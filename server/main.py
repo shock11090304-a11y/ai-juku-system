@@ -1532,6 +1532,66 @@ def init_db():
         event_id TEXT PRIMARY KEY,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+    -- 🏫 通塾生アプリ (塾長指示 2026-06-25): AI 学習 SaaS とは別系統の「塾生専用」機能。
+    --   対象 = 通塾生のみ (course='kokuritsu_nankan' 本クラス or plan='student_addon' 通塾生プラン)。
+    --   ① 授業ファイル配布 (PDF/画像/Word 等を DB base64 で保管・10MB 上限・認証 API 経由で配信)
+    --   ② 授業録画配布 (YouTube 限定公開 URL を登録・iframe 埋め込み再生)
+    --   ③ 出欠の自己申告 (生徒が 出席/欠席/遅刻 を申告 → 塾長へメール通知 + 管理画面で一覧)
+    -- 授業 (class_sessions) を軸に、ファイル/録画/出欠が session_id で紐づく。
+    CREATE TABLE IF NOT EXISTS class_sessions (
+        id {pk},
+        title TEXT NOT NULL,
+        subject TEXT,
+        session_date DATE,
+        start_time TEXT,
+        end_time TEXT,
+        location TEXT,
+        notes TEXT,
+        is_published INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_class_sessions_date ON class_sessions(session_date DESC, is_published);
+    -- 授業ファイル: バイト列は data_b64 に base64 で保管 (messages.attachment と同じ 10MB 上限・
+    --   _validate_message_attachment で MIME 許可リスト + magic byte 検証)。録画 (mp4) は DB に入れず
+    --   class_recordings の外部 URL を使う (DB/バックアップ肥大回避)。
+    CREATE TABLE IF NOT EXISTS class_files (
+        id {pk},
+        session_id INTEGER,
+        title TEXT NOT NULL,
+        filename TEXT,
+        mime TEXT,
+        file_size INTEGER DEFAULT 0,
+        data_b64 TEXT,
+        is_published INTEGER DEFAULT 1,
+        download_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_class_files_session ON class_files(session_id, is_published, created_at DESC);
+    CREATE TABLE IF NOT EXISTS class_recordings (
+        id {pk},
+        session_id INTEGER,
+        title TEXT NOT NULL,
+        video_url TEXT NOT NULL,
+        provider TEXT DEFAULT 'youtube',
+        duration_sec INTEGER,
+        is_published INTEGER DEFAULT 1,
+        view_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_class_recordings_session ON class_recordings(session_id, is_published, created_at DESC);
+    -- 出欠: 生徒の自己申告。(student_id, session_id) ユニークで再申告は UPDATE 上書き。
+    CREATE TABLE IF NOT EXISTS class_attendance (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        session_id INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        reason TEXT,
+        reported_at TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_class_attendance_uniq ON class_attendance(student_id, session_id);
+    CREATE INDEX IF NOT EXISTS idx_class_attendance_session ON class_attendance(session_id, status);
     """)
     # 既存DBに不足列を追加 (idempotent migration)
     # Postgres: 「column already exists」エラーで トランザクションが abort されると
@@ -40008,6 +40068,618 @@ def mark_message_read(msg_id: int, request: Request, authorization: Optional[str
         )
         conn.commit()
         return {"ok": True}
+    finally:
+        conn.close()
+
+
+# ==========================================================================
+# Routes: 通塾生アプリ (塾長指示 2026-06-25)
+#   AI 学習 SaaS とは別系統の「塾生専用」機能。対象 = 通塾生のみ。
+#   ① 授業ファイル配布  ② 授業録画 (YouTube 限定公開)  ③ 出欠の自己申告
+#   生徒側: /api/student/class/*  ・  塾長側: /api/admin/class/*
+# ==========================================================================
+_TSUJUKU_ALLOWED_PLANS = {"student_addon"}  # 通塾生プラン (¥5,000・招待制)
+_ATTENDANCE_STATUSES = {"present", "absent", "late"}
+_ATTENDANCE_LABEL = {"present": "出席", "absent": "欠席", "late": "遅刻"}
+
+
+def _require_tsujuku_student(student: Optional[dict]) -> None:
+    """🏫 通塾生アプリのアクセス判定。対象は通塾生のみ:
+      - course='kokuritsu_nankan' (本クラス所属生徒)
+      - plan='student_addon' (通塾生プラン ¥5,000・招待制)
+    オンライン専用の有料会員 (premium/family 等) は対象外 (物理授業の資料/録画/出欠のため)。"""
+    if not student:
+        raise HTTPException(status_code=401, detail="ログインが必要です")
+    if student.get("course") == _STUDY_LOG_TARGET_COURSE:
+        return
+    if (student.get("plan") or "").lower() in _TSUJUKU_ALLOWED_PLANS:
+        return
+    raise HTTPException(status_code=403, detail="この機能は通塾生のみ利用できます")
+
+
+def _class_valid_date_or_none(s: Optional[str]) -> Optional[str]:
+    """授業日 (YYYY-MM-DD) を検証。空なら None・不正なら 400。
+    Postgres の DATE 列に不正文字列を入れると例外になるため取り込み口で弾く。"""
+    s = (s or "").strip()
+    if not s:
+        return None
+    try:
+        datetime.strptime(s, "%Y-%m-%d")
+    except Exception:
+        raise HTTPException(status_code=400, detail="日付は YYYY-MM-DD 形式で入力してください")
+    return s
+
+
+def _detect_video_provider(url: str) -> str:
+    u = (url or "").lower()
+    if "youtube.com" in u or "youtu.be" in u:
+        return "youtube"
+    if "vimeo.com" in u:
+        return "vimeo"
+    return "link"
+
+
+# ----- Pydantic models -----
+class ClassSessionCreateRequest(BaseModel):
+    title: str
+    subject: Optional[str] = None
+    session_date: Optional[str] = None  # YYYY-MM-DD
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    location: Optional[str] = None
+    notes: Optional[str] = None
+    is_published: Optional[bool] = True
+
+
+class ClassSessionUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    subject: Optional[str] = None
+    session_date: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    location: Optional[str] = None
+    notes: Optional[str] = None
+    is_published: Optional[bool] = None
+
+
+class ClassFileCreateRequest(BaseModel):
+    title: str
+    filename: str
+    mime: str
+    data_b64: str
+    session_id: Optional[int] = None
+    is_published: Optional[bool] = True
+
+
+class ClassRecordingCreateRequest(BaseModel):
+    title: str
+    video_url: str
+    session_id: Optional[int] = None
+    duration_sec: Optional[int] = None
+    is_published: Optional[bool] = True
+
+
+class AttendanceReportRequest(BaseModel):
+    session_id: int
+    status: str  # present / absent / late
+    reason: Optional[str] = None
+
+
+# ============================ 生徒側 (通塾生限定) ============================
+@app.get("/api/student/class/feed")
+def student_class_feed(authorization: Optional[str] = Header(None)):
+    """通塾生: 授業スケジュール + 各授業のファイル/録画/自分の出欠状況を一括取得。
+    1 リクエストで生徒ページが必要とする全データを返す (round-trip 最小化)。"""
+    student = _get_current_student(authorization)
+    _require_tsujuku_student(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 公開中の授業 (日付の新しい順・日付 NULL は末尾)
+        c.execute(
+            "SELECT id, title, subject, session_date, start_time, end_time, location, notes "
+            "FROM class_sessions WHERE is_published = 1 "
+            "ORDER BY (session_date IS NULL), session_date DESC, id DESC"
+        )
+        sessions = {}
+        order = []
+        for r in c.fetchall():
+            sid = r["id"]
+            order.append(sid)
+            sessions[sid] = {
+                "id": sid, "title": r["title"], "subject": r["subject"],
+                "session_date": str(r["session_date"]) if r["session_date"] else None,
+                "start_time": r["start_time"], "end_time": r["end_time"],
+                "location": r["location"], "notes": r["notes"],
+                "files": [], "recordings": [], "my_attendance": None,
+            }
+        # 公開中のファイル (data_b64 は重いので取得しない)
+        loose_files = []
+        c.execute(
+            "SELECT id, session_id, title, filename, mime, file_size "
+            "FROM class_files WHERE is_published = 1 ORDER BY created_at DESC, id DESC"
+        )
+        for r in c.fetchall():
+            item = {"id": r["id"], "title": r["title"], "filename": r["filename"],
+                    "mime": r["mime"], "file_size": r["file_size"]}
+            if r["session_id"] is None:
+                loose_files.append(item)            # 授業に紐づかない資料
+            elif r["session_id"] in sessions:
+                sessions[r["session_id"]]["files"].append(item)
+            # else: 親授業が非公開 → 出さない (非公開で資料を撤回できるように)
+        # 公開中の録画
+        loose_recordings = []
+        c.execute(
+            "SELECT id, session_id, title, video_url, provider, duration_sec "
+            "FROM class_recordings WHERE is_published = 1 ORDER BY created_at DESC, id DESC"
+        )
+        for r in c.fetchall():
+            item = {"id": r["id"], "title": r["title"], "video_url": r["video_url"],
+                    "provider": r["provider"], "duration_sec": r["duration_sec"]}
+            if r["session_id"] is None:
+                loose_recordings.append(item)        # 授業に紐づかない録画
+            elif r["session_id"] in sessions:
+                sessions[r["session_id"]]["recordings"].append(item)
+            # else: 親授業が非公開 → 出さない
+        # 自分の出欠
+        c.execute(
+            "SELECT session_id, status, reason, reported_at FROM class_attendance WHERE student_id = ?",
+            (student["id"],)
+        )
+        for r in c.fetchall():
+            if r["session_id"] in sessions:
+                sessions[r["session_id"]]["my_attendance"] = {
+                    "status": r["status"], "reason": r["reason"],
+                    "reported_at": str(r["reported_at"]) if r["reported_at"] else None,
+                }
+        return {
+            "ok": True,
+            "student_name": student.get("name"),
+            "sessions": [sessions[sid] for sid in order],
+            "loose_files": loose_files,
+            "loose_recordings": loose_recordings,
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/api/student/class/files/{file_id}/download")
+def student_class_file_download(file_id: int, authorization: Optional[str] = Header(None)):
+    """通塾生: 授業ファイルをダウンロード。認証 + 通塾生ゲート後に DB から復号して配信。
+    ファイルは通塾生で共有 (個別所有ではない) ため、コホートゲートのみで十分。"""
+    student = _get_current_student(authorization)
+    _require_tsujuku_student(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 親授業の公開状態も見る (授業を非公開にしたら添付ファイルも配信停止)。
+        # session_id IS NULL のルース資料は授業に依存しないのでそのまま配信。
+        c.execute(
+            "SELECT f.filename, f.mime, f.data_b64, f.is_published, f.session_id, s.is_published AS sess_pub "
+            "FROM class_files f LEFT JOIN class_sessions s ON s.id = f.session_id WHERE f.id = ?",
+            (int(file_id),)
+        )
+        row = c.fetchone()
+        if not row or not row["is_published"]:
+            raise HTTPException(status_code=404, detail="ファイルが見つかりません")
+        if row["session_id"] is not None and not row["sess_pub"]:
+            raise HTTPException(status_code=404, detail="ファイルが見つかりません")
+        if not row["data_b64"]:
+            raise HTTPException(status_code=404, detail="ファイルの実体がありません")
+        import base64 as _b64
+        try:
+            data = _b64.b64decode(row["data_b64"])
+        except Exception:
+            raise HTTPException(status_code=500, detail="ファイルの読込に失敗しました")
+        # ダウンロード数をカウント (失敗は無視)
+        try:
+            c.execute("UPDATE class_files SET download_count = COALESCE(download_count,0) + 1 WHERE id = ?", (int(file_id),))
+            conn.commit()
+        except Exception:
+            pass
+        return _safe_attachment_response(
+            row["filename"] or "lesson_file", row["mime"] or "application/octet-stream", data
+        )
+    finally:
+        conn.close()
+
+
+@app.post("/api/student/class/attendance")
+def student_class_attendance(payload: AttendanceReportRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """通塾生: 出欠を自己申告 (出席/欠席/遅刻)。(student_id, session_id) で UPSERT。
+    申告すると塾長へメール通知 (best-effort) + 管理画面の出欠一覧に反映。"""
+    _check_rate_limit_ip(request, bucket="class_attendance", limit=30, window=300)
+    student = _get_current_student(authorization)
+    _require_tsujuku_student(student)
+    status = (payload.status or "").strip().lower()
+    if status not in _ATTENDANCE_STATUSES:
+        raise HTTPException(status_code=400, detail="status は present / absent / late のいずれか")
+    reason = _sanitize_text(payload.reason, 500)
+    now_iso = _utc_naive_iso()
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 授業が存在し公開中か確認
+        c.execute("SELECT is_published, title, session_date FROM class_sessions WHERE id = ?", (int(payload.session_id),))
+        srow = c.fetchone()
+        if not srow or not srow["is_published"]:
+            raise HTTPException(status_code=404, detail="授業が見つかりません")
+        # UPSERT (SELECT → UPDATE/INSERT・両 DB 互換)。prev status も取って変化判定に使う。
+        c.execute(
+            "SELECT id, status FROM class_attendance WHERE student_id = ? AND session_id = ?",
+            (student["id"], int(payload.session_id))
+        )
+        existing = c.fetchone()
+        prev_status = existing["status"] if existing else None
+        if existing:
+            c.execute(
+                "UPDATE class_attendance SET status = ?, reason = ?, reported_at = ?, updated_at = ? WHERE id = ?",
+                (status, reason, now_iso, now_iso, existing["id"])
+            )
+        else:
+            c.execute(
+                "INSERT INTO class_attendance (student_id, session_id, status, reason, reported_at, updated_at) "
+                "VALUES (?,?,?,?,?,?)",
+                (student["id"], int(payload.session_id), status, reason, now_iso, now_iso)
+            )
+        conn.commit()
+        sess_title = srow["title"] if srow else ""
+        sess_date = str(srow["session_date"]) if (srow and srow["session_date"]) else ""
+    finally:
+        conn.close()
+    status_changed = (prev_status != status)
+
+    # 監査 events は別接続で (best-effort)。出欠 UPSERT と同 txn にすると、PG(非autocommit)で
+    # events INSERT が失敗→txn abort→後続 commit が出欠ごと捨てる罠になるため分離する。
+    try:
+        conn2 = db()
+        try:
+            c2 = conn2.cursor()
+            c2.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("class_attendance_report",
+                 json.dumps({"student_id": student["id"], "name": student.get("name"),
+                             "class_session_id": int(payload.session_id), "status": status}, ensure_ascii=False),
+                 str(student["id"]))
+            )
+            conn2.commit()
+        finally:
+            conn2.close()
+    except Exception:
+        pass
+
+    # 塾長へメール通知 (best-effort・student_send_message と同じ inline Resend POST)。
+    # 状態が変わった時だけ送る (出席↔欠席トグル連打で Resend 枠を食い潰さないため)。
+    if status_changed and DAILY_SNS_TO_EMAIL and RESEND_API_KEY and FROM_EMAIL:
+        try:
+            import urllib.request as _ur
+            label = _ATTENDANCE_LABEL.get(status, status)
+            who = student.get("name") or "(名前未登録)"
+            reason_note = f"\n理由/連絡: {reason}" if reason else ""
+            email_body = (
+                f"{who}さん (生徒ID:{student['id']}) が出欠を申告しました。\n\n"
+                f"授業: {sess_title} {('('+sess_date+')') if sess_date else ''}\n"
+                f"出欠: {label}{reason_note}\n\n"
+                f"CEO ダッシュ「🏫 通塾クラス」→ 出欠一覧 で全員の状況を確認できます。"
+            )
+            req = _ur.Request(
+                "https://api.resend.com/emails",
+                data=json.dumps({
+                    "from": FROM_EMAIL,
+                    "to": [DAILY_SNS_TO_EMAIL],
+                    "subject": f"🏫 [出欠] {who}さん → {label}",
+                    "text": email_body,
+                }).encode("utf-8"),
+                headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+                method="POST",
+            )
+            _ur.urlopen(req, timeout=10).read()
+        except Exception as _e:
+            log.warning(f"[Class] attendance email notify failed: {_e}")
+
+    return {"ok": True, "status": status, "label": _ATTENDANCE_LABEL.get(status, status),
+            "info": "出欠を記録しました。塾長に通知されます。"}
+
+
+# ============================ 塾長側 (管理) ============================
+@app.post("/api/admin/class/sessions")
+def admin_class_session_create(payload: ClassSessionCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: 授業を作成。"""
+    _check_rate_limit_ip(request, bucket="class_admin", limit=60, window=60)
+    _verify_admin_required(authorization)
+    title = _sanitize_text(payload.title, 200)
+    if not title:
+        raise HTTPException(status_code=400, detail="タイトルは必須です")
+    subject = _sanitize_text(payload.subject, 80)
+    session_date = _class_valid_date_or_none(payload.session_date)
+    start_time = _sanitize_text(payload.start_time, 20)
+    end_time = _sanitize_text(payload.end_time, 20)
+    location = _sanitize_text(payload.location, 200)
+    notes = _sanitize_text(payload.notes, 2000)
+    is_pub = 1 if (payload.is_published is None or payload.is_published) else 0
+    now_iso = _utc_naive_iso()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO class_sessions (title, subject, session_date, start_time, end_time, location, notes, is_published, created_at, updated_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id",
+            (title, subject, session_date, start_time, end_time, location, notes, is_pub, now_iso, now_iso)
+        )
+        row = c.fetchone()
+        conn.commit()
+        return {"ok": True, "id": row["id"] if row else None}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/class/sessions")
+def admin_class_sessions_list(authorization: Optional[str] = Header(None)):
+    """塾長: 授業一覧 (ファイル数/録画数/出欠申告数つき)。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, title, subject, session_date, start_time, end_time, location, notes, is_published, created_at "
+            "FROM class_sessions ORDER BY (session_date IS NULL), session_date DESC, id DESC"
+        )
+        sessions = []
+        idx = {}
+        for r in c.fetchall():
+            d = {"id": r["id"], "title": r["title"], "subject": r["subject"],
+                 "session_date": str(r["session_date"]) if r["session_date"] else None,
+                 "start_time": r["start_time"], "end_time": r["end_time"],
+                 "location": r["location"], "notes": r["notes"],
+                 "is_published": bool(r["is_published"]),
+                 "file_count": 0, "recording_count": 0, "attendance_count": 0}
+            sessions.append(d)
+            idx[r["id"]] = d
+        for sql, key in (
+            ("SELECT session_id, COUNT(*) AS n FROM class_files GROUP BY session_id", "file_count"),
+            ("SELECT session_id, COUNT(*) AS n FROM class_recordings GROUP BY session_id", "recording_count"),
+            ("SELECT session_id, COUNT(*) AS n FROM class_attendance GROUP BY session_id", "attendance_count"),
+        ):
+            c.execute(sql)
+            for r in c.fetchall():
+                if r["session_id"] in idx:
+                    idx[r["session_id"]][key] = r["n"]
+        return {"ok": True, "sessions": sessions}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/class/sessions/{session_id}/detail")
+def admin_class_session_detail(session_id: int, authorization: Optional[str] = Header(None)):
+    """塾長: ある授業の中身 (ファイル/録画/出欠) を一括取得 (管理パネル用)。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, title, subject, session_date, start_time, end_time, location, notes, is_published "
+            "FROM class_sessions WHERE id = ?", (int(session_id),)
+        )
+        s = c.fetchone()
+        if not s:
+            raise HTTPException(status_code=404, detail="授業が見つかりません")
+        session = {"id": s["id"], "title": s["title"], "subject": s["subject"],
+                   "session_date": str(s["session_date"]) if s["session_date"] else None,
+                   "start_time": s["start_time"], "end_time": s["end_time"],
+                   "location": s["location"], "notes": s["notes"], "is_published": bool(s["is_published"])}
+        c.execute(
+            "SELECT id, title, filename, mime, file_size, is_published FROM class_files "
+            "WHERE session_id = ? ORDER BY created_at DESC, id DESC", (int(session_id),)
+        )
+        files = [{"id": r["id"], "title": r["title"], "filename": r["filename"], "mime": r["mime"],
+                  "file_size": r["file_size"], "is_published": bool(r["is_published"])} for r in c.fetchall()]
+        c.execute(
+            "SELECT id, title, video_url, provider, duration_sec, is_published FROM class_recordings "
+            "WHERE session_id = ? ORDER BY created_at DESC, id DESC", (int(session_id),)
+        )
+        recordings = [{"id": r["id"], "title": r["title"], "video_url": r["video_url"], "provider": r["provider"],
+                       "duration_sec": r["duration_sec"], "is_published": bool(r["is_published"])} for r in c.fetchall()]
+        c.execute(
+            "SELECT a.student_id, a.status, a.reason, a.reported_at, s.name "
+            "FROM class_attendance a LEFT JOIN students s ON s.id = a.student_id "
+            "WHERE a.session_id = ? ORDER BY (a.reported_at IS NULL), a.reported_at DESC", (int(session_id),)
+        )
+        attendance = []
+        counts = {"present": 0, "absent": 0, "late": 0}
+        for r in c.fetchall():
+            st = r["status"]
+            if st in counts:
+                counts[st] += 1
+            attendance.append({"student_id": r["student_id"], "name": r["name"], "status": st,
+                               "label": _ATTENDANCE_LABEL.get(st, st), "reason": r["reason"],
+                               "reported_at": str(r["reported_at"]) if r["reported_at"] else None})
+        return {"ok": True, "session": session, "files": files, "recordings": recordings,
+                "attendance": attendance, "counts": counts}
+    finally:
+        conn.close()
+
+
+@app.patch("/api/admin/class/sessions/{session_id}")
+def admin_class_session_update(session_id: int, payload: ClassSessionUpdateRequest, authorization: Optional[str] = Header(None)):
+    """塾長: 授業を編集 (指定フィールドのみ更新・公開/非公開トグル含む)。"""
+    _verify_admin_required(authorization)
+    fields = []
+    vals = []
+    if payload.title is not None:
+        t = _sanitize_text(payload.title, 200)
+        if not t:
+            raise HTTPException(status_code=400, detail="タイトルは空にできません")
+        fields.append("title = ?"); vals.append(t)
+    if payload.subject is not None:
+        fields.append("subject = ?"); vals.append(_sanitize_text(payload.subject, 80))
+    if payload.session_date is not None:
+        fields.append("session_date = ?"); vals.append(_class_valid_date_or_none(payload.session_date))
+    if payload.start_time is not None:
+        fields.append("start_time = ?"); vals.append(_sanitize_text(payload.start_time, 20))
+    if payload.end_time is not None:
+        fields.append("end_time = ?"); vals.append(_sanitize_text(payload.end_time, 20))
+    if payload.location is not None:
+        fields.append("location = ?"); vals.append(_sanitize_text(payload.location, 200))
+    if payload.notes is not None:
+        fields.append("notes = ?"); vals.append(_sanitize_text(payload.notes, 2000))
+    if payload.is_published is not None:
+        fields.append("is_published = ?"); vals.append(1 if payload.is_published else 0)
+    if not fields:
+        raise HTTPException(status_code=400, detail="更新する項目がありません")
+    fields.append("updated_at = ?"); vals.append(_utc_naive_iso())
+    vals.append(int(session_id))
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id FROM class_sessions WHERE id = ?", (int(session_id),))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="授業が見つかりません")
+        c.execute(f"UPDATE class_sessions SET {', '.join(fields)} WHERE id = ?", tuple(vals))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.delete("/api/admin/class/sessions/{session_id}")
+def admin_class_session_delete(session_id: int, authorization: Optional[str] = Header(None)):
+    """塾長: 授業を削除 (紐づくファイル/録画/出欠も一緒に削除)。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("DELETE FROM class_files WHERE session_id = ?", (int(session_id),))
+        c.execute("DELETE FROM class_recordings WHERE session_id = ?", (int(session_id),))
+        c.execute("DELETE FROM class_attendance WHERE session_id = ?", (int(session_id),))
+        c.execute("DELETE FROM class_sessions WHERE id = ?", (int(session_id),))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/class/files")
+def admin_class_file_create(payload: ClassFileCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: 授業ファイルをアップロード (base64・10MB 上限・MIME/magic byte 検証)。"""
+    _check_rate_limit_ip(request, bucket="class_admin", limit=60, window=60)
+    _verify_admin_required(authorization)
+    title = _sanitize_text(payload.title, 200)
+    if not title:
+        raise HTTPException(status_code=400, detail="タイトルは必須です")
+    # messages 添付と同じ検証 (MIME 許可リスト + サイズ + magic byte)
+    attachment = _validate_message_attachment(payload.filename, payload.mime, payload.data_b64)
+    if not attachment:
+        raise HTTPException(status_code=400, detail="ファイル (filename / mime / data_b64) が必要です")
+    is_pub = 1 if (payload.is_published is None or payload.is_published) else 0
+    conn = db()
+    try:
+        c = conn.cursor()
+        if payload.session_id is not None:
+            c.execute("SELECT id FROM class_sessions WHERE id = ?", (int(payload.session_id),))
+            if not c.fetchone():
+                raise HTTPException(status_code=404, detail="指定された授業が見つかりません")
+        c.execute(
+            "INSERT INTO class_files (session_id, title, filename, mime, file_size, data_b64, is_published, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?) RETURNING id",
+            (int(payload.session_id) if payload.session_id is not None else None,
+             title, attachment["filename"], attachment["mime"], attachment["size"],
+             attachment["data_b64"], is_pub, _utc_naive_iso())
+        )
+        row = c.fetchone()
+        conn.commit()
+        return {"ok": True, "id": row["id"] if row else None, "size": attachment["size"]}
+    finally:
+        conn.close()
+
+
+@app.delete("/api/admin/class/files/{file_id}")
+def admin_class_file_delete(file_id: int, authorization: Optional[str] = Header(None)):
+    """塾長: 授業ファイルを削除。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("DELETE FROM class_files WHERE id = ?", (int(file_id),))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/class/recordings")
+def admin_class_recording_create(payload: ClassRecordingCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: 授業録画を登録 (YouTube 限定公開 URL など)。動画実体は外部ホスト・ここは URL のみ保管。"""
+    _check_rate_limit_ip(request, bucket="class_admin", limit=60, window=60)
+    _verify_admin_required(authorization)
+    title = _sanitize_text(payload.title, 200)
+    if not title:
+        raise HTTPException(status_code=400, detail="タイトルは必須です")
+    url = (payload.video_url or "").strip()
+    if not (url.startswith("http://") or url.startswith("https://")):
+        raise HTTPException(status_code=400, detail="動画 URL は http(s):// で始まる必要があります")
+    url = url[:1000]
+    provider = _detect_video_provider(url)
+    duration = payload.duration_sec if (isinstance(payload.duration_sec, int) and payload.duration_sec > 0) else None
+    is_pub = 1 if (payload.is_published is None or payload.is_published) else 0
+    conn = db()
+    try:
+        c = conn.cursor()
+        if payload.session_id is not None:
+            c.execute("SELECT id FROM class_sessions WHERE id = ?", (int(payload.session_id),))
+            if not c.fetchone():
+                raise HTTPException(status_code=404, detail="指定された授業が見つかりません")
+        c.execute(
+            "INSERT INTO class_recordings (session_id, title, video_url, provider, duration_sec, is_published, created_at) "
+            "VALUES (?,?,?,?,?,?,?) RETURNING id",
+            (int(payload.session_id) if payload.session_id is not None else None,
+             title, url, provider, duration, is_pub, _utc_naive_iso())
+        )
+        row = c.fetchone()
+        conn.commit()
+        return {"ok": True, "id": row["id"] if row else None, "provider": provider}
+    finally:
+        conn.close()
+
+
+@app.delete("/api/admin/class/recordings/{recording_id}")
+def admin_class_recording_delete(recording_id: int, authorization: Optional[str] = Header(None)):
+    """塾長: 授業録画を削除。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("DELETE FROM class_recordings WHERE id = ?", (int(recording_id),))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/class/attendance")
+def admin_class_attendance_list(session_id: int, authorization: Optional[str] = Header(None)):
+    """塾長: ある授業の出欠一覧 (生徒名つき・申告の新しい順)。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT a.student_id, a.status, a.reason, a.reported_at, s.name, s.email "
+            "FROM class_attendance a LEFT JOIN students s ON s.id = a.student_id "
+            "WHERE a.session_id = ? ORDER BY (a.reported_at IS NULL), a.reported_at DESC",
+            (int(session_id),)
+        )
+        rows = []
+        counts = {"present": 0, "absent": 0, "late": 0}
+        for r in c.fetchall():
+            st = r["status"]
+            if st in counts:
+                counts[st] += 1
+            rows.append({
+                "student_id": r["student_id"], "name": r["name"], "email": r["email"],
+                "status": st, "label": _ATTENDANCE_LABEL.get(st, st), "reason": r["reason"],
+                "reported_at": str(r["reported_at"]) if r["reported_at"] else None,
+            })
+        return {"ok": True, "session_id": int(session_id), "counts": counts, "attendance": rows}
     finally:
         conn.close()
 

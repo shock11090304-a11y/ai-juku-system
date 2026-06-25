@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <meta name="robots" content="noindex">
+  <title>🏫 塾生メニュー | トリリオンAI塾</title>
+  <script src="cache-purge.js?v=20260625-class"></script>
+  <style>
+    :root { --accent:#818cf8; --accent2:#a78bfa; }
+    body { background: linear-gradient(135deg, #0f0f1e, #1a1a2e); color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; margin: 0; }
+    a { color: #c4b5fd; }
+    .nav { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.5rem; background:rgba(0,0,0,0.4); border-bottom:1px solid rgba(255,255,255,0.08); position:sticky; top:0; z-index:20; backdrop-filter:blur(6px); }
+    .nav-title { font-size:1.05rem; font-weight:800; background:linear-gradient(135deg,#a78bfa,#818cf8); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .nav-links a { padding:0.45rem 0.9rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#e4e4e7; text-decoration:none; font-size:0.82rem; font-weight:700; margin-left:0.4rem; }
+    .wrap { max-width: 860px; margin: 1.4rem auto; padding: 0 1rem 4rem; }
+    .hero { text-align:center; margin:1.2rem 0 1.6rem; padding:1.4rem 1rem; background:linear-gradient(135deg,rgba(129,140,248,0.12),rgba(167,139,250,0.06)); border:1px solid rgba(129,140,248,0.30); border-radius:14px; }
+    .hero h1 { font-size:1.7rem; margin:0 0 0.4rem; background:linear-gradient(135deg,#a78bfa,#818cf8); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .hero p { color:#cbd5e1; margin:0.2rem 0; font-size:0.92rem; line-height:1.6; }
+
+    .notice { padding:1.2rem 1.3rem; background:rgba(251,191,36,0.10); border:1px solid rgba(251,191,36,0.35); border-radius:12px; line-height:1.7; }
+    .notice h2 { margin:0 0 0.5rem; font-size:1.1rem; color:#fcd34d; }
+    .notice.err { background:rgba(239,68,68,0.10); border-color:rgba(239,68,68,0.40); }
+    .notice.err h2 { color:#fca5a5; }
+    .loading { text-align:center; color:#a1a1aa; padding:2.5rem; }
+    .muted { color:#a1a1aa; font-size:0.82rem; }
+
+    .sec-h { margin:1.8rem 0 0.7rem; font-size:1.1rem; font-weight:800; color:#e4e4e7; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:0.4rem; }
+
+    .session { background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.10); border-radius:14px; padding:1.1rem 1.2rem; margin-bottom:1.1rem; }
+    .session-head { display:flex; justify-content:space-between; align-items:flex-start; gap:0.6rem; flex-wrap:wrap; }
+    .session-date { display:inline-block; padding:0.2rem 0.6rem; background:rgba(129,140,248,0.18); border:1px solid rgba(129,140,248,0.4); border-radius:999px; color:#c7d2fe; font-size:0.78rem; font-weight:800; }
+    .session-title { font-size:1.08rem; font-weight:800; margin:0.45rem 0 0.2rem; }
+    .session-meta { color:#a1a1aa; font-size:0.82rem; }
+    .session-notes { margin-top:0.5rem; color:#cbd5e1; font-size:0.86rem; line-height:1.6; white-space:pre-wrap; }
+    .subj-chip { display:inline-block; padding:0.12rem 0.5rem; background:rgba(167,139,250,0.16); border:1px solid rgba(167,139,250,0.35); border-radius:6px; color:#ddd6fe; font-size:0.72rem; font-weight:700; }
+
+    .block { margin-top:0.9rem; }
+    .block-label { font-size:0.8rem; font-weight:800; color:#a5b4fc; margin-bottom:0.4rem; }
+    .res-row { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.7rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.10); border-radius:9px; margin:0.35rem 0; }
+    .res-icon { font-size:1.1rem; flex-shrink:0; }
+    .res-name { flex:1; font-size:0.9rem; font-weight:600; min-width:0; word-break:break-word; }
+    .res-sub { font-size:0.72rem; color:#a1a1aa; }
+    .btn { display:inline-block; padding:0.45rem 0.9rem; border:none; border-radius:8px; font-weight:800; font-size:0.84rem; cursor:pointer; text-decoration:none; }
+    .btn-primary { background:linear-gradient(135deg,#818cf8,#6366f1); color:#fff; }
+    .btn-ghost { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#e4e4e7; }
+    .btn:disabled { opacity:0.5; cursor:default; }
+
+    .att { margin-top:0.9rem; padding:0.8rem 0.9rem; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.28); border-radius:10px; }
+    .att-row { display:flex; gap:0.5rem; flex-wrap:wrap; }
+    .att-btn { padding:0.5rem 1rem; border-radius:8px; border:1.5px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.05); color:#e4e4e7; font-weight:800; font-size:0.88rem; cursor:pointer; }
+    .att-btn.sel-present { background:rgba(16,185,129,0.25); border-color:#10b981; color:#6ee7b7; }
+    .att-btn.sel-absent { background:rgba(239,68,68,0.22); border-color:#ef4444; color:#fca5a5; }
+    .att-btn.sel-late { background:rgba(251,191,36,0.20); border-color:#fbbf24; color:#fde68a; }
+    .att-reason { margin-top:0.55rem; }
+    .att-reason textarea { width:100%; box-sizing:border-box; min-height:48px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#e4e4e7; padding:0.5rem; font-size:0.85rem; }
+    .att-status { margin-top:0.5rem; font-size:0.84rem; font-weight:700; }
+    .att-saved { color:#6ee7b7; }
+
+    .video-wrap { position:relative; width:100%; padding-top:56.25%; margin-top:0.5rem; border-radius:10px; overflow:hidden; background:#000; }
+    .video-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+    .toast { position:fixed; left:50%; bottom:1.5rem; transform:translateX(-50%); background:rgba(20,20,40,0.97); border:1px solid rgba(129,140,248,0.5); color:#e4e4e7; padding:0.7rem 1.1rem; border-radius:10px; font-size:0.88rem; font-weight:700; z-index:50; box-shadow:0 6px 24px rgba(0,0,0,0.5); opacity:0; transition:opacity .2s; pointer-events:none; }
+    .toast.show { opacity:1; }
+    .toast.err { border-color:rgba(239,68,68,0.6); color:#fca5a5; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-title">🏫 塾生メニュー</div>
+    <div class="nav-links">
+      <a href="mypage.html">マイページ</a>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>🏫 塾生メニュー</h1>
+      <p>授業の<strong>配布ファイル</strong>・<strong>録画</strong>の確認と、<strong>出欠の連絡</strong>がここからできます。</p>
+      <p class="muted">通塾生専用。授業ごとに資料・録画・出欠がまとまっています。</p>
+    </section>
+
+    <div id="content"><div class="loading">読み込み中…</div></div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="auth-guard.js?v=20260625-class"></script>
+  <script>
+  (function () {
+    const BACKEND_URL = (window.location.hostname === 'localhost' && window.location.port === '8090')
+      ? 'http://localhost:8000'
+      : window.location.origin;
+
+    function token() {
+      return (window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken())
+        || localStorage.getItem('ai_juku_session_token') || '';
+    }
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, m => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]
+      ));
+    }
+    // href に入れる URL は http(s) のみ許可 (javascript:/data: スキーム注入を多層防御)
+    function safeHref(u) {
+      try { var p = new URL(u, location.href); return (p.protocol === 'http:' || p.protocol === 'https:') ? u : '#'; }
+      catch (e) { return '#'; }
+    }
+    function fmtKB(bytes) {
+      if (!bytes) return '';
+      const kb = bytes / 1024;
+      return kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : Math.max(1, Math.round(kb)) + ' KB';
+    }
+    function fmtDur(sec) {
+      if (!sec) return '';
+      const m = Math.floor(sec / 60), s = sec % 60;
+      return m + '分' + (s ? (' ' + s + '秒') : '');
+    }
+    function ytId(url) {
+      if (!url) return null;
+      try {
+        const u = new URL(url);
+        if (u.hostname.indexOf('youtu.be') >= 0) return (u.pathname.slice(1).split('/')[0]) || null;
+        if (u.hostname.indexOf('youtube.com') >= 0) {
+          if (u.pathname.indexOf('/embed/') === 0) return u.pathname.split('/')[2] || null;
+          if (u.pathname.indexOf('/shorts/') === 0) return u.pathname.split('/')[2] || null;
+          return u.searchParams.get('v');
+        }
+      } catch (e) {}
+      return null;
+    }
+    let _toastTimer = null;
+    function toast(msg, isErr) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show' + (isErr ? ' err' : '');
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(() => { t.className = 'toast'; }, 2600);
+    }
+
+    async function api(path, opts) {
+      opts = opts || {};
+      const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+      const tk = token();
+      if (tk) headers['Authorization'] = 'Bearer ' + tk;
+      const res = await fetch(BACKEND_URL + path, Object.assign({}, opts, { headers }));
+      if (!res.ok) {
+        let detail = '';
+        try { const j = await res.json(); detail = (j && j.detail) || ''; } catch (e) {}
+        const err = new Error(typeof detail === 'string' && detail ? detail : ('HTTP ' + res.status));
+        err.status = res.status;
+        throw err;
+      }
+      return res.json();
+    }
+
+    const content = document.getElementById('content');
+
+    function recordingHtml(r) {
+      const id = r.provider === 'youtube' ? ytId(r.video_url) : null;
+      const dur = r.duration_sec ? ('<span class="res-sub"> ・ ' + esc(fmtDur(r.duration_sec)) + '</span>') : '';
+      if (id) {
+        return '<div class="res-row" style="flex-direction:column;align-items:stretch;">'
+          + '<div style="display:flex;align-items:center;gap:0.6rem;">'
+          + '<span class="res-icon">🎬</span><span class="res-name">' + esc(r.title) + dur + '</span>'
+          + '<button class="btn btn-ghost rec-toggle" data-yt="' + esc(id) + '">▶ 再生</button></div>'
+          + '<div class="rec-player" style="display:none;"></div></div>';
+      }
+      // YouTube 以外 / ID 抽出失敗 → 外部リンク
+      return '<div class="res-row"><span class="res-icon">🎬</span>'
+        + '<span class="res-name">' + esc(r.title) + dur + '</span>'
+        + '<a class="btn btn-ghost" href="' + esc(safeHref(r.video_url)) + '" target="_blank" rel="noopener">↗ 開く</a></div>';
+    }
+
+    function fileHtml(f) {
+      const sub = f.file_size ? ('<span class="res-sub"> ・ ' + esc(fmtKB(f.file_size)) + '</span>') : '';
+      return '<div class="res-row"><span class="res-icon">📄</span>'
+        + '<span class="res-name">' + esc(f.title) + sub + '</span>'
+        + '<button class="btn btn-primary file-dl" data-id="' + f.id + '" data-fn="' + esc(f.filename || f.title) + '">⬇ 取得</button></div>';
+    }
+
+    function attendanceHtml(s) {
+      const cur = s.my_attendance && s.my_attendance.status;
+      const mk = (st, label) => '<button class="att-btn att-set' + (cur === st ? ' sel-' + st : '')
+        + '" data-sess="' + s.id + '" data-st="' + st + '">' + label + '</button>';
+      const reasonVal = (s.my_attendance && s.my_attendance.reason) ? esc(s.my_attendance.reason) : '';
+      const statusLine = cur
+        ? '<div class="att-status att-saved">✓ 申告済み: ' + esc({ present: '出席', absent: '欠席', late: '遅刻' }[cur] || cur) + '（変更も可能）</div>'
+        : '<div class="att-status muted">まだ申告していません</div>';
+      return '<div class="att" data-sess-wrap="' + s.id + '">'
+        + '<div class="block-label">📋 出欠の連絡</div>'
+        + '<div class="att-row">' + mk('present', '出席') + mk('absent', '欠席') + mk('late', '遅刻') + '</div>'
+        + '<div class="att-reason"><textarea data-reason="' + s.id + '" placeholder="（任意）欠席・遅刻の理由や連絡事項">' + reasonVal + '</textarea></div>'
+        + statusLine + '</div>';
+    }
+
+    function sessionHtml(s) {
+      const dateLabel = s.session_date ? esc(s.session_date) : '日付未定';
+      const time = [s.start_time, s.end_time].filter(Boolean).join('〜');
+      const metaBits = [];
+      if (time) metaBits.push('🕐 ' + esc(time));
+      if (s.location) metaBits.push('📍 ' + esc(s.location));
+      const subj = s.subject ? ' <span class="subj-chip">' + esc(s.subject) + '</span>' : '';
+      let html = '<div class="session">'
+        + '<div class="session-head"><span class="session-date">' + dateLabel + '</span></div>'
+        + '<div class="session-title">' + esc(s.title) + subj + '</div>';
+      if (metaBits.length) html += '<div class="session-meta">' + metaBits.join(' ・ ') + '</div>';
+      if (s.notes) html += '<div class="session-notes">' + esc(s.notes) + '</div>';
+      if (s.files && s.files.length) {
+        html += '<div class="block"><div class="block-label">📄 配布ファイル</div>' + s.files.map(fileHtml).join('') + '</div>';
+      }
+      if (s.recordings && s.recordings.length) {
+        html += '<div class="block"><div class="block-label">🎬 授業の録画</div>' + s.recordings.map(recordingHtml).join('') + '</div>';
+      }
+      html += attendanceHtml(s);
+      html += '</div>';
+      return html;
+    }
+
+    function render(data) {
+      const parts = [];
+      const sessions = data.sessions || [];
+      if (sessions.length) {
+        parts.push('<div class="sec-h">📅 授業</div>');
+        parts.push(sessions.map(sessionHtml).join(''));
+      }
+      const lf = data.loose_files || [], lr = data.loose_recordings || [];
+      if (lf.length || lr.length) {
+        parts.push('<div class="sec-h">🗂️ その他の資料</div>');
+        let block = '<div class="session">';
+        if (lf.length) block += '<div class="block"><div class="block-label">📄 配布ファイル</div>' + lf.map(fileHtml).join('') + '</div>';
+        if (lr.length) block += '<div class="block"><div class="block-label">🎬 録画</div>' + lr.map(recordingHtml).join('') + '</div>';
+        block += '</div>';
+        parts.push(block);
+      }
+      if (!parts.length) {
+        parts.push('<div class="notice"><h2>📭 まだ授業がありません</h2>授業のファイルや録画が登録されると、ここに表示されます。</div>');
+      }
+      content.innerHTML = parts.join('');
+      wireEvents();
+    }
+
+    function wireEvents() {
+      // 録画の再生トグル
+      content.querySelectorAll('.rec-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const player = btn.closest('.res-row').querySelector('.rec-player');
+          if (!player) return;
+          if (player.style.display === 'none') {
+            const id = btn.getAttribute('data-yt');
+            player.innerHTML = '<div class="video-wrap"><iframe src="https://www.youtube.com/embed/'
+              + encodeURIComponent(id) + '?rel=0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+            player.style.display = 'block';
+            btn.textContent = '■ 閉じる';
+          } else {
+            player.innerHTML = '';
+            player.style.display = 'none';
+            btn.textContent = '▶ 再生';
+          }
+        });
+      });
+      // ファイルダウンロード (認証ヘッダ必須 → fetch + blob)
+      content.querySelectorAll('.file-dl').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          const fn = btn.getAttribute('data-fn') || 'lesson_file';
+          const orig = btn.textContent;
+          btn.disabled = true; btn.textContent = '取得中…';
+          try {
+            const res = await fetch(BACKEND_URL + '/api/student/class/files/' + id + '/download', {
+              headers: { 'Authorization': 'Bearer ' + token() }
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = fn;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 4000);
+          } catch (e) {
+            toast('ダウンロードに失敗しました', true);
+          } finally {
+            btn.disabled = false; btn.textContent = orig;
+          }
+        });
+      });
+      // 出欠の申告
+      content.querySelectorAll('.att-set').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const sess = btn.getAttribute('data-sess');
+          const st = btn.getAttribute('data-st');
+          const wrap = content.querySelector('[data-sess-wrap="' + sess + '"]');
+          const reasonEl = content.querySelector('[data-reason="' + sess + '"]');
+          const reason = reasonEl ? reasonEl.value : '';
+          const allBtns = wrap.querySelectorAll('.att-set');
+          allBtns.forEach(b => { b.disabled = true; });
+          try {
+            const r = await api('/api/student/class/attendance', {
+              method: 'POST',
+              body: JSON.stringify({ session_id: Number(sess), status: st, reason: reason })
+            });
+            // 選択状態を更新
+            allBtns.forEach(b => {
+              b.className = 'att-btn att-set' + (b.getAttribute('data-st') === st ? ' sel-' + st : '');
+            });
+            const statusEl = wrap.querySelector('.att-status');
+            if (statusEl) {
+              statusEl.className = 'att-status att-saved';
+              statusEl.textContent = '✓ 申告済み: ' + (r.label || st) + '（変更も可能）';
+            }
+            toast('出欠を記録しました（' + (r.label || st) + '）');
+          } catch (e) {
+            toast(e.message || '記録に失敗しました', true);
+          } finally {
+            allBtns.forEach(b => { b.disabled = false; });
+          }
+        });
+      });
+    }
+
+    async function load() {
+      try {
+        const data = await api('/api/student/class/feed');
+        render(data);
+      } catch (e) {
+        if (e.status === 403) {
+          content.innerHTML = '<div class="notice"><h2>🏫 通塾生専用メニューです</h2>'
+            + 'このページは通塾生（本クラス・通塾生プラン）向けの機能です。<br>'
+            + 'ご不明な点は塾長までお問い合わせください。'
+            + '<div style="margin-top:0.9rem;"><a class="btn btn-ghost" href="mypage.html">← マイページに戻る</a></div></div>';
+        } else if (e.status === 401) {
+          // auth-guard が通常リダイレクトするが念のため
+          content.innerHTML = '<div class="notice"><h2>ログインが必要です</h2>'
+            + '<a class="btn btn-primary" href="login.html">ログイン</a></div>';
+        } else {
+          content.innerHTML = '<div class="notice err"><h2>⚠️ 読み込みに失敗しました</h2>'
+            + esc(e.message || '') + '<div style="margin-top:0.7rem;"><button class="btn btn-ghost" onclick="location.reload()">再読み込み</button></div></div>';
+        }
+      }
+    }
+
+    load();
+  })();
+  </script>
+</body>
+</html>

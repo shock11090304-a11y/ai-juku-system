@@ -481,6 +481,15 @@
               <div class="action-desc"><strong>動く解説・ドリル・単語帳・PDF を1画面で</strong>: 科目で探せる教材カタログ ─ 相加相乗の「動く解説」など登録なしで試せる教材も</div>
             </div>
           </a>
+          <!-- 🏫 塾生メニュー (塾長指示 2026-06-25): 通塾生のみ表示 (下部 inline script が feed 200 で display 解除)。
+               授業ファイル配布 / 録画 / 出欠連絡 = class.html。AI 学習 SaaS とは別系統の塾生専用機能。 -->
+          <a href="class.html" id="classMenuCard" class="action-btn action-btn-highlight" style="display:none;background:linear-gradient(135deg,rgba(129,140,248,0.20),rgba(167,139,250,0.10));border:2px solid rgba(129,140,248,0.55);">
+            <div class="action-icon">🏫</div>
+            <div>
+              <div class="action-title">塾生メニュー <span class="action-badge-new">NEW</span> <span style="background:rgba(129,140,248,0.22);color:#c7d2fe;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">通塾生</span></div>
+              <div class="action-desc"><strong>授業のファイル・録画・出欠連絡</strong>: 授業ごとに資料と録画、出欠の申告がここに集約</div>
+            </div>
+          </a>
         </div>
       </section>
 
@@ -2607,6 +2616,22 @@
         cancelBtn.textContent = '🚪 解約する';
       }
     });
+  })();
+  </script>
+  <!-- 🏫 通塾生メニューカードの出し分け (2026-06-25): 通塾生 (feed が 200) のときだけカードを表示。
+       オンライン専用生徒には feed が 403 を返すのでカードは隠れたまま。失敗時も安全側 (非表示)。 -->
+  <script>
+  (function () {
+    var card = document.getElementById('classMenuCard');
+    if (!card) return;
+    var base = (window.location.hostname === 'localhost' && window.location.port === '8090')
+      ? 'http://localhost:8000' : window.location.origin;
+    var tk = (window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken())
+      || localStorage.getItem('ai_juku_session_token');
+    if (!tk) return;
+    fetch(base + '/api/student/class/feed', { headers: { 'Authorization': 'Bearer ' + tk } })
+      .then(function (r) { if (r.ok) card.style.display = ''; })
+      .catch(function () {});
   })();
   </script>
 </body>

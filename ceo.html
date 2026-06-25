@@ -472,6 +472,7 @@
             <button type="button" class="tb-btn hub-btn" data-hub-target="studyLogSection" data-hub-label="📚 学習記録ダッシュボード"><span class="tb-icon">📖</span><span class="tb-label">学習記録</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="studyPlanSection" data-hub-label="📅 学習計画ダッシュボード"><span class="tb-icon">📅</span><span class="tb-label">学習計画</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="messagesSection" data-hub-label="📨 メッセージ配信"><span class="tb-icon">💬</span><span class="tb-label">メッセージ</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="classMgmtSection" data-hub-label="🏫 通塾クラス (ファイル/録画/出欠)"><span class="tb-icon">🏫</span><span class="tb-label">通塾クラス</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="magicLinkSendSection" data-hub-label="🔗 magic link 指定アドレス送信"><span class="tb-icon">🔗</span><span class="tb-label">ログインリンク</span></button>
           </div>
         </div>
@@ -2611,6 +2612,45 @@
         <div style="font-size:0.9rem; color:#f9a8d4; font-weight:700; margin-bottom:0.5rem;">📜 送信履歴 (最新50件)</div>
         <div id="msgHistory" style="max-height:500px; overflow-y:auto;"></div>
       </div>
+    </section>
+
+    <!-- 🏫 通塾クラス (塾長指示 2026-06-25): 授業ファイル配布 / 録画(YouTube限定公開) / 出欠 -->
+    <section id="classMgmtSection" style="margin:1.5rem 0; padding:1.2rem; background:rgba(129,140,248,0.06); border:1px solid rgba(129,140,248,0.30); border-radius:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem; flex-wrap:wrap; gap:0.5rem;">
+        <h2 style="margin:0; color:#c7d2fe; font-size:1.3rem;">🏫 通塾クラス</h2>
+        <button id="clsRefreshBtn" type="button" style="padding:0.4rem 0.8rem; background:rgba(129,140,248,0.2); border:1px solid rgba(129,140,248,0.4); border-radius:6px; color:#c7d2fe; cursor:pointer;">🔄 更新</button>
+      </div>
+      <p style="color:#a1a1aa; font-size:0.85rem; margin-bottom:1rem; line-height:1.6;">
+        授業を作成し、<strong>配布ファイル</strong>(PDF/画像/Word 等・10MB まで)と<strong>録画</strong>を登録。生徒(通塾生)は
+        <a href="class.html" target="_blank" style="color:#c4b5fd;text-decoration:underline;">塾生メニュー</a> で閲覧・出欠申告します。<br>
+        🎬 <strong>録画は YouTube に「限定公開」でアップロード</strong>し、その URL をここに貼り付けてください(動画ファイル自体はここには保存しません)。
+      </p>
+
+      <!-- 授業作成フォーム -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
+        <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.7rem;">➕ 授業を作成</div>
+        <div style="display:grid; grid-template-columns:1fr; gap:0.6rem;">
+          <input id="clsTitle" type="text" placeholder="授業タイトル * (例: 数学IA 二次関数)" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem;">
+            <input id="clsSubject" type="text" placeholder="科目 (例: 数学)" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+            <input id="clsDate" type="date" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.6rem;">
+            <input id="clsStart" type="text" placeholder="開始 (例: 19:00)" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+            <input id="clsEnd" type="text" placeholder="終了 (例: 20:30)" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+            <input id="clsLocation" type="text" placeholder="場所 (例: 本校 教室A)" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          </div>
+          <textarea id="clsNotes" placeholder="メモ・連絡事項 (任意)" style="padding:0.6rem; min-height:54px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"></textarea>
+        </div>
+        <div style="margin-top:0.7rem; display:flex; align-items:center; gap:0.7rem; flex-wrap:wrap;">
+          <button id="clsCreateBtn" type="button" style="padding:0.55rem 1.2rem; background:linear-gradient(135deg,#818cf8,#6366f1); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">授業を作成</button>
+          <span id="clsCreateMsg" style="font-size:0.85rem;"></span>
+        </div>
+      </div>
+
+      <!-- 授業一覧 -->
+      <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.5rem;">📅 授業一覧</div>
+      <div id="clsSessionList"><div style="color:#a1a1aa; font-size:0.85rem;">読み込み中…</div></div>
     </section>
 
     <!-- ========================================== -->
@@ -9637,6 +9677,234 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         e.preventDefault();
       }
     });
+  </script>
+
+  <!-- 🏫 通塾クラス 管理 (塾長指示 2026-06-25): 授業ファイル配布 / 録画(YouTube) / 出欠閲覧 -->
+  <script>
+  (function () {
+    if (!window.AdminAuth) return;
+    var listEl = document.getElementById('clsSessionList');
+    if (!listEl) return;
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
+    function safeHref(u) {
+      try { var p = new URL(u, location.href); return (p.protocol === 'http:' || p.protocol === 'https:') ? u : '#'; }
+      catch (e) { return '#'; }
+    }
+    function fmtKB(b) {
+      if (!b) return '';
+      var kb = b / 1024;
+      return kb >= 1024 ? (kb / 1024).toFixed(1) + 'MB' : Math.max(1, Math.round(kb)) + 'KB';
+    }
+    function attLabel(st) { return ({ present: '🟢出席', absent: '🔴欠席', late: '🟡遅刻' })[st] || st; }
+
+    async function adminJson(path, init) {
+      var res = await AdminAuth.fetch(path, init || {});
+      var j = null;
+      try { j = await res.json(); } catch (e) {}
+      if (!res.ok) {
+        var d = (j && j.detail) ? (typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail)) : ('HTTP ' + res.status);
+        var err = new Error(d); err.status = res.status; throw err;
+      }
+      return j;
+    }
+    function fileToB64(file) {
+      return new Promise(function (resolve, reject) {
+        var fr = new FileReader();
+        fr.onload = function () { var s = String(fr.result); var i = s.indexOf(','); resolve(i >= 0 ? s.slice(i + 1) : s); };
+        fr.onerror = reject;
+        fr.readAsDataURL(file);
+      });
+    }
+    var INP = 'padding:0.5rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:7px; color:#fff; font-size:0.85rem;';
+    var BTN = 'padding:0.45rem 0.9rem; border:0; border-radius:7px; font-weight:700; cursor:pointer; font-size:0.82rem;';
+
+    function rowBox() { return 'display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0.6rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:7px; margin:0.3rem 0; font-size:0.84rem;'; }
+
+    function sessionRowHtml(s) {
+      var date = s.session_date ? esc(s.session_date) : '日付未定';
+      var time = [s.start_time, s.end_time].filter(Boolean).join('〜');
+      var meta = [s.subject ? esc(s.subject) : '', time ? ('🕐 ' + esc(time)) : '', s.location ? ('📍 ' + esc(s.location)) : ''].filter(Boolean).join(' ・ ');
+      var pub = s.is_published ? '<span style="color:#6ee7b7;">●公開中</span>' : '<span style="color:#fca5a5;">●非公開</span>';
+      return '<div class="cls-session" data-id="' + s.id + '" style="background:rgba(0,0,0,0.22); border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:0.8rem 0.9rem; margin-bottom:0.7rem;">'
+        + '<div style="display:flex; justify-content:space-between; gap:0.5rem; flex-wrap:wrap; align-items:center;">'
+        + '<div><span style="display:inline-block; padding:0.12rem 0.5rem; background:rgba(129,140,248,0.18); border:1px solid rgba(129,140,248,0.4); border-radius:999px; color:#c7d2fe; font-size:0.74rem; font-weight:800;">' + date + '</span>'
+        + '<strong style="margin-left:0.5rem;">' + esc(s.title) + '</strong>'
+        + (meta ? ('<div style="font-size:0.76rem; color:#a1a1aa; margin-top:0.25rem;">' + meta + '</div>') : '') + '</div>'
+        + '<div style="font-size:0.74rem; font-weight:700;">' + pub + '</div></div>'
+        + '<div style="margin-top:0.5rem; font-size:0.78rem; color:#cbd5e1;">📄 ' + s.file_count + ' ・ 🎬 ' + s.recording_count + ' ・ 👥 出欠 ' + s.attendance_count + '</div>'
+        + '<div style="margin-top:0.5rem; display:flex; gap:0.4rem; flex-wrap:wrap;">'
+        + '<button class="cls-open" data-id="' + s.id + '" style="' + BTN + ' background:rgba(129,140,248,0.25); color:#c7d2fe;">📂 管理</button>'
+        + '<button class="cls-pub" data-id="' + s.id + '" data-pub="' + (s.is_published ? 1 : 0) + '" style="' + BTN + ' background:rgba(255,255,255,0.08); color:#e4e4e7;">' + (s.is_published ? '🙈 非公開に' : '👁 公開に') + '</button>'
+        + '<button class="cls-del" data-id="' + s.id + '" style="' + BTN + ' background:rgba(239,68,68,0.2); color:#fca5a5;">🗑 削除</button></div>'
+        + '<div class="cls-detail" data-detail="' + s.id + '" style="display:none; margin-top:0.7rem; padding-top:0.7rem; border-top:1px dashed rgba(255,255,255,0.12);"></div>'
+        + '</div>';
+    }
+
+    async function loadSessions() {
+      listEl.innerHTML = '<div style="color:#a1a1aa; font-size:0.85rem;">読み込み中…</div>';
+      try {
+        var d = await adminJson('/api/admin/class/sessions');
+        if (!d.sessions || !d.sessions.length) {
+          listEl.innerHTML = '<div style="color:#a1a1aa; font-size:0.85rem;">まだ授業がありません。上のフォームから作成してください。</div>';
+          return;
+        }
+        listEl.innerHTML = d.sessions.map(sessionRowHtml).join('');
+      } catch (e) {
+        listEl.innerHTML = '<div style="color:#fca5a5; font-size:0.85rem;">' + (e.status === 401 ? 'ログインしてください。' : ('読み込み失敗: ' + esc(e.message))) + '</div>';
+      }
+    }
+
+    function detailHtml(d) {
+      var sid = d.session.id;
+      var files = d.files.length ? d.files.map(function (f) {
+        return '<div style="' + rowBox() + '"><span style="flex:1;">📄 ' + esc(f.title) + ' <span style="color:#a1a1aa;">(' + esc(f.filename || '') + ' ' + fmtKB(f.file_size) + ')</span></span>'
+          + '<button class="cls-fdel" data-id="' + f.id + '" data-sess="' + sid + '" style="' + BTN + ' background:rgba(239,68,68,0.2); color:#fca5a5;">🗑</button></div>';
+      }).join('') : '<div style="color:#a1a1aa; font-size:0.8rem;">ファイルなし</div>';
+      var recs = d.recordings.length ? d.recordings.map(function (r) {
+        return '<div style="' + rowBox() + '"><span style="flex:1;">🎬 ' + esc(r.title) + ' <a href="' + esc(safeHref(r.video_url)) + '" target="_blank" rel="noopener" style="color:#c4b5fd;">↗</a> <span style="color:#a1a1aa;">[' + esc(r.provider) + ']</span></span>'
+          + '<button class="cls-rdel" data-id="' + r.id + '" data-sess="' + sid + '" style="' + BTN + ' background:rgba(239,68,68,0.2); color:#fca5a5;">🗑</button></div>';
+      }).join('') : '<div style="color:#a1a1aa; font-size:0.8rem;">録画なし</div>';
+      var att = d.attendance.length ? d.attendance.map(function (a) {
+        return '<div style="font-size:0.82rem; padding:0.15rem 0;">' + attLabel(a.status) + ' ' + esc(a.name || ('ID:' + a.student_id)) + (a.reason ? (' <span style="color:#a1a1aa;">— ' + esc(a.reason) + '</span>') : '') + '</div>';
+      }).join('') : '<div style="color:#a1a1aa; font-size:0.8rem;">まだ出欠申告はありません</div>';
+
+      return '<div style="font-size:0.85rem; color:#a5b4fc; font-weight:700; margin:0.2rem 0 0.3rem;">📄 配布ファイル</div>' + files
+        + '<div style="' + rowBox() + ' flex-wrap:wrap;">'
+        + '<input type="text" class="cls-file-title" placeholder="表示タイトル(任意)" style="' + INP + ' flex:1; min-width:120px;">'
+        + '<input type="file" class="cls-file-input" style="font-size:0.8rem; color:#cbd5e1; flex:1; min-width:150px;">'
+        + '<button class="cls-fadd" data-sess="' + sid + '" style="' + BTN + ' background:linear-gradient(135deg,#818cf8,#6366f1); color:#fff;">⬆ 追加</button></div>'
+        + '<div style="font-size:0.85rem; color:#a5b4fc; font-weight:700; margin:0.8rem 0 0.3rem;">🎬 授業の録画 (YouTube 限定公開 URL)</div>' + recs
+        + '<div style="' + rowBox() + ' flex-wrap:wrap;">'
+        + '<input type="text" class="cls-rec-title" placeholder="録画タイトル *" style="' + INP + ' flex:1; min-width:120px;">'
+        + '<input type="text" class="cls-rec-url" placeholder="https://youtu.be/... または https://www.youtube.com/watch?v=..." style="' + INP + ' flex:2; min-width:180px;">'
+        + '<button class="cls-radd" data-sess="' + sid + '" style="' + BTN + ' background:linear-gradient(135deg,#818cf8,#6366f1); color:#fff;">＋ 登録</button></div>'
+        + '<div style="font-size:0.85rem; color:#a5b4fc; font-weight:700; margin:0.8rem 0 0.3rem;">👥 出欠 (出席 ' + d.counts.present + ' / 欠席 ' + d.counts.absent + ' / 遅刻 ' + d.counts.late + ')</div>' + att;
+    }
+
+    async function openDetail(sid, box) {
+      box.style.display = 'block';
+      box.innerHTML = '<div style="color:#a1a1aa; font-size:0.82rem;">読み込み中…</div>';
+      try {
+        var d = await adminJson('/api/admin/class/sessions/' + sid + '/detail');
+        box.innerHTML = detailHtml(d);
+      } catch (e) {
+        box.innerHTML = '<div style="color:#fca5a5; font-size:0.82rem;">読み込み失敗: ' + esc(e.message) + '</div>';
+      }
+    }
+
+    // 作成
+    document.getElementById('clsCreateBtn').addEventListener('click', async function () {
+      var btn = this, msg = document.getElementById('clsCreateMsg');
+      var title = (document.getElementById('clsTitle').value || '').trim();
+      if (!title) { msg.style.color = '#fca5a5'; msg.textContent = 'タイトルは必須です'; return; }
+      var body = {
+        title: title,
+        subject: (document.getElementById('clsSubject').value || '').trim(),
+        session_date: document.getElementById('clsDate').value || null,
+        start_time: (document.getElementById('clsStart').value || '').trim(),
+        end_time: (document.getElementById('clsEnd').value || '').trim(),
+        location: (document.getElementById('clsLocation').value || '').trim(),
+        notes: (document.getElementById('clsNotes').value || '').trim()
+      };
+      btn.disabled = true; msg.style.color = '#a1a1aa'; msg.textContent = '作成中…';
+      try {
+        await adminJson('/api/admin/class/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        msg.style.color = '#6ee7b7'; msg.textContent = '✓ 作成しました';
+        ['clsTitle', 'clsSubject', 'clsDate', 'clsStart', 'clsEnd', 'clsLocation', 'clsNotes'].forEach(function (id) { document.getElementById(id).value = ''; });
+        loadSessions();
+      } catch (e) {
+        msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + e.message;
+      } finally { btn.disabled = false; }
+    });
+
+    document.getElementById('clsRefreshBtn').addEventListener('click', loadSessions);
+
+    // 一覧内のアクション (委譲)
+    listEl.addEventListener('click', async function (e) {
+      var t = e.target.closest('button'); if (!t) return;
+      var sid = t.getAttribute('data-id') || t.getAttribute('data-sess');
+
+      if (t.classList.contains('cls-open')) {
+        var box = listEl.querySelector('[data-detail="' + sid + '"]');
+        if (!box) return;
+        if (box.style.display === 'block') { box.style.display = 'none'; box.innerHTML = ''; }
+        else { await openDetail(sid, box); }
+        return;
+      }
+      if (t.classList.contains('cls-pub')) {
+        var makePub = t.getAttribute('data-pub') === '0';
+        t.disabled = true;
+        try { await adminJson('/api/admin/class/sessions/' + sid, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_published: makePub }) }); loadSessions(); }
+        catch (err) { alert('変更失敗: ' + err.message); t.disabled = false; }
+        return;
+      }
+      if (t.classList.contains('cls-del')) {
+        if (!confirm('この授業を削除しますか?\n紐づくファイル・録画・出欠もすべて削除されます。')) return;
+        t.disabled = true;
+        try { await adminJson('/api/admin/class/sessions/' + sid, { method: 'DELETE' }); loadSessions(); }
+        catch (err) { alert('削除失敗: ' + err.message); t.disabled = false; }
+        return;
+      }
+      if (t.classList.contains('cls-fadd')) {
+        var panel = t.closest('.cls-detail');
+        var fileInput = panel.querySelector('.cls-file-input');
+        var titleInput = panel.querySelector('.cls-file-title');
+        var file = fileInput.files[0];
+        if (!file) { alert('ファイルを選択してください'); return; }
+        if (file.size > 10 * 1024 * 1024) { alert('ファイルは 10MB までです'); return; }
+        if (!file.type) { alert('このファイル形式は判定できません。PDF / 画像 / Word / Excel / PowerPoint / テキストを選んでください。'); return; }
+        t.disabled = true; var orig = t.textContent; t.textContent = '送信中…';
+        try {
+          var b64 = await fileToB64(file);
+          await adminJson('/api/admin/class/files', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: Number(sid), title: (titleInput.value || '').trim() || file.name, filename: file.name, mime: file.type, data_b64: b64 })
+          });
+          await openDetail(sid, panel);        } catch (err) { alert('アップロード失敗: ' + err.message); t.disabled = false; t.textContent = orig; }
+        return;
+      }
+      if (t.classList.contains('cls-radd')) {
+        var panel2 = t.closest('.cls-detail');
+        var rt = (panel2.querySelector('.cls-rec-title').value || '').trim();
+        var ru = (panel2.querySelector('.cls-rec-url').value || '').trim();
+        if (!rt) { alert('録画タイトルを入力してください'); return; }
+        if (!/^https?:\/\//.test(ru)) { alert('動画 URL は http(s):// で始めてください'); return; }
+        t.disabled = true;
+        try {
+          await adminJson('/api/admin/class/recordings', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: Number(sid), title: rt, video_url: ru })
+          });
+          await openDetail(sid, panel2);        } catch (err) { alert('登録失敗: ' + err.message); t.disabled = false; }
+        return;
+      }
+      if (t.classList.contains('cls-fdel')) {
+        if (!confirm('このファイルを削除しますか?')) return;
+        try { await adminJson('/api/admin/class/files/' + sid, { method: 'DELETE' }); var p = t.closest('.cls-detail'); await openDetail(t.getAttribute('data-sess'), p); }
+        catch (err) { alert('削除失敗: ' + err.message); }
+        return;
+      }
+      if (t.classList.contains('cls-rdel')) {
+        if (!confirm('この録画を削除しますか?')) return;
+        try { await adminJson('/api/admin/class/recordings/' + sid, { method: 'DELETE' }); var p2 = t.closest('.cls-detail'); await openDetail(t.getAttribute('data-sess'), p2); }
+        catch (err) { alert('削除失敗: ' + err.message); }
+        return;
+      }
+    });
+
+    // 「通塾クラス」ハブボタンを開いたら読み込む
+    var hubBtn = document.querySelector('#ceoHubMenu [data-hub-target="classMgmtSection"]');
+    if (hubBtn) hubBtn.addEventListener('click', loadSessions);
+    // ログイン済みなら初期ロード (未ログインは loadSessions が 401 を表示)
+    if (AdminAuth.getToken && AdminAuth.getToken()) {
+      setTimeout(loadSessions, 300);
+    }
+  })();
   </script>
 </body>
 </html>
