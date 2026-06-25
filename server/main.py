@@ -12528,10 +12528,37 @@ def _wolfram_verify_one(stem: str, answer: str) -> dict:
     return out
 
 
+def _wolfram_resolve_choice_text(q: dict) -> Optional[str]:
+    """multiple_choice 小問から「正解の選択肢の中身」を解決する。
+    answer は 0始まり index 文字列/整数、または A-D 文字を許容。解決不能なら None。"""
+    choices = q.get("choices")
+    if not isinstance(choices, list) or not choices:
+        return None
+    ans = q.get("answer")
+    idx = None
+    if isinstance(ans, int):
+        idx = ans
+    elif isinstance(ans, str):
+        a = ans.strip()
+        if a.isdigit():
+            idx = int(a)
+        elif len(a) == 1 and a.upper() in "ABCD":
+            idx = "ABCD".index(a.upper())
+    if idx is None or idx < 0 or idx >= len(choices):
+        return None
+    txt = choices[idx]
+    return str(txt).strip() if txt is not None and str(txt).strip() else None
+
+
 def _wolfram_verify_question(question_data: dict) -> Optional[dict]:
-    """rikei 問題セットの記述式数学/理科の小問を検算し、サマリ dict を返す。
-    対象外(英語/選択式のみ等)や WOLFRAM_APP_ID 未設定なら None。
-    返却: {checked, verified, mismatch, unverifiable, details:[{id, status, query, wolfram}]}。
+    """rikei 問題セットの数学/理科の小問を検算し、サマリ dict を返す。
+    対象:
+      - 記述式(short_answer): 数学/物理/化学 → answer(完全解答) を検算
+      - 選択式(multiple_choice)の【数学のみ】: 正解選択肢の中身を解決して検算
+        (共通テスト型の数値・式の数学が大半を占めるため、誤答キー検出の実効性が高い)
+    物理/化学の選択式は概念問題が多く Wolfram で検算困難なため対象外。
+    対象外や WOLFRAM_APP_ID 未設定なら None。
+    返却: {checked, verified, mismatch, unverifiable, details:[{id, status, target, query, wolfram}]}。
     """
     if not WOLFRAM_APP_ID or not isinstance(question_data, dict):
         return None
@@ -12546,10 +12573,21 @@ def _wolfram_verify_question(question_data: dict) -> Optional[dict]:
     for q in qs:
         if not isinstance(q, dict):
             continue
-        # 誤答キーが一番痛い記述式に限定 (選択式は index 検証が別問題なので PoC では除外)
-        if q.get("type") != "short_answer":
+        qtype = q.get("type")
+        target = None          # 検算対象ラベル (auditing 用)
+        answer_to_verify = None
+        if qtype == "short_answer":
+            answer_to_verify = str(q.get("answer") or "")
+            target = "short_answer"
+        elif qtype == "multiple_choice" and subject == "数学":
+            # 正解選択肢の中身を解決して検算 (解決できなければ skip=カウントしない)
+            answer_to_verify = _wolfram_resolve_choice_text(q)
+            target = "choice"
+        else:
             continue
-        res = _wolfram_verify_one(str(q.get("stem") or ""), str(q.get("answer") or ""))
+        if not answer_to_verify:
+            continue
+        res = _wolfram_verify_one(str(q.get("stem") or ""), str(answer_to_verify))
         summary["checked"] += 1
         st = res.get("status")
         if st == "verified":
@@ -12563,6 +12601,7 @@ def _wolfram_verify_question(question_data: dict) -> Optional[dict]:
         details.append({
             "id": q.get("id"),
             "status": st,
+            "target": target,
             "query": res.get("query"),
             "wolfram": res.get("wolfram"),
         })
