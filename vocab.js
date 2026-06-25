@@ -269,13 +269,33 @@
       setTimeout(() => speak(w.example_en, 0.95), 250);
     }
 
-    // grade を SRS バックエンドに送信
+    // grade を SRS バックエンドに送信 → 返却の次回復習日を画面に表示
     const studentId = getStudentId();
+    const nextReviewEl = document.getElementById('vcNextReview');
+    if (nextReviewEl) { nextReviewEl.style.display = 'none'; nextReviewEl.textContent = ''; }
     vfetch(`${BACKEND_URL}/api/vocab/grade`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ student_id: studentId, word_id: w.id, knew: isCorrect }),
-    }).catch(e => console.warn('grade failed', e));
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!data || !nextReviewEl) return;
+        const days = data.next_review_in_days;
+        if (days == null) return;
+        // FSRS なら 🧠、Leitner なら 📦。「次回復習: ◯日後」を表示。
+        const isFsrs = data.scheduler === 'fsrs';
+        const icon = isFsrs ? '🧠' : '📦';
+        const whenTxt = days >= 1 ? `${days}日後` : '今日中';
+        let txt = `${icon} 次回復習: ${whenTxt}`;
+        if (isFsrs && typeof data.stability === 'number') {
+          // 定着度(安定度) を補足表示。日数=記憶がR=90%まで保つ目安。
+          txt += `（定着度 ${Math.round(data.stability)}日）`;
+        }
+        nextReviewEl.textContent = txt;
+        nextReviewEl.style.display = '';
+      })
+      .catch(e => console.warn('grade failed', e));
 
     if (typeof window.track === 'function') window.track('vocab_quiz_answer', { knew: isCorrect, level: w.level, pos: w.pos });
 
