@@ -131,6 +131,13 @@ OPENAI_MODEL_LIGHT = os.getenv("OPENAI_MODEL_LIGHT", "gpt-4o-mini")  # 二段 fa
 # 両キー未設定なら OCR 前処理は完全スキップ (既存挙動を 1mm も変えない安全な opt-in)。
 MATHPIX_APP_ID = os.getenv("MATHPIX_APP_ID", "")
 MATHPIX_APP_KEY = os.getenv("MATHPIX_APP_KEY", "")
+# Wolfram|Alpha 検算 (任意・AI 生成問題の「誤答キー」検出) — 2026-06-24 導入。
+# 自然言語の入試類題を LLM で検算クエリ化 → Wolfram で厳密計算 → LLM 判定、の 3 段。
+# 記述式(short_answer)の数学/理科のみ対象。未設定なら検算は完全スキップ(既存挙動不変)。
+# 発行: https://developer.wolframalpha.com/ → LLM API (非商用 2,000 コール/月 無料・PoC 用)。
+WOLFRAM_APP_ID = os.getenv("WOLFRAM_APP_ID", "")
+# "1" のとき検算 mismatch を保存ブロック(再生成)に使う。既定 "0" = 助言のみ(誤検出で良問を捨てない安全側)。
+WOLFRAM_VERIFY_BLOCK = os.getenv("WOLFRAM_VERIFY_BLOCK", "0") == "1"
 CRON_SECRET = os.getenv("CRON_SECRET", "")  # 未設定時は cron 系エンドポイントを全拒否
 STATS_TOKEN = os.getenv("STATS_TOKEN", "")  # 未設定時は /api/stats を全拒否
 # HMAC 署名鍵（保護者ビュー署名・他の署名用途で利用）
@@ -12412,6 +12419,152 @@ def _generate_kokugo_exam_question(
     return None
 
 
+# =====================================================================
+# 🧮 Wolfram|Alpha 検算 (2026-06-24・AI 生成問題の誤答キー検出)
+# AI が作る問題の最大リスク = もっともらしいが答えが間違った解答キー。
+# Wolfram は確率推測でなく厳密計算なので、記述式数学/理科の答えを検算できる。
+# ただし自然言語の入試問題は Wolfram が直接解けないため、
+#   1) LLM で「検算用 Wolfram クエリ」を抽出 (解けない問題は verifiable=false)
+#   2) Wolfram LLM API で厳密計算
+#   3) LLM で「提案された答え」と Wolfram 結果の一致を AGREE/DISAGREE/UNCLEAR 判定
+# WOLFRAM_APP_ID 未設定なら全関数が即 no-op (コスト 0・既存挙動不変)。
+# =====================================================================
+_WOLFRAM_VERIFY_SUBJECTS = ("数学", "物理", "化学")
+
+
+def _wolfram_llm_query(query: str) -> Optional[str]:
+    """Wolfram|Alpha LLM API に英語クエリを投げ、計算結果テキストを返す。解釈不能/失敗時 None。"""
+    if not WOLFRAM_APP_ID or not query:
+        return None
+    try:
+        import urllib.parse as _up
+        url = "https://www.wolframalpha.com/api/v1/llm-api?" + _up.urlencode(
+            {"appid": WOLFRAM_APP_ID, "input": query[:400], "maxchars": 1200}
+        )
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return resp.read().decode("utf-8", errors="ignore")[:1500]
+    except urllib.error.HTTPError as e:
+        # Wolfram は解釈不能なクエリに 501 を返す (正常系の一部) → info ログのみ
+        body = e.read().decode("utf-8", errors="ignore")[:160]
+        log.info(f"[wolfram] HTTP {e.code} (uninterpretable?): {body}")
+        return None
+    except Exception as e:
+        log.warning(f"[wolfram] query failed: {type(e).__name__}: {e}")
+        return None
+
+
+def _wolfram_verify_one(stem: str, answer: str) -> dict:
+    """1 小問の答えを検算。返却 status: verified/mismatch/unverifiable/no_result/error/skipped。"""
+    out = {"status": "skipped", "query": None, "wolfram": None}
+    if not WOLFRAM_APP_ID:
+        return out
+    if not stem or not answer:
+        out["status"] = "unverifiable"
+        return out
+    # 1) 検算用クエリ抽出 (haiku・安価)
+    try:
+        ext_body = {
+            "model": "claude-haiku-4-5",
+            "max_tokens": 400,
+            "system": (
+                "You convert a Japanese math/science exam question + its proposed answer into ONE "
+                "self-contained Wolfram|Alpha query (in English) whose computed result determines whether "
+                "the proposed answer is correct. If the problem cannot be reduced to a single computational "
+                "query (geometric proof, needs a figure, open-ended, requires reading a graph), set "
+                "verifiable=false. Output ONLY JSON: {\"verifiable\": true|false, \"query\": \"...\"}."
+            ),
+            "messages": [{"role": "user", "content": f"問題:\n{stem[:2500]}\n\n提案された答え:\n{answer[:1500]}"}],
+        }
+        data = _call_anthropic_safe(ext_body, kind="wolfram_extract")
+        text = (data.get("content") or [{}])[0].get("text", "") if data.get("content") else ""
+        parsed = _extract_json_robust(text) or {}
+    except Exception as e:
+        out["status"] = "error"
+        out["error"] = f"{type(e).__name__}: {str(e)[:120]}"
+        return out
+    if not parsed.get("verifiable") or not str(parsed.get("query") or "").strip():
+        out["status"] = "unverifiable"
+        return out
+    query = str(parsed["query"]).strip()[:400]
+    out["query"] = query
+    # 2) Wolfram で厳密計算
+    wres = _wolfram_llm_query(query)
+    out["wolfram"] = (wres or "")[:800]
+    if not wres:
+        out["status"] = "no_result"
+        return out
+    # 3) 一致判定 (haiku・安価)
+    try:
+        judge_body = {
+            "model": "claude-haiku-4-5",
+            "max_tokens": 120,
+            "system": (
+                "Compare a proposed answer with Wolfram|Alpha's computed result and decide if they agree "
+                "mathematically (equivalent forms like 1/2 and 0.5 count as agreement). "
+                "Reply with EXACTLY one word: AGREE, DISAGREE, or UNCLEAR."
+            ),
+            "messages": [{"role": "user", "content": f"Proposed answer: {answer[:1500]}\n\nWolfram result:\n{wres}\n\nVerdict:"}],
+        }
+        jdata = _call_anthropic_safe(judge_body, kind="wolfram_judge")
+        verdict = ((jdata.get("content") or [{}])[0].get("text", "") or "").strip().upper()
+    except Exception as e:
+        out["status"] = "error"
+        out["error"] = f"{type(e).__name__}: {str(e)[:120]}"
+        return out
+    if "DISAGREE" in verdict:
+        out["status"] = "mismatch"
+    elif "AGREE" in verdict:
+        out["status"] = "verified"
+    else:
+        out["status"] = "unclear"
+    return out
+
+
+def _wolfram_verify_question(question_data: dict) -> Optional[dict]:
+    """rikei 問題セットの記述式数学/理科の小問を検算し、サマリ dict を返す。
+    対象外(英語/選択式のみ等)や WOLFRAM_APP_ID 未設定なら None。
+    返却: {checked, verified, mismatch, unverifiable, details:[{id, status, query, wolfram}]}。
+    """
+    if not WOLFRAM_APP_ID or not isinstance(question_data, dict):
+        return None
+    subject = question_data.get("subject") or ""
+    if subject not in _WOLFRAM_VERIFY_SUBJECTS:
+        return None
+    qs = question_data.get("questions")
+    if not isinstance(qs, list) or not qs:
+        return None
+    details = []
+    summary = {"checked": 0, "verified": 0, "mismatch": 0, "unverifiable": 0, "other": 0}
+    for q in qs:
+        if not isinstance(q, dict):
+            continue
+        # 誤答キーが一番痛い記述式に限定 (選択式は index 検証が別問題なので PoC では除外)
+        if q.get("type") != "short_answer":
+            continue
+        res = _wolfram_verify_one(str(q.get("stem") or ""), str(q.get("answer") or ""))
+        summary["checked"] += 1
+        st = res.get("status")
+        if st == "verified":
+            summary["verified"] += 1
+        elif st == "mismatch":
+            summary["mismatch"] += 1
+        elif st == "unverifiable":
+            summary["unverifiable"] += 1
+        else:
+            summary["other"] += 1
+        details.append({
+            "id": q.get("id"),
+            "status": st,
+            "query": res.get("query"),
+            "wolfram": res.get("wolfram"),
+        })
+    if summary["checked"] == 0:
+        return None
+    summary["details"] = details
+    return summary
+
+
 def _generate_exam_question(
     exam_id: str,
     part_key: str,
@@ -21508,12 +21661,33 @@ def admin_exam_questions_generate(payload: dict, authorization: Optional[str] = 
         # 特定 part に N 問
         n = max(1, min(count or 1, 10))
         generated = []
+        rejected = []  # Wolfram 検算 mismatch でブロックした問題 (WOLFRAM_VERIFY_BLOCK=1 時のみ)
         for _ in range(n):
             q = _generate_exam_question(exam_id, part_key, eiken_grade)
-            if q:
-                _save_exam_question(exam_id, part_key, q, eiken_grade)
-                generated.append({"exam": exam_id, "part": part_key, "grade": eiken_grade})
-        return {"generated": len(generated), "details": generated}
+            if not q:
+                continue
+            # 🧮 Wolfram 検算 (rikei・記述式数学/理科のみ・WOLFRAM_APP_ID 設定時のみ)。
+            # 既定は助言モード: 結果を question_data に同梱して保存し、誤答キーを後から監査可能にする。
+            # WOLFRAM_VERIFY_BLOCK=1 のときだけ mismatch を保存ブロック→再生成扱い。
+            verify = None
+            if exam_id == "rikei" and WOLFRAM_APP_ID:
+                try:
+                    verify = _wolfram_verify_question(q)
+                except Exception as _we:
+                    log.warning(f"[ExamQ] wolfram verify error: {_we}")
+                    verify = None
+                if verify:
+                    q["wolfram_verification"] = verify
+                    if WOLFRAM_VERIFY_BLOCK and verify.get("mismatch", 0) > 0:
+                        rejected.append({"exam": exam_id, "part": part_key, "grade": eiken_grade,
+                                         "reason": "wolfram_mismatch", "wolfram": verify})
+                        log.warning(f"[ExamQ] blocked by wolfram mismatch: {exam_id}/{part_key} {verify.get('mismatch')} q")
+                        continue
+            _save_exam_question(exam_id, part_key, q, eiken_grade)
+            generated.append({"exam": exam_id, "part": part_key, "grade": eiken_grade,
+                              "wolfram": (verify and {k: verify[k] for k in ("checked", "verified", "mismatch", "unverifiable", "other") if k in verify}) or None})
+        return {"generated": len(generated), "rejected": len(rejected),
+                "details": generated, "rejected_details": rejected}
     else:
         # ローテ全件 (quota 使用)
         return _run_exam_questions_generation(quota=count or EXAM_QUESTIONS_DAILY_QUOTA)
