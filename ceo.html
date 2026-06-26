@@ -2643,6 +2643,20 @@
         <div id="calList" style="margin-top:0.7rem;"></div>
       </div>
 
+      <!-- 📎 クラスにファイルを送る -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
+        <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">📎 クラスにファイルを送る</div>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">時間割のクラスを選んでファイルをアップ → 生徒アプリ「予定」タブの「クラス別 配布ファイル」に表示(全通塾生が閲覧可・10MBまで)。</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+          <select id="cfClass" style="padding:0.55rem; min-width:190px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">クラスを選択…</option></select>
+          <input id="cfTitle" type="text" placeholder="表示タイトル(任意)" style="flex:1; min-width:130px; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          <input id="cfFile" type="file" style="font-size:0.82rem; color:#cbd5e1; flex:1; min-width:150px;">
+          <button id="cfAddBtn" type="button" style="padding:0.55rem 1.1rem; background:linear-gradient(135deg,#818cf8,#6366f1); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">送る</button>
+        </div>
+        <div id="cfMsg" style="font-size:0.82rem; margin-top:0.4rem;"></div>
+        <div id="cfList" style="margin-top:0.7rem;"></div>
+      </div>
+
       <!-- 授業作成フォーム -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
         <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.7rem;">➕ 授業を作成</div>
@@ -9960,12 +9974,67 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       catch (err) { alert('削除失敗: ' + err.message); }
     });
 
+    // 📎 クラス別ファイル配布
+    async function populateClassDropdown() {
+      var sel = document.getElementById('cfClass');
+      if (!sel || sel.options.length > 1) return;
+      try {
+        var d = await adminJson('/api/admin/class/timetable-classes');
+        (d.classes || []).forEach(function (c) { var o = document.createElement('option'); o.value = c.label; o.textContent = c.label; sel.appendChild(o); });
+      } catch (e) { /* 未ログイン等は無視 */ }
+    }
+    async function loadClassFiles() {
+      var list = document.getElementById('cfList');
+      if (!list) return;
+      try {
+        var d = await adminJson('/api/admin/class/labeled-files');
+        var fs = d.files || [];
+        if (!fs.length) { list.innerHTML = '<div style="color:#a1a1aa; font-size:0.82rem;">クラス別の配布ファイルはまだありません。</div>'; return; }
+        list.innerHTML = fs.map(function (f) {
+          return '<div style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0.55rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:7px; margin-bottom:0.3rem; font-size:0.84rem;">'
+            + '<span style="background:rgba(129,140,248,0.2); color:#c7d2fe; border:1px solid rgba(129,140,248,0.4); border-radius:6px; padding:0.05rem 0.45rem; font-size:0.72rem; font-weight:800; white-space:nowrap;">' + esc(f.class_label) + '</span>'
+            + '<span style="flex:1; min-width:0;">📄 ' + esc(f.title) + ' <span style="color:#a1a1aa;">(' + esc(f.filename || '') + ' ' + fmtKB(f.file_size) + ')</span></span>'
+            + '<button class="cf-del" data-id="' + f.id + '" style="' + BTN + ' background:rgba(239,68,68,0.2); color:#fca5a5;">🗑</button></div>';
+        }).join('');
+      } catch (e) {
+        list.innerHTML = '<div style="color:#fca5a5; font-size:0.82rem;">' + (e.status === 401 ? 'ログインしてください。' : ('読み込み失敗: ' + esc(e.message))) + '</div>';
+      }
+    }
+    var _cfAdd = document.getElementById('cfAddBtn');
+    if (_cfAdd) _cfAdd.addEventListener('click', async function () {
+      var msg = document.getElementById('cfMsg');
+      var label = document.getElementById('cfClass').value;
+      var fileInput = document.getElementById('cfFile'), titleInput = document.getElementById('cfTitle');
+      var file = fileInput.files[0];
+      if (!label) { msg.style.color = '#fca5a5'; msg.textContent = 'クラスを選んでください'; return; }
+      if (!file) { msg.style.color = '#fca5a5'; msg.textContent = 'ファイルを選んでください'; return; }
+      if (file.size > 10 * 1024 * 1024) { msg.style.color = '#fca5a5'; msg.textContent = 'ファイルは 10MB までです'; return; }
+      if (!file.type) { msg.style.color = '#fca5a5'; msg.textContent = 'このファイル形式は判定できません(PDF/画像/Word等)'; return; }
+      _cfAdd.disabled = true; msg.style.color = '#a1a1aa'; msg.textContent = '送信中…';
+      try {
+        var b64 = await fileToB64(file);
+        await adminJson('/api/admin/class/files', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ class_label: label, title: (titleInput.value || '').trim() || file.name, filename: file.name, mime: file.type, data_b64: b64 }) });
+        msg.style.color = '#6ee7b7'; msg.textContent = '✓ 送りました';
+        titleInput.value = ''; fileInput.value = '';
+        loadClassFiles();
+      } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + e.message; }
+      finally { _cfAdd.disabled = false; }
+    });
+    var _cfListEl = document.getElementById('cfList');
+    if (_cfListEl) _cfListEl.addEventListener('click', async function (e) {
+      var t = e.target.closest('.cf-del'); if (!t) return;
+      if (!confirm('このファイルを削除しますか?')) return;
+      try { await adminJson('/api/admin/class/files/' + t.getAttribute('data-id'), { method: 'DELETE' }); loadClassFiles(); }
+      catch (err) { alert('削除失敗: ' + err.message); }
+    });
+
     // 「通塾クラス」ハブボタンを開いたら読み込む
     var hubBtn = document.querySelector('#ceoHubMenu [data-hub-target="classMgmtSection"]');
-    if (hubBtn) hubBtn.addEventListener('click', function () { loadSessions(); loadCalendarAdmin(); });
+    if (hubBtn) hubBtn.addEventListener('click', function () { loadSessions(); loadCalendarAdmin(); populateClassDropdown(); loadClassFiles(); });
     // ログイン済みなら初期ロード (未ログインは loadSessions が 401 を表示)
     if (AdminAuth.getToken && AdminAuth.getToken()) {
-      setTimeout(function () { loadSessions(); loadCalendarAdmin(); }, 300);
+      setTimeout(function () { loadSessions(); loadCalendarAdmin(); populateClassDropdown(); loadClassFiles(); }, 300);
     }
   })();
   </script>

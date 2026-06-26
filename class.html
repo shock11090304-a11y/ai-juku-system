@@ -422,6 +422,23 @@
         + '<span class="res-name">' + esc(f.title) + sub + '</span>'
         + '<button class="btn btn-primary file-dl" data-id="' + f.id + '" data-fn="' + esc(f.filename || f.title) + '">⬇ 取得</button></div>';
     }
+    // 📎 クラス別 配布ファイル (時間割クラスごと・全通塾生に表示)
+    function labeledFilesHtml() {
+      var lf = (feedData && feedData.labeled_files) || [];
+      if (!lf.length) return '';
+      var groups = {}, order = [];
+      lf.forEach(function (f) {
+        var k = f.class_label || 'その他';
+        if (!groups[k]) { groups[k] = []; order.push(k); }
+        groups[k].push(f);
+      });
+      var h = '<div class="sec-divider">📎 クラス別 配布ファイル</div>';
+      order.forEach(function (k) {
+        h += '<div class="card"><div class="card-title" style="font-size:0.98rem;">' + esc(k) + '</div>'
+          + groups[k].map(fileRow).join('') + '</div>';
+      });
+      return h;
+    }
     function attendanceHtml(s) {
       var cur = s.my_attendance && s.my_attendance.status;
       var mk = function (st, label) {
@@ -445,6 +462,8 @@
       parts.push(calendarHtml());
       // 🗓 週間時間割（常時表示）
       parts.push(timetableHtml());
+      // 📎 クラス別 配布ファイル（あれば）
+      parts.push(labeledFilesHtml());
       // 📅 個別の授業（日付つき・プリント配布/録画/出欠）
       parts.push('<div class="sec-divider">📅 個別の授業（配布物・出欠）</div>');
       var indiv = [];

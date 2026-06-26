@@ -1718,6 +1718,8 @@ def init_db():
         ("vp_last_interval", "ALTER TABLE vocab_progress ADD COLUMN last_interval REAL"),
         # 🏫 [塾生アプリ登録 2026-06-26] 自己登録フォームで「現在受講科目」を収集・申込待ち一覧に表示。
         ("course_app_subjects", "ALTER TABLE course_applications ADD COLUMN subjects TEXT"),
+        # 📎 [クラス別ファイル配布 2026-06-26] class_files を時間割クラスに紐づけ (全通塾生に表示・クラス名で整理)
+        ("class_files_class_label", "ALTER TABLE class_files ADD COLUMN class_label TEXT"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -40094,6 +40096,27 @@ _TSUJUKU_ALLOWED_PLANS = {"student_addon"}  # 通塾生プラン (¥5,000・招�
 _ATTENDANCE_STATUSES = {"present", "absent", "late"}
 _ATTENDANCE_LABEL = {"present": "出席", "absent": "欠席", "late": "遅刻"}
 
+# 🗓 時間割クラス (入塾申込書 2026年度)。class.html の TIMETABLE と label を一致させること。
+#   label = クラス別ファイル配布・出欠の紐づけキー。dow: 0=日 1=月 … 6=土。
+_TIMETABLE_CLASSES = [
+    {"label": "月曜1限 中学応用", "dow": 1, "time": "19:15–20:15"},
+    {"label": "月曜2限 英文法 Lv.1", "dow": 1, "time": "20:25–21:25"},
+    {"label": "月曜3限 長文読解 Lv.1", "dow": 1, "time": "21:35–22:35"},
+    {"label": "火曜1限 中学基礎", "dow": 2, "time": "19:15–20:15"},
+    {"label": "火曜2限 英文法 Lv.2", "dow": 2, "time": "20:25–21:25"},
+    {"label": "火曜3限 長文読解 Lv.2", "dow": 2, "time": "21:35–22:35"},
+    {"label": "水曜1限 中学2年 英語", "dow": 3, "time": "19:15–20:15"},
+    {"label": "水曜2限 GMARCH", "dow": 3, "time": "20:25–21:25"},
+    {"label": "水曜3限 国公立コース 英文法", "dow": 3, "time": "21:35–22:35"},
+    {"label": "木曜1限 英検準1級対策", "dow": 4, "time": "19:15–20:15"},
+    {"label": "木曜2限 早慶クラス", "dow": 4, "time": "20:25–21:25"},
+    {"label": "木曜3限 国公立コース 長文読解", "dow": 4, "time": "21:35–22:35"},
+    {"label": "金曜1限 高2 英文法", "dow": 5, "time": "19:15–20:15"},
+    {"label": "金曜2限 英検2級対策", "dow": 5, "time": "20:25–21:25"},
+    {"label": "日曜 高校国語", "dow": 0, "time": "21:15–22:15"},
+]
+_TIMETABLE_LABELS = set(c["label"] for c in _TIMETABLE_CLASSES)
+
 
 def _require_tsujuku_student(student: Optional[dict]) -> None:
     """🏫 通塾生アプリのアクセス判定。対象は通塾生のみ:
@@ -40160,6 +40183,7 @@ class ClassFileCreateRequest(BaseModel):
     mime: str
     data_b64: str
     session_id: Optional[int] = None
+    class_label: Optional[str] = None   # 時間割クラスに紐づけて配布 (例: '月曜1限 中学応用')
     is_published: Optional[bool] = True
 
 
@@ -40207,18 +40231,24 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             }
         # 公開中のファイル (data_b64 は重いので取得しない)
         loose_files = []
+        labeled_files = []   # 時間割クラスに紐づくファイル (class_label でグループ表示)
         c.execute(
-            "SELECT id, session_id, title, filename, mime, file_size "
+            "SELECT id, session_id, title, filename, mime, file_size, class_label "
             "FROM class_files WHERE is_published = 1 ORDER BY created_at DESC, id DESC"
         )
         for r in c.fetchall():
             item = {"id": r["id"], "title": r["title"], "filename": r["filename"],
                     "mime": r["mime"], "file_size": r["file_size"]}
-            if r["session_id"] is None:
-                loose_files.append(item)            # 授業に紐づかない資料
-            elif r["session_id"] in sessions:
-                sessions[r["session_id"]]["files"].append(item)
-            # else: 親授業が非公開 → 出さない (非公開で資料を撤回できるように)
+            sid_ = r["session_id"]
+            if sid_ is not None:
+                if sid_ in sessions:
+                    sessions[sid_]["files"].append(item)
+                # else: 親授業が非公開 → 出さない (非公開で資料を撤回できるように)
+            elif r["class_label"]:
+                item["class_label"] = r["class_label"]
+                labeled_files.append(item)          # 時間割クラスに紐づく配布ファイル
+            else:
+                loose_files.append(item)            # 授業にもクラスにも紐づかない資料
         # 公開中の録画
         loose_recordings = []
         c.execute(
@@ -40248,6 +40278,7 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             "ok": True,
             "student_name": student.get("name"),
             "sessions": [sessions[sid] for sid in order],
+            "labeled_files": labeled_files,
             "loose_files": loose_files,
             "loose_recordings": loose_recordings,
         }
@@ -40582,6 +40613,9 @@ def admin_class_file_create(payload: ClassFileCreateRequest, request: Request, a
     attachment = _validate_message_attachment(payload.filename, payload.mime, payload.data_b64)
     if not attachment:
         raise HTTPException(status_code=400, detail="ファイル (filename / mime / data_b64) が必要です")
+    class_label = _sanitize_text(payload.class_label, 100)
+    if class_label and class_label not in _TIMETABLE_LABELS:
+        raise HTTPException(status_code=400, detail="class_label が時間割クラスと一致しません")
     is_pub = 1 if (payload.is_published is None or payload.is_published) else 0
     conn = db()
     try:
@@ -40591,11 +40625,11 @@ def admin_class_file_create(payload: ClassFileCreateRequest, request: Request, a
             if not c.fetchone():
                 raise HTTPException(status_code=404, detail="指定された授業が見つかりません")
         c.execute(
-            "INSERT INTO class_files (session_id, title, filename, mime, file_size, data_b64, is_published, created_at) "
-            "VALUES (?,?,?,?,?,?,?,?) RETURNING id",
+            "INSERT INTO class_files (session_id, title, filename, mime, file_size, data_b64, is_published, class_label, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?) RETURNING id",
             (int(payload.session_id) if payload.session_id is not None else None,
              title, attachment["filename"], attachment["mime"], attachment["size"],
-             attachment["data_b64"], is_pub, _utc_naive_iso())
+             attachment["data_b64"], is_pub, class_label, _utc_naive_iso())
         )
         row = c.fetchone()
         conn.commit()
@@ -40775,6 +40809,31 @@ def admin_class_calendar_delete(event_id: int, authorization: Optional[str] = He
         c.execute("DELETE FROM class_calendar WHERE id = ?", (int(event_id),))
         conn.commit()
         return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/class/timetable-classes")
+def admin_class_timetable_classes(authorization: Optional[str] = Header(None)):
+    """塾長: 時間割クラス一覧 (クラス別ファイル配布・出欠記録の選択肢)。"""
+    _verify_admin_required(authorization)
+    return {"ok": True, "classes": [{"label": c["label"], "dow": c["dow"], "time": c["time"]} for c in _TIMETABLE_CLASSES]}
+
+
+@app.get("/api/admin/class/labeled-files")
+def admin_class_labeled_files(authorization: Optional[str] = Header(None)):
+    """塾長: クラス別配布ファイル一覧 (class_label つき・確認/削除用)。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, title, filename, file_size, class_label FROM class_files "
+            "WHERE class_label IS NOT NULL AND class_label != '' ORDER BY class_label, created_at DESC"
+        )
+        files = [{"id": r["id"], "title": r["title"], "filename": r["filename"],
+                  "file_size": r["file_size"], "class_label": r["class_label"]} for r in c.fetchall()]
+        return {"ok": True, "files": files}
     finally:
         conn.close()
 
