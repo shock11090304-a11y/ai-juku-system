@@ -1592,6 +1592,16 @@ def init_db():
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_class_attendance_uniq ON class_attendance(student_id, session_id);
     CREATE INDEX IF NOT EXISTS idx_class_attendance_session ON class_attendance(session_id, status);
+    -- 📅 塾カレンダー (塾長指示 2026-06-26): 通塾生アプリ予定タブのカレンダーに表示する
+    --   休塾日(closed)・特別な予定(event)。日本の祝日はフロントで自動計算するためここには持たない。
+    CREATE TABLE IF NOT EXISTS class_calendar (
+        id {pk},
+        event_date DATE NOT NULL,
+        kind TEXT NOT NULL,
+        title TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_class_calendar_date ON class_calendar(event_date);
     """)
     # 既存DBに不足列を追加 (idempotent migration)
     # Postgres: 「column already exists」エラーで トランザクションが abort されると
@@ -40682,6 +40692,89 @@ def admin_class_attendance_list(session_id: int, authorization: Optional[str] = 
                 "reported_at": str(r["reported_at"]) if r["reported_at"] else None,
             })
         return {"ok": True, "session_id": int(session_id), "counts": counts, "attendance": rows}
+    finally:
+        conn.close()
+
+
+# ----- 📅 塾カレンダー (休塾日・特別予定)。日本の祝日はフロントで自動計算 -----
+_CALENDAR_KINDS = {"closed", "event"}
+
+
+class ClassCalendarCreateRequest(BaseModel):
+    event_date: str       # YYYY-MM-DD
+    kind: str             # closed (休塾日) | event (特別予定)
+    title: Optional[str] = None
+
+
+@app.get("/api/student/class/calendar")
+def student_class_calendar(authorization: Optional[str] = Header(None)):
+    """通塾生: 塾カレンダー (休塾日・特別予定) を取得。日本の祝日はフロントで自動表示。"""
+    student = _get_current_student(authorization)
+    _require_tsujuku_student(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, event_date, kind, title FROM class_calendar ORDER BY event_date")
+        events = [{"id": r["id"], "date": str(r["event_date"])[:10], "kind": r["kind"], "title": r["title"]}
+                  for r in c.fetchall()]
+        return {"ok": True, "events": events}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/class/calendar")
+def admin_class_calendar_create(payload: ClassCalendarCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: カレンダーに休塾日(closed) / 特別予定(event) を登録。"""
+    _check_rate_limit_ip(request, bucket="class_admin", limit=60, window=60)
+    _verify_admin_required(authorization)
+    ev_date = _class_valid_date_or_none(payload.event_date)
+    if not ev_date:
+        raise HTTPException(status_code=400, detail="日付 (YYYY-MM-DD) は必須です")
+    kind = (payload.kind or "").strip().lower()
+    if kind not in _CALENDAR_KINDS:
+        raise HTTPException(status_code=400, detail="kind は closed (休塾日) または event (予定) のいずれか")
+    title = _sanitize_text(payload.title, 100)
+    if kind == "event" and not title:
+        raise HTTPException(status_code=400, detail="予定にはタイトルを入力してください")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO class_calendar (event_date, kind, title, created_at) VALUES (?,?,?,?) RETURNING id",
+            (ev_date, kind, title, _utc_naive_iso())
+        )
+        row = c.fetchone()
+        conn.commit()
+        return {"ok": True, "id": row["id"] if row else None}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/class/calendar")
+def admin_class_calendar_list(authorization: Optional[str] = Header(None)):
+    """塾長: カレンダー登録一覧 (日付順)。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, event_date, kind, title FROM class_calendar ORDER BY event_date")
+        events = [{"id": r["id"], "date": str(r["event_date"])[:10], "kind": r["kind"], "title": r["title"],
+                   "label": "休塾日" if r["kind"] == "closed" else "予定"} for r in c.fetchall()]
+        return {"ok": True, "events": events}
+    finally:
+        conn.close()
+
+
+@app.delete("/api/admin/class/calendar/{event_id}")
+def admin_class_calendar_delete(event_id: int, authorization: Optional[str] = Header(None)):
+    """塾長: カレンダー登録を削除。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("DELETE FROM class_calendar WHERE id = ?", (int(event_id),))
+        conn.commit()
+        return {"ok": True}
     finally:
         conn.close()
 

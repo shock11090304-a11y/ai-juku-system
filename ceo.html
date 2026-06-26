@@ -2626,6 +2626,23 @@
         🎬 <strong>録画は YouTube に「限定公開」でアップロード</strong>し、その URL をここに貼り付けてください(動画ファイル自体はここには保存しません)。
       </p>
 
+      <!-- 📅 カレンダー登録 (休塾日・特別予定) -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
+        <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">📅 カレンダー（休塾日・特別予定）</div>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">塾生アプリ「予定」タブのカレンダーに表示されます。日本の祝日は自動表示されるので登録不要です。</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+          <input id="calDate" type="date" style="padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          <select id="calKind" style="padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+            <option value="closed">🔴 休塾日</option>
+            <option value="event">📌 予定</option>
+          </select>
+          <input id="calTitle" type="text" placeholder="予定のタイトル(「予定」のとき必須)" style="flex:1; min-width:160px; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          <button id="calAddBtn" type="button" style="padding:0.55rem 1.1rem; background:linear-gradient(135deg,#818cf8,#6366f1); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">登録</button>
+        </div>
+        <div id="calAddMsg" style="font-size:0.82rem; margin-top:0.4rem;"></div>
+        <div id="calList" style="margin-top:0.7rem;"></div>
+      </div>
+
       <!-- 授業作成フォーム -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
         <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.7rem;">➕ 授業を作成</div>
@@ -9897,12 +9914,58 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       }
     });
 
+    // 📅 カレンダー (休塾日・特別予定) 管理
+    async function loadCalendarAdmin() {
+      var list = document.getElementById('calList');
+      if (!list) return;
+      try {
+        var d = await adminJson('/api/admin/class/calendar');
+        var evs = d.events || [];
+        if (!evs.length) { list.innerHTML = '<div style="color:#a1a1aa; font-size:0.82rem;">登録された休塾日・予定はありません(祝日は自動表示)。</div>'; return; }
+        list.innerHTML = evs.map(function (e) {
+          var badge = e.kind === 'closed'
+            ? '<span style="background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.4); border-radius:6px; padding:0.05rem 0.45rem; font-size:0.72rem; font-weight:800;">🔴 休塾日</span>'
+            : '<span style="background:rgba(129,140,248,0.2); color:#c7d2fe; border:1px solid rgba(129,140,248,0.4); border-radius:6px; padding:0.05rem 0.45rem; font-size:0.72rem; font-weight:800;">📌 予定</span>';
+          return '<div style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0.55rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:7px; margin-bottom:0.3rem; font-size:0.84rem;">'
+            + '<span style="font-weight:800; color:#c7d2fe; min-width:6.2em;">' + esc(e.date) + '</span>' + badge
+            + '<span style="flex:1; min-width:0;">' + (e.title ? esc(e.title) : '') + '</span>'
+            + '<button class="cal-del" data-id="' + e.id + '" style="' + BTN + ' background:rgba(239,68,68,0.2); color:#fca5a5;">🗑</button></div>';
+        }).join('');
+      } catch (e) {
+        list.innerHTML = '<div style="color:#fca5a5; font-size:0.82rem;">' + (e.status === 401 ? 'ログインしてください。' : ('読み込み失敗: ' + esc(e.message))) + '</div>';
+      }
+    }
+    var _calAdd = document.getElementById('calAddBtn');
+    if (_calAdd) _calAdd.addEventListener('click', async function () {
+      var msg = document.getElementById('calAddMsg');
+      var date = document.getElementById('calDate').value;
+      var kind = document.getElementById('calKind').value;
+      var title = (document.getElementById('calTitle').value || '').trim();
+      if (!date) { msg.style.color = '#fca5a5'; msg.textContent = '日付を選んでください'; return; }
+      if (kind === 'event' && !title) { msg.style.color = '#fca5a5'; msg.textContent = '予定にはタイトルが必要です'; return; }
+      _calAdd.disabled = true; msg.style.color = '#a1a1aa'; msg.textContent = '登録中…';
+      try {
+        await adminJson('/api/admin/class/calendar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event_date: date, kind: kind, title: title }) });
+        msg.style.color = '#6ee7b7'; msg.textContent = '✓ 登録しました';
+        document.getElementById('calTitle').value = '';
+        loadCalendarAdmin();
+      } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + e.message; }
+      finally { _calAdd.disabled = false; }
+    });
+    var _calListEl = document.getElementById('calList');
+    if (_calListEl) _calListEl.addEventListener('click', async function (e) {
+      var t = e.target.closest('.cal-del'); if (!t) return;
+      if (!confirm('この登録を削除しますか?')) return;
+      try { await adminJson('/api/admin/class/calendar/' + t.getAttribute('data-id'), { method: 'DELETE' }); loadCalendarAdmin(); }
+      catch (err) { alert('削除失敗: ' + err.message); }
+    });
+
     // 「通塾クラス」ハブボタンを開いたら読み込む
     var hubBtn = document.querySelector('#ceoHubMenu [data-hub-target="classMgmtSection"]');
-    if (hubBtn) hubBtn.addEventListener('click', loadSessions);
+    if (hubBtn) hubBtn.addEventListener('click', function () { loadSessions(); loadCalendarAdmin(); });
     // ログイン済みなら初期ロード (未ログインは loadSessions が 401 を表示)
     if (AdminAuth.getToken && AdminAuth.getToken()) {
-      setTimeout(loadSessions, 300);
+      setTimeout(function () { loadSessions(); loadCalendarAdmin(); }, 300);
     }
   })();
   </script>

@@ -51,6 +51,32 @@
     .tt-class .tt-detail { display:block; font-size:0.74rem; color:#a1a1aa; font-weight:500; margin-top:0.05rem; }
     .tt-time { flex-shrink:0; font-size:0.72rem; color:#9ca3af; font-variant-numeric:tabular-nums; }
     .sec-divider { margin:1.5rem 0 0.7rem; font-size:0.95rem; font-weight:800; color:#e4e4e7; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:0.35rem; }
+    /* 📅 カレンダー */
+    .cal-head { display:flex; align-items:center; justify-content:space-between; margin:0.1rem 0 0.55rem; }
+    .cal-title { font-weight:800; font-size:1.02rem; }
+    .cal-nav { width:36px; height:36px; border-radius:9px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:#e4e4e7; font-size:1.2rem; line-height:1; cursor:pointer; font-family:inherit; }
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+    .cal-wd { text-align:center; font-size:0.7rem; font-weight:700; color:#a1a1aa; padding:0.15rem 0; }
+    .cal-wd.sun { color:#fca5a5; } .cal-wd.sat { color:#93c5fd; }
+    .cal-cell { position:relative; aspect-ratio:1/1; min-height:38px; border-radius:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; align-items:center; padding-top:0.2rem; overflow:hidden; }
+    .cal-cell.empty { background:transparent; border:0; }
+    .cal-cell .cal-d { font-size:0.8rem; font-weight:700; color:#e4e4e7; }
+    .cal-cell.sun .cal-d { color:#fca5a5; } .cal-cell.sat .cal-d { color:#93c5fd; }
+    .cal-cell.holiday { background:rgba(251,191,36,0.10); border-color:rgba(251,191,36,0.28); }
+    .cal-cell.holiday .cal-d { color:#fcd34d; }
+    .cal-cell.closed { background:rgba(239,68,68,0.20); border-color:rgba(239,68,68,0.48); }
+    .cal-cell.closed .cal-d { color:#fecaca; }
+    .cal-cell.today { box-shadow:0 0 0 2px #818cf8 inset; }
+    .cal-tag { font-size:0.56rem; font-weight:800; line-height:1; margin-top:2px; padding:1px 3px; border-radius:4px; }
+    .cal-tag.closed { background:#ef4444; color:#fff; }
+    .cal-tag.hol { color:#fcd34d; }
+    .cal-dot { width:5px; height:5px; border-radius:50%; background:#818cf8; margin-top:3px; }
+    .cal-legend { display:flex; gap:0.9rem; flex-wrap:wrap; margin:0.55rem 0 0.2rem; font-size:0.74rem; color:#cbd5e1; }
+    .cal-legend i.lg { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:0.25rem; vertical-align:middle; }
+    .cal-legend i.lg.closed { background:#ef4444; } .cal-legend i.lg.event { background:#818cf8; } .cal-legend i.lg.hol { background:rgba(251,191,36,0.6); }
+    .cal-list-h { font-size:0.8rem; font-weight:800; color:#a5b4fc; margin:0.65rem 0 0.25rem; }
+    .cal-li { font-size:0.84rem; padding:0.22rem 0; display:flex; gap:0.5rem; line-height:1.4; }
+    .cal-li-d { flex-shrink:0; font-weight:800; color:#c7d2fe; min-width:2.8em; font-variant-numeric:tabular-nums; }
     .block { margin-top:0.85rem; }
     .block-label { font-size:0.78rem; font-weight:800; color:#a5b4fc; margin-bottom:0.4rem; }
     .res-row { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.7rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.10); border-radius:9px; margin:0.35rem 0; }
@@ -263,7 +289,7 @@
         + '<span class="tt-time">' + esc(t) + '</span></div>';
     }
     function timetableHtml() {
-      var h = '<div class="block-label" style="font-size:0.95rem; margin-bottom:0.4rem;">🗓 週間時間割</div>'
+      var h = '<div class="block-label" style="font-size:0.95rem; margin:1.6rem 0 0.4rem;">🗓 週間時間割</div>'
         + '<div class="tt-intro">毎週くり返しの時間割です（' + esc(TIMETABLE.year) + '）。ご自分の受講クラスをご確認ください。</div>';
       TIMETABLE.weekdays.forEach(function (wd) {
         h += '<div class="tt-day"><span class="tt-day-h">' + esc(wd.day) + '曜</span>';
@@ -274,6 +300,96 @@
         h += '<div class="tt-day sun"><span class="tt-day-h">' + esc(sp.label) + '</span>'
           + ttRow('', sp.t, sp.c, sp.d) + '</div>';
       });
+      return h;
+    }
+
+    // ===================== 📅 カレンダー (休塾日・特別予定・日本の祝日 自動) =====================
+    function _pad2(n) { return n < 10 ? '0' + n : '' + n; }
+    function _ymd(y, m, d) { return y + '-' + _pad2(m) + '-' + _pad2(d); }
+    function _ymdOf(dt) { return _ymd(dt.getFullYear(), dt.getMonth() + 1, dt.getDate()); }
+    // 日本の国民の祝日を年から自動計算 (春分/秋分=国立天文台式・ハッピーマンデー・振替休日・国民の休日)
+    function jpHolidays(year) {
+      var H = {};
+      function set(m, d, name) { H[_ymd(year, m, d)] = name; }
+      function nthMon(m, n) { var first = new Date(year, m - 1, 1).getDay(); return (1 + ((8 - first) % 7)) + (n - 1) * 7; }
+      set(1, 1, '元日'); set(1, nthMon(1, 2), '成人の日');
+      set(2, 11, '建国記念の日'); set(2, 23, '天皇誕生日');
+      set(3, Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4)), '春分の日');
+      set(4, 29, '昭和の日'); set(5, 3, '憲法記念日'); set(5, 4, 'みどりの日'); set(5, 5, 'こどもの日');
+      set(7, nthMon(7, 3), '海の日'); set(8, 11, '山の日'); set(9, nthMon(9, 3), '敬老の日');
+      set(9, Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4)), '秋分の日');
+      set(10, nthMon(10, 2), 'スポーツの日'); set(11, 3, '文化の日'); set(11, 23, '勤労感謝の日');
+      // 国民の休日: 前後が祝日に挟まれた平日 (例: 2026/9/22)
+      Object.keys(H).slice().forEach(function (k) {
+        var mid = new Date(k + 'T00:00:00'); mid.setDate(mid.getDate() + 1);
+        var aft = new Date(mid); aft.setDate(aft.getDate() + 1);
+        var km = _ymdOf(mid);
+        if (!H[km] && H[_ymdOf(aft)] && mid.getDay() !== 0 && mid.getDay() !== 6) H[km] = '国民の休日';
+      });
+      // 振替休日: 祝日が日曜なら、その後の最初の非祝日
+      Object.keys(H).slice().sort().forEach(function (k) {
+        var dt = new Date(k + 'T00:00:00');
+        if (dt.getDay() === 0) { var sub = new Date(dt); do { sub.setDate(sub.getDate() + 1); } while (H[_ymdOf(sub)]); H[_ymdOf(sub)] = '振替休日'; }
+      });
+      return H;
+    }
+    var calEvents = {};   // 'YYYY-MM-DD' -> { kind:'closed'|'event', title }
+    var calY, calM;
+    (function () { var n = new Date(); calY = n.getFullYear(); calM = n.getMonth() + 1; })();
+    async function loadCalendar() {
+      try {
+        var d = await api('/api/student/class/calendar');
+        calEvents = {};
+        (d.events || []).forEach(function (e) { calEvents[e.date] = { kind: e.kind, title: e.title }; });
+      } catch (e) { /* 取得失敗でも祝日カレンダーは表示する */ }
+    }
+    function changeMonth(delta) {
+      calM += delta;
+      if (calM > 12) { calM = 1; calY++; } else if (calM < 1) { calM = 12; calY--; }
+      renderSchedule();
+    }
+    function calendarHtml() {
+      var hol = jpHolidays(calY);
+      var startDow = new Date(calY, calM - 1, 1).getDay();
+      var daysIn = new Date(calY, calM, 0).getDate();
+      var todayK = _ymdOf(new Date());
+      var wd = ['日', '月', '火', '水', '木', '金', '土'];
+      var h = '<div class="block-label" style="font-size:0.95rem; margin-bottom:0.3rem;">📅 カレンダー</div>'
+        + '<div class="cal-head"><button class="cal-nav" id="calPrev" aria-label="前の月">‹</button>'
+        + '<div class="cal-title">' + calY + '年 ' + calM + '月</div>'
+        + '<button class="cal-nav" id="calNext" aria-label="次の月">›</button></div><div class="cal-grid">';
+      wd.forEach(function (w, i) { h += '<div class="cal-wd' + (i === 0 ? ' sun' : '') + (i === 6 ? ' sat' : '') + '">' + w + '</div>'; });
+      for (var b = 0; b < startDow; b++) h += '<div class="cal-cell empty"></div>';
+      for (var day = 1; day <= daysIn; day++) {
+        var key = _ymd(calY, calM, day);
+        var dow = new Date(calY, calM - 1, day).getDay();
+        var ev = calEvents[key], hn = hol[key];
+        var cls = 'cal-cell';
+        if (key === todayK) cls += ' today';
+        if (ev && ev.kind === 'closed') cls += ' closed';
+        else if (hn) cls += ' holiday';
+        if (dow === 0) cls += ' sun'; if (dow === 6) cls += ' sat';
+        var mark = '';
+        if (ev && ev.kind === 'closed') mark = '<span class="cal-tag closed">休</span>';
+        else if (ev && ev.kind === 'event') mark = '<span class="cal-dot"></span>';
+        else if (hn) mark = '<span class="cal-tag hol">祝</span>';
+        h += '<div class="' + cls + '"><span class="cal-d">' + day + '</span>' + mark + '</div>';
+      }
+      h += '</div><div class="cal-legend"><span><i class="lg closed"></i>休塾日</span><span><i class="lg event"></i>予定</span><span><i class="lg hol"></i>祝日</span></div>';
+      var items = [];
+      for (var dd = 1; dd <= daysIn; dd++) {
+        var k = _ymd(calY, calM, dd), e = calEvents[k], hnm = hol[k];
+        if (e && e.kind === 'closed') items.push({ d: dd, t: '🔴 休塾日' });
+        else if (e && e.kind === 'event') items.push({ d: dd, t: '📌 ' + esc(e.title || '予定') });
+        if (hnm) items.push({ d: dd, t: '🎌 ' + esc(hnm) });
+      }
+      if (items.length) {
+        items.sort(function (a, b) { return a.d - b.d; });
+        h += '<div class="cal-list-h">今月の休塾日・予定</div>'
+          + items.map(function (it) { return '<div class="cal-li"><span class="cal-li-d">' + calM + '/' + it.d + '</span><span>' + it.t + '</span></div>'; }).join('');
+      } else {
+        h += '<div class="muted" style="padding:0.45rem 0;">今月の休塾日・特別予定はありません。</div>';
+      }
       return h;
     }
 
@@ -325,6 +441,8 @@
       var sessions = (feedData && feedData.sessions) || [];
       var lf = (feedData && feedData.loose_files) || [];
       var parts = [];
+      // 📅 カレンダー（休塾日・特別予定・祝日）
+      parts.push(calendarHtml());
       // 🗓 週間時間割（常時表示）
       parts.push(timetableHtml());
       // 📅 個別の授業（日付つき・プリント配布/録画/出欠）
@@ -347,6 +465,9 @@
       scheduleBody.querySelectorAll('.att-set').forEach(function (btn) {
         btn.addEventListener('click', function () { reportAttendance(btn); });
       });
+      var pv = document.getElementById('calPrev'), nx = document.getElementById('calNext');
+      if (pv) pv.addEventListener('click', function () { changeMonth(-1); });
+      if (nx) nx.addEventListener('click', function () { changeMonth(1); });
     }
     async function downloadFile(btn) {
       var id = btn.getAttribute('data-id'), fn = btn.getAttribute('data-fn') || 'lesson_file';
@@ -570,6 +691,8 @@
       renderSchedule();
       renderVideos();
       showTab('schedule');
+      // 塾長登録の休塾日/予定を読み込んで再描画（祝日カレンダーは即表示済み）
+      loadCalendar().then(function () { renderSchedule(); });
       // バッジ（宿題未提出・メッセージ未読）を先読み
       api('/api/student/homework').then(function (d) { updateBadge('hwBadge', (d.summary && d.summary.open) || 0); }).catch(function () {});
       api('/api/messages/me/unread-count').then(function (d) { updateBadge('msgBadge', d.unread_count || 0); }).catch(function () {});
