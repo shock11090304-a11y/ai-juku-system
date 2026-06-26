@@ -40989,6 +40989,11 @@ class StudentClassesRequest(BaseModel):
     class_labels: list = []
 
 
+class ClassRosterRequest(BaseModel):
+    class_label: str
+    student_ids: List[int] = []  # このクラスに所属させる生徒ID群 (チェックされた生徒)
+
+
 @app.get("/api/admin/class/students")
 def admin_class_students(authorization: Optional[str] = Header(None)):
     """塾長: 通塾生一覧 (出欠名簿 + 各自の受講クラス)。"""
@@ -41016,6 +41021,51 @@ def admin_set_student_classes(payload: StudentClassesRequest, authorization: Opt
         c.execute("UPDATE students SET class_labels = ? WHERE id = ?", (json.dumps(labels, ensure_ascii=False), int(payload.student_id)))
         conn.commit()
         return {"ok": True, "class_labels": labels}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/class/class-roster")
+def admin_set_class_roster(payload: ClassRosterRequest, authorization: Optional[str] = Header(None)):
+    """塾長: あるクラスの受講生を一括設定 (クラス選択→生徒チェック→保存)。
+    指定クラスについてのみ、チェックされた生徒には class_label を追加・外された生徒からは削除する。
+    各生徒の「他クラスの所属」は保持する (このクラスの membership だけを差分更新)。
+    対象は通塾生 roster のみ (student_ids に roster 外 id があっても無視=非通塾生の class_labels は触らない)。"""
+    _verify_admin_required(authorization)
+    cl = _sanitize_text(payload.class_label, 100)
+    if not cl or cl not in _TIMETABLE_LABELS:
+        raise HTTPException(status_code=400, detail="class_label が時間割クラスと一致しません")
+    want = set(int(x) for x in (payload.student_ids or []))
+    conn = db()
+    try:
+        c = conn.cursor()
+        added, removed, now_in = [], [], 0
+        # roster を1回読み、差分のある生徒だけ UPDATE (per-row catch はしない=PGは1文失敗で全txn abort)。
+        for r in _tsujuku_roster(c):
+            sid = r["id"]
+            labels = _parse_labels(r["class_labels"])
+            has = cl in labels
+            should = sid in want
+            if should:
+                now_in += 1
+            if should and not has:
+                c.execute("UPDATE students SET class_labels = ? WHERE id = ?",
+                          (json.dumps(labels + [cl], ensure_ascii=False), sid))
+                added.append(r["name"])
+            elif (not should) and has:
+                c.execute("UPDATE students SET class_labels = ? WHERE id = ?",
+                          (json.dumps([x for x in labels if x != cl], ensure_ascii=False), sid))
+                removed.append(r["name"])
+        conn.commit()  # ← membership をここで確定 (以降の events 失敗に巻き込まれない)
+        try:
+            c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                      ("class_roster_set", json.dumps({"class_label": cl, "in_class": now_in,
+                       "added": len(added), "removed": len(removed)}, ensure_ascii=False), "admin"))
+            conn.commit()
+        except Exception:
+            pass
+        return {"ok": True, "class_label": cl, "in_class_count": now_in,
+                "added": added, "removed": removed}
     finally:
         conn.close()
 

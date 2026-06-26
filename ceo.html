@@ -2694,9 +2694,21 @@
         <div id="atRoster" style="margin-top:0.7rem;"></div>
       </div>
 
+      <!-- 🏫 クラス別 受講生 一括登録 (クラス→生徒チェック→保存) -->
+      <div style="background:rgba(6,199,85,0.06); border:1px solid rgba(6,199,85,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
+        <div style="font-size:0.95rem; color:#34d399; font-weight:700; margin-bottom:0.3rem;">🏫 クラス別 受講生 一括登録</div>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">クラスを選び、そのクラスに来る生徒に<b>チェック → 保存</b>。クラスごとに一気に名簿を作れます(出欠・クラス宿題の対象になります)。各生徒の<b>他クラスの所属はそのまま保持</b>されます。</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:0.5rem;">
+          <select id="crClass" style="padding:0.55rem; min-width:200px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">クラスを選択…</option></select>
+          <span id="crCount" style="font-size:0.82rem; color:#86efac;"></span>
+        </div>
+        <div id="crStudents" style="margin-top:0.4rem;"></div>
+        <div id="crMsg" style="font-size:0.82rem; margin-top:0.4rem;"></div>
+      </div>
+
       <!-- 👥 生徒の受講クラス -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
-        <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">👥 生徒の受講クラス</div>
+        <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">👥 生徒の受講クラス (個別編集)</div>
         <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">各生徒の受講クラスを設定。アプリの「今日の出欠」は、ここで設定したクラスだけ生徒に表示されます。未設定の生徒は全クラス表示(移行用)。登録フォームで生徒が選んだクラスは承認時に自動設定されます。</p>
         <select id="scStudent" style="padding:0.55rem; min-width:200px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">生徒を選択…</option></select>
         <div id="scClasses" style="margin-top:0.6rem;"></div>
@@ -10022,7 +10034,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
 
     // 📎 クラス別ファイル配布 / 🙋 出欠記録 共通: クラス選択ドロップダウンを埋める
     async function populateClassDropdown() {
-      var sels = [document.getElementById('cfClass'), document.getElementById('atClass'), document.getElementById('hwClass')].filter(Boolean);
+      var sels = [document.getElementById('cfClass'), document.getElementById('atClass'), document.getElementById('hwClass'), document.getElementById('crClass')].filter(Boolean);
       if (!sels.length || sels.every(function (s) { return s.options.length > 1; })) return;
       try {
         var d = await adminJson('/api/admin/class/timetable-classes');
@@ -10135,6 +10147,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           _scStudents.forEach(function (s) { var o = document.createElement('option'); o.value = s.id; o.textContent = s.name + (s.grade ? (' (' + s.grade + ')') : ''); sel.appendChild(o); });
         }
         if (typeof hwUpdateCount === 'function') hwUpdateCount();  // 名簿ロード後に宿題カウントを更新(初回ロード時のfalse-0を解消)
+        if (typeof renderClassRoster === 'function') renderClassRoster();  // クラス別一括登録も名簿ロード後に再描画
       } catch (e) { /* 未ログイン等は無視 */ }
     }
     function renderStudentClasses() {
@@ -10166,6 +10179,52 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     }
     var _scStudentSel = document.getElementById('scStudent');
     if (_scStudentSel) _scStudentSel.addEventListener('change', renderStudentClasses);
+
+    // 🏫 クラス別 受講生 一括登録 (クラス→生徒チェック→保存)
+    function crUpdateCount() {
+      var box = document.getElementById('crStudents'); var el = document.getElementById('crCount');
+      if (!box || !el) return;
+      el.textContent = 'チェック中: ' + box.querySelectorAll('.cr-cb:checked').length + '名';
+    }
+    function renderClassRoster() {
+      var box = document.getElementById('crStudents'); if (!box) return;
+      var label = document.getElementById('crClass').value;
+      var msgEl = document.getElementById('crMsg'); if (msgEl) msgEl.textContent = '';
+      var cntEl = document.getElementById('crCount');
+      if (!label) { box.innerHTML = ''; if (cntEl) cntEl.textContent = ''; return; }
+      if (!_scStudents.length) { box.innerHTML = '<div style="color:#a1a1aa; font-size:0.82rem;">生徒を読み込み中…</div>'; return; }
+      box.innerHTML = '<div style="display:flex; flex-wrap:wrap; gap:0.4rem;">'
+        + _scStudents.map(function (s) {
+          var on = (s.class_labels || []).indexOf(label) >= 0;
+          return '<label style="display:inline-flex; align-items:center; gap:0.3rem; padding:0.4rem 0.7rem; background:' + (on ? 'rgba(6,199,85,0.18)' : 'rgba(255,255,255,0.05)') + '; border:1px solid ' + (on ? 'rgba(6,199,85,0.5)' : 'rgba(255,255,255,0.16)') + '; border-radius:999px; font-size:0.82rem; cursor:pointer;"><input type="checkbox" class="cr-cb" value="' + s.id + '"' + (on ? ' checked' : '') + ' style="accent-color:#10b981;">' + esc(s.name) + (s.grade ? ('<span style="color:#a1a1aa;">(' + esc(s.grade) + ')</span>') : '') + '</label>';
+        }).join('') + '</div>'
+        + '<button id="crSaveBtn" type="button" style="' + BTN + ' background:linear-gradient(135deg,#34d399,#10b981); color:#06281e; margin-top:0.6rem;">このクラスの受講生を保存</button>';
+      box.querySelectorAll('.cr-cb').forEach(function (cb) { cb.addEventListener('change', crUpdateCount); });
+      crUpdateCount();
+      document.getElementById('crSaveBtn').addEventListener('click', saveClassRoster);
+    }
+    async function saveClassRoster() {
+      var label = document.getElementById('crClass').value;
+      var ids = Array.prototype.map.call(document.querySelectorAll('#crStudents .cr-cb:checked'), function (cb) { return Number(cb.value); });
+      var msg = document.getElementById('crMsg'), btn = document.getElementById('crSaveBtn');
+      if (!label) { msg.style.color = '#fca5a5'; msg.textContent = 'クラスを選択してください'; return; }
+      if (btn) btn.disabled = true; msg.style.color = '#a1a1aa'; msg.textContent = '保存中…';
+      try {
+        var r = await adminJson('/api/admin/class/class-roster', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ class_label: label, student_ids: ids }) });
+        msg.style.color = '#6ee7b7'; msg.textContent = '✓ 「' + label + '」の受講生を保存しました（' + r.in_class_count + '名）';
+        // _scStudents をこの class の membership で同期 (他画面=個別編集/宿題カウントと整合)
+        var want = {}; ids.forEach(function (id) { want[id] = true; });
+        _scStudents.forEach(function (s) {
+          var has = (s.class_labels || []).indexOf(label) >= 0;
+          if (want[s.id] && !has) s.class_labels = (s.class_labels || []).concat([label]);
+          else if (!want[s.id] && has) s.class_labels = (s.class_labels || []).filter(function (x) { return x !== label; });
+        });
+        if (typeof hwUpdateCount === 'function') hwUpdateCount();  // 宿題カウントも同期
+      } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + (e.message || 'エラー'); }
+      finally { if (btn) btn.disabled = false; }
+    }
+    var _crClassSel = document.getElementById('crClass');
+    if (_crClassSel) _crClassSel.addEventListener('change', renderClassRoster);
 
     // 📝 クラスに宿題を出す
     function hwUpdateCount() {
