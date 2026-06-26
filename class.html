@@ -393,6 +393,69 @@
       return h;
     }
 
+    // ===================== 🙋 今日の出欠 (クラス×日付・自己申告) =====================
+    var attendMine = {};   // 'YYYY-MM-DD|label' -> { status, source }
+    var _DAY2DOW = { '日': 0, '月': 1, '火': 2, '水': 3, '木': 4, '金': 5, '土': 6 };
+    async function loadMyAttend() {
+      try {
+        var d = await api('/api/student/class/attend');
+        attendMine = {};
+        (d.records || []).forEach(function (r) { attendMine[r.date + '|' + r.class_label] = { status: r.status, source: r.source }; });
+      } catch (e) { attendMine = {}; }
+    }
+    function todayClasses() {
+      var dow = new Date().getDay();
+      var out = [];
+      TIMETABLE.weekdays.forEach(function (wd) {
+        if (_DAY2DOW[wd.day] === dow) wd.items.forEach(function (it) { out.push({ label: wd.day + '曜' + it.p + ' ' + it.c, time: it.t, title: it.c }); });
+      });
+      TIMETABLE.special.forEach(function (sp) { if (_DAY2DOW[sp.day] === dow) out.push({ label: sp.day + '曜 ' + sp.c, time: sp.t, title: sp.c }); });
+      return out;
+    }
+    function todayAttendHtml() {
+      var classes = todayClasses();
+      if (!classes.length) return '';   // 今日は授業がない曜日
+      var now = new Date(), dateStr = _ymdOf(now);
+      var lbl = { present: '出席', absent: '欠席', late: '遅刻' };
+      var h = '<div class="block-label" style="font-size:0.95rem; margin-bottom:0.3rem;">🙋 今日の出欠（' + (now.getMonth() + 1) + '/' + now.getDate() + '）</div>'
+        + '<div class="tt-intro">本日のクラスの出欠を申告してください。</div>';
+      classes.forEach(function (c) {
+        var rec = attendMine[dateStr + '|' + c.label];
+        var cur = rec && rec.status, byAdmin = rec && rec.source === 'admin';
+        var mk = function (st, label) {
+          return '<button class="att-btn att2-set' + (cur === st ? ' sel-' + st : '') + '" data-label="' + esc(c.label)
+            + '" data-date="' + dateStr + '" data-st="' + st + '"' + (byAdmin ? ' disabled' : '') + '>' + label + '</button>';
+        };
+        var statusLine = byAdmin ? '<div class="att-status att-saved">🏫 塾長が記録: ' + esc(lbl[cur] || cur) + '</div>'
+          : (cur ? '<div class="att-status att-saved">✓ 申告済み: ' + esc(lbl[cur] || cur) + '（変更も可能）</div>'
+            : '<div class="att-status muted">まだ申告していません</div>');
+        h += '<div class="card" style="padding:0.75rem 0.85rem;"><div style="font-weight:700; font-size:0.93rem;">' + esc(c.title)
+          + ' <span class="muted" style="font-weight:500;">' + esc(c.time) + '</span></div>'
+          + '<div class="att-row" style="margin-top:0.55rem;">' + mk('present', '出席') + mk('absent', '欠席') + mk('late', '遅刻') + '</div>'
+          + statusLine + '</div>';
+      });
+      return '<div class="sec-divider">🙋 今日の出欠</div>' + h;
+    }
+    async function reportAttend2(btn) {
+      if (btn.disabled) return;
+      var label = btn.getAttribute('data-label'), date = btn.getAttribute('data-date'), st = btn.getAttribute('data-st');
+      var card = btn.closest('.card'), all = card.querySelectorAll('.att2-set');
+      all.forEach(function (b) { b.disabled = true; });
+      var locked = false;
+      try {
+        var r = await api('/api/student/class/attend', { method: 'POST', body: JSON.stringify({ class_label: label, att_date: date, status: st }) });
+        if (r.locked) { locked = true; toast('塾長が記録済みのため変更できません', true); }
+        else {
+          attendMine[date + '|' + label] = { status: st, source: 'self' };
+          all.forEach(function (b) { b.className = 'att-btn att2-set' + (b.getAttribute('data-st') === st ? ' sel-' + st : ''); });
+          var se = card.querySelector('.att-status');
+          if (se) { se.className = 'att-status att-saved'; se.textContent = '✓ 申告済み: ' + (r.label || st) + '（変更も可能）'; }
+          toast('出欠を記録しました（' + (r.label || st) + '）');
+        }
+      } catch (e) { toast(e.message || '記録に失敗しました', true); }
+      finally { if (!locked) all.forEach(function (b) { b.disabled = false; }); }
+    }
+
     function sessionHtml(s) {
       var date = s.session_date ? esc(s.session_date) : '日付未定';
       var time = [s.start_time, s.end_time].filter(Boolean).join('〜');
@@ -458,6 +521,8 @@
       var sessions = (feedData && feedData.sessions) || [];
       var lf = (feedData && feedData.loose_files) || [];
       var parts = [];
+      // 🙋 今日の出欠（今日のクラスがある時のみ）
+      parts.push(todayAttendHtml());
       // 📅 カレンダー（休塾日・特別予定・祝日）
       parts.push(calendarHtml());
       // 🗓 週間時間割（常時表示）
@@ -483,6 +548,9 @@
       });
       scheduleBody.querySelectorAll('.att-set').forEach(function (btn) {
         btn.addEventListener('click', function () { reportAttendance(btn); });
+      });
+      scheduleBody.querySelectorAll('.att2-set').forEach(function (btn) {
+        btn.addEventListener('click', function () { reportAttend2(btn); });
       });
       var pv = document.getElementById('calPrev'), nx = document.getElementById('calNext');
       if (pv) pv.addEventListener('click', function () { changeMonth(-1); });
@@ -710,8 +778,8 @@
       renderSchedule();
       renderVideos();
       showTab('schedule');
-      // 塾長登録の休塾日/予定を読み込んで再描画（祝日カレンダーは即表示済み）
-      loadCalendar().then(function () { renderSchedule(); });
+      // 塾長登録の休塾日/予定 + 自分の出欠を読み込んで再描画（祝日カレンダーは即表示済み）
+      Promise.all([loadCalendar(), loadMyAttend()]).then(function () { renderSchedule(); });
       // バッジ（宿題未提出・メッセージ未読）を先読み
       api('/api/student/homework').then(function (d) { updateBadge('hwBadge', (d.summary && d.summary.open) || 0); }).catch(function () {});
       api('/api/messages/me/unread-count').then(function (d) { updateBadge('msgBadge', d.unread_count || 0); }).catch(function () {});

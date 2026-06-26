@@ -1602,6 +1602,19 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_class_calendar_date ON class_calendar(event_date);
+    -- 🙋 出欠記録 (塾長指示 2026-06-26): 時間割クラス×日付の出欠。生徒の自己申告(source='self')と
+    --   塾長の記録(source='admin')の両方。1行/(student,class_label,att_date) を UPSERT。塾長記録が最終。
+    CREATE TABLE IF NOT EXISTS class_attend (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        class_label TEXT NOT NULL,
+        att_date DATE NOT NULL,
+        status TEXT NOT NULL,
+        source TEXT NOT NULL DEFAULT 'self',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_class_attend_uniq ON class_attend(student_id, class_label, att_date);
+    CREATE INDEX IF NOT EXISTS idx_class_attend_lookup ON class_attend(att_date, class_label);
     """)
     # 既存DBに不足列を追加 (idempotent migration)
     # Postgres: 「column already exists」エラーで トランザクションが abort されると
@@ -40834,6 +40847,150 @@ def admin_class_labeled_files(authorization: Optional[str] = Header(None)):
         files = [{"id": r["id"], "title": r["title"], "filename": r["filename"],
                   "file_size": r["file_size"], "class_label": r["class_label"]} for r in c.fetchall()]
         return {"ok": True, "files": files}
+    finally:
+        conn.close()
+
+
+# ----- 🙋 出欠記録 (クラス×日付・生徒の自己申告 + 塾長の記録) -----
+class ClassAttendRequest(BaseModel):
+    class_label: str
+    att_date: str    # YYYY-MM-DD
+    status: str      # present/absent/late
+
+
+class AdminAttendMarkRequest(BaseModel):
+    student_id: int
+    class_label: str
+    att_date: str
+    status: str
+
+
+def _validate_attend(class_label, att_date, status):
+    cl = _sanitize_text(class_label, 100)
+    if not cl or cl not in _TIMETABLE_LABELS:
+        raise HTTPException(status_code=400, detail="class_label が時間割クラスと一致しません")
+    d = _class_valid_date_or_none(att_date)
+    if not d:
+        raise HTTPException(status_code=400, detail="日付 (YYYY-MM-DD) は必須です")
+    st = (status or "").strip().lower()
+    if st not in _ATTENDANCE_STATUSES:
+        raise HTTPException(status_code=400, detail="status は present / absent / late のいずれか")
+    return cl, d, st
+
+
+def _tsujuku_roster(c):
+    """通塾生(course=kokuritsu_nankan or plan=student_addon)の名簿を取得 (cursor 渡し)。"""
+    c.execute("SELECT id, name, grade FROM students WHERE course = ? OR plan = ? ORDER BY name",
+              (_STUDY_LOG_TARGET_COURSE, "student_addon"))
+    return c.fetchall()
+
+
+@app.post("/api/student/class/attend")
+def student_class_attend(payload: ClassAttendRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """通塾生: クラス×日付の出欠を自己申告。塾長が記録済み(source='admin')なら上書きしない。"""
+    _check_rate_limit_ip(request, bucket="class_attend", limit=40, window=300)
+    student = _get_current_student(authorization)
+    _require_tsujuku_student(student)
+    cl, d, st = _validate_attend(payload.class_label, payload.att_date, payload.status)
+    now_iso = _utc_naive_iso()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, source FROM class_attend WHERE student_id = ? AND class_label = ? AND att_date = ?",
+                  (student["id"], cl, d))
+        ex = c.fetchone()
+        if ex and ex["source"] == "admin":
+            return {"ok": True, "locked": True, "info": "塾長が記録済みのため変更できません。"}
+        if ex:
+            c.execute("UPDATE class_attend SET status = ?, source = 'self', updated_at = ? WHERE id = ?", (st, now_iso, ex["id"]))
+        else:
+            c.execute("INSERT INTO class_attend (student_id, class_label, att_date, status, source, updated_at) VALUES (?,?,?,?,?,?)",
+                      (student["id"], cl, d, st, "self", now_iso))
+        conn.commit()
+        return {"ok": True, "status": st, "label": _ATTENDANCE_LABEL.get(st, st)}
+    finally:
+        conn.close()
+
+
+@app.get("/api/student/class/attend")
+def student_class_attend_list(authorization: Optional[str] = Header(None)):
+    """通塾生: 自分の出欠記録 (直近・アプリ表示用)。"""
+    student = _get_current_student(authorization)
+    _require_tsujuku_student(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT class_label, att_date, status, source FROM class_attend WHERE student_id = ? ORDER BY att_date DESC LIMIT 200",
+                  (student["id"],))
+        recs = [{"class_label": r["class_label"], "date": str(r["att_date"])[:10], "status": r["status"], "source": r["source"]}
+                for r in c.fetchall()]
+        return {"ok": True, "records": recs}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/class/students")
+def admin_class_students(authorization: Optional[str] = Header(None)):
+    """塾長: 通塾生一覧 (出欠記録の名簿)。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        return {"ok": True, "students": [{"id": r["id"], "name": r["name"], "grade": r["grade"]} for r in _tsujuku_roster(c)]}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/class/attend")
+def admin_class_attend_roster(att_date: str, class_label: str, authorization: Optional[str] = Header(None)):
+    """塾長: あるクラス×日付の出欠名簿 (通塾生 + 各自の状況)。"""
+    _verify_admin_required(authorization)
+    d = _class_valid_date_or_none(att_date)
+    if not d:
+        raise HTTPException(status_code=400, detail="日付 (YYYY-MM-DD) は必須です")
+    cl = _sanitize_text(class_label, 100)
+    if not cl or cl not in _TIMETABLE_LABELS:
+        raise HTTPException(status_code=400, detail="class_label が時間割クラスと一致しません")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT student_id, status, source FROM class_attend WHERE att_date = ? AND class_label = ?", (d, cl))
+        by_sid = {r["student_id"]: {"status": r["status"], "source": r["source"]} for r in c.fetchall()}
+        roster = []
+        for r in _tsujuku_roster(c):
+            rec = by_sid.get(r["id"])
+            roster.append({"student_id": r["id"], "name": r["name"], "grade": r["grade"],
+                           "status": rec["status"] if rec else None, "source": rec["source"] if rec else None,
+                           "label": _ATTENDANCE_LABEL.get(rec["status"], rec["status"]) if rec else None})
+        counts = {"present": 0, "absent": 0, "late": 0}
+        for x in roster:
+            if x["status"] in counts:
+                counts[x["status"]] += 1
+        return {"ok": True, "att_date": d, "class_label": cl, "counts": counts, "roster": roster}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/class/attend")
+def admin_class_attend_mark(payload: AdminAttendMarkRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: あるクラス×日付の出欠を記録 (source='admin'・最終)。"""
+    _check_rate_limit_ip(request, bucket="class_admin", limit=120, window=60)
+    _verify_admin_required(authorization)
+    cl, d, st = _validate_attend(payload.class_label, payload.att_date, payload.status)
+    now_iso = _utc_naive_iso()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id FROM class_attend WHERE student_id = ? AND class_label = ? AND att_date = ?",
+                  (int(payload.student_id), cl, d))
+        ex = c.fetchone()
+        if ex:
+            c.execute("UPDATE class_attend SET status = ?, source = 'admin', updated_at = ? WHERE id = ?", (st, now_iso, ex["id"]))
+        else:
+            c.execute("INSERT INTO class_attend (student_id, class_label, att_date, status, source, updated_at) VALUES (?,?,?,?,?,?)",
+                      (int(payload.student_id), cl, d, st, "admin", now_iso))
+        conn.commit()
+        return {"ok": True}
     finally:
         conn.close()
 

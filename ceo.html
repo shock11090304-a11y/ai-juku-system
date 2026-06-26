@@ -2657,6 +2657,18 @@
         <div id="cfList" style="margin-top:0.7rem;"></div>
       </div>
 
+      <!-- 🙋 出欠を記録 -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
+        <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">🙋 出欠を記録</div>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">日付とクラスを選んで「表示」→ 通塾生一覧で出席/欠席/遅刻を記録。塾長の記録が最終(生徒の自己申告より優先)。生徒もアプリで自己申告できます。</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+          <input id="atDate" type="date" style="padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          <select id="atClass" style="padding:0.55rem; min-width:190px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">クラスを選択…</option></select>
+          <button id="atLoadBtn" type="button" style="padding:0.55rem 1.1rem; background:rgba(129,140,248,0.25); border:1px solid rgba(129,140,248,0.4); border-radius:8px; color:#c7d2fe; font-weight:800; cursor:pointer;">表示</button>
+        </div>
+        <div id="atRoster" style="margin-top:0.7rem;"></div>
+      </div>
+
       <!-- 授業作成フォーム -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
         <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.7rem;">➕ 授業を作成</div>
@@ -9974,13 +9986,16 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       catch (err) { alert('削除失敗: ' + err.message); }
     });
 
-    // 📎 クラス別ファイル配布
+    // 📎 クラス別ファイル配布 / 🙋 出欠記録 共通: クラス選択ドロップダウンを埋める
     async function populateClassDropdown() {
-      var sel = document.getElementById('cfClass');
-      if (!sel || sel.options.length > 1) return;
+      var sels = [document.getElementById('cfClass'), document.getElementById('atClass')].filter(Boolean);
+      if (!sels.length || sels.every(function (s) { return s.options.length > 1; })) return;
       try {
         var d = await adminJson('/api/admin/class/timetable-classes');
-        (d.classes || []).forEach(function (c) { var o = document.createElement('option'); o.value = c.label; o.textContent = c.label; sel.appendChild(o); });
+        sels.forEach(function (sel) {
+          if (sel.options.length > 1) return;
+          (d.classes || []).forEach(function (c) { var o = document.createElement('option'); o.value = c.label; o.textContent = c.label; sel.appendChild(o); });
+        });
       } catch (e) { /* 未ログイン等は無視 */ }
     }
     async function loadClassFiles() {
@@ -10027,6 +10042,50 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       if (!confirm('このファイルを削除しますか?')) return;
       try { await adminJson('/api/admin/class/files/' + t.getAttribute('data-id'), { method: 'DELETE' }); loadClassFiles(); }
       catch (err) { alert('削除失敗: ' + err.message); }
+    });
+
+    // 🙋 出欠記録 (クラス×日付の名簿)
+    function atMarkBtn(s, st, t, date, label) {
+      var on = s.status === st;
+      var bg = on ? ({ present: 'rgba(16,185,129,0.3)', absent: 'rgba(239,68,68,0.25)', late: 'rgba(251,191,36,0.25)' }[st]) : 'rgba(255,255,255,0.06)';
+      var col = on ? ({ present: '#6ee7b7', absent: '#fca5a5', late: '#fde68a' }[st]) : '#e4e4e7';
+      return '<button class="at-mark" data-sid="' + s.student_id + '" data-st="' + st + '" data-date="' + date + '" data-label="' + esc(label)
+        + '" style="padding:0.3rem 0.7rem; border:1px solid rgba(255,255,255,0.18); border-radius:6px; background:' + bg + '; color:' + col + '; font-weight:700; font-size:0.8rem; cursor:pointer;">' + t + '</button>';
+    }
+    async function loadAttendRoster() {
+      var date = document.getElementById('atDate').value, label = document.getElementById('atClass').value;
+      var box = document.getElementById('atRoster');
+      if (!date) { box.innerHTML = '<div style="color:#fca5a5; font-size:0.82rem;">日付を選んでください</div>'; return; }
+      if (!label) { box.innerHTML = '<div style="color:#fca5a5; font-size:0.82rem;">クラスを選んでください</div>'; return; }
+      box.innerHTML = '<div style="color:#a1a1aa; font-size:0.82rem;">読み込み中…</div>';
+      try {
+        var d = await adminJson('/api/admin/class/attend?att_date=' + encodeURIComponent(date) + '&class_label=' + encodeURIComponent(label));
+        var roster = d.roster || [];
+        if (!roster.length) { box.innerHTML = '<div style="color:#a1a1aa; font-size:0.82rem;">通塾生がいません。</div>'; return; }
+        var cc = d.counts || { present: 0, absent: 0, late: 0 };
+        box.innerHTML = '<div style="font-size:0.78rem; color:#cbd5e1; margin-bottom:0.45rem;">🟢出席 ' + cc.present + ' / 🔴欠席 ' + cc.absent + ' / 🟡遅刻 ' + cc.late + '</div>'
+          + roster.map(function (s) {
+            var src = s.source === 'self' ? ' <span style="color:#a1a1aa; font-size:0.7rem;">(本人申告)</span>' : (s.source === 'admin' ? ' <span style="color:#a5b4fc; font-size:0.7rem;">(記録済)</span>' : '');
+            return '<div data-sid="' + s.student_id + '" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; padding:0.45rem 0.55rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:7px; margin-bottom:0.3rem;">'
+              + '<span style="flex:1; min-width:90px; font-weight:700; font-size:0.86rem;">' + esc(s.name || ('ID:' + s.student_id)) + (s.grade ? (' <span style="color:#a1a1aa; font-size:0.75rem; font-weight:500;">' + esc(s.grade) + '</span>') : '') + src + '</span>'
+              + '<span style="display:flex; gap:0.35rem;">' + atMarkBtn(s, 'present', '出席', date, label) + atMarkBtn(s, 'absent', '欠席', date, label) + atMarkBtn(s, 'late', '遅刻', date, label) + '</span></div>';
+          }).join('');
+      } catch (e) {
+        box.innerHTML = '<div style="color:#fca5a5; font-size:0.82rem;">' + (e.status === 401 ? 'ログインしてください。' : ('読み込み失敗: ' + esc(e.message))) + '</div>';
+      }
+    }
+    var _atLoad = document.getElementById('atLoadBtn');
+    if (_atLoad) _atLoad.addEventListener('click', loadAttendRoster);
+    var _atRosterEl = document.getElementById('atRoster');
+    if (_atRosterEl) _atRosterEl.addEventListener('click', async function (e) {
+      var t = e.target.closest('.at-mark'); if (!t) return;
+      var sid = t.getAttribute('data-sid'), st = t.getAttribute('data-st'), date = t.getAttribute('data-date'), label = t.getAttribute('data-label');
+      var row = t.closest('[data-sid]');
+      row.querySelectorAll('.at-mark').forEach(function (b) { b.disabled = true; });
+      try {
+        await adminJson('/api/admin/class/attend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ student_id: Number(sid), class_label: label, att_date: date, status: st }) });
+        loadAttendRoster();
+      } catch (err) { alert('記録失敗: ' + err.message); row.querySelectorAll('.at-mark').forEach(function (b) { b.disabled = false; }); }
     });
 
     // 「通塾クラス」ハブボタンを開いたら読み込む
