@@ -2248,6 +2248,9 @@ async function loadCourseApps() {
         }
         const j = await r.json();
         resultEl.innerHTML = `<span style="color:#86efac;">✅ 承認完了 (生徒ID: ${j.student_id} ${j.welcome_email_sent ? '/ welcome メール送信済' : '/ メール送信失敗'})</span>`;
+        // 📲 「LINEで受け取る」案内を自動表示 (メール不達対策・塾長が LINE/QR で生徒に渡す)。
+        //    リスト再読込(下の setTimeout)で消えない固定 modal で出す。
+        if (j.line_link_code) showLineOnboardModal(name, j.line_link_code, j.line_add_friend_url);
         setTimeout(() => loadCourseApps(), 1500);
       } catch (err) {
         resultEl.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(err.message || '承認失敗')}</span>`;
@@ -2274,6 +2277,51 @@ async function loadCourseApps() {
   } catch (e) {
     list.innerHTML = `<div style="color:#fca5a5; padding:1rem;">エラー: ${escapeHtml(e.message || '')}</div>`;
   }
+}
+
+// 📲 承認時の「LINEで受け取る」案内モーダル (2026-06-26)。メール不達対策: 塾長が LINE/QR で
+//    新規通塾生にこの案内を渡す → 生徒が ①公式LINE友だち追加 ②コード送信 で連携 → 以降ログインリンクが
+//    LINE に届く。リスト再読込で消えないよう document.body 直下の固定 modal で表示する。
+function showLineOnboardModal(name, code, addFriendUrl) {
+  let modal = document.getElementById('lineOnboardModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'lineOnboardModal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:flex-start; justify-content:center; padding:2rem; overflow-y:auto;';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.style.display === 'flex') modal.style.display = 'none'; });
+  }
+  const friendLine = addFriendUrl
+    ? `<div style="margin:0.5rem 0;">友だち追加リンク: <a href="${escapeHtml(addFriendUrl)}" target="_blank" rel="noopener" style="color:#86efac;">${escapeHtml(addFriendUrl)}</a></div>`
+    : `<div style="margin:0.5rem 0; color:#a1a1aa; font-size:0.78rem;">※ トリリオン公式LINEの QRコード / ID を生徒に共有してください。</div>`;
+  modal.innerHTML = `
+    <div style="background:#0f172a; border:1px solid rgba(6,199,85,0.45); border-radius:14px; padding:1.5rem; max-width:520px; width:100%;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+        <h3 style="margin:0; color:#34d399; font-size:1.05rem;">📲 ${escapeHtml(name)}さんを LINE 受信に</h3>
+        <button id="lineOnboardClose" type="button" style="background:none; border:0; color:#a1a1aa; font-size:1.5rem; cursor:pointer; line-height:1;">×</button>
+      </div>
+      <div style="font-size:0.85rem; color:#cbd5e1; line-height:1.7;">
+        メールが届きにくい子向け。この案内を <strong style="color:#86efac;">LINE / QR</strong> で生徒に渡してください:
+        <div style="margin-top:0.7rem; padding:0.8rem; background:rgba(6,199,85,0.08); border:1px solid rgba(6,199,85,0.3); border-radius:8px;">
+          ① トリリオン公式LINEを友だち追加<br>
+          ② 下のコードをトークに送信<br>
+          ${friendLine}
+          <div style="margin-top:0.6rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+            <code id="lineOnboardCode" style="user-select:all; padding:0.45rem 0.7rem; background:rgba(0,0,0,0.5); border-radius:6px; color:#86efac; font-size:1rem; letter-spacing:0.02em; word-break:break-all;">${escapeHtml(code)}</code>
+            <button id="lineOnboardCopy" type="button" style="background:rgba(6,199,85,0.22); color:#34d399; border:1px solid rgba(6,199,85,0.5); padding:0.45rem 0.9rem; border-radius:6px; font-weight:700; cursor:pointer;">📋 コピー</button>
+          </div>
+        </div>
+        <div style="margin-top:0.7rem; font-size:0.78rem; color:#86efac;">→ 連携後は、その子のログイン用リンクが LINE に届きます（期限なし・1回で完了）。</div>
+      </div>
+    </div>`;
+  modal.style.display = 'flex';
+  modal.querySelector('#lineOnboardClose').addEventListener('click', () => modal.style.display = 'none');
+  modal.querySelector('#lineOnboardCopy').addEventListener('click', async () => {
+    const btn = modal.querySelector('#lineOnboardCopy');
+    try { await navigator.clipboard.writeText(code); btn.textContent = '✓ コピー済'; }
+    catch { btn.textContent = '手動でコード選択を'; }
+  });
 }
 
 // ==========================================================================

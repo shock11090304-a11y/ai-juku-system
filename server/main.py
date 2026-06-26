@@ -41604,6 +41604,17 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
     finally:
         conn.close()
 
+    # 📲 [LINE受信案内 2026-06-26] owner方針: 新規通塾生の承認時に「LINEで受け取る」案内を自動で出す
+    #   (キャリアメール不達対策)。LINE連携コードを自動発行 → welcome メール本文 + CEO承認結果モーダルの
+    #   両方に「①公式LINE友だち追加 →②コード送信」案内を載せ、塾長は QR/ID で直接渡せる(メール不要)。
+    #   _create_line_link_token は専用接続で commit/close するため承認 txn(commit済)後の呼出しで安全。
+    line_link_code = None
+    if student_id:
+        try:
+            line_link_code = _create_line_link_token(int(student_id))
+        except Exception as _le:
+            log.warning(f"[CourseApp] LINE link code issue failed: {_le}")
+
     # magic link 送信 (welcome + ログイン link)
     sent_link = False
     try:
@@ -41622,7 +41633,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
                 f"トリリオン塾生アプリのご登録が承認されました!\n"
                 f"以下のリンクから1クリックでログインできます (有効期限 30日間):\n\n"
                 f"{login_url}\n\n"
-                f"ログイン後、マイページの「📚 トリリオン塾生アプリ」から以下が使えます:\n"
+                f"ログイン後、そのまま塾生アプリで以下が使えます:\n"
                 f"📅 授業の予定・配布ファイル・出欠の連絡\n"
                 f"📝 宿題 (アプリ内ドリルで解いて提出)\n"
                 f"🎬 授業の録画アーカイブ\n"
@@ -41645,12 +41656,22 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
                 f"📨 塾長との直接メッセージ\n\n"
                 f"ご利用料金につきましては別途ご案内いたします。"
             )
+        # 📲 LINEで受け取る案内 (メールが届きにくい方向け・両コース共通)。連携コード発行成功時のみ。
+        if line_link_code:
+            body_text += (
+                "\n\n────────────\n"
+                "📲 LINE でログイン通知を受け取る (メールが届きにくい方におすすめ)\n"
+                "① トリリオン公式LINEを友だち追加\n"
+                f"② このコードを LINE のトークに送信: {line_link_code}\n"
+                "→ 連携後は、ログイン用リンクが LINE にも届きます。"
+            )
         res = _send_message_email(email_lower, welcome_subject, body_text, student_name=name)
         sent_link = res.get("sent", False)
     except Exception as e:
         log.warning(f"[CourseApp] welcome email failed: {e}")
 
-    return {"ok": True, "student_id": student_id, "welcome_email_sent": sent_link}
+    return {"ok": True, "student_id": student_id, "welcome_email_sent": sent_link,
+            "line_link_code": line_link_code, "line_add_friend_url": LINE_ADD_FRIEND_URL}
 
 
 class CourseApplicationRejectRequest(BaseModel):
