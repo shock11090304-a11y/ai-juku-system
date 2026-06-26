@@ -2657,6 +2657,28 @@
         <div id="cfList" style="margin-top:0.7rem;"></div>
       </div>
 
+      <!-- 📝 クラスに宿題を出す -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
+        <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">📝 クラスに宿題を出す</div>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">クラスを選んでボタン1つで、そのクラスの受講生 全員に同じ宿題を出せます。生徒はアプリの「宿題」タブで確認 → アプリ内ドリルで解いて提出(自動採点)。<b>対象は「👥 生徒の受講クラス」で登録済みの生徒のみ</b>です。</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:0.5rem;">
+          <select id="hwClass" style="padding:0.55rem; min-width:190px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">クラスを選択…</option></select>
+          <span id="hwCount" style="font-size:0.82rem; color:#a5b4fc;"></span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr; gap:0.5rem;">
+          <input id="hwTitle" type="text" placeholder="宿題タイトル * (例: 関係詞ドリル)" maxlength="200" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+            <input id="hwSubject" type="text" placeholder="科目 (任意・ドリル誘導用 例: 英語)" maxlength="80" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+            <input id="hwDue" type="date" title="提出期限(任意)" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          </div>
+          <textarea id="hwDesc" placeholder="内容・メモ (任意)" maxlength="2000" style="padding:0.6rem; min-height:54px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"></textarea>
+        </div>
+        <div style="margin-top:0.7rem; display:flex; align-items:center; gap:0.7rem; flex-wrap:wrap;">
+          <button id="hwAssignBtn" type="button" style="padding:0.55rem 1.2rem; background:linear-gradient(135deg,#34d399,#10b981); border:0; border-radius:8px; color:#06281e; font-weight:800; cursor:pointer;">このクラス全員に宿題を出す</button>
+          <span id="hwMsg" style="font-size:0.85rem;"></span>
+        </div>
+      </div>
+
       <!-- 🙋 出欠を記録 -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
         <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">🙋 出欠を記録</div>
@@ -9997,7 +10019,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
 
     // 📎 クラス別ファイル配布 / 🙋 出欠記録 共通: クラス選択ドロップダウンを埋める
     async function populateClassDropdown() {
-      var sels = [document.getElementById('cfClass'), document.getElementById('atClass')].filter(Boolean);
+      var sels = [document.getElementById('cfClass'), document.getElementById('atClass'), document.getElementById('hwClass')].filter(Boolean);
       if (!sels.length || sels.every(function (s) { return s.options.length > 1; })) return;
       try {
         var d = await adminJson('/api/admin/class/timetable-classes');
@@ -10109,6 +10131,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         if (sel.options.length <= 1) {
           _scStudents.forEach(function (s) { var o = document.createElement('option'); o.value = s.id; o.textContent = s.name + (s.grade ? (' (' + s.grade + ')') : ''); sel.appendChild(o); });
         }
+        if (typeof hwUpdateCount === 'function') hwUpdateCount();  // 名簿ロード後に宿題カウントを更新(初回ロード時のfalse-0を解消)
       } catch (e) { /* 未ログイン等は無視 */ }
     }
     function renderStudentClasses() {
@@ -10140,6 +10163,44 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     }
     var _scStudentSel = document.getElementById('scStudent');
     if (_scStudentSel) _scStudentSel.addEventListener('change', renderStudentClasses);
+
+    // 📝 クラスに宿題を出す
+    function hwUpdateCount() {
+      var el = document.getElementById('hwCount'); if (!el) return;
+      var label = document.getElementById('hwClass').value;
+      if (!label) { el.textContent = ''; return; }
+      var n = _scStudents.filter(function (s) { return (s.class_labels || []).indexOf(label) >= 0; }).length;
+      el.textContent = 'このクラスの受講生: ' + n + '名';
+      el.style.color = n ? '#a5b4fc' : '#fca5a5';
+    }
+    var _hwClassSel = document.getElementById('hwClass');
+    if (_hwClassSel) _hwClassSel.addEventListener('change', hwUpdateCount);
+    var _hwBtn = document.getElementById('hwAssignBtn');
+    if (_hwBtn) _hwBtn.addEventListener('click', async function () {
+      var label = document.getElementById('hwClass').value;
+      var title = (document.getElementById('hwTitle').value || '').trim();
+      var subject = (document.getElementById('hwSubject').value || '').trim();
+      var due = document.getElementById('hwDue').value || '';
+      var desc = (document.getElementById('hwDesc').value || '').trim();
+      var msg = document.getElementById('hwMsg');
+      if (!label) { msg.style.color = '#fca5a5'; msg.textContent = 'クラスを選択してください'; return; }
+      if (!title) { msg.style.color = '#fca5a5'; msg.textContent = '宿題タイトルを入力してください'; return; }
+      _hwBtn.disabled = true; msg.style.color = '#a1a1aa'; msg.textContent = '送信中…';
+      try {
+        var r = await adminJson('/api/admin/class/homework', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ class_label: label, title: title, subject: subject || undefined, due_date: due || undefined, description: desc || undefined }) });
+        if (r.assigned_count > 0) {
+          var nm = r.students || [];
+          var who = nm.length <= 8 ? nm.join('・') : (nm.slice(0, 8).join('・') + ' ほか' + (nm.length - 8) + '名');
+          msg.style.color = '#6ee7b7'; msg.textContent = '✓ ' + r.assigned_count + '名に宿題を出しました（' + label + '）' + (who ? '：' + who : '');
+          document.getElementById('hwTitle').value = ''; document.getElementById('hwSubject').value = '';
+          document.getElementById('hwDue').value = ''; document.getElementById('hwDesc').value = '';
+        } else {
+          msg.style.color = '#fca5a5'; msg.textContent = r.info || 'このクラスに登録された生徒がいません（先に「👥 生徒の受講クラス」で設定してください）';
+        }
+      } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + (e.message || 'エラー'); }
+      finally { _hwBtn.disabled = false; }
+    });
 
     // 「通塾クラス」ハブボタンを開いたら読み込む
     var hubBtn = document.querySelector('#ceoHubMenu [data-hub-target="classMgmtSection"]');

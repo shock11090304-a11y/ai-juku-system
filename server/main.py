@@ -40877,6 +40877,14 @@ class AdminAttendMarkRequest(BaseModel):
     status: str
 
 
+class AdminClassHomeworkRequest(BaseModel):
+    class_label: str
+    title: str
+    description: Optional[str] = None
+    subject: Optional[str] = None
+    due_date: Optional[str] = None
+
+
 def _validate_attend(class_label, att_date, status):
     cl = _sanitize_text(class_label, 100)
     if not cl or cl not in _TIMETABLE_LABELS:
@@ -41040,6 +41048,57 @@ def admin_class_attend_mark(payload: AdminAttendMarkRequest, request: Request, a
                       (int(payload.student_id), cl, d, st, "admin", now_iso))
         conn.commit()
         return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/class/homework")
+def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: あるクラスの受講生 全員に宿題を一括作成 (ボタン1つでクラス全員に出す)。
+    対象=class_labels に当該クラスを含む通塾生のみ(=登録フォーム/受講クラスで設定済み)。
+    出欠の移行フォールバック(未設定=全クラス)とは異なり、宿題は「受講クラスに登録済み」の生徒だけに出す
+    (未設定生徒に全クラス分の宿題が無差別に出るのを防ぐ)。"""
+    _check_rate_limit_ip(request, bucket="class_admin", limit=60, window=60)
+    _verify_admin_required(authorization)
+    cl = _sanitize_text(payload.class_label, 100)
+    if not cl or cl not in _TIMETABLE_LABELS:
+        raise HTTPException(status_code=400, detail="class_label が時間割クラスと一致しません")
+    title = _sanitize_text(payload.title, 200)
+    if not title:
+        raise HTTPException(status_code=400, detail="宿題タイトルは必須です")
+    description = _sanitize_text(payload.description, 2000) or None
+    subject = _sanitize_text(payload.subject, 80) or None
+    due_date = _class_valid_date_or_none(payload.due_date) if payload.due_date else None
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 受講クラスに当該クラスを含む生徒のみを対象 (strict・移行フォールバックは使わない)
+        targets = [(r["id"], r["name"]) for r in _tsujuku_roster(c) if cl in _parse_labels(r["class_labels"])]
+        if not targets:
+            return {"ok": True, "assigned_count": 0, "class_label": cl,
+                    "info": "このクラスに登録された生徒がいません。先に「👥 生徒の受講クラス」でクラスを設定してください。"}
+        # INSERT は upfront 検証済み。per-row catch はしない(PostgreSQL は1文失敗でtxn全体abortのため無意味)。
+        for sid, _name in targets:
+            c.execute(
+                "INSERT INTO homework_assignments (student_id, title, description, subject, due_date, attachment_print_id, status, created_by) "
+                "VALUES (?, ?, ?, ?, ?, NULL, 'open', 'admin')",
+                (sid, title, description, subject, due_date),
+            )
+        conn.commit()  # ← 宿題をここで確定(以降の events 失敗に巻き込まれない)
+        # 監査 events (best-effort・宿題 commit 済みなので失敗してもデータは安全)
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("class_homework_assigned", json.dumps({
+                    "class_label": cl, "title": title, "subject": subject, "due_date": due_date,
+                    "assigned_count": len(targets), "student_ids": [t[0] for t in targets],
+                }, ensure_ascii=False), "admin"),
+            )
+            conn.commit()
+        except Exception:
+            pass
+        return {"ok": True, "assigned_count": len(targets), "class_label": cl,
+                "students": [t[1] for t in targets]}
     finally:
         conn.close()
 
