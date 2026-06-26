@@ -40151,6 +40151,24 @@ def _require_tsujuku_student(student: Optional[dict]) -> None:
     raise HTTPException(status_code=403, detail="この機能は通塾生のみ利用できます")
 
 
+# 🏠 [塾生アプリ home 判定 2026-06-26] owner方針: 「通塾生登録→塾生アプリ / AI管理登録→AI管理」。
+#   純粋な通塾生はログイン後 class.html がホーム(マイページボタン非表示)。ただし AIプラン
+#   (premium/family/founder_special 等)も契約している生徒は AI管理(mypage)をホームに残す
+#   = 在籍中のAI機能利用者を締め出さない (owner確認済 2026-06-26「AI契約者はAI管理のまま」)。
+_AI_HOME_PLANS = {"premium", "family", "founder_special", "hybrid", "standard"}
+
+
+def _is_tsujuku_app_home(student: Optional[dict]) -> bool:
+    """class.html(塾生アプリ)をホームにすべき「純粋な通塾生」か。
+    = 通塾生(course=kokuritsu_nankan or plan=student_addon) かつ AIプランを持たない。
+    フロント(auth.html/login.html の遷移分岐, class.html のマイページ表示)と同一ロジック。"""
+    if not student:
+        return False
+    plan = (student.get("plan") or "").lower()
+    is_tsujuku = (student.get("course") == _STUDY_LOG_TARGET_COURSE) or (plan in _TSUJUKU_ALLOWED_PLANS)
+    return is_tsujuku and (plan not in _AI_HOME_PLANS)
+
+
 def _class_valid_date_or_none(s: Optional[str]) -> Optional[str]:
     """授業日 (YYYY-MM-DD) を検証。空なら None・不正なら 400。
     Postgres の DATE 列に不正文字列を入れると例外になるため取り込み口で弾く。"""
@@ -40310,6 +40328,9 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             "labeled_files": labeled_files,
             "loose_files": loose_files,
             "loose_recordings": loose_recordings,
+            # 純粋な通塾生(AIプラン無し)は class.html がホーム=マイページボタン非表示。
+            # AIプランも持つ生徒は false → マイページ導線を残す(AI管理へ戻れる)。
+            "is_tsujuku_app": _is_tsujuku_app_home(student),
         }
     finally:
         conn.close()

@@ -140,7 +140,8 @@
 <body>
   <header class="appbar">
     <div class="brand">📚 トリリオン塾生アプリ</div>
-    <a class="back" href="mypage.html">マイページ</a>
+    <!-- 純粋な通塾生(is_tsujuku_app)には不要なので既定で非表示。AIプランも持つ生徒のみ feed 後に表示。 -->
+    <a class="back" id="mypageLink" href="mypage.html" style="display:none;">マイページ</a>
   </header>
 
   <main class="wrap">
@@ -784,6 +785,11 @@
       }
       // 認可OK → アプリ表示
       showAppChrome();
+      // マイページ導線: 純粋な通塾生(is_tsujuku_app===true)には出さない(owner方針)。
+      //   AIプランも持つ生徒(false)や旧バックエンド(undefined)では出す=AI管理へ戻れる。
+      if (feedData && feedData.is_tsujuku_app !== true) {
+        var _ml = document.getElementById('mypageLink'); if (_ml) _ml.style.display = '';
+      }
       renderSchedule();
       renderVideos();
       showTab('schedule');
