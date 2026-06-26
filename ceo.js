@@ -2219,7 +2219,7 @@ async function loadCourseApps() {
         <div style="display:grid; grid-template-columns:auto 1fr; gap:0.3rem 0.7rem; font-size:0.82rem; margin-bottom:0.5rem;">
           <span style="color:#a1a1aa;">📧 メール:</span> <span style="color:#e4e4e7;">${escapeHtml(a.email)}</span>
           ${a.target_university ? `<span style="color:#a1a1aa;">🎯 志望校:</span> <span style="color:#fbbf24;">${escapeHtml(a.target_university)}</span>` : ''}
-          ${a.subjects ? `<span style="color:#a1a1aa;">📚 受講科目:</span> <span style="color:#a5b4fc;">${escapeHtml(a.subjects)}</span>` : ''}
+          ${a.subjects ? `<span style="color:#a1a1aa;">📚 受講クラス:</span> <span style="color:#a5b4fc;">${escapeHtml(a.subjects)}</span>` : ''}
           ${a.phone ? `<span style="color:#a1a1aa;">📞 電話:</span> <span style="color:#e4e4e7;">${escapeHtml(a.phone)}</span>` : ''}
           ${a.referrer && a.referrer !== '塾生アプリ' ? `<span style="color:#a1a1aa;">👥 紹介者:</span> <span style="color:#e4e4e7;">${escapeHtml(a.referrer)}</span>` : ''}
         </div>

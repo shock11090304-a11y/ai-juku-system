@@ -1733,6 +1733,8 @@ def init_db():
         ("course_app_subjects", "ALTER TABLE course_applications ADD COLUMN subjects TEXT"),
         # 📎 [クラス別ファイル配布 2026-06-26] class_files を時間割クラスに紐づけ (全通塾生に表示・クラス名で整理)
         ("class_files_class_label", "ALTER TABLE class_files ADD COLUMN class_label TEXT"),
+        # 🎒 [受講クラス 2026-06-26] 生徒の受講クラス (時間割 label の JSON 配列)。出欠を所属クラスに限定。
+        ("students_class_labels", "ALTER TABLE students ADD COLUMN class_labels TEXT"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -40224,6 +40226,15 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
     conn = db()
     try:
         c = conn.cursor()
+        # 🎒 受講クラス (出欠の絞り込みに使用)。未設定([]/None) は全クラス扱い(移行フォールバック)。
+        c.execute("SELECT class_labels FROM students WHERE id = ?", (student["id"],))
+        _clrow = c.fetchone()
+        try:
+            my_classes = json.loads(_clrow["class_labels"]) if (_clrow and _clrow["class_labels"]) else []
+        except Exception:
+            my_classes = []
+        if not isinstance(my_classes, list):
+            my_classes = []
         # 公開中の授業 (日付の新しい順・日付 NULL は末尾)
         c.execute(
             "SELECT id, title, subject, session_date, start_time, end_time, location, notes "
@@ -40290,6 +40301,7 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
         return {
             "ok": True,
             "student_name": student.get("name"),
+            "my_classes": my_classes,
             "sessions": [sessions[sid] for sid in order],
             "labeled_files": labeled_files,
             "loose_files": loose_files,
@@ -40880,9 +40892,18 @@ def _validate_attend(class_label, att_date, status):
 
 def _tsujuku_roster(c):
     """通塾生(course=kokuritsu_nankan or plan=student_addon)の名簿を取得 (cursor 渡し)。"""
-    c.execute("SELECT id, name, grade FROM students WHERE course = ? OR plan = ? ORDER BY name",
+    c.execute("SELECT id, name, grade, class_labels FROM students WHERE course = ? OR plan = ? ORDER BY name",
               (_STUDY_LOG_TARGET_COURSE, "student_addon"))
     return c.fetchall()
+
+
+def _parse_labels(raw):
+    """students.class_labels (JSON配列文字列) を list[str] に。壊れていれば []。"""
+    try:
+        v = json.loads(raw) if raw else []
+        return [x for x in v if isinstance(x, str)] if isinstance(v, list) else []
+    except Exception:
+        return []
 
 
 @app.post("/api/student/class/attend")
@@ -40929,14 +40950,38 @@ def student_class_attend_list(authorization: Optional[str] = Header(None)):
         conn.close()
 
 
+class StudentClassesRequest(BaseModel):
+    student_id: int
+    class_labels: list = []
+
+
 @app.get("/api/admin/class/students")
 def admin_class_students(authorization: Optional[str] = Header(None)):
-    """塾長: 通塾生一覧 (出欠記録の名簿)。"""
+    """塾長: 通塾生一覧 (出欠名簿 + 各自の受講クラス)。"""
     _verify_admin_required(authorization)
     conn = db()
     try:
         c = conn.cursor()
-        return {"ok": True, "students": [{"id": r["id"], "name": r["name"], "grade": r["grade"]} for r in _tsujuku_roster(c)]}
+        return {"ok": True, "students": [{"id": r["id"], "name": r["name"], "grade": r["grade"],
+                                          "class_labels": _parse_labels(r["class_labels"])} for r in _tsujuku_roster(c)]}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/class/student-classes")
+def admin_set_student_classes(payload: StudentClassesRequest, authorization: Optional[str] = Header(None)):
+    """塾長: ある生徒の受講クラスを設定 (時間割 label のみ)。出欠の絞り込みに使う。"""
+    _verify_admin_required(authorization)
+    labels = [l for l in (payload.class_labels or []) if isinstance(l, str) and l in _TIMETABLE_LABELS]
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id FROM students WHERE id = ?", (int(payload.student_id),))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        c.execute("UPDATE students SET class_labels = ? WHERE id = ?", (json.dumps(labels, ensure_ascii=False), int(payload.student_id)))
+        conn.commit()
+        return {"ok": True, "class_labels": labels}
     finally:
         conn.close()
 
@@ -40958,6 +41003,10 @@ def admin_class_attend_roster(att_date: str, class_label: str, authorization: Op
         by_sid = {r["student_id"]: {"status": r["status"], "source": r["source"]} for r in c.fetchall()}
         roster = []
         for r in _tsujuku_roster(c):
+            cls = _parse_labels(r["class_labels"])
+            # 受講クラスが設定済みなら、そのクラスの生徒のみ。未設定(空)は全クラスに表示(移行フォールバック)。
+            if cls and cl not in cls:
+                continue
             rec = by_sid.get(r["id"])
             roster.append({"student_id": r["id"], "name": r["name"], "grade": r["grade"],
                            "status": rec["status"] if rec else None, "source": rec["source"] if rec else None,
@@ -41416,7 +41465,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT id, name, email, status, referrer, grade, target_university FROM course_applications WHERE id = ?", (app_id,))
+        c.execute("SELECT id, name, email, status, referrer, grade, target_university, subjects FROM course_applications WHERE id = ?", (app_id,))
         row = c.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="申込が見つかりません")
@@ -41428,6 +41477,10 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         _app_goal = (row["target_university"] if "target_university" in row.keys() else None) or None
         # 🏫 トリリオン塾生アプリの自己登録(referrer='塾生アプリ')は、難関コースとは別文面のウェルカムを送る
         _is_juku_app_reg = ((row["referrer"] if "referrer" in row.keys() else None) or "") == "塾生アプリ"
+        # 🎒 受講クラス: 登録フォームの subjects は時間割クラス label の「・」連結。妥当な label のみ JSON 化。
+        _app_subjects = (row["subjects"] if "subjects" in row.keys() else None) or ""
+        _app_classes = [s.strip() for s in _app_subjects.split("・") if s.strip() in _TIMETABLE_LABELS]
+        _app_classes_json = json.dumps(_app_classes, ensure_ascii=False) if _app_classes else None
 
         # 既存生徒検索 → なければ trial として新規作成
         c.execute("SELECT id, status, course FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
@@ -41435,18 +41488,21 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         student_id = None
         if st:
             student_id = st["id"]
-            # 既存生徒に course 付与 (status は変更しない)
-            c.execute("UPDATE students SET course = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, student_id))
+            # 既存生徒に course 付与 (status は変更しない)。受講クラスが申込にあれば反映 (空なら既存維持)。
+            if _app_classes_json:
+                c.execute("UPDATE students SET course = ?, class_labels = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, _app_classes_json, student_id))
+            else:
+                c.execute("UPDATE students SET course = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, student_id))
             log.info(f"[CourseApp] approve existing student id={student_id} email={email_lower}")
         else:
             # 新規生徒 (trial で作成 / 国難コースは永久無料なので trial_end を 10 年後に設定)
             now = datetime.now(timezone.utc)
             trial_end = now + timedelta(days=3650)
-            # 申込フォームの学年・志望校を新規生徒プロフィールにも反映 (goal=志望校)。
+            # 申込フォームの学年・志望校・受講クラスを新規生徒プロフィールにも反映 (goal=志望校)。
             c.execute(
-                "INSERT INTO students (name, email, status, course, trial_start, trial_end, grade, goal) "
-                "VALUES (?,?,?,?,?,?,?,?) RETURNING id",
-                (name, email_lower, "trial", _STUDY_LOG_TARGET_COURSE, now.isoformat(), trial_end.isoformat(), _app_grade, _app_goal)
+                "INSERT INTO students (name, email, status, course, trial_start, trial_end, grade, goal, class_labels) "
+                "VALUES (?,?,?,?,?,?,?,?,?) RETURNING id",
+                (name, email_lower, "trial", _STUDY_LOG_TARGET_COURSE, now.isoformat(), trial_end.isoformat(), _app_grade, _app_goal, _app_classes_json)
             )
             new = c.fetchone()
             student_id = new["id"] if new else None

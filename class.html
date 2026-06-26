@@ -410,6 +410,9 @@
         if (_DAY2DOW[wd.day] === dow) wd.items.forEach(function (it) { out.push({ label: wd.day + '曜' + it.p + ' ' + it.c, time: it.t, title: it.c }); });
       });
       TIMETABLE.special.forEach(function (sp) { if (_DAY2DOW[sp.day] === dow) out.push({ label: sp.day + '曜 ' + sp.c, time: sp.t, title: sp.c }); });
+      // 受講クラスが設定されていれば、その所属クラスだけに絞る (未設定=全クラス表示の移行フォールバック)
+      var my = (feedData && feedData.my_classes) || [];
+      if (my.length) out = out.filter(function (c) { return my.indexOf(c.label) >= 0; });
       return out;
     }
     function todayAttendHtml() {

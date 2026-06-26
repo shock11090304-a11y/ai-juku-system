@@ -2669,6 +2669,15 @@
         <div id="atRoster" style="margin-top:0.7rem;"></div>
       </div>
 
+      <!-- 👥 生徒の受講クラス -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
+        <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">👥 生徒の受講クラス</div>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">各生徒の受講クラスを設定。アプリの「今日の出欠」は、ここで設定したクラスだけ生徒に表示されます。未設定の生徒は全クラス表示(移行用)。登録フォームで生徒が選んだクラスは承認時に自動設定されます。</p>
+        <select id="scStudent" style="padding:0.55rem; min-width:200px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">生徒を選択…</option></select>
+        <div id="scClasses" style="margin-top:0.6rem;"></div>
+        <div id="scMsg" style="font-size:0.82rem; margin-top:0.4rem;"></div>
+      </div>
+
       <!-- 授業作成フォーム -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
         <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.7rem;">➕ 授業を作成</div>
@@ -10088,12 +10097,56 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       } catch (err) { alert('記録失敗: ' + err.message); row.querySelectorAll('.at-mark').forEach(function (b) { b.disabled = false; }); }
     });
 
+    // 👥 生徒の受講クラス
+    var _scStudents = [], _scClasses = [];
+    async function loadStudentClassEditor() {
+      var sel = document.getElementById('scStudent');
+      if (!sel) return;
+      try {
+        if (!_scClasses.length) { var cd = await adminJson('/api/admin/class/timetable-classes'); _scClasses = cd.classes || []; }
+        var d = await adminJson('/api/admin/class/students');
+        _scStudents = d.students || [];
+        if (sel.options.length <= 1) {
+          _scStudents.forEach(function (s) { var o = document.createElement('option'); o.value = s.id; o.textContent = s.name + (s.grade ? (' (' + s.grade + ')') : ''); sel.appendChild(o); });
+        }
+      } catch (e) { /* 未ログイン等は無視 */ }
+    }
+    function renderStudentClasses() {
+      var box = document.getElementById('scClasses');
+      var sid = document.getElementById('scStudent').value;
+      document.getElementById('scMsg').textContent = '';
+      if (!sid) { box.innerHTML = ''; return; }
+      var stu = _scStudents.filter(function (s) { return String(s.id) === String(sid); })[0];
+      var mine = (stu && stu.class_labels) || [];
+      box.innerHTML = '<div style="display:flex; flex-wrap:wrap; gap:0.4rem;">'
+        + _scClasses.map(function (c) {
+          var on = mine.indexOf(c.label) >= 0;
+          return '<label style="display:inline-flex; align-items:center; gap:0.3rem; padding:0.4rem 0.7rem; background:' + (on ? 'rgba(129,140,248,0.2)' : 'rgba(255,255,255,0.05)') + '; border:1px solid ' + (on ? '#818cf8' : 'rgba(255,255,255,0.16)') + '; border-radius:999px; font-size:0.82rem; cursor:pointer;"><input type="checkbox" value="' + esc(c.label) + '"' + (on ? ' checked' : '') + ' style="accent-color:#818cf8;">' + esc(c.label) + '</label>';
+        }).join('') + '</div>'
+        + '<button id="scSaveBtn" type="button" style="' + BTN + ' background:linear-gradient(135deg,#818cf8,#6366f1); color:#fff; margin-top:0.6rem;">保存</button>';
+      document.getElementById('scSaveBtn').addEventListener('click', saveStudentClasses);
+    }
+    async function saveStudentClasses() {
+      var sid = document.getElementById('scStudent').value;
+      var labels = Array.prototype.map.call(document.querySelectorAll('#scClasses input:checked'), function (c) { return c.value; });
+      var msg = document.getElementById('scMsg'), btn = document.getElementById('scSaveBtn');
+      btn.disabled = true; msg.style.color = '#a1a1aa'; msg.textContent = '保存中…';
+      try {
+        await adminJson('/api/admin/class/student-classes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ student_id: Number(sid), class_labels: labels }) });
+        msg.style.color = '#6ee7b7'; msg.textContent = '✓ 保存しました（' + labels.length + 'クラス）';
+        var stu = _scStudents.filter(function (s) { return String(s.id) === String(sid); })[0]; if (stu) stu.class_labels = labels;
+      } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + e.message; }
+      finally { btn.disabled = false; }
+    }
+    var _scStudentSel = document.getElementById('scStudent');
+    if (_scStudentSel) _scStudentSel.addEventListener('change', renderStudentClasses);
+
     // 「通塾クラス」ハブボタンを開いたら読み込む
     var hubBtn = document.querySelector('#ceoHubMenu [data-hub-target="classMgmtSection"]');
-    if (hubBtn) hubBtn.addEventListener('click', function () { loadSessions(); loadCalendarAdmin(); populateClassDropdown(); loadClassFiles(); });
+    if (hubBtn) hubBtn.addEventListener('click', function () { loadSessions(); loadCalendarAdmin(); populateClassDropdown(); loadClassFiles(); loadStudentClassEditor(); });
     // ログイン済みなら初期ロード (未ログインは loadSessions が 401 を表示)
     if (AdminAuth.getToken && AdminAuth.getToken()) {
-      setTimeout(function () { loadSessions(); loadCalendarAdmin(); populateClassDropdown(); loadClassFiles(); }, 300);
+      setTimeout(function () { loadSessions(); loadCalendarAdmin(); populateClassDropdown(); loadClassFiles(); loadStudentClassEditor(); }, 300);
     }
   })();
   </script>

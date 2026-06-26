@@ -26,7 +26,11 @@
     textarea { min-height:64px; resize:vertical; }
     .hint { font-size:0.75rem; color:#a1a1aa; margin-top:0.3rem; line-height:1.5; }
     .subj-grid { display:flex; flex-wrap:wrap; gap:0.45rem; margin-top:0.35rem; }
-    .subj-chip { display:inline-flex; align-items:center; gap:0.35rem; padding:0.45rem 0.75rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.16); border-radius:999px; font-size:0.88rem; cursor:pointer; user-select:none; }
+    .subj-chip { display:inline-flex; align-items:center; gap:0.35rem; padding:0.45rem 0.75rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.16); border-radius:999px; font-size:0.85rem; cursor:pointer; user-select:none; }
+    .cls-grid { margin-top:0.4rem; }
+    .cls-day { display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center; padding:0.4rem 0; border-top:1px solid rgba(255,255,255,0.07); }
+    .cls-day:first-child { border-top:0; }
+    .cls-day-h { flex-shrink:0; min-width:2.2em; font-size:0.82rem; font-weight:800; color:#a5b4fc; }
     .subj-chip input { width:auto; margin:0; accent-color:#818cf8; }
     .subj-chip.on { background:rgba(129,140,248,0.20); border-color:#818cf8; color:#c7d2fe; }
     .btn { display:block; width:100%; margin-top:1.3rem; padding:0.8rem; border:none; border-radius:10px; font-weight:800; font-size:1rem; cursor:pointer; background:linear-gradient(135deg,#818cf8,#6366f1); color:#fff; font-family:inherit; }
@@ -69,20 +73,9 @@
           <option>既卒・浪人</option><option>その他</option>
         </select>
 
-        <label>現在 受講している科目（任意・あてはまるもの）</label>
-        <div class="subj-grid" id="subjGrid">
-          <label class="subj-chip"><input type="checkbox" value="英語">英語</label>
-          <label class="subj-chip"><input type="checkbox" value="数学">数学</label>
-          <label class="subj-chip"><input type="checkbox" value="国語">国語</label>
-          <label class="subj-chip"><input type="checkbox" value="物理">物理</label>
-          <label class="subj-chip"><input type="checkbox" value="化学">化学</label>
-          <label class="subj-chip"><input type="checkbox" value="生物">生物</label>
-          <label class="subj-chip"><input type="checkbox" value="日本史">日本史</label>
-          <label class="subj-chip"><input type="checkbox" value="世界史">世界史</label>
-          <label class="subj-chip"><input type="checkbox" value="地理">地理</label>
-          <label class="subj-chip"><input type="checkbox" value="公民">公民</label>
-          <label class="subj-chip"><input type="checkbox" value="小論文">小論文</label>
-        </div>
+        <label>受講クラス（あてはまるものを選択）</label>
+        <div class="hint">出欠は、ここで選んだクラスだけがアプリに表示されます。複数選択できます。</div>
+        <div class="cls-grid" id="subjGrid"></div>
 
         <label>志望校（任意）</label>
         <input id="targetUni" type="text" maxlength="100" placeholder="例: ◯◯大学 △△学部 / まだ未定でもOK">
@@ -108,7 +101,31 @@
     var btn = document.getElementById('submitBtn');
     var msgEl = document.getElementById('msg');
 
-    // 受講科目チップの選択ハイライト
+    // 受講クラス チェックを時間割から描画 (label は server _TIMETABLE_CLASSES と一致)
+    var CLASSES = [
+      ['月', [['月曜1限 中学応用', '1限 中学応用'], ['月曜2限 英文法 Lv.1', '2限 英文法Lv.1'], ['月曜3限 長文読解 Lv.1', '3限 長文読解Lv.1']]],
+      ['火', [['火曜1限 中学基礎', '1限 中学基礎'], ['火曜2限 英文法 Lv.2', '2限 英文法Lv.2'], ['火曜3限 長文読解 Lv.2', '3限 長文読解Lv.2']]],
+      ['水', [['水曜1限 中学2年 英語', '1限 中学2年英語'], ['水曜2限 GMARCH', '2限 GMARCH'], ['水曜3限 国公立コース 英文法', '3限 国公立 英文法']]],
+      ['木', [['木曜1限 英検準1級対策', '1限 英検準1級'], ['木曜2限 早慶クラス', '2限 早慶クラス'], ['木曜3限 国公立コース 長文読解', '3限 国公立 長文読解']]],
+      ['金', [['金曜1限 高2 英文法', '1限 高2英文法'], ['金曜2限 英検2級対策', '2限 英検2級']]],
+      ['日', [['日曜 高校国語', '高校国語']]]
+    ];
+    (function () {
+      var grid = document.getElementById('subjGrid');
+      CLASSES.forEach(function (d) {
+        var row = document.createElement('div'); row.className = 'cls-day';
+        var hh = document.createElement('span'); hh.className = 'cls-day-h'; hh.textContent = d[0] + '曜'; row.appendChild(hh);
+        d[1].forEach(function (it) {
+          var lab = document.createElement('label'); lab.className = 'subj-chip';
+          var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = it[0];
+          lab.appendChild(cb); lab.appendChild(document.createTextNode(it[1]));
+          row.appendChild(lab);
+        });
+        grid.appendChild(row);
+      });
+    })();
+
+    // 受講クラス チップの選択ハイライト
     Array.prototype.forEach.call(document.querySelectorAll('#subjGrid input'), function (c) {
       c.addEventListener('change', function () { c.closest('.subj-chip').classList.toggle('on', c.checked); });
     });
