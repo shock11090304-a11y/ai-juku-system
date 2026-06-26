@@ -1735,6 +1735,9 @@ def init_db():
         ("class_files_class_label", "ALTER TABLE class_files ADD COLUMN class_label TEXT"),
         # 🎒 [受講クラス 2026-06-26] 生徒の受講クラス (時間割 label の JSON 配列)。出欠を所属クラスに限定。
         ("students_class_labels", "ALTER TABLE students ADD COLUMN class_labels TEXT"),
+        # 📝 [宿題ドリル単元 2026-06-26] 宿題を特定の dojo-drill 単元に紐づけ (生徒アプリの「ドリルで解く」が
+        #   ?w_subject=&w_topic= でその単元を自動起動。例 topic="英文法 関係詞")。
+        ("homework_assignments_topic", "ALTER TABLE homework_assignments ADD COLUMN topic TEXT"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -36178,7 +36181,7 @@ def get_my_homework(authorization: Optional[str] = Header(None), status_filter: 
         c = conn.cursor()
         if status_filter == "open":
             c.execute(
-                "SELECT id, title, description, subject, due_date, status, student_note, "
+                "SELECT id, title, description, subject, topic, due_date, status, student_note, "
                 "       created_at, completed_at, created_by "
                 "FROM homework_assignments WHERE student_id = ? AND status = 'open' "
                 "ORDER BY (due_date IS NULL), due_date ASC, created_at DESC LIMIT ?",
@@ -36186,7 +36189,7 @@ def get_my_homework(authorization: Optional[str] = Header(None), status_filter: 
             )
         elif status_filter == "completed":
             c.execute(
-                "SELECT id, title, description, subject, due_date, status, student_note, "
+                "SELECT id, title, description, subject, topic, due_date, status, student_note, "
                 "       created_at, completed_at, created_by "
                 "FROM homework_assignments WHERE student_id = ? AND status = 'completed' "
                 "ORDER BY completed_at DESC LIMIT ?",
@@ -36194,7 +36197,7 @@ def get_my_homework(authorization: Optional[str] = Header(None), status_filter: 
             )
         else:
             c.execute(
-                "SELECT id, title, description, subject, due_date, status, student_note, "
+                "SELECT id, title, description, subject, topic, due_date, status, student_note, "
                 "       created_at, completed_at, created_by "
                 "FROM homework_assignments WHERE student_id = ? "
                 "ORDER BY (status = 'open') DESC, (due_date IS NULL), due_date ASC, created_at DESC LIMIT ?",
@@ -36208,6 +36211,7 @@ def get_my_homework(authorization: Optional[str] = Header(None), status_filter: 
                 "title": r["title"],
                 "description": r["description"],
                 "subject": r["subject"],
+                "topic": r["topic"],
                 "due_date": str(r["due_date"]) if r["due_date"] else None,
                 "status": r["status"],
                 "student_note": r["student_note"],
@@ -40883,6 +40887,7 @@ class AdminClassHomeworkRequest(BaseModel):
     description: Optional[str] = None
     subject: Optional[str] = None
     due_date: Optional[str] = None
+    topic: Optional[str] = None  # dojo-drill 単元 (例 "英文法 関係詞") = 生徒の「ドリルで解く」がこの単元を自動起動
 
 
 def _validate_attend(class_label, att_date, status):
@@ -41068,6 +41073,7 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
         raise HTTPException(status_code=400, detail="宿題タイトルは必須です")
     description = _sanitize_text(payload.description, 2000) or None
     subject = _sanitize_text(payload.subject, 80) or None
+    topic = _sanitize_text(payload.topic, 120) or None
     due_date = _class_valid_date_or_none(payload.due_date) if payload.due_date else None
     conn = db()
     try:
@@ -41080,9 +41086,9 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
         # INSERT は upfront 検証済み。per-row catch はしない(PostgreSQL は1文失敗でtxn全体abortのため無意味)。
         for sid, _name in targets:
             c.execute(
-                "INSERT INTO homework_assignments (student_id, title, description, subject, due_date, attachment_print_id, status, created_by) "
-                "VALUES (?, ?, ?, ?, ?, NULL, 'open', 'admin')",
-                (sid, title, description, subject, due_date),
+                "INSERT INTO homework_assignments (student_id, title, description, subject, topic, due_date, attachment_print_id, status, created_by) "
+                "VALUES (?, ?, ?, ?, ?, ?, NULL, 'open', 'admin')",
+                (sid, title, description, subject, topic, due_date),
             )
         conn.commit()  # ← 宿題をここで確定(以降の events 失敗に巻き込まれない)
         # 監査 events (best-effort・宿題 commit 済みなので失敗してもデータは安全)
@@ -41090,7 +41096,7 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
             c.execute(
                 "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
                 ("class_homework_assigned", json.dumps({
-                    "class_label": cl, "title": title, "subject": subject, "due_date": due_date,
+                    "class_label": cl, "title": title, "subject": subject, "topic": topic, "due_date": due_date,
                     "assigned_count": len(targets), "student_ids": [t[0] for t in targets],
                 }, ensure_ascii=False), "admin"),
             )

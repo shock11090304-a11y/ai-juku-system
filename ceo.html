@@ -2667,6 +2667,9 @@
         </div>
         <div style="display:grid; grid-template-columns:1fr; gap:0.5rem;">
           <input id="hwTitle" type="text" placeholder="宿題タイトル * (例: 関係詞ドリル)" maxlength="200" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          <select id="hwTopic" title="ドリル単元を選ぶと「ドリルで解く」がその単元を自動で開きます" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+            <option value="">ドリル単元 (任意・選ぶと「ドリルで解く」がその単元を開く)</option>
+          </select>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
             <input id="hwSubject" type="text" placeholder="科目 (任意・ドリル誘導用 例: 英語)" maxlength="80" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
             <input id="hwDue" type="date" title="提出期限(任意)" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
@@ -10175,11 +10178,26 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     }
     var _hwClassSel = document.getElementById('hwClass');
     if (_hwClassSel) _hwClassSel.addEventListener('change', hwUpdateCount);
+    // ドリル単元: 選ぶと「ドリルで解く」がその単元を自動起動 (topic は dojo-drill の preset.topic と完全一致が必須)
+    var HW_DRILL_TOPICS = [
+      { t: '英文法 関係詞', s: '英語' }, { t: '英文法 仮定法', s: '英語' }, { t: '英文法 時制', s: '英語' },
+      { t: '英文法 比較', s: '英語' }, { t: '英文法 分詞', s: '英語' }, { t: '英文法 総合', s: '英語' },
+      { t: '共通テスト英語 長文読解', s: '英語' }, { t: '共通テスト国語 現代文', s: '国語' }, { t: '共通テスト国語 古文', s: '国語' }
+    ];
+    var _hwTopicSel = document.getElementById('hwTopic');
+    if (_hwTopicSel) {
+      HW_DRILL_TOPICS.forEach(function (x) { var o = document.createElement('option'); o.value = x.t; o.textContent = '🎯 ' + x.t; _hwTopicSel.appendChild(o); });
+      _hwTopicSel.addEventListener('change', function () {
+        var hit = HW_DRILL_TOPICS.filter(function (x) { return x.t === _hwTopicSel.value; })[0];
+        if (hit) document.getElementById('hwSubject').value = hit.s;  // 単元に対応する科目を自動入力
+      });
+    }
     var _hwBtn = document.getElementById('hwAssignBtn');
     if (_hwBtn) _hwBtn.addEventListener('click', async function () {
       var label = document.getElementById('hwClass').value;
       var title = (document.getElementById('hwTitle').value || '').trim();
       var subject = (document.getElementById('hwSubject').value || '').trim();
+      var topic = (document.getElementById('hwTopic') ? document.getElementById('hwTopic').value : '') || '';
       var due = document.getElementById('hwDue').value || '';
       var desc = (document.getElementById('hwDesc').value || '').trim();
       var msg = document.getElementById('hwMsg');
@@ -10188,13 +10206,14 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       _hwBtn.disabled = true; msg.style.color = '#a1a1aa'; msg.textContent = '送信中…';
       try {
         var r = await adminJson('/api/admin/class/homework', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ class_label: label, title: title, subject: subject || undefined, due_date: due || undefined, description: desc || undefined }) });
+          body: JSON.stringify({ class_label: label, title: title, subject: subject || undefined, topic: topic || undefined, due_date: due || undefined, description: desc || undefined }) });
         if (r.assigned_count > 0) {
           var nm = r.students || [];
           var who = nm.length <= 8 ? nm.join('・') : (nm.slice(0, 8).join('・') + ' ほか' + (nm.length - 8) + '名');
           msg.style.color = '#6ee7b7'; msg.textContent = '✓ ' + r.assigned_count + '名に宿題を出しました（' + label + '）' + (who ? '：' + who : '');
           document.getElementById('hwTitle').value = ''; document.getElementById('hwSubject').value = '';
           document.getElementById('hwDue').value = ''; document.getElementById('hwDesc').value = '';
+          if (document.getElementById('hwTopic')) document.getElementById('hwTopic').value = '';
         } else {
           msg.style.color = '#fca5a5'; msg.textContent = r.info || 'このクラスに登録された生徒がいません（先に「👥 生徒の受講クラス」で設定してください）';
         }

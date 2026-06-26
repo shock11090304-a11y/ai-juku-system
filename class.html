@@ -33,6 +33,7 @@
     .chip { display:inline-block; padding:0.14rem 0.55rem; border-radius:999px; font-size:0.74rem; font-weight:800; }
     .chip-date { background:rgba(129,140,248,0.18); border:1px solid rgba(129,140,248,0.4); color:#c7d2fe; }
     .chip-subj { background:rgba(167,139,250,0.16); border:1px solid rgba(167,139,250,0.35); color:#ddd6fe; }
+    .chip-topic { background:rgba(56,189,248,0.16); border:1px solid rgba(56,189,248,0.4); color:#bae6fd; }
     .chip-open { background:rgba(251,191,36,0.18); border:1px solid rgba(251,191,36,0.4); color:#fde68a; }
     .chip-done { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#6ee7b7; }
     .chip-over { background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; }
@@ -650,8 +651,13 @@
         var statusChip = done ? '<span class="chip chip-done">完了</span>'
           : (overdue ? '<span class="chip chip-over">期限切れ</span>' : '<span class="chip chip-open">未提出</span>');
         var subj = it.subject ? ' <span class="chip chip-subj">' + esc(it.subject) + '</span>' : '';
+        var topicChip = it.topic ? ' <span class="chip chip-topic">🎯 ' + esc(it.topic) + '</span>' : '';
         var due = it.due_date ? ('<div class="card-meta">📅 期限: ' + esc(it.due_date) + '</div>') : '';
-        var drillUrl = 'dojo-drill.html' + (it.subject ? ('?w_subject=' + encodeURIComponent(it.subject)) : '');
+        // 宿題に単元(topic)があれば dojo-drill をその単元で自動起動 (?w_subject=&w_topic=)
+        var qp = [];
+        if (it.subject) qp.push('w_subject=' + encodeURIComponent(it.subject));
+        if (it.topic) qp.push('w_topic=' + encodeURIComponent(it.topic));
+        var drillUrl = 'dojo-drill.html' + (qp.length ? ('?' + qp.join('&')) : '');
         var actions = '<div class="row-actions">';
         if (!done) {
           actions += '<a class="btn btn-primary" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>'
@@ -660,7 +666,7 @@
           actions += '<a class="btn btn-ghost" href="' + esc(drillUrl) + '">🔁 もう一度解く</a>';
         }
         actions += '</div>';
-        return '<div class="card">' + statusChip + subj + '<div class="card-title">' + esc(it.title || '宿題') + '</div>'
+        return '<div class="card">' + statusChip + subj + topicChip + '<div class="card-title">' + esc(it.title || '宿題') + '</div>'
           + due + (it.description ? ('<div class="card-body">' + esc(it.description) + '</div>') : '')
           + (done && it.completed_at ? ('<div class="muted" style="margin-top:0.4rem;">提出: ' + esc(fmtDate(it.completed_at)) + '</div>') : '')
           + actions + '</div>';
