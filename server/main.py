@@ -41153,7 +41153,7 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
         targets = [(r["id"], r["name"]) for r in _tsujuku_roster(c) if cl in _parse_labels(r["class_labels"])]
         if not targets:
             return {"ok": True, "assigned_count": 0, "class_label": cl,
-                    "info": "このクラスに登録された生徒がいません。先に「👥 生徒の受講クラス」でクラスを設定してください。"}
+                    "info": "このクラスに登録された生徒がいません。「🏫 クラス別 受講生 一括登録」でクラスを設定してください。"}
         # INSERT は upfront 検証済み。per-row catch はしない(PostgreSQL は1文失敗でtxn全体abortのため無意味)。
         for sid, _name in targets:
             c.execute(

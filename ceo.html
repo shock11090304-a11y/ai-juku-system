@@ -2657,10 +2657,22 @@
         <div id="cfList" style="margin-top:0.7rem;"></div>
       </div>
 
+      <!-- 🏫 クラス別 受講生 一括登録 (クラス→生徒チェック→保存) ※受講クラスの設定はまずここで -->
+      <div style="background:rgba(6,199,85,0.06); border:1px solid rgba(6,199,85,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
+        <div style="font-size:0.95rem; color:#34d399; font-weight:700; margin-bottom:0.3rem;">🏫 クラス別 受講生 一括登録 <span style="font-size:0.72rem; color:#86efac; font-weight:600;">(まずここで各クラスの受講生を登録)</span></div>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">クラスを選び、そのクラスに来る生徒に<b>チェック → 保存</b>。<b>これを設定すると、下の「クラスに宿題を出す」の対象になります</b>(ファイル配布・出欠は未設定でも全員に表示)。各生徒の他クラスの所属はそのまま保持されます。</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:0.5rem;">
+          <select id="crClass" style="padding:0.55rem; min-width:200px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">クラスを選択…</option></select>
+          <span id="crCount" style="font-size:0.82rem; color:#86efac;"></span>
+        </div>
+        <div id="crStudents" style="margin-top:0.4rem;"></div>
+        <div id="crMsg" style="font-size:0.82rem; margin-top:0.4rem;"></div>
+      </div>
+
       <!-- 📝 クラスに宿題を出す -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
         <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">📝 クラスに宿題を出す</div>
-        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">クラスを選んでボタン1つで、そのクラスの受講生 全員に同じ宿題を出せます。生徒はアプリの「宿題」タブで確認 → アプリ内ドリルで解いて提出(自動採点)。<b>対象は「👥 生徒の受講クラス」で登録済みの生徒のみ</b>です。</p>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">クラスを選んでボタン1つで、そのクラスの受講生 全員に同じ宿題を出せます。生徒はアプリの「宿題」タブで確認 → アプリ内ドリルで解いて提出(自動採点)。<b>対象は上の「🏫 クラス別 受講生 一括登録」で登録した生徒のみ</b>です。</p>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:0.5rem;">
           <select id="hwClass" style="padding:0.55rem; min-width:190px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">クラスを選択…</option></select>
           <span id="hwCount" style="font-size:0.82rem; color:#a5b4fc;"></span>
@@ -2692,18 +2704,6 @@
           <button id="atLoadBtn" type="button" style="padding:0.55rem 1.1rem; background:rgba(129,140,248,0.25); border:1px solid rgba(129,140,248,0.4); border-radius:8px; color:#c7d2fe; font-weight:800; cursor:pointer;">表示</button>
         </div>
         <div id="atRoster" style="margin-top:0.7rem;"></div>
-      </div>
-
-      <!-- 🏫 クラス別 受講生 一括登録 (クラス→生徒チェック→保存) -->
-      <div style="background:rgba(6,199,85,0.06); border:1px solid rgba(6,199,85,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
-        <div style="font-size:0.95rem; color:#34d399; font-weight:700; margin-bottom:0.3rem;">🏫 クラス別 受講生 一括登録</div>
-        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">クラスを選び、そのクラスに来る生徒に<b>チェック → 保存</b>。クラスごとに一気に名簿を作れます(出欠・クラス宿題の対象になります)。各生徒の<b>他クラスの所属はそのまま保持</b>されます。</p>
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:0.5rem;">
-          <select id="crClass" style="padding:0.55rem; min-width:200px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">クラスを選択…</option></select>
-          <span id="crCount" style="font-size:0.82rem; color:#86efac;"></span>
-        </div>
-        <div id="crStudents" style="margin-top:0.4rem;"></div>
-        <div id="crMsg" style="font-size:0.82rem; margin-top:0.4rem;"></div>
       </div>
 
       <!-- 👥 生徒の受講クラス -->
@@ -10232,7 +10232,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var label = document.getElementById('hwClass').value;
       if (!label) { el.textContent = ''; return; }
       var n = _scStudents.filter(function (s) { return (s.class_labels || []).indexOf(label) >= 0; }).length;
-      el.textContent = 'このクラスの受講生: ' + n + '名';
+      el.textContent = 'このクラスの受講生: ' + n + '名' + (n === 0 ? ' — 上の「🏫 クラス別 受講生 一括登録」でこのクラスの生徒を設定してください' : '');
       el.style.color = n ? '#a5b4fc' : '#fca5a5';
     }
     var _hwClassSel = document.getElementById('hwClass');
@@ -10274,7 +10274,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           document.getElementById('hwDue').value = ''; document.getElementById('hwDesc').value = '';
           if (document.getElementById('hwTopic')) document.getElementById('hwTopic').value = '';
         } else {
-          msg.style.color = '#fca5a5'; msg.textContent = r.info || 'このクラスに登録された生徒がいません（先に「👥 生徒の受講クラス」で設定してください）';
+          msg.style.color = '#fca5a5'; msg.textContent = r.info || 'このクラスに登録された生徒がいません（上の「🏫 クラス別 受講生 一括登録」で設定してください）';
         }
       } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + (e.message || 'エラー'); }
       finally { _hwBtn.disabled = false; }
