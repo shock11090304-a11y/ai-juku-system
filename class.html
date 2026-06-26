@@ -39,6 +39,18 @@
     .card-title { font-size:1.05rem; font-weight:800; margin:0.45rem 0 0.2rem; }
     .card-meta { color:#a1a1aa; font-size:0.82rem; }
     .card-body { margin-top:0.5rem; color:#cbd5e1; font-size:0.88rem; line-height:1.65; white-space:pre-wrap; }
+    /* 🗓 週間時間割 */
+    .tt-intro { color:#a1a1aa; font-size:0.8rem; margin:0.1rem 0 0.7rem; line-height:1.55; }
+    .tt-day { background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.10); border-radius:12px; padding:0.7rem 0.85rem; margin-bottom:0.6rem; }
+    .tt-day-h { display:inline-block; padding:0.12rem 0.65rem; border-radius:8px; background:rgba(129,140,248,0.20); border:1px solid rgba(129,140,248,0.42); color:#c7d2fe; font-weight:800; font-size:0.86rem; margin-bottom:0.3rem; }
+    .tt-day.sun .tt-day-h { background:rgba(251,191,36,0.18); border-color:rgba(251,191,36,0.42); color:#fde68a; }
+    .tt-row { display:flex; gap:0.55rem; align-items:baseline; padding:0.42rem 0; border-top:1px solid rgba(255,255,255,0.06); }
+    .tt-row:first-of-type { border-top:0; }
+    .tt-period { flex-shrink:0; min-width:2.2em; font-size:0.74rem; font-weight:800; color:#a5b4fc; }
+    .tt-class { flex:1; min-width:0; font-size:0.9rem; font-weight:700; line-height:1.4; word-break:break-word; }
+    .tt-class .tt-detail { display:block; font-size:0.74rem; color:#a1a1aa; font-weight:500; margin-top:0.05rem; }
+    .tt-time { flex-shrink:0; font-size:0.72rem; color:#9ca3af; font-variant-numeric:tabular-nums; }
+    .sec-divider { margin:1.5rem 0 0.7rem; font-size:0.95rem; font-weight:800; color:#e4e4e7; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:0.35rem; }
     .block { margin-top:0.85rem; }
     .block-label { font-size:0.78rem; font-weight:800; color:#a5b4fc; margin-bottom:0.4rem; }
     .res-row { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.7rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.10); border-radius:9px; margin:0.35rem 0; }
@@ -108,7 +120,7 @@
     <div id="gate"></div>
 
     <section id="view-schedule" class="view" hidden>
-      <h1 class="view-title">📅 予定<span class="sub">授業の予定・配布ファイル・出欠の連絡</span></h1>
+      <h1 class="view-title">📅 予定<span class="sub">週間の時間割と、授業ごとの配布ファイル・出欠の連絡</span></h1>
       <div id="scheduleBody"><div class="loading">読み込み中…</div></div>
     </section>
 
@@ -210,6 +222,61 @@
 
     // ===================== 予定 (schedule) =====================
     var scheduleBody = document.getElementById('scheduleBody');
+
+    // 🗓 週間時間割 (2026年度 授業スケジュール・入塾申込書より)。全通塾生に塾全体の時間割として表示。
+    // 変更時はこの TIMETABLE を編集する (毎週くり返しの固定時間割)。
+    var TIMETABLE = {
+      year: '2026年度',
+      weekdays: [
+        { day: '月', items: [
+          { p: '1限', t: '19:15–20:15', c: '中学応用', d: '受験・中3' },
+          { p: '2限', t: '20:25–21:25', c: '英文法 Lv.1', d: '標準・高1/2' },
+          { p: '3限', t: '21:35–22:35', c: '長文読解 Lv.1', d: '標準・高1/2' }
+        ] },
+        { day: '火', items: [
+          { p: '1限', t: '19:15–20:15', c: '中学基礎', d: '定期テスト・中1/2' },
+          { p: '2限', t: '20:25–21:25', c: '英文法 Lv.2', d: '難関・高3' },
+          { p: '3限', t: '21:35–22:35', c: '長文読解 Lv.2', d: '難関・高3' }
+        ] },
+        { day: '水', items: [
+          { p: '1限', t: '19:15–20:15', c: '中学2年 英語', d: '' },
+          { p: '2限', t: '20:25–21:25', c: 'GMARCH', d: '大学別演習' },
+          { p: '3限', t: '21:35–22:35', c: '国公立コース 英文法', d: '' }
+        ] },
+        { day: '木', items: [
+          { p: '1限', t: '19:15–20:15', c: '英検準1級対策', d: '中高合同' },
+          { p: '2限', t: '20:25–21:25', c: '早慶クラス', d: '大学別演習' },
+          { p: '3限', t: '21:35–22:35', c: '国公立コース 長文読解', d: '' }
+        ] },
+        { day: '金', items: [
+          { p: '1限', t: '19:15–20:15', c: '高2 英文法', d: '' },
+          { p: '2限', t: '20:25–21:25', c: '英検2級対策', d: '中高合同' }
+        ] }
+      ],
+      special: [
+        { day: '日', label: '日曜 Special', t: '21:15–22:15', c: '高校国語', d: '現代文・古文' }
+      ]
+    };
+    function ttRow(p, t, c, d) {
+      return '<div class="tt-row"><span class="tt-period">' + esc(p) + '</span>'
+        + '<span class="tt-class">' + esc(c) + (d ? ' <span class="tt-detail">' + esc(d) + '</span>' : '') + '</span>'
+        + '<span class="tt-time">' + esc(t) + '</span></div>';
+    }
+    function timetableHtml() {
+      var h = '<div class="block-label" style="font-size:0.95rem; margin-bottom:0.4rem;">🗓 週間時間割</div>'
+        + '<div class="tt-intro">毎週くり返しの時間割です（' + esc(TIMETABLE.year) + '）。ご自分の受講クラスをご確認ください。</div>';
+      TIMETABLE.weekdays.forEach(function (wd) {
+        h += '<div class="tt-day"><span class="tt-day-h">' + esc(wd.day) + '曜</span>';
+        wd.items.forEach(function (it) { h += ttRow(it.p, it.t, it.c, it.d); });
+        h += '</div>';
+      });
+      TIMETABLE.special.forEach(function (sp) {
+        h += '<div class="tt-day sun"><span class="tt-day-h">' + esc(sp.label) + '</span>'
+          + ttRow('', sp.t, sp.c, sp.d) + '</div>';
+      });
+      return h;
+    }
+
     function sessionHtml(s) {
       var date = s.session_date ? esc(s.session_date) : '日付未定';
       var time = [s.start_time, s.end_time].filter(Boolean).join('〜');
@@ -258,12 +325,18 @@
       var sessions = (feedData && feedData.sessions) || [];
       var lf = (feedData && feedData.loose_files) || [];
       var parts = [];
-      if (sessions.length) parts.push(sessions.map(sessionHtml).join(''));
+      // 🗓 週間時間割（常時表示）
+      parts.push(timetableHtml());
+      // 📅 個別の授業（日付つき・プリント配布/録画/出欠）
+      parts.push('<div class="sec-divider">📅 個別の授業（配布物・出欠）</div>');
+      var indiv = [];
+      if (sessions.length) indiv.push(sessions.map(sessionHtml).join(''));
       if (lf.length) {
-        parts.push('<div class="block-label" style="margin-top:1rem;">🗂️ その他の配布ファイル</div>'
+        indiv.push('<div class="block-label" style="margin-top:1rem;">🗂️ その他の配布ファイル</div>'
           + '<div class="card">' + lf.map(fileRow).join('') + '</div>');
       }
-      if (!parts.length) parts.push('<div class="empty">📭 まだ授業の予定がありません。<br>登録されるとここに表示されます。</div>');
+      if (!indiv.length) indiv.push('<div class="empty" style="padding:1.4rem 1rem;">この先の個別授業（プリント配布・録画・出欠）はまだありません。</div>');
+      parts.push(indiv.join(''));
       scheduleBody.innerHTML = parts.join('');
       wireSchedule();
     }
