@@ -20,10 +20,15 @@
     .card { background:rgba(255,255,255,0.04); border:1px solid rgba(129,140,248,0.30); border-radius:14px; padding:1.3rem 1.2rem; }
     label { display:block; font-size:0.82rem; color:#cbd5e1; font-weight:700; margin:0.9rem 0 0.35rem; }
     label .req { color:#fca5a5; }
-    input, textarea { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16); border-radius:9px; color:#e4e4e7; padding:0.7rem; font-size:0.95rem; font-family:inherit; }
-    input:focus, textarea:focus { outline:none; border-color:#818cf8; }
+    input, textarea, select { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16); border-radius:9px; color:#e4e4e7; padding:0.7rem; font-size:0.95rem; font-family:inherit; }
+    input:focus, textarea:focus, select:focus { outline:none; border-color:#818cf8; }
+    select option { background:#1a1a2e; color:#e4e4e7; }
     textarea { min-height:64px; resize:vertical; }
     .hint { font-size:0.75rem; color:#a1a1aa; margin-top:0.3rem; line-height:1.5; }
+    .subj-grid { display:flex; flex-wrap:wrap; gap:0.45rem; margin-top:0.35rem; }
+    .subj-chip { display:inline-flex; align-items:center; gap:0.35rem; padding:0.45rem 0.75rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.16); border-radius:999px; font-size:0.88rem; cursor:pointer; user-select:none; }
+    .subj-chip input { width:auto; margin:0; accent-color:#818cf8; }
+    .subj-chip.on { background:rgba(129,140,248,0.20); border-color:#818cf8; color:#c7d2fe; }
     .btn { display:block; width:100%; margin-top:1.3rem; padding:0.8rem; border:none; border-radius:10px; font-weight:800; font-size:1rem; cursor:pointer; background:linear-gradient(135deg,#818cf8,#6366f1); color:#fff; font-family:inherit; }
     .btn:disabled { opacity:0.55; cursor:default; }
     .msg { margin-top:1rem; padding:0.9rem 1rem; border-radius:10px; font-size:0.9rem; line-height:1.7; display:none; }
@@ -56,6 +61,32 @@
         <input id="email" type="email" autocomplete="email" inputmode="email" placeholder="例: taro@example.com" maxlength="200" required>
         <div class="hint">ログイン用のリンクをこのアドレスに送ります。普段使っているアドレスを入れてください。</div>
 
+        <label>学年（任意）</label>
+        <select id="grade">
+          <option value="">選択してください</option>
+          <option>中1</option><option>中2</option><option>中3</option>
+          <option>高1</option><option>高2</option><option>高3</option>
+          <option>既卒・浪人</option><option>その他</option>
+        </select>
+
+        <label>現在 受講している科目（任意・あてはまるもの）</label>
+        <div class="subj-grid" id="subjGrid">
+          <label class="subj-chip"><input type="checkbox" value="英語">英語</label>
+          <label class="subj-chip"><input type="checkbox" value="数学">数学</label>
+          <label class="subj-chip"><input type="checkbox" value="国語">国語</label>
+          <label class="subj-chip"><input type="checkbox" value="物理">物理</label>
+          <label class="subj-chip"><input type="checkbox" value="化学">化学</label>
+          <label class="subj-chip"><input type="checkbox" value="生物">生物</label>
+          <label class="subj-chip"><input type="checkbox" value="日本史">日本史</label>
+          <label class="subj-chip"><input type="checkbox" value="世界史">世界史</label>
+          <label class="subj-chip"><input type="checkbox" value="地理">地理</label>
+          <label class="subj-chip"><input type="checkbox" value="公民">公民</label>
+          <label class="subj-chip"><input type="checkbox" value="小論文">小論文</label>
+        </div>
+
+        <label>志望校（任意）</label>
+        <input id="targetUni" type="text" maxlength="100" placeholder="例: ◯◯大学 △△学部 / まだ未定でもOK">
+
         <label>ひとこと（任意）</label>
         <textarea id="note" maxlength="500" placeholder="学年・塾での呼び名・通っている曜日など、塾長が本人確認しやすい情報があれば"></textarea>
 
@@ -77,6 +108,11 @@
     var btn = document.getElementById('submitBtn');
     var msgEl = document.getElementById('msg');
 
+    // 受講科目チップの選択ハイライト
+    Array.prototype.forEach.call(document.querySelectorAll('#subjGrid input'), function (c) {
+      c.addEventListener('change', function () { c.closest('.subj-chip').classList.toggle('on', c.checked); });
+    });
+
     function showMsg(text, isErr) {
       msgEl.innerHTML = text;
       msgEl.className = 'msg show ' + (isErr ? 'err' : 'ok');
@@ -93,6 +129,11 @@
       var name = (document.getElementById('name').value || '').trim();
       var email = (document.getElementById('email').value || '').trim();
       var note = (document.getElementById('note').value || '').trim();
+      var grade = document.getElementById('grade').value || '';
+      var targetUni = (document.getElementById('targetUni').value || '').trim();
+      var subjects = Array.prototype.map.call(
+        document.querySelectorAll('#subjGrid input:checked'), function (c) { return c.value; }
+      ).join('・');
       if (!name) { showMsg('お名前を入力してください。', true); return; }
       if (!email || email.indexOf('@') < 0) { showMsg('有効なメールアドレスを入力してください。', true); return; }
       btn.disabled = true;
@@ -102,7 +143,14 @@
         var res = await fetch(BACKEND_URL + '/api/course-applications', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name, email: email, note: note || undefined, referrer: '塾生アプリ' })
+          body: JSON.stringify({
+            name: name, email: email,
+            grade: grade || undefined,
+            target_university: targetUni || undefined,
+            subjects: subjects || undefined,
+            note: note || undefined,
+            referrer: '塾生アプリ'
+          })
         });
         var data = null; try { data = await res.json(); } catch (e2) {}
         if (res.ok) {

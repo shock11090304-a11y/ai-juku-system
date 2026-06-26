@@ -1706,6 +1706,8 @@ def init_db():
         ("vp_stability", "ALTER TABLE vocab_progress ADD COLUMN stability REAL"),
         ("vp_difficulty", "ALTER TABLE vocab_progress ADD COLUMN difficulty REAL"),
         ("vp_last_interval", "ALTER TABLE vocab_progress ADD COLUMN last_interval REAL"),
+        # 🏫 [塾生アプリ登録 2026-06-26] 自己登録フォームで「現在受講科目」を収集・申込待ち一覧に表示。
+        ("course_app_subjects", "ALTER TABLE course_applications ADD COLUMN subjects TEXT"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -40972,6 +40974,7 @@ class CourseApplicationRequest(BaseModel):
     phone: Optional[str] = None
     referrer: Optional[str] = None  # 紹介者
     note: Optional[str] = None
+    subjects: Optional[str] = None  # 現在受講科目 (塾生アプリ登録フォーム)
 
 
 @app.post("/api/course-applications")
@@ -40990,6 +40993,7 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
     phone = _sanitize_text(payload.phone, 30)
     referrer = _sanitize_text(payload.referrer, 100)
     note = _sanitize_text(payload.note, 1000)
+    subjects = _sanitize_text(payload.subjects, 200)  # 現在受講科目 (塾生アプリ登録)
     ip = _client_ip(request)
 
     conn = db()
@@ -41011,9 +41015,9 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
                 raise HTTPException(status_code=409, detail="このメールアドレスで既にお申込済みです (1-2営業日以内に塾長から連絡があります)")
 
         c.execute(
-            "INSERT INTO course_applications (name, email, grade, target_university, phone, referrer, note, ip) "
-            "VALUES (?,?,?,?,?,?,?,?) RETURNING id",
-            (name, email_lower, grade, target_uni, phone, referrer, note, ip)
+            "INSERT INTO course_applications (name, email, grade, target_university, phone, referrer, note, subjects, ip) "
+            "VALUES (?,?,?,?,?,?,?,?,?) RETURNING id",
+            (name, email_lower, grade, target_uni, phone, referrer, note, subjects, ip)
         )
         returned = c.fetchone()
         new_id = returned["id"] if returned else None
@@ -41035,7 +41039,8 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
                 f"お名前: {name}\n"
                 f"メール: {email_lower}\n"
                 f"学年: {grade or '未記入'}\n"
-                + ("" if _is_juku else f"志望校: {target_uni or '未記入'}\n")
+                + (f"受講科目: {subjects or '未記入'}\n" if _is_juku else "")
+                + f"志望校: {target_uni or '未記入'}\n"
                 + ("" if _is_juku else f"電話: {phone or '未記入'}\n")
                 + (f"出所: 塾生アプリ登録フォーム\n" if _is_juku else f"紹介者: {referrer or 'なし'}\n")
                 + f"メモ: {note or 'なし'}\n\n"
@@ -41062,13 +41067,13 @@ def admin_list_course_applications(authorization: Optional[str] = Header(None), 
         c = conn.cursor()
         if status and status in ("pending", "approved", "rejected"):
             c.execute(
-                "SELECT id, name, email, grade, target_university, phone, referrer, note, status, student_id, approved_at, rejected_reason, created_at "
+                "SELECT id, name, email, grade, target_university, phone, referrer, note, subjects, status, student_id, approved_at, rejected_reason, created_at "
                 "FROM course_applications WHERE status = ? ORDER BY created_at DESC LIMIT ?",
                 (status, limit)
             )
         else:
             c.execute(
-                "SELECT id, name, email, grade, target_university, phone, referrer, note, status, student_id, approved_at, rejected_reason, created_at "
+                "SELECT id, name, email, grade, target_university, phone, referrer, note, subjects, status, student_id, approved_at, rejected_reason, created_at "
                 "FROM course_applications ORDER BY created_at DESC LIMIT ?",
                 (limit,)
             )
@@ -41077,6 +41082,7 @@ def admin_list_course_applications(authorization: Optional[str] = Header(None), 
             "id": r["id"], "name": r["name"], "email": r["email"],
             "grade": r["grade"], "target_university": r["target_university"],
             "phone": r["phone"], "referrer": r["referrer"], "note": r["note"],
+            "subjects": r["subjects"] if "subjects" in r.keys() else None,
             "status": r["status"], "student_id": r["student_id"],
             "approved_at": str(r["approved_at"]) if r["approved_at"] else None,
             "rejected_reason": r["rejected_reason"],
@@ -41101,7 +41107,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT id, name, email, status, referrer FROM course_applications WHERE id = ?", (app_id,))
+        c.execute("SELECT id, name, email, status, referrer, grade, target_university FROM course_applications WHERE id = ?", (app_id,))
         row = c.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="申込が見つかりません")
@@ -41109,6 +41115,8 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             raise HTTPException(status_code=409, detail=f"既に {row['status']} 状態です")
         email_lower = (row["email"] or "").lower().strip()
         name = row["name"]
+        _app_grade = (row["grade"] if "grade" in row.keys() else None) or None
+        _app_goal = (row["target_university"] if "target_university" in row.keys() else None) or None
         # 🏫 トリリオン塾生アプリの自己登録(referrer='塾生アプリ')は、難関コースとは別文面のウェルカムを送る
         _is_juku_app_reg = ((row["referrer"] if "referrer" in row.keys() else None) or "") == "塾生アプリ"
 
@@ -41125,10 +41133,11 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             # 新規生徒 (trial で作成 / 国難コースは永久無料なので trial_end を 10 年後に設定)
             now = datetime.now(timezone.utc)
             trial_end = now + timedelta(days=3650)
+            # 申込フォームの学年・志望校を新規生徒プロフィールにも反映 (goal=志望校)。
             c.execute(
-                "INSERT INTO students (name, email, status, course, trial_start, trial_end) "
-                "VALUES (?,?,?,?,?,?) RETURNING id",
-                (name, email_lower, "trial", _STUDY_LOG_TARGET_COURSE, now.isoformat(), trial_end.isoformat())
+                "INSERT INTO students (name, email, status, course, trial_start, trial_end, grade, goal) "
+                "VALUES (?,?,?,?,?,?,?,?) RETURNING id",
+                (name, email_lower, "trial", _STUDY_LOG_TARGET_COURSE, now.isoformat(), trial_end.isoformat(), _app_grade, _app_goal)
             )
             new = c.fetchone()
             student_id = new["id"] if new else None
