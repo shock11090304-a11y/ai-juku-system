@@ -2630,7 +2630,15 @@
       || localStorage.getItem('ai_juku_session_token');
     if (!tk) return;
     fetch(base + '/api/student/class/feed', { headers: { 'Authorization': 'Bearer ' + tk } })
-      .then(function (r) { if (r.ok) card.style.display = ''; })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) return;  // 非通塾生 (feed 403 等) → カード非表示のまま・mypage はそのまま
+        // 🏫 純粋な通塾生(無料・AI管理対象外)は AI管理(mypage)を見せず塾生アプリ(class.html)へ。
+        //   ドリル結果の「マイページ」導線等からここに来ても class.html へ送り返す(AI機能は有料者のみ)。
+        //   class.html 側はマイページ導線を非表示にしてあるのでループしない。
+        if (d.is_tsujuku_app === true) { window.location.replace('class.html'); return; }
+        card.style.display = '';  // AIプランも持つ通塾生 → カード表示(mypage は使える)
+      })
       .catch(function () {});
   })();
   </script>
