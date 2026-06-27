@@ -386,12 +386,9 @@
             // 🎯 2026-05-21 塾長指示: 生徒は新規ログイン時 quick-start.html に直行 (5 科目クイック演習 + 定期テスト UI)
             //   redirect param 指定時 (例: ?redirect=mypage.html) は従来通り遷移先優先
             const params = new URLSearchParams(window.location.search);
-            // 🏫 無料の通塾生はログイン後そのまま class.html へ (AI課金=AIプラン/student_addon・AI生は quick-start)。
-            //   判定は server _is_tsujuku_app_home と同一ロジック。
-            const _PAID_AI_PLANS = ['premium', 'family', 'founder_special', 'hybrid', 'standard', 'student_addon'];
-            const _stu = (data && data.student) || {};
-            const _plan = (_stu.plan || '').toLowerCase();
-            const _isTsujukuApp = (_stu.course === 'kokuritsu_nankan') && _PAID_AI_PLANS.indexOf(_plan) < 0;
+            // 🏫 塾生アプリ自己登録(referrer=塾生アプリ)の通塾生だけ class.html へ。既存AI生は quick-start。
+            //   判定は server (verify-code が返す is_tsujuku_app) を直読み=course/plan誤判定を避けAI生を締め出さない。
+            const _isTsujukuApp = ((data && data.student) || {}).is_tsujuku_app === true;
             const raw = params.get('redirect') || (_isTsujukuApp ? 'class.html' : 'quick-start.html');
             const safe = /^[a-z0-9_\-./?#=&]+$/i.test(raw) && !raw.startsWith('//') && !raw.startsWith('http');
             window.location.href = safe ? raw : 'quick-start.html';

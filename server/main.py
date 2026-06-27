@@ -9634,6 +9634,7 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
             "goal": student["goal"],
             "plan": student["plan"],
             "course": student["course"],
+            "is_tsujuku_app": _is_juku_app_student(student["id"]),  # 塾生アプリ自己登録者のみ true
         }
     }
 
@@ -9727,6 +9728,7 @@ def verify_magic_link(t: str):
             "plan": row["plan"],
             "status": row["status"],
             "course": row["course"],
+            "is_tsujuku_app": _is_juku_app_student(row["id"]),  # 塾生アプリ自己登録者のみ true
         }
     }
 
@@ -40151,24 +40153,31 @@ def _require_tsujuku_student(student: Optional[dict]) -> None:
     raise HTTPException(status_code=403, detail="この機能は通塾生のみ利用できます")
 
 
-# 🏠 [塾生アプリ home 判定 2026-06-26] owner方針: 「通塾生登録→塾生アプリ / AI管理登録→AI管理」。
-#   無料の通塾生はログイン後 class.html がホーム(マイページボタン非表示)。AIに課金している生徒は
-#   AI管理(mypage)を残す = AI機能/解約画面を締め出さない。
-#   ★課金=AIプラン(premium/family/founder_special 等) ＋ 通塾生プラン student_addon(¥5,000・AI機能付き)。
-#     (owner確認 2026-06-26「AI管理は課金している方のみ・既存student_addonはそのまま・今後の登録=自己登録は
-#      無料courseになるので自動で塾生アプリ」→ student_addon は AI管理側に残す=塾生アプリ判定から除外)。
-_AI_HOME_PLANS = {"premium", "family", "founder_special", "hybrid", "standard"}
-_PAID_AI_PLANS = _AI_HOME_PLANS | {"student_addon"}  # AI管理(mypage)を残す課金プラン
-
-
-def _is_tsujuku_app_home(student: Optional[dict]) -> bool:
-    """class.html(塾生アプリ)をホームにすべき「無料の通塾生」か。
-    = 本クラス所属(course=kokuritsu_nankan) かつ AI課金プラン(_PAID_AI_PLANS=AIプラン+student_addon)を持たない。
-    フロント(auth.html/login.html の遷移分岐, class.html のマイページ表示)と同一ロジック。"""
-    if not student:
+# 🏠 [塾生アプリ home 判定 2026-06-27] owner方針: 「塾生アプリ登録→塾生アプリ / それ以外→AI管理」。
+#   ★当初は course=kokuritsu_nankan(=国公立難関大学コース)を「通塾生」とみなして塾生アプリに送ったが、
+#     これは AI機能付きコースなので、難関コースのAI利用者まで mypage から締め出す事故になった
+#     (2026-06-27 高野さん他11/14名がAI利用者と判明)。→ 判定を course/plan ではなく登録経路に変更。
+def _is_juku_app_student(student_id) -> bool:
+    """🏫 [2026-06-27] class.html(塾生アプリ)をホームにすべきか = 「塾生アプリ登録フォーム
+    (juku-register・referrer='塾生アプリ')から自己登録した純粋な通塾生」か。
+    ★course=kokuritsu_nankan は『国公立難関大学コース』=AI機能付き(学習記録/ドリル/カリキュラム)。
+      既存の難関コース生は course=kokuritsu_nankan でも AI を使うので、course だけで判定すると
+      AI利用者を mypage から締め出す事故になる(2026-06-27 高野さん他11名で発覚)。
+      → 判定は course/plan ではなく『登録経路 referrer=塾生アプリ』にする = 自己登録の通塾生のみ。
+      既存のAI生(referrer≠塾生アプリ)は全員 AI管理(mypage)のまま据え置き。
+    自前接続でcourse_applicationsを引く(login/feedの呼出しは軽量・存在チェックのみ)。"""
+    if not student_id:
         return False
-    plan = (student.get("plan") or "").lower()
-    return (student.get("course") == _STUDY_LOG_TARGET_COURSE) and (plan not in _PAID_AI_PLANS)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT 1 FROM course_applications WHERE student_id = ? AND referrer = ? LIMIT 1",
+                  (int(student_id), "塾生アプリ"))
+        return c.fetchone() is not None
+    except Exception:
+        return False
+    finally:
+        conn.close()
 
 
 def _class_valid_date_or_none(s: Optional[str]) -> Optional[str]:
@@ -40330,9 +40339,9 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             "labeled_files": labeled_files,
             "loose_files": loose_files,
             "loose_recordings": loose_recordings,
-            # 純粋な通塾生(AIプラン無し)は class.html がホーム=マイページボタン非表示。
-            # AIプランも持つ生徒は false → マイページ導線を残す(AI管理へ戻れる)。
-            "is_tsujuku_app": _is_tsujuku_app_home(student),
+            # 塾生アプリ自己登録(referrer=塾生アプリ)の通塾生のみ true = class.html がホーム
+            # (マイページボタン非表示)。既存のAI生(難関コース等)は false=マイページ導線/AI管理を残す。
+            "is_tsujuku_app": _is_juku_app_student(student["id"]),
         }
     finally:
         conn.close()

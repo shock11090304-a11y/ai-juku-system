@@ -261,13 +261,11 @@
           // オープンリダイレクト対策: 同一オリジンの相対パスのみ許可
           // 🎯 2026-05-21 塾長指示: magic link / OTP 緊急発行 → 生徒は quick-start.html に直行
           //   (magic link は ?redirect= 未指定が多数 → default を quick-start に揃えないと届かない)
-          // 🏫 無料の通塾生(トリリオン塾生アプリ)はログイン後そのまま class.html へ直行。
-          //   ?redirect= 明示時はそれを優先。AI課金(AIプラン or 通塾生プラン student_addon¥5000)や
-          //   AI生は従来通り quick-start (AI管理)。判定は server _is_tsujuku_app_home と同一ロジック。
-          const _PAID_AI_PLANS = ['premium', 'family', 'founder_special', 'hybrid', 'standard', 'student_addon'];
-          const _stu = (data && data.student) || {};
-          const _plan = (_stu.plan || '').toLowerCase();
-          const _isTsujukuApp = (_stu.course === 'kokuritsu_nankan') && _PAID_AI_PLANS.indexOf(_plan) < 0;
+          // 🏫 塾生アプリ自己登録(referrer=塾生アプリ)の通塾生だけログイン後 class.html へ直行。
+          //   ?redirect= 明示時はそれを優先。既存のAI生(難関コース等)は従来通り quick-start (AI管理)。
+          //   判定は server (verify が返す is_tsujuku_app = course_applications.referrer='塾生アプリ') を直読み
+          //   = course/plan で誤判定せず、AI利用者を締め出さない。
+          const _isTsujukuApp = ((data && data.student) || {}).is_tsujuku_app === true;
           const raw = params.get('redirect') || (_isTsujukuApp ? 'class.html' : 'quick-start.html');
           const safe = /^[a-z0-9_\-./?#=&]+$/i.test(raw) && !raw.startsWith('//') && !raw.startsWith('http');
           window.location.href = safe ? raw : 'quick-start.html';
