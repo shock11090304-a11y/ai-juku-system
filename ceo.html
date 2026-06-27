@@ -470,6 +470,7 @@
             <button type="button" class="tb-btn hub-btn" data-hub-target="homeworkStatusSection" data-hub-label="📚 宿題 実施状況"><span class="tb-icon">📚</span><span class="tb-label">宿題状況</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="homeworkBulkSection" data-hub-label="📚 宿題 一括割当"><span class="tb-icon">📤</span><span class="tb-label">宿題一括割当</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="studyLogSection" data-hub-label="📚 学習記録ダッシュボード"><span class="tb-icon">📖</span><span class="tb-label">学習記録</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="aiUsageSection" data-hub-label="📊 生徒の学習状況 (ドリル/学習記録/カリキュラム)"><span class="tb-icon">📊</span><span class="tb-label">学習状況</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="studyPlanSection" data-hub-label="📅 学習計画ダッシュボード"><span class="tb-icon">📅</span><span class="tb-label">学習計画</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="messagesSection" data-hub-label="📨 メッセージ配信"><span class="tb-icon">💬</span><span class="tb-label">メッセージ</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="classMgmtSection" data-hub-label="🏫 通塾クラス (ファイル/録画/出欠)"><span class="tb-icon">🏫</span><span class="tb-label">通塾クラス</span></button>
@@ -2615,6 +2616,30 @@
     </section>
 
     <!-- 🏫 通塾クラス (塾長指示 2026-06-25): 授業ファイル配布 / 録画(YouTube限定公開) / 出欠 -->
+    <section id="aiUsageSection" class="roster-section">
+      <div class="section-header-row">
+        <h2>📊 生徒の学習状況 <span id="aiUsageCounter" style="font-size:0.75rem;color:#94a3b8;font-weight:400;margin-left:0.5rem;"></span></h2>
+        <div class="roster-controls">
+          <input type="text" id="aiUsageSearch" placeholder="名前で検索..." />
+          <select id="aiUsageSort">
+            <option value="drills-desc">ドリル回数順(多→少)</option>
+            <option value="recent">最終活動が新しい順</option>
+            <option value="stale">活動が止まっている順</option>
+            <option value="study-desc">学習記録順(多→少)</option>
+            <option value="name">名前順</option>
+          </select>
+          <button type="button" id="aiUsageReload" title="最新の集計を再取得">🔄 更新</button>
+        </div>
+      </div>
+      <div style="color:#94a3b8;font-size:0.8rem;margin:0.2rem 0 0.8rem;">各生徒のドリル回数・学習記録・カリキュラム・最終活動日。<span style="color:#fca5a5;">🔴</span> は一定期間 活動なし＝声かけ候補です。</div>
+      <div class="roster-table-wrapper">
+        <table class="roster-table">
+          <thead><tr><th>#</th><th>氏名</th><th>コース</th><th>ドリル回数</th><th>正答率</th><th>学習記録</th><th>カリキュラム</th><th>最終活動</th><th>状態</th></tr></thead>
+          <tbody id="aiUsageBody"><tr><td colspan="9" style="text-align:center;padding:1rem;color:#a1a1aa;">読み込み中…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
     <section id="classMgmtSection" style="margin:1.5rem 0; padding:1.2rem; background:rgba(129,140,248,0.06); border:1px solid rgba(129,140,248,0.30); border-radius:14px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem; flex-wrap:wrap; gap:0.5rem;">
         <h2 style="margin:0; color:#c7d2fe; font-size:1.3rem;">🏫 通塾クラス</h2>
@@ -10295,6 +10320,84 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     if (AdminAuth.getToken && AdminAuth.getToken()) {
       setTimeout(function () { loadSessions(); loadCalendarAdmin(); populateClassDropdown(); loadClassFiles(); loadStudentClassEditor(); }, 300);
     }
+  })();
+  </script>
+  <script>
+  // 📊 生徒の学習状況 (2026-06-27 塾長要望): GET /api/admin/students/ai-usage を一覧描画。
+  (function () {
+    var _rows = [];
+    function esc(t) { var e = document.createElement('div'); e.textContent = (t == null ? '' : String(t)); return e.innerHTML; }
+    function badge(s) {
+      if ((s.drills || 0) === 0 && (s.study_logs || 0) === 0 && (s.tutor_calls || 0) === 0) return ['🔴 未利用', '#fca5a5'];
+      var d = s.days_since_activity;
+      if (d == null) return ['—', '#94a3b8'];
+      if (d <= 7) return ['🟢 活発', '#6ee7b7'];
+      if (d <= 30) return ['🟡 低調 (' + d + '日前)', '#fbbf24'];
+      return ['🔴 要確認 (' + d + '日前)', '#fca5a5'];
+    }
+    function courseLabel(s) {
+      if (s.course === 'kokuritsu_nankan') return '難関コース';
+      return s.plan || s.course || '—';
+    }
+    function render() {
+      var body = document.getElementById('aiUsageBody');
+      if (!body) return;
+      var q = (document.getElementById('aiUsageSearch').value || '').toLowerCase();
+      var sort = document.getElementById('aiUsageSort').value;
+      var list = _rows.filter(function (s) { return (s.name || '').toLowerCase().indexOf(q) >= 0; });
+      list.sort(function (a, b) {
+        if (sort === 'name') return (a.name || '').localeCompare(b.name || '', 'ja');
+        if (sort === 'study-desc') return (b.study_logs || 0) - (a.study_logs || 0);
+        if (sort === 'recent') return (b.last_activity || '').localeCompare(a.last_activity || '');
+        if (sort === 'stale') {
+          var da = a.days_since_activity == null ? -1 : a.days_since_activity;
+          var db_ = b.days_since_activity == null ? -1 : b.days_since_activity;
+          return db_ - da;
+        }
+        return (b.drills || 0) - (a.drills || 0); // drills-desc (既定)
+      });
+      if (!list.length) {
+        body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:1rem;color:#a1a1aa;">該当する生徒がいません</td></tr>';
+      } else {
+        body.innerHTML = list.map(function (s, i) {
+          var bd = badge(s);
+          var acc = (s.accuracy == null) ? '—' : (Math.round(s.accuracy * 100) + '%');
+          return '<tr>' +
+            '<td style="color:#71717a;">' + (i + 1) + '</td>' +
+            '<td><strong>' + esc(s.name || '—') + '</strong></td>' +
+            '<td style="color:#a1a1aa;font-size:0.8rem;">' + esc(courseLabel(s)) + '</td>' +
+            '<td style="font-weight:700;">' + (s.drills || 0) + '</td>' +
+            '<td style="color:#94a3b8;">' + acc + '</td>' +
+            '<td>' + (s.study_logs || 0) + '</td>' +
+            '<td>' + (s.curricula || 0) + '</td>' +
+            '<td style="color:#94a3b8;font-size:0.8rem;">' + esc(s.last_activity || '—') + '</td>' +
+            '<td style="color:' + bd[1] + ';font-weight:700;font-size:0.82rem;">' + bd[0] + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+      var cnt = document.getElementById('aiUsageCounter');
+      if (cnt) cnt.textContent = list.length + '名';
+    }
+    async function load() {
+      var body = document.getElementById('aiUsageBody');
+      if (!body || !window.AdminAuth) return;
+      body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:1rem;color:#a1a1aa;">読み込み中…</td></tr>';
+      try {
+        var res = await window.AdminAuth.fetch('/api/admin/students/ai-usage');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var j = await res.json();
+        _rows = (j && j.students) || [];
+        render();
+      } catch (e) {
+        body.innerHTML = '<tr><td colspan="9" style="color:#fca5a5;padding:1rem;">読み込み失敗: ' + esc(e && e.message || 'エラー') + '</td></tr>';
+      }
+    }
+    var si = document.getElementById('aiUsageSearch'); if (si) si.addEventListener('input', render);
+    var so = document.getElementById('aiUsageSort'); if (so) so.addEventListener('change', render);
+    var rb = document.getElementById('aiUsageReload'); if (rb) rb.addEventListener('click', load);
+    var hb = document.querySelector('#ceoHubMenu [data-hub-target="aiUsageSection"]');
+    if (hb) hb.addEventListener('click', load);
+    if (window.AdminAuth && AdminAuth.getToken && AdminAuth.getToken()) setTimeout(load, 300);
   })();
   </script>
 </body>

@@ -20064,6 +20064,130 @@ def admin_students_active_no_record(
     }
 
 
+@app.get("/api/admin/students/ai-usage")
+def admin_students_ai_usage(
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """📊 生徒別 学習状況 (CEO ダッシュ「📊 生徒の学習状況」用・2026-06-27 塾長要望).
+
+    各生徒の AI 学習活動を 1 リクエストで集計して一覧返却:
+      - drills: question_attempts (ドリル回数 / 正答数 / 正答率)
+      - study_logs: 学習記録 件数 + 合計分数
+      - curricula: active カリキュラム数
+      - tutor_calls: ai_tutor_solve_log (AIチューター利用回数)
+      - last_activity / days_since_activity: 最終活動日 = 上記の最新タイムスタンプ
+        (エンゲージメント低下＝声かけ候補の特定に使う)
+
+    N+1 を避けるため各テーブルを student_id で GROUP BY した LEFT JOIN で一括集計。
+    認証: admin Bearer or x-cron-secret
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    conn = db()
+    c = conn.cursor()
+    students = []
+    try:
+        try:
+            c.execute(
+                f"""SELECT s.id, s.name, s.email, s.grade, s.course, s.plan, s.status,
+                          s.last_login_at, s.created_at,
+                          COALESCE(qa.attempts, 0) AS attempts,
+                          COALESCE(qa.correct, 0) AS correct,
+                          qa.last_attempt,
+                          COALESCE(sl.records, 0) AS study_records,
+                          COALESCE(sl.minutes, 0) AS study_minutes,
+                          sl.last_study,
+                          COALESCE(cu.active_curr, 0) AS active_curr,
+                          COALESCE(tl.tutor_count, 0) AS tutor_count,
+                          tl.last_tutor
+                   FROM students s
+                   LEFT JOIN (
+                     SELECT student_id, COUNT(*) AS attempts,
+                            SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) AS correct,
+                            MAX(created_at) AS last_attempt
+                       FROM question_attempts GROUP BY student_id
+                   ) qa ON qa.student_id = s.id
+                   LEFT JOIN (
+                     SELECT student_id, COUNT(*) AS records,
+                            COALESCE(SUM(minutes), 0) AS minutes,
+                            MAX(studied_date) AS last_study
+                       FROM study_logs GROUP BY student_id
+                   ) sl ON sl.student_id = s.id
+                   LEFT JOIN (
+                     SELECT student_id, COUNT(*) AS active_curr
+                       FROM curricula WHERE status = 'active' GROUP BY student_id
+                   ) cu ON cu.student_id = s.id
+                   LEFT JOIN (
+                     SELECT student_id, COUNT(*) AS tutor_count, MAX(created_at) AS last_tutor
+                       FROM ai_tutor_solve_log GROUP BY student_id
+                   ) tl ON tl.student_id = s.id
+                   WHERE s.status IN ('trial', 'paid')
+                     AND {_synth_exclude_sql('s')}
+                   ORDER BY qa.attempts DESC NULLS LAST, s.id""",
+            )
+            rows = c.fetchall()
+        except Exception as _e:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            log.warning(f"[ai-usage] JOIN failed, falling back: {_e}")
+            rows = []
+
+        now = datetime.now(timezone.utc)
+        for r in rows:
+            d = dict(r)
+            # 最終活動 = ドリル/学習記録/AIチューター の最新。DATE と TIMESTAMP が混在するが
+            # 文字列(ISO)の辞書順 max が日付として正しい最新になる(先頭10桁=YYYY-MM-DD が支配)。
+            cands = [d.get("last_attempt"), d.get("last_study"), d.get("last_tutor")]
+            cands = [str(x) for x in cands if x]
+            last_act = max(cands)[:10] if cands else None
+            days_since = None
+            if last_act:
+                try:
+                    day = datetime.strptime(last_act, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                    days_since = max(0, (now - day).days)
+                except Exception:
+                    days_since = None
+            attempts = int(d.get("attempts") or 0)
+            correct = int(d.get("correct") or 0)
+            students.append({
+                "id": d.get("id"),
+                "name": d.get("name"),
+                "grade": d.get("grade"),
+                "course": d.get("course"),
+                "plan": d.get("plan"),
+                "status": d.get("status"),
+                "drills": attempts,
+                "drills_correct": correct,
+                "accuracy": round(correct / attempts, 3) if attempts > 0 else None,
+                "study_logs": int(d.get("study_records") or 0),
+                "study_minutes": int(d.get("study_minutes") or 0),
+                "curricula": int(d.get("active_curr") or 0),
+                "tutor_calls": int(d.get("tutor_count") or 0),
+                "last_activity": last_act,
+                "days_since_activity": days_since,
+            })
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "count": len(students),
+        "as_of": datetime.now(timezone.utc).isoformat(),
+        "students": students,
+    }
+
+
 @app.post("/api/admin/students/backfill-last-login")
 def admin_students_backfill_last_login(payload: dict = None, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """events テーブルから last_login_at を遡及推定して埋める。
