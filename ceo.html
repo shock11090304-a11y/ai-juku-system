@@ -6570,6 +6570,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             const lines = [
               `Stripe 側 active subscription: ${j.stripe_active_subscriptions}件`,
               `更新: ${j.reconciled}件`,
+              `固まり解消 (体験中/解約予約済みのまま固定の修復): ${j.stuck_sub_resolved ?? 0}件`,
               `孤立 (Stripe にあるが DB に該当生徒なし): ${j.orphans}件`,
               `エラー: ${j.errors}件`,
             ];
