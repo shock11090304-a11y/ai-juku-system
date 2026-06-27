@@ -14016,22 +14016,28 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
                 try: conn.rollback()
                 except Exception: pass
 
-    # 🚪 [cancel-period-end backstop] (2026-06-27): 期間末解約の予約 (cancel_at) が経過しても
-    # status が paid/past_due のまま「解約予約済み」で固まり、実際の解約 (canceled 化) に至らない穴を塞ぐ。
-    # 期間末解約の完了は subscription.deleted webhook 頼りだが、本番 webhook の購読漏れ/配送失敗
-    # (14244 の経緯) で取りこぼすと永久に解約されない。上の downgrade pass も
-    # Subscription.list(status=canceled, created>=90d) と「サブ作成日」でフィルタするため、
-    # 90日以上前に契約した長期会員の期間末解約は救済対象から漏れる。ここでは予約超過 (cancel_at < now)
-    # の生徒を sub_id で直接 Stripe retrieve して検証し、Stripe 側が終了済みなら canceled へ自己修復する。
-    # 対象は「予約超過の生徒」のみ (通常は 0〜数件) なので list 不要・retrieve で十分。
+    # 🚪 [stuck-subscription backstop] (2026-06-27): webhook 取りこぼしで「実際の状態遷移が起きず
+    # 固まる」生徒を sub_id で直接 Stripe retrieve して真実に合わせる自己修復。2系統の固まりを救う:
+    #   (A) paid/past_due の期間末解約 (cancel_at_period_end): cancel_at が過ぎても subscription.deleted
+    #       webhook 取りこぼしで「解約予約済み」のまま canceled 化しない。上の downgrade pass も
+    #       Subscription.list(status=canceled, created>=90d) と「サブ作成日」でフィルタするため、
+    #       90日以上前に契約した長期会員の期間末解約を取りこぼす。
+    #   (B) trial (カード登録済み 21日体験=trial_extended) の解約/自動課金/失効: cancel-trial は
+    #       trial を即時 Subscription.delete し webhook 待ち、cron_expire_trials は card trial を
+    #       意図的に除外 (Stripe が正) するため、subscription.deleted/updated を取りこぼすと
+    #       trial_end を過ぎても「体験中」のまま固定され、解約が処理済みにならない (岡田さん事例)。
+    # いずれも対象は「予約/体験期限を過ぎても active 系のまま」の少数 (通常 0〜数件) なので list 不要・
+    # 該当生徒のみ retrieve で十分。Stripe を真実として canceled / paid / past_due へ収束させる。
     stale_cancel = []
     try:
         _now_iso = datetime.now(timezone.utc).isoformat()
         c.execute(
-            "SELECT id, name, email, stripe_subscription_id, cancel_at FROM students "
-            "WHERE status IN ('paid','past_due') AND cancel_at IS NOT NULL AND cancel_at < ? "
-            "AND stripe_subscription_id IS NOT NULL AND stripe_subscription_id != ''",
-            (_now_iso,),
+            "SELECT id, name, email, status, stripe_subscription_id, cancel_at, trial_end FROM students "
+            "WHERE stripe_subscription_id IS NOT NULL AND stripe_subscription_id != '' AND ("
+            "  (status IN ('paid','past_due') AND cancel_at IS NOT NULL AND cancel_at < ?)"
+            "  OR (status = 'trial' AND trial_end IS NOT NULL AND trial_end < ?)"
+            ")",
+            (_now_iso, _now_iso),
         )
         _stale_rows = list(c.fetchall())
     except Exception as e:
@@ -14040,6 +14046,7 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
     for _r in _stale_rows:
         _sid = _r["id"]
         _subid = _r["stripe_subscription_id"]
+        _db_status = _r["status"]
         try:
             _sstatus = None
             try:
@@ -14055,34 +14062,64 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
                     errors.append({"stale_cancel_retrieve": _subid, "error": str(_re)})
                     continue
             if _sstatus in ("canceled", "incomplete_expired"):
-                # webhook 取りこぼし → canceled 自己修復。canceled 不変条件で cancel_at / sub_id /
-                # past_due_since を NULL クリア (webhook ハンドラ 27368 と同一)。
+                # 解約 (期間末完了 or 体験中の即時解約) の webhook 取りこぼし → canceled 自己修復。
+                # canceled 不変条件で cancel_at / sub_id / past_due_since を NULL クリア (webhook ハンドラ
+                # 27368 と同一)。
                 c.execute(
                     "UPDATE students SET status='canceled', cancel_at=NULL, stripe_subscription_id=NULL, "
-                    "past_due_since=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('paid','past_due')",
+                    "past_due_since=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('trial','paid','past_due')",
                     (_sid,),
                 )
                 if c.rowcount > 0:
                     conn.commit()
-                    stale_cancel.append({"student_id": _sid, "email": _r["email"], "subscription": _subid, "action": "canceled"})
+                    stale_cancel.append({"student_id": _sid, "email": _r["email"], "subscription": _subid, "from": _db_status, "action": "canceled"})
                     log.warning(
-                        f"[Reconcile cancel-backstop] student_id={_sid} 解約予約超過→canceled 自己修復 "
+                        f"[Reconcile stuck-sub backstop] student_id={_sid} ({_db_status})→canceled 自己修復 "
                         f"(subscription.deleted webhook 取りこぼし) sub={_subid}"
                     )
-            else:
-                # Stripe 側はまだ active = Portal で予約取消 or 期間延長された。Stripe の値を真実として
-                # cancel_at を再同期 (予約解除なら NULL に戻り、以後 stale 判定から外れる = 自己修復)。
+            elif _sstatus == "active":
+                # 自動課金成功 (trial→paid) もしくは past_due 回復。trial_end クリア・paid_since 起点・
+                # past_due_since 解消 (reconcile 昇格パス / webhook updated:active と同一規約)。
+                # 解約予約が残っていれば Stripe の cancel_at を再同期 (paid のまま「解約予約済み」を維持)。
                 _cap_flag = bool(_ssub.get("cancel_at_period_end")) if _ssub is not None else False
                 _cap_ts = (_ssub.get("cancel_at") or (_ssub.get("current_period_end") if _cap_flag else None)) if _ssub is not None else None
-                _cap_iso = None
-                if _cap_ts:
-                    _cap_iso = datetime.fromtimestamp(int(_cap_ts), tz=timezone.utc).isoformat()
+                _cap_iso = datetime.fromtimestamp(int(_cap_ts), tz=timezone.utc).isoformat() if _cap_ts else None
                 c.execute(
-                    "UPDATE students SET cancel_at=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('paid','past_due')",
+                    "UPDATE students SET status='paid', cancel_at=?, trial_end=NULL, "
+                    "paid_since=COALESCE(paid_since, CURRENT_TIMESTAMP), past_due_since=NULL, "
+                    "updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('trial','paid','past_due')",
                     (_cap_iso, _sid),
                 )
-                conn.commit()
-                stale_cancel.append({"student_id": _sid, "email": _r["email"], "subscription": _subid, "action": "resynced", "cancel_at": _cap_iso})
+                if c.rowcount > 0:
+                    conn.commit()
+                    stale_cancel.append({"student_id": _sid, "email": _r["email"], "subscription": _subid, "from": _db_status, "action": "activated", "cancel_at": _cap_iso})
+                    if _db_status != "paid":
+                        log.warning(f"[Reconcile stuck-sub backstop] student_id={_sid} ({_db_status})→paid 自己修復 (Stripe active・webhook 取りこぼし) sub={_subid}")
+            elif _sstatus in ("past_due", "unpaid"):
+                # 月次決済失敗。past_due へ降格し grace 起点を打刻 (webhook / reconcile downgrade と同一)。
+                c.execute(
+                    "UPDATE students SET status='past_due', "
+                    "past_due_since=COALESCE(past_due_since, CURRENT_TIMESTAMP), "
+                    "updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('trial','paid')",
+                    (_sid,),
+                )
+                if c.rowcount > 0:
+                    conn.commit()
+                    stale_cancel.append({"student_id": _sid, "email": _r["email"], "subscription": _subid, "from": _db_status, "action": "past_due"})
+                    log.warning(f"[Reconcile stuck-sub backstop] student_id={_sid} ({_db_status})→past_due 自己修復 (Stripe {_sstatus}) sub={_subid}")
+            else:
+                # Stripe 側はまだ trialing 等 = 進行中。誤って終端化せず、cancel_at だけ Stripe 値で再同期
+                # (予約解除なら NULL に戻る = 自己修復)。trial の trial_end ズレは触らない (Stripe が正)。
+                _cap_flag = bool(_ssub.get("cancel_at_period_end")) if _ssub is not None else False
+                _cap_ts = (_ssub.get("cancel_at") or (_ssub.get("current_period_end") if _cap_flag else None)) if _ssub is not None else None
+                _cap_iso = datetime.fromtimestamp(int(_cap_ts), tz=timezone.utc).isoformat() if _cap_ts else None
+                if _db_status in ("paid", "past_due"):
+                    c.execute(
+                        "UPDATE students SET cancel_at=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('paid','past_due')",
+                        (_cap_iso, _sid),
+                    )
+                    conn.commit()
+                    stale_cancel.append({"student_id": _sid, "email": _r["email"], "subscription": _subid, "from": _db_status, "action": "resynced", "stripe_status": _sstatus, "cancel_at": _cap_iso})
         except Exception as e:
             errors.append({"stale_cancel_student": _sid, "error": str(e)})
             try: conn.rollback()
@@ -14096,11 +14133,11 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
         "reconciled": len(reconciled),
         "relinked": len(relinked),
         "downgraded": len(downgraded),
-        "stale_cancel_resolved": len(stale_cancel),
+        "stuck_sub_resolved": len(stale_cancel),
         "orphans": len(orphans),
         "errors": len(errors),
-        "details": {"reconciled": reconciled, "relinked": relinked, "downgraded": downgraded, "stale_cancel": stale_cancel, "orphans": orphans, "errors": errors},
-        "message": f"✅ 昇格 {len(reconciled)} 件 / 紐付け修復 {len(relinked)} 件 / 降格 {len(downgraded)} 件 / 解約予約超過の解消 {len(stale_cancel)} 件を Stripe に同期。orphan {len(orphans)} 件は手動確認推奨。",
+        "details": {"reconciled": reconciled, "relinked": relinked, "downgraded": downgraded, "stuck_sub": stale_cancel, "orphans": orphans, "errors": errors},
+        "message": f"✅ 昇格 {len(reconciled)} 件 / 紐付け修復 {len(relinked)} 件 / 降格 {len(downgraded)} 件 / 固まりサブスクの解消 {len(stale_cancel)} 件を Stripe に同期。orphan {len(orphans)} 件は手動確認推奨。",
     }
 
 
