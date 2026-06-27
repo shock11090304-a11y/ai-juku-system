@@ -405,18 +405,18 @@
         (d.records || []).forEach(function (r) { attendMine[r.date + '|' + r.class_label] = { status: r.status, source: r.source }; });
       } catch (e) { attendMine = {}; }
     }
-    function todayClasses() {
-      var dow = new Date().getDay();
+    // 指定曜日(0=日..6=土)の授業一覧を時間割から。受講クラス設定済みならその所属だけに絞る(未設定=全表示の移行フォールバック)。
+    function _classesForDow(dow) {
       var out = [];
       TIMETABLE.weekdays.forEach(function (wd) {
         if (_DAY2DOW[wd.day] === dow) wd.items.forEach(function (it) { out.push({ label: wd.day + '曜' + it.p + ' ' + it.c, time: it.t, title: it.c }); });
       });
       TIMETABLE.special.forEach(function (sp) { if (_DAY2DOW[sp.day] === dow) out.push({ label: sp.day + '曜 ' + sp.c, time: sp.t, title: sp.c }); });
-      // 受講クラスが設定されていれば、その所属クラスだけに絞る (未設定=全クラス表示の移行フォールバック)
       var my = (feedData && feedData.my_classes) || [];
       if (my.length) out = out.filter(function (c) { return my.indexOf(c.label) >= 0; });
       return out;
     }
+    function todayClasses() { return _classesForDow(new Date().getDay()); }
     function todayAttendHtml() {
       var classes = todayClasses();
       if (!classes.length) return '';   // 今日は授業がない曜日
@@ -441,6 +441,47 @@
       });
       return '<div class="sec-divider">🙋 今日の出欠</div>' + h;
     }
+    // 🗓 これからの出欠（事前連絡）: 明日から14日間、所属クラスの授業日を日付ごとに出し、欠席/遅刻を前もって申告できる。
+    //   受講クラス未設定の生徒には出さない（全クラス羅列＝受講しないコマへの誤申告を防ぐ。今日の出欠は移行fallbackで従来通り）。
+    var _WDJP = ['日', '月', '火', '水', '木', '金', '土'];
+    function upcomingAttendHtml() {
+      var my = (feedData && feedData.my_classes) || [];
+      if (!my.length) return '';   // 受講クラス未設定なら事前連絡は出さない
+      var lbl = { present: '出席', absent: '欠席', late: '遅刻' };
+      var base = new Date(); base.setHours(0, 0, 0, 0);
+      var groups = [];
+      for (var i = 1; i <= 14; i++) {
+        var dt = new Date(base); dt.setDate(base.getDate() + i);
+        var key = _ymdOf(dt);
+        var ev = calEvents[key];
+        if (ev && ev.kind === 'closed') continue;   // 休塾日はスキップ
+        var cls = _classesForDow(dt.getDay());
+        if (cls.length) groups.push({ date: key, dt: dt, classes: cls });
+      }
+      if (!groups.length) return '';
+      var h = '<div class="sec-divider">🗓 これからの出欠（事前連絡）</div>'
+        + '<div class="tt-intro">先の授業について、欠席・遅刻を前もって連絡できます（あとから変更も可能）。</div>';
+      groups.forEach(function (g) {
+        h += '<div class="block-label" style="font-size:0.9rem; margin:0.9rem 0 0.3rem;">'
+          + (g.dt.getMonth() + 1) + '/' + g.dt.getDate() + '（' + _WDJP[g.dt.getDay()] + '）</div>';
+        g.classes.forEach(function (c) {
+          var rec = attendMine[g.date + '|' + c.label];
+          var cur = rec && rec.status, byAdmin = rec && rec.source === 'admin';
+          var mk = function (st, label) {
+            return '<button class="att-btn att2-set' + (cur === st ? ' sel-' + st : '') + '" data-label="' + esc(c.label)
+              + '" data-date="' + g.date + '" data-st="' + st + '"' + (byAdmin ? ' disabled' : '') + '>' + label + '</button>';
+          };
+          var statusLine = byAdmin ? '<div class="att-status att-saved">🏫 塾長が記録: ' + esc(lbl[cur] || cur) + '</div>'
+            : (cur ? '<div class="att-status att-saved">✓ 連絡済み: ' + esc(lbl[cur] || cur) + '（変更も可能）</div>'
+              : '<div class="att-status muted">未連絡</div>');
+          h += '<div class="card" data-att-verb="連絡済み" style="padding:0.7rem 0.8rem;"><div style="font-weight:700; font-size:0.9rem;">' + esc(c.title)
+            + ' <span class="muted" style="font-weight:500;">' + esc(c.time) + '</span></div>'
+            + '<div class="att-row" style="margin-top:0.5rem;">' + mk('present', '出席') + mk('absent', '欠席') + mk('late', '遅刻') + '</div>'
+            + statusLine + '</div>';
+        });
+      });
+      return h;
+    }
     async function reportAttend2(btn) {
       if (btn.disabled) return;
       var label = btn.getAttribute('data-label'), date = btn.getAttribute('data-date'), st = btn.getAttribute('data-st');
@@ -454,7 +495,7 @@
           attendMine[date + '|' + label] = { status: st, source: 'self' };
           all.forEach(function (b) { b.className = 'att-btn att2-set' + (b.getAttribute('data-st') === st ? ' sel-' + st : ''); });
           var se = card.querySelector('.att-status');
-          if (se) { se.className = 'att-status att-saved'; se.textContent = '✓ 申告済み: ' + (r.label || st) + '（変更も可能）'; }
+          if (se) { se.className = 'att-status att-saved'; se.textContent = '✓ ' + (card.getAttribute('data-att-verb') || '申告済み') + ': ' + (r.label || st) + '（変更も可能）'; }
           toast('出欠を記録しました（' + (r.label || st) + '）');
         }
       } catch (e) { toast(e.message || '記録に失敗しました', true); }
@@ -528,6 +569,8 @@
       var parts = [];
       // 🙋 今日の出欠（今日のクラスがある時のみ）
       parts.push(todayAttendHtml());
+      // 🗓 これからの出欠（事前連絡・受講クラス設定済みの生徒のみ）
+      parts.push(upcomingAttendHtml());
       // 📅 カレンダー（休塾日・特別予定・祝日）
       parts.push(calendarHtml());
       // 🗓 週間時間割（常時表示）
