@@ -10112,8 +10112,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         box.innerHTML = '<div style="font-size:0.78rem; color:#cbd5e1; margin-bottom:0.45rem;">🟢出席 ' + cc.present + ' / 🔴欠席 ' + cc.absent + ' / 🟡遅刻 ' + cc.late + '</div>'
           + roster.map(function (s) {
             var src = s.source === 'self' ? ' <span style="color:#a1a1aa; font-size:0.7rem;">(本人申告)</span>' : (s.source === 'admin' ? ' <span style="color:#a5b4fc; font-size:0.7rem;">(記録済)</span>' : '');
+            var de = _dupEmail(s, roster);
             return '<div data-sid="' + s.student_id + '" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; padding:0.45rem 0.55rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:7px; margin-bottom:0.3rem;">'
-              + '<span style="flex:1; min-width:90px; font-weight:700; font-size:0.86rem;">' + esc(s.name || ('ID:' + s.student_id)) + (s.grade ? (' <span style="color:#a1a1aa; font-size:0.75rem; font-weight:500;">' + esc(s.grade) + '</span>') : '') + src + '</span>'
+              + '<span style="flex:1; min-width:90px; font-weight:700; font-size:0.86rem;">' + esc(s.name || ('ID:' + s.student_id)) + (s.grade ? (' <span style="color:#a1a1aa; font-size:0.75rem; font-weight:500;">' + esc(s.grade) + '</span>') : '') + (de ? (' <span style="color:#fca5a5; font-size:0.7rem;">✉' + esc(de) + '</span>') : '') + src + '</span>'
               + '<span style="display:flex; gap:0.35rem;">' + atMarkBtn(s, 'present', '出席', date, label) + atMarkBtn(s, 'absent', '欠席', date, label) + atMarkBtn(s, 'late', '遅刻', date, label) + '</span></div>';
           }).join('');
       } catch (e) {
@@ -10144,7 +10145,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         var d = await adminJson('/api/admin/class/students');
         _scStudents = d.students || [];
         if (sel.options.length <= 1) {
-          _scStudents.forEach(function (s) { var o = document.createElement('option'); o.value = s.id; o.textContent = s.name + (s.grade ? (' (' + s.grade + ')') : ''); sel.appendChild(o); });
+          _scStudents.forEach(function (s) { var o = document.createElement('option'); o.value = s.id; var de = _dupEmail(s, _scStudents); o.textContent = s.name + (s.grade ? (' (' + s.grade + ')') : '') + (de ? (' ✉' + de) : ''); sel.appendChild(o); });
         }
         if (typeof hwUpdateCount === 'function') hwUpdateCount();  // 名簿ロード後に宿題カウントを更新(初回ロード時のfalse-0を解消)
         if (typeof renderClassRoster === 'function') renderClassRoster();  // クラス別一括登録も名簿ロード後に再描画
@@ -10180,6 +10181,12 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     var _scStudentSel = document.getElementById('scStudent');
     if (_scStudentSel) _scStudentSel.addEventListener('change', renderStudentClasses);
 
+    // 同名の重複アカウント(別メールで二重登録)を見分けるため、同名が複数いる生徒だけメールを併記。
+    function _dupEmail(s, list) {
+      if (!s || !s.email) return '';
+      var cnt = 0; for (var i = 0; i < list.length; i++) { if (list[i] && list[i].name === s.name) cnt++; }
+      return cnt > 1 ? s.email : '';
+    }
     // 🏫 クラス別 受講生 一括登録 (クラス→生徒チェック→保存)
     function crUpdateCount() {
       var box = document.getElementById('crStudents'); var el = document.getElementById('crCount');
@@ -10196,7 +10203,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       box.innerHTML = '<div style="display:flex; flex-wrap:wrap; gap:0.4rem;">'
         + _scStudents.map(function (s) {
           var on = (s.class_labels || []).indexOf(label) >= 0;
-          return '<label style="display:inline-flex; align-items:center; gap:0.3rem; padding:0.4rem 0.7rem; background:' + (on ? 'rgba(6,199,85,0.18)' : 'rgba(255,255,255,0.05)') + '; border:1px solid ' + (on ? 'rgba(6,199,85,0.5)' : 'rgba(255,255,255,0.16)') + '; border-radius:999px; font-size:0.82rem; cursor:pointer;"><input type="checkbox" class="cr-cb" value="' + s.id + '"' + (on ? ' checked' : '') + ' style="accent-color:#10b981;">' + esc(s.name) + (s.grade ? ('<span style="color:#a1a1aa;">(' + esc(s.grade) + ')</span>') : '') + '</label>';
+          var de = _dupEmail(s, _scStudents);
+          return '<label style="display:inline-flex; align-items:center; gap:0.3rem; padding:0.4rem 0.7rem; background:' + (on ? 'rgba(6,199,85,0.18)' : 'rgba(255,255,255,0.05)') + '; border:1px solid ' + (on ? 'rgba(6,199,85,0.5)' : 'rgba(255,255,255,0.16)') + '; border-radius:999px; font-size:0.82rem; cursor:pointer;"><input type="checkbox" class="cr-cb" value="' + s.id + '"' + (on ? ' checked' : '') + ' style="accent-color:#10b981;">' + esc(s.name) + (s.grade ? ('<span style="color:#a1a1aa;">(' + esc(s.grade) + ')</span>') : '') + (de ? ('<span style="color:#fca5a5; font-size:0.7rem;">✉' + esc(de) + '</span>') : '') + '</label>';
         }).join('') + '</div>'
         + '<button id="crSaveBtn" type="button" style="' + BTN + ' background:linear-gradient(135deg,#34d399,#10b981); color:#06281e; margin-top:0.6rem;">このクラスの受講生を保存</button>';
       box.querySelectorAll('.cr-cb').forEach(function (cb) { cb.addEventListener('change', crUpdateCount); });

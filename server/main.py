@@ -40925,8 +40925,9 @@ def _validate_attend(class_label, att_date, status):
 
 
 def _tsujuku_roster(c):
-    """通塾生(course=kokuritsu_nankan or plan=student_addon)の名簿を取得 (cursor 渡し)。"""
-    c.execute("SELECT id, name, grade, class_labels FROM students WHERE course = ? OR plan = ? ORDER BY name",
+    """通塾生(course=kokuritsu_nankan or plan=student_addon)の名簿を取得 (cursor 渡し)。
+    email も返す: 同名の重複アカウント(別メールで二重登録)を CEO 名簿で区別するため。"""
+    c.execute("SELECT id, name, grade, email, class_labels FROM students WHERE course = ? OR plan = ? ORDER BY name",
               (_STUDY_LOG_TARGET_COURSE, "student_addon"))
     return c.fetchall()
 
@@ -41002,6 +41003,7 @@ def admin_class_students(authorization: Optional[str] = Header(None)):
     try:
         c = conn.cursor()
         return {"ok": True, "students": [{"id": r["id"], "name": r["name"], "grade": r["grade"],
+                                          "email": r["email"],  # 同名の重複アカウント区別用
                                           "class_labels": _parse_labels(r["class_labels"])} for r in _tsujuku_roster(c)]}
     finally:
         conn.close()
@@ -41092,7 +41094,7 @@ def admin_class_attend_roster(att_date: str, class_label: str, authorization: Op
             if cls and cl not in cls:
                 continue
             rec = by_sid.get(r["id"])
-            roster.append({"student_id": r["id"], "name": r["name"], "grade": r["grade"],
+            roster.append({"student_id": r["id"], "name": r["name"], "grade": r["grade"], "email": r["email"],
                            "status": rec["status"] if rec else None, "source": rec["source"] if rec else None,
                            "label": _ATTENDANCE_LABEL.get(rec["status"], rec["status"]) if rec else None})
         counts = {"present": 0, "absent": 0, "late": 0}
