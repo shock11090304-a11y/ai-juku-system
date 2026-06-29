@@ -1,0 +1,31 @@
+{
+  "slug": "18_interrogatives",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"He is my teacher なので人を尋ねる Who。"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"A small cake と物を答えているので What。"},
+    {"no":3,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It is Tom's と所有を答えているので Whose。"},
+    {"no":4,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"At seven thirty と時刻を答えているので When。"},
+    {"no":5,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"In Tokyo と場所を答えているので Where。"},
+    {"no":6,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Because ... と理由を答えているので Why。"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"By bike と手段を答えているので How。"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"books は可算名詞なので How many。"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"water は不可算名詞なので How much。"},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"fifteen years old と年齢を答えているので How old。"},
+    {"no":11,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Three times a week と頻度を答えているので How often。"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主語を問う疑問詞 Who broke...。Ken did が答え。Who did/What did は不可。"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Which ... better, A or B? の選択疑問なので or。"},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"肯定文の付加疑問は否定 aren't you。"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定文 doesn't の付加疑問は肯定 does he。"},
+    {"no":16,"mc_index":-1,"produced_sentence":"Where do you live?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"疑問詞+do+主語+動詞。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"Whose umbrella is this?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Whose+名詞+is this の語順。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"How many books do you have?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"How many+複数名詞+do+主語+動詞。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"Who wrote this letter?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主語を問う疑問文。do を使わず動詞を直接続ける。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"Why were you absent yesterday?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Why+be動詞+主語+補語+時の副詞。be absent for school でなく be absent。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"How do you go to school?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"How+do+主語+動詞+to school。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"You like music, don't you?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"トークンに 'you,'(カンマ付き)があり付加疑問の語順を導く。You like music, don't you?。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"What is he?","multiple_valid":false,"multiple_valid_note":"職業を尋ねる定型は What is he? だが文脈次第で What does he do? も可。本問は be動詞の書きかえ指定なので What is he? が標準解。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"a doctor(職業)を尋ねる疑問文。What で始め be動詞をそのまま使う。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"I don't know where she lives.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"間接疑問は疑問詞+主語+動詞の平叙語順。does が消えて lives に。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"She can play the piano, can't she?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"助動詞 can の付加疑問は can't she?。"}
+  ]
+}

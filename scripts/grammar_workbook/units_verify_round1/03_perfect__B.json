@@ -1,0 +1,31 @@
+{
+  "slug": "03_perfect",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"already=完了の肯定文。「もう終えた」"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"疑問文の文末yet=「もう」"},
+    {"no":3,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"起点2015→since"},
+    {"no":4,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"期間ten years→for"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"経験の疑問文ever。neverは肯定で不可"},
+    {"no":6,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"肯定文で「一度も〜ない」never"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"今いない→have gone to(行ってしまった)"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"twice経験→have been to"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"yesterday明確な過去→過去形lost"},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"had already+過去分詞left"},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"said(過去)と時制一致→had read(大過去)"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"for three hours+現在に影響→has been raining"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"By the time+未来→未来完了will have finished"},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"How long+studied→have(現在完了)"},
+    {"no":15,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定文の文末yet=「まだ」"},
+    {"no":16,"mc_index":-1,"produced_sentence":"I have just finished lunch.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"have just+過去分詞"},
+    {"no":17,"mc_index":-1,"produced_sentence":"Have you ever climbed Mt. Fuji?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"経験疑問文"},
+    {"no":18,"mc_index":-1,"produced_sentence":"We have lived in this town since 2020.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"in this town+since 2020"},
+    {"no":19,"mc_index":-1,"produced_sentence":"When I reached the station, the bus had already left.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去完了had already left"},
+    {"no":20,"mc_index":-1,"produced_sentence":"She has been playing the piano for three hours.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在完了進行for three hours"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I have never seen the movie.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"経験の否定never"},
+    {"no":22,"mc_index":-1,"produced_sentence":"I have learned the guitar for three years.","multiple_valid":true,"multiple_valid_note":"継続を強調する現在完了進行形 'I have been learning the guitar for three years.' も文法的・意味的に正しく、ギター学習という動作動詞では進行形の方がむしろ自然。指示は『現在完了(継続用法)』なのでhave learnedも可。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"started ago + still now → for three yearsの継続"},
+    {"no":23,"mc_index":-1,"produced_sentence":"He has gone to Canada.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"have gone to=行ってしまって今いない"},
+    {"no":24,"mc_index":-1,"produced_sentence":"I have been to Kyoto twice.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"have been to+twiceの経験"},
+    {"no":25,"mc_index":-1,"produced_sentence":"When we arrived at the theater, the movie had already started.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"指定書き出し+過去完了had already started"}
+  ]
+}

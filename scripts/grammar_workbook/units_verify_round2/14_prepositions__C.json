@@ -1,0 +1,31 @@
+{
+  "slug": "14_prepositions",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"時刻の一点はat。"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"曜日・特定の日はon。"},
+    {"no":3,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"季節はin。"},
+    {"no":4,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"壁面に接触してかかっているのでon。"},
+    {"no":5,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"内部に入れるのでin。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"集合地点(一点)はat。"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"go to school、方向のto。"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"交通手段はby train(無冠詞)。"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"道具・手段はwith a knife。"},
+    {"no":10,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"言語はin English。"},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"waitは継続動作で~時まで続くのでuntil。byは完了の期限で不可。"},
+    {"no":12,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"finishは完了の期限なのでby tomorrow。"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"期間の長さ(数詞)はfor ten years。"},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"起点(~以来)はsince last year。"},
+    {"no":15,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"特定の出来事の間はduring+名詞。"},
+    {"no":16,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"理由はbecause of the rain。"},
+    {"no":17,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"位置(~の前に)はin front of。"},
+    {"no":18,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be good at -ing。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"I am afraid of dogs.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be afraid of。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"The result depends on the weather.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"depend on。トークン'the result'は文頭のため慣例的に大文字化。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"She drank coffee instead of tea.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"instead of。文頭sheは慣例で大文字化。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"According to the weather report, it will rain tomorrow.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"according to。文頭は慣例で大文字化、節間をコンマで区切る。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"We walked through the park.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"through(通り抜け)。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"He could not come because of his sickness.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"接続詞because+SVをbecause of+名詞句his sicknessへ書き換え。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"We arrived in Tokyo on May 5, 2024.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"完全な日付はonを使いMay 5, 2024(年もカンマで併記)。arriveの場所はin Tokyoのまま。問題文の'年と日付の前置詞'指示はやや作為的だが、正しい解答はon May 5, 2024で自然。"}
+  ]
+}

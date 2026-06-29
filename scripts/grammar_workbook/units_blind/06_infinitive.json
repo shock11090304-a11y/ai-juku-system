@@ -1,0 +1,267 @@
+{
+  "unit": "不定詞",
+  "unit_slug": "infinitive",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "My dream is ( ) abroad someday.",
+      "choices": [
+        "studied",
+        "studies",
+        "to study",
+        "study"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "I want ( ) a doctor in the future.",
+      "choices": [
+        "become",
+        "becoming",
+        "became",
+        "to become"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "( ) early is good for your health.",
+      "choices": [
+        "Get up",
+        "Got up",
+        "To get up",
+        "Gets up"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "She has a lot of homework ( ) tonight.",
+      "choices": [
+        "to do",
+        "do",
+        "doing",
+        "did"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "I went to the library ( ) some books.",
+      "choices": [
+        "borrow",
+        "borrowing",
+        "to borrow",
+        "borrowed"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "I was very happy ( ) the good news.",
+      "choices": [
+        "hear",
+        "hearing",
+        "to hear",
+        "heard"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "This water is too cold ( ).",
+      "choices": [
+        "to drink",
+        "drink",
+        "drinking",
+        "drank"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "He is old enough ( ) a car.",
+      "choices": [
+        "drive",
+        "driving",
+        "drove",
+        "to drive"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "It is important ( ) breakfast every morning.",
+      "choices": [
+        "eat",
+        "ate",
+        "to eat",
+        "eaten"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "It is easy ( ) me to read this book.",
+      "choices": [
+        "of",
+        "for",
+        "to",
+        "at"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "I don't know ( ) to say in this situation.",
+      "choices": [
+        "what",
+        "that",
+        "which one",
+        "who"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "Please tell me ( ) to get to the station.",
+      "choices": [
+        "what",
+        "who",
+        "why",
+        "how"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "My mother told me ( ) my room.",
+      "choices": [
+        "to clean",
+        "clean",
+        "cleaning",
+        "cleaned"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "I asked him ( ) the door.",
+      "choices": [
+        "to open",
+        "open",
+        "opening",
+        "opens"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "He grew up ( ) a famous singer.",
+      "choices": [
+        "become",
+        "to become",
+        "becoming",
+        "becomes"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "prompt_ja": "私は英語を勉強するのが好きだ。",
+      "tokens": [
+        "English",
+        "to",
+        "like",
+        "I",
+        "study"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "私には読むべき本が一冊ある。",
+      "tokens": [
+        "a book to read",
+        "I",
+        "have"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "彼女はその知らせを聞いて驚いた。",
+      "tokens": [
+        "surprised",
+        "the",
+        "to",
+        "was",
+        "hear",
+        "She",
+        "news"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "私は医者になりたい。",
+      "tokens": [
+        "to be",
+        "I",
+        "want",
+        "a doctor"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "この問題は私には解けないほど難しい。",
+      "tokens": [
+        "too difficult",
+        "This question",
+        "is",
+        "for me to solve"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "私は次に何をすべきかわからなかった。",
+      "tokens": [
+        "do",
+        "to",
+        "what",
+        "didn't",
+        "next",
+        "I",
+        "know"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "He is so kind that he can help everyone.",
+      "instruction": "ほぼ同じ意味になるよう enough to を使って書き換えなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "This box is so heavy that I cannot carry it.",
+      "instruction": "ほぼ同じ意味になるよう too ... to を使って書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "To learn a foreign language is interesting.",
+      "instruction": "It で始まる形式主語の文に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "I want a cold drink.",
+      "instruction": "something to を使って「何か冷たい飲み物が欲しい」という意味の文に書き換えなさい。"
+    }
+  ]
+}

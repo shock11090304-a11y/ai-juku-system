@@ -1,0 +1,58 @@
+{
+  "part": "math_exam_ia",
+  "group": "図形と計量(三角比)",
+  "unit_theme": "図形と計量(三角比)",
+  "passage": "花子さんと太郎さんは、敷地内の三角形の花壇 \\(\\triangle ABC\\) の大きさを測量している。巻尺で 2 辺の長さを測ると \\(AB = 7\\,\\text{m}\\)、\\(AC = 5\\,\\text{m}\\) であった。さらに分度器を用いて頂点 \\(A\\) の角を測ると \\(\\angle A = 60^\\circ\\) であった。二人はこの測定値をもとに、残りの辺の長さ、花壇の面積、外接円・各頂点の角、そして花壇に立てる支柱の高さを順に求めていく。必要に応じて \\(\\sqrt{3}=1.73\\cdots\\)、\\(\\sqrt{13}=3.60\\cdots\\) を用いてよい。",
+  "subqs": [
+    {
+      "stem": "\\(\\triangle ABC\\) において \\(AB = 7\\)、\\(AC = 5\\)、\\(\\angle A = 60^\\circ\\) である。余弦定理を用いて、辺 \\(BC\\) の長さを求めよ。",
+      "choices_latex": ["\\(\\sqrt{39}\\)", "\\(\\sqrt{109}\\)", "\\(2\\)", "\\(\\sqrt{74}\\)"],
+      "choices_value": ["sqrt(39)", "sqrt(109)", "Integer(2)", "sqrt(74)"],
+      "answer_index": 0,
+      "truth_value": "sqrt(39)",
+      "unit": "発展 図形と計量(三角比)(余弦定理で辺)",
+      "reason": "\\(BC^2 = 7^2+5^2-2\\cdot7\\cdot5\\cos60^\\circ = 49+25-35 = 39\\) より \\(BC=\\sqrt{39}\\)。",
+      "restates": "stem に \\(AB=7,\\ AC=5,\\ \\angle A=60^\\circ\\) を再掲（前問不要）。"
+    },
+    {
+      "stem": "\\(\\triangle ABC\\) において \\(AB = 7\\)、\\(AC = 5\\)、\\(\\angle A = 60^\\circ\\) である。\\(\\triangle ABC\\) の面積 \\(S\\) を求めよ。",
+      "choices_latex": ["\\(\\dfrac{35\\sqrt{3}}{4}\\)", "\\(\\dfrac{35}{4}\\)", "\\(\\dfrac{35\\sqrt{3}}{2}\\)", "\\(\\dfrac{35}{2}\\)"],
+      "choices_value": ["35*sqrt(3)/4", "Rational(35,4)", "35*sqrt(3)/2", "Rational(35,2)"],
+      "answer_index": 0,
+      "truth_value": "35*sqrt(3)/4",
+      "unit": "発展 図形と計量(三角比)(面積公式)",
+      "reason": "\\(S=\\dfrac{1}{2}\\cdot AB\\cdot AC\\cdot\\sin A=\\dfrac{1}{2}\\cdot7\\cdot5\\cdot\\dfrac{\\sqrt3}{2}=\\dfrac{35\\sqrt3}{4}\\)。",
+      "restates": "stem に \\(AB=7,\\ AC=5,\\ \\angle A=60^\\circ\\)（\\(\\sin60^\\circ=\\tfrac{\\sqrt3}{2}\\)）を再掲。"
+    },
+    {
+      "stem": "\\(\\triangle ABC\\) において \\(\\angle A = 60^\\circ\\) であり、\\(\\angle A\\) の対辺は \\(BC = \\sqrt{39}\\) である。\\(\\triangle ABC\\) の外接円の半径 \\(R\\) を求めよ。",
+      "choices_latex": ["\\(\\sqrt{13}\\)", "\\(2\\sqrt{13}\\)", "\\(\\dfrac{\\sqrt{39}}{2}\\)", "\\(\\dfrac{\\sqrt{13}}{2}\\)"],
+      "choices_value": ["sqrt(13)", "2*sqrt(13)", "sqrt(39)/2", "sqrt(13)/2"],
+      "answer_index": 0,
+      "truth_value": "sqrt(13)",
+      "unit": "発展 図形と計量(三角比)(正弦定理で外接円半径)",
+      "reason": "正弦定理 \\(\\dfrac{BC}{\\sin A}=2R\\) より \\(2R=\\dfrac{\\sqrt{39}}{\\sin60^\\circ}=\\dfrac{\\sqrt{39}}{\\sqrt3/2}=2\\sqrt{13}\\)、よって \\(R=\\sqrt{13}\\)。",
+      "restates": "前問 q1 の結果 \\(BC=\\sqrt{39}\\) と \\(\\angle A=60^\\circ\\) を stem に再掲。"
+    },
+    {
+      "stem": "\\(\\triangle ABC\\) において \\(AB = 7\\)、\\(AC = 5\\)、\\(BC = \\sqrt{39}\\) である。頂点 \\(B\\) の角について \\(\\cos B\\) の値を求めよ。",
+      "choices_latex": ["\\(\\dfrac{3\\sqrt{39}}{26}\\)", "\\(\\dfrac{1}{2}\\)", "\\(\\dfrac{21\\sqrt{39}}{130}\\)", "\\(\\dfrac{5\\sqrt{39}}{182}\\)"],
+      "choices_value": ["3*sqrt(39)/26", "Rational(1,2)", "21*sqrt(39)/130", "5*sqrt(39)/182"],
+      "answer_index": 0,
+      "truth_value": "3*sqrt(39)/26",
+      "unit": "発展 図形と計量(三角比)(余弦定理で別角)",
+      "reason": "\\(\\cos B=\\dfrac{BA^2+BC^2-CA^2}{2\\cdot BA\\cdot BC}=\\dfrac{49+39-25}{2\\cdot7\\cdot\\sqrt{39}}=\\dfrac{63}{14\\sqrt{39}}=\\dfrac{9}{2\\sqrt{39}}=\\dfrac{3\\sqrt{39}}{26}\\)。",
+      "restates": "前問 q1 の \\(BC=\\sqrt{39}\\) と \\(AB=7,\\ AC=5\\) を stem に再掲。"
+    },
+    {
+      "stem": "\\(\\triangle ABC\\) において \\(BC = \\sqrt{39}\\) であり、その面積は \\(S = \\dfrac{35\\sqrt{3}}{4}\\) である。頂点 \\(A\\) から辺 \\(BC\\) に下ろした垂線の長さ（高さ）\\(h\\) を求めよ。",
+      "choices_latex": ["\\(\\dfrac{35\\sqrt{13}}{26}\\)", "\\(\\dfrac{35\\sqrt{13}}{52}\\)", "\\(\\dfrac{5\\sqrt{13}}{26}\\)", "\\(\\dfrac{35\\sqrt{3}}{26}\\)"],
+      "choices_value": ["35*sqrt(13)/26", "35*sqrt(13)/52", "5*sqrt(13)/26", "35*sqrt(3)/26"],
+      "answer_index": 0,
+      "truth_value": "35*sqrt(13)/26",
+      "unit": "発展 図形と計量(三角比)(面積から高さ)",
+      "reason": "\\(S=\\dfrac12\\cdot BC\\cdot h\\) より \\(h=\\dfrac{2S}{BC}=\\dfrac{2\\cdot\\frac{35\\sqrt3}{4}}{\\sqrt{39}}=\\dfrac{35\\sqrt3}{2\\sqrt{39}}=\\dfrac{35}{2\\sqrt{13}}=\\dfrac{35\\sqrt{13}}{26}\\)。",
+      "restates": "前問 q1 の \\(BC=\\sqrt{39}\\) と q2 の \\(S=\\frac{35\\sqrt3}{4}\\) を stem に再掲。"
+    }
+  ]
+}

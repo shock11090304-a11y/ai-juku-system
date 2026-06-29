@@ -1,0 +1,23 @@
+{
+  "slug": "17_adjectives-adverbs",
+  "no": 3,
+  "type": "mc",
+  "action": "fix_explanation",
+  "corrected_question": {
+    "no": 3,
+    "type": "mc",
+    "level": "basic",
+    "stem": "He runs ( ) than I do.",
+    "choices": [
+      "quick",
+      "quickness",
+      "quickly",
+      "quicker"
+    ],
+    "answer_index": 3,
+    "answer_text": "quicker",
+    "explanation": "than があるので比較級が必要。quickly は原級ゆえ不可(比較級は more quickly)。選択肢中の比較級は quicker のみ。quick や quickness は動詞 runs を修飾できない。",
+    "point": "than があれば比較級を選ぶ"
+  },
+  "reason": "元の解説の「原級の副詞 quickly は than と共起できない」は誤り(more quickly than は正しい英語)。誤りの根拠を「quickly は原級だから比較級が必要なこの空所には不可」に訂正した。選択肢中の比較級は quicker のみで正解は一意。quick(形容詞)と quickness(名詞)は動詞 runs を修飾できないため不成立。answer と choices は変更せず、解説と point のみ最終解と整合させた。"
+}

@@ -1,0 +1,268 @@
+{
+  "unit": "形容詞・副詞",
+  "unit_slug": "adjectives-adverbs",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "She sings ( ).",
+      "choices": [
+        "beautiful",
+        "beauty",
+        "beautifully",
+        "beautify"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "This is a very ( ) book.",
+      "choices": [
+        "interesting",
+        "interest",
+        "interestingly",
+        "interested"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "He runs ( ) than I do.",
+      "choices": [
+        "quick",
+        "quickness",
+        "quickly",
+        "quicker"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "There are ( ) books on the desk.",
+      "choices": [
+        "much",
+        "a little",
+        "little",
+        "many"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "There isn't ( ) water in the glass.",
+      "choices": [
+        "much",
+        "many",
+        "few",
+        "a few"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "He has ( ) friends, so he often feels lonely.",
+      "choices": [
+        "little",
+        "much",
+        "less",
+        "few"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "I have ( ) money, so I can buy you a drink.",
+      "choices": [
+        "a few",
+        "few",
+        "a little",
+        "little"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "He is ( ) late for school.",
+      "choices": [
+        "every",
+        "always",
+        "all",
+        "many"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "She ( ) gets up early in the morning.",
+      "choices": [
+        "usually",
+        "usual",
+        "use",
+        "useful"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "Have you finished your homework ( )?",
+      "choices": [
+        "long ago",
+        "still",
+        "yet",
+        "ever"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "It is ten o'clock, but he is ( ) sleeping.",
+      "choices": [
+        "yet",
+        "already",
+        "still",
+        "ago"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "This coffee is too ( ) to drink.",
+      "choices": [
+        "hotly",
+        "hot",
+        "heat",
+        "heated"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "He is old ( ) to drive a car.",
+      "choices": [
+        "enough",
+        "too",
+        "very",
+        "so"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "It was ( ) a beautiful day that we went out.",
+      "choices": [
+        "so",
+        "very",
+        "such",
+        "too"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "This question is ( ) more difficult than that one.",
+      "choices": [
+        "very",
+        "many",
+        "much",
+        "so"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "stem": "I am ( ) tired today.",
+      "choices": [
+        "very",
+        "much",
+        "many",
+        "more"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "mc",
+      "stem": "I have hardly ( ) time to relax these days.",
+      "choices": [
+        "many",
+        "much",
+        "any",
+        "some"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "彼はとても速く走る。",
+      "tokens": [
+        "fast",
+        "very",
+        "runs",
+        "He"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "彼女はとても幸せそうに見える。",
+      "tokens": [
+        "very happy",
+        "She",
+        "looks"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "彼女は外国に行ったことが一度もない。",
+      "tokens": [
+        "been",
+        "never",
+        "She",
+        "has",
+        "abroad"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "これはとても面白い物語だ。",
+      "tokens": [
+        "interesting",
+        "such",
+        "is",
+        "story",
+        "This",
+        "an"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "order",
+      "prompt_ja": "彼は私を助けるほど親切だった。",
+      "tokens": [
+        "kind enough",
+        "to help me",
+        "He",
+        "was"
+      ]
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "He is a careful driver.",
+      "instruction": "drive を動詞として使い、ほぼ同じ内容の文に書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "This bag is so heavy that I can't carry it.",
+      "instruction": "too を使ってほぼ同じ内容の文に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "He is so kind that he can help us.",
+      "instruction": "enough を使ってほぼ同じ内容の文に書き換えなさい。"
+    }
+  ]
+}

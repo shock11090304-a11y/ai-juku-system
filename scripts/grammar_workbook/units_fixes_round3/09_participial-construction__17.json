@@ -1,0 +1,26 @@
+{
+  "slug": "09_participial-construction",
+  "no": 17,
+  "type": "order",
+  "action": "rewrite_question",
+  "key_was_correct": true,
+  "is_unique": true,
+  "my_answer": "Having finished my homework, I watched TV.",
+  "arrangements_considered": "元のtokens ['my homework','watched','having','I','finished','TV'] は文頭起こしになる大文字トークンが無く(参加詞は小文字 'having')、かつ 'I' も文頭可能なため、(a) Having finished my homework, I watched TV. と (b) I, having finished my homework, watched TV. の二通りが文法的に成立し一意でなかった。技法(3)に従い分詞句をコンマ込み大文字の1トークン 'Having finished my homework,' に固定。新tokens ['Having finished my homework,','I','watched','TV'] の全24順列を列挙して検証: 'watched'/'TV' 始まりは文を起こせず不可。'I' 始まり(例 'I Having finished my homework, watched TV' / 'I watched TV Having finished my homework,')は大文字 'Having' を文中に置く形となり非文。'Having finished my homework,' に続く主節は SVO の 'I watched TV' のみ自然で、'I TV watched'/'watched I TV' 等は非文。よって文法的・自然・意味一致する英文は 'Having finished my homework, I watched TV.' ちょうど1通り。",
+  "reason": "事前検査どおり語順が一意でなかった。原因は分詞句が複数トークンに分かれ、しかも文頭起こしトークン 'having' が小文字で 'I' と二箇所いずれにも置けたため (a) Having finished my homework, I watched TV. と (b) I, having finished my homework, watched TV. の二解が成立した点。技法(3)で分詞句をコンマ込み大文字の単一トークン 'Having finished my homework,' に統合し文頭固定、主節を 'I watched TV' に限定して唯一解化した。鍵(answer_text)は元から正しいので key_was_correct=true。単元『分詞構文』(完了分詞 Having done)を問う点・basic/standard 水準は不変。",
+  "corrected_question": {
+    "no": 17,
+    "type": "order",
+    "level": "standard",
+    "prompt_ja": "宿題を終えてしまったので、私はテレビを見た。",
+    "tokens": [
+      "Having finished my homework,",
+      "watched",
+      "I",
+      "TV"
+    ],
+    "answer_text": "Having finished my homework, I watched TV.",
+    "explanation": "主節より前に終わった動作は完了分詞 Having + 過去分詞で表す。コンマ付きの「Having finished my homework,」を文頭に固定し、主節 I watched TV を続ける。文頭の大文字とコンマにより語順が一意に定まる。",
+    "point": "完了分詞構文 Having done"
+  }
+}

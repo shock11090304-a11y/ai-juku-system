@@ -1,0 +1,31 @@
+{
+  "slug": "14_prepositions",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"at + clock time"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"on + day of the week"},
+    {"no":3,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"in + season"},
+    {"no":4,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"on + surface (wall)"},
+    {"no":5,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"in + enclosed space (bag)"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"at + specific meeting point"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"go to school"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"by + means of transport"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"with + instrument/tool"},
+    {"no":10,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"in + language"},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"waited until (continuous action up to a point)"},
+    {"no":12,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"by + deadline (finish by)"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"for + duration"},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"since + point in time"},
+    {"no":15,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"during + noun (the movie)"},
+    {"no":16,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"because of + noun (cause)"},
+    {"no":17,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"in front of (location)"},
+    {"no":18,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"good at + -ing"},
+    {"no":19,"mc_index":-1,"produced_sentence":"I am afraid of dogs.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be afraid of"},
+    {"no":20,"mc_index":-1,"produced_sentence":"The result depends on the weather.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"depend on"},
+    {"no":21,"mc_index":-1,"produced_sentence":"She drank coffee instead of tea.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"instead of"},
+    {"no":22,"mc_index":-1,"produced_sentence":"According to the weather report, it will rain.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"according to"},
+    {"no":23,"mc_index":-1,"produced_sentence":"We walked through the park.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"through"},
+    {"no":24,"mc_index":-1,"produced_sentence":"He could not come because of his sickness.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"because of + noun phrase"},
+    {"no":25,"mc_index":-1,"produced_sentence":"We arrived in Tokyo on May 5, 2024.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"on + specific date"}
+  ]
+}

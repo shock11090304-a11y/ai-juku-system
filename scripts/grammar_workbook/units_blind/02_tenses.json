@@ -1,0 +1,271 @@
+{
+  "unit": "時制",
+  "unit_slug": "tenses",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "My father ( ) coffee every morning.",
+      "choices": [
+        "drink",
+        "drinks",
+        "drinking",
+        "to drink"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "We ( ) to the zoo last Sunday.",
+      "choices": [
+        "went",
+        "go",
+        "goes",
+        "will go"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "Look! It ( ) outside now.",
+      "choices": [
+        "is raining",
+        "rains",
+        "rained",
+        "will rain"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "She ( ) to school by bike every day.",
+      "choices": [
+        "comes",
+        "come",
+        "came",
+        "is coming"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "I ( ) my homework two hours ago.",
+      "choices": [
+        "finished",
+        "finish",
+        "finishes",
+        "will finish"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "They ( ) soccer in the park yesterday afternoon.",
+      "choices": [
+        "play",
+        "plays",
+        "are playing",
+        "were playing"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "Water ( ) at 100 degrees Celsius.",
+      "choices": [
+        "boil",
+        "boils",
+        "boiled",
+        "is boiling"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "I ( ) my grandmother next weekend.",
+      "choices": [
+        "visit",
+        "am going to visit",
+        "visited",
+        "was visiting"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "If it ( ) tomorrow, we will stay home.",
+      "choices": [
+        "rain",
+        "will rain",
+        "rained",
+        "rains"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "When I ( ) home, I will call you.",
+      "choices": [
+        "got",
+        "will get",
+        "am getting",
+        "get"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "My brother ( ) a bath when the phone rang.",
+      "choices": [
+        "takes",
+        "took",
+        "was taking",
+        "is taking"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "Don't worry. I ( ) help you with your bags.",
+      "choices": [
+        "am",
+        "was",
+        "did",
+        "will"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "He ( ) not watch TV last night.",
+      "choices": [
+        "did",
+        "does",
+        "is",
+        "was"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "( ) you happy yesterday?",
+      "choices": [
+        "Do",
+        "Were",
+        "Did",
+        "Are"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "The train ( ) at seven tomorrow morning according to the schedule.",
+      "choices": [
+        "leaves",
+        "leave",
+        "left",
+        "has left"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "prompt_ja": "私の兄は銀行で働いている。",
+      "tokens": [
+        "at a bank",
+        "My brother",
+        "works"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "彼女は昨日その本を読みました。",
+      "tokens": [
+        "She",
+        "read",
+        "the",
+        "book",
+        "yesterday"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "私たちは台所で夕食を作っているところです。",
+      "tokens": [
+        "the",
+        "are",
+        "kitchen",
+        "We",
+        "cooking",
+        "dinner",
+        "in"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "明日晴れたら、私たちは公園に行きます。",
+      "tokens": [
+        "If it is sunny tomorrow,",
+        "we will go",
+        "to the park"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "私が部屋に入ったとき、彼は眠っていた。",
+      "tokens": [
+        "he",
+        "was sleeping",
+        "When I",
+        "entered the room,"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "私は来年、英語を勉強するつもりです。",
+      "tokens": [
+        "study",
+        "to",
+        "I",
+        "going",
+        "English",
+        "am",
+        "next year"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "I play tennis every Sunday.",
+      "instruction": "every Sunday を last Sunday に変えて、過去の文に書き換えなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "She studies math now.",
+      "instruction": "now に合わせて、今まさに進行中であることを表す現在進行形の文に書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "It will be cold tomorrow.",
+      "instruction": "will を使わず、be going to を使ってほぼ同じ意味の文に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "mc",
+      "stem": "What ( ) you doing at eight last night?",
+      "choices": [
+        "are",
+        "were",
+        "do",
+        "did"
+      ]
+    }
+  ]
+}

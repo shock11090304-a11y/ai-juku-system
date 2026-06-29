@@ -1,0 +1,31 @@
+{
+  "slug": "15_nouns-articles",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"an の後は母音音で始まる可算名詞。apple のみ適合(rice/water/milk は不可算で a/an 不可)。"},
+    {"no":2,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"child の不規則複数は children。"},
+    {"no":3,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"a glass of water が定型。"},
+    {"no":4,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"交通手段は by bus(無冠詞)。"},
+    {"no":5,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"唯一物の the sun。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"water は不可算→How much。"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"楽器演奏は play the piano。"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"homework は不可算→a lot of。many/a few/few は可算用で不可。"},
+    {"no":9,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"食事名は無冠詞で have lunch。"},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"sheep は単複同形。many の後は複数形 sheep。"},
+    {"no":11,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"honest は h 無音で母音音始まり→an。"},
+    {"no":12,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"loaf の複数は loaves。"},
+    {"no":13,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"不可算 milk＋『買う必要がある=ほとんど無い』否定的含意で little。a little は文意(買い足し必要)と矛盾。"},
+    {"no":14,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"可算 students＋『少数が来た』肯定で a few。much/a little は不可算用、little は可算に不可。"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"a piece of paper が定型。"},
+    {"no":16,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"スポーツ名は無冠詞で soccer。"},
+    {"no":17,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"前文で既出の cat を指す→The cat。"},
+    {"no":18,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"tooth の不規則複数は teeth。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"I have a cup of coffee for breakfast.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"a cup of coffee の語順で和文一致。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"They came by train.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"by train(無冠詞)。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"Mt. Fuji is the highest mountain in Japan.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"最上級＋the、語順一意。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"She plays the piano very well.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"play the piano。語順一意。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"There are three boxes on the desk.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"a box→three boxes、is→are。box の複数は boxes。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"These are knives.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"This is→These are、knife→knives。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"There are two women in the room.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"a woman→two women、is→are。woman の複数は women。"}
+  ]
+}

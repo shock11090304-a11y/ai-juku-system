@@ -1,0 +1,31 @@
+{
+  "slug": "20_reported-speech",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"間接話法の接続詞 that。"},
+    {"no":2,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"said to me。say は to を伴う。"},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"tell + 人 + that。said は to が必要、spoke/talked は that 節を直接取らない。"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"時制の一致で was。"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主節 told に合わせ過去完了 had finished。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"today→that day の話法変換。"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"tomorrow→the next day。"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Yes/No疑問の間接化は if/whether。whether は選択肢に無い。"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"間接疑問+時制の一致で lived。"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"medium","note":"時制の一致で left が標準。時刻表など不変の事実とみなせば leaves も理論上可だが、本単元(話法)では一致後の left が正答。"},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"tell + 人 + to do(命令の間接話法)。"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定命令の間接話法は not to do。to not は不可。"},
+    {"no":13,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"直接話法なので引用符付き \"I。"},
+    {"no":14,"mc_index":-1,"produced_sentence":"He said that he was tired.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":15,"mc_index":-1,"produced_sentence":"She told me that she was busy.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":16,"mc_index":-1,"produced_sentence":"He asked me if I was busy.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"トークンの I が主語、与えられた語で一意。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"She asked me where I lived.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":18,"mc_index":-1,"produced_sentence":"He said that he was happy.","multiple_valid":true,"multiple_valid_note":"接続詞 that の省略 \"He said he was happy.\" も口語的に文法上成立。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":19,"mc_index":-1,"produced_sentence":"She told me that she liked that book.","multiple_valid":true,"multiple_valid_note":"that 省略可。また this book を保持し \"...liked this book.\" も話者・場面次第で許容され得るが、標準的書き換えは that book。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":20,"mc_index":-1,"produced_sentence":"He said that he was busy that day.","multiple_valid":true,"multiple_valid_note":"that 省略可 \"He said he was busy that day.\"。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":21,"mc_index":-1,"produced_sentence":"She said that she would leave the next day.","multiple_valid":true,"multiple_valid_note":"tomorrow→the next day/the following day いずれも可。that 省略も可。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":22,"mc_index":-1,"produced_sentence":"He said that he had met her two days before.","multiple_valid":true,"multiple_valid_note":"two days ago→two days before/two days earlier いずれも可。that 省略も可。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":23,"mc_index":-1,"produced_sentence":"She asked me if I was tired.","multiple_valid":true,"multiple_valid_note":"if→whether も可 \"She asked me whether I was tired.\"。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":24,"mc_index":-1,"produced_sentence":"He asked me where I lived.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":25,"mc_index":-1,"produced_sentence":"She told me to open the door.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""}
+  ]
+}

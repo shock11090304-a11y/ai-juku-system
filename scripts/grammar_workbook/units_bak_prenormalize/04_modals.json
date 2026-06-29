@@ -1,0 +1,382 @@
+{
+  "unit": "助動詞",
+  "unit_slug": "modals",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "When I was a child, I ( ) swim very fast.",
+      "choices": [
+        "could",
+        "must",
+        "should",
+        "may"
+      ],
+      "answer_index": 0,
+      "answer_text": "could",
+      "explanation": "過去の能力「~できた」は could で表す。was a child という過去の文脈に合うのは could だけである。",
+      "point": "過去の能力は could"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) you open the window, please?",
+      "choices": [
+        "Must",
+        "Can",
+        "Should",
+        "Would like"
+      ],
+      "answer_index": 1,
+      "answer_text": "Can",
+      "explanation": "Can you ~? は「~してくれますか」という依頼を表す。Must や Should では依頼の意味にならない。",
+      "point": "Can you ~? は依頼"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "You ( ) finish your homework before dinner.",
+      "choices": [
+        "must",
+        "can",
+        "may",
+        "would"
+      ],
+      "answer_index": 0,
+      "answer_text": "must",
+      "explanation": "「~しなければならない」という義務は must で表す。before dinner という締め切りの文脈に合う。",
+      "point": "義務は must"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) I use your pen for a moment?",
+      "choices": [
+        "May",
+        "Must",
+        "Will",
+        "Would"
+      ],
+      "answer_index": 0,
+      "answer_text": "May",
+      "explanation": "May I ~? は「~してもよいですか」という許可を求める表現。Must I ~? では意味が通らない。",
+      "point": "May I ~? は許可"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "It is very cloudy, so it ( ) rain this afternoon.",
+      "choices": [
+        "may",
+        "must not",
+        "should not",
+        "cannot"
+      ],
+      "answer_index": 0,
+      "answer_text": "may",
+      "explanation": "「~かもしれない」という推量は may で表す。曇っているという文脈から「雨が降るかもしれない」が自然。",
+      "point": "may は ~かもしれない"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "You ( ) worry. Everything is fine.",
+      "choices": [
+        "don't have to",
+        "must",
+        "have to",
+        "should"
+      ],
+      "answer_index": 0,
+      "answer_text": "don't have to",
+      "explanation": "don't have to は「~する必要がない」という意味。「すべて順調だから心配する必要はない」と続くので自然。",
+      "point": "don't have to は不要"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "You look pale. You ( ) see a doctor.",
+      "choices": [
+        "should",
+        "may not",
+        "used to",
+        "cannot"
+      ],
+      "answer_index": 0,
+      "answer_text": "should",
+      "explanation": "should は「~したほうがよい」という助言を表す。顔色が悪い相手への助言として適切。",
+      "point": "should は助言"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He has studied all day, so he ( ) be tired now.",
+      "choices": [
+        "must",
+        "may not",
+        "should not",
+        "used to"
+      ],
+      "answer_index": 0,
+      "answer_text": "must",
+      "explanation": "must は「~にちがいない」という強い推量も表す。一日中勉強した根拠から「疲れているにちがいない」となる。",
+      "point": "must は ~にちがいない"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "There ( ) be a hospital near here.",
+      "choices": [
+        "used to",
+        "have to",
+        "had better",
+        "would like"
+      ],
+      "answer_index": 0,
+      "answer_text": "used to",
+      "explanation": "used to は「以前は~だった(今は違う)」という過去の状態を表す。There used to be ~ で「以前は~があった」。",
+      "point": "used to は昔の状態"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "It's getting dark. We ( ) go home now.",
+      "choices": [
+        "had better",
+        "used to",
+        "may not",
+        "must to"
+      ],
+      "answer_index": 0,
+      "answer_text": "had better",
+      "explanation": "had better は「~したほうがよい(さもないと困る)」という強めの忠告で、後ろは動詞の原形が続く。暗くなってきた状況に合うのは had better だけ。used to は「以前は~だった」で now と矛盾し、may not は「~しないかもしれない/~してはいけない」で文脈に合わず、must to は助動詞 must の直後に to を置けないため非文。",
+      "point": "had better は強い忠告(直後は動詞の原形)"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "She ( ) finish the report by tomorrow.",
+      "choices": [
+        "has to",
+        "have to",
+        "having to",
+        "to have"
+      ],
+      "answer_index": 0,
+      "answer_text": "has to",
+      "explanation": "have to は「~しなければならない」という義務を表す。主語 She は三人称単数なので has to の形になる。",
+      "point": "三単現の主語では has to"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) you help me carry this box?",
+      "choices": [
+        "Will",
+        "May",
+        "Must",
+        "Should"
+      ],
+      "answer_index": 0,
+      "answer_text": "Will",
+      "explanation": "Will you ~? は「~してくれませんか」という依頼を表す。荷物運びを頼む場面に合う。",
+      "point": "Will you ~? は依頼"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "When she was young, she ( ) play the piano every day.",
+      "choices": [
+        "would",
+        "must",
+        "should",
+        "may"
+      ],
+      "answer_index": 0,
+      "answer_text": "would",
+      "explanation": "would は「(以前は)よく~したものだ」という過去の習慣を表す。every day という反復の文脈に合う。",
+      "point": "would は過去の習慣"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "You ( ) smoke here. It is against the rules.",
+      "choices": [
+        "must not",
+        "don't have to",
+        "may",
+        "used to"
+      ],
+      "answer_index": 0,
+      "answer_text": "must not",
+      "explanation": "must not は「~してはいけない」という強い禁止を表す。規則違反だという文脈から禁止が適切。",
+      "point": "must not は禁止"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) I open the door for you?",
+      "choices": [
+        "Shall",
+        "Must",
+        "Used to",
+        "Had better"
+      ],
+      "answer_index": 0,
+      "answer_text": "Shall",
+      "explanation": "Shall I ~? は「~しましょうか」という申し出を表す。相手のためにドアを開ける申し出に合う。",
+      "point": "Shall I ~? は申し出"
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I ( ) speak English when I was three, but now I can.",
+      "choices": [
+        "could not",
+        "must not",
+        "should not",
+        "may not"
+      ],
+      "answer_index": 0,
+      "answer_text": "could not",
+      "explanation": "could not は過去の能力の否定「~できなかった」。3歳のときは話せなかったが今は話せる、という対比に合う。",
+      "point": "could not は ~できなかった"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "あなたは医者に診てもらったほうがよい。",
+      "tokens": [
+        "had better",
+        "You",
+        "see",
+        "a doctor"
+      ],
+      "answer_text": "You had better see a doctor.",
+      "explanation": "had better + 動詞の原形で「~したほうがよい(強い助言)」。You had better see a doctor. の語順で、目的語 a doctor は see の後ろに固定される。",
+      "point": "had better + 原形(~したほうがよい)"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "私はもっと一生懸命勉強しなければならない。",
+      "tokens": [
+        "study",
+        "to",
+        "I",
+        "harder",
+        "have"
+      ],
+      "answer_text": "I have to study harder.",
+      "explanation": "have to は「~しなければならない」を表し、後ろは動詞の原形を置く。「I + have to + study + harder」の語順。",
+      "point": "have to + 原形"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "窓を開けてもよろしいですか。",
+      "tokens": [
+        "open",
+        "I",
+        "the",
+        "may",
+        "window"
+      ],
+      "answer_text": "May I open the window?",
+      "explanation": "May I ~? は許可を求める表現。「May + I + 動詞の原形 + 目的語」で疑問文を作り、文末は疑問符。",
+      "point": "May I + 原形 ~?"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "あなたはそのことを心配する必要はない。",
+      "tokens": [
+        "have to",
+        "You",
+        "worry",
+        "about it",
+        "don't"
+      ],
+      "answer_text": "You don't have to worry about it.",
+      "explanation": "don't have to は「~する必要がない」。You don't have to worry about it. の語順で、about it は worry の後ろに固定される。",
+      "point": "don't have to は「~する必要はない」"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼女はその知らせを聞いてうれしいにちがいない。",
+      "tokens": [
+        "be",
+        "she",
+        "happy",
+        "must",
+        "about",
+        "the news"
+      ],
+      "answer_text": "She must be happy about the news.",
+      "explanation": "must は「~にちがいない」という強い推量を表す。「主語 + must + be + 形容詞」の語順になる。",
+      "point": "must be ~ は ~にちがいない"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "You must wash your hands before lunch.",
+      "instruction": "must を have to を使ってほぼ同じ意味に書き換えなさい。",
+      "answer_text": "You have to wash your hands before lunch.",
+      "explanation": "義務を表す must は have to でほぼ同じ意味に言い換えられる。主語が you なので have to を用いる。",
+      "point": "must = have to(義務)"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "She has to get up early every morning.",
+      "instruction": "has to を must を使ってほぼ同じ意味に書き換えなさい。",
+      "answer_text": "She must get up early every morning.",
+      "explanation": "義務を表す has to は must で言い換えられる。must は主語が三人称単数でも形が変わらず原形が続く。",
+      "point": "has to = must(義務)"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "Can you carry this bag for me?",
+      "instruction": "Can を Will にかえて、ほぼ同じ意味の依頼の文に書き換えなさい。",
+      "answer_text": "Will you carry this bag for me?",
+      "explanation": "依頼を表す Can you ~? は Will you ~? で言い換えられる。後ろの動詞は原形のままで変わらない。",
+      "point": "Can you ~ = Will you ~(依頼)"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "I was able to swim well when I was a child.",
+      "instruction": "was able to を could を使ってほぼ同じ意味に書き換えなさい。",
+      "answer_text": "I could swim well when I was a child.",
+      "explanation": "過去の「一般的・継続的な能力(~できた)」を表す was able to は could で言い換えられる。「子どものころ上手に泳げた」は継続的能力なので could が使える。（※ある時の一回限りの達成には could は使えず was able to を用いる点に注意。）",
+      "point": "過去の一般的能力は could = was able to"
+    }
+  ]
+}

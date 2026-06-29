@@ -1,0 +1,31 @@
+{
+  "slug": "12_subjunctive",
+  "persona": "A",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"subjunctive past 'were'"},
+    {"no":2,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"would in main clause"},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"subjunctive 'were' matches 'would go'"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"would"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"could (would also possible but could best fits)"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"If I were you"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"would have passed (past perfect subjunctive)"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"had left"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"would have arrived"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"would have told"},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"would not have been"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"I wish I could speak"},
+    {"no":13,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"I wish I were taller"},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"past wish -> had studied"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"as if"},
+    {"no":16,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Were it not for (inversion)"},
+    {"no":17,"mc_index":-1,"produced_sentence":"If I had time, I would help you.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":18,"mc_index":-1,"produced_sentence":"I wish I were a bird.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":19,"mc_index":-1,"produced_sentence":"If he had left early, he would have made it.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":20,"mc_index":-1,"produced_sentence":"She talks as if she were a doctor.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":21,"mc_index":-1,"produced_sentence":"Without your help, I would fail.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":22,"mc_index":-1,"produced_sentence":"If I were free now, I could help you.","multiple_valid":true,"multiple_valid_note":"'could help' or 'would be able to help'; both acceptable","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":23,"mc_index":-1,"produced_sentence":"If I had had time, I would have called you.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":24,"mc_index":-1,"produced_sentence":"I wish I could swim.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":25,"mc_index":-1,"produced_sentence":"I wish I had studied hard.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""}
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "slug": "05_passive",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"yesterday + 過去の受動態 was written。"},
+    {"no":2,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"複数主語These cars + 受動態 are made。"},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"動作主はby。"},
+    {"no":4,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"English is spoken all over the world。"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"every day(現在の習慣)+単数主語 the room → is。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":true,"multiple_valid_note":"is は be read と並ばず不可。should/can/will の3つはすべて文法的に成立(can be read/will be read/should be read)。意味上は「多くの若者に読まれるべき」の should が最も自然だが、断定不可。","grammatical_issue":false,"off_unit":false,"confidence":"medium","note":"助動詞+be+過去分詞。複数の助動詞が成立。"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"進行形の受動態 is being built。"},
+    {"no":8,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"完了形の受動態 has been finished。"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be interested in。"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be covered with snow。"},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be known to ~(~に知られている)。"},
+    {"no":12,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"take care of の受動態 be taken care of。"},
+    {"no":13,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"動作主 by her uncle。"},
+    {"no":14,"mc_index":-1,"produced_sentence":"This room is cleaned every weekend.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":15,"mc_index":-1,"produced_sentence":"The window was broken by Tom.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":16,"mc_index":-1,"produced_sentence":"This song is loved by many people.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":17,"mc_index":-1,"produced_sentence":"The letter was written in English.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":18,"mc_index":-1,"produced_sentence":"The desk must be moved by him.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":19,"mc_index":-1,"produced_sentence":"The room was cleaned by Tom.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":20,"mc_index":-1,"produced_sentence":"This computer is used by many students.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":21,"mc_index":-1,"produced_sentence":"This report was written by her.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":22,"mc_index":-1,"produced_sentence":"The work must be finished today by us.","multiple_valid":true,"multiple_valid_note":"動作主 by us は一般主語に近く省略可。「The work must be finished today.」も完全に正しい正解で、むしろこちらが標準的。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"助動詞+be+過去分詞。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"I was given this watch by my mother.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"me を主語化 → I was given ~。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"This watch was given to me by my mother.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"直接目的語を主語化 → 間接目的語の前に to。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"This flower is called a sunflower.","multiple_valid":true,"multiple_valid_note":"call O C の受動態。動作主 by them は総称の一般人称なので省略が標準だが、「This flower is called a sunflower by them.」も文法上は許容。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC の受動態 → S be called C。"}
+  ]
+}

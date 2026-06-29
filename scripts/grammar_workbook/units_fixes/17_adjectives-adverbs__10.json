@@ -1,0 +1,23 @@
+{
+  "slug": "17_adjectives-adverbs",
+  "no": 10,
+  "type": "mc",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 10,
+    "type": "mc",
+    "level": "basic",
+    "stem": "Have you finished your homework ( )?",
+    "choices": [
+      "long ago",
+      "yet",
+      "still",
+      "ever"
+    ],
+    "answer_index": 1,
+    "answer_text": "yet",
+    "explanation": "疑問文の文末で「もう(終わったか)」を表すのは yet。long ago は「ずっと前に」という過去の一時点を指す副詞句で、完了を問う現在完了の疑問文には合わない。still や ever もこの文末では成り立たない。",
+    "point": "疑問文の文末「もう」は yet"
+  },
+  "reason": "元の選択肢 already は疑問文末でも「もう(終わったの)」という驚きの意味で成立し得て正解が一意でなかった。明確な誤りである long ago(過去の一時点を指す副詞句で完了を問う現在完了の疑問文に不適合)に差し替え、yet を一意の正解とした。answer は yet のまま不変。explanation と point を最終形に整合させた。"
+}

@@ -1,0 +1,23 @@
+{
+  "slug": "03_perfect",
+  "no": 12,
+  "type": "mc",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 12,
+    "type": "mc",
+    "level": "standard",
+    "stem": "It ( ) for three hours, and it is still raining hard.",
+    "choices": [
+      "has been raining",
+      "rains",
+      "rained",
+      "is raining"
+    ],
+    "answer_index": 0,
+    "answer_text": "has been raining",
+    "explanation": "現在完了進行形 have been + ing は「過去から今まで動作がずっと続いている」を表します。for three hours で3時間の継続を示し、後半の it is still raining hard 今もまだ激しく降っている と整合します。is raining 現在進行形 は for three hours のように過去からの継続期間を取れず、rains 現在形 や rained 過去形 も継続中の状況に合いません。",
+    "point": "過去から今まで続く動作の継続は have been + ing。"
+  },
+  "reason": "後半が the ground is still wet だと「雨はやんで地面がぬれている」という結果(完了)を匂わせ、ずっと降り続けている現在完了進行形 has been raining と意味が噛み合わず正解が一意に定まりにくかった。後半を it is still raining hard 今もまだ激しく降っている に変更し、動作が現在も継続している文脈に統一。これで for three hours の継続期間と相まって has been raining だけが自然かつ一意の正解になり、is raining 現在進行形 は過去からの継続期間 for three hours を取れず不適、rains rained も継続中に合わず排除される。answer は不変、stem の後半文脈のみ最小修正。基礎定着レベルと単元「完了形(現在完了進行形)」を問う点は維持。"
+}

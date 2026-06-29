@@ -1,0 +1,31 @@
+{
+  "slug": "18_interrogatives",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"人物の正体を尋ねる→Who"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"答えがa cake(物)→What"},
+    {"no":3,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"所有者を尋ねるWhose bag。Whichもbag前に置けるが答えTom'sが所有を示すのでWhose一択"},
+    {"no":4,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"答えが時刻→When"},
+    {"no":5,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"答えがIn Tokyo(場所)→Where"},
+    {"no":6,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Becauseで答える→Why"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"答えがBy bike(手段)→How"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"books(可算複数)→How many"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"water(不可算)→How much"},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"年齢→How old"},
+    {"no":11,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"答えが頻度(週3回)→How often"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"疑問詞が主語(Ken didで応答)→Who broke。Who did/What didは語順崩壊で不可"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"選択疑問のtea or coffee→or"},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"肯定文You areの付加疑問→aren't you"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定文doesn'tの付加疑問→does he"},
+    {"no":16,"mc_index":-1,"produced_sentence":"Where do you live?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"疑問詞+do+主語+動詞"},
+    {"no":17,"mc_index":-1,"produced_sentence":"Whose umbrella is this?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Whose+名詞+is this"},
+    {"no":18,"mc_index":-1,"produced_sentence":"How many books do you have?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"How many+名詞+do+主語+動詞"},
+    {"no":19,"mc_index":-1,"produced_sentence":"Who wrote this letter?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"疑問詞主語+過去動詞(doは不要・tokenにも無し)"},
+    {"no":20,"mc_index":-1,"produced_sentence":"Why were you absent yesterday?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Why+were+主語+absent+yesterday"},
+    {"no":21,"mc_index":-1,"produced_sentence":"How do you go to school?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"How+do+主語+go+to school"},
+    {"no":22,"mc_index":-1,"produced_sentence":"You like music, don't you?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"平叙文+付加疑問。tokenの'you,'のコンマ位置を踏まえ末尾に?を付加"},
+    {"no":23,"mc_index":-1,"produced_sentence":"What is he?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"職業(a doctor)をWhatで尋ねる定番。What does he do?も成立するがbe動詞文の直書き換えはWhat is he?"},
+    {"no":24,"mc_index":-1,"produced_sentence":"I don't know where she lives.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"間接疑問は平叙語順where she lives"},
+    {"no":25,"mc_index":-1,"produced_sentence":"She can play the piano, can't she?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"助動詞canの肯定文→can't she"}
+  ]
+}

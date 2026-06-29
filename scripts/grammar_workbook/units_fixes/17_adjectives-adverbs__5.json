@@ -1,0 +1,23 @@
+{
+  "slug": "17_adjectives-adverbs",
+  "no": 5,
+  "type": "mc",
+  "action": "fix_explanation",
+  "corrected_question": {
+    "no": 5,
+    "type": "mc",
+    "level": "basic",
+    "stem": "There isn't ( ) water in the glass.",
+    "choices": [
+      "many",
+      "much",
+      "few",
+      "a few"
+    ],
+    "answer_index": 1,
+    "answer_text": "much",
+    "explanation": "water は数えられない名詞なので、量を表す much を使う。数を表す many や、可算名詞用の a few は使えない。",
+    "point": "much は不可算名詞の量に"
+  },
+  "reason": "元の解説が実在しない選択肢 few に言及し、実際の選択肢 a few に触れていなかった。指摘どおり、water は不可算名詞なので量を表す much を使い、数を表す many や可算名詞用の a few は使えない、という解説に修正。choices と answer(much)は不変で、正解は water が不可算のため much に一意に定まる。"
+}

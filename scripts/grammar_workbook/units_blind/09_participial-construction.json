@@ -1,0 +1,253 @@
+{
+  "unit": "分詞構文",
+  "unit_slug": "participial-construction",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "( ) the park, I met an old friend.",
+      "choices": [
+        "Walked in",
+        "Walk in",
+        "To walk in",
+        "Walking in"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "( ) tired, she went to bed early.",
+      "choices": [
+        "Felt",
+        "Feel",
+        "Feeling",
+        "To feel"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "( ) the door, he went out.",
+      "choices": [
+        "Opened",
+        "Opening",
+        "Open",
+        "To open"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "She sat on the sofa, ( ) a book.",
+      "choices": [
+        "read",
+        "to read",
+        "reads",
+        "reading"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "( ) the news, she became very happy.",
+      "choices": [
+        "Heard",
+        "Hearing",
+        "Hear",
+        "To hear"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "( ) what to say, he kept silent.",
+      "choices": [
+        "Knowing not",
+        "Not knowing",
+        "Not known",
+        "Don't knowing"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "( ) by everyone, he felt very happy.",
+      "choices": [
+        "Praising",
+        "Praised",
+        "Praise",
+        "To praise"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "( ) from a distance, the rock looks like a face.",
+      "choices": [
+        "Seeing",
+        "See",
+        "To see",
+        "Seen"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "( ) the work, she went home.",
+      "choices": [
+        "Having finished",
+        "Have finished",
+        "Finished",
+        "To finish"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "( ) tired, I will go out with you.",
+      "choices": [
+        "Being not",
+        "Not been",
+        "Not being",
+        "No being"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "It ( ) sunny, we decided to go on a picnic.",
+      "choices": [
+        "being",
+        "is",
+        "be",
+        "was"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "( ) ill, he could not attend the meeting.",
+      "choices": [
+        "Be",
+        "Being",
+        "To be",
+        "Been"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "Generally ( ), women live longer than men.",
+      "choices": [
+        "spoken",
+        "to speak",
+        "spoke",
+        "speaking"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "( ) the letter, she put it into her bag.",
+      "choices": [
+        "Writing",
+        "Having written",
+        "Written",
+        "To write"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "order",
+      "prompt_ja": "通りを歩いていたとき、私はその店を見つけた。",
+      "tokens": [
+        "Walking down the street,",
+        "I",
+        "found",
+        "the shop"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "prompt_ja": "彼は何も言わずに部屋を出て行った。",
+      "tokens": [
+        "Not saying anything,",
+        "he",
+        "left",
+        "the room"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "宿題を終えてしまったので、私はテレビを見た。",
+      "tokens": [
+        "Having finished my homework,",
+        "watched",
+        "I",
+        "TV"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "彼女はほほえみながら私を見た。",
+      "tokens": [
+        "she",
+        "at",
+        "Smiling,",
+        "me",
+        "looked"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "英語で書かれているので、この本は読みやすい。",
+      "tokens": [
+        "Written in English,",
+        "this book",
+        "is",
+        "easy",
+        "to read"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "rewrite",
+      "original": "When I saw the dog, I ran away.",
+      "instruction": "下線部 When I saw を分詞構文に書き換えなさい。"
+    },
+    {
+      "no": 21,
+      "type": "rewrite",
+      "original": "Because she was tired, she took a rest.",
+      "instruction": "下線部 Because she was を分詞構文に書き換えなさい。Being を省略しない形で答えなさい。"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "Seeing the police officer, he ran away.",
+      "instruction": "分詞構文を When を使った接続詞のある文に書き換えなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "After I had eaten lunch, I went out.",
+      "instruction": "下線部 After I had eaten を完了分詞構文に書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "As he did not know the answer, he stayed silent.",
+      "instruction": "下線部 As he did not know を分詞構文に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "Because it was written in easy English, the book sold well.",
+      "instruction": "下線部 Because it was を受動の分詞構文に書き換えなさい。Being を省略しない形で答えなさい。"
+    }
+  ]
+}

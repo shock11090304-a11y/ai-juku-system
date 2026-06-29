@@ -1,0 +1,31 @@
+{
+  "slug": "05_passive",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"yesterday=過去・受動態 was written"},
+    {"no":2,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"複数主語の受動態 are made"},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"動作主は by"},
+    {"no":4,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"is spoken"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"every day=現在・単数主語 is"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"助動詞+be+pp"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"進行形の受動態 is being built"},
+    {"no":8,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在完了 has been finished"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be interested in"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be covered with"},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be known to"},
+    {"no":12,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"take care of の受動態 was taken care of"},
+    {"no":13,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"動作主は by"},
+    {"no":14,"mc_index":-1,"produced_sentence":"This room is cleaned by my mother.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":15,"mc_index":-1,"produced_sentence":"The window was broken by Tom.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":16,"mc_index":-1,"produced_sentence":"This song is loved by many people.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":17,"mc_index":-1,"produced_sentence":"The letter was written in English.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":18,"mc_index":-1,"produced_sentence":"The desk must be moved by him.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":19,"mc_index":-1,"produced_sentence":"The room was cleaned by Tom.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":20,"mc_index":-1,"produced_sentence":"This computer is used by many students.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":21,"mc_index":-1,"produced_sentence":"This report was written by her.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":22,"mc_index":-1,"produced_sentence":"This work must be finished by Tom.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":23,"mc_index":-1,"produced_sentence":"I was given this watch by my mother.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"me を主語にした受動態"},
+    {"no":24,"mc_index":-1,"produced_sentence":"This watch was given to me by my mother.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"give の間接目的語残留は to me"},
+    {"no":25,"mc_index":-1,"produced_sentence":"This flower is called a sunflower.","multiple_valid":true,"multiple_valid_note":"動作主 by them を付けて This flower is called a sunflower by them. も文法上成立する。総称の they が動作主のため省略が自然だが、付けても正答。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC の受動態 O=主語, C残留"}
+  ]
+}

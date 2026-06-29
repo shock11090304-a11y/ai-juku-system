@@ -1,0 +1,58 @@
+{
+  "part": "math_exam_ia",
+  "group": "図形の性質",
+  "unit_theme": "図形の性質",
+  "passage": "太郎さんと花子さんは、円の外部の点から引いた直線と円の交わり方について考えている。\\(1\\) つの円があり、その円の外部に点 \\(\\mathrm{P}\\) をとる。点 \\(\\mathrm{P}\\) を通る \\(1\\) 本の直線（割線）を引くと、この直線は円と \\(2\\) 点で交わる。交点のうち \\(\\mathrm{P}\\) に近い方を \\(\\mathrm{A}\\)、遠い方を \\(\\mathrm{B}\\) とする。さらに点 \\(\\mathrm{P}\\) を通る別の割線を引くと、それも円と \\(2\\) 点で交わり、\\(\\mathrm{P}\\) に近い方を \\(\\mathrm{C}\\)、遠い方を \\(\\mathrm{D}\\) とする。また、点 \\(\\mathrm{P}\\) から円に引いた接線の接点を \\(\\mathrm{T}\\) とする。二人は方べきの定理（\\(\\mathrm{P}\\) を通る \\(2\\) 直線が円と交わるとき、交点までの線分の長さの積は一定で、接線については \\(\\mathrm{PT}^2\\) に等しい）を用いて、各線分の長さや比を順に求めていく。図は用いず、与えられた長さだけで考えること。",
+  "subqs": [
+    {
+      "stem": "円の外部の点 \\(\\mathrm{P}\\) を通る割線が円と \\(2\\) 点で交わり、\\(\\mathrm{P}\\) に近い交点を \\(\\mathrm{A}\\)、遠い交点を \\(\\mathrm{B}\\) とする。\\(3\\) 点 \\(\\mathrm{P},\\mathrm{A},\\mathrm{B}\\) はこの順に一直線上に並び、\\(\\mathrm{PA}=4\\)、\\(\\mathrm{AB}=5\\) である。このとき線分 \\(\\mathrm{PB}\\) の長さを求めよ。",
+      "choices_latex": ["\\(9\\)", "\\(1\\)", "\\(20\\)", "\\(\\sqrt{41}\\)"],
+      "choices_value": ["Integer(9)", "Integer(1)", "Integer(20)", "sqrt(41)"],
+      "answer_index": 0,
+      "truth_value": "Integer(9)",
+      "unit": "発展 図形の性質(割線の長さ)",
+      "reason": "\\(\\mathrm{P},\\mathrm{A},\\mathrm{B}\\) はこの順に並ぶので \\(\\mathrm{PB}=\\mathrm{PA}+\\mathrm{AB}=4+5=9\\)。",
+      "restates": "stem に \\(\\mathrm{PA}=4,\\ \\mathrm{AB}=5\\)、および \\(\\mathrm{P},\\mathrm{A},\\mathrm{B}\\) の順を再掲（前問不要）。"
+    },
+    {
+      "stem": "円の外部の点 \\(\\mathrm{P}\\) を通る割線が円と \\(2\\) 点 \\(\\mathrm{A}\\)（\\(\\mathrm{P}\\) に近い）、\\(\\mathrm{B}\\)（\\(\\mathrm{P}\\) に遠い）で交わり、\\(\\mathrm{PA}=4\\)、\\(\\mathrm{PB}=9\\) である。方べきの定理における値 \\(\\mathrm{PA}\\cdot\\mathrm{PB}\\) を求めよ。",
+      "choices_latex": ["\\(36\\)", "\\(13\\)", "\\(20\\)", "\\(45\\)"],
+      "choices_value": ["Integer(36)", "Integer(13)", "Integer(20)", "Integer(45)"],
+      "answer_index": 0,
+      "truth_value": "Integer(36)",
+      "unit": "発展 図形の性質(方べきの値)",
+      "reason": "\\(\\mathrm{PA}\\cdot\\mathrm{PB}=4\\times 9=36\\)。",
+      "restates": "stem に \\(\\mathrm{PA}=4,\\ \\mathrm{PB}=9\\) を再掲（q1 の \\(\\mathrm{PB}=9\\) を取り込み）。"
+    },
+    {
+      "stem": "円の外部の点 \\(\\mathrm{P}\\) について、方べきの定理の値は \\(36\\) である（\\(\\mathrm{P}\\) を通るどの割線でも、\\(\\mathrm{P}\\) から \\(2\\) つの交点までの長さの積は \\(36\\)）。いま \\(\\mathrm{P}\\) を通る別の割線が円と \\(2\\) 点で交わり、\\(\\mathrm{P}\\) に近い交点を \\(\\mathrm{C}\\)、遠い交点を \\(\\mathrm{D}\\) とすると \\(\\mathrm{PC}=3\\) である。線分 \\(\\mathrm{PD}\\) の長さを求めよ。",
+      "choices_latex": ["\\(12\\)", "\\(33\\)", "\\(9\\)", "\\(6\\)"],
+      "choices_value": ["Integer(12)", "Integer(33)", "Integer(9)", "Integer(6)"],
+      "answer_index": 0,
+      "truth_value": "Integer(12)",
+      "unit": "発展 図形の性質(方べきで別割線)",
+      "reason": "方べきの定理より \\(\\mathrm{PC}\\cdot\\mathrm{PD}=36\\)。\\(\\mathrm{PC}=3\\) なので \\(\\mathrm{PD}=36\\div 3=12\\)。",
+      "restates": "stem に方べきの値 \\(36\\)（q2 の結果）と \\(\\mathrm{PC}=3\\) を再掲。"
+    },
+    {
+      "stem": "円の外部の点 \\(\\mathrm{P}\\) について、方べきの定理の値は \\(36\\) である。点 \\(\\mathrm{P}\\) からこの円に引いた接線の接点を \\(\\mathrm{T}\\) とするとき、接線については \\(\\mathrm{PT}^2\\) がこの値に等しい。線分 \\(\\mathrm{PT}\\) の長さを求めよ。",
+      "choices_latex": ["\\(6\\)", "\\(18\\)", "\\(36\\)", "\\(2\\sqrt{6}\\)"],
+      "choices_value": ["Integer(6)", "Integer(18)", "Integer(36)", "2*sqrt(6)"],
+      "answer_index": 0,
+      "truth_value": "Integer(6)",
+      "unit": "発展 図形の性質(接線の長さ)",
+      "reason": "\\(\\mathrm{PT}^2=36\\) より \\(\\mathrm{PT}=\\sqrt{36}=6\\)（長さなので正）。",
+      "restates": "stem に方べきの値 \\(36\\)（q2 の結果）と \\(\\mathrm{PT}^2=36\\) の関係を再掲。"
+    },
+    {
+      "stem": "円の外部の点 \\(\\mathrm{P}\\) から円に接線を引き、その接点を \\(\\mathrm{T}\\)、接線の長さを \\(\\mathrm{PT}=6\\) とする。また \\(\\mathrm{P}\\) を通る割線が円と \\(2\\) 点 \\(\\mathrm{C}\\)（\\(\\mathrm{P}\\) に近い）、\\(\\mathrm{D}\\)（\\(\\mathrm{P}\\) に遠い）で交わり、\\(\\mathrm{PC}=3\\)、\\(\\mathrm{PD}=12\\) である。接弦角により \\(\\triangle\\mathrm{PTC}\\) と \\(\\triangle\\mathrm{PDT}\\) は相似であり、対応は \\(\\mathrm{PT}:\\mathrm{PD}=\\mathrm{PC}:\\mathrm{PT}=\\mathrm{TC}:\\mathrm{DT}\\) となる。このとき比の値 \\(\\dfrac{\\mathrm{TC}}{\\mathrm{DT}}\\) を求めよ。",
+      "choices_latex": ["\\(\\dfrac{1}{2}\\)", "\\(2\\)", "\\(\\dfrac{1}{4}\\)", "\\(\\dfrac{1}{3}\\)"],
+      "choices_value": ["Rational(1,2)", "Integer(2)", "Rational(1,4)", "Rational(1,3)"],
+      "answer_index": 0,
+      "truth_value": "Rational(1,2)",
+      "unit": "発展 図形の性質(接線と相似比)",
+      "reason": "相似比は \\(\\dfrac{\\mathrm{TC}}{\\mathrm{DT}}=\\dfrac{\\mathrm{PC}}{\\mathrm{PT}}=\\dfrac{3}{6}=\\dfrac12\\)（\\(=\\dfrac{\\mathrm{PT}}{\\mathrm{PD}}=\\dfrac{6}{12}\\) とも一致）。",
+      "restates": "stem に \\(\\mathrm{PT}=6\\)（q4）、\\(\\mathrm{PC}=3,\\ \\mathrm{PD}=12\\)（q3）と相似の対応を再掲。"
+    }
+  ]
+}

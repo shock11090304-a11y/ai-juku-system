@@ -1,0 +1,23 @@
+{
+  "slug": "19_negation-inversion",
+  "no": 15,
+  "type": "mc",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 15,
+    "type": "mc",
+    "level": "standard",
+    "stem": "It was in 2020 ( ) we first met.",
+    "choices": [
+      "where",
+      "that",
+      "which",
+      "what"
+    ],
+    "answer_index": 1,
+    "answer_text": "that",
+    "explanation": "It is ... that ... の強調構文。強調する語句が in 2020 のような時を表す副詞句でも、強調構文ではつねに that を使う。「私たちが初めて会ったのは2020年だった」。where は場所を表す語句にしか使えず時の副詞句には不可、which は強調構文では使わず後ろに先行詞となる名詞も無いため不可、what は関係詞 what が導く節が名詞として働くがここでは It was ... の枠に入れる名詞節を作れず不可。したがって that のみが成立する。",
+    "point": "強調構文は副詞句でも that(where/which/what は不可)"
+  },
+  "reason": "選択肢 when は時を表す副詞句の強調構文で現代英語では許容されることがあり、正解 that と紛れて一意性を欠いた。when を強調構文で明確に不可な where に差し替え、where(場所専用で時の副詞句に不可)which(強調構文では不使用かつ先行詞無し)what(名詞節を作れず枠に合わない)の3つをいずれも不成立にして that を一意化した。解説に「時を表す副詞句でも強調構文は that」を明記。answer は that のまま不変。"
+}

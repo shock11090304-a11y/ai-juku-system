@@ -1,0 +1,31 @@
+{
+  "slug": "20_reported-speech",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"that節を導く接続詞。間接話法の基本。"},
+    {"no":2,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"said to me。sayは前置詞toで相手を示す。"},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"told me that ... の語法。tell+人+that節。"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主節saidが過去なので時制の一致でwas。"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"時制の一致で過去完了had finished。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"間接話法でtoday→that day。"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"間接話法でtomorrow→the next day。"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Yes/No疑問の間接化はif/whether。"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"間接疑問。時制の一致でlived。"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"間接疑問。時制の一致でleft。"},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"命令の伝達はtell+人+to do。"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定命令の伝達はtell+人+not to do。"},
+    {"no":13,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"直接話法は引用符。He said to me, \"I am hungry.\""},
+    {"no":14,"mc_index":-1,"produced_sentence":"He said that he was tired.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"said that + 時制一致was。"},
+    {"no":15,"mc_index":-1,"produced_sentence":"She told me that she was busy.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"told me that + was。"},
+    {"no":16,"mc_index":-1,"produced_sentence":"He asked me if I was busy.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"asked me if + 平叙語順was。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"She asked me where I lived.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"間接疑問。asked me where + 平叙語順lived。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"He said that he was happy.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"I→he、am→was。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"She told me that she liked that book.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"told me、I→she、like→liked、this→that。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"He said that he was busy that day.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"am→was、today→that day。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"She said that she would leave the next day.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"will→would、tomorrow→the next day。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"He said that he had met her two days before.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"met→had met、two days ago→two days before。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"She asked me if I was tired.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Yes/No疑問→asked me if、are you→I was。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"He asked me where I lived.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"間接疑問。do you live→I lived。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"She told me to open the door.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"命令文→told me to open。"}
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "slug": "12_subjunctive",
+  "no": 20,
+  "type": "order",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 20,
+    "type": "order",
+    "level": "standard",
+    "prompt_ja": "彼女はまるで医者であるかのように話す。",
+    "tokens": [
+      "She",
+      "talks",
+      "as if",
+      "she",
+      "were",
+      "a doctor."
+    ],
+    "answer_text": "She talks as if she were a doctor.",
+    "explanation": "as if + 仮定法過去で「まるで~であるかのように」を表す。be 動詞は主語に関係なく were を使い、語順は「主語 + 動詞 + as if + 主語 + were ~」となる。文頭にくる主語は大文字の She、as if の後ろの主語は小文字の she で区別する。よって She talks as if she were a doctor. の語順に一意に定まる。",
+    "point": "as if + 主語 + were"
+  },
+  "reason": "元の整序トークンは小文字 if やバラバラの as・if を含み大文字始まりの語が無く、正解 She talks as if she were a doctor. を一意に組成できなかった。指摘どおり文頭にくる主語を大文字 She、as if 内の主語を小文字 she にして区別し、as if を1トークンにまとめ、末尾語 a doctor. にピリオドを含めて文頭と文末を一意化した。これで語順は1通りに定まる。explanation と point も最終解と完全に整合させた。基礎定着レベルと単元「仮定法(as if + 仮定法過去)」を問う点は維持している。"
+}

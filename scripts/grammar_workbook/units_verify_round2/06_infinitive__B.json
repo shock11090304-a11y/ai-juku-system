@@ -1,0 +1,31 @@
+{
+  "slug": "06_infinitive",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be動詞+不定詞(名詞的用法・補語)"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"want to do"},
+    {"no":3,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"To get up=主語の不定詞名詞的用法。動名詞Getting upも可だがchoicesに無い"},
+    {"no":4,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"homework to do=形容詞的用法"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"目的を表す副詞的用法 to borrow"},
+    {"no":6,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"感情の原因の副詞的用法 happy to hear"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"too ... to do"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"enough to do"},
+    {"no":9,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It is important to do(形式主語)"},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It is easy for me to do=意味上の主語for"},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"what to say(疑問詞+不定詞)。sayの目的語が欠けるためwhatのみ可"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"how to do(方法)"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"tell+O+to do"},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"ask+O+to do"},
+    {"no":15,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"grow up to do=結果の副詞的用法"},
+    {"no":16,"mc_index":-1,"produced_sentence":"I like to study English.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"like to do。tokensに-ing無くこの一通り"},
+    {"no":17,"mc_index":-1,"produced_sentence":"I have a book to read today.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"形容詞的用法 a book to read"},
+    {"no":18,"mc_index":-1,"produced_sentence":"She was surprised to hear the news.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"感情の原因の不定詞"},
+    {"no":19,"mc_index":-1,"produced_sentence":"He got up early to see the sunrise.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"目的の副詞的用法。earlyとto see順は意味上唯一"},
+    {"no":20,"mc_index":-1,"produced_sentence":"This question is too difficult for me to solve.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"too ... for 人 to do"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I didn't know what to do next.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"what to do。nextは末尾が自然"},
+    {"no":22,"mc_index":-1,"produced_sentence":"He is kind enough to help everyone.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"so kind that he can=kind enough to"},
+    {"no":23,"mc_index":-1,"produced_sentence":"This box is too heavy for me to carry.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"so heavy that I cannot carry it=too heavy for me to carry(末尾itは付けない)"},
+    {"no":24,"mc_index":-1,"produced_sentence":"It is interesting to learn a foreign language.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"形式主語It+真主語to learn"},
+    {"no":25,"mc_index":-1,"produced_sentence":"I want something cold to drink.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"something+形容詞+to do の語順"}
+  ]
+}

@@ -1,0 +1,251 @@
+{
+  "unit": "話法",
+  "unit_slug": "reported-speech",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "She said ( ) she was tired.",
+      "choices": [
+        "to",
+        "that",
+        "if",
+        "what"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "He said ( ) me that he would call later.",
+      "choices": [
+        "at",
+        "for",
+        "to",
+        "with"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "He ( ) me that he was busy.",
+      "choices": [
+        "said",
+        "spoke",
+        "talked",
+        "told"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "Tom said that he ( ) tired.",
+      "choices": [
+        "was",
+        "is",
+        "are",
+        "be"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "She told me that she ( ) finished her homework.",
+      "choices": [
+        "has",
+        "had",
+        "have",
+        "having"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "He said that he was busy ( ) day.",
+      "choices": [
+        "this",
+        "that",
+        "the",
+        "a"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "She said that she would come ( ) next day.",
+      "choices": [
+        "that",
+        "this",
+        "a",
+        "the"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "He asked me ( ) I was free.",
+      "choices": [
+        "that",
+        "if",
+        "what",
+        "so"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "She asked me where I ( ).",
+      "choices": [
+        "live",
+        "lived",
+        "do live",
+        "living"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "He asked me where ( ).",
+      "choices": [
+        "did I live",
+        "I did live",
+        "lived I",
+        "I lived"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "She told me ( ) open the window.",
+      "choices": [
+        "that",
+        "if",
+        "for",
+        "to"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "The teacher told us ( ) run in the hallway.",
+      "choices": [
+        "to not",
+        "don't",
+        "no to",
+        "not to"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "He said to me, ( ) am hungry.",
+      "choices": [
+        "that I",
+        "if I",
+        "to I",
+        "\"I"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "order",
+      "prompt_ja": "彼は疲れていると言った。",
+      "tokens": [
+        "tired",
+        "said",
+        "He",
+        "that",
+        "was",
+        "he"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "order",
+      "prompt_ja": "彼女は私に、自分は忙しいと言った。",
+      "tokens": [
+        "was",
+        "told",
+        "She",
+        "busy",
+        "me",
+        "she",
+        "that"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "prompt_ja": "彼は私に、忙しいかどうかたずねた。",
+      "tokens": [
+        "I",
+        "asked",
+        "if",
+        "He",
+        "busy",
+        "me",
+        "was"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "彼女は私に、どこに住んでいるのかたずねた。",
+      "tokens": [
+        "I",
+        "asked",
+        "where",
+        "She",
+        "lived",
+        "me"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "rewrite",
+      "original": "He said, \"I am happy.\"",
+      "instruction": "間接話法に書き換えなさい(接続詞 that を使うこと)。"
+    },
+    {
+      "no": 19,
+      "type": "rewrite",
+      "original": "She said to me, \"I like this book.\"",
+      "instruction": "間接話法に書き換えなさい(say to me は told me を使う)。"
+    },
+    {
+      "no": 20,
+      "type": "rewrite",
+      "original": "He said, \"I am busy today.\"",
+      "instruction": "間接話法に書き換えなさい。"
+    },
+    {
+      "no": 21,
+      "type": "rewrite",
+      "original": "She said, \"I will leave tomorrow.\"",
+      "instruction": "間接話法に書き換えなさい(接続詞 that を使い、tomorrow は the next day にすること)。"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "He said, \"I met her two days ago.\"",
+      "instruction": "間接話法に書き換えなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "She said to me, \"Are you tired?\"",
+      "instruction": "間接話法に書き換えなさい(say to me は asked me を使う)。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "He said to me, \"Where do you live?\"",
+      "instruction": "間接話法に書き換えなさい(say to me は asked me を使う)。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "She said to me, \"Open the door.\"",
+      "instruction": "間接話法に書き換えなさい(say to me は told me を使う)。"
+    }
+  ]
+}

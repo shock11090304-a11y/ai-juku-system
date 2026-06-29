@@ -1,0 +1,319 @@
+[
+  {
+    "slug": "04_modals",
+    "unit": "助動詞",
+    "no": 3,
+    "type": "mc",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "idx=1:must",
+    "solvers": {
+      "A": "idx=1",
+      "B": "idx=1",
+      "C": "idx=1"
+    },
+    "concerns": [
+      "C:multi:'must' (obligation) is intended, but 'may' (permission) and "
+    ]
+  },
+  {
+    "slug": "05_passive",
+    "unit": "受動態",
+    "no": 24,
+    "type": "rewrite",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "This watch was given to me by my mother.",
+    "solvers": {
+      "A": "This watch was given to me by my mother.",
+      "B": "This watch was given to me by my mother.",
+      "C": "This watch was given to me by my mother."
+    },
+    "concerns": [
+      "B:multi:直接目的語主語の受動では授与動詞giveは間接目的語の前にtoを置くのが標準だが、'This watch was giv"
+    ]
+  },
+  {
+    "slug": "05_passive",
+    "unit": "受動態",
+    "no": 25,
+    "type": "rewrite",
+    "reasons": [
+      "key-mismatch",
+      "multiple-valid",
+      "verifiers-split"
+    ],
+    "key_answer": "This flower is called a sunflower.",
+    "solvers": {
+      "A": "This flower is called a sunflower by them.",
+      "B": "This flower is called a sunflower.",
+      "C": "This flower is called a sunflower."
+    },
+    "concerns": [
+      "A:multi:by them は省略可: This flower is called a sunflower. も正解。",
+      "B:multi:一般人称they(漠然とした人々)が主語なのでby them省略が自然だが、'This flower is called",
+      "C:multi:by them を付けて This flower is called a sunflower by them. も可だが"
+    ]
+  },
+  {
+    "slug": "06_infinitive",
+    "unit": "不定詞",
+    "no": 23,
+    "type": "rewrite",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "This box is too heavy for me to carry.",
+    "solvers": {
+      "A": "This box is too heavy for me to carry.",
+      "B": "This box is too heavy for me to carry.",
+      "C": "This box is too heavy for me to carry."
+    },
+    "concerns": [
+      "C:multi:目的語itの扱いで 'too heavy to carry'(itなし)も可。元文の主語Iに合わせれば 'for me "
+    ]
+  },
+  {
+    "slug": "10_comparison",
+    "unit": "比較",
+    "no": 16,
+    "type": "order",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "She swims as fast as me.",
+    "solvers": {
+      "A": "She swims as fast as me.",
+      "B": "She swims as fast as me.",
+      "C": "She swims as fast as me."
+    },
+    "concerns": [
+      "C:multi:トークンが as me なので as I は作れない。口語では as me が標準的に許容される。"
+    ]
+  },
+  {
+    "slug": "12_subjunctive",
+    "unit": "仮定法",
+    "no": 11,
+    "type": "mc",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "idx=3:would not have been",
+    "solvers": {
+      "A": "idx=3",
+      "B": "idx=3",
+      "C": "idx=3"
+    },
+    "concerns": [
+      "B:multi:標準解はwould not have been(過去の結果)。ただしlateを現在の状態と解釈すれば混合仮定法でwoul"
+    ]
+  },
+  {
+    "slug": "12_subjunctive",
+    "unit": "仮定法",
+    "no": 22,
+    "type": "rewrite",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "If I were free now, I could help you.",
+    "solvers": {
+      "A": "If I were free now, I could help you.",
+      "B": "If I were free now, I could help you.",
+      "C": "If I were free now, I could help you."
+    },
+    "concerns": [
+      "B:multi:can/cannotの意味保持指示よりcould helpが主。wouldを使うと能力の意味が落ちるため不可。代替として"
+    ]
+  },
+  {
+    "slug": "13_conjunctions",
+    "unit": "接続詞",
+    "no": 18,
+    "type": "order",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "Either you or Tom is wrong.",
+    "solvers": {
+      "A": "Either you or Tom is wrong.",
+      "B": "Either you or Tom is wrong.",
+      "C": "Either you or Tom is wrong."
+    },
+    "concerns": [
+      "B:multi:和文「あなたかトムの」に厳密に従えばEither you or Tom is wrong.が最適。トークン上はEithe"
+    ]
+  },
+  {
+    "slug": "13_conjunctions",
+    "unit": "接続詞",
+    "no": 23,
+    "type": "rewrite",
+    "reasons": [
+      "key-mismatch",
+      "multiple-valid",
+      "verifiers-split"
+    ],
+    "key_answer": "This coffee is so hot that I can't drink it.",
+    "solvers": {
+      "A": "This coffee is so hot that I can't drink it.",
+      "B": "This coffee is so hot that I cannot drink it.",
+      "C": "This coffee is so hot that I can't drink it."
+    },
+    "concerns": [
+      "B:multi:so hot that I can't drink it と短縮形も可。また主節否定を保ったまま so hot that",
+      "C:multi:can't/cannot両表記可。"
+    ]
+  },
+  {
+    "slug": "13_conjunctions",
+    "unit": "接続詞",
+    "no": 24,
+    "type": "rewrite",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "Because he worked hard, he passed the exam.",
+    "solvers": {
+      "A": "Because he worked hard, he passed the exam.",
+      "B": "Because he worked hard, he passed the exam.",
+      "C": "Because he worked hard, he passed the exam."
+    },
+    "concerns": [
+      "B:multi:Because he worked hard, ... のほか Because he had worked hard, ",
+      "C:multi:worked hard / worked so hard など軽微な揺れ可。"
+    ]
+  },
+  {
+    "slug": "13_conjunctions",
+    "unit": "接続詞",
+    "no": 25,
+    "type": "rewrite",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "He can play not only the piano but also the guitar.",
+    "solvers": {
+      "A": "He can play not only the piano but also the guitar.",
+      "B": "He can play not only the piano but also the guitar.",
+      "C": "He can play not only the piano but also the guitar."
+    },
+    "concerns": [
+      "A:multi:Also valid: 'He can not only play the piano but also play th"
+    ]
+  },
+  {
+    "slug": "15_nouns-articles",
+    "unit": "名詞・冠詞",
+    "no": 14,
+    "type": "mc",
+    "reasons": [
+      "grammatical",
+      "multiple-valid"
+    ],
+    "key_answer": "idx=2:a few",
+    "solvers": {
+      "A": "idx=2",
+      "B": "idx=2",
+      "C": "idx=2"
+    },
+    "concerns": [
+      "C:multi:few (index 3) is also grammatical with countable students; b"
+    ]
+  },
+  {
+    "slug": "17_adjectives-adverbs",
+    "unit": "形容詞・副詞",
+    "no": 24,
+    "type": "rewrite",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "This bag is too heavy for me to carry.",
+    "solvers": {
+      "A": "This bag is too heavy for me to carry.",
+      "B": "This bag is too heavy for me to carry.",
+      "C": "This bag is too heavy for me to carry."
+    },
+    "concerns": [
+      "B:multi:原文がI can't carryなので意味保持にはfor meを補う本文が最善。ただしThis bag is too h"
+    ]
+  },
+  {
+    "slug": "20_reported-speech",
+    "unit": "話法",
+    "no": 19,
+    "type": "rewrite",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "She told me that she liked that book.",
+    "solvers": {
+      "A": "She told me that she liked that book.",
+      "B": "She told me that she liked that book.",
+      "C": "She told me that she liked that book."
+    },
+    "concerns": [
+      "C:multi:this→that が標準だが、文脈次第でthis bookを保持する解答も許容され得る。"
+    ]
+  },
+  {
+    "slug": "20_reported-speech",
+    "unit": "話法",
+    "no": 20,
+    "type": "rewrite",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "He said that he was busy that day.",
+    "solvers": {
+      "A": "He said that he was busy that day.",
+      "B": "He said that he was busy that day.",
+      "C": "He said that he was busy that day."
+    },
+    "concerns": [
+      "B:multi:that を使わず He said he was busy that day. も成立し、口語では today を維持し"
+    ]
+  },
+  {
+    "slug": "20_reported-speech",
+    "unit": "話法",
+    "no": 22,
+    "type": "rewrite",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "He said that he had met her two days before.",
+    "solvers": {
+      "A": "He said that he had met her two days before.",
+      "B": "He said that he had met her two days before.",
+      "C": "He said that he had met her two days before."
+    },
+    "concerns": [
+      "B:multi:ago→before が標準だが two days earlier も成立。また指示が緩いため He said that",
+      "C:multi:two days before / two days earlier のいずれも可。"
+    ]
+  },
+  {
+    "slug": "20_reported-speech",
+    "unit": "話法",
+    "no": 23,
+    "type": "rewrite",
+    "reasons": [
+      "multiple-valid"
+    ],
+    "key_answer": "She asked me if I was tired.",
+    "solvers": {
+      "A": "She asked me if I was tired.",
+      "B": "She asked me if I was tired.",
+      "C": "She asked me if I was tired."
+    },
+    "concerns": [
+      "B:multi:if の代わりに whether も同様に正しい: She asked me whether I was tired.",
+      "C:multi:if / whether のいずれも可。"
+    ]
+  }
+]

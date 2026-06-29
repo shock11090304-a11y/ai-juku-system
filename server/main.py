@@ -310,9 +310,11 @@ ENROLLMENT_FEE = 10000
 STUDENT_ADDON_PRICE = 5000
 
 # 創設メンバー体験は完全無料化 (CVR最大化方針)
-# 14日間 = 2 週間で学習習慣変化 + 集中体験 → 本契約継続を狙う設計 (2026-05-19 10→14 拡張)
+# 7日間 = 1 週間の集中体験で早期に価値実感 → 本契約継続を狙う設計 (2026-06-30 14→7 短縮・塾長指示)
 FOUNDER_TRIAL_PRICE = 0
-FOUNDER_TRIAL_DAYS = 14  # 10→14 日に拡張 (塾長指示 2026-05-19: スタサプ/Duolingo の 14 日標準に合わせ、学習習慣変化の最小単位 = 14日に到達。集客 funnel 改善 #1)
+FOUNDER_TRIAL_DAYS = 7  # 14→7 日に短縮 (塾長指示 2026-06-30: AI管理の体験を7日間に。早期の転換を促す。カード登録特典は +7 で 14日)。
+#   ※ AI管理(AIコーチング)の無料体験日数の単一ソース。新規申込の trial_end・Stripe商品名・決済画面文言が全てこれを参照。
+#     カード登録の延長特典 = EXTENDED_TRIAL_DAYS = FOUNDER_TRIAL_DAYS + 7。通塾生(塾生アプリ)の長期trial(+3650日)は別系統で無関係。
 # 💳 月次課金 決済失敗の猶予期間 (塾長指示 2026-05-29「猶予期間あり」): past_due 降格後この日数は
 # アクセスを維持し、生徒にカード更新を案内。Stripe の自動リトライ成功で paid 復帰。GRACE 超過 (= Stripe の
 # dunning が無効/枯渇で past_due のまま) なら scheduler が canceled 化してアクセス停止 (無料使い放題を防ぐ)。
@@ -3009,7 +3011,7 @@ def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: st
                 f"続けない場合は体験期間中にマイページの「解約する」または特定商取引法に基づく表記記載の方法で解約できます（体験中の解約で料金は一切かかりません）。"
             )
         else:
-            bottom = "体験期間は 14 日間。何もしなければ自動終了し、課金は一切発生しません。"
+            bottom = f"体験期間は {FOUNDER_TRIAL_DAYS} 日間。何もしなければ自動終了し、課金は一切発生しません。"
     elif stage == "late":
         if card_registered:
             subject = f"【AIコーチング】無料体験 終了まで {days_unused} 日 — 終了後は自動課金が始まります"
@@ -3220,7 +3222,7 @@ def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, u
 <p>{greeting}、体験のご利用ありがとうございます。</p>
 
 <p style="background:#f8f9fc; padding:1rem; border-left:4px solid #6366f1; border-radius:4px; margin: 1.5rem 0;">
-  📅 <strong>14日間の無料体験は{days_text}で終了します</strong>
+  📅 <strong>7日間の無料体験は{days_text}で終了します</strong>
 </p>
 
 <p><strong>継続してご利用されたい方</strong>は、以下のボタンから月額プランの本登録をお願いします。</p>
@@ -3334,7 +3336,7 @@ JUKUCHO_PERSONA = """あなたは「足立翔平」、200名規模の塾を10年
 - 月¥5万の塾で苦しむ家庭への憤りがエネルギー源
 - AIで質を落とさず1/3価格を実現した
 - Threadsでフォロワー集客中(現在地は0からのスタート)
-- 創設メンバー50名限定 永年¥14,500/月 / 14日間 完全無料体験(クレカ不要)
+- 創設メンバー50名限定 永年¥14,500/月 / 7日間 完全無料体験(クレカ不要)
 - 元現場の本音を語るキャラ・売り込み臭は出さない"""
 
 THREADS_RULES = """【Threadsアルゴリズム最適化ルール (絶対遵守)】
@@ -3642,7 +3644,7 @@ def _generate_daily_sns_posts() -> list:
 - **数字×権威型**: 末尾に「→ https://trillion-ai-juku.com/lp.html?utm_source=threads&utm_content=authority」
 - **体験談ストーリー型**: 末尾に「→ https://trillion-ai-juku.com/lp.html?utm_source=threads&utm_content=testimonial」
 
-リンク前には「気になる方は」「詳細はこちら」「14日間無料体験」などの自然な導入文を1行で書いてください。
+リンク前には「気になる方は」「詳細はこちら」「7日間無料体験」などの自然な導入文を1行で書いてください。
 他の3 type (逆説型/保護者あるある共感型/二択問いかけ型) はリンクを含めないこと。
 
 【出力形式】純粋なJSONのみ、他のテキストは含めない:
@@ -8811,7 +8813,7 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp
         greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
         body_intro = (
             f"""<p>{greeting}、ご登録ありがとうございます 🎉</p>
-    <p>14日間の無料体験が始まりました。<strong>以下の6桁コードをアプリに入力</strong>してログインしてください。</p>"""
+    <p>{FOUNDER_TRIAL_DAYS}日間の無料体験が始まりました。<strong>以下の6桁コードをアプリに入力</strong>してログインしてください。</p>"""
             if is_welcome else
             f"<p>{greeting}、以下の6桁コードをアプリに入力してログインしてください。</p>"
         )
@@ -14788,7 +14790,7 @@ async def admin_send_ig_carousel(
         "【¥14,500/月 永年保証】\n"
         "創設メンバー50名限定 / 契約後も値上げなし\n"
         "通常¥39,800のところ、永年この価格。\n\n"
-        "【14日間 完全無料】\n"
+        "【7日間 完全無料】\n"
         "クレカ登録なし。自動課金なし。\n\n"
         "【申込】\n"
         "プロフィールURL、または\n"
@@ -14816,7 +14818,7 @@ async def admin_send_ig_carousel(
         "ここまでの5機能を全部回すと、市販の参考書+個別塾+添削サービスを足したくらいの体験になります。\n\n"
         "それを月¥14,500。通常 ¥39,800 のところ、創設メンバー50名は永年¥14,500で固定。残り18席。\n\n"
         "「説明されて納得する」より「画面を見て確信する」ほうが、たぶん早い。\n\n"
-        "14日間、完全無料で全機能触れます。クレカ登録なし。MARCH・関関同立から東大まで対応。中堅大学を切り捨てた塾ではありません。\n\n"
+        "7日間、完全無料で全機能触れます。クレカ登録なし。MARCH・関関同立から東大まで対応。中堅大学を切り捨てた塾ではありません。\n\n"
         "見たら、止まらないです。\n\n"
         "trillion-ai-juku.com/lp.html\n\n"
         "#ai塾 #大学受験 #高校受験 #塾選び #家庭教師 #英検 #自宅学習 #生成ai #高校生勉強垢 #中学生勉強垢"
@@ -26066,7 +26068,7 @@ def create_trial_checkout(payload: dict):
                     "checkout_url": session.url,
                     "session_id": session.id,
                     "trial_days": EXTENDED_TRIAL_DAYS,
-                    "note": "クレジットカード登録後、21 日間 完全無料。trial 終了 24 時間前に Stripe からメール通知あり。",
+                    "note": f"クレジットカード登録後、{EXTENDED_TRIAL_DAYS} 日間 完全無料。trial 終了 24 時間前に Stripe からメール通知あり。",
                 }
         except Exception as e:
             log.error(f"[trial-checkout +7d] Stripe session creation failed: {type(e).__name__}: {e}")
@@ -27813,7 +27815,7 @@ LINE_TEMPLATES = {
     "trial_ending": lambda p: {
         "type": "text",
         "text": f"⏰ 無料体験終了まであと{p.get('days_left', 3)}日\n\n"
-                f"{p.get('name', '生徒')}さんは14日間で:\n"
+                f"{p.get('name', '生徒')}さんは{FOUNDER_TRIAL_DAYS}日間で:\n"
                 f"⏱ {p.get('hours', 0)}時間学習\n"
                 f"💬 AI質問 {p.get('questions', 0)}回\n\n"
                 f"継続するにはこちら👇\n"
@@ -28918,7 +28920,7 @@ def _send_trial_followup_email(to_email: str, student_name: str, days_since: int
         subject = "【AIコーチング】体験期間が終了しました — いつでも再開できます"
         headline = "体験期間が終了しました"
         body_msg = """
-<p>14日間の無料体験をご利用いただき、ありがとうございました。</p>
+<p>7日間の無料体験をご利用いただき、ありがとうございました。</p>
 <p>体験中の学習データはすべて保存されています。<br>
 いつでも月額プランに登録いただければ、続きから学習を再開できます。</p>
 <p style="background:#f0fdf4;padding:1rem;border-left:4px solid #22c55e;border-radius:4px;">
@@ -33907,7 +33909,7 @@ LP_VARIANT_POOL = {
         "description": "成果訴求 (合格実績/学習量)",
         "config": {
             "headline": "🎓 AI が君だけのカリキュラムを設計 — 24時間質問できる個別指導",
-            "cta_text": "14日間の無料体験を始める",
+            "cta_text": "7日間の無料体験を始める",
         },
         "active": True,
     },

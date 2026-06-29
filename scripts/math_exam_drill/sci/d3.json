@@ -1,0 +1,58 @@
+{
+  "part": "chem_exam",
+  "group": "気体の法則",
+  "unit_theme": "状態方程式・ボイルシャルル・混合気体の分圧と平均分子量",
+  "passage": "化学の実験で、容積を変えられる密閉容器を使って気体の性質を調べた。気体はすべて理想気体とみなし、気体定数は \\(R=8.3\\times10^{3}\\ \\text{Pa}\\cdot\\text{L}/(\\text{mol}\\cdot\\text{K})\\) とする。原子量は \\(\\text{O}=16\\)、\\(\\text{N}=14\\)(よって \\(\\text{O}_2=32\\)、\\(\\text{N}_2=28\\))とする。\n\nまず、容器に酸素 \\(\\text{O}_2\\) だけを入れ、圧力 \\(8.3\\times10^{5}\\ \\text{Pa}\\)、体積 \\(2.0\\ \\text{L}\\)、絶対温度 \\(400\\ \\text{K}\\) の状態にした。次に温度を下げる操作や、別の気体を加える操作を行い、状態方程式 \\(PV=nRT\\) や分圧の考え方を順に用いて(1)から(5)までを考える。",
+  "subqs": [
+    {
+      "stem": "気体定数を \\(R=8.3\\times10^{3}\\ \\text{Pa}\\cdot\\text{L}/(\\text{mol}\\cdot\\text{K})\\) とする。容器内の酸素 \\(\\text{O}_2\\) が、圧力 \\(P=8.3\\times10^{5}\\ \\text{Pa}\\)、体積 \\(V=2.0\\ \\text{L}\\)、絶対温度 \\(T=400\\ \\text{K}\\) の状態にあるとき、状態方程式 \\(PV=nRT\\) を用いて、容器内の \\(\\text{O}_2\\) の物質量 \\(n\\) を求めよ。",
+      "choices_latex": ["\\(0.25\\ \\text{mol}\\)", "\\(0.50\\ \\text{mol}\\)", "\\(1.0\\ \\text{mol}\\)", "\\(5.0\\ \\text{mol}\\)"],
+      "choices_value": ["Rational(1,4)", "Rational(1,2)", "Integer(1)", "Integer(5)"],
+      "answer_index": 1,
+      "truth_value": "Rational(1,2)",
+      "unit": "発展 気体の法則(状態方程式 PV=nRT)",
+      "reason": "\\(n=\\dfrac{PV}{RT}=\\dfrac{8.3\\times10^{5}\\times2.0}{8.3\\times10^{3}\\times400}=\\dfrac{1.66\\times10^{6}}{3.32\\times10^{6}}=0.50\\ \\text{mol}\\)。",
+      "restates": "stem内に \\(R=8.3\\times10^{3}\\)、\\(P=8.3\\times10^{5}\\ \\text{Pa}\\)、\\(V=2.0\\ \\text{L}\\)、\\(T=400\\ \\text{K}\\) を再掲。"
+    },
+    {
+      "stem": "容器内には \\(\\text{O}_2\\) が \\(0.50\\ \\text{mol}\\) 入っており、はじめ圧力 \\(8.3\\times10^{5}\\ \\text{Pa}\\)、絶対温度 \\(400\\ \\text{K}\\) であった。体積を \\(2.0\\ \\text{L}\\) に保ったまま温度を \\(200\\ \\text{K}\\) まで下げた。このときの圧力 \\(P'\\) を求めよ。(体積一定なので \\(\\dfrac{P}{T}\\) が一定。)",
+      "choices_latex": ["\\(2.075\\times10^{5}\\ \\text{Pa}\\)", "\\(4.15\\times10^{5}\\ \\text{Pa}\\)", "\\(8.3\\times10^{5}\\ \\text{Pa}\\)", "\\(1.66\\times10^{6}\\ \\text{Pa}\\)"],
+      "choices_value": ["Integer(207500)", "Integer(415000)", "Integer(830000)", "Integer(1660000)"],
+      "answer_index": 1,
+      "truth_value": "Integer(415000)",
+      "unit": "発展 気体の法則(ボイル・シャルルの法則)",
+      "reason": "体積一定より \\(\\dfrac{P}{T}\\) 一定。\\(P'=P\\times\\dfrac{T'}{T}=8.3\\times10^{5}\\times\\dfrac{200}{400}=4.15\\times10^{5}\\ \\text{Pa}\\)。",
+      "restates": "stem内に 初期 \\(P=8.3\\times10^{5}\\ \\text{Pa}\\)、\\(T=400\\ \\text{K}\\)、体積一定・\\(T'=200\\ \\text{K}\\) を再掲。(1)の \\(n=0.50\\ \\text{mol}\\) も再掲。"
+    },
+    {
+      "stem": "容器内には \\(\\text{O}_2\\) が \\(0.50\\ \\text{mol}\\) 入っている。ここへ窒素 \\(\\text{N}_2\\) を \\(1.50\\ \\text{mol}\\) 加えて混合気体にした。容器内の気体の全物質量 \\(n_{\\text{全}}\\) を求めよ。",
+      "choices_latex": ["\\(1.0\\ \\text{mol}\\)", "\\(1.5\\ \\text{mol}\\)", "\\(2.0\\ \\text{mol}\\)", "\\(2.5\\ \\text{mol}\\)"],
+      "choices_value": ["Integer(1)", "Rational(3,2)", "Integer(2)", "Rational(5,2)"],
+      "answer_index": 2,
+      "truth_value": "Integer(2)",
+      "unit": "発展 気体の法則(混合気体の全物質量)",
+      "reason": "\\(n_{\\text{全}}=n_{\\text{O}_2}+n_{\\text{N}_2}=0.50+1.50=2.0\\ \\text{mol}\\)。",
+      "restates": "stem内に \\(\\text{O}_2=0.50\\ \\text{mol}\\)((1)の結果)、加えた \\(\\text{N}_2=1.50\\ \\text{mol}\\) を再掲。"
+    },
+    {
+      "stem": "気体定数を \\(R=8.3\\times10^{3}\\ \\text{Pa}\\cdot\\text{L}/(\\text{mol}\\cdot\\text{K})\\) とする。\\(\\text{O}_2\\) \\(0.50\\ \\text{mol}\\) と \\(\\text{N}_2\\) \\(1.50\\ \\text{mol}\\) からなる混合気体(全 \\(2.0\\ \\text{mol}\\))を、体積 \\(2.0\\ \\text{L}\\)、絶対温度 \\(400\\ \\text{K}\\) の容器に入れた。このとき \\(\\text{N}_2\\) の分圧 \\(p_{\\text{N}_2}\\) を、\\(p_{\\text{N}_2}=\\dfrac{n_{\\text{N}_2}RT}{V}\\) を用いて求めよ。",
+      "choices_latex": ["\\(8.3\\times10^{5}\\ \\text{Pa}\\)", "\\(1.245\\times10^{6}\\ \\text{Pa}\\)", "\\(2.49\\times10^{6}\\ \\text{Pa}\\)", "\\(3.32\\times10^{6}\\ \\text{Pa}\\)"],
+      "choices_value": ["Integer(830000)", "Integer(1245000)", "Integer(2490000)", "Integer(3320000)"],
+      "answer_index": 2,
+      "truth_value": "Integer(2490000)",
+      "unit": "発展 気体の法則(混合気体の分圧)",
+      "reason": "\\(p_{\\text{N}_2}=\\dfrac{n_{\\text{N}_2}RT}{V}=\\dfrac{1.50\\times8.3\\times10^{3}\\times400}{2.0}=\\dfrac{4.98\\times10^{6}}{2.0}=2.49\\times10^{6}\\ \\text{Pa}\\)。",
+      "restates": "stem内に \\(R=8.3\\times10^{3}\\)、\\(n_{\\text{N}_2}=1.50\\ \\text{mol}\\)((3)の内訳)、\\(V=2.0\\ \\text{L}\\)、\\(T=400\\ \\text{K}\\) を再掲。"
+    },
+    {
+      "stem": "\\(\\text{O}_2\\)(分子量 \\(32\\))が \\(0.50\\ \\text{mol}\\)、\\(\\text{N}_2\\)(分子量 \\(28\\))が \\(1.50\\ \\text{mol}\\) からなる混合気体(全 \\(2.0\\ \\text{mol}\\))がある。この混合気体の平均分子量 \\(\\overline{M}\\) を求めよ。(平均分子量は混合気体 \\(1\\ \\text{mol}\\) あたりの質量に等しい。)",
+      "choices_latex": ["\\(28.5\\)", "\\(29\\)", "\\(30\\)", "\\(58\\)"],
+      "choices_value": ["Rational(57,2)", "Integer(29)", "Integer(30)", "Integer(58)"],
+      "answer_index": 1,
+      "truth_value": "Integer(29)",
+      "unit": "発展 気体の法則(混合気体の平均分子量)",
+      "reason": "全質量 \\(=0.50\\times32+1.50\\times28=16+42=58\\ \\text{g}\\)。\\(\\overline{M}=\\dfrac{58}{2.0}=29\\)。(モル分率で重みづけた平均 \\(\\overline{M}=\\dfrac{0.50}{2.0}\\times32+\\dfrac{1.50}{2.0}\\times28=8+21=29\\) でも同じ。)",
+      "restates": "stem内に \\(\\text{O}_2\\)(\\(32\\))\\(0.50\\ \\text{mol}\\)、\\(\\text{N}_2\\)(\\(28\\))\\(1.50\\ \\text{mol}\\)、全 \\(2.0\\ \\text{mol}\\)((3)の結果)を再掲。"
+    }
+  ]
+}

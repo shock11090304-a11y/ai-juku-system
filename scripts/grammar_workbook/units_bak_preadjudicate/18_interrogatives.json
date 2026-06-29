@@ -1,0 +1,271 @@
+{
+  "unit": "疑問文",
+  "unit_slug": "interrogatives",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) is that man? He is my teacher.",
+      "choices": ["Who", "What", "Which", "Whose"],
+      "answer_index": 0,
+      "answer_text": "Who",
+      "explanation": "答えが「私の先生だ」と人を表しているので、「だれ」とたずねる疑問詞 Who を使う。be 動詞の疑問文なので Who is ... の語順になる。",
+      "point": "人をたずねるなら Who"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) is in the box? A small cake is.",
+      "choices": ["Who", "What", "When", "Where"],
+      "answer_index": 1,
+      "answer_text": "What",
+      "explanation": "答えが「小さなケーキ」という物なので、「何」とたずねる疑問詞 What を使う。What is in the box? で「箱の中に何があるか」をたずねている。",
+      "point": "物をたずねるなら What"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) bag is this? It is Tom's.",
+      "choices": ["Who", "Whose", "Which", "What"],
+      "answer_index": 1,
+      "answer_text": "Whose",
+      "explanation": "答えが「トムのものだ」と持ち主を表しているので、「だれの」とたずねる Whose を使う。Whose のあとには名詞 bag が続く。",
+      "point": "持ち主をたずねるなら Whose + 名詞"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) do you go to school? At seven thirty.",
+      "choices": ["What", "Where", "When", "Why"],
+      "answer_index": 2,
+      "answer_text": "When",
+      "explanation": "答えが「7時30分に」と時を表しているので、「いつ」とたずねる When を使う。Why は理由、Where は場所をたずねる語なので合わない。",
+      "point": "時をたずねるなら When"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) does she live? In Tokyo.",
+      "choices": ["When", "Where", "Why", "Who"],
+      "answer_index": 1,
+      "answer_text": "Where",
+      "explanation": "答えが「東京に」と場所を表しているので、「どこに」とたずねる Where を使う。一般動詞の疑問文なので does を使う点も確認する。",
+      "point": "場所をたずねるなら Where"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) were you late? Because I missed the bus.",
+      "choices": ["When", "Where", "Why", "How"],
+      "answer_index": 2,
+      "answer_text": "Why",
+      "explanation": "答えが Because ... と理由を表しているので、「なぜ」とたずねる Why を使う。Why の答えは Because ... で始まることが多い。",
+      "point": "理由をたずねるなら Why"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) do you go to school? By bike.",
+      "choices": ["What", "How", "Why", "Where"],
+      "answer_index": 1,
+      "answer_text": "How",
+      "explanation": "答えが「自転車で」と手段を表しているので、「どうやって」とたずねる How を使う。How は手段・方法・状態などをたずねる語である。",
+      "point": "手段をたずねるなら How"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) books do you have? I have ten books.",
+      "choices": ["How much", "How many", "How long", "How old"],
+      "answer_index": 1,
+      "answer_text": "How many",
+      "explanation": "books は数えられる名詞で、答えも「10冊」と数なので How many を使う。How many のあとには複数形の名詞 books が続く。",
+      "point": "数えられる名詞の数は How many"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) water do you need? Just one cup.",
+      "choices": ["How many", "How much", "How old", "How far"],
+      "answer_index": 1,
+      "answer_text": "How much",
+      "explanation": "water は数えられない名詞なので、量をたずねるときは How much を使う。数えられる名詞のときは How many を使う点と区別する。",
+      "point": "数えられない名詞の量は How much"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) are you? I am fifteen years old.",
+      "choices": ["How long", "How old", "How tall", "How far"],
+      "answer_index": 1,
+      "answer_text": "How old",
+      "explanation": "答えが「15歳」と年齢を表しているので、年齢をたずねる How old を使う。How old are you? は年齢をたずねる決まった言い方である。",
+      "point": "年齢をたずねるなら How old"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) do you go to the gym? Three times a week.",
+      "choices": ["How long", "How far", "How often", "How much"],
+      "answer_index": 2,
+      "answer_text": "How often",
+      "explanation": "答えが「週に3回」と頻度を表しているので、「どのくらいの頻度で」とたずねる How often を使う。How long は期間、How far は距離をたずねる。",
+      "point": "頻度をたずねるなら How often"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) broke this window? Ken did.",
+      "choices": ["Who", "Whom", "What did", "Who did"],
+      "answer_index": 0,
+      "answer_text": "Who",
+      "explanation": "疑問詞 Who が主語になる疑問文では、ふつうの肯定文と同じ語順で do/does/did を使わない。Who broke ...? のあとに動詞が直接続く。",
+      "point": "疑問詞が主語なら do を使わない"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Which do you like better, tea ( ) coffee?",
+      "choices": ["and", "or", "but", "so"],
+      "answer_index": 1,
+      "answer_text": "or",
+      "explanation": "「A か B か」と2つから選ばせる選択疑問文では or を使う。Which ..., A or B? の形で「どちらが好きか」をたずねている。",
+      "point": "選択疑問文は A or B"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "You are a student, ( )?",
+      "choices": ["are you", "aren't you", "do you", "don't you"],
+      "answer_index": 1,
+      "answer_text": "aren't you",
+      "explanation": "付加疑問文では、前が肯定文なら後ろは否定の短縮形にする。be 動詞 are の文なので aren't you をつける。主語 you も合わせる。",
+      "point": "肯定文の付加疑問は否定形"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Tom doesn't play soccer, ( )?",
+      "choices": ["does he", "doesn't he", "is he", "do he"],
+      "answer_index": 0,
+      "answer_text": "does he",
+      "explanation": "前が否定文のときは付加疑問を肯定形にする。一般動詞 doesn't の文なので does he をつけ、主語 Tom を代名詞 he に直す。",
+      "point": "否定文の付加疑問は肯定形"
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "あなたはどこに住んでいますか。",
+      "tokens": ["do", "where", "live", "you"],
+      "answer_text": "Where do you live?",
+      "explanation": "場所をたずねるので疑問詞 Where を文頭に置き、そのあとに一般動詞の疑問文 do you live を続ける。Where do you live? の語順になる。",
+      "point": "疑問詞 + do + 主語 + 動詞"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "これはだれのかさですか。",
+      "tokens": ["is", "whose", "this", "umbrella"],
+      "answer_text": "Whose umbrella is this?",
+      "explanation": "持ち主をたずねる Whose のあとに名詞 umbrella を続けてかたまりにし、be 動詞の疑問文 is this を置く。Whose umbrella is this? となる。",
+      "point": "Whose + 名詞 + be 動詞 + 主語"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "あなたは何冊の本を持っていますか。",
+      "tokens": ["books", "do", "how many", "have", "you"],
+      "answer_text": "How many books do you have?",
+      "explanation": "数をたずねる How many のあとに複数形の名詞 books を続け、そのあとに一般動詞の疑問文 do you have を置く。How many books do you have? となる。",
+      "point": "How many + 名詞 + 疑問文"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "だれがこの手紙を書いたのですか。",
+      "tokens": ["this", "letter", "who", "wrote"],
+      "answer_text": "Who wrote this letter?",
+      "explanation": "疑問詞 Who が主語になるので、肯定文と同じ語順で動詞 wrote を直後に置く。do/did は使わない。Who wrote this letter? となる。",
+      "point": "疑問詞が主語なら直後に動詞"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "あなたはなぜ昨日学校を休んだのですか。",
+      "tokens": ["were", "absent", "why", "you", "yesterday"],
+      "answer_text": "Why were you absent yesterday?",
+      "explanation": "理由をたずねる Why を文頭に置き、be 動詞の疑問文 were you absent を続け、最後に時を表す yesterday を置く。Why were you absent yesterday? となる。",
+      "point": "Why + be 動詞 + 主語 + 語句"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "あなたはどうやって学校へ行きますか。",
+      "tokens": ["to school", "do", "go", "how", "you"],
+      "answer_text": "How do you go to school?",
+      "explanation": "手段をたずねる How を文頭に置き、一般動詞の疑問文 do you go to school を続ける。How do you go to school? の語順になる。",
+      "point": "How + do + 主語 + 動詞"
+    },
+    {
+      "no": 22,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "あなたは音楽が好きですよね。",
+      "tokens": ["you", "like music", "don't", "you,"],
+      "answer_text": "You like music, don't you?",
+      "explanation": "前が肯定文 You like music なので、付加疑問は否定形 don't you をカンマのあとに置く。一般動詞 like の文なので do 系を使う。",
+      "point": "肯定文 + , + 否定の付加疑問"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "He is a doctor.",
+      "instruction": "下線部の a doctor をたずねる疑問文に書きかえなさい(What で始める)。",
+      "answer_text": "What is he?",
+      "explanation": "職業など「何であるか」をたずねるときは What を使う。a doctor の部分を What にして文頭に出し、be 動詞の疑問文 is he を続ける。",
+      "point": "職業をたずねるのは What"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "Where does she live?",
+      "instruction": "I don't know で始まる間接疑問文に書きかえなさい。",
+      "answer_text": "I don't know where she lives.",
+      "explanation": "間接疑問文では疑問詞のあとを「主語 + 動詞」の語順にし、does を使わず動詞を主語に合わせて lives とする。I don't know where she lives. となる。",
+      "point": "間接疑問は does を消して動詞を活用"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "She can play the piano.",
+      "instruction": "文末に付加疑問をつけた文に書きかえなさい。",
+      "answer_text": "She can play the piano, can't she?",
+      "explanation": "前が肯定文で助動詞 can を含むので、付加疑問は否定形 can't she をつける。主語 She は代名詞 she のままで合わせる。",
+      "point": "助動詞の肯定文には can't + 代名詞"
+    }
+  ]
+}

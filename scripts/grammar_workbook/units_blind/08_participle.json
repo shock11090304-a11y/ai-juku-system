@@ -1,0 +1,264 @@
+{
+  "unit": "分詞",
+  "unit_slug": "participle",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "Look at the ( ) baby. She is so cute.",
+      "choices": [
+        "sleep",
+        "slept",
+        "to sleep",
+        "sleeping"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "I bought a ( ) car last week.",
+      "choices": [
+        "use",
+        "using",
+        "used",
+        "to use"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "The boy ( ) under the tree is my brother.",
+      "choices": [
+        "stand",
+        "stands",
+        "stood",
+        "standing"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "This is a letter ( ) in English.",
+      "choices": [
+        "written",
+        "write",
+        "wrote",
+        "writing"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "Do you know the girl ( ) the piano?",
+      "choices": [
+        "play",
+        "plays",
+        "played",
+        "playing"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "The language ( ) in Canada is English and French.",
+      "choices": [
+        "spoken",
+        "speak",
+        "speaking",
+        "spoke"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "The movie was so ( ) that I watched it twice.",
+      "choices": [
+        "excite",
+        "exciting",
+        "excited",
+        "to excite"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "I was very ( ) when I heard the news.",
+      "choices": [
+        "surprise",
+        "surprised",
+        "surprising",
+        "to surprise"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "This book is really ( ). I want to read it again.",
+      "choices": [
+        "interesting",
+        "interest",
+        "interested",
+        "to interest"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "We were all ( ) in the soccer game.",
+      "choices": [
+        "interested",
+        "interest",
+        "interesting",
+        "to interest"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "The long trip was very ( ), so I slept well.",
+      "choices": [
+        "tire",
+        "tiring",
+        "tired",
+        "to tire"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "I saw a man ( ) into the building.",
+      "choices": [
+        "runs",
+        "ran",
+        "running",
+        "to run"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "I heard my name ( ) from behind.",
+      "choices": [
+        "call",
+        "calling",
+        "called",
+        "to call"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "I had my bike ( ) at the shop yesterday.",
+      "choices": [
+        "repaired",
+        "repair",
+        "repairing",
+        "to repair"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "She got her hair ( ) before the party.",
+      "choices": [
+        "cutting",
+        "to cut",
+        "cuts",
+        "cut"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "stem": "Be careful with the ( ) glass on the floor.",
+      "choices": [
+        "broken",
+        "break",
+        "broke",
+        "breaking"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "サッカーをしているあの少年は私の兄です。",
+      "tokens": [
+        "playing soccer",
+        "The boy",
+        "is",
+        "my brother"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "これは中国で作られた人形です。",
+      "tokens": [
+        "made",
+        "a doll",
+        "is",
+        "This",
+        "in China"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "私は誰かが私の名前を呼ぶのを聞いた。",
+      "tokens": [
+        "calling",
+        "I",
+        "someone",
+        "heard",
+        "my name"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "彼はその知らせにわくわくしているようだった。",
+      "tokens": [
+        "excited",
+        "the news",
+        "seemed",
+        "He",
+        "about"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "私はその時計を直してもらった。",
+      "tokens": [
+        "repaired",
+        "the watch",
+        "I",
+        "got"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "The man who is talking with Tom is my uncle.",
+      "instruction": "関係代名詞を使わず、分詞を使った文に書き換えなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "I have a friend who lives in Osaka.",
+      "instruction": "関係代名詞を使わず、分詞を使った文に書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "This is a picture which was taken by my father.",
+      "instruction": "関係代名詞を使わず、分詞を使った文に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "Look at the house which is standing on the hill.",
+      "instruction": "関係代名詞を使わず、分詞を使った文に書き換えなさい。"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "slug": "03_perfect",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"肯定文の完了用法は already。"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"疑問文の完了用法は yet(もう)。"},
+    {"no":3,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"起点(2015年という時点)なので since。"},
+    {"no":4,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"期間(ten years)なので for。"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"経験を問う疑問文は ever。"},
+    {"no":6,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"before と呼応し『一度もない』で never。"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"今ここにいない=have gone to。been は経験で『いない』を表せない。"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"twice の経験は have been to。"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"yesterday があるので単純過去 lost。"},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"had already + 過去分詞 left。"},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主節 said(過去)+ before で時制の一致により had read(過去完了)。"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"for three hours で現在に影響(地面が濡れている)=has been raining(現在完了進行)。"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"By the time + 現在形 → 未来完了 will have finished。"},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"How long ... studied → 現在完了の have。"},
+    {"no":15,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定文の完了は not ... yet(まだ)。"},
+    {"no":16,"mc_index":-1,"produced_sentence":"I have just finished lunch.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"have just + 過去分詞。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"Have you ever climbed Mt. Fuji?","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Have you ever + 過去分詞 の経験疑問文。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"We have lived in this town since 2020.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"live in + 場所、since + 起点。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"When I reached the station, the bus had already left.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去の一点より前の完了=過去完了 had already left。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"She has been playing the piano for three hours.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"has been + ing の現在完了進行、for + 期間。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I have never seen the movie.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"have never + 過去分詞 の経験否定。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"I have lived in this city for three years.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"three years ago + 今も住む → 継続 have lived ... for three years。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"He has gone to Canada.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"have gone to で『行ってしまって今いない』。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"I have been to Kyoto twice.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"have been to + twice で経験(2回)。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"When we arrived at the theater, the movie had already started.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"指定の書き出し+過去完了 had already started。"}
+  ]
+}

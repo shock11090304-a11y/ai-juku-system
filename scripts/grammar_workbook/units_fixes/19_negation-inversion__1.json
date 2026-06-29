@@ -1,0 +1,23 @@
+{
+  "slug": "19_negation-inversion",
+  "no": 1,
+  "type": "mc",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 1,
+    "type": "mc",
+    "level": "basic",
+    "stem": "Not all of the students ( ) the exam last week.",
+    "choices": [
+      "passed",
+      "pass",
+      "passes",
+      "passing"
+    ],
+    "answer_index": 0,
+    "answer_text": "passed",
+    "explanation": "Not all で「すべてが~とは限らない」という部分否定。文末の last week が過去を示すので、動詞は過去形 passed が正解。pass や passes は現在形で last week と合わず不可、passing は助動詞がなく述語動詞にならないため不可。",
+    "point": "not all は部分否定(全部ではない)。last week があるので過去形 passed"
+  },
+  "reason": "元の stem には過去を示す語が無く、過去形 passed も現在形 pass(主語が複数 students)も成立し正解が一意に定まらなかった。文末に last week を追加して過去を明示し、過去形 passed のみが正解になるよう一意化した。部分否定 not all を問う趣旨と基礎レベルは維持。"
+}

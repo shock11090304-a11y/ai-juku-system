@@ -1,0 +1,31 @@
+{
+  "slug": "19_negation-inversion",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"last week=過去。Not all+複数主語だが時制で確定。passed。"},
+    {"no":2,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It...that分裂文。It was this book that..."},
+    {"no":3,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"肯定同意のso+倒置(does my brother)。"},
+    {"no":4,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定同意の倒置neither does。eitherは倒置不可。"},
+    {"no":5,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"no longer=もはや~ない。"},
+    {"no":6,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"do not want。否定。"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"分裂文の関係詞that(先行詞=letter,目的格)。whichも理屈上可だが選択肢に無し。"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"both are wrong→Neither(両方とも~ない)。"},
+    {"no":9,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"by no means=決して~ない。"},
+    {"no":10,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"did not enjoy。否定。"},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"not always=必ずしも~でない(部分否定)。not neverは二重否定で不可。"},
+    {"no":12,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定語Never文頭→倒置 have I seen。"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Little文頭→倒置。was lyingは過去なのでdid I know。"},
+    {"no":14,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"there is no water。形容詞的noで名詞修飾。"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"時を強調する分裂文はthat(whenでなく)。"},
+    {"no":16,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Not all=部分否定(全員が話せるわけではない)。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"He is no longer a child.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"no longer構文。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"Tom likes baseball, and so do I.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"so+倒置。doがあるためso do I。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"The news was by no means new.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"by no means=決して~ない。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"Not all the students passed the exam.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"部分否定Not all。ofは無いのでNot all the students。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"Never have I seen such a beautiful flower.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定語Never文頭→倒置。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"It was this book that changed my life.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It...that分裂文で主語を強調。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"It was Mary that made this cake.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主語Maryを強調。指示通りthatを使用。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"I do like this song.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"強調のdo。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"He is no longer a child.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"no longerで書換、nowは不使用。"}
+  ]
+}

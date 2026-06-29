@@ -1,0 +1,58 @@
+{
+  "part": "chem_exam",
+  "group": "発展",
+  "unit_theme": "有機化合物の計算（元素分析と分子式決定）",
+  "passage": "炭素・水素・酸素のみからなるある有機化合物 X について、その組成と分子式を決定する実験を行った。X を \\(6.00\\ \\text{g}\\) はかりとり、十分な量の酸素を通じながら完全燃焼させたところ、生成した気体を吸収管で捕集して、二酸化炭素 \\(\\mathrm{CO_2}\\) が \\(8.80\\ \\text{g}\\)、水 \\(\\mathrm{H_2O}\\) が \\(3.60\\ \\text{g}\\) 得られた。生成した \\(\\mathrm{CO_2}\\) 中の炭素はすべて X 由来であり、\\(\\mathrm{H_2O}\\) 中の水素はすべて X 由来である。また別の測定から、X の分子量は \\(180\\) であることがわかっている。原子量は \\(\\mathrm{H}=1\\)、\\(\\mathrm{C}=12\\)、\\(\\mathrm{O}=16\\)、式量は \\(\\mathrm{CO_2}=44\\)、\\(\\mathrm{H_2O}=18\\) とする。以下の問いに答えよ。",
+  "subqs": [
+    {
+      "stem": "完全燃焼で生成した二酸化炭素は \\(\\mathrm{CO_2}=8.80\\ \\text{g}\\)（式量 \\(44\\)）であった。\\(\\mathrm{CO_2}\\) 中の炭素はすべて X 由来である。X に含まれていた炭素原子の物質量は何 mol か。",
+      "choices_latex": ["\\(0.10\\ \\text{mol}\\)", "\\(0.20\\ \\text{mol}\\)", "\\(0.40\\ \\text{mol}\\)", "\\(8.80\\ \\text{mol}\\)"],
+      "choices_value": ["Rational(1,10)", "Rational(1,5)", "Rational(2,5)", "Integer(0)"],
+      "answer_index": 1,
+      "truth_value": "Rational(1,5)",
+      "unit": "発展 有機化合物の計算（炭素のmol）",
+      "reason": "\\(n(\\mathrm{C})=n(\\mathrm{CO_2})=8.80/44=0.20\\ \\text{mol}\\)。",
+      "restates": "CO2=8.80 g・式量CO2=44・CO2中の炭素は全てX由来 を stem に再掲。"
+    },
+    {
+      "stem": "完全燃焼で生成した水は \\(\\mathrm{H_2O}=3.60\\ \\text{g}\\)（式量 \\(18\\)）であった。\\(\\mathrm{H_2O}\\) 中の水素はすべて X 由来である（\\(\\mathrm{H_2O}\\) 1分子に水素原子は 2 個）。X に含まれていた水素原子の物質量は何 mol か。",
+      "choices_latex": ["\\(0.10\\ \\text{mol}\\)", "\\(0.20\\ \\text{mol}\\)", "\\(0.40\\ \\text{mol}\\)", "\\(3.60\\ \\text{mol}\\)"],
+      "choices_value": ["Rational(1,10)", "Rational(1,5)", "Rational(2,5)", "Integer(0)"],
+      "answer_index": 2,
+      "truth_value": "Rational(2,5)",
+      "unit": "発展 有機化合物の計算（水素のmol）",
+      "reason": "\\(n(\\mathrm{H_2O})=3.60/18=0.20\\ \\text{mol}\\)、\\(n(\\mathrm{H})=2\\times0.20=0.40\\ \\text{mol}\\)。",
+      "restates": "H2O=3.60 g・式量H2O=18・H2O中の水素は全てX由来・1分子に水素2個 を stem に再掲。"
+    },
+    {
+      "stem": "X を \\(6.00\\ \\text{g}\\) 用いた。前問までより炭素は \\(0.20\\ \\text{mol}\\)、水素は \\(0.40\\ \\text{mol}\\) 含まれていた（原子量 \\(\\mathrm{C}=12\\)、\\(\\mathrm{H}=1\\)、\\(\\mathrm{O}=16\\)）。残りはすべて酸素とみなせる。X に含まれていた酸素原子の物質量は何 mol か。",
+      "choices_latex": ["\\(0.10\\ \\text{mol}\\)", "\\(0.20\\ \\text{mol}\\)", "\\(0.30\\ \\text{mol}\\)", "\\(3.20\\ \\text{mol}\\)"],
+      "choices_value": ["Rational(1,10)", "Rational(1,5)", "Rational(3,10)", "Integer(0)"],
+      "answer_index": 1,
+      "truth_value": "Rational(1,5)",
+      "unit": "発展 有機化合物の計算（酸素のmol）",
+      "reason": "炭素の質量 \\(0.20\\times12=2.40\\ \\text{g}\\)、水素 \\(0.40\\times1=0.40\\ \\text{g}\\)、酸素の質量 \\(6.00-2.40-0.40=3.20\\ \\text{g}\\)、\\(n(\\mathrm{O})=3.20/16=0.20\\ \\text{mol}\\)。",
+      "restates": "試料6.00 g・C=0.20 mol・H=0.40 mol・原子量C=12,H=1,O=16 を stem に再掲。"
+    },
+    {
+      "stem": "X 中の各原子の物質量は 炭素 \\(0.20\\ \\text{mol}\\)、水素 \\(0.40\\ \\text{mol}\\)、酸素 \\(0.20\\ \\text{mol}\\) であった。これらの最も簡単な整数比から定まる組成式（実験式）として正しいものはどれか。組成式の式量に対応する数値（\\(\\mathrm{H}=1,\\ \\mathrm{C}=12,\\ \\mathrm{O}=16\\) で計算した組成式の式量）を選べ。",
+      "choices_latex": ["\\(\\mathrm{CHO}\\)（式量 \\(29\\)）", "\\(\\mathrm{CH_2O}\\)（式量 \\(30\\)）", "\\(\\mathrm{C_2H_4O_2}\\)（式量 \\(60\\)）", "\\(\\mathrm{CH_4O}\\)（式量 \\(32\\)）"],
+      "choices_value": ["Integer(29)", "Integer(30)", "Integer(60)", "Integer(32)"],
+      "answer_index": 1,
+      "truth_value": "Integer(30)",
+      "unit": "発展 有機化合物の計算（組成式の決定）",
+      "reason": "\\(\\mathrm{C:H:O}=0.20:0.40:0.20=1:2:1\\) より組成式は \\(\\mathrm{CH_2O}\\)、式量 \\(12+2\\times1+16=30\\)。",
+      "restates": "C=0.20 mol・H=0.40 mol・O=0.20 mol・原子量H=1,C=12,O=16 を stem に再掲。"
+    },
+    {
+      "stem": "X の組成式は \\(\\mathrm{CH_2O}\\)（式量 \\(30\\)）であり、X の分子量は \\(180\\) である。分子式は組成式の整数倍である。X の分子式を決定したとき、X 1分子に含まれる炭素原子の数はいくつか。",
+      "choices_latex": ["\\(3\\)", "\\(5\\)", "\\(6\\)", "\\(12\\)"],
+      "choices_value": ["Integer(3)", "Integer(5)", "Integer(6)", "Integer(12)"],
+      "answer_index": 2,
+      "truth_value": "Integer(6)",
+      "unit": "発展 有機化合物の計算（分子式の決定）",
+      "reason": "\\(n=180/30=6\\) より分子式は \\((\\mathrm{CH_2O})_6=\\mathrm{C_6H_{12}O_6}\\)。炭素原子は \\(1\\times6=6\\) 個。",
+      "restates": "組成式CH2O・式量30・分子量180・分子式は組成式の整数倍 を stem に再掲。"
+    }
+  ]
+}

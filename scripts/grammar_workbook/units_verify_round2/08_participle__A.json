@@ -1,0 +1,31 @@
+{
+  "slug": "08_participle",
+  "persona": "A",
+  "verdicts": [
+    {"no":1,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"sleeping baby (現在分詞の前置修飾)"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"used car (過去分詞の前置修飾)"},
+    {"no":3,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"standing (現在分詞の後置修飾)"},
+    {"no":4,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"written (過去分詞の後置修飾・受動)"},
+    {"no":5,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"playing (現在分詞の後置修飾)"},
+    {"no":6,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"spoken (過去分詞の後置修飾・受動)"},
+    {"no":7,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"exciting (物が主語=能動的に興奮させる)"},
+    {"no":8,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"surprised (人が主語=驚かされた)"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"interesting (本が主語)"},
+    {"no":10,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"interested (人が主語)"},
+    {"no":11,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"tiring (旅が主語=疲れさせる)"},
+    {"no":12,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"see + O + -ing (知覚動詞)"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"hear + O + 過去分詞 (名前は呼ばれる=受動)"},
+    {"no":14,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"have + O + 過去分詞 (使役・受益)"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"get + O + 過去分詞 (cut-cut-cut)"},
+    {"no":16,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"broken glass (過去分詞の前置修飾)"},
+    {"no":17,"mc_index":-1,"produced_sentence":"Look at the dog running over there.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在分詞の後置修飾"},
+    {"no":18,"mc_index":-1,"produced_sentence":"This is a doll made in China.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去分詞の後置修飾"},
+    {"no":19,"mc_index":-1,"produced_sentence":"I heard someone calling my name.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"hear + O + -ing"},
+    {"no":20,"mc_index":-1,"produced_sentence":"He seemed excited about the news.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"seem + 過去分詞(感情)"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I had the watch repaired yesterday.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"have + O + 過去分詞"},
+    {"no":22,"mc_index":-1,"produced_sentence":"The man talking with Tom is my uncle.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"who is を省き現在分詞へ"},
+    {"no":23,"mc_index":-1,"produced_sentence":"I have a friend living in Osaka.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"who lives → living"},
+    {"no":24,"mc_index":-1,"produced_sentence":"This is a picture taken by my father.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"which was を省き過去分詞へ"},
+    {"no":25,"mc_index":-1,"produced_sentence":"Look at the house standing on the hill.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"which is を省き現在分詞へ"}
+  ]
+}

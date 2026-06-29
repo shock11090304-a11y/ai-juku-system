@@ -1,0 +1,272 @@
+{
+  "unit": "仮定法",
+  "unit_slug": "subjunctive",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "If I ( ) rich, I would buy a big house.",
+      "choices": ["were", "am", "will be", "have been"],
+      "answer_index": 0,
+      "answer_text": "were",
+      "explanation": "現在の事実に反する仮定は仮定法過去で表す。If 節の be 動詞は主語に関係なく were を使うのが基本である。主節が would buy と過去形助動詞なので、If 節も過去形 were が正しい。",
+      "point": "仮定法過去の be は were"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "If I had enough money, I ( ) buy that camera.",
+      "choices": ["would", "will", "can", "must"],
+      "answer_index": 0,
+      "answer_text": "would",
+      "explanation": "仮定法過去では、主節は「would/could + 動詞の原形」で「~するだろうに」を表す。If 節が had という過去形なので、主節は will ではなく would を使う。",
+      "point": "仮定法過去の主節は would + 原形"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "If it ( ) sunny today, we would go to the beach.",
+      "choices": ["were", "is", "will be", "has been"],
+      "answer_index": 0,
+      "answer_text": "were",
+      "explanation": "今日の天気についての事実に反する仮定なので仮定法過去を使う。If 節の be 動詞は were とし、主節が would go なので時制を合わせる。",
+      "point": "事実に反する仮定は過去形"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "If I knew her phone number, I ( ) call her now.",
+      "choices": ["would", "will", "am going to", "shall"],
+      "answer_index": 0,
+      "answer_text": "would",
+      "explanation": "If 節が knew という過去形なので仮定法過去である。主節は「would + 原形」で「~するのに」を表す。実際は番号を知らないという事実に反する内容になる。",
+      "point": "現在の事実に反する=would + 原形"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "standard",
+      "stem": "If you studied harder, you ( ) pass the exam.",
+      "choices": ["could", "can", "will", "must"],
+      "answer_index": 0,
+      "answer_text": "could",
+      "explanation": "If 節が studied という過去形なので仮定法過去。主節は「could + 原形」で「~できるだろうに」を表す。can は時制が合わず誤り。",
+      "point": "could + 原形で ~できるだろうに"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "standard",
+      "stem": "If I ( ) you, I would not say such a thing.",
+      "choices": ["were", "am", "was being", "will be"],
+      "answer_index": 0,
+      "answer_text": "were",
+      "explanation": "If I were you は「もし私があなたなら」という決まった言い方で、助言をするときによく使う。仮定法過去なので be 動詞は were を用いる。",
+      "point": "If I were you は決まり文句"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "If I had studied harder, I ( ) passed the test.",
+      "choices": ["would have", "would", "will have", "had"],
+      "answer_index": 0,
+      "answer_text": "would have",
+      "explanation": "過去の事実に反する仮定は仮定法過去完了で表す。If 節が had studied なので、主節は「would have + 過去分詞」になる。実際は十分勉強しなかったという意味。",
+      "point": "仮定法過去完了の主節は would have + 過去分詞"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "If she ( ) earlier, she would have caught the train.",
+      "choices": ["had left", "left", "has left", "leaves"],
+      "answer_index": 0,
+      "answer_text": "had left",
+      "explanation": "過去の事実に反する仮定なので仮定法過去完了。If 節は「had + 過去分詞」の形にする。主節が would have caught なので、If 節も had left が正しい。",
+      "point": "仮定法過去完了の If 節は had + 過去分詞"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "If he had taken a taxi, he ( ) on time.",
+      "choices": ["would have arrived", "would arrive", "will arrive", "had arrived"],
+      "answer_index": 0,
+      "answer_text": "would have arrived",
+      "explanation": "If 節が had taken という過去完了なので仮定法過去完了。主節は「would have + 過去分詞」で「~していただろうに」を表す。実際は間に合わなかったという意味になる。",
+      "point": "過去の後悔は would have + 過去分詞"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "If I had known the truth, I ( ) you.",
+      "choices": ["would have told", "would tell", "will tell", "told"],
+      "answer_index": 0,
+      "answer_text": "would have told",
+      "explanation": "If 節が had known なので仮定法過去完了。主節は「would have + 過去分詞」で過去の事実に反することを表す。実際は真実を知らなかったので話さなかった。",
+      "point": "If 節が had pp なら主節は would have pp"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "If we had not missed the bus, we ( ) late.",
+      "choices": ["would not have been", "would not be", "will not be", "had not been"],
+      "answer_index": 0,
+      "answer_text": "would not have been",
+      "explanation": "If 節が had not missed なので仮定法過去完了。主節は「would not have + 過去分詞」で「~ではなかっただろうに」を表す。実際はバスに乗り遅れて遅刻したという意味。",
+      "point": "否定でも would have + 過去分詞の形"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I wish I ( ) speak French.",
+      "choices": ["could", "can", "will", "would have"],
+      "answer_index": 0,
+      "answer_text": "could",
+      "explanation": "I wish + 仮定法過去は現在かなわない願望を表す。「~できればいいのに」は I wish I could ~ で表現する。実際は話せないという意味になる。",
+      "point": "I wish + 仮定法過去は現在の願望"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I wish I ( ) taller.",
+      "choices": ["were", "am", "will be", "have been"],
+      "answer_index": 0,
+      "answer_text": "were",
+      "explanation": "I wish の後は仮定法過去を使い、be 動詞は were にする。「もっと背が高ければいいのに」という現在の事実に反する願望を表す。",
+      "point": "I wish の be 動詞は were"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I wish I ( ) harder when I was young.",
+      "choices": ["had studied", "studied", "study", "would study"],
+      "answer_index": 0,
+      "answer_text": "had studied",
+      "explanation": "過去のことへの後悔を表す願望は I wish + 仮定法過去完了「had + 過去分詞」を使う。「若いころもっと勉強していればよかった」という意味になる。",
+      "point": "過去への後悔は I wish + had pp"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He talks ( ) he knew everything.",
+      "choices": ["as if", "even if", "only if", "as long as"],
+      "answer_index": 0,
+      "answer_text": "as if",
+      "explanation": "as if + 仮定法過去で「まるで~であるかのように」を表す。He talks as if he knew everything で「彼は何でも知っているかのように話す」という意味になる。",
+      "point": "as if + 仮定法過去はまるで~のよう"
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) it not for water, no living thing could survive.",
+      "choices": ["Were", "Was", "If", "Had"],
+      "answer_index": 0,
+      "answer_text": "Were",
+      "explanation": "If it were not for ~(もし~がなければ)は If を省略すると Were it not for ~ という倒置の形になる。仮定法過去なので Were を文頭に置く。",
+      "point": "If 省略の倒置は Were it not for"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "もし時間があれば、私はあなたを手伝うのに。",
+      "tokens": ["help", "I", "had", "time", "if", "you", "would", "I"],
+      "answer_text": "If I had time, I would help you.",
+      "explanation": "仮定法過去は「If + 主語 + 過去形, 主語 + would + 原形」の形。If I had time が条件、I would help you が結果を表す。",
+      "point": "If + 過去形, would + 原形"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "鳥だったらいいのに。",
+      "tokens": ["I", "a", "were", "wish", "bird", "I"],
+      "answer_text": "I wish I were a bird.",
+      "explanation": "I wish + 仮定法過去で現在かなわない願望を表す。be 動詞は were を使い、「I wish I were ~」の語順になる。",
+      "point": "I wish I were ~ の語順"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "もし彼が早く出発していたら、間に合っただろうに。",
+      "tokens": ["had left", "if", "early", "have", "would", "he", "he", "made it"],
+      "answer_text": "If he had left early, he would have made it.",
+      "explanation": "仮定法過去完了は「If + 主語 + had + 過去分詞, 主語 + would have + 過去分詞」。過去の事実に反する仮定を表す語順である。",
+      "point": "If had pp, would have pp"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼女はまるで医者であるかのように話す。",
+      "tokens": ["if", "she", "a doctor", "talks", "were", "as", "she"],
+      "answer_text": "She talks as if she were a doctor.",
+      "explanation": "as if + 仮定法過去で「まるで~であるかのように」を表す。be 動詞は were を使い、「主語 + 動詞 + as if + 主語 + were ~」の語順。",
+      "point": "as if + 主語 + were"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "あなたの助けがなければ、私は失敗するだろう。",
+      "tokens": ["your help", "without", "fail", "I", "would"],
+      "answer_text": "Without your help, I would fail.",
+      "explanation": "Without ~ は「~がなければ」を表し、仮定法の条件として使える。主節は「would + 原形」で結果を表す語順になる。",
+      "point": "Without ~, would + 原形"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "As I am not free now, I cannot help you.",
+      "instruction": "仮定法過去を使って、ほぼ同じ意味の If で始まる一文に書き換えなさい。",
+      "answer_text": "If I were free now, I could help you.",
+      "explanation": "「暇でないので手伝えない」という事実を、仮定法過去で逆にして表す。If 節は were、主節は could + 原形にする。",
+      "point": "事実の否定→If + were, could + 原形"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "As I did not have time, I did not call you.",
+      "instruction": "仮定法過去完了を使って、ほぼ同じ意味の If で始まる一文に書き換えなさい。",
+      "answer_text": "If I had had time, I would have called you.",
+      "explanation": "過去の事実「時間がなかったので電話しなかった」を仮定法過去完了で表す。If 節は had had、主節は would have + 過去分詞にする。",
+      "point": "過去の事実→If had pp, would have pp"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "I am sorry that I cannot swim.",
+      "instruction": "I wish で始まる仮定法の文に書き換えなさい。",
+      "answer_text": "I wish I could swim.",
+      "explanation": "「泳げなくて残念だ」という現在かなわない願望は I wish + 仮定法過去で表す。「泳げたらいいのに」は I wish I could swim となる。",
+      "point": "現在の願望は I wish I could ~"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "I am sorry that I did not study hard.",
+      "instruction": "I wish で始まる仮定法の文に書き換えなさい。",
+      "answer_text": "I wish I had studied hard.",
+      "explanation": "「一生懸命勉強しなかったのが残念だ」という過去への後悔は I wish + 仮定法過去完了で表す。「勉強していればよかった」は I wish I had studied ~ になる。",
+      "point": "過去への後悔は I wish I had pp"
+    }
+  ]
+}

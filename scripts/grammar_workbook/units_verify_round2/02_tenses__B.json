@@ -1,0 +1,31 @@
+{
+  "slug": "02_tenses",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"every morning は習慣→三単現 drinks。"},
+    {"no":2,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"last Sunday は過去→went。"},
+    {"no":3,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Look! ... now は現在進行形→is raining。"},
+    {"no":4,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"every day は習慣→三単現 comes。"},
+    {"no":5,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"two hours ago は過去→finished。"},
+    {"no":6,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"medium","note":"単純過去 played は選択肢に無い。yesterday afternoon と整合する過去時制は were playing(過去進行形)。"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"不変の真理→現在形 boils。"},
+    {"no":8,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"next weekend は未来→am going to visit。"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"条件の副詞節 if 内は現在形で未来を表す→rains。"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"時の副詞節 when 内は現在形で未来を表す→get。"},
+    {"no":11,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"when the phone rang の継続動作→過去進行形 was taking。"},
+    {"no":12,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"I ___ help you の原形 help を伴う未来→will。"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"last night の否定+原形 watch→did not watch。"},
+    {"no":14,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"形容詞 happy+yesterday→be動詞過去 Were。"},
+    {"no":15,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"時刻表の確定した予定→現在形 leaves。"},
+    {"no":16,"mc_index":-1,"produced_sentence":"I get up at six every day.","multiple_valid":true,"multiple_valid_note":"語句固定のまま「I get up every day at six.」も文法的に成立する(副詞句の語順入替)。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":17,"mc_index":-1,"produced_sentence":"She read the book yesterday.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"read は過去形(発音 red)で綴り同形。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"We are cooking dinner now.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":19,"mc_index":-1,"produced_sentence":"If it is sunny tomorrow we will go to the park.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"トークンにカンマが無いため句読点無しで連結。文頭のため if→If に大文字化。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"When I entered the room, he was sleeping.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"トークン「When I」「entered the room,」が大文字・カンマ込みで固定のため従属節前置のこの語順のみ成立。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I am going to study English next year.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be going to do の未来。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"I played tennis last Sunday.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":23,"mc_index":-1,"produced_sentence":"She is studying math now.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":24,"mc_index":-1,"produced_sentence":"It is going to be cold tomorrow.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":25,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"at eight last night の進行+主語 you→過去進行形 were。"}
+  ]
+}

@@ -1,0 +1,372 @@
+{
+  "unit": "分詞構文",
+  "unit_slug": "participial-construction",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) the park, I met an old friend.",
+      "choices": [
+        "Walking in",
+        "Walked in",
+        "Walk in",
+        "To walk in"
+      ],
+      "answer_index": 0,
+      "answer_text": "Walking in",
+      "explanation": "もとの文は When I was walking in the park, I met ~ で主語が同じ I である。接続詞と主語を省き、動詞を -ing にすると分詞構文になる。",
+      "point": "分詞構文は動詞を -ing"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) tired, she went to bed early.",
+      "choices": [
+        "Feeling",
+        "Felt",
+        "Feel",
+        "To feel"
+      ],
+      "answer_index": 0,
+      "answer_text": "Feeling",
+      "explanation": "「疲れを感じたので早く寝た」という理由を表す分詞構文。Because she felt tired の接続詞と主語を省き、動詞を Feeling にする。",
+      "point": "理由を表す分詞構文も -ing"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) the door, he went out.",
+      "choices": [
+        "Opening",
+        "Opened",
+        "Open",
+        "To open"
+      ],
+      "answer_index": 0,
+      "answer_text": "Opening",
+      "explanation": "もとは He opened the door, and he went out. のように主語が同じ。前の動作を表す分詞構文は動詞を -ing にする。",
+      "point": "主語が同じなら -ing にする"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She sat on the sofa, ( ) a book.",
+      "choices": [
+        "reading",
+        "read",
+        "to read",
+        "reads"
+      ],
+      "answer_index": 0,
+      "answer_text": "reading",
+      "explanation": "「本を読みながらソファに座っていた」という付帯状況(~しながら)を表す分詞構文。動詞を reading にする。",
+      "point": "付帯状況の ~しながら も -ing"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) the news, she became very happy.",
+      "choices": [
+        "Hearing",
+        "Heard",
+        "Hear",
+        "To hear"
+      ],
+      "answer_index": 0,
+      "answer_text": "Hearing",
+      "explanation": "When she heard the news の接続詞と主語を省き、動詞を Hearing にした分詞構文。「~を聞いて」という時を表す。",
+      "point": "時を表す分詞構文も -ing"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) what to say, he kept silent.",
+      "choices": [
+        "Not knowing",
+        "Knowing not",
+        "Not known",
+        "Don't knowing"
+      ],
+      "answer_index": 0,
+      "answer_text": "Not knowing",
+      "explanation": "分詞構文の否定は not を分詞の前に置く。Because he did not know ~ を Not knowing ~ と書き換える。",
+      "point": "分詞構文の否定は not を前に"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) by everyone, he felt very happy.",
+      "choices": [
+        "Praised",
+        "Praising",
+        "Praise",
+        "To praise"
+      ],
+      "answer_index": 0,
+      "answer_text": "Praised",
+      "explanation": "「みんなにほめられて」という受動の意味なので過去分詞を使う。本来は Being praised だが Being は省略できる。",
+      "point": "受動の分詞構文は過去分詞(Being 省略)"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) from a distance, the rock looks like a face.",
+      "choices": [
+        "Seen",
+        "Seeing",
+        "See",
+        "To see"
+      ],
+      "answer_index": 0,
+      "answer_text": "Seen",
+      "explanation": "岩は「見られる」側なので受動の過去分詞 Seen を使う。When it is seen from a distance の Being が省略された形。",
+      "point": "受け身の関係なら過去分詞"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) the work, she went home.",
+      "choices": [
+        "Having finished",
+        "Finishing",
+        "Finished",
+        "To finish"
+      ],
+      "answer_index": 0,
+      "answer_text": "Having finished",
+      "explanation": "「仕事を終えてから」帰宅したと、主節より前の動作を強調するときは完了分詞 Having + 過去分詞を使う。",
+      "point": "前の動作を表すなら Having done"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) tired, I will go out with you.",
+      "choices": [
+        "Being not",
+        "Not being",
+        "Not been",
+        "No being"
+      ],
+      "answer_index": 1,
+      "answer_text": "Not being",
+      "explanation": "「疲れていないので」という否定の分詞構文。否定は not を分詞 being の前に置いて Not being とする。",
+      "point": "否定は not + being の語順"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "It ( ) sunny, we decided to go on a picnic.",
+      "choices": [
+        "being",
+        "is",
+        "be",
+        "was"
+      ],
+      "answer_index": 0,
+      "answer_text": "being",
+      "explanation": "主節の主語 we と分詞の意味上の主語 It が異なるため、独立分詞構文として It being sunny と主語を残す。",
+      "point": "主語が違えば独立分詞構文"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) ill, he could not attend the meeting.",
+      "choices": [
+        "Being",
+        "Be",
+        "To be",
+        "Been"
+      ],
+      "answer_index": 0,
+      "answer_text": "Being",
+      "explanation": "Because he was ill の接続詞と主語を省き、was を分詞 Being にする。「病気だったので」という理由を表す。",
+      "point": "be 動詞は Being にする"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) speaking, women live longer than men.",
+      "choices": [
+        "Generally",
+        "General",
+        "To general",
+        "Generality"
+      ],
+      "answer_index": 0,
+      "answer_text": "Generally",
+      "explanation": "Generally speaking は「一般的に言えば」という意味の慣用的な分詞構文。意味上の主語を考えず決まった形で使う。",
+      "point": "Generally speaking は慣用表現"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) the letter, she put it into her bag.",
+      "choices": [
+        "Having written",
+        "Writing",
+        "Written",
+        "To write"
+      ],
+      "answer_index": 0,
+      "answer_text": "Having written",
+      "explanation": "「手紙を書き終えてから」かばんに入れた、と主節より前に完了した動作なので完了分詞 Having written を使う。",
+      "point": "完了した動作は Having + 過去分詞"
+    },
+    {
+      "no": 15,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "通りを歩いていたとき、私はその店を見つけた。",
+      "tokens": [
+        "the street",
+        "found",
+        "down",
+        "I",
+        "walking",
+        "the shop"
+      ],
+      "answer_text": "Walking down the street, I found the shop.",
+      "explanation": "When I was walking down the street の接続詞と主語を省き、Walking で文を始める。後ろに主節 I found the shop を続ける。",
+      "point": "分詞構文を文頭に置く"
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼は何も言わずに部屋を出て行った。",
+      "tokens": [
+        "Not saying anything,",
+        "he",
+        "left",
+        "the room"
+      ],
+      "answer_text": "Not saying anything, he left the room.",
+      "explanation": "否定の分詞構文は not を分詞 saying の前に置く。コンマ付きの「Not saying anything,」を文頭に固定し、主節 he left the room を続ける。文頭の大文字とコンマにより語順が一意に定まる。",
+      "point": "否定の分詞構文は not を分詞の前に置く"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "宿題を終えてしまったので、私はテレビを見た。",
+      "tokens": [
+        "my homework",
+        "watched",
+        "having",
+        "I",
+        "finished",
+        "TV"
+      ],
+      "answer_text": "Having finished my homework, I watched TV.",
+      "explanation": "主節より前に終わった動作は完了分詞 Having + 過去分詞で表す。Having finished my homework を文頭に置く。",
+      "point": "完了分詞構文 Having done"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼女はほほえみながら私を見た。",
+      "tokens": [
+        "she",
+        "at",
+        "Smiling,",
+        "me",
+        "looked"
+      ],
+      "answer_text": "Smiling, she looked at me.",
+      "explanation": "「~しながら」という付帯状況を表す分詞構文。コンマ付きの Smiling, を文頭に固定し、主節 she looked at me を続ける。分詞句を文頭に置くことで語順が一意に定まる。",
+      "point": "付帯状況の分詞構文は文頭に置く"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "英語で書かれているので、この本は読みやすい。",
+      "tokens": [
+        "in English",
+        "to read",
+        "written",
+        "this book",
+        "easy",
+        "is"
+      ],
+      "answer_text": "Written in English, this book is easy to read.",
+      "explanation": "本は「書かれる」側なので受動の過去分詞 Written で始める。Being が省略された受動の分詞構文である。",
+      "point": "受動の分詞構文は過去分詞で始める"
+    },
+    {
+      "no": 20,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "When I saw the dog, I ran away.",
+      "instruction": "下線部 When I saw を分詞構文に書き換えなさい。",
+      "answer_text": "Seeing the dog, I ran away.",
+      "explanation": "主語が両方 I で同じなので、接続詞 When と主語 I を省き、動詞 saw を Seeing に変える。",
+      "point": "接続詞節を分詞構文に"
+    },
+    {
+      "no": 21,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "Because she was tired, she took a rest.",
+      "instruction": "下線部 Because she was を分詞構文に書き換えなさい。Being を省略しない形で答えなさい。",
+      "answer_text": "Being tired, she took a rest.",
+      "explanation": "接続詞 Because と主語 she を省き、was を分詞 Being にする。「疲れていたので」という理由を表す。",
+      "point": "be 動詞は Being にする"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "Seeing the police officer, he ran away.",
+      "instruction": "分詞構文を When を使った接続詞のある文に書き換えなさい。",
+      "answer_text": "When he saw the police officer, he ran away.",
+      "explanation": "分詞構文を接続詞の文に戻すときは、省略された主語と接続詞を補う。主語は主節と同じ he で、Seeing を saw にする。",
+      "point": "分詞構文を接続詞節に戻す"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "After I had eaten lunch, I went out.",
+      "instruction": "下線部 After I had eaten を完了分詞構文に書き換えなさい。",
+      "answer_text": "Having eaten lunch, I went out.",
+      "explanation": "主節より前に完了した動作なので完了分詞 Having + 過去分詞を使う。接続詞 After と主語 I を省く。",
+      "point": "前に完了した動作は Having done"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "As he did not know the answer, he stayed silent.",
+      "instruction": "下線部 As he did not know を分詞構文に書き換えなさい。",
+      "answer_text": "Not knowing the answer, he stayed silent.",
+      "explanation": "否定の分詞構文は not を分詞の前に置く。接続詞 As と主語 he を省き、did not know を Not knowing にする。",
+      "point": "否定の分詞構文は Not を前に"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "Because it was written in easy English, the book sold well.",
+      "instruction": "下線部 Because it was を受動の分詞構文に書き換えなさい。Being を省略しない形で答えなさい。",
+      "answer_text": "Being written in easy English, the book sold well.",
+      "explanation": "本は「書かれる」側なので受動の分詞構文。was を Being にし、過去分詞 written を続ける。接続詞と主語を省く。",
+      "point": "受動の分詞構文は Being + 過去分詞"
+    }
+  ]
+}

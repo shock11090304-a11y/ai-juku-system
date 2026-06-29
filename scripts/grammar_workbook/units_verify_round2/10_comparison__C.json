@@ -1,0 +1,31 @@
+{
+  "slug": "10_comparison",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"as + 原級 + as. tall."},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"than → comparative heavier."},
+    {"no":3,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"the ... in Japan → superlative highest."},
+    {"no":4,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"long adj → more difficult."},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"比較対象は無冠詞不可算 money."},
+    {"no":6,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"the most popular superlative."},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"not as + 原級 + as → big."},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"good → better than."},
+    {"no":9,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"the best ... I have ever seen → superlative best."},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"much + comparative hotter."},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"adverb than → faster."},
+    {"no":12,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"one of the + superlative + plural → oldest."},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"The more..., the more... 構文."},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"比較級 and 比較級: warmer and warmer."},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"No other ... as + 原級 + as → kind."},
+    {"no":16,"mc_index":-1,"produced_sentence":"She swims as fast as me.","multiple_valid":true,"multiple_valid_note":"格式の as I (do) も正しいが tokens は me 固定。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"as ... as 同等比較。tokens から成立。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"This book is more interesting than that one.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"more + interesting + than。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"He is the tallest student in the class.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"the tallest student in the class。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"Tokyo is one of the largest cities in Japan.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"one of the + superlative + plural noun。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"This question is much easier than that one.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"much + comparative 強調。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"Mike is shorter than Ken.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"逆向き比較 shorter。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"Your bike is newer than my bike.","multiple_valid":true,"multiple_valid_note":"than mine も可だが指示で my bike と your bike を使用。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"逆向き newer。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"That river is not as long as this river.","multiple_valid":true,"multiple_valid_note":"not so long as も可。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"longer→not as long as、主語 that river。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"No other girl in the village is as beautiful as Ann.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"最上級 → No other ... as ... as。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"Soccer is the most popular sport in this class.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"than any other → 最上級 the most popular。"}
+  ]
+}

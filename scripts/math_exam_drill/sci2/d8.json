@@ -1,0 +1,58 @@
+{
+  "part": "phys_exam",
+  "group": "発展",
+  "unit_theme": "電磁誘導",
+  "passage": "水平な床の上に、間隔 \\(L=0.40\\ \\text{m}\\) の2本の長い導体レールを平行に固定し、レール上に質量の無視できる導体棒を垂直に渡す。レール面に垂直な向き(鉛直上向き)に一様な磁束密度 \\(B=0.50\\ \\text{T}\\) の磁場をかける。導体棒はレールと常に直交を保ったまま、レールに沿って一定の速さ \\(v=5.0\\ \\text{m/s}\\) で滑らかに動く。レールの一端は抵抗値 \\(R=2.0\\ \\Omega\\) の抵抗でつながれており、レールと導体棒の電気抵抗は無視できる。レールに囲まれた回路の一部が面積 \\(S=0.20\\ \\text{m}^2\\) の長方形をなす瞬間を考える。以下の各問いは前問の結果を順に用いるが、必要な値は各設問にも再掲してある。図は不要で、文中の数値だけで計算できるものとする。",
+  "subqs": [
+    {
+      "stem": "磁束密度 \\(B=0.50\\ \\text{T}\\) の一様な磁場が、面積 \\(S=0.20\\ \\text{m}^2\\) の長方形の面を垂直に貫いている。この面を貫く磁束 \\(\\Phi=BS\\) は何 \\(\\text{Wb}\\) か。",
+      "choices_latex": ["\\(0.40\\ \\text{Wb}\\)", "\\(0.10\\ \\text{Wb}\\)", "\\(2.5\\ \\text{Wb}\\)", "\\(0.025\\ \\text{Wb}\\)"],
+      "choices_value": ["Rational(2,5)", "Rational(1,10)", "Rational(5,2)", "Rational(1,40)"],
+      "answer_index": 1,
+      "truth_value": "Rational(1,10)",
+      "unit": "発展 電磁誘導(磁束 Phi=BS)",
+      "reason": "\\(\\Phi=BS=0.50\\times0.20=0.10\\ \\text{Wb}\\)。",
+      "restates": "B=0.50 T、S=0.20 m^2 を stem に再掲。"
+    },
+    {
+      "stem": "間隔 \\(L=0.40\\ \\text{m}\\) の平行レール上の導体棒が、磁束密度 \\(B=0.50\\ \\text{T}\\) の磁場(レール面に垂直)の中を、一定の速さ \\(v=5.0\\ \\text{m/s}\\) で動いている。この導体棒に生じる誘導起電力の大きさ \\(V=BLv\\) は何 \\(\\text{V}\\) か。",
+      "choices_latex": ["\\(2.0\\ \\text{V}\\)", "\\(0.10\\ \\text{V}\\)", "\\(1.0\\ \\text{V}\\)", "\\(10\\ \\text{V}\\)"],
+      "choices_value": ["Integer(2)", "Rational(1,10)", "Integer(1)", "Integer(10)"],
+      "answer_index": 2,
+      "truth_value": "Integer(1)",
+      "unit": "発展 電磁誘導(誘導起電力 V=BLv)",
+      "reason": "\\(V=BLv=0.50\\times0.40\\times5.0=1.0\\ \\text{V}\\)。",
+      "restates": "B=0.50 T、L=0.40 m、v=5.0 m/s を stem に再掲。"
+    },
+    {
+      "stem": "前問より、導体棒には大きさ \\(V=1.0\\ \\text{V}\\) の誘導起電力が生じている。レールの一端は抵抗値 \\(R=2.0\\ \\Omega\\) の抵抗でつながれており、レールと導体棒の抵抗は無視できる。このとき回路を流れる電流の大きさ \\(I=\\dfrac{V}{R}\\) は何 \\(\\text{A}\\) か。",
+      "choices_latex": ["\\(2.0\\ \\text{A}\\)", "\\(0.50\\ \\text{A}\\)", "\\(0.25\\ \\text{A}\\)", "\\(1.0\\ \\text{A}\\)"],
+      "choices_value": ["Integer(2)", "Rational(1,2)", "Rational(1,4)", "Integer(1)"],
+      "answer_index": 1,
+      "truth_value": "Rational(1,2)",
+      "unit": "発展 電磁誘導(オームの法則 I=V/R)",
+      "reason": "\\(I=\\dfrac{V}{R}=\\dfrac{1.0}{2.0}=0.50\\ \\text{A}\\)。",
+      "restates": "誘導起電力 V=1.0 V、抵抗 R=2.0 Ω を stem に再掲。"
+    },
+    {
+      "stem": "前問より、回路には大きさ \\(I=0.50\\ \\text{A}\\) の電流が流れている。間隔 \\(L=0.40\\ \\text{m}\\) の導体棒は、磁束密度 \\(B=0.50\\ \\text{T}\\) の磁場(レール面に垂直)の中にある。この電流が流れる導体棒が磁場から受ける力の大きさ \\(F=BIL\\) は何 \\(\\text{N}\\) か。",
+      "choices_latex": ["\\(0.20\\ \\text{N}\\)", "\\(0.025\\ \\text{N}\\)", "\\(2.5\\ \\text{N}\\)", "\\(0.10\\ \\text{N}\\)"],
+      "choices_value": ["Rational(1,5)", "Rational(1,40)", "Rational(5,2)", "Rational(1,10)"],
+      "answer_index": 3,
+      "truth_value": "Rational(1,10)",
+      "unit": "発展 電磁誘導(電流が磁場から受ける力 F=BIL)",
+      "reason": "\\(F=BIL=0.50\\times0.50\\times0.40=0.10\\ \\text{N}\\)。レンツの法則により、この力は導体棒の運動を妨げる向き(速度と逆向き)にはたらく。",
+      "restates": "電流 I=0.50 A、B=0.50 T、L=0.40 m を stem に再掲。"
+    },
+    {
+      "stem": "同じ磁場の中に、巻数1回の別の正方形コイルを固定して置いたところ、外部の操作によってこのコイルを貫く磁束が \\(\\Delta t=0.10\\ \\text{s}\\) の間に \\(\\Delta\\Phi=0.30\\ \\text{Wb}\\) だけ一定の割合で増加した。このときコイルに生じる誘導起電力の大きさ \\(V=\\left|\\dfrac{\\Delta\\Phi}{\\Delta t}\\right|\\) は何 \\(\\text{V}\\) か。",
+      "choices_latex": ["\\(0.030\\ \\text{V}\\)", "\\(0.30\\ \\text{V}\\)", "\\(3.0\\ \\text{V}\\)", "\\(30\\ \\text{V}\\)"],
+      "choices_value": ["Rational(3,100)", "Rational(3,10)", "Integer(3)", "Integer(30)"],
+      "answer_index": 2,
+      "truth_value": "Integer(3)",
+      "unit": "発展 電磁誘導(ファラデーの法則 V=ΔΦ/Δt)",
+      "reason": "\\(V=\\left|\\dfrac{\\Delta\\Phi}{\\Delta t}\\right|=\\dfrac{0.30}{0.10}=3.0\\ \\text{V}\\)。レンツの法則より、磁束の増加を妨げる向きに起電力が生じる。",
+      "restates": "ΔΦ=0.30 Wb、Δt=0.10 s、巻数1回 を stem に再掲。"
+    }
+  ]
+}

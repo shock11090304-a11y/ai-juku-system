@@ -1,0 +1,31 @@
+{
+  "slug": "14_prepositions",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"時刻の点にはat。at six。"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"曜日にはon。on Sunday。"},
+    {"no":3,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"季節にはin。in winter。"},
+    {"no":4,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"壁の表面に接触はon the wall。"},
+    {"no":5,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"内部に入れるinto/in。選択肢はin。in her bag。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"待ち合わせの地点はat the station。"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"go to school。方向to。"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"交通手段はby train(無冠詞)。"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"道具にはwith a knife。"},
+    {"no":10,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"言語の手段はin English。"},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"waitは継続動作なので継続のuntil two o'clock。byは期限で待つ動作と不整合。"},
+    {"no":12,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"完了の期限はby tomorrow。finishは完了動作。"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"期間の長さにはfor ten years。"},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"起点(過去の一点)にはsince last year。"},
+    {"no":15,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"特定期間の名詞にはduring the movie。forは数詞付き期間用。"},
+    {"no":16,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"原因はbecause of the rain。"},
+    {"no":17,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"位置「~の前に」はin front of the house。"},
+    {"no":18,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be good at -ing。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"I am afraid of dogs.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be afraid of。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"The result depends on the weather.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"depend on。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"She drank coffee instead of tea.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"instead of tea。語順上coffeeとteaの入替は意味が逆になるため不可。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"According to the weather report, it will rain.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"According to ~。トークンは句単位で一意。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"We walked through the park.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"walk through the park。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"He could not come because of his sickness.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"because + 節 → because of + 名詞句。couldn'tの短縮形も可。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"We arrived in Tokyo on May 5, 2024.","multiple_valid":true,"multiple_valid_note":"日付の語順違いが許容される。英式の on 5 May 2024 / on the 5th of May, 2024 も正しい。前置詞は完全日付なのでon。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"特定の日付にはon。in 2024(年のみ)→on May 5, 2024。"}
+  ]
+}

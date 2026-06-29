@@ -1,0 +1,391 @@
+{
+  "unit": "接続詞",
+  "unit_slug": "conjunctions",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I like tea, ( ) my sister likes coffee.",
+      "choices": [
+        "but",
+        "because",
+        "if",
+        "so that"
+      ],
+      "answer_index": 0,
+      "answer_text": "but",
+      "explanation": "「私は紅茶が好きだが、姉はコーヒーが好きだ」と対比している。前後が逆の内容なので逆接の but を選ぶ。",
+      "point": "対比は but でつなぐ"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "It was raining, ( ) we stayed home.",
+      "choices": [
+        "but",
+        "or",
+        "though",
+        "so"
+      ],
+      "answer_index": 3,
+      "answer_text": "so",
+      "explanation": "「雨が降っていたので家にいた」と原因と結果をつないでいる。前が原因、後ろが結果なので so を選ぶ。",
+      "point": "so は結果をつなぐ"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Hurry up, ( ) you will miss the bus.",
+      "choices": [
+        "and",
+        "but",
+        "or",
+        "so"
+      ],
+      "answer_index": 2,
+      "answer_text": "or",
+      "explanation": "命令文の後の or は「さもないと」の意味。「急ぎなさい、さもないとバスに乗り遅れるよ」となる。",
+      "point": "命令文, or ~ はさもないと"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Wash your hands ( ) you eat lunch.",
+      "choices": [
+        "because",
+        "before",
+        "so",
+        "but"
+      ],
+      "answer_index": 1,
+      "answer_text": "before",
+      "explanation": "「昼食を食べる前に手を洗いなさい」という前後関係を表す。時を表す接続詞 before を選ぶ。",
+      "point": "before は ~する前に"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I was reading a book ( ) my mother was cooking.",
+      "choices": [
+        "because",
+        "if",
+        "while",
+        "before"
+      ],
+      "answer_index": 2,
+      "answer_text": "while",
+      "explanation": "「母が料理をしている間、私は本を読んでいた」と二つの動作が同時に進む。while を選ぶ。",
+      "point": "while は ~する間"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "He stayed home ( ) he was sick.",
+      "choices": [
+        "because",
+        "but",
+        "or",
+        "though"
+      ],
+      "answer_index": 0,
+      "answer_text": "because",
+      "explanation": "「病気だったので家にいた」と理由を述べている。理由を表す接続詞 because を選ぶ。",
+      "point": "because は理由を表す"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) it rains tomorrow, we will cancel the game.",
+      "choices": [
+        "Though",
+        "If",
+        "Because",
+        "While"
+      ],
+      "answer_index": 1,
+      "answer_text": "If",
+      "explanation": "「もし明日雨が降れば試合を中止する」と条件を表す。条件を表す接続詞 If を選ぶ。",
+      "point": "If は ~ならばの条件"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) it was cold, she went out without a coat.",
+      "choices": [
+        "Though",
+        "Because",
+        "If",
+        "So"
+      ],
+      "answer_index": 0,
+      "answer_text": "Though",
+      "explanation": "「寒かったけれどコートなしで出かけた」と予想に反する内容が続く。譲歩を表す Though を選ぶ。",
+      "point": "Though は ~だけれど"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Please wait here ( ) I come back.",
+      "choices": [
+        "because",
+        "until",
+        "though",
+        "so"
+      ],
+      "answer_index": 1,
+      "answer_text": "until",
+      "explanation": "「私が戻るまでここで待ってください」と継続の終わる時点を表す。until を選ぶ。",
+      "point": "until は ~するまでずっと"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) I got home, I called my friend.",
+      "choices": [
+        "Because of",
+        "In spite of",
+        "So that",
+        "As soon as"
+      ],
+      "answer_index": 3,
+      "answer_text": "As soon as",
+      "explanation": "「家に着くとすぐに友達に電話した」と直後の動作を表す。As soon as を選ぶ。Because of は前置詞句で後ろに節は続かない。",
+      "point": "As soon as は ~するとすぐに"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "You can't go in ( ) you have a ticket.",
+      "choices": [
+        "unless",
+        "if",
+        "because",
+        "though"
+      ],
+      "answer_index": 0,
+      "answer_text": "unless",
+      "explanation": "「チケットを持っていなければ中に入れない」という意味。unless は「~しない限り」を表し、if ... not と同じ働き。",
+      "point": "unless は ~しない限り"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "She spoke slowly ( ) everyone could understand her.",
+      "choices": [
+        "because",
+        "so that",
+        "though",
+        "as soon as"
+      ],
+      "answer_index": 1,
+      "answer_text": "so that",
+      "explanation": "「みんなが理解できるように、ゆっくり話した」と目的を表す。so that + 主語 + can/could で目的を表す。",
+      "point": "so that S can ~ は目的"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The box was ( ) heavy that I couldn't lift it.",
+      "choices": [
+        "such",
+        "very",
+        "so",
+        "too"
+      ],
+      "answer_index": 2,
+      "answer_text": "so",
+      "explanation": "so + 形容詞 + that ... で「とても~なので…」を表す。heavy は形容詞なので so を選ぶ。such は名詞の前に使う。",
+      "point": "so 形容詞 that で結果"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "It was ( ) a cold day that we stayed inside.",
+      "choices": [
+        "such",
+        "so",
+        "very",
+        "too"
+      ],
+      "answer_index": 0,
+      "answer_text": "such",
+      "explanation": "such + a + 形容詞 + 名詞 + that ... で「とても~な…なので」を表す。a cold day という名詞のまとまりがあるので such を選ぶ。",
+      "point": "such a 形容詞 名詞 that"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I don't know ( ) he will come to the party or not.",
+      "choices": [
+        "that",
+        "because",
+        "though",
+        "whether"
+      ],
+      "answer_index": 3,
+      "answer_text": "whether",
+      "explanation": "「彼が来るかどうか分からない」という名詞節。whether ... or not で「~かどうか」を表す。that は「~ということ」で or not とは合わない。",
+      "point": "whether ... or not は ~かどうか"
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "level": "standard",
+      "stem": "We could not go out ( ) the heavy rain.",
+      "choices": [
+        "because",
+        "though",
+        "so",
+        "because of"
+      ],
+      "answer_index": 3,
+      "answer_text": "because of",
+      "explanation": "the heavy rain は名詞句なので、前置詞の働きをする because of を選ぶ。接続詞 because の後ろには主語と動詞のある節が必要。",
+      "point": "名詞の前は because of"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼はとても疲れていたので眠れなかった。",
+      "tokens": [
+        "so tired",
+        "that",
+        "He was",
+        "he could not sleep"
+      ],
+      "answer_text": "He was so tired that he could not sleep.",
+      "explanation": "so + 形容詞 + that ... で「とても~なので…(結果)」を表す。He was so tired that he could not sleep. の語順で、so tired を that 節が受ける。語順は文法的に1通りに固定される。",
+      "point": "so ~ that … は「とても~なので…」"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "あなたかトムのどちらかが間違っている。",
+      "tokens": [
+        "Either",
+        "Tom",
+        "you",
+        "or",
+        "is",
+        "wrong"
+      ],
+      "answer_text": "Either you or Tom is wrong.",
+      "explanation": "either A or B で「AかBのどちらか」を表す。動詞は近い方の主語 Tom に合わせて is となる。",
+      "point": "either A or B は動詞をBに合わせる"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼は英語を話すだけでなく書くこともする。",
+      "tokens": [
+        "He",
+        "not only",
+        "speaks",
+        "English",
+        "but also",
+        "writes",
+        "it"
+      ],
+      "answer_text": "He not only speaks English but also writes it.",
+      "explanation": "not only A but also B で「AだけでなくBも」を表す相関接続詞。ここでは並列の動詞句 A=speaks English と B=writes it をつなぐ。代名詞 it は前に出た English を指すので、'speaks English' を先に、'writes it' を後に置く順序が一通りに定まる。文頭に置ける大文字トークンは主語 He だけなので語順が一意に決まる。",
+      "point": "not only A but also B(A・B は並列の動詞句)"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼女は若いけれどとても賢い。",
+      "tokens": [
+        "Although she",
+        "young,",
+        "very smart",
+        "she",
+        "is",
+        "is"
+      ],
+      "answer_text": "Although she is young, she is very smart.",
+      "explanation": "although + 主語 + 動詞 で「~だけれども」を表す譲歩の節。although she is young を前に置き、主節を続ける。",
+      "point": "Although ~, 主節 で譲歩"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "私は彼が正直だと思う。",
+      "tokens": [
+        "that",
+        "think",
+        "is",
+        "I",
+        "honest",
+        "he"
+      ],
+      "answer_text": "I think that he is honest.",
+      "explanation": "think の後ろに that 節を置き「~ということを思う」を表す。that の後ろは主語 he と動詞 is が続く。",
+      "point": "think that S V で ~と思う"
+    },
+    {
+      "no": 22,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼はとても親切な人なので、みんなが彼を好きだ。",
+      "tokens": [
+        "such a kind man",
+        "He is",
+        "that",
+        "everyone likes him"
+      ],
+      "answer_text": "He is such a kind man that everyone likes him.",
+      "explanation": "such + a + 形容詞 + 名詞 + that ... で「とても~な…なので」。He is such a kind man that everyone likes him. の語順で固定される。",
+      "point": "such ~ that …(とても~なので)"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "This coffee is too hot for me to drink.",
+      "instruction": "so ... that を使って、ほぼ同じ意味の文に書き換えなさい。",
+      "answer_text": "This coffee is so hot that I can't drink it.",
+      "explanation": "too ... for me to ~ は so ... that I can't ~ で言い換えられる。for me が動作主 I を示すので that 節の主語は I に固定される。drink の目的語 it を that 節の中で補う点に注意する。",
+      "point": "too ... for 人 to = so ... that 人 can't"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "Because of his hard work, he passed the exam.",
+      "instruction": "前置詞句を文頭の because の節に変えて、ほぼ同じ意味の文に書き換えなさい(文を Because で始めること)。",
+      "answer_text": "Because he worked hard, he passed the exam.",
+      "explanation": "because of + 名詞句は、接続詞 because + 主語 + 動詞の節で言い換えられる。原文は理由を文頭に置いているので、Because he worked hard を文頭に置き、his hard work を he worked hard という節にする。",
+      "point": "because of 名詞 = because S V(文頭に置く)"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "He can play both the piano and the guitar.",
+      "instruction": "not only A but also B を使って、ほぼ同じ意味の文に書き換えなさい。",
+      "answer_text": "He can play not only the piano but also the guitar.",
+      "explanation": "both A and B は not only A but also B で言い換えられ、どちらも「AもBも」を表す。A が the piano、B が the guitar になる。",
+      "point": "both A and B = not only A but also B"
+    }
+  ]
+}

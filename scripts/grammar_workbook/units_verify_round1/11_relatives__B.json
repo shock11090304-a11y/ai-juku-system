@@ -1,0 +1,31 @@
+{
+  "slug": "11_relatives",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"先行詞a friend(人)・後ろに動詞livesで主格→who"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"先行詞the book(物)主格→which"},
+    {"no":3,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"先行詞the dog(動物)主格→which(thatも可だが選択肢に無し)"},
+    {"no":4,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"人+動物の混合先行詞→thatのみ可"},
+    {"no":5,"mc_index":1,"produced_sentence":"","multiple_valid":true,"multiple_valid_note":"目的格で先行詞が人。whom(格式)が標準解だが、現代英語ではwho(index0)も口語的に広く容認される。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"目的格人→whom(I metの目的語)"},
+    {"no":6,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"先行詞the camera(物)目的格→which"},
+    {"no":7,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"先行詞the movie(物)目的格→which"},
+    {"no":8,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"所有格(mother is...)→whose"},
+    {"no":9,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"所有格(roof is red)→whose(無生物でもwhose可)"},
+    {"no":10,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"the town + I was born(in)→関係副詞where"},
+    {"no":11,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"the day(時)→関係副詞when"},
+    {"no":12,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"the reason→関係副詞why"},
+    {"no":13,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"先行詞を含む関係代名詞What(saidの目的語かつ主語節)"},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"非制限用法・主格・人→who"},
+    {"no":15,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"前置詞in+先行詞the house(物)→in which"},
+    {"no":16,"mc_index":-1,"produced_sentence":"I have a friend who can speak English.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":17,"mc_index":-1,"produced_sentence":"This is the house which my grandfather built.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":18,"mc_index":-1,"produced_sentence":"I know a boy whose father is a doctor.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":19,"mc_index":-1,"produced_sentence":"This is the hotel where we stayed yesterday.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":20,"mc_index":-1,"produced_sentence":"Here is the person who I wanted to meet.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"トークンhere is/who/I/wanted/to meet/the personから一意に構成"},
+    {"no":21,"mc_index":-1,"produced_sentence":"What he said was true.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":22,"mc_index":-1,"produced_sentence":"I have a friend who lives in Canada.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":23,"mc_index":-1,"produced_sentence":"This is the bike which I bought last week.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"指定通りwhichを使用"},
+    {"no":24,"mc_index":-1,"produced_sentence":"I know a girl whose brother is a famous singer.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":25,"mc_index":-1,"produced_sentence":"This is the park where we played yesterday.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""}
+  ]
+}

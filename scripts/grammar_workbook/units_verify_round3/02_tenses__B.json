@@ -1,0 +1,31 @@
+{
+  "slug": "02_tenses",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"every morning は習慣を表す現在形。主語 My father は3人称単数なので drinks。"},
+    {"no":2,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"last Sunday は過去を表す副詞なので過去形 went。"},
+    {"no":3,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Look! ... now は今まさに進行中。現在進行形 is raining。"},
+    {"no":4,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"every day の習慣、3人称単数で comes。"},
+    {"no":5,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"two hours ago は過去なので finished。"},
+    {"no":6,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"yesterday afternoon の過去。単純過去 played は選択肢に無く、過去進行形 were playing が成立。"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"不変の真理は現在形。Water は単数扱いで boils。"},
+    {"no":8,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"next weekend の予定。am going to visit が自然。"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"時・条件の副詞節中は未来を現在形で表す。If it rains tomorrow。"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"When 節(時の副詞節)は未来でも現在形。When I get home。"},
+    {"no":11,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"when the phone rang で中断された動作。過去進行形 was taking。"},
+    {"no":12,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"その場での申し出は will。I will help you。"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"last night の否定で原形 watch を伴うので did not watch。"},
+    {"no":14,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"happy は形容詞で動詞が無いため be 動詞。yesterday の過去で Were you happy。"},
+    {"no":15,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"時刻表・確定予定は現在形。according to the schedule で leaves。"},
+    {"no":16,"mc_index":-1,"produced_sentence":"My brother works at a bank.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在の習慣的事実。3人称単数 works。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"She read the book yesterday.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"yesterday なので read は過去形(発音 /red/)。語順 S V O 副詞。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"We are cooking dinner in the kitchen.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在進行形 are cooking。場所句 in the kitchen は文末。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"If it is sunny tomorrow, we will go to the park.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"条件節は現在形、主節は未来。トークンが句単位で順序ほぼ確定。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"When I entered the room, he was sleeping.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"入室(過去)時に進行中だった眠り(過去進行形)。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I am going to study English next year.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"つもり=be going to。I am going to study English next year。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"I played tennis last Sunday.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"every Sunday を last Sunday に変え過去形 played。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"She is studying math now.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在進行形 is studying。now はそのまま。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"It is going to be cold tomorrow.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"will be → is going to be。"},
+    {"no":25,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"at eight last night の進行中。過去進行形 What were you doing。"}
+  ]
+}

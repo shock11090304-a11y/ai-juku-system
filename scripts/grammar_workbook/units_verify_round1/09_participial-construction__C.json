@@ -1,0 +1,31 @@
+{
+  "slug": "09_participial-construction",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Walking in the park (= As I was walking), active present participle."},
+    {"no":2,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Feeling tired (= Because she felt tired)."},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Opening the door (= After he opened)."},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"...sat on the sofa, reading a book (attendant circumstance)."},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Hearing the news (= When she heard)."},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Negative participial construction: Not + participle."},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Passive participial: (Being) Praised by everyone."},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Passive: Seen from a distance (= When it is seen)."},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Perfect participle Having finished (prior completed action). 'Finishing' also possible but 'Having finished' is the canonical answer for a clearly prior action."},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Negative: Not being tired. 'Being not' is wrong word order."},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Absolute/independent participial: It being sunny, ... (different subject)."},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Being ill (= As he was ill)."},
+    {"no":13,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":true,"confidence":"high","note":"Generally speaking is a fixed idiomatic adverbial; tests adverb vs adjective (Generally vs General), not the participle. Off the participial-construction unit's core point."},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Perfect participle Having written (prior completed action before putting it in the bag)."},
+    {"no":15,"mc_index":-1,"produced_sentence":"Walking down the street, I found the shop.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Present participle opening clause."},
+    {"no":16,"mc_index":-1,"produced_sentence":"He left the room, not saying anything.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Negative participial as attendant circumstance. Tokens force trailing position (he, left, the room, not, saying, anything)."},
+    {"no":17,"mc_index":-1,"produced_sentence":"Having finished my homework, I watched TV.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Perfect participle from given tokens."},
+    {"no":18,"mc_index":-1,"produced_sentence":"She looked at me, smiling.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Attendant-circumstance participle in trailing position."},
+    {"no":19,"mc_index":-1,"produced_sentence":"Written in English, this book is easy to read.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Past participle (passive) construction."},
+    {"no":20,"mc_index":-1,"produced_sentence":"Seeing the dog, I ran away.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"When I saw -> Seeing."},
+    {"no":21,"mc_index":-1,"produced_sentence":"Being tired, she took a rest.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Because she was -> Being (instruction requires keeping Being)."},
+    {"no":22,"mc_index":-1,"produced_sentence":"When he saw the police officer, he ran away.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Seeing -> When he saw."},
+    {"no":23,"mc_index":-1,"produced_sentence":"Having eaten lunch, I went out.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"After I had eaten -> Having eaten (perfect participle)."},
+    {"no":24,"mc_index":-1,"produced_sentence":"Not knowing the answer, he stayed silent.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"As he did not know -> Not knowing."},
+    {"no":25,"mc_index":-1,"produced_sentence":"Being written in easy English, the book sold well.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Because it was -> Being written (passive perfect-tense not needed; instruction keeps Being)."}
+  ]
+}

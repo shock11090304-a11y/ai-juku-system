@@ -1,0 +1,274 @@
+{
+  "unit": "仮定法",
+  "unit_slug": "subjunctive",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "If I ( ) rich, I would buy a big house.",
+      "choices": [
+        "were",
+        "am",
+        "will be",
+        "have been"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "If I had enough money, I ( ) buy that camera.",
+      "choices": [
+        "will",
+        "can",
+        "would",
+        "must"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "If it ( ) sunny today, we would go to the beach.",
+      "choices": [
+        "is",
+        "were",
+        "will be",
+        "has been"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "If I knew her phone number, I ( ) call her now.",
+      "choices": [
+        "would",
+        "will",
+        "am going to",
+        "shall"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "If you studied harder, you ( ) pass the exam.",
+      "choices": [
+        "can",
+        "could",
+        "will",
+        "must"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "If I ( ) you, I would not say such a thing.",
+      "choices": [
+        "am",
+        "were",
+        "was being",
+        "will be"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "If I had studied harder, I ( ) passed the test.",
+      "choices": [
+        "would have",
+        "would",
+        "will have",
+        "had"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "If she ( ) earlier, she would have caught the train.",
+      "choices": [
+        "left",
+        "had left",
+        "has left",
+        "leaves"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "If he had taken a taxi, he ( ) on time.",
+      "choices": [
+        "would have arrived",
+        "would arrive",
+        "will arrive",
+        "had arrived"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "If I had known the truth, I ( ) you.",
+      "choices": [
+        "would have told",
+        "would tell",
+        "will tell",
+        "told"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "If we had not missed the bus, we ( ) late.",
+      "choices": [
+        "would not be",
+        "will not be",
+        "had not been",
+        "would not have been"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "I wish I ( ) speak French.",
+      "choices": [
+        "can",
+        "will",
+        "would have",
+        "could"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "I wish I ( ) taller.",
+      "choices": [
+        "were",
+        "am",
+        "will be",
+        "have been"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "I wish I ( ) harder when I was young.",
+      "choices": [
+        "studied",
+        "had studied",
+        "study",
+        "would study"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "He talks ( ) he knew everything.",
+      "choices": [
+        "even if",
+        "only if",
+        "as if",
+        "as long as"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "prompt_ja": "水がなければ、私たちは生きられないだろう。",
+      "tokens": [
+        "Without",
+        "water,",
+        "we",
+        "could",
+        "not",
+        "live."
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "もし時間があれば、私はあなたを手伝うのに。",
+      "tokens": [
+        "If",
+        "I",
+        "had",
+        "time,",
+        "I",
+        "would",
+        "help",
+        "you."
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "鳥だったらいいのに。",
+      "tokens": [
+        "I",
+        "a",
+        "were",
+        "wish",
+        "bird",
+        "I"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "もし彼が早く出発していたら、間に合っただろうに。",
+      "tokens": [
+        "If",
+        "he",
+        "had left",
+        "early,",
+        "he",
+        "would have",
+        "made it."
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "彼女はまるで医者であるかのように話す。",
+      "tokens": [
+        "She",
+        "talks",
+        "as if",
+        "she",
+        "were",
+        "a doctor."
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "あなたの助けがなければ、私は失敗するだろう。",
+      "tokens": [
+        "Without your help,",
+        "I",
+        "would",
+        "fail"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "As I am not free now, I cannot help you.",
+      "instruction": "仮定法過去を使い、原文の can/cannot(できる・できない)の意味を保って、If で始まるほぼ同じ意味の一文に書き換えなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "As I did not have time, I did not call you.",
+      "instruction": "仮定法過去完了を使って、ほぼ同じ意味の If で始まる一文に書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "I am sorry that I cannot swim.",
+      "instruction": "I wish で始まる仮定法の文に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "I am sorry that I did not study hard.",
+      "instruction": "I wish で始まる仮定法の文に書き換えなさい。"
+    }
+  ]
+}

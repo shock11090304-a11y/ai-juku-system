@@ -1,0 +1,31 @@
+{
+  "slug": "12_subjunctive",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去。be動詞はwere。"},
+    {"no":2,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去の主節would。"},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"would goと呼応する仮定法過去were。"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"If I knewと呼応するwould。"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去could。canは直説法で不可。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"If I were you慣用。"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去完了would have + p.p.。"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"would have caughtと呼応するhad left。"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"If he had taken...仮定法過去完了の主節would have arrived。"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去完了would have told。"},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"would not have been。"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"I wish + could。"},
+    {"no":13,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"I wish I were taller。"},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去の願望はhad studied。"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"as if + 仮定法knew。"},
+    {"no":16,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Were it not for ... 倒置(=If it were not for)。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"If I had time, I would help you.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去の並べ替え。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"I wish I were a bird.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"I wish + were。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"If he had left early, he would have made it.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去完了。have + made it = would have made it。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"She talks as if she were a doctor.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"as if + 仮定法過去。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"Without your help, I would fail.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Without = 仮定法相当語句。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"If I were free now, I could help you.","multiple_valid":true,"multiple_valid_note":"主節はwould helpも可。原文cannotのニュアンスからcouldが最適。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去への書き換え。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"If I had had time, I would have called you.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去完了への書き換え。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"I wish I could swim.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"cannot swim → I wish I could swim。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"I wish I had studied hard.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去の後悔 → I wish I had studied。"}
+  ]
+}

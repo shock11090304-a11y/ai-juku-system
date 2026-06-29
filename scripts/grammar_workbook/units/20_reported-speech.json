@@ -1,0 +1,364 @@
+{
+  "unit": "話法",
+  "unit_slug": "reported-speech",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She said ( ) she was tired.",
+      "choices": [
+        "to",
+        "that",
+        "if",
+        "what"
+      ],
+      "answer_index": 1,
+      "answer_text": "that",
+      "explanation": "say の後ろに伝達内容(平叙文)を続けるときは接続詞 that を使う。that は省略もできるが、空所を埋める形ではここでは that が正解。",
+      "point": "say の後の平叙文は that 節でつなぐ。"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "He said ( ) me that he would call later.",
+      "choices": [
+        "at",
+        "for",
+        "to",
+        "with"
+      ],
+      "answer_index": 2,
+      "answer_text": "to",
+      "explanation": "「人に言う」は say to+人 の形をとる。say の後ろに直接「人」を置くことはできない。",
+      "point": "say は say to 人。"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "He ( ) me that he was busy.",
+      "choices": [
+        "said",
+        "spoke",
+        "talked",
+        "told"
+      ],
+      "answer_index": 3,
+      "answer_text": "told",
+      "explanation": "「人に〜と言う」を1語で表すときは tell+人+that 節。said だと said me とはできず said to me になる。",
+      "point": "tell は直後に人を置ける(tell 人 that)。"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Tom said that he ( ) tired.",
+      "choices": [
+        "was",
+        "is",
+        "are",
+        "be"
+      ],
+      "answer_index": 0,
+      "answer_text": "was",
+      "explanation": "主節の said が過去形なので、that 節の中の時制も過去に合わせる(時制の一致)。is が was になる。",
+      "point": "主節が過去なら従属節も過去にする(時制の一致)。"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "standard",
+      "stem": "She told me that she ( ) finished her homework.",
+      "choices": [
+        "has",
+        "had",
+        "have",
+        "having"
+      ],
+      "answer_index": 1,
+      "answer_text": "had",
+      "explanation": "間接話法で「すでに終えていた」という直接話法の現在完了 has finished は、時制の一致で過去完了 had finished になる。",
+      "point": "現在完了は時制の一致で過去完了になる。"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He said that he was busy ( ) day.",
+      "choices": [
+        "this",
+        "that",
+        "the",
+        "a"
+      ],
+      "answer_index": 1,
+      "answer_text": "that",
+      "explanation": "間接話法では直接話法の today が that day に転換される。this day ではなく that day となる点に注意。",
+      "point": "today は that day に転換する。"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "She said that she would come ( ) next day.",
+      "choices": [
+        "that",
+        "this",
+        "a",
+        "the"
+      ],
+      "answer_index": 3,
+      "answer_text": "the",
+      "explanation": "直接話法の tomorrow は間接話法で the next day に転換される。the next day という決まった形を覚える。",
+      "point": "tomorrow は the next day に転換する。"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He asked me ( ) I was free.",
+      "choices": [
+        "that",
+        "if",
+        "what",
+        "so"
+      ],
+      "answer_index": 1,
+      "answer_text": "if",
+      "explanation": "Yes / No で答える疑問文を間接話法にするときは ask+人+if(または whether)を使う。that は使えない。",
+      "point": "Yes/No疑問文の伝達は ask if/whether。"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "She asked me where I ( ).",
+      "choices": [
+        "live",
+        "lived",
+        "do live",
+        "living"
+      ],
+      "answer_index": 1,
+      "answer_text": "lived",
+      "explanation": "疑問詞のある疑問文の伝達では where+S+V の語順になり、do は使わない。主節が過去なので時制の一致で live は lived になる。",
+      "point": "疑問詞の伝達は 疑問詞+S+V で時制を一致させる。"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He asked me where ( ).",
+      "choices": [
+        "did I live",
+        "I did live",
+        "lived I",
+        "I lived"
+      ],
+      "answer_index": 3,
+      "answer_text": "I lived",
+      "explanation": "間接疑問は「疑問詞 + 主語 + 動詞」の語順で、do/did や倒置は使わない。よって where I lived が正しい。",
+      "point": "間接疑問は 疑問詞+S+V(倒置なし)"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She told me ( ) open the window.",
+      "choices": [
+        "that",
+        "if",
+        "for",
+        "to"
+      ],
+      "answer_index": 3,
+      "answer_text": "to",
+      "explanation": "命令や依頼の伝達は tell / ask+人+to do の形を使う。to open とする。",
+      "point": "命令・依頼の伝達は tell/ask 人 to do。"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The teacher told us ( ) run in the hallway.",
+      "choices": [
+        "to not",
+        "don't",
+        "no to",
+        "not to"
+      ],
+      "answer_index": 3,
+      "answer_text": "not to",
+      "explanation": "否定の命令(〜しないように言う)を伝達するときは tell+人+not to do の形。not は to の前に置く。",
+      "point": "否定の命令の伝達は not to do。"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "basic",
+      "stem": "He said to me, ( ) am hungry.",
+      "choices": [
+        "that I",
+        "if I",
+        "to I",
+        "\"I"
+      ],
+      "answer_index": 3,
+      "answer_text": "\"I",
+      "explanation": "直接話法では話した言葉をそのまま引用符 \" \" で囲み、コンマの後に大文字で始める。よって \"I am hungry.\" の形になる。",
+      "point": "直接話法は引用符で言葉をそのまま示す。"
+    },
+    {
+      "no": 14,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼は疲れていると言った。",
+      "tokens": [
+        "tired",
+        "said",
+        "He",
+        "that",
+        "was",
+        "he"
+      ],
+      "answer_text": "He said that he was tired.",
+      "explanation": "say that S V の語順。主節が said(過去)なので that 節の中も was と過去にして時制を一致させる。",
+      "point": "said that he was 〜 の順で時制を一致。"
+    },
+    {
+      "no": 15,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼女は私に、自分は忙しいと言った。",
+      "tokens": [
+        "was",
+        "told",
+        "She",
+        "busy",
+        "me",
+        "she",
+        "that"
+      ],
+      "answer_text": "She told me that she was busy.",
+      "explanation": "tell は tell+人+that 節の語順をとる。主節 told が過去なので that 節も was と過去にする。",
+      "point": "told me that she was 〜 の順。"
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼は私に、忙しいかどうかたずねた。",
+      "tokens": [
+        "I",
+        "asked",
+        "if",
+        "He",
+        "busy",
+        "me",
+        "was"
+      ],
+      "answer_text": "He asked me if I was busy.",
+      "explanation": "Yes / No 疑問文の伝達は ask+人+if+S+V の語順。主節 asked が過去なので am は was になる。",
+      "point": "asked me if I was 〜 の順。"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼女は私に、どこに住んでいるのかたずねた。",
+      "tokens": [
+        "I",
+        "asked",
+        "where",
+        "She",
+        "lived",
+        "me"
+      ],
+      "answer_text": "She asked me where I lived.",
+      "explanation": "疑問詞のある疑問文の伝達は ask+人+疑問詞+S+V の語順で、do は使わない。主節が過去のため live は lived になる。",
+      "point": "asked me where I lived の順(平叙文の語順)。"
+    },
+    {
+      "no": 18,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "He said, \"I am happy.\"",
+      "instruction": "間接話法に書き換えなさい(接続詞 that を使うこと)。",
+      "answer_text": "He said that he was happy.",
+      "explanation": "直接話法を間接話法にする。引用符を外し接続詞 that でつなぎ、代名詞 I は he に、主節が過去なので時制の一致で am は was になる。that は省略できるが、ここでは that を使う形を答えとする。",
+      "point": "that でつなぎ、I→he、am→was(時制の一致)。"
+    },
+    {
+      "no": 19,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "She said to me, \"I like this book.\"",
+      "instruction": "間接話法に書き換えなさい(say to me は told me を使う)。",
+      "answer_text": "She told me that she liked that book.",
+      "explanation": "say to me は told me にする。代名詞 I は she に、主節が過去なので時制の一致で like は liked になる。話法の転換では指示語 this は that に転換するので this book は that book になる。",
+      "point": "say to me→told me、I→she、like→liked、this→that。"
+    },
+    {
+      "no": 20,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "He said, \"I am busy today.\"",
+      "instruction": "間接話法に書き換えなさい。",
+      "answer_text": "He said that he was busy that day.",
+      "explanation": "I は he に、am は was に時制を一致させる。時を表す副詞 today は間接話法で that day に転換する。",
+      "point": "today→that day、am→was。"
+    },
+    {
+      "no": 21,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "She said, \"I will leave tomorrow.\"",
+      "instruction": "間接話法に書き換えなさい(接続詞 that を使い、tomorrow は the next day にすること)。",
+      "answer_text": "She said that she would leave the next day.",
+      "explanation": "直接話法を間接話法にする。代名詞 I は she に、主節が過去(said)なので will は時制の一致で would になる。時を表す副詞 tomorrow は間接話法で the next day に転換する。指示により接続詞 that を用い、転換語は the next day に固定する。",
+      "point": "will→would(時制の一致)、tomorrow→the next day、that でつなぐ。"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "He said, \"I met her two days ago.\"",
+      "instruction": "間接話法に書き換えなさい。",
+      "answer_text": "He said that he had met her two days before.",
+      "explanation": "I は he に、過去形 met は時制の一致で過去完了 had met になる。時を表す ago は間接話法で before に転換する。",
+      "point": "met→had met、ago→before。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "She said to me, \"Are you tired?\"",
+      "instruction": "間接話法に書き換えなさい(say to me は asked me を使う)。",
+      "answer_text": "She asked me if I was tired.",
+      "explanation": "Yes / No 疑問文の伝達は asked me if+S+V。you は伝えられた相手の I に、主節が過去なので are は was になる。語順は平叙文の S+V にする。",
+      "point": "Yes/No疑問文→asked me if、you→I、are→was。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "He said to me, \"Where do you live?\"",
+      "instruction": "間接話法に書き換えなさい(say to me は asked me を使う)。",
+      "answer_text": "He asked me where I lived.",
+      "explanation": "疑問詞のある疑問文の伝達は asked me+疑問詞+S+V で、do は使わない。you は I に、主節が過去なので live は lived になる。",
+      "point": "疑問詞疑問文→asked me where I lived(do は不要)。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "She said to me, \"Open the door.\"",
+      "instruction": "間接話法に書き換えなさい(say to me は told me を使う)。",
+      "answer_text": "She told me to open the door.",
+      "explanation": "命令文の伝達は tell+人+to do の形にする。told me to open とする。引用符と命令文の動詞原形を to 不定詞にまとめる。",
+      "point": "命令文の伝達は told me to do。"
+    }
+  ]
+}

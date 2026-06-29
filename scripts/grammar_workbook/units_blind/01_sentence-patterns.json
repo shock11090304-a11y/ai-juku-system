@@ -1,0 +1,263 @@
+{
+  "unit": "文型",
+  "unit_slug": "sentence-patterns",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "She ( ) very happy today.",
+      "choices": [
+        "looks",
+        "look",
+        "looking",
+        "to look"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "The baby ( ) all night long.",
+      "choices": [
+        "made",
+        "slept",
+        "took",
+        "gave"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "My father ( ) me a new bike.",
+      "choices": [
+        "bought",
+        "looked",
+        "stayed",
+        "became"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "We ( ) our dog Pochi.",
+      "choices": [
+        "call",
+        "speak",
+        "talk",
+        "say"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "This soup ( ) good.",
+      "choices": [
+        "eats",
+        "drinks",
+        "cooks",
+        "tastes"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "He ( ) the door open.",
+      "choices": [
+        "stayed",
+        "looked",
+        "kept",
+        "happened"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "My grandfather ( ) a doctor.",
+      "choices": [
+        "arrived",
+        "slept",
+        "became",
+        "smiled"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "Please ( ) me the salt.",
+      "choices": [
+        "sit",
+        "stay",
+        "go",
+        "pass"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "The news ( ) us very surprised.",
+      "choices": [
+        "looked",
+        "made",
+        "seemed",
+        "felt"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "The sun ( ) brightly this morning.",
+      "choices": [
+        "showed",
+        "shone",
+        "gave",
+        "told"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "The leaves ( ) red in autumn.",
+      "choices": [
+        "turn",
+        "put",
+        "bring",
+        "give"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "They ( ) in this small town.",
+      "choices": [
+        "live",
+        "make",
+        "call",
+        "keep"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "I ( ) him a birthday present.",
+      "choices": [
+        "went",
+        "came",
+        "stayed",
+        "gave"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "The children ( ) in the park.",
+      "choices": [
+        "wanted",
+        "needed",
+        "ran",
+        "liked"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "We ( ) the baby Mary.",
+      "choices": [
+        "spoke",
+        "talked",
+        "named",
+        "listened"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "prompt_ja": "私の母は私にセーターを作ってくれた。",
+      "tokens": [
+        "a",
+        "made",
+        "My mother",
+        "sweater",
+        "me"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "彼はとても疲れているように見える。",
+      "tokens": [
+        "very",
+        "looks",
+        "He",
+        "tired"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "私たちは彼をトムと呼ぶ。",
+      "tokens": [
+        "Tom",
+        "call",
+        "him",
+        "We"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "先生は私たちに難しい質問をした。",
+      "tokens": [
+        "a",
+        "asked",
+        "The teacher",
+        "us",
+        "difficult question"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "暖かい服装はあなたを健康に保つ。",
+      "tokens": [
+        "healthy",
+        "you",
+        "Warm clothes",
+        "keep"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "彼女は私にその物語を話してくれた。",
+      "tokens": [
+        "the story",
+        "me",
+        "told",
+        "She"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "He gave me a book.",
+      "instruction": "to を使って同じ意味の第3文型(SVO + 前置詞句)に書き換えなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "She bought her son a watch.",
+      "instruction": "for を使って同じ意味の第3文型(SVO + 前置詞句)に書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "My uncle sent a letter to me.",
+      "instruction": "前置詞を使わない第4文型(SVOO)に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "She made a cake for us.",
+      "instruction": "前置詞を使わない第4文型(SVOO)に書き換えなさい。"
+    }
+  ]
+}

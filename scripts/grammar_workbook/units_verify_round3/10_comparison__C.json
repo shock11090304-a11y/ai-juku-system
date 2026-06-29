@@ -1,0 +1,31 @@
+{
+  "slug": "10_comparison",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"as ... as は原級。tall。"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"than があるので比較級 heavier。more heavy は不可。"},
+    {"no":3,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"the ... in Japan で最上級 highest。"},
+    {"no":4,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"than で比較級。difficult は more difficult。"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"比較対象は無冠詞の money。健康と金銭の対比。"},
+    {"no":6,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"the ... popular で最上級 most popular。"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"not as ... as は原級 big。"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"than で比較級。good→better。"},
+    {"no":9,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"the ... I have ever seen で最上級 best。"},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"much は比較級強調。hotter。"},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"than で比較級 faster(副詞)。"},
+    {"no":12,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"one of the ... buildings で最上級 oldest。"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"The 比較級, the 比較級 構文。The more。"},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"比較級 and 比較級 でますます。warmer。"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"No other ... as ... as は原級 kind。"},
+    {"no":16,"mc_index":-1,"produced_sentence":"She swims as fast as me.","multiple_valid":true,"multiple_valid_note":"格式的には as I (do) も正しいが、口語の as me がトークン指定。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"原級比較 as ... as。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"This book is more interesting than that one.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"比較級 more interesting than。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"He is the tallest student in the class.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"最上級 the tallest。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"Tokyo is one of the largest cities in Japan.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"one of the 最上級 複数名詞。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"This question is much easier than that one.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"much が比較級 easier を強調。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"Mike is shorter than Ken.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主語Mike+shorterで反対の比較級。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"Your bike is newer than my bike.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主語your bike+newer。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"That river is not as long as this river.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"longer than → not as long as の原級書き換え。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"No other girl in the village is as beautiful as Ann.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"最上級→No other ... as ... as の原級書き換え。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"Soccer is the most popular sport in this class.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"than any other → 最上級 the most popular。"}
+  ]
+}

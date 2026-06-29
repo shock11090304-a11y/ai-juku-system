@@ -1,0 +1,108 @@
+{
+  "part": "phys_exam",
+  "group": "phys_exam",
+  "unit_theme": "単振動",
+  "passage": "ある生徒が、なめらかで水平な床の上でばね振り子の運動を調べる実験を行った。自然長のばねの一端を壁に固定し、他端に質量 \\( m = 0.20\\ \\text{kg} \\) の小球を取り付ける。ばね定数は \\( k = 5.0\\ \\text{N/m} \\) である。小球をつり合いの位置から右向きに \\( A = 0.10\\ \\text{m} \\) だけ引いて静かに手をはなすと、小球はつり合いの位置を中心とする単振動を始めた。空気抵抗とばねの質量は無視できるものとし、円周率は \\( \\pi \\) のまま用いる。後半では同じ場所で長さ \\( L \\) の単振り子の実験も行う。重力加速度の大きさは \\( g = 10\\ \\text{m/s}^2 \\) とする。",
+  "subqs": [
+    {
+      "stem": "質量 \\( m = 0.20\\ \\text{kg} \\) の小球がばね定数 \\( k = 5.0\\ \\text{N/m} \\) のばねにつながれて単振動している。この単振動の周期 \\( T \\) はいくらか。",
+      "choices_latex": [
+        "\\( \\dfrac{2}{5}\\pi\\ \\text{s} \\)",
+        "\\( \\dfrac{1}{5}\\pi\\ \\text{s} \\)",
+        "\\( \\dfrac{4}{5}\\pi\\ \\text{s} \\)",
+        "\\( 5\\pi\\ \\text{s} \\)"
+      ],
+      "choices_value": [
+        "Rational(2,5)*pi",
+        "Rational(1,5)*pi",
+        "Rational(4,5)*pi",
+        "5*pi"
+      ],
+      "answer_index": 0,
+      "truth_value": "Rational(2,5)*pi",
+      "unit": "発展 単振動(周期)",
+      "reason": "\\( T=2\\pi\\sqrt{m/k}=2\\pi\\sqrt{0.20/5.0}=2\\pi\\sqrt{0.04}=2\\pi\\times0.2=\\tfrac{2}{5}\\pi\\ \\text{s} \\)。",
+      "restates": "stem に m=0.20 kg, k=5.0 N/m を再掲。"
+    },
+    {
+      "stem": "質量 \\( m = 0.20\\ \\text{kg} \\)、ばね定数 \\( k = 5.0\\ \\text{N/m} \\) のばね振り子について、単振動の角振動数 \\( \\omega \\) はいくらか。",
+      "choices_latex": [
+        "\\( 5\\ \\text{rad/s} \\)",
+        "\\( 25\\ \\text{rad/s} \\)",
+        "\\( \\dfrac{1}{5}\\ \\text{rad/s} \\)",
+        "\\( \\sqrt{5}\\ \\text{rad/s} \\)"
+      ],
+      "choices_value": [
+        "Integer(5)",
+        "Integer(25)",
+        "Rational(1,5)",
+        "sqrt(5)"
+      ],
+      "answer_index": 0,
+      "truth_value": "Integer(5)",
+      "unit": "発展 単振動(角振動数)",
+      "reason": "\\( \\omega=\\sqrt{k/m}=\\sqrt{5.0/0.20}=\\sqrt{25}=5\\ \\text{rad/s} \\)。",
+      "restates": "stem に m=0.20 kg, k=5.0 N/m を再掲。"
+    },
+    {
+      "stem": "上のばね振り子は、つり合いの位置から振幅 \\( A = 0.10\\ \\text{m} \\) で単振動しており、角振動数は \\( \\omega = 5\\ \\text{rad/s} \\) である。小球がつり合いの位置を通過するときの速さ(最大の速さ)\\( v_{\\max} \\) はいくらか。",
+      "choices_latex": [
+        "\\( 0.50\\ \\text{m/s} \\)",
+        "\\( 0.10\\ \\text{m/s} \\)",
+        "\\( 2.5\\ \\text{m/s} \\)",
+        "\\( 5.0\\ \\text{m/s} \\)"
+      ],
+      "choices_value": [
+        "Rational(1,2)",
+        "Rational(1,10)",
+        "Rational(5,2)",
+        "Integer(5)"
+      ],
+      "answer_index": 0,
+      "truth_value": "Rational(1,2)",
+      "unit": "発展 単振動(最大速度)",
+      "reason": "\\( v_{\\max}=A\\omega=0.10\\times5=0.50\\ \\text{m/s} \\)。",
+      "restates": "stem に A=0.10 m, ω=5 rad/s(q2の結果)を再掲。"
+    },
+    {
+      "stem": "上のばね振り子は、振幅 \\( A = 0.10\\ \\text{m} \\)、角振動数 \\( \\omega = 5\\ \\text{rad/s} \\) で単振動している。小球が運動の両端(つり合いの位置から最も離れた位置)にあるときの加速度の大きさ(最大の加速度)\\( a_{\\max} \\) はいくらか。",
+      "choices_latex": [
+        "\\( 2.5\\ \\text{m/s}^2 \\)",
+        "\\( 0.50\\ \\text{m/s}^2 \\)",
+        "\\( 25\\ \\text{m/s}^2 \\)",
+        "\\( 0.25\\ \\text{m/s}^2 \\)"
+      ],
+      "choices_value": [
+        "Rational(5,2)",
+        "Rational(1,2)",
+        "Integer(25)",
+        "Rational(1,4)"
+      ],
+      "answer_index": 0,
+      "truth_value": "Rational(5,2)",
+      "unit": "発展 単振動(最大加速度)",
+      "reason": "\\( a_{\\max}=A\\omega^2=0.10\\times5^2=0.10\\times25=2.5\\ \\text{m/s}^2 \\)。",
+      "restates": "stem に A=0.10 m, ω=5 rad/s(q2の結果)を再掲。"
+    },
+    {
+      "stem": "実験の後半で、同じ場所(重力加速度の大きさ \\( g = 10\\ \\text{m/s}^2 \\))で長さ \\( L = 0.90\\ \\text{m} \\) の単振り子をつくり、小さく振らせた。この単振り子の周期 \\( T \\) はいくらか。",
+      "choices_latex": [
+        "\\( \\dfrac{3}{5}\\pi\\ \\text{s} \\)",
+        "\\( \\dfrac{2}{5}\\pi\\ \\text{s} \\)",
+        "\\( \\dfrac{9}{50}\\pi\\ \\text{s} \\)",
+        "\\( \\dfrac{6}{5}\\pi\\ \\text{s} \\)"
+      ],
+      "choices_value": [
+        "Rational(3,5)*pi",
+        "Rational(2,5)*pi",
+        "Rational(9,50)*pi",
+        "Rational(6,5)*pi"
+      ],
+      "answer_index": 0,
+      "truth_value": "Rational(3,5)*pi",
+      "unit": "発展 単振動(単振り子の周期)",
+      "reason": "\\( T=2\\pi\\sqrt{L/g}=2\\pi\\sqrt{0.90/10}=2\\pi\\sqrt{0.09}=2\\pi\\times0.3=\\tfrac{3}{5}\\pi\\ \\text{s} \\)。",
+      "restates": "stem に L=0.90 m, g=10 m/s^2 を再掲(passage にも g 明記)。"
+    }
+  ]
+}

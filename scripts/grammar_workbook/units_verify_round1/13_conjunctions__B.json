@@ -1,0 +1,31 @@
+{
+  "slug": "13_conjunctions",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"対比のbut。"},
+    {"no":2,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"結果のso。"},
+    {"no":3,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"命令文+or「さもないと」。"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"時のbefore。"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"同時進行のwhile。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"理由のbecause。"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"条件のIf。"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"譲歩のThough（コートなしで外出＝寒さに反する）。"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"until「〜まで（ずっと）」。"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"接続詞As soon as。他は前置詞句で節を導けない。"},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"unless「〜でない限り」。"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"目的のso that。"},
+    {"no":13,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"so+形容詞+that構文。"},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"such+a+形容詞+名詞+that構文。"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"whether ... or not。"},
+    {"no":16,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"後ろが名詞句the heavy rainなのでbecause of。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"Both she and Ken can dance.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"both A and B。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"Either you or Tom is wrong.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"either A or B。動詞isは近い方Tomに一致。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"He speaks not only English but also French.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"not only A but also B。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"Although she is young, she is very smart.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"「although she」「young,」のトークン化からこの語順が確定。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I think that he is honest.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"think that節。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"I got home before it started to rain.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"before節。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"This coffee is so hot that I can't drink it.","multiple_valid":true,"multiple_valid_note":"目的語itの代わりにwe/you/oneを主語にしても可（例：This coffee is so hot that we can't drink it.）。意味はほぼ同じ。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"too...to を so...that に書き換え。後続のitが必要。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"Because he worked hard, he passed the exam.","multiple_valid":true,"multiple_valid_note":"Because he worked hard を文末に置く語順（He passed the exam because he worked hard.）も成立。意味は同じ。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"because of+名詞句をbecause+節に変換。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"He can play not only the piano but also the guitar.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"both A and B を not only A but also B に変換。"}
+  ]
+}

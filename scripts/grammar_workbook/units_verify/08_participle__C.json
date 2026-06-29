@@ -1,0 +1,31 @@
+{
+  "slug": "08_participle",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在分詞 sleeping が名詞 baby を前置修飾。"},
+    {"no":2,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去分詞 used で「中古の車」。"},
+    {"no":3,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在分詞句 standing under the tree が後置修飾。"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去分詞 written が letter を後置修飾(受動)。"},
+    {"no":5,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在分詞 playing the piano が girl を後置修飾。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去分詞 spoken が language を後置修飾(受動)。"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主語が物 movie ゆえ現在分詞 exciting。"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主語が人 I ゆえ過去分詞 surprised。"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主語が物 book ゆえ interesting。"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主語が人 we、be interested in で interested。"},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主語が物 trip ゆえ tiring。"},
+    {"no":12,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"知覚動詞 saw + O + 現在分詞 running(進行中の動作)。原形 run が無いので running が唯一適切。"},
+    {"no":13,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"hear + O + 過去分詞 called(名前が呼ばれる=受動)。"},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"使役 have + O + 過去分詞 repaired(してもらう)。"},
+    {"no":15,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"get + O + 過去分詞、cut の過去分詞は cut。"},
+    {"no":16,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去分詞 broken が glass を前置修飾。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"The boy playing soccer is my brother.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在分詞句が後置修飾。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"This is a doll made in China.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去分詞句が後置修飾。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"I heard someone calling my name.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"知覚動詞 + O + 現在分詞。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"He seemed excited about the news.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"感情の過去分詞 excited(be/seem excited about)。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I got the watch repaired.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"get + O + 過去分詞(してもらう)。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"The man talking with Tom is my uncle.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"who is を削り現在分詞句 talking に。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"I have a friend living in Osaka.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"who lives を現在分詞 living に変換。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"This is a picture taken by my father.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"which was を削り過去分詞 taken に。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"Look at the house standing on the hill.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"which is を削り現在分詞 standing に。"}
+  ]
+}

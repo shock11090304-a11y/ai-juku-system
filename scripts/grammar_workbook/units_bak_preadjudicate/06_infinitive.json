@@ -1,0 +1,271 @@
+{
+  "unit": "不定詞",
+  "unit_slug": "infinitive",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "My dream is ( ) abroad someday.",
+      "choices": ["to study", "studied", "studies", "study"],
+      "answer_index": 0,
+      "answer_text": "to study",
+      "explanation": "be動詞の後ろで補語として「~すること」を表すには名詞的用法の to do を使います。My dream is to study abroad. で「私の夢は留学することだ」となります。",
+      "point": "補語になる名詞的用法 to do"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I want ( ) a doctor in the future.",
+      "choices": ["become", "to become", "becoming", "became"],
+      "answer_index": 1,
+      "answer_text": "to become",
+      "explanation": "want は目的語に to do をとり、want to do で「~したい」を表します。want のあとに動詞の原形や ing は置けません。",
+      "point": "want to do = ~したい"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) early is good for your health.",
+      "choices": ["Get up", "Got up", "To get up", "Gets up"],
+      "answer_index": 2,
+      "answer_text": "To get up",
+      "explanation": "文頭で主語として「~することは」を表すには名詞的用法の To do を使います。To get up early で「早起きすることは」となります。",
+      "point": "主語になる名詞的用法 To do"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She has a lot of homework ( ) tonight.",
+      "choices": ["do", "doing", "to do", "did"],
+      "answer_index": 2,
+      "answer_text": "to do",
+      "explanation": "名詞 homework を後ろから修飾して「やるべき宿題」とするには形容詞的用法の to do を使います。homework to do で「やるべき宿題」です。",
+      "point": "名詞を修飾する形容詞的用法 to do"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I went to the library ( ) some books.",
+      "choices": ["to borrow", "borrow", "borrowing", "borrowed"],
+      "answer_index": 0,
+      "answer_text": "to borrow",
+      "explanation": "「~するために」という目的を表すには副詞的用法の to do を使います。went to the library to borrow some books で「本を借りるために図書館へ行った」となります。",
+      "point": "目的を表す副詞的用法 to do = ~するために"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I was very happy ( ) the good news.",
+      "choices": ["hear", "to hear", "hearing", "heard"],
+      "answer_index": 1,
+      "answer_text": "to hear",
+      "explanation": "happy など感情を表す形容詞のあとに to do を置くと「~して(うれしい)」という感情の原因を表します。happy to hear で「聞いてうれしい」です。",
+      "point": "感情の原因を表す副詞的用法 to do = ~して"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "This water is too cold ( ).",
+      "choices": ["drink", "to drink", "drinking", "drank"],
+      "answer_index": 1,
+      "answer_text": "to drink",
+      "explanation": "too ... to do は「~すぎて…できない」を表します。too cold to drink で「冷たすぎて飲めない」となります。",
+      "point": "too ... to do = ~すぎて…できない"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He is old enough ( ) a car.",
+      "choices": ["drive", "to drive", "driving", "drove"],
+      "answer_index": 1,
+      "answer_text": "to drive",
+      "explanation": "... enough to do は「…するのに十分~」を表します。old enough to drive で「運転できる年齢だ(運転するのに十分な年齢だ)」となります。",
+      "point": "... enough to do = …するのに十分~"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "It is important ( ) breakfast every morning.",
+      "choices": ["eat", "ate", "to eat", "eaten"],
+      "answer_index": 2,
+      "answer_text": "to eat",
+      "explanation": "It is ... to do の形式主語構文です。It が形式上の主語で、本当の主語は to eat 以下です。「朝食を食べることは大切だ」となります。",
+      "point": "It is ... to do の形式主語構文"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "It is easy ( ) me to read this book.",
+      "choices": ["of", "for", "to", "at"],
+      "answer_index": 1,
+      "answer_text": "for",
+      "explanation": "It is ... to do の構文で「~するのは(人)にとって」と動作主を示すには for 人 を使います。It is easy for me to read で「私にとって読むのはやさしい」です。",
+      "point": "It is ... for 人 to do の for"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I don't know ( ) to say in this situation.",
+      "choices": ["what", "that", "which one", "who"],
+      "answer_index": 0,
+      "answer_text": "what",
+      "explanation": "疑問詞 + to do で「何を~すべきか」を表します。what to say で「何を言うべきか」となります。say の目的語が欠けているので what が適切です。",
+      "point": "疑問詞 + to do(what to do = 何を~すべきか)"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Please tell me ( ) to get to the station.",
+      "choices": ["how", "what", "who", "why"],
+      "answer_index": 0,
+      "answer_text": "how",
+      "explanation": "how to do で「どうやって~するか、~する方法」を表します。how to get to the station で「駅への行き方」となります。",
+      "point": "how to do = ~する方法"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "My mother told me ( ) my room.",
+      "choices": ["clean", "to clean", "cleaning", "cleaned"],
+      "answer_index": 1,
+      "answer_text": "to clean",
+      "explanation": "tell 人 to do で「(人)に~するように言う」を表します。told me to clean で「私に掃除するように言った」となります。",
+      "point": "tell 人 to do = (人)に~するよう言う"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I asked him ( ) the door.",
+      "choices": ["open", "to open", "opening", "opens"],
+      "answer_index": 1,
+      "answer_text": "to open",
+      "explanation": "ask 人 to do で「(人)に~するよう頼む」を表します。asked him to open で「彼にドアを開けるよう頼んだ」となります。",
+      "point": "ask 人 to do = (人)に~するよう頼む"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He grew up ( ) a famous singer.",
+      "choices": ["become", "to become", "becoming", "becomes"],
+      "answer_index": 1,
+      "answer_text": "to become",
+      "explanation": "grow up to do で「成長して(結果として)~になる」という結果を表す副詞的用法です。grew up to become で「成長して有名な歌手になった」となります。",
+      "point": "結果を表す副詞的用法 to do(~してその結果…になる)"
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "私は英語を勉強するのが好きだ。",
+      "tokens": ["English", "to", "like", "I", "study"],
+      "answer_text": "I like to study English.",
+      "explanation": "like to do で「~するのが好きだ」を表す名詞的用法です。to study English が like の目的語になります。",
+      "point": "like to do = ~するのが好きだ"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "私には今日読む本が一冊ある。",
+      "tokens": ["to", "have", "a", "book", "I", "read", "today"],
+      "answer_text": "I have a book to read today.",
+      "explanation": "名詞 a book を後ろから to read が修飾する形容詞的用法です。a book to read で「読むための本」となります。",
+      "point": "名詞 + to do(読むべき本)"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼女はその知らせを聞いて驚いた。",
+      "tokens": ["surprised", "the", "to", "was", "hear", "she", "news"],
+      "answer_text": "She was surprised to hear the news.",
+      "explanation": "感情を表す形容詞 surprised のあとに to do を置き「~して驚いた」という感情の原因を表します。",
+      "point": "感情の原因 to do = ~して(驚いた)"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼は日の出を見るために早く起きた。",
+      "tokens": ["early", "to", "see", "got up", "he", "the sunrise"],
+      "answer_text": "He got up early to see the sunrise.",
+      "explanation": "目的を表す副詞的用法 to do です。to see the sunrise で「日の出を見るために」となり、got up early を修飾します。",
+      "point": "目的の to do = ~するために"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "この問題は私には解けないほど難しい。",
+      "tokens": ["difficult", "for", "to solve", "this question", "too", "is", "me"],
+      "answer_text": "This question is too difficult for me to solve.",
+      "explanation": "too ... for 人 to do で「~すぎて(人)には…できない」を表します。for me が解く人を示します。",
+      "point": "too ... for 人 to do"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私は次に何をすべきかわからなかった。",
+      "tokens": ["do", "to", "what", "didn't", "next", "I", "know"],
+      "answer_text": "I didn't know what to do next.",
+      "explanation": "疑問詞 + to do の what to do で「何をすべきか」を表し、know の目的語になります。",
+      "point": "what to do = 何を~すべきか"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "He is so kind that he can help everyone.",
+      "instruction": "ほぼ同じ意味になるよう enough to を使って書き換えなさい。",
+      "answer_text": "He is kind enough to help everyone.",
+      "explanation": "so ... that 主語 can do は ... enough to do で書き換えられます。kind enough to help で「みんなを助けられるほど親切だ」となります。",
+      "point": "so ... that ~ can do = ... enough to do"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "This box is so heavy that I cannot carry it.",
+      "instruction": "ほぼ同じ意味になるよう too ... to を使って書き換えなさい。",
+      "answer_text": "This box is too heavy for me to carry.",
+      "explanation": "so ... that 主語 cannot do は too ... for 人 to do で書き換えられます。重すぎて運べない主体 I を for me で示します。元文の it は不定詞の目的語と重なるため繰り返しません。",
+      "point": "so ... that ~ cannot do = too ... for 人 to do"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "To learn a foreign language is interesting.",
+      "instruction": "It で始まる形式主語の文に書き換えなさい。",
+      "answer_text": "It is interesting to learn a foreign language.",
+      "explanation": "不定詞が主語の文は、形式主語 It を文頭に置き、真の主語の to do を後ろにまわす It is ... to do の形に書き換えられます。",
+      "point": "To do is ... = It is ... to do"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "I want a cold drink.",
+      "instruction": "something to を使って「何か冷たい飲み物が欲しい」という意味の文に書き換えなさい。",
+      "answer_text": "I want something cold to drink.",
+      "explanation": "something を形容詞 cold と形容詞的用法の to drink が修飾します。something を修飾する語順は something + 形容詞 + to do の順です。",
+      "point": "something + 形容詞 + to do(何か~する…なもの)"
+    }
+  ]
+}

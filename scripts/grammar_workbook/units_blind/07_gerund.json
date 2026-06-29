@@ -1,0 +1,266 @@
+{
+  "unit": "動名詞",
+  "unit_slug": "gerund",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "I enjoy ( ) music in my free time.",
+      "choices": [
+        "to listen to",
+        "listen to",
+        "listening to",
+        "listened to"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "Have you finished ( ) your homework?",
+      "choices": [
+        "to do",
+        "do",
+        "doing",
+        "done"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "( ) early is good for your health.",
+      "choices": [
+        "Get up",
+        "To getting up",
+        "Got up",
+        "Getting up"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "Thank you for ( ) me.",
+      "choices": [
+        "to help",
+        "helping",
+        "help",
+        "helped"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "Would you mind ( ) the window?",
+      "choices": [
+        "to open",
+        "opening",
+        "open",
+        "opened"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "He is good at ( ) soccer.",
+      "choices": [
+        "to play",
+        "play",
+        "played",
+        "playing"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "My hobby is ( ) pictures of flowers.",
+      "choices": [
+        "take",
+        "taking",
+        "taken",
+        "to taking"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "We had to give up ( ) the mountain because of the rain.",
+      "choices": [
+        "to climb",
+        "climbing",
+        "climb",
+        "climbed"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "You should avoid ( ) too much sugar.",
+      "choices": [
+        "eating",
+        "to eat",
+        "eat",
+        "eaten"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "On his way home, he stopped ( ) a cup of coffee.",
+      "choices": [
+        "drinking",
+        "drink",
+        "drank",
+        "to drink"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "The doctor told him to stop ( ) for his health.",
+      "choices": [
+        "to smoke",
+        "smoking",
+        "smoke",
+        "smoked"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "Remember ( ) the door when you leave.",
+      "choices": [
+        "locking",
+        "lock",
+        "to lock",
+        "locked"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "I remember ( ) him at the party last year.",
+      "choices": [
+        "to meet",
+        "meeting",
+        "meet",
+        "met"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "I am looking forward to ( ) you again soon.",
+      "choices": [
+        "seeing",
+        "see",
+        "saw",
+        "seen"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "She is used to ( ) in front of many people.",
+      "choices": [
+        "speak",
+        "speaking",
+        "spoke",
+        "spoken"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "stem": "It is no use ( ) about the past.",
+      "choices": [
+        "worrying",
+        "to worry",
+        "worry",
+        "worried"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "彼女はテレビを見るのが好きだ。",
+      "tokens": [
+        "likes",
+        "TV",
+        "watching",
+        "She"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "本を読むことは大切だ。",
+      "tokens": [
+        "important",
+        "is",
+        "books",
+        "Reading"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "彼女はテニスをするのが得意だ。",
+      "tokens": [
+        "playing tennis",
+        "She",
+        "is",
+        "good at"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "私は早起きするのが苦手だ。",
+      "tokens": [
+        "bad",
+        "getting up",
+        "at",
+        "I",
+        "early",
+        "am"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "私はあなたとまた働くのを楽しみにしている。",
+      "tokens": [
+        "forward",
+        "with you",
+        "working",
+        "looking",
+        "I",
+        "am",
+        "to"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "I like to cook for my family.",
+      "instruction": "to 不定詞を動名詞(-ing)に変えて、同じ意味の文に書き換えなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "To learn a foreign language is not easy.",
+      "instruction": "下線部の主語の不定詞 To learn を動名詞(-ing)に変えて書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "She is proud that she is a nurse.",
+      "instruction": "of + 動名詞(-ing)を使って、同じ意味の文に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "We could not help laughing at his joke.",
+      "instruction": "ほぼ同じ意味になるように、could not but の形を使って書き換えなさい。"
+    }
+  ]
+}

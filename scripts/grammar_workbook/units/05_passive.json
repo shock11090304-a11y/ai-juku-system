@@ -1,0 +1,369 @@
+{
+  "unit": "受動態",
+  "unit_slug": "passive",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "This letter ( ) by my brother yesterday.",
+      "choices": [
+        "wrote",
+        "is writing",
+        "writes",
+        "was written"
+      ],
+      "answer_index": 3,
+      "answer_text": "was written",
+      "explanation": "受動態は be + 過去分詞。yesterday があるので過去形 was を使い、write の過去分詞 written を続ける。手紙は書かれる側なので受動態が正しい。",
+      "point": "受動態は be + 過去分詞"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "These cars ( ) in Japan.",
+      "choices": [
+        "are made",
+        "make",
+        "makes",
+        "is made"
+      ],
+      "answer_index": 0,
+      "answer_text": "are made",
+      "explanation": "主語 These cars は複数なので be 動詞は are。make の過去分詞 made を続ける。車は作られる側なので受動態。",
+      "point": "主語が複数なら be は are"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "The window was broken ( ) the boy.",
+      "choices": [
+        "with",
+        "of",
+        "by",
+        "to"
+      ],
+      "answer_index": 2,
+      "answer_text": "by",
+      "explanation": "受動態で行為者(誰がしたか)を示すときは by を使う。break は break-broke-broken と変化する。",
+      "point": "行為者は by で示す"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "English ( ) all over the world.",
+      "choices": [
+        "speak",
+        "is spoken",
+        "speaks",
+        "speaking"
+      ],
+      "answer_index": 1,
+      "answer_text": "is spoken",
+      "explanation": "英語は話される側なので受動態 be + 過去分詞。speak の過去分詞は spoken。一般的事実なので現在形 is を使う。",
+      "point": "speak-spoke-spoken"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "The room ( ) cleaned every day.",
+      "choices": [
+        "is",
+        "are",
+        "was",
+        "were"
+      ],
+      "answer_index": 0,
+      "answer_text": "is",
+      "explanation": "主語 The room は単数で、every day があるので現在形。部屋は掃除される側なので be 動詞は is。",
+      "point": "単数主語 + 現在は is"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "standard",
+      "stem": "This book should ( ) by many young people.",
+      "choices": [
+        "read",
+        "be reading",
+        "be read",
+        "is read"
+      ],
+      "answer_index": 2,
+      "answer_text": "be read",
+      "explanation": "助動詞 + be + 過去分詞 で助動詞付きの受動態を作る。should の後ろは動詞の原形なので be を置き、read の過去分詞 read を続けて should be read(読まれるべきだ)。read は read-read-read と形が変わらない。read は be が無く非文、be reading は進行形で受動態でない、is read は should の後ろに is を置けず不可。",
+      "point": "助動詞 + be + 過去分詞"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The bridge is ( ) built now.",
+      "choices": [
+        "been",
+        "be",
+        "being",
+        "to be"
+      ],
+      "answer_index": 2,
+      "answer_text": "being",
+      "explanation": "進行形の受動態は be + being + 過去分詞。now があるので「今建設されている最中だ」という進行形の受動態。",
+      "point": "進行形の受動態 be being pp"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The work has ( ) finished already.",
+      "choices": [
+        "been",
+        "be",
+        "being",
+        "to be"
+      ],
+      "answer_index": 0,
+      "answer_text": "been",
+      "explanation": "完了形の受動態は have/has + been + 過去分詞。already があり has been finished で「すでに終えられた」となる。",
+      "point": "完了形の受動態 have been pp"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I am interested ( ) Japanese history.",
+      "choices": [
+        "at",
+        "for",
+        "in",
+        "with"
+      ],
+      "answer_index": 2,
+      "answer_text": "in",
+      "explanation": "be interested in ... で「...に興味がある」。by 以外の前置詞をとる受動態の決まり文句。",
+      "point": "be interested in"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The top of the mountain is covered ( ) snow.",
+      "choices": [
+        "by",
+        "in",
+        "with",
+        "of"
+      ],
+      "answer_index": 2,
+      "answer_text": "with",
+      "explanation": "be covered with ... で「...で覆われている」。by ではなく with をとる受動態表現。",
+      "point": "be covered with"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He is known ( ) everyone in this town.",
+      "choices": [
+        "by",
+        "as",
+        "with",
+        "to"
+      ],
+      "answer_index": 3,
+      "answer_text": "to",
+      "explanation": "be known to ... で「...に知られている」。知っている相手を示すときは to を使う。be known as は「...として知られている」で意味が異なる。",
+      "point": "be known to ... に知られている"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The baby was taken care ( ) by her grandmother.",
+      "choices": [
+        "for",
+        "of",
+        "with",
+        "to"
+      ],
+      "answer_index": 1,
+      "answer_text": "of",
+      "explanation": "群動詞 take care of(世話をする)を受動態にしても of は残る。be taken care of by ... の語順になる。",
+      "point": "群動詞は前置詞を残す"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "She was given a nice present ( ) her uncle.",
+      "choices": [
+        "by",
+        "to",
+        "for",
+        "of"
+      ],
+      "answer_index": 0,
+      "answer_text": "by",
+      "explanation": "SVOO の受動態で人を主語にした文。行為者(贈った人)を示すので by。He gave her a present. を She を主語にすると She was given a present by him. となる。",
+      "point": "SVOO 受動態でも行為者は by"
+    },
+    {
+      "level": "basic",
+      "prompt_ja": "この部屋は私の母によって掃除される。",
+      "tokens": [
+        "cleaned",
+        "This room",
+        "is",
+        "by my mother"
+      ],
+      "answer_text": "This room is cleaned by my mother.",
+      "explanation": "受動態は be 動詞 + 過去分詞。This room is cleaned に行為者を表す by my mother を続ける。by 句は文末で語順は1通り。",
+      "point": "受動態は be + 過去分詞、行為者は by",
+      "no": 14,
+      "type": "order"
+    },
+    {
+      "no": 15,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "その窓はトムによって割られました。",
+      "tokens": [
+        "by",
+        "broken",
+        "The",
+        "was",
+        "Tom",
+        "window"
+      ],
+      "answer_text": "The window was broken by Tom.",
+      "explanation": "過去の受動態 was + 過去分詞 broken。行為者 Tom は by で示す。固有名詞 Tom は大文字。",
+      "point": "過去受動態 + by 行為者"
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "この歌は多くの人に愛されています。",
+      "tokens": [
+        "is",
+        "many",
+        "loved",
+        "song",
+        "by",
+        "This",
+        "people"
+      ],
+      "answer_text": "This song is loved by many people.",
+      "explanation": "現在の受動態 is + loved。歌は愛される側で、行為者 many people を by で示す。",
+      "point": "is + 過去分詞 + by 人"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "その手紙は英語で書かれていました。",
+      "tokens": [
+        "written",
+        "letter",
+        "in",
+        "was",
+        "The",
+        "English"
+      ],
+      "answer_text": "The letter was written in English.",
+      "explanation": "過去の受動態 was + written。「英語で」は in English。write-wrote-written の変化に注意。",
+      "point": "write の過去分詞は written"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "その机は彼によって動かされなければならない。",
+      "tokens": [
+        "be",
+        "must",
+        "The",
+        "by",
+        "moved",
+        "desk",
+        "him"
+      ],
+      "answer_text": "The desk must be moved by him.",
+      "explanation": "助動詞 + be + 過去分詞。must be moved で「動かされなければならない」。行為者は by him。",
+      "point": "助動詞 + be + 過去分詞"
+    },
+    {
+      "no": 19,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "Tom cleaned the room.",
+      "instruction": "受動態に書き換えなさい。",
+      "answer_text": "The room was cleaned by Tom.",
+      "explanation": "能動文の目的語 the room を主語にし、was + 過去分詞 cleaned。行為者 Tom は by で示す。過去形なので was。",
+      "point": "目的語を主語にして be + 過去分詞 + by"
+    },
+    {
+      "no": 20,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "Many students use this computer.",
+      "instruction": "受動態に書き換えなさい。",
+      "answer_text": "This computer is used by many students.",
+      "explanation": "目的語 this computer を主語にする。現在形で主語は単数なので is used。行為者 many students は by で示す。",
+      "point": "現在の受動態 is + 過去分詞"
+    },
+    {
+      "no": 21,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "She wrote this report.",
+      "instruction": "受動態に書き換えなさい。",
+      "answer_text": "This report was written by her.",
+      "explanation": "目的語 this report を主語にし、過去なので was written。行為者 she は by の後ろで目的格 her になる。",
+      "point": "by の後ろは目的格(she->her)"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "Tom must finish this work.",
+      "instruction": "受動態に書き換えなさい。",
+      "answer_text": "This work must be finished by Tom.",
+      "explanation": "助動詞 must を含む受動態は must be + 過去分詞。能動文の目的語 this work を主語にし、must be finished とする。行為者 Tom は特定の人物なので省略できず by Tom で示す。",
+      "point": "助動詞 + be + 過去分詞 + by 行為者"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "My mother gave me this watch.",
+      "instruction": "me を主語にして受動態に書き換えなさい。",
+      "answer_text": "I was given this watch by my mother.",
+      "explanation": "SVOO の受動態。間接目的語 me を主語にすると I was given this watch。主語になるので I になり、行為者 my mother は by で示す。",
+      "point": "SVOO 受動態(人を主語に)"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "My mother gave me this watch.",
+      "instruction": "this watch を主語にして受動態に書き換えなさい。",
+      "answer_text": "This watch was given to me by my mother.",
+      "explanation": "SVOO のもう一通りの受動態。直接目的語 this watch を主語にすると、もう一方の目的語 me の前に to が必要。This watch was given to me by my mother となる。",
+      "point": "物を主語にすると人の前に to"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "They call this flower a sunflower.",
+      "instruction": "受動態に書き換えなさい。",
+      "answer_text": "This flower is called a sunflower.",
+      "explanation": "SVOC の受動態。目的語 this flower を主語にし、補語 a sunflower はそのまま後ろに残す。is called a sunflower。行為者 they は一般の人なので by them は省略する。",
+      "point": "SVOC 受動態は補語をそのまま残す"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "slug": "19_negation-inversion",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"部分否定。複数主語 all of the students に呼応し過去形 passed。"},
+    {"no":2,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It is ... that ... の強調構文。"},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"肯定への同意 so + 倒置 does。"},
+    {"no":4,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定への同意 neither + 倒置 does。"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"no longer = もはや~ない。"},
+    {"no":6,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"do not want。emphatic do の形 do really/very/much は不可、not のみ成立。"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It was ... that ... 強調構文。who/whose/what は不可。"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":true,"multiple_valid_note":"単数動詞 is に呼応するため Neither(0)も Either(1)も文法的に成立(Either of the two answers is correct も可)。Both は are を要求し不可、None は通例 three or more を指すためやや不自然。意味的に最も自然なのは Neither。","grammatical_issue":false,"off_unit":false,"confidence":"medium","note":"Neither が最有力だが Either も単数 is と整合。"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"by no means = 決して~ない の慣用句。"},
+    {"no":10,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"did not enjoy。"},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"not always = 必ずしも~ない の部分否定。"},
+    {"no":12,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定語句 Never 文頭で倒置 have I seen。"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Little 文頭で倒置 did I know。"},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"There is no water。形容詞的否定 no + 名詞。"},
+    {"no":15,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It was ... that ... 強調構文(時の副詞句強調でも that)。"},
+    {"no":16,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Not all = 全員が~わけではない の部分否定。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"He is no longer a child.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":18,"mc_index":-1,"produced_sentence":"Tom likes baseball, and so do I.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"so + 倒置 do I。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"The news was by no means new.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"by no means = 決して~ない。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"She was not glad to hear the news.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":21,"mc_index":-1,"produced_sentence":"I have never seen such a beautiful flower.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"never を文中に置く平叙文(倒置語句は与えられていない)。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"It was this book that changed my life.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It was ... that ... 強調構文。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"It was Mary that made this cake.","multiple_valid":true,"multiple_valid_note":"人を強調するため that の代わりに who も可(It was Mary who made this cake.)。指示は It is ... that ... だが人主語強調では who も標準的に正しい。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It is/was Mary that(who)made this cake."},
+    {"no":24,"mc_index":-1,"produced_sentence":"I do like this song.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"強調の do + 原形。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"He is no longer a child.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"no longer を使い now を削除。"}
+  ]
+}

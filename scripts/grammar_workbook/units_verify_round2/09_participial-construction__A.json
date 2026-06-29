@@ -1,0 +1,31 @@
+{
+  "slug": "09_participial-construction",
+  "persona": "A",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Walking in the park, I met an old friend. Active simultaneous."},
+    {"no":2,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Feeling tired, she went to bed early. Reason."},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Opening the door, he went out."},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"She sat on the sofa, reading a book. Simultaneous."},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Hearing the news, she became very happy."},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Not knowing what to say. Negation precedes participle."},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Praised by everyone. Passive (past participle)."},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Seen from a distance. Passive."},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Having finished the work. Perfect participle."},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Not being tired. Negation precedes being."},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It being sunny. Absolute construction with subject."},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Being ill, he could not attend. Reason."},
+    {"no":13,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Generally speaking. Idiomatic participial phrase."},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Having written the letter. Completion before main clause."},
+    {"no":15,"mc_index":-1,"produced_sentence":"Walking down the street, I found the shop.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":16,"mc_index":-1,"produced_sentence":"Not saying anything, he left the room.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Token 'Not saying anything,' has trailing comma + capital N, so it must be fronted."},
+    {"no":17,"mc_index":-1,"produced_sentence":"Having finished my homework, I watched TV.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":""},
+    {"no":18,"mc_index":-1,"produced_sentence":"Smiling, she looked at me.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Token 'Smiling,' capitalized with comma forces it to the front; 'she' is lowercase."},
+    {"no":19,"mc_index":-1,"produced_sentence":"Written in English, this book is easy to read.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Passive participle fronted."},
+    {"no":20,"mc_index":-1,"produced_sentence":"Seeing the dog, I ran away.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"When I saw -> Seeing."},
+    {"no":21,"mc_index":-1,"produced_sentence":"Being tired, she took a rest.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Because she was -> Being (not omitted as instructed)."},
+    {"no":22,"mc_index":-1,"produced_sentence":"When he saw the police officer, he ran away.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Seeing -> When he saw."},
+    {"no":23,"mc_index":-1,"produced_sentence":"Having eaten lunch, I went out.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"After I had eaten -> Having eaten (perfect participle)."},
+    {"no":24,"mc_index":-1,"produced_sentence":"Not knowing the answer, he stayed silent.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"As he did not know -> Not knowing."},
+    {"no":25,"mc_index":-1,"produced_sentence":"Being written in easy English, the book sold well.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Because it was -> Being written (passive, Being not omitted)."}
+  ]
+}

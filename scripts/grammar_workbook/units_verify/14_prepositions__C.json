@@ -1,0 +1,31 @@
+{
+  "slug": "14_prepositions",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"時刻にはat。at six。"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"曜日にはon。on Sunday。"},
+    {"no":3,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"季節にはin。in winter。"},
+    {"no":4,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"接触面にはon。on the wall。"},
+    {"no":5,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"容器の内部にはin。in her bag。"},
+    {"no":6,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"地点・待ち合わせにはat。at the station。"},
+    {"no":7,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"方向go to school。"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"交通手段はby train(無冠詞)。"},
+    {"no":9,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"道具にはwith。with a knife。"},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"言語にはin。in English。"},
+    {"no":11,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"動作の継続「〜まで(ずっと)」はuntil。waited until two。"},
+    {"no":12,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"完了の期限「〜までに」はby。finish by tomorrow。"},
+    {"no":13,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"期間の長さにはfor。for ten years。"},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"起点にはsince。since last year。"},
+    {"no":15,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"特定の名詞の期間中はduring。during the movie。"},
+    {"no":16,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"理由はbecause of the rain。"},
+    {"no":17,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"位置「〜の前に」はin front of。"},
+    {"no":18,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be good at 〜ing。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"I am afraid of dogs.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be afraid of。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"The result depends on the weather.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"depend on。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"She drank coffee instead of tea.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"instead of tea。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"According to the weather report, it will rain.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"according to 〜。tokenにカンマ含む。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"We walked through the park.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"walk through 〜。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"He could not come because of his sickness.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"because節をbecause of+名詞句に書き換え。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"We arrived in Tokyo on May 5, 2024.","multiple_valid":false,"multiple_valid_note":"日付表記はMay 5/5 May等の差異あり","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"特定の日付にはon。arrived inのinは到着先用法で前置詞単元として混在し得るがon Mayが要点。"}
+  ]
+}

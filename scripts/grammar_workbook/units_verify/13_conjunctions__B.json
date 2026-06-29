@@ -1,0 +1,31 @@
+{
+  "slug": "13_conjunctions",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"対比のbut。"},
+    {"no":2,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"結果のso。"},
+    {"no":3,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"命令文+or「さもないと」。"},
+    {"no":4,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"昼食を食べる前に手を洗え=before。"},
+    {"no":5,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"同時進行のwhile。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"理由のbecause。"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"条件のIf。"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"譲歩のThough(寒かったが上着なしで外出)。"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"私が戻るまで待て=until。"},
+    {"no":10,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"As soon as=～するとすぐに。Because of/In spite ofは節を取れない。"},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"チケットがなければ入れない=unless。"},
+    {"no":12,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"目的のso that(cancould)。"},
+    {"no":13,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"so+形容詞+that構文。"},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"such+a+形容詞+名詞+that構文(soは a の前に置けない)。"},
+    {"no":15,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"whether ... or not。"},
+    {"no":16,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"後ろが名詞句(the heavy rain)なのでbecause of。becauseは節を要する。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"He was so tired that he could not sleep.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"so ... that構文。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"Either you or Tom is wrong.","multiple_valid":true,"multiple_valid_note":"和文「あなたかトムの」に厳密に従えばEither you or Tom is wrong.が最適。トークン上はEither Tom or you are wrong.も文法的に成立する(近接のyouに合わせareも可)が、和文の語順とeither A or Bでは動詞を近い名詞に一致させる規則からこの形を本命とする。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"either A or Bは近い名詞に動詞一致→is。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"He not only speaks English but also writes it.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"not only A but also B。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"Although she is young, she is very smart.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"isが2つあり「Although she is young, she is very smart.」で全トークン消費。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I think that he is honest.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"接続詞thatの名詞節。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"He is such a kind man that everyone likes him.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"such a ... that構文。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"This coffee is so hot that I cannot drink it.","multiple_valid":true,"multiple_valid_note":"so hot that I can't drink it と短縮形も可。また主節否定を保ったまま so hot that I am not able to drink it も同義で成立する。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"too ... to → so ... that ...not。itの補完が必要(drink it)。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"Because he worked hard, he passed the exam.","multiple_valid":true,"multiple_valid_note":"Because he worked hard, ... のほか Because he had worked hard, ... も成立。時制を強調しなければ単純過去が標準。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"前置詞句Because of his hard work→節Because he worked hard。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"He can play not only the piano but also the guitar.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"both A and B → not only A but also B。"}
+  ]
+}

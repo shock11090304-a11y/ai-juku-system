@@ -1,0 +1,83 @@
+{
+  "part": "chem_exam",
+  "group": "発展",
+  "unit_theme": "熱化学(ヘスの法則)",
+  "passage": "都市ガスの主成分であるメタン \\(\\mathrm{CH_4}\\) について、その燃焼や生成にかかわる反応熱を考える。次の3つの熱化学方程式(反応熱の値はすべて25 ℃, \\(1.0\\times10^{5}\\ \\text{Pa}\\) における値)が与えられている。\n(ア) 黒鉛(炭素)の燃焼: \\(\\mathrm{C}(\\text{黒鉛})+\\mathrm{O_2}(\\text{気})=\\mathrm{CO_2}(\\text{気})+394\\ \\text{kJ}\\)\n(イ) 水素の燃焼: \\(\\mathrm{H_2}(\\text{気})+\\tfrac{1}{2}\\mathrm{O_2}(\\text{気})=\\mathrm{H_2O}(\\text{液})+286\\ \\text{kJ}\\)\n(ウ) メタンの燃焼: \\(\\mathrm{CH_4}(\\text{気})+2\\mathrm{O_2}(\\text{気})=\\mathrm{CO_2}(\\text{気})+2\\mathrm{H_2O}(\\text{液})+891\\ \\text{kJ}\\)\nすべての反応熱は発熱を正とする。図やグラフは用いず、上の3式の数値だけで以下の各問いに答えられる。",
+  "subqs": [
+    {
+      "stem": "熱化学方程式 (ア) \\(\\mathrm{C}(\\text{黒鉛})+\\mathrm{O_2}(\\text{気})=\\mathrm{CO_2}(\\text{気})+394\\ \\text{kJ}\\) は、二酸化炭素 \\(\\mathrm{CO_2}\\) の生成熱を表している。黒鉛と酸素はともに単体であることに注意して、\\(\\mathrm{CO_2}(\\text{気})\\) 1 mol の生成熱は何 kJ/mol か。発熱を正として答えよ。",
+      "choices_latex": [
+        "\\(+394\\ \\text{kJ/mol}\\)",
+        "\\(-394\\ \\text{kJ/mol}\\)",
+        "\\(+197\\ \\text{kJ/mol}\\)",
+        "\\(+788\\ \\text{kJ/mol}\\)"
+      ],
+      "choices_value": ["Integer(394)", "Integer(-394)", "Integer(197)", "Integer(788)"],
+      "answer_index": 0,
+      "truth_value": "Integer(394)",
+      "unit": "発展 熱化学(ヘスの法則)(与式の確認・生成熱と符号)",
+      "reason": "生成熱は成分元素の単体から化合物1 molが生じるときの反応熱。(ア)は黒鉛と酸素(ともに単体)からCO2(気)1 molが生成し394 kJを放出するので、生成熱は発熱で +394 kJ/mol。",
+      "restates": "stem内に (ア) C(黒鉛)+O2=CO2(気)+394 kJ を再掲。黒鉛・酸素が単体であることと発熱を正と明記。"
+    },
+    {
+      "stem": "熱化学方程式 (イ) \\(\\mathrm{H_2}(\\text{気})+\\tfrac{1}{2}\\mathrm{O_2}(\\text{気})=\\mathrm{H_2O}(\\text{液})+286\\ \\text{kJ}\\) より、水素 \\(\\mathrm{H_2}\\) を完全に燃焼させて液体の水 \\(\\mathrm{H_2O}(\\text{液})\\) を 2 mol 生成させたとき、放出される熱量は何 kJ か。",
+      "choices_latex": [
+        "\\(286\\ \\text{kJ}\\)",
+        "\\(143\\ \\text{kJ}\\)",
+        "\\(572\\ \\text{kJ}\\)",
+        "\\(858\\ \\text{kJ}\\)"
+      ],
+      "choices_value": ["Integer(286)", "Integer(143)", "Integer(572)", "Integer(858)"],
+      "answer_index": 2,
+      "truth_value": "Integer(572)",
+      "unit": "発展 熱化学(ヘスの法則)(2式の組合せ・量論比のスケール)",
+      "reason": "(イ)はH2O(液)1 mol生成で286 kJ放出。2 mol生成では反応熱も2倍になり 286×2=572 kJ。",
+      "restates": "stem内に (イ) H2+1/2 O2=H2O(液)+286 kJ を再掲。"
+    },
+    {
+      "stem": "次の3式が与えられている: (ア) \\(\\mathrm{C}(\\text{黒鉛})+\\mathrm{O_2}=\\mathrm{CO_2}(\\text{気})+394\\ \\text{kJ}\\)、(イ) \\(\\mathrm{H_2}+\\tfrac{1}{2}\\mathrm{O_2}=\\mathrm{H_2O}(\\text{液})+286\\ \\text{kJ}\\)、(ウ) \\(\\mathrm{CH_4}(\\text{気})+2\\mathrm{O_2}=\\mathrm{CO_2}(\\text{気})+2\\mathrm{H_2O}(\\text{液})+891\\ \\text{kJ}\\)。ヘスの法則を用いて、メタンの生成反応 \\(\\mathrm{C}(\\text{黒鉛})+2\\mathrm{H_2}(\\text{気})=\\mathrm{CH_4}(\\text{気})+Q\\ \\text{kJ}\\) の反応熱 \\(Q\\)(メタンの生成熱)を、発熱を正として求めよ。生成熱は \\(Q=(\\text{ア})+2\\times(\\text{イ})-(\\text{ウ})\\) で計算できる。",
+      "choices_latex": [
+        "\\(-75\\ \\text{kJ}\\)",
+        "\\(+75\\ \\text{kJ}\\)",
+        "\\(-211\\ \\text{kJ}\\)",
+        "\\(+1857\\ \\text{kJ}\\)"
+      ],
+      "choices_value": ["Integer(-75)", "Integer(75)", "Integer(-211)", "Integer(1857)"],
+      "answer_index": 1,
+      "truth_value": "Integer(75)",
+      "unit": "発展 熱化学(ヘスの法則)(ヘスの法則で目的の反応熱)",
+      "reason": "ヘスの法則より Q=(ア)+2×(イ)-(ウ)=394+2×286-891=394+572-891=+75 kJ。メタンの生成熱は発熱で +75 kJ/mol。",
+      "restates": "stem内に (ア)394, (イ)286, (ウ)891 の3式と計算式 Q=(ア)+2(イ)-(ウ)、発熱を正を再掲。"
+    },
+    {
+      "stem": "前問より、メタンの生成反応 \\(\\mathrm{C}(\\text{黒鉛})+2\\mathrm{H_2}(\\text{気})=\\mathrm{CH_4}(\\text{気})+Q\\ \\text{kJ}\\) の反応熱(メタンの生成熱)は \\(Q=+75\\ \\text{kJ}\\)(発熱)であった。このとき、その逆反応であるメタンの分解反応 \\(\\mathrm{CH_4}(\\text{気})=\\mathrm{C}(\\text{黒鉛})+2\\mathrm{H_2}(\\text{気})+Q'\\ \\text{kJ}\\) の反応熱 \\(Q'\\) は何 kJ か。発熱を正(吸熱を負)として答えよ。逆反応の反応熱は正反応の反応熱と符号が逆になる。",
+      "choices_latex": [
+        "\\(+75\\ \\text{kJ}\\)",
+        "\\(-150\\ \\text{kJ}\\)",
+        "\\(+891\\ \\text{kJ}\\)",
+        "\\(-75\\ \\text{kJ}\\)"
+      ],
+      "choices_value": ["Integer(75)", "Integer(-150)", "Integer(891)", "Integer(-75)"],
+      "answer_index": 3,
+      "truth_value": "Integer(-75)",
+      "unit": "発展 熱化学(ヘスの法則)(逆反応の反応熱と符号)",
+      "reason": "正反応(生成)が +75 kJ の発熱なら、その逆反応(分解)は同じ大きさで吸熱になる。発熱を正とする符号則では Q'=-(+75)=-75 kJ(75 kJの吸熱)。",
+      "restates": "stem内に 前問のメタン生成熱 Q=+75 kJ(発熱)と、逆反応では符号が逆になる規則、発熱を正を再掲。"
+    },
+    {
+      "stem": "メタンの燃焼を表す熱化学方程式 \\(\\mathrm{CH_4}(\\text{気})+2\\mathrm{O_2}(\\text{気})=\\mathrm{CO_2}(\\text{気})+2\\mathrm{H_2O}(\\text{液})+891\\ \\text{kJ}\\) より、メタンの燃焼熱は 891 kJ/mol である。メタンを完全に燃焼させて 4455 kJ の熱を得るには、メタンを何 mol 燃焼させればよいか。",
+      "choices_latex": [
+        "\\(5\\ \\text{mol}\\)",
+        "\\(10\\ \\text{mol}\\)",
+        "\\(2.5\\ \\text{mol}\\)",
+        "\\(4\\ \\text{mol}\\)"
+      ],
+      "choices_value": ["Integer(5)", "Integer(10)", "Rational(5,2)", "Integer(4)"],
+      "answer_index": 0,
+      "truth_value": "Integer(5)",
+      "unit": "発展 熱化学(ヘスの法則)(燃焼熱の応用)",
+      "reason": "メタンの燃焼熱は 891 kJ/mol。必要なメタンの物質量は (得たい熱量)/(燃焼熱)=4455/891=5 mol。",
+      "restates": "stem内に メタンの燃焼熱 891 kJ/mol(ウの式)を再掲。"
+    }
+  ]
+}

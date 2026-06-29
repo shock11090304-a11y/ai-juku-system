@@ -1,0 +1,58 @@
+{
+  "part": "chem_exam",
+  "group": "発展",
+  "unit_theme": "溶液の濃度",
+  "passage": "ある生徒が水酸化ナトリウム NaOH と希硫酸 H2SO4 を用いて、溶液を順に調製・希釈し、最後に中和に用いる一連の実験を行った。実験はすべて25℃で行い、溶液の体積は希釈・混合の前後で各体積の単純な和になるものとする。原子量は H=1.0、O=16、Na=23、S=32 とし、NaOH の式量は 40、H2SO4 の分子量は 98 とする。各設問は前の設問の結果を引き継ぐが、その設問文中に与えた数値だけで解けるよう必要な値を再掲してある。図は不要で、文中の数値のみで計算できる。",
+  "subqs": [
+    {
+      "stem": "\\(\\text{NaOH}\\)(式量 \\(40\\))の固体 \\(8.0\\ \\text{g}\\) を正確にはかりとった。この \\(\\text{NaOH}\\) の物質量は何 \\(\\text{mol}\\) か。",
+      "choices_latex": ["\\(0.20\\ \\text{mol}\\)", "\\(5.0\\ \\text{mol}\\)", "\\(8.0\\ \\text{mol}\\)", "\\(0.10\\ \\text{mol}\\)"],
+      "choices_value": ["Rational(1,5)", "Integer(5)", "Integer(8)", "Rational(1,10)"],
+      "answer_index": 0,
+      "truth_value": "Rational(1,5)",
+      "unit": "発展 溶液の濃度(物質量の計算)",
+      "reason": "物質量 = 質量 ÷ 式量 = \\(8.0/40 = 0.20\\ \\text{mol}\\)。",
+      "restates": "stem に NaOH の式量 40 と質量 8.0 g を明記(連鎖の起点で前問依存なし)。"
+    },
+    {
+      "stem": "前問ではかりとった \\(\\text{NaOH}\\) は \\(0.20\\ \\text{mol}\\) であった。これをすべて水に溶かし、\\(500\\ \\text{mL}\\) のメスフラスコで正確に \\(500\\ \\text{mL}\\) にした。この水溶液のモル濃度は何 \\(\\text{mol/L}\\) か。",
+      "choices_latex": ["\\(0.20\\ \\text{mol/L}\\)", "\\(0.40\\ \\text{mol/L}\\)", "\\(0.80\\ \\text{mol/L}\\)", "\\(0.040\\ \\text{mol/L}\\)"],
+      "choices_value": ["Rational(1,5)", "Rational(2,5)", "Rational(4,5)", "Rational(1,25)"],
+      "answer_index": 1,
+      "truth_value": "Rational(2,5)",
+      "unit": "発展 溶液の濃度(モル濃度の定義)",
+      "reason": "モル濃度 = 物質量 ÷ 体積[L] = \\(0.20/0.500 = 0.40\\ \\text{mol/L}\\)。",
+      "restates": "前問の溶質量 0.20 mol を stem に再掲し、溶液体積 500 mL(=0.500 L)も明記。"
+    },
+    {
+      "stem": "前問で得た \\(0.40\\ \\text{mol/L}\\) の \\(\\text{NaOH}\\) 水溶液を \\(100\\ \\text{mL}\\) はかりとり、水を加えて全体を \\(400\\ \\text{mL}\\) にした。希釈後の \\(\\text{NaOH}\\) 水溶液のモル濃度は何 \\(\\text{mol/L}\\) か。",
+      "choices_latex": ["\\(0.40\\ \\text{mol/L}\\)", "\\(1.6\\ \\text{mol/L}\\)", "\\(0.10\\ \\text{mol/L}\\)", "\\(0.050\\ \\text{mol/L}\\)"],
+      "choices_value": ["Rational(2,5)", "Rational(8,5)", "Rational(1,10)", "Rational(1,20)"],
+      "answer_index": 2,
+      "truth_value": "Rational(1,10)",
+      "unit": "発展 溶液の濃度(希釈)",
+      "reason": "希釈では溶質量が一定。\\(0.40\\times100 = c\\times400\\) より \\(c = 0.40\\times\\dfrac{100}{400} = 0.10\\ \\text{mol/L}\\)。",
+      "restates": "前問の濃度 0.40 mol/L を分取元として再掲し、分取量 100 mL・希釈後体積 400 mL も明記。"
+    },
+    {
+      "stem": "次に、上で得た \\(0.10\\ \\text{mol/L}\\) の \\(\\text{NaOH}\\) 水溶液を中和するための希硫酸を調製する。試薬びんの希硫酸 \\(\\text{H}_2\\text{SO}_4\\)(分子量 \\(98\\))は、密度 \\(1.40\\ \\text{g/cm}^3\\)、質量パーセント濃度 \\(35\\%\\) であった。この希硫酸のモル濃度は何 \\(\\text{mol/L}\\) か。",
+      "choices_latex": ["\\(0.50\\ \\text{mol/L}\\)", "\\(3.5\\ \\text{mol/L}\\)", "\\(7.0\\ \\text{mol/L}\\)", "\\(5.0\\ \\text{mol/L}\\)"],
+      "choices_value": ["Rational(1,2)", "Rational(7,2)", "Integer(7)", "Integer(5)"],
+      "answer_index": 3,
+      "truth_value": "Integer(5)",
+      "unit": "発展 溶液の濃度(質量パーセント⇄モル濃度)",
+      "reason": "溶液 \\(1\\ \\text{L}=1000\\ \\text{cm}^3\\) の質量は \\(1000\\times1.40=1400\\ \\text{g}\\)。溶質は \\(1400\\times0.35=490\\ \\text{g}\\)、物質量は \\(490/98=5.0\\ \\text{mol}\\)。よって \\(5.0\\ \\text{mol/L}\\)。",
+      "restates": "前問の 0.10 mol/L NaOH を中和する試薬として位置づけ、分子量 98・密度 1.40 g/cm³・質量パーセント濃度 35% を stem に明記。"
+    },
+    {
+      "stem": "前問で調製した \\(5.0\\ \\text{mol/L}\\) の希硫酸 \\(\\text{H}_2\\text{SO}_4\\) を用いて、\\(0.10\\ \\text{mol/L}\\) の \\(\\text{NaOH}\\) 水溶液 \\(200\\ \\text{mL}\\) をちょうど中和する。\\(\\text{H}_2\\text{SO}_4\\) は2価の酸で、中和は \\(\\text{H}_2\\text{SO}_4 + 2\\,\\text{NaOH} \\rightarrow \\text{Na}_2\\text{SO}_4 + 2\\,\\text{H}_2\\text{O}\\) で進む。必要な \\(5.0\\ \\text{mol/L}\\) 希硫酸の体積は何 \\(\\text{mL}\\) か。",
+      "choices_latex": ["\\(2\\ \\text{mL}\\)", "\\(4\\ \\text{mL}\\)", "\\(1\\ \\text{mL}\\)", "\\(20\\ \\text{mL}\\)"],
+      "choices_value": ["Integer(2)", "Integer(4)", "Integer(1)", "Integer(20)"],
+      "answer_index": 0,
+      "truth_value": "Integer(2)",
+      "unit": "発展 溶液の濃度(中和に必要な体積)",
+      "reason": "NaOH の物質量 = \\(0.10\\times0.200 = 0.020\\ \\text{mol}\\)。\\(\\text{H}_2\\text{SO}_4\\) は2価なので必要量は \\(0.020\\div2 = 0.010\\ \\text{mol}\\)。体積 = \\(0.010\\div5.0 = 0.0020\\ \\text{L} = 2\\ \\text{mL}\\)。",
+      "restates": "前問の希硫酸濃度 5.0 mol/L と、希釈で得た NaOH 濃度 0.10 mol/L・体積 200 mL を再掲し、H2SO4 が2価であること(係数2)も化学反応式で明示。"
+    }
+  ]
+}

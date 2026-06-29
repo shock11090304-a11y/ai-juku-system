@@ -1,0 +1,31 @@
+{
+  "slug": "05_passive",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"was written: past passive with yesterday."},
+    {"no":2,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"are made: plural subject passive."},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"by marks the agent."},
+    {"no":4,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"is spoken: English is spoken worldwide."},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"is: singular subject, present, every day."},
+    {"no":6,"mc_index":1,"produced_sentence":"","multiple_valid":true,"multiple_valid_note":"should/can/will all yield grammatical modal-passive 'X be read'. Only 'is' is wrong (is be read). The three modals are interchangeable here.","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Modal + be + past participle. can/should/will all valid; is is the only impossible choice."},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"being: present progressive passive (is being built)."},
+    {"no":8,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"been: present perfect passive (has been finished)."},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be interested in: fixed collocation."},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be covered with: fixed collocation."},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be known to: known to everyone."},
+    {"no":12,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"take care of -> passive keeps of: was taken care of by."},
+    {"no":13,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"by: agent of the giving."},
+    {"no":14,"mc_index":-1,"produced_sentence":"This room is cleaned every weekend.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Present passive."},
+    {"no":15,"mc_index":-1,"produced_sentence":"The window was broken by Tom.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Past passive with agent."},
+    {"no":16,"mc_index":-1,"produced_sentence":"This song is loved by many people.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Present passive with agent."},
+    {"no":17,"mc_index":-1,"produced_sentence":"The letter was written in English.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Past passive, in English."},
+    {"no":18,"mc_index":-1,"produced_sentence":"The desk must be moved by him.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Modal passive: must be moved by him."},
+    {"no":19,"mc_index":-1,"produced_sentence":"The room was cleaned by Tom.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Past passive conversion."},
+    {"no":20,"mc_index":-1,"produced_sentence":"This computer is used by many students.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Present passive conversion."},
+    {"no":21,"mc_index":-1,"produced_sentence":"This report was written by her.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Past passive; she -> by her."},
+    {"no":22,"mc_index":-1,"produced_sentence":"The work must be finished today.","multiple_valid":true,"multiple_valid_note":"'by us' may be appended ('The work must be finished by us today.') but with the vague agent 'we' it is normally omitted; both accepted.","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Modal passive; agent by us commonly dropped."},
+    {"no":23,"mc_index":-1,"produced_sentence":"I was given this watch by my mother.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Indirect object as subject: I was given..."},
+    {"no":24,"mc_index":-1,"produced_sentence":"This watch was given to me by my mother.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Direct object as subject: keeps to me."},
+    {"no":25,"mc_index":-1,"produced_sentence":"This flower is called a sunflower.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC passive: object complement stays."}
+  ]
+}

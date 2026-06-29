@@ -1,0 +1,391 @@
+{
+  "unit": "前置詞",
+  "unit_slug": "prepositions",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I get up ( ) six every morning.",
+      "choices": [
+        "on",
+        "at",
+        "in",
+        "to"
+      ],
+      "answer_index": 1,
+      "answer_text": "at",
+      "explanation": "時刻には at を使う。six は時刻なので at six となる。日付には on、月や年には in を使う。",
+      "point": "時刻には at"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "We have a party ( ) Sunday.",
+      "choices": [
+        "at",
+        "on",
+        "in",
+        "for"
+      ],
+      "answer_index": 1,
+      "answer_text": "on",
+      "explanation": "曜日や日付には on を使う。Sunday は曜日なので on Sunday となる。時刻の at と混同しないこと。",
+      "point": "曜日や日付には on"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "It is very cold ( ) winter in this country.",
+      "choices": [
+        "at",
+        "in",
+        "on",
+        "by"
+      ],
+      "answer_index": 1,
+      "answer_text": "in",
+      "explanation": "季節や月、年には in を使う。winter は季節なので in winter となる。曜日の on と区別する。",
+      "point": "季節や月や年には in"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "There is a clock ( ) the wall.",
+      "choices": [
+        "in",
+        "at",
+        "to",
+        "on"
+      ],
+      "answer_index": 3,
+      "answer_text": "on",
+      "explanation": "壁などの面に接している場合は on を使う。on the wall で「壁に(掛かって)」を表す。中に入っているなら in を使う。",
+      "point": "面に接していれば on"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She put the keys ( ) her bag.",
+      "choices": [
+        "on",
+        "at",
+        "in",
+        "for"
+      ],
+      "answer_index": 2,
+      "answer_text": "in",
+      "explanation": "かばんの中など空間の内部には in を使う。in her bag で「かばんの中に」を表す。面に接する on とは区別する。",
+      "point": "内部には in"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Let's meet ( ) the station at noon.",
+      "choices": [
+        "in",
+        "on",
+        "at",
+        "into"
+      ],
+      "answer_index": 2,
+      "answer_text": "at",
+      "explanation": "待ち合わせ場所など一点として捉える場所には at を使う。at the station で「駅で」を表す。",
+      "point": "地点としての場所は at"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I go ( ) school by bus.",
+      "choices": [
+        "at",
+        "for",
+        "to",
+        "in"
+      ],
+      "answer_index": 2,
+      "answer_text": "to",
+      "explanation": "到達点を示す方向には to を使う。go to school で「学校へ行く」を表す。",
+      "point": "到達点への方向は to"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "basic",
+      "stem": "He went to Osaka ( ) train.",
+      "choices": [
+        "on",
+        "by",
+        "with",
+        "in"
+      ],
+      "answer_index": 1,
+      "answer_text": "by",
+      "explanation": "交通手段には by を使う。by train で「電車で」を表す。この場合 train に冠詞は付けない。",
+      "point": "交通手段には by"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She cut the apple ( ) a knife.",
+      "choices": [
+        "by",
+        "in",
+        "on",
+        "with"
+      ],
+      "answer_index": 3,
+      "answer_text": "with",
+      "explanation": "道具を使うときは with を使う。with a knife で「ナイフで」を表す。交通手段の by とは区別する。",
+      "point": "道具には with"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Please write your name ( ) English.",
+      "choices": [
+        "by",
+        "in",
+        "with",
+        "on"
+      ],
+      "answer_index": 1,
+      "answer_text": "in",
+      "explanation": "言語を表すときは in を使う。in English で「英語で」を表す。道具の with とは区別する。",
+      "point": "言語には in"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I waited for him ( ) two o'clock.",
+      "choices": [
+        "by",
+        "for",
+        "until",
+        "in"
+      ],
+      "answer_index": 2,
+      "answer_text": "until",
+      "explanation": "ある時点まで動作が続くときは until(till) を使う。「2時までずっと待った」という継続を表す。期限の by とは区別する。",
+      "point": "継続の終わりは until"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "basic",
+      "stem": "You must finish your homework ( ) tomorrow.",
+      "choices": [
+        "until",
+        "by",
+        "for",
+        "in"
+      ],
+      "answer_index": 1,
+      "answer_text": "by",
+      "explanation": "期限を表すときは by を使う。「明日までに(終わらせる)」という締め切りを表す。継続の until とは区別する。",
+      "point": "期限には by"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I have lived here ( ) ten years.",
+      "choices": [
+        "since",
+        "during",
+        "for",
+        "by"
+      ],
+      "answer_index": 2,
+      "answer_text": "for",
+      "explanation": "期間の長さには for を使う。for ten years で「10年間」を表す。起点を示す since とは区別する。",
+      "point": "期間の長さには for"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I have known her ( ) last year.",
+      "choices": [
+        "for",
+        "since",
+        "during",
+        "until"
+      ],
+      "answer_index": 1,
+      "answer_text": "since",
+      "explanation": "起点となる時を示すときは since を使う。since last year で「去年から(ずっと)」を表す。期間の長さを表す for とは区別する。",
+      "point": "起点には since"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He fell asleep ( ) the movie.",
+      "choices": [
+        "for",
+        "since",
+        "during",
+        "by"
+      ],
+      "answer_index": 2,
+      "answer_text": "during",
+      "explanation": "during の後ろには特定の期間を表す名詞が来る。during the movie で「映画の間に」を表す。後ろに数字の期間が来る for とは区別する。",
+      "point": "特定の名詞の期間は during"
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "level": "standard",
+      "stem": "We could not play soccer ( ) the rain.",
+      "choices": [
+        "because of",
+        "instead of",
+        "in front of",
+        "according to"
+      ],
+      "answer_index": 0,
+      "answer_text": "because of",
+      "explanation": "理由や原因を表す群前置詞は because of。「雨のために」を表す。後ろには名詞が来る。",
+      "point": "理由を表す because of"
+    },
+    {
+      "no": 17,
+      "type": "mc",
+      "level": "standard",
+      "stem": "There is a big tree ( ) the house.",
+      "choices": [
+        "because of",
+        "instead of",
+        "in front of",
+        "thanks to"
+      ],
+      "answer_index": 2,
+      "answer_text": "in front of",
+      "explanation": "in front of は「~の前に」という位置を表す群前置詞。「家の前に」を表す。",
+      "point": "位置を表す in front of"
+    },
+    {
+      "no": 18,
+      "type": "mc",
+      "level": "standard",
+      "stem": "She is good ( ) playing the piano.",
+      "choices": [
+        "at",
+        "of",
+        "with",
+        "to"
+      ],
+      "answer_index": 0,
+      "answer_text": "at",
+      "explanation": "be good at ~ で「~が得意だ」を表す決まった表現。後ろに動名詞が来るときも at を使う。",
+      "point": "be good at で得意"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "私は犬を怖がっている。",
+      "tokens": [
+        "of",
+        "I",
+        "afraid",
+        "dogs",
+        "am"
+      ],
+      "answer_text": "I am afraid of dogs.",
+      "explanation": "be afraid of ~ で「~を怖がる」を表す。afraid の後ろは of を使い、その後ろに名詞を置く。",
+      "point": "be afraid of で怖がる"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "その結果は天気しだいだ。",
+      "tokens": [
+        "the weather",
+        "depends",
+        "The result",
+        "on"
+      ],
+      "answer_text": "The result depends on the weather.",
+      "explanation": "depend on ~ で「~しだいである、~に頼る」を表す。depend の後ろは on を使う。",
+      "point": "depend on でしだい"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼女は紅茶のかわりにコーヒーを飲んだ。",
+      "tokens": [
+        "coffee",
+        "She",
+        "tea",
+        "drank",
+        "instead of"
+      ],
+      "answer_text": "She drank coffee instead of tea.",
+      "explanation": "instead of ~ で「~のかわりに」を表す群前置詞。drank coffee instead of tea の語順になる。",
+      "point": "instead of でかわりに"
+    },
+    {
+      "no": 22,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "天気予報によると雨が降るだろう。",
+      "tokens": [
+        "According to",
+        "the weather report,",
+        "it will",
+        "rain"
+      ],
+      "answer_text": "According to the weather report, it will rain.",
+      "explanation": "according to ~ で「~によると」を表す群前置詞。文頭に置き、後ろには情報源を表す名詞(the weather report)を続け、コンマの後に主節 it will rain を置く。according to の後ろに文(主語+動詞)は続けられない。",
+      "point": "according to でによると"
+    },
+    {
+      "no": 23,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私たちは公園を通り抜けて歩いた。",
+      "tokens": [
+        "the park",
+        "through",
+        "We",
+        "walked"
+      ],
+      "answer_text": "We walked through the park.",
+      "explanation": "through ~ で「~を通り抜けて」を表す。空間を端から端へ通り抜けるイメージで使う。",
+      "point": "through で通り抜けて"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "He could not come because he was sick.",
+      "instruction": "because of を使って、ほぼ同じ意味の文に書き換えなさい(his sickness を使う)。",
+      "answer_text": "He could not come because of his sickness.",
+      "explanation": "接続詞 because の後ろは文(主語+動詞)だが、群前置詞 because of の後ろは名詞が来る。was sick を名詞 his sickness にかえる。",
+      "point": "because + 文 = because of + 名詞"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "We arrived in Tokyo in 2024.",
+      "instruction": "年だけの「in 2024」を完全な日付「2024年5月5日」に変え、日付の前置詞を正しく使った文に書き換えなさい。",
+      "answer_text": "We arrived in Tokyo on May 5, 2024.",
+      "explanation": "年だけのときは in 2024 だが、月日まで含む特定の日付には on を使う。月日に年を添えるときは on May 5, 2024 のように年をカンマで併記し、前置詞は on 一つにする。on May 5 in 2024 のように年に別の in を付けるのは誤り。",
+      "point": "年は in、特定の日付は on(on May 5, 2024)"
+    }
+  ]
+}

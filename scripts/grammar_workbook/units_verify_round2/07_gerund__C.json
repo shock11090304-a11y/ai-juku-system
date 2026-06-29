@@ -1,0 +1,31 @@
+{
+  "slug": "07_gerund",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"enjoy + V-ing"},
+    {"no":2,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"finish + V-ing"},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"gerund as subject"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"for + V-ing (preposition)"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"mind + V-ing"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be good at + V-ing"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"gerund as complement after be"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"give up + V-ing"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"avoid + V-ing"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"stop to V = paused in order to drink (purpose). Answer is to-inf; this tests the stop+to-inf vs stop+V-ing contrast."},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"stop + V-ing = quit doing"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"remember to do (future action). Answer is to-inf; tests the remember contrast."},
+    {"no":13,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"remember V-ing (past memory), last year confirms"},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"look forward to + V-ing (to = preposition)"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be used to + V-ing (to = preposition)"},
+    {"no":16,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It is no use + V-ing"},
+    {"no":17,"mc_index":-1,"produced_sentence":"She likes watching TV.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"likes + watching (gerund object)"},
+    {"no":18,"mc_index":-1,"produced_sentence":"Reading books is important.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"gerund subject takes singular is"},
+    {"no":19,"mc_index":-1,"produced_sentence":"He left the room without saying anything.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"without + V-ing"},
+    {"no":20,"mc_index":-1,"produced_sentence":"I am bad at getting up early.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be bad at + V-ing; tokens: I am bad at getting up early"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I am looking forward to working with you.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"look forward to + V-ing"},
+    {"no":22,"mc_index":-1,"produced_sentence":"I like cooking for my family.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"like to cook -> like cooking"},
+    {"no":23,"mc_index":-1,"produced_sentence":"Learning a foreign language is not easy.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"To learn -> Learning (gerund subject; is unchanged)"},
+    {"no":24,"mc_index":-1,"produced_sentence":"She is proud of being a nurse.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be proud that S is -> be proud of being"},
+    {"no":25,"mc_index":-1,"produced_sentence":"We could not but laugh at his joke.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"medium","note":"cannot help V-ing = cannot but + bare infinitive. The instructed could-not-but form yields bare inf 'laugh', not a gerund, so this rewrite arguably tests an idiom rather than the gerund itself (borderline off-unit, but it is the intended answer)."}
+  ]
+}

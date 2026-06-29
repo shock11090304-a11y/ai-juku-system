@@ -1,0 +1,393 @@
+{
+  "unit": "否定・倒置・強調・省略",
+  "unit_slug": "negation-inversion",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Not all of the students ( ) the exam last week.",
+      "choices": [
+        "passed",
+        "pass",
+        "passes",
+        "passing"
+      ],
+      "answer_index": 0,
+      "answer_text": "passed",
+      "explanation": "Not all で「すべてが~とは限らない」という部分否定。文末の last week が過去を示すので、動詞は過去形 passed が正解。pass や passes は現在形で last week と合わず不可、passing は助動詞がなく述語動詞にならないため不可。",
+      "point": "not all は部分否定(全部ではない)。last week があるので過去形 passed"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) was this book that changed my life.",
+      "choices": [
+        "It",
+        "That",
+        "There",
+        "This"
+      ],
+      "answer_index": 0,
+      "answer_text": "It",
+      "explanation": "It is ... that ... の強調構文。「私の人生を変えたのはまさにこの本だった」と this book を強調している。文頭は It。",
+      "point": "強調構文は It is ... that ..."
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I like coffee, and ( ) does my brother.",
+      "choices": [
+        "so",
+        "neither",
+        "too",
+        "also"
+      ],
+      "answer_index": 0,
+      "answer_text": "so",
+      "explanation": "肯定文を受けて「~もそうだ」と言うときは So + 助動詞 + 主語。前が like なので So does my brother となる。",
+      "point": "So do I は「私もそうだ」"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I don't like natto, and ( ) does my sister.",
+      "choices": [
+        "so",
+        "neither",
+        "either",
+        "too"
+      ],
+      "answer_index": 1,
+      "answer_text": "neither",
+      "explanation": "否定文を受けて「~もそうでない」は Neither + 助動詞 + 主語。「妹もそうではない」となり neither を選ぶ。",
+      "point": "Neither do I は「私もそうでない」"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "He is ( ) longer a child.",
+      "choices": [
+        "no",
+        "not",
+        "never",
+        "none"
+      ],
+      "answer_index": 0,
+      "answer_text": "no",
+      "explanation": "no longer で「もはや~ない」を表す。「彼はもう子どもではない」。not longer とは言わない。",
+      "point": "no longer は「もはや~ない」"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I do ( ) want to go there.",
+      "choices": [
+        "really",
+        "very",
+        "not",
+        "much"
+      ],
+      "answer_index": 2,
+      "answer_text": "not",
+      "explanation": "do not で「行きたくない」と否定する。動詞 want を否定する do not の not を選ぶ。",
+      "point": "do not + 動詞の原形で否定"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "basic",
+      "stem": "It was a letter ( ) she wrote to me.",
+      "choices": [
+        "that",
+        "what",
+        "who",
+        "whose"
+      ],
+      "answer_index": 0,
+      "answer_text": "that",
+      "explanation": "It is ... that ... の強調構文。「彼女が私に書いたのは手紙だった」と a letter(目的語)を強調している。強調構文では that を使う。",
+      "point": "強調構文で目的語を強調"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) of the two answers is correct; both are wrong.",
+      "choices": [
+        "Neither",
+        "Either",
+        "Both",
+        "Each"
+      ],
+      "answer_index": 0,
+      "answer_text": "Neither",
+      "explanation": "two answers(2つ)について「どちらも~ない」は Neither で表し、単数動詞 is に呼応する。後半の both are wrong(2つとも間違い)と整合するのは Neither だけ。Either(どちらか一方は正しい)は both are wrong と矛盾し不可、Both は複数動詞 are を要するため is と合わず不可、Each(それぞれ正しい)も「どちらも正しい」の意味で both are wrong と矛盾するため不可。",
+      "point": "2つで「どちらも~ない」は Neither(単数動詞で受ける)"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The movie was ( ) means boring.",
+      "choices": [
+        "by no",
+        "by any",
+        "in no",
+        "at no"
+      ],
+      "answer_index": 0,
+      "answer_text": "by no",
+      "explanation": "by no means で「決して~ない」という強い否定。「その映画は決して退屈ではなかった」となる。",
+      "point": "by no means は「決して~ない」"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I did ( ) enjoy the trip.",
+      "choices": [
+        "enjoy",
+        "really",
+        "do",
+        "not"
+      ],
+      "answer_index": 3,
+      "answer_text": "not",
+      "explanation": "did not enjoy で「楽しまなかった」と過去の否定。空所には not が入る。",
+      "point": "did not + 原形で過去の否定"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "She is not ( ) right.",
+      "choices": [
+        "always",
+        "never",
+        "no",
+        "none"
+      ],
+      "answer_index": 0,
+      "answer_text": "always",
+      "explanation": "not always で「いつも~とは限らない」という部分否定。「彼女がいつも正しいわけではない」となる。",
+      "point": "not always は部分否定"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Never ( ) such a beautiful sunset.",
+      "choices": [
+        "I have seen",
+        "have I seen",
+        "I saw",
+        "saw I"
+      ],
+      "answer_index": 1,
+      "answer_text": "have I seen",
+      "explanation": "否定語 Never を文頭に置くと、後ろは疑問文と同じ語順(倒置)になる。have I seen が正しい。",
+      "point": "否定語が文頭で倒置(疑問文の語順)"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Little ( ) know that he was lying.",
+      "choices": [
+        "I did",
+        "did I",
+        "I have",
+        "have I"
+      ],
+      "answer_index": 1,
+      "answer_text": "did I",
+      "explanation": "Little を文頭に出すと倒置が起こり did I know の語順になる。「彼がうそをついているとはほとんど気づかなかった」。",
+      "point": "Little did I know で倒置"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "There is ( ) water in the bottle.",
+      "choices": [
+        "no",
+        "not",
+        "never",
+        "none"
+      ],
+      "answer_index": 0,
+      "answer_text": "no",
+      "explanation": "名詞 water の前で「~がない」と言うときは no を使う。「ボトルに水が全くない」。not は動詞などを否定する。",
+      "point": "名詞の前の「ない」は no"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "It was in 2020 ( ) we first met.",
+      "choices": [
+        "where",
+        "that",
+        "which",
+        "what"
+      ],
+      "answer_index": 1,
+      "answer_text": "that",
+      "explanation": "It is ... that ... の強調構文。強調する語句が in 2020 のような時を表す副詞句でも、強調構文ではつねに that を使う。「私たちが初めて会ったのは2020年だった」。where は場所を表す語句にしか使えず時の副詞句には不可、which は強調構文では使わず後ろに先行詞となる名詞も無いため不可、what は関係詞 what が導く節が名詞として働くがここでは It was ... の枠に入れる名詞節を作れず不可。したがって that のみが成立する。",
+      "point": "強調構文は副詞句でも that(where/which/what は不可)"
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Not ( ) of us can speak English.",
+      "choices": [
+        "all",
+        "none",
+        "never",
+        "no"
+      ],
+      "answer_index": 0,
+      "answer_text": "all",
+      "explanation": "Not all of us で「私たち全員が~できるわけではない」という部分否定。「私たち全員が英語を話せるわけではない」。",
+      "point": "not all of ~ は部分否定"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼はもはや子どもではない。",
+      "tokens": [
+        "a",
+        "longer",
+        "is",
+        "no",
+        "he",
+        "child"
+      ],
+      "answer_text": "He is no longer a child.",
+      "explanation": "no longer で「もはや~ない」。be 動詞のあとに no longer を置き、その後に a child を続ける。",
+      "point": "no longer は「もはや~ない」"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "トムは野球が好きで、私もそうだ。",
+      "tokens": [
+        "likes",
+        "Tom",
+        "do",
+        "baseball",
+        "so",
+        "and",
+        "I"
+      ],
+      "answer_text": "Tom likes baseball, and so do I.",
+      "explanation": "肯定文を受けて「私もそうだ」は So + 助動詞 + 主語の語順。一般動詞 likes を受けるので do を使い so do I となる。",
+      "point": "So + 助動詞 + 主語で「私もそうだ」"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "そのニュースは決して新しくなかった。",
+      "tokens": [
+        "was",
+        "no",
+        "new",
+        "by",
+        "means",
+        "the news"
+      ],
+      "answer_text": "The news was by no means new.",
+      "explanation": "by no means で「決して~ない」という強い否定。be 動詞のあとに by no means を置き、形容詞 new を続ける。",
+      "point": "by no means は「決して~ない」"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "すべての生徒がその試験に合格したわけではない。",
+      "tokens": [
+        "Not all",
+        "passed",
+        "the students",
+        "the exam"
+      ],
+      "answer_text": "Not all the students passed the exam.",
+      "explanation": "not all は「すべてが~なわけではない」という部分否定。Not all the students passed = 全員が合格したわけではない(一部は不合格)。Not all を文頭に置く。",
+      "point": "not all は部分否定「全部が~とは限らない」"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私はそんなに美しい花を一度も見たことがない。",
+      "tokens": [
+        "have",
+        "Never",
+        "I",
+        "such",
+        "seen",
+        "a beautiful flower"
+      ],
+      "answer_text": "Never have I seen such a beautiful flower.",
+      "explanation": "否定語 Never を文頭に置くと倒置が起こり、後ろは疑問文と同じ have I seen の語順になる。文頭の大文字 Never が倒置を要求するため『そんなに美しい花を一度も見たことがない』はこの語順のみで成立する。",
+      "point": "否定語(Never)が文頭で倒置(have I seen)"
+    },
+    {
+      "no": 22,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私の人生を変えたのはこの本だった。",
+      "tokens": [
+        "this book",
+        "it",
+        "that",
+        "my life",
+        "was",
+        "changed"
+      ],
+      "answer_text": "It was this book that changed my life.",
+      "explanation": "It is ... that ... の強調構文。was のあとに強調したい this book を置き、that 以下に残りの文を続ける。",
+      "point": "It is ... that ... の強調構文"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "Mary made this cake.",
+      "instruction": "It was ... that ... の強調構文を使い、主語 Mary を強調する文に書き換えなさい(関係詞は that を用いること)。",
+      "answer_text": "It was Mary that made this cake.",
+      "explanation": "強調構文 It is/was ... that ... で主語を強調する。元の文 made が過去なので繋辞も過去にして It was とし、that の前に強調したい Mary を置く。残りの made this cake はそのまま that のあとに続ける。",
+      "point": "主語を強調する強調構文(過去なら It was ... that ...)"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "I like this song.",
+      "instruction": "動詞を強調する do を使って、「本当に~する」という強調の文に書き換えなさい。",
+      "answer_text": "I do like this song.",
+      "explanation": "一般動詞の前に do/does/did を置くと「本当に~する」と動詞を強調できる。現在で主語が I なので do like となる。",
+      "point": "強調の do は「本当に~する」"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "He is not a child now.",
+      "instruction": "no longer を使って「彼はもはや子どもではない」とほぼ同じ意味の文に書き換えなさい(now は使わない)。",
+      "answer_text": "He is no longer a child.",
+      "explanation": "not ... now を no longer で言いかえる。be 動詞のあとに no longer を置き「もはや~ない」を表す。",
+      "point": "no longer は「もはや~ない」"
+    }
+  ]
+}

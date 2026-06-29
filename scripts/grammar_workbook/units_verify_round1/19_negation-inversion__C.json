@@ -1,0 +1,31 @@
+{
+  "slug": "19_negation-inversion",
+  "persona": "C",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"部分否定 Not all。主語複数で過去 passed が自然。"},
+    {"no":2,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It was ... that の強調構文。"},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"肯定同調の倒置 so does。"},
+    {"no":4,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定同調の倒置 neither does。"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"no longer。"},
+    {"no":6,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"do not want。"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It was ... that の強調構文(目的語強調)。"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"二者の全否定 Neither + is。"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"by no means(決して~ない)。"},
+    {"no":10,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"did not enjoy。"},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"部分否定 not always(必ずしも~とは限らない)。"},
+    {"no":12,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"否定語頭の倒置 Never have I seen。"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Little did I know の倒置。"},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"There is no water。"},
+    {"no":15,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It was ... that の強調構文(副詞句強調)。when も口語で可だが標準は that。"},
+    {"no":16,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"部分否定 Not all of us。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"He is no longer a child.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"no longer の並べ替え。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"Tom likes baseball, and so do I.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"so + 倒置(so do I)。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"The news was by no means new.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"by no means。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"She was not glad to hear the news.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"not + 形容詞の否定文。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I have never seen such a beautiful flower.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"never の否定文。倒置不要(主語I始まり)。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"It was this book that changed my life.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"It was ... that の強調構文。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"It was Mary that made this cake.","multiple_valid":true,"multiple_valid_note":"人を強調するため who も可: It was Mary who made this cake.","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主語Maryを強調する強調構文。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"I do like this song.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"強調の do。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"He is no longer a child.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"no longer への書き換え(now 不使用)。"}
+  ]
+}

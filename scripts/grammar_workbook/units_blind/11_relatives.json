@@ -1,0 +1,270 @@
+{
+  "unit": "関係詞",
+  "unit_slug": "relatives",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "I have a friend ( ) lives in Osaka.",
+      "choices": [
+        "which",
+        "whose",
+        "where",
+        "who"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "This is the book ( ) made me cry.",
+      "choices": [
+        "who",
+        "whose",
+        "when",
+        "which"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "The dog ( ) is running in the park is mine.",
+      "choices": [
+        "who",
+        "whose",
+        "why",
+        "which"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "Look at the boy and the dog ( ) are walking together.",
+      "choices": [
+        "who",
+        "that",
+        "which",
+        "whose"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "She is the woman ( ) I met at the party.",
+      "choices": [
+        "whom",
+        "what",
+        "whose",
+        "which"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "This is the camera ( ) I bought yesterday.",
+      "choices": [
+        "who",
+        "whom",
+        "which",
+        "whose"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "The movie ( ) we saw last night was boring.",
+      "choices": [
+        "which",
+        "who",
+        "whom",
+        "whose"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "I know a girl ( ) mother is a doctor.",
+      "choices": [
+        "who",
+        "whom",
+        "which",
+        "whose"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "I live in a house ( ) roof is red.",
+      "choices": [
+        "whose",
+        "who",
+        "which",
+        "where"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "This is the town ( ) I was born.",
+      "choices": [
+        "which",
+        "who",
+        "when",
+        "where"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "I remember the day ( ) we first met.",
+      "choices": [
+        "which",
+        "where",
+        "when",
+        "why"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "Tell me the reason ( ) you were late.",
+      "choices": [
+        "which",
+        "where",
+        "why",
+        "when"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "( ) he said surprised everyone.",
+      "choices": [
+        "Which",
+        "What",
+        "That",
+        "Who"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "My uncle, ( ) lives in Tokyo, sent me a present.",
+      "choices": [
+        "whom",
+        "which",
+        "what",
+        "who"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "This is the house in ( ) Natsume Soseki lived.",
+      "choices": [
+        "who",
+        "where",
+        "which",
+        "whom"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "prompt_ja": "私には英語を話せる友達がいます。",
+      "tokens": [
+        "a friend",
+        "who",
+        "speak",
+        "I have",
+        "can",
+        "English"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "これは私の祖父が建てた家です。",
+      "tokens": [
+        "the house",
+        "which",
+        "This is",
+        "built",
+        "my grandfather"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "私は父が医者である少年を知っています。",
+      "tokens": [
+        "a boy",
+        "whose",
+        "I know",
+        "is",
+        "father",
+        "a doctor"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "ここが私たちが昨日泊まったホテルです。",
+      "tokens": [
+        "the hotel",
+        "where",
+        "This is",
+        "stayed",
+        "we",
+        "yesterday"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "これは私が昨日会った男性です。",
+      "tokens": [
+        "This is",
+        "the man",
+        "whom",
+        "I",
+        "met",
+        "yesterday"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "彼が言ったことは本当だった。",
+      "tokens": [
+        "What",
+        "was",
+        "he said",
+        "true"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "I have a friend. He lives in Canada.",
+      "instruction": "関係代名詞 who を使って1文にしなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "This is the bike. I bought it last week.",
+      "instruction": "関係代名詞 which を使って1文にしなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "I know a girl. Her brother is a famous singer.",
+      "instruction": "関係代名詞 whose を使って1文にしなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "This is the park. We played here yesterday.",
+      "instruction": "関係副詞 where を使って1文にしなさい。"
+    }
+  ]
+}

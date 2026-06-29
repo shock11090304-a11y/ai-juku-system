@@ -1,0 +1,108 @@
+{
+ "part": "phys_exam",
+ "group": "物理",
+ "unit_theme": "気体の熱力学",
+ "passage": "ある単原子分子理想気体を、なめらかに動くピストン付きのシリンダーに封入した。気体の物質量は \\(n=2.0\\ \\text{mol}\\)、気体定数は \\(R=8.3\\ \\text{J/(mol}\\cdot\\text{K)}\\) とする。はじめ気体は状態Aにあり、圧力 \\(P_{\\mathrm A}=1.0\\times10^{5}\\ \\text{Pa}\\)、絶対温度 \\(T_{\\mathrm A}=300\\ \\text{K}\\) であった。次に、圧力を一定に保ったまま加熱して温度 \\(360\\ \\text{K}\\) の状態Bにした（A→B：定圧変化）。続いて、体積を一定に保ったまま冷却して温度を \\(300\\ \\text{K}\\) に戻し、状態Cにした（B→C：定積変化）。以下の各問いに答えよ。単原子分子理想気体の内部エネルギー変化は \\(\\Delta U=\\tfrac{3}{2}nR\\,\\Delta T\\) で与えられる。",
+ "subqs": [
+  {
+   "stem": "状態Aについて、物質量 \\(n=2.0\\ \\text{mol}\\)、気体定数 \\(R=8.3\\ \\text{J/(mol}\\cdot\\text{K)}\\)、圧力 \\(P_{\\mathrm A}=1.0\\times10^{5}\\ \\text{Pa}\\)、絶対温度 \\(T_{\\mathrm A}=300\\ \\text{K}\\) である。状態方程式 \\(PV=nRT\\) を用いて、状態Aの体積 \\(V_{\\mathrm A}\\) を求めよ。",
+   "choices_latex": [
+    "\\(2.49\\times10^{-2}\\ \\text{m}^3\\)",
+    "\\(4.98\\times10^{-1}\\ \\text{m}^3\\)",
+    "\\(4.98\\times10^{-2}\\ \\text{m}^3\\)",
+    "\\(9.96\\times10^{-2}\\ \\text{m}^3\\)"
+   ],
+   "choices_value": [
+    "Rational(249,10000)",
+    "Rational(249,500)",
+    "Rational(249,5000)",
+    "Rational(249,2500)"
+   ],
+   "answer_index": 2,
+   "truth_value": "Rational(249,5000)",
+   "unit": "発展 気体の熱力学(状態方程式)",
+   "reason": "V=nRT/P=(2.0×8.3×300)/(1.0×10^5)=4980/10^5=4.98×10^-2 m^3。",
+   "restates": "n=2.0 mol, R=8.3 J/(mol·K), P_A=1.0×10^5 Pa, T_A=300 K を stem に再掲。"
+  },
+  {
+   "stem": "A→Bは定圧変化である。物質量 \\(n=2.0\\ \\text{mol}\\)、気体定数 \\(R=8.3\\ \\text{J/(mol}\\cdot\\text{K)}\\)、圧力一定 \\(P=1.0\\times10^{5}\\ \\text{Pa}\\) のもとで、温度が \\(T_{\\mathrm A}=300\\ \\text{K}\\) から \\(T_{\\mathrm B}=360\\ \\text{K}\\) に変化した。このとき気体が外部にする仕事 \\(W=P\\,\\Delta V=nR\\,\\Delta T\\) を求めよ。",
+   "choices_latex": [
+    "\\(9.96\\times10^{2}\\ \\text{J}\\)",
+    "\\(5.98\\times10^{3}\\ \\text{J}\\)",
+    "\\(4.98\\times10^{2}\\ \\text{J}\\)",
+    "\\(1.49\\times10^{3}\\ \\text{J}\\)"
+   ],
+   "choices_value": [
+    "Integer(996)",
+    "Integer(5976)",
+    "Integer(498)",
+    "Integer(1494)"
+   ],
+   "answer_index": 0,
+   "truth_value": "Integer(996)",
+   "unit": "発展 気体の熱力学(定圧変化の仕事)",
+   "reason": "定圧では W=PΔV=nRΔT=2.0×8.3×(360-300)=2.0×8.3×60=996 J。",
+   "restates": "n=2.0 mol, R=8.3 J/(mol·K), ΔT=360-300=60 K を stem に再掲。"
+  },
+  {
+   "stem": "A→Bの定圧変化について、単原子分子理想気体の内部エネルギー変化を求めよ。物質量 \\(n=2.0\\ \\text{mol}\\)、気体定数 \\(R=8.3\\ \\text{J/(mol}\\cdot\\text{K)}\\)、温度は \\(300\\ \\text{K}\\) から \\(360\\ \\text{K}\\) へ変化した。\\(\\Delta U=\\tfrac{3}{2}nR\\,\\Delta T\\) を用いよ。",
+   "choices_latex": [
+    "\\(9.96\\times10^{2}\\ \\text{J}\\)",
+    "\\(2.49\\times10^{3}\\ \\text{J}\\)",
+    "\\(7.47\\times10^{2}\\ \\text{J}\\)",
+    "\\(1.49\\times10^{3}\\ \\text{J}\\)"
+   ],
+   "choices_value": [
+    "Integer(996)",
+    "Integer(2490)",
+    "Integer(747)",
+    "Integer(1494)"
+   ],
+   "answer_index": 3,
+   "truth_value": "Integer(1494)",
+   "unit": "発展 気体の熱力学(内部エネルギー変化)",
+   "reason": "ΔU=(3/2)nRΔT=(3/2)×2.0×8.3×60=1.5×996=1494 J。",
+   "restates": "n=2.0 mol, R=8.3 J/(mol·K), ΔT=60 K, ΔU=(3/2)nRΔT を stem に再掲。"
+  },
+  {
+   "stem": "A→Bの定圧変化について、熱力学第一法則 \\(Q=\\Delta U+W\\) を用いて気体が吸収した熱量 \\(Q\\) を求めよ。この過程で、気体が外部にした仕事は \\(W=9.96\\times10^{2}\\ \\text{J}\\)、内部エネルギー変化は \\(\\Delta U=1.49\\times10^{3}\\ \\text{J}\\)（=1494 J）である。",
+   "choices_latex": [
+    "\\(4.98\\times10^{2}\\ \\text{J}\\)",
+    "\\(2.49\\times10^{3}\\ \\text{J}\\)",
+    "\\(1.49\\times10^{3}\\ \\text{J}\\)",
+    "\\(9.96\\times10^{2}\\ \\text{J}\\)"
+   ],
+   "choices_value": [
+    "Integer(498)",
+    "Integer(2490)",
+    "Integer(1494)",
+    "Integer(996)"
+   ],
+   "answer_index": 1,
+   "truth_value": "Integer(2490)",
+   "unit": "発展 気体の熱力学(第一法則・吸収熱)",
+   "reason": "Q=ΔU+W=1494+996=2490 J。",
+   "restates": "W=996 J, ΔU=1494 J, Q=ΔU+W を stem に再掲。"
+  },
+  {
+   "stem": "B→Cは定積変化（体積一定）である。物質量 \\(n=2.0\\ \\text{mol}\\)、気体定数 \\(R=8.3\\ \\text{J/(mol}\\cdot\\text{K)}\\) の単原子分子理想気体を、温度 \\(T_{\\mathrm B}=360\\ \\text{K}\\) から \\(T_{\\mathrm C}=300\\ \\text{K}\\) へ冷却した。定積変化では気体がする仕事は \\(W=0\\) であり \\(Q=\\Delta U=\\tfrac{3}{2}nR\\,\\Delta T\\) となる。この過程で気体が吸収した熱量 \\(Q\\) を求めよ（放出は負）。",
+   "choices_latex": [
+    "\\(+1.49\\times10^{3}\\ \\text{J}\\)",
+    "\\(0\\ \\text{J}\\)",
+    "\\(-1.49\\times10^{3}\\ \\text{J}\\)",
+    "\\(-9.96\\times10^{2}\\ \\text{J}\\)"
+   ],
+   "choices_value": [
+    "Integer(1494)",
+    "Integer(0)",
+    "Integer(-1494)",
+    "Integer(-996)"
+   ],
+   "answer_index": 2,
+   "truth_value": "Integer(-1494)",
+   "unit": "発展 気体の熱力学(定積変化のQ・W・ΔU)",
+   "reason": "定積では W=0、Q=ΔU=(3/2)nRΔT=(3/2)×2.0×8.3×(300-360)=1.5×(-996)=-1494 J(放出)。",
+   "restates": "n=2.0 mol, R=8.3 J/(mol·K), ΔT=300-360=-60 K, W=0, Q=ΔU=(3/2)nRΔT を stem に再掲。"
+  }
+ ]
+}

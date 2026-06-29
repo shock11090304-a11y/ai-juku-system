@@ -1,0 +1,58 @@
+{
+  "part": "chem_exam",
+  "group": "発展",
+  "unit_theme": "中和滴定",
+  "passage": "ある生徒が、希硫酸が出す水素イオンの物質量から出発して水酸化ナトリウム水溶液の濃度を中和滴定で決定し、さらにその同じ水酸化ナトリウム水溶液を用いて濃度未知の塩酸を分析した。希硫酸 \\(\\mathrm{H_2SO_4}\\) は2価の酸、水酸化ナトリウム \\(\\mathrm{NaOH}\\) は1価の塩基、塩酸 \\(\\mathrm{HCl}\\) は1価の酸である。中和反応では、酸が出す水素イオン \\(\\mathrm{H^+}\\) の物質量と塩基が出す水酸化物イオン \\(\\mathrm{OH^-}\\) の物質量が等しくなる(\\(\\mathrm{H^+}\\) と \\(\\mathrm{OH^-}\\) は \\(1:1\\) で反応する)。各設問は前の設問で求めた値を引き継いで進むが、必要な濃度・体積・価数・前問の結果はすべて各設問の文中に再掲してあるので、その設問だけを読んでも解ける。計算に図やグラフは不要である。",
+  "subqs": [
+    {
+      "stem": "濃度 \\(0.050\\ \\text{mol/L}\\) の希硫酸 \\(\\mathrm{H_2SO_4}\\)(2価の酸)を \\(20.0\\ \\text{mL}\\) とった。この希硫酸が出すことのできる水素イオン \\(\\mathrm{H^+}\\) の物質量は何 \\(\\text{mol}\\) か。なお2価の酸は1分子あたり \\(\\mathrm{H^+}\\) を2個出す。",
+      "choices_latex": ["\\(1.0\\times10^{-3}\\ \\text{mol}\\)", "\\(2.0\\times10^{-3}\\ \\text{mol}\\)", "\\(4.0\\times10^{-3}\\ \\text{mol}\\)", "\\(1.0\\times10^{-2}\\ \\text{mol}\\)"],
+      "choices_value": ["Rational(1,1000)", "Rational(1,500)", "Rational(1,250)", "Rational(1,100)"],
+      "answer_index": 1,
+      "truth_value": "Rational(1,500)",
+      "unit": "発展 中和滴定(ステップ1: 価数を考慮した水素イオンのmol)",
+      "reason": "\\(\\mathrm{H_2SO_4}\\) は2価なので \\(n(\\mathrm{H^+})=0.050\\times\\dfrac{20.0}{1000}\\times2=2.0\\times10^{-3}\\ \\text{mol}\\)。",
+      "restates": "stem に 希硫酸0.050 mol/L・20.0 mL・H2SO4は2価(H+を2個出す) を再掲。連鎖の起点なので前問値の引き継ぎは無い。"
+    },
+    {
+      "stem": "ステップ1で求めたとおり、この希硫酸の試料には水素イオン \\(\\mathrm{H^+}\\) が \\(2.0\\times10^{-3}\\ \\text{mol}\\) 含まれている。この \\(\\mathrm{H^+}\\) をちょうど中和するのに必要な水酸化ナトリウム \\(\\mathrm{NaOH}\\)(1価の塩基)の物質量は何 \\(\\text{mol}\\) か。中和では \\(\\mathrm{H^+}\\) と \\(\\mathrm{OH^-}\\) が \\(1:1\\) で反応する。",
+      "choices_latex": ["\\(1.0\\times10^{-3}\\ \\text{mol}\\)", "\\(2.0\\times10^{-3}\\ \\text{mol}\\)", "\\(4.0\\times10^{-3}\\ \\text{mol}\\)", "\\(8.0\\times10^{-3}\\ \\text{mol}\\)"],
+      "choices_value": ["Rational(1,1000)", "Rational(1,500)", "Rational(1,250)", "Rational(1,125)"],
+      "answer_index": 1,
+      "truth_value": "Rational(1,500)",
+      "unit": "発展 中和滴定(ステップ2: 中和に必要な塩基のmol)",
+      "reason": "\\(\\mathrm{NaOH}\\) は1価で \\(\\mathrm{OH^-}\\) を1個出すので、必要な \\(\\mathrm{NaOH}\\) は \\(n(\\mathrm{H^+})=2.0\\times10^{-3}\\ \\text{mol}\\) に等しい。",
+      "restates": "stem に ステップ1の結果H+が2.0×10⁻³ mol・NaOHは1価・H+とOH-は1:1 を再掲。"
+    },
+    {
+      "stem": "ステップ2で求めたとおり、中和に必要な水酸化ナトリウム \\(\\mathrm{NaOH}\\) の物質量は \\(2.0\\times10^{-3}\\ \\text{mol}\\) であった。この \\(\\mathrm{NaOH}\\) 水溶液を滴定に用いたところ、ちょうど \\(25.0\\ \\text{mL}\\) を要した。\\(\\mathrm{NaOH}\\) 水溶液のモル濃度は何 \\(\\text{mol/L}\\) か。",
+      "choices_latex": ["\\(8.0\\times10^{-2}\\ \\text{mol/L}\\)", "\\(4.0\\times10^{-2}\\ \\text{mol/L}\\)", "\\(1.6\\times10^{-1}\\ \\text{mol/L}\\)", "\\(5.0\\times10^{-2}\\ \\text{mol/L}\\)"],
+      "choices_value": ["Rational(2,25)", "Rational(1,25)", "Rational(4,25)", "Rational(1,20)"],
+      "answer_index": 0,
+      "truth_value": "Rational(2,25)",
+      "unit": "発展 中和滴定(ステップ3: 塩基のモル濃度の決定)",
+      "reason": "\\(c=\\dfrac{2.0\\times10^{-3}}{25.0/1000}=8.0\\times10^{-2}\\ \\text{mol/L}\\)。",
+      "restates": "stem に ステップ2の結果NaOHは2.0×10⁻³ mol・滴定体積25.0 mL を再掲。"
+    },
+    {
+      "stem": "ステップ3で濃度が \\(8.0\\times10^{-2}\\ \\text{mol/L}\\) と決まった水酸化ナトリウム \\(\\mathrm{NaOH}\\)(強塩基)を用いて、こんどは希硫酸 \\(\\mathrm{H_2SO_4}\\)(強酸)を中和滴定した。両者が過不足なく反応した中和点(当量点)における水溶液の \\(\\mathrm{pH}\\) はおよそいくらか。強酸と強塩基の塩は加水分解しないことに注意せよ。なお水溶液の温度は \\(25\\ \\text{℃}\\)(このとき中性は \\(\\mathrm{pH}=7\\))とする。",
+      "choices_latex": ["\\(1\\)", "\\(5\\)", "\\(7\\)", "\\(13\\)"],
+      "choices_value": ["Integer(1)", "Integer(5)", "Integer(7)", "Integer(13)"],
+      "answer_index": 2,
+      "truth_value": "Integer(7)",
+      "unit": "発展 中和滴定(ステップ4: 強酸強塩基の中和点のpH)",
+      "reason": "強酸と強塩基の中和では、生じる塩(\\(\\mathrm{Na_2SO_4}\\))が加水分解しないため中和点は中性で \\(\\mathrm{pH}=7\\)。",
+      "restates": "stem に ステップ3の結果NaOHが8.0×10⁻² mol/L(強塩基)・強酸H2SO4・25℃で中性はpH7・中和点(当量点)・強酸強塩基の塩は非加水分解 を再掲。"
+    },
+    {
+      "stem": "ステップ3で濃度が \\(8.0\\times10^{-2}\\ \\text{mol/L}\\) と決まった水酸化ナトリウム \\(\\mathrm{NaOH}\\)(1価の塩基)水溶液を用いて、こんどは濃度未知の塩酸 \\(\\mathrm{HCl}\\)(1価の酸)\\(10.0\\ \\text{mL}\\) を中和滴定したところ、この \\(\\mathrm{NaOH}\\) 水溶液 \\(20.0\\ \\text{mL}\\) でちょうど中和した。塩酸 \\(\\mathrm{HCl}\\) のモル濃度は何 \\(\\text{mol/L}\\) か。中和では \\(\\mathrm{H^+}\\) と \\(\\mathrm{OH^-}\\) が \\(1:1\\) で反応する。",
+      "choices_latex": ["\\(8.0\\times10^{-2}\\ \\text{mol/L}\\)", "\\(1.6\\times10^{-1}\\ \\text{mol/L}\\)", "\\(3.2\\times10^{-1}\\ \\text{mol/L}\\)", "\\(4.0\\times10^{-2}\\ \\text{mol/L}\\)"],
+      "choices_value": ["Rational(2,25)", "Rational(4,25)", "Rational(8,25)", "Rational(1,25)"],
+      "answer_index": 1,
+      "truth_value": "Rational(4,25)",
+      "unit": "発展 中和滴定(ステップ5: 濃度未知の酸の決定)",
+      "reason": "\\(\\mathrm{OH^-}\\) の物質量 \\(=8.0\\times10^{-2}\\times\\dfrac{20.0}{1000}=1.6\\times10^{-3}\\ \\text{mol}\\)。\\(\\mathrm{HCl}\\) は1価なので \\(c=\\dfrac{1.6\\times10^{-3}}{10.0/1000}=1.6\\times10^{-1}\\ \\text{mol/L}\\)。",
+      "restates": "stem に ステップ3の結果NaOH8.0×10⁻² mol/L(1価)・HCl10.0 mL(1価)・NaOH滴定体積20.0 mL・H+とOH-は1:1 を再掲。"
+    }
+  ]
+}

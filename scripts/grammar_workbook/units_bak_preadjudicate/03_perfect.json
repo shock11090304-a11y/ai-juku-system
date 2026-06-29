@@ -1,0 +1,271 @@
+{
+  "unit": "完了形",
+  "unit_slug": "perfect",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I have ( ) finished my homework, so I can watch TV now.",
+      "choices": ["already", "yet", "ago", "now"],
+      "answer_index": 0,
+      "answer_text": "already",
+      "explanation": "現在完了の完了用法で「もう終えてしまった」を表すには already を使います。yet は否定文・疑問文で用いるため肯定文には不適です。",
+      "point": "肯定文の「もう」は already。"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Have you finished your report ( )?",
+      "choices": ["already", "yet", "ever", "since"],
+      "answer_index": 1,
+      "answer_text": "yet",
+      "explanation": "疑問文で文末に置く「もう(終わった?)」は yet を使います。already は肯定文向き、ever は経験を尋ねるときに使います。",
+      "point": "疑問文・文末の「もう」は yet。"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She has lived in Osaka ( ) 2015.",
+      "choices": ["for", "since", "from", "during"],
+      "answer_index": 1,
+      "answer_text": "since",
+      "explanation": "継続用法で「2015年から(ずっと)」のように起点を示すときは since を使います。for は期間の長さに使います。",
+      "point": "起点(〜から)は since。"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "We have known each other ( ) ten years.",
+      "choices": ["since", "for", "from", "in"],
+      "answer_index": 1,
+      "answer_text": "for",
+      "explanation": "継続用法で「10年間」という期間の長さを表すときは for を使います。since は起点(〜から)に使います。",
+      "point": "期間の長さは for。"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Have you ( ) been to Hokkaido?",
+      "choices": ["ever", "never", "already", "yet"],
+      "answer_index": 0,
+      "answer_text": "ever",
+      "explanation": "経験を尋ねる疑問文で「今までに〜したことがありますか」は ever を使います。never は否定の意味なので疑問文の趣旨に合いません。",
+      "point": "経験を問う疑問文は ever。"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I have ( ) seen such a beautiful sunset before.",
+      "choices": ["ever", "never", "yet", "already"],
+      "answer_index": 1,
+      "answer_text": "never",
+      "explanation": "経験用法で「今までに一度も〜したことがない」は never を使います。have never の形で否定の経験を表します。",
+      "point": "「一度もない」は have never。"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "My brother has ( ) to America, so he is not here now.",
+      "choices": ["been", "gone", "went", "going"],
+      "answer_index": 1,
+      "answer_text": "gone",
+      "explanation": "have gone to は「〜へ行ってしまった(今ここにいない)」という結果を表します。「今ここにいない」と続くので gone が正解です。have been to なら経験になります。",
+      "point": "行ってしまって不在は have gone to。"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I have ( ) to that museum twice.",
+      "choices": ["gone", "been", "went", "go"],
+      "answer_index": 1,
+      "answer_text": "been",
+      "explanation": "have been to は「〜へ行ったことがある」という経験を表します。twice(2回)があるので経験用法とわかり been が正解です。",
+      "point": "「行ったことがある」は have been to。"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I ( ) my key yesterday, so I could not enter the room.",
+      "choices": ["have lost", "lost", "had lose", "have been lost"],
+      "answer_index": 1,
+      "answer_text": "lost",
+      "explanation": "yesterday のように過去の一時点を示す語があるときは現在完了は使えず、過去形 lost を用います。",
+      "point": "yesterday など過去の一点は過去形。"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "When I got to the station, the train had already ( ).",
+      "choices": ["leave", "left", "leaving", "leaves"],
+      "answer_index": 1,
+      "answer_text": "left",
+      "explanation": "過去完了 had + 過去分詞の形です。駅に着いた時点よりも前に電車が出ていたという大過去を表すので left が正解です。",
+      "point": "過去完了は had + 過去分詞。"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "She said that she ( ) the book before.",
+      "choices": ["has read", "had read", "reads", "is reading"],
+      "answer_index": 1,
+      "answer_text": "had read",
+      "explanation": "主節が said(過去)で、それより前の経験を表すので過去完了 had read を使います。before があり大過去の経験を示します。",
+      "point": "過去より前は過去完了 had + 過去分詞。"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "It ( ) for three hours, and the ground is still wet.",
+      "choices": ["has been raining", "rains", "rained", "is raining"],
+      "answer_index": 0,
+      "answer_text": "has been raining",
+      "explanation": "現在完了進行形 have been + ing は「ずっと〜し続けている」を表します。for three hours と継続を示し、結果として地面がぬれている状況に合います。",
+      "point": "継続中の動作は have been + ing。"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "By the time you arrive, I ( ) cooking dinner.",
+      "choices": ["will finish", "will have finished", "have finished", "finished"],
+      "answer_index": 1,
+      "answer_text": "will have finished",
+      "explanation": "未来完了 will have + 過去分詞は「(未来のある時までに)〜してしまっているだろう」を表します。By the time you arrive と未来の基準点があるので適します。",
+      "point": "未来までに完了は will have + 過去分詞。"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "basic",
+      "stem": "How long ( ) you studied English?",
+      "choices": ["did", "have", "are", "do"],
+      "answer_index": 1,
+      "answer_text": "have",
+      "explanation": "How long で継続の期間を尋ねる現在完了の疑問文です。have you studied の語順になるので have が正解です。",
+      "point": "How long の継続は現在完了 have。"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "basic",
+      "stem": "He has not finished his lunch ( ).",
+      "choices": ["already", "yet", "ever", "since"],
+      "answer_index": 1,
+      "answer_text": "yet",
+      "explanation": "否定文で文末に置く「まだ(〜していない)」は yet を使います。already は肯定文向きです。",
+      "point": "否定文の「まだ」は yet。"
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "私はちょうど昼食を食べ終えたところです。",
+      "tokens": ["just", "I", "finished", "lunch", "have"],
+      "answer_text": "I have just finished lunch.",
+      "explanation": "現在完了の完了用法 have + 過去分詞で「ちょうど〜したところだ」を表します。just は have と過去分詞の間に置きます。",
+      "point": "just は have と過去分詞の間。"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "あなたは今までに富士山に登ったことがありますか。",
+      "tokens": ["climbed", "you", "ever", "Have", "Mt. Fuji"],
+      "answer_text": "Have you ever climbed Mt. Fuji?",
+      "explanation": "経験を尋ねる現在完了の疑問文です。Have you ever + 過去分詞の語順になります。",
+      "point": "経験の疑問文は Have you ever + 過去分詞。"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私たちは2020年からこの町に住んでいます。",
+      "tokens": ["have", "in", "We", "lived", "this town", "since", "2020"],
+      "answer_text": "We have lived in this town since 2020.",
+      "explanation": "継続用法 have + 過去分詞に since(起点)を組み合わせます。have lived in this town の語順を作ります。",
+      "point": "継続+起点は have lived 〜 since。"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私が駅に着いたとき、バスはすでに出発していた。",
+      "tokens": ["had", "the bus", "already", "I", "left", "When", "reached the station,"],
+      "answer_text": "When I reached the station, the bus had already left.",
+      "explanation": "過去のある時点より前を表す過去完了 had + 過去分詞です。already は had と過去分詞の間に置きます。",
+      "point": "過去完了の already は had と過去分詞の間。"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼女は3時間ずっとピアノを弾き続けている。",
+      "tokens": ["been", "the piano", "has", "She", "for", "playing", "three hours"],
+      "answer_text": "She has been playing the piano for three hours.",
+      "explanation": "現在完了進行形 have been + ing で動作の継続を表します。for で期間の長さを示します。",
+      "point": "動作の継続は have been + ing + for。"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私は一度もその映画を見たことがない。",
+      "tokens": ["seen", "have", "the movie", "I", "never"],
+      "answer_text": "I have never seen the movie.",
+      "explanation": "経験用法の否定 have never + 過去分詞で「一度も〜したことがない」を表します。",
+      "point": "「一度もない」は have never + 過去分詞。"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "I started to learn the guitar three years ago. I still learn it now.",
+      "instruction": "現在完了(継続用法)を使って for を用いた1文に書き換えなさい。",
+      "answer_text": "I have learned the guitar for three years.",
+      "explanation": "過去に始めて今も続く動作は現在完了の継続用法で表します。three years ago の3年を for three years として期間に変えます。",
+      "point": "過去から今も続く継続は have + 過去分詞 + for。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "He went to Canada, and he is not here now.",
+      "instruction": "have gone to を使って「〜へ行ってしまった(今いない)」の意味の1文に書き換えなさい。",
+      "answer_text": "He has gone to Canada.",
+      "explanation": "「行ってしまって今ここにいない」という結果は have gone to で表します。主語が三人称単数なので has を使います。",
+      "point": "不在の結果は has gone to。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "I visited Kyoto once. I visited it again last month.",
+      "instruction": "have been to と twice を使って「2回行ったことがある」という経験の1文に書き換えなさい。",
+      "answer_text": "I have been to Kyoto twice.",
+      "explanation": "「〜へ行ったことがある」という経験は have been to で表します。2回なので twice を加えます。",
+      "point": "経験「行ったことがある」は have been to。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "The movie started. Then we arrived at the theater.",
+      "instruction": "「私たちが劇場に着いたとき、映画はすでに始まっていた」という意味になるよう、過去完了を使った1文に書き換えなさい。書き出しは When we arrived at the theater で始めること。",
+      "answer_text": "When we arrived at the theater, the movie had already started.",
+      "explanation": "到着した過去の時点より前に映画が始まっていたので過去完了 had + 過去分詞を使います。already は had と過去分詞の間に置きます。",
+      "point": "過去より前の出来事は過去完了 had + 過去分詞。"
+    }
+  ]
+}

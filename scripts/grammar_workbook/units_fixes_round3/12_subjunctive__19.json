@@ -1,0 +1,29 @@
+{
+  "slug": "12_subjunctive",
+  "no": 19,
+  "type": "order",
+  "action": "rewrite_question",
+  "key_was_correct": true,
+  "is_unique": false,
+  "my_answer": "If he had left early, he would have made it.",
+  "arrangements_considered": "修正後トークン集合 {If, he, had left, early,, he, would have, made it.} を大文字小文字を尊重して並べると、文頭に置けるのは唯一の大文字始まりトークン 'If' のみ(他は全て小文字始まり)。よって文は必ず 'If ...' で始まり、'He would have made it if he had left early.' のような主節先行の別解は 'He' が無いため成立しない。'If' の後は仮定法過去完了の条件節 'he had left early,' が必要(主語 he + had + 過去分詞 left + 副詞 early)。'early,' はコンマ込み1トークンなので条件節の終端を固定し、語の入れ替え 'If he had left, early he ...' は副詞 early が浮いて不自然/非文。コンマ後は主節 'he would have made it.' のみが残り、'would have' は1トークン、'made it.' は末尾(ピリオド付き)なので語順は確定。'If he would have made it early, he had left.' は if 節に would を入れる非標準形かつ主節 had left が過去完了単独で意味不成立のため除外。したがって文法的・自然・意味一致する英文はちょうど1通り: 'If he had left early, he would have made it.'",
+  "reason": "元のトークンでは 'if' が小文字始まりで文頭を一意に固定するトークンが無く、かつ条件節と主節がともに 'he' を含むため主節先行の別解や副詞 early の浮動で語順が一意でない疑いがあった。技法(1)に従い 'If' を唯一の大文字始まりトークンにして文頭を強制し、技法(3)の要領で 'early,' をコンマ込み1トークン化して条件節終端を固定、'would have' を結合し 'made it.' を末尾ピリオド付きにして語順を1通りに確定させた。単元『仮定法』(仮定法過去完了 If had pp, would have pp)と基礎定着レベルは維持。",
+  "corrected_question": {
+    "no": 19,
+    "type": "order",
+    "level": "standard",
+    "prompt_ja": "もし彼が早く出発していたら、間に合っただろうに。",
+    "tokens": [
+      "If",
+      "he",
+      "had left",
+      "early,",
+      "he",
+      "would have",
+      "made it."
+    ],
+    "answer_text": "If he had left early, he would have made it.",
+    "explanation": "過去の事実に反する仮定は仮定法過去完了で表す。語順は「If + 主語 + had + 過去分詞, 主語 + would have + 過去分詞」。If he had left early が条件、he would have made it が結果を表す。実際は早く出発しなかったので間に合わなかった、という意味になる。",
+    "point": "If had pp, would have pp"
+  }
+}

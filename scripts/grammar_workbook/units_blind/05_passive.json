@@ -1,0 +1,256 @@
+{
+  "unit": "受動態",
+  "unit_slug": "passive",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "This letter ( ) by my brother yesterday.",
+      "choices": [
+        "wrote",
+        "is writing",
+        "writes",
+        "was written"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "These cars ( ) in Japan.",
+      "choices": [
+        "are made",
+        "make",
+        "makes",
+        "is made"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "The window was broken ( ) the boy.",
+      "choices": [
+        "with",
+        "of",
+        "by",
+        "to"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "English ( ) all over the world.",
+      "choices": [
+        "speak",
+        "is spoken",
+        "speaks",
+        "speaking"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "The room ( ) cleaned every day.",
+      "choices": [
+        "is",
+        "are",
+        "was",
+        "were"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "This book should ( ) by many young people.",
+      "choices": [
+        "read",
+        "be reading",
+        "be read",
+        "is read"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "The bridge is ( ) built now.",
+      "choices": [
+        "been",
+        "be",
+        "being",
+        "to be"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "The work has ( ) finished already.",
+      "choices": [
+        "been",
+        "be",
+        "being",
+        "to be"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "I am interested ( ) Japanese history.",
+      "choices": [
+        "at",
+        "for",
+        "in",
+        "with"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "The top of the mountain is covered ( ) snow.",
+      "choices": [
+        "by",
+        "in",
+        "with",
+        "of"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "He is known ( ) everyone in this town.",
+      "choices": [
+        "by",
+        "as",
+        "with",
+        "to"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "The baby was taken care ( ) by her grandmother.",
+      "choices": [
+        "for",
+        "of",
+        "with",
+        "to"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "She was given a nice present ( ) her uncle.",
+      "choices": [
+        "by",
+        "to",
+        "for",
+        "of"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "order",
+      "prompt_ja": "この部屋は私の母によって掃除される。",
+      "tokens": [
+        "cleaned",
+        "This room",
+        "is",
+        "by my mother"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "order",
+      "prompt_ja": "その窓はトムによって割られました。",
+      "tokens": [
+        "by",
+        "broken",
+        "The",
+        "was",
+        "Tom",
+        "window"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "prompt_ja": "この歌は多くの人に愛されています。",
+      "tokens": [
+        "is",
+        "many",
+        "loved",
+        "song",
+        "by",
+        "This",
+        "people"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "その手紙は英語で書かれていました。",
+      "tokens": [
+        "written",
+        "letter",
+        "in",
+        "was",
+        "The",
+        "English"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "その机は彼によって動かされなければならない。",
+      "tokens": [
+        "be",
+        "must",
+        "The",
+        "by",
+        "moved",
+        "desk",
+        "him"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "rewrite",
+      "original": "Tom cleaned the room.",
+      "instruction": "受動態に書き換えなさい。"
+    },
+    {
+      "no": 20,
+      "type": "rewrite",
+      "original": "Many students use this computer.",
+      "instruction": "受動態に書き換えなさい。"
+    },
+    {
+      "no": 21,
+      "type": "rewrite",
+      "original": "She wrote this report.",
+      "instruction": "受動態に書き換えなさい。"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "Tom must finish this work.",
+      "instruction": "受動態に書き換えなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "My mother gave me this watch.",
+      "instruction": "me を主語にして受動態に書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "My mother gave me this watch.",
+      "instruction": "this watch を主語にして受動態に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "They call this flower a sunflower.",
+      "instruction": "受動態に書き換えなさい。"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "slug": "01_sentence-patterns",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC。主語She(三単現)+補語happyにはlooksが適切。"},
+    {"no":2,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SV(完全自動詞)。slept all night long。"},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO。bought me a new bike。他は二重目的語を取れない。"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC。call our dog Pochi。speak/talk/sayは構文不適。"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC。taste+形容詞good。スープが他動詞eat等の主語にはならない。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC。kept the door open。stay/look/happenは目的語+補語を取れない。"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC。became a doctor。"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO。pass me the salt。"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC。made us surprised。look/seem/feelは目的語+補語を取れない。"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SV。The sun shone brightly。"},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC。turn+形容詞red。put/bring/giveは補語を取れない。"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SV。live in this town。"},
+    {"no":13,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO。gave him a present。go/come/stayは二重目的語不可。"},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SV。ran in the park。want/need/likeは他動詞で目的語が必要。"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC。named the baby Mary。speak/talk/listenは構文不適。"},
+    {"no":16,"mc_index":-1,"produced_sentence":"My mother made me a sweater.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO。tokensにforが無いため第3文型化は不可。語順一意。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"He looks very tired.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC。look+補語tired、veryは強調。語順一意。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"We call him Tom.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC。call him Tom。語順一意。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"The teacher asked us a difficult question.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO。tokensにforが無いため前置詞句版は不可。語順一意。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"Warm clothes keep you healthy.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC。keep you healthy。語順一意。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"She told me the story.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO。tokensにtoが無いため前置詞句版は不可。語順一意。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"He gave a book to me.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"give型はtoを取る。SVO+前置詞句。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"She bought a watch for her son.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"buy型はforを取る。SVO+前置詞句。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"My uncle sent me a letter.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"send型のSVOO化。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"She made us a cake.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"make型のSVOO化。"}
+  ]
+}

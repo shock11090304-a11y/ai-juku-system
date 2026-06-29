@@ -1,0 +1,272 @@
+{
+  "unit": "時制",
+  "unit_slug": "tenses",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "My father ( ) coffee every morning.",
+      "choices": ["drink", "drinks", "drinking", "to drink"],
+      "answer_index": 1,
+      "answer_text": "drinks",
+      "explanation": "every morning は習慣を表すので現在形を使う。主語 My father は三人称単数なので動詞に s を付けて drinks となる。",
+      "point": "三人称単数現在は動詞に s"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "We ( ) to the zoo last Sunday.",
+      "choices": ["go", "goes", "went", "will go"],
+      "answer_index": 2,
+      "answer_text": "went",
+      "explanation": "last Sunday は過去を表すので過去形を使う。go は不規則動詞で過去形は went となる。",
+      "point": "過去を表す語には過去形"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Look! It ( ) outside now.",
+      "choices": ["rains", "rained", "is raining", "will rain"],
+      "answer_index": 2,
+      "answer_text": "is raining",
+      "explanation": "now は今まさに進行中のことを表すので現在進行形を使う。be 動詞 is と動詞 ing 形で is raining となる。",
+      "point": "now は現在進行形と相性がよい"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She ( ) to school by bike every day.",
+      "choices": ["come", "comes", "came", "is coming"],
+      "answer_index": 1,
+      "answer_text": "comes",
+      "explanation": "every day は習慣なので現在形を使う。主語 She は三人称単数なので comes となる。",
+      "point": "習慣は現在形で表す"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I ( ) my homework two hours ago.",
+      "choices": ["finish", "finishes", "finished", "will finish"],
+      "answer_index": 2,
+      "answer_text": "finished",
+      "explanation": "two hours ago は過去を表すので過去形を使う。finish は規則動詞なので ed を付けて finished となる。",
+      "point": "ago があれば過去形"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "They ( ) soccer in the park yesterday afternoon.",
+      "choices": ["play", "plays", "are playing", "were playing"],
+      "answer_index": 3,
+      "answer_text": "were playing",
+      "explanation": "yesterday afternoon の時点で進行中だった動作を表すので過去進行形を使う。主語 They に合わせて were playing となる。",
+      "point": "過去のある時点の進行は過去進行形"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Water ( ) at 100 degrees Celsius.",
+      "choices": ["boil", "boils", "boiled", "is boiling"],
+      "answer_index": 1,
+      "answer_text": "boils",
+      "explanation": "変わらない事実や法則は現在形で表す。主語 Water は三人称単数扱いなので boils となる。",
+      "point": "不変の事実は現在形"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I ( ) my grandmother next weekend.",
+      "choices": ["visit", "visited", "am going to visit", "was visiting"],
+      "answer_index": 2,
+      "answer_text": "am going to visit",
+      "explanation": "next weekend は未来を表し、すでに決めている予定なので be going to を使う。主語 I に合わせて am going to visit となる。",
+      "point": "予定の未来は be going to"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "If it ( ) tomorrow, we will stay home.",
+      "choices": ["rain", "rains", "will rain", "rained"],
+      "answer_index": 1,
+      "answer_text": "rains",
+      "explanation": "条件を表す if 節の中では、未来のことでも現在形を使う。主語 it は三人称単数なので rains となる。",
+      "point": "条件のif節は未来でも現在形"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "When I ( ) home, I will call you.",
+      "choices": ["get", "got", "will get", "am getting"],
+      "answer_index": 0,
+      "answer_text": "get",
+      "explanation": "時を表す when 節の中では、未来のことでも現在形を使う。主語 I なので get のままになる。",
+      "point": "時のwhen節は未来でも現在形"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "My brother ( ) a bath when the phone rang.",
+      "choices": ["takes", "took", "was taking", "is taking"],
+      "answer_index": 2,
+      "answer_text": "was taking",
+      "explanation": "電話が鳴った時、ちょうど風呂に入っている最中だったので過去進行形を使う。主語 My brother に合わせて was taking となる。",
+      "point": "過去の途中の動作は過去進行形"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Don't worry. I ( ) help you with your bags.",
+      "choices": ["am", "was", "will", "did"],
+      "answer_index": 2,
+      "answer_text": "will",
+      "explanation": "その場で決めた申し出には will を使う。will の後ろは動詞の原形 help が続くので will help となる。",
+      "point": "その場で決めた未来はwill"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "basic",
+      "stem": "He ( ) not watch TV last night.",
+      "choices": ["does", "did", "is", "was"],
+      "answer_index": 1,
+      "answer_text": "did",
+      "explanation": "last night は過去を表す。一般動詞の過去の否定文は did not の形を使い、後ろの動詞は原形 watch になる。",
+      "point": "一般動詞過去の否定はdid not"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) you happy yesterday?",
+      "choices": ["Do", "Did", "Were", "Are"],
+      "answer_index": 2,
+      "answer_text": "Were",
+      "explanation": "happy は形容詞で be 動詞の文。yesterday は過去なので過去の be 動詞を使う。主語 you に合うのは Were となる。",
+      "point": "be動詞過去の疑問文はWas/Were"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The train ( ) at seven tomorrow morning according to the schedule.",
+      "choices": ["leave", "leaves", "left", "is leaving"],
+      "answer_index": 1,
+      "answer_text": "leaves",
+      "explanation": "時刻表で決まった発着は、未来のことでも現在形で表す。主語 The train は三人称単数なので leaves となる。",
+      "point": "確定した予定は現在形でも表せる"
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "私は毎日6時に起きます。",
+      "tokens": ["at", "I", "up", "every", "get", "six", "day"],
+      "answer_text": "I get up at six every day.",
+      "explanation": "every day は習慣を表すので現在形にする。get up at six で6時に起きるという意味になる。",
+      "point": "習慣は現在形で表す"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼女は昨日その本を読みました。",
+      "tokens": ["the", "read", "she", "yesterday", "book"],
+      "answer_text": "She read the book yesterday.",
+      "explanation": "yesterday は過去を表すので過去形にする。read の過去形はつづりが同じ read となる。",
+      "point": "yesterday があれば過去形"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私たちは今、夕食を作っているところです。",
+      "tokens": ["dinner", "are", "we", "cooking", "now"],
+      "answer_text": "We are cooking dinner now.",
+      "explanation": "now は今進行中のことを表すので現在進行形にする。are cooking で作っている最中という意味になる。",
+      "point": "now は現在進行形"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "明日晴れたら、私たちは公園に行きます。",
+      "tokens": ["sunny tomorrow", "if it is", "we will go", "to the park"],
+      "answer_text": "If it is sunny tomorrow, we will go to the park.",
+      "explanation": "条件を表す if 節の中では、未来のことでも現在形 is を使う。主節は未来なので will go とする。",
+      "point": "条件のif節は現在形・主節はwill"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私が部屋に入ったとき、彼は眠っていた。",
+      "tokens": ["was sleeping", "when I", "he", "entered the room"],
+      "answer_text": "When I entered the room, he was sleeping.",
+      "explanation": "入った時点で進行中だった状態なので、彼の動作は過去進行形 was sleeping にする。entered は過去形でその時点を示す。",
+      "point": "過去の途中は過去進行形"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私は来年、英語を勉強するつもりです。",
+      "tokens": ["study", "to", "I", "going", "English", "am", "next year"],
+      "answer_text": "I am going to study English next year.",
+      "explanation": "next year は未来で、すでに決めている予定なので be going to を使う。主語 I に合わせて am going to study となる。",
+      "point": "予定の未来は be going to"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "I play tennis every Sunday.",
+      "instruction": "every Sunday を last Sunday に変えて、過去の文に書き換えなさい。",
+      "answer_text": "I played tennis last Sunday.",
+      "explanation": "last Sunday は過去を表すので動詞を過去形にする。play は規則動詞なので played となる。",
+      "point": "過去の語に合わせ動詞を過去形に"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "She studies math now.",
+      "instruction": "now に合わせて、今まさに進行中であることを表す現在進行形の文に書き換えなさい。",
+      "answer_text": "She is studying math now.",
+      "explanation": "今進行中の動作は現在進行形で表す。主語 She に be 動詞 is を使い、動詞を studying にして is studying とする。",
+      "point": "進行中の動作は現在進行形"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "It will be cold tomorrow.",
+      "instruction": "will を使わず、be going to を使ってほぼ同じ意味の文に書き換えなさい。",
+      "answer_text": "It is going to be cold tomorrow.",
+      "explanation": "未来を表す will は be going to で言い換えられる。主語 It に合わせて is going to be とする。",
+      "point": "未来のwillはbe going toで言い換え可"
+    },
+    {
+      "no": 25,
+      "type": "mc",
+      "level": "standard",
+      "stem": "What ( ) you doing at eight last night?",
+      "choices": ["are", "do", "did", "were"],
+      "answer_index": 3,
+      "answer_text": "were",
+      "explanation": "at eight last night の時点で進行中だった動作を尋ねる過去進行形の疑問文。主語 you に合う be 動詞は were となる。",
+      "point": "過去進行形の疑問文はWas/Were"
+    }
+  ]
+}

@@ -1,0 +1,385 @@
+{
+  "unit": "関係詞",
+  "unit_slug": "relatives",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I have a friend ( ) lives in Osaka.",
+      "choices": [
+        "who",
+        "which",
+        "whose",
+        "where"
+      ],
+      "answer_index": 0,
+      "answer_text": "who",
+      "explanation": "先行詞 a friend は人で、関係詞節の中で主語の働きをするので主格の who を使う。lives の主語にあたる部分が欠けている点に注目する。",
+      "point": "人が先行詞で主語なら who"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "This is the book ( ) made me cry.",
+      "choices": [
+        "who",
+        "which",
+        "whose",
+        "when"
+      ],
+      "answer_index": 1,
+      "answer_text": "which",
+      "explanation": "先行詞 the book は物で、関係詞節の中で made の主語(主格)になるので which を使う。人ではないので who は使えない。",
+      "point": "物が先行詞で主語なら which"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "The dog ( ) is running in the park is mine.",
+      "choices": [
+        "who",
+        "which",
+        "whose",
+        "why"
+      ],
+      "answer_index": 1,
+      "answer_text": "which",
+      "explanation": "先行詞 the dog は動物で、is running の主語になる主格である。動物が先行詞のときは which を使うのが基本(ペットなど親しい動物には who を使うこともある)。ここでは公園を走る一匹の犬を指すので which が正解。whose は後ろに名詞がなく所有関係でないため不可、why は理由を表す関係副詞なので主格には使えない。",
+      "point": "動物が先行詞のときは which が基本(親しい動物には who も)"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Look at the boy and the dog ( ) are walking together.",
+      "choices": [
+        "who",
+        "which",
+        "that",
+        "whose"
+      ],
+      "answer_index": 2,
+      "answer_text": "that",
+      "explanation": "先行詞が「人 + 動物」のように人と物が混ざっているときは、関係代名詞は that を使う。who も which も一方しか指せない。",
+      "point": "人と物が混ざれば that"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "standard",
+      "stem": "She is the woman ( ) I met at the party.",
+      "choices": [
+        "what",
+        "whom",
+        "whose",
+        "which"
+      ],
+      "answer_index": 1,
+      "answer_text": "whom",
+      "explanation": "先行詞 the woman は人で、met の目的語(目的格)になっている。人を指す目的格の関係代名詞は whom を使う。what は先行詞を含む関係代名詞なので the woman の後ろには置けず、whose は後ろに名詞がなく所有関係でないため不可、which は人を指せない。",
+      "point": "人が先行詞で目的語なら whom"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "standard",
+      "stem": "This is the camera ( ) I bought yesterday.",
+      "choices": [
+        "who",
+        "whom",
+        "which",
+        "whose"
+      ],
+      "answer_index": 2,
+      "answer_text": "which",
+      "explanation": "先行詞 the camera は物で、bought の目的語(目的格)になっている。物の目的格は which を使う。",
+      "point": "物が先行詞で目的語なら which"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The movie ( ) we saw last night was boring.",
+      "choices": [
+        "who",
+        "whom",
+        "which",
+        "whose"
+      ],
+      "answer_index": 2,
+      "answer_text": "which",
+      "explanation": "先行詞 the movie は物で、saw の目的語(目的格)になっている。物を指す目的格の関係代名詞は which を使う。whom は人を指す目的格なので物の the movie には使えず、who は主格、whose は所有格で後ろに名詞が続くため不可。",
+      "point": "目的格でも物が先行詞なら which(人なら whom)"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I know a girl ( ) mother is a doctor.",
+      "choices": [
+        "who",
+        "whom",
+        "whose",
+        "which"
+      ],
+      "answer_index": 2,
+      "answer_text": "whose",
+      "explanation": "先行詞 a girl と後ろの名詞 mother が「その女の子の母」という所有の関係にある。所有格の whose を使い、whose mother でひとかたまりになる。",
+      "point": "所有(~の)を表すなら whose"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I live in a house ( ) roof is red.",
+      "choices": [
+        "who",
+        "which",
+        "whose",
+        "where"
+      ],
+      "answer_index": 2,
+      "answer_text": "whose",
+      "explanation": "先行詞 a house と roof が「その家の屋根」という所有関係にある。所有格の whose は先行詞が物でも使える。",
+      "point": "whose は物の所有にも使える"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "basic",
+      "stem": "This is the town ( ) I was born.",
+      "choices": [
+        "which",
+        "who",
+        "where",
+        "when"
+      ],
+      "answer_index": 2,
+      "answer_text": "where",
+      "explanation": "先行詞 the town は場所を表し、後ろが I was born と完全な文になっている。場所を表す関係副詞 where を使う。",
+      "point": "場所が先行詞なら where"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I remember the day ( ) we first met.",
+      "choices": [
+        "which",
+        "where",
+        "when",
+        "why"
+      ],
+      "answer_index": 2,
+      "answer_text": "when",
+      "explanation": "先行詞 the day は時を表し、後ろが we first met と完全な文になっている。時を表す関係副詞 when を使う。",
+      "point": "時が先行詞なら when"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Tell me the reason ( ) you were late.",
+      "choices": [
+        "which",
+        "where",
+        "when",
+        "why"
+      ],
+      "answer_index": 3,
+      "answer_text": "why",
+      "explanation": "先行詞 the reason(理由)を受け、後ろが you were late と完全な文になっている。理由を表す関係副詞 why を使う。",
+      "point": "the reason には why"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) he said surprised everyone.",
+      "choices": [
+        "What",
+        "Which",
+        "That",
+        "Who"
+      ],
+      "answer_index": 0,
+      "answer_text": "What",
+      "explanation": "先行詞を含む関係代名詞 what は「~すること・もの」の意味で、the thing which に等しい。ここでは「彼が言ったこと」が主語になっている。",
+      "point": "what は先行詞を含む(~こと)"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "My uncle, ( ) lives in Tokyo, sent me a present.",
+      "choices": [
+        "who",
+        "whom",
+        "which",
+        "what"
+      ],
+      "answer_index": 0,
+      "answer_text": "who",
+      "explanation": "コンマのついた継続用法。先行詞 My uncle は人で、lives の主語(主格)になるので who を使う。継続用法では that は使えない。",
+      "point": "コンマ + who は補足説明"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "This is the house in ( ) Natsume Soseki lived.",
+      "choices": [
+        "who",
+        "which",
+        "where",
+        "whom"
+      ],
+      "answer_index": 1,
+      "answer_text": "which",
+      "explanation": "前置詞 in の後ろには関係副詞 where ではなく目的格の関係代名詞が入る。先行詞 the house は物なので in which となる。",
+      "point": "前置詞の後ろは which か whom"
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "私には英語を話せる友達がいます。",
+      "tokens": [
+        "a friend",
+        "who",
+        "speak",
+        "I have",
+        "can",
+        "English"
+      ],
+      "answer_text": "I have a friend who can speak English.",
+      "explanation": "先行詞 a friend は人で、関係詞節の主語になるので主格の who を使う。who can speak English が a friend を後ろから説明する。",
+      "point": "人 + who + 動詞のかたまり"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "これは私の祖父が建てた家です。",
+      "tokens": [
+        "the house",
+        "which",
+        "this is",
+        "built",
+        "my grandfather"
+      ],
+      "answer_text": "This is the house which my grandfather built.",
+      "explanation": "先行詞 the house は物で、built の目的語(目的格)になるので which を使う。which my grandfather built が the house を説明する。",
+      "point": "物 + which + 主語 + 動詞"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私は父が医者である少年を知っています。",
+      "tokens": [
+        "a boy",
+        "whose",
+        "I know",
+        "is",
+        "father",
+        "a doctor"
+      ],
+      "answer_text": "I know a boy whose father is a doctor.",
+      "explanation": "「その少年の父」という所有関係なので所有格 whose を使い、whose father でひとかたまりにする。whose father is a doctor が a boy を説明する。",
+      "point": "whose + 名詞で所有を表す"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "ここが私たちが昨日泊まったホテルです。",
+      "tokens": [
+        "the hotel",
+        "where",
+        "this is",
+        "stayed",
+        "we",
+        "yesterday"
+      ],
+      "answer_text": "This is the hotel where we stayed yesterday.",
+      "explanation": "先行詞 the hotel は場所で、後ろが we stayed yesterday と完全な文になるので関係副詞 where を使う。",
+      "point": "場所 + where + 完全な文"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "これは私が昨日会った男性です。",
+      "tokens": [
+        "This is",
+        "the man",
+        "whom",
+        "I",
+        "met",
+        "yesterday"
+      ],
+      "answer_text": "This is the man whom I met yesterday.",
+      "explanation": "先行詞 the man は人で、met の目的語(目的格)になっているので、人の目的格の関係代名詞 whom を使う。whom I met yesterday が the man を後ろから説明する。yesterday は文末に置く。",
+      "point": "人が先行詞で目的語なら whom"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼が言ったことは本当だった。",
+      "tokens": [
+        "what",
+        "was",
+        "he said",
+        "true"
+      ],
+      "answer_text": "What he said was true.",
+      "explanation": "先行詞を含む関係代名詞 what が「彼が言ったこと」というかたまりを作り、文全体の主語になる。was true が述語になる。",
+      "point": "What ... が主語のかたまり"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "I have a friend. He lives in Canada.",
+      "instruction": "関係代名詞 who を使って1文にしなさい。",
+      "answer_text": "I have a friend who lives in Canada.",
+      "explanation": "2文目の He は a friend を指す主語なので、主格の関係代名詞 who に置きかえて1文にまとめる。who lives in Canada が a friend を説明する。",
+      "point": "主語の代名詞は主格 who に"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "This is the bike. I bought it last week.",
+      "instruction": "関係代名詞 which を使って1文にしなさい。",
+      "answer_text": "This is the bike which I bought last week.",
+      "explanation": "2文目の it は the bike を指す目的語なので、目的格の関係代名詞 which に置きかえる。which I bought last week が the bike を説明する。",
+      "point": "目的語の代名詞は目的格 which に"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "I know a girl. Her brother is a famous singer.",
+      "instruction": "関係代名詞 whose を使って1文にしなさい。",
+      "answer_text": "I know a girl whose brother is a famous singer.",
+      "explanation": "2文目の Her は a girl の所有を表すので、所有格の関係代名詞 whose に置きかえ、whose brother でひとかたまりにする。",
+      "point": "所有格 Her は whose に"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "This is the park. We played here yesterday.",
+      "instruction": "関係副詞 where を使って1文にしなさい。",
+      "answer_text": "This is the park where we played yesterday.",
+      "explanation": "2文目の here は the park という場所を指す副詞なので、場所を表す関係副詞 where に置きかえる。where we played yesterday が the park を説明する。",
+      "point": "場所の副詞 here は where に"
+    }
+  ]
+}

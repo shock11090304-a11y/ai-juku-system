@@ -1,0 +1,24 @@
+{
+  "slug": "12_subjunctive",
+  "no": 16,
+  "type": "order",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 16,
+    "type": "order",
+    "level": "basic",
+    "prompt_ja": "水がなければ、私たちは生きられないだろう。",
+    "tokens": [
+      "Without",
+      "water,",
+      "we",
+      "could",
+      "not",
+      "live."
+    ],
+    "answer_text": "Without water, we could not live.",
+    "explanation": "Without は「もし~がなければ」を表し、if 節の代用として仮定法の条件になる。文頭の前置詞句 Without water, をコンマごと先頭に置き、主節は「主語 + could not + 動詞の原形」で「~できないだろう」を表す。先頭は大文字の Without のみ、water, はコンマ付きで主語 we の前、could の後に not、文末は live. となるため語順は一意に定まる。倒置形ではなく基礎的な標準形で仮定法を問う。",
+    "point": "Without ~, 主語 + could not + 原形"
+  },
+  "reason": "元の問題は If 省略の倒置 Were it not for で難関寄りであり、基礎定着レベルを逸脱していた。倒置を避けた標準形に直すため、order 形式で Without water, we could not live. に変更。Without を if 節の代用とする基礎的な仮定法を維持し、トークンは重複なしで先頭の大文字 Without と各語の文法的位置から語順が一意に定まる。explanation と point も最終解答に整合させた。"
+}

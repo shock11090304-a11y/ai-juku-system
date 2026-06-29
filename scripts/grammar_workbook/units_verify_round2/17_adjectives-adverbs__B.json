@@ -1,0 +1,31 @@
+{
+  "slug": "17_adjectives-adverbs",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"動詞 sings を修飾するので副詞 beautifully。"},
+    {"no":2,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"本を「面白くさせる」能動の意味で interesting。interested は人の感情。"},
+    {"no":3,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"than があるので比較級 quicker(=more quickly の口語形)。"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"books は可算名詞複数、There are とも一致するので many。"},
+    {"no":5,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"water は不可算なので much。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"friends は可算複数で「ほとんどいない(寂しい)」否定的含意なので few。"},
+    {"no":7,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"money は不可算で肯定的「少しはある(おごれる)」なので a little。"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"be動詞の後の頻度副詞 always。"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"一般動詞 gets up を修飾する頻度副詞 usually。"},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在完了の疑問文末尾「もう~したか」は yet。"},
+    {"no":11,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"「まだ~している」継続は still。"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"too + 形容詞 hot。"},
+    {"no":13,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"形容詞の後置で「~するのに十分」enough。"},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"a beautiful day の語順なので such ... that。so なら so beautiful a day となり不可。"},
+    {"no":15,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"比較級 more difficult の強調は much。"},
+    {"no":16,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"原級 tired の強調は very。"},
+    {"no":17,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"hardly any time「ほとんど時間がない」。time は不可算だが hardly と結ぶ慣用は any。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"He runs very fast.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"very が副詞 fast を修飾。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"I usually get up at seven.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"頻度副詞 usually は一般動詞の前。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"She has never been abroad.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"have/has + never + 過去分詞の経験用法。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"This is such an interesting story.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"such + a/an + 形容詞 + 名詞。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"He was kind enough to help me.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"形容詞 + enough + to不定詞。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"He drives carefully.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"形容詞+名詞を動詞+副詞へ。a careful driver = drives carefully。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"This bag is too heavy for me to carry.","multiple_valid":true,"multiple_valid_note":"so~that S can't 構文を too~to に書き換え。主語 I を明示するため for me を入れる「This bag is too heavy for me to carry.」が標準。for me を省いた「This bag is too heavy to carry.」も文法的に成立するが、原文の I のニュアンスを保つには for me 付きが適切。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"末尾の it は不要(carry の目的語が主語と一致するため)。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"He is kind enough to help us.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"so~that S can を 形容詞+enough+to に書き換え。"}
+  ]
+}

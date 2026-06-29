@@ -1,0 +1,23 @@
+{
+  "slug": "03_perfect",
+  "no": 5,
+  "type": "mc",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 5,
+    "type": "mc",
+    "level": "basic",
+    "stem": "Have you ( ) been to Hokkaido in your life?",
+    "choices": [
+      "ever",
+      "since",
+      "for",
+      "gone"
+    ],
+    "answer_index": 0,
+    "answer_text": "ever",
+    "explanation": "経験を尋ねる疑問文で「今までに(人生で)一度でも行ったことがありますか」は ever を使います。in your life を加えたことで経験用法に一意に定まります。since と for は接続詞・前置詞でこの位置に置けず、gone は been と過去分詞が二つ重なるため不可です。",
+    "point": "経験を問う疑問文は Have you ever 〜。"
+  },
+  "reason": "元の選択肢にあった never は「Have you never been to Hokkaido?(一度も行ったことがないの?)」という驚き・確認の否定疑問として英語で成立し、正解が ever に一意に定まらなかった。指摘どおり stem に in your life を加えて経験用法に固定し、never を文法的に明確に不成立な since・for・gone へ差し替えた。これにより ever 以外はどれも文として成立せず正解が一つに確定する。answer は ever のまま不変で、基礎レベルと完了形(経験用法)の出題趣旨も維持。explanation と point を最終形に整合させた。半角ASCIIのみ・空所は丸括弧・選択肢4つ重複なし・answer_text は choices の該当要素と一致を確認済み。"
+}

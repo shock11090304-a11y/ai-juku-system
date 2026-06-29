@@ -1,0 +1,385 @@
+{
+  "unit": "形容詞・副詞",
+  "unit_slug": "adjectives-adverbs",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She sings ( ).",
+      "choices": [
+        "beautiful",
+        "beauty",
+        "beautifully",
+        "beautify"
+      ],
+      "answer_index": 2,
+      "answer_text": "beautifully",
+      "explanation": "動詞 sings を修飾するので副詞を選ぶ。形容詞 beautiful ではなく、副詞 beautifully が正しい。",
+      "point": "動詞を修飾するのは副詞"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "This is a very ( ) book.",
+      "choices": [
+        "interesting",
+        "interest",
+        "interestingly",
+        "interested"
+      ],
+      "answer_index": 0,
+      "answer_text": "interesting",
+      "explanation": "名詞 book を修飾するので形容詞を選ぶ。副詞 interestingly は名詞を修飾できない。",
+      "point": "名詞を修飾するのは形容詞"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "He runs ( ) than I do.",
+      "choices": [
+        "quick",
+        "quickness",
+        "quickly",
+        "quicker"
+      ],
+      "answer_index": 3,
+      "answer_text": "quicker",
+      "explanation": "than があるので比較級が必要。quickly は原級ゆえ不可(比較級は more quickly)。選択肢中の比較級は quicker のみ。quick や quickness は動詞 runs を修飾できない。",
+      "point": "than があれば比較級を選ぶ"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "There are ( ) books on the desk.",
+      "choices": [
+        "much",
+        "a little",
+        "little",
+        "many"
+      ],
+      "answer_index": 3,
+      "answer_text": "many",
+      "explanation": "books は数えられる名詞の複数形なので、数を表す数量形容詞 many を使う。much や a little, little は数えられない名詞の量に使う語で、複数名詞 books には付けられない。",
+      "point": "many は可算名詞の複数形に"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "There isn't ( ) water in the glass.",
+      "choices": [
+        "much",
+        "many",
+        "few",
+        "a few"
+      ],
+      "answer_index": 0,
+      "answer_text": "much",
+      "explanation": "water は数えられない名詞なので、量を表す much を使う。数を表す many や、可算名詞用の a few は使えない。",
+      "point": "much は不可算名詞の量に"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He has ( ) friends, so he often feels lonely.",
+      "choices": [
+        "little",
+        "much",
+        "less",
+        "few"
+      ],
+      "answer_index": 3,
+      "answer_text": "few",
+      "explanation": "friends は可算名詞の複数形で、「友達がほとんどいない」という否定的な意味なので few を選ぶ。little と much は不可算名詞に使い、less は比較級なのでいずれも不適切。",
+      "point": "few は可算名詞で「ほとんどない」"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I have ( ) money, so I can buy you a drink.",
+      "choices": [
+        "a few",
+        "few",
+        "a little",
+        "little"
+      ],
+      "answer_index": 2,
+      "answer_text": "a little",
+      "explanation": "money は数えられない名詞で、「少しはある」と肯定的な意味なので a little を選ぶ。可算名詞用の a few は使えない。",
+      "point": "a little は不可算名詞で「少しある」"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "basic",
+      "stem": "He is ( ) late for school.",
+      "choices": [
+        "every",
+        "always",
+        "all",
+        "many"
+      ],
+      "answer_index": 1,
+      "answer_text": "always",
+      "explanation": "頻度を表す副詞 always「いつも」が適切。every や all は名詞につく語で副詞ではない。",
+      "point": "頻度は副詞 always で表す"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She ( ) gets up early in the morning.",
+      "choices": [
+        "usually",
+        "usual",
+        "use",
+        "useful"
+      ],
+      "answer_index": 0,
+      "answer_text": "usually",
+      "explanation": "一般動詞 gets up の前に置いて頻度を表す副詞 usually を選ぶ。usual や useful は形容詞で動詞を修飾できない。",
+      "point": "頻度副詞は一般動詞の前"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Have you finished your homework ( )?",
+      "choices": [
+        "long ago",
+        "still",
+        "yet",
+        "ever"
+      ],
+      "answer_index": 2,
+      "answer_text": "yet",
+      "explanation": "疑問文の文末で「もう(終わったか)」を表すのは yet。long ago は「ずっと前に」という過去の一時点を指す副詞句で、完了を問う現在完了の疑問文には合わない。still や ever もこの文末では成り立たない。",
+      "point": "疑問文の文末「もう」は yet"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "It is ten o'clock, but he is ( ) sleeping.",
+      "choices": [
+        "yet",
+        "already",
+        "still",
+        "ago"
+      ],
+      "answer_index": 2,
+      "answer_text": "still",
+      "explanation": "「まだ(眠っている)」と動作が続いていることを表すのは still。yet は否定文や疑問文で使う。",
+      "point": "「まだ続く」は still"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "basic",
+      "stem": "This coffee is too ( ) to drink.",
+      "choices": [
+        "hotly",
+        "hot",
+        "heat",
+        "heated"
+      ],
+      "answer_index": 1,
+      "answer_text": "hot",
+      "explanation": "too の後ろには形容詞または副詞が来る。ここは be 動詞の補語なので形容詞 hot を選ぶ。副詞 hotly は不適切。",
+      "point": "too の後ろは形容詞か副詞"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He is old ( ) to drive a car.",
+      "choices": [
+        "enough",
+        "too",
+        "very",
+        "so"
+      ],
+      "answer_index": 0,
+      "answer_text": "enough",
+      "explanation": "enough は形容詞や副詞の後ろに置いて「十分に」を表す。old enough to ... で「~するのに十分な年齢だ」となる。",
+      "point": "enough は形容詞の後ろ"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "It was ( ) a beautiful day that we went out.",
+      "choices": [
+        "so",
+        "very",
+        "such",
+        "too"
+      ],
+      "answer_index": 2,
+      "answer_text": "such",
+      "explanation": "such は a + 形容詞 + 名詞 の語順をとる。such a beautiful day が正しい。so は so beautiful a day のように形容詞の直前に置く。",
+      "point": "such a + 形容詞 + 名詞"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "This question is ( ) more difficult than that one.",
+      "choices": [
+        "very",
+        "many",
+        "much",
+        "so"
+      ],
+      "answer_index": 2,
+      "answer_text": "much",
+      "explanation": "比較級 more difficult を強める「ずっと」には much を使う。very は原級を強める語で比較級は強められない。",
+      "point": "比較級を強めるのは much"
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I am ( ) tired today.",
+      "choices": [
+        "very",
+        "much",
+        "many",
+        "more"
+      ],
+      "answer_index": 0,
+      "answer_text": "very",
+      "explanation": "形容詞の原級 tired を強めるには very を使う。much は比較級や過去分詞を強めるときに使う。",
+      "point": "原級を強めるのは very"
+    },
+    {
+      "no": 17,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I have hardly ( ) time to relax these days.",
+      "choices": [
+        "many",
+        "much",
+        "any",
+        "some"
+      ],
+      "answer_index": 2,
+      "answer_text": "any",
+      "explanation": "hardly は「ほとんど~ない」という否定の副詞。否定文と同じく any を使い、hardly any time で「ほとんど時間がない」となる。",
+      "point": "hardly は「ほとんど~ない」"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼はとても速く走る。",
+      "tokens": [
+        "fast",
+        "very",
+        "runs",
+        "He"
+      ],
+      "answer_text": "He runs very fast.",
+      "explanation": "fast は形も意味も「速く」という副詞で、動詞 runs を修飾する。very fast で「とても速く」と程度を強める。",
+      "point": "fast は形容詞と同形の副詞"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼女はとても幸せそうに見える。",
+      "tokens": [
+        "very happy",
+        "She",
+        "looks"
+      ],
+      "answer_text": "She looks very happy.",
+      "explanation": "look(~に見える)は後ろに形容詞をとる(叙述用法)。副詞 happily ではなく形容詞 happy。very は形容詞を強める。語順は She looks very happy.。",
+      "point": "look+形容詞(叙述用法、副詞は不可)"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼女は外国に行ったことが一度もない。",
+      "tokens": [
+        "been",
+        "never",
+        "She",
+        "has",
+        "abroad"
+      ],
+      "answer_text": "She has never been abroad.",
+      "explanation": "頻度を表す副詞 never は have/has と過去分詞の間に置く。abroad は「外国へ」という副詞なので前置詞は不要。",
+      "point": "頻度副詞は have と過去分詞の間"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "これはとても面白い物語だ。",
+      "tokens": [
+        "interesting",
+        "such",
+        "is",
+        "story",
+        "This",
+        "an"
+      ],
+      "answer_text": "This is such an interesting story.",
+      "explanation": "such は a/an + 形容詞 + 名詞 の語順をとる。母音で始まる interesting の前なので an を使う。",
+      "point": "such an + 形容詞 + 名詞"
+    },
+    {
+      "no": 22,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼は私を助けるほど親切だった。",
+      "tokens": [
+        "kind enough",
+        "to help me",
+        "He",
+        "was"
+      ],
+      "answer_text": "He was kind enough to help me.",
+      "explanation": "形容詞 + enough + to do で「~するのに十分…」。He was kind enough to help me. の語順で、kind enough のまとまりに to help me が続く。",
+      "point": "形容詞 + enough + to do"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "He is a careful driver.",
+      "instruction": "drive を動詞として使い、ほぼ同じ内容の文に書き換えなさい。",
+      "answer_text": "He drives carefully.",
+      "explanation": "形容詞 careful が名詞 driver を修飾する文を、動詞 drive とそれを修飾する副詞 carefully を使って言い換える。",
+      "point": "形容詞は副詞に変えて動詞を修飾"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "This bag is so heavy that I can't carry it.",
+      "instruction": "too を使ってほぼ同じ内容の文に書き換えなさい。",
+      "answer_text": "This bag is too heavy for me to carry.",
+      "explanation": "so ... that 主語 can't ~ は too ... to do で言い換えられる。意味上の主語は for me で表す。",
+      "point": "so...that can't = too...to"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "He is so kind that he can help us.",
+      "instruction": "enough を使ってほぼ同じ内容の文に書き換えなさい。",
+      "answer_text": "He is kind enough to help us.",
+      "explanation": "so ... that 主語 can ~ は ... enough to do で言い換えられる。enough は形容詞 kind の後ろに置く。",
+      "point": "so...that can = enough to"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "slug": "16_pronouns",
+  "no": 13,
+  "type": "mc",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 13,
+    "type": "mc",
+    "level": "standard",
+    "stem": "I don't like this shirt. Please show me ( ).",
+    "choices": [
+      "other",
+      "another",
+      "the other",
+      "the others"
+    ],
+    "answer_index": 1,
+    "answer_text": "another",
+    "explanation": "不特定の「もう一つ別のもの」を1語で指すので another を選ぶ。another は an と other からできた語で、それ自体が代名詞として目的語になれる。other は単独では代名詞にならず使えない。the other は「2つのうち残りの1つ」を指す語で、ここでは2つに限定する文脈がないので合わない。the others は複数の「残り全部」を指すので単数の意味に合わない。",
+    "point": "another はもう一つ別のもの(単数の代名詞)"
+  },
+  "reason": "もとの「Please show me ( ) one.」は another だけでなく the other one も自然に成立し正解が一意でなかった。stem から one を外して「Please show me ( ).」にし、another を単独の代名詞として問う形に変更。これにより other は単独で代名詞にならず不可、the other は2つに限定する文脈がないため不可、the others は複数を指すため不可となり、正解は another ただ1つに定まる。選択肢は4つで重複なし、answer_text は choices の answer_index 番目と一致。解説と point も another=「もう一つ別の単数のもの」に整合させた。基礎定着レベルと単元「代名詞」を維持。"
+}

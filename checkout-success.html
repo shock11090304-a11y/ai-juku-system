@@ -300,13 +300,13 @@
       const cancelEl = document.getElementById('cancelNote');
       if (purchaseType === 'trial') {
         if (titleEl) titleEl.innerHTML = 'ご登録<span class="gradient-text">完了しました！</span>';
-        if (subEl) subEl.innerHTML = '🎖 創設メンバーとしてご登録ありがとうございます！<br>14日間 完全無料の体験が始まります。クレジットカード登録不要・自動課金なし・解約手続きも不要です。';
+        if (subEl) subEl.innerHTML = '🎖 創設メンバーとしてご登録ありがとうございます！<br>7日間 完全無料の体験が始まります。クレジットカード登録不要・自動課金なし・解約手続きも不要です。';
         if (cancelEl) cancelEl.innerHTML = '体験期間中はいつでも<a href="legal.html#tokusho" style="color:var(--primary-light);">解約可能</a>です。';
       } else if (purchaseType === 'trial_extended') {
         // クレカ登録 +7日延長 (21日無料 → 終了後に founder_special 月額の自動課金開始)。
         // checkout.html の opt-in 同意文言とミラー — 「自動課金なし」「カード登録不要」は絶対に出さない。
         if (titleEl) titleEl.innerHTML = 'ご登録<span class="gradient-text">完了しました！</span>';
-        if (subEl) subEl.innerHTML = '🎖 創設メンバーとしてご登録ありがとうございます！<br>カード登録特典により <strong>21日間 完全無料</strong>の体験が始まります。体験期間中は一切課金されません。21日経過後は創設メンバープラン ¥14,500/月 (税込) の自動課金が始まります。';
+        if (subEl) subEl.innerHTML = '🎖 創設メンバーとしてご登録ありがとうございます！<br>カード登録特典により <strong>14日間 完全無料</strong>の体験が始まります。体験期間中は一切課金されません。14日経過後は創設メンバープラン ¥14,500/月 (税込) の自動課金が始まります。';
         if (cancelEl) cancelEl.innerHTML = '続けない場合は体験期間中に<a href="legal.html#tokusho" style="color:var(--primary-light);">解約</a>いただければ、料金は一切かかりません。';
       } else if (purchaseType === 'monthly' || purchaseType === 'student_addon') {
         if (titleEl) titleEl.innerHTML = 'ご契約<span class="gradient-text">完了しました！</span>';

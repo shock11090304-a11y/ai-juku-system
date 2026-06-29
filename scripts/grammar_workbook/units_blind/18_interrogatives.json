@@ -1,0 +1,269 @@
+{
+  "unit": "疑問文",
+  "unit_slug": "interrogatives",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "( ) is that man? He is my teacher.",
+      "choices": [
+        "What",
+        "Which",
+        "Whose",
+        "Who"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "( ) is in the box? A small cake is.",
+      "choices": [
+        "Who",
+        "When",
+        "Where",
+        "What"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "( ) bag is this? It is Tom's.",
+      "choices": [
+        "Who",
+        "Which",
+        "What",
+        "Whose"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "( ) do you go to school? At seven thirty.",
+      "choices": [
+        "What",
+        "When",
+        "Where",
+        "Why"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "( ) does she live? In Tokyo.",
+      "choices": [
+        "When",
+        "Why",
+        "Who",
+        "Where"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "( ) were you late? Because I missed the bus.",
+      "choices": [
+        "When",
+        "Where",
+        "Why",
+        "How"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "( ) do you go to school? By bike.",
+      "choices": [
+        "What",
+        "Why",
+        "How",
+        "Where"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "( ) books do you have? I have ten books.",
+      "choices": [
+        "How many",
+        "How much",
+        "How long",
+        "How old"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "( ) water do you need? Just one cup.",
+      "choices": [
+        "How much",
+        "How many",
+        "How old",
+        "How far"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "( ) are you? I am fifteen years old.",
+      "choices": [
+        "How long",
+        "How tall",
+        "How old",
+        "How far"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "( ) do you go to the gym? Three times a week.",
+      "choices": [
+        "How long",
+        "How far",
+        "How much",
+        "How often"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "( ) broke this window? Ken did.",
+      "choices": [
+        "Whom",
+        "Who",
+        "What did",
+        "Who did"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "Which do you like better, tea ( ) coffee?",
+      "choices": [
+        "or",
+        "and",
+        "but",
+        "so"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "You are a student, ( )?",
+      "choices": [
+        "aren't you",
+        "are you",
+        "do you",
+        "don't you"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "Tom doesn't play soccer, ( )?",
+      "choices": [
+        "doesn't he",
+        "is he",
+        "does he",
+        "do he"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "prompt_ja": "あなたはどこに住んでいますか。",
+      "tokens": [
+        "do",
+        "Where",
+        "live",
+        "you"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "それはだれのかさですか。",
+      "tokens": [
+        "is",
+        "umbrella",
+        "Whose",
+        "it"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "あなたは何冊の本を持っていますか。",
+      "tokens": [
+        "books",
+        "do",
+        "How many",
+        "have",
+        "you"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "だれがこの手紙を書いたのですか。",
+      "tokens": [
+        "this",
+        "letter",
+        "Who",
+        "wrote"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "あなたはなぜ昨日学校を休んだのですか。",
+      "tokens": [
+        "were",
+        "absent",
+        "Why",
+        "you",
+        "yesterday"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "あなたはどうやって学校へ行きますか。",
+      "tokens": [
+        "to school",
+        "do",
+        "go",
+        "How",
+        "you"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "order",
+      "prompt_ja": "あなたは音楽が好きですよね。",
+      "tokens": [
+        "You",
+        "like music",
+        "don't",
+        "you,"
+      ]
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "He is a doctor.",
+      "instruction": "下線部の a doctor をたずねる疑問文に書きかえなさい(What で始める)。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "Where does she live?",
+      "instruction": "I don't know で始まる間接疑問文に書きかえなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "She can play the piano.",
+      "instruction": "文末に付加疑問をつけた文に書きかえなさい。"
+    }
+  ]
+}

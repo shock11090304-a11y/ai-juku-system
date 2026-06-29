@@ -1,0 +1,58 @@
+{
+  "part": "chem_exam",
+  "group": "B",
+  "unit_theme": "発展 電気分解(ファラデーの法則)",
+  "passage": "硫酸銅(II) \\(\\mathrm{CuSO_4}\\) 水溶液に、電極として2枚の白金板を浸し、直流電源につないで電気分解を行った。回路には可変抵抗 \\(R_1=2\\ \\Omega\\) と \\(R_2=3\\ \\Omega\\) を直列に接続し、電流計が示す電流の値を一定に保ったまま電気分解を続けた。このとき、電流の大きさは \\(I=5.0\\ \\text{A}\\)、電気分解を行った時間は \\(t=1930\\ \\text{s}\\) であった。陰極では銅(II)イオン \\(\\mathrm{Cu^{2+}}\\) が電子を受け取って金属銅 \\(\\mathrm{Cu}\\) が析出し、陽極では水が酸化されて酸素 \\(\\mathrm{O_2}\\) が発生した。 各設問の計算には次の値を用いよ。ファラデー定数 \\(F=9.65\\times10^{4}\\ \\text{C/mol}\\)、銅の原子量 \\(\\mathrm{Cu}=64\\)、標準状態(0 ℃, \\(1.013\\times10^{5}\\ \\text{Pa}\\))における気体1 mol の体積は \\(22.4\\ \\text{L/mol}\\) とする。電極および回路で生じる発熱や副反応は無視し、電流はすべて電気分解に使われるものとする。",
+  "subqs": [
+    {
+      "stem": "電流の大きさ \\(I=5.0\\ \\text{A}\\)、電気分解を行った時間 \\(t=1930\\ \\text{s}\\) のとき、この電気分解で流れた電気量 \\(Q\\) は何 C か。最も適当なものを選べ。",
+      "choices_latex": ["\\(9650\\ \\text{C}\\)", "\\(\\dfrac{1}{386}\\ \\text{C}\\)", "\\(1935\\ \\text{C}\\)", "\\(386\\ \\text{C}\\)"],
+      "choices_value": ["Integer(9650)", "Rational(1,386)", "Integer(1935)", "Integer(386)"],
+      "answer_index": 0,
+      "truth_value": "Integer(9650)",
+      "unit": "発展 電気分解(ファラデーの法則)(電気量Q=Itの計算)",
+      "reason": "\\(Q=It=5.0\\times1930=9650\\ \\text{C}\\)。",
+      "restates": "stem に電流 I=5.0 A、時間 t=1930 s を再掲。"
+    },
+    {
+      "stem": "この電気分解で流れた電気量は \\(Q=9650\\ \\text{C}\\) であった。ファラデー定数を \\(F=9.65\\times10^{4}\\ \\text{C/mol}\\) とするとき、回路を流れた電子の物質量は何 mol か。最も適当なものを選べ。",
+      "choices_latex": ["\\(10\\ \\text{mol}\\)", "\\(0.20\\ \\text{mol}\\)", "\\(0.10\\ \\text{mol}\\)", "\\(0.050\\ \\text{mol}\\)"],
+      "choices_value": ["Integer(10)", "Rational(1,5)", "Rational(1,10)", "Rational(1,20)"],
+      "answer_index": 2,
+      "truth_value": "Rational(1,10)",
+      "unit": "発展 電気分解(ファラデーの法則)(電子の物質量 Q/F)",
+      "reason": "流れた電子の物質量は \\(\\dfrac{Q}{F}=\\dfrac{9650}{9.65\\times10^{4}}=0.10\\ \\text{mol}\\)。",
+      "restates": "stem に電気量 Q=9650 C、ファラデー定数 F=9.65×10^4 C/mol を再掲。"
+    },
+    {
+      "stem": "回路を流れた電子の物質量は \\(0.10\\ \\text{mol}\\) であった。陰極では \\(\\mathrm{Cu^{2+}+2e^{-}\\rightarrow Cu}\\) の反応で銅が析出する。陰極で析出する銅の物質量は何 mol か。最も適当なものを選べ。",
+      "choices_latex": ["\\(0.10\\ \\text{mol}\\)", "\\(0.050\\ \\text{mol}\\)", "\\(0.20\\ \\text{mol}\\)", "\\(0.025\\ \\text{mol}\\)"],
+      "choices_value": ["Rational(1,10)", "Rational(1,20)", "Rational(1,5)", "Rational(1,40)"],
+      "answer_index": 1,
+      "truth_value": "Rational(1,20)",
+      "unit": "発展 電気分解(ファラデーの法則)(価数を考えた析出物の物質量)",
+      "reason": "\\(\\mathrm{Cu^{2+}}\\) 1 mol の析出に電子2 mol が必要なので、銅は \\(\\dfrac{0.10}{2}=0.050\\ \\text{mol}\\)。",
+      "restates": "stem に電子の物質量 0.10 mol と陰極の反応式 Cu^2+ + 2e^- → Cu(価数2)を再掲。"
+    },
+    {
+      "stem": "陰極で析出する銅の物質量は \\(0.050\\ \\text{mol}\\) であった。銅の原子量を \\(\\mathrm{Cu}=64\\) とするとき、陰極に析出する銅の質量は何 g か。最も適当なものを選べ。",
+      "choices_latex": ["\\(6.4\\ \\text{g}\\)", "\\(1.6\\ \\text{g}\\)", "\\(0.80\\ \\text{g}\\)", "\\(3.2\\ \\text{g}\\)"],
+      "choices_value": ["Rational(32,5)", "Rational(8,5)", "Rational(4,5)", "Rational(16,5)"],
+      "answer_index": 3,
+      "truth_value": "Rational(16,5)",
+      "unit": "発展 電気分解(ファラデーの法則)(析出金属の質量)",
+      "reason": "\\(m=0.050\\times64=3.2\\ \\text{g}\\)。",
+      "restates": "stem に析出した銅の物質量 0.050 mol、銅の原子量 Cu=64 を再掲。"
+    },
+    {
+      "stem": "回路を流れた電子の物質量は \\(0.10\\ \\text{mol}\\) であった。陽極では \\(\\mathrm{2H_2O\\rightarrow O_2+4H^{+}+4e^{-}}\\) の反応で酸素が発生する。標準状態における気体1 mol の体積を \\(22.4\\ \\text{L/mol}\\) とするとき、陽極で発生する酸素の標準状態における体積は何 L か。最も適当なものを選べ。",
+      "choices_latex": ["\\(0.56\\ \\text{L}\\)", "\\(1.12\\ \\text{L}\\)", "\\(2.24\\ \\text{L}\\)", "\\(0.28\\ \\text{L}\\)"],
+      "choices_value": ["Rational(14,25)", "Rational(28,25)", "Rational(56,25)", "Rational(7,25)"],
+      "answer_index": 0,
+      "truth_value": "Rational(14,25)",
+      "unit": "発展 電気分解(ファラデーの法則)(発生気体の標準状態体積)",
+      "reason": "酸素 1 mol の発生に電子4 mol が必要なので \\(\\mathrm{O_2}=\\dfrac{0.10}{4}=0.025\\ \\text{mol}\\)。体積は \\(0.025\\times22.4=0.56\\ \\text{L}\\)。",
+      "restates": "stem に電子の物質量 0.10 mol、陽極の反応式 2H2O → O2 + 4H^+ + 4e^-(電子4個)、標準状態のモル体積 22.4 L/mol を再掲。"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "slug": "01_sentence-patterns",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC: look+形容詞 happy。lookは三単現looksが必要。"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SV: slept all night long。他はSVOO等を要求し不適。"},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO: bought me a new bike。look/stay/becomeはSVOO不可。"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC: call our dog Pochi。speak/talk/sayはこの構造不可。"},
+    {"no":5,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC: taste+形容詞 good。eats/drinks/cooksは形容詞補語を取らない。"},
+    {"no":6,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC: keep the door open。stay/look/happenはSVOC不可。"},
+    {"no":7,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC: became a doctor。arrive/sleep/smileは名詞補語を取らない。"},
+    {"no":8,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO: pass me the salt。sit/stay/goは目的語2つを取らない。"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC: made us very surprised。look/seem/feelはここで他動詞SVOC不可。"},
+    {"no":10,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SV: shone brightly(自動詞shineの過去shone)。give/tellは目的語必須、showは自動詞用法でも不自然。"},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC: turn red(変化のturn+形容詞)。put/bring/giveは形容詞補語不可。"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SV: live in this town。make/call/keepは目的語が必要。"},
+    {"no":13,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO: gave him a present。go/come/stayはSVOO不可。"},
+    {"no":14,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SV: ran in the park。want/need/likeは目的語が必須でin句のみでは不適。"},
+    {"no":15,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC: named the baby Mary。speak/talk/listenはこの構造不可。"},
+    {"no":16,"mc_index":-1,"produced_sentence":"My mother made me a sweater.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO(make A B)。日本語訳と一致。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"He looks very tired.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC(look+形容詞)。veryはtiredを修飾。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"We call him Tom.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC(call O C)。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"The teacher asked us a difficult question.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO(ask A B)。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"Warm clothes keep you healthy.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC(keep O C)。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"She told me the story.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO(tell A B)。前置詞toが無いトークン構成のためSVOOのみ成立。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"He gave a book to me.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"give A B → give B to A。toを使うSVO+前置詞句。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"She bought a watch for her son.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"buy A B → buy B for A。buyはfor型動詞。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"My uncle sent me a letter.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"send B to A → send A B(SVOO)。前置詞無し。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"She made us a cake.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"make B for A → make A B(SVOO)。前置詞無し。"}
+  ]
+}

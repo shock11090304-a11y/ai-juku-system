@@ -1,0 +1,380 @@
+{
+  "unit": "分詞",
+  "unit_slug": "participle",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Look at the ( ) baby. She is so cute.",
+      "choices": [
+        "sleep",
+        "slept",
+        "sleeping",
+        "to sleep"
+      ],
+      "answer_index": 2,
+      "answer_text": "sleeping",
+      "explanation": "赤ちゃんが自分で眠っているので、能動の意味を表す現在分詞を使う。名詞 baby の前に置いて the sleeping baby となる。",
+      "point": "能動で名詞を前から修飾は現在分詞"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I bought a ( ) car last week.",
+      "choices": [
+        "use",
+        "used",
+        "using",
+        "to use"
+      ],
+      "answer_index": 1,
+      "answer_text": "used",
+      "explanation": "車は人に使われる側なので、受動の意味を表す過去分詞を使う。a used car で中古車という意味になる。",
+      "point": "受動で名詞を前から修飾は過去分詞"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "The boy ( ) under the tree is my brother.",
+      "choices": [
+        "stand",
+        "stands",
+        "standing",
+        "stood"
+      ],
+      "answer_index": 2,
+      "answer_text": "standing",
+      "explanation": "少年が自分で立っているので能動の現在分詞を使う。修飾語句 under the tree を伴うので名詞の後ろに置く。",
+      "point": "後ろから修飾する能動は現在分詞"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "This is a letter ( ) in English.",
+      "choices": [
+        "write",
+        "wrote",
+        "writing",
+        "written"
+      ],
+      "answer_index": 3,
+      "answer_text": "written",
+      "explanation": "手紙は書かれる側なので受動の過去分詞を使う。in English を伴うので名詞 letter の後ろに置いて written in English となる。",
+      "point": "後ろから修飾する受動は過去分詞"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Do you know the girl ( ) the piano?",
+      "choices": [
+        "play",
+        "plays",
+        "playing",
+        "played"
+      ],
+      "answer_index": 2,
+      "answer_text": "playing",
+      "explanation": "女の子が自分でピアノを弾いているので能動の現在分詞を使う。目的語 the piano を伴うので名詞の後ろに置く。",
+      "point": "目的語を伴う能動は現在分詞で後置修飾"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "The language ( ) in Canada is English and French.",
+      "choices": [
+        "speak",
+        "speaking",
+        "spoken",
+        "spoke"
+      ],
+      "answer_index": 2,
+      "answer_text": "spoken",
+      "explanation": "言語は話される側なので受動の過去分詞を使う。in Canada を伴うので名詞 language の後ろに置いて spoken in Canada となる。",
+      "point": "話される側は過去分詞で後置修飾"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The movie was so ( ) that I watched it twice.",
+      "choices": [
+        "excite",
+        "excited",
+        "exciting",
+        "to excite"
+      ],
+      "answer_index": 2,
+      "answer_text": "exciting",
+      "explanation": "映画は人をわくわくさせる側なので、能動の意味の現在分詞 exciting を使う。物が主語で人を興奮させるときは ing 形になる。",
+      "point": "人を興奮させる物にはexciting"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I was very ( ) when I heard the news.",
+      "choices": [
+        "surprise",
+        "surprising",
+        "surprised",
+        "to surprise"
+      ],
+      "answer_index": 2,
+      "answer_text": "surprised",
+      "explanation": "人は驚かされる側なので、受動の意味の過去分詞 surprised を使う。人が主語で感情を抱くときは ed 形になる。",
+      "point": "驚いた人にはsurprised"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "This book is really ( ). I want to read it again.",
+      "choices": [
+        "interest",
+        "interesting",
+        "interested",
+        "to interest"
+      ],
+      "answer_index": 1,
+      "answer_text": "interesting",
+      "explanation": "本は人に興味を起こさせる側なので、能動の意味の現在分詞 interesting を使う。物が興味を抱かせるときは ing 形になる。",
+      "point": "興味を起こさせる物にはinteresting"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "We were all ( ) in the soccer game.",
+      "choices": [
+        "interest",
+        "interesting",
+        "interested",
+        "to interest"
+      ],
+      "answer_index": 2,
+      "answer_text": "interested",
+      "explanation": "人は興味を持たされる側なので、受動の意味の過去分詞 interested を使う。be interested in で interested の後ろは in が続く。",
+      "point": "興味を持つ人にはinterested"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The long trip was very ( ), so I slept well.",
+      "choices": [
+        "tire",
+        "tired",
+        "tiring",
+        "to tire"
+      ],
+      "answer_index": 2,
+      "answer_text": "tiring",
+      "explanation": "旅行は人を疲れさせる側なので、能動の意味の現在分詞 tiring を使う。物が主語で人を疲れさせるときは ing 形になる。",
+      "point": "人を疲れさせる物にはtiring"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I saw a man ( ) into the building.",
+      "choices": [
+        "runs",
+        "ran",
+        "running",
+        "to run"
+      ],
+      "answer_index": 2,
+      "answer_text": "running",
+      "explanation": "知覚動詞 see + O + 現在分詞で「Oが~しているのを見る」。男が走っている進行中の様子なので running。runs/ran は定動詞で不可、to run も知覚動詞では使わない。",
+      "point": "知覚動詞 see+O+-ing"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I heard my name ( ) from behind.",
+      "choices": [
+        "call",
+        "called",
+        "calling",
+        "to call"
+      ],
+      "answer_index": 1,
+      "answer_text": "called",
+      "explanation": "名前は呼ばれる側なので、知覚動詞 hear の後ろで受動の過去分詞を使う。hear + O + 過去分詞で O が…されるのを聞くとなる。",
+      "point": "知覚動詞+O+過去分詞は受動"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I had my bike ( ) at the shop yesterday.",
+      "choices": [
+        "repair",
+        "repairing",
+        "repaired",
+        "to repair"
+      ],
+      "answer_index": 2,
+      "answer_text": "repaired",
+      "explanation": "自転車は修理される側なので過去分詞を使う。have + O + 過去分詞で O を…してもらうという意味になる。",
+      "point": "have+O+過去分詞は…してもらう"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "She got her hair ( ) before the party.",
+      "choices": [
+        "cut",
+        "cutting",
+        "to cut",
+        "cuts"
+      ],
+      "answer_index": 0,
+      "answer_text": "cut",
+      "explanation": "髪は切られる側なので過去分詞を使う。cut の過去分詞は cut のまま。get + O + 過去分詞で O を…してもらうとなる。",
+      "point": "get+O+過去分詞は…してもらう"
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Be careful with the ( ) glass on the floor.",
+      "choices": [
+        "break",
+        "broke",
+        "breaking",
+        "broken"
+      ],
+      "answer_index": 3,
+      "answer_text": "broken",
+      "explanation": "ガラスは割られた側なので受動の過去分詞を使う。break の過去分詞 broken を名詞の前に置いて broken glass となる。",
+      "point": "壊された物には過去分詞broken"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "サッカーをしているあの少年は私の兄です。",
+      "tokens": [
+        "playing soccer",
+        "The boy",
+        "is",
+        "my brother"
+      ],
+      "answer_text": "The boy playing soccer is my brother.",
+      "explanation": "現在分詞句 playing soccer が名詞 The boy を後ろから修飾する(後置修飾)。The boy playing soccer = サッカーをしている少年。",
+      "point": "現在分詞句の後置修飾(名詞+-ing句)"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "これは中国で作られた人形です。",
+      "tokens": [
+        "made",
+        "a doll",
+        "is",
+        "this",
+        "in China"
+      ],
+      "answer_text": "This is a doll made in China.",
+      "explanation": "人形は作られる側なので受動の過去分詞 made を使う。in China を伴うので名詞 doll の後ろに置いて後置修飾する。",
+      "point": "作られた物は過去分詞で後置修飾"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私は誰かが私の名前を呼ぶのを聞いた。",
+      "tokens": [
+        "calling",
+        "I",
+        "someone",
+        "heard",
+        "my name"
+      ],
+      "answer_text": "I heard someone calling my name.",
+      "explanation": "知覚動詞 hear の後ろで、誰かが呼んでいる進行中の様子を表すので現在分詞 calling を使う。hear + O + ing の形になる。",
+      "point": "知覚動詞+O+ing は進行の様子"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼はその知らせにわくわくしているようだった。",
+      "tokens": [
+        "excited",
+        "the news",
+        "seemed",
+        "he",
+        "about"
+      ],
+      "answer_text": "He seemed excited about the news.",
+      "explanation": "人はわくわくさせられる側なので過去分詞 excited を使う。seem の後ろの補語になり be excited about の形で about が続く。",
+      "point": "興奮した人にはexcited"
+    },
+    {
+      "level": "standard",
+      "prompt_ja": "私はその時計を直してもらった。",
+      "tokens": [
+        "repaired",
+        "the watch",
+        "I",
+        "got"
+      ],
+      "answer_text": "I got the watch repaired.",
+      "explanation": "get + O + 過去分詞で「O を~してもらう」。時計は直される側なので過去分詞 repaired。get the watch repaired の語順で固定される。",
+      "point": "get+O+過去分詞は「~してもらう」",
+      "no": 21,
+      "type": "order"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "The man who is talking with Tom is my uncle.",
+      "instruction": "関係代名詞を使わず、分詞を使った文に書き換えなさい。",
+      "answer_text": "The man talking with Tom is my uncle.",
+      "explanation": "who is を省いて現在分詞 talking から始まる句で名詞 man を後ろから修飾する。男が自分で話しているので能動の現在分詞を使う。",
+      "point": "進行の関係詞節は現在分詞句に"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "I have a friend who lives in Osaka.",
+      "instruction": "関係代名詞を使わず、分詞を使った文に書き換えなさい。",
+      "answer_text": "I have a friend living in Osaka.",
+      "explanation": "who lives を現在分詞 living に変えて名詞 friend を後ろから修飾する。友人が自分で住んでいるので能動の現在分詞を使う。",
+      "point": "能動の関係詞節は現在分詞句に"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "This is a picture which was taken by my father.",
+      "instruction": "関係代名詞を使わず、分詞を使った文に書き換えなさい。",
+      "answer_text": "This is a picture taken by my father.",
+      "explanation": "which was を省いて過去分詞 taken から始まる句で名詞 picture を後ろから修飾する。写真は撮られる側なので受動の過去分詞を使う。",
+      "point": "受動の関係詞節は過去分詞句に"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "Look at the house which is standing on the hill.",
+      "instruction": "関係代名詞を使わず、分詞を使った文に書き換えなさい。",
+      "answer_text": "Look at the house standing on the hill.",
+      "explanation": "which is を省いて現在分詞 standing から始まる句で名詞 house を後ろから修飾する。家が立っている能動の様子なので現在分詞を使う。",
+      "point": "立っている様子は現在分詞句に"
+    }
+  ]
+}

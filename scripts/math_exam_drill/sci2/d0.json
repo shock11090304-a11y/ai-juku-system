@@ -1,0 +1,58 @@
+{
+  "part": "chem_exam",
+  "group": "化学",
+  "unit_theme": "化学平衡",
+  "passage": "気体のヨウ化水素 \\(\\mathrm{HI}\\) を容積 \\(2.0\\ \\text{L}\\) の密閉容器に入れ、ある一定温度 \\(T\\) に保つと、次の可逆反応が起こって平衡状態に達する。\\[\\mathrm{2HI \\rightleftharpoons H_2 + I_2}\\] いずれの物質も気体である。ある実験では、はじめに \\(\\mathrm{HI}\\) を \\(4.0\\ \\text{mol}\\) だけ容器に入れ(\\(\\mathrm{H_2}\\) と \\(\\mathrm{I_2}\\) ははじめ \\(0\\ \\text{mol}\\))、温度 \\(T\\) で平衡に達したところ、容器内に残った \\(\\mathrm{HI}\\) は \\(2.0\\ \\text{mol}\\) であった。容積は \\(2.0\\ \\text{L}\\) で一定とし、温度はつねに \\(T\\) に保たれているものとする。以下の問いに、前問で求めた値を順に用いて答えよ。",
+  "subqs": [
+    {
+      "stem": "容積 \\(2.0\\ \\text{L}\\) の密閉容器に \\(\\mathrm{HI}\\) を \\(4.0\\ \\text{mol}\\)(\\(\\mathrm{H_2,\\ I_2}\\) はともに \\(0\\ \\text{mol}\\))入れ、温度 \\(T\\) で平衡 \\(\\mathrm{2HI \\rightleftharpoons H_2 + I_2}\\) に達したところ、残った \\(\\mathrm{HI}\\) は \\(2.0\\ \\text{mol}\\) であった。このとき平衡状態における \\(\\mathrm{HI}\\) のモル濃度 \\([\\mathrm{HI}]\\) は何 \\(\\text{mol/L}\\) か。",
+      "choices_latex": ["\\(1.0\\ \\text{mol/L}\\)", "\\(0.50\\ \\text{mol/L}\\)", "\\(2.0\\ \\text{mol/L}\\)", "\\(0.25\\ \\text{mol/L}\\)"],
+      "choices_value": ["Rational(1)", "Rational(1,2)", "Rational(2)", "Rational(1,4)"],
+      "answer_index": 0,
+      "truth_value": "Rational(1)",
+      "unit": "発展 化学平衡(平衡時のモル濃度)",
+      "reason": "平衡時の \\(\\mathrm{HI}\\) は \\(2.0\\ \\text{mol}\\)、容積 \\(2.0\\ \\text{L}\\) より \\([\\mathrm{HI}]=\\dfrac{2.0}{2.0}=1.0\\ \\text{mol/L}\\)。",
+      "restates": "容積2.0 L・平衡時のHIが2.0 mol を stem に再掲。"
+    },
+    {
+      "stem": "前問の実験では、容積 \\(2.0\\ \\text{L}\\) の容器に \\(\\mathrm{HI}\\) を \\(4.0\\ \\text{mol}\\) 入れ、平衡 \\(\\mathrm{2HI \\rightleftharpoons H_2 + I_2}\\) で残った \\(\\mathrm{HI}\\) は \\(2.0\\ \\text{mol}\\)、すなわち \\([\\mathrm{HI}]=1.0\\ \\text{mol/L}\\) であった。反応した \\(\\mathrm{HI}\\) は \\(4.0-2.0=2.0\\ \\text{mol}\\) であり、係数比 \\(\\mathrm{2HI:H_2:I_2}=2:1:1\\) より平衡時の \\(\\mathrm{H_2}\\) と \\(\\mathrm{I_2}\\) はそれぞれ \\(1.0\\ \\text{mol}\\) である。このときの濃度平衡定数 \\(K_c=\\dfrac{[\\mathrm{H_2}][\\mathrm{I_2}]}{[\\mathrm{HI}]^2}\\) の値はいくらか(単位は省略)。",
+      "choices_latex": ["\\(\\dfrac{1}{2}\\)", "\\(\\dfrac{1}{4}\\)", "\\(1\\)", "\\(\\dfrac{1}{16}\\)"],
+      "choices_value": ["Rational(1,2)", "Rational(1,4)", "Rational(1)", "Rational(1,16)"],
+      "answer_index": 1,
+      "truth_value": "Rational(1,4)",
+      "unit": "発展 化学平衡(濃度平衡定数Kc)",
+      "reason": "\\([\\mathrm{H_2}]=[\\mathrm{I_2}]=\\dfrac{1.0}{2.0}=0.50\\ \\text{mol/L}\\)、\\([\\mathrm{HI}]=1.0\\ \\text{mol/L}\\)。\\(K_c=\\dfrac{0.50\\times0.50}{1.0^2}=\\dfrac{1}{4}\\)。",
+      "restates": "容積2.0 L・HI=2.0 mol([HI]=1.0)・H2=I2=1.0 mol・係数比を stem に再掲。"
+    },
+    {
+      "stem": "前問と同じ温度 \\(T\\)・容積 \\(2.0\\ \\text{L}\\) で平衡 \\(\\mathrm{2HI \\rightleftharpoons H_2 + I_2}\\)(\\(K_c=\\dfrac{1}{4}\\))に達している状態を考える。この平衡状態に対し、温度・容積を一定に保ったまま、生成物である水素 \\(\\mathrm{H_2}\\) を新たに少量加えた。ルシャトリエの原理にしたがうと、平衡はどちらに移動するか。最も適切なものを選べ。",
+      "choices_latex": ["左(\\(\\mathrm{HI}\\) が増える向き)に移動する", "右(\\(\\mathrm{H_2,\\ I_2}\\) が増える向き)に移動する", "移動しない", "いったん右に移動した後、左に戻り元に戻る"],
+      "choices_value": ["Integer(0)", "Integer(1)", "Integer(2)", "Integer(3)"],
+      "answer_index": 0,
+      "truth_value": "Integer(0)",
+      "unit": "発展 化学平衡(平衡移動・ルシャトリエの原理)",
+      "reason": "生成物 \\(\\mathrm{H_2}\\) を加えるとその濃度増加を打ち消す向き、すなわち \\(\\mathrm{H_2}\\) を消費して \\(\\mathrm{HI}\\) を生成する左向きに平衡が移動する。",
+      "restates": "反応式・H2が生成物であること・温度容積一定でH2を加えた条件を stem に再掲。"
+    },
+    {
+      "stem": "前問と同じ実験(容積 \\(2.0\\ \\text{L}\\)、はじめ \\(\\mathrm{HI}\\) を \\(4.0\\ \\text{mol}\\) 入れ、平衡 \\(\\mathrm{2HI \\rightleftharpoons H_2 + I_2}\\) で残った \\(\\mathrm{HI}\\) が \\(2.0\\ \\text{mol}\\)、反応した \\(\\mathrm{HI}\\) が \\(2.0\\ \\text{mol}\\))について、はじめに入れた \\(\\mathrm{HI}\\) のうち反応によって解離した割合(解離度)\\(\\alpha\\) はいくらか。解離度 \\(\\alpha\\) は \\(\\alpha=\\dfrac{(\\text{反応した }\\mathrm{HI}\\text{ の物質量})}{(\\text{はじめの }\\mathrm{HI}\\text{ の物質量})}\\) で定義する。",
+      "choices_latex": ["\\(0.50\\)", "\\(0.25\\)", "\\(1.0\\)", "\\(0.75\\)"],
+      "choices_value": ["Rational(1,2)", "Rational(1,4)", "Rational(1)", "Rational(3,4)"],
+      "answer_index": 0,
+      "truth_value": "Rational(1,2)",
+      "unit": "発展 化学平衡(解離度α)",
+      "reason": "反応した \\(\\mathrm{HI}\\) は \\(2.0\\ \\text{mol}\\)、はじめの \\(\\mathrm{HI}\\) は \\(4.0\\ \\text{mol}\\) なので \\(\\alpha=\\dfrac{2.0}{4.0}=0.50\\)。",
+      "restates": "はじめのHI=4.0 mol・反応したHI=2.0 mol・解離度の定義式を stem に再掲。"
+    },
+    {
+      "stem": "同じ温度 \\(T\\)(よって \\(K_c=\\dfrac{[\\mathrm{H_2}][\\mathrm{I_2}]}{[\\mathrm{HI}]^2}=\\dfrac{1}{4}\\))で、容積 \\(2.0\\ \\text{L}\\) の同じ容器に、今度ははじめに \\(\\mathrm{HI}\\) を \\(8.0\\ \\text{mol}\\) だけ入れた(\\(\\mathrm{H_2,\\ I_2}\\) ははじめ \\(0\\ \\text{mol}\\))。平衡 \\(\\mathrm{2HI \\rightleftharpoons H_2 + I_2}\\) に達したとき、容器内に残る \\(\\mathrm{HI}\\) は何 \\(\\text{mol}\\) か。",
+      "choices_latex": ["\\(4.0\\ \\text{mol}\\)", "\\(2.0\\ \\text{mol}\\)", "\\(6.0\\ \\text{mol}\\)", "\\(8.0\\ \\text{mol}\\)"],
+      "choices_value": ["Rational(4)", "Rational(2)", "Rational(6)", "Rational(8)"],
+      "answer_index": 0,
+      "truth_value": "Rational(4)",
+      "unit": "発展 化学平衡(条件変更後の新しい平衡量)",
+      "reason": "生成する \\(\\mathrm{H_2}\\) を \\(x\\ \\text{mol}\\) とすると \\(\\mathrm{I_2}=x\\)、反応した \\(\\mathrm{HI}=2x\\) で \\(\\mathrm{HI}=8.0-2x\\)。容積 \\(2.0\\ \\text{L}\\) より \\(K_c=\\dfrac{(x/2)^2}{((8.0-2x)/2)^2}=\\dfrac{x^2}{(8.0-2x)^2}=\\dfrac{1}{4}\\)。\\(\\dfrac{x}{8.0-2x}=\\dfrac{1}{2}\\) より \\(2x=8.0-2x\\)、\\(x=2.0\\)。よって \\(\\mathrm{HI}=8.0-2\\times2.0=4.0\\ \\text{mol}\\)。",
+      "restates": "Kc=1/4・容積2.0 L・はじめのHI=8.0 mol・反応式を stem に再掲。"
+    }
+  ]
+}

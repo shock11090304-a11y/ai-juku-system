@@ -1,0 +1,108 @@
+{
+ "part": "chem_exam",
+ "group": "発展 反応速度",
+ "unit_theme": "反応速度と速度式（連動大問）",
+ "passage": "五酸化二窒素 N\\(_2\\)O\\(_5\\) は次のように分解する。\\n\\(\\quad 2\\,\\mathrm{N_2O_5} \\rightarrow 4\\,\\mathrm{NO_2} + \\mathrm{O_2}\\)\\nこの分解反応について、温度 \\(25\\,{}^\\circ\\mathrm{C}\\) 一定で N\\(_2\\)O\\(_5\\) の濃度変化を測定した。反応速度 \\(v\\) は N\\(_2\\)O\\(_5\\) の減少速度 \\(v=-\\dfrac{\\Delta[\\mathrm{N_2O_5}]}{\\Delta t}\\) で表すものとする。必要であれば \\(\\log_{e}2=0.69\\) を用いてよい。各設問の数値は計算しやすいように設定してある。",
+ "subqs": [
+  {
+   "stem": "温度 \\(25\\,{}^\\circ\\mathrm{C}\\) 一定での N\\(_2\\)O\\(_5\\) の分解 \\(2\\,\\mathrm{N_2O_5}\\rightarrow 4\\,\\mathrm{NO_2}+\\mathrm{O_2}\\) において、N\\(_2\\)O\\(_5\\) の濃度は時刻 \\(t=0\\,\\text{s}\\) で \\(1.00\\,\\text{mol/L}\\)、\\(t=200\\,\\text{s}\\) で \\(0.80\\,\\text{mol/L}\\) であった。この区間における N\\(_2\\)O\\(_5\\) の平均の分解速度 \\(v=-\\dfrac{\\Delta[\\mathrm{N_2O_5}]}{\\Delta t}\\) はいくらか。",
+   "choices_latex": [
+    "\\(1.0\\times 10^{-3}\\ \\text{mol/(L}\\cdot\\text{s)}\\)",
+    "\\(2.0\\times 10^{-1}\\ \\text{mol/(L}\\cdot\\text{s)}\\)",
+    "\\(2.0\\times 10^{-3}\\ \\text{mol/(L}\\cdot\\text{s)}\\)",
+    "\\(5.0\\times 10^{-3}\\ \\text{mol/(L}\\cdot\\text{s)}\\)"
+   ],
+   "choices_value": [
+    "Rational(1,1000)",
+    "Rational(1,5)",
+    "Rational(1,500)",
+    "Rational(1,200)"
+   ],
+   "answer_index": 0,
+   "truth_value": "Rational(1,1000)",
+   "unit": "発展 反応速度(平均の反応速度)",
+   "reason": "v = -Δ[N2O5]/Δt = (1.00-0.80)/200 = 0.20/200 = 1.0×10⁻³ mol/(L·s)。",
+   "restates": "stem内に反応式・[N2O5](t=0)=1.00、(t=200s)=0.80・速度の定義式 v=-Δ[N2O5]/Δt を再掲。"
+  },
+  {
+   "stem": "同じ分解反応 \\(2\\,\\mathrm{N_2O_5}\\rightarrow 4\\,\\mathrm{NO_2}+\\mathrm{O_2}\\) で、速度式が \\(v=k[\\mathrm{N_2O_5}]^{m}\\) と書けるとする。初濃度を変えて初速度を測ると、\\([\\mathrm{N_2O_5}]_0=1.00\\,\\text{mol/L}\\) のとき \\(v=2.0\\times10^{-3}\\,\\text{mol/(L}\\cdot\\text{s)}\\)、\\([\\mathrm{N_2O_5}]_0=2.00\\,\\text{mol/L}\\) のとき \\(v=4.0\\times10^{-3}\\,\\text{mol/(L}\\cdot\\text{s)}\\) であった。初濃度を 2 倍にすると初速度は何倍になるか。",
+   "choices_latex": [
+    "\\(4\\ \\text{倍}\\)",
+    "\\(2\\ \\text{倍}\\)",
+    "\\(1\\ \\text{倍}\\)",
+    "\\(\\dfrac{1}{2}\\ \\text{倍}\\)"
+   ],
+   "choices_value": [
+    "Integer(4)",
+    "Integer(2)",
+    "Integer(1)",
+    "Rational(1,2)"
+   ],
+   "answer_index": 1,
+   "truth_value": "Integer(2)",
+   "unit": "発展 反応速度(反応次数の決定)",
+   "reason": "速度比 = (4.0×10⁻³)/(2.0×10⁻³) = 2。濃度2倍で速度2倍だから m=1（1次反応）で速度は2倍。",
+   "restates": "stem内に v=k[N2O5]^m と2組の(初濃度,初速度)データを再掲。"
+  },
+  {
+   "stem": "この分解は N\\(_2\\)O\\(_5\\) について 1 次反応で、速度式は \\(v=k[\\mathrm{N_2O_5}]\\) と書ける。\\([\\mathrm{N_2O_5}]=1.00\\,\\text{mol/L}\\) のとき分解速度が \\(v=2.0\\times10^{-3}\\,\\text{mol/(L}\\cdot\\text{s)}\\) であった。速度定数 \\(k\\) の値はいくらか（単位に注意）。",
+   "choices_latex": [
+    "\\(1.0\\times10^{-3}\\ \\text{/s}\\)",
+    "\\(4.0\\times10^{-3}\\ \\text{/s}\\)",
+    "\\(2.0\\times10^{-3}\\ \\text{/s}\\)",
+    "\\(5.0\\times10^{2}\\ \\text{/s}\\)"
+   ],
+   "choices_value": [
+    "Rational(1,1000)",
+    "Rational(1,250)",
+    "Rational(1,500)",
+    "Integer(500)"
+   ],
+   "answer_index": 2,
+   "truth_value": "Rational(1,500)",
+   "unit": "発展 反応速度(速度定数kと単位)",
+   "reason": "1次反応 v=k[N2O5] より k = v/[N2O5] = (2.0×10⁻³)/1.00 = 2.0×10⁻³ /s。1次反応の k の単位は /s（s⁻¹）。",
+   "restates": "stem内に1次反応であること・速度式 v=k[N2O5]・[N2O5]=1.00 のとき v=2.0×10⁻³ を再掲。"
+  },
+  {
+   "stem": "1 次反応 \\(v=k[\\mathrm{N_2O_5}]\\) の半減期は \\(t_{1/2}=\\dfrac{\\log_{e}2}{k}\\) で与えられる。速度定数 \\(k=2.0\\times10^{-3}\\,\\text{/s}\\)、\\(\\log_{e}2=0.69\\) とすると半減期は \\(t_{1/2}=345\\,\\text{s}\\) である。N\\(_2\\)O\\(_5\\) の濃度が \\(0.80\\,\\text{mol/L}\\) の時刻から \\(1035\\,\\text{s}\\) 経過したとき、N\\(_2\\)O\\(_5\\) の濃度はいくらか。",
+   "choices_latex": [
+    "\\(0.40\\ \\text{mol/L}\\)",
+    "\\(0.20\\ \\text{mol/L}\\)",
+    "\\(0.05\\ \\text{mol/L}\\)",
+    "\\(0.10\\ \\text{mol/L}\\)"
+   ],
+   "choices_value": [
+    "Rational(2,5)",
+    "Rational(1,5)",
+    "Rational(1,20)",
+    "Rational(1,10)"
+   ],
+   "answer_index": 3,
+   "truth_value": "Rational(1,10)",
+   "unit": "発展 反応速度(半減期と指定時刻の濃度)",
+   "reason": "1035/345 = 3 半減期。0.80×(1/2)³ = 0.80/8 = 0.10 mol/L。",
+   "restates": "stem内に半減期の式・k=2.0×10⁻³・log_e2=0.69・t_(1/2)=345s・基準濃度0.80mol/L・経過1035sを再掲。"
+  },
+  {
+   "stem": "一般に温度が \\(10\\,{}^\\circ\\mathrm{C}\\) 上がるごとに反応速度（速度定数）が 2 倍になるとみなす（2倍則）。この分解反応の速度定数は \\(25\\,{}^\\circ\\mathrm{C}\\) で \\(k=2.0\\times10^{-3}\\,\\text{/s}\\) である。温度を \\(55\\,{}^\\circ\\mathrm{C}\\) に上げたときの速度定数 \\(k\\) はおよそいくらか。",
+   "choices_latex": [
+    "\\(1.6\\times10^{-2}\\ \\text{/s}\\)",
+    "\\(4.0\\times10^{-3}\\ \\text{/s}\\)",
+    "\\(8.0\\times10^{-3}\\ \\text{/s}\\)",
+    "\\(1.2\\times10^{-2}\\ \\text{/s}\\)"
+   ],
+   "choices_value": [
+    "Rational(2,125)",
+    "Rational(1,250)",
+    "Rational(1,125)",
+    "Rational(3,250)"
+   ],
+   "answer_index": 0,
+   "truth_value": "Rational(2,125)",
+   "unit": "発展 反応速度(温度変化と2倍則)",
+   "reason": "55-25=30℃ 上昇 → 30/10=3 段階 → 速度は 2³=8 倍。k=2.0×10⁻³×8 = 1.6×10⁻² /s。",
+   "restates": "stem内に2倍則(10℃で2倍)・25℃でk=2.0×10⁻³・目標温度55℃を再掲。"
+  }
+ ]
+}

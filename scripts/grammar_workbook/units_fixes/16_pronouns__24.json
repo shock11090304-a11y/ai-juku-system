@@ -1,0 +1,17 @@
+{
+  "slug": "16_pronouns",
+  "no": 24,
+  "type": "rewrite",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 24,
+    "type": "rewrite",
+    "level": "standard",
+    "original": "All the boys on the team are tall.",
+    "instruction": "主語を Every で始め、ほぼ同じ意味の文に書きかえなさい。",
+    "answer_text": "Every boy on the team is tall.",
+    "explanation": "every は後ろに単数名詞 boy を取り、動詞も is と単数で受ける。All の複数 boys / are が Every の単数 boy / is に変わる。on the team は「チームに所属して」の意味で米語標準の前置詞。",
+    "point": "every + 単数名詞 + 単数動詞"
+  },
+  "reason": "原文・解答の in the team は英で使われる形で、米語標準は on the team。前置詞論争を避けるため original と answer_text の両方を on the team に統一した。問う趣旨は代名詞 every の単複一致(every + 単数名詞 boy + 単数動詞 is)のままで、instruction(主語を Every で始める)により答えは Every boy on the team is tall. の一通りに定まる。explanation と point も最終解答と整合させ、on the team の意味も補足した。"
+}

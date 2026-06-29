@@ -1,0 +1,266 @@
+{
+  "unit": "比較",
+  "unit_slug": "comparison",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "Tom is as ( ) as his brother.",
+      "choices": [
+        "taller",
+        "tallest",
+        "more tall",
+        "tall"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "This box is ( ) than that one.",
+      "choices": [
+        "heavier",
+        "heavy",
+        "heaviest",
+        "more heavy"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "Mt. Fuji is the ( ) mountain in Japan.",
+      "choices": [
+        "high",
+        "higher",
+        "more high",
+        "highest"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "This question is ( ) than the first one.",
+      "choices": [
+        "more difficult",
+        "difficult",
+        "difficulter",
+        "most difficult"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "Health is more important than ( ).",
+      "choices": [
+        "money",
+        "more money",
+        "the money",
+        "moneys"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "Soccer is the ( ) popular sport in this school.",
+      "choices": [
+        "more",
+        "much",
+        "most",
+        "very"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "My bag is not as ( ) as yours.",
+      "choices": [
+        "bigger",
+        "biggest",
+        "big",
+        "more big"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "This dictionary is ( ) than that one.",
+      "choices": [
+        "better",
+        "good",
+        "best",
+        "well"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "This is the ( ) movie I have ever seen.",
+      "choices": [
+        "good",
+        "better",
+        "best",
+        "well"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "Today is much ( ) than yesterday.",
+      "choices": [
+        "hotter",
+        "hot",
+        "hottest",
+        "more hot"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "He runs ( ) than I do.",
+      "choices": [
+        "fast",
+        "fastest",
+        "faster",
+        "more fast"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "This is one of the ( ) buildings in the city.",
+      "choices": [
+        "old",
+        "older",
+        "more old",
+        "oldest"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "( ) you study, the more you will learn.",
+      "choices": [
+        "The most",
+        "More",
+        "Much more",
+        "The more"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "The weather is getting warmer and ( ).",
+      "choices": [
+        "warm",
+        "warmest",
+        "warmer",
+        "more warm"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "No other student in my class is as ( ) as Ken.",
+      "choices": [
+        "kinder",
+        "kindest",
+        "more kind",
+        "kind"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "prompt_ja": "彼女は私と同じくらい速く泳ぐ。",
+      "tokens": [
+        "fast",
+        "as",
+        "swims",
+        "She",
+        "as",
+        "me"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "この本はあの本よりおもしろい。",
+      "tokens": [
+        "more",
+        "than",
+        "is",
+        "This book",
+        "that one",
+        "interesting"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "彼はクラスでいちばん背が高い生徒だ。",
+      "tokens": [
+        "the",
+        "student",
+        "tallest",
+        "is",
+        "He",
+        "in the class"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "東京は日本でいちばん大きな都市のひとつだ。",
+      "tokens": [
+        "one of",
+        "cities",
+        "is",
+        "Tokyo",
+        "the largest",
+        "in Japan"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "この問題はあの問題よりずっと易しい。",
+      "tokens": [
+        "easier",
+        "much",
+        "This question",
+        "than",
+        "is",
+        "that one"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "rewrite",
+      "original": "Ken is taller than Mike.",
+      "instruction": "主語を Mike にして、shorter を使ってほぼ同じ内容の文に書き換えなさい。"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "My bike is older than your bike.",
+      "instruction": "your bike を主語にして、newer を使い、my bike と your bike を使ってほぼ同じ内容の文に書き換えなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "This river is longer than that river.",
+      "instruction": "than を使わず、not as ... as を使ってほぼ同じ内容の文に書き換えなさい(主語は that river)。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "Ann is the most beautiful girl in the village.",
+      "instruction": "No other を主語にして、as ... as を使ってほぼ同じ内容の文に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "Soccer is more popular than any other sport in this class.",
+      "instruction": "最上級を使って、ほぼ同じ意味の文に書き換えなさい(主語は Soccer)。"
+    }
+  ]
+}

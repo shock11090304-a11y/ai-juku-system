@@ -1,0 +1,23 @@
+{
+  "slug": "02_tenses",
+  "no": 15,
+  "type": "mc",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 15,
+    "type": "mc",
+    "level": "standard",
+    "stem": "The train ( ) at seven tomorrow morning according to the schedule.",
+    "choices": [
+      "leave",
+      "leaves",
+      "left",
+      "has left"
+    ],
+    "answer_index": 1,
+    "answer_text": "leaves",
+    "explanation": "時刻表で決まった発着は、未来のことでも現在形で表す。主語 The train は三人称単数なので leaves となる。leave は三単現の s が無く誤り。left は過去形、has left は現在完了で、どちらも未来を表す tomorrow morning と両立せず誤りとなる。",
+    "point": "確定した予定は現在形でも表せる"
+  },
+  "reason": "誤答 is leaving は現在進行形が近接未来の確定予定を表せるため正解 leaves と同じく成立してしまい、答えが一意でなかった。is leaving を has left に差し替えた。has left は現在完了で未来を表す tomorrow morning と時制が両立せず明確な誤りとなり、leave(三単現の s 欠落)・left(過去形)も誤りなので、正解は leaves ただ1つに定まる。answer は leaves のまま不変で、単元「時制」(確定予定は現在形)と基礎定着レベルを維持している。explanation と point も最終選択肢に整合させた。"
+}

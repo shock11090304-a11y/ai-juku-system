@@ -1,0 +1,31 @@
+{
+  "slug": "12_subjunctive",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去。主節would buyに対応しbe動詞はwere。"},
+    {"no":2,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去のif節(had)に対し主節はwould+原形。"},
+    {"no":3,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主節would goより仮定法過去。be動詞はwere。"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"if I knewに対し仮定法過去の主節would call。"},
+    {"no":5,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"if you studiedに対し仮定法過去の主節could。wouldは選択肢になく、canは時制不一致。"},
+    {"no":6,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"If I were you の定型。"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去完了。if had studiedに対し主節would have passed。"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"主節would have caughtより仮定法過去完了。if節はhad left。"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"if had takenに対し主節would have arrived。on timeは到着動詞arriveが自然。"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"if had knownに対し主節would have told。"},
+    {"no":11,"mc_index":3,"produced_sentence":"","multiple_valid":true,"multiple_valid_note":"標準解はwould not have been(過去の結果)。ただしlateを現在の状態と解釈すれば混合仮定法でwould not be(index0)も文法的に成立する(過去のif節+現在の主節)。本問の単元主旨では過去完了一致のindex3が主。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去完了の一致でwould not have been。"},
+    {"no":12,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"I wish節では助動詞はcould。canは直説法で不可。"},
+    {"no":13,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"I wish + 仮定法過去のbe動詞はwere。"},
+    {"no":14,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去(when I was young)への後悔ゆえI wish + 過去完了had studied。"},
+    {"no":15,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"he knewの仮定法と結ぶのはas if(まるで〜のように)。"},
+    {"no":16,"mc_index":-1,"produced_sentence":"Without water, we could not live.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Without構文の仮定法。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"If I had time, I would help you.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"I wish I were a bird.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"I wish I were a bird. の語順のみ成立。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"If he had left early, he would have made it.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去完了。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"She talks as if she were a doctor.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"as if + 仮定法過去。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"Without your help, I would fail.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"Without構文の仮定法。トークンfailに句読点が無いため末尾にピリオドを補った。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"If I were free now, I could help you.","multiple_valid":true,"multiple_valid_note":"can/cannotの意味保持指示よりcould helpが主。wouldを使うと能力の意味が落ちるため不可。代替としてIf I were free now, I would be able to help you. も同義で成立。","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去。canの意味はcouldで保持。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"If I had had time, I would have called you.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"仮定法過去完了。had had / would have called。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"I wish I could swim.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"cannot swim → I wish I could swim。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"I wish I had studied hard.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去への後悔ゆえI wish + 過去完了had studied。"}
+  ]
+}

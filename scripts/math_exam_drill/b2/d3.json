@@ -1,0 +1,58 @@
+{
+  "part": "math_exam_iib",
+  "group": "三角関数",
+  "unit_theme": "三角関数の合成と最大・最小",
+  "passage": "数学の授業で、太郎さんと花子さんは関数 \\( f(\\theta)=\\sin\\theta+\\sqrt{3}\\,\\cos\\theta \\) の最大値・最小値を、三角関数の合成を用いて調べている。ただし \\( \\theta \\) の範囲は \\( 0 \\leqq \\theta \\leqq \\pi \\) とする。\n太郎「\\( a\\sin\\theta+b\\cos\\theta \\) の形は、\\( r\\sin(\\theta+\\alpha) \\) に合成できたよね。」\n花子「まず \\( r=\\sqrt{a^2+b^2} \\) を求めて、それから \\( \\alpha \\) を決めればいいね。」\n二人はこの方針に従って、合成形を求めてから値域を調べていく。",
+  "subqs": [
+    {
+      "stem": "関数 \\( f(\\theta)=\\sin\\theta+\\sqrt{3}\\,\\cos\\theta \\) を \\( r\\sin(\\theta+\\alpha) \\)（\\( r>0 \\)）の形に合成する。\\( a\\sin\\theta+b\\cos\\theta \\) における係数は \\( a=1,\\ b=\\sqrt{3} \\) であり、振幅は \\( r=\\sqrt{a^2+b^2} \\) で求められる。この \\( r \\) の値を求めよ。",
+      "choices_latex": ["\\( 4 \\)", "\\( \\sqrt{3}+1 \\)", "\\( 2 \\)", "\\( 2\\sqrt{3} \\)"],
+      "choices_value": ["Integer(4)", "sqrt(3)+1", "Integer(2)", "2*sqrt(3)"],
+      "answer_index": 2,
+      "truth_value": "Integer(2)",
+      "unit": "発展 三角関数(合成の振幅r)",
+      "reason": "\\( r=\\sqrt{1^2+(\\sqrt3)^2}=\\sqrt{1+3}=\\sqrt4=2 \\)。",
+      "restates": "stem内に a=1, b=√3 と r=√(a²+b²) を再掲。"
+    },
+    {
+      "stem": "関数 \\( f(\\theta)=\\sin\\theta+\\sqrt{3}\\,\\cos\\theta \\) は、振幅 \\( r=2 \\) を用いて \\( 2\\sin(\\theta+\\alpha) \\) の形に合成できる。ここで位相 \\( \\alpha \\) は \\( \\cos\\alpha=\\dfrac{1}{2},\\ \\sin\\alpha=\\dfrac{\\sqrt{3}}{2} \\)（ただし \\( 0<\\alpha<\\dfrac{\\pi}{2} \\)）を満たす。この \\( \\alpha \\) の値を求めよ。",
+      "choices_latex": ["\\( \\dfrac{\\pi}{6} \\)", "\\( \\dfrac{\\pi}{3} \\)", "\\( \\dfrac{\\pi}{4} \\)", "\\( \\dfrac{2\\pi}{3} \\)"],
+      "choices_value": ["pi/6", "pi/3", "pi/4", "2*pi/3"],
+      "answer_index": 1,
+      "truth_value": "pi/3",
+      "unit": "発展 三角関数(合成の位相α)",
+      "reason": "\\( \\cos\\alpha=\\tfrac12,\\ \\sin\\alpha=\\tfrac{\\sqrt3}{2},\\ 0<\\alpha<\\tfrac{\\pi}{2} \\) より \\( \\alpha=\\dfrac{\\pi}{3} \\)。よって \\( f(\\theta)=2\\sin\\!\\left(\\theta+\\tfrac{\\pi}{3}\\right) \\)。",
+      "restates": "stem内に r=2, および cosα=1/2, sinα=√3/2, 0<α<π/2 を再掲。"
+    },
+    {
+      "stem": "関数 \\( f(\\theta)=\\sin\\theta+\\sqrt{3}\\,\\cos\\theta \\) は \\( f(\\theta)=2\\sin\\!\\left(\\theta+\\dfrac{\\pi}{3}\\right) \\) と合成される。\\( 0\\leqq\\theta\\leqq\\pi \\) のとき、\\( f(\\theta) \\) の最大値を求めよ。",
+      "choices_latex": ["\\( \\sqrt{3} \\)", "\\( \\sqrt{3}+1 \\)", "\\( 4 \\)", "\\( 2 \\)"],
+      "choices_value": ["sqrt(3)", "sqrt(3)+1", "Integer(4)", "Integer(2)"],
+      "answer_index": 3,
+      "truth_value": "Integer(2)",
+      "unit": "発展 三角関数(範囲つき最大値)",
+      "reason": "\\( 0\\leqq\\theta\\leqq\\pi \\) のとき \\( \\theta+\\tfrac{\\pi}{3} \\) は \\( \\tfrac{\\pi}{3}\\leqq\\theta+\\tfrac{\\pi}{3}\\leqq\\tfrac{4\\pi}{3} \\)。この区間に \\( \\tfrac{\\pi}{2} \\) が含まれ \\( \\sin \\) の最大値1をとるので、最大値は \\( 2\\times1=2 \\)（\\( \\theta=\\tfrac{\\pi}{6} \\) のとき）。",
+      "restates": "stem内に合成形 f(θ)=2sin(θ+π/3) と範囲 0≤θ≤π を再掲。"
+    },
+    {
+      "stem": "関数 \\( f(\\theta)=2\\sin\\!\\left(\\theta+\\dfrac{\\pi}{3}\\right) \\) について、\\( 0\\leqq\\theta\\leqq\\pi \\) の範囲で方程式 \\( f(\\theta)=\\sqrt{3} \\) を解いたとき、解のうち最大の \\( \\theta \\) の値を求めよ。",
+      "choices_latex": ["\\( \\dfrac{\\pi}{3} \\)", "\\( 0 \\)", "\\( \\dfrac{2\\pi}{3} \\)", "\\( \\dfrac{\\pi}{6} \\)"],
+      "choices_value": ["pi/3", "Integer(0)", "2*pi/3", "pi/6"],
+      "answer_index": 0,
+      "truth_value": "pi/3",
+      "unit": "発展 三角関数(方程式の解)",
+      "reason": "\\( 2\\sin(\\theta+\\tfrac{\\pi}{3})=\\sqrt3 \\Rightarrow \\sin(\\theta+\\tfrac{\\pi}{3})=\\tfrac{\\sqrt3}{2} \\)。\\( \\tfrac{\\pi}{3}\\leqq\\theta+\\tfrac{\\pi}{3}\\leqq\\tfrac{4\\pi}{3} \\) より \\( \\theta+\\tfrac{\\pi}{3}=\\tfrac{\\pi}{3},\\tfrac{2\\pi}{3} \\)、すなわち \\( \\theta=0,\\tfrac{\\pi}{3} \\)。最大は \\( \\dfrac{\\pi}{3} \\)。",
+      "restates": "stem内に合成形 f(θ)=2sin(θ+π/3) と範囲 0≤θ≤π を再掲。"
+    },
+    {
+      "stem": "関数 \\( f(\\theta)=2\\sin\\!\\left(\\theta+\\dfrac{\\pi}{3}\\right) \\) について、\\( 0\\leqq\\theta\\leqq\\pi \\) の範囲における最小値を求めよ。",
+      "choices_latex": ["\\( -2 \\)", "\\( -1 \\)", "\\( -\\sqrt{3} \\)", "\\( 0 \\)"],
+      "choices_value": ["-2", "-1", "-sqrt(3)", "Integer(0)"],
+      "answer_index": 2,
+      "truth_value": "-sqrt(3)",
+      "unit": "発展 三角関数(範囲つき最小値)",
+      "reason": "\\( \\tfrac{\\pi}{3}\\leqq\\theta+\\tfrac{\\pi}{3}\\leqq\\tfrac{4\\pi}{3} \\) でこの区間に \\( \\tfrac{3\\pi}{2} \\) は含まれないので \\( \\sin \\) は端点で最小。\\( \\sin\\tfrac{4\\pi}{3}=-\\tfrac{\\sqrt3}{2} \\) が最小値で、\\( f=2\\times(-\\tfrac{\\sqrt3}{2})=-\\sqrt3 \\)（\\( \\theta=\\pi \\) のとき）。",
+      "restates": "stem内に合成形 f(θ)=2sin(θ+π/3) と範囲 0≤θ≤π を再掲。"
+    }
+  ]
+}

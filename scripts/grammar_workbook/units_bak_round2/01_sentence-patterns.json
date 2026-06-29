@@ -1,0 +1,271 @@
+{
+  "unit": "文型",
+  "unit_slug": "sentence-patterns",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She ( ) very happy today.",
+      "choices": ["looks", "look", "looking", "to look"],
+      "answer_index": 0,
+      "answer_text": "looks",
+      "explanation": "主語が三人称単数 She なので動詞は looks になる。look は SVC の文型をつくり、後ろの happy は補語(C)で主語の様子を表す。",
+      "point": "SVCの look は三単現で looks"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "The baby ( ) all night long.",
+      "choices": ["slept", "made", "took", "gave"],
+      "answer_index": 0,
+      "answer_text": "slept",
+      "explanation": "sleep は目的語をとらない自動詞で、SV の文型をつくる。made / took / give はいずれも目的語が必要な他動詞なので不適。",
+      "point": "自動詞 sleep は SV をつくる"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "My father ( ) me a new bike.",
+      "choices": ["bought", "looked", "stayed", "became"],
+      "answer_index": 0,
+      "answer_text": "bought",
+      "explanation": "後ろに me(人)と a new bike(物)が並ぶ第4文型 SVOO。buy は SVOO をとれる動詞。look / stay / become は SVOO をとれない。",
+      "point": "SVOO をとる buy"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "We ( ) our dog Pochi.",
+      "choices": ["call", "speak", "talk", "say"],
+      "answer_index": 0,
+      "answer_text": "call",
+      "explanation": "our dog(O)と Pochi(C)が並ぶ第5文型 SVOC で、call O C は「OをCと呼ぶ」。speak / talk / say はこの形をとれない。",
+      "point": "SVOC の call O C"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "This soup ( ) good.",
+      "choices": ["tastes", "eats", "drinks", "cooks"],
+      "answer_index": 0,
+      "answer_text": "tastes",
+      "explanation": "taste は SVC をつくり「~の味がする」。後ろの good は補語(C)。eat / drink / cook は目的語が必要な他動詞で、ここでは意味が成り立たない。",
+      "point": "SVC の taste は「~の味がする」"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He ( ) the door open.",
+      "choices": ["kept", "stayed", "looked", "happened"],
+      "answer_index": 0,
+      "answer_text": "kept",
+      "explanation": "the door(O)と open(C)が並ぶ第5文型 SVOC で、keep O C は「OをCのままにしておく」。stay / look / happen は目的語をとらない自動詞なのでこの形にできない。",
+      "point": "SVOC の keep O C"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "My grandfather ( ) a doctor.",
+      "choices": ["became", "arrived", "slept", "smiled"],
+      "answer_index": 0,
+      "answer_text": "became",
+      "explanation": "become は SVC をつくり「~になる」。後ろの a doctor は補語(C)で、主語=補語の関係が成り立つ。arrive / sleep / smile は自動詞でこの意味の補語をとらない。",
+      "point": "SVC の become は「~になる」"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Please ( ) me the salt.",
+      "choices": ["pass", "sit", "stay", "go"],
+      "answer_index": 0,
+      "answer_text": "pass",
+      "explanation": "me(人)と the salt(物)が並ぶ第4文型 SVOO で、pass O O は「Oに Oを手渡す」。sit / stay / go は自動詞で目的語をとれない。",
+      "point": "SVOO の pass"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The news ( ) us very surprised.",
+      "choices": ["made", "looked", "seemed", "felt"],
+      "answer_index": 0,
+      "answer_text": "made",
+      "explanation": "us(O)と surprised(C)が並ぶ第5文型 SVOC で、make O C は「OをCにする」。look / seem / feel はこの SVOC の形をとれない自動詞。",
+      "point": "SVOC の make O C"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The sun ( ) brightly this morning.",
+      "choices": ["shone", "showed", "gave", "told"],
+      "answer_index": 0,
+      "answer_text": "shone",
+      "explanation": "shine は目的語をとらない自動詞で「輝く」、shone はその過去形。brightly は副詞の修飾語なので文型は SV。show / give / tell は目的語が必要な他動詞でこの文には合わない。",
+      "point": "自動詞 shine は SV"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The leaves ( ) red in autumn.",
+      "choices": ["turn", "put", "bring", "give"],
+      "answer_index": 0,
+      "answer_text": "turn",
+      "explanation": "turn は SVC をつくり「~(の色)になる」。後ろの red は補語(C)。put / bring / give は目的語が必要な他動詞で、この補語の形をとれない。",
+      "point": "SVC の turn は「~になる」"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "basic",
+      "stem": "They ( ) in this small town.",
+      "choices": ["live", "make", "call", "keep"],
+      "answer_index": 0,
+      "answer_text": "live",
+      "explanation": "live は目的語をとらない自動詞で、in this small town は場所を表す修飾語。よって SV の文型。make / call / keep は目的語が必要なのでここでは不自然。",
+      "point": "自動詞 live は SV"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I ( ) him a birthday present.",
+      "choices": ["gave", "went", "came", "stayed"],
+      "answer_index": 0,
+      "answer_text": "gave",
+      "explanation": "him(人)と a birthday present(物)が並ぶ第4文型 SVOO で、give O O は「Oに Oを与える」。go / come / stay は自動詞で目的語をとれない。",
+      "point": "SVOO の give"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "basic",
+      "stem": "The children ( ) in the park.",
+      "choices": ["ran", "wanted", "needed", "liked"],
+      "answer_index": 0,
+      "answer_text": "ran",
+      "explanation": "run は自動詞として「走る」の意味で SV の文型をつくり、in the park は修飾語。want / need / like は目的語が必要な他動詞なので、目的語のないこの文では使えない。",
+      "point": "自動詞 run は SV"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "We ( ) the baby Mary.",
+      "choices": ["named", "spoke", "talked", "listened"],
+      "answer_index": 0,
+      "answer_text": "named",
+      "explanation": "the baby(O)と Mary(C)が並ぶ第5文型 SVOC で、name O C は「OをCと名づける」。speak / talk / listen は自動詞でこの形をとれない。",
+      "point": "SVOC の name O C"
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "私の母は私にセーターを作ってくれた。",
+      "tokens": ["a", "made", "my mother", "sweater", "me"],
+      "answer_text": "My mother made me a sweater.",
+      "explanation": "make O O の第4文型。「人(me)+物(a sweater)」の順に目的語を並べる。",
+      "point": "SVOO は 人 → 物 の順"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼はとても疲れているように見える。",
+      "tokens": ["very", "looks", "he", "tired"],
+      "answer_text": "He looks very tired.",
+      "explanation": "look + 形容詞の SVC。very は形容詞 tired を強める副詞で tired の直前に置く。",
+      "point": "look + 形容詞は SVC"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私たちは彼をトムと呼ぶ。",
+      "tokens": ["Tom", "call", "him", "we"],
+      "answer_text": "We call him Tom.",
+      "explanation": "call O C の第5文型。O(him)の後ろに C(Tom)を置き「OをCと呼ぶ」を表す。",
+      "point": "call O C は SVOC"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "先生は私たちに難しい質問をした。",
+      "tokens": ["a", "asked", "the teacher", "us", "difficult question"],
+      "answer_text": "The teacher asked us a difficult question.",
+      "explanation": "ask O O の第4文型。「人(us)+物(a difficult question)」の順に並べる。",
+      "point": "ask は SVOO をとる"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "暖かい服装はあなたを健康に保つ。",
+      "tokens": ["healthy", "you", "warm clothes", "keep"],
+      "answer_text": "Warm clothes keep you healthy.",
+      "explanation": "keep O C の第5文型。O(you)の後ろに C(healthy)を置き「OをCに保つ」を表す。",
+      "point": "keep O C は SVOC"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼女は私にその物語を話してくれた。",
+      "tokens": ["the story", "me", "told", "she"],
+      "answer_text": "She told me the story.",
+      "explanation": "tell O O の第4文型。「人(me)+物(the story)」の順に目的語を並べる。",
+      "point": "tell は SVOO をとる"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "He gave me a book.",
+      "instruction": "to を使って同じ意味の第3文型(SVO + 前置詞句)に書き換えなさい。",
+      "answer_text": "He gave a book to me.",
+      "explanation": "give O O(第4文型)は give 物 to 人(第3文型)に書き換えられる。物を動詞の直後に置き、人の前に to を入れる。",
+      "point": "give A B → give B to A"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "She bought her son a watch.",
+      "instruction": "for を使って同じ意味の第3文型(SVO + 前置詞句)に書き換えなさい。",
+      "answer_text": "She bought a watch for her son.",
+      "explanation": "buy O O(第4文型)は buy 物 for 人(第3文型)に書き換える。buy は to ではなく for をとる動詞である点に注意。",
+      "point": "buy A B → buy B for A"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "My uncle sent a letter to me.",
+      "instruction": "前置詞を使わない第4文型(SVOO)に書き換えなさい。",
+      "answer_text": "My uncle sent me a letter.",
+      "explanation": "send 物 to 人(第3文型)は send 人 物(第4文型 SVOO)に書き換えられる。前置詞 to を消し、人を物の前に置く。",
+      "point": "send B to A → send A B"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "She made a cake for us.",
+      "instruction": "前置詞を使わない第4文型(SVOO)に書き換えなさい。",
+      "answer_text": "She made us a cake.",
+      "explanation": "make 物 for 人(第3文型)は make 人 物(第4文型 SVOO)に書き換えられる。前置詞 for を消し、人を物の前に置く。",
+      "point": "make B for A → make A B"
+    }
+  ]
+}

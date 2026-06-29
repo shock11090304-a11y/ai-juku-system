@@ -1,0 +1,23 @@
+{
+  "slug": "15_nouns-articles",
+  "no": 18,
+  "type": "mc",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 18,
+    "type": "mc",
+    "level": "standard",
+    "stem": "The dentist checked all of my ( ).",
+    "choices": [
+      "tooth",
+      "teeth",
+      "tooths",
+      "toothes"
+    ],
+    "answer_index": 1,
+    "answer_text": "teeth",
+    "explanation": "tooth(歯)の複数形は不規則変化で teeth となる。all of my のあとは複数形が必要なので teeth を選ぶ。tooths や toothes という形は存在しない。単数の tooth は all of my と合わない。",
+    "point": "tooth - teeth(不規則複数)"
+  },
+  "reason": "元の stem「There are a lot of ( ) brushing their teeth...」は空所に teeth を入れると「歯が歯を磨く」という非文になっていた。tooth→teeth の不規則複数を自然に問う文「The dentist checked all of my ( ).」に差し替えた。all of my のあとは複数形が必須で、tooth(単数)は不可、tooths と toothes は存在しない誤形なので正解は teeth ただ一つに定まる。explanation と point は最終解答に整合させ、基礎定着レベルと単元「名詞・冠詞(不規則複数)」を維持した。"
+}

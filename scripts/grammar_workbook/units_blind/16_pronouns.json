@@ -1,0 +1,266 @@
+{
+  "unit": "代名詞",
+  "unit_slug": "pronouns",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "( ) am a high school student.",
+      "choices": [
+        "My",
+        "I",
+        "Me",
+        "Mine"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "This is ( ) bag.",
+      "choices": [
+        "she",
+        "hers",
+        "herself",
+        "her"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "My mother loves ( ) very much.",
+      "choices": [
+        "we",
+        "our",
+        "us",
+        "ours"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "This pen is ( ). I bought it yesterday.",
+      "choices": [
+        "my",
+        "me",
+        "mine",
+        "I"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "Please wait for ( ) at the station.",
+      "choices": [
+        "they",
+        "their",
+        "them",
+        "theirs"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "She looked at ( ) in the mirror.",
+      "choices": [
+        "her",
+        "herself",
+        "she",
+        "hers"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "He made this cake by ( ).",
+      "choices": [
+        "him",
+        "his",
+        "himself",
+        "he"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "We enjoyed ( ) at the party last night.",
+      "choices": [
+        "us",
+        "our",
+        "ours",
+        "ourselves"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "( ) is rainy today.",
+      "choices": [
+        "It",
+        "This",
+        "That",
+        "There"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "What time ( ) now?",
+      "choices": [
+        "is this",
+        "is it",
+        "is there",
+        "are they"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "I lost my umbrella, so I have to buy a new ( ).",
+      "choices": [
+        "it",
+        "one",
+        "that",
+        "them"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "I have two dogs. One is white and ( ) is black.",
+      "choices": [
+        "another",
+        "other",
+        "the other",
+        "others"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "I don't like this shirt. Please show me ( ).",
+      "choices": [
+        "other",
+        "the other",
+        "another",
+        "the others"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "Some students like math, and ( ) like English.",
+      "choices": [
+        "another",
+        "others",
+        "the other",
+        "other"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "Would you like ( ) coffee?",
+      "choices": [
+        "some",
+        "any",
+        "much",
+        "many"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "stem": "I don't have ( ) money with me now.",
+      "choices": [
+        "some",
+        "no one",
+        "much of",
+        "any"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "mc",
+      "stem": "( ) student in this class has a tablet.",
+      "choices": [
+        "All",
+        "Both",
+        "Some of",
+        "Every"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "mc",
+      "stem": "I want ( ) cold to eat.",
+      "choices": [
+        "cold something",
+        "cold anything",
+        "something cold",
+        "anything cold"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "これはあなたの自転車ですか。",
+      "tokens": [
+        "this",
+        "bike",
+        "your",
+        "Is"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "彼女は自分を誇りに思っている。",
+      "tokens": [
+        "herself",
+        "She",
+        "is",
+        "proud of"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "このかばんはあなたのものですか。",
+      "tokens": [
+        "yours",
+        "this",
+        "bag",
+        "Is"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "order",
+      "prompt_ja": "何か温かいものがほしい。",
+      "tokens": [
+        "hot",
+        "want",
+        "I",
+        "something"
+      ]
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "This is my notebook.",
+      "instruction": "下線部 my notebook を1語の所有代名詞にして、ほぼ同じ意味の文に書きかえなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "All the boys on the team are tall.",
+      "instruction": "主語を Every で始め、ほぼ同じ意味の文に書きかえなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "I have some questions.",
+      "instruction": "否定文に書きかえなさい。"
+    }
+  ]
+}

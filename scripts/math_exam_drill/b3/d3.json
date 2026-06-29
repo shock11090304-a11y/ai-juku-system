@@ -1,0 +1,58 @@
+{
+  "part": "math_exam_iib",
+  "group": "complex_numbers_equations",
+  "unit_theme": "複素数と方程式",
+  "passage": "花子さんと太郎さんは、2次方程式 \\( x^2 - 4x + 13 = 0 \\) について調べている。\n花子「この方程式は実数解をもたないみたいだね。」\n太郎「判別式を計算すると確かにそうだね。でも解と係数の関係を使えば、解 \\(\\alpha,\\ \\beta\\) を直接求めなくても \\(\\alpha+\\beta\\) や \\(\\alpha\\beta\\)、さらに \\(\\alpha^2+\\beta^2\\) のような対称式の値が次々に求められるよ。」\n二人は、2次方程式 \\( x^2 + bx + c = 0 \\) の2つの解を \\(\\alpha,\\ \\beta\\) とするとき、解と係数の関係 \\(\\alpha+\\beta=-b,\\ \\alpha\\beta=c\\) を出発点に、対称式の値を順に計算していくことにした。以下、方程式は \\( x^2 - 4x + 13 = 0 \\)(すなわち \\(b=-4,\\ c=13\\))とし、その2解を \\(\\alpha,\\ \\beta\\) とする。",
+  "subqs": [
+    {
+      "stem": "2次方程式 \\( x^2 - 4x + 13 = 0 \\)(すなわち \\(b=-4,\\ c=13\\))の2解を \\(\\alpha,\\ \\beta\\) とする。解と係数の関係 \\(\\alpha+\\beta=-b\\) を用いて、\\(\\alpha+\\beta\\) の値を求めよ。",
+      "choices_latex": ["\\(4\\)", "\\(2\\)", "\\(-4\\)", "\\(13\\)"],
+      "choices_value": ["Integer(4)", "Integer(2)", "Integer(-4)", "Integer(13)"],
+      "answer_index": 0,
+      "truth_value": "Integer(4)",
+      "unit": "発展 複素数と方程式(解と係数の関係・和)",
+      "reason": "解と係数の関係より \\(\\alpha+\\beta=-b=-(-4)=4\\)。",
+      "restates": "方程式 \\(x^2-4x+13=0\\)、\\(b=-4,\\ c=13\\) をstem内に再掲。"
+    },
+    {
+      "stem": "2次方程式 \\( x^2 - 4x + 13 = 0 \\)(すなわち \\(b=-4,\\ c=13\\))の2解を \\(\\alpha,\\ \\beta\\) とする。解と係数の関係 \\(\\alpha\\beta=c\\) を用いて、\\(\\alpha\\beta\\) の値を求めよ。",
+      "choices_latex": ["\\(13\\)", "\\(-13\\)", "\\(4\\)", "\\(16\\)"],
+      "choices_value": ["Integer(13)", "Integer(-13)", "Integer(4)", "Integer(16)"],
+      "answer_index": 0,
+      "truth_value": "Integer(13)",
+      "unit": "発展 複素数と方程式(解と係数の関係・積)",
+      "reason": "解と係数の関係より \\(\\alpha\\beta=c=13\\)。",
+      "restates": "方程式 \\(x^2-4x+13=0\\)、\\(b=-4,\\ c=13\\) をstem内に再掲。"
+    },
+    {
+      "stem": "2次方程式 \\( x^2 - 4x + 13 = 0 \\)(すなわち \\(b=-4,\\ c=13\\))の2解を \\(\\alpha,\\ \\beta\\) とすると、解と係数の関係から \\(\\alpha+\\beta=4,\\ \\alpha\\beta=13\\) である。このとき \\(\\alpha^2+\\beta^2\\) の値を求めよ。",
+      "choices_latex": ["\\(-10\\)", "\\(42\\)", "\\(10\\)", "\\(-42\\)"],
+      "choices_value": ["Integer(-10)", "Integer(42)", "Integer(10)", "Integer(-42)"],
+      "answer_index": 0,
+      "truth_value": "Integer(-10)",
+      "unit": "発展 複素数と方程式(対称式 \\(\\alpha^2+\\beta^2\\))",
+      "reason": "\\(\\alpha^2+\\beta^2=(\\alpha+\\beta)^2-2\\alpha\\beta=4^2-2\\cdot13=16-26=-10\\)。",
+      "restates": "前問で得た \\(\\alpha+\\beta=4,\\ \\alpha\\beta=13\\) をstem内に再掲。"
+    },
+    {
+      "stem": "2次方程式 \\( x^2 - 4x + 13 = 0 \\)(すなわち \\(b=-4,\\ c=13\\))の2解を \\(\\alpha,\\ \\beta\\) とすると、解と係数の関係から \\(\\alpha+\\beta=4,\\ \\alpha\\beta=13\\) である。このとき \\(\\alpha^3+\\beta^3\\) の値を求めよ。",
+      "choices_latex": ["\\(-92\\)", "\\(92\\)", "\\(-116\\)", "\\(-44\\)"],
+      "choices_value": ["Integer(-92)", "Integer(92)", "Integer(-116)", "Integer(-44)"],
+      "answer_index": 0,
+      "truth_value": "Integer(-92)",
+      "unit": "発展 複素数と方程式(対称式 \\(\\alpha^3+\\beta^3\\))",
+      "reason": "\\(\\alpha^3+\\beta^3=(\\alpha+\\beta)^3-3\\alpha\\beta(\\alpha+\\beta)=4^3-3\\cdot13\\cdot4=64-156=-92\\)。",
+      "restates": "前問で得た \\(\\alpha+\\beta=4,\\ \\alpha\\beta=13\\) をstem内に再掲。"
+    },
+    {
+      "stem": "2次方程式 \\( x^2 - 4x + 13 = 0 \\)(すなわち \\(b=-4,\\ c=13\\))の2解を \\(\\alpha,\\ \\beta\\) とすると、解と係数の関係から \\(\\alpha+\\beta=4,\\ \\alpha\\beta=13\\) であり、\\(\\alpha^2+\\beta^2=-10\\) である。\\(\\alpha^2\\) と \\(\\beta^2\\) の2つを解にもつ \\(x\\) の2次方程式(\\(x^2\\) の係数が \\(1\\) のもの)を求めよ。",
+      "choices_latex": ["\\(x^2 + 10x + 169 = 0\\)", "\\(x^2 - 10x + 169 = 0\\)", "\\(x^2 + 4x + 13 = 0\\)", "\\(x^2 - 20x + 169 = 0\\)"],
+      "choices_value": ["x**2+10*x+169", "x**2-10*x+169", "x**2+4*x+13", "x**2-20*x+169"],
+      "answer_index": 0,
+      "truth_value": "x**2+10*x+169",
+      "unit": "発展 複素数と方程式(2解から新方程式の構成)",
+      "reason": "\\(\\alpha^2+\\beta^2=-10,\\ \\alpha^2\\beta^2=(\\alpha\\beta)^2=13^2=169\\)。求める方程式は \\(x^2-(\\alpha^2+\\beta^2)x+\\alpha^2\\beta^2=0\\) より \\(x^2-(-10)x+169=x^2+10x+169=0\\)。",
+      "restates": "前問で得た \\(\\alpha+\\beta=4,\\ \\alpha\\beta=13,\\ \\alpha^2+\\beta^2=-10\\) をstem内に再掲。"
+    }
+  ]
+}

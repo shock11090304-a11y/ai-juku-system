@@ -1,0 +1,23 @@
+{
+  "slug": "11_relatives",
+  "no": 7,
+  "type": "mc",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 7,
+    "type": "mc",
+    "level": "standard",
+    "stem": "The movie ( ) we saw last night was boring.",
+    "choices": [
+      "who",
+      "whom",
+      "which",
+      "whose"
+    ],
+    "answer_index": 2,
+    "answer_text": "which",
+    "explanation": "先行詞 the movie は物で、saw の目的語(目的格)になっている。物を指す目的格の関係代名詞は which を使う。whom は人を指す目的格なので物の the movie には使えず、who は主格、whose は所有格で後ろに名詞が続くため不可。",
+    "point": "目的格でも物が先行詞なら which(人なら whom)"
+  },
+  "reason": "選択肢に関係詞でない we が混在していた。指摘どおり we を whom に差し替え choices を who/whom/which/whose の関係詞4語(重複なし)にし、目的格における人と物の使い分けを問う良問にした。先行詞 the movie は物で saw の目的語ゆえ正解は which ただ1つに定まる(whom は人専用・who は主格・whose は所有格で不成立)。answer_index=2 は choices内の which と一致。explanation と point を最終解答 which に完全整合させ、基礎定着レベルと単元「関係詞」の論点を維持した。"
+}

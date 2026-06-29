@@ -1,0 +1,18 @@
+{
+  "slug": "01_sentence-patterns",
+  "no": 2,
+  "type": "mc",
+  "action": "fix_explanation",
+  "corrected_question": {
+    "no": 2,
+    "type": "mc",
+    "level": "basic",
+    "stem": "The baby ( ) all night long.",
+    "choices": ["slept", "made", "took", "gave"],
+    "answer_index": 0,
+    "answer_text": "slept",
+    "explanation": "sleep は目的語をとらない自動詞で、SV の文型をつくる。made / took / gave はいずれも目的語が必要な他動詞なので不適。",
+    "point": "自動詞 sleep は SV をつくる"
+  },
+  "reason": "解説の誤字を修正。選択肢は slept / made / took / gave なのに解説本文が give と書かれていた。選択肢に合わせ gave に直し、他動詞 made / took / gave は目的語が必要で不適という説明と完全に整合させた。answer(slept)と choices は変更せず、explanation のみ最小修正。正解は自動詞 slept のただ1つに定まる。"
+}

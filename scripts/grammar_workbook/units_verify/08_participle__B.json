@@ -1,0 +1,31 @@
+{
+  "slug": "08_participle",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"眠っている赤ちゃん。現在分詞 sleeping が名詞を修飾。"},
+    {"no":2,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"中古車=used car。過去分詞。"},
+    {"no":3,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"立っている少年。現在分詞 standing の後置修飾。"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"英語で書かれた手紙。過去分詞 written。"},
+    {"no":5,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"ピアノを弾いている少女。現在分詞 playing の後置修飾。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"カナダで話される言語。過去分詞 spoken。"},
+    {"no":7,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"映画がわくわくさせる側=exciting。現在分詞。"},
+    {"no":8,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"人が驚かされた側=surprised。過去分詞。"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"本が面白い=interesting。現在分詞。"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"人が興味を持った側=interested。過去分詞。"},
+    {"no":11,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"旅行が疲れさせる側=tiring。現在分詞。"},
+    {"no":12,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"知覚動詞 see+O+現在分詞 running。原形 run は選択肢に無く ran は過去形で不可。"},
+    {"no":13,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"name は呼ばれる側=過去分詞 called(受動)。calling だと名前が呼ぶ意になり不可。"},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"have+O+過去分詞(使役・受動)。bike は修理される側=repaired。"},
+    {"no":15,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"get+O+過去分詞。cut の過去分詞は cut。髪は切られる側。"},
+    {"no":16,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"割れたガラス=broken glass。過去分詞。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"The boy playing soccer is my brother.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在分詞句の後置修飾。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"This is a doll made in China.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去分詞句 made in China の後置修飾。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"I heard someone calling my name.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"知覚動詞 hear+O+現在分詞 calling。トークンに call の原形が無く calling で確定。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"He seemed excited about the news.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"seem+過去分詞(感情)excited about ~。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I got the watch repaired.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"get+O+過去分詞(使役・受動)。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"The man talking with Tom is my uncle.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"who is talking→現在分詞 talking の後置修飾。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"I have a friend living in Osaka.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"who lives→現在分詞 living の後置修飾。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"This is a picture taken by my father.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"which was taken→過去分詞 taken の後置修飾。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"Look at the house standing on the hill.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"which is standing→現在分詞 standing の後置修飾。"}
+  ]
+}

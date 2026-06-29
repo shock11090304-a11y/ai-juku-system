@@ -1,0 +1,275 @@
+{
+  "unit": "接続詞",
+  "unit_slug": "conjunctions",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "I like tea, ( ) my sister likes coffee.",
+      "choices": [
+        "but",
+        "because",
+        "if",
+        "so that"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "It was raining, ( ) we stayed home.",
+      "choices": [
+        "but",
+        "or",
+        "though",
+        "so"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "Hurry up, ( ) you will miss the bus.",
+      "choices": [
+        "and",
+        "but",
+        "or",
+        "so"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "Wash your hands ( ) you eat lunch.",
+      "choices": [
+        "because",
+        "before",
+        "so",
+        "but"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "I was reading a book ( ) my mother was cooking.",
+      "choices": [
+        "because",
+        "if",
+        "while",
+        "before"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "He stayed home ( ) he was sick.",
+      "choices": [
+        "because",
+        "but",
+        "or",
+        "though"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "( ) it rains tomorrow, we will cancel the game.",
+      "choices": [
+        "Though",
+        "If",
+        "Because",
+        "While"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "( ) it was cold, she went out without a coat.",
+      "choices": [
+        "Though",
+        "Because",
+        "If",
+        "So"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "Please wait here ( ) I come back.",
+      "choices": [
+        "because",
+        "until",
+        "though",
+        "so"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "( ) I got home, I called my friend.",
+      "choices": [
+        "Because of",
+        "In spite of",
+        "So that",
+        "As soon as"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "You can't go in ( ) you have a ticket.",
+      "choices": [
+        "unless",
+        "if",
+        "because",
+        "though"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "She spoke slowly ( ) everyone could understand her.",
+      "choices": [
+        "because",
+        "so that",
+        "though",
+        "as soon as"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "The box was ( ) heavy that I couldn't lift it.",
+      "choices": [
+        "such",
+        "very",
+        "so",
+        "too"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "It was ( ) a cold day that we stayed inside.",
+      "choices": [
+        "such",
+        "so",
+        "very",
+        "too"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "I don't know ( ) he will come to the party or not.",
+      "choices": [
+        "that",
+        "because",
+        "though",
+        "whether"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "stem": "We could not go out ( ) the heavy rain.",
+      "choices": [
+        "because",
+        "though",
+        "so",
+        "because of"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "彼はとても疲れていたので眠れなかった。",
+      "tokens": [
+        "so tired",
+        "that",
+        "He was",
+        "he could not sleep"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "あなたかトムのどちらかが間違っている。",
+      "tokens": [
+        "Either",
+        "Tom",
+        "you",
+        "or",
+        "is",
+        "wrong"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "彼は英語を話すだけでなく書くこともする。",
+      "tokens": [
+        "He",
+        "not only",
+        "speaks",
+        "English",
+        "but also",
+        "writes",
+        "it"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "彼女は若いけれどとても賢い。",
+      "tokens": [
+        "Although she",
+        "young,",
+        "very smart",
+        "she",
+        "is",
+        "is"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "私は彼が正直だと思う。",
+      "tokens": [
+        "that",
+        "think",
+        "is",
+        "I",
+        "honest",
+        "he"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "order",
+      "prompt_ja": "彼はとても親切な人なので、みんなが彼を好きだ。",
+      "tokens": [
+        "such a kind man",
+        "He is",
+        "that",
+        "everyone likes him"
+      ]
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "This coffee is too hot for me to drink.",
+      "instruction": "so ... that を使って、ほぼ同じ意味の文に書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "Because of his hard work, he passed the exam.",
+      "instruction": "前置詞句を文頭の because の節に変えて、ほぼ同じ意味の文に書き換えなさい(文を Because で始めること)。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "He can play both the piano and the guitar.",
+      "instruction": "not only A but also B を使って、ほぼ同じ意味の文に書き換えなさい。"
+    }
+  ]
+}

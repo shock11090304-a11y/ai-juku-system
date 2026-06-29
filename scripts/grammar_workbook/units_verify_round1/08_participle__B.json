@@ -1,0 +1,31 @@
+{
+  "slug": "08_participle",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"sleeping baby(現在分詞の限定用法)"},
+    {"no":2,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"used car=中古車(過去分詞)"},
+    {"no":3,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"The boy standing...(後置修飾の現在分詞)"},
+    {"no":4,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"a letter written in English(受動の過去分詞)"},
+    {"no":5,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"the girl playing the piano(現在分詞)"},
+    {"no":6,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"The language spoken in Canada(過去分詞)。動詞isは単数だが慣用的に許容"},
+    {"no":7,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"so exciting that(物が興奮させる→現在分詞)"},
+    {"no":8,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"I was surprised(人が驚かされる→過去分詞)"},
+    {"no":9,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"book is interesting(物→現在分詞)"},
+    {"no":10,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"interested in(人→過去分詞)"},
+    {"no":11,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"trip was tiring(物が疲れさせる→現在分詞)"},
+    {"no":12,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"saw a man running(知覚動詞+現在分詞、進行中)"},
+    {"no":13,"mc_index":1,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"heard my name called(名前は呼ばれる→過去分詞、受動)"},
+    {"no":14,"mc_index":2,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"had my bike repaired(使役受動、have O 過去分詞)"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"got her hair cut(cutの過去分詞=cut、使役受動)"},
+    {"no":16,"mc_index":3,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"broken glass(割れたガラス→過去分詞)"},
+    {"no":17,"mc_index":-1,"produced_sentence":"Look at the dog running over there.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"現在分詞runningがthe dogを後置修飾"},
+    {"no":18,"mc_index":-1,"produced_sentence":"This is a doll made in China.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"過去分詞madeがa dollを後置修飾"},
+    {"no":19,"mc_index":-1,"produced_sentence":"I heard someone calling my name.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"知覚動詞heard+O+現在分詞calling"},
+    {"no":20,"mc_index":-1,"produced_sentence":"He seemed excited about the news.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"seem+過去分詞(感情)excited about"},
+    {"no":21,"mc_index":-1,"produced_sentence":"I had the watch repaired yesterday.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"使役受動 have O 過去分詞"},
+    {"no":22,"mc_index":-1,"produced_sentence":"The man talking with Tom is my uncle.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"who is talking→現在分詞talkingで後置修飾"},
+    {"no":23,"mc_index":-1,"produced_sentence":"I have a friend living in Osaka.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"who lives→現在分詞livingで後置修飾"},
+    {"no":24,"mc_index":-1,"produced_sentence":"This is a picture taken by my father.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"which was taken→過去分詞takenで後置修飾"},
+    {"no":25,"mc_index":-1,"produced_sentence":"Look at the house standing on the hill.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"which is standing→現在分詞standingで後置修飾"}
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "part": "phys_exam",
+  "group": "phys_exam",
+  "unit_theme": "等速円運動",
+  "passage": "物理部の生徒が、なめらかな水平面上で小球を等速円運動させる実験を行った。中心\\( \\mathrm{O} \\)に固定した軽い糸の他端に質量\\( m=0.20\\ \\text{kg} \\)の小球を結び、小球を半径\\( r=0.50\\ \\text{m} \\)の円周上で一定の速さ\\( v=2.0\\ \\text{m/s} \\)で回し続けた。ここで角速度\\( \\omega \\)、速さ\\( v \\)、半径\\( r \\)の間には\\( v=r\\omega \\)の関係があり、向心加速度は\\( a=\\dfrac{v^2}{r}=r\\omega^2 \\)、向心力は\\( F=ma \\)で表される。重力加速度の大きさは\\( g=9.8\\ \\text{m/s}^2 \\)とするが、必要な値は各問で与える。以下、円周率\\( \\pi \\)はそのまま用いてよい。",
+  "subqs": [
+    {
+      "stem": "半径\\( r=0.50\\ \\text{m} \\)の円周上を速さ\\( v=2.0\\ \\text{m/s} \\)で等速円運動する小球の角速度\\( \\omega \\)を求めよ。\\( v=r\\omega \\)を用いてよい。",
+      "choices_latex": [
+        "\\( 1.0\\ \\text{rad/s} \\)",
+        "\\( 2.0\\ \\text{rad/s} \\)",
+        "\\( 4.0\\ \\text{rad/s} \\)",
+        "\\( 8.0\\ \\text{rad/s} \\)"
+      ],
+      "choices_value": [
+        "Integer(1)",
+        "Integer(2)",
+        "Integer(4)",
+        "Integer(8)"
+      ],
+      "answer_index": 2,
+      "truth_value": "Integer(4)",
+      "unit": "発展 等速円運動(角速度ω=v/r)",
+      "reason": "\\( \\omega = v/r = 2.0/0.50 = 4.0\\ \\text{rad/s} \\)。",
+      "restates": "stem に r=0.50 m, v=2.0 m/s, 関係式 v=rω を再掲。"
+    },
+    {
+      "stem": "別の小球を、角速度\\( \\omega'=5.0\\ \\text{rad/s} \\)で半径\\( r'=0.40\\ \\text{m} \\)の等速円運動をさせた。この小球の速さ\\( v' \\)を求めよ。\\( v'=r'\\omega' \\)を用いてよい。",
+      "choices_latex": [
+        "\\( 1.0\\ \\text{m/s} \\)",
+        "\\( 2.0\\ \\text{m/s} \\)",
+        "\\( 8.0\\ \\text{m/s} \\)",
+        "\\( 12.5\\ \\text{m/s} \\)"
+      ],
+      "choices_value": [
+        "Integer(1)",
+        "Integer(2)",
+        "Integer(8)",
+        "Rational(25,2)"
+      ],
+      "answer_index": 1,
+      "truth_value": "Integer(2)",
+      "unit": "発展 等速円運動(速さ v=rω)",
+      "reason": "\\( v' = r'\\omega' = 0.40\\times 5.0 = 2.0\\ \\text{m/s} \\)。",
+      "restates": "stem に ω'=5.0 rad/s, r'=0.40 m, 関係式 v'=r'ω' を再掲。"
+    },
+    {
+      "stem": "最初の小球(半径\\( r=0.50\\ \\text{m} \\)、速さ\\( v=2.0\\ \\text{m/s} \\))の向心加速度の大きさ\\( a \\)を求めよ。\\( a=\\dfrac{v^2}{r} \\)を用いてよい。",
+      "choices_latex": [
+        "\\( 2.0\\ \\text{m/s}^2 \\)",
+        "\\( 4.0\\ \\text{m/s}^2 \\)",
+        "\\( 8.0\\ \\text{m/s}^2 \\)",
+        "\\( 16\\ \\text{m/s}^2 \\)"
+      ],
+      "choices_value": [
+        "Integer(2)",
+        "Integer(4)",
+        "Integer(8)",
+        "Integer(16)"
+      ],
+      "answer_index": 2,
+      "truth_value": "Integer(8)",
+      "unit": "発展 等速円運動(向心加速度 a=v²/r)",
+      "reason": "\\( a = v^2/r = 2.0^2/0.50 = 4.0/0.50 = 8.0\\ \\text{m/s}^2 \\)。",
+      "restates": "stem に r=0.50 m, v=2.0 m/s, 関係式 a=v²/r を再掲。"
+    },
+    {
+      "stem": "最初の小球(質量\\( m=0.20\\ \\text{kg} \\)、半径\\( r=0.50\\ \\text{m} \\)、速さ\\( v=2.0\\ \\text{m/s} \\))にはたらく向心力の大きさ\\( F \\)を求めよ。\\( F=\\dfrac{mv^2}{r} \\)を用いてよい。",
+      "choices_latex": [
+        "\\( 0.80\\ \\text{N} \\)",
+        "\\( 1.6\\ \\text{N} \\)",
+        "\\( 3.2\\ \\text{N} \\)",
+        "\\( 8.0\\ \\text{N} \\)"
+      ],
+      "choices_value": [
+        "Rational(4,5)",
+        "Rational(8,5)",
+        "Rational(16,5)",
+        "Integer(8)"
+      ],
+      "answer_index": 1,
+      "truth_value": "Rational(8,5)",
+      "unit": "発展 等速円運動(向心力 F=mv²/r)",
+      "reason": "\\( F = mv^2/r = 0.20\\times 2.0^2/0.50 = 0.20\\times 8.0 = 1.6\\ \\text{N} \\)。",
+      "restates": "stem に m=0.20 kg, r=0.50 m, v=2.0 m/s, 関係式 F=mv²/r を再掲。"
+    },
+    {
+      "stem": "次に、長さ\\( L \\)の軽い糸の先に質量\\( m=0.20\\ \\text{kg} \\)のおもりをつけ、鉛直線と糸のなす角が\\( 60^\\circ \\)を保つように円錐振り子として等速円運動させた。重力加速度を\\( g=10\\ \\text{m/s}^2 \\)、\\( \\cos 60^\\circ = 0.50 \\)とする。糸の張力\\( S \\)の大きさを求めよ。鉛直方向のつり合いは\\( S\\cos 60^\\circ = mg \\)である。",
+      "choices_latex": [
+        "\\( 1.0\\ \\text{N} \\)",
+        "\\( 2.0\\ \\text{N} \\)",
+        "\\( 4.0\\ \\text{N} \\)",
+        "\\( 8.0\\ \\text{N} \\)"
+      ],
+      "choices_value": [
+        "Integer(1)",
+        "Integer(2)",
+        "Integer(4)",
+        "Integer(8)"
+      ],
+      "answer_index": 2,
+      "truth_value": "Integer(4)",
+      "unit": "発展 等速円運動(円錐振り子の張力)",
+      "reason": "鉛直つり合い \\( S\\cos 60^\\circ = mg \\) より \\( S = mg/\\cos 60^\\circ = 0.20\\times 10/0.50 = 4.0\\ \\text{N} \\)。",
+      "restates": "stem に m=0.20 kg, g=10 m/s², cos60°=0.50, つり合い式 Scos60°=mg を再掲。"
+    }
+  ]
+}

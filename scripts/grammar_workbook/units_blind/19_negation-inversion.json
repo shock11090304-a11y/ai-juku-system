@@ -1,0 +1,277 @@
+{
+  "unit": "否定・倒置・強調・省略",
+  "unit_slug": "negation-inversion",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "Not all of the students ( ) the exam last week.",
+      "choices": [
+        "pass",
+        "passes",
+        "passed",
+        "passing"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "( ) was this book that changed my life.",
+      "choices": [
+        "That",
+        "There",
+        "This",
+        "It"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "I like coffee, and ( ) does my brother.",
+      "choices": [
+        "neither",
+        "so",
+        "too",
+        "also"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "I don't like natto, and ( ) does my sister.",
+      "choices": [
+        "so",
+        "neither",
+        "either",
+        "too"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "He is ( ) longer a child.",
+      "choices": [
+        "not",
+        "never",
+        "none",
+        "no"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "I do ( ) want to go there.",
+      "choices": [
+        "really",
+        "very",
+        "much",
+        "not"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "It was a letter ( ) she wrote to me.",
+      "choices": [
+        "that",
+        "what",
+        "who",
+        "whose"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "( ) of the two answers is correct; both are wrong.",
+      "choices": [
+        "Neither",
+        "Either",
+        "Both",
+        "Each"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "The movie was ( ) means boring.",
+      "choices": [
+        "by any",
+        "in no",
+        "by no",
+        "at no"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "I did ( ) enjoy the trip.",
+      "choices": [
+        "enjoy",
+        "really",
+        "do",
+        "not"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "She is not ( ) right.",
+      "choices": [
+        "never",
+        "always",
+        "no",
+        "none"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "Never ( ) such a beautiful sunset.",
+      "choices": [
+        "I have seen",
+        "I saw",
+        "saw I",
+        "have I seen"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "Little ( ) know that he was lying.",
+      "choices": [
+        "I did",
+        "did I",
+        "I have",
+        "have I"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "There is ( ) water in the bottle.",
+      "choices": [
+        "not",
+        "never",
+        "none",
+        "no"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "It was in 2020 ( ) we first met.",
+      "choices": [
+        "that",
+        "where",
+        "which",
+        "what"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "stem": "Not ( ) of us can speak English.",
+      "choices": [
+        "none",
+        "never",
+        "all",
+        "no"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "彼はもはや子どもではない。",
+      "tokens": [
+        "a",
+        "longer",
+        "is",
+        "no",
+        "He",
+        "child"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "トムは野球が好きで、私もそうだ。",
+      "tokens": [
+        "likes",
+        "Tom",
+        "do",
+        "baseball",
+        "so",
+        "and",
+        "I"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "そのニュースは決して新しくなかった。",
+      "tokens": [
+        "was",
+        "no",
+        "new",
+        "by",
+        "means",
+        "The news"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "すべての生徒がその試験に合格したわけではない。",
+      "tokens": [
+        "Not all",
+        "passed",
+        "the students",
+        "the exam"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "私はそんなに美しい花を一度も見たことがない。",
+      "tokens": [
+        "have",
+        "Never",
+        "I",
+        "such",
+        "seen",
+        "a beautiful flower"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "order",
+      "prompt_ja": "私の人生を変えたのはこの本だった。",
+      "tokens": [
+        "this book",
+        "It",
+        "that",
+        "my life",
+        "was",
+        "changed"
+      ]
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "Mary made this cake.",
+      "instruction": "It was ... that ... の強調構文を使い、主語 Mary を強調する文に書き換えなさい(関係詞は that を用いること)。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "I like this song.",
+      "instruction": "動詞を強調する do を使って、「本当に~する」という強調の文に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "He is not a child now.",
+      "instruction": "no longer を使って「彼はもはや子どもではない」とほぼ同じ意味の文に書き換えなさい(now は使わない)。"
+    }
+  ]
+}

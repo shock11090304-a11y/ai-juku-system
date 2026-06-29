@@ -1,0 +1,55 @@
+{
+  "passage": "都市ガスの主成分であるメタン \\(\\mathrm{CH_4}\\) について、その燃焼や生成にかかわる反応熱を考える。次の3つの熱化学方程式(反応熱の値はすべて25 ℃, \\(1.0\\times10^{5}\\ \\text{Pa}\\) における値)が与えられている。\n(ア) 黒鉛(炭素)の燃焼: \\(\\mathrm{C}(\\text{黒鉛})+\\mathrm{O_2}(\\text{気})=\\mathrm{CO_2}(\\text{気})+394\\ \\text{kJ}\\)\n(イ) 水素の燃焼: \\(\\mathrm{H_2}(\\text{気})+\\tfrac{1}{2}\\mathrm{O_2}(\\text{気})=\\mathrm{H_2O}(\\text{液})+286\\ \\text{kJ}\\)\n(ウ) メタンの燃焼: \\(\\mathrm{CH_4}(\\text{気})+2\\mathrm{O_2}(\\text{気})=\\mathrm{CO_2}(\\text{気})+2\\mathrm{H_2O}(\\text{液})+891\\ \\text{kJ}\\)\nすべての反応熱は発熱を正とする。図やグラフは用いず、上の3式の数値だけで以下の各問いに答えられる。",
+  "questions": [
+    {
+      "id": "q1",
+      "stem": "熱化学方程式 (ア) \\(\\mathrm{C}(\\text{黒鉛})+\\mathrm{O_2}(\\text{気})=\\mathrm{CO_2}(\\text{気})+394\\ \\text{kJ}\\) は、二酸化炭素 \\(\\mathrm{CO_2}\\) の生成熱を表している。黒鉛と酸素はともに単体であることに注意して、\\(\\mathrm{CO_2}(\\text{気})\\) 1 mol の生成熱は何 kJ/mol か。発熱を正として答えよ。",
+      "choices": [
+        "\\(+394\\ \\text{kJ/mol}\\)",
+        "\\(-394\\ \\text{kJ/mol}\\)",
+        "\\(+197\\ \\text{kJ/mol}\\)",
+        "\\(+788\\ \\text{kJ/mol}\\)"
+      ]
+    },
+    {
+      "id": "q2",
+      "stem": "熱化学方程式 (イ) \\(\\mathrm{H_2}(\\text{気})+\\tfrac{1}{2}\\mathrm{O_2}(\\text{気})=\\mathrm{H_2O}(\\text{液})+286\\ \\text{kJ}\\) より、水素 \\(\\mathrm{H_2}\\) を完全に燃焼させて液体の水 \\(\\mathrm{H_2O}(\\text{液})\\) を 2 mol 生成させたとき、放出される熱量は何 kJ か。",
+      "choices": [
+        "\\(286\\ \\text{kJ}\\)",
+        "\\(143\\ \\text{kJ}\\)",
+        "\\(572\\ \\text{kJ}\\)",
+        "\\(858\\ \\text{kJ}\\)"
+      ]
+    },
+    {
+      "id": "q3",
+      "stem": "次の3式が与えられている: (ア) \\(\\mathrm{C}(\\text{黒鉛})+\\mathrm{O_2}=\\mathrm{CO_2}(\\text{気})+394\\ \\text{kJ}\\)、(イ) \\(\\mathrm{H_2}+\\tfrac{1}{2}\\mathrm{O_2}=\\mathrm{H_2O}(\\text{液})+286\\ \\text{kJ}\\)、(ウ) \\(\\mathrm{CH_4}(\\text{気})+2\\mathrm{O_2}=\\mathrm{CO_2}(\\text{気})+2\\mathrm{H_2O}(\\text{液})+891\\ \\text{kJ}\\)。ヘスの法則を用いて、メタンの生成反応 \\(\\mathrm{C}(\\text{黒鉛})+2\\mathrm{H_2}(\\text{気})=\\mathrm{CH_4}(\\text{気})+Q\\ \\text{kJ}\\) の反応熱 \\(Q\\)(メタンの生成熱)を、発熱を正として求めよ。生成熱は \\(Q=(\\text{ア})+2\\times(\\text{イ})-(\\text{ウ})\\) で計算できる。",
+      "choices": [
+        "\\(-75\\ \\text{kJ}\\)",
+        "\\(+75\\ \\text{kJ}\\)",
+        "\\(-211\\ \\text{kJ}\\)",
+        "\\(+1857\\ \\text{kJ}\\)"
+      ]
+    },
+    {
+      "id": "q4",
+      "stem": "前問より、メタンの生成反応 \\(\\mathrm{C}(\\text{黒鉛})+2\\mathrm{H_2}(\\text{気})=\\mathrm{CH_4}(\\text{気})+Q\\ \\text{kJ}\\) の反応熱(メタンの生成熱)は \\(Q=+75\\ \\text{kJ}\\)(発熱)であった。このとき、その逆反応であるメタンの分解反応 \\(\\mathrm{CH_4}(\\text{気})=\\mathrm{C}(\\text{黒鉛})+2\\mathrm{H_2}(\\text{気})+Q'\\ \\text{kJ}\\) の反応熱 \\(Q'\\) は何 kJ か。発熱を正(吸熱を負)として答えよ。逆反応の反応熱は正反応の反応熱と符号が逆になる。",
+      "choices": [
+        "\\(+75\\ \\text{kJ}\\)",
+        "\\(-150\\ \\text{kJ}\\)",
+        "\\(+891\\ \\text{kJ}\\)",
+        "\\(-75\\ \\text{kJ}\\)"
+      ]
+    },
+    {
+      "id": "q5",
+      "stem": "メタンの燃焼を表す熱化学方程式 \\(\\mathrm{CH_4}(\\text{気})+2\\mathrm{O_2}(\\text{気})=\\mathrm{CO_2}(\\text{気})+2\\mathrm{H_2O}(\\text{液})+891\\ \\text{kJ}\\) より、メタンの燃焼熱は 891 kJ/mol である。メタンを完全に燃焼させて 4455 kJ の熱を得るには、メタンを何 mol 燃焼させればよいか。",
+      "choices": [
+        "\\(5\\ \\text{mol}\\)",
+        "\\(10\\ \\text{mol}\\)",
+        "\\(2.5\\ \\text{mol}\\)",
+        "\\(4\\ \\text{mol}\\)"
+      ]
+    }
+  ]
+}

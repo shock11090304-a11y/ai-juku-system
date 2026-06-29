@@ -113,11 +113,11 @@ const PLAN_CONFIG = {
     },
   },
 
-  // 完全無料 14日間体験 (学習習慣化の最小単位=14日。FOUNDER_TRIAL_DAYS と一致)
+  // 完全無料 7日間体験 (FOUNDER_TRIAL_DAYS と一致・2026-06-30 14→7 短縮)
   trial: {
     price: 0,
     priceLabel: '完全無料',
-    duration: '14日間',
+    duration: '7日間',
     description: 'クレジットカード登録不要・自動課金なし・解約手続き不要',
   },
 

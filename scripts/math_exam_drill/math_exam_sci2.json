@@ -1,0 +1,1049 @@
+{
+ "questions": [
+  {
+   "exam_id": "rikei",
+   "part_key": "chem_exam",
+   "eiken_grade": "kyotsu_rikei",
+   "question_data": {
+    "passage": "気体のヨウ化水素 \\(\\mathrm{HI}\\) を容積 \\(2.0\\ \\text{L}\\) の密閉容器に入れ、ある一定温度 \\(T\\) に保つと、次の可逆反応が起こって平衡状態に達する。\\[\\mathrm{2HI \\rightleftharpoons H_2 + I_2}\\] いずれの物質も気体である。ある実験では、はじめに \\(\\mathrm{HI}\\) を \\(4.0\\ \\text{mol}\\) だけ容器に入れ(\\(\\mathrm{H_2}\\) と \\(\\mathrm{I_2}\\) ははじめ \\(0\\ \\text{mol}\\))、温度 \\(T\\) で平衡に達したところ、容器内に残った \\(\\mathrm{HI}\\) は \\(2.0\\ \\text{mol}\\) であった。容積は \\(2.0\\ \\text{L}\\) で一定とし、温度はつねに \\(T\\) に保たれているものとする。以下の問いに、前問で求めた値を順に用いて答えよ。",
+    "subject": "数学",
+    "univ_simulated": "共通テスト(本番形式)",
+    "year_simulated": 2025,
+    "source": "kyotsu-exam-format-sci2-20260623",
+    "exam_format": true,
+    "group": "化学",
+    "questions": [
+     {
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "容積 \\(2.0\\ \\text{L}\\) の密閉容器に \\(\\mathrm{HI}\\) を \\(4.0\\ \\text{mol}\\)(\\(\\mathrm{H_2,\\ I_2}\\) はともに \\(0\\ \\text{mol}\\))入れ、温度 \\(T\\) で平衡 \\(\\mathrm{2HI \\rightleftharpoons H_2 + I_2}\\) に達したところ、残った \\(\\mathrm{HI}\\) は \\(2.0\\ \\text{mol}\\) であった。このとき平衡状態における \\(\\mathrm{HI}\\) のモル濃度 \\([\\mathrm{HI}]\\) は何 \\(\\text{mol/L}\\) か。",
+      "choices": [
+       "\\(1.0\\ \\text{mol/L}\\)",
+       "\\(0.50\\ \\text{mol/L}\\)",
+       "\\(2.0\\ \\text{mol/L}\\)",
+       "\\(0.25\\ \\text{mol/L}\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 化学平衡(平衡時のモル濃度)",
+      "explanation": "【単元】発展 化学平衡(平衡時のモル濃度)。正解は「\\(1.0\\ \\text{mol/L}\\)」。平衡時の \\(\\mathrm{HI}\\) は \\(2.0\\ \\text{mol}\\)、容積 \\(2.0\\ \\text{L}\\) より \\([\\mathrm{HI}]=\\dfrac{2.0}{2.0}=1.0\\ \\text{mol/L}\\)。"
+     },
+     {
+      "id": "q2",
+      "type": "multiple_choice",
+      "stem": "前問の実験では、容積 \\(2.0\\ \\text{L}\\) の容器に \\(\\mathrm{HI}\\) を \\(4.0\\ \\text{mol}\\) 入れ、平衡 \\(\\mathrm{2HI \\rightleftharpoons H_2 + I_2}\\) で残った \\(\\mathrm{HI}\\) は \\(2.0\\ \\text{mol}\\)、すなわち \\([\\mathrm{HI}]=1.0\\ \\text{mol/L}\\) であった。反応した \\(\\mathrm{HI}\\) は \\(4.0-2.0=2.0\\ \\text{mol}\\) であり、係数比 \\(\\mathrm{2HI:H_2:I_2}=2:1:1\\) より平衡時の \\(\\mathrm{H_2}\\) と \\(\\mathrm{I_2}\\) はそれぞれ \\(1.0\\ \\text{mol}\\) である。このときの濃度平衡定数 \\(K_c=\\dfrac{[\\mathrm{H_2}][\\mathrm{I_2}]}{[\\mathrm{HI}]^2}\\) の値はいくらか(単位は省略)。",
+      "choices": [
+       "\\(\\dfrac{1}{2}\\)",
+       "\\(\\dfrac{1}{4}\\)",
+       "\\(1\\)",
+       "\\(\\dfrac{1}{16}\\)"
+      ],
+      "answer": 1,
+      "unit": "発展 化学平衡(濃度平衡定数Kc)",
+      "explanation": "【単元】発展 化学平衡(濃度平衡定数Kc)。正解は「\\(\\dfrac{1}{4}\\)」。\\([\\mathrm{H_2}]=[\\mathrm{I_2}]=\\dfrac{1.0}{2.0}=0.50\\ \\text{mol/L}\\)、\\([\\mathrm{HI}]=1.0\\ \\text{mol/L}\\)。\\(K_c=\\dfrac{0.50\\times0.50}{1.0^2}=\\dfrac{1}{4}\\)。"
+     },
+     {
+      "id": "q3",
+      "type": "multiple_choice",
+      "stem": "前問と同じ温度 \\(T\\)・容積 \\(2.0\\ \\text{L}\\) で平衡 \\(\\mathrm{2HI \\rightleftharpoons H_2 + I_2}\\)(\\(K_c=\\dfrac{1}{4}\\))に達している状態を考える。この平衡状態に対し、温度・容積を一定に保ったまま、生成物である水素 \\(\\mathrm{H_2}\\) を新たに少量加えた。ルシャトリエの原理にしたがうと、平衡はどちらに移動するか。最も適切なものを選べ。",
+      "choices": [
+       "右(\\(\\mathrm{H_2,\\ I_2}\\) が増える向き)に移動する",
+       "移動しない",
+       "左(\\(\\mathrm{HI}\\) が増える向き)に移動する",
+       "いったん右に移動した後、左に戻り元に戻る"
+      ],
+      "answer": 2,
+      "unit": "発展 化学平衡(平衡移動・ルシャトリエの原理)",
+      "explanation": "【単元】発展 化学平衡(平衡移動・ルシャトリエの原理)。正解は「左(\\(\\mathrm{HI}\\) が増える向き)に移動する」。生成物 \\(\\mathrm{H_2}\\) を加えるとその濃度増加を打ち消す向き、すなわち \\(\\mathrm{H_2}\\) を消費して \\(\\mathrm{HI}\\) を生成する左向きに平衡が移動する。"
+     },
+     {
+      "id": "q4",
+      "type": "multiple_choice",
+      "stem": "前問と同じ実験(容積 \\(2.0\\ \\text{L}\\)、はじめ \\(\\mathrm{HI}\\) を \\(4.0\\ \\text{mol}\\) 入れ、平衡 \\(\\mathrm{2HI \\rightleftharpoons H_2 + I_2}\\) で残った \\(\\mathrm{HI}\\) が \\(2.0\\ \\text{mol}\\)、反応した \\(\\mathrm{HI}\\) が \\(2.0\\ \\text{mol}\\))について、はじめに入れた \\(\\mathrm{HI}\\) のうち反応によって解離した割合(解離度)\\(\\alpha\\) はいくらか。解離度 \\(\\alpha\\) は \\(\\alpha=\\dfrac{(\\text{反応した }\\mathrm{HI}\\text{ の物質量})}{(\\text{はじめの }\\mathrm{HI}\\text{ の物質量})}\\) で定義する。",
+      "choices": [
+       "\\(0.25\\)",
+       "\\(1.0\\)",
+       "\\(0.75\\)",
+       "\\(0.50\\)"
+      ],
+      "answer": 3,
+      "unit": "発展 化学平衡(解離度α)",
+      "explanation": "【単元】発展 化学平衡(解離度α)。正解は「\\(0.50\\)」。反応した \\(\\mathrm{HI}\\) は \\(2.0\\ \\text{mol}\\)、はじめの \\(\\mathrm{HI}\\) は \\(4.0\\ \\text{mol}\\) なので \\(\\alpha=\\dfrac{2.0}{4.0}=0.50\\)。"
+     },
+     {
+      "id": "q5",
+      "type": "multiple_choice",
+      "stem": "同じ温度 \\(T\\)(よって \\(K_c=\\dfrac{[\\mathrm{H_2}][\\mathrm{I_2}]}{[\\mathrm{HI}]^2}=\\dfrac{1}{4}\\))で、容積 \\(2.0\\ \\text{L}\\) の同じ容器に、今度ははじめに \\(\\mathrm{HI}\\) を \\(8.0\\ \\text{mol}\\) だけ入れた(\\(\\mathrm{H_2,\\ I_2}\\) ははじめ \\(0\\ \\text{mol}\\))。平衡 \\(\\mathrm{2HI \\rightleftharpoons H_2 + I_2}\\) に達したとき、容器内に残る \\(\\mathrm{HI}\\) は何 \\(\\text{mol}\\) か。",
+      "choices": [
+       "\\(4.0\\ \\text{mol}\\)",
+       "\\(2.0\\ \\text{mol}\\)",
+       "\\(6.0\\ \\text{mol}\\)",
+       "\\(8.0\\ \\text{mol}\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 化学平衡(条件変更後の新しい平衡量)",
+      "explanation": "【単元】発展 化学平衡(条件変更後の新しい平衡量)。正解は「\\(4.0\\ \\text{mol}\\)」。生成する \\(\\mathrm{H_2}\\) を \\(x\\ \\text{mol}\\) とすると \\(\\mathrm{I_2}=x\\)、反応した \\(\\mathrm{HI}=2x\\) で \\(\\mathrm{HI}=8.0-2x\\)。容積 \\(2.0\\ \\text{L}\\) より \\(K_c=\\dfrac{(x/2)^2}{((8.0-2x)/2)^2}=\\dfrac{x^2}{(8.0-2x)^2}=\\dfrac{1}{4}\\)。\\(\\dfrac{x}{8.0-2x}=\\dfrac{1}{2}\\) より \\(2x=8.0-2x\\)、\\(x=2.0\\)。よって \\(\\mathrm{HI}=8.0-2\\times2.0=4.0\\ \\text{mol}\\)。"
+     }
+    ]
+   },
+   "model": "claude-opus-verified"
+  },
+  {
+   "exam_id": "rikei",
+   "part_key": "chem_exam",
+   "eiken_grade": "kyotsu_rikei",
+   "question_data": {
+    "passage": "五酸化二窒素 N\\(_2\\)O\\(_5\\) は次のように分解する。\\n\\(\\quad 2\\,\\mathrm{N_2O_5} \\rightarrow 4\\,\\mathrm{NO_2} + \\mathrm{O_2}\\)\\nこの分解反応について、温度 \\(25\\,{}^\\circ\\mathrm{C}\\) 一定で N\\(_2\\)O\\(_5\\) の濃度変化を測定した。反応速度 \\(v\\) は N\\(_2\\)O\\(_5\\) の減少速度 \\(v=-\\dfrac{\\Delta[\\mathrm{N_2O_5}]}{\\Delta t}\\) で表すものとする。必要であれば \\(\\log_{e}2=0.69\\) を用いてよい。各設問の数値は計算しやすいように設定してある。",
+    "subject": "数学",
+    "univ_simulated": "共通テスト(本番形式)",
+    "year_simulated": 2025,
+    "source": "kyotsu-exam-format-sci2-20260623",
+    "exam_format": true,
+    "group": "化学",
+    "questions": [
+     {
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "温度 \\(25\\,{}^\\circ\\mathrm{C}\\) 一定での N\\(_2\\)O\\(_5\\) の分解 \\(2\\,\\mathrm{N_2O_5}\\rightarrow 4\\,\\mathrm{NO_2}+\\mathrm{O_2}\\) において、N\\(_2\\)O\\(_5\\) の濃度は時刻 \\(t=0\\,\\text{s}\\) で \\(1.00\\,\\text{mol/L}\\)、\\(t=200\\,\\text{s}\\) で \\(0.80\\,\\text{mol/L}\\) であった。この区間における N\\(_2\\)O\\(_5\\) の平均の分解速度 \\(v=-\\dfrac{\\Delta[\\mathrm{N_2O_5}]}{\\Delta t}\\) はいくらか。",
+      "choices": [
+       "\\(2.0\\times 10^{-1}\\ \\text{mol/(L}\\cdot\\text{s)}\\)",
+       "\\(1.0\\times 10^{-3}\\ \\text{mol/(L}\\cdot\\text{s)}\\)",
+       "\\(2.0\\times 10^{-3}\\ \\text{mol/(L}\\cdot\\text{s)}\\)",
+       "\\(5.0\\times 10^{-3}\\ \\text{mol/(L}\\cdot\\text{s)}\\)"
+      ],
+      "answer": 1,
+      "unit": "発展 反応速度(平均の反応速度)",
+      "explanation": "【単元】発展 反応速度(平均の反応速度)。正解は「\\(1.0\\times 10^{-3}\\ \\text{mol/(L}\\cdot\\text{s)}\\)」。v = -Δ[N2O5]/Δt = (1.00-0.80)/200 = 0.20/200 = 1.0×10⁻³ mol/(L·s)。"
+     },
+     {
+      "id": "q2",
+      "type": "multiple_choice",
+      "stem": "同じ分解反応 \\(2\\,\\mathrm{N_2O_5}\\rightarrow 4\\,\\mathrm{NO_2}+\\mathrm{O_2}\\) で、速度式が \\(v=k[\\mathrm{N_2O_5}]^{m}\\) と書けるとする。初濃度を変えて初速度を測ると、\\([\\mathrm{N_2O_5}]_0=1.00\\,\\text{mol/L}\\) のとき \\(v=2.0\\times10^{-3}\\,\\text{mol/(L}\\cdot\\text{s)}\\)、\\([\\mathrm{N_2O_5}]_0=2.00\\,\\text{mol/L}\\) のとき \\(v=4.0\\times10^{-3}\\,\\text{mol/(L}\\cdot\\text{s)}\\) であった。初濃度を 2 倍にすると初速度は何倍になるか。",
+      "choices": [
+       "\\(4\\ \\text{倍}\\)",
+       "\\(1\\ \\text{倍}\\)",
+       "\\(2\\ \\text{倍}\\)",
+       "\\(\\dfrac{1}{2}\\ \\text{倍}\\)"
+      ],
+      "answer": 2,
+      "unit": "発展 反応速度(反応次数の決定)",
+      "explanation": "【単元】発展 反応速度(反応次数の決定)。正解は「\\(2\\ \\text{倍}\\)」。速度比 = (4.0×10⁻³)/(2.0×10⁻³) = 2。濃度2倍で速度2倍だから m=1（1次反応）で速度は2倍。"
+     },
+     {
+      "id": "q3",
+      "type": "multiple_choice",
+      "stem": "この分解は N\\(_2\\)O\\(_5\\) について 1 次反応で、速度式は \\(v=k[\\mathrm{N_2O_5}]\\) と書ける。\\([\\mathrm{N_2O_5}]=1.00\\,\\text{mol/L}\\) のとき分解速度が \\(v=2.0\\times10^{-3}\\,\\text{mol/(L}\\cdot\\text{s)}\\) であった。速度定数 \\(k\\) の値はいくらか（単位に注意）。",
+      "choices": [
+       "\\(1.0\\times10^{-3}\\ \\text{/s}\\)",
+       "\\(4.0\\times10^{-3}\\ \\text{/s}\\)",
+       "\\(5.0\\times10^{2}\\ \\text{/s}\\)",
+       "\\(2.0\\times10^{-3}\\ \\text{/s}\\)"
+      ],
+      "answer": 3,
+      "unit": "発展 反応速度(速度定数kと単位)",
+      "explanation": "【単元】発展 反応速度(速度定数kと単位)。正解は「\\(2.0\\times10^{-3}\\ \\text{/s}\\)」。1次反応 v=k[N2O5] より k = v/[N2O5] = (2.0×10⁻³)/1.00 = 2.0×10⁻³ /s。1次反応の k の単位は /s（s⁻¹）。"
+     },
+     {
+      "id": "q4",
+      "type": "multiple_choice",
+      "stem": "1 次反応 \\(v=k[\\mathrm{N_2O_5}]\\) の半減期は \\(t_{1/2}=\\dfrac{\\log_{e}2}{k}\\) で与えられる。速度定数 \\(k=2.0\\times10^{-3}\\,\\text{/s}\\)、\\(\\log_{e}2=0.69\\) とすると半減期は \\(t_{1/2}=345\\,\\text{s}\\) である。N\\(_2\\)O\\(_5\\) の濃度が \\(0.80\\,\\text{mol/L}\\) の時刻から \\(1035\\,\\text{s}\\) 経過したとき、N\\(_2\\)O\\(_5\\) の濃度はいくらか。",
+      "choices": [
+       "\\(0.10\\ \\text{mol/L}\\)",
+       "\\(0.40\\ \\text{mol/L}\\)",
+       "\\(0.20\\ \\text{mol/L}\\)",
+       "\\(0.05\\ \\text{mol/L}\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 反応速度(半減期と指定時刻の濃度)",
+      "explanation": "【単元】発展 反応速度(半減期と指定時刻の濃度)。正解は「\\(0.10\\ \\text{mol/L}\\)」。1035/345 = 3 半減期。0.80×(1/2)³ = 0.80/8 = 0.10 mol/L。"
+     },
+     {
+      "id": "q5",
+      "type": "multiple_choice",
+      "stem": "一般に温度が \\(10\\,{}^\\circ\\mathrm{C}\\) 上がるごとに反応速度（速度定数）が 2 倍になるとみなす（2倍則）。この分解反応の速度定数は \\(25\\,{}^\\circ\\mathrm{C}\\) で \\(k=2.0\\times10^{-3}\\,\\text{/s}\\) である。温度を \\(55\\,{}^\\circ\\mathrm{C}\\) に上げたときの速度定数 \\(k\\) はおよそいくらか。",
+      "choices": [
+       "\\(4.0\\times10^{-3}\\ \\text{/s}\\)",
+       "\\(1.6\\times10^{-2}\\ \\text{/s}\\)",
+       "\\(8.0\\times10^{-3}\\ \\text{/s}\\)",
+       "\\(1.2\\times10^{-2}\\ \\text{/s}\\)"
+      ],
+      "answer": 1,
+      "unit": "発展 反応速度(温度変化と2倍則)",
+      "explanation": "【単元】発展 反応速度(温度変化と2倍則)。正解は「\\(1.6\\times10^{-2}\\ \\text{/s}\\)」。55-25=30℃ 上昇 → 30/10=3 段階 → 速度は 2³=8 倍。k=2.0×10⁻³×8 = 1.6×10⁻² /s。"
+     }
+    ]
+   },
+   "model": "claude-opus-verified"
+  },
+  {
+   "exam_id": "rikei",
+   "part_key": "phys_exam",
+   "eiken_grade": "kyotsu_rikei",
+   "question_data": {
+    "passage": "ある単原子分子理想気体を、なめらかに動くピストン付きのシリンダーに封入した。気体の物質量は \\(n=2.0\\ \\text{mol}\\)、気体定数は \\(R=8.3\\ \\text{J/(mol}\\cdot\\text{K)}\\) とする。はじめ気体は状態Aにあり、圧力 \\(P_{\\mathrm A}=1.0\\times10^{5}\\ \\text{Pa}\\)、絶対温度 \\(T_{\\mathrm A}=300\\ \\text{K}\\) であった。次に、圧力を一定に保ったまま加熱して温度 \\(360\\ \\text{K}\\) の状態Bにした（A→B：定圧変化）。続いて、体積を一定に保ったまま冷却して温度を \\(300\\ \\text{K}\\) に戻し、状態Cにした（B→C：定積変化）。以下の各問いに答えよ。単原子分子理想気体の内部エネルギー変化は \\(\\Delta U=\\tfrac{3}{2}nR\\,\\Delta T\\) で与えられる。",
+    "subject": "数学",
+    "univ_simulated": "共通テスト(本番形式)",
+    "year_simulated": 2025,
+    "source": "kyotsu-exam-format-sci2-20260623",
+    "exam_format": true,
+    "group": "物理",
+    "questions": [
+     {
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "状態Aについて、物質量 \\(n=2.0\\ \\text{mol}\\)、気体定数 \\(R=8.3\\ \\text{J/(mol}\\cdot\\text{K)}\\)、圧力 \\(P_{\\mathrm A}=1.0\\times10^{5}\\ \\text{Pa}\\)、絶対温度 \\(T_{\\mathrm A}=300\\ \\text{K}\\) である。状態方程式 \\(PV=nRT\\) を用いて、状態Aの体積 \\(V_{\\mathrm A}\\) を求めよ。",
+      "choices": [
+       "\\(2.49\\times10^{-2}\\ \\text{m}^3\\)",
+       "\\(4.98\\times10^{-1}\\ \\text{m}^3\\)",
+       "\\(4.98\\times10^{-2}\\ \\text{m}^3\\)",
+       "\\(9.96\\times10^{-2}\\ \\text{m}^3\\)"
+      ],
+      "answer": 2,
+      "unit": "発展 気体の熱力学(状態方程式)",
+      "explanation": "【単元】発展 気体の熱力学(状態方程式)。正解は「\\(4.98\\times10^{-2}\\ \\text{m}^3\\)」。V=nRT/P=(2.0×8.3×300)/(1.0×10^5)=4980/10^5=4.98×10^-2 m^3。"
+     },
+     {
+      "id": "q2",
+      "type": "multiple_choice",
+      "stem": "A→Bは定圧変化である。物質量 \\(n=2.0\\ \\text{mol}\\)、気体定数 \\(R=8.3\\ \\text{J/(mol}\\cdot\\text{K)}\\)、圧力一定 \\(P=1.0\\times10^{5}\\ \\text{Pa}\\) のもとで、温度が \\(T_{\\mathrm A}=300\\ \\text{K}\\) から \\(T_{\\mathrm B}=360\\ \\text{K}\\) に変化した。このとき気体が外部にする仕事 \\(W=P\\,\\Delta V=nR\\,\\Delta T\\) を求めよ。",
+      "choices": [
+       "\\(5.98\\times10^{3}\\ \\text{J}\\)",
+       "\\(4.98\\times10^{2}\\ \\text{J}\\)",
+       "\\(1.49\\times10^{3}\\ \\text{J}\\)",
+       "\\(9.96\\times10^{2}\\ \\text{J}\\)"
+      ],
+      "answer": 3,
+      "unit": "発展 気体の熱力学(定圧変化の仕事)",
+      "explanation": "【単元】発展 気体の熱力学(定圧変化の仕事)。正解は「\\(9.96\\times10^{2}\\ \\text{J}\\)」。定圧では W=PΔV=nRΔT=2.0×8.3×(360-300)=2.0×8.3×60=996 J。"
+     },
+     {
+      "id": "q3",
+      "type": "multiple_choice",
+      "stem": "A→Bの定圧変化について、単原子分子理想気体の内部エネルギー変化を求めよ。物質量 \\(n=2.0\\ \\text{mol}\\)、気体定数 \\(R=8.3\\ \\text{J/(mol}\\cdot\\text{K)}\\)、温度は \\(300\\ \\text{K}\\) から \\(360\\ \\text{K}\\) へ変化した。\\(\\Delta U=\\tfrac{3}{2}nR\\,\\Delta T\\) を用いよ。",
+      "choices": [
+       "\\(1.49\\times10^{3}\\ \\text{J}\\)",
+       "\\(9.96\\times10^{2}\\ \\text{J}\\)",
+       "\\(2.49\\times10^{3}\\ \\text{J}\\)",
+       "\\(7.47\\times10^{2}\\ \\text{J}\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 気体の熱力学(内部エネルギー変化)",
+      "explanation": "【単元】発展 気体の熱力学(内部エネルギー変化)。正解は「\\(1.49\\times10^{3}\\ \\text{J}\\)」。ΔU=(3/2)nRΔT=(3/2)×2.0×8.3×60=1.5×996=1494 J。"
+     },
+     {
+      "id": "q4",
+      "type": "multiple_choice",
+      "stem": "A→Bの定圧変化について、熱力学第一法則 \\(Q=\\Delta U+W\\) を用いて気体が吸収した熱量 \\(Q\\) を求めよ。この過程で、気体が外部にした仕事は \\(W=9.96\\times10^{2}\\ \\text{J}\\)、内部エネルギー変化は \\(\\Delta U=1.49\\times10^{3}\\ \\text{J}\\)（=1494 J）である。",
+      "choices": [
+       "\\(4.98\\times10^{2}\\ \\text{J}\\)",
+       "\\(2.49\\times10^{3}\\ \\text{J}\\)",
+       "\\(1.49\\times10^{3}\\ \\text{J}\\)",
+       "\\(9.96\\times10^{2}\\ \\text{J}\\)"
+      ],
+      "answer": 1,
+      "unit": "発展 気体の熱力学(第一法則・吸収熱)",
+      "explanation": "【単元】発展 気体の熱力学(第一法則・吸収熱)。正解は「\\(2.49\\times10^{3}\\ \\text{J}\\)」。Q=ΔU+W=1494+996=2490 J。"
+     },
+     {
+      "id": "q5",
+      "type": "multiple_choice",
+      "stem": "B→Cは定積変化（体積一定）である。物質量 \\(n=2.0\\ \\text{mol}\\)、気体定数 \\(R=8.3\\ \\text{J/(mol}\\cdot\\text{K)}\\) の単原子分子理想気体を、温度 \\(T_{\\mathrm B}=360\\ \\text{K}\\) から \\(T_{\\mathrm C}=300\\ \\text{K}\\) へ冷却した。定積変化では気体がする仕事は \\(W=0\\) であり \\(Q=\\Delta U=\\tfrac{3}{2}nR\\,\\Delta T\\) となる。この過程で気体が吸収した熱量 \\(Q\\) を求めよ（放出は負）。",
+      "choices": [
+       "\\(+1.49\\times10^{3}\\ \\text{J}\\)",
+       "\\(0\\ \\text{J}\\)",
+       "\\(-1.49\\times10^{3}\\ \\text{J}\\)",
+       "\\(-9.96\\times10^{2}\\ \\text{J}\\)"
+      ],
+      "answer": 2,
+      "unit": "発展 気体の熱力学(定積変化のQ・W・ΔU)",
+      "explanation": "【単元】発展 気体の熱力学(定積変化のQ・W・ΔU)。正解は「\\(-1.49\\times10^{3}\\ \\text{J}\\)」。定積では W=0、Q=ΔU=(3/2)nRΔT=(3/2)×2.0×8.3×(300-360)=1.5×(-996)=-1494 J(放出)。"
+     }
+    ]
+   },
+   "model": "claude-opus-verified"
+  },
+  {
+   "exam_id": "rikei",
+   "part_key": "phys_exam",
+   "eiken_grade": "kyotsu_rikei",
+   "question_data": {
+    "passage": "コンデンサーの性質を調べる一連の実験を行った。実験で用いる平行板コンデンサーは、すべて極板間が真空(空気)で、電気容量はコンデンサーごとに与える。電池はすべて内部抵抗が無視でき、導線の抵抗も無視する。電気容量 \\(C\\)、極板間の電圧 \\(V\\)、たくわえられる電気量 \\(Q\\)、静電エネルギー \\(U\\) の関係を、単一のコンデンサーから始め、並列・直列接続、さらに極板間隔を変えた場合へと順に調べていく。各小問では必要な値・接続をそのつど文章で与える。",
+    "subject": "数学",
+    "univ_simulated": "共通テスト(本番形式)",
+    "year_simulated": 2025,
+    "source": "kyotsu-exam-format-sci2-20260623",
+    "exam_format": true,
+    "group": "物理",
+    "questions": [
+     {
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "電気容量 \\(C=4\\ \\mu\\text{F}\\) のコンデンサーを、起電力 \\(V=10\\ \\text{V}\\) の電池に接続して十分に時間が経過した。このとき極板間の電圧は \\(10\\ \\text{V}\\) になっている。関係式 \\(Q=CV\\) を用いて、このコンデンサーにたくわえられる電気量 \\(Q\\) を求めよ。",
+      "choices": [
+       "\\(0.4\\ \\mu\\text{C}\\)",
+       "\\(2.5\\ \\mu\\text{C}\\)",
+       "\\(20\\ \\mu\\text{C}\\)",
+       "\\(40\\ \\mu\\text{C}\\)"
+      ],
+      "answer": 3,
+      "unit": "発展 コンデンサー(電気量 Q=CV・ステップ1)",
+      "explanation": "【単元】発展 コンデンサー(電気量 Q=CV・ステップ1)。正解は「\\(40\\ \\mu\\text{C}\\)」。\\(Q=CV=4\\ \\mu\\text{F}\\times10\\ \\text{V}=40\\ \\mu\\text{C}\\)。"
+     },
+     {
+      "id": "q2",
+      "type": "multiple_choice",
+      "stem": "前問と同じく、電気容量 \\(C=4\\ \\mu\\text{F}\\) のコンデンサーを電圧 \\(V=10\\ \\text{V}\\) で充電した(極板間の電圧は \\(10\\ \\text{V}\\))。このコンデンサーにたくわえられる静電エネルギー \\(U\\) を、関係式 \\(U=\\dfrac{1}{2}CV^{2}\\) を用いて求めよ。",
+      "choices": [
+       "\\(200\\ \\mu\\text{J}\\)",
+       "\\(400\\ \\mu\\text{J}\\)",
+       "\\(20\\ \\mu\\text{J}\\)",
+       "\\(2000\\ \\mu\\text{J}\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 コンデンサー(静電エネルギー U=½CV²・ステップ2)",
+      "explanation": "【単元】発展 コンデンサー(静電エネルギー U=½CV²・ステップ2)。正解は「\\(200\\ \\mu\\text{J}\\)」。\\(U=\\dfrac{1}{2}CV^{2}=\\dfrac{1}{2}\\times4\\ \\mu\\text{F}\\times(10\\ \\text{V})^{2}=\\dfrac{1}{2}\\times4\\times100=200\\ \\mu\\text{J}\\)。"
+     },
+     {
+      "id": "q3",
+      "type": "multiple_choice",
+      "stem": "次に、電気容量 \\(C_{1}=4\\ \\mu\\text{F}\\) と \\(C_{2}=6\\ \\mu\\text{F}\\) の2つのコンデンサーを並列に接続した。並列接続の合成容量は各容量の和 \\(C=C_{1}+C_{2}\\) で与えられる。この合成容量 \\(C\\) を求めよ。",
+      "choices": [
+       "\\(2.4\\ \\mu\\text{F}\\)",
+       "\\(10\\ \\mu\\text{F}\\)",
+       "\\(24\\ \\mu\\text{F}\\)",
+       "\\(5\\ \\mu\\text{F}\\)"
+      ],
+      "answer": 1,
+      "unit": "発展 コンデンサー(並列合成容量 C1+C2・ステップ3)",
+      "explanation": "【単元】発展 コンデンサー(並列合成容量 C1+C2・ステップ3)。正解は「\\(10\\ \\mu\\text{F}\\)」。並列なので \\(C=C_{1}+C_{2}=4+6=10\\ \\mu\\text{F}\\)。"
+     },
+     {
+      "id": "q4",
+      "type": "multiple_choice",
+      "stem": "今度は、電気容量 \\(C_{1}=3\\ \\mu\\text{F}\\) と \\(C_{2}=6\\ \\mu\\text{F}\\) の2つのコンデンサーを直列に接続し、その両端に起電力 \\(9\\ \\text{V}\\) の電池をつないだ。直列接続の合成容量は \\(C=\\dfrac{C_{1}C_{2}}{C_{1}+C_{2}}\\) で与えられる。直列では両コンデンサーに共通の電気量 \\(Q\\) がたくわえられる(\\(Q=C\\times9\\ \\text{V}\\))。このとき \\(C_{1}\\) の極板間の電圧 \\(V_{1}\\)(\\(V_{1}=Q/C_{1}\\))を求めよ。",
+      "choices": [
+       "\\(3\\ \\text{V}\\)",
+       "\\(4.5\\ \\text{V}\\)",
+       "\\(6\\ \\text{V}\\)",
+       "\\(9\\ \\text{V}\\)"
+      ],
+      "answer": 2,
+      "unit": "発展 コンデンサー(直列合成容量と各電圧・ステップ4)",
+      "explanation": "【単元】発展 コンデンサー(直列合成容量と各電圧・ステップ4)。正解は「\\(6\\ \\text{V}\\)」。合成容量 \\(C=\\dfrac{C_{1}C_{2}}{C_{1}+C_{2}}=\\dfrac{3\\times6}{3+6}=2\\ \\mu\\text{F}\\)。共通電気量 \\(Q=C\\times9=2\\times9=18\\ \\mu\\text{C}\\)。よって \\(V_{1}=\\dfrac{Q}{C_{1}}=\\dfrac{18}{3}=6\\ \\text{V}\\)(容量の小さい側に大きな電圧)。"
+     },
+     {
+      "id": "q5",
+      "type": "multiple_choice",
+      "stem": "最後に、電気容量 \\(C=4\\ \\mu\\text{F}\\) のコンデンサーを電圧 \\(10\\ \\text{V}\\) の電池で充電した。このとき電気量は \\(Q=CV=4\\times10=40\\ \\mu\\text{C}\\) である。その後、電池を外して電気量 \\(Q=40\\ \\mu\\text{C}\\) を一定に保ったまま、極板間隔を 2 倍に広げた。平行板コンデンサーの容量は極板間隔に反比例するので容量は半分の \\(2\\ \\mu\\text{F}\\) になる。電気量一定のとき静電エネルギーは \\(U=\\dfrac{Q^{2}}{2C}\\) で表される。極板間隔を広げた後の静電エネルギー \\(U\\) を求めよ。",
+      "choices": [
+       "\\(200\\ \\mu\\text{J}\\)",
+       "\\(100\\ \\mu\\text{J}\\)",
+       "\\(800\\ \\mu\\text{J}\\)",
+       "\\(400\\ \\mu\\text{J}\\)"
+      ],
+      "answer": 3,
+      "unit": "発展 コンデンサー(極板間隔変化での容量・エネルギー変化・ステップ5)",
+      "explanation": "【単元】発展 コンデンサー(極板間隔変化での容量・エネルギー変化・ステップ5)。正解は「\\(400\\ \\mu\\text{J}\\)」。電池を外したので電気量は \\(Q=40\\ \\mu\\text{C}\\) のまま一定。間隔2倍で容量は半分 \\(C'=2\\ \\mu\\text{F}\\)。よって \\(U=\\dfrac{Q^{2}}{2C'}=\\dfrac{40^{2}}{2\\times2}=\\dfrac{1600}{4}=400\\ \\mu\\text{J}\\)(極板を引き離す仕事の分だけ増加)。"
+     }
+    ]
+   },
+   "model": "claude-opus-verified"
+  },
+  {
+   "exam_id": "rikei",
+   "part_key": "chem_exam",
+   "eiken_grade": "kyotsu_rikei",
+   "question_data": {
+    "passage": "炭素・水素・酸素のみからなるある有機化合物 X について、その組成と分子式を決定する実験を行った。X を \\(6.00\\ \\text{g}\\) はかりとり、十分な量の酸素を通じながら完全燃焼させたところ、生成した気体を吸収管で捕集して、二酸化炭素 \\(\\mathrm{CO_2}\\) が \\(8.80\\ \\text{g}\\)、水 \\(\\mathrm{H_2O}\\) が \\(3.60\\ \\text{g}\\) 得られた。生成した \\(\\mathrm{CO_2}\\) 中の炭素はすべて X 由来であり、\\(\\mathrm{H_2O}\\) 中の水素はすべて X 由来である。また別の測定から、X の分子量は \\(180\\) であることがわかっている。原子量は \\(\\mathrm{H}=1\\)、\\(\\mathrm{C}=12\\)、\\(\\mathrm{O}=16\\)、式量は \\(\\mathrm{CO_2}=44\\)、\\(\\mathrm{H_2O}=18\\) とする。以下の問いに答えよ。",
+    "subject": "数学",
+    "univ_simulated": "共通テスト(本番形式)",
+    "year_simulated": 2025,
+    "source": "kyotsu-exam-format-sci2-20260623",
+    "exam_format": true,
+    "group": "化学",
+    "questions": [
+     {
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "完全燃焼で生成した二酸化炭素は \\(\\mathrm{CO_2}=8.80\\ \\text{g}\\)（式量 \\(44\\)）であった。\\(\\mathrm{CO_2}\\) 中の炭素はすべて X 由来である。X に含まれていた炭素原子の物質量は何 mol か。",
+      "choices": [
+       "\\(0.20\\ \\text{mol}\\)",
+       "\\(0.10\\ \\text{mol}\\)",
+       "\\(0.40\\ \\text{mol}\\)",
+       "\\(8.80\\ \\text{mol}\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 有機化合物の計算（炭素のmol）",
+      "explanation": "【単元】発展 有機化合物の計算（炭素のmol）。正解は「\\(0.20\\ \\text{mol}\\)」。\\(n(\\mathrm{C})=n(\\mathrm{CO_2})=8.80/44=0.20\\ \\text{mol}\\)。"
+     },
+     {
+      "id": "q2",
+      "type": "multiple_choice",
+      "stem": "完全燃焼で生成した水は \\(\\mathrm{H_2O}=3.60\\ \\text{g}\\)（式量 \\(18\\)）であった。\\(\\mathrm{H_2O}\\) 中の水素はすべて X 由来である（\\(\\mathrm{H_2O}\\) 1分子に水素原子は 2 個）。X に含まれていた水素原子の物質量は何 mol か。",
+      "choices": [
+       "\\(0.10\\ \\text{mol}\\)",
+       "\\(0.40\\ \\text{mol}\\)",
+       "\\(0.20\\ \\text{mol}\\)",
+       "\\(3.60\\ \\text{mol}\\)"
+      ],
+      "answer": 1,
+      "unit": "発展 有機化合物の計算（水素のmol）",
+      "explanation": "【単元】発展 有機化合物の計算（水素のmol）。正解は「\\(0.40\\ \\text{mol}\\)」。\\(n(\\mathrm{H_2O})=3.60/18=0.20\\ \\text{mol}\\)、\\(n(\\mathrm{H})=2\\times0.20=0.40\\ \\text{mol}\\)。"
+     },
+     {
+      "id": "q3",
+      "type": "multiple_choice",
+      "stem": "X を \\(6.00\\ \\text{g}\\) 用いた。前問までより炭素は \\(0.20\\ \\text{mol}\\)、水素は \\(0.40\\ \\text{mol}\\) 含まれていた（原子量 \\(\\mathrm{C}=12\\)、\\(\\mathrm{H}=1\\)、\\(\\mathrm{O}=16\\)）。残りはすべて酸素とみなせる。X に含まれていた酸素原子の物質量は何 mol か。",
+      "choices": [
+       "\\(0.10\\ \\text{mol}\\)",
+       "\\(0.30\\ \\text{mol}\\)",
+       "\\(0.20\\ \\text{mol}\\)",
+       "\\(3.20\\ \\text{mol}\\)"
+      ],
+      "answer": 2,
+      "unit": "発展 有機化合物の計算（酸素のmol）",
+      "explanation": "【単元】発展 有機化合物の計算（酸素のmol）。正解は「\\(0.20\\ \\text{mol}\\)」。炭素の質量 \\(0.20\\times12=2.40\\ \\text{g}\\)、水素 \\(0.40\\times1=0.40\\ \\text{g}\\)、酸素の質量 \\(6.00-2.40-0.40=3.20\\ \\text{g}\\)、\\(n(\\mathrm{O})=3.20/16=0.20\\ \\text{mol}\\)。"
+     },
+     {
+      "id": "q4",
+      "type": "multiple_choice",
+      "stem": "X 中の各原子の物質量は 炭素 \\(0.20\\ \\text{mol}\\)、水素 \\(0.40\\ \\text{mol}\\)、酸素 \\(0.20\\ \\text{mol}\\) であった。これらの最も簡単な整数比から定まる組成式（実験式）として正しいものはどれか。組成式の式量に対応する数値（\\(\\mathrm{H}=1,\\ \\mathrm{C}=12,\\ \\mathrm{O}=16\\) で計算した組成式の式量）を選べ。",
+      "choices": [
+       "\\(\\mathrm{CHO}\\)（式量 \\(29\\)）",
+       "\\(\\mathrm{C_2H_4O_2}\\)（式量 \\(60\\)）",
+       "\\(\\mathrm{CH_4O}\\)（式量 \\(32\\)）",
+       "\\(\\mathrm{CH_2O}\\)（式量 \\(30\\)）"
+      ],
+      "answer": 3,
+      "unit": "発展 有機化合物の計算（組成式の決定）",
+      "explanation": "【単元】発展 有機化合物の計算（組成式の決定）。正解は「\\(\\mathrm{CH_2O}\\)（式量 \\(30\\)）」。\\(\\mathrm{C:H:O}=0.20:0.40:0.20=1:2:1\\) より組成式は \\(\\mathrm{CH_2O}\\)、式量 \\(12+2\\times1+16=30\\)。"
+     },
+     {
+      "id": "q5",
+      "type": "multiple_choice",
+      "stem": "X の組成式は \\(\\mathrm{CH_2O}\\)（式量 \\(30\\)）であり、X の分子量は \\(180\\) である。分子式は組成式の整数倍である。X の分子式を決定したとき、X 1分子に含まれる炭素原子の数はいくつか。",
+      "choices": [
+       "\\(6\\)",
+       "\\(3\\)",
+       "\\(5\\)",
+       "\\(12\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 有機化合物の計算（分子式の決定）",
+      "explanation": "【単元】発展 有機化合物の計算（分子式の決定）。正解は「\\(6\\)」。\\(n=180/30=6\\) より分子式は \\((\\mathrm{CH_2O})_6=\\mathrm{C_6H_{12}O_6}\\)。炭素原子は \\(1\\times6=6\\) 個。"
+     }
+    ]
+   },
+   "model": "claude-opus-verified"
+  },
+  {
+   "exam_id": "rikei",
+   "part_key": "chem_exam",
+   "eiken_grade": "kyotsu_rikei",
+   "question_data": {
+    "passage": "ある一価の弱酸 HA の水溶液について、25℃ で次の実験を行った。この温度における HA の電離定数は \\(K_a = 2.0\\times10^{-5}\\ \\text{mol/L}\\) で一定であり、水のイオン積や水の電離による \\([\\mathrm{H^+}]\\) は無視してよい。電離度 \\(\\alpha\\) は 1 に比べて十分小さい場合に近似式 \\(\\alpha = \\sqrt{K_a/C}\\)、\\([\\mathrm{H^+}] = C\\alpha\\) を用いてよい(\\(C\\) はモル濃度)。計算には \\(\\log_{10}2 = 0.30\\) を用いる。\n\n【操作I】濃度 \\(C = 0.20\\ \\text{mol/L}\\) の HA 水溶液を調製し、その電離度・水素イオン濃度・pH を求めた。\n【操作II】操作I の溶液に、電離が完全な塩 NaA を溶かし、溶液中で \\([\\mathrm{HA}] = 0.20\\ \\text{mol/L}\\)、\\([\\mathrm{A^-}] = 0.10\\ \\text{mol/L}\\) となる緩衝液を調製した。\n【操作III】操作I とは別に、\\(0.20\\ \\text{mol/L}\\) の HA 水溶液を純水で 100 倍に希釈した溶液を用意した。\n各操作の溶液について、以下の問いに答えよ。",
+    "subject": "数学",
+    "univ_simulated": "共通テスト(本番形式)",
+    "year_simulated": 2025,
+    "source": "kyotsu-exam-format-sci2-20260623",
+    "exam_format": true,
+    "group": "化学",
+    "questions": [
+     {
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "【操作I】濃度 \\(C = 0.20\\ \\text{mol/L}\\) の弱酸 HA 水溶液がある。電離定数は \\(K_a = 2.0\\times10^{-5}\\ \\text{mol/L}\\) であり、電離度は近似式 \\(\\alpha = \\sqrt{K_a/C}\\) で求めてよい。この溶液中の HA の電離度 \\(\\alpha\\) はいくらか。",
+      "choices": [
+       "\\(1.0\\times10^{-1}\\)",
+       "\\(1.0\\times10^{-2}\\)",
+       "\\(1.0\\times10^{-4}\\)",
+       "\\(2.0\\times10^{-2}\\)"
+      ],
+      "answer": 1,
+      "unit": "発展 電離平衡とpH(q1 電離度)",
+      "explanation": "【単元】発展 電離平衡とpH(q1 電離度)。正解は「\\(1.0\\times10^{-2}\\)」。\\(\\alpha=\\sqrt{K_a/C}=\\sqrt{(2.0\\times10^{-5})/0.20}=\\sqrt{1.0\\times10^{-4}}=1.0\\times10^{-2}\\)。"
+     },
+     {
+      "id": "q2",
+      "type": "multiple_choice",
+      "stem": "【操作I】濃度 \\(C = 0.20\\ \\text{mol/L}\\)、電離定数 \\(K_a = 2.0\\times10^{-5}\\ \\text{mol/L}\\) の弱酸 HA 水溶液において、電離度は \\(\\alpha = 1.0\\times10^{-2}\\) であった。\\([\\mathrm{H^+}] = C\\alpha\\) を用いて、この溶液の水素イオン濃度 \\([\\mathrm{H^+}]\\) を求めよ。",
+      "choices": [
+       "\\(2.0\\times10^{-4}\\ \\text{mol/L}\\)",
+       "\\(2.0\\times10^{-2}\\ \\text{mol/L}\\)",
+       "\\(2.0\\times10^{-3}\\ \\text{mol/L}\\)",
+       "\\(1.0\\times10^{-3}\\ \\text{mol/L}\\)"
+      ],
+      "answer": 2,
+      "unit": "発展 電離平衡とpH(q2 水素イオン濃度)",
+      "explanation": "【単元】発展 電離平衡とpH(q2 水素イオン濃度)。正解は「\\(2.0\\times10^{-3}\\ \\text{mol/L}\\)」。\\([\\mathrm{H^+}]=C\\alpha=0.20\\times(1.0\\times10^{-2})=2.0\\times10^{-3}\\ \\text{mol/L}\\)。"
+     },
+     {
+      "id": "q3",
+      "type": "multiple_choice",
+      "stem": "【操作I】弱酸 HA 水溶液(\\(C = 0.20\\ \\text{mol/L}\\))の水素イオン濃度は \\([\\mathrm{H^+}] = 2.0\\times10^{-3}\\ \\text{mol/L}\\) であった。\\(\\log_{10}2 = 0.30\\) として、この溶液の pH を求めよ。",
+      "choices": [
+       "\\(3.30\\)",
+       "\\(2.30\\)",
+       "\\(3.70\\)",
+       "\\(2.70\\)"
+      ],
+      "answer": 3,
+      "unit": "発展 電離平衡とpH(q3 pH)",
+      "explanation": "【単元】発展 電離平衡とpH(q3 pH)。正解は「\\(2.70\\)」。\\(\\mathrm{pH}=-\\log_{10}(2.0\\times10^{-3})=3-\\log_{10}2=3-0.30=2.70\\)。"
+     },
+     {
+      "id": "q4",
+      "type": "multiple_choice",
+      "stem": "【操作II】操作I の溶液に塩 NaA(完全電離)を加え、溶液中で \\([\\mathrm{HA}] = 0.20\\ \\text{mol/L}\\)、\\([\\mathrm{A^-}] = 0.10\\ \\text{mol/L}\\) とした緩衝液をつくった。電離定数は \\(K_a = 2.0\\times10^{-5}\\ \\text{mol/L}\\)、\\(\\log_{10}2 = 0.30\\) とする。平衡式 \\([\\mathrm{H^+}] = K_a\\dfrac{[\\mathrm{HA}]}{[\\mathrm{A^-}]}\\) を用いて、この緩衝液の pH を求めよ。",
+      "choices": [
+       "\\(4.40\\)",
+       "\\(4.70\\)",
+       "\\(5.00\\)",
+       "\\(4.60\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 電離平衡とpH(q4 緩衝液のpH)",
+      "explanation": "【単元】発展 電離平衡とpH(q4 緩衝液のpH)。正解は「\\(4.40\\)」。\\([\\mathrm{H^+}]=K_a\\dfrac{[\\mathrm{HA}]}{[\\mathrm{A^-}]}=2.0\\times10^{-5}\\times\\dfrac{0.20}{0.10}=4.0\\times10^{-5}\\)。\\(\\mathrm{pH}=-\\log_{10}(4.0\\times10^{-5})=5-2\\log_{10}2=5-0.60=4.40\\)。"
+     },
+     {
+      "id": "q5",
+      "type": "multiple_choice",
+      "stem": "【操作III】\\(0.20\\ \\text{mol/L}\\) の弱酸 HA 水溶液を純水で 100 倍に希釈した(希釈後の濃度 \\(C' = 2.0\\times10^{-3}\\ \\text{mol/L}\\))。電離定数は \\(K_a = 2.0\\times10^{-5}\\ \\text{mol/L}\\) で一定であり、電離による減少は無視して \\([\\mathrm{H^+}] = \\sqrt{K_a\\,C'}\\) としてよい。希釈後の溶液の水素イオン濃度 \\([\\mathrm{H^+}]\\) を求めよ。",
+      "choices": [
+       "\\(2.0\\times10^{-3}\\ \\text{mol/L}\\)",
+       "\\(2.0\\times10^{-4}\\ \\text{mol/L}\\)",
+       "\\(4.0\\times10^{-8}\\ \\text{mol/L}\\)",
+       "\\(2.0\\times10^{-5}\\ \\text{mol/L}\\)"
+      ],
+      "answer": 1,
+      "unit": "発展 電離平衡とpH(q5 希釈後の[H+])",
+      "explanation": "【単元】発展 電離平衡とpH(q5 希釈後の[H+])。正解は「\\(2.0\\times10^{-4}\\ \\text{mol/L}\\)」。\\([\\mathrm{H^+}]=\\sqrt{K_a\\,C'}=\\sqrt{(2.0\\times10^{-5})(2.0\\times10^{-3})}=\\sqrt{4.0\\times10^{-8}}=2.0\\times10^{-4}\\ \\text{mol/L}\\)。希釈で薄まり [H+] は操作I の \\(2.0\\times10^{-3}\\) より小さくなる。"
+     }
+    ]
+   },
+   "model": "claude-opus-verified"
+  },
+  {
+   "exam_id": "rikei",
+   "part_key": "chem_exam",
+   "eiken_grade": "kyotsu_rikei",
+   "question_data": {
+    "passage": "濃度未知の過酸化水素水 \\(\\mathrm{H_2O_2}\\) の濃度を、硫酸酸性下での過マンガン酸カリウム \\(\\mathrm{KMnO_4}\\) 水溶液による酸化還元滴定で求める実験を行った。この条件で起こる全反応は次式で表される。\\[2\\mathrm{MnO_4^-} + 5\\mathrm{H_2O_2} + 6\\mathrm{H^+} \\rightarrow 2\\mathrm{Mn^{2+}} + 5\\mathrm{O_2} + 8\\mathrm{H_2O}\\] また、各成分の半反応式は次のとおりである。\\[\\mathrm{MnO_4^-} + 8\\mathrm{H^+} + 5\\mathrm{e^-} \\rightarrow \\mathrm{Mn^{2+}} + 4\\mathrm{H_2O}\\]\\[\\mathrm{H_2O_2} \\rightarrow \\mathrm{O_2} + 2\\mathrm{H^+} + 2\\mathrm{e^-}\\] \\(\\mathrm{KMnO_4}\\) 水溶液自身が赤紫色を示すため、滴下した \\(\\mathrm{KMnO_4}\\) の色が消えなくなった点を滴定の終点とする(指示薬は不要)。以下の問いに、前問で求めた値を順に用いて答えよ。",
+    "subject": "数学",
+    "univ_simulated": "共通テスト(本番形式)",
+    "year_simulated": 2025,
+    "source": "kyotsu-exam-format-sci2-20260623",
+    "exam_format": true,
+    "group": "化学",
+    "questions": [
+     {
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "硫酸酸性下の過マンガン酸イオン \\(\\mathrm{MnO_4^-}\\) について、この中のマンガン原子 \\(\\mathrm{Mn}\\) の酸化数を求めよ。ただし酸素原子 \\(\\mathrm{O}\\) の酸化数は \\(-2\\)、イオン全体の電荷は \\(-1\\) とする。",
+      "choices": [
+       "\\(+2\\)",
+       "\\(-2\\)",
+       "\\(+7\\)",
+       "\\(+5\\)"
+      ],
+      "answer": 2,
+      "unit": "発展 酸化還元滴定(酸化数)",
+      "explanation": "【単元】発展 酸化還元滴定(酸化数)。正解は「\\(+7\\)」。\\(\\mathrm{Mn}\\) の酸化数を \\(x\\) とすると \\(x+4\\times(-2)=-1\\)、よって \\(x=+7\\)。"
+     },
+     {
+      "id": "q2",
+      "type": "multiple_choice",
+      "stem": "過マンガン酸イオンの半反応式 \\(\\mathrm{MnO_4^-} + 8\\mathrm{H^+} + n\\,\\mathrm{e^-} \\rightarrow \\mathrm{Mn^{2+}} + 4\\mathrm{H_2O}\\) において、\\(\\mathrm{MnO_4^-}\\) 1個がやりとりする電子の数 \\(n\\)(係数)はいくつか。\\(\\mathrm{Mn}\\) の酸化数は \\(\\mathrm{MnO_4^-}\\) 中で \\(+7\\)、\\(\\mathrm{Mn^{2+}}\\) 中で \\(+2\\) である。",
+      "choices": [
+       "\\(2\\)",
+       "\\(7\\)",
+       "\\(1\\)",
+       "\\(5\\)"
+      ],
+      "answer": 3,
+      "unit": "発展 酸化還元滴定(半反応式の電子数)",
+      "explanation": "【単元】発展 酸化還元滴定(半反応式の電子数)。正解は「\\(5\\)」。\\(\\mathrm{Mn}\\) の酸化数が \\(+7\\rightarrow+2\\) と \\(5\\) 減少するので、電子 \\(5\\) 個を受け取る。\\(n=5\\)。"
+     },
+     {
+      "id": "q3",
+      "type": "multiple_choice",
+      "stem": "\\(\\mathrm{MnO_4^-}\\) は1個あたり電子を \\(5\\) 個受け取り、\\(\\mathrm{H_2O_2}\\) は1個あたり電子を \\(2\\) 個放出する。授受する電子の総数が等しくなるように量論を合わせるとき、\\(\\mathrm{KMnO_4}\\) 1 \\(\\text{mol}\\) と過不足なく反応する \\(\\mathrm{H_2O_2}\\) は何 \\(\\text{mol}\\) か。",
+      "choices": [
+       "\\(\\dfrac{5}{2}\\ \\text{mol}\\)",
+       "\\(\\dfrac{2}{5}\\ \\text{mol}\\)",
+       "\\(5\\ \\text{mol}\\)",
+       "\\(2\\ \\text{mol}\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 酸化還元滴定(量論比)",
+      "explanation": "【単元】発展 酸化還元滴定(量論比)。正解は「\\(\\dfrac{5}{2}\\ \\text{mol}\\)」。電子数を合わせると \\(\\mathrm{KMnO_4}:\\mathrm{H_2O_2}=2:5\\)。よって \\(\\mathrm{KMnO_4}\\) 1 \\(\\text{mol}\\) に対し \\(\\mathrm{H_2O_2}\\) は \\(\\dfrac{5}{2}\\ \\text{mol}\\)。"
+     },
+     {
+      "id": "q4",
+      "type": "multiple_choice",
+      "stem": "\\(0.0500\\ \\text{mol/L}\\) の \\(\\mathrm{H_2O_2}\\) 水溶液 \\(20.0\\ \\text{mL}\\) を、\\(0.0200\\ \\text{mol/L}\\) の \\(\\mathrm{KMnO_4}\\) 水溶液で硫酸酸性下に滴定する。\\(\\mathrm{KMnO_4}:\\mathrm{H_2O_2}=2:5\\)(\\(\\mathrm{KMnO_4}\\) 1 \\(\\text{mol}\\) が \\(\\mathrm{H_2O_2}\\) \\(\\dfrac{5}{2}\\ \\text{mol}\\) と反応)である。終点までに必要な \\(\\mathrm{KMnO_4}\\) 水溶液の体積は何 \\(\\text{mL}\\) か。",
+      "choices": [
+       "\\(50.0\\ \\text{mL}\\)",
+       "\\(20.0\\ \\text{mL}\\)",
+       "\\(8.0\\ \\text{mL}\\)",
+       "\\(40.0\\ \\text{mL}\\)"
+      ],
+      "answer": 1,
+      "unit": "発展 酸化還元滴定(必要体積)",
+      "explanation": "【単元】発展 酸化還元滴定(必要体積)。正解は「\\(20.0\\ \\text{mL}\\)」。\\(\\mathrm{H_2O_2}\\) の物質量 \\(=0.0500\\times\\dfrac{20.0}{1000}=1.00\\times10^{-3}\\ \\text{mol}\\)。必要な \\(\\mathrm{KMnO_4}=\\dfrac{2}{5}\\times1.00\\times10^{-3}=4.00\\times10^{-4}\\ \\text{mol}\\)。体積 \\(=\\dfrac{4.00\\times10^{-4}}{0.0200}=2.00\\times10^{-2}\\ \\text{L}=20.0\\ \\text{mL}\\)。"
+     },
+     {
+      "id": "q5",
+      "type": "multiple_choice",
+      "stem": "次に濃度未知の \\(\\mathrm{H_2O_2}\\) 水溶液 \\(10.0\\ \\text{mL}\\) をとり、硫酸酸性下で \\(0.0200\\ \\text{mol/L}\\) の \\(\\mathrm{KMnO_4}\\) 水溶液で滴定したところ、終点までに \\(25.0\\ \\text{mL}\\) を要した。\\(\\mathrm{KMnO_4}\\) 1 \\(\\text{mol}\\) は \\(\\mathrm{H_2O_2}\\) \\(\\dfrac{5}{2}\\ \\text{mol}\\) と反応する。この \\(\\mathrm{H_2O_2}\\) 水溶液のモル濃度は何 \\(\\text{mol/L}\\) か。",
+      "choices": [
+       "\\(0.0500\\ \\text{mol/L}\\)",
+       "\\(0.250\\ \\text{mol/L}\\)",
+       "\\(0.125\\ \\text{mol/L}\\)",
+       "\\(0.0625\\ \\text{mol/L}\\)"
+      ],
+      "answer": 2,
+      "unit": "発展 酸化還元滴定(濃度未知試料の定量)",
+      "explanation": "【単元】発展 酸化還元滴定(濃度未知試料の定量)。正解は「\\(0.125\\ \\text{mol/L}\\)」。\\(\\mathrm{KMnO_4}\\) の物質量 \\(=0.0200\\times\\dfrac{25.0}{1000}=5.00\\times10^{-4}\\ \\text{mol}\\)。\\(\\mathrm{H_2O_2}=\\dfrac{5}{2}\\times5.00\\times10^{-4}=1.25\\times10^{-3}\\ \\text{mol}\\)。濃度 \\(=\\dfrac{1.25\\times10^{-3}}{10.0/1000}=0.125\\ \\text{mol/L}\\)。"
+     }
+    ]
+   },
+   "model": "claude-opus-verified"
+  },
+  {
+   "exam_id": "rikei",
+   "part_key": "chem_exam",
+   "eiken_grade": "kyotsu_rikei",
+   "question_data": {
+    "passage": "難溶性の塩 \\(\\text{MX}_2\\)(式量 \\(100\\))について,その溶解平衡を調べる実験を行った。\\(\\text{MX}_2\\) は水中で次のように電離する。\\[\\text{MX}_2 \\;\\rightleftharpoons\\; \\text{M}^{2+} + 2\\,\\text{X}^{-}\\]ある一定温度(\\(25\\ {}^{\\circ}\\text{C}\\))で,純水に \\(\\text{MX}_2\\) を十分に加えてよくかき混ぜ,溶け残りのある飽和水溶液をつくった。この温度における \\(\\text{MX}_2\\) の純水への溶解度(モル溶解度)は \\(s = 1.0\\times10^{-2}\\ \\text{mol/L}\\) であった。以下では \\(\\text{MX}_2\\) 由来の \\(\\text{M}^{2+}\\) と \\(\\text{X}^{-}\\) は完全に電離しているものとし,温度はとくに断りがない限り一定とする。式量 \\(\\text{MX}_2 = 100\\),\\(\\sqrt{2.5\\times10^{-5}} = 5.0\\times10^{-3}\\) を用いてよい。",
+    "subject": "数学",
+    "univ_simulated": "共通テスト(本番形式)",
+    "year_simulated": 2025,
+    "source": "kyotsu-exam-format-sci2-20260623",
+    "exam_format": true,
+    "group": "化学",
+    "questions": [
+     {
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "この温度における \\(\\text{MX}_2\\) の純水へのモル溶解度は \\(s = 1.0\\times10^{-2}\\ \\text{mol/L}\\) である。この飽和水溶液を \\(500\\ \\text{mL}\\) とったとき,その中に溶けている \\(\\text{MX}_2\\) の物質量は何 \\(\\text{mol}\\) か。",
+      "choices": [
+       "\\(1.0\\times10^{-2}\\ \\text{mol}\\)",
+       "\\(2.5\\times10^{-3}\\ \\text{mol}\\)",
+       "\\(2.0\\times10^{-2}\\ \\text{mol}\\)",
+       "\\(5.0\\times10^{-3}\\ \\text{mol}\\)"
+      ],
+      "answer": 3,
+      "unit": "発展 溶解度と溶解度積(飽和溶液中の溶質量)",
+      "explanation": "【単元】発展 溶解度と溶解度積(飽和溶液中の溶質量)。正解は「\\(5.0\\times10^{-3}\\ \\text{mol}\\)」。溶解した物質量 = 溶解度 × 体積 = \\(1.0\\times10^{-2}\\ \\text{mol/L} \\times 0.500\\ \\text{L} = 5.0\\times10^{-3}\\ \\text{mol}\\)。"
+     },
+     {
+      "id": "q2",
+      "type": "multiple_choice",
+      "stem": "\\(\\text{MX}_2\\)(式量 \\(100\\))の純水へのモル溶解度は \\(s = 1.0\\times10^{-2}\\ \\text{mol/L}\\) である。\\(\\text{MX}_2 \\rightleftharpoons \\text{M}^{2+} + 2\\,\\text{X}^{-}\\) と完全に電離するとき,この飽和水溶液中の \\(\\text{X}^{-}\\) のモル濃度は何 \\(\\text{mol/L}\\) か。",
+      "choices": [
+       "\\(2.0\\times10^{-2}\\ \\text{mol/L}\\)",
+       "\\(1.0\\times10^{-2}\\ \\text{mol/L}\\)",
+       "\\(5.0\\times10^{-3}\\ \\text{mol/L}\\)",
+       "\\(4.0\\times10^{-2}\\ \\text{mol/L}\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 溶解度と溶解度積(飽和モル濃度)",
+      "explanation": "【単元】発展 溶解度と溶解度積(飽和モル濃度)。正解は「\\(2.0\\times10^{-2}\\ \\text{mol/L}\\)」。\\(\\text{MX}_2\\) 1 mol から \\(\\text{X}^{-}\\) は 2 mol 生じるので \\([\\text{X}^{-}] = 2s = 2\\times1.0\\times10^{-2} = 2.0\\times10^{-2}\\ \\text{mol/L}\\)。"
+     },
+     {
+      "id": "q3",
+      "type": "multiple_choice",
+      "stem": "\\(\\text{MX}_2 \\rightleftharpoons \\text{M}^{2+} + 2\\,\\text{X}^{-}\\) の溶解度積は \\(K_{\\mathrm{sp}} = [\\text{M}^{2+}][\\text{X}^{-}]^{2}\\) で定義される。純水の飽和水溶液中で \\([\\text{M}^{2+}] = 1.0\\times10^{-2}\\ \\text{mol/L}\\),\\([\\text{X}^{-}] = 2.0\\times10^{-2}\\ \\text{mol/L}\\) であるとき,\\(K_{\\mathrm{sp}}\\) の値は何 \\((\\text{mol/L})^{3}\\) か。",
+      "choices": [
+       "\\(1.0\\times10^{-4}\\ (\\text{mol/L})^{3}\\)",
+       "\\(4.0\\times10^{-6}\\ (\\text{mol/L})^{3}\\)",
+       "\\(2.0\\times10^{-6}\\ (\\text{mol/L})^{3}\\)",
+       "\\(1.0\\times10^{-6}\\ (\\text{mol/L})^{3}\\)"
+      ],
+      "answer": 1,
+      "unit": "発展 溶解度と溶解度積(溶解度積 Ksp)",
+      "explanation": "【単元】発展 溶解度と溶解度積(溶解度積 Ksp)。正解は「\\(4.0\\times10^{-6}\\ (\\text{mol/L})^{3}\\)」。\\(K_{\\mathrm{sp}} = [\\text{M}^{2+}][\\text{X}^{-}]^{2} = (1.0\\times10^{-2})(2.0\\times10^{-2})^{2} = 1.0\\times10^{-2}\\times4.0\\times10^{-4} = 4.0\\times10^{-6}\\ (\\text{mol/L})^{3}\\)。"
+     },
+     {
+      "id": "q4",
+      "type": "multiple_choice",
+      "stem": "\\(\\text{MX}_2\\) の溶解度積は \\(K_{\\mathrm{sp}} = [\\text{M}^{2+}][\\text{X}^{-}]^{2} = 4.0\\times10^{-6}\\ (\\text{mol/L})^{3}\\) である。\\(\\text{M}^{2+}\\) を \\(0.16\\ \\text{mol/L}\\) 含む水溶液(\\(\\text{M(NO}_3)_2\\) 水溶液)に \\(\\text{MX}_2\\) を飽和するまで溶かした。このとき溶ける \\(\\text{MX}_2\\) のモル溶解度 \\(s'\\) は何 \\(\\text{mol/L}\\) か。ただし \\([\\text{M}^{2+}]\\) は \\(0.16\\ \\text{mol/L}\\) のままとみなし,溶けた \\(\\text{MX}_2\\) から \\([\\text{X}^{-}] = 2s'\\) が生じるとする。必要なら \\(\\sqrt{2.5\\times10^{-5}} = 5.0\\times10^{-3}\\) を用いよ。",
+      "choices": [
+       "\\(5.0\\times10^{-3}\\ \\text{mol/L}\\)",
+       "\\(1.25\\times10^{-3}\\ \\text{mol/L}\\)",
+       "\\(2.5\\times10^{-3}\\ \\text{mol/L}\\)",
+       "\\(2.5\\times10^{-5}\\ \\text{mol/L}\\)"
+      ],
+      "answer": 2,
+      "unit": "発展 溶解度と溶解度積(共通イオン効果)",
+      "explanation": "【単元】発展 溶解度と溶解度積(共通イオン効果)。正解は「\\(2.5\\times10^{-3}\\ \\text{mol/L}\\)」。\\(K_{\\mathrm{sp}} = [\\text{M}^{2+}](2s')^{2}\\) より \\((2s')^{2} = \\dfrac{4.0\\times10^{-6}}{0.16} = 2.5\\times10^{-5}\\),\\(2s' = \\sqrt{2.5\\times10^{-5}} = 5.0\\times10^{-3}\\),よって \\(s' = 2.5\\times10^{-3}\\ \\text{mol/L}\\)。共通イオン効果で純水中(\\(1.0\\times10^{-2}\\))より小さくなる。"
+     },
+     {
+      "id": "q5",
+      "type": "multiple_choice",
+      "stem": "\\(\\text{MX}_2\\)(式量 \\(100\\))の純水へのモル溶解度は \\(s = 1.0\\times10^{-2}\\ \\text{mol/L}\\) である。\\(\\text{MX}_2\\) を \\(5.0\\times10^{-3}\\ \\text{mol}\\) 溶かした飽和水溶液 \\(500\\ \\text{mL}\\) を,温度を一定(飽和を保つ)に保ったまま水を蒸発させ,体積を \\(200\\ \\text{mL}\\) にした。このとき析出する \\(\\text{MX}_2\\) は何 \\(\\text{mol}\\) か。",
+      "choices": [
+       "\\(2.0\\times10^{-3}\\ \\text{mol}\\)",
+       "\\(5.0\\times10^{-3}\\ \\text{mol}\\)",
+       "\\(4.0\\times10^{-3}\\ \\text{mol}\\)",
+       "\\(3.0\\times10^{-3}\\ \\text{mol}\\)"
+      ],
+      "answer": 3,
+      "unit": "発展 溶解度と溶解度積(蒸発による析出量)",
+      "explanation": "【単元】発展 溶解度と溶解度積(蒸発による析出量)。正解は「\\(3.0\\times10^{-3}\\ \\text{mol}\\)」。蒸発後も温度一定で飽和なので,溶けたまま残るのは \\(s\\times V = 1.0\\times10^{-2}\\ \\text{mol/L}\\times0.200\\ \\text{L} = 2.0\\times10^{-3}\\ \\text{mol}\\)。析出量 = 全量 − 残存量 = \\(5.0\\times10^{-3} - 2.0\\times10^{-3} = 3.0\\times10^{-3}\\ \\text{mol}\\)。"
+     }
+    ]
+   },
+   "model": "claude-opus-verified"
+  },
+  {
+   "exam_id": "rikei",
+   "part_key": "phys_exam",
+   "eiken_grade": "kyotsu_rikei",
+   "question_data": {
+    "passage": "ある惑星 P のまわりを回る人工衛星の運動を考える。惑星 P は質量 \\(M\\)、半径 \\(R\\) の一様な球とみなせ、自転や大気の影響は無視する。万有引力定数を \\(G\\) とし、衛星の質量を \\(m\\) とする。衛星は惑星の中心を中心とする円軌道を等速円運動するものとする。以下では、惑星中心からの距離や軌道半径を \\(R\\) を単位として表し、各設問に必要な量はその設問中に与える。数値が必要な箇所では \\(G,\\ M,\\ R,\\ m\\) を用いて答えよ。",
+    "subject": "数学",
+    "univ_simulated": "共通テスト(本番形式)",
+    "year_simulated": 2025,
+    "source": "kyotsu-exam-format-sci2-20260623",
+    "exam_format": true,
+    "group": "物理",
+    "questions": [
+     {
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "万有引力定数 \\(G\\)、惑星 P の質量 \\(M\\)、衛星の質量 \\(m\\) とする。衛星が惑星中心から距離 \\(2R\\)(\\(R\\) は惑星半径)の点にあるとき、衛星が惑星から受ける万有引力の大きさ \\(F\\) を求めよ。万有引力は \\(F=\\dfrac{GMm}{r^{2}}\\)(\\(r\\) は中心からの距離)で与えられる。",
+      "choices": [
+       "\\(F=\\dfrac{GMm}{4R^{2}}\\)",
+       "\\(F=\\dfrac{GMm}{2R^{2}}\\)",
+       "\\(F=\\dfrac{GMm}{4R}\\)",
+       "\\(F=\\dfrac{2GMm}{R^{2}}\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 万有引力(万有引力の大きさ)",
+      "explanation": "【単元】発展 万有引力(万有引力の大きさ)。正解は「\\(F=\\dfrac{GMm}{4R^{2}}\\)」。\\(F=\\dfrac{GMm}{r^{2}}\\) に \\(r=2R\\) を代入し、\\(F=\\dfrac{GMm}{(2R)^{2}}=\\dfrac{GMm}{4R^{2}}\\)。"
+     },
+     {
+      "id": "q2",
+      "type": "multiple_choice",
+      "stem": "万有引力定数 \\(G\\)、惑星 P の質量 \\(M\\) とする。質量 \\(m\\) の衛星が惑星中心から距離 \\(2R\\)(\\(R\\) は惑星半径)を半径とする等速円運動をしている。万有引力 \\(\\dfrac{GMm}{(2R)^{2}}\\) が向心力 \\(\\dfrac{mv^{2}}{2R}\\) に等しいことから、衛星の速さ \\(v\\) を求めよ。",
+      "choices": [
+       "\\(v=\\sqrt{\\dfrac{GM}{R}}\\)",
+       "\\(v=\\sqrt{\\dfrac{GM}{2R}}\\)",
+       "\\(v=\\sqrt{\\dfrac{2GM}{R}}\\)",
+       "\\(v=\\dfrac{GM}{2R}\\)"
+      ],
+      "answer": 1,
+      "unit": "発展 万有引力(円軌道の速さ)",
+      "explanation": "【単元】発展 万有引力(円軌道の速さ)。正解は「\\(v=\\sqrt{\\dfrac{GM}{2R}}\\)」。向心力の式 \\(\\dfrac{mv^{2}}{2R}=\\dfrac{GMm}{(2R)^{2}}\\) より \\(v^{2}=\\dfrac{GM}{2R}\\)、よって \\(v=\\sqrt{\\dfrac{GM}{2R}}\\)。"
+     },
+     {
+      "id": "q3",
+      "type": "multiple_choice",
+      "stem": "万有引力定数 \\(G\\)、惑星 P の質量 \\(M\\) とする。衛星が惑星中心から距離 \\(2R\\)(\\(R\\) は惑星半径)を半径とする等速円運動をしており、その速さは \\(v=\\sqrt{\\dfrac{GM}{2R}}\\) である。公転周期 \\(T\\) を \\(T=\\dfrac{2\\pi(2R)}{v}\\)(円周を速さで割る)で求めよ。",
+      "choices": [
+       "\\(T=\\dfrac{2\\sqrt{2}\\,\\pi R^{3/2}}{\\sqrt{GM}}\\)",
+       "\\(T=\\dfrac{4\\pi R^{3/2}}{\\sqrt{GM}}\\)",
+       "\\(T=\\dfrac{4\\sqrt{2}\\,\\pi R^{3/2}}{\\sqrt{GM}}\\)",
+       "\\(T=\\dfrac{8\\sqrt{2}\\,\\pi R^{3/2}}{\\sqrt{GM}}\\)"
+      ],
+      "answer": 2,
+      "unit": "発展 万有引力(公転周期)",
+      "explanation": "【単元】発展 万有引力(公転周期)。正解は「\\(T=\\dfrac{4\\sqrt{2}\\,\\pi R^{3/2}}{\\sqrt{GM}}\\)」。\\(T=\\dfrac{2\\pi(2R)}{v}=\\dfrac{4\\pi R}{\\sqrt{GM/(2R)}}=4\\pi R\\sqrt{\\dfrac{2R}{GM}}=\\dfrac{4\\sqrt{2}\\,\\pi R^{3/2}}{\\sqrt{GM}}\\)。"
+     },
+     {
+      "id": "q4",
+      "type": "multiple_choice",
+      "stem": "同じ惑星 P のまわりで、半径 \\(2R\\)(\\(R\\) は惑星半径)の円軌道を回る衛星の公転周期を \\(T\\) とする。ケプラーの第三法則「\\(\\dfrac{(\\text{周期})^{2}}{(\\text{軌道半径})^{3}}\\) は一定」を用いて、同じ惑星のまわりで半径 \\(8R\\) の円軌道を回る別の衛星の公転周期 \\(T'\\) を、\\(T\\) を用いて求めよ。",
+      "choices": [
+       "\\(T'=4T\\)",
+       "\\(T'=16T\\)",
+       "\\(T'=64T\\)",
+       "\\(T'=8T\\)"
+      ],
+      "answer": 3,
+      "unit": "発展 万有引力(ケプラーの第三法則)",
+      "explanation": "【単元】発展 万有引力(ケプラーの第三法則)。正解は「\\(T'=8T\\)」。\\(\\dfrac{T'^{2}}{(8R)^{3}}=\\dfrac{T^{2}}{(2R)^{3}}\\) より \\(T'^{2}=T^{2}\\left(\\dfrac{8R}{2R}\\right)^{3}=64\\,T^{2}\\)、よって \\(T'=8T\\)。"
+     },
+     {
+      "id": "q5",
+      "type": "multiple_choice",
+      "stem": "万有引力定数 \\(G\\)、惑星 P の質量 \\(M\\)、半径 \\(R\\) とする。惑星の地表すれすれ(惑星中心から距離 \\(R\\))を等速円運動する物体の速さ(第一宇宙速度)\\(v_{1}\\) を求めよ。質量 \\(m\\) の物体について、万有引力 \\(\\dfrac{GMm}{R^{2}}\\) が向心力 \\(\\dfrac{mv_{1}^{2}}{R}\\) に等しい。",
+      "choices": [
+       "\\(v_{1}=\\sqrt{\\dfrac{GM}{R}}\\)",
+       "\\(v_{1}=\\sqrt{\\dfrac{GM}{2R}}\\)",
+       "\\(v_{1}=\\sqrt{\\dfrac{2GM}{R}}\\)",
+       "\\(v_{1}=\\dfrac{GM}{R}\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 万有引力(第一宇宙速度)",
+      "explanation": "【単元】発展 万有引力(第一宇宙速度)。正解は「\\(v_{1}=\\sqrt{\\dfrac{GM}{R}}\\)」。向心力の式 \\(\\dfrac{mv_{1}^{2}}{R}=\\dfrac{GMm}{R^{2}}\\) より \\(v_{1}^{2}=\\dfrac{GM}{R}\\)、よって \\(v_{1}=\\sqrt{\\dfrac{GM}{R}}\\)。"
+     }
+    ]
+   },
+   "model": "claude-opus-verified"
+  },
+  {
+   "exam_id": "rikei",
+   "part_key": "phys_exam",
+   "eiken_grade": "kyotsu_rikei",
+   "question_data": {
+    "passage": "ある生徒が、なめらかで水平な床の上でばね振り子の運動を調べる実験を行った。自然長のばねの一端を壁に固定し、他端に質量 \\( m = 0.20\\ \\text{kg} \\) の小球を取り付ける。ばね定数は \\( k = 5.0\\ \\text{N/m} \\) である。小球をつり合いの位置から右向きに \\( A = 0.10\\ \\text{m} \\) だけ引いて静かに手をはなすと、小球はつり合いの位置を中心とする単振動を始めた。空気抵抗とばねの質量は無視できるものとし、円周率は \\( \\pi \\) のまま用いる。後半では同じ場所で長さ \\( L \\) の単振り子の実験も行う。重力加速度の大きさは \\( g = 10\\ \\text{m/s}^2 \\) とする。",
+    "subject": "数学",
+    "univ_simulated": "共通テスト(本番形式)",
+    "year_simulated": 2025,
+    "source": "kyotsu-exam-format-sci2-20260623",
+    "exam_format": true,
+    "group": "物理",
+    "questions": [
+     {
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "質量 \\( m = 0.20\\ \\text{kg} \\) の小球がばね定数 \\( k = 5.0\\ \\text{N/m} \\) のばねにつながれて単振動している。この単振動の周期 \\( T \\) はいくらか。",
+      "choices": [
+       "\\( \\dfrac{1}{5}\\pi\\ \\text{s} \\)",
+       "\\( \\dfrac{2}{5}\\pi\\ \\text{s} \\)",
+       "\\( \\dfrac{4}{5}\\pi\\ \\text{s} \\)",
+       "\\( 5\\pi\\ \\text{s} \\)"
+      ],
+      "answer": 1,
+      "unit": "発展 単振動(周期)",
+      "explanation": "【単元】発展 単振動(周期)。正解は「\\( \\dfrac{2}{5}\\pi\\ \\text{s} \\)」。\\( T=2\\pi\\sqrt{m/k}=2\\pi\\sqrt{0.20/5.0}=2\\pi\\sqrt{0.04}=2\\pi\\times0.2=\\tfrac{2}{5}\\pi\\ \\text{s} \\)。"
+     },
+     {
+      "id": "q2",
+      "type": "multiple_choice",
+      "stem": "質量 \\( m = 0.20\\ \\text{kg} \\)、ばね定数 \\( k = 5.0\\ \\text{N/m} \\) のばね振り子について、単振動の角振動数 \\( \\omega \\) はいくらか。",
+      "choices": [
+       "\\( 25\\ \\text{rad/s} \\)",
+       "\\( \\dfrac{1}{5}\\ \\text{rad/s} \\)",
+       "\\( 5\\ \\text{rad/s} \\)",
+       "\\( \\sqrt{5}\\ \\text{rad/s} \\)"
+      ],
+      "answer": 2,
+      "unit": "発展 単振動(角振動数)",
+      "explanation": "【単元】発展 単振動(角振動数)。正解は「\\( 5\\ \\text{rad/s} \\)」。\\( \\omega=\\sqrt{k/m}=\\sqrt{5.0/0.20}=\\sqrt{25}=5\\ \\text{rad/s} \\)。"
+     },
+     {
+      "id": "q3",
+      "type": "multiple_choice",
+      "stem": "上のばね振り子は、つり合いの位置から振幅 \\( A = 0.10\\ \\text{m} \\) で単振動しており、角振動数は \\( \\omega = 5\\ \\text{rad/s} \\) である。小球がつり合いの位置を通過するときの速さ(最大の速さ)\\( v_{\\max} \\) はいくらか。",
+      "choices": [
+       "\\( 0.10\\ \\text{m/s} \\)",
+       "\\( 2.5\\ \\text{m/s} \\)",
+       "\\( 5.0\\ \\text{m/s} \\)",
+       "\\( 0.50\\ \\text{m/s} \\)"
+      ],
+      "answer": 3,
+      "unit": "発展 単振動(最大速度)",
+      "explanation": "【単元】発展 単振動(最大速度)。正解は「\\( 0.50\\ \\text{m/s} \\)」。\\( v_{\\max}=A\\omega=0.10\\times5=0.50\\ \\text{m/s} \\)。"
+     },
+     {
+      "id": "q4",
+      "type": "multiple_choice",
+      "stem": "上のばね振り子は、振幅 \\( A = 0.10\\ \\text{m} \\)、角振動数 \\( \\omega = 5\\ \\text{rad/s} \\) で単振動している。小球が運動の両端(つり合いの位置から最も離れた位置)にあるときの加速度の大きさ(最大の加速度)\\( a_{\\max} \\) はいくらか。",
+      "choices": [
+       "\\( 2.5\\ \\text{m/s}^2 \\)",
+       "\\( 0.50\\ \\text{m/s}^2 \\)",
+       "\\( 25\\ \\text{m/s}^2 \\)",
+       "\\( 0.25\\ \\text{m/s}^2 \\)"
+      ],
+      "answer": 0,
+      "unit": "発展 単振動(最大加速度)",
+      "explanation": "【単元】発展 単振動(最大加速度)。正解は「\\( 2.5\\ \\text{m/s}^2 \\)」。\\( a_{\\max}=A\\omega^2=0.10\\times5^2=0.10\\times25=2.5\\ \\text{m/s}^2 \\)。"
+     },
+     {
+      "id": "q5",
+      "type": "multiple_choice",
+      "stem": "実験の後半で、同じ場所(重力加速度の大きさ \\( g = 10\\ \\text{m/s}^2 \\))で長さ \\( L = 0.90\\ \\text{m} \\) の単振り子をつくり、小さく振らせた。この単振り子の周期 \\( T \\) はいくらか。",
+      "choices": [
+       "\\( \\dfrac{2}{5}\\pi\\ \\text{s} \\)",
+       "\\( \\dfrac{3}{5}\\pi\\ \\text{s} \\)",
+       "\\( \\dfrac{9}{50}\\pi\\ \\text{s} \\)",
+       "\\( \\dfrac{6}{5}\\pi\\ \\text{s} \\)"
+      ],
+      "answer": 1,
+      "unit": "発展 単振動(単振り子の周期)",
+      "explanation": "【単元】発展 単振動(単振り子の周期)。正解は「\\( \\dfrac{3}{5}\\pi\\ \\text{s} \\)」。\\( T=2\\pi\\sqrt{L/g}=2\\pi\\sqrt{0.90/10}=2\\pi\\sqrt{0.09}=2\\pi\\times0.3=\\tfrac{3}{5}\\pi\\ \\text{s} \\)。"
+     }
+    ]
+   },
+   "model": "claude-opus-verified"
+  },
+  {
+   "exam_id": "rikei",
+   "part_key": "phys_exam",
+   "eiken_grade": "kyotsu_rikei",
+   "question_data": {
+    "passage": "水平な床の上に、間隔 \\(L=0.40\\ \\text{m}\\) の2本の長い導体レールを平行に固定し、レール上に質量の無視できる導体棒を垂直に渡す。レール面に垂直な向き(鉛直上向き)に一様な磁束密度 \\(B=0.50\\ \\text{T}\\) の磁場をかける。導体棒はレールと常に直交を保ったまま、レールに沿って一定の速さ \\(v=5.0\\ \\text{m/s}\\) で滑らかに動く。レールの一端は抵抗値 \\(R=2.0\\ \\Omega\\) の抵抗でつながれており、レールと導体棒の電気抵抗は無視できる。レールに囲まれた回路の一部が面積 \\(S=0.20\\ \\text{m}^2\\) の長方形をなす瞬間を考える。以下の各問いは前問の結果を順に用いるが、必要な値は各設問にも再掲してある。図は不要で、文中の数値だけで計算できるものとする。",
+    "subject": "数学",
+    "univ_simulated": "共通テスト(本番形式)",
+    "year_simulated": 2025,
+    "source": "kyotsu-exam-format-sci2-20260623",
+    "exam_format": true,
+    "group": "物理",
+    "questions": [
+     {
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "磁束密度 \\(B=0.50\\ \\text{T}\\) の一様な磁場が、面積 \\(S=0.20\\ \\text{m}^2\\) の長方形の面を垂直に貫いている。この面を貫く磁束 \\(\\Phi=BS\\) は何 \\(\\text{Wb}\\) か。",
+      "choices": [
+       "\\(0.40\\ \\text{Wb}\\)",
+       "\\(2.5\\ \\text{Wb}\\)",
+       "\\(0.10\\ \\text{Wb}\\)",
+       "\\(0.025\\ \\text{Wb}\\)"
+      ],
+      "answer": 2,
+      "unit": "発展 電磁誘導(磁束 Phi=BS)",
+      "explanation": "【単元】発展 電磁誘導(磁束 Phi=BS)。正解は「\\(0.10\\ \\text{Wb}\\)」。\\(\\Phi=BS=0.50\\times0.20=0.10\\ \\text{Wb}\\)。"
+     },
+     {
+      "id": "q2",
+      "type": "multiple_choice",
+      "stem": "間隔 \\(L=0.40\\ \\text{m}\\) の平行レール上の導体棒が、磁束密度 \\(B=0.50\\ \\text{T}\\) の磁場(レール面に垂直)の中を、一定の速さ \\(v=5.0\\ \\text{m/s}\\) で動いている。この導体棒に生じる誘導起電力の大きさ \\(V=BLv\\) は何 \\(\\text{V}\\) か。",
+      "choices": [
+       "\\(2.0\\ \\text{V}\\)",
+       "\\(0.10\\ \\text{V}\\)",
+       "\\(10\\ \\text{V}\\)",
+       "\\(1.0\\ \\text{V}\\)"
+      ],
+      "answer": 3,
+      "unit": "発展 電磁誘導(誘導起電力 V=BLv)",
+      "explanation": "【単元】発展 電磁誘導(誘導起電力 V=BLv)。正解は「\\(1.0\\ \\text{V}\\)」。\\(V=BLv=0.50\\times0.40\\times5.0=1.0\\ \\text{V}\\)。"
+     },
+     {
+      "id": "q3",
+      "type": "multiple_choice",
+      "stem": "前問より、導体棒には大きさ \\(V=1.0\\ \\text{V}\\) の誘導起電力が生じている。レールの一端は抵抗値 \\(R=2.0\\ \\Omega\\) の抵抗でつながれており、レールと導体棒の抵抗は無視できる。このとき回路を流れる電流の大きさ \\(I=\\dfrac{V}{R}\\) は何 \\(\\text{A}\\) か。",
+      "choices": [
+       "\\(0.50\\ \\text{A}\\)",
+       "\\(2.0\\ \\text{A}\\)",
+       "\\(0.25\\ \\text{A}\\)",
+       "\\(1.0\\ \\text{A}\\)"
+      ],
+      "answer": 0,
+      "unit": "発展 電磁誘導(オームの法則 I=V/R)",
+      "explanation": "【単元】発展 電磁誘導(オームの法則 I=V/R)。正解は「\\(0.50\\ \\text{A}\\)」。\\(I=\\dfrac{V}{R}=\\dfrac{1.0}{2.0}=0.50\\ \\text{A}\\)。"
+     },
+     {
+      "id": "q4",
+      "type": "multiple_choice",
+      "stem": "前問より、回路には大きさ \\(I=0.50\\ \\text{A}\\) の電流が流れている。間隔 \\(L=0.40\\ \\text{m}\\) の導体棒は、磁束密度 \\(B=0.50\\ \\text{T}\\) の磁場(レール面に垂直)の中にある。この電流が流れる導体棒が磁場から受ける力の大きさ \\(F=BIL\\) は何 \\(\\text{N}\\) か。",
+      "choices": [
+       "\\(0.20\\ \\text{N}\\)",
+       "\\(0.10\\ \\text{N}\\)",
+       "\\(0.025\\ \\text{N}\\)",
+       "\\(2.5\\ \\text{N}\\)"
+      ],
+      "answer": 1,
+      "unit": "発展 電磁誘導(電流が磁場から受ける力 F=BIL)",
+      "explanation": "【単元】発展 電磁誘導(電流が磁場から受ける力 F=BIL)。正解は「\\(0.10\\ \\text{N}\\)」。\\(F=BIL=0.50\\times0.50\\times0.40=0.10\\ \\text{N}\\)。レンツの法則により、この力は導体棒の運動を妨げる向き(速度と逆向き)にはたらく。"
+     },
+     {
+      "id": "q5",
+      "type": "multiple_choice",
+      "stem": "同じ磁場の中に、巻数1回の別の正方形コイルを固定して置いたところ、外部の操作によってこのコイルを貫く磁束が \\(\\Delta t=0.10\\ \\text{s}\\) の間に \\(\\Delta\\Phi=0.30\\ \\text{Wb}\\) だけ一定の割合で増加した。このときコイルに生じる誘導起電力の大きさ \\(V=\\left|\\dfrac{\\Delta\\Phi}{\\Delta t}\\right|\\) は何 \\(\\text{V}\\) か。",
+      "choices": [
+       "\\(0.030\\ \\text{V}\\)",
+       "\\(0.30\\ \\text{V}\\)",
+       "\\(3.0\\ \\text{V}\\)",
+       "\\(30\\ \\text{V}\\)"
+      ],
+      "answer": 2,
+      "unit": "発展 電磁誘導(ファラデーの法則 V=ΔΦ/Δt)",
+      "explanation": "【単元】発展 電磁誘導(ファラデーの法則 V=ΔΦ/Δt)。正解は「\\(3.0\\ \\text{V}\\)」。\\(V=\\left|\\dfrac{\\Delta\\Phi}{\\Delta t}\\right|=\\dfrac{0.30}{0.10}=3.0\\ \\text{V}\\)。レンツの法則より、磁束の増加を妨げる向きに起電力が生じる。"
+     }
+    ]
+   },
+   "model": "claude-opus-verified"
+  },
+  {
+   "exam_id": "rikei",
+   "part_key": "phys_exam",
+   "eiken_grade": "kyotsu_rikei",
+   "question_data": {
+    "passage": "物理部の生徒が、なめらかな水平面上で小球を等速円運動させる実験を行った。中心\\( \\mathrm{O} \\)に固定した軽い糸の他端に質量\\( m=0.20\\ \\text{kg} \\)の小球を結び、小球を半径\\( r=0.50\\ \\text{m} \\)の円周上で一定の速さ\\( v=2.0\\ \\text{m/s} \\)で回し続けた。ここで角速度\\( \\omega \\)、速さ\\( v \\)、半径\\( r \\)の間には\\( v=r\\omega \\)の関係があり、向心加速度は\\( a=\\dfrac{v^2}{r}=r\\omega^2 \\)、向心力は\\( F=ma \\)で表される。重力加速度の大きさは\\( g=9.8\\ \\text{m/s}^2 \\)とするが、必要な値は各問で与える。以下、円周率\\( \\pi \\)はそのまま用いてよい。",
+    "subject": "数学",
+    "univ_simulated": "共通テスト(本番形式)",
+    "year_simulated": 2025,
+    "source": "kyotsu-exam-format-sci2-20260623",
+    "exam_format": true,
+    "group": "物理",
+    "questions": [
+     {
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "半径\\( r=0.50\\ \\text{m} \\)の円周上を速さ\\( v=2.0\\ \\text{m/s} \\)で等速円運動する小球の角速度\\( \\omega \\)を求めよ。\\( v=r\\omega \\)を用いてよい。",
+      "choices": [
+       "\\( 1.0\\ \\text{rad/s} \\)",
+       "\\( 2.0\\ \\text{rad/s} \\)",
+       "\\( 8.0\\ \\text{rad/s} \\)",
+       "\\( 4.0\\ \\text{rad/s} \\)"
+      ],
+      "answer": 3,
+      "unit": "発展 等速円運動(角速度ω=v/r)",
+      "explanation": "【単元】発展 等速円運動(角速度ω=v/r)。正解は「\\( 4.0\\ \\text{rad/s} \\)」。\\( \\omega = v/r = 2.0/0.50 = 4.0\\ \\text{rad/s} \\)。"
+     },
+     {
+      "id": "q2",
+      "type": "multiple_choice",
+      "stem": "別の小球を、角速度\\( \\omega'=5.0\\ \\text{rad/s} \\)で半径\\( r'=0.40\\ \\text{m} \\)の等速円運動をさせた。この小球の速さ\\( v' \\)を求めよ。\\( v'=r'\\omega' \\)を用いてよい。",
+      "choices": [
+       "\\( 2.0\\ \\text{m/s} \\)",
+       "\\( 1.0\\ \\text{m/s} \\)",
+       "\\( 8.0\\ \\text{m/s} \\)",
+       "\\( 12.5\\ \\text{m/s} \\)"
+      ],
+      "answer": 0,
+      "unit": "発展 等速円運動(速さ v=rω)",
+      "explanation": "【単元】発展 等速円運動(速さ v=rω)。正解は「\\( 2.0\\ \\text{m/s} \\)」。\\( v' = r'\\omega' = 0.40\\times 5.0 = 2.0\\ \\text{m/s} \\)。"
+     },
+     {
+      "id": "q3",
+      "type": "multiple_choice",
+      "stem": "最初の小球(半径\\( r=0.50\\ \\text{m} \\)、速さ\\( v=2.0\\ \\text{m/s} \\))の向心加速度の大きさ\\( a \\)を求めよ。\\( a=\\dfrac{v^2}{r} \\)を用いてよい。",
+      "choices": [
+       "\\( 2.0\\ \\text{m/s}^2 \\)",
+       "\\( 8.0\\ \\text{m/s}^2 \\)",
+       "\\( 4.0\\ \\text{m/s}^2 \\)",
+       "\\( 16\\ \\text{m/s}^2 \\)"
+      ],
+      "answer": 1,
+      "unit": "発展 等速円運動(向心加速度 a=v²/r)",
+      "explanation": "【単元】発展 等速円運動(向心加速度 a=v²/r)。正解は「\\( 8.0\\ \\text{m/s}^2 \\)」。\\( a = v^2/r = 2.0^2/0.50 = 4.0/0.50 = 8.0\\ \\text{m/s}^2 \\)。"
+     },
+     {
+      "id": "q4",
+      "type": "multiple_choice",
+      "stem": "最初の小球(質量\\( m=0.20\\ \\text{kg} \\)、半径\\( r=0.50\\ \\text{m} \\)、速さ\\( v=2.0\\ \\text{m/s} \\))にはたらく向心力の大きさ\\( F \\)を求めよ。\\( F=\\dfrac{mv^2}{r} \\)を用いてよい。",
+      "choices": [
+       "\\( 0.80\\ \\text{N} \\)",
+       "\\( 3.2\\ \\text{N} \\)",
+       "\\( 1.6\\ \\text{N} \\)",
+       "\\( 8.0\\ \\text{N} \\)"
+      ],
+      "answer": 2,
+      "unit": "発展 等速円運動(向心力 F=mv²/r)",
+      "explanation": "【単元】発展 等速円運動(向心力 F=mv²/r)。正解は「\\( 1.6\\ \\text{N} \\)」。\\( F = mv^2/r = 0.20\\times 2.0^2/0.50 = 0.20\\times 8.0 = 1.6\\ \\text{N} \\)。"
+     },
+     {
+      "id": "q5",
+      "type": "multiple_choice",
+      "stem": "次に、長さ\\( L \\)の軽い糸の先に質量\\( m=0.20\\ \\text{kg} \\)のおもりをつけ、鉛直線と糸のなす角が\\( 60^\\circ \\)を保つように円錐振り子として等速円運動させた。重力加速度を\\( g=10\\ \\text{m/s}^2 \\)、\\( \\cos 60^\\circ = 0.50 \\)とする。糸の張力\\( S \\)の大きさを求めよ。鉛直方向のつり合いは\\( S\\cos 60^\\circ = mg \\)である。",
+      "choices": [
+       "\\( 1.0\\ \\text{N} \\)",
+       "\\( 2.0\\ \\text{N} \\)",
+       "\\( 8.0\\ \\text{N} \\)",
+       "\\( 4.0\\ \\text{N} \\)"
+      ],
+      "answer": 3,
+      "unit": "発展 等速円運動(円錐振り子の張力)",
+      "explanation": "【単元】発展 等速円運動(円錐振り子の張力)。正解は「\\( 4.0\\ \\text{N} \\)」。鉛直つり合い \\( S\\cos 60^\\circ = mg \\) より \\( S = mg/\\cos 60^\\circ = 0.20\\times 10/0.50 = 4.0\\ \\text{N} \\)。"
+     }
+    ]
+   },
+   "model": "claude-opus-verified"
+  }
+ ],
+ "skip_full": false
+}

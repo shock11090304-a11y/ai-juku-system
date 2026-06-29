@@ -1,0 +1,30 @@
+{
+  "passage": "数学の授業で、太郎さんと花子さんは関数 \\( f(\\theta)=\\sin\\theta+\\sqrt{3}\\,\\cos\\theta \\) の最大値・最小値を、三角関数の合成を用いて調べている。ただし \\( \\theta \\) の範囲は \\( 0 \\leqq \\theta \\leqq \\pi \\) とする。\n太郎「\\( a\\sin\\theta+b\\cos\\theta \\) の形は、\\( r\\sin(\\theta+\\alpha) \\) に合成できたよね。」\n花子「まず \\( r=\\sqrt{a^2+b^2} \\) を求めて、それから \\( \\alpha \\) を決めればいいね。」\n二人はこの方針に従って、合成形を求めてから値域を調べていく。",
+  "questions": [
+    {
+      "id": "q1",
+      "stem": "関数 \\( f(\\theta)=\\sin\\theta+\\sqrt{3}\\,\\cos\\theta \\) を \\( r\\sin(\\theta+\\alpha) \\)（\\( r>0 \\)）の形に合成する。\\( a\\sin\\theta+b\\cos\\theta \\) における係数は \\( a=1,\\ b=\\sqrt{3} \\) であり、振幅は \\( r=\\sqrt{a^2+b^2} \\) で求められる。この \\( r \\) の値を求めよ。",
+      "choices": ["\\( 4 \\)", "\\( \\sqrt{3}+1 \\)", "\\( 2 \\)", "\\( 2\\sqrt{3} \\)"]
+    },
+    {
+      "id": "q2",
+      "stem": "関数 \\( f(\\theta)=\\sin\\theta+\\sqrt{3}\\,\\cos\\theta \\) は、振幅 \\( r=2 \\) を用いて \\( 2\\sin(\\theta+\\alpha) \\) の形に合成できる。ここで位相 \\( \\alpha \\) は \\( \\cos\\alpha=\\dfrac{1}{2},\\ \\sin\\alpha=\\dfrac{\\sqrt{3}}{2} \\)（ただし \\( 0<\\alpha<\\dfrac{\\pi}{2} \\)）を満たす。この \\( \\alpha \\) の値を求めよ。",
+      "choices": ["\\( \\dfrac{\\pi}{6} \\)", "\\( \\dfrac{\\pi}{3} \\)", "\\( \\dfrac{\\pi}{4} \\)", "\\( \\dfrac{2\\pi}{3} \\)"]
+    },
+    {
+      "id": "q3",
+      "stem": "関数 \\( f(\\theta)=\\sin\\theta+\\sqrt{3}\\,\\cos\\theta \\) は \\( f(\\theta)=2\\sin\\!\\left(\\theta+\\dfrac{\\pi}{3}\\right) \\) と合成される。\\( 0\\leqq\\theta\\leqq\\pi \\) のとき、\\( f(\\theta) \\) の最大値を求めよ。",
+      "choices": ["\\( \\sqrt{3} \\)", "\\( \\sqrt{3}+1 \\)", "\\( 4 \\)", "\\( 2 \\)"]
+    },
+    {
+      "id": "q4",
+      "stem": "関数 \\( f(\\theta)=2\\sin\\!\\left(\\theta+\\dfrac{\\pi}{3}\\right) \\) について、\\( 0\\leqq\\theta\\leqq\\pi \\) の範囲で方程式 \\( f(\\theta)=\\sqrt{3} \\) を解いたとき、解のうち最大の \\( \\theta \\) の値を求めよ。",
+      "choices": ["\\( \\dfrac{\\pi}{3} \\)", "\\( 0 \\)", "\\( \\dfrac{2\\pi}{3} \\)", "\\( \\dfrac{\\pi}{6} \\)"]
+    },
+    {
+      "id": "q5",
+      "stem": "関数 \\( f(\\theta)=2\\sin\\!\\left(\\theta+\\dfrac{\\pi}{3}\\right) \\) について、\\( 0\\leqq\\theta\\leqq\\pi \\) の範囲における最小値を求めよ。",
+      "choices": ["\\( -2 \\)", "\\( -1 \\)", "\\( -\\sqrt{3} \\)", "\\( 0 \\)"]
+    }
+  ]
+}

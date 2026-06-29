@@ -1,0 +1,384 @@
+{
+  "unit": "代名詞",
+  "unit_slug": "pronouns",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) am a high school student.",
+      "choices": [
+        "I",
+        "My",
+        "Me",
+        "Mine"
+      ],
+      "answer_index": 0,
+      "answer_text": "I",
+      "explanation": "文の主語になるので主格 I を選ぶ。My は所有格、me は目的格、mine は所有代名詞で主語にはならない。",
+      "point": "主語には主格"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "This is ( ) bag.",
+      "choices": [
+        "she",
+        "her",
+        "hers",
+        "herself"
+      ],
+      "answer_index": 1,
+      "answer_text": "her",
+      "explanation": "名詞 bag の前に置いて「彼女の」と所有を表すので所有格 her を選ぶ。hers は所有代名詞で後ろに名詞を取らない。",
+      "point": "名詞の前は所有格"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "My mother loves ( ) very much.",
+      "choices": [
+        "we",
+        "our",
+        "us",
+        "ours"
+      ],
+      "answer_index": 2,
+      "answer_text": "us",
+      "explanation": "動詞 loves の目的語になるので目的格 us を選ぶ。we は主格なので動詞の後ろには置けない。",
+      "point": "動詞の目的語は目的格"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "This pen is ( ). I bought it yesterday.",
+      "choices": [
+        "my",
+        "me",
+        "I",
+        "mine"
+      ],
+      "answer_index": 3,
+      "answer_text": "mine",
+      "explanation": "「私のもの」という意味で1語で所有を表すので所有代名詞 mine を選ぶ。my は後ろに名詞が必要。",
+      "point": "mine は my + 名詞"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Please wait for ( ) at the station.",
+      "choices": [
+        "they",
+        "their",
+        "them",
+        "theirs"
+      ],
+      "answer_index": 2,
+      "answer_text": "them",
+      "explanation": "前置詞 for の後ろは目的格になるので them を選ぶ。they は主格なので前置詞の後ろには置けない。",
+      "point": "前置詞の後ろは目的格"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She looked at ( ) in the mirror.",
+      "choices": [
+        "her",
+        "herself",
+        "she",
+        "hers"
+      ],
+      "answer_index": 1,
+      "answer_text": "herself",
+      "explanation": "主語 She と同じ人物が動作の対象なので再帰代名詞 herself を選ぶ。「自分自身を鏡で見た」という意味。",
+      "point": "主語と同じなら再帰代名詞"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He made this cake by ( ).",
+      "choices": [
+        "him",
+        "his",
+        "himself",
+        "he"
+      ],
+      "answer_index": 2,
+      "answer_text": "himself",
+      "explanation": "by oneself で「独力で、一人で」という意味になる。主語 He に合わせて himself を選ぶ。",
+      "point": "by oneself は独力で"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "We enjoyed ( ) at the party last night.",
+      "choices": [
+        "us",
+        "our",
+        "ourselves",
+        "ours"
+      ],
+      "answer_index": 2,
+      "answer_text": "ourselves",
+      "explanation": "enjoy oneself で「楽しむ」という意味の決まった言い方。主語 We に合わせて ourselves を選ぶ。",
+      "point": "enjoy oneself は楽しむ"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) is rainy today.",
+      "choices": [
+        "It",
+        "This",
+        "That",
+        "There"
+      ],
+      "answer_index": 0,
+      "answer_text": "It",
+      "explanation": "天候を表す文の主語には形式的な It を使う。This や That は具体的なものを指すので天気の主語には使わない。",
+      "point": "天候の主語は It"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "basic",
+      "stem": "What time ( ) now?",
+      "choices": [
+        "is this",
+        "is it",
+        "is there",
+        "are they"
+      ],
+      "answer_index": 1,
+      "answer_text": "is it",
+      "explanation": "時刻をたずねる文では形式的な It を主語に使う。What time is it now? が決まった言い方。",
+      "point": "時刻の主語は It"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I lost my umbrella, so I have to buy a new ( ).",
+      "choices": [
+        "it",
+        "one",
+        "that",
+        "them"
+      ],
+      "answer_index": 1,
+      "answer_text": "one",
+      "explanation": "前に出た名詞と同じ種類の不特定なものを指すので one ( = an umbrella) を選ぶ。it は同一の特定のものを指すので a new とは合わない。",
+      "point": "one は a + 名詞の代用"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I have two dogs. One is white and ( ) is black.",
+      "choices": [
+        "another",
+        "other",
+        "the other",
+        "others"
+      ],
+      "answer_index": 2,
+      "answer_text": "the other",
+      "explanation": "2つのうち「一方」を One で受けたら、残りの「もう一方」は the other で表す。残りが1つに決まるので the が付く。",
+      "point": "2つの残り一方は the other"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I don't like this shirt. Please show me ( ) one.",
+      "choices": [
+        "other",
+        "another",
+        "the other",
+        "others"
+      ],
+      "answer_index": 1,
+      "answer_text": "another",
+      "explanation": "「もう一つ別の」と不特定の一つを表すので another を選ぶ。another は an + other からできた語で後ろに単数名詞を取る。",
+      "point": "another はもう一つ別の"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Some students like math, and ( ) like English.",
+      "choices": [
+        "another",
+        "the other",
+        "others",
+        "other"
+      ],
+      "answer_index": 2,
+      "answer_text": "others",
+      "explanation": "Some ... others ... で「~する人もいれば、~する人もいる」を表す。others は「他の人々」という意味の複数の代名詞。",
+      "point": "Some ... others ... の組み合わせ"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Would you like ( ) coffee?",
+      "choices": [
+        "some",
+        "any",
+        "much",
+        "many"
+      ],
+      "answer_index": 0,
+      "answer_text": "some",
+      "explanation": "疑問文でも人にすすめる・依頼する文では some を使う。Would you like some ...? は決まった言い方。",
+      "point": "勧誘の疑問文は some"
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I don't have ( ) money with me now.",
+      "choices": [
+        "some",
+        "any",
+        "no one",
+        "much of"
+      ],
+      "answer_index": 1,
+      "answer_text": "any",
+      "explanation": "否定文では some ではなく any を使う。not ... any で「少しも~ない」という意味になる。",
+      "point": "否定文は any"
+    },
+    {
+      "no": 17,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) student in this class has a tablet.",
+      "choices": [
+        "Every",
+        "All",
+        "Both",
+        "Some of"
+      ],
+      "answer_index": 0,
+      "answer_text": "Every",
+      "explanation": "every は後ろに単数名詞 student を取り、動詞も has と単数で受ける。All なら複数名詞 + have になる。",
+      "point": "every + 単数名詞 + 単数動詞"
+    },
+    {
+      "no": 18,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I want ( ) cold to eat.",
+      "choices": [
+        "cold something",
+        "something cold",
+        "cold anything",
+        "anything cold"
+      ],
+      "answer_index": 1,
+      "answer_text": "something cold",
+      "explanation": "something など -thing で終わる語を形容詞で修飾するときは、形容詞を後ろに置いて something cold とする。肯定文なので anything ではなく something を使い、to eat が something cold を後ろから説明する。",
+      "point": "-thing + 形容詞は後ろ置き"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "これはあなたの自転車ですか。",
+      "tokens": [
+        "this",
+        "bike",
+        "your",
+        "is"
+      ],
+      "answer_text": "Is this your bike?",
+      "explanation": "所有格 your を名詞 bike の前に置く。be動詞の疑問文なので Is を文頭に出す。",
+      "point": "名詞の前は所有格"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼女は自分を誇りに思っている。",
+      "tokens": [
+        "herself",
+        "She",
+        "is",
+        "proud of"
+      ],
+      "answer_text": "She is proud of herself.",
+      "explanation": "be proud of oneself で「自分を誇りに思う」。主語 She に対応する再帰代名詞は herself。語順は She is proud of herself.。",
+      "point": "再帰代名詞(be proud of oneself)"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "このかばんはあなたのものですか。",
+      "tokens": [
+        "yours",
+        "this",
+        "bag",
+        "is"
+      ],
+      "answer_text": "Is this bag yours?",
+      "explanation": "yours は your bag を1語で表す所有代名詞で、be動詞 is の補語になる。疑問文なので Is を文頭に出して Is this bag yours? とする。",
+      "point": "yours は your + 名詞の所有代名詞"
+    },
+    {
+      "level": "basic",
+      "prompt_ja": "何か温かいものがほしい。",
+      "tokens": [
+        "hot",
+        "want",
+        "I",
+        "something"
+      ],
+      "answer_text": "I want something hot.",
+      "explanation": "something などの -thing で終わる代名詞は、形容詞を後ろに置いて something hot とする。語順は1通りに定まる。",
+      "point": "-thing+形容詞の語順(something hot)",
+      "no": 22,
+      "type": "order"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "This is my notebook.",
+      "instruction": "下線部 my notebook を1語の所有代名詞にして、ほぼ同じ意味の文に書きかえなさい。",
+      "answer_text": "This is mine.",
+      "explanation": "my notebook ( = 私のノート) は所有代名詞 mine で1語にまとめられる。my + 名詞 = mine の関係。",
+      "point": "my + 名詞 = mine"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "All the boys in the team are tall.",
+      "instruction": "主語を Every で始め、ほぼ同じ意味の文に書きかえなさい。",
+      "answer_text": "Every boy in the team is tall.",
+      "explanation": "every は後ろに単数名詞 boy を取り、動詞も is と単数で受ける。All の複数 boys / are が Every の単数 boy / is に変わる。",
+      "point": "every + 単数名詞 + 単数動詞"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "I have some questions.",
+      "instruction": "否定文に書きかえなさい。",
+      "answer_text": "I don't have any questions.",
+      "explanation": "肯定文の some は否定文では any に変える。一般動詞 have の否定文なので don't を使う。",
+      "point": "否定文では some を any に"
+    }
+  ]
+}

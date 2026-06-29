@@ -1,0 +1,23 @@
+{
+  "slug": "15_nouns-articles",
+  "no": 16,
+  "type": "mc",
+  "action": "fix_explanation",
+  "corrected_question": {
+    "no": 16,
+    "type": "mc",
+    "level": "standard",
+    "stem": "My brother likes ( ) after school with his friends.",
+    "choices": [
+      "a soccer",
+      "the soccer",
+      "soccer",
+      "soccers"
+    ],
+    "answer_index": 2,
+    "answer_text": "soccer",
+    "explanation": "スポーツ名は冠詞を付けず無冠詞で使う(like soccer / play soccer)。a soccer や the soccer, soccers とはしない。",
+    "point": "スポーツ名は無冠詞(like soccer / play soccer)"
+  },
+  "reason": "stemは likes だが旧解説は play 前提で食い違っていた。指摘どおり解説を「スポーツ名は無冠詞(like soccer / play soccer)」に直し、a soccer/the soccer/soccers を否定する内容に整合させた。answer・stem・choices は不変で、正解は無冠詞の soccer(index2)のみに一意に定まる。pointも likes 文脈に合わせ like soccer を併記して整合させた。"
+}

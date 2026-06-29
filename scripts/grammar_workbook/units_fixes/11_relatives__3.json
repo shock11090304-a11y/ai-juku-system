@@ -1,0 +1,23 @@
+{
+  "slug": "11_relatives",
+  "no": 3,
+  "type": "mc",
+  "action": "fix_explanation",
+  "corrected_question": {
+    "no": 3,
+    "type": "mc",
+    "level": "basic",
+    "stem": "The dog ( ) is running in the park is mine.",
+    "choices": [
+      "who",
+      "which",
+      "whose",
+      "why"
+    ],
+    "answer_index": 1,
+    "answer_text": "which",
+    "explanation": "先行詞 the dog は動物で、is running の主語になる主格である。動物が先行詞のときは which を使うのが基本(ペットなど親しい動物には who を使うこともある)。ここでは公園を走る一匹の犬を指すので which が正解。whose は後ろに名詞がなく所有関係でないため不可、why は理由を表す関係副詞なので主格には使えない。",
+    "point": "動物が先行詞のときは which が基本(親しい動物には who も)"
+  },
+  "reason": "解説が動物を一律「物の扱い」と断定していたため、動物が先行詞のときは which を使うのが基本であり、ペットなど親しい動物には who を使うこともある、という補足に修正した。正解 which は不変。本問は公園を走る一匹の犬を指し名前や所有の絆も示されないので基本どおり which が一意に定まり、who は基本則から外れ、whose は後続名詞がなく所有関係もないため不可、why は主格に使えないため不可。基礎定着レベルと関係詞(動物先行詞の主格)を問う点は維持。"
+}

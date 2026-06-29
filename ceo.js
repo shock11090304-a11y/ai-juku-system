@@ -387,7 +387,7 @@ function renderActionItems(m) {
   if (m.trialCount > 0 && m.paidCount < m.studentCount) {
     const convertRate = m.paidCount / (m.paidCount + m.trialCount) * 100;
     items.push({ type: 'warning', priority: '💡 注視', title: `体験生徒 ${m.trialCount}名の有料化を急げ`,
-      desc: `現在の有料転換率 ${convertRate.toFixed(0)}%。目標は60%以上。無料体験14日目にメンター面談を入れると転換率が上がります。` });
+      desc: `現在の有料転換率 ${convertRate.toFixed(0)}%。目標は60%以上。無料体験7日目にメンター面談を入れると転換率が上がります。` });
   }
 
   if (m.mrr < m.goalMonthly && m.mrr > 0) {

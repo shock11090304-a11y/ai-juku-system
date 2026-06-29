@@ -1,0 +1,83 @@
+{
+  "part": "chem_exam",
+  "group": "chem_exam",
+  "unit_theme": "溶解度と溶解度積",
+  "passage": "難溶性の塩 \\(\\text{MX}_2\\)(式量 \\(100\\))について,その溶解平衡を調べる実験を行った。\\(\\text{MX}_2\\) は水中で次のように電離する。\\[\\text{MX}_2 \\;\\rightleftharpoons\\; \\text{M}^{2+} + 2\\,\\text{X}^{-}\\]ある一定温度(\\(25\\ {}^{\\circ}\\text{C}\\))で,純水に \\(\\text{MX}_2\\) を十分に加えてよくかき混ぜ,溶け残りのある飽和水溶液をつくった。この温度における \\(\\text{MX}_2\\) の純水への溶解度(モル溶解度)は \\(s = 1.0\\times10^{-2}\\ \\text{mol/L}\\) であった。以下では \\(\\text{MX}_2\\) 由来の \\(\\text{M}^{2+}\\) と \\(\\text{X}^{-}\\) は完全に電離しているものとし,温度はとくに断りがない限り一定とする。式量 \\(\\text{MX}_2 = 100\\),\\(\\sqrt{2.5\\times10^{-5}} = 5.0\\times10^{-3}\\) を用いてよい。",
+  "subqs": [
+    {
+      "stem": "この温度における \\(\\text{MX}_2\\) の純水へのモル溶解度は \\(s = 1.0\\times10^{-2}\\ \\text{mol/L}\\) である。この飽和水溶液を \\(500\\ \\text{mL}\\) とったとき,その中に溶けている \\(\\text{MX}_2\\) の物質量は何 \\(\\text{mol}\\) か。",
+      "choices_latex": [
+        "\\(5.0\\times10^{-3}\\ \\text{mol}\\)",
+        "\\(1.0\\times10^{-2}\\ \\text{mol}\\)",
+        "\\(2.5\\times10^{-3}\\ \\text{mol}\\)",
+        "\\(2.0\\times10^{-2}\\ \\text{mol}\\)"
+      ],
+      "choices_value": ["Rational(1,200)", "Rational(1,100)", "Rational(1,400)", "Rational(1,50)"],
+      "answer_index": 0,
+      "truth_value": "Rational(1,200)",
+      "unit": "発展 溶解度と溶解度積(飽和溶液中の溶質量)",
+      "reason": "溶解した物質量 = 溶解度 × 体積 = \\(1.0\\times10^{-2}\\ \\text{mol/L} \\times 0.500\\ \\text{L} = 5.0\\times10^{-3}\\ \\text{mol}\\)。",
+      "restates": "モル溶解度 \\(s = 1.0\\times10^{-2}\\ \\text{mol/L}\\) と体積 \\(500\\ \\text{mL}\\) を stem に再掲。"
+    },
+    {
+      "stem": "\\(\\text{MX}_2\\)(式量 \\(100\\))の純水へのモル溶解度は \\(s = 1.0\\times10^{-2}\\ \\text{mol/L}\\) である。\\(\\text{MX}_2 \\rightleftharpoons \\text{M}^{2+} + 2\\,\\text{X}^{-}\\) と完全に電離するとき,この飽和水溶液中の \\(\\text{X}^{-}\\) のモル濃度は何 \\(\\text{mol/L}\\) か。",
+      "choices_latex": [
+        "\\(1.0\\times10^{-2}\\ \\text{mol/L}\\)",
+        "\\(5.0\\times10^{-3}\\ \\text{mol/L}\\)",
+        "\\(2.0\\times10^{-2}\\ \\text{mol/L}\\)",
+        "\\(4.0\\times10^{-2}\\ \\text{mol/L}\\)"
+      ],
+      "choices_value": ["Rational(1,100)", "Rational(1,200)", "Rational(2,100)", "Rational(4,100)"],
+      "answer_index": 2,
+      "truth_value": "Rational(2,100)",
+      "unit": "発展 溶解度と溶解度積(飽和モル濃度)",
+      "reason": "\\(\\text{MX}_2\\) 1 mol から \\(\\text{X}^{-}\\) は 2 mol 生じるので \\([\\text{X}^{-}] = 2s = 2\\times1.0\\times10^{-2} = 2.0\\times10^{-2}\\ \\text{mol/L}\\)。",
+      "restates": "モル溶解度 \\(s = 1.0\\times10^{-2}\\ \\text{mol/L}\\) と電離式(X⁻ は 2 倍)を stem に再掲。"
+    },
+    {
+      "stem": "\\(\\text{MX}_2 \\rightleftharpoons \\text{M}^{2+} + 2\\,\\text{X}^{-}\\) の溶解度積は \\(K_{\\mathrm{sp}} = [\\text{M}^{2+}][\\text{X}^{-}]^{2}\\) で定義される。純水の飽和水溶液中で \\([\\text{M}^{2+}] = 1.0\\times10^{-2}\\ \\text{mol/L}\\),\\([\\text{X}^{-}] = 2.0\\times10^{-2}\\ \\text{mol/L}\\) であるとき,\\(K_{\\mathrm{sp}}\\) の値は何 \\((\\text{mol/L})^{3}\\) か。",
+      "choices_latex": [
+        "\\(1.0\\times10^{-4}\\ (\\text{mol/L})^{3}\\)",
+        "\\(4.0\\times10^{-6}\\ (\\text{mol/L})^{3}\\)",
+        "\\(2.0\\times10^{-6}\\ (\\text{mol/L})^{3}\\)",
+        "\\(1.0\\times10^{-6}\\ (\\text{mol/L})^{3}\\)"
+      ],
+      "choices_value": ["Rational(1,10000)", "Rational(1,250000)", "Rational(1,500000)", "Rational(1,1000000)"],
+      "answer_index": 1,
+      "truth_value": "Rational(1,250000)",
+      "unit": "発展 溶解度と溶解度積(溶解度積 Ksp)",
+      "reason": "\\(K_{\\mathrm{sp}} = [\\text{M}^{2+}][\\text{X}^{-}]^{2} = (1.0\\times10^{-2})(2.0\\times10^{-2})^{2} = 1.0\\times10^{-2}\\times4.0\\times10^{-4} = 4.0\\times10^{-6}\\ (\\text{mol/L})^{3}\\)。",
+      "restates": "\\(K_{\\mathrm{sp}}\\) の定義式と \\([\\text{M}^{2+}] = 1.0\\times10^{-2}\\),\\([\\text{X}^{-}] = 2.0\\times10^{-2}\\) を stem に再掲。"
+    },
+    {
+      "stem": "\\(\\text{MX}_2\\) の溶解度積は \\(K_{\\mathrm{sp}} = [\\text{M}^{2+}][\\text{X}^{-}]^{2} = 4.0\\times10^{-6}\\ (\\text{mol/L})^{3}\\) である。\\(\\text{M}^{2+}\\) を \\(0.16\\ \\text{mol/L}\\) 含む水溶液(\\(\\text{M(NO}_3)_2\\) 水溶液)に \\(\\text{MX}_2\\) を飽和するまで溶かした。このとき溶ける \\(\\text{MX}_2\\) のモル溶解度 \\(s'\\) は何 \\(\\text{mol/L}\\) か。ただし \\([\\text{M}^{2+}]\\) は \\(0.16\\ \\text{mol/L}\\) のままとみなし,溶けた \\(\\text{MX}_2\\) から \\([\\text{X}^{-}] = 2s'\\) が生じるとする。必要なら \\(\\sqrt{2.5\\times10^{-5}} = 5.0\\times10^{-3}\\) を用いよ。",
+      "choices_latex": [
+        "\\(5.0\\times10^{-3}\\ \\text{mol/L}\\)",
+        "\\(1.25\\times10^{-3}\\ \\text{mol/L}\\)",
+        "\\(2.5\\times10^{-5}\\ \\text{mol/L}\\)",
+        "\\(2.5\\times10^{-3}\\ \\text{mol/L}\\)"
+      ],
+      "choices_value": ["Rational(1,200)", "Rational(1,800)", "Rational(1,40000)", "Rational(1,400)"],
+      "answer_index": 3,
+      "truth_value": "Rational(1,400)",
+      "unit": "発展 溶解度と溶解度積(共通イオン効果)",
+      "reason": "\\(K_{\\mathrm{sp}} = [\\text{M}^{2+}](2s')^{2}\\) より \\((2s')^{2} = \\dfrac{4.0\\times10^{-6}}{0.16} = 2.5\\times10^{-5}\\),\\(2s' = \\sqrt{2.5\\times10^{-5}} = 5.0\\times10^{-3}\\),よって \\(s' = 2.5\\times10^{-3}\\ \\text{mol/L}\\)。共通イオン効果で純水中(\\(1.0\\times10^{-2}\\))より小さくなる。",
+      "restates": "\\(K_{\\mathrm{sp}} = 4.0\\times10^{-6}\\),\\([\\text{M}^{2+}] = 0.16\\ \\text{mol/L}\\),\\([\\text{X}^{-}] = 2s'\\),\\(\\sqrt{2.5\\times10^{-5}} = 5.0\\times10^{-3}\\) を stem に再掲。"
+    },
+    {
+      "stem": "\\(\\text{MX}_2\\)(式量 \\(100\\))の純水へのモル溶解度は \\(s = 1.0\\times10^{-2}\\ \\text{mol/L}\\) である。\\(\\text{MX}_2\\) を \\(5.0\\times10^{-3}\\ \\text{mol}\\) 溶かした飽和水溶液 \\(500\\ \\text{mL}\\) を,温度を一定(飽和を保つ)に保ったまま水を蒸発させ,体積を \\(200\\ \\text{mL}\\) にした。このとき析出する \\(\\text{MX}_2\\) は何 \\(\\text{mol}\\) か。",
+      "choices_latex": [
+        "\\(2.0\\times10^{-3}\\ \\text{mol}\\)",
+        "\\(5.0\\times10^{-3}\\ \\text{mol}\\)",
+        "\\(3.0\\times10^{-3}\\ \\text{mol}\\)",
+        "\\(4.0\\times10^{-3}\\ \\text{mol}\\)"
+      ],
+      "choices_value": ["Rational(2,1000)", "Rational(5,1000)", "Rational(3,1000)", "Rational(4,1000)"],
+      "answer_index": 2,
+      "truth_value": "Rational(3,1000)",
+      "unit": "発展 溶解度と溶解度積(蒸発による析出量)",
+      "reason": "蒸発後も温度一定で飽和なので,溶けたまま残るのは \\(s\\times V = 1.0\\times10^{-2}\\ \\text{mol/L}\\times0.200\\ \\text{L} = 2.0\\times10^{-3}\\ \\text{mol}\\)。析出量 = 全量 − 残存量 = \\(5.0\\times10^{-3} - 2.0\\times10^{-3} = 3.0\\times10^{-3}\\ \\text{mol}\\)。",
+      "restates": "全溶解量 \\(5.0\\times10^{-3}\\ \\text{mol}\\),モル溶解度 \\(s = 1.0\\times10^{-2}\\ \\text{mol/L}\\),蒸発後体積 \\(200\\ \\text{mL}\\) を stem に再掲。"
+    }
+  ]
+}

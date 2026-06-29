@@ -1,0 +1,272 @@
+{
+  "unit": "完了形",
+  "unit_slug": "perfect",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "I have ( ) finished my homework, so I can watch TV now.",
+      "choices": [
+        "yet",
+        "ago",
+        "already",
+        "now"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "Have you finished your report ( )?",
+      "choices": [
+        "already",
+        "ever",
+        "since",
+        "yet"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "She has lived in Osaka ( ) 2015.",
+      "choices": [
+        "for",
+        "from",
+        "since",
+        "during"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "We have known each other ( ) ten years.",
+      "choices": [
+        "since",
+        "for",
+        "from",
+        "in"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "Have you ( ) been to Hokkaido in your life?",
+      "choices": [
+        "ever",
+        "since",
+        "for",
+        "gone"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "I have ( ) seen such a beautiful sunset before.",
+      "choices": [
+        "never",
+        "ever",
+        "yet",
+        "already"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "My brother has ( ) to America, so he is not here now.",
+      "choices": [
+        "been",
+        "gone",
+        "went",
+        "going"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "I have ( ) to that museum twice.",
+      "choices": [
+        "gone",
+        "went",
+        "go",
+        "been"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "I ( ) my key yesterday, so I could not enter the room.",
+      "choices": [
+        "lost",
+        "have lost",
+        "had lose",
+        "have been lost"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "When I got to the station, the train had already ( ).",
+      "choices": [
+        "leave",
+        "leaving",
+        "left",
+        "leaves"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "She said that she ( ) the book before.",
+      "choices": [
+        "has read",
+        "reads",
+        "is reading",
+        "had read"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "It ( ) for three hours, and it is still raining hard.",
+      "choices": [
+        "rains",
+        "has been raining",
+        "rained",
+        "is raining"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "By the time you arrive, I ( ) cooking dinner.",
+      "choices": [
+        "will have finished",
+        "will finish",
+        "have finished",
+        "finished"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "How long ( ) you studied English?",
+      "choices": [
+        "did",
+        "are",
+        "do",
+        "have"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "He has not finished his lunch ( ).",
+      "choices": [
+        "already",
+        "yet",
+        "ever",
+        "since"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "prompt_ja": "私はちょうど昼食を食べ終えたところです。",
+      "tokens": [
+        "just",
+        "I",
+        "finished",
+        "lunch",
+        "have"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "あなたは今までに富士山に登ったことがありますか。",
+      "tokens": [
+        "climbed",
+        "you",
+        "ever",
+        "Have",
+        "Mt. Fuji"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "私たちは2020年からこの町に住んでいます。",
+      "tokens": [
+        "have",
+        "in",
+        "We",
+        "lived",
+        "this town",
+        "since",
+        "2020"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "私が駅に着いたとき、バスはすでに出発していた。",
+      "tokens": [
+        "had",
+        "the bus",
+        "already left",
+        "I",
+        "When",
+        "reached the station,"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "彼女は3時間ずっとピアノを弾き続けている。",
+      "tokens": [
+        "been",
+        "the piano",
+        "has",
+        "She",
+        "for",
+        "playing",
+        "three hours"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "私は一度もその映画を見たことがない。",
+      "tokens": [
+        "seen",
+        "have",
+        "the movie",
+        "I",
+        "never"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "I moved to this city three years ago. I still live here now.",
+      "instruction": "現在完了(継続用法)を使って for を用いた1文に書き換えなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "He went to Canada, and he is not here now.",
+      "instruction": "have gone to を使って「〜へ行ってしまった(今いない)」の意味の1文に書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "I visited Kyoto once. I visited it again last month.",
+      "instruction": "have been to と twice を使って「2回行ったことがある」という経験の1文に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "The movie started. Then we arrived at the theater.",
+      "instruction": "「私たちが劇場に着いたとき、映画はすでに始まっていた」という意味になるよう、過去完了を使った1文に書き換えなさい。書き出しは When we arrived at the theater で始めること。"
+    }
+  ]
+}

@@ -1,0 +1,381 @@
+{
+  "unit": "比較",
+  "unit_slug": "comparison",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Tom is as ( ) as his brother.",
+      "choices": [
+        "taller",
+        "tallest",
+        "more tall",
+        "tall"
+      ],
+      "answer_index": 3,
+      "answer_text": "tall",
+      "explanation": "as ... as の間には形容詞や副詞の原級を置く。比較級 taller や最上級 tallest は入らない。",
+      "point": "as ... as の間は原級"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "This box is ( ) than that one.",
+      "choices": [
+        "heavier",
+        "heavy",
+        "heaviest",
+        "more heavy"
+      ],
+      "answer_index": 0,
+      "answer_text": "heavier",
+      "explanation": "than があるので比較級を選ぶ。heavy は y を i にかえて -er を付け heavier となる。",
+      "point": "than の前は比較級"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Mt. Fuji is the ( ) mountain in Japan.",
+      "choices": [
+        "high",
+        "higher",
+        "more high",
+        "highest"
+      ],
+      "answer_index": 3,
+      "answer_text": "highest",
+      "explanation": "the と in Japan があるので最上級を選ぶ。high は -est を付けて highest となる。",
+      "point": "the ...est は最上級"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "This question is ( ) than the first one.",
+      "choices": [
+        "more difficult",
+        "difficult",
+        "difficulter",
+        "most difficult"
+      ],
+      "answer_index": 0,
+      "answer_text": "more difficult",
+      "explanation": "difficult のような長い語の比較級は more を前に置く。difficulter という形はない。",
+      "point": "長い語の比較級は more"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Health is more important than ( ).",
+      "choices": [
+        "money",
+        "more money",
+        "the money",
+        "moneys"
+      ],
+      "answer_index": 0,
+      "answer_text": "money",
+      "explanation": "more important than の後ろには比べる相手をそのまま置く。ここでは money が自然である。",
+      "point": "than の後は比べる相手"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Soccer is the ( ) popular sport in this school.",
+      "choices": [
+        "more",
+        "much",
+        "most",
+        "very"
+      ],
+      "answer_index": 2,
+      "answer_text": "most",
+      "explanation": "popular は長い語なので最上級は the most popular となる。in this school があるので最上級を選ぶ。",
+      "point": "長い語の最上級は most"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "basic",
+      "stem": "My bag is not as ( ) as yours.",
+      "choices": [
+        "bigger",
+        "biggest",
+        "big",
+        "more big"
+      ],
+      "answer_index": 2,
+      "answer_text": "big",
+      "explanation": "not as ... as は「~ほど…でない」という意味で、間には原級を置く。比較級 bigger は入らない。",
+      "point": "not as ... as の間も原級"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "This dictionary is ( ) than that one.",
+      "choices": [
+        "better",
+        "good",
+        "best",
+        "well"
+      ],
+      "answer_index": 0,
+      "answer_text": "better",
+      "explanation": "good の比較級は不規則変化で better となる。than があるので比較級を選ぶ。",
+      "point": "good - better - best"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "This is the ( ) movie I have ever seen.",
+      "choices": [
+        "good",
+        "better",
+        "best",
+        "well"
+      ],
+      "answer_index": 2,
+      "answer_text": "best",
+      "explanation": "good の最上級は不規則変化で best となる。the と I have ever seen があるので最上級を選ぶ。",
+      "point": "good の最上級は best"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Today is much ( ) than yesterday.",
+      "choices": [
+        "hotter",
+        "hot",
+        "hottest",
+        "more hot"
+      ],
+      "answer_index": 0,
+      "answer_text": "hotter",
+      "explanation": "much は比較級を強める語で「ずっと」の意味。than があるので比較級 hotter を選ぶ。hot は t を重ねる。",
+      "point": "much は比較級を強める"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He runs ( ) than I do.",
+      "choices": [
+        "fast",
+        "fastest",
+        "faster",
+        "more fast"
+      ],
+      "answer_index": 2,
+      "answer_text": "faster",
+      "explanation": "than があるので比較級を選ぶ。fast は副詞でも -er を付けて faster となる。",
+      "point": "副詞 fast の比較級は faster"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "This is one of the ( ) buildings in the city.",
+      "choices": [
+        "old",
+        "older",
+        "more old",
+        "oldest"
+      ],
+      "answer_index": 3,
+      "answer_text": "oldest",
+      "explanation": "one of the + 最上級 + 複数名詞で「最も~なもののひとつ」を表す。buildings が複数なので最上級 oldest を選ぶ。",
+      "point": "one of the + 最上級 + 複数名詞"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "( ) you study, the more you will learn.",
+      "choices": [
+        "The most",
+        "More",
+        "Much more",
+        "The more"
+      ],
+      "answer_index": 3,
+      "answer_text": "The more",
+      "explanation": "the + 比較級, the + 比較級で「~すればするほど…」を表す。後半が the more なので前半も The more となる。",
+      "point": "the + 比較級, the + 比較級"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The weather is getting warmer and ( ).",
+      "choices": [
+        "warm",
+        "warmest",
+        "warmer",
+        "more warm"
+      ],
+      "answer_index": 2,
+      "answer_text": "warmer",
+      "explanation": "比較級 and 比較級で「ますます~」を表す。warmer and warmer で「だんだん暖かく」となる。",
+      "point": "比較級 and 比較級 でますます~"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "No other student in my class is as ( ) as Ken.",
+      "choices": [
+        "kinder",
+        "kindest",
+        "more kind",
+        "kind"
+      ],
+      "answer_index": 3,
+      "answer_text": "kind",
+      "explanation": "No other ... as ... as ~ は「~ほど…な者は他にいない」という最上級相当の表現。as と as の間には原級を置く。",
+      "point": "No other ... as 原級 as は最上級相当"
+    },
+    {
+      "no": 16,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼女は私と同じくらい速く泳ぐ。",
+      "tokens": [
+        "fast",
+        "as",
+        "swims",
+        "She",
+        "as",
+        "me"
+      ],
+      "answer_text": "She swims as fast as me.",
+      "explanation": "as ... as の間に副詞の原級 fast を置く。「主語 + 動詞 + as 原級 as + 比べる相手」の語順になる。",
+      "point": "as 原級 as で同程度"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "この本はあの本よりおもしろい。",
+      "tokens": [
+        "more",
+        "than",
+        "is",
+        "This book",
+        "that one",
+        "interesting"
+      ],
+      "answer_text": "This book is more interesting than that one.",
+      "explanation": "interesting は長い語なので比較級は more interesting。「主語 + be動詞 + more 原級 + than + 比べる相手」の語順。",
+      "point": "more 原級 than の語順"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼はクラスでいちばん背が高い生徒だ。",
+      "tokens": [
+        "the",
+        "student",
+        "tallest",
+        "is",
+        "He",
+        "in the class"
+      ],
+      "answer_text": "He is the tallest student in the class.",
+      "explanation": "最上級は the + ...est で表す。「主語 + be動詞 + the 最上級 + 名詞 + in ~」の語順になる。",
+      "point": "the 最上級 + 名詞 で最も~な"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "東京は日本でいちばん大きな都市のひとつだ。",
+      "tokens": [
+        "one of",
+        "cities",
+        "is",
+        "Tokyo",
+        "the largest",
+        "in Japan"
+      ],
+      "answer_text": "Tokyo is one of the largest cities in Japan.",
+      "explanation": "one of the + 最上級 + 複数名詞で「最も~なもののひとつ」。名詞は複数形 cities にする。",
+      "point": "one of the 最上級 複数名詞"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "この問題はあの問題よりずっと易しい。",
+      "tokens": [
+        "easier",
+        "much",
+        "This question",
+        "than",
+        "is",
+        "that one"
+      ],
+      "answer_text": "This question is much easier than that one.",
+      "explanation": "much は比較級 easier を強めて「ずっと」を表す。「主語 + be動詞 + much 比較級 + than ~」の語順になる。",
+      "point": "much + 比較級 でずっと~"
+    },
+    {
+      "no": 21,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "Ken is taller than Mike.",
+      "instruction": "主語を Mike にして、shorter を使ってほぼ同じ内容の文に書き換えなさい。",
+      "answer_text": "Mike is shorter than Ken.",
+      "explanation": "「ケンはマイクより背が高い」は「マイクはケンより背が低い」と言い換えられる。tall の反対 short の比較級 shorter を用いる。",
+      "point": "比較級は反対語で逆向きにできる"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "My bike is older than your bike.",
+      "instruction": "your bike を主語にして、newer を使い、my bike と your bike を使ってほぼ同じ内容の文に書き換えなさい。",
+      "answer_text": "Your bike is newer than my bike.",
+      "explanation": "「私の自転車はあなたのより古い」は「あなたの自転車は私のより新しい」と言える。old の反対 new の比較級 newer を用い、主語を your bike に入れ替える。my bike と your bike を使う指示なので比較対象は my bike とし、Your bike is newer than my bike. と書く(than mine は不可)。",
+      "point": "old ⇄ new で主語を入れ替える"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "This river is longer than that river.",
+      "instruction": "than を使わず、not as ... as を使ってほぼ同じ内容の文に書き換えなさい(主語は that river)。",
+      "answer_text": "That river is not as long as this river.",
+      "explanation": "「この川はあの川より長い」は「あの川はこの川ほど長くない」と同意になる。not as long as ~ で表し、間は原級 long を使う。",
+      "point": "比較級 = not as 原級 as(主語を入れ替え)"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "Ann is the most beautiful girl in the village.",
+      "instruction": "No other を主語にして、as ... as を使ってほぼ同じ内容の文に書き換えなさい。",
+      "answer_text": "No other girl in the village is as beautiful as Ann.",
+      "explanation": "最上級は No other ... as 原級 as ~ で言い換えられる。「村でアンほど美しい少女は他にいない」となり、間は原級 beautiful を使う。",
+      "point": "最上級 = No other ... as 原級 as"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "Soccer is more popular than any other sport in this class.",
+      "instruction": "最上級を使って、ほぼ同じ意味の文に書き換えなさい(主語は Soccer)。",
+      "answer_text": "Soccer is the most popular sport in this class.",
+      "explanation": "比較級 + than any other 単数名詞は最上級で言い換えられる。popular は長い語なので the most popular とする。",
+      "point": "比較級 than any other = 最上級"
+    }
+  ]
+}

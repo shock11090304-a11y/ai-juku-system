@@ -37,8 +37,8 @@ function updateSummary() {
     } else {
       const ext = !!document.getElementById('enableCardExtension')?.checked;
       submitBtn.textContent = ext
-        ? '🎁 21日間 完全無料体験を開始する (クレカ登録) →'
-        : '🎁 14日間 無料体験を開始する →';
+        ? '🎁 14日間 完全無料体験を開始する (クレカ登録) →'
+        : '🎁 7日間 無料体験を開始する →';
     }
   }
   // 体験期間説明セクションも plan に応じて切替
@@ -437,7 +437,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     const _ext = !!document.getElementById('enableCardExtension')?.checked;
     submitBtn.textContent = (errPlan === 'student_addon')
       ? '💳 ¥5,000/月で登録する →'
-      : (_ext ? '🎁 21日間 完全無料体験を開始する (クレカ登録) →' : '🎁 14日間 無料体験を開始する →');
+      : (_ext ? '🎁 14日間 完全無料体験を開始する (クレカ登録) →' : '🎁 7日間 無料体験を開始する →');
 
     // BACKEND_DOWN 時の「自動で成功画面へ進行」を削除。
     // 以前は決済せずに localStorage に学生を作って「成功」画面へ遷移していたが、

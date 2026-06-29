@@ -1,0 +1,266 @@
+{
+  "unit": "助動詞",
+  "unit_slug": "modals",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "When I was a child, I ( ) swim very fast.",
+      "choices": [
+        "must",
+        "could",
+        "should",
+        "may"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "( ) you open the window, please?",
+      "choices": [
+        "Must",
+        "Can",
+        "Should",
+        "Would like"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "You ( ) finish your homework before dinner.",
+      "choices": [
+        "can",
+        "must",
+        "may",
+        "would"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "( ) I use your pen for a moment?",
+      "choices": [
+        "Must",
+        "May",
+        "Will",
+        "Would"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "It is very cloudy, so it ( ) rain this afternoon.",
+      "choices": [
+        "may",
+        "must not",
+        "should not",
+        "cannot"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "You ( ) worry. Everything is fine.",
+      "choices": [
+        "must",
+        "have to",
+        "should",
+        "don't have to"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "You look pale. You ( ) see a doctor.",
+      "choices": [
+        "may not",
+        "used to",
+        "should",
+        "cannot"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "He has studied all day, so he ( ) be tired now.",
+      "choices": [
+        "may not",
+        "should not",
+        "must",
+        "used to"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "There ( ) be a hospital near here.",
+      "choices": [
+        "have to",
+        "had better",
+        "would like",
+        "used to"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "It's getting dark. We ( ) go home now.",
+      "choices": [
+        "used to",
+        "had better",
+        "may not",
+        "must to"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "She ( ) finish the report by tomorrow.",
+      "choices": [
+        "has to",
+        "have to",
+        "having to",
+        "to have"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "( ) you help me carry this box?",
+      "choices": [
+        "Will",
+        "May",
+        "Must",
+        "Should"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "When she was young, she ( ) play the piano every day.",
+      "choices": [
+        "must",
+        "should",
+        "may",
+        "would"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "You ( ) smoke here. It is against the rules.",
+      "choices": [
+        "must not",
+        "don't have to",
+        "may",
+        "used to"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "( ) I open the door for you?",
+      "choices": [
+        "Must",
+        "Used to",
+        "Had better",
+        "Shall"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "stem": "I ( ) speak English when I was three, but now I can.",
+      "choices": [
+        "must not",
+        "should not",
+        "could not",
+        "may not"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "prompt_ja": "あなたは医者に診てもらったほうがよい。",
+      "tokens": [
+        "had better",
+        "You",
+        "see",
+        "a doctor"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "prompt_ja": "私はもっと一生懸命勉強しなければならない。",
+      "tokens": [
+        "study",
+        "to",
+        "I",
+        "harder",
+        "have"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "窓を開けてもよろしいですか。",
+      "tokens": [
+        "open",
+        "I",
+        "the",
+        "May",
+        "window"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "あなたはそのことを心配する必要はない。",
+      "tokens": [
+        "have to",
+        "You",
+        "worry",
+        "about it",
+        "don't"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "彼女はその知らせを聞いてうれしいにちがいない。",
+      "tokens": [
+        "be",
+        "She",
+        "happy",
+        "must",
+        "about",
+        "the news"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "original": "You must wash your hands before lunch.",
+      "instruction": "must を have to を使ってほぼ同じ意味に書き換えなさい。"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "She has to get up early every morning.",
+      "instruction": "has to を must を使ってほぼ同じ意味に書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "Can you carry this bag for me?",
+      "instruction": "Can を Will にかえて、ほぼ同じ意味の依頼の文に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "I was able to swim well when I was a child.",
+      "instruction": "was able to を could を使ってほぼ同じ意味に書き換えなさい。"
+    }
+  ]
+}

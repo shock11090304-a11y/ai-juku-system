@@ -1,0 +1,268 @@
+{
+  "unit": "名詞・冠詞",
+  "unit_slug": "nouns-articles",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "stem": "I have an ( ) every morning for breakfast.",
+      "choices": [
+        "rice",
+        "water",
+        "milk",
+        "apple"
+      ]
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "stem": "There are three ( ) in the garden.",
+      "choices": [
+        "child",
+        "childs",
+        "children",
+        "childes"
+      ]
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "stem": "Would you like a ( ) of water?",
+      "choices": [
+        "piece",
+        "sheet",
+        "glass",
+        "slice"
+      ]
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "stem": "I go to school ( ) bus every day.",
+      "choices": [
+        "a",
+        "by",
+        "the",
+        "on a"
+      ]
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "stem": "The sun rises in the east. ( ) sun is very bright today.",
+      "choices": [
+        "A",
+        "An",
+        "The",
+        "(no article)"
+      ]
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "stem": "How ( ) water do you need?",
+      "choices": [
+        "much",
+        "many",
+        "few",
+        "a few"
+      ]
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "stem": "She can play ( ) piano very well.",
+      "choices": [
+        "a",
+        "the",
+        "an",
+        "(no article)"
+      ]
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "stem": "I have ( ) homework to do today.",
+      "choices": [
+        "a lot of",
+        "many",
+        "a few",
+        "few"
+      ]
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "stem": "We usually have ( ) at noon.",
+      "choices": [
+        "a lunch",
+        "the lunch",
+        "lunches",
+        "lunch"
+      ]
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "stem": "There are many ( ) on the farm.",
+      "choices": [
+        "sheeps",
+        "sheep",
+        "a sheep",
+        "sheepes"
+      ]
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "stem": "He is ( ) honest boy, so everyone trusts him.",
+      "choices": [
+        "a",
+        "the",
+        "an",
+        "(no article)"
+      ]
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "stem": "I bought two ( ) of bread at the bakery.",
+      "choices": [
+        "loaf",
+        "loafs",
+        "loafes",
+        "loaves"
+      ]
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "stem": "There is ( ) milk left in the bottle. We need to buy some.",
+      "choices": [
+        "a few",
+        "few",
+        "little",
+        "a little"
+      ]
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "stem": "Only ( ) students came to school because of the heavy snow.",
+      "choices": [
+        "much",
+        "a little",
+        "a few",
+        "little"
+      ]
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "stem": "I need a ( ) of paper to write a memo.",
+      "choices": [
+        "piece",
+        "glass",
+        "cup",
+        "loaf"
+      ]
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "stem": "My brother likes ( ) after school with his friends.",
+      "choices": [
+        "a soccer",
+        "soccer",
+        "the soccer",
+        "soccers"
+      ]
+    },
+    {
+      "no": 17,
+      "type": "mc",
+      "stem": "I saw a cat near my house. ( ) cat had a long tail.",
+      "choices": [
+        "A",
+        "The",
+        "An",
+        "(no article)"
+      ]
+    },
+    {
+      "no": 18,
+      "type": "mc",
+      "stem": "The dentist checked all of my ( ).",
+      "choices": [
+        "tooth",
+        "tooths",
+        "toothes",
+        "teeth"
+      ]
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "prompt_ja": "私は朝食にコーヒーを一杯飲む。",
+      "tokens": [
+        "cup of",
+        "I have",
+        "coffee",
+        "a",
+        "for breakfast"
+      ]
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "prompt_ja": "彼らは電車で来た。",
+      "tokens": [
+        "came",
+        "by",
+        "They",
+        "train"
+      ]
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "prompt_ja": "富士山は日本でいちばん高い山だ。",
+      "tokens": [
+        "the highest",
+        "is",
+        "Mt. Fuji",
+        "in Japan",
+        "mountain"
+      ]
+    },
+    {
+      "no": 22,
+      "type": "order",
+      "prompt_ja": "彼女はピアノを弾くのがとても上手だ。",
+      "tokens": [
+        "very well",
+        "the piano",
+        "She",
+        "plays"
+      ]
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "original": "There is a box on the desk.",
+      "instruction": "下線部 a box を three にかえ、複数形の文に書き換えなさい。"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "original": "This is a knife.",
+      "instruction": "These を主語にして、複数形の文に書き換えなさい。"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "original": "There is a woman in the room.",
+      "instruction": "下線部 a woman を two にかえ、複数形の文に書き換えなさい。"
+    }
+  ]
+}

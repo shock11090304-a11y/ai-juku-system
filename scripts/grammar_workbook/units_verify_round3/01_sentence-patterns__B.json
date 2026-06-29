@@ -1,0 +1,31 @@
+{
+  "slug": "01_sentence-patterns",
+  "persona": "B",
+  "verdicts": [
+    {"no":1,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC: looks + 形容詞 happy。主語 She(3単)で looks。"},
+    {"no":2,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SV(完全自動詞): slept all night long。他は意味不成立。"},
+    {"no":3,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO: bought me a new bike。"},
+    {"no":4,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC: call our dog Pochi。speak/talk/say は不可。"},
+    {"no":5,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC: tastes good。"},
+    {"no":6,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC: kept the door open。stayed/looked/happened は補語をとれない。"},
+    {"no":7,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC: became a doctor。"},
+    {"no":8,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO: pass me the salt。"},
+    {"no":9,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC: made us very surprised。looked/seemed/felt は他動詞でOをとれない。"},
+    {"no":10,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SV: shone brightly。"},
+    {"no":11,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC: turn red(〜になる)。"},
+    {"no":12,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SV: live in this town。"},
+    {"no":13,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO: gave him a birthday present。"},
+    {"no":14,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SV: ran in the park。want/need/like は目的語が必要。"},
+    {"no":15,"mc_index":0,"produced_sentence":"","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC: named the baby Mary。"},
+    {"no":16,"mc_index":-1,"produced_sentence":"My mother made me a sweater.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO。tokensに for/to が無いので第4文型のみ成立。"},
+    {"no":17,"mc_index":-1,"produced_sentence":"He looks very tired.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVC。"},
+    {"no":18,"mc_index":-1,"produced_sentence":"We call him Tom.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC。"},
+    {"no":19,"mc_index":-1,"produced_sentence":"The teacher asked us a difficult question.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO。tokensに前置詞が無いので第4文型のみ。"},
+    {"no":20,"mc_index":-1,"produced_sentence":"Warm clothes keep you healthy.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOC。"},
+    {"no":21,"mc_index":-1,"produced_sentence":"She told me the story.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"SVOO。tokensに to が無いので第4文型のみ。"},
+    {"no":22,"mc_index":-1,"produced_sentence":"He gave a book to me.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"give は to をとる。"},
+    {"no":23,"mc_index":-1,"produced_sentence":"She bought a watch for her son.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"buy は for をとる。"},
+    {"no":24,"mc_index":-1,"produced_sentence":"My uncle sent me a letter.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"send の第4文型。"},
+    {"no":25,"mc_index":-1,"produced_sentence":"She made us a cake.","multiple_valid":false,"multiple_valid_note":"","grammatical_issue":false,"off_unit":false,"confidence":"high","note":"make の第4文型。"}
+  ]
+}

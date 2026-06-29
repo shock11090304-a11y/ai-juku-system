@@ -1,0 +1,382 @@
+{
+  "unit": "動名詞",
+  "unit_slug": "gerund",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I enjoy ( ) music in my free time.",
+      "choices": [
+        "to listen to",
+        "listen to",
+        "listening to",
+        "listened to"
+      ],
+      "answer_index": 2,
+      "answer_text": "listening to",
+      "explanation": "enjoy は目的語に動名詞(-ing)をとる動詞で、to 不定詞はとれない。よって listening to が正しい。listen to ~ で「~を聞く」。",
+      "point": "enjoy + 動名詞(-ing)"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Have you finished ( ) your homework?",
+      "choices": [
+        "to do",
+        "do",
+        "doing",
+        "done"
+      ],
+      "answer_index": 2,
+      "answer_text": "doing",
+      "explanation": "finish は目的語に動名詞をとる動詞なので doing が正しい。to do や原形 do は不可。",
+      "point": "finish + 動名詞(-ing)"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "( ) early is good for your health.",
+      "choices": [
+        "Get up",
+        "To getting up",
+        "Got up",
+        "Getting up"
+      ],
+      "answer_index": 3,
+      "answer_text": "Getting up",
+      "explanation": "文の主語になれるのは動名詞(-ing)。Getting up early が主語のかたまりで「早起きすること」を表す。原形 Get up や Got up は主語になれない。",
+      "point": "動名詞は主語になれる"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Thank you for ( ) me.",
+      "choices": [
+        "to help",
+        "helping",
+        "help",
+        "helped"
+      ],
+      "answer_index": 1,
+      "answer_text": "helping",
+      "explanation": "前置詞 for の後ろには動詞は動名詞(-ing)の形で置く。to help のような不定詞は前置詞の目的語になれない。",
+      "point": "前置詞 + 動名詞(-ing)"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Would you mind ( ) the window?",
+      "choices": [
+        "to open",
+        "opening",
+        "open",
+        "opened"
+      ],
+      "answer_index": 1,
+      "answer_text": "opening",
+      "explanation": "mind は目的語に動名詞をとる動詞で、Would you mind -ing? は「~してくださいませんか」という丁寧な依頼。to open は不可。",
+      "point": "mind + 動名詞(-ing)"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "He is good at ( ) soccer.",
+      "choices": [
+        "to play",
+        "play",
+        "played",
+        "playing"
+      ],
+      "answer_index": 3,
+      "answer_text": "playing",
+      "explanation": "be good at ~ の at は前置詞なので、後ろの動詞は動名詞(-ing)にする。to play は前置詞の後ろに置けない。",
+      "point": "be good at + 動名詞(-ing)"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "standard",
+      "stem": "My hobby is ( ) pictures of flowers.",
+      "choices": [
+        "take",
+        "taking",
+        "taken",
+        "to taking"
+      ],
+      "answer_index": 1,
+      "answer_text": "taking",
+      "explanation": "be 動詞の後ろで補語になる動名詞。My hobby is taking ~ で「私の趣味は~を撮ることだ」。take pictures で「写真を撮る」。",
+      "point": "動名詞は補語になれる"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "standard",
+      "stem": "We had to give up ( ) the mountain because of the rain.",
+      "choices": [
+        "to climb",
+        "climbing",
+        "climb",
+        "climbed"
+      ],
+      "answer_index": 1,
+      "answer_text": "climbing",
+      "explanation": "give up は目的語に動名詞をとり「~するのをあきらめる・やめる」。to climb は不可。",
+      "point": "give up + 動名詞(-ing)"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "standard",
+      "stem": "You should avoid ( ) too much sugar.",
+      "choices": [
+        "eating",
+        "to eat",
+        "eat",
+        "eaten"
+      ],
+      "answer_index": 0,
+      "answer_text": "eating",
+      "explanation": "avoid は目的語に動名詞をとる動詞で「~するのを避ける」。to eat はとれない。",
+      "point": "avoid + 動名詞(-ing)"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "standard",
+      "stem": "On his way home, he stopped ( ) a cup of coffee.",
+      "choices": [
+        "drinking",
+        "drink",
+        "drank",
+        "to drink"
+      ],
+      "answer_index": 3,
+      "answer_text": "to drink",
+      "explanation": "stop to do は「~するために立ち止まる」で目的を表す不定詞。ここは「コーヒーを飲むために立ち止まった」の意味なので to drink。stop drinking なら「飲むのをやめる」で意味が変わる。",
+      "point": "stop to do は「~するために立ち止まる」"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "The doctor told him to stop ( ) for his health.",
+      "choices": [
+        "to smoke",
+        "smoking",
+        "smoke",
+        "smoked"
+      ],
+      "answer_index": 1,
+      "answer_text": "smoking",
+      "explanation": "stop -ing は「~するのをやめる」。「健康のためにたばこをやめる」の意味なので smoking。stop to smoke だと「たばこを吸うために立ち止まる」になり不自然。",
+      "point": "stop -ing は「~するのをやめる」"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Remember ( ) the door when you leave.",
+      "choices": [
+        "locking",
+        "lock",
+        "to lock",
+        "locked"
+      ],
+      "answer_index": 2,
+      "answer_text": "to lock",
+      "explanation": "remember to do は「(これから)~するのを覚えておく・忘れずに~する」。出かけるときの未来の動作なので to lock。remember locking なら「鍵をかけたことを覚えている」と過去のことになる。",
+      "point": "remember to do はこれからすること"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I remember ( ) him at the party last year.",
+      "choices": [
+        "to meet",
+        "meeting",
+        "meet",
+        "met"
+      ],
+      "answer_index": 1,
+      "answer_text": "meeting",
+      "explanation": "remember -ing は「(過去に)~したことを覚えている」。last year という過去のことなので meeting。remember to meet なら「これから会うのを覚えておく」で意味が変わる。",
+      "point": "remember -ing は過去にしたこと"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I am looking forward to ( ) you again soon.",
+      "choices": [
+        "seeing",
+        "see",
+        "saw",
+        "seen"
+      ],
+      "answer_index": 0,
+      "answer_text": "seeing",
+      "explanation": "look forward to ~ の to は前置詞なので、後ろの動詞は動名詞(-ing)にする。see という原形にはしない。「またすぐ会えるのを楽しみにしている」。",
+      "point": "look forward to + 動名詞(-ing)"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "She is used to ( ) in front of many people.",
+      "choices": [
+        "speak",
+        "speaking",
+        "spoke",
+        "spoken"
+      ],
+      "answer_index": 1,
+      "answer_text": "speaking",
+      "explanation": "be used to ~ は「~に慣れている」で、この to は前置詞なので後ろは動名詞(-ing)。speak という原形は不可。",
+      "point": "be used to + 動名詞(-ing)"
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "level": "basic",
+      "stem": "It is no use ( ) about the past.",
+      "choices": [
+        "worrying",
+        "to worry",
+        "worry",
+        "worried"
+      ],
+      "answer_index": 0,
+      "answer_text": "worrying",
+      "explanation": "It is no use -ing は「~しても無駄だ」という慣用表現で、必ず動名詞(-ing)を使う。to worry は不可。",
+      "point": "It is no use + 動名詞(-ing)"
+    },
+    {
+      "no": 17,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼女はテレビを見るのが好きだ。",
+      "tokens": [
+        "likes",
+        "TV",
+        "watching",
+        "She"
+      ],
+      "answer_text": "She likes watching TV.",
+      "explanation": "like の後ろに動名詞 watching を置き「~するのが好きだ」を表す。watch TV で「テレビを見る」。",
+      "point": "like + 動名詞(-ing)"
+    },
+    {
+      "no": 18,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "本を読むことは大切だ。",
+      "tokens": [
+        "important",
+        "is",
+        "books",
+        "Reading"
+      ],
+      "answer_text": "Reading books is important.",
+      "explanation": "動名詞 Reading books が主語のかたまりで「本を読むこと」。主語は単数扱いなので動詞は is。",
+      "point": "動名詞の主語は単数扱い"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼女はテニスをするのが得意だ。",
+      "tokens": [
+        "playing tennis",
+        "She",
+        "is",
+        "good at"
+      ],
+      "answer_text": "She is good at playing tennis.",
+      "explanation": "前置詞 at の後ろは動名詞。be good at -ing で「~するのが得意」。語順は She is good at playing tennis.。",
+      "point": "前置詞の後ろは動名詞(be good at -ing)"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私は早起きするのが苦手だ。",
+      "tokens": [
+        "bad",
+        "getting up",
+        "at",
+        "I",
+        "early",
+        "am"
+      ],
+      "answer_text": "I am bad at getting up early.",
+      "explanation": "be bad at ~ の at は前置詞なので後ろは動名詞 getting up。「~するのが苦手だ」を表す。get up early で「早起きする」。",
+      "point": "be bad at + 動名詞(-ing)"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "私はあなたとまた働くのを楽しみにしている。",
+      "tokens": [
+        "forward",
+        "with you",
+        "working",
+        "looking",
+        "I",
+        "am",
+        "to"
+      ],
+      "answer_text": "I am looking forward to working with you.",
+      "explanation": "look forward to ~ の to は前置詞なので後ろは動名詞 working。「~するのを楽しみにしている」を表す。",
+      "point": "look forward to + 動名詞(-ing)"
+    },
+    {
+      "no": 22,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "I like to cook for my family.",
+      "instruction": "to 不定詞を動名詞(-ing)に変えて、同じ意味の文に書き換えなさい。",
+      "answer_text": "I like cooking for my family.",
+      "explanation": "like は to 不定詞も動名詞も目的語にとれる。to cook を動名詞 cooking に変えてもほぼ同じ意味になる。",
+      "point": "like to do = like -ing"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "To learn a foreign language is not easy.",
+      "instruction": "下線部の主語の不定詞 To learn を動名詞(-ing)に変えて書き換えなさい。",
+      "answer_text": "Learning a foreign language is not easy.",
+      "explanation": "主語の To learn(~を学ぶこと)は動名詞 Learning に書き換えられる。文頭なので大文字で始める。意味は変わらない。",
+      "point": "主語の不定詞は動名詞に書き換え可"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "She is proud that she is a nurse.",
+      "instruction": "of + 動名詞(-ing)を使って、同じ意味の文に書き換えなさい。",
+      "answer_text": "She is proud of being a nurse.",
+      "explanation": "be proud that S V は be proud of -ing で書き換えられる。前置詞 of の後ろは動名詞 being。主語が同じなので「看護師であることを誇りに思う」を表す。",
+      "point": "be proud of + 動名詞(-ing)"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "We could not help laughing at his joke.",
+      "instruction": "ほぼ同じ意味になるように、could not but の形を使って書き換えなさい。",
+      "answer_text": "We could not but laugh at his joke.",
+      "explanation": "cannot help -ing(~せずにはいられない)は cannot but + 動詞の原形で言い換えられる。help の後ろは動名詞 laughing、but の後ろは原形 laugh になる点に注意。",
+      "point": "cannot help -ing = cannot but + 原形"
+    }
+  ]
+}

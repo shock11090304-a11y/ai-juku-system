@@ -34,7 +34,7 @@
       <div class="checkout-header">
         <div class="eyebrow">🎖 FOUNDER TRIAL</div>
         <h1>創設メンバー トライアル申込み</h1>
-        <p class="checkout-sub">創業記念・先着50名限定 / <strong>14日間 完全無料</strong>で全機能体験（クレカ登録不要）</p>
+        <p class="checkout-sub">創業記念・先着50名限定 / <strong>7日間 完全無料</strong>で全機能体験（クレカ登録不要）</p>
         <!-- 🔥 ソーシャルプルーフ -->
         <div data-social-proof style="margin-top:1rem;"></div>
       </div>
@@ -165,7 +165,7 @@
             <span id="summaryPrice">¥39,800</span>
           </div>
           <div class="summary-row emphasis">
-            <span>🎖 創設メンバー 14日間 無料体験</span>
+            <span>🎖 創設メンバー 7日間 無料体験</span>
             <span style="color:var(--success);font-weight:800;">¥0</span>
           </div>
           <div class="summary-row" id="summaryEnrollmentRow">
@@ -178,13 +178,13 @@
             <span class="total">¥0</span>
           </div>
           <p class="summary-note" id="trialNote">
-            <strong>📅 料金スケジュール（クレジットカード登録なし・14日間体験の場合）</strong><br>
+            <strong>📅 料金スケジュール（クレジットカード登録なし・7日間体験の場合）</strong><br>
             ・本日: ¥0（クレジットカード登録不要・自動課金なし）<br>
             ・体験終了の1〜2日前: 「ご継続のご意思」を確認するメールが届きます<br>
             <span id="enrollmentScheduleNote">・<strong>ご継続をお申込みいただいた場合のみ</strong>、初回月額に入塾金 ¥10,000 を合算で請求</span><br>
             ・<strong>2回目以降の課金は契約日を起算日として毎月同日</strong>（例: 7月15日にご契約→毎月15日に自動課金）<br>
             ・何もしなければ体験は自動終了し、料金は一切発生しません<br>
-            ※下記「クレジットカード登録で +7 日延長」をご選択の場合は、21日間の体験終了後に創設メンバープラン ¥14,500/月（税込）の自動課金が始まります（料金・解約条件は下記の説明をご確認ください）<br>
+            ※下記「クレジットカード登録で +7 日延長」をご選択の場合は、14日間の体験終了後に創設メンバープラン ¥14,500/月（税込）の自動課金が始まります（料金・解約条件は下記の説明をご確認ください）<br>
             ※「塾生アドオン」プランでは入塾金は発生しません
           </p>
           <!-- 🎓 通塾生プラン (student_addon) 専用 note: 即課金・無料体験なし・履歴継承 -->
@@ -214,22 +214,22 @@
             <input type="checkbox" id="enableCardExtension" style="margin-top:0.3rem; min-width:1.1rem; min-height:1.1rem; accent-color:#22c55e;">
             <div style="flex:1; min-width:0;">
               <div style="font-weight:800; font-size:0.95rem; color:#86efac; margin-bottom:0.25rem;">
-                🎁 クレジットカード登録で +7 日延長 (合計 21 日体験)
+                🎁 クレジットカード登録で +7 日延長 (合計 14 日体験)
               </div>
               <div style="font-size:0.82rem; color:#cbd5e1; line-height:1.5;">
                 ・カード情報は <strong>Stripe</strong> に直接登録され弊社は保存しません<br>
-                ・体験期間中 (21 日間) は<strong>一切課金されません</strong><br>
-                ・<strong>21 日間の体験終了後、創設メンバープラン ¥14,500/月（税込）が自動課金</strong>されます<br>
+                ・体験期間中 (14 日間) は<strong>一切課金されません</strong><br>
+                ・<strong>14 日間の体験終了後、創設メンバープラン ¥14,500/月（税込）が自動課金</strong>されます<br>
                 ・体験終了の 1〜2 日前に、課金開始のご案内メールが届きます<br>
                 ・解約は<strong>体験期間中いつでも</strong>マイページの「解約する」から可能（体験中の解約で料金は一切かかりません。メールでのご連絡でも解約できます）<br>
-                ・解約手続きを忘れない安心が欲しい方向け (チェックなしでも 14 日完全無料体験 OK)
+                ・解約手続きを忘れない安心が欲しい方向け (チェックなしでも 7 日完全無料体験 OK)
               </div>
             </div>
           </label>
         </div>
 
         <button type="submit" id="submitBtn" class="btn-primary btn-lg btn-block">
-          🎁 14日間 無料体験を開始する →
+          🎁 7日間 無料体験を開始する →
         </button>
 
         <!-- 🚀 2026-05-29 塾長指示: 体験をスキップして即時本契約で始める 第2 CTA。
@@ -278,22 +278,22 @@
         const plan = (planEl?.value || window.__urlPlanOverride || 'founder_special');
         if (plan === 'student_addon') return;
         btn.textContent = cb.checked
-          ? '🎁 21日間 完全無料体験を開始する (クレカ登録) →'
-          : '🎁 14日間 無料体験を開始する →';
+          ? '🎁 14日間 完全無料体験を開始する (クレカ登録) →'
+          : '🎁 7日間 無料体験を開始する →';
       }
       cb.addEventListener('change', function(e) {
         // OFF→ON 時の二段階確認 (自動課金理解の明示同意)
         if (cb.checked) {
           const ok = confirm(
             '⚠️ クレジットカード登録の確認\n\n' +
-            '21 日間の体験終了後、創設メンバープラン ¥14,500/月（税込）が自動課金されます。\n\n' +
-            '✅ 体験期間中 (21 日間) は一切課金されません\n' +
+            '14 日間の体験終了後、創設メンバープラン ¥14,500/月（税込）が自動課金されます。\n\n' +
+            '✅ 体験期間中 (14 日間) は一切課金されません\n' +
             '✅ 体験終了の 1〜2 日前に課金開始のご案内メールあり\n' +
             '✅ 体験期間中いつでもマイページの「解約する」から解約可\n' +
             '   (体験中の解約で料金は一切かかりません)\n' +
             '✅ 解約手続きを忘れない安心が欲しい方向け\n\n' +
             '上記を理解の上、クレカ登録で +7 日延長を希望しますか?\n' +
-            '(チェックを外せば 14 日完全無料体験のままで OK)'
+            '(チェックを外せば 7 日完全無料体験のままで OK)'
           );
           if (!ok) {
             cb.checked = false;

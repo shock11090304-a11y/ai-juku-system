@@ -1,0 +1,386 @@
+{
+  "unit": "名詞・冠詞",
+  "unit_slug": "nouns-articles",
+  "questions": [
+    {
+      "no": 1,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I have an ( ) every morning for breakfast.",
+      "choices": [
+        "apple",
+        "rice",
+        "water",
+        "milk"
+      ],
+      "answer_index": 0,
+      "answer_text": "apple",
+      "explanation": "an は母音の音で始まる数えられる名詞の前に付く。apple は数えられる名詞で、母音の音で始まるので an apple となる。rice や water は数えられない名詞で an を付けられない。",
+      "point": "an + 母音の音で始まる可算名詞"
+    },
+    {
+      "no": 2,
+      "type": "mc",
+      "level": "basic",
+      "stem": "There are three ( ) in the garden.",
+      "choices": [
+        "child",
+        "childs",
+        "children",
+        "childes"
+      ],
+      "answer_index": 2,
+      "answer_text": "children",
+      "explanation": "child の複数形は不規則変化で children となる。childs という形はない。three があるので複数形を選ぶ。",
+      "point": "child - children(不規則複数)"
+    },
+    {
+      "no": 3,
+      "type": "mc",
+      "level": "basic",
+      "stem": "Would you like a ( ) of water?",
+      "choices": [
+        "piece",
+        "glass",
+        "sheet",
+        "slice"
+      ],
+      "answer_index": 1,
+      "answer_text": "glass",
+      "explanation": "数えられない名詞 water は a glass of ~(コップ1杯の)で数える。a piece of は紙やケーキなど、a slice of はパンなどに使う。",
+      "point": "a glass of water(水の数え方)"
+    },
+    {
+      "no": 4,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I go to school ( ) bus every day.",
+      "choices": [
+        "a",
+        "the",
+        "by",
+        "on a"
+      ],
+      "answer_index": 2,
+      "answer_text": "by",
+      "explanation": "交通手段を表すときは by bus, by train のように by + 無冠詞の名詞を使う。a や the は付けない。",
+      "point": "交通手段は by + 無冠詞"
+    },
+    {
+      "no": 5,
+      "type": "mc",
+      "level": "basic",
+      "stem": "The sun rises in the east. ( ) sun is very bright today.",
+      "choices": [
+        "A",
+        "An",
+        "The",
+        "(no article)"
+      ],
+      "answer_index": 2,
+      "answer_text": "The",
+      "explanation": "sun(太陽)は世界に一つしかないものなので the を付ける。唯一のものには the を使う。",
+      "point": "唯一のものには the(the sun)"
+    },
+    {
+      "no": 6,
+      "type": "mc",
+      "level": "basic",
+      "stem": "How ( ) water do you need?",
+      "choices": [
+        "many",
+        "much",
+        "few",
+        "a few"
+      ],
+      "answer_index": 1,
+      "answer_text": "much",
+      "explanation": "water は数えられない名詞なので量をたずねるときは how much を使う。how many は数えられる名詞に使う。",
+      "point": "数えられない名詞は how much"
+    },
+    {
+      "no": 7,
+      "type": "mc",
+      "level": "basic",
+      "stem": "She can play ( ) piano very well.",
+      "choices": [
+        "a",
+        "an",
+        "the",
+        "(no article)"
+      ],
+      "answer_index": 2,
+      "answer_text": "the",
+      "explanation": "楽器を演奏すると言うときは play the piano のように the を付ける。スポーツの play soccer とは異なる。",
+      "point": "楽器は play the + 楽器名"
+    },
+    {
+      "no": 8,
+      "type": "mc",
+      "level": "basic",
+      "stem": "I have ( ) homework to do today.",
+      "choices": [
+        "many",
+        "a lot of",
+        "a few",
+        "few"
+      ],
+      "answer_index": 1,
+      "answer_text": "a lot of",
+      "explanation": "homework は数えられない名詞。many や a few は数えられる名詞に使う。a lot of は数えられる名詞にも数えられない名詞にも使えるのでここでは a lot of が正しい。",
+      "point": "a lot of は可算・不可算どちらにも使える"
+    },
+    {
+      "no": 9,
+      "type": "mc",
+      "level": "basic",
+      "stem": "We usually have ( ) at noon.",
+      "choices": [
+        "a lunch",
+        "the lunch",
+        "lunch",
+        "lunches"
+      ],
+      "answer_index": 2,
+      "answer_text": "lunch",
+      "explanation": "breakfast, lunch, dinner などの食事名は冠詞を付けずに無冠詞で使う。have lunch で「昼食をとる」となる。",
+      "point": "食事名は無冠詞(have lunch)"
+    },
+    {
+      "no": 10,
+      "type": "mc",
+      "level": "basic",
+      "stem": "There are many ( ) on the farm.",
+      "choices": [
+        "sheep",
+        "sheeps",
+        "a sheep",
+        "sheepes"
+      ],
+      "answer_index": 0,
+      "answer_text": "sheep",
+      "explanation": "sheep は単数形と複数形が同じ形の名詞。many があっても複数形は sheep のままで、sheeps とはしない。",
+      "point": "sheep は単複同形"
+    },
+    {
+      "no": 11,
+      "type": "mc",
+      "level": "standard",
+      "stem": "He is ( ) honest boy, so everyone trusts him.",
+      "choices": [
+        "a",
+        "an",
+        "the",
+        "(no article)"
+      ],
+      "answer_index": 1,
+      "answer_text": "an",
+      "explanation": "honest は h を発音せず母音の音 o で始まるので an を付ける。つづりではなく音で a か an かを決める。",
+      "point": "音が母音なら an(an honest)"
+    },
+    {
+      "no": 12,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I bought two ( ) of bread at the bakery.",
+      "choices": [
+        "loaf",
+        "loafs",
+        "loaves",
+        "loafes"
+      ],
+      "answer_index": 2,
+      "answer_text": "loaves",
+      "explanation": "loaf の複数形は f を v にかえて loaves となる。two があるので複数形を選ぶ。a loaf of bread で「ひとかたまりのパン」を表す。",
+      "point": "loaf - loaves(f を v にかえる)"
+    },
+    {
+      "no": 13,
+      "type": "mc",
+      "level": "standard",
+      "stem": "There is ( ) milk left in the bottle. We need to buy some.",
+      "choices": [
+        "a few",
+        "few",
+        "a little",
+        "little"
+      ],
+      "answer_index": 3,
+      "answer_text": "little",
+      "explanation": "milk は数えられない名詞なので little か a little を使う。後ろに「買う必要がある」とあるので「ほとんどない」を表す little が正しい。a little だと「少しある」となり意味が合わない。",
+      "point": "little は不可算で「ほとんどない」"
+    },
+    {
+      "no": 14,
+      "type": "mc",
+      "level": "standard",
+      "stem": "Only ( ) students came to school because of the heavy snow.",
+      "choices": [
+        "much",
+        "a little",
+        "little",
+        "a few"
+      ],
+      "answer_index": 3,
+      "answer_text": "a few",
+      "explanation": "students は数えられる名詞なので a few か few を使う。「数人が来た」という事実を表すので「少しいる」の a few が正しい。much や a little は数えられない名詞に使う。",
+      "point": "a few は可算で「少しある」"
+    },
+    {
+      "no": 15,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I need a ( ) of paper to write a memo.",
+      "choices": [
+        "glass",
+        "cup",
+        "piece",
+        "loaf"
+      ],
+      "answer_index": 2,
+      "answer_text": "piece",
+      "explanation": "数えられない名詞 paper(紙)は a piece of ~(1枚の)で数える。a glass of や a cup of は飲み物に使う。",
+      "point": "a piece of paper(紙の数え方)"
+    },
+    {
+      "no": 16,
+      "type": "mc",
+      "level": "standard",
+      "stem": "My brother likes ( ) after school with his friends.",
+      "choices": [
+        "a soccer",
+        "the soccer",
+        "soccer",
+        "soccers"
+      ],
+      "answer_index": 2,
+      "answer_text": "soccer",
+      "explanation": "スポーツ名は冠詞を付けずに play soccer のように無冠詞で使う。楽器の the piano とは異なる。",
+      "point": "スポーツ名は無冠詞(play soccer)"
+    },
+    {
+      "no": 17,
+      "type": "mc",
+      "level": "standard",
+      "stem": "I saw a cat near my house. ( ) cat had a long tail.",
+      "choices": [
+        "A",
+        "An",
+        "The",
+        "(no article)"
+      ],
+      "answer_index": 2,
+      "answer_text": "The",
+      "explanation": "一度話に出てすでに分かっているものには the を付ける。前文の a cat を指しているので、二度目は The cat となる。",
+      "point": "前に出た特定のものには the"
+    },
+    {
+      "no": 18,
+      "type": "mc",
+      "level": "standard",
+      "stem": "There are a lot of ( ) brushing their teeth in the bathroom.",
+      "choices": [
+        "tooth",
+        "tooths",
+        "teeth",
+        "toothes"
+      ],
+      "answer_index": 2,
+      "answer_text": "teeth",
+      "explanation": "tooth(歯)の複数形は不規則変化で teeth となる。a lot of があるので複数形を選ぶ。tooths という形はない。",
+      "point": "tooth - teeth(不規則複数)"
+    },
+    {
+      "no": 19,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "私は朝食にコーヒーを一杯飲む。",
+      "tokens": [
+        "cup of",
+        "I have",
+        "coffee",
+        "a",
+        "for breakfast"
+      ],
+      "answer_text": "I have a cup of coffee for breakfast.",
+      "explanation": "数えられない名詞 coffee は a cup of ~(1杯の)で数える。食事名 breakfast は for breakfast と無冠詞で使う。",
+      "point": "a cup of coffee(コーヒーの数え方)"
+    },
+    {
+      "no": 20,
+      "type": "order",
+      "level": "basic",
+      "prompt_ja": "彼らは電車で来た。",
+      "tokens": [
+        "came",
+        "by",
+        "They",
+        "train"
+      ],
+      "answer_text": "They came by train.",
+      "explanation": "交通手段は by train のように by + 無冠詞の名詞で表す。train に a や the を付けない。「主語 + 動詞 + by 交通手段」の語順になる。",
+      "point": "交通手段は by + 無冠詞"
+    },
+    {
+      "no": 21,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "富士山は日本でいちばん高い山だ。",
+      "tokens": [
+        "the highest",
+        "is",
+        "Mt. Fuji",
+        "in Japan",
+        "mountain"
+      ],
+      "answer_text": "Mt. Fuji is the highest mountain in Japan.",
+      "explanation": "最上級には the を付ける。the highest mountain で「いちばん高い山」となり、唯一に決まるものなので the を用いる。",
+      "point": "最上級には the"
+    },
+    {
+      "no": 22,
+      "type": "order",
+      "level": "standard",
+      "prompt_ja": "彼女はピアノを弾くのがとても上手だ。",
+      "tokens": [
+        "very well",
+        "the piano",
+        "she",
+        "plays"
+      ],
+      "answer_text": "She plays the piano very well.",
+      "explanation": "楽器を演奏すると言うときは play the piano のように the を付ける。「主語 + plays the 楽器名 + 副詞」の語順になる。",
+      "point": "楽器は play the + 楽器名"
+    },
+    {
+      "no": 23,
+      "type": "rewrite",
+      "level": "basic",
+      "original": "There is a box on the desk.",
+      "instruction": "下線部 a box を three にかえ、複数形の文に書き換えなさい。",
+      "answer_text": "There are three boxes on the desk.",
+      "explanation": "box の複数形は es を付けて boxes となる。主語が複数になるので be動詞も is から are にかえる。",
+      "point": "box - boxes / is - are"
+    },
+    {
+      "no": 24,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "This is a knife.",
+      "instruction": "These を主語にして、複数形の文に書き換えなさい。",
+      "answer_text": "These are knives.",
+      "explanation": "knife の複数形は f を v にかえて knives となる。This は These に、be動詞 is は are にかえ、冠詞 a は不要になる。",
+      "point": "knife - knives / a は複数で消える"
+    },
+    {
+      "no": 25,
+      "type": "rewrite",
+      "level": "standard",
+      "original": "There is a woman in the room.",
+      "instruction": "下線部 a woman を two にかえ、複数形の文に書き換えなさい。",
+      "answer_text": "There are two women in the room.",
+      "explanation": "woman の複数形は不規則変化で women となる。主語が複数になるので be動詞も is から are にかえる。",
+      "point": "woman - women(不規則複数)"
+    }
+  ]
+}

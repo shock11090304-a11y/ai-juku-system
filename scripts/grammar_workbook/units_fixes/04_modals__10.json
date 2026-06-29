@@ -1,0 +1,23 @@
+{
+  "slug": "04_modals",
+  "no": 10,
+  "type": "mc",
+  "action": "rewrite_question",
+  "corrected_question": {
+    "no": 10,
+    "type": "mc",
+    "level": "standard",
+    "stem": "It's getting dark. We ( ) go home now.",
+    "choices": [
+      "had better",
+      "used to",
+      "may not",
+      "must to"
+    ],
+    "answer_index": 0,
+    "answer_text": "had better",
+    "explanation": "had better は「~したほうがよい(さもないと困る)」という強めの忠告で、後ろは動詞の原形が続く。暗くなってきた状況に合うのは had better だけ。used to は「以前は~だった」で now と矛盾し、may not は「~しないかもしれない/~してはいけない」で文脈に合わず、must to は助動詞 must の直後に to を置けないため非文。",
+    "point": "had better は強い忠告(直後は動詞の原形)"
+  },
+  "reason": "誤答 would rather not は would rather not + 原形で文法的に成立し、文脈上も「家に帰りたくない」と読めて正解 had better と競合し一意性を欠く。これを助動詞 must の直後に to を置く非文 must to に差し替え、文法的に成立しない選択肢として一意化した。残る used to は now との矛盾、may not は文脈不一致でいずれも不成立。answer は had better のまま不変で、explanation と point も最終選択肢に整合させた。基礎定着レベルと単元「助動詞」を維持。"
+}
