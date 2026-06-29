@@ -41925,7 +41925,8 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
     if admin_to and RESEND_API_KEY:
         try:
             _is_juku = (referrer == "塾生アプリ")
-            _kind = "🏫 トリリオン塾生アプリ 新規登録申請" if _is_juku else "国公立難関大学コースへの新規申込"
+            _is_enroll = (referrer == "入塾申込フォーム")
+            _kind = "🏫 トリリオン塾生アプリ 新規登録申請" if _is_juku else ("入塾申込フォームからの新規入塾申込" if _is_enroll else "国公立難関大学コースへの新規申込")
             body_text = (
                 f"塾長へ\n\n"
                 f"{_kind}が届きました。\n\n"
@@ -41940,7 +41941,7 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
                 + f"メモ: {note or 'なし'}\n\n"
                 f"CEO ダッシュ → 📋 申込待ち から承認できます。"
             )
-            _subj = f"📥 塾生アプリ 新規登録: {name}" if _is_juku else f"📥 難関コース 新規申込: {name}"
+            _subj = f"📥 塾生アプリ 新規登録: {name}" if _is_juku else (f"📥 入塾申込フォーム 新規申込: {name}" if _is_enroll else f"📥 難関コース 新規申込: {name}")
             _send_message_email(admin_to, _subj, body_text, student_name="塾長")
         except Exception as ee:
             log.warning(f"[CourseApp] admin email failed: {ee}")
