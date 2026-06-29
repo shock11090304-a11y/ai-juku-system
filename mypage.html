@@ -2489,6 +2489,32 @@
           ? `<br><span style="background:rgba(251,191,36,0.18);color:#fbbf24;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.78rem;font-weight:700;">🎁 入塾金 ¥10,000 免除キャンペーン適用済み</span>`
           : '';
         statusLabel.innerHTML = `ステータス: <strong style="color:#c7d2fe;">${statusText}</strong><br>プラン: <strong>${s.plan || '—'}</strong> / メール: ${s.email}${waivedBadge}`;
+        // 🎯 [体験中フォロー 2026-06-30] 新規コホート(show_trial_followup)の体験中のみ「残りX日」+ 残3日で緊急継続CTA。
+        //   既存の体験中の生徒には出さない(server 側 show_trial_followup=created_at>=基準 で制御・塾長指示の完全新規のみ)。
+        let trialUrg = document.getElementById('trialUrgentBanner');
+        if (!isHonClass && s.show_trial_followup && s.status === 'trial' && typeof s.trial_days_left === 'number') {
+          const dleft = s.trial_days_left;
+          const chipBg = dleft <= 3 ? 'rgba(248,113,113,0.18)' : 'rgba(167,139,250,0.15)';
+          const chipFg = dleft <= 3 ? '#fca5a5' : '#c7d2fe';
+          statusLabel.innerHTML += `<br><span style="background:${chipBg};color:${chipFg};padding:0.25rem 0.6rem;border-radius:6px;font-size:0.85rem;font-weight:800;">⏳ 無料体験 残り ${dleft} 日</span>`;
+          if (!trialUrg) {
+            trialUrg = document.createElement('div');
+            trialUrg.id = 'trialUrgentBanner';
+            statusLabel.parentNode.insertBefore(trialUrg, statusLabel.nextSibling);
+          }
+          if (dleft <= 3) {
+            trialUrg.style.display = '';
+            trialUrg.innerHTML = `<div style="margin-top:0.85rem;padding:1rem 1.1rem;background:linear-gradient(135deg,rgba(248,113,113,0.18),rgba(236,72,153,0.10));border:1px solid rgba(248,113,113,0.45);border-radius:12px;">
+              <div style="font-weight:800;color:#fca5a5;font-size:1rem;">⏰ 無料体験の終了まで あと ${dleft} 日</div>
+              <div style="color:#fcd34d;font-size:0.83rem;margin:0.35rem 0 0.75rem;line-height:1.6;">このまま続けるには、体験中に継続手続き（カード登録）が必要です。手続きしないと終了時にご利用が止まります（学習データは保存されたままです）。</div>
+              <a href="upgrade.html" style="display:inline-block;background:linear-gradient(135deg,#fbbf24,#ec4899);color:#fff;font-weight:800;padding:0.65rem 1.5rem;border-radius:10px;text-decoration:none;font-size:0.95rem;">今すぐ継続する（カード登録）→</a>
+            </div>`;
+          } else {
+            trialUrg.style.display = 'none';
+          }
+        } else if (trialUrg) {
+          trialUrg.style.display = 'none';
+        }
         // 🚪 解約予約済み [cancel-period-end] (2026-06-12): paid/past_due の解約は Stripe の期間末解約
         // (cancel_at_period_end) に変更され、auth/me が予約時刻 cancel_at (ISO・UTC) を返すようになった。
         // 予約中は利用期限をステータスに明示し、下の「解約する」ボタンは出さない (既に予約済みのため)。

@@ -315,6 +315,24 @@ FOUNDER_TRIAL_PRICE = 0
 FOUNDER_TRIAL_DAYS = 7  # 14→7 日に短縮 (塾長指示 2026-06-30: AI管理の体験を7日間に。早期の転換を促す。カード登録特典は +7 で 14日)。
 #   ※ AI管理(AIコーチング)の無料体験日数の単一ソース。新規申込の trial_end・Stripe商品名・決済画面文言が全てこれを参照。
 #     カード登録の延長特典 = EXTENDED_TRIAL_DAYS = FOUNDER_TRIAL_DAYS + 7。通塾生(塾生アプリ)の長期trial(+3650日)は別系統で無関係。
+# 🎯 [体験中フォロー強化 2026-06-30 塾長指示] 残日数カウントダウン/緊急継続CTA/満了前キュー/フォロー強化は
+#   「この日時(UTC)以降に登録した新規生徒のみ」に適用する。既存の体験中の生徒には後出しで一切付けない(完全に新規のみ)。
+#   判定は created_at >= この基準。env で前倒し/後ろ倒し可。
+TRIAL_FOLLOWUP_NEW_FROM = os.getenv("TRIAL_FOLLOWUP_NEW_FROM", "2026-06-30")  # created_at(日付)で比較。PG/SQLite両対応(timestamp>=date)。
+
+
+def _email_rate_limit(min_interval: float = 0.6):
+    """📧 Resend レート制限(2req/s→429)対策: バルク送信(trial フォロー cron 群)の送信間隔を空ける。
+    in-process scheduler は単一スレッドで cron を逐次実行するためロック不要。
+    welcome/magic-link などユーザーリクエスト hot-path には付けない(_send_trial_* のみに適用)。"""
+    import time as _t
+    _wait = _EMAIL_LAST_SEND[0] + min_interval - _t.monotonic()
+    if _wait > 0:
+        _t.sleep(_wait)
+    _EMAIL_LAST_SEND[0] = _t.monotonic()
+
+
+_EMAIL_LAST_SEND = [0.0]
 # 💳 月次課金 決済失敗の猶予期間 (塾長指示 2026-05-29「猶予期間あり」): past_due 降格後この日数は
 # アクセスを維持し、生徒にカード更新を案内。Stripe の自動リトライ成功で paid 復帰。GRACE 超過 (= Stripe の
 # dunning が無効/枯渇で past_due のまま) なら scheduler が canceled 化してアクセス停止 (無料使い放題を防ぐ)。
@@ -20191,6 +20209,87 @@ def admin_students_active_no_record(
     }
 
 
+@app.get("/api/admin/trial/expiring-queue")
+def admin_trial_expiring_queue(
+    days: int = 3,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🎯 満了前キュー (体験中フォロー 2026-06-30 塾長指示): まもなく無料体験が満了する『新規コホート』の
+    生徒で、カード未登録(=満了で課金されず静かに消える層)を、活動量(ドリル/学習記録)・連絡手段つきで一覧。
+    塾長が満了前に LINE/電話/個別メッセージでカード登録(継続)を1対1で依頼する救出キュー。
+    ★対象は created_at >= TRIAL_FOLLOWUP_NEW_FROM の新規生徒のみ(既存の体験中は対象外=塾長指示の完全新規のみ)。
+    認証: admin Bearer or x-cron-secret。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    days = max(1, min(int(days or 3), 14))
+    now = datetime.now(timezone.utc)
+    cutoff_end = (now + timedelta(days=days)).isoformat()
+    conn = db()
+    c = conn.cursor()
+    students = []
+    try:
+        try:
+            c.execute(
+                f"""SELECT s.id, s.name, s.email, s.grade, s.trial_end, s.last_login_at, s.line_user_id,
+                          COALESCE(qa.n, 0) AS drills, COALESCE(sl.n, 0) AS logs
+                   FROM students s
+                   LEFT JOIN (SELECT student_id, COUNT(*) AS n FROM question_attempts GROUP BY student_id) qa ON qa.student_id = s.id
+                   LEFT JOIN (SELECT student_id, COUNT(*) AS n FROM study_logs GROUP BY student_id) sl ON sl.student_id = s.id
+                   WHERE s.status = 'trial' AND s.trial_end IS NOT NULL
+                     AND s.trial_end > ? AND s.trial_end <= ?
+                     AND s.stripe_customer_id IS NULL
+                     AND (s.course IS NULL OR s.course != 'kokuritsu_nankan')
+                     AND (s.plan IS NULL OR s.plan != 'student_addon')
+                     AND s.created_at >= ?
+                     AND {_synth_exclude_sql('s')}
+                   ORDER BY COALESCE(qa.n, 0) DESC, s.trial_end ASC""",
+                (now.isoformat(), cutoff_end, TRIAL_FOLLOWUP_NEW_FROM),
+            )
+            rows = c.fetchall()
+        except Exception as _e:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            log.warning(f"[expiring-queue] query failed: {_e}")
+            rows = []
+        for r in rows:
+            d = dict(r)
+            te = d.get("trial_end")
+            days_left = None
+            te_str = None
+            if te:
+                try:
+                    _te = datetime.fromisoformat(te.replace("Z", "+00:00")) if isinstance(te, str) else te
+                    if _te.tzinfo is None:
+                        _te = _te.replace(tzinfo=timezone.utc)
+                    import math as _m
+                    days_left = max(0, _m.ceil((_te - now).total_seconds() / 86400))
+                    te_str = str(te)[:16]
+                except Exception:
+                    te_str = str(te)[:16]
+            students.append({
+                "id": d.get("id"), "name": d.get("name"), "grade": d.get("grade"), "email": d.get("email"),
+                "trial_end": te_str, "days_left": days_left,
+                "drills": int(d.get("drills") or 0), "study_logs": int(d.get("logs") or 0),
+                "has_line": bool(d.get("line_user_id")),
+                "is_carrier_email": _is_carrier_email(d.get("email") or ""),
+                "last_login_at": str(d.get("last_login_at"))[:16] if d.get("last_login_at") else None,
+            })
+    finally:
+        conn.close()
+    return {"ok": True, "days": days, "count": len(students), "students": students}
+
+
 @app.get("/api/admin/students/ai-usage")
 def admin_students_ai_usage(
     authorization: Optional[str] = Header(None),
@@ -25470,6 +25569,35 @@ def auth_me(authorization: Optional[str] = Header(None)):
     except Exception as _cae:
         log.warning(f"[auth_me] cancel_at fetch skipped: {_cae}")
     student["entitled"] = True  # 🚪 [login-allow-inactive] active 本人。auth-guard は entitled で分岐。
+    # 🎯 [体験中フォロー] mypage の残日数カウントダウン+緊急継続CTA 用。status=trial かつ
+    #   「新規コホート(created_at >= TRIAL_FOLLOWUP_NEW_FROM)」のみ show_trial_followup=true で出す
+    #   (既存の体験中の生徒には付けない=塾長指示の完全新規のみ)。trial_days_left は ceil(残秒/日)。
+    student["trial_days_left"] = None
+    student["trial_end_iso"] = None
+    student["show_trial_followup"] = False
+    try:
+        if (student.get("status") or "") == "trial":
+            _conn2 = db()
+            try:
+                _c2 = _conn2.cursor()
+                _c2.execute("SELECT trial_end, (created_at >= ?) AS is_new_cohort FROM students WHERE id = ?",
+                            (TRIAL_FOLLOWUP_NEW_FROM, int(student["id"])))
+                _trow = _c2.fetchone()
+            finally:
+                _conn2.close()
+            if _trow and _trow["trial_end"]:
+                _te = _trow["trial_end"]
+                if isinstance(_te, str):
+                    _te = datetime.fromisoformat(_te.replace("Z", "+00:00"))
+                if _te.tzinfo is None:
+                    _te = _te.replace(tzinfo=timezone.utc)
+                import math as _math
+                _left = (_te - datetime.now(timezone.utc)).total_seconds()
+                student["trial_days_left"] = max(0, _math.ceil(_left / 86400))
+                student["trial_end_iso"] = _te.isoformat()
+                student["show_trial_followup"] = bool(_trow["is_new_cohort"])
+    except Exception as _tfe:
+        log.warning(f"[auth_me] trial followup calc skipped: {_tfe}")
     return {"ok": True, "student": student}
 
 
@@ -29035,8 +29163,9 @@ def _detect_at_risk_trial_students(now: datetime) -> list:
                  AND s.trial_start <= ?
                  AND s.trial_start >= ?
                  AND (s.course IS NULL OR s.course != 'kokuritsu_nankan')
+                 AND s.created_at >= ?
                LIMIT 200""",
-            (now.isoformat(), cutoff_recent, early_cutoff, late_cutoff)
+            (now.isoformat(), cutoff_recent, early_cutoff, late_cutoff, TRIAL_FOLLOWUP_NEW_FROM)
         )
         candidates = list(c.fetchall())
 
@@ -29582,8 +29711,9 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
            FROM students
            WHERE status IN ('trial','paid') AND email IS NOT NULL
              AND trial_end IS NOT NULL
-             AND trial_end > ? AND trial_end <= ?""",
-        (t_start.isoformat(), t_end.isoformat())
+             AND trial_end > ? AND trial_end <= ?
+             AND created_at >= ?""",  # 🎯 体験フォロー新仕様=新規コホートのみ(塾長指示・既存は対象外)
+        (t_start.isoformat(), t_end.isoformat(), TRIAL_FOLLOWUP_NEW_FROM)
     )
     candidates = list(c.fetchall())
 
@@ -29672,6 +29802,7 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
             preview.append({"student_id": row["id"], "email": row["email"], "days_left": days_left,
                             "template": _tmpl, "silent": not _last_login})
             continue
+        _email_rate_limit()  # 📧 Resend 429対策: 一括送信の間隔を空ける
         if _card_registered:
             result = _send_trial_extended_ending_email(row["email"], row["name"] or "", days_left)
         else:
@@ -29828,6 +29959,7 @@ def cron_trial_nurture(x_cron_secret: str = Header(None), dry_run: bool = False)
                 preview.append({"day": 2, "student_id": row["id"], "email": row["email"]})
                 continue
             login_url = f"{BASE_URL}/mypage.html"
+            _email_rate_limit()  # 📧 Resend 429対策
             result = _send_trial_nurture_day2_email(row["email"], row["name"] or "", login_url)
             c.execute(
                 """INSERT INTO notifications (student_id, channel, template, payload, success, error)
@@ -29863,6 +29995,7 @@ def cron_trial_nurture(x_cron_secret: str = Header(None), dry_run: bool = False)
                 preview.append({"day": 5, "student_id": row["id"], "email": row["email"]})
                 continue
             login_url = f"{BASE_URL}/mypage.html"
+            _email_rate_limit()  # 📧 Resend 429対策
             result = _send_trial_nurture_day5_email(row["email"], row["name"] or "", login_url)
             c.execute(
                 """INSERT INTO notifications (student_id, channel, template, payload, success, error)
@@ -29944,6 +30077,7 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
                 preview.append({"student_id": row["id"], "email": row["email"], "stage": "early", "days_unused": days_unused, "card_registered": _card_registered})
                 continue
             login_url = f"{BASE_URL}/login.html?email={row['email']}"
+            _email_rate_limit()  # 📧 Resend 429対策
             result = _send_trial_unused_warning_email(row["email"], row["name"] or "", "early", login_url, days_unused, card_registered=_card_registered)
             c.execute(
                 """INSERT INTO notifications (student_id, channel, template, payload, success, error)
@@ -29959,8 +30093,9 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
         c.execute(
             """SELECT id, name, email, trial_end, stripe_subscription_id FROM students
                WHERE status = 'trial' AND email IS NOT NULL AND last_login_at IS NULL
-                 AND trial_end IS NOT NULL AND trial_end > ? AND trial_end <= ? AND (course IS NULL OR course != 'kokuritsu_nankan')""",
-            (late_lower.isoformat(), late_upper.isoformat())
+                 AND trial_end IS NOT NULL AND trial_end > ? AND trial_end <= ? AND (course IS NULL OR course != 'kokuritsu_nankan')
+                 AND created_at >= ?""",  # 🎯 体験フォロー新仕様=新規コホートのみ
+            (late_lower.isoformat(), late_upper.isoformat(), TRIAL_FOLLOWUP_NEW_FROM)
         )
         for row in c.fetchall():
             c.execute(
@@ -29986,6 +30121,7 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
                 preview.append({"student_id": row["id"], "email": row["email"], "stage": "late", "days_left": days_left, "card_registered": _card_registered})
                 continue
             login_url = f"{BASE_URL}/login.html?email={row['email']}"
+            _email_rate_limit()  # 📧 Resend 429対策
             result = _send_trial_unused_warning_email(row["email"], row["name"] or "", "late", login_url, days_left, card_registered=_card_registered)
             c.execute(
                 """INSERT INTO notifications (student_id, channel, template, payload, success, error)

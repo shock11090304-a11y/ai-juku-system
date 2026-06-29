@@ -471,6 +471,7 @@
             <button type="button" class="tb-btn hub-btn" data-hub-target="homeworkBulkSection" data-hub-label="📚 宿題 一括割当"><span class="tb-icon">📤</span><span class="tb-label">宿題一括割当</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="studyLogSection" data-hub-label="📚 学習記録ダッシュボード"><span class="tb-icon">📖</span><span class="tb-label">学習記録</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="aiUsageSection" data-hub-label="📊 生徒の学習状況 (ドリル/学習記録/カリキュラム)"><span class="tb-icon">📊</span><span class="tb-label">学習状況</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="trialExpiringSection" data-hub-label="🎯 体験満了前キュー (新規・カード登録依頼)"><span class="tb-icon">🎯</span><span class="tb-label">満了前キュー</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="studyPlanSection" data-hub-label="📅 学習計画ダッシュボード"><span class="tb-icon">📅</span><span class="tb-label">学習計画</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="messagesSection" data-hub-label="📨 メッセージ配信"><span class="tb-icon">💬</span><span class="tb-label">メッセージ</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="classMgmtSection" data-hub-label="🏫 通塾クラス (ファイル/録画/出欠)"><span class="tb-icon">🏫</span><span class="tb-label">通塾クラス</span></button>
@@ -2616,6 +2617,28 @@
     </section>
 
     <!-- 🏫 通塾クラス (塾長指示 2026-06-25): 授業ファイル配布 / 録画(YouTube限定公開) / 出欠 -->
+    <section id="trialExpiringSection" class="roster-section">
+      <div class="section-header-row">
+        <h2>🎯 体験満了前キュー <span id="teqCounter" style="font-size:0.75rem;color:#94a3b8;font-weight:400;margin-left:0.5rem;"></span></h2>
+        <div class="roster-controls">
+          <select id="teqDays">
+            <option value="3">残り3日以内</option>
+            <option value="2">残り2日以内</option>
+            <option value="1">残り1日以内</option>
+            <option value="7">残り7日以内</option>
+          </select>
+          <button type="button" id="teqReload" title="最新を再取得">🔄 更新</button>
+        </div>
+      </div>
+      <div style="color:#94a3b8;font-size:0.8rem;margin:0.2rem 0 0.8rem;line-height:1.7;">まもなく無料体験が満了する<strong style="color:#e8eaff;">新規登録者</strong>で<strong style="color:#fca5a5;">カード未登録</strong>（＝満了で課金されず静かに消える層）。<strong>活動が多い人ほど上＝優先</strong>。満了前に LINE／電話／個別メッセージで「継続（カード登録）」を直接お願いしてください。<span style="color:#fbbf24;">※既存の体験中の生徒は対象外（新規登録者のみ）。</span></div>
+      <div class="roster-table-wrapper">
+        <table class="roster-table">
+          <thead><tr><th>#</th><th>氏名</th><th>残り</th><th>ドリル</th><th>学習記録</th><th>最終ログイン</th><th>連絡先</th></tr></thead>
+          <tbody id="teqBody"><tr><td colspan="7" style="text-align:center;padding:1rem;color:#a1a1aa;">読み込み中…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
     <section id="aiUsageSection" class="roster-section">
       <div class="section-header-row">
         <h2>📊 生徒の学習状況 <span id="aiUsageCounter" style="font-size:0.75rem;color:#94a3b8;font-weight:400;margin-left:0.5rem;"></span></h2>
@@ -10401,6 +10424,51 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     var hb = document.querySelector('#ceoHubMenu [data-hub-target="aiUsageSection"]');
     if (hb) hb.addEventListener('click', load);
     if (window.AdminAuth && AdminAuth.getToken && AdminAuth.getToken()) setTimeout(load, 300);
+  })();
+  </script>
+  <script>
+  // 🎯 体験満了前キュー (2026-06-30): GET /api/admin/trial/expiring-queue を一覧描画。
+  (function () {
+    function esc(t) { var e = document.createElement('div'); e.textContent = (t == null ? '' : String(t)); return e.innerHTML; }
+    async function load() {
+      var body = document.getElementById('teqBody');
+      if (!body || !window.AdminAuth) return;
+      var days = (document.getElementById('teqDays') || {}).value || '3';
+      body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:1rem;color:#a1a1aa;">読み込み中…</td></tr>';
+      try {
+        var res = await window.AdminAuth.fetch('/api/admin/trial/expiring-queue?days=' + encodeURIComponent(days));
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var j = await res.json();
+        var list = (j && j.students) || [];
+        var cnt = document.getElementById('teqCounter');
+        if (cnt) cnt.textContent = list.length + '名';
+        if (!list.length) {
+          body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:1.2rem;color:#6ee7b7;">対象なし（満了間近のカード未登録 新規生はいません）</td></tr>';
+          return;
+        }
+        body.innerHTML = list.map(function (s, i) {
+          var dl = (s.days_left == null) ? '—' : ('残り' + s.days_left + '日');
+          var dlc = (s.days_left != null && s.days_left <= 1) ? '#fca5a5' : (s.days_left != null && s.days_left <= 3 ? '#fbbf24' : '#c7d2fe');
+          var line = s.has_line ? '<span style="color:#06c755;">📲 LINE連携済</span>' : '<span style="color:#71717a;">LINE未連携</span>';
+          var carrier = s.is_carrier_email ? ' <span title="キャリアメール=届きにくい" style="color:#fbbf24;">⚠️📧</span>' : '';
+          return '<tr>' +
+            '<td style="color:#71717a;">' + (i + 1) + '</td>' +
+            '<td><strong>' + esc(s.name || '—') + '</strong> <span class="muted" style="font-size:0.8em;">' + esc(s.grade || '') + '</span></td>' +
+            '<td style="font-weight:800;color:' + dlc + ';">' + dl + '</td>' +
+            '<td style="font-weight:700;">' + (s.drills || 0) + '</td>' +
+            '<td>' + (s.study_logs || 0) + '</td>' +
+            '<td style="color:#94a3b8;font-size:0.8rem;">' + esc(s.last_login_at || '—') + '</td>' +
+            '<td style="font-size:0.8rem;">' + line + carrier + '<br><span style="color:#a5b4fc;">' + esc(s.email || '') + '</span></td>' +
+          '</tr>';
+        }).join('');
+      } catch (e) {
+        body.innerHTML = '<tr><td colspan="7" style="color:#fca5a5;padding:1rem;">読み込み失敗: ' + esc(e && e.message || 'エラー') + '</td></tr>';
+      }
+    }
+    var dsel = document.getElementById('teqDays'); if (dsel) dsel.addEventListener('change', load);
+    var rb = document.getElementById('teqReload'); if (rb) rb.addEventListener('click', load);
+    var hb = document.querySelector('#ceoHubMenu [data-hub-target="trialExpiringSection"]'); if (hb) hb.addEventListener('click', load);
+    if (window.AdminAuth && AdminAuth.getToken && AdminAuth.getToken()) setTimeout(load, 400);
   })();
   </script>
 </body>
