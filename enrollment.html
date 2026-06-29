@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>入塾申込書 | Trillion English Academy</title>
+  <meta name="description" content="トリリオン英語塾の入塾申込フォーム。東大・京大・早慶など難関大志望者向けの英語専門オンライン塾。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0B2545;
+      --navy-2: #1E3A5F;
+      --gold: #C9A961;
+      --bg: #F8F9FB;
+      --section-bg: #FFFFFF;
+      --accent-bg: #EEF2F8;
+      --border: #E5E7EB;
+      --border-dark: #B8C1D1;
+      --text: #1A1A1A;
+      --muted: #6B7280;
+      --danger: #B91C1C;
+      --success: #047857;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Noto Sans JP', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      padding-bottom: 110px;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* ----- Header ----- */
+    .site-header {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%);
+      color: white;
+      padding: 2rem 1.25rem 1.75rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .site-header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(201,169,97,0.08), transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(255,255,255,0.05), transparent 40%);
+      pointer-events: none;
+    }
+    .site-header .brand {
+      font-family: 'Noto Serif JP', serif;
+      font-weight: 600;
+      font-size: 1.625rem;
+      letter-spacing: 0.06em;
+      position: relative;
+    }
+    .site-header .brand-jp {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-top: 0.25rem;
+      letter-spacing: 0.15em;
+      position: relative;
+    }
+    .site-header .title {
+      font-family: 'Noto Serif JP', serif;
+      font-weight: 500;
+      font-size: 1.125rem;
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      letter-spacing: 0.2em;
+      position: relative;
+    }
+    .site-header .title-en {
+      font-family: 'Noto Serif JP', serif;
+      font-style: italic;
+      font-size: 0.75rem;
+      opacity: 0.7;
+      letter-spacing: 0.05em;
+      margin-top: 0.15rem;
+      position: relative;
+    }
+
+    /* ----- Main container ----- */
+    main { max-width: 820px; margin: 0 auto; padding: 1.5rem 1rem; }
+    .lead-note {
+      background: white;
+      border-left: 3px solid var(--gold);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      border-radius: 0 4px 4px 0;
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+    .lead-note strong { color: var(--navy); font-weight: 500; }
+
+    /* ----- Sections ----- */
+    .section {
+      background: var(--section-bg);
+      border-radius: 6px;
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(11,37,69,0.05);
+      border: 1px solid var(--border);
+    }
+    .section-header {
+      background: var(--navy);
+      color: white;
+      padding: 0.85rem 1.25rem;
+      font-family: 'Noto Serif JP', serif;
+      font-weight: 500;
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: baseline;
+      gap: 0.625rem;
+    }
+    .section-header .num {
+      font-style: italic;
+      opacity: 0.7;
+      font-size: 0.9rem;
+      font-weight: 400;
+    }
+    .section-body { padding: 1.25rem; }
+
+    /* ----- Form Fields ----- */
+    .field { margin-bottom: 1rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field-grid {
+      display: grid;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .field-grid:last-child { margin-bottom: 0; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-1-2 { grid-template-columns: 1fr 2fr; }
+    .grid-auto { grid-template-columns: auto 1fr; align-items: center; }
+    @media (max-width: 640px) {
+      .grid-2, .grid-3, .grid-1-2 { grid-template-columns: 1fr; }
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--navy);
+      margin-bottom: 0.35rem;
+      letter-spacing: 0.04em;
+    }
+    label .req { color: var(--danger); margin-left: 0.25rem; font-weight: 700; }
+
+    input[type="text"],
+    input[type="tel"],
+    input[type="email"],
+    input[type="date"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid var(--border-dark);
+      border-radius: 4px;
+      font-size: 1rem;
+      font-family: inherit;
+      background: white;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      color: var(--text);
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(11,37,69,0.1);
+    }
+    input[readonly] {
+      background: var(--accent-bg);
+      color: var(--navy);
+      font-weight: 600;
+      cursor: default;
+    }
+
+    /* Radio & Checkbox */
+    .radio-group, .checkbox-group {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 0.4rem 0;
+    }
+    .radio-group label, .checkbox-group label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    input[type="radio"], input[type="checkbox"] {
+      width: 1.1rem; height: 1.1rem;
+      accent-color: var(--navy);
+      cursor: pointer;
+    }
+
+    /* Inline date/year/month picker */
+    .inline-date {
+      display: inline-flex;
+      gap: 0.3rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .inline-date input { width: auto; min-width: 60px; max-width: 80px; text-align: center; padding: 0.5rem 0.5rem; }
+    .inline-date input.yr { max-width: 90px; }
+    .inline-date .sep { color: var(--muted); }
+
+    /* ----- Course list ----- */
+    .course-category {
+      font-family: 'Noto Serif JP', serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--navy);
+      margin-top: 1.25rem;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+      letter-spacing: 0.06em;
+    }
+    .course-category:first-child { margin-top: 0; }
+
+    .course-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.9rem;
+      align-items: center;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-bottom: 0.4rem;
+    }
+    .course-card:hover {
+      border-color: var(--navy-2);
+      background: #FCFDFE;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(11,37,69,0.06);
+    }
+    .course-card input[type="checkbox"] { margin: 0; }
+    .course-card.is-checked {
+      border-color: var(--navy);
+      background: var(--accent-bg);
+      box-shadow: 0 1px 3px rgba(11,37,69,0.08);
+    }
+    .course-card .info .name {
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .course-card .info .meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+      letter-spacing: 0.03em;
+    }
+    .course-card .fee {
+      font-family: 'Noto Serif JP', serif;
+      font-weight: 600;
+      color: var(--navy);
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+
+    .sub-fields {
+      margin-top: 0.5rem;
+      margin-left: 2rem;
+      padding: 0.75rem 0.85rem;
+      background: var(--accent-bg);
+      border-radius: 5px;
+      display: none;
+    }
+    .sub-fields.show { display: block; }
+    .sub-fields .field-grid { margin-bottom: 0; }
+    .sub-fields label { font-size: 0.78rem; }
+
+    /* ----- Schedule (collapsible) ----- */
+    details.schedule {
+      margin-bottom: 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: white;
+      overflow: hidden;
+    }
+    details.schedule summary {
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--navy);
+      cursor: pointer;
+      background: var(--accent-bg);
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    details.schedule summary::-webkit-details-marker { display: none; }
+    details.schedule summary::after {
+      content: '▼';
+      font-size: 0.7rem;
+      transition: transform 0.2s;
+    }
+    details.schedule[open] summary::after { transform: rotate(180deg); }
+    .schedule-table-wrap {
+      overflow-x: auto;
+      padding: 0.75rem;
+    }
+    .schedule-table {
+      width: 100%;
+      min-width: 580px;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+    }
+    .schedule-table th, .schedule-table td {
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.4rem;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .schedule-table thead th {
+      background: var(--navy);
+      color: white;
+      font-weight: 500;
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+    }
+    .schedule-table tbody th {
+      background: var(--accent-bg);
+      font-weight: 500;
+      color: var(--navy);
+      font-size: 0.7rem;
+      line-height: 1.4;
+    }
+    .schedule-table tbody td { font-size: 0.7rem; line-height: 1.4; }
+
+    /* ----- Payment summary ----- */
+    .pay-summary {
+      background: var(--accent-bg);
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      margin-top: 0.5rem;
+    }
+    .pay-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      padding: 0.6rem 0;
+      align-items: baseline;
+      gap: 1rem;
+    }
+    .pay-row + .pay-row { border-top: 1px dashed var(--border-dark); }
+    .pay-row .label { color: var(--text); font-size: 0.9rem; }
+    .pay-row .label .sub { font-size: 0.75rem; color: var(--muted); }
+    .pay-row .value {
+      font-family: 'Noto Serif JP', serif;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--navy);
+      white-space: nowrap;
+    }
+    .pay-row .value .yen { font-size: 0.8rem; margin-left: 0.15rem; font-weight: 500; }
+    .pay-row.is-total {
+      background: var(--navy);
+      color: white;
+      margin: 0.75rem -1.25rem -1rem;
+      padding: 0.85rem 1.25rem;
+      border-radius: 0 0 6px 6px;
+    }
+    .pay-row.is-total .label,
+    .pay-row.is-total .value { color: white; }
+    .pay-row.is-total .label .sub { color: rgba(255,255,255,0.65); }
+    .pay-row.is-total .value { font-size: 1.25rem; }
+    .pay-row.is-subtotal .value { color: var(--gold); font-size: 1.15rem; }
+
+    /* ----- Mock exam grid ----- */
+    .exam-block {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .exam-block:last-child { margin-bottom: 0; }
+    .exam-title {
+      font-family: 'Noto Serif JP', serif;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 0.75rem;
+      font-size: 0.95rem;
+    }
+    .exam-grid-wrap { overflow-x: auto; }
+    table.exam-grid {
+      width: 100%;
+      min-width: 480px;
+      border-collapse: separate;
+      border-spacing: 0.2rem;
+      margin-top: 0.5rem;
+    }
+    table.exam-grid th {
+      background: var(--navy);
+      color: white;
+      font-weight: 500;
+      padding: 0.4rem;
+      font-size: 0.75rem;
+      border-radius: 3px;
+      letter-spacing: 0.04em;
+    }
+    table.exam-grid td:first-child {
+      background: var(--accent-bg);
+      text-align: center;
+      font-weight: 500;
+      color: var(--navy);
+      font-size: 0.8rem;
+      border-radius: 3px;
+      padding: 0.4rem;
+    }
+    table.exam-grid td input {
+      padding: 0.4rem 0.3rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    /* ----- Privacy ----- */
+    .privacy-text {
+      background: var(--accent-bg);
+      padding: 1rem 1.25rem;
+      border-radius: 5px;
+      font-size: 0.85rem;
+      line-height: 1.75;
+    }
+    .privacy-text p { margin-bottom: 0.5rem; }
+    .privacy-text ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+    .privacy-text li { margin-bottom: 0.15rem; }
+
+    .consent {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: white;
+      border: 2px solid var(--navy);
+      border-radius: 5px;
+    }
+    .consent label {
+      display: flex; align-items: flex-start; gap: 0.6rem;
+      cursor: pointer; font-size: 0.95rem; font-weight: 500;
+    }
+    .consent input[type="checkbox"] { margin-top: 0.2rem; flex-shrink: 0; }
+
+    /* ----- Sticky footer ----- */
+    .sticky-footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      box-shadow: 0 -2px 12px rgba(11,37,69,0.08);
+      z-index: 100;
+    }
+    .sticky-inner {
+      max-width: 820px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 0.75rem;
+      align-items: center;
+    }
+    .total-display {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+    .total-display .amount {
+      display: block;
+      font-family: 'Noto Serif JP', serif;
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: var(--navy);
+      line-height: 1.2;
+    }
+    .total-display .amount .yen { font-size: 0.85rem; margin-left: 0.15rem; }
+
+    /* Buttons */
+    .btn {
+      padding: 0.7rem 1.25rem;
+      border: none;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    .btn-primary { background: var(--navy); color: white; }
+    .btn-primary:hover { background: var(--navy-2); }
+    .btn-primary:disabled { background: var(--muted); cursor: not-allowed; opacity: 0.7; }
+    .btn-secondary {
+      background: white;
+      color: var(--navy);
+      border: 1px solid var(--navy);
+    }
+    .btn-secondary:hover { background: var(--accent-bg); }
+
+    @media (max-width: 640px) {
+      .sticky-inner {
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+      }
+      .total-display { grid-column: 1 / -1; }
+      .btn { padding: 0.7rem 0.9rem; font-size: 0.85rem; }
+      .btn-secondary { display: none; }
+    }
+
+    /* ----- Misc ----- */
+    .field-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+
+    .success-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(248,249,251,0.97);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 2rem;
+      text-align: center;
+      z-index: 200;
+    }
+    .success-overlay.show { display: flex; }
+    .success-overlay .icon {
+      width: 64px; height: 64px;
+      background: var(--success);
+      color: white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    .success-overlay h2 {
+      font-family: 'Noto Serif JP', serif;
+      color: var(--navy);
+      margin-bottom: 0.5rem;
+    }
+    .success-overlay p { color: var(--muted); max-width: 420px; }
+
+    /* Print */
+    @media print {
+      body { padding-bottom: 0; background: white; }
+      .sticky-footer, .no-print, .lead-note { display: none !important; }
+      .site-header { background: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .section { break-inside: avoid; box-shadow: none; page-break-inside: avoid; }
+      .section-header { background: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
+    /* Honeypot (Netlify) */
+    .hp-field { position: absolute; left: -9999px; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">Trillion English Academy</div>
+    <div class="brand-jp">トリリオン英語塾</div>
+    <div class="title">入塾申込書</div>
+    <div class="title-en">Enrollment Application</div>
+  </header>
+
+  <main>
+    <div class="lead-note">
+      <strong>ご記入のお願い</strong><br>
+      下記のフォームにご記入ください。コースを選択すると、月額・初月合計が自動で計算されます。
+      入力内容はそのまま塾へ送信されます（最後に「送信」を押してください）。
+    </div>
+
+    <form id="enrollForm" name="enrollment" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thank-you">
+      <input type="hidden" name="form-name" value="enrollment">
+      <p class="hp-field"><label>このフィールドは入力しないでください <input name="bot-field"></label></p>
+
+      <!-- 申込日 -->
+      <div class="section">
+        <div class="section-header">申込日</div>
+        <div class="section-body">
+          <div class="field">
+            <label class="field-label" for="apply_date">申込日 <span class="req">*</span></label>
+            <input type="date" id="apply_date" name="申込日" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ⅰ 生徒情報 -->
+      <div class="section">
+        <div class="section-header"><span class="num">Ⅰ</span> 生徒情報</div>
+        <div class="section-body">
+          <div class="field-grid grid-2">
+            <div class="field">
+              <label class="field-label" for="s_furigana">フリガナ <span class="req">*</span></label>
+              <input type="text" id="s_furigana" name="生徒_フリガナ" required>
+            </div>
+            <div class="field">
+              <label class="field-label" for="s_name">氏名 <span class="req">*</span></label>
+              <input type="text" id="s_name" name="生徒_氏名" required>
+            </div>
+          </div>
+          <div class="field-grid grid-2">
+            <div class="field">
+              <label class="field-label">性別 <span class="req">*</span></label>
+              <div class="radio-group">
+                <label><input type="radio" name="生徒_性別" value="男" required> 男</label>
+                <label><input type="radio" name="生徒_性別" value="女"> 女</label>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="s_birth">生年月日 <span class="req">*</span></label>
+              <input type="date" id="s_birth" name="生徒_生年月日" required>
+            </div>
+          </div>
+          <div class="field-grid grid-2">
+            <div class="field">
+              <label class="field-label" for="s_school">在籍学校 <span class="req">*</span></label>
+              <input type="text" id="s_school" name="生徒_在籍学校" placeholder="例：○○高等学校" required>
+            </div>
+            <div class="field">
+              <label class="field-label">学年 <span class="req">*</span></label>
+              <div class="inline-date">
+                <label style="display:inline-flex;gap:0.3rem;align-items:center;"><input type="radio" name="生徒_校種" value="中" required> 中</label>
+                <label style="display:inline-flex;gap:0.3rem;align-items:center;margin-left:0.6rem;"><input type="radio" name="生徒_校種" value="高"> 高</label>
+                <input type="number" name="生徒_学年" min="1" max="6" placeholder="年" style="max-width:70px;margin-left:0.5rem;" required>
+                <span class="sep">年</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ⅱ 保護者情報 -->
+      <div class="section">
+        <div class="section-header"><span class="num">Ⅱ</span> 保護者情報</div>
+        <div class="section-body">
+          <div class="field-grid grid-2">
+            <div class="field">
+              <label class="field-label" for="p_furigana">フリガナ <span class="req">*</span></label>
+              <input type="text" id="p_furigana" name="保護者_フリガナ" required>
+            </div>
+            <div class="field">
+              <label class="field-label" for="p_name">氏名 <span class="req">*</span></label>
+              <input type="text" id="p_name" name="保護者_氏名" required>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">続柄 <span class="req">*</span></label>
+            <div class="radio-group">
+              <label><input type="radio" name="保護者_続柄" value="父" required> 父</label>
+              <label><input type="radio" name="保護者_続柄" value="母"> 母</label>
+              <label><input type="radio" name="保護者_続柄" value="その他"> その他</label>
+              <input type="text" name="保護者_続柄_その他" placeholder="（その他の場合）" style="max-width:200px;">
+            </div>
+          </div>
+          <div class="field-grid grid-1-2">
+            <div class="field">
+              <label class="field-label" for="p_zip">郵便番号 <span class="req">*</span></label>
+              <input type="text" id="p_zip" name="保護者_郵便番号" placeholder="123-4567" pattern="\d{3}-?\d{4}" required>
+            </div>
+            <div class="field">
+              <label class="field-label" for="p_addr">住所 <span class="req">*</span></label>
+              <input type="text" id="p_addr" name="保護者_住所" required>
+            </div>
+          </div>
+          <div class="field-grid grid-2">
+            <div class="field">
+              <label class="field-label" for="p_tel">電話番号 <span class="req">*</span></label>
+              <input type="tel" id="p_tel" name="保護者_TEL" placeholder="090-1234-5678" required>
+            </div>
+            <div class="field">
+              <label class="field-label" for="p_email">メールアドレス <span class="req">*</span></label>
+              <input type="email" id="p_email" name="保護者_Email" placeholder="example@mail.com" required>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ⅲ 志望校 -->
+      <div class="section">
+        <div class="section-header"><span class="num">Ⅲ</span> 志望校</div>
+        <div class="section-body">
+          <div class="field">
+            <label class="field-label" for="univ1">第1志望 <span class="req">*</span></label>
+            <input type="text" id="univ1" name="志望校1" placeholder="例：東京大学 文科一類" required>
+          </div>
+          <div class="field">
+            <label class="field-label" for="univ2">第2志望</label>
+            <input type="text" id="univ2" name="志望校2">
+          </div>
+          <div class="field">
+            <label class="field-label" for="univ3">第3志望</label>
+            <input type="text" id="univ3" name="志望校3">
+          </div>
+        </div>
+      </div>
+
+      <!-- 受講希望コース -->
+      <div class="section">
+        <div class="section-header">受講希望コース</div>
+        <div class="section-body">
+
+          <details class="schedule">
+            <summary>2026年度 授業スケジュール表を見る</summary>
+            <div class="schedule-table-wrap">
+              <table class="schedule-table">
+                <thead>
+                  <tr>
+                    <th>時限</th><th>月(MON)</th><th>火(TUE)</th><th>水(WED)</th><th>木(THU)</th><th>金(FRI)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><th>1限<br>19:15-20:15</th><td>中学応用<br>受験・中3</td><td>中学基礎<br>中1/2</td><td>中学2年<br>英語</td><td>英検準1級<br>対策</td><td>高2 英文法</td></tr>
+                  <tr><th>2限<br>20:25-21:25</th><td>英文法 Lv.1<br>標準・高1/2</td><td>英文法 Lv.2<br>難関・高3</td><td>GMARCH<br>大学別演習</td><td>早慶クラス<br>大学別演習</td><td>英検2級<br>対策</td></tr>
+                  <tr><th>3限<br>21:35-22:35</th><td>長文読解 Lv.1<br>標準・高1/2</td><td>長文読解 Lv.2<br>難関・高3</td><td>国公立<br>英文法</td><td>国公立<br>長文読解</td><td>—</td></tr>
+                  <tr><th>日曜<br>21:15-22:15</th><td colspan="5">高校国語(現代文・古文)</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+
+          <div class="course-category">中学部</div>
+          <label class="course-card">
+            <input type="checkbox" name="コース_中学応用" value="ON" data-fee="7500">
+            <div class="info"><div class="name">中学応用</div><div class="meta">受験・中3 ／ 月曜 1限</div></div>
+            <div class="fee">7,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <label class="course-card">
+            <input type="checkbox" name="コース_中学基礎" value="ON" data-fee="7500">
+            <div class="info"><div class="name">中学基礎</div><div class="meta">定期テスト・中1/2 ／ 火曜 1限</div></div>
+            <div class="fee">7,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <label class="course-card">
+            <input type="checkbox" name="コース_中学2年" value="ON" data-fee="7500">
+            <div class="info"><div class="name">中学2年 英語</div><div class="meta">水曜 1限</div></div>
+            <div class="fee">7,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+
+          <div class="course-category">高等部</div>
+          <label class="course-card">
+            <input type="checkbox" name="コース_英文法L1" value="ON" data-fee="7500">
+            <div class="info"><div class="name">英文法 Lv.1</div><div class="meta">標準・高1/2 ／ 月曜 2限</div></div>
+            <div class="fee">7,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <label class="course-card">
+            <input type="checkbox" name="コース_英文法L2" value="ON" data-fee="7500">
+            <div class="info"><div class="name">英文法 Lv.2</div><div class="meta">難関・高3 ／ 火曜 2限</div></div>
+            <div class="fee">7,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <label class="course-card">
+            <input type="checkbox" name="コース_長文L1" value="ON" data-fee="7500">
+            <div class="info"><div class="name">長文読解 Lv.1</div><div class="meta">標準・高1/2 ／ 月曜 3限</div></div>
+            <div class="fee">7,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <label class="course-card">
+            <input type="checkbox" name="コース_長文L2" value="ON" data-fee="7500">
+            <div class="info"><div class="name">長文読解 Lv.2</div><div class="meta">難関・高3 ／ 火曜 3限</div></div>
+            <div class="fee">7,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <label class="course-card">
+            <input type="checkbox" name="コース_高2英文法" value="ON" data-fee="7500">
+            <div class="info"><div class="name">高2 英文法</div><div class="meta">金曜 1限</div></div>
+            <div class="fee">7,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <label class="course-card">
+            <input type="checkbox" name="コース_高校国語" value="ON" data-fee="7500">
+            <div class="info"><div class="name">高校国語</div><div class="meta">現代文・古文 ／ 日曜</div></div>
+            <div class="fee">7,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+
+          <div class="course-category">特別コース</div>
+          <label class="course-card">
+            <input type="checkbox" name="コース_GMARCH" value="ON" data-fee="12500">
+            <div class="info"><div class="name">GMARCHコース</div><div class="meta">大学別演習 ／ 水曜 2限</div></div>
+            <div class="fee">12,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <label class="course-card">
+            <input type="checkbox" name="コース_早慶" value="ON" data-fee="12500">
+            <div class="info"><div class="name">早慶クラス</div><div class="meta">大学別演習 ／ 木曜 2限</div></div>
+            <div class="fee">12,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <label class="course-card">
+            <input type="checkbox" name="コース_英検準1" value="ON" data-fee="8500">
+            <div class="info"><div class="name">英検準1級対策</div><div class="meta">木曜 1限</div></div>
+            <div class="fee">8,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <label class="course-card">
+            <input type="checkbox" name="コース_英検2" value="ON" data-fee="7500">
+            <div class="info"><div class="name">英検2級対策</div><div class="meta">金曜 2限</div></div>
+            <div class="fee">7,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <label class="course-card" id="card-manage">
+            <input type="checkbox" name="コース_学習管理" value="ON" data-fee="22500">
+            <div class="info"><div class="name">学習管理コース</div><div class="meta">通常授業2科目＋管理</div></div>
+            <div class="fee">22,500<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <div class="sub-fields" id="sub-manage">
+            <div class="field-grid grid-2">
+              <div class="field">
+                <label class="field-label" for="manage1">科目①</label>
+                <input type="text" id="manage1" name="学習管理_科目1">
+              </div>
+              <div class="field">
+                <label class="field-label" for="manage2">科目②</label>
+                <input type="text" id="manage2" name="学習管理_科目2">
+              </div>
+            </div>
+          </div>
+          <label class="course-card">
+            <input type="checkbox" name="コース_国公立" value="ON" data-fee="25000">
+            <div class="info"><div class="name">国公立難関大学コース</div><div class="meta">水・金・日 ＋ スタサプ</div></div>
+            <div class="fee">25,000<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+          <label class="course-card">
+            <input type="checkbox" name="コース_AI管理生徒アドオン" value="ON" data-fee="5000">
+            <div class="info"><div class="name">AI管理生徒アドオン</div><div class="meta">AIによる学習管理・進捗サポート ／ 毎月</div></div>
+            <div class="fee">5,000<span style="font-size:0.7em;"> 円</span></div>
+          </label>
+
+          <!-- お支払い金額（自動計算） -->
+          <div class="pay-summary" style="margin-top:1.5rem;">
+            <div class="pay-row">
+              <div class="label">入塾金<span class="sub"> （初回のみ）</span></div>
+              <div class="value">10,000<span class="yen">円</span></div>
+            </div>
+            <div class="pay-row">
+              <div class="label">設備費<span class="sub"> （毎月）</span></div>
+              <div class="value">1,350<span class="yen">円</span></div>
+            </div>
+            <div class="pay-row is-subtotal">
+              <div class="label">受講料<span class="sub"> （選択コース合計）</span></div>
+              <div class="value"><span id="sum-courses">0</span><span class="yen">円</span></div>
+            </div>
+            <div class="pay-row">
+              <div class="label">毎月のお支払い合計<span class="sub"> （設備費＋受講料）</span></div>
+              <div class="value"><span id="sum-monthly">1,350</span><span class="yen">円</span></div>
+            </div>
+            <div class="pay-row is-total">
+              <div class="label">初月お支払い合計<span class="sub"> （入塾金＋設備費＋受講料）</span></div>
+              <div class="value"><span id="sum-first">11,350</span><span class="yen">円</span></div>
+            </div>
+          </div>
+          <div class="field-note" style="margin-top:0.75rem;">※ すべて税込表示です。振込手数料はご負担をお願いいたします。</div>
+          <noscript>
+            <div class="field-note" style="margin-top:0.5rem;color:var(--danger);">
+              ※ 金額の自動計算には JavaScript が必要です。メールやファイルのプレビュー画面では計算されない場合があります。Safari や Chrome などのブラウザで開いてください。
+            </div>
+          </noscript>
+
+          <!-- 隠しフィールド（送信用） -->
+          <input type="hidden" name="金額_受講料" id="hidden_courses" value="0">
+          <input type="hidden" name="金額_毎月合計" id="hidden_monthly" value="1350">
+          <input type="hidden" name="金額_初月合計" id="hidden_first" value="11350">
+        </div>
+      </div>
+
+      <!-- Ⅳ 英語レベル・資格 -->
+      <div class="section">
+        <div class="section-header"><span class="num">Ⅳ</span> 英語レベル・資格</div>
+        <div class="section-body">
+          <div class="field-grid grid-2">
+            <div class="field">
+              <label class="field-label" for="eiken_grade">英検取得級</label>
+              <input type="text" id="eiken_grade" name="英検級" placeholder="例：準1級">
+            </div>
+            <div class="field">
+              <label class="field-label" for="eiken_date">英検取得日</label>
+              <input type="month" id="eiken_date" name="英検取得日">
+            </div>
+          </div>
+          <div class="field-grid grid-2">
+            <div class="field">
+              <label class="field-label" for="toeic_score">TOEICスコア</label>
+              <input type="number" id="toeic_score" name="TOEIC" min="0" max="990" placeholder="例：800">
+            </div>
+            <div class="field">
+              <label class="field-label" for="toeic_date">TOEIC受験日</label>
+              <input type="month" id="toeic_date" name="TOEIC受験日">
+            </div>
+          </div>
+          <div class="field-grid grid-2">
+            <div class="field">
+              <label class="field-label" for="toefl_score">TOEFL / IELTS スコア</label>
+              <input type="text" id="toefl_score" name="TOEFL_IELTS" placeholder="例：TOEFL iBT 95">
+            </div>
+            <div class="field">
+              <label class="field-label" for="toefl_date">受験日</label>
+              <input type="month" id="toefl_date" name="TOEFL_IELTS受験日">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="other_cert">その他資格</label>
+            <input type="text" id="other_cert" name="その他資格">
+          </div>
+          <div class="field-grid grid-2">
+            <div class="field">
+              <label class="field-label" for="strong">英語の得意分野</label>
+              <input type="text" id="strong" name="英語_得意" placeholder="例：長文読解">
+            </div>
+            <div class="field">
+              <label class="field-label" for="weak">英語の苦手分野</label>
+              <input type="text" id="weak" name="英語_苦手" placeholder="例：英文法・リスニング">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 模試結果 -->
+      <div class="section">
+        <div class="section-header">模試・学力テストの結果</div>
+        <div class="section-body">
+          <div class="field-note" style="margin-bottom:1rem;">最新の模試結果をご記入ください。国公立難関大学コース希望の方は全科目ご記入ください。</div>
+
+          <div class="exam-block">
+            <div class="exam-title">模試 ①</div>
+            <div class="field-grid grid-2">
+              <div class="field">
+                <label class="field-label">模試名</label>
+                <input type="text" name="模試1_名">
+              </div>
+              <div class="field">
+                <label class="field-label">受験日</label>
+                <input type="month" name="模試1_受験日">
+              </div>
+            </div>
+            <div class="exam-grid-wrap">
+              <table class="exam-grid">
+                <thead><tr><th>科目</th><th>英語</th><th>数学</th><th>国語</th><th>理科</th><th>社会</th><th>総合</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>点数</td>
+                    <td><input type="text" name="模試1_点数_英語"></td>
+                    <td><input type="text" name="模試1_点数_数学"></td>
+                    <td><input type="text" name="模試1_点数_国語"></td>
+                    <td><input type="text" name="模試1_点数_理科"></td>
+                    <td><input type="text" name="模試1_点数_社会"></td>
+                    <td><input type="text" name="模試1_点数_総合"></td>
+                  </tr>
+                  <tr>
+                    <td>偏差値</td>
+                    <td><input type="text" name="模試1_偏差値_英語"></td>
+                    <td><input type="text" name="模試1_偏差値_数学"></td>
+                    <td><input type="text" name="模試1_偏差値_国語"></td>
+                    <td><input type="text" name="模試1_偏差値_理科"></td>
+                    <td><input type="text" name="模試1_偏差値_社会"></td>
+                    <td><input type="text" name="模試1_偏差値_総合"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="exam-block">
+            <div class="exam-title">模試 ②</div>
+            <div class="field-grid grid-2">
+              <div class="field">
+                <label class="field-label">模試名</label>
+                <input type="text" name="模試2_名">
+              </div>
+              <div class="field">
+                <label class="field-label">受験日</label>
+                <input type="month" name="模試2_受験日">
+              </div>
+            </div>
+            <div class="exam-grid-wrap">
+              <table class="exam-grid">
+                <thead><tr><th>科目</th><th>英語</th><th>数学</th><th>国語</th><th>理科</th><th>社会</th><th>総合</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>点数</td>
+                    <td><input type="text" name="模試2_点数_英語"></td>
+                    <td><input type="text" name="模試2_点数_数学"></td>
+                    <td><input type="text" name="模試2_点数_国語"></td>
+                    <td><input type="text" name="模試2_点数_理科"></td>
+                    <td><input type="text" name="模試2_点数_社会"></td>
+                    <td><input type="text" name="模試2_点数_総合"></td>
+                  </tr>
+                  <tr>
+                    <td>偏差値</td>
+                    <td><input type="text" name="模試2_偏差値_英語"></td>
+                    <td><input type="text" name="模試2_偏差値_数学"></td>
+                    <td><input type="text" name="模試2_偏差値_国語"></td>
+                    <td><input type="text" name="模試2_偏差値_理科"></td>
+                    <td><input type="text" name="模試2_偏差値_社会"></td>
+                    <td><input type="text" name="模試2_偏差値_総合"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ⅴ 個人情報 -->
+      <div class="section">
+        <div class="section-header"><span class="num">Ⅴ</span> 個人情報の取り扱いについて</div>
+        <div class="section-body">
+          <div class="privacy-text">
+            <p>当塾は、ご提供いただいた個人情報を以下の目的のみに利用いたします。</p>
+            <ol>
+              <li>授業・指導に関する連絡および成績管理</li>
+              <li>入塾手続きおよび講座運営に関する事務連絡</li>
+              <li>当塾からの講座・イベント等のご案内</li>
+              <li>緊急時のご連絡</li>
+            </ol>
+            <p>お預かりした個人情報は、法令に基づく場合を除き、第三者に提供することはありません。</p>
+          </div>
+          <div class="consent">
+            <label>
+              <input type="checkbox" name="同意" value="同意する" required>
+              <span>上記の個人情報の取り扱いに同意の上、入塾を申し込みます。</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 署名 -->
+      <div class="section">
+        <div class="section-header">署名</div>
+        <div class="section-body">
+          <div class="field-note" style="margin-bottom:1rem;">フォーム上では、保護者・生徒の氏名を再度ご記入いただくことで署名に代えます。</div>
+          <div class="field-grid grid-2">
+            <div class="field">
+              <label class="field-label" for="sig_p">保護者氏名（署名） <span class="req">*</span></label>
+              <input type="text" id="sig_p" name="署名_保護者" required>
+            </div>
+            <div class="field">
+              <label class="field-label" for="sig_s">生徒氏名（署名） <span class="req">*</span></label>
+              <input type="text" id="sig_s" name="署名_生徒" required>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </main>
+
+  <!-- Sticky footer -->
+  <div class="sticky-footer">
+    <div class="sticky-inner">
+      <div class="total-display">
+        初月お支払い合計
+        <span class="amount"><span id="sticky-amount">11,350</span><span class="yen">円</span></span>
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="window.print()">印刷／PDF保存</button>
+      <button type="submit" form="enrollForm" class="btn btn-primary">この内容で送信</button>
+    </div>
+  </div>
+
+  <!-- Success overlay -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="icon">✓</div>
+    <h2>送信完了しました</h2>
+    <p>お申し込みありがとうございます。<br>当塾より追ってご連絡を差し上げます。</p>
+  </div>
+
+  <script>
+    // ----- 金額自動計算 -----
+    const fmt = n => n.toLocaleString('ja-JP');
+    function recalc() {
+      let total = 0;
+      document.querySelectorAll('.course-card input[type="checkbox"]').forEach(cb => {
+        const card = cb.closest('.course-card');
+        if (cb.checked) {
+          card.classList.add('is-checked');
+          total += parseInt(cb.dataset.fee || 0, 10);
+        } else {
+          card.classList.remove('is-checked');
+        }
+      });
+      const monthly = total + 1350;
+      const first   = total + 1350 + 10000;
+      document.getElementById('sum-courses').textContent = fmt(total);
+      document.getElementById('sum-monthly').textContent = fmt(monthly);
+      document.getElementById('sum-first').textContent   = fmt(first);
+      document.getElementById('sticky-amount').textContent = fmt(first);
+      document.getElementById('hidden_courses').value = total;
+      document.getElementById('hidden_monthly').value = monthly;
+      document.getElementById('hidden_first').value   = first;
+    }
+    document.querySelectorAll('.course-card input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', recalc);
+    });
+
+    // ----- 学習管理コースの科目欄を表示／非表示 -----
+    const manageCb = document.querySelector('input[name="コース_学習管理"]');
+    const manageSub = document.getElementById('sub-manage');
+    function toggleManage() {
+      if (manageCb.checked) manageSub.classList.add('show');
+      else manageSub.classList.remove('show');
+    }
+    manageCb.addEventListener('change', toggleManage);
+
+    // ----- 申込日のデフォルト：今日 -----
+    document.getElementById('apply_date').valueAsDate = new Date();
+
+    // ----- 送信処理（Netlify対応） -----
+    const form = document.getElementById('enrollForm');
+    form.addEventListener('submit', function(e) {
+      // Netlify Forms は HTML 標準のサブミットで動くので、基本そのまま流す。
+      // ただしローカル環境（file://）等では fetch に失敗するので、その時は overlay 表示のみ。
+      if (window.location.protocol === 'file:' || window.location.hostname === 'localhost') {
+        e.preventDefault();
+        document.getElementById('successOverlay').classList.add('show');
+        return;
+      }
+      // Netlify本番 → 通常 submit させる（action="/thank-you" にリダイレクト）
+      // ※/thank-you ページを Netlify 側で作成してください。
+    });
+
+    // 初回計算
+    recalc();
+    toggleManage();
+  </script>
+</body>
+</html>
