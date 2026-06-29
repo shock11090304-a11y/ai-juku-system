@@ -9980,6 +9980,15 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
             normalized.append(d)
         return max(normalized).isoformat()
 
+    # 🏫 [2026-06-27] 塾生アプリ登録経由(referrer=塾生アプリ)の生徒IDを集合化。
+    #   ロスターを「塾生アプリの生徒」と「AI管理の生徒」に分離表示する用 (is_tsujuku_app と同基準)。
+    tsujuku_app_ids = set()
+    try:
+        c.execute("SELECT DISTINCT student_id FROM course_applications WHERE referrer = ? AND student_id IS NOT NULL", ("塾生アプリ",))
+        tsujuku_app_ids = {r["student_id"] for r in c.fetchall()}
+    except Exception as _e:
+        log.warning(f"[admin_stats] tsujuku_app_ids query failed: {_e}")
+
     students = []
     for row in rows:
         # row["line_user_id"] は schema が古いと KeyError → 安全に拾う
@@ -10011,6 +10020,7 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
             "has_line": bool(_line_uid),
             "is_carrier_email": _is_carrier_email(_email),
             "course": (row["course"] if "course" in row.keys() else None),
+            "is_tsujuku_app": (row["id"] in tsujuku_app_ids),  # 塾生アプリ登録経由=ロスター分離表示用
             # 🆓 2026-05-29: 入塾金免除バッジ表示用 (生徒詳細モーダル)
             "enrollment_fee_waived": (bool(row["enrollment_fee_waived"]) if "enrollment_fee_waived" in row.keys() else False),
         })

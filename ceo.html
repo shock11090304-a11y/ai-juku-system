@@ -3143,6 +3143,8 @@
           has_line: !!st.has_line,
           is_carrier_email: !!st.is_carrier_email,
           email: st.email || '',
+          course: st.course || null,
+          is_tsujuku_app: !!st.is_tsujuku_app,  // 塾生アプリ登録経由=ロスター分離表示用
         }));
         // 申込詳細モーダル用に完全フィールドを保持 (id => student)
         window.__studentsById = (data.students || []).reduce((acc, st) => {

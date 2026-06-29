@@ -261,7 +261,7 @@ function renderRoster(students) {
     return;
   }
 
-  tbody.innerHTML = list.map((s, i) => {
+  const rowHtml = (s, i) => {
     const courses = Array.isArray(s.courses) ? s.courses.join(', ') :
                     (typeof s.goal === 'string' ? s.goal : '');
     const fee = s.fee || 0;
@@ -319,7 +319,21 @@ function renderRoster(students) {
         <td>${deleteBtn}</td>
       </tr>
     `;
-  }).join('');
+  };
+  // 🏫 [2026-06-27] ロスターを「塾生アプリの生徒」と「AI管理の生徒」の2セクションに分割表示。
+  //   判定 = is_tsujuku_app (course_applications.referrer='塾生アプリ' = 塾生アプリ登録経由)。
+  //   各グループ内で番号は 1 から振り直し。検索/並び替え/学年モードは両グループに適用済み (list)。
+  const _grp = (icon, label, arr, bg, fg) => {
+    const head = `<tr><td colspan="10" style="background:${bg};color:${fg};font-weight:700;padding:0.55rem 0.85rem;font-size:0.92rem;border-top:1px solid rgba(255,255,255,0.06);">${icon} ${label}（${arr.length}名）</td></tr>`;
+    const body = arr.length ? arr.map(rowHtml).join('')
+      : `<tr><td colspan="10" style="text-align:center;padding:0.8rem;color:var(--text-muted);font-size:0.85em;">該当する生徒はいません</td></tr>`;
+    return head + body;
+  };
+  const appList = list.filter(s => s.is_tsujuku_app);
+  const aiList = list.filter(s => !s.is_tsujuku_app);
+  tbody.innerHTML =
+    _grp('🏫', '塾生アプリの生徒', appList, 'rgba(52,211,153,0.13)', '#6ee7b7') +
+    _grp('🤖', 'AI管理の生徒', aiList, 'rgba(129,140,248,0.13)', '#c7d2fe');
   // 削除ボタン bind
   tbody.querySelectorAll('.roster-delete-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
