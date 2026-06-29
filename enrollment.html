@@ -587,9 +587,8 @@
       入力内容はそのまま塾へ送信されます（最後に「送信」を押してください）。
     </div>
 
-    <form id="enrollForm" name="enrollment" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thank-you">
-      <input type="hidden" name="form-name" value="enrollment">
-      <p class="hp-field"><label>このフィールドは入力しないでください <input name="bot-field"></label></p>
+    <form id="enrollForm" name="enrollment" method="POST">
+      <p class="hp-field"><label>このフィールドは入力しないでください <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
 
       <!-- 申込日 -->
       <div class="section">
@@ -1110,18 +1109,78 @@
     // ----- 申込日のデフォルト：今日 -----
     document.getElementById('apply_date').valueAsDate = new Date();
 
-    // ----- 送信処理（Netlify対応） -----
+    // ----- 送信処理（Railway API: course_applications に登録 → CEO「申込待ち」に反映） -----
+    // 本番(trillion-ai-juku.com)では window.location.origin 経由で Railway API にプロキシされる。
+    const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+      ? 'http://localhost:8000' : window.location.origin;
     const form = document.getElementById('enrollForm');
-    form.addEventListener('submit', function(e) {
-      // Netlify Forms は HTML 標準のサブミットで動くので、基本そのまま流す。
-      // ただしローカル環境（file://）等では fetch に失敗するので、その時は overlay 表示のみ。
-      if (window.location.protocol === 'file:' || window.location.hostname === 'localhost') {
-        e.preventDefault();
+    const submitBtn = document.querySelector('button[form="enrollForm"][type="submit"]');
+
+    // フォーム値取得（text / radio群 / select / hidden すべて対応）
+    function val(name) {
+      const el = form.elements[name];
+      if (!el) return '';
+      // RadioNodeList の .value は選択中ラジオの value を返す
+      return ((el.value != null ? el.value : '') + '').trim();
+    }
+
+    // 申込明細を note にまとめる（API の note カラムへ。約1000字以内）
+    function buildNote() {
+      const courses = [];
+      form.querySelectorAll('.course-card input[type="checkbox"]:checked').forEach(cb => {
+        const nm = cb.closest('.course-card').querySelector('.info .name');
+        if (nm) courses.push(`${nm.textContent.trim()}(${Number(cb.dataset.fee || 0).toLocaleString('ja-JP')}円)`);
+      });
+      const rel = val('保護者_続柄') === 'その他' ? ('その他:' + val('保護者_続柄_その他')) : val('保護者_続柄');
+      const lines = [
+        `■申込日: ${val('申込日')}`,
+        `■生徒: ${val('生徒_氏名')}(${val('生徒_フリガナ')}) ${val('生徒_性別')} ${val('生徒_生年月日')}`,
+        `■在籍校: ${val('生徒_在籍学校')} / ${val('生徒_校種')}${val('生徒_学年')}年`,
+        `■保護者: ${val('保護者_氏名')}(${val('保護者_フリガナ')}) 続柄:${rel}`,
+        `■連絡先: TEL ${val('保護者_TEL')} / 〒${val('保護者_郵便番号')} ${val('保護者_住所')}`,
+        `■志望校: ①${val('志望校1')} ②${val('志望校2') || '-'} ③${val('志望校3') || '-'}`,
+        `■受講コース: ${courses.length ? courses.join('、') : 'なし'}`,
+      ];
+      const m1 = val('学習管理_科目1'), m2 = val('学習管理_科目2');
+      if (m1 || m2) lines.push(`■学習管理科目: ${m1 || '-'} / ${m2 || '-'}`);
+      lines.push(`■金額: 受講料 ${val('金額_受講料')}円 / 毎月 ${val('金額_毎月合計')}円 / 初月 ${val('金額_初月合計')}円`);
+      const eiken = val('英検級'), strong = val('英語_得意'), weak = val('英語_苦手');
+      if (eiken || strong || weak) lines.push(`■英語: 英検${eiken || '-'} 得意:${strong || '-'} 苦手:${weak || '-'}`);
+      return lines.join('\n').slice(0, 980);
+    }
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (val('bot-field')) return;  // honeypot
+      // file:// プレビュー等は API に到達できないので overlay のみ表示
+      if (window.location.protocol === 'file:') {
         document.getElementById('successOverlay').classList.add('show');
         return;
       }
-      // Netlify本番 → 通常 submit させる（action="/thank-you" にリダイレクト）
-      // ※/thank-you ページを Netlify 側で作成してください。
+      const schoolType = val('生徒_校種'), gradeNum = val('生徒_学年');
+      const payload = {
+        name: val('生徒_氏名'),
+        email: val('保護者_Email'),
+        grade: (schoolType && gradeNum) ? (schoolType + gradeNum + '年') : undefined,
+        phone: val('保護者_TEL') || undefined,
+        target_university: val('志望校1') || undefined,
+        referrer: '入塾申込フォーム',
+        note: buildNote(),
+      };
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '送信中...'; }
+      try {
+        const res = await fetch(API_BASE + '/api/course-applications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+        document.getElementById('successOverlay').classList.add('show');
+      } catch (err) {
+        alert('❌ 送信に失敗しました: ' + (err.message || '時間をおいて再度お試しください'));
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'この内容で送信'; }
+      }
     });
 
     // 初回計算
