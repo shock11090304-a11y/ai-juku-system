@@ -8754,23 +8754,31 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     function _recsHtml(recs) {
       return recs.length ? recs.map(r => `<div style="margin-bottom:6px;padding:6px 9px;background:rgba(139,92,246,0.10);border-left:3px solid #8b5cf6;border-radius:4px;font-size:0.84rem;"><b style="color:#c4b5fd;">【${esc(r[0])}】</b> ${esc(r[1])}</div>`).join('') : '<div style="color:#71717a;font-size:0.84rem;">特記事項なし。</div>';
     }
-    // 弱点 weak_topics から、自動採点ドリルの (subject, unit) を1つ選ぶ。無ければ null。
+    // 弱点 weak_topics から、自動採点ドリル化できる単元を「全部」抽出。
+    // このドリル(grammar_questions)は英語(英文法)＋古文が在庫の中心。理科/数学等は対応外として注記。
     var _ENG_DRILL_UNITS = ['時制', '助動詞', '受動態', '不定詞', '動名詞', '分詞構文', '分詞', '関係詞', '仮定法', '比較', '接続詞', '前置詞', '疑問詞・間接疑問', '否定・倒置', '強調・省略', '冠詞', '名詞・代名詞', '形容詞・副詞', '話法', '語法・イディオム'];
-    function _pickDrillUnit(s) {
+    var _SJ_LABEL = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学' };
+    function _pickDrillUnits(s) {
       const wts = (s.weak_topics || []).filter(w => w.topic);
-      const genuine = wts.filter(w => (w.attempts || 0) >= 5 && w.accuracy != null && w.accuracy < 0.75).sort((a, b) => a.accuracy - b.accuracy);
-      const misses = wts.filter(w => (w.attempts || 0) <= 2 && (w.accuracy || 0) === 0);
-      for (const w of [...genuine, ...misses]) {
-        if (w.subject === 'japanese') return { subject: 'japanese', unit: '古文' };
+      // 弱点の重い順: 慢性弱点(5回以上で正答<0.75)→新出ミス(1-2回で正答0)
+      const order = [
+        ...wts.filter(w => (w.attempts || 0) >= 5 && w.accuracy != null && w.accuracy < 0.75).sort((a, b) => a.accuracy - b.accuracy),
+        ...wts.filter(w => (w.attempts || 0) <= 2 && (w.accuracy || 0) === 0),
+      ];
+      const seen = new Set(), units = [], uncovered = new Set();
+      for (const w of order) {
         if (w.subject === 'english') {
-          const t = w.topic;
-          for (const u of _ENG_DRILL_UNITS) {
-            const key = u.split('・')[0];
-            if (t.indexOf(u) >= 0 || t.indexOf(key) >= 0) return { subject: 'english', unit: u };
-          }
+          let matched = null;
+          for (const u of _ENG_DRILL_UNITS) { const key = u.split('・')[0]; if (w.topic.indexOf(u) >= 0 || w.topic.indexOf(key) >= 0) { matched = u; break; } }
+          if (matched) { const k = 'english|' + matched; if (!seen.has(k)) { seen.add(k); units.push({ subject: 'english', unit: matched }); } }
+          else uncovered.add('english');
+        } else if (w.subject === 'japanese') {
+          const k = 'japanese|古文'; if (!seen.has(k)) { seen.add(k); units.push({ subject: 'japanese', unit: '古文' }); }
+        } else if (w.subject) {
+          uncovered.add(w.subject);
         }
       }
-      return null;
+      return { units: units.slice(0, 5), uncovered: [...uncovered] };
     }
     // ワンクリック配信: 弱点単元の自動採点ドリル(10問)を当該生徒に配信
     async function _assignWeaknessDrill(btn) {
@@ -8841,9 +8849,12 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           const accStr = a.accuracy != null ? Math.round(a.accuracy * 100) + '%' : '—';
           const stale = (a.total || 0) === 0 || (a.d7 || 0) === 0; // 演習ゼロ or 直近7日ゼロ
           const bg = BG[band[0]] || 'transparent';
-          const u = _pickDrillUnit(s);
-          const drillBtn = u
-            ? `<div style="margin-top:7px;text-align:right;"><button type="button" data-assign-drill data-sid="${s.id}" data-subject="${u.subject}" data-unit="${esc(u.unit)}" data-name="${esc(nm)}" title="「${esc(u.unit)}」の自動採点ドリル(10問)をこの生徒に配信" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:5px 11px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">📨 「${esc(u.unit)}」ドリルを配信</button></div>`
+          const dp = _pickDrillUnits(s);
+          const btns = dp.units.map(u => `<button type="button" data-assign-drill data-sid="${s.id}" data-subject="${u.subject}" data-unit="${esc(u.unit)}" data-name="${esc(nm)}" title="「${esc(u.unit)}」の自動採点ドリル(10問)をこの生徒に配信" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:5px 11px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">📨「${esc(u.unit)}」</button>`).join('');
+          const uncovLabels = [...new Set(dp.uncovered.map(x => _SJ_LABEL[x] || x))];
+          const uncovNote = uncovLabels.length ? `<span style="font-size:0.72rem;color:#9ca3af;">※${uncovLabels.join('・')}の弱点は英文法/古文ドリル対象外</span>` : '';
+          const drillBtn = (dp.units.length || dp.uncovered.length)
+            ? `<div style="margin-top:7px;display:flex;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:wrap;">${uncovNote}${dp.units.length ? '<span style="font-size:0.74rem;color:#94a3b8;">弱点ドリル配信:</span>' : ''}${btns}</div>`
             : '';
           return `<div style="border:1px solid rgba(255,255,255,0.1);border-left:4px solid ${band[1]};border-radius:8px;padding:10px 12px;margin-bottom:10px;background:${bg};">
             <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;">
