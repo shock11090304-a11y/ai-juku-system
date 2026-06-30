@@ -8754,6 +8754,45 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     function _recsHtml(recs) {
       return recs.length ? recs.map(r => `<div style="margin-bottom:6px;padding:6px 9px;background:rgba(139,92,246,0.10);border-left:3px solid #8b5cf6;border-radius:4px;font-size:0.84rem;"><b style="color:#c4b5fd;">【${esc(r[0])}】</b> ${esc(r[1])}</div>`).join('') : '<div style="color:#71717a;font-size:0.84rem;">特記事項なし。</div>';
     }
+    // 弱点 weak_topics から、自動採点ドリルの (subject, unit) を1つ選ぶ。無ければ null。
+    var _ENG_DRILL_UNITS = ['時制', '助動詞', '受動態', '不定詞', '動名詞', '分詞構文', '分詞', '関係詞', '仮定法', '比較', '接続詞', '前置詞', '疑問詞・間接疑問', '否定・倒置', '強調・省略', '冠詞', '名詞・代名詞', '形容詞・副詞', '話法', '語法・イディオム'];
+    function _pickDrillUnit(s) {
+      const wts = (s.weak_topics || []).filter(w => w.topic);
+      const genuine = wts.filter(w => (w.attempts || 0) >= 5 && w.accuracy != null && w.accuracy < 0.75).sort((a, b) => a.accuracy - b.accuracy);
+      const misses = wts.filter(w => (w.attempts || 0) <= 2 && (w.accuracy || 0) === 0);
+      for (const w of [...genuine, ...misses]) {
+        if (w.subject === 'japanese') return { subject: 'japanese', unit: '古文' };
+        if (w.subject === 'english') {
+          const t = w.topic;
+          for (const u of _ENG_DRILL_UNITS) {
+            const key = u.split('・')[0];
+            if (t.indexOf(u) >= 0 || t.indexOf(key) >= 0) return { subject: 'english', unit: u };
+          }
+        }
+      }
+      return null;
+    }
+    // ワンクリック配信: 弱点単元の自動採点ドリル(10問)を当該生徒に配信
+    async function _assignWeaknessDrill(btn) {
+      const sid = btn.getAttribute('data-sid'), subject = btn.getAttribute('data-subject'), unit = btn.getAttribute('data-unit');
+      const sname = btn.getAttribute('data-name') || ('id' + sid);
+      if (!sid || !unit || !window.AdminAuth) return;
+      if (!confirm(`${sname} さんに「${unit}」の自動採点ドリル(10問)を配信します。よろしいですか？`)) return;
+      const o = btn.textContent; btn.disabled = true; btn.textContent = '⏳ 配信中...';
+      try {
+        const res = await AdminAuth.fetch('/api/admin/grammar-drill/create', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subject, unit, levels: ['standard', 'advanced'], count: 10, student_ids: [Number(sid)] }),
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.detail || ('HTTP ' + res.status));
+        btn.textContent = '✅ 配信済'; btn.style.background = '#16a34a'; btn.style.opacity = '0.9';
+      } catch (e) {
+        alert('⚠ 配信に失敗: ' + (e && e.message ? e.message : e) + '\n(単元の在庫不足の場合は「科目別単元ドリル」で補充/取込してください)');
+        btn.disabled = false; btn.textContent = o;
+      }
+    }
+    window._assignWeaknessDrill = _assignWeaknessDrill;
 
     // 🎯 やるべきこと: 生徒詳細モーダルのタブ (1名分)
     async function loadStudentActionPlan(sid, pane) {
@@ -8802,14 +8841,26 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           const accStr = a.accuracy != null ? Math.round(a.accuracy * 100) + '%' : '—';
           const stale = (a.total || 0) === 0 || (a.d7 || 0) === 0; // 演習ゼロ or 直近7日ゼロ
           const bg = BG[band[0]] || 'transparent';
+          const u = _pickDrillUnit(s);
+          const drillBtn = u
+            ? `<div style="margin-top:7px;text-align:right;"><button type="button" data-assign-drill data-sid="${s.id}" data-subject="${u.subject}" data-unit="${esc(u.unit)}" data-name="${esc(nm)}" title="「${esc(u.unit)}」の自動採点ドリル(10問)をこの生徒に配信" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:5px 11px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">📨 「${esc(u.unit)}」ドリルを配信</button></div>`
+            : '';
           return `<div style="border:1px solid rgba(255,255,255,0.1);border-left:4px solid ${band[1]};border-radius:8px;padding:10px 12px;margin-bottom:10px;background:${bg};">
             <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;">
               <span><a href="#" onclick="event.preventDefault();window.showStudentDetail&&window.showStudentDetail(${s.id})" title="クリックで生徒詳細" style="color:#c4b5fd;font-weight:700;text-decoration:none;">${esc(nm)}</a> <span style="color:#94a3b8;font-size:0.8rem;">#${s.id}・${esc(s.grade || '?')}・${esc((s.goal || '志望未設定').slice(0, 22))}</span></span>
               <span style="font-size:0.78rem;white-space:nowrap;color:#94a3b8;">残${s.days_to_exam == null ? '—' : s.days_to_exam}日 ／ <b style="color:${band[1]};">${band[0]} ${(s.admission || {}).score != null ? (s.admission).score + '%' : ''}</b></span>
             </div>
             <div style="font-size:0.76rem;color:#9ca3af;margin:4px 0 6px;">演習 <b style="color:#cbd5e1;">${a.total || 0}</b>問(7日${a.d7 || 0}) ／ 正答 ${accStr} ／ 最終活動 ${esc(lastDate)}${stale ? ' <span style="color:#fca5a5;">🔴</span>' : ''}</div>
-            ${_recsHtml(_actionRecs(s))}</div>`;
+            ${_recsHtml(_actionRecs(s))}${drillBtn}</div>`;
         }).join('');
+        // 弱点ドリル配信ボタン (委譲・1回だけバインド)
+        if (!box.dataset.drillBound) {
+          box.dataset.drillBound = '1';
+          box.addEventListener('click', function (e) {
+            const b = e.target.closest && e.target.closest('[data-assign-drill]');
+            if (b) _assignWeaknessDrill(b);
+          });
+        }
       } catch (e) {
         box.innerHTML = '<div style="color:#fca5a5;padding:1rem;">読み込み失敗: ' + esc(e.message || e) + '</div>';
       }
