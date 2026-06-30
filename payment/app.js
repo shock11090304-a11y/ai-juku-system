@@ -232,6 +232,7 @@ async function loadData() {
   if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];   // 2026-05-07: 生徒追加機能
   if (!STATE.overrides.regLinks) STATE.overrides.regLinks = {};         // 2026-06-01: Stripe登録↔名簿 紐付け
   if (!STATE.overrides.studentEdits) STATE.overrides.studentEdits = {}; // 2026-06-03: 既存生徒の編集 上書き
+  if (!Array.isArray(STATE.overrides.importedAppIds)) STATE.overrides.importedAppIds = []; // 2026-06-30: 入塾申込フォーム 取込済み course_application id
   // newStudents を STATE.data.students に in-memory merge (id 重複は新生徒側を採用)
   mergeNewStudentsIntoData();
   // 編集 (コース/月謝/学年/氏名) を上書き適用
@@ -410,6 +411,219 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('click', (e) => {
   const m = document.getElementById('addStudentModal');
   if (m && !m.classList.contains('hidden') && e.target === m) closeAddStudentModalSafe();
+});
+
+// =============================================================
+// 2026-06-30: 入塾申込フォーム取り込み
+//   Web 入塾申込フォーム → POST /api/course-applications → course_applications(pending) を
+//   この月謝名簿 (newStudents) に塾長操作で取り込む。
+//   公開フォームは admin token を持てず、overrides blob は last-write-wins で塾長ブラウザが丸ごと
+//   上書きするため「サーバが横から blob を書く」自動同期は塾長の保存で消える恐れがある。→ 取り込みは
+//   塾長ブラウザの STATE 内で行い、通常の saveOverrides/CloudSync 経路で保存する (単一 writer を維持)。
+//   取込済み id は overrides.importedAppIds に記録し、一覧から除外する。
+// =============================================================
+const ENROLL_REFERRER = '入塾申込フォーム';
+
+function openImportAppsModalSafe() {
+  const m = document.getElementById('importAppsModal');
+  if (!m) return;
+  m.classList.remove('hidden');
+  m.style.display = '';
+}
+function closeImportAppsModalSafe() {
+  const m = document.getElementById('importAppsModal');
+  if (!m) return;
+  m.classList.add('hidden');
+  m.style.display = 'none';
+}
+
+// 申込 note (■受講コース / ■金額 / ■保護者 …) から コース配列・月謝・振込人名カナ を抽出
+function parseEnrollmentApp(app) {
+  const note = (app && app.note) || '';
+  let courses = [];
+  const mCourse = note.match(/■受講コース[:：]\s*(.+)/);
+  if (mCourse) {
+    const raw = mCourse[1].trim();
+    if (raw && raw !== 'なし') {
+      // 区切りは 、(全角読点) のみ。ASCII ',' は金額 "25,000円" 内に出るため分割対象にしない。
+      courses = raw.split(/[、，]/).map(s => s.replace(/\s*[（(][^）)]*[）)]\s*$/, '').trim()).filter(Boolean);
+    }
+  }
+  // 月謝 = 受講料 (設備費を含まない = この名簿の月謝慣習に一致)
+  let fee = 0;
+  const mFee = note.match(/受講料\s*([\d,]+)\s*円/);
+  if (mFee) fee = parseInt(mFee[1].replace(/,/g, ''), 10) || 0;
+  // 振込人名(カナ): 保護者行の (カナ) を拾う (best-effort)
+  let payerName = '';
+  const mPayer = note.match(/■保護者[:：][^（(]*[（(]([ぁ-んァ-ヶー\s]+)[）)]/);
+  if (mPayer) payerName = mPayer[1].trim();
+  return { courses, fee, payerName };
+}
+
+async function fetchPendingEnrollmentApps() {
+  const token = (typeof CloudSync !== 'undefined') ? CloudSync.getToken() : '';
+  if (!token) return { error: 'auth' };
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/course-applications?status=pending&limit=200`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (res.status === 401) return { error: 'auth' };
+    if (!res.ok) return { error: `HTTP ${res.status}` };
+    const data = await res.json();
+    const imported = new Set(STATE.overrides.importedAppIds || []);
+    const apps = (data.applications || []).filter(a => a && a.referrer === ENROLL_REFERRER && !imported.has(a.id));
+    return { apps };
+  } catch (e) {
+    return { error: e.message || 'fetch失敗' };
+  }
+}
+
+function updateImportAppsBadge(n) {
+  const b = document.getElementById('importAppsBadge');
+  if (!b) return;
+  if (n > 0) { b.textContent = n; b.style.display = ''; }
+  else { b.style.display = 'none'; }
+}
+
+async function renderImportAppsList() {
+  const box = document.getElementById('importAppsList');
+  if (!box) return;
+  box.innerHTML = '<p style="color:#9ca3af;font-size:0.9rem;">読み込み中…</p>';
+  const result = await fetchPendingEnrollmentApps();
+  if (result.error === 'auth') {
+    box.innerHTML = '<p style="color:#fbbf24;font-size:0.9rem;line-height:1.6;">⚠ クラウド未ログインです。右上の 🔒 から管理者ログインしてから「↻ 再読み込み」を押してください。</p>';
+    updateImportAppsBadge(0);
+    return;
+  }
+  if (result.error) {
+    box.innerHTML = `<p style="color:#f87171;font-size:0.9rem;">取得に失敗しました: ${escapeHtml(result.error)}</p>`;
+    return;
+  }
+  const apps = result.apps || [];
+  updateImportAppsBadge(apps.length);
+  if (!apps.length) {
+    box.innerHTML = '<p style="color:#9ca3af;font-size:0.9rem;">未取り込みの申込はありません。</p>';
+    return;
+  }
+  box.innerHTML = apps.map(app => {
+    const p = parseEnrollmentApp(app);
+    const chips = p.courses.map(c => `<span style="display:inline-block;background:rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.4);border-radius:6px;padding:1px 7px;margin:2px 3px 0 0;font-size:0.74rem;">${escapeHtml(c)}</span>`).join('');
+    return `
+    <div style="border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 14px;background:rgba(0,0,0,0.18);">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;">
+        <div style="font-weight:700;font-size:1rem;">${escapeHtml(app.name)} <span style="font-weight:400;font-size:0.8rem;color:#9ca3af;">${escapeHtml(app.grade || '')}</span></div>
+        <div style="font-weight:700;color:#a5b4fc;white-space:nowrap;">月謝 ¥${(p.fee || 0).toLocaleString()}</div>
+      </div>
+      <div style="font-size:0.78rem;color:#cbd5e1;margin-top:4px;">✉ ${escapeHtml(app.email || '-')} ／ ☎ ${escapeHtml(app.phone || '-')}</div>
+      <div style="margin-top:6px;">${chips || '<span style="color:#9ca3af;font-size:0.76rem;">コース未取得 (取込後に変更可)</span>'}</div>
+      <details style="margin-top:8px;"><summary style="cursor:pointer;font-size:0.76rem;color:#9ca3af;">申込内容を見る</summary><pre style="white-space:pre-wrap;font-size:0.74rem;color:#cbd5e1;margin:6px 0 0;font-family:inherit;">${escapeHtml(app.note || '(なし)')}</pre></details>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
+        <button class="btn btn-ghost btn-sm" data-dismiss="${app.id}">🗑 無視</button>
+        <button class="btn btn-primary btn-sm" data-import="${app.id}">✓ 名簿に取り込む</button>
+      </div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-import]').forEach(b => b.addEventListener('click', () => {
+    const app = apps.find(a => String(a.id) === b.getAttribute('data-import'));
+    if (app) importApplicationAsStudent(app);
+  }));
+  box.querySelectorAll('[data-dismiss]').forEach(b => b.addEventListener('click', () => {
+    const id = parseInt(b.getAttribute('data-dismiss'), 10);
+    if (confirm('この申込を一覧から消します (名簿には追加しません)。よろしいですか？')) dismissApplication(id);
+  }));
+}
+
+function allocateNewStudentId() {
+  const usedIds = new Set((STATE.data && STATE.data.students ? STATE.data.students : []).map(s => s.id));
+  const newMax = (STATE.overrides.newStudents || []).reduce((mx, s) => Math.max(mx, s.id || 0), 0);
+  let id = Math.max((STATE.data && STATE.data.nextStudentId) || 1, newMax + 1);
+  while (usedIds.has(id)) id += 1;
+  return id;
+}
+
+async function importApplicationAsStudent(app) {
+  const p = parseEnrollmentApp(app);
+  const normName = (typeof normalizeName === 'function') ? normalizeName(app.name) : (app.name || '').trim();
+  const dup = normName ? STATE.data.students.find(s => (typeof normalizeName === 'function' ? normalizeName(s.name) : s.name) === normName) : null;
+  if (dup) {
+    if (!confirm(`既に同名の生徒「${dup.name}」(ID #${dup.id}) がいます。\n本当に新規で取り込みますか？ (同姓同名なら OK)`)) return;
+  }
+  const id = allocateNewStudentId();
+  const newStudent = {
+    id,
+    name: app.name || '(無名)',
+    grade: app.grade || '',
+    email: app.email || '',
+    courses: p.courses,
+    enrollDate: STATE.currentMonth || todayMonth(),
+    status: '通塾',
+    fee: p.fee || 0,
+    notes: (app.note || '') + `\n[入塾申込フォーム取込 app#${app.id}]`,
+    addedVia: 'enrollment-application-import',
+    addedAt: new Date().toISOString(),
+  };
+  if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];
+  STATE.overrides.newStudents.push(newStudent);
+  if (p.payerName) {
+    if (!STATE.overrides.payerNames) STATE.overrides.payerNames = {};
+    STATE.overrides.payerNames[id] = p.payerName;
+  }
+  if (app.email) {
+    if (!STATE.overrides.emails) STATE.overrides.emails = {};
+    STATE.overrides.emails[id] = app.email;
+  }
+  if (!Array.isArray(STATE.overrides.importedAppIds)) STATE.overrides.importedAppIds = [];
+  if (!STATE.overrides.importedAppIds.includes(app.id)) STATE.overrides.importedAppIds.push(app.id);
+  saveOverrides();
+
+  STATE.data.students.push(cloneStudentForData(newStudent));
+  STATE.data.nextStudentId = id + 1;
+  populateAllFilters();
+  refresh();
+
+  let cloudMsg = '';
+  if (typeof CloudSync !== 'undefined' && CloudSync.bootstrapped && CloudSync.getToken()) {
+    const ok = await CloudSync.pushNow();
+    cloudMsg = ok ? '✓ クラウド同期完了 (携帯/PC 共有)' : '⚠ クラウド同期失敗 (右上 ⚠ から再試行)';
+  } else {
+    cloudMsg = 'ℹ クラウド未ログイン: localStorage のみ保存';
+  }
+  alert(`✓ ${newStudent.name} さん (ID #${id}) を名簿に取り込みました。\n月謝 ¥${(p.fee || 0).toLocaleString()} / 学年 ${app.grade || '未設定'}\n\n${cloudMsg}`);
+  renderImportAppsList();
+}
+
+async function dismissApplication(appId) {
+  if (!Array.isArray(STATE.overrides.importedAppIds)) STATE.overrides.importedAppIds = [];
+  if (!STATE.overrides.importedAppIds.includes(appId)) STATE.overrides.importedAppIds.push(appId);
+  saveOverrides();
+  if (typeof CloudSync !== 'undefined' && CloudSync.bootstrapped && CloudSync.getToken()) {
+    await CloudSync.pushNow();
+  }
+  renderImportAppsList();
+}
+
+function openImportAppsModal() {
+  openImportAppsModalSafe();
+  renderImportAppsList();
+}
+
+// 起動時/ログイン後にバッジ件数だけ静かに更新
+async function refreshImportAppsBadge() {
+  if (typeof CloudSync === 'undefined' || !CloudSync.getToken()) return;
+  const result = await fetchPendingEnrollmentApps();
+  if (result && result.apps) updateImportAppsBadge(result.apps.length);
+}
+
+// ESC / overlay クリックで閉じる (申込取り込みモーダル)
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const m = document.getElementById('importAppsModal');
+    if (m && !m.classList.contains('hidden')) closeImportAppsModalSafe();
+  }
+});
+document.addEventListener('click', (e) => {
+  const m = document.getElementById('importAppsModal');
+  if (m && !m.classList.contains('hidden') && e.target === m) closeImportAppsModalSafe();
 });
 
 // =============================================================
@@ -4564,6 +4778,11 @@ async function importAll(file) {
           }
           return cur;
         })(),
+        // 2026-06-30: 申込取込済み id も失わない (= 取込済み申込がバックアップ復元で再出現するのを防ぐ)
+        importedAppIds: Array.from(new Set([
+          ...(Array.isArray(STATE.overrides.importedAppIds) ? STATE.overrides.importedAppIds : []),
+          ...(Array.isArray(ov.importedAppIds) ? ov.importedAppIds : []),
+        ])),
       };
       for (const m of Object.keys(ov.payments || {})) {
         merged.payments[m] = { ...(merged.payments[m] || {}), ...ov.payments[m] };
@@ -5892,6 +6111,16 @@ function setupModals() {
   if (ascb) ascb.addEventListener('click', closeAddStudentModalSafe);
   const assb = document.getElementById('addStudentSaveBtn');
   if (assb) assb.addEventListener('click', saveNewStudent);
+
+  // 2026-06-30 追加: 入塾申込フォーム取り込み
+  const iab = document.getElementById('importAppsBtn');
+  if (iab) iab.addEventListener('click', openImportAppsModal);
+  const iacb = document.getElementById('importAppsCloseBtn');
+  if (iacb) iacb.addEventListener('click', closeImportAppsModalSafe);
+  const iarb = document.getElementById('importAppsRefreshBtn');
+  if (iarb) iarb.addEventListener('click', renderImportAppsList);
+  // 起動後にバッジ件数を静かに更新 (token があれば)
+  setTimeout(() => { try { refreshImportAppsBadge(); } catch (e) {} }, 2500);
 
   // 2026-06-03: 生徒編集モーダル
   const escb = document.getElementById('editStudentCancelBtn');
