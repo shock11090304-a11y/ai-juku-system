@@ -81,6 +81,7 @@
     .cal-list-h { font-size:0.8rem; font-weight:800; color:#a5b4fc; margin:0.65rem 0 0.25rem; }
     .cal-li { font-size:0.84rem; padding:0.22rem 0; display:flex; gap:0.5rem; line-height:1.4; }
     .cal-li-d { flex-shrink:0; font-weight:800; color:#c7d2fe; min-width:2.8em; font-variant-numeric:tabular-nums; }
+    .cal-note { margin:0.55rem 0 0.1rem; padding:0.5rem 0.7rem; background:rgba(129,140,248,0.12); border:1px solid rgba(129,140,248,0.32); border-radius:9px; font-size:0.8rem; line-height:1.5; font-weight:700; color:#c7d2fe; }
     .block { margin-top:0.85rem; }
     .block-label { font-size:0.78rem; font-weight:800; color:#a5b4fc; margin-bottom:0.4rem; }
     .res-row { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.7rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.10); border-radius:9px; margin:0.35rem 0; }
@@ -382,11 +383,14 @@
         h += '<div class="' + cls + '"><span class="cal-d">' + day + '</span>' + mark + '</div>';
       }
       h += '</div><div class="cal-legend"><span><i class="lg closed"></i>休塾日</span><span><i class="lg event"></i>予定</span><span><i class="lg hol"></i>祝日</span></div>';
-      var items = [];
+      var items = [], hasNatsuki = false;
       for (var dd = 1; dd <= daysIn; dd++) {
         var k = _ymd(calY, calM, dd), e = calEvents[k], hnm = hol[k];
         if (e && e.kind === 'closed') items.push({ d: dd, t: '🔴 休塾日' });
-        else if (e && e.kind === 'event') items.push({ d: dd, t: '📌 ' + esc(e.title || '予定') });
+        else if (e && e.kind === 'event') {
+          items.push({ d: dd, t: '📌 ' + esc(e.title || '予定') });
+          if (/夏期講習/.test(e.title || '')) hasNatsuki = true;
+        }
         if (hnm) items.push({ d: dd, t: '🎌 ' + esc(hnm) });
       }
       if (items.length) {
@@ -396,6 +400,7 @@
       } else {
         h += '<div class="muted" style="padding:0.45rem 0;">今月の休塾日・特別予定はありません。</div>';
       }
+      if (hasNatsuki) h += '<div class="cal-note">📌 夏期講習中も、通常授業（週間時間割）はこれまでどおりあります。</div>';
       return h;
     }
 
