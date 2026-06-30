@@ -20711,6 +20711,7 @@ def admin_student_activity(student_id: int, hours: int = 720, limit: int = 200, 
 @app.get("/api/admin/learning-digest")
 def admin_learning_digest(authorization: Optional[str] = Header(None),
                           student_id: Optional[int] = None,
+                          include_all: bool = False,
                           limit: int = 500):
     """全生徒(または student_id 指定で1名)の学習データを匿名化して集約したダイジェスト。
     志望校への最短ルート提案・問題生成などの AI 分析の入力に使う。
@@ -20749,8 +20750,15 @@ def admin_learning_digest(authorization: Optional[str] = Header(None),
     order = []
     try:
         # 1) 生徒基本
-        sw = "WHERE id = ?" if student_id else ""
-        sp = [student_id] if student_id else []
+        # 既定は「AI管理の現役生徒のみ」= status IN ('trial','paid') かつ合成sentinel除外
+        # (CEO「📊 生徒の学習状況」49名ビューと同条件。過去の退会/期限切れ・監視用は除く)。
+        # student_id 指定時はその生徒を無条件取得。include_all=true で全件 (デバッグ用)。
+        if student_id:
+            sw, sp = "WHERE id = ?", [student_id]
+        elif include_all:
+            sw, sp = "", []
+        else:
+            sw, sp = f"WHERE status IN ('trial', 'paid') AND {_synth_exclude_sql('students')}", []
         try:
             c.execute(f"SELECT id, name, grade, goal, course, plan, status, created_at, last_login_at "
                       f"FROM students {sw} ORDER BY id LIMIT ?", (*sp, limit))
