@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>英文構造 判別トレーニング — SVOCM・分詞・関係詞の問題集</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --amber:#d97706; --purple:#7c3aed;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --ng-bg:#fdeceb; --ng-ink:#c4362a; --amber-bg:#fef3e2;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --blue:#5b91f5; --green:#34c780; --amber:#f0b357; --purple:#a78bfa; --red:#f0726a;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --ng-bg:#3a1714; --ng-ink:#f0958c; --amber-bg:#33270f; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:16px; font-weight:600; margin:0 0 8px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  .steps{list-style:none; margin:0; padding:0; counter-reset:st;}
+  .steps li{position:relative; padding:6px 0 6px 30px; font-size:14px; border-bottom:1px dashed var(--bd);}
+  .steps li:last-child{border-bottom:0;}
+  .steps li::before{counter-increment:st; content:counter(st); position:absolute; left:0; top:7px;
+    width:21px; height:21px; border-radius:50%; background:var(--blue); color:#fff; font-size:12px;
+    text-align:center; line-height:21px; font-weight:700;}
+  /* tabs */
+  .tabs{display:flex; gap:0; border:1px solid var(--bd); border-radius:10px; overflow:hidden; margin:0 0 14px; flex-wrap:wrap;}
+  .tabs button{flex:1 1 auto; border:0; border-radius:0; padding:9px 6px; font-size:13px; background:var(--card); color:var(--sub); cursor:pointer; min-width:64px;}
+  .tabs button:hover{background:var(--info-bg);}
+  .tabs button.on{background:var(--blue); color:#fff; font-weight:600;}
+  .tabs button.on:hover{background:var(--blue);}
+  /* progress row */
+  .prog{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; font-size:13px; color:var(--sub);}
+  .prog .score{font-weight:600; color:var(--ink);}
+  .bar{height:6px; background:var(--bd); border-radius:99px; overflow:hidden; margin:2px 0 14px;}
+  .bar > i{display:block; height:100%; background:var(--blue); width:0; transition:width .3s;}
+  /* sentence */
+  .qtag{display:inline-block; font-size:12px; padding:3px 9px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); margin-bottom:10px;}
+  .sentence{font-size:19px; line-height:2.1; word-break:break-word; margin:4px 0 6px; letter-spacing:.2px;}
+  .sentence .tk{padding:1px 2px; border-radius:4px;}
+  .sentence .target{border-bottom:3px solid var(--amber); font-weight:600;}
+  .sentence sup.rl{font-size:10px; font-weight:700; margin-left:1px; vertical-align:super;}
+  /* role colors (revealed) */
+  .role-S{color:var(--green);} .role-V{color:var(--blue);} .role-O{color:var(--amber);}
+  .role-C{color:var(--purple);} .role-M{color:var(--sub);}
+  .qtext{font-size:15px; font-weight:600; margin:12px 0 10px;}
+  /* choices */
+  .choices{display:flex; flex-direction:column; gap:8px;}
+  .choices button{font:inherit; font-size:14.5px; text-align:left; padding:11px 13px; border:1px solid var(--bd);
+    background:var(--card); color:var(--ink); border-radius:10px; cursor:pointer; line-height:1.5;}
+  .choices button:hover:not(:disabled){background:var(--info-bg); border-color:var(--info-ink);}
+  .choices button:disabled{cursor:default;}
+  .choices button.correct{background:var(--ok-bg); border-color:var(--ok-ink); color:var(--ok-ink); font-weight:600;}
+  .choices button.wrong{background:var(--ng-bg); border-color:var(--ng-ink); color:var(--ng-ink);}
+  .choices button .mk{font-weight:700; margin-right:6px;}
+  /* feedback */
+  .fb{margin-top:14px; border-radius:11px; padding:12px 14px; font-size:14px; border:1px solid var(--bd); display:none;}
+  .fb.show{display:block;}
+  .fb .verdict{font-weight:700; font-size:15px; margin-bottom:6px;}
+  .fb.ok .verdict{color:var(--ok-ink);} .fb.ng .verdict{color:var(--ng-ink);}
+  .fb .pat{display:inline-block; font-size:12.5px; background:var(--amber-bg); color:var(--amber); border-radius:7px; padding:3px 9px; margin:2px 0 8px;}
+  .fb .ja{color:var(--sub); font-size:13.5px; margin:6px 0 8px;}
+  .fb .ex{font-size:14px;}
+  .fb .ex b{color:var(--ink);}
+  .nav{display:flex; gap:8px; margin-top:14px;}
+  .nav button{font:inherit; font-size:14px; padding:9px 14px; border:1px solid var(--bd); background:var(--card);
+    color:var(--ink); border-radius:9px; cursor:pointer;}
+  .nav button.primary{background:var(--blue); color:#fff; border-color:var(--blue); font-weight:600;}
+  .nav button:hover{background:var(--info-bg);} .nav button.primary:hover{background:var(--blue);}
+  .nav button:disabled{opacity:.4; cursor:default;}
+  .nav .spacer{flex:1;}
+  /* legend */
+  .legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:12.5px; color:var(--sub); margin-top:6px;}
+  .legend span b{font-weight:700;}
+  .done{text-align:center; padding:10px 0;}
+  .done .big{font-size:30px; font-weight:700; margin:6px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>英文構造 判別トレーニング</h1>
+    <p class="lead">長い英文が「読めない」のは、<b>どこがS・V・O・C・Mか</b>を見抜けていないことが原因のことが多いです。SVOCM・分詞・関係詞の判別を1問ずつ練習し、解いた後は<b>文全体の色分け</b>で骨組みを確認できます。</p>
+  </header>
+
+  <div class="takeaway">この問題集のゴール＝<b>英文をカタマリ（要素）に分けて読む</b>こと。まず<b>述語動詞 V</b> を見つけ、その前の<b>主語 S</b>、後ろの<b>O / C</b> を確認。残り（前置詞句・分詞句・関係詞節など）は<b>修飾語 M</b> としてカッコでくくると、骨組みが見えます。</div>
+
+  <section class="card">
+    <h2>📐 文構造の読み方 3ステップ</h2>
+    <ol class="steps">
+      <li><b>動詞 V を探す</b>：文の中心になる述語動詞を見つける（時制のある動詞）。</li>
+      <li><b>主語 S を探す</b>：V の前のカタマリ（名詞句・名詞節）が主語。長い修飾はカッコでくくる。</li>
+      <li><b>V の後ろを判定</b>：O（目的語）か C（補語：S=C や O=C が成り立つ）か。残りは M（修飾語）。</li>
+    </ol>
+    <div class="legend">
+      <span class="role-S"><b>S</b> 主語</span>
+      <span class="role-V"><b>V</b> 動詞</span>
+      <span class="role-O"><b>O</b> 目的語</span>
+      <span class="role-C"><b>C</b> 補語</span>
+      <span class="role-M"><b>M</b> 修飾語</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="tabs" id="tabs">
+      <button data-cat="all" class="on">すべて</button>
+      <button data-cat="svocm">5文型 SVOCM</button>
+      <button data-cat="participle">分詞</button>
+      <button data-cat="relative">関係詞</button>
+      <button data-cat="mixed">総合</button>
+    </div>
+
+    <div class="prog">
+      <span id="counter">問 1 / 1</span>
+      <span class="score" id="score">正解 0</span>
+    </div>
+    <div class="bar"><i id="barFill"></i></div>
+
+    <div id="quizArea">
+      <span class="qtag" id="catTag"></span>
+      <div class="sentence" id="sentence"></div>
+      <div class="qtext" id="qtext"></div>
+      <div class="choices" id="choices"></div>
+
+      <div class="fb" id="fb">
+        <div class="verdict" id="verdict"></div>
+        <span class="pat" id="pat" style="display:none"></span>
+        <div class="ja" id="ja"></div>
+        <div class="ex" id="ex"></div>
+      </div>
+
+      <div class="nav">
+        <button id="prevBtn">← 前の問題</button>
+        <div class="spacer"></div>
+        <button id="nextBtn" class="primary" disabled>次の問題 →</button>
+      </div>
+    </div>
+
+    <div id="doneArea" class="done" style="display:none">
+      <div>このカテゴリーは全問終了！</div>
+      <div class="big"><span id="doneScore"></span></div>
+      <div class="nav" style="justify-content:center">
+        <button id="restartBtn" class="primary">もう一度挑戦する</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p style="margin:0 0 8px"><a href="kyozai.html">← 教材ライブラリ</a></p>
+    © AI塾 / trillion-ai-juku.com ・ 英文・文法ラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  // ---- choice sets (reused) ----
+  var C_SVOCM = ["S（主語）","V（動詞・述語）","O（目的語）","C（補語）","M（修飾語）"];
+  var C_PAT   = ["第1文型 SV","第2文型 SVC","第3文型 SVO","第4文型 SVOO","第5文型 SVOC"];
+
+  // ---- problem bank ----
+  // tokens: 文を構成するカタマリ {t:語句, r:役割S/V/O/C/M}。ti=下線(出題対象)のindex。
+  // q:設問 / ch:選択肢 / a:正解index / pat:文型(任意) / ja:和訳 / ex:解説
+  var BANK = [
+    /* ===== 5文型 SVOCM ===== */
+    { cat:"svocm",
+      tokens:[{t:"The sun",r:"S"},{t:"rises",r:"V"},{t:"in the east.",r:"M"}], ti:2,
+      q:"下線部 in the east の働きは？", ch:C_SVOCM, a:4, pat:"第1文型 SV",
+      ja:"太陽は東から昇る。",
+      ex:"<b>rise</b> は目的語をとらない自動詞。in the east は「場所」を表す<b>修飾語M</b>で、文型には数えません。骨格は <b>S＋V</b>（第1文型）。" },
+
+    { cat:"svocm",
+      tokens:[{t:"She",r:"S"},{t:"became",r:"V"},{t:"a doctor.",r:"C"}], ti:2,
+      q:"下線部 a doctor の働きは？", ch:C_SVOCM, a:3, pat:"第2文型 SVC",
+      ja:"彼女は医者になった。",
+      ex:"become は <b>S＝C</b> の関係をつくる動詞。<b>She＝a doctor</b> なので a doctor は<b>補語C</b>。よって SVC（第2文型）。" },
+
+    { cat:"svocm",
+      tokens:[{t:"This soup",r:"S"},{t:"tastes",r:"V"},{t:"good.",r:"C"}], ti:2,
+      q:"下線部 good の働きは？", ch:C_SVOCM, a:3, pat:"第2文型 SVC",
+      ja:"このスープはおいしい（よい味がする）。",
+      ex:"taste は「〜の味がする」の<b>第2文型SVC</b>。補語には<b>形容詞 good</b> を置きます（×well）。This soup＝good の状態。" },
+
+    { cat:"svocm",
+      tokens:[{t:"The leaves",r:"S"},{t:"turned",r:"V"},{t:"red",r:"C"},{t:"in autumn.",r:"M"}], ti:2,
+      q:"下線部 red の働きは？", ch:C_SVOCM, a:3, pat:"第2文型 SVC",
+      ja:"葉は秋に赤くなった。",
+      ex:"turn は「〜になる」の<b>SVC</b>。The leaves＝red なので red は<b>補語C</b>。in autumn は時を表す<b>修飾語M</b>（文型には数えない）。" },
+
+    { cat:"svocm",
+      tokens:[{t:"He",r:"S"},{t:"gave",r:"V"},{t:"me",r:"O"},{t:"a present.",r:"O"}], ti:2,
+      q:"下線部 me の働きは？", ch:C_SVOCM, a:2, pat:"第4文型 SVOO",
+      ja:"彼は私にプレゼントをくれた。",
+      ex:"give は「人に物を与える」<b>第4文型SVOO</b>。me＝間接目的語O（だれに）、a present＝直接目的語O（なにを）。" },
+
+    { cat:"svocm",
+      tokens:[{t:"My father",r:"S"},{t:"bought",r:"V"},{t:"me",r:"O"},{t:"a new bike.",r:"O"}], ti:3,
+      q:"下線部 a new bike の働きは？", ch:C_SVOCM, a:2, pat:"第4文型 SVOO",
+      ja:"父は私に新しい自転車を買ってくれた。",
+      ex:"buy は SVOO をとれる動詞。me（間接O）＋a new bike（直接O）。<b>me≠a new bike</b>（イコールでない）ので C ではなく O。" },
+
+    { cat:"svocm",
+      tokens:[{t:"We",r:"S"},{t:"call",r:"V"},{t:"the dog",r:"O"},{t:"Pochi.",r:"C"}], ti:3,
+      q:"下線部 Pochi の働きは？", ch:C_SVOCM, a:3, pat:"第5文型 SVOC",
+      ja:"私たちはその犬をポチと呼ぶ。",
+      ex:"call O C＝「OをCと呼ぶ」<b>第5文型SVOC</b>。<b>the dog＝Pochi</b> のイコール関係が成り立つのが O と C の見分け方。" },
+
+    { cat:"svocm",
+      tokens:[{t:"The news",r:"S"},{t:"made",r:"V"},{t:"her",r:"O"},{t:"happy.",r:"C"}], ti:3,
+      q:"下線部 happy の働きは？", ch:C_SVOCM, a:3, pat:"第5文型 SVOC",
+      ja:"その知らせは彼女を幸せにした。",
+      ex:"make O C＝「OをCにする」<b>SVOC</b>。<b>her＝happy</b>（she is happy）の関係なので happy は<b>補語C</b>。" },
+
+    { cat:"svocm",
+      tokens:[{t:"I",r:"S"},{t:"keep",r:"V"},{t:"my room",r:"O"},{t:"clean.",r:"C"}], ti:3,
+      q:"下線部 clean の働きは？", ch:C_SVOCM, a:3, pat:"第5文型 SVOC",
+      ja:"私は部屋をきれいに保っている。",
+      ex:"keep O C＝「OをCに保つ」<b>SVOC</b>。my room＝clean の関係。もし clean を副詞的に考えても、ここは「部屋＝きれい」の状態なので<b>補語C</b>。" },
+
+    { cat:"svocm",
+      tokens:[{t:"He",r:"S"},{t:"runs",r:"V"},{t:"fast.",r:"M"}], ti:1,
+      q:"この文の文型は？", ch:C_PAT, a:0, pat:"第1文型 SV",
+      ja:"彼は速く走る。",
+      ex:"runs は自動詞、fast は「どのように」を表す<b>副詞＝修飾語M</b>。Mは文型に数えないので、骨格は<b>S＋V（第1文型）</b>。" },
+
+    { cat:"svocm",
+      tokens:[{t:"The boy",r:"S"},{t:"in the blue cap",r:"M"},{t:"is",r:"V"},{t:"my brother.",r:"C"}], ti:1,
+      q:"下線部 in the blue cap の働きは？", ch:C_SVOCM, a:4, pat:"第2文型 SVC",
+      ja:"青い帽子をかぶった少年は私の弟だ。",
+      ex:"前置詞句 in the blue cap が直前の名詞 The boy を説明する<b>形容詞的な修飾語M</b>。骨格は <b>The boy … is my brother</b>（SVC）。長い主語に惑わされず、まずV(is)を探すのがコツ。" },
+
+    { cat:"svocm",
+      tokens:[{t:"She",r:"S"},{t:"showed",r:"V"},{t:"me",r:"O"},{t:"her new dress.",r:"O"}], ti:3,
+      q:"下線部 her new dress の働きは？", ch:C_SVOCM, a:2, pat:"第4文型 SVOO",
+      ja:"彼女は私に新しいドレスを見せた。",
+      ex:"show A B＝「AにBを見せる」<b>SVOO</b>。me（人・間接O）＋her new dress（物・直接O）。" },
+
+    /* ===== 分詞 ===== */
+    { cat:"participle",
+      tokens:[{t:"The crying baby",r:"S"},{t:"is",r:"V"},{t:"my sister.",r:"C"}], ti:0,
+      q:"下線部 crying の種類は？",
+      ch:["現在分詞（baby を修飾：「泣いている」能動）","過去分詞（受動）","動名詞（〜すること）","分詞構文"], a:0,
+      pat:"第2文型 SVC",
+      ja:"泣いている赤ちゃんは私の妹だ。",
+      ex:"名詞 baby を前から修飾する<b>現在分詞</b>。baby は「自分で泣く」<b>能動</b>の関係なので -ing。a crying baby＝泣いている赤ちゃん。" },
+
+    { cat:"participle",
+      tokens:[{t:"Look at",r:"V"},{t:"the broken window.",r:"O"}], ti:1,
+      q:"下線部 broken の種類は？",
+      ch:["現在分詞（能動）","過去分詞（window が「壊される」受動）","動名詞","分詞構文"], a:1,
+      ja:"あの割れた窓を見て。",
+      ex:"window は「壊される」側＝<b>受動・完了</b>なので<b>過去分詞</b> broken。a broken window＝割れた窓。能動なら -ing、受動なら -ed が原則。" },
+
+    { cat:"participle",
+      tokens:[{t:"The boy",r:"S"},{t:"running over there",r:"M"},{t:"is",r:"V"},{t:"Tom.",r:"C"}], ti:1,
+      q:"下線部 running over there の働きは？",
+      ch:["現在分詞句（the boy を後ろから修飾）","過去分詞句（受動）","分詞構文","関係代名詞節"], a:0,
+      pat:"第2文型 SVC",
+      ja:"向こうで走っている少年はトムだ。",
+      ex:"2語以上の分詞句は名詞を<b>後ろから</b>修飾します。the boy who is running＝走っている少年。能動なので<b>現在分詞</b>。骨格は The boy … is Tom（SVC）。" },
+
+    { cat:"participle",
+      tokens:[{t:"This",r:"S"},{t:"is",r:"V"},{t:"a book",r:"C"},{t:"written by Soseki.",r:"M"}], ti:3,
+      q:"下線部 written by Soseki の働きは？",
+      ch:["現在分詞句（能動）","過去分詞句（a book を修飾：受動）","分詞構文","動名詞句"], a:1,
+      ja:"これは漱石によって書かれた本だ。",
+      ex:"book は「書かれる」<b>受動</b>なので<b>過去分詞</b> written。後ろから名詞 a book を修飾（＝which was written by Soseki）。" },
+
+    { cat:"participle",
+      tokens:[{t:"Walking along the river,",r:"M"},{t:"I",r:"S"},{t:"found",r:"V"},{t:"a cat.",r:"O"}], ti:0,
+      q:"下線部 Walking along the river の働きは？",
+      ch:["分詞構文（〜していると／〜しながら）","名詞を修飾する現在分詞","動名詞（主語）","過去分詞"], a:0,
+      pat:"第3文型 SVO",
+      ja:"川沿いを歩いていると、私はネコを見つけた。",
+      ex:"文頭のコンマ付き分詞句は<b>分詞構文</b>。意味上の主語は主節の I。<b>When I was walking along the river</b> の書き換えです。" },
+
+    { cat:"participle",
+      tokens:[{t:"Written in easy English,",r:"M"},{t:"this book",r:"S"},{t:"is",r:"V"},{t:"for kids.",r:"M"}], ti:0,
+      q:"下線部 Written in easy English の働きは？",
+      ch:["受動の分詞構文（〜なので：Being が省略）","名詞を修飾する過去分詞","現在分詞句","動名詞"], a:0,
+      ja:"やさしい英語で書かれているので、この本は子ども向けだ。",
+      ex:"先頭の過去分詞は<b>受動の分詞構文</b>。本来 <b>Being</b> written … の Being が省略された形。Because it is written in easy English の意味。" },
+
+    { cat:"participle",
+      tokens:[{t:"The movie",r:"S"},{t:"was",r:"V"},{t:"exciting.",r:"C"}], ti:2,
+      q:"下線部 exciting が -ing になるのは？",
+      ch:["主語が「物」で人をワクワクさせる側だから","主語が「人」で受け身だから","動名詞だから","分詞構文だから"], a:0,
+      pat:"第2文型 SVC",
+      ja:"その映画はわくわくするものだった。",
+      ex:"exciting＝「（物事が）人を興奮させる」。主語が<b>物（The movie）</b>なので<b>-ing</b>。人が主語なら excited（興奮させられる側）。" },
+
+    { cat:"participle",
+      tokens:[{t:"I",r:"S"},{t:"was",r:"V"},{t:"excited",r:"C"},{t:"about the game.",r:"M"}], ti:2,
+      q:"下線部 excited が -ed になるのは？",
+      ch:["主語が「人」で興奮させられる側だから","主語が「物」だから","動名詞だから","受動の分詞構文だから"], a:0,
+      ja:"私はその試合にわくわくしていた。",
+      ex:"人の感情は<b>過去分詞</b>で表します。I（人）は「興奮させられた＝わくわくした」側なので excited。exciting と excited の主役の違いに注意。" },
+
+    { cat:"participle",
+      tokens:[{t:"He",r:"S"},{t:"kept",r:"V"},{t:"me",r:"O"},{t:"waiting",r:"C"},{t:"for an hour.",r:"M"}], ti:3,
+      q:"下線部 waiting の働きは？",
+      ch:["現在分詞の補語C（me が待っている：能動）","過去分詞（受動）","動名詞","分詞構文"], a:0,
+      pat:"第5文型 SVOC",
+      ja:"彼は私を1時間待たせ続けた。",
+      ex:"keep O C の C に<b>現在分詞</b>。<b>me＝waiting</b>（me が待っている：能動）なので -ing。「Oが〜している状態を保つ」第5文型。" },
+
+    { cat:"participle",
+      tokens:[{t:"I",r:"S"},{t:"had",r:"V"},{t:"my hair",r:"O"},{t:"cut",r:"C"},{t:"yesterday.",r:"M"}], ti:3,
+      q:"下線部 cut の種類は？",
+      ch:["過去分詞（hair が「切られる」受動）","現在分詞（能動）","動名詞","過去形の動詞"], a:0,
+      pat:"第5文型 SVOC",
+      ja:"私は昨日、髪を切ってもらった。",
+      ex:"have O 過去分詞＝「Oを〜してもらう／される」。<b>my hair＝cut</b>（髪は切られる：受動）なので<b>過去分詞</b>。cut は cut-cut-cut の無変化動詞。" },
+
+    /* ===== 関係詞 ===== */
+    { cat:"relative",
+      tokens:[{t:"I",r:"S"},{t:"have",r:"V"},{t:"a friend",r:"O"},{t:"who lives in Osaka.",r:"M"}], ti:3,
+      q:"下線部の who の種類は？",
+      ch:["関係代名詞 主格（who＋動詞）","関係代名詞 目的格","関係代名詞 所有格","関係副詞"], a:0,
+      ja:"私には大阪に住んでいる友達がいる。",
+      ex:"who の直後が<b>動詞 lives</b> → <b>主格</b>の関係代名詞。先行詞 a friend（人）が節の中で主語の働き。who lives in Osaka が a friend を修飾。" },
+
+    { cat:"relative",
+      tokens:[{t:"This",r:"S"},{t:"is",r:"V"},{t:"the book",r:"C"},{t:"that I bought yesterday.",r:"M"}], ti:3,
+      q:"下線部の that の種類は？",
+      ch:["関係代名詞 主格","関係代名詞 目的格（後ろで目的語が欠ける）","関係代名詞 所有格","関係副詞"], a:1,
+      ja:"これは私が昨日買った本だ。",
+      ex:"that の後ろが <b>I bought（S＋V）</b>で <b>bought の目的語が欠けている</b> → <b>目的格</b>。目的格は省略可（the book I bought）。" },
+
+    { cat:"relative",
+      tokens:[{t:"I",r:"S"},{t:"know",r:"V"},{t:"a boy",r:"O"},{t:"whose father is a doctor.",r:"M"}], ti:3,
+      q:"下線部の whose の種類は？",
+      ch:["関係代名詞 主格","関係代名詞 目的格","関係代名詞 所有格（whose＋名詞）","関係副詞"], a:2,
+      ja:"私はお父さんが医者の少年を知っている。",
+      ex:"<b>whose＋名詞</b>（whose father）の形は<b>所有格</b>の関係代名詞。a boy の「父」＝whose father。His father is a doctor の his が whose に。" },
+
+    { cat:"relative",
+      tokens:[{t:"This",r:"S"},{t:"is",r:"V"},{t:"the house",r:"C"},{t:"where I was born.",r:"M"}], ti:3,
+      q:"下線部の where の種類は？",
+      ch:["関係副詞（場所：where＝in which）","関係代名詞 主格","関係代名詞 目的格","関係代名詞 所有格"], a:0,
+      ja:"ここは私が生まれた家だ。",
+      ex:"where の後ろが <b>I was born</b> と<b>欠けのない完全な文</b>。先行詞が場所 the house → <b>関係副詞</b>（＝in which）。" },
+
+    { cat:"relative",
+      tokens:[{t:"Do you remember",r:"V"},{t:"the day",r:"O"},{t:"when we first met?",r:"M"}], ti:2,
+      q:"下線部の when の種類は？",
+      ch:["関係副詞（時：when＝on which）","関係代名詞 主格","関係代名詞 目的格","接続詞 when"], a:0,
+      ja:"私たちが初めて会った日を覚えていますか。",
+      ex:"先行詞が時 the day、後ろが <b>we first met</b> と完全文 → <b>関係副詞 when</b>（＝on which）。前後で欠けがあるか（代名詞）／ないか（副詞）で見分けます。" },
+
+    { cat:"relative",
+      tokens:[{t:"The man",r:"S"},{t:"I met yesterday",r:"M"},{t:"was",r:"V"},{t:"kind.",r:"C"}], ti:1,
+      q:"下線部 I met yesterday の前に省略されている語は？",
+      ch:["目的格の関係代名詞 who(m) / that","主格の関係代名詞 who","関係副詞 when","接続詞 that"], a:0,
+      pat:"第2文型 SVC",
+      ja:"私が昨日会った男性は親切だった。",
+      ex:"The man <b>(who(m)/that)</b> I met yesterday … met の目的語が欠けた<b>目的格</b>なので省略可能（接触節）。骨格は The man … was kind（SVC）。" },
+
+    { cat:"relative",
+      tokens:[{t:"Paris,",r:"S"},{t:"which I visited last year,",r:"M"},{t:"is",r:"V"},{t:"beautiful.",r:"C"}], ti:1,
+      q:"下線部のような関係詞の使い方は？",
+      ch:["非制限用法（コンマ付き・先行詞の補足説明）","制限用法（先行詞を限定）","関係副詞","that の制限用法"], a:0,
+      pat:"第2文型 SVC",
+      ja:"パリは、私が去年訪れたのだが、美しい。",
+      ex:"前後を<b>コンマで挟む</b>のは<b>非制限用法</b>。先行詞 Paris に補足説明を付け足します。固有名詞は通常この用法。<b>that は非制限用法に使えません</b>。" },
+
+    { cat:"relative",
+      tokens:[{t:"The house",r:"S"},{t:"in which he lives",r:"M"},{t:"is",r:"V"},{t:"old.",r:"C"}], ti:1,
+      q:"下線部 in which の説明として正しいのは？",
+      ch:["前置詞＋関係代名詞（＝where）","関係副詞","所有格の関係代名詞","主格の関係代名詞"], a:0,
+      pat:"第2文型 SVC",
+      ja:"彼が住んでいる家は古い。",
+      ex:"<b>前置詞＋関係代名詞</b>。he lives <b>in</b> the house の in が which の前に出た形で、<b>＝where</b>。後ろは欠けのない文になります。" },
+
+    { cat:"relative",
+      tokens:[{t:"Everything",r:"S"},{t:"that he said",r:"M"},{t:"was",r:"V"},{t:"true.",r:"C"}], ti:1,
+      q:"下線部の that の種類は？",
+      ch:["関係代名詞 主格","関係代名詞 目的格（said の目的語が欠ける）","関係副詞","接続詞 that"], a:1,
+      pat:"第2文型 SVC",
+      ja:"彼が言ったことはすべて本当だった。",
+      ex:"that の後ろ <b>he said</b> で目的語が欠ける → <b>目的格</b>。先行詞が everything のような -thing や最上級のときは which より<b>that</b> を好みます。" },
+
+    { cat:"relative",
+      tokens:[{t:"The train",r:"S"},{t:"which goes to Kyoto",r:"M"},{t:"has",r:"V"},{t:"left.",r:"O"}], ti:1,
+      q:"下線部の which の種類は？",
+      ch:["関係代名詞 主格（which＋動詞）","関係代名詞 目的格","関係代名詞 所有格","関係副詞"], a:0,
+      pat:"第3文型 SVO",
+      ja:"京都行きの電車は出てしまった。",
+      ex:"which の直後が<b>動詞 goes</b> → <b>主格</b>の関係代名詞。先行詞 The train が<b>「人以外」</b>なので who ではなく which。骨格は The train … has left。" },
+
+    /* ===== 総合 ===== */
+    { cat:"mixed",
+      tokens:[{t:"The girl",r:"S"},{t:"reading a book under the tree",r:"M"},{t:"is",r:"V"},{t:"my classmate.",r:"C"}], ti:1,
+      q:"下線部 reading a book under the tree の働きは？",
+      ch:["現在分詞句（the girl を後ろから修飾：M）","主語 S","補語 C","目的語 O"], a:0,
+      pat:"第2文型 SVC",
+      ja:"木の下で本を読んでいる少女は私のクラスメートだ。",
+      ex:"長い主語の文。現在分詞句が the girl を後ろから修飾（＝who is reading …）する<b>修飾語M</b>。まず V(is) を見つけ、その前のカタマリ全体が主語。骨格は <b>The girl … is my classmate</b>（SVC）。" },
+
+    { cat:"mixed",
+      tokens:[{t:"What he said",r:"S"},{t:"made",r:"V"},{t:"us",r:"O"},{t:"surprised.",r:"C"}], ti:0,
+      q:"下線部 What he said の働きは？",
+      ch:["S（主語になる名詞節）","V（動詞）","O（目的語）","M（修飾語）"], a:0,
+      pat:"第5文型 SVOC",
+      ja:"彼が言ったことは私たちを驚かせた。",
+      ex:"関係詞 what（＝the thing which）が作る<b>名詞節が主語S</b>。骨格は make O C の<b>SVOC</b>で、us＝surprised（過去分詞の補語）。" },
+
+    { cat:"mixed",
+      tokens:[{t:"The book",r:"S"},{t:"I borrowed from the library",r:"M"},{t:"was",r:"V"},{t:"interesting.",r:"C"}], ti:1,
+      q:"下線部 I borrowed from the library の正体は？",
+      ch:["目的格の関係代名詞が省略された節（the book を修飾）","主格の関係代名詞節","分詞構文","補語C"], a:0,
+      pat:"第2文型 SVC",
+      ja:"私が図書館で借りた本は面白かった。",
+      ex:"The book <b>(which/that)</b> I borrowed … borrowed の目的語が欠けた<b>目的格</b>なので省略されています（接触節＝M）。骨格は The book … was interesting（SVC）。" },
+
+    { cat:"mixed",
+      tokens:[{t:"Surprised at the news,",r:"M"},{t:"she",r:"S"},{t:"couldn't speak.",r:"V"}], ti:0,
+      q:"下線部 Surprised at the news の働きは？",
+      ch:["受動の分詞構文（〜して：理由・付帯）","名詞を修飾する過去分詞","主語 S","補語 C"], a:0,
+      pat:"第1文型 SV",
+      ja:"その知らせに驚いて、彼女は口がきけなかった。",
+      ex:"先頭のコンマ付き過去分詞は<b>受動の分詞構文</b>（Being surprised の Being 省略）。意味上の主語は主節の she。＝Because she was surprised at the news。" },
+
+    { cat:"mixed",
+      tokens:[{t:"I",r:"S"},{t:"found",r:"V"},{t:"the door",r:"O"},{t:"locked.",r:"C"}], ti:3,
+      q:"下線部 locked の働きは？",
+      ch:["過去分詞の補語C（the door が「鍵をかけられた」受動）","現在分詞（能動）","目的語O","修飾語M"], a:0,
+      pat:"第5文型 SVOC",
+      ja:"私はドアに鍵がかかっているのに気づいた。",
+      ex:"find O C＝「OがCだとわかる」<b>SVOC</b>。<b>the door＝locked</b>（ドアは鍵をかけられる：受動）なので<b>過去分詞</b>が補語。" },
+
+    { cat:"mixed",
+      tokens:[{t:"The reason",r:"S"},{t:"why he succeeded",r:"M"},{t:"is",r:"V"},{t:"clear.",r:"C"}], ti:1,
+      q:"下線部 why の種類は？",
+      ch:["関係副詞（理由：why＝for which）","関係代名詞 主格","関係代名詞 目的格","接続詞 because"], a:0,
+      pat:"第2文型 SVC",
+      ja:"彼が成功した理由は明らかだ。",
+      ex:"先行詞が the reason、後ろが <b>he succeeded</b> と完全文 → <b>関係副詞 why</b>。骨格は The reason … is clear（SVC）。" },
+
+    { cat:"mixed",
+      tokens:[{t:"Running fast,",r:"M"},{t:"the dog",r:"S"},{t:"chased",r:"V"},{t:"the cat.",r:"O"}], ti:0,
+      q:"下線部 Running fast の働きは？",
+      ch:["分詞構文（〜しながら：付帯状況）","名詞を修飾する現在分詞","主語 S","補語 C"], a:0,
+      pat:"第3文型 SVO",
+      ja:"速く走りながら、その犬はネコを追いかけた。",
+      ex:"文頭のコンマ付き現在分詞は<b>分詞構文</b>。意味上の主語は the dog。「〜しながら」の<b>付帯状況</b>を表します。骨格は the dog chased the cat（SVO）。" },
+
+    { cat:"mixed",
+      tokens:[{t:"It",r:"S"},{t:"is",r:"V"},{t:"the most interesting book",r:"C"},{t:"that I have ever read.",r:"M"}], ti:3,
+      q:"下線部の that の種類は？",
+      ch:["関係代名詞 目的格（read の目的語が欠ける）","関係代名詞 主格","関係副詞","接続詞 that"], a:0,
+      pat:"第2文型 SVC",
+      ja:"それは私が今までに読んだ中で最も面白い本だ。",
+      ex:"that の後ろ <b>I have ever read</b> で read の目的語が欠ける → <b>目的格</b>。先行詞に<b>最上級</b>（the most interesting）が付くと which より <b>that</b> が好まれます。" }
+  ];
+
+  // ---- engine ----
+  var ROLE_LABEL = {S:"S",V:"V",O:"O",C:"C",M:"M"};
+  var state = { cat:"all", list:[], idx:0, answered:{}, correct:0, attempted:0 };
+
+  function $(id){ return document.getElementById(id); }
+
+  function buildList(){
+    state.list = BANK.map(function(p,i){return i;}).filter(function(i){
+      return state.cat==="all" || BANK[i].cat===state.cat;
+    });
+  }
+
+  function renderSentence(p, reveal){
+    var html = "";
+    for(var i=0;i<p.tokens.length;i++){
+      var tk = p.tokens[i];
+      var sep = (i===0 || /^[,.?!]/.test(tk.t)) ? "" : " ";
+      var cls = "tk";
+      if(reveal) cls += " role-" + tk.r;
+      if(i===p.ti) cls += " target";
+      var sup = reveal ? '<sup class="rl role-'+tk.r+'">'+ROLE_LABEL[tk.r]+'</sup>' : '';
+      html += sep + '<span class="'+cls+'">' + esc(tk.t) + '</span>' + sup;
+    }
+    $("sentence").innerHTML = html;
+  }
+
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  var CAT_JA = {svocm:"5文型 SVOCM",participle:"分詞",relative:"関係詞",mixed:"総合"};
+
+  function render(){
+    var total = state.list.length;
+    if(total===0){ return; }
+    var gi = state.list[state.idx];
+    var p = BANK[gi];
+    var ans = state.answered[gi];      // chosen index or undefined
+
+    $("quizArea").style.display = "block";
+    $("doneArea").style.display = "none";
+
+    $("catTag").textContent = CAT_JA[p.cat] || "";
+    $("counter").textContent = "問 " + (state.idx+1) + " / " + total;
+    $("score").textContent = "正解 " + state.correct + (state.attempted? " / "+state.attempted : "");
+    $("barFill").style.width = (total? Math.round((state.idx)/total*100) : 0) + "%";
+
+    var reveal = (ans !== undefined);
+    renderSentence(p, reveal);
+    $("qtext").textContent = p.q;
+
+    // choices
+    var box = $("choices");
+    box.innerHTML = "";
+    p.ch.forEach(function(c, ci){
+      var b = document.createElement("button");
+      b.innerHTML = '<span class="mk">'+String.fromCharCode(65+ci)+'.</span>'+esc(c);
+      if(reveal){
+        b.disabled = true;
+        if(ci===p.a) b.classList.add("correct");
+        else if(ci===ans) b.classList.add("wrong");
+      } else {
+        b.addEventListener("click", function(){ choose(gi, ci); });
+      }
+      box.appendChild(b);
+    });
+
+    // feedback
+    var fb = $("fb");
+    if(reveal){
+      fb.className = "fb show " + (ans===p.a ? "ok":"ng");
+      $("verdict").textContent = (ans===p.a ? "○ 正解！" : "× 不正解");
+      if(p.pat){ $("pat").style.display="inline-block"; $("pat").textContent = "文型：" + p.pat; }
+      else { $("pat").style.display="none"; }
+      $("ja").textContent = "和訳：" + p.ja;
+      $("ex").innerHTML = p.ex;
+    } else {
+      fb.className = "fb";
+    }
+
+    $("prevBtn").disabled = (state.idx===0);
+    $("nextBtn").disabled = !reveal;
+    $("nextBtn").textContent = (state.idx===total-1) ? "結果を見る →" : "次の問題 →";
+  }
+
+  function choose(gi, ci){
+    if(state.answered[gi]!==undefined) return;
+    state.answered[gi] = ci;
+    state.attempted++;
+    if(ci===BANK[gi].a) state.correct++;
+    render();
+  }
+
+  function showDone(){
+    $("quizArea").style.display = "none";
+    $("doneArea").style.display = "block";
+    $("barFill").style.width = "100%";
+    var total = state.list.length;
+    $("doneScore").textContent = state.correct + " / " + total + " 問正解";
+    $("score").textContent = "正解 " + state.correct + " / " + state.attempted;
+  }
+
+  function next(){
+    if(state.idx < state.list.length-1){ state.idx++; render(); }
+    else { showDone(); }
+  }
+  function prev(){ if(state.idx>0){ state.idx--; render(); } }
+
+  function resetQuiz(keepCat){
+    if(!keepCat) state.cat = "all";
+    buildList();
+    state.idx = 0; state.answered = {}; state.correct = 0; state.attempted = 0;
+    render();
+  }
+
+  // tabs
+  var tabBtns = $("tabs").querySelectorAll("button");
+  tabBtns.forEach(function(b){
+    b.addEventListener("click", function(){
+      tabBtns.forEach(function(x){ x.classList.toggle("on", x===b); });
+      state.cat = b.getAttribute("data-cat");
+      resetQuiz(true);
+    });
+  });
+  $("nextBtn").addEventListener("click", next);
+  $("prevBtn").addEventListener("click", prev);
+  $("restartBtn").addEventListener("click", function(){ resetQuiz(true); });
+
+  resetQuiz(true);
+})();
+</script>
+</body>
+</html>
