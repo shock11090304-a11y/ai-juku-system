@@ -517,15 +517,20 @@ async function renderImportAppsList() {
       <div style="font-size:0.78rem;color:#cbd5e1;margin-top:4px;">✉ ${escapeHtml(app.email || '-')} ／ ☎ ${escapeHtml(app.phone || '-')}</div>
       <div style="margin-top:6px;">${chips || '<span style="color:#9ca3af;font-size:0.76rem;">コース未取得 (取込後に変更可)</span>'}</div>
       <details style="margin-top:8px;"><summary style="cursor:pointer;font-size:0.76rem;color:#9ca3af;">申込内容を見る</summary><pre style="white-space:pre-wrap;font-size:0.74rem;color:#cbd5e1;margin:6px 0 0;font-family:inherit;">${escapeHtml(app.note || '(なし)')}</pre></details>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;">
         <button class="btn btn-ghost btn-sm" data-dismiss="${app.id}">🗑 無視</button>
-        <button class="btn btn-primary btn-sm" data-import="${app.id}">✓ 名簿に取り込む</button>
+        <button class="btn btn-ghost btn-sm" data-import="${app.id}">✓ 名簿に取り込む</button>
+        <button class="btn btn-primary btn-sm" data-import-invite="${app.id}" title="名簿に取り込み、続けて Stripe カード決済の案内メールを送信します">✉ 取込＋Stripe案内</button>
       </div>
     </div>`;
   }).join('');
   box.querySelectorAll('[data-import]').forEach(b => b.addEventListener('click', () => {
     const app = apps.find(a => String(a.id) === b.getAttribute('data-import'));
     if (app) importApplicationAsStudent(app);
+  }));
+  box.querySelectorAll('[data-import-invite]').forEach(b => b.addEventListener('click', () => {
+    const app = apps.find(a => String(a.id) === b.getAttribute('data-import-invite'));
+    if (app) importApplicationAndInvite(app);
   }));
   box.querySelectorAll('[data-dismiss]').forEach(b => b.addEventListener('click', () => {
     const id = parseInt(b.getAttribute('data-dismiss'), 10);
@@ -541,12 +546,13 @@ function allocateNewStudentId() {
   return id;
 }
 
-async function importApplicationAsStudent(app) {
+// 取り込みの中核 (alert/一覧再描画はしない)。成功時 {id, fee, cloudOk} / 中断時 null を返す。
+async function _importApplicationCore(app) {
   const p = parseEnrollmentApp(app);
   const normName = (typeof normalizeName === 'function') ? normalizeName(app.name) : (app.name || '').trim();
   const dup = normName ? STATE.data.students.find(s => (typeof normalizeName === 'function' ? normalizeName(s.name) : s.name) === normName) : null;
   if (dup) {
-    if (!confirm(`既に同名の生徒「${dup.name}」(ID #${dup.id}) がいます。\n本当に新規で取り込みますか？ (同姓同名なら OK)`)) return;
+    if (!confirm(`既に同名の生徒「${dup.name}」(ID #${dup.id}) がいます。\n本当に新規で取り込みますか？ (同姓同名なら OK)`)) return null;
   }
   const id = allocateNewStudentId();
   const newStudent = {
@@ -581,15 +587,72 @@ async function importApplicationAsStudent(app) {
   populateAllFilters();
   refresh();
 
-  let cloudMsg = '';
+  let cloudOk = true;
   if (typeof CloudSync !== 'undefined' && CloudSync.bootstrapped && CloudSync.getToken()) {
-    const ok = await CloudSync.pushNow();
-    cloudMsg = ok ? '✓ クラウド同期完了 (携帯/PC 共有)' : '⚠ クラウド同期失敗 (右上 ⚠ から再試行)';
-  } else {
-    cloudMsg = 'ℹ クラウド未ログイン: localStorage のみ保存';
+    cloudOk = await CloudSync.pushNow();
   }
-  alert(`✓ ${newStudent.name} さん (ID #${id}) を名簿に取り込みました。\n月謝 ¥${(p.fee || 0).toLocaleString()} / 学年 ${app.grade || '未設定'}\n\n${cloudMsg}`);
+  return { id, fee: p.fee || 0, cloudOk, name: newStudent.name, grade: app.grade || '未設定' };
+}
+
+function _cloudMsg(cloudOk) {
+  if (typeof CloudSync === 'undefined' || !CloudSync.getToken()) return 'ℹ クラウド未ログイン: localStorage のみ保存';
+  return cloudOk ? '✓ クラウド同期完了 (携帯/PC 共有)' : '⚠ クラウド同期失敗 (右上 ⚠ から再試行)';
+}
+
+async function importApplicationAsStudent(app) {
+  const r = await _importApplicationCore(app);
+  if (!r) return;
+  alert(`✓ ${r.name} さん (ID #${r.id}) を名簿に取り込みました。\n月謝 ¥${r.fee.toLocaleString()} / 学年 ${r.grade}\n\n${_cloudMsg(r.cloudOk)}`);
   renderImportAppsList();
+}
+
+// 取り込み + Stripe案内メール送信 (確認してから任意送信)。
+async function importApplicationAndInvite(app) {
+  const r = await _importApplicationCore(app);
+  if (!r) return;
+  const s = STATE.data.students.find(x => x.id === r.id);
+  const mailMsg = await sendStripeInviteForStudent(s);
+  alert(`✓ ${r.name} さん (ID #${r.id}) を名簿に取り込みました。\n月謝 ¥${r.fee.toLocaleString()} / 学年 ${r.grade}\n\n${mailMsg}\n${_cloudMsg(r.cloudOk)}`);
+  renderImportAppsList();
+}
+
+// 1名に Stripe案内メールを送る。検証→確認→Resend(失敗時mailto)→送信済み記録。結果文字列を返す。
+async function sendStripeInviteForStudent(s) {
+  if (!s) return '⚠ 案内メール未送信: 生徒が見つかりません';
+  const to = getEmail(s.id);
+  if (!to) return '⚠ 案内メール未送信: メールアドレスが未登録です';
+  const link = paymentLinkFor(s);
+  if (!link || link === '(未設定)') {
+    return `⚠ 案内メール未送信: 月謝 ¥${(s.fee || 0).toLocaleString()} の Stripe 決済リンクが未設定です\n(設定モーダルの「月謝額→決済リンク」に登録すると送れます)`;
+  }
+  const m = buildStripeInviteFor(s.id);
+  if (!m || !m.to) return '⚠ 案内メール未送信: メール生成に失敗しました';
+  const preview = (m.body || '').slice(0, 300) + ((m.body || '').length > 300 ? '…' : '');
+  if (!confirm(`Stripe カード決済の案内メールを送信します。\n\n宛先: ${m.to}\n件名: ${m.subject}\n\n${preview}\n\n送信しますか？`)) {
+    return 'ℹ 案内メールは送信しませんでした (取り込みのみ完了)';
+  }
+  // Resend API 直送 (サーバ側・モバイル可)。admin パスワードがあれば優先。
+  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || ((typeof CHAT_PW_KEY !== 'undefined') ? localStorage.getItem(CHAT_PW_KEY) : '') || '';
+  if (pw) {
+    try {
+      const res = await commIndividualSendResend(s, m.subject, m.body);
+      if (res) {
+        setStripeInviteSent(s.id, new Date().toISOString().slice(0, 10));
+        saveOverrides();
+        if (typeof CloudSync !== 'undefined' && CloudSync.bootstrapped && CloudSync.getToken()) await CloudSync.pushNow();
+        return `✅ Stripe案内メールを送信しました (${m.to})`;
+      }
+    } catch (e) { /* fall through to mailto */ }
+  }
+  // フォールバック: メーラーで開く (Resend 未設定/失敗時)
+  if (mailtoSafetyCheck(m.to, m.subject, m.body)) {
+    window.open(mailtoUrl(m.to, m.subject, m.body), '_blank');
+    setStripeInviteSent(s.id, new Date().toISOString().slice(0, 10));
+    saveOverrides();
+    if (typeof CloudSync !== 'undefined' && CloudSync.bootstrapped && CloudSync.getToken()) await CloudSync.pushNow();
+    return `📧 メーラーを開きました (${m.to})。表示されたメールの送信ボタンを押してください\n(Resend直送には チャットタブで管理パスワード設定が必要です)`;
+  }
+  return '⚠ 本文が長くメーラーで開けませんでした。名簿の「➜送信」から手動送信してください';
 }
 
 async function dismissApplication(appId) {
