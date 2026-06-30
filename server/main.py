@@ -5948,7 +5948,21 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
             weakness_cnt = rw["cnt"] or 0
         except (TypeError, KeyError, IndexError):
             weakness_cnt = (rw[0] if rw else 0) or 0
-        weakness_penalty = min(20, weakness_cnt * 2)
+        # 🎯 [adm-recalib] 2026-06-30: 「演習した単元すべて」を弱点として減点する逆転バグを修正。
+        # 旧: weakness_penalty = min(20, 全単元数 * 2) → たくさん解いて弱点を発掘した真面目な
+        #     生徒ほど減点され、何もしていない生徒は弱点ゼロで高スコアになる逆転が起きていた。
+        # 新: 真の弱点 = 十分な試行(>=5)があり実測正答率が低い(<0.6)ものだけを数える。
+        c.execute(
+            "SELECT COUNT(*) AS cnt FROM student_weakness "
+            "WHERE student_id = ? AND qa_attempts >= 5 AND qa_accuracy IS NOT NULL AND qa_accuracy < 0.6",
+            (student_id,),
+        )
+        rtw = c.fetchone()
+        try:
+            true_weak_cnt = rtw["cnt"] or 0
+        except (TypeError, KeyError, IndexError):
+            true_weak_cnt = (rtw[0] if rtw else 0) or 0
+        weakness_penalty = min(15, true_weak_cnt * 3)
 
         # 配布プリント DL ボーナス
         c.execute("SELECT COUNT(*) AS cnt FROM lesson_print_downloads WHERE student_id = ?", (student_id,))
@@ -5968,9 +5982,20 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
             vocab_cnt = (rv[0] if rv else 0) or 0
         vocab_bonus = min(10, vocab_cnt // 50)
 
-        # 📝 模試 (mock_exam_sessions) の最新偏差値を反映 — docstring の「模試成績」が
-        # 実装に存在しなかった乖離の解消 ([adm-accuracy] 2026-06-12 監査指摘)。
-        # 模試 D 判定でも学習時間さえ積めば高スコアになる誤導を防ぐ。未受験なら ±0。
+        # 📝 [adm-recalib] 2026-06-30: 客観的な実力指標 = 模試偏差値を最優先で反映。
+        # 外部模試 (exam_results・河合/駿台/進研 等) があれば最新回の平均偏差値を採用、
+        # 無ければ内蔵模試 (mock_exam_sessions) の推定偏差値。外部模試の方が客観性が高い。
+        c.execute(
+            "SELECT AVG(deviation) AS avg_dev FROM exam_results "
+            "WHERE student_id = ? AND deviation IS NOT NULL "
+            "AND exam_date = (SELECT MAX(exam_date) FROM exam_results WHERE student_id = ? AND deviation IS NOT NULL)",
+            (student_id, student_id),
+        )
+        rext = c.fetchone()
+        try:
+            ext_dev = float(rext["avg_dev"]) if rext and rext["avg_dev"] is not None else None
+        except (TypeError, KeyError, IndexError, ValueError):
+            ext_dev = None
         c.execute(
             "SELECT deviation_estimate FROM mock_exam_sessions "
             "WHERE student_id = ? AND submitted_at IS NOT NULL AND deviation_estimate IS NOT NULL "
@@ -5982,22 +6007,53 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
             mock_dev = float(rmock["deviation_estimate"]) if rmock and rmock["deviation_estimate"] is not None else None
         except (TypeError, KeyError, IndexError, ValueError):
             mock_dev = None
-        if mock_dev is None:
+        eval_dev = ext_dev if ext_dev is not None else mock_dev  # 客観実力 (外部模試を優先)
+        if eval_dev is None:
             mock_adjust = 0
-        elif mock_dev >= 65:
-            mock_adjust = 10
-        elif mock_dev >= 60:
-            mock_adjust = 6
-        elif mock_dev >= 55:
-            mock_adjust = 3
-        elif mock_dev >= 50:
-            mock_adjust = 0
-        elif mock_dev >= 45:
-            mock_adjust = -5
-        else:
-            mock_adjust = -10
+        elif eval_dev >= 70: mock_adjust = 15
+        elif eval_dev >= 65: mock_adjust = 12
+        elif eval_dev >= 60: mock_adjust = 8
+        elif eval_dev >= 55: mock_adjust = 4
+        elif eval_dev >= 50: mock_adjust = 0
+        elif eval_dev >= 45: mock_adjust = -6
+        elif eval_dev >= 40: mock_adjust = -12
+        else: mock_adjust = -15
 
-        score = max(5, min(95, baseline + study_bonus + dl_bonus + vocab_bonus + mock_adjust - weakness_penalty))
+        # 🎯 [adm-recalib] 実演習パフォーマンス (question_attempts 直近90日) の正答率・量を反映。
+        # 旧スコアは実際のドリル成績を一切見ていなかった (1489問 正答94% でも加点ゼロだった)。
+        date_90d_qa = ("created_at >= (NOW() - INTERVAL '90 days')" if USE_POSTGRES
+                       else "created_at >= datetime('now', '-90 days')")
+        c.execute(
+            f"SELECT COUNT(*) AS n, AVG(CASE WHEN is_correct IS NOT NULL THEN is_correct ELSE NULL END) AS acc "
+            f"FROM question_attempts WHERE student_id = ? AND {date_90d_qa}",
+            (student_id,),
+        )
+        rp = c.fetchone()
+        try:
+            perf_n = rp["n"] or 0
+            perf_acc = rp["acc"]
+        except (TypeError, KeyError, IndexError):
+            perf_n = (rp[0] if rp else 0) or 0
+            perf_acc = (rp[1] if (rp is not None and len(rp) > 1) else None)
+        perf_acc = float(perf_acc) if perf_acc is not None else None
+        if perf_n < 10 or perf_acc is None:
+            perf_adjust = 0
+        elif perf_acc >= 0.85: perf_adjust = 10
+        elif perf_acc >= 0.75: perf_adjust = 6
+        elif perf_acc >= 0.65: perf_adjust = 3
+        elif perf_acc >= 0.55: perf_adjust = 0
+        elif perf_acc >= 0.45: perf_adjust = -5
+        else: perf_adjust = -10
+        # 安全弁: 模試が低い(<50)のにドリル正答が高いケースは、ドリルが本番より易しい可能性が高い。
+        # 実力以上に見せないため、その場合のドリル加点は無効化する (3 視点監査の趣旨)。
+        if eval_dev is not None and eval_dev < 50 and perf_adjust > 0:
+            perf_adjust = 0
+
+        # 客観データ (演習10+ or 模試) の有無 = 「順調」表示を許す前提条件。
+        has_objective = (perf_n >= 10) or (eval_dev is not None)
+
+        score = max(5, min(95, baseline + study_bonus + dl_bonus + vocab_bonus
+                           + mock_adjust + perf_adjust - weakness_penalty))
 
         # 🗓 残り日数 ([adm-accuracy] 2026-06-12: 全員一律「翌年 2/25」固定を動的化)。
         # 優先順: ① curricula.exam_date (active・未来日) ② 学年からの推定 ③ 高3標準 (翌 2/25)。
@@ -6070,11 +6126,19 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
             "study_hours_30d": round(study_hours, 1),
             "study_bonus": study_bonus,
             "weakness_count": weakness_cnt,
+            "true_weakness_count": true_weak_cnt,
             "weakness_penalty": -weakness_penalty,
             "lesson_print_downloads": dl_cnt,
             "dl_bonus": dl_bonus,
             "vocab_progress": vocab_cnt,
             "vocab_bonus": vocab_bonus,
+            # 🎯 [adm-recalib] 2026-06-30: 実演習パフォーマンス・客観実力指標を内訳に開示
+            "perf_attempts_90d": perf_n,
+            "perf_accuracy": round(perf_acc, 3) if perf_acc is not None else None,
+            "perf_adjust": perf_adjust,
+            "exam_deviation": round(ext_dev, 1) if ext_dev is not None else None,
+            "eval_deviation": round(eval_dev, 1) if eval_dev is not None else None,
+            "has_objective": has_objective,
             # 🎯 [adm-accuracy] 2026-06-12: 模試反映 + 本番想定日の根拠を内訳に開示
             "mock_deviation": mock_dev,
             "mock_adjust": mock_adjust,
@@ -6101,15 +6165,27 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
             except Exception:
                 is_new_student = False
         # 学習データがほぼ無い場合も「データ蓄積中」として扱う (study_min == 0 かつ dl_cnt == 0)
-        has_no_activity = (study_min == 0 and dl_cnt == 0 and vocab_cnt == 0)
+        has_no_activity = (study_min == 0 and dl_cnt == 0 and vocab_cnt == 0 and perf_n == 0 and eval_dev is None)
+        # 🎯 [adm-recalib] 2026-06-30: 客観データ(演習/模試)が無いまま「順調✨」と表示して
+        # "何もしていない受験生を放置する" リスクを構造的に排除。客観データが無ければ順調帯に
+        # 到達させず、専用メッセージで実力測定を促す。
+        # さらに「順調✨(70+)」は模試での裏付けを必須にする (ドリルは本番より易しい場合があり、
+        # ドリルだけで高評価=過信を招くため)。模試が無い生徒は最大「標準(69)」止まりにして、
+        # 模試受験を促す (= 模試データが6名と希少な現状の改善インセンティブにもなる)。
+        if eval_dev is None:
+            score = min(score, 69)
+        if not has_objective:
+            score = min(score, 55)
         if is_new_student or has_no_activity:
             analysis = f"📊 データ蓄積中 ({target_univ} 志望)。学習記録・配布プリント DL・単語帳練習を進めると、より精度の高い参考値が表示されます。"
+        elif not has_objective:
+            analysis = f"🟡 客観データ不足 ({target_univ} 志望)。学習記録はありますが、演習(ドリル)・模試の実績が少なく実力を客観評価できません。まず演習か模試で実力測定を。"
         elif score >= 70:
             analysis = f"順調です ✨ {target_univ} 合格可能性は高水準。引き続き弱点 TOP3 の解消に集中。"
         elif score >= 50:
-            analysis = f"標準的な水準 📊 {target_univ} 合格に向けてはあと {100 - score}% の余地。学習時間を月 +5h、弱点プリント DL を増やすと加速。"
+            analysis = f"標準的な水準 📊 {target_univ} 合格に向けてはあと {100 - score}% の余地。弱点単元の演習と模試での実力確認を。"
         elif score >= 30:
-            analysis = f"要注力 ⚠️ {target_univ} 合格には学習時間 (月 60h+) と弱点プリント活用が必須。残り {days_remaining} 日。"
+            analysis = f"要注力 ⚠️ {target_univ} 合格には演習量・正答率の底上げが必須。弱点単元を優先的に。残り {days_remaining} 日。"
         else:
             analysis = f"危機水準 🔴 {target_univ} 志望なら今すぐ毎日 2h 学習を継続。塾長相談を推奨。"
 
