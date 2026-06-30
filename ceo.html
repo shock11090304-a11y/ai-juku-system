@@ -8360,6 +8360,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         <button class="sd-tab-btn" data-tab="homework" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📚 宿題</button>
         <button class="sd-tab-btn" data-tab="studyplan" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📅 学習計画</button>
         <button class="sd-tab-btn" data-tab="exams" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📊 模試</button>
+        <button class="sd-tab-btn" data-tab="action" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">🎯 やるべきこと</button>
       </div>
       <!-- タブパネル -->
       <div id="studentDetailBody" style="padding:24px;color:#e4e4e7;font-size:0.92rem;line-height:1.7;">
@@ -8369,6 +8370,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         <div class="sd-tab-pane" data-pane="homework" style="display:none;">読み込み中...</div>
         <div class="sd-tab-pane" data-pane="studyplan" style="display:none;">読み込み中...</div>
         <div class="sd-tab-pane" data-pane="exams" style="display:none;">読み込み中...</div>
+        <div class="sd-tab-pane" data-pane="action" style="display:none;">読み込み中...</div>
       </div>
     </div>
   </div>
@@ -8685,7 +8687,55 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         examsPane.dataset.loaded = '';
         examsPane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">タブをクリックして読み込みます</div>';
       }
+      // 🎯 やるべきことタブ (新規 2026-06-30)
+      const actionPane = modal.querySelector('[data-pane="action"]');
+      if (actionPane) {
+        actionPane.dataset.studentId = String(st.id);
+        actionPane.dataset.loaded = '';
+        actionPane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">タブをクリックして読み込みます</div>';
+      }
       modal.style.display = 'flex';
+    }
+
+    // 🎯 やるべきこと: learning-digest(1名分) を取得し、弱点分析と同じルールで打ち手を算出・表示
+    async function loadStudentActionPlan(sid, pane) {
+      const res = await AdminAuth.fetch(`/api/admin/learning-digest?student_id=${sid}`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const s = (data.students || [])[0];
+      if (!s) { pane.innerHTML = '<div style="color:#71717a;padding:1rem;">学習データがありません。</div>'; return; }
+      const SUBJ = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学' };
+      const sj = x => SUBJ[x] || x;
+      const a = s.activity || {}, adm = s.admission || {}, bd = adm.breakdown || {}, reasons = s.reason_totals || {};
+      const total = a.total || 0, acc = a.accuracy, grade = s.grade || '';
+      const is3 = /3/.test(grade) || grade.indexOf('高卒') >= 0 || grade.indexOf('浪人') >= 0;
+      const recs = [];
+      if (total === 0) {
+        recs.push(['最優先', 'まだ演習ゼロ。まず英文法ドリル1単元(関係詞/助動詞 等)から開始させる＋声かけ。']);
+        recs.push(['模試', '模試・偏差値が無く実力が客観評価できない。模試 or 内蔵模試を1回受験。']);
+      } else {
+        const gw = (s.weak_topics || []).filter(w => w.topic && (w.attempts || 0) >= 5 && w.accuracy != null && w.accuracy < 0.75).sort((x, y) => x.accuracy - y.accuracy);
+        if (gw.length) recs.push(['弱点演習', gw.slice(0, 4).map(w => `${sj(w.subject)}「${w.topic}」(正答${Math.round(w.accuracy * 100)}%/${w.attempts}問)`).join('、') + ' を反復 → 該当単元の自動採点ドリルを配信。']);
+        const nm = (s.weak_topics || []).filter(w => w.topic && (w.attempts || 0) <= 2 && (w.accuracy || 0) === 0);
+        if (nm.length) { const tops = [...new Set(nm.map(w => w.topic.split('(')[0]))]; recs.push(['取りこぼし', tops.slice(0, 5).join('・') + ' を新出でミス → 解説で固める。']); }
+        const sb = (s.subject_balance || []).slice().sort((x, y) => (y.attempts || 0) - (x.attempts || 0));
+        const activeSubj = sb.filter(x => (x.attempts || 0) >= 10).map(x => x.subject);
+        if (activeSubj.length <= 1 && is3) recs.push(['科目偏り', `演習が${activeSubj.length ? sj(activeSubj[0]) : '一部'}に集中。受験科目全体に広げる。`]);
+        sb.filter(x => (x.attempts || 0) >= 20 && x.accuracy != null && x.accuracy < 0.6).forEach(x => recs.push(['底上げ', `${sj(x.subject)}が正答${Math.round(x.accuracy * 100)}%(${x.attempts}問)と低い。基礎に戻して反復。`]));
+        const tot = Object.values(reasons).reduce((p, c) => p + c, 0);
+        if (tot >= 5 && (reasons.understanding || 0) >= tot * 0.5) recs.push(['誤答傾向', '『理解不足』が最多 → 演習より先にインプット(講義/参考書)を補強。']);
+        if ((reasons.careless || 0) >= Math.max(3, tot * 0.25)) recs.push(['誤答傾向', '『ケアレス』が多い → 見直し習慣・時間配分の指導。']);
+        if ((reasons.time || 0) || (reasons.timeout || 0)) recs.push(['誤答傾向', '時間切れあり → スピード演習で処理速度を上げる。']);
+        if (acc != null && acc >= 0.85 && total >= 100) recs.push(['伸ばす', 'ドリル正答が高い → 過去問・模試レベルへ移行して実戦力へ。']);
+        const ed = bd.eval_deviation;
+        if (ed != null) recs.push(['模試', `客観偏差値≈${ed}。志望との差を埋める計画を。模試結果は「📊模試」タブで確認。`]);
+        else if (total >= 20) recs.push(['模試なし', '客観指標が無い。模試を受けて実力を可視化。']);
+        if (is3 && (a.d7 || 0) === 0 && total > 0) recs.push(['停止注意', '高3だが直近7日ゼロ → 声かけ。']);
+      }
+      const accStr = acc != null ? Math.round(acc * 100) + '%' : '—';
+      let html = `<div style="font-size:0.82rem;color:#94a3b8;margin-bottom:8px;line-height:1.7;">残${s.days_to_exam}日 ／ 演習 通算${total}問(7日${a.d7 || 0}/30日${a.d30 || 0}) 正答${accStr}<br>学習${bd.study_hours_30d != null ? bd.study_hours_30d : '?'}h/月 ／ 模試偏差 ${bd.eval_deviation != null ? bd.eval_deviation : '—'} ／ 合格 ${adm.score != null ? adm.score : '—'}%</div>`;
+      html += recs.length ? recs.map(r => `<div style="margin-bottom:7px;padding:7px 10px;background:rgba(139,92,246,0.10);border-left:3px solid #8b5cf6;border-radius:4px;"><b style="color:#c4b5fd;">【${esc(r[0])}】</b> ${esc(r[1])}</div>`).join('') : '<div style="color:#71717a;">特記事項なし。</div>';
+      pane.innerHTML = html;
     }
 
     // 📊 模試タブ load (2026-06-30): 塾長が生徒の模試成績(外部+内蔵)を閲覧
@@ -9405,6 +9455,15 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           if (sid && typeof loadStudentExams === 'function') {
             pane.dataset.loaded = 'loading';
             loadStudentExams(sid, pane).then(() => { pane.dataset.loaded = 'done'; })
+              .catch(e => { pane.innerHTML = `<div style="color:#fca5a5;padding:1rem;">⚠ ${String(e.message || e)}</div>`; pane.dataset.loaded = ''; });
+          }
+        }
+        // 🎯 やるべきことタブ (新規 2026-06-30)
+        if (target === 'action' && pane && !pane.dataset.loaded) {
+          const sid = pane.dataset.studentId;
+          if (sid && typeof loadStudentActionPlan === 'function') {
+            pane.dataset.loaded = 'loading';
+            loadStudentActionPlan(sid, pane).then(() => { pane.dataset.loaded = 'done'; })
               .catch(e => { pane.innerHTML = `<div style="color:#fca5a5;padding:1rem;">⚠ ${String(e.message || e)}</div>`; pane.dataset.loaded = ''; });
           }
         }
