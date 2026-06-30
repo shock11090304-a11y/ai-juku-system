@@ -72,6 +72,9 @@
     .cal-tag.closed { background:#ef4444; color:#fff; }
     .cal-tag.hol { color:#fcd34d; }
     .cal-dot { width:5px; height:5px; border-radius:50%; background:#818cf8; margin-top:3px; }
+    .cal-cell.event { background:rgba(129,140,248,0.15); border-color:rgba(129,140,248,0.42); }
+    .cal-cell.event .cal-d { color:#c7d2fe; }
+    .cal-ev { font-size:0.56rem; line-height:1.16; font-weight:700; color:#c7d2fe; margin-top:1px; padding:0 2px; width:100%; box-sizing:border-box; text-align:center; word-break:break-word; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
     .cal-legend { display:flex; gap:0.9rem; flex-wrap:wrap; margin:0.55rem 0 0.2rem; font-size:0.74rem; color:#cbd5e1; }
     .cal-legend i.lg { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:0.25rem; vertical-align:middle; }
     .cal-legend i.lg.closed { background:#ef4444; } .cal-legend i.lg.event { background:#818cf8; } .cal-legend i.lg.hol { background:rgba(251,191,36,0.6); }
@@ -369,11 +372,12 @@
         var cls = 'cal-cell';
         if (key === todayK) cls += ' today';
         if (ev && ev.kind === 'closed') cls += ' closed';
+        else if (ev && ev.kind === 'event') cls += ' event';
         else if (hn) cls += ' holiday';
         if (dow === 0) cls += ' sun'; if (dow === 6) cls += ' sat';
         var mark = '';
         if (ev && ev.kind === 'closed') mark = '<span class="cal-tag closed">休</span>';
-        else if (ev && ev.kind === 'event') mark = '<span class="cal-dot"></span>';
+        else if (ev && ev.kind === 'event') mark = '<span class="cal-ev">' + esc(ev.title || '予定') + '</span>';
         else if (hn) mark = '<span class="cal-tag hol">祝</span>';
         h += '<div class="' + cls + '"><span class="cal-d">' + day + '</span>' + mark + '</div>';
       }
