@@ -8321,6 +8321,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         <button class="sd-tab-btn" data-tab="stats" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📊 利用統計</button>
         <button class="sd-tab-btn" data-tab="homework" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📚 宿題</button>
         <button class="sd-tab-btn" data-tab="studyplan" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📅 学習計画</button>
+        <button class="sd-tab-btn" data-tab="exams" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📊 模試</button>
       </div>
       <!-- タブパネル -->
       <div id="studentDetailBody" style="padding:24px;color:#e4e4e7;font-size:0.92rem;line-height:1.7;">
@@ -8329,6 +8330,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         <div class="sd-tab-pane" data-pane="stats" style="display:none;">読み込み中...</div>
         <div class="sd-tab-pane" data-pane="homework" style="display:none;">読み込み中...</div>
         <div class="sd-tab-pane" data-pane="studyplan" style="display:none;">読み込み中...</div>
+        <div class="sd-tab-pane" data-pane="exams" style="display:none;">読み込み中...</div>
       </div>
     </div>
   </div>
@@ -8638,7 +8640,50 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         studyPlanPane.dataset.loaded = '';
         studyPlanPane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">タブをクリックして読み込みます</div>';
       }
+      // 📊 模試タブ (新規 2026-06-30): 同じ lazy fetch パターン
+      const examsPane = modal.querySelector('[data-pane="exams"]');
+      if (examsPane) {
+        examsPane.dataset.studentId = String(st.id);
+        examsPane.dataset.loaded = '';
+        examsPane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">タブをクリックして読み込みます</div>';
+      }
       modal.style.display = 'flex';
+    }
+
+    // 📊 模試タブ load (2026-06-30): 塾長が生徒の模試成績(外部+内蔵)を閲覧
+    async function loadStudentExams(sid, pane) {
+      const res = await AdminAuth.fetch(`/api/admin/students/${sid}/exam-results`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const ext = data.external || [], intl = data.internal || [];
+      if (!ext.length && !intl.length) {
+        pane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">模試の記録がありません。<br><span style="font-size:0.82rem;">生徒のマイページ「模試結果」から入力されると、ここに表示されます。</span></div>';
+        return;
+      }
+      // 外部模試を 模試名＋日付 でグループ化
+      const groups = {};
+      ext.forEach(r => {
+        const k = (r.exam_name || '?') + '|' + (r.exam_date || '');
+        (groups[k] = groups[k] || { name: r.exam_name, date: r.exam_date, rows: [] }).rows.push(r);
+      });
+      let html = '';
+      Object.values(groups).sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).forEach(g => {
+        const devs = g.rows.filter(x => x.deviation != null);
+        const avg = devs.length ? (devs.reduce((s, x) => s + x.deviation, 0) / devs.length).toFixed(1) : '—';
+        html += `<div style="margin-bottom:14px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;">
+          <div style="display:flex;justify-content:space-between;gap:8px;font-weight:600;color:#a78bfa;flex-wrap:wrap;"><span>${esc(g.name || '模試')}</span><span style="color:#cbd5e1;font-size:0.85rem;">${esc(g.date || '')} ／ 平均偏差 <strong>${avg}</strong></span></div>
+          <table style="width:100%;margin-top:6px;font-size:0.85rem;border-collapse:collapse;">
+            <tr style="color:#9ca3af;text-align:left;"><th style="padding:3px 6px;font-weight:500;">科目</th><th style="font-weight:500;">偏差値</th><th style="font-weight:500;">得点</th><th style="font-weight:500;">判定</th></tr>
+            ${g.rows.map(r => `<tr style="border-top:1px solid rgba(255,255,255,0.06);"><td style="padding:3px 6px;">${esc(r.subject || '')}</td><td style="font-weight:700;color:#e4e4e7;">${r.deviation != null ? r.deviation : '—'}</td><td style="color:#cbd5e1;">${r.score != null ? (esc(String(r.score)) + (r.max_score ? '/' + esc(String(r.max_score)) : '')) : '—'}</td><td style="color:#cbd5e1;">${esc(r.judgement || '')}</td></tr>`).join('')}
+          </table></div>`;
+      });
+      if (intl.length) {
+        html += `<div style="margin-top:10px;color:#9ca3af;font-size:0.82rem;font-weight:600;">アプリ内蔵模試:</div>`;
+        intl.forEach(r => {
+          html += `<div style="font-size:0.85rem;padding:3px 6px;color:#cbd5e1;">・${esc(r.exam_type || r.target_label || '模試')} 偏差 <strong>${r.deviation_estimate != null ? r.deviation_estimate : '—'}</strong>${r.score_total != null ? ' (' + esc(String(r.score_total)) + (r.score_max ? '/' + esc(String(r.score_max)) : '') + '点)' : ''} <span style="color:#9ca3af;">${esc(String(r.submitted_at || '').slice(0, 10))}</span></div>`;
+        });
+      }
+      pane.innerHTML = html;
     }
 
     // 📚 宿題タブ load (新規 2026-05-24)
@@ -9313,6 +9358,15 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           if (sid && typeof loadStudentStudyPlans === 'function') {
             pane.dataset.loaded = 'loading';
             loadStudentStudyPlans(sid, pane).then(() => { pane.dataset.loaded = 'done'; })
+              .catch(e => { pane.innerHTML = `<div style="color:#fca5a5;padding:1rem;">⚠ ${String(e.message || e)}</div>`; pane.dataset.loaded = ''; });
+          }
+        }
+        // 📊 模試タブ (新規 2026-06-30)
+        if (target === 'exams' && pane && !pane.dataset.loaded) {
+          const sid = pane.dataset.studentId;
+          if (sid && typeof loadStudentExams === 'function') {
+            pane.dataset.loaded = 'loading';
+            loadStudentExams(sid, pane).then(() => { pane.dataset.loaded = 'done'; })
               .catch(e => { pane.innerHTML = `<div style="color:#fca5a5;padding:1rem;">⚠ ${String(e.message || e)}</div>`; pane.dataset.loaded = ''; });
           }
         }
@@ -10391,7 +10445,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           var acc = (s.accuracy == null) ? '—' : (Math.round(s.accuracy * 100) + '%');
           return '<tr>' +
             '<td style="color:#71717a;">' + (i + 1) + '</td>' +
-            '<td><strong>' + esc(s.name || '—') + '</strong></td>' +
+            '<td><a href="#" onclick="event.preventDefault();window.showStudentDetail&&window.showStudentDetail(' + (s.id || 0) + ')" title="クリックで詳細・模試を表示" style="color:#c4b5fd;text-decoration:none;font-weight:700;cursor:pointer;">' + esc(s.name || '—') + '</a></td>' +
             '<td style="color:#a1a1aa;font-size:0.8rem;">' + esc(courseLabel(s)) + '</td>' +
             '<td style="font-weight:700;">' + (s.drills || 0) + '</td>' +
             '<td style="color:#94a3b8;">' + acc + '</td>' +
