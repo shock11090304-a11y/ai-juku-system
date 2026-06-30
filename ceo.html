@@ -2653,6 +2653,7 @@
           </select>
           <button type="button" id="aiUsageReload" title="最新の集計を再取得">🔄 更新</button>
           <button type="button" id="learningDigestBtn" title="全生徒の学習データを匿名化JSONで書き出す (AI分析用・氏名/連絡先は含みません)">📤 学習データ書き出し</button>
+          <button type="button" id="admissionRecalcBtn" title="新しいロジックで全生徒の合格可能性スコアを即時再計算します">🔄 合格スコア再計算</button>
         </div>
       </div>
       <div style="color:#94a3b8;font-size:0.8rem;margin:0.2rem 0 0.8rem;">各生徒のドリル回数・学習記録・カリキュラム・最終活動日。<span style="color:#fca5a5;">🔴</span> は一定期間 活動なし＝声かけ候補です。</div>
@@ -10505,6 +10506,22 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         alert('⚠️ 書き出し失敗: ' + e.message);
       }
       dlb.disabled = false; dlb.textContent = orig;
+    });
+    // 🔄 合格スコア 全員即時再計算
+    var arb = document.getElementById('admissionRecalcBtn');
+    if (arb) arb.addEventListener('click', async function() {
+      if (!window.AdminAuth || !AdminAuth.getToken || !AdminAuth.getToken()) { alert('管理者ログインが必要です'); return; }
+      if (!confirm('新しいロジックで全生徒の合格可能性スコアを今すぐ再計算します。\n(数十名で数秒〜十数秒かかります)\nよろしいですか？')) return;
+      arb.disabled = true; var o = arb.textContent; arb.textContent = '⏳ 再計算中...';
+      try {
+        var r = await AdminAuth.fetch('/api/admin/admission/recompute-all', { method: 'POST' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var d = await r.json();
+        alert('✅ 合格スコア再計算 完了\n\n更新: ' + (d.updated || 0) + '名 / 失敗: ' + (d.failed || 0) + '名 (対象 ' + (d.total || 0) + '名)\n\n「📤 学習データ書き出し」で新スコアを確認できます。');
+      } catch (e) {
+        alert('⚠️ 再計算に失敗しました: ' + (e && e.message ? e.message : e));
+      }
+      arb.disabled = false; arb.textContent = o;
     });
     var hb = document.querySelector('#ceoHubMenu [data-hub-target="aiUsageSection"]');
     if (hb) hb.addEventListener('click', load);

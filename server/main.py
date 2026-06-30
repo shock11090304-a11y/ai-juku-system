@@ -6284,6 +6284,68 @@ def student_admission_likelihood(
     return result
 
 
+@app.post("/api/admin/admission/recompute-all")
+def admin_admission_recompute_all(authorization: Optional[str] = Header(None), limit: int = 2000):
+    """🎯 全(現役)生徒の合格可能性スコアを即時再計算してキャッシュ更新 (admin)。
+    スコアロジック変更後に、日次cron/ページ閲覧を待たず一括反映するために使う。
+    対象 = status IN ('trial','paid') かつ合成sentinel除外 (CEO「学習状況」と同条件)。"""
+    _verify_admin_required(authorization)
+    try:
+        limit = max(1, min(int(limit or 2000), 5000))
+    except (TypeError, ValueError):
+        limit = 2000
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            f"SELECT id FROM students WHERE status IN ('trial', 'paid') AND {_synth_exclude_sql('students')} "
+            f"ORDER BY id LIMIT ?",
+            (limit,),
+        )
+        ids = [r["id"] for r in c.fetchall()]
+    finally:
+        conn.close()
+
+    updated, failed = 0, 0
+    for sid in ids:
+        try:
+            result = _calculate_admission_likelihood(sid)
+            if not result:
+                failed += 1
+                continue
+            conn2 = db()
+            try:
+                cc = conn2.cursor()
+                if USE_POSTGRES:
+                    cc.execute(
+                        "INSERT INTO admission_likelihood (student_id, target_university, score, previous_score, "
+                        "breakdown_json, analysis_text, days_remaining) VALUES (?, ?, ?, ?, ?, ?, ?) "
+                        "ON CONFLICT (student_id) DO UPDATE SET "
+                        "target_university = EXCLUDED.target_university, score = EXCLUDED.score, "
+                        "previous_score = EXCLUDED.previous_score, breakdown_json = EXCLUDED.breakdown_json, "
+                        "analysis_text = EXCLUDED.analysis_text, days_remaining = EXCLUDED.days_remaining, "
+                        "generated_at = CURRENT_TIMESTAMP",
+                        (sid, result["target_university"], result["score"], result["previous_score"],
+                         result["breakdown_json"], result["analysis"], result["days_remaining"]),
+                    )
+                else:
+                    cc.execute(
+                        "INSERT OR REPLACE INTO admission_likelihood "
+                        "(student_id, target_university, score, previous_score, breakdown_json, analysis_text, days_remaining, generated_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                        (sid, result["target_university"], result["score"], result["previous_score"],
+                         result["breakdown_json"], result["analysis"], result["days_remaining"]),
+                    )
+                conn2.commit()
+                updated += 1
+            finally:
+                conn2.close()
+        except Exception as e:
+            failed += 1
+            log.warning(f"[admission recompute] sid={sid} failed: {e}")
+    return {"ok": True, "updated": updated, "failed": failed, "total": len(ids)}
+
+
 @app.get("/api/student/lesson-prints/by-goal")
 def student_lesson_prints_by_goal(
     request: Request, student_id: int,
