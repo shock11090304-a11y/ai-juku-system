@@ -8778,10 +8778,11 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         const res = await AdminAuth.fetch('/api/admin/learning-digest');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
-        const is3 = g => /3/.test(g || '') || (g || '').indexOf('高卒') >= 0 || (g || '').indexOf('浪人') >= 0;
+        // 並べ替え: 危機→要注力→客観不足→標準→順調 の優先順、同帯では受験まで近い順
+        const prio = s => { const m = { '危機': 0, '要注力': 1, '客観不足': 2, '標準': 3, '順調': 4 }; const k = _actionBand(s)[0]; return (k in m) ? m[k] : 5; };
         let list = (data.students || []).slice().sort((a, b) => {
-          const a3 = is3(a.grade) ? 0 : 1, b3 = is3(b.grade) ? 0 : 1;
-          if (a3 !== b3) return a3 - b3;
+          const pa = prio(a), pb = prio(b);
+          if (pa !== pb) return pa - pb;
           const ad = a.days_to_exam == null ? 9999 : a.days_to_exam, bd = b.days_to_exam == null ? 9999 : b.days_to_exam;
           if (ad !== bd) return ad - bd;
           return ((b.activity || {}).total || 0) - ((a.activity || {}).total || 0);
@@ -8791,16 +8792,23 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         const cnt = document.getElementById('actionListCount'); if (cnt) cnt.textContent = list.length + '名';
         if (!list.length) { box.innerHTML = '<div style="padding:1rem;color:#a1a1aa;">該当する生徒がいません</div>'; return; }
         const nameMap = window.__studentsById || {};
+        const BG = { '危機': 'rgba(248,113,113,0.10)', '要注力': 'rgba(251,191,36,0.09)' };
         box.innerHTML = list.map(s => {
           const band = _actionBand(s);
           const a = s.activity || {};
           const rec = nameMap[String(s.id)];
           const nm = (rec && rec.name) ? rec.name : ('id' + s.id + ' ' + (s.initial || ''));
-          return `<div style="border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:5px;">
+          const lastDate = a.last_at ? String(a.last_at).slice(0, 10) : '—';
+          const accStr = a.accuracy != null ? Math.round(a.accuracy * 100) + '%' : '—';
+          const stale = (a.total || 0) === 0 || (a.d7 || 0) === 0; // 演習ゼロ or 直近7日ゼロ
+          const bg = BG[band[0]] || 'transparent';
+          return `<div style="border:1px solid rgba(255,255,255,0.1);border-left:4px solid ${band[1]};border-radius:8px;padding:10px 12px;margin-bottom:10px;background:${bg};">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;">
               <span><a href="#" onclick="event.preventDefault();window.showStudentDetail&&window.showStudentDetail(${s.id})" title="クリックで生徒詳細" style="color:#c4b5fd;font-weight:700;text-decoration:none;">${esc(nm)}</a> <span style="color:#94a3b8;font-size:0.8rem;">#${s.id}・${esc(s.grade || '?')}・${esc((s.goal || '志望未設定').slice(0, 22))}</span></span>
-              <span style="font-size:0.78rem;color:#94a3b8;white-space:nowrap;">残${s.days_to_exam == null ? '—' : s.days_to_exam}日 ／ <b style="color:${band[1]};">${band[0]} ${(s.admission || {}).score != null ? (s.admission).score + '%' : ''}</b></span>
-            </div>${_recsHtml(_actionRecs(s))}</div>`;
+              <span style="font-size:0.78rem;white-space:nowrap;color:#94a3b8;">残${s.days_to_exam == null ? '—' : s.days_to_exam}日 ／ <b style="color:${band[1]};">${band[0]} ${(s.admission || {}).score != null ? (s.admission).score + '%' : ''}</b></span>
+            </div>
+            <div style="font-size:0.76rem;color:#9ca3af;margin:4px 0 6px;">演習 <b style="color:#cbd5e1;">${a.total || 0}</b>問(7日${a.d7 || 0}) ／ 正答 ${accStr} ／ 最終活動 ${esc(lastDate)}${stale ? ' <span style="color:#fca5a5;">🔴</span>' : ''}</div>
+            ${_recsHtml(_actionRecs(s))}</div>`;
         }).join('');
       } catch (e) {
         box.innerHTML = '<div style="color:#fca5a5;padding:1rem;">読み込み失敗: ' + esc(e.message || e) + '</div>';
