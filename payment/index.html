@@ -177,6 +177,7 @@
         <button class="btn btn-ghost btn-sm" id="resetFilterBtn">↺ リセット</button>
         <button class="btn btn-ghost btn-sm" id="emailImportBtn" title="メアド一括登録 (CSV/TSV)">📧 メアド一括登録</button>
         <button class="btn btn-primary btn-sm" id="addStudentBtn" title="新規生徒を追加 (クラウド同期されます)">➕ 生徒追加</button>
+        <button class="btn btn-ghost btn-sm" id="importAppsBtn" title="入塾申込フォームからの申込を名簿に取り込む">📥 申込取り込み<span id="importAppsBadge" style="display:none;margin-left:5px;background:#ef4444;color:#fff;border-radius:999px;padding:1px 7px;font-size:0.72rem;font-weight:700;">0</span></button>
         <button class="btn btn-accent btn-sm" id="stripeInviteBtn" title="現通塾生に Stripe カード決済 (毎月自動引き落とし) の案内メールを一斉送信">💳 Stripe案内メール一斉送信</button>
       </div>
     </div>
@@ -729,6 +730,26 @@
     <div style="padding:14px 22px;border-top:1px solid rgba(255,255,255,0.08);display:flex;gap:10px;justify-content:flex-end;background:var(--panel,#1f2937);flex-shrink:0;">
       <button class="btn btn-ghost" id="addStudentCancelBtn">キャンセル</button>
       <button class="btn btn-primary" id="addStudentSaveBtn">✓ 追加して保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 申込取り込みモーダル (2026-06-30: 入塾申込フォーム → course_applications → 名簿 newStudents に取り込む) -->
+<div id="importAppsModal" class="modal-overlay hidden">
+  <div style="background:var(--panel,#1f2937);color:var(--text,#fff);border-radius:14px;max-width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:calc(100vh - 4rem);min-height:0;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="padding:18px 22px 12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+      <h3 style="margin:0;font-size:1.1rem;font-weight:700;">📥 入塾申込フォームから取り込み</h3>
+      <p style="margin:6px 0 0;font-size:0.78rem;color:var(--text-muted,#9ca3af);line-height:1.45;">
+        Web 入塾申込フォーム (referrer=入塾申込フォーム) で届いた申込を、この月謝名簿に追加します。<br>
+        取り込むと <code>newStudents</code> に保存され、クラウド同期されます。月謝・コースは取り込み後に「✏️変更」で調整できます。
+      </p>
+    </div>
+    <div id="importAppsList" style="padding:14px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;">
+      <p style="color:var(--text-muted,#9ca3af);font-size:0.9rem;">読み込み中…</p>
+    </div>
+    <div style="padding:14px 22px;border-top:1px solid rgba(255,255,255,0.08);display:flex;gap:10px;justify-content:space-between;align-items:center;background:var(--panel,#1f2937);flex-shrink:0;">
+      <button class="btn btn-ghost btn-sm" id="importAppsRefreshBtn">↻ 再読み込み</button>
+      <button class="btn btn-ghost" id="importAppsCloseBtn">閉じる</button>
     </div>
   </div>
 </div>
