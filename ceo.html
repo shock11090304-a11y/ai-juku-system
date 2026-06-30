@@ -8790,12 +8790,15 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         if (q) { const ql = q.toLowerCase(); list = list.filter(s => String(s.id).includes(q) || String(s.initial || '').toLowerCase().includes(ql) || String(s.goal || '').toLowerCase().includes(ql)); }
         const cnt = document.getElementById('actionListCount'); if (cnt) cnt.textContent = list.length + '名';
         if (!list.length) { box.innerHTML = '<div style="padding:1rem;color:#a1a1aa;">該当する生徒がいません</div>'; return; }
+        const nameMap = window.__studentsById || {};
         box.innerHTML = list.map(s => {
           const band = _actionBand(s);
           const a = s.activity || {};
+          const rec = nameMap[String(s.id)];
+          const nm = (rec && rec.name) ? rec.name : ('id' + s.id + ' ' + (s.initial || ''));
           return `<div style="border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;margin-bottom:10px;">
             <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:5px;">
-              <span><a href="#" onclick="event.preventDefault();window.showStudentDetail&&window.showStudentDetail(${s.id})" title="クリックで生徒詳細" style="color:#c4b5fd;font-weight:700;text-decoration:none;">id${s.id} ${esc(s.initial || '')}</a> <span style="color:#94a3b8;font-size:0.8rem;">${esc(s.grade || '?')}・${esc((s.goal || '志望未設定').slice(0, 22))}</span></span>
+              <span><a href="#" onclick="event.preventDefault();window.showStudentDetail&&window.showStudentDetail(${s.id})" title="クリックで生徒詳細" style="color:#c4b5fd;font-weight:700;text-decoration:none;">${esc(nm)}</a> <span style="color:#94a3b8;font-size:0.8rem;">#${s.id}・${esc(s.grade || '?')}・${esc((s.goal || '志望未設定').slice(0, 22))}</span></span>
               <span style="font-size:0.78rem;color:#94a3b8;white-space:nowrap;">残${s.days_to_exam == null ? '—' : s.days_to_exam}日 ／ <b style="color:${band[1]};">${band[0]} ${(s.admission || {}).score != null ? (s.admission).score + '%' : ''}</b></span>
             </div>${_recsHtml(_actionRecs(s))}</div>`;
         }).join('');
