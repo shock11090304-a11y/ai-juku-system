@@ -21060,6 +21060,53 @@ def admin_learning_digest(authorization: Optional[str] = Header(None),
     }
 
 
+@app.get("/api/admin/students/{student_id}/exam-results")
+def admin_student_exam_results(student_id: int, authorization: Optional[str] = Header(None), limit: int = 100):
+    """塾長: 指定生徒の模試成績 (外部模試 exam_results + 内蔵模試 mock_exam_sessions)。
+    生徒本人しか見られなかった模試結果を塾長も閲覧できるようにする (CEO 生徒詳細の模試タブ用)。"""
+    _verify_admin_required(authorization)
+    try:
+        limit = max(1, min(int(limit or 100), 500))
+    except (TypeError, ValueError):
+        limit = 100
+    conn = db()
+    c = conn.cursor()
+    external, internal = [], []
+    try:
+        c.execute(
+            "SELECT exam_name, exam_date, subject, score, max_score, deviation, judgement, target_university, note "
+            "FROM exam_results WHERE student_id = ? ORDER BY exam_date DESC, id DESC LIMIT ?",
+            (student_id, limit),
+        )
+        for r in c.fetchall():
+            external.append({
+                "exam_name": r["exam_name"],
+                "exam_date": str(r["exam_date"]) if r["exam_date"] else None,
+                "subject": r["subject"], "score": r["score"], "max_score": r["max_score"],
+                "deviation": r["deviation"], "judgement": r["judgement"],
+                "target_university": r["target_university"], "note": r["note"],
+            })
+        try:
+            c.execute(
+                "SELECT exam_type, target_label, score_total, score_max, deviation_estimate, submitted_at "
+                "FROM mock_exam_sessions WHERE student_id = ? AND submitted_at IS NOT NULL "
+                "ORDER BY submitted_at DESC LIMIT ?",
+                (student_id, limit),
+            )
+            for r in c.fetchall():
+                internal.append({
+                    "exam_type": r["exam_type"], "target_label": r["target_label"],
+                    "score_total": r["score_total"], "score_max": r["score_max"],
+                    "deviation_estimate": r["deviation_estimate"],
+                    "submitted_at": str(r["submitted_at"]) if r["submitted_at"] else None,
+                })
+        except Exception as e:
+            log.warning(f"[admin exam-results] mock skip: {e}")
+    finally:
+        conn.close()
+    return {"ok": True, "student_id": student_id, "external": external, "internal": internal}
+
+
 @app.post("/api/admin/students/send-magic-link-to")
 def admin_send_magic_link_to_address(payload: dict, authorization: Optional[str] = Header(None)):
     """🔥 2026-05-01: CEO ダッシュから指定アドレスに magic link を送信。
