@@ -1,0 +1,487 @@
+{
+  "_comment": "AI塾 弱点特訓ドリル v1: 観測弱点(英語 関係詞・助動詞 / 古文 助動詞・重要古語)の検証済み4択。/api/admin/grammar/import 用。",
+  "version": "2026-06-30",
+  "count": 32,
+  "questions": [
+    {
+      "subject": "english",
+      "unit": "関係詞",
+      "level": "advanced",
+      "stem": "The scientist (   ) discovery changed medicine won the prize.",
+      "choices": [
+        "who",
+        "whom",
+        "whose",
+        "which"
+      ],
+      "answer": 2,
+      "explanation": "「その科学者の発見(the scientist's discovery)」。所有格の関係代名詞 whose。直後が名詞で始まるのが目印。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "関係詞",
+      "level": "standard",
+      "stem": "This is the hospital (   ) which she was born.",
+      "choices": [
+        "in",
+        "on",
+        "at",
+        "of"
+      ],
+      "answer": 0,
+      "explanation": "be born in a place。前置詞は元の文(She was born in the hospital)で決まる。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "関係詞",
+      "level": "standard",
+      "stem": "(   ) surprised everyone was his sudden silence.",
+      "choices": [
+        "That",
+        "What",
+        "Which",
+        "It"
+      ],
+      "answer": 1,
+      "explanation": "先行詞を含み「〜すること/もの」。What = The thing which。文頭で先行詞が無ければ that/which は不可。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "関係詞",
+      "level": "advanced",
+      "stem": "He has three daughters, all of (   ) live abroad.",
+      "choices": [
+        "them",
+        "which",
+        "whom",
+        "whose"
+      ],
+      "answer": 2,
+      "explanation": "「数量詞+of+whom」。先行詞は人で of の目的語なので whom。them だと接続詞が無く不可。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "関係詞",
+      "level": "standard",
+      "stem": "Kyoto, (   ) I visited last spring, was full of tourists.",
+      "choices": [
+        "that",
+        "where",
+        "which",
+        "what"
+      ],
+      "answer": 2,
+      "explanation": "非制限用法(コンマ)。先行詞は物(Kyoto)で visited の目的語。非制限では that 不可。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "関係詞",
+      "level": "advanced",
+      "stem": "I don't like the way (   ) he talks to his staff.",
+      "choices": [
+        "how",
+        "in which",
+        "what",
+        "by which"
+      ],
+      "answer": 1,
+      "explanation": "「方法」は the way in which / the way / how 単独。the way how は誤り(最頻出ミス)。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "関係詞",
+      "level": "advanced",
+      "stem": "You may give this ticket to (   ) wants it.",
+      "choices": [
+        "whom",
+        "whoever",
+        "whomever",
+        "whichever"
+      ],
+      "answer": 1,
+      "explanation": "複合関係代名詞。前置詞 to の目的語だが節中で wants の主語なので主格 whoever。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "関係詞",
+      "level": "standard",
+      "stem": "She is the only student (   ) passed the exam.",
+      "choices": [
+        "what",
+        "which",
+        "that",
+        "whose"
+      ],
+      "answer": 2,
+      "explanation": "先行詞に the only / the first / 最上級 が付くと関係代名詞は that が好まれる。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "関係詞",
+      "level": "advanced",
+      "stem": "He said nothing, (   ) made us very uneasy.",
+      "choices": [
+        "that",
+        "which",
+        "what",
+        "it"
+      ],
+      "answer": 1,
+      "explanation": "前の文全体を受ける非制限用法の which。that は文全体を受けられない。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "関係詞",
+      "level": "advanced",
+      "stem": "The manager (   ) I spoke yesterday has resigned.",
+      "choices": [
+        "who",
+        "that",
+        "to whom",
+        "whom to"
+      ],
+      "answer": 2,
+      "explanation": "speak to someone。前置詞 to を関係代名詞の前に出して to whom。「whom to」の語順は不可。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "助動詞",
+      "level": "standard",
+      "stem": "You (   ) have told me earlier — I could have helped you then.",
+      "choices": [
+        "should",
+        "must",
+        "can",
+        "will"
+      ],
+      "answer": 0,
+      "explanation": "should have+過去分詞「〜すべきだったのに(しなかった)」。過去への非難・後悔。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "助動詞",
+      "level": "standard",
+      "stem": "He looks pale. He (   ) have caught a cold.",
+      "choices": [
+        "may",
+        "should",
+        "need",
+        "ought"
+      ],
+      "answer": 0,
+      "explanation": "may/might have+過去分詞「〜したかもしれない」。過去の推量。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "助動詞",
+      "level": "standard",
+      "stem": "I would (   ) you didn't smoke in this room.",
+      "choices": [
+        "better",
+        "rather",
+        "prefer",
+        "sooner"
+      ],
+      "answer": 1,
+      "explanation": "would rather+S+過去形「むしろSに〜してほしい」。仮定法で過去形。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "助動詞",
+      "level": "advanced",
+      "stem": "There (   ) be a tall tree here, but it was cut down.",
+      "choices": [
+        "would",
+        "used to",
+        "could",
+        "might"
+      ],
+      "answer": 1,
+      "explanation": "過去の「状態(〜があった)」は used to のみ。would は過去の反復動作専用で状態には使えない。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "助動詞",
+      "level": "advanced",
+      "stem": "It's hopeless. We may (   ) well give up now.",
+      "choices": [
+        "so",
+        "too",
+        "as",
+        "very"
+      ],
+      "answer": 2,
+      "explanation": "may as well+動詞原形「(どうせなら)〜したほうがよい」。might as well も同義。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "english",
+      "unit": "助動詞",
+      "level": "standard",
+      "stem": "In the future, robots will (   ) do this job for us.",
+      "choices": [
+        "can",
+        "be able to",
+        "could",
+        "able to"
+      ],
+      "answer": 1,
+      "explanation": "助動詞は重ねられない(×will can)。未来の能力は will be able to。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "advanced",
+      "stem": "妻の嫗に預けて養はす。── 傍線「す」の文法的意味は？",
+      "choices": [
+        "使役",
+        "尊敬",
+        "可能",
+        "自発"
+      ],
+      "answer": 0,
+      "explanation": "下に尊敬語が無く養う対象がいるので使役。「す・さす・しむ」は下に尊敬語があれば尊敬、無ければ使役。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "advanced",
+      "stem": "御格子上げさせ給ふ。── 「させ」の意味は？",
+      "choices": [
+        "使役",
+        "尊敬",
+        "受身",
+        "完了"
+      ],
+      "answer": 1,
+      "explanation": "「させ給ふ」は最高敬語(二重尊敬)。使役対象がなく主語が帝なので尊敬。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "advanced",
+      "stem": "風の音にぞおどろかれぬる。── 「れ」の意味は？",
+      "choices": [
+        "受身",
+        "尊敬",
+        "自発",
+        "可能"
+      ],
+      "answer": 2,
+      "explanation": "「自然とはっと気づかれる」。知覚・心情の動詞に付く「る・らる」は自発。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "advanced",
+      "stem": "我こそ死なめ。── 「め(む)」の意味は？",
+      "choices": [
+        "推量",
+        "意志",
+        "勧誘",
+        "適当"
+      ],
+      "answer": 1,
+      "explanation": "一人称+「む」は意志(死のう)。「こそ〜め」の係り結び。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "advanced",
+      "stem": "羽なければ空をも飛ぶべからず。── 「べし」の意味は？",
+      "choices": [
+        "当然",
+        "可能",
+        "命令",
+        "意志"
+      ],
+      "answer": 1,
+      "explanation": "打消(ず)を伴う「べし」は可能(=不可能、飛べない)になりやすい。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "advanced",
+      "stem": "男もすなる日記といふものを。── 「なる」の意味は？",
+      "choices": [
+        "断定",
+        "伝聞・推定",
+        "存在",
+        "比況"
+      ],
+      "answer": 1,
+      "explanation": "サ変終止形「す」+「なる」=伝聞推定。終止形接続なら伝聞推定、体言・連体形接続なら断定。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "advanced",
+      "stem": "鏡に色・形あらましかば、映らざらまし。── 「まし」の意味は？",
+      "choices": [
+        "反実仮想",
+        "意志",
+        "単純推量",
+        "打消"
+      ],
+      "answer": 0,
+      "explanation": "「ましかば〜まし」は反実仮想の典型構文「(もし〜なら)…ないだろうに」。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "advanced",
+      "stem": "今ごろは都にも雪降るらむ。── 「らむ」の意味は？",
+      "choices": [
+        "過去推量",
+        "現在推量",
+        "伝聞",
+        "婉曲"
+      ],
+      "answer": 1,
+      "explanation": "目に見えない現在の事態の推量が「らむ」。過去推量は「けむ」。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "standard",
+      "stem": "古語「ありがたし」の意味として最適なものは？",
+      "choices": [
+        "感謝したい",
+        "めったにない・珍しい",
+        "つらい",
+        "恐ろしい"
+      ],
+      "answer": 1,
+      "explanation": "「有り+難し」=存在しがたい。現代の「感謝」の意味は古文では出ない。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "standard",
+      "stem": "古語「つとめて」の意味は？",
+      "choices": [
+        "努力して",
+        "早朝・翌朝",
+        "すぐに",
+        "突然"
+      ],
+      "answer": 1,
+      "explanation": "枕草子「冬はつとめて」。「努力」ではない。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "standard",
+      "stem": "古語「やがて」の意味は？",
+      "choices": [
+        "そのまま・すぐに",
+        "(将来)やがて",
+        "ゆっくりと",
+        "決して"
+      ],
+      "answer": 0,
+      "explanation": "古文の「やがて」は即時・継続。「将来」は現代語の意味。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "standard",
+      "stem": "古語「なつかし」の意味は？",
+      "choices": [
+        "昔を思い出す",
+        "心がひかれる・慕わしい",
+        "悲しい",
+        "恥ずかしい"
+      ],
+      "answer": 1,
+      "explanation": "動詞「懐く」由来。「過去を懐かしむ」ではない。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "standard",
+      "stem": "古語「あさまし」の意味は？",
+      "choices": [
+        "朝が早い",
+        "驚きあきれる",
+        "卑しい",
+        "親しみやすい"
+      ],
+      "answer": 1,
+      "explanation": "良い意味でも悪い意味でも「驚きあきれる」。「卑しい」は派生義。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "standard",
+      "stem": "古語「ねんごろなり」の意味は？",
+      "choices": [
+        "眠そうだ",
+        "親切だ・丁寧だ",
+        "退屈だ",
+        "豪華だ"
+      ],
+      "answer": 1,
+      "explanation": "「念入りだ・心がこもっている」。男女の仲では「親密だ」。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "standard",
+      "stem": "古語「いたづらなり」の意味は？",
+      "choices": [
+        "いたずら好きだ",
+        "むだだ・むなしい",
+        "忙しい",
+        "正直だ"
+      ],
+      "answer": 1,
+      "explanation": "「いたづらになる」=むだになる・死ぬ。現代の「いたずら」ではない。",
+      "source": "weakness_v1"
+    },
+    {
+      "subject": "japanese",
+      "unit": "古文",
+      "level": "standard",
+      "stem": "古語「おどろく」の意味は？",
+      "choices": [
+        "びっくりするだけ",
+        "目を覚ます・はっと気づく",
+        "怒る",
+        "逃げ出す"
+      ],
+      "answer": 1,
+      "explanation": "古文の最重要義は「目を覚ます/はっと気づく」。",
+      "source": "weakness_v1"
+    }
+  ]
+}
