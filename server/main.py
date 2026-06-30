@@ -20708,6 +20708,274 @@ def admin_student_activity(student_id: int, hours: int = 720, limit: int = 200, 
     }
 
 
+@app.get("/api/admin/learning-digest")
+def admin_learning_digest(authorization: Optional[str] = Header(None),
+                          student_id: Optional[int] = None,
+                          limit: int = 500):
+    """全生徒(または student_id 指定で1名)の学習データを匿名化して集約したダイジェスト。
+    志望校への最短ルート提案・問題生成などの AI 分析の入力に使う。
+
+    匿名化方針: 氏名フル・メール・保護者情報は含めない (id + イニシャルのみ)。
+    含む: 学年/志望校(goal)/合格可能性/偏差値推移/弱点単元/誤答理由/科目別演習量/
+          活動量(7d/30d/90d)/直近学習記録/カリキュラム概要。
+    認証: admin Bearer 必須。"""
+    _verify_admin_required(authorization)
+    try:
+        limit = max(1, min(int(limit or 500), 2000))
+    except (TypeError, ValueError):
+        limit = 500
+
+    now = datetime.now(timezone.utc)
+    def _iso(dt): return dt.strftime("%Y-%m-%d %H:%M:%S")
+    cut7, cut30, cut90 = _iso(now - timedelta(days=7)), _iso(now - timedelta(days=30)), _iso(now - timedelta(days=90))
+
+    def _jload(v, default):
+        if not v:
+            return default
+        try:
+            return json.loads(v) if isinstance(v, str) else v
+        except Exception:
+            return default
+
+    # student_id 指定時は対象を1名に絞る WHERE 句を作る helper
+    def _sclause(prefix_and=False):
+        if student_id:
+            return (f"{'AND' if prefix_and else 'WHERE'} student_id = ?", [student_id])
+        return ("", [])
+
+    conn = db()
+    c = conn.cursor()
+    students = {}
+    order = []
+    try:
+        # 1) 生徒基本
+        sw = "WHERE id = ?" if student_id else ""
+        sp = [student_id] if student_id else []
+        try:
+            c.execute(f"SELECT id, name, grade, goal, course, plan, status, created_at, last_login_at "
+                      f"FROM students {sw} ORDER BY id LIMIT ?", (*sp, limit))
+        except Exception:
+            c.execute(f"SELECT id, name, grade, goal, course, plan, status, created_at "
+                      f"FROM students {sw} ORDER BY id LIMIT ?", (*sp, limit))
+        for r in c.fetchall():
+            sid = r["id"]
+            nm = (r["name"] or "").strip()
+            students[sid] = {
+                "id": sid,
+                "initial": (nm[0] + ".") if nm else "?",
+                "grade": r["grade"] or "",
+                "goal": r["goal"] or "",
+                "course": r["course"] or "",
+                "status": r["status"] or "",
+                "last_login_at": str(r["last_login_at"]) if ("last_login_at" in r.keys() and r["last_login_at"]) else None,
+                "admission": None,
+                "deviation_history": [],
+                "weak_topics": [],
+                "reason_totals": {},
+                "subject_balance": [],
+                "activity": {"total": 0, "d7": 0, "d30": 0, "d90": 0, "last_at": None, "accuracy": None},
+                "recent_study": [],
+                "curriculum": None,
+                "days_to_exam": None,
+            }
+            order.append(sid)
+
+        # 2) 合格可能性 (生徒ごと最新)
+        try:
+            cl, cp = _sclause()
+            c.execute(f"SELECT student_id, target_university, score, breakdown_json, analysis_text, days_remaining, generated_at "
+                      f"FROM admission_likelihood {cl} ORDER BY student_id, generated_at DESC", tuple(cp))
+            for r in c.fetchall():
+                s = students.get(r["student_id"])
+                if not s or s["admission"]:
+                    continue
+                s["admission"] = {
+                    "target": r["target_university"] or "",
+                    "score": r["score"],
+                    "days_remaining": r["days_remaining"],
+                    "breakdown": _jload(r["breakdown_json"], {}),
+                    "analysis": (r["analysis_text"] or "")[:600],
+                    "generated_at": str(r["generated_at"]) if r["generated_at"] else None,
+                }
+                if r["days_remaining"] is not None:
+                    s["days_to_exam"] = r["days_remaining"]
+        except Exception as e:
+            log.warning(f"[digest] admission_likelihood skip: {e}")
+
+        # 3) 弱点単元 (正答率が低い順) + 誤答理由集計
+        try:
+            cl, cp = _sclause()
+            c.execute(f"SELECT student_id, subject, topic, qa_accuracy, qa_attempts, avg_elapsed_ms, reason_counts "
+                      f"FROM student_weakness {('WHERE qa_attempts > 0' if not student_id else 'WHERE student_id = ? AND qa_attempts > 0')} "
+                      f"ORDER BY student_id, qa_accuracy ASC", (tuple(cp) if not student_id else (student_id,)))
+            for r in c.fetchall():
+                s = students.get(r["student_id"])
+                if not s:
+                    continue
+                if len(s["weak_topics"]) < 8:
+                    s["weak_topics"].append({
+                        "subject": r["subject"], "topic": r["topic"],
+                        "accuracy": round(r["qa_accuracy"], 3) if r["qa_accuracy"] is not None else None,
+                        "attempts": r["qa_attempts"],
+                        "avg_elapsed_ms": r["avg_elapsed_ms"],
+                    })
+                for reason, cnt in (_jload(r["reason_counts"], {}) or {}).items():
+                    try:
+                        s["reason_totals"][reason] = s["reason_totals"].get(reason, 0) + int(cnt)
+                    except (TypeError, ValueError):
+                        pass
+        except Exception as e:
+            log.warning(f"[digest] student_weakness skip: {e}")
+
+        # 4) 偏差値推移 (外部模試 exam_results + 内蔵模試 mock_exam_sessions)
+        try:
+            cl, cp = _sclause()
+            c.execute(f"SELECT student_id, exam_name, exam_date, subject, deviation, judgement, target_university "
+                      f"FROM exam_results {cl} ORDER BY student_id, exam_date", tuple(cp))
+            for r in c.fetchall():
+                s = students.get(r["student_id"])
+                if not s or len(s["deviation_history"]) >= 24:
+                    continue
+                s["deviation_history"].append({
+                    "src": "exam", "name": r["exam_name"], "date": str(r["exam_date"]) if r["exam_date"] else None,
+                    "subject": r["subject"], "deviation": r["deviation"], "judgement": r["judgement"],
+                })
+        except Exception as e:
+            log.warning(f"[digest] exam_results skip: {e}")
+        try:
+            cl, cp = _sclause()
+            c.execute(f"SELECT student_id, exam_type, deviation_estimate, submitted_at "
+                      f"FROM mock_exam_sessions {('WHERE submitted_at IS NOT NULL' if not student_id else 'WHERE student_id = ? AND submitted_at IS NOT NULL')} "
+                      f"ORDER BY student_id, submitted_at", (tuple(cp) if not student_id else (student_id,)))
+            for r in c.fetchall():
+                s = students.get(r["student_id"])
+                if not s or len(s["deviation_history"]) >= 24:
+                    continue
+                s["deviation_history"].append({
+                    "src": "mock", "name": r["exam_type"], "date": str(r["submitted_at"]) if r["submitted_at"] else None,
+                    "subject": "total", "deviation": r["deviation_estimate"], "judgement": None,
+                })
+        except Exception as e:
+            log.warning(f"[digest] mock_exam_sessions skip: {e}")
+
+        # 5) 科目別の演習量・正答率 (直近90日)
+        try:
+            q = "SELECT student_id, subject, COUNT(*) AS n, AVG(CASE WHEN is_correct IS NOT NULL THEN is_correct ELSE NULL END) AS acc, AVG(elapsed_ms) AS avg_ms FROM question_attempts WHERE created_at >= ?"
+            p = [cut90]
+            if student_id:
+                q += " AND student_id = ?"; p.append(student_id)
+            q += " GROUP BY student_id, subject"
+            c.execute(q, tuple(p))
+            for r in c.fetchall():
+                s = students.get(r["student_id"])
+                if not s:
+                    continue
+                s["subject_balance"].append({
+                    "subject": r["subject"], "attempts": r["n"],
+                    "accuracy": round(r["acc"], 3) if r["acc"] is not None else None,
+                    "avg_elapsed_ms": int(r["avg_ms"]) if r["avg_ms"] is not None else None,
+                })
+        except Exception as e:
+            log.warning(f"[digest] subject_balance skip: {e}")
+
+        # 6) 活動量 (7d/30d/90d/総数・最終・通算正答率)
+        try:
+            q = ("SELECT student_id, COUNT(*) AS total, "
+                 "SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS d7, "
+                 "SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS d30, "
+                 "SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS d90, "
+                 "MAX(created_at) AS last_at, "
+                 "AVG(CASE WHEN is_correct IS NOT NULL THEN is_correct ELSE NULL END) AS acc "
+                 "FROM question_attempts ")
+            p = [cut7, cut30, cut90]
+            if student_id:
+                q += "WHERE student_id = ? "; p.append(student_id)
+            q += "GROUP BY student_id"
+            c.execute(q, tuple(p))
+            for r in c.fetchall():
+                s = students.get(r["student_id"])
+                if not s:
+                    continue
+                s["activity"] = {
+                    "total": r["total"] or 0, "d7": r["d7"] or 0, "d30": r["d30"] or 0, "d90": r["d90"] or 0,
+                    "last_at": str(r["last_at"]) if r["last_at"] else None,
+                    "accuracy": round(r["acc"], 3) if r["acc"] is not None else None,
+                }
+        except Exception as e:
+            log.warning(f"[digest] activity skip: {e}")
+
+        # 7) 直近の学習記録 (各生徒 最新5件)
+        try:
+            cl, cp = _sclause()
+            c.execute(f"SELECT student_id, studied_date, subject, material, minutes "
+                      f"FROM study_logs {cl} ORDER BY student_id, studied_date DESC", tuple(cp))
+            for r in c.fetchall():
+                s = students.get(r["student_id"])
+                if not s or len(s["recent_study"]) >= 5:
+                    continue
+                s["recent_study"].append({
+                    "date": str(r["studied_date"]) if r["studied_date"] else None,
+                    "subject": r["subject"], "material": r["material"], "minutes": r["minutes"],
+                })
+        except Exception as e:
+            log.warning(f"[digest] study_logs skip: {e}")
+
+        # 8) カリキュラム概要 (生徒ごと最新)
+        try:
+            cl, cp = _sclause()
+            c.execute(f"SELECT student_id, target_university, target_faculty, exam_date, start_date, daily_minutes, status, phases "
+                      f"FROM curricula {cl} ORDER BY student_id, id DESC", tuple(cp))
+            seen_cur = set()
+            for r in c.fetchall():
+                sid = r["student_id"]
+                s = students.get(sid)
+                if not s or sid in seen_cur:
+                    continue
+                seen_cur.add(sid)
+                phases = _jload(r["phases"], [])
+                exam_date = str(r["exam_date"]) if r["exam_date"] else None
+                s["curriculum"] = {
+                    "target_university": r["target_university"] or "",
+                    "target_faculty": r["target_faculty"] or "",
+                    "exam_date": exam_date,
+                    "daily_minutes": r["daily_minutes"],
+                    "status": r["status"],
+                    "phase_count": len(phases) if isinstance(phases, list) else None,
+                }
+                # 受験まで残日数 (admission 由来が無ければ exam_date から算出)
+                if s["days_to_exam"] is None and exam_date:
+                    try:
+                        ed = datetime.strptime(exam_date[:10], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                        s["days_to_exam"] = max(0, (ed - now).days)
+                    except Exception:
+                        pass
+        except Exception as e:
+            log.warning(f"[digest] curricula skip: {e}")
+    finally:
+        conn.close()
+
+    result = [students[sid] for sid in order]
+    # データ密度サマリ (= 何が溜まっているか / 足りないかの診断を兼ねる)
+    density = {
+        "students": len(result),
+        "with_attempts": sum(1 for s in result if s["activity"]["total"] > 0),
+        "with_exam_or_mock": sum(1 for s in result if s["deviation_history"]),
+        "with_weakness": sum(1 for s in result if s["weak_topics"]),
+        "with_goal": sum(1 for s in result if s["goal"]),
+        "with_curriculum": sum(1 for s in result if s["curriculum"]),
+        "with_admission": sum(1 for s in result if s["admission"]),
+        "active_7d": sum(1 for s in result if s["activity"]["d7"] > 0),
+    }
+    return {
+        "ok": True,
+        "generated_at": _iso(now),
+        "anonymized": True,
+        "note": "氏名・連絡先は含みません。id は塾内で生徒を特定するための内部IDです。",
+        "density": density,
+        "students": result,
+    }
+
+
 @app.post("/api/admin/students/send-magic-link-to")
 def admin_send_magic_link_to_address(payload: dict, authorization: Optional[str] = Header(None)):
     """🔥 2026-05-01: CEO ダッシュから指定アドレスに magic link を送信。

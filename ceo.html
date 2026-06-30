@@ -2652,6 +2652,7 @@
             <option value="name">名前順</option>
           </select>
           <button type="button" id="aiUsageReload" title="最新の集計を再取得">🔄 更新</button>
+          <button type="button" id="learningDigestBtn" title="全生徒の学習データを匿名化JSONで書き出す (AI分析用・氏名/連絡先は含みません)">📤 学習データ書き出し</button>
         </div>
       </div>
       <div style="color:#94a3b8;font-size:0.8rem;margin:0.2rem 0 0.8rem;">各生徒のドリル回数・学習記録・カリキュラム・最終活動日。<span style="color:#fca5a5;">🔴</span> は一定期間 活動なし＝声かけ候補です。</div>
@@ -10421,6 +10422,36 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     var si = document.getElementById('aiUsageSearch'); if (si) si.addEventListener('input', render);
     var so = document.getElementById('aiUsageSort'); if (so) so.addEventListener('change', render);
     var rb = document.getElementById('aiUsageReload'); if (rb) rb.addEventListener('click', load);
+    // 📤 学習データ書き出し (匿名化JSON) → AI分析用。氏名/連絡先は含まない。
+    var dlb = document.getElementById('learningDigestBtn');
+    if (dlb) dlb.addEventListener('click', async function() {
+      if (!window.AdminAuth || !AdminAuth.getToken || !AdminAuth.getToken()) { alert('管理者ログインが必要です'); return; }
+      dlb.disabled = true; var orig = dlb.textContent; dlb.textContent = '⏳ 書き出し中...';
+      try {
+        var r = await AdminAuth.fetch('/api/admin/learning-digest');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var data = await r.json();
+        var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        var ymd = (data.generated_at || '').slice(0, 10).replace(/-/g, '') || 'digest';
+        a.href = url; a.download = 'learning-digest-' + ymd + '.json';
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+        var d = data.density || {};
+        alert('✅ 学習データを書き出しました (' + (d.students || 0) + '名)\n\n' +
+              '【データ密度＝分析の効きどころ】\n' +
+              '・演習記録あり: ' + (d.with_attempts || 0) + '名\n' +
+              '・模試/偏差値あり: ' + (d.with_exam_or_mock || 0) + '名\n' +
+              '・弱点データあり: ' + (d.with_weakness || 0) + '名\n' +
+              '・志望校 設定済: ' + (d.with_goal || 0) + '名\n' +
+              '・直近7日アクティブ: ' + (d.active_7d || 0) + '名\n\n' +
+              'この JSON ファイルをチャットにアップロードしてください。\n(氏名・連絡先・保護者情報は含まれていません)');
+      } catch (e) {
+        alert('⚠️ 書き出し失敗: ' + e.message);
+      }
+      dlb.disabled = false; dlb.textContent = orig;
+    });
     var hb = document.querySelector('#ceoHubMenu [data-hub-target="aiUsageSection"]');
     if (hb) hb.addEventListener('click', load);
     if (window.AdminAuth && AdminAuth.getToken && AdminAuth.getToken()) setTimeout(load, 300);
