@@ -8758,6 +8758,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     // このドリル(grammar_questions)は英語(英文法)＋古文が在庫の中心。理科/数学等は対応外として注記。
     var _ENG_DRILL_UNITS = ['時制', '助動詞', '受動態', '不定詞', '動名詞', '分詞構文', '分詞', '関係詞', '仮定法', '比較', '接続詞', '前置詞', '疑問詞・間接疑問', '否定・倒置', '強調・省略', '冠詞', '名詞・代名詞', '形容詞・副詞', '話法', '語法・イディオム'];
     var _SJ_LABEL = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学' };
+    // 🧩 2026-07-01 数学/理科/社会は単元が粗いので「科目まるごと」配信 (unit空=科目レベル)。英語(20単元)/国語(古文)は従来通り単元指定。
+    var _SUBJECT_LEVEL_DRILL = { math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', social: '社会' };
     function _pickDrillUnits(s) {
       const wts = (s.weak_topics || []).filter(w => w.topic);
       // 弱点の重い順: 慢性弱点(5回以上で正答<0.75)→新出ミス(1-2回で正答0)
@@ -8770,10 +8772,13 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         if (w.subject === 'english') {
           let matched = null;
           for (const u of _ENG_DRILL_UNITS) { const key = u.split('・')[0]; if (w.topic.indexOf(u) >= 0 || w.topic.indexOf(key) >= 0) { matched = u; break; } }
-          if (matched) { const k = 'english|' + matched; if (!seen.has(k)) { seen.add(k); units.push({ subject: 'english', unit: matched }); } }
+          if (matched) { const k = 'english|' + matched; if (!seen.has(k)) { seen.add(k); units.push({ subject: 'english', unit: matched, label: matched }); } }
           else uncovered.add('english');
         } else if (w.subject === 'japanese') {
-          const k = 'japanese|古文'; if (!seen.has(k)) { seen.add(k); units.push({ subject: 'japanese', unit: '古文' }); }
+          const k = 'japanese|古文'; if (!seen.has(k)) { seen.add(k); units.push({ subject: 'japanese', unit: '古文', label: '古文' }); }
+        } else if (w.subject && _SUBJECT_LEVEL_DRILL[w.subject]) {
+          // 数学/理科/社会: unit を空にして科目まるごと配信 (バックエンドが科目プール全体から出題)
+          const k = w.subject + '|'; if (!seen.has(k)) { seen.add(k); units.push({ subject: w.subject, unit: '', label: _SUBJECT_LEVEL_DRILL[w.subject] }); }
         } else if (w.subject) {
           uncovered.add(w.subject);
         }
@@ -8782,10 +8787,11 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     }
     // ワンクリック配信: 弱点単元の自動採点ドリル(10問)を当該生徒に配信
     async function _assignWeaknessDrill(btn) {
-      const sid = btn.getAttribute('data-sid'), subject = btn.getAttribute('data-subject'), unit = btn.getAttribute('data-unit');
+      const sid = btn.getAttribute('data-sid'), subject = btn.getAttribute('data-subject'), unit = btn.getAttribute('data-unit') || '';
+      const label = btn.getAttribute('data-label') || unit || subject;  // 科目単位配信は unit 空 → 表示は data-label
       const sname = btn.getAttribute('data-name') || ('id' + sid);
-      if (!sid || !unit || !window.AdminAuth) return;
-      if (!confirm(`${sname} さんに「${unit}」の自動採点ドリル(10問)を配信します。よろしいですか？`)) return;
+      if (!sid || !subject || !window.AdminAuth) return;
+      if (!confirm(`${sname} さんに「${label}」の自動採点ドリル(10問)を配信します。よろしいですか？`)) return;
       const o = btn.textContent; btn.disabled = true; btn.textContent = '⏳ 配信中...';
       try {
         const res = await AdminAuth.fetch('/api/admin/grammar-drill/create', {
@@ -8850,9 +8856,16 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           const stale = (a.total || 0) === 0 || (a.d7 || 0) === 0; // 演習ゼロ or 直近7日ゼロ
           const bg = BG[band[0]] || 'transparent';
           const dp = _pickDrillUnits(s);
-          const btns = dp.units.map(u => `<button type="button" data-assign-drill data-sid="${s.id}" data-subject="${u.subject}" data-unit="${esc(u.unit)}" data-name="${esc(nm)}" title="「${esc(u.unit)}」の自動採点ドリル(10問)をこの生徒に配信" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:5px 11px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">📨「${esc(u.unit)}」</button>`).join('');
-          const uncovLabels = [...new Set(dp.uncovered.map(x => _SJ_LABEL[x] || x))];
-          const uncovNote = uncovLabels.length ? `<span style="font-size:0.72rem;color:#9ca3af;">※${uncovLabels.join('・')}の弱点は英文法/古文ドリル対象外</span>` : '';
+          const btns = dp.units.map(u => {
+            const whole = !u.unit;  // unit空=科目まるごと配信(数学/理科/社会)。単元指定(英語/古文)と区別
+            const disp = whole ? (u.label + '(全体)') : u.label;
+            const tip = whole ? `${u.label}全体からミックス10問を配信` : `「${u.label}」の自動採点ドリル(10問)を配信`;
+            return `<button type="button" data-assign-drill data-sid="${s.id}" data-subject="${u.subject}" data-unit="${esc(u.unit)}" data-label="${esc(disp)}" data-name="${esc(nm)}" title="${esc(tip)}" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:5px 11px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">📨「${esc(disp)}」</button>`;
+          }).join('');
+          // 既にボタンが出ている科目は「対象外」注記から除外(英語の非文法トピックだけが残る)
+          const coveredSubj = new Set(dp.units.map(u => u.subject));
+          const uncovLabels = [...new Set(dp.uncovered.filter(x => !coveredSubj.has(x)).map(x => _SJ_LABEL[x] || x))];
+          const uncovNote = uncovLabels.length ? `<span style="font-size:0.72rem;color:#9ca3af;">※${uncovLabels.join('・')}の弱点は自動採点ドリル対象外</span>` : '';
           const drillBtn = (dp.units.length || dp.uncovered.length)
             ? `<div style="margin-top:7px;display:flex;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:wrap;">${uncovNote}${dp.units.length ? '<span style="font-size:0.74rem;color:#94a3b8;">弱点ドリル配信:</span>' : ''}${btns}</div>`
             : '';

@@ -38022,12 +38022,17 @@ def admin_grammar_drill_create(
     if not _grammar_admin_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
 
-    unit = (payload.get("unit") or "").strip()
-    if not unit:
-        raise HTTPException(status_code=422, detail="unit (単元) が必要です")
     subject = _canon_grammar_subject(payload.get("subject"))  # 🧩 多科目化(既定 english)。canonical科目コードへ正規化
     if subject not in _GRAMMAR_CANON_SUBJECTS:
         raise HTTPException(status_code=422, detail=f"subject が不正です。{sorted(_GRAMMAR_CANON_SUBJECTS)} のいずれか(別名 数学/英語/国語/社会等も可)で指定してください")
+    unit = (payload.get("unit") or "").strip()
+    # 🧩 2026-07-01 [科目単位ドリル] unit 空 = その科目のプール全体からまとめて出題。
+    #   数学/理科/社会は単元が粗い(各2-5種)ため CEO 弱点パネルからは科目まるごと配信する。
+    #   unit 指定あり(英語の関係詞・国語の古文 等)は従来通り単元ピンポイント。
+    #   表示/保存/通知用の unit は空なら科目ラベル(例:「数学」)で補完。
+    subject_level = not unit
+    if subject_level:
+        unit = _grammar_subject_label_ja(subject)
     levels = payload.get("levels") or ["standard", "advanced"]
     if not isinstance(levels, list):
         levels = [levels]
@@ -38075,24 +38080,28 @@ def admin_grammar_drill_create(
                     exclude_ids = []
         # 1) 在庫から count 問をランダム固定 (exclude_ids があれば除外 = 前回と被らない新問のみ)
         ph = ",".join(["?"] * len(levels))
+        # 🧩 科目単位配信(subject_level)は unit フィルタを外し、その科目の全単元から出題。
+        unit_clause = "" if subject_level else "unit = ? AND "
+        unit_params = () if subject_level else (unit,)
         if exclude_ids:
             ex_ph = ",".join(["?"] * len(exclude_ids))
             c.execute(
-                f"SELECT id FROM grammar_questions WHERE unit = ? AND subject = ? AND level IN ({ph}) AND active = 1 "
+                f"SELECT id FROM grammar_questions WHERE {unit_clause}subject = ? AND level IN ({ph}) AND active = 1 "
                 f"AND id NOT IN ({ex_ph}) ORDER BY RANDOM() LIMIT ?",
-                (unit, subject, *levels, *exclude_ids, count),
+                (*unit_params, subject, *levels, *exclude_ids, count),
             )
         else:
             c.execute(
-                f"SELECT id FROM grammar_questions WHERE unit = ? AND subject = ? AND level IN ({ph}) AND active = 1 "
+                f"SELECT id FROM grammar_questions WHERE {unit_clause}subject = ? AND level IN ({ph}) AND active = 1 "
                 f"ORDER BY RANDOM() LIMIT ?",
-                (unit, subject, *levels, count),
+                (*unit_params, subject, *levels, count),
             )
         qids = [r["id"] for r in c.fetchall()]
         if len(qids) < count:
+            _scope = f"科目「{unit}」" if subject_level else f"単元「{unit}」"
             raise HTTPException(
                 status_code=400,
-                detail=f"単元「{unit}」の在庫が不足しています (要求 {count}問 / "
+                detail=f"{_scope}の在庫が不足しています (要求 {count}問 / "
                        f"{'前回の問題を除いた' if exclude_ids else ''}在庫 {len(qids)}問)。"
                        f"レベルを広げるか、問題数を減らすか、問題を補充してください。",
             )
