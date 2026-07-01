@@ -2944,6 +2944,27 @@ def _check_rate_limit_ip(request, bucket: str, limit: int = 10, window: int = 60
                 del _RATE_LIMIT_STORE[k]
 
 
+def _check_rate_limit_value(value: str, bucket: str, limit: int = 10, window: int = 60) -> None:
+    """任意の文字列キー(email 等)単位の簡易レートリミッタ。超過時は HTTPException 429。
+    Vercel 等の proxy 経由だと _client_ip が共有 egress IP になり IP 単位が機能しない
+    public フォームで、実 identity (email) 単位に絞るために使う。in-memory per-process。"""
+    import time as _t
+    key = (f"val:{(value or '').lower().strip()}", bucket)
+    now = _t.time()
+    timestamps = [t for t in _RATE_LIMIT_STORE.get(key, []) if now - t < window]
+    if len(timestamps) >= limit:
+        raise HTTPException(status_code=429, detail="リクエストが多すぎます。しばらく待ってから再度お試しください。")
+    timestamps.append(now)
+    _RATE_LIMIT_STORE[key] = timestamps
+    # メモリ肥大化対策 (_check_rate_limit_ip と同じ backstop・自己完結にして相乗り依存を無くす)
+    if len(_RATE_LIMIT_STORE) > 10000:
+        cutoff = now - 3600
+        for k in list(_RATE_LIMIT_STORE.keys()):
+            _RATE_LIMIT_STORE[k] = [t for t in _RATE_LIMIT_STORE[k] if t > cutoff]
+            if not _RATE_LIMIT_STORE[k]:
+                del _RATE_LIMIT_STORE[k]
+
+
 def _check_recipient_send_cap(to_email: str, limit: int = 10, window: int = 3600) -> bool:
     """🛡️ 2026-06-12 security MEDIUM fix: 送信先メールアドレス単位の送信上限。
     IP rate limit は IP 分散 + 複数アカウント (student_email に第三者アドレスを設定して
@@ -42335,8 +42356,22 @@ class CourseApplicationRequest(BaseModel):
 @app.post("/api/course-applications")
 def public_course_application(payload: CourseApplicationRequest, request: Request):
     """公開: 難関大学コースへの申込 (クレカ不要)。"""
-    # 公開 endpoint なので rate limit を厳しめに (1 IP 5回/24h)
-    _check_rate_limit_ip(request, bucket="course_apply", limit=5, window=86400)
+    # 公開 endpoint の rate limit。
+    # ⚠️ trillion-ai-juku.com は Vercel 経由で API に proxy されるため _client_ip は
+    #   実クライアントではなく Vercel egress の共有IP(少数の AWS IP プール)になりがち。
+    #   旧実装 (1IP 5回/24h・全フォーム共通バケット) では、混雑日に複数の正規申込者が
+    #   同一 egress IP を共有して枠を使い切り、本物の入塾申込が 429 で弾かれる事故が
+    #   起き得た(高橋勇尚さん事例 2026-07-01)。対策:
+    #   (1) フォーム種別ごとにバケット分離(塾生アプリ登録が入塾申込の枠を食わない)
+    #   (2) 共有IP前提で IP 上限を大幅緩和。abuse 抑止の本丸は honeypot + 同一email 409 +
+    #       下の email 単位上限(共有IPを迂回しても効く実 identity ベースの防御)。
+    _ref_raw = (payload.referrer or "").strip()
+    _ip_bucket = "course_apply_juku" if _ref_raw == "塾生アプリ" else "course_apply_enroll"
+    _check_rate_limit_ip(request, bucket=_ip_bucket, limit=40, window=86400)
+    _email_for_limit = (payload.email or "").lower().strip()
+    if _email_for_limit:
+        # 10/24h。同一email 409 が重複を先に弾くので、正規の再送(数回)は絶対に届く緩さ。
+        _check_rate_limit_value(_email_for_limit, bucket="course_apply_email", limit=10, window=86400)
     name = _sanitize_text(payload.name, 100)
     if not name:
         raise HTTPException(status_code=400, detail="お名前は必須です")

@@ -569,9 +569,38 @@
 
     /* Honeypot (Netlify) */
     .hp-field { position: absolute; left: -9999px; }
+
+    /* 入力エラー表示（未入力の無音失敗を防ぐ） */
+    /* スクロール先が上部トースト/下部固定フッターに隠れないよう余白を確保（モバイル配慮） */
+    .field, .consent { scroll-margin-top: 150px; scroll-margin-bottom: 96px; }
+    .has-error input:not([type=radio]):not([type=checkbox]):not([type=hidden]),
+    .has-error select,
+    .has-error textarea,
+    .has-error .radio-group,
+    .has-error .inline-date {
+      outline: 2px solid #ef4444;
+      outline-offset: 1px;
+      border-radius: 8px;
+      background: #fff7f7;
+    }
+    .has-error .field-label,
+    .consent.has-error span { color: #dc2626; }
+    .consent.has-error input[type=checkbox] { outline: 2px solid #ef4444; outline-offset: 2px; }
+    .form-error-toast {
+      display: none; position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+      z-index: 9999; width: 540px; max-width: 92%;
+      background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5;
+      border-radius: 12px; padding: 0.85rem 1.1rem;
+      font-size: 0.9rem; line-height: 1.6;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+    }
+    .form-error-toast.show { display: block; }
+    .form-error-toast b { color: #dc2626; }
   </style>
 </head>
 <body>
+
+  <div id="formError" class="form-error-toast" role="alert" aria-live="assertive"></div>
 
   <header class="site-header">
     <div class="brand">Trillion English Academy</div>
@@ -587,7 +616,7 @@
       入力内容はそのまま塾へ送信されます（最後に「送信」を押してください）。
     </div>
 
-    <form id="enrollForm" name="enrollment" method="POST">
+    <form id="enrollForm" name="enrollment" method="POST" novalidate>
       <p class="hp-field"><label>このフィールドは入力しないでください <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
 
       <!-- 申込日 -->
@@ -1149,9 +1178,65 @@
       return lines.join('\n').slice(0, 980);
     }
 
+    // ----- 入力チェックのUI（未入力を赤表示＋自動スクロール＋画面上部に警告） -----
+    const errorToast = document.getElementById('formError');
+    function fieldInfo(el) {
+      const field = el.closest('.field');
+      if (field) {
+        const lab = field.querySelector('.field-label');
+        return { box: field, label: lab ? lab.textContent.replace(/[*＊]/g, '').trim() : (el.name || 'この項目') };
+      }
+      const consent = el.closest('.consent');
+      if (consent) return { box: consent, label: '個人情報の取り扱いへの同意' };
+      return { box: el.closest('label') || el, label: el.name || 'この項目' };
+    }
+    function clearErrors() {
+      form.querySelectorAll('.has-error').forEach(b => b.classList.remove('has-error'));
+      form.querySelectorAll('[aria-invalid="true"]').forEach(el => el.removeAttribute('aria-invalid'));
+      if (errorToast) errorToast.classList.remove('show');
+    }
+    function showErrors() {
+      form.querySelectorAll('.has-error').forEach(b => b.classList.remove('has-error'));
+      // 未入力/不正の項目を全て拾う（ラジオ群は同名で複数 :invalid → box 単位で重複排除）
+      const invalids = Array.from(form.querySelectorAll(':invalid'))
+        .filter(el => el.name !== 'bot-field' && el.type !== 'hidden');
+      const boxes = [];
+      const seen = new Set();
+      let firstLabel = '';
+      invalids.forEach(el => {
+        el.setAttribute('aria-invalid', 'true');  // 支援技術に個別項目のエラーを伝える
+        const info = fieldInfo(el);
+        if (!info.box || seen.has(info.box)) return;
+        seen.add(info.box);
+        info.box.classList.add('has-error');
+        boxes.push(info.box);
+        if (!firstLabel) firstLabel = info.label;
+      });
+      if (errorToast && boxes.length) {
+        errorToast.innerHTML = '⚠ 未入力・未選択の項目が <b>' + boxes.length + '件</b> あります。赤く表示された項目をご入力のうえ、もう一度「送信」を押してください。<br>（最初の項目：<b>' + firstLabel + '</b>）';
+        errorToast.classList.add('show');
+      }
+      if (boxes.length) {
+        // block:'start' + scroll-margin で、対象項目が上部トーストの真下に来る（フッターにも隠れない）
+        // behavior は 'auto'(即時)。'smooth' は一部モバイル/webview で無効化され全くスクロールしない事故がある。
+        boxes[0].scrollIntoView({ behavior: 'auto', block: 'start' });
+        const focusable = boxes[0].querySelector('input, select, textarea');
+        if (focusable) { try { focusable.focus({ preventScroll: true }); } catch (_) { focusable.focus(); } }
+      }
+    }
+    // 入力し直したら、その項目の赤表示を消す
+    form.addEventListener('input', function (e) {
+      if (e.target && !e.target.matches(':invalid')) e.target.removeAttribute('aria-invalid');
+      const box = e.target.closest('.has-error');
+      if (box && box.querySelector(':invalid') == null) box.classList.remove('has-error');
+    });
+
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
       if (val('bot-field')) return;  // honeypot
+      // 未入力チェック（novalidate なので自前で判定 → スマホでの“無音失敗”を防ぐ）
+      if (!form.checkValidity()) { showErrors(); return; }
+      clearErrors();
       // file:// プレビュー等は API に到達できないので overlay のみ表示
       if (window.location.protocol === 'file:') {
         document.getElementById('successOverlay').classList.add('show');
@@ -1178,7 +1263,12 @@
         if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
         document.getElementById('successOverlay').classList.add('show');
       } catch (err) {
-        alert('❌ 送信に失敗しました: ' + (err.message || '時間をおいて再度お試しください'));
+        if (errorToast) {
+          errorToast.innerHTML = '❌ 送信に失敗しました：' + (err.message || '通信エラーが発生しました。少し時間をおいて、もう一度お試しください。');
+          errorToast.classList.add('show');
+        } else {
+          alert('❌ 送信に失敗しました: ' + (err.message || '時間をおいて再度お試しください'));
+        }
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'この内容で送信'; }
       }
     });
