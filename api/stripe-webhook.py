@@ -440,14 +440,58 @@ def _handle_payment_intent_succeeded(event):
     # done_key が既に他の status (succeeded/manually_reconciled/retry) で確定済なら override しない
     # tombstone (unpaid マーク済) があれば auto-reconcile を完全に skip (幽霊復活防止)
     if rid and month:
+        uncertain_key = f"charge:uncertain:{rid}:{month}"
+        requires_action_key = f"charge:requires_action:{rid}:{month}"
+        done_key = f"charge:done:{rid}:{month}"
         tombstone_key = f"charge:unpaid-tombstone:{rid}:{month}"
         tombstone_check = _redis_safe("GET", tombstone_key)
-        if tombstone_check and isinstance(tombstone_check, dict) and tombstone_check.get("result"):
+        tombstone_active = bool(tombstone_check and isinstance(tombstone_check, dict) and tombstone_check.get("result"))
+        if tombstone_active:
+            # 🚨 2026-07-02 fix (df439e6 3並列review 残穴②): PI 非照合の無差別ミュートをやめる。
+            # mark_unpaid → 💳個別請求/retry → 新 PI が再び requires_action → 顧客が 3DS 完了、
+            # の succeeded が握り潰され、回収済みなのに台帳が 🔐 のまま最大 30 日 (tombstone TTL)
+            # 止まっていた (execute/retry は成功分岐でしか tombstone を DEL しない)。判定は2段:
+            # ① RA record の payment_intent_id と event PI の完全一致 → 通す。
+            #    mark_unpaid は RA record を必ず DEL するため、tombstone と併存する RA record は
+            #    tombstone より「後」の新試行 (execute/retry の RA 分岐) が書いたもの = その PI は
+            #    幽霊ではあり得ない。時刻比較では区別できない同一秒 (UI の mark_unpaid→retry 自動
+            #    連鎖で常態的に起きる)・clock skew・Idempotency replay で created が古い正当回収も
+            #    これで救う (2026-07-03 3並列review P1)。
+            # ② fallback: tombstone の marked_at と PI の created の時刻比較 (canceled handler
+            #    ガード3 の canceled_at vs noted_at と同型)。RA record に PI が無い uncertain 起点
+            #    向け。created >= marked_at なら新試行 = 通す (「未課金」と確定判断した旧 PI が
+            #    判断と同一秒に作成されることは物理的にないため >= が安全)。
+            #    marked_at / created が取れない場合は安全側 = ミュート維持。
+            ra_probe_pi = ""
+            _ra_probe = _redis_safe("GET", requires_action_key)
+            if _ra_probe and isinstance(_ra_probe, dict) and _ra_probe.get("result"):
+                try:
+                    _ra_probe_rec = json.loads(_ra_probe["result"])
+                    if isinstance(_ra_probe_rec, dict):
+                        ra_probe_pi = (_ra_probe_rec.get("payment_intent_id") or "").strip()
+                except Exception:
+                    ra_probe_pi = ""
+            if pi_id and ra_probe_pi and ra_probe_pi == pi_id:
+                tombstone_active = False
+                _log(f"webhook: tombstone bypassed (event PI matches live RA record) rid={rid} month={month} pi={pi_id}")
+            else:
+                marked_at_ts = 0
+                try:
+                    _tomb = json.loads(tombstone_check["result"])
+                    if isinstance(_tomb, dict):
+                        marked_at_ts = int(_tomb.get("marked_at") or 0)
+                except Exception:
+                    marked_at_ts = 0
+                try:
+                    pi_created_ts = int(obj.get("created") or 0)
+                except Exception:
+                    pi_created_ts = 0
+                if marked_at_ts and pi_created_ts and pi_created_ts >= marked_at_ts:
+                    tombstone_active = False
+                    _log(f"webhook: tombstone predates PI (marked_at={marked_at_ts} <= created={pi_created_ts}) - allowing auto-reconcile rid={rid} month={month} pi={pi_id}")
+        if tombstone_active:
             _log(f"webhook: tombstone found, skipping auto-reconcile rid={rid} month={month} pi={pi_id}")
         else:
-            uncertain_key = f"charge:uncertain:{rid}:{month}"
-            requires_action_key = f"charge:requires_action:{rid}:{month}"
-            done_key = f"charge:done:{rid}:{month}"
             existing_uncertain = _redis_safe("GET", uncertain_key)
             existing_requires_action = _redis_safe("GET", requires_action_key)
             should_auto_reconcile = False
@@ -532,6 +576,10 @@ def _handle_payment_intent_succeeded(event):
                     _redis_safe("RPUSH", f"charge:history:audit:{rid}:{month}", json.dumps(_history_rec, ensure_ascii=False))
                     _redis_safe("EXPIRE", f"charge:history:audit:{rid}:{month}", "31536000")
                     _clear_charge_source_state(source_state, rid, month)
+                    # 月が succeeded で決着したので tombstone も解除 (execute/retry の成功分岐・
+                    # mark_paid と同じ「決着時に消す」規約。残しても done=succeeded ガードで
+                    # 実害は無いが、30日間 旧 PI 由来 event のログ文言が紛らわしくなるだけ)
+                    _redis_safe("DEL", tombstone_key)
                     _log(f"webhook: auto-reconciled {source_state} → succeeded rid={rid} month={month} pi={pi_id} amount={amount}")
     _log(f"webhook: payment_intent.succeeded rid={rid} month={month} pi={pi_id} amount={amount}")
 

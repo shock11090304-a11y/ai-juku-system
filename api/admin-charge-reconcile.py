@@ -299,6 +299,16 @@ class handler(BaseHTTPRequestHandler):
                 # 拒否して mark_paid へ誘導する (誤った tombstone + 再請求 = 二重課金を防ぐ)。
                 ra_rec_mu = _get_record(requires_action_key)
                 ra_pi_mu = (ra_rec_mu.get("payment_intent_id") or "").strip() if ra_rec_mu else ""
+                # 🚨 2026-07-03 fix (3並列review P2): RA record が欠落していても (execute/retry の
+                # RA 分岐が done SET 後・RA record SET 前でクラッシュした窓)、done ロックが
+                # requires_action で PI を知っていればそれを cancel 対象に拾う。
+                # 拾わないと生きた 3DS PI を Stripe 側に残したまま掃除・再請求可能化してしまい、
+                # 顧客が後から旧リンクを完了すると二重課金になり得る (時刻ゲートで succeeded は
+                # ミュートされるため台帳にも現れない)。
+                if not ra_pi_mu:
+                    _done_rec_mu = _get_record(done_key)
+                    if _done_rec_mu and _done_rec_mu.get("status") == "requires_action":
+                        ra_pi_mu = (_done_rec_mu.get("payment_intent_id") or "").strip()
                 cancel_warning = ""
                 ra_pi_dead = False  # cancel 成功 / canceled 済み / Stripe 上不存在 = もう課金し得ない
                 ra_dead_reason = ""  # 監査用: charge:failed.error_detail に刻む dead 判定理由
@@ -413,16 +423,7 @@ class handler(BaseHTTPRequestHandler):
                         "message": "別の retry が進行中です。2 分後に再度お試しください",
                     })
                     return
-                # 必ず mark_unpaid 状態 (= done_key が無い) を確認
-                check = _redis("GET", done_key)
-                if check and isinstance(check, dict) and check.get("result"):
-                    _redis("DEL", retry_lock_key)  # lock 解除
-                    _json(self, 400, {
-                        "error": "ALREADY_LOCKED",
-                        "message": "done_key が既に存在します。先に mark_unpaid してから retry してください",
-                    })
-                    return
-                # 再請求実行
+                # 再請求の前提検証 (done プリロックより前に済ませ、失敗時のロック掃除を不要にする)
                 secret_key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
                 if not secret_key:
                     _redis("DEL", retry_lock_key)
@@ -434,6 +435,23 @@ class handler(BaseHTTPRequestHandler):
                 if not customer_id or not payment_method_id or monthly_fee <= 0:
                     _redis("DEL", retry_lock_key)
                     _json(self, 400, {"error": "INVALID_REG", "message": "customer/pm/fee が欠落"})
+                    return
+                # 必ず mark_unpaid 状態 (= done_key が無い) を確認しつつ、確認と同時に
+                # SET NX "pending" で二重請求ロックを取る (execute の一斉ループと同じプリロック)。
+                # 🚨 2026-07-03 fix (3並列review P1): 従来は GET 確認のみで Stripe 呼出中
+                # (最大20秒) を done ロック無しで走り、並走した月末バッチ/個別請求 execute が
+                # この月を NX 取得 → 課金 → done=succeeded 確定した後に、戻ってきた retry が
+                # plain SET で succeeded を中間 status へ降格上書きし得た (両者が課金する
+                # 二重課金 race の入口)。プリロックがあれば並走 execute 側は NX 失敗 =
+                # "already charged" skip になり、retry 側が負けた場合はここで 400 を返すため、
+                # 窓そのものが閉じる。
+                nx_done = _redis("SET", done_key, "pending", "NX", "EX", "5184000")
+                if not nx_done or not isinstance(nx_done, dict) or nx_done.get("result") != "OK":
+                    _redis("DEL", retry_lock_key)  # lock 解除
+                    _json(self, 400, {
+                        "error": "ALREADY_LOCKED",
+                        "message": "done_key が既に存在します。先に mark_unpaid してから retry してください",
+                    })
                     return
                 student_name = reg.get("studentName") or reg.get("student_name") or ""
                 email = reg.get("email", "")
@@ -521,6 +539,54 @@ class handler(BaseHTTPRequestHandler):
                             "paymentIntentId": pi_new_id, "stripeStatus": pi_status,
                         })
                         return
+                    if pi_status == "requires_action":
+                        # 🚨 2026-07-02 fix (df439e6 3並列review 残穴①): retry の新 PI が 3DS 要求に
+                        # なった場合も execute の RA 分岐と同じく done ロック + charge:requires_action
+                        # record + index を書く。従来は「unexpected status」で無記録のまま返しており、
+                        #  - done 無し = 月末バッチ/個別請求が同月に別 PI を作れる (3DS 完了と重なると二重課金)
+                        #  - source record 無し = 顧客が後から 3DS 完了しても webhook auto-reconcile
+                        #    が不発 (課金済みなのに pi:succeeded 監査にしか残らず台帳・売上集計から漏れる)
+                        # ★tombstone はここでは消さない (execute RA 分岐と同じ規約。uncertain 起点の
+                        #   旧 PI succeeded ミュートが本来目的で、この新 PI の 3DS 完了は webhook 側が
+                        #   「RA record との PI 完全一致」(fallback: marked_at vs PI created 比較) で通す)
+                        now_ts = int(time.time())
+                        next_action = pi.get("next_action", {}) or {}
+                        redirect = (next_action.get("redirect_to_url") or {}).get("url", "")
+                        _redis("SET", done_key, json.dumps({
+                            "payment_intent_id": pi_new_id,
+                            "status": "requires_action",
+                            "amount": monthly_fee,
+                            "noted_at": now_ts,
+                            "retry": True,
+                        }, ensure_ascii=False), "EX", "5184000")
+                        _redis("SET", requires_action_key, json.dumps({
+                            "payment_intent_id": pi_new_id,
+                            "registration_id": rid,
+                            "month": month,
+                            "amount": monthly_fee,
+                            "student_name": student_name,
+                            "email": email,
+                            "phone": reg.get("phone", ""),
+                            "redirect_url": redirect,
+                            "noted_at": now_ts,
+                            "retry": True,
+                            "source": "manual-retry",
+                            "idempotency_key": idempotency,
+                        }, ensure_ascii=False), "EX", "31536000")
+                        _redis("ZADD", "charge:requires_action:index", str(now_ts), f"{rid}:{month}")
+                        _redis("DEL", retry_lock_key)  # in-flight lock 解除
+                        _log(f"reconcile: retry requires_action rid={rid} month={month} pi={pi_new_id}")
+                        _json(self, 200, {
+                            "ok": False, "action": "retry", "registrationId": rid, "month": month,
+                            "paymentIntentId": pi_new_id, "stripeStatus": pi_status,
+                            "redirectUrl": redirect,
+                            "warning": ("3DS 認証待ちです (まだ課金されていません)。🔐3DS認証要の一覧に"
+                                        "記録しました。顧客に認証 URL を送り、本人認証が完了すると"
+                                        "自動で回収記録に反映されます"),
+                        })
+                        return
+                    # その他の status (canceled 等) = 課金不成立 → プリロック解放 (execute の else 分岐と同規約)
+                    _redis("DEL", done_key)
                     _redis("DEL", retry_lock_key)
                     _json(self, 200, {
                         "ok": False, "action": "retry", "registrationId": rid, "month": month,
@@ -529,6 +595,8 @@ class handler(BaseHTTPRequestHandler):
                     })
                     return
                 except urllib.error.HTTPError as e:
+                    # Stripe がエラー応答 = リクエストは届いた = 課金は走っていない → プリロック解放
+                    _redis("DEL", done_key)
                     _redis("DEL", retry_lock_key)
                     detail = ""
                     try: detail = e.read().decode("utf-8", errors="replace")[:300]
@@ -536,8 +604,43 @@ class handler(BaseHTTPRequestHandler):
                     _json(self, 502, {"error": "STRIPE_API_ERROR", "detail": detail})
                     return
                 except Exception as e:
+                    # 🚨 2026-07-03 fix (3並列review): timeout 等 = Stripe 側で課金されたか不明。
+                    # 従来はロック無しのまま 500 を返すだけで、直後の再試行 (retry は乱数キー) が
+                    # 原試行の成功と重なると二重課金し得た。execute の uncertain 規約と同じく
+                    # done ロックを温存し ⚠️要確認 (charge:uncertain) に記録して、塾長の
+                    # mark_paid / mark_unpaid 決着に誘導する。
+                    _now_rt = int(time.time())
+                    _redis("SET", done_key, json.dumps({
+                        "status": "uncertain",
+                        "amount": monthly_fee,
+                        "idempotency_key": idempotency,
+                        "noted_at": _now_rt,
+                        "retry": True,
+                        "error": str(e)[:200],
+                    }, ensure_ascii=False), "EX", "5184000")
+                    _redis("SET", uncertain_key, json.dumps({
+                        "registration_id": rid,
+                        "month": month,
+                        "amount": monthly_fee,
+                        "student_name": student_name,
+                        "email": email,
+                        "phone": reg.get("phone", ""),
+                        "idempotency_key": idempotency,
+                        "error": str(e)[:300],
+                        "noted_at": _now_rt,
+                        "retry": True,
+                        "source": "manual-retry",
+                    }, ensure_ascii=False), "EX", "31536000")
+                    _redis("ZADD", "charge:uncertain:index", str(_now_rt), f"{rid}:{month}")
                     _redis("DEL", retry_lock_key)
-                    _json(self, 500, {"error": "RETRY_FAILED", "message": str(e)[:200]})
+                    _log(f"reconcile: retry uncertain rid={rid} month={month} err={e!r}")
+                    _json(self, 500, {
+                        "error": "RETRY_UNCERTAIN",
+                        "message": ("Stripe との通信が不確定に終わりました (課金された可能性があります)。"
+                                    "⚠️要確認に記録したので、Stripe Dashboard で実際の状態を確認し、"
+                                    "成功なら mark_paid・未課金なら mark_unpaid で決着してください: "
+                                    + str(e)[:150]),
+                    })
                     return
         except Exception as e:
             _log(f"reconcile internal error: {e!r}")

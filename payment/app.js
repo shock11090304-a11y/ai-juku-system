@@ -3591,7 +3591,9 @@ async function retryCharge(rid, month, studentName, amount) {
     });
     const d2 = await r2.json();
     if (!r2.ok || d2.error) { alert(`❌ retry 失敗: ${d2.message || d2.error}\n${d2.detail || ''}`); return; }
-    alert(`✅ retry 完了: ${d2.paymentIntentId || ''} (${d2.stripeStatus || ''})`);
+    // ⚠️ warning = 「3DS 認証待ち (未課金・🔐一覧に記録済み)」等。黙殺すると「✅ 完了」だけ見て
+    // 回収済みと誤認するため必ず表示する (reconcileCharge 側と同じ規約)
+    alert(`✅ retry 完了: ${d2.paymentIntentId || ''} (${d2.stripeStatus || ''})${d2.warning ? `\n\n⚠️ ${d2.warning}` : ''}`);
     fetchChargeHistory();
     setTimeout(() => fetchMonthEndPreview(), 500);   // ❌マス/バナーを stale にしない (📖台帳も連鎖更新)
   } catch (e) {
