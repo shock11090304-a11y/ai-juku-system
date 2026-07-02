@@ -194,7 +194,7 @@ const PLAN_CONFIG = {
   // 数字は塾長判断で plans.js を直接編集して更新可
   socialProof: {
     totalUsers: 83,             // 累計利用者数 (体験 + 本契約 + 通塾生 全部の合計)
-    founderRemaining: 17,       // 創設メンバー残り枠 (50 - 33 名 想定)
+    // 🔷 2026-07-02 偽装の「残り枠N名」は撤去。残席は lp の実数連動カウンター(/api/founders/count)に一本化。
     thisWeekSignups: 5,         // 今週の新規申込数
     todaySignups: 2,            // 本日の新規申込数
     onlineNow: 12,              // 現在閲覧中の人数 (擬似値)

@@ -2,7 +2,8 @@
  * 🔥 Social Proof Banner — 社会的証明モニター
  *
  * lp.html / checkout.html / course-kokuritsu-nankan.html / pricing-compare.html
- * 等で「累計 X 人突破」「創設メンバー残り Y 名」等のダミーモニターを表示。
+ * 等で「累計 X 人突破」等の社会的証明モニターを表示。
+ * ★2026-07-02 塾長方針: 偽装の「残り枠 N 名」表示は撤去(残席は lp の実数連動カウンター /api/founders/count に一本化)。
  *
  * 数値は plans.js の PLAN_CONFIG.socialProof で集中管理 (塾長が直接編集可)。
  *
@@ -39,7 +40,7 @@
       el.innerHTML = `
         <div style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.4rem 0.9rem; background:linear-gradient(135deg, rgba(34,197,94,0.15), rgba(59,130,246,0.1)); border:1px solid rgba(34,197,94,0.4); border-radius:999px; font-size:0.78rem; color:#86efac; font-weight:700;">
           <span style="width:8px; height:8px; background:#34d399; border-radius:50%; animation:sp-pulse 2s infinite;"></span>
-          <span>🔥 累計 <strong data-sp-total style="color:#fbbf24; font-size:1rem;">${sp.totalUsers}</strong> 人突破 / 残り枠 <strong style="color:#f87171;">${sp.founderRemaining}</strong> 名</span>
+          <span>🔥 累計 <strong data-sp-total style="color:#fbbf24; font-size:1rem;">${sp.totalUsers}</strong> 人突破</span>
         </div>`;
     } else {
       el.innerHTML = `
@@ -55,12 +56,6 @@
               <span style="color:#94a3b8; font-size:0.82rem;">累計利用者</span>
               <strong data-sp-total style="color:#fbbf24; font-size:1.15rem;">${sp.totalUsers}</strong>
               <span style="color:#fbbf24; font-size:0.82rem;">人 突破</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:0.4rem;">
-              <span style="font-size:1.1rem;">🎁</span>
-              <span style="color:#94a3b8; font-size:0.82rem;">創設メンバー残り</span>
-              <strong style="color:#f87171; font-size:1.05rem;">${sp.founderRemaining}</strong>
-              <span style="color:#f87171; font-size:0.82rem;">名</span>
             </div>
             <div style="display:flex; align-items:center; gap:0.4rem;">
               <span style="font-size:1.1rem;">📈</span>
