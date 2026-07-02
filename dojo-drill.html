@@ -877,6 +877,13 @@
     }
 
     async function finalize() {
+      // 🛡️ 2026-07-02 二重送信ガード: await 中の再クリック/リトライで同一解答が question_attempts に
+      //   重複記録され、弱点集計(qa_attempts/正答率・習得判定)が歪むのを防ぐ。処理完了で必ず解除。
+      if (finalize._running) return;
+      finalize._running = true;
+      const _fb = document.getElementById('finalizeBtn');
+      if (_fb) { _fb.disabled = true; _fb.textContent = '⏳ 記録中...'; }
+      try {
       const { preset, daimon, qs, results, startedAt } = cur;
       const graded = results.filter(r => r.isCorrect !== null);
       const correct = graded.filter(r => r.isCorrect).length;
@@ -937,6 +944,13 @@
         }
       }
       renderResult({ correct, total: graded.length, elapsedMs: totalElapsedMs, recorded, subAttempts });
+      } catch (e) {
+        // 万一 renderResult 等で例外が出ても、ボタンが「⏳記録中...」disabled で固まらないよう復帰させる
+        if (_fb) { _fb.disabled = false; _fb.textContent = '✅ 結果を記録して弱点に反映'; }
+        throw e;
+      } finally {
+        finalize._running = false;
+      }
     }
 
     function renderResult({ correct, total, elapsedMs, recorded, subAttempts }) {

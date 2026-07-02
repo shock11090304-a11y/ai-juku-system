@@ -8775,7 +8775,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           if (matched) { const k = 'english|' + matched; if (!seen.has(k)) { seen.add(k); units.push({ subject: 'english', unit: matched, label: matched }); } }
           else uncovered.add('english');
         } else if (w.subject === 'japanese') {
-          const k = 'japanese|古文'; if (!seen.has(k)) { seen.add(k); units.push({ subject: 'japanese', unit: '古文', label: '古文' }); }
+          // 🧩 2026-07-02 fix: 国語は 古文/漢文/現代文 が在庫にあるのに従来 古文固定で、漢文/現代文の弱点にも
+          //   古文を誤配信していた(再測定されず克服ループに乗らない)。数学/理科/社会と同様に unit 空=科目
+          //   まるごと配信にして全単元(古文+漢文+現代文)から出題する。
+          const k = 'japanese|'; if (!seen.has(k)) { seen.add(k); units.push({ subject: 'japanese', unit: '', label: '国語' }); }
         } else if (w.subject && _SUBJECT_LEVEL_DRILL[w.subject]) {
           // 数学/理科/社会: unit を空にして科目まるごと配信 (バックエンドが科目プール全体から出題)
           const k = w.subject + '|'; if (!seen.has(k)) { seen.add(k); units.push({ subject: w.subject, unit: '', label: _SUBJECT_LEVEL_DRILL[w.subject] }); }

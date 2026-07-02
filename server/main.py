@@ -4535,6 +4535,16 @@ async def _weakness_aggregation_scheduler():
             await asyncio.sleep(3600)
 
 
+def _weakness_subject_key(subj) -> str:
+    """🧩 2026-07-02: 弱点集計キー用に subject を canonical(_GRAMMAR_CANON_SUBJECTS)へ寄せる。
+    日本語ラベル(英語/数学/世界史/化学基礎 等)は alias 表経由で canonical コードに正規化し、
+    _WEAKNESS_SUBJECT_TO_POOL / CEO 科目別ドリル配信ボタン(canonical キー前提)の空振りを防ぐ。
+    canonical 化できない finer subject(english_reading 等)は情報欠落を避けるため小文字化した原値を維持。
+    consumer は canonical しか拾わないので finer subject の据え置きは従来と同挙動(=無害)。"""
+    _c = _canon_grammar_subject(subj)  # 未知/非別名は '' を返す(runtime で解決される後方定義関数)
+    return _c if _c else str(subj or "").strip().lower()
+
+
 def _run_weakness_aggregation(only_student_id: Optional[int] = None) -> dict:
     """🎯 2026-05-22 塾長指示で UNION 拡張: ai_tutor_solve_log + question_attempts (mock_exam/practice/essay_grade)
     の 2 系統 (過去 30 日) を student × subject × topic で集計し student_weakness を更新。
@@ -4580,7 +4590,7 @@ def _run_weakness_aggregation(only_student_id: Optional[int] = None) -> dict:
             if not sid or not subj:
                 continue
             topic_norm = (topic or "")[:120]
-            key = (int(sid), str(subj).strip().lower(), topic_norm)
+            key = (int(sid), _weakness_subject_key(subj), topic_norm)
             agg[key]["count"] += 1
             sc = conf_score_map.get((conf or "").lower())
             if sc is not None:
@@ -4612,7 +4622,7 @@ def _run_weakness_aggregation(only_student_id: Optional[int] = None) -> dict:
             if not sid or not subj:
                 continue
             topic_norm = (topic or "")[:120]
-            key = (int(sid), str(subj).strip().lower(), topic_norm)
+            key = (int(sid), _weakness_subject_key(subj), topic_norm)
             agg[key]["count"] += 1
             # score 推定: is_correct 優先 → score_got/score_max
             sc = None
@@ -7157,6 +7167,11 @@ def _collect_health_snapshot() -> dict:
 
     # 🔥 申込→ログイン経路 監視 (2026-04-30 追加 — 塾長指示「申込→ログイン経路を完璧に」)
     # 過去 24h 申込数のうち、何名がログイン済みか。50% 以下は赤バナー警告。
+    # 🛡️ 2026-07-02 fix: このアラートは「LP セルフ申込→当日ログイン」ファネルの磁気リンク/認証障害を
+    #   捉えるのが目的。塾長が course_applications を手動承認して作った生徒は 30 日有効の magic link 案内で
+    #   当日ログインしないのが正常なため、これらを signups から除外する。除外しないと承認のたびに
+    #   「24h 申込ログイン率が低い」critical が毎時誤発報していた(6/28 以降 60通超)。
+    #   NOT IN サブクエリは student_id IS NOT NULL 限定(NULL 混入で NOT IN が全滅する罠を回避)。
     try:
         c.execute(
             f"""SELECT
@@ -7165,6 +7180,7 @@ def _collect_health_snapshot() -> dict:
                FROM students
                WHERE created_at >= ?
                  AND status IN ('trial', 'paid')
+                 AND id NOT IN (SELECT student_id FROM course_applications WHERE student_id IS NOT NULL)
                  AND {_synth_exclude_sql()}""",
             (h24,)
         )
@@ -7470,9 +7486,19 @@ def _run_monitor_check() -> dict:
     alerts = _evaluate_alerts(snapshot)
     sent_alerts = []
     skipped_alerts = []
+    info_suppressed = []
     for a in alerts:
         if _alert_recently_sent(a["key"]):
             skipped_alerts.append(a["key"])
+            continue
+        # 🛡️ 2026-07-02 fix: info レベルは CEO ダッシュのバナー表示専用でありメール送信しない
+        #   (funnel_drop_form の info 分岐コメント「バナー表示のみで critical email は送らない」通り)。
+        #   従来はここが severity 無関係に全件メール送信しており、info の funnel_drop_form が
+        #   毎時 owner へ送られ(6/25 以降 60通超)、本物の critical が埋もれていた。
+        #   記録(_record_alert_sent)はして cooldown を効かせ、毎サイクルの再処理を止める。
+        if a.get("severity") == "info":
+            _record_alert_sent(a["key"], {"severity": a["severity"], "title": a["title"], "channel": "banner_only"})
+            info_suppressed.append(a["key"])
             continue
         # 1件ずつ即時送信 (新規アラートのみ)
         subject, html = _format_alert_email([a], snapshot)
@@ -7486,6 +7512,7 @@ def _run_monitor_check() -> dict:
         "alerts_total": len(alerts),
         "alerts_sent": sent_alerts,
         "alerts_skipped_cooldown": skipped_alerts,
+        "alerts_info_suppressed": info_suppressed,
     }
 
 
@@ -23604,6 +23631,13 @@ def record_question_attempt(payload: dict, request: Request, authorization: Opti
     subject = payload.get("subject")
     if not subject:
         subject = _infer_subject_from_pool(exam_id, part_key) if exam_id else "unknown"
+    # 🧩 2026-07-02: 弱点集計/CEO 科目別配信は canonical subject コード前提。塾生アプリ(class.html)や
+    #   dojo-drill が日本語ラベル(英語/数学/世界史 等)を送ってくる経路があり、そのまま保存されると
+    #   _WEAKNESS_SUBJECT_TO_POOL/科目ボタンが空振りする。別名は canonical へ吸収し、canonical 化
+    #   できない finer subject(english_reading 等)や 'unknown' は原値を維持する(情報欠落防止)。
+    _subj_canon = _canon_grammar_subject(subject)
+    if _subj_canon:
+        subject = _subj_canon
     topic = payload.get("topic")
     is_correct = payload.get("is_correct")
     if is_correct is not None:
@@ -28408,9 +28442,9 @@ LINE_TEMPLATES = {
     "weekly_report": lambda p: {
         "type": "text",
         "text": f"📊 {p.get('name', '生徒')}さんの今週のレポート\n\n"
-                f"🔥 学習時間: {p.get('hours', 0)}時間\n"
+                f"📝 演習問題数: {p.get('problems_done', 0)}問\n"
                 f"💯 平均正答率: {p.get('accuracy', 0)}%\n"
-                f"💬 AI質問数: {p.get('questions', 0)}回\n\n"
+                f"🔥 学習時間: {p.get('hours', 0)}時間\n\n"
                 f"詳しくはマイページをご確認ください👇\n"
                 f"{p.get('url', BASE_URL)}"
     },
@@ -29306,8 +29340,8 @@ def _send_weekly_report_email(to_email: str, student_name: str, stats: dict) -> 
     <div style="font-size:1.8rem;font-weight:800;">{hours}<span style="font-size:0.9rem;">時間</span></div>
   </div>
   <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#ec4899,#f472b6);color:#fff;padding:1rem;border-radius:12px;text-align:center;">
-    <div style="font-size:0.75rem;opacity:0.85;">💬 AI質問数</div>
-    <div style="font-size:1.8rem;font-weight:800;">{questions}<span style="font-size:0.9rem;">回</span></div>
+    <div style="font-size:0.75rem;opacity:0.85;">📝 演習問題数</div>
+    <div style="font-size:1.8rem;font-weight:800;">{problems_done}<span style="font-size:0.9rem;">問</span></div>
   </div>
   <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#22c55e,#4ade80);color:#fff;padding:1rem;border-radius:12px;text-align:center;">
     <div style="font-size:0.75rem;opacity:0.85;">💯 正答率</div>
@@ -29325,7 +29359,8 @@ def _send_weekly_report_email(to_email: str, student_name: str, stats: dict) -> 
 </p>
 
 <div style="background:#f8fafc;padding:1rem;border-radius:8px;font-size:0.85rem;color:#64748b;">
-  💡 学習データが蓄積されるほど、より精度の高いレポートをお届けします。<br>
+  💡 「学習時間」は時間計測ありの演習(道場ドリル)の合計です。自動採点ドリル等は時間を記録しないため、
+  実際の学習量は「演習問題数」もあわせてご覧ください。<br>
   ご不明な点がございましたらお気軽にお問い合わせください。
 </div>
 
@@ -29365,8 +29400,24 @@ def _send_weekly_report_email(to_email: str, student_name: str, stats: dict) -> 
     return {"sent": False, "error": "max_retries_exceeded"}
 
 
+def _weekly_subject_label(subj_raw) -> str:
+    """週次レポート表示用に subject を日本語ラベル化。canonical コード(english 等)は
+    _GRAMMAR_SUBJECT_LABEL_JA で日本語に、日本語別名はそのまま、未知は原値/『その他』。"""
+    s = str(subj_raw or "").strip()
+    if not s:
+        return "その他"
+    canon = _canon_grammar_subject(s)  # '' if 未知の非別名
+    if canon:
+        return _GRAMMAR_SUBJECT_LABEL_JA.get(canon, s)
+    return s
+
+
 def _compute_weekly_stats(student_id: int, days: int = 7) -> dict:
-    """過去N日間の活動統計を events テーブルから集計"""
+    """過去N日間の活動統計を集計。
+    ⚠️ 2026-07-02 fix: 実際の演習活動は events(activity_*)ではなく question_attempts に記録される
+    (本番の events には activity_mypage_view しか emit されず、activity_problem_solved 等はゼロ)。
+    events 依存のままだと全生徒 hours=questions=problems=0 と算定され、週次レポートが 100% スキップされ
+    保護者・生徒に一度も届かなかった。events(将来 emit 再開時の後方互換)＋ question_attempts の両方から集計する。"""
     conn = db()
     c = conn.cursor()
     since_dt = datetime.now(timezone.utc) - timedelta(days=days)
@@ -29409,6 +29460,48 @@ def _compute_weekly_stats(student_id: int, days: int = 7) -> dict:
                 subject_stats[subj]["correct"] += 1
         elif name == "activity_ai_call":
             questions += 1
+
+    # 📊 2026-07-02: 実データ源 question_attempts から集計してマージ (events 側は本番で空)。
+    #   problems/正答/科目別は採点済み (is_correct IS NOT NULL) の attempt のみ・
+    #   AI質問数は source='ai_tutor'・学習時間は elapsed_ms 合計 (0/欠損は加算せず過小に留める=虚偽計上しない)。
+    conn2 = db()
+    c2 = conn2.cursor()
+    try:
+        c2.execute(
+            """SELECT subject, is_correct, elapsed_ms, source FROM question_attempts
+               WHERE student_id = ? AND created_at >= ?""",
+            (int(student_id), since_dt),
+        )
+        qa_rows = c2.fetchall()
+    finally:
+        conn2.close()
+    qa_ms = 0
+    for qr in qa_rows:
+        try:
+            src = qr["source"] or ""; ic = qr["is_correct"]; ems = qr["elapsed_ms"]; subj_raw = qr["subject"]
+        except (TypeError, KeyError, IndexError):
+            subj_raw = qr[0]; ic = qr[1]; ems = qr[2]; src = qr[3] if len(qr) > 3 else ""
+        try:
+            ev = int(ems or 0)
+            if 0 < ev < 3_600_000:
+                qa_ms += ev
+        except (TypeError, ValueError):
+            pass
+        if src == "ai_tutor":
+            questions += 1
+        if ic is None:
+            continue  # 記述採点待ち等は問題数に数えない
+        problems_done += 1
+        total_answered += 1
+        if int(ic) == 1:
+            correct += 1
+        lbl = _weekly_subject_label(subj_raw)
+        if lbl not in subject_stats:
+            subject_stats[lbl] = {"correct": 0, "total": 0}
+        subject_stats[lbl]["total"] += 1
+        if int(ic) == 1:
+            subject_stats[lbl]["correct"] += 1
+    hours += qa_ms / 3_600_000.0
 
     accuracy = round(100 * correct / total_answered) if total_answered > 0 else 0
     weakest_subject = None
@@ -30941,6 +31034,7 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
                         "hours": stats["hours"],
                         "accuracy": stats["accuracy"],
                         "questions": stats["questions"],
+                        "problems_done": stats["problems_done"],
                         "url": f"{BASE_URL}/mypage.html",
                     }
                     _do_line_push(row["id"], "weekly_report", params)
@@ -31014,6 +31108,7 @@ def weekly_reports_send_one(payload: dict, request: Request, x_stats_token: str 
                 "hours": stats["hours"],
                 "accuracy": stats["accuracy"],
                 "questions": stats["questions"],
+                "problems_done": stats["problems_done"],
                 "url": f"{BASE_URL}/mypage.html",
             }
             result["line"] = _do_line_push(int(student_id), "weekly_report", params)
@@ -37790,9 +37885,13 @@ GRAMMAR_LEVELS = {"basic": "基礎", "standard": "標準", "advanced": "やや�
 #   canonical キー(小文字英)でないと弱点ループが推薦0で空振りする(3並列レビュー指摘)。import/create で正規化・検証。
 _GRAMMAR_CANON_SUBJECTS = {"english", "math", "physics", "chemistry", "biology", "earth", "japanese", "social"}
 _GRAMMAR_SUBJECT_ALIASES = {
-    "英語": "english", "eng": "english",
+    "英語": "english", "eng": "english", "english grammar": "english", "英文法": "english",
     "数学": "math", "mathematics": "math", "数iii": "math", "数学iii": "math",
+    "数学a": "math", "数学b": "math", "数学c": "math", "数学i": "math", "数学ii": "math",
+    "数i": "math", "数ii": "math", "数a": "math", "数b": "math", "数c": "math",
     "物理": "physics", "化学": "chemistry", "生物": "biology", "地学": "earth",
+    # 🧩 2026-07-02: 「〜基礎」も科目単位では同一 canonical に寄せる(弱点集計/配信の空振り防止)
+    "物理基礎": "physics", "化学基礎": "chemistry", "生物基礎": "biology", "地学基礎": "earth",
     "国語": "japanese", "現代文": "japanese", "古文": "japanese", "漢文": "japanese",
     "社会": "social", "日本史": "social", "世界史": "social", "地理": "social",
     "公民": "social", "倫理": "social", "政治経済": "social", "政経": "social",
@@ -42360,11 +42459,18 @@ class CourseApplicationRequest(BaseModel):
     referrer: Optional[str] = None  # 紹介者
     note: Optional[str] = None
     subjects: Optional[str] = None  # 現在受講科目 (塾生アプリ登録フォーム)
+    bot_field: Optional[str] = None  # 🛡️ honeypot: 人間には不可視・bot が埋めたら破棄 (サーバ側検証)
 
 
 @app.post("/api/course-applications")
 def public_course_application(payload: CourseApplicationRequest, request: Request):
     """公開: 難関大学コースへの申込 (クレカ不要)。"""
+    # 🛡️ 2026-07-02 fix: サーバ側 honeypot。従来 honeypot はクライアント JS のみで、API 直叩き
+    #   (XFF 偽装で IP 枠回避可) の bot を素通ししていた。隠しフィールド bot_field が非空なら
+    #   200 を装って静かに破棄 (INSERT/通知メールを一切行わない=owner 受信箱の氾濫と申込キュー汚染を防ぐ)。
+    if (payload.bot_field or "").strip():
+        log.info("[CourseApp] honeypot tripped, silently dropping (no insert/notify)")
+        return {"ok": True, "application_id": None, "message": "お申込ありがとうございます。塾長から1-2営業日以内にご連絡いたします。"}
     # 公開 endpoint の rate limit。
     # ⚠️ trillion-ai-juku.com は Vercel 経由で API に proxy されるため _client_ip は
     #   実クライアントではなく Vercel egress の共有IP(少数の AWS IP プール)になりがち。
@@ -42426,8 +42532,20 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
         conn.close()
 
     # 塾長 email 通知
+    # 🛡️ 2026-07-02 fix: 申込1件=通知1通のため、スパム申込で owner 受信箱が氾濫し得る。
+    #   宛先(固定 admin アドレス)単位で 30通/時 の上限を非raise で適用し、超過分は通知のみ抑制。
+    #   (申込レコードは既に保存済なので CEO『申込待ち』からは確認可能=データは失わない。)
     admin_to = os.getenv("DAILY_SNS_TO_EMAIL") or os.getenv("MONITORING_TO_EMAIL")
-    if admin_to and RESEND_API_KEY:
+    _notify_ok = True
+    if admin_to:
+        try:
+            _check_rate_limit_value(admin_to, bucket="course_app_admin_notify", limit=30, window=3600)
+        except HTTPException:
+            _notify_ok = False
+            log.warning(f"[CourseApp] admin notify suppressed (hourly cap) to protect inbox; app id={new_id} still saved")
+        except Exception:
+            pass
+    if admin_to and RESEND_API_KEY and _notify_ok:
         try:
             _is_juku = (referrer == "塾生アプリ")
             _is_enroll = (referrer == "入塾申込フォーム")

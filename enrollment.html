@@ -1251,6 +1251,7 @@
         target_university: val('志望校1') || undefined,
         referrer: '入塾申込フォーム',
         note: buildNote(),
+        bot_field: val('bot-field') || undefined,  // honeypot（人間は常に空。サーバ側でも検証）
       };
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '送信中...'; }
       try {
