@@ -240,6 +240,38 @@ class handler(BaseHTTPRequestHandler):
                 allowed = set(filter_ids)
                 ids = [rid for rid in ids if rid in allowed]
 
+            # 🚨 2026-07-02 fix (3並列review P1): 失敗記録がある月の再請求は Idempotency-Key に
+            # 失敗世代 salt (charge:failed の failed_at) を混ぜる。
+            # 決定的キーのままだと Stripe Idempotency (24h) が「元リクエストの作成レスポンス」を
+            # そのまま replay するため、
+            #  - Dashboard で PI キャンセル → 台帳❌ → 当日中の💳個別請求 が canceled 済み PI の
+            #    requires_action スナップショットを返し、終端 PI の 🔐 ゾンビ (RA record + done
+            #    ロック 60日) を再生産する
+            #  - カード decline → 当日中の再請求 も実試行されず旧 decline を replay する
+            # salt は同一失敗世代内で不変 (連打しても同一キー) なので二重請求防御は従来どおり。
+            # KV 全断時は salt 無し (=従来キー) に degrade する (done NX も失敗し請求自体 skip)。
+            # ★MGET だけ瞬断で落ちた場合は無 salt キーで旧応答 replay を踏み得るが、課金は
+            #   発生しない (Stripe は保存済み応答を返すだけ)。🔐 が再発したら履歴 ❌ 行の
+            #   🔁再請求 (mark_unpaid→retry・乱数キー) で回復できる。
+            ids_capped = ids[:500]
+            failed_salts = {}
+            if not dry_run and ids_capped:
+                _fkeys = [f"charge:failed:{_r}:{current_month}" for _r in ids_capped]
+                for _i in range(0, len(_fkeys), 400):
+                    _mres = _redis("MGET", *_fkeys[_i:_i + 400])
+                    _vals = _mres.get("result") if (_mres and isinstance(_mres, dict)) else None
+                    if not isinstance(_vals, list) or len(_vals) != len(_fkeys[_i:_i + 400]):
+                        continue
+                    for _rid, _v in zip(ids_capped[_i:_i + 400], _vals):
+                        if not _v:
+                            continue
+                        try:
+                            _fa = int(json.loads(_v).get("failed_at") or 0)
+                        except Exception:
+                            _fa = 0
+                        if _fa:
+                            failed_salts[_rid] = _fa
+
             results = []
             summary = {
                 "total": 0,
@@ -249,7 +281,7 @@ class handler(BaseHTTPRequestHandler):
                 "total_amount_charged": 0,
             }
 
-            for rid in ids[:500]:
+            for rid in ids_capped:
                 summary["total"] += 1
                 got = _redis("GET", f"reg:completed:{rid}")
                 if not got or not isinstance(got, dict):
@@ -311,7 +343,10 @@ class handler(BaseHTTPRequestHandler):
 
                 # 実行
                 # Idempotency-Key には amount を含める (金額変更時の retry で旧額 PI が返るのを防ぐ)
+                # + 失敗記録がある月は失敗世代 salt を付与 (上の failed_salts 参照・replay 回避)
                 idempotency = f"juku-monthly-{rid}-{current_month}-{monthly_fee}"
+                if failed_salts.get(rid):
+                    idempotency = f"{idempotency}-r{failed_salts[rid]}"
                 pi_metadata = {
                     "system": "juku-payment-monthly",
                     "registration_id": rid,
@@ -327,6 +362,12 @@ class handler(BaseHTTPRequestHandler):
                     pi_id = pi.get("id", "")
                     pi_status = pi.get("status", "")
                     if pi_status in ("succeeded", "processing"):
+                        # 🚨 2026-07-02 fix (round3 review): mark_unpaid 由来の tombstone を解除
+                        # (reconcile retry の成功時と同じ規約)。残すと以後30日、この月の
+                        # payment_intent.succeeded (async 承認の確定) が auto-reconcile されず
+                        # 台帳反映が止まる。★requires_action 分岐では消さない: uncertain 起点の
+                        # 旧 PI 幽霊復活防止が tombstone の本来目的で、RA 中は月が未決着のため。
+                        _redis("DEL", f"charge:unpaid-tombstone:{rid}:{current_month}")
                         # 成功時: done_key を success にマーク
                         _redis("SET", done_key, json.dumps({
                             "payment_intent_id": pi_id,

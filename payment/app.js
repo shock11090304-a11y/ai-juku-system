@@ -3536,7 +3536,7 @@ async function reconcileCharge(rid, month, action) {
       MONTHEND_STATE.reconcileBusy = null; return;
     }
   } else if (action === 'mark_unpaid') {
-    if (!confirm(`${rid} のロックを解除します。これで月末バッチで再度引き落とし対象になります。`)) {
+    if (!confirm(`${rid} のロックを解除します。これで月末バッチで再度引き落とし対象になります。\n\n※ 🔐3DS待ちの分は残っていた PaymentIntent を自動でキャンセルします。\n※ ⚠️要確認の分で Stripe Dashboard に未完了の PaymentIntent を見つけた場合は、Dashboard 側でキャンセルしてから解除してください (放置すると後から二重課金になり得ます)。`)) {
       MONTHEND_STATE.reconcileBusy = null; return;
     }
   }
@@ -3548,7 +3548,9 @@ async function reconcileCharge(rid, month, action) {
     });
     const data = await res.json();
     if (!res.ok || data.error) { alert(`❌ ${data.message || data.error || 'エラー'}`); return; }
-    alert(`✅ ${action} 完了`);
+    // ⚠️ warning = 「生きた 3DS PI を cancel できなかった/二重回収の可能性」等。黙殺すると
+    // 二重課金の入口が silent に残るため必ず表示する (2026-07-02 round2 review)
+    alert(data.warning ? `✅ ${action} 完了\n\n⚠️ ${data.warning}` : `✅ ${action} 完了`);
     document.getElementById('reconcileModal').style.display = 'none';
     // 履歴を再取得 + プレビュー/📖台帳も更新 (⚠️マスや個別請求ボタンを stale にしない)
     fetchChargeHistory();
@@ -3581,6 +3583,7 @@ async function retryCharge(rid, month, studentName, amount) {
     });
     const d1 = await r1.json();
     if (!r1.ok || d1.error) { alert(`❌ unlock 失敗: ${d1.message || d1.error}`); return; }
+    if (d1.warning) alert(`⚠️ ${d1.warning}`);
     // 2. retry
     const r2 = await fetch('/payment/api/admin-charge-reconcile', {
       method: 'POST', headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },

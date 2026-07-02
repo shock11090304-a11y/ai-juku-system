@@ -12,6 +12,12 @@ Stripe Dashboard 設定:
             customer.subscription.deleted
             payment_intent.succeeded   (🆕 v2 月末バッチ請求用)
             payment_intent.payment_failed   (🆕 v2 バッチ請求失敗時)
+            payment_intent.canceled    (🆕 2026-07-02 塾長が Dashboard で要確認 PI を
+                                        キャンセルした時の掃除用。★Dashboard の webhook
+                                        endpoint にこのイベントの購読追加が必要。
+                                        ★順序: デプロイ反映確認 → 購読追加 の順を厳守
+                                        — 先に購読すると旧コードが webhook:seen に 24h
+                                        焼き付け、Resend も duplicate 扱いになる)
 
 Env:
   STRIPE_WEBHOOK_SECRET   Stripe webhook signing secret (whsec_...)
@@ -315,9 +321,9 @@ def _handle_payment_succeeded(event):
 
 def _clear_charge_source_state(source_state, rid, month):
     """月次 auto-reconcile 完了時の中間 state 掃除 (record DEL + index ZREM)。
-    uncertain 側は mark_paid / mark_unpaid (admin-charge-reconcile.py:213-215/228-229) と
-    同じ掃除規約。requires_action 側の掃除は webhook のみが行う (reconcile は RA 名前空間を
-    掃除しない = mark_paid で決着させた RA record は残る・既知の残課題)。
+    mark_paid / mark_unpaid (admin-charge-reconcile.py) も uncertain / requires_action の
+    両 namespace をこれと同じ規約で掃除する (2026-07-02 fix: 従来 reconcile は uncertain
+    のみで、mark_paid で決着させた RA record が TTL 1年残る残課題があった → 解消済み)。
     🚨 2026-07-02 fix: uncertain 側も index から ZREM する (従来は record DEL のみで
     index にゴミが残り、台帳の MGET 枠 (GET_CAP) を無駄に食っていた)。"""
     if source_state == "uncertain":
@@ -572,6 +578,190 @@ def _handle_payment_intent_failed(event):
     _log(f"webhook: payment_intent.payment_failed rid={rid} month={month} pi={pi_id} code={error_code} decline={decline_code}")
 
 
+def _kv_get_state(key):
+    """KV GET → (exists, parsed_dict|None)。値はあるが JSON dict でない
+    (execute の SET NX 初期値 "pending" 等) は (True, None) を返す。"""
+    got = _redis_safe("GET", key)
+    if not (got and isinstance(got, dict) and got.get("result")):
+        return False, None
+    try:
+        parsed = json.loads(got["result"])
+    except Exception:
+        return True, None
+    return True, parsed if isinstance(parsed, dict) else None
+
+
+def _handle_payment_intent_canceled(event):
+    """🆕 2026-07-02: payment_intent.canceled — 主に塾長が Stripe Dashboard で
+    要確認 (uncertain / requires_action) の PI を手動キャンセルした時の掃除。
+    従来はハンドラが無く、キャンセルしても charge:uncertain / charge:requires_action /
+    spot:history の record が TTL 1年残り、台帳・詳細履歴に ⚠️/🔐 が出続けていた。
+
+    月次: failed 相当の掃除 = 中間 record (uncertain/RA) + 中間 done ロックを解除し、
+          charge:failed を書く (台帳 ❌ = execute 同期失敗と同じ「ロック解除済・再請求可能」規約。
+          failed_at は再請求時の Idempotency salt 供給源のため掃除より先に書く)。
+    spot: _update_spot_history で failed 確定 (succeeded からの降格は同関数が拒否。
+          processing→failed は正規の前進遷移として通す = 同関数 L364 の規約どおり)。
+
+    ★安全ガード (succeeded 済みを canceled で降格させない):
+      - done or charge:history が succeeded/processing/manually_reconciled → 月の状態は不変
+        (同一 PI の残骸 RA record の掃除のみ行う)
+      - RA record / 中間 done の payment_intent_id が event と別 PI → 一切触らない
+        (retry 等で別 PI が生きている月を旧 PI のキャンセルで誤って unlock しない)
+      - PI id を持たない uncertain の record/done ロックは canceled_at vs noted_at の
+        前後比較で守る (遅延再送された旧 PI の canceled が新試行のロックを外さない)
+      - done が中間 status の JSON dict でない ("pending" = execute 実行中の NX ロック) → done 温存
+    ※ Stripe Dashboard の webhook endpoint に payment_intent.canceled の購読追加が必要。
+      ★順序厳守: 本コードのデプロイ反映を確認してから購読追加すること。先に購読すると
+      旧コードが event id を webhook:seen に焼き付け (TTL 24h)、デプロイ後に Dashboard から
+      Resend しても duplicate 扱いで飲まれる (24h 待つか mark_unpaid での手動復旧になる)。"""
+    obj = event.get("data", {}).get("object", {})
+    meta = obj.get("metadata", {}) or {}
+    _pi_sys = (meta.get("system") or "").strip()
+    if _pi_sys and not _pi_sys.startswith("juku-payment"):
+        _log(f"webhook: PaymentIntent skipped (system={_pi_sys} - not juku-payment)")
+        return
+    pi_id = obj.get("id", "")
+    rid = meta.get("registration_id", "")
+    month = meta.get("month", "")
+    reason = obj.get("cancellation_reason") or ""
+    record = {
+        "payment_intent_id": pi_id,
+        "registration_id": rid,
+        "month": month,
+        "amount": obj.get("amount", 0),
+        "metadata": meta,
+        "cancellation_reason": reason,
+        "canceled_at": int(time.time()),
+        "source_event": "payment_intent.canceled",
+    }
+    _redis_safe("SET", f"pi:canceled:{pi_id}", json.dumps(record, ensure_ascii=False), "EX", "31536000")
+    _redis_safe("ZADD", "pi:canceled:index", str(record["canceled_at"]), pi_id)
+    if _pi_sys == "juku-payment-spot":
+        _update_spot_history(meta, pi_id, "failed", "payment_intent.canceled")
+        _log(f"webhook: payment_intent.canceled (spot) rid={rid} pi={pi_id} reason={reason}")
+        return
+    if not rid or not month:
+        _log(f"webhook: payment_intent.canceled without rid/month pi={pi_id} - audit only")
+        return
+
+    ra_key = f"charge:requires_action:{rid}:{month}"
+    unc_key = f"charge:uncertain:{rid}:{month}"
+    done_key = f"charge:done:{rid}:{month}"
+    ra_exists, ra_rec = _kv_get_state(ra_key)
+    unc_exists, unc_rec = _kv_get_state(unc_key)
+    done_exists, done_rec = _kv_get_state(done_key)
+    _hist_exists, hist_rec = _kv_get_state(f"charge:history:{rid}:{month}")
+
+    # --- ガード1: 月が succeeded で確定済みなら絶対に降格させない ---
+    done_final = bool(done_rec and (
+        done_rec.get("status") in ("succeeded", "processing") or
+        done_rec.get("manually_reconciled") is True))
+    hist_final = bool(hist_rec and hist_rec.get("status") in ("succeeded", "processing"))
+    if done_final or hist_final:
+        # 決着済みの月に残った「同一 PI の」RA 残骸だけは掃除 (旧 mark_paid が RA を
+        # 掃除しなかった時代のデータの自己修復。PI 一致 = その record は確実に死んでいる)
+        if ra_rec and (ra_rec.get("payment_intent_id") or "") == pi_id:
+            _redis_safe("DEL", ra_key)
+            _redis_safe("ZREM", "charge:requires_action:index", f"{rid}:{month}")
+            _log(f"webhook: canceled PI swept stale RA record (month settled) rid={rid} month={month} pi={pi_id}")
+        else:
+            _log(f"webhook: payment_intent.canceled ignored (month settled) rid={rid} month={month} pi={pi_id}")
+        return
+
+    # --- ガード2: 別 PI がこの月を保持している場合は触らない ---
+    ra_pi = (ra_rec.get("payment_intent_id") or "") if ra_rec else ""
+    if ra_pi and ra_pi != pi_id:
+        _log(f"webhook: canceled PI mismatch (RA holds {ra_pi}) rid={rid} month={month} pi={pi_id} - skip")
+        return
+    done_intermediate = bool(done_rec and done_rec.get("status") in ("uncertain", "requires_action"))
+    done_pi = (done_rec.get("payment_intent_id") or "") if done_rec else ""
+    if done_intermediate and done_pi and done_pi != pi_id:
+        _log(f"webhook: canceled PI mismatch (done lock holds {done_pi}) rid={rid} month={month} pi={pi_id} - skip")
+        return
+
+    # --- ガード3: 遅延/再送 event の stale 判定 (2026-07-02 3並列review P1) ---
+    # uncertain の record / done ロックは PI id を持たない (timeout 起因で PI 不明) ため
+    # ガード2 で守れない。Stripe は配送失敗時 最大3日 retry / 手動 Resend も可能で、
+    # webhook:seen の dedup は 24h しか効かない。PI の canceled_at より「後に」生まれた
+    # uncertain 中間 state は別 (より新しい) 試行のもの → 旧 PI の canceled で解除しない
+    # (解除すると新試行が実は成功していた場合に ❌ 表示 → 再請求 = 二重請求の入口になる)。
+    try:
+        canceled_at_ts = int(obj.get("canceled_at") or 0)
+    except Exception:
+        canceled_at_ts = 0
+
+    def _newer_than_cancel(rec):
+        if not canceled_at_ts or not rec:
+            return False
+        try:
+            return int(rec.get("noted_at") or 0) > canceled_at_ts
+        except Exception:
+            return False
+
+    will_clean = []
+    if ra_exists:
+        # RA はガード2 で PI 照合済み (同一 PI or 照合不能 record のみここに来る)
+        will_clean.append("requires_action")
+    if unc_exists:
+        if _newer_than_cancel(unc_rec):
+            _log(f"webhook: canceled PI stale (uncertain noted_at > canceled_at) rid={rid} month={month} pi={pi_id} - keep uncertain")
+        else:
+            will_clean.append("uncertain")
+    release_done = False
+    if done_exists:
+        if not done_intermediate:
+            # "pending" (execute 実行中の NX ロック) / 想定外形式 → in-flight 二重請求防御を壊さない
+            _log(f"webhook: canceled PI keeps non-intermediate done rid={rid} month={month} pi={pi_id}")
+        elif not done_pi and _newer_than_cancel(done_rec):
+            # PI 無し (uncertain) の done ロックがキャンセルより新しい = 別試行のロック → 温存
+            _log(f"webhook: canceled PI stale (done noted_at > canceled_at) rid={rid} month={month} pi={pi_id} - keep done lock")
+        else:
+            release_done = True
+            will_clean.append("done-lock")
+    if not will_clean:
+        _log(f"webhook: payment_intent.canceled no state to clean rid={rid} month={month} pi={pi_id}")
+        return
+
+    # 台帳・詳細履歴に「この月は未回収 (キャンセル)」を残す = execute 同期失敗と同じ charge:failed 規約。
+    # ★掃除 (DEL) より先に書く: この record の failed_at は再請求時の Idempotency salt
+    # (execute の failed_salts) の供給源なので、途中クラッシュで「掃除済みなのに ❌ が無い
+    # (= salt 無しの決定的キーで Stripe replay を踏む)」窓を作らない (2026-07-02 review P2)。
+    src_rec = ra_rec or unc_rec or {}
+    try:
+        amount = int(src_rec.get("amount") or 0) or int(obj.get("amount") or 0)
+    except Exception:
+        amount = 0
+    failed_rec = {
+        "registration_id": rid,
+        "month": month,
+        "amount": amount,
+        "student_name": src_rec.get("student_name") or meta.get("student_name", ""),
+        "email": src_rec.get("email") or meta.get("email", ""),
+        "phone": src_rec.get("phone", ""),
+        "payment_intent_id": pi_id,
+        "error_code": "payment_intent_canceled",
+        "decline_code": reason,
+        "error_detail": f"PaymentIntent がキャンセルされました (reason={reason or 'unknown'}・Stripe Dashboard 等での手動キャンセル)",
+        "failed_at": int(time.time()),
+        "source_event": "payment_intent.canceled",
+    }
+    _redis_safe("SET", f"charge:failed:{rid}:{month}", json.dumps(failed_rec, ensure_ascii=False), "EX", "31536000")
+    _redis_safe("ZADD", "charge:failed:index", str(failed_rec["failed_at"]), f"{rid}:{month}")
+
+    # 掃除 (❌ マーカー確定後)
+    if "requires_action" in will_clean:
+        _redis_safe("DEL", ra_key)
+        _redis_safe("ZREM", "charge:requires_action:index", f"{rid}:{month}")
+    if "uncertain" in will_clean:
+        _redis_safe("DEL", unc_key)
+        _redis_safe("ZREM", "charge:uncertain:index", f"{rid}:{month}")
+    if release_done:
+        # 中間ロック解除 → 台帳 ❌ + 個別請求で再請求可能に (execute の同期失敗と同じ扱い)
+        _redis_safe("DEL", done_key)
+    _log(f"webhook: payment_intent.canceled cleaned {'+'.join(will_clean)} rid={rid} month={month} pi={pi_id} reason={reason}")
+
+
 HANDLERS = {
     "checkout.session.completed": _handle_checkout_completed,
     "invoice.payment_failed": _handle_payment_failed,
@@ -579,6 +769,7 @@ HANDLERS = {
     "customer.subscription.deleted": _handle_subscription_deleted,
     "payment_intent.succeeded": _handle_payment_intent_succeeded,
     "payment_intent.payment_failed": _handle_payment_intent_failed,
+    "payment_intent.canceled": _handle_payment_intent_canceled,
 }
 
 

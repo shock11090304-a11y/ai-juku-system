@@ -15,6 +15,13 @@ Body (JSON):
 
 - mark_paid: Stripe で実際は課金されていた → charge:done を success にマーク + charge:history 作成
 - mark_unpaid: Stripe で実際は未課金 → charge:uncertain と done_key を削除 (再実行可能化)
+- どちらも charge:uncertain / charge:requires_action の record + index を掃除する
+  (webhook _clear_charge_source_state と同じ規約。2026-07-02 fix: 従来は uncertain のみで、
+   requires_action の月を手動決着させると RA record が TTL 1年残り台帳に 🔐 が並存し続けた)
+- mark_unpaid は RA record が指す 3DS 待ち PI を Stripe 側でも cancel してから消す
+  (raw API の requires_action PI は自動失効しない = 放置すると顧客が後から 3DS 完了 → 二重課金。
+   cancel 不能 = 実は succeeded/processing なら 400 で拒否して mark_paid へ誘導。
+   mark_paid も決着 PI と別の生きた RA PI があれば best-effort で cancel する)
 - retry: mark_unpaid 後に新規 Idempotency-Key で即時再請求 (=execute と同じロジックを 1 件だけ)
 
 Response:
@@ -164,6 +171,7 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             uncertain_key = f"charge:uncertain:{rid}:{month}"
+            requires_action_key = f"charge:requires_action:{rid}:{month}"
             done_key = f"charge:done:{rid}:{month}"
 
             if action == "mark_paid":
@@ -210,13 +218,70 @@ class handler(BaseHTTPRequestHandler):
                 # 🚨 3rd review fix: append-only audit log
                 _redis("RPUSH", f"charge:history:audit:{rid}:{month}", json.dumps(_history_record_mr, ensure_ascii=False))
                 _redis("EXPIRE", f"charge:history:audit:{rid}:{month}", "31536000")
+                # 🚨 2026-07-02 fix (3並列review 収束): RA record が「決着に使った PI とは別の」
+                # 生きた 3DS PI を指している場合、痕跡を消す前に best-effort で cancel する
+                # (放置すると顧客が後から旧 3DS リンクを完了 → 二重課金し得る)。
+                # mark_paid の主目的 (回収記録) は cancel 失敗でも成立するため abort はしない
+                # (succeeded 済み PI への cancel は Stripe 側が拒否するので誤爆も起きない)。
+                ra_rec_mp = _get_record(requires_action_key)
+                ra_pi_mp = (ra_rec_mp.get("payment_intent_id") or "").strip() if ra_rec_mp else ""
+                mp_warning = ""
+                if ra_pi_mp and ra_pi_mp != pi_id:
+                    _sk_mp = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+                    if _sk_mp:
+                        try:
+                            _stripe_post(_sk_mp, f"payment_intents/{ra_pi_mp}/cancel",
+                                         [("cancellation_reason", "duplicate")])
+                            _log(f"reconcile: mark_paid canceled stray RA PI {ra_pi_mp} rid={rid} month={month}")
+                        except Exception as e:
+                            # 🚨 round2 review P2: 失敗をログだけにしない。現況を取得して
+                            # 「二重回収の可能性 (succeeded)」と「生きた PI 放置」を warning で塾長に見せる
+                            _pi_now_mp = _stripe_get(_sk_mp, f"payment_intents/{ra_pi_mp}")
+                            _pi_now_mp_status = (_pi_now_mp or {}).get("status", "")
+                            if _pi_now_mp_status in ("succeeded", "processing"):
+                                if pi_id:
+                                    # 決着 PI を明示指定した上で「別の」PI も回収済み = 真の二重回収疑い
+                                    mp_warning = (f"⚠️ この月には別の PaymentIntent ({ra_pi_mp}) も"
+                                                  f" {_pi_now_mp_status} で存在します (二重回収の可能性)。"
+                                                  " Stripe Dashboard で確認し、必要なら返金してください")
+                                    _log(f"reconcile CRITICAL: mark_paid found ANOTHER {_pi_now_mp_status} PI {ra_pi_mp} rid={rid} month={month} - possible double collection")
+                                else:
+                                    # 🚨 round3 review: PI ID 未入力の mark_paid では、succeeded の RA PI は
+                                    # 「いま記録した回収そのもの」である可能性が最も高い。ここで
+                                    # 「二重回収→返金」と断定調に出すと正当な月謝の返金を誘発するため中立文言
+                                    mp_warning = (f"この月の 3DS 待ちだった PI ({ra_pi_mp}) は Stripe 上"
+                                                  f" {_pi_now_mp_status} です。いま『成功』として記録した回収は"
+                                                  " この PI 自体の可能性が高いです (PI ID を入力すると照合できます)。"
+                                                  " 念のため Dashboard で二重になっていないかご確認ください")
+                                    _log(f"reconcile: mark_paid RA PI {ra_pi_mp} is {_pi_now_mp_status} (no pi_id given - likely the actual collection) rid={rid} month={month}")
+                            elif _pi_now_mp_status in ("canceled",):
+                                _log(f"reconcile: mark_paid stray RA PI {ra_pi_mp} already canceled")
+                            else:
+                                mp_warning = (f"3DS 待ちの別 PI ({ra_pi_mp}) の cancel に失敗しました"
+                                              f" (現況 status={_pi_now_mp_status or '取得不能'})。"
+                                              " 放置すると顧客が後から 3DS 完了して二重課金になり得ます。"
+                                              " Stripe Dashboard で手動キャンセルしてください")
+                                _log(f"reconcile WARN: mark_paid could not cancel stray RA PI {ra_pi_mp}: {e!r} - Stripe Dashboard で要確認")
+                    else:
+                        mp_warning = (f"STRIPE_SECRET_KEY 未設定のため 3DS 待ちの別 PI ({ra_pi_mp}) を"
+                                      " cancel できませんでした。Stripe Dashboard で手動キャンセルしてください")
+                        _log(f"reconcile WARN: mark_paid stray RA PI {ra_pi_mp} not canceled (no STRIPE_SECRET_KEY)")
                 _redis("DEL", uncertain_key)
                 # uncertain index からも削除
                 _redis("ZREM", "charge:uncertain:index", f"{rid}:{month}")
+                # 🚨 2026-07-02 fix: requires_action (3DS 待ち) の月を Dashboard 確認後に
+                # mark_paid で決着させた場合も record + index を掃除 (webhook と同じ規約)。
+                # 従来は uncertain のみ掃除で、RA record が TTL 1年残り台帳・詳細履歴に
+                # 🔐 が ✅ と並存し続けていた
+                _redis("DEL", requires_action_key)
+                _redis("ZREM", "charge:requires_action:index", f"{rid}:{month}")
                 # 🚨 Round 4 fix (H1): tombstone も削除 (mark_unpaid → mark_paid 順序の整合性)
                 _redis("DEL", f"charge:unpaid-tombstone:{rid}:{month}")
                 _log(f"reconcile: mark_paid rid={rid} month={month} pi={pi_id}")
-                _json(self, 200, {"ok": True, "action": "mark_paid", "registrationId": rid, "month": month})
+                _resp_mp = {"ok": True, "action": "mark_paid", "registrationId": rid, "month": month}
+                if mp_warning:
+                    _resp_mp["warning"] = mp_warning
+                _json(self, 200, _resp_mp)
                 return
 
             if action == "mark_unpaid":
@@ -224,16 +289,116 @@ class handler(BaseHTTPRequestHandler):
                 # 🚨 3rd review fix: tombstone を SET して webhook auto-reconcile による「幽霊復活」を防ぐ
                 # mark_unpaid 後に SCA 後の payment_intent.succeeded event が遅延到着しても、
                 # webhook 側で tombstone check して auto-reconcile を skip する
+                #
+                # 🚨 2026-07-02 fix (3並列review P1): RA record が生きた 3DS PI を指す場合、
+                # KV の痕跡を消す「前に」Stripe 側でその PI を cancel する。
+                # raw API 作成の requires_action PI は放置では自動キャンセルされず、顧客が
+                # 後から旧 3DS リンクを完了すると succeeded し得る (retry 済みなら二重課金・
+                # source record 消滅済みで auto-reconcile もされず台帳に出ない)。
+                # cancel 不能 = 実は回収済み (succeeded/processing) なら mark_unpaid 自体を
+                # 拒否して mark_paid へ誘導する (誤った tombstone + 再請求 = 二重課金を防ぐ)。
+                ra_rec_mu = _get_record(requires_action_key)
+                ra_pi_mu = (ra_rec_mu.get("payment_intent_id") or "").strip() if ra_rec_mu else ""
+                cancel_warning = ""
+                ra_pi_dead = False  # cancel 成功 / canceled 済み / Stripe 上不存在 = もう課金し得ない
+                ra_dead_reason = ""  # 監査用: charge:failed.error_detail に刻む dead 判定理由
+                if ra_pi_mu:
+                    secret_key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+                    if not secret_key:
+                        cancel_warning = (f"STRIPE_SECRET_KEY 未設定のため 3DS 待ち PI ({ra_pi_mu}) を"
+                                          " cancel できませんでした。Stripe Dashboard で手動キャンセルしてください")
+                        _log(f"reconcile CRITICAL: mark_unpaid without STRIPE_SECRET_KEY - live RA PI {ra_pi_mu} not canceled")
+                    else:
+                        try:
+                            _stripe_post(secret_key, f"payment_intents/{ra_pi_mu}/cancel",
+                                         [("cancellation_reason", "abandoned")])
+                            ra_pi_dead = True
+                            ra_dead_reason = "canceled-by-mark-unpaid"
+                            _log(f"reconcile: mark_unpaid canceled RA PI {ra_pi_mu} rid={rid} month={month}")
+                        except urllib.error.HTTPError as he:
+                            # 404 = この Stripe アカウントに PI が存在しない (test-mode 残骸等)。
+                            # Dashboard でもキャンセル不能な PI で 502 恒久ブロックにしない (round2 review)
+                            if getattr(he, "code", None) == 404:
+                                ra_pi_dead = True
+                                ra_dead_reason = "not-found-on-stripe-404"
+                                _log(f"reconcile: mark_unpaid RA PI {ra_pi_mu} not found on Stripe (404) - treating as dead")
+                            else:
+                                # cancel 不能 = 既に終端 or 進行中 → 現況を取得して分岐
+                                pi_now = _stripe_get(secret_key, f"payment_intents/{ra_pi_mu}")
+                                pi_now_status = (pi_now or {}).get("status", "")
+                                if pi_now_status in ("succeeded", "processing"):
+                                    _json(self, 400, {
+                                        "error": "PI_NOT_CANCELABLE",
+                                        "message": (f"この月の 3DS 待ち PI ({ra_pi_mu}) は Stripe 上"
+                                                    f" {pi_now_status} (回収済み/処理中) です。"
+                                                    " mark_unpaid ではなく mark_paid で決着させてください"),
+                                        "pi_status": pi_now_status,
+                                    })
+                                    return
+                                if pi_now_status != "canceled":
+                                    _json(self, 502, {
+                                        "error": "STRIPE_CANCEL_FAILED",
+                                        "message": (f"PI ({ra_pi_mu}) の cancel に失敗しました"
+                                                    f" (現況 status={pi_now_status or '取得不能'})。"
+                                                    " Stripe Dashboard で手動キャンセル後に再実行してください"),
+                                    })
+                                    return
+                                # canceled 済み → 続行 (Dashboard キャンセル後の mark_unpaid 等・冪等)
+                                ra_pi_dead = True
+                                ra_dead_reason = "already-canceled"
+                        except Exception as e:
+                            _json(self, 502, {
+                                "error": "STRIPE_CANCEL_FAILED",
+                                "message": (f"PI ({ra_pi_mu}) の cancel 中にエラー: {str(e)[:150]}。"
+                                            " Stripe Dashboard で手動キャンセル後に再実行してください"),
+                            })
+                            return
+                if ra_pi_dead:
+                    # 🚨 2026-07-02 fix (round2 3並列review P1): 死んだ RA PI の月は charge:failed を
+                    # 書いて「失敗世代」を進める (failed_at は execute の Idempotency salt 供給源)。
+                    # 書かないと mark_unpaid → 当日中の 💳個別請求 (execute) が旧バッチと同一の
+                    # 決定的キーになり、Stripe Idempotency (24h) が canceled 済み PI の
+                    # requires_action スナップショットを replay して 🔐 ゾンビを再生産する。
+                    # ★uncertain 起点 (RA PI 不明) では書かない: そこでは同一キー replay が
+                    #   「原試行が実は成功していた場合に新 PI を作らず同一応答を返す」二重課金
+                    #   防止の安全装置として機能するため、世代を進めてはいけない。
+                    # ★掃除 (DEL) より先に書く (webhook 側と同じ順序規約・クラッシュ窓対策)。
+                    _now_mu = int(time.time())
+                    _failed_rec_mu = {
+                        "registration_id": rid,
+                        "month": month,
+                        "amount": int((ra_rec_mu or {}).get("amount") or 0) or int(reg.get("monthly_fee", 0) or 0),
+                        "student_name": (ra_rec_mu or {}).get("student_name") or reg.get("studentName") or reg.get("student_name") or "",
+                        "email": (ra_rec_mu or {}).get("email") or reg.get("email", ""),
+                        "phone": (ra_rec_mu or {}).get("phone") or reg.get("phone", ""),
+                        "payment_intent_id": ra_pi_mu,
+                        "error_code": "manually_marked_unpaid",
+                        "decline_code": "",
+                        "error_detail": f"mark_unpaid: 3DS 待ち PI ({ra_pi_mu}) を未課金確定 (dead={ra_dead_reason or 'unknown'})",
+                        "failed_at": _now_mu,
+                        "source_event": "manual-mark-unpaid",
+                    }
+                    _redis("SET", f"charge:failed:{rid}:{month}", json.dumps(_failed_rec_mu, ensure_ascii=False), "EX", "31536000")
+                    _redis("ZADD", "charge:failed:index", str(_now_mu), f"{rid}:{month}")
                 _redis("DEL", done_key)
                 _redis("DEL", uncertain_key)
                 _redis("ZREM", "charge:uncertain:index", f"{rid}:{month}")
+                # 🚨 2026-07-02 fix: requires_action record + index も掃除 (mark_paid 側と同様)。
+                # 「未課金」と塾長が確定した月に 🔐 3DS待ち表示を残さない。
+                # ★KV record を消しても Stripe 側の旧 PI は生きている可能性があるため、
+                #   上の cancel 処理で先に殺してから消す (順序に意味がある)
+                _redis("DEL", requires_action_key)
+                _redis("ZREM", "charge:requires_action:index", f"{rid}:{month}")
                 # tombstone (30 日 TTL・retry/再実行が完了するまで)
                 _redis("SET", f"charge:unpaid-tombstone:{rid}:{month}", json.dumps({
                     "marked_at": int(time.time()),
                     "reason": "manually marked unpaid by admin",
                 }, ensure_ascii=False), "EX", "2592000")  # 30 days
                 _log(f"reconcile: mark_unpaid rid={rid} month={month} (tombstone set)")
-                _json(self, 200, {"ok": True, "action": "mark_unpaid", "registrationId": rid, "month": month})
+                _resp_mu = {"ok": True, "action": "mark_unpaid", "registrationId": rid, "month": month}
+                if cancel_warning:
+                    _resp_mu["warning"] = cancel_warning
+                _json(self, 200, _resp_mu)
                 return
 
             if action == "retry":
