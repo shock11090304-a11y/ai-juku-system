@@ -138,77 +138,12 @@
   <script src="analytics.js" defer></script>
   <script src="pwa.js" defer></script>
   <script>
-    // 創業者枠カウンター（バックエンド連動版）
+    // 🔷 2026-07-02 塾長方針: 残席カウンターを完全撤去(実数連動含め残席"数"は一切表示しない)。
+    //   以下は入塾金免除バナーのバックエンド連動のみ。
     (function() {
-      const LIMIT = 50;
-      const CACHE_KEY = 'ai_juku_founder_count';
-      const CACHE_TS_KEY = 'ai_juku_founder_ts';
       const BACKEND_URL = window.location.hostname === 'localhost' && window.location.port === '8090'
         ? 'http://localhost:8000'
         : window.location.origin;
-
-      // キャッシュされた値を即座に表示（ちらつき防止）。
-      // バックエンド不通時に架空の数字を見せないため、デフォルトは 0 で正直に表示する。
-      const cachedCount = parseInt(localStorage.getItem(CACHE_KEY) || '0');
-
-      function renderCounter(taken) {
-        const remaining = Math.max(0, LIMIT - taken);
-        const pct = Math.min(100, Math.round((taken / LIMIT) * 100));
-        // 残り枠数
-        const numEl = document.getElementById('seatsLeft');
-        if (numEl) {
-          numEl.textContent = remaining;
-          // 緊急度による色変化
-          if (remaining <= 10) numEl.style.color = '#ef4444';
-          else if (remaining <= 30) numEl.style.color = '#f59e0b';
-          else numEl.style.color = '#10b981';
-        }
-        // プログレスバー
-        const bar = document.getElementById('seatsBar');
-        if (bar) {
-          bar.style.width = pct + '%';
-          if (pct >= 90) bar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
-          else if (pct >= 70) bar.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
-        }
-        // 「○名が登録済み」
-        const takenEl = document.getElementById('seatsTaken');
-        if (takenEl) takenEl.textContent = taken;
-        // 募集終了時の処理
-        if (remaining === 0) {
-          document.querySelectorAll('[data-founder-cta]').forEach(btn => {
-            btn.textContent = '⛔ 募集終了';
-            btn.style.opacity = '0.5';
-            btn.style.pointerEvents = 'none';
-          });
-        }
-      }
-
-      // バックエンドから最新値を取得
-      async function fetchCount() {
-        try {
-          const controller = new AbortController();
-          setTimeout(() => controller.abort(), 2000);
-          const res = await fetch(`${BACKEND_URL}/api/founders/count?public=1`, { signal: controller.signal });
-          if (res.ok) {
-            const data = await res.json();
-            localStorage.setItem(CACHE_KEY, String(data.taken));
-            localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
-            renderCounter(data.taken);
-            return true;
-          }
-        } catch (e) {
-          // 無視（キャッシュ値で表示継続）
-        }
-        return false;
-      }
-
-      // 即座にキャッシュ値でレンダリング、その後バックエンドから取得
-      document.addEventListener('DOMContentLoaded', () => {
-        renderCounter(cachedCount);
-        fetchCount();
-        // 60秒ごとに更新
-        setInterval(fetchCount, 60000);
-      });
 
       // 入塾金免除キャンペーン残枠を取得してバナー表示
       async function fetchWaiverStatus() {
@@ -230,14 +165,6 @@
         } catch (e) { /* 無視 */ }
       }
       document.addEventListener('DOMContentLoaded', fetchWaiverStatus);
-
-      // ローカルで即時反映用（チェックアウト完了時に呼ばれる）
-      window.bumpFounder = () => {
-        const current = parseInt(localStorage.getItem(CACHE_KEY) || '0');
-        const updated = Math.min(LIMIT, current + 1);
-        localStorage.setItem(CACHE_KEY, String(updated));
-        renderCounter(updated);
-      };
     })();
   </script>
 </head>
@@ -305,21 +232,8 @@
       </div>
     </div>
 
-    <!-- 残席カウンター (コンパクト版) -->
+    <!-- 創設メンバー 価格 (残席カウンターは撤去・「50名限定」の事実表記のみ) -->
     <div class="seats-counter seats-counter-enhanced">
-      <div class="seats-left">
-        <span class="seats-label">🔥 創設メンバー 残り枠</span>
-        <span class="seats-num" id="seatsLeft">--</span><span class="seats-total">/ 50</span>
-      </div>
-      <div class="seats-progress-wrap">
-        <div class="seats-progress-bar-bg">
-          <div class="seats-progress-bar" id="seatsBar" style="width:0%;"></div>
-        </div>
-        <div class="seats-progress-meta">
-          <span><strong id="seatsTaken">0</strong>名が既に登録済み</span>
-          <span class="seats-live">🟢 リアルタイム</span>
-        </div>
-      </div>
       <div class="seats-price">
         <span class="price-strike">通常 ¥39,800/月</span>
         <span class="price-now">永年 <strong>¥14,500</strong>/月</span>
