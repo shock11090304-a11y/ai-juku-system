@@ -315,11 +315,6 @@ let timer = null;
 let startTime = 0;
 let isPlaying = true;
 
-function getSeatsLeft() {
-  const count = parseInt(localStorage.getItem('ai_juku_founder_count') || '32');
-  return Math.max(0, 100 - count);
-}
-
 function renderChips() {
   const container = document.getElementById('featureChips');
   container.innerHTML = FRAMES.map((f, i) =>
@@ -367,10 +362,6 @@ function renderFrame(i) {
   document.querySelectorAll('.fc-chip').forEach((c, idx) => {
     c.classList.toggle('active', idx === i);
   });
-
-  // Update seats counter
-  const sr = document.getElementById('seatsRemaining');
-  if (sr) sr.textContent = getSeatsLeft();
 }
 
 function startTimer() {
