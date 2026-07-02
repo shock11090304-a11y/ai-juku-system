@@ -3366,9 +3366,10 @@ function renderChargeLedger(data) {
     if (!rid || !e.month) continue;
     if (e.studentName && !nameByRid[rid]) nameByRid[rid] = e.studentName;
     if (e.kind === 'spot') {
-      // 失敗 (=確定未課金) はノイズなので出さない。成功は🎓、不確定/3DS待ちは⚠️付きで表示
-      // (「課金されたか不明」を無言で消すと台帳を信じて二重請求しかねないため・2026-07-02 review)
-      if (e.status === 'failed') continue;
+      // 同期失敗 (=塾長が請求モーダルで❌を目撃済みの確定未課金) はノイズなので出さない。
+      // ★非同期失敗 (sourceEvent 有り = 3DS 拒否等を webhook が後から確定・誰も画面で見ていない)
+      //   は❌で表示する。黙って消すと未回収の講習費が無音化するため (2026-07-02 review)
+      if (e.status === 'failed' && !e.sourceEvent) continue;
       (spotMap[rid] = spotMap[rid] || {});
       (spotMap[rid][e.month] = spotMap[rid][e.month] || []).push(e);
     } else {
@@ -3431,7 +3432,13 @@ function renderChargeLedger(data) {
     const spots = (spotMap[rid] || {})[m] || [];
     for (const s of spots) {
       const ok = isSpotOk(s.status);
-      inner += `<div style="font-size:0.72rem;color:${ok ? '#a78bfa' : '#fbbf24'};white-space:nowrap;" title="${escapeHtmlME(s.label || '講習費用')}${fmtDateME(s.chargedAt) ? ' ' + fmtDateME(s.chargedAt) : ''}${ok ? '' : ' — 課金されたか要確認 (Stripe ダッシュボードで確認してください)'}">🎓 ${fmtYenME(s.amount)}${ok ? '' : ' ⚠️要確認'}</div>`;
+      const failed = s.status === 'failed';  // 非同期失敗のみここに来る (同期失敗は上でフィルタ済み)
+      const color = ok ? '#a78bfa' : (failed ? '#f87171' : '#fbbf24');
+      const suffix = ok ? '' : (failed ? ' ❌失敗' : ' ⚠️要確認');
+      const titleNote = ok ? '' : (failed
+        ? ' — 3DS/カード確認で失敗・未課金です (必要なら生徒一覧の🎓ボタンから再請求)'
+        : ' — 課金されたか要確認 (Stripe ダッシュボードで確認してください)');
+      inner += `<div style="font-size:0.72rem;color:${color};white-space:nowrap;" title="${escapeHtmlME(s.label || '講習費用')}${fmtDateME(s.chargedAt) ? ' ' + fmtDateME(s.chargedAt) : ''}${titleNote}">🎓 ${fmtYenME(s.amount)}${suffix}</div>`;
     }
     return `<td class="ta-c">${inner}</td>`;
   };

@@ -313,6 +313,86 @@ def _handle_payment_succeeded(event):
         _log(f"webhook: payment_succeeded invoice={invoice_id} amount={amount_paid}")
 
 
+def _clear_charge_source_state(source_state, rid, month):
+    """月次 auto-reconcile 完了時の中間 state 掃除 (record DEL + index ZREM)。
+    uncertain 側は mark_paid / mark_unpaid (admin-charge-reconcile.py:213-215/228-229) と
+    同じ掃除規約。requires_action 側の掃除は webhook のみが行う (reconcile は RA 名前空間を
+    掃除しない = mark_paid で決着させた RA record は残る・既知の残課題)。
+    🚨 2026-07-02 fix: uncertain 側も index から ZREM する (従来は record DEL のみで
+    index にゴミが残り、台帳の MGET 枠 (GET_CAP) を無駄に食っていた)。"""
+    if source_state == "uncertain":
+        _redis_safe("DEL", f"charge:uncertain:{rid}:{month}")
+        _redis_safe("ZREM", "charge:uncertain:index", f"{rid}:{month}")
+    elif source_state == "requires_action":
+        _redis_safe("DEL", f"charge:requires_action:{rid}:{month}")
+        _redis_safe("ZREM", "charge:requires_action:index", f"{rid}:{month}")
+
+
+def _update_spot_history(meta, pi_id, new_status, source_event):
+    """🆕 2026-07-02: 講習など単発スポット課金 (admin-charge-spot.py) の record を
+    Stripe event で確定更新する。spot:history は同期 response 時の書き切りで、
+    requires_action (3DS) → 顧客の認証完了後に succeeded へ更新する経路が無く、
+    台帳 (admin-charge-ledger) で「🎓⚠️要確認」のまま永久に残っていた。
+    record key は PI metadata の registration_id + idem_token から再構成する
+    (idem_token は admin-charge-spot.py が metadata に焼き込む。無い旧 PI は skip)。"""
+    rid = (meta.get("registration_id") or "").strip()
+    token = (meta.get("idem_token") or "").strip()
+    if not rid or not token:
+        _log(f"webhook: spot PI missing registration_id/idem_token metadata pi={pi_id} - skip spot reconcile")
+        return
+    key = f"spot:history:{rid}:{token}"
+    got = _redis_safe("GET", key)
+    rec = None
+    if got and isinstance(got, dict) and got.get("result"):
+        try:
+            parsed = json.loads(got["result"])
+            if isinstance(parsed, dict):
+                rec = parsed
+        except Exception:
+            pass
+    if not rec:
+        # 同期 response がまだ record を書いていない (即時成功時は webhook が先着し得る)
+        # or TTL 切れ → 同期側の書込を正とする / 触らない
+        _log(f"webhook: spot record not found key={key} pi={pi_id} - skip")
+        return
+    cur = (rec.get("status") or "").strip()
+    if cur == new_status:
+        return  # 冪等 (Stripe event 再送)
+    if cur == "succeeded":
+        # out-of-order な failed event で確定成功を降格させない。
+        # ★processing は非終端 status (Stripe は processing → payment_failed に正規遷移し得る)
+        # なのでここでは守らない = processing → failed は正当な前進遷移として通す (2026-07-02 review)
+        _log(f"webhook: spot skip downgrade key={key} {cur} -x-> {new_status} pi={pi_id}")
+        return
+    if new_status == "failed" and cur not in ("requires_action", "uncertain", "processing"):
+        # 同期側で確定済みの failed の再書込は不要・想定外 status からの failed 化はしない
+        _log(f"webhook: spot skip failed-transition key={key} cur={cur} pi={pi_id}")
+        return
+    rec_pi = (rec.get("payment_intent_id") or "").strip()
+    if rec_pi and pi_id and rec_pi != pi_id:
+        # 同一 idem_token で別 PI は Idempotency-Key 上ありえない → 触らず要調査ログのみ
+        _log(f"webhook: spot PI mismatch key={key} rec_pi={rec_pi} event_pi={pi_id} - skip")
+        return
+    rec["status"] = new_status
+    if pi_id and not rec_pi:
+        rec["payment_intent_id"] = pi_id
+    rec["status_updated_at"] = int(time.time())
+    rec["source_event"] = source_event
+    # "at" は変更しない (台帳の月割り当ては at 由来。3DS 完了が月を跨いでも請求起票月に留める)
+    rec_json = json.dumps(rec, ensure_ascii=False)
+    _redis_safe("SET", key, rec_json, "EX", "31536000")  # 1y (spot.py の _record と同じ)
+    # index 自己修復: 書込時に ZADD だけ落ちた個体を台帳に復帰させる
+    # (score = record の at = 元の起票時刻なので、既存 entry は score 不変 = 順序も不変・冪等)
+    try:
+        _at_score = int(rec.get("at") or 0) or int(time.time())
+    except Exception:
+        _at_score = int(time.time())
+    _redis_safe("ZADD", "spot:history:index", str(_at_score), f"{rid}:{token}")
+    _redis_safe("RPUSH", f"spot:history:audit:{rid}", rec_json)
+    _redis_safe("EXPIRE", f"spot:history:audit:{rid}", "31536000")
+    _log(f"webhook: spot {cur} -> {new_status} rid={rid} token={token} pi={pi_id}")
+
+
 def _handle_payment_intent_succeeded(event):
     """🆕 v2 (2026-05-13): 月末バッチ請求の PaymentIntent 成功 event を非同期 reconcile 用に記録。
     execute.py が同期 response で既に charge:history を書いているが、SCA 後の銀行 async 承認 etc で
@@ -344,6 +424,12 @@ def _handle_payment_intent_succeeded(event):
     }
     _redis_safe("SET", f"pi:succeeded:{pi_id}", json.dumps(record, ensure_ascii=False), "EX", "31536000")
     _redis_safe("ZADD", "pi:succeeded:index", str(record["succeeded_at"]), pi_id)
+    # 🆕 2026-07-02: 単発スポット課金 (admin-charge-spot.py) は月次 reconcile 対象外。
+    # spot:history の status を succeeded に確定して終了 (3DS 完了・async 承認の反映)。
+    if _pi_sys == "juku-payment-spot":
+        _update_spot_history(meta, pi_id, "succeeded", "payment_intent.succeeded")
+        _log(f"webhook: payment_intent.succeeded (spot) rid={rid} pi={pi_id} amount={amount}")
+        return
     # 🚨 2nd/3rd/4th review fix: 自動 reconcile (uncertain + requires_action 両方の case を処理)
     # done_key が既に他の status (succeeded/manually_reconciled/retry) で確定済なら override しない
     # tombstone (unpaid マーク済) があれば auto-reconcile を完全に skip (幽霊復活防止)
@@ -376,7 +462,10 @@ def _handle_payment_intent_succeeded(event):
                 if existing_done_raw and isinstance(existing_done_raw, dict):
                     ed_s = existing_done_raw.get("result")
                     if ed_s:
-                        try: existing_done = json.loads(ed_s)
+                        try:
+                            _ed = json.loads(ed_s)
+                            if isinstance(_ed, dict):
+                                existing_done = _ed
                         except Exception: pass
                 # 既存 done が succeeded/manually_reconciled なら、上書きせず source state だけ削除
                 # 🚨 Round 5 fix (H3): manually_reconciled も skip 条件に追加 (mark_paid との race 防御)
@@ -384,54 +473,59 @@ def _handle_payment_intent_succeeded(event):
                     existing_done.get("status") in ("succeeded", "processing") or
                     existing_done.get("manually_reconciled") is True
                 ):
-                    if source_state == "uncertain": _redis_safe("DEL", uncertain_key)
-                    elif source_state == "requires_action":
-                        _redis_safe("DEL", requires_action_key)
-                        _redis_safe("ZREM", "charge:requires_action:index", f"{rid}:{month}")
+                    _clear_charge_source_state(source_state, rid, month)
                     _log(f"webhook: {source_state} cleared (done already finalized) rid={rid} month={month} pi={pi_id}")
                 else:
-                    # 🚨 Round 5 fix (C1): SET NX で atomic に書き込む (手動 mark_paid との同時実行 race 防御)
-                    # NX が失敗 = 別経路 (mark_paid 等) で既に書き込まれた → 自分の SET は skip
                     now_ts = int(time.time())
-                    nx_result = _redis_safe("SET", done_key, json.dumps({
+                    done_payload = json.dumps({
                         "payment_intent_id": pi_id, "status": "succeeded",
                         "amount": amount, "charged_at": now_ts,
                         "auto_reconciled_from": source_state,
-                    }, ensure_ascii=False), "NX", "EX", "5184000")
-                    nx_ok = nx_result and isinstance(nx_result, dict) and nx_result.get("result") == "OK"
-                    if not nx_ok:
-                        # 手動 mark_paid が先に書いた → source state だけ削除して終了
-                        if source_state == "uncertain": _redis_safe("DEL", uncertain_key)
-                        elif source_state == "requires_action":
-                            _redis_safe("DEL", requires_action_key)
-                            _redis_safe("ZREM", "charge:requires_action:index", f"{rid}:{month}")
+                    }, ensure_ascii=False)
+                    # 🚨 2026-07-02 fix: execute は uncertain/requires_action 時に done_key を
+                    # 中間 status のまま保持する (二重請求防止ロック) ため、常時 SET NX だと
+                    # 通常フローで必ず失敗し「race 扱い → history 未記録のまま return」になっていた
+                    # (= 3DS 完了/uncertain 自動確定の回収済みが台帳・売上集計から漏れる)。
+                    # 既存 done が中間 status (uncertain/requires_action) なら succeeded へ確定上書き。
+                    # done_key 不在時のみ SET NX (手動 mark_paid との同時書込 race 防御は従来通り)。
+                    if existing_done is not None:
+                        set_result = _redis_safe("SET", done_key, done_payload, "EX", "5184000")
+                        if not (set_result and isinstance(set_result, dict) and set_result.get("result") == "OK"):
+                            # plain SET は race では失敗しない (失敗 = KV エラーのみ)。真実の記録は
+                            # history 側なので続行するが、done が中間 status のまま残る事実はログに残す
+                            _log(f"webhook: WARN done overwrite kv-error rid={rid} month={month} - proceeding with history write")
+                        wrote_done = True
+                    else:
+                        nx_result = _redis_safe("SET", done_key, done_payload, "NX", "EX", "5184000")
+                        wrote_done = bool(nx_result and isinstance(nx_result, dict) and nx_result.get("result") == "OK")
+                    if not wrote_done:
+                        # 手動 mark_paid が先に書いた → source state だけ削除して終了 (history は mark_paid 側が書く)
+                        _clear_charge_source_state(source_state, rid, month)
                         _log(f"webhook: race detected (manual mark_paid won) {source_state} cleared rid={rid} month={month}")
                         return
-                    # 🚨 Round 4 fix: requires_action → succeeded の場合も charge:history に記録
-                    # (売上集計から漏れる致命傷を防ぐ)
-                    if source_state == "requires_action":
-                        student_name = meta.get("student_name", "")
-                        email = meta.get("email", "")
-                        _history_rec = {
-                            "payment_intent_id": pi_id,
-                            "registration_id": rid,
-                            "month": month,
-                            "amount": amount,
-                            "student_name": student_name,
-                            "email": email,
-                            "charged_at": now_ts,
-                            "status": "succeeded",
-                            "auto_reconciled_from": "requires_action",
-                            "source": "sca-async-completion",
-                        }
-                        _redis_safe("ZADD", "charge:history:index", str(now_ts), f"{rid}:{month}")
-                        _redis_safe("SET", f"charge:history:{rid}:{month}", json.dumps(_history_rec, ensure_ascii=False), "EX", "31536000")
-                        _redis_safe("RPUSH", f"charge:history:audit:{rid}:{month}", json.dumps(_history_rec, ensure_ascii=False))
-                        _redis_safe("EXPIRE", f"charge:history:audit:{rid}:{month}", "31536000")
-                        _redis_safe("DEL", requires_action_key)
-                        _redis_safe("ZREM", "charge:requires_action:index", f"{rid}:{month}")
-                    else:
-                        _redis_safe("DEL", uncertain_key)
+                    # 🚨 Round 4 fix + 2026-07-02 fix: requires_action だけでなく uncertain 起点の
+                    # 自動確定も charge:history に記録する (書かないと台帳 (admin-charge-ledger) の
+                    # マスが空欄・月合計/履歴の売上集計から漏れる。charge:done は TTL 60日で消えるため
+                    # history が唯一の恒久記録)
+                    student_name = meta.get("student_name", "")
+                    email = meta.get("email", "")
+                    _history_rec = {
+                        "payment_intent_id": pi_id,
+                        "registration_id": rid,
+                        "month": month,
+                        "amount": amount,
+                        "student_name": student_name,
+                        "email": email,
+                        "charged_at": now_ts,
+                        "status": "succeeded",
+                        "auto_reconciled_from": source_state,
+                        "source": "sca-async-completion" if source_state == "requires_action" else "uncertain-async-completion",
+                    }
+                    _redis_safe("ZADD", "charge:history:index", str(now_ts), f"{rid}:{month}")
+                    _redis_safe("SET", f"charge:history:{rid}:{month}", json.dumps(_history_rec, ensure_ascii=False), "EX", "31536000")
+                    _redis_safe("RPUSH", f"charge:history:audit:{rid}:{month}", json.dumps(_history_rec, ensure_ascii=False))
+                    _redis_safe("EXPIRE", f"charge:history:audit:{rid}:{month}", "31536000")
+                    _clear_charge_source_state(source_state, rid, month)
                     _log(f"webhook: auto-reconciled {source_state} → succeeded rid={rid} month={month} pi={pi_id} amount={amount}")
     _log(f"webhook: payment_intent.succeeded rid={rid} month={month} pi={pi_id} amount={amount}")
 
@@ -470,6 +564,11 @@ def _handle_payment_intent_failed(event):
     }
     _redis_safe("SET", f"pi:failed:{pi_id}", json.dumps(record, ensure_ascii=False), "EX", "31536000")
     _redis_safe("ZADD", "pi:failed:index", str(record["failed_at"]), pi_id)
+    # 🆕 2026-07-02: 単発スポット課金の 3DS 拒否/失敗も record に反映する
+    # (succeeded 側と対で、requires_action の「🎓⚠️要確認」が永久に残らないようにする。
+    #  _update_spot_history 内で succeeded/processing からの降格は拒否 = out-of-order event 安全)
+    if _pi_sys == "juku-payment-spot":
+        _update_spot_history(meta, pi_id, "failed", "payment_intent.payment_failed")
     _log(f"webhook: payment_intent.payment_failed rid={rid} month={month} pi={pi_id} code={error_code} decline={decline_code}")
 
 

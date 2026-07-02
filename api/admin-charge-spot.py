@@ -219,6 +219,10 @@ class handler(BaseHTTPRequestHandler):
                 "label": label,
                 "email": email,
                 "source": "spot-charge-v1",
+                # 🆕 2026-07-02: webhook (payment_intent.succeeded/payment_failed) が
+                # spot:history:{rid}:{idem_token} を再構成して 3DS 完了後の status を
+                # succeeded/failed に確定更新するための key 素材 (無いと要確認が永久に残る)
+                "idem_token": idem_token,
             }
 
             def _record(status, pi_id, extra=None):

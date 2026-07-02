@@ -548,6 +548,10 @@ def _handle_ledger(handler, params):
             "chargedAt": at,
             "label": rec.get("label", ""),
             "paymentIntentId": rec.get("payment_intent_id", ""),
+            # webhook が status を確定更新した record にのみ付く (payment_intent.succeeded /
+            # payment_intent.payment_failed)。フロントは「非同期で failed になった spot」
+            # (= 塾長が同期モーダルで失敗を見ていない) を❌表示するための判別に使う (2026-07-02)。
+            "sourceEvent": rec.get("source_event", ""),
         })
 
     _json(handler, 200, {
