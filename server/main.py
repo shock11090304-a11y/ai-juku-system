@@ -345,27 +345,9 @@ FOUNDER_LIMIT = int(os.getenv("FOUNDER_LIMIT", "50"))
 FOUNDER_SPECIAL_PRICE = 14500
 FOUNDER1_PRICE = FOUNDER_SPECIAL_PRICE  # 後方互換
 
-# 顧客向け表示用の擬似申込数 (購買意欲喚起のためのカモフラージュ・FOMO 設計)
-# /api/founders/count?public=1 で動的計算された値が返る。塾長の指示で
-# 「実申込が増えるほど残枠表示も縮小して FOMO を加速」設計。
-#
-# 計算式:
-#   public_taken = real_taken + FAKE_BASE + (real_taken * FAKE_MULTIPLIER) + (days_since_launch * DAILY_GROWTH)
-#   public_remaining = max(MIN_REMAINING, FOUNDER_LIMIT - public_taken)
-#
-# 例 (50枠・緊迫MAX設定: BASE=28, MULTIPLIER=2.5, DAILY_GROWTH=0.5, MIN=2):
-#   day0  real=0  → public_taken=28 → 残22  (初期から 56%埋まり = "もう半分以上!" の心理)
-#   day3  real=0  → public_taken=29 → 残21  (3日で +1)
-#   day7  real=0  → public_taken=31 → 残19  (1週間経過・残半分以下)
-#   day7  real=3  → public_taken=42 → 残8   (実申込3でも一気に縮小・"あと8人"の極限緊張)
-#   day14 real=5  → public_taken=52 → max → 残2 (即決断ライン)
-# 「50名のうち残り2-22名」の幅で常に「焦り」を演出。
-# 経営的には実申込が進むほど public_taken も加速 → 後発の希少性が指数的に上昇する設計。
-FOUNDER_PUBLIC_FAKE_TAKEN = int(os.getenv("FOUNDER_PUBLIC_FAKE_TAKEN", "28"))  # 旧称・後方互換 (BASE と同義)
-FOUNDER_PUBLIC_FAKE_BASE = int(os.getenv("FOUNDER_PUBLIC_FAKE_BASE", str(FOUNDER_PUBLIC_FAKE_TAKEN)))
-FOUNDER_PUBLIC_FAKE_MULTIPLIER = float(os.getenv("FOUNDER_PUBLIC_FAKE_MULTIPLIER", "2.5"))
-FOUNDER_PUBLIC_FAKE_DAILY_GROWTH = float(os.getenv("FOUNDER_PUBLIC_FAKE_DAILY_GROWTH", "0.5"))
-FOUNDER_PUBLIC_MIN_REMAINING = int(os.getenv("FOUNDER_PUBLIC_MIN_REMAINING", "2"))
+# 🔷 2026-07-02 塾長方針: 残枠の偽装カモフラージュ(FOMO 演出)を廃止。/api/founders/count は
+#   public/内部とも実申込数(=実残枠 FOUNDER_LIMIT - 実paid)を返す誠実表示に統一。
+#   旧 FOUNDER_PUBLIC_FAKE_*(BASE/MULTIPLIER/DAILY_GROWTH/MIN_REMAINING)env と動的計算関数は撤去。
 
 # Daily SNS研究員: 毎日 JST DAILY_SNS_HOUR_JST 時に塾長キャラのThreads投稿5本を生成→Gmail送信
 DAILY_SNS_TO_EMAIL = os.getenv("DAILY_SNS_TO_EMAIL", "")
@@ -10576,7 +10558,7 @@ def admin_analytics(authorization: Optional[str] = Header(None)):
         "top_ctas_24h": [{"text": t, "count": n} for t, n in top_ctas],
         "referrers_24h": referrers_24h,
         "referrers_7d": referrers_7d,
-        "founders_public_offset": FOUNDER_PUBLIC_FAKE_TAKEN,
+        "founders_public_offset": 0,  # 🔷 2026-07-02 偽装カウンター廃止により常に0(実数表示)
     }
 
 
@@ -27136,18 +27118,8 @@ def list_plans():
         "trial_duration_days": FOUNDER_TRIAL_DAYS,
     }
 
-def _calculate_dynamic_fake_taken(real_paid: int) -> int:
-    """カモフラージュ申込数を動的計算 (FOMO 加速設計)。
-    要素:
-      - BASE (デフォルト26): ローンチ初日の最低カモフラージュ
-      - MULTIPLIER (デフォルト2.0): 実申込1名あたりの追加偽申込
-      - DAILY_GROWTH (デフォルト0.5): 1日あたりの自然増 (週で +3.5)
-    最終的に MIN_REMAINING で下限保護 (残0=売り止め印象を防ぐ)。"""
-    import time
-    days_since_launch = max(0, (time.time() - SERVICE_LAUNCH_TS) / 86400)
-    natural_growth = int(days_since_launch * FOUNDER_PUBLIC_FAKE_DAILY_GROWTH)
-    fomo_boost = int(real_paid * FOUNDER_PUBLIC_FAKE_MULTIPLIER)
-    return real_paid + FOUNDER_PUBLIC_FAKE_BASE + fomo_boost + natural_growth
+# 🔷 2026-07-02 塾長方針で残枠の偽装カモフラージュを廃止。旧 _calculate_dynamic_fake_taken() は撤去。
+#   /api/founders/count は public/内部とも実申込数(実残枠)を返す(誠実表示・景表法配慮)。
 
 
 @app.get("/api/founders/count")
@@ -27174,13 +27146,9 @@ def founders_count(public: bool = False):
         paid = 0
     conn.close()
     real_remaining = max(0, FOUNDER_LIMIT - paid)
-    if public:
-        # 動的カモフラージュ計算
-        public_taken = _calculate_dynamic_fake_taken(paid)
-        # 最低 MIN_REMAINING 名は残す (「残0」=完売印象を防ぐ)
-        public_remaining = max(FOUNDER_PUBLIC_MIN_REMAINING, FOUNDER_LIMIT - public_taken)
-        public_taken = FOUNDER_LIMIT - public_remaining
-        return {"limit": FOUNDER_LIMIT, "taken": public_taken, "remaining": public_remaining}
+    # 🔷 2026-07-02 塾長方針: FOMO 偽装カウンターを廃止し、public/内部とも「実申込数」を返す(誠実表示)。
+    #   実際に契約(paid/past_due)した人数ぶんだけ残枠が実減する。景表法(有利誤認)配慮 + 規模拡大に備えた透明化。
+    #   ※旧カモフラージュ実装 _calculate_dynamic_fake_taken と env(FOUNDER_PUBLIC_FAKE_*)は撤去済。
     return {"limit": FOUNDER_LIMIT, "taken": paid, "remaining": real_remaining}
 
 # ==========================================================================
@@ -38687,12 +38655,19 @@ def student_today_question_start(request: Request, authorization: Optional[str] 
         ex = c.fetchone()
         if ex:
             return {"ok": True, "drill_id": (ex["drill_id"] if hasattr(ex, "keys") else ex[0]), "reused": True}
-        # standard/english から1問 (最も間口の広い基礎〜標準)。無ければ任意レベルの english。
-        c.execute(
-            "SELECT id FROM grammar_questions WHERE subject = 'english' AND level = 'standard' AND active = 1 "
-            "ORDER BY RANDOM() LIMIT 1"
-        )
-        r = c.fetchone()
+        # 🔰 2026-07-02: 最初の1問は basic 優先 → standard → 任意レベル english の順にフォールバック。
+        #   独学挫折の高2等に共テ標準をいきなり出すと1問目で心が折れるため、最も易しい層から出して
+        #   「折れさせない最初の1歩」にする(basic 在庫が無い場合のみ standard 以上へ)。
+        r = None
+        for _lv in ("basic", "standard"):
+            c.execute(
+                "SELECT id FROM grammar_questions WHERE subject = 'english' AND level = ? AND active = 1 "
+                "ORDER BY RANDOM() LIMIT 1",
+                (_lv,),
+            )
+            r = c.fetchone()
+            if r:
+                break
         if not r:
             c.execute("SELECT id FROM grammar_questions WHERE subject = 'english' AND active = 1 ORDER BY RANDOM() LIMIT 1")
             r = c.fetchone()
