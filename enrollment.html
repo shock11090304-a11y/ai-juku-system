@@ -273,6 +273,23 @@
       font-size: 0.95rem;
       white-space: nowrap;
     }
+    .course-card.is-recommended {
+      border: 1.5px solid var(--navy);
+      background: var(--accent-bg);
+    }
+    .course-card .reco-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: white;
+      background: var(--navy);
+      border-radius: 3px;
+      padding: 0.1rem 0.45rem;
+      margin-left: 0.4rem;
+      vertical-align: 1px;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
 
     .sub-fields {
       margin-top: 0.5rem;
@@ -856,9 +873,9 @@
             <div class="info"><div class="name">国公立難関大学コース</div><div class="meta">水・金・日 ＋ スタサプ</div></div>
             <div class="fee">25,000<span style="font-size:0.7em;"> 円</span></div>
           </label>
-          <label class="course-card">
+          <label class="course-card is-recommended">
             <input type="checkbox" name="コース_AI管理生徒アドオン" value="ON" data-fee="5000">
-            <div class="info"><div class="name">AI管理生徒アドオン</div><div class="meta">AIによる学習管理・進捗サポート ／ 毎月</div></div>
+            <div class="info"><div class="name">AI管理生徒アドオン<span class="reco-badge">塾長おすすめ</span></div><div class="meta">AIが今日やる課題を毎日セット・弱点を自動フォロー・保護者様へ週次レポート ／ どのコースにも追加可・毎月</div></div>
             <div class="fee">5,000<span style="font-size:0.7em;"> 円</span></div>
           </label>
 
