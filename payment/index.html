@@ -388,6 +388,7 @@
       ③ 金額に問題なければ「🚀 一斉引き落とし実行」(赤いボタン) を押下 → 全カードに同時請求<br>
       ④ 当月既に引き落とし済みの顧客は自動 skip (重複請求防止)<br>
       ⑤ 失敗した顧客はリストに赤色で表示 → 個別対応<br>
+      ⑥ 一斉実行の<strong>あと</strong>にカード登録した生徒は、表の「💳 個別請求」でその人だけ請求できます (下の 📖 台帳で月別の請求済み状況を確認)<br>
       <span style="color:var(--text-dim);font-size:0.85rem;">※ AIコーチングの課金 (¥14,500/月) とは完全に分離されています</span>
     </div>
 
@@ -439,6 +440,9 @@
 
     <div id="monthEndStatus" style="margin-bottom:1rem;"></div>
 
+    <!-- 💡 一斉実行後にカード登録した人など「請求対象月がまだ未請求」の人がいる時だけ表示 -->
+    <div id="monthEndUnchargedNote" style="margin-bottom:1rem;display:none;"></div>
+
     <div class="table-wrap">
       <table class="table" id="monthEndTable">
         <thead>
@@ -460,6 +464,20 @@
       </table>
     </div>
 
+    <!-- 📖 引き落とし台帳: 誰の何月分をカードから引き落とし済みか (2026-07-02 塾長要望) -->
+    <div style="margin-top:1.5rem;padding:1rem;border:1px solid rgba(99,102,241,0.35);border-radius:8px;background:rgba(99,102,241,0.05);">
+      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+        <h3 style="margin:0;color:var(--primary-light);">📖 引き落とし台帳（誰の何月分を引き落とし済みか）</h3>
+        <button class="btn btn-ghost btn-sm" id="ledgerRefreshBtn">🔄 台帳を更新</button>
+      </div>
+      <div class="hint" style="font-size:0.82rem;margin-bottom:0.75rem;">
+        プレビュー更新すると自動で読み込まれます。✅=月謝引き落とし成功 / ❌=失敗 / 🔐=3DS認証待ち / ⚠️=要確認 / 🎓=講習など単発課金。<br>
+        いまの請求対象月でまだ未請求の人のマスには「💳 個別請求」ボタンが出ます (押すと<strong>その人のその月分だけ</strong>請求・他の人には飛びません)。❌/⚠️/🔐 のマスはクリックで下の詳細履歴が開きます。
+      </div>
+      <div id="ledgerStatus" style="margin-bottom:0.5rem;"></div>
+      <div id="ledgerResults" class="table-wrap"></div>
+    </div>
+
     <div id="monthEndResultModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" style="display:none;">
       <div class="modal-card" style="max-width:720px;">
         <h2 id="monthEndResultTitle">実行結果</h2>
@@ -472,7 +490,7 @@
 
     <!-- 📜 過去の引き落とし履歴・失敗者一覧・要対応 (2026-05-13 review 反映) -->
     <details style="margin-top:1.5rem;padding:1rem;border:1px solid rgba(245,158,11,0.3);border-radius:8px;background:rgba(245,158,11,0.04);">
-      <summary style="cursor:pointer;font-weight:600;color:#fbbf24;">📜 過去の履歴・失敗者一覧・要対応 (clicking to expand)</summary>
+      <summary style="cursor:pointer;font-weight:600;color:#fbbf24;">📜 過去の履歴・失敗者一覧・要対応 (クリックで展開)</summary>
       <div style="margin-top:1rem;">
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
           <label style="color:var(--text-dim);font-size:0.9rem">月:</label>
@@ -1133,6 +1151,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="app.js?v=20260611-tuition-label2"></script>
+<script src="app.js?v=20260702-charge-ledger"></script>
 </body>
 </html>

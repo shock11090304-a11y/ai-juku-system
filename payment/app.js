@@ -2516,7 +2516,7 @@ function refresh() {
 // ===========================================================================
 // 💳 月末一斉引き落とし (Stripe Setup Mode + 月末バッチ請求) - 2026-05-13
 // ===========================================================================
-const MONTHEND_STATE = { lastPreview: null, busy: false, excluded: new Set(), includeArrears: false, billMode: 'current' };
+const MONTHEND_STATE = { lastPreview: null, busy: false, excluded: new Set(), includeArrears: false, billMode: 'current', lastLedger: null, ledgerBusy: false };
 
 // 請求対象月ヘルパー (2026-06-26: 月末に翌月分を前倒し請求する運用)。
 //   billMode 'current' → カレンダー月 / 'next' → 翌月。
@@ -2543,6 +2543,15 @@ function monthEndIsNextMode(prev) {
 function fmtYenME(n) {
   try { return '¥' + Number(n || 0).toLocaleString('ja-JP'); }
   catch (_) { return '¥' + (n || 0); }
+}
+
+// epoch 秒 → JST の "M/D" 表示 (0/不正値は空文字)。台帳の引落日・カード登録日表示用。
+function fmtDateME(epochSec) {
+  const n = Number(epochSec) || 0;
+  if (n <= 0) return '';
+  try {
+    return new Date(n * 1000).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' });
+  } catch (_) { return ''; }
 }
 
 function getMonthEndAdminPw() {
@@ -2611,6 +2620,8 @@ async function fetchMonthEndPreview() {
     MONTHEND_STATE.lastPreview = data;
     renderMonthEndTable(data);
     setMonthEndStatus(`✅ 月 <strong>${data.month}</strong> のプレビュー取得完了 (${data.total_customers} 名)`, 'success');
+    renderUnchargedNote(data);
+    fetchChargeLedger();   // 📖 台帳も自動更新 (非同期・失敗してもプレビュー表示には影響しない)
   } catch (e) {
     setMonthEndStatus(`❌ ネットワークエラー: ${e.message}`, 'error');
   } finally {
@@ -2670,6 +2681,11 @@ function renderMonthEndTable(data) {
       statusBadge = '<span style="color:var(--text-dim);">✅ 当月引き落とし済</span>';
     } else if (c.ready) {
       statusBadge = '<span style="color:var(--success);">🟢 ready</span>';
+      // 未請求の人にはカード登録日を添える (一斉実行のあとに登録した人を見分けるため)
+      const regDate = fmtDateME(c.registeredAt);
+      if (regDate) {
+        statusBadge += `<div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px;white-space:nowrap;">カード登録 ${regDate}</div>`;
+      }
     } else {
       statusBadge = `<span style="color:#f87171;">⚠️ ${escapeHtmlME(c.issue || 'NG')}</span>`;
     }
@@ -2688,9 +2704,9 @@ function renderMonthEndTable(data) {
     const toggleCell = chargeable
       ? `<td class="ta-c"><input type="checkbox" class="me-toggle" ${MONTHEND_STATE.excluded.has(c.registrationId) ? '' : 'checked'} onchange="toggleMonthEndRow('${rid}', this.checked)" title="今回の一斉引き落としの対象にする / 外す" style="width:18px;height:18px;cursor:pointer;"></td>`
       : `<td class="ta-c" style="color:var(--text-dim)">—</td>`;
-    // 個別「この人だけ」請求 + 退塾
+    // 個別請求 (この人だけ) + 退塾。一斉実行のあとにカード登録した人の追い請求もこのボタン。
     const oneBtn = chargeable
-      ? `<button class="btn btn-ghost btn-sm" onclick="chargeOneMonthEnd('${rid}')" title="この人だけ今すぐ引き落とし" style="color:#34d399;border-color:rgba(16,185,129,0.45);">💳 この人だけ</button> `
+      ? `<button class="btn btn-ghost btn-sm" onclick="chargeOneMonthEnd('${rid}')" title="この人だけ今すぐ引き落とし (一斉実行後にカード登録した人の請求もこれでOK)" style="color:#34d399;border-color:rgba(16,185,129,0.45);">💳 個別請求</button> `
       : '';
     // 🎓 講習費用の単発スポット課金 (任意金額・1回限り・月謝は変えない)。カード紐付け(ready)なら当月請求済でも可。
     const spotBtn = c.ready
@@ -2764,9 +2780,33 @@ function updateMonthEndSelectionSummary() {
   }
 }
 
-// 「💳 この人だけ」個別引き落とし。同じ execute エンドポイントに registrationIds:[rid] を渡す
+// 💡 「一斉実行のあとにカード登録した人」を目立たせるバナー。
+// 請求対象月で誰かに請求済み (previously_charged_this_month > 0) なのに未請求 ready が残っている時だけ表示
+// (月初〜一斉実行前の「全員未請求」の状態ではうるさいので出さない)。
+function renderUnchargedNote(data) {
+  const el = document.getElementById('monthEndUnchargedNote');
+  if (!el) return;
+  const uncharged = ((data && data.customers) || []).filter(c => c.ready && !c.alreadyChargedThisMonth);
+  if (!(data && data.previously_charged_this_month > 0) || uncharged.length === 0) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  const MAX_NAMES = 8;
+  const names = uncharged.slice(0, MAX_NAMES).map(c => {
+    const d = fmtDateME(c.registeredAt);
+    return `<strong>${escapeHtmlME(c.studentName || '(名前未設定)')}</strong>${d ? `<span style="font-size:0.78rem;">（カード登録 ${d}）</span>` : ''}`;
+  }).join('・') + (uncharged.length > MAX_NAMES ? ` ほか ${uncharged.length - MAX_NAMES} 名` : '');
+  el.innerHTML = `💡 <strong>${escapeHtmlME(data.month)} 分をまだ引き落とせていない</strong>カード登録者が ${uncharged.length} 名います: ${names}<br>
+    <span style="font-size:0.82rem;color:var(--text-dim);">一斉実行のあとにカード登録した生徒のほか、引き落とし失敗・対象トグルOFFで外した生徒もここに出ます。表か下の📖台帳の「💳 個別請求」でその人の分だけ請求できます (他の人に請求は飛びません)。</span>`;
+  el.style.cssText = 'margin-bottom:1rem;display:block;padding:0.75rem 1rem;border-radius:8px;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;';
+}
+
+// 「💳 個別請求 (この人だけ)」個別引き落とし。同じ execute エンドポイントに registrationIds:[rid] を渡す
 // (サーバ側で当月二重請求は SET NX で防止済み)。
-async function chargeOneMonthEnd(rid) {
+// expectedMonth (任意): 📖台帳のマスから呼ぶ時にマスの月を焼き込む。プレビューの請求対象月と
+// 一致しない (モード切替直後の stale 表示など) 場合は請求せず中止する (2026-07-02 review)。
+async function chargeOneMonthEnd(rid, expectedMonth) {
   if (MONTHEND_STATE.busy) return;
   const pw = getMonthEndAdminPw();
   if (!pw) { setMonthEndStatus('🔒 管理パスワードを入力してください', 'warn'); return; }
@@ -2781,6 +2821,16 @@ async function chargeOneMonthEnd(rid) {
   const isNextMonth = billMonth !== calMonth;
   if (calMonth !== nowMonth) {
     setMonthEndStatus(`⚠️ プレビューの基準月 (${calMonth}) と現在月 (${nowMonth}) が不一致。「🔄 プレビュー更新」を押してください`, 'error');
+    return;
+  }
+  if (expectedMonth && expectedMonth !== billMonth) {
+    setMonthEndStatus(`⚠️ このボタンは ${expectedMonth} 分ですが、現在の請求対象月は ${billMonth} です (表示が古い可能性)。「🔄 プレビュー更新」してからやり直してください`, 'warn');
+    return;
+  }
+  // 一斉実行と同じ鮮度ガード: プレビューが10分以上前なら中止 (2026-07-02 review)
+  const previewAge = Date.now() / 1000 - (preview.preview_at || 0);
+  if (previewAge > 600) {
+    setMonthEndStatus(`⚠️ プレビューが古いです (${Math.floor(previewAge / 60)} 分前)。「🔄 プレビュー更新」を押してからやり直してください`, 'warn');
     return;
   }
   const amt = Number(c.monthlyFee) || 0;
@@ -2905,7 +2955,9 @@ async function submitSpotCharge() {
 window.submitSpotCharge = submitSpotCharge;
 
 function escapeHtmlME(s) {
-  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  // シングルクォートも潰す: onclick="fn('...')" のような単引用符コンテキストに埋め込むため
+  // (rid はサーバ生成 token_urlsafe で通常混入しないが、構造的防御・2026-07-02 review)
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // 月末 execute エンドポイントへの単一 POST (当月 or 滞納月)。
@@ -3245,6 +3297,188 @@ function downloadHistoryCsv() {
   URL.revokeObjectURL(url);
 }
 
+// ===========================================================================
+// 📖 引き落とし台帳 (月別 × 生徒・2026-07-02 塾長要望)
+//   「誰の何月分をカードから引き落とし済みか」を一目で確認し、
+//   請求対象月で未請求の人はマス内の「💳 個別請求」からそのまま請求できる。
+//   データは read-only の /payment/api/admin-charge-ledger (charge:history 等の集計)。
+// ===========================================================================
+
+async function fetchChargeLedger() {
+  const statusEl = document.getElementById('ledgerStatus');
+  const pw = getMonthEndAdminPw();
+  if (!statusEl) return;
+  if (!pw) { statusEl.innerHTML = '<span style="color:#fbbf24">🔒 管理パスワードを入力すると台帳が表示されます</span>'; return; }
+  // 名簿プレビュー未取得のまま台帳だけ描くと全員が「(現名簿外)」の薄字になってしまう。
+  // 先にプレビューを取りに行く (成功時にこの関数が自動で呼ばれる・失敗時は連鎖しないのでループしない)。
+  if (!MONTHEND_STATE.lastPreview) {
+    statusEl.innerHTML = '<span style="color:var(--text-dim)">⏳ 先に名簿プレビューを取得しています...</span>';
+    fetchMonthEndPreview();
+    return;
+  }
+  if (MONTHEND_STATE.ledgerBusy) return;
+  MONTHEND_STATE.ledgerBusy = true;
+  statusEl.innerHTML = '<span style="color:var(--text-dim)">⏳ 台帳を取得中...</span>';
+  try {
+    const res = await fetch('/payment/api/admin-charge-ledger?months=6', {
+      method: 'GET', headers: { 'X-Admin-Password': pw },
+    });
+    if (res.status === 401) { statusEl.innerHTML = '<span style="color:#f87171">❌ 認証失敗。管理パスワードを確認してください</span>'; return; }
+    const data = await res.json();
+    if (!res.ok) { statusEl.innerHTML = `<span style="color:#f87171">❌ ${escapeHtmlME(data.message || data.error || 'unknown')}</span>`; return; }
+    MONTHEND_STATE.lastLedger = data;
+    renderChargeLedger(data);
+    const t = data.fetched_at ? new Date(data.fetched_at * 1000).toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' }) : '';
+    statusEl.innerHTML = t ? `<span style="color:var(--success);font-size:0.82rem;">✅ 台帳更新 (${t} 時点)</span>` : '';
+  } catch (e) {
+    statusEl.innerHTML = `<span style="color:#f87171">❌ ネットワークエラー: ${escapeHtmlME(e.message)}</span>`;
+  } finally {
+    MONTHEND_STATE.ledgerBusy = false;
+  }
+}
+
+function renderChargeLedger(data) {
+  const target = document.getElementById('ledgerResults');
+  if (!target) return;
+  const entries = Array.isArray(data.entries) ? data.entries : [];
+  const preview = MONTHEND_STATE.lastPreview;
+  const billMonth = (preview && preview.month) || '';
+  const isSpotOk = s => (s === 'succeeded' || s === 'processing');
+
+  // 表示する月列: サーバの months (翌月+今月+直近5ヶ月) を昇順 (左=古い→右=新しい)。
+  // 翌月列はエントリがある (前倒し請求済み) か、いま翌月分モードで請求対象のときだけ出す。
+  let months = (Array.isArray(data.months) ? data.months.slice() : []).sort();
+  const nextM = data.next_month || '';
+  if (nextM && months.indexOf(nextM) >= 0) {
+    const hasNext = entries.some(e => e.month === nextM) || billMonth === nextM;
+    if (!hasNext) months = months.filter(m => m !== nextM);
+  }
+  if (!months.length) { target.innerHTML = ''; return; }
+
+  // rid → month → 月謝エントリ (優先度: 成功 > 3DS待ち > 要確認 > 失敗。失敗→再請求成功は成功を表示)
+  const rankOf = s => ({ success: 3, requires_action: 2, uncertain: 1, failed: 0 })[s] !== undefined
+    ? { success: 3, requires_action: 2, uncertain: 1, failed: 0 }[s] : -1;
+  const cellMap = {};   // rid -> { month -> entry }
+  const spotMap = {};   // rid -> { month -> [spot entries] }
+  const nameByRid = {};
+  for (const e of entries) {
+    const rid = e.registrationId || '';
+    if (!rid || !e.month) continue;
+    if (e.studentName && !nameByRid[rid]) nameByRid[rid] = e.studentName;
+    if (e.kind === 'spot') {
+      // 失敗 (=確定未課金) はノイズなので出さない。成功は🎓、不確定/3DS待ちは⚠️付きで表示
+      // (「課金されたか不明」を無言で消すと台帳を信じて二重請求しかねないため・2026-07-02 review)
+      if (e.status === 'failed') continue;
+      (spotMap[rid] = spotMap[rid] || {});
+      (spotMap[rid][e.month] = spotMap[rid][e.month] || []).push(e);
+    } else {
+      const byMonth = (cellMap[rid] = cellMap[rid] || {});
+      const cur = byMonth[e.month];
+      if (!cur || rankOf(e.status) > rankOf(cur.status)) byMonth[e.month] = e;
+    }
+  }
+
+  // 行 = 現在の名簿 (プレビューと同じ並び) + 履歴にだけ居る人 (退塾済みなど) を下に薄く
+  const rosterRows = (preview && Array.isArray(preview.customers)) ? preview.customers : [];
+  const rosterIds = new Set(rosterRows.map(c => c.registrationId));
+  const seen = new Set();
+  const historyOnly = [];
+  for (const rid of Object.keys(cellMap).concat(Object.keys(spotMap))) {
+    if (!rosterIds.has(rid) && !seen.has(rid)) { seen.add(rid); historyOnly.push(rid); }
+  }
+  if (!rosterRows.length && !historyOnly.length) {
+    target.innerHTML = '<div style="color:var(--text-dim);padding:1rem;">まだ引き落とし履歴がありません</div>';
+    return;
+  }
+
+  const monthTh = m => {
+    const isBill = m === billMonth;
+    return `<th class="ta-c" style="white-space:nowrap;${isBill ? 'background:rgba(99,102,241,0.15);border-bottom:2px solid var(--primary-light);' : ''}">${parseInt(m.slice(5), 10)}月<div style="font-size:0.68rem;font-weight:400;color:var(--text-dim)">${escapeHtmlME(m.slice(0, 4))}</div>${isBill ? '<div style="font-size:0.66rem;color:var(--primary-light);">今の請求対象</div>' : ''}</th>`;
+  };
+
+  // マス内の個別請求ボタンは「一斉実行後の追い請求」用: 請求対象月で誰かに請求済みのときだけ出す
+  // (月初の全員未請求時に23個並んで「1人ずつ押す」誤運用を誘わないため。先行個別請求は上の名簿表から可能)
+  const showCellButtons = !!(preview && preview.previously_charged_this_month > 0);
+  const oneBtnHtml = (rid, m, retry) =>
+    `<button class="btn btn-ghost btn-sm" onclick="chargeOneMonthEnd('${escapeHtmlME(rid)}', '${escapeHtmlME(m)}')" title="この人のこの月分だけ今すぐ${retry ? '再' : ''}請求 (他の人には請求されません)" style="color:#34d399;border-color:rgba(16,185,129,0.45);white-space:nowrap;">💳 個別請求</button>`;
+
+  const cellHtml = (rid, m, rosterC) => {
+    const e = (cellMap[rid] || {})[m];
+    const chargeableHere = !!(rosterC && m === billMonth && rosterC.ready && !rosterC.alreadyChargedThisMonth && showCellButtons);
+    let inner = '';
+    if (e) {
+      const d = fmtDateME(e.chargedAt);
+      if (e.status === 'success') {
+        inner = `<span style="color:var(--success);white-space:nowrap;">✅ ${fmtYenME(e.amount)}</span>${d ? `<div style="font-size:0.7rem;color:var(--text-dim)">${d}</div>` : ''}`;
+      } else if (e.status === 'requires_action') {
+        inner = `<span class="ledger-issue" data-month="${escapeHtmlME(m)}" style="color:#fbbf24;cursor:pointer;text-decoration:underline dotted;" title="クリックで下の詳細履歴を開く">🔐 3DS待ち</span>`;
+      } else if (e.status === 'uncertain') {
+        inner = `<span class="ledger-issue" data-month="${escapeHtmlME(m)}" style="color:#fbbf24;cursor:pointer;text-decoration:underline dotted;" title="クリックで下の詳細履歴を開く">⚠️ 要確認</span>`;
+      } else {
+        inner = `<span class="ledger-issue" data-month="${escapeHtmlME(m)}" style="color:#f87171;cursor:pointer;text-decoration:underline dotted;" title="クリックで下の詳細履歴を開く">❌ 失敗</span>`;
+      }
+      // ❌失敗はサーバ側でロック解除済み=再請求可能 (ready ∧ 未請求) なら個別請求ボタンを添える。
+      // 🔐3DS待ち/⚠️要確認 は done ロック保持中 → alreadyChargedThisMonth=true なのでボタンは出ない (二重請求防止)。
+      if (e.status === 'failed' && chargeableHere) {
+        inner += `<div style="margin-top:3px;">${oneBtnHtml(rid, m, true)}</div>`;
+      }
+    } else if (chargeableHere) {
+      // いまの請求対象月でまだ未請求 → その場で個別請求できるボタン (既存の chargeOneMonthEnd を使用)
+      inner = oneBtnHtml(rid, m, false);
+    } else {
+      inner = '<span style="color:var(--text-dim)">―</span>';
+    }
+    const spots = (spotMap[rid] || {})[m] || [];
+    for (const s of spots) {
+      const ok = isSpotOk(s.status);
+      inner += `<div style="font-size:0.72rem;color:${ok ? '#a78bfa' : '#fbbf24'};white-space:nowrap;" title="${escapeHtmlME(s.label || '講習費用')}${fmtDateME(s.chargedAt) ? ' ' + fmtDateME(s.chargedAt) : ''}${ok ? '' : ' — 課金されたか要確認 (Stripe ダッシュボードで確認してください)'}">🎓 ${fmtYenME(s.amount)}${ok ? '' : ' ⚠️要確認'}</div>`;
+    }
+    return `<td class="ta-c">${inner}</td>`;
+  };
+
+  let html = '<table class="table" style="min-width:720px;"><thead><tr><th style="min-width:120px;">生徒氏名</th>' + months.map(monthTh).join('') + '</tr></thead><tbody>';
+  for (const c of rosterRows) {
+    const rid = c.registrationId || '';
+    html += `<tr><td style="white-space:nowrap;">${escapeHtmlME(c.studentName || nameByRid[rid] || rid)}</td>${months.map(m => cellHtml(rid, m, c)).join('')}</tr>`;
+  }
+  for (const rid of historyOnly) {
+    html += `<tr style="opacity:0.55;"><td style="white-space:nowrap;">${escapeHtmlME(nameByRid[rid] || rid)} <span style="font-size:0.7rem;color:var(--text-dim)">(現名簿外)</span></td>${months.map(m => cellHtml(rid, m, null)).join('')}</tr>`;
+  }
+
+  // フッター: 月ごとの成功合計 (月謝) + 講習の成功合計
+  html += '<tr style="border-top:2px solid rgba(255,255,255,0.15);font-weight:600;"><td>合計 (成功のみ)</td>';
+  for (const m of months) {
+    let sum = 0, cnt = 0, spotSum = 0;
+    for (const e of entries) {
+      if (e.month !== m) continue;
+      if (e.kind === 'spot') { if (isSpotOk(e.status)) spotSum += Number(e.amount) || 0; }
+      else if (e.status === 'success') { sum += Number(e.amount) || 0; cnt++; }
+    }
+    html += `<td class="ta-c" style="white-space:nowrap;">${cnt ? `${fmtYenME(sum)}<div style="font-size:0.68rem;color:var(--text-dim);font-weight:400;">${cnt}名</div>` : '<span style="color:var(--text-dim)">―</span>'}${spotSum ? `<div style="font-size:0.7rem;color:#a78bfa;font-weight:400;">🎓 ${fmtYenME(spotSum)}</div>` : ''}</td>`;
+  }
+  html += '</tr></tbody></table>';
+  if (data.truncated) {
+    html += '<div style="font-size:0.78rem;color:#fbbf24;margin-top:0.5rem;">⚠️ 件数が多いため一部のみ表示しています</div>';
+  }
+  html += '<div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.5rem;">※ 成功履歴は1年間保存。それ以前の分は Stripe ダッシュボードでご確認ください。</div>';
+  target.innerHTML = html;
+
+  // ❌/⚠️/🔐 のマス → 下の詳細履歴パネルをその月で開く (再請求/reconcile ボタンがある)
+  target.querySelectorAll('.ledger-issue').forEach(el => {
+    el.addEventListener('click', () => {
+      const m = el.dataset.month || '';
+      const mi = document.getElementById('historyMonthInput');
+      const tf = document.getElementById('historyTypeFilter');
+      if (mi && m) mi.value = m;
+      if (tf) tf.value = 'all';
+      const det = mi ? mi.closest('details') : null;
+      if (det) det.open = true;
+      fetchChargeHistory();
+      if (det && det.scrollIntoView) det.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+}
+
 // 🔧 uncertain reconcile モーダル
 function openReconcileModal(rid, month, studentName, amount) {
   const modal = document.getElementById('reconcileModal');
@@ -3309,8 +3543,9 @@ async function reconcileCharge(rid, month, action) {
     if (!res.ok || data.error) { alert(`❌ ${data.message || data.error || 'エラー'}`); return; }
     alert(`✅ ${action} 完了`);
     document.getElementById('reconcileModal').style.display = 'none';
-    // 履歴を再取得
+    // 履歴を再取得 + プレビュー/📖台帳も更新 (⚠️マスや個別請求ボタンを stale にしない)
     fetchChargeHistory();
+    setTimeout(() => fetchMonthEndPreview(), 500);
   } catch (e) {
     alert(`❌ ${e.message}`);
   } finally {
@@ -3348,6 +3583,7 @@ async function retryCharge(rid, month, studentName, amount) {
     if (!r2.ok || d2.error) { alert(`❌ retry 失敗: ${d2.message || d2.error}\n${d2.detail || ''}`); return; }
     alert(`✅ retry 完了: ${d2.paymentIntentId || ''} (${d2.stripeStatus || ''})`);
     fetchChargeHistory();
+    setTimeout(() => fetchMonthEndPreview(), 500);   // ❌マス/バナーを stale にしない (📖台帳も連鎖更新)
   } catch (e) {
     alert(`❌ ${e.message}`);
   } finally {
@@ -6307,6 +6543,8 @@ function setupModals() {
   // 📜 履歴 / 🔧 reconcile / 🗑 退塾 (2nd review 反映)
   document.getElementById('historyFetchBtn')?.addEventListener('click', fetchChargeHistory);
   document.getElementById('historyCsvBtn')?.addEventListener('click', downloadHistoryCsv);
+  // 📖 引き落とし台帳 (月別 × 生徒)
+  document.getElementById('ledgerRefreshBtn')?.addEventListener('click', fetchChargeLedger);
   document.getElementById('reconcileModalClose')?.addEventListener('click', () => {
     const modal = document.getElementById('reconcileModal');
     if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }

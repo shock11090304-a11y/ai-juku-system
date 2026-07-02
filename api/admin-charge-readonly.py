@@ -13,11 +13,13 @@ webhook/register-subscribe) には一切触れない。
 Endpoints (vercel.json rewrite でいずれも本ファイルへ転送):
   GET /payment/api/admin-charge-month-end-preview          → __ep=preview
   GET /payment/api/admin-charge-history?month=&type=       → __ep=history
+  GET /payment/api/admin-charge-ledger?months=6            → __ep=ledger
+    (月別×生徒の引き落とし台帳。charge:history 等の既存KVを読むだけの read-only 集計)
 
 振り分けは Vercel rewrite の挙動に依存しないよう3層フォールバック:
-  (1) destination に埋め込んだ ?__ep=preview / ?__ep=history (一次)
-  (2) self.path に history / preview(month-end) が含まれるか (source保持時)
-  (3) クエリに month/type/include_audit/audit_rid があれば history・無ければ preview
+  (1) destination に埋め込んだ ?__ep=preview / ?__ep=history / ?__ep=ledger (一次)
+  (2) self.path に ledger / history / preview(month-end) が含まれるか (source保持時)
+  (3) クエリに months があれば ledger・month/type/include_audit/audit_rid があれば history・無ければ preview
 
 認証: X-Admin-Password (CHAT_ADMIN_PASSWORD) — 旧2ファイルと同一。
 レスポンスJSON / ステータスコードは旧2ファイルと完全に同一。
@@ -218,6 +220,13 @@ def _handle_preview(handler):
             total_amount += monthly_fee
             ready_count += 1
 
+        # カード登録完了日時 (webhook が reg:completed に保存する completed_at)。
+        # 「月末一斉実行のあとに登録した人」を UI で見分けるために返す。旧レコードは 0。
+        try:
+            registered_at = int(r.get("completed_at") or 0)
+        except Exception:
+            registered_at = 0
+
         customers.append({
             "registrationId": rid,
             "customerId": customer_id,
@@ -233,7 +242,22 @@ def _handle_preview(handler):
             "ready": ready,
             "alreadyChargedThisMonth": already_charged,
             "issue": issue,
+            "registeredAt": registered_at,
         })
+
+    # 🚨 第二ゲート (2026-07-02 review): charge:done は TTL 60日・charge:history は 1年。
+    # 前倒し請求から60日超で done だけ失効すると「実は請求済みなのに未請求」と表示され、
+    # 未請求バナー/個別請求ボタンが二重請求へ誤誘導する。done 不在でも成功 history が
+    # あれば「請求済み」に倒す (MGET 1回・read-only。execute 側の課金ロジックには触れない)。
+    unc = [c for c in customers if c["ready"] and not c["alreadyChargedThisMonth"]]
+    if unc:
+        hist_recs = _mget_records([f"charge:history:{c['registrationId']}:{month_str}" for c in unc])
+        for c, rec in zip(unc, hist_recs):
+            if rec:
+                c["alreadyChargedThisMonth"] = True
+                already_charged_count += 1
+                ready_count -= 1
+                total_amount -= c["monthlyFee"]
 
     _json(handler, 200, {
         "month": month_str,                # 請求対象月 (今月 or 翌月) = billing_month
@@ -367,22 +391,195 @@ def _handle_history(handler, params):
     _json(handler, 200, result)
 
 
+# ===== 台帳 (月別 × 生徒のカード引き落とし状況・2026-07-02 塾長要望) =====
+# 「誰の何月分をカードから引き落とし済みか」を1リクエストで返す read-only 集計。
+# 既存の charge:history / charge:failed / charge:requires_action / charge:uncertain と
+# spot:history (講習などの単発課金) を読むだけで、書き込み・課金は一切行わない。
+
+# 並び順 = 切り詰め (GET_CAP) 時に生き残る優先度。要対応の uncertain/requires_action を先頭に置く
+# (末尾から切り捨てるため、溢れても「要対応が消えて健全に見える」事故を防ぐ・2026-07-02 review)。
+_LEDGER_STATUS_NAMESPACES = (
+    ("uncertain", "charge:uncertain"),
+    ("requires_action", "charge:requires_action"),
+    ("failed", "charge:failed"),
+    ("success", "charge:history"),
+)
+
+
+def _mget_records(keys):
+    """MGET で一括取得し、keys と同順の [dict|None] を返す。
+    逐次 GET は 1件=1HTTPS往復で件数比例に遅くなり Vercel 関数 timeout (10s) を踏むため、
+    台帳系の record 取得は必ずこれを使う (2026-07-02 review P1)。read-only。"""
+    out = []
+    CHUNK = 400  # 1 コールの応答サイズを抑える
+    for i in range(0, len(keys), CHUNK):
+        chunk = keys[i:i + CHUNK]
+        resp = _redis("MGET", *chunk)
+        vals = resp.get("result") if (resp and isinstance(resp, dict)) else None
+        if not isinstance(vals, list) or len(vals) != len(chunk):
+            vals = [None] * len(chunk)
+        for s in vals:
+            if not s:
+                out.append(None)
+                continue
+            try:
+                out.append(json.loads(s))
+            except Exception:
+                out.append(None)
+    return out
+
+
+def _index_entries(index_key):
+    """ZRANGE 全件 → [(rid, month)] に分解。entry は "{rid}:{YYYY-MM}" 形式のみ採用
+    (rid 自体に ':' が含まれても月は末尾固定なので rpartition で安全に分離できる)。"""
+    zr = _redis("ZRANGE", index_key, "0", "-1", "REV")
+    if not zr or not isinstance(zr, dict):
+        return []
+    items = zr.get("result") or []
+    if not isinstance(items, list):
+        return []
+    out = []
+    for entry in items:
+        if not isinstance(entry, str) or ":" not in entry:
+            continue
+        rid, _, month = entry.rpartition(":")
+        if (rid and len(month) == 7 and month[4] == "-"
+                and month[:4].isdigit() and month[5:].isdigit()):
+            out.append((rid, month))
+    return out
+
+
+def _month_jst_from_ts(ts):
+    """epoch 秒 → JST の 'YYYY-MM' (不正値は空文字)。spot 課金の月割り当てに使う。"""
+    try:
+        JST = timezone(timedelta(hours=9))
+        return datetime.fromtimestamp(int(ts), JST).strftime("%Y-%m")
+    except Exception:
+        return ""
+
+
+def _handle_ledger(handler, params):
+    """月別 × 生徒の引き落とし台帳。対象月 = 翌月 (前倒し請求分) + 今月 + 直近 (months-1) ヶ月。"""
+    try:
+        n = int((params.get("months", ["6"])[0] or "6").strip())
+    except Exception:
+        n = 6
+    n = max(1, min(n, 12))
+    current = _current_month_jst()
+    next_month = _add_month(current, 1)
+    months = [next_month] + [_add_month(current, -i) for i in range(0, n)]
+    month_set = set(months)
+
+    truncated = False
+    entries = []
+
+    # --- 月謝の月次引き落とし (4状態) ---
+    # index の ZRANGE は namespace ごとに1回だけ (月ごとに再取得しない)。
+    pairs = []  # (status, namespace, rid, month)
+    for status, ns in _LEDGER_STATUS_NAMESPACES:
+        for rid, month in _index_entries(f"{ns}:index"):
+            if month in month_set:
+                pairs.append((status, ns, rid, month))
+    GET_CAP = 2000  # 応答サイズの上限ガード (取得は MGET バッチなので時間はかからない)
+    if len(pairs) > GET_CAP:
+        pairs = pairs[:GET_CAP]
+        truncated = True
+    monthly_records = _mget_records([f"{ns}:{rid}:{month}" for _, ns, rid, month in pairs])
+    for (status, ns, rid, month), r in zip(pairs, monthly_records):
+        if not r:
+            continue  # TTL 切れ (成功 history は1年保存) は index に残っていても表示しない
+        try:
+            amount = int(r.get("amount", 0) or 0)
+        except Exception:
+            amount = 0
+        try:
+            at = int(r.get("charged_at") or r.get("failed_at") or r.get("noted_at") or 0)
+        except Exception:
+            at = 0
+        entries.append({
+            "kind": "monthly",
+            "status": status,
+            "month": month,
+            "registrationId": rid,
+            "studentName": r.get("student_name") or r.get("studentName") or "",
+            "amount": amount,
+            "chargedAt": at,
+            "paymentIntentId": r.get("payment_intent_id", ""),
+        })
+
+    # --- 講習などの単発スポット課金 (spot:history:{rid}:{idem_token}) ---
+    # index entry に月は無いので record の at (epoch) から JST 月を導出して割り当てる。
+    spot_zr = _redis("ZRANGE", "spot:history:index", "0", "-1", "REV")
+    spot_items = []
+    if spot_zr and isinstance(spot_zr, dict) and isinstance(spot_zr.get("result"), list):
+        spot_items = spot_zr["result"]
+    SPOT_CAP = 300  # 新しい順に上限まで (古い spot が多い場合のみ切り捨て)
+    if len(spot_items) > SPOT_CAP:
+        spot_items = spot_items[:SPOT_CAP]
+        truncated = True
+    spot_pairs = []
+    for entry in spot_items:
+        if not isinstance(entry, str) or ":" not in entry:
+            continue
+        rid, _, token = entry.rpartition(":")
+        spot_pairs.append((rid, token))
+    spot_records = _mget_records([f"spot:history:{rid}:{token}" for rid, token in spot_pairs])
+    for (rid, token), rec in zip(spot_pairs, spot_records):
+        if not rec:
+            continue
+        month = _month_jst_from_ts(rec.get("at") or 0)
+        if month not in month_set:
+            continue
+        try:
+            amount = int(rec.get("amount", 0) or 0)
+        except Exception:
+            amount = 0
+        try:
+            at = int(rec.get("at") or 0)
+        except Exception:
+            at = 0
+        entries.append({
+            "kind": "spot",
+            "status": rec.get("status", ""),
+            "month": month,
+            "registrationId": rid,
+            "studentName": rec.get("student_name") or "",
+            "amount": amount,
+            "chargedAt": at,
+            "label": rec.get("label", ""),
+            "paymentIntentId": rec.get("payment_intent_id", ""),
+        })
+
+    _json(handler, 200, {
+        "months": months,            # [翌月, 今月, 先月, ...] — 並べ替えはフロント側
+        "current_month": current,
+        "next_month": next_month,
+        "fetched_at": int(time.time()),
+        "entries": entries,
+        "truncated": truncated,
+    })
+
+
 def _route(self):
-    """preview か history かを Vercel rewrite 挙動に依らず3層で判定。"""
+    """preview / history / ledger を Vercel rewrite 挙動に依らず3層で判定。"""
     parsed = urlparse(self.path)
     params = parse_qs(parsed.query)
     # (1) destination に埋め込んだ識別子 (一次・最も確実)
     ep = (params.get("__ep", [""])[0] or "").strip().lower()
     # (2) self.path が source を保持している場合のフォールバック
-    if ep not in ("preview", "history"):
+    if ep not in ("preview", "history", "ledger"):
         p = (parsed.path or "").lower()
-        if "history" in p:
+        if "ledger" in p:
+            ep = "ledger"
+        elif "history" in p:
             ep = "history"
         elif "preview" in p or "month-end" in p:
             ep = "preview"
-    # (3) クエリ特徴での最終フォールバック (history は常に month/type 付き・preview は無)
-    if ep not in ("preview", "history"):
-        if any(k in params for k in ("month", "type", "include_audit", "audit_rid")):
+    # (3) クエリ特徴での最終フォールバック (ledger は months・history は month/type 付き・preview は無)
+    if ep not in ("preview", "history", "ledger"):
+        if "months" in params:
+            ep = "ledger"
+        elif any(k in params for k in ("month", "type", "include_audit", "audit_rid")):
             ep = "history"
         else:
             ep = "preview"
@@ -398,6 +595,8 @@ class handler(BaseHTTPRequestHandler):
             ep, params = _route(self)
             if ep == "history":
                 _handle_history(self, params)
+            elif ep == "ledger":
+                _handle_ledger(self, params)
             else:
                 _handle_preview(self)
         except Exception as e:
