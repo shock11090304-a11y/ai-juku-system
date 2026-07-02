@@ -15,26 +15,39 @@
   weekly_report      … 週次レポートが全生徒スキップ(集計ソース断絶で無音no-op)
   monitor_storm      … 監視 monitor_alert の誤発報ストーム(本物のcriticalが埋もれる)
   scheduler_live     … in-process スケジューラの最終実行時刻(停止検知)
+  stripe_webhook_events … Stripe webhook endpoint の購読イベント欠落(コードにハンドラを
+                       追加しても Dashboard 未購読だと機能が無音で不成立:
+                       例 payment_intent.canceled 欠落 → 台帳の⚠️/🔐が残り続ける)
 
 使い方:
   # 静的/APIチェックのみ(DB不要・どこでも可)
-  python3 scripts/health_check/prod_healthcheck.py
+  python3 scripts/health_check/prod_healthcheck.py --static-only
 
   # DBチェックも含める(本番Postgresへ read-only 接続)
   railway run -s Postgres python3 scripts/health_check/prod_healthcheck.py
+
+  # Stripe webhook 購読検査も含める (opt-in: STRIPE_SECRET_KEY があるときだけ・READ-ONLY GET)
+  # ※通常の `railway run -s Postgres` の env に Stripe 鍵は無い → その場合は明示スキップ。
+  #   鍵は Railway ai-juku-api サービスの env にある (sk_live)。履歴に残さない形で併用可:
+  STRIPE_SECRET_KEY="$(railway variables -s ai-juku-api --kv | sed -n 's/^STRIPE_SECRET_KEY=//p')" \
+      railway run -s Postgres python3 scripts/health_check/prod_healthcheck.py
 
   # 静的チェックを飛ばして DB のみ / JSON出力
   ... prod_healthcheck.py --db-only
   ... prod_healthcheck.py --json
 
 終了コード: FAIL が1件でもあれば 1、WARN のみ/全PASS なら 0。CI/cron から使える。
+※鍵なしの通常運用では stripe_webhook_events が常に WARN 1件 (スキップ表示) 残る。
+  CI/cron の判定は必ず終了コード/FAIL 件数で行うこと (WARN>0 で発報すると常時鳴る)。
 """
 import argparse
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -46,6 +59,24 @@ FRESHNESS_FILES = [
     "app.js", "ceo.html", "mypage.html", "dojo-drill.html",
     "enrollment.html", "class.html", "checkout.js",
 ]
+# Stripe webhook endpoint (api/stripe-webhook.py) が Dashboard 側で購読しているべきイベント。
+# 購読が欠けているとハンドラは一切呼ばれず機能が無音で不成立になる
+# (例: payment_intent.canceled 欠落 → PIキャンセルしても台帳の⚠️/🔐が残り続ける)。
+# WEBHOOK_PATH は直接経路 /api/stripe-webhook。公式登録URLの /payment/api/stripe-webhook は
+# vercel.json rewrite でここに流れるだけなので、どちらの形で登録されていても同一機能=両方正とする。
+WEBHOOK_PATH = "/api/stripe-webhook"
+WEBHOOK_HOST_HINT = "trillion-ai-juku.com"
+REQUIRED_WEBHOOK_EVENTS = {
+    "checkout.session.completed",
+    "invoice.payment_failed",
+    "invoice.payment_succeeded",
+    "customer.subscription.deleted",
+    "payment_intent.succeeded",
+    "payment_intent.payment_failed",
+    # df439e6 (要確認PI残骸の掃除ハンドラ) 用。ハンドラのマージ前から購読状態を監視したいので
+    # 基準に含める (ローカルの HANDLERS に無い間は「購読予定」として区別表示される)。
+    "payment_intent.canceled",
+}
 
 PASS, WARN, FAIL = "PASS", "WARN", "FAIL"
 results = []  # (section, level, message)
@@ -112,6 +143,153 @@ def check_vercel_cap():
             (r.stdout.strip().splitlines() or ["(no output)"])[-1])
     except Exception as e:
         add("vercel_cap", WARN, f"実行失敗 {type(e).__name__}: {e}")
+
+
+def _webhook_required_events():
+    """必須イベント = 固定の基準セット ∪ api/stripe-webhook.py の HANDLERS 登録イベント。
+    今後ハンドラを足したのに基準セットの更新を忘れても、自動で検査対象に入る。
+    返り値 (required, handlers): handlers はこの checkout のコードにハンドラが実在するもの
+    (欠落メッセージで「稼働中の未購読」と「購読予定(未デプロイ)」を区別するために分けて返す)。
+    ファイルが読めない/形が変わった場合は handlers=空 で基準セットのみ検査 (縮退・検査は止めない)。"""
+    handlers = set()
+    try:
+        with open(os.path.join(REPO, "api", "stripe-webhook.py"), encoding="utf-8") as f:
+            src = f.read()
+        m = re.search(r"HANDLERS\s*=\s*\{(.*?)\}", src, re.DOTALL)
+        if m:
+            block = re.sub(r"#[^\n]*", "", m.group(1))  # コメントアウト行を実ハンドラに数えない
+            handlers = set(re.findall(
+                r'''['"]([a-z0-9_]+(?:\.[a-z0-9_]+)+)['"]\s*:''', block))
+    except Exception:
+        handlers = set()
+    return set(REQUIRED_WEBHOOK_EVENTS) | handlers, handlers
+
+
+def _analyze_webhook_endpoints(payload, key_mode):
+    """webhook_endpoints 一覧の解析部 (check_stripe_webhook_events から分離)。
+    endpoint 毎に個別判定する: 署名 secret (STRIPE_WEBHOOK_SECRET) は1本しか合わないため、
+    複数 endpoint の enabled_events を union すると「片方にしか無いイベントは実際は401で
+    捨てられているのに購読済み扱い」の偽PASSになる。"""
+    def _norm(u):
+        return (u or "").strip().rstrip("/").lower()
+
+    if payload.get("has_more"):
+        add("stripe_webhook_events", WARN,
+            "endpoint 一覧が100件超でページ分割 — 2ページ目以降の対象を未登録と誤判定し得る")
+    endpoints = payload.get("data") or []
+    matches = [ep for ep in endpoints
+               if WEBHOOK_HOST_HINT in _norm(ep.get("url"))
+               and _norm(ep.get("url")).endswith(WEBHOOK_PATH)]
+    if not matches:
+        others = sorted(_norm(ep.get("url")) for ep in endpoints)
+        shown = (", ".join(others[:4]) + ("…" if len(others) > 4 else "")) if others else "(0件)"
+        add("stripe_webhook_events", WARN,
+            f"webhook endpoint (…{WEBHOOK_PATH}) が Stripe [{key_mode}] に未登録 "
+            f"= 決済 webhook 全イベント未達の恐れ。Dashboard→Developers→Webhooks で登録要 "
+            f"[登録済endpoint: {shown}]")
+        return
+    enabled = [ep for ep in matches if (ep.get("status") or "") == "enabled"]
+    if not enabled:
+        add("stripe_webhook_events", WARN,
+            f"webhook endpoint はあるが全て disabled ({len(matches)}件) [{key_mode}] = イベント未達。"
+            f"Dashboard→Developers→Webhooks で有効化要")
+        return
+    if len(enabled) > 1:
+        add("stripe_webhook_events", WARN,
+            f"該当 endpoint が {len(enabled)}件 enabled — 署名 secret (STRIPE_WEBHOOK_SECRET) は"
+            f"1本しか合わないため他方への配信は401で捨てられる (そちらにしか無い購読は実質無効)。"
+            f"endpoint 毎に個別判定する")
+
+    required, handlers = _webhook_required_events()
+    multi = len(enabled) > 1
+    for ep in sorted(enabled, key=lambda e: (_norm(e.get("url")), str(e.get("id") or ""))):
+        url = _norm(ep.get("url"))
+        label = (f"{url} ({ep.get('id') or '?'}) [{key_mode}]" if multi
+                 else f"{url} [{key_mode}]")
+        events = set(ep.get("enabled_events") or [])
+        wildcard = "*" in events
+        if wildcard:
+            add("stripe_webhook_events", PASS,
+                f"{label}: enabled_events=['*'] (全イベント購読)")
+        else:
+            missing = sorted(required - events)
+            if not missing:
+                add("stripe_webhook_events", PASS,
+                    f"{label}: 必須{len(required)}イベントすべて購読済み")
+            else:
+                # ラベルはこの checkout のコード基準 (デプロイ済みとは限らない)。購読追加の
+                # 判断は必ず「本番デプロイ反映確認後」— 末尾の★注意が両群に効く
+                miss_impl = [e for e in missing if e in handlers]
+                miss_pending = [e for e in missing if e not in handlers]
+                parts = []
+                if miss_impl:
+                    parts.append(f"ハンドラ実装済み(この checkout 基準)の未購読 {miss_impl} "
+                                 f"= 機能が無音で不成立")
+                if miss_pending:
+                    parts.append(f"購読予定 {miss_pending} (ハンドラがこの checkout に無い"
+                                 f"=未マージ/未デプロイの可能性)")
+                add("stripe_webhook_events", WARN,
+                    f"{label}: 購読漏れ{len(missing)}件 — " + " / ".join(parts) +
+                    "。追加は Dashboard→Developers→Webhooks。"
+                    "★そのハンドラの本番デプロイ反映を確認してから購読追加 "
+                    "(逆順は webhook:seen 24h 焼き付きで Resend も duplicate 扱い)")
+        # 逆向きの盲点: 実際に配信される required イベント (wildcard は全 required・
+        # 通常は購読済み ∩ required) のうちハンドラがこの checkout に無いものは、本番も
+        # 同状態なら受信しても処理されず webhook:seen (24h) に焼き付いている
+        delivered = required if wildcard else (events & required)
+        ghost = sorted(delivered - handlers)
+        if ghost:
+            add("stripe_webhook_events", WARN,
+                f"{label}: 購読済みだがハンドラがこの checkout に無い {ghost} "
+                f"= 本番も同状態なら受信イベントが処理されず焼き付き進行中 "
+                f"(checkout が本番より古いだけなら pull で解消・そうでなければ要ハンドラdeploy)")
+
+
+def check_stripe_webhook_events():
+    """Stripe Dashboard の webhook endpoint が必須イベントを購読しているか (READ-ONLY GET)。
+    opt-in: STRIPE_SECRET_KEY が env にあるときだけ検査する
+    (通常運用の `railway run -s Postgres` の env に Stripe 鍵は無い → 明示スキップ)。
+    このチェックはどの分岐でも FAIL を出さない (欠落=WARN の設計・exit code を変えない)。"""
+    key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+    if not key:
+        add("stripe_webhook_events", WARN,
+            "スキップ (鍵なし): STRIPE_SECRET_KEY 未設定。付与すると Stripe webhook の"
+            "購読イベント欠落を検査 (鍵を履歴に残さない実行例は冒頭 docstring / README.md)")
+        return
+    try:
+        req = urllib.request.Request(
+            "https://api.stripe.com/v1/webhook_endpoints?limit=100",
+            headers={"Authorization": f"Bearer {key}",
+                     "User-Agent": "ai-juku-healthcheck/1.0"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            payload = json.loads(r.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        detail = ""
+        try:
+            detail = (json.loads(e.read().decode("utf-8"))
+                      .get("error", {}).get("message", "") or "")[:120]
+        except Exception:
+            pass
+        add("stripe_webhook_events", WARN,
+            f"Stripe API 照会失敗 HTTP {e.code} {detail} (鍵の有効性/権限を確認)")
+        return
+    except Exception as e:
+        add("stripe_webhook_events", WARN, f"Stripe API 照会失敗: {type(e).__name__}: {e}")
+        return
+
+    # 鍵のモード (sk_live_/rk_live_/sk_test_/rk_test_)。test 鍵だと test 環境の endpoint しか
+    # 見えず本番 (live) の購読は未検証のままなので明示する。
+    parts = key.split("_")
+    key_mode = parts[1] if len(parts) >= 3 and parts[1] in ("live", "test") else "?"
+    if key_mode != "live":
+        add("stripe_webhook_events", WARN,
+            f"鍵が {key_mode} mode — 本番 (live) の購読は未検証 (sk_live_/rk_live_ の鍵で実行を)")
+    try:
+        _analyze_webhook_endpoints(payload, key_mode)
+    except Exception as e:
+        # 想定外の応答形でもヘルスチェック全体を落とさない (このチェックは常に WARN 止まり)
+        add("stripe_webhook_events", WARN,
+            f"Stripe 応答の解析に失敗: {type(e).__name__}: {e}")
 
 
 # ---------------------------------------------------------------- DB 系
@@ -336,6 +514,7 @@ def main():
         check_api_health()
         check_deploy_freshness()
         check_vercel_cap()
+        check_stripe_webhook_events()
     if not args.static_only:
         run_db_checks()
 

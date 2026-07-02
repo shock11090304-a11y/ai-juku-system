@@ -15,9 +15,16 @@ railway run -s Postgres python3 scripts/health_check/prod_healthcheck.py
 
 # JSON出力(CI/cronで集計する場合)
 railway run -s Postgres python3 scripts/health_check/prod_healthcheck.py --json
+
+# Stripe webhook 購読検査も含める(opt-in: STRIPE_SECRET_KEY があるときだけ・READ-ONLY GET)
+# 鍵が無い場合は「スキップ (鍵なし)」の WARN 1行で明示される(失敗にはならない)
+STRIPE_SECRET_KEY="$(railway variables -s ai-juku-api --kv | sed -n 's/^STRIPE_SECRET_KEY=//p')" \
+    railway run -s Postgres python3 scripts/health_check/prod_healthcheck.py
 ```
 
 FAIL が1件でもあれば終了コード 1(WARN のみ/全PASS は 0)。
+鍵なしの通常運用では `stripe_webhook_events` が常に WARN 1件(スキップ表示)残るので、
+CI/cron の判定は**終了コード / FAIL 件数**で行うこと(`WARN>0` で発報すると常時鳴る)。
 
 ## チェック項目と、対応する過去のバグ
 
@@ -33,6 +40,7 @@ FAIL が1件でもあれば終了コード 1(WARN のみ/全PASS は 0)。
 | `weekly_report` | 週次レポートが全生徒スキップでないか | 集計ソース断絶で無音no-op(一度も配信されず) |
 | `monitor_storm` | 監視アラートの誤発報ストーム | login_rate 誤発報で本物の critical が埋没 |
 | `scheduler_live` | in-process スケジューラの最終実行 | cron 停止の検知 |
+| `stripe_webhook_events` | Stripe webhook endpoint の必須イベント購読(opt-in: STRIPE_SECRET_KEY がある時だけ) | LIVE endpoint に payment_intent.succeeded/payment_failed/canceled が未購読で、3DS完了・キャンセル等の自動反映ハンドラが本番で無音不発 (2026-07-02 実測) |
 
 ## 定期実行(任意)
 
