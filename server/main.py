@@ -27129,10 +27129,8 @@ def founders_count(public: bool = False):
     旧: ai/hybrid/intensive）を対象。トライアル中も status='paid' が立つため、
     実際に枠を占有している全員をカウントする。
 
-    public=1 (顧客向け): 動的計算カモフラージュ値を返す (FOMO設計)。
-      実申込が増えるほど + 経過日数が増えるほど 残枠表示が縮小する。
-      env で BASE/MULTIPLIER/DAILY_GROWTH/MIN_REMAINING を調整可能。
-    public未指定 (内部用): 実数値を返す (CEOダッシュボード用)。"""
+    🔷 2026-07-02 塾長方針: 偽装カモフラージュを廃止。public 引数に関わらず実申込数
+    (実残枠 = FOUNDER_LIMIT - 実paid)を返す誠実表示に統一 (public 引数は後方互換で受けるだけ)。"""
     conn = db()
     c = conn.cursor()
     try:

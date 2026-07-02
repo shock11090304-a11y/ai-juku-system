@@ -725,7 +725,7 @@
     <!-- 創設メンバー残枠 (実数値 vs 顧客表示値) -->
     <section id="founderSeatsSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
-        <h2 style="font-size:1.15rem;color:#fbbf24;margin:0;">🎁 創設メンバー 残り枠 (内部 vs 公開)</h2>
+        <h2 style="font-size:1.15rem;color:#fbbf24;margin:0;">🎁 創設メンバー 残り枠 (実数・偽装表示は廃止)</h2>
         <span id="foundersUpdated" style="font-size:0.7rem;color:#71717a;">--</span>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.7rem;">
@@ -734,17 +734,10 @@
           <div style="font-size:1.8rem;font-weight:900;color:#34d399;"><span id="foundersRealRemaining">--</span><span style="font-size:0.9rem;color:#71717a;"> / 50</span></div>
           <div style="font-size:0.7rem;color:#71717a;">実申込: <span id="foundersRealTaken">--</span>名</div>
         </div>
-        <div style="background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
-          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">👁 顧客に見せている残枠</div>
-          <div style="font-size:1.8rem;font-weight:900;color:#fbbf24;"><span id="foundersPublicRemaining">--</span><span style="font-size:0.9rem;color:#71717a;"> / 50</span></div>
-          <div style="font-size:0.7rem;color:#71717a;">表示申込: <span id="foundersPublicTaken">--</span>名 (オフセット +<span id="foundersOffset">--</span>)</div>
-        </div>
-        <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.85rem;text-align:center;">
-          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">⚙️ カモフラージュ設定</div>
-          <div style="font-size:0.85rem;color:#e4e4e7;line-height:1.5;">
-            Railway env<br>
-            <code style="font-size:0.72rem;color:#a78bfa;">FOUNDER_PUBLIC_FAKE_TAKEN</code>
-          </div>
+        <div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">✅ 顧客への表示</div>
+          <div style="font-size:1rem;font-weight:800;color:#34d399;line-height:1.5;">実数をそのまま表示</div>
+          <div style="font-size:0.7rem;color:#71717a;margin-top:0.2rem;">偽装カウンターは廃止 (2026-07-02)。lp等も実残枠を表示します。</div>
         </div>
       </div>
     </section>
@@ -3421,23 +3414,12 @@
       try {
         const BACKEND = (window.location.hostname === 'localhost' && window.location.port === '8090')
           ? 'http://localhost:8000' : window.location.origin;
-        const [realRes, publicRes] = await Promise.all([
-          fetch(`${BACKEND}/api/founders/count`),
-          fetch(`${BACKEND}/api/founders/count?public=1`),
-        ]);
+        // 🔷 2026-07-02 偽装カウンター廃止: public/内部とも実数なので実残枠のみ取得。
+        const realRes = await fetch(`${BACKEND}/api/founders/count`);
         if (realRes.ok) {
           const r = await realRes.json();
           document.getElementById('foundersRealRemaining').textContent = r.remaining;
           document.getElementById('foundersRealTaken').textContent = r.taken;
-        }
-        if (publicRes.ok) {
-          const p = await publicRes.json();
-          document.getElementById('foundersPublicRemaining').textContent = p.remaining;
-          document.getElementById('foundersPublicTaken').textContent = p.taken;
-          // オフセット = public.taken - real.taken (後で再計算)
-          const realTakenEl = document.getElementById('foundersRealTaken');
-          const realTaken = parseInt(realTakenEl.textContent || '0', 10) || 0;
-          document.getElementById('foundersOffset').textContent = p.taken - realTaken;
         }
         const now = new Date();
         const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
