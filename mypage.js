@@ -4964,6 +4964,30 @@ async function initCoachNextMove(student, ajMode, isPreview) {
 
   const sid = student ? student.id : 'guest';
 
+  // 🔰 2026-07-02 「今日の1問」開始 (超低摩擦オンボーディング・③.5 と ⑤ の一手で共用)。
+  //   1問だけの grammar_drill を発行し、既存の解答エリア(grammarDrillSection)をその場で開く。
+  //   10問診断より入口を軽くして「最初の1問に辿り着けず離脱」を防ぐのが狙い。
+  async function startTodayQuestion(btn) {
+    // 🛡️ 二重クリックガード (<a> は disabled 不可のため dataset + pointerEvents で再入防止)
+    if (btn && btn.dataset.busy === '1') return;
+    const _orig = btn ? btn.textContent : '';
+    try {
+      if (btn) { btn.dataset.busy = '1'; btn.style.pointerEvents = 'none'; btn.style.opacity = '0.6'; btn.textContent = '⏳ 問題を準備中...'; }
+      const r = await slApiFetch('/api/student/today-question/start', { method: 'POST', body: '{}' });
+      const sec2 = document.getElementById('grammarDrillSection');
+      if (sec2) { sec2.style.display = 'block'; sec2.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      if (r && r.drill_id && typeof window._gdOpenDrill === 'function') {
+        window._gdOpenDrill(r.drill_id);
+      } else if (typeof window._gdReloadList === 'function') {
+        window._gdReloadList();
+      }
+    } catch (e) {
+      alert((e && e.message) ? String(e.message) : '問題の準備に失敗しました。少し待ってからもう一度お試しください。');
+    } finally {
+      if (btn) { btn.dataset.busy = ''; btn.style.pointerEvents = ''; btn.style.opacity = ''; btn.textContent = _orig || '▶ やってみる'; }
+    }
+  }
+
   // ① 塾長からの宿題ドリル (未完了があれば最優先)。やりかけのミニ診断もここで拾う
   let _drillItems = [];
   try {
@@ -5062,40 +5086,16 @@ async function initCoachNextMove(student, ajMode, isPreview) {
     } catch (_) { /* noop */ }
   }
 
-  // ③.5 🔰 ミニ診断 (2026-06-11 塾長指示「自走に必要なもの③」): 弱点データが無い =
-  // AI がまだその子を知らない状態なら、10 問の実力チェックを最初の一手にする。
-  // 提出すると弱点が即時集計され、翌日からの一手・プリント推薦が個別化される。
-  // 診断ドリルが既にある (open はルール①で拾済み / completed は再診断しない) 場合は出さない。
+  // ③.5 🔰 今日の1問 (2026-07-02 塾長方針: オンボーディング最優先)。弱点データがまだ無い =
+  // AI がまだその子を知らない状態では、10問診断より「1問だけ」を最初の一手にして着手の壁を最小化する。
+  // 1問でも解けば question_attempts に記録され、翌日からの一手・弱点集計が個別化していく。
   if (ajMode === 'kosei' && student && student.id != null) {
-    const _hasDiag = _drillItems.some(function (it) { return it && it.unit === '診断'; });
-    if (!_hasDiag) {
-      setMove({
-        title: '🔰 はじめての実力チェック（10問・約3分）',
-        reason: '10問だけ解くと、AI があなたの苦手な単元を見つけて、明日からの「一手」をあなた専用にします。',
-        onClick: async function (btn) {
-          // 🛡️ 二重クリックガード (review B1): <a> は disabled 不可のため dataset + pointerEvents で再入防止
-          if (btn && btn.dataset.busy === '1') return;
-          const _orig = btn ? btn.textContent : '';
-          try {
-            if (btn) { btn.dataset.busy = '1'; btn.style.pointerEvents = 'none'; btn.style.opacity = '0.6'; btn.textContent = '⏳ 問題を準備中...'; }
-            const r = await slApiFetch('/api/student/diagnostic/start', { method: 'POST', body: '{}' });
-            const sec2 = document.getElementById('grammarDrillSection');
-            if (sec2) { sec2.style.display = 'block'; sec2.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-            if (r && r.drill_id && typeof window._gdOpenDrill === 'function') {
-              window._gdOpenDrill(r.drill_id);
-            } else if (typeof window._gdReloadList === 'function') {
-              window._gdReloadList();
-            }
-          } catch (e) {
-            // サーバの detail (例: 在庫不足は塾長連絡案内) があればそれを優先表示
-            alert((e && e.message) ? String(e.message) : '診断の準備に失敗しました。少し待ってからもう一度お試しください。');
-          } finally {
-            if (btn) { btn.dataset.busy = ''; btn.style.pointerEvents = ''; btn.style.opacity = ''; btn.textContent = _orig || '▶ やってみる'; }
-          }
-        },
-      });
-      return;
-    }
+    setMove({
+      title: '📝 今日の1問だけ解こう（約30秒）',
+      reason: 'まずは1問だけ。ここから始めれば、AI があなたの苦手を見つけて、明日からの「一手」をあなた専用にします。',
+      onClick: startTodayQuestion,
+    });
+    return;
   }
 
   // ④ 学習記録 (対象プランのみ・データ上いちばん多い「最初の一歩」)
@@ -5119,10 +5119,11 @@ async function initCoachNextMove(student, ajMode, isPreview) {
       href: 'mock-exam.html',
     });
   } else {
+    // 🔰 2026-07-02: 別ページへ遷移させず、その場で「今日の1問」に着手させる(着手の壁を最小化)。
     setMove({
-      title: '英語の基礎問題に挑戦してみよう（共通テストレベル）',
-      reason: '大学名はまだ選ばなくて OK。基礎〜標準レベルから AI が出題します。',
-      href: 'english-exam.html?focus=daigaku&grade=kyotsu',
+      title: '📝 今日の1問だけ解こう（約30秒）',
+      reason: '大学名はまだ選ばなくて OK。まず1問だけ、ここから始めよう。基礎〜標準レベルから出題します。',
+      onClick: startTodayQuestion,
     });
   }
 }

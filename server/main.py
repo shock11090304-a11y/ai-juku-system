@@ -38661,6 +38661,80 @@ def student_diagnostic_start(request: Request, authorization: Optional[str] = He
         conn.close()
 
 
+@app.post("/api/student/today-question/start")
+def student_today_question_start(request: Request, authorization: Optional[str] = Header(None)):
+    """🔰 2026-07-02 塾長方針(オンボーディング最優先): 「今日の1問」= 超低摩擦の最初の1歩。
+    登録しても最初の1問に辿り着けず離脱する層(実データで過半)を activation させるため、
+    1問だけの grammar_drill を発行して既存のドリル提出/採点/記録フローに乗せる
+    (=1問解けば question_attempts に記録され弱点集計にも入る)。10問診断より入口を軽くする狙い。
+    open の今日の1問があれば再利用・完了後は習慣化のため新しい1問を再発行する。"""
+    # 🛡️ 生徒トークン単位のレート制限 (校内NAT/Vercel共有egressで複数生徒が同一IPを共有しても
+    #   誤って 429 を出さないため、純IPではなく caller(トークン)基準。2026-05-26 audit M5 の規約に合わせる)
+    _check_rate_limit_caller(request, authorization, bucket="today_question_start", limit=20, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 冪等: 未完了の「今日の1問」があれば再利用 (二重発行を防ぐ)
+        c.execute(
+            "SELECT a.drill_id FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
+            "WHERE a.student_id = ? AND d.created_by = 'today_question' AND a.status = 'open' "
+            "ORDER BY a.assigned_at DESC LIMIT 1",
+            (student["id"],),
+        )
+        ex = c.fetchone()
+        if ex:
+            return {"ok": True, "drill_id": (ex["drill_id"] if hasattr(ex, "keys") else ex[0]), "reused": True}
+        # standard/english から1問 (最も間口の広い基礎〜標準)。無ければ任意レベルの english。
+        c.execute(
+            "SELECT id FROM grammar_questions WHERE subject = 'english' AND level = 'standard' AND active = 1 "
+            "ORDER BY RANDOM() LIMIT 1"
+        )
+        r = c.fetchone()
+        if not r:
+            c.execute("SELECT id FROM grammar_questions WHERE subject = 'english' AND active = 1 ORDER BY RANDOM() LIMIT 1")
+            r = c.fetchone()
+        if not r:
+            raise HTTPException(status_code=503, detail="出題できる問題がありません (塾長に連絡してください)")
+        qid = r["id"] if hasattr(r, "keys") else r[0]
+        c.execute(
+            "INSERT INTO grammar_drills (subject, title, unit, level, question_ids, created_by) "
+            "VALUES ('english', '📝 今日の1問', '今日の1問', 'standard', ?, 'today_question') RETURNING id",
+            (json.dumps([qid]),),
+        )
+        dr = c.fetchone()
+        drill_id = (dr["id"] if hasattr(dr, "keys") else dr[0]) if dr else None
+        if not drill_id:
+            conn.rollback()
+            raise HTTPException(status_code=500, detail="今日の1問の作成に失敗しました")
+        c.execute(
+            "INSERT INTO grammar_drill_assignments (drill_id, student_id, status) VALUES (?, ?, 'open')",
+            (drill_id, student["id"]),
+        )
+        conn.commit()
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("today_question_started", json.dumps({"student_id": student["id"], "drill_id": drill_id}, ensure_ascii=False), f"student_{student['id']}"),
+            )
+            conn.commit()
+        except Exception as _ev_e:
+            # activation 計測用イベント。欠損しても機能は無影響だが、分析の穴を無言化しないよう記録。
+            log.warning(f"[today_question_start] event insert failed (non-fatal): {_ev_e}")
+        return {"ok": True, "drill_id": drill_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        log.error(f"[today_question_start] failed: {e}")
+        raise HTTPException(status_code=500, detail="今日の1問の作成に失敗しました")
+    finally:
+        conn.close()
+
+
 @app.get("/api/student/grammar-drill/{drill_id}")
 def student_grammar_drill_get(drill_id: int, request: Request, authorization: Optional[str] = Header(None)):
     """🎓 生徒: ドリルの問題を取得 (解答用)。未完了なら answer/explanation は隠す。完了済みなら復習用に開示。"""
