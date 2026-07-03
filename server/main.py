@@ -3096,6 +3096,66 @@ def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: st
         return {"sent": False, "error": str(e)}
 
 
+def _send_first_question_nudge_email(to_email: str, student_name: str, login_url: str) -> dict:
+    """🔰 2026-07-03 activation nudge: ログイン済だが1問も解いていない生徒に「まず1問だけ」促す。
+    既存ナッジ (trial-unused-warning=未ログイン層 / check_inactivity=LINE層) の隙間に落ちる
+    「ログインしたのに最初の1問に未着手」の最大ボリューム層 (登録の約6割が1問未着手=activation律速)
+    を拾う。ログイン後の quick-start に出る「まず1問だけ解いてみる」CTA へ誘導。
+    重複防止は notifications template='first_question_nudge' で一人一回。"""
+    import html as _html
+    if not RESEND_API_KEY:
+        log.warning(f"[DEV-MODE] First-question nudge skipped for {to_email}")
+        return {"sent": False, "dev_mode": True}
+    safe_name = _html.escape(student_name or "")
+    greeting = f"{safe_name}さま" if safe_name else "こんにちは"
+    subject = "【AIコーチング】まず1問だけ、解いてみませんか?(30秒)"
+    body_intro = (
+        "AIコーチングにログインいただき、ありがとうございます。\n\n"
+        "まだ問題を1問も解いていないようです。最初の1問さえ解けば、AI があなたの得意・苦手を"
+        "見つけて、翌日からの学習を組み立て始めます。\n\n"
+        "むずかしく考えなくて大丈夫です。ログイン後の画面にある「まず1問だけ解いてみる」を押すと、"
+        "あなた向けの最初の1問がすぐ出ます。まずは30秒、1問だけ試してみてください。"
+    )
+    cta_label = "🎓 ログインして1問だけ解く"
+    bottom = "無料で使えます。合わなければ何もしなくて大丈夫です (自動終了・課金は発生しません)。"
+    html = f"""<!DOCTYPE html>
+<html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
+<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AIコーチング</h1>
+<p>{greeting}、こんにちは。</p>
+<p style="white-space:pre-line;">{_html.escape(body_intro)}</p>
+
+<p style="text-align:center; margin: 2rem 0;">
+  <a href="{login_url}" style="display:inline-block; padding: 1rem 2rem; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; text-decoration:none; border-radius:8px; font-weight:700; font-size:1.05rem;">
+    {_html.escape(cta_label)}
+  </a>
+</p>
+
+<div style="background:#fafafa; padding:1rem; border-radius:6px; margin: 1.5rem 0; font-size: 0.9rem; color:#555;">
+  💡 {_html.escape(bottom)}
+</div>
+
+<p style="font-size:0.85rem; color:#666;">ご不明な点はお問い合わせください。</p>
+<hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
+<p style="font-size:0.8rem; color:#999;">
+  お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
+</p>
+</body></html>"""
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": html}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"First-question nudge email failed for {to_email}: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)}
+
+
 def _send_trial_nurture_day2_email(to_email: str, student_name: str, login_url: str) -> dict:
     """📧 体験 Day 2 nurture メール (集客 funnel #3・塾長指示 2026-05-19)
     体験開始 2 日目に「学習習慣を作る」エンカレッジを送信。
@@ -3882,12 +3942,16 @@ async def _trial_management_scheduler():
                 log.info("[TrialMgr] Skipped (already ran today by another replica)")
                 continue
 
-            # 7 タスクを順次実行 (例外は個別に握りつぶしてループ継続)
+            # 各タスクを順次実行 (例外は個別に握りつぶしてループ継続)
             tasks = [
                 ("expire-trials", lambda: cron_expire_trials(x_cron_secret=secret, dry_run=False)),
                 ("trial-reminders", lambda: cron_trial_reminders(x_cron_secret=secret, dry_run=False)),
                 ("trial-followups", lambda: cron_trial_followups(x_cron_secret=secret, dry_run=False)),
                 ("trial-unused-warning", lambda: cron_trial_unused_warning(x_cron_secret=secret, dry_run=False)),
+                # 🔰 activation nudge (2026-07-03 追加・バックログ監査 rank3): ログイン済だが1問も
+                #   解いていない層 (既存ナッジの隙間・登録の約6割が1問未着手) に「まず1問だけ」メール。
+                #   コホート窓+dedup(一人一回)+合成除外+CAP で誤発報を構造的に防止。
+                ("first-question-nudge", lambda: cron_first_question_nudge(x_cron_secret=secret, dry_run=False)),
                 # 🚨 体験中・離脱予兆者への AI 個別フォロー (2026-05-11 追加)
                 ("trial-rescue", lambda: admin_trial_rescue_now(payload={"dry_run": False}, authorization=None, x_cron_secret=secret)),
                 # 📧 体験 Day 2 / Day 5 nurture メール (集客 funnel #3・2026-05-19 追加)
@@ -30782,6 +30846,89 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
         "sent_early": sent_early,
         "sent_late": sent_late,
         "skipped_already_sent": skipped_already,
+        "dry_run": dry_run,
+        "preview": preview if dry_run else None,
+    }
+
+
+# 🔰 activation nudge の登録コホート窓 (登録から MIN 日経過〜MAX 日以内)。
+#   MIN: 登録直後には送らない (押し付け回避)。MAX: 古すぎるコホートを一斉送信しない (blast/迷惑回避)。
+FIRST_Q_NUDGE_MIN_AGE_DAYS = int(os.getenv("FIRST_Q_NUDGE_MIN_AGE_DAYS", "3"))
+FIRST_Q_NUDGE_MAX_AGE_DAYS = int(os.getenv("FIRST_Q_NUDGE_MAX_AGE_DAYS", "30"))
+FIRST_Q_NUDGE_CAP = int(os.getenv("FIRST_Q_NUDGE_CAP", "200"))
+
+
+@app.post("/api/cron/first-question-nudge")
+def cron_first_question_nudge(x_cron_secret: str = Header(None), dry_run: bool = False):
+    """🔰 2026-07-03 activation nudge cron (バックログ監査 rank3)。
+    「ログイン済だが question_attempts が1件も無い (=最初の1問に未着手)」の新規コホート生徒に
+    『まず1問だけ』メールを一人一回送る。北極星=activation (登録の約6割が1問未着手) の律速を直接叩く。
+    既存ナッジの隙間を埋める: trial-unused-warning は last_login_at IS NULL (未ログイン層)、
+    check_inactivity は LINE 保有者のみ。ログイン済で1問未着手の最大ボリューム層はどちらにも届いていなかった。
+
+    対象条件 (fail-safe に厳格): status IN (trial,paid) / email あり / last_login_at IS NOT NULL /
+      created_at が TRIAL_FOLLOWUP_NEW_FROM 以降 (新規コホート方針) かつ 登録 MIN〜MAX 日 /
+      本科 (course=kokuritsu_nankan) 除外 / 合成監視除外 / question_attempts ゼロ。
+    重複防止: notifications template='first_question_nudge' (success=1 が1件でもあれば skip = 一人一回)。
+    毎日 JST10:00 の _trial_management_scheduler から dry_run=False で実行。dry_run=True は送信せず preview のみ。
+    ★誤発報防止: 上記コホート窓 + dedup + 合成除外 + CAP で一斉誤送信を構造的に防ぐ。"""
+    if not CRON_SECRET:
+        raise HTTPException(status_code=503, detail="Cron not configured")
+    if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    conn = db()
+    c = conn.cursor()
+    now = datetime.now(timezone.utc)
+    min_age = now - timedelta(days=FIRST_Q_NUDGE_MIN_AGE_DAYS)   # これより新しい登録は対象外 (created_at <= min_age)
+    max_age = now - timedelta(days=FIRST_Q_NUDGE_MAX_AGE_DAYS)   # これより古い登録は対象外 (created_at >= max_age)
+    sent = 0
+    matched = 0
+    preview = []
+    try:
+        # ★dedup は SQL 側で行う (LIMIT より前に送信済みを除外)。
+        #   一人一回 = notifications template='first_question_nudge' success=1 が既にある生徒を NOT EXISTS で外す。
+        #   これを LIMIT の後 (Python 側) でやると、送信済みが CAP 枠を占有し続けて未送信の古いコホート末尾が
+        #   永久に届かない (starvation)。SQL 側に寄せると LIMIT は「未送信の適格者」だけを bound する。
+        #   送信失敗 (success=0) は success=1 が無いので次回も対象 = 配信成功までリトライ・成功後は二度と送らない。
+        c.execute(
+            f"""SELECT s.id, s.name, s.email, s.created_at, s.last_login_at FROM students s
+                WHERE s.status IN ('trial', 'paid') AND s.email IS NOT NULL AND s.email != ''
+                  AND s.last_login_at IS NOT NULL
+                  AND s.created_at >= ? AND s.created_at >= ? AND s.created_at <= ?
+                  AND (s.course IS NULL OR s.course != 'kokuritsu_nankan')
+                  AND {_synth_exclude_sql('s')}
+                  AND NOT EXISTS (SELECT 1 FROM question_attempts qa WHERE qa.student_id = s.id)
+                  AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.student_id = s.id
+                                    AND n.template = 'first_question_nudge' AND n.success = 1)
+                ORDER BY s.created_at DESC LIMIT ?""",
+            (TRIAL_FOLLOWUP_NEW_FROM, max_age.isoformat(), min_age.isoformat(), FIRST_Q_NUDGE_CAP)
+        )
+        rows = c.fetchall()
+        matched = len(rows)  # = 未送信の適格者 (CAP 上限)。送信済みは SQL 側で除外済 = LIMIT starvation なし。
+        for row in rows:
+            if dry_run:
+                preview.append({"student_id": row["id"], "email": row["email"], "name": row["name"]})
+                continue
+            login_url = f"{BASE_URL}/login.html?email={row['email']}"
+            _email_rate_limit()  # 📧 Resend 429対策
+            result = _send_first_question_nudge_email(row["email"], row["name"] or "", login_url)
+            c.execute(
+                """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                   VALUES (?, 'email', 'first_question_nudge', ?, ?, ?)""",
+                (row["id"], json.dumps({"activation_nudge": True}), 1 if result.get("sent") else 0, result.get("error", ""))
+            )
+            if result.get("sent"):
+                sent += 1
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "matched": matched,  # 未送信の適格者数 (dry_run では preview と同数)
+        "sent": sent,
+        "capped": matched >= FIRST_Q_NUDGE_CAP,
         "dry_run": dry_run,
         "preview": preview if dry_run else None,
     }
