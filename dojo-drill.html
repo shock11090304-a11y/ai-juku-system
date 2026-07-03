@@ -114,6 +114,8 @@
   </main>
 
   <script src="auth-guard.js?v=20260615-dojo-drill"></script>
+  <!-- 🧒 生徒モード判定 (ajCurrentMode: chugaku/shougaku/kosei)。直着地時の既定タブを学年に合わせるため同期読込。 -->
+  <script src="student-mode.js?v=20260604-junior-preview"></script>
   <script>
   (function () {
     const BACKEND_URL = (window.location.hostname === 'localhost' && window.location.port === '8090')
@@ -654,6 +656,14 @@
       { key: 'univ',   label: '🎓 大学別（二次・私大）' },
     ];
     let ddLevel = 'kyotsu';
+    // 🧒 [2026-07-04] 弱点リンク無しで直着地した中学生/小学生の初期タブをモードに合わせる (c4e7df2 の弱点ループ受け皿導線)。
+    //   ?w_subject/w_topic 経由は後段 maybeAutoStartFromWeakness が ddLevel を上書きするので、ここは直着地の既定だけを補正する。
+    //   'kosei'(高校・大学受験・既定) / preview_mode / 未ログイン(=ajCurrentMode が 'kosei') は 'kyotsu' を維持 → 大学受験生の挙動は不変。
+    //   dojo に小学生プールは無いため shougaku も最年少タブ chugaku に寄せる ('kyotsu' より近い)。
+    try {
+      const _mode = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';
+      if (_mode === 'chugaku' || _mode === 'shougaku') ddLevel = 'chugaku';
+    } catch (_) { /* student-mode.js 未読込等は既定 'kyotsu' を維持 */ }
     const ddSubject = { kyotsu: null, unit: null, chugaku: null, univ: '国公立' };  // レベルごとに選択中の科目を保持
 
     function ddSubjectsFor(level) {
