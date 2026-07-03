@@ -439,14 +439,24 @@ async function loadGrowthKpis() {
     const res = await window.AdminAuth.fetch('/api/admin/growth-kpis');
     if (!res.ok) { cards.innerHTML = '<div style="color:#ef4444;font-size:0.85rem;">KPI取得失敗 (' + res.status + ')</div>'; return; }
     const d = await res.json();
-    const s = d.students || {}, e = d.engagement || {}, f = d.enrollment_fee || {}, cf = d.conversion_funnel || {};
+    const s = d.students || {}, e = d.engagement || {}, f = d.enrollment_fee || {}, cf = d.conversion_funnel || {}, a = d.activation || {};
     const card = (label, value, sub, color) =>
       '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:0.8rem;">'
       + '<div style="font-size:0.72rem;color:#9ca3af;">' + label + '</div>'
       + '<div style="font-size:1.5rem;font-weight:800;color:' + (color || '#e5e7eb') + ';margin:2px 0;">' + value + '</div>'
       + '<div style="font-size:0.72rem;color:#71717a;">' + (sub || '') + '</div></div>';
+    // activation率は高いほど良い(北極星)。低いと赤で警告。
+    const rateColor = (p) => ((p || 0) >= 60 ? '#22c55e' : (p || 0) >= 40 ? '#f59e0b' : '#ef4444');
+    const av7 = a.d7 || {}, av30 = a.d30 || {};
     cards.innerHTML =
-      card('有料率', (s.paid_rate_pct || 0) + '%', '有料 ' + (s.paid || 0) + ' / 実生徒 ' + (s.total || 0), '#22c55e')
+      // 🔰 activation を最重要KPIとして先頭に配置 (2026-07-03: 登録→最初の1問=最大の律速)。
+      //   D7/D30 は「登録から窓が満了した生徒」だけを分母にした累計コホート率(直近登録者を
+      //   未達扱いしない)。累計の着手率そのものは既存「ドリル利用率」カードと同義のため重複表示しない。
+      card('D7 activation', (av7.rate_pct || 0) + '%', (av7.activated || 0) + ' / ' + (av7.eligible || 0) + '名が7日内に着手 (累計コホート)', rateColor(av7.rate_pct))
+      + card('D30 activation', (av30.rate_pct || 0) + '%', (av30.activated || 0) + ' / ' + (av30.eligible || 0) + '名が30日内に着手 (累計コホート)', rateColor(av30.rate_pct))
+      + card('未着手', (a.unactivated || 0) + '名', '登録後まだ1問も解いていない実生徒 (全 ' + (s.total || 0) + '名中)', '#ef4444')
+      + card('今日の1問 開封(新CTA)', (a.today_question_opened || 0) + '名', '「まず1問」ボタン経由で開いた数 (7/2〜・浸透待ち)', '#38bdf8')
+      + card('有料率', (s.paid_rate_pct || 0) + '%', '有料 ' + (s.paid || 0) + ' / 実生徒 ' + (s.total || 0), '#22c55e')
       + card('実生徒数', (s.total || 0) + '名', '体験 ' + (s.trial || 0) + ' / 期限切れ ' + (s.expired || 0))
       + card('ドリル利用率', (e.drill_rate_pct || 0) + '%', (e.drill_users || 0) + ' / ' + (s.total || 0) + ' 名が解いた', '#38bdf8')
       + card('5問到達率', (e.reach5_rate_pct || 0) + '%', (e.reach5 || 0) + ' / ' + (e.weakness_topics || 0) + ' 弱点topic', '#f59e0b')
@@ -454,12 +464,55 @@ async function loadGrowthKpis() {
       + card('入塾金', '免除 ' + (f.waived || 0), '未回収 ' + (f.uncollected || 0) + ' は意図的(回収不要) / 回収 ' + (f.charged || 0), '#9ca3af')
       + card('期限切れ', (s.expired || 0) + '名', '方針: そのまま(再活性化しない)', '#9ca3af')
       + card('転換(誘導→有料)', (cf.rate_pct || 0) + '%', '直近30日 誘導 ' + (cf.nudged_30d || 0) + ' → 有料 ' + (cf.converted || 0), '#34d399');
+    renderActivationByChannel(a.by_channel || []);
     const asOf = document.getElementById('growthKpiAsOf');
     if (asOf && d.as_of) { try { asOf.textContent = '更新: ' + new Date(d.as_of).toLocaleString('ja-JP'); } catch (_) {} }
   } catch (err) {
     console.error('loadGrowthKpis failed:', err);
     cards.innerHTML = '<div style="color:#ef4444;font-size:0.85rem;">KPI取得エラー</div>';
   }
+}
+
+// 🔰 流入元別 activation テーブル (どのチャネルが「最初の1問」まで運べているか)。
+//   growthKpiSection 内に一度だけ生成し、以降は innerHTML を差し替える。
+function renderActivationByChannel(list) {
+  const section = document.getElementById('growthKpiSection');
+  if (!section) return;
+  let wrap = document.getElementById('activationByChannel');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'activationByChannel';
+    wrap.style.marginTop = '0.9rem';
+    section.appendChild(wrap);
+  }
+  if (!Array.isArray(list) || !list.length) { wrap.innerHTML = ''; return; }
+  const rateColor = (p) => ((p || 0) >= 60 ? '#22c55e' : (p || 0) >= 40 ? '#f59e0b' : '#ef4444');
+  const th = (t, align) => '<th style="padding:0.35rem 0.6rem;text-align:' + (align || 'left') + ';font-weight:600;">' + t + '</th>';
+  const td = (t, align, color, small) => '<td style="padding:0.35rem 0.6rem;text-align:' + (align || 'left') + ';'
+    + (color ? 'font-weight:700;color:' + color + ';' : 'color:#9ca3af;')
+    + (small ? 'font-size:0.8rem;color:#71717a;' : '') + '">' + t + '</td>';
+  // 小標本 (実生徒 <5) は率が乱高下する (1〜2名で0%↔100%)。率をグレー表示にして参考値と分かるようにする。
+  // 率ごとに実分母で小標本判定する: 着手率は total、D7率は d7_eligible(登録7日経過数)基準。
+  //   total は多いが d7_eligible が小さい(最近の流入が多い)チャネルで D7率だけ参考値化するため。
+  const rowsHtml = list.map(r => {
+    const small = (r.total || 0) < 5;
+    const d7small = (r.d7_eligible || 0) < 5;
+    const rc = (p) => small ? '#71717a' : rateColor(p);
+    const rcD7 = (p) => d7small ? '#71717a' : rateColor(p);
+    return '<tr>' + td(escapeHtml(r.channel || '') + (small ? ' <span style="color:#71717a;font-size:0.7rem;">(少)</span>' : ''), 'left', '#e5e7eb')
+      + td(String(r.total || 0), 'right')
+      + td((r.rate_pct || 0) + '%', 'right', rc(r.rate_pct))
+      + td((r.activated || 0) + '/' + (r.total || 0), 'right', null, true)
+      + td((r.d7_rate_pct || 0) + '%', 'right', rcD7(r.d7_rate_pct))
+      + td((r.d7_activated || 0) + '/' + (r.d7_eligible || 0), 'right', null, true)
+      + '</tr>';
+  }).join('');
+  wrap.innerHTML =
+    '<div style="font-size:0.8rem;color:#c7d2fe;font-weight:700;margin-bottom:0.4rem;">🔰 流入元別 activation (最初の1問への到達) <span style="color:#71717a;font-weight:400;font-size:0.72rem;">— グレーの率/(少)=分母5名未満の小標本・参考値</span></div>'
+    + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.82rem;">'
+    + '<thead><tr style="color:#9ca3af;border-bottom:1px solid rgba(255,255,255,0.12);">'
+    + th('流入元') + th('実生徒', 'right') + th('着手率', 'right') + th('(実数)', 'right') + th('D7率', 'right') + th('(実数)', 'right')
+    + '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
 }
 
 async function loadExpiredUsers() {

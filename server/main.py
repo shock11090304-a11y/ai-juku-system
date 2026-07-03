@@ -10002,6 +10002,76 @@ def admin_verify(authorization: Optional[str] = Header(None)):
     return {"ok": True}
 
 
+def _as_naive_dt(v):
+    """DB の TIMESTAMP 値 (naive UTC 想定) / ISO文字列 / aware datetime を naive UTC datetime に揃える。
+    activation の「登録日 vs 初回attempt日」比較を同一基準で行うため (naive TZ trap 対策)。"""
+    if v is None:
+        return None
+    if isinstance(v, str):
+        try:
+            v = datetime.fromisoformat(v.strip().replace(' ', 'T').replace('Z', '+00:00'))
+        except Exception:
+            return None
+    if getattr(v, "tzinfo", None) is not None:
+        try:
+            v = v.astimezone(timezone.utc).replace(tzinfo=None)
+        except Exception:
+            v = v.replace(tzinfo=None)
+    return v
+
+
+def _compute_activation(real_rows, first_at_map, now_naive):
+    """activation KPI (最重要=登録→最初の1問) を算出する純関数 (DB非依存=単体test可能)。
+    - real_rows: 合成監視を除外した実生徒行 (id / created_at / signup_utm_source を含む dict 群)。
+    - first_at_map: {student_id: 初回 question_attempt の naive datetime}。attempt無し生徒は不在。
+    - now_naive: 現在時刻 (naive UTC)。
+    ★D7/D30 は「窓が満了した生徒 (登録から7/30日経過)」だけを分母にする = 直近登録者を
+      未達扱いして率を過小評価しない (cohort-correct)。activated_ever は時期を問わず1問でも
+      解いた実生徒 (=『登録の何%が1問未着手か』の分子)。チャネル別 (signup_utm_source) 内訳付き。"""
+    def _pct(a, b):
+        return round(a / b * 100, 1) if b else 0.0
+    d7, d30 = timedelta(days=7), timedelta(days=30)
+    total = len(real_rows)
+    act_ever = d7_elig = d7_act = d30_elig = d30_act = 0
+    ch = {}
+    for r in real_rows:
+        created = _as_naive_dt(r["created_at"])
+        first = first_at_map.get(r["id"])
+        ever = first is not None
+        if ever:
+            act_ever += 1
+        chan = (str(r.get("signup_utm_source")).strip() if r.get("signup_utm_source") else "") or "(直接/不明)"
+        cc = ch.setdefault(chan, {"total": 0, "activated": 0, "d7_eligible": 0, "d7_activated": 0})
+        cc["total"] += 1
+        if ever:
+            cc["activated"] += 1
+        if created is not None and created <= now_naive - d7:
+            d7_elig += 1
+            cc["d7_eligible"] += 1
+            if first is not None and first <= created + d7:
+                d7_act += 1
+                cc["d7_activated"] += 1
+        if created is not None and created <= now_naive - d30:
+            d30_elig += 1
+            if first is not None and first <= created + d30:
+                d30_act += 1
+    by_channel = sorted(
+        ({"channel": k, "total": v["total"], "activated": v["activated"],
+          "rate_pct": _pct(v["activated"], v["total"]),
+          "d7_eligible": v["d7_eligible"], "d7_activated": v["d7_activated"],
+          "d7_rate_pct": _pct(v["d7_activated"], v["d7_eligible"])}
+         for k, v in ch.items()),
+        key=lambda z: (-z["total"], z["channel"]))
+    return {
+        "activated_ever": act_ever,
+        "unactivated": total - act_ever,
+        "activated_rate_pct": _pct(act_ever, total),
+        "d7": {"eligible": d7_elig, "activated": d7_act, "rate_pct": _pct(d7_act, d7_elig)},
+        "d30": {"eligible": d30_elig, "activated": d30_act, "rate_pct": _pct(d30_act, d30_elig)},
+        "by_channel": by_channel,
+    }
+
+
 @app.get("/api/admin/growth-kpis")
 def admin_growth_kpis(authorization: Optional[str] = Header(None)):
     """📊 経営KPI(成長指標): 有料率・ドリル利用率・5問到達率・習得卒業・入塾金回収。read-only・既存DBクエリのみ。
@@ -10014,7 +10084,7 @@ def admin_growth_kpis(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="未認証")
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, status, email, goal, name, enrollment_fee_charged_at, enrollment_fee_waived FROM students")
+    c.execute("SELECT id, status, email, goal, name, enrollment_fee_charged_at, enrollment_fee_waived, created_at, signup_utm_source FROM students")
     rows = [r for r in c.fetchall() if not _is_synthetic_student(r["email"], r["goal"], r["name"])]
     real_ids = {r["id"] for r in rows}
     total = len(rows)
@@ -10038,6 +10108,33 @@ def admin_growth_kpis(authorization: Optional[str] = Header(None)):
     # ドリル利用: 実生徒で1問でも解いた distinct 数 (退会済の孤児 student_id は real_ids 交差で除外)
     c.execute("SELECT DISTINCT student_id FROM question_attempts")
     drill_users = len({x["student_id"] for x in c.fetchall()} & real_ids)
+    # 🔰 2026-07-03 activation KPI (最重要=登録→最初の1問) の材料。初回 attempt 時刻を実生徒分だけ拾う。
+    c.execute("SELECT student_id, MIN(created_at) AS first_at FROM question_attempts GROUP BY student_id")
+    first_at_map = {}
+    for x in c.fetchall():
+        if x["student_id"] in real_ids:
+            first_at_map[x["student_id"]] = _as_naive_dt(x["first_at"])
+    # 「まず1問」CTA (6c661fa) の中間funnel: 今日の1問を開いた実生徒数 (attempt=完了 の手前段)。
+    # emit 側 (today_question_started) の session_id は "student_{id}" 形式。
+    tq_opened = 0
+    try:
+        c.execute("SELECT DISTINCT session_id FROM events WHERE name=?", ("today_question_started",))
+        _op = set()
+        for _r in c.fetchall():
+            _sid = str(_r["session_id"] or "")
+            if _sid.startswith("student_"):
+                _sid = _sid[len("student_"):]
+            elif _sid.startswith("student:"):
+                _sid = _sid[len("student:"):]
+            try:
+                _op.add(int(_sid))
+            except (TypeError, ValueError):
+                pass
+        tq_opened = len(_op & real_ids)
+    except Exception as _e:
+        log.warning(f"[growth-kpis] today_question funnel query failed: {type(_e).__name__}: {_e}")
+    activation = _compute_activation(rows, first_at_map, datetime.now(timezone.utc).replace(tzinfo=None))
+    activation["today_question_opened"] = tq_opened
     # 弱点ループ: 実生徒の student_weakness (topic 単位)
     c.execute("SELECT student_id, qa_attempts, qa_accuracy FROM student_weakness")
     wrows = [w for w in c.fetchall() if w["student_id"] in real_ids]
@@ -10085,6 +10182,10 @@ def admin_growth_kpis(authorization: Optional[str] = Header(None)):
         "conversion_funnel": {
             "nudged_30d": nudged, "converted": converted, "rate_pct": pct(converted, nudged),
         },
+        # 🔰 最重要KPI: activation (登録→最初の1問)。activated_ever=時期問わず1問でも解いた実生徒、
+        #   d7/d30=登録から窓満了した生徒だけを分母にしたコホート率、by_channel=流入元別、
+        #   today_question_opened=「まず1問」CTA で今日の1問を開いた実生徒数。
+        "activation": activation,
     }
 
 
