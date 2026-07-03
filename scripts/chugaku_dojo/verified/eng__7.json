@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "This letter (    ) by Ken yesterday.",
+  "passage": "",
+  "choices": [
+   "writes",
+   "wrote",
+   "was written",
+   "is written"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「was written」。 「昨日書かれた」という過去の受け身なので〈was/were + 過去分詞〉を使います。主語 letter は単数で過去なので was written です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "English (    ) in many countries around the world.",
+  "passage": "",
+  "choices": [
+   "speaks",
+   "is spoken",
+   "is speaking",
+   "spoke"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「is spoken」。 「英語は話されている」という現在の受け身なので〈is/are + 過去分詞〉を使います。speak の過去分詞は spoken です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "These pictures (    ) by a famous artist.",
+  "passage": "",
+  "choices": [
+   "was painted",
+   "were painted",
+   "painted",
+   "are painting"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「were painted」。 主語 pictures は複数なので be動詞は were を使います。「描かれた」という過去の受け身で〈were + 過去分詞〉になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "This room is cleaned every day. の下線部を疑問文にしたとき、(    ) this room cleaned every day?",
+  "passage": "",
+  "choices": [
+   "Do",
+   "Does",
+   "Is",
+   "Was"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「Is」。 受け身の疑問文は be動詞を主語の前に出します。もとの文が is cleaned なので Is this room cleaned ...? となります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "The window (    ) by the boy. 「その窓は少年によって割られた」",
+  "passage": "",
+  "choices": [
+   "is break",
+   "was broke",
+   "was broken",
+   "broke"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「was broken」。 break の過去分詞は broken です。過去の受け身なので〈was + 過去分詞〉で was broken となります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "That mountain (    ) covered with snow in winter.",
+  "passage": "",
+  "choices": [
+   "is",
+   "does",
+   "has",
+   "was"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態。正解は「is」。 「〜でおおわれている」は be covered with 〜 と表します。冬の一般的な事実なので現在形の is を使います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "This book (    ) read by a lot of students now.",
+  "passage": "",
+  "choices": [
+   "is",
+   "are",
+   "was",
+   "were"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態。正解は「is」。 主語 book は単数で、now があるので現在の受け身です。単数の主語には be動詞 is を使い is read となります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "「この歌は世界中で愛されています」 This song (    ) all over the world.",
+  "passage": "",
+  "choices": [
+   "loves",
+   "is loved",
+   "is loving",
+   "loved"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「is loved」。 「愛されている」という受け身なので〈is + 過去分詞〉を使います。love の過去分詞は loved です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "A: Was this cake made by your mother?  B: (    )  She made it this morning.",
+  "passage": "",
+  "choices": [
+   "Yes, it was.",
+   "Yes, it did.",
+   "No, it wasn't.",
+   "Yes, she was."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態。正解は「Yes, it was.」。 Was 〜? で始まる受け身の疑問文には was を使って答えます。主語 this cake を it で受けるので Yes, it was. が正しい応答です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "These computers (    ) in Japan. 「これらのコンピューターは日本で作られています」",
+  "passage": "",
+  "choices": [
+   "is made",
+   "are made",
+   "makes",
+   "are making"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「are made」。 主語 computers は複数なので be動詞は are を使います。「作られている」という受け身で〈are + 過去分詞〉になります。"
+ }
+]

@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nI have a friend ( ) can speak three languages.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "whose",
+   "whom"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係代名詞。正解は「who」。 先行詞が「a friend」(人)で、後ろに動詞canが続く主格なので who を使います。人なら who、ものなら which です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThis is the book ( ) made me cry.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "whose",
+   "where"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「which」。 先行詞が「the book」(もの)で、後ろに動詞madeが続く主格なので which を使います。人以外の主格は which か that です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThe man ( ) I met yesterday was very kind.",
+  "passage": "",
+  "choices": [
+   "which",
+   "who",
+   "whose",
+   "what"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「who」。 先行詞が「The man」(人)で、後ろに I met と主語+動詞が続く目的格です。人の目的格には who(または whom / that)を使います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nI know a girl ( ) mother is a doctor.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "whose",
+   "who's"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「whose」。 「その女の子の母」という所有の関係なので、所有格の whose を使います。whose の後ろには名詞(mother)が続きます。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nLook at the dog ( ) is running over there.",
+  "passage": "",
+  "choices": [
+   "who",
+   "whose",
+   "which",
+   "what"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「which」。 先行詞が「the dog」(動物・人以外)で、後ろに is running と動詞が続く主格なので which を使います。that も使えますが、選択肢にあるのは which です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThis is the house ( ) my grandfather built fifty years ago.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "whose",
+   "where"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「which」。 先行詞が「the house」(もの)で、後ろに my grandfather built と主語+動詞が続く目的格です。ものの目的格は which(または that)を使います。built の目的語が抜けているので where は不可です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nHe is the tallest boy ( ) I have ever seen.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "that",
+   "whose"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「that」。 先行詞に最上級(the tallest)がつくときは、関係代名詞に that を使うのがふつうです。基本の使い方として覚えましょう。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThe letter ( ) came this morning was from my aunt.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "whose",
+   "whom"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「which」。 先行詞が「The letter」(もの)で、後ろに came と動詞が続く主格なので which を使います。人以外の主格は which か that です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の対話の( )に入る最も適切な語を選びなさい。\nA: Do you know the boy ( ) is talking with Ms. Sato?\nB: Yes, he is my classmate.",
+  "passage": "",
+  "choices": [
+   "which",
+   "who",
+   "whose",
+   "what"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「who」。 先行詞が「the boy」(人)で、後ろに is talking と動詞が続く主格なので who を使います。人の主格は who です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThe bike ( ) I bought last week is already broken.",
+  "passage": "",
+  "choices": [
+   "who",
+   "whose",
+   "which",
+   "where"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「which」。 先行詞が「The bike」(もの)で、後ろに I bought と主語+動詞が続く目的格です。ものの目的格は which(または that)を使い、bought の目的語が抜けているので where は不可です。"
+ }
+]

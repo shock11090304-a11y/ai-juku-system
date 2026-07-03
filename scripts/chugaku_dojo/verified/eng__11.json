@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: Thank you very much for helping me. B: (      )",
+  "passage": "",
+  "choices": [
+   "You're welcome.",
+   "Here you are.",
+   "Yes, please.",
+   "Nice to meet you."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「You're welcome.」。 お礼(Thank you)への返事は「どういたしまして」を表す You're welcome. です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: May I help you? B: Yes, (      ) a red T-shirt.",
+  "passage": "",
+  "choices": [
+   "I'm looking for",
+   "I'm looking at",
+   "I'm looking after",
+   "I'm looking up"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「I'm looking for」。 店で「~をさがしています」と言うときは look for ~ を使います。look after は「世話をする」の意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: How about going to the movies this weekend? B: (      ) Let's meet at three.",
+  "passage": "",
+  "choices": [
+   "That sounds good.",
+   "You're right, I'm busy.",
+   "No, thank you.",
+   "I've never been there."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「That sounds good.」。 誘いに賛成して待ち合わせを決めているので「いいね(それはよさそうだ)」が自然です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: I'm going to take a test tomorrow. B: (      )",
+  "passage": "",
+  "choices": [
+   "Good luck!",
+   "You're welcome.",
+   "Here you are.",
+   "That's too bad."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「Good luck!」。 これからテストを受ける相手を応援する場面なので「がんばって(幸運を)」が合います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: (      )? B: It's July 3rd.",
+  "passage": "",
+  "choices": [
+   "What's the date today",
+   "What time is it",
+   "What day is it today",
+   "How's the weather"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「What's the date today」。 答えが「7月3日」という日付なので、日付をたずねる What's the date today? が正しいです。What day is it? は曜日をたずねる表現です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: Excuse me. Could you tell me the way to the station? B: Sure. Go straight and (      ) left at the second corner.",
+  "passage": "",
+  "choices": [
+   "turn",
+   "take",
+   "get",
+   "go"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「turn」。 道案内で「~を曲がる」は turn (right/left) を使い、turn left は「左に曲がる」です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: Hello. This is Ken. (      ) Mike, please? B: Sorry, he's out now.",
+  "passage": "",
+  "choices": [
+   "May I speak to",
+   "May I help you",
+   "Who are you",
+   "How are you"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「May I speak to」。 電話で相手を呼び出してもらうときは May I speak to ~? (~をお願いできますか)と言います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: Would you like some more tea? B: (      ) It was delicious.",
+  "passage": "",
+  "choices": [
+   "No, thank you. I'm full.",
+   "Yes, I am.",
+   "You're welcome.",
+   "Not at all."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「No, thank you. I'm full.」。 おかわりをすすめられて「もうおなかがいっぱい」と断る流れなので、ていねいに断る No, thank you. が自然です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: I have a headache and a fever. B: (      ) You should go home and rest.",
+  "passage": "",
+  "choices": [
+   "That's too bad.",
+   "Congratulations!",
+   "You're welcome.",
+   "Here you are."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「That's too bad.」。 具合が悪い相手を気づかう場面なので「それはお気の毒に(大変だね)」が合います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: Do you mind if I open the window? B: (      ) It's a little hot in here.",
+  "passage": "",
+  "choices": [
+   "Of course not.",
+   "Yes, I do.",
+   "No, thank you.",
+   "You're welcome."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「Of course not.」。 Do you mind ~? (~してもいい?)に「どうぞ」と許可するときは、否定で答える Of course not.(もちろんかまいません)を使います。"
+ }
+]

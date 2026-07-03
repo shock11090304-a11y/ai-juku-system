@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI want ( ) a doctor in the future.",
+  "passage": "",
+  "choices": [
+   "become",
+   "to become",
+   "became",
+   "becoming"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「to become」。〈want to+動詞の原形〉で「〜したい」という意味になり、to のあとは必ず動詞の原形が続きます。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy sister enjoys ( ) the piano every day.",
+  "passage": "",
+  "choices": [
+   "play",
+   "to play",
+   "playing",
+   "played"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞・動名詞。正解は「playing」。enjoy のあとは動名詞(〜ing)が続き、〈enjoy+動詞のing形〉で「〜して楽しむ」という意味になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nIt started ( ) hard, so we stayed home.",
+  "passage": "",
+  "choices": [
+   "rain",
+   "to rain",
+   "rained",
+   "rains"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「to rain」。start は不定詞(to+原形)を目的語に取ることができ、「雨が降り始めた」という意味になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Why did you go to the library?\nB: I went there ( ) some books.",
+  "passage": "",
+  "choices": [
+   "borrow",
+   "to borrow",
+   "borrowing",
+   "borrowed"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「to borrow」。「〜するために」と目的を表すときは不定詞〈to+動詞の原形〉を使い、これを副詞的用法といいます。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nHe is good at ( ) English.",
+  "passage": "",
+  "choices": [
+   "speak",
+   "to speak",
+   "speaking",
+   "spoke"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞・動名詞。正解は「speaking」。前置詞 at のあとに動詞を置くときは動名詞(〜ing)にします。〈be good at+ing〉で「〜が得意だ」という意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWould you like something ( )? — Yes, some water, please.",
+  "passage": "",
+  "choices": [
+   "drink",
+   "to drink",
+   "drinking",
+   "drank"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「to drink」。名詞のあとに置いて「〜するための」と説明する形容詞的用法の不定詞です。something to drink で「飲み物」を表します。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\n( ) breakfast is important for our health.",
+  "passage": "",
+  "choices": [
+   "Eat",
+   "Eating",
+   "Eaten",
+   "To eaten"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「Eating」。文の主語になれるのは動名詞(〜ing)で、「朝食を食べること」という意味になります。動詞の原形は主語になれません。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThank you for ( ) me with my homework.",
+  "passage": "",
+  "choices": [
+   "help",
+   "to help",
+   "helping",
+   "helped"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞・動名詞。正解は「helping」。前置詞 for のあとに動詞を続けるときは動名詞(〜ing)にします。Thank you for 〜ing で「〜してくれてありがとう」の意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI have a lot of things ( ) today.",
+  "passage": "",
+  "choices": [
+   "do",
+   "to do",
+   "doing",
+   "did"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「to do」。名詞(things)のあとに置いて「〜すべき」と説明する形容詞的用法の不定詞です。things to do で「するべきこと」を表します。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nIt is a lot of fun ( ) soccer with my friends.",
+  "passage": "",
+  "choices": [
+   "play",
+   "to play",
+   "playing",
+   "played"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「to play」。It is ... to 〜 の形で、It は形式主語、本当の主語は to のあとの不定詞です。「〜することは楽しい」という意味になります。"
+ }
+]

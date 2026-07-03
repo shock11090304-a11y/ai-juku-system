@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "( ) she a nurse?",
+  "passage": "",
+  "choices": [
+   "Is",
+   "Are",
+   "Am",
+   "Do"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】be動詞・一般動詞。正解は「Is」。主語が三人称単数 she のとき、be動詞の疑問文は Is で始めます。are は you や複数、am は I に使います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "I ( ) soccer every Sunday.",
+  "passage": "",
+  "choices": [
+   "plays",
+   "play",
+   "am play",
+   "playing"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「play」。主語が I のとき一般動詞は原形のままで、s はつきません。be動詞と一般動詞を同時に並べることもできません。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "My brother ( ) English very hard.",
+  "passage": "",
+  "choices": [
+   "study",
+   "studys",
+   "studies",
+   "studying"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「studies」。主語が三人称単数のとき、〈子音字+y〉で終わる動詞は y を i に変えて es をつけます。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "( ) you like music? — Yes, I do.",
+  "passage": "",
+  "choices": [
+   "Are",
+   "Is",
+   "Do",
+   "Does"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「Do」。一般動詞 like の疑問文で主語が you のときは Do を使います。答えが do なのもヒントです。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "Ken ( ) not have a bike.",
+  "passage": "",
+  "choices": [
+   "do",
+   "does",
+   "is",
+   "are"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「does」。主語が三人称単数 Ken の一般動詞の否定文は does not (doesn't) を使い、動詞は原形 have になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "We ( ) in Osaka last year.",
+  "passage": "",
+  "choices": [
+   "are",
+   "was",
+   "were",
+   "is"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「were」。主語が複数 We で過去の文なので、be動詞の過去形は were を使います。was は I や三人称単数に使います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "She ( ) to the library yesterday.",
+  "passage": "",
+  "choices": [
+   "go",
+   "goes",
+   "went",
+   "going"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「went」。yesterday があるので過去の文です。go の過去形は不規則変化で went になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "There ( ) some books on the desk.",
+  "passage": "",
+  "choices": [
+   "is",
+   "are",
+   "am",
+   "does"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「are」。There is/are の文では後ろの名詞に合わせます。some books は複数なので are を使います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "( ) your father cook dinner every day?",
+  "passage": "",
+  "choices": [
+   "Do",
+   "Does",
+   "Is",
+   "Are"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「Does」。主語 your father は三人称単数なので、一般動詞 cook の疑問文は Does で始め、動詞は原形にします。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "Tom and I ( ) good friends.",
+  "passage": "",
+  "choices": [
+   "am",
+   "is",
+   "are",
+   "do"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「are」。Tom and I は複数の主語なので、be動詞は are を使います。I があっても二人以上なら am ではありません。"
+ }
+]

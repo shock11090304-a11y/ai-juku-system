@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "I have two ( ) in my bag. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "book",
+   "books",
+   "a book",
+   "the book"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「books」。two(2つ)のように2以上を表す語のあとの数えられる名詞は複数形にします。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "Please give me ( ) water. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "a",
+   "an",
+   "some",
+   "many"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「some」。water は数えられない名詞なので a/an や many は使えず、「いくらかの」を表す some が合います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "This is ( ) interesting book. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "a",
+   "an",
+   "the",
+   "some"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「an」。次の語 interesting が母音の音で始まるので、冠詞は a ではなく an を使います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "Is this your bag? — Yes, it's ( ). 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "my",
+   "I",
+   "mine",
+   "me"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「mine」。「私のもの」という意味を1語で表す所有代名詞は mine です。my は後ろに名詞が必要です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "Ken and ( ) are good friends. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "I",
+   "me",
+   "my",
+   "mine"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「I」。文の主語になるのは主格の I です。「Ken and I」で主語のまとまりになります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "I don't have any ( ) today. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "homework",
+   "homeworks",
+   "a homework",
+   "homeworkes"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「homework」。homework は数えられない名詞なので複数形にしたり a をつけたりせず、そのままの形を使います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "She has three ( ). 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "child",
+   "childs",
+   "children",
+   "childrens"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「children」。child の複数形は s をつけず children という特別な形になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "I know that girl. I met ( ) yesterday. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "she",
+   "her",
+   "hers",
+   "they"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「her」。動詞 met の目的語になるのは目的格の her です。she は主語に使う形です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "We can see ( ) moon at night. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "a",
+   "an",
+   "the",
+   "some"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「the」。moon(月)のように世界に1つしかないものには the をつけます。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "There are many students in this school, but ( ) of them can swim well. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "a few",
+   "little",
+   "much",
+   "a little"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「a few」。students は数えられる名詞なので「少数の」は a few を使います。little や a little は数えられない名詞に使います。"
+ }
+]

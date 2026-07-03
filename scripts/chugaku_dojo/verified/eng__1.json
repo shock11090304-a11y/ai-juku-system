@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "Look! The children ( ) soccer in the park now.",
+  "passage": "",
+  "choices": [
+   "are playing",
+   "play",
+   "played",
+   "were playing"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制。正解は「are playing」。 nowや「Look!」があり、今まさに進行中の動作なので現在進行形〈be動詞+~ing〉を使います。主語がchildrenと複数なのでareです。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "I ( ) my homework yesterday, so I can play games today.",
+  "passage": "",
+  "choices": [
+   "finish",
+   "finished",
+   "am finishing",
+   "will finish"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「finished」。 yesterday(昨日)は過去を表す言葉なので、動詞は過去形にします。finishの過去形はfinishedです。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "A: What ( ) you do next Sunday?  B: I'm going to visit my grandmother.",
+  "passage": "",
+  "choices": [
+   "did",
+   "do",
+   "will",
+   "are"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「will」。 next Sunday(次の日曜日)は未来のことで、答えもbe going toで未来を表しています。未来をたずねるのでwill you do ~? とします。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "My father ( ) a newspaper when I got home last night.",
+  "passage": "",
+  "choices": [
+   "reads",
+   "is reading",
+   "was reading",
+   "read"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「was reading」。 「私が帰宅したとき(過去のある時点)に読んでいる最中だった」ので過去進行形〈was/were+~ing〉を使います。主語がfatherなのでwasです。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "We ( ) to Okinawa next summer.",
+  "passage": "",
+  "choices": [
+   "go",
+   "went",
+   "are going to go",
+   "were going"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「are going to go」。 next summer(次の夏)は未来のことなので、be going to ~(~するつもりだ)で未来を表します。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "Ken ( ) up early this morning because he had a lot of things to do.",
+  "passage": "",
+  "choices": [
+   "gets",
+   "got",
+   "is getting",
+   "will get"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「got」。 this morning(今朝)はもう過ぎた過去のことなので過去形にします。getは不規則動詞で、過去形はgotです。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "It ( ) raining hard, so we couldn't go outside.",
+  "passage": "",
+  "choices": [
+   "is",
+   "was",
+   "were",
+   "will be"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「was」。 couldn't(~できなかった)という過去の文なので、進行形も過去進行形〈was raining〉にします。主語itにはwasを使います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "A: Were you sleeping at ten last night?  B: Yes, I ( ).",
+  "passage": "",
+  "choices": [
+   "was",
+   "were",
+   "did",
+   "am"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制。正解は「was」。 Were you ~? と過去進行形でたずねられているので、答えもbe動詞の過去形で返します。主語Iにはwasを使います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "Don't worry. I ( ) help you with your bags.",
+  "passage": "",
+  "choices": [
+   "will",
+   "was",
+   "did",
+   "am"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制。正解は「will」。 「(今その場で決めて)~してあげよう」という未来の意志を表すのでwillを使います。〈will+動詞の原形〉の形です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "When I visited Tom, he ( ) lunch in the kitchen.",
+  "passage": "",
+  "choices": [
+   "cooks",
+   "cooked",
+   "was cooking",
+   "will cook"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「was cooking」。 「私が訪ねたとき(過去の一点)に料理をしている最中だった」ので過去進行形〈was cooking〉を使います。"
+ }
+]

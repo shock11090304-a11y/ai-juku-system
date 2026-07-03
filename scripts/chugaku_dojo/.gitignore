@@ -1,0 +1,5 @@
+# 中間生成物(再生成可能・コミット不要)
+_*.js
+_*.json
+blind/
+chu_unit_presets.js.txt

@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "△ABC と △DEF は相似で、相似比が 3:5 である。AB=12cm のとき、対応する辺 DE の長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "20cm",
+   "14cm",
+   "18cm",
+   "7.2cm"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「20cm」。 相似比が3:5だから、対応する辺の長さの比も3:5。AB:DE=3:5より DE=12×5÷3=20(cm)。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "相似な2つの三角形があり、相似比が 2:3 である。このとき、面積の比を求めなさい。",
+  "passage": "",
+  "choices": [
+   "2:3",
+   "4:9",
+   "4:6",
+   "8:27"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】相似。正解は「4:9」。 相似な図形の面積の比は相似比の2乗になる。2²:3²=4:9。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "△ABC で、辺AB上に点D、辺AC上に点Eがあり、DE//BC である。AD=4cm、DB=6cm、DE=8cm のとき、BC の長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "12cm",
+   "20cm",
+   "16cm",
+   "10cm"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】相似。正解は「20cm」。 DE//BCより△ADEと△ABCは相似。AD:AB=4:(4+6)=4:10だから DE:BC=4:10。BC=8×10÷4=20(cm)。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "△ABC で、辺ABの中点をM、辺ACの中点をNとする。BC=14cm のとき、中点連結定理より線分MN の長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "28cm",
+   "14cm",
+   "7cm",
+   "3.5cm"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】相似。正解は「7cm」。 中点連結定理より MN//BC で MN=BC÷2=14÷2=7(cm)。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "身長1.5mの人が地面に2mの影をつくっているとき、同じ時刻に10mの影をつくっている木の高さは何mか。",
+  "passage": "",
+  "choices": [
+   "7.5m",
+   "13.3m",
+   "15m",
+   "6.5m"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「7.5m」。 同じ時刻の影は相似なので、身長:影=木の高さ:木の影。1.5:2=木:10より 木=1.5×10÷2=7.5(m)。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "相似な2つの図形の面積の比が 9:16 であるとき、相似比を求めなさい。",
+  "passage": "",
+  "choices": [
+   "9:16",
+   "3:4",
+   "81:256",
+   "18:32"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】相似。正解は「3:4」。 面積の比は相似比の2乗だから、相似比は面積比の平方根。√9:√16=3:4。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "相似な2つの立体があり、相似比が 1:2 である。このとき、体積の比を求めなさい。",
+  "passage": "",
+  "choices": [
+   "1:2",
+   "1:4",
+   "1:8",
+   "1:6"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】相似。正解は「1:8」。 相似な立体の体積の比は相似比の3乗になる。1³:2³=1:8。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "△ABC で、辺AB上に点D、辺AC上に点Eがあり、DE//BC である。AD=6cm、DB=4cm、AE=9cm のとき、EC の長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "6cm",
+   "13.5cm",
+   "3cm",
+   "9cm"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「6cm」。 DE//BCのとき AD:DB=AE:EC。6:4=9:ECより EC=4×9÷6=6(cm)。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "相似な2つの三角形P、Qがあり、相似比は 2:3 である。三角形Pの周の長さが24cmのとき、三角形Qの周の長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "16cm",
+   "36cm",
+   "54cm",
+   "48cm"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】相似。正解は「36cm」。 周の長さの比は相似比に等しく2:3。24:Q=2:3より Q=24×3÷2=36(cm)。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "相似な2つの三角形があり、面積がそれぞれ 8cm²、18cm² である。このとき、対応する辺の長さの比(相似比)を求めなさい。",
+  "passage": "",
+  "choices": [
+   "8:18",
+   "4:9",
+   "2:3",
+   "2√2:3√2"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】相似。正解は「2:3」。 面積の比は8:18=4:9。相似比は面積比の平方根だから √4:√9=2:3。"
+ }
+]

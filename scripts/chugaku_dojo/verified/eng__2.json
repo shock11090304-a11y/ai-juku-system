@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "You () not run in the hallway. It's dangerous. (下線部に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "can",
+   "must",
+   "may",
+   "will"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞。正解は「must」。「~してはいけない」という強い禁止は must not で表します。can not は「できない」、may not は「~かもしれない/してはいけない」ですが、危険を伝える強い禁止では must が最適です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "\"() you open the window?\" \"Sure. No problem.\" (下線部に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "Must",
+   "Should",
+   "Could",
+   "May"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞。正解は「Could」。「~してくれますか」と相手に依頼するときは Could you ~? を使います。Sure と応じているので依頼の表現が合います。May you ~? という依頼表現はありません。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "When I was a child, I () swim very fast. (下線部に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "can",
+   "could",
+   "must",
+   "should"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞。正解は「could」。When I was a child と過去のことを述べているので、can の過去形 could「~できた」を使います。can は現在形なので時制が合いません。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "It's cloudy today. It () rain this afternoon, so take your umbrella. (下線部に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "may",
+   "must",
+   "can",
+   "should"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「may」。「~かもしれない」という推量は may で表します。曇っていて雨が降るかもしれない、という不確かな予想なので may が合います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "You () finish your homework before dinner. Your mother is angry. (下線部に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "can",
+   "may",
+   "have to",
+   "are able to"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞。正解は「have to」。「~しなければならない」という義務は have to で表します。お母さんが怒っているので宿題を終わらせる必要がある、という文脈に合います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "\"() I use your pen?\" \"Yes, of course.\" (下線部に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "May",
+   "Must",
+   "Should",
+   "Would"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「May」。「~してもいいですか」と許可を求めるときは May I ~? を使います。Yes, of course. と許可しているので合います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "You don't () wait here. You can go home now. (下線部に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "must",
+   "have to",
+   "should",
+   "may"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞。正解は「have to」。don't have to は「~する必要はない」という意味です。もう帰っていいという文脈に合います。must は don't must という形にできません。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "() you like something to drink? (下線部に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "Would",
+   "Must",
+   "Should",
+   "May"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「Would」。Would you like ~? は「~はいかがですか」と相手にすすめる決まった言い方です。飲み物をすすめる文なので Would が合います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "We () be quiet in the library. Many people are studying there. (下線部に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "should",
+   "may",
+   "could",
+   "will"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「should」。「~すべきだ」という助言・当然を表すのは should です。図書館では静かにすべきだ、という文脈に合います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "If it is sunny tomorrow, we () able to play soccer. (下線部に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "will",
+   "will be",
+   "can",
+   "must"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞。正解は「will be」。「~できるだろう」と未来のことを言うときは will のあとに be able to を続けます。will と can を並べて使うことはできないので will be able to とします。"
+ }
+]

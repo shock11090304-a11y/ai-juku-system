@@ -1,0 +1,146 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の内容として正しいものを1つ選びなさい。",
+  "passage": "Last summer, Kenta visited his grandfather in Hokkaido. His grandfather has a small farm and grows potatoes and corn. Every morning, Kenta got up at five and helped him on the farm. It was hard work, but Kenta enjoyed it very much. One day, his grandfather said, \"Farming is not easy, but I love it because I can grow food for many people.\" Kenta was moved by these words. Before he went home, he decided to study science at high school. He wanted to learn how to grow better vegetables. Now he reads many books about plants every day.",
+  "choices": [
+   "Kenta helped his grandfather on the farm every morning.",
+   "Kenta's grandfather grows rice and tomatoes on his farm.",
+   "Kenta got up at seven every morning in Hokkaido.",
+   "Kenta thought the farm work was too hard to enjoy."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「Kenta helped his grandfather on the farm every morning.」。本文に「Every morning, Kenta got up at five and helped him on the farm」とあるので、毎朝手伝ったが正しいです。育てているのはpotatoesとcorn、起きたのは五時、そして仕事を楽しんだと書かれています。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の内容から、ケンタが高校で理科(science)を勉強しようと決めた理由として最も適切なものはどれですか。",
+  "passage": "Last summer, Kenta visited his grandfather in Hokkaido. His grandfather has a small farm and grows potatoes and corn. Every morning, Kenta got up at five and helped him on the farm. It was hard work, but Kenta enjoyed it very much. One day, his grandfather said, \"Farming is not easy, but I love it because I can grow food for many people.\" Kenta was moved by these words. Before he went home, he decided to study science at high school. He wanted to learn how to grow better vegetables. Now he reads many books about plants every day.",
+  "choices": [
+   "He wanted to learn how to grow better vegetables.",
+   "He wanted to become a science teacher in Hokkaido.",
+   "He wanted to make a lot of money on a big farm.",
+   "He wanted to travel around the world after school."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「He wanted to learn how to grow better vegetables.」。本文に「He wanted to learn how to grow better vegetables」と理由がはっきり書かれています。先生になる・お金・旅行の話は本文にありません。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の下線部 these words が指す内容として最も適切なものはどれですか。",
+  "passage": "Last summer, Kenta visited his grandfather in Hokkaido. His grandfather has a small farm and grows potatoes and corn. Every morning, Kenta got up at five and helped him on the farm. It was hard work, but Kenta enjoyed it very much. One day, his grandfather said, \"Farming is not easy, but I love it because I can grow food for many people.\" Kenta was moved by these words. Before he went home, he decided to study science at high school. He wanted to learn how to grow better vegetables. Now he reads many books about plants every day.",
+  "choices": [
+   "Farming is not easy, but I love it because I can grow food for many people.",
+   "Every morning, Kenta got up at five and helped him.",
+   "He decided to study science at high school.",
+   "He reads many books about plants every day."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「Farming is not easy, but I love it because I can grow food for many people.」。these words は直前のおじいさんの発言を指しています。指示語は前の内容を指すので、直前の会話文が答えです。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の内容として正しいものを1つ選びなさい。",
+  "passage": "Emma is a student from Australia. She came to Japan two years ago and now goes to a junior high school in Osaka. At first, she could not speak Japanese well, so she was worried about making friends. However, her classmates were very kind to her. They talked to her slowly and taught her useful words. One girl, Aya, became her best friend. They eat lunch together every day. Emma says, \"Learning Japanese is difficult, but my friends help me a lot. I want to work in Japan in the future.\" She practices Japanese with Aya after school.",
+  "choices": [
+   "Emma's classmates were kind and taught her useful words.",
+   "Emma could speak Japanese well when she came to Japan.",
+   "Emma came to Japan from Australia five years ago.",
+   "Emma eats lunch alone because she has no friends."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「Emma's classmates were kind and taught her useful words.」。本文に「her classmates were very kind to her. They talked to her slowly and taught her useful words」とあります。来日は二年前で、最初は日本語をうまく話せませんでした。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の内容から、エマの将来の希望として正しいものはどれですか。",
+  "passage": "Emma is a student from Australia. She came to Japan two years ago and now goes to a junior high school in Osaka. At first, she could not speak Japanese well, so she was worried about making friends. However, her classmates were very kind to her. They talked to her slowly and taught her useful words. One girl, Aya, became her best friend. They eat lunch together every day. Emma says, \"Learning Japanese is difficult, but my friends help me a lot. I want to work in Japan in the future.\" She practices Japanese with Aya after school.",
+  "choices": [
+   "She wants to work in Japan in the future.",
+   "She wants to go back to Australia soon.",
+   "She wants to become a Japanese teacher.",
+   "She wants to study English harder."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「She wants to work in Japan in the future.」。エマ自身が「I want to work in Japan in the future」と言っています。オーストラリアに戻る・先生になるとは本文に書かれていません。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の下線部 They eat lunch together every day. の They が指す人たちとして正しいものはどれですか。",
+  "passage": "Emma is a student from Australia. She came to Japan two years ago and now goes to a junior high school in Osaka. At first, she could not speak Japanese well, so she was worried about making friends. However, her classmates were very kind to her. They talked to her slowly and taught her useful words. One girl, Aya, became her best friend. They eat lunch together every day. Emma says, \"Learning Japanese is difficult, but my friends help me a lot. I want to work in Japan in the future.\" She practices Japanese with Aya after school.",
+  "choices": [
+   "Emma and Aya",
+   "Emma and her teacher",
+   "All of Emma's classmates",
+   "Emma and her family"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「Emma and Aya」。直前で「One girl, Aya, became her best friend.」と述べ、次の文で They eat lunch together とあるので、They はエマとアヤの二人を指します。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の内容として正しいものを1つ選びなさい。",
+  "passage": "Our town has a beautiful river. When my mother was a child, the water was very clean, and many fish lived there. But some years ago, people threw plastic bottles and bags into the river, and it became dirty. Last year, our school started a project to clean it. Every month, students and teachers pick up the trash along the river. Many people in the town joined us, too. Now the river is getting cleaner, and we can see small fish again. I am happy because I could do something good for my town. I hope everyone keeps the river clean.",
+  "choices": [
+   "Students and teachers pick up the trash by the river every month.",
+   "The river has always been dirty since my mother was a child.",
+   "Only students clean the river, and no one else helps them.",
+   "The school started the project ten years ago."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「Students and teachers pick up the trash by the river every month.」。本文に「Every month, students and teachers pick up the trash along the river」とあります。母が子どものころは川はきれいで、町の人も手伝い、活動は昨年始まりました。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文によると、川が汚れてしまった原因として正しいものはどれですか。",
+  "passage": "Our town has a beautiful river. When my mother was a child, the water was very clean, and many fish lived there. But some years ago, people threw plastic bottles and bags into the river, and it became dirty. Last year, our school started a project to clean it. Every month, students and teachers pick up the trash along the river. Many people in the town joined us, too. Now the river is getting cleaner, and we can see small fish again. I am happy because I could do something good for my town. I hope everyone keeps the river clean.",
+  "choices": [
+   "People threw plastic bottles and bags into the river.",
+   "The town built a new factory near the river.",
+   "The river was too small for many fish to live in.",
+   "Students forgot to clean the river every month."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「People threw plastic bottles and bags into the river.」。本文に「people threw plastic bottles and bags into the river, and it became dirty」と原因が書かれています。工場や川の大きさの話は本文にありません。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "この本文で筆者が最も伝えたいこと(要旨)として最も適切なものはどれですか。",
+  "passage": "Our town has a beautiful river. When my mother was a child, the water was very clean, and many fish lived there. But some years ago, people threw plastic bottles and bags into the river, and it became dirty. Last year, our school started a project to clean it. Every month, students and teachers pick up the trash along the river. Many people in the town joined us, too. Now the river is getting cleaner, and we can see small fish again. I am happy because I could do something good for my town. I hope everyone keeps the river clean.",
+  "choices": [
+   "Working together to clean the river made the town better, and the writer hopes it stays clean.",
+   "The river will never become clean again no matter what people do.",
+   "Cleaning the river is only the teachers' job, not the students'.",
+   "The writer wants to move to another town with a cleaner river."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「Working together to clean the river made the town better, and the writer hopes it stays clean.」。汚れた川をみんなで掃除してきれいになり、最後に「keeps the river clean」と願っています。全体の流れに合うのはこの一文だけです。"
+ }
+]

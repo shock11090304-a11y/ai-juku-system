@@ -12309,6 +12309,16 @@ EXAM_QUESTION_ROTATION = [
     ("daigaku", "rinri",         "kyotsu"),  # 共通テスト 倫理 (古典思想家/西洋哲学/現代思想/青年期)
     ("daigaku", "koukyou",       "kyotsu"),  # 共通テスト 公共 (新課程 2025〜・主体的市民・公共性・倫理+政経の入門)
     ("daigaku", "gendaishakai",  "kyotsu"),  # 共通テスト 現代社会 (旧課程 2024〜2024・時事問題/SDGs/グローバル化)
+    # 🧒 中学生 (公立高校入試 標準・中1〜中3) ・2026-07-03 塾長指示「中学生分野(入試問題道場)の弱点克服」追加
+    #   dojo-drill.html の「🧒 中学生（高校受験）」レベル (単元別/弱点克服) が使う専用プール。
+    #   exam=chugaku / grade=koukou 固定・科目1part(英/数/国/理/社)・単元は bank topic LIKE(=各設問 unit)で絞る。
+    #   本文必須ガード(DAIGAKU_KOKUGO_PARTS)は exam=daigaku 限定なので chugaku/kokugo は非対象。
+    #   ★ 下の AUTO_GENERATE_SKIP にも登録 → 手動取込のみ(AI自動生成/オンデマンド補充しない・無課金維持)。
+    ("chugaku", "eng",    "koukou"),   # 中学英語 (文法単元別 + 長文読解)
+    ("chugaku", "math",   "koukou"),   # 中学数学 (正負の数〜三平方の定理・確率・データ)
+    ("chugaku", "kokugo", "koukou"),   # 中学国語 (漢字/語句/文法/敬語/古文入門/詩歌 + 読解)
+    ("chugaku", "rika",   "koukou"),   # 中学理科 (物理/化学/生物/地学の全単元)
+    ("chugaku", "shakai", "koukou"),   # 中学社会 (地理/歴史/公民)
 ]
 
 
@@ -12339,6 +12349,13 @@ EXAM_QUESTION_AUTO_GENERATE_SKIP = {
     # 共通テスト型 化学/物理 発展 (図不要の数値検証型・連動大問・手動取込のみ・AI生成しない / 2026-06-23)
     ("rikei", "chem_exam", "kyotsu_rikei"),
     ("rikei", "phys_exam", "kyotsu_rikei"),
+    # 🧒 中学生 (公立高校入試) 弱点克服プール (手動取込のみ・AI生成/オンデマンド補充しない / 2026-07-03)
+    #   大学受験用プロンプトで中学問題を自動生成すると品質崩壊 + 無課金方針に反するため全 part を skip。
+    ("chugaku", "eng",    "koukou"),
+    ("chugaku", "math",   "koukou"),
+    ("chugaku", "kokugo", "koukou"),
+    ("chugaku", "rika",   "koukou"),
+    ("chugaku", "shakai", "koukou"),
 }
 
 

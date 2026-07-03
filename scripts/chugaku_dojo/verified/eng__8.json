@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "I ( ) my homework already.",
+  "passage": "",
+  "choices": [
+   "finish",
+   "finishing",
+   "have finished",
+   "am finish"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】現在完了。正解は「have finished」。 現在完了は〈have[has]+過去分詞〉の形。alreadyは「もう(すでに)」の意味で完了の意味を表し、finish の過去分詞 finished を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "She ( ) lived in Tokyo for ten years.",
+  "passage": "",
+  "choices": [
+   "have",
+   "has",
+   "is",
+   "does"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「has」。 主語が三人称単数(She)のときは has を使う。for ten years「10年間」は継続を表し、現在完了〈has+過去分詞 lived〉になる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "Have you ever ( ) Kyoto?",
+  "passage": "",
+  "choices": [
+   "visit",
+   "visited",
+   "visiting",
+   "visits"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「visited」。 現在完了では have のあとに過去分詞を置く。ever「今までに」は経験を表し、visit の過去分詞 visited を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "My brother has been sick ( ) last Sunday.",
+  "passage": "",
+  "choices": [
+   "for",
+   "since",
+   "when",
+   "ago"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「since」。 last Sunday は「先週の日曜日」という起点(時の一点)なので since「〜から(ずっと)」を使う。期間の長さを表す for とは区別する。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "\"Have you finished your lunch yet?\" \"( )\"",
+  "passage": "",
+  "choices": [
+   "Yes, I do.",
+   "Yes, I have.",
+   "Yes, I am.",
+   "Yes, I did."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「Yes, I have.」。 Have you 〜? で始まる現在完了の質問には have[has] を使って答える。yet は疑問文で「もう」の意味。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "I have known Ken ( ) three years.",
+  "passage": "",
+  "choices": [
+   "since",
+   "for",
+   "from",
+   "in"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「for」。 three years「3年間」は期間の長さを表すので for「〜の間」を使う。起点を表す since とは使い分ける。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "We ( ) seen that movie before.",
+  "passage": "",
+  "choices": [
+   "haven't",
+   "aren't",
+   "didn't",
+   "don't"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「haven't」。 現在完了の否定文は〈have[has] not+過去分詞〉。あとに過去分詞 seen が続くので haven't(=have not)を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "How long ( ) you studied English?",
+  "passage": "",
+  "choices": [
+   "do",
+   "did",
+   "have",
+   "are"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】現在完了。正解は「have」。 How long「どのくらいの間」で期間をたずね、あとに studied(過去分詞)が続くので現在完了の疑問文〈have+主語+過去分詞〉になる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "The train has just ( ).",
+  "passage": "",
+  "choices": [
+   "leave",
+   "left",
+   "leaving",
+   "leaves"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「left」。 just「ちょうど」は完了を表す。has のあとは過去分詞なので、leave の過去分詞 left を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "Tom has ( ) to America twice.",
+  "passage": "",
+  "choices": [
+   "gone",
+   "been",
+   "went",
+   "going"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「been」。 「〜へ行ったことがある」という経験は have been to 〜 で表す。have gone to 〜 は「行ってしまった(今ここにいない)」の意味になる。"
+ }
+]

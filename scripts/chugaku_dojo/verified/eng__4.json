@@ -1,0 +1,146 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Ken is ( ) than his brother.",
+  "passage": "",
+  "choices": [
+   "tall",
+   "taller",
+   "tallest",
+   "more tall"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「taller」。 than があるので比較級を使います。short い形容詞 tall は語尾に -er をつけて taller とします。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "This is the ( ) book of the three.",
+  "passage": "",
+  "choices": [
+   "interesting",
+   "more interesting",
+   "most interesting",
+   "interestinger"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「most interesting」。 the があり「3つの中で一番」を表すので最上級です。長い語 interesting は前に most を置いて最上級にします。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Mt. Fuji is the ( ) mountain in Japan.",
+  "passage": "",
+  "choices": [
+   "high",
+   "higher",
+   "highest",
+   "most high"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「highest」。「日本で一番高い」という最上級で、the と in Japan が手がかりです。short い語 high は -est をつけて highest とします。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Soccer is as ( ) as baseball in my class.",
+  "passage": "",
+  "choices": [
+   "popular",
+   "more popular",
+   "most popular",
+   "popularer"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較。正解は「popular」。「as ... as」で「同じくらい〜だ」を表すときは、間に形容詞の原級(もとの形)を入れます。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Which is ( ), summer or winter?",
+  "passage": "",
+  "choices": [
+   "hot",
+   "hotter",
+   "hottest",
+   "the hottest"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「hotter」。夏と冬の2つを比べているので比較級です。hot は t を重ねて hotter とつづります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "This question is ( ) difficult than that one.",
+  "passage": "",
+  "choices": [
+   "much",
+   "more",
+   "many",
+   "most"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「more」。than があり、difficult は長い語なので前に more を置いて比較級にします。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "I like spring the ( ) of all the seasons.",
+  "passage": "",
+  "choices": [
+   "good",
+   "well",
+   "better",
+   "best"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較。正解は「best」。「すべての季節の中で一番好き」という最上級で、well / much の最上級 best を使います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Tom can run ( ) than any other boy in his class.",
+  "passage": "",
+  "choices": [
+   "fast",
+   "faster",
+   "fastest",
+   "more fast"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「faster」。than があるので比較級です。副詞 fast は -er をつけて faster とします。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Yumi is one of the ( ) students in this school.",
+  "passage": "",
+  "choices": [
+   "smart",
+   "smarter",
+   "smartest",
+   "more smart"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「smartest」。「one of the + 最上級 + 複数名詞」で「最も〜な…の一人」を表します。smart は -est をつけて smartest とします。"
+ }
+]

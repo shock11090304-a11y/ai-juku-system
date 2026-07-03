@@ -298,10 +298,80 @@
       { subj: '国語', name: '現代文 評論読解', exam: 'daigaku', part: 'gendai', grade: 'kyotsu', filter: '評論読解', min: 15, topic: '現代文 評論読解' },
       { subj: '国語', name: '現代文 小説読解', exam: 'daigaku', part: 'gendai', grade: 'kyotsu', filter: '小説読解', min: 15, topic: '現代文 小説読解' },
     ];
+    // ───────── 🧒 中学生（公立高校入試 標準・弱点克服）: 2026-07-03 塾長指示で新設。exam=chugaku/grade=koukou 固定。
+    //   単元別（弱点克服）と同機構: agg で小問束ね + bank topic LIKE(=各設問 unit) で単元絞り込み。専用プール=手動取込のみ。
+    const CHU_UNIT_PRESETS = [
+      // 英語
+      { subj: '英語', name: 'be動詞・一般動詞', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: 'be動詞・一般動詞', unitExact: true, agg: 8, min: 12, topic: '中学英語 be動詞・一般動詞' },
+      { subj: '英語', name: '時制（過去・進行・未来）', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '時制', unitExact: true, agg: 8, min: 12, topic: '中学英語 時制' },
+      { subj: '英語', name: '助動詞', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '助動詞', unitExact: true, agg: 8, min: 12, topic: '中学英語 助動詞' },
+      { subj: '英語', name: '名詞・代名詞・冠詞', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '名詞・代名詞・冠詞', unitExact: true, agg: 8, min: 12, topic: '中学英語 名詞・代名詞・冠詞' },
+      { subj: '英語', name: '比較', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '比較', unitExact: true, agg: 8, min: 12, topic: '中学英語 比較' },
+      { subj: '英語', name: '不定詞・動名詞', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '不定詞・動名詞', unitExact: true, agg: 8, min: 12, topic: '中学英語 不定詞・動名詞' },
+      { subj: '英語', name: '分詞（現在分詞・過去分詞）', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '分詞', unitExact: true, agg: 8, min: 12, topic: '中学英語 分詞' },
+      { subj: '英語', name: '受動態', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '受動態', unitExact: true, agg: 8, min: 12, topic: '中学英語 受動態' },
+      { subj: '英語', name: '現在完了', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '現在完了', unitExact: true, agg: 8, min: 12, topic: '中学英語 現在完了' },
+      { subj: '英語', name: '関係代名詞', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '関係代名詞', unitExact: true, agg: 8, min: 12, topic: '中学英語 関係代名詞' },
+      { subj: '英語', name: '接続詞・前置詞', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '接続詞・前置詞', unitExact: true, agg: 8, min: 12, topic: '中学英語 接続詞・前置詞' },
+      { subj: '英語', name: '会話・熟語表現', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '会話表現', unitExact: true, agg: 8, min: 12, topic: '中学英語 会話表現' },
+      { subj: '英語', name: '長文読解', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '長文読解', unitExact: true, agg: 4, min: 12, topic: '中学英語 長文読解' },
+      // 数学
+      { subj: '数学', name: '正負の数・四則計算', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '正負の数', unitExact: true, agg: 8, min: 12, topic: '中学数学 正負の数' },
+      { subj: '数学', name: '文字式・式の計算', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '式の計算', unitExact: true, agg: 8, min: 12, topic: '中学数学 式の計算' },
+      { subj: '数学', name: '一次方程式・文章題', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '一次方程式', unitExact: true, agg: 8, min: 12, topic: '中学数学 一次方程式' },
+      { subj: '数学', name: '連立方程式', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '連立方程式', unitExact: true, agg: 8, min: 12, topic: '中学数学 連立方程式' },
+      { subj: '数学', name: '平方根', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '平方根', unitExact: true, agg: 8, min: 12, topic: '中学数学 平方根' },
+      { subj: '数学', name: '二次方程式', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '二次方程式', unitExact: true, agg: 8, min: 12, topic: '中学数学 二次方程式' },
+      { subj: '数学', name: '比例・反比例', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '比例・反比例', unitExact: true, agg: 8, min: 12, topic: '中学数学 比例・反比例' },
+      { subj: '数学', name: '一次関数', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '一次関数', unitExact: true, agg: 8, min: 12, topic: '中学数学 一次関数' },
+      { subj: '数学', name: '関数 y=ax²（二乗に比例）', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '二乗に比例', unitExact: true, agg: 8, min: 12, topic: '中学数学 二乗に比例' },
+      { subj: '数学', name: '三角形の合同と証明', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '合同と証明', unitExact: true, agg: 8, min: 12, topic: '中学数学 合同と証明' },
+      { subj: '数学', name: '図形の相似', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '相似', unitExact: true, agg: 8, min: 12, topic: '中学数学 相似' },
+      { subj: '数学', name: '円周角', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '円周角', unitExact: true, agg: 8, min: 12, topic: '中学数学 円周角' },
+      { subj: '数学', name: '三平方の定理', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '三平方の定理', unitExact: true, agg: 8, min: 12, topic: '中学数学 三平方の定理' },
+      { subj: '数学', name: '場合の数・確率', exam: 'chugaku', part: 'math', grade: 'koukou', filter: '確率', unitExact: true, agg: 8, min: 12, topic: '中学数学 確率' },
+      { subj: '数学', name: 'データの活用（統計）', exam: 'chugaku', part: 'math', grade: 'koukou', filter: 'データの活用', unitExact: true, agg: 8, min: 12, topic: '中学数学 データの活用' },
+      // 国語
+      { subj: '国語', name: '漢字の読み書き', exam: 'chugaku', part: 'kokugo', grade: 'koukou', filter: '漢字', unitExact: true, agg: 8, min: 12, topic: '中学国語 漢字' },
+      { subj: '国語', name: '語句・慣用句・四字熟語', exam: 'chugaku', part: 'kokugo', grade: 'koukou', filter: '語句', unitExact: true, agg: 8, min: 12, topic: '中学国語 語句' },
+      { subj: '国語', name: '文法（品詞・活用）', exam: 'chugaku', part: 'kokugo', grade: 'koukou', filter: '文法', unitExact: true, agg: 8, min: 12, topic: '中学国語 文法' },
+      { subj: '国語', name: '敬語', exam: 'chugaku', part: 'kokugo', grade: 'koukou', filter: '敬語', unitExact: true, agg: 8, min: 12, topic: '中学国語 敬語' },
+      { subj: '国語', name: '古文入門', exam: 'chugaku', part: 'kokugo', grade: 'koukou', filter: '古文', unitExact: true, agg: 8, min: 12, topic: '中学国語 古文' },
+      { subj: '国語', name: '詩・短歌・俳句', exam: 'chugaku', part: 'kokugo', grade: 'koukou', filter: '詩歌', unitExact: true, agg: 8, min: 12, topic: '中学国語 詩歌' },
+      { subj: '国語', name: '説明的文章の読解', exam: 'chugaku', part: 'kokugo', grade: 'koukou', filter: '説明的文章', unitExact: true, agg: 4, min: 12, topic: '中学国語 説明的文章' },
+      { subj: '国語', name: '文学的文章の読解', exam: 'chugaku', part: 'kokugo', grade: 'koukou', filter: '文学的文章', unitExact: true, agg: 4, min: 12, topic: '中学国語 文学的文章' },
+      // 理科
+      { subj: '理科', name: '光・音', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '光と音', unitExact: true, agg: 8, min: 12, topic: '中学理科 光と音' },
+      { subj: '理科', name: '力・圧力', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '力と圧力', unitExact: true, agg: 8, min: 12, topic: '中学理科 力と圧力' },
+      { subj: '理科', name: '電流と回路', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '電流と回路', unitExact: true, agg: 8, min: 12, topic: '中学理科 電流と回路' },
+      { subj: '理科', name: '電流と磁界', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '電流と磁界', unitExact: true, agg: 8, min: 12, topic: '中学理科 電流と磁界' },
+      { subj: '理科', name: '運動とエネルギー', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '運動とエネルギー', unitExact: true, agg: 8, min: 12, topic: '中学理科 運動とエネルギー' },
+      { subj: '理科', name: '物質の性質・状態変化', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '物質と状態変化', unitExact: true, agg: 8, min: 12, topic: '中学理科 物質と状態変化' },
+      { subj: '理科', name: '化学変化と原子・分子', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '化学変化と原子', unitExact: true, agg: 8, min: 12, topic: '中学理科 化学変化と原子' },
+      { subj: '理科', name: 'イオン・酸とアルカリ', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: 'イオンと酸', unitExact: true, agg: 8, min: 12, topic: '中学理科 イオンと酸' },
+      { subj: '理科', name: '植物のつくりとはたらき', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '植物', unitExact: true, agg: 8, min: 12, topic: '中学理科 植物' },
+      { subj: '理科', name: '動物・人体', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '動物と人体', unitExact: true, agg: 8, min: 12, topic: '中学理科 動物と人体' },
+      { subj: '理科', name: '生殖・遺伝', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '生殖と遺伝', unitExact: true, agg: 8, min: 12, topic: '中学理科 生殖と遺伝' },
+      { subj: '理科', name: '大地の変化（地層・火山・地震）', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '大地の変化', unitExact: true, agg: 8, min: 12, topic: '中学理科 大地の変化' },
+      { subj: '理科', name: '天気とその変化', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '天気', unitExact: true, agg: 8, min: 12, topic: '中学理科 天気' },
+      { subj: '理科', name: '地球と宇宙（天体）', exam: 'chugaku', part: 'rika', grade: 'koukou', filter: '天体', unitExact: true, agg: 8, min: 12, topic: '中学理科 天体' },
+      // 社会
+      { subj: '社会', name: '世界地理', exam: 'chugaku', part: 'shakai', grade: 'koukou', filter: '世界地理', unitExact: true, agg: 8, min: 12, topic: '中学社会 世界地理' },
+      { subj: '社会', name: '日本地理', exam: 'chugaku', part: 'shakai', grade: 'koukou', filter: '日本地理', unitExact: true, agg: 8, min: 12, topic: '中学社会 日本地理' },
+      { subj: '社会', name: '歴史 古代〜平安', exam: 'chugaku', part: 'shakai', grade: 'koukou', filter: '歴史 古代', unitExact: true, agg: 8, min: 12, topic: '中学社会 歴史 古代' },
+      { subj: '社会', name: '歴史 鎌倉〜室町', exam: 'chugaku', part: 'shakai', grade: 'koukou', filter: '歴史 中世', unitExact: true, agg: 8, min: 12, topic: '中学社会 歴史 中世' },
+      { subj: '社会', name: '歴史 安土桃山〜江戸', exam: 'chugaku', part: 'shakai', grade: 'koukou', filter: '歴史 近世', unitExact: true, agg: 8, min: 12, topic: '中学社会 歴史 近世' },
+      { subj: '社会', name: '歴史 明治〜大正', exam: 'chugaku', part: 'shakai', grade: 'koukou', filter: '歴史 近代', unitExact: true, agg: 8, min: 12, topic: '中学社会 歴史 近代' },
+      { subj: '社会', name: '歴史 昭和〜現代', exam: 'chugaku', part: 'shakai', grade: 'koukou', filter: '歴史 現代', unitExact: true, agg: 8, min: 12, topic: '中学社会 歴史 現代' },
+      { subj: '社会', name: '公民 政治（憲法・人権・三権）', exam: 'chugaku', part: 'shakai', grade: 'koukou', filter: '公民 政治', unitExact: true, agg: 8, min: 12, topic: '中学社会 公民 政治' },
+      { subj: '社会', name: '公民 経済', exam: 'chugaku', part: 'shakai', grade: 'koukou', filter: '公民 経済', unitExact: true, agg: 8, min: 12, topic: '中学社会 公民 経済' },
+      { subj: '社会', name: '公民 国際社会', exam: 'chugaku', part: 'shakai', grade: 'koukou', filter: '公民 国際', unitExact: true, agg: 8, min: 12, topic: '中学社会 公民 国際' },
+      { subj: '社会', name: '資料・統計の読み取り', exam: 'chugaku', part: 'shakai', grade: 'koukou', filter: '資料読み取り', unitExact: true, agg: 8, min: 12, topic: '中学社会 資料読み取り' },
+    ];
     // 共テ + 単元別 + 大学別 を1配列に集約 (data-idx 共有)
     const UNIV_FLAT = [];
     UNIVERSITIES.forEach(u => u.parts.forEach(p => UNIV_FLAT.push({ ...p, univKey: u.key, univName: u.name, name: `${u.name} ${p.label}` })));
-    const ALL = PRESETS.concat(UNIT_PRESETS, UNIV_FLAT);
+    const ALL = PRESETS.concat(UNIT_PRESETS, CHU_UNIT_PRESETS, UNIV_FLAT);
     const REASONS = [
       { v: '', t: '理由を選択…' },
       { v: 'understanding', t: '理解不足（知識・解法が分からなかった）' },
@@ -574,14 +644,16 @@
     const DD_LEVELS = [
       { key: 'kyotsu', label: '📘 共通テスト' },
       { key: 'unit',   label: '✍️ 単元別（弱点克服）' },
+      { key: 'chugaku', label: '🧒 中学生（高校受験）' },
       { key: 'univ',   label: '🎓 大学別（二次・私大）' },
     ];
     let ddLevel = 'kyotsu';
-    const ddSubject = { kyotsu: null, unit: null, univ: '国公立' };  // レベルごとに選択中の科目を保持
+    const ddSubject = { kyotsu: null, unit: null, chugaku: null, univ: '国公立' };  // レベルごとに選択中の科目を保持
 
     function ddSubjectsFor(level) {
       if (level === 'kyotsu') return [...new Set(PRESETS.map(p => p.subject))];
       if (level === 'unit')   return [...new Set(UNIT_PRESETS.map(p => p.subj))];
+      if (level === 'chugaku') return [...new Set(CHU_UNIT_PRESETS.map(p => p.subj))];
       return ['国公立', '私立'];
     }
 
@@ -645,6 +717,10 @@
       } else if (ddLevel === 'unit') {
         html += '<div class="muted" style="margin:0 0 0.6rem;">苦手な単元を10〜15分で</div><div class="preset-grid">';
         UNIT_PRESETS.filter(p => p.subj === activeSub).forEach(p => { html += presetCard(p, p.name, p.agg ? `${p.agg}問セット` : '本文読解'); });
+        html += '</div>';
+      } else if (ddLevel === 'chugaku') {
+        html += '<div class="muted" style="margin:0 0 0.6rem;">高校受験（公立標準）・苦手な単元を10〜15分で</div><div class="preset-grid">';
+        CHU_UNIT_PRESETS.filter(p => p.subj === activeSub).forEach(p => { html += presetCard(p, p.name, p.agg ? `${p.agg}問セット` : '本文読解'); });
         html += '</div>';
       } else {
         html += '<div class="muted" style="margin:0 0 0.6rem;">大学を選んでください</div><div class="univ-chips">';

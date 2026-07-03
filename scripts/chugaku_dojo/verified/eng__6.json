@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nLook at the ( ) baby. She is so cute.",
+  "passage": "",
+  "choices": [
+   "sleeping",
+   "slept",
+   "sleep",
+   "to sleep"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞。正解は「sleeping」。 名詞babyを前から修飾し「眠っている赤ちゃん」の意味。「〜している」と能動の意味なので現在分詞(-ing)を使います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nThis is a picture ( ) by my brother.",
+  "passage": "",
+  "choices": [
+   "taking",
+   "taken",
+   "take",
+   "takes"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞。正解は「taken」。 「兄によって撮られた写真」と受け身の意味なので過去分詞を使います。takeの過去分詞はtakenです。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nThe boy ( ) tennis over there is my friend.",
+  "passage": "",
+  "choices": [
+   "play",
+   "played",
+   "playing",
+   "plays"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「playing」。 「向こうでテニスをしている少年」と能動の意味で名詞boyを後ろから修飾します。「〜している」は現在分詞(-ing)です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nEnglish is a language ( ) all over the world.",
+  "passage": "",
+  "choices": [
+   "speaking",
+   "speak",
+   "spoke",
+   "spoken"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞。正解は「spoken」。 「世界中で話されている言語」と受け身の意味なので過去分詞を使います。speakの過去分詞はspokenです。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nDo you know the girl ( ) with Mr. Sato?",
+  "passage": "",
+  "choices": [
+   "talking",
+   "talked",
+   "talk",
+   "to talk"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞。正解は「talking」。 「サトウ先生と話している女の子」と能動の意味で名詞girlを後ろから修飾します。「〜している」は現在分詞(-ing)です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nI have a friend ( ) in Canada.",
+  "passage": "",
+  "choices": [
+   "lived",
+   "living",
+   "live",
+   "to live"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞。正解は「living」。 「カナダに住んでいる友達」と能動の意味で名詞friendを後ろから修飾します。「〜している」は現在分詞(-ing)です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nThe letter ( ) in English was very difficult to read.",
+  "passage": "",
+  "choices": [
+   "writing",
+   "wrote",
+   "written",
+   "write"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「written」。 「英語で書かれた手紙」と受け身の意味なので過去分詞を使います。writeの過去分詞はwrittenです。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nThere are many people ( ) for the bus at the station.",
+  "passage": "",
+  "choices": [
+   "waited",
+   "wait",
+   "to wait",
+   "waiting"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞。正解は「waiting」。 「バスを待っている多くの人々」と能動の意味で名詞peopleを後ろから修飾します。「〜している」は現在分詞(-ing)です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nI found some books ( ) in Chinese at the shop.",
+  "passage": "",
+  "choices": [
+   "wrote",
+   "written",
+   "writing",
+   "write"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞。正解は「written」。 「中国語で書かれた本」と受け身の意味なので過去分詞を使います。名詞booksを後ろから修飾しています。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nThe man ( ) the red car is my uncle.",
+  "passage": "",
+  "choices": [
+   "drives",
+   "driven",
+   "driving",
+   "drove"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「driving」。 「赤い車を運転している男の人」と能動の意味で名詞manを後ろから修飾します。「〜している」は現在分詞(-ing)です。"
+ }
+]

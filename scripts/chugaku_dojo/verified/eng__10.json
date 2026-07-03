@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nI stayed home ( ) it was raining hard.",
+  "passage": "",
+  "choices": [
+   "because",
+   "but",
+   "or",
+   "if"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「because」。理由を表すときは because を使います。「雨が激しく降っていたので家にいた」という意味になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nMy birthday is ( ) May.",
+  "passage": "",
+  "choices": [
+   "at",
+   "on",
+   "in",
+   "to"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞・前置詞。正解は「in」。月の前には in を使います。日付なら on、時刻なら at と使い分けます。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nWait here ( ) I come back.",
+  "passage": "",
+  "choices": [
+   "until",
+   "during",
+   "between",
+   "without"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「until」。「〜まで(ずっと)」と継続の期限を表すときは until を使います。「私が戻るまでここで待って」という意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nI want to be a doctor, ( ) I study hard every day.",
+  "passage": "",
+  "choices": [
+   "so",
+   "because",
+   "but",
+   "or"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「so」。「だから〜」と結果を表すときは so を使います。「医者になりたいので毎日一生懸命勉強する」という意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThe station is ( ) the bank and the post office.",
+  "passage": "",
+  "choices": [
+   "among",
+   "between",
+   "during",
+   "along"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞・前置詞。正解は「between」。「2つのものの間に」は between を使います。3つ以上の間なら among を使います。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\n( ) you are tired, you should take a rest.",
+  "passage": "",
+  "choices": [
+   "If",
+   "That",
+   "Which",
+   "What"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「If」。「もし〜なら」と条件を表すときは If を使います。「もし疲れているなら、休むべきだ」という意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nWe played soccer ( ) two hours yesterday.",
+  "passage": "",
+  "choices": [
+   "for",
+   "since",
+   "during",
+   "while"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「for」。「two hours(2時間)」のような期間の長さの前には for を使います。during は「〜の間ずっと」で後ろに期間ではなく出来事がきます。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の対話の( )に入る最も適切な語を選びなさい。\nA: I like both tea ( ) coffee.\nB: Me too.",
+  "passage": "",
+  "choices": [
+   "and",
+   "but",
+   "or",
+   "so"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「and」。「both A and B」で「AとBの両方」という意味になります。both があるので and が正しいです。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nPlease come to school ( ) eight o'clock.",
+  "passage": "",
+  "choices": [
+   "in",
+   "on",
+   "at",
+   "for"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞・前置詞。正解は「at」。時刻の前には at を使います。「8時に学校へ来てください」という意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nI didn't know ( ) she was sick.",
+  "passage": "",
+  "choices": [
+   "that",
+   "if or not",
+   "because",
+   "during"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「that」。「〜ということ」と内容を表す名詞のかたまりを作るときは接続詞 that を使います。「彼女が病気だと知らなかった」という意味です。"
+ }
+]

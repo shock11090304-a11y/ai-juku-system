@@ -1,0 +1,99 @@
+{
+  "_doc": "中学生（高校受験・公立標準）入試問題道場『弱点克服』単元カタログ。frontend(dojo-drill.html)・作問Workflow・取込packagerの唯一のソース。exam=chugaku / grade=koukou 固定。filter=各単元の弱点キー(=各設問 unit 値の接頭辞 && bank topic LIKE の一致文字列)。reading=本文付き読解。",
+  "exam": "chugaku",
+  "grade": "koukou",
+  "level_label": "公立高校入試 標準（中1〜中3）",
+  "subjects": [
+    {
+      "part": "eng",
+      "subj": "英語",
+      "units": [
+        { "filter": "be動詞・一般動詞", "name": "be動詞・一般動詞" },
+        { "filter": "時制", "name": "時制（過去・進行・未来）" },
+        { "filter": "助動詞", "name": "助動詞" },
+        { "filter": "名詞・代名詞・冠詞", "name": "名詞・代名詞・冠詞" },
+        { "filter": "比較", "name": "比較" },
+        { "filter": "不定詞・動名詞", "name": "不定詞・動名詞" },
+        { "filter": "分詞", "name": "分詞（現在分詞・過去分詞）" },
+        { "filter": "受動態", "name": "受動態" },
+        { "filter": "現在完了", "name": "現在完了" },
+        { "filter": "関係代名詞", "name": "関係代名詞" },
+        { "filter": "接続詞・前置詞", "name": "接続詞・前置詞" },
+        { "filter": "会話表現", "name": "会話・熟語表現" },
+        { "filter": "長文読解", "name": "長文読解", "reading": true }
+      ]
+    },
+    {
+      "part": "math",
+      "subj": "数学",
+      "units": [
+        { "filter": "正負の数", "name": "正負の数・四則計算" },
+        { "filter": "式の計算", "name": "文字式・式の計算" },
+        { "filter": "一次方程式", "name": "一次方程式・文章題" },
+        { "filter": "連立方程式", "name": "連立方程式" },
+        { "filter": "平方根", "name": "平方根" },
+        { "filter": "二次方程式", "name": "二次方程式" },
+        { "filter": "比例・反比例", "name": "比例・反比例" },
+        { "filter": "一次関数", "name": "一次関数" },
+        { "filter": "二乗に比例", "name": "関数 y=ax²（二乗に比例）" },
+        { "filter": "合同と証明", "name": "三角形の合同と証明" },
+        { "filter": "相似", "name": "図形の相似" },
+        { "filter": "円周角", "name": "円周角" },
+        { "filter": "三平方の定理", "name": "三平方の定理" },
+        { "filter": "確率", "name": "場合の数・確率" },
+        { "filter": "データの活用", "name": "データの活用（統計）" }
+      ]
+    },
+    {
+      "part": "kokugo",
+      "subj": "国語",
+      "units": [
+        { "filter": "漢字", "name": "漢字の読み書き" },
+        { "filter": "語句", "name": "語句・慣用句・四字熟語" },
+        { "filter": "文法", "name": "文法（品詞・活用）" },
+        { "filter": "敬語", "name": "敬語" },
+        { "filter": "古文", "name": "古文入門" },
+        { "filter": "詩歌", "name": "詩・短歌・俳句" },
+        { "filter": "説明的文章", "name": "説明的文章の読解", "reading": true },
+        { "filter": "文学的文章", "name": "文学的文章の読解", "reading": true }
+      ]
+    },
+    {
+      "part": "rika",
+      "subj": "理科",
+      "units": [
+        { "filter": "光と音", "name": "光・音" },
+        { "filter": "力と圧力", "name": "力・圧力" },
+        { "filter": "電流と回路", "name": "電流と回路" },
+        { "filter": "電流と磁界", "name": "電流と磁界" },
+        { "filter": "運動とエネルギー", "name": "運動とエネルギー" },
+        { "filter": "物質と状態変化", "name": "物質の性質・状態変化" },
+        { "filter": "化学変化と原子", "name": "化学変化と原子・分子" },
+        { "filter": "イオンと酸", "name": "イオン・酸とアルカリ" },
+        { "filter": "植物", "name": "植物のつくりとはたらき" },
+        { "filter": "動物と人体", "name": "動物・人体" },
+        { "filter": "生殖と遺伝", "name": "生殖・遺伝" },
+        { "filter": "大地の変化", "name": "大地の変化（地層・火山・地震）" },
+        { "filter": "天気", "name": "天気とその変化" },
+        { "filter": "天体", "name": "地球と宇宙（天体）" }
+      ]
+    },
+    {
+      "part": "shakai",
+      "subj": "社会",
+      "units": [
+        { "filter": "世界地理", "name": "世界地理" },
+        { "filter": "日本地理", "name": "日本地理" },
+        { "filter": "歴史 古代", "name": "歴史 古代〜平安" },
+        { "filter": "歴史 中世", "name": "歴史 鎌倉〜室町" },
+        { "filter": "歴史 近世", "name": "歴史 安土桃山〜江戸" },
+        { "filter": "歴史 近代", "name": "歴史 明治〜大正" },
+        { "filter": "歴史 現代", "name": "歴史 昭和〜現代" },
+        { "filter": "公民 政治", "name": "公民 政治（憲法・人権・三権）" },
+        { "filter": "公民 経済", "name": "公民 経済" },
+        { "filter": "公民 国際", "name": "公民 国際社会" },
+        { "filter": "資料読み取り", "name": "資料・統計の読み取り" }
+      ]
+    }
+  ]
+}

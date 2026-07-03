@@ -1,0 +1,162 @@
+[
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "3(2a−b)−2(a−3b) を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "4a+3b",
+   "4a−5b",
+   "4a+b",
+   "8a+3b"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「4a+3b」。 かっこを外すと 6a−3b−2a+6b。同類項をまとめて 6a−2a=4a、−3b+6b=3b で 4a+3b です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "12a²b ÷ 3a を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "4ab",
+   "4a²b",
+   "36a³b",
+   "4b"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「4ab」。 係数は 12÷3=4、文字は a²÷a=a なので 4ab となります。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "2/3 x − 1/2 x を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "1/6 x",
+   "1/5 x",
+   "7/6 x",
+   "x"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「1/6 x」。 通分すると 4/6 x − 3/6 x なので、係数は 4/6−3/6=1/6 で 1/6 x です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "x=3、y=−2 のとき、5x−2y の値を求めなさい。",
+  "passage": "",
+  "choices": [
+   "19",
+   "11",
+   "13",
+   "−19"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「19」。 代入すると 5×3−2×(−2)=15+4=19 です。−2y の符号に注意しましょう。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "(x+3y)/2 − (x−y)/3 を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "(x+11y)/6",
+   "(x+7y)/6",
+   "(5x+11y)/6",
+   "(x+11y)/5"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「(x+11y)/6」。 通分すると (3(x+3y)−2(x−y))/6=(3x+9y−2x+2y)/6=(x+11y)/6 です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "2a²b × 3ab² を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "6a³b³",
+   "6a²b²",
+   "5a³b³",
+   "6a³b²"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「6a³b³」。 係数は 2×3=6、文字は a²×a=a³、b×b²=b³ なので 6a³b³ です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "(−2xy²)³ を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "−8x³y⁶",
+   "−8x³y⁵",
+   "−6x³y⁶",
+   "8x³y⁶"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「−8x³y⁶」。 (−2)³=−8、x³、(y²)³=y⁶ で −8x³y⁶。指数どうしは掛けて y²×3=y⁶ です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "8x²y ÷ (−2x) × 3y を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "−12xy²",
+   "12xy²",
+   "−12xy",
+   "−4xy²"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「−12xy²」。 係数は 8÷(−2)×3=−12、文字は x²÷x×1=x、y×y=y² なので −12xy² です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "5x−{2x−(x−4)} を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "4x−4",
+   "4x+4",
+   "2x−4",
+   "6x−4"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「4x−4」。 内側から外すと 2x−(x−4)=x+4、5x−(x+4)=4x−4 となります。かっこ前のマイナスの配り忘れに注意です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "a=−3 のとき、a²−4a の値を求めなさい。",
+  "passage": "",
+  "choices": [
+   "21",
+   "−3",
+   "−21",
+   "3"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「21」。 代入すると (−3)²−4×(−3)=9+12=21 です。(−3)²=9 とマイナス×マイナスに注意しましょう。"
+ }
+]
