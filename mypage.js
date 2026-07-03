@@ -4925,6 +4925,27 @@ async function initCoachNextMove(student, ajMode, isPreview) {
     return;
   }
 
+  // 🔰 2026-07-03 [quick-start activation] クイックスタートの「まず1問」CTA (mypage.html?today=1)
+  //   から着地した新規生を、迷わせずその場で最初の1問へ直行させる (activation 律速対策:
+  //   旧 Trial ウォークスルー撤去後の“最初の一歩”の受け皿がフロント既定導線に無かった)。
+  //   下で宣言する startTodayQuestion は関数宣言=hoist 済みでここから呼べる。既存の
+  //   ③.5/⑤ 経路と同じ関数・同じ文脈なので新たな失敗経路は増えない。冪等 API のため二度でも安全。
+  try {
+    if (new URLSearchParams(window.location.search).get('today') === '1') {
+      // リロード/戻るでの再発火を防ぐため today を先に除去 (await 前の同期実行)
+      try {
+        const _u = new URL(window.location.href);
+        _u.searchParams.delete('today');
+        window.history.replaceState(null, '', _u.pathname + _u.search + _u.hash);
+      } catch (_) { /* URL 非対応ブラウザは無視 */ }
+      startTodayQuestion();  // fire-and-forget (自前で try/catch/finally 済み)
+      // 「まず1問」で来た初回は最初の1問に集中させる。ここで return して、後続の一手ルール
+      //   (③.5「今日の1問だけ解こう」カード等) が #coachNextMove に二重表示されるのを防ぐ。
+      //   today は上で除去済みなので、次回以降の通常訪問では従来どおりコーチカードが出る。
+      return;
+    }
+  } catch (_) { /* URLSearchParams 非対応は無視 */ }
+
   // ✅ 達成ボタン: streak/XP を実際に進めて保存 (この経路が唯一の streak 加算 = 数字は本物)
   doneBtn.onclick = function () {
     let _tierUnlocked = false;
