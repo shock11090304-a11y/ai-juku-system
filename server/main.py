@@ -4090,7 +4090,7 @@ def _run_weekly_worksheet_generation() -> dict:
         # Postgres / SQLite 両対応: cutoff を Python 側で計算してパラメータ化
         login_cutoff = (datetime.now(timezone.utc) - timedelta(days=60)).isoformat()
         c.execute(
-            "SELECT id, name, email, line_user_id FROM students "
+            "SELECT id, name, email, line_user_id, grade FROM students "
             "WHERE status IN ('paid', 'trial') "
             "AND (last_login_at IS NULL OR last_login_at >= ?) "
             "LIMIT 500",
@@ -4108,6 +4108,11 @@ def _run_weekly_worksheet_generation() -> dict:
                 sname = (st["name"] if hasattr(st, "keys") else st[1]) or ""
                 semail = (st["email"] if hasattr(st, "keys") else st[2]) or ""
                 sline = (st["line_user_id"] if hasattr(st, "keys") else st[3]) or ""
+                sgrade = (st["grade"] if hasattr(st, "keys") else st[4]) if (hasattr(st, "keys") or len(st) > 4) else None
+                # 🧒 2026-07-03 中学生は subject="chugaku" バケットのみを対象にし、大学プール(daigaku/rikei)由来の
+                #   弱点をプリントに出さない (中学生に大学問題が漏れない=厳守)。kosei/shougaku は従来どおり無制限。
+                smode = _student_mode_from_grade(sgrade)
+                _subj_scope = "AND subject = 'chugaku' " if smode == "chugaku" else ""
 
                 # 既に今週分が生成済か (dedup)
                 c.execute("SELECT id FROM worksheet_archives WHERE student_id=? AND week_start_date=?", (sid, week_start))
@@ -4120,7 +4125,7 @@ def _run_weekly_worksheet_generation() -> dict:
                 c.execute(
                     "SELECT subject, topic, question_count, avg_confidence_score "
                     "FROM student_weakness "
-                    "WHERE student_id=? AND question_count >= 1 "
+                    "WHERE student_id=? AND question_count >= 1 " + _subj_scope +
                     "AND NOT (COALESCE(qa_accuracy, -1) >= ? AND COALESCE(qa_attempts, 0) >= ?) "
                     "ORDER BY (CASE WHEN COALESCE(qa_attempts, 0) >= 2 THEN qa_accuracy ELSE 1.0 END) ASC, "
                     "question_count DESC, COALESCE(avg_confidence_score, 0.5) ASC "
@@ -4143,6 +4148,10 @@ def _run_weekly_worksheet_generation() -> dict:
                     pool_keys = _WEAKNESS_SUBJECT_TO_POOL.get((wsubj or "").lower(), [])
                     if not pool_keys:
                         continue
+                    # 🧒 中学生バケットは topic(単元filter)が唯一の識別子。空 topic は問題も引けず
+                    #   solve-link も findPresetForWeakness で null=無効になるため、subject_topics に入れず skip。
+                    if (wsubj or "").lower() == "chugaku" and not wtopic:
+                        continue
                     subject_topics.append({"subject": wsubj, "topic": wtopic})
                     for (pool_exam, pool_part) in pool_keys[:2]:  # 最大 2 pool まで試す
                         try:
@@ -4152,6 +4161,14 @@ def _run_weekly_worksheet_generation() -> dict:
                             if pool_part:
                                 count_params.append("part_key=?")
                                 count_args.append(pool_part)
+                            # 🧒 2026-07-03 中学生プール(exam=chugaku)は part 非依存の単一バケット=単元 topic を
+                            #   必ず LIKE 絞りしないと数学弱点に理科/社会…と科目混在する。topic 無しは配信しない
+                            #   (bank の unit=filter は question_data 内に埋め込まれ LIKE 一致する)。
+                            if pool_exam == "chugaku":
+                                if not wtopic:
+                                    continue
+                                count_params.append("question_data LIKE ?")
+                                count_args.append(f"%{wtopic}%")
                             count_sql = f"SELECT COUNT(*) FROM exam_questions WHERE {' AND '.join(count_params)}"
                             c.execute(count_sql, tuple(count_args))
                             cnt_row = c.fetchone()
@@ -4826,6 +4843,12 @@ _WEAKNESS_SUBJECT_TO_POOL = {
                ("daigaku", "chiri"), ("daigaku", "kouminka"),
                ("daigaku", "rinri"), ("daigaku", "seiji_keizai"),
                ("daigaku", "r_long")],  # 2026-05-14 社会専門 pool 整備済 + 2026-06-17 倫理/政経追加 + r_long フォールバック
+    # 🧒 2026-07-03 中学生(公立高校入試)弱点克服。入試道場 dojo が exam=chugaku で記録すると
+    #   _infer_subject_from_pool 未マップ → subject="chugaku" の単一バケットに5科目(英/数/国/理/社)が
+    #   collapse し、唯一の識別子は topic=単元filter(例「正負の数」「be動詞・一般動詞」)。よって pool は
+    #   part 非依存の exam=chugaku 一本にし、消費側(週次プリント/weakness-top3)で topic を必ず LIKE 絞りする
+    #   (part を跨いだ科目混在を防ぐ)。★ 大学プール(daigaku/rikei/eiken)は一切含めない=中学生に大学問題は漏れない。
+    "chugaku": [("chugaku", None)],
 }
 
 # 📝 2026-05-22 塾長指示: (exam_id, part_key) → subject の逆引きマッピング
@@ -4956,6 +4979,19 @@ _WEAKNESS_MASTERY_ACCURACY = 0.8
 _WEAKNESS_MASTERY_MIN_ATTEMPTS = 5
 
 
+def _student_mode_from_grade(grade) -> str:
+    """🧒 2026-07-03 学年(grade) → 学習モード。student-mode.js `ajStudentMode` と同一規約
+    (小学/中学受験=shougaku・中学=chugaku・その他/未設定=kosei)。弱点ループの pool 分離
+    (中学生に大学プールを出さない) をサーバ側でも一貫判定するため。"""
+    import re as _re
+    g = str(grade or "")
+    if _re.search(r"小学|小[1-6]年?|中学受験|中受", g):
+        return "shougaku"
+    if _re.search(r"中学|中[1-3]年?", g):
+        return "chugaku"
+    return "kosei"
+
+
 def _weakness_recommended_action(dominant_reason: Optional[str], slow: bool = False, accurate: bool = False) -> dict:
     """🎯 [dojo-drill Phase2+ 2026-06-15 / review fix] 弱点の主因(+遅さ)から「次にやるべき対策」を出し分ける。
     key: speed_training / review_basics / repeat_drill / careful_reading / general。
@@ -4987,6 +5023,7 @@ def _weakness_recommended_action(dominant_reason: Optional[str], slow: bool = Fa
 
 @app.get("/api/student/weakness-top3")
 def student_weakness_top3(request: Request, student_id: int, limit: int = 3, recommend_each: int = 3,
+                          pool: Optional[str] = None,
                           authorization: Optional[str] = Header(None)):
     """🎯 生徒の弱点 TOP3 + 該当 exam_questions pool 問題推薦
     塾長指示 2026-05-13「個別問題推薦 UI」の核 endpoint。
@@ -5038,6 +5075,9 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
 
     limit = max(1, min(int(limit or 3), 5))
     recommend_each = max(1, min(int(recommend_each or 3), 5))
+    # 🧒 2026-07-03 中学生モードは pool=chugaku を渡す → subject="chugaku" バケットのみ返す。
+    #   大学プール由来(english/math/social…)の弱点・推薦を中学生に一切出さない(厳守・サーバ側で遮断)。
+    _pool_clause = "AND subject = 'chugaku' " if (pool or "").strip().lower() == "chugaku" else ""
 
     conn = db()
     try:
@@ -5054,7 +5094,7 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
             #     採点不足(写真質問のみ等)は accuracy=1.0 扱いで後ろへ回し、従来どおり件数の多い順で拾う。
             #   旧仕様(件数 DESC 一本)は「よく解いた単元は正答率が上がっても上位に残り卒業しない」問題があった。
             "SELECT subject, topic, question_count, avg_confidence_score, last_seen_at, reason_counts, avg_elapsed_ms, qa_accuracy, qa_attempts "
-            "FROM student_weakness WHERE student_id = ? "
+            "FROM student_weakness WHERE student_id = ? " + _pool_clause +
             "AND NOT (COALESCE(qa_accuracy, -1) >= ? AND COALESCE(qa_attempts, 0) >= ?) "
             "ORDER BY (CASE WHEN COALESCE(qa_attempts, 0) >= 2 THEN qa_accuracy ELSE 1.0 END) ASC, "
             "question_count DESC, COALESCE(avg_confidence_score, 0.5) ASC, last_seen_at DESC LIMIT ?",
@@ -5109,6 +5149,12 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
                 nonlocal recommended, seen_ids
                 if len(recommended) >= recommend_each:
                     return
+                # 🧒 2026-07-03 中学生プール(exam=chugaku)は5科目collapse バケット。keyword 無しの subject-only
+                #   fallback だと科目横断で誤推薦するため、単元 topic を必ず LIKE 絞りに使う(topic 無しは推薦しない)。
+                if exam_id == "chugaku" and not kw:
+                    if not topic:
+                        return
+                    kw = str(topic).strip()
                 like_clause = ""
                 params = [exam_id]
                 if part_key:
@@ -5214,7 +5260,7 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
             try:
                 c.execute(
                     "SELECT subject, topic, avg_elapsed_ms, qa_accuracy, question_count FROM student_weakness "
-                    "WHERE student_id = ? AND avg_elapsed_ms IS NOT NULL AND qa_accuracy IS NOT NULL", (student_id,))
+                    "WHERE student_id = ? " + _pool_clause + "AND avg_elapsed_ms IS NOT NULL AND qa_accuracy IS NOT NULL", (student_id,))
                 best = None
                 for x in c.fetchall():
                     xs = x["subject"] if hasattr(x, "keys") else x[0]
@@ -5234,7 +5280,7 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
         try:
             c.execute(
                 "SELECT subject, topic, qa_accuracy, qa_attempts FROM student_weakness "
-                "WHERE student_id = ? AND COALESCE(qa_accuracy, -1) >= ? AND COALESCE(qa_attempts, 0) >= ? "
+                "WHERE student_id = ? " + _pool_clause + "AND COALESCE(qa_accuracy, -1) >= ? AND COALESCE(qa_attempts, 0) >= ? "
                 "ORDER BY qa_accuracy DESC, qa_attempts DESC LIMIT 50",
                 (student_id, _WEAKNESS_MASTERY_ACCURACY, _WEAKNESS_MASTERY_MIN_ATTEMPTS),
             )

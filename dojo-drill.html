@@ -569,7 +569,11 @@
       if (!wt) return null;
       const pref = (u) => String(u == null ? '' : u).split(/[（(：:]/)[0].trim();
       const wtPref = pref(wt);
-      const cands = UNIT_PRESETS.concat(PRESETS);
+      // 🧒 2026-07-03 中学生(chugaku)の弱点は subject="chugaku"・topic=単元filter。候補を CHU_UNIT_PRESETS
+      //   のみに絞る = 「時制」「確率」「比較」等 大学プールと同名の filter があっても大学カードを開かない
+      //   (誤誘導 & 大学プール流入の二重防止)。逆に大学生の弱点は従来どおり CHU を候補にしない。
+      const isChu = String(wSubject || '').toLowerCase() === 'chugaku';
+      const cands = isChu ? CHU_UNIT_PRESETS.slice() : UNIT_PRESETS.concat(PRESETS);
       const subjOf = (p) => String(p.subj || p.subject || '');
       // 弱点 subject (英語/pool 名) → preset.subj に含まれうる語。社会系は全部 'social' に潰れて
       //   日本史/世界史の区別が付かないため、曖昧時は「誤った科目を開かず」メニューに戻すのが安全。
@@ -616,9 +620,11 @@
         const p = findPresetForWeakness(wTopic, wSubject);
         if (!p) return false;
         // 戻ったときに該当タブが開いているよう、レベル/科目を合わせてからドリル開始
+        // 🧒 2026-07-03 CHU_UNIT_PRESETS は 'chugaku' レベル・科目キーは p.subj(英語/数学/…)を使う。
+        const inChu = CHU_UNIT_PRESETS.indexOf(p) >= 0;
         const inUnit = UNIT_PRESETS.indexOf(p) >= 0;
-        ddLevel = inUnit ? 'unit' : 'kyotsu';
-        ddSubject[ddLevel] = inUnit ? p.subj : p.subject;
+        ddLevel = inChu ? 'chugaku' : (inUnit ? 'unit' : 'kyotsu');
+        ddSubject[ddLevel] = (inChu || inUnit) ? p.subj : p.subject;
         renderPresets();
         startDrill(p);  // startDrill が先頭で drillOrigin=null するので、その直後に元の弱点を stamp する
         drillOrigin = { subject: (wSubject || '').trim(), topic: (wTopic || '').trim() };

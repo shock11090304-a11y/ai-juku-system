@@ -5119,6 +5119,46 @@ async function initCoachNextMove(student, ajMode, isPreview) {
     return;
   }
 
+  // ③-中学 🧒 弱点 TOP3 (中学生モード・chugaku プール限定 / 2026-07-03)。kosei の ③ を中学生向けに複製。
+  //   pool=chugaku で大学プール由来の弱点を除外 → 苦手の1位を chugaku ドリルで直接開く(w_subject=chugaku)。
+  //   データが無ければ「まず中学生ドリルで1単元」= 解けば弱点が個別化する activation 導線。
+  if (ajMode === 'chugaku' && student && student.id != null) {
+    try {
+      const w = await slApiFetch('/api/student/weakness-top3?student_id=' + encodeURIComponent(sid) + '&limit=1&recommend_each=0&pool=chugaku');
+      const top = ((w && w.weaknesses) || [])[0];
+      if (top && (top.topic || top.subject)) {
+        const label = (top.topic || top.subject).toString();
+        let reasonMsg = (top.recommended_action && top.recommended_action.hint) || '最近のミスから見つけた苦手単元です。';
+        if (top.low_confidence) { reasonMsg += '（まだ数問なので、もう少し解くと分析の精度が上がります）'; }
+        if (top.mastery_hint) { reasonMsg += ' 🎯 ' + top.mastery_hint; }
+        if (w && w.mastered_count > 0) { reasonMsg += ' ✅ これまで ' + w.mastered_count + ' 単元を習得済み。'; }
+        // 中学生プールの弱点は必ずドリルで解ける(写真質問ルートは大学志向のため使わない)。
+        const drillHref = 'dojo-drill.html?w_subject=' + encodeURIComponent(top.subject || '') + '&w_topic=' + encodeURIComponent(top.topic || '');
+        setMove({
+          title: '苦手の 1 位「' + label + '」を練習しよう',
+          reason: reasonMsg + ' ⏱ この単元の中学生ドリルをすぐ開けます。',
+          href: drillHref,
+        });
+        return;
+      }
+      if (w && w.mastered_count > 0) {
+        setMove({
+          title: '🎉 苦手だった ' + w.mastered_count + ' 単元を習得！次の単元に挑戦しよう',
+          reason: '記録された苦手をすべて基準クリアしました。新しい単元のドリルを解くと、また弱点を見つけて対策できます。',
+          href: 'dojo-drill.html',
+        });
+        return;
+      }
+    } catch (_) { /* noop → 下の activation 導線へ */ }
+    // 弱点データがまだ無い中学生 → まず中学生ドリルで最初の1単元(解けば弱点集計が個別化していく)。
+    setMove({
+      title: '🧒 中学生ドリルで1単元やってみよう',
+      reason: '苦手な単元を1つ選んで解くと、AI があなたの弱点を見つけて、明日からの一手をあなた専用にします。',
+      href: 'dojo-drill.html',
+    });
+    return;
+  }
+
   // ④ 学習記録 (対象プランのみ・データ上いちばん多い「最初の一歩」)
   try {
     const authStudent = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || student;
