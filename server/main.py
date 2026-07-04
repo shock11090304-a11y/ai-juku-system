@@ -315,6 +315,11 @@ FOUNDER_TRIAL_PRICE = 0
 FOUNDER_TRIAL_DAYS = 7  # 14→7 日に短縮 (塾長指示 2026-06-30: AI管理の体験を7日間に。早期の転換を促す。カード登録特典は +7 で 14日)。
 #   ※ AI管理(AIコーチング)の無料体験日数の単一ソース。新規申込の trial_end・Stripe商品名・決済画面文言が全てこれを参照。
 #     カード登録の延長特典 = EXTENDED_TRIAL_DAYS = FOUNDER_TRIAL_DAYS + 7。通塾生(塾生アプリ)の長期trial(+3650日)は別系統で無関係。
+# 🎫 taiken.html の ¥1,500「体験授業」Stripe Payment Link の plink id。塾長への即時決済通知の判定に使う。
+#   このリンクは metadata 空 = ai-juku の月謝生とは無関係 (体験決済は手動運用・月謝サブスクと非紐付)。
+#   現行 id は 2026-07-04 に Stripe API (livemode) で実物確認 (taiken.html:225 の buy.stripe.com/aFa9AV72Zc777plePE4F200)。
+#   ★Stripe Dashboard でこのリンクを作り直すと id が変わる → env TAIKEN_TRIAL_PLINK_ID で上書き可 (コード改修不要)。
+TAIKEN_TRIAL_PLINK_ID = os.getenv("TAIKEN_TRIAL_PLINK_ID", "plink_1TlejRR3lrRgwu4Sod3zgFyg")
 # 🎯 [体験中フォロー強化 2026-06-30 塾長指示] 残日数カウントダウン/緊急継続CTA/満了前キュー/フォロー強化は
 #   「この日時(UTC)以降に登録した新規生徒のみ」に適用する。既存の体験中の生徒には後出しで一切付けない(完全に新規のみ)。
 #   判定は created_at >= この基準。env で前倒し/後ろ倒し可。
@@ -2151,6 +2156,9 @@ _BACKGROUND_TASKS: list = []
 @app.on_event("startup")
 async def _start_background_tasks():
     """uvicorn 起動時に呼ばれる。daily SNS scheduler + 申込決済監視 scheduler を bg task として起動。"""
+    # 🎫 taiken ¥1,500 体験決済 → 塾長即時通知の判定 plink id を起動ログに出す。Stripe Dashboard で
+    #   リンクを作り直して id が変わった時、本番ログを grep するだけで設定値の齟齬に気づけるようにする。
+    log.info(f"[Startup] taiken notify Payment Link id configured: {TAIKEN_TRIAL_PLINK_ID[:14]}… (¥1,500 体験授業 決済 → 塾長即時通知)")
     if DAILY_SNS_TO_EMAIL and ANTHROPIC_API_KEY and RESEND_API_KEY:
         task = asyncio.create_task(_daily_sns_scheduler())
         _BACKGROUND_TASKS.append(task)
@@ -26683,6 +26691,12 @@ def trial_signup(payload: TrialSignup, request: Request):
 
     log.info(f"Trial signup: {email_norm} -> student_id={student_id} existing={is_existing}")
 
+    # 🔔 2026-07-04 体験(lp.html フォーム)の新規申込を塾長へ即時通知。
+    #   新規 INSERT が成立した時だけ (not is_existing = IntegrityError で既存行に落ちていない)。
+    #   再申込/再活性化 (is_existing=True) では送らない。synthetic 除外・非throw はヘルパー内蔵。
+    if student_id and not is_existing:
+        _notify_admin_new_trial(payload.name, email_norm, "lp", goal=goal)
+
     # 紹介ループ: ?ref= が指定されていて、新規申込 (=既存ユーザーでない) なら referrals に記録。
     # 既存ユーザーの再申込時は記録しない (再活性化は紹介報酬対象外)。
     # Anti-fraud: 同一 referrer から大量招待 = 自己アカウント生成攻撃を防ぐため、
@@ -27642,6 +27656,33 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         if _meta_system.startswith("juku-payment"):
             log.info(f"[Stripe webhook] Skipping juku-payment event (system={_meta_system}) - handled by Vercel /payment/api/stripe-webhook")
             return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
+        # 🔔 2026-07-04 taiken.html ¥1,500「体験授業」Payment Link 決済の塾長 即時通知。
+        #   この Payment Link は metadata 空 = ai-juku 月謝生とは無関係 (体験決済は手動運用)。
+        #   ★早期 return は「plink id 一致」だけで判定する (payment_status に依存させない):
+        #    monthly 分岐に流すと「既存メール一致で status='paid' 化」する誤変換や無用な critical event
+        #    (stripe_webhook_skipped_unknown_plan) が起きるため、taiken セッションは決済成否に依らず
+        #    student レコードに触れず divert する (将来 Konbini 等の非同期決済を有効化し
+        #    payment_status='unpaid' で completed が届いても mis-conversion を起こさない)。
+        #    併せて下流の共通 welcome(magic-link)メール送出もスキップされる = 意図的
+        #    (taiken はログインアカウント無しの単発体験・月謝生化は手動運用なので送らない)。
+        #   通知は決済成立時のみ (payment_status=='paid')。※現状このリンクはカード専用=同期決済のみ。
+        #    非同期決済を有効化するなら checkout.session.async_payment_succeeded の購読/分岐追加も必要
+        #    (その際は event_id でなく session.id 単位の dedup を入れて二重通知を防ぐこと)。
+        #   processed_events 冪等ガードの内側 (event 記録済) なので Stripe 再送でも二重通知しない。
+        #   conn 未取得の位置なので email 送信中に pool を保持しない。
+        if session.get("payment_link") == TAIKEN_TRIAL_PLINK_ID:
+            if session.get("payment_status") == "paid":
+                try:
+                    _tk_cd = session.get("customer_details") or {}
+                    _tk_email = _tk_cd.get("email") or session.get("customer_email")
+                    _tk_name = _tk_cd.get("name")
+                    _tk_amt = session.get("amount_total")  # JPY は最小単位=円 (÷100 不要)
+                    _notify_admin_new_trial(_tk_name, _tk_email, "taiken_paid", amount_jpy=_tk_amt)  # 非throw・synthetic/30通per時 内蔵
+                except Exception as _tke:
+                    log.warning(f"[Stripe webhook] taiken notify failed: {type(_tke).__name__}: {_tke}")
+            else:
+                log.info(f"[Stripe webhook] taiken session diverted, non-paid (payment_status={session.get('payment_status')}) — no notify, no student write")
+            return JSONResponse({"received": True, "handled": "taiken_trial_payment"}, status_code=200)
         purchase_type = meta.get("purchase_type", "monthly")  # 既定は月額（旧互換）
         plan = meta.get("plan")
         student_id = meta.get("student_id")
@@ -27663,6 +27704,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             # Stripe 決済不要。自動課金は発生しない。
             now = datetime.now(timezone.utc)
             trial_end = now + timedelta(days=FOUNDER_TRIAL_DAYS)
+            _trial_new_insert = False  # 🔔 新規体験生を INSERT した時だけ塾長へ即時通知する歯止め
             if student_id and student_id != "":
                 c.execute(
                     """UPDATE students SET status='trial', stripe_customer_id=?,
@@ -27686,7 +27728,17 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                            VALUES (?, ?, 'trial', ?, ?, ?)""",
                         (name_from_meta or "（新規）", email, customer, now.isoformat(), trial_end.isoformat())
                     )
+                    _trial_new_insert = True  # ← 新規体験生を作成した唯一の経路
             conn.commit()
+            # 🔔 2026-07-04 Stripe チェックアウト(purchase_type=='trial')経由の新規体験生を塾長へ即時通知。
+            #   ★この分岐は現状 休眠: FOUNDER_TRIAL_PRICE==0 の無料体験は Stripe をスキップし
+            #    (26932 の free 返却)、taiken.html の ¥1,500 Payment Link は purchase_type 未設定=
+            #    monthly 分岐へ行くため、実運用ではここに来ない。有償体験モデル復活時の保険として設置。
+            #    現行の体験申込の実通知は /api/trial/signup 側 (source='lp') が担う。
+            #   新規 INSERT 時のみ (UPDATE/再送では送らない) + processed_events 冪等ガードの内側=二重通知しない。
+            #   _notify_admin_new_trial は非throw なので webhook 200 を妨げない。
+            if _trial_new_insert:
+                _notify_admin_new_trial(name_from_meta, email, "checkout")
 
         elif purchase_type == "trial_extended":
             # 🎁 2026-05-19 集客 funnel #4: +7 日延長 trial (Stripe Subscription 21 日)
@@ -40676,6 +40728,87 @@ def _send_message_email(to_email: str, subject: str, body_text: str, student_nam
     except Exception as e:
         log.error(f"[Messages] email send failed for {to_email}: {type(e).__name__}: {str(e)[:200]}")
         return {"sent": False, "error": str(e)[:200]}
+
+
+def _notify_admin_new_trial(name, email, source: str, goal=None, amount_jpy=None) -> None:
+    """🔔 2026-07-04 体験(trial)新規申込を塾長へ即時メール通知する。
+    従来は毎朝 7 時の日次サマリ (_send_daily_summary_if_due) の「過去24h 申込◯名」に
+    件数として乗るだけで、体験申込 1 件ごとの即時通知が無かった穴を塞ぐ。
+
+    ★呼び出しは「新規の体験イベント発生時だけ」= lp/checkout は students へ新規 INSERT された時、
+      taiken_paid は ¥1,500 決済完了 webhook 時 (いずれも processed_events 冪等ガード or
+      not is_existing 判定の内側)。UPDATE / 再申込 / 再送では呼ばない。この関数自体も下記 3 歯止めを
+      内蔵し、絶対に例外を送出しない (webhook の 200 応答・signup の登録処理を決してブロックしない)。
+
+    歯止め (/api/course-applications の塾長通知ブロックがお手本):
+      (1) synthetic 監視 sentinel には通知しない (_is_synthetic_student)
+      (2) 宛先 (固定 admin アドレス) 単位 30通/時 の rate limit を非 raise で適用
+          (course_app_admin_notify とは別バケット)。超過分は通知のみ抑制・データは不変。
+      (3) 送信全体を try/except で隔離。
+
+    source: 'lp'          (lp.html → /api/trial/signup = 現行の無料体験申込・実質の主経路) /
+            'taiken_paid' (taiken.html の ¥1,500「体験授業」Payment Link 決済完了。webhook で plink id
+                           完全一致判定。student レコードを作らない有償体験の即時通知) /
+            'checkout'    (Stripe checkout.session.completed webhook・purchase_type=='trial' の新規
+                           INSERT。★現状この経路は休眠: FOUNDER_TRIAL_PRICE==0 の無料体験は Stripe を
+                           スキップするため実質来ない。有償体験モデル復活時の保険として設置)
+    """
+    try:
+        # (1) 合成監視 sentinel は owner 受信箱を汚さないため通知しない。宛先は塾長の実アドレス
+        #     なので _send_message_email の synthetic-recipient skip は効かない → 申込者(生徒)
+        #     側の email / goal / name で明示的に弾く。
+        if _is_synthetic_student(email, goal, name):
+            return
+        admin_to = os.getenv("DAILY_SNS_TO_EMAIL") or os.getenv("MONITORING_TO_EMAIL")
+        if not admin_to or not RESEND_API_KEY:
+            return
+        # (2) 宛先単位 30通/時。超過は通知のみ抑制 (申込レコードは保存済 = CEO ダッシュで確認可)。
+        try:
+            _check_rate_limit_value(admin_to, bucket="trial_signup_admin_notify", limit=30, window=3600)
+        except HTTPException:
+            log.warning(f"[TrialNotify] admin notify suppressed (hourly cap) source={source}")
+            return
+        except Exception:
+            pass
+        _name = (str(name).strip() if name else "") or "（新規）"
+        _email = (str(email).strip() if email else "") or "（不明）"
+        if source == "taiken_paid":
+            # 実決済額を Stripe イベント (session.amount_total) から表示。Dashboard で価格変更されても
+            # 追随する (JPY は最小単位=円なので ÷100 不要)。未取得/不正時は現行価格 ¥1,500 に fallback。
+            try:
+                _amt = f"¥{int(amount_jpy):,}" if amount_jpy is not None else "¥1,500"
+            except (TypeError, ValueError):
+                _amt = "¥1,500"
+            _src_label = f"taiken.html {_amt} 体験授業（Stripe 決済完了）"
+            _subject = f"📥 体験授業 決済({_amt}): {_name}"
+            _head = f"taiken.html の 体験授業（{_amt}）の決済が完了しました。"
+            _footer = "※この体験決済は ai-juku の月謝サブスクとは非紐付です（フォロー/キャッシュバックは手動運用）。"
+        elif source == "checkout":
+            _src_label = "Stripe チェックアウト決済（体験・webhook）"
+            _subject = f"📥 体験 新規申込: {_name}"
+            _head = "体験(trial)の新規申込が届きました。"
+            _footer = "CEO ダッシュ → 生徒一覧 / 📊 生徒の学習状況 から確認できます。"
+        else:  # 'lp' (現行主経路) と未知 source
+            _src_label = "LP フォーム（lp.html → /api/trial/signup）" if source == "lp" else str(source or "不明")
+            _subject = f"📥 体験 新規申込: {_name}"
+            _head = "体験(trial)の新規申込が届きました。"
+            _footer = "CEO ダッシュ → 生徒一覧 / 📊 生徒の学習状況 から確認できます。"
+        body_text = (
+            f"塾長へ\n\n"
+            f"{_head}\n\n"
+            f"## 申込者情報\n"
+            f"お名前: {_name}\n"
+            f"メール: {_email}\n"
+            f"経路: {_src_label}\n"
+            + (f"目標: {str(goal).strip()}\n" if (goal and str(goal).strip()) else "")
+            + f"\n{_footer}"
+        )
+        _send_message_email(admin_to, _subject, body_text, student_name="塾長")
+    except Exception as ee:
+        try:
+            log.warning(f"[TrialNotify] admin email failed source={source}: {type(ee).__name__}: {ee}")
+        except Exception:
+            pass
 
 
 class MessageSendRequest(BaseModel):
