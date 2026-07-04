@@ -1742,6 +1742,10 @@ def init_db():
         ("class_files_class_label", "ALTER TABLE class_files ADD COLUMN class_label TEXT"),
         # 🎒 [受講クラス 2026-06-26] 生徒の受講クラス (時間割 label の JSON 配列)。出欠を所属クラスに限定。
         ("students_class_labels", "ALTER TABLE students ADD COLUMN class_labels TEXT"),
+        # 🚫 [塾生アプリ AIなし枠 2026-07-04 塾長指示] 宿題/課題中心の通塾生を「塾生アプリ(class.html)のみ」に絞る。
+        #   1 = AI 全機能ブロック (mypage/ドリル/チューター等)。class.html の宿題/予定/出欠/動画/メッセージは
+        #   別ゲート(_require_tsujuku_student)なので不変。承認時に塾長が指定 (既定は塾生アプリ登録=ON)。
+        ("students_ai_disabled", "ALTER TABLE students ADD COLUMN ai_disabled INTEGER DEFAULT 0"),
         # 📝 [宿題ドリル単元 2026-06-26] 宿題を特定の dojo-drill 単元に紐づけ (生徒アプリの「ドリルで解く」が
         #   ?w_subject=&w_topic= でその単元を自動起動。例 topic="英文法 関係詞")。
         ("homework_assignments_topic", "ALTER TABLE homework_assignments ADD COLUMN topic TEXT"),
@@ -2137,7 +2141,76 @@ except Exception as _se:
 # ==========================================================================
 # FastAPI App
 # ==========================================================================
+# 🚫 [塾生アプリ AIなし枠 2026-07-04 塾長指示] 承認時に「塾生アプリのみ(AIなし)」に指定された生徒
+#   (students.ai_disabled=1) を AI 系ルートから遮断する。許可 prefix = 通塾生アプリ(class.html)が叩く
+#   API + auth/routing + admin のみ。それ以外の /api/ に student session token でアクセスしたら 403。
+#   ai_disabled 以外の生徒・トークン無し・管理者なりすまし(impersonation)は一切影響を受けない。
+_AI_DISABLED_ALLOWED_PREFIXES = (
+    "/api/student/class/",        # 出欠/予定表/配布ファイル/クラスフィード
+    "/api/student/homework",      # 宿題一覧・完了 (/complete 含む)
+    "/api/messages/me",           # 塾長メッセージ 受信/未読/添付/既読
+    "/api/student/messages/send", # 塾長へメッセージ送信
+    "/api/auth/",                 # ログイン/セッション/ルーティング (is_tsujuku_app 判定を含む)
+    "/api/admin/",                # 管理系 (塾長・なりすまし。student session token では認可されない)
+)
+_AI_DISABLED_CACHE: dict = {}     # student_id -> (is_disabled: bool, fetched_at: float)
+_AI_DISABLED_CACHE_TTL = 30.0     # 秒。承認/トグルの反映は最大この遅延 (実害無)
+
+
+def _is_student_ai_disabled(student_id) -> bool:
+    """その生徒が「塾生アプリ専用(AIなし)」か。毎 AI リクエストの DB 往復を避ける 30秒 TTL cache 付き。
+    判定不能時は False (フェイルオープン=既存機能を壊さない)。"""
+    import time as _t
+    try:
+        sid = int(student_id)
+    except (TypeError, ValueError):
+        return False
+    now = _t.time()
+    _ent = _AI_DISABLED_CACHE.get(sid)
+    if _ent and (now - _ent[1]) < _AI_DISABLED_CACHE_TTL:
+        return _ent[0]
+    val = False
+    try:
+        _conn = db(); _c = _conn.cursor()
+        _c.execute("SELECT ai_disabled FROM students WHERE id = ?", (sid,))
+        _r = _c.fetchone()
+        _conn.close()
+        val = bool(_r["ai_disabled"]) if (_r and "ai_disabled" in _r.keys()) else False
+    except Exception:
+        val = False
+    _AI_DISABLED_CACHE[sid] = (val, now)
+    if len(_AI_DISABLED_CACHE) > 5000:  # cache 肥大化 backstop
+        _AI_DISABLED_CACHE.clear()
+    return val
+
+
 app = FastAPI(title="AIコーチング API", version="1.0.0")
+
+
+# ai_disabled 生徒を AI ルートから弾く middleware。CORS より先に登録 → CORS が外側になり 403 応答にも
+#   CORS ヘッダが付く (ブラウザ fetch のクロスオリジンで必要)。フェイルオープン設計 (ゲート障害で全落ち回避)。
+#   ★設計上の対象外: 認証不要の public AI endpoint (/api/news/generate-question・
+#     /api/exam-questions/recommend 等) は student identity が無いため per-student では弾けない。
+#     これらは元々誰でも叩ける IP レート制限のみの経路で、class.html は一切呼ばない (frontend 非露出) ため
+#     ai_disabled 生徒の実害無し (この変更が導入/悪化させた穴ではない)。
+@app.middleware("http")
+async def _ai_disabled_route_gate(request: Request, call_next):
+    try:
+        _p = request.url.path
+        if _p.startswith("/api/") and not _p.startswith(_AI_DISABLED_ALLOWED_PREFIXES):
+            _auth = request.headers.get("authorization") or ""
+            if _auth.startswith("Bearer "):
+                _claims = _verify_session_token(_auth[len("Bearer "):].strip())
+                if _claims and _claims.get("token_type") != "impersonation" and _claims.get("student_id"):
+                    if _is_student_ai_disabled(_claims["student_id"]):
+                        return JSONResponse(
+                            {"detail": "この生徒は塾生アプリ(宿題/予定/出欠/動画)専用です。AI機能はご利用いただけません。"},
+                            status_code=403,
+                        )
+    except Exception:
+        pass  # ゲート自体の障害で全リクエストを落とさない (フェイルオープン)
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -9490,7 +9563,7 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
     # last_login_at も同時追加: auth_me の 4h スロットルが「dict に無いキー参照で常に None」になり
     # 毎リクエスト UPDATE が走っていた既存バグの修正 (review 指摘)
     # stripe_subscription_id は 2026-06-12 追加 [mypage-keiyaku-copy]: card_registered フラグ算出用
-    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, stripe_subscription_id, trial_end, enrollment_fee_waived, course, past_due_since, created_at, last_login_at FROM students WHERE id = ?", (claims["student_id"],))
+    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, stripe_subscription_id, trial_end, enrollment_fee_waived, course, past_due_since, created_at, last_login_at, ai_disabled FROM students WHERE id = ?", (claims["student_id"],))
     row = c.fetchone()
     conn.close()
     if not row:
@@ -10321,7 +10394,7 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
     c = conn.cursor()
     # last_login_at は migration 直後の旧 DB に存在しない可能性あり → try/except でフォールバック
     try:
-        c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived FROM students ORDER BY id DESC")
+        c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived, ai_disabled FROM students ORDER BY id DESC")
         rows = c.fetchall()
         has_last_login = True
     except Exception:
@@ -10427,6 +10500,8 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
             "has_line": bool(_line_uid),
             "is_carrier_email": _is_carrier_email(_email),
             "course": (row["course"] if "course" in row.keys() else None),
+            # 🚫 [塾生アプリ AIなし枠 2026-07-04] 生徒詳細モーダルの AI利用トグル表示用 (列なし fallback は 0)
+            "ai_disabled": (1 if (("ai_disabled" in row.keys()) and row["ai_disabled"]) else 0),
             "is_tsujuku_app": (row["id"] in tsujuku_app_ids),  # 塾生アプリ登録経由=ロスター分離表示用
             # 🆓 2026-05-29: 入塾金免除バッジ表示用 (生徒詳細モーダル)
             "enrollment_fee_waived": (bool(row["enrollment_fee_waived"]) if "enrollment_fee_waived" in row.keys() else False),
@@ -31485,13 +31560,17 @@ def _verify_student_active(student_id: int) -> dict:
     conn = db()
     c = conn.cursor()
     c.execute(
-        "SELECT id, status, trial_end, plan, course, past_due_since FROM students WHERE id = ?",
+        "SELECT id, status, trial_end, plan, course, past_due_since, ai_disabled FROM students WHERE id = ?",
         (student_id,),
     )
     row = c.fetchone()
     conn.close()
     if not row:
         raise HTTPException(status_code=404, detail="生徒が見つかりません")
+    # 🚫 [塾生アプリ AIなし枠] ai_disabled=1 は AI 全機能を拒否。通塾生アプリ(class.html)は別ゲート
+    #   (_require_tsujuku_student) で通すのでここでは弾いてよい (このゲートは AI コスト経路専用)。
+    if (row["ai_disabled"] if "ai_disabled" in row.keys() else 0):
+        raise HTTPException(status_code=403, detail="この生徒は塾生アプリ(宿題/予定/出欠/動画)専用です。AI機能はご利用いただけません。")
     _row_course = row["course"] if "course" in row.keys() else None
     status = row["status"]
     if status == "paid":
@@ -31537,15 +31616,21 @@ def _check_ai_budget(student_id: int) -> None:
     # 生徒の plan + course を取得して budget を決定
     plan = "trial"
     _course = None
+    _ai_disabled = 0
     try:
-        c.execute("SELECT plan, course FROM students WHERE id = ?", (student_id,))
+        c.execute("SELECT plan, course, ai_disabled FROM students WHERE id = ?", (student_id,))
         row = c.fetchone()
         if row and row["plan"]:
             plan = str(row["plan"])
         if row:
             _course = row["course"] if "course" in row.keys() else None
+            _ai_disabled = (row["ai_disabled"] if "ai_disabled" in row.keys() else 0) or 0
     except Exception:
         pass
+    # 🚫 [塾生アプリ AIなし枠] AI トークン消費の直前ゲート。ai_disabled は conn を閉じてから 403。
+    if _ai_disabled:
+        conn.close()
+        raise HTTPException(status_code=403, detail="この生徒は塾生アプリ(宿題/予定/出欠/動画)専用です。AI機能はご利用いただけません。")
     # 国公立難関大学コース = premium 同等 (塾長指示: プレミアムの名前を変えて使っている)
     is_premium_tier = plan in PREMIUM_TIER_PLANS or _course == "kokuritsu_nankan"
     if _course == "kokuritsu_nankan":
@@ -39629,6 +39714,30 @@ def admin_set_student_email(student_id: int, payload: StudentEmailSetRequest,
         conn.close()
 
 
+@app.post("/api/admin/students/{student_id}/ai-disabled")
+def admin_set_student_ai_disabled(student_id: int, payload: dict, authorization: Optional[str] = Header(None)):
+    """🚫 [塾生アプリ AIなし枠 2026-07-04] 既存生徒の AI 利用可否を塾長が切替。payload: {ai_disabled: bool}。
+    1 = 塾生アプリ(宿題/予定/出欠/動画)のみ・AI全機能ブロック / 0 = AIあり。cache 即時無効化で反映。"""
+    _verify_admin_required(authorization)
+    _val = 1 if payload.get("ai_disabled") else 0
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id FROM students WHERE id = ?", (student_id,))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        c.execute("UPDATE students SET ai_disabled = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (_val, student_id))
+        conn.commit()
+    finally:
+        conn.close()
+    try:
+        _AI_DISABLED_CACHE.pop(int(student_id), None)  # 30秒 TTL を待たず即時反映
+    except Exception:
+        pass
+    log.info(f"[AIDisabled] admin set student {student_id} ai_disabled={_val}")
+    return {"ok": True, "student_id": student_id, "ai_disabled": _val}
+
+
 @app.post("/api/admin/students/{student_id}/course")
 def admin_set_student_course(student_id: int, payload: StudentCourseSetRequest, authorization: Optional[str] = Header(None)):
     """塾長: 生徒のコースを設定 (kokuritsu_nankan or null)。"""
@@ -43107,6 +43216,9 @@ def admin_list_course_applications(authorization: Optional[str] = Header(None), 
 
 class CourseApplicationApproveRequest(BaseModel):
     note: Optional[str] = None  # 内部メモ
+    # 🚫 [塾生アプリ AIなし枠 2026-07-04] 承認時に塾長が「塾生アプリのみ(AIなし)」を指定。
+    #   None = 既定 (塾生アプリ登録は AIなし / 難関コース登録は AIあり)。True=AIなし / False=AIあり。
+    ai_disabled: Optional[bool] = None
 
 
 @app.post("/api/admin/course-applications/{app_id}/approve")
@@ -43134,26 +43246,37 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         _app_classes_json = json.dumps(_app_classes, ensure_ascii=False) if _app_classes else None
 
         # 既存生徒検索 → なければ trial として新規作成
-        c.execute("SELECT id, status, course FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
+        c.execute("SELECT id, status, course, ai_disabled FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
         st = c.fetchone()
         student_id = None
+        # 🚫 [塾生アプリ AIなし枠] AI利用可否の決定:
+        #   ・塾長の明示指定 (payload.ai_disabled) があれば最優先 (CEO 承認 UI は常に明示送信)。
+        #   ・未指定 & 既存生徒 → 現状維持 (既存の AI 利用者を smart-default で勝手に無効化しない=
+        #     2026-06-27「難関コースの AI 利用者を mypage から締め出した」事故クラスの再発防止)。
+        #   ・未指定 & 新規生徒 → 塾生アプリ登録は AIなし(1) / 難関コースは AIあり(0)。
+        if payload.ai_disabled is not None:
+            _ai_disabled = 1 if payload.ai_disabled else 0
+        elif st:
+            _ai_disabled = (st["ai_disabled"] if "ai_disabled" in st.keys() else 0) or 0
+        else:
+            _ai_disabled = 1 if _is_juku_app_reg else 0
         if st:
             student_id = st["id"]
             # 既存生徒に course 付与 (status は変更しない)。受講クラスが申込にあれば反映 (空なら既存維持)。
             if _app_classes_json:
-                c.execute("UPDATE students SET course = ?, class_labels = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, _app_classes_json, student_id))
+                c.execute("UPDATE students SET course = ?, class_labels = ?, ai_disabled = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, _app_classes_json, _ai_disabled, student_id))
             else:
-                c.execute("UPDATE students SET course = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, student_id))
-            log.info(f"[CourseApp] approve existing student id={student_id} email={email_lower}")
+                c.execute("UPDATE students SET course = ?, ai_disabled = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, _ai_disabled, student_id))
+            log.info(f"[CourseApp] approve existing student id={student_id} email={email_lower} ai_disabled={_ai_disabled}")
         else:
             # 新規生徒 (trial で作成 / 国難コースは永久無料なので trial_end を 10 年後に設定)
             now = datetime.now(timezone.utc)
             trial_end = now + timedelta(days=3650)
             # 申込フォームの学年・志望校・受講クラスを新規生徒プロフィールにも反映 (goal=志望校)。
             c.execute(
-                "INSERT INTO students (name, email, status, course, trial_start, trial_end, grade, goal, class_labels) "
-                "VALUES (?,?,?,?,?,?,?,?,?) RETURNING id",
-                (name, email_lower, "trial", _STUDY_LOG_TARGET_COURSE, now.isoformat(), trial_end.isoformat(), _app_grade, _app_goal, _app_classes_json)
+                "INSERT INTO students (name, email, status, course, trial_start, trial_end, grade, goal, class_labels, ai_disabled) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id",
+                (name, email_lower, "trial", _STUDY_LOG_TARGET_COURSE, now.isoformat(), trial_end.isoformat(), _app_grade, _app_goal, _app_classes_json, _ai_disabled)
             )
             new = c.fetchone()
             student_id = new["id"] if new else None
@@ -43168,6 +43291,14 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         conn.commit()
     finally:
         conn.close()
+
+    # 🚫 [塾生アプリ AIなし枠] 承認で ai_disabled を変更した既存生徒を TTL cache から即時無効化
+    #   (admin toggle endpoint と対称。新規生徒は未 cache なので無害)。
+    try:
+        if student_id:
+            _AI_DISABLED_CACHE.pop(int(student_id), None)
+    except Exception:
+        pass
 
     # 📲 [LINE受信案内 2026-06-26] owner方針: 新規通塾生の承認時に「LINEで受け取る」案内を自動で出す
     #   (キャリアメール不達対策)。LINE連携コードを自動発行 → welcome メール本文 + CEO承認結果モーダルの

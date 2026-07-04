@@ -2292,7 +2292,7 @@ async function loadCourseApps() {
         </div>
         ${a.note ? `<div style="background:rgba(0,0,0,0.25); padding:0.45rem 0.6rem; border-radius:6px; font-size:0.82rem; color:#d4d4d8; margin-bottom:0.5rem;">💬 ${escapeHtml(a.note)}</div>` : ''}
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-          <button data-id="${a.id}" data-name="${escapeHtml(a.name)}" class="ca-approve-btn" style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border:0; padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:700;">✅ 承認 (アカウント作成 + magic link 送信)</button>
+          <button data-id="${a.id}" data-name="${escapeHtml(a.name)}" data-referrer="${escapeHtml(a.referrer||'')}" class="ca-approve-btn" style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border:0; padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:700;">✅ 承認 (アカウント作成 + magic link 送信)</button>
           <button data-id="${a.id}" data-name="${escapeHtml(a.name)}" class="ca-reject-btn" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:0; padding:0.5rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.85rem;">✕ 却下</button>
         </div>
         <div class="ca-result" style="margin-top:0.4rem; font-size:0.78rem; min-height:1em;"></div>
@@ -2300,21 +2300,32 @@ async function loadCourseApps() {
     list.querySelectorAll('.ca-approve-btn').forEach(b => b.addEventListener('click', async (e) => {
       const id = b.getAttribute('data-id');
       const name = b.getAttribute('data-name');
+      const referrer = b.getAttribute('data-referrer') || '';
       const resultEl = b.parentElement.parentElement.querySelector('.ca-result');
       if (!confirm(`「${name}」さんを承認しますか?\n生徒アカウントを作成し、magic link メールを送信します。`)) return;
+      // 🚫 [塾生アプリ AIなし枠] 承認時に AI 利用可否を塾長が指定。塾生アプリ登録は既定「AIなし」。
+      const _defaultNoAI = (referrer === '塾生アプリ');
+      const _useAI = confirm(
+        `「${name}」さんに AI 機能を使わせますか?\n\n` +
+        `［OK］AIあり … 国公立難関コース等。ドリル/AIチューター/教材生成などフル機能。\n` +
+        `［キャンセル］塾生アプリのみ(AIなし) … 宿題/予定表/出欠/動画だけ。模試・宿題中心の通塾生。\n\n` +
+        (_defaultNoAI
+          ? '※この申込は「🏫 塾生アプリ」登録です。通常は［キャンセル］(AIなし) を選んでください。'
+          : '※この申込は難関コースです。通常は［OK］(AIあり) を選んでください。')
+      );
       b.disabled = true;
       const orig = b.textContent;
       b.textContent = '承認処理中...';
       try {
         const r = await window.AdminAuth.fetch(`/api/admin/course-applications/${encodeURIComponent(id)}/approve`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ai_disabled: !_useAI }),
         });
         if (!r.ok) {
           let detail = ''; try { const j = await r.json(); detail = j.detail || ''; } catch {}
           throw new Error(detail || `HTTP ${r.status}`);
         }
         const j = await r.json();
-        resultEl.innerHTML = `<span style="color:#86efac;">✅ 承認完了 (生徒ID: ${j.student_id} ${j.welcome_email_sent ? '/ welcome メール送信済' : '/ メール送信失敗'})</span>`;
+        resultEl.innerHTML = `<span style="color:#86efac;">✅ 承認完了 (生徒ID: ${j.student_id} ${j.welcome_email_sent ? '/ welcome メール送信済' : '/ メール送信失敗'} / ${_useAI ? 'AIあり' : '🏫 塾生アプリのみ(AIなし)'})</span>`;
         // 📲 「LINEで受け取る」案内を自動表示 (メール不達対策・塾長が LINE/QR で生徒に渡す)。
         //    リスト再読込(下の setTimeout)で消えない固定 modal で出す。
         if (j.line_link_code) showLineOnboardModal(name, j.line_link_code, j.line_add_friend_url);

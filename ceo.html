@@ -8508,6 +8508,14 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           <div style="margin-top:6px;color:#71717a;font-size:0.75rem;line-height:1.5;">通塾している<strong style="color:#fde68a;">無期限の本クラス生</strong>をタグ付け。設定すると <strong style="color:#fde68a;">アプリが無期限利用可</strong> になり(体験期限で切れない) + <strong style="color:#fde68a;">体験終了・継続案内メールの対象外</strong>になり、学習記録/計画も解放されます。</div>
         </div>`
           : `<div style="margin-top:12px;padding:10px 14px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:10px;color:#fde68a;font-size:0.8rem;">🎓 本クラス(国公立難関) 登録済 — 無期限利用・継続案内メール対象外</div>`),
+        // 🚫 [塾生アプリ AIなし枠 2026-07-04] 本クラス生の AI 利用 ON/OFF。OFF=塾生アプリ(宿題/予定/出欠/動画)のみ。
+        (st.course === 'kokuritsu_nankan'
+          ? `<div style="margin-top:10px;padding:12px 14px;background:rgba(129,140,248,0.06);border:1px solid rgba(129,140,248,0.25);border-radius:10px;">
+          <div style="color:#c7d2fe;font-weight:600;font-size:0.85rem;margin-bottom:8px;">🤖 AI利用 <span style="color:#71717a;font-weight:400;">(現在: ${st.ai_disabled ? '🚫 塾生アプリのみ(AIなし)' : '✅ AIあり'})</span></div>
+          <button type="button" class="sd-toggle-ai-btn" data-student-id="${esc(st.id)}" data-student-name="${esc(st.name || '')}" data-ai-disabled="${st.ai_disabled ? 1 : 0}" style="width:100%;padding:10px 14px;background:${st.ai_disabled ? 'linear-gradient(135deg,#4f46e5,#6366f1)' : 'rgba(239,68,68,0.13)'};color:${st.ai_disabled ? '#fff' : '#fca5a5'};border:${st.ai_disabled ? 'none' : '1px solid rgba(239,68,68,0.4)'};border-radius:8px;font-weight:bold;font-size:0.9rem;cursor:pointer;">${st.ai_disabled ? '🤖 AIを使えるようにする' : '🚫 塾生アプリのみ(AIなし)にする'}</button>
+          <div style="margin-top:6px;color:#71717a;font-size:0.74rem;line-height:1.5;">「塾生アプリのみ」= 宿題/予定表/出欠/動画だけ利用可。ドリル/AIチューター/教材生成などAI機能を全てブロックします(模試・宿題中心の通塾生向け)。</div>
+        </div>`
+          : ''),
       ].join('');
 
       // 🎯 2026-05-26 audit fix: 学年/志望校 編集 button の listener 配線
@@ -8644,6 +8652,42 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             }
           } catch (e) {
             alert('登録エラー: ' + (e && e.message ? e.message : e));
+            btn.disabled = false; btn.textContent = _orig;
+          }
+        });
+      });
+
+      // 🚫 [塾生アプリ AIなし枠 2026-07-04] AI利用 ON/OFF トグルの配線 (既存生徒をワンクリックで切替)。
+      infoPane.querySelectorAll('.sd-toggle-ai-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const sid = Number(btn.dataset.studentId) || 0;
+          const nm = btn.dataset.studentName || '';
+          if (sid <= 0) { alert('student_id 不正'); return; }
+          const curDisabled = btn.dataset.aiDisabled === '1';   // 現在 AIなし か
+          const newDisabled = !curDisabled;                      // トグル後の状態
+          const msg = newDisabled
+            ? `${nm} さん (ID ${sid}) を「塾生アプリのみ(AIなし)」にします。\nドリル/AIチューター等のAI機能が全てブロックされ、宿題/予定/出欠/動画のみ利用可になります。よろしいですか？`
+            : `${nm} さん (ID ${sid}) に AI機能を使えるようにします。よろしいですか？`;
+          if (!confirm(msg)) return;
+          const _orig = btn.textContent;
+          btn.disabled = true; btn.textContent = '⏳ 更新中...';
+          try {
+            const r = await AdminAuth.fetch(`/api/admin/students/${sid}/ai-disabled`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ai_disabled: newDisabled }),
+            });
+            const d = await r.json().catch(() => ({}));
+            if (r.ok) {
+              if (st) st.ai_disabled = newDisabled ? 1 : 0;
+              alert(`✅ ${nm} さんを ${newDisabled ? '「🏫 塾生アプリのみ(AIなし)」' : '「🤖 AIあり」'} に変更しました。画面を更新します。`);
+              location.reload();
+            } else {
+              alert('変更失敗: ' + (d.detail || ('HTTP ' + r.status)));
+              btn.disabled = false; btn.textContent = _orig;
+            }
+          } catch (e) {
+            alert('変更エラー: ' + (e && e.message ? e.message : e));
             btn.disabled = false; btn.textContent = _orig;
           }
         });
