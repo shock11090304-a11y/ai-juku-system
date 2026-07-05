@@ -20917,12 +20917,78 @@ def _repeat_admin_authed(authorization: Optional[str]) -> bool:
                 and _verify_admin_token(authorization[len("Bearer "):].strip()))
 
 
+# 🔁 遡及スキャンはプロセス内で 1 回だけ自動実行する (再デプロイでリセット=再スキャンは冪等で安全)。
+#   signup 時検知 (27193〜) は「導入後の新規申込」しかフラグを立てないため、導入前に別メールで再登録
+#   済みの既存重複 (例: 山田くん) はいつまでもバナー(=即時課金導線)に出ない。これを埋めるのが遡及スキャン。
+_REPEAT_BACKFILL_DONE = False
+
+
+def _backfill_repeat_suspects(limit: int = 2000) -> int:
+    """既存の trial/expired 生徒を過去の体験/課金者と突合し、別メール再登録の疑いを遡ってフラグ化する。
+    ・対象は未処理の行のみ (repeat_trial_reason IS NULL)。dismiss/convert 済は reason が残るので再フラグしない
+      = 塾長の「誤検知(無視)」判断がそのまま効き続ける。
+    ・「後から登録した側」だけを立てる (一致相手の id < 当該 id) = signup 時検知と同じ意味論。元の正当な体験は温存し、
+      再取得の疑いがある新しい行だけをバナーに載せる。
+    非throw。新規に立てた件数を返す。"""
+    flagged = 0
+    try:
+        _cn = db(); _cc = _cn.cursor()
+        try:
+            _cc.execute(
+                "SELECT id, name, email, student_email, status, created_at FROM students "
+                "WHERE COALESCE(repeat_trial_suspect,0)=0 AND repeat_trial_reason IS NULL "
+                "  AND status IN ('trial','expired') "
+                f"  AND {_synth_exclude_sql('students')} "
+                "ORDER BY id DESC LIMIT ?",
+                (int(limit),),
+            )
+            rows = [dict(r) for r in _cc.fetchall()]
+            for s in rows:
+                # 直前の SELECT が万一 abort していても引きずらない (PG の txn-abort footgun 回避)。read-only。
+                try: _cn.rollback()
+                except Exception: pass
+                try:
+                    prior = _find_prior_trial_identity(
+                        _cc, s.get("email") or "", s.get("name") or "", s.get("student_email") or "")
+                except Exception as _pe:
+                    log.warning(f"[repeat-trial] backfill match query failed for student {s.get('id')}: {_pe}")
+                    continue
+                # 一致相手が「より古い行」のときだけ = この行が後から作られた再登録側。
+                if prior and prior.get("id") is not None and s.get("id") is not None:
+                    try:
+                        older = int(prior["id"]) < int(s["id"])
+                    except Exception:
+                        older = False
+                    if older:
+                        _flag_repeat_suspect(s["id"], _repeat_reason_text(prior, prior.get("match_kind")))
+                        _record_repeat_event("repeat_trial_flagged_backfill",
+                                             {"student_id": s["id"], "prior_id": prior.get("id"),
+                                              "match_kind": prior.get("match_kind")})
+                        flagged += 1
+        finally:
+            _cn.close()
+    except Exception as _e:
+        log.warning(f"[repeat-trial] backfill failed: {_e}")
+    return flagged
+
+
 @app.get("/api/admin/students/repeat-trial-suspects")
 def admin_repeat_trial_suspects(authorization: Optional[str] = Header(None)):
     """⚠️ 体験の重複再取得の疑いがある生徒一覧 (別メール再登録・氏名/子メール/同一カード一致)。
     まだ課金に至っていない (trial/expired) 生徒に絞る。合成監視は除外。read-only。"""
     if not _repeat_admin_authed(authorization):
         raise HTTPException(status_code=401, detail="未認証")
+    # 🔁 プロセス内で一度だけ遡及スキャン: signup 検知導入前の既存重複を拾ってバナーに載せる。
+    #   先にフラグを立ててから走らせ、同時アクセスによる多重実行を抑える (冪等なので二重でも無害)。
+    global _REPEAT_BACKFILL_DONE
+    if not _REPEAT_BACKFILL_DONE:
+        _REPEAT_BACKFILL_DONE = True
+        try:
+            _n = _backfill_repeat_suspects()
+            if _n:
+                log.info(f"[repeat-trial] backfill flagged {_n} existing suspect(s)")
+        except Exception as _be:
+            log.warning(f"[repeat-trial] backfill invocation failed: {_be}")
     conn = db(); c = conn.cursor()
     out = []
     try:
@@ -21085,6 +21151,18 @@ def admin_repeat_trial_dismiss(student_id: int, authorization: Optional[str] = H
         raise HTTPException(status_code=500, detail=f"処理に失敗しました: {type(e).__name__}")
     _record_repeat_event("repeat_trial_dismissed_by_admin", {"student_id": student_id})
     return {"ok": True, "message": "誤検知として解除しました。体験はそのまま継続します。"}
+
+
+@app.post("/api/admin/students/repeat-trial-rescan")
+def admin_repeat_trial_rescan(authorization: Optional[str] = Header(None)):
+    """🔁 既存の体験生を今すぐ遡及スキャンして重複疑いを立て直す (塾長の手動トリガ)。
+    自動スキャンはプロセス内 1 回だけなので、後から気づいた既存重複をその場で拾い直したいとき用。冪等。admin only。"""
+    if not _repeat_admin_authed(authorization):
+        raise HTTPException(status_code=401, detail="未認証")
+    n = _backfill_repeat_suspects()
+    _record_repeat_event("repeat_trial_rescan_by_admin", {"flagged": n})
+    return {"ok": True, "flagged": n,
+            "message": (f"再スキャン完了: {n}名を新たに検出しました。" if n else "再スキャン完了: 新たな該当はありませんでした。")}
 
 
 @app.post("/api/admin/students/backfill-last-login")

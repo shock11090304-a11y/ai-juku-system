@@ -2295,8 +2295,14 @@
         <div id="activeNoRecordList" style="display:none;margin-top:0.85rem;padding:0.65rem 0.85rem;background:rgba(15,23,42,0.55);border-radius:8px;max-height:300px;overflow-y:auto;font-size:0.78rem;color:#cbd5e1;"></div>
       </div>
 
-      <!-- 🔁 体験の重複再取得の疑い (2026-07-06 塾長指示): 別メールで再登録した既体験者を検知 -->
-      <div id="repeatTrialAlert" style="display:none;margin:0.75rem 0;padding:0.9rem 1rem;background:linear-gradient(90deg,rgba(239,68,68,0.16),rgba(239,68,68,0.05));border:1px solid rgba(239,68,68,0.45);border-radius:10px;">
+      <!-- 🔁 体験の重複再取得ガード (2026-07-06 塾長指示): 別メールで再登録した既体験者を検知 -->
+      <!-- 常時表示の操作バー: 検知導入前の既存重複(例: 山田くん)を遡って拾うため塾長が手動再スキャンできる。 -->
+      <div id="repeatTrialControl" style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;margin:0.75rem 0 0;padding:0.5rem 0.8rem;background:rgba(148,163,184,0.06);border:1px solid rgba(148,163,184,0.2);border-radius:9px;">
+        <div style="font-size:0.78rem;color:#94a3b8;">🔁 体験の重複再取得ガード <span id="repeatTrialStatus" style="color:#64748b;">（別メール再登録の既体験者を検知）</span></div>
+        <button type="button" id="repeatTrialRescan" style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.2);padding:0.45rem 0.85rem;border-radius:8px;cursor:pointer;font-size:0.8rem;">🔁 既存生を再スキャン</button>
+      </div>
+
+      <div id="repeatTrialAlert" style="display:none;margin:0.5rem 0 0.75rem;padding:0.9rem 1rem;background:linear-gradient(90deg,rgba(239,68,68,0.16),rgba(239,68,68,0.05));border:1px solid rgba(239,68,68,0.45);border-radius:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
           <div style="flex:1;min-width:240px;">
             <div style="color:#fca5a5;font-weight:700;font-size:0.95rem;">🔁 <span id="repeatTrialCount">0</span>名 が「体験の重複再取得」の疑い <span style="color:#f87171;font-weight:400;font-size:0.78rem;">(別メールで再登録した既体験者)</span></div>
@@ -4695,6 +4701,23 @@
       setInterval(loadRepeatTrialSuspects, 60000);
       const _rtRefresh = document.getElementById('repeatTrialRefresh');
       if (_rtRefresh) _rtRefresh.addEventListener('click', loadRepeatTrialSuspects);
+      // 🔁 既存生を再スキャン: 検知導入前の既存重複 (例: 山田くん) を遡って拾い直す (冪等)。
+      const _rtRescan = document.getElementById('repeatTrialRescan');
+      if (_rtRescan) _rtRescan.addEventListener('click', async () => {
+        const statusEl = document.getElementById('repeatTrialStatus');
+        _rtRescan.disabled = true; const _label = _rtRescan.textContent; _rtRescan.textContent = '⏳ スキャン中…';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/students/repeat-trial-rescan', { method: 'POST' });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) { alert('再スキャンに失敗しました: ' + (j.detail || r.status)); }
+          else if (statusEl) statusEl.textContent = j.message || '再スキャン完了';
+          await loadRepeatTrialSuspects();
+        } catch (e) {
+          alert('通信エラー: ' + e.message);
+        } finally {
+          _rtRescan.disabled = false; _rtRescan.textContent = _label;
+        }
+      });
       // 動的に描画されるボタンは event delegation で処理 (本契約へ切替 / 誤検知)
       const _rtList = document.getElementById('repeatTrialList');
       if (_rtList) _rtList.addEventListener('click', async (ev) => {
@@ -4724,6 +4747,7 @@
         const alertEl = document.getElementById('repeatTrialAlert');
         const countEl = document.getElementById('repeatTrialCount');
         const listEl = document.getElementById('repeatTrialList');
+        const statusEl = document.getElementById('repeatTrialStatus');
         if (!alertEl || !listEl) return;
         try {
           const r = await AdminAuth.fetch('/api/admin/students/repeat-trial-suspects');
@@ -4731,6 +4755,9 @@
           const j = await r.json();
           const rows = j.suspects || [];
           if (countEl) countEl.textContent = rows.length;
+          if (statusEl) statusEl.textContent = rows.length
+            ? `（別メール再登録の疑い ${rows.length}名 — 下で対応してください）`
+            : '（別メール再登録の既体験者を検知 — 現在該当なし）';
           if (rows.length === 0) { alertEl.style.display = 'none'; listEl.innerHTML = ''; return; }
           const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
           listEl.innerHTML = rows.map(s => `
