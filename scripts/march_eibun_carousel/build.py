@@ -30,7 +30,7 @@ TITLE = "MARCHの英文はこう読む"
 VOL = "vol.02"
 HANDLE = "@trillion_ai"
 SITE = "trillion-ai-juku.com"
-SOURCE = "テーマ: クジラ構文 (no more A than B)・難関大頻出"
+SOURCE = "英文出典: L.S.Park『A Long Walk to Water』(2010) ・ 難関私大 長文空所補充"
 
 CSS = """
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -192,33 +192,33 @@ SLIDES = {}
 
 # --- 1: フック ---
 SLIDES[1] = shell(1, """
-  <div class="pill solid">実際の入試レベル</div>
-  <div class="pill ghost" style="margin-top:20px">難関私大レベル ・ <b>下線部和訳</b></div>
+  <div class="pill solid">実際の入試問題</div>
+  <div class="pill ghost" style="margin-top:20px">難関私大 ・ <b>空所補充(文脈)</b></div>
   <div class="quote serif" style="margin-top:30px">
-    “A whale is <span class="u">no more</span> a fish<br>
-    <span class="u">than</span> a horse is.”
+    “There was <span class="u">nothing</span><br>
+    to do <span class="u">but</span> wait.”
   </div>
-  <div class="hl-line" style="margin-top:20px">この一文、<span class="uy">訳せる？</span></div>
-  <div class="sub2" style="margin-top:22px">事故ポイントは、<span class="pinkstrong">たった1つの構文</span>。</div>
-  <div class="gloss" style="margin-top:18px">whale クジラ &nbsp;/&nbsp; <b>no more A than B</b> ← 今日のカギ</div>
+  <div class="hl-line" style="margin-top:20px">この <span class="gold">but</span>、<span class="uy">訳せる？</span></div>
+  <div class="sub2" style="margin-top:22px">事故ポイントは、<span class="pinkstrong">この “but” 1語</span>。</div>
+  <div class="gloss" style="margin-top:18px"><b>nothing to do but ~</b> ← 今日のカギ</div>
   <div style="flex:1"></div>
   <div class="cta">▶ スワイプして挑戦</div>
 """, src=False)
 
 # --- 2: 設問 ---
 SLIDES[2] = shell(2, """
-  <div class="hl-line sm" style="font-size:54px">Q. この <span class="gold">no more…than</span>、<br>どう訳す？</div>
-  <div class="box dash" style="padding:26px 34px">
-    <div class="serif-blk" style="font-size:48px">A whale is
-      <span class="circle">no&nbsp;more</span> a fish <span class="circle">than</span> a horse is.</div>
+  <div class="hl-line sm" style="font-size:54px">Q. この <span class="gold">but</span>、<br>どう訳す？</div>
+  <div class="box dash" style="padding:30px 34px">
+    <div class="serif-blk" style="font-size:52px">There was nothing to do
+      <span class="circle">but</span> wait.</div>
   </div>
   <div class="choice">
     <div class="mk">A</div>
-    <div class="tx"><small>珍訳</small>クジラは、馬ほど魚ではない</div>
+    <div class="tx"><small>珍訳</small>することは無かった。しかし、待った</div>
   </div>
   <div class="choice">
     <div class="mk">B</div>
-    <div class="tx">馬が魚でないのと同様に、クジラも魚ではない</div>
+    <div class="tx">ただ待つ<b>しかなかった</b></div>
   </div>
   <div class="wide pink" style="font-size:34px;padding:18px">💬 直感でOK。AかBをコメントで!</div>
   <div class="cta dash" style="align-self:center;font-size:32px;padding:14px 32px">▶ 次のスライドで答え合わせ</div>
@@ -229,81 +229,79 @@ SLIDES[3] = shell(3, """
   <div class="answer-label">ANSWER</div>
   <div class="hl-line sm" style="font-size:52px">正解は…</div>
   <div class="cbig">B</div>
-  <div class="box green" style="padding:26px 34px">
-    <div class="note" style="line-height:1.42;font-size:36px">「馬が魚でないのと<span class="green">同じように</span>、<br>クジラも魚ではない」</div>
+  <div class="box green" style="padding:30px 34px">
+    <div class="note" style="line-height:1.4;font-size:42px">「ただ、<span class="green">待つしかなかった</span>」</div>
   </div>
   <div class="box pinkd" style="padding:22px 32px">
     <div class="smallnote" style="font-size:32px;color:#e9ecff;font-weight:700;line-height:1.42">
-      <span class="pink">A</span>で読むと「馬より魚っぽくない(比較)」<br>という<span class="pinkstrong">珍訳</span>に ⚠️</div>
+      <span class="pink">but</span> を「しかし」と読むと<br>意味が通らない<span class="pinkstrong">珍訳</span>に ⚠️</div>
   </div>
-  <div class="sub2" style="font-size:40px">カギは、たった1つの<span class="uy">“公式”</span>。</div>
-  <div class="cta" style="align-self:center;font-size:34px;padding:16px 38px">▶ その公式へ</div>
+  <div class="sub2" style="font-size:40px">カギは but の<span class="uy">“本当の顔”</span>。</div>
+  <div class="cta" style="align-self:center;font-size:34px;padding:16px 38px">▶ その正体へ</div>
 """, src=False)
 
 # --- 4: 解説(公式) ---
 SLIDES[4] = shell(4, """
-  <div class="hl-line sm" style="font-size:54px">no more A than B は<br><span class="gold">A も B も</span>“まとめて否定”</div>
+  <div class="hl-line sm" style="font-size:52px">nothing to do <span class="gold">but</span> ~ は<br>「〜する<span class="uy">しかない</span>」</div>
   <div class="rule-box">
-    <div class="rule-row"><span class="k">no more A than B</span><span class="arw">→</span>
-      <span style="color:#fff">Bでないのと同様にA<span class="pink">でない</span></span></div>
-    <div class="rule-row"><span class="k">no less A than B</span><span class="arw">→</span>
-      <span style="color:#fff">Bと同様にA<span class="green">である</span></span></div>
+    <div class="rule-row"><span class="k">nothing to do but V</span><span class="arw">→</span>
+      <span style="color:#fff">Vする<span class="pink">しかない</span></span></div>
+    <div class="rule-row"><span class="k">この but</span><span class="arw">=</span>
+      <span style="color:#fff">「〜を除いて / 〜以外」<span class="green">except</span></span></div>
   </div>
-  <div class="diagram serif" style="font-size:44px">
-    A whale is <span class="circle">no more</span> <span class="u">a&nbsp;fish</span> than <span class="u">a&nbsp;horse</span> is.
+  <div class="diagram serif" style="font-size:46px">
+    nothing to do <span class="circle">but</span> <span class="u">wait</span>
   </div>
-  <div class="smallnote" style="font-size:30px">
-    <span class="tag s">A</span> = a fish &nbsp;&nbsp; <span class="tag v">B</span> = a horse (魚ではない)</div>
+  <div class="smallnote" style="font-size:31px">
+    = 「<b>待つこと以外</b>に、することがない」</div>
   <div class="note" style="font-size:36px;line-height:1.4">
-    <span class="pink">than の後ろ</span>は「誰もがNOと言える例え」<br>→ だから <span class="pink">A も否定</span>される</div>
+    <span class="pink">do の後ろ</span>の but は<br>「しかし」<span class="pink">じゃない</span></div>
   <div class="box dash" style="padding:22px 28px">
     <div class="smallnote serif" style="font-size:32px;color:#eef1ff;font-weight:700">
-      He is no more mad than you are.<span style="font-family:'Noto Sans CJK JP'">&nbsp;→&nbsp;「君と同じで彼も狂ってなどいない」</span></div>
+      I had no choice but to wait.<span style="font-family:'Noto Sans CJK JP'">&nbsp;→&nbsp;「待つしかなかった」</span></div>
   </div>
-  <div class="cta dash" style="align-self:center;font-size:33px;padding:14px 32px">▶ 後半に“もう一つの注意点”</div>
-""", src=False)
+  <div class="cta dash" style="align-self:center;font-size:33px;padding:14px 32px">▶ 後半に“but の仲間”</div>
+""", src=True)
 
-# --- 5: もう一つの注意点(比較のmoreと区別) ---
+# --- 5: but の仲間(例外のbut) ---
 SLIDES[5] = shell(5, """
-  <div class="hl-line sm"><span class="gold">“比較の more”</span>と<br>間違えるな</div>
-  <div class="box dash" style="margin-top:8px;padding:30px 34px">
-    <div class="smallnote serif" style="font-size:38px;color:#fff;font-weight:700;line-height:1.4">
-      A cat is <b>more</b> independent than a dog.</div>
-    <div class="smallnote" style="margin-top:8px;font-size:34px;color:#a5b4fc;font-weight:800">
-      → 比較「猫の<b>方が</b>自立的」</div>
+  <div class="hl-line sm" style="font-size:52px"><span class="gold">“例外の but”</span>で<br>まとめて得する</div>
+  <div class="box gold" style="padding:24px 32px">
+    <div class="smallnote serif" style="font-size:36px;color:#fff;font-weight:700">have no choice but to do</div>
+    <div class="smallnote" style="margin-top:6px;font-size:33px;color:#fcd34d;font-weight:800">→「〜する<b>しかない</b>」</div>
   </div>
-  <div class="box gold" style="margin-top:14px;padding:30px 34px">
-    <div class="smallnote serif" style="font-size:38px;color:#fff;font-weight:700;line-height:1.4">
-      A cat is <span class="gold">no more</span> human than a dog.</div>
-    <div class="smallnote" style="margin-top:8px;font-size:34px;color:#f472b6;font-weight:800">
-      → 否定「犬と同じで、猫も人間ではない」</div>
+  <div class="box dash" style="padding:22px 30px">
+    <div class="smallnote serif" style="font-size:36px;color:#fff;font-weight:700">anything but ~</div>
+    <div class="smallnote" style="margin-top:6px;font-size:33px;color:#a5b4fc;font-weight:800">→「<b>決して</b>〜ではない」</div>
   </div>
-  <div class="note" style="margin-top:20px;font-size:38px;line-height:1.45">
-    <span class="gold">no</span> が付いたら“比べていない”。<br>than の後ろは <span class="pink">「ありえない例え」</span>。</div>
-  <div class="smallnote" style="margin-top:14px;font-size:32px">
-    ※ no more / no less を見たら “両者セット” で考える</div>
+  <div class="box dash" style="padding:22px 30px">
+    <div class="smallnote serif" style="font-size:36px;color:#fff;font-weight:700">all but ~</div>
+    <div class="smallnote" style="margin-top:6px;font-size:33px;color:#a5b4fc;font-weight:800">→「<b>ほとんど</b>〜」</div>
+  </div>
+  <div class="note" style="margin-top:8px;font-size:36px;line-height:1.42">
+    but に <span class="gold">「除外」の顔</span>があると<br>一気に読める</div>
   <div class="cta dash" style="align-self:center;font-size:33px;padding:14px 32px">▶ 最後にまとめ</div>
 """, src=False)
 
 # --- 6: 全訳・まとめ ---
 SLIDES[6] = shell(6, """
   <div class="hl-line sm" style="font-size:52px">今日の1文・<span class="uy">全訳</span></div>
-  <div class="box gold" style="padding:26px 34px">
-    <div class="note" style="font-size:38px;line-height:1.45;font-weight:800">
-      「馬が魚でないのとちょうど<br>同じように、クジラも魚ではない。」</div>
+  <div class="box gold" style="padding:28px 34px">
+    <div class="note" style="font-size:40px;line-height:1.45;font-weight:800">
+      「することは、ただ<br>待つことしか<br>なかった。」</div>
   </div>
   <div class="box pinkd" style="padding:22px 30px">
     <div class="note" style="font-size:33px">
-      <span class="gold">no more A than B</span> = Bでないのと同様にA<span class="pink">でない</span></div>
+      <span class="gold">nothing to do but V</span> = Vする<span class="pink">しかない</span></div>
   </div>
   <div class="smallnote" style="font-size:29px">
-    ※ no less A than B = Bと同様にAである(両者肯定)</div>
+    ※ この but =「〜を除いて(except)」。「しかし」ではない</div>
   <div class="smallnote" style="font-size:32px;color:#fcd34d;font-weight:800">
-    この“クジラ構文”は MARCH・共通テスト・英検で頻出</div>
+    but の識別は 難関私大・共通テスト・英検で頻出</div>
   <div class="wide gold" style="font-size:40px;padding:18px">📄 保存して復習</div>
   <div class="wide pink" style="font-size:38px;padding:18px">✅ フォローで次の1文 → @trillion_ai</div>
   <div class="teaser" style="font-size:31px;padding:20px 30px">
-    次回: たった1語で文全体がひっくり返る、否定の“伏兵”<span class="gold">(難関大頻出)</span></div>
+    次回: 中学単語 “as” だけで受験生を沈めた一文<span class="gold">(難関大)</span></div>
 """, src=False)
 
 
