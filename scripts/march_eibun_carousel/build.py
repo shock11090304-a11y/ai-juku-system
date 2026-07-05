@@ -305,9 +305,128 @@ SLIDES[6] = shell(6, """
 """, src=False)
 
 
-def render(n, html):
-    hp = os.path.join(OUT, f"march_{n:02d}.html")
-    pp = os.path.join(OUT, f"march_{n:02d}.png")
+# ============================ vol.03 「couldn't help studying」 ============================
+# 同じ入試長文 (A Long Walk to Water) の一文:
+#   "He tried not to stare, but he couldn't help studying the families closely."
+# ワナ: can't help ~ing =「思わず〜してしまう」/ study =「勉強」ではなく「観察・熟視」
+HELP_SOURCE = "英文出典: L.S.Park『A Long Walk to Water』(2010) ・ 難関私大 長文(語義)"
+
+
+def deck_help():
+    s = {}
+    # --- 1: フック ---
+    s[1] = shell(1, """
+      <div class="pill solid">実際の入試問題</div>
+      <div class="pill ghost" style="margin-top:20px">難関私大 ・ <b>下線部の意味</b></div>
+      <div class="quote serif" style="margin-top:26px">
+        “He <span class="u">couldn't help</span><br>
+        <span class="u">studying</span> the families.”
+      </div>
+      <div class="hl-line" style="margin-top:18px">この一文、<span class="uy">訳せる？</span></div>
+      <div class="sub2" style="margin-top:20px">事故ポイントは、<span class="pinkstrong">2つの“思い込み”</span>。</div>
+      <div class="gloss" style="margin-top:16px">help =「手伝う」? &nbsp;/&nbsp; study =「勉強」? ← 要注意</div>
+      <div style="flex:1"></div>
+      <div class="cta">▶ スワイプして挑戦</div>
+    """, src=False)
+
+    # --- 2: 設問 ---
+    s[2] = shell(2, """
+      <div class="hl-line sm" style="font-size:52px">Q. <span class="gold">couldn't help studying</span><br>どう訳す？</div>
+      <div class="box dash" style="padding:30px 34px">
+        <div class="serif-blk" style="font-size:50px">He <span class="circle">couldn't help</span> studying the families.</div>
+      </div>
+      <div class="choice">
+        <div class="mk">A</div>
+        <div class="tx"><small>珍訳</small>家族を研究するのを手伝えなかった</div>
+      </div>
+      <div class="choice">
+        <div class="mk">B</div>
+        <div class="tx">つい家族をじっと見てしまった</div>
+      </div>
+      <div class="wide pink" style="font-size:34px;padding:18px">💬 直感でOK。AかBをコメントで!</div>
+      <div class="cta dash" style="align-self:center;font-size:32px;padding:14px 32px">▶ 次のスライドで答え合わせ</div>
+    """, src=False)
+
+    # --- 3: 解答 ---
+    s[3] = shell(3, """
+      <div class="answer-label">ANSWER</div>
+      <div class="hl-line sm" style="font-size:52px">正解は…</div>
+      <div class="cbig">B</div>
+      <div class="box green" style="padding:28px 34px">
+        <div class="note" style="line-height:1.4;font-size:38px">「つい、その家族を<br><span class="green">じっと見て</span>しまった」</div>
+      </div>
+      <div class="box pinkd" style="padding:22px 32px">
+        <div class="smallnote" style="font-size:32px;color:#e9ecff;font-weight:700;line-height:1.42">
+          <span class="pink">help</span>=手伝う / <span class="pink">study</span>=勉強 と読むと<br>意味不明な<span class="pinkstrong">珍訳</span>に ⚠️</div>
+      </div>
+      <div class="sub2" style="font-size:40px">ワナは、この<span class="uy">“2語”</span>。</div>
+      <div class="cta" style="align-self:center;font-size:34px;padding:16px 38px">▶ その正体へ</div>
+    """, src=False)
+
+    # --- 4: ワナ1 = can't help ~ing ---
+    s[4] = shell(4, """
+      <div class="hl-line sm" style="font-size:52px">can't help <span class="gold">~ing</span> は<br>「思わず<span class="uy">〜してしまう</span>」</div>
+      <div class="rule-box">
+        <div class="rule-row"><span class="k">can't help ~ing</span><span class="arw">→</span>
+          <span style="color:#fff">〜せずには<span class="pink">いられない</span></span></div>
+        <div class="rule-row"><span class="k">この help</span><span class="arw">=</span>
+          <span style="color:#fff">「避ける」<span class="green">avoid</span>(≠手伝う)</span></div>
+      </div>
+      <div class="diagram serif" style="font-size:46px">
+        couldn't help <span class="circle">studying</span>
+      </div>
+      <div class="smallnote" style="font-size:31px">= 「見<b>ずにはいられなかった</b>」</div>
+      <div class="note" style="font-size:36px;line-height:1.4">
+        <span class="pink">help + ~ing</span> なら<br>「手伝う」<span class="pink">じゃない</span></div>
+      <div class="box dash" style="padding:22px 28px">
+        <div class="smallnote serif" style="font-size:32px;color:#eef1ff;font-weight:700">
+          I couldn't help laughing.<span style="font-family:'Noto Sans CJK JP'">&nbsp;→&nbsp;「思わず笑ってしまった」</span></div>
+      </div>
+      <div class="cta dash" style="align-self:center;font-size:33px;padding:14px 32px">▶ 後半に“もう1つのワナ”</div>
+    """, src=True)
+
+    # --- 5: ワナ2 = study の意味 ---
+    s[5] = shell(5, """
+      <div class="hl-line sm" style="font-size:52px"><span class="gold">study</span> =「勉強」<br>だけじゃない</div>
+      <div class="box gold" style="padding:24px 32px">
+        <div class="smallnote serif" style="font-size:36px;color:#fff;font-weight:700">study the map</div>
+        <div class="smallnote" style="margin-top:6px;font-size:33px;color:#fcd34d;font-weight:800">→「地図を<b>じっくり調べる</b>」</div>
+      </div>
+      <div class="box dash" style="padding:22px 30px">
+        <div class="smallnote serif" style="font-size:36px;color:#fff;font-weight:700">study her face</div>
+        <div class="smallnote" style="margin-top:6px;font-size:33px;color:#a5b4fc;font-weight:800">→「顔を<b>じっと見る/観察する</b>」</div>
+      </div>
+      <div class="note" style="margin-top:8px;font-size:36px;line-height:1.42">
+        長文の study は <span class="pink">「観察する・熟視する」</span><br>を疑え(≒ examine / observe)</div>
+      <div class="cta dash" style="align-self:center;font-size:33px;padding:14px 32px">▶ 最後にまとめ</div>
+    """, src=False)
+
+    # --- 6: 全訳・まとめ ---
+    s[6] = shell(6, """
+      <div class="hl-line sm" style="font-size:52px">今日の1文・<span class="uy">全訳</span></div>
+      <div class="box gold" style="padding:26px 34px">
+        <div class="note" style="font-size:35px;line-height:1.45;font-weight:800">
+          「彼はじろじろ見まいとしたが、<br>つい その家族を熱心に<br>観察してしまった。」</div>
+      </div>
+      <div class="box pinkd" style="padding:20px 30px">
+        <div class="note" style="font-size:31px">
+          <span class="gold">can't help ~ing</span> = つい〜してしまう / <span class="gold">study</span> = 観察する</div>
+      </div>
+      <div class="smallnote" style="font-size:29px">
+        ※ help =「避ける」・study =「じっくり見る」の顔がある</div>
+      <div class="smallnote" style="font-size:32px;color:#fcd34d;font-weight:800">
+        どちらも 難関私大・共通テスト・英検で頻出</div>
+      <div class="wide gold" style="font-size:40px;padding:18px">📄 保存して復習</div>
+      <div class="wide pink" style="font-size:38px;padding:18px">✅ フォローで次の1文 → @trillion_ai</div>
+      <div class="teaser" style="font-size:31px;padding:20px 30px">
+        次回: 中学単語 “as” だけで受験生を沈めた一文<span class="gold">(難関大)</span></div>
+    """, src=False)
+    return s
+
+
+def render(prefix, n, html):
+    hp = os.path.join(OUT, f"{prefix}_{n:02d}.html")
+    pp = os.path.join(OUT, f"{prefix}_{n:02d}.png")
     with open(hp, "w", encoding="utf-8") as f:
         f.write(html)
     if not CHROME:
@@ -322,6 +441,13 @@ def render(n, html):
 
 
 if __name__ == "__main__":
+    # vol.02 「but」 (import 時に vol.02 グローバルで構築済み)
     for n in range(1, 7):
-        render(n, SLIDES[n])
+        render("march", n, SLIDES[n])
+    # vol.03 「couldn't help studying」 — グローバルを切り替えて構築
+    VOL = "vol.03"
+    SOURCE = HELP_SOURCE
+    slides_help = deck_help()
+    for n in range(1, 7):
+        render("march_v3", n, slides_help[n])
     print("done ->", OUT)

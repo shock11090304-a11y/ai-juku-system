@@ -9,9 +9,17 @@
 「but=しかし」ではなく「but=〜を除いて(except)」→ `nothing to do but V`=「Vするしかない」という
 MARCH・共通テスト・英検頻出の識別ポイントを解説する。
 
+## vol.03 = 「この一文、訳せる?」(couldn't help studying)
+同じ入試長文の一文 `He tried not to stare, but he couldn't help studying the families closely.`
+から、**can't help ~ing**（=思わず〜してしまう／help≠手伝う）と **study**（=観察する・熟視する／≠勉強）
+の2つの誤読ポイントを解説する6枚組。
+
 ## 生成
 ```bash
-python3 build.py          # out/march_01.png ... march_06.png (2160x2700, 4:5)
+python3 build.py
+#  vol.02「but」        → out/march_01.png    ... march_06.png
+#  vol.03「help studying」→ out/march_v3_01.png ... march_v3_06.png
+#  いずれも 2160x2700 (4:5)
 ```
 - HTML を組み、ヘッドレス Chromium(`--force-device-scale-factor=2`)で 1080x1350 → 2x PNG に描画。
 - フォント: 見出し・和文 = Noto Sans CJK JP / 英文引用 = Liberation Serif(Times系)。
