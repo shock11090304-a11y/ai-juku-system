@@ -1749,6 +1749,18 @@ def init_db():
         # 📝 [宿題ドリル単元 2026-06-26] 宿題を特定の dojo-drill 単元に紐づけ (生徒アプリの「ドリルで解く」が
         #   ?w_subject=&w_topic= でその単元を自動起動。例 topic="英文法 関係詞")。
         ("homework_assignments_topic", "ALTER TABLE homework_assignments ADD COLUMN topic TEXT"),
+        # 🔁 [体験の重複再取得ガード 2026-07-06 塾長指示]
+        #   「メールを変えて再登録した既体験者は、体験なしで即時課金にしたい」。
+        #   メールは変えられても不変な手がかり = カード指紋 / 氏名 で「同一人物・別メール」を捕捉する。
+        #   payment_fingerprint : Stripe PaymentMethod.card.fingerprint (物理カード単位で安定・別 customer でも一致)。
+        #     カード投入経路 (trial_extended / monthly checkout) の webhook で best-effort 保存。
+        #   repeat_trial_suspect: 1 = 過去体験者の可能性 (別メール)。氏名一致 or 同一カード別氏名 (兄弟の可能性) で立てる。
+        #     ★氏名だけの一致は同姓同名で誤検知し得るので「自動課金」はせず塾長確認 (CEO ダッシュのバナー) に回す。
+        #     同一カード AND 同一氏名 のときだけ webhook が Stripe trial を即終了 = 自動即課金 (誤検知ほぼ皆無)。
+        #   repeat_trial_reason : バナー/通知メール表示用の理由文 (一致した過去 student の氏名・体験時期など)。
+        ("students_payment_fingerprint", "ALTER TABLE students ADD COLUMN payment_fingerprint TEXT DEFAULT NULL"),
+        ("students_repeat_trial_suspect", "ALTER TABLE students ADD COLUMN repeat_trial_suspect INTEGER DEFAULT 0"),
+        ("students_repeat_trial_reason", "ALTER TABLE students ADD COLUMN repeat_trial_reason TEXT DEFAULT NULL"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -20893,6 +20905,188 @@ def admin_students_ai_usage(
     }
 
 
+# =====================================================================
+# 🔁 体験の重複再取得ガード (2026-07-06 塾長指示) — CEO ダッシュ用 API
+#   「メールを変えて再登録した既体験者は体験なしで即課金にしたい」。
+#   ・自動で確実な分 (同一カード＋同一氏名) は webhook が即課金化する。
+#   ・氏名だけ一致 / 同一カード別氏名 (兄弟の可能性) は誤検知し得るので、ここで塾長が確認して
+#     「本契約へ切替(体験打切)」or「誤検知(無視)」をワンクリックで選ぶ。
+# =====================================================================
+def _repeat_admin_authed(authorization: Optional[str]) -> bool:
+    return bool(authorization and authorization.startswith("Bearer ")
+                and _verify_admin_token(authorization[len("Bearer "):].strip()))
+
+
+@app.get("/api/admin/students/repeat-trial-suspects")
+def admin_repeat_trial_suspects(authorization: Optional[str] = Header(None)):
+    """⚠️ 体験の重複再取得の疑いがある生徒一覧 (別メール再登録・氏名/子メール/同一カード一致)。
+    まだ課金に至っていない (trial/expired) 生徒に絞る。合成監視は除外。read-only。"""
+    if not _repeat_admin_authed(authorization):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db(); c = conn.cursor()
+    out = []
+    try:
+        c.execute(
+            "SELECT id, name, email, grade, status, trial_end, created_at, repeat_trial_reason "
+            "FROM students "
+            "WHERE COALESCE(repeat_trial_suspect,0) = 1 "
+            "  AND status IN ('trial','expired') "
+            f"  AND {_synth_exclude_sql('students')} "
+            "ORDER BY created_at DESC, id DESC LIMIT 200"
+        )
+        for r in c.fetchall():
+            d = dict(r)
+            out.append({
+                "id": d.get("id"),
+                "name": d.get("name"),
+                "email": d.get("email"),
+                "grade": d.get("grade"),
+                "status": d.get("status"),
+                "trial_end": str(d.get("trial_end")) if d.get("trial_end") else None,
+                "created_at": str(d.get("created_at")) if d.get("created_at") else None,
+                "reason": d.get("repeat_trial_reason"),
+            })
+    finally:
+        conn.close()
+    return {"ok": True, "count": len(out), "suspects": out}
+
+
+@app.post("/api/admin/students/{student_id}/repeat-trial-convert")
+def admin_repeat_trial_convert(student_id: int, authorization: Optional[str] = Header(None)):
+    """⚠️→ 本契約へ切替。既体験者の無料体験を打ち切り、即課金へ切り替える。フラグ解除。admin only。
+    ・カード登録済み (trial_extended = live Stripe subscription あり) → Stripe trial を即終了 = そのまま即課金。
+      (ここで失効させるだけだと Stripe 上の trial が生き残り 21 日後に silent 課金 = access 断+課金の最悪形になる)
+    ・カード未登録の純無料体験 (sub 無し) → 体験を失効させ、次回アクセスで本契約(即時課金)導線へ誘導。"""
+    if not _repeat_admin_authed(authorization):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db(); c = conn.cursor()
+    try:
+        c.execute("SELECT id, status, stripe_subscription_id FROM students WHERE id=?", (student_id,))
+        row = c.fetchone()
+        if not row:
+            conn.close()
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        st = (row["status"] or "").strip()
+        sub_id = (row["stripe_subscription_id"] or "").strip()
+        conn.close()
+        if st in ("paid", "past_due"):
+            # 既に課金済み → 体験打切は不要。フラグだけ解除。
+            _cn = db(); _cc = _cn.cursor()
+            try:
+                _cc.execute("UPDATE students SET repeat_trial_suspect=0, updated_at=CURRENT_TIMESTAMP WHERE id=?", (student_id,))
+                _cn.commit()
+            finally:
+                _cn.close()
+            _record_repeat_event("repeat_trial_converted_by_admin", {"student_id": student_id, "action": "already_paid"})
+            return {"ok": True, "action": "already_paid", "message": "既に有料のため、疑いフラグのみ解除しました。"}
+        def _set_paid_clear():
+            _cn = db(); _cc = _cn.cursor()
+            try:
+                _cc.execute(
+                    "UPDATE students SET status='paid', paid_since=COALESCE(paid_since,CURRENT_TIMESTAMP), "
+                    "trial_end=NULL, repeat_trial_suspect=0, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                    (student_id,))
+                _cn.commit()
+            finally:
+                _cn.close()
+
+        def _clear_flag():
+            _cn = db(); _cc = _cn.cursor()
+            try:
+                _cc.execute("UPDATE students SET repeat_trial_suspect=0, updated_at=CURRENT_TIMESTAMP WHERE id=?", (student_id,))
+                _cn.commit()
+            finally:
+                _cn.close()
+
+        # カード登録済み体験 (live Stripe sub あり) は、失効させるだけだと Stripe 上の trial が生き残り
+        # 21 日後に silent 課金する (access 断+課金の最悪形)。必ず Stripe を経由し、単純 expire しない。
+        # ★安全第一: sub の実状態を retrieve してから分岐。trialing のときだけ trial を即終了 (=即課金)。
+        #   既に active (=課金開始済) なら成功扱い。retrieve/modify に失敗しても、放置すれば trial_extended は
+        #   体験終了時に自動課金される設計なので access は切らない (paying sub を delete/strand しない)。
+        if sub_id:
+            if not STRIPE_SECRET_KEY:
+                _clear_flag()
+                return {"ok": True, "action": "needs_manual",
+                        "message": "この生徒はカード登録済みです。Stripe 未設定のため自動処理できません。手動でご確認ください。(疑いフラグは解除)"}
+            _s = get_stripe()
+            try:
+                _sub_status = getattr(_s.Subscription.retrieve(sub_id), "status", None)
+            except Exception as _re2:
+                log.error(f"[repeat-trial] convert: sub retrieve failed (sub={sub_id}): {_re2}")
+                raise HTTPException(status_code=502, detail="Stripe の状態取得に失敗しました。体験はそのまま継続しています。時間をおいて再試行してください。")
+            if _sub_status == "trialing":
+                try:
+                    # idempotency_key で二重クリック/レース時の二重 modify を Stripe 側で無害化 (同一キーは
+                    # キャッシュ応答=二重課金にならない)。
+                    _s.Subscription.modify(sub_id, trial_end="now",
+                                           idempotency_key=f"rt-convert-{student_id}-{sub_id}")  # trial 即終了 → 即課金
+                except Exception as _me2:
+                    log.error(f"[repeat-trial] convert: trial_end=now failed (sub={sub_id}): {_me2}")
+                    _record_repeat_event("repeat_trial_convert_charge_failed",
+                                         {"student_id": student_id, "subscription": sub_id, "error": str(_me2)[:200]})
+                    # 即課金できず。ただし delete/expire はしない — trial_extended は体験終了時に自動課金
+                    # される設計なので、放置しても silent 課金+access 断にはならない。owner に再試行を促す。
+                    raise HTTPException(status_code=502, detail="即時課金に失敗しました。体験はそのまま継続し、体験終了時に自動課金されます。時間をおいて再試行してください。")
+                _set_paid_clear()
+                _record_repeat_event("repeat_trial_converted_by_admin", {"student_id": student_id, "action": "charged_now", "subscription": sub_id})
+                return {"ok": True, "action": "charged_now",
+                        "message": "カード登録済みのため、体験を即終了して今すぐ課金しました (自動で有料に切り替わります)。"}
+            if _sub_status == "active":
+                _set_paid_clear()
+                _record_repeat_event("repeat_trial_converted_by_admin", {"student_id": student_id, "action": "already_active", "subscription": sub_id})
+                return {"ok": True, "action": "charged_now",
+                        "message": "既にカード課金が開始済みのため、有料へ切り替えました。"}
+            # canceled / incomplete / unpaid 等 = live な無料体験ではない → delete も expire もせず、フラグのみ解除。
+            _clear_flag()
+            _record_repeat_event("repeat_trial_converted_by_admin", {"student_id": student_id, "action": "cleared", "subscription": sub_id, "sub_status": _sub_status})
+            return {"ok": True, "action": "cleared",
+                    "message": f"Stripe のサブスク状態={_sub_status} のため、疑いフラグのみ解除しました (体験の再付与は発生しません)。"}
+
+        # sub 無し = カード未登録の純無料体験 → 体験失効 → 本契約(即時課金)導線へ (paywall)。
+        now = datetime.now(timezone.utc)
+        _cn = db(); _cc = _cn.cursor()
+        try:
+            _cc.execute(
+                "UPDATE students SET status='expired', trial_end=?, repeat_trial_suspect=0, "
+                "updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                (now.isoformat(), student_id))
+            _cn.commit()
+        finally:
+            _cn.close()
+    except HTTPException:
+        raise
+    except Exception as e:
+        try: conn.close()
+        except Exception: pass
+        raise HTTPException(status_code=500, detail=f"処理に失敗しました: {type(e).__name__}")
+    _record_repeat_event("repeat_trial_converted_by_admin", {"student_id": student_id, "action": "trial_ended"})
+    return {"ok": True, "action": "trial_ended",
+            "message": "体験を打ち切り、本契約(即時課金)導線へ切り替えました。次回アクセス時に本契約案内が表示されます。"}
+
+
+@app.post("/api/admin/students/{student_id}/repeat-trial-dismiss")
+def admin_repeat_trial_dismiss(student_id: int, authorization: Optional[str] = Header(None)):
+    """⚠️→ 誤検知(無視)。疑いフラグを解除するのみ。体験はそのまま継続 (本物の新規を締め出さない)。admin only。"""
+    if not _repeat_admin_authed(authorization):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db(); c = conn.cursor()
+    try:
+        c.execute("SELECT id FROM students WHERE id=?", (student_id,))
+        if not c.fetchone():
+            conn.close()
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        c.execute("UPDATE students SET repeat_trial_suspect=0, updated_at=CURRENT_TIMESTAMP WHERE id=?", (student_id,))
+        conn.commit(); conn.close()
+    except HTTPException:
+        raise
+    except Exception as e:
+        try: conn.close()
+        except Exception: pass
+        raise HTTPException(status_code=500, detail=f"処理に失敗しました: {type(e).__name__}")
+    _record_repeat_event("repeat_trial_dismissed_by_admin", {"student_id": student_id})
+    return {"ok": True, "message": "誤検知として解除しました。体験はそのまま継続します。"}
+
+
 @app.post("/api/admin/students/backfill-last-login")
 def admin_students_backfill_last_login(payload: dict = None, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """events テーブルから last_login_at を遡及推定して埋める。
@@ -26618,6 +26812,231 @@ def usage_me(authorization: Optional[str] = Header(None)):
     }
 
 
+# =====================================================================
+# 🔁 体験の重複再取得ガード (2026-07-06 塾長指示) — ヘルパー群
+#   要件:「メールを変えて再登録した既体験者は、体験なしで即時課金にしたい」。
+#   メールは変えられても不変な手がかり (氏名 / カード指紋) で「同一人物・別メール」を捕捉する。
+#   ★氏名だけの一致は同姓同名で誤検知し得るので "自動課金" せず塾長確認 (CEO バナー) に回す。
+#     同一カード AND 同一氏名 のときだけ webhook が Stripe trial を即終了 = 自動即課金 (誤検知ほぼ皆無)。
+# =====================================================================
+def _normalize_person_name(name) -> str:
+    """氏名を照合用に正規化: NFKC (全角→半角) → 空白/区切り除去 → casefold。
+    「山田 太郎」「山田　太郎」等の空白・全半角ゆらぎを吸収する (読みの表記ゆれまでは
+    吸収しないが、再取得を狙う人は同じ表記を再入力しがちなので実用上十分)。"""
+    import unicodedata
+    import re
+    try:
+        s = unicodedata.normalize("NFKC", str(name or ""))
+    except Exception:
+        s = str(name or "")
+    s = re.sub(r"[\s　・,\.、。]+", "", s)  # 空白(半/全角)・中黒・句読点を除去
+    return s.strip().casefold()
+
+
+def _find_prior_trial_identity(c, email_norm: str, name: str, student_email_norm: str = ""):
+    """別メールで過去に体験/課金した「同一人物の可能性がある行」を1件返す (無ければ None)。
+    照合キー (メール以外の不変な手がかり):
+      1. 子メール (student_email) 完全一致 — 任意入力だが一致時は信頼度中〜高
+      2. 正規化氏名の完全一致 — 誤検知し得る (同姓同名) ので "疑い" 止まり
+    対象は「過去に体験 or 課金の痕跡がある行」に限る。現在申込中の同一メール行は
+    email_norm 除外で自然に外れる。合成監視 (synthetic) は除外。
+    返り値: dict(row) + 'match_kind' ('student_email' | 'name')。判断は呼び出し側。"""
+    email_norm = (email_norm or "").lower().strip()
+    student_email_norm = (student_email_norm or "").lower().strip()
+    norm_name = _normalize_person_name(name)
+    # 1) 子メール一致 (最優先・比較的堅い)
+    if student_email_norm:
+        try:
+            c.execute(
+                "SELECT id, name, email, grade, trial_end, paid_since, status, created_at "
+                "FROM students "
+                "WHERE LOWER(email) <> ? "
+                "  AND (LOWER(COALESCE(student_email,'')) = ? OR LOWER(email) = ?) "
+                "  AND (trial_end IS NOT NULL OR paid_since IS NOT NULL "
+                "       OR status IN ('trial','expired','paid','past_due','canceled')) "
+                f"  AND {_synth_exclude_sql('students')} "
+                "ORDER BY id LIMIT 1",
+                (email_norm, student_email_norm, student_email_norm),
+            )
+            row = c.fetchone()
+            if row:
+                d = dict(row); d["match_kind"] = "student_email"; return d
+        except Exception as _e:
+            log.warning(f"[repeat-trial] student_email match query failed: {_e}")
+    # 2) 正規化氏名一致 (誤検知し得る → suspect 止まり)。DB 側で正規化できないので候補を
+    #    絞って Python で比較。体験/課金痕跡ありの行に限定 + LIMIT で同姓同名の暴発を抑える。
+    if norm_name and len(norm_name) >= 2:
+        try:
+            c.execute(
+                "SELECT id, name, email, grade, trial_end, paid_since, status, created_at "
+                "FROM students "
+                "WHERE LOWER(email) <> ? "
+                "  AND (trial_end IS NOT NULL OR paid_since IS NOT NULL "
+                "       OR status IN ('trial','expired','paid','past_due','canceled')) "
+                f"  AND {_synth_exclude_sql('students')} "
+                # 正規化を DB 側でできないので候補を newest 側から走査。体験/課金痕跡ありに限定済みで
+                # 現状 母数は数百 (LIMIT は将来の暴走ガード)。ここを超える規模になったら正規化氏名列+indexへ。
+                "ORDER BY id DESC LIMIT 5000",
+                (email_norm,),
+            )
+            for row in c.fetchall():
+                if _normalize_person_name(row["name"]) == norm_name:
+                    d = dict(row); d["match_kind"] = "name"; return d
+        except Exception as _e:
+            log.warning(f"[repeat-trial] name match query failed: {_e}")
+    return None
+
+
+def _repeat_reason_text(prior: dict, match_kind: str) -> str:
+    """CEO バナー / 通知メール用の理由文を組み立てる (塾長が一目で判断できる粒度)。"""
+    try:
+        who = (prior.get("name") or "(氏名不明)").strip()
+    except Exception:
+        who = "(氏名不明)"
+    when = ""
+    try:
+        _c = prior.get("created_at")
+        if _c:
+            when = f"・登録 {str(_c)[:10]}"
+    except Exception:
+        pass
+    kind_label = {
+        "student_email": "生徒メール一致",
+        "name": "氏名一致",
+        "card": "同一カード・別氏名",
+        "card_name": "同一カード＋氏名一致",
+    }.get(match_kind, match_kind)
+    st = (prior.get("status") or "").strip()
+    st_label = {"paid": "以前は有料", "canceled": "解約済", "expired": "体験終了",
+                "trial": "体験中", "past_due": "支払い遅延"}.get(st, st or "?")
+    pid = prior.get("id")
+    return f"{kind_label}: 過去に「{who}」(別メール{when}・{st_label}・#{pid}) が存在。体験の再取得の可能性。"
+
+
+def _flag_repeat_suspect(student_id, reason: str) -> None:
+    """行に「体験重複の疑い」フラグを立てる (自動課金はしない=塾長確認へ)。非throw。
+    ★独立コネクションで書く: webhook の共有 txn が PG で abort 状態でも巻き込まれない
+    (この codebase の "失敗SQL握りつぶし→txn全体abort→後続連鎖失敗" footgun 回避)。"""
+    try:
+        _cn = db(); _cc = _cn.cursor()
+        try:
+            _cc.execute(
+                "UPDATE students SET repeat_trial_suspect=1, repeat_trial_reason=? WHERE id=?",
+                ((reason or "")[:500], student_id),
+            )
+            _cn.commit()
+            log.info(f"[repeat-trial] flagged student {student_id} as repeat suspect: {reason}")
+        finally:
+            _cn.close()
+    except Exception as _e:
+        log.warning(f"[repeat-trial] flag update failed for student {student_id}: {_e}")
+
+
+def _record_repeat_event(name: str, props: dict) -> None:
+    """体験重複ガードの監査イベントを events に残す (独立コネクション・非throw)。"""
+    try:
+        _cn = db(); _cc = _cn.cursor()
+        try:
+            _cc.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                (name, json.dumps(props or {}, ensure_ascii=False), f"student:{(props or {}).get('student_id')}"),
+            )
+            _cn.commit()
+        finally:
+            _cn.close()
+    except Exception as _e:
+        log.warning(f"[repeat-trial] event record failed ({name}): {_e}")
+
+
+def _retrieve_card_fingerprint(s, subscription, customer):
+    """Stripe subscription / customer から card fingerprint を best-effort 取得。失敗時 None。
+    fingerprint は物理カード単位で安定 (別 customer・別トークンでも同一 PAN なら一致) =
+    メールを変えても不変な "同一人物" の手がかり。"""
+    try:
+        if subscription:
+            try:
+                _sub = s.Subscription.retrieve(subscription, expand=["default_payment_method"])
+                _pm = getattr(_sub, "default_payment_method", None)
+                _card = getattr(_pm, "card", None) if _pm else None
+                _fp = getattr(_card, "fingerprint", None) if _card else None
+                if _fp:
+                    return _fp
+            except Exception as _e1:
+                log.warning(f"[repeat-trial] subscription PM fingerprint fetch failed: {_e1}")
+        if customer:
+            try:
+                _pml = s.PaymentMethod.list(customer=customer, type="card", limit=1)
+                if _pml.data:
+                    _card = getattr(_pml.data[0], "card", None)
+                    return getattr(_card, "fingerprint", None) if _card else None
+            except Exception as _e2:
+                log.warning(f"[repeat-trial] customer PM fingerprint fetch failed: {_e2}")
+    except Exception as _e:
+        log.warning(f"[repeat-trial] fingerprint retrieve failed: {_e}")
+    return None
+
+
+def _store_fingerprint_and_check_repeat(s, student_id, customer, subscription):
+    """カード指紋を student 行に保存し、別メールの過去体験者と同一指紋かを判定する。
+    独立コネクション・全て best-effort・非throw。
+    返り値: (fingerprint, prior_row_dict_or_None, same_name_bool)。
+    prior = 「別メール・別 student・過去に体験/課金痕跡あり・同一指紋」の1行。"""
+    fp = _retrieve_card_fingerprint(s, subscription, customer)
+    if not fp:
+        return (None, None, False)
+    # student_id は monthly 経路で metadata 由来の文字列で来ることがある → int 化 (PG の
+    # integer=text 型不一致で SELECT/UPDATE が落ちるのを防ぐ)。不正なら None (保存skip・照会は継続)。
+    try:
+        student_id = int(student_id) if student_id not in (None, "") else None
+    except (TypeError, ValueError):
+        student_id = None
+    this_name = ""
+    this_email = ""
+    prior = None
+    try:
+        _cn = db(); _cc = _cn.cursor()
+        try:
+            # monthly の新規メール INSERT 経路では student_id が渡らない (None) ため、直前に
+            # INSERT された行を subscription から解決して指紋を確実に保存する (将来照合の履歴穴を塞ぐ)。
+            if not student_id and subscription:
+                try:
+                    _cc.execute("SELECT id FROM students WHERE stripe_subscription_id=? ORDER BY id DESC LIMIT 1", (subscription,))
+                    _rr = _cc.fetchone()
+                    if _rr:
+                        student_id = _rr["id"]
+                except Exception:
+                    pass
+            if student_id:
+                _cc.execute("SELECT name, email FROM students WHERE id=?", (student_id,))
+                _r = _cc.fetchone()
+                if _r:
+                    this_name = _r["name"] or ""
+                    this_email = (_r["email"] or "").lower().strip()
+                _cc.execute("UPDATE students SET payment_fingerprint=? WHERE id=?", (fp, student_id))
+                _cn.commit()
+            _cc.execute(
+                "SELECT id, name, email, trial_end, paid_since, status, created_at "
+                "FROM students "
+                "WHERE payment_fingerprint = ? AND id <> ? "
+                "  AND LOWER(COALESCE(email,'')) <> ? "
+                "  AND (trial_end IS NOT NULL OR paid_since IS NOT NULL "
+                "       OR status IN ('trial','expired','paid','past_due','canceled')) "
+                f"  AND {_synth_exclude_sql('students')} "
+                "ORDER BY id LIMIT 1",
+                (fp, student_id or -1, this_email),
+            )
+            _pr = _cc.fetchone()
+            if _pr:
+                prior = dict(_pr)
+        finally:
+            _cn.close()
+    except Exception as _e:
+        log.warning(f"[repeat-trial] store/check fingerprint failed (student={student_id}): {_e}")
+    same_name = bool(prior) and bool(_normalize_person_name(this_name)) and \
+        (_normalize_person_name(prior.get("name")) == _normalize_person_name(this_name))
+    return (fp, prior, same_name)
+
+
 @app.post("/api/trial/signup")
 def trial_signup(payload: TrialSignup, request: Request):
     # レート制限 (4番手 監査 2026-04-30): 1 IP あたり 5分で 3 申込まで。
@@ -26762,6 +27181,21 @@ def trial_signup(payload: TrialSignup, request: Request):
                     student_email_newly_set = True
         except Exception as _e:
             log.warning(f"[Signup] re-activation update failed for student {student_id}: {_e}")
+
+    # 🔁 [体験の重複再取得ガード 2026-07-06 塾長指示] 別メールの新規申込 (not is_existing) について、
+    #   氏名 / 子メールが過去の体験者と一致するかを判定し、疑いがあればフラグを立てる。
+    #   ★ここでは体験を止めない (自動課金しない)。氏名一致は同姓同名で誤検知し得るため塾長確認に回す。
+    #   同一メールの再取得は既存の 60 日クールダウン (上の IntegrityError 分岐) が担当。
+    #   カード指紋による "自動即課金" は Stripe webhook 側 (カード投入時に判定)。非throw。
+    _repeat_reason = None
+    if student_id and not is_existing:
+        try:
+            _prior = _find_prior_trial_identity(c, email_norm, payload.name, student_email_norm)
+            if _prior:
+                _repeat_reason = _repeat_reason_text(_prior, _prior.get("match_kind"))
+                _flag_repeat_suspect(student_id, _repeat_reason)
+        except Exception as _re_e:
+            log.warning(f"[repeat-trial] signup detection failed for student {student_id}: {_re_e}")
     conn.close()
 
     log.info(f"Trial signup: {email_norm} -> student_id={student_id} existing={is_existing}")
@@ -26770,7 +27204,7 @@ def trial_signup(payload: TrialSignup, request: Request):
     #   新規 INSERT が成立した時だけ (not is_existing = IntegrityError で既存行に落ちていない)。
     #   再申込/再活性化 (is_existing=True) では送らない。synthetic 除外・非throw はヘルパー内蔵。
     if student_id and not is_existing:
-        _notify_admin_new_trial(payload.name, email_norm, "lp", goal=goal)
+        _notify_admin_new_trial(payload.name, email_norm, "lp", goal=goal, repeat_warning=_repeat_reason)
 
     # 紹介ループ: ?ref= が指定されていて、新規申込 (=既存ユーザーでない) なら referrals に記録。
     # 既存ユーザーの再申込時は記録しない (再活性化は紹介報酬対象外)。
@@ -27867,6 +28301,59 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                     # 🔁 [upgrade-supersede] trial_extended 再申込: 旧 subscription を残すと
                     # 旧側の trial 明けに二重課金が始まるため、置換が成立した時点で即時解約
                     _cancel_superseded_subscription(s, _old_sub_te, subscription, target_id, "trial_extended-recheckout-supersede")
+                    # 🔁 [体験の重複再取得ガード 2026-07-06 塾長指示] カード投入経路 (trial_extended) は
+                    #   ここで初めて "物理カード" が判明する。過去に別メールで体験/課金した人が同じカードで
+                    #   新メールから 21 日体験を取り直そうとしたケースを捕捉する。
+                    #   ・同一カード AND 同一氏名 → 100% 同一人物 → Stripe trial を即終了 = 自動即課金
+                    #     (subscription.updated=active の既存機構が paid 化 + 入塾金課金を行う)。
+                    #   ・同一カードだが別氏名 → 兄弟が親カードを共有した可能性 → 自動課金せず塾長確認へ回す。
+                    #   全て best-effort・非throw (課金確定処理を決してブロックしない)。指紋保存/照会は独立コネクション。
+                    try:
+                        _fp, _prior_fp, _same_name = _store_fingerprint_and_check_repeat(
+                            s, target_id, customer, subscription)
+                        if _prior_fp:
+                            _pri_id = _prior_fp.get("id")
+                            if _same_name:
+                                try:
+                                    s.Subscription.modify(subscription, trial_end="now",
+                                                          idempotency_key=f"rt-auto-{target_id}-{subscription}")
+                                    log.info(f"[repeat-trial] AUTO immediate-charge: ended trial for student "
+                                             f"{target_id} (same card+name as #{_pri_id})")
+                                    # DB/Stripe drift 回避: Stripe は即課金を開始するので DB も楽観的に paid へ
+                                    # 寄せる (subscription.updated=active 到達前の窓で "無料体験中" と誤表示させない)。
+                                    # 独立コネクション・status='trial' の行だけ。入塾金は subscription.updated 側の
+                                    # claim-first が担当 (ここでは触らない)。suspect フラグも掃除する。
+                                    try:
+                                        _cn2 = db(); _cc2 = _cn2.cursor()
+                                        try:
+                                            _cc2.execute(
+                                                "UPDATE students SET status='paid', "
+                                                "paid_since=COALESCE(paid_since,CURRENT_TIMESTAMP), "
+                                                "trial_end=NULL, repeat_trial_suspect=0, "
+                                                "updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='trial'",
+                                                (target_id,))
+                                            _cn2.commit()
+                                        finally:
+                                            _cn2.close()
+                                    except Exception as _oe:
+                                        log.warning(f"[repeat-trial] optimistic paid update failed (student={target_id}): {_oe}")
+                                    _record_repeat_event("repeat_trial_auto_charged", {
+                                        "student_id": target_id, "prior_student_id": _pri_id,
+                                        "subscription": subscription,
+                                        "reason": _repeat_reason_text(_prior_fp, "card_name"),
+                                    })
+                                except Exception as _me:
+                                    # trial 即終了に失敗 → 塾長確認へ降格 (取りこぼさない)
+                                    log.error(f"[repeat-trial] auto trial_end='now' failed for {subscription}: {_me}")
+                                    _flag_repeat_suspect(target_id, _repeat_reason_text(_prior_fp, "card_name"))
+                            else:
+                                _flag_repeat_suspect(target_id, _repeat_reason_text(_prior_fp, "card"))
+                                _record_repeat_event("repeat_trial_flagged_card", {
+                                    "student_id": target_id, "prior_student_id": _pri_id,
+                                    "reason": _repeat_reason_text(_prior_fp, "card"),
+                                })
+                    except Exception as _rte:
+                        log.warning(f"[repeat-trial] trial_extended fingerprint check failed: {_rte}")
                 elif subscription:
                     # [cancel-consistency] 解約先行 (canceled) または行消失 → 作成済み subscription を孤立した
                     # まま放置すると課金が始まるため即時解約する。
@@ -27997,6 +28484,14 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             # 🔁 [upgrade-supersede] DB が新 subscription を指した後に旧サブスクを即時解約する
             # (subscription.deleted webhook は sub_id 厳密一致 → 置換済みの生徒は canceled 化されない)
             _cancel_superseded_subscription(s, _old_sub_monthly, subscription, _supersede_student_id, "monthly-checkout-supersede")
+
+            # 🔁 [体験の重複再取得ガード 2026-07-06] monthly は即時課金 (trial 無し) なので "止める体験"
+            #   は無いが、投入されたカード指紋を保存しておく = 将来この人が別メールから trial_extended
+            #   を取り直したときに同一カードとして検知できる履歴を積む。best-effort・非throw。
+            try:
+                _store_fingerprint_and_check_repeat(s, _supersede_student_id, customer, subscription)
+            except Exception as _mfe:
+                log.warning(f"[repeat-trial] monthly fingerprint store failed: {_mfe}")
 
             # 入塾金 InvoiceItem (月額のみ・先着100名キャンペーン適用時はスキップ)
             # Race condition 対策: webhook 処理時に再度枠チェック (atomic)。
@@ -40839,7 +41334,7 @@ def _send_message_email(to_email: str, subject: str, body_text: str, student_nam
         return {"sent": False, "error": str(e)[:200]}
 
 
-def _notify_admin_new_trial(name, email, source: str, goal=None, amount_jpy=None) -> None:
+def _notify_admin_new_trial(name, email, source: str, goal=None, amount_jpy=None, repeat_warning=None) -> None:
     """🔔 2026-07-04 体験(trial)新規申込を塾長へ即時メール通知する。
     従来は毎朝 7 時の日次サマリ (_send_daily_summary_if_due) の「過去24h 申込◯名」に
     件数として乗るだけで、体験申込 1 件ごとの即時通知が無かった穴を塞ぐ。
@@ -40902,10 +41397,19 @@ def _notify_admin_new_trial(name, email, source: str, goal=None, amount_jpy=None
             _subject = f"📥 体験 新規申込: {_name}"
             _head = "体験(trial)の新規申込が届きました。"
             _footer = "CEO ダッシュ → 生徒一覧 / 📊 生徒の学習状況 から確認できます。"
+        # 🔁 [体験の重複再取得ガード] 別メール再登録の疑いがある申込は件名・本文で塾長に警告。
+        #   塾長はこのメールを見て CEO ダッシュの「⚠️ 体験重複の疑い」バナーからワンクリックで
+        #   「本契約へ切替(体験打切)」または「誤検知(無視)」を選べる。
+        _rw = (str(repeat_warning).strip() if repeat_warning else "")
+        if _rw:
+            _subject = f"⚠️再登録の疑い / {_subject}"
         body_text = (
             f"塾長へ\n\n"
             f"{_head}\n\n"
-            f"## 申込者情報\n"
+            + (f"⚠️ 体験の再取得(別メール登録)の疑いがあります。\n{_rw}\n"
+               f"→ CEO ダッシュ「⚠️ 体験重複の疑い」バナーで「本契約へ切替」または「誤検知(無視)」を選べます。\n\n"
+               if _rw else "")
+            + f"## 申込者情報\n"
             f"お名前: {_name}\n"
             f"メール: {_email}\n"
             f"経路: {_src_label}\n"
