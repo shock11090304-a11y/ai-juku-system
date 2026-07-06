@@ -404,6 +404,11 @@ ENROLLMENT_FEE_EXEMPT = {"student_addon"}
 ENROLLMENT_WAIVER_CAMPAIGN_ENABLED = os.getenv("ENROLLMENT_WAIVER_ENABLED", "1") == "1"
 ENROLLMENT_WAIVER_LIMIT = int(os.getenv("ENROLLMENT_WAIVER_LIMIT", "100"))
 
+# 入塾金の「既定の扱い」(2026-07-06 塾長運用切替): "charge"=既定で徴収 / "waive"=既定で免除。
+#   生徒ごとの明示指定が最優先: enrollment_fee_waived=1(免除指定) / enrollment_fee_force_charge=1(徴収指定)。
+#   判定は必ず _should_charge_enrollment() に一元化する (checkout と trial_extended 両経路で同一挙動)。
+ENROLLMENT_FEE_DEFAULT = (os.getenv("ENROLLMENT_FEE_DEFAULT", "charge") or "charge").strip().lower()
+
 # プランごとの月次クォータ (None = 無制限)
 # plans.js の quotas と完全一致させる必要あり
 PLAN_QUOTAS = {
@@ -1629,6 +1634,8 @@ def init_db():
     # SQLite: ADD COLUMN IF NOT EXISTS は古いバージョンで非対応なので try/except で対応。
     _migrations = [
         ("enrollment_fee_waived", "ALTER TABLE students ADD COLUMN enrollment_fee_waived INTEGER DEFAULT 0"),
+        # 生徒ごとの「徴収する」明示指定 (2026-07-06)。既定=免除運用で特定生徒だけ入塾金を徴収するため。
+        ("enrollment_fee_force_charge", "ALTER TABLE students ADD COLUMN enrollment_fee_force_charge INTEGER DEFAULT 0"),
         ("enrollment_waiver_applied_at", "ALTER TABLE students ADD COLUMN enrollment_waiver_applied_at TIMESTAMP"),
         # 入塾金課金の冪等マーカー (2026-06-21)。trial_extended (カード登録21日体験) の自動 paid 化時に
         # 入塾金を即時課金する処理 (customer.subscription.updated active) の二重課金防止に使用。
@@ -10406,7 +10413,7 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
     c = conn.cursor()
     # last_login_at は migration 直後の旧 DB に存在しない可能性あり → try/except でフォールバック
     try:
-        c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived, ai_disabled FROM students ORDER BY id DESC")
+        c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived, enrollment_fee_force_charge, ai_disabled FROM students ORDER BY id DESC")
         rows = c.fetchall()
         has_last_login = True
     except Exception:
@@ -10517,6 +10524,8 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
             "is_tsujuku_app": (row["id"] in tsujuku_app_ids),  # 塾生アプリ登録経由=ロスター分離表示用
             # 🆓 2026-05-29: 入塾金免除バッジ表示用 (生徒詳細モーダル)
             "enrollment_fee_waived": (bool(row["enrollment_fee_waived"]) if "enrollment_fee_waived" in row.keys() else False),
+            "enrollment_fee_force_charge": (bool(row["enrollment_fee_force_charge"]) if "enrollment_fee_force_charge" in row.keys() else False),
+            "enrollment_fee_default": ENROLLMENT_FEE_DEFAULT,  # UI が「既定」表示に使う (waive/charge)
         })
     # 集計 (合成監視 sentinel は status/新規申込カウントからも除外)
     synth_sql = "" if include_synthetic else f" AND {_synth_exclude_sql()}"
@@ -23005,9 +23014,10 @@ def admin_waive_enrollment_fee(
         customer_id = st["stripe_customer_id"]
         student_name = (st["name"] or "").strip()
 
-        # 1) DB フラグ (冪等: 既に免除でも applied_at が NULL なら埋める)
+        # 1) DB フラグ (冪等: 既に免除でも applied_at が NULL なら埋める)。
+        #    免除に設定 → 「徴収する」指定は必ず解除 (相互排他・2026-07-06)。
         c.execute(
-            "UPDATE students SET enrollment_fee_waived = 1, "
+            "UPDATE students SET enrollment_fee_waived = 1, enrollment_fee_force_charge = 0, "
             "enrollment_waiver_applied_at = COALESCE(enrollment_waiver_applied_at, CURRENT_TIMESTAMP) "
             "WHERE id = ?",
             (student_id,),
@@ -23183,9 +23193,9 @@ def admin_unwaive_enrollment_fee(
         except Exception:
             was_waived = False
         student_name = (st["name"] or "").strip()
-        # DB フラグを落とす (冪等・applied_at も NULL に戻す)
+        # 「既定に戻す」= 免除/徴収の両指定を解除 (冪等・applied_at も NULL に戻す)
         c.execute(
-            "UPDATE students SET enrollment_fee_waived = 0, enrollment_waiver_applied_at = NULL WHERE id = ?",
+            "UPDATE students SET enrollment_fee_waived = 0, enrollment_fee_force_charge = 0, enrollment_waiver_applied_at = NULL WHERE id = ?",
             (student_id,),
         )
         conn.commit()
@@ -23199,10 +23209,7 @@ def admin_unwaive_enrollment_fee(
             conn.commit()
         except Exception as e:
             log.warning(f"[unwaive-enrollment] events 記録失敗 (取消自体は成功): {e}")
-        if was_waived:
-            msg = f"🔁 {student_name or ('生徒 #'+str(student_id))} の入塾金免除を取り消しました（今後の本契約で ¥10,000 を徴収します）"
-        else:
-            msg = f"（{student_name or ('生徒 #'+str(student_id))} は元から免除設定ではありません）入塾金は徴収対象です"
+        msg = f"↩ {student_name or ('生徒 #'+str(student_id))} の入塾金を既定の扱いに戻しました（既定: {'免除' if ENROLLMENT_FEE_DEFAULT == 'waive' else '徴収'}）"
         return {"ok": True, "student_id": student_id, "was_waived": was_waived, "db_updated": True, "message": msg}
     except HTTPException:
         raise
@@ -23210,6 +23217,70 @@ def admin_unwaive_enrollment_fee(
         try: conn.rollback()
         except Exception: pass
         log.error(f"[unwaive-enrollment] unexpected: {type(e).__name__}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"内部エラー: {type(e).__name__}")
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/students/{student_id}/charge-enrollment-fee")
+def admin_charge_enrollment_fee(
+    student_id: int,
+    payload: dict = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """💴 個別生徒を入塾金「徴収する」に指定する (admin only・2026-07-06)。
+
+    既定=免除運用 (ENROLLMENT_FEE_DEFAULT=waive) で、特定の生徒だけ入塾金 ¥10,000 を徴収したいときに使う。
+    enrollment_fee_force_charge=1 をセット (= 免除指定 enrollment_fee_waived は解除)。
+    ※ この指定は「本契約 / trial_extended 転換の初回請求」で ¥10,000 を加算する (checkout と webhook が
+      _should_charge_enrollment() で参照)。既に本契約済みの生徒へ後から徴収する場合は個別請求
+      (create-invoice の「入塾金」プリセット) を使うこと (本フラグは過去の請求には遡及しない)。
+    認証: admin Bearer または X-Cron-Secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT id, name FROM students WHERE id=?", (student_id,))
+        st = c.fetchone()
+        if not st:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        student_name = (st["name"] or "").strip()
+        # 「徴収する」指定 → 免除指定は解除 (相互排他)
+        c.execute(
+            "UPDATE students SET enrollment_fee_force_charge = 1, enrollment_fee_waived = 0, enrollment_waiver_applied_at = NULL WHERE id = ?",
+            (student_id,),
+        )
+        conn.commit()
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("admin_enrollment_fee_force_charge", json.dumps({
+                    "student_id": student_id, "student_name": student_name,
+                }, ensure_ascii=False), "admin"),
+            )
+            conn.commit()
+        except Exception as e:
+            log.warning(f"[charge-enrollment] events 記録失敗 (指定自体は成功): {e}")
+        return {
+            "ok": True, "student_id": student_id, "db_updated": True,
+            "message": f"💴 {student_name or ('生徒 #'+str(student_id))} を入塾金「徴収する」に設定しました（本契約時に ¥10,000 を加算します。既に本契約済みなら個別請求「入塾金」で請求してください）",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        log.error(f"[charge-enrollment] unexpected: {type(e).__name__}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"内部エラー: {type(e).__name__}")
     finally:
         conn.close()
@@ -26887,12 +26958,34 @@ def _is_waiver_eligible() -> bool:
     return _get_waiver_count() < ENROLLMENT_WAIVER_LIMIT
 
 
+def _should_charge_enrollment(plan: str, waived: bool, force_charge: bool) -> bool:
+    """入塾金 ¥10,000 を徴収すべきか (checkout / trial_extended 両経路の一元判定・2026-07-06)。
+
+    優先順位:
+      1. 免除対象プラン (ENROLLMENT_FEE_EXEMPT=student_addon 通塾生) → 常に徴収しない
+      2. 生徒個別「徴収する」指定 (force_charge=1) → 徴収する (最優先)
+      3. 生徒個別「免除する」指定 (waived=1) → 徴収しない
+      4. 既定 (ENROLLMENT_FEE_DEFAULT): "waive"=免除 / "charge"=徴収 (ただし先着キャンペーン枠が残れば免除)
+    """
+    if plan in ENROLLMENT_FEE_EXEMPT:
+        return False
+    if force_charge:
+        return True
+    if waived:
+        return False
+    if ENROLLMENT_FEE_DEFAULT == "waive":
+        return False
+    # 既定=徴収: 先着100名キャンペーン枠が残っていれば免除
+    return not _is_waiver_eligible()
+
+
 @app.get("/api/campaigns/enrollment-waiver/status")
 def waiver_status():
     """入塾金免除キャンペーンの残枠を返す (公開エンドポイント)。
     LP/checkout のバナー表示に使用。"""
     used = _get_waiver_count()
     remaining = max(0, ENROLLMENT_WAIVER_LIMIT - used)
+    _default_waive = ENROLLMENT_FEE_DEFAULT == "waive"
     return {
         "enabled": ENROLLMENT_WAIVER_CAMPAIGN_ENABLED,
         "limit": ENROLLMENT_WAIVER_LIMIT,
@@ -26900,6 +26993,10 @@ def waiver_status():
         "remaining": remaining,
         "is_active": ENROLLMENT_WAIVER_CAMPAIGN_ENABLED and remaining > 0,
         "discount_amount": ENROLLMENT_FEE,
+        # 🆕 2026-07-06: 既定=免除運用 (ENROLLMENT_FEE_DEFAULT=waive) を checkout 表示に反映するため公開。
+        #   effective_free = 先着キャンペーン枠 or 既定免除 のどちらかで入塾金が実質 ¥0 になる状態。
+        "default_waive": _default_waive,
+        "effective_free": _default_waive or (ENROLLMENT_WAIVER_CAMPAIGN_ENABLED and remaining > 0),
     }
 
 
@@ -27931,30 +28028,32 @@ def create_checkout_session(payload: CheckoutRequest, request: Request):
         payload.plan not in ENROLLMENT_FEE_EXEMPT
         and _is_waiver_eligible()
     )
-    needs_enrollment_fee = (payload.plan not in ENROLLMENT_FEE_EXEMPT) and not waiver_eligible
-    # 🛡️ 2026-05-29: 個別免除フラグ (CEO ダッシュ「🆓 入塾金免除」ボタン) を尊重。
-    #   campaign 枠とは独立に、DB で enrollment_fee_waived=1 の生徒は入塾金を必ず免除する。
-    #   これが無いと「免除ボタンを押したのに本契約 checkout で ¥10,000 課金」の silent fail になる。
-    #   enrollment_waiver_applied は "0" のまま (campaign カウンタを二重消費しない) で needs_enrollment_fee だけ落とす。
-    if needs_enrollment_fee and (payload.student_id or payload.email):
+    # 🆕 2026-07-06: 入塾金の徴収可否は _should_charge_enrollment() に一元化。
+    #   既定 (ENROLLMENT_FEE_DEFAULT) + 生徒個別の免除(enrollment_fee_waived)/徴収(enrollment_fee_force_charge)
+    #   を必ず尊重する (免除/徴収ボタンを押したのに checkout で無視される silent fail を防ぐ)。
+    _ef_waived = False
+    _ef_force = False
+    if payload.plan not in ENROLLMENT_FEE_EXEMPT and (payload.student_id or payload.email):
         _conn_w = None
         try:
             _conn_w = db(); _c_w = _conn_w.cursor()
             if payload.student_id:
-                _c_w.execute("SELECT enrollment_fee_waived FROM students WHERE id=?", (payload.student_id,))
+                _c_w.execute("SELECT COALESCE(enrollment_fee_waived,0) AS w, COALESCE(enrollment_fee_force_charge,0) AS f FROM students WHERE id=?", (payload.student_id,))
             else:
-                # email は大文字小文字を無視して照合 (免除の取りこぼし防止・他箇所と統一)
-                _c_w.execute("SELECT enrollment_fee_waived FROM students WHERE LOWER(email)=LOWER(?)", (payload.email,))
+                # email は大文字小文字を無視して照合 (取りこぼし防止・他箇所と統一)
+                _c_w.execute("SELECT COALESCE(enrollment_fee_waived,0) AS w, COALESCE(enrollment_fee_force_charge,0) AS f FROM students WHERE LOWER(email)=LOWER(?) LIMIT 1", (payload.email,))
             _rw = _c_w.fetchone()
-            if _rw and ("enrollment_fee_waived" in _rw.keys()) and _rw["enrollment_fee_waived"]:
-                needs_enrollment_fee = False
-                log.info(f"[Checkout] 個別免除フラグ適用: 入塾金スキップ student_id={payload.student_id} email={payload.email}")
+            if _rw:
+                _ef_waived = bool(_rw["w"]) if ("w" in _rw.keys()) else False
+                _ef_force = bool(_rw["f"]) if ("f" in _rw.keys()) else False
         except Exception as _we:
-            log.warning(f"[Checkout] manual waiver lookup failed: {type(_we).__name__}: {_we}")
+            log.warning(f"[Checkout] enrollment flag lookup failed: {type(_we).__name__}: {_we}")
         finally:
             if _conn_w is not None:
                 try: _conn_w.close()
                 except Exception: pass
+    needs_enrollment_fee = _should_charge_enrollment(payload.plan, _ef_waived, _ef_force)
+    log.info(f"[Checkout] enrollment: needs={needs_enrollment_fee} default={ENROLLMENT_FEE_DEFAULT} waived={_ef_waived} force_charge={_ef_force} plan={payload.plan}")
     subscription_data = {
         "metadata": {
             "plan": payload.plan,
@@ -29222,12 +29321,15 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                     try:
                         c2.execute(
                             "SELECT id, plan, COALESCE(enrollment_fee_waived,0) AS waived, "
+                            "COALESCE(enrollment_fee_force_charge,0) AS force_charge, "
                             "enrollment_fee_charged_at AS charged FROM students "
                             "WHERE stripe_subscription_id=?",
                             (sub_id,)
                         )
                         _er = c2.fetchone()
-                        if _er and (_er["plan"] not in ENROLLMENT_FEE_EXEMPT) and not _er["waived"] and not _er["charged"]:
+                        # 🆕 2026-07-06: checkout と同一判定 (_should_charge_enrollment)。既定=免除運用でも
+                        #   force_charge 指定の生徒は trial_extended 転換時に入塾金を徴収する。
+                        if _er and (not _er["charged"]) and _should_charge_enrollment(_er["plan"], bool(_er["waived"]), bool(_er["force_charge"])):
                             # claim-first (atomic): フラグを確保できた worker だけが課金する
                             c2.execute(
                                 "UPDATE students SET enrollment_fee_charged_at=CURRENT_TIMESTAMP "
