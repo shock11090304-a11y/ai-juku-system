@@ -8591,9 +8591,12 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         `<div style="margin-top:12px;padding:14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:10px;">
           <div style="color:#86efac;font-weight:600;font-size:0.88rem;margin-bottom:8px;">🆓 入塾金 (¥10,000)</div>
           ${st.enrollment_fee_waived
-            ? `<div style="color:#6ee7b7;font-weight:bold;font-size:0.9rem;">✅ 免除済み</div>`
+            ? `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                 <span style="color:#6ee7b7;font-weight:bold;font-size:0.9rem;">✅ 免除に設定中</span>
+                 <button type="button" class="sd-unwaive-enrollment-btn" data-student-id="${esc(st.id)}" data-student-name="${esc(st.name || '')}" style="padding:7px 12px;background:rgba(148,163,184,0.18);color:#e2e8f0;border:1px solid rgba(148,163,184,0.4);border-radius:8px;font-weight:700;font-size:0.82rem;cursor:pointer;">🔁 徴収に戻す</button>
+               </div>`
             : `<button type="button" class="sd-waive-enrollment-btn" data-student-id="${esc(st.id)}" data-student-name="${esc(st.name || '')}" style="width:100%;padding:11px 16px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.92rem;cursor:pointer;">🆓 入塾金を免除する</button>`}
-          <div style="margin-top:6px;color:#71717a;font-size:0.75rem;line-height:1.5;">体験→有料転換時の初回請求に乗る入塾金 ¥10,000 を免除します (Stripe の保留請求も自動削除)。</div>
+          <div style="margin-top:6px;color:#71717a;font-size:0.75rem;line-height:1.5;">既定は<strong style="color:#cbd5e1;">徴収</strong>（本契約時に¥10,000）。<strong>免除する生徒だけ</strong>このボタンで指定してください（本契約の前に）。免除時は Stripe の保留入塾金請求も自動削除されます。</div>
         </div>`,
         // 🔄 アカウント復活 (2026-06-06 塾長指示): 解約/体験終了の生徒のみ表示。テスト垢を在籍(体験)へ戻す。
         ((st.status === 'canceled' || st.status === 'expired')
@@ -9674,6 +9677,36 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         return;
       }
       // 🆓 入塾金免除ボタン (2026-05-29 塾長指示)
+      const unwaiveBtn = e.target.closest && e.target.closest('.sd-unwaive-enrollment-btn');
+      if (unwaiveBtn) {
+        e.preventDefault();
+        const sid = unwaiveBtn.dataset.studentId;
+        const sname = unwaiveBtn.dataset.studentName || ('生徒 #' + sid);
+        if (!confirm(`${sname} の入塾金免除を取り消し、徴収対象に戻します。\n（今後の本契約時に入塾金 ¥10,000 が加算されます。既に本契約済みの場合は個別請求「入塾金」で請求してください）\n続行しますか?`)) return;
+        unwaiveBtn.disabled = true;
+        const _orig0 = unwaiveBtn.textContent;
+        unwaiveBtn.textContent = '処理中...';
+        (async () => {
+          try {
+            const res = await AdminAuth.fetch(`/api/admin/students/${encodeURIComponent(sid)}/unwaive-enrollment-fee`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+              alert(data.message || '🔁 入塾金を徴収対象に戻しました');
+              const wrap = unwaiveBtn.closest('div');
+              if (wrap) wrap.outerHTML = '<div style="color:#cbd5e1;font-weight:bold;font-size:0.9rem;">🔁 徴収に設定しました（再度開くと変更できます）</div>';
+            } else {
+              alert('⚠ 取消に失敗しました: ' + (data.detail || data.message || ('HTTP ' + res.status)));
+              unwaiveBtn.disabled = false; unwaiveBtn.textContent = _orig0;
+            }
+          } catch (err) {
+            alert('⚠ 通信エラー: ' + (err && err.message ? err.message : err));
+            unwaiveBtn.disabled = false; unwaiveBtn.textContent = _orig0;
+          }
+        })();
+        return;
+      }
       const waiveBtn = e.target.closest && e.target.closest('.sd-waive-enrollment-btn');
       if (waiveBtn) {
         e.preventDefault();

@@ -23140,6 +23140,81 @@ def admin_waive_enrollment_fee(
         conn.close()
 
 
+@app.post("/api/admin/students/{student_id}/unwaive-enrollment-fee")
+def admin_unwaive_enrollment_fee(
+    student_id: int,
+    payload: dict = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🔁 個別生徒の入塾金免除を取り消す (= 入塾金 ¥10,000 を徴収対象に戻す・admin only)。
+
+    塾長指示 (2026-07-06): 一律自動免除 (先着キャンペーン) を止め「既定=徴収・免除は生徒ごとに指定」
+    運用へ切替。誤って免除した / 徴収に切り替えたい生徒を戻せるよう waive-enrollment-fee の逆操作を提供。
+
+    動作:
+    1. 認証 (admin Bearer or X-Cron-Secret)
+    2. student 存在確認
+    3. DB: enrollment_fee_waived=0 + enrollment_waiver_applied_at=NULL (冪等)
+    4. events.admin_enrollment_fee_unwaived に audit 記録
+    ※ Stripe への課金操作はしない (免除フラグを外すだけ = 次回の本契約 checkout で入塾金 ¥10,000 が加算される)。
+       既に本契約済みの生徒へ後から徴収する場合は個別請求 (create-invoice の「入塾金」プリセット) を使う。
+    認証: admin Bearer または X-Cron-Secret"""
+    # auth (waive-enrollment-fee と同一)
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT id, name, enrollment_fee_waived FROM students WHERE id=?", (student_id,))
+        st = c.fetchone()
+        if not st:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        try:
+            was_waived = bool(st["enrollment_fee_waived"]) if "enrollment_fee_waived" in st.keys() else False
+        except Exception:
+            was_waived = False
+        student_name = (st["name"] or "").strip()
+        # DB フラグを落とす (冪等・applied_at も NULL に戻す)
+        c.execute(
+            "UPDATE students SET enrollment_fee_waived = 0, enrollment_waiver_applied_at = NULL WHERE id = ?",
+            (student_id,),
+        )
+        conn.commit()
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("admin_enrollment_fee_unwaived", json.dumps({
+                    "student_id": student_id, "student_name": student_name, "was_waived": was_waived,
+                }, ensure_ascii=False), "admin"),
+            )
+            conn.commit()
+        except Exception as e:
+            log.warning(f"[unwaive-enrollment] events 記録失敗 (取消自体は成功): {e}")
+        if was_waived:
+            msg = f"🔁 {student_name or ('生徒 #'+str(student_id))} の入塾金免除を取り消しました（今後の本契約で ¥10,000 を徴収します）"
+        else:
+            msg = f"（{student_name or ('生徒 #'+str(student_id))} は元から免除設定ではありません）入塾金は徴収対象です"
+        return {"ok": True, "student_id": student_id, "was_waived": was_waived, "db_updated": True, "message": msg}
+    except HTTPException:
+        raise
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        log.error(f"[unwaive-enrollment] unexpected: {type(e).__name__}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"内部エラー: {type(e).__name__}")
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/textbooks/purge")
 def admin_textbook_pool_purge(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """textbook_pool の特定レコードを削除する admin endpoint。
