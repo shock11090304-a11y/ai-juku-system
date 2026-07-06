@@ -478,6 +478,20 @@
       <div id="ledgerResults" class="table-wrap"></div>
     </div>
 
+    <!-- ⚠ 未完了の登録: フォームは始めたがカード未入力で止まっている層 (2026-07-06 塾長要望) -->
+    <div style="margin-top:1.5rem;padding:1rem;border:1px solid rgba(245,158,11,0.4);border-radius:8px;background:rgba(245,158,11,0.06);">
+      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+        <h3 style="margin:0;color:#fbbf24;">⚠ 未完了の登録（カード未入力）</h3>
+        <button class="btn btn-ghost btn-sm" id="pendingRegRefreshBtn">🔄 更新</button>
+      </div>
+      <div class="hint" style="font-size:0.82rem;margin-bottom:0.75rem;">
+        登録フォームは開始した（＝Stripeに顧客はできた）が、<strong>カード入力まで終わっていない</strong>ため月謝アプリの一覧に出ず、引き落とし対象にもならない人です。<br>
+        「申し込んだつもり」で止まっている可能性が高いので、<strong>登録リンクを再送してカード入力を促す</strong>のがおすすめです。同じ生徒の再試行は最新1件にまとめ、試行回数を表示します。
+      </div>
+      <div id="pendingRegStatus" style="margin-bottom:0.5rem;"></div>
+      <div id="pendingRegResults" class="table-wrap"></div>
+    </div>
+
     <div id="monthEndResultModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" style="display:none;">
       <div class="modal-card" style="max-width:720px;">
         <h2 id="monthEndResultTitle">実行結果</h2>

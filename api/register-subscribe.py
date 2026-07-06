@@ -240,18 +240,96 @@ def _stripe_post(secret_key, path, form, idempotency_key=None):
         return json.loads(resp.read().decode("utf-8"))
 
 
+def _stripe_get(secret_key, path, params=None):
+    """Stripe GET API helper (read-only)。"""
+    url = f"https://api.stripe.com/v1/{path}"
+    if params:
+        url += "?" + urllib.parse.urlencode(params, doseq=True)
+    req = urllib.request.Request(url, headers={
+        "Authorization": f"Bearer {secret_key}",
+        "Stripe-Version": "2024-06-20",
+    })
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _find_reusable_customer(secret_key, payload):
+    """🆕 2026-07-06: 同一 email + 同一生徒 で「カード未登録 (=まだ登録完了していない)」の
+    juku Customer が既にあれば再利用する。カード入力前に離脱→再登録を繰り返すと毎回新 Customer が
+    生まれ、Stripe が no-card 顧客で汚れる (上村 4回・伊勢 2回等の重複) 問題への対処。
+
+    ★兄弟 (同 email・別生徒) を1顧客に統合しないよう metadata.student_name 一致を必須にする。
+    ★カード有りの顧客は「既に完了済」なので再利用しない (呼び出し前の reg:completed 重複ガードで
+      通常は弾かれるが、二重の安全弁として payment_methods でも確認)。
+    見つからなければ None。全体 best-effort (失敗時は None を返し従来どおり新規作成に倒す)。"""
+    email = (payload.get("email") or "").strip()
+    student = (payload.get("studentName") or "").strip()
+    if not email or not student:
+        return None
+    try:
+        res = _stripe_get(secret_key, "customers", {"email": email, "limit": 20})
+    except Exception as e:
+        _log(f"reuse-lookup failed (skip, will create new): {e}")
+        return None
+    candidates = []
+    for c in (res.get("data") or []):
+        if c.get("deleted"):
+            continue
+        md = c.get("metadata", {}) or {}
+        if md.get("system", "") != "juku-payment-monthly":
+            continue
+        if (md.get("student_name", "") or "").strip() != student:
+            continue  # 別生徒 (兄弟) は統合しない
+        candidates.append(c)
+    candidates.sort(key=lambda c: c.get("created", 0), reverse=True)  # 最新から
+    for c in candidates:
+        cid = c.get("id")
+        if not cid:
+            continue
+        try:
+            pms = _stripe_get(secret_key, f"customers/{cid}/payment_methods", {"type": "card", "limit": 1})
+            if (pms.get("data") or []):
+                continue  # カード有り = 完了済のはず → 統合せずスキップ
+        except Exception:
+            continue  # 確認できなければ安全側で再利用しない (新規作成に倒す)
+        return c
+    return None
+
+
 def _create_or_find_customer(secret_key, payload, registration_id, metadata):
     """🆕 v2 (CRITICAL fix 2026-05-13): Customer を明示的に先行作成。
     mode=setup の Customer 自動作成挙動に依存せず、確実に customer_id を確保する。
     Idempotency-Key に registration_id を含めるので 1 registration につき 1 Customer のみ作成される。
+
+    🆕 2026-07-06: 同一 email+生徒 の「カード未登録」Customer があれば再利用し重複量産を防ぐ
+    (_find_reusable_customer)。再利用時は最新の申込内容でメタデータ/説明を更新して返す。
     """
     student = payload["studentName"]
     parent = payload["parentName"]
+    name = f"{parent} (生徒: {student})"[:240]
+    desc = f"通塾月謝 — 保護者: {parent} / 生徒: {student} ({payload.get('grade', '')})"[:240]
+
+    # カード未入力で放置中の同一生徒 Customer を再利用 (重複 Customer 抑制)
+    reuse = _find_reusable_customer(secret_key, payload)
+    if reuse and reuse.get("id"):
+        cid = reuse["id"]
+        form = [("name", name), ("description", desc), ("phone", payload.get("phone", "") or "")]
+        for k, v in metadata.items():
+            if v is None: continue
+            form.append((f"metadata[{k}]", str(v)))
+        try:
+            updated = _stripe_post(secret_key, f"customers/{cid}", form)
+            _log(f"register: reusing existing no-card customer {cid} for {payload.get('email')} / {student}")
+            return updated
+        except Exception as e:
+            _log(f"reuse-update failed for {cid}, falling back to new customer: {e}")
+            # fall through to create new
+
     form = [
         ("email", payload["email"]),
-        ("name", f"{parent} (生徒: {student})"[:240]),
+        ("name", name),
         ("phone", payload.get("phone", "") or ""),
-        ("description", f"通塾月謝 — 保護者: {parent} / 生徒: {student} ({payload.get('grade', '')})"[:240]),
+        ("description", desc),
     ]
     for k, v in metadata.items():
         if v is None: continue

@@ -2516,7 +2516,7 @@ function refresh() {
 // ===========================================================================
 // 💳 月末一斉引き落とし (Stripe Setup Mode + 月末バッチ請求) - 2026-05-13
 // ===========================================================================
-const MONTHEND_STATE = { lastPreview: null, busy: false, excluded: new Set(), includeArrears: false, billMode: 'current', lastLedger: null, ledgerBusy: false };
+const MONTHEND_STATE = { lastPreview: null, busy: false, excluded: new Set(), includeArrears: false, billMode: 'current', lastLedger: null, ledgerBusy: false, lastPending: null, pendingBusy: false };
 
 // 請求対象月ヘルパー (2026-06-26: 月末に翌月分を前倒し請求する運用)。
 //   billMode 'current' → カレンダー月 / 'next' → 翌月。
@@ -2622,6 +2622,7 @@ async function fetchMonthEndPreview() {
     setMonthEndStatus(`✅ 月 <strong>${data.month}</strong> のプレビュー取得完了 (${data.total_customers} 名)`, 'success');
     renderUnchargedNote(data);
     fetchChargeLedger();   // 📖 台帳も自動更新 (非同期・失敗してもプレビュー表示には影響しない)
+    fetchPendingRegistrations();  // ⚠ 未完了の登録も自動更新 (read-only・失敗しても影響なし)
   } catch (e) {
     setMonthEndStatus(`❌ ネットワークエラー: ${e.message}`, 'error');
   } finally {
@@ -3335,6 +3336,77 @@ async function fetchChargeLedger() {
   } finally {
     MONTHEND_STATE.ledgerBusy = false;
   }
+}
+
+// ===========================================================================
+// ⚠ 未完了の登録 (カード未入力で放置・2026-07-06 塾長要望)
+//   フォームは始めた (=Stripe Customer はできた) がカード入力を完了せず、月謝アプリに
+//   出ず引き落とし対象にもならない層。read-only の /payment/api/registration-pending。
+// ===========================================================================
+async function fetchPendingRegistrations() {
+  const statusEl = document.getElementById('pendingRegStatus');
+  const pw = getMonthEndAdminPw();
+  if (!statusEl) return;
+  if (!pw) { statusEl.innerHTML = '<span style="color:#fbbf24">🔒 管理パスワードを入力すると未完了の登録が表示されます</span>'; return; }
+  if (MONTHEND_STATE.pendingBusy) return;
+  MONTHEND_STATE.pendingBusy = true;
+  statusEl.innerHTML = '<span style="color:var(--text-dim)">⏳ 未完了の登録を取得中...</span>';
+  try {
+    const res = await fetch('/payment/api/registration-pending', {
+      method: 'GET', headers: { 'X-Admin-Password': pw },
+    });
+    if (res.status === 401) { statusEl.innerHTML = '<span style="color:#f87171">❌ 認証失敗。管理パスワードを確認してください</span>'; return; }
+    const data = await res.json();
+    if (!res.ok) { statusEl.innerHTML = `<span style="color:#f87171">❌ ${escapeHtmlME(data.message || data.error || 'unknown')}</span>`; return; }
+    MONTHEND_STATE.lastPending = data;
+    renderPendingRegistrations(data);
+    const t = data.fetched_at ? new Date(data.fetched_at * 1000).toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' }) : '';
+    const atRisk = data.total_at_risk ? `・未回収の恐れ <strong style="color:#fbbf24">${fmtYenME(data.total_at_risk)}/月</strong>` : '';
+    statusEl.innerHTML = `<span style="color:var(--text-dim);font-size:0.82rem;">✅ 更新 (${t} 時点)・実対象 <strong>${data.real_count || 0}</strong>名${atRisk}</span>`;
+  } catch (e) {
+    statusEl.innerHTML = `<span style="color:#f87171">❌ ネットワークエラー: ${escapeHtmlME(e.message)}</span>`;
+  } finally {
+    MONTHEND_STATE.pendingBusy = false;
+  }
+}
+
+function renderPendingRegistrations(data) {
+  const target = document.getElementById('pendingRegResults');
+  if (!target) return;
+  const regs = Array.isArray(data.registrations) ? data.registrations : [];
+  if (!regs.length) {
+    target.innerHTML = '<div style="color:var(--text-dim);padding:1rem;">未完了の登録はありません（全員カード入力まで完了しています）🎉</div>';
+    return;
+  }
+  const rows = regs.map(r => {
+    const test = r.isLikelyTest;
+    const dim = test ? 'opacity:0.5;' : '';
+    const days = Number(r.daysLeft) || 0;
+    const expBadge = test
+      ? '<span style="color:var(--text-dim);font-size:0.78rem;">テスト?</span>'
+      : (days <= 0
+          ? '<span style="color:#f87171;font-size:0.78rem;">期限切れ</span>'
+          : `<span style="color:${days <= 2 ? '#f87171' : '#fbbf24'};font-size:0.78rem;">あと約${days}日</span>`);
+    const attempts = Number(r.attempts) || 1;
+    const attemptsBadge = attempts > 1 ? ` <span title="登録を${attempts}回試みています" style="color:#fbbf24;font-size:0.76rem;">×${attempts}回</span>` : '';
+    return `<tr style="${dim}">
+      <td>${escapeHtmlME(r.studentName || '')}${attemptsBadge}</td>
+      <td>${escapeHtmlME(r.grade || '')}</td>
+      <td>${escapeHtmlME(r.parentName || '')}</td>
+      <td style="font-size:0.82rem;">${escapeHtmlME(r.email || '')}</td>
+      <td class="ta-r">${fmtYenME(r.monthlyFee)}</td>
+      <td style="font-size:0.82rem;">${escapeHtmlME(r.feeBreakdown || '')}</td>
+      <td class="ta-c">${expBadge}</td>
+    </tr>`;
+  }).join('');
+  target.innerHTML = `
+    <table class="table">
+      <thead><tr>
+        <th>生徒氏名</th><th>学年</th><th>保護者</th><th>メール</th>
+        <th class="ta-r">月額 (¥)</th><th>内訳</th><th class="ta-c" title="reg:pending の7日TTL">カード入力期限</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
 }
 
 function renderChargeLedger(data) {
@@ -6557,6 +6629,8 @@ function setupModals() {
   document.getElementById('historyCsvBtn')?.addEventListener('click', downloadHistoryCsv);
   // 📖 引き落とし台帳 (月別 × 生徒)
   document.getElementById('ledgerRefreshBtn')?.addEventListener('click', fetchChargeLedger);
+  // ⚠ 未完了の登録 (カード未入力)
+  document.getElementById('pendingRegRefreshBtn')?.addEventListener('click', fetchPendingRegistrations);
   document.getElementById('reconcileModalClose')?.addEventListener('click', () => {
     const modal = document.getElementById('reconcileModal');
     if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }

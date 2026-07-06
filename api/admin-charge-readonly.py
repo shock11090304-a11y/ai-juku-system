@@ -564,23 +564,114 @@ def _handle_ledger(handler, params):
     })
 
 
+# ===== 未完了の登録 (カード未入力で放置・2026-07-06 塾長要望) =====
+# 保護者が登録フォームを開始 (= Stripe Customer 作成) したがカード入力を完了せず reg:completed に
+# 昇格していない層 = 月謝アプリに一切出ない「隠れ離脱」。register-subscribe.py が書く reg:pending
+# (7日 TTL) と reg:index を読むだけの read-only 集計。書き込み・課金は一切しない。
+# 同一 (email, 生徒) の再試行は最新1件に畳み、試行回数 (attempts) を添える (上村 4回等のノイズ抑制)。
+_PENDING_TTL_SEC = 604800  # register-subscribe.py の reg:pending EX と一致 (7日)
+
+
+def _norm_name(s):
+    """氏名の重複判定キー用の正規化: 空白 (半角/全角 U+3000/タブ) を全除去。
+    「上村　琥珀」(全角空白) と「上村琥珀」を同一生徒として畳むため。str.split() は
+    全角空白も whitespace として扱う ('\\u3000'.isspace() is True)。表示名には使わない。"""
+    return "".join((s or "").split())
+
+
+def _handle_pending(handler):
+    zr = _redis("ZRANGE", "reg:index", "0", "-1", "REV")
+    ids = []
+    if zr and isinstance(zr, dict) and isinstance(zr.get("result"), list):
+        ids = [rid for rid in zr["result"] if isinstance(rid, str)]
+    ids = ids[:1000]
+    recs = _mget_records([f"reg:pending:{rid}" for rid in ids])
+
+    now = int(time.time())
+    fam = {}  # (email_lower, student) -> aggregated entry (最新を残し attempts を数える)
+    for rid, r in zip(ids, recs):
+        if not r:
+            continue  # TTL 切れ (index にだけ残る幽霊) は表示しない
+        email = (r.get("email") or "").strip()
+        student = (r.get("studentName") or r.get("student_name") or "").strip()
+        parent = (r.get("parentName") or r.get("parent_name") or "").strip()
+        try:
+            created = int(r.get("created_at") or 0)
+        except Exception:
+            created = 0
+        try:
+            monthly_fee = int(r.get("monthly_fee") or r.get("fee") or 0)
+        except Exception:
+            monthly_fee = 0
+        el = email.lower()
+        # 塾長自身のデバッグ/テスト登録を薄く分離 (現実は7日TTLで大半消えるが保険)
+        is_test = (
+            any(t in el for t in ("example.com", "deploy", "diag", "debug", "final_"))
+            or "test" in el
+            or student in ("山田たろう", "山田太郎", "テスト太郎", "duplicate test")
+            or el in ("shock11090304@gmail.com", "shock918324@ezweb.ne.jp")
+        )
+        days_left = round((created + _PENDING_TTL_SEC - now) / 86400, 1) if created else 0
+        item = {
+            "registrationId": rid,
+            "studentName": student,
+            "parentName": parent,
+            "grade": r.get("grade", ""),
+            "email": email,
+            "phone": r.get("phone", ""),
+            "monthlyFee": monthly_fee,
+            "feeBreakdown": r.get("fee_breakdown", ""),
+            "customerId": r.get("stripe_customer_id", ""),
+            "createdAt": created,
+            "expiresAt": (created + _PENDING_TTL_SEC) if created else 0,
+            "daysLeft": max(0, days_left),
+            "source": r.get("source", ""),
+            "isLikelyTest": is_test,
+        }
+        key = (el, _norm_name(student))
+        prev = fam.get(key)
+        if prev is None:
+            item["attempts"] = 1
+            fam[key] = item
+        else:
+            attempts = prev["attempts"] + 1
+            if item["createdAt"] >= prev["createdAt"]:
+                item["attempts"] = attempts
+                fam[key] = item
+            else:
+                prev["attempts"] = attempts
+
+    entries = sorted(fam.values(), key=lambda x: (x["isLikelyTest"], -x["createdAt"]))
+    real = [e for e in entries if not e["isLikelyTest"]]
+    _json(handler, 200, {
+        "fetched_at": now,
+        "count": len(entries),
+        "real_count": len(real),
+        "total_at_risk": sum(e["monthlyFee"] for e in real),
+        "registrations": entries,
+    })
+
+
 def _route(self):
-    """preview / history / ledger を Vercel rewrite 挙動に依らず3層で判定。"""
+    """preview / history / ledger / pending を Vercel rewrite 挙動に依らず3層で判定。"""
     parsed = urlparse(self.path)
     params = parse_qs(parsed.query)
+    known = ("preview", "history", "ledger", "pending")
     # (1) destination に埋め込んだ識別子 (一次・最も確実)
     ep = (params.get("__ep", [""])[0] or "").strip().lower()
     # (2) self.path が source を保持している場合のフォールバック
-    if ep not in ("preview", "history", "ledger"):
+    if ep not in known:
         p = (parsed.path or "").lower()
-        if "ledger" in p:
+        if "pending" in p:
+            ep = "pending"
+        elif "ledger" in p:
             ep = "ledger"
         elif "history" in p:
             ep = "history"
         elif "preview" in p or "month-end" in p:
             ep = "preview"
     # (3) クエリ特徴での最終フォールバック (ledger は months・history は month/type 付き・preview は無)
-    if ep not in ("preview", "history", "ledger"):
+    if ep not in known:
         if "months" in params:
             ep = "ledger"
         elif any(k in params for k in ("month", "type", "include_audit", "audit_rid")):
@@ -601,6 +692,8 @@ class handler(BaseHTTPRequestHandler):
                 _handle_history(self, params)
             elif ep == "ledger":
                 _handle_ledger(self, params)
+            elif ep == "pending":
+                _handle_pending(self)
             else:
                 _handle_preview(self)
         except Exception as e:

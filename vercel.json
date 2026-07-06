@@ -56,6 +56,10 @@
       "destination": "/api/admin-charge-readonly?__ep=ledger"
     },
     {
+      "source": "/payment/api/registration-pending",
+      "destination": "/api/admin-charge-readonly?__ep=pending"
+    },
+    {
       "source": "/payment/api/admin-charge-reconcile",
       "destination": "/api/admin-charge-reconcile"
     },
