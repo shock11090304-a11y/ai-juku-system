@@ -2705,8 +2705,21 @@
       <p style="color:#a1a1aa; font-size:0.85rem; margin-bottom:1rem; line-height:1.6;">
         授業を作成し、<strong>配布ファイル</strong>(PDF/画像/Word 等・10MB まで)と<strong>録画</strong>を登録。生徒(通塾生)は
         <a href="class.html" target="_blank" style="color:#c4b5fd;text-decoration:underline;">塾生メニュー</a> で閲覧・出欠申告します。<br>
-        🎬 <strong>録画は YouTube に「限定公開」でアップロード</strong>し、その URL をここに貼り付けてください(動画ファイル自体はここには保存しません)。
+        🎬 <strong>録画は YouTube に「限定公開」でアップロード</strong>し、その URL を下の「🎬 授業の録画を登録」欄に貼り付けてください(動画ファイル自体はここには保存しません)。
       </p>
+
+      <!-- 🎬 授業の録画を登録 (YouTube 限定公開 URL) — 授業を開かずにここから直接登録できる -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
+        <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">🎬 授業の録画を登録 (YouTube URL)</div>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">録画をアップした授業を選び、YouTube の <strong>限定公開 URL</strong> を貼り付けて登録 → 生徒アプリ「予定」タブのその授業から視聴できます。授業が一覧に無い場合は下の「➕ 授業を作成」で先に作成してください。</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+          <select id="recSess" style="padding:0.55rem; min-width:200px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">授業を選択…</option></select>
+          <input id="recTitle" type="text" placeholder="録画タイトル * (例: 第1回 二次関数)" style="flex:1; min-width:150px; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          <input id="recUrl" type="url" placeholder="https://youtu.be/... または https://www.youtube.com/watch?v=..." style="flex:2; min-width:220px; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          <button id="recAddBtn" type="button" style="padding:0.55rem 1.1rem; background:linear-gradient(135deg,#818cf8,#6366f1); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">＋ 登録</button>
+        </div>
+        <div id="recMsg" style="font-size:0.82rem; margin-top:0.4rem;"></div>
+      </div>
 
       <!-- 📅 カレンダー登録 (休塾日・特別予定) -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
@@ -10344,10 +10357,25 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         + '</div>';
     }
 
+    // 上部「🎬 授業の録画を登録」欄の授業ドロップダウンを最新の一覧で埋める
+    function fillRecSessDropdown(sessions) {
+      var sel = document.getElementById('recSess');
+      if (!sel) return;
+      var keep = sel.value;
+      var opts = ['<option value="">授業を選択…</option>'];
+      (sessions || []).forEach(function (s) {
+        var date = s.session_date ? esc(s.session_date) : '日付未定';
+        opts.push('<option value="' + s.id + '">' + date + ' ' + esc(s.title) + (s.subject ? ' (' + esc(s.subject) + ')' : '') + '</option>');
+      });
+      sel.innerHTML = opts.join('');
+      if (keep) sel.value = keep;
+    }
+
     async function loadSessions() {
       listEl.innerHTML = '<div style="color:#a1a1aa; font-size:0.85rem;">読み込み中…</div>';
       try {
         var d = await adminJson('/api/admin/class/sessions');
+        fillRecSessDropdown(d.sessions);
         if (!d.sessions || !d.sessions.length) {
           listEl.innerHTML = '<div style="color:#a1a1aa; font-size:0.85rem;">まだ授業がありません。上のフォームから作成してください。</div>';
           return;
@@ -10357,6 +10385,30 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         listEl.innerHTML = '<div style="color:#fca5a5; font-size:0.85rem;">' + (e.status === 401 ? 'ログインしてください。' : ('読み込み失敗: ' + esc(e.message))) + '</div>';
       }
     }
+
+    // 上部欄から録画を直接登録 (授業を開かずに)
+    document.getElementById('recAddBtn').addEventListener('click', async function () {
+      var btn = this, msg = document.getElementById('recMsg');
+      var sid = document.getElementById('recSess').value;
+      var rt = (document.getElementById('recTitle').value || '').trim();
+      var ru = (document.getElementById('recUrl').value || '').trim();
+      if (!sid) { msg.style.color = '#fca5a5'; msg.textContent = '授業を選択してください'; return; }
+      if (!rt) { msg.style.color = '#fca5a5'; msg.textContent = '録画タイトルを入力してください'; return; }
+      if (!/^https?:\/\//.test(ru)) { msg.style.color = '#fca5a5'; msg.textContent = '動画 URL は http(s):// で始めてください'; return; }
+      btn.disabled = true; msg.style.color = '#a1a1aa'; msg.textContent = '登録中…';
+      try {
+        await adminJson('/api/admin/class/recordings', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: Number(sid), title: rt, video_url: ru })
+        });
+        msg.style.color = '#6ee7b7'; msg.textContent = '✓ 録画を登録しました';
+        document.getElementById('recTitle').value = '';
+        document.getElementById('recUrl').value = '';
+        loadSessions();
+      } catch (e) {
+        msg.style.color = '#fca5a5'; msg.textContent = '登録失敗: ' + e.message;
+      } finally { btn.disabled = false; }
+    });
 
     function detailHtml(d) {
       var sid = d.session.id;
