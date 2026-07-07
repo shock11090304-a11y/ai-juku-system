@@ -521,7 +521,9 @@ async function loadExpiredUsers() {
     const res = await window.AdminAuth.fetch('/api/admin/stats');
     if (!res.ok) return;
     const data = await res.json();
-    const expired = (data.students || []).filter(s => s.status === 'expired');
+    // 🎓 本クラス(国公立難関 course=kokuritsu_nankan)生は無期限利用 = 体験終了フォローの対象外。
+    //    内部 status が一時的に 'expired' に残っていても回収案内リストには出さない (サーバ側でも自己修復する)。
+    const expired = (data.students || []).filter(s => s.status === 'expired' && s.course !== 'kokuritsu_nankan');
     renderExpiredUsers(expired);
   } catch (e) {
     console.error('loadExpiredUsers failed:', e);

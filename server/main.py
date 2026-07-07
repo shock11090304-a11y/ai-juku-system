@@ -2293,6 +2293,11 @@ async def _start_background_tasks():
     _BACKGROUND_TASKS.append(task)
     log.info("[Startup] Post-deploy smoke test scheduled (will run in 30 seconds)")
 
+    # 🎓 本クラス(国公立難関)生の誤「体験終了」を起動時に自己修復 (無期限アクセス保証・毎日 cron を待たない)
+    task = asyncio.create_task(_heal_honclass_on_boot())
+    _BACKGROUND_TASKS.append(task)
+    log.info("[Startup] 本クラス生 access heal scheduled (will run in 15 seconds)")
+
     # 🔔 体験管理 scheduler (毎日 JST 10:00):
     # - expire-trials: trial_end 経過後の自動 expired 化
     # - trial-reminders: 終了 1-2 日前リマインダー
@@ -30591,6 +30596,60 @@ def _compute_weekly_stats(student_id: int, days: int = 7) -> dict:
     }
 
 
+def _heal_mis_expired_honclass(conn=None) -> list:
+    """🎓 本クラス(course='kokuritsu_nankan')生は「無期限利用」= 体験期限で切れない在籍生。
+    ところが SaaS 体験を先行登録した既存生徒に後から本クラスを付与した経路 (course_application 承認や、
+    旧仕様で trial_end を延長しなかった時期のタグ付け) では status='expired' のまま残り、
+    「体験終了」扱いになって英文法ドリル配信の宛先選択・各種一覧・宿題対象から漏れる不具合があった。
+    本クラス生で status='expired' の在籍生を trial(trial_end 10 年後) に復帰させて自己修復する。
+    canceled(退塾) は対象外。冪等・小件数なので毎日 cron + デプロイ起動時に走らせて再発しても勝手に治す。
+    返り値: 復帰させた生徒 [{id,email,name}] のリスト。"""
+    own = conn is None
+    if own:
+        conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, name, email FROM students WHERE course = 'kokuritsu_nankan' AND status = 'expired'"
+        )
+        victims = [{"id": r["id"], "email": r["email"], "name": r["name"]} for r in c.fetchall()]
+        if victims:
+            far_end = (datetime.now(timezone.utc) + timedelta(days=3650)).isoformat()
+            ids = [v["id"] for v in victims]
+            ph = ",".join(["?"] * len(ids))
+            c.execute(
+                f"UPDATE students SET status='trial', trial_end=?, updated_at=CURRENT_TIMESTAMP WHERE id IN ({ph})",
+                tuple([far_end] + ids),
+            )
+            try:
+                c.execute(
+                    "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                    ("honclass_access_healed",
+                     json.dumps({"count": len(victims), "student_ids": ids[:100]}, ensure_ascii=False),
+                     "in_process_scheduler"),
+                )
+            except Exception:
+                pass
+            conn.commit()
+            log.info(f"[HonClassHeal] 本クラス生 expired→trial(無期限) 復帰: {len(victims)}名 {victims[:20]}")
+        return victims
+    finally:
+        if own:
+            conn.close()
+
+
+async def _heal_honclass_on_boot():
+    """デプロイ起動時に一度だけ本クラス生の誤 expired を修復 (毎日 cron を待たず即時反映)。
+    冪等・小件数。multi-replica で重複しても UPDATE は同一結果 (2 回目は 0 件)。"""
+    await asyncio.sleep(15)
+    try:
+        healed = _heal_mis_expired_honclass()
+        if healed:
+            log.info(f"[Startup] 本クラス生 heal on boot: {len(healed)}名を無期限(trial)へ復帰")
+    except Exception as e:
+        log.warning(f"[Startup] 本クラス生 heal on boot failed: {type(e).__name__}: {e}")
+
+
 @app.post("/api/cron/expire-trials")
 def cron_expire_trials(x_cron_secret: str = Header(None), dry_run: bool = False):
     """体験期間終了した trial ユーザーを 'expired' に変更。毎日実行。
@@ -30605,13 +30664,24 @@ def cron_expire_trials(x_cron_secret: str = Header(None), dry_run: bool = False)
     conn = db()
     c = conn.cursor()
     now = datetime.now(timezone.utc)
+    # 🎓 本クラス生 (course='kokuritsu_nankan') の誤 expired を先に自己修復してから expire 判定に入る
+    #    (無期限アクセス保証・下の SELECT でも course で除外するので二重の安全)。dry_run 時は書き換えない。
+    if not dry_run:
+        try:
+            _heal_mis_expired_honclass(conn)
+        except Exception as _he:
+            log.warning(f"[expire-trials] 本クラス生 heal skipped: {_he}")
     # trial かつ trial_end 経過済みのユーザーを expired に。
     # 💳 2026-06-12: stripe_subscription_id を持つカード登録済み生徒 (trial_extended 経路) は除外。
     # 彼らの trial_end 後の paid 化/解約は Stripe webhook (subscription.updated/deleted) が正であり、
     # cron が webhook より先に expired 化すると「Stripe は課金継続・アクセスは失効」事故になるため。
+    # 🎓 2026-07-07: 本クラス生 (course='kokuritsu_nankan') も除外 — 無期限利用なので trial_end 経過でも
+    #    expired 化しない。以前は除外が無く、短い trial_end のまま本クラス付与された生徒が「体験終了」に
+    #    落ちてドリル配信/一覧/宿題対象から漏れていた (上の heal と合わせて再発防止)。
     c.execute(
         "SELECT id, name, email, trial_end FROM students WHERE status='trial' AND trial_end IS NOT NULL AND trial_end < ?"
-        " AND (stripe_subscription_id IS NULL OR stripe_subscription_id = '')",
+        " AND (stripe_subscription_id IS NULL OR stripe_subscription_id = '')"
+        " AND (course IS NULL OR course != 'kokuritsu_nankan')",
         (now.isoformat(),)
     )
     candidates = list(c.fetchall())
@@ -44021,12 +44091,22 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             _ai_disabled = 1 if _is_juku_app_reg else 0
         if st:
             student_id = st["id"]
-            # 既存生徒に course 付与 (status は変更しない)。受講クラスが申込にあれば反映 (空なら既存維持)。
+            # 既存生徒に course 付与。受講クラスが申込にあれば反映 (空なら既存維持)。
             if _app_classes_json:
                 c.execute("UPDATE students SET course = ?, class_labels = ?, ai_disabled = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, _app_classes_json, _ai_disabled, student_id))
             else:
                 c.execute("UPDATE students SET course = ?, ai_disabled = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, _ai_disabled, student_id))
-            log.info(f"[CourseApp] approve existing student id={student_id} email={email_lower} ai_disabled={_ai_disabled}")
+            # 🎓 本クラスは無期限利用: trial_end を 10 年後にして体験期限で切れないようにし、既に expired/canceled に
+            #    落ちている既存生徒は在籍(trial)へ復帰させる (admin_set_student_course と同じ規約)。
+            #    以前は「status は変更しない」だったため、SaaS 体験終了済みの生徒を本クラスに承認しても
+            #    「体験終了」のまま残り、ドリル配信/一覧/宿題対象から漏れていた (2026-07-07 fix)。
+            _far_end = (datetime.now(timezone.utc) + timedelta(days=3650)).isoformat()
+            _old_status = st["status"] if "status" in st.keys() else None
+            if _old_status in ("expired", "canceled"):
+                c.execute("UPDATE students SET trial_end = ?, status = 'trial', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (_far_end, student_id))
+            else:
+                c.execute("UPDATE students SET trial_end = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (_far_end, student_id))
+            log.info(f"[CourseApp] approve existing student id={student_id} email={email_lower} ai_disabled={_ai_disabled} old_status={_old_status}")
         else:
             # 新規生徒 (trial で作成 / 国難コースは永久無料なので trial_end を 10 年後に設定)
             now = datetime.now(timezone.utc)
