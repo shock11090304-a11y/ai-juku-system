@@ -110,6 +110,9 @@
     .att-saved { color:#6ee7b7; }
 
     /* 動画 */
+    /* 再生ボタンと同じ .row-actions(flex) 内にあるため、幅指定が無いとプレーヤーが潰れて高さ0になる。
+       全幅で自分の行に折り返させて 16:9 の枠を確保する。 */
+    .rec-player { flex-basis:100%; width:100%; }
     .video-wrap { position:relative; width:100%; padding-top:56.25%; margin-top:0.55rem; border-radius:10px; overflow:hidden; background:#000; }
     .video-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
 
