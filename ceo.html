@@ -2711,10 +2711,10 @@
       <!-- 🎬 授業の録画を登録 (YouTube 限定公開 URL) — 授業を開かずにここから直接登録できる -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
         <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">🎬 授業の録画を登録 (YouTube URL)</div>
-        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">録画をアップした授業を選び、YouTube の <strong>限定公開 URL</strong> を貼り付けて登録 → 生徒アプリ「予定」タブのその授業から視聴できます。授業が一覧に無い場合は下の「➕ 授業を作成」で先に作成してください。</p>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">YouTube の <strong>限定公開 URL</strong> を貼り付けて登録 → 生徒アプリの <strong>「🎬 動画」タブ</strong>に並び、いつでも視聴できます。<br><span style="color:#86efac;">授業の選択は任意です。</span>選ばなくても登録でき、その録画は動画タブに直接表示されます（タイトルに「月曜1限 中学応用 7/7」のようにクラス名を入れると分かりやすいです)。特定の日付の授業に紐づけたいときだけ、下で作成した授業を選んでください。</p>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
-          <select id="recSess" style="padding:0.55rem; min-width:200px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">授業を選択…</option></select>
-          <input id="recTitle" type="text" placeholder="録画タイトル * (例: 第1回 二次関数)" style="flex:1; min-width:150px; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          <select id="recSess" style="padding:0.55rem; min-width:200px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">授業に紐づけない（動画タブに直接表示）</option></select>
+          <input id="recTitle" type="text" placeholder="録画タイトル * (例: 月曜1限 中学応用 7/7)" style="flex:1; min-width:150px; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
           <input id="recUrl" type="url" placeholder="https://youtu.be/... または https://www.youtube.com/watch?v=..." style="flex:2; min-width:220px; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
           <button id="recAddBtn" type="button" style="padding:0.55rem 1.1rem; background:linear-gradient(135deg,#818cf8,#6366f1); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">＋ 登録</button>
         </div>
@@ -10362,7 +10362,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var sel = document.getElementById('recSess');
       if (!sel) return;
       var keep = sel.value;
-      var opts = ['<option value="">授業を選択…</option>'];
+      var opts = ['<option value="">授業に紐づけない（動画タブに直接表示）</option>'];
       (sessions || []).forEach(function (s) {
         var date = s.session_date ? esc(s.session_date) : '日付未定';
         opts.push('<option value="' + s.id + '">' + date + ' ' + esc(s.title) + (s.subject ? ' (' + esc(s.subject) + ')' : '') + '</option>');
@@ -10389,19 +10389,20 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     // 上部欄から録画を直接登録 (授業を開かずに)
     document.getElementById('recAddBtn').addEventListener('click', async function () {
       var btn = this, msg = document.getElementById('recMsg');
-      var sid = document.getElementById('recSess').value;
+      var sid = document.getElementById('recSess').value;   // 空 = 授業に紐づけない(loose 録画)
       var rt = (document.getElementById('recTitle').value || '').trim();
       var ru = (document.getElementById('recUrl').value || '').trim();
-      if (!sid) { msg.style.color = '#fca5a5'; msg.textContent = '授業を選択してください'; return; }
       if (!rt) { msg.style.color = '#fca5a5'; msg.textContent = '録画タイトルを入力してください'; return; }
       if (!/^https?:\/\//.test(ru)) { msg.style.color = '#fca5a5'; msg.textContent = '動画 URL は http(s):// で始めてください'; return; }
+      var recBody = { title: rt, video_url: ru };
+      if (sid) recBody.session_id = Number(sid);   // 未選択なら session_id を送らず動画タブに直接表示
       btn.disabled = true; msg.style.color = '#a1a1aa'; msg.textContent = '登録中…';
       try {
         await adminJson('/api/admin/class/recordings', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: Number(sid), title: rt, video_url: ru })
+          body: JSON.stringify(recBody)
         });
-        msg.style.color = '#6ee7b7'; msg.textContent = '✓ 録画を登録しました';
+        msg.style.color = '#6ee7b7'; msg.textContent = '✓ 登録しました（生徒の「🎬 動画」タブに表示されます）';
         document.getElementById('recTitle').value = '';
         document.getElementById('recUrl').value = '';
         loadSessions();
