@@ -2813,6 +2813,14 @@
       <!-- 授業作成フォーム -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
         <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.7rem;">➕ 授業を作成</div>
+        <!-- 🗓 時間割からワンクリックで下のフォームに流し込む (タイトル・科目・時刻を自動入力) -->
+        <div style="background:rgba(129,140,248,0.10); border:1px solid rgba(129,140,248,0.30); border-radius:8px; padding:0.7rem 0.8rem; margin-bottom:0.7rem;">
+          <div style="font-size:0.82rem; color:#c7d2fe; font-weight:700; margin-bottom:0.4rem;">🗓 時間割から作成（選ぶとタイトル・科目・時刻が自動入力されます）</div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+            <select id="clsTtPick" style="flex:1; min-width:220px; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">時間割のクラスを選ぶ…</option></select>
+            <span style="font-size:0.76rem; color:#a1a1aa;">→ 右で日付を入れて「授業を作成」</span>
+          </div>
+        </div>
         <div style="display:grid; grid-template-columns:1fr; gap:0.6rem;">
           <input id="clsTitle" type="text" placeholder="授業タイトル * (例: 数学IA 二次関数)" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem;">
@@ -10410,6 +10418,42 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         msg.style.color = '#fca5a5'; msg.textContent = '登録失敗: ' + e.message;
       } finally { btn.disabled = false; }
     });
+
+    // 🗓 時間割クラス (class.html / server の TIMETABLE と一致させること)。
+    //   選ぶと下の授業作成フォームにタイトル・科目・時刻を流し込む。
+    var CLS_TIMETABLE = [
+      { label: '月曜1限 中学応用', subject: '受験・中3', start: '19:15', end: '20:15' },
+      { label: '月曜2限 英文法 Lv.1', subject: '標準・高1/2', start: '20:25', end: '21:25' },
+      { label: '月曜3限 長文読解 Lv.1', subject: '標準・高1/2', start: '21:35', end: '22:35' },
+      { label: '火曜1限 中学基礎', subject: '定期テスト・中1/2', start: '19:15', end: '20:15' },
+      { label: '火曜2限 英文法 Lv.2', subject: '難関・高3', start: '20:25', end: '21:25' },
+      { label: '火曜3限 長文読解 Lv.2', subject: '難関・高3', start: '21:35', end: '22:35' },
+      { label: '水曜1限 中学2年 英語', subject: '', start: '19:15', end: '20:15' },
+      { label: '水曜2限 GMARCH', subject: '大学別演習', start: '20:25', end: '21:25' },
+      { label: '水曜3限 国公立コース 英文法', subject: '', start: '21:35', end: '22:35' },
+      { label: '木曜1限 英検準1級対策', subject: '中高合同', start: '19:15', end: '20:15' },
+      { label: '木曜2限 早慶クラス', subject: '大学別演習', start: '20:25', end: '21:25' },
+      { label: '木曜3限 国公立コース 長文読解', subject: '', start: '21:35', end: '22:35' },
+      { label: '金曜1限 高2 英文法', subject: '', start: '19:15', end: '20:15' },
+      { label: '金曜2限 英検2級対策', subject: '中高合同', start: '20:25', end: '21:25' },
+      { label: '日曜 高校国語', subject: '現代文・古文', start: '21:15', end: '22:15' }
+    ];
+    (function initTtPick() {
+      var sel = document.getElementById('clsTtPick');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">時間割のクラスを選ぶ…</option>'
+        + CLS_TIMETABLE.map(function (t, i) { return '<option value="' + i + '">' + esc(t.label) + ' (' + esc(t.start) + '〜' + esc(t.end) + ')</option>'; }).join('');
+      sel.addEventListener('change', function () {
+        var t = CLS_TIMETABLE[Number(sel.value)];
+        if (!t) return;
+        document.getElementById('clsTitle').value = t.label;
+        document.getElementById('clsSubject').value = t.subject;
+        document.getElementById('clsStart').value = t.start;
+        document.getElementById('clsEnd').value = t.end;
+        var msg = document.getElementById('clsCreateMsg');
+        msg.style.color = '#a1a1aa'; msg.textContent = 'フォームに反映しました。日付を入れて「授業を作成」を押してください。';
+      });
+    })();
 
     function detailHtml(d) {
       var sid = d.session.id;
