@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "△ABCで、辺AB上に点D、辺AC上に点EがありDE//BCである。AD=5cm、DB=3cm、BC=16cmのとき、線分DEの長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "10cm",
+   "8cm",
+   "12cm",
+   "9.6cm"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「10cm」。 DE//BCより△ADE∽△ABC。相似比はAD:AB=5:(5+3)=5:8。よってDE=BC×5/8=16×5/8=10cm。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "△ABCで、辺AB上に点D、辺AC上に点EがありDE//BCである。AD=6cm、AB=15cm、AE=8cmのとき、線分ACの長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "18cm",
+   "20cm",
+   "12cm",
+   "16cm"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】相似。正解は「20cm」。 DE//BCよりAD:AB=AE:AC。6:15=8:AC。AC=15×8÷6=20cm。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "△ABCで、辺AB上に点D、辺AC上に点EがありDE//BCである。AD=4cm、DB=8cm、EC=10cmのとき、線分AEの長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "5cm",
+   "20cm",
+   "6cm",
+   "2.5cm"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「5cm」。 DE//BCよりAD:DB=AE:EC。4:8=AE:10。AE=10×4÷8=5cm。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "△ABCで、辺ABの中点をM、辺ACの中点をNとする。線分MN=7cmのとき、辺BCの長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "14cm",
+   "3.5cm",
+   "7cm",
+   "10.5cm"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「14cm」。 中点連結定理よりMN=BC×1/2。よってBC=MN×2=7×2=14cm。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "△ABCと△DEFは相似で、相似比が2:5である。DE=20cmのとき、対応する辺ABの長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "8cm",
+   "50cm",
+   "10cm",
+   "4cm"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「8cm」。 AB:DE=2:5。AB:20=2:5。AB=20×2÷5=8cm。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "相似な2つの三角形P、Qがあり、相似比は3:4である。三角形Qの周の長さが32cmのとき、三角形Pの周の長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "24cm",
+   "18cm",
+   "42.7cm",
+   "28cm"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「24cm」。 周の長さの比は相似比と同じ3:4。P:32=3:4。P=32×3÷4=24cm。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "相似な2つの平面図形があり、相似比が3:5である。このとき、面積の比を求めなさい。",
+  "passage": "",
+  "choices": [
+   "9:25",
+   "3:5",
+   "6:10",
+   "27:125"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「9:25」。 面積の比は相似比を2乗した比になる。3²:5²=9:25。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "相似な2つの三角形があり、面積がそれぞれ16cm²、25cm²である。このとき、対応する辺の長さの比(相似比)を求めなさい。",
+  "passage": "",
+  "choices": [
+   "4:5",
+   "16:25",
+   "8:12.5",
+   "2:3"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「4:5」。 面積比が16:25=4²:5²なので、相似比はそれぞれの平方根をとって4:5。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "相似な2つの立体があり、相似比が2:3である。このとき、体積の比を求めなさい。",
+  "passage": "",
+  "choices": [
+   "8:27",
+   "4:9",
+   "2:3",
+   "6:9"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「8:27」。 体積の比は相似比を3乗した比になる。2³:3³=8:27。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "相似な2つの円柱があり、体積の比が8:125である。このとき、相似比を求めなさい。",
+  "passage": "",
+  "choices": [
+   "2:5",
+   "4:25",
+   "8:125",
+   "2:3"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「2:5」。 体積比8:125=2³:5³なので、相似比はそれぞれの立方根をとって2:5。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "身長1.6mの人が地面に2mの影をつくっているとき、同じ時刻に7.5mの影をつくっている街灯の高さは何mか。",
+  "passage": "",
+  "choices": [
+   "6m",
+   "9.375m",
+   "5m",
+   "4.8m"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「6m」。 高さ:影の比は一定なので1.6:2=x:7.5。x=7.5×1.6÷2=6m。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "△ABCで、∠BAC=∠ADCとなるように辺BC上に点Dをとる。このとき△ABCと△DACは相似である。AC=6cm、BC=9cmのとき、辺DCの長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "4cm",
+   "3cm",
+   "6cm",
+   "13.5cm"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「4cm」。 △ABC∽△DAC(∠Cが共通、∠BAC=∠ADC)。対応する辺よりAC:DC=BC:AC。6:DC=9:6。DC=6×6÷9=4cm。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "平行な2直線に2本の直線が交わっている。1本目の直線が上下の平行線を切り取る比が3:4で、これに対応して2本目の直線が上側で6cmを切り取っている。2本目の直線の下側の長さは何cmか。",
+  "passage": "",
+  "choices": [
+   "8cm",
+   "4.5cm",
+   "6cm",
+   "7cm"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「8cm」。 平行線が直線を切り取る比は等しいので3:4=6:x。x=6×4÷3=8cm。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "相似",
+  "unit": "相似",
+  "stem": "△ABCで辺AB、AC上にそれぞれ点D、EをとりDE//BCとする。AD:DB=2:3で、△ADEの面積が8cm²のとき、四角形DBCEの面積は何cm²か。",
+  "passage": "",
+  "choices": [
+   "42cm²",
+   "50cm²",
+   "18cm²",
+   "12cm²"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】相似。正解は「42cm²」。 △ADE∽△ABCで相似比AD:AB=2:5。面積比は4:25。△ABC=8×25/4=50cm²。四角形DBCE=△ABC−△ADE=50−8=42cm²。"
+ }
+]

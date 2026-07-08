@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "4a − 7b + 2a + 3b を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "6a − 4b",
+   "6a + 4b",
+   "2a − 4b",
+   "6a − 10b"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「6a − 4b」。 同じ文字どうしをまとめます。4a+2a=6a、−7b+3b=−4b なので 6a − 4b です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "5(2x − 3y) を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "10x − 15y",
+   "10x − 3y",
+   "7x − 8y",
+   "10x + 15y"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「10x − 15y」。 分配法則で 5×2x=10x、5×(−3y)=−15y。よって 10x − 15y です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "(6x − 9y) ÷ 3 を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "2x − 3y",
+   "2x − 9y",
+   "6x − 3y",
+   "2x − 6y"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「2x − 3y」。 各項を3でわります。6x÷3=2x、−9y÷3=−3y。よって 2x − 3y です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "2(3a + b) + 3(a − 2b) を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "9a − 4b",
+   "9a + 4b",
+   "6a − 4b",
+   "9a − b"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「9a − 4b」。 展開すると 6a+2b+3a−6b。まとめて 9a−4b です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "(4x − 5y) − (x − 3y) を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "3x − 2y",
+   "3x − 8y",
+   "5x − 2y",
+   "3x + 2y"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「3x − 2y」。 かっこを外すと 4x−5y−x+3y。まとめて 3x−2y です。うしろのかっこの符号に注意します。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "3x²y × (−2xy) を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "−6x³y²",
+   "−6x²y²",
+   "6x³y²",
+   "−5x³y²"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「−6x³y²」。 係数は 3×(−2)=−6、xは x²×x=x³、yは y×y=y²。よって −6x³y² です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "(−4a²b) ÷ 2ab を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "−2a",
+   "−2ab",
+   "−2a²",
+   "2a"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「−2a」。 −4a²b ÷ 2ab は 係数 −4÷2=−2、a²÷a=a、b÷b=1。よって −2a です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "15x²y ÷ 5x × 2y を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "6xy²",
+   "6xy",
+   "6x²y²",
+   "10xy²"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「6xy²」。 15x²y÷5x=3xy、これに 2y をかけて 3xy×2y=6xy² です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "(3a²b³)² を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "9a⁴b⁶",
+   "6a⁴b⁶",
+   "9a⁴b⁵",
+   "9a²b³"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「9a⁴b⁶」。 各因数を2乗します。3²=9、(a²)²=a⁴、(b³)²=b⁶。よって 9a⁴b⁶ です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "x = −2、y = 5 のとき、3x + 2y の値を求めなさい。",
+  "passage": "",
+  "choices": [
+   "4",
+   "16",
+   "−4",
+   "11"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「4」。 3×(−2)+2×5 = −6+10 = 4 です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "a = 4 のとき、2a² − 3a の値を求めなさい。",
+  "passage": "",
+  "choices": [
+   "20",
+   "44",
+   "52",
+   "−4"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「20」。 2×4²−3×4 = 2×16−12 = 32−12 = 20 です。2a²は 2×(a²) の意味です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "x = −3 のとき、−x² + 5 の値を求めなさい。",
+  "passage": "",
+  "choices": [
+   "−4",
+   "14",
+   "8",
+   "2"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「−4」。 −x² は −(x²) の意味なので −(−3)²+5 = −9+5 = −4 です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "(2x + y)/3 + (x − 2y)/6 を計算しなさい。",
+  "passage": "",
+  "choices": [
+   "(5x)/6",
+   "(5x − 4y)/6",
+   "(3x − y)/6",
+   "(5x)/9"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「(5x)/6」。 通分すると (4x+2y)/6 + (x−2y)/6 = (4x+2y+x−2y)/6 = (5x)/6 です。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "式の計算",
+  "unit": "式の計算",
+  "stem": "等式 3x + 2y = 12 を y について解きなさい。",
+  "passage": "",
+  "choices": [
+   "y = (12 − 3x)/2",
+   "y = 12 − 3x",
+   "y = (3x − 12)/2",
+   "y = 6 − 3x"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】式の計算。正解は「y = (12 − 3x)/2」。 2y = 12 − 3x とし、両辺を2でわると y = (12 − 3x)/2 です。"
+ }
+]

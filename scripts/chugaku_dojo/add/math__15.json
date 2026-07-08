@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "方程式 4x − 7 = 9 を解きなさい。",
+  "passage": "",
+  "choices": [
+   "x = 4",
+   "x = 5",
+   "x = 0.5",
+   "x = -4"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「x = 4」。 4x=9+7=16、両辺を4でわって x=4。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "方程式 5x + 8 = 2x − 7 を解きなさい。",
+  "passage": "",
+  "choices": [
+   "x = -5",
+   "x = 5",
+   "x = -1",
+   "x = -15"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「x = -5」。 5x−2x=−7−8、3x=−15、x=−5。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "方程式 6 − 2x = 3x + 21 を解きなさい。",
+  "passage": "",
+  "choices": [
+   "x = -3",
+   "x = 3",
+   "x = -5.4",
+   "x = 5"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「x = -3」。 −2x−3x=21−6、−5x=15、x=−3。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "方程式 2(x + 4) = 3x − 1 を解きなさい。",
+  "passage": "",
+  "choices": [
+   "x = 9",
+   "x = 7",
+   "x = -9",
+   "x = 1"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「x = 9」。 かっこを開いて 2x+8=3x−1、8+1=3x−2x、x=9。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "方程式 3(2x − 1) = 4(x + 2) を解きなさい。",
+  "passage": "",
+  "choices": [
+   "x = 5.5",
+   "x = 4.5",
+   "x = 2.5",
+   "x = 1"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「x = 5.5」。 6x−3=4x+8、6x−4x=8+3、2x=11、x=5.5。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "方程式 0.5x − 1.2 = 0.2x + 0.6 を解きなさい。",
+  "passage": "",
+  "choices": [
+   "x = 6",
+   "x = 2",
+   "x = -2",
+   "x = 0.6"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「x = 6」。 両辺を10倍して 5x−12=2x+6、3x=18、x=6。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "方程式 0.03x + 0.1 = 0.05x − 0.2 を解きなさい。",
+  "passage": "",
+  "choices": [
+   "x = 15",
+   "x = 5",
+   "x = -15",
+   "x = 1.5"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「x = 15」。 両辺を100倍して 3x+10=5x−20、30=2x、x=15。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "方程式 (x − 5)/3 = (x + 1)/4 を解きなさい。",
+  "passage": "",
+  "choices": [
+   "x = 23",
+   "x = 17",
+   "x = -23",
+   "x = 4"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「x = 23」。 両辺に12をかけて 4(x−5)=3(x+1)、4x−20=3x+3、x=23。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "方程式 x/2 + x/3 = 10 を解きなさい。",
+  "passage": "",
+  "choices": [
+   "x = 12",
+   "x = 6",
+   "x = 60",
+   "x = 5"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「x = 12」。 両辺に6をかけて 3x+2x=60、5x=60、x=12。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "方程式 (2x + 1)/5 = 3 を解きなさい。",
+  "passage": "",
+  "choices": [
+   "x = 7",
+   "x = 8",
+   "x = 5",
+   "x = 2.8"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「x = 7」。 両辺に5をかけて 2x+1=15、2x=14、x=7。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "比例式 3 : 8 = 9 : x を満たす x の値を求めなさい。",
+  "passage": "",
+  "choices": [
+   "x = 24",
+   "x = 14",
+   "x = 3",
+   "x = 27"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「x = 24」。 3×x=8×9、3x=72、x=24。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "比例式 x : 6 = 10 : 15 を満たす x の値を求めなさい。",
+  "passage": "",
+  "choices": [
+   "x = 4",
+   "x = 9",
+   "x = 25",
+   "x = 1"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「x = 4」。 15×x=6×10、15x=60、x=4。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "xについての方程式 2x + a = 5x − 4 の解が x = 3 であるとき、a の値を求めなさい。",
+  "passage": "",
+  "choices": [
+   "a = 5",
+   "a = -5",
+   "a = 13",
+   "a = 3"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「a = 5」。 x=3を代入して 2×3+a=5×3−4、6+a=11、a=5。"
+ },
+ {
+  "subject": "数学",
+  "part": "math",
+  "filter": "一次方程式",
+  "unit": "一次方程式",
+  "stem": "1本90円の鉛筆を何本かと、150円の消しゴムを1個買ったところ、代金の合計は690円だった。買った鉛筆の本数を求めなさい。",
+  "passage": "",
+  "choices": [
+   "6本",
+   "5本",
+   "9本",
+   "4本"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】一次方程式。正解は「6本」。 本数をxとすると 90x+150=690、90x=540、x=6。"
+ }
+]
