@@ -1901,6 +1901,11 @@ async function sendMessage() {
     if (msg) {
       msg.textContent = `✅ 送信完了 (受信者 ${data.recipients} 名 · email送信 ${data.email_sent}/${data.email_attempted}${data.email_failed ? ` · 失敗 ${data.email_failed}` : ''})`;
       msg.style.color = '#86efac';
+      if (data.warnings && data.warnings.length) {
+        const w = data.warnings.map(x => `${x.name}(${x.count}通・${(x.emails || []).join(', ')})`).join(' / ');
+        msg.textContent += `  ⚠ 同名重複: ${w} — 別メールの二重登録で同一人物に二重送信の可能性。CEO名簿で重複アカウントの統合をご確認ください。`;
+        msg.style.color = '#fbbf24';
+      }
     }
     document.getElementById('msgSubject').value = '';
     document.getElementById('msgBody').value = '';

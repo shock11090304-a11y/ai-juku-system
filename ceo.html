@@ -10885,6 +10885,11 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           var nm = r.students || [];
           var who = nm.length <= 8 ? nm.join('・') : (nm.slice(0, 8).join('・') + ' ほか' + (nm.length - 8) + '名');
           msg.style.color = '#6ee7b7'; msg.textContent = '✓ ' + r.assigned_count + '名に宿題を出しました（' + label + '）' + (who ? '：' + who : '');
+          if (r.warnings && r.warnings.length) {
+            var _w = r.warnings.map(function (x) { return x.name + '(' + x.count + '件・#' + (x.student_ids || []).join('/#') + ')'; }).join('、');
+            msg.style.color = '#fbbf24';
+            msg.textContent += '  ⚠ 同名重複の可能性: ' + _w + ' — 別メールの二重登録で二重配布かもしれません。CEO名簿で重複アカウントの統合をご確認ください。';
+          }
           document.getElementById('hwTitle').value = ''; document.getElementById('hwSubject').value = '';
           document.getElementById('hwDue').value = ''; document.getElementById('hwDesc').value = '';
           if (document.getElementById('hwTopic')) document.getElementById('hwTopic').value = '';

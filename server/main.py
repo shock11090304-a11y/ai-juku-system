@@ -41991,6 +41991,20 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
         if payload.send_email:
             background_tasks.add_task(_bg_send_messages_email, msg_records, subject, body)
 
+        # 🚨 同名重複ガード (2026-07-09): 一斉送信で正規化氏名が重複 = 別メールでの二重登録により
+        #   同一人物へ2通(両アドレス)飛ぶ疑い。silent dedup はしない (兄弟等の別人同姓同名を無言で
+        #   1通に潰すと本物の宛先が欠落する)。送信は実行しつつ塾長に警告を返して手動統合を促す。
+        dup_warnings = []
+        if target == "broadcast":
+            _bn = {}
+            for t in targets:
+                _bn.setdefault(_normalize_person_name(t["name"]), []).append(t)
+            dup_warnings = [
+                {"name": v[0]["name"], "student_ids": [x["id"] for x in v],
+                 "emails": [x["email"] for x in v], "count": len(v)}
+                for v in _bn.values() if len(v) > 1
+            ]
+
         return {
             "ok": True,
             "target": target,
@@ -41998,6 +42012,7 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
             "email_attempted": recipients_with_email,
             "email_queued": recipients_with_email,
             "broadcast_group_id": broadcast_group_id,
+            "warnings": dup_warnings,
         }
     finally:
         conn.close()
@@ -43573,6 +43588,17 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
         if not targets:
             return {"ok": True, "assigned_count": 0, "class_label": cl,
                     "info": "このクラスに登録された生徒がいません。「🏫 クラス別 受講生 一括登録」でクラスを設定してください。"}
+        # 🚨 同名重複ガード (2026-07-09): 同一クラスに正規化氏名が重複 = 別メールでの二重登録による
+        #   二重配布の疑い。silent dedup はしない (真に別人の同姓同名の宿題を無言で欠落させ得るため=
+        #   この codebase が repeat_trial で一貫して避けている失敗モード)。配布は実行しつつ、塾長に
+        #   警告を返して手動統合(重複アカウント停止)を促す。
+        _dup_by_norm = {}
+        for _sid, _nm in targets:
+            _dup_by_norm.setdefault(_normalize_person_name(_nm), []).append((_sid, _nm))
+        dup_warnings = [
+            {"name": v[0][1], "student_ids": [s for s, _ in v], "count": len(v)}
+            for v in _dup_by_norm.values() if len(v) > 1
+        ]
         # INSERT は upfront 検証済み。per-row catch はしない(PostgreSQL は1文失敗でtxn全体abortのため無意味)。
         for sid, _name in targets:
             c.execute(
@@ -43594,7 +43620,8 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
         except Exception:
             pass
         return {"ok": True, "assigned_count": len(targets), "class_label": cl,
-                "students": [t[1] for t in targets]}
+                "students": [t[1] for t in targets],
+                "warnings": dup_warnings}
     finally:
         conn.close()
 
@@ -44078,6 +44105,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         c.execute("SELECT id, status, course, ai_disabled FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
         st = c.fetchone()
         student_id = None
+        _repeat_prior = None  # 🚨 別メール同名の既存生徒(二重登録疑い)。新規作成時のみ検知して post-commit でフラグ。
         # 🚫 [塾生アプリ AIなし枠] AI利用可否の決定:
         #   ・塾長の明示指定 (payload.ai_disabled) があれば最優先 (CEO 承認 UI は常に明示送信)。
         #   ・未指定 & 既存生徒 → 現状維持 (既存の AI 利用者を smart-default で勝手に無効化しない=
@@ -44120,6 +44148,14 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             new = c.fetchone()
             student_id = new["id"] if new else None
             log.info(f"[CourseApp] approve created new student id={student_id} email={email_lower}")
+            # 🚨 同名重複ガード (2026-07-09): email 一致は上の SELECT で既存生徒に合流するので、
+            #   ここに来た=別メール。同名(正規化)の既存 体験/課金生徒がいれば「別メール二重登録」の疑い。
+            #   承認はブロックせず、prior を控えて post-commit でフラグのみ立てる (CEO 重複バナー導線に合流)。
+            #   ※読み取りのみ (uncommitted txn の c を使用)。フラグ書込みは commit 後 (行ロック回避)。
+            try:
+                _repeat_prior = _find_prior_trial_identity(c, email_lower, name, "")
+            except Exception:
+                _repeat_prior = None
 
         # application を approved に更新
         admin_note = _sanitize_text(payload.note, 500)
@@ -44138,6 +44174,19 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             _AI_DISABLED_CACHE.pop(int(student_id), None)
     except Exception:
         pass
+
+    # 🚨 別メール同名の二重登録疑いをフラグ (独立接続・非throw・承認 txn commit 後に実行=行ロック回避)。
+    #   自動課金/停止はしない (氏名一致は誤検知し得る)。CEO の重複バナー導線に合流させ塾長判断に委ねる。
+    if student_id and _repeat_prior:
+        try:
+            _rk = _repeat_prior.get("match_kind", "name")
+            _flag_repeat_suspect(int(student_id), _repeat_reason_text(_repeat_prior, _rk))
+            _record_repeat_event("course_approve_repeat_suspect", {
+                "student_id": int(student_id), "prior_id": _repeat_prior.get("id"),
+                "match_kind": _rk, "email": email_lower,
+            })
+        except Exception as _re:
+            log.warning(f"[CourseApp] repeat-suspect flag failed: {_re}")
 
     # 📲 [LINE受信案内 2026-06-26] owner方針: 新規通塾生の承認時に「LINEで受け取る」案内を自動で出す
     #   (キャリアメール不達対策)。LINE連携コードを自動発行 → welcome メール本文 + CEO承認結果モーダルの
