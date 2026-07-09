@@ -1,0 +1,722 @@
+[
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "I ___ soccer with my friends yesterday.",
+    "choices": [
+      "played",
+      "play",
+      "playing",
+      "plays"
+    ],
+    "answer": 0,
+    "explanation": "yesterday(昨日)があるので過去の文。play は規則変化で過去形「played」になる。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "She ___ to the library last Sunday.",
+    "choices": [
+      "go",
+      "went",
+      "goes",
+      "going"
+    ],
+    "answer": 1,
+    "explanation": "last Sunday(先週の日曜)で過去の文。go の過去形は不規則で「went」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "We ___ a movie last night.",
+    "choices": [
+      "watch",
+      "watches",
+      "watched",
+      "watching"
+    ],
+    "answer": 2,
+    "explanation": "last night(昨夜)で過去の文。watch の過去形は規則変化で「watched」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "He ___ up at six this morning.",
+    "choices": [
+      "get",
+      "gets",
+      "getting",
+      "got"
+    ],
+    "answer": 3,
+    "explanation": "this morning の出来事で過去の文。get の過去形は不規則で「got」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "My father ___ very busy last week.",
+    "choices": [
+      "was",
+      "is",
+      "were",
+      "are"
+    ],
+    "answer": 0,
+    "explanation": "主語 My father は3人称単数で、last week(先週)なので be 動詞の過去形は「was」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "They ___ in Osaka three years ago.",
+    "choices": [
+      "live",
+      "lived",
+      "lives",
+      "living"
+    ],
+    "answer": 1,
+    "explanation": "three years ago(3年前)で過去の文。live は e で終わるので d だけ足して「lived」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "I ___ my homework after dinner last night.",
+    "choices": [
+      "do",
+      "does",
+      "did",
+      "done"
+    ],
+    "answer": 2,
+    "explanation": "last night(昨夜)があるので過去の文。do の過去形は不規則で「did」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "___ you enjoy the concert last night?",
+    "choices": [
+      "Do",
+      "Are",
+      "Were",
+      "Did"
+    ],
+    "answer": 3,
+    "explanation": "一般動詞 enjoy の過去の疑問文。last night があるので文頭は「Did」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "We ___ not have school yesterday.",
+    "choices": [
+      "did",
+      "do",
+      "were",
+      "was"
+    ],
+    "answer": 0,
+    "explanation": "一般動詞 have の過去の否定文は did not(didn't) を使う。空所には「did」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "She ___ a beautiful picture in art class yesterday.",
+    "choices": [
+      "draw",
+      "drew",
+      "drawn",
+      "draws"
+    ],
+    "answer": 1,
+    "explanation": "yesterday(昨日)があるので過去の文。draw の過去形は不規則で「drew」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "The students ___ very tired after the game.",
+    "choices": [
+      "was",
+      "are",
+      "were",
+      "is"
+    ],
+    "answer": 2,
+    "explanation": "主語 The students は複数なので、過去の be 動詞は「were」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "I ___ my grandmother last weekend.",
+    "choices": [
+      "visit",
+      "visits",
+      "visiting",
+      "visited"
+    ],
+    "answer": 3,
+    "explanation": "last weekend(先週末)で過去の文。visit の過去形は規則変化で「visited」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "He ___ lunch at that restaurant.",
+    "choices": [
+      "ate",
+      "eat",
+      "eaten",
+      "eats"
+    ],
+    "answer": 0,
+    "explanation": "過去の動作。eat の過去形は不規則で「ate」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "We ___ a lot of pictures on the trip.",
+    "choices": [
+      "take",
+      "took",
+      "taken",
+      "takes"
+    ],
+    "answer": 1,
+    "explanation": "旅行での過去の動作。take の過去形は不規則で「took」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "past",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "It ___ rainy last Monday.",
+    "choices": [
+      "is",
+      "were",
+      "was",
+      "did"
+    ],
+    "answer": 2,
+    "explanation": "主語 It は3人称単数で、last Monday なので過去の be 動詞「was」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "I ___ visit my uncle next Sunday.",
+    "choices": [
+      "will",
+      "am",
+      "do",
+      "was"
+    ],
+    "answer": 0,
+    "explanation": "next Sunday(次の日曜)で未来の文。will の後は動詞の原形。空所には「will」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "It ___ be sunny tomorrow.",
+    "choices": [
+      "is",
+      "will",
+      "was",
+      "does"
+    ],
+    "answer": 1,
+    "explanation": "tomorrow(明日)の予想で未来の文。「will be 〜」で『〜だろう』。空所には「will」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "She is going to ___ tennis this afternoon.",
+    "choices": [
+      "plays",
+      "played",
+      "play",
+      "playing"
+    ],
+    "answer": 2,
+    "explanation": "be going to の後は動詞の原形。空所には原形の「play」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "We ___ going to have a party next week.",
+    "choices": [
+      "will",
+      "do",
+      "is",
+      "are"
+    ],
+    "answer": 3,
+    "explanation": "主語 We に合う be 動詞は「are」。be going to で未来を表す。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "___ you help me tomorrow?",
+    "choices": [
+      "Will",
+      "Do",
+      "Are",
+      "Did"
+    ],
+    "answer": 0,
+    "explanation": "tomorrow がある未来の依頼・疑問文。文頭は「Will」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "He ___ be twelve years old next month.",
+    "choices": [
+      "is",
+      "will",
+      "was",
+      "are"
+    ],
+    "answer": 1,
+    "explanation": "next month(来月)で未来の文。「will be 〜」で年齢の予定。空所には「will」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "I'm going ___ study English hard.",
+    "choices": [
+      "for",
+      "at",
+      "to",
+      "in"
+    ],
+    "answer": 2,
+    "explanation": "be going to + 動詞の原形 で未来を表す。空所には「to」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "They will ___ to Okinawa next summer.",
+    "choices": [
+      "going",
+      "went",
+      "goes",
+      "go"
+    ],
+    "answer": 3,
+    "explanation": "助動詞 will の後は動詞の原形。空所には原形の「go」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "My brother ___ going to buy a new bike.",
+    "choices": [
+      "is",
+      "are",
+      "will",
+      "does"
+    ],
+    "answer": 0,
+    "explanation": "主語 My brother は3人称単数なので be 動詞は「is」。be going to で未来。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "___ it be cold tomorrow? — No, it won't.",
+    "choices": [
+      "Is",
+      "Will",
+      "Does",
+      "Did"
+    ],
+    "answer": 1,
+    "explanation": "答えが No, it won't. なので疑問文は Will を使う未来の文。文頭は「Will」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "What ___ you do next weekend?",
+    "choices": [
+      "do",
+      "are",
+      "will",
+      "did"
+    ],
+    "answer": 2,
+    "explanation": "next weekend(次の週末)で未来の疑問文。「What will you do?」空所には「will」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "The train ___ arrive at ten.",
+    "choices": [
+      "is",
+      "was",
+      "has",
+      "will"
+    ],
+    "answer": 3,
+    "explanation": "これからの予定を表す未来の文。「will arrive」。空所には「will」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "Are you going ___ join the soccer team?",
+    "choices": [
+      "to",
+      "for",
+      "with",
+      "in"
+    ],
+    "answer": 0,
+    "explanation": "be going to + 動詞の原形 の疑問文。空所には「to」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "We ___ meet in front of the station tomorrow.",
+    "choices": [
+      "are",
+      "will",
+      "do",
+      "were"
+    ],
+    "answer": 1,
+    "explanation": "tomorrow がある未来の文。「will meet」。空所には「will」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "future",
+    "unit": "時制",
+    "level": "basic",
+    "stem": "She won't ___ late for school.",
+    "choices": [
+      "is",
+      "was",
+      "be",
+      "being"
+    ],
+    "answer": 2,
+    "explanation": "won't(will not)の後は動詞の原形。be 動詞の原形は「be」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "___ you play the guitar? — Yes, I can.",
+    "choices": [
+      "Can",
+      "Do",
+      "Must",
+      "Are"
+    ],
+    "answer": 0,
+    "explanation": "答えが Yes, I can. なので疑問文も Can を使う。『〜できますか』。文頭は「Can」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "I have ___ get up early every day.",
+    "choices": [
+      "can",
+      "to",
+      "will",
+      "must"
+    ],
+    "answer": 1,
+    "explanation": "have to + 動詞の原形 で『〜しなければならない』。have の後に続くのは「to」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "Ken can ___ English very well.",
+    "choices": [
+      "speaks",
+      "spoke",
+      "speak",
+      "speaking"
+    ],
+    "answer": 2,
+    "explanation": "助動詞 can の後は動詞の原形。空所には原形の「speak」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "___ I use your pen? — Sure, go ahead.",
+    "choices": [
+      "Do",
+      "Am",
+      "Was",
+      "May"
+    ],
+    "answer": 3,
+    "explanation": "『〜してもいいですか』と許可を求める文。答えが Sure なので文頭は「May」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "It's cold. You ___ close the window.",
+    "choices": [
+      "should",
+      "are",
+      "is",
+      "being"
+    ],
+    "answer": 0,
+    "explanation": "『〜したほうがよい』と助言する文。助動詞 should の後は動詞の原形。空所には「should」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "Students must ___ the school rules.",
+    "choices": [
+      "follows",
+      "follow",
+      "followed",
+      "following"
+    ],
+    "answer": 1,
+    "explanation": "助動詞 must の後は動詞の原形。空所には原形の「follow」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "___ I carry your bag? — Oh, thank you.",
+    "choices": [
+      "Do",
+      "Am",
+      "Shall",
+      "Did"
+    ],
+    "answer": 2,
+    "explanation": "『(私が)〜しましょうか』と申し出る文。答えが thank you なので文頭は「Shall」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "She ___ swim well when she was five.",
+    "choices": [
+      "can",
+      "must",
+      "should",
+      "could"
+    ],
+    "answer": 3,
+    "explanation": "when she was five(5歳のとき)で過去の能力。can の過去形「could」を使う。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "You look sleepy. You ___ go to bed early.",
+    "choices": [
+      "should",
+      "are",
+      "do",
+      "being"
+    ],
+    "answer": 0,
+    "explanation": "『〜したほうがよい』と助言する文。助動詞 should の後は動詞の原形。空所には「should」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "My sister can ___ a bike.",
+    "choices": [
+      "rides",
+      "ride",
+      "rode",
+      "riding"
+    ],
+    "answer": 1,
+    "explanation": "助動詞 can の後は動詞の原形。空所には原形の「ride」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "We ___ to wear a uniform at our school.",
+    "choices": [
+      "must",
+      "can",
+      "have",
+      "should"
+    ],
+    "answer": 2,
+    "explanation": "have to + 動詞の原形 で『〜しなければならない』。to が続くのは「have」だけ。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "___ you close the door, please? — Sure.",
+    "choices": [
+      "Do",
+      "Are",
+      "Was",
+      "Can"
+    ],
+    "answer": 3,
+    "explanation": "『〜してくれますか』と依頼する文。please があり答えが Sure。文頭は「Can」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "You ___ not run in the hospital.",
+    "choices": [
+      "must",
+      "are",
+      "is",
+      "being"
+    ],
+    "answer": 0,
+    "explanation": "must not で『〜してはいけない』という強い禁止を表す。空所には「must」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "He must ___ tired after the long trip.",
+    "choices": [
+      "is",
+      "be",
+      "was",
+      "being"
+    ],
+    "answer": 1,
+    "explanation": "助動詞 must の後は動詞の原形。be 動詞の原形は「be」。「must be tired」で『疲れているにちがいない』。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  },
+  {
+    "group": "aux",
+    "unit": "助動詞",
+    "level": "basic",
+    "stem": "___ I have some water? — Of course.",
+    "choices": [
+      "Do",
+      "Am",
+      "Can",
+      "Was"
+    ],
+    "answer": 2,
+    "explanation": "『〜してもいいですか』と求める文。答えが Of course なので文頭は「Can」。",
+    "source": "chu2grammar-20260709",
+    "subject": "english"
+  }
+]

@@ -1,0 +1,497 @@
+[
+  {
+    "n": 0,
+    "group": "past",
+    "stem": "I ___ soccer with my friends yesterday.",
+    "choices": [
+      "played",
+      "play",
+      "playing",
+      "plays"
+    ]
+  },
+  {
+    "n": 1,
+    "group": "past",
+    "stem": "She ___ to the library last Sunday.",
+    "choices": [
+      "go",
+      "went",
+      "goes",
+      "going"
+    ]
+  },
+  {
+    "n": 2,
+    "group": "past",
+    "stem": "We ___ a movie last night.",
+    "choices": [
+      "watch",
+      "watches",
+      "watched",
+      "watching"
+    ]
+  },
+  {
+    "n": 3,
+    "group": "past",
+    "stem": "He ___ up at six this morning.",
+    "choices": [
+      "get",
+      "gets",
+      "getting",
+      "got"
+    ]
+  },
+  {
+    "n": 4,
+    "group": "past",
+    "stem": "My father ___ very busy last week.",
+    "choices": [
+      "was",
+      "is",
+      "were",
+      "are"
+    ]
+  },
+  {
+    "n": 5,
+    "group": "past",
+    "stem": "They ___ in Osaka three years ago.",
+    "choices": [
+      "live",
+      "lived",
+      "lives",
+      "living"
+    ]
+  },
+  {
+    "n": 6,
+    "group": "past",
+    "stem": "I ___ my homework after dinner last night.",
+    "choices": [
+      "do",
+      "does",
+      "did",
+      "done"
+    ]
+  },
+  {
+    "n": 7,
+    "group": "past",
+    "stem": "___ you enjoy the concert last night?",
+    "choices": [
+      "Do",
+      "Are",
+      "Were",
+      "Did"
+    ]
+  },
+  {
+    "n": 8,
+    "group": "past",
+    "stem": "We ___ not have school yesterday.",
+    "choices": [
+      "did",
+      "do",
+      "were",
+      "was"
+    ]
+  },
+  {
+    "n": 9,
+    "group": "past",
+    "stem": "She ___ a beautiful picture in art class yesterday.",
+    "choices": [
+      "draw",
+      "drew",
+      "drawn",
+      "draws"
+    ]
+  },
+  {
+    "n": 10,
+    "group": "past",
+    "stem": "The students ___ very tired after the game.",
+    "choices": [
+      "was",
+      "are",
+      "were",
+      "is"
+    ]
+  },
+  {
+    "n": 11,
+    "group": "past",
+    "stem": "I ___ my grandmother last weekend.",
+    "choices": [
+      "visit",
+      "visits",
+      "visiting",
+      "visited"
+    ]
+  },
+  {
+    "n": 12,
+    "group": "past",
+    "stem": "He ___ lunch at that restaurant.",
+    "choices": [
+      "ate",
+      "eat",
+      "eaten",
+      "eats"
+    ]
+  },
+  {
+    "n": 13,
+    "group": "past",
+    "stem": "We ___ a lot of pictures on the trip.",
+    "choices": [
+      "take",
+      "took",
+      "taken",
+      "takes"
+    ]
+  },
+  {
+    "n": 14,
+    "group": "past",
+    "stem": "It ___ rainy last Monday.",
+    "choices": [
+      "is",
+      "were",
+      "was",
+      "did"
+    ]
+  },
+  {
+    "n": 15,
+    "group": "future",
+    "stem": "I ___ visit my uncle next Sunday.",
+    "choices": [
+      "will",
+      "am",
+      "do",
+      "was"
+    ]
+  },
+  {
+    "n": 16,
+    "group": "future",
+    "stem": "It ___ be sunny tomorrow.",
+    "choices": [
+      "is",
+      "will",
+      "was",
+      "does"
+    ]
+  },
+  {
+    "n": 17,
+    "group": "future",
+    "stem": "She is going to ___ tennis this afternoon.",
+    "choices": [
+      "plays",
+      "played",
+      "play",
+      "playing"
+    ]
+  },
+  {
+    "n": 18,
+    "group": "future",
+    "stem": "We ___ going to have a party next week.",
+    "choices": [
+      "will",
+      "do",
+      "is",
+      "are"
+    ]
+  },
+  {
+    "n": 19,
+    "group": "future",
+    "stem": "___ you help me tomorrow?",
+    "choices": [
+      "Will",
+      "Do",
+      "Are",
+      "Did"
+    ]
+  },
+  {
+    "n": 20,
+    "group": "future",
+    "stem": "He ___ be twelve years old next month.",
+    "choices": [
+      "is",
+      "will",
+      "was",
+      "are"
+    ]
+  },
+  {
+    "n": 21,
+    "group": "future",
+    "stem": "I'm going ___ study English hard.",
+    "choices": [
+      "for",
+      "at",
+      "to",
+      "in"
+    ]
+  },
+  {
+    "n": 22,
+    "group": "future",
+    "stem": "They will ___ to Okinawa next summer.",
+    "choices": [
+      "going",
+      "went",
+      "goes",
+      "go"
+    ]
+  },
+  {
+    "n": 23,
+    "group": "future",
+    "stem": "My brother ___ going to buy a new bike.",
+    "choices": [
+      "is",
+      "are",
+      "will",
+      "does"
+    ]
+  },
+  {
+    "n": 24,
+    "group": "future",
+    "stem": "___ it be cold tomorrow? — No, it won't.",
+    "choices": [
+      "Is",
+      "Will",
+      "Does",
+      "Did"
+    ]
+  },
+  {
+    "n": 25,
+    "group": "future",
+    "stem": "What ___ you do next weekend?",
+    "choices": [
+      "do",
+      "are",
+      "will",
+      "did"
+    ]
+  },
+  {
+    "n": 26,
+    "group": "future",
+    "stem": "The train ___ arrive at ten.",
+    "choices": [
+      "is",
+      "was",
+      "has",
+      "will"
+    ]
+  },
+  {
+    "n": 27,
+    "group": "future",
+    "stem": "Are you going ___ join the soccer team?",
+    "choices": [
+      "to",
+      "for",
+      "with",
+      "in"
+    ]
+  },
+  {
+    "n": 28,
+    "group": "future",
+    "stem": "We ___ meet in front of the station tomorrow.",
+    "choices": [
+      "are",
+      "will",
+      "do",
+      "were"
+    ]
+  },
+  {
+    "n": 29,
+    "group": "future",
+    "stem": "She won't ___ late for school.",
+    "choices": [
+      "is",
+      "was",
+      "be",
+      "being"
+    ]
+  },
+  {
+    "n": 30,
+    "group": "aux",
+    "stem": "___ you play the guitar? — Yes, I can.",
+    "choices": [
+      "Can",
+      "Do",
+      "Must",
+      "Are"
+    ]
+  },
+  {
+    "n": 31,
+    "group": "aux",
+    "stem": "I have ___ get up early every day.",
+    "choices": [
+      "can",
+      "to",
+      "will",
+      "must"
+    ]
+  },
+  {
+    "n": 32,
+    "group": "aux",
+    "stem": "Ken can ___ English very well.",
+    "choices": [
+      "speaks",
+      "spoke",
+      "speak",
+      "speaking"
+    ]
+  },
+  {
+    "n": 33,
+    "group": "aux",
+    "stem": "___ I use your pen? — Sure, go ahead.",
+    "choices": [
+      "Do",
+      "Am",
+      "Was",
+      "May"
+    ]
+  },
+  {
+    "n": 34,
+    "group": "aux",
+    "stem": "It's cold. You ___ close the window.",
+    "choices": [
+      "should",
+      "are",
+      "is",
+      "being"
+    ]
+  },
+  {
+    "n": 35,
+    "group": "aux",
+    "stem": "Students must ___ the school rules.",
+    "choices": [
+      "follows",
+      "follow",
+      "followed",
+      "following"
+    ]
+  },
+  {
+    "n": 36,
+    "group": "aux",
+    "stem": "___ I carry your bag? — Oh, thank you.",
+    "choices": [
+      "Do",
+      "Am",
+      "Shall",
+      "Did"
+    ]
+  },
+  {
+    "n": 37,
+    "group": "aux",
+    "stem": "She ___ swim well when she was five.",
+    "choices": [
+      "can",
+      "must",
+      "should",
+      "could"
+    ]
+  },
+  {
+    "n": 38,
+    "group": "aux",
+    "stem": "You look sleepy. You ___ go to bed early.",
+    "choices": [
+      "should",
+      "are",
+      "do",
+      "being"
+    ]
+  },
+  {
+    "n": 39,
+    "group": "aux",
+    "stem": "My sister can ___ a bike.",
+    "choices": [
+      "rides",
+      "ride",
+      "rode",
+      "riding"
+    ]
+  },
+  {
+    "n": 40,
+    "group": "aux",
+    "stem": "We ___ to wear a uniform at our school.",
+    "choices": [
+      "must",
+      "can",
+      "have",
+      "should"
+    ]
+  },
+  {
+    "n": 41,
+    "group": "aux",
+    "stem": "___ you close the door, please? — Sure.",
+    "choices": [
+      "Do",
+      "Are",
+      "Was",
+      "Can"
+    ]
+  },
+  {
+    "n": 42,
+    "group": "aux",
+    "stem": "You ___ not run in the hospital.",
+    "choices": [
+      "must",
+      "are",
+      "is",
+      "being"
+    ]
+  },
+  {
+    "n": 43,
+    "group": "aux",
+    "stem": "He must ___ tired after the long trip.",
+    "choices": [
+      "is",
+      "be",
+      "was",
+      "being"
+    ]
+  },
+  {
+    "n": 44,
+    "group": "aux",
+    "stem": "___ I have some water? — Of course.",
+    "choices": [
+      "Do",
+      "Am",
+      "Can",
+      "Was"
+    ]
+  }
+]
