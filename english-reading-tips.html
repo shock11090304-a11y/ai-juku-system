@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>共通テスト英語リーディング — 読み方のコツ</title>
+<meta name="description" content="共通テスト英語リーディングを80分・約6000語でさばくための読み方のコツ。設問先読み・スキャニング・パラフレーズの見抜き方・時間配分まで、実戦手順でまとめました。">
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --amber:#d97706; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --warn-bg:#fdf2e2; --warn-ink:#b45309;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --warn-bg:#3a2a12; --warn-ink:#e6b366; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.8; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 56px;}
+  header h1{font-size:22px; font-weight:700; margin:0 0 6px; letter-spacing:.01em;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 16px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:13px 15px; font-size:14px; margin:16px 0 8px;}
+  .takeaway b{font-weight:700;}
+  .stat-row{display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 4px;}
+  .stat{flex:1 1 130px; background:var(--card); border:1px solid var(--bd); border-radius:12px; padding:12px 14px;}
+  .stat .n{font-size:20px; font-weight:700; color:var(--blue);}
+  .stat .l{font-size:12px; color:var(--sub); margin-top:2px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px 18px; margin:16px 0;}
+  .card h2{font-size:17px; font-weight:700; margin:0 0 4px; display:flex; align-items:center; gap:8px;}
+  .card h2 .no{display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px;
+               background:var(--blue); color:#fff; font-size:13px; font-weight:700; flex:none;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 10px;}
+  .card p{margin:8px 0; font-size:14.5px;}
+  ul.tips{margin:8px 0 2px; padding-left:0; list-style:none;}
+  ul.tips li{position:relative; padding:6px 0 6px 26px; font-size:14.5px; border-top:1px dashed var(--bd);}
+  ul.tips li:first-child{border-top:none;}
+  ul.tips li:before{content:"✓"; position:absolute; left:2px; top:6px; color:var(--green); font-weight:700;}
+  .ex{background:var(--bg); border-radius:10px; padding:10px 13px; margin:10px 0 4px; font-size:14px; border:1px solid var(--bd);}
+  .ex .en{font-weight:600;}
+  .ex .ja{color:var(--sub); font-size:13px; display:block; margin-top:2px;}
+  .ex .arrow{color:var(--blue); font-weight:700; margin:0 4px;}
+  .pill{display:inline-block; font-size:12px; padding:2px 9px; border-radius:999px; margin:2px 4px 2px 0; background:var(--info-bg); color:var(--info-ink);}
+  .pill.warn{background:var(--warn-bg); color:var(--warn-ink);}
+  .warn{background:var(--warn-bg); color:var(--warn-ink); border-radius:10px; padding:10px 13px; font-size:13.5px; margin:10px 0 2px;}
+  .warn b{font-weight:700;}
+  table.tt{width:100%; border-collapse:collapse; margin:10px 0 2px; font-size:13.5px;}
+  table.tt th,table.tt td{border:1px solid var(--bd); padding:8px 10px; text-align:left; vertical-align:top;}
+  table.tt th{background:var(--info-bg); color:var(--info-ink); font-weight:700; white-space:nowrap;}
+  .flow{counter-reset:st; margin:8px 0 0; padding:0; list-style:none;}
+  .flow li{counter-increment:st; position:relative; padding:8px 0 8px 34px; font-size:14.5px; border-top:1px dashed var(--bd);}
+  .flow li:first-child{border-top:none;}
+  .flow li:before{content:counter(st); position:absolute; left:0; top:8px; width:24px; height:24px; border-radius:50%;
+                  background:var(--green); color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center;}
+  .flow li b{font-weight:700;}
+  .quiz{margin:6px 0 0;}
+  .quiz .q{font-size:14px; margin:6px 0;}
+  .quiz button{font:inherit; font-size:13px; padding:6px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+               border-radius:9px; cursor:pointer;}
+  .quiz button:hover{background:var(--info-bg);}
+  .quiz .ans{display:none; margin-top:8px; padding:10px 12px; border-radius:9px; background:var(--ok-bg); color:var(--ok-ink); font-size:13.5px;}
+  .quiz.open .ans{display:block;}
+  .quiz.open button{opacity:.5;}
+  footer{color:var(--sub); font-size:12px; margin-top:26px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .nav-links{display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 6px;}
+  .nav-links a{flex:1 1 180px; text-align:center; background:var(--card); border:1px solid var(--bd); border-radius:10px;
+               padding:10px 12px; font-size:13.5px; color:var(--ink); text-decoration:none;}
+  .nav-links a:hover{background:var(--info-bg); border-color:var(--info-ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>共通テスト英語リーディング — 読み方のコツ</h1>
+    <p class="lead">80分・約6000語をさばくための「読まない技術」。全訳せず、設問が求める情報だけを取りに行く読み方を、実戦手順でまとめました。</p>
+  </header>
+
+  <div class="takeaway">
+    最重要は3つ。<b>① 設問を先に読む</b>（何を探すか決めてから本文へ）／<b>② 全訳しない</b>（必要な段落だけ精読）／<b>③ 言い換え（パラフレーズ）を見抜く</b>。この3点で「速さ」と「正確さ」が両立します。
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">約6000語</div><div class="l">総語数（年により変動）</div></div>
+    <div class="stat"><div class="n">80分</div><div class="l">試験時間</div></div>
+    <div class="stat"><div class="n">6</div><div class="l">大問数・後半ほど長い</div></div>
+  </div>
+
+  <!-- 1 -->
+  <section class="card">
+    <h2><span class="no">1</span>まず「敵」を知る</h2>
+    <p class="hint">対策は相手の性質を知ることから。共通テスト・リーディングの特徴。</p>
+    <ul class="tips">
+      <li><b>全問が読解。</b>発音・アクセント・単独の文法問題は出ない（2021年〜）。「読んで情報を処理する」1本勝負。</li>
+      <li><b>実用文が中心。</b>ポスター・広告・記事・ブログ・レシピ・レポート・物語など、生活や学びの場面の英文。</li>
+      <li><b>図表との照合が多い。</b>表・グラフ・チラシの数値と本文を突き合わせて答える設問。</li>
+      <li><b>後半ほど重い。</b>第5・6問は語数が多く配点も大きい。<b>前半を速く終え、後半に時間を残す</b>のが鉄則。</li>
+      <li><b>速読が前提。</b>6000語を80分＝1分あたり約75語を処理する速度が要る。ゆっくり全訳する時間はない。</li>
+    </ul>
+  </section>
+
+  <!-- 2 -->
+  <section class="card">
+    <h2><span class="no">2</span>解く順番と時間配分</h2>
+    <p class="hint">「詰まったら飛ばす」。1問に固執して後半を落とすのが最ももったいない。</p>
+    <table class="tt">
+      <tr><th>大問</th><th>内容の傾向</th><th>目安時間</th></tr>
+      <tr><td>第1問</td><td>短い掲示・メッセージ</td><td>約5分</td></tr>
+      <tr><td>第2問</td><td>チラシ・レビュー＋意見/事実</td><td>約10分</td></tr>
+      <tr><td>第3問</td><td>ブログ・記事（流れ把握）</td><td>約10分</td></tr>
+      <tr><td>第4問</td><td>複数資料の比較・照合</td><td>約13分</td></tr>
+      <tr><td>第5問</td><td>物語・伝記（時系列）</td><td>約15分</td></tr>
+      <tr><td>第6問</td><td>説明文・要約（論理展開）</td><td>約20分</td></tr>
+      <tr><td>見直し</td><td>マーク確認・保留問題</td><td>約7分</td></tr>
+    </table>
+    <div class="warn"><b>※目安です。</b>過去問で自分の得意・不得意に合わせて調整を。開始前に各大問の「締め切り時刻」を問題冊子に書き込むと、時間切れを防げます。</div>
+  </section>
+
+  <!-- 3 -->
+  <section class="card">
+    <h2><span class="no">3</span>設問先読み（最重要スキル）</h2>
+    <p class="hint">本文を読む前に「何を探すか」を確定させる。これで無駄読みが激減する。</p>
+    <ul class="tips">
+      <li><b>本文より先に設問・選択肢に目を通す。</b>「探す対象」を頭に入れてから読み始める。</li>
+      <li><b>設問の順番 ≒ 本文の順番。</b>設問は本文の流れに沿って並ぶことが多い。上から順に照合できる。</li>
+      <li><b>固有名詞・数字・日付・時刻をキーワードに。</b>これらは本文で見つけやすく、該当箇所へ一気にジャンプできる（スキャニング）。</li>
+      <li><b>What / When / Why / How を仕分ける。</b>「事実を1つ選ぶ」のか「理由」なのか「筆者の意見」なのかで、探し方が変わる。</li>
+    </ul>
+  </section>
+
+  <!-- 4 -->
+  <section class="card">
+    <h2><span class="no">4</span>全訳しない読み方</h2>
+    <p class="hint">スキミング（要旨読み）とスキャニング（情報探し）を使い分ける。</p>
+    <ul class="tips">
+      <li><b>各段落の第1文（トピックセンテンス）で要旨をつかむ。</b>段落は「主張→具体例」の順が多い。まず1文目で「この段落は何の話か」を掴む。</li>
+      <li><b>細部は設問が要求したときだけ精読。</b>すべての文を同じ濃さで読まない。メリハリが命。</li>
+      <li><b>知らない単語で止まらない。</b>前後の文・接頭辞・語尾から意味を推測して読み進む。全部の単語を知る必要はない。</li>
+      <li><b>指でペースメイク。</b>視線を戻して読み返す「返り読み」を減らすと、体感速度が上がる。</li>
+    </ul>
+  </section>
+
+  <!-- 5 -->
+  <section class="card">
+    <h2><span class="no">5</span>パラフレーズ（言い換え）を見抜く</h2>
+    <p class="hint">正解の選択肢は、本文の表現を「言い換えた」もの。単語一致に釣られない。</p>
+    <div class="ex">
+      <span class="en">本文：Ticket sales dropped sharply after the price rose.</span>
+      <span class="ja">値上げのあと、チケットの売上が急落した。</span>
+      <span class="en" style="margin-top:6px;display:block;"><span class="arrow">↔</span>正解：a significant decrease in ticket sales</span>
+      <span class="ja">チケット売上の大幅な減少（＝dropped sharply の言い換え）</span>
+    </div>
+    <div class="warn"><b>ひっかけ注意：</b>本文と同じ単語が入っている選択肢が正解とは限りません。むしろ「本文の語をそのまま使った選択肢」はダミーのことが多い。<span class="pill warn">語の一致 ≠ 正解</span></div>
+  </section>
+
+  <!-- 6 -->
+  <section class="card">
+    <h2><span class="no">6</span>論理の流れを追う（ディスコースマーカー）</h2>
+    <p class="hint">つなぎ言葉に印をつけると、筆者の主張と論理展開が見えてくる。</p>
+    <table class="tt">
+      <tr><th>役割</th><th>目印になる語</th><th>読みのヒント</th></tr>
+      <tr><td>逆接</td><td>however, but, although, yet</td><td>直後に<b>筆者の主張</b>が来やすい。要チェック。</td></tr>
+      <tr><td>因果</td><td>because, therefore, so, thus</td><td>「理由」設問の答えが近くにある。</td></tr>
+      <tr><td>例示</td><td>for example, such as, for instance</td><td>前の抽象的な主張の言い換え・具体化。</td></tr>
+      <tr><td>追加</td><td>moreover, in addition, also</td><td>同じ方向の情報が続く。並列で整理。</td></tr>
+      <tr><td>対比</td><td>on the other hand, while, unlike</td><td>2つの比較設問のヒント。</td></tr>
+    </table>
+  </section>
+
+  <!-- 7 -->
+  <section class="card">
+    <h2><span class="no">7</span>Fact と Opinion を区別する</h2>
+    <p class="hint">「事実を選べ／意見を選べ」は共通テスト頻出。見分けの物差しを持つ。</p>
+    <table class="tt">
+      <tr><th></th><th>Fact（事実）</th><th>Opinion（意見）</th></tr>
+      <tr><td>中身</td><td>数値・データ・観察できる出来事</td><td>書き手の判断・感想・評価</td></tr>
+      <tr><td>目印</td><td>年号・％・固有名詞・過去の事実</td><td>think, believe, should, best, important, beautiful</td></tr>
+      <tr><td>例</td><td>The store opened in 2010.</td><td>The store has the best coffee in town.</td></tr>
+    </table>
+    <p>選択肢に <span class="pill">should</span><span class="pill">best</span><span class="pill">must</span> など主観語があれば Opinion 寄り、数値・出来事だけなら Fact 寄り、と当たりをつける。</p>
+  </section>
+
+  <!-- 8 -->
+  <section class="card">
+    <h2><span class="no">8</span>選択肢の切り方（消去法）</h2>
+    <p class="hint">迷ったら「消す」。残すより消すほうが速く確実。</p>
+    <ul class="tips">
+      <li><b>言い過ぎワードに注意。</b><span class="pill warn">always</span><span class="pill warn">never</span><span class="pill warn">only</span><span class="pill warn">all</span><span class="pill warn">must</span> は誤りになりやすい。本文がそこまで断言しているか確認。</li>
+      <li><b>本文にない情報を足した選択肢を消す。</b>もっともらしくても、本文に根拠がなければ×。</li>
+      <li><b>一部だけ正しい選択肢に注意。</b>前半は正しいが後半で言い過ぎ・すり替え、というダミーが多い。</li>
+      <li><b>2択で迷ったら本文へ戻る。</b>記憶で選ばず、該当文に指を戻して照合する。</li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section class="card">
+    <h2><span class="no">9</span>図表・グラフ問題</h2>
+    <p class="hint">本文と図を「往復」する。図だけ・本文だけでは解けないように作られている。</p>
+    <ul class="tips">
+      <li><b>先に軸・単位・凡例を確認。</b>何を測ったグラフか、縦横が何かを最初に押さえる。</li>
+      <li><b>増減・最大最小・順位が問われやすい。</b>「最も増えたのは」「2番目に高いのは」を素早く読み取る。</li>
+      <li><b>本文の数値と図の数値を突き合わせる。</b>本文中の「20% increase」などと図を対応させる。</li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section class="card">
+    <h2><span class="no">10</span>代名詞・指示語を追う</h2>
+    <p class="hint">it / they / this / that / such が「何を指すか」を常に確認すると誤読が減る。</p>
+    <div class="ex">
+      <span class="en">The new policy raised fees, but <b>it</b> improved the service.</span>
+      <span class="ja">その新方針は料金を上げたが、<b>それ（＝新方針）</b>はサービスを改善した。</span>
+    </div>
+    <p>指示語の中身がずれると設問の正誤判定を丸ごと間違える。長い文ほど「this＝直前の何？」を口の中で確認するクセを。</p>
+  </section>
+
+  <!-- 11 quiz -->
+  <section class="card">
+    <h2><span class="no">11</span>ミニ演習：言い換えを見抜けるか</h2>
+    <p class="hint">本文の下線部を最もよく言い換えているのはどれ？（ボタンで答え合わせ）</p>
+    <div class="ex" style="margin-bottom:6px;">
+      <span class="en">本文：The museum is <u>within walking distance</u> of the station.</span>
+      <span class="ja">その美術館は駅から歩いて行ける距離にある。</span>
+    </div>
+    <div class="quiz" id="quiz">
+      <div class="q">A. far from the station&nbsp;&nbsp;/&nbsp;&nbsp;B. close enough to walk from the station&nbsp;&nbsp;/&nbsp;&nbsp;C. next to a parking lot</div>
+      <button id="quizBtn">答えを見る</button>
+      <div class="ans"><b>正解：B</b>　within walking distance＝「歩いて行ける」＝ close enough to walk。A は逆（far）、C は本文にない情報。<b>語の一致ではなく意味の一致</b>で選ぶのがコツ。</div>
+    </div>
+  </section>
+
+  <!-- 本番手順 -->
+  <section class="card" style="border-color:var(--green);">
+    <h2 style="color:var(--green);">本番の手順（この順で回す）</h2>
+    <ol class="flow">
+      <li><b>設問を先読み</b>して「探すもの」を決める（固有名詞・数字に目印）。</li>
+      <li><b>スキャニング</b>でキーワードのある段落へジャンプ。</li>
+      <li>その段落を<b>精読</b>し、根拠となる1文を特定する。</li>
+      <li>本文の根拠と選択肢を<b>パラフレーズ照合</b>（語一致に釣られない）。</li>
+      <li>残りは<b>消去法</b>。言い過ぎ・本文にない情報を切る。</li>
+      <li>詰まったら<b>飛ばして次へ</b>。時間を後半に残す。</li>
+    </ol>
+  </section>
+
+  <div class="nav-links">
+    <a href="english-exam.html">📘 英語6試験 対策ガイド</a>
+    <a href="dojo-drill.html">✏️ 隙間時間ドリルで演習</a>
+    <a href="vocab.html">🔤 AI単語帳で語彙を増やす</a>
+  </div>
+
+  <footer>
+    <p style="margin:0 0 8px"><a href="kyozai.html">← 教材ライブラリ</a></p>
+    © AI塾 / trillion-ai-juku.com ・ 時間配分の目安は年度・個人差により変わります。過去問で自分用に調整してください。
+  </footer>
+</div>
+
+<script>
+(function(){
+  var q=document.getElementById("quiz"), b=document.getElementById("quizBtn");
+  if(b){ b.addEventListener("click",function(){ q.classList.add("open"); b.disabled=true; }); }
+})();
+</script>
+</body>
+</html>
