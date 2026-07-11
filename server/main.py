@@ -31958,6 +31958,12 @@ DORMANT_REENGAGE_MAX_DAYS = int(os.getenv("DORMANT_REENGAGE_MAX_DAYS", "120"))  
 DORMANT_REENGAGE_CAP = int(os.getenv("DORMANT_REENGAGE_CAP", "25"))                      # 1回の送信上限
 DORMANT_REENGAGE_COOLDOWN_DAYS = int(os.getenv("DORMANT_REENGAGE_COOLDOWN_DAYS", "21"))  # 同一生徒への再送間隔
 DORMANT_REENGAGE_LIFETIME_MAX = int(os.getenv("DORMANT_REENGAGE_LIFETIME_MAX", "3"))     # 生涯送信上限(=最大この回数で自動停止)
+# テスト/ダミー名の口座を再活性ナッジ対象から除外 (26296 BLOCKED_KEYWORDS と同一集合)。
+#   _synth_exclude_sql は synthetic-monitor sentinel しか外さないため、test/staff 口座(実在風メール)が
+#   「戻ってきて」メールを受け取る事故を防ぐ。休眠プールは小さく該当は稀なので LIMIT 後 Python 側で後置除去。
+_DORMANT_REENGAGE_NAME_BLOCK = ('テスト', 'ﾃｽﾄ', 'test', 'ダミー', 'dummy', 'サンプル', 'sample',
+                                'デモ', 'demo', '品質検証', '確認用', '動作確認', '検証用',
+                                'あいうえお', 'aaa', 'bbb', 'xxx', 'zzz', '監視 守', '監視　守')
 
 
 @app.post("/api/cron/dormant-reengage")
@@ -32000,6 +32006,7 @@ def cron_dormant_reengage(x_cron_secret: str = Header(None), dry_run: bool = Fal
                   AND s.last_login_at IS NOT NULL
                   AND s.last_login_at < ? AND s.last_login_at >= ?
                   AND COALESCE(s.ai_disabled, 0) = 0
+                  AND s.email NOT LIKE '%@example.com'
                   AND {_synth_exclude_sql('s')}
                   AND NOT EXISTS (SELECT 1 FROM question_attempts qa WHERE qa.student_id = s.id AND qa.created_at >= ?)
                   AND NOT EXISTS (SELECT 1 FROM ai_tutor_solve_log t WHERE t.student_id = s.id AND t.created_at >= ?)
@@ -32014,6 +32021,10 @@ def cron_dormant_reengage(x_cron_secret: str = Header(None), dry_run: bool = Fal
              cut_cooldown.isoformat(), DORMANT_REENGAGE_LIFETIME_MAX, DORMANT_REENGAGE_CAP)
         )
         rows = c.fetchall()
+        # テスト/ダミー名の口座を除外 (synthetic sentinel 以外の test/staff 混入防止)。
+        #   休眠プールは小さく該当は稀なので LIMIT 後の Python 側除去で十分 (CAP starvation 実害無)。
+        rows = [r for r in rows
+                if not any(kw in (r["name"] or "").lower() for kw in _DORMANT_REENGAGE_NAME_BLOCK)]
         matched = len(rows)
         now_naive = now.replace(tzinfo=None)
         for row in rows:
