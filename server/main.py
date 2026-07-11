@@ -4057,6 +4057,9 @@ async def _trial_management_scheduler():
                 #   解いていない層 (既存ナッジの隙間・登録の約6割が1問未着手) に「まず1問だけ」メール。
                 #   コホート窓+dedup(一人一回)+合成除外+CAP で誤発報を構造的に防止。
                 ("first-question-nudge", lambda: cron_first_question_nudge(x_cron_secret=secret, dry_run=False)),
+                # 😴 休眠再活性ナッジ (2026-07-11): 一度ログインしたが N 日活動ゼロの休眠生に「また1問だけ」メール。
+                #   ★DORMANT_REENGAGE_ENABLED 既定OFF=有効化まで無送信。COOLDOWN+生涯上限でしつこくしない。
+                ("dormant-reengage", lambda: cron_dormant_reengage(x_cron_secret=secret, dry_run=False)),
                 # 🚨 体験中・離脱予兆者への AI 個別フォロー (2026-05-11 追加)
                 ("trial-rescue", lambda: admin_trial_rescue_now(payload={"dry_run": False}, authorization=None, x_cron_secret=secret)),
                 # 📧 体験 Day 2 / Day 5 nurture メール (集客 funnel #3・2026-05-19 追加)
@@ -31939,6 +31942,120 @@ def cron_first_question_nudge(x_cron_secret: str = Header(None), dry_run: bool =
         "matched": matched,  # 未送信の適格者数 (dry_run では preview と同数)
         "sent": sent,
         "capped": matched >= FIRST_Q_NUDGE_CAP,
+        "dry_run": dry_run,
+        "preview": preview if dry_run else None,
+    }
+
+
+# 😴 休眠再活性ナッジ (2026-07-11): 一度ログインしたが N 日活動が無い休眠生に「また1問だけ」メール。
+#   first-question-nudge の構造化ガード(窓+dedup+合成除外+CAP)を踏襲。re-engagement 用の差分:
+#   (1) 集客funnelでなく学習リマインドなので kokuritsu_nankan(本科)も対象。ai_disabled(塾生アプリ専用=AI無)は除外。
+#   (2) dedup は「一人一回(永久)」でなく COOLDOWN 日おき + 生涯上限で低頻度反復(しつこくしない=お客様への配慮)。
+#   ★家庭向け自動メールのため既定OFF。塾長が dry_run で対象を確認後 DORMANT_REENGAGE_ENABLED=1 で有効化する。
+DORMANT_REENGAGE_ENABLED = os.getenv("DORMANT_REENGAGE_ENABLED", "0") == "1"
+DORMANT_REENGAGE_MIN_DAYS = int(os.getenv("DORMANT_REENGAGE_MIN_DAYS", "14"))            # 直近この日数、活動が無い
+DORMANT_REENGAGE_MAX_DAYS = int(os.getenv("DORMANT_REENGAGE_MAX_DAYS", "120"))           # これより古い休眠(ほぼ離脱)は対象外
+DORMANT_REENGAGE_CAP = int(os.getenv("DORMANT_REENGAGE_CAP", "25"))                      # 1回の送信上限
+DORMANT_REENGAGE_COOLDOWN_DAYS = int(os.getenv("DORMANT_REENGAGE_COOLDOWN_DAYS", "21"))  # 同一生徒への再送間隔
+DORMANT_REENGAGE_LIFETIME_MAX = int(os.getenv("DORMANT_REENGAGE_LIFETIME_MAX", "3"))     # 生涯送信上限(=最大この回数で自動停止)
+
+
+@app.post("/api/cron/dormant-reengage")
+def cron_dormant_reengage(x_cron_secret: str = Header(None), dry_run: bool = False):
+    """😴 2026-07-11 休眠再活性ナッジ cron。「一度ログインしたが直近 MIN 日、演習/AI/学習記録の活動が全く無い」
+    休眠生に『また1問だけ』メールを低頻度で送る。声掛けしても動かない層(お客様化した生徒)を、手動でなく
+    自動・ゼロ工数で再入口に置き続けるのが目的(塾長方針: 個別追跡は止め、自動ナッジで door を開けておく)。
+
+    対象: status IN (trial,paid) / email あり / last_login_at が [now-MAX, now-MIN) (=MIN日以上MAX日以内の休眠) /
+      ai_disabled=0 (塾生アプリ専用は AI 再活性ナッジ不適で除外) / 合成監視除外 /
+      直近MIN日に question_attempts・ai_tutor_solve_log・study_logs が1件も無い(真の休眠)。
+      ★集客funnelと異なり course=kokuritsu_nankan(本科)も対象(学習リマインドの性質・久保田型の休眠本科生を拾う)。
+    頻度制御(しつこくしない): notifications template='dormant_reengage' success=1 が COOLDOWN 日以内にあれば skip、
+      かつ生涯送信数が LIFETIME_MAX 未満のみ(=最大 LIFETIME_MAX 回で自動停止)。dedup は SQL 側=CAP starvation 無し。
+    ★家庭向け自動メールのため既定OFF(DORMANT_REENGAGE_ENABLED)。dry_run=True は ENABLED に関わらず preview のみ・無送信。
+    毎日 JST10:00 の _trial_management_scheduler から dry_run=False で実行。"""
+    if not CRON_SECRET:
+        raise HTTPException(status_code=503, detail="Cron not configured")
+    if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    # ★家庭向け自動メール: 実送信は明示的に有効化されるまで無効 (dry_run は常に可)
+    if not dry_run and not DORMANT_REENGAGE_ENABLED:
+        return {"ok": True, "disabled": True, "matched": 0, "sent": 0, "dry_run": False,
+                "hint": "DORMANT_REENGAGE_ENABLED=1 で有効化"}
+
+    conn = db()
+    c = conn.cursor()
+    now = datetime.now(timezone.utc)
+    cut_recent = now - timedelta(days=DORMANT_REENGAGE_MIN_DAYS)      # 活動/ログインがこれより古い = 休眠
+    cut_ancient = now - timedelta(days=DORMANT_REENGAGE_MAX_DAYS)     # これより古い休眠(ほぼ離脱)は対象外
+    cut_cooldown = now - timedelta(days=DORMANT_REENGAGE_COOLDOWN_DAYS)
+    sent = 0
+    matched = 0
+    preview = []
+    try:
+        # ★dedup(COOLDOWN)と生涯上限は SQL 側で行う (LIMIT より前に除外 = CAP starvation 回避)。
+        c.execute(
+            f"""SELECT s.id, s.name, s.email, s.last_login_at FROM students s
+                WHERE s.status IN ('trial', 'paid') AND s.email IS NOT NULL AND s.email != ''
+                  AND s.last_login_at IS NOT NULL
+                  AND s.last_login_at < ? AND s.last_login_at >= ?
+                  AND COALESCE(s.ai_disabled, 0) = 0
+                  AND {_synth_exclude_sql('s')}
+                  AND NOT EXISTS (SELECT 1 FROM question_attempts qa WHERE qa.student_id = s.id AND qa.created_at >= ?)
+                  AND NOT EXISTS (SELECT 1 FROM ai_tutor_solve_log t WHERE t.student_id = s.id AND t.created_at >= ?)
+                  AND NOT EXISTS (SELECT 1 FROM study_logs sl WHERE sl.student_id = s.id AND sl.created_at >= ?)
+                  AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.student_id = s.id
+                                    AND n.template = 'dormant_reengage' AND n.success = 1 AND n.sent_at >= ?)
+                  AND (SELECT COUNT(*) FROM notifications n2 WHERE n2.student_id = s.id
+                         AND n2.template = 'dormant_reengage' AND n2.success = 1) < ?
+                ORDER BY s.last_login_at DESC LIMIT ?""",
+            (cut_recent.isoformat(), cut_ancient.isoformat(),
+             cut_recent.isoformat(), cut_recent.isoformat(), cut_recent.isoformat(),
+             cut_cooldown.isoformat(), DORMANT_REENGAGE_LIFETIME_MAX, DORMANT_REENGAGE_CAP)
+        )
+        rows = c.fetchall()
+        matched = len(rows)
+        now_naive = now.replace(tzinfo=None)
+        for row in rows:
+            days_inactive = None
+            _lla = _as_naive_dt(row["last_login_at"])
+            if _lla:
+                days_inactive = max(0, (now_naive - _lla).days)
+            if dry_run:
+                preview.append({"student_id": row["id"], "name": row["name"],
+                                "email": row["email"], "days_inactive": days_inactive})
+                continue
+            nm = (row["name"] or "").strip()
+            subject = (nm + "さん、また少しずつ再開しよう🌱") if nm else "また少しずつ再開しよう🌱"
+            greeting = (nm + "さん、こんにちは。トリリオン塾です。") if nm else "こんにちは。トリリオン塾です。"
+            body = (
+                greeting + "\n"
+                "最近アプリを開けていないみたいですね。忙しい時期もありますよね😊\n\n"
+                "もし少し時間ができたら、今日は「1問だけ」やってみませんか？\n"
+                "・マイページを開く →「ドリル」を1問（5分でOK）\n\n"
+                "たった1問でも、続けると必ず力になります。わからない問題は「AIに質問」で写真を送るだけ。いつでも待っています。\n\n"
+                "またいつでも戻ってきてね。応援しています！\n"
+                "トリリオン塾"
+            )
+            _email_rate_limit()  # 📧 Resend 429対策
+            result = _send_message_email(row["email"], subject, body, student_name=None)
+            c.execute(
+                """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                   VALUES (?, 'email', 'dormant_reengage', ?, ?, ?)""",
+                (row["id"], json.dumps({"days_inactive": days_inactive}, ensure_ascii=False),
+                 1 if result.get("sent") else 0, result.get("error", ""))
+            )
+            if result.get("sent"):
+                sent += 1
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "matched": matched,
+        "sent": sent,
+        "capped": matched >= DORMANT_REENGAGE_CAP,
         "dry_run": dry_run,
         "preview": preview if dry_run else None,
     }
