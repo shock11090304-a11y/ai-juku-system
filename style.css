@@ -462,6 +462,8 @@ select:focus, input:focus, textarea:focus {
 }
 .ai-msg .msg-body { background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.2); }
 .msg-body.thinking { color: var(--text-dim); font-style: italic; }
+/* AI応答 Markdown の "---" 区切り線 (formatMarkdown が <hr class="md-hr"> に変換) */
+.md-hr { border: none; border-top: 1px solid rgba(255, 255, 255, 0.15); margin: 0.4rem 0; }
 
 .chat-input-area {
   display: flex;

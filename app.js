@@ -2796,9 +2796,36 @@ function loadChatHistory() {
 }
 
 // KaTeX描画ヘルパ。\( ... \) と \[ ... \] 区切りを描画。
-// KaTeX 未ロード時は何もしない（プレーンテキストで表示される、非致命的）。
+// 🛡️ 2026-07-12: KaTeX 未ロード時に黙って捨てず保留キューへ積み、ロード完了後に再描画する。
+//   (チャット履歴復元や低速回線で KaTeX の defer ロードより先に appendMessage が走ると
+//    $$…$$ が生 LaTeX のまま画面に固定されるバグの恒久対策。KaTeX 本体も CDN 依存を
+//    やめ /vendor/katex/ に同梱済み = コンテンツブロッカー環境でも読み込める)
+const _pendingMathEls = new Set();
+let _pendingMathTimer = null;
+function _flushPendingMathWhenReady() {
+  if (_pendingMathTimer) return;
+  let tries = 0;
+  _pendingMathTimer = setInterval(() => {
+    if (typeof window.renderMathInElement === 'function') {
+      clearInterval(_pendingMathTimer);
+      _pendingMathTimer = null;
+      const els = Array.from(_pendingMathEls);
+      _pendingMathEls.clear();
+      els.forEach(el => { if (el.isConnected) renderMathInNode(el); });
+    } else if (++tries >= 120) { // ~60秒待っても KaTeX が来ない環境では諦める (生テキスト表示のまま)
+      clearInterval(_pendingMathTimer);
+      _pendingMathTimer = null;
+      _pendingMathEls.clear();
+    }
+  }, 500);
+}
 function renderMathInNode(el) {
-  if (!el || typeof window.renderMathInElement !== 'function') return;
+  if (!el) return;
+  if (typeof window.renderMathInElement !== 'function') {
+    _pendingMathEls.add(el);
+    _flushPendingMathWhenReady();
+    return;
+  }
   try {
     window.renderMathInElement(el, {
       // 🔢 2026-06-04 石井くん事例の文字化け修正: AI チューターは単一 $...$ で数式を返すが
@@ -3037,14 +3064,29 @@ function escapeHtml(s) {
 }
 
 function formatMarkdown(text) {
-  return text
+  // 🛡️ 2026-07-12: 数式ブロック内部を markdown 変換から保護 (stash→変換→restore)。
+  //   $$…$$ 内の "---" や "**" が <hr>/<strong> 化されると text node が分断され、
+  //   KaTeX auto-render が delimiter を対応付けられず生 LaTeX のまま残るため。
+  //   (単一 $…$ は通貨表記 "$10" と衝突するので formatMath 同様 stash しない)
+  const ph = [];
+  const SENT = '\u0001\u0002'; // 通常テキストと衝突しない不可視 sentinel (formatMath と同方式)
+  const stash = (m) => { ph.push(m); return SENT + (ph.length - 1) + SENT; };
+  const out = text
+    .replace(/\$\$([\s\S]*?)\$\$/g, stash)
+    .replace(/\\\[([\s\S]*?)\\\]/g, stash)
+    .replace(/\\\(([\s\S]*?)\\\)/g, stash)
     .replace(/^### (.*$)/gm, '<h3>$1</h3>')
     .replace(/^## (.*$)/gm, '<h2>$1</h2>')
     .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+    .replace(/^\s*-{3,}\s*$/gm, '<hr class="md-hr">')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/^\- (.+)$/gm, '• $1')
     .replace(/^\d+\. (.+)$/gm, '$&');
+  return out.replace(new RegExp(SENT + '(\\d+)' + SENT, 'g'), (m, i) => {
+    const v = ph[parseInt(i)];
+    return v === undefined ? m : v;
+  });
 }
 
 // 🛡️ 2026-06-02: 回答が maxTokens で途切れた時だけ「続き」ボタンを出し、続きを取得して同じ吹き出しに

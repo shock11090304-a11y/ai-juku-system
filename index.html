@@ -22,11 +22,11 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-192.svg">
   <meta name="theme-color" content="#6366f1">
-  <link rel="stylesheet" href="style.css?v=20260602-chat-continue">
+  <link rel="stylesheet" href="style.css?v=20260712-katex-selfhost">
   <!-- KaTeX: 数学/物理/化学のLaTeX記法を描画（プロンプトで \( ... \) / \[ ... \] を強制しているため必要） -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="/vendor/katex/katex.min.css?v=0.16.11">
+  <script defer src="/vendor/katex/katex.min.js?v=0.16.11"></script>
+  <script defer src="/vendor/katex/auto-render.min.js?v=0.16.11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
   <!-- plans.js: 価格・機能の Single Source of Truth (app.js より前に load) -->
   <script src="plans.js?v=20260519-cache-bump-sweep"></script>
@@ -1472,7 +1472,7 @@
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
   <script src="toast.js?v=20260526-profile-sync"></script>
-  <script src="app.js?v=20260604-math-render2"></script>
+  <script src="app.js?v=20260712-katex-selfhost"></script>
   <script>
   // 定期テスト連携: exam-prep.html から ?examPrep=1&subject=&topic=&examId= で来た時、
   // 問題ジェネレーターに自動入力 + タブ切替 + 通知バナー
