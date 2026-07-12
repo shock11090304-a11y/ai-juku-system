@@ -975,7 +975,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ==========================================================================
 // 📚 学習記録ダッシュボード (Studyplus 代替・Phase 1)
-// 国公立難関大学コース受講生のみ集計対象 (server 側で course='kokuritsu_nankan' フィルタ)
+// 表示対象 (2026-07-13 塾長方針): 塾生アプリ登録生を除く、国公立難関コース受講生 + 期間内に学習記録を
+//   入力した生徒 (churn/premium 含む)。server 側 _study_log_dashboard_students が決定。
 // ==========================================================================
 let _slDashboardLoadTimer = null;
 function _scheduleStudyLogLoad() {
@@ -1217,7 +1218,7 @@ function renderStudyLogHeatmap(data) {
   const dates = data.dates || [];
   const students = data.students || [];
   if (!students.length) {
-    el.innerHTML = '<div style="color:#71717a; padding:1rem; text-align:center;">国公立難関大学コース受講生がまだ居ません。CEOダッシュの「コース管理」から生徒をアサインしてください。</div>';
+    el.innerHTML = '<div style="color:#71717a; padding:1rem; text-align:center;">表示対象の生徒がいません（塾生アプリ登録生を除く、国公立難関コース受講生＋学習記録を入力した生徒）。「コース管理」からコース生をアサインできます。</div>';
     return;
   }
   const dateHeader = dates.map(d => `<th style="padding:2px 3px; font-size:0.65rem; color:#71717a; text-align:center; min-width:32px;">${d.slice(5)}</th>`).join('');
@@ -1259,7 +1260,7 @@ function renderStudyLogRanking(data) {
   const activeStudents = allStudents.filter(s => s.total_minutes > 0);
   const inactiveCount = allStudents.length - activeStudents.length;
   if (!activeStudents.length) {
-    el.innerHTML = `<div style="color:#71717a; padding:1rem; text-align:center;">期間内に学習記録のある生徒がいません ${allStudents.length > 0 ? `(コース受講生 ${allStudents.length} 名全員未記録)` : ''}</div>`;
+    el.innerHTML = `<div style="color:#71717a; padding:1rem; text-align:center;">期間内に学習記録のある生徒がいません ${allStudents.length > 0 ? `(対象生徒 ${allStudents.length} 名全員未記録)` : ''}</div>`;
     return;
   }
   const max = activeStudents[0].total_minutes;

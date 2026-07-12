@@ -37895,6 +37895,40 @@ _STUDY_SUBJECTS = {
 }
 _STUDY_LOG_TARGET_COURSE = "kokuritsu_nankan"  # 国公立難関大学コース 識別子
 
+
+def _study_log_dashboard_students(c, cutoff_date):
+    """📚 学習記録ダッシュボード(ヒートマップ/ランキング/タイムライン)の表示対象生徒。
+    塾長方針 2026-07-13「塾生アプリで登録している子以外は、学習記録の入力をしている子は反映するように」:
+      - 監視コホート = course='kokuritsu_nankan' かつ status IN ('paid','trial') (0分もサボり可視化として表示)
+      - ＋ 期間内に学習記録を入力した生徒 (churn/premium 等・status/course 問わず。実際の入力者を漏らさず反映)
+      - − 塾生アプリ登録生 (course_applications.referrer='塾生アプリ') は除外
+          (通塾生の学習は塾生アプリの出欠で管理する別系統。mypage の記録入力はしないため、
+           従来は course=kokuritsu_nankan 一括表示で 0分の空行がヒートマップを埋めていた=そのノイズを排除)
+    ★塾生アプリ判定は course/plan ではなく登録経路 referrer='塾生アプリ' (既存の _is_juku_app_student と同基準)。
+      course=kokuritsu_nankan は難関コース(AI利用)であり塾生アプリとは別軸なので混同しない。
+    戻り値: [{"id","name","grade","status"}] を name 昇順 (呼び出し側で必要に応じ再ソート)。
+    """
+    c.execute("SELECT DISTINCT student_id FROM course_applications WHERE referrer = ?", ("塾生アプリ",))
+    juku_ids = {r["student_id"] for r in c.fetchall()}
+    # 合成監視/テスト用アカウントは除外 (dormant-reengage cron と同じ「非実在アカウント」判定)
+    c.execute(
+        f"""SELECT id, name, grade, status FROM students
+           WHERE (
+                 (course = ? AND status IN ('paid', 'trial'))
+                 OR id IN (SELECT DISTINCT student_id FROM study_logs WHERE studied_date >= ?)
+           )
+           AND {_synth_exclude_sql()}
+           AND COALESCE(email, '') NOT LIKE '%@example.com'
+           ORDER BY name""",
+        (_STUDY_LOG_TARGET_COURSE, cutoff_date),
+    )
+    return [
+        {"id": r["id"], "name": r["name"], "grade": r["grade"], "status": r["status"]}
+        for r in c.fetchall()
+        if r["id"] not in juku_ids
+    ]
+
+
 # JST (UTC+9) helper - JST 基準で「今日」を計算しないと夜間学習の記録が翌日扱いになる
 _JST = timezone(timedelta(hours=9))
 
@@ -38192,28 +38226,25 @@ def admin_study_logs_timeline(authorization: Optional[str] = Header(None), days:
     conn = db()
     try:
         c = conn.cursor()
-        if student_id:
-            c.execute(
-                """SELECT sl.id, sl.student_id, sl.studied_date, sl.subject, sl.material, sl.minutes, sl.pages, sl.note, sl.created_at,
-                          s.name AS student_name, s.grade, s.course
-                   FROM study_logs sl
-                   JOIN students s ON sl.student_id = s.id
-                   WHERE sl.studied_date >= ? AND sl.student_id = ? AND s.course = ?
-                   ORDER BY sl.created_at DESC
-                   LIMIT ?""",
-                (cutoff_date, int(student_id), _STUDY_LOG_TARGET_COURSE, limit)
-            )
-        else:
-            c.execute(
-                """SELECT sl.id, sl.student_id, sl.studied_date, sl.subject, sl.material, sl.minutes, sl.pages, sl.note, sl.created_at,
-                          s.name AS student_name, s.grade, s.course
-                   FROM study_logs sl
-                   JOIN students s ON sl.student_id = s.id
-                   WHERE sl.studied_date >= ? AND s.course = ?
-                   ORDER BY sl.created_at DESC
-                   LIMIT ?""",
-                (cutoff_date, _STUDY_LOG_TARGET_COURSE, limit)
-            )
+        # 📚 表示対象コホート (塾生アプリ生除外・入力者反映) の id 集合に絞る
+        cohort_ids = {s["id"] for s in _study_log_dashboard_students(c, cutoff_date)}
+        if student_id is not None and int(student_id) not in cohort_ids:
+            # ドリルダウン先が対象外 (塾生アプリ生等) の場合は空
+            return {"ok": True, "logs": [], "count": 0, "period_days": days}
+        if not cohort_ids:
+            return {"ok": True, "logs": [], "count": 0, "period_days": days}
+        target_ids = [int(student_id)] if student_id is not None else sorted(cohort_ids)
+        id_ph = ",".join(["?"] * len(target_ids))
+        c.execute(
+            f"""SELECT sl.id, sl.student_id, sl.studied_date, sl.subject, sl.material, sl.minutes, sl.pages, sl.note, sl.created_at,
+                       s.name AS student_name, s.grade, s.course
+                FROM study_logs sl
+                JOIN students s ON sl.student_id = s.id
+                WHERE sl.studied_date >= ? AND sl.student_id IN ({id_ph})
+                ORDER BY sl.created_at DESC
+                LIMIT ?""",
+            (cutoff_date, *target_ids, limit)
+        )
         rows = c.fetchall()
 
         logs = []
@@ -38263,8 +38294,8 @@ def admin_study_logs_timeline(authorization: Optional[str] = Header(None), days:
 
 @app.get("/api/admin/study-logs/heatmap")
 def admin_study_logs_heatmap(authorization: Optional[str] = Header(None), days: int = 30):
-    """塾長: 国公立難関大学コース生徒×日 の学習時間ヒートマップ。
-    記録ゼロの生徒も「サボってる生徒」として可視化するため LEFT JOIN で全員表示。
+    """塾長: 表示対象生徒×日 の学習時間ヒートマップ (_study_log_dashboard_students が対象を決定)。
+    記録ゼロの生徒も「サボってる生徒」として可視化するため全員分の行を出す (0分セル)。
     """
     _verify_admin_required(authorization)
 
@@ -38279,25 +38310,8 @@ def admin_study_logs_heatmap(authorization: Optional[str] = Header(None), days: 
     conn = db()
     try:
         c = conn.cursor()
-        # 国公立難関大学コース受講中の生徒一覧 (active 状態のみ)
-        c.execute(
-            """SELECT id, name, grade FROM students
-               WHERE course = ? AND status IN ('paid', 'trial')
-               ORDER BY name""",
-            (_STUDY_LOG_TARGET_COURSE,)
-        )
-        all_students = c.fetchall()
-
-        # 期間内の集計
-        c.execute(
-            """SELECT sl.student_id, sl.studied_date, SUM(sl.minutes) AS total_minutes
-               FROM study_logs sl
-               JOIN students s ON sl.student_id = s.id
-               WHERE sl.studied_date >= ? AND s.course = ? AND s.status IN ('paid', 'trial')
-               GROUP BY sl.student_id, sl.studied_date""",
-            (cutoff_date, _STUDY_LOG_TARGET_COURSE)
-        )
-        agg_rows = c.fetchall()
+        # 📚 表示対象生徒 (塾生アプリ生除外・監視コホート + 期間内入力者。記録ゼロも表示)
+        all_students = _study_log_dashboard_students(c, cutoff_date)
 
         students_map = {}
         for s in all_students:
@@ -38308,6 +38322,20 @@ def admin_study_logs_heatmap(authorization: Optional[str] = Header(None), days: 
                 "data": {},
                 "total": 0,
             }
+
+        # 期間内の集計 (対象生徒のみ・course 条件は外し churn/premium の入力も拾う=students_map 会員で絞る)
+        if students_map:
+            id_ph = ",".join(["?"] * len(students_map))
+            c.execute(
+                f"""SELECT sl.student_id, sl.studied_date, SUM(sl.minutes) AS total_minutes
+                    FROM study_logs sl
+                    WHERE sl.studied_date >= ? AND sl.student_id IN ({id_ph})
+                    GROUP BY sl.student_id, sl.studied_date""",
+                (cutoff_date, *students_map.keys())
+            )
+            agg_rows = c.fetchall()
+        else:
+            agg_rows = []
         for r in agg_rows:
             sid = r["student_id"]
             if sid in students_map:
@@ -38392,30 +38420,37 @@ def admin_study_logs_students_summary(authorization: Optional[str] = Header(None
     conn = db()
     try:
         c = conn.cursor()
-        c.execute(
-            """SELECT s.id, s.name, s.grade, s.status,
-                      COALESCE(SUM(sl.minutes), 0) AS total_minutes,
-                      COUNT(DISTINCT sl.studied_date) AS days_active,
-                      MAX(sl.studied_date) AS last_studied
-               FROM students s
-               LEFT JOIN study_logs sl ON s.id = sl.student_id AND sl.studied_date >= ?
-               WHERE s.course = ? AND s.status IN ('paid', 'trial')
-               GROUP BY s.id, s.name, s.grade, s.status
-               ORDER BY total_minutes DESC""",
-            (cutoff_date, _STUDY_LOG_TARGET_COURSE)
-        )
-        rows = c.fetchall()
+        # 📚 表示対象生徒 (塾生アプリ生除外・監視コホート + 期間内入力者)
+        cohort = _study_log_dashboard_students(c, cutoff_date)
+        meta_by_id = {s["id"]: s for s in cohort}
+        agg = {}
+        if meta_by_id:
+            id_ph = ",".join(["?"] * len(meta_by_id))
+            c.execute(
+                f"""SELECT sl.student_id,
+                           COALESCE(SUM(sl.minutes), 0) AS total_minutes,
+                           COUNT(DISTINCT sl.studied_date) AS days_active,
+                           MAX(sl.studied_date) AS last_studied
+                    FROM study_logs sl
+                    WHERE sl.studied_date >= ? AND sl.student_id IN ({id_ph})
+                    GROUP BY sl.student_id""",
+                (cutoff_date, *meta_by_id.keys())
+            )
+            for r in c.fetchall():
+                agg[r["student_id"]] = r
         students = []
-        for r in rows:
+        for sid, meta in meta_by_id.items():
+            a = agg.get(sid)
             students.append({
-                "student_id": r["id"],
-                "name": r["name"],
-                "grade": r["grade"],
-                "status": r["status"],
-                "total_minutes": int(r["total_minutes"] or 0),
-                "days_active": int(r["days_active"] or 0),
-                "last_studied": str(r["last_studied"]) if r["last_studied"] else None,
+                "student_id": sid,
+                "name": meta["name"],
+                "grade": meta["grade"],
+                "status": meta["status"],
+                "total_minutes": int(a["total_minutes"]) if a else 0,
+                "days_active": int(a["days_active"]) if a else 0,
+                "last_studied": str(a["last_studied"]) if (a and a["last_studied"]) else None,
             })
+        students.sort(key=lambda x: -x["total_minutes"])
         return {"ok": True, "students": students, "period_days": days}
     finally:
         conn.close()
