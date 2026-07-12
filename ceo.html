@@ -660,7 +660,7 @@
           <span id="gdCreateMsg" style="font-size:0.82rem;"></span>
         </div>
       </div>
-      <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.4rem;">📋 配信済みドリル <span style="color:#71717a;">(クリックで問題別の正解率を表示)</span></div>
+      <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.4rem;">📋 配信済みドリル <span style="color:#71717a;">(単元をタップで配信履歴を展開 → 配信をクリックで問題別の正解率)</span></div>
       <div id="gdList" style="display:grid;gap:0.4rem;">読み込み中...</div>
       <div id="gdAnalytics" style="display:none;margin-top:0.8rem;"></div>
     </section>
@@ -4325,21 +4325,76 @@
         gdSelectAll(false); gdRefresh();
       } catch (e) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(String(e))}</span>`; }
     }
+    // 📝 配信済みドリル一覧の集約表示 (2026-07-12 塾長指示「かなりスクロールしないといけない」):
+    //   従来は最大50配信を縦1列のフルワイド行で全件描画 → 単元ごとに1カードへ集約し
+    //   複数列グリッドで敷き詰め。カードをタップで単元内の個別配信を展開 (従来の行 + 🗑削除)。
+    //   平均正解率は完了数で重み付けした加重平均 (完了0の配信は含めない)。
+    let _gdItems = [];
+    let _gdGroupKeys = [];           // 描画順の単元キー (onclick へは index で渡す = 引用符事故防止)
+    const _gdExpandedUnits = new Set();
+    let _gdShowAllGroups = false;
     async function gdRefresh() {
       try {
         const res = await AdminAuth.fetch('/api/admin/grammar-drill/list');
         if (!res.ok) return;
         const data = await res.json();
-        const box = document.getElementById('gdList'); if (!box) return;
-        const items = data.items || [];
-        if (!items.length) { box.innerHTML = '<div style="color:#71717a;font-size:0.8rem;padding:0.4rem;">まだドリルがありません</div>'; return; }
-        box.innerHTML = items.map(d => {
-          const rate = d.avg_correct_rate == null ? '—' : `${d.avg_correct_rate}%`;
-          const rc = d.avg_correct_rate == null ? '#71717a' : (d.avg_correct_rate >= 70 ? '#34d399' : (d.avg_correct_rate >= 50 ? '#fbbf24' : '#fca5a5'));
-          return `<div style="display:flex;align-items:center;gap:0.5rem;background:rgba(0,0,0,0.2);border:1px solid #334155;border-radius:8px;padding:0.5rem 0.7rem;"><div onclick="gdAnalytics(${d.id})" style="cursor:pointer;flex:1;min-width:0;"><div style="font-size:0.84rem;color:#e5e7eb;font-weight:700;">${escapeHtml(d.title)}</div><div style="font-size:0.75rem;color:#94a3b8;">配信 ${d.assigned}名 / 完了 ${d.completed}名 ・ 平均正解率 <span style="color:${rc};font-weight:700;">${rate}</span></div></div><button onclick="gdDelete(${d.id})" title="ドリルを削除" style="background:none;border:1px solid #475569;color:#fca5a5;border-radius:5px;padding:0.25rem 0.5rem;font-size:0.72rem;cursor:pointer;flex-shrink:0;">🗑</button></div>`;
-        }).join('');
+        _gdItems = data.items || [];
+        gdRenderList();
       } catch (e) { console.warn('[gd] list', e); }
     }
+    function _gdRateColor(rate) {
+      return rate == null ? '#71717a' : (rate >= 70 ? '#34d399' : (rate >= 50 ? '#fbbf24' : '#fca5a5'));
+    }
+    function _gdDrillRow(d) {
+      const rate = d.avg_correct_rate == null ? '—' : `${d.avg_correct_rate}%`;
+      const rc = _gdRateColor(d.avg_correct_rate);
+      const dm = String(d.created_at || '').match(/\d{4}-(\d{2})-(\d{2})/);
+      const dts = dm ? `${dm[1]}/${dm[2]}` : '';
+      return `<div style="display:flex;align-items:center;gap:0.5rem;background:rgba(0,0,0,0.25);border:1px solid #334155;border-radius:8px;padding:0.45rem 0.6rem;"><div onclick="gdAnalytics(${d.id})" style="cursor:pointer;flex:1;min-width:0;"><div style="font-size:0.8rem;color:#e5e7eb;font-weight:700;">${escapeHtml(d.title)}${dts ? ` <span style="color:#71717a;font-weight:400;font-size:0.85em;">${dts}</span>` : ''}</div><div style="font-size:0.73rem;color:#94a3b8;">配信 ${d.assigned}名 / 完了 ${d.completed}名 ・ 正解率 <span style="color:${rc};font-weight:700;">${rate}</span></div></div><button onclick="gdDelete(${d.id})" title="ドリルを削除" style="background:none;border:1px solid #475569;color:#fca5a5;border-radius:5px;padding:0.25rem 0.5rem;font-size:0.72rem;cursor:pointer;flex-shrink:0;">🗑</button></div>`;
+    }
+    function gdRenderList() {
+      const box = document.getElementById('gdList'); if (!box) return;
+      const items = _gdItems;
+      if (!items.length) { box.innerHTML = '<div style="color:#71717a;font-size:0.8rem;padding:0.4rem;">まだドリルがありません</div>'; return; }
+      // 単元ごとに集約 (unit 未設定の旧データは title の括弧書きを除いた部分で代用)
+      const groups = new Map();
+      items.forEach(d => {
+        const key = (d.unit && String(d.unit).trim()) || String(d.title || '').replace(/（[^）]*）/g, '').trim() || 'その他';
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(d);
+      });
+      // API が created_at DESC で返すため、グループ順 = 直近配信が新しい単元順になる
+      const entries = Array.from(groups.entries());
+      _gdGroupKeys = entries.map(e => e[0]);
+      const GROUP_LIMIT = 12;
+      const showAll = _gdShowAllGroups || entries.length <= GROUP_LIMIT;
+      const visible = showAll ? entries : entries.slice(0, GROUP_LIMIT);
+      let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.45rem;">';
+      html += visible.map(([unit, ds], i) => {
+        const assigned = ds.reduce((s, d) => s + (d.assigned || 0), 0);
+        const completed = ds.reduce((s, d) => s + (d.completed || 0), 0);
+        const wsum = ds.reduce((s, d) => s + (d.avg_correct_rate != null && d.completed ? d.avg_correct_rate * d.completed : 0), 0);
+        const wcnt = ds.reduce((s, d) => s + (d.avg_correct_rate != null && d.completed ? d.completed : 0), 0);
+        const avg = wcnt ? Math.round(wsum / wcnt * 10) / 10 : null;
+        const rc = _gdRateColor(avg);
+        const open = _gdExpandedUnits.has(unit);
+        let card = `<div style="background:rgba(0,0,0,0.2);border:1px solid ${open ? '#60a5fa' : '#334155'};border-radius:8px;padding:0.5rem 0.7rem;${open ? 'grid-column:1 / -1;' : ''}">`;
+        card += `<div onclick="gdToggleUnit(${i})" style="cursor:pointer;"><div style="font-size:0.84rem;color:#e5e7eb;font-weight:700;">${open ? '▼' : '▶'} ${escapeHtml(unit)} <span style="font-size:0.72rem;color:#93c5fd;font-weight:700;background:rgba(96,165,250,0.15);border-radius:9px;padding:0.05rem 0.45rem;">×${ds.length}回</span></div><div style="font-size:0.73rem;color:#94a3b8;">のべ配信 ${assigned}名 / 完了 ${completed}名 ・ 平均正解率 <span style="color:${rc};font-weight:700;">${avg == null ? '—' : avg + '%'}</span></div></div>`;
+        if (open) card += `<div style="display:grid;gap:0.35rem;margin-top:0.5rem;">${ds.map(_gdDrillRow).join('')}</div>`;
+        card += '</div>';
+        return card;
+      }).join('');
+      html += '</div>';
+      if (!showAll) html += `<button onclick="gdShowAllGroups()" style="margin-top:0.45rem;background:none;border:1px dashed #475569;color:#94a3b8;border-radius:6px;padding:0.35rem 0.9rem;font-size:0.76rem;cursor:pointer;">▼ すべての単元を表示 (残り ${entries.length - GROUP_LIMIT}単元)</button>`;
+      box.innerHTML = html;
+    }
+    function gdToggleUnit(i) {
+      const unit = _gdGroupKeys[i];
+      if (unit == null) return;
+      if (_gdExpandedUnits.has(unit)) _gdExpandedUnits.delete(unit); else _gdExpandedUnits.add(unit);
+      gdRenderList();
+    }
+    function gdShowAllGroups() { _gdShowAllGroups = true; gdRenderList(); }
     async function gdAnalytics(drillId) {
       const box = document.getElementById('gdAnalytics'); if (!box) return;
       _gdClearRemediation();  // 別ドリルの分析を開く/開き直す = 文脈リセット (stale な対策モードを持ち越さない)
@@ -4460,7 +4515,7 @@
         else alert('削除失敗: ' + (data.detail || ''));
       } catch (e) { alert('削除失敗: ' + e); }
     }
-    window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits; window.gdDelete = gdDelete; window.gdRemediation = gdRemediation; window._gdClearRemediation = _gdClearRemediation; window.gdSubjectChange = gdSubjectChange;
+    window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits; window.gdDelete = gdDelete; window.gdRemediation = gdRemediation; window._gdClearRemediation = _gdClearRemediation; window.gdSubjectChange = gdSubjectChange; window.gdToggleUnit = gdToggleUnit; window.gdShowAllGroups = gdShowAllGroups;
     document.addEventListener('DOMContentLoaded', gdInit);
 
     // ✏️ 英文法ドリル 問題プール補充 (2026-06-19): seed JSON を grammar_questions に一括投入 (無課金・dedup)
