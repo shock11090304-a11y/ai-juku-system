@@ -464,6 +464,31 @@ select:focus, input:focus, textarea:focus {
 .msg-body.thinking { color: var(--text-dim); font-style: italic; }
 /* AI応答 Markdown の "---" 区切り線 (formatMarkdown が <hr class="md-hr"> に変換) */
 .md-hr { border: none; border-top: 1px solid rgba(255, 255, 255, 0.15); margin: 0.4rem 0; }
+/* AI応答の ``` フェンス (図解・ステップ一覧など)。等幅はこのブロック内のみに限定 */
+.md-code {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  margin: 0.3rem 0;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  overflow-x: auto;
+  white-space: pre;
+}
+/* AI応答の Markdown 表 */
+.md-table { border-collapse: collapse; margin: 0.4rem 0; font-size: 0.88rem; }
+.md-table th, .md-table td { border: 1px solid rgba(255, 255, 255, 0.15); padding: 0.35rem 0.7rem; text-align: left; }
+.md-table th { background: rgba(99, 102, 241, 0.15); font-weight: 700; }
+/* AI応答の "> " 引用 (強調ボックス) */
+.md-quote {
+  border-left: 3px solid rgba(99, 102, 241, 0.6);
+  background: rgba(99, 102, 241, 0.07);
+  border-radius: 0 8px 8px 0;
+  padding: 0.45rem 0.8rem;
+  margin: 0.3rem 0;
+}
 
 .chat-input-area {
   display: flex;

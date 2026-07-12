@@ -3064,29 +3064,65 @@ function escapeHtml(s) {
 }
 
 function formatMarkdown(text) {
-  // 🛡️ 2026-07-12: 数式ブロック内部を markdown 変換から保護 (stash→変換→restore)。
-  //   $$…$$ 内の "---" や "**" が <hr>/<strong> 化されると text node が分断され、
-  //   KaTeX auto-render が delimiter を対応付けられず生 LaTeX のまま残るため。
+  // 🛡️ 2026-07-12: 数式ブロックと ``` フェンスを markdown 変換から保護 (stash→変換→restore)。
+  //   - $$…$$ 内の "---" や "**" が <hr>/<strong> 化されると text node が分断され、
+  //     KaTeX auto-render が delimiter を対応付けられず生 LaTeX のまま残る。
+  //   - 旧 inline code 正規表現 /`([^`]+)`/ は改行もまたぐため、``` フェンスが2組あると
+  //     「閉じフェンスの残り backtick〜次の開きフェンス」までの本文全体 (見出し・数式込み) を
+  //     巨大な <code> に包んでいた。<code> は KaTeX の ignoredTags なので中の数式が生のまま
+  //     等幅表示になる = 生徒報告「字体が変で何言ってるかわからない」の直接原因。
   //   (単一 $…$ は通貨表記 "$10" と衝突するので formatMath 同様 stash しない)
   const ph = [];
   const SENT = '\u0001\u0002'; // 通常テキストと衝突しない不可視 sentinel (formatMath と同方式)
   const stash = (m) => { ph.push(m); return SENT + (ph.length - 1) + SENT; };
-  const out = text
+  // ``` フェンス → 整形済み <pre> を先に stash (中身は escapeHtml 済みテキストのまま保持)
+  const stashFence = (m, body) => {
+    const inner = body.replace(/^\n/, '').replace(/\n[ \t]*$/, '');
+    ph.push('<pre class="md-code">' + inner + '</pre>');
+    return SENT + (ph.length - 1) + SENT;
+  };
+  let out = text
+    .replace(/```[^\n`]*\n([\s\S]*?)```/g, stashFence)
     .replace(/\$\$([\s\S]*?)\$\$/g, stash)
     .replace(/\\\[([\s\S]*?)\\\]/g, stash)
     .replace(/\\\(([\s\S]*?)\\\)/g, stash)
+    .replace(/^#### (.*$)/gm, '<h4>$1</h4>')
     .replace(/^### (.*$)/gm, '<h3>$1</h3>')
     .replace(/^## (.*$)/gm, '<h2>$1</h2>')
     .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-    .replace(/^\s*-{3,}\s*$/gm, '<hr class="md-hr">')
+    .replace(/^\s*-{3,}\s*$/gm, '<hr class="md-hr">');
+  // Markdown 表 (ヘッダ行 + |---| 区切り行 + データ行) → <table>
+  //   escapeHtml 済みテキストが対象・セル内の数式は stash 済み placeholder のまま入り、
+  //   restore 後に KaTeX が描画する (table は ignoredTags でないため)
+  out = out.replace(/^\|(.+)\|[ \t]*\n\|([ \t:|-]+)\|[ \t]*\n((?:\|.*\|[ \t]*\n?)*)/gm, (m, head, sep, body) => {
+    if (!/^[ \t:|-]+$/.test(sep) || !/-/.test(sep)) return m;
+    const cells = (line) => line.replace(/^\||\|[ \t]*$/g, '').split('|').map(c => c.trim());
+    const th = cells('|' + head + '|').map(c => '<th>' + c + '</th>').join('');
+    const rows = body.split('\n').filter(l => /^\|.*\|[ \t]*$/.test(l))
+      .map(l => '<tr>' + cells(l).map(c => '<td>' + c + '</td>').join('') + '</tr>').join('');
+    return '<table class="md-table"><thead><tr>' + th + '</tr></thead><tbody>' + rows + '</tbody></table>';
+  });
+  // 引用ブロック (連続する "&gt; " 行・escapeHtml 済みなので > は &gt;)
+  // "&gt;=" (不等号 >=) を引用と誤認しないよう、&gt; の直後は空白または行末のみ引用扱い
+  out = out.replace(/(?:^&gt;(?:[ \t].*)?(?:\n|$))+/gm, (m) => {
+    const inner = m.replace(/^&gt;[ \t]?/gm, '').replace(/\n$/, '');
+    return '<blockquote class="md-quote">' + inner + '</blockquote>\n';
+  });
+  out = out
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
     .replace(/^\- (.+)$/gm, '• $1')
     .replace(/^\d+\. (.+)$/gm, '$&');
-  return out.replace(new RegExp(SENT + '(\\d+)' + SENT, 'g'), (m, i) => {
-    const v = ph[parseInt(i)];
-    return v === undefined ? m : v;
-  });
+  // restore は入れ子 placeholder (不均衡 $$ で math stash が fence placeholder を飲むケース) に
+  // 備えて sentinel が消えるまで反復 (最大5回で打ち切り)
+  let res = out;
+  for (let pass = 0; pass < 5 && res.indexOf(SENT) !== -1; pass++) {
+    res = res.replace(new RegExp(SENT + '(\\d+)' + SENT, 'g'), (m, i) => {
+      const v = ph[parseInt(i)];
+      return v === undefined ? m : v;
+    });
+  }
+  return res;
 }
 
 // 🛡️ 2026-06-02: 回答が maxTokens で途切れた時だけ「続き」ボタンを出し、続きを取得して同じ吹き出しに
