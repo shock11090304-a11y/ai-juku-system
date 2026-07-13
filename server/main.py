@@ -32583,7 +32583,13 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
     c = conn.cursor()
     # kokuritsu_nankan コース生も含めるため course も取得
     # 🛡️ 塾長指示 2026-05-26: 保護者 email 並行配信用に parent_email / parent_email_enabled を取得
-    c.execute("SELECT id, name, email, line_user_id, course, parent_email, parent_email_enabled FROM students WHERE status IN ('trial', 'paid')")
+    # 🎯 塾長指示 2026-07-13: 配信対象を「国公立難関大学コース生 or 課金中(status=paid)」に限定。
+    #   ★kokuritsu_nankan は trial_end≈2036 の永年 trial なので status='paid' には入らない=course で拾う。
+    #   これで非難関の無料 trial 生(お試し登録層)には送らない (無活動週 skip と併せて配信を絞る)。
+    c.execute(
+        "SELECT id, name, email, line_user_id, course, parent_email, parent_email_enabled FROM students "
+        "WHERE status IN ('trial', 'paid') AND (course = 'kokuritsu_nankan' OR status = 'paid')"
+    )
     students = list(c.fetchall())
     conn.close()
 
