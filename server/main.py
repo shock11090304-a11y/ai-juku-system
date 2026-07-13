@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List
-from datetime import datetime, timezone, timedelta, time as dt_time
+from datetime import datetime, date, timezone, timedelta, time as dt_time
 import os
 import json
 import sqlite3
@@ -4120,7 +4120,10 @@ async def _weekly_reports_scheduler():
                 log.info("[WeeklyReports] Skipped (already ran today by another replica)")
                 continue
             try:
-                result = cron_weekly_reports(x_cron_secret=secret, dry_run=False)
+                # 🧵 同期関数 (60名分の AI コメント生成 + メール送信で数分〜十数分かかる) を
+                #   別スレッドへ逃がす。in-process 単一プロセスの event loop をブロックしない
+                #   (毎週日曜のこの間 API が無応答になるブラウンアウトを防ぐ・2026-07-13 review 指摘)。
+                result = await asyncio.to_thread(cron_weekly_reports, x_cron_secret=secret, dry_run=False)
                 log.info(f"[WeeklyReports] result: {result}")
                 _record_scheduler_run("weekly_reports_run", result if isinstance(result, dict) else {})
             except Exception as e:
@@ -30353,106 +30356,413 @@ def admin_issue_line_link(payload: dict, authorization: Optional[str] = Header(N
 # Routes: Cron-style (triggered externally)
 # ==========================================================================
 
-def _send_weekly_report_email(to_email: str, student_name: str, stats: dict) -> dict:
-    """保護者向け週次レポートをメールで送信 (Resend API)。
-    塾長指示: LINE は使わない → メールで配信。"""
+# ══════════════════════════════════════════════════════════════════
+# 📊 保護者向け週次レポート (2026-07-13 現論会レベルに作り込み)
+#   ヘッダー(志望校/学年/開始日/受験まで) + 学習計画の進捗(curriculum phases) +
+#   3指標カード + AIコーチコメント(成長ポイント/評価) + 小テスト得点率 + 週間推移グラフ + 科目別。
+#   描画 _render_weekly_report_html は pure (ctx→HTML)。DB層は PG/SQLite 両対応のため
+#   PG専用構文(AT TIME ZONE/FILTER/::date)は使わず日付集計は Python 側で行う。
+# ══════════════════════════════════════════════════════════════════
+_KYOTSU_DATES = {2027: date(2027, 1, 16), 2028: date(2028, 1, 15), 2029: date(2029, 1, 13),
+                 2030: date(2030, 1, 19), 2031: date(2031, 1, 18), 2032: date(2032, 1, 17)}
+
+
+def _wr_jst_date(dt):
+    """timestamp/str/date を JST の date へ正規化 (naive は UTC とみなす)。"""
+    if dt is None:
+        return None
+    if isinstance(dt, datetime):
+        d = dt
+    elif isinstance(dt, date):
+        return dt
+    elif isinstance(dt, str):
+        try:
+            d = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+        except Exception:
+            try:
+                return datetime.strptime(dt[:10], "%Y-%m-%d").date()
+            except Exception:
+                return None
+    else:
+        return None
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=timezone.utc)
+    return d.astimezone(_JST).date()
+
+
+def _build_weekly_report_ctx(student_id: int, name: str, stats: dict) -> dict:
+    """週次レポート(保護者リッチ版)のコンテキストを DB から構築。stats=_compute_weekly_stats の結果。"""
+    today = _today_jst()
+    sid = int(student_id)
+    grade = goal = created_at = exam_target = None
+    university = faculty = exam_date = None
+    phases = []
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT grade, goal, created_at, exam_target_date FROM students WHERE id = ?", (sid,))
+        r = c.fetchone()
+        if r:
+            grade = r["grade"]; goal = r["goal"]; created_at = r["created_at"]; exam_target = r["exam_target_date"]
+        cstart = _wr_jst_date(created_at)
+        c.execute(
+            "SELECT target_university, target_faculty, exam_date, start_date, phases FROM curricula "
+            "WHERE student_id = ? AND phases IS NOT NULL ORDER BY updated_at DESC, id DESC LIMIT 1",
+            (sid,),
+        )
+        cu = c.fetchone()
+        if cu:
+            university = cu["target_university"]; faculty = cu["target_faculty"]
+            exam_date = _wr_jst_date(cu["exam_date"])
+            _sd = _wr_jst_date(cu["start_date"])
+            if _sd:
+                cstart = _sd
+            try:
+                _ph = cu["phases"]
+                phases = _ph if isinstance(_ph, list) else json.loads(_ph or "[]")
+            except Exception:
+                phases = []
+        # 学習日数 (activity のあった distinct JST 日)・トレンド用に created_at を取得
+        c.execute("SELECT created_at, is_correct FROM question_attempts WHERE student_id = ?", (sid,))
+        qa_rows = c.fetchall()
+        c.execute("SELECT studied_date FROM study_logs WHERE student_id = ?", (sid,))
+        sl_rows = c.fetchall()
+        # 小テスト (grammar_drill)
+        def _quiz_rate(days):
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+            c.execute(
+                "SELECT COALESCE(SUM(score_correct),0) AS cc, COALESCE(SUM(score_total),0) AS tt FROM grammar_drill_assignments "
+                "WHERE student_id = ? AND status = 'completed' AND completed_at >= ?",
+                (sid, cutoff),
+            )
+            _qr = c.fetchone()
+            cc, tt = (_qr["cc"] or 0), (_qr["tt"] or 0)
+            return round(100 * cc / tt) if tt else None
+        quiz_week = _quiz_rate(7); quiz_month = _quiz_rate(30)
+        _cut7 = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        c.execute(
+            "SELECT d.unit, d.title FROM grammar_drill_assignments a JOIN grammar_drills d ON a.drill_id = d.id "
+            "WHERE a.student_id = ? AND a.status = 'completed' AND a.completed_at >= ? ORDER BY a.completed_at DESC LIMIT 8",
+            (sid, _cut7),
+        )
+        ranges = []
+        for rr in c.fetchall():
+            v = (rr["unit"] or rr["title"] or "").strip()
+            if v and v not in ranges:
+                ranges.append(v)
+        ranges = ranges[:4]
+    finally:
+        conn.close()
+
+    # 志望校 / 受験日 fallback
+    if not university:
+        university = goal or "未設定"; faculty = faculty or ""
+    if not exam_date:
+        exam_date = _wr_jst_date(exam_target)
+    if not exam_date and grade:
+        # 共通テスト日の推定は高校生のみ (中学生の grade 「中3」等が "3" に誤マッチして
+        #  大学共テ日を保護者に見せる誤表示を防ぐ・2026-07-13 review 指摘)。
+        g = str(grade); yr = None
+        if "高" in g:
+            if "3" in g:
+                yr = today.year + (0 if today.month < 2 else 1)
+            elif "2" in g:
+                yr = today.year + (1 if today.month < 2 else 2)
+            elif "1" in g:
+                yr = today.year + (2 if today.month < 2 else 3)
+        if yr:
+            exam_date = _KYOTSU_DATES.get(yr)
+    days_until = (exam_date - today).days if exam_date else None
+
+    # 学習日数 (Python 側で JST 日付集計)
+    active = set()
+    for rr in qa_rows:
+        d = _wr_jst_date(rr["created_at"])
+        if d:
+            active.add(d)
+    for rr in sl_rows:
+        d = _wr_jst_date(rr["studied_date"])
+        if d:
+            active.add(d)
+    active_days = len(active)
+
+    # 週間トレンド (直近6週の正答率・月曜起点)
+    week0 = today - timedelta(days=today.weekday())
+    buckets = {}
+    for w in range(6):
+        ws = week0 - timedelta(days=7 * (5 - w))
+        buckets[ws] = [0, 0]  # [correct, total]
+    for rr in qa_rows:
+        ic = rr["is_correct"]
+        if ic is None:
+            continue
+        d = _wr_jst_date(rr["created_at"])
+        if not d:
+            continue
+        ws = d - timedelta(days=d.weekday())
+        if ws in buckets:
+            buckets[ws][1] += 1
+            if int(ic) == 1:
+                buckets[ws][0] += 1
+    trend = []
+    for ws in sorted(buckets):
+        cc, tt = buckets[ws]
+        trend.append({"label": f"{ws.month}/{ws.day}", "pct": round(100 * cc / tt) if tt else 0, "has": bool(tt)})
+
+    # 学習計画の進捗 (curriculum phases: 現在フェーズ番号/全体 + 計画期間の経過率)
+    progress = None
+    if phases:
+        total = len(phases); cur_idx = 1; cur_phase = (phases[0].get("name") if isinstance(phases[0], dict) else "") or ""
+        pdone = 0
+        for i, p in enumerate(phases):
+            if not isinstance(p, dict):
+                continue
+            edd = _wr_jst_date(p.get("end_date")); sdd = _wr_jst_date(p.get("start_date"))
+            if edd and edd < today:
+                pdone = i + 1
+            if sdd and sdd <= today and (not edd or edd >= today):
+                cur_idx = i + 1; cur_phase = p.get("name") or cur_phase
+        if pdone and pdone >= cur_idx:
+            cur_idx = min(pdone + 1, total)
+            _cp = phases[cur_idx - 1]  # フェーズ番号を進めたらラベルも合わせる (番号と名称の不一致防止)
+            if isinstance(_cp, dict) and _cp.get("name"):
+                cur_phase = _cp["name"]
+        allstart = _wr_jst_date(phases[0].get("start_date")) if isinstance(phases[0], dict) else None
+        allend = _wr_jst_date(phases[-1].get("end_date")) if isinstance(phases[-1], dict) else None
+        allstart = allstart or cstart; allend = allend or exam_date
+        pct = 0
+        if allstart and allend and allend > allstart:
+            pct = max(0, min(100, round(100 * (today - allstart).days / (allend - allstart).days)))
+        progress = {"cur": cur_idx, "total": total, "pct": pct, "phase": cur_phase}
+
+    return {
+        "student_id": sid, "name": name or "", "grade": grade or "—",
+        "university": university, "faculty": faculty or "",
+        "coaching_start": cstart, "active_days": active_days,
+        "exam_date": exam_date, "days_until": days_until,
+        "hours": stats.get("hours", 0), "problems_done": stats.get("problems_done", 0),
+        "questions": stats.get("questions", 0), "accuracy": stats.get("accuracy", 0),
+        "subject_stats": stats.get("subject_stats", {}), "weakest_subject": stats.get("weakest_subject"),
+        "progress": progress, "quiz": {"week": quiz_week, "month": quiz_month, "ranges": ranges},
+        "trend": trend, "report_date": today,
+        "growth_points": [], "evaluation": "",
+    }
+
+
+def _weekly_coach_comments_fallback(ctx: dict) -> dict:
+    """AI 生成失敗時の決定的コメント。"""
+    gp1 = f"今週は学習時間 約{ctx['hours']}時間・演習{ctx['problems_done']}問に取り組み、学習の習慣が続いています。"
+    w = ctx.get("weakest_subject")
+    if w:
+        gp2 = f"正答率は{ctx['accuracy']}%。特に{w}が今週の重点で、間違い直しを重ねることで着実に力がつきます。"
+    else:
+        gp2 = f"正答率は{ctx['accuracy']}%で安定しています。この調子で演習量を保っていきましょう。"
+    ev = ("基礎の定着が進んでいる段階です。引き続き、間違えた問題の解き直しと復習の頻度を高めることで、"
+          "『解説を見れば分かる』から『自力で解ける』へと力を伸ばしていきます。")
+    return {"growth_points": [gp1, gp2], "evaluation": ev}
+
+
+def _weekly_report_minimal_ctx(name: str, stats: dict) -> dict:
+    """_build_weekly_report_ctx が DB 失敗した際の最小 ctx。stats だけで確実にメールを送れる形に劣化させる
+    (2026-07-13 review: ctx 構築失敗でその生徒のレポートが丸ごと欠落するのを防ぐ)。"""
+    ctx = {
+        "student_id": None, "name": name or "", "grade": "—", "university": "未設定", "faculty": "",
+        "coaching_start": None, "active_days": 0, "exam_date": None, "days_until": None,
+        "hours": stats.get("hours", 0), "problems_done": stats.get("problems_done", 0),
+        "questions": stats.get("questions", 0), "accuracy": stats.get("accuracy", 0),
+        "subject_stats": stats.get("subject_stats", {}), "weakest_subject": stats.get("weakest_subject"),
+        "progress": None, "quiz": {"week": None, "month": None, "ranges": []},
+        "trend": [], "report_date": _today_jst(),
+    }
+    fb = _weekly_coach_comments_fallback(ctx)
+    ctx["growth_points"] = fb["growth_points"]; ctx["evaluation"] = fb["evaluation"]
+    return ctx
+
+
+def _weekly_coach_comments(ctx: dict) -> dict:
+    """今週の成長ポイント(2点)+全体評価を AI 生成し ctx に格納。失敗時は fallback。"""
+    fb = _weekly_coach_comments_fallback(ctx)
+    try:
+        subj_lines = ", ".join(
+            f"{k} {v.get('correct', 0)}/{v.get('total', 0)}" for k, v in (ctx.get("subject_stats") or {}).items()
+        ) or "記録なし"
+        qz = ctx.get("quiz", {})
+        system = ("あなたは中高生向けオンライン塾の学習コーチです。保護者に毎週届ける学習レポートに載せる、"
+                  "前向きで具体的なコメントを書きます。誇張・断定・不確実な約束は避け、与えられた数値の事実に基づき、"
+                  "生徒の努力を認めつつ次の一歩を示します。丁寧語で。")
+        user = (
+            f"生徒: {ctx['name']}（{ctx['grade']}） / 第一志望: {ctx['university']} {ctx['faculty']}\n"
+            f"今週の実績: 学習時間 約{ctx['hours']}時間 / 演習 {ctx['problems_done']}問 / 正答率 {ctx['accuracy']}%\n"
+            f"科目別: {subj_lines} / 今週の弱点: {ctx.get('weakest_subject') or '特になし'}\n"
+            f"小テスト得点率: 今週 {qz.get('week')}% / 直近1ヶ月 {qz.get('month')}%\n\n"
+            "次の JSON のみを出力してください（前後に説明やコードフェンスを付けない）:\n"
+            '{"growth_points": ["今週の良かった点1（60〜90字・数値に触れる）", '
+            '"良かった点2（60〜90字）"], "evaluation": "現在の学習段階の評価と今後の方針（90〜140字・保護者向け）"}'
+        )
+        data = _call_ai_safe(
+            {"model": "claude-sonnet-4-6-20251022", "max_tokens": 800, "system": system,
+             "messages": [{"role": "user", "content": user}]},
+            task_type="weekly_report_comment", student_id=ctx.get("student_id"),
+        )
+        txt = ((data.get("content") or [{}])[0] or {}).get("text", "").strip()
+        if txt.startswith("```"):
+            txt = txt.split("```", 2)[1]
+            if txt.startswith("json"):
+                txt = txt[4:]
+            txt = txt.strip()
+            if txt.endswith("```"):
+                txt = txt[:-3].strip()
+        parsed = json.loads(txt)
+        gp = [str(x).strip() for x in (parsed.get("growth_points") or []) if str(x).strip()][:2]
+        ev = str(parsed.get("evaluation") or "").strip()
+        if gp and ev:
+            if len(gp) < 2:
+                gp = gp + fb["growth_points"][len(gp):]
+            ctx["growth_points"] = gp
+            ctx["evaluation"] = ev
+            return ctx
+    except Exception as e:
+        log.warning(f"[WeeklyReport] AI comment failed sid={ctx.get('student_id')}: {type(e).__name__}: {str(e)[:150]}")
+    ctx["growth_points"] = fb["growth_points"]
+    ctx["evaluation"] = fb["evaluation"]
+    return ctx
+
+
+_WR_NAVY = "#12324f"; _WR_NAVY2 = "#1b4b6b"; _WR_ORANGE = "#d98324"
+_WR_INK = "#1f2937"; _WR_MUT = "#64748b"; _WR_LINE = "#e2e8f0"
+
+
+def _wr_cell(label, value, big=False):
     import html as _html
+    vs = f"font-size:{'1.15rem' if big else '1rem'};font-weight:800;color:{_WR_NAVY};"
+    return (f'<td style="padding:10px 8px;text-align:center;border:1px solid {_WR_LINE};">'
+            f'<div style="font-size:0.7rem;color:{_WR_MUT};margin-bottom:3px;">{label}</div>'
+            f'<div style="{vs}">{value}</div></td>')
+
+
+def _render_weekly_report_html(ctx: dict, mypage_url=None) -> str:
+    """ctx → 保護者向け週次レポート HTML (pure・現論会レベルのレイアウト)。"""
+    import html as _html
+    esc = lambda s: _html.escape(str(s if s is not None else ""))
+    mypage_url = mypage_url or f"{BASE_URL}/mypage.html"
+    c = ctx; name = esc(c["name"])
+    rd = c["report_date"]; rd_s = f"{rd.year}/{rd.month:02d}/{rd.day:02d}"
+    cs = c.get("coaching_start"); cs_s = f"{cs.year}/{cs.month:02d}/{cs.day:02d}" if cs else "—"
+    ed = c.get("exam_date"); ed_s = (f"{ed.year}/{ed.month:02d}/{ed.day:02d}" if ed else "未設定")
+    du = c.get("days_until"); du_s = (f"{du}日" if du is not None and du >= 0 else "—")
+    uni = esc(c["university"]); fac = esc(c["faculty"])
+    goal_disp = uni + (f"<br><span style='font-size:0.8rem;color:{_WR_MUT}'>{fac}</span>" if fac else "")
+
+    prog = c.get("progress"); prog_html = ""
+    if prog:
+        barw = max(2, min(100, prog["pct"]))
+        prog_html = (
+            f'<div style="background:{_WR_NAVY};color:#fff;padding:16px 18px;text-align:center;">'
+            f'<div style="font-size:0.8rem;opacity:0.85;">学習計画の進捗</div>'
+            f'<div style="font-size:1.7rem;font-weight:900;">フェーズ {prog["cur"]} / {prog["total"]} '
+            f'<span style="font-size:0.9rem;font-weight:600;opacity:0.9;">{esc(prog["phase"])}</span></div>'
+            f'<div style="background:rgba(255,255,255,0.2);border-radius:99px;height:9px;margin:8px auto 4px;max-width:420px;">'
+            f'<div style="width:{barw}%;height:9px;background:{_WR_ORANGE};border-radius:99px;"></div></div>'
+            f'<div style="font-size:0.75rem;opacity:0.85;">計画期間の経過 {prog["pct"]}%</div></div>'
+        )
+
+    gp = "".join(f'<p style="margin:0 0 8px;font-size:0.86rem;line-height:1.6;">{esc(p)}</p>'
+                 for p in c.get("growth_points", []))
+    ev = esc(c.get("evaluation", ""))
+
+    ranges = c["quiz"]["ranges"]
+    ranges_s = " / ".join(esc(r) for r in ranges) if ranges else "この週の小テスト実施なし"
+    rate_disp = lambda v: (f"{v}%" if v is not None else "—")
+
+    subj_rows = ""
+    for s_, ss in (c.get("subject_stats") or {}).items():
+        t = ss.get("total", 0); cc = ss.get("correct", 0); r = round(100 * cc / t) if t else 0
+        col = "#16a34a" if r >= 70 else ("#d98324" if r >= 50 else "#dc2626")
+        subj_rows += (f'<tr><td style="padding:6px 10px;border-bottom:1px solid {_WR_LINE};">{esc(s_)}</td>'
+                      f'<td style="padding:6px 10px;border-bottom:1px solid {_WR_LINE};text-align:center;">{cc}/{t}</td>'
+                      f'<td style="padding:6px 10px;border-bottom:1px solid {_WR_LINE};text-align:center;color:{col};font-weight:700;">{r}%</td></tr>')
+
+    if not subj_rows:
+        subj_rows = f'<tr><td colspan="3" style="padding:8px 10px;color:{_WR_MUT};">今週の演習記録はありません</td></tr>'
+
+    bars = ""
+    for t in c.get("trend", []):
+        h = max(4, int(t["pct"] * 0.85)) if t["has"] else 2
+        col = _WR_ORANGE if t["has"] else "#cbd5e1"
+        val = f'{t["pct"]}' if t["has"] else ""
+        bars += (f'<td style="vertical-align:bottom;text-align:center;padding:0 4px;">'
+                 f'<div style="font-size:0.62rem;color:{_WR_MUT};height:12px;">{val}</div>'
+                 f'<div style="width:26px;height:{h}px;background:{col};border-radius:3px 3px 0 0;margin:0 auto;"></div>'
+                 f'<div style="font-size:0.6rem;color:{_WR_MUT};margin-top:3px;">{esc(t["label"])}</div></td>')
+
+    weakest_note = ""
+    if c.get("weakest_subject"):
+        weakest_note = (f'<div style="background:#fff7ed;border:1px solid #fed7aa;padding:10px 12px;border-radius:8px;'
+                        f'margin:12px 0;font-size:0.85rem;color:#9a3412;">▲ 今週の重点強化ポイントは <b>{esc(c["weakest_subject"])}</b>。'
+                        f'AIチューターで集中的に復習しましょう。</div>')
+
+    return f"""<!DOCTYPE html><html><body style="margin:0;background:#f1f5f9;font-family:-apple-system,'Hiragino Sans',sans-serif;color:{_WR_INK};">
+<div style="max-width:600px;margin:0 auto;background:#fff;">
+  <div style="background:{_WR_NAVY};background:linear-gradient(135deg,{_WR_NAVY},{_WR_NAVY2});color:#fff;padding:20px;text-align:center;">
+    <div style="font-size:0.8rem;opacity:0.8;">TRILLION AI コーチング</div>
+    <div style="font-size:1.3rem;font-weight:800;">コーチングレポート ({rd_s})</div></div>
+  <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+    <tr>{_wr_cell('コーチング開始日', cs_s)}{_wr_cell('学年', esc(c['grade']))}{_wr_cell('第一志望校・学部', goal_disp)}</tr>
+    <tr>{_wr_cell('これまでの学習日数', f"{c['active_days']}日")}{_wr_cell('目標試験日', ed_s)}{_wr_cell('試験本番まであと', du_s, big=True)}</tr>
+  </table>
+  {prog_html}
+  <div style="padding:16px 18px;">
+    <p style="font-size:0.85rem;color:{_WR_MUT};margin:0 0 14px;">{name}さまの保護者さま、いつもお世話になっております。今週の学習状況をお知らせします。</p>
+    <div style="display:flex;gap:10px;margin:0 0 16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:100px;background:#6366f1;background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;padding:12px;border-radius:10px;text-align:center;">
+        <div style="font-size:0.7rem;opacity:0.85;">今週の学習時間</div><div style="font-size:1.5rem;font-weight:800;">{c['hours']}<span style="font-size:0.8rem;">h</span></div></div>
+      <div style="flex:1;min-width:100px;background:#ec4899;background:linear-gradient(135deg,#ec4899,#f472b6);color:#fff;padding:12px;border-radius:10px;text-align:center;">
+        <div style="font-size:0.7rem;opacity:0.85;">演習問題数</div><div style="font-size:1.5rem;font-weight:800;">{c['problems_done']}<span style="font-size:0.8rem;">問</span></div></div>
+      <div style="flex:1;min-width:100px;background:#16a34a;background:linear-gradient(135deg,#16a34a,#4ade80);color:#fff;padding:12px;border-radius:10px;text-align:center;">
+        <div style="font-size:0.7rem;opacity:0.85;">正答率</div><div style="font-size:1.5rem;font-weight:800;">{c['accuracy']}<span style="font-size:0.8rem;">%</span></div></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin:0 0 16px;"><tr style="vertical-align:top;">
+      <td style="width:50%;padding-right:8px;">
+        <div style="font-size:0.9rem;font-weight:800;color:{_WR_NAVY};border-bottom:2px solid {_WR_NAVY};padding-bottom:4px;margin-bottom:8px;">今週の成長ポイント</div>{gp}</td>
+      <td style="width:50%;padding-left:8px;border-left:1px solid {_WR_LINE};">
+        <div style="font-size:0.9rem;font-weight:800;color:{_WR_NAVY};border-bottom:2px solid {_WR_NAVY};padding-bottom:4px;margin-bottom:8px;">全体の進捗から見た評価</div>
+        <p style="margin:0;font-size:0.86rem;line-height:1.6;">{ev}</p></td>
+    </tr></table>
+    <div style="font-size:0.9rem;font-weight:800;color:{_WR_NAVY};margin:4px 0 4px;">今週の小テスト出題範囲</div>
+    <div style="font-size:0.86rem;color:{_WR_INK};margin:0 0 12px;">{ranges_s}</div>
+    <table style="width:100%;border-collapse:collapse;margin:0 0 16px;text-align:center;">
+      <tr style="background:#f8fafc;"><th style="padding:8px;font-size:0.8rem;color:{_WR_MUT};border:1px solid {_WR_LINE};">今週の小テスト得点率</th>
+        <th style="padding:8px;font-size:0.8rem;color:{_WR_MUT};border:1px solid {_WR_LINE};">直近1ヶ月の平均</th></tr>
+      <tr><td style="padding:12px;border:1px solid {_WR_LINE};font-size:1.6rem;font-weight:800;color:{_WR_NAVY};">{rate_disp(c['quiz']['week'])}</td>
+          <td style="padding:12px;border:1px solid {_WR_LINE};font-size:1.6rem;font-weight:800;color:{_WR_NAVY};">{rate_disp(c['quiz']['month'])}</td></tr>
+    </table>
+    <div style="font-size:0.9rem;font-weight:800;color:{_WR_NAVY};margin:4px 0 6px;">週間 正答率の推移</div>
+    <table style="width:100%;border-collapse:collapse;background:#f8fafc;border-radius:8px;"><tr style="height:120px;">{bars}</tr></table>
+    <h3 style="font-size:0.9rem;color:{_WR_NAVY};margin:18px 0 6px;">科目別 成績</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:0.86rem;">
+      <tr style="background:#f8fafc;"><th style="padding:8px 10px;text-align:left;">科目</th><th style="padding:8px 10px;">正答</th><th style="padding:8px 10px;">正答率</th></tr>
+      {subj_rows}</table>
+    {weakest_note}
+    <p style="text-align:center;margin:20px 0 6px;">
+      <a href="{mypage_url}" style="display:inline-block;padding:12px 28px;background:{_WR_ORANGE};color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">マイページで詳しく見る</a></p>
+    <p style="font-size:0.72rem;color:{_WR_MUT};text-align:center;margin:8px 0 0;">TRILLION AI コーチング ／ 「学習時間」は時間計測ありの演習の合計です。本メールは学習記録から自動生成されています。</p>
+  </div>
+</div></body></html>"""
+
+
+def _send_weekly_report_email(to_email: str, ctx: dict) -> dict:
+    """保護者向け週次レポートをメール送信 (Resend API)。ctx=_build_weekly_report_ctx(+_weekly_coach_comments)。"""
     if not RESEND_API_KEY:
         log.warning(f"[WeeklyReport] Email skipped (no RESEND_API_KEY) for {to_email}")
         return {"sent": False, "dev_mode": True}
-    safe_name = _html.escape(student_name or "")
-    hours = stats.get("hours", 0)
-    accuracy = stats.get("accuracy", 0)
-    questions = stats.get("questions", 0)
-    problems_done = stats.get("problems_done", 0)
-    weakest = stats.get("weakest_subject")
-    subject_stats = stats.get("subject_stats", {})
-    mypage_url = f"{BASE_URL}/mypage.html"
-
-    # 科目別の表を生成
-    subject_rows = ""
-    for subj, ss in subject_stats.items():
-        total = ss.get("total", 0)
-        correct = ss.get("correct", 0)
-        rate = round(100 * correct / total) if total else 0
-        bar_color = "#22c55e" if rate >= 70 else "#f59e0b" if rate >= 50 else "#ef4444"
-        subject_rows += f"""<tr>
-            <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;">{_html.escape(subj)}</td>
-            <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;text-align:center;">{correct}/{total}</td>
-            <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;text-align:center;">
-              <span style="color:{bar_color};font-weight:700;">{rate}%</span>
-            </td>
-        </tr>"""
-
-    subject_table = ""
-    if subject_rows:
-        subject_table = f"""
-        <h3 style="font-size:1rem;color:#6366f1;margin:1.5rem 0 0.5rem;">📚 科目別成績</h3>
-        <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
-          <tr style="background:#f8fafc;">
-            <th style="padding:8px 10px;text-align:left;">科目</th>
-            <th style="padding:8px 10px;text-align:center;">正答</th>
-            <th style="padding:8px 10px;text-align:center;">正答率</th>
-          </tr>
-          {subject_rows}
-        </table>"""
-
-    weakest_note = ""
-    if weakest:
-        weakest_note = f"""
-        <div style="background:#fef3c7;padding:0.8rem 1rem;border-radius:8px;margin:1rem 0;font-size:0.9rem;">
-          ⚠️ <strong>{_html.escape(weakest)}</strong> が今週の重点強化ポイントです。
-          AI チューターに質問して苦手を克服しましょう。
-        </div>"""
-
-    subject = f"【AIコーチング】{safe_name}さんの週次学習レポート"
-    html = f"""<!DOCTYPE html>
-<html><body style="font-family: -apple-system, 'Hiragino Sans', sans-serif; line-height:1.7; color:#333; max-width:560px; margin:0 auto; padding:2rem;">
-<h1 style="font-size:1.3rem;color:#6366f1;margin-bottom:0.3rem;">🎓 AIコーチング</h1>
-<h2 style="font-size:1.1rem;color:#475569;margin-top:0;">📊 {safe_name}さんの今週のレポート</h2>
-
-<p>{safe_name}さまの保護者さま、いつもお世話になっております。<br>今週の学習状況をお知らせいたします。</p>
-
-<div style="display:flex;gap:12px;margin:1.2rem 0;flex-wrap:wrap;">
-  <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;padding:1rem;border-radius:12px;text-align:center;">
-    <div style="font-size:0.75rem;opacity:0.85;">🔥 学習時間</div>
-    <div style="font-size:1.8rem;font-weight:800;">{hours}<span style="font-size:0.9rem;">時間</span></div>
-  </div>
-  <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#ec4899,#f472b6);color:#fff;padding:1rem;border-radius:12px;text-align:center;">
-    <div style="font-size:0.75rem;opacity:0.85;">📝 演習問題数</div>
-    <div style="font-size:1.8rem;font-weight:800;">{problems_done}<span style="font-size:0.9rem;">問</span></div>
-  </div>
-  <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#22c55e,#4ade80);color:#fff;padding:1rem;border-radius:12px;text-align:center;">
-    <div style="font-size:0.75rem;opacity:0.85;">💯 正答率</div>
-    <div style="font-size:1.8rem;font-weight:800;">{accuracy}<span style="font-size:0.9rem;">%</span></div>
-  </div>
-</div>
-
-{subject_table}
-{weakest_note}
-
-<p style="text-align:center;margin:1.5rem 0;">
-  <a href="{mypage_url}" style="display:inline-block;padding:0.9rem 2rem;background:linear-gradient(135deg,#6366f1,#ec4899);color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:1rem;">
-    📊 マイページで詳細を確認
-  </a>
-</p>
-
-<div style="background:#f8fafc;padding:1rem;border-radius:8px;font-size:0.85rem;color:#64748b;">
-  💡 「学習時間」は時間計測ありの演習(道場ドリル)の合計です。自動採点ドリル等は時間を記録しないため、
-  実際の学習量は「演習問題数」もあわせてご覧ください。<br>
-  ご不明な点がございましたらお気軽にお問い合わせください。
-</div>
-
-<hr style="margin:2rem 0;border:none;border-top:1px solid #e2e8f0;">
-<p style="font-size:0.8rem;color:#94a3b8;">
-  AIコーチング | <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
-</p>
-</body></html>"""
+    import html as _html
+    safe_name = _html.escape(ctx.get("name") or "")
+    subject = f"【TRILLION AI コーチング】{safe_name}さんの週次コーチングレポート"
+    html = _render_weekly_report_html(ctx)
 
     import urllib.request
     import time as _t
     payload_data = json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": html}).encode("utf-8")
-    # 429 リトライ (最大3回・指数バックオフ 3s/6s/12s)
     for attempt in range(3):
         try:
             req = urllib.request.Request(
@@ -30467,10 +30777,7 @@ def _send_weekly_report_email(to_email: str, student_name: str, stats: dict) -> 
                 return {"sent": True, "resend_id": result.get("id")}
         except urllib.error.HTTPError as he:
             if he.code == 429 and attempt < 2:
-                wait = 3 * (2 ** attempt)
-                log.info(f"[WeeklyReport] 429 retry {attempt+1}/3 for {to_email}, waiting {wait}s")
-                _t.sleep(wait)
-                continue
+                _t.sleep(3 * (2 ** attempt)); continue
             log.error(f"[WeeklyReport] Email failed for {to_email}: HTTP {he.code}")
             return {"sent": False, "error": f"HTTP {he.code}"}
         except Exception as e:
@@ -32297,6 +32604,16 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
                     "would_send_line": bool(row.get("line_user_id")),
                 })
                 continue
+            # 📊 リッチ週次レポートのコンテキスト + AIコーチコメントを1回だけ生成 (生徒+保護者メールで共用)。
+            #   メール宛先が全く無い生徒 (LINE のみ等) では AI 呼び出しを省く。
+            _wr_ctx = None
+            if row.get("email") or (row.get("parent_email") and row.get("parent_email_enabled")):
+                try:
+                    _wr_ctx = _weekly_coach_comments(_build_weekly_report_ctx(row["id"], row["name"], stats))
+                except Exception as _wre:
+                    # ctx 構築(DB)失敗でも最小 ctx で必ず送る (レポート欠落を防ぐ)
+                    log.warning(f"[WeeklyReport] ctx build failed sid={row['id']}: {type(_wre).__name__}: {str(_wre)[:150]}")
+                    _wr_ctx = _weekly_report_minimal_ctx(row["name"], stats)
             # --- メール配信 (全生徒) ---
             email = row.get("email")
             if email and sent_email >= WEEKLY_REPORT_EMAIL_CAP:
@@ -32320,7 +32637,7 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
                     if email_index > 0:
                         _t.sleep(1.5)
                     email_index += 1
-                    res = _send_weekly_report_email(email, row["name"], stats)
+                    res = _send_weekly_report_email(email, _wr_ctx)
                     _ok = res.get("sent", False)
                     # notifications テーブルに記録
                     _n_conn = db()
@@ -32363,7 +32680,7 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
                         if email_index > 0:
                             _t.sleep(1.5)
                         email_index += 1
-                        pres = _send_weekly_report_email(parent_email, row["name"], stats)
+                        pres = _send_weekly_report_email(parent_email, _wr_ctx)
                         _pok = pres.get("sent", False)
                         _pn_conn = db()
                         _pn_c = _pn_conn.cursor()
@@ -32440,7 +32757,11 @@ def weekly_reports_send_one(payload: dict, request: Request, x_stats_token: str 
     result = {"email": None, "line": None}
     # メール送信
     if row["email"]:
-        result["email"] = _send_weekly_report_email(row["email"], row["name"], stats)
+        try:
+            _single_ctx = _weekly_coach_comments(_build_weekly_report_ctx(int(student_id), row["name"], stats))
+        except Exception:
+            _single_ctx = _weekly_report_minimal_ctx(row["name"], stats)
+        result["email"] = _send_weekly_report_email(row["email"], _single_ctx)
         # notifications に記録
         _ok = result["email"].get("sent", False)
         _n_conn = db()
