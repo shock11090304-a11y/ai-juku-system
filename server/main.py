@@ -30600,11 +30600,18 @@ def _weekly_coach_comments(ctx: dict) -> dict:
             '"良かった点2（60〜90字）"], "evaluation": "現在の学習段階の評価と今後の方針（90〜140字・保護者向け）"}'
         )
         data = _call_ai_safe(
-            {"model": "claude-sonnet-4-6-20251022", "max_tokens": 800, "system": system,
+            {"model": "claude-haiku-4-5-20251001", "max_tokens": 1000, "system": system,
              "messages": [{"role": "user", "content": user}]},
             task_type="weekly_report_comment", student_id=ctx.get("student_id"),
         )
-        txt = ((data.get("content") or [{}])[0] or {}).get("text", "").strip()
+        # content は複数ブロックのことがある (reasoning モデルは thinking ブロックが先頭 =
+        #  content[0].text が空)。type=='text' の全ブロックを連結して確実に本文を取る。
+        txt = "".join(
+            b.get("text", "") for b in (data.get("content") or [])
+            if isinstance(b, dict) and b.get("type") == "text"
+        ).strip()
+        if not txt:  # 念のため旧来の [0] も見る
+            txt = ((data.get("content") or [{}])[0] or {}).get("text", "").strip()
         if txt.startswith("```"):
             txt = txt.split("```", 2)[1]
             if txt.startswith("json"):
