@@ -653,6 +653,11 @@
           <button onclick="gdSelectAll(true)" style="margin-left:0.3rem;background:none;color:#60a5fa;border:1px solid #475569;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">全選択</button>
           <button onclick="gdSelectAll(false)" style="background:none;color:#94a3b8;border:1px solid #475569;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">解除</button>
         </div>
+        <div id="gdGroupsRow" style="display:flex;align-items:center;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.45rem;font-size:0.76rem;">
+          <span style="color:#a78bfa;font-weight:700;">👥 グループ</span>
+          <span id="gdGroupChips" style="display:flex;flex-wrap:wrap;gap:0.3rem;"></span>
+          <button type="button" onclick="gdSaveGroup()" title="今チェックしている生徒を名前を付けて保存" style="background:none;color:#c4b5fd;border:1px dashed #6d28d9;border-radius:12px;padding:0.15rem 0.65rem;font-size:0.72rem;cursor:pointer;">＋ 選択中を保存</button>
+        </div>
         <div id="gdStudents" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.2rem;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:0.5rem;margin-bottom:0.7rem;">読み込み中...</div>
         <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
           <button onclick="gdCreate()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;padding:0.55rem 1.2rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📤 ドリルを配信</button>
@@ -4292,6 +4297,7 @@
       const data = await res.json();
       _gdStudents = (data.students || []).filter(s => s.status !== 'canceled');
       gdRenderStudents('');
+      gdRenderGroups();
     }
     function gdRenderStudents(filter) {
       const box = document.getElementById('gdStudents'); if (!box) return;
@@ -4303,6 +4309,52 @@
     }
     function gdFilterStudents(v) { gdRenderStudents(v); }
     function gdSelectAll(on) { document.querySelectorAll('.gd-st').forEach(c => { c.checked = on; }); }
+    // 👥 配信グループ (ブラウザ内 localStorage に保存。生徒を毎回選び直さず、クラス等をワンタップで選択)
+    const GD_GROUPS_KEY = 'ceo_gd_groups_v1';
+    function gdGetGroups() { try { return JSON.parse(localStorage.getItem(GD_GROUPS_KEY) || '[]'); } catch (e) { return []; } }
+    function gdSetGroups(g) { try { localStorage.setItem(GD_GROUPS_KEY, JSON.stringify(g)); } catch (e) {} }
+    function gdRenderGroups() {
+      const box = document.getElementById('gdGroupChips'); if (!box) return;
+      const groups = gdGetGroups();
+      if (!groups.length) { box.innerHTML = '<span style="color:#52525b;">（未登録：生徒を選んで「＋選択中を保存」）</span>'; return; }
+      box.innerHTML = groups.map((gp, i) =>
+        `<span style="display:inline-flex;align-items:center;background:rgba(167,139,250,0.14);border:1px solid rgba(167,139,250,0.45);border-radius:12px;padding:0.1rem 0.15rem 0.1rem 0.55rem;">`
+        + `<button type="button" onclick="gdApplyGroup(${i})" title="この${gp.ids.length}名を選択に追加" style="background:none;border:none;color:#ddd6fe;font-size:0.74rem;font-weight:700;cursor:pointer;padding:0;">${escapeHtml(gp.name)} <span style="color:#a78bfa;">${gp.ids.length}</span></button>`
+        + `<button type="button" onclick="gdDeleteGroup(${i})" title="グループを削除" style="background:none;border:none;color:#f9a8d4;font-size:0.72rem;cursor:pointer;padding:0 0.3rem;">✕</button>`
+        + `</span>`
+      ).join('');
+    }
+    function gdSaveGroup() {
+      const msg = document.getElementById('gdCreateMsg');
+      const ids = Array.from(document.querySelectorAll('.gd-st:checked')).map(c => parseInt(c.value, 10));
+      if (!ids.length) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">先に生徒をチェックしてから「＋選択中を保存」してください</span>'; return; }
+      const name = (prompt(`グループ名を入力（${ids.length}名を保存）`, '') || '').trim();
+      if (!name) return;
+      const groups = gdGetGroups();
+      const at = groups.findIndex(g => g.name === name);
+      if (at >= 0) { if (!confirm(`「${name}」は既にあります。上書きしますか？`)) return; groups[at] = { name, ids }; }
+      else groups.push({ name, ids });
+      gdSetGroups(groups); gdRenderGroups();
+      if (msg) msg.innerHTML = `<span style="color:#86efac;">👥 グループ「${escapeHtml(name)}」を保存しました（${ids.length}名）</span>`;
+    }
+    function gdApplyGroup(i) {
+      const gp = gdGetGroups()[i]; if (!gp) return;
+      // フィルタを解除して全生徒を再描画 → 既存の選択は維持しつつグループ員を追加(＝複数グループの合成が可能)
+      const already = new Set(Array.from(document.querySelectorAll('.gd-st:checked')).map(c => parseInt(c.value, 10)));
+      const filt = document.getElementById('gdStudentFilter'); if (filt) filt.value = '';
+      gdRenderStudents('');
+      gp.ids.forEach(id => already.add(Number(id)));
+      document.querySelectorAll('.gd-st').forEach(c => { if (already.has(parseInt(c.value, 10))) c.checked = true; });
+      const present = gp.ids.filter(id => document.querySelector('.gd-st[value="' + id + '"]')).length;
+      const miss = gp.ids.length - present;
+      const msg = document.getElementById('gdCreateMsg');
+      if (msg) msg.innerHTML = `<span style="color:#86efac;">👥「${escapeHtml(gp.name)}」の ${present}名を選択に追加${miss > 0 ? `（${miss}名は現在の生徒一覧に不在）` : ''}</span>`;
+    }
+    function gdDeleteGroup(i) {
+      const groups = gdGetGroups(); const gp = groups[i]; if (!gp) return;
+      if (!confirm(`グループ「${gp.name}」を削除しますか？（生徒自体は消えません）`)) return;
+      groups.splice(i, 1); gdSetGroups(groups); gdRenderGroups();
+    }
     async function gdCreate() {
       const msg = document.getElementById('gdCreateMsg');
       if (!_gdSelUnit) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">先に単元を選んでください</span>'; return; }
