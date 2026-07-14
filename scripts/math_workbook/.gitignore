@@ -1,0 +1,7 @@
+# 中間生成物・バックアップ(コミット不要)
+*.bak
+*_display.json
+rewrite_out.json
+qa_ia.json
+qa_iib.json
+_build_*.html
