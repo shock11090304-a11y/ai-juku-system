@@ -2819,6 +2819,74 @@ function _flushPendingMathWhenReady() {
     }
   }, 500);
 }
+// 🔢 2026-07-14 小川くん事例の恒久対策: AI が区切り (\( \) / $ $) を付け忘れて「生」で書いた
+//   数式 — 不等号 (≥≦≠…) の素 Unicode や裸の LaTeX コマンド (\geq \dfrac…) — を KaTeX が拾えず
+//   「\geq」やフォント未収録の記号がそのまま表示されるのを防ぐ。DOM を歩いて code/pre/.katex と
+//   既に区切り済みの text node を避けつつ、生の数式片を $...$ で包んで renderMathInElement に載せる。
+//   (house 先例: ai-tutor-photo.html の pretifyMath を移植し、裸の LaTeX コマンドも包むよう拡張)
+const _BARE_LATEX_NOARG_RE = /\\(?:geqq|leqq|geqslant|leqslant|geq|leq|neqq|neq|equiv|approx|simeq|cong|propto|fallingdotseq|times|div|cdot|pm|mp|to|longrightarrow|rightarrow|leftarrow|Rightarrow|Leftrightarrow|iff|implies|mapsto|infty|angle|perp|parallel|notin|subseteq|subset|supseteq|supset|cup|cap|emptyset|varnothing|forall|exists|therefore|because|partial|nabla|alpha|beta|gamma|delta|varepsilon|epsilon|zeta|eta|vartheta|theta|iota|kappa|lambda|mu|nu|xi|varpi|pi|varrho|rho|varsigma|sigma|tau|upsilon|varphi|phi|chi|psi|omega|Gamma|Delta|Theta|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega|ldots|cdots|dots|circ|prime|le|ge|ne|in)(?![a-zA-Z])/;
+// 素の数式トークン (LaTeX コマンド + 素 Unicode) を1回のパスで検出。frac/sqrt/binom を先頭に置き
+// 引数ごと丸取りするので、内部の \pi 等が二重ラップされない (単一パス=非重複が保証される)。
+// _BRACE は1段ネストまで許容 (\dfrac{\sqrt{2}}{3} 等の入れ子引数を丸取り)。
+const _BRACE = '\\{(?:[^{}]|\\{[^{}]*\\})*\\}';
+const _BARE_MATH_TOKEN_RE = new RegExp(
+  '\\\\(?:d|t)?frac\\s*' + _BRACE + '\\s*' + _BRACE      // \dfrac{..}{..}
+  + '|\\\\binom\\s*' + _BRACE + '\\s*' + _BRACE          // \binom{..}{..}
+  + '|\\\\sqrt\\s*(?:\\[[^\\]]*\\])?\\s*' + _BRACE        // \sqrt[..]{..}
+  + '|' + _BARE_LATEX_NOARG_RE.source                    // 引数なし関係/ギリシャ/演算子コマンド
+  + '|√\\d+'                                              // 素 Unicode √n
+  + '|[≦≧≤≥≠≒≈±∞]',                                       // 素 Unicode 記号 (⇒⇐⇔ は文章の矢印と衝突するため除外)
+  'g');
+const _BARE_UNI_MAP = { '≦':'\\leqq','≧':'\\geqq','≤':'\\leq','≥':'\\geq','≠':'\\neq','≒':'\\fallingdotseq','≈':'\\approx','±':'\\pm','∞':'\\infty' };
+function _bareMathToLatex(m) {
+  if (m.charAt(0) === '\\') return m;                     // 既に LaTeX コマンド/frac/sqrt → そのまま
+  if (m.charAt(0) === '√') return '\\sqrt{' + m.slice(1) + '}'; // √5 → \sqrt{5}
+  return _BARE_UNI_MAP[m] || m;                           // 素 Unicode 記号 → LaTeX
+}
+function _wrapBareMath(container) {
+  if (!container || typeof document.createTreeWalker !== 'function') return;
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+    acceptNode: function(node) {
+      let p = node.parentNode;
+      while (p && p !== container) {
+        const tag = (p.tagName || '').toLowerCase();
+        if (tag === 'code' || tag === 'pre' || tag === 'kbd' || tag === 'samp') return NodeFilter.FILTER_REJECT;
+        if (p.classList && (p.classList.contains('katex') || p.classList.contains('katex-display') || p.classList.contains('katex-html'))) return NodeFilter.FILTER_REJECT;
+        p = p.parentNode;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) nodes.push(n);
+  nodes.forEach(function(node) {
+    const original = node.nodeValue;
+    if (!original || original.length < 2) return;
+    // 既に LaTeX 区切りを含む text node は触らない (二重変換防止)
+    if (original.indexOf('$') >= 0 || original.indexOf('\\(') >= 0 || original.indexOf('\\[') >= 0) return;
+    // 素の数式トークン (LaTeX コマンド・frac/sqrt・素 Unicode 記号) を1回のパスで $..$ 化。
+    // frac/sqrt を先頭に置くので引数内の \pi 等は二重ラップされない (非重複が保証される)。
+    const t = original.replace(_BARE_MATH_TOKEN_RE, function(m){ return '$' + _bareMathToLatex(m) + '$'; })
+                      .replace(/\$\s*\$/g, ' '); // 隣接ラップで生じた空 $$ を空白へ
+    if (t === original) return;
+    // 数式 ($..$) と plain text を分離し、数式は <span> の text として保持 → renderMathInElement が組版
+    const fragments = document.createDocumentFragment();
+    const re = /\$[^$\n]+?\$/g;
+    let lastIdx = 0;
+    let match;
+    while ((match = re.exec(t)) !== null) {
+      if (match.index > lastIdx) fragments.appendChild(document.createTextNode(t.substring(lastIdx, match.index)));
+      const span = document.createElement('span');
+      span.textContent = match[0];
+      fragments.appendChild(span);
+      lastIdx = match.index + match[0].length;
+    }
+    if (lastIdx < t.length) fragments.appendChild(document.createTextNode(t.substring(lastIdx)));
+    if (fragments.childNodes.length > 0) node.parentNode.replaceChild(fragments, node);
+  });
+}
+
 function renderMathInNode(el) {
   if (!el) return;
   if (typeof window.renderMathInElement !== 'function') {
@@ -2827,6 +2895,8 @@ function renderMathInNode(el) {
     return;
   }
   try {
+    // 生の数式片 (\geq や ≧ 等・区切り忘れ) を $...$ で包んでから KaTeX 組版に載せる
+    try { _wrapBareMath(el); } catch (e) { console.warn('wrapBareMath failed:', e); }
     window.renderMathInElement(el, {
       // 🔢 2026-06-04 石井くん事例の文字化け修正: AI チューターは単一 $...$ で数式を返すが
       //   従来 delimiter は $$ / \( / \[ のみで単一 $ を拾えず生表示されていた。
@@ -3104,7 +3174,9 @@ function formatMarkdown(text) {
   });
   // 引用ブロック (連続する "&gt; " 行・escapeHtml 済みなので > は &gt;)
   // "&gt;=" (不等号 >=) を引用と誤認しないよう、&gt; の直後は空白または行末のみ引用扱い
-  out = out.replace(/(?:^&gt;(?:[ \t].*)?(?:\n|$))+/gm, (m) => {
+  // 🔢 2026-07-14: 行頭「&gt; 5」等 (不等号「5 より大きい」) を引用ブロックに飲まれて > が消える
+  //   のを防ぐ。&gt; の直後が空白+数字/小数点なら数式とみなし引用扱いしない (真の引用は文字始まり)
+  out = out.replace(/(?:^&gt;(?![ \t]*[.\d])(?:[ \t].*)?(?:\n|$))+/gm, (m) => {
     const inner = m.replace(/^&gt;[ \t]?/gm, '').replace(/\n$/, '');
     return '<blockquote class="md-quote">' + inner + '</blockquote>\n';
   });
@@ -3249,6 +3321,7 @@ async function sendChatMessage() {
 - 分からない場合に戻るべき単元や教材ページを示す
 分量の目安: 基礎質問 300〜500字／応用以上 500〜1200字。「答えだけ短く」は避ける
 ${/数学|物理|化学|理科/.test(subject) ? `- 数式は LaTeX 記法で記述する（インライン \\( ... \\)、ディスプレイ \\[ ... \\]）。分数は \\dfrac、根号は \\sqrt、積分は \\int、総和は \\sum を用いる。全角記号（²・√・∫）やASCII混在（x^2, 1/2）は使わない
+- 【最重要・文字化け防止／厳守】不等号（≥ ≤ ≠ ≧ ≦ ≒ ≈ ＞ ＜）・分数・根号・指数・添字・ギリシャ文字・その他あらゆる数学記号は、日本語の文の途中に1つだけ書くときでも必ず \\( ... \\) で囲む。区切りの外に、生の Unicode 記号（≥ ≧ ≦ ≠ √ ∫ 等）や裸の LaTeX コマンド（\\geq \\dfrac 等）を1文字も出さない。例: ×「だから k≥3」 ×「だから k \\geq 3」 → ○「だから \\(k \\geq 3\\)」。数式・数直線・場合分けの式をコードフェンス（3連バッククォート）やインラインコード（バッククォート囲み）の中に入れない（KaTeX が描画できず生の文字列・等幅フォントで文字化けする）。コードフェンスは実際のプログラムコード専用
 - 数学の論述では、使う定理・公式の根拠を明示し、場合分けは漏れなく列挙する。証明問題では「示すべき命題」を冒頭で宣言する
 - 確率は独立性・復元/非復元を明記、整数は mod の法を明示、図形は座標・長さを文字で完全再現（画像依存禁止）
 - 生徒の学年「${student.grade || '未設定'}」の履修範囲を逸脱した道具（数Ⅲの極限・複素平面・ベクトル外積など）は、必要最小限に留め、使う際は一言断る
