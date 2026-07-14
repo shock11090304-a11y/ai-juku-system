@@ -2436,6 +2436,8 @@ function applyKatex(rootEl) {
   if (!rootEl) return;
   // 🔢 Plain text 数式 (π/2, √5, x^2 等) を先に $LaTeX$ に変換 (AI tutor と同じ品質)
   try { pretifyMath(rootEl); } catch (e) { console.warn('[katex] pretifyMath failed', e); }
+  // 🔢 2026-07-14: pretifyMath が拾わない裸 LaTeX コマンド (\geq \dfrac 等) と西洋不等号 (≤ ≥) を \(..\) 化 (math-wrap.js)
+  try { if (typeof window.wrapBareMath === 'function') window.wrapBareMath(rootEl); } catch (e) { console.warn('[katex] wrapBareMath failed', e); }
   if (typeof window.renderMathInElement !== 'function') return;
   try {
     window.renderMathInElement(rootEl, {
