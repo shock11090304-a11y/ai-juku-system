@@ -655,8 +655,10 @@
         </div>
         <div id="gdGroupsRow" style="display:flex;align-items:center;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.45rem;font-size:0.76rem;">
           <span style="color:#a78bfa;font-weight:700;">👥 グループ</span>
+          <span style="color:#71717a;font-size:0.68rem;">（このPCのみ）</span>
           <span id="gdGroupChips" style="display:flex;flex-wrap:wrap;gap:0.3rem;"></span>
-          <button type="button" onclick="gdSaveGroup()" title="今チェックしている生徒を名前を付けて保存" style="background:none;color:#c4b5fd;border:1px dashed #6d28d9;border-radius:12px;padding:0.15rem 0.65rem;font-size:0.72rem;cursor:pointer;">＋ 選択中を保存</button>
+          <input id="gdGroupNameInput" placeholder="グループ名(例:高3クラス)" maxlength="30" onkeydown="if(event.key==='Enter'){event.preventDefault();gdSaveGroup();}" style="background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:0.2rem 0.5rem;font-size:0.72rem;width:9rem;">
+          <button type="button" onclick="gdSaveGroup()" title="名前を入力し、チェック中の生徒をこの名前で保存" style="background:none;color:#c4b5fd;border:1px dashed #6d28d9;border-radius:12px;padding:0.15rem 0.65rem;font-size:0.72rem;cursor:pointer;">＋ 選択中を保存</button>
         </div>
         <div id="gdStudents" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.2rem;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:0.5rem;margin-bottom:0.7rem;">読み込み中...</div>
         <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
@@ -4312,7 +4314,7 @@
     // 👥 配信グループ (ブラウザ内 localStorage に保存。生徒を毎回選び直さず、クラス等をワンタップで選択)
     const GD_GROUPS_KEY = 'ceo_gd_groups_v1';
     function gdGetGroups() { try { return JSON.parse(localStorage.getItem(GD_GROUPS_KEY) || '[]'); } catch (e) { return []; } }
-    function gdSetGroups(g) { try { localStorage.setItem(GD_GROUPS_KEY, JSON.stringify(g)); } catch (e) {} }
+    function gdSetGroups(g) { try { localStorage.setItem(GD_GROUPS_KEY, JSON.stringify(g)); return true; } catch (e) { return false; } }
     function gdRenderGroups() {
       const box = document.getElementById('gdGroupChips'); if (!box) return;
       const groups = gdGetGroups();
@@ -4327,15 +4329,18 @@
     function gdSaveGroup() {
       const msg = document.getElementById('gdCreateMsg');
       const ids = Array.from(document.querySelectorAll('.gd-st:checked')).map(c => parseInt(c.value, 10));
-      if (!ids.length) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">先に生徒をチェックしてから「＋選択中を保存」してください</span>'; return; }
-      const name = (prompt(`グループ名を入力（${ids.length}名を保存）`, '') || '').trim();
-      if (!name) return;
+      if (!ids.length) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">先に生徒をチェックしてから、グループ名を入れて保存してください</span>'; return; }
+      const inp = document.getElementById('gdGroupNameInput');
+      const name = ((inp && inp.value) || '').trim();
+      if (!name) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">グループ名の枠に名前を入力してください（例：高3クラス）</span>'; if (inp) inp.focus(); return; }
       const groups = gdGetGroups();
       const at = groups.findIndex(g => g.name === name);
-      if (at >= 0) { if (!confirm(`「${name}」は既にあります。上書きしますか？`)) return; groups[at] = { name, ids }; }
-      else groups.push({ name, ids });
-      gdSetGroups(groups); gdRenderGroups();
-      if (msg) msg.innerHTML = `<span style="color:#86efac;">👥 グループ「${escapeHtml(name)}」を保存しました（${ids.length}名）</span>`;
+      const updated = at >= 0;
+      if (updated) groups[at] = { name, ids }; else groups.push({ name, ids });
+      if (!gdSetGroups(groups)) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">❌ 保存できませんでした（ブラウザのデータ保存が無効の可能性）</span>'; return; }
+      gdRenderGroups();
+      if (inp) inp.value = '';
+      if (msg) msg.innerHTML = `<span style="color:#86efac;">👥 グループ「${escapeHtml(name)}」を${updated ? '更新' : '保存'}しました（${ids.length}名）</span>`;
     }
     function gdApplyGroup(i) {
       const gp = gdGetGroups()[i]; if (!gp) return;
@@ -4352,8 +4357,8 @@
     }
     function gdDeleteGroup(i) {
       const groups = gdGetGroups(); const gp = groups[i]; if (!gp) return;
-      if (!confirm(`グループ「${gp.name}」を削除しますか？（生徒自体は消えません）`)) return;
       groups.splice(i, 1); gdSetGroups(groups); gdRenderGroups();
+      const msg = document.getElementById('gdCreateMsg'); if (msg) msg.innerHTML = `<span style="color:#cbd5e1;">グループ「${escapeHtml(gp.name)}」を削除しました</span>`;
     }
     async function gdCreate() {
       const msg = document.getElementById('gdCreateMsg');
