@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="/vendor/katex/katex.min.css?v=0.16.11">
   <script defer src="/vendor/katex/katex.min.js?v=0.16.11"></script>
   <script defer src="/vendor/katex/auto-render.min.js?v=0.16.11"></script>
+  <script defer src="math-wrap.js?v=20260714"></script>
   <style>
     body { background: linear-gradient(135deg, #0f0f1e, #1a1a2e); color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; margin: 0; }
     a { color: #93c5fd; }
@@ -514,6 +515,8 @@
       const run = () => {
         if (typeof window.renderMathInElement !== 'function') return false;
         try {
+          // 🔢 2026-07-14: 区切り忘れの生数式(不等号≥≦≠・裸\geq\dfrac)を \(..\) 化して描画に載せる (math-wrap.js)
+          if (typeof window.wrapBareMath === 'function') window.wrapBareMath(rootEl);
           window.renderMathInElement(rootEl, {
             delimiters: [
               { left: '$$', right: '$$', display: true },

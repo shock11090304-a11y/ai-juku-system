@@ -4386,6 +4386,8 @@ function _gdApplyKatex(rootEl) {
   const run = () => {
     if (typeof window.renderMathInElement !== 'function') return false;
     try {
+      // 🔢 2026-07-14: 区切り忘れの生数式(不等号≥≦≠・裸\geq\dfrac)を \(..\) 化して描画に載せる (math-wrap.js)
+      if (typeof window.wrapBareMath === 'function') window.wrapBareMath(rootEl);
       window.renderMathInElement(rootEl, {
         delimiters: [
           { left: '$$', right: '$$', display: true },
