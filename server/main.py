@@ -1152,6 +1152,14 @@ def init_db():
     CREATE UNIQUE INDEX IF NOT EXISTS uq_study_log_admin_like
         ON study_log_reactions(log_id, actor_type, kind)
         WHERE actor_type = 'admin' AND kind = 'like';
+    -- 👥 配信グループ (ドリル配信/宿題ビルダー共通・全端末で共有・塾長指示 2026-07-14)
+    --    student_ids は生徒IDの JSON 配列 (TEXT)。Postgres/SQLite 両対応。
+    CREATE TABLE IF NOT EXISTS delivery_groups (
+        id {pk},
+        name TEXT NOT NULL UNIQUE,
+        student_ids TEXT NOT NULL DEFAULT '[]',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
     -- 学習計画 (Phase 2 - 国公立難関大学コース限定・塾長指示 2026-05-05)
     -- week_pattern (2026-05-22 塾長指示): 'all' = 毎日 / "1,3,5" = 月水金 / "2,4,6" = 火木土 等
     --   1=月 2=火 3=水 4=木 5=金 6=土 7=日 (isoweekday 準拠)
@@ -40076,6 +40084,92 @@ def admin_grammar_drill_list(
                 "created_at": str(d["created_at"]) if d["created_at"] else None,
             })
         return {"ok": True, "items": items}
+    finally:
+        conn.close()
+
+
+# ========================================================================
+# 👥 配信グループ (ドリル配信/宿題ビルダー共通・全端末で共有・塾長指示 2026-07-14)
+#   クラス等の生徒集合をサーバに保存し、CEOダッシュのどの画面/端末からも呼び出せる。
+# ========================================================================
+class DeliveryGroupRequest(BaseModel):
+    name: str
+    student_ids: List[int] = []
+
+
+def _clean_group_ids(raw) -> list:
+    out = []
+    for x in (raw or []):
+        try:
+            out.append(int(x))
+        except (TypeError, ValueError):
+            continue
+    return sorted(set(out))
+
+
+@app.get("/api/admin/delivery-groups")
+def admin_delivery_groups_list(authorization: Optional[str] = Header(None)):
+    """👥 保存済みの配信グループ一覧 (name 昇順)。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, name, student_ids FROM delivery_groups ORDER BY name")
+        groups = []
+        for r in c.fetchall():
+            try:
+                ids = _clean_group_ids(json.loads(r["student_ids"] or "[]"))
+            except Exception:
+                ids = []
+            groups.append({"id": r["id"], "name": r["name"], "student_ids": ids})
+        return {"ok": True, "groups": groups}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/delivery-groups")
+def admin_delivery_groups_upsert(payload: DeliveryGroupRequest, authorization: Optional[str] = Header(None)):
+    """👥 グループを作成/更新 (同名は上書き)。返り値に id と正規化済み student_ids。"""
+    _verify_admin_required(authorization)
+    name = (payload.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="グループ名が空です")
+    if len(name) > 60:
+        name = name[:60]
+    ids = _clean_group_ids(payload.student_ids)
+    ids_json = json.dumps(ids)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id FROM delivery_groups WHERE name = ?", (name,))
+        row = c.fetchone()
+        if row:
+            gid = row["id"]
+            c.execute(
+                "UPDATE delivery_groups SET student_ids = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (ids_json, gid),
+            )
+        else:
+            c.execute("INSERT INTO delivery_groups (name, student_ids) VALUES (?, ?)", (name, ids_json))
+            conn.commit()
+            c.execute("SELECT id FROM delivery_groups WHERE name = ?", (name,))
+            gid = c.fetchone()["id"]
+        conn.commit()
+        return {"ok": True, "id": gid, "name": name, "student_ids": ids}
+    finally:
+        conn.close()
+
+
+@app.delete("/api/admin/delivery-groups/{group_id}")
+def admin_delivery_groups_delete(group_id: int, authorization: Optional[str] = Header(None)):
+    """👥 グループを削除 (生徒自体は消えない)。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("DELETE FROM delivery_groups WHERE id = ?", (group_id,))
+        conn.commit()
+        return {"ok": True}
     finally:
         conn.close()
 
