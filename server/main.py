@@ -26760,10 +26760,17 @@ def auth_me(authorization: Optional[str] = Header(None)):
             _conn.close()
         if not _row:
             raise HTTPException(status_code=401, detail="Unauthorized")
+        # 🛡️ [影dup統合 2026-07-15] 統合で退役したアカウント (email='retired.…' 規約 = 太田/阿井/新田統合時の
+        #   email解放形式) の残留セッションは「継続登録」に誘導してはいけない — 本人の正アカウントは別に
+        #   生きており、upgrade.html で課金させると退役アカウントへの誤課金事故になる。
+        #   auth-guard は account_merged=true を見て継続登録でなく再ログインへ流す。
+        _email_l = (_row["email"] or "")
+        _is_retired_merge = _email_l.startswith("retired.") and _email_l.endswith(".invalid")
         return {"ok": True, "student": {
             "id": _row["id"], "name": _row["name"], "email": _row["email"],
             "grade": _row["grade"], "status": _row["status"], "course": _row["course"],
             "entitled": False, "access_status": _row["status"],
+            "account_merged": _is_retired_merge,
         }}
     # last_login_at リフレッシュ: 4 時間に 1 回まで (DB 書込抑制)
     try:

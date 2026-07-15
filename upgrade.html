@@ -120,6 +120,28 @@
     const params = new URLSearchParams(window.location.search);
     if (params.get('email')) document.getElementById('email').value = params.get('email');
 
+    // 🛡️ [影dup統合 2026-07-15] 重複統合で退役した旧アカウントの残留セッションでこのページに来た場合は
+    //   再ログインへ流す (本人の正アカウントは別に生きている = ここで課金すると退役アカウントへの
+    //   誤課金事故。auth-guard 経由は同じ判定で先に弾かれるが、このページは auth-guard を読まないため
+    //   直リンク/リロード用に自前ガード)。トークン無し・API失敗・通常の体験切れは何もしない (従来動作)。
+    (function () {
+      try {
+        var _tk = localStorage.getItem('ai_juku_session_token');
+        if (!_tk) return;
+        fetch(API_BASE + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + _tk } })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (d && d.student && d.student.account_merged === true) {
+              try {
+                ['ai_juku_session_token', 'ai_juku_session_expires', 'ai_juku_session_student'].forEach(function (k) { localStorage.removeItem(k); });
+              } catch (_) {}
+              window.location.replace('login.html?reason=account_merged');
+            }
+          })
+          .catch(function () {});
+      } catch (_) {}
+    })();
+
     // Plan selection visual
     const planOptions = document.querySelectorAll('.plan-option');
     planOptions.forEach(opt => {
