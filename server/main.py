@@ -10499,10 +10499,11 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
         return max(normalized).isoformat()
 
     # 🏫 [2026-06-27] 塾生アプリ登録経由(referrer=塾生アプリ)の生徒IDを集合化。
-    #   ロスターを「塾生アプリの生徒」と「AI管理の生徒」に分離表示する用 (is_tsujuku_app と同基準)。
+    #   ロスターを「塾生アプリの生徒」と「AI管理の生徒」に分離表示する用 (is_tsujuku_app と同基準 =
+    #   _JUKU_APP_IDS_SQL 単一ソース。2026-07-15 既存AI生への合流承認は塾生アプリ扱いしない厳格化に追随)。
     tsujuku_app_ids = set()
     try:
-        c.execute("SELECT DISTINCT student_id FROM course_applications WHERE referrer = ? AND student_id IS NOT NULL", ("塾生アプリ",))
+        c.execute(_JUKU_APP_IDS_SQL, ("塾生アプリ",))
         tsujuku_app_ids = {r["student_id"] for r in c.fetchall()}
     except Exception as _e:
         log.warning(f"[admin_stats] tsujuku_app_ids query failed: {_e}")
@@ -38246,11 +38247,13 @@ def _study_log_dashboard_students(c, cutoff_date):
       - − 塾生アプリ登録生 (course_applications.referrer='塾生アプリ') は除外
           (通塾生の学習は塾生アプリの出欠で管理する別系統。mypage の記録入力はしないため、
            従来は course=kokuritsu_nankan 一括表示で 0分の空行がヒートマップを埋めていた=そのノイズを排除)
-    ★塾生アプリ判定は course/plan ではなく登録経路 referrer='塾生アプリ' (既存の _is_juku_app_student と同基準)。
+    ★塾生アプリ判定は course/plan ではなく登録経路 referrer='塾生アプリ' (既存の _is_juku_app_student と同基準 =
+      _JUKU_APP_IDS_SQL 単一ソース。2026-07-15 厳格化: 既存AI生に申込が合流したケースは mypage で
+      記録入力を続けるAI管理生なので除外しない = 塾長方針 2026-07-13「記録入力者は反映」を維持)。
       course=kokuritsu_nankan は難関コース(AI利用)であり塾生アプリとは別軸なので混同しない。
     戻り値: [{"id","name","grade","status"}] を name 昇順 (呼び出し側で必要に応じ再ソート)。
     """
-    c.execute("SELECT DISTINCT student_id FROM course_applications WHERE referrer = ?", ("塾生アプリ",))
+    c.execute(_JUKU_APP_IDS_SQL, ("塾生アプリ",))
     juku_ids = {r["student_id"] for r in c.fetchall()}
     # 合成監視/テスト用アカウントは除外 (dormant-reengage cron と同じ「非実在アカウント」判定)
     c.execute(
@@ -43169,6 +43172,16 @@ def _require_tsujuku_student(student: Optional[dict]) -> None:
 #   ★当初は course=kokuritsu_nankan(=国公立難関大学コース)を「通塾生」とみなして塾生アプリに送ったが、
 #     これは AI機能付きコースなので、難関コースのAI利用者まで mypage から締め出す事故になった
 #     (2026-06-27 高野さん他11/14名がAI利用者と判明)。→ 判定を course/plan ではなく登録経路に変更。
+# 🏫 [2026-07-15] 塾生アプリ生の判定SQL (単一ソース)。_is_juku_app_student (ログイン/feed) /
+#   admin_stats のロスター分離 / _study_log_dashboard_students の除外集合の3箇所で共用。
+#   条件の意味 (created_at 比較 / ai_disabled 分岐) は _is_juku_app_student の docstring を参照。
+_JUKU_APP_IDS_SQL = (
+    "SELECT DISTINCT ca.student_id FROM course_applications ca JOIN students s ON s.id = ca.student_id "
+    "WHERE ca.referrer = ? AND ca.student_id IS NOT NULL "
+    "AND (s.created_at >= COALESCE(ca.created_at, s.created_at) OR COALESCE(s.ai_disabled, 0) = 1)"
+)
+
+
 def _is_juku_app_student(student_id) -> bool:
     """🏫 [2026-06-27] class.html(塾生アプリ)をホームにすべきか = 「塾生アプリ登録フォーム
     (juku-register・referrer='塾生アプリ')から自己登録した純粋な通塾生」か。
@@ -43177,14 +43190,20 @@ def _is_juku_app_student(student_id) -> bool:
       AI利用者を mypage から締め出す事故になる(2026-06-27 高野さん他11名で発覚)。
       → 判定は course/plan ではなく『登録経路 referrer=塾生アプリ』にする = 自己登録の通塾生のみ。
       既存のAI生(referrer≠塾生アプリ)は全員 AI管理(mypage)のまま据え置き。
+    ★[2026-07-15 太田さん事故] 塾生アプリ申込が「既存のAI生」に合流した場合 (承認の既存生徒検索が
+      email/student_email でヒット、例: 山田さん #12681) は、申込行があるだけで true になり
+      AI利用者を mypage から締め出す(高野さん事故クラスの再発)。→ 申込の存在に加えて
+      (a) その申込がアカウントを作った (students.created_at >= 申込 created_at = 自己登録の新規通塾生)
+      or (b) 塾長が AIなし枠を明示指定 (ai_disabled=1)
+      のときだけ true。既存AI生への後付け合流 (作成日 < 申込日 & AIあり) は false = mypage 据え置き。
     自前接続でcourse_applicationsを引く(login/feedの呼出しは軽量・存在チェックのみ)。"""
     if not student_id:
         return False
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT 1 FROM course_applications WHERE student_id = ? AND referrer = ? LIMIT 1",
-                  (int(student_id), "塾生アプリ"))
+        c.execute(_JUKU_APP_IDS_SQL + " AND ca.student_id = ? LIMIT 1",
+                  ("塾生アプリ", int(student_id)))
         return c.fetchone() is not None
     except Exception:
         return False
@@ -44693,19 +44712,50 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         _app_classes_json = json.dumps(_app_classes, ensure_ascii=False) if _app_classes else None
 
         # 既存生徒検索 → なければ trial として新規作成
-        c.execute("SELECT id, status, course, ai_disabled FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
-        st = c.fetchone()
+        # 🛡️ [影dup根絶 2026-07-15] email(親) だけでなく「確認済みの student_email(子)」でも既存生徒に
+        #   合流させる。太田/阿井/新田さん(6/28-29) は既存AI生が自分のメール(=students.student_email)で
+        #   塾生アプリに自己登録 → 別アカウントが新規作成され、ログイン照合 (email 完全一致が
+        #   student_email 一致より優先・main.py request_magic_link) が新アカウントを掴んで
+        #   本来の AI 管理に入れなくなった(影乗っ取り)。優先順位はログインと同じ email 一致優先。
+        #   未確認 (student_email_verified=0) は第三者アドレスを設定できるため合流しない
+        #   (magic-link の「子メール宛にコードを送るか」ガードと同じ verified 基準。
+        #    ※ログインのアカウント照合自体は unverified でも解決される点に注意 = 未確認一致で
+        #    新規作成した場合は影乗っ取りが再現し得るため、下の _shadow_prior で CEO へ警告する)。
+        try:
+            c.execute(
+                "SELECT id, status, course, ai_disabled, plan FROM students "
+                "WHERE LOWER(email) = ? OR (LOWER(COALESCE(student_email, '')) = ? AND COALESCE(student_email_verified, 0) = 1) "
+                "ORDER BY CASE WHEN LOWER(email) = ? THEN 0 ELSE 1 END, id LIMIT 1",
+                (email_lower, email_lower, email_lower))
+            st = c.fetchone()
+        except Exception:
+            # student_email_verified 列が無い旧 DB (ALTER 失敗・部分デプロイ) でも承認自体は殺さない
+            conn.rollback()
+            c.execute("SELECT id, status, course, ai_disabled, plan FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
+            st = c.fetchone()
+        # 既存アカウントへの合流か (CEO 承認結果に表示して「新規が作られていない」ことを可視化)
+        _attached_existing = st is not None
+        _attached_plan = (st["plan"] if (st and "plan" in st.keys()) else None) or None
         student_id = None
         _repeat_prior = None  # 🚨 別メール同名の既存生徒(二重登録疑い)。新規作成時のみ検知して post-commit でフラグ。
+        _shadow_prior = None  # 🚨 申込メール=既存生徒の未確認 student_email (影アカウント疑い)。新規作成時のみ検知。
         # 🚫 [塾生アプリ AIなし枠] AI利用可否の決定:
-        #   ・塾長の明示指定 (payload.ai_disabled) があれば最優先 (CEO 承認 UI は常に明示送信)。
-        #   ・未指定 & 既存生徒 → 現状維持 (既存の AI 利用者を smart-default で勝手に無効化しない=
-        #     2026-06-27「難関コースの AI 利用者を mypage から締め出した」事故クラスの再発防止)。
-        #   ・未指定 & 新規生徒 → 塾生アプリ登録は AIなし(1) / 難関コースは AIあり(0)。
-        if payload.ai_disabled is not None:
-            _ai_disabled = 1 if payload.ai_disabled else 0
-        elif st:
+        #   ・既存生徒への合流 → 常に現状維持 (既存の AI 利用者を勝手に無効化しない)。
+        #     🛡️ [2026-07-15 review指摘] CEO の AIあり/なし選択は「合流先が誰か」判明前に確定するため、
+        #     塾生アプリ申込の推奨既定 (AIなし) に従うだけで、合流先の有料AI生の AI を即停止し
+        #     _is_juku_app_student の ai_disabled=1 分岐で mypage からも追放してしまう。よって合流時は
+        #     payload より既存値を優先し、食い違いは response (ai_disabled_preserved) で CEO に可視化。
+        #     意図的に変えたい場合は承認後に生徒詳細の AI トグル (admin_set_student_ai_disabled) を使う。
+        #   ・新規 & 塾長の明示指定 (payload.ai_disabled) があれば最優先 (CEO 承認 UI は常に明示送信)。
+        #   ・新規 & 未指定 → 塾生アプリ登録は AIなし(1) / 難関コースは AIあり(0)。
+        _ai_disabled_preserved = False
+        if st:
             _ai_disabled = (st["ai_disabled"] if "ai_disabled" in st.keys() else 0) or 0
+            if payload.ai_disabled is not None and (1 if payload.ai_disabled else 0) != _ai_disabled:
+                _ai_disabled_preserved = True
+                log.info(f"[CourseApp] attach: ai_disabled 既存値 {_ai_disabled} を保持 (CEO指定 {payload.ai_disabled} は不適用) student_id={st['id']}")
+        elif payload.ai_disabled is not None:
+            _ai_disabled = 1 if payload.ai_disabled else 0
         else:
             _ai_disabled = 1 if _is_juku_app_reg else 0
         if st:
@@ -44747,6 +44797,19 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
                 _repeat_prior = _find_prior_trial_identity(c, email_lower, name, "")
             except Exception:
                 _repeat_prior = None
+            # 🛡️ [影dup根絶 2026-07-15] 申込メールが既存生徒の「未確認 student_email」と一致 =
+            #   verified なら上の SELECT で自動合流していたケース。未確認は乗っ取り対策で合流しないが、
+            #   このままログインが新アカウントに吸われる影乗っ取り (太田さん事故) が再現し得るため、
+            #   承認はブロックせず CEO の重複バナー導線へ警告を出す (post-commit で _flag_repeat_suspect)。
+            try:
+                c.execute(
+                    "SELECT id, name FROM students WHERE LOWER(COALESCE(student_email, '')) = ? AND id <> ? LIMIT 1",
+                    (email_lower, student_id))
+                _sr = c.fetchone()
+                if _sr:
+                    _shadow_prior = {"id": _sr["id"], "name": _sr["name"]}
+            except Exception:
+                _shadow_prior = None
 
         # application を approved に更新
         admin_note = _sanitize_text(payload.note, 500)
@@ -44779,6 +44842,19 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         except Exception as _re:
             log.warning(f"[CourseApp] repeat-suspect flag failed: {_re}")
 
+    # 🛡️ [影dup根絶 2026-07-15] 未確認 student_email 一致の影アカウント疑いを CEO 重複バナーへ (非throw)
+    if student_id and _shadow_prior:
+        try:
+            _flag_repeat_suspect(int(student_id), (
+                f"影アカウント疑い: 申込メールが既存生徒 {_shadow_prior['name']} (#{_shadow_prior['id']}) の"
+                f"生徒用メール(未確認)と一致。今後このメールでのログインは新アカウントに吸われ、"
+                f"既存アカウントに入れなくなる可能性 (太田さん 2026-07-15 事故と同型)。統合を検討してください"))
+            _record_repeat_event("course_approve_shadow_suspect", {
+                "student_id": int(student_id), "prior_id": _shadow_prior.get("id"), "email": email_lower,
+            })
+        except Exception as _se:
+            log.warning(f"[CourseApp] shadow-suspect flag failed: {_se}")
+
     # 📲 [LINE受信案内 2026-06-26] owner方針: 新規通塾生の承認時に「LINEで受け取る」案内を自動で出す
     #   (キャリアメール不達対策)。LINE連携コードを自動発行 → welcome メール本文 + CEO承認結果モーダルの
     #   両方に「①公式LINE友だち追加 →②コード送信」案内を載せ、塾長は QR/ID で直接渡せる(メール不要)。
@@ -44801,6 +44877,10 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         magic_token = _create_magic_link_token(student_id)
         login_url = f"https://trillion-ai-juku.com/auth.html?t={magic_token}"
         if _is_juku_app_reg:
+            # 🏫 [2026-07-15 review指摘] 塾生アプリ登録者のリンクは必ず class.html に着地させる。
+            #   既存AI生への合流 (attached_existing) では is_tsujuku_app=false になり、redirect 無指定だと
+            #   auth.html の既定 quick-start.html に落ちて文面「そのまま塾生アプリで使えます」と矛盾するため。
+            login_url += "&redirect=class.html"
             # 🏫 トリリオン塾生アプリの登録者向け文面 (難関コースのAI機能案内は出さない)
             welcome_subject = "✅ トリリオン塾生アプリ ご登録承認"
             body_text = (
@@ -44815,6 +44895,13 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
                 f"💬 塾長へのメッセージ\n\n"
                 f"※リンクの有効期限が切れた場合は、ログイン画面でメールアドレスを入力すれば再送できます。"
             )
+            # 🛡️ 既存AI生への合流 (AIあり) の場合だけ一文追加: 「新しいアカウントができた」誤解と
+            #   「マイページが消えた?」の混乱を防ぐ (2026-07-15 review指摘)。
+            if _attached_existing and not _ai_disabled:
+                body_text += (
+                    "\n\n※これまでお使いのアカウントにそのまま統合されています。"
+                    "マイページ (AI学習) も今まで通り使えます。"
+                )
         else:
             welcome_subject = "✅ 国公立難関大学コース ご加入承認"
             body_text = (
@@ -44846,7 +44933,11 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         log.warning(f"[CourseApp] welcome email failed: {e}")
 
     return {"ok": True, "student_id": student_id, "welcome_email_sent": sent_link,
-            "line_link_code": line_link_code, "line_add_friend_url": LINE_ADD_FRIEND_URL}
+            "line_link_code": line_link_code, "line_add_friend_url": LINE_ADD_FRIEND_URL,
+            # 🛡️ [影dup根絶 2026-07-15] 既存アカウントへの合流を CEO 承認結果に可視化 (新規作成なし)。
+            #   ai_disabled_preserved=true は「CEO の AIあり/なし選択と既存値が食い違ったため既存値を保持した」印。
+            "attached_existing": _attached_existing, "attached_plan": _attached_plan,
+            "ai_disabled_preserved": _ai_disabled_preserved, "ai_disabled_final": _ai_disabled}
 
 
 class CourseApplicationRejectRequest(BaseModel):

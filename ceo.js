@@ -2333,7 +2333,23 @@ async function loadCourseApps() {
           throw new Error(detail || `HTTP ${r.status}`);
         }
         const j = await r.json();
-        resultEl.innerHTML = `<span style="color:#86efac;">✅ 承認完了 (生徒ID: ${j.student_id} ${j.welcome_email_sent ? '/ welcome メール送信済' : '/ メール送信失敗'} / ${_useAI ? 'AIあり' : '🏫 塾生アプリのみ(AIなし)'})</span>`;
+        // 🛡️ [影dup根絶 2026-07-15] 既存アカウントに合流した場合は新規作成でないことを明示。
+        //    合流時サーバは AIあり/なし選択を適用せず既存値を保持する (ai_disabled_preserved) ため、
+        //    表示は必ずサーバの最終値 (ai_disabled_final) を使う。行内表示はリスト再読込(1.5秒)で
+        //    消える+LINEモーダルに覆われるため、合流時は alert でも通知 (このフローは confirm 前提)。
+        const _finalAI = (j.ai_disabled_final != null) ? !j.ai_disabled_final : _useAI;
+        const _aiNote = j.ai_disabled_preserved
+          ? `AIあり/なしの選択は適用せず、このアカウントの既存設定 (${_finalAI ? 'AIあり' : 'AIなし'}) を維持しました。変更する場合は生徒詳細の AI トグルから。`
+          : `AI設定: ${_finalAI ? 'AIあり' : '🏫 塾生アプリのみ(AIなし)'}`;
+        const _attachNote = j.attached_existing
+          ? `<br><span style="color:#fbbf24;">⚠️ 既存アカウント #${escapeHtml(String(j.student_id))} に合流 (新規作成なし${j.attached_plan ? ` / プラン: ${escapeHtml(String(j.attached_plan))}` : ''}) — ${escapeHtml(_aiNote)}</span>`
+          : '';
+        resultEl.innerHTML = `<span style="color:#86efac;">✅ 承認完了 (生徒ID: ${j.student_id} ${j.welcome_email_sent ? '/ welcome メール送信済' : '/ メール送信失敗'} / ${_finalAI ? 'AIあり' : '🏫 塾生アプリのみ(AIなし)'})</span>${_attachNote}`;
+        if (j.attached_existing) {
+          try {
+            alert(`⚠️ この申込は新規作成ではなく、既存アカウント #${j.student_id}${j.attached_plan ? `（プラン: ${j.attached_plan}）` : ''} に合流しました。\n${_aiNote}`);
+          } catch (_) {}
+        }
         // 📲 「LINEで受け取る」案内を自動表示 (メール不達対策・塾長が LINE/QR で生徒に渡す)。
         //    リスト再読込(下の setTimeout)で消えない固定 modal で出す。
         if (j.line_link_code) showLineOnboardModal(name, j.line_link_code, j.line_add_friend_url);
