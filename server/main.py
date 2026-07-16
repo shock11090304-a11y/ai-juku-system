@@ -8649,7 +8649,7 @@ async def _run_synthetic_checkout_test() -> dict:
                     f"<p>申込→決済フローが壊れている可能性があります。<strong>機会損失中です。即時対応必要。</strong></p>"
                     f"<h3>失敗内容</h3>{fail_html}"
                     f"<h3>詳細</h3><pre>{html_escape_safe(json.dumps(details, ensure_ascii=False, indent=2))}</pre>"
-                    f"<p><a href='{base}/ceo.html'>CEO ダッシュボードを開く</a></p>"
+                    f"<p><a href='{frontend_base}/ceo.html'>CEO ダッシュボードを開く</a></p>"
                 )
                 _send_monitor_email(subj, body_html)
             except Exception as e:
