@@ -20,6 +20,7 @@ from typing import Optional, List
 from datetime import datetime, date, timezone, timedelta, time as dt_time
 import os
 import json
+import re
 import sqlite3
 import threading
 import hmac
@@ -38,6 +39,9 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 ROOT = pathlib.Path(__file__).parent
+
+# モジュール共通 JST: 関数ローカル定義漏れの NameError が再発するため module-global 化 (関数内の同名ローカル定義は無害に shadow)
+JST = timezone(timedelta(hours=9))
 
 # DATABASE_URL が設定されていれば Postgres、未設定なら SQLite（ローカル開発用）。
 # Railway で Postgres プラグインを追加すると DATABASE_URL が自動注入される。
