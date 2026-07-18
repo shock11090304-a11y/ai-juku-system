@@ -42,6 +42,10 @@
     ['ai_juku_chat_history', 'ai_juku_stats', 'ai_juku_problem_history', 'ai_juku_activity', 'ai_juku_last_curriculum', 'ai_juku_cache_owner_sid'].forEach(function (k) {
       try { localStorage.removeItem(k); } catch (_) {}
     });
+    // 🚪 2026-07-18 [magic-reload-race] auth.html の magic token 退避 (sessionStorage・literal は
+    //   auth.html の PENDING_T_KEY と一致必須)。verify 中断で残った退避が、ログアウト後に同タブで
+    //   auth.html を開いた際の静かな再ログインになるため、ログアウト/セッション破棄時に必ず消す。
+    try { sessionStorage.removeItem('ai_juku_pending_magic_t'); } catch (_e) {}
   }
 
   // 🔑 2026-06-14 [trust-identity] サーバ検証済みの本人を全表示ポインタに固定する。
