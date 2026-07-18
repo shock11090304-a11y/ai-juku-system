@@ -26856,6 +26856,17 @@ def auth_me(authorization: Optional[str] = Header(None)):
                 student["show_trial_followup"] = bool(_trow["is_new_cohort"])
     except Exception as _tfe:
         log.warning(f"[auth_me] trial followup calc skipped: {_tfe}")
+    # 🏫 [2026-07-18 UX review P3] verify / verify-code と同基準の塾生アプリ判定を auth/me にも同梱する。
+    #   auth-guard の applyVerifiedStudent (と app.js init) が全ガードページでこの応答を localStorage の
+    #   session_student へ上書きするため、ここに無いと verify が付けた is_tsujuku_app が消え、
+    #   auth.html の検証済セッション fallback (1becdda) で通塾生が class.html でなく
+    #   quick-start.html に着地する。判定不能時は False (=従来の quick-start 着地) に倒し、
+    #   全ページガードの hot path である auth/me 自体は落とさない。
+    try:
+        student["is_tsujuku_app"] = _is_juku_app_student(student["id"])
+    except Exception as _jae:
+        student["is_tsujuku_app"] = False
+        log.warning(f"[auth_me] is_tsujuku_app calc skipped: {_jae}")
     return {"ok": True, "student": student}
 
 
