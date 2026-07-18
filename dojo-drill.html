@@ -793,8 +793,16 @@
           let questions = [];
           pool.forEach(it => {
             const _p = (it && (it.passage || it.audio_script || it.prompt)) || '';
+            // 🎯 [2026-07-18] _parent_qid: 集約後も各小問が自分の親大問(行)の id を保持する。従来は
+            //   記録時に daimon._question_id (= pool[0] の行id) が全小問へ押印され、question_attempts の
+            //   exam_question_id が別の行に化けて帰属監査が不能だった (混載行事件の調査で発覚)。
+            const _pid = (it && it._question_id) || null;
             ((it && Array.isArray(it.questions)) ? it.questions : []).forEach(q => {
-              if (q && q.stem) questions.push(_p ? { ...q, _passage: _p } : q);
+              if (q && q.stem) {
+                const qq = { ...q, _parent_qid: _pid };
+                if (_p) qq._passage = _p;
+                questions.push(qq);
+              }
             });
           });
           // 🎯 unitExact: 小問 unit の接頭辞 (「(」「（」「:」「：」の前) が filter と完全一致する小問だけに厳密化。
@@ -996,7 +1004,10 @@
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tk}` },
           body: JSON.stringify({
             source: 'practice',
-            exam_question_id: daimon._question_id || null,
+            // 🎯 [2026-07-18] agg は小問ごとに親大問の行id (_parent_qid・集約時付与) を記録。従来の
+            //   daimon._question_id は agg では pool[0] の行id で全小問に同一idが押印されていた。
+            //   非agg の小問は _parent_qid を持たないため従来通り daimon._question_id に fallback。
+            exam_question_id: (qs[r.qi] && qs[r.qi]._parent_qid) || daimon._question_id || null,
             exam_id: preset.exam, part_key: preset.part,
             topic: r.unit || preset.topic,
             is_correct: r.isCorrect ? 1 : 0,
