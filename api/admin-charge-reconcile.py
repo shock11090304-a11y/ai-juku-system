@@ -152,7 +152,7 @@ class handler(BaseHTTPRequestHandler):
             month = (payload.get("month") or "").strip()
             pi_id = (payload.get("paymentIntentId") or "").strip()
 
-            # 🚨 2026-05-13: Vercel Hobby plan 12 function 上限のため migrate_legacy 機能を統合
+            # 🚨 2026-05-13: 当時の Vercel Hobby plan 12 function 上限のため migrate_legacy 機能を統合 (2026-07-18 Pro化で上限解消・統合はそのまま)
             # 旧 Subscription mode 顧客を Setup mode に移行 (1-shot 操作)
             if action == "migrate_legacy_batch":
                 return _handle_migrate_legacy_batch(self, payload)
@@ -648,7 +648,7 @@ class handler(BaseHTTPRequestHandler):
 
 
 # ============================================================================
-# 🚨 2026-05-13: 旧 Subscription mode → Setup mode 移行 (Vercel 12 function 上限のため統合)
+# 🚨 2026-05-13: 旧 Subscription mode → Setup mode 移行 (当時のVercel Hobby 12 function 上限のため統合・2026-07-18 Pro化で上限解消、統合はそのまま)
 # 塾長指示「既存 3 名を手間ゼロで月末バッチに自動移行」(2026-05-13)
 # 処理: Stripe Customer から PaymentMethod 取得 + Subscription を cancel_at_period_end
 #       + KV reg:completed を新形式に更新 (checkout_mode='setup' + monthly_fee + payment_method_id)

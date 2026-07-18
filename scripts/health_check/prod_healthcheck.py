@@ -4,9 +4,9 @@
 2026-07-02 の多視点監査で「見つかったけれど気づけていなかった」バグ群を、今後は
 毎回・機械的に検出できるようにするための常設ツール。各チェックは今回の実所見に対応:
 
-  deploy_freshness   … Vercel 12関数上限による本番ビルド凍結(HEADと本番のmd5不一致)
+  deploy_freshness   … 本番ビルドの凍結/未反映(HEADと本番のmd5不一致・原因を問わず検出)
   api_health         … 本番API/主要公開ページの死活
-  vercel_cap         … api/*.py が 12 を超えていないか(超過=デプロイ全体失敗)
+  vercel_cap         … api/*.py 数の方針ガード(2026-07-18 Pro化で旧12個上限は解消・警告のみ)
   subject_canonical  … question_attempts/student_weakness の非canonical subject
                        (弱点集計・CEO科目配信が空振りする原因)
   orphan_rows        … 削除済み生徒を参照する活動行(KPI水増し・ゾンビassignment)
@@ -139,8 +139,10 @@ def check_vercel_cap():
         return
     try:
         r = subprocess.run(["bash", script], capture_output=True, text=True, timeout=30)
-        add("vercel_cap", PASS if r.returncode == 0 else FAIL,
-            (r.stdout.strip().splitlines() or ["(no output)"])[-1])
+        last = (r.stdout.strip().splitlines() or ["(no output)"])[-1]
+        # スクリプトは警告専用で常に exit 0 (2026-07-18 Pro化・上限は解消)。
+        # 基準値超過は最終行の ⚠️ マーカーで検出して WARN に上げる (PASS のまま埋もれさせない)。
+        add("vercel_cap", WARN if (r.returncode != 0 or last.startswith("⚠️")) else PASS, last)
     except Exception as e:
         add("vercel_cap", WARN, f"実行失敗 {type(e).__name__}: {e}")
 

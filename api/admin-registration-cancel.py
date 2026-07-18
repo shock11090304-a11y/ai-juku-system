@@ -119,7 +119,7 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             # 🔀 action="update_fee": 月謝額の更新 (生徒一覧の月謝編集を月末引き落とし額=registration.monthly_fee に同期)。
-            #    Vercel Hobby の Serverless Function 12個上限のため独立 function にせず本 function に同居。
+            #    旧Vercel Hobby の Serverless Function 12個上限のため独立 function にせず本 function に同居 (2026-07-18 Pro化で上限解消・同居はそのまま維持)。
             #    action 未指定/その他 = 従来の退塾(cancel)処理 (既存クライアント完全互換)。退塾ロジックは下記で無改変。
             #    安全: read-modify-write で全フィールド保持・EX無し・index/done_key/history 不可侵・customerId 二重照合。
             action = (payload.get("action") or "").strip()

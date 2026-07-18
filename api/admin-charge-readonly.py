@@ -4,8 +4,9 @@
   - 月末一斉引き落とし「プレビュー」 (旧 admin-charge-month-end-preview.py)
   - 月末引き落としの「過去履歴・失敗者一覧」 (旧 admin-charge-history.py)
 
-統合理由: Vercel Hobby プランは「1デプロイあたり最大12 Serverless Functions」。
-api/*.py が13個になるとデプロイ全体がビルド失敗し本番が前ビルドで凍結する
+統合理由 (旧Hobby時代の制約・2026-07-18 Pro化で12関数上限は解消済み、統合はそのまま維持):
+当時の Vercel Hobby プランは「1デプロイあたり最大12 Serverless Functions」で、
+api/*.py が13個になるとデプロイ全体がビルド失敗し本番が前ビルドで凍結した
 (過去 74e2c5fb / 216d9ac で同型対応の前例あり)。読み取り専用GETの2本を
 1ファイルに畳んで枠を1つ空け、実課金POST系 (execute/reconcile/spot/past-due/
 webhook/register-subscribe) には一切触れない。

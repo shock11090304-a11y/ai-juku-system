@@ -11,13 +11,10 @@
 - **DB接続プール**: `db()` は psycopg_pool(max_size=`DB_POOL_MAX`既定16・単一プロセス前提)。不具合時は env `DB_POOL_ENABLED=0` → 再起動で直接connectへ即フォールバック。★将来 `uvicorn --workers N` 化するなら 16×N が Postgres `max_connections`(現100) を超えないよう `DB_POOL_MAX` を絞ること。
   - 取込API等は**デプロイ済みのコードを検証**するので、新 part/ルートを足したら「push→デプロイ反映確認→その後にデータ投入」の順を守る (逆順は無効扱いで弾かれる)。
 
-## ⚠️ Vercel Hobby「12 Serverless Function 上限」(最重要 footgun)
-- `api/` 配下 (**サブディレクトリ含め再帰的に**) の handler を定義した `.py` が Vercel の Serverless Function として数えられ、**Hobby プランは12個が上限**。`api/v2/foo.py` のようにサブディレクトリに置いても1関数として数えられる(直下だけの問題ではない)。
-- **13個目を足すと Vercel デプロイが「全体」失敗し、本番が前ビルドで凍結する** (新URL 404 / app.js が古いまま / `gh` の "Vercel" status=failure)。`py_compile` も `vercel.json` も通るのに本番だけ落ちるため診断が難しく、**過去3回再発** (74e2c5fb / 216d9ac / d59461f)。
-- **現在 12/12 (満杯)。** 新しい `api/*.py` を**足さないこと**。
-- 新しい決済系エンドポイントが必要なら、**既存関数に action を同居**させる:
-  `vercel.json` の rewrite で `/payment/api/<new>` → `/api/<existing>?__ep=<action>` に振り、関数内で `__ep` 分岐。
-  (例: `admin-charge-month-end-preview` / `admin-charge-history` は両方 `admin-charge-readonly.py` に同居。)
-- ★ `api/*.py` を増やす前に必ず `bash scripts/check_vercel_function_cap.sh` で関数数を確認 (13個=exit 1)。
-  CI (`.github/workflows/vercel-function-cap.yml`) も push 時にこれを実行し、超過を即・明確に赤チェック化する。
-  (※ API ロジックの追加は基本 Railway 側の `server/main.py` に書く。`api/*.py` は Stripe 等の Vercel 専用関数のみ。)
+## Vercel は Pro プラン (2026-07-18 に Hobby から移行済み)
+- 商用利用の規約準拠 + B2B(学校導入)前提で Pro 化 ($20/月・$20分の従量クレジット込み。現使用量は枠内に余裕)。
+- **旧「12 Serverless Function 上限」は解消済み**: Hobby 固有の上限だったため、`api/*.py` の個数で Vercel デプロイが失敗することはもう無い (過去3回の本番凍結事故 74e2c5fb / 216d9ac / d59461f は Hobby 時代の話)。
+- **アーキテクチャ方針は不変**: API ロジックは Railway 側の `server/main.py` に書く。`api/*.py` は Stripe 等「Vercel でしか動けない」関数のみ (現12個が基準値)。
+- `scripts/check_vercel_function_cap.sh` と CI (`.github/workflows/vercel-function-cap.yml`) は基準値超過を**警告するだけの非ブロッキング**(常に exit 0) に変更済み。正当に関数を増やしたときは同スクリプトの `BASELINE` を実数に更新して警告を止める。
+- 既存の `__ep` action 同居 (例: `admin-charge-month-end-preview` / `admin-charge-history` は `admin-charge-readonly.py` に同居) はそのまま稼働中・触らない。新規に Vercel 専用関数が本当に必要なら素直に足してよい (同居の曲芸は不要になった)。
+- 本番が古いままの症状 (新URL 404 / app.js が古い / `gh` の "Vercel" status=failure) を見たら、関数数ではなく Vercel ビルドログと healthcheck の `deploy_freshness` を見る。
