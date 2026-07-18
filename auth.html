@@ -121,7 +121,22 @@
       ? 'http://localhost:8000'
       : 'https://ai-juku-api-production.up.railway.app';
     const params = new URLSearchParams(window.location.search);
-    const token = params.get('t');
+    let token = params.get('t');
+    // 🛡️ [magic-reload-race] 2026-07-18: cache-purge.js (head 先頭) は stale render 疑い
+    //   (transferSize=0) や cache_version 更新で location.reload() することがある。下の
+    //   replaceState で ?t= を消した後にリロードされると token が失われ「リンク無効」で
+    //   ログイン不能になるため、URL から消す前に sessionStorage へ退避する。タブ限定なので
+    //   Referer / history 漏洩対策 (4番手 監査 2026-04-30) の趣旨は損なわない。
+    //   退避の削除は「verify がサーバ応答を返した後」のみ (成功/失敗どちらでも削除)。
+    //   ネットワーク断・リロードによる fetch 中断では残し、リロード後に再試行できるようにする
+    //   (magic token はステートレス署名 = 複数回クリック可・再検証は冪等 / main.py _sign_session_token)。
+    const PENDING_T_KEY = 'ai_juku_pending_magic_t';
+    const clearPendingToken = () => { try { sessionStorage.removeItem(PENDING_T_KEY); } catch (_e) {} };
+    if (token) {
+      try { sessionStorage.setItem(PENDING_T_KEY, token); } catch (_e) { /* private mode 等は退避なし=従来挙動 */ }
+    } else {
+      try { token = sessionStorage.getItem(PENDING_T_KEY) || null; } catch (_e) {}
+    }
     // ブラウザ history / 第三者拡張機能経由の token 漏洩を最小化するため、
     // token を読み取った直後に URL から ?t=... を消去する (4番手 監査 2026-04-30)。
     if (token && window.history && window.history.replaceState) {
@@ -165,6 +180,21 @@
       if (!resendMsg) return;
       resendMsg.className = 'resend-msg ' + type;
       resendMsg.innerHTML = html;
+    }
+
+    // オープンリダイレクト対策: 同一オリジンの相対パスのみ許可
+    // 🎯 2026-05-21 塾長指示: magic link / OTP 緊急発行 → 生徒は quick-start.html に直行
+    //   (magic link は ?redirect= 未指定が多数 → default を quick-start に揃えないと届かない)
+    // 🏫 塾生アプリ自己登録(referrer=塾生アプリ)の通塾生だけログイン後 class.html へ直行。
+    //   ?redirect= 明示時はそれを優先。既存のAI生(難関コース等)は従来通り quick-start (AI管理)。
+    //   判定は server (verify が返す is_tsujuku_app = course_applications.referrer='塾生アプリ') を直読み
+    //   = course/plan で誤判定せず、AI利用者を締め出さない。
+    //   (?redirect= は replaceState 後の URL にも残す仕様なのでリロードを跨いでも有効)
+    function gotoAfterLogin(student) {
+      const _isTsujukuApp = (student || {}).is_tsujuku_app === true;
+      const raw = params.get('redirect') || (_isTsujukuApp ? 'class.html' : 'quick-start.html');
+      const safe = /^[a-z0-9_\-./?#=&]+$/i.test(raw) && !raw.startsWith('//') && !raw.startsWith('http');
+      window.location.href = safe ? raw : 'quick-start.html';
     }
 
     // 再送信フォーム handler
@@ -214,6 +244,21 @@
 
     (async () => {
       if (!token) {
+        // 🛡️ [magic-reload-race] verify 完了・セッション保存「後」にリロードされた場合は
+        //   token も退避も無いが実はログイン済み。有効セッションがあればエラーを出さず
+        //   通常の遷移に載せる (期限切れセッションしか無ければ従来どおりエラー表示)。
+        let _sess = null;
+        try {
+          const _exp = parseInt(localStorage.getItem('ai_juku_session_expires') || '0', 10); // epoch 秒
+          if (localStorage.getItem('ai_juku_session_token') && _exp > Math.floor(Date.now() / 1000)) {
+            _sess = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+          }
+        } catch (_e) {}
+        if (_sess) {
+          showSuccess(_sess.name || 'ゲスト');
+          setTimeout(() => { gotoAfterLogin(_sess); }, 600);
+          return;
+        }
         showError('ログインリンクが無効です。メールから再度お試しください。');
         return;
       }
@@ -221,6 +266,7 @@
         const res = await fetch(`${API_BASE}/api/auth/verify?t=${encodeURIComponent(token)}`);
         const data = await res.json();
         if (!res.ok) {
+          clearPendingToken(); // サーバが検証を返答済み = 退避 token の再試行は不要 (成功/失敗どちらでも削除)
           if (res.status === 401) {
             showError('このリンクは <strong>有効期限が切れている</strong>、または既に使用済みです。<br>下のフォームから新しいリンクを再発行できます。', '<br><a class="auth-btn" href="login.html">ログインページへ</a>');
           } else if (res.status === 403) {
@@ -241,6 +287,9 @@
         localStorage.setItem('ai_juku_session_token', data.token);
         localStorage.setItem('ai_juku_session_expires', String(data.expires_at));
         localStorage.setItem('ai_juku_session_student', JSON.stringify(data.student));
+        // ⚠️ 退避 token の削除はセッション保存より後 (この同期ブロック内は reload が割り込めない
+        //   ため、「保存前に消えて再試行も不能」という中間状態を作らない)
+        clearPendingToken();
         // 🔑 2026-06-14 [mypage-guest-fix] 各生徒ページ (mypage 等) の氏名表示は
         //   ai_juku_current_student + ai_juku_students を読む (getCurrentStudent 系)。
         //   これらは従来 index.html の app.js init でしか同期されず、magic link/OTP の URL →
@@ -257,19 +306,7 @@
           }
         } catch (_e) {}
         showSuccess(data.student.name || 'ゲスト');
-        setTimeout(() => {
-          // オープンリダイレクト対策: 同一オリジンの相対パスのみ許可
-          // 🎯 2026-05-21 塾長指示: magic link / OTP 緊急発行 → 生徒は quick-start.html に直行
-          //   (magic link は ?redirect= 未指定が多数 → default を quick-start に揃えないと届かない)
-          // 🏫 塾生アプリ自己登録(referrer=塾生アプリ)の通塾生だけログイン後 class.html へ直行。
-          //   ?redirect= 明示時はそれを優先。既存のAI生(難関コース等)は従来通り quick-start (AI管理)。
-          //   判定は server (verify が返す is_tsujuku_app = course_applications.referrer='塾生アプリ') を直読み
-          //   = course/plan で誤判定せず、AI利用者を締め出さない。
-          const _isTsujukuApp = ((data && data.student) || {}).is_tsujuku_app === true;
-          const raw = params.get('redirect') || (_isTsujukuApp ? 'class.html' : 'quick-start.html');
-          const safe = /^[a-z0-9_\-./?#=&]+$/i.test(raw) && !raw.startsWith('//') && !raw.startsWith('http');
-          window.location.href = safe ? raw : 'quick-start.html';
-        }, 1200);
+        setTimeout(() => { gotoAfterLogin((data && data.student) || null); }, 1200);
       } catch (e) {
         showError('ネットワークエラーが発生しました。<br>しばらくしてから再度お試しください。');
       }
