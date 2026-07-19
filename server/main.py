@@ -4731,11 +4731,24 @@ def _weakness_subject_key(subj) -> str:
     return _c if _c else str(subj or "").strip().lower()
 
 
+# 🤔 [自信なし自己申告 2026-07-19 塾長承認 (生徒10469 要望 study_logs#1661)] 「勘で答えて当たった」を
+#   生徒が metadata.guessed=true で自己申告したとき、正解 attempt を弱点集計でどう割り引くか。
+#   - _GUESS_CORRECT_SCORE: avg_confidence_score への寄与。AI チューター confidence 'low'=0.2 と同義に揃える
+#     (不正解 0.0 < 勘正解 0.2 < medium 0.6 < 確信正解 1.0 の順序を保つ)。
+#   - _GUESS_CORRECT_MASTERY_CREDIT: qa_accuracy (習得卒業 80%×5問 判定) への正解 credit。勘正解は習得の
+#     証拠として半分しか数えない「弱シグナル」(1.0 だとまぐれ連発で早期卒業=生徒の不満の構造そのもの)。
+#   is_correct 自体は真値のまま保存する (成績表示・保護者レポート等の他 consumer は素の正誤を見る)。
+_GUESS_CORRECT_SCORE = 0.2
+_GUESS_CORRECT_MASTERY_CREDIT = 0.5
+
+
 def _run_weakness_aggregation(only_student_id: Optional[int] = None) -> dict:
     """🎯 2026-05-22 塾長指示で UNION 拡張: ai_tutor_solve_log + question_attempts (mock_exam/practice/essay_grade)
     の 2 系統 (過去 30 日) を student × subject × topic で集計し student_weakness を更新。
     既存レコードは UPSERT (UNIQUE 制約に依拠)。
     confidence/正誤 score: high=1.0 / medium=0.6 / low=0.2 / 正解=1.0 / 不正解=0.0 → 低いほど弱点。
+    🤔 2026-07-19: 正解でも metadata.guessed (生徒の「自信なし(勘)」自己申告) があれば score=0.2・
+    習得 credit=0.5 に割り引く (まぐれ正解が弱点から消える/早期卒業する問題への対応)。
     qa_attempts = 採点済み(is_correct あり)演習回数。qa_accuracy = その実測正答率 → 習得(卒業)判定に使う。
     only_student_id を渡すと「その生徒だけ」を即時集計 (ドリル直後の弱点反映=閉ループの即応性)。
     None なら全生徒 (毎晩 cron / ミニ診断後 / 手動)。
@@ -4810,10 +4823,25 @@ def _run_weakness_aggregation(only_student_id: Optional[int] = None) -> dict:
             topic_norm = (topic or "")[:120]
             key = (int(sid), _weakness_subject_key(subj), topic_norm)
             agg[key]["count"] += 1
+            # 🤔 metadata は score 計算より先に読む: guessed (自信なし自己申告) が正解 score を割り引くため
+            md = None
+            if meta_raw:
+                try:
+                    md = json.loads(meta_raw) if isinstance(meta_raw, str) else (meta_raw if isinstance(meta_raw, dict) else None)
+                except Exception:
+                    md = None
+            if md is not None and not isinstance(md, dict):
+                # 🛡️ 非 dict の有効 JSON (list/str/num) が /api/question-attempts 経由で入っても
+                #   .get で夜間集計 (全生徒) が丸ごと落ちないよう None に倒す (2026-07-19 review 指摘の既存露出)
+                md = None
+            guessed = bool(md.get("guessed")) if md else False
             # score 推定: is_correct 優先 → score_got/score_max
             sc = None
             if ic is not None:
-                sc = 1.0 if int(ic) == 1 else 0.0
+                if int(ic) == 1:
+                    sc = _GUESS_CORRECT_SCORE if guessed else 1.0
+                else:
+                    sc = 0.0
             elif sg is not None and sm is not None and int(sm) > 0:
                 sc = max(0.0, min(1.0, float(sg) / float(sm)))
             if sc is not None:
@@ -4823,12 +4851,6 @@ def _run_weakness_aggregation(only_student_id: Optional[int] = None) -> dict:
             #   - 隙間ドリル (dojo-drill): 小問1件=1 attempt・不正解時 metadata.reason
             #   - 大学別1問深掘り (university-exam): 1大問=1 attempt・metadata.total_reason_counts {reason:count}
             #   両対応しないと過去問のみ解く生徒で dominant_reason が永遠に None になる。
-            md = None
-            if meta_raw:
-                try:
-                    md = json.loads(meta_raw) if isinstance(meta_raw, str) else (meta_raw if isinstance(meta_raw, dict) else None)
-                except Exception:
-                    md = None
             if md:
                 trc = md.get("total_reason_counts")
                 if isinstance(trc, dict) and trc:
@@ -4845,11 +4867,16 @@ def _run_weakness_aggregation(only_student_id: Optional[int] = None) -> dict:
                     if rsn:
                         rsn = str(rsn)[:40]
                         agg[key]["reasons"][rsn] = agg[key]["reasons"].get(rsn, 0) + 1
+                # 🤔 自信なし申告は正誤を問わず擬似理由 'guess' として計上 (dominant_reason → 対策
+                #   「解説で根拠を固める」への導線)。dojo の不正解 reason とは UI 上排他なので二重計上しない。
+                if guessed:
+                    agg[key]["reasons"]["guess"] = agg[key]["reasons"].get("guess", 0) + 1
             # 🎯 review fix #6: question_attempts のみの実測正答率 (AI自信度を混ぜずに slow_but_correct 判定するため)
+            # 🤔 勘正解は習得 credit を _GUESS_CORRECT_MASTERY_CREDIT に割引 (qa_accuracy が REAL なので小数可)
             if ic is not None:
                 agg[key]["qa_graded"] += 1
                 if int(ic) == 1:
-                    agg[key]["qa_correct"] += 1
+                    agg[key]["qa_correct"] += (_GUESS_CORRECT_MASTERY_CREDIT if guessed else 1)
             # 🎯 Phase2: 所要時間 (elapsed_ms) を集計 (「正答だが遅い単元」検出用)。0〜60分の妥当値のみ。
             if elapsed_raw is not None:
                 try:
@@ -5137,6 +5164,10 @@ def _weakness_recommended_action(dominant_reason: Optional[str], slow: bool = Fa
     if r == "misread":
         return {"key": "careful_reading", "label": "設問・本文の精読を意識",
                 "hint": "読み違いが多めです。設問の条件に線を引く癖をつけましょう。", "mode": "ai_tutor"}
+    if r == "guess":
+        # 🤔 2026-07-19 自信なし(勘)自己申告が主因: 当たっていても根拠が無い状態 → 解説理解を優先
+        return {"key": "review_basics", "label": "解説を読んで根拠を固める",
+                "hint": "勘で答えた問題が多めです。「なぜその答えになるか」を自分の言葉で説明できるかを基準に復習しましょう。", "mode": "ai_tutor"}
     if slow:
         return {"key": "speed_training", "label": "解くスピードを上げる練習",
                 "hint": "解答に時間がかかっています。制限時間を意識して演習しましょう。", "mode": "drill"}
@@ -5332,7 +5363,7 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
                     reason_counts = {}
             # review fix(low): 同点は dict scan 順依存で非決定的になるため、件数降順→指導優先度で決定化
             dominant_reason = (sorted(reason_counts.items(),
-                                      key=lambda kv: (-kv[1], {"understanding": 0, "misread": 1, "time": 2, "careless": 3, "other": 4}.get(kv[0], 99)))[0][0]
+                                      key=lambda kv: (-kv[1], {"understanding": 0, "misread": 1, "time": 2, "careless": 3, "other": 4, "guess": 5}.get(kv[0], 99)))[0][0]
                                if reason_counts else None)
             # 🎯 [Phase2+ / review fix #5,#6] 「遅い」判定 (自己中央値の1.4倍超・単元3件以上のときのみ)。
             #   「正答だが遅い」の正答判定は AI自信度を含まない qa_accuracy で行う (review fix #6)。
@@ -40663,7 +40694,9 @@ def student_grammar_drill_get(drill_id: int, request: Request, authorization: Op
 @app.post("/api/student/grammar-drill/{drill_id}/submit")
 def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request, authorization: Optional[str] = Header(None)):
     """🎓 生徒: ドリルを提出・採点。
-    payload: { answers: { "<question_id>": <choice_index 0始まり> } }
+    payload: { answers: { "<question_id>": <choice_index 0始まり> },
+               unsure: ["<question_id>", ...]  # 🤔 2026-07-19 任意: 生徒が「自信なし(勘で答えた)」に
+                                               #    チェックした問題。正解でも弱点集計で割り引く (metadata.guessed) }
     返却: 採点結果 + 各問の正誤・正解・解説 (誤答のみフロントで解説展開)。"""
     _check_rate_limit_caller(request, authorization, bucket="grammar_drill_submit", limit=30, window=60)
     student = _get_current_student(authorization)
@@ -40672,6 +40705,15 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
     answers = payload.get("answers") or {}
     if not isinstance(answers, dict):
         raise HTTPException(status_code=422, detail="answers が不正です")
+    # 🤔 自信なし(勘)自己申告 (生徒10469 要望 study_logs#1661): 旧クライアントは送らない → 空 set で従来挙動
+    unsure_raw = payload.get("unsure")
+    unsure_set = set()
+    if isinstance(unsure_raw, (list, tuple)):
+        for u in unsure_raw[:200]:  # 上限は防御のみ (1ドリルは高々数十問)
+            try:
+                unsure_set.add(str(int(u)))
+            except (TypeError, ValueError):
+                continue
     conn = db()
     try:
         c = conn.cursor()
@@ -40735,6 +40777,7 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
                 q_unit = q["unit"] or unit
             except (KeyError, TypeError, IndexError):
                 q_unit = unit
+            guessed = str(qid) in unsure_set  # 🤔 自信なし自己申告 (正誤に関わらず記録・集計側で解釈)
             results.append({
                 "no": idx,
                 "question_id": qid,
@@ -40744,9 +40787,10 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
                 "your_answer": chosen,
                 "correct_answer": correct_idx,
                 "is_correct": is_correct,
+                "guessed": guessed,  # 🤔 フロントの「弱点として記録」表示・復習カード化に使用
                 "explanation": q["explanation"],
             })
-            attempts.append((qid, 1 if is_correct else 0, q_unit))
+            attempts.append((qid, 1 if is_correct else 0, q_unit, guessed))
 
         total = len(results)  # 実在問題数 (削除済みを除く・表示数と一致)
         # assignment 更新
@@ -40763,9 +40807,14 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
         conn.commit()
         # question_attempts に記録 (source=grammar_drill・既存の弱点集計に乗せる)
         # topic は設問自身の単元 (2026-06-11): 横断ミニ診断で単元別の弱点が正しく立つように
+        has_guessed = False
         try:
-            for (eq_id, is_corr, q_unit) in attempts:
-                meta = json.dumps({"drill_id": drill_id, "unit": q_unit, "drill_unit": unit}, ensure_ascii=False)
+            for (eq_id, is_corr, q_unit, guessed) in attempts:
+                meta_dict = {"drill_id": drill_id, "unit": q_unit, "drill_unit": unit}
+                if guessed:
+                    meta_dict["guessed"] = True  # 🤔 弱点集計 (_run_weakness_aggregation) が正解 credit を割引
+                    has_guessed = True
+                meta = json.dumps(meta_dict, ensure_ascii=False)
                 c.execute(
                     "INSERT INTO question_attempts (student_id, source, exam_question_id, subject, topic, "
                     "is_correct, score_got, score_max, metadata, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
@@ -40777,12 +40826,13 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
         # 🔰 ミニ診断 (unit='診断') の提出直後は弱点集計を即時実行 (2026-06-11):
         # 翌朝 4:00 の日次 cron を待たずに弱点 TOP3 / コーチの一手 / プリント推薦へ反映する。
         # 全体集計だが在籍規模では軽量 (失敗しても提出自体は成功扱い・cron が翌朝拾う)
-        if unit == "診断":
+        # 🤔 2026-07-19: 自信なし申告があった提出も即時集計 (申告した生徒に弱点反映が即見えるように)
+        if unit == "診断" or has_guessed:
             try:
                 _t0 = time.time()
                 # 🎯 提出した本人だけを即時集計 (全生徒走査は不要・only_student_id でスコープ)
                 _agg = _run_weakness_aggregation(only_student_id=student["id"])
-                log.info(f"[grammar_drill_submit] diagnostic instant aggregation: {_agg.get('students_processed')} students in {time.time()-_t0:.1f}s")
+                log.info(f"[grammar_drill_submit] instant aggregation ({'diagnostic' if unit == '診断' else 'guessed'}): {_agg.get('students_processed')} students in {time.time()-_t0:.1f}s")
             except Exception as e:
                 log.warning(f"[grammar_drill_submit] diagnostic aggregation failed (non-fatal): {e}")
         # 監査 events

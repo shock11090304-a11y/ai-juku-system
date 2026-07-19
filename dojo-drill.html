@@ -77,6 +77,11 @@
     .reason { margin-top:0.5rem; display:none; }
     .reason.show { display:block; }
     .reason select { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.2); color:#e4e4e7; border-radius:6px; padding:0.3rem 0.5rem; font-size:0.82rem; }
+    /* 🤔 自信なし(勘)自己申告 (正解時に表示・2026-07-19 生徒要望) */
+    .guess { margin-top:0.45rem; display:none; }
+    .guess.show { display:block; }
+    .guess label { display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.8rem; color:#a1a1aa; }
+    .guess input { accent-color:#f59e0b; }
     .expl { margin-top:0.6rem; padding:0.6rem 0.8rem; background:rgba(59,130,246,0.10); border:1px solid rgba(59,130,246,0.3); border-radius:8px; font-size:0.86rem; line-height:1.7; display:none; }
     .expl.show { display:block; }
     .expl-ans { color:#86efac; font-weight:700; }
@@ -106,7 +111,7 @@
     <section class="hero">
       <h1>⏱ 隙間時間ドリル</h1>
       <p>共通テスト・<strong>難関大</strong>の<strong>大問1個</strong>を <strong>10〜25分</strong>で。スキマ時間に1セット解いて、弱点を即チェック。</p>
-      <p class="muted">解答すると小問ごとの正誤・つまずき理由が記録され、マイページの「🎯 弱点 TOP3」に反映されます。</p>
+      <p class="muted">解答すると小問ごとの正誤・つまずき理由が記録され、マイページの「🎯 弱点 TOP3」に反映されます。勘で正解した問題は「🤔 自信なし」にチェックすると弱点として記録されます。</p>
     </section>
 
     <div id="presetView"></div>
@@ -867,6 +872,7 @@
         }
         body += `<div class="selfmark" data-qi="${qi}" style="display:none;"></div>
           <div class="reason" data-qi="${qi}"></div>
+          <div class="guess" data-qi="${qi}"></div>
           <div class="expl" data-qi="${qi}"></div>
         </div>`;
       });
@@ -941,6 +947,7 @@
             smEl.querySelectorAll('button').forEach(b => b.classList.remove('on-correct', 'on-wrong'));
             btn.classList.add(mk === 'correct' ? 'on-correct' : 'on-wrong');
             toggleReason(qi, mk === 'wrong');
+            toggleGuess(qi, mk === 'correct');
             updateFinalizeHint();
           }));
         }
@@ -948,6 +955,11 @@
         reasonEl.innerHTML = `<span class="muted">つまずき理由:</span> <select data-qi="${qi}">${REASONS.map(r => `<option value="${r.v}">${r.t}</option>`).join('')}</select>`;
         reasonEl.querySelector('select').addEventListener('change', updateFinalizeHint);
         if (autoGraded && isCorrect === false) reasonEl.classList.add('show');
+        // 🤔 自信なし(勘) checkbox (正解時に表示・2026-07-19 生徒要望):
+        //   勘で当たった問題を「正解でも弱点として記録」できるようにする (metadata.guessed)
+        const guessEl = block.querySelector(`.guess[data-qi="${qi}"]`);
+        guessEl.innerHTML = `<label><input type="checkbox" data-qi="${qi}"> 🤔 勘で正解した（自信なし）— チェックすると弱点として記録します</label>`;
+        if (isCorrect === true) guessEl.classList.add('show');
 
         cur.results[qi] = { qi, sub_id: q.id || `q${qi + 1}`, unit: deriveUnit(q, preset), isMC, isCorrect, autoGraded, correctIdx };
       });
@@ -969,6 +981,16 @@
     function getReason(qi) {
       const sel = document.querySelector(`.reason[data-qi="${qi}"] select`);
       return sel ? sel.value : '';
+    }
+    function toggleGuess(qi, show) {
+      const g = document.querySelector(`.guess[data-qi="${qi}"]`);
+      if (g) g.classList.toggle('show', show);
+    }
+    // 🤔 自信なし(勘)申告のチェック状態。「正解の小問のみ有効」のゲートは finalize 側で
+    //   isCorrect === true と AND するため、自己採点を❌に切替えてチェックが残っても無効になる。
+    function getGuessed(qi) {
+      const cb = document.querySelector(`.guess[data-qi="${qi}"] input[type="checkbox"]`);
+      return !!(cb && cb.checked);
     }
     function updateFinalizeHint() {
       // 不正解なのに理由未選択の小問数
@@ -996,7 +1018,11 @@
       const perMs = graded.length ? Math.round(totalElapsedMs / graded.length) : null;
       // 記録: 小問ごとに 1 attempt (topic 単位で十分なサンプル数を弱点集計に渡す)
       const tk = token();
-      const subAttempts = results.map(r => ({ sub_id: r.sub_id, unit: r.unit, is_correct: r.isCorrect === null ? null : (r.isCorrect ? 1 : 0), reason: getReason(r.qi) || null, auto_graded: r.autoGraded }));
+      // 🤔 guessed は finalize 開始時に1回だけ読んで固定 (POST await 中にチェックを切替えても
+      //   本記録と origin credit 記録で食い違わないように・review 指摘)
+      const guessedByQi = {};
+      results.forEach(r => { guessedByQi[r.qi] = (r.isCorrect === true && getGuessed(r.qi)) || false; });
+      const subAttempts = results.map(r => ({ sub_id: r.sub_id, unit: r.unit, is_correct: r.isCorrect === null ? null : (r.isCorrect ? 1 : 0), reason: getReason(r.qi) || null, guessed: guessedByQi[r.qi], auto_graded: r.autoGraded }));
       let recorded = 0;
       if (tk && graded.length) {
         const reqs = graded.map(r => fetch(`${BACKEND_URL}/api/question-attempts`, {
@@ -1015,6 +1041,7 @@
             metadata: {
               drill: true, drill_preset: preset.name, sub_id: r.sub_id, sub_unit: r.unit || null,
               reason: getReason(r.qi) || null, auto_graded: r.autoGraded,
+              guessed: guessedByQi[r.qi],  // 🤔 勘正解は弱点集計で割引 (2026-07-19)
               year_simulated: daimon.year_simulated || null
             }
           })
@@ -1036,7 +1063,7 @@
                 topic: drillOrigin.topic,
                 is_correct: r.isCorrect ? 1 : 0,
                 elapsed_ms: perMs,
-                metadata: { drill: true, drill_preset: preset.name, sub_id: r.sub_id, weakness_credit: true, origin_topic: drillOrigin.topic }
+                metadata: { drill: true, drill_preset: preset.name, sub_id: r.sub_id, weakness_credit: true, origin_topic: drillOrigin.topic, guessed: guessedByQi[r.qi] }
               })
             }).then(() => {}).catch(() => {}));
           await Promise.all(originReqs);
@@ -1073,6 +1100,10 @@
       const reasonLabel = { understanding: '理解不足', careless: 'ケアレスミス', time: '時間切れ', misread: '読み違い', other: 'その他' };
       const reasonHtml = Object.keys(reasonCounts).length
         ? `<div class="weak-box"><strong style="color:#d8b4fe;">つまずき傾向:</strong> ${Object.entries(reasonCounts).map(([k, v]) => `${reasonLabel[k] || k} ×${v}`).join(' / ')}</div>` : '';
+      // 🤔 勘正解 (自信なし申告つきの正解) の集計 (2026-07-19 生徒要望): 正解でも弱点として記録した旨を明示
+      const guessedN = subAttempts.filter(s => s.is_correct === 1 && s.guessed).length;
+      const guessedHtml = guessedN
+        ? `<div class="weak-box" style="background:rgba(245,158,11,0.10); border-color:rgba(245,158,11,0.35);"><strong style="color:#fbbf24;">🤔 勘で正解:</strong> ${guessedN}問 — 正解でも弱点として記録しました。解説で根拠を確認しましょう。</div>` : '';
       // 🎯 間違えた小問の単元集計 (小問→単元の炙り出し)
       const missedUnits = {};
       subAttempts.forEach(s => { if (s.is_correct === 0 && s.unit) missedUnits[s.unit] = (missedUnits[s.unit] || 0) + 1; });
@@ -1086,6 +1117,7 @@
         <div class="muted" style="margin-top:0.3rem;">所要時間: ${mm}分${String(ss).padStart(2, '0')}秒 ${cur.preset ? '／ 目安 ' + cur.preset.min + '分' : ''}</div>
         ${unitHtml}
         ${reasonHtml}
+        ${guessedHtml}
         ${recNote}
         <div class="actions" style="margin-top:1rem;">
           <button class="btn btn-primary" id="againBtn">⏱ もう1セット</button>

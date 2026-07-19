@@ -4449,7 +4449,13 @@ function _gdRenderQuestionBlock(drillId, q, opts) {
     }).join('');
     body = choiceLines + _gdExplanationBlock(q, isCorrect);
   } else {
-    body = _gdRenderChoices(drillId, q);
+    // 🤔 自信なし(勘)自己申告 (2026-07-19 生徒要望): チェックすると正解でも弱点として記録される。
+    // type=checkbox なので submitDrill の radio 収集 (input[type="radio"]:checked) には混ざらない。
+    body = _gdRenderChoices(drillId, q)
+      + `<label style="display:flex; align-items:center; gap:6px; margin-top:2px; cursor:pointer; font-size:0.78rem; color:#94a3b8;">
+          <input type="checkbox" data-gd-unsure data-gd-unsure-qid="${_gdEscape(String(q.question_id))}" style="flex:0 0 auto; accent-color:#f59e0b;">
+          <span>🤔 自信なし（勘で答えた）</span>
+        </label>`;
   }
   const statusMark = review
     ? ((q.your_answer != null && q.answer != null && Number(q.your_answer) === Number(q.answer))
@@ -4493,10 +4499,14 @@ function _gdRenderResultItem(r) {
   const head = isCorrect
     ? '<span style="color:#6ee7b7; font-weight:bold;">✓ 正解</span>'
     : '<span style="color:#fca5a5; font-weight:bold;">✗ 不正解</span>';
+  // 🤔 自信なし申告つきの正解: 「弱点として記録された」ことを明示 (2026-07-19 生徒要望)
+  const guessBadge = (isCorrect && r.guessed)
+    ? ' <span style="color:#fbbf24; font-weight:bold; font-size:0.8rem;">🤔 自信なし → 弱点として記録</span>'
+    : '';
   // 間違えた問題だけ explanation を展開 (正解は details で任意展開)
   const explBlock = _gdExplanationBlock({ explanation: r.explanation }, isCorrect);
   return `<div style="padding:14px 15px; background:rgba(255,255,255,0.02); border:1px solid ${isCorrect ? 'rgba(52,211,153,0.25)' : 'rgba(239,68,68,0.3)'}; border-radius:10px; margin-bottom:12px;">
-    <div style="font-weight:bold; color:#fff; font-size:0.95rem; margin-bottom:10px; line-height:1.6;"><span style="color:#5eead4; margin-right:6px;">Q${_gdEscape(String(r.no))}.</span> ${head} <span style="margin-left:4px;">${_gdRich(r.stem)}</span></div>
+    <div style="font-weight:bold; color:#fff; font-size:0.95rem; margin-bottom:10px; line-height:1.6;"><span style="color:#5eead4; margin-right:6px;">Q${_gdEscape(String(r.no))}.</span> ${head}${guessBadge} <span style="margin-left:4px;">${_gdRich(r.stem)}</span></div>
     ${choiceLines}
     ${explBlock}
   </div>`;
@@ -4685,6 +4695,7 @@ async function initGrammarDrillSection() {
         <div style="font-size:1.0rem; font-weight:800; color:#fff;">${titleHtml}</div>
         ${meta ? `<div style="font-size:0.8rem; color:#94a3b8; margin-top:3px;">${meta}</div>` : ''}
         <div style="font-size:0.78rem; color:#94a3b8; margin-top:6px;">全 ${questions.length} 問 — すべて答えてから「提出」を押してください。</div>
+        <div style="font-size:0.76rem; color:#fbbf24; margin-top:4px;">🤔 勘で答えた問題は「自信なし」にチェック → 正解でも AI が弱点として記録し、復習に出します。</div>
       </div>
       <div data-gd-form="${_gdEscape(String(drillId))}">${blocks}</div>
       <div data-gd-submit-msg style="text-align:center; color:#fca5a5; font-size:0.82rem; min-height:1.1em; margin-bottom:8px;"></div>
@@ -4718,7 +4729,9 @@ async function initGrammarDrillSection() {
         const ci = (r.correct_answer == null) ? null : Number(r.correct_answer);
         const answer = (ci != null && letters[ci] ? '(' + letters[ci] + ') ' : '') + (ci != null ? (choices[ci] || '') : '');
         const key = ('英語__' + problem).slice(0, 200);
-        if (!r.is_correct) {
+        // 🤔 「自信なし(勘)」申告つきの正解は誤答と同様に復習カード化する (2026-07-19 生徒要望):
+        //   勘で当たった問題は覚えていないので、翌日の「今日の復習」に出して定着させる。
+        if (!r.is_correct || r.guessed) {
           LB.recordAttempt(sid, {
             key: key,
             subject: '英語',
@@ -4746,10 +4759,15 @@ async function initGrammarDrillSection() {
       || list.querySelector('[data-gd-form]');
     const msgEl = list.querySelector('[data-gd-submit-msg]');
     const answers = {};
+    const unsure = [];  // 🤔 自信なし(勘)チェック済みの question_id 一覧 (2026-07-19)
     if (form) {
       form.querySelectorAll('input[type="radio"]:checked').forEach(inp => {
         const qid = inp.getAttribute('data-gd-qid');
         if (qid != null) answers[qid] = Number(inp.value);
+      });
+      form.querySelectorAll('input[data-gd-unsure]:checked').forEach(inp => {
+        const qid = inp.getAttribute('data-gd-unsure-qid');
+        if (qid != null) unsure.push(qid);
       });
     }
     const answeredN = Object.keys(answers).length;
@@ -4763,7 +4781,7 @@ async function initGrammarDrillSection() {
     try {
       res = await slApiFetch(`/api/student/grammar-drill/${encodeURIComponent(drillId)}/submit`, {
         method: 'POST',
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ answers, unsure }),
       });
     } catch (e) {
       if (msgEl) msgEl.textContent = '❌ 提出に失敗しました: ' + ((e && (e.message || e)) || '');
@@ -4786,6 +4804,8 @@ async function initGrammarDrillSection() {
     const pct = (res && res.percentage != null)
       ? res.percentage
       : (total ? Math.round((correct / total) * 100) : 0);
+    // 🤔 自信なし申告つきで正解した問題数 (弱点として記録された旨をサマリーに出す・2026-07-19)
+    const guessedCorrectN = results.filter(r => r && r.is_correct && r.guessed).length;
     const blocks = results.map(_gdRenderResultItem).join('');
     list.innerHTML = `
       <div style="margin-bottom:12px;">
@@ -4796,6 +4816,7 @@ async function initGrammarDrillSection() {
         <div style="font-size:2rem; font-weight:800; color:#5eead4;">${_gdEscape(String(correct))} / ${_gdEscape(String(total))} <span style="font-size:1.1rem; color:#cbd5e1;">(${_gdEscape(String(pct))}%)</span></div>
         <div style="font-size:0.82rem; color:#cbd5e1; margin-top:6px;">${pct >= 80 ? '🎉 素晴らしい!' : pct >= 60 ? '👍 もう一歩!' : '📖 間違えた問題の解説を確認しましょう'}</div>
         ${res && res.unit === '診断' ? '<div style="font-size:0.8rem; color:#86efac; margin-top:8px; font-weight:700;">🔰 AI があなたの苦手を記録しました。明日からの「コーチの今日の一手」があなた専用になります</div>' : ''}
+        ${guessedCorrectN ? `<div style="font-size:0.8rem; color:#fbbf24; margin-top:8px; font-weight:700;">🤔 自信なしの正解 ${_gdEscape(String(guessedCorrectN))} 問は弱点として記録しました。明日の復習にも出します</div>` : ''}
       </div>
       ${blocks}
       <div style="text-align:center; margin-top:6px;">
