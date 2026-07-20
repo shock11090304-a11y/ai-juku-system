@@ -3013,19 +3013,132 @@ def _verify_referral_code(code: str) -> Optional[int]:
 
 # In-memory rate limit tracker: {(ip, bucket): [timestamps]}
 _RATE_LIMIT_STORE: dict = {}
+# key -> (window 秒, limit)。掃除を window 認識にし、かつ「上限到達中の key」を evict から
+# 守るために保持する (下の _rate_limit_evict_slot の注意書き参照)。
+_RATE_LIMIT_META: dict = {}
+_RATE_LIMIT_MAX_KEYS = 20000       # キー数の hard cap (メモリ有界化)。超えたら新規 key を記録しない
+_RATE_LIMIT_PRUNE_INTERVAL = 5.0   # 期限切れ掃除の最短間隔(秒)。全走査が毎リクエスト走るのを防ぐ
+_RATE_LIMIT_EVICT_SCAN = 64        # 満杯時に席を探して見る候補数 (走査を O(1) に抑える)
+_RATE_LIMIT_LAST_PRUNE = 0.0
+_RATE_LIMIT_PRUNE_LOCK = threading.Lock()
+
+
+def _rate_limit_prune(now: float, force: bool = False) -> None:
+    """期限切れエントリの掃除 (時間ベース・最短 _RATE_LIMIT_PRUNE_INTERVAL 間隔)。
+
+    ⚠️ 掃除は必ず key ごとの window で刈ること (2026-07-21 修正):
+      旧実装は「key 数 >10000 で一律 `cutoff = now - 3600`」だったため、window=86400 の
+      バケット (course_apply_enroll / course_apply_juku / course_apply_email) がキー洪水下で
+      実質1時間窓に劣化していた = 「1日10件」の上限が「1時間10件」になる。キー洪水は
+      XFF 偽装の匿名リクエストで誰でも起こせるので実害のある穴だった。
+      逆に一律 `now - 86400` に広げるのも不可 (洪水下でほぼ何も消せずメモリが24時間分に膨らむ)。
+
+    ★ここでは期限切れ以外は絶対に消さない。メモリの hard cap は「新規 key を作らない」側
+      (_rate_limit_store_hit) で担保する。生きているカウンタを容量都合で消すのは、それ自体が
+      「洪水でレート制限をリセットする」攻撃手段になるため (3視点 review の HIGH 指摘)。
+
+    sync route は Starlette のスレッドプールで並行実行される (L752 参照) ので、
+    single-flight lock で多重掃除を防ぎ、辞書操作は get/pop で TOCTOU KeyError を避ける。"""
+    global _RATE_LIMIT_LAST_PRUNE
+    if not force and now - _RATE_LIMIT_LAST_PRUNE < _RATE_LIMIT_PRUNE_INTERVAL:
+        return
+    if not _RATE_LIMIT_PRUNE_LOCK.acquire(blocking=False):
+        return  # 他スレッドが掃除中
+    try:
+        _RATE_LIMIT_LAST_PRUNE = now
+        for k in list(_RATE_LIMIT_STORE.keys()):
+            ts = _RATE_LIMIT_STORE.get(k)
+            if ts is None:
+                continue
+            cutoff = now - _RATE_LIMIT_META.get(k, (3600, 0))[0]
+            kept = [t for t in ts if t > cutoff]
+            if kept:
+                _RATE_LIMIT_STORE[k] = kept
+            else:
+                _RATE_LIMIT_STORE.pop(k, None)
+                _RATE_LIMIT_META.pop(k, None)
+        # store から消えた key の meta を回収 (admin_login 成功時の pop 等で取り残される)
+        if len(_RATE_LIMIT_META) > len(_RATE_LIMIT_STORE):
+            for k in list(_RATE_LIMIT_META.keys()):
+                if k not in _RATE_LIMIT_STORE:
+                    _RATE_LIMIT_META.pop(k, None)
+    finally:
+        _RATE_LIMIT_PRUNE_LOCK.release()
+
+
+def _rate_limit_evict_slot() -> bool:
+    """満杯時に席を1つだけ空ける。空けられたら True。
+
+    ⚠️ evict してよいのは「上限に到達していない key」だけ。上限到達中の key を消すのは
+       レート制限のリセットそのもので、XFF 偽装のキー洪水 (~2万req) で任意の caller の上限
+       — magic-link のメール爆撃 cap (_check_recipient_send_cap)、admin_login のブルート
+       フォース cap、curriculum の AI クレジット cap — を解除できる攻撃になる。
+    ⚠️ 候補は「新しく作られた順」に見る。洪水キーは常に最新なので攻撃者自身のキーが最初に
+       落ち、洪水前から居る正規のカウンタは温存される (古い順に消すと逆になり穴が再発する)。
+    候補内では window が短いもの = どうせ先に期限切れになるものを優先して落とす。
+    全候補が上限到達中なら False (呼び出し側は記録を諦める = 既存カウンタは触らない)。"""
+    best_k = None
+    best_w = None
+    try:
+        for i, k in enumerate(reversed(_RATE_LIMIT_STORE)):
+            if i >= _RATE_LIMIT_EVICT_SCAN:
+                break
+            _w, _lim = _RATE_LIMIT_META.get(k, (3600, 0))
+            if _lim and len(_RATE_LIMIT_STORE.get(k) or ()) >= _lim:
+                continue  # 上限到達中 = 消すとリセットになる
+            if best_w is None or _w < best_w:
+                best_k, best_w = k, _w
+    except RuntimeError:
+        return False  # 他スレッドが同時に辞書を変更 (次のリクエストで再試行)
+    if best_k is None:
+        return False
+    _RATE_LIMIT_STORE.pop(best_k, None)
+    _RATE_LIMIT_META.pop(best_k, None)
+    return True
+
+
+def _rate_limit_store_hit(key, timestamps: list, window: int, limit: int, now: float) -> bool:
+    """タイムスタンプ列を保存し、掃除とメモリ上限管理をまとめて行う共通処理。
+    記録できたら True、満杯で新規 key を記録できなければ False を返す。
+    既存 key の更新は必ず通す (カウンタが容量都合で黙って消えないことがレート制限の生命線)。
+    新規 key は満杯なら席を1つ空けてから記録し、空けられなければ記録を諦めて False。
+    ★呼び出し側はこの戻り値で fail-open / fail-closed を選ぶこと:
+      - IP/caller 単位 (XFF 偽装で誰でも別 key を無限に作れる = そもそも厳密でない) は
+        fail-open (新規 key の初回は「まだ 0 回」= 素通りが正しい判定でもある)。
+      - identity 単位 (val:/rcpt: = XFF 偽装に耐える最後の砦) は fail-closed。満杯時に
+        True 扱いすると「上限に積み増せないまま送り放題」= メール爆撃の踏み台になる。
+    同一 key が複数の (window, limit) で使われた場合、window は最大 (短い方で刈ると長窓を
+    取りこぼす)、limit は最小 (大きい方だと evict 保護が緩み、低limitのcap到達中の key が
+    保護されず reset されうる) を採用する。
+    ※ cap 判定と挿入は atomic ではないので、並行スレッド数ぶん (実測 +19/20000) だけ上限を
+      一時的に超えうる。有界なので許容 — ここに lock を置くと全リクエストが直列化する。"""
+    if key not in _RATE_LIMIT_STORE:
+        if len(_RATE_LIMIT_STORE) >= _RATE_LIMIT_MAX_KEYS:
+            _rate_limit_prune(now)
+            if len(_RATE_LIMIT_STORE) >= _RATE_LIMIT_MAX_KEYS and not _rate_limit_evict_slot():
+                return False
+    _RATE_LIMIT_STORE[key] = timestamps
+    _prev = _RATE_LIMIT_META.get(key)
+    _RATE_LIMIT_META[key] = ((window, limit) if _prev is None
+                             else (max(window, _prev[0]), min(limit, _prev[1])))
+    _rate_limit_prune(now)
+    return True
 
 def _client_ip(request) -> str:
-    """X-Forwarded-For を考慮して本物のクライアントIPを取得（Railway等のプロキシ対応）。"""
+    """X-Forwarded-For を考慮して本物のクライアントIPを取得（Railway等のプロキシ対応）。
+    ★値は攻撃者が自由に詰められるヘッダなので 64 文字で切る (IPv6 最長 45 文字なので実害なし)。
+      切らないと rate limit の key 1個が最大ヘッダ長(数KB)を抱え、キー数が上限内でも
+      メモリを食い潰せてしまう。"""
     if not request:
         return "unknown"
     xff = request.headers.get("x-forwarded-for", "")
     if xff:
         # 先頭が元のクライアントIP（カンマ区切り）
-        return xff.split(",")[0].strip()
+        return xff.split(",")[0].strip()[:64]
     xri = request.headers.get("x-real-ip", "")
     if xri:
-        return xri.strip()
-    return request.client.host if request.client else "unknown"
+        return xri.strip()[:64]
+    return (request.client.host if request.client else "unknown")[:64]
 
 
 def _check_rate_limit_ip(request, bucket: str, limit: int = 10, window: int = 60) -> None:
@@ -3040,35 +3153,32 @@ def _check_rate_limit_ip(request, bucket: str, limit: int = 10, window: int = 60
     if len(timestamps) >= limit:
         raise HTTPException(status_code=429, detail="リクエストが多すぎます。しばらく待ってから再度お試しください。")
     timestamps.append(now)
-    _RATE_LIMIT_STORE[key] = timestamps
-    # メモリ肥大化対策: 古いバケットを定期的にクリーンアップ
-    if len(_RATE_LIMIT_STORE) > 10000:
-        cutoff = now - 3600
-        for k in list(_RATE_LIMIT_STORE.keys()):
-            _RATE_LIMIT_STORE[k] = [t for t in _RATE_LIMIT_STORE[k] if t > cutoff]
-            if not _RATE_LIMIT_STORE[k]:
-                del _RATE_LIMIT_STORE[k]
+    # メモリ肥大化対策の backstop 込みで保存 (掃除は key ごとの window で刈る)。
+    # IP 単位は満杯時 fail-open (戻り値を無視): 新規 IP の初回は「まだ 0 回」で素通りが正しく、
+    # かつ IP key は XFF 偽装で無限に湧く = ここに fail-closed 判定を置いても厳密性は上がらない。
+    _rate_limit_store_hit(key, timestamps, window, limit, now)
 
 
 def _check_rate_limit_value(value: str, bucket: str, limit: int = 10, window: int = 60) -> None:
     """任意の文字列キー(email 等)単位の簡易レートリミッタ。超過時は HTTPException 429。
     Vercel 等の proxy 経由だと _client_ip が共有 egress IP になり IP 単位が機能しない
-    public フォームで、実 identity (email) 単位に絞るために使う。in-memory per-process。"""
+    public フォームで、実 identity (email) 単位に絞るために使う。in-memory per-process。
+    ★value は payload 由来 = 任意長なので 200 文字で切る (有効な email の上限 254 を超える
+      長さは identity として無意味・key 1個で大量メモリを抱えるのを防ぐ)。"""
     import time as _t
-    key = (f"val:{(value or '').lower().strip()}", bucket)
+    key = (f"val:{(value or '').lower().strip()[:200]}", bucket)
     now = _t.time()
     timestamps = [t for t in _RATE_LIMIT_STORE.get(key, []) if now - t < window]
     if len(timestamps) >= limit:
         raise HTTPException(status_code=429, detail="リクエストが多すぎます。しばらく待ってから再度お試しください。")
     timestamps.append(now)
-    _RATE_LIMIT_STORE[key] = timestamps
-    # メモリ肥大化対策 (_check_rate_limit_ip と同じ backstop・自己完結にして相乗り依存を無くす)
-    if len(_RATE_LIMIT_STORE) > 10000:
-        cutoff = now - 3600
-        for k in list(_RATE_LIMIT_STORE.keys()):
-            _RATE_LIMIT_STORE[k] = [t for t in _RATE_LIMIT_STORE[k] if t > cutoff]
-            if not _RATE_LIMIT_STORE[k]:
-                del _RATE_LIMIT_STORE[k]
+    # メモリ肥大化対策 (_check_rate_limit_ip と同じ backstop・自己完結にして相乗り依存を無くす)。
+    # ★identity(email 等)単位は満杯時 fail-CLOSED: 記録できなければ 429。fail-open にすると
+    #   XFF 偽装のキー洪水でストアを満杯に固定した状態で email 単位上限が無効化され、共有 egress IP
+    #   下の唯一の防御 (course_apply_email 10/日・admin 通知 30/h 等) が素通りしてしまう。
+    #   洪水中だけ正規申込も一時 429 になるが、それは可視・一過性で、上限消失より軽い。
+    if not _rate_limit_store_hit(key, timestamps, window, limit, now):
+        raise HTTPException(status_code=429, detail="リクエストが多すぎます。しばらく待ってから再度お試しください。")
 
 
 def _check_recipient_send_cap(to_email: str, limit: int = 10, window: int = 3600) -> bool:
@@ -3079,13 +3189,18 @@ def _check_recipient_send_cap(to_email: str, limit: int = 10, window: int = 3600
     超過時は False (呼び出し側で送信スキップ)。in-memory per-process のベストエフォート
     (render.yaml は uvicorn 単一プロセス起動なので実効・workers 追加時は要共有ストア化)。"""
     import time as _t
-    key = (f"rcpt:{(to_email or '').lower().strip()}", "magic_link_send")
+    key = (f"rcpt:{(to_email or '').lower().strip()[:200]}", "magic_link_send")
     now = _t.time()
     timestamps = [t for t in _RATE_LIMIT_STORE.get(key, []) if now - t < window]
     if len(timestamps) >= limit:
         return False
     timestamps.append(now)
-    _RATE_LIMIT_STORE[key] = timestamps
+    # ★fail-CLOSED: ストア満杯で記録できなければ「送らない」を選ぶ (False)。ここで True を返すと
+    #   カウンタを積み増せないまま送信が通り続け、XFF 偽装のキー洪水で満杯固定した攻撃者が
+    #   任意アドレスへ magic-link を無限送信できる踏み台になる (3視点 review HIGH)。
+    #   洪水中は正規の再送も一時的に届かなくなるが、外部への無限送信より遥かに軽い被害。
+    if not _rate_limit_store_hit(key, timestamps, window, limit, now):
+        return False
     return True
 
 
@@ -3096,7 +3211,7 @@ def _recipient_send_cap_exceeded(to_email: str, limit: int = 10, window: int = 3
     正規ユーザーが最大 1 時間ログイン不能になる事故を防ぐ。limit/window は
     _check_recipient_send_cap と必ず同値にすること。"""
     import time as _t
-    key = (f"rcpt:{(to_email or '').lower().strip()}", "magic_link_send")
+    key = (f"rcpt:{(to_email or '').lower().strip()[:200]}", "magic_link_send")
     now = _t.time()
     return len([t for t in _RATE_LIMIT_STORE.get(key, []) if now - t < window]) >= limit
 
@@ -3124,7 +3239,14 @@ def _check_rate_limit_caller(request, authorization: Optional[str], bucket: str,
     if len(timestamps) >= limit:
         raise HTTPException(status_code=429, detail="リクエストが多すぎます。しばらく待ってから再度お試しください。")
     timestamps.append(now)
-    _RATE_LIMIT_STORE[key] = timestamps
+    # ⚠️ この関数は認証前に呼ばれるため XFF 偽装で ip:* キーを無限に増やせる。
+    #    以前は掃除ブロックが無く、同一リクエスト内の後続 value/ip 呼び出しが掃除して
+    #    くれる経路に依存していた (この EP しか叩かれない攻撃では掃除ゼロ) ので backstop を共有。
+    # 満杯時は fail-open (戻り値無視): sid: は正規ログイン生の初回を 429 で締め出さないため、
+    # ip: は XFF 偽装で無限に湧く側なので fail-closed にしても厳密性が上がらないため。
+    # curriculum 等 caller cap の AI クレジット消費は独立の日次全体cap(_CURRICULUM_DAILY_CAP_STATE)
+    # が別途 100/日 で頭打ちにするので、満杯時に per-caller が緩んでも総支出は有界。
+    _rate_limit_store_hit(key, timestamps, window, limit, now)
 
 
 def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: str, login_url: str, days_unused: int, card_registered: bool = False) -> dict:
@@ -10257,6 +10379,7 @@ def admin_login(payload: AdminLoginRequest, request: Request):
         raise HTTPException(status_code=401, detail="パスワードが正しくありません")
     ip = _client_ip(request)
     _RATE_LIMIT_STORE.pop((ip, "admin_login"), None)
+    _RATE_LIMIT_META.pop((ip, "admin_login"), None)   # store と対で消す (掃除も回収するが即時に揃える)
     tok = _sign_admin_token()
     log.info(f"Admin login success from {ip}")
     return {"ok": True, **tok}
@@ -24603,8 +24726,9 @@ def public_exam_questions_recommend(payload: dict):
 
 
 # /api/curriculum/generate の全体日次上限 (in-process・UTC 日付でリセット)。共有 _RATE_LIMIT_STORE には
-# 相乗りしない: >10000 キー時の掃除が cutoff=now-3600 で全バケットを刈るため、86400s 窓はキー洪水攻撃下で
-# 実質 1 時間窓に劣化する (3並列 review 2026-07-20 指摘)。独立カウンタなら構造的に影響を受けない
+# 相乗りしない: 掃除の窓ズレ問題は 2026-07-21 に解消済みだが、共有ストアは「キー数 hard cap 到達時に
+# 上限未到達 key の席を空ける」設計 = 全体 cap のような単一カウンタを置く場所ではない (単純な日付
+# キーの独立カウンタなら evict も掃除も構造的に無関係でいられる)
 CURRICULUM_GLOBAL_DAILY_CAP = int(os.getenv("CURRICULUM_GLOBAL_DAILY_CAP", "100"))
 _CURRICULUM_DAILY_CAP_STATE = {"day": "", "count": 0}
 
