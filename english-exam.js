@@ -4990,12 +4990,15 @@ async function generateCurriculum() {
     weak_parts,
     history_summary,
   };
-  resultBox.innerHTML = '<p class="ee-loading">⏳ AI が個別カリキュラムを設計中… (30〜90秒)</p>';
+  resultBox.innerHTML = '<p class="ee-loading">⏳ AI が個別カリキュラムを設計中… (1〜2分ほど・画面を閉じずにお待ちください)</p>';
   resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
   genBtn.disabled = true; genBtn.textContent = '⏳ 生成中...';
   try {
+    // 🛟 2026-07-20: カリキュラム生成は非ストリーミングで 1〜3 分かかり、Vercel rewrite (/api/:path*)
+    // 経由だと応答前に 502 ROUTER_EXTERNAL_TARGET_ERROR で切られる (本番実測)。長時間応答を
+    // 受け取れる Railway 直で呼ぶ (CORS / origin check とも trillion-ai-juku.com 許可済)
     const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
-      ? 'http://localhost:8000' : window.location.origin;
+      ? 'http://localhost:8000' : PRODUCTION_API_BASE;
     // 📚 マイ参考書 inject (塾長指示 2026-05-14): ログイン済なら Authorization header 付与
     // backend `public_curriculum_generate` が Authorization を opportunistic に解釈して使用中マイ参考書を inject する
     const headers = { 'Content-Type': 'application/json' };

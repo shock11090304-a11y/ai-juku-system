@@ -24764,8 +24764,10 @@ def public_curriculum_generate(payload: dict, request: Request, authorization: O
       ],
       "estimated_total_minutes": <週合計>,
       "milestone_jp": "今週末に達成すべき指標 (例: r_long で 70%以上)"
-    }}
-    // 全 {weeks_remaining} 週分を生成 (簡略化のため最大 16 週まで・残りは "applies_remaining_weeks" でまとめる)
+    }},
+    {{"week": "11-20", "applies_remaining_weeks": true, "phase": "応用強化", "focus_jp": "この期間の毎週共通テンプレ (代表タスク)", "tasks": [<3-4個>], "estimated_total_minutes": <週合計>, "milestone_jp": "期間末に達成すべき指標"}}
+    // 詳細化は最大 10 週まで (JSON が長すぎると切断され全てが無駄になる)。11 週目以降が残る場合は
+    // 上のような範囲まとめ行 ("week": "開始-終了" の文字列) を同じ配列に入れ、第 {weeks_remaining} 週まで漏れなくカバー
   ],
   "study_principles": [
     "学習者へのコーチング指針 1",
@@ -24780,7 +24782,10 @@ def public_curriculum_generate(payload: dict, request: Request, authorization: O
 }}
 
 【厳守】
-- weekly_roadmap は最初の 12-16 週を必ず詳細化、それ以降は "phase 名" + "代表的なタスクパターン" でまとめてOK (週単位のテンプレ化)
+- weekly_roadmap は最初の 8-10 週を必ず詳細化し、それ以降は範囲まとめ行 (applies_remaining_weeks: true・週ごとに列挙しない) で
+  第 {weeks_remaining} 週まで漏れなくカバーする。詳細週は 10 週を絶対に超えない・tasks は 1 週あたり最大 4 個
+  (2026-07-20: 16 週詳細×5 tasks が max_tokens 12000 を超えて切断→fallback 落ちが weeks_remaining=31 の実受験日で再発したため、
+  出力量を構造的に上限内へ束ねる)
 - minutes 合計は daily_minutes × 7 を超えない (週上限 = {daily_minutes * 7})
 - estimated_score_at_exam は具体的な数値 (例: 「東大英語 78/120 → 88/120 (+10)」)"""
 
@@ -24793,6 +24798,8 @@ def public_curriculum_generate(payload: dict, request: Request, authorization: O
                 # 汎用 fallback 落ち → 利用者が再生成を繰り返す (2026-07-19 に 5 連発・全て無駄玉)。
                 # 12000 = 実需 (~8-11k tokens) + 余裕。非ストリーミングのため生成時間が timeout を
                 # 超えないよう "_timeout_s" も併せて延長 (16000 まで上げると 180s 超過リスクが出る)。
+                # 2026-07-20: 12000 でも weeks_remaining=31 (受験日2月の実ケース) で切断再発 →
+                # prompt 側で「詳細 10 週まで・tasks≤4/週」に構造制限し実需を ~5-7k へ圧縮 (12000 は据置き)。
                 "max_tokens": 12000,
                 "_timeout_s": 300,
                 "system": system,
