@@ -24602,9 +24602,20 @@ def public_exam_questions_recommend(payload: dict):
     }
 
 
+# /api/curriculum/generate の全体日次上限 (in-process・UTC 日付でリセット)。共有 _RATE_LIMIT_STORE には
+# 相乗りしない: >10000 キー時の掃除が cutoff=now-3600 で全バケットを刈るため、86400s 窓はキー洪水攻撃下で
+# 実質 1 時間窓に劣化する (3並列 review 2026-07-20 指摘)。独立カウンタなら構造的に影響を受けない
+CURRICULUM_GLOBAL_DAILY_CAP = int(os.getenv("CURRICULUM_GLOBAL_DAILY_CAP", "100"))
+_CURRICULUM_DAILY_CAP_STATE = {"day": "", "count": 0}
+
+
 @app.post("/api/curriculum/generate")
-def public_curriculum_generate(payload: dict, authorization: Optional[str] = Header(None)):
+def public_curriculum_generate(payload: dict, request: Request, authorization: Optional[str] = Header(None)):
     """🎯 受験日逆算 個別 AI カリキュラム生成。
+    🛡️ 匿名OK (english-exam.js の正規動線) のまま毎回 Anthropic を呼ぶ (~$0.12/回) ため、
+    origin check + rate limit (caller 5回/時 + 全体 CURRICULUM_GLOBAL_DAILY_CAP 回/日) で
+    クレジット燃焼露出を封鎖 (2026-07-20)。全体 cap 超過時は 429 ではなく非AI fallback へ劣化
+    (攻撃中も正規利用者は簡易プランを受け取れる・支出は0のまま)。
     payload: {
       "exam_id": "daigaku|toefl|toeic|ielts|eiken",
       "target_grade": "todai|gp1|null"  (大学キー or 英検級),
@@ -24631,6 +24642,23 @@ def public_curriculum_generate(payload: dict, authorization: Optional[str] = Hea
       "milestone_assessments": [...],
     }
     """
+    # 🛡️ /api/ai/call と同等の origin check (2026-07-20): 認証必須化はしない (匿名利用は正規動線)。
+    # ヘッダ値は攻撃者制御なので !r で改行を潰してログ注入を防ぐ
+    if not _origin_allowed(request):
+        log.warning(
+            f"/api/curriculum/generate blocked by origin check: origin={request.headers.get('origin')!r} "
+            f"referer={request.headers.get('referer')!r} ip={_client_ip(request)!r}"
+        )
+        raise HTTPException(status_code=403, detail="Origin not allowed")
+    # ログイン済は生徒ID単位 (塾内共有 NAT でも互いに独立)・匿名は同一 IP で 5回/時。
+    # 無音ブロックは入塾フォーム事故の教訓 → 発動を必ずログに残す (limit 適正化の実測にも使う)
+    try:
+        _check_rate_limit_caller(request, authorization, bucket="curriculum_generate", limit=5, window=3600)
+    except HTTPException:
+        log.warning(
+            f"/api/curriculum/generate per-caller cap (5/h) hit: ip={_client_ip(request)!r} authed={bool(authorization)}"
+        )
+        raise
     if not isinstance(payload, dict):
         raise HTTPException(status_code=400, detail="invalid payload")
     exam_id = payload.get("exam_id") or "daigaku"
@@ -24655,7 +24683,23 @@ def public_curriculum_generate(payload: dict, authorization: Optional[str] = Hea
     days_remaining = max(1, int((target_date - now).total_seconds() / 86400))
     weeks_remaining = max(1, days_remaining // 7)
 
-    if not ANTHROPIC_API_KEY:
+    # 🛡️ 全体日次上限 backstop: _client_ip は XFF 先頭を信用するため偽装 + IP 分散で per-caller 制限は
+    # 迂回できる。AI 呼び出し総数を CURRICULUM_GLOBAL_DAILY_CAP 回/日 (既定 100 ≒ 最悪 ~$12/日) で頭打ちに
+    # する。payload 検証後に数えるので 400 連打では消費されない。正規利用は数回/日で桁で余裕
+    _today_utc = now.strftime("%Y-%m-%d")
+    if _CURRICULUM_DAILY_CAP_STATE["day"] != _today_utc:
+        _CURRICULUM_DAILY_CAP_STATE["day"] = _today_utc
+        _CURRICULUM_DAILY_CAP_STATE["count"] = 0
+    _daily_capped = _CURRICULUM_DAILY_CAP_STATE["count"] >= CURRICULUM_GLOBAL_DAILY_CAP
+    if _daily_capped:
+        log.warning(
+            f"/api/curriculum/generate daily global cap hit ({CURRICULUM_GLOBAL_DAILY_CAP}/day) — "
+            f"AI を呼ばず非AI fallback で応答 (連打攻撃 or 想定外の人気。env CURRICULUM_GLOBAL_DAILY_CAP で調整可)"
+        )
+    else:
+        _CURRICULUM_DAILY_CAP_STATE["count"] += 1
+
+    if not ANTHROPIC_API_KEY or _daily_capped:
         # フォールバック: 簡易ロジック生成
         return _curriculum_fallback(
             exam_id, target_grade_name, days_remaining, weeks_remaining,
