@@ -1964,20 +1964,25 @@
       const currentWeek = Math.min(cur.weekly_roadmap.length, daysSince / 7 + 1 | 0);
       const w = cur.weekly_roadmap[Math.max(0, currentWeek - 1)] || cur.weekly_roadmap[0];
       const completed = new Set(cur.completed_weeks || []);
-      const isDone = completed.has(w.week);
+      // 🔑 2026-07-21: english-exam.js は週キーを dataset の生「文字列」で保存する (範囲まとめ行 "11-20" 対応)。
+      //   ここで has(w.week) だけ見ていると数値週 3 が "3" と一致せず「✅ Week完了済」が出なくなる。
+      //   旧版が数値で書いた記録も拾えるよう、english-exam.js renderCurriculum と同じ二重照合にする (片方だけ直すと非対称)
+      const weekKey = String(w.week ?? '').trim();  // trim も english-exam.js 側と揃える (揃えないと前後空白付き week で照合が外れる)
+      const legacyNum = /^\d+$/.test(weekKey) ? Number(weekKey) : null;
+      const isDone = weekKey !== '' && (completed.has(weekKey) || (legacyNum !== null && completed.has(legacyNum)));
       const phaseColor = w.phase === '基礎固め' ? '#22c55e' : w.phase === '応用強化' ? '#fbbf24' : '#f87171';
       const tasksHtml = (w.tasks || []).slice(0, 4).map(t =>
-        `<li style="margin-bottom:0.3rem;font-size:0.82rem;line-height:1.5;"><strong>${(t.title_jp || '').replace(/</g,'&lt;')}</strong> <span style="color:#94a3b8;">(${t.minutes || 0}分)</span></li>`
+        `<li style="margin-bottom:0.3rem;font-size:0.82rem;line-height:1.5;"><strong>${(t.title_jp || '').replace(/</g,'&lt;')}</strong> <span style="color:#94a3b8;">(${String(t.minutes || 0).replace(/</g,'&lt;')}分)</span></li>`
       ).join('');
       const remainingDays = cur.days_remaining ?? '--';
       el.innerHTML = `
         <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:0.85rem;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.4rem;">
-            <div style="font-weight:800;color:#fbbf24;">🎯 今週のタスク (Week ${w.week})</div>
+            <div style="font-weight:800;color:#fbbf24;">🎯 今週のタスク (Week ${weekKey.replace(/</g,'&lt;')}${(w.applies_remaining_weeks === true || /^\d+\s*[-–〜~]\s*\d+$/.test(weekKey)) ? '・毎週共通' : ''})</div>
             <div style="font-size:0.78rem;color:#94a3b8;">📅 受験日まで <strong style="color:#fbbf24;">${remainingDays}日</strong></div>
           </div>
           <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;flex-wrap:wrap;">
-            <span style="background:${phaseColor}22;color:${phaseColor};padding:0.15rem 0.5rem;border-radius:4px;font-size:0.72rem;font-weight:700;">${w.phase || ''}</span>
+            <span style="background:${phaseColor}22;color:${phaseColor};padding:0.15rem 0.5rem;border-radius:4px;font-size:0.72rem;font-weight:700;">${String(w.phase || '').replace(/</g,'&lt;')}</span>
             <span style="font-size:0.85rem;color:#e4e4e7;">${(w.focus_jp || '').replace(/</g,'&lt;')}</span>
           </div>
           <ul style="list-style:disc inside;padding:0;margin:0 0 0.5rem 0;">${tasksHtml}</ul>

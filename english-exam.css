@@ -1058,6 +1058,8 @@ body {
 .cur-head-meta { font-size: 0.95rem; color: var(--ee-text-dim); margin-bottom: 0.4rem; }
 .cur-head-pred { font-size: 1rem; color: var(--ee-success); }
 .cur-fallback-tag { display:inline-block; padding: 0.1rem 0.4rem; background: rgba(248,113,113,0.15); color: #f87171; border-radius: 4px; font-size: 0.7rem; margin-left: 0.5rem; }
+/* 簡易版になった理由と次の一手。title 属性はスマホで見えないので必ず可視の1行で出す */
+.cur-fallback-note { margin-top: 0.35rem; font-size: 0.75rem; line-height: 1.5; color: #cbd5e1; }
 
 .cur-phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.7rem; margin-bottom: 1.2rem; }
 .cur-phase-card {

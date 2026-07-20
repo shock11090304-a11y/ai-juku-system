@@ -5012,7 +5012,15 @@ async function generateCurriculum() {
     });
     if (!res.ok) {
       const err = await res.text();
-      throw new Error('http_' + res.status + ' ' + err.slice(0, 100));
+      console.warn('[curriculum] http error', res.status, err.slice(0, 200));
+      // 生徒に生の http_429 / JSON を見せない。特に 429 は「後でもう一度」と案内する以上、
+      // 何回まで・いつまで待つのかを日本語で返す (caller cap = 5回/時)
+      const friendly = res.status === 429
+        ? '短い時間に何度も生成しています (1 時間に 5 回まで)。少し時間をおいてからお試しください。'
+        : res.status === 403
+          ? 'このページからは生成できませんでした。マイページから開き直してお試しください。'
+          : null;
+      throw new Error(friendly || ('http_' + res.status + ' ' + err.slice(0, 100)));
     }
     const data = await res.json();
     // 永続化
@@ -5038,10 +5046,27 @@ function renderCurriculum(data) {
   const progress = loadCurriculumState() || {};
   const completed = new Set(progress.completed_weeks || []);
 
+  // 簡易版タグは理由 (server: fallback_reason) で文言を出し分け。
+  // 「混雑中 (=日次上限)」は待てば直る / 「AI応答なし」は障害 — 生徒の次の行動が変わるので区別する。
+  // note は必ず可視の1行で出す (title 属性はスマホで見えない = 肝心の案内が主要端末で全損するため)。
+  // 文面は過去形: この結果は localStorage に保存され後日そのまま再描画されるので、「今混んでいる」と断定しない
+  const FALLBACK_LABELS = {
+    daily_cap: { text: '⚠ 混雑中・簡易版', note: 'その時点で本日ぶんの AI 生成上限に達していたため、簡易プランを表示しています (上限のリセットは日本時間の朝 9 時ごろ)。あらためて生成すると AI 版が作れます。' },
+    ai_error: { text: '⚠ AI応答なし・簡易版', note: 'AI から応答が得られなかったため、簡易プランを表示しています。少し時間をおいて、もう一度生成してみてください。' },
+    no_key: { text: '⚠ 簡易版', note: 'AI 生成が使えない状態のため、簡易プランを表示しています。' },
+    // 理由不明 (旧サーバ応答 / localStorage の古い保存分)。原因を勝手に断定しない中立文言
+    unknown: { text: '⚠ 簡易版', note: 'AI 生成ができなかったため、簡易プランを表示しています。あらためて生成すると AI 版が作れることがあります。' },
+  };
+  const fbKey = String(data.fallback_reason || '');
+  const fb = data.fallback
+    ? (Object.prototype.hasOwnProperty.call(FALLBACK_LABELS, fbKey) ? FALLBACK_LABELS[fbKey] : FALLBACK_LABELS.unknown)
+    : null;
+
   let html = `<div class="cur-result-card">`;
   html += `<div class="cur-head">
     <div class="cur-head-title">🎯 ${escapeHtml(data.target_grade_name || '受験対策')} (${escapeHtml(data.exam_id || '')})</div>
-    <div class="cur-head-meta">📅 残 <strong>${data.days_remaining}</strong> 日 (約 <strong>${data.weeks_remaining}</strong> 週間) ${data.fallback ? '<span class="cur-fallback-tag">⚠ AI不調・簡易版</span>' : ''}</div>
+    <div class="cur-head-meta">📅 残 <strong>${data.days_remaining}</strong> 日 (約 <strong>${data.weeks_remaining}</strong> 週間) ${fb ? `<span class="cur-fallback-tag">${escapeHtml(fb.text)}</span>` : ''}</div>
+    ${fb ? `<div class="cur-fallback-note">${escapeHtml(fb.note)}</div>` : ''}
     ${data.estimated_score_at_exam ? `<div class="cur-head-pred">🎯 予測到達: <strong>${escapeHtml(data.estimated_score_at_exam)}</strong></div>` : ''}
   </div>`;
 
@@ -5052,7 +5077,7 @@ function renderCurriculum(data) {
     phases.forEach((p, i) => {
       html += `<div class="cur-phase-card" style="border-color:${colors[i] || '#94a3b8'}33;">
         <div class="cur-phase-name" style="color:${colors[i] || '#94a3b8'};">${escapeHtml(p.phase || `Phase ${i+1}`)}</div>
-        <div class="cur-phase-weeks">${p.weeks_count || 0} 週間</div>
+        <div class="cur-phase-weeks">${escapeHtml(p.weeks_count || 0)} 週間</div>
         <div class="cur-phase-obj">${escapeHtml(p.objective_jp || '')}</div>
       </div>`;
     });
@@ -5070,20 +5095,36 @@ function renderCurriculum(data) {
   if (roadmap.length) {
     html += '<div class="cur-roadmap-head">📋 週次ロードマップ (チェックを入れて進捗管理)</div>';
     html += '<div class="cur-roadmap">';
-    roadmap.forEach(w => {
-      const isDone = completed.has(w.week);
+    roadmap.forEach((w, wi) => {
+      // 🔑 2026-07-21: week は AI 出力由来で「範囲まとめ行」= "11-20" のような文字列になり得る (0c92caa)。
+      //   保存 (下の change ハンドラ) と復元でキー型がズレると永遠に一致せず、チェックがリロードで外れる。
+      //   → dataset の生文字列を単一のキーに統一。旧版が数値で記録した分は「純粋な数字列のときだけ」数値でも照合
+      //     (Number() 直呼びは "  "→0 / "0x10"→16 のような別解釈を拾うので数字列に限定)。
+      //   なお旧版の保存は parseInt なので、範囲行 "11-20" のチェックは数値 11 として残っている。
+      //   その古い記録は Week 11 側に一度だけ誤って現れ得るが、トグルすれば下の掃除で消える (self-heal)。
+      //   ★ 同じ照合ロジックが mypage.html の「今週のタスク」ウィジェットにもある — 片方だけ直すと非対称になる。
+      //   week 欠落行 (AI 出力の崩れ) は行番号をキーにする。'' に潰すと欠落行どうしが同じキーで連動する
+      const rawWeek = String(w.week ?? '').trim();
+      const weekKey = rawWeek !== '' ? rawWeek : `#${wi + 1}`;
+      const legacyNum = /^\d+$/.test(weekKey) ? Number(weekKey) : null;
+      const isDone = completed.has(weekKey) || (legacyNum !== null && completed.has(legacyNum));
+      const weekLabel = escapeHtml(weekKey);
+      // 範囲まとめ行 (week="11-20" / applies_remaining_weeks) は「その期間の毎週やる共通メニュー」。
+      // 詳細週と同じ見た目のまま並べると「20 週目のこと」と誤読されるので、ラベルと分の単位で明示する
+      const isRange = w.applies_remaining_weeks === true || /^\d+\s*[-–〜~]\s*\d+$/.test(weekKey);
+      const headLabel = rawWeek !== '' ? `Week ${weekLabel}${isRange ? ' の毎週' : ''}` : `${wi + 1} 週目`;
       const phaseColor = w.phase === '基礎固め' ? '#22c55e' : w.phase === '応用強化' ? '#fbbf24' : '#f87171';
-      html += `<div class="cur-week-card${isDone ? ' done' : ''}" data-week="${w.week}">
+      html += `<div class="cur-week-card${isDone ? ' done' : ''}" data-week="${weekLabel}">
         <div class="cur-week-head">
           <label class="cur-week-check">
-            <input type="checkbox" ${isDone ? 'checked' : ''} data-week="${w.week}">
-            <span>Week ${w.week}</span>
+            <input type="checkbox" ${isDone ? 'checked' : ''} data-week="${weekLabel}">
+            <span>${headLabel}</span>
           </label>
           <span class="cur-week-phase" style="background:${phaseColor}22;color:${phaseColor};">${escapeHtml(w.phase || '')}</span>
-          <span class="cur-week-min">${w.estimated_total_minutes || 0} 分</span>
+          <span class="cur-week-min">${escapeHtml(w.estimated_total_minutes || 0)} 分${isRange ? '/週' : ''}</span>
         </div>
         <div class="cur-week-focus">🎯 ${escapeHtml(w.focus_jp || '')}</div>
-        ${(w.tasks || []).length ? '<ul class="cur-week-tasks">' + (w.tasks).map(t => `<li><span class="cur-task-cat">${escapeHtml(t.category || '')}</span> <strong>${escapeHtml(t.title_jp || '')}</strong> <span class="cur-task-min">${t.minutes || 0}分</span><div class="cur-task-detail">${escapeHtml(t.detail_jp || '')}</div></li>`).join('') + '</ul>' : ''}
+        ${(w.tasks || []).length ? '<ul class="cur-week-tasks">' + (w.tasks).map(t => `<li><span class="cur-task-cat">${escapeHtml(t.category || '')}</span> <strong>${escapeHtml(t.title_jp || '')}</strong> <span class="cur-task-min">${escapeHtml(t.minutes || 0)}分</span><div class="cur-task-detail">${escapeHtml(t.detail_jp || '')}</div></li>`).join('') + '</ul>' : ''}
         ${w.milestone_jp ? `<div class="cur-week-mile">📌 ${escapeHtml(w.milestone_jp)}</div>` : ''}
       </div>`;
     });
@@ -5094,7 +5135,7 @@ function renderCurriculum(data) {
   if (milestones.length) {
     html += '<details class="cur-milestones"><summary>🏁 マイルストーン</summary><ul>';
     milestones.forEach(m => {
-      html += `<li>Week ${m.week} · ${escapeHtml(m.type || '')}: ${escapeHtml(m.target_jp || '')}</li>`;
+      html += `<li>Week ${escapeHtml(m.week)} · ${escapeHtml(m.type || '')}: ${escapeHtml(m.target_jp || '')}</li>`;
     });
     html += '</ul></details>';
   }
@@ -5106,13 +5147,18 @@ function renderCurriculum(data) {
   // 進捗チェック バインド
   box.querySelectorAll('input[type="checkbox"][data-week]').forEach(cb => {
     cb.addEventListener('change', () => {
-      const w = parseInt(cb.dataset.week, 10);
+      // キーは dataset の生文字列 (範囲まとめ行 "11-20" もそのまま)。旧版が数値で書いた記録も一緒に掃除して
+      // 「外したのにリロードで復活」を防ぐ
+      const w = cb.dataset.week || '';
+      cb.closest('.cur-week-card').classList.toggle('done', cb.checked);
+      if (w === '') return;  // 保険 (描画側で必ず非空キーを振っている)
       const cur = loadCurriculumState() || {};
       const list = new Set(cur.completed_weeks || []);
-      if (cb.checked) list.add(w); else list.delete(w);
+      list.delete(w);
+      if (/^\d+$/.test(w)) list.delete(Number(w));
+      if (cb.checked) list.add(w);
       cur.completed_weeks = [...list];
       saveCurriculumState(cur);
-      cb.closest('.cur-week-card').classList.toggle('done', cb.checked);
     });
   });
   document.getElementById('curRegenBtn')?.addEventListener('click', () => {

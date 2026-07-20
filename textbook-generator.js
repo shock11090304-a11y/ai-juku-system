@@ -181,9 +181,12 @@ async function generateTextbook() {
   const tabs = document.getElementById('viewTabs');
 
   btn.disabled = true;
-  btn.textContent = '⏳ 生成中...';
+  btn.textContent = '⏳ 準備中...';
   result.className = 'tb-result';
-  result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">⚙️</div><p>AIが教材を執筆中... (30-90秒)</p></div>';
+  // 📚 2026-05-01 に live 生成は廃止され登録済み教材の検索のみ (Step 1) → 実測ほぼ一瞬。
+  //    旧文言「AIが教材を執筆中... (30-90秒)」は AI も走らず時間も嘘だったので実態に合わせる
+  //    (textbook-generator.html の「💡 生成時間: 60〜180秒」も同時に是正済み)
+  result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">📚</div><p>教材を準備しています...</p></div>';
   actions.style.display = 'none';
   tabs.style.display = 'none';
 
@@ -588,9 +591,11 @@ ${/数学/.test(subject) ? `
     result.innerHTML = `<div class="tb-placeholder" style="text-align:center;padding:2rem;">
       <div style="font-size:3rem;">📚</div>
       <h3 style="margin:1rem 0;color:#fbbf24;">この教材は準備中です</h3>
-      <p style="color:#cbd5e1;margin-bottom:0.5rem;">ご要求の単元 <strong>${topic}</strong> (${level}) は<br>まだ教材プールに登録されていません。</p>
-      <p style="color:#94a3b8;font-size:0.85rem;margin-top:1rem;">塾長にリクエストが自動送信されました。<br>近日中に教材プールに追加されますので、しばらくお待ちください。</p>
-      <p style="color:#71717a;font-size:0.75rem;margin-top:1.5rem;">理由: ${poolMissReason || 'pool 未登録'}</p>
+      <p style="color:#cbd5e1;margin-bottom:0.5rem;">ご要求の単元 <strong>${escapeHtmlTb(topic)}</strong> (${escapeHtmlTb(level)}) は<br>まだ教材として登録されていません。</p>
+      ${sessionToken
+        ? '<p style="color:#94a3b8;font-size:0.85rem;margin-top:1rem;">塾長にリクエストが自動送信されました。<br>近日中に追加されますので、しばらくお待ちください。</p>'
+        : '<p style="color:#94a3b8;font-size:0.85rem;margin-top:1rem;">ログインしてもう一度お試しいただくと、塾長へのリクエストが自動で送信されます。</p>'}
+      <p style="color:#71717a;font-size:0.75rem;margin-top:1.5rem;">理由: ${escapeHtmlTb(poolMissReason || 'pool 未登録')}</p>
       <p style="color:#71717a;font-size:0.75rem;margin-top:0.5rem;">別の単元 (例: 仮定法、分詞構文、関係代名詞 など)<br>ですでに準備済みのものをお試しください。</p>
     </div>`;
     actions.style.display = 'none';

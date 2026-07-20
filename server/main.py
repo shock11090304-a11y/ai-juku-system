@@ -24824,10 +24824,13 @@ def public_curriculum_generate(payload: dict, request: Request, authorization: O
         _CURRICULUM_DAILY_CAP_STATE["count"] += 1
 
     if not ANTHROPIC_API_KEY or _daily_capped:
-        # フォールバック: 簡易ロジック生成
+        # フォールバック: 簡易ロジック生成 (reason はクライアントのタグ文言出し分けに使う)
         return _curriculum_fallback(
             exam_id, target_grade_name, days_remaining, weeks_remaining,
-            current_level, daily_minutes, weak_parts
+            current_level, daily_minutes, weak_parts,
+            # キー未設定が優先: キーが無い環境では日次カウンタだけ伸びて cap に当たるが、
+            # そこで "daily_cap" (= 時間をおけば AI 版が作れる) と案内すると永遠に叶わない嘘になる
+            reason=("no_key" if not ANTHROPIC_API_KEY else "daily_cap"),
         )
 
     weak_parts_text = ", ".join(weak_parts) if weak_parts else "履歴未提供 (汎用最適化)"
@@ -24955,12 +24958,13 @@ def public_curriculum_generate(payload: dict, request: Request, authorization: O
         log.error(f"[Curriculum] AI generation failed: {type(e).__name__}: {e}")
         return _curriculum_fallback(
             exam_id, target_grade_name, days_remaining, weeks_remaining,
-            current_level, daily_minutes, weak_parts
+            current_level, daily_minutes, weak_parts,
+            reason="ai_error",
         )
 
 
 def _curriculum_fallback(exam_id, target_grade_name, days_remaining, weeks_remaining,
-                          current_level, daily_minutes, weak_parts):
+                          current_level, daily_minutes, weak_parts, reason="ai_error"):
     """AI が使えない時の汎用フォールバック・3フェーズ均等分割"""
     base_phase = max(1, weeks_remaining // 3)
     return {
@@ -24999,6 +25003,9 @@ def _curriculum_fallback(exam_id, target_grade_name, days_remaining, weeks_remai
         ],
         "estimated_score_at_exam": "履歴データが充実すると AI が具体的なスコア予測を返します",
         "fallback": True,
+        # daily_cap = 日次上限 (時間をおけば直る) / ai_error = 生成失敗 / no_key = API キー未設定。
+        # クライアント (english-exam.js renderCurriculum) がタグ文言を出し分ける
+        "fallback_reason": reason,
     }
 
 

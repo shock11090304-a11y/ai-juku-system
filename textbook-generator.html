@@ -266,9 +266,11 @@
         <button id="generateTbBtn" class="btn-primary" style="width:100%;">✨ テキスト教材を生成</button>
         <div class="quality-badge">
           <strong>💎 クオリティ最優先モード</strong>
-          <span>Claude Opus 4.7 + Extended Thinking で市販参考書レベル。<strong style="color:var(--success);">プラン料金に含まれているため追加料金なし</strong>。</span>
+          <!-- 実態は「登録済み教材から表示」なので、これから書くとは読めない過去形に (直下の tb-cost と矛盾していた) -->
+          <span>Claude Opus 4.7 + Extended Thinking で作り込んだ市販参考書レベルの教材を収録。<strong style="color:var(--success);">プラン料金に含まれているため追加料金なし</strong>。</span>
         </div>
-        <p class="tb-cost">💡 生成時間: 60〜180秒 / <strong style="color:var(--success);">追加料金：なし（月額プラン内）</strong></p>
+        <!-- 2026-05-01 に live 生成は廃止 (登録済み教材から即時表示) → 「生成時間 60〜180秒」は実態と食い違うため是正 -->
+        <p class="tb-cost">💡 登録済みの教材からすぐに表示されます / <strong style="color:var(--success);">追加料金：なし（月額プラン内）</strong></p>
       </section>
 
       <section class="tb-output">
@@ -347,6 +349,6 @@ build_pdf(CHAPTERS, output_path='output.pdf')</pre>
     <div class="footer-bottom">© 2026 AIコーチング | Textbook Generator</div>
   </footer>
 
-  <script src="textbook-generator.js?v=20260604-katex-single-dollar"></script>
+  <script src="textbook-generator.js?v=20260721-copy-actual"></script>
 </body>
 </html>
