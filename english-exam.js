@@ -5051,7 +5051,8 @@ function renderCurriculum(data) {
   // note は必ず可視の1行で出す (title 属性はスマホで見えない = 肝心の案内が主要端末で全損するため)。
   // 文面は過去形: この結果は localStorage に保存され後日そのまま再描画されるので、「今混んでいる」と断定しない
   const FALLBACK_LABELS = {
-    daily_cap: { text: '⚠ 混雑中・簡易版', note: 'その時点で本日ぶんの AI 生成上限に達していたため、簡易プランを表示しています (上限のリセットは日本時間の朝 9 時ごろ)。あらためて生成すると AI 版が作れます。' },
+    // 上限はリセットされるまで解けない (=すぐ押し直しても同じ簡易版が返る) ので、「翌朝以降に」と条件を明示する
+    daily_cap: { text: '⚠ 混雑中・簡易版', note: 'その時点で本日ぶんの AI 生成上限に達していたため、簡易プランを表示しています。上限は日本時間の朝 9 時ごろにリセットされるので、翌朝以降にあらためて生成すると AI 版が作れます。' },
     ai_error: { text: '⚠ AI応答なし・簡易版', note: 'AI から応答が得られなかったため、簡易プランを表示しています。少し時間をおいて、もう一度生成してみてください。' },
     no_key: { text: '⚠ 簡易版', note: 'AI 生成が使えない状態のため、簡易プランを表示しています。' },
     // 理由不明 (旧サーバ応答 / localStorage の古い保存分)。原因を勝手に断定しない中立文言
@@ -5112,7 +5113,8 @@ function renderCurriculum(data) {
       // 範囲まとめ行 (week="11-20" / applies_remaining_weeks) は「その期間の毎週やる共通メニュー」。
       // 詳細週と同じ見た目のまま並べると「20 週目のこと」と誤読されるので、ラベルと分の単位で明示する
       const isRange = w.applies_remaining_weeks === true || /^\d+\s*[-–〜~]\s*\d+$/.test(weekKey);
-      const headLabel = rawWeek !== '' ? `Week ${weekLabel}${isRange ? ' の毎週' : ''}` : `${wi + 1} 週目`;
+      // 「・毎週共通」の言い回しは mypage.html の今週タスクウィジェットと揃える (同じ概念に別表現を使わない)
+      const headLabel = rawWeek !== '' ? `Week ${weekLabel}${isRange ? '・毎週共通' : ''}` : `Week ${wi + 1} (週番号なし)`;
       const phaseColor = w.phase === '基礎固め' ? '#22c55e' : w.phase === '応用強化' ? '#fbbf24' : '#f87171';
       html += `<div class="cur-week-card${isDone ? ' done' : ''}" data-week="${weekLabel}">
         <div class="cur-week-head">
