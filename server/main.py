@@ -1017,6 +1017,8 @@ def init_db():
         model TEXT NOT NULL,
         input_tokens INTEGER NOT NULL DEFAULT 0,
         output_tokens INTEGER NOT NULL DEFAULT 0,
+        cache_creation_tokens INTEGER NOT NULL DEFAULT 0,
+        cache_read_tokens INTEGER NOT NULL DEFAULT 0,
         cost_usd REAL NOT NULL DEFAULT 0,
         kind TEXT,
         student_id INTEGER,
@@ -1780,6 +1782,11 @@ def init_db():
         ("students_payment_fingerprint", "ALTER TABLE students ADD COLUMN payment_fingerprint TEXT DEFAULT NULL"),
         ("students_repeat_trial_suspect", "ALTER TABLE students ADD COLUMN repeat_trial_suspect INTEGER DEFAULT 0"),
         ("students_repeat_trial_reason", "ALTER TABLE students ADD COLUMN repeat_trial_reason TEXT DEFAULT NULL"),
+        # 💰 [prompt caching 2026-07-20 塾長指示] system prompt を cache_control でキャッシュし input 費を削減。
+        #   cache 書込 (1.25x) / 読込 (0.1x) は通常 input と単価が違うため別列で記録し cost_usd を正確に保つ
+        #   (CEO ダッシュ残量予測は SUM(cost_usd) 参照なので、ここが歪むと残日数予測がドリフトする)。
+        ("anthropic_usage_cache_creation", "ALTER TABLE anthropic_usage_log ADD COLUMN cache_creation_tokens INTEGER NOT NULL DEFAULT 0"),
+        ("anthropic_usage_cache_read", "ALTER TABLE anthropic_usage_log ADD COLUMN cache_read_tokens INTEGER NOT NULL DEFAULT 0"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -10955,24 +10962,32 @@ _AI_PROXY_RATE = {}  # session_id → [unix timestamps]
 _AI_CIRCUIT_BREAKER = {"credit_low_until": 0.0, "last_error": None}
 
 # 💸 Anthropic API 価格表 USD per 1M tokens (2026-05-13 塾長指示・credit 残量予測バナー用)
-# 出典: https://www.anthropic.com/pricing (公開価格)
+# 出典: https://platform.claude.com/docs/en/docs/about-claude/pricing (2026-07-20 照合)
+# ★prefix match は dict の挿入順に評価されるため、より具体的な model 名を先に置くこと
+#   (例: opus-4-8 を opus-4 より先に置かないと旧 Opus 4 価格 15/75 で誤課金計上される)
 # 不明 model は claude-sonnet 価格で fallback
 ANTHROPIC_PRICES_USD_PER_MTOK = {
-    # Opus 4.x
-    "claude-opus-4-7": {"input": 15.0, "output": 75.0},
-    "claude-opus-4": {"input": 15.0, "output": 75.0},
+    # Opus 4.5 以降は $5/$25 (旧表の 15/75 は Opus 4.1 世代の価格で 3x 過大計上だった → 2026-07-20 修正)
+    "claude-opus-4-8": {"input": 5.0, "output": 25.0},
+    "claude-opus-4-7": {"input": 5.0, "output": 25.0},
+    "claude-opus-4-6": {"input": 5.0, "output": 25.0},
+    "claude-opus-4-5": {"input": 5.0, "output": 25.0},
+    "claude-opus-4": {"input": 15.0, "output": 75.0},  # Opus 4/4.1 (retired/deprecated) は 15/75 のまま正
     # Sonnet 4.x
     "claude-sonnet-4-6": {"input": 3.0, "output": 15.0},
     "claude-sonnet-4-5": {"input": 3.0, "output": 15.0},
     "claude-sonnet-4": {"input": 3.0, "output": 15.0},
-    # Haiku 4.x
-    "claude-haiku-4-5": {"input": 0.25, "output": 1.25},
-    "claude-haiku-4": {"input": 0.25, "output": 1.25},
+    # Haiku 4.5 は $1/$5 (旧表の 0.25/1.25 は Haiku 3 世代の価格で 4x 過小計上だった → 2026-07-20 修正)
+    "claude-haiku-4-5": {"input": 1.0, "output": 5.0},
+    "claude-haiku-4": {"input": 1.0, "output": 5.0},
 }
 
 
-def _estimate_anthropic_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float:
-    """model + token 数から推定 cost USD を計算 (cache tokens は input 扱いで割安計算は省略)"""
+def _estimate_anthropic_cost_usd(model: str, input_tokens: int, output_tokens: int,
+                                  cache_creation_tokens: int = 0, cache_read_tokens: int = 0) -> float:
+    """model + token 数から推定 cost USD を計算。
+    prompt caching (2026-07-20): cache 書込 = input 単価 x1.25 / cache 読込 = input 単価 x0.1。
+    usage.input_tokens には cache 分が含まれない (Anthropic 仕様) ため別引数で加算する。"""
     # model 名から prefix で fuzzy match (例: "claude-opus-4-7-20251130" → "claude-opus-4-7")
     prices = None
     if model:
@@ -10982,22 +10997,32 @@ def _estimate_anthropic_cost_usd(model: str, input_tokens: int, output_tokens: i
                 break
     if not prices:
         prices = {"input": 3.0, "output": 15.0}  # Sonnet 価格で安全側 fallback
-    return (input_tokens * prices["input"] + output_tokens * prices["output"]) / 1_000_000.0
+    return (
+        input_tokens * prices["input"]
+        + cache_creation_tokens * prices["input"] * 1.25
+        + cache_read_tokens * prices["input"] * 0.10
+        + output_tokens * prices["output"]
+    ) / 1_000_000.0
 
 
 def _record_anthropic_usage(model: str, input_tokens: int, output_tokens: int,
-                              *, kind: Optional[str] = None, student_id: Optional[int] = None) -> None:
+                              *, cache_creation_tokens: int = 0, cache_read_tokens: int = 0,
+                              kind: Optional[str] = None, student_id: Optional[int] = None) -> None:
     """🛡️ Anthropic API 成功時に usage を anthropic_usage_log に記録 (best-effort・例外時 silent)"""
-    if not model or (input_tokens <= 0 and output_tokens <= 0):
+    if not model or (input_tokens <= 0 and output_tokens <= 0
+                     and cache_creation_tokens <= 0 and cache_read_tokens <= 0):
         return
     try:
-        cost = _estimate_anthropic_cost_usd(model, input_tokens, output_tokens)
+        cost = _estimate_anthropic_cost_usd(model, input_tokens, output_tokens,
+                                            cache_creation_tokens, cache_read_tokens)
         conn = db()
         c = conn.cursor()
         c.execute(
-            "INSERT INTO anthropic_usage_log (model, input_tokens, output_tokens, cost_usd, kind, student_id) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (model, int(input_tokens), int(output_tokens), float(cost), kind, student_id),
+            "INSERT INTO anthropic_usage_log (model, input_tokens, output_tokens, "
+            "cache_creation_tokens, cache_read_tokens, cost_usd, kind, student_id) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (model, int(input_tokens), int(output_tokens),
+             int(cache_creation_tokens), int(cache_read_tokens), float(cost), kind, student_id),
         )
         conn.commit()
         conn.close()
@@ -11125,6 +11150,32 @@ def _anthropic_max_tokens_cap(model: str, requested: int) -> int:
     if model.startswith("claude-haiku-4"):
         return min(requested, 8000)
     return min(requested, 8000)
+
+
+def _apply_prompt_cache(tier_body: dict) -> None:
+    """💰 prompt caching (2026-07-20 塾長指示): system を cache_control 付き block 配列に変換して
+    input 費を削減する (2回目以降の同一 system は 0.1x 課金。TTL 5分・利用のたび延長)。
+    - チャット/vision は app.js が数千 token の固定 system を毎回全文再送しており、ここが input 費の主因。
+      system は生徒/科目ごとに固定なので連続質問でほぼ確実に cache hit する。
+    - Anthropic 送信直前の tier_body だけを書き換えること (Gemini/OpenAI fallback は元の body を
+      受け取るため、cache_control が混入すると変換器が壊れる)。
+    - system が最小キャッシュ長未満のときは API が黙って非キャッシュ扱いするだけでエラーには
+      ならないため、無条件で付与してよい (実測 2026-07-20: sonnet-4-6 で 1,474 tokens の system が
+      cache_creation/cache_read に計上されることを本番 API で確認済み)。
+    """
+    sys_val = tier_body.get("system")
+    if isinstance(sys_val, str):
+        if sys_val.strip():
+            tier_body["system"] = [
+                {"type": "text", "text": sys_val, "cache_control": {"type": "ephemeral"}}
+            ]
+    elif isinstance(sys_val, list) and sys_val:
+        # 既に block 配列の caller: 最後の text block に cache_control を付与 (breakpoint は末尾 1 個)
+        last = sys_val[-1]
+        if isinstance(last, dict) and last.get("type") == "text" and "cache_control" not in last:
+            new_list = list(sys_val)
+            new_list[-1] = {**last, "cache_control": {"type": "ephemeral"}}
+            tier_body["system"] = new_list
 
 
 def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
@@ -11876,6 +11927,15 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
         raise HTTPException(status_code=503, detail="AI service not configured")
 
     requested_model = body.get("model") or "claude-sonnet-4-6"
+    # ⏱ per-call timeout (2026-07-20): 非ストリーミングなので応答は生成完了まで届かない。
+    # 長文生成 (curriculum の 12k tokens 級 JSON 等) は 180s では生成途中に socket timeout →
+    # リトライ 3 連 (input 3 重課金) → 降格の悪循環になるため、caller が "_timeout_s" で延長できる。
+    # "_timeout_s" は API に送らない内部キー (tier_body から pop)。Gemini/OpenAI 変換器は
+    # 既知フィールドのみ拾うので元 body に残っていても無害。
+    try:
+        req_timeout_s = max(60, min(600, int(body.get("_timeout_s") or 180)))
+    except Exception:
+        req_timeout_s = 180
     # フォールバック chain: 重複除去
     chain = []
     seen = set()
@@ -11890,8 +11950,11 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
     for tier_idx, model in enumerate(chain):
         # tier ごとに body を再構築 (Opus 4.7 専用パラメータは降格時に外す)
         tier_body = dict(body)
+        tier_body.pop("_timeout_s", None)  # 内部キー: API に送らない
         tier_body["model"] = model
         tier_body["max_tokens"] = _anthropic_max_tokens_cap(model, int(body.get("max_tokens") or 4000))
+        # 💰 prompt caching: Anthropic 送信分のみ system を cache 化 (fallback 用の body は不変)
+        _apply_prompt_cache(tier_body)
         if not model.startswith("claude-opus-4-7"):
             tier_body.pop("thinking", None)
             tier_body.pop("output_config", None)
@@ -11910,7 +11973,7 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
                     },
                     method="POST",
                 )
-                with urllib.request.urlopen(req, timeout=180) as resp:
+                with urllib.request.urlopen(req, timeout=req_timeout_s) as resp:
                     data = json.loads(resp.read().decode("utf-8"))
                     if tier_idx > 0 or attempt > 0:
                         log.warning(
@@ -11934,6 +11997,8 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
                             model,
                             int(usage_obj.get("input_tokens") or 0),
                             int(usage_obj.get("output_tokens") or 0),
+                            cache_creation_tokens=int(usage_obj.get("cache_creation_input_tokens") or 0),
+                            cache_read_tokens=int(usage_obj.get("cache_read_input_tokens") or 0),
                             kind=kind, student_id=student_id,
                         )
                     except Exception:
@@ -24680,12 +24745,23 @@ def public_curriculum_generate(payload: dict, authorization: Optional[str] = Hea
         d = _call_anthropic_safe(
             {
                 "model": EXAM_QUESTIONS_MODEL,
-                "max_tokens": 8000,
+                # 8000 だと長期プラン (12-16 週詳細) の JSON が max_tokens で途中切断 → parse 失敗 →
+                # 汎用 fallback 落ち → 利用者が再生成を繰り返す (2026-07-19 に 5 連発・全て無駄玉)。
+                # 12000 = 実需 (~8-11k tokens) + 余裕。非ストリーミングのため生成時間が timeout を
+                # 超えないよう "_timeout_s" も併せて延長 (16000 まで上げると 180s 超過リスクが出る)。
+                "max_tokens": 12000,
+                "_timeout_s": 300,
                 "system": system,
                 "messages": [{"role": "user", "content": user}],
             },
             kind="curriculum_generate",
         )
+        if d.get("stop_reason") == "max_tokens":
+            # 切断されたら JSON parse はほぼ確実に失敗し fallback に落ちる。原因を一目で判別できるよう明示ログ
+            log.warning(
+                f"[Curriculum] output truncated at max_tokens (model={d.get('_actual_model')}, "
+                f"weeks_remaining={weeks_remaining}) — fallback 落ちの可能性大"
+            )
         text = d["content"][0]["text"].strip()
         if text.startswith("```"):
             text = text.split("```", 2)[1]
