@@ -32928,9 +32928,13 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
     # 🎯 塾長指示 2026-07-13: 配信対象を「国公立難関大学コース生 or 課金中(status=paid)」に限定。
     #   ★kokuritsu_nankan は trial_end≈2036 の永年 trial なので status='paid' には入らない=course で拾う。
     #   これで非難関の無料 trial 生(お試し登録層)には送らない (無活動週 skip と併せて配信を絞る)。
+    # 🛡️ 2026-07-21 synthetic 除外 (audit 検出: 7/19 実行で豊岡太郎 @synthetic-monitor.local に
+    #   実配信+AIコメント生成1回が発生していた。weekly_worksheet cron は除外済みで非対称だった)。
+    #   除外条件は _synth_exclude_sql が単一ソース (email ドメイン+goal marker+名前の三重判定)
     c.execute(
         "SELECT id, name, email, line_user_id, course, parent_email, parent_email_enabled FROM students "
-        "WHERE status IN ('trial', 'paid') AND (course = 'kokuritsu_nankan' OR status = 'paid')"
+        "WHERE status IN ('trial', 'paid') AND (course = 'kokuritsu_nankan' OR status = 'paid') "
+        f"AND {_synth_exclude_sql()}"
     )
     students = list(c.fetchall())
     conn.close()
@@ -33061,11 +33065,19 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
                         "problems_done": stats["problems_done"],
                         "url": f"{BASE_URL}/mypage.html",
                     }
-                    _do_line_push(row["id"], "weekly_report", params)
-                    sent_line += 1
+                    # 2026-07-21: _do_line_push は LINE API 失敗でも raise せず {"ok": False} を返す —
+                    # 戻り値を見ずに増分すると sent_line が「試行数」になり週次サマリが嘘をつく (audit 検出)
+                    _line_res = _do_line_push(row["id"], "weekly_report", params)
+                    if isinstance(_line_res, dict) and _line_res.get("ok"):
+                        sent_line += 1
+                    else:
+                        log.warning(f"[WeeklyReport] LINE push not delivered for {row['id']}: {_line_res}")
                 except Exception as le:
                     log.warning(f"[WeeklyReport] LINE push failed for {row['id']}: {le}")
         except Exception as e:
+            # 2026-07-21: ここに落ちた生徒はどのカウンタにも乗らず週次サマリから無言で消えていた
+            # (audit 指摘の counter 不可視経路)。failed に計上して合計を検算可能に保つ
+            failed += 1
             log.error(f"Weekly report failed for {row['id']}: {e}")
     return {
         "sent_email": sent_email, "sent_line": sent_line,
