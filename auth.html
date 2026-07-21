@@ -288,10 +288,15 @@
         localStorage.setItem('ai_juku_session_expires', String(data.expires_at));
         localStorage.setItem('ai_juku_session_student', JSON.stringify(data.student));
         // 🛡️ 2026-07-21 [admin-token-hygiene] 実生徒ログイン = この端末はいま生徒のもの。
-        //   CEO の admin token 残骸 (TTL 30日) をここで掃除する — 残すと生徒ページの admin
-        //   fallback (english-exam.js 等) が管理者権限で API を叩けてしまう。ceo.html の
+        //   CEO の admin token 残骸 (TTL 7日・env) と ai_juku_api_key (sk-ant- 生キー・無期限) を
+        //   ここで掃除する — 残すと生徒ページの admin fallback (english-exam.js 等) が管理者権限で
+        //   API を叩け、API キーは Anthropic 課金の踏み台になる。ceo.html の
         //   「生徒として入る」なりすましはこのページを通らずセッションを直接セットするため無傷
-        try { localStorage.removeItem('ai_juku_admin_token'); localStorage.removeItem('ai_juku_admin_expires'); } catch (_) {}
+        try {
+          localStorage.removeItem('ai_juku_admin_token');
+          localStorage.removeItem('ai_juku_admin_expires');
+          localStorage.removeItem('ai_juku_api_key');
+        } catch (_) {}
         // ⚠️ 退避 token の削除はセッション保存より後 (この同期ブロック内は reload が割り込めない
         //   ため、「保存前に消えて再試行も不能」という中間状態を作らない)
         clearPendingToken();

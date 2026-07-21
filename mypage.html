@@ -2118,6 +2118,60 @@
       if (!input || !saveBtn || !checkbox || !status) return;
       const token = localStorage.getItem('ai_juku_session_token') || '';
       if (!token) return;
+      // 📊 2026-07-21 [parent-email-collection] 監査結果: parent_email 登録は3家庭・全て生徒本人と
+      //   同一アドレス → server の重複送信ガードで「保護者向け別送」は開始以来 0 件だった。
+      //   ①同一アドレスなら「✅配信中」と嘘を出さず実態を表示 ②未登録/同一なら widget 列に案内を出す
+      const sessStudent = (() => { try { return JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null'); } catch (_) { return null; } })();
+      const studentEmail = String((sessStudent && sessStudent.email) || '').toLowerCase().trim();
+      const isSameAsStudent = (pe) => !!(pe && studentEmail && String(pe).toLowerCase().trim() === studentEmail);
+      const SNOOZE_BASE = 'aj_parent_nudge_snooze';
+      const snoozeKey = () => (typeof window.aiJukuStudentScopedKey === 'function' && window.aiJukuStudentScopedKey(SNOOZE_BASE)) || SNOOZE_BASE;
+      function renderParentNudge(state) {  // state: 'unset' | 'same'
+        try {
+          if (document.getElementById('parentEmailNudge')) return;
+          const snooze = parseInt(localStorage.getItem(snoozeKey()) || '0', 10);
+          if (snooze && Date.now() < snooze) return;  // 「あとで」から14日間は出さない
+          const anchor = document.getElementById('examPrepWidget') || document.getElementById('curriculumWeekWidget');
+          if (!anchor) return;
+          const div = document.createElement('div');
+          div.id = 'parentEmailNudge';
+          div.style.cssText = 'background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.35);border-radius:10px;padding:0.8rem;margin-bottom:0.8rem;display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;';
+          const msg = state === 'same'
+            ? '📊 週次レポートの保護者向け配信が、生徒本人と同じアドレス宛てになっています。保護者ご自身のメールを登録すると保護者にも届きます。'
+            : '📊 保護者のメールアドレスを登録すると、毎週日曜に学習レポート (学習時間・正答率・弱点) が保護者へ自動で届きます。';
+          div.innerHTML = `
+            <div style="flex:1;min-width:220px;font-size:0.82rem;color:#cbd5e1;line-height:1.55;">${msg}</div>
+            <div style="display:flex;gap:0.4rem;">
+              <button id="parentNudgeGoBtn" style="background:rgba(168,85,247,0.25);color:#e9d5ff;border:1px solid rgba(168,85,247,0.5);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">設定する</button>
+              <button id="parentNudgeLaterBtn" style="background:transparent;color:#94a3b8;border:1px solid rgba(255,255,255,0.12);padding:0.35rem 0.6rem;border-radius:6px;font-size:0.78rem;cursor:pointer;">あとで</button>
+            </div>`;
+          anchor.insertAdjacentElement('beforebegin', div);
+          document.getElementById('parentNudgeGoBtn').addEventListener('click', () => {
+            const sec = document.getElementById('parentEmailSection');
+            if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => { try { input.focus(); } catch (_) {} }, 400);
+          });
+          document.getElementById('parentNudgeLaterBtn').addEventListener('click', () => {
+            try { localStorage.setItem(snoozeKey(), String(Date.now() + 14 * 86400000)); } catch (_) {}
+            div.remove();
+          });
+        } catch (e) { console.warn('parent nudge failed:', e); }
+      }
+      function showHonestStatus(pe, enabled, savedPrefix) {
+        if (isSameAsStudent(pe)) {
+          status.style.color = '#fcd34d';
+          // 保存時も ✅ を混ぜない (緑チェック+琥珀警告の混合シグナルは UX review 指摘)
+          status.textContent = savedPrefix
+            ? '⚠️ 保存しました。ただし生徒本人と同じアドレスのため、保護者向けの別送はされません'
+            : '⚠️ 生徒本人と同じアドレスのため、保護者向けの別送はされません (本人宛てには毎週届いています)';
+          return 'same';
+        }
+        if (pe) {
+          status.style.color = '#86efac';
+          status.textContent = savedPrefix ? `${savedPrefix} ${pe} (${enabled ? '配信中' : '配信停止中'})` : '✅ 配信中: ' + pe;
+        }
+        return pe ? 'ok' : 'unset';
+      }
       // 初期取得
       fetch(`${API_BASE}/api/student/parent-email`, { headers: { 'Authorization': 'Bearer ' + token } })
         .then(r => r.ok ? r.json() : null)
@@ -2125,7 +2179,9 @@
           if (!d) return;
           input.value = d.parent_email || '';
           checkbox.checked = !!d.enabled;
-          if (d.parent_email) status.textContent = '✅ 配信中: ' + d.parent_email;
+          const state = showHonestStatus(d.parent_email, !!d.enabled, '');
+          if (state === 'unset') renderParentNudge('unset');
+          else if (state === 'same') renderParentNudge('same');
         }).catch(() => {});
       // 保存
       saveBtn.addEventListener('click', async function() {
@@ -2147,8 +2203,15 @@
           });
           const j = await res.json();
           if (res.ok && j.ok) {
-            status.style.color = '#86efac';
-            status.textContent = email ? `✅ 保存しました: ${email} (${enabled ? '配信中' : '配信停止中'})` : '✅ 保存しました (email 未設定)';
+            if (email) {
+              // 同一アドレス保存も受け付けるが、実態 (別送されない) を保存直後に正直に伝える
+              showHonestStatus(email, enabled, '✅ 保存しました:');
+              const nudge = document.getElementById('parentEmailNudge');
+              if (nudge && !isSameAsStudent(email)) nudge.remove();  // 保護者アドレスが入ったら案内を畳む
+            } else {
+              status.style.color = '#86efac';
+              status.textContent = '✅ 保存しました (email 未設定)';
+            }
           } else {
             status.style.color = '#fca5a5';
             status.textContent = '⚠️ ' + (j.detail || '保存に失敗しました');

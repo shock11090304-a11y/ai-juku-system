@@ -367,9 +367,14 @@
           localStorage.setItem('ai_juku_session_token', data.token);
           localStorage.setItem('ai_juku_session_expires', String(data.expires_at));
           localStorage.setItem('ai_juku_session_student', JSON.stringify(data.student));
-          // 🛡️ 2026-07-21 [admin-token-hygiene] 実生徒ログインで CEO admin token 残骸を掃除
-          //   (auth.html と同方針。ceo.html なりすましはこのページを通らないため無傷)
-          try { localStorage.removeItem('ai_juku_admin_token'); localStorage.removeItem('ai_juku_admin_expires'); } catch (_) {}
+          // 🛡️ 2026-07-21 [admin-token-hygiene] 実生徒ログインで CEO admin token 残骸 +
+          //   ai_juku_api_key (sk-ant- 生キー・無期限) を掃除 (auth.html と同方針。
+          //   ceo.html なりすましはこのページを通らないため無傷)
+          try {
+            localStorage.removeItem('ai_juku_admin_token');
+            localStorage.removeItem('ai_juku_admin_expires');
+            localStorage.removeItem('ai_juku_api_key');
+          } catch (_) {}
           // 🔑 2026-06-14 [mypage-guest-fix] 名前表示用キー (ai_juku_current_student /
           //   ai_juku_students) も同期。URL 経路 (auth.html) と同方針で、コード入力経路でも
           //   各ページの getCurrentStudent が authed 生徒を解決できるようにする。
