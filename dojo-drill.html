@@ -674,6 +674,20 @@
       const _mode = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';
       if (_mode === 'chugaku' || _mode === 'shougaku') ddLevel = 'chugaku';
     } catch (_) { /* student-mode.js 未読込等は既定 'kyotsu' を維持 */ }
+    // 🎯 2026-07-22 塾長指示: mypage クイックアクションから弱点克服タブへ直行する ?tab= を追加。
+    //   tab=weakness は「その生徒の弱点克服タブ」= 高校生(kosei)は 'unit'・中学生/小学生は 'chugaku'
+    //   (プールが別なので固定 'unit' にすると中学生が高校生用プールに着地してしまう)。
+    //   明示指定 (kyotsu/unit/chugaku/univ) もそのまま受ける。?w_topic 経由の弱点ループ auto-start は
+    //   後段 maybeAutoStartFromWeakness が ddLevel を上書きするので従来どおり優先される
+    try {
+      const _tabP = new URLSearchParams(window.location.search).get('tab') || '';
+      if (_tabP === 'weakness') {
+        const _m2 = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';
+        ddLevel = (_m2 === 'chugaku' || _m2 === 'shougaku') ? 'chugaku' : 'unit';
+      } else if (_tabP === 'kyotsu' || _tabP === 'unit' || _tabP === 'chugaku' || _tabP === 'univ') {
+        ddLevel = _tabP;
+      }
+    } catch (_) { /* param 不正は既定タブを維持 */ }
     const ddSubject = { kyotsu: null, unit: null, chugaku: null, univ: '国公立' };  // レベルごとに選択中の科目を保持
 
     function ddSubjectsFor(level) {
