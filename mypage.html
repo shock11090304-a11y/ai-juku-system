@@ -135,6 +135,151 @@
       </div>
     </section>
 
+    <!-- 🎯 合格可能性スコア + ⚡ クイックアクション (塾長指示 2026-07-22: ページ最上部へ)。
+         admissionLikelihoodSection は kosei のみ表示 (中学生モードでは非表示のままクイックアクションが先頭に来る) -->
+    <div class="dashboard-grid">
+      <!-- 🎯 合格可能性スコア ダッシュボード (塾長指示 2026-05-26。🎯 [adm-accuracy] 2026-06-12:
+           実体は SQL ヒューリスティックのため名称を「AI 合格判定」から変更 + 免責を常時表示化) -->
+      <section id="admissionLikelihoodSection" class="aj-adv2" style="display:none; margin: 0 0 1.5rem 0; padding: 1.2rem 1.4rem; background: linear-gradient(135deg, rgba(239,68,68,0.13), rgba(251,191,36,0.10)); border: 2px solid rgba(239,68,68,0.4); border-radius: 16px; box-shadow: 0 8px 24px rgba(239,68,68,0.15);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+          <h3 style="margin:0; font-size:1.1rem; font-weight:800; color:#fff;">📊 合格可能性スコア <span style="font-size:0.65em; color:#fca5a5; font-weight:600;">(学習データからの参考値・残り日数)</span></h3>
+          <button type="button" id="admissionRefreshBtn" style="padding:0.35rem 0.7rem; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.4); border-radius:8px; color:#fca5a5; font-weight:700; font-size:0.78rem; cursor:pointer;">🔄 再計算</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.8rem; margin-bottom:0.8rem;">
+          <div style="padding:0.8rem; background:rgba(0,0,0,0.30); border-radius:10px; text-align:center;">
+            <div style="font-size:0.7rem; color:#fca5a5; font-weight:700; margin-bottom:0.3rem;">合格可能性</div>
+            <div style="display:flex; align-items:baseline; justify-content:center; gap:0.3rem;">
+              <span id="admScore" style="font-size:2.2rem; font-weight:900; color:#fff;">--</span>
+              <span style="font-size:0.85rem; color:#cbd5e1;">%</span>
+              <span id="admScoreDelta" style="font-size:0.75rem; color:#86efac; margin-left:0.3rem;"></span>
+            </div>
+          </div>
+          <div style="padding:0.8rem; background:rgba(0,0,0,0.30); border-radius:10px; text-align:center;">
+            <div style="font-size:0.7rem; color:#fca5a5; font-weight:700; margin-bottom:0.3rem;">志望校</div>
+            <div id="admUniv" style="font-size:1.0rem; font-weight:800; color:#fde68a;">--</div>
+          </div>
+          <div style="padding:0.8rem; background:rgba(0,0,0,0.30); border-radius:10px; text-align:center;">
+            <div style="font-size:0.7rem; color:#fca5a5; font-weight:700; margin-bottom:0.3rem;">本番まで</div>
+            <div style="display:flex; align-items:baseline; justify-content:center; gap:0.2rem;">
+              <span id="admDays" style="font-size:1.8rem; font-weight:900; color:#fff;">--</span>
+              <span style="font-size:0.85rem; color:#cbd5e1;">日</span>
+            </div>
+          </div>
+        </div>
+        <div id="admAnalysis" style="padding:0.7rem 0.9rem; background:rgba(0,0,0,0.20); border-left:3pt solid #fbbf24; border-radius:6px; font-size:0.85rem; color:#fde68a; line-height:1.6; margin-bottom:0.6rem;">⏳ 計算中…</div>
+        <!-- 🎯 [adm-accuracy] 免責を内訳の外に常時表示 (details を開かないと見えなかった指摘の修正) -->
+        <div style="font-size:0.7rem; color:#a1a1aa; margin-bottom:0.6rem;">※ 学習記録・弱点・模試結果などから自動算出した参考値です (AI による合否予測ではありません)。</div>
+        <details style="background:rgba(0,0,0,0.15); border-radius:8px; padding:0.5rem 0.7rem;">
+          <summary style="cursor:pointer; font-size:0.78rem; color:#cbd5e1; font-weight:700;">📊 スコア内訳</summary>
+          <div id="admBreakdown" style="margin-top:0.6rem; font-size:0.75rem; color:#a1a1aa; line-height:1.7;"></div>
+        </details>
+      </section>
+
+      <!-- Quick Actions -->
+      <section class="action-card-section aj-adv1">
+        <div class="section-title"><h2>⚡ クイックアクション</h2></div>
+        <div class="action-buttons">
+          <a href="quick-start.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(251,191,36,0.22),rgba(236,72,153,0.12));border:2px solid rgba(251,191,36,0.55);">
+            <div class="action-icon">⚡</div>
+            <div>
+              <div class="action-title">今すぐ問題挑戦 <span class="action-badge-new">NEW</span></div>
+              <div class="action-desc">5 科目から選んで AI 即時生成 + 定期テスト単元演習</div>
+            </div>
+          </a>
+          <!-- ✍️ 弱点克服 直行 (塾長指示 2026-07-22: 入試道場の弱点克服をクイックアクションへ)。
+               tab=weakness は dojo-drill 側でモード解決 (高校生=単元別/中学生=高校受験プール) -->
+          <a href="dojo-drill.html?tab=weakness" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(239,68,68,0.20),rgba(245,158,11,0.12));border:2px solid rgba(239,68,68,0.5);">
+            <div class="action-icon">✍️</div>
+            <div>
+              <div class="action-title">弱点克服ドリル <span class="action-badge-new">NEW</span></div>
+              <div class="action-desc"><strong>苦手単元を選んで集中演習</strong>: 単元別プールから即スタート — 正答率 80% で習得卒業まで追跡</div>
+            </div>
+          </a>
+          <a href="index.html?openHistory=1" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(34,197,94,0.10));border:2px solid rgba(99,102,241,0.45);">
+            <div class="action-icon">📚</div>
+            <div>
+              <div class="action-title">解いた問題を再演習 <span class="action-badge-new">NEW</span></div>
+              <div class="action-desc">過去に解いた問題から「もう一度」を選んで復習</div>
+            </div>
+          </a>
+          <a href="index.html" class="action-btn primary">
+            <div class="action-icon">💬</div>
+            <div>
+              <div class="action-title">AIチューターに聞く</div>
+              <div class="action-desc">わからない問題をその場で解決</div>
+            </div>
+          </a>
+          <a href="index.html#tab-problems" class="action-btn" id="generateProblemsQuick">
+            <div class="action-icon">🧪</div>
+            <div>
+              <div class="action-title">問題を生成する</div>
+              <div class="action-desc">弱点を入力→オリジナル問題</div>
+            </div>
+          </a>
+          <a href="index.html#tab-essay" class="action-btn">
+            <div class="action-icon">✍️</div>
+            <div>
+              <div class="action-title">英作文を添削</div>
+              <div class="action-desc">書いた答案をAIがチェック</div>
+            </div>
+          </a>
+          <a href="index.html#tab-curriculum" class="action-btn">
+            <div class="action-icon">🎯</div>
+            <div>
+              <div class="action-title">学習計画を見る</div>
+              <div class="action-desc">志望校までのロードマップ</div>
+            </div>
+          </a>
+          <a href="textbook-generator.html" class="action-btn action-btn-highlight">
+            <div class="action-icon">📚</div>
+            <div>
+              <div class="action-title">自分の参考書を作る <span class="action-badge-new">NEW</span></div>
+              <div class="action-desc">弱点特化の教材をAIが執筆</div>
+            </div>
+          </a>
+          <a href="nyushi-dojo.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(245,158,11,0.22),rgba(220,38,38,0.10));border:2px solid rgba(245,158,11,0.55);">
+            <div class="action-icon">🏛️</div>
+            <div>
+              <div class="action-title">入試問題 道場 <span class="action-badge-new">NEW</span> <span style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">18,000 問+</span></div>
+              <div class="action-desc"><strong>大学入試の演習はここに集約</strong>: 📚 単元別演習 / 🟣 大学別 深掘り / 🎯 本番想定模試 — 3 mode で 18,000 問+の演習プールに 1 画面からアクセス</div>
+            </div>
+          </a>
+          <a href="vocab.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(16,185,129,0.10));border:2px solid rgba(99,102,241,0.45);">
+            <div class="action-icon">📖</div>
+            <div>
+              <div class="action-title">AI 単語帳 (SRS) <span class="action-badge-new">NEW</span></div>
+              <div class="action-desc">忘却曲線対応 Leitner Box・科学的暗記</div>
+            </div>
+          </a>
+          <!-- 📚 配布プリント CTA (塾長指示 2026-05-26: クイックアクション内に追加) -->
+          <a href="#lessonPrintsSection" class="action-btn action-btn-highlight" id="quickActionLessonPrints" style="background:linear-gradient(135deg,rgba(59,130,246,0.22),rgba(168,85,247,0.12));border:2px solid rgba(59,130,246,0.55);">
+            <div class="action-icon">📚</div>
+            <div>
+              <div class="action-title">配布プリント <span class="action-badge-new">NEW</span> <span id="lpQuickCount" style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">…</span></div>
+              <div class="action-desc"><strong>解説付き PDF を配布</strong>: 授業用 / 自習用 / 演習問題集 + 詳細解説 ─ 弱点に合わせて AI が推薦</div>
+            </div>
+          </a>
+          <!-- 🗂️ 教材ライブラリ (塾長指示 2026-06-19: kyozai.html ハブへの導線) -->
+          <a href="kyozai.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(16,185,129,0.20),rgba(59,130,246,0.10));border:2px solid rgba(16,185,129,0.55);">
+            <div class="action-icon">🗂️</div>
+            <div>
+              <div class="action-title">教材ライブラリ <span class="action-badge-new">NEW</span> <span style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">無料あり</span></div>
+              <div class="action-desc"><strong>動く解説・ドリル・単語帳・PDF を1画面で</strong>: 科目で探せる教材カタログ ─ 相加相乗の「動く解説」など登録なしで試せる教材も</div>
+            </div>
+          </a>
+          <!-- 🏫 塾生メニュー (塾長指示 2026-06-25): 通塾生のみ表示 (下部 inline script が feed 200 で display 解除)。
+               授業ファイル配布 / 録画 / 出欠連絡 = class.html。AI 学習 SaaS とは別系統の塾生専用機能。 -->
+          <a href="class.html" id="classMenuCard" class="action-btn action-btn-highlight" style="display:none;background:linear-gradient(135deg,rgba(129,140,248,0.20),rgba(167,139,250,0.10));border:2px solid rgba(129,140,248,0.55);">
+            <div class="action-icon">📚</div>
+            <div>
+              <div class="action-title">トリリオン塾生アプリ <span class="action-badge-new">NEW</span> <span style="background:rgba(129,140,248,0.22);color:#c7d2fe;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">通塾生</span></div>
+              <div class="action-desc"><strong>予定・宿題・動画・メッセージ</strong>: 授業の予定/配布ファイル/録画と、宿題・出欠連絡・塾長への連絡がここに集約</div>
+            </div>
+          </a>
+        </div>
+      </section>
+    </div><!-- /dashboard-grid (最上部: 合格可能性+クイックアクション) -->
+
     <section id="study-log" class="study-log-quick-cta" style="margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(99,102,241,0.20), rgba(236,72,153,0.13)); border: 1px solid rgba(167,139,250,0.45); border-radius: 14px; box-shadow: 0 8px 24px rgba(99,102,241,0.18);">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.9rem; flex-wrap:wrap;">
         <div style="flex:1 1 220px; min-width:200px;">
@@ -349,148 +494,9 @@
 
     <!-- Today's Quest: 塾長指示 2026-05-15 で削除 (XP/クエスト gamification 機能廃止) -->
 
+    <!-- 🎯 合格可能性+クイックアクションは塾長指示 2026-07-22 でページ最上部へ移動 (アラート帯直後)。
+         以下の grid は配布プリント+今日の統計のみ -->
     <div class="dashboard-grid">
-      <!-- 🎯 合格可能性スコア ダッシュボード (塾長指示 2026-05-26。🎯 [adm-accuracy] 2026-06-12:
-           実体は SQL ヒューリスティックのため名称を「AI 合格判定」から変更 + 免責を常時表示化) -->
-      <section id="admissionLikelihoodSection" class="aj-adv2" style="display:none; margin: 0 0 1.5rem 0; padding: 1.2rem 1.4rem; background: linear-gradient(135deg, rgba(239,68,68,0.13), rgba(251,191,36,0.10)); border: 2px solid rgba(239,68,68,0.4); border-radius: 16px; box-shadow: 0 8px 24px rgba(239,68,68,0.15);">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap; margin-bottom:0.8rem;">
-          <h3 style="margin:0; font-size:1.1rem; font-weight:800; color:#fff;">📊 合格可能性スコア <span style="font-size:0.65em; color:#fca5a5; font-weight:600;">(学習データからの参考値・残り日数)</span></h3>
-          <button type="button" id="admissionRefreshBtn" style="padding:0.35rem 0.7rem; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.4); border-radius:8px; color:#fca5a5; font-weight:700; font-size:0.78rem; cursor:pointer;">🔄 再計算</button>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.8rem; margin-bottom:0.8rem;">
-          <div style="padding:0.8rem; background:rgba(0,0,0,0.30); border-radius:10px; text-align:center;">
-            <div style="font-size:0.7rem; color:#fca5a5; font-weight:700; margin-bottom:0.3rem;">合格可能性</div>
-            <div style="display:flex; align-items:baseline; justify-content:center; gap:0.3rem;">
-              <span id="admScore" style="font-size:2.2rem; font-weight:900; color:#fff;">--</span>
-              <span style="font-size:0.85rem; color:#cbd5e1;">%</span>
-              <span id="admScoreDelta" style="font-size:0.75rem; color:#86efac; margin-left:0.3rem;"></span>
-            </div>
-          </div>
-          <div style="padding:0.8rem; background:rgba(0,0,0,0.30); border-radius:10px; text-align:center;">
-            <div style="font-size:0.7rem; color:#fca5a5; font-weight:700; margin-bottom:0.3rem;">志望校</div>
-            <div id="admUniv" style="font-size:1.0rem; font-weight:800; color:#fde68a;">--</div>
-          </div>
-          <div style="padding:0.8rem; background:rgba(0,0,0,0.30); border-radius:10px; text-align:center;">
-            <div style="font-size:0.7rem; color:#fca5a5; font-weight:700; margin-bottom:0.3rem;">本番まで</div>
-            <div style="display:flex; align-items:baseline; justify-content:center; gap:0.2rem;">
-              <span id="admDays" style="font-size:1.8rem; font-weight:900; color:#fff;">--</span>
-              <span style="font-size:0.85rem; color:#cbd5e1;">日</span>
-            </div>
-          </div>
-        </div>
-        <div id="admAnalysis" style="padding:0.7rem 0.9rem; background:rgba(0,0,0,0.20); border-left:3pt solid #fbbf24; border-radius:6px; font-size:0.85rem; color:#fde68a; line-height:1.6; margin-bottom:0.6rem;">⏳ 計算中…</div>
-        <!-- 🎯 [adm-accuracy] 免責を内訳の外に常時表示 (details を開かないと見えなかった指摘の修正) -->
-        <div style="font-size:0.7rem; color:#a1a1aa; margin-bottom:0.6rem;">※ 学習記録・弱点・模試結果などから自動算出した参考値です (AI による合否予測ではありません)。</div>
-        <details style="background:rgba(0,0,0,0.15); border-radius:8px; padding:0.5rem 0.7rem;">
-          <summary style="cursor:pointer; font-size:0.78rem; color:#cbd5e1; font-weight:700;">📊 スコア内訳</summary>
-          <div id="admBreakdown" style="margin-top:0.6rem; font-size:0.75rem; color:#a1a1aa; line-height:1.7;"></div>
-        </details>
-      </section>
-
-      <!-- Quick Actions -->
-      <section class="action-card-section aj-adv1">
-        <div class="section-title"><h2>⚡ クイックアクション</h2></div>
-        <div class="action-buttons">
-          <a href="quick-start.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(251,191,36,0.22),rgba(236,72,153,0.12));border:2px solid rgba(251,191,36,0.55);">
-            <div class="action-icon">⚡</div>
-            <div>
-              <div class="action-title">今すぐ問題挑戦 <span class="action-badge-new">NEW</span></div>
-              <div class="action-desc">5 科目から選んで AI 即時生成 + 定期テスト単元演習</div>
-            </div>
-          </a>
-          <!-- ✍️ 弱点克服 直行 (塾長指示 2026-07-22: 入試道場の弱点克服をクイックアクションへ)。
-               tab=weakness は dojo-drill 側でモード解決 (高校生=単元別/中学生=高校受験プール) -->
-          <a href="dojo-drill.html?tab=weakness" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(239,68,68,0.20),rgba(245,158,11,0.12));border:2px solid rgba(239,68,68,0.5);">
-            <div class="action-icon">✍️</div>
-            <div>
-              <div class="action-title">弱点克服ドリル <span class="action-badge-new">NEW</span></div>
-              <div class="action-desc"><strong>苦手単元を選んで集中演習</strong>: 単元別プールから即スタート — 正答率 80% で習得卒業まで追跡</div>
-            </div>
-          </a>
-          <a href="index.html?openHistory=1" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(34,197,94,0.10));border:2px solid rgba(99,102,241,0.45);">
-            <div class="action-icon">📚</div>
-            <div>
-              <div class="action-title">解いた問題を再演習 <span class="action-badge-new">NEW</span></div>
-              <div class="action-desc">過去に解いた問題から「もう一度」を選んで復習</div>
-            </div>
-          </a>
-          <a href="index.html" class="action-btn primary">
-            <div class="action-icon">💬</div>
-            <div>
-              <div class="action-title">AIチューターに聞く</div>
-              <div class="action-desc">わからない問題をその場で解決</div>
-            </div>
-          </a>
-          <a href="index.html#tab-problems" class="action-btn" id="generateProblemsQuick">
-            <div class="action-icon">🧪</div>
-            <div>
-              <div class="action-title">問題を生成する</div>
-              <div class="action-desc">弱点を入力→オリジナル問題</div>
-            </div>
-          </a>
-          <a href="index.html#tab-essay" class="action-btn">
-            <div class="action-icon">✍️</div>
-            <div>
-              <div class="action-title">英作文を添削</div>
-              <div class="action-desc">書いた答案をAIがチェック</div>
-            </div>
-          </a>
-          <a href="index.html#tab-curriculum" class="action-btn">
-            <div class="action-icon">🎯</div>
-            <div>
-              <div class="action-title">学習計画を見る</div>
-              <div class="action-desc">志望校までのロードマップ</div>
-            </div>
-          </a>
-          <a href="textbook-generator.html" class="action-btn action-btn-highlight">
-            <div class="action-icon">📚</div>
-            <div>
-              <div class="action-title">自分の参考書を作る <span class="action-badge-new">NEW</span></div>
-              <div class="action-desc">弱点特化の教材をAIが執筆</div>
-            </div>
-          </a>
-          <a href="nyushi-dojo.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(245,158,11,0.22),rgba(220,38,38,0.10));border:2px solid rgba(245,158,11,0.55);">
-            <div class="action-icon">🏛️</div>
-            <div>
-              <div class="action-title">入試問題 道場 <span class="action-badge-new">NEW</span> <span style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">18,000 問+</span></div>
-              <div class="action-desc"><strong>大学入試の演習はここに集約</strong>: 📚 単元別演習 / 🟣 大学別 深掘り / 🎯 本番想定模試 — 3 mode で 18,000 問+の演習プールに 1 画面からアクセス</div>
-            </div>
-          </a>
-          <a href="vocab.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(16,185,129,0.10));border:2px solid rgba(99,102,241,0.45);">
-            <div class="action-icon">📖</div>
-            <div>
-              <div class="action-title">AI 単語帳 (SRS) <span class="action-badge-new">NEW</span></div>
-              <div class="action-desc">忘却曲線対応 Leitner Box・科学的暗記</div>
-            </div>
-          </a>
-          <!-- 📚 配布プリント CTA (塾長指示 2026-05-26: クイックアクション内に追加) -->
-          <a href="#lessonPrintsSection" class="action-btn action-btn-highlight" id="quickActionLessonPrints" style="background:linear-gradient(135deg,rgba(59,130,246,0.22),rgba(168,85,247,0.12));border:2px solid rgba(59,130,246,0.55);">
-            <div class="action-icon">📚</div>
-            <div>
-              <div class="action-title">配布プリント <span class="action-badge-new">NEW</span> <span id="lpQuickCount" style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">…</span></div>
-              <div class="action-desc"><strong>解説付き PDF を配布</strong>: 授業用 / 自習用 / 演習問題集 + 詳細解説 ─ 弱点に合わせて AI が推薦</div>
-            </div>
-          </a>
-          <!-- 🗂️ 教材ライブラリ (塾長指示 2026-06-19: kyozai.html ハブへの導線) -->
-          <a href="kyozai.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(16,185,129,0.20),rgba(59,130,246,0.10));border:2px solid rgba(16,185,129,0.55);">
-            <div class="action-icon">🗂️</div>
-            <div>
-              <div class="action-title">教材ライブラリ <span class="action-badge-new">NEW</span> <span style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">無料あり</span></div>
-              <div class="action-desc"><strong>動く解説・ドリル・単語帳・PDF を1画面で</strong>: 科目で探せる教材カタログ ─ 相加相乗の「動く解説」など登録なしで試せる教材も</div>
-            </div>
-          </a>
-          <!-- 🏫 塾生メニュー (塾長指示 2026-06-25): 通塾生のみ表示 (下部 inline script が feed 200 で display 解除)。
-               授業ファイル配布 / 録画 / 出欠連絡 = class.html。AI 学習 SaaS とは別系統の塾生専用機能。 -->
-          <a href="class.html" id="classMenuCard" class="action-btn action-btn-highlight" style="display:none;background:linear-gradient(135deg,rgba(129,140,248,0.20),rgba(167,139,250,0.10));border:2px solid rgba(129,140,248,0.55);">
-            <div class="action-icon">📚</div>
-            <div>
-              <div class="action-title">トリリオン塾生アプリ <span class="action-badge-new">NEW</span> <span style="background:rgba(129,140,248,0.22);color:#c7d2fe;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">通塾生</span></div>
-              <div class="action-desc"><strong>予定・宿題・動画・メッセージ</strong>: 授業の予定/配布ファイル/録画と、宿題・出欠連絡・塾長への連絡がここに集約</div>
-            </div>
-          </a>
-        </div>
-      </section>
-
       <!-- 📚 配布プリント (塾長指示 2026-05-26 — Quick Actions 直下に配置)
            Claude が ~/Desktop/問題生成/ で作成した PDF を全生徒に配信。
            弱点 TOP3 マッチプリントを上部・以下は科目フィルタで一覧 -->
