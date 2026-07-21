@@ -375,32 +375,16 @@ const storage = {
 })();
 
 // ==========================================================================
-// 🛡️ [cross-student-cache-guard] (2026-06-18): 同一ブラウザで別生徒に切り替わった瞬間
-//   (ログイン / 塾長なりすまし「生徒として入る」/ 再ログイン) に、前生徒の per-student
-//   ローカルキャッシュ (AIチューター履歴・統計・問題履歴・活動・カリキュラム) を破棄する。
-//   これらは studentId でスコープされていない GLOBAL localStorage キーのため、放置すると
-//   前生徒の学習データが次の生徒に表示される (江花さんが別生徒のチャット履歴を見てしまう事故)。
-//   サーバは session token の生徒IDで厳密に絞っており IDOR/サーバ漏洩は無い=クライアント
-//   キャッシュのみの対策。識別は信頼できる ai_juku_session_student.id を使う
-//   (auth-guard が /api/auth/me で確定し、login/なりすまし経路もサーバ応答から設定するキー)。
-(function guardPerStudentCaches() {
-  try {
-    if (!localStorage.getItem('ai_juku_session_token')) return; // 未ログイン/デモ: ローカルのみで動作
-    var sid = '';
-    try { sid = String((JSON.parse(localStorage.getItem('ai_juku_session_student') || '{}') || {}).id ?? ''); } catch (_) {}
-    if (!sid) sid = String(localStorage.getItem('aj_current_student_id') || '');
-    if (!sid) return; // 本人ID未確定: 次回ロードに委ねる
-    var OWNER_KEY = 'ai_juku_cache_owner_sid';
-    if (localStorage.getItem(OWNER_KEY) === sid) return; // 同一生徒: 何もしない
-    // 生徒が変わった (または本ガード初回) → per-student キャッシュを破棄。重要データは
-    //   サーバが正なので再取得され実害なし (chat=/api/ai-tutor/history/me 等)。
-    ['ai_juku_chat_history', 'ai_juku_stats', 'ai_juku_problem_history',
-      'ai_juku_activity', 'ai_juku_last_curriculum'].forEach(function (k) {
-      try { localStorage.removeItem(k); } catch (_) {}
-    });
-    localStorage.setItem(OWNER_KEY, sid);
-  } catch (_) { /* 失敗してもアプリ動作は止めない */ }
-})();
+// 🛡️ [cross-student-cache-guard] (2026-06-18 導入 → 2026-07-21 cache-purge.js へ移設)
+//   同一ブラウザで別生徒に切り替わった瞬間に前生徒の per-student ローカルキャッシュを破棄する
+//   ガードは **cache-purge.js** に単一実装がある (キー一覧も同ファイルの
+//   window.AI_JUKU_PER_STUDENT_CACHE_KEYS)。index.html は cache-purge.js を app.js より先に
+//   <head> で読むため、ここに重複実装を置く必要はない。
+//   移設理由: app.js は index.html しか読まず、実ログイン導線 (login/auth → quick-start →
+//   mypage) も english-exam.html も index.html を経由しないため、ここに置いたままでは
+//   肝心の「ログアウトせず別生徒がログイン」経路でガードが一度も走らなかった。
+//   ⚠️ 破棄してよいのは「サーバに正がある/使い捨て」のキーだけ。端末が唯一の保管場所の
+//   データ (例: AI カリキュラム) は破棄せず生徒IDでキーを分ける — cache-purge.js 参照。
 
 // ==========================================================================
 // Seed Data (初期サンプル生徒)

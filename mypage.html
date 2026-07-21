@@ -7,7 +7,7 @@
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
   <title>マイページ | AIコーチング</title>
-  <script src="cache-purge.js?v=20260606-honclass-mypage"></script>
+  <script src="cache-purge.js?v=20260721-xstudent-scope"></script>
 
   <script src="frontend-error-monitor.js?v=20260529-past-due-grace"></script>
   <link rel="stylesheet" href="style.css?v=20260529-past-due-grace">
@@ -1948,7 +1948,15 @@
       const el = document.getElementById(containerId);
       if (!el) return;
       let cur = null;
-      try { cur = JSON.parse(localStorage.getItem('ee_curriculum_v1') || 'null'); } catch {}
+      // 🔑 2026-07-21 [curriculum-per-student] キーは生徒ごと (ee_curriculum_v1__<生徒ID>)。
+      //   読みは cache-purge.js の window.aiJukuReadScoped (導出は同所 aiJukuStudentScopedKey が
+      //   唯一のソース。english-exam.js の loadCurriculumState も同じ導出を使う)。キーを直書き
+      //   すると別生徒のプランを拾う or 本人のプランを見失う。未定義なら未生成扱い (CTA表示) に倒す。
+      try {
+        if (typeof window.aiJukuReadScoped === 'function') {
+          cur = JSON.parse(window.aiJukuReadScoped('ee_curriculum_v1') || 'null');
+        }
+      } catch {}
       if (!cur || !cur.weekly_roadmap || !cur.weekly_roadmap.length) {
         el.innerHTML = `
           <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:0.85rem;">

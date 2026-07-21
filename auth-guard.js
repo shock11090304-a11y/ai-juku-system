@@ -38,10 +38,24 @@
     localStorage.removeItem(ALT_CURRENT_KEY);
     // 🛡️ 2026-06-18 [cross-student-cache-guard] per-student のローカル学習キャッシュも消す。
     //   残すとログアウト→別生徒ログイン時に前生徒のチャット/統計/問題履歴/活動/カリキュラムが
-    //   漏れる (app.js の guardPerStudentCaches と対。こちらは logout/無効セッション経路を担保)。
-    ['ai_juku_chat_history', 'ai_juku_stats', 'ai_juku_problem_history', 'ai_juku_activity', 'ai_juku_last_curriculum', 'ai_juku_cache_owner_sid'].forEach(function (k) {
+    //   漏れる (cache-purge.js の guardPerStudentCaches と対。こちらは logout/無効セッション
+    //   経路を担保する)。キー一覧は cache-purge.js が単一ソース。
+    //   ⚠️ fallback リテラルは cache-purge.js を読まないページ (kyoto2025-*.html /
+    //   todai2025-*.html) 用。新キー追加時は cache-purge.js の配列とここの両方を更新する。
+    var perStudentKeys = (window.AI_JUKU_PER_STUDENT_CACHE_KEYS && window.AI_JUKU_PER_STUDENT_CACHE_KEYS.length)
+      ? window.AI_JUKU_PER_STUDENT_CACHE_KEYS
+      : ['ai_juku_chat_history', 'ai_juku_stats', 'ai_juku_problem_history', 'ai_juku_activity',
+        'ai_juku_last_curriculum', 'ai_juku_students', 'ai_juku_current_student'];
+    // ⚠️ 生徒スコープ付きの ee_curriculum_v1__<生徒ID> は **絶対に消さない**。サーバに正が無く、
+    //   ログアウトのたびに消すと本人が自分の学習プランと週チェックを復元不能に失う。
+    //   別生徒からはキーが違うので読めない = 破棄しなくても漏洩は閉じている。
+    perStudentKeys.concat(['ai_juku_cache_owner_sid']).forEach(function (k) {
       try { localStorage.removeItem(k); } catch (_) {}
     });
+    // ⚠️ 旧グローバルキー (ee_curriculum_v1 / ai_juku_eng_exam_history) はここでは **触らない**。
+    //   サーバに正が無いデータで、持ち主の振り分けは次のログイン時に cache-purge.js の
+    //   migrateLegacyKey が行う (引き継ぎ or 隔離)。ログアウト時に消すと、cache-purge.js を
+    //   読まない9ページ (kyoto2025-*/todai2025-*) 経由で唯一のコピーを失う。
     // 🚪 2026-07-18 [magic-reload-race] auth.html の magic token 退避 (sessionStorage・literal は
     //   auth.html の PENDING_T_KEY と一致必須)。verify 中断で残った退避が、ログアウト後に同タブで
     //   auth.html を開いた際の静かな再ログインになるため、ログアウト/セッション破棄時に必ず消す。

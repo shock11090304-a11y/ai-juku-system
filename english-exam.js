@@ -3962,18 +3962,35 @@ renderQuestions = function() {
 
 // ==========================================================================
 // 学習履歴 (localStorage 永続化)
+// 🔑 2026-07-21 [curriculum-per-student] 生徒ごとにキーを分ける (ai_juku_eng_exam_history__<生徒ID>)。
+//   履歴は「あなたの学習履歴」表示だけでなく AI カリキュラム生成の入力 (weak_parts) にもなるため、
+//   共有のままだと別生徒の弱点からプランが作られてしまう。導出は cache-purge.js の
+//   aiJukuStudentScopedKey が唯一のソース (カリキュラムと同方式・旧キーは同所の移行が処理)。
 // ==========================================================================
-const HIST_KEY = 'ai_juku_eng_exam_history';
-
+// キー解決はカリキュラムと同じ pin-once (_pinnedScopedKey)。試験中に別タブで生徒が
+// 切り替わっても、受験記録は試験を受けた生徒の器に書かれる (新しい生徒の履歴/ヒートマップ/
+// AIカリキュラム入力を汚染しない)。
 function saveHistory(record) {
-  let arr = [];
-  try { arr = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch {}
+  const k = _pinnedScopedKey('ai_juku_eng_exam_history');
+  if (!k) { console.warn('[history] 生徒が確定できないため保存をスキップ'); return; }
+  // ⚠️ 種は必ず loadHistory() (旧キーfallback込み) から取る。スコープキーだけを読むと、
+  //   匿名利用者の初回保存で __anon が1件だけになり、旧キーの過去履歴50件が以後の表示・
+  //   ヒートマップ・AIカリキュラム入力から見えなくなる (データは残るが実質消失)。
+  let arr = loadHistory();
+  if (!Array.isArray(arr)) arr = [];
   arr.unshift(record);
   arr = arr.slice(0, 50); // 最大50件保持
-  localStorage.setItem(HIST_KEY, JSON.stringify(arr));
+  try { localStorage.setItem(k, JSON.stringify(arr)); } catch {}
 }
 function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch { return []; }
+  const k = _pinnedScopedKey('ai_juku_eng_exam_history');
+  if (!k) return [];
+  try {
+    let raw = localStorage.getItem(k);
+    // 匿名時のみ旧グローバルキーへフォールバック (移行はログイン時に cache-purge.js が行う)
+    if (raw === null && k === 'ai_juku_eng_exam_history__anon') raw = localStorage.getItem('ai_juku_eng_exam_history');
+    return JSON.parse(raw || '[]');
+  } catch { return []; }
 }
 
 // showResult を拡張して履歴保存
@@ -4898,13 +4915,81 @@ function bindArchiveFilters() {
 // ==========================================================================
 // 🎯 受験日カウントダウン + 個別 AI カリキュラム (Phase 7)
 // ==========================================================================
-const CURRICULUM_KEY = 'ee_curriculum_v1';
+// 🔑 2026-07-21 [curriculum-per-student] カリキュラムは生徒ごとにキーを分ける
+//   (ee_curriculum_v1__<生徒ID>)。同一端末で別生徒がログインしても前生徒のプランが
+//   見えないようにするため。キー導出は cache-purge.js の window.aiJukuStudentScopedKey が
+//   唯一のソース (mypage.html の今週のタスクウィジェットは同 aiJukuReadScoped 経由で読む)。
+//   ★ここで自前にキー文字列を組み立てないこと: 読み手が2箇所あるので必ず片方だけ直す事故になる。
+//   cache-purge.js は english-exam.html / mypage.html の <head> 先頭で同期読み込み済み。
+//   万一未定義なら「保存しない」= 漏洩側でなく機能停止側に倒す (fail-closed)。
+
+// 🔒 ページ寿命の間、この画面が属する生徒のキーを **一度だけ** 確定して使い続ける (pin-once)。
+//   この画面を開いたまま別タブでログアウト/別生徒ログインが起きても、読み書きは最初に確定した
+//   生徒の器に留まる = 前の生徒の週チェックや受験記録が新しい生徒の器に紛れ込まない
+//   (毎回キーを引き直す方式は load→save 直列の週チェック経路でガードが絶対に発火しない欠陥があった)。
+//   正しい生徒での利用再開はページ再読み込みで自然に新しい pin になる。
+const _eeScopedKeyPins = {};
+function _pinnedScopedKey(base) {
+  if (_eeScopedKeyPins[base]) return _eeScopedKeyPins[base];
+  const k = (typeof window.aiJukuStudentScopedKey === 'function')
+    ? window.aiJukuStudentScopedKey(base) : null;
+  if (k) _eeScopedKeyPins[base] = k;   // null (本人ID未確定) は pin しない=次の呼び出しで再判定
+  return k;
+}
 
 function loadCurriculumState() {
-  try { return JSON.parse(localStorage.getItem(CURRICULUM_KEY) || 'null'); } catch { return null; }
+  const k = _pinnedScopedKey('ee_curriculum_v1');
+  if (!k) return null;
+  try {
+    let raw = localStorage.getItem(k);
+    // 匿名時のみ旧グローバルキーへフォールバック (未ログイン時代のデータを見せ続ける。
+    // 移行はログイン時に cache-purge.js が行う)
+    if (raw === null && k === 'ee_curriculum_v1__anon') raw = localStorage.getItem('ee_curriculum_v1');
+    return JSON.parse(raw || 'null');
+  } catch { return null; }
 }
+// 戻り値: 保存できたら true、失敗したら「画面に出した警告文」(string)。
+// 呼び出し側がこの後 #curriculumResult を innerHTML で描き直す場合、!== true なら描画後に
+// _curriculumWarn(戻り値) を再掲すること (先のバナーは描き直しで消える上、失敗理由ごとに
+// 文言が違う — quota 失敗にログイン文言を出すと誤誘導になる)。
 function saveCurriculumState(data) {
-  try { localStorage.setItem(CURRICULUM_KEY, JSON.stringify(data)); } catch {}
+  const k = _pinnedScopedKey('ee_curriculum_v1');
+  if (!k) {
+    const msg = '⚠️ ログイン状態を確認できないため保存できませんでした。この内容はページを再読み込みすると消えます。再ログイン後にもう一度お試しください。';
+    console.warn('[curriculum] 生徒が確定できないため保存をスキップ');
+    _curriculumWarn(msg);
+    return msg;
+  }
+  try { localStorage.setItem(k, JSON.stringify(data)); } catch (e) {
+    // 保存領域不足・iOSプライベートモードなど。true を返すと「保存できたら true」の契約が破れ、
+    // 生成結果が黙って消える (quota 実測プローブで検出された穴)
+    const msg = '⚠️ 端末の保存領域に書き込めず、保存できませんでした。この内容はページを再読み込みすると消えます。ブラウザのプライベートモード解除や空き容量の確保をお試しください。';
+    console.warn('[curriculum] 保存失敗 (storage):', e);
+    _curriculumWarn(msg);
+    return msg;
+  }
+  return true;
+}
+
+// 保存できなかったことを画面にも出す (1〜2分かけた生成結果が黙って消えるのを防ぐ)
+function _curriculumWarn(msg) {
+  try {
+    const el = document.getElementById('curriculumResult');
+    if (!el) return;
+    // 同文の重複バナーは1枚に (週チェック連打で積み上がらない)
+    for (const prev of el.querySelectorAll('[data-ee-warn]')) {
+      if (prev.textContent === msg) prev.remove();
+    }
+    const d = document.createElement('div');
+    d.setAttribute('data-ee-warn', '1');
+    d.style.cssText = 'margin:0.6rem 0;padding:0.6rem 0.8rem;border-radius:8px;'
+      + 'background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.4);color:#fecaca;font-size:0.85rem;';
+    d.textContent = msg;
+    el.prepend(d);
+    // sticky ヘッダー (~115px) がコンテナ先頭を覆い隠すため、バナー自体を画面内へスクロール
+    // (生成フローの scrollIntoView(block:'start') 直後だとバナーが完全にヘッダー下に沈む実測あり)
+    try { d.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) { d.scrollIntoView(); }
+  } catch (_) {}
 }
 
 function bindCurriculumForm() {
@@ -5023,9 +5108,18 @@ async function generateCurriculum() {
       throw new Error(friendly || ('http_' + res.status + ' ' + err.slice(0, 100)));
     }
     const data = await res.json();
-    // 永続化
-    saveCurriculumState({ ...data, ...payload, saved_at: new Date().toISOString() });
+    // 永続化 → 描画。⚠️ renderCurriculum は #curriculumResult を innerHTML で総書き換えするため、
+    // 保存失敗時の警告バナーは描画の**後**に再掲する (先に出た内部バナーは描画で消える)。
+    // 順序は save→render のまま: render は保存済み state から completed_weeks を読むので、
+    // 逆にすると旧プランの週チェックが新プランに残って見える。
+    const _saved = saveCurriculumState({ ...data, ...payload, saved_at: new Date().toISOString() });
     renderCurriculum(data);
+    if (_saved !== true) {
+      // 失敗理由に応じた文言 (save が画面に出した文) をそのまま再掲する。
+      // ここで固定文言を出すと quota 失敗にログイン文言が出る誤誘導になる (close-out review 検出)
+      _curriculumWarn(typeof _saved === 'string' ? _saved
+        : '⚠️ この学習プランは端末に保存されていません。ページを再読み込みすると消えます。');
+    }
   } catch (e) {
     console.error('[curriculum] failed', e);
     resultBox.innerHTML = `<p class="ee-error">⚠️ 生成失敗: ${escapeHtml(String(e.message || e))}</p>`;

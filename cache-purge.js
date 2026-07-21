@@ -118,6 +118,215 @@
 })();
 
 // ==========================================================================
+// 🛡️ [cross-student-cache-guard] per-student ローカルキャッシュの単一ソース
+//
+// これらは studentId でスコープされていない **GLOBAL** localStorage キーなので、
+// 同一端末で別生徒に切り替わった瞬間 (ログイン / 塾長なりすまし / 再ログイン) に
+// 破棄しないと前生徒の学習データが次の生徒に表示される。
+//
+// 【2026-07-21 ここへ移設した理由】
+//   旧実装は app.js だけにあり、app.js を読むのは index.html のみ。だが実ログイン導線は
+//   login/auth → quick-start.html → mypage.html で index.html を経由しない (login.html:392)
+//   ため、「ログアウトせずに別生徒がログイン」経路ではガードが一度も走っていなかった。
+//   english-exam.html に至っては app.js も auth-guard.js も読まない。
+//   cache-purge.js はほぼ全生徒ページの <head> 先頭で同期読み込みされる (例外は kyoto2025-*/
+//   todai2025-* の9ページ=auth-guard.js の fallback リテラルが担保)。ここに置くことで
+//   「ページを開いた時点で必ず走る」を満たす (headless 実ページ検証で確認)。
+//
+// 【2026-07-21 データを消してよいキーの判定基準】
+//   ⚠️ 破棄してよいのは「サーバに正がある = 再取得できる」か「使い捨てバッファ」だけ。
+//      端末が唯一の保管場所のデータをここに足すと、切替時だけでなく初回ロードや本人の
+//      ログアウトでも消え、復元不能になる。そういうデータは破棄せず生徒IDでキーを分ける
+//      (下の window.aiJukuStudentScopedKey 方式)。
+//
+// ⚠️ 新しい per-student グローバルキャッシュを足したら、下の配列と
+//    auth-guard.js の clearSession() (= ログアウト/401 経路) の両方に登録すること。
+// ==========================================================================
+window.AI_JUKU_PER_STUDENT_CACHE_KEYS = [
+  'ai_juku_chat_history',    // AIチューター履歴 (正=サーバ /api/ai-tutor/history/me)
+  'ai_juku_stats',           // 学習統計 (index.html の問題数カウンタ・表示のみ)
+  'ai_juku_problem_history', // 直近20件の問題履歴 (上限付きキャッシュ)
+  'ai_juku_activity',        // 活動ログ
+  'ai_juku_last_curriculum', // 学習プラン取込の一時バッファ (確定分は正=サーバ curricula)
+  'ai_juku_students',        // 🔑 生徒名簿=氏名PII。残すと index.html の生徒切替ドロップダウンに
+                             //   前生徒の氏名が出る。正=サーバ (/api/auth/me → applyVerifiedStudent)
+  'ai_juku_current_student'  // 🔑 表示ポインタ。上と対で再構築される
+];
+
+// ==========================================================================
+// 🔑 [curriculum-per-student] 端末が唯一の保管場所のデータは「破棄」でなく「キー分離」
+//
+//   ee_curriculum_v1 = AI 生成カリキュラム (受験校/弱点/週ロードマップ/completed_weeks)。
+//   サーバに保存も復元APIも無い (server/main.py の /api/curriculum/generate は生成のみ)。
+//   消すと 1〜3分・約$0.12 の生成結果と、生徒が手で付けた週チェックが復元不能で失われる。
+//   → ee_curriculum_v1__<生徒ID> に分ける。別生徒からは構造的に読めず (漏洩が閉じる)、
+//     かつ本人はログアウトしても別生徒を挟んでも自分のプランを保持できる。
+//   読み手 (english-exam.js / mypage.html) は必ずこの関数でキーを解決すること。
+//   ★ここが唯一のキー導出。各所で文字列を組み立てると必ず片側だけ直す事故になる。
+// ==========================================================================
+(function perStudentCacheGuard() {
+  var CURRICULUM_BASE_KEY = 'ee_curriculum_v1';
+  var EXAM_HISTORY_BASE_KEY = 'ai_juku_eng_exam_history';
+  var OWNER_KEY = 'ai_juku_cache_owner_sid';
+
+  // 識別は信頼できる ai_juku_session_student.id のみを使う (auth-guard が /api/auth/me で確定し、
+  // login/auth/ceo なりすましの各経路も token と同じ同期ブロックで設定するキー)。
+  // ⚠️ aj_current_student_id への fallback は持たない: それは applyVerifiedStudent が後から
+  //    書く別系統で、ログイン直後は「前の生徒」の値が残っている。fallback すると OWNER_KEY を
+  //    誤った生徒で確定させ、以後の破棄を永久に抑止してしまう (判定不能なら次回ロードに委ねる)。
+  // 生徒IDは必ず数字 (server/main.py の students.id)。数字以外は信用しない
+  //   (localStorage を手で書けば "anon"/"unattributed" を騙れてしまうため)。
+  function currentSid() {
+    try {
+      var ss = JSON.parse(localStorage.getItem('ai_juku_session_student') || '{}') || {};
+      if (ss.id !== null && ss.id !== undefined && ss.id !== '') {
+        var id = String(ss.id);
+        if (/^\d+$/.test(id)) return id;
+      }
+    } catch (_) {}
+    return '';
+  }
+
+  // 生徒スコープ付きキーの唯一の導出点。
+  // 未ログイン(匿名)は従来どおり共有の __anon バケット (匿名利用は正規動線のため維持)。
+  // ⚠️ 「token はあるが生徒IDを解決できない」時に __anon へ落としてはいけない: ログイン済み
+  //   生徒のデータを共有バケットに書き込む=別の匿名利用者に見える。null を返して
+  //   読み手側で fail-closed (保存しない/未生成扱い) にする。
+  window.aiJukuStudentScopedKey = function (baseKey) {
+    var sid = currentSid();
+    if (sid) return baseKey + '__' + sid;
+    if (localStorage.getItem('ai_juku_session_token')) return null; // 本人ID未確定
+    return baseKey + '__anon';
+  };
+
+  // ※ 受験履歴 (直近50件・EXAM_HISTORY_BASE_KEY) はカリキュラム生成の **入力** でもあるため、
+  //   共有のままにすると別生徒の弱点から AI プランが作られる。サーバに正が無いので破棄でなく
+  //   スコープ化する (english-exam.js が aiJukuStudentScopedKey で解決)。
+
+  // スコープ付きキーの読み出し (生の文字列を返す・無ければ null)。
+  // 匿名時のみ旧グローバルキーへフォールバックする: 匿名ロードでは下の移行を意図的に走らせない
+  // (持ち主判定は次のログイン時に行う) ため、未ログイン時代のデータはまだ旧キーに居る。
+  // ログイン済みは <head> の移行が先に走っているのでフォールバック不要。
+  window.aiJukuReadScoped = function (baseKey) {
+    var k = window.aiJukuStudentScopedKey(baseKey);
+    if (k === null) return null;                        // 本人ID未確定: fail-closed
+    var v = localStorage.getItem(k);
+    if (v === null && !localStorage.getItem('ai_juku_session_token')) {
+      v = localStorage.getItem(baseKey);
+    }
+    return v;
+  };
+
+  // この端末で「今の生徒とは別の生徒」が使われた痕跡があるか。
+  // 旧グローバルキーの持ち主を確定できるかの判定に使う。判定不能なら安全側 (=痕跡あり) を返す。
+  // app.js の seedStudents (デモ生徒 山田太郎/佐藤花子/鈴木一郎) は名簿が空だと自動投入され
+  // 永続化される (app.js:761-765)。これを「別生徒の痕跡」と数えると、単独利用の端末でも
+  // 引き継ぎが拒否され本人がプランを失う。サーバ由来の生徒は必ず email を持つ (/api/auth/me)
+  // 一方デモ生徒は parentEmail しか持たないので、その2条件でデモ行だけを除外する。
+  function isDemoSeedStudent(s) {
+    var id = String(s.id);
+    return (id === '1' || id === '2' || id === '3') && !s.email;
+  }
+
+  function deviceSawAnotherStudent(sid) {
+    try {
+      var owner = localStorage.getItem(OWNER_KEY);
+      if (owner && owner !== sid) return true;
+      var list = JSON.parse(localStorage.getItem('ai_juku_students') || '[]');
+      // 壊れた値 (非配列) は「証拠なし」ではなく「判定不能」= 安全側に倒す。
+      if (Object.prototype.toString.call(list) !== '[object Array]') return true;
+      for (var i = 0; i < list.length; i++) {
+        var s = list[i];
+        if (!s || s.id === null || s.id === undefined) continue;
+        if (String(s.id) === sid || isDemoSeedStudent(s)) continue;
+        return true;
+      }
+    } catch (_) { return true; }
+    return false;
+  }
+
+  // 持ち主を確定できない旧データの隔離先。読み手は aiJukuStudentScopedKey() 経由のみで、
+  // そこは「数字の生徒ID」か「__anon」しか返さない (__unattributed は返さない) ため、
+  // 隔離キーは誰の画面にも出ない = 漏洩ゼロ。
+  // サーバに正が無いデータを「捨てる」代わりに「見えない場所に保全」して後から救出可能にする。
+  // 空きスロットを順に探すのは、1枠固定だと埋まっていた時に退避できず削除に倒れるため。
+  function quarantine(baseKey, value) {
+    for (var i = 0; i < 5; i++) {
+      var k = baseKey + '__unattributed' + (i === 0 ? '' : ('_' + i));
+      var cur = localStorage.getItem(k);
+      if (cur === null) { localStorage.setItem(k, value); return true; }
+      if (cur === value) return true;   // 同一内容が既に退避済み
+    }
+    return false;
+  }
+
+  // 旧グローバルキー (スコープ無し時代のデータ) の一度きりの移行。**ログイン時のみ** 行う。
+  //   ・持ち主を確定できる端末 (別生徒の痕跡なし) → 本人のスコープ付きキーへ引き継ぎ (損失ゼロ)
+  //     (塾長決定 2026-07-21: 匿名利用者は痕跡を残さないため、匿名作成分が「次に最初に
+  //      ログインした生徒」に渡り得るリスクを許容し、損失ゼロを優先する)
+  //   ・確定できない端末 → 引き継がず隔離 (別生徒に渡さない・ただし捨てもしない)
+  //   ・匿名ロードでは **移行しない**。login.html 等も cache-purge を読むため、ここで動かすと
+  //     「ログアウト中に通過しただけ」で本人のプランが共有 __anon へ流れ、再ログイン後に
+  //     見えなくなる (旧実装の実損)。匿名の読み手は aiJukuReadScoped の旧キーフォールバックで
+  //     引き続き自分のデータを見られる。
+  function migrateLegacyKey(baseKey, sid) {
+    if (!sid) return;
+    var legacy = null;
+    try { legacy = localStorage.getItem(baseKey); } catch (_) { return; }
+    if (legacy === null) return;
+    try {
+      var target = baseKey + '__' + sid;
+      if (deviceSawAnotherStudent(sid)) target = null;         // 持ち主不明 → 隔離へ回す
+      var saved = false;
+      if (target !== null) {
+        var cur = localStorage.getItem(target);
+        if (cur === null) { localStorage.setItem(target, legacy); saved = true; }
+        else if (cur === legacy) { saved = true; }             // 既に同じ内容が入っている
+      }
+      if (!saved) saved = quarantine(baseKey, legacy);
+      // ⚠️ 退避できた時だけ旧キーを消す。無条件に消すと、退避先が既に埋まっていた場合に
+      //   「どこにもコピーが無いまま削除」= サーバに正の無いデータの完全消失になる。
+      //   (旧キーが残っても読み手は匿名フォールバックだけ = ログイン画面には出ない)
+      if (saved) localStorage.removeItem(baseKey);
+    } catch (_) {}
+  }
+
+  try {
+    var hasToken = !!localStorage.getItem('ai_juku_session_token');
+    var sid = hasToken ? currentSid() : '';
+    // ⚠️ 「token はあるが生徒ID未確定」は匿名と同じ扱いにしてはいけない。匿名分岐に落とすと
+    //   ログイン済み生徒のプランを共有 __anon バケットへ移してしまう。何もせず次回に委ねる。
+    if (hasToken && !sid) return;
+    // ★順序が重要: 移行判定は ai_juku_students / OWNER_KEY を証拠に使うので、破棄より先に行う。
+    migrateLegacyKey(CURRICULUM_BASE_KEY, sid);
+    migrateLegacyKey(EXAM_HISTORY_BASE_KEY, sid);
+    if (!sid) return;                                    // 未ログイン: 破棄はしない
+    if (localStorage.getItem(OWNER_KEY) === sid) return; // 同一生徒: 何もしない
+    // 生徒が変わった (または本ガード初回) → 再取得可能な per-student キャッシュのみ破棄。
+    var meRaw = localStorage.getItem('ai_juku_session_student');
+    window.AI_JUKU_PER_STUDENT_CACHE_KEYS.forEach(function (k) {
+      try { localStorage.removeItem(k); } catch (_) {}
+    });
+    // 🔑 名簿と表示ポインタだけは「削除」でなく「今の生徒1件で上書き」する。
+    //   空のまま app.js に渡すと app.js:761-765 が seedStudents (デモ生徒 山田太郎/佐藤花子/
+    //   鈴木一郎) を書き戻して永続化し、生徒切替ドロップダウンに架空の生徒が並ぶ。
+    //   auth-guard の applyVerifiedStudent は /api/auth/me の非同期応答後なので間に合わない。
+    //   前生徒の氏名 PII は消える (本来の目的) まま、空名簿だけを避けられる。
+    try {
+      var me = meRaw ? JSON.parse(meRaw) : null;
+      if (me && me.id !== null && me.id !== undefined) {
+        localStorage.setItem('ai_juku_students', JSON.stringify([me]));
+        localStorage.setItem('ai_juku_current_student', JSON.stringify(me.id));
+        // vocab/mock-exam が読む別系統ポインタ。ここだけ前生徒のまま残すと非対称になる
+        // (サーバは token の student_id で判定するので実害は無いが、表示が食い違う)。
+        localStorage.setItem('aj_current_student_id', sid);
+      }
+    } catch (_) {}
+    localStorage.setItem(OWNER_KEY, sid);
+  } catch (_) { /* 失敗してもアプリ動作は止めない */ }
+})();
+
+// ==========================================================================
 // 🔄 ユーザー操作: システム強制更新ボタン用の共通関数
 // 「同じ回答ばかり」など古いキャッシュ由来の不具合を生徒自身で解消するため、
 // mypage.html / index.html のヘッダーボタンから呼び出される。
