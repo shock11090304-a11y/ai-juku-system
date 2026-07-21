@@ -24804,7 +24804,12 @@ def public_curriculum_generate(payload: dict, request: Request, authorization: O
     except Exception:
         raise HTTPException(status_code=400, detail="exam_date must be ISO date format (YYYY-MM-DD)")
     now = datetime.now(timezone.utc)
-    days_remaining = max(1, int((target_date - now).total_seconds() / 86400))
+    # 📅 カレンダー日数 (JST 基準) で数える。旧式 int((target−now).total_seconds()/86400) は
+    #   exam_date "YYYY-MM-DD" (=UTC 深夜) との時刻差の切り捨てなので、JST 09:00 以降は終日
+    #   1 日少ない値になっていた。2026-07-21 からクライアント2画面は exam_date から自前再計算
+    #   するが、この値は生成プロンプトと旧保存分のフォールバック表示の入力なので根も揃える。
+    #   max(1, ...) の下限は既存仕様を維持 (weeks_remaining=0 でプロンプトが壊れるのを防ぐ)
+    days_remaining = max(1, (target_date.date() - datetime.now(JST).date()).days)
     weeks_remaining = max(1, days_remaining // 7)
 
     # 🛡️ 全体日次上限 backstop: _client_ip は XFF 先頭を信用するため偽装 + IP 分散で per-caller 制限は

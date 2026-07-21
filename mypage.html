@@ -2038,14 +2038,28 @@
           const minSpan = min && min !== '0' ? ` <span style="color:#94a3b8;">(${min}分)</span>` : '';
           return `<li style="margin-bottom:0.3rem;font-size:0.82rem;line-height:1.5;"><strong>${String(t.title_jp || '').replace(/</g,'&lt;')}</strong>${minSpan}</li>`;
         }).join('');
-      // ⚠️ days_remaining は「生成した日」のスナップショットで、日が経っても減らない (english-exam.js:5069 も同様)。
-      //   ここだけ exam_date から引き直すと全週ロードマップ側と数字が食い違うので、直すなら 2 画面同時に。
-      const remainingDays = String(cur.days_remaining ?? '--').replace(/</g,'&lt;');  // localStorage 由来なので生で埋めない
+      // 📅 受験日カウントダウン: days_remaining は「生成した日」のスナップショットなので、表示のたび
+      //   exam_date からローカル深夜基準で引き直す (計画が古いほど嘘の日数が出ていた)。
+      //   ★同じ再計算が english-exam.js renderCurriculum (残 N 日) にもある — 片方だけ直すと2画面で食い違う。
+      //   exam_date が無い/壊れている保存分は従来どおりスナップショットへフォールバック
+      let daysLeft = null;
+      const examYmd = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(cur.exam_date ?? ''));
+      if (examYmd) {
+        const examLocal = new Date(+examYmd[1], +examYmd[2] - 1, +examYmd[3]);
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const diff = Math.round((examLocal.getTime() - today.getTime()) / 86400000);
+        if (Number.isFinite(diff)) daysLeft = diff;
+      }
+      const remainingDays = String(daysLeft ?? cur.days_remaining ?? '--').replace(/</g,'&lt;');  // localStorage 由来なので生で埋めない
+      // 受験日を過ぎたら「0日」を出し続けるのでなく状態を言う (english-exam.js 側と文言を揃える)
+      const countdownHtml = (daysLeft !== null && daysLeft < 0)
+        ? '受験日を過ぎました'
+        : `受験日まで <strong style="color:#fbbf24;">${remainingDays}日</strong>`;
       el.innerHTML = `
         <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:0.85rem;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.4rem;">
             <div style="font-weight:800;color:#fbbf24;">🎯 今週のタスク (${headLabel})</div>
-            <div style="font-size:0.78rem;color:#94a3b8;">📅 受験日まで <strong style="color:#fbbf24;">${remainingDays}日</strong></div>
+            <div style="font-size:0.78rem;color:#94a3b8;">📅 ${countdownHtml}</div>
           </div>
           <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;flex-wrap:wrap;">
             <span style="background:${phaseColor}22;color:${phaseColor};padding:0.15rem 0.5rem;border-radius:4px;font-size:0.72rem;font-weight:700;">${String(w.phase || '').replace(/</g,'&lt;')}</span>

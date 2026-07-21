@@ -5022,9 +5022,15 @@ function bindCurriculumForm() {
 
   dateInp.addEventListener('change', () => {
     if (!dateInp.value) { daysHint.textContent = '--'; return; }
-    const d = new Date(dateInp.value);
-    const diff = Math.ceil((d - new Date()) / 86400000);
-    daysHint.textContent = diff > 0 ? `あと ${diff} 日 (約${Math.ceil(diff/7)}週間)` : '受験日を未来日付に';
+    // ローカル深夜基準のカレンダー日数 + floor 週 — 直下の結果カード (残 N 日) と同じ数え方に揃える。
+    // 旧 Math.ceil は同じ画面内で「あと 20 日 (約3週間)」vs「残 20 日 (約 2 週間)」の矛盾を出していた
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateInp.value);
+    if (!m) { daysHint.textContent = '--'; return; }
+    const examLocal = new Date(+m[1], +m[2] - 1, +m[3]);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diff = Math.round((examLocal.getTime() - today.getTime()) / 86400000);
+    const w = Math.floor(diff / 7);
+    daysHint.textContent = diff > 0 ? `あと ${diff} 日${w >= 1 ? ` (約${w}週間)` : ''}` : '受験日を未来日付に';
   });
 
   genBtn.addEventListener('click', generateCurriculum);
@@ -5131,14 +5137,19 @@ async function generateCurriculum() {
 function renderCurriculum(data) {
   const box = document.getElementById('curriculumResult');
   if (!box || !data) return;
-  const phases = data.phases || [];
-  const roadmap = data.weekly_roadmap || [];
-  const principles = data.study_principles || [];
-  const milestones = data.milestone_assessments || [];
+  // Array.isArray 必須 (2026-07-21): server は json.loads の結果を型検査せず返すので、AI 出力の型ドリフト
+  //   (配列のはずが文字列/object で来る) は通常運転で起こりうる。"abc".length は truthy で .forEach が throw
+  //   → カリキュラム section 全体が白紙になる。mypage.html の今週タスク widget と同じガード (片方だけだと非対称)
+  const phases = Array.isArray(data.phases) ? data.phases : [];
+  const roadmap = Array.isArray(data.weekly_roadmap) ? data.weekly_roadmap : [];
+  const principles = Array.isArray(data.study_principles) ? data.study_principles : [];
+  const milestones = Array.isArray(data.milestone_assessments) ? data.milestone_assessments : [];
 
   // 進捗チェック (localStorage の completed_weeks)
   const progress = loadCurriculumState() || {};
-  const completed = new Set(progress.completed_weeks || []);
+  // Array.isArray 必須: new Set(5) / new Set({}) は throw、new Set("23") は Set{"2","3"} になって
+  //   生徒が押していない ✅ が出る (mypage 側 renderCurriculumWeekWidget と同じガード)
+  const completed = new Set(Array.isArray(progress.completed_weeks) ? progress.completed_weeks : []);
 
   // 簡易版タグは理由 (server: fallback_reason) で文言を出し分け。
   // 「混雑中 (=日次上限)」は待てば直る / 「AI応答なし」は障害 — 生徒の次の行動が変わるので区別する。
@@ -5157,10 +5168,32 @@ function renderCurriculum(data) {
     ? (Object.prototype.hasOwnProperty.call(FALLBACK_LABELS, fbKey) ? FALLBACK_LABELS[fbKey] : FALLBACK_LABELS.unknown)
     : null;
 
+  // 📅 days_remaining は生成時スナップショット (server 計算)。表示のたび exam_date からローカル深夜基準で
+  //   引き直す — 古い計画ほど嘘の残日数が出ていた。★同じ再計算が mypage.html renderCurriculumWeekWidget
+  //   にもある (片方だけ直すと2画面で数字が食い違う)。exam_date 欠落/壊れの保存分はスナップショットへ。
+  //   受験日超過は「0日」を出し続けず状態を言う (mypage 側と文言を揃える)
+  let _cdDays = null;
+  const _cdM = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(data.exam_date ?? ''));
+  if (_cdM) {
+    const _cdExam = new Date(+_cdM[1], +_cdM[2] - 1, +_cdM[3]);
+    const _cdToday = new Date(); _cdToday.setHours(0, 0, 0, 0);
+    const _d = Math.round((_cdExam.getTime() - _cdToday.getTime()) / 86400000);
+    if (Number.isFinite(_d)) _cdDays = _d;
+  }
+  let _cdMeta;
+  if (_cdDays !== null && _cdDays < 0) {
+    _cdMeta = '受験日を過ぎました';
+  } else if (_cdDays !== null) {
+    // 週数は server と同じ floor。7日未満で「残 3 日 (約 1 週間)」と矛盾させないため 1 週未満は日数のみ
+    const _w = Math.floor(_cdDays / 7);
+    _cdMeta = `残 <strong>${escapeHtml(_cdDays)}</strong> 日` + (_w >= 1 ? ` (約 <strong>${escapeHtml(_w)}</strong> 週間)` : '');
+  } else {
+    _cdMeta = `残 <strong>${escapeHtml(data.days_remaining ?? '--')}</strong> 日 (約 <strong>${escapeHtml(data.weeks_remaining ?? '--')}</strong> 週間)`;
+  }
   let html = `<div class="cur-result-card">`;
   html += `<div class="cur-head">
     <div class="cur-head-title">🎯 ${escapeHtml(data.target_grade_name || '受験対策')} (${escapeHtml(data.exam_id || '')})</div>
-    <div class="cur-head-meta">📅 残 <strong>${data.days_remaining}</strong> 日 (約 <strong>${data.weeks_remaining}</strong> 週間) ${fb ? `<span class="cur-fallback-tag">${escapeHtml(fb.text)}</span>` : ''}</div>
+    <div class="cur-head-meta">📅 ${_cdMeta} ${fb ? `<span class="cur-fallback-tag">${escapeHtml(fb.text)}</span>` : ''}</div>
     ${fb ? `<div class="cur-fallback-note">${escapeHtml(fb.note)}</div>` : ''}
     ${data.estimated_score_at_exam ? `<div class="cur-head-pred">🎯 予測到達: <strong>${escapeHtml(data.estimated_score_at_exam)}</strong></div>` : ''}
   </div>`;
@@ -5170,6 +5203,7 @@ function renderCurriculum(data) {
     html += '<div class="cur-phases">';
     const colors = ['#22c55e', '#fbbf24', '#f87171'];
     phases.forEach((p, i) => {
+      if (!p || typeof p !== 'object') return;  // null/文字列要素 (AI 出力の崩れ) — p.phase 参照で throw させない (roadmap 行 skip と同じ)
       html += `<div class="cur-phase-card" style="border-color:${colors[i] || '#94a3b8'}33;">
         <div class="cur-phase-name" style="color:${colors[i] || '#94a3b8'};">${escapeHtml(p.phase || `Phase ${i+1}`)}</div>
         <div class="cur-phase-weeks">${escapeHtml(p.weeks_count || 0)} 週間</div>
@@ -5191,6 +5225,7 @@ function renderCurriculum(data) {
     html += '<div class="cur-roadmap-head">📋 週次ロードマップ (チェックを入れて進捗管理)</div>';
     html += '<div class="cur-roadmap">';
     roadmap.forEach((w, wi) => {
+      if (!w || typeof w !== 'object') return;  // null/文字列の行 (AI 出力の崩れ) は skip — 下の w.week 参照で throw させない (mypage と同じ)
       // 🔑 2026-07-21: week は AI 出力由来で「範囲まとめ行」= "11-20" のような文字列になり得る (0c92caa)。
       //   保存 (下の change ハンドラ) と復元でキー型がズレると永遠に一致せず、チェックがリロードで外れる。
       //   → dataset の生文字列を単一のキーに統一。旧版が数値で記録した分は「純粋な数字列のときだけ」数値でも照合
@@ -5210,6 +5245,12 @@ function renderCurriculum(data) {
       // 「・毎週共通」の言い回しは mypage.html の今週タスクウィジェットと揃える (同じ概念に別表現を使わない)
       const headLabel = rawWeek !== '' ? `Week ${weekLabel}${isRange ? '・毎週共通' : ''}` : `Week ${wi + 1} (週番号なし)`;
       const phaseColor = w.phase === '基礎固め' ? '#22c55e' : w.phase === '応用強化' ? '#fbbf24' : '#f87171';
+      // tasks も型ドリフトし得る (文字列だと .map が throw・null 要素は t.category で throw)。
+      // 素の文字列は題名として拾う。題名の無い行もここでは残す (mypage と違い category/detail_jp を
+      // 描画するので情報が残る)。minutes は欠落/0 なら「0分」と嘘を書かず span ごと省く (mypage と同じ)
+      const wTasks = (Array.isArray(w.tasks) ? w.tasks : [])
+        .map(t => (typeof t === 'string' ? { title_jp: t } : t))
+        .filter(t => t && typeof t === 'object');
       html += `<div class="cur-week-card${isDone ? ' done' : ''}" data-week="${weekLabel}">
         <div class="cur-week-head">
           <label class="cur-week-check">
@@ -5220,7 +5261,11 @@ function renderCurriculum(data) {
           <span class="cur-week-min">${escapeHtml(w.estimated_total_minutes || 0)} 分${isRange ? '/週' : ''}</span>
         </div>
         <div class="cur-week-focus">🎯 ${escapeHtml(w.focus_jp || '')}</div>
-        ${(w.tasks || []).length ? '<ul class="cur-week-tasks">' + (w.tasks).map(t => `<li><span class="cur-task-cat">${escapeHtml(t.category || '')}</span> <strong>${escapeHtml(t.title_jp || '')}</strong> <span class="cur-task-min">${escapeHtml(t.minutes || 0)}分</span><div class="cur-task-detail">${escapeHtml(t.detail_jp || '')}</div></li>`).join('') + '</ul>' : ''}
+        ${wTasks.length ? '<ul class="cur-week-tasks">' + wTasks.map(t => {
+          const _min = String(t.minutes ?? '').trim();
+          const _minSpan = _min && _min !== '0' ? ` <span class="cur-task-min">${escapeHtml(_min)}分</span>` : '';
+          return `<li><span class="cur-task-cat">${escapeHtml(t.category || '')}</span> <strong>${escapeHtml(t.title_jp || '')}</strong>${_minSpan}<div class="cur-task-detail">${escapeHtml(t.detail_jp || '')}</div></li>`;
+        }).join('') + '</ul>' : ''}
         ${w.milestone_jp ? `<div class="cur-week-mile">📌 ${escapeHtml(w.milestone_jp)}</div>` : ''}
       </div>`;
     });
@@ -5231,6 +5276,7 @@ function renderCurriculum(data) {
   if (milestones.length) {
     html += '<details class="cur-milestones"><summary>🏁 マイルストーン</summary><ul>';
     milestones.forEach(m => {
+      if (!m || typeof m !== 'object') return;  // null/文字列要素 — m.week 参照で throw させない
       html += `<li>Week ${escapeHtml(m.week)} · ${escapeHtml(m.type || '')}: ${escapeHtml(m.target_jp || '')}</li>`;
     });
     html += '</ul></details>';
@@ -5249,7 +5295,10 @@ function renderCurriculum(data) {
       cb.closest('.cur-week-card').classList.toggle('done', cb.checked);
       if (w === '') return;  // 保険 (描画側で必ず非空キーを振っている)
       const cur = loadCurriculumState() || {};
-      const list = new Set(cur.completed_weeks || []);
+      // Array.isArray 必須 (書き込み側): 描画側だけガードすると、壊れ値 "23" が初回チェックで
+      // new Set("23")={"2","3"} に洗浄されて ["2","3",...] で保存され、両画面に恒久の偽✅が生える。
+      // 数値 5 は new Set(5) が throw してチェックが無言で消える (toggle 済みの見た目だけ残る)
+      const list = new Set(Array.isArray(cur.completed_weeks) ? cur.completed_weeks : []);
       list.delete(w);
       if (/^\d+$/.test(w)) list.delete(Number(w));
       if (cb.checked) list.add(w);
