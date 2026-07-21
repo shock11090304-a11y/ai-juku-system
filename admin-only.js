@@ -20,6 +20,15 @@
   var tok = null;
   try {
     tok = localStorage.getItem('ai_juku_admin_token');
+    // 🛡️ 2026-07-21 [admin-token-hygiene] 期限切れ token は「無い」扱いにして掃除する
+    //   (server は期限を強制するが、client が presence だけ見ると期限切れ端末で admin UI の
+    //   殻が開いて API 401 の壊れ画面になる)。expires は epoch 秒 (ceo.html saveSession と同じ)
+    var exp = parseInt(localStorage.getItem('ai_juku_admin_expires') || '0', 10);
+    if (tok && exp && Math.floor(Date.now() / 1000) >= exp) {
+      localStorage.removeItem('ai_juku_admin_token');
+      localStorage.removeItem('ai_juku_admin_expires');
+      tok = null;
+    }
   } catch (e) {
     tok = null;
   }
