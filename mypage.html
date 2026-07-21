@@ -2157,9 +2157,21 @@
           });
         } catch (e) { console.warn('parent nudge failed:', e); }
       }
-      function showHonestStatus(pe, enabled, savedPrefix) {
-        if (isSameAsStudent(pe)) {
+      function showHonestStatus(pe, enabled, savedPrefix, parallelActive) {
+        // 📊 server が parallel_active (cron と同一判定) を返す場合はそれが正。
+        //   配管済みの家庭 (parent_email=email・生徒コピーは student_email へ) では
+        //   session email 比較だと誤って ⚠ になるため、server 判定を優先する
+        const sameLooking = isSameAsStudent(pe);
+        const inactive = (parallelActive === false) || (parallelActive === undefined && sameLooking);
+        if (pe && inactive) {
           status.style.color = '#fcd34d';
+          // 停止中と同一アドレスは原因が違う — 混同すると「別アドレスなのに同一と言われる」誤案内になる (review D1)
+          if (!enabled) {
+            status.textContent = savedPrefix
+              ? '⚠️ 保存しました。ただし配信が停止中です (「配信を有効にする」にチェックを入れて保存すると届きます)'
+              : '⚠️ 配信が停止中です (「配信を有効にする」にチェックを入れて保存すると再開します)';
+            return 'disabled';  // 意図的な OFF — nudge は出さない
+          }
           // 保存時も ✅ を混ぜない (緑チェック+琥珀警告の混合シグナルは UX review 指摘)
           status.textContent = savedPrefix
             ? '⚠️ 保存しました。ただし生徒本人と同じアドレスのため、保護者向けの別送はされません'
@@ -2179,7 +2191,7 @@
           if (!d) return;
           input.value = d.parent_email || '';
           checkbox.checked = !!d.enabled;
-          const state = showHonestStatus(d.parent_email, !!d.enabled, '');
+          const state = showHonestStatus(d.parent_email, !!d.enabled, '', d.parallel_active);
           if (state === 'unset') renderParentNudge('unset');
           else if (state === 'same') renderParentNudge('same');
         }).catch(() => {});
@@ -2204,10 +2216,10 @@
           const j = await res.json();
           if (res.ok && j.ok) {
             if (email) {
-              // 同一アドレス保存も受け付けるが、実態 (別送されない) を保存直後に正直に伝える
-              showHonestStatus(email, enabled, '✅ 保存しました:');
+              // 同一アドレス保存も受け付けるが、実態 (別送されるか) を保存直後に正直に伝える
+              const st = showHonestStatus(email, enabled, '✅ 保存しました:', j.parallel_active);
               const nudge = document.getElementById('parentEmailNudge');
-              if (nudge && !isSameAsStudent(email)) nudge.remove();  // 保護者アドレスが入ったら案内を畳む
+              if (nudge && st !== 'same') nudge.remove();  // 実効化したら案内を畳む
             } else {
               status.style.color = '#86efac';
               status.textContent = '✅ 保存しました (email 未設定)';

@@ -24750,6 +24750,33 @@ CURRICULUM_GLOBAL_DAILY_CAP = int(os.getenv("CURRICULUM_GLOBAL_DAILY_CAP", "100"
 _CURRICULUM_DAILY_CAP_STATE = {"day": "", "count": 0}
 
 
+def _weekly_report_recipients(row) -> tuple:
+    """週次レポートの宛先決定 (pure 関数・dict / psycopg Row 両対応 → 単体テスト可能)。
+    2026-07-21 [parent-email-piping]: checkout 由来の家庭では students.email が「保護者様
+    メールアドレス」ラベルで収集される (checkout.html:136・trial_signup の 400 文言にも明記)。
+    - 生徒コピー: verified な student_email が別アドレスで存在すればそこへ (これまで生徒本人には
+      一通も届いていなかった)。無ければ従来どおり email。unverified の student_email には送らない
+      (2026-06-11/12 security review: 未確認アドレスへの送信は spam 踏み台ベクター)。
+    - 保護者コピー: parent_email が有効で「実際の生徒コピー先」と異なる時のみ。
+      ★比較相手を email 固定にしない — parent_email=email に配管した家庭では生徒コピーが
+      student_email へ移るため、email 比較のままだと保護者コピーが誤って skip される。
+    """
+    def _g(k):
+        try:
+            return row.get(k) if hasattr(row, "get") else (row[k] if k in row.keys() else None)
+        except Exception:
+            return None
+    email = (_g("email") or "").strip()
+    s_em = (_g("student_email") or "").strip()
+    verified = _g("student_email_verified")
+    is_verified = str(verified) in ("1", "True", "true")
+    student_to = s_em if (s_em and is_verified and s_em.lower() != email.lower()) else email
+    p_em = (_g("parent_email") or "").strip()
+    p_on = _g("parent_email_enabled")
+    parent_to = p_em if (p_em and p_on and p_em.lower() != (student_to or "").lower()) else None
+    return student_to, parent_to
+
+
 @app.post("/api/curriculum/generate")
 def public_curriculum_generate(payload: dict, request: Request, authorization: Optional[str] = Header(None)):
     """🎯 受験日逆算 個別 AI カリキュラム生成。
@@ -27695,14 +27722,25 @@ def trial_signup(payload: TrialSignup, request: Request):
             )
 
     is_existing = False
+    # 📊 2026-07-21 [parent-email-piping] checkout の必須フィールドは「保護者様メールアドレス」
+    # ラベル (checkout.html:136) = email_norm は保護者のアドレス。生徒用アドレスが別に指定された
+    # 申込では parent_email にも配管し、週次レポートの保護者チャネルを最初から有効にする
+    # (これまで支払い時に貰った保護者アドレスが捨てられ、保護者別送は開始以来 0 件だった)。
+    # 生徒用が空/同一の申込では従来どおり NULL (email への一本送りで保護者に届いている)
+    _pipe_parent = email_norm if (student_email_norm and student_email_norm != email_norm) else None
     try:
         c.execute(
             """INSERT INTO students (name, email, student_email, grade, goal, plan, status, trial_start, trial_end,
+                parent_email, parent_email_enabled,
                 signup_utm_source, signup_utm_content, signup_utm_campaign, signup_lp_variant, signup_referrer)
-               VALUES (?, ?, ?, ?, ?, ?, 'trial', ?, ?, ?, ?, ?, ?, ?)
+               VALUES (?, ?, ?, ?, ?, ?, 'trial', ?, ?, ?, ?, ?, ?, ?, ?, ?)
                RETURNING id""",
             (payload.name, email_norm, student_email_norm, grade, goal,
              plan, now.isoformat(), trial_end.isoformat(),
+             # enabled は非配管でも 1 (DDL default と同じ)。0 にすると mypage の checkbox が
+             # 外れた状態で seed され、後から別アドレスを保存した家庭が配信 OFF のまま気づけない
+             # (review D1)。parent_email NULL + enabled=1 は「未設定・設定すれば即有効」の従来意味
+             _pipe_parent, 1,
              utm_source, utm_content, utm_campaign, lp_variant, referrer)
         )
         returned = c.fetchone()
@@ -27758,13 +27796,17 @@ def trial_signup(payload: TrialSignup, request: Request):
                         allow_regrant = True  # parse 失敗時は安全側 (ユーザー体験優先) で従来通り許可
             if existing_status not in ("paid", "past_due"):
                 if allow_regrant:
-                    # 既存生徒の student_email も更新 (空白のままなら新値で上書き、既存値があれば保持)
+                    # 既存生徒の student_email も更新 (空白のままなら新値で上書き、既存値があれば保持)。
+                    # parent_email も同じ「空の時だけ」規律で配管 (self-service で設定済みの値は上書きしない)
                     c.execute(
                         """UPDATE students SET status='trial', trial_start=?, trial_end=?,
                            student_email = CASE WHEN COALESCE(student_email, '') = '' THEN ? ELSE student_email END,
+                           parent_email = CASE WHEN COALESCE(parent_email, '') = '' AND ? <> '' THEN ? ELSE parent_email END,
+                           parent_email_enabled = CASE WHEN COALESCE(parent_email, '') = '' AND ? <> '' THEN 1 ELSE parent_email_enabled END,
                            updated_at=CURRENT_TIMESTAMP
                            WHERE id=?""",
-                        (now.isoformat(), trial_end.isoformat(), student_email_norm, student_id)
+                        (now.isoformat(), trial_end.isoformat(), student_email_norm,
+                         _pipe_parent or '', _pipe_parent or '', _pipe_parent or '', student_id)
                     )
                     conn.commit()
                     log.info(f"[Signup] Re-activated trial for existing student {student_id} ({email_norm}) prev_status={existing_status}")
@@ -32932,7 +32974,8 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
     #   実配信+AIコメント生成1回が発生していた。weekly_worksheet cron は除外済みで非対称だった)。
     #   除外条件は _synth_exclude_sql が単一ソース (email ドメイン+goal marker+名前の三重判定)
     c.execute(
-        "SELECT id, name, email, line_user_id, course, parent_email, parent_email_enabled FROM students "
+        "SELECT id, name, email, student_email, student_email_verified, line_user_id, course, "
+        "parent_email, parent_email_enabled FROM students "
         "WHERE status IN ('trial', 'paid') AND (course = 'kokuritsu_nankan' OR status = 'paid') "
         f"AND {_synth_exclude_sql()}"
     )
@@ -32956,17 +32999,23 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
             if stats["hours"] == 0 and stats["questions"] == 0 and stats["problems_done"] == 0:
                 skipped += 1
                 continue
+            # 宛先決定は _weekly_report_recipients (pure) が単一ソース。dry_run preview と
+            # ctx 生成ゲートも同じ結果を使う (review 指摘: raw email 参照のままだと preview が
+            # 新しい送り分けを映さず「日曜前の本番検証」に使えない)
+            email, _wr_parent_to = _weekly_report_recipients(row)
             if dry_run:
                 previews.append({
                     "student_id": row["id"], "name": row["name"], "stats": stats,
-                    "would_send_email": bool(row.get("email")),
+                    "would_send_email": bool(email),
+                    "student_copy_to": email or None,
+                    "parent_copy_to": _wr_parent_to,
                     "would_send_line": bool(row.get("line_user_id")),
                 })
                 continue
             # 📊 リッチ週次レポートのコンテキスト + AIコーチコメントを1回だけ生成 (生徒+保護者メールで共用)。
             #   メール宛先が全く無い生徒 (LINE のみ等) では AI 呼び出しを省く。
             _wr_ctx = None
-            if row.get("email") or (row.get("parent_email") and row.get("parent_email_enabled")):
+            if email or _wr_parent_to:
                 try:
                     _wr_ctx = _weekly_coach_comments(_build_weekly_report_ctx(row["id"], row["name"], stats))
                 except Exception as _wre:
@@ -32974,7 +33023,6 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
                     log.warning(f"[WeeklyReport] ctx build failed sid={row['id']}: {type(_wre).__name__}: {str(_wre)[:150]}")
                     _wr_ctx = _weekly_report_minimal_ctx(row["name"], stats)
             # --- メール配信 (全生徒) ---
-            email = row.get("email")
             if email and sent_email >= WEEKLY_REPORT_EMAIL_CAP:
                 capped += 1
                 log.warning(f"[WeeklyReport] Email cap ({WEEKLY_REPORT_EMAIL_CAP}) reached, skipping student {row['id']}")
@@ -33014,14 +33062,9 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
                     else:
                         failed += 1
             # --- 📊 保護者向け並行配信 (塾長指示 2026-05-26) ---
-            try:
-                parent_email = row.get("parent_email") if hasattr(row, "get") else (row["parent_email"] if "parent_email" in row.keys() else None)
-                parent_enabled = row.get("parent_email_enabled") if hasattr(row, "get") else (row["parent_email_enabled"] if "parent_email_enabled" in row.keys() else 1)
-            except Exception:
-                parent_email = None
-                parent_enabled = 0
-            # 保護者 email が生徒 email と同じなら 2 重送信防止で skip
-            if parent_email and parent_enabled and parent_email != row.get("email"):
+            # 宛先と重複判定は _weekly_report_recipients が決定済み (実際の生徒コピー先と比較)。
+            parent_email = _wr_parent_to
+            if parent_email:
                 if sent_email >= WEEKLY_REPORT_EMAIL_CAP:
                     capped += 1
                 else:
@@ -42054,9 +42097,17 @@ async def student_set_parent_email(request: Request, authorization: Optional[str
             (parent_email or None, enabled, student_id),
         )
         conn.commit()
+        # 保存後の実効状態 (parallel_active) も返す — client が保存直後に正確な状態表示を出せるように
+        c.execute(
+            "SELECT email, student_email, student_email_verified, parent_email, parent_email_enabled "
+            "FROM students WHERE id = ?",
+            (student_id,),
+        )
+        _prow = c.fetchone()
+        _, _parent_to = _weekly_report_recipients(_prow) if _prow else ("", None)
     finally:
         conn.close()
-    return {"ok": True, "parent_email": parent_email or None, "enabled": bool(enabled)}
+    return {"ok": True, "parent_email": parent_email or None, "enabled": bool(enabled), "parallel_active": bool(_parent_to)}
 
 
 @app.get("/api/student/parent-email")
@@ -42076,15 +42127,28 @@ def student_get_parent_email(request: Request, authorization: Optional[str] = He
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT parent_email, COALESCE(parent_email_enabled, 1) AS enabled FROM students WHERE id = ?", (student_id,))
+        # parent_email_enabled は raw のまま取る (COALESCE すると下の helper 入力が cron と
+        # 微妙にズレる — review D4)。表示用の enabled だけ python 側で NULL→有効に倒す
+        c.execute(
+            "SELECT email, student_email, student_email_verified, parent_email, parent_email_enabled "
+            "FROM students WHERE id = ?",
+            (student_id,),
+        )
         row = c.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
         try:
-            pe = row["parent_email"]; en = row["enabled"]
+            pe = row["parent_email"]; en = row["parent_email_enabled"]
         except (TypeError, KeyError, IndexError):
-            pe = row[0]; en = row[1]
-        return {"parent_email": pe or "", "enabled": bool(en)}
+            pe = row[3]; en = row[4]
+        if en is None:
+            en = 1
+        # 📊 [parent-email-piping] 保護者コピーが実際に別送されるか (判定は週次 cron と同じ
+        # _weekly_report_recipients が単一ソース)。mypage の「✅配信中/⚠別送されません」表示が
+        # cron の実挙動とズレないようにする — client 側の推測 (session email 比較) は
+        # 配管後の家庭 (parent_email=email・生徒コピーは student_email へ) で誤って ⚠ を出す
+        _, _parent_to = _weekly_report_recipients(row)
+        return {"parent_email": pe or "", "enabled": bool(en), "parallel_active": bool(_parent_to)}
     finally:
         conn.close()
 
