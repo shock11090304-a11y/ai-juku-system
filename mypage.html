@@ -1949,7 +1949,9 @@
       if (!el) return;
       let cur = null;
       try { cur = JSON.parse(localStorage.getItem('ee_curriculum_v1') || 'null'); } catch {}
-      if (!cur || !cur.weekly_roadmap || !cur.weekly_roadmap.length) {
+      // Array.isArray 必須: localStorage は壊れた値を持ち得るし、下の forEach は配列以外で throw する。
+      // ここは他ウィジェット (vocab SRS / 配布プリント) と同じ描画列にいるので、throw すると後続が丸ごと消える
+      if (!cur || !Array.isArray(cur.weekly_roadmap) || !cur.weekly_roadmap.length) {
         el.innerHTML = `
           <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:0.85rem;">
             <div style="font-weight:800;color:#fbbf24;margin-bottom:0.4rem;">🎯 個別 AI カリキュラム</div>
@@ -1958,32 +1960,88 @@
           </div>`;
         return;
       }
-      // 経過週を概算: saved_at からの経過日 / 7
+      // 経過週を概算: saved_at からの経過日 / 7 (1 始まり)
       const savedAt = cur.saved_at ? new Date(cur.saved_at) : new Date();
-      const daysSince = Math.max(0, Math.floor((Date.now() - savedAt.getTime()) / 86400000));
-      const currentWeek = Math.min(cur.weekly_roadmap.length, daysSince / 7 + 1 | 0);
-      const w = cur.weekly_roadmap[Math.max(0, currentWeek - 1)] || cur.weekly_roadmap[0];
-      const completed = new Set(cur.completed_weeks || []);
+      const savedMs = savedAt.getTime();
+      const daysSince = Number.isFinite(savedMs)
+        ? Math.max(0, Math.floor((Date.now() - savedMs) / 86400000))
+        // saved_at が壊れていたら Week 1 扱い。NaN のままだと下の照合が全部 false になり、
+        // 週番号に関係なく必ず先頭行 (index 0) が出る。1 週目として扱えば「week 1 の行」を正しく引ける
+        : 0;
+      const elapsedWeek = Math.floor(daysSince / 7) + 1;
+      // 🔑 2026-07-21: 行を「配列 index」で選ばず week の値で照合する。
+      //   ★正規形 (0c92caa 以降の「詳細10週 + 範囲まとめ行 week:"11-20" が末尾」) では旧 index 方式と
+      //     結果は同じ。経過 11 週目以降に範囲行が出るのは仕様どおり (applies_remaining_weeks = 残り全週に適用)。
+      //     つまりこれは「今出ている不具合の修理」ではなく、AI 出力の並びが崩れたときの保険。実測した差分:
+      //       ・week 3 が欠落 → 経過 W3〜W10 の 8 週ぶん旧は 1 週先を表示 (W11 の範囲行で合流)
+      //       ・範囲行が先頭に来た → 経過 W1 で旧は範囲行を表示 (以降も全週ズレたまま)
+      //       ・範囲行が 2 本 ("11-20"/"21-31") → 経過 W12〜W20 の 9 週連続で旧は "21-31" を表示 (先の期間の課題)
+      //       ・週番号が 2 始まり → 計画期間中の W2〜W10 で 1 週ぶんズレる
+      //   範囲行の判定式は english-exam.js renderCurriculum (isRange) と同一に保つ (片方だけ直すと非対称)。
+      const RANGE_RE = /^(\d+)\s*[-–〜~]\s*(\d+)$/;
+      const weekSpan = (row, i) => {
+        const raw = String(row.week ?? '').trim();
+        const m = raw.match(RANGE_RE);
+        if (m) return [Math.min(+m[1], +m[2]), Math.max(+m[1], +m[2])];
+        // ここは week が範囲表記でないときの分岐。この場合に限り「残り全週に適用」フラグで上限を外す
+        // (AI が "11-20" でなく単一週+フラグで返し得るため)。範囲表記があるときは上の return で確定済みなので、
+        // その行ではフラグは参照されない ("11-20"+フラグ なら hi=20 のまま)
+        const lead = raw.match(/^(\d+)/);
+        const lo = lead ? +lead[1] : i + 1;  // week 欠落行は行番号で代用
+        return [lo, row.applies_remaining_weeks === true ? Infinity : lo];
+      };
+      let wIndex = -1, fallbackIndex = -1, fallbackHi = -Infinity;
+      cur.weekly_roadmap.forEach((row, i) => {
+        if (!row || typeof row !== 'object') return;
+        const [lo, hi] = weekSpan(row, i);
+        if (wIndex < 0 && elapsedWeek >= lo && elapsedWeek <= hi) wIndex = i;
+        // 計画を走り切った場合の受け皿: 経過週より手前で最も後ろの行 (通常は範囲まとめ行)
+        if (hi < elapsedWeek && hi > fallbackHi) { fallbackHi = hi; fallbackIndex = i; }
+      });
+      if (wIndex < 0) wIndex = fallbackIndex >= 0 ? fallbackIndex : 0;
+      const w = cur.weekly_roadmap[wIndex] || cur.weekly_roadmap[0] || {};
+      // Array.isArray 必須: new Set(5) / new Set({}) は throw、new Set("23") は Set{"2","3"} になって
+      // 身に覚えのない「✅ Week完了済」を出す (english-exam.js は常に配列で書くが localStorage は壊れ得る)
+      const completed = new Set(Array.isArray(cur.completed_weeks) ? cur.completed_weeks : []);
       // 🔑 2026-07-21: english-exam.js は週キーを dataset の生「文字列」で保存する (範囲まとめ行 "11-20" 対応)。
       //   ここで has(w.week) だけ見ていると数値週 3 が "3" と一致せず「✅ Week完了済」が出なくなる。
       //   旧版が数値で書いた記録も拾えるよう、english-exam.js renderCurriculum と同じ二重照合にする (片方だけ直すと非対称)
-      const weekKey = String(w.week ?? '').trim();  // trim も english-exam.js 側と揃える (揃えないと前後空白付き week で照合が外れる)
+      const rawWeek = String(w.week ?? '').trim();  // trim も english-exam.js 側と揃える (揃えないと前後空白付き week で照合が外れる)
+      const weekKey = rawWeek !== '' ? rawWeek : `#${wIndex + 1}`;  // week 欠落行のキーも english-exam.js と同一にする
       const legacyNum = /^\d+$/.test(weekKey) ? Number(weekKey) : null;
-      const isDone = weekKey !== '' && (completed.has(weekKey) || (legacyNum !== null && completed.has(legacyNum)));
+      const isDone = completed.has(weekKey) || (legacyNum !== null && completed.has(legacyNum));
+      const isRange = w.applies_remaining_weeks === true || RANGE_RE.test(weekKey);
+      const headLabel = rawWeek !== ''
+        ? `Week ${weekKey.replace(/</g,'&lt;')}${isRange ? '・毎週共通' : ''}`
+        : `Week ${wIndex + 1} (週番号なし)`;  // ラベルも english-exam.js と揃える
       const phaseColor = w.phase === '基礎固め' ? '#22c55e' : w.phase === '応用強化' ? '#fbbf24' : '#f87171';
-      const tasksHtml = (w.tasks || []).slice(0, 4).map(t =>
-        `<li style="margin-bottom:0.3rem;font-size:0.82rem;line-height:1.5;"><strong>${(t.title_jp || '').replace(/</g,'&lt;')}</strong> <span style="color:#94a3b8;">(${String(t.minutes || 0).replace(/</g,'&lt;')}分)</span></li>`
-      ).join('');
-      const remainingDays = cur.days_remaining ?? '--';
+      // tasks も AI 出力そのまま (server は json.loads の結果を型検査せず返す)。文字列や {} が来ると
+      // .slice/.map が throw し、上の Array.isArray ガードと同じ巻き添え (後続ウィジェット全滅) が起きる
+      const tasksHtml = (Array.isArray(w.tasks) ? w.tasks : [])
+        .map(t => (typeof t === 'string' ? { title_jp: t } : t))  // "音読30分" のような素の文字列ドリフトも拾う
+        // 題名が空の行も捨てる。空 <li> が出るだけでなく 4 件枠を食って実タスクを押し出すため
+        // ★ 判定は下の描画と同じ `|| ''` で揃える。?? にすると title_jp=0/false が filter は通過・描画は空文字となり
+        //    「空 <li> が出たうえに 4 件枠だけ消費する」というこの filter の目的そのものが達成できない
+        .filter(t => t && typeof t === 'object' && String(t.title_jp || '').trim() !== '')
+        .slice(0, 4)  // ★ filter の後に切る。先に切ると先頭に null が混じったとき有効タスクを取りこぼす
+        .map(t => {
+          // minutes 欠落時に "(0分)" と嘘の所要時間を出さない (文字列ドリフトを拾った行は minutes を持たない)
+          const min = String(t.minutes ?? '').replace(/</g,'&lt;');
+          const minSpan = min && min !== '0' ? ` <span style="color:#94a3b8;">(${min}分)</span>` : '';
+          return `<li style="margin-bottom:0.3rem;font-size:0.82rem;line-height:1.5;"><strong>${String(t.title_jp || '').replace(/</g,'&lt;')}</strong>${minSpan}</li>`;
+        }).join('');
+      // ⚠️ days_remaining は「生成した日」のスナップショットで、日が経っても減らない (english-exam.js:5069 も同様)。
+      //   ここだけ exam_date から引き直すと全週ロードマップ側と数字が食い違うので、直すなら 2 画面同時に。
+      const remainingDays = String(cur.days_remaining ?? '--').replace(/</g,'&lt;');  // localStorage 由来なので生で埋めない
       el.innerHTML = `
         <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:0.85rem;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.4rem;">
-            <div style="font-weight:800;color:#fbbf24;">🎯 今週のタスク (Week ${weekKey.replace(/</g,'&lt;')}${(w.applies_remaining_weeks === true || /^\d+\s*[-–〜~]\s*\d+$/.test(weekKey)) ? '・毎週共通' : ''})</div>
+            <div style="font-weight:800;color:#fbbf24;">🎯 今週のタスク (${headLabel})</div>
             <div style="font-size:0.78rem;color:#94a3b8;">📅 受験日まで <strong style="color:#fbbf24;">${remainingDays}日</strong></div>
           </div>
           <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;flex-wrap:wrap;">
             <span style="background:${phaseColor}22;color:${phaseColor};padding:0.15rem 0.5rem;border-radius:4px;font-size:0.72rem;font-weight:700;">${String(w.phase || '').replace(/</g,'&lt;')}</span>
-            <span style="font-size:0.85rem;color:#e4e4e7;">${(w.focus_jp || '').replace(/</g,'&lt;')}</span>
+            <span style="font-size:0.85rem;color:#e4e4e7;">${String(w.focus_jp || '').replace(/</g,'&lt;')}</span>
           </div>
           <ul style="list-style:disc inside;padding:0;margin:0 0 0.5rem 0;">${tasksHtml}</ul>
           ${isDone ? '<div style="color:#22c55e;font-size:0.85rem;font-weight:700;">✅ Week完了済</div>' : ''}
