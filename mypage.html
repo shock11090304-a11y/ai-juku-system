@@ -7,7 +7,7 @@
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
   <title>マイページ | AIコーチング</title>
-  <script src="cache-purge.js?v=20260721-xstudent-batch2"></script>
+  <script src="cache-purge.js?v=20260721-inherit-notice"></script>
 
   <script src="frontend-error-monitor.js?v=20260529-past-due-grace"></script>
   <link rel="stylesheet" href="style.css?v=20260529-past-due-grace">
@@ -1484,6 +1484,7 @@
           try { initCoachNextMove(student, _ajMode, _isPreview); } catch (_e) { /* 失敗しても他 widget に波及させない */ }
         }
         if (!_isPreview) {
+          renderInheritNoticeBanner(studentId);  // 📦 引き継ぎ通知 (widget 群の最上部に挿入)
           LB.renderTodayReview('lbTodayReview', studentId);
           LB.renderStudyTimeWidget('lbStudyTimeWidget', studentId);
           ExamPrep.renderUpcomingWidget('examPrepWidget');
@@ -1941,6 +1942,41 @@
         console.warn('Vocab SRS widget fetch failed:', e);
         el.innerHTML = '';
       }
+    }
+
+    // 📦 引き継ぎ通知バナー (2026-07-21 塾長承認の「通知+取り消し式」)。
+    // cache-purge.js の migrateLegacyKey がヒューリスティック引き継ぎ (持ち主推定) をしたときだけ
+    // マーカーが立つ。よくある「本人が後からログイン」もここを通るので、事前確認でなく
+    // 事後通知+取り消し (押されたら隔離へ退避 = コピー無し削除はしない) にしている
+    function renderInheritNoticeBanner(studentId) {
+      try {
+        if (!studentId || typeof window.aiJukuGetInheritNotice !== 'function') return;
+        const keys = window.aiJukuGetInheritNotice(studentId);
+        if (!keys.length) return;
+        if (document.getElementById('inheritNoticeBanner')) return;
+        const anchor = document.getElementById('examPrepWidget') || document.getElementById('curriculumWeekWidget');
+        if (!anchor) return;
+        const div = document.createElement('div');
+        div.id = 'inheritNoticeBanner';
+        div.style.cssText = 'background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.35);border-radius:10px;padding:0.85rem;margin-bottom:0.8rem;';
+        div.innerHTML = `
+          <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.6;">📦 この端末で作成されていた学習データ (学習プラン・履歴など) を、あなたのアカウントに引き継ぎました。</div>
+          <div style="display:flex;gap:0.5rem;margin-top:0.55rem;flex-wrap:wrap;">
+            <button id="inheritOkBtn" style="background:rgba(59,130,246,0.2);color:#93c5fd;border:1px solid rgba(59,130,246,0.45);padding:0.35rem 0.9rem;border-radius:6px;font-size:0.8rem;font-weight:700;cursor:pointer;">OK</button>
+            <button id="inheritUndoBtn" style="background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.15);padding:0.35rem 0.9rem;border-radius:6px;font-size:0.8rem;cursor:pointer;">自分のものではない (引き継ぎを取り消す)</button>
+          </div>`;
+        anchor.insertAdjacentElement('beforebegin', div);
+        document.getElementById('inheritOkBtn').addEventListener('click', () => {
+          window.aiJukuDismissInheritNotice(studentId);
+          div.remove();
+        });
+        document.getElementById('inheritUndoBtn').addEventListener('click', () => {
+          if (!confirm('この端末で作成済みだった学習プラン・履歴の引き継ぎを取り消します。データは隔離保管に移り、この画面から消えます。よろしいですか？')) return;
+          const ok = window.aiJukuUndoInherit(studentId);
+          alert(ok ? '引き継ぎを取り消しました。' : '一部のデータを退避できませんでした。時間をおいてもう一度お試しください。');
+          location.reload();
+        });
+      } catch (e) { console.warn('inherit notice banner failed:', e); }
     }
 
     // 🎯 今週のタスク (english-exam.js が localStorage に保存した curriculum data から表示)

@@ -288,7 +288,13 @@ window.AI_JUKU_PER_STUDENT_CACHE_KEYS = [
       var saved = false;
       if (target !== null) {
         var cur = localStorage.getItem(target);
-        if (cur === null) { localStorage.setItem(target, legacy); saved = true; }
+        if (cur === null) {
+          localStorage.setItem(target, legacy); saved = true;
+          // 2026-07-21 [inherit-notice] ヒューリスティック引き継ぎ (=持ち主推定で本人扱いにした) を記録。
+          // mypage が一度だけ「引き継ぎました (違う場合は取り消し)」バナーを出す (塾長承認の通知+取り消し式)。
+          // タグ照合 (moshi split/rescue) は持ち主が証明済みなので記録しない
+          recordInheritNotice(baseKey, sid);
+        }
         else if (cur === legacy) { saved = true; }             // 既に同じ内容が入っている
       }
       if (!saved) saved = quarantine(baseKey, legacy);
@@ -348,6 +354,55 @@ window.AI_JUKU_PER_STUDENT_CACHE_KEYS = [
       if (allSaved) localStorage.removeItem(baseKey);
     } catch (_) {}
   }
+
+  // 2026-07-21 [inherit-notice] 引き継ぎ通知マーカー (生徒別キー・値は引き継いだ baseKey の配列)。
+  // 生徒が「自分のものではない」を押したら aiJukuUndoInherit がバケットごと隔離へ退避して取り消す
+  function inheritNoticeKey(sid) { return 'ai_juku_inherit_notice__' + sid; }
+  function recordInheritNotice(baseKey, sid) {
+    try {
+      var k = inheritNoticeKey(sid);
+      var raw = localStorage.getItem(k);
+      var arr = raw ? JSON.parse(raw) : [];
+      if (!(arr instanceof Array)) arr = [];
+      var found = false;
+      for (var i = 0; i < arr.length; i++) { if (arr[i] === baseKey) { found = true; break; } }
+      if (!found) arr.push(baseKey);
+      localStorage.setItem(k, JSON.stringify(arr));
+    } catch (_) {}
+  }
+  // mypage のバナーが使う公開 API。sid は数字のみ (この file の規律)
+  window.aiJukuGetInheritNotice = function (sid) {
+    if (!/^\d+$/.test(String(sid || ''))) return [];
+    try {
+      var arr = JSON.parse(localStorage.getItem(inheritNoticeKey(String(sid))) || '[]');
+      return (arr instanceof Array) ? arr : [];
+    } catch (_) { return []; }
+  };
+  window.aiJukuDismissInheritNotice = function (sid) {
+    if (!/^\d+$/.test(String(sid || ''))) return;
+    try { localStorage.removeItem(inheritNoticeKey(String(sid))); } catch (_) {}
+  };
+  window.aiJukuUndoInherit = function (sid) {
+    if (!/^\d+$/.test(String(sid || ''))) return false;
+    sid = String(sid);
+    var keys = window.aiJukuGetInheritNotice(sid);
+    var allMoved = true;
+    for (var i = 0; i < keys.length; i++) {
+      var baseKey = keys[i];
+      // baseKey は自分が記録した文字列だが、念のため素性を検査 (localStorage 改竄で任意キーを消させない)
+      if (typeof baseKey !== 'string' || !/^[a-z0-9_]+$/i.test(baseKey)) continue;
+      try {
+        var bk = baseKey + '__' + sid;
+        var val = localStorage.getItem(bk);
+        if (val === null) continue;
+        // 隔離へ退避できた時だけバケットを消す (コピー無し削除の禁止はここでも同じ)
+        if (quarantine(baseKey, val)) localStorage.removeItem(bk);
+        else allMoved = false;
+      } catch (_) { allMoved = false; }
+    }
+    if (allMoved) window.aiJukuDismissInheritNotice(sid);
+    return allMoved;
+  };
 
   // 2026-07-21 [xstudent-batch2] 隔離からの救出。模試履歴はエントリに studentId タグがあるので、
   // 「後からログインした本人」のぶんを隔離スロットから回収できる (review 指摘: 救出路が無いと
