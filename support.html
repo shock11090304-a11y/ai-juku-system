@@ -166,6 +166,13 @@
             <a href="legal.html#privacy" target="_blank">プライバシーポリシー</a>に同意します *
           </label>
         </div>
+        <!-- 🛡️ honeypot: 人間には不可視。bot が埋めたらサーバが静かに破棄 (course-applications と同じ) -->
+        <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
+          <label for="contactWebsite">Website</label>
+          <input type="text" id="contactWebsite" name="website" tabindex="-1" autocomplete="off">
+        </div>
+        <!-- 文字色 #fca5a5 = 暗背景で 9.26:1 (review 実測: #b91c1c は 2.71:1 で WCAG AA 未達だった) -->
+        <div id="contactError" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.4);border-radius:8px;padding:0.8rem;margin-bottom:0.8rem;color:#fca5a5;font-size:0.88rem;line-height:1.6;"></div>
         <button type="submit" class="btn-primary btn-lg btn-block">送信する</button>
       </form>
       <div id="contactSuccess" class="contact-success" style="display:none;">
@@ -259,27 +266,59 @@
       });
     });
 
-    document.getElementById('contactForm').addEventListener('submit', (e) => {
+    // 📮 2026-07-21: 実送信化。旧実装は localStorage に書いて成功画面を出すだけ (サーバに届かない
+    // 偽成功) で、生徒の問い合わせが 1 件も届いていなかった。失敗時は偽成功を絶対に出さず、
+    // 入力値を残したままエラー + 代替連絡先を案内する
+    document.getElementById('contactForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const ticketId = 'AJ' + Date.now().toString(36).toUpperCase();
-      const ticket = {
-        ticketId,
+      const form = document.getElementById('contactForm');
+      const btn = form.querySelector('button[type="submit"]');
+      const errBox = document.getElementById('contactError');
+      if (errBox) errBox.style.display = 'none';
+      const payload = {
         name: document.getElementById('contactName').value,
         email: document.getElementById('contactEmail').value,
         category: document.getElementById('contactCategory').value,
         subject: document.getElementById('contactSubject').value,
         message: document.getElementById('contactMessage').value,
-        createdAt: new Date().toISOString(),
+        bot_field: (document.getElementById('contactWebsite') || {}).value || '',  // honeypot
       };
-      const tickets = JSON.parse(localStorage.getItem('ai_juku_support_tickets') || '[]');
-      tickets.push(ticket);
-      localStorage.setItem('ai_juku_support_tickets', JSON.stringify(tickets));
-
-      document.getElementById('contactForm').style.display = 'none';
-      document.getElementById('ticketId').textContent = ticketId;
-      document.getElementById('contactSuccess').style.display = 'block';
-
-      if (window.track) window.track('support_ticket_created', { category: ticket.category });
+      const prevLabel = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = '送信中…'; }
+      // dev (localhost:8090 静的サーバ) では rewrite が無いので API を 8000 に向ける (enrollment.html と同じ shim)
+      const API_BASE = (window.location.origin.includes(':8090')) ? 'http://localhost:8000' : '';
+      try {
+        const res = await fetch(API_BASE + '/api/support/ticket', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data || !data.ok) {
+          // FastAPI 422 は detail が配列 → 生徒向けの言葉に置き換える
+          let msg = data && typeof data.detail === 'string' ? data.detail : '';
+          if (!msg && res.status === 422) msg = 'メールアドレスの形式を確認してください';
+          if (!msg) msg = '送信に失敗しました (HTTP ' + res.status + ')';
+          throw new Error(msg);
+        }
+        form.style.display = 'none';
+        document.getElementById('ticketId').textContent = data.ticket_code || '受付済み';
+        document.getElementById('contactSuccess').style.display = 'block';
+        if (window.track) window.track('support_ticket_created', { category: payload.category });
+      } catch (err) {
+        // fetch の network 例外は英語 ("Failed to fetch") のまま出るので日本語に写像
+        const msg = (err instanceof TypeError) ? '通信に失敗しました。ネットワーク接続をご確認ください'
+          : (err && err.message) ? err.message : '送信に失敗しました';
+        if (errBox) {
+          errBox.textContent = '⚠ ' + msg + ' — 時間をおいて再送するか、support@trillion-ai-juku.com へ直接メールしてください (入力内容はこの画面に残っています)。';
+          errBox.style.display = 'block';
+          errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          alert('送信に失敗しました。時間をおいて再送するか、support@trillion-ai-juku.com へメールしてください。');
+        }
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = prevLabel; }
+      }
     });
 
     function openChat() {

@@ -21,6 +21,7 @@ from datetime import datetime, date, timezone, timedelta, time as dt_time
 import os
 import json
 import re
+import secrets
 import sqlite3
 import threading
 import hmac
@@ -1423,6 +1424,22 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_course_applications_status ON course_applications(status, created_at);
     CREATE INDEX IF NOT EXISTS idx_course_applications_email ON course_applications(email, status);
+    -- サポート問い合わせ (2026-07-21: support.html は localStorage に書くだけの偽成功フォームで
+    -- 問い合わせが 1 件も届いていなかった。DB が正・メールは通知。詳細は /api/support/ticket)
+    CREATE TABLE IF NOT EXISTS support_tickets (
+        id {pk},
+        ticket_code TEXT NOT NULL,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        category TEXT,
+        subject TEXT,
+        message TEXT NOT NULL,
+        ip TEXT,
+        notified INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'open',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status, created_at);
     -- 塾長→生徒メッセージ機能 (Phase 3 - email only, 塾長指示 2026-05-05)
     CREATE TABLE IF NOT EXISTS messages (
         id {pk},
@@ -44971,6 +44988,121 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
             log.warning(f"[CourseApp] admin email failed: {ee}")
 
     return {"ok": True, "application_id": new_id, "message": "お申込ありがとうございます。塾長から1-2営業日以内にご連絡いたします。"}
+
+
+class SupportTicketRequest(BaseModel):
+    name: str
+    email: EmailStr
+    category: Optional[str] = None
+    subject: Optional[str] = None
+    message: str
+    bot_field: Optional[str] = None  # 🛡️ honeypot (course-applications と同じサーバ側検証)
+
+
+# 🛡️ 全体日次 cap (review 指摘): per-key 制限は XFF 偽装+email 回転で迂回できるため、
+# DB 行の書き込み総量に独立の頭打ちを置く (disk-fill DoS の上限 = 200行×~5.5KB ≒ 1.1MB/日)。
+# curriculum の独立カウンタと同じ設計 (共有 _RATE_LIMIT_STORE に載せない理由も同じ)。
+# 超過は 429 の日本語 detail = client がメール代替案内を必ず出す (静かな損失は作らない)
+_SUPPORT_DAILY_CAP_STATE = {"day": "", "count": 0}
+
+
+@app.post("/api/support/ticket")
+def public_support_ticket(payload: SupportTicketRequest, request: Request):
+    """公開: サポート問い合わせ。2026-07-21 まで support.html は localStorage に書くだけの
+    偽成功フォームで、生徒の問い合わせが 1 件もサーバに届いていなかった (さらに 18ec7ac からは
+    生徒切替 purge で消えていた)。DB (support_tickets) が正・メールは通知。
+    通知メールが失敗しても DB 保存済みなら受付成功を返す (問い合わせを二度と黙って失わない)。"""
+    if (payload.bot_field or "").strip():
+        # ip 入りで記録 (review 指摘: 被害報告が来たとき「bot の波」か「autofill 誤爆の実害者」かを判別できるように)
+        log.info(f"[Support] honeypot tripped, silently dropping (no insert/notify) ip={_client_ip(request)}")
+        return {"ok": True, "ticket_code": None}
+    if not _origin_allowed(request):
+        raise HTTPException(status_code=403, detail="このページからは送信できませんでした。サイトのサポートページから開き直してお試しください。")
+    # Vercel rewrite 経由で _client_ip が共有 egress に縮退するため IP 枠は緩め、
+    # abuse 抑止の本丸は honeypot + email 単位 (course-applications と同じ設計判断)
+    _check_rate_limit_ip(request, bucket="support_ticket", limit=30, window=3600)
+    # 全体日次 cap (UTC 日付キー・env SUPPORT_GLOBAL_DAILY_CAP 既定200・0で無効化はしない=最低1)
+    _today_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if _SUPPORT_DAILY_CAP_STATE["day"] != _today_utc:
+        _SUPPORT_DAILY_CAP_STATE["day"] = _today_utc
+        _SUPPORT_DAILY_CAP_STATE["count"] = 0
+    _daily_cap = max(1, int(os.getenv("SUPPORT_GLOBAL_DAILY_CAP", "200") or 200))
+    if _SUPPORT_DAILY_CAP_STATE["count"] >= _daily_cap:
+        log.warning(f"[Support] global daily cap ({_daily_cap}) hit — likely abuse; rejecting with 429")
+        raise HTTPException(status_code=429, detail="本日の受付上限に達しました。お手数ですが support@trillion-ai-juku.com へ直接メールでご連絡ください。")
+    email_lower = (payload.email or "").lower().strip()
+    _check_rate_limit_value(email_lower, bucket="support_ticket_email", limit=5, window=3600)
+    name = _sanitize_text(payload.name, 100)
+    if not name:
+        raise HTTPException(status_code=400, detail="お名前は必須です")
+    category = _sanitize_text(payload.category, 50)
+    subject = _sanitize_text(payload.subject, 200)
+    message = _sanitize_text(payload.message, 5000)
+    if not message:
+        raise HTTPException(status_code=400, detail="お問い合わせ内容は必須です")
+    ticket_code = "AJ-" + secrets.token_hex(4).upper()
+    ip = _client_ip(request)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO support_tickets (ticket_code, name, email, category, subject, message, ip) "
+            "VALUES (?,?,?,?,?,?,?) RETURNING id",
+            (ticket_code, name, email_lower, category, subject, message, ip),
+        )
+        returned = c.fetchone()
+        new_id = returned["id"] if returned else None
+        conn.commit()
+        _SUPPORT_DAILY_CAP_STATE["count"] += 1
+        log.info(f"[Support] new ticket id={new_id} code={ticket_code} email={email_lower} ip={ip}")
+    finally:
+        conn.close()
+
+    # 塾長 email 通知 (course-applications と同じ受信箱保護 cap。抑制されてもチケットは保存済み)
+    admin_to = os.getenv("DAILY_SNS_TO_EMAIL") or os.getenv("MONITORING_TO_EMAIL")
+    if not admin_to or not RESEND_API_KEY:
+        # 設定欠落は通知が「静かに送られないだけ」になる (review 指摘) — 気づけるよう毎回 warning
+        log.warning(f"[Support] notify not configured (admin_to={'set' if admin_to else 'MISSING'}, resend={'set' if RESEND_API_KEY else 'MISSING'}); ticket id={new_id} saved but unnotified")
+    _notify_ok = True
+    if admin_to:
+        try:
+            _check_rate_limit_value(admin_to, bucket="support_admin_notify", limit=30, window=3600)
+        except HTTPException:
+            _notify_ok = False
+            log.warning(f"[Support] admin notify suppressed (hourly cap); ticket id={new_id} still saved")
+        except Exception:
+            pass
+    if admin_to and RESEND_API_KEY and _notify_ok:
+        try:
+            body_text = (
+                f"塾長へ\n\n"
+                f"サポートフォームから問い合わせが届きました。\n\n"
+                f"## 問い合わせ ({ticket_code})\n"
+                f"お名前: {name}\n"
+                f"メール: {email_lower}\n"
+                f"カテゴリ: {category or '未選択'}\n"
+                f"件名: {subject or '(無題)'}\n\n"
+                f"{message}\n\n"
+                f"※ 返信は {email_lower} 宛に直接どうぞ (このメールへの返信は届きません)。"
+            )
+            _send_res = _send_message_email(admin_to, f"📮 サポート問い合わせ: {name} ({category or 'その他'})", body_text, student_name="塾長")
+            # _send_message_email は失敗しても raise せず {"sent": False} を返す (review 指摘) —
+            # sent 成功時だけ notified=1 (このフラグは将来の「未通知チケット再送」の根拠になるため嘘を書かない)
+            if _send_res.get("sent") and new_id:
+                try:
+                    conn2 = db()
+                    c2 = conn2.cursor()
+                    c2.execute("UPDATE support_tickets SET notified = 1 WHERE id = ?", (new_id,))
+                    conn2.commit()
+                    conn2.close()
+                except Exception:
+                    pass
+            elif not _send_res.get("sent"):
+                log.warning(f"[Support] admin email not sent (ticket id={new_id} still saved): {_send_res.get('error')}")
+        except Exception as ee:
+            log.warning(f"[Support] admin email failed (ticket id={new_id} still saved): {ee}")
+
+    return {"ok": True, "ticket_code": ticket_code}
 
 
 @app.get("/api/admin/course-applications")
