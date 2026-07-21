@@ -150,7 +150,15 @@ window.AI_JUKU_PER_STUDENT_CACHE_KEYS = [
   'ai_juku_last_curriculum', // 学習プラン取込の一時バッファ (確定分は正=サーバ curricula)
   'ai_juku_students',        // 🔑 生徒名簿=氏名PII。残すと index.html の生徒切替ドロップダウンに
                              //   前生徒の氏名が出る。正=サーバ (/api/auth/me → applyVerifiedStudent)
-  'ai_juku_current_student'  // 🔑 表示ポインタ。上と対で再構築される
+  'ai_juku_current_student', // 🔑 表示ポインタ。上と対で再構築される
+  // --- 2026-07-21 [xstudent-batch2] 棚卸しで発見した未処置キー (使い捨て/統計クラス → 破棄で閉鎖) ---
+  'ai_juku_email_log',       // 🔑 旧メール送信ログ=保護者メール PII。正無し・使い捨てログ
+  'ai_juku_support_tickets', // 🔑 サポートフォーム下書き=氏名/メール PII (書き込みのみで読み手無し)
+  'ai_juku_session_stats_v1',// セッション正答率/苦手単元 (ai_juku_stats と同クラスの表示統計)
+  'ai_juku_problem_stats_v1',// 問題別 正答率カウンタ (同上)
+  'ai_juku_problem_sessions',// 生成済み問題セットのキャッシュ (~150KB×15 上限・再生成可能)
+  'ai_juku_vocab_progress',  // english-exam 内蔵単語トレーナーのカウント (SRS 本体はサーバ側で別物)
+  'ai_juku_question_issues'  // オフライン時の問題報告バッファ (再送実装なし=死蔵。PII 無し)
 ];
 
 // ==========================================================================
@@ -291,6 +299,97 @@ window.AI_JUKU_PER_STUDENT_CACHE_KEYS = [
     } catch (_) {}
   }
 
+  // 2026-07-21 [xstudent-batch2] 模試履歴のように「各エントリが studentId タグを持つ配列」の移行。
+  // ⚠️ タグの数字だけでは「実生徒 ID」と「匿名デモ生徒 ID (app.js の seedStudents は 1,2,3…)」を
+  //   区別できない。タグごとに __<tag> へ配ると、匿名時代のデモ模試が実在の若番生徒のバケットへ
+  //   合流し得る (成績記録の汚染 = 消失より悪い)。→ 保守的に「今ログイン中の本人タグだけ引き取り、
+  //   それ以外 (他タグ/タグ無し) は隔離」。他の実生徒のぶんは本人がこの端末で先にログインすれば
+  //   その時の本ルーチンで自分のバケットに入り、後手なら隔離 (救出可能・共有キーからは消える)。
+  // 部分失敗時は旧キーを残し、再実行は内容一致 dedupe で冪等
+  function splitMigrateTagged(baseKey, sid) {
+    if (!sid) return;
+    var raw = null;
+    try { raw = localStorage.getItem(baseKey); } catch (_) { return; }
+    if (raw === null) return;
+    try {
+      var arr = JSON.parse(raw);
+      if (!(arr instanceof Array)) {
+        if (quarantine(baseKey, raw)) localStorage.removeItem(baseKey);
+        return;
+      }
+      var mine = [];
+      var others = [];
+      for (var i = 0; i < arr.length; i++) {
+        var e = arr[i];
+        var tag = (e && e.studentId !== null && e.studentId !== undefined) ? String(e.studentId) : '';
+        if (tag === String(sid)) mine.push(e); else others.push(e);
+      }
+      var allSaved = true;
+      if (mine.length) {
+        try {
+          var tk = baseKey + '__' + sid;
+          var curRaw = localStorage.getItem(tk);
+          var cur = curRaw ? JSON.parse(curRaw) : [];
+          if (!(cur instanceof Array)) cur = [];
+          // 内容一致 dedupe: 部分失敗→再実行で同じ行を二重に積まない
+          var seen = {};
+          for (var c = 0; c < cur.length; c++) { try { seen[JSON.stringify(cur[c])] = 1; } catch (_) {} }
+          for (var g = 0; g < mine.length; g++) {
+            var sig = '';
+            try { sig = JSON.stringify(mine[g]); } catch (_) {}
+            if (!sig || !seen[sig]) cur.push(mine[g]);
+          }
+          localStorage.setItem(tk, JSON.stringify(cur));
+        } catch (_) { allSaved = false; }
+      }
+      if (others.length) {
+        if (!quarantine(baseKey, JSON.stringify(others))) allSaved = false;
+      }
+      if (allSaved) localStorage.removeItem(baseKey);
+    } catch (_) {}
+  }
+
+  // 2026-07-21 [xstudent-batch2] 隔離からの救出。模試履歴はエントリに studentId タグがあるので、
+  // 「後からログインした本人」のぶんを隔離スロットから回収できる (review 指摘: 救出路が無いと
+  // 共用端末で2番目にログインした生徒の自己記録が見かけ上消えたままになる)。タグの無いキー
+  // (exam-prep 等) は持ち主を証明できないため対象外。スロット内の非配列 (blob ごと隔離) は触らない。
+  // 回収先への保存が成功してからスロットを縮める (失敗時はスロット無傷=データ喪失なし)
+  function rescueTaggedFromQuarantine(baseKey, sid) {
+    if (!sid) return;
+    for (var i = 0; i < 5; i++) {
+      var k = baseKey + '__unattributed' + (i === 0 ? '' : ('_' + i));
+      var raw = null;
+      try { raw = localStorage.getItem(k); } catch (_) { continue; }
+      if (raw === null) continue;
+      try {
+        var arr = JSON.parse(raw);
+        if (!(arr instanceof Array)) continue;
+        var mine = [];
+        var rest = [];
+        for (var j = 0; j < arr.length; j++) {
+          var e = arr[j];
+          var tag = (e && e.studentId !== null && e.studentId !== undefined) ? String(e.studentId) : '';
+          if (tag === String(sid)) mine.push(e); else rest.push(e);
+        }
+        if (!mine.length) continue;
+        var tk = baseKey + '__' + sid;
+        var curRaw = localStorage.getItem(tk);
+        var cur = curRaw ? JSON.parse(curRaw) : [];
+        if (!(cur instanceof Array)) cur = [];
+        var seen = {};
+        for (var c = 0; c < cur.length; c++) { try { seen[JSON.stringify(cur[c])] = 1; } catch (_) {} }
+        for (var m = 0; m < mine.length; m++) {
+          var sig = '';
+          try { sig = JSON.stringify(mine[m]); } catch (_) {}
+          if (!sig || !seen[sig]) cur.push(mine[m]);
+        }
+        localStorage.setItem(tk, JSON.stringify(cur));
+        if (rest.length) localStorage.setItem(k, JSON.stringify(rest));
+        else localStorage.removeItem(k);
+      } catch (_) {}
+    }
+  }
+
   try {
     var hasToken = !!localStorage.getItem('ai_juku_session_token');
     var sid = hasToken ? currentSid() : '';
@@ -300,6 +399,17 @@ window.AI_JUKU_PER_STUDENT_CACHE_KEYS = [
     // ★順序が重要: 移行判定は ai_juku_students / OWNER_KEY を証拠に使うので、破棄より先に行う。
     migrateLegacyKey(CURRICULUM_BASE_KEY, sid);
     migrateLegacyKey(EXAM_HISTORY_BASE_KEY, sid);
+    // 2026-07-21 [xstudent-batch2] 追加スコープ化。exam_prep = 定期テスト予定 (学校名・試験日・
+    // 範囲。mypage widget が今まで全生徒混載で表示していた)。referral = 紹介コード/履歴 (前生徒の
+    // コードを次生徒が引き継ぐと報酬の誤帰属)。いずれもタグ無し単一 blob → 持ち主ヒューリスティック
+    migrateLegacyKey('ai_juku_exam_prep__exams', sid);
+    migrateLegacyKey('ai_juku_referral__my_code', sid);
+    migrateLegacyKey('ai_juku_referral__history', sid);
+    // 模試履歴はエントリ毎 studentId タグ → 本人タグのみ引き取り・他タグ/タグ無しは隔離
+    // (匿名は sid='' で no-op = 旧キー継続。デモ ID と実 ID の衝突汚染を避けるため多バケット配布はしない)
+    splitMigrateTagged('ai_juku_moshi_history', sid);
+    // 過去に隔離された自分タグの行はここで回収 (2番目以降にログインした本人の帰り道)
+    rescueTaggedFromQuarantine('ai_juku_moshi_history', sid);
     if (!sid) return;                                    // 未ログイン: 破棄はしない
     if (localStorage.getItem(OWNER_KEY) === sid) return; // 同一生徒: 何もしない
     // 生徒が変わった (または本ガード初回) → 再取得可能な per-student キャッシュのみ破棄。
@@ -307,6 +417,14 @@ window.AI_JUKU_PER_STUDENT_CACHE_KEYS = [
     window.AI_JUKU_PER_STUDENT_CACHE_KEYS.forEach(function (k) {
       try { localStorage.removeItem(k); } catch (_) {}
     });
+    // exam_pool_cache:<exam>/<grade>/<section> は server プールの 5 分 TTL キャッシュ (再取得可能)。
+    // 前生徒の出題傾向が滲むだけだが、生徒切替のついでにまとめて捨てる (キーは可変なので prefix 走査)
+    try {
+      for (var pci = localStorage.length - 1; pci >= 0; pci--) {
+        var pck = localStorage.key(pci);
+        if (pck && pck.indexOf('exam_pool_cache:') === 0) localStorage.removeItem(pck);
+      }
+    } catch (_) {}
     // 🔑 名簿と表示ポインタだけは「削除」でなく「今の生徒1件で上書き」する。
     //   空のまま app.js に渡すと app.js:761-765 が seedStudents (デモ生徒 山田太郎/佐藤花子/
     //   鈴木一郎) を書き戻して永続化し、生徒切替ドロップダウンに架空の生徒が並ぶ。

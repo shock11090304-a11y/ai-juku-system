@@ -78,7 +78,9 @@ function renderFamilyDashboard() {
   const info = getPlanInfo();
   const students = state.students || [];
   const stats = storage.get(STORAGE_KEYS.STATS, { total: 0 });
-  const moshiAll = JSON.parse(localStorage.getItem(STORAGE_KEYS.MOSHI_HISTORY) || '[]');
+  // 🔑 [xstudent-batch2] スコープ化後は getFamilyMoshiAll が名簿バケット+匿名+隔離内の名簿タグ行を
+  //   集約 (家族プランの横断表示は同一アカウント内なので正当。実装と注意点は関数側コメント参照)
+  const moshiAll = getFamilyMoshiAll();
 
   // 現プランが家族以外の場合はアップグレード案内
   if (info.maxStudents < 2) {
@@ -9428,11 +9430,54 @@ function exportAllData() {
 // ==========================================================================
 // 模試履歴ストック: 保存・一覧・詳細・削除・Vision連携
 // ==========================================================================
+// 🔑 2026-07-21 [xstudent-batch2] 模試履歴は生徒スコープ (ai_juku_moshi_history__<生徒ID>)。
+//   キー導出は cache-purge.js が単一ソース (aiJukuStudentScopedKey / aiJukuReadScoped)。
+//   旧グローバルキーは cache-purge.js の splitMigrateTagged が studentId タグで各バケットへ振り分け済み。
+//   匿名は旧キー継続 (782f2e5 の方針と同じ)。token 有り ID 未確定は保存を見送る (fail-closed:
+//   誤った生徒のバケットに書くくらいなら次のロードでやり直す)
 function getMoshiHistory() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEYS.MOSHI_HISTORY) || '[]');
+  try {
+    if (typeof window.aiJukuReadScoped === 'function') {
+      return JSON.parse(window.aiJukuReadScoped(STORAGE_KEYS.MOSHI_HISTORY) || '[]');
+    }
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.MOSHI_HISTORY) || '[]');
+  } catch { return []; }
 }
 function saveMoshiHistory(arr) {
-  localStorage.setItem(STORAGE_KEYS.MOSHI_HISTORY, JSON.stringify(arr));
+  let key = STORAGE_KEYS.MOSHI_HISTORY;
+  if (typeof window.aiJukuStudentScopedKey === 'function') {
+    const sk = window.aiJukuStudentScopedKey(STORAGE_KEYS.MOSHI_HISTORY);
+    if (sk === null) { console.warn('[moshi] 生徒ID未確定のため保存を見送り'); return; }
+    key = sk;
+  }
+  localStorage.setItem(key, JSON.stringify(arr));
+}
+// 家族ダッシュボード用: 名簿内の兄弟の模試バケットを明示 sid で読む (同一アカウント内の正当参照)。
+// 数字 sid 以外は読まない (cache-purge.js と同じ規律)
+function getMoshiHistoryFor(sid) {
+  if (sid === null || sid === undefined || !/^\d+$/.test(String(sid))) return [];
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.MOSHI_HISTORY + '__' + String(sid)) || '[]'); }
+  catch { return []; }
+}
+// 家族ダッシュボードの集約: 名簿バケット + __anon (匿名デモ) + 旧グローバル残置 + 隔離のうち
+// 名簿タグ行 (兄弟は自分の sid でログインしないため隔離に入ったままになる — 表示だけここで救済)。
+// 隔離行は移動しない (持ち主証明はタグのみ・データは隔離に残したまま読み出す)
+function getFamilyMoshiAll() {
+  const students = state.students || [];
+  let all = students.reduce((acc, s) => acc.concat(getMoshiHistoryFor(s.id)), []);
+  try { all = all.concat(JSON.parse(localStorage.getItem(STORAGE_KEYS.MOSHI_HISTORY + '__anon') || '[]')); } catch {}
+  try { all = all.concat(JSON.parse(localStorage.getItem(STORAGE_KEYS.MOSHI_HISTORY) || '[]')); } catch {}
+  try {
+    const rosterIds = new Set(students.map(s => String(s.id)));
+    for (let i = 0; i < 5; i++) {
+      const qk = STORAGE_KEYS.MOSHI_HISTORY + '__unattributed' + (i === 0 ? '' : ('_' + i));
+      const qraw = localStorage.getItem(qk);
+      if (!qraw) continue;
+      const qarr = JSON.parse(qraw);
+      if (Array.isArray(qarr)) qarr.forEach(e => { if (e && rosterIds.has(String(e.studentId))) all.push(e); });
+    }
+  } catch {}
+  return all;
 }
 
 function renderMoshiList() {

@@ -13,12 +13,29 @@
   'use strict';
   const STORAGE_KEY = 'ai_juku_exam_prep__exams';
 
+  // 🔑 2026-07-21 [xstudent-batch2] 定期テスト予定 (学校名・試験日・範囲) は生徒スコープ。
+  //   従来はグローバル1本で、mypage widget が共用端末で前生徒の学校名/試験日をそのまま表示していた。
+  //   キー導出は cache-purge.js が単一ソース (旧データの持ち主振り分け=migrateLegacyKey も同所)。
+  //   匿名は旧キー継続・token 有り ID 未確定は書かない (fail-closed)
   function _read() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    try {
+      if (typeof window.aiJukuReadScoped === 'function') {
+        return JSON.parse(window.aiJukuReadScoped(STORAGE_KEY) || '[]');
+      }
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    }
     catch { return []; }
   }
   function _write(exams) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(exams)); }
+    try {
+      let key = STORAGE_KEY;
+      if (typeof window.aiJukuStudentScopedKey === 'function') {
+        const sk = window.aiJukuStudentScopedKey(STORAGE_KEY);
+        if (sk === null) { console.warn('ExamPrep: 生徒ID未確定のため保存を見送り'); return; }
+        key = sk;
+      }
+      localStorage.setItem(key, JSON.stringify(exams));
+    }
     catch (e) { console.warn('ExamPrep storage write failed:', e); }
   }
   function _uid() {

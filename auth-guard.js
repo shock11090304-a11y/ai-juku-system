@@ -45,11 +45,20 @@
     var perStudentKeys = (window.AI_JUKU_PER_STUDENT_CACHE_KEYS && window.AI_JUKU_PER_STUDENT_CACHE_KEYS.length)
       ? window.AI_JUKU_PER_STUDENT_CACHE_KEYS
       : ['ai_juku_chat_history', 'ai_juku_stats', 'ai_juku_problem_history', 'ai_juku_activity',
-        'ai_juku_last_curriculum', 'ai_juku_students', 'ai_juku_current_student'];
+        'ai_juku_last_curriculum', 'ai_juku_students', 'ai_juku_current_student',
+        // 2026-07-21 [xstudent-batch2] cache-purge.js 側の配列と対で追加 (両方更新が掟)
+        'ai_juku_email_log', 'ai_juku_support_tickets', 'ai_juku_session_stats_v1',
+        'ai_juku_problem_stats_v1', 'ai_juku_problem_sessions', 'ai_juku_vocab_progress',
+        'ai_juku_question_issues'];
     // ⚠️ 生徒スコープ付きの ee_curriculum_v1__<生徒ID> は **絶対に消さない**。サーバに正が無く、
     //   ログアウトのたびに消すと本人が自分の学習プランと週チェックを復元不能に失う。
     //   別生徒からはキーが違うので読めない = 破棄しなくても漏洩は閉じている。
-    perStudentKeys.concat(['ai_juku_cache_owner_sid']).forEach(function (k) {
+    // 🔑 2026-07-21 [xstudent-batch2] ai_juku_cache_owner_sid はログアウトで **消さない** (tombstone)。
+    //   消すと「A がログアウト → B が初ログイン」の瞬間に持ち主証拠が無くなり、migrateLegacyKey の
+    //   単一持ち主ヒューリスティックが旧グローバルキー (exam-prep/referral 等) を B に相続させて
+    //   しまう (review 実証: B に A の学校名/紹介コードが出た)。残しておけば owner≠新sid の証拠に
+    //   なって隔離へ回る。同一生徒の再ログインは owner一致で今までどおり何も壊れない
+    perStudentKeys.forEach(function (k) {
       try { localStorage.removeItem(k); } catch (_) {}
     });
     // ⚠️ 旧グローバルキー (ee_curriculum_v1 / ai_juku_eng_exam_history) はここでは **触らない**。

@@ -26,6 +26,29 @@
     catch (e) { console.warn('Referral storage write failed:', e); }
   }
 
+  // 🔑 2026-07-21 [xstudent-batch2] my_code / history は生徒スコープ (前生徒のコードを次生徒が
+  //   引き継ぐと紹介報酬の誤帰属になる)。used_code は「この端末からの申込の帰属」なので据え置き。
+  //   キー導出は cache-purge.js が単一ソース。旧グローバル値の持ち主振り分け (migrateLegacyKey)
+  //   も同所で実施済み。匿名は旧キー継続・token 有り ID 未確定は書かない (次ロードで再生成)
+  function _readScoped(baseKey, fallback) {
+    try {
+      if (typeof window.aiJukuReadScoped === 'function') {
+        const v = window.aiJukuReadScoped(baseKey);
+        return v ? JSON.parse(v) : fallback;
+      }
+    } catch { return fallback; }
+    return _read(baseKey, fallback);
+  }
+  function _writeScoped(baseKey, value) {
+    let key = baseKey;
+    if (typeof window.aiJukuStudentScopedKey === 'function') {
+      const sk = window.aiJukuStudentScopedKey(baseKey);
+      if (sk === null) { console.warn('Referral: 生徒ID未確定のため保存を見送り'); return; }
+      key = sk;
+    }
+    _write(key, value);
+  }
+
   function _generateCode(seed) {
     // 例: "AIJ-XXXX-YYYY" (英数大文字)
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -41,17 +64,17 @@
   }
 
   function getMyCode(student) {
-    let code = _read(LS_MY_CODE, null);
+    let code = _readScoped(LS_MY_CODE, null);
     if (!code) {
       code = _generateCode(student?.id || student?.email || 'guest');
-      _write(LS_MY_CODE, code);
+      _writeScoped(LS_MY_CODE, code);
     }
     return code;
   }
 
   function regenerateMyCode(student) {
     const code = _generateCode((student?.id || 'x') + '_' + Date.now());
-    _write(LS_MY_CODE, code);
+    _writeScoped(LS_MY_CODE, code);
     return code;
   }
 
@@ -65,7 +88,7 @@
     if (!/^AIJ-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(normalized)) {
       return { ok: false, error: '紹介コードの形式が正しくありません (例: AIJ-XXXX-YYYY)' };
     }
-    const myCode = _read(LS_MY_CODE, null);
+    const myCode = _readScoped(LS_MY_CODE, null);
     if (myCode === normalized) {
       return { ok: false, error: '自分の紹介コードは使用できません' };
     }
@@ -78,12 +101,12 @@
   }
 
   function getHistory() {
-    return _read(LS_HISTORY, []);
+    return _readScoped(LS_HISTORY, []);
   }
 
   function recordReferralSuccess(refereeIdentifier) {
     // 通常はサーバー側で確定するが、デモ表示用にlocalStorageへ反映
-    const hist = _read(LS_HISTORY, []);
+    const hist = _readScoped(LS_HISTORY, []);
     hist.push({
       id: 'r_' + Date.now(),
       referee: refereeIdentifier,
@@ -91,12 +114,12 @@
       reward: '1ヶ月無料',
       status: 'confirmed',
     });
-    _write(LS_HISTORY, hist);
+    _writeScoped(LS_HISTORY, hist);
     return hist;
   }
 
   function getRewardsSummary() {
-    const hist = _read(LS_HISTORY, []);
+    const hist = _readScoped(LS_HISTORY, []);
     return {
       totalReferrals: hist.length,
       monthsFree: hist.length,  // 1名 = 1ヶ月無料
