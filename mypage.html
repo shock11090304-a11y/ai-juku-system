@@ -178,6 +178,9 @@
       <!-- Quick Actions -->
       <section class="action-card-section aj-adv1">
         <div class="section-title"><h2>⚡ クイックアクション</h2></div>
+        <!-- 🎯 2026-07-22 塾長指示: クイックアクションは「主力だけを大きく」表示 (13ボタンで主力が埋もれ使いにくい問題)。
+             主力=使用実績上位5つ(問題演習3種+単語帳+AIチューター)を常時表示、他は下の「その他の機能」に折りたたむ。
+             利用データ: 問題演習8,210回/月・単語帳2,507回/月・チャット1,034回/月 が突出、英作文添削/学習計画/参考書は僅少。 -->
         <div class="action-buttons">
           <a href="quick-start.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(251,191,36,0.22),rgba(236,72,153,0.12));border:2px solid rgba(251,191,36,0.55);">
             <div class="action-icon">⚡</div>
@@ -195,48 +198,6 @@
               <div class="action-desc"><strong>苦手単元を選んで集中演習</strong>: 単元別プールから即スタート — 正答率 80% で習得卒業まで追跡</div>
             </div>
           </a>
-          <a href="index.html?openHistory=1" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(34,197,94,0.10));border:2px solid rgba(99,102,241,0.45);">
-            <div class="action-icon">📚</div>
-            <div>
-              <div class="action-title">解いた問題を再演習 <span class="action-badge-new">NEW</span></div>
-              <div class="action-desc">過去に解いた問題から「もう一度」を選んで復習</div>
-            </div>
-          </a>
-          <a href="index.html" class="action-btn primary">
-            <div class="action-icon">💬</div>
-            <div>
-              <div class="action-title">AIチューターに聞く</div>
-              <div class="action-desc">わからない問題をその場で解決</div>
-            </div>
-          </a>
-          <a href="index.html#tab-problems" class="action-btn" id="generateProblemsQuick">
-            <div class="action-icon">🧪</div>
-            <div>
-              <div class="action-title">問題を生成する</div>
-              <div class="action-desc">弱点を入力→オリジナル問題</div>
-            </div>
-          </a>
-          <a href="index.html#tab-essay" class="action-btn">
-            <div class="action-icon">✍️</div>
-            <div>
-              <div class="action-title">英作文を添削</div>
-              <div class="action-desc">書いた答案をAIがチェック</div>
-            </div>
-          </a>
-          <a href="index.html#tab-curriculum" class="action-btn">
-            <div class="action-icon">🎯</div>
-            <div>
-              <div class="action-title">学習計画を見る</div>
-              <div class="action-desc">志望校までのロードマップ</div>
-            </div>
-          </a>
-          <a href="textbook-generator.html" class="action-btn action-btn-highlight">
-            <div class="action-icon">📚</div>
-            <div>
-              <div class="action-title">自分の参考書を作る <span class="action-badge-new">NEW</span></div>
-              <div class="action-desc">弱点特化の教材をAIが執筆</div>
-            </div>
-          </a>
           <a href="nyushi-dojo.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(245,158,11,0.22),rgba(220,38,38,0.10));border:2px solid rgba(245,158,11,0.55);">
             <div class="action-icon">🏛️</div>
             <div>
@@ -251,24 +212,15 @@
               <div class="action-desc">忘却曲線対応 Leitner Box・科学的暗記</div>
             </div>
           </a>
-          <!-- 📚 配布プリント CTA (塾長指示 2026-05-26: クイックアクション内に追加) -->
-          <a href="#lessonPrintsSection" class="action-btn action-btn-highlight" id="quickActionLessonPrints" style="background:linear-gradient(135deg,rgba(59,130,246,0.22),rgba(168,85,247,0.12));border:2px solid rgba(59,130,246,0.55);">
-            <div class="action-icon">📚</div>
+          <a href="index.html" class="action-btn primary">
+            <div class="action-icon">💬</div>
             <div>
-              <div class="action-title">配布プリント <span class="action-badge-new">NEW</span> <span id="lpQuickCount" style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">…</span></div>
-              <div class="action-desc"><strong>解説付き PDF を配布</strong>: 授業用 / 自習用 / 演習問題集 + 詳細解説 ─ 弱点に合わせて AI が推薦</div>
-            </div>
-          </a>
-          <!-- 🗂️ 教材ライブラリ (塾長指示 2026-06-19: kyozai.html ハブへの導線) -->
-          <a href="kyozai.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(16,185,129,0.20),rgba(59,130,246,0.10));border:2px solid rgba(16,185,129,0.55);">
-            <div class="action-icon">🗂️</div>
-            <div>
-              <div class="action-title">教材ライブラリ <span class="action-badge-new">NEW</span> <span style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">無料あり</span></div>
-              <div class="action-desc"><strong>動く解説・ドリル・単語帳・PDF を1画面で</strong>: 科目で探せる教材カタログ ─ 相加相乗の「動く解説」など登録なしで試せる教材も</div>
+              <div class="action-title">AIチューターに聞く</div>
+              <div class="action-desc">わからない問題をその場で解決</div>
             </div>
           </a>
           <!-- 🏫 塾生メニュー (塾長指示 2026-06-25): 通塾生のみ表示 (下部 inline script が feed 200 で display 解除)。
-               授業ファイル配布 / 録画 / 出欠連絡 = class.html。AI 学習 SaaS とは別系統の塾生専用機能。 -->
+               通塾生の主要ハブなので折りたたまず主力側に残す。AI 学習 SaaS とは別系統の塾生専用機能。 -->
           <a href="class.html" id="classMenuCard" class="action-btn action-btn-highlight" style="display:none;background:linear-gradient(135deg,rgba(129,140,248,0.20),rgba(167,139,250,0.10));border:2px solid rgba(129,140,248,0.55);">
             <div class="action-icon">📚</div>
             <div>
@@ -277,6 +229,69 @@
             </div>
           </a>
         </div>
+        <!-- ＋ その他の機能: 使用実績の低い導線は折りたたみ (塾長指示 2026-07-22)。機能は残す=新機能の発見機会を潰さない。
+             開閉シェブロン(▾・開くと反転)で「展開できる」ことを明示 (3並列レビュー指摘: インジケータ不在で7機能が隠れていると気づきにくい)。 -->
+        <style>
+          details.action-more > summary::-webkit-details-marker{display:none;}
+          details.action-more > summary .aj-more-chev{transition:transform .2s;}
+          details.action-more[open] > summary .aj-more-chev{transform:rotate(180deg);}
+        </style>
+        <details class="action-more" style="margin-top:0.6rem;">
+          <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; gap:0.4rem; padding:0.7rem 1rem; border:1px dashed rgba(148,163,184,0.4); border-radius:12px; color:#cbd5e1; font-weight:700; font-size:0.85rem; background:rgba(148,163,184,0.06);"><span>🔧 その他の機能（7）｜英作文添削・学習計画・参考書 など</span><span class="aj-more-chev" style="margin-left:auto;">▾</span></summary>
+          <div class="action-buttons" style="margin-top:0.6rem;">
+            <a href="index.html?openHistory=1" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(34,197,94,0.10));border:2px solid rgba(99,102,241,0.45);">
+              <div class="action-icon">📚</div>
+              <div>
+                <div class="action-title">解いた問題を再演習 <span class="action-badge-new">NEW</span></div>
+                <div class="action-desc">過去に解いた問題から「もう一度」を選んで復習</div>
+              </div>
+            </a>
+            <a href="index.html#tab-problems" class="action-btn" id="generateProblemsQuick">
+              <div class="action-icon">🧪</div>
+              <div>
+                <div class="action-title">問題を生成する</div>
+                <div class="action-desc">弱点を入力→オリジナル問題</div>
+              </div>
+            </a>
+            <a href="index.html#tab-essay" class="action-btn">
+              <div class="action-icon">✍️</div>
+              <div>
+                <div class="action-title">英作文を添削</div>
+                <div class="action-desc">書いた答案をAIがチェック</div>
+              </div>
+            </a>
+            <a href="index.html#tab-curriculum" class="action-btn">
+              <div class="action-icon">🎯</div>
+              <div>
+                <div class="action-title">学習計画を見る</div>
+                <div class="action-desc">志望校までのロードマップ</div>
+              </div>
+            </a>
+            <a href="textbook-generator.html" class="action-btn action-btn-highlight">
+              <div class="action-icon">📚</div>
+              <div>
+                <div class="action-title">自分の参考書を作る <span class="action-badge-new">NEW</span></div>
+                <div class="action-desc">弱点特化の教材をAIが執筆</div>
+              </div>
+            </a>
+            <!-- 📚 配布プリント CTA (塾長指示 2026-05-26)。lpQuickCount は id で JS が件数を注入 (位置非依存) -->
+            <a href="#lessonPrintsSection" class="action-btn action-btn-highlight" id="quickActionLessonPrints" style="background:linear-gradient(135deg,rgba(59,130,246,0.22),rgba(168,85,247,0.12));border:2px solid rgba(59,130,246,0.55);">
+              <div class="action-icon">📚</div>
+              <div>
+                <div class="action-title">配布プリント <span class="action-badge-new">NEW</span> <span id="lpQuickCount" style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">…</span></div>
+                <div class="action-desc"><strong>解説付き PDF を配布</strong>: 授業用 / 自習用 / 演習問題集 + 詳細解説 ─ 弱点に合わせて AI が推薦</div>
+              </div>
+            </a>
+            <!-- 🗂️ 教材ライブラリ (塾長指示 2026-06-19: kyozai.html ハブへの導線) -->
+            <a href="kyozai.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(16,185,129,0.20),rgba(59,130,246,0.10));border:2px solid rgba(16,185,129,0.55);">
+              <div class="action-icon">🗂️</div>
+              <div>
+                <div class="action-title">教材ライブラリ <span class="action-badge-new">NEW</span> <span style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">無料あり</span></div>
+                <div class="action-desc"><strong>動く解説・ドリル・単語帳・PDF を1画面で</strong>: 科目で探せる教材カタログ ─ 相加相乗の「動く解説」など登録なしで試せる教材も</div>
+              </div>
+            </a>
+          </div>
+        </details>
       </section>
     </div><!-- /dashboard-grid (最上部: 合格可能性+クイックアクション) -->
 
