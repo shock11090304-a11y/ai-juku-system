@@ -1,0 +1,110 @@
+[
+ {
+  "word": "biodiversity",
+  "pos": "noun",
+  "meaning_jp": "生物多様性",
+  "example_en": "Deforestation poses a grave threat to global biodiversity.",
+  "example_jp": "森林破壊は、地球の生物多様性に対する重大な脅威となる。",
+  "level": "todai_kyodai",
+  "tags": "univ:todai"
+ },
+ {
+  "word": "presuppose",
+  "pos": "verb",
+  "meaning_jp": "前提とする",
+  "example_en": "Any argument for progress presupposes a shared idea of what is better.",
+  "example_jp": "進歩を求めるいかなる議論も、何がより良いかについての共有された観念を前提とする。",
+  "level": "todai_kyodai",
+  "tags": "univ:todai"
+ },
+ {
+  "word": "inherently",
+  "pos": "adverb",
+  "meaning_jp": "本質的に, もともと",
+  "example_en": "Language is inherently ambiguous, and no translation is ever perfect.",
+  "example_jp": "言語は本質的に曖昧であり、いかなる翻訳も完璧ではない。",
+  "level": "todai_kyodai",
+  "tags": "univ:todai"
+ },
+ {
+  "word": "arguably",
+  "pos": "adverb",
+  "meaning_jp": "おそらく, ほぼ間違いなく",
+  "example_en": "This is arguably the most influential book of the last century.",
+  "example_jp": "これはおそらく、前世紀で最も影響力のある本である。",
+  "level": "todai_kyodai",
+  "tags": "univ:todai"
+ },
+ {
+  "word": "paradoxically",
+  "pos": "adverb",
+  "meaning_jp": "逆説的に",
+  "example_en": "Paradoxically, having more choices can make us less satisfied.",
+  "example_jp": "逆説的に、より多くの選択肢を持つことは、私たちの満足度を下げうる。",
+  "level": "todai_kyodai",
+  "tags": "univ:todai"
+ },
+ {
+  "word": "fundamentally",
+  "pos": "adverb",
+  "meaning_jp": "根本的に, 基本的に",
+  "example_en": "The two philosophers disagree fundamentally about the nature of truth.",
+  "example_jp": "二人の哲学者は、真理の本質について根本的に意見を異にする。",
+  "level": "todai_kyodai",
+  "tags": "univ:todai"
+ },
+ {
+  "word": "reluctantly",
+  "pos": "adverb",
+  "meaning_jp": "しぶしぶ、いやいや",
+  "example_en": "They reluctantly agreed to the new plan.",
+  "example_jp": "彼らはしぶしぶ新しい計画に同意した。",
+  "level": "chihokkokuritsu",
+  "tags": ""
+ },
+ {
+  "word": "genuinely",
+  "pos": "adverb",
+  "meaning_jp": "心から、本当に",
+  "example_en": "I am genuinely grateful for your help.",
+  "example_jp": "あなたの助けに心から感謝しています。",
+  "level": "chihokkokuritsu",
+  "tags": ""
+ },
+ {
+  "word": "abruptly",
+  "pos": "adverb",
+  "meaning_jp": "突然、不意に",
+  "example_en": "The music stopped abruptly.",
+  "example_jp": "音楽が突然止まった。",
+  "level": "chihokkokuritsu",
+  "tags": ""
+ },
+ {
+  "word": "profoundly",
+  "pos": "adverb",
+  "meaning_jp": "深く、大いに",
+  "example_en": "His speech affected me profoundly.",
+  "example_jp": "彼の演説は私に深く影響を与えた。",
+  "level": "chihokkokuritsu",
+  "tags": ""
+ },
+ {
+  "word": "cautiously",
+  "pos": "adverb",
+  "meaning_jp": "慎重に、用心して",
+  "example_en": "She opened the door cautiously.",
+  "example_jp": "彼女は慎重にドアを開けた。",
+  "level": "chihokkokuritsu",
+  "tags": ""
+ },
+ {
+  "word": "loudly",
+  "pos": "adverb",
+  "meaning_jp": "大声で、大きな音で",
+  "example_en": "Don't talk so loudly in the classroom.",
+  "example_jp": "教室でそんなに大声で話さないで。",
+  "level": "eiken_g4",
+  "tags": ""
+ }
+]
