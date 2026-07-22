@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>document.documentElement.className='js';</script>
+<title>Trillion English Academy｜元代ゼミ講師が主宰するオンライン英語専門塾</title>
+<meta name="description" content="「丸暗記の排除」— 理論に基づく英文法の本当の理解と論理的読解力を養成。元代々木ゼミナール講師が主宰する、中学生〜高卒生対象のオンライン英語専門塾。全国どこからでもZoom生ライブ授業。2025年度は東大・阪大・早慶・医学部などに合格。">
+<meta name="theme-color" content="#0d1f3c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d1f3c'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='38' font-weight='700' fill='%23c8a24a' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E">
+
+<!-- OGP (SNSシェア時) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Trillion English Academy">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="Trillion English Academy｜オンライン英語専門塾">
+<meta property="og:description" content="「丸暗記の排除」理論で解く英語。元代々木ゼミナール講師が主宰。全国どこからでもZoom生ライブ。2025年度 東大・阪大・早慶・医学部 合格。">
+<meta property="og:url" content="https://trillion-ai-juku.com/academy.html">
+<meta name="twitter:card" content="summary">
+
+<style>
+  :root{
+    --navy:#0d1f3c;
+    --navy-2:#132a4f;
+    --navy-soft:#1c3a63;
+    --gold:#c8a24a;
+    --gold-2:#b8912f;
+    --gold-ink:#7a5f16;      /* 明るい背景上のテキスト用（AA準拠） */
+    --ivory:#faf6ec;
+    --ivory-2:#f3ecdc;
+    --paper:#ffffff;
+    --ink:#1b2537;
+    --ink-soft:#4a5875;
+    --line:#e4dcc8;
+    --line-navy:rgba(200,162,74,.28);
+    --shadow:0 18px 50px -24px rgba(13,31,60,.45);
+    --serif:Georgia,"Hiragino Mincho ProN","YuMincho","Yu Mincho","Noto Serif JP",serif;
+    --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic","Meiryo","Noto Sans JP",system-ui,sans-serif;
+    --wrap:1120px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--gothic);
+    color:var(--ink);
+    background:var(--ivory);
+    line-height:1.8;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.serif{font-family:var(--serif);letter-spacing:.01em}
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+  .wrap{max-width:var(--wrap);margin:0 auto;padding:0 22px}
+  section{scroll-margin-top:82px}
+  .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+  /* ===== ボタン ===== */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:.5em;
+    font-weight:800;font-size:1rem;line-height:1;
+    padding:1.05em 1.9em;border-radius:999px;cursor:pointer;
+    transition:transform .18s ease,box-shadow .18s ease,background .18s ease,color .18s ease;
+    border:1.5px solid transparent;white-space:nowrap;
+  }
+  .btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:var(--navy);box-shadow:0 12px 26px -12px rgba(200,162,74,.75)}
+  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 16px 32px -12px rgba(200,162,74,.9)}
+  .btn-outline{border-color:rgba(255,255,255,.6);color:#fff}
+  .btn-outline:hover{background:rgba(255,255,255,.12);transform:translateY(-2px)}
+  .btn-ink{border-color:var(--navy);color:var(--navy)}
+  .btn-ink:hover{background:var(--navy);color:#fff;transform:translateY(-2px)}
+
+  /* ===== ヘッダー ===== */
+  header.nav{
+    position:fixed;top:0;left:0;right:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 22px;transition:background .25s ease,box-shadow .25s ease,padding .25s ease;
+  }
+  header.nav.scrolled{background:rgba(13,31,60,.94);box-shadow:0 6px 24px -14px rgba(0,0,0,.6);padding:10px 22px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .brand{display:flex;align-items:center;gap:.6rem;color:#fff}
+  .brand .mono{
+    width:38px;height:38px;border-radius:10px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--gold),var(--gold-2));
+    color:var(--navy);font-family:var(--serif);font-weight:700;font-size:1.4rem;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .brand b{font-family:var(--serif);font-size:1.08rem;font-weight:700;letter-spacing:.02em;line-height:1.15;display:block}
+  .brand .jp{display:block;font-size:.62rem;letter-spacing:.22em;color:var(--gold);font-family:var(--gothic);font-weight:700}
+  nav.links{display:flex;align-items:center;gap:1.4rem}
+  nav.links a{color:rgba(255,255,255,.92);font-size:.9rem;font-weight:700;transition:color .15s}
+  nav.links a:hover{color:var(--gold)}
+  nav.links .btn{padding:.7em 1.3em;font-size:.85rem}
+
+  /* モバイルメニュー */
+  .m-menu{display:none;position:relative}
+  .m-menu>summary{list-style:none;cursor:pointer;width:40px;height:40px;border-radius:9px;border:1px solid var(--line-navy);color:#fff;font-size:1.15rem;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06)}
+  .m-menu>summary::-webkit-details-marker{display:none}
+  .m-panel{
+    position:absolute;right:0;top:calc(100% + 10px);min-width:210px;
+    background:var(--navy-2);border:1px solid var(--line-navy);border-radius:14px;padding:.5rem;
+    display:flex;flex-direction:column;gap:.15rem;box-shadow:0 22px 44px -18px rgba(0,0,0,.7);
+  }
+  .m-panel a{color:#fff;font-weight:700;font-size:.95rem;padding:.7rem .9rem;border-radius:9px}
+  .m-panel a:hover{background:rgba(200,162,74,.16);color:var(--gold)}
+
+  /* ===== ヒーロー ===== */
+  .hero{
+    position:relative;color:#fff;
+    background:
+      radial-gradient(1100px 520px at 82% -8%,rgba(200,162,74,.16),transparent 60%),
+      linear-gradient(160deg,var(--navy) 0%,#0a1830 55%,#0e2246 100%);
+    padding:150px 0 96px;overflow:hidden;
+  }
+  .hero::before{
+    content:"";position:absolute;inset:0;opacity:.5;
+    background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);
+    background-size:26px 26px;-webkit-mask-image:linear-gradient(180deg,#000,transparent);mask-image:linear-gradient(180deg,#000,transparent);
+  }
+  .hero .wrap{position:relative;z-index:1}
+  .hero-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:3rem;align-items:center}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:.5em;
+    font-size:.8rem;font-weight:800;letter-spacing:.12em;color:var(--gold);
+    border:1px solid var(--line-navy);border-radius:999px;padding:.5em 1.1em;margin-bottom:1.6rem;
+    background:rgba(200,162,74,.08);
+  }
+  .hero h1{
+    font-size:clamp(2rem,5.2vw,3.2rem);font-weight:700;line-height:1.32;margin-bottom:1.3rem;
+    text-shadow:0 2px 30px rgba(0,0,0,.3);text-wrap:balance;
+  }
+  .hero h1 .gold{color:var(--gold)}
+  .hero .lede{font-size:clamp(1rem,2.1vw,1.12rem);color:rgba(255,255,255,.88);max-width:640px;margin-bottom:2.2rem;font-weight:500}
+  .hero .lede b{color:#fff;font-weight:800}
+  .hero-cta{display:flex;flex-wrap:wrap;gap:.9rem;margin-bottom:2.2rem}
+  .hero-tags{display:flex;flex-wrap:wrap;gap:.6rem 1.4rem;font-size:.86rem;color:rgba(255,255,255,.74);font-weight:600}
+  .hero-tags span{display:inline-flex;align-items:center;gap:.45em}
+  .hero-tags .dot{color:var(--gold)}
+  /* ヒーロー実績カード */
+  .hero-proof{
+    background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
+    border:1px solid var(--line-navy);border-radius:18px;padding:1.7rem 1.7rem 1.5rem;
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 26px 60px -30px rgba(0,0,0,.7);
+  }
+  .hero-proof .hp-h{font-size:.78rem;font-weight:800;letter-spacing:.14em;color:var(--gold);text-transform:uppercase;margin-bottom:.7rem}
+  .hero-proof .hp-univ{font-family:var(--serif);font-size:1.05rem;line-height:1.7;color:#fff;margin-bottom:1.2rem}
+  .hero-proof .hp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;border-top:1px solid var(--line-navy);padding-top:1.1rem}
+  .hero-proof .hp-stats div{text-align:center}
+  .hero-proof .hp-stats b{font-family:var(--serif);font-size:1.7rem;font-weight:700;color:var(--gold);display:block;line-height:1}
+  .hero-proof .hp-stats span{font-size:.7rem;color:rgba(255,255,255,.72);font-weight:700}
+
+  /* ===== 汎用セクション ===== */
+  .sec{padding:84px 0}
+  .sec-head{text-align:center;max-width:720px;margin:0 auto 3rem}
+  .sec-kicker{font-size:.8rem;font-weight:800;letter-spacing:.2em;color:var(--gold-ink);text-transform:uppercase;margin-bottom:.8rem}
+  .sec-head h2{font-size:clamp(1.6rem,3.6vw,2.35rem);font-weight:700;color:var(--navy);line-height:1.4}
+  .sec-head p{margin-top:1rem;color:var(--ink-soft);font-size:1.02rem}
+  .rule{width:56px;height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-2));border-radius:2px;margin:1.1rem auto 0}
+
+  /* ===== 合格実績 ===== */
+  .results{background:linear-gradient(160deg,var(--navy),#0a1830);color:#fff;padding:80px 0}
+  .results .sec-head h2{color:#fff}
+  .results .sec-kicker{color:var(--gold)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:2.6rem}
+  .stat{
+    text-align:center;padding:1.8rem 1rem;border:1px solid var(--line-navy);border-radius:16px;
+    background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.01));
+  }
+  .stat .num{font-family:var(--serif);font-size:clamp(2.4rem,6vw,3.4rem);font-weight:700;color:var(--gold);line-height:1}
+  .stat .lbl{margin-top:.6rem;font-size:.9rem;font-weight:700;color:rgba(255,255,255,.88)}
+  .breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:16px}
+  .bd-card{border:1px solid var(--line-navy);border-radius:14px;padding:1.3rem 1.4rem;background:rgba(255,255,255,.03)}
+  .bd-card h3{font-family:var(--gothic);font-size:.82rem;letter-spacing:.08em;color:var(--gold);font-weight:800;margin-bottom:.7rem}
+  .bd-card p{font-size:.95rem;color:rgba(255,255,255,.92);line-height:1.85}
+  .results-note{text-align:center;margin-top:1.6rem;font-size:.8rem;color:rgba(255,255,255,.62)}
+
+  /* ===== コンセプト / 特徴 ===== */
+  .concept-lead{max-width:760px;margin:0 auto 3rem;text-align:center;color:var(--ink-soft);font-size:1.05rem}
+  .concept-lead .big{font-family:var(--serif);font-size:clamp(1.3rem,3vw,1.75rem);color:var(--navy);font-weight:700;line-height:1.6;margin-bottom:1rem}
+  .concept-lead .big em{font-style:normal;color:var(--gold-ink);border-bottom:3px solid rgba(200,162,74,.45)}
+  .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:20px}
+  .feat{
+    background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:1.9rem 1.7rem;
+    box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .2s ease;
+  }
+  .feat:hover{transform:translateY(-4px)}
+  .feat .no{font-family:var(--serif);font-size:2.6rem;font-weight:700;color:var(--ivory-2);line-height:1;position:absolute;top:1rem;right:1.3rem}
+  .feat h3{font-size:1.14rem;color:var(--navy);margin-bottom:.7rem;position:relative}
+  .feat p{font-size:.95rem;color:var(--ink-soft);position:relative}
+  .feat .fine{display:block;margin-top:.7rem;font-size:.8rem;color:var(--ink-soft);background:var(--ivory);border-radius:8px;padding:.5rem .7rem}
+  /* 受講のお約束（ルール） */
+  .rules-note{
+    margin-top:22px;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--gold);
+    border-radius:14px;padding:1.6rem 1.8rem;box-shadow:var(--shadow);
+  }
+  .rules-note h3{font-size:1.1rem;color:var(--navy);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+  .rules-note ul{list-style:none;display:grid;gap:.6rem}
+  .rules-note li{font-size:.92rem;color:var(--ink-soft);padding-left:1.4em;position:relative;line-height:1.7}
+  .rules-note li::before{content:"❖";position:absolute;left:0;color:var(--gold-ink)}
+  .rules-note li b{color:var(--navy);font-weight:800}
+
+  /* ===== 時間割 ===== */
+  .schedule{background:var(--ivory-2)}
+  .scroll-hint{display:none;font-size:.8rem;font-weight:700;color:var(--gold-ink);margin-bottom:.5rem}
+  .scroll-hint::before{content:"↔ ";}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px;box-shadow:var(--shadow)}
+  .period{margin-bottom:2rem}
+  .period-hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:.7rem;margin-bottom:.8rem}
+  .period-hd .pn{font-family:var(--serif);font-weight:700;font-size:1.2rem;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:.15em .7em}
+  .period-hd .pt{font-weight:800;color:var(--gold-ink)}
+  .period-hd .ps{color:var(--ink-soft);font-size:.9rem}
+  table.tt{border-collapse:collapse;width:100%;min-width:640px;background:var(--paper);font-size:.9rem}
+  table.tt th,table.tt td{border:1px solid var(--line);padding:.75rem .6rem;text-align:center;vertical-align:middle}
+  table.tt thead th{background:var(--navy);color:#fff;font-weight:700;font-size:.85rem}
+  table.tt tbody td{color:var(--ink)}
+  table.tt tbody td b{display:block;color:var(--navy);font-weight:800;font-size:.92rem}
+  table.tt tbody td span{font-size:.76rem;color:var(--ink-soft)}
+  table.tt td.empty{background:var(--ivory);color:#b9b09a}
+  .sun-line{display:flex;flex-wrap:wrap;align-items:center;gap:1rem;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:12px;padding:1rem 1.3rem;margin-top:.4rem}
+  .sun-line .sd{font-family:var(--serif);font-weight:700;color:var(--navy)}
+  .sun-line .st{font-weight:800;color:var(--gold-ink)}
+  .sun-line .sc{color:var(--ink);font-weight:700}
+  .sun-line .sp{color:var(--ink-soft);font-size:.85rem}
+  .sched-notes{margin-top:1.6rem;display:grid;gap:.5rem;font-size:.88rem;color:var(--ink-soft)}
+  .sched-notes li{list-style:none;padding-left:1.4em;position:relative}
+  .sched-notes li::before{content:"❖";position:absolute;left:0;color:var(--gold-ink)}
+
+  /* ===== コース ===== */
+  .course-group{margin-bottom:2.6rem}
+  .course-group > h3{
+    font-size:1.35rem;color:var(--navy);display:flex;align-items:center;gap:.7rem;margin-bottom:1.3rem;
+    padding-bottom:.7rem;border-bottom:2px solid var(--line);
+  }
+  .course-group > h3 .tag{font-family:var(--gothic);font-size:.7rem;font-weight:800;letter-spacing:.08em;color:var(--gold);background:var(--navy);border-radius:999px;padding:.35em .95em}
+  .course-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:18px}
+  .course{
+    background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.5rem;
+    box-shadow:var(--shadow);display:flex;flex-direction:column;
+  }
+  .course.special{border-top:4px solid var(--gold)}
+  .course .ctop{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.7rem}
+  .course h4{font-size:1.1rem;color:var(--navy);line-height:1.4}
+  .course .lvl{font-size:.72rem;font-weight:800;color:var(--gold-ink);letter-spacing:.05em}
+  .course .price{text-align:right;flex-shrink:0}
+  .course .price b{font-family:var(--serif);font-size:1.35rem;color:var(--navy);font-weight:700}
+  .course .price b small{font-size:.72rem;font-weight:700}
+  .course .price span{display:block;font-size:.68rem;color:var(--ink-soft)}
+  .course .meta{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.8rem}
+  .course .meta i{font-style:normal;font-size:.75rem;font-weight:700;color:var(--ink-soft);background:var(--ivory);border:1px solid var(--line);border-radius:6px;padding:.25em .6em}
+  .course .sum{font-size:.9rem;color:var(--ink-soft);margin-bottom:.9rem;flex-grow:1}
+  .course details{border-top:1px dashed var(--line);padding-top:.7rem}
+  .course details summary{cursor:pointer;font-size:.82rem;font-weight:800;color:var(--gold-ink);list-style:none;display:flex;align-items:center;gap:.4em}
+  .course details summary::-webkit-details-marker{display:none}
+  .course details summary::before{content:"＋";font-weight:800}
+  .course details[open] summary::before{content:"−"}
+  .course details .dbody{margin-top:.8rem;font-size:.85rem;color:var(--ink-soft);display:grid;gap:.7rem}
+  .course details .dbody .dt{font-weight:800;color:var(--navy);font-size:.8rem;margin-bottom:.1rem}
+
+  /* ===== 料金 ===== */
+  .pricing{background:var(--ivory-2)}
+  .price-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px;box-shadow:var(--shadow);margin-bottom:1.6rem}
+  table.pt{border-collapse:collapse;width:100%;min-width:560px;background:var(--paper);font-size:.92rem}
+  table.pt caption{caption-side:top;text-align:left;font-weight:800;padding:.9rem 1.1rem;font-size:.9rem;letter-spacing:.05em;background:var(--navy);color:var(--gold)}
+  table.pt th,table.pt td{border-bottom:1px solid var(--line);padding:.8rem 1.1rem;text-align:left}
+  table.pt thead th{background:var(--navy-2);color:#fff;font-size:.82rem;font-weight:700}
+  table.pt tbody tr:nth-child(even){background:var(--ivory)}
+  table.pt td.yen{text-align:right;font-family:var(--serif);font-weight:700;color:var(--navy);white-space:nowrap}
+  .fee-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:16px;margin-bottom:1.6rem}
+  .fee{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:1.3rem 1.5rem;box-shadow:var(--shadow)}
+  .fee .k{font-size:.85rem;font-weight:800;color:var(--ink-soft)}
+  .fee .v{font-family:var(--serif);font-size:1.9rem;font-weight:700;color:var(--navy);line-height:1.1;margin:.3rem 0}
+  .fee .v small{font-size:.8rem;font-weight:700}
+  .fee .note{font-size:.78rem;color:var(--ink-soft)}
+  .example{
+    background:linear-gradient(135deg,var(--navy),#0a1830);color:#fff;border-radius:16px;padding:1.6rem 1.8rem;
+    display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;
+  }
+  .example .ex-l b{color:var(--gold);font-weight:800}
+  .example .ex-l{font-size:.95rem;color:rgba(255,255,255,.88)}
+  .example .ex-r{font-family:var(--serif);font-size:clamp(1.5rem,4vw,2.1rem);font-weight:700;white-space:nowrap}
+  .example .ex-r span{color:var(--gold)}
+
+  /* ===== 流れ ===== */
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;counter-reset:step}
+  .step{
+    background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:1.7rem 1.4rem;
+    box-shadow:var(--shadow);position:relative;text-align:center;
+  }
+  .step::before{
+    counter-increment:step;content:"0" counter(step);
+    font-family:var(--serif);font-size:1rem;font-weight:700;color:var(--navy);
+    width:2.6rem;height:2.6rem;border-radius:50%;border:2px solid var(--gold);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;background:var(--ivory);
+  }
+  .step h3{font-size:1.05rem;color:var(--navy);margin-bottom:.6rem}
+  .step p{font-size:.86rem;color:var(--ink-soft)}
+
+  /* ===== 支払い / 退塾 ===== */
+  .policy{background:var(--ivory-2)}
+  .policy-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .pol{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:1.8rem;box-shadow:var(--shadow)}
+  .pol h3{font-size:1.15rem;color:var(--navy);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;padding-bottom:.7rem;border-bottom:1px solid var(--line)}
+  .pol ul{list-style:none;display:grid;gap:.7rem}
+  .pol li{font-size:.9rem;color:var(--ink-soft);padding-left:1.4em;position:relative;line-height:1.7}
+  .pol li::before{content:"❖";position:absolute;left:0;color:var(--gold-ink)}
+  .pol li b{color:var(--navy);font-weight:800}
+
+  /* ===== 最終CTA ===== */
+  .final{background:linear-gradient(160deg,var(--navy),#0a1830 60%,#0e2246);color:#fff;text-align:center;padding:88px 0}
+  .final h2{font-size:clamp(1.7rem,4vw,2.6rem);font-weight:700;margin-bottom:1rem}
+  .final p{color:rgba(255,255,255,.85);max-width:560px;margin:0 auto 2.2rem;font-size:1.05rem}
+  .final .hero-cta{justify-content:center}
+  .final .sns{margin-top:1.8rem;font-size:.9rem;color:rgba(255,255,255,.72)}
+  .final .sns a{color:var(--gold);font-weight:800}
+
+  /* ===== フッター ===== */
+  footer.ft{background:#081426;color:rgba(255,255,255,.66);padding:48px 0 40px;font-size:.85rem}
+  footer.ft .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2rem}
+  footer.ft .brand b{color:#fff}
+  footer.ft .ft-links{display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center}
+  footer.ft .ft-links a:hover{color:var(--gold)}
+  footer.ft .cc{width:100%;border-top:1px solid rgba(255,255,255,.1);padding-top:1.4rem;margin-top:.6rem;font-size:.78rem;color:rgba(255,255,255,.55)}
+
+  /* ===== reveal（プログレッシブエンハンス: .js のときのみ隠す） ===== */
+  .js .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+  .js .reveal.in{opacity:1;transform:none}
+
+  /* ===== レスポンシブ ===== */
+  @media(max-width:980px){
+    .hero-grid{grid-template-columns:1fr;gap:2.2rem}
+    .hero-proof{max-width:520px}
+  }
+  @media(max-width:860px){
+    nav.links > a:not(.btn){display:none}
+    nav.links{gap:.7rem}
+    .m-menu{display:block}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .flow{grid-template-columns:repeat(2,1fr)}
+    .policy-grid{grid-template-columns:1fr}
+    .hero{padding:126px 0 74px}
+    .sec{padding:64px 0}
+    .scroll-hint{display:block}
+  }
+  @media(max-width:620px){
+    .hero-proof{display:none}
+  }
+  @media(max-width:520px){
+    .hero-cta .btn{width:100%}
+    .example{flex-direction:column;align-items:flex-start;text-align:left}
+    .brand b{font-size:.92rem}
+    .brand .jp{font-size:.55rem;letter-spacing:.14em}
+    nav.links .btn{padding:.65em 1em;font-size:.8rem}
+  }
+  @media(prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .js .reveal{opacity:1;transform:none;transition:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== ヘッダー ===== -->
+<header class="nav" id="nav">
+  <a href="#top" class="brand" aria-label="Trillion English Academy トップへ">
+    <span class="mono" aria-hidden="true">T</span>
+    <span><b>Trillion English Academy</b><span class="jp">トリリオン英語塾</span></span>
+  </a>
+  <nav class="links" aria-label="セクション">
+    <a href="#results">合格実績</a>
+    <a href="#features">特徴</a>
+    <a href="#schedule">時間割</a>
+    <a href="#courses">コース</a>
+    <a href="#pricing">料金</a>
+    <a href="#flow">入塾の流れ</a>
+    <a href="taiken.html" class="btn btn-gold">体験授業</a>
+    <details class="m-menu">
+      <summary aria-label="メニューを開く">☰</summary>
+      <div class="m-panel">
+        <a href="#results">合格実績</a>
+        <a href="#features">授業の特徴</a>
+        <a href="#schedule">時間割</a>
+        <a href="#courses">コース</a>
+        <a href="#pricing">料金</a>
+        <a href="#flow">入塾の流れ</a>
+        <a href="#policy">お支払い・退塾</a>
+        <a href="enrollment.html">入塾申込</a>
+      </div>
+    </details>
+  </nav>
+</header>
+
+<!-- ===== ヒーロー ===== -->
+<section class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">◆ 元代々木ゼミナール講師 主宰 ／ オンライン英語専門塾</span>
+        <h1>「丸暗記」を、捨てる。<br><span class="gold">理論で解く</span>英語へ。</h1>
+        <p class="lede">
+          Trillion English Academy は、理論に基づく英文法の<b>「本当の理解」</b>と<b>論理的読解力</b>を養成する英語専門塾です。
+          中学生から高校生・浪人生まで、一人ひとりの目標に合わせたカリキュラムで、難関大学合格と英語資格取得を全力でサポートします。全国どこからでも、Zoomの生ライブ授業で。
+        </p>
+        <div class="hero-cta">
+          <a href="taiken.html" class="btn btn-gold">まずは体験授業（¥1,500）</a>
+          <a href="#courses" class="btn btn-outline">コース・料金を見る</a>
+        </div>
+        <div class="hero-tags">
+          <span><span class="dot" aria-hidden="true">●</span> Zoom 生ライブ授業</span>
+          <span><span class="dot" aria-hidden="true">●</span> 全国どこからでも受講可</span>
+          <span><span class="dot" aria-hidden="true">●</span> 欠席時アーカイブ視聴OK</span>
+          <span><span class="dot" aria-hidden="true">●</span> 中学生〜高卒生対象</span>
+        </div>
+      </div>
+      <aside class="hero-proof" aria-label="2025年度 合格実績ハイライト">
+        <div class="hp-h">2025年度 合格実績</div>
+        <div class="hp-univ">東京大学・大阪大学・九州大学・神戸大学<br>早稲田・慶應・上智・MARCH<br>私立医学部 医学科</div>
+        <div class="hp-stats">
+          <div><b>12</b><span>国公立</span></div>
+          <div><b>24</b><span>私立</span></div>
+          <div><b>3</b><span>医学部</span></div>
+          <div><b>32</b><span>英検</span></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 合格実績 ===== -->
+<section class="results" id="results">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-kicker">Results 2025</div>
+      <h2>結果が、指導の証明。</h2>
+    </div>
+    <div class="stats reveal">
+      <div class="stat"><div class="num">12</div><div class="lbl">国公立大学 合格</div></div>
+      <div class="stat"><div class="num">24</div><div class="lbl">私立大学 合格</div></div>
+      <div class="stat"><div class="num">3</div><div class="lbl">医学部医学科</div></div>
+      <div class="stat"><div class="num">32</div><div class="lbl">英検 合格者</div></div>
+    </div>
+    <div class="breakdown reveal">
+      <div class="bd-card">
+        <h3>国公立大学</h3>
+        <p>東京大学 ／ 大阪大学 ／ 九州大学(2) ／ 神戸大学 ／ 東京外国語大学 ／ 兵庫県立大学(2) ／ 高知大学(2) ／ 佐賀大学</p>
+      </div>
+      <div class="bd-card">
+        <h3>私立大学</h3>
+        <p>早稲田大学(1) ／ 慶應義塾大学(2) ／ 上智大学(2) ／ MARCH(13) ／ 関関同立(6)</p>
+      </div>
+      <div class="bd-card">
+        <h3>私立医学部</h3>
+        <p>医学部医学科 3名</p>
+      </div>
+      <div class="bd-card">
+        <h3>英検</h3>
+        <p>1級：1名 ／ 準1級：6名 ／ 2級：25名</p>
+      </div>
+    </div>
+    <p class="results-note">※ 2025年度実績。合格者数・内訳はいずれも当塾在籍生の実数です。</p>
+  </div>
+</section>
+
+<!-- ===== コンセプト & 特徴 ===== -->
+<section class="sec" id="features">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-kicker">Our Concept &amp; Method</div>
+      <h2>なぜ、Trillion なのか</h2>
+      <div class="rule"></div>
+    </div>
+    <div class="concept-lead reveal">
+      <p class="big">「なぜ、その答えになるのか」を、<em>理論で理解する</em>。</p>
+      <p>暗記に頼らず、初見の問題にも応用が効く文法力・読解力を育てます。中学部では高校入試対策にとどまらず、大学入試につながる知識まで指導。スタディサプリを活用した国公立難関大学の全教科対策にも対応しています。</p>
+    </div>
+    <div class="features">
+      <div class="feat reveal">
+        <span class="no" aria-hidden="true">01</span>
+        <h3>Zoomによる生ライブ授業</h3>
+        <p>すべての授業はZoomを使ったリアルタイムのライブ形式。対面同様の臨場感で、講師の解説をその場で受けられます。全国どこからでも、ネット環境があれば受講可能です。</p>
+      </div>
+      <div class="feat reveal">
+        <span class="no" aria-hidden="true">02</span>
+        <h3>欠席時もアーカイブで安心</h3>
+        <p>授業はすべて録画。欠席時や復習にアーカイブ映像を視聴できます。部活や体調不良で出られなくても、学習の遅れを取り戻せます。</p>
+        <span class="fine">※ 入塾前のアーカイブ視聴が必要な場合は、別途 20,000円（税込）が発生します。</span>
+      </div>
+      <div class="feat reveal">
+        <span class="no" aria-hidden="true">03</span>
+        <h3>Studyplus で連絡・質問対応</h3>
+        <p>入塾後は Studyplus を連絡ツールとして使用。授業外の質問対応もこちらで行い、わからない箇所をいつでも気軽に質問できます。</p>
+        <span class="fine">※ 学習管理プラン以外の方は、連絡用ツールとしての使用となります。</span>
+      </div>
+      <div class="feat reveal">
+        <span class="no" aria-hidden="true">04</span>
+        <h3>教材はPDFで配布</h3>
+        <p>授業で使う教材はすべてPDFで配布。タブレットやPCで閲覧でき、印刷して書き込むことも可能です。教材費は授業料に含まれ、追加費用はかかりません。</p>
+      </div>
+      <div class="feat reveal">
+        <span class="no" aria-hidden="true">05</span>
+        <h3>全国どこからでも受講可能</h3>
+        <p>オンライン塾のため地域を問わず全国から受講可能。地方在住でも、都市部のトップレベルの指導を受けられることが最大の強みです。</p>
+      </div>
+    </div>
+    <div class="rules-note reveal">
+      <h3>受講にあたってのお約束</h3>
+      <ul>
+        <li>授業中は<b>カメラON・マイクOFFを必須</b>とします。やむを得ない理由でカメラをOFFにする場合は、事前にStudyplusにてご連絡ください。</li>
+        <li>授業態度に問題がある場合は、保護者へご連絡いたします。</li>
+        <li>改善が見られない場合は、<b>退塾をお願いすることがあります。</b></li>
+        <li>保護者への連絡は、お子様の様子に変化が見られる場合などに適宜行います。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 時間割 ===== -->
+<section class="sec schedule" id="schedule">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-kicker">Time Table</div>
+      <h2>授業スケジュール</h2>
+      <p>中学部（1限）と高校部（2限・3限）の2部制で運営しています。</p>
+      <div class="rule"></div>
+    </div>
+
+    <div class="period reveal">
+      <div class="period-hd"><span class="pn">1限</span><span class="pt">19:15 – 20:15</span><span class="ps">中学部 Early Session</span></div>
+      <p class="scroll-hint">横にスクロールできます</p>
+      <div class="table-scroll">
+        <table class="tt">
+          <caption class="sr-only">1限 19:15–20:15 中学部の時間割</caption>
+          <thead><tr><th>月 (MON)</th><th>火 (TUE)</th><th>水 (WED)</th><th>木 (THU)</th><th>金 (FRI)</th></tr></thead>
+          <tbody><tr>
+            <td><b>中学応用</b><span>受験・中3</span></td>
+            <td><b>中学基礎</b><span>定期テスト 中1/2</span></td>
+            <td><b>中学2年 英語</b></td>
+            <td><b>英検準1級 対策</b><span>中高合同</span></td>
+            <td><b>高校2年生 英文法</b></td>
+          </tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="period reveal">
+      <div class="period-hd"><span class="pn">2限</span><span class="pt">20:25 – 21:25</span><span class="ps">高校部 Evening Session</span></div>
+      <p class="scroll-hint">横にスクロールできます</p>
+      <div class="table-scroll">
+        <table class="tt">
+          <caption class="sr-only">2限 20:25–21:25 高校部の時間割</caption>
+          <thead><tr><th>月 (MON)</th><th>火 (TUE)</th><th>水 (WED)</th><th>木 (THU)</th><th>金 (FRI)</th></tr></thead>
+          <tbody><tr>
+            <td><b>英文法 Lv.1</b><span>標準・高1/2</span></td>
+            <td><b>英文法 Lv.2</b><span>難関・高3</span></td>
+            <td><b>GMARCH</b><span>大学別演習</span></td>
+            <td><b>早慶クラス</b><span>大学別演習</span></td>
+            <td><b>英検2級 対策</b><span>中高合同</span></td>
+          </tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="period reveal">
+      <div class="period-hd"><span class="pn">3限</span><span class="pt">21:35 – 22:35</span><span class="ps">高校部</span></div>
+      <p class="scroll-hint">横にスクロールできます</p>
+      <div class="table-scroll">
+        <table class="tt">
+          <caption class="sr-only">3限 21:35–22:35 高校部の時間割</caption>
+          <thead><tr><th>月 (MON)</th><th>火 (TUE)</th><th>水 (WED)</th><th>木 (THU)</th><th>金 (FRI)</th></tr></thead>
+          <tbody><tr>
+            <td><b>長文読解 Lv.1</b><span>標準・高1/2</span></td>
+            <td><b>長文読解 Lv.2</b><span>難関・高3</span></td>
+            <td><b>国公立コース</b><span>英文法</span></td>
+            <td><b>国公立コース</b><span>長文読解</span></td>
+            <td class="empty">—</td>
+          </tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="sun-line reveal">
+      <span class="pn">日曜</span>
+      <span class="st">21:15 – 22:15</span>
+      <span class="sc">高校国語（現代文・古文）</span>
+      <span class="sp">国公立難関大学コース</span>
+    </div>
+
+    <ul class="sched-notes reveal">
+      <li>2限と3限はセットでの受講を推奨しています（英文法＋長文読解）。</li>
+      <li>英語力に自信のある中学生や、中高一貫校で英語の進度が早い生徒は、高等部の授業を受講することも可能です。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===== コース ===== -->
+<section class="sec" id="courses">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-kicker">Courses</div>
+      <h2>各コースのご案内</h2>
+      <p>「＋ 詳細を見る」をタップすると、各コースの進め方・到達目標・使用教材・おすすめの生徒を確認できます。</p>
+      <div class="rule"></div>
+    </div>
+
+    <!-- 中学部 -->
+    <div class="course-group reveal">
+      <h3>中学部 <span class="tag">JUNIOR HIGH</span></h3>
+      <div class="course-grid">
+
+        <div class="course">
+          <div class="ctop">
+            <div><h4>中学応用</h4><div class="lvl">受験・中3</div></div>
+            <div class="price"><b>7,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：中3・高校受験生</i><i>月曜 1限</i></div>
+          <p class="sum">高校受験はもちろん、大学入試を見据えた応用レベルの英語力を養成。中学英語の枠を超え、受験で差がつく実力を鍛えます。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>前半で文法・構文の理論解説、後半で入試レベルの演習。「なぜその答えになるのか」を重視し応用力を養います。</div></div>
+            <div><div class="dt">到達目標</div><div>高校入試で英語を得点源にし、高校英語へスムーズに接続できる文法力・読解力の習得。</div></div>
+            <div><div class="dt">使用教材</div><div>オリジナルPDF教材（文法解説＋入試過去問ベースの演習問題）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>大学受験まで見据えて英語を伸ばしたい中3生。難関高校を目指す生徒。</div></div>
+          </div></details>
+        </div>
+
+        <div class="course">
+          <div class="ctop">
+            <div><h4>中学基礎</h4><div class="lvl">定期テスト・中1/2</div></div>
+            <div class="price"><b>7,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：中1・中2</i><i>火曜 1限</i></div>
+          <p class="sum">学校の定期テスト対策を軸に、英語の基礎をしっかり固める講座。文法の「なぜそうなるのか」を丁寧に解説し、暗記に頼らない理解を積み上げます。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>学校の進度に合わせて文法を解説し、演習で定着。テスト前は頻出問題対策も実施します。</div></div>
+            <div><div class="dt">到達目標</div><div>定期テストで安定して高得点を取れる基礎力をつけ、中3以降の応用学習へスムーズに移行。</div></div>
+            <div><div class="dt">使用教材</div><div>オリジナルPDF教材（文法解説＋定期テスト頻出パターン演習）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>英語に苦手意識がある中学生。「理解して覚えたい」タイプの生徒。</div></div>
+          </div></details>
+        </div>
+
+        <div class="course">
+          <div class="ctop">
+            <div><h4>中学2年 英語</h4><div class="lvl">学校準拠</div></div>
+            <div class="price"><b>7,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：中2</i><i>水曜 1限</i></div>
+          <p class="sum">中2の学校進度に合わせた英語指導。つまずきやすい文法事項を丁寧にフォローし、中3以降の応用に備えます。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>教科書進度に沿いつつ、不定詞・動名詞・比較など中2の重要文法を理論的に解説。演習で確実に定着。</div></div>
+            <div><div class="dt">到達目標</div><div>中2英語の文法事項を完全に理解し、中3の受験英語へ自信を持って進める土台づくり。</div></div>
+            <div><div class="dt">使用教材</div><div>オリジナルPDF教材（文法解説＋学校準拠の演習問題）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>中2の英語でつまずきを感じ始めた生徒。中1からの積み残しを解消したい生徒。</div></div>
+          </div></details>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 高校部 -->
+    <div class="course-group reveal">
+      <h3>高校部 <span class="tag">HIGH SCHOOL</span></h3>
+      <div class="course-grid">
+
+        <div class="course">
+          <div class="ctop">
+            <div><h4>英文法 Lv.1</h4><div class="lvl">標準・高1/2</div></div>
+            <div class="price"><b>7,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：高1・高2</i><i>月曜 2限</i></div>
+          <p class="sum">英文法を基礎から体系的に学び、「なぜそうなるのか」を理論的に理解。初見の問題にも応用が効く文法力を身につけます。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>前半で理論解説、後半で入試問題演習。毎回「理解→演習→確認」のサイクルで定着させます。</div></div>
+            <div><div class="dt">到達目標</div><div>共通テストの文法・語法で安定得点。日東駒専〜GMARCH中位レベルの文法問題に対応。</div></div>
+            <div><div class="dt">使用教材</div><div>オリジナルPDF教材（理論解説＋入試過去問ベースの演習）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>体系的に学び直したい高1・高2生。暗記で乗り切ってきたが模試で点が取れない生徒。</div></div>
+          </div></details>
+        </div>
+
+        <div class="course">
+          <div class="ctop">
+            <div><h4>英文法 Lv.2</h4><div class="lvl">難関・高3</div></div>
+            <div class="price"><b>7,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：高3</i><i>火曜 2限</i></div>
+          <p class="sum">基礎が入っている前提で、問題演習を中心に展開。応用まで効く理解力を養い、難関大入試で高得点を狙う実力を鍛えます。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>実際の入試問題を使い、解くプロセスを重視した演習型授業。「なぜ正解か・なぜ他が不正解か」を徹底解説。</div></div>
+            <div><div class="dt">到達目標</div><div>GMARCH上位〜早慶レベルの文法・語法で安定得点。正誤問題や整序問題にも対応できる応用力。</div></div>
+            <div><div class="dt">使用教材</div><div>オリジナルPDF教材（難関大過去問＋テーマ別演習問題）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>基礎はあるが難関大の問題で解けない高3生。GMARCH以上を志望する受験生。</div></div>
+          </div></details>
+        </div>
+
+        <div class="course">
+          <div class="ctop">
+            <div><h4>長文読解 Lv.1</h4><div class="lvl">標準・高1/2</div></div>
+            <div class="price"><b>7,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：高1・高2</i><i>月曜 3限</i></div>
+          <p class="sum">高校の基礎から長文の読み方を学ぶ講座。論理的な読解法を一から指導し、地方国公立〜中堅私大レベルの長文に対応する力を養成します。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>パラグラフリーディングの基礎から、論理展開の把握→設問分析→根拠の特定という読解プロセスを段階的に習得。</div></div>
+            <div><div class="dt">到達目標</div><div>共通テストのリーディングで7割以上を安定。300〜500語程度の長文を論理的に読み解く力。</div></div>
+            <div><div class="dt">使用教材</div><div>オリジナルPDF教材（読解法解説＋入試過去問ベースの長文演習）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>長文を読むと内容がわからなくなる生徒。単語は覚えているのに長文の点数が伸びない生徒。</div></div>
+          </div></details>
+        </div>
+
+        <div class="course">
+          <div class="ctop">
+            <div><h4>長文読解 Lv.2</h4><div class="lvl">難関・高3</div></div>
+            <div class="price"><b>7,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：高3</i><i>火曜 3限</i></div>
+          <p class="sum">十分な単語力を前提に、文法力を駆使して長文を正確に読み解くクラス。地方国公立上位レベルの長文で高得点を狙う実戦力を鍛えます。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>700語以上の本格的な長文を、制限時間内で正確に読み切る実戦演習。文構造分析・論理展開の把握を高度に鍛えます。</div></div>
+            <div><div class="dt">到達目標</div><div>共通テストのリーディングで8割以上。GMARCH〜早慶・国公立二次レベルの長文に対応。</div></div>
+            <div><div class="dt">使用教材</div><div>オリジナルPDF教材（難関大過去問＋テーマ別長文演習）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>難関大の長文で時間が足りない・正答率が安定しない高3生。国公立や早慶を志望する受験生。</div></div>
+          </div></details>
+        </div>
+
+        <div class="course">
+          <div class="ctop">
+            <div><h4>高2 英文法</h4><div class="lvl">高2 基盤づくり</div></div>
+            <div class="price"><b>7,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：高2</i><i>金曜 1限</i></div>
+          <p class="sum">高2を対象に、入試に向けた英文法の基盤づくり。高3での演習に備え、文法事項を理論的に整理します。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>高2で押さえるべき文法項目を体系的に解説し、演習で理解を定着。高3の受験学習に直結する土台を築きます。</div></div>
+            <div><div class="dt">到達目標</div><div>高2終了時点で英文法の全体像を把握し、高3からの実戦演習へスムーズに移行。</div></div>
+            <div><div class="dt">使用教材</div><div>オリジナルPDF教材（文法体系解説＋入試基礎演習）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>高2から受験を意識した英語学習を始めたい生徒。高3で慌てたくない生徒。</div></div>
+          </div></details>
+        </div>
+
+        <div class="course">
+          <div class="ctop">
+            <div><h4>高校国語</h4><div class="lvl">現代文・古文</div></div>
+            <div class="price"><b>7,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：高校生</i><i>日曜 21:15–22:15</i></div>
+          <p class="sum">現代文の論理的読解と古文の基礎文法を学習。国公立二次試験や私大入試に対応する読解力・記述力を養成します。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>現代文は論理構造の分析と記述対策、古文は文法・単語の基礎から読解演習まで、バランスよく指導。</div></div>
+            <div><div class="dt">到達目標</div><div>共通テストの国語で安定得点し、国公立二次の記述問題にも対応できる力。</div></div>
+            <div><div class="dt">使用教材</div><div>オリジナルPDF教材（現代文読解法＋古文文法解説＋入試演習）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>国語の勉強法がわからない生徒。英語は得意だが国語で総合点が伸び悩む生徒。</div></div>
+          </div></details>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 特別コース -->
+    <div class="course-group reveal">
+      <h3>特別コース <span class="tag">SPECIAL</span></h3>
+      <div class="course-grid">
+
+        <div class="course special">
+          <div class="ctop">
+            <div><h4>GMARCHコース</h4><div class="lvl">大学別演習・少人数制</div></div>
+            <div class="price"><b>12,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：GMARCH志望</i><i>水曜 2限</i></div>
+          <p class="sum">GMARCH各大学の出題傾向に合わせた大学別演習。少人数制で受講者数に制限を設け、志望大学・学部に応じてテキストを変更します。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>志望大学・学部ごとの出題傾向を分析し、過去問演習と弱点補強を繰り返します。少人数制で個別進捗に対応。</div></div>
+            <div><div class="dt">到達目標</div><div>GMARCH合格に必要な英語力の完成。各大学の出題形式に慣れ、本番で実力を発揮できる状態。</div></div>
+            <div><div class="dt">使用教材</div><div>志望大学・学部別の過去問＋オリジナル演習教材（PDF）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>GMARCH志望で大学別対策を本格的に始めたい生徒。志望校の問題形式に慣れていない生徒。</div></div>
+          </div></details>
+        </div>
+
+        <div class="course special">
+          <div class="ctop">
+            <div><h4>早慶クラス</h4><div class="lvl">大学別演習・少人数制</div></div>
+            <div class="price"><b>12,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：早慶志望</i><i>木曜 2限</i></div>
+          <p class="sum">早稲田・慶應の入試に特化した大学別演習クラス。少人数制で、高度な語彙力・読解力・記述力を要求する早慶レベルの問題に対応する力を鍛えます。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>早慶各学部の出題形式に特化した演習。難度の高い語彙・文法、長文読解、英作文まで学部別に最適化。</div></div>
+            <div><div class="dt">到達目標</div><div>早慶合格に必要な高度な英語力の完成。学部ごとの傾向を熟知し、合格点を安定して超える実力。</div></div>
+            <div><div class="dt">使用教材</div><div>志望大学・学部別の過去問＋オリジナル演習教材（PDF）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>早慶を第一志望とする生徒。GMARCHは解けるが早慶になると歯が立たない生徒。</div></div>
+          </div></details>
+        </div>
+
+        <div class="course special">
+          <div class="ctop">
+            <div><h4>英検準1級対策</h4><div class="lvl">4技能対策</div></div>
+            <div class="price"><b>8,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：中高合同</i><i>木曜 1限</i></div>
+          <p class="sum">英検準1級合格に必要なリーディング・リスニング・ライティング・スピーキングの4技能をバランスよく対策します。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>4技能を毎回バランスよく扱います。特にライティングは添削指導で着実にスコアアップ。</div></div>
+            <div><div class="dt">到達目標</div><div>英検準1級合格。大学入試での英検利用（加点・優遇）を活かせるレベルの英語力。</div></div>
+            <div><div class="dt">使用教材</div><div>オリジナルPDF教材（技能別対策＋過去問演習＋ライティング添削）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>準1級取得を目指す中高生。2級は取得済みで次のレベルに挑戦したい生徒。</div></div>
+          </div></details>
+        </div>
+
+        <div class="course special">
+          <div class="ctop">
+            <div><h4>英検2級対策</h4><div class="lvl">頻出パターン演習</div></div>
+            <div class="price"><b>7,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：中高合同</i><i>金曜 2限</i></div>
+          <p class="sum">英検2級合格を目指し、頻出の文法・語彙・読解を集中演習。大学入試にも直結する英語力を養成します。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>文法・語彙・読解・リスニング・ライティングを効率的に対策。頻出パターンを押さえた演習で合格力を養成。</div></div>
+            <div><div class="dt">到達目標</div><div>英検2級合格。高校卒業レベルの英語力を身につけ、大学入試の基礎力としても活用。</div></div>
+            <div><div class="dt">使用教材</div><div>オリジナルPDF教材（頻出パターン演習＋過去問＋ライティング対策）</div></div>
+            <div><div class="dt">おすすめの生徒</div><div>2級取得を目指す中高生。大学入試に向けて英語の基礎力を証明したい生徒。</div></div>
+          </div></details>
+        </div>
+
+        <div class="course special">
+          <div class="ctop">
+            <div><h4>学習管理コース</h4><div class="lvl">通常授業2科目＋管理</div></div>
+            <div class="price"><b>22,500<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：高校生</i><i>面談なし</i></div>
+          <p class="sum">通常授業2科目に加え、学習管理を行うコース。Studyplusへの学習記録の入力が必須となります。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">内容</div><div>通常授業2科目＋学習管理（月額22,500円・面談なし）。Studyplusへの記録入力が必須です。</div></div>
+            <div><div class="dt">課題方針</div><div>Studyplusへの学習記録入力（必須）。例：単語帳30分、問題集2P等。週ごとの振り返りと、講師のアドバイスに基づく調整を行います。</div></div>
+            <div><div class="dt">ご注意</div><div>入力がない場合、適正な学習支援ができず、アドバイス等が不可となる場合があります。</div></div>
+          </div></details>
+        </div>
+
+        <div class="course special">
+          <div class="ctop">
+            <div><h4>国公立難関大学コース</h4><div class="lvl">ライブ＋スタディサプリ</div></div>
+            <div class="price"><b>25,000<small>円</small></b><span>／ 月（税込）</span></div>
+          </div>
+          <div class="meta"><i>対象：国公立志望</i><i>水・金・日＋スタディサプリ</i></div>
+          <p class="sum">水曜の英文法、金曜の長文読解、日曜の国語をライブ授業で実施。さらにスタディサプリで数学・理科・社会をカバーし、国公立合格に必要な総合力を養成します。</p>
+          <details><summary>詳細を見る</summary><div class="dbody">
+            <div><div class="dt">授業の進め方</div><div>英語は英文法（水）＋長文読解（金）の2本柱。国語（日）と合わせ、他教科はスタディサプリで個別カリキュラムを作成。</div></div>
+            <div><div class="dt">到達目標</div><div>国公立合格に必要な5教科の総合力。共通テスト・二次試験の両方に対応できる実力。</div></div>
+            <div><div class="dt">使用教材</div><div>英語・国語：オリジナルPDF教材。その他教科：スタディサプリ＋個別カリキュラム。</div></div>
+            <div><div class="dt">課題方針</div><div>毎週の課題提出が必須。英文法演習・長文実践問題・国語の記述課題・志望校の過去問演習など。提出は個別LINEにて。</div></div>
+          </div></details>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 料金 ===== -->
+<section class="sec pricing" id="pricing">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-kicker">Tuition</div>
+      <h2>コース・料金のご案内</h2>
+      <p>各コースの月額授業料は以下のとおりです。すべてのクラスに設備費（月額1,350円）が別途かかります。</p>
+      <div class="rule"></div>
+    </div>
+
+    <p class="scroll-hint">横にスクロールできます</p>
+    <div class="price-table-wrap reveal">
+      <table class="pt">
+        <caption>通常コース</caption>
+        <thead><tr><th>コース名</th><th>対象</th><th>曜日・時限</th><th style="text-align:right">月額（税込）</th></tr></thead>
+        <tbody>
+          <tr><td>中学応用</td><td>受験生・中3</td><td>月曜 1限</td><td class="yen">7,500円</td></tr>
+          <tr><td>中学基礎</td><td>中1・中2</td><td>火曜 1限</td><td class="yen">7,500円</td></tr>
+          <tr><td>中学2年英語</td><td>中2</td><td>水曜 1限</td><td class="yen">7,500円</td></tr>
+          <tr><td>高2英文法</td><td>高2</td><td>金曜 1限</td><td class="yen">7,500円</td></tr>
+          <tr><td>英文法 Lv.1</td><td>高1・高2（標準）</td><td>月曜 2限</td><td class="yen">7,500円</td></tr>
+          <tr><td>英文法 Lv.2</td><td>高3（難関）</td><td>火曜 2限</td><td class="yen">7,500円</td></tr>
+          <tr><td>長文読解 Lv.1</td><td>高1・高2（標準）</td><td>月曜 3限</td><td class="yen">7,500円</td></tr>
+          <tr><td>長文読解 Lv.2</td><td>高3（難関）</td><td>火曜 3限</td><td class="yen">7,500円</td></tr>
+          <tr><td>高校国語</td><td>高校生</td><td>日曜</td><td class="yen">7,500円</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="scroll-hint">横にスクロールできます</p>
+    <div class="price-table-wrap reveal">
+      <table class="pt">
+        <caption>特別コース</caption>
+        <thead><tr><th>コース名</th><th>対象</th><th>曜日・時限</th><th style="text-align:right">月額（税込）</th></tr></thead>
+        <tbody>
+          <tr><td>GMARCHコース</td><td>GMARCH志望</td><td>水曜 2限</td><td class="yen">12,500円</td></tr>
+          <tr><td>早慶クラス</td><td>早慶志望</td><td>木曜 2限</td><td class="yen">12,500円</td></tr>
+          <tr><td>英検準1級対策</td><td>中高合同</td><td>木曜 1限</td><td class="yen">8,500円</td></tr>
+          <tr><td>英検2級対策</td><td>中高合同</td><td>金曜 2限</td><td class="yen">7,500円</td></tr>
+          <tr><td>学習管理コース</td><td>高校生（通常授業2科目＋学習管理）</td><td>—</td><td class="yen">22,500円</td></tr>
+          <tr><td>国公立難関大学コース</td><td>国公立志望（ライブ＋スタディサプリ）</td><td>水・金・日</td><td class="yen">25,000円</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="fee-cards reveal">
+      <div class="fee"><div class="k">入塾金</div><div class="v">10,000<small>円</small></div><div class="note">入塾時のみ（初回）</div></div>
+      <div class="fee"><div class="k">設備費</div><div class="v">1,350<small>円 / 月</small></div><div class="note">全クラス共通</div></div>
+    </div>
+
+    <div class="example reveal">
+      <div class="ex-l"><b>【 月額料金の例 】</b><br>高1生が <b>英文法 Lv.1</b> ＋ <b>長文読解 Lv.1</b> を受講する場合<br>授業料 7,500円 × 2科目 ＋ 設備費 1,350円</div>
+      <div class="ex-r">＝ 月額 <span>16,350円</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 入塾の流れ ===== -->
+<section class="sec" id="flow">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-kicker">How to Join</div>
+      <h2>入塾までの流れ</h2>
+      <div class="rule"></div>
+    </div>
+    <div class="flow">
+      <div class="step reveal"><h3>お問い合わせ</h3><p>Instagram または Threads の <b>@TrillionEnglish</b> へDMをお送りください。</p></div>
+      <div class="step reveal"><h3>ヒアリング</h3><p>現在の学力・目標をお伺いし、最適なコースをご提案します。</p></div>
+      <div class="step reveal"><h3>入塾手続き</h3><p>入塾申込書のご記入・入塾金のお支払いで手続き完了です。</p></div>
+      <div class="step reveal"><h3>授業開始</h3><p>いよいよ授業スタート！目標に向かって一緒に頑張りましょう。</p></div>
+    </div>
+    <div style="text-align:center;margin-top:2.4rem" class="reveal">
+      <a href="enrollment.html" class="btn btn-ink">入塾申込書を記入する</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 支払い / 退塾 ===== -->
+<section class="sec policy" id="policy">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-kicker">Payment &amp; Withdrawal</div>
+      <h2>お支払い・退塾について</h2>
+      <div class="rule"></div>
+    </div>
+    <div class="policy-grid">
+      <div class="pol reveal">
+        <h3>お支払い方法</h3>
+        <ul>
+          <li>月謝のお支払い期日：<b>毎月末日</b>までに翌月分をお振込みください。</li>
+          <li>入塾金（10,000円）は入塾手続き時にお支払いください。</li>
+          <li>設備費（1,350円/月）は月謝と合わせてお振込みください。</li>
+          <li>振込手数料はご負担をお願いいたします。</li>
+          <li>お振込み後、振込名義人のお名前を必ずDMにてご連絡ください。</li>
+          <li>お振込み先は、入塾手続き時に個別にご案内いたします。</li>
+        </ul>
+      </div>
+      <div class="pol reveal">
+        <h3>退塾について</h3>
+        <ul>
+          <li>退塾をご希望の場合は、<b>退塾希望月の前月15日まで</b>にDMにてご連絡ください。</li>
+          <li>期日を過ぎてのお申し出は、翌月分の月謝が発生いたします。</li>
+          <li>月途中での退塾による日割り返金は行っておりません。</li>
+          <li>入塾金の返金はいたしかねます。</li>
+          <li>休塾（一時休会）をご希望の場合も、事前にDMにてご相談ください。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 最終CTA ===== -->
+<section class="final" id="contact">
+  <div class="wrap">
+    <h2>まずは、お気軽にお問い合わせください。</h2>
+    <p>「今の学力で大丈夫？」「どのコースが合う？」——どんなご相談でも歓迎です。全国どこからでも、あなたの英語を本気で伸ばします。</p>
+    <div class="hero-cta">
+      <a href="taiken.html" class="btn btn-gold">体験授業を申し込む（¥1,500）</a>
+      <a href="https://www.instagram.com/TrillionEnglish/" target="_blank" rel="noopener" class="btn btn-outline">Instagram でDM相談</a>
+    </div>
+    <p class="sns">Instagram / Threads：<a href="https://www.instagram.com/TrillionEnglish/" target="_blank" rel="noopener">@TrillionEnglish</a></p>
+  </div>
+</section>
+
+<!-- ===== フッター ===== -->
+<footer class="ft">
+  <div class="wrap">
+    <div class="brand">
+      <span class="mono" aria-hidden="true">T</span>
+      <span><b>Trillion English Academy</b><span class="jp" style="color:var(--gold)">トリリオン英語塾</span></span>
+    </div>
+    <nav class="ft-links" aria-label="フッター">
+      <a href="#results">合格実績</a>
+      <a href="#features">特徴</a>
+      <a href="#schedule">時間割</a>
+      <a href="#courses">コース</a>
+      <a href="#pricing">料金</a>
+      <a href="taiken.html">体験授業</a>
+      <a href="enrollment.html">入塾申込</a>
+    </nav>
+    <div class="cc">© Trillion English Academy. 元代々木ゼミナール講師が主宰する、オンライン英語専門塾。</div>
+  </div>
+</footer>
+
+<script>
+  // ヘッダー: スクロールで背景ON
+  (function(){
+    var nav = document.getElementById('nav');
+    var onScroll = function(){
+      if (window.scrollY > 24) nav.classList.add('scrolled');
+      else nav.classList.remove('scrolled');
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, {passive:true});
+  })();
+
+  // モバイルメニュー: リンクを押したら閉じる / 外側クリックで閉じる
+  (function(){
+    var menu = document.querySelector('.m-menu');
+    if(!menu) return;
+    menu.querySelectorAll('.m-panel a').forEach(function(a){
+      a.addEventListener('click', function(){ menu.removeAttribute('open'); });
+    });
+    document.addEventListener('click', function(e){
+      if (menu.hasAttribute('open') && !menu.contains(e.target)) menu.removeAttribute('open');
+    });
+  })();
+
+  // スクロールで要素をふわっと表示（JSが無ければ .js クラスが付かず常時表示）
+  (function(){
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      els.forEach(function(el){ el.classList.add('in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {threshold:0, rootMargin:'0px 0px -40px 0px'});
+    els.forEach(function(el){ io.observe(el); });
+  })();
+</script>
+</body>
+</html>
