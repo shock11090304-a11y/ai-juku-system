@@ -2380,6 +2380,7 @@
         //   を新標準として追加。旧 _answers/_strict + 無印本編も後方互換維持。
         //   _解説→解答扱い / _問題→本番版(ヒント無し)扱い / _ヒント付き問題→本編(main)扱い。
         (prints || []).forEach(p => {
+          if (!p) return;  // 配列内 null で throw させない (防御・上の正規化 forEach と規律を揃える)
           const fp = p.file_path || '';
           if (fp.endsWith('_answers.pdf')) {
             answersByPrefix[fp.replace('_answers.pdf', '')] = p;
@@ -2422,7 +2423,12 @@
             mainPrints.push(strictByPrefix[prefix]);
           }
         });
-        return mainPrints;
+        // 🎯 2026-07-22 塾長指示: 「問題のみで解答が無い」演習問題集は生徒に出さない
+        //   (答え合わせできない問題集を配らない)。対象は target_type='演習問題集' かつ
+        //   解答 (answerPrint) が付いていないカードのみ。実測: 対象 68 件。
+        //   ★自習用/授業用/サンプル等の読み物系 (元々解答が無いのが正常) と、
+        //     解答単独 (orphan 解答解説)・本番試験版は除外条件に含めない (=残す)。
+        return mainPrints.filter(p => !(p && p.target_type === '演習問題集' && !p.answerPrint));
       }
 
       function renderPrintCard(p, compact) {
@@ -2495,10 +2501,15 @@
           const univList = document.getElementById('lessonPrintsByUnivList');
           const univLabel = document.getElementById('lpUnivLabel');
           if (univBlock && univList && data.university_match && data.university_match.prints && data.university_match.prints.length > 0) {
-            if (univLabel) univLabel.textContent = data.university_match.university;
             const univGrouped = groupAnswerPrints(data.university_match.prints);
-            univList.innerHTML = univGrouped.map(p => renderPrintCard(p, true)).join('');
-            univBlock.style.display = '';
+            // 🎯 2026-07-22: 解答なし演習問題集の除外で 0 件なら大学一致ボックスは畳む
+            if (univGrouped.length === 0) {
+              univBlock.style.display = 'none';
+            } else {
+              if (univLabel) univLabel.textContent = data.university_match.university;
+              univList.innerHTML = univGrouped.map(p => renderPrintCard(p, true)).join('');
+              univBlock.style.display = '';
+            }
           } else if (univBlock) {
             univBlock.style.display = 'none';
           }
@@ -2524,6 +2535,8 @@
             html += `<div style="font-size:0.7rem;color:#c4b5fd;font-weight:700;margin:0.4rem 0 0.2rem 0;">▸ ${escapeHTML(lv)}</div>`;
             byLevel[lv].forEach(p => { html += renderPrintCard(p, true); });
           });
+          // 🎯 2026-07-22: 全 level が解答なし演習問題集で埋まっていた等で html が空なら畳む
+          if (!html) { goalBlock.style.display = 'none'; return; }
           goalList.innerHTML = html;
           goalBlock.style.display = '';
         } catch (e) {
@@ -2558,6 +2571,11 @@
           // 🛡️ 塾長指示 2026-05-26: 推薦リストも本編+解答 集約
           const allRecommended = matched.flatMap(rec => rec.prints || []);
           const groupedRec = groupAnswerPrints(allRecommended);
+          // 🎯 2026-07-22: 解答なし演習問題集の除外で全件消えたら、空の推薦ボックスを出さず畳む
+          if (groupedRec.length === 0) {
+            if (recommendedBlock) recommendedBlock.style.display = 'none';
+            return;
+          }
           groupedRec.forEach(p => { html += renderPrintCard(p, true); });
           if (recommendedList) recommendedList.innerHTML = html;
           if (recommendedBlock) recommendedBlock.style.display = '';
@@ -2597,9 +2615,17 @@
             totalEl.textContent = '';
             return;
           }
-          empty.style.display = 'none';
           // 🛡️ 塾長指示 2026-05-26: 本編+解答 PDF を集約 (解答単独表示を抑制)
           const grouped = groupAnswerPrints(printsForMode);
+          // 🎯 2026-07-22: グルーピング後に 0 セット (この絞り込みが解答なし演習問題集だけだった等) なら
+          //   空の <div> でなく「該当なし」メッセージを出す (printsForMode.length チェックはグルーピング前なので拾えない)
+          if (grouped.length === 0) {
+            list.innerHTML = '';
+            empty.style.display = '';
+            totalEl.textContent = '';
+            return;
+          }
+          empty.style.display = 'none';
           list.innerHTML = grouped.map(p => renderPrintCard(p, false)).join('');
           const _displayTotal = (_modeL === 'kosei') ? (data.total || printsForMode.length) : printsForMode.length;
           totalEl.textContent = `全 ${_displayTotal} 件 (${grouped.length} セット表示)`;
