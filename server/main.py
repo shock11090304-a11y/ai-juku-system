@@ -36574,6 +36574,11 @@ def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, li
         if levels:
             sql_m += f" AND vw.level IN ({placeholders})"
             params_m.extend(levels)
+        # 🐛 2026-07-22 univ fix: タグ絞りを SQL に押し込む (post-fetch だと id 昇順 LIMIT 窓に
+        #   univ タグ語 (高 id) が入らず新規生徒が必ず 0 問になっていた)。下の Python filter は保険で残す
+        if univ:
+            sql_m += " AND vw.tags LIKE ?"
+            params_m.append(f"%univ:{univ}%")
         sql_m += " ORDER BY (vp.review_count - vp.correct_count) DESC, vp.last_reviewed_at DESC LIMIT ?"
         # univ post-fetch filter で削られる分を考慮し fetch_limit を増やす (致命 fix 2026-05-25)
         fetch_limit_m = limit * 10 if univ else limit * 3
@@ -36596,6 +36601,9 @@ def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, li
         if levels:
             sql_due += f" AND vw.level IN ({placeholders})"
             params.extend(levels)
+        if univ:  # 🐛 2026-07-22 univ fix (SQL 側絞り)
+            sql_due += " AND vw.tags LIKE ?"
+            params.append(f"%univ:{univ}%")
         sql_due += " ORDER BY vp.next_review_at ASC LIMIT ?"
         params.append(limit * 3)  # univ filter で絞られる可能性があるので余裕めに
         c.execute(sql_due, tuple(params))
@@ -36614,6 +36622,10 @@ def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, li
             if levels:
                 sql_new += f" AND level IN ({placeholders})"
                 params2.extend(levels)
+            # 🐛 2026-07-22 univ fix (本丸): これが無いと id 昇順 LIMIT が univ タグ語に届かず新規生徒が 0 問
+            if univ:
+                sql_new += " AND tags LIKE ?"
+                params2.append(f"%univ:{univ}%")
             sql_new += " ORDER BY id LIMIT ?"
             params2.append((limit - len(candidates)) * 3)
             c.execute(sql_new, tuple(params2))
