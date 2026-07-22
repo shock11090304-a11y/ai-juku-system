@@ -2369,6 +2369,15 @@ async def _start_background_tasks():
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Weekly worksheet scheduler launched (target Sun JST 5:00)")
 
+    # 🎯 弱点ドリル 3日ルーティン scheduler (毎日 JST 5:30・env WEAKNESS_DRILL_ROUTINE_ENABLED で ON):
+    # 塾長要望 2026-07-22「3日に1回・分析後に弱点を自動出題」。4:00 弱点集計→5:00 週次プリントの後に走らせ、
+    # 各生徒(受験生)の最優先弱点を自動採点ドリル(10問)化→3日周期で LINE/メール配信 (閉ループで再採点)。
+    # 既定OFF(env 未設定=何もしない)で段階投入。ON時は週次プリントが受験生を stand-down し二重送信を防ぐ。
+    if CRON_SECRET:
+        task = asyncio.create_task(_weakness_drill_routine_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info("[Startup] Weakness drill routine scheduler launched (target JST 5:30 daily, gated by WEAKNESS_DRILL_ROUTINE_ENABLED)")
+
     # 🗄️ R2 daily DB backup scheduler (毎日 JST R2_BACKUP_HOUR_JST=3:00):
     # 2026-05-20 Railway 全体障害で「DB と app の同居 = DB も道連れ」教訓から実装。
     # Supabase 自身も daily backup を持つが、別事業者 (Cloudflare R2) に dump を
@@ -4382,6 +4391,14 @@ def _run_weekly_worksheet_generation() -> dict:
                 #   弱点をプリントに出さない (中学生に大学問題が漏れない=厳守)。kosei/shougaku は従来どおり無制限。
                 smode = _student_mode_from_grade(sgrade)
                 _subj_scope = "AND subject = 'chugaku' " if smode == "chugaku" else ""
+
+                # 🎯 2026-07-22: 3日ドリルルーティン(WEAKNESS_DRILL_ROUTINE_ENABLED)が有効なとき、routine が
+                #   実際に配信している受験生は週次プリントから stand-down し二重送信を防ぐ。★ただし stand-down は
+                #   「直近に routine ドリルを受け取った生徒」限定 (kosei一律ではない): routine が配信できない生徒
+                #   (国語/現代文など grammar 在庫の薄い科目が最重症・ドリル化不可の弱点のみ)は週次プリントを継続し、
+                #   両方から漏れる配信ゼロ(3並列レビュー指摘のブラックホール)を防ぐ。中学/小学は routine 対象外。
+                if _weakness_drill_routine_enabled() and smode == "kosei" and _student_has_recent_routine_drill(c, sid):
+                    continue
 
                 # 既に今週分が生成済か (dedup)
                 c.execute("SELECT id FROM worksheet_archives WHERE student_id=? AND week_start_date=?", (sid, week_start))
@@ -40252,6 +40269,29 @@ def admin_grammar_import(
         conn.close()
 
 
+def _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, exclude_ids=None):
+    """grammar_questions からドリル用の問題 id を count 問ランダム抽出 (active のみ)。
+    subject_level=True は unit フィルタを外しその科目の全単元から出題。exclude_ids で前回出題を除外。
+    grammar-drill/create endpoint と弱点ルーティン(_run_weakness_drill_routine)が同一抽出を共有する。"""
+    ph = ",".join(["?"] * len(levels))
+    unit_clause = "" if subject_level else "unit = ? AND "
+    unit_params = () if subject_level else (unit,)
+    if exclude_ids:
+        ex_ph = ",".join(["?"] * len(exclude_ids))
+        c.execute(
+            f"SELECT id FROM grammar_questions WHERE {unit_clause}subject = ? AND level IN ({ph}) AND active = 1 "
+            f"AND id NOT IN ({ex_ph}) ORDER BY RANDOM() LIMIT ?",
+            (*unit_params, subject, *levels, *exclude_ids, count),
+        )
+    else:
+        c.execute(
+            f"SELECT id FROM grammar_questions WHERE {unit_clause}subject = ? AND level IN ({ph}) AND active = 1 "
+            f"ORDER BY RANDOM() LIMIT ?",
+            (*unit_params, subject, *levels, count),
+        )
+    return [r["id"] for r in c.fetchall()]
+
+
 def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count: int, subject: str = "english"):
     """BackgroundTasks: 配信されたドリルを各生徒へ LINE / メールで能動通知 (best-effort)。
     notify_list: [{"id":int,"name":str,"email":str|None,"line_user_id":str|None}]
@@ -40382,24 +40422,8 @@ def admin_grammar_drill_create(
                 except Exception:
                     exclude_ids = []
         # 1) 在庫から count 問をランダム固定 (exclude_ids があれば除外 = 前回と被らない新問のみ)
-        ph = ",".join(["?"] * len(levels))
-        # 🧩 科目単位配信(subject_level)は unit フィルタを外し、その科目の全単元から出題。
-        unit_clause = "" if subject_level else "unit = ? AND "
-        unit_params = () if subject_level else (unit,)
-        if exclude_ids:
-            ex_ph = ",".join(["?"] * len(exclude_ids))
-            c.execute(
-                f"SELECT id FROM grammar_questions WHERE {unit_clause}subject = ? AND level IN ({ph}) AND active = 1 "
-                f"AND id NOT IN ({ex_ph}) ORDER BY RANDOM() LIMIT ?",
-                (*unit_params, subject, *levels, *exclude_ids, count),
-            )
-        else:
-            c.execute(
-                f"SELECT id FROM grammar_questions WHERE {unit_clause}subject = ? AND level IN ({ph}) AND active = 1 "
-                f"ORDER BY RANDOM() LIMIT ?",
-                (*unit_params, subject, *levels, count),
-            )
-        qids = [r["id"] for r in c.fetchall()]
+        #    弱点ルーティン配信(_run_weakness_drill_routine)と同一抽出を共有 (_grammar_pick_drill_question_ids)。
+        qids = _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, exclude_ids)
         if len(qids) < count:
             _scope = f"科目「{unit}」" if subject_level else f"単元「{unit}」"
             raise HTTPException(
@@ -40489,6 +40513,335 @@ def admin_grammar_drill_create(
         raise
     finally:
         conn.close()
+
+
+# ========================================================================
+# 🎯 弱点ドリル 3日ルーティン (2026-07-22 塾長要望「3日に1回・分析後に弱点を自動出題」)
+#   毎日 JST 5:30 (4:00 弱点集計→5:00 週次プリントの後) に、各生徒(受験生=kosei)の最優先弱点を
+#   自動採点ドリル(10問)化して配信。生徒ごと3日周期・未完了は積まない。env WEAKNESS_DRILL_ROUTINE_ENABLED
+#   で ON (既定OFF=段階投入)。ON時は週次プリント(_run_weekly_worksheet_generation)が受験生を stand-down し
+#   二重送信を防ぐ (中学/小学は grammar_questions 在庫外=ルーティン対象外のため週次プリントを継続)。
+_WEAKNESS_ROUTINE_CADENCE_DAYS = 3
+_WEAKNESS_ROUTINE_DRILL_COUNT = 10
+_WEAKNESS_ROUTINE_CREATED_BY = "weakness_routine_3d"
+# ceo.html _pickDrillUnits のサーバ移植用: 英語は文法20単元をピンポイント配信、数学/理科/社会は
+# 単元が粗いので「科目まるごと」配信 (unit 空)、国語(japanese)も科目まるごと。
+_ENG_DRILL_UNITS = ['時制', '助動詞', '受動態', '不定詞', '動名詞', '分詞構文', '分詞', '関係詞', '仮定法',
+                    '比較', '接続詞', '前置詞', '疑問詞・間接疑問', '否定・倒置', '強調・省略', '冠詞',
+                    '名詞・代名詞', '形容詞・副詞', '話法', '語法・イディオム']
+_SUBJECT_LEVEL_DRILL = {'math': '数学', 'physics': '物理', 'chemistry': '化学', 'biology': '生物',
+                        'earth': '地学', 'social': '社会'}
+
+
+def _weakness_drill_routine_enabled() -> bool:
+    return str(os.getenv("WEAKNESS_DRILL_ROUTINE_ENABLED", "")).strip().lower() in ("1", "true", "yes", "on")
+
+
+def _weakness_routine_send_cap() -> int:
+    try:
+        return max(1, min(int(os.getenv("WEAKNESS_DRILL_ROUTINE_CAP", "60")), 500))
+    except (TypeError, ValueError):
+        return 60
+
+
+def _weakness_routine_pick_drills(c, sid, limit=5):
+    """生徒の『ドリル化できる弱点』を重症度順に最大 limit 件返す ({subject,unit,label} のリスト・先頭が最優先)。
+    ceo.html _pickDrillUnits のサーバ移植。習得済み(卒業: qa_accuracy>=0.8 & qa_attempts>=5)は除外し、
+    _select_balanced_weak_topics で科目バランス+重症度順に並べた弱点から grammar_questions で配信可能な
+    候補を (subject,unit) 重複除去しつつ集める。英語で文法単元に該当しない(長文/語彙等)弱点はスキップ。
+    ★呼び出し側は先頭から順に試し、在庫不足なら次点へ回す = 薄い科目(現代文/地学)が最重症でも配信ゼロに
+    ならないため (3並列レビュー指摘の配信ブラックホール回避)。配信可能が無ければ []。"""
+    c.execute(
+        "SELECT subject, topic, qa_accuracy, qa_attempts, avg_elapsed_ms FROM student_weakness "
+        "WHERE student_id = ? AND qa_attempts > 0 "
+        "AND NOT (COALESCE(qa_accuracy, -1) >= ? AND COALESCE(qa_attempts, 0) >= ?) "
+        "ORDER BY qa_accuracy ASC",
+        (sid, _WEAKNESS_MASTERY_ACCURACY, _WEAKNESS_MASTERY_MIN_ATTEMPTS),
+    )
+    cands = [{
+        "subject": r["subject"], "topic": r["topic"],
+        "accuracy": round(r["qa_accuracy"], 3) if r["qa_accuracy"] is not None else None,
+        "attempts": r["qa_attempts"], "avg_elapsed_ms": r["avg_elapsed_ms"],
+    } for r in c.fetchall()]
+    if not cands:
+        return []
+    picks, seen = [], set()
+    for w in _select_balanced_weak_topics(cands, cap=8):
+        subj = _canon_grammar_subject(w.get("subject"))
+        topic = w.get("topic") or ""
+        cand = None
+        if subj == "english":
+            for u in _ENG_DRILL_UNITS:
+                key = u.split("・")[0]
+                if (u in topic) or (key and key in topic):
+                    cand = {"subject": "english", "unit": u, "label": u}
+                    break
+            # 英語だが文法単元に非該当(長文/語彙等)→ この弱点はドリル化不可・次の弱点へ
+        elif subj == "japanese":
+            cand = {"subject": "japanese", "unit": "", "label": "国語"}
+        elif subj in _SUBJECT_LEVEL_DRILL:
+            cand = {"subject": subj, "unit": "", "label": _SUBJECT_LEVEL_DRILL[subj]}
+        # canonical 化できない(chugaku 等)→ grammar ドリル不可・次の弱点へ
+        if cand:
+            k = (cand["subject"], cand["unit"])
+            if k not in seen:
+                seen.add(k)
+                picks.append(cand)
+                if len(picks) >= limit:
+                    break
+    return picks
+
+
+def _student_has_recent_routine_drill(c, sid, days=8):
+    """生徒に直近 days 日以内の弱点ルーティンドリル配信があるか (status 不問=完了/未完了とも)。
+    週次プリントの stand-down 判定に使う: routine が実際に担当している生徒だけを週次プリントから外し、
+    routine が配信できない生徒(薄い科目/ドリル化不可の弱点)は週次プリントを継続させ配信ゼロを防ぐ
+    (3並列レビュー指摘のブラックホール回避)。★判定は『直近配信』のみで status は見ない: 未完了(open)を
+    放置した休眠生の週次プリント(=再活性の役割)を無期限に止めない (open に時間下限が無いと再活性が
+    永久停止する過抑制を回避・3並列レビュー2ラウンド指摘)。stale な open ドリルは8日で recency から外れ
+    週次が再開する。routine 側の overdue ガード(open>0 で新規を積まない)は別途維持。
+    days は routine cadence(3日) より広くとり日曜の取りこぼしを防ぐ。"""
+    cutoff = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        c.execute(
+            "SELECT 1 FROM grammar_drill_assignments a JOIN grammar_drills d ON a.drill_id = d.id "
+            "WHERE d.created_by = ? AND a.student_id = ? AND a.assigned_at >= ? LIMIT 1",
+            (_WEAKNESS_ROUTINE_CREATED_BY, sid, cutoff),
+        )
+        return c.fetchone() is not None
+    except Exception:
+        return False
+
+
+def _create_routine_grammar_drill(c, conn, subject, unit, count, sid, st):
+    """1名分の弱点ルーティンドリルを作成 + 割当。在庫不足なら None。成功時 notify エントリ付き dict。
+    grammar-drill/create のコア(問題選択→drill→assignment)を再現し created_by=_WEAKNESS_ROUTINE_CREATED_BY
+    でタグ付け (cadence/overdue 判定に使用)。commit は1名単位で分離し PG txn poisoning を避ける。"""
+    subject_level = not unit
+    disp_unit = unit if unit else _grammar_subject_label_ja(subject)
+    levels = ["standard", "advanced"]
+    # 前回の同タグ・同科目・同単元ドリルの出題済み id を除外 (前回と被らない新問で再出題)
+    exclude_ids = []
+    try:
+        c.execute(
+            "SELECT question_ids FROM grammar_drills WHERE created_by = ? AND subject = ? AND unit = ? "
+            "ORDER BY id DESC LIMIT 1",
+            (_WEAKNESS_ROUTINE_CREATED_BY, subject, disp_unit),
+        )
+        row = c.fetchone()
+        if row:
+            raw = (row["question_ids"] if hasattr(row, "keys") else row[0]) or "[]"
+            exclude_ids = [int(x) for x in json.loads(raw)]
+    except Exception:
+        exclude_ids = []
+    qids = _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, exclude_ids)
+    if len(qids) < count and exclude_ids:
+        # 新問が尽きたら除外なしで再取得 (同一問題でも復習の価値あり=配信を止めない)
+        qids = _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, None)
+    if len(qids) < count:
+        return None  # 在庫不足 (earth / 現代文 等の薄い科目)
+    level_label = "・".join(GRAMMAR_LEVELS.get(l, l) for l in levels)
+    title = f"🎯弱点対策 {disp_unit}ドリル（{level_label}・{count}問）"
+    try:
+        c.execute(
+            "INSERT INTO grammar_drills (subject, title, unit, level, question_ids, created_by) "
+            "VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
+            (subject, title, disp_unit, ",".join(levels), json.dumps(qids), _WEAKNESS_ROUTINE_CREATED_BY),
+        )
+        dr = c.fetchone()
+        drill_id = (dr["id"] if hasattr(dr, "keys") else dr[0]) if dr else None
+        if not drill_id:
+            conn.rollback()
+            return None
+        c.execute(
+            "INSERT INTO grammar_drill_assignments (drill_id, student_id, status, score_total) "
+            "VALUES (?, ?, 'open', ?) ON CONFLICT (drill_id, student_id) DO NOTHING RETURNING id",
+            (drill_id, sid, count),
+        )
+        got = c.fetchone()
+        conn.commit()
+        if not got:
+            return None  # (drill_id, sid) 既存 = 新 drill なので通常起きない
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        log.warning(f"[WeaknessRoutine] drill create failed sid={sid}: {type(e).__name__}: {e}")
+        return None
+    return {
+        "unit": disp_unit, "subject": subject,
+        "s": {"id": sid, "name": st["name"], "email": st["email"], "line_user_id": st["line_user_id"]},
+    }
+
+
+def _run_weakness_drill_routine(only_student_id: Optional[int] = None, dry_run: bool = False) -> dict:
+    """🎯 3日ルーティン本体。対象=AI管理の在籍生(trial/paid・synthetic除外)・受験生(kosei)・直近30日ログイン
+    あり・ドリル化できる弱点あり。生徒ごと3日周期(直近3日に配信済み=skip)・未完了(open)が残る=skip。
+    在庫不足の科目は skip。CAP で1回の配信人数を制限。dry_run=True は副作用ゼロ(候補のみ)=事前確認用。
+    返却: {eligible, delivered, skipped_*, capped, cap, dry_run, delivered_students}"""
+    import time as _t
+    from collections import defaultdict
+    conn = db()
+    c = conn.cursor()
+    now = datetime.now(timezone.utc)
+    # cadence_cutoff は routine_state.last_at (=str(assigned_at)=naive UTC "YYYY-MM-DD HH:MM:SS[.ffffff]")
+    #   と Python 側で文字列比較するため、同一書式の naive UTC 文字列にする (aware isoformat だと 'T'/offset で
+    #   書式不一致→日付粒度に劣化する 3並列レビュー指摘の堅牢化)。login_cutoff は SQL 側比較なので isoformat 可。
+    cadence_cutoff = (datetime.utcnow() - timedelta(days=_WEAKNESS_ROUTINE_CADENCE_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+    login_cutoff = (now - timedelta(days=30)).isoformat()
+    cap = _weakness_routine_send_cap()
+    summary = {
+        "eligible": 0, "delivered": 0, "skipped_grade": 0, "skipped_recent": 0,
+        "skipped_open": 0, "skipped_no_weakness": 0, "skipped_no_inventory": 0,
+        "capped": 0, "cap": cap, "dry_run": bool(dry_run), "delivered_students": [],
+    }
+    try:
+        sql = ("SELECT id, name, email, line_user_id, grade FROM students "
+               f"WHERE status IN ('trial', 'paid') AND {_synth_exclude_sql('students')} "
+               "AND (last_login_at IS NULL OR last_login_at >= ?) ")
+        params = [login_cutoff]
+        if only_student_id:
+            sql += "AND id = ? "
+            params.append(int(only_student_id))
+        sql += "ORDER BY id LIMIT 500"
+        c.execute(sql, tuple(params))
+        students = c.fetchall() or []
+
+        # 既存 routine 配信状況 (cadence + overdue) を一括取得
+        routine_state = {}
+        try:
+            c.execute(
+                "SELECT a.student_id AS sid, MAX(a.assigned_at) AS last_at, "
+                "SUM(CASE WHEN a.status = 'open' THEN 1 ELSE 0 END) AS open_cnt "
+                "FROM grammar_drill_assignments a JOIN grammar_drills d ON a.drill_id = d.id "
+                "WHERE d.created_by = ? GROUP BY a.student_id",
+                (_WEAKNESS_ROUTINE_CREATED_BY,),
+            )
+            for r in c.fetchall():
+                routine_state[r["sid"]] = {
+                    "last_at": str(r["last_at"]) if r["last_at"] else None,
+                    "open": int(r["open_cnt"] or 0),
+                }
+        except Exception as e:
+            log.warning(f"[WeaknessRoutine] routine_state fetch failed: {e}")
+
+        notify_list = []
+        for st in students:
+            sid = st["id"]
+            if _student_mode_from_grade(st["grade"]) != "kosei":
+                summary["skipped_grade"] += 1
+                continue
+            rs = routine_state.get(sid)
+            if rs:
+                if rs["open"] > 0:
+                    summary["skipped_open"] += 1
+                    continue
+                if rs["last_at"] and rs["last_at"] >= cadence_cutoff:
+                    summary["skipped_recent"] += 1
+                    continue
+            picks = _weakness_routine_pick_drills(c, sid)
+            if not picks:
+                summary["skipped_no_weakness"] += 1
+                continue
+            summary["eligible"] += 1
+            if summary["delivered"] >= cap:
+                summary["capped"] += 1
+                continue
+            if dry_run:
+                summary["delivered"] += 1
+                summary["delivered_students"].append({"id": sid, "unit": picks[0]["label"], "subject": picks[0]["subject"], "dry_run": True})
+                continue
+            # 在庫のある候補が見つかるまで重症度順に試す (薄い科目が最重症でも配信ゼロにしない)
+            created = None
+            for p in picks:
+                created = _create_routine_grammar_drill(c, conn, p["subject"], p["unit"], _WEAKNESS_ROUTINE_DRILL_COUNT, sid, st)
+                if created is not None:
+                    break
+            if created is None:
+                summary["skipped_no_inventory"] += 1
+                continue
+            summary["delivered"] += 1
+            summary["delivered_students"].append({"id": sid, "unit": created["unit"], "subject": created["subject"]})
+            notify_list.append(created)
+
+        # 通知 (best-effort・同期)。(subject, unit) でグループ化し既存の _notify_grammar_drill_assigned を再利用。
+        # グループ内は同関数が 1.5s throttle・グループ間も 1.5s sleep で Resend レート制限(1通/秒)を回避。
+        if notify_list and not dry_run:
+            groups = defaultdict(list)
+            for n in notify_list:
+                groups[(n["subject"], n["unit"])].append(n["s"])
+            first = True
+            for (subj, unit), slist in groups.items():
+                if not first:
+                    _t.sleep(1.5)
+                first = False
+                try:
+                    _notify_grammar_drill_assigned(slist, unit, _WEAKNESS_ROUTINE_DRILL_COUNT, subj)
+                except Exception as e:
+                    log.warning(f"[WeaknessRoutine] notify group ({subj},{unit}) failed: {e}")
+        return summary
+    finally:
+        conn.close()
+
+
+async def _weakness_drill_routine_scheduler():
+    """🎯 弱点ドリル 3日ルーティン scheduler: 毎日 JST 5:30 (弱点集計 4:00・週次プリント 5:00 の後) に起動。
+    env WEAKNESS_DRILL_ROUTINE_ENABLED が有効な日だけ実配信 (既定OFF=段階投入)。multi-replica dedup 付き。"""
+    JST = timezone(timedelta(hours=9))
+    TARGET_HOUR_JST, TARGET_MIN_JST = 5, 30
+    log.info(f"[WeaknessRoutine] Scheduler started, target JST {TARGET_HOUR_JST}:{TARGET_MIN_JST:02d} daily (per-student 3-day cadence, env-gated)")
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            target = now_jst.replace(hour=TARGET_HOUR_JST, minute=TARGET_MIN_JST, second=0, microsecond=0)
+            if target <= now_jst:
+                target += timedelta(days=1)
+            await asyncio.sleep((target - now_jst).total_seconds())
+            if not _weakness_drill_routine_enabled():
+                continue  # env OFF の間は毎日チェックのみで何もしない
+            if _check_scheduler_ran_today_jst("weakness_drill_routine_run"):
+                log.info("[WeaknessRoutine] Skipped (already ran today by another replica)")
+                continue
+            try:
+                # to_thread で event loop を塞がない (同期DB + 同期通知 + グループ間 1.5s sleep を含むため。
+                #   _weekly_reports_scheduler と同方式。3並列レビュー指摘)。
+                result = await asyncio.to_thread(_run_weakness_drill_routine)
+                log.info(f"[WeaknessRoutine] result: {result}")
+                _record_scheduler_run("weakness_drill_routine_run", result)
+            except Exception as e:
+                log.error(f"[WeaknessRoutine] failed: {type(e).__name__}: {e}", exc_info=True)
+                _record_scheduler_run("weakness_drill_routine_run", {"error": f"{type(e).__name__}: {e}"})
+        except asyncio.CancelledError:
+            log.info("[WeaknessRoutine] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[WeaknessRoutine] Scheduler loop error: {e}", exc_info=True)
+            await asyncio.sleep(3600)
+
+
+@app.post("/api/admin/weakness-drill-routine/run")
+def admin_weakness_drill_routine_run(
+    payload: Optional[dict] = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🎯 admin: 弱点ドリル3日ルーティンを手動実行/プレビュー。env の ON/OFF に関わらず実行できる
+    (塾長の事前確認/緊急配信用)。payload: { dry_run?: bool (既定 true=副作用ゼロで候補確認),
+    student_id?: int (1名だけ試す) }。dry_run=true は一切配信せず「誰に何が配信されるか」だけ返す。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    payload = payload or {}
+    dry = payload.get("dry_run")
+    dry = True if dry is None else bool(dry)  # 既定 dry_run (誤爆防止)
+    sid = payload.get("student_id")
+    try:
+        sid = int(sid) if sid is not None else None
+    except (TypeError, ValueError):
+        sid = None
+    result = _run_weakness_drill_routine(only_student_id=sid, dry_run=dry)
+    result["enabled_env"] = _weakness_drill_routine_enabled()
+    return {"ok": True, **result}
 
 
 @app.get("/api/admin/grammar-drill/list")
