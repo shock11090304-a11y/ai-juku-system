@@ -21728,6 +21728,61 @@ def admin_student_activity(student_id: int, hours: int = 720, limit: int = 200, 
     }
 
 
+def _select_balanced_weak_topics(cands, cap=8):
+    """🎯 2026-07-22 CEO『やるべきこと一覧』の弱点表示用に、科目バランスを取りつつ重症度順で
+    最大 cap 件を選ぶ。
+    背景(3レンズ+敵対検証で確定した表示欠陥): 従来は student_weakness を qa_accuracy ASC で並べ
+    先頭 cap 件を機械切りしていた。英語は『単発0%(attempts少・accuracy0)』の細切れ弱点行を非英語の
+    約5倍持つため、これらが上位枠を占有し、演習量の多い生徒で非英語の慢性弱点(理科/社会/数学)が
+    枠外に押し出され CEO 一覧・ドリルボタンから消えていた(実例: 3450の理科全滅・4383の社会5件・10469の数学)。
+    対策: (1)重症度キーで慢性弱点(attempts>=5 & accuracy<0.75)を最優先し、同 accuracy では attempts の
+    多い(=裏付けのある)方を優先=単発ノイズを後回し。(2)『慢性弱点を持つ科目』に各1枠を確保してから
+    残枠を重症度順に充填する(単発0%ノイズしか無い科目には枠を配らない=英語の慢性弱点を不当に押し出さない)。
+    これで非英語科目の慢性弱点が必ず1件は表面化する。集計値(reason_totals)は呼び出し側で全行を
+    使い続けるためここでは絞らない。下流(_actionRecs の rec 抽出・_pickDrillUnits のドリルボタン・
+    生徒詳細モーダル)は全てこの weak_topics を消費するので、この1箇所の修正で全経路が非英語を拾う。"""
+    if not cands:
+        return []
+
+    def _chronic(w):
+        # 慢性弱点 = 5回以上解いて正答<75% (ceo.html の gw フィルタと閾値を揃える)。
+        acc = w["accuracy"] if w.get("accuracy") is not None else 1.0
+        return (w.get("attempts") or 0) >= 5 and acc < 0.75
+
+    def sev_key(w):
+        acc = w["accuracy"] if w.get("accuracy") is not None else 1.0
+        att = w.get("attempts") or 0
+        return (0 if _chronic(w) else 1, acc, -att)  # 昇順: 慢性→accuracy低い→attempts多い
+
+    # 科目ごとに束ねる(日本語ラベル凍結行 数学/英語 等は canonical に寄せて math/english と統合)
+    by_subj = {}
+    for w in cands:
+        k = _canon_grammar_subject(w.get("subject")) or (w.get("subject") or "")
+        by_subj.setdefault(k, []).append(w)
+    for k in by_subj:
+        by_subj[k].sort(key=sev_key)
+
+    # Pass1: 各科目の『慢性弱点(裏付けのある本物の弱点)』を1件ずつ確保する。
+    #   ★単発0%ノイズしか無い科目には枠を保証しない=英語の深刻な慢性弱点をノイズ科目で不当に
+    #   押し出さない(3並列レビュー指摘の過剰是正エッジ回避)。surface したい非英語弱点(理科/社会/数学)は
+    #   いずれも慢性側なので当初意図は保たれる。科目は「その科目の最重症の深刻さ」順に seat。
+    subj_order = sorted(by_subj.keys(), key=lambda k: sev_key(by_subj[k][0]))
+    selected = []
+    for k in subj_order:
+        if len(selected) >= cap:
+            break
+        if _chronic(by_subj[k][0]):
+            selected.append(by_subj[k].pop(0))
+    # Pass2: 残枠を全科目横断の重症度順で充填 (Pass1で枠を得なかった科目・非慢性行もここで拾う)
+    if len(selected) < cap:
+        leftover = [w for lst in by_subj.values() for w in lst]
+        leftover.sort(key=sev_key)
+        selected.extend(leftover[: cap - len(selected)])
+    # 表示は重症度順
+    selected.sort(key=sev_key)
+    return selected
+
+
 @app.get("/api/admin/learning-digest")
 def admin_learning_digest(authorization: Optional[str] = Header(None),
                           student_id: Optional[int] = None,
@@ -21830,28 +21885,35 @@ def admin_learning_digest(authorization: Optional[str] = Header(None),
         except Exception as e:
             log.warning(f"[digest] admission_likelihood skip: {e}")
 
-        # 3) 弱点単元 (正答率が低い順) + 誤答理由集計
+        # 3) 弱点単元 (科目バランス選抜・重症度順) + 誤答理由集計
+        #    🎯 2026-07-22 fix: 従来の「qa_accuracy ASC 先頭8件」機械切りは英語の単発0%細切れ行が枠を
+        #    占有し非英語の慢性弱点を押し出していた(3レンズ診断で確定)。_select_balanced_weak_topics で
+        #    『慢性弱点を持つ科目』に各1枠を確保しつつ重症度順に選ぶ。reason_totals は従来どおり全行から集計する。
         try:
             cl, cp = _sclause()
             c.execute(f"SELECT student_id, subject, topic, qa_accuracy, qa_attempts, avg_elapsed_ms, reason_counts "
                       f"FROM student_weakness {('WHERE qa_attempts > 0' if not student_id else 'WHERE student_id = ? AND qa_attempts > 0')} "
                       f"ORDER BY student_id, qa_accuracy ASC", (tuple(cp) if not student_id else (student_id,)))
+            _weak_cand = {}  # student_id -> [weakness dict ...] (全候補・後で科目バランス選抜)
             for r in c.fetchall():
                 s = students.get(r["student_id"])
                 if not s:
                     continue
-                if len(s["weak_topics"]) < 8:
-                    s["weak_topics"].append({
-                        "subject": r["subject"], "topic": r["topic"],
-                        "accuracy": round(r["qa_accuracy"], 3) if r["qa_accuracy"] is not None else None,
-                        "attempts": r["qa_attempts"],
-                        "avg_elapsed_ms": r["avg_elapsed_ms"],
-                    })
+                _weak_cand.setdefault(r["student_id"], []).append({
+                    "subject": r["subject"], "topic": r["topic"],
+                    "accuracy": round(r["qa_accuracy"], 3) if r["qa_accuracy"] is not None else None,
+                    "attempts": r["qa_attempts"],
+                    "avg_elapsed_ms": r["avg_elapsed_ms"],
+                })
                 for reason, cnt in (_jload(r["reason_counts"], {}) or {}).items():
                     try:
                         s["reason_totals"][reason] = s["reason_totals"].get(reason, 0) + int(cnt)
                     except (TypeError, ValueError):
                         pass
+            for sid, cands in _weak_cand.items():
+                s = students.get(sid)
+                if s:
+                    s["weak_topics"] = _select_balanced_weak_topics(cands, cap=8)
         except Exception as e:
             log.warning(f"[digest] student_weakness skip: {e}")
 
