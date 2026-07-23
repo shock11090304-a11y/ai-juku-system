@@ -499,6 +499,7 @@ const EXAMS = {
         { key: 'l_part1', name: 'Listening Part 1 (会話)',       icon: '💬', timeMin: 10, qCount: 12, scoreMax: 12, desc: '会話を聞いて応答' },
         { key: 'l_part2', name: 'Listening Part 2 (パッセージ)', icon: '🎙', timeMin: 10, qCount: 12, scoreMax: 12, desc: '長めのパッセージ理解' },
         { key: 'l_part3', name: 'Listening Part 3 (Real-Life)',  icon: '🌐', timeMin: 5,  qCount: 5,  scoreMax: 5,  desc: 'アナウンス等の状況把握' },
+        { key: 's_interview', name: '🎤 二次面接シミュレーション (通し・発音つき)', icon: '🎧', timeMin: 8, qCount: 5, scoreMax: 38, desc: 'ナレーション→No.1〜No.4を本番の流れで。面接官の音声・準備/回答タイマー・録音再生・AI採点つき' },
         { key: 's_read',  name: '二次 ナレーション (4コマ)',       icon: '🗣', timeMin: 3, qCount: 1, scoreMax: 15, desc: '4コマイラストのストーリーを英語で語る (準1級はナレーション形式・1分準備+2分)' },
         { key: 's_q1',    name: '二次 No.1 (イラスト質問)',        icon: '🗣', timeMin: 1, qCount: 1, scoreMax: 5,  desc: '4コマ目の人物の立場・心情を問う質問' },
         { key: 's_qa',    name: '二次 No.2-4 (意見・社会問題)',     icon: '🗣', timeMin: 5, qCount: 3, scoreMax: 15, desc: 'カードのトピック＋社会問題への即興意見' },
@@ -1382,8 +1383,10 @@ async function pickExamSections(examId) {
     // poolCount === null → fetch 失敗 (sentinel) → 在庫表示なし・従来通り (致命対応)
     const poolCount = _getPoolCount(poolMap, examId, sec.key, _grade);
     const hasPool = poolCount !== null;
+    // 🎤 s_interview は「1 pool行 = 1本の通し面接」なので在庫充足の基準は 1 (qCount=5 と比べない)。
+    const _needCount = sec.key === 's_interview' ? 1 : (sec.qCount || 1);
     const isZero = hasPool && poolCount === 0;
-    const isLow = hasPool && poolCount > 0 && poolCount < (sec.qCount || 1);
+    const isLow = hasPool && poolCount > 0 && poolCount < _needCount;
     let specHtml;
     if (isZero) {
       // pool=0: 「準備中」+ disable
@@ -1445,6 +1448,12 @@ async function pickExamSections(examId) {
 // ==========================================================================
 async function startSection(section) {
   const exam = EXAMS[state.examId];
+  // 🎤 2026-07-23 二次面接シミュレーション: 通し面接モード(s_interview)は専用 runner (eiken-interview.js) へ委譲。
+  //   録音/タイマー/面接官TTS/録音再生/AI採点を持つ別 UX。通常の question runner はバイパスする。
+  if (section.key === 's_interview' && typeof window.startEikenInterview === 'function') {
+    window.startEikenInterview({ examId: state.examId, eikenGrade: state.eikenGrade });
+    return;
+  }
   showRunner(exam, section);
   await generateAndShowQuestions(exam, section, /*full=*/false);
 }

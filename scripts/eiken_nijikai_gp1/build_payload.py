@@ -17,9 +17,11 @@ cards = json.load(open(SRC, encoding="utf-8"))
 orig = json.load(open(ORIG, encoding="utf-8"))
 
 def clean(s):
-    """表示ノイズ除去: 生成物に紛れたリテラル `\\"`(バックスラッシュ+引用符)→ `"`。
-    正規の日本語/英語本文にバックスラッシュ+引用符は出ないため安全。"""
-    return (s or "").replace('\\"', '"').replace("\\'", "'")
+    """表示ノイズ除去: 生成物に紛れたリテラルのエスケープ列を実文字へ。
+    - `\\n`(2文字のバックスラッシュ+n)→ 実改行 (解説の箇条書き区切り。pre-wrapで改行表示)
+    - `\\"`→ `"` / `\\'`→ `'`
+    正規の日本語/英語本文にこれらのリテラル列は出ないため安全。"""
+    return (s or "").replace('\\n', '\n').replace('\\"', '"').replace("\\'", "'")
 
 # --- 独立検証: frames以外は元と同一 / framesは全て日本語・4要素 ---
 def has_ja(s): return bool(re.search(r"[ぁ-んァ-ヶ一-龥]", s or ""))

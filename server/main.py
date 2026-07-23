@@ -12526,6 +12526,7 @@ EXAM_QUESTION_ROTATION = [
     ("eiken", "s_read", "gp1"),
     ("eiken", "s_q1",   "gp1"),
     ("eiken", "s_qa",   "gp1"),
+    ("eiken", "s_interview", "gp1"),  # 2026-07-23 発音つき二次面接モード: 1カード=通し(ナレーション+No.1-4)で配信
     ("eiken", "r_q1", "g2"),
     ("eiken", "r_q3", "g2"),        # 2026-05-03 復活: 2級長文 (旧形式但し import 既存データあり)
     ("eiken", "r_q3b", "g2"),       # 2026-04-30 追加: 2級長文内容一致
@@ -12768,6 +12769,7 @@ EXAM_QUESTION_AUTO_GENERATE_SKIP = {
     ("eiken", "s_read", "gp1"),
     ("eiken", "s_q1",   "gp1"),
     ("eiken", "s_qa",   "gp1"),
+    ("eiken", "s_interview", "gp1"),  # 二次面接モード(通し)・手動取込のみ
     # 📜 国語 単元別 (手動取込のみ・AI生成しない / 2026-06-17)
     ("daigaku", "kobun_unit", "kyotsu"),
     ("daigaku", "kanbun_unit", "kyotsu"),
