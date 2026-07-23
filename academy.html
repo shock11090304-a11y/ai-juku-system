@@ -254,8 +254,23 @@
   .report .subj-bar .sb-top{display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.25rem}
   .report .subj-bar .track{height:.5rem;background:var(--ivory-2);border-radius:999px;overflow:hidden}
   .report .subj-bar .fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-2));border-radius:999px}
+  .report .subj-bar.weak .fill{background:linear-gradient(90deg,#e0a24a,#c0562f)}
   .report .ai-c{margin-top:.9rem;background:var(--ivory);border-left:3px solid var(--gold);border-radius:8px;padding:.7rem .85rem;font-size:.8rem;color:var(--ink-soft);line-height:1.65}
   .report .ai-c b{color:var(--navy)}
+  .report .warn{color:#b23}
+  .an-lead{font-size:.85rem;color:var(--ink-soft);line-height:1.65;margin-bottom:1rem}
+  .an-lead b{color:var(--navy)}
+  .analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
+  .mini-tbl{width:100%;border-collapse:collapse;font-size:.8rem;margin:.35rem 0 1rem}
+  .mini-tbl th,.mini-tbl td{border-bottom:1px solid var(--line);padding:.38rem .5rem;text-align:center}
+  .mini-tbl th{color:var(--ink-soft);font-weight:800;font-size:.72rem}
+  .mini-tbl td:first-child,.mini-tbl th:first-child{text-align:left}
+  .mini-tbl .hi{color:var(--gold-ink);font-weight:800}
+  .strengths{list-style:none;display:grid;gap:.45rem;font-size:.8rem;color:var(--ink-soft)}
+  .strengths li{padding-left:1.3em;position:relative;line-height:1.55}
+  .strengths li::before{content:"✓";position:absolute;left:0;color:var(--gold-ink);font-weight:800}
+  .strengths li b{color:var(--navy)}
+  .mock-note{display:block;margin-top:1rem;font-size:.72rem;color:var(--ink-soft);line-height:1.5}
 
   /* ===== 塾生アプリ ===== */
   .app{background:var(--ivory-2)}
@@ -409,6 +424,7 @@
   @media(max-width:620px){
     .hero-proof{display:none}
     .mocks{grid-template-columns:1fr}
+    .analysis-grid{grid-template-columns:1fr}
   }
   @media(max-width:520px){
     .hero-cta .btn{width:100%}
@@ -608,8 +624,8 @@
       </div>
     </div>
     <div class="screens-sub reveal">
-      <h3>実際の画面で見る</h3>
-      <p>「動く解説」教材は実際の画面です。AIチューター・保護者レポートは画面イメージです。</p>
+      <h3>実際の画面とレポートで見る</h3>
+      <p>「動く解説」教材は実際の画面です。AIチューターは画面イメージ、レポートは実際のレポートを基にした例です（氏名等の個人情報は掲載していません）。</p>
     </div>
     <div class="shots reveal">
       <figure class="shot">
@@ -641,20 +657,56 @@
         </div>
       </div>
       <div class="mock">
-        <div class="mhd"><b>保護者への週次レポート</b><span class="mimg">レポート例</span></div>
+        <div class="mhd"><b>保護者への学習状況レポート</b><span class="mimg">レポート例</span></div>
         <div class="mbody">
           <div class="report">
-            <div class="rrow"><span>対象</span><b>高2 ・ A様</b></div>
-            <div class="rrow"><span>今週の学習時間</span><b>12時間30分（先週比 +2h）</b></div>
-            <div class="rrow"><span>AIへの質問</span><b>34回</b></div>
+            <div class="rrow"><span>対象</span><b>高2 ・ 国公立コース</b></div>
+            <div class="rrow"><span>集計期間</span><b>直近50日（在籍日数）</b></div>
+            <div class="rrow"><span>演習問題数</span><b>301問（正答率 72.8%）</b></div>
+            <div class="rrow"><span>学習記録 / AI質問・添削</span><b>46.5時間 / 46回</b></div>
             <div class="rlabel">科目別 正答率</div>
-            <div class="subj-bar"><div class="sb-top"><span>英語</span><span>82%</span></div><div class="track"><div class="fill" style="width:82%"></div></div></div>
-            <div class="subj-bar"><div class="sb-top"><span>数学</span><span>68%</span></div><div class="track"><div class="fill" style="width:68%"></div></div></div>
-            <div class="subj-bar"><div class="sb-top"><span>国語</span><span>75%</span></div><div class="track"><div class="fill" style="width:75%"></div></div></div>
-            <div class="subj-bar"><div class="sb-top"><span>化学</span><span>61%</span></div><div class="track"><div class="fill" style="width:61%"></div></div></div>
-            <div class="ai-c"><b>今週のAIコメント：</b>英文法は安定して高水準です。数学IIの三角関数で失点が集中しているため、来週は加法定理の演習を重点的に配信します。</div>
+            <div class="subj-bar"><div class="sb-top"><span>英語</span><span>71.6%</span></div><div class="track"><div class="fill" style="width:72%"></div></div></div>
+            <div class="subj-bar"><div class="sb-top"><span>国語</span><span>80.0%</span></div><div class="track"><div class="fill" style="width:80%"></div></div></div>
+            <div class="subj-bar"><div class="sb-top"><span>数学 <span class="warn">⚠ 要強化</span></span><span>57.7%</span></div><div class="track"><div class="fill" style="width:58%"></div></div></div>
+            <div class="ai-c"><b>総合サマリー：</b>6月は学習時間が毎週増加。7月は文法ドリルから「現代文要約のAI添削」へ利用がシフトし、3日連続で答案を提出しています。自己申告の苦手（英文法・現代文）は自走サイクルが定着。残る最重要課題は数学（正答率57.7%）の基礎固めです。</div>
+          </div>
+          <span class="mock-note">※ レポート例。実際のレポートを基に作成し、氏名・志望校・生徒ID等の個人情報は掲載していません。</span>
+        </div>
+      </div>
+    </div>
+    <div class="mock reveal" style="margin-top:18px">
+      <div class="mhd"><b>生徒向け 弱点分析レポート</b><span class="mimg">レポート例</span></div>
+      <div class="mbody report">
+        <p class="an-lead"><b>結論：</b>数学は安定して戦えています。合格までの伸びしろが最も大きいのは理科2科目（物理・化学）、次いで英語の「記述力」。勉強時間の配分を組み替えれば、成績の伸びが時間に追いついてきます。</p>
+        <div class="analysis-grid">
+          <div>
+            <div class="rlabel">現在地（記述模試）</div>
+            <table class="mini-tbl">
+              <thead><tr><th>科目</th><th>得点</th><th>偏差値</th></tr></thead>
+              <tbody>
+                <tr><td>英語</td><td>64/200</td><td>46</td></tr>
+                <tr><td>数学</td><td>109/200</td><td class="hi">60</td></tr>
+                <tr><td>物理</td><td>39/100</td><td>47</td></tr>
+                <tr><td>化学</td><td>28/100</td><td>47</td></tr>
+              </tbody>
+            </table>
+            <div class="rlabel">あなたの強み</div>
+            <ul class="strengths">
+              <li><b>数学の土台</b> — 4科目で最も安定（偏差値60）。演習正答率87%。</li>
+              <li><b>継続力</b> — ほぼ毎日演習・累計1,000問超、課題ドリル18件すべて完遂。</li>
+              <li><b>質問力</b> — AIへの質問350件超。「わからない」を放置しない姿勢。</li>
+            </ul>
+          </div>
+          <div>
+            <div class="rlabel">データが示した弱点（単元別 正答率）</div>
+            <div class="subj-bar weak"><div class="sb-top"><span>無機化学（非金属）</span><span>50%</span></div><div class="track"><div class="fill" style="width:50%"></div></div></div>
+            <div class="subj-bar weak"><div class="sb-top"><span>有機化学（芳香族）</span><span>50%</span></div><div class="track"><div class="fill" style="width:50%"></div></div></div>
+            <div class="subj-bar weak"><div class="sb-top"><span>物理・力学（応用）</span><span>40%</span></div><div class="track"><div class="fill" style="width:40%"></div></div></div>
+            <div class="subj-bar weak"><div class="sb-top"><span>数学・解の配置</span><span>64%</span></div><div class="track"><div class="fill" style="width:64%"></div></div></div>
+            <div class="ai-c"><b>時間配分の組み替え：</b>最も得意な数学に時間を使いすぎています。1日の「最初の90分」を理科に固定し、浮いた時間を英語の音読・英作文へ。<br><br><b>2日に1回ミッション：</b>弱点データから物理5＋化学5＋英/数5＝15問を自動配信。解くほど、次のミッションが賢くなります。</div>
           </div>
         </div>
+        <span class="mock-note">※ レポート例。実際の分析レポートを基に作成し、氏名・志望校・生徒ID等の個人情報は掲載していません。</span>
       </div>
     </div>
     <p class="misc-strip">さらに ── <b>英単語SRS（忘却曲線ドリル）</b>／<b>英作文・現代文の記述添削</b>／<b>本番想定の模試と偏差値の推移</b> も。</p>
