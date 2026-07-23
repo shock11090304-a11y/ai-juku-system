@@ -133,6 +133,8 @@
       '.eiv-note{font-size:.82rem;color:#94a3b8;line-height:1.6;}' +
       '.eiv-card{background:rgba(30,41,59,.6);border:1px solid rgba(148,163,184,.18);border-radius:12px;padding:14px 16px;margin:12px 0;}' +
       '.eiv-storyboard{white-space:pre-wrap;line-height:1.85;font-size:.92rem;}' +
+      '.eiv-figure{text-align:center;}' +
+      '.eiv-figure img{max-width:100%;max-height:70vh;border-radius:10px;background:#fff;padding:4px;box-shadow:0 4px 18px rgba(0,0,0,.35);}' +
       '.eiv-examiner{display:flex;gap:10px;align-items:flex-start;background:rgba(99,102,241,.10);border:1px solid rgba(99,102,241,.3);border-radius:12px;padding:12px 14px;margin:10px 0;}' +
       '.eiv-examiner .av{font-size:1.6rem;line-height:1;}' +
       '.eiv-examiner .q{font-size:1rem;font-weight:600;line-height:1.6;}' +
@@ -242,13 +244,22 @@
     else { renderAnswer(q); }
   }
 
+  // 4コマイラスト画像 (data URI・無ければ空文字)。data:image/(png|jpeg|jpg|webp);base64 形式のみ許可(XSS防御)。
+  function figureHtml() {
+    var f = S.card && S.card.figure_b64;
+    if (!f || !/^data:image\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$/.test(f)) return '';
+    return '<div class="eiv-figure"><img src="' + f + '" alt="4コマイラスト（面接カード）" loading="lazy" /></div>';
+  }
+
   function renderPrep(q) {
     S.phase = 'prep';
     var sb = S.card.passage || '';
+    var figv = figureHtml();
     contentEl.innerHTML =
       stepsHtml() +
       '<div class="eiv-card"><b>🧠 準備タイム</b> — 4コマを見て、語る内容を英語で考えてください。' +
       '<div class="eiv-note" style="margin-top:4px;">準備が終わったら「話す準備ができた」を押すとすぐナレーションに進めます。</div></div>' +
+      (figv ? '<div class="eiv-card">' + figv + '</div>' : '') +
       (sb ? '<div class="eiv-card eiv-storyboard">' + esc(sb) + '</div>' : '') +
       '<div class="eiv-card" style="text-align:center;">' +
       '  <div class="eiv-timer" id="eiv-tm">' + fmt(q.prep_sec) + '</div>' +
@@ -264,13 +275,14 @@
     stopSpeak();
     var isNarr = q.phase === 'narration';
     var sb = S.card.passage || '';
+    var figv = figureHtml();
+    var boardInner = figv + (sb ? '<div class="eiv-storyboard" style="margin-top:8px;">' + esc(sb) + '</div>' : '');
     contentEl.innerHTML =
       stepsHtml() +
       '<div class="eiv-examiner"><span class="av">🧑‍🏫</span><div><div class="eiv-note" style="margin-bottom:2px;">面接官 (' + esc(q.label || '') + ')</div>' +
       '<div class="q" id="eiv-qtext">' + esc(q.examiner_say || q.stem || '') + '</div>' +
       '<button class="eiv-btn mini ghost" id="eiv-replayq" style="margin-top:8px;">🔊 質問をもう一度</button></div></div>' +
-      (isNarr && sb ? '<details class="eiv-card" open><summary style="cursor:pointer;font-weight:700;">🖼 4コマを見る</summary><div class="eiv-storyboard" style="margin-top:8px;">' + esc(sb) + '</div></details>'
-        : (sb ? '<details class="eiv-card"><summary style="cursor:pointer;font-weight:700;">🖼 4コマを見る</summary><div class="eiv-storyboard" style="margin-top:8px;">' + esc(sb) + '</div></details>' : '')) +
+      (boardInner ? '<details class="eiv-card"' + (isNarr ? ' open' : '') + '><summary style="cursor:pointer;font-weight:700;">🖼 4コマ（イラスト＋説明）を見る</summary><div style="margin-top:8px;">' + boardInner + '</div></details>' : '') +
       '<div class="eiv-card" style="text-align:center;">' +
       '  <div class="eiv-timer" id="eiv-tm">' + fmt(q.answer_sec) + '</div>' +
       '  <div class="eiv-bar"><i id="eiv-bar" style="width:100%"></i></div>' +
@@ -566,7 +578,11 @@
         examiner_say: q.examiner_say || q.stem || '', stem: q.stem || '', answer: q.answer || '', explanation: q.explanation || '',
       };
     });
-    return { passage: qd.passage || sel.passage || '', prompt: qd.prompt || '', topic_ja: qd.topic_ja || '', question_data: qd, qs: qs };
+    return {
+      passage: qd.passage || sel.passage || '', prompt: qd.prompt || '', topic_ja: qd.topic_ja || '',
+      figure_b64: qd.figure_b64 || sel.figure_b64 || '',
+      question_data: qd, qs: qs,
+    };
   }
 
   // ---------- entry ----------

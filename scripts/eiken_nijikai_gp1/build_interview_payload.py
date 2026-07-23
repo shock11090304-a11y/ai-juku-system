@@ -4,13 +4,34 @@
 1カード=1行に「ナレーション + No.1〜No.4」を通しで格納。frontend の面接runnerが
 phase/prep_sec/answer_sec/examiner_say を読んで逐次進行(面接官TTS・タイマー・録音)する。
 """
-import json, os, re
+import json, os, re, base64
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "cards_ja.json")
 OUT = os.path.join(HERE, "interview_payload.json")
+FIGDIR = os.path.join(HERE, "figures")
 MODEL = "claude-max-eiken-interview-gp1-20260723"
 GRADE = "gp1"
+
+# topic_en → 4コマイラスト画像ファイル(gpt-image-1生成→1280px JPEG最適化・gen_figure.py)。
+TOPIC_TO_SLUG = {
+    "Technology in Schools": "edtech",
+    "Telework and Flexible Working": "telework",
+    "Community Support for the Elderly": "aging",
+    "Reducing Plastic Waste": "plastic",
+}
+
+def figure_data_uri(topic_en):
+    """topic の4コマ画像を data:image/jpeg;base64,… にして返す(無ければ空文字)。
+    事前生成した画像を payload に直接埋め込む=取込時も生徒fetch時もOpenAI課金ゼロ(一度きり)。"""
+    slug = TOPIC_TO_SLUG.get(topic_en)
+    if not slug:
+        return ""
+    p = os.path.join(FIGDIR, slug + ".jpg")
+    if not os.path.exists(p):
+        return ""
+    b64 = base64.b64encode(open(p, "rb").read()).decode("ascii")
+    return "data:image/jpeg;base64," + b64
 
 def clean(s):
     # リテラルのエスケープ列を実文字へ (\n→改行・\"→"・\'→')。build_payload.py と同一方針。
@@ -48,6 +69,8 @@ for c in cards:
          "examiner_say": clean(c["q4_stem"]), "stem": clean(c["q4_stem"]),
          "answer": clean(c["q4_model"]), "explanation": clean(c["q4_tips"])},
     ]
+    fig = figure_data_uri(c.get("topic_en", ""))
+    assert fig, f"画像が見つからない: topic_en={c.get('topic_en')} (figures/ に jpg を配置)"
     rows.append({
         "exam_id": "eiken", "part_key": "s_interview", "eiken_grade": GRADE, "model": MODEL,
         "question_data": {
@@ -55,6 +78,7 @@ for c in cards:
             "audio_script": "",
             "prompt": f"二次面接シミュレーション（テーマ: {topic_ja}）。面接官の指示に従って、ナレーション→No.1〜No.4の順に英語で答えます。",
             "topic_ja": topic_ja,
+            "figure_b64": fig,  # 4コマイラスト(data URI・面接runnerがナレーション/No.1で表示)
             "questions": qs,
         },
     })
