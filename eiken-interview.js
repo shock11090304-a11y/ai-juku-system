@@ -248,7 +248,9 @@
   function figureHtml() {
     var f = S.card && S.card.figure_b64;
     if (!f || !/^data:image\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$/.test(f)) return '';
-    return '<div class="eiv-figure"><img src="' + f + '" alt="4コマイラスト（面接カード）" loading="lazy" /></div>';
+    // ★loading="lazy" は付けない: position:fixed オーバーレイ内では intersection observer が
+    //   発火せず画像が読み込まれない(8x8 の壊れアイコンになる)。data URI は即時ロードでよい。
+    return '<div class="eiv-figure"><img src="' + f + '" alt="4コマイラスト（面接カード）" /></div>';
   }
 
   function renderPrep(q) {
