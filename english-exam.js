@@ -499,9 +499,9 @@ const EXAMS = {
         { key: 'l_part1', name: 'Listening Part 1 (会話)',       icon: '💬', timeMin: 10, qCount: 12, scoreMax: 12, desc: '会話を聞いて応答' },
         { key: 'l_part2', name: 'Listening Part 2 (パッセージ)', icon: '🎙', timeMin: 10, qCount: 12, scoreMax: 12, desc: '長めのパッセージ理解' },
         { key: 'l_part3', name: 'Listening Part 3 (Real-Life)',  icon: '🌐', timeMin: 5,  qCount: 5,  scoreMax: 5,  desc: 'アナウンス等の状況把握' },
-        { key: 's_read',  name: '二次 パッセージ音読',            icon: '🗣', timeMin: 1, qCount: 1, scoreMax: 5,  desc: '示されたパッセージを音読' },
-        { key: 's_q1',    name: '二次 Q1 (パッセージ理解)',       icon: '🗣', timeMin: 1, qCount: 1, scoreMax: 5,  desc: '読んだパッセージへの質問' },
-        { key: 's_qa',    name: '二次 Q2-Q4 (即興回答)',          icon: '🗣', timeMin: 5, qCount: 3, scoreMax: 15, desc: 'トピックに対する即興回答' },
+        { key: 's_read',  name: '二次 ナレーション (4コマ)',       icon: '🗣', timeMin: 3, qCount: 1, scoreMax: 15, desc: '4コマイラストのストーリーを英語で語る (準1級はナレーション形式・1分準備+2分)' },
+        { key: 's_q1',    name: '二次 No.1 (イラスト質問)',        icon: '🗣', timeMin: 1, qCount: 1, scoreMax: 5,  desc: '4コマ目の人物の立場・心情を問う質問' },
+        { key: 's_qa',    name: '二次 No.2-4 (意見・社会問題)',     icon: '🗣', timeMin: 5, qCount: 3, scoreMax: 15, desc: 'カードのトピック＋社会問題への即興意見' },
       ],
       g2: [
         { key: 'r_q1',  name: 'Reading 大問1 (短文穴埋め)',  icon: '📝', timeMin: 12, qCount: 17, scoreMax: 17, desc: '語彙・熟語・文法の穴埋め' },

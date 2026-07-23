@@ -12520,6 +12520,12 @@ EXAM_QUESTION_ROTATION = [
     ("eiken", "r_q4", "gp1"),       # 2026-05-21 塾長指示: 準1級 Eメール返信 (新形式 2024〜・小川くん事例 fix)
     ("eiken", "w_essay", "gp1"),
     ("eiken", "w_summary", "gp1"),  # 2026-05-23 塾長指摘: 準1級も新形式 2024〜で要約問題あり (UI mismatch fix・frontend は既存)
+    # 🗣 二次(面接) 準1級 ・2026-07-23 塾長指示「二次のプールを増やす(準1級のみ)」で新規追加。
+    #   本物の準1級二次=4コマナレーション(s_read)+No.1 イラスト質問(s_q1)+No.2-4 意見(s_qa)。
+    #   ★下の AUTO_GENERATE_SKIP にも登録=手動取込のみ(AI自動生成/オンデマンド補充しない・無課金&品質維持)。
+    ("eiken", "s_read", "gp1"),
+    ("eiken", "s_q1",   "gp1"),
+    ("eiken", "s_qa",   "gp1"),
     ("eiken", "r_q1", "g2"),
     ("eiken", "r_q3", "g2"),        # 2026-05-03 復活: 2級長文 (旧形式但し import 既存データあり)
     ("eiken", "r_q3b", "g2"),       # 2026-04-30 追加: 2級長文内容一致
@@ -12757,6 +12763,11 @@ EXAM_QUESTION_ROTATION = [
 # memory: feedback_claude_max_seed.md「売上前は Anthropic API 課金禁止」
 EXAM_QUESTION_AUTO_GENERATE_SKIP = {
     ("daigaku", "nihonshi", "waseda"),  # 早稲田大日本史 (語群選択 9 択 + 0 = 該当なし型・手動投入のみ)
+    # 🗣 二次(面接) 準1級 (手動取込のみ・AI生成/オンデマンド補充しない / 2026-07-23)
+    #   汎用プロンプトでは4コマナレーション等の二次特有形式を作れず品質崩壊するため。無課金も維持。
+    ("eiken", "s_read", "gp1"),
+    ("eiken", "s_q1",   "gp1"),
+    ("eiken", "s_qa",   "gp1"),
     # 📜 国語 単元別 (手動取込のみ・AI生成しない / 2026-06-17)
     ("daigaku", "kobun_unit", "kyotsu"),
     ("daigaku", "kanbun_unit", "kyotsu"),
