@@ -13140,6 +13140,13 @@ def _self_containment_gate(qd: dict) -> tuple:
         qs = qd.get("questions") or []
         if not isinstance(qs, list) or not qs:
             return True, []
+        # 🗣 2026-07-23 speaking(二次面接: 音読/ナレーション/イラスト質問/意見) は passage から「解答」する
+        #   形式ではない(口頭産出)。特に No.4 型の一般社会テーマは意図的にカード本文と無関係で、Layer B
+        #   (passage 準拠の可解性判定)が「本文に根拠なし」と必ず誤 reject する。全問 type=="speaking" の
+        #   大問は自己完結ゲートを免除する(Layer A のベクトル検出も speaking には無関係)。
+        _q_types = [q.get("type") for q in qs if isinstance(q, dict)]
+        if _q_types and all(t == "speaking" for t in _q_types):
+            return True, []
         # 座標ペアの検出: LaTeX 空白 (\,  \; ~ 改行) を含む (1,\ 0,\ 2) や A(3,\ 0) も拾えるよう寛容に。
         #   括弧直後が数字/マイナス(=数値座標)のみ対象 → (a_1,a_2,a_3) 等の記号定義は意図的に拾わない。
         COORD = _re.compile(r'\(\s*-?\d[^()]*[,，][^()]*-?\d')
