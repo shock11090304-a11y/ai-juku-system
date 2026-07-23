@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="cache-purge.js?v=20260723-yt-playlists"></script>
+<title>YouTube プレイリスト一覧 | AIコーチング</title>
+<link rel="stylesheet" href="style.css?v=20260519-input-widen" />
+<link rel="manifest" href="manifest.json" />
+<style>
+  .yt-container { max-width: 960px; margin: 2rem auto 4rem; padding: 0 1rem; }
+  .yt-title { font-size: 1.6rem; color: #e4e4e7; margin-bottom: 0.3rem; }
+  .yt-sub { color: #a1a1aa; font-size: 0.92rem; margin: 0 0 1.2rem; line-height: 1.6; }
+  .yt-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.7rem; margin-bottom: 1rem; }
+  .yt-count { font-weight: 800; color: #a78bfa; font-size: 0.9rem; background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.3); border-radius: 999px; padding: 0.25rem 0.8rem; }
+  .yt-btn { background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15); padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+  .yt-btn:hover { background: rgba(255,255,255,0.14); }
+  .yt-save { font-size: 0.8rem; color: #34d399; opacity: 0; transition: opacity 0.25s; font-weight: 700; }
+  .yt-save.show { opacity: 1; }
+  .yt-table-wrap { overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; background: rgba(255,255,255,0.03); }
+  table.yt-table { width: 100%; border-collapse: collapse; }
+  .yt-table th, .yt-table td { text-align: left; padding: 0.7rem 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.07); vertical-align: middle; }
+  .yt-table thead th { font-size: 0.78rem; letter-spacing: 0.04em; color: #9ca3af; text-transform: uppercase; background: rgba(255,255,255,0.03); position: sticky; top: 0; }
+  .yt-table tbody tr:last-child td { border-bottom: none; }
+  .yt-table tbody tr:hover { background: rgba(99,102,241,0.06); }
+  .yt-num { width: 2.2rem; text-align: center; color: #6b7280; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .yt-name-input { width: 100%; box-sizing: border-box; padding: 0.5rem 0.7rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #e4e4e7; font-size: 0.95rem; font-family: inherit; }
+  .yt-name-input:focus { outline: none; border-color: #818cf8; box-shadow: 0 0 0 2px rgba(99,102,241,0.25); }
+  .yt-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.68rem; color: #6b7280; margin-top: 0.3rem; word-break: break-all; }
+  .yt-open { display: inline-block; white-space: nowrap; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; text-decoration: none; padding: 0.45rem 0.9rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; }
+  .yt-open:hover { transform: translateY(-1px); }
+  .yt-act { width: 1%; white-space: nowrap; }
+  .yt-note { margin-top: 1.1rem; font-size: 0.82rem; color: #9ca3af; line-height: 1.7; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid #6366f1; border-radius: 8px; padding: 0.8rem 1rem; }
+  @media (max-width: 560px) {
+    .yt-table th, .yt-table td { padding: 0.55rem 0.5rem; }
+    .yt-open { padding: 0.4rem 0.6rem; font-size: 0.8rem; }
+  }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="logo">
+    <span class="logo-icon">📺</span>
+    <div>
+      <h1>YouTube プレイリスト</h1>
+      <p class="tagline">授業・講義動画のプレイリストまとめ</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <a href="mypage.html" class="btn-icon" title="マイページ">👤</a>
+    <a href="index.html" class="btn-icon" title="アプリ">🎓</a>
+  </div>
+</header>
+
+<main class="yt-container">
+  <h1 class="yt-title">📺 YouTube プレイリスト一覧</h1>
+  <p class="yt-sub">
+    授業・講義動画のプレイリストまとめ。科目・単元名は各行に直接入力でき、<strong>この端末のブラウザに自動保存</strong>されます。
+    「開く ▶」で YouTube のプレイリストを新しいタブで表示します。
+  </p>
+
+  <div class="yt-toolbar">
+    <span class="yt-count" id="ytCount">16 件</span>
+    <button type="button" class="yt-btn" id="ytCopyBtn">📋 名前＋URL をコピー</button>
+    <button type="button" class="yt-btn" id="ytClearBtn">↩︎ 入力した名前をリセット</button>
+    <span class="yt-save" id="ytSave">✓ 保存しました</span>
+  </div>
+
+  <div class="yt-table-wrap">
+    <table class="yt-table">
+      <thead>
+        <tr>
+          <th class="yt-num">#</th>
+          <th>プレイリスト名（科目・単元）</th>
+          <th class="yt-act">操作</th>
+        </tr>
+      </thead>
+      <tbody id="ytBody"><!-- rows injected by JS --></tbody>
+    </table>
+  </div>
+
+  <p class="yt-note">
+    ⚠️ 入力した名前は<strong>この端末のブラウザ内だけ</strong>に保存されます（他の人には共有されません）。
+    全員が見える形にしたい場合は、「📋 名前＋URL をコピー」でコピーした内容を渡してもらえれば、
+    HTML に直接埋め込んだ共有版を作成します。
+  </p>
+</main>
+
+<textarea id="ytClipFallback" style="position:fixed;left:-9999px;top:-9999px;" aria-hidden="true"></textarea>
+
+<script>
+  // 貼り付けられた 21 件から重複を除いた 16 件（貼り付け順を維持）
+  var PLAYLISTS = [
+    'PLj1sTb-oInWKwHn7FugLNDHInn3M7fmPT',
+    'PLj1sTb-oInWL2JhEy5j3ZWiOFTs-66G1b',
+    'PLj1sTb-oInWKlCjlfEAv7OSqjJwIR5jZM',
+    'PLj1sTb-oInWL6pa0Cir7ML1pehcLeMdp3',
+    'PLj1sTb-oInWJzRaD2pMZC2sOUM46mWRUV',
+    'PLj1sTb-oInWLMLD3qIQ0A1AVrLshmaWvc',
+    'PLj1sTb-oInWLj3vfGE-udTl_VomCgCtl4',
+    'PLj1sTb-oInWLPMaOZBYaRIBiIlUSJeCMp',
+    'PLj1sTb-oInWItRlAz0VZHoSvVxY4mEMzZ',
+    'PLj1sTb-oInWJo4oq_TSj1KMBnB0KNEZzE',
+    'PLj1sTb-oInWKS7ugVeytMDnj2ja6qW6sW',
+    'PLj1sTb-oInWJCjcssIf3DLi2-qdBacLPH',
+    'PLj1sTb-oInWJjy60hYRpIQKjNE47Br3xS',
+    'PLj1sTb-oInWKGpY5LYVmN4D8mReUv2dEh',
+    'PLj1sTb-oInWJdqYj3R2PSODSBzDmH4pHZ',
+    'PLj1sTb-oInWJAXL1B232-gZpLsB6Yrk5j'
+  ];
+
+  var STORE_KEY = function (id) { return 'yt_playlist_name::' + id; };
+  var urlFor = function (id) { return 'https://www.youtube.com/playlist?list=' + id; };
+
+  var tbody = document.getElementById('ytBody');
+  var saveIndicator = document.getElementById('ytSave');
+  var saveTimer = null;
+  function flashSaved() {
+    saveIndicator.classList.add('show');
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () { saveIndicator.classList.remove('show'); }, 1200);
+  }
+
+  PLAYLISTS.forEach(function (id, i) {
+    var tr = document.createElement('tr');
+
+    var num = document.createElement('td');
+    num.className = 'yt-num';
+    num.textContent = String(i + 1);
+
+    var nameTd = document.createElement('td');
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'yt-name-input';
+    input.placeholder = '科目・単元名を入力（例: 数学ⅠA 二次関数）';
+    try { input.value = localStorage.getItem(STORE_KEY(id)) || ''; } catch (e) { input.value = ''; }
+    input.addEventListener('input', function () {
+      try { localStorage.setItem(STORE_KEY(id), input.value); flashSaved(); } catch (e) {}
+    });
+    var idEl = document.createElement('div');
+    idEl.className = 'yt-id';
+    idEl.textContent = id;
+    nameTd.appendChild(input);
+    nameTd.appendChild(idEl);
+
+    var actTd = document.createElement('td');
+    actTd.className = 'yt-act';
+    var a = document.createElement('a');
+    a.className = 'yt-open';
+    a.href = urlFor(id);
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = '開く ▶';
+    actTd.appendChild(a);
+
+    tr.appendChild(num);
+    tr.appendChild(nameTd);
+    tr.appendChild(actTd);
+    tbody.appendChild(tr);
+  });
+
+  // 名前＋URL をコピー（塾長に渡して共有版を作るとき用）
+  document.getElementById('ytCopyBtn').addEventListener('click', function () {
+    var lines = PLAYLISTS.map(function (id, i) {
+      var name = '';
+      try { name = (localStorage.getItem(STORE_KEY(id)) || '').trim(); } catch (e) {}
+      return (i + 1) + '\t' + name + '\t' + urlFor(id);
+    });
+    var text = lines.join('\n');
+    var done = function () {
+      var btn = document.getElementById('ytCopyBtn');
+      var orig = btn.textContent;
+      btn.textContent = '✓ コピーしました';
+      setTimeout(function () { btn.textContent = orig; }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text, done); });
+    } else {
+      fallbackCopy(text, done);
+    }
+  });
+
+  function fallbackCopy(text, done) {
+    var ta = document.getElementById('ytClipFallback');
+    ta.value = text;
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { window.prompt('コピーしてください:', text); }
+  }
+
+  // 入力した名前をリセット
+  document.getElementById('ytClearBtn').addEventListener('click', function () {
+    if (!window.confirm('この端末に保存した名前をすべて消去します。よろしいですか？')) return;
+    PLAYLISTS.forEach(function (id) { try { localStorage.removeItem(STORE_KEY(id)); } catch (e) {} });
+    var inputs = document.querySelectorAll('.yt-name-input');
+    for (var i = 0; i < inputs.length; i++) inputs[i].value = '';
+    flashSaved();
+  });
+</script>
+</body>
+</html>
