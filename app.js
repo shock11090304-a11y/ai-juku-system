@@ -29,7 +29,7 @@ function getPlanInfo() {
   const stdPrice = cfg?.plans?.standard?.price ?? 24980;
   const premPrice = cfg?.plans?.premium?.price ?? 39800;
   const famPrice = cfg?.plans?.family?.price ?? 59800;
-  const addonPrice = cfg?.studentAddon?.price ?? 9800;
+  const addonPrice = cfg?.studentAddon?.price ?? 5000;
   const famMax = cfg?.plans?.family?.maxStudents ?? 3;
   const info = {
     standard: { name: 'スタンダード', price: stdPrice, maxStudents: 1, color: '#3b82f6' },
@@ -485,10 +485,10 @@ AIコーチング`,
       // plans.js を Single Source of Truth として参照
       const cfg = (typeof window !== 'undefined' && window.PLAN_CONFIG) || null;
       const premLabel = cfg?.plans?.premium?.priceLabel || '¥39,800';
-      const addonLabel = cfg?.studentAddon?.priceLabel || '¥9,800';
+      const addonLabel = cfg?.studentAddon?.priceLabel || '¥5,000';
       const enrollLabel = cfg?.enrollmentFee?.priceLabel || '¥10,000';
       const premPrice = cfg?.plans?.premium?.price ?? 39800;
-      const addonPrice = cfg?.studentAddon?.price ?? 9800;
+      const addonPrice = cfg?.studentAddon?.price ?? 5000;
       const annualSaving = Math.round((premPrice - addonPrice) * 12 / 10000); // 万円単位
       return `${s.parentName || s.name + 'さんの保護者'}様
 
@@ -514,7 +514,7 @@ ${s.name}さんの学習をさらに加速させるため、塾生様限定の�
 ・AI学習履歴を担当講師が毎週レビュー
 ・保護者向け統合レポート
 
-2週間の無料トライアルもご用意しております。
+7日間の無料体験もご用意しております。
 ご興味があればこのメールにご返信ください。
 
 AIコーチング`;

@@ -579,7 +579,7 @@ async function initReferralSection() {
   try {
     const copyEl = document.getElementById('referralAudienceCopy');
     if (copyEl && isStudentAddon) {
-      copyEl.innerHTML = '🏫 <strong>リアル塾の友達・クラスメイト</strong>に紹介すれば、あなたは <strong style="color:#a78bfa;">¥3,000 OFF</strong>、相手は <strong style="color:#ec4899;">入塾金 ¥10,000 免除</strong>。塾生プラン限定 永年¥9,800 で広めましょう。';
+      copyEl.innerHTML = '🏫 <strong>リアル塾の友達・クラスメイト</strong>に紹介すれば、あなたは <strong style="color:#a78bfa;">¥3,000 OFF</strong>、相手は <strong style="color:#ec4899;">入塾金 ¥10,000 免除</strong>。塾生プラン限定 永年¥5,000 で広めましょう。';
     }
   } catch (e) { /* noop */ }
 }
