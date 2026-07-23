@@ -223,6 +223,40 @@
   .misc-strip{margin-top:1.4rem;text-align:center;font-size:.88rem;color:var(--ink-soft)}
   .misc-strip b{color:var(--navy)}
 
+  /* ===== 画面ショーケース ===== */
+  .screens-sub{text-align:center;margin:2.8rem 0 1.5rem}
+  .screens-sub h3{font-size:1.2rem;color:var(--navy)}
+  .screens-sub p{font-size:.9rem;color:var(--ink-soft);margin-top:.35rem}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:18px;margin-bottom:1.8rem}
+  .shot{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);margin:0}
+  .shot .bar{display:flex;gap:.4rem;align-items:center;padding:.6rem .8rem;background:var(--ivory-2);border-bottom:1px solid var(--line)}
+  .shot .bar span{width:.6rem;height:.6rem;border-radius:50%;background:#cdbf9c}
+  .shot img{width:100%;height:auto;display:block}
+  .shot figcaption{padding:.75rem .9rem;font-size:.82rem;color:var(--ink-soft);display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+  .shot figcaption .real{font-size:.64rem;font-weight:800;color:#fff;background:var(--navy);border-radius:999px;padding:.2em .65em;white-space:nowrap}
+  .mocks{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  .mock{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+  .mock .mhd{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.85rem 1.1rem;background:var(--navy);color:#fff}
+  .mock .mhd b{font-size:.92rem;font-weight:800}
+  .mock .mhd .mimg{font-size:.62rem;font-weight:800;color:var(--navy);background:var(--gold);border-radius:999px;padding:.25em .65em;white-space:nowrap}
+  .mock .mbody{padding:1.1rem;flex-grow:1}
+  .chat{display:grid;gap:.65rem}
+  .chat .msg{max-width:85%;font-size:.84rem;line-height:1.6;padding:.65rem .85rem;border-radius:14px}
+  .chat .q{justify-self:end;background:var(--navy);color:#fff;border-bottom-right-radius:4px}
+  .chat .a{justify-self:start;background:var(--ivory-2);color:var(--ink);border:1px solid var(--line);border-bottom-left-radius:4px}
+  .chat .a b{color:var(--navy)}
+  .chat .who{font-size:.64rem;font-weight:800;color:var(--gold-ink);margin-bottom:.2rem}
+  .report{font-size:.84rem;color:var(--ink)}
+  .report .rrow{display:flex;justify-content:space-between;gap:.6rem;padding:.35rem 0;border-bottom:1px dashed var(--line)}
+  .report .rrow b{color:var(--navy);text-align:right}
+  .report .rlabel{margin-top:.8rem;font-weight:800;color:var(--navy);font-size:.82rem}
+  .report .subj-bar{margin:.55rem 0}
+  .report .subj-bar .sb-top{display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.25rem}
+  .report .subj-bar .track{height:.5rem;background:var(--ivory-2);border-radius:999px;overflow:hidden}
+  .report .subj-bar .fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-2));border-radius:999px}
+  .report .ai-c{margin-top:.9rem;background:var(--ivory);border-left:3px solid var(--gold);border-radius:8px;padding:.7rem .85rem;font-size:.8rem;color:var(--ink-soft);line-height:1.65}
+  .report .ai-c b{color:var(--navy)}
+
   /* ===== 塾生アプリ ===== */
   .app{background:var(--ivory-2)}
   .app-tabs{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-bottom:2.2rem}
@@ -374,6 +408,7 @@
   }
   @media(max-width:620px){
     .hero-proof{display:none}
+    .mocks{grid-template-columns:1fr}
   }
   @media(max-width:520px){
     .hero-cta .btn{width:100%}
@@ -572,7 +607,57 @@
         <div class="subj"><i>全科目対応</i></div>
       </div>
     </div>
-    <p class="misc-strip">さらに ── <b>英単語SRS（忘却曲線ドリル）</b>／<b>英作文・現代文の記述添削</b>／<b>本番想定の模試と偏差値の推移</b>／<b>保護者へ週次レポート自動配信</b> も。</p>
+    <div class="screens-sub reveal">
+      <h3>実際の画面で見る</h3>
+      <p>「動く解説」教材は実際の画面です。AIチューター・保護者レポートは画面イメージです。</p>
+    </div>
+    <div class="shots reveal">
+      <figure class="shot">
+        <div class="bar"><span></span><span></span><span></span></div>
+        <img src="academy-assets/screen-math.jpg" alt="動く解説 数学：微分＝接線の傾き" loading="lazy">
+        <figcaption>数学「微分＝接線の傾き」<span class="real">実際の画面</span></figcaption>
+      </figure>
+      <figure class="shot">
+        <div class="bar"><span></span><span></span><span></span></div>
+        <img src="academy-assets/screen-chem.jpg" alt="動く解説 化学：酸と塩基とpH" loading="lazy">
+        <figcaption>化学「酸と塩基・pH」<span class="real">実際の画面</span></figcaption>
+      </figure>
+      <figure class="shot">
+        <div class="bar"><span></span><span></span><span></span></div>
+        <img src="academy-assets/screen-eng.jpg" alt="動く解説 英語：関係詞" loading="lazy">
+        <figcaption>英語「関係詞」<span class="real">実際の画面</span></figcaption>
+      </figure>
+    </div>
+    <div class="mocks reveal">
+      <div class="mock">
+        <div class="mhd"><b>AIチューターとの学習</b><span class="mimg">画面イメージ</span></div>
+        <div class="mbody">
+          <div class="chat">
+            <div class="msg q">x²−5x+6&gt;0 の解き方がわかりません</div>
+            <div class="msg a"><div class="who">AIチューター</div>まず因数分解して <b>(x−2)(x−3)&gt;0</b>。y=(x−2)(x−3) は下に凸の放物線で、x=2 と x=3 で 0 になります。<b>正（&gt;0）</b>になるのは 2つの解の外側なので、答えは <b>x&lt;2 または x&gt;3</b> です。</div>
+            <div class="msg q">なぜ内側じゃないんですか？</div>
+            <div class="msg a"><div class="who">AIチューター</div>下に凸のグラフは、2つの解の<b>内側で y が負</b>・外側で正になります。今回は &gt;0（正）を聞かれているので外側が答え。グラフを一度描くと迷いません。</div>
+          </div>
+        </div>
+      </div>
+      <div class="mock">
+        <div class="mhd"><b>保護者への週次レポート</b><span class="mimg">レポート例</span></div>
+        <div class="mbody">
+          <div class="report">
+            <div class="rrow"><span>対象</span><b>高2 ・ A様</b></div>
+            <div class="rrow"><span>今週の学習時間</span><b>12時間30分（先週比 +2h）</b></div>
+            <div class="rrow"><span>AIへの質問</span><b>34回</b></div>
+            <div class="rlabel">科目別 正答率</div>
+            <div class="subj-bar"><div class="sb-top"><span>英語</span><span>82%</span></div><div class="track"><div class="fill" style="width:82%"></div></div></div>
+            <div class="subj-bar"><div class="sb-top"><span>数学</span><span>68%</span></div><div class="track"><div class="fill" style="width:68%"></div></div></div>
+            <div class="subj-bar"><div class="sb-top"><span>国語</span><span>75%</span></div><div class="track"><div class="fill" style="width:75%"></div></div></div>
+            <div class="subj-bar"><div class="sb-top"><span>化学</span><span>61%</span></div><div class="track"><div class="fill" style="width:61%"></div></div></div>
+            <div class="ai-c"><b>今週のAIコメント：</b>英文法は安定して高水準です。数学IIの三角関数で失点が集中しているため、来週は加法定理の演習を重点的に配信します。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="misc-strip">さらに ── <b>英単語SRS（忘却曲線ドリル）</b>／<b>英作文・現代文の記述添削</b>／<b>本番想定の模試と偏差値の推移</b> も。</p>
     <div class="addon-note reveal">
       <div class="an-l"><b>AI学習アプリのご利用</b>　通塾生は月謝に追加するだけで使い放題（招待制・入塾金なし）。<br>国公立難関大学コースの方は、無料で同梱されています。</div>
       <div class="an-r">月額 <span>+5,000円</span></div>
@@ -985,10 +1070,10 @@
             <div class="price"><b>22,500<small>円</small></b><span>／ 月（税込）</span></div>
           </div>
           <div class="meta"><i>対象：高校生</i><i>面談なし</i></div>
-          <p class="sum">通常授業2科目に加え、学習管理を行うコース。Studyplusへの学習記録の入力が必須となります。</p>
+          <p class="sum">通常授業2科目に加え、学習管理を行うコース。塾生アプリへの学習記録の入力が必須となります。</p>
           <details><summary>詳細を見る</summary><div class="dbody">
-            <div><div class="dt">内容</div><div>通常授業2科目＋学習管理（月額22,500円・面談なし）。Studyplusへの記録入力が必須です。</div></div>
-            <div><div class="dt">課題方針</div><div>Studyplusへの学習記録入力（必須）。例：単語帳30分、問題集2P等。週ごとの振り返りと、講師のアドバイスに基づく調整を行います。</div></div>
+            <div><div class="dt">内容</div><div>通常授業2科目＋学習管理（月額22,500円・面談なし）。塾生アプリへの記録入力が必須です。</div></div>
+            <div><div class="dt">課題方針</div><div>塾生アプリへの学習記録入力（必須）。例：単語帳30分、問題集2P等。週ごとの振り返りと、講師のアドバイスに基づく調整を行います。</div></div>
             <div><div class="dt">ご注意</div><div>入力がない場合、適正な学習支援ができず、アドバイス等が不可となる場合があります。</div></div>
           </div></details>
         </div>
