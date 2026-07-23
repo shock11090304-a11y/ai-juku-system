@@ -8,6 +8,10 @@
   ],
   "rewrites": [
     {
+      "source": "/academy",
+      "destination": "/academy.html"
+    },
+    {
       "source": "/payment/api/stripe-charges",
       "destination": "/api/stripe-charges"
     },
