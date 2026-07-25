@@ -258,6 +258,18 @@
       }
       // skip_send + code 揃っていれば Step1 をスキップして Step2 に直接ジャンプ
       // (magic-link 再発行を回避 = admin が発行した OTP が無効化されないようにする)
+      // 🌻 2026-07-25: ?email=...&have_code=1 = 「コードは既にメールで受け取っている」
+      //   (summer-ai.html の申込完了パネルからの遷移)。Step1 のコード送信を挟まずに
+      //   6桁入力欄へ直接着地させる。code は渡さない (URL に OTP を載せない) ので自動 submit もしない。
+      //   「コードを再送信」は届かなかった時の救済としてそのまま使える (disable しない)。
+      if (!skipSend && qp.get('have_code') === '1' && e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+        currentEmail = e;
+        emailShown.textContent = e;
+        step1.classList.add('hidden');
+        step2.classList.add('active');
+        try { otpInput.focus(); } catch (_e) { /* noop */ }
+        return;
+      }
       if (skipSend && e && /^\d{6}$/.test(code)) {
         currentEmail = e;
         emailShown.textContent = e;

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="cache-purge.js?v=20260721-inherit-notice"></script>
+  <script src="frontend-error-monitor.js?v=20260427-init"></script>
+  <title>夏期講習 AI学習管理 お申し込み | AIコーチング</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="lp.css">
+  <link rel="stylesheet" href="checkout.css">
+  <style>
+    /* checkout.css の --text-muted(#6b7280) は 12px で約3.9:1 = AA(4.5:1) 未達。
+       同意文・注記が一番読みにくくなるのでこのページだけ --text-dim(7.4:1) に上げる。 */
+    .field-hint, .legal-note { color: var(--text-dim); }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="lp.html" class="nav-logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">AIコーチング</span>
+      </a>
+    </div>
+  </nav>
+
+  <main class="checkout-main">
+    <div class="checkout-wrapper">
+
+      <div class="checkout-header">
+        <div class="eyebrow">🌻 夏期講習 受講生 限定</div>
+        <h1>夏期講習 AI学習管理 お申し込み</h1>
+        <p class="checkout-sub" id="subLead">
+          夏期講習の受講生は、<strong id="headlineEnd">2026年8月31日まで</strong>
+          AI学習管理を無料でお使いいただけます（<strong>クレジットカード登録なし・自動課金なし</strong>）
+        </p>
+      </div>
+
+      <!-- 期間バナー: /api/trial/cohort-info (サーバの単一ソース) で上書きされる -->
+      <div id="periodBanner" style="background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(236,72,153,0.12));border:1px solid rgba(129,140,248,0.45);border-radius:12px;padding:0.95rem 1.1rem;margin-bottom:1.2rem;text-align:center;">
+        <div style="font-weight:900;color:#a5b4fc;font-size:1.02rem;margin-bottom:0.3rem;">
+          📅 ご利用期間：<span id="periodEndLabel" style="white-space:nowrap;">2026年8月31日</span>まで
+        </div>
+        <div style="font-size:0.86rem;color:#cbd5e1;" id="periodSubLabel">
+          お申し込み日にかかわらず<strong>全員この日で終了</strong>します（自動で終了し、料金は一切かかりません）。
+        </div>
+      </div>
+
+      <!-- 受付終了のときだけ出す停止バナー -->
+      <div id="closedBanner" style="display:none;background:rgba(239,68,68,0.12);border:1px solid rgba(248,113,113,0.5);border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.2rem;">
+        <div style="font-weight:900;color:#fca5a5;font-size:1rem;margin-bottom:0.35rem;">🔒 夏期講習AI管理の受付は終了しました</div>
+        <div style="font-size:0.88rem;color:#fecaca;line-height:1.6;">
+          通常の無料体験は <a href="checkout.html" style="color:#fca5a5;font-weight:700;">こちら</a> からお申し込みいただけます。
+          ご不明な点は担当講師または <a href="mailto:info@trillion-ai-juku.com" style="color:#fca5a5;">info@trillion-ai-juku.com</a> までご連絡ください。
+        </div>
+      </div>
+
+      <!-- 準備中 (合言葉/終了日が未設定) のときだけ出すバナー。「受付終了」と混同させない -->
+      <div id="pendingBanner" style="display:none;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.5);border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.2rem;">
+        <div style="font-weight:900;color:#fcd34d;font-size:1rem;margin-bottom:0.35rem;">🛠 ただ今準備中です</div>
+        <div style="font-size:0.88rem;color:#fde68a;line-height:1.6;">
+          お申し込みの受付開始までしばらくお待ちください。お急ぎの場合は担当講師または
+          <a href="mailto:info@trillion-ai-juku.com" style="color:#fcd34d;">info@trillion-ai-juku.com</a> までご連絡ください。
+        </div>
+      </div>
+
+      <!-- 申込フォーム (novalidate: HTML5 の無音ブロックを避け、自前で可視エラーを出す) -->
+      <form id="summerForm" novalidate>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="lastName">姓（お子様） *</label>
+            <input type="text" id="lastName" required placeholder="例: 山田" autocomplete="family-name">
+          </div>
+          <div class="form-group">
+            <label for="firstName">名（お子様） *</label>
+            <input type="text" id="firstName" required placeholder="例: 太郎" autocomplete="given-name">
+          </div>
+          <div class="form-group">
+            <label for="grade">学年 *</label>
+            <select id="grade" required>
+              <option value="">選択してください</option>
+              <option>小学5年</option>
+              <option>小学6年</option>
+              <option>中学1年</option>
+              <option>中学2年</option>
+              <option>中学3年</option>
+              <option>高校1年</option>
+              <option>高校2年</option>
+              <option>高校3年</option>
+              <option>既卒生</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">保護者様メールアドレス *</label>
+          <input type="email" id="email" required autocomplete="email" maxlength="254" placeholder="parent@example.com" inputmode="email" spellcheck="false">
+          <p class="field-hint">📧 このアドレスに <strong>ログイン用の6桁コード</strong> が届きます。受信できるアドレスをご入力ください。<br>
+            ⚠️ ご兄弟でご利用の場合は、<strong>お子様ごとに別のメールアドレス</strong>でお申し込みください（同じアドレスでは1名分しか登録できません）。</p>
+        </div>
+
+        <div class="form-group">
+          <label for="studentEmail">生徒様メールアドレス（任意）</label>
+          <input type="email" id="studentEmail" autocomplete="email" maxlength="254" placeholder="student@example.com（生徒本人のメール）" inputmode="email" spellcheck="false">
+          <p class="field-hint">💡 生徒本人のスマホ/PCでログインする場合に推奨。空欄なら保護者メールのみに届きます。</p>
+        </div>
+
+        <div class="form-group">
+          <label for="goal">志望校・目標（任意）</label>
+          <input type="text" id="goal" placeholder="例：関西大学 経済学部 / 英検2級合格">
+        </div>
+
+        <!-- 合言葉コード: URL の ?code= があれば自動入力して隠す。誤り/未指定時は表示して手入力させる -->
+        <div class="form-group" id="codeGroup">
+          <label for="cohortCode">🌻 夏期講習コード *<span style="font-weight:400;font-size:0.78rem;color:#94a3b8;margin-left:0.4rem;">配布プリント／LINEに記載</span></label>
+          <input type="text" id="cohortCode" required aria-required="true" placeholder="配布されたコードをご入力ください" maxlength="64" autocomplete="off" spellcheck="false">
+          <p class="field-hint">💡 案内されたURLからアクセスすると自動入力されます。入っていない場合は担当講師にご確認ください。</p>
+        </div>
+
+        <div class="summary-box">
+          <h3>📋 お申し込み内容</h3>
+          <div class="summary-row">
+            <span>内容</span>
+            <span>AI学習管理（夏期講習 受講生特典）</span>
+          </div>
+          <div class="summary-row emphasis">
+            <span>ご利用期間</span>
+            <span id="summaryPeriod" style="color:var(--success);font-weight:800;white-space:nowrap;">2026年8月31日まで</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row">
+            <span>お支払い金額</span>
+            <span class="total">¥0</span>
+          </div>
+          <p class="summary-note">
+            <strong>📅 料金・期間について</strong><br>
+            ・<strong>クレジットカードの登録はありません</strong>（決済画面には進みません）<br>
+            ・お申し込み日にかかわらず<strong>全員 同じ日（上記のご利用期間）で終了</strong>します。お申し込みが遅い場合、その分ご利用期間は短くなります<br>
+            ・期間が終わると<strong>自動で終了</strong>し、料金は一切発生しません<br>
+            ・解約手続きは不要です<br>
+            ・期間終了後も続けたい場合のみ、あらためて継続のお手続きをご案内します
+          </p>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn-primary btn-lg btn-block">
+          🌻 AI管理を使い始める →
+        </button>
+
+        <p class="legal-note">
+          ご登録により、<a href="legal.html#terms">利用規約</a>・<a href="legal.html#privacy">プライバシーポリシー</a>・<a href="legal.html#tokusho">特商法に基づく表記</a>に同意したものとみなされます。
+        </p>
+        <p class="legal-note" style="margin-top:0.6rem;">
+          📞 お困りの場合: <a href="mailto:info@trillion-ai-juku.com">info@trillion-ai-juku.com</a>
+        </p>
+
+        <div id="errorBox" class="error-box" role="alert" aria-live="assertive" style="display:none;"></div>
+        <div id="loadingBox" class="loading-box" style="display:none;">
+          <div class="spinner"></div>
+          <p>お申し込みを送信しています...</p>
+        </div>
+      </form>
+
+      <!-- 完了パネル (Stripe を経由しないので同一ページで完結させる) -->
+      <div id="doneBox" style="display:none;">
+        <div style="background:linear-gradient(135deg,rgba(34,197,94,0.14),rgba(99,102,241,0.10));border:1px solid rgba(74,222,128,0.45);border-radius:14px;padding:1.4rem 1.2rem;text-align:center;">
+          <div style="font-size:2.2rem;line-height:1;margin-bottom:0.6rem;">🎉</div>
+          <h2 style="font-size:1.25rem;font-weight:900;color:#86efac;margin:0 0 0.6rem;">登録が完了しました</h2>
+          <p style="font-size:0.95rem;color:#e2e8f0;line-height:1.7;margin:0 0 1rem;">
+            <strong id="doneEmailLabel"></strong> に<strong>ログイン用の6桁コード</strong>をお送りしました。<br>
+            下のボタンからログインページを開き、そのコードを入力してください。
+          </p>
+          <p id="donePeriodRow" style="font-size:0.92rem;color:#a5b4fc;font-weight:800;margin:0 0 1.1rem;">
+            📅 ご利用期間：<span id="donePeriod" style="white-space:nowrap;">2026年8月31日</span>まで
+          </p>
+          <a id="doneLoginLink" href="login.html" class="btn-primary btn-lg btn-block" style="text-decoration:none;display:block;">🔑 6桁コードを入力してログイン →</a>
+          <p id="doneMailWarn" style="display:none;font-size:0.84rem;color:#fcd34d;line-height:1.6;margin-top:0.9rem;">
+            ⚠️ メールの送信に失敗した可能性があります。迷惑メールフォルダをご確認のうえ、届いていない場合は
+            <a href="mailto:info@trillion-ai-juku.com" style="color:#fcd34d;">info@trillion-ai-juku.com</a> までご連絡ください。
+          </p>
+          <p style="font-size:0.82rem;color:#94a3b8;line-height:1.6;margin-top:0.9rem;">
+            ※ メールが見つからない場合は、迷惑メール／プロモーションフォルダもご確認ください。
+            キャリアメール（docomo/au/softbank）は届きにくいことがあります。
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">© 2026 AIコーチング | Powered by Claude AI</div>
+  </footer>
+
+  <script>
+  (function () {
+    'use strict';
+    // dev: フロント :8090 / FastAPI :8000。prod: 同一オリジン (checkout.js と同じ規約)
+    var API_BASE = window.location.origin.indexOf(':8090') !== -1
+      ? 'http://localhost:8000'
+      : window.location.origin;
+    var COHORT = 'summer1m';
+
+    var params = new URLSearchParams(window.location.search);
+    var form = document.getElementById('summerForm');
+    var submitBtn = document.getElementById('submitBtn');
+    var errorBox = document.getElementById('errorBox');
+    var loadingBox = document.getElementById('loadingBox');
+    var codeInput = document.getElementById('cohortCode');
+    var codeGroup = document.getElementById('codeGroup');
+
+    // URL の ?code= を自動入力 (入っていれば入力欄は隠して事故を防ぐ。誤りなら送信時に開く)
+    var urlCode = (params.get('code') || params.get('cohort_code') || '').trim();
+    if (urlCode) {
+      codeInput.value = urlCode;
+      codeGroup.style.display = 'none';
+    }
+    // 名前などの prefill (講師が個別URLを配る場合に使える)
+    ['lastName', 'firstName', 'email', 'goal'].forEach(function (id) {
+      var v = params.get(id);
+      if (v) { document.getElementById(id).value = v; }
+    });
+    if (params.get('grade')) { document.getElementById('grade').value = params.get('grade'); }
+
+    function esc(s) {
+      var d = document.createElement('div');
+      d.textContent = String(s == null ? '' : s);
+      return d.innerHTML;
+    }
+    // focusEl があればその項目へフォーカス+スクロール (エラー箇所が画面外に残らないように)
+    function showError(msg, focusEl) {
+      errorBox.innerHTML = '⚠️ ' + esc(msg);
+      errorBox.style.display = 'block';
+      if (focusEl) {
+        try { focusEl.focus(); } catch (_e) { /* noop */ }
+        focusEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      } else {
+        errorBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }
+
+    // ── 期間表示: サーバの単一ソース (SUMMER_COHORT_END) を取得して HTML の既定値を上書きする。
+    //    取得に失敗しても既定値 (2026年8月31日) が出ているので「いつまで無料か」が空欄にはならない。
+    var periodLabel = document.getElementById('periodEndLabel').textContent.trim();
+    fetch(API_BASE + '/api/trial/cohort-info?cohort=' + encodeURIComponent(COHORT))
+      .then(function (r) {
+        // 404 = API 側が未反映 (静的は数秒 / Railway は約1分でデプロイされる時差)。
+        // このままフォームを出すと旧 API が cohort を無視して「7日間体験」を黙って作るので準備中にする。
+        if (r.status === 404) {
+          return { known: true, active: false, configured: false, reason: 'unconfigured' };
+        }
+        return r.json();
+      })
+      .then(function (d) {
+        if (!d || !d.known) { return; }
+        if (d.end_label) {
+          periodLabel = d.end_label;
+          document.getElementById('periodEndLabel').textContent = d.end_label;
+          document.getElementById('summaryPeriod').textContent = d.end_label + 'まで';
+          document.getElementById('headlineEnd').textContent = d.end_label + 'まで';
+          // 送信完了後は donePeriodRow を差し替えて span を消す分岐があるので null 許容
+          var _dp = document.getElementById('donePeriod');
+          if (_dp) { _dp.textContent = d.end_label; }
+          if (typeof d.days_left === 'number' && d.days_left > 0 && d.active) {
+            document.getElementById('periodSubLabel').innerHTML =
+              'お申し込み日にかかわらず<strong>全員この日で終了</strong>します（残り約' + d.days_left +
+              '日・自動で終了し、料金は一切かかりません）。';
+          }
+        }
+        if (!d.active) {
+          // 「準備中 (未設定)」と「受付終了 (期間経過)」は案内が真逆なので必ず出し分ける。
+          // どちらもリード文「◯月◯日まで無料で使えます」と矛盾するので一緒に隠す。
+          var pending = (d.configured === false) || (d.reason === 'unconfigured');
+          document.getElementById(pending ? 'pendingBanner' : 'closedBanner').style.display = 'block';
+          document.getElementById('periodBanner').style.display = 'none';
+          var lead = document.getElementById('subLead');
+          if (lead) { lead.style.display = 'none'; }
+          form.style.display = 'none';
+        }
+      })
+      .catch(function () { /* 既定値を表示したまま申込は継続可 */ });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorBox.style.display = 'none';
+
+      var lastNameEl = document.getElementById('lastName');
+      var firstNameEl = document.getElementById('firstName');
+      var emailEl = document.getElementById('email');
+      var studentEmailEl = document.getElementById('studentEmail');
+      var gradeEl = document.getElementById('grade');
+      var lastName = lastNameEl.value.trim();
+      var firstName = firstNameEl.value.trim();
+      var email = emailEl.value.trim();
+      var studentEmail = studentEmailEl.value.trim();
+      var grade = gradeEl.value;
+      var goal = document.getElementById('goal').value.trim();
+      var code = codeInput.value.trim();
+
+      // 自前バリデーション (HTML5 の無音ブロックを避けるため novalidate + 可視メッセージ)
+      if (!lastName || !firstName) {
+        showError('姓と名の両方をご入力ください。', lastName ? firstNameEl : lastNameEl); return;
+      }
+      if (!email || email.indexOf('@') === -1 || email.indexOf('.') === -1) {
+        showError('保護者様のメールアドレスをご確認ください。', emailEl); return;
+      }
+      if (studentEmail && (studentEmail.indexOf('@') === -1 || studentEmail.indexOf('.') === -1)) {
+        showError('生徒様のメールアドレスをご確認ください（空欄でもお申し込みできます）。', studentEmailEl); return;
+      }
+      if (!grade) { showError('学年を選択してください。', gradeEl); return; }
+      if (!code) {
+        codeGroup.style.display = '';
+        showError('夏期講習コードをご入力ください（案内されたURLからアクセスすると自動入力されます）。', codeInput);
+        return;
+      }
+
+      var payload = {
+        plan: 'founder_special',       // 表示・請求用の既定プラン (体験中は課金なし)
+        name: lastName + firstName,
+        email: email,
+        student_email: studentEmail,
+        grade: grade,
+        goal: goal,
+        cohort: COHORT,
+        cohort_code: code,
+        utm_source: 'kaki_koushuu',
+        utm_campaign: params.get('utm_campaign') || undefined,
+        referrer: document.referrer ? document.referrer.slice(0, 500) : undefined
+      };
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '📮 送信中... (1〜2秒)';
+      loadingBox.style.display = 'block';
+      // cache-purge.js の自動リロードと送信のレースを防ぐ (checkout.js と同じ規約)
+      window.__checkout_in_flight = true;
+
+      var ctrl = new AbortController();
+      var tm = setTimeout(function () { ctrl.abort(); }, 20000);
+
+      fetch(API_BASE + '/api/trial/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: ctrl.signal
+      }).then(function (res) {
+        clearTimeout(tm);
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          if (!res.ok) {
+            var msg = (data && typeof data.detail === 'string' && data.detail) ? data.detail : '';
+            if (res.status === 429) {
+              throw new Error(msg || 'ただ今混み合っています。5分ほど待ってから再度お試しください。');
+            }
+            if (res.status === 400 || res.status === 422) {
+              // コード関連のエラーだけ入力欄を開いて手入力で復帰できるようにする
+              // (「既にご登録済み」「受付終了」「準備中」でコード欄を開くと「コードが違うのだ」と誤誘導する)。
+              // URL 由来の誤コードは消す — 残すと focus しても直す場所が分からない。
+              // detail が配列の 422 (氏名の文字数など) では msg が空 → コード欄は開かない
+              // (開くと prefill 済みの正しいコードを消してしまい復帰不能になる)
+              if (msg && msg.indexOf('コード') !== -1) {
+                codeGroup.style.display = '';
+                if (urlCode && codeInput.value.trim() === urlCode) { codeInput.value = ''; }
+              }
+              throw new Error(msg || '入力内容をご確認ください。');
+            }
+            throw new Error(msg || 'お申し込みを受け付けられませんでした。時間をおいて再度お試しください。');
+          }
+          return data;
+        });
+      }).then(function (data) {
+        loadingBox.style.display = 'none';
+        form.style.display = 'none';
+        document.getElementById('periodBanner').style.display = 'none';
+        var shown = email;
+        if (studentEmail && data && data.student_email_sent) { shown = email + ' と ' + studentEmail; }
+        document.getElementById('doneEmailLabel').textContent = shown;
+        // 期間はサーバが実際に付与した時だけ断定する。cohort_end_jst が無い = 既存アカウントの
+        // 期限が据え置かれたケース (既存の期限の方が長い / カード登録済み) なので日付を出さない。
+        if (data && data.cohort_end_jst) {
+          document.getElementById('donePeriod').textContent = periodLabel;
+        } else {
+          document.getElementById('donePeriodRow').textContent =
+            '📅 ご利用期間は、すでにご登録のアカウントの内容がそのまま適用されます（詳しくは担当講師にご確認ください）。';
+        }
+        // ログインページの「コードは既に持っている」経路へ (auth.html は magic link 専用 = エラーになる)
+        document.getElementById('doneLoginLink').href =
+          'login.html?email=' + encodeURIComponent(email) + '&have_code=1';
+        if (data && data.email_sent === false) {
+          document.getElementById('doneMailWarn').style.display = 'block';
+        }
+        document.getElementById('doneBox').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }).catch(function (err) {
+        clearTimeout(tm);
+        loadingBox.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.textContent = '🌻 AI管理を使い始める →';
+        var m = (err && err.name === 'AbortError')
+          ? '通信がタイムアウトしました。電波状況をご確認のうえ再度お試しください。'
+          : (err && err.message) || 'お申し込みに失敗しました。';
+        showError(m, (codeGroup.style.display !== 'none') ? codeInput : null);
+      }).then(function () {
+        window.__checkout_in_flight = false;
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

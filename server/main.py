@@ -21,6 +21,7 @@ from datetime import datetime, date, timezone, timedelta, time as dt_time
 import os
 import json
 import re
+import unicodedata  # 全角→半角 (NFKC) 正規化。module-global 固定 = 関数内 import 漏れによる NameError 再発防止
 import secrets
 import sqlite3
 import threading
@@ -329,6 +330,76 @@ TAIKEN_TRIAL_PLINK_ID = os.getenv("TAIKEN_TRIAL_PLINK_ID", "plink_1TlejRR3lrRgwu
 #   「この日時(UTC)以降に登録した新規生徒のみ」に適用する。既存の体験中の生徒には後出しで一切付けない(完全に新規のみ)。
 #   判定は created_at >= この基準。env で前倒し/後ろ倒し可。
 TRIAL_FOLLOWUP_NEW_FROM = os.getenv("TRIAL_FOLLOWUP_NEW_FROM", "2026-06-30")  # created_at(日付)で比較。PG/SQLite両対応(timestamp>=date)。
+
+# 🌻 夏期講習コホート (塾長指示 2026-07-25): 夏期講習生に「1ヶ月だけ」AI管理を開放する専用登録URL
+#   (summer-ai.html?code=... → POST /api/trial/signup with cohort='summer1m')。
+#   通常の 7日間体験 (FOUNDER_TRIAL_DAYS) とは別枠で、下記の固定終了日に全員が一斉終了する。
+#   設計上の安全性 (この3点が「1ヶ月だけ」を保証する):
+#     (1) カード登録なし = Stripe を一切経由しない → 自動課金は構造的に発生しない
+#     (2) 終了は既存の在籍ゲート (_get_current_student: status='trial' は trial_end 未来のみ許可) が
+#         trial_end で自動判定 → 終了日以降は手作業ゼロで AI が止まる (expire-trials cron が status も expired 化)
+#     (3) 合言葉コード必須 → URL が SNS 等に転載されても、コードを知らない人は 1ヶ月枠を取れない
+#         (通常の 7日間体験 導線 checkout.html は一切変更していない)
+SUMMER_COHORT_ID = "summer1m"  # フロントが送る cohort 値 (これ以外は通常体験にフォールバック)
+#   ★★ 合言葉は **env 必須・既定なし** (fail-closed)。このリポジトリは public なので、コードを
+#      ソースに書くと「SNS 転載されてもコードを知らない人は取れない」という保護 (3) が消える。
+#      未設定の間は 1ヶ月枠を誰にも発行しない (ページも「準備中」表示になる)。
+#      設定: railway variables --set SUMMER_COHORT_CODE=<配布プリントに載せる合言葉>
+SUMMER_COHORT_CODE = os.getenv("SUMMER_COHORT_CODE", "")
+#   ★終了日時は JST で書く (offset 必須)。DB の trial_end は naive TIMESTAMP 列だが保存時に UTC へ変換する
+#     ([[ai-juku-naive-timestamp-tz-trap]]: aware JST の iso をそのまま入れると PG が offset を捨てて 9時間遅れる)。
+SUMMER_COHORT_END = os.getenv("SUMMER_COHORT_END", "2026-08-31T23:59:59+09:00")
+SUMMER_COHORT_CAMPAIGN = os.getenv("SUMMER_COHORT_CAMPAIGN", "summer2026_1m")  # signup_utm_campaign に刻む識別子 (CEO 側で分離集計)
+#   1日あたりの AI トークン上限 (このコホートのみ)。無料枠を約1ヶ月開けるため、premium 同等の
+#   2M/日 では合言葉流出時の原価上限が大きすぎる。実運用の消費実績に対しては十分な余裕がある。
+SUMMER_COHORT_TOKEN_BUDGET = int(os.getenv("SUMMER_COHORT_TOKEN_BUDGET", "400000"))
+
+
+def _normalize_cohort_code(v) -> str:
+    """合言葉コードの正規化: 全角→半角 (NFKC)・空白/ハイフン除去・大文字化。
+    プリント・LINE からのコピペや IME 全角英数 (ＫＡＫＩ２０２６) で弾かれないようにする。
+    ★NFKC は必須: hmac.compare_digest は str 同士だと非 ASCII で TypeError を投げるため、
+      全角のまま照合すると 500 になる (2026-07-25 review 指摘)。"""
+    s = str(v or "")
+    try:
+        s = unicodedata.normalize("NFKC", s)
+    except (TypeError, ValueError):
+        pass
+    for ch in (" ", "　", "\t", "\n", "\r", "-", "_"):
+        s = s.replace(ch, "")
+    return s.upper()
+
+
+def _summer_cohort_code_configured() -> bool:
+    """合言葉が env に設定済みか (未設定なら 1ヶ月枠は発行しない = fail-closed)。"""
+    return bool(_normalize_cohort_code(SUMMER_COHORT_CODE))
+
+
+def _verify_summer_cohort_code(v) -> bool:
+    """夏期講習コホートの合言葉照合 (timing-safe)。env 未設定なら常に False (fail-closed)。
+    ★bytes で比較する: hmac.compare_digest は str 同士だと非 ASCII で TypeError を投げるため、
+      str 比較のままだと「合言葉に日本語 (ひまわり2026 等) を設定 → ページは受付中なのに
+      正しいコードでも全員 400」という 100% 申込不能の設定事故が起きる (2026-07-25 review)。"""
+    expected = _normalize_cohort_code(SUMMER_COHORT_CODE)
+    if not expected:
+        return False
+    try:
+        return hmac.compare_digest(_normalize_cohort_code(v).encode("utf-8"), expected.encode("utf-8"))
+    except (TypeError, ValueError, UnicodeError):
+        return False
+
+
+def _summer_cohort_end_utc() -> Optional[datetime]:
+    """夏期講習コホートの一斉終了日時を UTC aware で返す。env の書式不正時は None
+    (呼び出し側は 1ヶ月枠を発行せず通常体験にフォールバック = 事故時に安全側)。"""
+    try:
+        dt = datetime.fromisoformat(str(SUMMER_COHORT_END).strip().replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        log.error(f"[summer-cohort] SUMMER_COHORT_END の書式が不正: {SUMMER_COHORT_END!r}")
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=JST)  # offset 無しは JST 表記と解釈 (塾長が env を直書きした時の親切設計)
+    return dt.astimezone(timezone.utc)
 
 
 def _email_rate_limit(min_interval: float = 0.6):
@@ -2531,6 +2602,11 @@ class TrialSignup(BaseModel):
     utm_campaign: Optional[str] = None  # custom_gpt_funnel_xxx 等
     lp_variant: Optional[str] = None  # v2_baseline/v3_50limit/v3_results
     referrer: Optional[str] = None  # HTTP referer (utm 無し時の補助情報)
+    # 🌻 夏期講習コホート (2026-07-25): summer-ai.html が cohort='summer1m' + 合言葉を送ると
+    #   trial_end が「通常7日」ではなく固定の一斉終了日 (SUMMER_COHORT_END) になる。
+    #   未指定 (通常の checkout.html 導線) では従来どおり FOUNDER_TRIAL_DAYS。
+    cohort: Optional[str] = None
+    cohort_code: Optional[str] = None
 
     @field_validator("name")
     @classmethod
@@ -3304,7 +3380,9 @@ def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: st
                 f"続けない場合は体験期間中にマイページの「解約する」または特定商取引法に基づく表記記載の方法で解約できます（体験中の解約で料金は一切かかりません）。"
             )
         else:
-            bottom = f"体験期間は {FOUNDER_TRIAL_DAYS} 日間。何もしなければ自動終了し、課金は一切発生しません。"
+            # 日数は書かない: 通常体験 (7日) と夏期講習コホート (固定終了日) で期間が違うため、
+            # 定型文に日数を焼き込むと一方に虚偽の案内が飛ぶ (2026-07-25 review 指摘)。
+            bottom = "無料体験は期間満了で自動終了し、課金は一切発生しません。"
     elif stage == "late":
         if card_registered:
             subject = f"【AIコーチング】無料体験 終了まで {days_unused} 日 — 終了後は自動課金が始まります"
@@ -3446,7 +3524,7 @@ def _send_trial_nurture_day2_email(to_email: str, student_name: str, login_url: 
 <p>{greeting}、体験 2 日目になりました。</p>
 
 <p style="background:#f0f7ff; padding:1rem; border-left:4px solid #3b82f6; border-radius:4px; margin: 1.5rem 0;">
-  💡 <strong>2 週間の体験で成果を出すコツ</strong><br>
+  💡 <strong>体験期間で成果を出すコツ</strong><br>
   最初の 3 日で「1 日 30 分」のリズムを作れると、その後の継続率が大きく変わります。短時間でも毎日触れることが大切です。
 </p>
 
@@ -3502,18 +3580,20 @@ def _send_trial_nurture_day5_email(to_email: str, student_name: str, login_url: 
         return {"sent": False, "dev_mode": True}
     safe_name = _html.escape(student_name or "")
     greeting = f"{safe_name}さま" if safe_name else "保護者さま"
-    subject = "体験 5 日目のおすすめ — 残り 9 日の活用方法"
+    # 残り日数は書かない (旧 14日体験時代の「残り 9 日」が残っていた。現行 7日体験でも
+    # 夏期講習コホート(固定終了日)でも不正確になるため period-agnostic に・2026-07-25 review)
+    subject = "体験 5 日目のおすすめ — 後半の活用方法"
     html = f"""<!DOCTYPE html>
 <html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
 <h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AIコーチング</h1>
 <p>{greeting}、体験開始から 5 日目になりました。</p>
 
 <p style="background:#fef3c7; padding:1rem; border-left:4px solid #f59e0b; border-radius:4px; margin: 1.5rem 0;">
-  ⏰ <strong>残り 9 日 — 後半に向けて</strong><br>
-  2 週間続けると学習リズムが定着しやすくなります。残りの 9 日で機能をフル活用してみてください。
+  ⏰ <strong>体験の後半に向けて</strong><br>
+  毎日続けると学習リズムが定着しやすくなります。残りの期間で機能をフル活用してみてください。
 </p>
 
-<p><strong>残り 9 日でやってほしいこと:</strong></p>
+<p><strong>残りの期間でやってほしいこと:</strong></p>
 <ul>
   <li>📊 学習効率分析ダッシュボードで「自分の最高効率時間帯」を確認</li>
   <li>🍅 Pomodoro モード (25 分集中 + 5 分休憩のサイクル機能) で 1 時間集中</li>
@@ -3575,7 +3655,7 @@ def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, u
 <p>{greeting}、体験のご利用ありがとうございます。</p>
 
 <p style="background:#f8f9fc; padding:1rem; border-left:4px solid #6366f1; border-radius:4px; margin: 1.5rem 0;">
-  📅 <strong>7日間の無料体験は{days_text}で終了します</strong>
+  📅 <strong>無料体験は{days_text}で終了します</strong>
 </p>
 
 <p><strong>継続してご利用されたい方</strong>は、以下のボタンから月額プランの本登録をお願いします。</p>
@@ -7581,6 +7661,8 @@ def _collect_health_snapshot() -> dict:
     #   当日ログインしないのが正常なため、これらを signups から除外する。除外しないと承認のたびに
     #   「24h 申込ログイン率が低い」critical が毎時誤発報していた(6/28 以降 60通超)。
     #   NOT IN サブクエリは student_id IS NOT NULL 限定(NULL 混入で NOT IN が全滅する罠を回避)。
+    # 🌻 2026-07-25 追加除外: 夏期講習コホート(教室で一斉登録 → 帰宅後にログイン)も当日ログイン率が
+    #   低いのが正常。除外しないと講習初日に同じ critical 誤発報 (最大24通/日) が再発する。
     try:
         c.execute(
             f"""SELECT
@@ -7590,8 +7672,9 @@ def _collect_health_snapshot() -> dict:
                WHERE created_at >= ?
                  AND status IN ('trial', 'paid')
                  AND id NOT IN (SELECT student_id FROM course_applications WHERE student_id IS NOT NULL)
+                 AND COALESCE(signup_utm_campaign, '') <> ?
                  AND {_synth_exclude_sql()}""",
-            (h24,)
+            (h24, SUMMER_COHORT_CAMPAIGN)
         )
         login_row = c.fetchone()
         signups_24h_login = int(login_row[0]) if login_row else 0
@@ -9400,8 +9483,11 @@ def _create_otp(student_id: int, ttl_seconds: int = None) -> str:
 
 
 def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp_code: str = "", is_welcome: bool = False,
-                            is_child_verify: bool = False) -> dict:
+                            is_child_verify: bool = False, trial_note: str = "") -> dict:
     """Resend 経由でマジックリンクメール送信。OTPコードも含める。未設定ならコンソール出力。
+    trial_note: welcome メール冒頭の体験期間の一文を差し替える (空 = 従来の「{FOUNDER_TRIAL_DAYS}日間の
+      無料体験が始まりました。」)。夏期講習コホートのように期間が通常と違う申込で使う。
+      ★サーバ側で組む固定文のみ渡すこと (ユーザー入力は渡さない)。念のため escape する。
     is_child_verify: 子メール (student_email) 宛の確認付き welcome (magicv リンク)。
       🛡️ 2026-06-12 UX review H1: 通常 welcome の宛名は「保護者さま」で、子が OTP を入力すれば
       ログインできてしまうためリンクをクリックする動機が無く、確認 (verified) が永久に立たず
@@ -9424,9 +9510,10 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp
         )
     else:
         greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
+        _trial_line = _html.escape(trial_note) if trial_note else f"{FOUNDER_TRIAL_DAYS}日間の無料体験が始まりました。"
         body_intro = (
             f"""<p>{greeting}、ご登録ありがとうございます 🎉</p>
-    <p>{FOUNDER_TRIAL_DAYS}日間の無料体験が始まりました。<strong>以下の6桁コードをアプリに入力</strong>してログインしてください。</p>"""
+    <p>{_trial_line}<strong>以下の6桁コードをアプリに入力</strong>してログインしてください。</p>"""
             if is_welcome else
             f"<p>{greeting}、以下の6桁コードをアプリに入力してログインしてください。</p>"
         )
@@ -9527,7 +9614,8 @@ def _send_magic_link_with_retry(to_email: str, student_name: str, magic_url: str
                                   otp_code: str = "", is_welcome: bool = False,
                                   max_attempts: int = 3,
                                   bypass_recipient_cap: bool = False,
-                                  is_child_verify: bool = False) -> dict:
+                                  is_child_verify: bool = False,
+                                  trial_note: str = "") -> dict:
     """_send_magic_link_email を 429/一時エラー対応で最大 max_attempts 回リトライ。
     指数バックオフ (1s → 2s → 4s)。bounce/blocked 系のレスポンスは即諦める。
     キャリアメール宛は注意ログを出す。
@@ -9549,6 +9637,7 @@ def _send_magic_link_with_retry(to_email: str, student_name: str, magic_url: str
             result = _send_magic_link_email(
                 to_email, student_name, magic_url,
                 otp_code=otp_code, is_welcome=is_welcome, is_child_verify=is_child_verify,
+                trial_note=trial_note,
             )
             if isinstance(result, dict) and result.get("sent"):
                 return result
@@ -27773,7 +27862,16 @@ def trial_signup(payload: TrialSignup, request: Request):
     # (1) Resend abuse 判定で送信ブロック、(2) DB に dummy student を量産される。
     # 🛡️ 2026-05-21: 同 Wi-Fi の家族・兄弟同時申込み + 入力ミス再試行による偶発抵触を
     # 軽減するため 3→5 に緩和 (限度の妥当性は週次で events.rate_limit_hit を確認)。
-    _check_rate_limit_ip(request, bucket="trial_signup", limit=5, window=300)
+    # 🌻 夏期講習コホート (2026-07-25) は「教室で全員が同じ Wi-Fi から一斉登録」する運用なので
+    #   5件/5分/IP では確実に詰まる → 合言葉コードが正しい申込だけ専用バケット (20件/5分) に回す
+    #   (10人ずつ時間差で登録する運用を想定。超過は「5分ほど待って」で復帰可)。
+    #   コード不正/未指定は従来の厳しいバケットで数えるので、コード総当たりは 5回/5分/IP に制限される。
+    _cohort = (payload.cohort or "").strip().lower()[:32]
+    _cohort_code_ok = bool(_cohort) and _verify_summer_cohort_code(payload.cohort_code)
+    if _cohort_code_ok:
+        _check_rate_limit_ip(request, bucket="trial_signup_cohort", limit=20, window=300)
+    else:
+        _check_rate_limit_ip(request, bucket="trial_signup", limit=5, window=300)
 
     # 入力検証: TrialSignup の field_validator (フルネーム必須・XSS 対策) は通過済み。
     # メール小文字化 + grade/goal/plan の長さ制限 (XSS 対策の二重防御)
@@ -27793,6 +27891,57 @@ def trial_signup(payload: TrialSignup, request: Request):
 
     now = datetime.now(timezone.utc)
     trial_end = now + timedelta(days=FOUNDER_TRIAL_DAYS)  # 14 日間の完全無料体験 (2026-05-19 拡張)
+
+    # 🌻 夏期講習コホート (2026-07-25 塾長指示): 合言葉コード付きの専用URLからの申込は
+    #   「登録日から N 日」ではなく固定の一斉終了日 (SUMMER_COHORT_END) を trial_end にする。
+    #   カード登録が無いので Stripe は一切経由しない = 終了日以降は在籍ゲートで自動的にAIが止まる。
+    summer_cohort = False
+    #   ★summer_granted = 「実際に trial_end を書いた」かどうか。据え置き分岐 (既存の方が長い /
+    #     カード登録済み) では False のままにし、welcome メールと応答で期間を断定しない
+    #     (付与していない相手に「8/31まで無料で始まりました」と言わないため・2026-07-25 review)。
+    summer_granted = False
+    if _cohort:
+        if _cohort != SUMMER_COHORT_ID:
+            raise HTTPException(status_code=400, detail="この登録URLは無効です。塾長にご確認ください。")
+        if not _summer_cohort_code_configured():
+            # env 未設定 = まだ受付を開けていない。「コードが違う」ではなく準備中として断る
+            # (合言葉が無い状態で 1ヶ月枠を発行しない fail-closed)。
+            log.error("[summer-cohort] SUMMER_COHORT_CODE 未設定のため申込を保留 (準備中)")
+            raise HTTPException(
+                status_code=400,
+                detail="夏期講習AI管理はただ今準備中です。お手数ですが担当講師にご連絡ください。",
+            )
+        if not _cohort_code_ok:
+            raise HTTPException(
+                status_code=400,
+                detail="夏期講習用のコードが正しくありません。配布プリント／LINEに記載のコードをご入力ください。",
+            )
+        _cohort_end = _summer_cohort_end_utc()
+        if _cohort_end is None:
+            # env の書式不正 = 運用ミス。通常7日体験を黙って発行すると「8/31まで」と案内された
+            # 生徒に「7日間」の welcome が届く不整合になるので、発行せず明示的に断る (fail-closed)。
+            log.error(f"[summer-cohort] SUMMER_COHORT_END 不正 ({SUMMER_COHORT_END!r}) のため申込を保留")
+            raise HTTPException(
+                status_code=400,
+                detail="夏期講習AI管理はただ今準備中です。お手数ですが担当講師にご連絡ください。",
+            )
+        elif _cohort_end <= now:
+            _e_jst = _cohort_end.astimezone(JST)
+            _end_label = f"{_e_jst.year}年{_e_jst.month}月{_e_jst.day}日"
+            raise HTTPException(
+                status_code=400,
+                detail=f"夏期講習AI管理の受付は終了しました（{_end_label}まで）。通常の無料体験は /checkout.html からお申し込みいただけます。",
+            )
+        else:
+            trial_end = _cohort_end
+            summer_cohort = True
+            # CEO 側の分離集計 + 監視の誤発報除外がこのタグ一致に依存するので、フロント指定では
+            # 上書きさせない (配布URLに ?utm_campaign= が付くと除外が黙って外れる)。
+            utm_campaign = SUMMER_COHORT_CAMPAIGN[:100]
+            utm_source = utm_source or "kaki_koushuu"
+            # 呼び出し元が plan を自由指定できないよう固定 (無料枠に任意 plan を載せさせない)
+            plan = "founder_special"
+
     conn = db()
     c = conn.cursor()
 
@@ -27845,6 +27994,7 @@ def trial_signup(payload: TrialSignup, request: Request):
         returned = c.fetchone()
         student_id = returned["id"] if returned else None
         conn.commit()
+        summer_granted = summer_cohort  # 新規 INSERT = 固定終了日を実際に書けた
         # 🛡️ 2026-06-12 security review: 新規行の student_email はこの申込で初めて設定された
         # = 未確認 (student_email_verified は DEFAULT 0)。welcome は magicv リンクで送る。
         student_email_newly_set = bool(student_email_norm)
@@ -27855,12 +28005,47 @@ def trial_signup(payload: TrialSignup, request: Request):
         conn.rollback()
         is_existing = True
         student_email_newly_set = False
-        c.execute("SELECT id, status, trial_end, student_email FROM students WHERE LOWER(email) = ? LIMIT 1", (email_norm,))
+        c.execute(
+            "SELECT id, status, trial_end, student_email, ai_disabled, stripe_subscription_id "
+            "FROM students WHERE LOWER(email) = ? LIMIT 1", (email_norm,))
         row = c.fetchone()
         student_id = row["id"] if row else None
         if not student_id:
             conn.close()
             raise HTTPException(status_code=400, detail="Email conflict")
+        # 🌻 夏期講習コホートで「既にアカウントがある」に当たった時の扱い (2026-07-25 review 指摘)。
+        #   ai_disabled=1 (塾生アプリ/AIなし枠) は _ai_disabled_route_gate が AI 系 API を 403 で
+        #   弾き続けるので、trial_end だけ伸ばすと「登録完了・8/31まで使えます」と案内した直後に
+        #   全機能 403 という silent failure になる。ここで明示的に断って塾長に寄せる
+        #   (既存生の ai_disabled を勝手に解除しない方針 = [[tsujuku-app-only-ai-disabled]] を尊重)。
+        #   ★この raise は下の内側 try (except Exception で握り潰す) より前に置くこと。
+        if summer_cohort and ((row["ai_disabled"] if "ai_disabled" in row.keys() else 0) or 0):
+            conn.close()
+            log.warning(f"[summer-cohort] ai_disabled 生徒の申込を拒否 student={student_id}")
+            raise HTTPException(
+                status_code=400,
+                detail="このメールアドレスは既に塾生アプリ（AI機能なし）でご登録済みです。"
+                       "AI管理の追加は担当講師・塾長にご連絡ください。",
+            )
+        #   月額課金中 (paid) / 決済失敗の猶予中 (past_due) も明示的に断る。下の UPDATE は
+        #   これらを一切変更しない = 何も起きないのに「8/31まで無料で始まりました」と通知して
+        #   しまう (¥14,500 課金中の家庭に「料金は一切かかりません」= 事実の反転)。
+        _ex_status = row["status"] if "status" in row.keys() else None
+        if summer_cohort and _ex_status in ("paid", "past_due"):
+            conn.close()
+            log.warning(f"[summer-cohort] 有料契約中の申込を拒否 student={student_id} status={_ex_status}")
+            # past_due は「そのままご利用いただけます」が逆の案内になる (mypage はカード更新を促す)
+            raise HTTPException(
+                status_code=400,
+                detail=("このメールアドレスは既に月額プランでご登録済みです"
+                        "（夏期講習枠のお申し込みは不要です）。"
+                        "ログインページからそのままご利用いただけます。"
+                        if _ex_status == "paid" else
+                        "このメールアドレスは既に月額プランでご登録済みです"
+                        "（夏期講習枠のお申し込みは不要です）。"
+                        "ただ今お支払いを確認できていないため、マイページの「契約管理」から"
+                        "カード情報のご更新をお願いします。"),
+            )
         # 既存行の student_email が空で、今回の申込が新値を持つ場合のみ「新規設定」扱い
         # (下の UPDATE は CASE で空の時だけ埋める。既存値がある再申込では上書きも再送もしない —
         #  これが無いと同一親メールの再 POST のたびに任意の student_email へ welcome を
@@ -27893,6 +28078,38 @@ def trial_signup(payload: TrialSignup, request: Request):
                             allow_regrant = True
                     except Exception:
                         allow_regrant = True  # parse 失敗時は安全側 (ユーザー体験優先) で従来通り許可
+            # 🌻 夏期講習コホートはクールダウンを免除する。理由: (a) 合言葉コード必須 = 塾長が
+            #   配った相手だけ、(b) 付与先は「登録日+N日」ではなく固定の一斉終了日なので、何度
+            #   申し込んでも終了日は動かず「永久に無料」の抜け道にはならない (無限トライアル抑制の
+            #   目的を損なわない)。免除しないと、7月に7日体験を使った夏期講習生が申込 → 付与
+            #   スキップ → 画面は成功なのにAIが使えない silent failure になる。
+            #   paid / past_due は下の条件で従来どおり一切変更しない (課金中を trial 降格させない)。
+            if summer_cohort and existing_status not in ("paid", "past_due"):
+                # ★★ 絶対に trial_end を「短縮」しない (2026-07-25 review CRITICAL)。
+                #   下の UPDATE は trial_end を無条件代入するため、通塾生/本クラス生の長期 trial
+                #   (trial_end≈2036 = 無期限アクセス保証・[[login-entitlement-architecture]]) が
+                #   8/31 に切り詰められ、course タグを外した瞬間に締め出し事故になる。
+                #   カード登録済み trial (stripe_subscription_id あり) も触らない — trial_end を
+                #   伸ばすと Stripe の実課金日と課金前通知 (trial_ending_card) がズレて課金サプライズになる。
+                _prev_te_dt = None
+                if prev_trial_end:
+                    try:
+                        _prev_te_dt = (datetime.fromisoformat(prev_trial_end.replace("Z", "+00:00"))
+                                       if isinstance(prev_trial_end, str) else prev_trial_end)
+                        if _prev_te_dt.tzinfo is None:
+                            _prev_te_dt = _prev_te_dt.replace(tzinfo=timezone.utc)
+                    except Exception:
+                        _prev_te_dt = None
+                _ex_sub = (row["stripe_subscription_id"] if "stripe_subscription_id" in row.keys() else None)
+                if _ex_sub:
+                    allow_regrant = False
+                    log.info(f"[summer-cohort] カード登録済み trial のため trial_end 据え置き student={student_id}")
+                elif _prev_te_dt and _prev_te_dt > trial_end:
+                    allow_regrant = False
+                    log.info(f"[summer-cohort] 既存 trial_end({_prev_te_dt}) がコホート終了日より後 "
+                             f"→ 据え置き (短縮しない) student={student_id}")
+                else:
+                    allow_regrant = True
             if existing_status not in ("paid", "past_due"):
                 if allow_regrant:
                     # 既存生徒の student_email も更新 (空白のままなら新値で上書き、既存値があれば保持)。
@@ -27908,6 +28125,15 @@ def trial_signup(payload: TrialSignup, request: Request):
                          _pipe_parent or '', _pipe_parent or '', _pipe_parent or '', student_id)
                     )
                     conn.commit()
+                    summer_granted = summer_cohort  # UPDATE が実際に走った = 固定終了日を書けた
+                    # 🌻 コホート識別子は「空のときだけ」刻む (元の流入元 attribution は壊さない。
+                    #   AI 上限の判定は _check_ai_budget 側で trial_end 一致もみるので取りこぼさない)
+                    if summer_cohort:
+                        c.execute(
+                            "UPDATE students SET signup_utm_campaign=? "
+                            "WHERE id=? AND COALESCE(signup_utm_campaign,'')=''",
+                            (SUMMER_COHORT_CAMPAIGN[:100], student_id))
+                        conn.commit()
                     log.info(f"[Signup] Re-activated trial for existing student {student_id} ({email_norm}) prev_status={existing_status}")
                 else:
                     # クールダウン中: 体験は再付与せず status/データ据え置き。student_email だけ補完。
@@ -27947,8 +28173,15 @@ def trial_signup(payload: TrialSignup, request: Request):
     # 🔔 2026-07-04 体験(lp.html フォーム)の新規申込を塾長へ即時通知。
     #   新規 INSERT が成立した時だけ (not is_existing = IntegrityError で既存行に落ちていない)。
     #   再申込/再活性化 (is_existing=True) では送らない。synthetic 除外・非throw はヘルパー内蔵。
-    if student_id and not is_existing:
-        _notify_admin_new_trial(payload.name, email_norm, "lp", goal=goal, repeat_warning=_repeat_reason)
+    # 🌻 夏期講習コホートは「既存アカウントに合流した」ケースも通知する。兄弟が同じ保護者メールで
+    #   申し込むと 2人目は既存行に合流し、氏名/学年が黙って捨てられて 1アカウント共有になる
+    #   (画面は「登録完了」なので保護者も気づけない)。塾長が名簿突合できるよう必ず通知する。
+    if student_id and (not is_existing or summer_cohort):
+        _notify_admin_new_trial(
+            payload.name, email_norm,
+            ("夏期講習1ヶ月枠(既存アカウントに合流・要確認)" if (summer_cohort and is_existing)
+             else "夏期講習1ヶ月枠" if summer_cohort else "lp"),
+            goal=goal, repeat_warning=_repeat_reason)
 
     # 紹介ループ: ?ref= が指定されていて、新規申込 (=既存ユーザーでない) なら referrals に記録。
     # 既存ユーザーの再申込時は記録しない (再活性化は紹介報酬対象外)。
@@ -28025,12 +28258,27 @@ def trial_signup(payload: TrialSignup, request: Request):
             session_token = _create_magic_link_token(student_id)
             magic_url = f"{BASE_URL}/auth.html?t={session_token}"
             otp_code = _create_otp(student_id)
+            # 🌻 夏期講習コホートは「7日間の無料体験」ではなく一斉終了日を明記する
+            #   (welcome メールは全新規が受け取る最重要メール = 期間の誤案内は事故)
+            _welcome_trial_note = ""
+            if summer_granted:
+                _te_jst = trial_end.astimezone(JST)
+                _welcome_trial_note = (
+                    f"夏期講習のAI管理({_te_jst.year}年{_te_jst.month}月{_te_jst.day}日まで)が始まりました。"
+                    "期間が終わると自動で終了し、料金は一切かかりません。"
+                )
+            elif summer_cohort:
+                # 据え置き分岐 (既存の期限の方が長い / カード登録済み) = 期間を断定してはいけない。
+                # 既存の「{FOUNDER_TRIAL_DAYS}日間の無料体験が始まりました」も嘘になるので中立文にする
+                # (直後に「以下の6桁コードを…」が続くのでコードには言及しない)。
+                _welcome_trial_note = "ご利用期間は担当講師よりご案内します。"
             result = _send_magic_link_with_retry(
                 email_norm,
                 payload.name or "",
                 magic_url,
                 otp_code=otp_code,
                 is_welcome=True,
+                trial_note=_welcome_trial_note,
             )
             email_sent = bool(result.get("sent"))
             if not email_sent:
@@ -28101,6 +28349,10 @@ def trial_signup(payload: TrialSignup, request: Request):
         "trial_end": trial_end.isoformat(),
         "email_sent": email_sent,  # フロント (checkout-success.html) で「メール届かなかった場合は…」案内に使う
         "student_email_sent": student_email_sent,  # 生徒メール (任意) への送信成否
+        # 🌻 夏期講習コホート: 成功画面で「◯月◯日まで使えます」を出すためフロントへ返す。
+        #   実際に付与できた時だけ (据え置き分岐では期間を返さない = 完了パネルも断定しない)
+        "cohort": SUMMER_COHORT_ID if summer_granted else None,
+        "cohort_end_jst": trial_end.astimezone(JST).isoformat() if summer_granted else None,
     }
 
 # ==========================================================================
@@ -28613,6 +28865,38 @@ def list_plans():
         "enrollment_fee": ENROLLMENT_FEE,
         "trial_fee": FOUNDER_TRIAL_PRICE,
         "trial_duration_days": FOUNDER_TRIAL_DAYS,
+    }
+
+
+@app.get("/api/trial/cohort-info")
+def trial_cohort_info(cohort: str = ""):
+    """🌻 夏期講習コホートの一斉終了日を返す public な設定照会 (summer-ai.html が表示に使う)。
+    DB アクセス無し・秘密情報なし (合言葉コードは絶対に返さない)。終了日をページに直書きすると
+    env を変えた時にサイト表示だけ古くなるため、単一ソース (SUMMER_COHORT_END) から配る。"""
+    cid = (cohort or "").strip().lower()[:32]
+    if cid != SUMMER_COHORT_ID:
+        return {"cohort": cid or None, "known": False, "active": False}
+    # 「合言葉/終了日が未設定 (=準備中)」と「期間が過ぎた (=受付終了)」はページ側の文言が
+    # 真逆になるので必ず区別できる形で返す (未設定を「受付終了」と誤報しないため)。
+    configured = _summer_cohort_code_configured()
+    end_utc = _summer_cohort_end_utc()
+    if end_utc is None:
+        return {"cohort": cid, "known": True, "active": False,
+                "configured": False, "reason": "unconfigured", "error": "end_date_unconfigured"}
+    end_jst = end_utc.astimezone(JST)
+    now = datetime.now(timezone.utc)
+    _secs_left = max(0, int((end_utc - now).total_seconds()))
+    days_left = (_secs_left + 86399) // 86400  # 端数は繰り上げ (残り0.5日 → 「あと1日」)
+    _expired = end_utc <= now
+    return {
+        "cohort": cid,
+        "known": True,
+        "active": bool(configured and not _expired),
+        "configured": configured,  # False = 合言葉 env 未設定 (準備中)。コード自体は絶対に返さない
+        "reason": ("expired" if _expired else ("unconfigured" if not configured else "open")),
+        "end_jst": end_jst.isoformat(),
+        "end_label": f"{end_jst.year}年{end_jst.month}月{end_jst.day}日",
+        "days_left": days_left,
     }
 
 # 🔷 2026-07-02 塾長方針で残枠の偽装カモフラージュを廃止。旧 _calculate_dynamic_fake_taken() は撤去。
@@ -31564,7 +31848,7 @@ def _send_trial_followup_email(to_email: str, student_name: str, days_since: int
         subject = "【AIコーチング】体験期間が終了しました — いつでも再開できます"
         headline = "体験期間が終了しました"
         body_msg = """
-<p>7日間の無料体験をご利用いただき、ありがとうございました。</p>
+<p>無料体験をご利用いただき、ありがとうございました。</p>
 <p>体験中の学習データはすべて保存されています。<br>
 いつでも月額プランに登録いただければ、続きから学習を再開できます。</p>
 <p style="background:#f0fdf4;padding:1rem;border-left:4px solid #22c55e;border-radius:4px;">
@@ -32047,6 +32331,11 @@ def cron_trial_followups(x_cron_secret: str = Header(None), dry_run: bool = Fals
                 continue
 
             upgrade_url = f"{BASE_URL}/upgrade.html?email={_urlparse.quote(row['email'], safe='')}"
+            # 📧 他の一括送信 cron と同じ送信間隔ガード (Resend 2req/s → 429)。
+            #   夏期講習コホートは全員 trial_end が同一 = 終了翌日に Day1 が N 通同時発生するため、
+            #   これが無いと 3通目以降が 429 で落ち、dedup が success=1 のみを見るため Day1 が
+            #   永久に届かない生徒が出る (2026-07-25 review 指摘・他6箇所には既に入っていた)。
+            _email_rate_limit()
             result = _send_trial_followup_email(row["email"], row["name"] or "", step, upgrade_url)
             c.execute(
                 """INSERT INTO notifications (student_id, channel, template, payload, success, error)
@@ -33395,14 +33684,21 @@ def _check_ai_budget(student_id: int) -> None:
     plan = "trial"
     _course = None
     _ai_disabled = 0
+    _campaign = None
+    _status = None
+    _trial_end_raw = None
     try:
-        c.execute("SELECT plan, course, ai_disabled FROM students WHERE id = ?", (student_id,))
+        c.execute("SELECT plan, course, ai_disabled, signup_utm_campaign, status, trial_end "
+                  "FROM students WHERE id = ?", (student_id,))
         row = c.fetchone()
         if row and row["plan"]:
             plan = str(row["plan"])
         if row:
             _course = row["course"] if "course" in row.keys() else None
             _ai_disabled = (row["ai_disabled"] if "ai_disabled" in row.keys() else 0) or 0
+            _campaign = row["signup_utm_campaign"] if "signup_utm_campaign" in row.keys() else None
+            _status = row["status"] if "status" in row.keys() else None
+            _trial_end_raw = row["trial_end"] if "trial_end" in row.keys() else None
     except Exception:
         pass
     # 🚫 [塾生アプリ AIなし枠] AI トークン消費の直前ゲート。ai_disabled は conn を閉じてから 403。
@@ -33415,6 +33711,33 @@ def _check_ai_budget(student_id: int) -> None:
         budget = PLAN_DAILY_TOKEN_BUDGET.get("premium", 2_000_000)
     else:
         budget = PLAN_DAILY_TOKEN_BUDGET.get(plan, AI_DAILY_TOKEN_BUDGET)
+    # 🌻 夏期講習コホート (無料・約1ヶ月) はプレミアム同等の 2M/日 では原価上限が大きすぎるので
+    #   専用上限を掛ける。実運用の1人あたり消費 (塾全体で月 $65-70) から見て十分に余裕がある一方、
+    #   合言葉が流出した場合の1アカウント最大原価を 1/5 に抑える (env SUMMER_COHORT_TOKEN_BUDGET)。
+    #   ★plan は founder_special のまま = 既存 UI (PLAN_INFO 参照) を壊さない。
+    #   ★判定は「タグ一致」だけに頼らない: 既存アカウントに合流した参加者は attribution を
+    #     壊さないため元の signup_utm_campaign を保持することがあり、タグだけだと 2M/日 のまま
+    #     素通りする (2026-07-25 review)。trial_end が一斉終了日と一致する trial も同じ枠とみなす。
+    #   ★paid/past_due には掛けない: 有料転換後もこの上限が残ると premium 表示のまま 1/5 に
+    #     絞られ、原因特定不能なサイレント降格になる。
+    #   ★コホート期間が終わった後は掛けない: signup_utm_campaign は恒久列なので、掛け続けると
+    #     その後 kokuritsu_nankan (永久無料・本来2M) や無料枠に移った生徒が原因不明のまま
+    #     1/5 に絞られ続ける (2026-07-25 review)。
+    _c_end = _summer_cohort_end_utc()
+    if (_status not in ("paid", "past_due") and _course != "kokuritsu_nankan"
+            and _c_end and _c_end > datetime.now(timezone.utc)):
+        _is_cohort = bool(_campaign and SUMMER_COHORT_CAMPAIGN and str(_campaign) == SUMMER_COHORT_CAMPAIGN)
+        if not _is_cohort and _status == "trial" and _trial_end_raw:
+            try:
+                _te = (datetime.fromisoformat(str(_trial_end_raw).replace("Z", "+00:00"))
+                       if isinstance(_trial_end_raw, str) else _trial_end_raw)
+                if _te.tzinfo is None:
+                    _te = _te.replace(tzinfo=timezone.utc)
+                _is_cohort = abs((_te - _c_end).total_seconds()) < 60
+            except Exception:
+                pass
+        if _is_cohort:
+            budget = min(budget, SUMMER_COHORT_TOKEN_BUDGET)
     # psycopg は % をプレースホルダ誤検知するため LIKE パターンもパラメータで渡す
     c.execute(
         """SELECT props FROM events
