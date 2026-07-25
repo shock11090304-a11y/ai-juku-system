@@ -33937,6 +33937,13 @@ def _check_quota(student: dict, feature: str) -> None:
     used = _get_monthly_usage(int(student["id"]), feature)
     if used >= limit:
         feature_label = {"problems": "問題生成", "essays": "添削", "textbooks": "参考書生成"}.get(feature, feature)
+        # 🔔 2026-07-25 塾長指示「上限にふれてしまった場合に判断する」→ 触れたことが分かる仕組みが必要。
+        #   従来は events 記録もダッシュボードも通知も無く、生徒が黙って使うのをやめるだけだった。
+        #   ★非throw・上限到達時のみ実行 = 通常系の hot path には一切影響しない。
+        try:
+            _record_quota_exceeded(student, feature, plan, limit, used)
+        except Exception:
+            pass
         raise HTTPException(
             status_code=429,
             detail=(
@@ -43548,6 +43555,170 @@ def _send_message_email(to_email: str, subject: str, body_text: str, student_nam
     except Exception as e:
         log.error(f"[Messages] email send failed for {to_email}: {type(e).__name__}: {str(e)[:200]}")
         return {"sent": False, "error": str(e)[:200]}
+
+
+def _record_quota_exceeded(student: dict, feature: str, plan: str, limit: int, used: int) -> None:
+    """🔔 月次クォータ (問題生成/添削/参考書) の上限到達を記録し、夏期講習コホートなら塾長へ通知する。
+    (塾長指示 2026-07-25「上限にふれてしまった場合に判断する」= 触れたことが伝わらないと判断できない)
+
+    設計 (2026-07-25 3視点 review の指摘を反映):
+    - ★絶対に例外を送出しない (呼び出し側の 429 応答を壊さない)。呼び出しは上限到達時のみ。
+    - ★events を dedup の台帳にする (in-memory ではないのでデプロイ/再起動を跨いで有効。
+      上限到達後は毎リクエストここを通るため必須)。記録は 生徒×feature×月 で1行。
+    - ★**メールは 生徒×月 で1通だけ** (feature 別に3通送らない)。40名×3機能=月120通で受信箱が
+      埋まると「判断する」前に読まれなくなるため。どの機能で到達したかは events に残る。
+    - ★**送信の成否を props.notified に持ち、成功するまで dedup を確定させない**。
+      記録を先に確定させると Resend の一時障害1回で当月の通知が永久に埋もれ、機能の目的
+      (触れたことが伝わる) が静かに失われる。再試行は宛先 10通/時 の cap で有界。
+    - ★通知は「夏期講習コホート **かつ** 在籍が無料枠 **かつ** コホート期間中」に限定
+      (_check_ai_budget と同じ歯止め)。signup_utm_campaign は恒久列なので、有料転換後や
+      期間終了後に「夏期講習生が…」と誤ラベルで送らないため。
+    """
+    try:
+        sid = int(student.get("id")) if isinstance(student, dict) else int(student["id"])
+    except (TypeError, ValueError, KeyError, AttributeError):
+        return
+    ym = _jst_year_month()
+    now = datetime.now(timezone.utc)
+
+    feature_recorded = False   # 同 feature×月 の記録済みか (events 重複防止)
+    notified_this_month = False  # 同月に通知成功済みか (メールは月1通)
+    is_cohort = False
+    guards_ok = False
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "SELECT props FROM events WHERE name = ? AND session_id = ? AND created_at > ? LIMIT 100",
+            ("quota_exceeded", str(sid), now - timedelta(days=40)),
+        )
+        for row in c.fetchall():
+            try:
+                p = json.loads(row["props"] or "{}")
+            except (json.JSONDecodeError, TypeError, ValueError):
+                continue
+            if p.get("year_month") != ym:
+                continue
+            if p.get("feature") == feature:
+                feature_recorded = True
+            if p.get("notified"):
+                notified_this_month = True
+        # コホート判定 + 歯止め (status / コホート期間)
+        c.execute("SELECT status, trial_end, signup_utm_campaign FROM students WHERE id = ?", (sid,))
+        srow = c.fetchone()
+        if srow is not None:
+            is_cohort = _is_summer_cohort_row(srow)
+            _st = srow["status"] if "status" in srow.keys() else None
+            _c_end = _summer_cohort_end_utc()
+            guards_ok = (_st not in ("paid", "past_due")) and bool(_c_end) and _c_end > now
+    except Exception as e:
+        log.warning(f"[QuotaAlert] lookup failed student={sid} feature={feature}: {type(e).__name__}: {e}")
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+        return
+
+    should_notify = bool(is_cohort and guards_ok and not notified_this_month)
+    if feature_recorded and not should_notify:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return
+
+    # ---- 通知 (夏期講習コホートのみ)。_notify_admin_new_trial と同じ3歯止め。
+    sent = False
+    if should_notify:
+        try:
+            _name = str((student.get("name") if isinstance(student, dict) else "") or "").strip()
+            _email = str((student.get("email") if isinstance(student, dict) else "") or "").strip()
+            _goal = (student.get("goal") if isinstance(student, dict) else None)
+            if _is_synthetic_student(_email, _goal, _name):
+                should_notify = False
+            else:
+                admin_to = os.getenv("DAILY_SNS_TO_EMAIL") or os.getenv("MONITORING_TO_EMAIL")
+                if not admin_to or not RESEND_API_KEY:
+                    should_notify = False
+                else:
+                    try:
+                        # 再試行も含めて 10通/時 で有界化 (送信が失敗し続けても Resend を叩き続けない)
+                        _check_rate_limit_value(admin_to, bucket="quota_admin_notify", limit=10, window=3600)
+                        _ok = True
+                    except HTTPException:
+                        log.warning("[QuotaAlert] admin notify suppressed (hourly cap)")
+                        _ok = False
+                    except Exception:
+                        _ok = True
+                    if _ok:
+                        label = {"problems": "AI問題生成", "essays": "添削",
+                                 "textbooks": "参考書生成"}.get(feature, feature)
+                        _res = _send_message_email(
+                            admin_to,
+                            f"⚠️ 夏期講習生が{label}の月上限({limit}回)に達しました: {_name or ('#' + str(sid))}",
+                            f"夏期講習枠の生徒（AI管理）が、今月の{label}の上限に達しました。\n"
+                            f"この生徒は翌月1日のリセットまで{label}を使えません"
+                            f"（画面には「プレミアムプランにアップグレード」と表示されます）。\n\n"
+                            f"## 対象\n"
+                            f"生徒: {_name or '(氏名未設定)'} (#{sid})\n"
+                            f"メール: {_email or '(不明)'}\n"
+                            f"到達した機能: {label}\n"
+                            f"上限: {limit}回 / 月 (使用 {used}回・対象月 {ym})\n\n"
+                            f"## ご判断（Claude に伝えていただければ対応します）\n"
+                            f"(a) このままにする → その生徒は翌月1日のリセットまで待ちます\n"
+                            f"(b) 夏期講習枠の上限を上げる → 例「夏期講習枠の{label}を月150回に上げて」\n"
+                            f"    ※この上限は現在、通常の無料体験生と共通の設定を使っています。"
+                            f"夏期講習枠だけに適用する分離も併せて行います（コード変更とデプロイが必要）。\n\n"
+                            f"※ この通知は同じ生徒につき月1通だけです（他の機能で到達しても再送しません）。\n"
+                            f"※ 通常プランの生徒の到達は記録のみで通知しません"
+                            f"（events の name='quota_exceeded' に残ります）。",
+                            student_name="塾長",
+                        )
+                        sent = bool(_res and _res.get("sent"))
+                        if sent:
+                            log.info(f"[QuotaAlert] notified owner: student={sid} feature={feature} limit={limit}")
+                        else:
+                            log.warning(f"[QuotaAlert] notify send failed student={sid} "
+                                        f"(次回リクエストで再試行・10通/時で有界): {(_res or {}).get('error')}")
+        except Exception as ee:
+            try:
+                log.warning(f"[QuotaAlert] notify raised student={sid}: {type(ee).__name__}: {ee}")
+            except Exception:
+                pass
+
+    # ---- 記録 (feature 初回、または「通知が今回初めて成功した」ことを台帳に残す時)
+    try:
+        c = conn.cursor()
+        if not feature_recorded:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("quota_exceeded",
+                 json.dumps({"student_id": sid, "feature": feature, "year_month": ym,
+                             "plan": plan, "limit": limit, "used": used,
+                             "cohort": is_cohort, "notified": sent}, ensure_ascii=False),
+                 str(sid)),
+            )
+            conn.commit()
+        elif sent:
+            # feature 行は既にあるが通知は今回初成功 → notified=true を台帳に残して再試行を止める
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("quota_exceeded",
+                 json.dumps({"student_id": sid, "feature": feature, "year_month": ym,
+                             "plan": plan, "limit": limit, "used": used,
+                             "cohort": is_cohort, "notified": True, "retry": True}, ensure_ascii=False),
+                 str(sid)),
+            )
+            conn.commit()
+    except Exception as e:
+        log.warning(f"[QuotaAlert] record failed student={sid} feature={feature}: {type(e).__name__}: {e}")
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 def _notify_admin_new_trial(name, email, source: str, goal=None, amount_jpy=None, repeat_warning=None) -> None:
