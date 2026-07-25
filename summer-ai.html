@@ -35,18 +35,18 @@
         <div class="eyebrow">🌻 夏期講習 受講生 限定</div>
         <h1>夏期講習 AI学習管理 お申し込み</h1>
         <p class="checkout-sub" id="subLead">
-          夏期講習の受講生は、<strong id="headlineEnd">2026年8月31日まで</strong>
+          夏期講習の受講生は、<strong id="headlineEnd">2026年7月27日〜2026年8月27日</strong>の期間
           AI学習管理を無料でお使いいただけます（<strong>クレジットカード登録なし・自動課金なし</strong>）
         </p>
       </div>
 
       <!-- 期間バナー: /api/trial/cohort-info (サーバの単一ソース) で上書きされる -->
       <div id="periodBanner" style="background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(236,72,153,0.12));border:1px solid rgba(129,140,248,0.45);border-radius:12px;padding:0.95rem 1.1rem;margin-bottom:1.2rem;text-align:center;">
-        <div style="font-weight:900;color:#a5b4fc;font-size:1.02rem;margin-bottom:0.3rem;">
-          📅 ご利用期間：<span id="periodEndLabel" style="white-space:nowrap;">2026年8月31日</span>まで
+        <div style="font-weight:900;color:#a5b4fc;font-size:1.02rem;margin-bottom:0.3rem;" id="periodMainLine">
+          📅 ご利用期間：<span style="white-space:nowrap;">2026年7月27日</span> 〜 <span id="periodEndLabel" style="white-space:nowrap;">2026年8月27日</span>
         </div>
         <div style="font-size:0.86rem;color:#cbd5e1;" id="periodSubLabel">
-          お申し込み日にかかわらず<strong>全員この日で終了</strong>します（自動で終了し、料金は一切かかりません）。
+          お申し込み日にかかわらず<strong>全員 2026年8月27日 で終了</strong>します（自動で終了し、料金は一切かかりません）。
         </div>
       </div>
 
@@ -59,10 +59,10 @@
         </div>
       </div>
 
-      <!-- 準備中 (合言葉/終了日が未設定) のときだけ出すバナー。「受付終了」と混同させない -->
+      <!-- 準備中 (合言葉/終了日が未設定) / 受付開始前 のときだけ出すバナー。「受付終了」と混同させない -->
       <div id="pendingBanner" style="display:none;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.5);border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.2rem;">
-        <div style="font-weight:900;color:#fcd34d;font-size:1rem;margin-bottom:0.35rem;">🛠 ただ今準備中です</div>
-        <div style="font-size:0.88rem;color:#fde68a;line-height:1.6;">
+        <div style="font-weight:900;color:#fcd34d;font-size:1rem;margin-bottom:0.35rem;" id="pendingTitle">🛠 ただ今準備中です</div>
+        <div style="font-size:0.88rem;color:#fde68a;line-height:1.6;" id="pendingBody">
           お申し込みの受付開始までしばらくお待ちください。お急ぎの場合は担当講師または
           <a href="mailto:info@trillion-ai-juku.com" style="color:#fcd34d;">info@trillion-ai-juku.com</a> までご連絡ください。
         </div>
@@ -129,7 +129,7 @@
           </div>
           <div class="summary-row emphasis">
             <span>ご利用期間</span>
-            <span id="summaryPeriod" style="color:var(--success);font-weight:800;white-space:nowrap;">2026年8月31日まで</span>
+            <span id="summaryPeriod" style="color:var(--success);font-weight:800;">2026年7月27日〜2026年8月27日</span>
           </div>
           <div class="summary-divider"></div>
           <div class="summary-row">
@@ -174,7 +174,7 @@
             下のボタンからログインページを開き、そのコードを入力してください。
           </p>
           <p id="donePeriodRow" style="font-size:0.92rem;color:#a5b4fc;font-weight:800;margin:0 0 1.1rem;">
-            📅 ご利用期間：<span id="donePeriod" style="white-space:nowrap;">2026年8月31日</span>まで
+            📅 ご利用期間：<span id="donePeriod" style="white-space:nowrap;">2026年7月27日〜2026年8月27日</span>
           </p>
           <a id="doneLoginLink" href="login.html" class="btn-primary btn-lg btn-block" style="text-decoration:none;display:block;">🔑 6桁コードを入力してログイン →</a>
           <p id="doneMailWarn" style="display:none;font-size:0.84rem;color:#fcd34d;line-height:1.6;margin-top:0.9rem;">
@@ -243,8 +243,9 @@
     }
 
     // ── 期間表示: サーバの単一ソース (SUMMER_COHORT_END) を取得して HTML の既定値を上書きする。
-    //    取得に失敗しても既定値 (2026年8月31日) が出ているので「いつまで無料か」が空欄にはならない。
+    //    取得に失敗しても既定値 (2026年8月27日) が出ているので「いつまで無料か」が空欄にはならない。
     var periodLabel = document.getElementById('periodEndLabel').textContent.trim();
+    var startLabel = '';  // API から開始日が来たら保持 (完了パネルもレンジで揃える)
     fetch(API_BASE + '/api/trial/cohort-info?cohort=' + encodeURIComponent(COHORT))
       .then(function (r) {
         // 404 = API 側が未反映 (静的は数秒 / Railway は約1分でデプロイされる時差)。
@@ -258,22 +259,42 @@
         if (!d || !d.known) { return; }
         if (d.end_label) {
           periodLabel = d.end_label;
+          startLabel = d.start_label || '';
+          var _range = startLabel ? (startLabel + '〜' + d.end_label) : (d.end_label + 'まで');
           document.getElementById('periodEndLabel').textContent = d.end_label;
-          document.getElementById('summaryPeriod').textContent = d.end_label + 'まで';
-          document.getElementById('headlineEnd').textContent = d.end_label + 'まで';
+          document.getElementById('summaryPeriod').textContent = _range;
+          document.getElementById('headlineEnd').textContent = _range;
+          if (startLabel) {
+            // レンジ表示。日付が途中で改行しないよう nowrap span で包む (textContent 差し替えだと
+            // 既定 HTML の nowrap が消えてスマホで「2026年7月 / 27日」と割れる)
+            document.getElementById('periodMainLine').innerHTML =
+              '📅 ご利用期間：<span style="white-space:nowrap;">' + esc(startLabel) +
+              '</span> 〜 <span style="white-space:nowrap;">' + esc(d.end_label) + '</span>';
+          }
           // 送信完了後は donePeriodRow を差し替えて span を消す分岐があるので null 許容
           var _dp = document.getElementById('donePeriod');
-          if (_dp) { _dp.textContent = d.end_label; }
+          if (_dp) { _dp.textContent = _range; }
           if (typeof d.days_left === 'number' && d.days_left > 0 && d.active) {
+            // 期間をレンジ表示にしたので「この日」では曖昧 → 終了日を明示する
             document.getElementById('periodSubLabel').innerHTML =
-              'お申し込み日にかかわらず<strong>全員この日で終了</strong>します（残り約' + d.days_left +
-              '日・自動で終了し、料金は一切かかりません）。';
+              'お申し込み日にかかわらず<strong>全員 ' + esc(d.end_label) + ' で終了</strong>します（残り約' +
+              d.days_left + '日・自動で終了し、料金は一切かかりません）。';
           }
         }
         if (!d.active) {
-          // 「準備中 (未設定)」と「受付終了 (期間経過)」は案内が真逆なので必ず出し分ける。
-          // どちらもリード文「◯月◯日まで無料で使えます」と矛盾するので一緒に隠す。
-          var pending = (d.configured === false) || (d.reason === 'unconfigured');
+          // 「受付開始前」「準備中 (未設定)」「受付終了 (期間経過)」は案内が全く違うので出し分ける。
+          // いずれもリード文「◯月◯日まで無料で使えます」と噛み合わないので一緒に隠す。
+          var notStarted = (d.reason === 'not_started');
+          var pending = notStarted || (d.configured === false) || (d.reason === 'unconfigured');
+          if (notStarted) {
+            document.getElementById('pendingTitle').textContent =
+              '🗓 ' + (d.start_label || '受付開始日') + ' から受付開始です';
+            // 日付が途中で改行しないよう nowrap span で包む (375px で「2026年7 / 月27日」と割れる)
+            document.getElementById('pendingBody').innerHTML =
+              'AI学習管理のご利用期間は <span style="white-space:nowrap;">' + esc(d.start_label || '') +
+              '</span>〜<span style="white-space:nowrap;">' + esc(d.end_label || '') +
+              '</span> です。受付開始日になったら、このページからお申し込みください。';
+          }
           document.getElementById(pending ? 'pendingBanner' : 'closedBanner').style.display = 'block';
           document.getElementById('periodBanner').style.display = 'none';
           var lead = document.getElementById('subLead');
@@ -379,7 +400,8 @@
         // 期間はサーバが実際に付与した時だけ断定する。cohort_end_jst が無い = 既存アカウントの
         // 期限が据え置かれたケース (既存の期限の方が長い / カード登録済み) なので日付を出さない。
         if (data && data.cohort_end_jst) {
-          document.getElementById('donePeriod').textContent = periodLabel;
+          document.getElementById('donePeriod').textContent =
+            startLabel ? (startLabel + '〜' + periodLabel) : (periodLabel + 'まで');
         } else {
           document.getElementById('donePeriodRow').textContent =
             '📅 ご利用期間は、すでにご登録のアカウントの内容がそのまま適用されます（詳しくは担当講師にご確認ください）。';

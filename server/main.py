@@ -346,9 +346,14 @@ SUMMER_COHORT_ID = "summer1m"  # フロントが送る cohort 値 (これ以外�
 #      未設定の間は 1ヶ月枠を誰にも発行しない (ページも「準備中」表示になる)。
 #      設定: railway variables --set SUMMER_COHORT_CODE=<配布プリントに載せる合言葉>
 SUMMER_COHORT_CODE = os.getenv("SUMMER_COHORT_CODE", "")
-#   ★終了日時は JST で書く (offset 必須)。DB の trial_end は naive TIMESTAMP 列だが保存時に UTC へ変換する
+#   ★開始/終了日時は JST で書く (offset 必須)。DB の trial_end は naive TIMESTAMP 列だが保存時に UTC へ変換する
 #     ([[ai-juku-naive-timestamp-tz-trap]]: aware JST の iso をそのまま入れると PG が offset を捨てて 9時間遅れる)。
-SUMMER_COHORT_END = os.getenv("SUMMER_COHORT_END", "2026-08-31T23:59:59+09:00")
+#   ★開始日 (塾長指示 2026-07-25: 使える日程は 7/27〜8/27)。開始前は受付を開かない
+#     (ページは「◯月◯日から受付開始」表示・申込は 400)。在籍ゲートは trial_end しか見ないので、
+#     「開始日から使える」は "開始日より前に登録させない" ことで担保する。
+#     空文字にすると開始ゲート無し (いつでも受付) になる。
+SUMMER_COHORT_START = os.getenv("SUMMER_COHORT_START", "2026-07-27T00:00:00+09:00")
+SUMMER_COHORT_END = os.getenv("SUMMER_COHORT_END", "2026-08-27T23:59:59+09:00")
 SUMMER_COHORT_CAMPAIGN = os.getenv("SUMMER_COHORT_CAMPAIGN", "summer2026_1m")  # signup_utm_campaign に刻む識別子 (CEO 側で分離集計)
 #   1日あたりの AI トークン上限 (このコホートのみ)。無料枠を約1ヶ月開けるため、premium 同等の
 #   2M/日 では合言葉流出時の原価上限が大きすぎる。実運用の消費実績に対しては十分な余裕がある。
@@ -387,6 +392,23 @@ def _verify_summer_cohort_code(v) -> bool:
         return hmac.compare_digest(_normalize_cohort_code(v).encode("utf-8"), expected.encode("utf-8"))
     except (TypeError, ValueError, UnicodeError):
         return False
+
+
+def _summer_cohort_start_utc() -> Optional[datetime]:
+    """夏期講習コホートの受付開始日時を UTC aware で返す。未設定 (空) or 書式不正なら None
+    = 開始ゲート無し (いつでも受付)。★書式不正で「受付を止める」方向には倒さない:
+      終了日と違って開始日は「早く開いてしまう」より「講習が始まっても開かない」方が事故が重い。"""
+    raw = str(SUMMER_COHORT_START or "").strip()
+    if not raw:
+        return None
+    try:
+        dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        log.error(f"[summer-cohort] SUMMER_COHORT_START の書式が不正 (開始ゲート無効): {SUMMER_COHORT_START!r}")
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=JST)
+    return dt.astimezone(timezone.utc)
 
 
 def _summer_cohort_end_utc() -> Optional[datetime]:
@@ -27898,7 +27920,7 @@ def trial_signup(payload: TrialSignup, request: Request):
     summer_cohort = False
     #   ★summer_granted = 「実際に trial_end を書いた」かどうか。据え置き分岐 (既存の方が長い /
     #     カード登録済み) では False のままにし、welcome メールと応答で期間を断定しない
-    #     (付与していない相手に「8/31まで無料で始まりました」と言わないため・2026-07-25 review)。
+    #     (付与していない相手に「終了日まで無料で始まりました」と言わないため・2026-07-25 review)。
     summer_granted = False
     if _cohort:
         if _cohort != SUMMER_COHORT_ID:
@@ -27916,9 +27938,18 @@ def trial_signup(payload: TrialSignup, request: Request):
                 status_code=400,
                 detail="夏期講習用のコードが正しくありません。配布プリント／LINEに記載のコードをご入力ください。",
             )
+        # 開始日より前は受付を開かない (「使える日程は7/27〜」= 開始前に登録させない)
+        _cohort_start = _summer_cohort_start_utc()
+        if _cohort_start and now < _cohort_start:
+            _s_jst = _cohort_start.astimezone(JST)
+            raise HTTPException(
+                status_code=400,
+                detail=f"夏期講習AI管理のお申し込みは{_s_jst.year}年{_s_jst.month}月{_s_jst.day}日から受付開始です。"
+                       "その日以降にあらためてお申し込みください。",
+            )
         _cohort_end = _summer_cohort_end_utc()
         if _cohort_end is None:
-            # env の書式不正 = 運用ミス。通常7日体験を黙って発行すると「8/31まで」と案内された
+            # env の書式不正 = 運用ミス。通常7日体験を黙って発行すると「終了日まで」と案内された
             # 生徒に「7日間」の welcome が届く不整合になるので、発行せず明示的に断る (fail-closed)。
             log.error(f"[summer-cohort] SUMMER_COHORT_END 不正 ({SUMMER_COHORT_END!r}) のため申込を保留")
             raise HTTPException(
@@ -28015,7 +28046,7 @@ def trial_signup(payload: TrialSignup, request: Request):
             raise HTTPException(status_code=400, detail="Email conflict")
         # 🌻 夏期講習コホートで「既にアカウントがある」に当たった時の扱い (2026-07-25 review 指摘)。
         #   ai_disabled=1 (塾生アプリ/AIなし枠) は _ai_disabled_route_gate が AI 系 API を 403 で
-        #   弾き続けるので、trial_end だけ伸ばすと「登録完了・8/31まで使えます」と案内した直後に
+        #   弾き続けるので、trial_end だけ伸ばすと「登録完了・終了日まで使えます」と案内した直後に
         #   全機能 403 という silent failure になる。ここで明示的に断って塾長に寄せる
         #   (既存生の ai_disabled を勝手に解除しない方針 = [[tsujuku-app-only-ai-disabled]] を尊重)。
         #   ★この raise は下の内側 try (except Exception で握り潰す) より前に置くこと。
@@ -28028,7 +28059,7 @@ def trial_signup(payload: TrialSignup, request: Request):
                        "AI管理の追加は担当講師・塾長にご連絡ください。",
             )
         #   月額課金中 (paid) / 決済失敗の猶予中 (past_due) も明示的に断る。下の UPDATE は
-        #   これらを一切変更しない = 何も起きないのに「8/31まで無料で始まりました」と通知して
+        #   これらを一切変更しない = 何も起きないのに「終了日まで無料で始まりました」と通知して
         #   しまう (¥14,500 課金中の家庭に「料金は一切かかりません」= 事実の反転)。
         _ex_status = row["status"] if "status" in row.keys() else None
         if summer_cohort and _ex_status in ("paid", "past_due"):
@@ -28088,7 +28119,7 @@ def trial_signup(payload: TrialSignup, request: Request):
                 # ★★ 絶対に trial_end を「短縮」しない (2026-07-25 review CRITICAL)。
                 #   下の UPDATE は trial_end を無条件代入するため、通塾生/本クラス生の長期 trial
                 #   (trial_end≈2036 = 無期限アクセス保証・[[login-entitlement-architecture]]) が
-                #   8/31 に切り詰められ、course タグを外した瞬間に締め出し事故になる。
+                #   終了日に切り詰められ、course タグを外した瞬間に締め出し事故になる。
                 #   カード登録済み trial (stripe_subscription_id あり) も触らない — trial_end を
                 #   伸ばすと Stripe の実課金日と課金前通知 (trial_ending_card) がズレて課金サプライズになる。
                 _prev_te_dt = None
@@ -28888,16 +28919,26 @@ def trial_cohort_info(cohort: str = ""):
     _secs_left = max(0, int((end_utc - now).total_seconds()))
     days_left = (_secs_left + 86399) // 86400  # 端数は繰り上げ (残り0.5日 → 「あと1日」)
     _expired = end_utc <= now
-    return {
+    start_utc = _summer_cohort_start_utc()
+    _not_started = bool(start_utc and now < start_utc)
+    start_jst = start_utc.astimezone(JST) if start_utc else None
+    out = {
         "cohort": cid,
         "known": True,
-        "active": bool(configured and not _expired),
+        "active": bool(configured and not _expired and not _not_started),
         "configured": configured,  # False = 合言葉 env 未設定 (準備中)。コード自体は絶対に返さない
-        "reason": ("expired" if _expired else ("unconfigured" if not configured else "open")),
+        # 受付前 / 受付終了 / 準備中 はページの文言が全く違うので必ず区別できる形で返す
+        "reason": ("expired" if _expired else
+                   ("unconfigured" if not configured else
+                    ("not_started" if _not_started else "open"))),
         "end_jst": end_jst.isoformat(),
         "end_label": f"{end_jst.year}年{end_jst.month}月{end_jst.day}日",
         "days_left": days_left,
     }
+    if start_jst:
+        out["start_jst"] = start_jst.isoformat()
+        out["start_label"] = f"{start_jst.year}年{start_jst.month}月{start_jst.day}日"
+    return out
 
 # 🔷 2026-07-02 塾長方針で残枠の偽装カモフラージュを廃止。旧 _calculate_dynamic_fake_taken() は撤去。
 #   /api/founders/count は public/内部とも実申込数(実残枠)を返す(誠実表示・景表法配慮)。
