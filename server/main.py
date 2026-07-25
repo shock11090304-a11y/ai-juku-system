@@ -394,6 +394,40 @@ def _verify_summer_cohort_code(v) -> bool:
         return False
 
 
+def _is_summer_cohort_row(row) -> bool:
+    """students の行 (sqlite3.Row / PG _Row / dict) が夏期講習コホートかを判定する共通関数。
+    ★判定は2段: (1) signup_utm_campaign 一致 (2) status='trial' かつ trial_end が一斉終了日と一致。
+      (2) が必要な理由 = 既存アカウントに合流した参加者は元の流入元 attribution を保持するため
+      campaign が付かないことがあり、タグだけ見ると取りこぼす (2026-07-25 review)。
+    ★env の campaign が空でも「全員コホート扱い」に化けないよう bool(...) で明示ガードする。"""
+    try:
+        def _g(k):
+            if isinstance(row, dict):
+                return row.get(k)
+            try:
+                return row[k] if k in row.keys() else None
+            except Exception:
+                return None
+        camp = _g("signup_utm_campaign")
+        if camp and SUMMER_COHORT_CAMPAIGN and str(camp) == SUMMER_COHORT_CAMPAIGN:
+            return True
+        if str(_g("status") or "") != "trial":
+            return False
+        te_raw = _g("trial_end")
+        if not te_raw:
+            return False
+        c_end = _summer_cohort_end_utc()
+        if not c_end:
+            return False
+        te = (datetime.fromisoformat(str(te_raw).replace("Z", "+00:00"))
+              if isinstance(te_raw, str) else te_raw)
+        if te.tzinfo is None:
+            te = te.replace(tzinfo=timezone.utc)
+        return abs((te - c_end).total_seconds()) < 60
+    except Exception:
+        return False
+
+
 def _summer_cohort_start_utc() -> Optional[datetime]:
     """夏期講習コホートの受付開始日時を UTC aware で返す。未設定 (空) or 書式不正なら None
     = 開始ゲート無し (いつでも受付)。★書式不正で「受付を止める」方向には倒さない:
@@ -3604,14 +3638,15 @@ def _send_trial_nurture_day5_email(to_email: str, student_name: str, login_url: 
     greeting = f"{safe_name}さま" if safe_name else "保護者さま"
     # 残り日数は書かない (旧 14日体験時代の「残り 9 日」が残っていた。現行 7日体験でも
     # 夏期講習コホート(固定終了日)でも不正確になるため period-agnostic に・2026-07-25 review)
-    subject = "体験 5 日目のおすすめ — 後半の活用方法"
+    # 「後半」も書かない: 1ヶ月枠(夏期講習)では登録5日目はまだ序盤で実態と合わない (2026-07-25 review)
+    subject = "体験 5 日目のおすすめ — 機能をフル活用する4つの方法"
     html = f"""<!DOCTYPE html>
 <html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
 <h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AIコーチング</h1>
 <p>{greeting}、体験開始から 5 日目になりました。</p>
 
 <p style="background:#fef3c7; padding:1rem; border-left:4px solid #f59e0b; border-radius:4px; margin: 1.5rem 0;">
-  ⏰ <strong>体験の後半に向けて</strong><br>
+  ⏰ <strong>ここからが伸びどきです</strong><br>
   毎日続けると学習リズムが定着しやすくなります。残りの期間で機能をフル活用してみてください。
 </p>
 
@@ -7685,6 +7720,10 @@ def _collect_health_snapshot() -> dict:
     #   NOT IN サブクエリは student_id IS NOT NULL 限定(NULL 混入で NOT IN が全滅する罠を回避)。
     # 🌻 2026-07-25 追加除外: 夏期講習コホート(教室で一斉登録 → 帰宅後にログイン)も当日ログイン率が
     #   低いのが正常。除外しないと講習初日に同じ critical 誤発報 (最大24通/日) が再発する。
+    # ★campaign が空文字の env 設定では述語を足さない: `COALESCE(...) <> ''` は
+    #   「campaign 未設定の全生徒を除外」に化けて監視自体が黙る footgun (2026-07-25 review)
+    _camp_excl = "AND COALESCE(signup_utm_campaign, '') <> ? " if SUMMER_COHORT_CAMPAIGN else ""
+    _camp_args = (SUMMER_COHORT_CAMPAIGN,) if SUMMER_COHORT_CAMPAIGN else ()
     try:
         c.execute(
             f"""SELECT
@@ -7694,9 +7733,9 @@ def _collect_health_snapshot() -> dict:
                WHERE created_at >= ?
                  AND status IN ('trial', 'paid')
                  AND id NOT IN (SELECT student_id FROM course_applications WHERE student_id IS NOT NULL)
-                 AND COALESCE(signup_utm_campaign, '') <> ?
+                 {_camp_excl}
                  AND {_synth_exclude_sql()}""",
-            (h24, SUMMER_COHORT_CAMPAIGN)
+            (h24,) + _camp_args
         )
         login_row = c.fetchone()
         signups_24h_login = int(login_row[0]) if login_row else 0
@@ -27892,6 +27931,13 @@ def trial_signup(payload: TrialSignup, request: Request):
     _cohort_code_ok = bool(_cohort) and _verify_summer_cohort_code(payload.cohort_code)
     if _cohort_code_ok:
         _check_rate_limit_ip(request, bucket="trial_signup_cohort", limit=20, window=300)
+    elif _cohort:
+        # 🌻 コード誤り/未設定でも「コホート導線からの試行」は通常funnelと別バケットで数える
+        #   (2026-07-25 review): /api/* は Vercel rewrite 経由で XFF 先頭が共有 egress IP に
+        #   なるため、教室でコードを5回打ち間違えると**無関係な通常体験の申込**が5分間 429 になる
+        #   ([[enrollment-form-silent-fail-and-shared-ip-ratelimit]] と同じ共有IP問題)。
+        #   総当たり耐性は維持 (通常funnelと同じ 5件/5分)。
+        _check_rate_limit_ip(request, bucket="trial_signup_cohort_reject", limit=5, window=300)
     else:
         _check_rate_limit_ip(request, bucket="trial_signup", limit=5, window=300)
 
@@ -28164,6 +28210,15 @@ def trial_signup(payload: TrialSignup, request: Request):
                             "UPDATE students SET signup_utm_campaign=? "
                             "WHERE id=? AND COALESCE(signup_utm_campaign,'')=''",
                             (SUMMER_COHORT_CAMPAIGN[:100], student_id))
+                        # ★plan も新規INSERT経路と揃える (2026-07-25 review)。ここを更新しないと
+                        #   plan が premium tier 外 (旧既定の 'hybrid'/'standard'/NULL 等) の既存
+                        #   アカウントで合流した生徒は、trial_end は 8/27 に伸びて welcome も届くのに
+                        #   学習管理系エンドポイントが 403 になり「宿題が出てこない」silent failure になる。
+                        #   paid/past_due はこの分岐に入らない (上で 400 拒否済み) ので課金者の plan は不変。
+                        #   ★student_addon (通塾生アドオン・入塾金免除枠) は潰さない
+                        c.execute(
+                            "UPDATE students SET plan=? WHERE id=? AND COALESCE(plan,'') NOT IN (?, ?)",
+                            ("founder_special", student_id, "founder_special", "student_addon"))
                         conn.commit()
                     log.info(f"[Signup] Re-activated trial for existing student {student_id} ({email_norm}) prev_status={existing_status}")
                 else:
@@ -31993,7 +32048,8 @@ def _detect_at_risk_trial_students(now: datetime) -> list:
     try:
         c.execute(
             """SELECT s.id, s.name, s.email, s.grade, s.goal, s.plan,
-                      s.trial_start, s.trial_end, s.last_login_at
+                      s.trial_start, s.trial_end, s.last_login_at,
+                      s.status, s.signup_utm_campaign
                FROM students s
                WHERE s.status = 'trial'
                  AND s.email IS NOT NULL
@@ -32014,6 +32070,16 @@ def _detect_at_risk_trial_students(now: datetime) -> list:
         result = []
         for row in candidates:
             sid = row["id"] if hasattr(row, "keys") else row[0]
+            # 🌻 夏期講習コホートは除外 (2026-07-25)。この救出メールは残日数を見ずに
+            #   「体験はあと数日で終わります」と断定する定型/AI文面なので、1ヶ月枠の生徒には
+            #   登録3日後 (実残28日) に虚偽の期限を送ってしまう (AI生成コストも人数分かかる)。
+            #   終了間近の案内は trial-reminders (trial_end の24-48h前) が正しく担当する。
+            #   ★判定は SQL ではなく Python 側で行う: (a) campaign が空の env 設定で述語が
+            #     「campaign 未設定の全生徒を除外」に化ける footgun を避ける、(b) 合流生は元の
+            #     attribution を保持して campaign が付かないことがあるため trial_end 一致も見る
+            #     (_check_ai_budget と同じ二段判定)。
+            if _is_summer_cohort_row(row):
+                continue
             c.execute(
                 """SELECT id FROM notifications
                    WHERE student_id = ? AND template = 'trial_rescue'
@@ -33767,17 +33833,9 @@ def _check_ai_budget(student_id: int) -> None:
     _c_end = _summer_cohort_end_utc()
     if (_status not in ("paid", "past_due") and _course != "kokuritsu_nankan"
             and _c_end and _c_end > datetime.now(timezone.utc)):
-        _is_cohort = bool(_campaign and SUMMER_COHORT_CAMPAIGN and str(_campaign) == SUMMER_COHORT_CAMPAIGN)
-        if not _is_cohort and _status == "trial" and _trial_end_raw:
-            try:
-                _te = (datetime.fromisoformat(str(_trial_end_raw).replace("Z", "+00:00"))
-                       if isinstance(_trial_end_raw, str) else _trial_end_raw)
-                if _te.tzinfo is None:
-                    _te = _te.replace(tzinfo=timezone.utc)
-                _is_cohort = abs((_te - _c_end).total_seconds()) < 60
-            except Exception:
-                pass
-        if _is_cohort:
+        # コホート判定は _is_summer_cohort_row に集約 (trial-rescue の除外と同一ロジック = drift 防止)
+        if _is_summer_cohort_row({"signup_utm_campaign": _campaign, "status": _status,
+                                  "trial_end": _trial_end_raw}):
             budget = min(budget, SUMMER_COHORT_TOKEN_BUDGET)
     # psycopg は % をプレースホルダ誤検知するため LIKE パターンもパラメータで渡す
     c.execute(
