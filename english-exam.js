@@ -784,6 +784,15 @@ function bindExamCards() {
     document.getElementById('examPickSection').style.display = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
+  // 目標欄: 英検は 1〜100 の % 入力。type=number の min/max は入力を止めないので、
+  // 範囲外のまま進むと結果画面の目標行が理由も出さずに消える。その場で丸めて気づけるようにする。
+  document.getElementById('targetScore')?.addEventListener('blur', function () {
+    if (state.examId !== 'eiken' || this.value === '') return;
+    const v = parseFloat(this.value);
+    if (!isFinite(v)) { this.value = ''; return; }
+    if (v < 1) this.value = '1';
+    else if (v > 100) this.value = '100';
+  });
 }
 
 // 🎯 2026-05-15 塾長指示「科目別に変更」: クイックスタートで選んだ科目 (math/phys/chem/bio/earth/
@@ -1330,25 +1339,37 @@ async function pickExamSections(examId) {
   // 🛡️ 2026-07-26 fix: 英検のとき hint が「受験する級を入力 (例: 準1級)」と案内していたが、
   //   input は type="number" なので「準1級」は値として保持できず、打った文字が消えていた
   //   (生徒報告・iOS。IME変換中の文字は見えるが確定で破棄される = HTML の値サニタイズ仕様)。
-  //   級は STEP1 の gradePickSection で選択済み (state.eikenGradeName) なので二重入力でもあり、
-  //   英検では入力欄を出さずに選択済みの級を表示する。
+  //   級は gradePickSection で選択済み (state.eikenGradeName) なので二重入力でもある。
+  //   → 級は入力させず表示だけにし、欄は下記のとおり目標正答率(%)の数値入力にした。
   //   あわせて placeholder の else 分岐が rikei/bunkei まで「例: 準1級」に落ちていたのを修正
   //   (どちらも 0〜100点の数値試験)。
+  //   英検は目標も数値で入れたい (塾長指示 2026-07-26) が、結果画面の点数は CSE ではなく
+  //   「その大問の素点」(scoreLocally の 正答率×大問の満点。英検の exam.scoreMax は 0 のダミー)。
+  //   素点は大問ごとに満点が違って比較にならないので、英検だけ **目標正答率(%)** で受ける。
   const ts = document.getElementById('targetScore');
   const tsHint = document.getElementById('targetScoreHint');
   const tsEcho = document.getElementById('targetGradeEcho');
   const tsLabel = document.getElementById('targetScoreLabel');
   const TARGET_PLACEHOLDER = { toefl: '例: 100', toeic: '例: 800', ielts: '例: 7.0', daigaku: '例: 80', rikei: '例: 80', bunkei: '例: 80' };
+  // 目標値は試験ごとに保持する。英検は「%」、他は「点/バンド」と単位が違うので混ざると誤読になる。
+  // 英検は級までキーに含める (準1級の80%と3級の80%は要求される力が別物なので引き継がない)。
+  const _targetKey = exam.id === 'eiken' ? `eiken:${state.eikenGrade || '-'}` : exam.id;
+  state.targetByExam = state.targetByExam || {};
+  const _prevTargetExam = state._targetExamId;
+  if (_prevTargetExam) state.targetByExam[_prevTargetExam] = ts.value;
+  if (_prevTargetExam !== _targetKey) ts.value = state.targetByExam[_targetKey] || '';
+  state._targetExamId = _targetKey;
   if (exam.id === 'eiken') {
-    if (tsLabel) tsLabel.textContent = '🎯 受験する級';
-    // value は消さない (他試験で入力した目標スコアが英検を経由しただけで消えてしまうため)。
-    // 英検の結果画面では showResult 側で targetScore を 0 扱いにして無視する。
-    ts.style.display = 'none';
-    if (tsEcho) { tsEcho.textContent = state.eikenGradeName || '未選択'; tsEcho.style.display = ''; }
-    if (tsHint) tsHint.textContent = '前の画面で選択済み (変更は下の「← 試験を選び直す」から)';
+    if (tsLabel) tsLabel.textContent = '🎯 目標正答率';
+    ts.style.display = '';
+    ts.placeholder = '例: 80';
+    ts.min = '1'; ts.max = '100'; ts.step = '1';
+    if (tsEcho) { tsEcho.textContent = `受験する級: ${state.eikenGradeName || '未選択'}`; tsEcho.style.display = ''; }
+    if (tsHint) tsHint.textContent = '% で入力 (級の変更は下の「← 試験を選び直す」から)';
   } else {
     if (tsLabel) tsLabel.textContent = '🎯 目標スコア';
     ts.style.display = '';
+    ts.removeAttribute('min'); ts.removeAttribute('max'); ts.removeAttribute('step');
     if (tsEcho) tsEcho.style.display = 'none';
     ts.placeholder = TARGET_PLACEHOLDER[exam.id] || `例: ${exam.scoreMax || ''}`;
     if (tsHint) tsHint.textContent = exam.id === 'daigaku'
@@ -3462,13 +3483,21 @@ function showResult(exam, section, result) {
   }
 
   // ヒーロー
-  // 英検は「級」で判定するので目標スコア差分は出さない (欄は非表示。他試験で入れた値が残っていても無視する)
-  const targetScore = state.examId === 'eiken'
-    ? 0
-    : parseFloat(document.getElementById('targetScore')?.value || '0');
+  // 英検の点数は CSE ではなく「その大問の素点」なので、素点の目標差分は意味を持たない。
+  // 英検だけ目標を **正答率(%)** で受け取り、下の percent と突き合わせる (入力欄側も % 表記)。
+  const _targetRaw = parseFloat(document.getElementById('targetScore')?.value || '0');
+  const _isEikenTarget = state.examId === 'eiken';
+  const targetScore = _isEikenTarget ? 0 : _targetRaw;
+  const targetPercent = (_isEikenTarget && _targetRaw > 0 && _targetRaw <= 100) ? _targetRaw : 0;
   const examScoreMax = exam.scoreMax || section.scoreMax || 30;
   const sectionScoreMaxSafe = section.scoreMax || 30;
   const percent = Math.round((result.overallScore / examScoreMax) * 100);
+  // 目標正答率の突き合わせには overallScore ではなく **大問の得点** を使う。
+  // overallScore は AI 採点経路 (scoreWithClaude の aiResult.overall_score) だと「試験全体に換算した推定値」が
+  // 入り、大問の満点とスケールが合わない (英検の Writing/Speaking で数百%になり得る)。
+  // section_score は AI プロンプトで 0〜sectionScoreMax に明示的に縛っているので安全。
+  const sectionPercent = Math.max(0, Math.min(100,
+    Math.round(((result.sectionScore || 0) / (sectionScoreMaxSafe || 1)) * 100)));
 
   // 🎯 2026-05-13 教育アプリ UX: 一言評価 + 大アイコン (Duolingo 流)
   // ユーザーが結果画面を見た瞬間に「自分の状態」が分かる
@@ -3512,6 +3541,7 @@ function showResult(exam, section, result) {
       ${(['eiken','toefl','toeic','ielts'].indexOf(state.examId) >= 0) ? `<div class="result-hero-cefr">CEFR <strong>${result.cefr}</strong> 相当</div>` : ''}
       <div class="result-hero-section">${section.icon || '📝'} ${section.name || ''}: ${result.sectionScore} / ${sectionScoreMaxSafe}</div>
       ${targetScore > 0 ? `<div class="result-hero-target">🎯 目標 ${targetScore} まで <strong>${(targetScore - result.overallScore).toFixed(1)}</strong></div>` : ''}
+      ${targetPercent > 0 ? `<div class="result-hero-target${sectionPercent >= targetPercent ? ' is-hit' : ''}">🎯 目標正答率 ${targetPercent}% / 今回 ${sectionPercent}% ${sectionPercent >= targetPercent ? '<strong>達成!</strong>' : `— あと <strong>${Math.max(0, Math.round(targetPercent - sectionPercent))}%</strong>`}</div>` : ''}
       <div class="result-hero-bar"><div class="result-hero-bar-fill" style="width:${percent}%;background:${exam.color}"></div></div>
     </div>`;
 

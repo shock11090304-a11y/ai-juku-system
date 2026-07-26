@@ -298,16 +298,17 @@ body {
   box-sizing: border-box;
 }
 .exam-meta-input:focus { outline: none; border-color: var(--ee-primary); }
-/* 入力させずに「選択済みの値」を見せる枠 (英検の受験級など) */
+/* 入力させずに「選択済みの値」を見せる枠 (英検の受験級など。入力欄の上に置く小さめの帯) */
 .exam-meta-static {
   width: 100%;
-  padding: 0.6rem 0.8rem;
+  padding: 0.4rem 0.7rem;
+  margin-bottom: 0.45rem;
   background: rgba(255,255,255,0.03);
   border: 1px dashed var(--ee-panel-border);
   border-radius: 8px;
   color: var(--ee-text);
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: 700;
   box-sizing: border-box;
 }
@@ -608,6 +609,11 @@ body {
   padding: 0.5rem;
   border-radius: 6px;
   margin: 0.6rem 0;
+}
+/* 目標達成時はご褒美感を出す (未達の amber と区別) */
+.result-hero-target.is-hit {
+  color: var(--ee-success);
+  background: rgba(16,185,129,0.12);
 }
 .result-hero-bar {
   width: 100%; height: 12px;
