@@ -3301,7 +3301,7 @@ ${JSON.stringify(userPayload, null, 2)}
 【出力形式】純粋なJSONのみ:
 {
   "section_score": (このセクションの推定スコア 0〜${sectionScoreMax}),
-  "overall_score": (この試験全体に換算した推定スコア。${exam.name}の総合スコア基準で),
+  "overall_score": (この試験全体に換算した推定スコア。${exam.name}の総合スコア基準で。★必ず 0〜${exam.scoreMax || sectionScoreMax || 30} の範囲の数値。英検CSEのような別スケールの数値は絶対に返さない),
   "cefr": "A1|A2|B1|B2|C1|C2",
   "strengths": ["具体的な強み1", "強み2"],
   "weaknesses": ["弱点1 (具体的に何ができてないか)", "弱点2"],
@@ -3347,9 +3347,38 @@ ${JSON.stringify(userPayload, null, 2)}
     aiResult = await callClaudeJson({ system, user: userMsg, model: MODEL_DEFAULT, maxTokens: 3500, images: photoImages });
   }
 
+  // 🛡️ 2026-07-26 fix: overall_score はプロンプトでレンジを縛れていない (「試験全体に換算した
+  //   推定スコア」としか指示していない)。特に英検は exam.scoreMax が 0 のダミーで、表示・履歴の
+  //   分母が「その大問の満点」になるため、AI が CSE 基準の数千を返すと結果画面が
+  //   「1850 / 16点」、正答率が数千% となり 🏆「合格圏内」の一言評価まで誤爆していた。
+  //   表示スケールを超えた (または負・非数の) 値はスケール不一致が確定なので、
+  //   0〜満点に拘束できている section_score の比率から表示スケールに引き直す。
+  const _displayMax = exam.scoreMax || sectionScoreMax || 30;
+  const _mcFallback = mcScore / Math.max(1, mcTotal);
+  let _secScore = Number(aiResult.section_score);
+  if (!Number.isFinite(_secScore) || _secScore < 0 || _secScore > sectionScoreMax * 2) {
+    // 非数・負・桁違い。
+    // ★4択がある大問は正答率から作り直せるが、記述/スピーキングだけの大問 (mcTotal=0) は
+    //   作り直すと必ず 0 点になり、良い答案を無言で 0 点にしてしまう。数値として読めるなら
+    //   範囲に丸めるだけに留める (甘めに出ることはあっても、書けた答案を 0 点にはしない)。
+    const _rebuilt = mcTotal > 0
+      ? Math.round(_mcFallback * sectionScoreMax)
+      : (Number.isFinite(_secScore) ? Math.max(0, Math.min(sectionScoreMax, _secScore)) : 0);
+    console.warn('[score] section_score が範囲外 → 補正', { raw: aiResult.section_score, sectionScoreMax, mcTotal, fixed: _rebuilt });
+    _secScore = _rebuilt;
+  } else if (_secScore > sectionScoreMax) {
+    // 満点をわずかに超えただけ (AI の丸め誤差) は上限に丸める。
+    _secScore = sectionScoreMax;
+  }
+  let _ovrScore = Number(aiResult.overall_score);
+  if (!Number.isFinite(_ovrScore) || _ovrScore < 0 || _ovrScore > _displayMax) {
+    const _fixed = Math.round((_secScore / (sectionScoreMax || 1)) * _displayMax * 10) / 10;
+    console.warn('[score] overall_score が表示スケール外 → section_score 比率で引き直し', { raw: aiResult.overall_score, displayMax: _displayMax, fixed: _fixed });
+    _ovrScore = _fixed;
+  }
   return {
-    sectionScore: aiResult.section_score ?? Math.round((mcScore / Math.max(1, mcTotal)) * sectionScoreMax),
-    overallScore: aiResult.overall_score ?? Math.round((mcScore / Math.max(1, mcTotal)) * (exam.scoreMax || sectionScoreMax || 30)),
+    sectionScore: _secScore,
+    overallScore: _ovrScore,
     cefr: aiResult.cefr || 'B1',
     strengths: aiResult.strengths || [],
     weaknesses: aiResult.weaknesses || [],
@@ -3490,6 +3519,9 @@ function showResult(exam, section, result) {
   const targetScore = _isEikenTarget ? 0 : _targetRaw;
   const targetPercent = (_isEikenTarget && _targetRaw > 0 && _targetRaw <= 100) ? _targetRaw : 0;
   const examScoreMax = exam.scoreMax || section.scoreMax || 30;
+  // exam.scoreMax が無い試験 (英検は 0 のダミー) では分母が「大問の満点」= 点数になる。
+  // その場合に exam.scoreUnit ('級') をそのまま付けると「12 / 16級」と出るので点に直す。
+  const examScoreUnit = exam.scoreMax ? (exam.scoreUnit || '点') : '点';
   const sectionScoreMaxSafe = section.scoreMax || 30;
   const percent = Math.round((result.overallScore / examScoreMax) * 100);
   // 目標正答率の突き合わせには overallScore ではなく **大問の得点** を使う。
@@ -3536,7 +3568,7 @@ function showResult(exam, section, result) {
       <div class="result-hero-exam">${exam.name}</div>
       <div class="result-hero-score" style="color:${exam.color}">
         <span class="result-hero-num">${result.overallScore}</span>
-        <span class="result-hero-unit">/ ${examScoreMax}${exam.scoreUnit || '点'}</span>
+        <span class="result-hero-unit">/ ${examScoreMax}${examScoreUnit}</span>
       </div>
       ${(['eiken','toefl','toeic','ielts'].indexOf(state.examId) >= 0) ? `<div class="result-hero-cefr">CEFR <strong>${result.cefr}</strong> 相当</div>` : ''}
       <div class="result-hero-section">${section.icon || '📝'} ${section.name || ''}: ${result.sectionScore} / ${sectionScoreMaxSafe}</div>
