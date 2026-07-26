@@ -532,16 +532,15 @@
     .success-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(248,249,251,0.97);
+      background: rgba(248,249,251,0.99);
       display: none;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      padding: 2rem;
+      /* ⚠️ flex+justify-content:center は、中身が画面より高いとき上端(✓と見出し)が
+         スクロールで戻せない位置に切れる。STEP2カードを足して高くなったので block+overflow に変更。 */
+      padding: 2.25rem 1.25rem 3rem;
       text-align: center;
       z-index: 200;
     }
-    .success-overlay.show { display: flex; }
+    .success-overlay.show { display: block; }
     .success-overlay .icon {
       width: 64px; height: 64px;
       background: var(--success);
@@ -556,7 +555,38 @@
       color: var(--navy);
       margin-bottom: 0.5rem;
     }
-    .success-overlay p { color: var(--muted); max-width: 420px; }
+    .success-overlay p { color: var(--muted); max-width: 420px; margin-left: auto; margin-right: auto; }
+    /* 完了後に STEP2(塾生アプリ登録) へ受け渡す。長くなるので中身は margin:auto + 縦スクロール可 */
+    .success-overlay { overflow-y: auto; }
+    .success-overlay .so-inner { margin: 0 auto; width: 100%; max-width: 480px; }
+    @media (min-height: 760px) { .success-overlay .so-inner { margin-top: 5vh; } }
+    .success-overlay .so-inner .icon { margin-left: auto; margin-right: auto; }
+    .so-next {
+      margin-top: 1.75rem;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.3rem 1.1rem 1.4rem;
+      box-shadow: 0 2px 12px rgba(11,37,69,0.07);
+    }
+    .so-step {
+      display: inline-block;
+      background: var(--navy); color: white;
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em;
+      padding: 0.2rem 0.65rem; border-radius: 2px;
+    }
+    .so-next-title { font-size: 1.05rem; font-weight: 700; color: var(--text); margin-top: 0.6rem; }
+    .success-overlay .so-next-desc { font-size: 0.85rem; margin-top: 0.45rem; line-height: 1.75; }
+    .so-cta {
+      display: block; margin-top: 1.1rem; padding: 0.95rem 1rem;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%);
+      color: white; text-decoration: none;
+      font-weight: 700; font-size: 1rem; letter-spacing: 0.04em;
+      border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(11,37,69,0.22);
+    }
+    .success-overlay .so-raw { font-size: 0.72rem; margin-top: 0.7rem; word-break: break-all; }
+    .so-raw a { color: var(--navy); }
 
     /* Print */
     @media print {
@@ -1093,9 +1123,19 @@
 
   <!-- Success overlay -->
   <div class="success-overlay" id="successOverlay">
-    <div class="icon">✓</div>
-    <h2>送信完了しました</h2>
-    <p>お申し込みありがとうございます。<br>当塾より追ってご連絡を差し上げます。</p>
+    <div class="so-inner">
+      <div class="icon">✓</div>
+      <h2>送信完了しました</h2>
+      <p>お申し込みありがとうございます。内容は塾長に届いています。<br>受講料などの詳細は、1〜2営業日以内に塾長よりご連絡いたします。</p>
+
+      <div class="so-next">
+        <div class="so-step">STEP 2</div>
+        <div class="so-next-title">つづけて、塾生アプリのご登録を</div>
+        <p class="so-next-desc">出欠の確認・宿題・塾からのご連絡は、すべて塾生アプリで行います。<br>お名前・メールアドレス・受講クラスをご登録ください（1分ほどで終わります）。</p>
+        <a class="so-cta" href="https://trillion-ai-juku.com/juku-register.html">塾生アプリの登録に進む</a>
+        <p class="so-raw">ボタンが開かない場合はこちら<br><a href="https://trillion-ai-juku.com/juku-register.html">https://trillion-ai-juku.com/juku-register.html</a></p>
+      </div>
+    </div>
   </div>
 
   <script>
