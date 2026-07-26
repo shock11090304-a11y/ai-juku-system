@@ -960,6 +960,9 @@ _PG_POOL = None            # ConnectionPool or None
 #   db() はプールが詰まると上限なしの直接接続を張るため、DB_POOL_MAX は同時接続の上限として
 #   機能していない。実効上限はスレッド数。よって「スレッドを増やす」判断は必ずこの数字を見てから行う
 #   (0 のままなら枯渇していない = 増やす理由が無い)。/api/health の db_pool_fallbacks で確認できる。
+# ★ただしこのカウンタは「プールがあって getconn に失敗した」ときだけ増える。
+#   DB_POOL_ENABLED=0 / プールinit失敗 のときは pool 自体が None で下の except を通らないため
+#   **全接続が直接connectなのに 0 のまま**になる。health の db_pool_active と必ずセットで読むこと。
 _DB_DIRECT_CONNECT = {"count": 0, "last_ts": None}
 _PG_POOL_DISABLED = False   # 一度 init 失敗したら以後 fallback 固定 (再試行で毎回失敗コストを払わない)
 _PG_POOL_LOCK = threading.Lock()  # 遅延生成の競合防止 (sync route は Starlette スレッドプールで並行)
@@ -2965,6 +2968,10 @@ def health():
         "threads_used": thread_used,       # 同期ルートのスレッド使用数 (枯渇= 全APIが待たされる)
         "threads_total": thread_total,
         "db_pool_fallbacks": _DB_DIRECT_CONNECT["count"],   # >0 が続く= 接続予算が苦しい先行指標
+        # ★db_pool_fallbacks の読み方の前提。false のときは**プール自体が無効**で
+        #   全接続が直接connect = 上のカウンタは 0 のまま動かない (0 を「健全」と読むと誤り)。
+        #   CLAUDE.md が緊急時に DB_POOL_ENABLED=0 を勧めているので必ず踏まれる経路。
+        "db_pool_active": bool(USE_POSTGRES and _DB_POOL_ENABLED and not _PG_POOL_DISABLED),
         "time": datetime.now(timezone.utc).isoformat(),
         "git_sha": git_sha[:12] if git_sha else "unknown",  # 12 chars で簡素表示
         "stripe_configured": bool(STRIPE_SECRET_KEY),

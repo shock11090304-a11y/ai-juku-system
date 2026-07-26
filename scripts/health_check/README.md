@@ -30,7 +30,7 @@ CI/cron の判定は**終了コード / FAIL 件数**で行うこと(`WARN>0` �
 
 | section | 何を見るか | 元になった実バグ |
 |---|---|---|
-| `api_health` | /api/health と主要公開ページの 200 | 死活の基本 |
+| `api_health` | /api/health と主要公開ページの 200 + サーバの混み具合(処理枠)・DB接続プールの状態 | 死活の基本。2026-07-26 の 502 事故(イベントループ停止で全API待ち)の予兆を、200 が返るうちに掴むため |
 | `deploy_freshness` | git HEAD と本番配信の md5 一致 | ビルド凍結/デプロイ未反映で本番が古いまま (旧Hobby時代は12関数上限が主因・2026-07-18 Pro化で上限は解消) |
 | `vercel_cap` | api/*.py が基準値(12)以内か (Pro化後は警告のみ・超過してもFAILしない) | 旧Hobby時代: 13個目でデプロイ全体失敗 |
 | `subject_canonical` | 非canonical な subject の混入 | 日本語ラベル保存で弱点集計/CEO科目配信が空振り |

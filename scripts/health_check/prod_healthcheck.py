@@ -5,7 +5,7 @@
 毎回・機械的に検出できるようにするための常設ツール。各チェックは今回の実所見に対応:
 
   deploy_freshness   … 本番ビルドの凍結/未反映(HEADと本番のmd5不一致・原因を問わず検出)
-  api_health         … 本番API/主要公開ページの死活
+  api_health         … 本番API/主要公開ページの死活 + サーバの混み具合(処理枠)/DB接続の予兆
   vercel_cap         … api/*.py 数の方針ガード(2026-07-18 Pro化で旧12個上限は解消・警告のみ)
   subject_canonical  … question_attempts/student_weakness の非canonical subject
                        (弱点集計・CEO科目配信が空振りする原因)
@@ -95,8 +95,46 @@ def _http_get(url, timeout=15):
 # ---------------------------------------------------------------- 静的/API 系
 def check_api_health():
     try:
-        code, _ = _http_get(f"{API}/api/health")
+        code, raw = _http_get(f"{API}/api/health")
         add("api_health", PASS if code == 200 else FAIL, f"GET /api/health = {code}")
+        # 🩺 2026-07-27: 「詰まりかけ」を塾長の目に入れる。
+        # ステータスコードだけ見ていると、スレッド枯渇で全APIが待たされていても
+        # health は 200 を返すので PASS としか出ず、予兆に気づけない。
+        if code == 200:
+            # ★解析は独立した try にする: ここで落ちても「GET失敗」と誤ラベルしないため
+            #   (GET 自体は上で成功=PASS 済み。矛盾した2行が並ぶと深夜の診断を誤らせる)
+            try:
+                h = json.loads(raw)
+                if not isinstance(h, dict):
+                    h = {}
+                verdict = h.get("verdict")
+                used, total = h.get("threads_used"), h.get("threads_total")
+                if verdict and verdict != "ok":
+                    add("api_health", WARN if verdict == "busy" else FAIL,
+                        f"サーバの混み具合: {verdict} — {h.get('hint','')} (処理枠 {used}/{total})")
+                elif used is not None and total:
+                    add("api_health", PASS, f"サーバの混み具合: ok (処理枠 {used}/{total})")
+                # DB接続の予兆。★db_pool_active=False は「プール自体が無効」で、
+                #   下の回数が 0 のままでも健全の証拠にならない (全部が直接接続のため)。
+                #   フィールドが無い旧 deploy では None なので `is False` で判定する (誤警告防止)。
+                if h.get("db_pool_active") is False:
+                    add("api_health", WARN,
+                        "DB接続プールが無効です (今は全部が直接つなぎに行く設定)。"
+                        "緊急対応でわざと切っている場合はそのままでOK。"
+                        "覚えがない/何日も続くならエンジニアに確認してください")
+                else:
+                    # ★この回数は「サーバ起動からの累計」で時間窓が無い。過去に1回あっただけでも
+                    #   次の deploy まで出続けるので、少数のうちは PASS 表示に留めて鳴らし過ぎを防ぐ。
+                    fb = h.get("db_pool_fallbacks") or 0
+                    if fb >= 5:
+                        add("api_health", WARN,
+                            f"DB接続の空き待ちが起動から {fb} 回。"
+                            "数が増え続けるようならエンジニアに確認してください")
+                    elif fb:
+                        add("api_health", PASS,
+                            f"DB接続の空き待ちが起動から {fb} 回 (少数なら様子見でOK)")
+            except Exception as e:
+                add("api_health", WARN, f"health レスポンスの解析に失敗: {type(e).__name__}: {e}")
     except Exception as e:
         add("api_health", FAIL, f"GET /api/health 失敗: {type(e).__name__}: {e}")
     for path in ("mypage.html", "ceo.html", "dojo-drill.html", "enrollment.html"):
