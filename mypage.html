@@ -2763,7 +2763,9 @@
         const waivedBadge = s.enrollment_fee_waived
           ? `<br><span style="background:rgba(251,191,36,0.18);color:#fbbf24;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.78rem;font-weight:700;">🎁 入塾金 ¥10,000 免除キャンペーン適用済み</span>`
           : '';
-        statusLabel.innerHTML = `ステータス: <strong style="color:#c7d2fe;">${statusText}</strong><br>プラン: <strong>${s.plan || '—'}</strong> / メール: ${s.email}${waivedBadge}`;
+        // 🌻 plan_label (サーバが夏期講習枠にだけ付ける表示名) を優先。無ければ従来どおり plan。
+        //   これが無いと保護者に内部IDの 'founder_special' がそのまま見えてしまう (2026-07-25 塾長指示)。
+        statusLabel.innerHTML = `ステータス: <strong style="color:#c7d2fe;">${statusText}</strong><br>プラン: <strong>${s.plan_label || s.plan || '—'}</strong> / メール: ${s.email}${waivedBadge}`;
         // 🎯 [体験中フォロー 2026-06-30] 新規コホート(show_trial_followup)の体験中のみ「残りX日」+ 残3日で緊急継続CTA。
         //   既存の体験中の生徒には出さない(server 側 show_trial_followup=created_at>=基準 で制御・塾長指示の完全新規のみ)。
         let trialUrg = document.getElementById('trialUrgentBanner');

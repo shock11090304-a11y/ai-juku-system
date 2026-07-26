@@ -358,6 +358,9 @@ SUMMER_COHORT_CAMPAIGN = os.getenv("SUMMER_COHORT_CAMPAIGN", "summer2026_1m")  #
 #   1日あたりの AI トークン上限 (このコホートのみ)。無料枠を約1ヶ月開けるため、premium 同等の
 #   2M/日 では合言葉流出時の原価上限が大きすぎる。実運用の消費実績に対しては十分な余裕がある。
 SUMMER_COHORT_TOKEN_BUDGET = int(os.getenv("SUMMER_COHORT_TOKEN_BUDGET", "400000"))
+#   画面に出す表示用プラン名 (塾長指示 2026-07-25「夏期講習AI学習管理と表示されるように」)。
+#   DB の plan 列は 'founder_special' のまま = 既存 UI の PLAN_INFO 参照や請求ロジックを壊さない。
+SUMMER_COHORT_PLAN_LABEL = os.getenv("SUMMER_COHORT_PLAN_LABEL", "夏期講習 AI学習管理")
 
 
 def _normalize_cohort_code(v) -> str:
@@ -426,6 +429,36 @@ def _is_summer_cohort_row(row) -> bool:
         return abs((te - c_end).total_seconds()) < 60
     except Exception:
         return False
+
+
+def _summer_cohort_plan_label(row) -> Optional[str]:
+    """夏期講習コホート生に見せる表示用プラン名を返す。該当しなければ None
+    (= 呼び出し側は従来の表示ロジックをそのまま使う。既存生徒の表示は一切変えない)。
+
+    塾長指示 2026-07-25: 「これから登録する人が『夏期講習AI学習管理』と表示されるように」。
+    ★通塾生 (course='kokuritsu_nankan') は**必ず対象外**にする。指示「id 6 / 3450 / 3451 /
+      3733 / 3150 は触れない」を表示面でも守るため = 本クラス生は従来の
+      「本クラス会員（国公立難関コース・無期限利用）」表示を維持する。
+    ★paid / past_due も対象外 (実際に契約しているプラン名を出すべき相手)。
+    ★DB の plan 列は書き換えない (請求・PLAN_INFO 参照・創設メンバー枠の集計を壊さないため)。
+    """
+    try:
+        def _g(k):
+            if isinstance(row, dict):
+                return row.get(k)
+            try:
+                return row[k] if k in row.keys() else None
+            except Exception:
+                return None
+        if str(_g("course") or "") == "kokuritsu_nankan":
+            return None
+        if str(_g("status") or "") in ("paid", "past_due"):
+            return None
+        if not _is_summer_cohort_row(row):
+            return None
+        return SUMMER_COHORT_PLAN_LABEL or None
+    except Exception:
+        return None
 
 
 def _summer_cohort_start_utc() -> Optional[datetime]:
@@ -10781,7 +10814,10 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
     c = conn.cursor()
     # last_login_at は migration 直後の旧 DB に存在しない可能性あり → try/except でフォールバック
     try:
-        c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived, enrollment_fee_force_charge, ai_disabled FROM students ORDER BY id DESC")
+        # 🌻 signup_utm_campaign は表示用プラン名 (_summer_cohort_plan_label) の判定に使う。
+        #   これが無いと CEO ロスターは trial_end 一致だけで判定することになり、後から trial_end が
+        #   変わったコホート生が mypage と CEO で違う名前に見える (2026-07-25 review)。
+        c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived, enrollment_fee_force_charge, ai_disabled, signup_utm_campaign FROM students ORDER BY id DESC")
         rows = c.fetchall()
         has_last_login = True
     except Exception:
@@ -10879,6 +10915,9 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
             "grade": row["grade"],
             "goal": row["goal"],
             "plan": row["plan"],
+            # 🌻 表示用プラン名 (夏期講習枠のみ非 None)。フロントは plan_label があればそれを優先表示。
+            #   DB の plan 列は 'founder_special' のままなので請求・集計ロジックは不変。
+            "plan_label": _summer_cohort_plan_label(row),
             "status": row["status"],
             "trial_end": str(row["trial_end"]) if row["trial_end"] else None,
             "paid_since": str(row["paid_since"]) if row["paid_since"] else None,
@@ -21272,6 +21311,7 @@ def admin_students_ai_usage(
         try:
             c.execute(
                 f"""SELECT s.id, s.name, s.email, s.grade, s.course, s.plan, s.status,
+                          s.trial_end, s.signup_utm_campaign,
                           s.last_login_at, s.created_at,
                           COALESCE(qa.attempts, 0) AS attempts,
                           COALESCE(qa.correct, 0) AS correct,
@@ -21339,6 +21379,8 @@ def admin_students_ai_usage(
                 "grade": d.get("grade"),
                 "course": d.get("course"),
                 "plan": d.get("plan"),
+                # 🌻 表示用プラン名 (夏期講習枠のみ非 None)。フロントの courseLabel が優先表示する。
+                "plan_label": _summer_cohort_plan_label(d),
                 "status": d.get("status"),
                 "drills": attempts,
                 "drills_correct": correct,
@@ -27394,14 +27436,22 @@ def auth_me(authorization: Optional[str] = Header(None)):
     # 付与して ISO で返し、ブラウザ側 new Date() の JST 解釈ずれ (日付が前後する) を防ぐ。
     # 旧 DB (列未追加) で SELECT が失敗しても auth/me 自体は落とさない (magic-link の fallback と同思想)。
     student["cancel_at"] = None
+    # 🌻 表示用プラン名 (塾長指示 2026-07-25「夏期講習AI学習管理と表示されるように」)。
+    #   既定 None = 各画面の従来表示のまま (既存生徒の表示は一切変えない)。
+    #   ★_get_current_student の dict には trial_end / signup_utm_campaign が無いので、
+    #     下の cancel_at 取得クエリに列を足して同じ1クエリで判定する (クエリ数は増やさない)。
+    student["plan_label"] = None
     try:
         conn = db()
         try:
             c = conn.cursor()
-            c.execute("SELECT cancel_at FROM students WHERE id = ?", (student["id"],))
+            c.execute("SELECT cancel_at, status, trial_end, course, signup_utm_campaign "
+                      "FROM students WHERE id = ?", (student["id"],))
             _ca_row = c.fetchone()
         finally:
             conn.close()
+        if _ca_row is not None:
+            student["plan_label"] = _summer_cohort_plan_label(_ca_row)
         _ca_val = _ca_row["cancel_at"] if _ca_row else None
         if _ca_val:
             if isinstance(_ca_val, str):

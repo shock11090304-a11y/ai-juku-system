@@ -3228,7 +3228,10 @@
           grade: st.grade || '',
           goal: st.goal || '',
           fee: st.status === 'paid' ? planFee(st.plan) : 0,
-          courses: [planLabel(st.plan || st.status)],
+          // 🌻 plan_label (サーバが夏期講習枠にだけ付ける表示名) を優先。無ければ従来の planLabel。
+          //   これが無いとコホート生が本物の「創設メンバー(永年¥14,500)」と同じ表示になり見分けられない。
+          courses: [st.plan_label || planLabel(st.plan || st.status)],
+          plan_label: st.plan_label || null,
           status: st.status,
           trial_end: st.trial_end,
           plan: st.plan,
@@ -8744,7 +8747,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       modal.querySelectorAll('.sd-tab-pane').forEach(p => p.style.display = (p.dataset.pane === 'info' ? 'block' : 'none'));
 
       const statusLabel = STATUS_LABEL[st.status] || (st.status || '不明');
-      const planLabel   = st.plan ? (PLAN_LABEL[st.plan] || st.plan) : '<span style="color:#71717a;">未契約 (トライアル中など)</span>';
+      // 🌻 夏期講習枠は plan_label を優先 (本物の創設メンバー ¥14,500 と混同しないため)
+      const planLabel   = st.plan_label
+        ? `<strong style="color:#fcd34d;">${esc(st.plan_label)}</strong>`
+        : (st.plan ? (PLAN_LABEL[st.plan] || st.plan) : '<span style="color:#71717a;">未契約 (トライアル中など)</span>');
       const emailHtml = st.email
         ? `<a href="${esc(safeMailtoHref(st.email))}" style="color:#34d399;text-decoration:underline;">${esc(st.email)}</a>`
         : '<span style="color:#71717a;">登録なし</span>';
@@ -11110,6 +11116,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     }
     function courseLabel(s) {
       if (s.course === 'kokuritsu_nankan') return '難関コース';
+      // 🌻 夏期講習枠はサーバが付ける表示名を出す (従来は 'founder_special' が生で出ていた)
+      if (s.plan_label) return s.plan_label;
       return s.plan || s.course || '—';
     }
     function render() {

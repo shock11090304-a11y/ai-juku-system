@@ -38,7 +38,21 @@ function getPlanInfo() {
     student_addon: { name: '塾生アドオン', price: addonPrice, maxStudents: 1, color: '#10b981' },
     trial: { name: '7日間無料体験', price: 0, maxStudents: 1, color: '#f59e0b' },
   };
-  return info[plan] || info.premium;
+  // plan キーを返す (表示名で分岐すると plan_label 差し替え時に壊れるため・addStudent が使用)
+  const base = { ...(info[plan] || info.premium), plan: info[plan] ? plan : 'premium' };
+  // 🌻 2026-07-25: ログイン中の生徒にサーバが表示用プラン名 (plan_label) を付けている場合は
+  //   表示だけ差し替える。ACTIVE_PLAN の既定値 'premium' は DB と無関係なので、無料枠の生徒に
+  //   「プレミアム」(¥39,800/月) と表示されてしまうのを防ぐ (夏期講習枠で実害が大きい)。
+  //   ★maxStudents は base のまま維持する: ここで 1 に固定すると、家族プランを選んでいる生徒で
+  //     「家族プランにアップグレードしますか?」の確認が何度も出るループになる (2026-07-25 review)。
+  //   plan_label はサーバが夏期講習枠にだけ付けるので、他の生徒の表示は一切変わらない。
+  try {
+    const _ss = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+    if (_ss && _ss.plan_label) {
+      return { ...base, name: _ss.plan_label, price: 0, color: '#f59e0b' };
+    }
+  } catch (_e) { /* localStorage 不可でも従来動作にフォールバック */ }
+  return base;
 }
 function setActivePlan(plan) {
   localStorage.setItem(STORAGE_KEYS.ACTIVE_PLAN, plan);
@@ -1208,7 +1222,9 @@ function addStudent() {
   const planInfo = getPlanInfo();
   const current = state.students.length;
   if (current >= planInfo.maxStudents) {
-    if (planInfo.name !== '家族プラン') {
+    // ★表示名ではなく plan キーで判定する: 夏期講習枠などで name が差し替わると
+    //   家族プランの上限ガードが素通りしてしまうため (2026-07-25 review)
+    if (planInfo.plan !== 'family') {
       if (confirm(`現在のプラン「${planInfo.name}」は生徒${planInfo.maxStudents}名までです。\n\n家族プラン（¥59,800/月・最大3名）にアップグレードしますか？\n\nOKを押すと家族プランに切替わり、差額は次回請求から自動反映されます。`)) {
         setActivePlan('family');
         alert('✅ 家族プランに切替えました。引き続き生徒を追加できます。');
