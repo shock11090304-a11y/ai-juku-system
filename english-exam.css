@@ -298,6 +298,19 @@ body {
   box-sizing: border-box;
 }
 .exam-meta-input:focus { outline: none; border-color: var(--ee-primary); }
+/* 入力させずに「選択済みの値」を見せる枠 (英検の受験級など) */
+.exam-meta-static {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px dashed var(--ee-panel-border);
+  border-radius: 8px;
+  color: var(--ee-text);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  box-sizing: border-box;
+}
 .exam-meta-hint {
   font-size: 0.74rem;
   color: var(--ee-text-muted);

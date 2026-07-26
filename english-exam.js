@@ -1326,14 +1326,35 @@ async function pickExamSections(examId) {
   }
   document.getElementById('examDetailDesc').textContent = desc;
 
-  // 目標スコアのプレースホルダ
+  // 目標スコア欄
+  // 🛡️ 2026-07-26 fix: 英検のとき hint が「受験する級を入力 (例: 準1級)」と案内していたが、
+  //   input は type="number" なので「準1級」は値として保持できず、打った文字が消えていた
+  //   (生徒報告・iOS。IME変換中の文字は見えるが確定で破棄される = HTML の値サニタイズ仕様)。
+  //   級は STEP1 の gradePickSection で選択済み (state.eikenGradeName) なので二重入力でもあり、
+  //   英検では入力欄を出さずに選択済みの級を表示する。
+  //   あわせて placeholder の else 分岐が rikei/bunkei まで「例: 準1級」に落ちていたのを修正
+  //   (どちらも 0〜100点の数値試験)。
   const ts = document.getElementById('targetScore');
-  ts.placeholder = exam.id === 'toefl' ? '例: 100' : exam.id === 'toeic' ? '例: 800' : exam.id === 'ielts' ? '例: 7.0' : exam.id === 'daigaku' ? '例: 80' : '例: 準1級';
-  document.getElementById('targetScoreHint').textContent = exam.id === 'eiken'
-    ? '受験する級を入力 (例: 準1級)'
-    : exam.id === 'daigaku'
+  const tsHint = document.getElementById('targetScoreHint');
+  const tsEcho = document.getElementById('targetGradeEcho');
+  const tsLabel = document.getElementById('targetScoreLabel');
+  const TARGET_PLACEHOLDER = { toefl: '例: 100', toeic: '例: 800', ielts: '例: 7.0', daigaku: '例: 80', rikei: '例: 80', bunkei: '例: 80' };
+  if (exam.id === 'eiken') {
+    if (tsLabel) tsLabel.textContent = '🎯 受験する級';
+    // value は消さない (他試験で入力した目標スコアが英検を経由しただけで消えてしまうため)。
+    // 英検の結果画面では showResult 側で targetScore を 0 扱いにして無視する。
+    ts.style.display = 'none';
+    if (tsEcho) { tsEcho.textContent = state.eikenGradeName || '未選択'; tsEcho.style.display = ''; }
+    if (tsHint) tsHint.textContent = '前の画面で選択済み (変更は下の「← 試験を選び直す」から)';
+  } else {
+    if (tsLabel) tsLabel.textContent = '🎯 目標スコア';
+    ts.style.display = '';
+    if (tsEcho) tsEcho.style.display = 'none';
+    ts.placeholder = TARGET_PLACEHOLDER[exam.id] || `例: ${exam.scoreMax || ''}`;
+    if (tsHint) tsHint.textContent = exam.id === 'daigaku'
       ? '目標得点率/換算点 (大学・年度により配点異なる)'
       : `${exam.scoreMin}〜${exam.scoreMax}${exam.scoreUnit}`;
+  }
 
   // セクションカード生成 (英検は級別、大学入試・理系は大学別の sectionsByGrade を使う)
   const sections = (examId === 'eiken' && state.eikenGrade)
@@ -3441,7 +3462,10 @@ function showResult(exam, section, result) {
   }
 
   // ヒーロー
-  const targetScore = parseFloat(document.getElementById('targetScore')?.value || '0');
+  // 英検は「級」で判定するので目標スコア差分は出さない (欄は非表示。他試験で入れた値が残っていても無視する)
+  const targetScore = state.examId === 'eiken'
+    ? 0
+    : parseFloat(document.getElementById('targetScore')?.value || '0');
   const examScoreMax = exam.scoreMax || section.scoreMax || 30;
   const sectionScoreMaxSafe = section.scoreMax || 30;
   const percent = Math.round((result.overallScore / examScoreMax) * 100);
