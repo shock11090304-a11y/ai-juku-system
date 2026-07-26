@@ -42,6 +42,32 @@ log = logging.getLogger(__name__)
 
 ROOT = pathlib.Path(__file__).parent
 
+
+def _env_int(name: str, default: int, lo: int = None, hi: int = None) -> int:
+    """env から int を安全に読む (2026-07-26)。
+    ★裸の int(os.getenv(...)) は危険: 障害対応中の塾長が「180s」「48.0」のように単位や小数を
+      付けて入力すると **import 時に ValueError → プロセスが起動できない** (env を消すまで復旧不能)。
+      安全弁として足した env が事故を増やしては本末転倒なので、不正値は既定値へ落として起動を守る。
+    ★lo/hi でクランプする。特に APP_THREAD_LIMIT=0 は anyio が例外を出さず受理してしまい、
+      同期ルート(ほぼ全API)がスレッドを1本も取れず永久停止する = 最悪の踏み方なので必ず下限を設ける。
+    """
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        val = default
+    else:
+        try:
+            val = int(str(raw).strip())
+        except (TypeError, ValueError):
+            log.warning(f"[env] {name}={raw!r} は整数として読めないため既定値 {default} を使う")
+            val = default
+    if lo is not None and val < lo:
+        log.warning(f"[env] {name}={val} は下限 {lo} を下回るため {lo} に丸めた")
+        val = lo
+    if hi is not None and val > hi:
+        log.warning(f"[env] {name}={val} は上限 {hi} を超えるため {hi} に丸めた")
+        val = hi
+    return val
+
 # モジュール共通 JST: 関数ローカル定義漏れの NameError が再発するため module-global 化 (関数内の同名ローカル定義は無害に shadow)
 JST = timezone(timedelta(hours=9))
 
@@ -124,6 +150,10 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 # Tier 4 fallback が Pro 主軸に切替わる (Pro→Flash 二段 fallback ロジックも残してある)。
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_MODEL_LIGHT = os.getenv("GEMINI_MODEL_LIGHT", "gemini-2.5-flash")
+# Gemini 1呼び出しの上限秒 (2026-07-26)。未指定だと SDK 既定 600秒まで待ち、
+# fallback で2モデル直列だと最悪1200秒スレッドを握る。180秒あれば通常の生成には十分。
+# 0 以下は「SDK既定に任せる」= 意図的仕様なので下限は設けない (上限のみ)
+_GEMINI_TIMEOUT_S = _env_int("GEMINI_TIMEOUT_S", 180, hi=900)
 # OpenAI Tier 5 fallback (2026-05-10 塾長指示・3段防御 Sonnet → Gemini → GPT)
 # OpenAI Platform で API key 発行: https://platform.openai.com/api-keys
 # 通常時は呼ばれない (Anthropic + Gemini 両方ダウン時のみ発火) のでコスト最小。
@@ -527,6 +557,14 @@ DAILY_SNS_MODEL = os.getenv("DAILY_SNS_MODEL", "claude-sonnet-4-6")
 # 申込→決済 常時監視: 5分おきに健全性チェック、異常時のみアラート、朝7時にサマリ
 MONITORING_ENABLED = os.getenv("MONITORING_ENABLED", "1") == "1"
 MONITORING_INTERVAL_MIN = int(os.getenv("MONITORING_INTERVAL_MIN", "5"))
+# 起動から この秒数 は E2E 合成テストを見送る (2026-07-26)。
+# deploy 切替の最中に新コンテナが自分の公開URLを叩くと、実害ゼロでも Railway edge が
+# 502 を返し「申込→決済フローが壊れている」と誤発報するため (塾長を夜中に起こす原因)。
+# deploy 直後の検証は _post_deploy_smoke_test (起動30秒後) が担当するので監視の穴にはならない。
+_SYNTHETIC_BOOT_GRACE_S = _env_int("SYNTHETIC_BOOT_GRACE_S", 90, lo=0, hi=600)
+# deploy 直後 smoke test が失敗したとき、アラート前に再検査するまでの待ち秒 (2026-07-26)。
+# 「黙らせる」のではなく「もう一度確かめる」= deploy検証の役目を殺さずに切替窓の誤報だけ消す。
+_POSTDEPLOY_RECHECK_S = _env_int("POSTDEPLOY_RECHECK_S", 60, lo=5, hi=600)
 MONITORING_TO_EMAIL = os.getenv("MONITORING_TO_EMAIL", "") or DAILY_SNS_TO_EMAIL
 MONITORING_DAILY_SUMMARY_HOUR_JST = int(os.getenv("MONITORING_DAILY_SUMMARY_HOUR_JST", "7"))
 MONITORING_ALERT_COOLDOWN_MIN = int(os.getenv("MONITORING_ALERT_COOLDOWN_MIN", "60"))  # 同じアラートは60分に1回まで
@@ -908,7 +946,21 @@ _DB_POOL_ENABLED = os.getenv("DB_POOL_ENABLED", "1") == "1"
 _DB_POOL_MIN = int(os.getenv("DB_POOL_MIN", "2"))
 _DB_POOL_MAX = int(os.getenv("DB_POOL_MAX", "16"))
 _DB_POOL_TIMEOUT = float(os.getenv("DB_POOL_TIMEOUT", "10"))
+# TCP接続確立の上限秒 (2026-07-26)。psycopg/libpq は既定で**無制限**に待つため、
+# Postgres 側やネットワークが不調だと db() を呼んだスレッドが永久に固まる。
+# (2026-07-26 の 502 事故当時は db() をイベントループ上で呼ぶ経路があり、
+#  これは「アプリ全体の永久停止」に直結しうる穴だった。経路自体は本コミットで修正済みだが、
+#  上限を入れて二度と無限待ちが起きないようにする。)
+# ★下限2: libpq は connect_timeout=0 を「無限待ち」と解釈する (安全弁が黙って無効化される)。
+#   1 未満は 2 に丸められる仕様でもあるため、下限を 2 にして 0 を踏ませない。
+_DB_CONNECT_TIMEOUT = _env_int("DB_CONNECT_TIMEOUT", 10, lo=2, hi=60)
 _PG_POOL = None            # ConnectionPool or None
+# プール枯渇 → 直接接続フォールバックの発生回数 (2026-07-26)。
+# ★これが増えることが「Postgres の接続予算を食い潰しつつある」唯一の先行指標。
+#   db() はプールが詰まると上限なしの直接接続を張るため、DB_POOL_MAX は同時接続の上限として
+#   機能していない。実効上限はスレッド数。よって「スレッドを増やす」判断は必ずこの数字を見てから行う
+#   (0 のままなら枯渇していない = 増やす理由が無い)。/api/health の db_pool_fallbacks で確認できる。
+_DB_DIRECT_CONNECT = {"count": 0, "last_ts": None}
 _PG_POOL_DISABLED = False   # 一度 init 失敗したら以後 fallback 固定 (再試行で毎回失敗コストを払わない)
 _PG_POOL_LOCK = threading.Lock()  # 遅延生成の競合防止 (sync route は Starlette スレッドプールで並行)
 
@@ -927,6 +979,7 @@ def _get_pg_pool():
                 from psycopg_pool import ConnectionPool
                 _PG_POOL = ConnectionPool(
                     DATABASE_URL,
+                    kwargs={"connect_timeout": _DB_CONNECT_TIMEOUT},  # 無限待ち防止 (2026-07-26)
                     min_size=_DB_POOL_MIN, max_size=_DB_POOL_MAX, timeout=_DB_POOL_TIMEOUT,
                     max_lifetime=1800, max_idle=300,
                     check=ConnectionPool.check_connection,  # getconn 時に死接続を検出→差替
@@ -948,8 +1001,11 @@ def db():
                 return _Connection(pool.getconn(timeout=_DB_POOL_TIMEOUT), is_pg=True, pool=pool)
             except Exception as e:
                 # プールが詰まった/壊れた等 → このリクエストは直接 connect で必ず処理する (可用性優先)
-                log.warning(f"[db-pool] getconn 失敗→直接connect: {type(e).__name__}: {e}")
-        return _Connection(psycopg.connect(DATABASE_URL), is_pg=True, pool=None)
+                _DB_DIRECT_CONNECT["count"] += 1
+                _DB_DIRECT_CONNECT["last_ts"] = datetime.now(timezone.utc).isoformat()
+                log.warning(f"[db-pool] getconn 失敗→直接connect ({_DB_DIRECT_CONNECT['count']}回目): {type(e).__name__}: {e}")
+        # プール枯渇時の直接接続。connect_timeout 必須 (無しだと libpq が無限待ち = スレッド永久喪失)
+        return _Connection(psycopg.connect(DATABASE_URL, connect_timeout=_DB_CONNECT_TIMEOUT), is_pg=True, pool=None)
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     return _Connection(conn, is_pg=False, pool=None)
@@ -2438,12 +2494,103 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "x-cron-secret", "stripe-signature", "x-line-signature"],
 )
 
+# --- イベントループ保護 (2026-07-26 本番502インシデント) --------------------------------
+# 【事故】22:40 JST に /api/trial/signup が Railway edge から 502 "Application failed to respond"。
+#   直後の GET /api/health (DBもNWも触らない純粋dict返却) が **51.66秒**。負荷は低かった
+#   (その1時間の Anthropic 呼び出しは5件のみ) ので「同時アクセス過多」では説明できない。
+# 【真因】`async def` のまま**同期ブロッキング処理をイベントループ上で直接実行**していた。
+#   uvicorn は単一プロセス・単一イベントループ。ループが1秒でも塞がると全リクエストが止まり、
+#   新規TCP接続すら受け付けられなくなる → edge から見ると「アプリが応答しない」= 502。
+#   最悪だったのが `/api/ai/call` (ai_proxy): **await が1つも無いのに async def** で、
+#   _call_anthropic_safe() (既定180s・最大600s × 3モデルtier × 指数バックオフ再試行) を
+#   ループ上で直叩きしていた。生徒が1人AIを使うだけで**塾全体が数十秒フリーズ**する構造。
+# 【対策】ブロッキングする経路は `def` (= Starlette が threadpool で実行) に落とす。
+#   生ボディ/JSON だけは非同期に読む必要があるので、下の依存で薄く吸収する
+#   (body は受信済みバッファを返すだけでブロックしない)。
+async def _raw_body_dep(request: Request) -> bytes:
+    """同期(def)エンドポイントで**生ボディ**を受け取るための依存。
+    ★これ自体はループ上で走るが、既に受信済みの body を返すだけなのでブロックしない。
+      本体を def にできる = 重い処理が threadpool に逃げてループが空くのが狙い。"""
+    return await request.body()
+
+
+async def _json_body_dep(request: Request):
+    """同期(def)エンドポイントで **JSON body** を受け取るための依存。
+    パース失敗時は None を返し、判定は各ハンドラ側に委ねる (既存の 400 文言を変えないため)。"""
+    try:
+        return await request.json()
+    except Exception:
+        return None
+
+
+async def _record_event_async(name: str, props: dict, session_id: str, *, truncate: int = 0):
+    """async 文脈から events を1行記録する。
+    ★必ず threadpool 経由 (2026-07-26): 同期DBをそのまま await 無しで呼ぶと
+      イベントループを塞ぎ、記録している間サービス全体が停止する。
+    記録は補助的な処理なので、失敗しても呼び出し元は壊さない。"""
+    def _write():
+        conn = db()
+        try:
+            c = conn.cursor()
+            payload = json.dumps(props, ensure_ascii=False)
+            if truncate:
+                payload = payload[:truncate]
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                (name, payload, session_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    try:
+        await asyncio.to_thread(_write)
+    except Exception as e:
+        log.warning(f"[events] 非同期記録に失敗 ({name}): {type(e).__name__}: {e}")
+
+
+# 同期(def)ルートを流す Starlette/anyio のスレッド上限 (anyio 既定 = 40)。
+# ★既定値は「40 のまま」= 実質ノーオペにしてある。理由:
+#   今回の502/51秒の原因は**スレッド枯渇ではなくイベントループのブロック**だったので、
+#   スレッドを増やしても1ミリも直らない。むしろ増やすと以下の理由で Postgres が落ちる:
+#     db() はプールが詰まると `psycopg.connect` の**直接接続**へフォールバックするため、
+#     DB_POOL_MAX は同時接続数の上限として機能していない。実効上限はスレッド数そのもの。
+#     現状の最悪同時接続数 ≒ anyio(40) + asyncio既定executor(最大32) + loop(1) ≒ 73 本。
+#     Postgres の max_connections=100 (superuser予約等を引いた実用枠 ≒ 85) に対し既に余裕が薄く、
+#     例えば 64 に上げると ≒ 97 本となり `FATAL: sorry, too many clients already` の圏内に入る。
+#   → 上げたくなったら**先に db() の直接接続フォールバックを有界化**すること。順序を逆にするな。
+# env で必要時のみ引き上げる (例: APP_THREAD_LIMIT=48)。
+# ★下限8: anyio は total_tokens=0 を**例外なく受理**してしまい (ValueError になるのは負数のみ)、
+#   0 だと同期ルート(ほぼ全API)がスレッドを1本も取れず永久停止する。
+#   「制限を外すつもりで 0」を打たれても死なないよう、必ず下限でクランプする。
+_APP_THREAD_LIMIT = _env_int("APP_THREAD_LIMIT", 40, lo=8, hi=256)
+# startup で掴んだ CapacityLimiter を保持 (/api/health から飽和度を読むため)。
+# ★worker スレッドから current_default_thread_limiter() を呼ぶと実行中ループが無く失敗しうるので、
+#   ループ上(startup)で取得したオブジェクトを使い回す。borrowed/total は素の int 属性。
+_APP_THREAD_LIMITER = None
+
 # 起動時に Daily SNS 研究員 scheduler を asyncio.Task として常駐起動
 _BACKGROUND_TASKS: list = []
 
 @app.on_event("startup")
 async def _start_background_tasks():
     """uvicorn 起動時に呼ばれる。daily SNS scheduler + 申込決済監視 scheduler を bg task として起動。"""
+    # 🧵 同期ルート用スレッド上限の引き上げ (2026-07-26)。
+    # ★ここで設定するのが必須: anyio の default thread limiter は RunVar =
+    #   「実行中のイベントループ」に紐づくため、import 時に触っても本番のループには効かない。
+    #   startup フックは既にループ上で走っているので、ここが唯一確実に効く場所。
+    try:
+        global _APP_THREAD_LIMITER
+        import anyio.to_thread as _att
+        _limiter = _att.current_default_thread_limiter()
+        _before = _limiter.total_tokens
+        if _APP_THREAD_LIMIT != _before:
+            _limiter.total_tokens = _APP_THREAD_LIMIT
+        _APP_THREAD_LIMITER = _limiter
+        log.info(f"[Startup] sync-route thread limit: {_before} -> {_limiter.total_tokens}")
+    except Exception as e:
+        # 失敗しても既定40で動く (可用性優先・起動は絶対に止めない)
+        log.warning(f"[Startup] thread limiter 設定失敗 (既定40のまま続行): {type(e).__name__}: {e}")
+
     # 🎫 taiken ¥1,500 体験決済 → 塾長即時通知の判定 plink id を起動ログに出す。Stripe Dashboard で
     #   リンクを作り直して id が変わった時、本番ログを grep するだけで設定値の齟齬に気づけるようにする。
     log.info(f"[Startup] taiken notify Payment Link id configured: {TAIKEN_TRIAL_PLINK_ID[:14]}… (¥1,500 体験授業 決済 → 塾長即時通知)")
@@ -2569,17 +2716,24 @@ async def _post_deploy_smoke_test():
         log.info(f"[PostDeploy] running smoke test at {started_iso}")
 
         # 1. 合成 E2E テスト
-        synth = await _run_synthetic_checkout_test()
+        # ★alert=False: この1回目は boot+30秒 = Railway の deploy 切替窓に入っていることがあり、
+        #   実害ゼロでも自分の公開URLが502を返す。ここで鳴らすと塾長を深夜に叩き起こす誤報になるので、
+        #   通知の判断は下の 3-B (60秒後の再検査) に一任する。
+        synth = await _run_synthetic_checkout_test(alert=False)
         _SYNTHETIC_CHECKOUT_LAST.update(synth)
 
-        # 2. 直近 5 分の JS エラー件数集計
-        try:
+        # 2. 直近 5 分の JS エラー件数集計 (★to_thread 経由: ループ保護 / 2026-07-26)
+        def _count_js_errors():
             conn = db()
-            c = conn.cursor()
-            ts_5m = "created_at > NOW() - INTERVAL '5 minutes'" if USE_POSTGRES else "created_at > datetime('now', '-5 minutes')"
-            c.execute(f"SELECT COUNT(*) FROM events WHERE name='js_error' AND {ts_5m}")
-            js_err_5m = c.fetchone()[0] or 0
-            conn.close()
+            try:
+                c = conn.cursor()
+                ts_5m = "created_at > NOW() - INTERVAL '5 minutes'" if USE_POSTGRES else "created_at > datetime('now', '-5 minutes')"
+                c.execute(f"SELECT COUNT(*) FROM events WHERE name='js_error' AND {ts_5m}")
+                return c.fetchone()[0] or 0
+            finally:
+                conn.close()
+        try:
+            js_err_5m = await asyncio.to_thread(_count_js_errors)
         except Exception:
             js_err_5m = 0
 
@@ -2591,17 +2745,27 @@ async def _post_deploy_smoke_test():
             "synthetic_failures": synth.get("failures", []),
             "js_errors_last_5min": js_err_5m,
         }
-        try:
-            conn = db()
-            c = conn.cursor()
-            c.execute(
-                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
-                ("post_deploy_smoke_test", json.dumps(result, ensure_ascii=False)[:4000], "monitor")
-            )
-            conn.commit()
-            conn.close()
-        except Exception:
-            pass
+        # ★to_thread 経由 (ループ保護 / 2026-07-26)
+        await _record_event_async("post_deploy_smoke_test", result, "monitor", truncate=4000)
+
+        # 3-B. ★2026-07-26 誤報対策: 失敗したら「1回だけ」時間を置いて再検査する。
+        #   boot+30秒はまだ Railway の deploy 切替窓に入っていることがあり、
+        #   新コンテナが自分の公開URLを叩くと実害ゼロでも 502 を掴む
+        #   (2026-07-26 22:40 のアラートの正体。前後の tick は全て 200 だった)。
+        #   ★グレース期間で「黙らせる」のではなく「もう一度確かめる」方式にしているのは、
+        #     deploy 直後の検証という本来の役目を殺さないため。本物の障害は再検査でも失敗する。
+        if not synth.get("ok"):
+            log.warning(f"[PostDeploy] 1回目 NG ({synth.get('failures')}) — 切替窓の可能性があるため {_POSTDEPLOY_RECHECK_S}秒後に再検査する")
+            await asyncio.sleep(_POSTDEPLOY_RECHECK_S)
+            # 再検査は alert=True (既定)。ここで失敗すれば**本物**なので、この関数の内部から
+            # 通常どおり緊急メールが飛ぶ。= 偽陽性0通・本物は確実に通知、が両立する。
+            synth2 = await _run_synthetic_checkout_test()
+            _SYNTHETIC_CHECKOUT_LAST.update(synth2)
+            if synth2.get("ok"):
+                log.info("[PostDeploy] 再検査で復帰 = deploy切替窓の一過性失敗と判断しアラートしない")
+            else:
+                log.warning("[PostDeploy] 再検査も NG = 本物の異常")
+            synth = synth2
 
         # 4. 失敗時のみ即時アラート (成功時はログのみで沈黙)
         if not synth.get("ok") or js_err_5m >= 3:
@@ -2621,7 +2785,7 @@ async def _post_deploy_smoke_test():
                     f"<p>このまま放置すると顧客が壊れたフォームを踏み続けます。今すぐ確認してください。</p>"
                     f"<p>2 連続失敗で自動 rollback が発火する仕組みになっていますが、deploy 直後の最初の失敗時は通知のみです。</p>"
                 )
-                _send_monitor_email("🚨 deploy 直後の自動 smoke test 失敗", body_html)
+                await asyncio.to_thread(_send_monitor_email, "🚨 deploy 直後の自動 smoke test 失敗", body_html)
             except Exception as e:
                 log.warning(f"[PostDeploy] alert email failed: {e}")
         else:
@@ -2769,8 +2933,38 @@ def health():
         or os.getenv("GIT_SHA")
         or "unknown"
     )
+    # 🩺 2026-07-26 追加: 「詰まりかけ」を数値で外から見えるようにする。
+    # ★この endpoint は **同期(def)のまま**にしてある (async 化しない)。
+    #   Railway は healthcheckPath=/api/health を「新コンテナを昇格して旧を殺してよいか」の
+    #   判定に使う。sync なら threadpool が枯渇した退化ビルドは昇格に失敗して旧コンテナが生き残るが、
+    #   async にすると枯渇していても 5ms で 200 を返してしまい、壊れたビルドが昇格する。
+    #   = health は「イベントループ + スレッドプール」両方のカナリアである必要がある。
+    thread_used = thread_total = None
+    try:
+        if _APP_THREAD_LIMITER is not None:
+            thread_used = int(_APP_THREAD_LIMITER.borrowed_tokens)
+            thread_total = int(_APP_THREAD_LIMITER.total_tokens)
+    except Exception:
+        pass
+    # 塾長が深夜に見て判断できる一行 (英語のメトリクスだけでは判断できないため)
+    if thread_used is not None and thread_total:
+        _ratio = thread_used / thread_total
+        verdict = "ok" if _ratio < 0.7 else ("busy" if _ratio < 0.95 else "stuck")
+    else:
+        verdict = "ok"
+    hint = {
+        "ok": "正常です。",
+        "busy": "AI生成などで混み合っています。数分待てば戻ることが多いです。",
+        "stuck": "処理が詰まっています。数分待っても直らなければ Railway で Restart してください。",
+    }[verdict]
+
     return {
         "status": "ok",
+        "verdict": verdict,
+        "hint": hint,
+        "threads_used": thread_used,       # 同期ルートのスレッド使用数 (枯渇= 全APIが待たされる)
+        "threads_total": thread_total,
+        "db_pool_fallbacks": _DB_DIRECT_CONNECT["count"],   # >0 が続く= 接続予算が苦しい先行指標
         "time": datetime.now(timezone.utc).isoformat(),
         "git_sha": git_sha[:12] if git_sha else "unknown",  # 12 chars で簡素表示
         "stripe_configured": bool(STRIPE_SECRET_KEY),
@@ -4418,7 +4612,11 @@ async def _trial_management_scheduler():
             results = {}
             for task_name, fn in tasks:
                 try:
-                    r = fn()
+                    # ★2026-07-26: to_thread 必須。各タスクは Stripe API ページング
+                    #   (stripe 11.x の既定 timeout=80秒) や Resend 直列送信を含む同期処理で、
+                    #   11本を直列にループ上で回すと毎日 JST10:00 に数分間サービス全停止していた
+                    #   (今回修理した 502 / health 51秒と同じバグクラス)。
+                    r = await asyncio.to_thread(fn)
                     results[task_name] = r
                     log.info(f"[TrialMgr] {task_name}: {r}")
                 except Exception as e:
@@ -4498,7 +4696,7 @@ async def _weekly_worksheet_scheduler():
                 log.info("[WeeklyWorksheet] Skipped (already ran today by another replica)")
                 continue
             try:
-                result = _run_weekly_worksheet_generation()
+                result = await asyncio.to_thread(_run_weekly_worksheet_generation)
                 log.info(f"[WeeklyWorksheet] result: {result}")
                 _record_scheduler_run("weekly_worksheet_run", result)
             except Exception as e:
@@ -4927,7 +5125,7 @@ async def _anthropic_credit_monitor_scheduler():
                 log.info("[CreditMonitor] Skipped (already ran today)")
                 continue
             try:
-                result = _run_credit_monitor()
+                result = await asyncio.to_thread(_run_credit_monitor)
                 log.info(f"[CreditMonitor] result: {result}")
                 _record_scheduler_run("credit_monitor_run", result)
             except Exception as e:
@@ -5040,7 +5238,7 @@ async def _weakness_aggregation_scheduler():
                 log.info("[Weakness] Skipped (already ran today by another replica)")
                 continue
             try:
-                result = _run_weakness_aggregation()
+                result = await asyncio.to_thread(_run_weakness_aggregation)
                 log.info(f"[Weakness] result: {result}")
                 _record_scheduler_run("weakness_aggregation_run", result)
             except Exception as e:
@@ -7204,7 +7402,11 @@ def student_lesson_print_download(
 
 
 @app.post("/api/admin/tts/generate")
-async def admin_tts_generate(request: Request, x_cron_secret: Optional[str] = Header(None)):
+def admin_tts_generate(
+    request: Request,
+    x_cron_secret: Optional[str] = Header(None),
+    _json_body=Depends(_json_body_dep),
+):
     """🎬 OpenAI TTS proxy (塾長指示 2026-05-26: 動画解説生成用)。
     ローカル動画生成スクリプトから text → mp3 base64 を返却。
     既存 OPENAI_API_KEY を共有利用 (ローカルに key 不要)。
@@ -7221,9 +7423,9 @@ async def admin_tts_generate(request: Request, x_cron_secret: Optional[str] = He
     import hmac as _hmac
     if not _hmac.compare_digest(str(x_cron_secret or ""), CRON_SECRET):
         raise HTTPException(status_code=403, detail="CRON_SECRET 不一致")
-    try:
-        raw = await request.json()
-    except Exception:
+    # ★2026-07-26: OpenAI TTS を urlopen(timeout=60) で同期呼び出しするため def 化 (ループ保護)
+    raw = _json_body
+    if raw is None:
         raise HTTPException(status_code=400, detail="JSON body 不正")
     text = (raw or {}).get("text", "").strip() if isinstance(raw, dict) else ""
     voice = (raw or {}).get("voice", "nova") if isinstance(raw, dict) else "nova"
@@ -7273,7 +7475,11 @@ async def admin_tts_generate(request: Request, x_cron_secret: Optional[str] = He
 
 
 @app.post("/api/admin/lesson-prints/sync")
-async def admin_lesson_prints_sync(request: Request, x_cron_secret: Optional[str] = Header(None)):
+def admin_lesson_prints_sync(
+    request: Request,
+    x_cron_secret: Optional[str] = Header(None),
+    _json_body=Depends(_json_body_dep),
+):
     """🔄 配布プリント sync endpoint (CRON_SECRET 認証)。
     POST body (JSON): {"prints": [{title, subject, topic, level, target_grade, target_type, description, file_path, pages, file_size_kb, subtitle}, ...]}
     file_path が既存なら UPDATE、新規なら INSERT (upsert)。
@@ -7287,9 +7493,8 @@ async def admin_lesson_prints_sync(request: Request, x_cron_secret: Optional[str
     import hmac as _hmac
     if not _hmac.compare_digest(str(x_cron_secret or ""), CRON_SECRET):
         raise HTTPException(status_code=403, detail="CRON_SECRET 不一致")
-    try:
-        raw = await request.json()
-    except Exception:
+    raw = _json_body   # ★2026-07-26: await request.json() を依存に移し本体を def 化 (ループ保護)
+    if raw is None:
         raise HTTPException(status_code=400, detail="JSON body 不正")
     prints = raw.get("prints") if isinstance(raw, dict) else None
     if not isinstance(prints, list) or not prints:
@@ -7551,7 +7756,7 @@ async def _daily_sns_scheduler():
             await asyncio.sleep(sleep_secs)
             # 実行 (重複チェック付き)
             try:
-                result = _run_daily_sns_post()
+                result = await asyncio.to_thread(_run_daily_sns_post)
                 log.info(f"[DailySNS] Run result: {result}")
             except Exception as e:
                 log.error(f"[DailySNS] Run error: {type(e).__name__}: {e}", exc_info=True)
@@ -8649,12 +8854,16 @@ def _send_daily_summary_if_due() -> dict:
 async def _monitor_scheduler():
     """5分おきに監視チェック + 朝7時にデイリーサマリ"""
     JST = timezone(timedelta(hours=9))
+    _boot_ts = time.time()
     log.info(f"[Monitor] Scheduler started, interval={MONITORING_INTERVAL_MIN}min, daily_summary at JST {MONITORING_DAILY_SUMMARY_HOUR_JST}:00")
     while True:
         try:
             # 1. 5分間隔の異常検知
             try:
-                result = _run_monitor_check()
+                # ★2026-07-26: to_thread 必須。内部の _lookup_founder_special_price_id() が
+                #   env 未設定時に Stripe API を叩く (stripe 11.x の既定 timeout=80秒)。
+                #   ループ上で走らせると1時間に1回、最大80秒サービス全体が止まる。
+                result = await asyncio.to_thread(_run_monitor_check)
                 if result.get("alerts_sent"):
                     log.warning(f"[Monitor] Alerts sent: {result['alerts_sent']}")
                 else:
@@ -8663,9 +8872,23 @@ async def _monitor_scheduler():
                 log.error(f"[Monitor] check error: {e}", exc_info=True)
             # 1-B. 🛡️ 申込→決済 フロー E2E 合成テスト (revenue critical)
             try:
-                synth = await _run_synthetic_checkout_test()
-                _SYNTHETIC_CHECKOUT_LAST.update(synth)
-                if not synth.get("ok"):
+                # ★2026-07-26 誤報対策: 起動直後は **deploy の切替中**で、Railway edge がまだ
+                #   新コンテナに切り替わりきっていない窓がある。そこで自分の公開URLを叩くと
+                #   実害ゼロなのに 502 "Application failed to respond" を掴んで
+                #   「申込→決済フローが壊れている・機会損失中」と誤発報する
+                #   (2026-07-26 22:40 のアラートの正体がこれ。前後の tick は全て 200)。
+                #   → 起動から SYNTHETIC_BOOT_GRACE_S 秒は E2E を見送る。
+                #   deploy 直後の検証は _post_deploy_smoke_test (起動30秒後) が別途担うので穴にはならない。
+                synth = None
+                _uptime = time.time() - _boot_ts
+                if _uptime < _SYNTHETIC_BOOT_GRACE_S:
+                    log.info(f"[Monitor:Synth] 起動直後のためスキップ (uptime={int(_uptime)}s < {_SYNTHETIC_BOOT_GRACE_S}s / deploy切替窓の誤検知回避)")
+                else:
+                    synth = await _run_synthetic_checkout_test()
+                    _SYNTHETIC_CHECKOUT_LAST.update(synth)
+                if synth is None:
+                    pass
+                elif not synth.get("ok"):
                     log.warning(f"[Monitor:Synth] FAILED: {synth.get('failures')}")
                     _SYNTHETIC_CONSECUTIVE_FAILS["count"] += 1
                     _SYNTHETIC_CONSECUTIVE_FAILS["last_failure_ts"] = time.time()
@@ -8697,7 +8920,7 @@ async def _monitor_scheduler():
             now_jst = datetime.now(JST)
             if now_jst.hour == MONITORING_DAILY_SUMMARY_HOUR_JST:
                 try:
-                    summary_result = _send_daily_summary_if_due()
+                    summary_result = await asyncio.to_thread(_send_daily_summary_if_due)
                     if summary_result.get("sent"):
                         log.info("[Monitor] Daily summary sent")
                 except Exception as e:
@@ -8705,20 +8928,20 @@ async def _monitor_scheduler():
             # 2-B. 🔥 24h 未ログイン生徒への自動 magic link 再送信 (Phase B nudge)
             # 朝 9 時 (JST) に1日1回実行。NEVER_LOGIN_NUDGE_HOUR_JST で変更可能。
             try:
-                _maybe_run_never_login_nudge(now_jst)
+                await asyncio.to_thread(_maybe_run_never_login_nudge, now_jst)
             except Exception as e:
                 log.error(f"[Monitor:Nudge] error: {e}", exc_info=True)
             # 2-C. 🌐 ドメイン状態 RDAP 監視 (2026-05-06 clientHold 事故再発防止)
             # 30 分おきに WHOIS Domain Status をチェック。clientHold/serverHold 検知時は緊急アラート。
             try:
-                domain_check = _maybe_run_domain_status_check()
+                domain_check = await asyncio.to_thread(_maybe_run_domain_status_check)
                 if domain_check.get("ran") and not domain_check.get("ok", True):
                     log.warning(f"[Monitor:Domain] BAD STATUS: {domain_check.get('bad')}")
             except Exception as e:
                 log.error(f"[Monitor:Domain] check error: {e}", exc_info=True)
             # 2-D. 🔔 Whois 認証年次リマインダー (年1回, デフォ 4/15 朝)
             try:
-                _maybe_run_whois_renewal_reminder(now_jst)
+                await asyncio.to_thread(_maybe_run_whois_renewal_reminder, now_jst)
             except Exception as e:
                 log.error(f"[Monitor:Whois] reminder error: {e}", exc_info=True)
             # 3. 次のループまで sleep
@@ -8780,7 +9003,7 @@ def _synth_exclude_sql(alias: str = "") -> str:
     )
 
 
-async def _run_synthetic_checkout_test() -> dict:
+async def _run_synthetic_checkout_test(*, alert: bool = True) -> dict:
     """申込フロー全体を 5 分おきに自動回帰テスト。失敗時は alert を発火。
 
     エンドポイント設計:
@@ -8962,15 +9185,21 @@ async def _run_synthetic_checkout_test() -> dict:
     if sentinel_student_id:
         try:
             await asyncio.sleep(2.0)  # event 記録の遅延を吸収 (commit ラグ + Postgres 反映)
-            conn = db()
-            c = conn.cursor()
             session_key = f"student:{sentinel_student_id}"
-            c.execute(
-                "SELECT props FROM events WHERE name = 'signup_email_status' AND session_id = ? ORDER BY created_at DESC LIMIT 1",
-                (session_key,)
-            )
-            row = c.fetchone()
-            conn.close()
+            # ★2026-07-26: 5分おきに走る監視が同期DBをループ上で叩いていた (= 定期的な全停止要因)。
+            #   threadpool へ退避 + try/finally で接続を確実に返す。
+            def _fetch_signup_event():
+                conn = db()
+                try:
+                    c = conn.cursor()
+                    c.execute(
+                        "SELECT props FROM events WHERE name = 'signup_email_status' AND session_id = ? ORDER BY created_at DESC LIMIT 1",
+                        (session_key,)
+                    )
+                    return c.fetchone()
+                finally:
+                    conn.close()
+            row = await asyncio.to_thread(_fetch_signup_event)
             if not row:
                 failures.append(f"events.signup_email_status not recorded within 2s for student_id={sentinel_student_id}")
             else:
@@ -8990,13 +9219,19 @@ async def _run_synthetic_checkout_test() -> dict:
             log.warning(f"[Monitor:Synth] events.signup_email_status check failed: {e}")
 
     # 5. cleanup: sentinel student を DB から消す
+    # ★2026-07-26: to_thread 化 (ループ保護)。ここが失敗すると sentinel が students に残留する
+    #   (実際 7/25 に26件・7/26 に5件の残骸を確認 = 監視が途中で落ちた回数の指標になっている)。
     if sentinel_student_id:
-        try:
+        def _cleanup_sentinel():
             conn = db()
-            c = conn.cursor()
-            c.execute("DELETE FROM students WHERE id = ? AND email = ?", (sentinel_student_id, sentinel_email))
-            conn.commit()
-            conn.close()
+            try:
+                c = conn.cursor()
+                c.execute("DELETE FROM students WHERE id = ? AND email = ?", (sentinel_student_id, sentinel_email))
+                conn.commit()
+            finally:
+                conn.close()
+        try:
+            await asyncio.to_thread(_cleanup_sentinel)
         except Exception as e:
             log.warning(f"[Monitor:Synth] sentinel cleanup failed: {e}")
 
@@ -9012,7 +9247,11 @@ async def _run_synthetic_checkout_test() -> dict:
     }
 
     # 失敗時、cooldown 30 分でアラートメール送信
-    if not ok:
+    # ★2026-07-26: alert=False の呼び出し (deploy 直後の1回目) では**送らない**。
+    #   アラートはこの関数の内部で送られるので、呼び出し側で後から「再検査して復帰したから送らない」と
+    #   判断しても手遅れ (既に塾長のスマホが鳴っている)。抑止は発火点であるここに置く必要がある。
+    #   さらに偽陽性で 30分 cooldown を消費すると、直後に起きた**本物**の障害が黙殺される。
+    if not ok and alert:
         now_ts = time.time()
         if now_ts - _SYNTHETIC_CHECKOUT_ALERTED_AT["ts"] > 1800:
             _SYNTHETIC_CHECKOUT_ALERTED_AT["ts"] = now_ts
@@ -9026,22 +9265,12 @@ async def _run_synthetic_checkout_test() -> dict:
                     f"<h3>詳細</h3><pre>{html_escape_safe(json.dumps(details, ensure_ascii=False, indent=2))}</pre>"
                     f"<p><a href='{frontend_base}/ceo.html'>CEO ダッシュボードを開く</a></p>"
                 )
-                _send_monitor_email(subj, body_html)
+                await asyncio.to_thread(_send_monitor_email, subj, body_html)
             except Exception as e:
                 log.warning(f"[Monitor:Synth] alert email failed: {e}")
 
-    # events に結果を記録 (ダッシュ表示用)
-    try:
-        conn = db()
-        c = conn.cursor()
-        c.execute(
-            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
-            ("synthetic_checkout_test", json.dumps(result, ensure_ascii=False)[:4000], "monitor")
-        )
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
+    # events に結果を記録 (ダッシュ表示用) ★to_thread 経由 (ループ保護 / 2026-07-26)
+    await _record_event_async("synthetic_checkout_test", result, "monitor", truncate=4000)
 
     return result
 
@@ -9265,22 +9494,12 @@ async def _attempt_auto_rollback(reason: str, failures: list = None, force: bool
             f"<p>Vercel の自動再 deploy で 2-3 分以内に旧コードが再公開されます。次の合成テストで OK が出れば自動修復成功です。</p>"
             f"<p><strong>本格修正:</strong> 巻き戻された commit のバグを直し、新しい commit として再 push してください。</p>"
         )
-        _send_monitor_email("🚨 申込フロー auto-rollback 実行", body_html)
+        await asyncio.to_thread(_send_monitor_email, "🚨 申込フロー auto-rollback 実行", body_html)
     except Exception as e:
         log.warning(f"[auto-rollback] notification email failed: {e}")
 
-    # ---- 5. events 記録 ----
-    try:
-        conn = db()
-        c = conn.cursor()
-        c.execute(
-            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
-            ("auto_rollback", json.dumps(rb_record, ensure_ascii=False)[:4000], "monitor")
-        )
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
+    # ---- 5. events 記録 ---- (★to_thread 経由: ループを塞がない / 2026-07-26)
+    await _record_event_async("auto_rollback", rb_record, "monitor", truncate=4000)
 
     return {
         "ok": True,
@@ -11524,6 +11743,26 @@ def _apply_prompt_cache(tier_body: dict) -> None:
             tier_body["system"] = new_list
 
 
+def _gemini_request_options(body: dict = None, *, default_s: int = None) -> dict:
+    """Gemini SDK 呼び出しに渡す request_options を組む (2026-07-26)。
+    ★timeout 未指定だと SDK 既定 600秒まで待ち、AI経路が threadpool (上限40) を長時間握る。
+    ★caller の body["_timeout_s"] を尊重する: curriculum 生成等は 300秒必要で、
+      一律180秒に切ると Tier4 (Gemini) fallback が長文生成のときだけ新たに壊れる
+      (= AI never-fail の最終防衛線を自分で潰すことになる)。
+    ★0 以下は「SDK既定に任せる」= 何も渡さない (0 を渡すと即タイムアウトして Tier4 が全滅する)。
+    戻り値は **展開して使う (例: model.generate_content(x, **_gemini_request_options(body)))。
+    """
+    base = default_s if default_s is not None else _GEMINI_TIMEOUT_S
+    try:
+        if isinstance(body, dict) and body.get("_timeout_s"):
+            base = max(int(base or 0), int(body["_timeout_s"]))
+    except (TypeError, ValueError):
+        pass
+    if base and int(base) > 0:
+        return {"request_options": {"timeout": max(30, min(900, int(base)))}}
+    return {}
+
+
 def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
     """Gemini API 呼び出し (Anthropic body 互換 → Gemini 形式変換)。
     入力は Anthropic /v1/messages 形式 (model/max_tokens/system/messages)。
@@ -11635,7 +11874,13 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
             chat = gen_model.start_chat(history=history)
             # 2026-05-10 vision 対応: parts list を直接渡す (image 含む場合)
             # 単一 text の場合は string でも list でも OK だが、list 統一で安全
-            resp = chat.send_message(last_user_parts)
+            # ★2026-07-26 timeout 明示: 未指定だと google-generativeai の既定 (600秒) まで待つ。
+            #   AI 経路は threadpool (上限40) で走るため、無制限待ちが数本あるだけで
+            #   枠を食い潰し他機能まで巻き添えになる。env GEMINI_TIMEOUT_S で調整可。
+            #   ★caller の _timeout_s を尊重する (curriculum の 300秒指定を180秒で切らない)。
+            #   ★0以下は「SDK既定に任せる」= timeout 指定を外す (0 を渡すと即タイムアウトし、
+            #     AI never-fail の最終防衛線 Tier4 が 100% 死ぬため。安全弁が事故を生まないように)。
+            resp = chat.send_message(last_user_parts, **_gemini_request_options(body))
             text = resp.text or ""
 
             # 🚨 2026-05-21 塾長指示「Curriculum silent fail 修正」(小川くん事例):
@@ -14360,7 +14605,9 @@ async def _exam_questions_scheduler():
                 sleep_secs = (target - now_jst).total_seconds()
                 log.info(f"[ExamQ] Next daily run at {target.isoformat()} (in {int(sleep_secs)}s)")
                 await asyncio.sleep(sleep_secs)
-                result = _run_exam_questions_generation(quota=EXAM_QUESTIONS_DAILY_QUOTA)
+                # ★2026-07-26: to_thread 必須。中身は Anthropic 同期生成 (実測 39秒/問) で、
+                #   ループ上で走らせると生成中ずっと全API停止 (= /api/health 51秒の実体)。
+                result = await asyncio.to_thread(_run_exam_questions_generation, quota=EXAM_QUESTIONS_DAILY_QUOTA)
                 log.info(f"[ExamQ] Daily run result: {result}")
             except asyncio.CancelledError:
                 log.info("[ExamQ] Scheduler cancelled")
@@ -14378,7 +14625,9 @@ async def _exam_questions_scheduler():
         while True:
             try:
                 tick_start = datetime.now(JST)
-                result = _run_exam_questions_generation(quota=per_tick)
+                # ★2026-07-26: to_thread 必須 (上と同理由)。この tick は**起動30秒後**に必ず走るため、
+                #   deploy のたびに数分間ループが止まり、監視の合成テストが誤検知していた。
+                result = await asyncio.to_thread(_run_exam_questions_generation, quota=per_tick)
                 log.info(f"[ExamQ] Tick @ {tick_start.isoformat()}: {result}")
                 await asyncio.sleep(interval_secs)
             except asyncio.CancelledError:
@@ -15896,7 +16145,8 @@ async def admin_send_ig_carousel(
         '</body></html>'
     )
 
-    result = _send_monitor_email(
+    result = await asyncio.to_thread(   # ★2026-07-26: Resend送信をループ上でブロックしない
+        _send_monitor_email,
         subject=subject,
         body_html=body_html,
         to_email=to_email,
@@ -16297,11 +16547,13 @@ def _send_student_invite_email(to_email: str, name: str, invite_url: str, expire
 
 
 @app.post("/api/admin/marketing/bulk-invite")
-async def admin_bulk_invite(
+def admin_bulk_invite(
     payload: dict,
     authorization: Optional[str] = Header(None),
 ):
     """🚀 通塾生向け一斉招待メール配信。
+    ★2026-07-26 `async def` → `def`: await ゼロなのに async だったため、最大100通の
+      Resend 直列送信 + db() をイベントループ上で実行し、配信中ずっと全API が止まっていた。
     payload: {emails: ["a@b.com", ...], expires_days?: 30, base_url?, dry_run?: false}
     Anti-spam: 1回最大100件、Resend 100件/日無料枠を考慮。
     Dedup: 直近24h で同じ email に既に送信済ならスキップ。
@@ -16583,7 +16835,7 @@ async def admin_send_link_email(
         '</body></html>'
     )
 
-    result = _send_monitor_email(subject=subject, body_html=body_html, to_email=to_email)
+    result = await asyncio.to_thread(_send_monitor_email, subject=subject, body_html=body_html, to_email=to_email)   # ★ループ保護 2026-07-26
     return {"ok": True, "to": to_email, "links": len(links), **result}
 
 
@@ -18025,22 +18277,12 @@ async def admin_exam_questions_burst_seed(payload: dict = None, authorization: O
 
     duration = (datetime.now(timezone.utc) - started).total_seconds()
 
-    # events ログ
-    try:
-        conn = db()
-        c = conn.cursor()
-        c.execute(
-            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
-            ("exam_questions_burst_seed", json.dumps({
-                "target": target, "max_total": max_total, "concurrency": concurrency,
-                "queued": len(needs), "generated": len(generated), "failed": len(failed),
-                "duration_sec": int(duration),
-            }, ensure_ascii=False), "admin"),
-        )
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        log.warning(f"[BurstSeed] event log failed: {e}")
+    # events ログ (★to_thread 経由: ループを塞がない / 2026-07-26)
+    await _record_event_async("exam_questions_burst_seed", {
+        "target": target, "max_total": max_total, "concurrency": concurrency,
+        "queued": len(needs), "generated": len(generated), "failed": len(failed),
+        "duration_sec": int(duration),
+    }, "admin")
 
     log.info(f"[BurstSeed] done: generated={len(generated)} failed={len(failed)} duration={int(duration)}s")
     # 概算コスト (Sonnet 4.6 $3/$15 per 1M tokens, ~3500 tokens output avg per question = $0.053)
@@ -20529,7 +20771,7 @@ def _generate_textbook_from_youtube(
             )
             # YouTube URL を file_data として渡す (mime_type は SDK が自動判定するが video/mp4 を明示)
             video_part = {"file_data": {"mime_type": "video/mp4", "file_uri": youtube_url}}
-            response = model.generate_content([video_part, user_prompt])
+            response = model.generate_content([video_part, user_prompt], **_gemini_request_options(default_s=600))  # ★2026-07-26 timeout明示(動画は長尺なので600s)
             text = response.text or ""
             if idx > 0:
                 log.warning(f"[YT-Textbook] succeeded with fallback model {gm_name}")
@@ -20559,7 +20801,7 @@ def _generate_textbook_from_youtube(
                 # mime_type なしで再試行
                 try:
                     video_part = {"file_data": {"file_uri": youtube_url}}
-                    response = model.generate_content([video_part, user_prompt])
+                    response = model.generate_content([video_part, user_prompt], **_gemini_request_options(default_s=600))  # ★2026-07-26 timeout明示(動画は長尺なので600s)
                     text = response.text or ""
                     log.warning(f"[YT-Textbook] succeeded after removing mime_type")
                     break
@@ -29296,12 +29538,20 @@ def _cancel_superseded_subscription(stripe_client, old_sub_id, new_sub_id, stude
 # Routes: Stripe Webhook
 # ==========================================================================
 @app.post("/api/stripe/webhook")
-async def stripe_webhook(request: Request, stripe_signature: str = Header(None)):
+def stripe_webhook(
+    request: Request,
+    stripe_signature: str = Header(None),
+    payload: bytes = Depends(_raw_body_dep),
+):
+    """★2026-07-26 `async def` → `def` (イベントループ保護)。
+    唯一の await だった `await request.body()` を _raw_body_dep に逃がし、本体 (1200行超・
+    db() 13箇所 + Stripe API 呼び出し) を threadpool 実行にした。従来は決済 webhook が届くたびに
+    イベントループが数秒〜数十秒止まり、その間の申込/ログインが全滅していた。
+    署名検証に使う生バイト列はそのまま (依存は body をそのまま返すだけ・改変しない)。"""
     if not STRIPE_WEBHOOK_SECRET:
         log.warning("Stripe webhook called but STRIPE_WEBHOOK_SECRET not set")
         return {"received": True, "mock": True}
 
-    payload = await request.body()
     s = get_stripe()
     try:
         event = s.Webhook.construct_event(payload, stripe_signature, STRIPE_WEBHOOK_SECRET)
@@ -31066,7 +31316,10 @@ async def line_webhook(request: Request, x_line_signature: str = Header(None)):
     import asyncio as _aio
     for event in data.get("events", []):
         try:
-            _t = _aio.create_task(_handle_line_event(event))
+            # ★2026-07-26: 中身は db() + LINE Reply HTTP + Resend が全部同期なので
+            #   to_thread へ逃がす。従来は create_task でイベントループ上に載せており、
+            #   生徒がLINEを1通送るたびに外部HTTPの往復ぶんサービス全体が止まっていた。
+            _t = _aio.create_task(_aio.to_thread(_handle_line_event, event))
             _LINE_BG_TASKS.add(_t)
             _t.add_done_callback(_LINE_BG_TASKS.discard)
         except Exception as e:
@@ -31074,8 +31327,11 @@ async def line_webhook(request: Request, x_line_signature: str = Header(None)):
     return {"ok": True}
 
 
-async def _handle_line_event(event: dict):
-    """LINE webhook イベントの非同期ハンドラ。冪等性 + follow + message(連携コード) を処理。
+def _handle_line_event(event: dict):
+    """LINE webhook イベントのハンドラ。冪等性 + follow + message(連携コード) を処理。
+    ★2026-07-26 `async def` → `def`: await ゼロなのに async だったため、中身の同期処理
+      (db() / LINE Reply API / Resend) がイベントループ上で走っていた。
+      呼び出し側で asyncio.to_thread に載せるので、fire-and-forget の挙動は従来どおり。
     image = AIチューター写真解答は Phase C で _handle_line_image を追加して分岐する。"""
     try:
         etype = event.get("type")
@@ -34069,9 +34325,16 @@ def _record_ai_call_failure(stage: str, status_code: int, detail: str, payload_o
 
 
 @app.post("/api/ai/call")
-async def ai_proxy(payload: AIProxyRequest, request: Request, authorization: Optional[str] = Header(None)):
+def ai_proxy(payload: AIProxyRequest, request: Request, authorization: Optional[str] = Header(None)):
     """顧客の全AI呼び出しを塾長のAPIキーで代理実行。
-    認証=セッショントークン必須(IDOR修正 2026-06-23)・Origin検証・1日あたりトークンbudgetで多層防御。"""
+    認証=セッショントークン必須(IDOR修正 2026-06-23)・Origin検証・1日あたりトークンbudgetで多層防御。
+
+    ★2026-07-26 `async def` → `def`: **await が1つも無いのに async だった**ため、
+      _call_anthropic_safe() (既定180s/最大600s × 3tier × 再試行) と db() を
+      イベントループ上で直接ブロックしていた = 生徒1人のAI利用で塾全体が数十秒停止し、
+      /api/trial/signup が Railway edge で 502 になっていた本番事故の主因。
+      `def` にすると Starlette が threadpool で実行するのでループは空いたまま。
+      (中身は同期処理のみ・asyncio/async with は不使用なので変換は無害)"""
     if not ANTHROPIC_API_KEY:
         _record_ai_call_failure("anthropic_unconfigured", 503, "ANTHROPIC_API_KEY 未設定", payload, request)
         raise HTTPException(
@@ -35408,7 +35671,7 @@ def _detect_image_kind(data: bytes) -> Optional[str]:
 
 
 @app.post("/api/admin/marketing-assets/{campaign}/upload")
-async def admin_marketing_assets_upload(
+def admin_marketing_assets_upload(   # ★2026-07-26 def 化: _github_api(timeout=30) をループ上で叩いていた
     campaign: str,
     request: Request,
     file: UploadFile = File(...),
@@ -35454,7 +35717,7 @@ async def admin_marketing_assets_upload(
         raise HTTPException(status_code=413, detail=f"Content-Length が上限 {_MARKETING_UPLOAD_MAX_BYTES//1024//1024}MB 超過")
 
     # ファイル読込 (上限+1 で打ち切り = OOM 防止)
-    contents = await file.read(_MARKETING_UPLOAD_MAX_BYTES + 1)
+    contents = file.file.read(_MARKETING_UPLOAD_MAX_BYTES + 1)   # 同期ルートなので await 不要
     if len(contents) > _MARKETING_UPLOAD_MAX_BYTES:
         raise HTTPException(status_code=413, detail=f"ファイルサイズが上限 {_MARKETING_UPLOAD_MAX_BYTES//1024//1024}MB 超過")
     if len(contents) == 0:
@@ -39027,30 +39290,35 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
     topic_guess = _Counter(topics).most_common(1)[0][0] if topics else ""
 
     # ai_tutor_solve_log に保存 (弱点ストック準備)
-    try:
+    # ★2026-07-26: 同期DBをループ上で直接叩いていたため threadpool へ退避 (ループ保護)
+    def _write_solve_log():
         conn_log = db()
-        c_log = conn_log.cursor()
-        c_log.execute(
-            "INSERT INTO ai_tutor_solve_log "
-            "(student_id, mode, subject_guess, topic_guess, problem_text, has_image, "
-            " round_count, final_answer, confidence, ai_models, elapsed_ms) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (
-                student_id or None,
-                mode,
-                subject_guess,
-                topic_guess[:200] if topic_guess else None,
-                (problem_text or successful_final[0].get("problem_text", ""))[:1000] if successful_final else None,
-                1 if image_items else 0,
-                2 if round2 else 1,
-                (consensus.get("final_answer") or "")[:1000],
-                consensus.get("confidence", "low"),
-                ",".join(r.get("ai_id", "?") for r in successful_final),
-                elapsed_ms_total,
-            ),
-        )
-        conn_log.commit()
-        conn_log.close()
+        try:
+            c_log = conn_log.cursor()
+            c_log.execute(
+                "INSERT INTO ai_tutor_solve_log "
+                "(student_id, mode, subject_guess, topic_guess, problem_text, has_image, "
+                " round_count, final_answer, confidence, ai_models, elapsed_ms) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    student_id or None,
+                    mode,
+                    subject_guess,
+                    topic_guess[:200] if topic_guess else None,
+                    (problem_text or successful_final[0].get("problem_text", ""))[:1000] if successful_final else None,
+                    1 if image_items else 0,
+                    2 if round2 else 1,
+                    (consensus.get("final_answer") or "")[:1000],
+                    consensus.get("confidence", "low"),
+                    ",".join(r.get("ai_id", "?") for r in successful_final),
+                    elapsed_ms_total,
+                ),
+            )
+            conn_log.commit()
+        finally:
+            conn_log.close()
+    try:
+        await asyncio.to_thread(_write_solve_log)
     except Exception as ee:
         log.warning(f"[solve-from-image] db log failed: {ee}")
 
@@ -42987,7 +43255,11 @@ class StudentMaterialUpdateRequest(BaseModel):
 
 
 @app.post("/api/student/parent-email")
-async def student_set_parent_email(request: Request, authorization: Optional[str] = Header(None)):
+def student_set_parent_email(
+    request: Request,
+    authorization: Optional[str] = Header(None),
+    _json_body=Depends(_json_body_dep),
+):
     """📊 保護者 email 設定 (本人 only・塾長指示 2026-05-26)
     POST body: {"parent_email": "...", "enabled": true/false}
     enabled=false で配信停止 (parent_email は保持)
@@ -43003,9 +43275,8 @@ async def student_set_parent_email(request: Request, authorization: Optional[str
         student_id = int(claims["student_id"])
     except (TypeError, ValueError):
         raise HTTPException(status_code=400, detail="student_id 不正")
-    try:
-        body = await request.json()
-    except Exception:
+    body = _json_body   # ★2026-07-26: await request.json() を依存に移し本体を def 化 (ループ保護)
+    if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="JSON body 不正")
     parent_email = (body.get("parent_email") or "").strip()
     enabled = 1 if body.get("enabled", True) else 0
@@ -47324,6 +47595,10 @@ def _call_gemini_pdf_analysis(pdf_bytes: bytes, target_university: str, year: st
             prompt,
         ],
         generation_config={"temperature": 0.2, "max_output_tokens": 8000, "response_mime_type": "application/json"},
+        # ★2026-07-26: timeout 必須。呼び出し元の past_exam_solver / past_exam_upload は
+        #   今回 def 化して anyio(上限40)のスレッドを使うため、SDK既定600秒のまま放置すると
+        #   PDF を数本上げただけで枠を大量に食い潰す。PDF解析は重いので既定より長め(300秒)。
+        **_gemini_request_options(default_s=300),
     )
     text = (response.text or "").strip()
     try:
@@ -47773,7 +48048,7 @@ def _render_pastexam_pdf_via_generate_py(yaml_str: str, subject: str, base_name:
 
 
 @app.post("/api/admin/past-exam-solver")
-async def past_exam_solver(
+def past_exam_solver(
     file: UploadFile = File(...),
     target_university: str = Form("共通テスト"),
     year: str = Form(""),
@@ -47793,9 +48068,12 @@ async def past_exam_solver(
 
     Returns:
       {ok, upload_id, problems_extracted, explanations: [...], preview: top 3}
+
+    ★2026-07-26 `async def` → `def` (ループ保護): PDF解析(PyMuPDF/CPUバウンド) + Gemini/Claude
+      呼び出しをイベントループ上で実行していたため、解説生成中は全APIが停止していた。
     """
     _require_admin(authorization)
-    pdf_bytes = await file.read()
+    pdf_bytes = file.file.read()   # 同期ルートなので await 不要 (SpooledTemporaryFile を直読)
     if not pdf_bytes:
         raise HTTPException(status_code=400, detail="empty file")
     if len(pdf_bytes) > 20 * 1024 * 1024:
@@ -47909,7 +48187,7 @@ async def past_exam_solver(
 
 
 @app.post("/api/admin/past-exam/upload")
-async def past_exam_upload(
+def past_exam_upload(
     file: UploadFile = File(...),
     target_university: str = Form(...),
     year: str = Form(...),
@@ -47922,9 +48200,13 @@ async def past_exam_upload(
     Returns:
       {"ok": True, "upload_id": int, "problems_extracted": int, "similars_generated": int,
        "cost_yen": int, "preview": [...]}  (上位 3 件プレビュー)
+
+    ★2026-07-26 `async def` → `def` (ループ保護): 上記の通り**60-90秒**かかる処理を
+      イベントループ上で走らせていたため、塾長が過去問を1本上げるたびに
+      その間の生徒アクセス・申込が丸ごと止まっていた。
     """
     _require_admin(authorization)
-    pdf_bytes = await file.read()
+    pdf_bytes = file.file.read()   # 同期ルートなので await 不要
     if not pdf_bytes:
         raise HTTPException(status_code=400, detail="empty file")
     if len(pdf_bytes) > 20 * 1024 * 1024:  # 20MB 上限
@@ -49331,7 +49613,9 @@ async def _r2_backup_scheduler():
                     if not os.getenv('R2_ACCOUNT_ID'):
                         log.warning('[r2_backup_scheduler] R2_ACCOUNT_ID not set, skip')
                     else:
-                        result = _run_r2_backup()
+                        # ★2026-07-26: to_thread 必須 (全テーブル dump + gzip + R2 アップロードを
+                        #   ループ上で実行しており、毎日 JST3:00 に数十秒〜数分の全停止要因だった)
+                        result = await asyncio.to_thread(_run_r2_backup)
                         log.info(f'[r2_backup_scheduler] success: {result}')
                     last_run_date = today_str
                 except Exception as e:
