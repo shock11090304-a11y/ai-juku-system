@@ -11045,17 +11045,44 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     var _hwClassSel = document.getElementById('hwClass');
     if (_hwClassSel) _hwClassSel.addEventListener('change', hwUpdateCount);
     // ドリル単元: 選ぶと「ドリルで解く」がその単元を自動起動 (topic は dojo-drill の preset.topic と完全一致が必須)
+    //   🧒 中学(高校受験)の単元は subject を 'chugaku' にすること。dojo-drill の
+    //   findPresetForWeakness は w_subject==='chugaku' のとき中学プリセットだけを候補にするため、
+    //   '英語' にすると大学カードと照合されて「ドリルで解く」が単元を開かない。
     var HW_DRILL_TOPICS = [
       { t: '英文法 関係詞', s: '英語' }, { t: '英文法 仮定法', s: '英語' }, { t: '英文法 時制', s: '英語' },
       { t: '英文法 比較', s: '英語' }, { t: '英文法 分詞', s: '英語' }, { t: '英文法 総合', s: '英語' },
-      { t: '共通テスト英語 長文読解', s: '英語' }, { t: '共通テスト国語 現代文', s: '国語' }, { t: '共通テスト国語 古文', s: '国語' }
+      { t: '共通テスト英語 長文読解', s: '英語' }, { t: '共通テスト国語 現代文', s: '国語' }, { t: '共通テスト国語 古文', s: '国語' },
+      // 🧒 中学英語 (高校受験) — 通塾生アプリのクラス宿題用。2026-07-29 時点で各単元とも本番プールに15問以上。
+      { t: '中学英語 be動詞・一般動詞', s: 'chugaku' }, { t: '中学英語 時制', s: 'chugaku' },
+      { t: '中学英語 過去形', s: 'chugaku' }, { t: '中学英語 未来形', s: 'chugaku' },
+      { t: '中学英語 助動詞', s: 'chugaku' }, { t: '中学英語 名詞・代名詞・冠詞', s: 'chugaku' },
+      { t: '中学英語 比較', s: 'chugaku' }, { t: '中学英語 不定詞の用法', s: 'chugaku' },
+      { t: '中学英語 不定詞・動名詞', s: 'chugaku' }, { t: '中学英語 分詞', s: 'chugaku' },
+      { t: '中学英語 受動態', s: 'chugaku' }, { t: '中学英語 現在完了', s: 'chugaku' },
+      { t: '中学英語 関係代名詞', s: 'chugaku' }, { t: '中学英語 接続詞・前置詞', s: 'chugaku' },
+      { t: '中学英語 会話表現', s: 'chugaku' }, { t: '中学英語 長文読解', s: 'chugaku' }
     ];
     var _hwTopicSel = document.getElementById('hwTopic');
     if (_hwTopicSel) {
       HW_DRILL_TOPICS.forEach(function (x) { var o = document.createElement('option'); o.value = x.t; o.textContent = '🎯 ' + x.t; _hwTopicSel.appendChild(o); });
       _hwTopicSel.addEventListener('change', function () {
         var hit = HW_DRILL_TOPICS.filter(function (x) { return x.t === _hwTopicSel.value; })[0];
-        if (hit) document.getElementById('hwSubject').value = hit.s;  // 単元に対応する科目を自動入力
+        var _subjEl = document.getElementById('hwSubject');
+        if (!_subjEl) return;
+        if (hit) {
+          // 単元に対応する科目を自動入力。★ここは「ドリルで解く」の照合キーなので手で書き換えると
+          //   単元が開かなくなる (中学は 'chugaku' 固定・'英語' に直すと大学プリセットと照合されて不一致)。
+          //   単元を選んでいる間は readonly にして事故を防ぐ。単元を空に戻すと編集可に戻す。
+          _subjEl.value = hit.s;
+          _subjEl.readOnly = true;
+          _subjEl.title = '選んだドリル単元に対応する科目です（この欄は書き換えないでください）';
+          _subjEl.style.opacity = '0.75';
+        } else {
+          if (HW_DRILL_TOPICS.some(function (x) { return x.s === _subjEl.value; })) _subjEl.value = '';
+          _subjEl.readOnly = false;
+          _subjEl.title = '';
+          _subjEl.style.opacity = '';
+        }
       });
     }
     var _hwBtn = document.getElementById('hwAssignBtn');
@@ -11085,6 +11112,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           document.getElementById('hwTitle').value = ''; document.getElementById('hwSubject').value = '';
           document.getElementById('hwDue').value = ''; document.getElementById('hwDesc').value = '';
           if (document.getElementById('hwTopic')) document.getElementById('hwTopic').value = '';
+          // 単元選択で readOnly にした科目欄を編集可に戻す (次の宿題で書けなくなるのを防ぐ)
+          var _sj = document.getElementById('hwSubject');
+          if (_sj) { _sj.readOnly = false; _sj.title = ''; _sj.style.opacity = ''; }
         } else {
           msg.style.color = '#fca5a5'; msg.textContent = r.info || 'このクラスに登録された生徒がいません（上の「🏫 クラス別 受講生 一括登録」で設定してください）';
         }

@@ -1,0 +1,302 @@
+[
+ {
+  "id": "q1",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nIt is difficult for me ( ) up early in the morning.",
+  "choices": [
+   "get",
+   "to get",
+   "getting",
+   "got"
+  ]
+ },
+ {
+  "id": "q2",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI didn't know what ( ) to her at that time.",
+  "choices": [
+   "to say",
+   "say",
+   "saying",
+   "said"
+  ]
+ },
+ {
+  "id": "q3",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nKen promised ( ) his little sister to the zoo on Sunday.",
+  "choices": [
+   "take",
+   "to take",
+   "taking",
+   "took"
+  ]
+ },
+ {
+  "id": "q4",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy father taught me how ( ) a bike.",
+  "choices": [
+   "ride",
+   "riding",
+   "to ride",
+   "rode"
+  ]
+ },
+ {
+  "id": "q5",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nKen got up early ( ) the first train.",
+  "choices": [
+   "catch",
+   "to catch",
+   "catching",
+   "caught"
+  ]
+ },
+ {
+  "id": "q6",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Why do you use this app every day?\nB: ( ) new English words.",
+  "choices": [
+   "Learn",
+   "Learning",
+   "Learned",
+   "To learn"
+  ]
+ },
+ {
+  "id": "q7",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI was very glad ( ) you at the station yesterday.",
+  "choices": [
+   "see",
+   "seeing",
+   "to see",
+   "saw"
+  ]
+ },
+ {
+  "id": "q8",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nShe was surprised ( ) the news about the accident.",
+  "choices": [
+   "to hear",
+   "hear",
+   "hears",
+   "heard"
+  ]
+ },
+ {
+  "id": "q9",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI had no time ( ) TV yesterday.",
+  "choices": [
+   "watch",
+   "to watch",
+   "watching",
+   "watched"
+  ]
+ },
+ {
+  "id": "q10",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe have nothing ( ) for lunch. Let's go shopping.",
+  "choices": [
+   "eat",
+   "eating",
+   "ate",
+   "to eat"
+  ]
+ },
+ {
+  "id": "q11",
+  "stem": "次の日本文の意味に合う英文として最も適切なものを選びなさい。\n私は彼に何か冷たい飲み物をあげたい。",
+  "choices": [
+   "I want to give him something cold to drink.",
+   "I want to give him cold something to drink.",
+   "I want to give him something to drink cold.",
+   "I want to give something cold to drink for him."
+  ]
+ },
+ {
+  "id": "q12",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy mother told me ( ) my room before dinner.",
+  "choices": [
+   "clean",
+   "to clean",
+   "cleaning",
+   "cleaned"
+  ]
+ },
+ {
+  "id": "q13",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI asked him ( ) the window because the room was very hot.",
+  "choices": [
+   "open",
+   "opening",
+   "to open",
+   "opened"
+  ]
+ },
+ {
+  "id": "q14",
+  "stem": "次の中から、英文として正しいものを選びなさい。",
+  "choices": [
+   "I want you come to my party.",
+   "I want that you come to my party.",
+   "I want you to coming to my party.",
+   "I want you to come to my party."
+  ]
+ },
+ {
+  "id": "q15",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nPlease let me ( ) your new camera.",
+  "choices": [
+   "to use",
+   "using",
+   "use",
+   "used"
+  ]
+ },
+ {
+  "id": "q16",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThis song always makes me ( ) happy.",
+  "choices": [
+   "to feel",
+   "feel",
+   "feeling",
+   "felt"
+  ]
+ },
+ {
+  "id": "q17",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nBe careful ( ) the glass. It is very old.",
+  "choices": [
+   "not break",
+   "not breaking",
+   "not to break",
+   "don't break"
+  ]
+ },
+ {
+  "id": "q18",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI was ( ) tired to do my homework last night.",
+  "choices": [
+   "too",
+   "very",
+   "so",
+   "enough"
+  ]
+ },
+ {
+  "id": "q19",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nShe spoke slowly ( ) for us to understand her English.",
+  "choices": [
+   "enough",
+   "too",
+   "very",
+   "much"
+  ]
+ },
+ {
+  "id": "q20",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nThis bag is so heavy that I cannot carry it.\n= This bag is ( ).",
+  "choices": [
+   "heavy enough for me to carry",
+   "so heavy for me to carry",
+   "very heavy for me to carry",
+   "too heavy for me to carry"
+  ]
+ },
+ {
+  "id": "q21",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nThis book is easy enough for me to read.\n= This book is so easy that I ( ) read it.",
+  "choices": [
+   "cannot",
+   "should",
+   "can",
+   "must"
+  ]
+ },
+ {
+  "id": "q22",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nHe was too busy to answer my e-mail.",
+  "choices": [
+   "彼はとても忙しかったが、私のメールに返事をした。",
+   "彼は私のメールに返事をするために、とても忙しくしていた。",
+   "彼は忙しすぎて、私のメールに返事ができなかった。",
+   "彼は私のメールに返事をするほど忙しくはなかった。"
+  ]
+ },
+ {
+  "id": "q23",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy parents don't let me ( ) video games on weekdays.",
+  "choices": [
+   "to play",
+   "play",
+   "playing",
+   "played"
+  ]
+ },
+ {
+  "id": "q24",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nOur teacher makes us ( ) English in every class.",
+  "choices": [
+   "speak",
+   "to speak",
+   "speaking",
+   "spoke"
+  ]
+ },
+ {
+  "id": "q25",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThe baby is sleeping. Please try ( ) any noise.",
+  "choices": [
+   "not to make",
+   "not make",
+   "not making",
+   "not to making"
+  ]
+ },
+ {
+  "id": "q26",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nCould you tell me how to use this washing machine?",
+  "choices": [
+   "この洗濯機を使ってもよいか教えていただけますか。",
+   "この洗濯機を使ったことがあるか教えていただけますか。",
+   "この洗濯機をいつ使えばよいか教えていただけますか。",
+   "この洗濯機をどう使えばよいか教えていただけますか。"
+  ]
+ },
+ {
+  "id": "q27",
+  "stem": "次の中から、英文として正しいものを選びなさい。",
+  "choices": [
+   "It is important for us to help each other.",
+   "It is important for us help each other.",
+   "It is important for us helping each other.",
+   "It is important that for us to help each other."
+  ]
+ },
+ {
+  "id": "q28",
+  "stem": "次の文の to see と同じ用法の不定詞を含む文を選びなさい。\nI went to the park to see the cherry blossoms.",
+  "choices": [
+   "I want to see your new car.",
+   "She has a lot of work to do today.",
+   "It is fun to see old friends.",
+   "He came to Japan to study Japanese."
+  ]
+ },
+ {
+  "id": "q29",
+  "stem": "次の文の to read と同じ用法の不定詞を含む文を選びなさい。\nI have many books to read this summer.",
+  "choices": [
+   "I like to read comic books.",
+   "He studied hard to pass the exam.",
+   "To read English books is not easy.",
+   "This is a good place to take pictures."
+  ]
+ },
+ {
+  "id": "q30",
+  "stem": "次の文の to be と同じ用法の不定詞を含む文を選びなさい。\nMy dream is to be a nurse.",
+  "choices": [
+   "He has a lot of homework to do.",
+   "She wants to study science at college.",
+   "I was happy to win the game.",
+   "We use computers to study English."
+  ]
+ }
+]

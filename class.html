@@ -706,7 +706,14 @@
         var overdue = !done && it.due_date && it.due_date < today;
         var statusChip = done ? '<span class="chip chip-done">完了</span>'
           : (overdue ? '<span class="chip chip-over">期限切れ</span>' : '<span class="chip chip-open">未提出</span>');
-        var subj = it.subject ? ' <span class="chip chip-subj">' + esc(it.subject) + '</span>' : '';
+        // 科目 'chugaku' は中学(高校受験)ドリルへの内部キー。生の chugaku を生徒に見せない。
+        // 単元チップが「中学英語 …」等で始まるときは科目チップが重複するだけなので出さない。
+        // (ラベルは週次プリントの subjJa と同じ規約: chugaku → 中学)
+        var subjLabel = it.subject;
+        if (it.subject === 'chugaku') {
+          subjLabel = /^中学/.test(it.topic || '') ? '' : '中学';
+        }
+        var subj = subjLabel ? ' <span class="chip chip-subj">' + esc(subjLabel) + '</span>' : '';
         var topicChip = it.topic ? ' <span class="chip chip-topic">🎯 ' + esc(it.topic) + '</span>' : '';
         var due = it.due_date ? ('<div class="card-meta">📅 期限: ' + esc(it.due_date) + '</div>') : '';
         // 宿題に単元(topic)があれば dojo-drill をその単元で自動起動 (?w_subject=&w_topic=)

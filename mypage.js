@@ -3957,8 +3957,12 @@ function _hwDueDateBadge(dueDate, status) {
 function _renderHomeworkItem(item) {
   const isOpen = item.status === 'open';
   const dueBadge = _hwDueDateBadge(item.due_date, item.status);
-  const subjectBadge = item.subject
-    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(99,102,241,0.2); color:#a5b4fc; border-radius:8px; margin-right:6px;">${_hwEscape(item.subject)}</span>`
+  // 科目 'chugaku' は中学(高校受験)ドリルへの内部キー。生の chugaku を生徒に見せない
+  // (mypage.html の SUBJ_JA と同じ規約)。★mypage は単元(topic)バッジを描かないので、
+  // class.html と違ってここでバッジを消すと科目も単元も何も出なくなる。必ず出すこと。
+  let _subjLabel = item.subject === 'chugaku' ? '中学' : item.subject;
+  const subjectBadge = _subjLabel
+    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(99,102,241,0.2); color:#a5b4fc; border-radius:8px; margin-right:6px;">${_hwEscape(_subjLabel)}</span>`
     : '';
   const desc = item.description
     ? `<div style="color:#cbd5e1; font-size:0.86rem; line-height:1.6; margin-top:6px; white-space:pre-wrap;">${_hwEscape(item.description)}</div>`

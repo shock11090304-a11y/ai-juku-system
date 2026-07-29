@@ -1,0 +1,482 @@
+[
+ {
+  "passage": "",
+  "subject": "英語",
+  "univ_simulated": "公立高校入試(標準)",
+  "year_simulated": null,
+  "source": "chugaku_koukou_futeishi_v1",
+  "format_type": "不定詞の用法",
+  "questions": [
+   {
+    "id": "q1",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nIt is difficult for me ( ) up early in the morning.",
+    "choices": [
+     "get",
+     "to get",
+     "getting",
+     "got"
+    ],
+    "answer": "1",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「to get」。〈It is +形容詞+ for 人 + to +動詞の原形〉で「(人)にとって〜することは…だ」を表します。文頭の It は形式主語で、本当の主語は to get up early のほう(名詞的用法)です。「私にとって朝早く起きることは難しい」。"
+   },
+   {
+    "id": "q2",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI didn't know what ( ) to her at that time.",
+    "choices": [
+     "to say",
+     "say",
+     "saying",
+     "said"
+    ],
+    "answer": "0",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「to say」。〈疑問詞+ to +動詞の原形〉で「何を〜すればよいか」を表し、know の目的語になります(名詞的用法)。what to say で「何を言えばよいか」。「そのとき私は彼女に何と言えばよいかわからなかった」。"
+   },
+   {
+    "id": "q3",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nKen promised ( ) his little sister to the zoo on Sunday.",
+    "choices": [
+     "take",
+     "to take",
+     "taking",
+     "took"
+    ],
+    "answer": "1",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「to take」。promise は後ろに〈to +動詞の原形〉をとり、「〜すると約束する」という意味になります。ここでは promised の目的語になっている名詞的用法です。「ケンは日曜日に妹を動物園へ連れて行くと約束した」。"
+   },
+   {
+    "id": "q4",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy father taught me how ( ) a bike.",
+    "choices": [
+     "ride",
+     "riding",
+     "to ride",
+     "rode"
+    ],
+    "answer": "2",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「to ride」。〈how to +動詞の原形〉で「〜のしかた、どうやって〜すればよいか」。teach の目的語になる名詞的用法です。teach 人 how to 〜 で「(人)に〜のしかたを教える」となります。「父は私に自転車の乗り方を教えてくれた」。"
+   },
+   {
+    "id": "q5",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nKen got up early ( ) the first train.",
+    "choices": [
+     "catch",
+     "to catch",
+     "catching",
+     "caught"
+    ],
+    "answer": "1",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「to catch」。「〜するために」と目的を表す副詞的用法です。got up early(早く起きた)という動作の目的を、後ろから〈to +動詞の原形〉が説明しています。「ケンは始発電車に乗るために早く起きた」。"
+   }
+  ]
+ },
+ {
+  "passage": "",
+  "subject": "英語",
+  "univ_simulated": "公立高校入試(標準)",
+  "year_simulated": null,
+  "source": "chugaku_koukou_futeishi_v1",
+  "format_type": "不定詞の用法",
+  "questions": [
+   {
+    "id": "q6",
+    "type": "multiple_choice",
+    "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Why do you use this app every day?\nB: ( ) new English words.",
+    "choices": [
+     "Learn",
+     "Learning",
+     "Learned",
+     "To learn"
+    ],
+    "answer": "3",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「To learn」。Why 〜? に「〜するためです」と目的で答えるときは〈To +動詞の原形〉で始めます(副詞的用法)。Because I want to learn 〜 と同じ内容を短く答えた形です。原形のままだと命令文になり、Learning や Learned では Why への答えになりません。「新しい英単語を覚えるためです」。"
+   },
+   {
+    "id": "q7",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI was very glad ( ) you at the station yesterday.",
+    "choices": [
+     "see",
+     "seeing",
+     "to see",
+     "saw"
+    ],
+    "answer": "2",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「to see」。glad, happy, sad, sorry などの感情を表す形容詞の後ろに置く〈to +動詞の原形〉は「〜して」と感情の原因を表す副詞的用法です。glad のあとに see や saw、seeing をそのまま続けることはできません。「昨日は駅であなたに会えてとてもうれしかった」。"
+   },
+   {
+    "id": "q8",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nShe was surprised ( ) the news about the accident.",
+    "choices": [
+     "to hear",
+     "hear",
+     "hears",
+     "heard"
+    ],
+    "answer": "0",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「to hear」。be surprised to 〜 で「〜して驚く」。感情の原因を表す副詞的用法です。surprised の後ろに動詞をそのままの形(hear)や hears・heard の形を続けることはできません。「彼女はその事故の知らせを聞いて驚いた」。"
+   },
+   {
+    "id": "q9",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI had no time ( ) TV yesterday.",
+    "choices": [
+     "watch",
+     "to watch",
+     "watching",
+     "watched"
+    ],
+    "answer": "1",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「to watch」。直前の名詞 time を後ろから説明する形容詞的用法です。time to watch TV で「テレビを見る時間」。「昨日はテレビを見る時間がなかった」。"
+   },
+   {
+    "id": "q10",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe have nothing ( ) for lunch. Let's go shopping.",
+    "choices": [
+     "eat",
+     "eating",
+     "ate",
+     "to eat"
+    ],
+    "answer": "3",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「to eat」。nothing to eat で「食べるものが何もない」。-thing で終わる語も、不定詞が後ろから説明します(形容詞的用法)。「昼食に食べるものが何もない。買い物に行こう」。"
+   }
+  ]
+ },
+ {
+  "passage": "",
+  "subject": "英語",
+  "univ_simulated": "公立高校入試(標準)",
+  "year_simulated": null,
+  "source": "chugaku_koukou_futeishi_v1",
+  "format_type": "不定詞の用法",
+  "questions": [
+   {
+    "id": "q11",
+    "type": "multiple_choice",
+    "stem": "次の日本文の意味に合う英文として最も適切なものを選びなさい。\n私は彼に何か冷たい飲み物をあげたい。",
+    "choices": [
+     "I want to give him something cold to drink.",
+     "I want to give him cold something to drink.",
+     "I want to give him something to drink cold.",
+     "I want to give something cold to drink for him."
+    ],
+    "answer": "0",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「I want to give him something cold to drink.」something を形容詞と不定詞の両方で説明するときは〈something +形容詞+ to +動詞の原形〉の順に並べます(不定詞は形容詞的用法)。cold something のように形容詞を前に置くことはできません。「彼に〜をあげる」は give him 〜 の語順で、give 〜 for him とは言いません。"
+   },
+   {
+    "id": "q12",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy mother told me ( ) my room before dinner.",
+    "choices": [
+     "clean",
+     "to clean",
+     "cleaning",
+     "cleaned"
+    ],
+    "answer": "1",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「to clean」。〈tell +人+ to +動詞の原形〉で「(人)に〜するように言う」。「母は私に夕食の前に部屋をそうじするように言った」。"
+   },
+   {
+    "id": "q13",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI asked him ( ) the window because the room was very hot.",
+    "choices": [
+     "open",
+     "opening",
+     "to open",
+     "opened"
+    ],
+    "answer": "2",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「to open」。〈ask +人+ to +動詞の原形〉で「(人)に〜してくれるように頼む」。「部屋がとても暑かったので、私は彼に窓を開けてくれるように頼んだ」。"
+   },
+   {
+    "id": "q14",
+    "type": "multiple_choice",
+    "stem": "次の中から、英文として正しいものを選びなさい。",
+    "choices": [
+     "I want you come to my party.",
+     "I want that you come to my party.",
+     "I want you to coming to my party.",
+     "I want you to come to my party."
+    ],
+    "answer": "3",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「I want you to come to my party.」「(人)に〜してほしい」は〈want +人+ to +動詞の原形〉で表します。人のあとの to を落として want you come とはできず、want は後ろに that 節もとれません。また不定詞の to のあとは必ず動詞の原形なので to coming の形にもなりません。"
+   },
+   {
+    "id": "q15",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nPlease let me ( ) your new camera.",
+    "choices": [
+     "to use",
+     "using",
+     "use",
+     "used"
+    ],
+    "answer": "2",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「use」。〈let +人+ 動詞の原形〉で「(人)に〜させてあげる」。let の後ろでは to をつけない原形不定詞を使います。「あなたの新しいカメラを使わせてください」。"
+   }
+  ]
+ },
+ {
+  "passage": "",
+  "subject": "英語",
+  "univ_simulated": "公立高校入試(標準)",
+  "year_simulated": null,
+  "source": "chugaku_koukou_futeishi_v1",
+  "format_type": "不定詞の用法",
+  "questions": [
+   {
+    "id": "q16",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThis song always makes me ( ) happy.",
+    "choices": [
+     "to feel",
+     "feel",
+     "feeling",
+     "felt"
+    ],
+    "answer": "1",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「feel」。〈make +人+ 動詞の原形〉で「(人)に〜させる」。make の後ろも to をつけない原形不定詞です。「この歌はいつも私を幸せな気持ちにさせてくれる」。"
+   },
+   {
+    "id": "q17",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nBe careful ( ) the glass. It is very old.",
+    "choices": [
+     "not break",
+     "not breaking",
+     "not to break",
+     "don't break"
+    ],
+    "answer": "2",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「not to break」。不定詞を打ち消すときは to の直前に not を置き、〈not to +動詞の原形〉の形にします。be careful not to 〜 で「〜しないように気をつける」。not だけを動詞の前に置いたり、don't を続けたりすることはできません。「そのコップを割らないように気をつけて。とても古いものです」。"
+   },
+   {
+    "id": "q18",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI was ( ) tired to do my homework last night.",
+    "choices": [
+     "too",
+     "very",
+     "so",
+     "enough"
+    ],
+    "answer": "0",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「too」。〈too +形容詞+ to +動詞の原形〉で「あまりに…すぎて〜できない」。so を使うなら so tired that I couldn't 〜 のように that が必要です。very には「〜できない」という打ち消しの意味がなく、enough は tired の後ろに置く語なので、どちらもこの形では使えません。「昨夜は疲れすぎて宿題ができなかった」。"
+   },
+   {
+    "id": "q19",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nShe spoke slowly ( ) for us to understand her English.",
+    "choices": [
+     "enough",
+     "too",
+     "very",
+     "much"
+    ],
+    "answer": "0",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「enough」。〈形容詞・副詞+ enough (for 人) to +動詞の原形〉で「(人)が〜できるほど十分…」。enough は形容詞や副詞の後ろに置くのが大切なきまりです。形容詞・副詞の後ろに置いて「十分に」の意味を足せるのは enough だけで、too・very・much はいずれも前に置く語です。「彼女は私たちが彼女の英語を理解できるくらいゆっくり話してくれた」。"
+   },
+   {
+    "id": "q20",
+    "type": "multiple_choice",
+    "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nThis bag is so heavy that I cannot carry it.\n= This bag is ( ).",
+    "choices": [
+     "heavy enough for me to carry",
+     "so heavy for me to carry",
+     "very heavy for me to carry",
+     "too heavy for me to carry"
+    ],
+    "answer": "3",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「too heavy for me to carry」。〈so +形容詞+ that 主語 cannot 〜〉は〈too +形容詞+ for 人 + to +動詞の原形〉に書きかえられます。「運べない」という打ち消しの意味は too が担います。enough を使うと「運べるほど十分重い」と反対の意味になり、that 〜 cannot を伴わない so や very だけでは「〜できない」を表せません。もとの文の it(=かばん)を to carry の後ろに残さない点にも注意しましょう。"
+   }
+  ]
+ },
+ {
+  "passage": "",
+  "subject": "英語",
+  "univ_simulated": "公立高校入試(標準)",
+  "year_simulated": null,
+  "source": "chugaku_koukou_futeishi_v1",
+  "format_type": "不定詞の用法",
+  "questions": [
+   {
+    "id": "q21",
+    "type": "multiple_choice",
+    "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nThis book is easy enough for me to read.\n= This book is so easy that I ( ) read it.",
+    "choices": [
+     "cannot",
+     "should",
+     "can",
+     "must"
+    ],
+    "answer": "2",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「can」。〈形容詞+ enough for 人 + to +動詞の原形〉は「(人)が〜できるほど十分…」という意味なので、〈so +形容詞+ that 主語 can 〜〉に書きかえられます。cannot では反対の意味になり、should や must では「できる」という意味になりません。「この本はやさしいので私にも読める」。"
+   },
+   {
+    "id": "q22",
+    "type": "multiple_choice",
+    "stem": "次の英文の意味として最も適切なものを選びなさい。\nHe was too busy to answer my e-mail.",
+    "choices": [
+     "彼はとても忙しかったが、私のメールに返事をした。",
+     "彼は私のメールに返事をするために、とても忙しくしていた。",
+     "彼は忙しすぎて、私のメールに返事ができなかった。",
+     "彼は私のメールに返事をするほど忙しくはなかった。"
+    ],
+    "answer": "2",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「彼は忙しすぎて、私のメールに返事ができなかった。」〈too +形容詞+ to +動詞の原形〉は「…すぎて〜できない」という打ち消しの意味を表します。英文に not はありませんが、日本語にするときは「〜できなかった」と訳す点がポイントです。「忙しかったが返事をした」「返事をするために忙しくした」「返事をするほど忙しくない」は、どれも「〜できなかった」という打ち消しになっていません。"
+   },
+   {
+    "id": "q23",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy parents don't let me ( ) video games on weekdays.",
+    "choices": [
+     "to play",
+     "play",
+     "playing",
+     "played"
+    ],
+    "answer": "1",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「play」。〈let +人+ 動詞の原形〉で「(人)に〜させてあげる」。let の後ろは to をつけない原形不定詞です。「両親は平日は私にゲームをさせてくれない」。"
+   },
+   {
+    "id": "q24",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nOur teacher makes us ( ) English in every class.",
+    "choices": [
+     "speak",
+     "to speak",
+     "speaking",
+     "spoke"
+    ],
+    "answer": "0",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「speak」。〈make +人+ 動詞の原形〉で「(人)に〜させる」。make の後ろも to をつけない原形不定詞です。「先生は毎回の授業で私たちに英語を話させる」。"
+   },
+   {
+    "id": "q25",
+    "type": "multiple_choice",
+    "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThe baby is sleeping. Please try ( ) any noise.",
+    "choices": [
+     "not to make",
+     "not make",
+     "not making",
+     "not to making"
+    ],
+    "answer": "0",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「not to make」。try not to 〜 で「〜しないようにする」。不定詞を打ち消す not は to の直前に置き、〈not to +動詞の原形〉の形にします。not だけを動詞の前に置いたり、to のあとを -ing にしたりはできません。「赤ちゃんが眠っています。音を立てないようにしてください」。"
+   }
+  ]
+ },
+ {
+  "passage": "",
+  "subject": "英語",
+  "univ_simulated": "公立高校入試(標準)",
+  "year_simulated": null,
+  "source": "chugaku_koukou_futeishi_v1",
+  "format_type": "不定詞の用法",
+  "questions": [
+   {
+    "id": "q26",
+    "type": "multiple_choice",
+    "stem": "次の英文の意味として最も適切なものを選びなさい。\nCould you tell me how to use this washing machine?",
+    "choices": [
+     "この洗濯機を使ってもよいか教えていただけますか。",
+     "この洗濯機を使ったことがあるか教えていただけますか。",
+     "この洗濯機をいつ使えばよいか教えていただけますか。",
+     "この洗濯機をどう使えばよいか教えていただけますか。"
+    ],
+    "answer": "3",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「この洗濯機をどう使えばよいか教えていただけますか。」〈how to +動詞の原形〉は「どうやって〜すればよいか、〜のしかた」を表します。「〜してもよいか」は may、「いつ〜すればよいか」は when to 〜、「〜したことがあるか」は have used を使う言い方で、どれも how to 〜 とは意味が違います。"
+   },
+   {
+    "id": "q27",
+    "type": "multiple_choice",
+    "stem": "次の中から、英文として正しいものを選びなさい。",
+    "choices": [
+     "It is important for us to help each other.",
+     "It is important for us help each other.",
+     "It is important for us helping each other.",
+     "It is important that for us to help each other."
+    ],
+    "answer": "0",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「It is important for us to help each other.」〈It is +形容詞+ for 人 + to +動詞の原形〉が正しい形です。It は形式主語で、to help 〜 が本当の主語になる名詞的用法です。for 人 のあとは必ず〈to +動詞の原形〉で、to をつけずに動詞の原形を置いたり -ing にしたりはできません。that を入れることもできません。"
+   },
+   {
+    "id": "q28",
+    "type": "multiple_choice",
+    "stem": "次の文の to see と同じ用法の不定詞を含む文を選びなさい。\nI went to the park to see the cherry blossoms.",
+    "choices": [
+     "I want to see your new car.",
+     "She has a lot of work to do today.",
+     "It is fun to see old friends.",
+     "He came to Japan to study Japanese."
+    ],
+    "answer": "3",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「He came to Japan to study Japanese.」例文の to see は「桜を見るために」と目的を表す副詞的用法です。「日本語を勉強するために来日した」も同じ目的を表しています。want to see は名詞的用法、work to do は名詞を説明する形容詞的用法、It is fun to see 〜 は形式主語 It を使った名詞的用法です。"
+   },
+   {
+    "id": "q29",
+    "type": "multiple_choice",
+    "stem": "次の文の to read と同じ用法の不定詞を含む文を選びなさい。\nI have many books to read this summer.",
+    "choices": [
+     "I like to read comic books.",
+     "He studied hard to pass the exam.",
+     "To read English books is not easy.",
+     "This is a good place to take pictures."
+    ],
+    "answer": "3",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「This is a good place to take pictures.」例文の to read は直前の名詞 books を後ろから説明する形容詞的用法です。名詞 place を後ろから説明している文が同じ用法にあたります。like to read は名詞的用法、studied hard to pass は目的を表す副詞的用法、To read 〜 is not easy は主語になる名詞的用法です。"
+   },
+   {
+    "id": "q30",
+    "type": "multiple_choice",
+    "stem": "次の文の to be と同じ用法の不定詞を含む文を選びなさい。\nMy dream is to be a nurse.",
+    "choices": [
+     "He has a lot of homework to do.",
+     "She wants to study science at college.",
+     "I was happy to win the game.",
+     "We use computers to study English."
+    ],
+    "answer": "1",
+    "unit": "不定詞の用法",
+    "explanation": "【単元】不定詞の用法。正解は「She wants to study science at college.」例文の to be は is の後ろで「〜になること」という意味を表す名詞的用法です。wants の目的語になっている「〜すること」も同じ名詞的用法です。homework to do は名詞を説明する形容詞的用法、happy to win は感情の原因、use computers to study は目的を表す副詞的用法です。"
+   }
+  ]
+ }
+]

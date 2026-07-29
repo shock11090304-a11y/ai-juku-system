@@ -317,7 +317,13 @@
       { subj: '英語', name: '助動詞', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '助動詞', unitExact: true, agg: 8, min: 12, topic: '中学英語 助動詞' },
       { subj: '英語', name: '名詞・代名詞・冠詞', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '名詞・代名詞・冠詞', unitExact: true, agg: 8, min: 12, topic: '中学英語 名詞・代名詞・冠詞' },
       { subj: '英語', name: '比較', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '比較', unitExact: true, agg: 8, min: 12, topic: '中学英語 比較' },
-      { subj: '英語', name: '不定詞・動名詞', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '不定詞・動名詞', unitExact: true, agg: 8, min: 12, topic: '中学英語 不定詞・動名詞' },
+      // ⬇ 隣に「不定詞（3用法・重要構文）」が並ぶので、何を練習するカードかを name に書いて区別する
+      //   (副見出しは全カード共通で「8問セット」を出す枠なのでここでは使わない)
+      { subj: '英語', name: '不定詞・動名詞（to と -ing）', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '不定詞・動名詞', unitExact: true, agg: 8, min: 12, topic: '中学英語 不定詞・動名詞' },
+      // 🎯 2026-07-29 不定詞だけを集中演習する単元 (3用法・too〜to/enough to・not to do・原形不定詞・用法の識別)。
+      //   ⚠ filter を素の「不定詞」にすると unitExact(pref(unit).startsWith(filter)) が上の
+      //   「不定詞・動名詞」を巻き込むため不可。「不定詞の用法」は互いに接頭辞にならないので分離される。
+      { subj: '英語', name: '不定詞（3用法・重要構文）', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '不定詞の用法', unitExact: true, agg: 8, min: 12, topic: '中学英語 不定詞の用法' },
       { subj: '英語', name: '分詞（現在分詞・過去分詞）', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '分詞', unitExact: true, agg: 8, min: 12, topic: '中学英語 分詞' },
       { subj: '英語', name: '受動態', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '受動態', unitExact: true, agg: 8, min: 12, topic: '中学英語 受動態' },
       { subj: '英語', name: '現在完了', exam: 'chugaku', part: 'eng', grade: 'koukou', filter: '現在完了', unitExact: true, agg: 8, min: 12, topic: '中学英語 現在完了' },
