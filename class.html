@@ -81,6 +81,7 @@
     .cal-list-h { font-size:0.8rem; font-weight:800; color:#a5b4fc; margin:0.65rem 0 0.25rem; }
     .cal-li { font-size:0.84rem; padding:0.22rem 0; display:flex; gap:0.5rem; line-height:1.4; }
     .cal-li-d { flex-shrink:0; font-weight:800; color:#c7d2fe; min-width:2.8em; font-variant-numeric:tabular-nums; }
+    .cal-li > span:not(.cal-li-d) { min-width:0; word-break:break-word; }
     .cal-note { margin:0.55rem 0 0.1rem; padding:0.5rem 0.7rem; background:rgba(129,140,248,0.12); border:1px solid rgba(129,140,248,0.32); border-radius:9px; font-size:0.8rem; line-height:1.5; font-weight:700; color:#c7d2fe; }
     .block { margin-top:0.85rem; }
     .block-label { font-size:0.78rem; font-weight:800; color:#a5b4fc; margin-bottom:0.4rem; }
@@ -363,14 +364,32 @@
       return H;
     }
     var calEvents = {};   // 'YYYY-MM-DD' -> { kind:'closed'|'event', title }
+    // 取得状態。未取得・失敗のまま「休塾日はありません」と断言すると誤情報になるので3値で持つ
+    var calLoadState = 'loading';   // 'loading' | 'ok' | 'error'
+    // 多重発火ガードは飛行中の Promise ごと持つ。boolean のロックだと、応答が返らないまま固まったときに
+    // ロックが外れず再取得が永久に効かなくなる (ガードが回復可能な状態を回復不能にしてしまう)。
+    var calInflight = null;
+    var CAL_TIMEOUT_MS = 10000;   // これ以上待たせると生徒は「壊れた」と判断する (再取得ボタンがあるので短めで良い)
     var calY, calM;
     (function () { var n = new Date(); calY = n.getFullYear(); calM = n.getMonth() + 1; })();
-    async function loadCalendar() {
-      try {
-        var d = await api('/api/student/class/calendar');
-        calEvents = {};
-        (d.events || []).forEach(function (e) { calEvents[e.date] = { kind: e.kind, title: e.title }; });
-      } catch (e) { /* 取得失敗でも祝日カレンダーは表示する */ }
+    function loadCalendar() {
+      if (calInflight) return calInflight;   // 相乗りのクリックも本物の完了を待たせる
+      calInflight = (async function () {
+        try {
+          // 応答が返らないと「読み込み中…」から復帰できないので、必ず打ち切って error に落とす
+          var d = await Promise.race([
+            api('/api/student/class/calendar'),
+            new Promise(function (_, rej) { setTimeout(function () { rej(new Error('timeout')); }, CAL_TIMEOUT_MS); })
+          ]);
+          calEvents = {};
+          (d.events || []).forEach(function (e) { calEvents[e.date] = { kind: e.kind, title: e.title }; });
+          calLoadState = 'ok';
+        } catch (e) {
+          calEvents = {};   // 失敗時に前回の休塾日が盤面に残らないようにする
+          calLoadState = 'error';   /* 取得失敗でも祝日カレンダーは表示する */
+        } finally { calInflight = null; }
+      })();
+      return calInflight;
     }
     function changeMonth(delta) {
       calM += delta;
@@ -383,10 +402,21 @@
       var daysIn = new Date(calY, calM, 0).getDate();
       var todayK = _ymdOf(new Date());
       var wd = ['日', '月', '火', '水', '木', '金', '土'];
+      // ★取得できていない間はカレンダーの中身を断言しない。マーク無しの綺麗な盤面こそが
+      //   「休塾日ゼロの月」に見える最大の誤読源なので、告知は盤面の"上"に置き、盤面自体も薄くする。
+      var pending = calLoadState !== 'ok';
       var h = '<div class="block-label" style="font-size:0.95rem; margin-bottom:0.3rem;">📅 カレンダー</div>'
+        + (!pending ? ''
+          : calLoadState === 'error'
+            ? '<div class="notice err" style="margin:0 0 0.55rem;"><h2>⚠️ 予定を読み込めませんでした</h2>' + esc(GD_NET_MSG)
+            + '<div style="text-align:center;margin-top:0.7rem;"><button class="btn btn-ghost cal-reload">🔄 再読み込み</button></div></div>'
+            : '<div class="muted" style="padding:0 0 0.45rem;">休塾日・予定を読み込み中…</div>')
         + '<div class="cal-head"><button class="cal-nav" id="calPrev" aria-label="前の月">‹</button>'
         + '<div class="cal-title">' + calY + '年 ' + calM + '月</div>'
-        + '<button class="cal-nav" id="calNext" aria-label="次の月">›</button></div><div class="cal-grid">';
+        + '<button class="cal-nav" id="calNext" aria-label="次の月">›</button></div>'
+        // 0.55 = 「明らかに薄い」と分かりつつ日付のコントラストが AA (4.9:1) を保てる濃度。
+        // error は再取得が成功するまで解除されないので、読めなくなるほど薄くしてはいけない。
+        + '<div class="cal-grid"' + (pending ? ' style="opacity:0.55;"' : '') + '>';
       wd.forEach(function (w, i) { h += '<div class="cal-wd' + (i === 0 ? ' sun' : '') + (i === 6 ? ' sat' : '') + '">' + w + '</div>'; });
       for (var b = 0; b < startDow; b++) h += '<div class="cal-cell empty"></div>';
       for (var day = 1; day <= daysIn; day++) {
@@ -405,23 +435,30 @@
         else if (hn) mark = '<span class="cal-tag hol">祝</span>';
         h += '<div class="' + cls + '"><span class="cal-d">' + day + '</span>' + mark + '</div>';
       }
-      h += '</div><div class="cal-legend"><span><i class="lg closed"></i>休塾日</span><span><i class="lg event"></i>予定</span><span><i class="lg hol"></i>祝日</span></div>';
+      h += '</div>';
+      // 凡例は盤面の色の意味を説明するもの = 盤面が確定してから出す
+      if (!pending) h += '<div class="cal-legend"><span><i class="lg closed"></i>休塾日</span><span><i class="lg event"></i>予定</span><span><i class="lg hol"></i>祝日</span></div>';
       var items = [], hasNatsuki = false;
       for (var dd = 1; dd <= daysIn; dd++) {
         var k = _ymd(calY, calM, dd), e = calEvents[k], hnm = hol[k];
-        if (e && e.kind === 'closed') items.push({ d: dd, t: '🔴 休塾日' });
+        // closed は原則「🔴 休塾日」。title があれば理由 (例: お盆休塾) を併記する
+        if (e && e.kind === 'closed') items.push({ d: dd, t: '🔴 休塾日' + (e.title ? '（' + esc(e.title) + '）' : '') });
         else if (e && e.kind === 'event') {
           items.push({ d: dd, t: '📌 ' + esc(e.title || '予定') });
           if (/夏期講習/.test(e.title || '')) hasNatsuki = true;
         }
         if (hnm) items.push({ d: dd, t: '🎌 ' + esc(hnm) });
       }
-      if (items.length) {
-        items.sort(function (a, b) { return a.d - b.d; });
-        h += '<div class="cal-list-h">今月の休塾日・予定</div>'
-          + items.map(function (it) { return '<div class="cal-li"><span class="cal-li-d">' + calM + '/' + it.d + '</span><span>' + it.t + '</span></div>'; }).join('');
-      } else {
-        h += '<div class="muted" style="padding:0.45rem 0;">今月の休塾日・特別予定はありません。</div>';
+      // 一覧も同様。未確定のうちは出さない (祝日はクライアント計算なので items は非空になり得るが、
+      // それを出すと「休塾日は無い」と読めてしまう)。告知は上の pending ブロックで出済み。
+      if (!pending) {
+        if (items.length) {
+          items.sort(function (a, b) { return a.d - b.d; });
+          h += '<div class="cal-list-h">今月の休塾日・予定</div>'
+            + items.map(function (it) { return '<div class="cal-li"><span class="cal-li-d">' + calM + '/' + it.d + '</span><span>' + it.t + '</span></div>'; }).join('');
+        } else {
+          h += '<div class="muted" style="padding:0.45rem 0;">今月の休塾日・予定はありません。</div>';
+        }
       }
       if (hasNatsuki) h += '<div class="cal-note">📌 夏期講習中も、通常授業（週間時間割）はこれまで通りあります。</div>';
       return h;
@@ -635,6 +672,21 @@
       var pv = document.getElementById('calPrev'), nx = document.getElementById('calNext');
       if (pv) pv.addEventListener('click', function () { changeMonth(-1); });
       if (nx) nx.addEventListener('click', function () { changeMonth(1); });
+      // カレンダー取得に失敗したときの再取得 (PWA standalone では画面リロードの手段が無いのでボタンで直す)
+      scheduleBody.querySelectorAll('.cal-reload').forEach(function (b) {
+        b.addEventListener('click', function () {
+          b.disabled = true; b.textContent = '再取得中…';
+          loadCalendar().then(function () {
+            if (calLoadState === 'ok') { renderSchedule(); return; }
+            // 失敗時は全体を描き直さない (入力途中の欠席理由が消えるため)。
+            // 再描画すると同じ赤箱が一瞬で戻り「押しても無反応」に見えるので toast で結果を伝える。
+            b.disabled = false; b.textContent = '🔄 再読み込み';
+            toast('まだつながりません。少し待ってからもう一度おためしください。', true);
+          }).catch(function () {
+            b.disabled = false; b.textContent = '🔄 再読み込み';   // 「再取得中…」で固着させない
+          });
+        });
+      });
     }
     async function downloadFile(btn) {
       var id = btn.getAttribute('data-id'), fn = btn.getAttribute('data-fn') || 'lesson_file';
