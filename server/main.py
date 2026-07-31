@@ -2419,13 +2419,28 @@ except Exception as _se:
 #   (students.ai_disabled=1) を AI 系ルートから遮断する。許可 prefix = 通塾生アプリ(class.html)が叩く
 #   API + auth/routing + admin のみ。それ以外の /api/ に student session token でアクセスしたら 403。
 #   ai_disabled 以外の生徒・トークン無し・管理者なりすまし(impersonation)は一切影響を受けない。
+#   ★2026-07-31 境界を厳密化: 以前は裸の prefix ("/api/student/homework") だけだったので
+#     startswith が **兄弟名** にも当たった (例 "/api/student/homework-ai-hint" を将来足すと、
+#     無変更で ai_disabled 生徒に開通する。テストも落ちないので気づけない)。
+#     → 単発ルートは EXACT (完全一致)、子を持つものは末尾スラッシュの PREFIX、と分けて書く。
+_AI_DISABLED_ALLOWED_EXACT = frozenset({
+    "/api/student/homework",        # 宿題一覧
+    "/api/student/grammar-drills",  # 単元ドリル一覧
+    "/api/messages/me",             # 塾長メッセージ 受信
+    "/api/student/messages/send",   # 塾長へメッセージ送信
+})
 _AI_DISABLED_ALLOWED_PREFIXES = (
-    "/api/student/class/",        # 出欠/予定表/配布ファイル/クラスフィード
-    "/api/student/homework",      # 宿題一覧・完了 (/complete 含む)
-    "/api/messages/me",           # 塾長メッセージ 受信/未読/添付/既読
-    "/api/student/messages/send", # 塾長へメッセージ送信
-    "/api/auth/",                 # ログイン/セッション/ルーティング (is_tsujuku_app 判定を含む)
-    "/api/admin/",                # 管理系 (塾長・なりすまし。student session token では認可されない)
+    "/api/student/class/",          # 出欠/予定表/配布ファイル/クラスフィード
+    "/api/student/homework/",       # 宿題の完了 (/{id}/complete)
+    # 📝 [2026-07-31 塾長指示] 塾生アプリの宿題タブで「科目別 単元ドリル」(固定N問・サーバ採点) を
+    #   解けるようにするため開放。対象は3ルートのみ (一覧 /grammar-drills・取得 /grammar-drill/{id}・
+    #   提出 /grammar-drill/{id}/submit)。★採点は grammar_questions の解答キーとの DB 照合だけで
+    #   Anthropic 呼び出しはゼロ = AIなし枠の趣旨 (AIコストを使わせない) を破らない。
+    #   出題は塾長が CEO パネルから配信した固定問題のみ (IDOR ガード=自分の assignment だけ取得可)。
+    "/api/student/grammar-drill/",  # 取得・提出 (/{id}, /{id}/submit)
+    "/api/messages/me/",            # 未読数/添付/既読
+    "/api/auth/",                   # ログイン/セッション/ルーティング (is_tsujuku_app 判定を含む)
+    "/api/admin/",                  # 管理系 (塾長・なりすまし。student session token では認可されない)
 )
 _AI_DISABLED_CACHE: dict = {}     # student_id -> (is_disabled: bool, fetched_at: float)
 _AI_DISABLED_CACHE_TTL = 30.0     # 秒。承認/トグルの反映は最大この遅延 (実害無)
@@ -2471,7 +2486,7 @@ app = FastAPI(title="AIコーチング API", version="1.0.0")
 async def _ai_disabled_route_gate(request: Request, call_next):
     try:
         _p = request.url.path
-        if _p.startswith("/api/") and not _p.startswith(_AI_DISABLED_ALLOWED_PREFIXES):
+        if _p.startswith("/api/") and _p not in _AI_DISABLED_ALLOWED_EXACT and not _p.startswith(_AI_DISABLED_ALLOWED_PREFIXES):
             _auth = request.headers.get("authorization") or ""
             if _auth.startswith("Bearer "):
                 _claims = _verify_session_token(_auth[len("Bearer "):].strip())
@@ -41471,8 +41486,13 @@ def _run_weakness_drill_routine(only_student_id: Optional[int] = None, dry_run: 
         "capped": 0, "cap": cap, "dry_run": bool(dry_run), "delivered_students": [],
     }
     try:
+        # 🚫 ai_disabled=0 限定: 「塾生アプリのみ(AIなし枠)」の生徒は AI 由来の自動配信の対象外
+        #   (休眠再活性 cron と同じ方針)。2026-07-31 に塾生アプリの宿題タブへドリルを出すように
+        #   したことで、塾長が出した覚えのない自動ドリルが AIなし枠の生徒に「宿題」として見える
+        #   ようになったため、抽出側で塞ぐ。既存の割当は残るので必要なら個別に削除する。
         sql = ("SELECT id, name, email, line_user_id, grade FROM students "
                f"WHERE status IN ('trial', 'paid') AND {_synth_exclude_sql('students')} "
+               "AND COALESCE(ai_disabled, 0) = 0 "
                "AND (last_login_at IS NULL OR last_login_at >= ?) ")
         params = [login_cutoff]
         if only_student_id:

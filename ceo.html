@@ -670,7 +670,8 @@
           <button type="button" onclick="gdSaveGroup()" title="名前を入力し、チェック中の生徒をこの名前で保存" style="background:none;color:#c4b5fd;border:1px dashed #6d28d9;border-radius:12px;padding:0.15rem 0.65rem;font-size:0.72rem;cursor:pointer;">＋ 選択中を保存</button>
           <span id="gdGroupMsg" style="font-size:0.72rem;margin-left:0.2rem;"></span>
         </div>
-        <div id="gdStudents" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.2rem;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:0.5rem;margin-bottom:0.7rem;">読み込み中...</div>
+        <div id="gdStudents" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.2rem;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:0.5rem;margin-bottom:0.35rem;">読み込み中...</div>
+        <div style="font-size:0.76rem;color:#a1a1aa;margin-bottom:0.55rem;">🏫 = 塾生アプリ登録の生徒 → 配信したドリルは<b>塾生アプリの「📝 宿題」タブ</b>にも出ます。無印の生徒はマイページの宿題に出ます。問題も自動採点も同じです。</div>
         <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
           <button onclick="gdCreate()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;padding:0.55rem 1.2rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📤 ドリルを配信</button>
           <span id="gdRemediationBadge" style="display:none;align-items:center;gap:0.4rem;font-size:0.76rem;font-weight:800;color:#fbcfe8;background:rgba(236,72,153,0.16);border:1px solid rgba(236,72,153,0.45);border-radius:14px;padding:0.2rem 0.7rem;">🎯 弱点対策モード（前回の問題を除外）<button onclick="_gdClearRemediation()" title="通常配信に戻す" style="background:none;border:1px solid rgba(236,72,153,0.5);color:#f9a8d4;border-radius:10px;padding:0 0.4rem;font-size:0.72rem;cursor:pointer;">✕ 解除</button></span>
@@ -4319,8 +4320,10 @@
       const box = document.getElementById('gdStudents'); if (!box) return;
       const f = (filter || '').toLowerCase();
       const list = _gdStudents.filter(s => !f || (s.name || '').toLowerCase().includes(f) || String(s.id).includes(f));
+      // 🏫 = 塾生アプリ(class.html)の生徒。届く先が違う(アプリの宿題タブ / マイページ)ので配信前に見分けられるようにする。
+      //    is_tsujuku_app は /api/admin/stats が返す (referrer='塾生アプリ' の登録経由)。未定義なら無印=AI管理扱い。
       box.innerHTML = list.map(s =>
-        `<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.76rem;color:#e5e7eb;padding:0.15rem;"><input type="checkbox" class="gd-st" value="${s.id}"> ${escapeHtml(s.name || '(無名)')} <span style="color:#71717a;">#${s.id}</span></label>`
+        `<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.76rem;color:#e5e7eb;padding:0.15rem;"><input type="checkbox" class="gd-st" value="${s.id}">${s.is_tsujuku_app ? '<span title="塾生アプリの生徒" style="flex-shrink:0;">🏫</span>' : ''} ${escapeHtml(s.name || '(無名)')} <span style="color:#71717a;">#${s.id}</span></label>`
       ).join('') || '<div style="color:#71717a;font-size:0.78rem;">該当生徒なし</div>';
     }
     function gdFilterStudents(v) { gdRenderStudents(v); }

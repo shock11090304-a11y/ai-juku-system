@@ -96,6 +96,26 @@
     .btn:disabled { opacity:0.5; cursor:default; }
     .row-actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.8rem; }
 
+    /* 📝 自動採点ドリル (科目別 単元ドリル = grammar_drill)。宿題タブ内で解答→即採点まで完結する。 */
+    .gd-head { margin-bottom:0.9rem; }
+    .gd-q { background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.10); border-radius:12px; padding:0.85rem 0.95rem; margin-bottom:0.75rem; }
+    .gd-q.unanswered { border-color:rgba(251,191,36,0.65); box-shadow:0 0 0 1px rgba(251,191,36,0.35); }
+    .gd-no { font-size:0.74rem; font-weight:800; color:#a5b4fc; }
+    .gd-stem { font-size:0.95rem; font-weight:700; line-height:1.65; margin:0.3rem 0 0.6rem; white-space:pre-wrap; word-break:break-word; }
+    /* タップ領域は 44pt 以上を確保 (スマホで押しにくいと誤タップが増える) */
+    .gd-choice { display:flex; gap:0.55rem; align-items:flex-start; padding:0.7rem 0.65rem; margin:0.32rem 0; background:rgba(0,0,0,0.22); border:1px solid rgba(255,255,255,0.10); border-radius:9px; font-size:0.9rem; line-height:1.5; cursor:pointer; word-break:break-word; }
+    div.gd-choice { cursor:default; }   /* 復習表示 (label でなく div) は押せないので手の形にしない */
+    .gd-choice input { margin:0.15rem 0 0; flex-shrink:0; width:19px; height:19px; accent-color:#818cf8; }
+    .gd-choice.sel { background:rgba(129,140,248,0.16); border-color:rgba(129,140,248,0.5); }
+    .gd-choice.ok { background:rgba(16,185,129,0.16); border-color:rgba(16,185,129,0.5); color:#6ee7b7; }
+    .gd-choice.ng { background:rgba(239,68,68,0.14); border-color:rgba(239,68,68,0.45); color:#fca5a5; }
+    .gd-mark { flex-shrink:0; font-weight:800; }
+    .gd-exp { margin-top:0.55rem; padding:0.6rem 0.7rem; background:rgba(129,140,248,0.10); border:1px solid rgba(129,140,248,0.28); border-radius:9px; font-size:0.84rem; line-height:1.65; color:#cbd5e1; white-space:pre-wrap; word-break:break-word; }
+    .gd-score { text-align:center; padding:1rem 0.9rem; margin-bottom:1rem; background:linear-gradient(135deg,rgba(129,140,248,0.18),rgba(167,139,250,0.10)); border:1px solid rgba(129,140,248,0.42); border-radius:14px; }
+    .gd-score .n { display:block; font-size:2rem; font-weight:800; color:#c7d2fe; line-height:1.2; }
+    .gd-msg { text-align:center; color:#fca5a5; font-size:0.84rem; font-weight:700; min-height:1.2em; margin:0.3rem 0 0.6rem; }
+    .gd-submit-wrap { text-align:center; margin-bottom:0.6rem; }
+
     /* 出欠 */
     .att { margin-top:0.9rem; padding:0.8rem 0.9rem; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.28); border-radius:10px; }
     .att-row { display:flex; gap:0.5rem; flex-wrap:wrap; }
@@ -160,7 +180,7 @@
     </section>
 
     <section id="view-homework" class="view" hidden>
-      <h1 class="view-title">📝 宿題<span class="sub">出された宿題をアプリ内のドリルで解いて提出(自動採点)</span></h1>
+      <h1 class="view-title">📝 宿題<span class="sub">塾長から出された宿題と、単元ドリル（その場で自動採点）</span></h1>
       <div id="homeworkBody"><div class="loading">読み込み中…</div></div>
     </section>
 
@@ -683,25 +703,81 @@
     }
 
     // ===================== 宿題 (homework) =====================
+    // 宿題タブには 2 系統が同居する:
+    //   (A) クラス宿題 homework_assignments … 塾長が「クラスに宿題を出す」で配布。dojo-drill へのリンク。
+    //   (B) 科目別 単元ドリル grammar_drill  … 塾長が CEO「科目別 単元ドリル」で配信。固定N問・サーバ採点。
+    // (B) は AI 管理の生徒(mypage)と同じ機構で、2026-07-31 に塾生アプリでも解けるようにした。
+    var gdDrills = [];          // (B) の一覧。取得失敗時は [] だが gdFailed=true で「0件」と区別する。
+    var gdFailed = false;
+
+    // 宿題とドリルを並行取得。★ドリル側が落ちても宿題の表示は続ける (取得失敗 ≠ 0件)。
+    function _settle(p) { return p.then(function (d) { return { ok: true, d: d }; }, function (e) { return { ok: false, e: e }; }); }
+    function gdOpenCount() { return gdDrills.filter(function (x) { return x.status === 'open'; }).length; }
+    // 生の "Failed to fetch" 等を生徒に見せない
+    var GD_NET_MSG = '通信できませんでした。電波の良い場所でもう一度おためしください。';
+    function gdErrMsg(e) {
+      var m = (e && e.message) || '';
+      // 403 はサーバが「AI機能はご利用いただけません」と返すが、塾生アプリの生徒には意味不明。
+      // (静的が先に反映されて API がまだ旧版のときに起きる。数十秒で解消する)
+      if (e && e.status === 403) return 'いまは開けませんでした。少し待ってから、もう一度おためしください。';
+      // ★status で判定する。FastAPI 既定の 500 は detail が "Internal Server Error" なので
+      //   文字列判定だけだと英語のまま生徒に出る (同じ障害で日本語と英語が混在した)
+      if (e && e.status >= 500) return GD_NET_MSG;
+      if (!m || /failed to fetch|networkerror|load failed/i.test(m)) return GD_NET_MSG;
+      return m;
+    }
+
     async function loadHomework() {
       var body = document.getElementById('homeworkBody');
       body.innerHTML = '<div class="loading">読み込み中…</div>';
-      try {
-        var d = await api('/api/student/homework');
+      var r = await Promise.all([
+        _settle(api('/api/student/homework')),
+        _settle(api('/api/student/grammar-drills'))
+      ]);
+      var hwRes = r[0], gdRes = r[1];
+      // ★403 は「まだ API が旧版 (AIなし枠ゲートに /grammar-drill が未登録)」でも起きる。
+      //   静的(Vercel 数秒)が API(Railway ~1分)より先に反映されるので、その窓でエラー扱いにすると
+      //   ドリル0件の生徒にまで赤バナーが出る → 403 は静かに「0件」とみなす。
+      gdFailed = !gdRes.ok && !(gdRes.e && gdRes.e.status === 403);
+      gdDrills = gdRes.ok ? ((gdRes.d && gdRes.d.items) || []) : [];
+      if (!hwRes.ok) {
+        var e = hwRes.e;
+        if (e.status === 403) { body.innerHTML = '<div class="empty">この機能は通塾生のみ利用できます。</div>'; return; }
+        // 宿題APIが落ちても、取得できたドリルは出す (片方の失敗で両方消えるのを防ぐ)
+        // ★hwLoaded は true にする: false のままだとタブを移動して戻った瞬間に showTab が
+        //   loadHomework() を再実行し、解答中のドリルを確認なしで捨ててしまう (戻るconfirmの迂回路)
         hwLoaded = true;
-        renderHomework(d);
-        updateBadge('hwBadge', (d.summary && d.summary.open) || 0);
-      } catch (e) {
-        if (e.status === 403) { body.innerHTML = '<div class="empty">この機能は通塾生のみ利用できます。</div>'; }
-        else { body.innerHTML = '<div class="notice err"><h2>読み込みに失敗しました</h2>' + esc(e.message || '') + '</div>'; }
+        renderHomework({ items: [] }, gdErrMsg(e));
+        // ★両方落ちたときはバッジを触らない (未提出があるのに 0 に見えるのを防ぐ)
+        if (gdRes.ok) updateBadge('hwBadge', gdOpenCount());
+        return;
       }
+      hwLoaded = true;
+      renderHomework(hwRes.d);
+      // ★ドリルが取れなかったときはバッジを更新しない (0件と誤って「宿題なし」に見えるのを防ぐ。
+      //   古い数字が残るほうが、未提出を見落とすより安全)
+      if (!gdFailed) updateBadge('hwBadge', ((hwRes.d.summary && hwRes.d.summary.open) || 0) + gdOpenCount());
     }
-    function renderHomework(d) {
+    function _reloadBtn() { return '<div style="text-align:center;margin-top:0.7rem;"><button class="btn btn-ghost hw-reload">🔄 再読み込み</button></div>'; }
+    function _errBox(title, msg) { return '<div class="notice err" style="margin-bottom:0.9rem;"><h2>⚠️ ' + esc(title) + '</h2>' + esc(msg) + _reloadBtn() + '</div>'; }
+    function renderHomework(d, errMsg) {
       var body = document.getElementById('homeworkBody');
       var items = (d && d.items) || [];
-      if (!items.length) { body.innerHTML = '<div class="empty">📝 今は出ている宿題はありません。</div>'; return; }
+      var openDrills = gdDrills.filter(function (x) { return x.status === 'open'; });
+      var doneDrills = gdDrills.filter(function (x) { return x.status !== 'open'; });
+      // ★両方落ちたときに同じ赤い箱と再読み込みボタンを2つ並べない (どっちを押すのか分からなくなる)
+      var errBox = (errMsg && gdFailed) ? _errBox('読み込めませんでした', GD_NET_MSG)
+        : errMsg ? _errBox('宿題を読み込めませんでした', errMsg)
+          : gdFailed ? _errBox('ドリルを読み込めませんでした', GD_NET_MSG) : '';
+      if (!items.length && !gdDrills.length) {
+        // ★読み込みに失敗しているときに「ありません」と言い切らない (生徒が1行目だけ読んで離脱する)
+        body.innerHTML = errBox
+          + (errBox ? '' : '<div class="empty">📝 今は出ている宿題はありません。<br>新しい宿題やドリルが出るとここに届きます。</div>');
+        _wireReload(body);
+        return;
+      }
       var today = new Date().toISOString().slice(0, 10);
-      body.innerHTML = items.map(function (it) {
+      var hwHtml = items.map(function (it) {
         var done = it.status === 'completed';
         var overdue = !done && it.due_date && it.due_date < today;
         var statusChip = done ? '<span class="chip chip-done">完了</span>'
@@ -709,7 +785,7 @@
         // 科目 'chugaku' は中学(高校受験)ドリルへの内部キー。生の chugaku を生徒に見せない。
         // 単元チップが「中学英語 …」等で始まるときは科目チップが重複するだけなので出さない。
         // (ラベルは週次プリントの subjJa と同じ規約: chugaku → 中学)
-        var subjLabel = it.subject;
+        var subjLabel = gdSubjJa(it.subject) || it.subject;   // 'english' 等の生コードを見せない
         if (it.subject === 'chugaku') {
           subjLabel = /^中学/.test(it.topic || '') ? '' : '中学';
         }
@@ -723,8 +799,11 @@
         var drillUrl = 'dojo-drill.html' + (qp.length ? ('?' + qp.join('&')) : '');
         var actions = '<div class="row-actions">';
         if (!done) {
+          // ★ このカードは「別ページで練習 → 自分で完了を押す」型。単元ドリル(その場で自動採点)と
+          //   ボタンの色・形が似ているので、戻ってくることを一言添える。
           actions += '<a class="btn btn-primary" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>'
-            + '<button class="btn btn-green hw-done" data-id="' + it.id + '">✓ 提出（完了）にする</button>';
+            + '<button class="btn btn-green hw-done" data-id="' + it.id + '">✓ 提出（完了）にする</button>'
+            + '<div class="muted" style="flex-basis:100%;margin-top:0.35rem;">解き終わったら「✓ 提出（完了）にする」を押してね</div>';
         } else {
           actions += '<a class="btn btn-ghost" href="' + esc(drillUrl) + '">🔁 もう一度解く</a>';
         }
@@ -734,8 +813,24 @@
           + (done && it.completed_at ? ('<div class="muted" style="margin-top:0.4rem;">提出: ' + esc(fmtDate(it.completed_at)) + '</div>') : '')
           + actions + '</div>';
       }).join('');
+      // 提出済みドリルは溜まる一方 (mypage で解いたぶんも全部返ってくる) ので直近5件だけ出す。
+      // API は assigned_at DESC 順で返す = slice(0,5) が「最近の5件」。
+      var doneShown = doneDrills.slice(0, 5), doneRest = doneDrills.length - doneShown.length;
+      // 未提出ドリル → クラス宿題 → 提出済みドリル の順 (やることが上に来る)
+      body.innerHTML = errBox
+        + openDrills.map(gdCardHtml).join('') + hwHtml + doneShown.map(gdCardHtml).join('')
+        + (doneRest > 0 ? ('<div class="muted" style="text-align:center;margin-top:0.4rem;">ほかに完了したドリルが ' + doneRest + ' 件あります</div>') : '');
       body.querySelectorAll('.hw-done').forEach(function (btn) {
         btn.addEventListener('click', function () { completeHomework(btn); });
+      });
+      body.querySelectorAll('.gd-open').forEach(function (btn) {
+        btn.addEventListener('click', function () { gdOpen(btn.getAttribute('data-id')); });
+      });
+      _wireReload(body);
+    }
+    function _wireReload(root) {
+      root.querySelectorAll('.hw-reload').forEach(function (b) {
+        b.addEventListener('click', function () { hwLoaded = false; loadHomework(); });
       });
     }
     async function completeHomework(btn) {
@@ -746,6 +841,291 @@
         toast('提出しました！おつかれさま 🎉');
         hwLoaded = false; await loadHomework();
       } catch (e) { toast(e.message || '失敗しました', true); btn.disabled = false; btn.textContent = orig; }
+    }
+
+    // ===================== 📝 科目別 単元ドリル (grammar_drill) =====================
+    // 塾長が CEO「📝 科目別 単元ドリル」で配信した固定N問。ここで 解答 → サーバ採点 → 解説 まで完結する
+    // (AI 管理の生徒が mypage で解くのと同じ機構・同じ問題プール・同じ解答キー)。
+    // 解答は送るまでサーバが正解を返さない (未提出は answer/explanation を伏せて配信) ので答えは覗けない。
+    var GD_SUBJ_JA = { english: '英語', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会' };
+    // 「科目まるごと配信」(unit 未指定) のとき、サーバは unit を科目の日本語ラベルで補完する。
+    // その語がこちらの表示ラベルと違う科目 (english → サーバは「英文法」) があるので、
+    // 単元チップの重複判定はサーバ側の語も含めて見る。
+    var GD_SUBJ_ALIAS = { english: ['英語', '英文法'] };
+    var _has = Object.prototype.hasOwnProperty;   // subject に 'constructor' 等が来ても prototype を拾わない
+    function gdSubjJa(subject) { return _has.call(GD_SUBJ_JA, subject) ? GD_SUBJ_JA[subject] : ''; }
+    function gdIsSubjectUnit(unit, subject, label) {
+      if (!unit) return false;
+      var alias = _has.call(GD_SUBJ_ALIAS, subject) ? GD_SUBJ_ALIAS[subject] : [];
+      return unit === label || alias.indexOf(unit) >= 0;
+    }
+    var GD_MARKS = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧'];
+    function gdMark(i) { return GD_MARKS[i] || ('(' + (i + 1) + ')'); }
+    function gdScrollTop() { try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); } }
+    function gdBackHtml() { return '<div style="margin:0 0 0.9rem;"><button class="btn btn-ghost gd-back">← 宿題一覧に戻る</button></div>'; }
+    function gdWireBack(root) {
+      root.querySelectorAll('.gd-back').forEach(function (b) {
+        b.addEventListener('click', function () {
+          // 解答中に戻ると選んだ答えは消える (下書き保存は無い) ので、1つでも答えていたら確認する
+          var f = document.getElementById('gdForm');
+          if (f && f.querySelectorAll('input[type="radio"]:checked').length) {
+            if (!window.confirm('まだ提出していません。ここでやめると、答えたぶんが消えます。やめますか？')) return;
+          }
+          hwLoaded = false; gdScrollTop(); loadHomework();
+        });
+      });
+    }
+
+    // タイトルが既に絵文字で始まるとき (「🎯弱点対策 …」等) に 📝 を足すと二重になるので付けない。
+    // ★ \p{...} の正規表現は古い iOS Safari でパースエラー = script 全体が死ぬので、コードポイント判定にする。
+    function gdTitle(t) {
+      var s = String(t || 'ドリル');
+      var cp = s.codePointAt(0) || 0;
+      var isEmoji = (cp >= 0x1F000) || (cp >= 0x2190 && cp <= 0x2BFF);
+      return (isEmoji ? '' : '📝 ') + s;
+    }
+    // 日時列は naive UTC 保存 (本番 Postgres は Etc/UTC)。'Z' を補って端末のタイムゾーン(=JST)で日付を出す。
+    // これをやらないと朝5:30のルーティン配信が「前日 出題」と表示される。
+    function gdLocalDate(s, withTime) {
+      if (!s) return '';
+      var t = String(s).replace(' ', 'T');
+      if (!/[Zz]$|[+-]\d{2}:?\d{2}$/.test(t)) t += 'Z';
+      var d = new Date(t);
+      if (isNaN(d.getTime())) return String(s).slice(0, 16);
+      var ymd = d.getFullYear() + '-' + _pad2(d.getMonth() + 1) + '-' + _pad2(d.getDate());
+      return withTime ? (ymd + ' ' + _pad2(d.getHours()) + ':' + _pad2(d.getMinutes())) : ymd;
+    }
+    // 一覧に出すドリルカード (宿題カードと同じ見た目に揃える)
+    function gdCardHtml(it) {
+      var done = it.status !== 'open';
+      var chip = done ? '<span class="chip chip-done">完了</span>' : '<span class="chip chip-open">未提出</span>';
+      var sj = gdSubjJa(it.subject);
+      var title = String(it.title || 'ドリル');
+      var subjChip = sj ? ' <span class="chip chip-subj">' + esc(sj) + '</span>' : '';
+      // 科目まるごと配信は unit が科目名と同じ (例「数学」「英文法」) になる → チップ2連発を避ける。
+      // 既定タイトルは「{単元}ドリル（標準・25問）」なので、タイトルが単元で始まるときもチップは不要。
+      // indexOf >= 0: 既定タイトルは「{単元}ドリル（…）」だが「🎯弱点対策 {単元}ドリル」のように
+      // 単元が途中に来る配信もあるので、前方一致ではなく含有で見る
+      var unitDup = !it.unit || gdIsSubjectUnit(it.unit, it.subject, sj) || title.indexOf(it.unit) >= 0;
+      var unitChip = unitDup ? '' : (' <span class="chip chip-topic">🎯 ' + esc(it.unit) + '</span>');
+      var meta;
+      if (done) {
+        meta = 'スコア ' + esc(String(it.score_correct == null ? 0 : it.score_correct)) + ' / ' + esc(String(it.score_total || 0))
+          + (it.completed_at ? (' ・ 提出: ' + esc(gdLocalDate(it.completed_at, true))) : '');
+      } else {
+        var n = Number(it.score_total || 0);   // 未設定(NULL)の古い配信があるので「全 0 問」を出さない
+        var showN = n > 0 && title.indexOf(n + '問') < 0;   // タイトルに「25問」が入っていれば重ねない
+        meta = (showN ? ('全 ' + n + ' 問 ・ ') : '') + 'その場で自動採点 ・ いつでもOK'
+          + (it.assigned_at ? (' ・ 出題 ' + esc(gdLocalDate(it.assigned_at))) : '');
+      }
+      var actions = '<div class="row-actions"><button class="btn ' + (done ? 'btn-ghost' : 'btn-primary') + ' gd-open" data-id="'
+        + esc(String(it.drill_id)) + '">' + (done ? '🔁 解説を見る' : '▶ 解いて提出する') + '</button></div>';
+      return '<div class="card">' + chip + subjChip + unitChip
+        + '<div class="card-title">' + esc(gdTitle(it.title)) + '</div>'
+        + '<div class="card-meta">' + meta + '</div>' + actions + '</div>';
+    }
+
+    // 1問ぶん。review=true は採点後/提出ずみの復習表示 (正解・自分の解答・解説を出す)。
+    function gdQuestionHtml(q, review) {
+      var choices = q.choices || [];
+      var inner, noMark = '';
+      if (review) {
+        var ans = (q.answer == null) ? null : Number(q.answer);
+        var mine = (q.your_answer == null || q.your_answer === '') ? null : Number(q.your_answer);
+        // 25問だと「どれを間違えたか」を探すのが大変 → 問番号の横に正誤を出す
+        noMark = (mine == null) ? ' —' : (mine === ans ? ' ✅' : ' ❌');
+        inner = choices.map(function (c, i) {
+          var isAns = (ans != null && i === ans), isMine = (mine != null && i === mine);
+          var cls = 'gd-choice' + (isAns ? ' ok' : (isMine ? ' ng' : ''));
+          var tail = isAns ? (isMine ? ' ✅ 正解（あなたの解答）' : ' ✅ 正解') : (isMine ? ' ❌ あなたの解答' : '');
+          return '<div class="' + cls + '"><span class="gd-mark">' + gdMark(i) + '</span><span>' + esc(c) + tail + '</span></div>';
+        }).join('');
+        if (mine == null) inner += '<div class="card-meta" style="margin-top:0.3rem;">（未解答）</div>';
+        if (q.explanation) inner += '<div class="gd-exp"><b>💡 解説</b><br>' + esc(q.explanation) + '</div>';
+      } else {
+        var nm = 'gdq' + q.question_id;
+        inner = choices.map(function (c, i) {
+          return '<label class="gd-choice"><input type="radio" name="' + esc(nm) + '" data-qid="' + esc(String(q.question_id)) + '" value="' + i + '">'
+            + '<span><span class="gd-mark">' + gdMark(i) + '</span> ' + esc(c) + '</span></label>';
+        }).join('');
+      }
+      return '<div class="gd-q"><div class="gd-no">問 ' + esc(String(q.no)) + noMark + '</div>'
+        + '<div class="gd-stem">' + esc(q.stem) + '</div>' + inner + '</div>';
+    }
+
+    async function gdOpen(drillId) {
+      var body = document.getElementById('homeworkBody');
+      body.innerHTML = '<div class="loading">読み込み中…</div>';
+      gdScrollTop();
+      var data;
+      try { data = await api('/api/student/grammar-drill/' + encodeURIComponent(drillId)); }
+      catch (e) {
+        body.innerHTML = gdBackHtml() + _errBox('ドリルを開けませんでした', gdErrMsg(e));
+        gdWireBack(body); _wireReload(body); return;
+      }
+      var drill = data.drill || {}, qs = data.questions || [];
+      var review = (data.status === 'completed');
+      // ★ drill.level は 'standard,advanced' 等の内部コードなので生徒には出さない (単元だけ見せる)
+      var head = gdBackHtml()
+        + '<div class="gd-head"><div class="card-title" style="margin-top:0;">' + esc(gdTitle(drill.title)) + '</div>'
+        + (drill.unit ? '<div class="card-meta">' + esc(drill.unit) + '</div>' : '')
+        + (review
+          ? '<div class="gd-score" style="margin-top:0.7rem;">✅ 完了<span class="n">'
+            + esc(String(data.score_correct == null ? 0 : data.score_correct)) + ' / ' + esc(String(data.score_total || 0)) + '</span>'
+            + '<div class="card-meta" style="margin-top:0.25rem;">'
+            + ((data.score_total && data.score_correct === data.score_total) ? '🎉 全問正解！解説でもう一度確認しておこう' : 'まちがえた問題（❌）の解説を読み直しましょう')
+            + '</div></div>'
+          // 問題が0件のときは提出ボタン自体が出ないので、この案内文も出さない (矛盾防止)
+          : (qs.length ? '<div class="card-meta" style="margin-top:0.35rem;">全 ' + qs.length + ' 問。すべて答えてから「提出して採点する」を押してください。</div>' : ''))
+        + '</div>';
+      if (!qs.length) {
+        body.innerHTML = head + '<div class="empty">このドリルには表示できる問題がありません。塾長にご連絡ください。</div>';
+        gdWireBack(body); return;
+      }
+      var blocks = qs.map(function (q) { return gdQuestionHtml(q, review); }).join('');
+      // ★ 解答中は末尾に「戻る」を置かない = 提出ボタンのすぐ下にあると押し間違えて解答が消えるため
+      body.innerHTML = head
+        + (review ? (blocks + gdBackHtml())
+          : '<div id="gdForm">' + blocks + '</div><div class="gd-msg" id="gdMsg"></div>'
+            + '<div class="gd-submit-wrap"><button class="btn btn-green" id="gdSubmitBtn" data-total="' + qs.length + '">📤 提出して採点する</button></div>');
+      gdWireBack(body);
+      if (!review) {
+        var form = document.getElementById('gdForm');
+        if (form) {
+          form.addEventListener('change', function (ev) {  // 選択中の肢をハイライト (スマホで押した実感を出す)
+            var inp = ev.target;
+            if (!inp || inp.type !== 'radio') return;
+            form.querySelectorAll('input[name="' + inp.name + '"]').forEach(function (o) {
+              var lb = o.closest('.gd-choice'); if (lb) lb.classList.toggle('sel', o.checked);
+            });
+            // ★答えたら未回答マークと警告文を更新する。残したままだと「タップが効いていない」に見える
+            var qb = inp.closest('.gd-q'); if (qb) qb.classList.remove('unanswered');
+            var m = document.getElementById('gdMsg');
+            if (m && m.textContent) {
+              var left = qs.length - form.querySelectorAll('input[type="radio"]:checked').length;
+              m.textContent = left > 0 ? ('⚠ あと ' + left + ' 問') : '';
+            }
+          });
+        }
+        var sbtn = document.getElementById('gdSubmitBtn');
+        if (sbtn) sbtn.addEventListener('click', function () { gdSubmit(drillId, qs.length, sbtn); });
+      }
+      gdApplyMath(body, JSON.stringify(qs));
+    }
+
+    async function gdSubmit(drillId, total, btn) {
+      var body = document.getElementById('homeworkBody');
+      var form = document.getElementById('gdForm'), msg = document.getElementById('gdMsg');
+      if (!form) return;
+      var answers = {};
+      form.querySelectorAll('input[type="radio"]:checked').forEach(function (inp) {
+        answers[inp.getAttribute('data-qid')] = Number(inp.value);
+      });
+      var n = Object.keys(answers).length;
+      form.querySelectorAll('.gd-q.unanswered').forEach(function (q) { q.classList.remove('unanswered'); });
+      if (total && n < total) {
+        // ★ 25問だと未回答を目で探せない → 印を付けて最初の未回答へスクロールする
+        var nos = [], first = null;
+        form.querySelectorAll('.gd-q').forEach(function (q) {
+          if (q.querySelector('input[type="radio"]:checked')) return;
+          q.classList.add('unanswered');
+          if (!first) first = q;
+          var lb = q.querySelector('.gd-no');
+          if (lb && nos.length < 3) nos.push(lb.textContent.replace(/\s+/g, ''));
+        });
+        var warn = '⚠ ' + nos.join('・') + ((total - n) > nos.length ? ' ほか' : '') + ' がまだです（あと ' + (total - n) + ' 問）';
+        if (msg) msg.textContent = warn;
+        // スクロールすると上の文字は画面外に去るので、トーストでも残数を伝える
+        toast(warn.replace('⚠ ', ''), true);
+        if (first) { try { first.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { first.scrollIntoView(); } }
+        return;
+      }
+      if (msg) msg.textContent = '';
+      btn.disabled = true; btn.textContent = '⏳ 採点中…';
+      var res;
+      try {
+        res = await api('/api/student/grammar-drill/' + encodeURIComponent(drillId) + '/submit',
+          { method: 'POST', body: JSON.stringify({ answers: answers }) });
+      } catch (e) {
+        // 二重提出 (別端末で先に出した等) は失敗ではないので、提出ずみの画面を開き直す
+        if (e.status === 409) { toast('このドリルは提出ずみです'); hwLoaded = false; gdOpen(drillId); return; }
+        if (msg) msg.textContent = '❌ 提出できませんでした。' + gdErrMsg(e);
+        btn.disabled = false; btn.textContent = '📤 提出して採点する';
+        return;
+      }
+      hwLoaded = false;  // 一覧に戻ったら最新(完了扱い)で読み直す
+      // このドリルは提出済みになったので、一覧に戻る前にタブのバッジを減らしておく
+      gdDrills.forEach(function (x) { if (String(x.drill_id) === String(drillId)) x.status = 'completed'; });
+      var badge = document.getElementById('hwBadge');
+      var curTxt = (badge && badge.textContent) || '';
+      var cur = parseInt(curTxt, 10);
+      // '99+' は実数が分からないので触らない (すぐ後の loadHomework が正しい数に直す)
+      if (curTxt.indexOf('+') < 0 && cur > 0) updateBadge('hwBadge', cur - 1);
+      gdRenderResult(body, res);
+    }
+
+    function gdRenderResult(body, res) {
+      var results = (res && res.results) || [];
+      var correct = (res && res.score_correct != null) ? res.score_correct : 0;
+      var total = (res && res.score_total != null) ? res.score_total : results.length;
+      var pct = (res && res.percentage != null) ? res.percentage : (total ? Math.round(100 * correct / total) : 0);
+      var word = pct >= 80 ? '🎉 よくできました!' : (pct >= 60 ? '👍 もう一歩!' : '📖 まちがえた問題の解説を読みましょう');
+      var blocks = results.map(function (r) {
+        return gdQuestionHtml({
+          no: r.no, question_id: r.question_id, stem: r.stem, choices: r.choices,
+          answer: r.correct_answer, your_answer: r.your_answer, explanation: r.explanation
+        }, true);
+      }).join('');
+      body.innerHTML = gdBackHtml()
+        + '<div class="gd-score">採点結果<span class="n">' + esc(String(correct)) + ' / ' + esc(String(total)) + '</span>'
+        + '<div class="card-meta" style="margin-top:0.25rem;">' + esc(String(pct)) + '% ・ ' + word + '</div></div>'
+        + blocks + gdBackHtml();
+      gdWireBack(body);
+      gdApplyMath(body, JSON.stringify(results));
+      gdScrollTop();
+      toast('提出しました！' + correct + ' / ' + total + ' 正解' + (pct >= 80 ? ' 🎉' : ''));
+    }
+
+    // 数式の描画。英語ドリルには数式が無いので、必要な問題が来たときだけ KaTeX を後から読み込む
+    // (/vendor/ 同梱・CDN 禁止。読み込み失敗時は素のテキストのまま=表示は壊れない)。
+    var _gdKatex = null;
+    function gdLoadKatex() {
+      if (_gdKatex) return _gdKatex;
+      _gdKatex = new Promise(function (resolve) {
+        var css = document.createElement('link');
+        css.rel = 'stylesheet'; css.href = '/vendor/katex/katex.min.css?v=0.16.11';
+        document.head.appendChild(css);
+        var s1 = document.createElement('script');
+        s1.src = '/vendor/katex/katex.min.js?v=0.16.11';
+        s1.onerror = function () { resolve(false); };
+        s1.onload = function () {
+          var s2 = document.createElement('script');
+          s2.src = '/vendor/katex/auto-render.min.js?v=0.16.11';
+          s2.onload = function () { resolve(true); };
+          s2.onerror = function () { resolve(false); };
+          document.head.appendChild(s2);
+        };
+        document.head.appendChild(s1);
+      });
+      return _gdKatex;
+    }
+    function gdApplyMath(root, rawText) {
+      if (!root || !/\$|\\\(|\\\[|\\frac|\\sqrt|\\times|\\geq|\\leq/.test(rawText || '')) return;
+      gdLoadKatex().then(function (ok) {
+        if (!ok || typeof window.renderMathInElement !== 'function') return;
+        try {
+          window.renderMathInElement(root, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '\\[', right: '\\]', display: true },
+              { left: '\\(', right: '\\)', display: false },
+              { left: '$', right: '$', display: false }
+            ],
+            // trust:false = \href/\url を無効化 (問題文由来のリンク注入を塞ぐ・既定値だが明示して固定)
+            throwOnError: false, errorColor: '#f87171', strict: 'ignore', trust: false
+          });
+        } catch (e) { /* 描画できなくても素のテキストで読める */ }
+      });
     }
 
     // ===================== メッセージ (messages) =====================
@@ -857,8 +1237,18 @@
       showTab('schedule');
       // 塾長登録の休塾日/予定 + 自分の出欠を読み込んで再描画（祝日カレンダーは即表示済み）
       Promise.all([loadCalendar(), loadMyAttend()]).then(function () { renderSchedule(); });
-      // バッジ（宿題未提出・メッセージ未読）を先読み
-      api('/api/student/homework').then(function (d) { updateBadge('hwBadge', (d.summary && d.summary.open) || 0); }).catch(function () {});
+      // バッジ（宿題未提出・メッセージ未読）を先読み。宿題タブは クラス宿題 + 単元ドリル の未提出合計。
+      Promise.all([
+        _settle(api('/api/student/homework')),
+        _settle(api('/api/student/grammar-drills'))
+      ]).then(function (r) {
+        // ★片方でも取れなければバッジを出さない (部分合計 = 未提出があるのに少なく見える。
+        //   loadHomework と同じ方針。タブを開けば正しい数字と赤バナーが出る)
+        if (!r[0].ok || !r[1].ok) return;
+        var n = ((r[0].d.summary && r[0].d.summary.open) || 0)
+          + ((r[1].d.items) || []).filter(function (x) { return x.status === 'open'; }).length;
+        updateBadge('hwBadge', n);
+      }).catch(function () {});
       api('/api/messages/me/unread-count').then(function (d) { updateBadge('msgBadge', d.unread_count || 0); }).catch(function () {});
       // タブ
       Array.prototype.forEach.call(document.querySelectorAll('#tabbar button'), function (b) {
