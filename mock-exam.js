@@ -110,6 +110,9 @@
 
   function renderQuestion(sec, q, sIdx, qIdx) {
     const passage = q.passage ? `<div class="me-passage"><pre>${_meProtectMath(escapeHtmlBody, q.passage)}</pre></div>` : '';
+    // 図版は本文の前に置く (本番の共通テストも資料が先・本文が後)
+    const figSvg = _meSanitizeSvg(q.figure_svg || q.figure || '');
+    const figure = figSvg ? `<div class="me-figure">${figSvg}</div>` : '';
     const audio = q.audio_script ? `<details class="me-audio-script"><summary>📢 音声スクリプト</summary><pre>${escapeHtmlBody(q.audio_script)}</pre></details>` : '';
     const prompt = q.prompt ? `<div class="me-prompt"><strong>${_meProtectMath(escapeHtmlBody, q.prompt)}</strong></div>` : '';
     const yearLabel = q.year_simulated || q.univ_simulated ? `<div class="me-q-meta">${escapeHtml(q.univ_simulated || '')} ${q.year_simulated || ''}</div>` : '';
@@ -165,6 +168,7 @@
       <article class="me-question">
         ${yearLabel}
         ${prompt}
+        ${figure}
         ${passage}
         ${audio}
         ${subQs}
@@ -503,6 +507,40 @@
   function escapeHtml(s) {
     if (s == null) return '';
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // 🖼 [2026-08-02] 大問の図版 (figure_svg) を描画。共通テスト英語はカレンダー/ポスター/
+  //   比較表/グラフが大問ごとに付き、これが無いと設問の根拠が読み取れない。
+  //   ★ sanitize は dojo-drill.html の _ddSanitizeSvg と同一方式にすること。
+  //     正規表現サニタイズは HTML パーサとの解釈差で `/onmouseover=` 等がすり抜ける
+  //     (レビューで実証された XSS)。innerHTML と同じ text/html でパースし、DOM 木を
+  //     allowlist で歩いて (a) 許可外要素を除去 (b) on* 属性を全除去
+  //     (c) href/xlink:href はフラグメント参照のみ (d) 危険な style を除去 → 直列化。
+  //     失敗時は fail-closed で空文字 (図を出さない)。
+  var _ME_SVG_OK = new Set(['svg', 'g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon',
+    'path', 'text', 'tspan', 'defs', 'lineargradient', 'radialgradient', 'stop', 'title', 'desc',
+    'marker', 'clippath', 'use', 'symbol', 'pattern']);
+  function _meSanitizeSvg(s) {
+    if (!s || typeof s !== 'string' || s.indexOf('<svg') < 0) return '';
+    try {
+      const doc = new DOMParser().parseFromString('<div>' + s + '</div>', 'text/html');
+      const svg = doc.body && doc.body.querySelector('svg');
+      if (!svg) return '';
+      const clean = (el) => {
+        Array.from(el.attributes).forEach((a) => {
+          const n = a.name.toLowerCase();
+          if (/(?:^|:)on/.test(n)) { el.removeAttribute(a.name); return; }
+          if (n === 'href' || n === 'xlink:href') { if (!/^\s*#/.test(a.value)) el.removeAttribute(a.name); return; }
+          if (n === 'style' && /url\s*\(|expression|javascript:/i.test(a.value)) el.removeAttribute(a.name);
+        });
+        Array.from(el.children).forEach((c) => {
+          if (!_ME_SVG_OK.has(c.tagName.toLowerCase())) { c.remove(); return; }
+          clean(c);
+        });
+      };
+      clean(svg);
+      return svg.outerHTML;
+    } catch (e) { return ''; }
   }
 
   // 🧮 [全教科模試 2026-06-17] 数学/理科の LaTeX 数式を教科書通りに描画 (dojo-drill と同方式)。

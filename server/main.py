@@ -36332,6 +36332,12 @@ def mock_exam_generate(payload: dict, request: Request, authorization: Optional[
                 "passage": qdata.get("passage", ""),
                 "audio_script": qdata.get("audio_script", ""),
                 "prompt": qdata.get("prompt", ""),
+                # 🖼 2026-08-02: 図版を view に含める。共通テスト英語はカレンダー/ポスター/
+                #   比較表/グラフが大問ごとに付き、これが無いと設問の根拠が読み取れない。
+                #   これまで payload に入っておらず、図付きの大問 (dojo_eng_kyotsu2026_graph
+                #   の 6 大問など) は Web 受験だと図が出ないまま出題されていた。
+                #   描画側 (mock-exam.js) は dojo-drill.html と同じ DOM allowlist で sanitize する。
+                "figure_svg": qdata.get("figure_svg", ""),
                 "year_simulated": qdata.get("year_simulated"),
                 "univ_simulated": qdata.get("univ_simulated"),
                 "questions": sub_questions,
