@@ -54,9 +54,27 @@ CANON = {
     'english': ['🎯 コアイメージ', '🔬 文構造分析', '📍 本文の根拠', '❌ 誤答 NG 理由'],
     'kokugo': ['現代語訳', '解答の根拠', '誤答 NG 理由'],
     'rikei': ['考え方|方針', '立式', '計算', '答え'],
-    'shakai': [],   # server 側に専用プロンプトが無い (英語プロンプトに相乗り) = 正典未定義
+    # 社会は 2026-08-02 に server 側へ正典を定義した (_generate_shakai_exam_question)。
+    # ハードコードせず main.py の SHAKAI_EXPLANATION_SECTIONS から読む = 二重管理を避ける。
+    'shakai': None,
     'drill': [],
 }
+
+
+def _shakai_canon():
+    """server/main.py が宣言している社会の正典セクションを読む。"""
+    try:
+        src = open(MAIN_PY, encoding='utf-8').read()
+    except OSError:
+        return []
+    m = re.search(r'SHAKAI_EXPLANATION_SECTIONS\s*=\s*\(([^)]*)\)', src)
+    if not m:
+        return []
+    keymap = {'【単元】': '単元', '答え:': '答え', '解説:': '解説', '補足:': '補足'}
+    return [keymap.get(s, s) for s in re.findall(r'"([^"]+)"', m.group(1))]
+
+
+CANON['shakai'] = _shakai_canon()
 
 # 解説の「型」を判定するためのマーカー。多数派の型を測るのに使う。
 MARKERS = [
