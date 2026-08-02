@@ -252,14 +252,14 @@ E(G, 0,
          "and [74% said [(that) they feel sleepy during first period]].`\n"
          "  M=Of those (回答した 478 人のうち)\n"
          "  S=74% / V=said / O=that 節 (S=they / V=feel / C=sleepy / M=during first period)",
-  konkyo="第1段「we asked all 612 students at this school ~, and 478 students answered. "
+  konkyo="第1段「our committee asked all 612 students at this school ~, and 478 students answered. "
          "Of those, 61% ~, and **74% said that they feel sleepy during first period**」\n"
          "74% ≒ 4 分の 3 で、母数は「回答した生徒」である。",
-  ng=["`we asked all 612 students ~ and 478 students answered` より、"
+  ng=["`our committee asked all 612 students ~ and 478 students answered` より、"
       "回答したのは 478 人。全員ではない。`asked` と `answered` の主語の違いが急所。",
       "8:45 は第3段で紹介される**他県の高校の事例**の時刻であり、"
       "この学校の生徒の希望として調査された事実はない。",
-      "西側から通う生徒については `must leave home before 7:00` とあるだけで、"
+      "西側から通う生徒については `have to leave home before 7:00` とあるだけで、"
       "遅刻が最も多いという記述はない。"])
 
 E(G, 1,
@@ -294,8 +294,8 @@ E(G, 2,
          "根拠となるデータは示されておらず、委員会の判断として述べられている。",
   ng=["第1段の調査結果の数値そのもので、検証可能な**事実**。",
       "第3段で紹介される他県の研究結果の数値で、**事実**として提示されている。",
-      "最終段の `Club activities would lose about thirty minutes of practice time on weekdays` は、"
-      "始業を遅らせた場合に生じる時間の計算であり、事実として述べられている。"])
+      "第2段 `Students who travel by train from the west side of the city have to leave home "
+      "before 7:00` は通学の実態を述べた**事実**。時刻という検証できる情報しか含まない。"])
 
 E(G, 3,
   core="- `though` = 譲歩の接続詞。直前の肯定的な内容に留保をつける\n"
@@ -493,10 +493,13 @@ E(G, 4,
   kouzou="`[A shorter journey] is [not always] rated [as a better one].`\n"
          "  S=A shorter journey / V=is rated (受動態) / C=as a better one / M=not always (部分否定)\n"
          "  → 「短い方が高評価」が**常には**成り立たないことを 1 例でも示せばよい",
-  konkyo="REPORT A: Train 42 min = 2.9 に対し Bus 35 min = 2.6。**短い方が低評価**。\n"
-         "REPORT B:「**Students who had to change trains once rated their journey higher (2.6) "
-         "than students who took a single direct train (2.1).**」乗り換えありの方が高評価。\n"
-         "2 つの資料の双方に反例があり、部分否定が支持される。",
+  konkyo="REPORT A: Train 42 min = 2.9 に対し Bus 35 min = 2.6。**より短いバスの方が低評価**で、"
+         "所要時間と満足度が単純に対応していない。\n"
+         "REPORT B:「the most common answer was **not the length of the journey but the crowding**」と、"
+         "所要時間が主因であることを正面から否定している。"
+         "さらに「Students who had to change trains once rated their journey higher (2.6) "
+         "than students who took a single direct train (2.1).」も同じ向きの例。\n"
+         "2 つの資料のどちらにも反例があるので、部分否定 `not always` が支持される。",
   ng=["`always` を含む全称命題。REPORT A の Train (42 min・2.9) > Bus (35 min・2.6) が反例になる。",
       "REPORT A で Bicycle 3.8 は Train 2.9・Bus 2.6 より高い。逆の記述。",
       "REPORT B は自校の train 評価 2.2 が市の 2.9 より `much lower` と明記しており、"
