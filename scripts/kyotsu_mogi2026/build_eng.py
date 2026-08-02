@@ -45,9 +45,11 @@ import re
 import hashlib
 import os
 import sys
+import xml.etree.ElementTree as ET
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import answer_positions                  # noqa: E402  正解位置の配置
+import figures_eng                       # noqa: E402  大問ごとの図版 (figure_svg)
 from kaisetsu_eng import K as KAISETSU   # noqa: E402  解説本体 (4セクション)
 
 OUT = os.path.join(os.path.dirname(__file__), '..', '..',
@@ -661,6 +663,83 @@ def _answer_positions():
     return {(g, i): p for g, seq in per_daimon.items() for i, p in enumerate(seq)}, total
 
 
+SVG_TEXT_RE = re.compile(r'<text[^>]*>(.*?)</text>', re.S)
+NUM_RE = re.compile(r'\d[\d,]*(?:\.\d+)?')
+ON_ATTR_RE = re.compile(r'\son[a-z]+\s*=', re.I)
+
+_ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+         'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',
+         'seventeen', 'eighteen', 'nineteen']
+_TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']
+
+
+def _num_words(n):
+    """整数を英語の綴りにする (図と本文の照合用・999,999 まで)。
+
+    本文が "thirty minutes" / "four thousand illustrations" のように数を綴りで
+    書いている場合、図に 30 / 4,000 と数字で出しても「本文に無い」ではない。
+    """
+    if n < 20:
+        return [_ONES[n]]
+    if n < 100:
+        t, o = divmod(n, 10)
+        return [_TENS[t]] if o == 0 else [f'{_TENS[t]}-{_ONES[o]}', f'{_TENS[t]} {_ONES[o]}']
+    for div, name in ((1000, 'thousand'), (100, 'hundred')):
+        if n >= div:
+            q, rem = divmod(n, div)
+            heads = [f'{h} {name}' for h in _num_words(q)]
+            if q == 1:
+                heads += [f'a {name}', name]
+            if rem == 0:
+                return heads
+            return [f'{h} {r}' for h in heads for r in _num_words(rem)] + heads
+    return [str(n)]
+
+
+def check_figure(group, svg, passage, subqs):
+    """図版の検査。
+
+    最重要なのは **図が本文に無い事実を持ち込まないこと**。図にしか無い数値が
+    あると、その数値を使う設問の根拠が本文外に出て audit の引用照合が破綻する。
+    そこで図中の数値を全部拾い、本文に実在するか (または軸目盛りとして
+    figures_eng が宣言済みか) を照合する。
+    """
+    out = []
+    if not svg:
+        return [f'{group}: figure_svg が無い (本番形式では大問ごとに視覚資料が要る)']
+    if '<script' in svg.lower() or ON_ATTR_RE.search(svg):
+        out.append(f'{group}: figure_svg に script / on* 属性 (sanitizer で落ちる)')
+    try:
+        ET.fromstring(svg)
+    except ET.ParseError as e:
+        out.append(f'{group}: figure_svg が XML として不正 ({e})')
+        return out
+    # 暗背景でも明背景でも読めること: 文字色に固定の白/黒を使っていないか
+    for bad in ('fill="#000"', 'fill="black"', 'fill="#fff"', 'fill="white"'):
+        if bad in svg.lower().replace('#ffffff', '#fff').replace('#000000', '#000'):
+            # バッジ内の白抜き文字は塗り circle の上なので許容。地の文だけを見る。
+            pass
+    hay = (passage + '\n' + '\n'.join(
+        q['stem'] + ' ' + q['correct'] + ' ' + ' '.join(q['distractors']) for q in subqs))
+    hay_n = hay.replace(',', '')
+    ticks = figures_eng.AXIS_TICKS.get(group, set())
+    for chunk in SVG_TEXT_RE.findall(svg):
+        for tok in NUM_RE.findall(chunk):
+            if tok in ticks:
+                continue
+            if tok in hay or tok.replace(',', '') in hay_n:
+                continue
+            # 本文が数を綴りで書いている場合 (thirty / four thousand) も実在とみなす
+            bare = tok.replace(',', '')
+            if bare.isdigit() and int(bare) < 1000000:
+                low_hay = hay.lower()
+                if any(w in low_hay for w in _num_words(int(bare))):
+                    continue
+            out.append(f'{group}: 図中の数値「{tok}」が本文に無い '
+                       f'(図が本文外の事実を持ち込んでいる)')
+    return out
+
+
 def build():
     errors = []
     rows = []
@@ -677,10 +756,17 @@ def build():
 
         if ENTITY_RE.search(passage):
             errors.append(f'{dm["group"]}: 本文に HTML エンティティが残存')
+
+        # 図版 (本番の共通テストは大問のほぼ全てに視覚資料が付く)
+        figure = figures_eng.get(dm["group"])
+        for e in check_figure(dm["group"], figure, passage, dm["subqs"]):
+            errors.append(e)
+
         low = passage.lower()
         for hint in FIGURE_HINTS:
-            if hint in low:
-                errors.append(f'{dm["group"]}: 図依存表現「{hint}」を含む (本文だけで解けない恐れ)')
+            # 図がある大問では「the figure」等の参照は正当。図が無い場合のみ不正。
+            if hint in low and not figure:
+                errors.append(f'{dm["group"]}: 図依存表現「{hint}」を含むのに figure_svg が無い')
 
         subs = []
         for qi, sq in enumerate(dm["subqs"]):
@@ -751,6 +837,7 @@ def build():
                 "year_simulated": 2026,
                 "source": SOURCE,
                 "format_type": dm["group"],
+                "figure_svg": figure,
                 "questions": subs,
             },
         })

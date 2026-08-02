@@ -16,6 +16,8 @@ build 側は「正解が合っているか」「フォーマットが揃って�
   I. PDF ↔ JSON        PDF の正解一覧が JSON の answer と一致するか
   J. 本番形式の要件     場面設定 250 字以上 / 誘導連鎖が各大問にあるか
   K. 正解番号の偏り     大問内で同じ番号が半数以上でないか / 同じ番号が連続しないか
+  L. 図版               英語の全大問に figure_svg があるか / SVG が安全で妥当か /
+                        図中の数値が本文に実在するか (図が本文外の事実を持ち込まないか)
 
 実行: python3 scripts/kyotsu_mogi2026/audit.py
 """
@@ -261,6 +263,47 @@ def check_pdfs():
 
 
 # =====================================================================
+def check_figures(rows):
+    """L. 図版。本番の共通テストは大問ごとに視覚資料が付く。
+
+    最大の危険は「図にしか無い数値」。それがあると設問の根拠が本文の外に出る。
+    build_eng.py と同じ照合をここでも独立に回す (ビルダーを信用しない)。
+    """
+    import xml.etree.ElementTree as ET
+    sys.path.insert(0, HERE)
+    import build_eng          # noqa: E402  数値の綴り展開と図版検査を共有
+    import figures_eng        # noqa: E402
+    n_fig = 0
+    for r in rows:
+        qd = r['question_data']
+        label = qd.get('format_type')
+        svg = qd.get('figure_svg') or ''
+        if not svg:
+            err(f'英語/{label}: figure_svg が無い (本番形式では大問ごとに視覚資料が要る)')
+            continue
+        n_fig += 1
+        if '<script' in svg.lower() or re.search(r'\son[a-z]+\s*=', svg, re.I):
+            err(f'英語/{label}: figure_svg に script / on* 属性')
+        try:
+            ET.fromstring(svg)
+        except ET.ParseError as e:
+            err(f'英語/{label}: figure_svg が XML として不正 ({e})')
+            continue
+        # 明背景 (PDF) でも暗背景 (Web) でも読めるように currentColor を使っているか
+        if 'currentColor' not in svg:
+            err(f'英語/{label}: figure_svg が currentColor を使っていない '
+                f'(白背景か暗背景のどちらかで文字が沈む)')
+        subs = [{'stem': q['stem'],
+                 'correct': q['choices'][q['answer']],
+                 'distractors': [c for j, c in enumerate(q['choices']) if j != q['answer']]}
+                for q in qd['questions']]
+        for e in build_eng.check_figure(label, svg, qd['passage'], subs):
+            err(f'英語/{e}')
+        _ = figures_eng.AXIS_TICKS.get(label)   # 宣言漏れの検知は check_figure 側
+    return n_fig
+
+
+# =====================================================================
 def main():
     if not shutil_which('pdftotext'):
         warn('pdftotext が無いため PDF の点検を飛ばした (apt-get install poppler-utils)')
@@ -319,6 +362,10 @@ def main():
                 err(f'{nm}/{lab}: 同じ番号が {run} 問連続 ({"".join(circ[a] for a in ans)})')
                 n_run += 1
     print(f'   {"✅" if n_bad + n_run == 0 else "❌"} 半数以上の偏り {n_bad} 件 / 連続 {n_run} 件')
+
+    print('\n[L] 図版 (英語)')
+    n_fig = check_figures(eng)
+    print(f'   {n_fig}/{len(eng)} 大問に図版あり (SVG の妥当性・数値の裏取りを確認)')
 
     print('\n[G] 既存プールとの重複')
     check_dup_against_pool(eng, '英語')

@@ -22,6 +22,17 @@
 - **数学の正解は手入力しない**。`correct`/`distractors` を「LaTeX と sympy 値」の組で持ち、`verify()` で独立に再計算して照合する。誤答が正解と同値でないことも確認する (別表記の同値が混じると正解が 2 つある問題になる)。
 - **正解番号は大問ごとに 0〜3 の順列で配る** (`scripts/kyotsu_mogi2026/answer_positions.py`)。全体だけ均等にしても大問内が偏る (実測で 3 連続・21大問中10大問が半数以上)。生徒は大問単位で解く。
 - **解説が引用する英文は本文に実在させる**。要約を引用符で囲まない。`audit.py` が全数照合する。
+- **英語の模試は大問ごとに図版 (`question_data.figure_svg`) を付ける**。本番の共通テスト リーディングは
+  カレンダー/ポスター/比較表/グラフ/イラスト/時系列図が全大問に付く。本文だけだと「読解問題」にはなっても
+  「共通テスト形式」にはならない (2026-08-02 塾長指摘)。図の作法は `scripts/kyotsu_mogi2026/figures_eng.py`:
+  - **図に本文に無い数値を出さない**。出すと設問の根拠が本文外に出て引用照合が破綻する。
+    `build_eng.py::check_figure` が図中の全数値を本文と照合する (綴り字 "thirty" ↔ 30 も解決する)。
+    軸の目盛りだけは `figures_eng.AXIS_TICKS` に宣言して除外する。
+  - **線と文字は `currentColor`**。PDF は白地・Web アプリは暗地なので、固定色だとどちらかで沈む。
+    塗りは中間色 (#3b82f6 / #ef4444 / #22c55e / #f59e0b) のみ。
+  - **✓ / ✗ は文字で置かず線で描く**。日本語フォントに無いと PDF で豆腐になる。
+  - `<script>` と `on*` 属性は禁止 (server 側 sanitizer で落ちる)。
+  - ★ `mock-exam.js` は `figure_svg` を描画しない (未対応)。Web 受験に載せるならフロント側の対応が要る。
 - **PDF を作るなら passage / stem / choices / explanation の 4 つを漏れなく KaTeX に通す**。通し忘れると日本語フォントで `¥(AB=6¥)` と出る。整形は必ず LaTeX 描画の**前**に行う (後だと SVG path が本文に漏れる)。
 - 作ったら `scripts/kyotsu_mogi2026/preflight.py` (取込契約) と `audit.py` (総点検) を必ず通す。詳細な経緯は `scripts/kyotsu_mogi2026/README.md`。
 

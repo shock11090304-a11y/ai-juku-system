@@ -156,6 +156,8 @@ body {
 }
 .daimon-head .pt { font-size: 9.5pt; opacity: .92; }
 .lead { font-size: 9pt; color: #4a5261; margin: 2.5mm 0 3mm; }
+.figure { margin: 3mm 0 4mm; text-align: center; page-break-inside: avoid; }
+.figure svg { max-width: 100%; height: auto; color: #16181d; }
 .passage { border: 1px solid #d5dce5; background: #fafbfd; border-radius: 3px; padding: 4mm 5mm; margin-bottom: 5mm; }
 .passage .ps { margin: 0 0 2.6mm; white-space: pre-wrap; }
 .passage .ps:last-child { margin-bottom: 0; }
@@ -301,6 +303,10 @@ def render_daimon(dm, label, pts, lead=None):
              f'<span class="pt">配点 {sum(pts)} 点</span></div>']
     if lead:
         parts.append(f'<div class="lead">{esc(lead)}</div>')
+    # 図版 (共通テストは大問ごとに視覚資料が付く)。SVG は currentColor で描いてあるので
+    # 紙面の文字色をそのまま継承する = 白背景でも沈まない。
+    if qd.get('figure_svg'):
+        parts.append(f'<div class="figure">{qd["figure_svg"]}</div>')
     parts.append(f'<div class="passage">{qd["passage"]}</div>')
     for i, q in enumerate(qd['questions']):
         ch = ''.join(f'<li><span class="mk">{CIRCLED[j]}</span>{c}</li>'
@@ -401,6 +407,9 @@ def render_explanations(daimons):
     for dm, label, pts in daimons:
         parts.append(f'<section class="daimon"><div class="daimon-head">'
                      f'<span>{esc(label)}</span><span class="pt">配点 {sum(pts)} 点</span></div>')
+        # 解説を読み直すときに図が手元に無いと根拠を追えないので、冊子側にも出す
+        if dm['question_data'].get('figure_svg'):
+            parts.append(f'<div class="figure">{dm["question_data"]["figure_svg"]}</div>')
         for i, q in enumerate(dm['question_data']['questions']):
             correct = q['choices'][q['answer']]      # 正解は必ず answer から引く (解説文の書式に依存しない)
             parts.append(
