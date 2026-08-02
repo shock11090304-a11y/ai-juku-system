@@ -15,6 +15,7 @@ build 側は「正解が合っているか」「フォーマットが揃って�
   H. PDF の組版事故     KaTeX の SVG path 流出 / 未描画の LaTeX (¥ 表示) / Markdown 記号の生表示
   I. PDF ↔ JSON        PDF の正解一覧が JSON の answer と一致するか
   J. 本番形式の要件     場面設定 250 字以上 / 誘導連鎖が各大問にあるか
+  K. 正解番号の偏り     大問内で同じ番号が半数以上でないか / 同じ番号が連続しないか
 
 実行: python3 scripts/kyotsu_mogi2026/audit.py
 """
@@ -294,6 +295,27 @@ def main():
         if chained == 0:
             err(f'{g}: 誘導連鎖 (前問の結果を使う小問) が 1 つも無い')
         print(f'   {g:16} 場面設定 {len(qd["passage"]):4}字 / 誘導連鎖 {chained} 問')
+
+    print('\n[K] 正解番号の偏り (大問単位)')
+    circ = '①②③④'
+    n_bad = n_run = 0
+    for rows_, nm in ((eng, '英語'), (math, '数学(単元別)'), (math_exam, '数学(本番形式)')):
+        for r in rows_:
+            qd = r['question_data']
+            lab = qd.get('group') or qd.get('format_type')
+            ans = [q['answer'] for q in qd['questions']]
+            run = cur = 1
+            for j in range(1, len(ans)):
+                cur = cur + 1 if ans[j] == ans[j - 1] else 1
+                run = max(run, cur)
+            top = max(set(ans), key=ans.count)
+            if ans.count(top) / len(ans) >= 0.5:
+                err(f'{nm}/{lab}: 大問内で {circ[top]} が {ans.count(top)}/{len(ans)} 問 (半数以上)')
+                n_bad += 1
+            if run >= 2:
+                err(f'{nm}/{lab}: 同じ番号が {run} 問連続 ({"".join(circ[a] for a in ans)})')
+                n_run += 1
+    print(f'   {"✅" if n_bad + n_run == 0 else "❌"} 半数以上の偏り {n_bad} 件 / 連続 {n_run} 件')
 
     print('\n[G] 既存プールとの重複')
     check_dup_against_pool(eng, '英語')

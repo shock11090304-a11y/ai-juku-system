@@ -34,6 +34,10 @@
 import json
 import hashlib
 import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import answer_positions   # noqa: E402  正解位置の配置
 
 from sympy import (
     Integer, Rational, symbols, sqrt, simplify, expand, factor, Tuple, Interval,
@@ -552,14 +556,20 @@ A でない方を E とする。花子さんは次のように考えている。
 # 検証 → JSON
 # =====================================================================
 def _answer_positions():
-    keys = [(dm["group"], qi) for dm in DAIMON for qi in range(len(dm["subqs"]))]
-    ranked = sorted(keys, key=lambda kk: hashlib.md5(f'{SOURCE}:{kk[0]}:{kk[1]}'.encode()).hexdigest())
-    return {kk: i % 4 for i, kk in enumerate(ranked)}
+    """正解位置を大問ごとに決める (answer_positions.assign)。
+
+    大問ごとに 0..3 の順列を選び perm[j%4] で配るので、
+    隣り合う小問が同じ番号になることが構造的に起きず (最大連続 1)、
+    1 大問内の各番号の出現も ⌊n/4⌋〜⌈n/4⌉ に収まる。
+    順列は全体の分布が最も平らになるものを貪欲に選ぶので、全体の均等も保たれる。"""
+    sizes = [(dm["group"], len(dm["subqs"])) for dm in DAIMON]
+    per_daimon, total = answer_positions.assign(sizes, SOURCE)
+    return {(g, i): p for g, seq in per_daimon.items() for i, p in enumerate(seq)}, total
 
 
 def build():
     rows, errors, total_sub, total_pts = [], [], 0, 0
-    positions = _answer_positions()
+    positions, pos_total = _answer_positions()
 
     for dm in DAIMON:
         subs = []
