@@ -37,15 +37,20 @@ SHAKAI_PARTS = {'nihonshi', 'sekaishi', 'chiri', 'rinri', 'seiji_keizai',
                 'kouminka', 'koukyou', 'gendaishakai'}
 
 
+# 単元ドリル系 = 本文を伴わない一問一答。科目を問わず 【単元】/答え/解説/補足 が正典
+# (server/main.py の UNIT_DRILL_EXPLANATION_SECTIONS)。
+UNIT_DRILL_PARTS = SHAKAI_PARTS | {'kobun_unit', 'kanbun_unit', 'gendai_unit', 'bio_basic'}
+
+
 def family(exam_id, part_key):
     if exam_id == 'drill':
         return 'drill'
+    if part_key in UNIT_DRILL_PARTS:
+        return 'unit_drill'
     if exam_id == 'rikei' or (part_key or '').startswith('math'):
         return 'rikei'
     if part_key in KOKUGO_PARTS:
         return 'kokugo'
-    if part_key in SHAKAI_PARTS:
-        return 'shakai'
     return 'english'
 
 
@@ -54,27 +59,27 @@ CANON = {
     'english': ['🎯 コアイメージ', '🔬 文構造分析', '📍 本文の根拠', '❌ 誤答 NG 理由'],
     'kokugo': ['現代語訳', '解答の根拠', '誤答 NG 理由'],
     'rikei': ['考え方|方針', '立式', '計算', '答え'],
-    # 社会は 2026-08-02 に server 側へ正典を定義した (_generate_shakai_exam_question)。
-    # ハードコードせず main.py の SHAKAI_EXPLANATION_SECTIONS から読む = 二重管理を避ける。
-    'shakai': None,
+    # 単元ドリル系 (社会 / 国語単元 / 理科基礎) は 2026-08-02 に server 側へ正典を定義した。
+    # ハードコードせず main.py の UNIT_DRILL_EXPLANATION_SECTIONS から読む = 二重管理を避ける。
+    'unit_drill': None,
     'drill': [],
 }
 
 
-def _shakai_canon():
-    """server/main.py が宣言している社会の正典セクションを読む。"""
+def _unit_drill_canon():
+    """server/main.py が宣言している単元ドリルの正典セクションを読む。"""
     try:
         src = open(MAIN_PY, encoding='utf-8').read()
     except OSError:
         return []
-    m = re.search(r'SHAKAI_EXPLANATION_SECTIONS\s*=\s*\(([^)]*)\)', src)
+    m = re.search(r'UNIT_DRILL_EXPLANATION_SECTIONS\s*=\s*\(([^)]*)\)', src)
     if not m:
         return []
     keymap = {'【単元】': '単元', '答え:': '答え', '解説:': '解説', '補足:': '補足'}
     return [keymap.get(s, s) for s in re.findall(r'"([^"]+)"', m.group(1))]
 
 
-CANON['shakai'] = _shakai_canon()
+CANON['unit_drill'] = _unit_drill_canon()
 
 # 解説の「型」を判定するためのマーカー。多数派の型を測るのに使う。
 MARKERS = [
@@ -217,7 +222,8 @@ def survey(rows):
     seen_stem = {}
     MOCK = mock_pools()
     pool_stat = collections.defaultdict(lambda: {'q': 0, 'g': 0, 'sig': collections.Counter(),
-                                                 'ans': collections.Counter(), 'fam': ''})
+                                                 'ans': collections.Counter(), 'fam': '',
+                                                 'has_passage': False, 'has_choices': False})
 
     def add(kind, sev, r, where, msg):
         findings.append({'kind': kind, 'sev': sev, 'file': r['file'],
@@ -228,9 +234,13 @@ def survey(rows):
         pkey = (r['exam_id'], r['part_key'])
         fam = family(*pkey)
         pool_stat[pkey]['fam'] = fam
+        if (r['qd'].get('passage') or '').strip():
+            pool_stat[pkey]['has_passage'] = True
         for s in (r['qd'].get('questions') or []):
             if isinstance(s, dict):
                 pool_stat[pkey]['sig'][signature(s.get('explanation'))] += 1
+                if isinstance(s.get('choices'), list) and len(s['choices']) >= 2:
+                    pool_stat[pkey]['has_choices'] = True
 
     dominant = {}
     for pkey, v in pool_stat.items():
@@ -440,6 +450,9 @@ def main():
     ap.add_argument('--only', nargs='*')
     ap.add_argument('--kind', nargs='*')
     ap.add_argument('--limit', type=int, default=30, help='--detail で kind ごとに出す件数')
+    ap.add_argument('--max-high', type=int, default=None,
+                    help='深刻度「高」がこの数を超えたら exit 1 (CI ゲート用)。'
+                         '既定は測るだけで常に exit 0')
     args = ap.parse_args()
 
     rows, skipped = load_rows(set(args.only) if args.only else None)
@@ -503,7 +516,15 @@ def main():
     for pkey, v in sorted(pool_stat.items()):
         if pkey not in MOCK or not v['q']:
             continue
-        canon = CANON[v['fam']]
+        canon = list(CANON[v['fam']] or [])
+        # server の英語プロンプトは 📍本文の根拠 を「長文の場合」、❌誤答NG理由を
+        # 「multiple_choice の場合」と条件付きで求めている。本文の無い英作文や
+        # 選択肢の無い和訳に一律で要求するのは正典の読み違え。
+        if v['fam'] == 'english':
+            if not v.get('has_passage'):
+                canon = [c for c in canon if '本文の根拠' not in c]
+            if not v.get('has_choices'):
+                canon = [c for c in canon if '誤答' not in c]
         if not canon:
             print(f'  {"/".join(pkey):34s} 正典が未定義 (server に専用プロンプト無し)')
             any_mismatch = True
@@ -544,7 +565,12 @@ def main():
                        'findings': findings}, f, ensure_ascii=False, indent=1)
         print(f'\nJSON 出力: {args.json_out}')
 
-    return 0   # measure-only
+    # 既定は measure-only。--max-high を渡したときだけゲートとして働く。
+    if args.max_high is not None and by_sev['high'] > args.max_high:
+        print(f'\n❌ 深刻度「高」が {by_sev["high"]} 件 (上限 {args.max_high})。'
+              f'--detail --kind ' + ' '.join(sorted({f["kind"] for f in high})) + ' で内訳を出せます。')
+        return 1
+    return 0
 
 
 if __name__ == '__main__':

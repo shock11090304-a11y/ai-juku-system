@@ -16,14 +16,16 @@ name: exam-quality
 on:
   push:
     paths:
-      - 'seed-data/kyotsu_mogi2026_*.json'
+      - 'seed-data/**'
       - 'scripts/kyotsu_mogi2026/**'
+      - 'scripts/seed_survey.py'
       - 'kyotsu-mogi2026-*.pdf'
       - '.github/workflows/exam-quality.yml'
   pull_request:
     paths:
-      - 'seed-data/kyotsu_mogi2026_*.json'
+      - 'seed-data/**'
       - 'scripts/kyotsu_mogi2026/**'
+      - 'scripts/seed_survey.py'
       - 'kyotsu-mogi2026-*.pdf'
 
 jobs:
@@ -61,3 +63,11 @@ jobs:
 
       - name: 総点検 (解説フォーマット / 引用の実在 / 正解番号の偏り / PDF の組版)
         run: python3 scripts/kyotsu_mogi2026/audit.py
+
+      # 上までは kyotsu_mogi2026 の 3 ファイルだけを見る。ここから先は seed-data 全体
+      # (37 ファイル・5,848 小問) を同じ物差しで測る。
+      # 「高」= 出題が壊れる/取込が通らないもの (解説の捏造引用・傍線部が本文に無い・
+      # answer が範囲外・選択肢が同文 など)。2026-08-02 に 0 件まで直したので、
+      # そこを維持する。中/低 (型の不揃い・4択でない 等) は報告するだけで止めない。
+      - name: seed-data 全体の実測 (深刻度「高」が 1 件でもあれば落とす)
+        run: python3 scripts/seed_survey.py --max-high 0
