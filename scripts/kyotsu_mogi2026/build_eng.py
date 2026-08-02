@@ -161,6 +161,16 @@ BORROWING DURING THE SUMMER
  The library is open Monday to Friday, 9:00-16:00. It is closed at weekends and from 11 to 15 August.
  You may borrow five books at a time during the summer, instead of the usual two.
 
+WHERE TO READ
+ The reading room on the second floor is open during library hours and has thirty seats.
+ It is a silent area: talking and eating are not allowed. The counter area on the first
+ floor has one small table where you may discuss a book quietly with one other person.
+
+IF YOU FINISH EARLY
+ Students who reach Gold before 25 August may keep reading and record extra titles on a
+ second card. Extra titles bring no further prize, but the librarian will print the names
+ of the three students who read the most in the same September newsletter.
+
 Questions? Email the library staff.""",
   [
     Q("What must you do to receive a prize?",
@@ -207,11 +217,26 @@ Three apps compared by our student reporters
  Progress report      Weekly        Daily         Monthly
 --------------------------------------------------------------
 
+HOW WE TESTED
+Three student reporters each used one app for eight weeks and kept a record of the words
+they studied. We agreed in advance on what we would report: the cost, what the app can and
+cannot do, and one thing we would tell a friend. The table above lists only what we could
+check ourselves. Ratings from the app stores are not included, because we could not confirm
+who had written them.
+
 REVIEWS
 
 Kenta (2nd year): I used WordStep every day on the train, where my phone often loses its signal, and that never caused a problem. The word list is short, though, so I finished it in two months and had nothing left to study. If price is the only thing you care about, start here.
 
-Aya (3rd year): QuizLeaf's speaking check is strict — it told me my "th" sound was wrong about fifty times — but my score on the pronunciation test went up by twelve points. The daily report is useful, yet I cannot open the app on the school bus, because there is no Wi-Fi there. For me, the result was worth the cost.""",
+Aya (3rd year): QuizLeaf's speaking check is strict — it told me my "th" sound was wrong about fifty times — but my score on the pronunciation test went up by twelve points. The daily report is useful, yet I cannot open the app on the school bus, because there is no Wi-Fi there. For me, the result was worth the cost.
+
+Sora (1st year): MemoRise sits between the other two. It works on the train and it checks
+pronunciation, which is the combination I wanted, and 300 yen is less than I spend on one
+drink a week. The weak point is the report. Once a month is too slow to notice that you
+have stopped studying; by the time the report arrives you have already lost two weeks. I
+set an alarm on my phone instead, which solved the problem but should not have been
+necessary. If you are the kind of person who keeps going without being reminded, this is
+the one I would choose.""",
   [
     Q("Which app allows a student with no internet connection to practise speaking?",
       "情報統合",
@@ -256,6 +281,17 @@ We think that a later start would help. A study carried out at a high school in 
 
 Of course, a later start means a later finish. Club activities would lose about thirty minutes of practice time on weekdays, and several teachers have told us that this is the most serious problem with the idea. Our committee believes that shorter but better-organised practice would be no less effective, and that arriving at school awake matters more than half an hour on the field.
 
+We also asked what students would do with an extra thirty minutes in the morning. The most
+common answer was sleep (58%), followed by breakfast (21%) and study (11%). Only 4% chose
+club activities. Among the 129 students who travel by train, 88 said they had fallen asleep
+on the train at least once in the past month.
+
+Two teachers replied to our request for comments. Mr Okada, who coaches the baseball team,
+told us that a thirty-minute loss on weekdays would be difficult to make up at weekends,
+because the ground is shared with three other schools. Ms Fujita, who teaches first-period
+mathematics, said that she now spends the first ten minutes of most lessons waking the class
+up, and that she would rather start later and teach for the full period.
+
 We will present these results to the school council in October.""",
   [
     Q("What did the committee's survey find?",
@@ -294,6 +330,37 @@ We will present these results to the school council in October.""",
 # =====================================================================
 # r_long — 第3問B・第4問・第5問・第6問 相当
 # =====================================================================
+
+D("r_long", "第3問A 体験記事",
+  """You are reading the online newsletter of your school's volunteer club.
+
+RICE FIELDS AND WET SOCKS
+by Nao, second year
+
+I had never stood in a rice field before last Saturday. Twenty-two of us took the 6:40 train to Kawakami, a village about an hour north of the city, to help with the planting. Mr Ito, the farmer who invited us, has grown rice on the same land for forty years and now works it alone.
+
+He gave us five minutes of instruction. Push the seedling in until the roots are covered, he said, no deeper, and keep to the line marked by the rope. Then he stepped back and let us try. My first row was a disaster. Half of my seedlings floated back up within a minute, and I had pushed the others so far down that Mr Ito had to pull them out again.
+
+What surprised me was the mud. I had expected it to be soft. In fact it grips your feet and does not let go, and lifting one leg while balancing on the other is far harder than it looks. Three people fell in. By eleven o'clock nobody cared any more about staying clean.
+
+We finished four fields before lunch, which Mr Ito said would have taken him three days on his own. He would not accept anything for the meal his wife had prepared.
+
+The club returns in September for the harvest. Sign up at the club room by 5 August. We can take twenty-five people this time, and no experience is needed.""",
+  [
+    Q("What surprised Nao most about the work?",
+      "詳細理解",
+      "How hard it was to move through the mud.",
+      ["How long the train journey took.",
+       "How many people Mr Ito employed.",
+       "How cold the water in the field was."]),
+    Q("What will the club do in September?",
+      "詳細理解",
+      "Return to Kawakami to help with the harvest.",
+      ["Invite Mr Ito to visit the school.",
+       "Plant rice in a different village.",
+       "Send Nao to work in the field alone."]),
+  ])
+
 
 D("r_long", "第3問B 体験ブログ(時系列)",
   """You are reading a blog written by a Japanese high school student who took part in an international science camp.
@@ -365,11 +432,19 @@ In June we surveyed 1,200 high school students in Higashi City about how they tr
 
 Students who cycle or walk gave clearly higher ratings than those who use public transport. The groups differ in one other way, however: almost all of the students who walk live within 1.5 km of their school.
 
+We also asked what students disliked most about their journey. Among cyclists the most common answer was rain, mentioned by 63%; among walkers it was heavy bags. Neither group mentioned other people. For train and bus users, four of the five most common answers involved other passengers.
+
+One further point deserves attention. We asked students to record their actual departure time for one week. The times students had given us from memory were, on average, seven minutes later than the times they recorded. The gap was largest among train users, who underestimated by eleven minutes. This suggests that reported journey times in surveys of this kind should be treated as a lower limit rather than an exact figure.
+
+Finally, a caution about the ratings themselves. Students rated the journey they actually make, not the journey they would make by another method. A student who walks 1.2 km has no view on what the same trip would feel like by train, and a train user cannot walk 18 km. The ratings therefore compare people, not methods, and any conclusion drawn from them carries that limit.
+
 REPORT B (from the student newspaper of Higashi North High School)
 
 We repeated the city survey at our own school, where 84% of students come by train. Our average rating for the train journey was 2.2 — much lower than the city figure of 2.9. When we asked why, the most common answer was not the length of the journey but the crowding: 71% of train users said that they could not sit down, and 55% said that they could not read or study on board.
 
-One result surprised us. Students who had to change trains once rated their journey higher (2.6) than students who took a single direct train (2.1). In interviews, several students explained that the change gave them a short break and a chance to get a seat on the second train.""",
+One result surprised us. Students who had to change trains once rated their journey higher (2.6) than students who took a single direct train (2.1). In interviews, several students explained that the change gave them a short break and a chance to get a seat on the second train. One student put it this way: "Standing for forty minutes is worse than standing for twenty, sitting for five, and standing for fifteen, even though the total is the same."
+
+We asked the same students what would improve their journey most. Only 9% chose a faster train. 46% chose a less crowded train, and 28% chose a guaranteed seat even if the journey took longer. When we put these results beside the city figures, one pattern stands out: the two surveys agree about which groups are least satisfied, but they disagree about why. The city report treats the journey as a length of time. Our respondents treat it as a length of time spent in a particular condition, and it is the condition, not the clock, that they complain about.""",
   [
     Q("According to Report A, which group spends the least time travelling to school?",
       "詳細理解",
@@ -411,13 +486,21 @@ Ines Bertrand was born in 1901 in a small town in the south of France, the fourt
 
 In 1922 a visiting university lecturer, Dr Hugo Meyer, brought a broken microscope to the workshop. While he waited, he noticed the drawings Ines had made in the margins of the workshop's order book: leaves, insect wings, the inside of a flower. He asked whether she had ever drawn what she saw through a lens. She had never looked through one.
 
+The order book itself survives. Its margins are filled with objects drawn from whatever was on the workshop bench: a housefly's wing, the seed head of a dandelion, the underside of a leaf. She had no microscope and no training. What she had was the habit of looking at something for a long time before touching a pencil to paper, and a hand trained by four years of painting figures two millimetres high.
+
 Meyer invited her to his laboratory in Lyon. Photography of microscopic samples was still poor at that time; a photograph flattened everything into grey, and important details disappeared. A trained illustrator could do what a camera could not — decide which parts mattered and show them clearly. Ines was employed as a technical assistant in 1923.
+
+The work was slower than anyone expected. A single plate could take three weeks: days at the microscope, then a series of drawings that were shown to the researcher, corrected, and drawn again. Meyer's notebooks record one exchange in which he asked for a structure to be made clearer and she refused, on the grounds that the sample did not show it clearly and the drawing should not claim more than the sample did. He gave way.
 
 Over the next eleven years she produced more than four thousand illustrations for research papers. She never signed them. Scientific illustrations were then regarded as part of the equipment, like a test tube, and the illustrator's name did not appear. Colleagues later recalled that she would sometimes spend a whole day at the microscope before making a single mark on paper, insisting that she could not draw a structure until she understood what it did.
 
 In 1934 she was refused permission to attend a conference in Berlin at which twelve of her illustrations were displayed, because assistants were not invited. She resigned two weeks later.
 
+She was forty-three, unemployed, and without a reference from the laboratory, since technical assistants were not given them.
+
 What followed was unexpected. She opened a small studio and began teaching illustration to science students — first four of them, then thirty. Her argument was simple and, at the time, unusual: a scientist who could draw a specimen would observe it more carefully than one who could only photograph it. Two of her students went on to lead university departments, and both taught drawing to their own students.
+
+Her teaching method was unusual in one respect that her students all mention. She never corrected a drawing. She would ask what the student had seen, listen to the answer, and then send them back to the microscope with a single question — where does that edge actually stop? — and wait. One of them wrote later that it took him two months to understand that she was not being difficult. She had decided that a drawing corrected by someone else teaches nothing, because the error is in the looking and not in the hand.
 
 Ines Bertrand died in 1988. In 1994 a researcher who was matching handwriting in laboratory notebooks identified 3,800 of her unsigned drawings. A collection of them was published in 2001, one hundred years after her birth, under a title she never chose: Seeing First.""",
   [
@@ -463,13 +546,15 @@ MORE TREES IS NOT ALWAYS THE ANSWER
 
 [2] The main way trees cool a city is not by absorbing carbon dioxide, which happens far too slowly to affect summer temperatures, but by providing shade and by releasing water vapour from their leaves. Both effects are strongly local. A tree cools the ground beneath it and the air within a few metres of it; a hundred metres away the difference may be too small to measure. A thousand trees planted in a park on the edge of a city therefore do very little for the crowded central district where the temperature is highest.
 
-[3] Those hot central districts are also, in most cities that have been studied, the districts where the fewest trees already grow, and where residents have the least influence over planning decisions. A survey of thirty-seven cities found that districts with lower average incomes had, on average, 24% less tree cover than wealthier districts in the same city. When a city counts only the total number of trees planted, a programme can look like a complete success while leaving that gap exactly where it was.
+[3] Those hot central districts are also, in most cities that have been studied, the districts where the fewest trees already grow, and where residents have the least influence over planning decisions. A survey of thirty-seven cities found that districts with lower average incomes had, on average, 24% less tree cover than wealthier districts in the same city. The gap was not explained by building density: when the researchers compared districts with similar amounts of open ground, it remained. Nor was it explained by preference. Where residents of low-cover districts were asked, they wanted trees at least as much as anyone else, and often more, because they were the ones living with the heat. When a city counts only the total number of trees planted, a programme can look like a complete success while leaving that gap exactly where it was.
 
-[4] There is a further complication. Trees need water, and in dry regions a young tree may require regular watering for its first three to five years. Several cities have found that a large share of the trees they planted did not survive long enough to provide any shade at all. One review of North American programmes estimated that between 15% and 30% of newly planted street trees die within five years, and that survival depends far more on maintenance budgets than on which species is chosen.
+[4] There is a further complication. Trees need water, and in dry regions a young tree may require regular watering for its first three to five years. Several cities have found that a large share of the trees they planted did not survive long enough to provide any shade at all. One review of North American programmes estimated that between 15% and 30% of newly planted street trees die within five years, and that survival depends far more on maintenance budgets than on which species is chosen. The pattern is easy to explain once stated. Planting is a single event with a photograph attached to it. Watering is a five-year obligation with nothing to show. Budgets are written by people who need the photograph, and the obligation is left to whoever holds the post in three years' time.
 
-[5] None of this is an argument against planting trees. It is an argument against counting them. A programme that plants two hundred trees along a treeless street in a hot district, waters them for five years and replaces those that die will do more for the people who live there than a programme that plants twenty thousand seedlings and then walks away. The second programme, however, produces a much better headline.
+[5] None of this is an argument against planting trees. It is an argument against counting them. A programme that plants two hundred trees along a treeless street in a hot district, waters them for five years and replaces those that die will do more for the people who live there than a programme that plants twenty thousand seedlings and then walks away. The second programme, however, produces a much better headline. It also produces a number that can be compared with last year's number, which is what a city government is usually asked for. A count is easy to audit and impossible to argue with. A measure of shade delivered to the people who need it is neither.
 
-[6] The question a city should ask is not "how many trees have we planted?" but "how many people are now standing in shade at two o'clock in the afternoon?" That number is harder to collect and much harder to celebrate. It is also the only one that measures what the trees were planted for.""",
+[6] None of the objections above requires new science. They require a city to accept a harder question in place of an easier one, and to keep accepting it after the officials who chose it have moved on. That is an unusual thing for any institution to do, which is why the total keeps being reported.
+
+[7] The question a city should ask is not "how many trees have we planted?" but "how many people are now standing in shade at two o'clock in the afternoon?" That number is harder to collect and much harder to celebrate. It is also the only one that measures what the trees were planted for.""",
   [
     Q("What is the main point of paragraph [2]?",
       "要点把握",
@@ -513,15 +598,19 @@ WHERE FOOD IS LOST
 
 [2] It does, and sharply. In lower-income countries most losses happen early, between the field and the market. Crops are damaged by insects during storage, or spoil in transport because there is no refrigeration, or simply cannot reach a buyer before they rot. Very little is thrown away by households, because food is expensive relative to income and people are careful with it.
 
-[3] In higher-income countries the pattern is reversed. Storage and transport are efficient, and losses before the shop are comparatively small. The waste happens at the end of the chain: in supermarkets, in restaurants and, above all, in homes. In several European studies, households were responsible for between 45% and 55% of all the food wasted in the country — more than farms, factories, shops and restaurants combined.
+[3] The difference is not a matter of care. A farmer in either place has the same reason to get a crop to market. What differs is the chain between the two: whether there is a cold store within reach, whether the road holds up in the rain, whether a buyer can be found in the two days the crop will keep. Where those things are missing, food is lost before anyone has had the chance to decide anything about it.
 
-[4] Household waste is also the hardest kind to reduce, because it is not one behaviour but many. A shopper buys three peppers because they are sold in a pack of three, uses one, and finds the others soft a week later. A family cooks for four when three are eating. A label reading "best before" is understood as if it read "use by", and a perfectly good yoghurt goes into the bin. Each of these has a different solution, and none of those solutions is a poster telling people not to waste food.
+[4] In higher-income countries the pattern is reversed. Storage and transport are efficient, and losses before the shop are comparatively small. The waste happens at the end of the chain: in supermarkets, in restaurants and, above all, in homes. In several European studies, households were responsible for between 45% and 55% of all the food wasted in the country — more than farms, factories, shops and restaurants combined.
 
-[5] This is why the measures that work best tend to be structural rather than educational. When one supermarket chain removed date labels from fresh fruit and vegetables — items for which the label adds no safety information — waste of those items in customers' homes fell measurably. When another chain allowed customers to buy single items instead of fixed packs, sales of the affected products fell slightly while waste fell a great deal more.
+[5] Household waste is also the hardest kind to reduce, because it is not one behaviour but many. A shopper buys three peppers because they are sold in a pack of three, uses one, and finds the others soft a week later. A family cooks for four when three are eating. A label reading "best before" is understood as if it read "use by", and a perfectly good yoghurt goes into the bin. A restaurant portion arrives larger than anyone ordered because a small plate looks like poor value. A household buys for the week it plans to have rather than the week it will have, and Thursday's plan collapses on Tuesday. Each of these has a different solution, and none of those solutions is a poster telling people not to waste food.
 
-[6] Educational campaigns are not useless, but their effects fade. Studies of household campaigns generally show a reduction while the campaign is running and a return to earlier levels within a year of its end. Changes to the way food is sold, by contrast, keep working whether or not anyone is paying attention.
+[6] This is why the measures that work best tend to be structural rather than educational. When one supermarket chain removed date labels from fresh fruit and vegetables — items for which the label adds no safety information — waste of those items in customers' homes fell measurably. When another chain allowed customers to buy single items instead of fixed packs, sales of the affected products fell slightly while waste fell a great deal more. A third removed multi-buy offers on fresh produce and replaced them with a lower single price. Customers bought less and threw away much less, and the chain reported that revenue on those items was almost unchanged, because the lower price brought in buyers who had previously bought nothing.
 
-[7] For a country deciding where to act, then, the first step is not a slogan. It is to find out where in its own food chain the food is actually being lost — and to accept that the answer for one country is not the answer for another.""",
+[7] Educational campaigns are not useless, but their effects fade. Studies of household campaigns generally show a reduction while the campaign is running and a return to earlier levels within a year of its end. One reason may be that a campaign asks people to remember something new every time they shop, while a change to the packet asks nothing of them at all. Changes to the way food is sold, by contrast, keep working whether or not anyone is paying attention.
+
+[8] There is a further reason to start with measurement rather than with a campaign. A country that assumes its losses are where the headline says they are will spend its money in the wrong place, and will then conclude that food waste is hard to reduce. It is not especially hard to reduce. It is hard to reduce without first knowing which of several quite different problems you actually have.
+
+[9] For a country deciding where to act, then, the first step is not a slogan. It is to find out where in its own food chain the food is actually being lost — and to accept that the answer for one country is not the answer for another.""",
   [
     Q("Why does the author say that the figure \"a third of all food\" has \"stopped meaning very much\"?",
       "要点把握",

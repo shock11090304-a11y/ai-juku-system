@@ -630,7 +630,7 @@ E(G, 1,
          "  主節: S=a programme / V=can look / C=like a complete success\n"
          "  while 分詞句: leaving + O=that gap + C=exactly where it was (格差は元のまま)",
   konkyo="第3段「A survey of thirty-seven cities found that districts with lower average incomes had, "
-         "on average, 24% less tree cover than wealthier districts in the same city. "
+         "on average, 24% less tree cover than wealthier districts in the same city. ~ "
          "**When a city counts only the total number of trees planted, a programme can look like "
          "a complete success while leaving that gap exactly where it was.**」",
   ng=["苗木の価格については `trees are cheap` と第1段にあり、高コストは論点ではない。",
@@ -737,10 +737,10 @@ E(G, 2,
          "— [more than [farms, factories, shops and restaurants] combined].`\n"
          "  S=households / V=were responsible for / O=between 45% and 55% ~\n"
          "  ダッシュ以下が比較の補足: more than A, B, C and D combined",
-  konkyo="第3段「**households were responsible for between 45% and 55% of all the food wasted "
+  konkyo="第4段「**households were responsible for between 45% and 55% of all the food wasted "
          "in the country — more than farms, factories, shops and restaurants combined.**」",
   ng=["レストランは家庭より少ない側として列挙されている。大小が逆。",
-      "第3段冒頭に `losses before the shop are comparatively small` とあり、"
+      "第4段冒頭に `losses before the shop are comparatively small` とあり、"
       "高所得国では輸送段階の損失は小さい。",
       "45〜55% は**家庭**の割合。スーパーマーケットの数値ではない。数値の係り先の取り違え。"])
 
@@ -753,11 +753,11 @@ E(G, 3,
          "  主節: S=Household waste / V=is / C=the hardest kind to reduce (不定詞が kind を修飾)\n"
          "  because 節: S=it / V=is / C=not one behaviour but many (= many behaviours)\n"
          "  → 続く 3 つの具体例 (3 個パック・作りすぎ・表示の誤読) が many の中身",
-  konkyo="第4段「Household waste is also the hardest kind to reduce, "
+  konkyo="第5段「Household waste is also the hardest kind to reduce, "
          "**because it is not one behaviour but many.**」\n"
          "3 つの例のあとに「**Each of these has a different solution**」と締められる。",
   ng=["調査への非協力についての記述はない。",
-      "第3段で家庭の割合が数値化されており、測定できている。",
+      "第4段で家庭の割合が数値化されており、測定できている。",
       "第2段で低所得国の家庭についても論じており、富裕国限定ではない。"])
 
 E(G, 4,
@@ -769,11 +769,53 @@ E(G, 4,
          "[a return to earlier levels [within a year of its end]].`\n"
          "  第1文: S=Educational campaigns / V=are / C=not useless ・ S=their effects / V=fade\n"
          "  第2文: S=Studies / V=show / O=a reduction と a return (等位接続)",
-  konkyo="第6段「Educational campaigns are not useless, but **their effects fade.** "
+  konkyo="第7段「Educational campaigns are not useless, but **their effects fade.** "
          "Studies of household campaigns generally show a reduction while the campaign is running "
          "and **a return to earlier levels within a year of its end.**」",
-  ng=["第5段は `the measures that work best tend to be structural rather than educational` とし、"
+  ng=["第6段は `the measures that work best tend to be structural rather than educational` とし、"
       "販売方法の変更の方が有効だと述べている。優劣が逆。",
       "`Educational campaigns are not useless` と明示的に否定されている。"
       "「全く効果がない」は本文より強すぎる。",
       "低所得国との関連づけは本文にない。"])
+
+
+# =====================================================================
+# 第3問A 体験記事
+# =====================================================================
+G = "第3問A 体験記事"
+
+E(G, 0,
+  core="- `What surprised me was ~` = 強調構文的な what 節。**驚いた対象**が be 動詞の後ろに来る\n"
+       "- `I had expected it to be soft. In fact ~` = 予想と現実の対比。`In fact` の後ろが実際\n"
+       "- `grip` =「つかんで離さない」。柔らかさの逆を表す動詞がコア",
+  kouzou="`[What surprised me] was [the mud].`\n"
+         "  S=What surprised me (関係代名詞 what 節) / V=was / C=the mud\n"
+         "`In fact [it] grips [your feet] and does not let go, and "
+         "[lifting one leg while balancing on the other] is [far harder than it looks].`\n"
+         "  前半: S=it (= the mud) / V=grips / O=your feet ・ V=does not let go\n"
+         "  後半: S=動名詞句 lifting one leg ~ / V=is / C=far harder than it looks",
+  konkyo="第4段「**What surprised me was the mud.** I had expected it to be soft. "
+         "In fact it grips your feet and does not let go, and lifting one leg while balancing "
+         "on the other is far harder than it looks.」\n"
+         "`What surprised me was ~` が「最も驚いたこと」を名指ししている。",
+  ng=["電車は `the 6:40 train` `about an hour north of the city` と述べられるだけで、"
+      "所要時間に驚いたという記述はない。",
+      "第1段に `now works it alone` (今は一人で耕している) とあり、雇っている人はいない。"
+      "むしろ人手がないことが招待の背景になっている。",
+      "水の冷たさについての記述は本文にない。驚いたのは泥の「柔らかさの予想が外れたこと」。"])
+
+E(G, 1,
+  core="- `return` =「戻る」。同じ場所への再訪を含意する\n"
+       "- `for the harvest` = 目的の for。「収穫のために」\n"
+       "- `Sign up ~ by 5 August` = 期限の by。締切であって実施日ではない",
+  kouzou="`[The club] returns [in September] [for the harvest].`\n"
+         "  S=The club / V=returns (確定した予定を表す現在形) / M=in September, for the harvest\n"
+         "`Sign up [at the club room] [by 5 August].`\n"
+         "  命令文: V=Sign up / M=at the club room, by 5 August",
+  konkyo="最終段「**The club returns in September for the harvest.** "
+         "Sign up at the club room by 5 August.」\n"
+         "9 月の予定は「収穫の手伝いに戻る」こと。8 月 5 日は申込の締切であって活動日ではない。",
+  ng=["Mr Ito が学校を訪れるという記述はない。訪れるのは部員の側。",
+      "`returns` は同じ場所に戻ることを示す。別の村へ行くとは述べられていない。",
+      "`We can take twenty-five people this time` と 25 人規模の活動であり、"
+      "Nao が単独で作業するという記述はない。"])
