@@ -14,6 +14,7 @@ build 側は「正解が合っているか」「フォーマットが揃って�
   G. 既存プールとの重複  既存 seed と content hash が衝突しないか
   H. PDF の組版事故     KaTeX の SVG path 流出 / 未描画の LaTeX (¥ 表示) / Markdown 記号の生表示
   I. PDF ↔ JSON        PDF の正解一覧が JSON の answer と一致するか
+  J. 本番形式の要件     場面設定 250 字以上 / 誘導連鎖が各大問にあるか
 
 実行: python3 scripts/kyotsu_mogi2026/audit.py
 """
@@ -237,7 +238,7 @@ def check_pdfs():
             err(f'{name}: 文字化け (U+FFFD) を含む')
 
     for pdf, seed, order in [('kyotsu-mogi2026-eng-kaisetsu.pdf', 'eng', None),
-                             ('kyotsu-mogi2026-math-kaisetsu.pdf', 'math', ('math_1a', 'math_2b'))]:
+                             ('kyotsu-mogi2026-math-kaisetsu.pdf', 'math_exam', None)]:
         path = os.path.join(ROOT, pdf)
         if not os.path.exists(path):
             err(f'{pdf} が無い')
@@ -262,13 +263,15 @@ def main():
     if not shutil_which('pdftotext'):
         warn('pdftotext が無いため PDF の点検を飛ばした (apt-get install poppler-utils)')
 
-    eng, math = load('eng'), load('math')
-    print(f'点検対象: 英語 {len(eng)} 大問 / 数学 {len(math)} 大問')
+    eng, math, math_exam = load('eng'), load('math'), load('math_exam')
+    print(f'点検対象: 英語 {len(eng)} 大問 / 数学(単元別ドリル) {len(math)} 大問 '
+          f'/ 数学(本番形式) {len(math_exam)} 大問')
 
     print('\n[A-D] スキーマと解説フォーマット')
     check_schema_and_format(math, '数学')
+    check_schema_and_format(math_exam, '数学')
     check_schema_and_format(eng, '英語')
-    n_sub = sum(len(r['question_data']['questions']) for r in eng + math)
+    n_sub = sum(len(r['question_data']['questions']) for r in eng + math + math_exam)
     print(f'   {n_sub} 小問を点検')
 
     print('\n[E] 「本文の根拠」の引用が本文に実在するか')
@@ -280,9 +283,22 @@ def main():
     bad_pts = [r for r in math for q in r['question_data']['questions']]
     print(f'   数学 = 1 小問 4 点 × {len(bad_pts)} 小問')
 
+    print('\n[J] 本番形式の要件 (場面設定の長さ・誘導連鎖)')
+    for r in math_exam:
+        qd = r['question_data']
+        g = qd['group']
+        if len(qd['passage']) < 250:
+            err(f'{g}: 場面設定が {len(qd["passage"])} 字 (本番相当は 250 字以上)')
+        chained = sum(1 for q in qd['questions']
+                      if re.search(r'問\d+\s*(の結果|より|で求めた)', q['stem']))
+        if chained == 0:
+            err(f'{g}: 誘導連鎖 (前問の結果を使う小問) が 1 つも無い')
+        print(f'   {g:16} 場面設定 {len(qd["passage"]):4}字 / 誘導連鎖 {chained} 問')
+
     print('\n[G] 既存プールとの重複')
     check_dup_against_pool(eng, '英語')
-    check_dup_against_pool(math, '数学')
+    check_dup_against_pool(math, '数学(単元別)')
+    check_dup_against_pool(math_exam, '数学(本番形式)')
     print('   既存 seed との content hash 衝突を確認')
 
     if shutil_which('pdftotext'):

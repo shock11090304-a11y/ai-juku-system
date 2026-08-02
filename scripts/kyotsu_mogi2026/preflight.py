@@ -25,7 +25,8 @@ ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 MAIN_PY = os.path.join(ROOT, 'server', 'main.py')
 SEEDS = [
     os.path.join(ROOT, 'seed-data', 'kyotsu_mogi2026_eng_manual.json'),
-    os.path.join(ROOT, 'seed-data', 'kyotsu_mogi2026_math_manual.json'),
+    os.path.join(ROOT, 'seed-data', 'kyotsu_mogi2026_math_manual.json'),       # 単元別ドリル (math_unit)
+    os.path.join(ROOT, 'seed-data', 'kyotsu_mogi2026_math_exam_manual.json'),  # 本番形式 (math_1a)
 ]
 
 errors = []

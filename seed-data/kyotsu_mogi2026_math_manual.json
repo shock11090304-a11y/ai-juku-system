@@ -2,7 +2,7 @@
  "questions": [
   {
    "exam_id": "rikei",
-   "part_key": "math_1a",
+   "part_key": "math_unit",
    "eiken_grade": "kyotsu_rikei",
    "model": "claude-kyotsu-mogi2026-verified",
    "question_data": {
@@ -89,7 +89,7 @@
   },
   {
    "exam_id": "rikei",
-   "part_key": "math_1a",
+   "part_key": "math_unit",
    "eiken_grade": "kyotsu_rikei",
    "model": "claude-kyotsu-mogi2026-verified",
    "question_data": {
@@ -176,7 +176,7 @@
   },
   {
    "exam_id": "rikei",
-   "part_key": "math_1a",
+   "part_key": "math_unit",
    "eiken_grade": "kyotsu_rikei",
    "model": "claude-kyotsu-mogi2026-verified",
    "question_data": {
@@ -263,7 +263,7 @@
   },
   {
    "exam_id": "rikei",
-   "part_key": "math_1a",
+   "part_key": "math_unit",
    "eiken_grade": "kyotsu_rikei",
    "model": "claude-kyotsu-mogi2026-verified",
    "question_data": {
@@ -350,7 +350,7 @@
   },
   {
    "exam_id": "rikei",
-   "part_key": "math_1a",
+   "part_key": "math_unit",
    "eiken_grade": "kyotsu_rikei",
    "model": "claude-kyotsu-mogi2026-verified",
    "question_data": {
@@ -437,7 +437,7 @@
   },
   {
    "exam_id": "rikei",
-   "part_key": "math_1a",
+   "part_key": "math_unit",
    "eiken_grade": "kyotsu_rikei",
    "model": "claude-kyotsu-mogi2026-verified",
    "question_data": {
@@ -524,7 +524,7 @@
   },
   {
    "exam_id": "rikei",
-   "part_key": "math_2b",
+   "part_key": "math_unit",
    "eiken_grade": "kyotsu_rikei",
    "model": "claude-kyotsu-mogi2026-verified",
    "question_data": {
@@ -611,7 +611,7 @@
   },
   {
    "exam_id": "rikei",
-   "part_key": "math_2b",
+   "part_key": "math_unit",
    "eiken_grade": "kyotsu_rikei",
    "model": "claude-kyotsu-mogi2026-verified",
    "question_data": {
@@ -698,7 +698,7 @@
   },
   {
    "exam_id": "rikei",
-   "part_key": "math_2b",
+   "part_key": "math_unit",
    "eiken_grade": "kyotsu_rikei",
    "model": "claude-kyotsu-mogi2026-verified",
    "question_data": {
@@ -785,7 +785,7 @@
   },
   {
    "exam_id": "rikei",
-   "part_key": "math_2b",
+   "part_key": "math_unit",
    "eiken_grade": "kyotsu_rikei",
    "model": "claude-kyotsu-mogi2026-verified",
    "question_data": {
@@ -872,7 +872,7 @@
   },
   {
    "exam_id": "rikei",
-   "part_key": "math_2b",
+   "part_key": "math_unit",
    "eiken_grade": "kyotsu_rikei",
    "model": "claude-kyotsu-mogi2026-verified",
    "question_data": {
@@ -959,7 +959,7 @@
   },
   {
    "exam_id": "rikei",
-   "part_key": "math_2b",
+   "part_key": "math_unit",
    "eiken_grade": "kyotsu_rikei",
    "model": "claude-kyotsu-mogi2026-verified",
    "question_data": {
