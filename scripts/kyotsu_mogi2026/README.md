@@ -51,6 +51,25 @@
 | II・B 第5問 | 統計的な推測 (二項分布・標準誤差・信頼区間・正規分布) |
 | II・B 第6問 | ベクトル (内積・なす角・大きさ・垂直条件・空間) |
 
+## 印刷用 PDF (紙の模試)
+
+同じ seed JSON から、印刷して配れる冊子も生成する。アプリの出題内容と完全に同じなので、
+問題文を二重に管理しなくてよい。
+
+| ファイル | 内容 |
+|---|---|
+| `kyotsu-mogi2026-eng-mondai.pdf` | 英語 問題編 (80分・100点満点・解答用紙つき) 20ページ |
+| `kyotsu-mogi2026-eng-kaisetsu.pdf` | 英語 解答・解説編 (正解一覧 + 設問別解説) 12ページ |
+| `kyotsu-mogi2026-math-mondai.pdf` | 数学 問題編 (I・A 120点 / II・B・C 120点・解答用紙つき) 17ページ |
+| `kyotsu-mogi2026-math-kaisetsu.pdf` | 数学 解答・解説編 17ページ |
+
+数式は `vendor/katex` を **node 側で静的レンダリング**してから流し込む。印刷時に JS の実行完了を
+待たなくてよいので、「数式が欠けた PDF が出る」事故が構造的に起きない。
+KaTeX が解釈できない式が 1 つでもあればビルドが落ちる。
+
+配点は英語が大問ごとに 2〜3 点で合計ちょうど 100 点、数学は 1 小問 4 点 (1 大問 20 点)。
+数学は本番が 70 分 4 大問なので、表紙に「第1問〜第4問 (80点) を選べば本番と同じ分量」と明記してある。
+
 ## 手順
 
 ```bash
@@ -61,11 +80,17 @@ python3 scripts/kyotsu_mogi2026/build_math.py   # 要 sympy
 # 2. 取込前チェック (server/main.py の実定義と突き合わせ)
 python3 scripts/kyotsu_mogi2026/preflight.py
 
-# 3. 本番投入 (CRON_SECRET は環境変数から)
+# 3. 印刷用 PDF (要 node + playwright。Chromium は /opt/pw-browsers に既設)
+python3 scripts/kyotsu_mogi2026/build_pdf.py
+
+# 4. 本番投入 (CRON_SECRET は環境変数から)
 railway run -s ai-juku-api python3 scripts/kyotsu_mogi2026/import_prod.py
 ```
 
 `import_prod.py` は `--dry-run` で件数だけ確認できる。`eng` / `math` を引数に取ると片方だけ投入する。
+
+PDF を出したあとは、`pdftotext -layout` で抜いた正解一覧が JSON の `answer` と一致するか
+突き合わせておくとよい (102/102 一致を確認済み)。組版の過程で解答がずれていないことの最終確認になる。
 
 ## 品質ゲート
 
