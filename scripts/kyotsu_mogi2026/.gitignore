@@ -1,1 +1,2 @@
-scripts/kyotsu_mogi2026/_build/
+# build_pdf.py の中間生成物 (HTML/KaTeX入力/レンダー用JS)。PDF 本体のみコミットする
+_build/
