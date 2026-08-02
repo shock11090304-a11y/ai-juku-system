@@ -61,11 +61,11 @@
       "stem": "What do Ken and Riku have in common in their comments?",
       "choices": [
        "Both believe phones should be completely banned from school grounds.",
-       "Both are willing to accept phones being kept away from students during the school day.",
        "Both think phones bring no benefits to students at all.",
+       "Both are willing to accept phones being kept away from students during the school day.",
        "Both are mainly worried about students' grades falling."
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "共通点把握",
       "explanation": "正解は「Both are willing to accept phones being kept away from students during the school day.」。Kenは「授業中はロッカーに入れておきたい(leave mine in a locker during lessons)」、Rikuは「毎朝集めて下校時に返すのは受け入れる(phones being collected each morning and returned)」と、日中は手元から離す案を容認している。Kenは緊急時の利便性を認めており「完全禁止」「利点ゼロ」ではなく、Rikuは成績より依存を懸念しているため他は誤り。"
      },
@@ -76,10 +76,10 @@
       "choices": [
        "Aoi, because she says phones must always be available to students.",
        "Ken, because he wants phones locked away at all times.",
-       "Mei, because she argues that clear rules let phones help learning.",
-       "Riku, because he focuses only on reducing screen attachment."
+       "Riku, because he focuses only on reducing screen attachment.",
+       "Mei, because she argues that clear rules let phones help learning."
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "立場の統合",
       "explanation": "正解は「Mei, because she argues that clear rules let phones help learning.」。Source Aの結論は「完全禁止ではなく、いつ使ってよいかの明確なルール(a clear set of rules about when devices may be used)」であり、教師の指導下で使えば生徒の関与が高まるとする。これはMeiの「教師が使用時を明確に決めれば道具は学習を助ける」と一致する。Aoiの常時利用やKenの常時禁止はSource Aの『明確なルール』方針とずれ、Rikuは依存問題のみに焦点を当てている。"
      },
@@ -89,11 +89,11 @@
       "stem": "What conclusion can be drawn from Source A?",
       "choices": [
        "The mere presence of a phone is the main cause of poor learning.",
+       "The way and timing of phone use, rather than the phone itself, determines its effect on school life.",
        "Notifications during lessons have no measurable effect on students' focus.",
-       "Schools should remove all phones to protect students' social skills.",
-       "The way and timing of phone use, rather than the phone itself, determines its effect on school life."
+       "Schools should remove all phones to protect students' social skills."
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "Source A推論",
       "explanation": "正解は「The way and timing of phone use, rather than the phone itself, determines its effect on school life.」。Source Aは「問題は端末そのものではなく、いつどう使うか(rarely the phone itself, but how and when it is used)」と述べ、指導下では関与が高まり、通知を切らない無制限使用では復帰に時間がかかる、と使い方次第で結果が変わることを一貫して示す。完全撤去の推奨や通知に影響なしという記述は本文と矛盾する。"
      },
@@ -285,10 +285,10 @@
       "choices": [
        "Paper books are always better than e-books for any kind of study.",
        "E-books should replace paper books because they are faster and lighter.",
-       "Neither format is best overall; the right choice depends on the task.",
-       "Students should avoid screens entirely to protect their concentration."
+       "Students should avoid screens entirely to protect their concentration.",
+       "Neither format is best overall; the right choice depends on the task."
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "意見要旨",
       "explanation": "正解は「Neither format is best overall; the right choice depends on the task.」。Aoiは「one is simply better than the other とは思わない・it depends on what you are doing」と述べ、素早い確認には電子書籍、深い集中には紙、と用途で使い分けている。どちらか一方を全面的に推す他の選択肢は彼女の趣旨と合わない。"
      },
@@ -297,12 +297,12 @@
       "type": "multiple_choice",
       "stem": "What do Riku and Sota have in common in their opinions?",
       "choices": [
+       "Both say that paper helps them concentrate and remember better.",
        "Both believe e-books are better for memorizing difficult material.",
        "Both prefer tablets because they are lighter and easier to carry.",
-       "Both think the choice of format makes no real difference to studying.",
-       "Both say that paper helps them concentrate and remember better."
+       "Both think the choice of format makes no real difference to studying."
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "共通点把握",
       "explanation": "正解は「Both say that paper helps them concentrate and remember better.」。Rikuは「paper makes deep, focused study possible」「手書きで覚えられる」と述べ、Sotaは紙に戻して「my concentration returned」、画面では「rarely remembered where information appeared」と述べる。二人とも紙が集中と記憶に役立つ点で一致する。"
      },
@@ -311,12 +311,12 @@
       "type": "multiple_choice",
       "stem": "Whose opinion is most clearly supported by the information in Source A?",
       "choices": [
-       "Sota, because Source A links screens to distraction and weaker memory.",
        "Mei, because Source A says e-books are better for all serious study.",
+       "Sota, because Source A links screens to distraction and weaker memory.",
        "Riku, because Source A says handwriting in margins is always necessary.",
        "No one, because Source A states the device makes no difference at all."
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "立場の統合",
       "explanation": "正解は「Sota, because Source A links screens to distraction and weaker memory.」。Source Aは「screensは速く浅い読みを招き、messagesやlinksというdigital distractionsのリスクがある」「紙の物理的レイアウトが記憶を支える mental map を作る」と述べる。Sotaの「画面で気が散り、情報の場所を覚えられず点数が下がった」という経験と最もよく一致する。Meiの全面肯定や、デバイス無関係とする説明は本文と矛盾する。"
      },
@@ -326,11 +326,11 @@
       "stem": "Which conclusion can best be drawn from Source A?",
       "choices": [
        "The reading device alone decides how well a student learns.",
-       "The medium matters, but how carefully a student reads matters too.",
        "Screens are useless for any kind of academic study.",
+       "The medium matters, but how carefully a student reads matters too.",
        "Paper is more efficient than screens for every reading task."
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "Source A推論",
       "explanation": "正解は「The medium matters, but how carefully a student reads matters too.」。Source Aは紙が記憶でやや有利と述べつつ、「the device itself is not the only factor」「how carefully a student reads … can matter just as much as the medium」と明言し、検索や流し読みでは digital が効率的とも述べる。媒体だけで決まる、画面は無用、紙が全タスクで効率的、という極端な結論は本文を超えており誤り。"
      },
@@ -487,10 +487,10 @@
       "choices": [
        "Online classes should gradually replace in-person classes in every subject.",
        "Online learning should be avoided until internet access becomes equal for all.",
-       "In-person classes are the only way to build real friendships at school.",
-       "Schools should match each subject or activity to the format that suits it best."
+       "Schools should match each subject or activity to the format that suits it best.",
+       "In-person classes are the only way to build real friendships at school."
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "意見要旨",
       "explanation": "正解は「Schools should match each subject or activity to the format that suits it best.」。Aishaは \"a 'blended' approach makes the most sense\" と述べ、ルーティン学習はオンライン、討論や実験は教室がよいと例示し、\"which subjects and activities suit each style\" が本当の問いだと結論づけている。よって科目・活動ごとに最適な形式を当てはめるべき、という趣旨が最も近い。"
      },
@@ -529,10 +529,10 @@
       "choices": [
        "Classroom lessons are always superior to online lessons regardless of planning.",
        "Online lessons are always superior as long as they include videos and chat.",
-       "The quality of a lesson's design matters more than whether it is online or in-person, but some students still need a classroom's structure.",
-       "Younger students learn just as well online as older students do."
+       "Younger students learn just as well online as older students do.",
+       "The quality of a lesson's design matters more than whether it is online or in-person, but some students still need a classroom's structure."
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "Source A推論",
       "explanation": "正解は「The quality of a lesson's design matters more than whether it is online or in-person, but some students still need a classroom's structure.」。Source Aは \"the format of a class matters less than how carefully it is designed\" と述べつつ、\"younger learners and those who struggle to manage their own time tend to fall behind... benefit most from the structure... of a classroom\" とも述べる。両面をまとめた選択肢が記事の主旨から導ける結論。always superior 系は記事の慎重な立場と矛盾し誤り。"
      },

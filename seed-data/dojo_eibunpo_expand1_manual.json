@@ -16,12 +16,12 @@
       "type": "multiple_choice",
       "stem": "She is the woman ___ helped me when I was in trouble.",
       "choices": [
-       "who",
        "whom",
        "which",
-       "whose"
+       "whose",
+       "who"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "関係詞(関係代名詞の主格)",
       "explanation": "【単元】関係詞(関係代名詞の主格)。先行詞 the woman は人で、関係詞節の中で動詞 helped の主語の働きをするため、主格の who が正しい。whom は目的格であり主語の位置には立てない。which は人を先行詞に取れない(物・事を受ける)。whose は所有格で直後に名詞が必要なため不適。"
      },
@@ -58,12 +58,12 @@
       "type": "multiple_choice",
       "stem": "Do you remember the day ___ we first met?",
       "choices": [
+       "when",
        "which",
        "who",
-       "where",
-       "when"
+       "where"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "関係詞(関係副詞 when)",
       "explanation": "【単元】関係詞(関係副詞 when)。先行詞が the day という「時」を表す名詞で、関係詞節 we first met が完全文(欠けがない)であるため、時を表す関係副詞 when が正しい。which は関係代名詞なので後続の節に名詞の欠落が必要だが、ここでは完全文で不適。where は「場所」を受ける関係副詞で時には使えない。who は人を受ける関係代名詞で不適。"
      },
@@ -72,12 +72,12 @@
       "type": "multiple_choice",
       "stem": "This is the house ___ I was born.",
       "choices": [
-       "where",
        "that",
        "which",
-       "what"
+       "what",
+       "where"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "関係詞(関係副詞 where)",
       "explanation": "【単元】関係詞(関係副詞 where)。先行詞が the house という「場所」で、後続の I was born は完全文であるため、場所を表す関係副詞 where が正しい。which や that は関係代名詞で、後続の節に名詞の欠落が必要だが born は自動詞で目的語を取らず完全文なので不適(in which なら可)。what は先行詞を含むため、先行詞 the house がある本問では使えない。"
      },
@@ -142,12 +142,12 @@
       "type": "multiple_choice",
       "stem": "He is the person ___ I spoke about at the meeting.",
       "choices": [
-       "whom",
        "which",
+       "whom",
        "whose",
        "who is"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "関係詞(目的格 whom)",
       "explanation": "【単元】関係詞(目的格 whom)。先行詞 the person は人で、spoke about の前置詞 about の目的語になるため、人を受ける目的格 whom が正しい(about whom の whom が前に出た形)。which は人を受けられない。whose は所有格で後ろに名詞が必要。who is は be動詞が余分で、speak about の目的語の働きをせず非文。"
      },
@@ -156,12 +156,12 @@
       "type": "multiple_choice",
       "stem": "This is the very thing ___ I wanted to buy.",
       "choices": [
-       "what",
        "that",
+       "what",
        "who",
        "whose"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "関係詞(関係代名詞 that)",
       "explanation": "【単元】関係詞(関係代名詞 that の選択)。先行詞に the very がつくときは関係代名詞 that が好まれ、buy の目的語が欠けた節を導くため that が正しい。what は先行詞を含むので、先行詞 the very thing がある本問では重複して使えない。who は人を受けるので thing には不適。whose は所有格で後ろに名詞が必要なため不適。"
      },
@@ -212,12 +212,12 @@
       "type": "multiple_choice",
       "stem": "I have two sons, both of ___ live in Tokyo.",
       "choices": [
-       "whom",
        "them",
+       "whom",
        "which",
        "who"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "関係詞(非制限用法・前置詞+関係代名詞)",
       "explanation": "【単元】関係詞(非制限用法・前置詞+関係代名詞)。コンマの後で two sons を受け、both of の of の目的語になる人を受ける目的格 whom が正しく、非制限用法として継続的に説明する。them は代名詞で関係詞節を導けず、コンマで二文をつなぐと非文。which は人を受けられない。who は主格であり前置詞 of の目的語の位置には立てない。"
      },
@@ -227,11 +227,11 @@
       "stem": "He passed the exam, ___ made his parents happy.",
       "choices": [
        "that",
-       "which",
        "what",
+       "which",
        "it"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "関係詞(非制限用法 which・文を受ける)",
       "explanation": "【単元】関係詞(非制限用法 which・前文を受ける)。コンマの後で「彼が試験に合格したこと」という前の文全体を先行詞に取り、made の主語の欠落を補う非制限用法の which が正しい。that は非制限用法(コンマの後)では使えない。what は先行詞を含み、前文を先行詞に取るこの用法はできない。it は代名詞で関係詞節を導けず、コンマで二文をつなぐと非文。"
      },
@@ -242,10 +242,10 @@
       "choices": [
        "However",
        "Whatever",
-       "Whoever",
-       "Whichever"
+       "Whichever",
+       "Whoever"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "関係詞(複合関係代名詞 whoever)",
       "explanation": "【単元】関係詞(複合関係代名詞 whoever・譲歩)。「誰がドアに来ても」という譲歩の副詞節を作り、comes の主語の欠落を補うには、人を表す主格の whoever が正しい。However は様態・程度を表し直後に形容詞・副詞を伴うのが普通で、単独で主語節を作れない。Whatever は物・事を表し comes の主語(人)に合わない。Whichever は限定された選択肢から選ぶ意で、不特定の人物を指す本文に不適。"
      },
@@ -254,12 +254,12 @@
       "type": "multiple_choice",
       "stem": "___ hard you try, you cannot finish it in a day.",
       "choices": [
+       "However",
        "Whichever",
        "Whatever",
-       "Whoever",
-       "However"
+       "Whoever"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "関係詞(複合関係副詞 however)",
       "explanation": "【単元】関係詞(複合関係副詞 however・譲歩)。直後の形容詞・副詞(hard)を伴い「どんなに一生懸命~しても」という譲歩を表すには、複合関係副詞 However が正しい(However hard you try の語順)。Whatever は名詞や名詞節を導き、直後に副詞 hard を従えて譲歩を作る形にはならない。Whoever は人を表す複合関係代名詞で hard を直接修飾できない。Whichever も選択を表す代名詞で副詞 hard を伴う譲歩構文を作れない。"
      },
@@ -268,12 +268,12 @@
       "type": "multiple_choice",
       "stem": "Paris, ___ I visited last summer, is a beautiful city.",
       "choices": [
-       "which",
        "where",
+       "which",
        "that",
        "what"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "関係詞(非制限用法 which)",
       "explanation": "【単元】関係詞(非制限用法 which)。固有名詞 Paris をコンマで挟んで補足説明し、visited の目的語の欠落を補う物・地名を受ける関係代名詞は which が正しい。that は非制限用法(コンマの後)では使えない。where は関係副詞で後続が完全文の場合に用いるが、ここでは visited の目的語が欠けており不適。what は先行詞を含むため、先行詞 Paris がある本問では使えない。"
      },
@@ -283,11 +283,11 @@
       "stem": "If I ___ you, I would apologize to her right away.",
       "choices": [
        "am",
-       "were",
        "had been",
+       "were",
        "would be"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "仮定法(仮定法過去)",
       "explanation": "【単元】仮定法(仮定法過去)。現在の事実に反する仮定なので if 節は過去形 were を用い、主節は would + 動詞の原形。よって were が正しい。直説法現在 am は事実に反する仮定を表せず不可。had been は過去完了で過去の事実に反する仮定(仮定法過去完了)となり時制が合わない。would be は if 節の中では用いない。"
      }
@@ -312,10 +312,10 @@
       "choices": [
        "studied",
        "studies",
-       "had studied",
-       "would study"
+       "would study",
+       "had studied"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "仮定法(仮定法過去完了)",
       "explanation": "【単元】仮定法(仮定法過去完了)。last year という過去の事実に反する仮定で、主節が would have passed なので if 節は had + 過去分詞の had studied が正しい。仮定法過去の studied では時制が主節(過去完了相当)と合わない。直説法現在 studies は過去の事実に反する仮定を表せない。would study は if 節内で用いない。"
      },
@@ -325,11 +325,11 @@
       "stem": "___ I rich, I would travel around the world.",
       "choices": [
        "If were",
+       "Were",
        "If I am",
-       "Was",
-       "Were"
+       "Was"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "仮定法(if省略の倒置・仮定法過去)",
       "explanation": "【単元】仮定法(if省略の倒置)。If I were ... の if を省略すると主語と were が倒置して Were I rich, ... となる。よって Were が正しい。倒置形では if を残さないので If were は誤り。倒置に用いる仮定法の be 動詞は人称にかかわらず were であり Was は不可。If I am は直説法現在で事実に反する仮定にならない。"
      },
@@ -338,12 +338,12 @@
       "type": "multiple_choice",
       "stem": "___ I known about the meeting, I would have attended it.",
       "choices": [
-       "Had",
        "If had",
        "If I have",
+       "Had",
        "Have"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "仮定法(if省略の倒置・仮定法過去完了)",
       "explanation": "【単元】仮定法(if省略の倒置・仮定法過去完了)。If I had known ... の if を省略すると Had I known ... と倒置になる。よって Had が正しい。倒置では if を残さないので If had は誤り。過去の事実に反する仮定なので直説法現在の If I have や Have は不可。"
      },
@@ -352,12 +352,12 @@
       "type": "multiple_choice",
       "stem": "I wish I ___ how to swim; then I could join you at the beach.",
       "choices": [
-       "know",
        "knew",
+       "know",
        "have known",
        "will know"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "仮定法(I wish + 仮定法過去)",
       "explanation": "【単元】仮定法(I wish + 仮定法過去)。現在実現していない願望を表す I wish の後は仮定法過去を用いるので knew が正しい。直説法現在 know は願望(事実に反する)を表せない。have known は現在完了で時制が合わず、will know は未来を表す直説法で I wish の構文に合わない。"
      },
@@ -368,10 +368,10 @@
       "choices": [
        "studied",
        "study",
-       "had studied",
-       "have studied"
+       "have studied",
+       "had studied"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "仮定法(I wish + 仮定法過去完了)",
       "explanation": "【単元】仮定法(I wish + 仮定法過去完了)。過去の事実に反する後悔の願望なので I wish の後は仮定法過去完了 had + 過去分詞の had studied が正しい。仮定法過去 studied は現在の事実に反する願望を表すので過去への後悔には合わない。直説法現在 study や現在完了 have studied は事実に反する過去の願望を表せない。"
      },
@@ -381,11 +381,11 @@
       "stem": "He talks ___ he knew everything, but actually he knows very little.",
       "choices": [
        "like if",
+       "as if",
        "even if",
-       "as if he",
-       "as if"
+       "as if he"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "仮定法(as if + 仮定法過去)",
       "explanation": "【単元】仮定法(as if + 仮定法過去)。「まるで〜であるかのように」と現在の事実に反する様子を表すには as if + 仮定法過去(knew)を用いるので as if が正しい。even if は「たとえ〜でも」で意味が通らない。as if he は後に knew が続くと he が重複し非文。like if という表現は標準英語に存在しない。"
      }
@@ -408,12 +408,12 @@
       "type": "multiple_choice",
       "stem": "She looked ___ she had seen a ghost the moment she opened the door.",
       "choices": [
-       "as though",
        "even though",
        "as if she",
+       "as though",
        "though as"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "仮定法(as though + 仮定法過去完了)",
       "explanation": "【単元】仮定法(as though + 仮定法過去完了)。過去の時点よりさらに前の事実に反する様子を「まるで〜したかのように」と表すには as though + 仮定法過去完了(had seen)を用いるので as though が正しい。even though は「〜だけれども」で事実を述べる接続詞であり仮定法と意味が合わない。as though she は後に she had seen が続き主語が重複して非文。though as は語順が誤りで成立しない。"
      },
@@ -423,11 +423,11 @@
       "stem": "It is high time you ___ to bed; it's almost midnight.",
       "choices": [
        "go",
-       "went",
        "have gone",
-       "will go"
+       "will go",
+       "went"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "仮定法(It is time + 仮定法過去)",
       "explanation": "【単元】仮定法(It is time + 仮定法過去)。「もう〜してよい頃だ」を表す It is (high) time の後は、まだしていない事柄を表すため仮定法過去 went を用いるので went が正しい。直説法現在 go はこの構文では用いない。have gone(現在完了)や will go(未来)もこの慣用構文では使わない。"
      },
@@ -437,11 +437,11 @@
       "stem": "___ your help, I would not have finished the project on time.",
       "choices": [
        "Except",
-       "Unless",
        "Without",
+       "Unless",
        "Despite"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "仮定法(without + 仮定法)",
       "explanation": "【単元】仮定法(without + 仮定法)。「〜がなければ」と仮定の条件を名詞句で表すには Without your help が適切で、主節 would not have finished と呼応するので Without が正しい。Unless は節(主語+動詞)を導く接続詞で名詞 your help を直接取れない。Except は「〜を除いて」で意味が通らない。Despite は「〜にもかかわらず」で譲歩を表し、仮定の条件にならない。"
      },
@@ -450,12 +450,12 @@
       "type": "multiple_choice",
       "stem": "___ your timely advice, the company would have gone bankrupt.",
       "choices": [
+       "But for",
        "But of",
        "But to",
-       "For but",
-       "But for"
+       "For but"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "仮定法(but for + 仮定法)",
       "explanation": "【単元】仮定法(but for + 仮定法)。「〜がなかったら」を表す慣用句は But for で、主節 would have gone bankrupt と呼応するので But for が正しい。But to / For but / But of はいずれもこの意味を表す定型表現として存在せず非文。"
      },
@@ -464,12 +464,12 @@
       "type": "multiple_choice",
       "stem": "If you ___ change your mind, please let me know immediately.",
       "choices": [
-       "should",
        "would",
        "had",
+       "should",
        "were"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "仮定法(if + should)",
       "explanation": "【単元】仮定法(if + should: 万一)。「万一〜なら」と実現の可能性が低い未来を表すには if 節に should を用い、後に動詞の原形 change を続けるので should が正しい。would は if 節の中でこの用法を持たない。had は後に過去分詞が必要で原形 change とは結びつかない。were は後に to 不定詞(were to change)が必要で、原形 change とは結びつかないため不可。"
      },
@@ -479,11 +479,11 @@
       "stem": "If the sun ___ to rise in the west, I would change my opinion.",
       "choices": [
        "was",
-       "were",
        "had",
-       "would"
+       "would",
+       "were"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "仮定法(if + were to)",
       "explanation": "【単元】仮定法(if + were to: 仮定の were to)。「仮に〜するとしたら」と純粋な仮定を表すには if 節に were to + 動詞の原形を用いるので were が正しい(were to rise)。was to は仮定法のこの構文では用いず非文。had は後に過去分詞が必要で to rise とは結びつかない。would は if 節内のこの用法を持たない。"
      }
@@ -507,11 +507,11 @@
       "stem": "If I had taken your advice then, I ___ much happier now.",
       "choices": [
        "would have been",
-       "will be",
        "would be",
+       "will be",
        "had been"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "仮定法(mixed conditional)",
       "explanation": "【単元】仮定法(mixed conditional)。if 節が過去の事実に反する仮定(had taken)で、主節が now という現在の帰結を表すため、主節は would + 動詞の原形 would be となる(混合条件文)。よって would be が正しい。would have been は過去の帰結を表し now と合わない。will be は直説法未来で事実に反する仮定の帰結に使えない。had been は主節の帰結に用いる形ではない。"
      },
@@ -522,10 +522,10 @@
       "choices": [
        "is",
        "were",
-       "would be",
-       "had been"
+       "had been",
+       "would be"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "仮定法(mixed conditional・仮定法過去完了)",
       "explanation": "【単元】仮定法(mixed conditional)。主節は wouldn't have made で yesterday という過去の帰結を表すが、if 節は「(普段から)もっと注意深い人だったら」という現在も続く性質を述べるとも読める一方、ここでは過去の出来事に直結する条件として had been more careful が自然で、主節の仮定法過去完了と呼応する。よって had been が正しい。直説法現在 is は事実に反する仮定を表せない。仮定法過去 were だけでは過去の帰結 wouldn't have made とは時制が合わない。would be は if 節内で用いない。"
      },
@@ -534,12 +534,12 @@
       "type": "multiple_choice",
       "stem": "___ it not been for the doctor's quick action, the patient might have died.",
       "choices": [
-       "Had",
        "If",
        "Were",
-       "Has"
+       "Has",
+       "Had"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "仮定法(if省略の倒置・had it not been for)",
       "explanation": "【単元】仮定法(if省略の倒置・but for相当)。If it had not been for ...(〜がなかったら)の if を省略して倒置すると Had it not been for ... となる。主節 might have died と呼応するので Had が正しい。If では倒置にならず it not been と続けると非文になる。Were は be 動詞の倒置で後の been と結びつかない。Has は現在完了で過去の事実に反する仮定の時制に合わない。"
      },
@@ -548,12 +548,12 @@
       "type": "multiple_choice",
       "stem": "If it ___ tomorrow, the outdoor concert will be cancelled.",
       "choices": [
-       "rained",
        "rains",
+       "rained",
        "would rain",
        "had rained"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "仮定法(仮定法と直説法条件文の区別)",
       "explanation": "【単元】仮定法(直説法の条件文との区別)。tomorrow に実際に起こりうる条件で主節が will be cancelled なので、これは仮定法ではなく直説法(第一条件文)であり、if 節は現在形 rains を用いる(時を表す副詞節では未来も現在形)。よって rains が正しい。仮定法過去 rained は現在の事実に反する仮定で主節 will と合わない。would rain は if 節内で用いない。had rained は過去の事実に反する仮定で文意に合わない。"
      },
@@ -563,11 +563,11 @@
       "stem": "I would rather you ___ anything about this to my parents.",
       "choices": [
        "don't say",
-       "won't say",
        "didn't say",
+       "won't say",
        "haven't said"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "仮定法(would rather + 仮定法過去)",
       "explanation": "【単元】仮定法(would rather + 主語 + 仮定法過去)。would rather の後に別の主語(you)が続くときは、現在・未来のことでも仮定法過去を用いるので didn't say が正しい。直説法現在 don't say はこの構文に合わない。won't say(未来)や haven't said(現在完了)もこの慣用構文では用いない。"
      },
@@ -578,10 +578,10 @@
       "choices": [
        "is already starting",
        "has already started",
-       "already starts",
-       "had already started"
+       "had already started",
+       "already starts"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "時制(過去完了)",
       "explanation": "【単元】時制(過去完了)。過去のある時点(arrived)より前に完了していた動作は過去完了で表すため had already started が正しい。has already started は現在完了で、現在を基準にするので過去の文脈に合わない。already starts は単純現在で時系列の前後関係を示せず誤り。is already starting は現在進行形で過去の出来事を表せないため不適切。"
      }
@@ -604,12 +604,12 @@
       "type": "multiple_choice",
       "stem": "I ___ in this town for ten years, and I still love living here.",
       "choices": [
-       "have lived",
        "lived",
        "live",
-       "am living"
+       "am living",
+       "have lived"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "時制(現在完了の継続)",
       "explanation": "【単元】時制(現在完了の継続)。for ten years という期間を伴い、過去から現在まで住み続けている継続を表すので have lived が正しい。live は単純現在で「ずっと〜してきた」という継続のニュアンスを出せない。lived は過去形で現在も住んでいることを含意せず文意に反する。am living は現在進行形で「一時的な居住」を表し、十年の継続には不適切。"
      },
@@ -646,12 +646,12 @@
       "type": "multiple_choice",
       "stem": "She ___ to Canada three times, so she knows the country well.",
       "choices": [
+       "has been",
        "is going",
        "has gone",
-       "was",
-       "has been"
+       "was"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "時制(現在完了の経験)",
       "explanation": "【単元】時制(現在完了の経験)。three times を伴い「行ったことがある」という経験を表すには have/has been to を用いるため has been が正しい。has gone to は「行ってしまって今ここにいない」という結果を表し、現在カナダをよく知っている文意と矛盾する。was は単純過去で回数を伴う経験の含意が弱い。is going は現在進行形で経験を表せないため不適切。"
      },
@@ -660,12 +660,12 @@
       "type": "multiple_choice",
       "stem": "When I was a child, I ___ to the beach every summer with my family.",
       "choices": [
-       "would go",
        "have gone",
        "go",
-       "will go"
+       "will go",
+       "would go"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "時制(過去の習慣 would)",
       "explanation": "【単元】時制(過去の習慣 would)。過去の繰り返された習慣を表すには would do(またはused to)を用いるので would go が自然で正しい。go は単純現在で過去の習慣を表せない。have gone は現在完了で「行ってしまった」の意となり過去の習慣に合わない。will go は未来を表し過去の文脈に反するため不適切。"
      },
@@ -730,12 +730,12 @@
       "type": "multiple_choice",
       "stem": "I ___ him before, so I recognized his face immediately at the party.",
       "choices": [
-       "had met",
        "have met",
+       "had met",
        "meet",
        "will meet"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "時制(過去完了の経験)",
       "explanation": "【単元】時制(過去完了の経験)。過去のある時点(recognized)より前に「会ったことがあった」という経験を表すには過去完了を用いるため had met が正しい。meet は単純現在で過去の前後関係を表せない。have met は現在完了で現在を基準にするので過去の文脈に合わない。will meet は未来表現で過去の出来事を表せないため不適切。"
      },
@@ -744,12 +744,12 @@
       "type": "multiple_choice",
       "stem": "This soup tastes great. ___ you want some more?",
       "choices": [
-       "Are",
        "Do",
+       "Are",
        "Have",
        "Will"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "時制(状態動詞は進行形不可)",
       "explanation": "【単元】時制(状態動詞は進行形不可)。want は「欲しい」という状態を表す状態動詞で進行形にできず、一般動詞の疑問文は do を用いるため Do が正しい。Are は be 動詞の疑問文を導き、状態動詞 want と進行形を作ろうとする誤り(Are you wanting は不可)。Have は完了の疑問文を作るが過去分詞が続かず不適切。Will は未来の疑問だが文意(今もっと欲しいか)に合わないため不適切。"
      },
@@ -800,12 +800,12 @@
       "type": "multiple_choice",
       "stem": "He has lost his keys, so he ___ get into his house now.",
       "choices": [
-       "can't",
        "didn't",
+       "can't",
        "won't have",
        "hasn't"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "時制(現在完了の結果)",
       "explanation": "【単元】時制(現在完了の結果)。鍵をなくした結果として「今、家に入れない」という現在の状態を表すため can't が正しい。didn't は過去の否定で now と整合しない。won't have は未来の否定の意味になり現在の状況に合わない。hasn't は単独では get の前に置けず非文となるため不適切。"
      },
@@ -815,11 +815,11 @@
       "stem": "As soon as the train ___, I will text you.",
       "choices": [
        "will arrive",
-       "arrives",
        "is arriving",
+       "arrives",
        "will have arrived"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "時制(時の副詞節中の現在形)",
       "explanation": "【単元】時制(時を表す副詞節中は未来でも現在形)。As soon as が導く時の副詞節では未来の内容でも現在形を用いるため arrives が正しい。will arrive は副詞節内に未来形を使う誤り。is arriving は現在進行形だが時の副詞節では原則現在形が求められ不適切。will have arrived も未来完了で副詞節には用いないため誤り。"
      },
@@ -830,10 +830,10 @@
       "choices": [
        "didn't finish",
        "don't finish",
-       "haven't finished",
-       "wasn't finishing"
+       "wasn't finishing",
+       "haven't finished"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "時制(現在完了・完了用法)",
       "explanation": "【単元】時制(現在完了・完了用法 yet)。yet を伴い「まだ〜し終えていない」という現在までの完了の否定を表すには現在完了を用いるため haven't finished が正しい。didn't finish は単純過去で yet との相性が悪く、現在の「遊びに行けない」状態とのつながりも弱い。don't finish は単純現在で完了を表せない。wasn't finishing は過去進行形で「まだ終えていない」という完了の意を表せないため不適切。"
      },
@@ -842,12 +842,12 @@
       "type": "multiple_choice",
       "stem": "They ___ each other since they were in high school.",
       "choices": [
+       "have known",
        "know",
        "knew",
-       "are knowing",
-       "have known"
+       "are knowing"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "時制(現在完了の継続・状態動詞)",
       "explanation": "【単元】時制(現在完了の継続・状態動詞)。since を伴い高校時代から現在まで「知り合いである」という状態の継続を表すには現在完了を用いるため have known が正しい。know は単純現在で継続のニュアンスを欠く。knew は過去形で現在も知り合いである含意を持たない。状態動詞 know は進行形にできないので are knowing は非文であり不適切。"
      },
@@ -856,12 +856,12 @@
       "type": "multiple_choice",
       "stem": "Last year I visited Kyoto, where I ___ many beautiful temples.",
       "choices": [
-       "saw",
        "see",
+       "saw",
        "have seen",
        "will see"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "時制(過去形)",
       "explanation": "【単元】時制(過去形)。Last year という明確な過去の時を表す副詞があるので、過去の一回の出来事は過去形で表し saw が正しい。see は単純現在で過去の出来事を表せない。have seen は現在完了だが、last year のように明確な過去を示す副詞とは併用できないため誤り。will see は未来表現で過去の文脈に反するため不適切。"
      },
@@ -871,11 +871,11 @@
       "stem": "This bridge is ___ than that one over the river.",
       "choices": [
        "more long",
-       "longer",
        "longest",
+       "longer",
        "as longer"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "比較(比較級の基本形)",
       "explanation": "【単元】比較(比較級の基本形)。1音節の形容詞 long は -er を付けて longer とするのが規則。than があるので比較級が必要。more long は短音節形容詞に more を使う誤り。longest は最上級で2者比較には不適。as longer は as ... as 構文の崩れた誤形(as の後は原級 long が来る)。"
      }
@@ -900,10 +900,10 @@
       "choices": [
        "high",
        "higher",
-       "highest",
-       "more highest"
+       "more highest",
+       "highest"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "比較(最上級の基本形)",
       "explanation": "【単元】比較(最上級+the)。in the world という最上級を導く範囲表現があり、定冠詞 the を伴う highest が正しい。原級 high は最上級の意味を表せない。higher は比較級で「最も高い」を表せない。more highest は more と最上級 -est の二重比較で非文。"
      },
@@ -913,11 +913,11 @@
       "stem": "She speaks English ___ fluently than her brother.",
       "choices": [
        "very",
+       "more",
        "much",
-       "most",
-       "more"
+       "most"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "比較(副詞の比較級)",
       "explanation": "【単元】比較(副詞の比較級)。fluently は -ly で終わる副詞なので比較級は more fluently とする。than があるので比較級が必要。much は比較級を強調する語で、原級 fluently を比較級にはできない。most は最上級用。very は原級を修飾する語で than と共には使えない。"
      },
@@ -926,12 +926,12 @@
       "type": "multiple_choice",
       "stem": "He is ___ taller than his father.",
       "choices": [
-       "much",
        "very",
        "more",
+       "much",
        "so"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "比較(比較級の強調 much)",
       "explanation": "【単元】比較(比較級の強調)。比較級 taller を「ずっと」と強調するには much / far / even / still を用いる。much taller が正しい。very は原級専用で比較級は強調できない。more は taller がすでに比較級なので二重比較となり誤り。so は than を伴う比較級の強調には使えない。"
      },
@@ -940,12 +940,12 @@
       "type": "multiple_choice",
       "stem": "Tokyo is ___ exciting city I have ever visited.",
       "choices": [
-       "the more",
        "the most",
+       "the more",
        "more",
        "most"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "比較(最上級の基本形)",
       "explanation": "【単元】比較(最上級+経験のever)。I have ever visited を伴い「今までで最も～」を表すので定冠詞付きの最上級 the most exciting が正しい。exciting は長音節形容詞なので most を用いる。the more は比較級で最上級の意味を表せない。冠詞のない more / most は形容詞の最上級に通常 the が必要なこの文脈では不適。"
      },
@@ -956,10 +956,10 @@
       "choices": [
        "very",
        "too",
-       "far",
-       "many"
+       "many",
+       "far"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "比較(比較級の強調 far)",
       "explanation": "【単元】比較(比較級の強調 far)。比較級 faster を強調する副詞は much / far / even / still。far faster が正しい。very は原級専用で比較級を強調できない。too は「～すぎる」の意で原級を修飾する。many は可算名詞の数を表す語で、副詞の比較級は修飾できない。"
      },
@@ -969,11 +969,11 @@
       "stem": "The ___ you start, the sooner you will finish.",
       "choices": [
        "more soon",
+       "sooner",
        "soon",
-       "soonest",
-       "sooner"
+       "soonest"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "比較(the+比較級 the+比較級)",
       "explanation": "【単元】比較(the+比較級, the+比較級)。「~すればするほど…」の構文は〈The+比較級 …, the+比較級 …〉。後半が the sooner なので前半も比較級 sooner が正しい。原級 soon や最上級 soonest はこの構文に入らない。more soon は soon が短い副詞で sooner と変化するため二重比較となり誤り。"
      }
@@ -996,12 +996,12 @@
       "type": "multiple_choice",
       "stem": "The more money he earns, ___ he wants.",
       "choices": [
-       "the more",
        "more",
        "the most",
+       "the more",
        "the much"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "比較(the+比較級 the+比較級)",
       "explanation": "【単元】比較(the+比較級, the+比較級)。〈The+比較級 …, the+比較級 …〉構文で、後半も〈the+比較級〉の形が必要なので the more が正しい。the を欠いた more は構文上不可。the most は最上級でこの構文に入らない。the much は much の比較級が more であるため誤り(比較級の形になっていない)。"
      },
@@ -1011,11 +1011,11 @@
       "stem": "This room is twice ___ that one.",
       "choices": [
        "larger than",
-       "as large as",
        "as large than",
-       "so large as"
+       "so large as",
+       "as large as"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "比較(倍数表現 as as)",
       "explanation": "【単元】比較(倍数表現)。「~の2倍…」は〈twice as+原級+as〉で表すので twice as large as が正しい。倍数詞 twice は as ... as 構文と結びつく。larger than では twice と比較級が直接結びつかず誤り。as large than は as と than の混在で非文。so large as は肯定文の比較で twice と共に用いるのは不適切(so ... as は通例否定文)。"
      },
@@ -1025,11 +1025,11 @@
       "stem": "This dictionary is ___ as that one.",
       "choices": [
        "more useful",
-       "so useful",
        "as useful",
+       "so useful",
        "useful enough"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "比較(as as 同等比較)",
       "explanation": "【単元】比較(as ... as 同等比較)。直後に as that one と続いており「~と同じくらい役に立つ」を表す〈as+原級+as〉の前半 as useful が正しい。so useful は肯定文の同等比較には通例使わない。more useful は比較級で後ろが than でなく as なので不適。useful enough は「十分に役立つ」の意で as that one とは結びつかない。"
      },
@@ -1038,12 +1038,12 @@
       "type": "multiple_choice",
       "stem": "She is not ___ a singer as a songwriter.",
       "choices": [
+       "so much",
        "more than",
        "as more",
-       "much more",
-       "so much"
+       "much more"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "比較(not so much A as B)",
       "explanation": "【単元】比較(not so much A as B)。「AというよりむしろB」は〈not so much A as B〉。空所には so much が入り、not so much a singer as a songwriter となる。as more は as の後に比較級が来る誤り。much more は than を要求し as とは合わない。more than は「~以上」の意でこの構文を成さない。"
      },
@@ -1052,12 +1052,12 @@
       "type": "multiple_choice",
       "stem": "He has ___ ten thousand yen in his wallet, which is too little.",
       "choices": [
-       "no more than",
        "no less than",
        "not less than",
+       "no more than",
        "more than"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "比較(no more than)",
       "explanation": "【単元】比較(no more than)。which is too little から「たった1万円しかない」という少なさの強調が読み取れる。「~しかない」は no more than(=only)で表す。no less than は「~もの」と多さを強調し文脈に矛盾。not less than は「少なくとも」で多さ寄り。more than は単に「~以上」で「少ない」という含意と合わない。"
      },
@@ -1067,11 +1067,11 @@
       "stem": "This product is far ___ to all the others on the market.",
       "choices": [
        "more superior",
-       "superior",
        "superiorer",
-       "superior than"
+       "superior than",
+       "superior"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "比較(ラテン比較 superior to)",
       "explanation": "【単元】比較(ラテン比較 superior to)。superior 自体に比較の意味が含まれ、比較対象は than でなく to で示すので superior が正しい(superior to ~)。more superior は二重比較で非文。superiorer のような語形変化は存在しない。superior than は than を用いる誤りで、superior は to をとる。"
      }
@@ -1095,11 +1095,11 @@
       "stem": "My sister is two years ___ to me.",
       "choices": [
        "senior than",
-       "more senior",
        "senior",
+       "more senior",
        "elder"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "比較(ラテン比較 senior to)",
       "explanation": "【単元】比較(ラテン比較 senior to)。senior は「年上の」を表し、比較対象を to で示すので senior が正しい(senior to me)。more senior は二重比較で非文。senior than は than をとる誤りで senior は to を伴う。elder は限定用法中心で than も to もとらず、ここでは構文に合わない。"
      },
@@ -1110,10 +1110,10 @@
       "choices": [
        "prefer than",
        "prefer rather",
-       "more prefer",
-       "prefer"
+       "prefer",
+       "more prefer"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "比較(ラテン比較 prefer to)",
       "explanation": "【単元】比較(ラテン比較 prefer A to B)。「BよりAを好む」は〈prefer A to B〉で、to で比較対象を示すので prefer が正しい(prefer tea to coffee)。prefer rather は rather が余分で誤り。more prefer は prefer 自体に好みの比較が含まれ二重表現となり非文。prefer than は than をとる誤りで prefer は to を伴う。"
      },
@@ -1122,12 +1122,12 @@
       "type": "multiple_choice",
       "stem": "No other student in the class is ___ than Ken.",
       "choices": [
-       "taller",
        "tall",
        "tallest",
-       "as tall"
+       "as tall",
+       "taller"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "比較(比較級で最上級の意味)",
       "explanation": "【単元】比較(比較級で最上級の意味)。〈No other+単数名詞 … 比較級+than〉で「~ほど…な者はいない」と最上級相当を表す。than があるので比較級 taller が正しい。原級 tall や最上級 tallest は than と結びつかない。as tall は as ... as 構文用で than の前には置けない。"
      },
@@ -1136,12 +1136,12 @@
       "type": "multiple_choice",
       "stem": "Health is ___ important than wealth.",
       "choices": [
-       "no fewer",
        "no less",
+       "no fewer",
        "not fewer",
        "no lesser"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "比較(no less than)",
       "explanation": "【単元】比較(no less ... than)。「~に劣らず…だ」は〈no less+原級+than〉。important は不可算的に程度を表すので no less important than が正しい。fewer は可算名詞の数に用いる語で important の程度には不適。not fewer も同様に数の語で誤り。no lesser は lesser が限定用法の特殊な比較級で than 構文のこの位置には合わない。"
      },
@@ -1151,11 +1151,11 @@
       "stem": "Of the two brothers, Tom is ___.",
       "choices": [
        "the tallest",
-       "taller",
        "the taller",
+       "taller",
        "more tall"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "比較(2者間の比較級)",
       "explanation": "【単元】比較(2者間の比較級+the)。「2人のうちで~な方」は〈the+比較級〉で表すので the taller が正しい。Of the two が2者を示すため最上級 the tallest は不適。the を欠いた taller は「2者のうちの一方」を特定するこの文脈では定冠詞が必要。more tall は短音節形容詞に more を使う誤り(tall→taller)。"
      },
@@ -1166,10 +1166,10 @@
       "choices": [
        "to standing",
        "stood",
-       "stand",
-       "standing"
+       "standing",
+       "stand"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "分詞(現在分詞の形容詞用法・後置修飾)",
       "explanation": "【単元】分詞(現在分詞の形容詞用法・後置修飾)。名詞 the boy が「立っている」という能動・進行の意味を持つので、現在分詞 standing が後置修飾として正しい。過去分詞 stood は「立たされた」という受動の意味になり主体的に立っている少年の説明にならない。原形 stand は名詞を修飾できず、to standing は to 不定詞と動名詞の混同で文法的に存在しない形。"
      }
@@ -1192,12 +1192,12 @@
       "type": "multiple_choice",
       "stem": "The language ___ in that country is Portuguese, not Spanish.",
       "choices": [
-       "spoken",
        "speaks",
        "speaking",
-       "to speak"
+       "to speak",
+       "spoken"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "分詞(過去分詞の形容詞用法・後置修飾)",
       "explanation": "【単元】分詞(過去分詞の形容詞用法・後置修飾)。The language は「話される」という受動の関係なので過去分詞 spoken が正しい。現在分詞 speaking だと「言語が話す」という能動になり不自然。定形動詞 speaks では関係詞節を作る主語・関係詞が欠け一文に動詞が二つ並んでしまう。to speak は名詞を受動的に後置修飾できない。"
      },
@@ -1234,12 +1234,12 @@
       "type": "multiple_choice",
       "stem": "___ what to say, she remained silent for a while.",
       "choices": [
+       "Not knowing",
        "Don't know",
        "Knowing not",
-       "Not to know",
-       "Not knowing"
+       "Not to know"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "分詞(分詞構文の否定・理由)",
       "explanation": "【単元】分詞(分詞構文の否定・理由)。分詞構文の否定は分詞の直前に not を置くので Not knowing が正しい(=Because she did not know)。Knowing not は否定語の位置が誤り。Not to know は不定詞で理由を表す分詞構文にならず、Don't know は命令文の形で従属節を作れない。"
      },
@@ -1248,12 +1248,12 @@
       "type": "multiple_choice",
       "stem": "She sat on the bench ___ her eyes closed.",
       "choices": [
-       "with",
        "for",
        "by",
-       "in"
+       "in",
+       "with"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "分詞(付帯状況 with+O+分詞)",
       "explanation": "【単元】分詞(付帯状況 with+O+分詞)。付帯状況を表す「with+目的語+分詞」の構文で、her eyes closed(目を閉じた状態で)を導く前置詞は with が正しい。for / by / in はこの「with+O+過去分詞」の付帯状況構文を作れず、いずれも her eyes closed という構造を後続させられない。"
      },
@@ -1318,12 +1318,12 @@
       "type": "multiple_choice",
       "stem": "I must have my watch ___ because it keeps losing time.",
       "choices": [
-       "repaired",
        "repair",
+       "repaired",
        "repairing",
        "to repair"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "分詞(使役動詞 have+O+過去分詞)",
       "explanation": "【単元】分詞(使役動詞 have+O+過去分詞)。have+目的語+過去分詞は「O を~してもらう/される」を表し、my watch は「修理される」側=受動なので過去分詞 repaired が正しい。原形 repair は my watch が修理する能動になり不適。現在分詞 repairing も時計が修理する意になり不自然で、to repair はこの have 構文の補語には用いない。"
      },
@@ -1332,12 +1332,12 @@
       "type": "multiple_choice",
       "stem": "The teacher kept us ___ in the cold rain for almost an hour.",
       "choices": [
-       "wait",
        "waiting",
+       "wait",
        "to wait",
        "waited"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "分詞(keep+O+現在分詞)",
       "explanation": "【単元】分詞(keep+O+現在分詞)。keep+目的語+現在分詞は「O を~させ続ける」を表し、us は「待つ」動作主=能動・継続なので現在分詞 waiting が正しい。原形 wait は keep の補語に取れず、過去分詞 waited だと「待たれる」受動で不自然。to wait も keep のこの構文では用いない。"
      },
@@ -1388,12 +1388,12 @@
       "type": "multiple_choice",
       "stem": "___ in plain English, the report was easy for everyone to understand.",
       "choices": [
-       "Written",
        "Wrote",
+       "Written",
        "Writing",
        "Write"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "分詞(分詞構文・受動)",
       "explanation": "【単元】分詞(分詞構文・受動)。文の主語 the report は「書かれた」側=受動なので過去分詞 Written が正しい(=Because it was written)。現在分詞 Writing だと「報告書が書く」という能動で非文。Wrote は過去形の定形動詞、Write は原形でいずれも分詞構文を作れない。"
      },
@@ -1403,11 +1403,11 @@
       "stem": "There ___ no bus service, we had to walk all the way home.",
       "choices": [
        "was",
-       "being",
        "is",
+       "being",
        "to be"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "分詞(There being の独立分詞構文)",
       "explanation": "【単元】分詞(There being の独立分詞構文)。there is 構文を分詞構文にすると there being となり、主節の主語 we と意味上の主語が異なる独立分詞構文として There being が正しい(=As there was no bus service)。定形動詞 was / is を置くと接続詞なしに節が二つ並び非文になる。to be は不定詞でこの理由を表す分詞構文の働きをしない。"
      },
@@ -1418,10 +1418,10 @@
       "choices": [
        "consider",
        "considering",
-       "considered",
-       "to consider"
+       "to consider",
+       "considered"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "分詞(慣用的独立分詞構文 all things considered)",
       "explanation": "【単元】分詞(慣用的独立分詞構文 all things considered)。「あらゆる事情を考慮すると」は慣用表現 all things considered で、All things は「考慮される」側=受動なので過去分詞 considered が正しい。現在分詞 considering だと「あらゆる事情が考慮する」という能動で不自然。原形 consider は分詞構文を作れず、to consider もこの慣用句では用いない。"
      },
@@ -1430,12 +1430,12 @@
       "type": "multiple_choice",
       "stem": "Most of the people ___ to the party arrived more than an hour late.",
       "choices": [
+       "invited",
        "inviting",
        "to inviting",
-       "invite",
-       "invited"
+       "invite"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "分詞(過去分詞の後置修飾)",
       "explanation": "【単元】分詞(過去分詞の後置修飾)。the people は「招待された」側=受動なので過去分詞 invited が正しい(=who were invited to the party)。現在分詞 inviting だと「招待する人々」という能動になり文意に反する。原形 invite は名詞を修飾できず、to inviting は to 不定詞と動名詞の混同で存在しない形。"
      }
@@ -1458,12 +1458,12 @@
       "type": "multiple_choice",
       "stem": "When I was a child, I ___ swim across the river, but now I can't even manage a few strokes.",
       "choices": [
-       "could",
        "can",
+       "could",
        "should",
        "would rather"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "助動詞(canとcould・過去の能力)",
       "explanation": "【単元】助動詞(could=過去の能力)。過去に持っていた能力(かつてはできた)を表すので could が適切。can は現在の能力を表すため「子供の頃」という過去の文脈と合わない。should は義務・助言を表し能力の意味がない。would rather は「むしろ〜したい」の意で文意に合わない。"
      },
@@ -1473,11 +1473,11 @@
       "stem": "It's only a five-minute walk, so it ___ be far from here.",
       "choices": [
        "must not",
-       "cannot",
        "may not",
+       "cannot",
        "should not"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "助動詞(cannotの否定推量)",
       "explanation": "【単元】助動詞(cannotの否定推量「〜のはずがない」)。「遠いはずがない」という強い否定の推量には cannot が適切。must not は「〜してはいけない」という禁止を表す。may not は「〜でないかもしれない」と可能性を弱く否定するだけ。should not は「〜すべきでない」という助言で文意に合わない。"
      },
@@ -1488,10 +1488,10 @@
       "choices": [
        "should tell",
        "must have told",
-       "should have told",
-       "would tell"
+       "would tell",
+       "should have told"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "助動詞(should have+過去分詞・後悔)",
       "explanation": "【単元】助動詞(should have+過去分詞=過去の後悔・非難)。「言っておくべきだったのに(言わなかった)」という過去にしなかったことへの後悔を表すので should have told が適切。must have told は「言ったにちがいない」という過去の推量で謝罪の文脈に合わない。should tell は現在・未来の助言。would tell は仮定や過去の習慣を表し後悔の意味がない。"
      },
@@ -1500,12 +1500,12 @@
       "type": "multiple_choice",
       "stem": "The lights are off and the car is gone, so they ___ already.",
       "choices": [
+       "must have left",
        "may leave",
        "might have to leave",
-       "should leave",
-       "must have left"
+       "should leave"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "助動詞(must have+過去分詞・過去の推量)",
       "explanation": "【単元】助動詞(must have+過去分詞=過去の推量)。電気が消え車もない状況証拠から「すでに出発したにちがいない」という過去への確信ある推量で must have left が正しい。may leave は現在・未来の可能性。might have to leave は「出発しなければならないかもしれない」という未来の必要の推量。should leave は現在・未来の助言で、すでに起きたことの推量にはならない。"
      },
@@ -1514,12 +1514,12 @@
       "type": "multiple_choice",
       "stem": "You ___ worry about the deadline; I've already finished the report for you.",
       "choices": [
-       "need not",
        "must not",
+       "need not",
        "don't need",
        "needn't to"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "助動詞(need not・不必要)",
       "explanation": "【単元】助動詞(need not=不必要)。助動詞の need は後ろに原形動詞を直接とり「〜する必要はない」を表すので need not worry の形になる。must not は「〜してはいけない」という禁止で文意に合わない。don't need は本動詞用法で don't need to worry のように to が必要。needn't to は助動詞の need に to を付けており誤りで、to は不要。"
      },
@@ -1529,11 +1529,11 @@
       "stem": "It started raining hard, so we ___ stay home rather than go out.",
       "choices": [
        "had better",
-       "may as well",
        "would rather",
+       "may as well",
        "ought"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "助動詞(may as well)",
       "explanation": "【単元】助動詞(may as well=〜する方がよい/どうせなら〜する方がましだ)。「外出するくらいなら家にいる方がましだ」という消極的選択で may as well が適切。had better は強い忠告で than と直接対比する構文には合わない。would rather は主語の願望を表し、文末の rather than と意味的に重複し不自然。ought は単独では使えず ought to が必要。"
      }
@@ -1558,10 +1558,10 @@
       "choices": [
        "is used to",
        "would rather",
-       "used to",
-       "had better"
+       "had better",
+       "used to"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "助動詞(used to・過去の習慣)",
       "explanation": "【単元】助動詞(used to=過去の習慣)。「(昔は)〜したものだった」という過去の習慣を表すので used to が適切。would rather は「むしろ〜したい」で習慣を表さない。is used to は「〜に慣れている」の意で後ろは動名詞(washing)が必要であり、また現在形なので過去の文脈に合わない。had better は現在・未来の忠告。"
      },
@@ -1571,11 +1571,11 @@
       "stem": "You ___ touch that wire — it's extremely dangerous and could kill you.",
       "choices": [
        "had not better",
+       "had better not",
        "don't have better",
-       "would rather not",
-       "had better not"
+       "would rather not"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "助動詞(had better not・否定の忠告)",
       "explanation": "【単元】助動詞(had better not=否定の忠告)。had better の否定は not を better の直後に置いて had better not の形をとる。had not better は否定語の位置が誤り。would rather not は「むしろ〜したくない」という願望で、危険を警告する強い忠告の意味にならない。don't have better は語法として成立しない非文。"
      },
@@ -1584,12 +1584,12 @@
       "type": "multiple_choice",
       "stem": "I'd rather you ___ tell anyone about this until the official announcement is made.",
       "choices": [
-       "didn't",
        "don't",
        "won't",
+       "didn't",
        "not to"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "助動詞(would rather+主語+過去形)",
       "explanation": "【単元】助動詞(would rather+主語+過去形=控えめな願望)。「あなたには〜してほしくない」と現在・未来の願望を相手に向けて述べる場合、would rather の後の that 節内では仮定法過去(動詞の過去形)を使うため didn't が正しい。don't や won't は現在・未来形でこの構文の語法に合わない。not to は to不定詞で、節をとる would rather の後ろには続かない。"
      },
@@ -1598,12 +1598,12 @@
       "type": "multiple_choice",
       "stem": "___ I ask you a personal question, or would that be too intrusive?",
       "choices": [
-       "Must",
        "May",
+       "Must",
        "Need",
        "Used"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "助動詞(may・許可)",
       "explanation": "【単元】助動詞(may=許可を求める)。「〜してもよろしいですか」と丁寧に許可を求める疑問文で May が適切。Must は「〜しなければならないか」という義務の意味になり質問の意図に合わない。Need を疑問文の文頭に置くと「〜する必要があるか」の意になり許可とは異なる。Used は助動詞として疑問文頭には使えず、Did you use to の形になる。"
      },
@@ -1614,10 +1614,10 @@
       "choices": [
        "ought",
        "need",
-       "dare",
-       "used"
+       "used",
+       "dare"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "助動詞(dare・非難)",
       "explanation": "【単元】助動詞(dare=よくも〜できる)。How dare you+原形 で「よくも〜できるな」という非難・憤りを表す定型表現なので dare が正しい。need は「〜する必要がある」で文意に合わない。ought は ought to の形が必要で How と結びつくこの構文には合わない。used は過去の習慣を表しこの感嘆的非難構文には使えない。"
      },
@@ -1627,11 +1627,11 @@
       "stem": "Students ___ submit their essays by Friday; no late work will be accepted.",
       "choices": [
        "should rather",
+       "ought to",
        "used to",
-       "may well",
-       "ought to"
+       "may well"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "助動詞(ought to・義務)",
       "explanation": "【単元】助動詞(ought to=義務・当然)。「〜すべきだ/〜しなければならない」という義務を表すので ought to+原形 が正しい。should rather は語法として成立しない非文。may well は「たぶん〜だろう」という推量で締め切り厳守の指示に合わない。used to は過去の習慣を表し未来の義務を述べる文脈に合わない。"
      }
@@ -1654,12 +1654,12 @@
       "type": "multiple_choice",
       "stem": "She isn't answering her phone. She ___ in a meeting right now.",
       "choices": [
-       "might be",
        "might been",
        "may have",
+       "might be",
        "must been"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "助動詞(might be・現在の推量)",
       "explanation": "【単元】助動詞(might be=現在の推量「〜かもしれない」)。「今ちょうど会議中かもしれない」という現在の状態の推量なので might be が正しい。might been は助動詞の後に過去分詞 been だけが続く誤りで、be か have been が必要。may have は後ろに過去分詞を伴って過去の推量を作る形であり、文末の right now(現在)と矛盾する。must been も must の後に原形 be か have been が必要で非文。"
      },
@@ -1669,11 +1669,11 @@
       "stem": "There's a slight chance of rain, so you ___ take an umbrella just in case.",
       "choices": [
        "had better not",
-       "may as well",
        "would rather",
-       "must not"
+       "must not",
+       "may as well"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "助動詞(may as well・軽い助言)",
       "explanation": "【単元】助動詞(may as well=〜しておく方がよい)。「念のため傘を持っておく方がよい」という軽い助言で may as well が適切。had better not は「〜しない方がよい」という否定の忠告で文意と逆になる。would rather は主語の願望を表し、客観的な助言の文脈に合わない。must not は「〜してはいけない」という禁止で意味が逆になる。"
      },
@@ -1683,11 +1683,11 @@
       "stem": "I called him several times last night, but no one picked up. He ___ asleep.",
       "choices": [
        "must be",
-       "should be",
        "may have been",
+       "should be",
        "can have been"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "助動詞(may have+過去分詞・過去の推量)",
       "explanation": "【単元】助動詞(may have+過去分詞=過去の推量「〜だったかもしれない」)。「(昨夜)眠っていたのかもしれない」という過去の状態への控えめな推量なので may have been が正しい。must be や should be は現在の状態を表し、last night という過去の文脈に合わない。can have been は肯定平叙文では用いられず、過去の可能性を述べる肯定の推量には使えない非文。"
      },
@@ -1696,12 +1696,12 @@
       "type": "multiple_choice",
       "stem": "We ___ cancel the picnic if the weather doesn't improve by tomorrow morning.",
       "choices": [
+       "may have to",
        "ought have to",
        "may must",
-       "must can",
-       "may have to"
+       "must can"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "助動詞(may have to・助動詞の重ね不可)",
       "explanation": "【単元】助動詞(may have to=〜しなければならないかもしれない)。助動詞 may と「義務」を表す have to を組み合わせ「中止しなければならないかもしれない」を表す may have to が正しい。may must は助動詞を二つ重ねており英語では不可。must can も助動詞の連続で非文。ought have to は ought to have ですらなく語法として成立しない誤り。"
      },
@@ -1710,12 +1710,12 @@
       "type": "multiple_choice",
       "stem": "The Mona Lisa ___ by millions of tourists every year.",
       "choices": [
-       "is seen",
        "sees",
        "is seeing",
+       "is seen",
        "see"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "受動態(基本・現在形)",
       "explanation": "【単元】受動態(基本・現在形)。主語 The Mona Lisa は「見られる」側で、毎年繰り返される事実なので現在形の受動態 be動詞+過去分詞の is seen が正しい。sees と see は能動態で「絵画が見る」となり意味不明。is seeing は進行形(能動)で受動の意味を表せない。"
      },
@@ -1725,11 +1725,11 @@
       "stem": "This bridge ___ in 1990 and is still in use today.",
       "choices": [
        "built",
-       "was built",
        "has built",
-       "is built"
+       "is built",
+       "was built"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "受動態(基本・過去形)",
       "explanation": "【単元】受動態(基本・過去形)。in 1990 という過去の一時点を表す副詞句があり、橋は「建てられた」側なので過去形の受動態 was built が正しい。built は能動の過去形で「橋が建てた」となり不可。has built は能動の現在完了。is built は現在形で過去の年と合わない。"
      }
@@ -1753,11 +1753,11 @@
       "stem": "Look! The whole street ___ now because of the parade.",
       "choices": [
        "is cleaning",
-       "cleans",
        "is being cleaned",
+       "cleans",
        "has cleaned"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "受動態(進行形)",
       "explanation": "【単元】受動態(進行形)。now で「今まさに〜されている最中」を表すため、受動態の進行形 be動詞+being+過去分詞の is being cleaned が正しい。is cleaning と cleans は能動で「通りが掃除する」となり不可。has cleaned は能動の現在完了で進行中の意味を表せない。"
      },
@@ -1768,10 +1768,10 @@
       "choices": [
        "has not finished",
        "did not finish",
-       "is not finishing",
-       "has not been finished"
+       "has not been finished",
+       "is not finishing"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "受動態(現在完了)",
       "explanation": "【単元】受動態(現在完了)。yet があり「まだ仕上げられていない」という完了の受動を表すため、have/has+been+過去分詞の has not been finished が正しい。has not finished と is not finishing は能動で「報告書が仕上げない」となり不可。did not finish も能動の過去形。"
      },
@@ -1780,12 +1780,12 @@
       "type": "multiple_choice",
       "stem": "When I arrived, I found that my application ___ already ___.",
       "choices": [
-       "had / been rejected",
        "had / rejected",
        "has / been rejected",
-       "was / rejecting"
+       "was / rejecting",
+       "had / been rejected"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "受動態(過去完了)",
       "explanation": "【単元】受動態(過去完了)。到着した過去の時点より前に「すでに却下されていた」という大過去の受動を表すため、had+been+過去分詞となる had / been rejected が正しい。had / rejected は受動の been が欠落。has / been rejected は時制が現在完了で過去の文脈に合わない。was / rejecting は能動進行で意味が通らない。"
      },
@@ -1794,12 +1794,12 @@
       "type": "multiple_choice",
       "stem": "The patient must ___ to the hospital immediately.",
       "choices": [
-       "take",
        "be taken",
+       "take",
        "be taking",
        "taken"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "受動態(助動詞+受動態)",
       "explanation": "【単元】受動態(助動詞+受動態)。助動詞 must の後は動詞の原形で、患者は「運ばれる」側なので be+過去分詞の be taken が正しい。take は能動で「患者が運ぶ」となり不可。be taking は能動進行。taken は be が欠落しており助動詞の後に過去分詞だけを置くことはできない。"
      },
@@ -1809,11 +1809,11 @@
       "stem": "The thief ___ by the police while he was trying to escape.",
       "choices": [
        "was catching",
-       "caught",
        "was caught",
+       "caught",
        "catches"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "受動態(過去形・by+動作主)",
       "explanation": "【単元】受動態(過去形・by+動作主)。by the police という動作主が示され、泥棒は「捕まえられた」側なので過去形の受動態 was caught が正しい。was catching と catches と caught はいずれも能動で「泥棒が捕まえる」となり、by the police と矛盾する。"
      },
@@ -1824,10 +1824,10 @@
       "choices": [
        "called off",
        "called off was",
-       "was called",
-       "was called off"
+       "was called off",
+       "was called"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "受動態(群動詞の受動態)",
       "explanation": "【単元】受動態(群動詞の受動態)。call off(中止する)という句動詞の受動態は be動詞+過去分詞+副詞の語順を保ち was called off が正しい。called off は能動で「会議が中止した」となり不可。was called は off が欠落して意味が変わる。called off was は語順が崩れた非文。"
      }
@@ -1850,12 +1850,12 @@
       "type": "multiple_choice",
       "stem": "The little boy ___ good care of by his grandparents.",
       "choices": [
-       "was taken",
        "took",
        "was taken care",
-       "took care"
+       "took care",
+       "was taken"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "受動態(群動詞の受動態)",
       "explanation": "【単元】受動態(群動詞の受動態)。take good care of(〜を大切に世話する)を受動態にすると be動詞+taken+(good care of)となり、空所には was taken が入って was taken good care of by ... の形が完成する。took と took care は能動で「少年が世話した」となり不可。was taken care は元の名詞句 good care が分断され不自然になる。"
      },
@@ -1892,12 +1892,12 @@
       "type": "multiple_choice",
       "stem": "He ___ a genius by everyone who knew him.",
       "choices": [
+       "was considered",
        "considered",
        "considering",
-       "was considered as being",
-       "was considered"
+       "was considered as being"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "受動態(SVOCの受動態)",
       "explanation": "【単元】受動態(SVOCの受動態)。consider O C(OをCとみなす)で O he を主語にした受動態は be動詞+considered+補語 となり was considered が正しい(was considered a genius)。considered は能動で by everyone と矛盾。considering は be動詞欠落。was considered as being は余分な as being が付いた冗長・不自然な形で、consider は通例 as を伴わない。"
      },
@@ -1906,12 +1906,12 @@
       "type": "multiple_choice",
       "stem": "The newborn baby ___ Emma after her grandmother.",
       "choices": [
-       "was named",
        "named",
        "was named as",
-       "naming"
+       "naming",
+       "was named"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "受動態(SVOCの受動態)",
       "explanation": "【単元】受動態(SVOCの受動態)。name O C(OをCと名付ける)の受動態は be動詞+named+名前 となり was named が正しい(was named Emma)。named は能動で「赤ん坊が名付けた」となり不可。naming は be動詞欠落。was named as は name にとって不要な as が入り不自然(name は補語を直接とる)。"
      },
@@ -1976,12 +1976,12 @@
       "type": "multiple_choice",
       "stem": "The thief ___ to enter the house through a back window.",
       "choices": [
-       "was seen",
        "saw",
+       "was seen",
        "was seen enter",
        "seeing"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "受動態(知覚動詞の受動態)",
       "explanation": "【単元】受動態(知覚動詞の受動態)。知覚動詞 see O do の受動態では原形不定詞が to不定詞になり be seen to do となるため was seen が正しい(was seen to enter)。saw は能動で「泥棒が見た」となり不可。was seen enter は to が欠落しており受動態では原形のままにできない。seeing は be動詞欠落で受動の形が不完全。"
      },
@@ -1990,12 +1990,12 @@
       "type": "multiple_choice",
       "stem": "I want ___ a doctor in the future.",
       "choices": [
-       "becoming",
        "to become",
+       "becoming",
        "become",
        "became"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "不定詞(名詞用法・want to do)",
       "explanation": "【単元】不定詞(名詞用法・目的語)。動詞 want は to不定詞を目的語にとり、want to do の形になるので to become が正しい。動名詞 becoming は want とは結びつかず誤り。原形 become は単独で目的語になれず誤り。過去形 became は名詞句として機能せず誤り。"
      },
@@ -2046,12 +2046,12 @@
       "type": "multiple_choice",
       "stem": "This box is too heavy ___ alone.",
       "choices": [
-       "to carry",
        "carrying",
+       "to carry",
        "to carrying",
        "carried"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "不定詞(too ... to do)",
       "explanation": "【単元】不定詞(too ... to do)。「あまりに~なので…できない」を表す too+形容詞+to do の形で、to carry が正しい。動名詞 carrying は too の構文に合わず誤り。to carrying は to の後に動名詞を置いており非文。過去分詞 carried は too ... to の構文をとれず誤り。"
      },
@@ -2061,11 +2061,11 @@
       "stem": "She is old ___ to drive a car.",
       "choices": [
        "too",
-       "enough",
        "so",
+       "enough",
        "very"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "不定詞(形容詞 + enough to do)",
       "explanation": "【単元】不定詞(enough to do)。「~するのに十分なほど…」は形容詞+enough+to do の語順をとるため enough が正しい。too は too old to drive で「年を取りすぎて運転できない」と逆の意味になり文意に合わず誤り。so や very は to不定詞と直接結んでこの構文を作れず誤り。"
      },
@@ -2076,10 +2076,10 @@
       "choices": [
        "so that to",
        "in order for",
-       "in order to",
-       "for to"
+       "for to",
+       "in order to"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "不定詞(in order to do)",
       "explanation": "【単元】不定詞(in order to do・目的)。「~するために」を明示する目的の表現は in order to do で、in order to が正しい。in order for は後ろに意味上の主語(for+名詞)を必要とし直後に動詞原形は置けず誤り。so that to は so that 節と to不定詞の混同で非文。for to は現代英語に存在しない形で誤り。"
      },
@@ -2088,12 +2088,12 @@
       "type": "multiple_choice",
       "stem": "I left early ___ miss the rush hour.",
       "choices": [
+       "so as not to",
        "as so not to",
        "so as to not",
-       "so not as to",
-       "so as not to"
+       "so not as to"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "不定詞(so as (not) to do)",
       "explanation": "【単元】不定詞(so as not to do・否定の目的)。「~しないように」は so as not to do の語順で、not は to の直前に置くため so as not to が正しい。so as to not は not を to と動詞の間に置く分離不定詞で標準的でなく誤り。so not as to と as so not to は語順が崩れた非文。"
      },
@@ -2102,12 +2102,12 @@
       "type": "multiple_choice",
       "stem": "It is important ___ to be on time.",
       "choices": [
-       "for him",
        "of him",
+       "for him",
        "to him",
        "with him"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "不定詞(意味上の主語 for)",
       "explanation": "【単元】不定詞(意味上の主語・for)。important のような人の性質を表さない形容詞では、不定詞の意味上の主語は for+目的格で示すため for him が正しい。of him は kind や careless など人の性質を表す形容詞に用いるもので important とは結びつかず誤り。to him と with him は意味上の主語を導けず誤り。"
      },
@@ -2117,11 +2117,11 @@
       "stem": "It was very kind ___ to help the old man.",
       "choices": [
        "for you",
-       "of you",
        "to you",
+       "of you",
        "by you"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "不定詞(意味上の主語 of)",
       "explanation": "【単元】不定詞(意味上の主語・of)。kind は人の性質・評価を表す形容詞なので、不定詞の意味上の主語は of+目的格で示し of you が正しい。for you は人の性質を表す形容詞では用いず誤り。to you と by you は意味上の主語を導く用法がなく誤り。"
      }
@@ -2146,10 +2146,10 @@
       "choices": [
        "be",
        "being",
-       "to be",
-       "been"
+       "been",
+       "to be"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "不定詞(seem to do)",
       "explanation": "【単元】不定詞(seem to do)。seem は to不定詞を続けて「~のようだ」を表すため seem to be が正しい。動名詞 being は seem の後に置けず誤り。原形 be は seem の直後に置けず誤り。過去分詞 been は単独でこの位置に置けず誤り。"
      },
@@ -2159,11 +2159,11 @@
       "stem": "He is said ___ a great scientist when he was young.",
       "choices": [
        "to have",
+       "to have been",
        "to be",
-       "being",
-       "to have been"
+       "being"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "不定詞(be said to + 完了不定詞)",
       "explanation": "【単元】不定詞(be said to do・完了不定詞)。主節 is said より前の「若い頃に~だった」を表すには完了不定詞 to have been を用いるため to have been が正しい。to be は現在の状態を表し過去の時を表せず誤り。being は be said to の構文に合わず誤り。to have は be動詞の過去を補語付きで表せず文として不完全で誤り。"
      },
@@ -2172,12 +2172,12 @@
       "type": "multiple_choice",
       "stem": "She seems ___ the book already.",
       "choices": [
-       "to have read",
        "to read",
        "reading",
+       "to have read",
        "to be read"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "不定詞(完了不定詞 to have+pp)",
       "explanation": "【単元】不定詞(完了不定詞)。already があり、述語 seems より前の「すでに読んでしまった」という完了を表すには完了不定詞 to have read を用いるため to have read が正しい。to read は単純不定詞で完了の意味を表せず誤り。reading は seem の後に続かず誤り。to be read は受動で「読まれる」となり主語 she が読む文意に合わず誤り。"
      },
@@ -2186,12 +2186,12 @@
       "type": "multiple_choice",
       "stem": "My parents made me ___ the room before dinner.",
       "choices": [
-       "to clean",
        "clean",
+       "to clean",
        "cleaning",
        "cleaned"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "不定詞(使役動詞 make + 原形不定詞)",
       "explanation": "【単元】不定詞(原形不定詞・使役動詞)。使役動詞 make は目的語の後に原形不定詞をとり make+O+do の形になるため clean が正しい。to clean は make の後では to を伴わず誤り。動名詞 cleaning や過去分詞 cleaned は能動の使役の形に合わず誤り。"
      },
@@ -2202,10 +2202,10 @@
       "choices": [
        "ran",
        "to run",
-       "run",
-       "runs"
+       "runs",
+       "run"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "不定詞(知覚動詞 + 原形不定詞)",
       "explanation": "【単元】不定詞(原形不定詞・知覚動詞)。知覚動詞 see は目的語の後に原形不定詞をとり see+O+do で「~するのを見る」を表すため run が正しい。to run は知覚動詞の後では to を伴わず誤り。過去形 ran や三単現 runs は目的格補語の位置で定形動詞となり誤り。"
      },
@@ -2215,11 +2215,11 @@
       "stem": "You had better ___ a doctor right away.",
       "choices": [
        "seen",
+       "see",
        "to see",
-       "seeing",
-       "see"
+       "seeing"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "不定詞(had better + 原形不定詞)",
       "explanation": "【単元】不定詞(原形不定詞・had better)。had better は後に原形不定詞(to なしの不定詞)をとるため see が正しい。to see は had better の後では to を付けず誤り。動名詞 seeing と過去分詞 seen は had better に続かず誤り。"
      }
@@ -2242,12 +2242,12 @@
       "type": "multiple_choice",
       "stem": "___, I don't agree with your plan at all.",
       "choices": [
-       "To be honest",
        "Being honest",
        "Honest to be",
+       "To be honest",
        "To honest"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "不定詞(独立不定詞 to be honest)",
       "explanation": "【単元】不定詞(独立不定詞)。「正直に言うと」を表す慣用的な独立不定詞は To be honest で、文全体を修飾するため To be honest が正しい。Being honest は分詞構文で「正直であって」の意味になり慣用句として不適切で誤り。Honest to be は語順が崩れた非文。To honest は honest が形容詞で動詞がなく非文。"
      },
@@ -2257,11 +2257,11 @@
       "stem": "___ the truth, I had never met her before that day.",
       "choices": [
        "Telling",
-       "To tell",
        "Told",
-       "To telling"
+       "To telling",
+       "To tell"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "不定詞(独立不定詞 to tell the truth)",
       "explanation": "【単元】不定詞(独立不定詞)。「本当のことを言うと」を表す慣用的独立不定詞は To tell the truth で、To tell が正しい。Telling は分詞構文となり「本当のことを言うと」という前置きの慣用句としては不自然で誤り。過去分詞 Told は能動の意味を表せず誤り。To telling は to の後に動名詞を置く非文。"
      },
@@ -2271,11 +2271,11 @@
       "stem": "I don't know what ___ next in this situation.",
       "choices": [
        "do",
-       "doing",
        "to do",
+       "doing",
        "to be done"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "不定詞(疑問詞 + to do)",
       "explanation": "【単元】不定詞(疑問詞+to不定詞)。「次に何をすべきか」は〈疑問詞+to do〉の形で know の目的語となるため what to do が正しい。動名詞 doing は疑問詞 what と結んでこの名詞句を作れず誤り。原形 do は what の後に直接続けられず誤り。to be done は受動で「何がされるべきか」となり、主語が行動する文意に合わず誤り。"
      },
@@ -2284,12 +2284,12 @@
       "type": "multiple_choice",
       "stem": "I really enjoy ___ to classical music on weekends.",
       "choices": [
+       "listening",
        "to listening",
        "to listen",
-       "listen",
-       "listening"
+       "listen"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "動名詞(動名詞のみを目的語にとる動詞 enjoy)",
       "explanation": "【単元】動名詞(動名詞のみを目的語にとる動詞 enjoy)。enjoy は目的語に動名詞をとる動詞なので listening が正しい。to listen は不定詞で enjoy の目的語にはできず誤り。listen は原形のままで動詞 enjoy の目的語にならず誤り。to listening は to のあとに動名詞という非文の形で誤り。"
      },
@@ -2298,12 +2298,12 @@
       "type": "multiple_choice",
       "stem": "Would you mind ___ the window? It's getting cold in here.",
       "choices": [
-       "closing",
        "close",
        "to close",
+       "closing",
        "closed"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "動名詞(動名詞のみを目的語にとる動詞 mind)",
       "explanation": "【単元】動名詞(動名詞のみを目的語にとる動詞 mind)。mind は動名詞を目的語にとるので closing が正しい。to close は不定詞で mind の目的語にはできず誤り。close は原形のままで目的語にならず誤り。closed は過去分詞で能動の意味を表せず誤り。"
      },
@@ -2313,11 +2313,11 @@
       "stem": "She finished ___ her homework before dinner.",
       "choices": [
        "to do",
-       "doing",
        "do",
-       "to doing"
+       "to doing",
+       "doing"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "動名詞(動名詞のみを目的語にとる動詞 finish)",
       "explanation": "【単元】動名詞(動名詞のみを目的語にとる動詞 finish)。finish は目的語に動名詞をとるので doing が正しい。to do は不定詞で finish の目的語にできず誤り。do は原形のままで目的語にならず誤り。to doing は to+動名詞という誤った形で非文。"
      }
@@ -2341,11 +2341,11 @@
       "stem": "You should avoid ___ too much sugar to stay healthy.",
       "choices": [
        "to eat",
-       "eat",
        "eating",
+       "eat",
        "to eating"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "動名詞(動名詞のみを目的語にとる動詞 avoid)",
       "explanation": "【単元】動名詞(動名詞のみを目的語にとる動詞 avoid)。avoid は動名詞を目的語にとるので eating が正しい。to eat は不定詞で avoid の目的語にできず誤り。eat は原形のままで目的語にならず誤り。to eating は to のあとに動名詞という非文で誤り。"
      },
@@ -2356,10 +2356,10 @@
       "choices": [
        "tried",
        "to try",
-       "try",
-       "trying"
+       "trying",
+       "try"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "動名詞(動名詞のみを目的語にとる動詞 give up)",
       "explanation": "【単元】動名詞(動名詞のみを目的語にとる動詞 give up)。give up は動名詞を目的語にとるので trying が正しい。to try は不定詞で give up の目的語にできず誤り。try は原形のままで目的語にならず誤り。tried は過去形・過去分詞で give up の直後に置けず誤り。"
      },
@@ -2368,12 +2368,12 @@
       "type": "multiple_choice",
       "stem": "Remember ___ the door when you leave; otherwise it stays open all night.",
       "choices": [
-       "to lock",
        "locking",
        "lock",
-       "locked"
+       "locked",
+       "to lock"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "動名詞(remember to do と remember doing の意味差)",
       "explanation": "【単元】動名詞(remember to do と remember doing の意味差)。これから行う義務を表す「~するのを覚えておく」は remember to do なので to lock が正しい。locking は「(過去に)~したのを覚えている」の意味になり、未来の行為を促す文脈に合わず誤り。lock は原形のままで remember の目的語にならず誤り。locked は過去分詞でこの位置に置けず誤り。"
      },
@@ -2382,12 +2382,12 @@
       "type": "multiple_choice",
       "stem": "I still remember ___ that beautiful beach with my family when I was a child.",
       "choices": [
-       "to visit",
        "visiting",
+       "to visit",
        "visit",
        "to visiting"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "動名詞(remember doing で過去の記憶)",
       "explanation": "【単元】動名詞(remember doing で過去の記憶)。「(過去に)~したのを覚えている」は remember doing なので visiting が正しい。to visit は「これから~するのを覚えておく」の意味で、子どもの頃の回想という過去の文脈に合わず誤り。visit は原形のままで目的語にならず誤り。to visiting は to+動名詞の非文で誤り。"
      },
@@ -2397,11 +2397,11 @@
       "stem": "Don't forget ___ this letter on your way to work tomorrow.",
       "choices": [
        "mailing",
-       "mail",
        "to mail",
+       "mail",
        "to mailing"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "動名詞(forget to do で未来の義務)",
       "explanation": "【単元】動名詞(forget to do で未来の義務)。これからすべきことを「~するのを忘れるな」と言うときは forget to do なので to mail が正しい。mailing は「~したことを忘れる」の過去の意味になり、明日の行為を促す文脈に合わず誤り。mail は原形のままで目的語にならず誤り。to mailing は to+動名詞の非文で誤り。"
      },
@@ -2412,10 +2412,10 @@
       "choices": [
        "to smoke",
        "to smoking",
-       "smoke",
-       "smoking"
+       "smoking",
+       "smoke"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "動名詞(stop doing で行為そのものを中止)",
       "explanation": "【単元】動名詞(stop doing で行為そのものを中止)。「~するのをやめる」と行為自体を中止する意味は stop doing なので smoking が正しい。to smoke にすると「タバコを吸うために立ち止まる」という別の意味になり文脈に合わず誤り。smoke は原形のままで stop の目的語にならず誤り。to smoking は to+動名詞の非文で誤り。"
      }
@@ -2438,12 +2438,12 @@
       "type": "multiple_choice",
       "stem": "We were walking for hours, so we stopped ___ a rest under a tree.",
       "choices": [
-       "to have",
        "having",
        "have",
-       "to having"
+       "to having",
+       "to have"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "動名詞(stop to do は目的の不定詞)",
       "explanation": "【単元】動名詞(stop to do は目的の不定詞)。「~するために立ち止まる」は stop の後に目的を表す不定詞を置くので to have が正しい。having だと「休むのをやめる」という逆の意味になり文脈に合わず誤り。have は原形のままでこの位置に置けず誤り。to having は to+動名詞の非文で誤り。"
      },
@@ -2480,12 +2480,12 @@
       "type": "multiple_choice",
       "stem": "He regrets ___ harder when he was a student.",
       "choices": [
+       "not studying",
        "not to study",
        "didn't study",
-       "to not study",
-       "not studying"
+       "to not study"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "動名詞(regret doing で過去の行為を後悔)",
       "explanation": "【単元】動名詞(regret doing で過去の行為を後悔)。「(過去に)~しなかったことを後悔する」は regret not doing なので not studying が正しい。not to study は regret の後に不定詞を置く形で、過去の後悔には合わず誤り。to not study も不定詞の形で意味が合わず誤り。didn't study は定形動詞で regret の目的語にならず誤り。"
      },
@@ -2494,12 +2494,12 @@
       "type": "multiple_choice",
       "stem": "She is good ___ solving difficult math problems.",
       "choices": [
-       "at",
        "to",
        "for",
-       "in"
+       "in",
+       "at"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "動名詞(前置詞+動名詞 be good at doing)",
       "explanation": "【単元】動名詞(前置詞+動名詞 be good at doing)。「~するのが得意だ」は be good at doing で at の後に動名詞を置くので at が正しい。to は be good to で「~に親切だ」の別の意味になり solving と結びつかず誤り。for は be good at の語法に合わず誤り。in も be good at の慣用に合わず誤り。"
      },
@@ -2564,12 +2564,12 @@
       "type": "multiple_choice",
       "stem": "The movie was so moving that I could not help ___ at the ending.",
       "choices": [
-       "crying",
        "but crying",
+       "crying",
        "to cry",
        "cry"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "動名詞(慣用 cannot help ~ing)",
       "explanation": "【単元】動名詞(慣用 cannot help ~ing)。「~せずにはいられない」は cannot help doing なので crying が正しい。to cry は不定詞でこの慣用に合わず誤り。but crying は cannot but do(原形)の形が崩れた非文で誤り。cry は原形のままで help の後に直接置けず誤り。"
      },
@@ -2578,12 +2578,12 @@
       "type": "multiple_choice",
       "stem": "She didn't go to the party ___ she was feeling tired.",
       "choices": [
-       "although",
        "because",
+       "although",
        "unless",
        "whether"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "接続詞(従位接続詞・理由のbecause)",
       "explanation": "【単元】接続詞(従位接続詞・理由のbecause)。「疲れていたので行かなかった」という理由を導くには because が正しい。although は「〜だけれども」と譲歩を表し意味が逆になる。unless は「〜しない限り」で条件を表し文意に合わない。whether は「〜かどうか」で名詞節を導き、副詞節として理由を示せない。"
      },
@@ -2634,12 +2634,12 @@
       "type": "multiple_choice",
       "stem": "The problem was ___ nobody knew the answer.",
       "choices": [
-       "that",
        "what",
+       "that",
        "which",
        "whether"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "接続詞(名詞節のthat)",
       "explanation": "【単元】接続詞(名詞節のthat)。補語として「誰も答えを知らないということだった」と完全な文を導く名詞節には that が正しい。what は関係代名詞・疑問詞で後ろに不完全文が必要だが、ここは完全文なので不可。which は関係代名詞で先行詞が必要。whether は「〜かどうか」で文意に合わない。"
      },
@@ -2649,11 +2649,11 @@
       "stem": "You won't pass the exam ___ you study harder.",
       "choices": [
        "if",
-       "unless",
        "whether",
+       "unless",
        "as"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "接続詞(従位接続詞・条件のunless)",
       "explanation": "【単元】接続詞(従位接続詞・条件のunless)。「もっと勉強しない限り合格しない」という否定の条件を一語で表すには unless が正しい。if は肯定の条件を導くため「勉強すれば落ちる」となり矛盾する。whether は「〜かどうか」で条件節を作れない。as は理由・様態などを表し、ここでは意味が通らない。"
      },
@@ -2664,10 +2664,10 @@
       "choices": [
        "as long as",
        "unless",
-       "in case",
-       "even if"
+       "even if",
+       "in case"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "接続詞(従位接続詞・備えのin case)",
       "explanation": "【単元】接続詞(従位接続詞・備えのin case)。「後で雨が降る場合に備えて」という用心・備えを表すには in case が適切。unless は「〜しない限り」で意味が逆。as long as は「〜さえすれば/〜する限り」で備えの意味にならない。even if は「たとえ〜でも」で譲歩を表し文意に合わない。"
      },
@@ -2676,12 +2676,12 @@
       "type": "multiple_choice",
       "stem": "___ you keep quiet, you can stay in the room.",
       "choices": [
+       "As long as",
        "Unless",
        "Whether",
-       "In case",
-       "As long as"
+       "In case"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "接続詞(従位接続詞・条件のas long as)",
       "explanation": "【単元】接続詞(従位接続接続詞・条件のas long as)。「静かにしてさえいれば」という肯定の条件を表すには as long as が正しい。Unless は「〜しない限り」で否定条件となり意味が逆。In case は「〜する場合に備えて」で備えを表す。Whether は「〜かどうか」で条件節を作れない。"
      },
@@ -2690,12 +2690,12 @@
       "type": "multiple_choice",
       "stem": "He was so tired ___ he fell asleep at his desk.",
       "choices": [
-       "that",
        "as",
+       "that",
        "than",
        "such"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "接続詞(so ... that構文)",
       "explanation": "【単元】接続詞(so ... that構文)。「so + 形容詞 + that節」で「とても〜なので…」を表すため that が正しい。as は理由・様態を表しこの相関構文には合わない。than は比較に使う語で構文に合わない。such は名詞を修飾する「such ... that」の語であり、形容詞 tired を受けるここでは so が対応するので such は不可。"
      },
@@ -2705,11 +2705,11 @@
       "stem": "It was ___ a beautiful day that we went for a long walk.",
       "choices": [
        "so",
-       "such",
        "very",
+       "such",
        "too"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "接続詞(such ... that構文)",
       "explanation": "【単元】接続詞(such ... that構文)。「such + a + 形容詞 + 名詞 + that」で「とても〜な…なので」を表すには such が正しい。so は「so + 形容詞」の語順をとり「so beautiful a day」となるため、a を伴うこの語順では不可。very と too は that節と相関構文を作らない。"
      }
@@ -2734,10 +2734,10 @@
       "choices": [
        "she can",
        "she does",
-       "can she",
-       "does she"
+       "does she",
+       "can she"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "接続詞(相関接続詞・Not only ... but also)",
       "explanation": "【単元】接続詞(相関接続詞・Not only ... but also)。否定の副詞句 Not only が文頭に出ると倒置が起こり、助動詞 can が主語 she の前に来る can she が正しい。she can は倒置されておらず誤り。she does と does she は動詞 play と一般動詞 does が重複し非文。倒置を伴う can she が適切。"
      },
@@ -2747,11 +2747,11 @@
       "stem": "Either John ___ his brothers are responsible for the mess.",
       "choices": [
        "and",
+       "or",
        "but",
-       "nor",
-       "or"
+       "nor"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "接続詞(相関接続詞・either ... or)",
       "explanation": "【単元】接続詞(相関接続詞・either ... or)。Either と相関して用いるのは or であり「ジョンか兄弟のどちらか」を表す。and は both ... and の組み合わせで either とは呼応しない。nor は neither ... nor の組み合わせ。but は either と相関接続詞を作らない。"
      },
@@ -2760,12 +2760,12 @@
       "type": "multiple_choice",
       "stem": "Neither the manager ___ the employees were satisfied with the plan.",
       "choices": [
-       "nor",
        "or",
        "and",
+       "nor",
        "but"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "接続詞(相関接続詞・neither ... nor)",
       "explanation": "【単元】接続詞(相関接続詞・neither ... nor)。Neither と相関して「どちらも〜ない」を表すのは nor が正しい。or は either ... or の組み合わせ。and は both ... and の組み合わせ。but は neither と相関接続詞を作らない。"
      },
@@ -2774,12 +2774,12 @@
       "type": "multiple_choice",
       "stem": "___ the book and the movie were highly praised by critics.",
       "choices": [
-       "Either",
        "Both",
+       "Either",
        "Neither",
        "Not only"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "接続詞(相関接続詞・both ... and)",
       "explanation": "【単元】接続詞(相関接続詞・both ... and)。直後に and があり「本と映画の両方が」を表すには Both ... and の Both が正しい。Either は or と、Neither は nor と呼応するため and とは組み合わせられない。Not only は but (also) と呼応する語で and とは相関しない。"
      },
@@ -2790,10 +2790,10 @@
       "choices": [
        "During",
        "Despite",
-       "While",
-       "Whether"
+       "Whether",
+       "While"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "接続詞(従位接続詞・時のwhile)",
       "explanation": "【単元】接続詞(従位接続詞・時のwhile)。後ろに「主語+動詞」の節が続き「歩いている間に」と時を表すには接続詞の While が正しい。During は前置詞で名詞のみを従えるため節を導けない。Despite も前置詞で節を導けない。Whether は「〜かどうか」で時を表せない。"
      },
@@ -2803,11 +2803,11 @@
       "stem": "___ I get older, I become more cautious about my health.",
       "choices": [
        "Whether",
+       "As",
        "While",
-       "Unless",
-       "As"
+       "Unless"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "接続詞(従位接続詞・比例のas)",
       "explanation": "【単元】接続詞(従位接続詞・比例のas)。「〜するにつれて」という比例・推移を表すには As が最も自然で適切。While は「〜する間」「〜だが」で比例関係を表しにくい。Unless は「〜しない限り」で条件を表し文意に合わない。Whether は「〜かどうか」で副詞節を作れない。"
      }
@@ -2830,12 +2830,12 @@
       "type": "multiple_choice",
       "stem": "It has been ten years ___ we last met in Tokyo.",
       "choices": [
-       "since",
        "for",
        "before",
+       "since",
        "during"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "接続詞(従位接続詞・起点のsince)",
       "explanation": "【単元】接続詞(従位接続詞・起点のsince)。「最後に会って以来10年が経つ」と過去の起点を表す節を導くには since が正しく、主節の現在完了 has been と呼応する。for は前置詞で期間を表すが節を導けない。before は「〜する前に」で文意に合わない。during は前置詞で節を従えられない。"
      },
@@ -2845,11 +2845,11 @@
       "stem": "He worked very hard, ___ he was able to finish the project early.",
       "choices": [
        "but",
-       "so",
        "for",
-       "or"
+       "or",
+       "so"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "接続詞(等位接続詞・結果のso)",
       "explanation": "【単元】接続詞(等位接続詞・結果のso)。「一生懸命働いた、それで早く終えられた」と結果を導く等位接続詞には so が正しい。but は逆接で意味が通らない。for は「というのは〜だから」と理由を後置する語で、結果には合わない。or は選択を表し文意に合わない。"
      },
@@ -2859,11 +2859,11 @@
       "stem": "___ he is young, he is very experienced in this field.",
       "choices": [
        "Because",
-       "So",
        "Though",
+       "So",
        "Unless"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "接続詞(従位接続詞・譲歩のthough)",
       "explanation": "【単元】接続詞(従位接続詞・譲歩のthough)。「若いけれども経験豊富だ」と主節に反する譲歩を導くには Though が適切。Because は理由を表し「若いので経験豊富」となり不自然。So は等位接続詞で文頭からこのように節を導けない。Unless は「〜しない限り」で条件を表し意味が通らない。"
      },
@@ -2872,12 +2872,12 @@
       "type": "multiple_choice",
       "stem": "We have an important meeting ___ Monday morning, so don't be late.",
       "choices": [
+       "on",
        "to",
        "at",
-       "in",
-       "on"
+       "in"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "前置詞(時のon・特定の日/曜日)",
       "explanation": "【単元】前置詞(時のon — 特定の日・曜日)。曜日や特定の日付の「〜に」は on で表すため on が正しい。Monday morning のように曜日に morning が付いても、特定の日として扱うため on を用いる。at は the weekend や時刻のように「時の一点」に使い、曜日には不適。in は in the morning / in 2020 のように「月・年・午前など幅のある時間帯」に使うため曜日には不適。to は時を表す前置詞として使えず非文。"
      },
@@ -2886,12 +2886,12 @@
       "type": "multiple_choice",
       "stem": "The store opens ___ nine o'clock every weekday.",
       "choices": [
-       "at",
        "on",
        "in",
+       "at",
        "for"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "前置詞(時のat・時刻)",
       "explanation": "【単元】前置詞(時のat — 時刻の一点)。具体的な時刻「〜時に」は時の一点を表す at を用いるため at が正しい。in は in the morning や in May のように幅のある時間帯・月・年に使うので時刻には不適。on は曜日・日付に使うため時刻には不適。for は for two hours のように「期間の長さ」を表すので時刻の一点には不適。"
      },
@@ -2901,11 +2901,11 @@
       "stem": "My grandfather was born ___ 1955, just after the war.",
       "choices": [
        "on",
-       "in",
        "by",
-       "at"
+       "at",
+       "in"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "前置詞(時のin・年)",
       "explanation": "【単元】前置詞(時のin — 年・月・季節)。「〜年に」のように年を表すときは幅のある時間に用いる in が正しい。on は曜日・日付など特定の日に使うため年には不適。at は時刻や at night など時の一点に使うため年には不適。by は「〜までに(期限)」を表すので「生まれた年」を示す文脈には合わず不適。"
      }
@@ -2929,11 +2929,11 @@
       "stem": "You must submit your report ___ Friday; no extensions will be given.",
       "choices": [
        "for",
-       "until",
        "by",
+       "until",
        "during"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "前置詞(時のby・期限)",
       "explanation": "【単元】前置詞(時のby — 期限「〜までに」)。提出という一回の動作の締め切りは「〜までに」を表す by が正しい。until(till)は「〜までずっと(継続)」を表し、wait until のように状態・継続動作に使うため一回の締め切りには不適。for は期間の長さを表すので期限には不適。during は「〜の間中」で特定の名詞期間に付くため Friday 単独の期限表現には不適。"
      },
@@ -2944,10 +2944,10 @@
       "choices": [
        "by",
        "for",
-       "within",
-       "until"
+       "until",
+       "within"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "前置詞(時のuntil/till・継続)",
       "explanation": "【単元】前置詞(時のuntil/till — 継続「〜までずっと」)。wait のように「ある時点までずっと状態を続ける」場合は継続を表す until が正しい(till も可)。by は「〜までに(その時点までのどこかで完了)」の期限を表すので、待ち続ける継続動作には不適。for は期間の長さを示すので「come back まで」という到達点を表せず不適。within は「〜以内に」で期間の幅を示し、ここでは意味が合わず不適。"
      },
@@ -2956,12 +2956,12 @@
       "type": "multiple_choice",
       "stem": "I have lived in this town ___ ten years now.",
       "choices": [
-       "for",
        "during",
        "since",
-       "in"
+       "in",
+       "for"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "前置詞(時のfor・期間の長さ)",
       "explanation": "【単元】前置詞(時のfor — 期間の長さ)。ten years のように「期間の長さ(どれだけの間)」を示すときは for が正しい。since は since 2015 のように「起点(〜以来)」を表し後ろに期間の長さは取れないため不適。during は during the summer のように「特定の名詞期間の間」に使い、長さを表す数値期間には不適。in は「〜後に/〜のうちに」で期間の長さそのものには使わないため不適。"
      },
@@ -2970,12 +2970,12 @@
       "type": "multiple_choice",
       "stem": "She fell asleep ___ the long flight to London.",
       "choices": [
-       "for",
        "during",
+       "for",
        "while",
        "since"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "前置詞(時のduring・特定期間)",
       "explanation": "【単元】前置詞(時のduring — 特定の名詞期間の間)。the long flight という特定の名詞のかたまりの「間に」と言うときは during が正しい。for は期間の長さを表し後ろは for two hours のような数量表現が中心で、the long flight のような特定の出来事には不適。while は接続詞であり後ろに節(主語+動詞)を取るため、名詞句 the long flight の前には置けず不適。since は起点を表すので「飛行中に」という文脈に合わず不適。"
      },
@@ -2985,11 +2985,11 @@
       "stem": "If you order now, the package will arrive ___ three days.",
       "choices": [
        "by",
-       "until",
        "within",
+       "until",
        "during"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "前置詞(時のwithin・以内)",
       "explanation": "【単元】前置詞(時のwithin — 「〜以内に」)。three days という期間の「枠内に収まる(以内に)」と言うときは within が正しい。until は「〜までずっと」の継続を表すので到着の意味に合わず不適。by は by Friday のように特定の時点を期限とするのが自然で、three days という期間の長さの前では within ほど自然でなく「以内」の意味を出せないため不適。during は「〜の間中ずっと」で特定の名詞期間に付き、「3日以内に到着」の意味にならず不適。"
      },
@@ -3000,10 +3000,10 @@
       "choices": [
        "in",
        "among",
-       "between",
-       "at"
+       "at",
+       "between"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "前置詞(場所のat・地点)",
       "explanation": "【単元】前置詞(場所のat — 地点)。the bus stop のように待ち合わせの「地点・ポイント」を示すときは at が正しい。in は in the room のように「内部・空間の中」を表すので地点には不適。between は「(2つ)の間に」、among は「(3つ以上)の中に」を表し、いずれも単一の地点を示す文脈には合わず不適。"
      }
@@ -3026,12 +3026,12 @@
       "type": "multiple_choice",
       "stem": "There were beautiful old paintings hanging ___ the walls of the gallery.",
       "choices": [
-       "on",
        "at",
        "in",
-       "between"
+       "between",
+       "on"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "前置詞(場所のon・接触面)",
       "explanation": "【単元】前置詞(場所のon — 接触している面)。walls のように「面に接して掛かっている」状態は接触を表す on が正しい。in は「内部・中に」を表すので壁面に接する場合には不適。at は「地点」を表すので面への接触には不適。between は「2つの間に」を表すので、壁面に掛かっている状況には合わず不適。"
      },
@@ -3068,12 +3068,12 @@
       "type": "multiple_choice",
       "stem": "It is sometimes hard to find a true friend ___ so many acquaintances.",
       "choices": [
+       "among",
        "between",
        "by",
-       "at",
-       "among"
+       "at"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "前置詞(場所のamong・3つ以上の中)",
       "explanation": "【単元】前置詞(場所のamong — 3つ以上の中)。so many acquaintances のように「多数(3つ以上)のものに囲まれた中で」と言うときは among が正しい。between は基本的に「2つ(または個別に区別できるもの)の間」に使うため、漠然とした多数の中には不適。at は「地点」、by は「〜のそばに」を表し、いずれも「多数の中で」という意味を表せず不適。"
      },
@@ -3082,12 +3082,12 @@
       "type": "multiple_choice",
       "stem": "The match was canceled ___ the heavy rain last night.",
       "choices": [
-       "because of",
        "because",
        "so",
-       "although"
+       "although",
+       "because of"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "前置詞(群前置詞 because of・原因)",
       "explanation": "【単元】前置詞(群前置詞 because of — 原因「〜のせいで」)。後ろに the heavy rain という名詞句が来て「〜が原因で」と言うときは群前置詞 because of が正しい。because は接続詞で後ろに節(主語+動詞)を取るため、名詞句の前には置けず不適。so は「だから」と結果を導く接続詞で原因の名詞句を導けず不適。although は「〜だけれども」の譲歩接続詞で、後ろに節を取り意味も合わないため不適。"
      },
@@ -3152,12 +3152,12 @@
       "type": "multiple_choice",
       "stem": "You should not depend ___ your parents for money once you start working.",
       "choices": [
-       "on",
        "to",
+       "on",
        "at",
        "with"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "前置詞(動詞+前置詞 depend on)",
       "explanation": "【単元】前置詞(動詞+前置詞 depend on)。「〜に頼る・依存する」は depend on(または depend upon)で表すため on が正しい。depend to・depend at・depend with はいずれも誤った結びつきで、depend と結びつく前置詞は on/upon であるため不適。"
      },
@@ -3166,12 +3166,12 @@
       "type": "multiple_choice",
       "stem": "The sun ___ in the east and sets in the west, a fact known to everyone.",
       "choices": [
-       "raises",
        "rises",
+       "raises",
        "is raised",
        "raises up"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "語法(自動詞 rise と他動詞 raise)",
       "explanation": "【単元】語法(自動詞 rise と他動詞 raise の区別)。「(太陽が)昇る」は目的語をとらない自動詞 rise を用いる。rises が正しい。raise は「~を上げる」という他動詞で目的語が必要なため、目的語のないこの文では誤り。is raised は受動態で「上げられる」となり太陽の自然な動きを表せず不適。raises up は他動詞 raise に up が重なった非標準的な形で誤り。"
      },
@@ -3222,12 +3222,12 @@
       "type": "multiple_choice",
       "stem": "Please ___ the baby gently on the bed so that she won't wake up.",
       "choices": [
-       "lay",
        "lying",
+       "lay",
        "lie",
        "lain"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "語法(他動詞 lay と自動詞 lie)",
       "explanation": "【単元】語法(他動詞 lay「~を横たえる」と自動詞 lie の区別)。the baby という目的語をとり「~を横たえる」と命じるには他動詞 lay の原形を用いる。lay が正しい。lie は「横たわる」という自動詞で目的語をとれないため誤り。lying は lie の現在分詞・動名詞で命令文の動詞になれず不適。lain は lie の過去分詞で命令文の原形位置に置けず誤り。"
      },
@@ -3237,11 +3237,11 @@
       "stem": "I forgot my umbrella, so may I ___ yours until the rain stops?",
       "choices": [
        "lend",
-       "borrow",
        "rent",
+       "borrow",
        "lend out"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "語法(borrow と lend)",
       "explanation": "【単元】語法(borrow「(無料で)借りる」と lend「貸す」の区別)。相手の傘を「借りる」側の動作なので borrow を用いる。borrow が正しい。lend は「(人に)貸す」で動作の向きが逆になり誤り。rent は「(有料で)賃借/賃貸する」で、傘を一時的に無料で借りる状況には合わない。lend out も「貸し出す」で向きが逆のため誤り。"
      },
@@ -3252,10 +3252,10 @@
       "choices": [
        "borrow",
        "rent",
-       "lend",
-       "borrow from"
+       "borrow from",
+       "lend"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "語法(lend と borrow)",
       "explanation": "【単元】語法(lend「~を貸す」と borrow「借りる」の区別)。図書館が利用者に本を「貸す」側であり、〈lend+人+物〉の形をとれるのは lend である。lend が正しい。borrow は「借りる」で動作の向きが逆になり、しかも〈borrow+人+物〉の語法もとれず誤り。rent は通常「有料で貸す/借りる」で図書館の無料貸出には合わない。borrow from は「~から借りる」でやはり向きが逆のため誤り。"
      },
@@ -3264,12 +3264,12 @@
       "type": "multiple_choice",
       "stem": "Could you ___ me how to get to the nearest station from here?",
       "choices": [
+       "tell",
        "say",
        "speak",
-       "talk",
-       "tell"
+       "talk"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "語法(tell と say・speak・talk)",
       "explanation": "【単元】語法(tell・say・speak・talk の使い分け)。〈tell+人+how to ...〉のように「人に~を教える/伝える」と直接目的語に人をとれるのは tell である。tell が正しい。say は〈say+発話内容〉をとり、say me のように人を直接目的語にできないため誤り。speak は通常自動詞的で〈speak+人〉と人を直接目的語にとれず誤り。talk も〈talk to/with+人〉の形をとり、talk me のように人を直接目的語にできないため誤り。"
      },
@@ -3278,12 +3278,12 @@
       "type": "multiple_choice",
       "stem": "She didn't ___ a word during the entire meeting; she just listened.",
       "choices": [
-       "say",
        "tell",
+       "say",
        "talk",
        "speak"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "語法(say と tell・speak・talk)",
       "explanation": "【単元】語法(say・tell・speak・talk の使い分け)。a word という発話内容を目的語にとり「一言も言わなかった」と表すには say を用いる。say が正しい。tell は「(人に情報を)伝える」で a word を目的語にする say a word の慣用には合わず誤り。talk は〈talk to/about〉のように用い、talk a word とは言えないため誤り。speak も speak a word は一般的でなく、ここでは say a word が定型表現のため誤り。"
      },
@@ -3293,11 +3293,11 @@
       "stem": "He can ___ three languages fluently, including French and Chinese.",
       "choices": [
        "tell",
-       "speak",
        "talk",
+       "speak",
        "say"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "語法(speak と say・tell・talk)",
       "explanation": "【単元】語法(speak・say・tell・talk の使い分け)。「(言語)を話す」と言語そのものを目的語にとれるのは speak である。speak が正しい。tell は「(情報を)伝える」で言語名を目的語にとる用法はなく誤り。say は発話内容を目的語にとり「言語を話せる」の意味では用いられない。talk も〈talk in+言語〉のように言うことはあっても、talk three languages と直接目的語にはとれず誤り。"
      }
@@ -3322,10 +3322,10 @@
       "choices": [
        "advices",
        "an advice",
-       "advice",
-       "advise"
+       "advise",
+       "advice"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "語法(不可算名詞 advice)",
       "explanation": "【単元】語法(不可算名詞 advice)。advice は不可算名詞で複数形にも不定冠詞 a/an もとらず、a lot of で量を表す。advice が正しい。advices は不可算名詞を複数形にした誤り。an advice は不可算名詞に不定冠詞を付けた誤り。advise は「助言する」という動詞であり、ここでは名詞が必要なため誤り。"
      },
@@ -3335,11 +3335,11 @@
       "stem": "We received some important ___ about the flight delay just before boarding.",
       "choices": [
        "informations",
+       "information",
        "an information",
-       "informative",
-       "information"
+       "informative"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "語法(不可算名詞 information)",
       "explanation": "【単元】語法(不可算名詞 information)。information は不可算名詞で複数形も不定冠詞もとらず、some で量を表す。information が正しい。informations は不可算名詞を複数形にした誤り。an information は不可算名詞に不定冠詞を付けた誤り。informative は「有益な」という形容詞であり、名詞が必要なこの位置には置けず誤り。"
      },
@@ -3348,12 +3348,12 @@
       "type": "multiple_choice",
       "stem": "They bought several pieces of ___ for their new apartment last weekend.",
       "choices": [
-       "furniture",
        "furnitures",
        "a furniture",
+       "furniture",
        "furnish"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "語法(不可算名詞 furniture)",
       "explanation": "【単元】語法(不可算名詞 furniture)。furniture は不可算名詞で複数形も不定冠詞もとらず、数えるときは a piece of / pieces of を用いる。several pieces of furniture となる furniture が正しい。furnitures は不可算名詞を複数形にした誤り。a furniture は不可算名詞に不定冠詞を付けた誤り。furnish は「家具を備え付ける」という動詞で、名詞が必要なこの位置には合わず誤り。"
      },
@@ -3362,12 +3362,12 @@
       "type": "multiple_choice",
       "stem": "That's wonderful ___! I'm so glad to hear that you passed the entrance exam.",
       "choices": [
-       "a news",
        "news",
+       "a news",
        "newses",
        "new"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "語法(不可算名詞 news)",
       "explanation": "【単元】語法(不可算名詞 news)。news は語尾が -s でも不可算の単数扱いの名詞で、不定冠詞も複数形もとらない。wonderful news となる news が正しい。a news は不可算名詞に不定冠詞を付けた誤り。newses はそもそも存在しない複数形で誤り。new は「新しい」という形容詞であり、名詞が必要なこの位置には合わず誤り。"
      },
@@ -3378,10 +3378,10 @@
       "choices": [
        "few",
        "many",
-       "little",
-       "a few"
+       "a few",
+       "little"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "語法(数量形容詞 little と few・many)",
       "explanation": "【単元】語法(数量形容詞 little と few・many の区別)。water は不可算名詞なので「ほとんどない」を表すには不可算用の little を用いる。very little water となる little が正しい。few は可算名詞の複数につく語で不可算の water には使えず誤り。many も可算名詞の複数につくため不可算の water には不適。a few も可算名詞用で「少しはある」の意で、不可算の water には使えず誤り。"
      },
@@ -3391,11 +3391,11 @@
       "stem": "Only ___ students attended the lecture because of the heavy snowstorm.",
       "choices": [
        "a little",
+       "a few",
        "much",
-       "little",
-       "a few"
+       "little"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "語法(数量形容詞 a few と a little・much)",
       "explanation": "【単元】語法(数量形容詞 a few と a little・much の区別)。students は可算名詞の複数なので「少数の~がいた」を表すには可算用の a few を用いる。a few students となる a few が正しい。a little は不可算名詞用で可算の students には使えず誤り。much も不可算名詞用で可算の students には不適。little も不可算名詞用で、可算の students には使えず誤り。"
      }
@@ -3418,12 +3418,12 @@
       "type": "multiple_choice",
       "stem": "I don't like this shirt. Could you show me ___ one in a different color?",
       "choices": [
-       "another",
        "other",
        "the other",
+       "another",
        "others"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "語法(another と other・the other)",
       "explanation": "【単元】語法(another と other・the other・others の区別)。〈another+単数名詞〉で「(不特定の)もう一つの」を表し、one という単数名詞を修飾できるのは another である。another one となる another が正しい。other は単独で単数の可算名詞を限定詞なしには修飾できず(the other one のように限定詞が必要)、ここでは誤り。the other は「(二つのうちの)もう一方」で特定の対象を指し、色違いを漠然と求める文脈に合わない。others は代名詞で名詞 one を修飾できず誤り。"
      },
@@ -3433,11 +3433,11 @@
       "stem": "She has two brothers; one is a doctor, and ___ is an engineer.",
       "choices": [
        "another",
-       "the other",
        "other",
-       "others"
+       "others",
+       "the other"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "語法(the other と another・others)",
       "explanation": "【単元】語法(the other「二つのうちのもう一方」と another・other・others の区別)。二人の兄弟のうち一方を one、残る特定の一方を指すには the other を用いる。the other が正しい。another は「(三つ以上のうち)もう一つ別の」で、残りが一つに限定される二者では不適。other は限定詞や複数形を伴わず単独で主語の代名詞にはなれず誤り。others は「(不特定の)他のものたち」で複数を指し、残りが一人に確定するこの文には合わず誤り。"
      },
@@ -3447,11 +3447,11 @@
       "stem": "___ student in the class has to submit the report by Friday without exception.",
       "choices": [
        "Most",
-       "All",
        "Every",
+       "All",
        "Both"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "語法(every+単数名詞)",
       "explanation": "【単元】語法(every+単数名詞・単数動詞)。〈every+単数名詞〉で「どの~も」を表し、単数名詞 student と単数動詞 has に一致するのは every である。Every student ... has となる every が正しい。All は〈all+複数名詞+複数動詞〉(all students have)をとり、単数の student や has と一致せず誤り。Most も複数名詞・複数動詞を伴い(most students have)、単数の student・has と合わず誤り。Both は「両方」で二つを前提とし、不特定多数のクラスの生徒全員を指すこの文に合わず誤り。"
      },
@@ -3460,12 +3460,12 @@
       "type": "multiple_choice",
       "stem": "___ have I seen such a beautiful sunset in my entire life.",
       "choices": [
+       "Never",
        "Sometimes",
        "Always",
-       "Often",
-       "Never"
+       "Often"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "倒置・強調(否定の副詞Never文頭の倒置)",
       "explanation": "【単元】倒置・強調(否定の副詞Never文頭の倒置)。否定の副詞 Never が文頭に置かれると、後ろは「助動詞+主語+動詞」の倒置語順 have I seen となる。現在完了の経験を否定する Never がこの倒置を引き起こすので Never が正しい。Always・Often・Sometimes はいずれも否定の副詞ではないため文頭に出ても倒置を起こさず、後ろの have I seen という倒置語順と整合しないので誤り。"
      },
@@ -3474,12 +3474,12 @@
       "type": "multiple_choice",
       "stem": "Hardly ___ the station when the train left.",
       "choices": [
-       "had I reached",
        "I had reached",
        "I reached",
+       "had I reached",
        "did I reach"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "倒置・強調(Hardly...when の倒置)",
       "explanation": "【単元】倒置・強調(Hardly...when の倒置)。否定の副詞 Hardly が文頭にあるため、後続は倒置して「助動詞+主語+本動詞」となり、また Hardly...when 構文は過去完了で表すので had I reached が正しい。倒置を起こしていない I had reached や I reached は語順が誤り。did I reach は時制が単純過去で、Hardly...when の「~するやいなや」を表す過去完了 had+過去分詞 にならず誤り。"
      },
@@ -3489,11 +3489,11 @@
       "stem": "Scarcely had we sat down ___ the phone rang.",
       "choices": [
        "than",
-       "when",
        "then",
-       "that"
+       "that",
+       "when"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "倒置・強調(Scarcely...when の相関語)",
       "explanation": "【単元】倒置・強調(Scarcely...when の相関語)。文頭の否定副詞 Scarcely により had we sat down と倒置が起きており、「~するかしないうちに…した」を表すこの構文では後半を when で受けるため when が正しい。Hardly/Scarcely と相関するのは when であって than ではない(than は No sooner...than の組み合わせで使う)。then は接続詞ではなく副詞なので節をつなげず、that も誤り。"
      }
@@ -3517,11 +3517,11 @@
       "stem": "No sooner had she entered the room ___ everyone stood up.",
       "choices": [
        "when",
-       "that",
        "than",
+       "that",
        "then"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "倒置・強調(No sooner...than の倒置)",
       "explanation": "【単元】倒置・強調(No sooner...than の倒置)。否定表現 No sooner が文頭に出て had she entered と倒置が起きている。No sooner と相関して後半を導くのは than なので than が正しい。Hardly/Scarcely と組むのが when であり、No sooner には when は不可。that・then はこの相関構文の接続語にならず誤り。"
      },
@@ -3532,10 +3532,10 @@
       "choices": [
        "she agreed",
        "agreed she",
-       "she did agree",
-       "did she agree"
+       "did she agree",
+       "she did agree"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "倒置・強調(Not until 文頭の倒置)",
       "explanation": "【単元】倒置・強調(Not until 文頭の倒置)。否定の副詞句 Not until ... が文頭に出ると主節が倒置し、一般動詞の文では do/does/did を用いて「did+主語+動詞の原形」とするので did she agree が正しい。she agreed は倒置していないため誤り。agreed she は本動詞をそのまま主語の前に出しており、一般動詞では不可。she did agree は強調の did を残しつつ倒置していない語順で、Not until 文頭の倒置にならず誤り。"
      },
@@ -3544,12 +3544,12 @@
       "type": "multiple_choice",
       "stem": "Little ___ that he would become a world-famous scientist.",
       "choices": [
-       "did he know",
        "knew he",
        "he knew",
-       "he did know"
+       "he did know",
+       "did he know"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "倒置・強調(Little did I know の倒置)",
       "explanation": "【単元】倒置・強調(Little did I know の倒置)。否定的な副詞 Little が文頭に置かれると倒置が起こり、一般動詞 know は did he know の語順になるので did he know が正しい。he knew・he did know は倒置していない平叙語順なので誤り。knew he は一般動詞をそのまま倒置させた形で、英語では助動詞 do を立てる必要があるため不可。"
      },
@@ -3558,12 +3558,12 @@
       "type": "multiple_choice",
       "stem": "Only after the meeting ___ how serious the problem was.",
       "choices": [
-       "I realized",
        "did I realize",
+       "I realized",
        "realized I",
        "I did realize"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "倒置・強調(Only+副詞句文頭の倒置)",
       "explanation": "【単元】倒置・強調(Only+副詞句文頭の倒置)。Only に導かれる副詞句 Only after the meeting が文頭に出ると主節は倒置し、一般動詞では did I realize の語順になるので did I realize が正しい。I realized・I did realize は倒置していないため誤り。realized I は助動詞 do を立てず本動詞を直接前に出しており不可。"
      },
@@ -3573,11 +3573,11 @@
       "stem": "Only by working hard ___ achieve your goals.",
       "choices": [
        "you can",
-       "you could",
        "can you",
+       "you could",
        "could you have"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "倒置・強調(Only by ...文頭の倒置)",
       "explanation": "【単元】倒置・強調(Only by ...文頭の倒置)。Only に導かれる副詞句 Only by working hard が文頭に出るため主節は倒置し、助動詞 can が主語の前に出て can you achieve となる。よって can you が正しい。you can・you could は倒置していないので誤り。could you have は完了形 have achieved を要求する形で、後ろの原形 achieve と整合せず文意も合わないため誤り。"
      },
@@ -3588,10 +3588,10 @@
       "choices": [
        "So have I",
        "So I have",
-       "Neither I have",
-       "Neither have I"
+       "Neither have I",
+       "Neither I have"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "倒置・強調(否定への同意 Neither+倒置)",
       "explanation": "【単元】倒置・強調(否定への同意 Neither+倒置)。相手の否定文「私もない」に同調するには Neither/Nor を文頭に置いて「助動詞+主語」と倒置するので Neither have I が正しい。So have I は肯定文への同意(私もそうだ)に使うため、否定文への応答としては誤り。Neither I have は倒置していない語順なので不可。So I have は「確かにそうした」という確認の意味で、否定への同意にならず誤り。"
      }
@@ -3614,12 +3614,12 @@
       "type": "multiple_choice",
       "stem": "She passed the exam, and ___.",
       "choices": [
-       "so did her brother",
        "so her brother did",
        "so does her brother",
-       "also did her brother"
+       "also did her brother",
+       "so did her brother"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "倒置・強調(肯定への追随 so+倒置)",
       "explanation": "【単元】倒置・強調(肯定への追随 so+倒置)。「~もまたそうだ」を表す so は文頭に置かれ「助動詞+主語」と倒置し、前の動詞 passed(過去)に合わせて did を用いるので so did her brother が正しい。so her brother did は倒置していないため誤り。so does her brother は時制が現在で過去の passed と一致せず不可。also did her brother はこの追随構文で also を使わないため誤り。"
      },
@@ -3656,12 +3656,12 @@
       "type": "multiple_choice",
       "stem": "It was ___ that broke the window, not John.",
       "choices": [
+       "Tom who",
        "that Tom",
        "Tom which",
-       "Tom whom",
-       "Tom who"
+       "Tom whom"
       ],
-      "answer": 3,
+      "answer": 0,
       "unit": "倒置・強調(強調構文 It was ... that 人)",
       "explanation": "【単元】倒置・強調(強調構文 It was ... that 人)。It was と that で主語 Tom を強調する分裂文で、強調される語が人の場合 that または who が使えるので Tom who が正しい。which は人を受けられないため Tom which は誤り。強調されるのが主語であって目的格ではないので Tom whom も不可。that Tom は that を Tom の前に置く誤った語順で、It was that Tom broke... という非文になり誤り。"
      },
@@ -3670,12 +3670,12 @@
       "type": "multiple_choice",
       "stem": "It was ___ I first met her ten years ago.",
       "choices": [
-       "at this station that",
        "at this station which",
        "this station where",
-       "at this station when"
+       "at this station when",
+       "at this station that"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "倒置・強調(強調構文 It was ... that 副詞句)",
       "explanation": "【単元】倒置・強調(強調構文 It was ... that 副詞句)。強調構文 It is/was ... that は名詞だけでなく副詞句も強調でき、強調部分が場所・時いずれでも接続詞は that を用いるので at this station that が正しい。強調構文では which/where/when を使えないため at this station which・this station where・at this station when はいずれも誤り(関係副詞 where や when を入れるのは関係詞節との混同による誤答)。"
      },
@@ -3740,12 +3740,12 @@
       "type": "multiple_choice",
       "stem": "I was not surprised ___ by his rude behavior.",
       "choices": [
-       "at all",
        "in all",
+       "at all",
        "of all",
        "by all"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "倒置・強調(否定の強調 not ... at all)",
       "explanation": "【単元】倒置・強調(否定の強調 not ... at all)。否定文を「まったく~ない」と強調するときは not ... at all という固定表現を用いるので at all が正しい。in all は「全部で・合計で」、of all は「すべての中で」、by all は単独では成立しない表現で、いずれも否定の強調 not ... at all の意味にならないため誤り。"
      }

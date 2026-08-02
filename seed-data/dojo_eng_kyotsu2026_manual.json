@@ -18,12 +18,12 @@
       "type": "multiple_choice",
       "stem": "Why does the group decide against running a food stand?",
       "choices": [
-       "Because no teacher can supervise the cooking for the full festival hours",
        "Because the science club is already selling food at the festival",
        "Because the festival ends before the busiest selling hours begin",
+       "Because no teacher can supervise the cooking for the full festival hours",
        "Because the class budget is too small to buy any cooking ingredients"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "情報統合",
       "explanation": "正解は「Because no teacher can supervise the cooking for the full festival hours」。Riku は \"we'd need a teacher to supervise the cooking, and Mr. Sato already told me he can't stay after 3 p.m.\" と述べ、Mei が \"The festival runs until 5 p.m., so a food stand that closes early would lose its busiest hours\" と続ける。つまり監督できるのが3時までで5時までの開催に足りないことが断念理由。科学部は怪奇屋敷(haunted house)であり食べ物ではないので他の選択肢は誤り。"
      },
@@ -33,11 +33,11 @@
       "stem": "What does Hana say is her main concern about the board-game café?",
       "choices": [
        "That the small classroom would be too quiet for customers",
-       "That buying new board games would cost too much money",
        "That the art club has already taken all the tables",
-       "That no teacher would agree to supervise the booth"
+       "That no teacher would agree to supervise the booth",
+       "That buying new board games would cost too much money"
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "詳細理解",
       "explanation": "正解は「That buying new board games would cost too much money」。Hana は \"My worry is money — we only have a 6,000-yen budget, and new games cost a lot.\" と明言している。テーブル不足を心配したのは Riku、静かな小部屋については Hana 自身が \"a small room is fine\" と問題視していないため、他は誤り。"
      }
@@ -63,11 +63,11 @@
       "stem": "What does Aoi tell the members about what to bring to the camp?",
       "choices": [
        "They should carry their own volleyballs in the ball cart on the bus.",
-       "They should bring a suitcase because the new bus is larger than before.",
        "They should each bring only one bag and leave their own volleyballs at home.",
+       "They should bring a suitcase because the new bus is larger than before.",
        "They should bring two bags, one for clothes and one for sports gear."
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "詳細理解",
       "explanation": "正解は「They should each bring only one bag and leave their own volleyballs at home.」。Aoiは「We can only bring one bag each」「leave your own balls at home」と述べており、バッグは1つ、ボールは持参不要。バスは小さくなった(smaller)ので「larger」は誤り、スーツケースは禁止。"
      },
@@ -78,10 +78,10 @@
       "choices": [
        "No meals are provided, so everyone must bring all their own food.",
        "All meals including Saturday lunch are provided at the lodge.",
-       "Only snacks are provided, and members must buy lunch at the lodge.",
-       "Saturday lunch is not provided, but the other meals are."
+       "Saturday lunch is not provided, but the other meals are.",
+       "Only snacks are provided, and members must buy lunch at the lodge."
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "事実把握",
       "explanation": "正解は「Saturday lunch is not provided, but the other meals are.」。Aoiは「Dinner and Sunday meals are provided at the lodge, but Saturday lunch is NOT」と説明している。よって土曜の昼食だけ各自持参で、それ以外は提供される。"
      },
@@ -90,12 +90,12 @@
       "type": "multiple_choice",
       "stem": "What can be understood about Mei's plan for the camp?",
       "choices": [
-       "She will travel separately by train and meet the others at the lodge.",
        "She will not attend the camp because of her dentist appointment.",
        "She will take the same bus but get off at a different stop.",
-       "She will arrive at the school gate later, at around noon."
+       "She will arrive at the school gate later, at around noon.",
+       "She will travel separately by train and meet the others at the lodge."
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "推論",
       "explanation": "正解は「She will travel separately by train and meet the others at the lodge.」。Meiは歯科の予約でバスに乗れず、「come by train and arrive at the lodge by noon」とコーチに許可されている。欠席ではなく、別経路(電車)で合宿先に合流する。集合場所の門に正午到着するのではなく、lodgeに正午までに着く点に注意。"
      }
@@ -120,12 +120,12 @@
       "type": "multiple_choice",
       "stem": "A student has a club activity every weekday afternoon and wants to use the library after the club ends at 5:00 p.m. On which days can the student use the library after the club?",
       "choices": [
-       "Tuesdays and Thursdays",
        "Mondays, Wednesdays, and Fridays",
+       "Tuesdays and Thursdays",
        "Every weekday",
        "Saturdays only"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "詳細理解",
       "explanation": "正解は「Mondays, Wednesdays, and Fridays」。本文の Opening hours で、7月から月・水・金は午後6時まで開館し、火・木は従来通り4時30分に閉まると述べている。クラブが5時に終わった後に利用できるのは6時まで開いている月・水・金のみで、火・木は4時30分に閉まるため利用できない。"
      },
@@ -135,11 +135,11 @@
       "stem": "What is true about borrowing books under the new rules?",
       "choices": [
        "The number of books and the loan period both stay the same.",
-       "Students can borrow fewer books, but keep them longer than before.",
        "Students can borrow more books than before, but must return them sooner.",
+       "Students can borrow fewer books, but keep them longer than before.",
        "Students can renew any book as many times as they like."
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "情報統合",
       "explanation": "正解は「Students can borrow more books than before, but must return them sooner.」。本文の Borrowing で、以前は3冊・2週間だったが、今は最大5冊に増えた一方で貸出期間は1週間に短縮されたとある。冊数は増え期間は短くなるので、この選択肢が正しい。renew は1回のみで、他の生徒が予約済みの本は更新できないため「何度でも」は誤り。"
      }
@@ -193,11 +193,11 @@
       "stem": "What can be inferred about the condition of Greenfield Park before the cleanup?",
       "choices": [
        "It had been closed to the public for a whole year",
-       "A recent event left it dirty and the river path hard to walk on",
        "It was damaged by heavy rain during the summer festival",
+       "A recent event left it dirty and the river path hard to walk on",
        "The playground equipment had become old and dangerous"
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "推論",
       "explanation": "正解は「A recent event left it dirty and the river path hard to walk on」。本文冒頭に「After last month's summer festival, our park is covered in litter, and the river path has become muddy and overgrown.」とあり、先月の夏祭りという最近の催しの後でゴミが散らかり、川沿いの道が泥で歩きにくくなったと読み取れる。閉鎖された期間や大雨による被害、遊具の老朽化については本文に記述がなく、過度の推測(言い過ぎ)である。"
      }
@@ -223,11 +223,11 @@
       "stem": "Where and when will the group hold their study session?",
       "choices": [
        "At the city library on Wednesday afternoon",
-       "At the city library on Tuesday afternoon",
        "At the community center on Tuesday afternoon",
+       "At the city library on Tuesday afternoon",
        "At the community center on Wednesday afternoon"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "情報統合",
       "explanation": "正解は「At the community center on Tuesday afternoon」。HanaはWednesdayの図書館を提案したが、Rikuはサッカー練習で時間が足りずTuesdayを希望し、MeiがTuesdayは図書館が修理で休館のため駅近くのcommunity centerのstudy roomを使うと提案、Rikuも『Tuesday afternoon is open for me. Let's do that.』と同意した。よって会場はcommunity center、日はTuesday afternoonに確定する。"
      },
@@ -238,10 +238,10 @@
       "choices": [
        "Because she is the best at biology in the group",
        "Because she lives closest to the community center",
-       "Because the library asked her to reserve it",
-       "Because she has a community center card that the others do not have"
+       "Because she has a community center card that the others do not have",
+       "Because the library asked her to reserve it"
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "詳細理解",
       "explanation": "正解は「Because she has a community center card that the others do not have」。Rikuは『I can't book the room because I don't have a community center card. Mei, you have one, right?』と述べ、Meiは『I do. I'll reserve the room from 3 to 6 p.m.』と答えている。予約にはカードが必要で、それを持つのがMeiだから彼女が予約する。生物が得意なのはDaichiであり、Meiの予約理由ではない。"
      },
@@ -250,12 +250,12 @@
       "type": "multiple_choice",
       "stem": "What can be inferred about Daichi from the chat?",
       "choices": [
-       "He may join the session later than the others because of his part-time work",
        "He will arrive at the session before the others because he is good at biology",
        "He cannot join the session at all because the room is already full",
-       "He will book the room since he has a community center card"
+       "He will book the room since he has a community center card",
+       "He may join the session later than the others because of his part-time work"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "推論",
       "explanation": "正解は「He may join the session later than the others because of his part-time work」。Rikuは『he works at his family's shop on weekday afternoons until 4. He might join us late.』と述べ、Meiも『come whenever you finish work!』と書いている。予約は3〜6時で、Daichiは4時まで仕事のため遅れて合流する可能性が高い。生物が得意でも到着が早いとは述べられておらず、参加不可や予約担当も誤り。"
      }
@@ -280,12 +280,12 @@
       "type": "multiple_choice",
       "stem": "Why is Mei unable to become the cheer leader?",
       "choices": [
-       "She does not enjoy leading cheers in front of others.",
        "Her club practice ends after the cheer team's practice begins.",
+       "She does not enjoy leading cheers in front of others.",
        "She has already promised to become the program designer.",
        "She does not know how to use the new digital scoreboard."
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "詳細理解",
       "explanation": "正解は「Her club practice ends after the cheer team's practice begins.」。Mei は \"I have club practice every afternoon until 4\" と述べ、さらに \"The cheer team has to practice from 3:30, so I don't think I can make it\" と説明している。つまり応援団の練習開始(3:30)よりも自分の部活終了(4時)が遅いため間に合わないことが理由であり、選択肢の他の要素(嫌い/約束済み/デジタル板)は理由として本文に書かれていない。"
      },
@@ -309,11 +309,11 @@
       "stem": "Which role still needs help before it can be carried out smoothly?",
       "choices": [
        "The equipment manager, because Kenji has lost his brother's notes.",
+       "The scoreboard keeper, because Tomo needs to be taught the new board.",
        "The cheer leader, because Sora must find a replacement.",
-       "The program designer, because Mei dislikes drawing pictures.",
-       "The scoreboard keeper, because Tomo needs to be taught the new board."
+       "The program designer, because Mei dislikes drawing pictures."
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "情報統合",
       "explanation": "正解は「The scoreboard keeper, because Tomo needs to be taught the new board.」。Tomo は scoreboard を引き受ける条件として \"someone has to teach me how the new digital board works. I've only ever used the old chalk one\" と述べ、Kenji が \"I'll show you on Thursday\" と応じている。Kenji はノートを持っており(失っていない)、Sora は自ら応援団長を引き受けたので代役は不要、Mei は \"I love drawing\" と述べているため、他の選択肢は本文と矛盾する。"
      }
@@ -338,12 +338,12 @@
       "type": "multiple_choice",
       "stem": "What is one thing library committee members are expected to do?",
       "choices": [
-       "Organize a Book Week event once each term",
        "Teach reading lessons to younger students every morning",
        "Buy new books for the library with school money",
-       "Repair damaged books in the reading corner"
+       "Repair damaged books in the reading corner",
+       "Organize a Book Week event once each term"
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "事実把握",
       "explanation": "正解は「Organize a Book Week event once each term」。本文の \"What committee members do\" に \"Plan one 'Book Week' event each term to get more students reading\" とあり、学期ごとに一度イベントを企画することが仕事として挙げられている。朝の読書指導・本の購入・本の修理は本文に書かれていない。"
      },
@@ -352,12 +352,12 @@
       "type": "multiple_choice",
       "stem": "A first-year student who wants to join the committee must",
       "choices": [
-       "pay a small fee before the meeting",
        "bring a short note from a parent",
+       "pay a small fee before the meeting",
        "work alone at the front desk",
        "apply only by email before May 8"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "詳細理解",
       "explanation": "正解は「bring a short note from a parent」。本文の \"Important points\" に \"First-year students are welcome, but you will need a short note from a parent\" とある。料金の支払いは記載が無く、front deskは必ずペアで働くため一人にはならない。メール申込は5月8日に来られない人向けの代替手段で、1年生全員に求められるものではない。"
      },
@@ -367,11 +367,11 @@
       "stem": "What should a student do if he or she cannot come to the library on May 8?",
       "choices": [
        "Wait until next term and apply again",
-       "Ask another student to attend in his or her place",
        "Email Ms. Tanaka by May 15 to set up another time",
+       "Ask another student to attend in his or her place",
        "Sign up online before the meeting date"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "推論",
       "explanation": "正解は「Email Ms. Tanaka by May 15 to set up another time」。本文に \"If you cannot come on May 8 but still want to join, send an email to Ms. Tanaka by May 15. She will arrange another time to meet you.\" とある。次の学期まで待つ・代理出席・事前のオンライン登録はいずれも本文の指示と異なる(本文は \"You do not need to sign up before this meeting\" とも述べている)。"
      }
@@ -410,12 +410,12 @@
       "type": "multiple_choice",
       "stem": "If a visitor can stay for only one performance, what would the writer most likely suggest?",
       "choices": [
-       "Coming to the Choir at 3:00 p.m. and sitting in a full hall",
        "Arriving at 10:00 a.m. for the Brass Band's relaxing opening",
        "Watching the Dance Club's new lunchtime routine at 11:30 a.m.",
+       "Coming to the Choir at 3:00 p.m. and sitting in a full hall",
        "Seeing the Drama Club's comedy at 1:30 p.m. in the afternoon"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "推論",
       "explanation": "正解は「Coming to the Choir at 3:00 p.m. and sitting in a full hall」。本文に「If you can only stay for one show, the teachers recommend this one (the Choir)... because it is the most fun when the hall is full.」とあり、1公演しか見られない人にはChoir(3:00 p.m.)が勧められている。満員のホールが最も楽しいとあるため、満席で見るのが筆者の意図に沿う。他の公演は「1つだけ」の推奨対象として挙げられていない。"
      }
@@ -512,12 +512,12 @@
       "type": "multiple_choice",
       "stem": "According to the notice, which change will the library make starting in October?",
       "choices": [
-       "The library will open earlier on weekday mornings and close earlier in the evening.",
        "The library will open later on weekdays and stay open three more hours in the evening.",
+       "The library will open earlier on weekday mornings and close earlier in the evening.",
        "The library will close one hour later on weekday mornings but stay open until the evening.",
        "The library will be open every day of the week, including Sundays."
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "事実把握",
       "explanation": "正解は「The library will open later on weekdays and stay open three more hours in the evening.」。本文に平日は8:00ではなく9:00開館(open one hour later)で、5:00ではなく8:00閉館(stay open three hours longer in the evening)とある。日曜は引き続き閉館(remain closed on Sundays)なので毎日開くわけではない。"
      },
@@ -527,11 +527,11 @@
       "stem": "Why did the library decide to change its opening hours?",
       "choices": [
        "Because students complained that the study rooms were always full.",
-       "Because the staff wanted to allow students to eat and drink in the library.",
        "Because many students could not use the library after their club activities ended.",
+       "Because the staff wanted to allow students to eat and drink in the library.",
        "Because more than 300 students asked the library to open on Sundays."
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "詳細理解",
       "explanation": "正解は「Because many students could not use the library after their club activities ended.」。本文に「Many students told us they could not use the library after club activities, which usually finish around 6:00 p.m.」とあり、これが変更の理由。300人超は意見を集めた人数で日曜開館を求めたわけではなく、飲食許可は理由として述べられていない。"
      },
@@ -542,10 +542,10 @@
       "choices": [
        "The new evening hours are a great improvement for students who join club activities.",
        "Reserving study rooms one day in advance is a fair and helpful rule.",
-       "The library should stop allowing drinks because they make the reading area dirty.",
-       "The later morning opening is inconvenient, but the new Saturday hours are welcome."
+       "The later morning opening is inconvenient, but the new Saturday hours are welcome.",
+       "The library should stop allowing drinks because they make the reading area dirty."
       ],
-      "answer": 3,
+      "answer": 2,
       "unit": "事実と意見の区別",
       "explanation": "正解は「The later morning opening is inconvenient, but the new Saturday hours are welcome.」。Lisaは朝9時開館で「makes my mornings harder」と不便さを述べ、一方「glad the library is finally open on Saturdays」と土曜開館を歓迎している。夜延長を歓迎しているのはMarkであり、飲み物や予約規則についての意見はLisaは述べていない。"
      }
@@ -772,12 +772,12 @@
       "type": "multiple_choice",
       "stem": "Why did the writer fail to notice that the train pass had fallen?",
       "choices": [
-       "Because the writer hurried off the crowded train without paying attention.",
        "Because the writer was busy reading the returned library books on the train.",
        "Because the writer had placed the pass inside the heavy bag, not a pocket.",
-       "Because a station worker had already taken the pass at the ticket gate."
+       "Because a station worker had already taken the pass at the ticket gate.",
+       "Because the writer hurried off the crowded train without paying attention."
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "詳細理解",
       "explanation": "正解は「Because the writer hurried off the crowded train without paying attention.」。本文に「I rushed out so quickly that I did not notice something fall from my pocket」とあり、混雑した電車から急いで降りたために落下に気づかなかったと分かる。本は返却に向かう途中で読んでいたわけではなく、passはポケットにあったので他の選択肢は本文と矛盾する。"
      },
@@ -947,11 +947,11 @@
       "stem": "The teacher says underline (3) \"students will take action when they can see a clear reason to do so\" is a bit weak. Which sentence best replaces it while keeping the writer's main finding?",
       "choices": [
        "People remembered the busy Thursday more than any other day of the week.",
-       "Concrete facts, such as the weight of wasted food, moved students to act far more than words alone.",
        "The Environment Club should hold Eco Week every single month from now on.",
+       "Concrete facts, such as the weight of wasted food, moved students to act far more than words alone.",
        "Most students already knew that wasting food and plastic was bad for the planet."
       ],
-      "answer": 1,
+      "answer": 2,
       "unit": "要点把握",
       "explanation": "正解は「Concrete facts, such as the weight of wasted food, moved students to act far more than words alone.」。下線部(3)の主旨は『生徒は明確な理由が見えれば行動する』で、直後にも『衝撃的な数字を示したポスターが長い演説より行動を変えた』とある。具体的な事実(食品ロスの重さ)が言葉以上に人を動かしたという選択肢がこの発見を最も明確に言い換える。他は曜日の印象・頻度の提案・既知の前提にすぎず、主旨の言い換えになっていない。"
      },
@@ -962,10 +962,10 @@
       "choices": [
        "a quiet week with few visitors",
        "a single survey about food waste",
-       "a new beginning that gave the club energy and direction",
-       "a difficult event that the members hope to forget"
+       "a difficult event that the members hope to forget",
+       "a new beginning that gave the club energy and direction"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "要点把握",
       "explanation": "正解は「a new beginning that gave the club energy and direction」。下線部(4)直後に『今では多くの新会員と将来への明確な計画がある(many new members and a clear plan for the future)』とあり、エコ週間がクラブに勢いと方向性を与えた新たな出発点だったことを示す。よってこの選択肢が全体の意味を要約する。来場者が少ない/単なる一調査/忘れたい困難な行事、はいずれも本文の肯定的な結末と矛盾する。"
      }
@@ -991,11 +991,11 @@
       "stem": "下線部 (1) の文「It is also for those who have never thought of reading as fun, ...」の後に続けるのに最も適切な語句を選びなさい。",
       "choices": [
        "so we have decided to cancel some of the events",
+       "because we have prepared activities that anyone can enjoy",
        "because the library will be closed during the event",
-       "although we only welcome experienced readers",
-       "because we have prepared activities that anyone can enjoy"
+       "although we only welcome experienced readers"
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "詳細理解",
       "explanation": "正解は「because we have prepared activities that anyone can enjoy」。下線部直前で Reading Week は「すでに本好きの生徒だけのものではない(not only for students who already love books)」と述べ、本好きでない生徒にも向けたものだと説明している。その理由として「誰でも楽しめる活動を用意した」と続くのが文脈に最も自然で、本文後半の Book Exchange・Lunchtime Talks・Reading Passport といった多様な活動の紹介とも一致する。他の選択肢は図書館が閉まる・経験者しか歓迎しない・イベント中止など、本文の趣旨(誰でも参加できる)と矛盾する。"
      },
@@ -1004,12 +1004,12 @@
       "type": "multiple_choice",
       "stem": "次の1文を入れるのに最も適切な位置を <A>〜<D> から選びなさい。\n挿入文: \"No special skill is needed; you only have to be willing to try.\"",
       "choices": [
-       "<A>",
        "<B>",
        "<C>",
+       "<A>",
        "<D>"
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "情報統合",
       "explanation": "正解は「<A>」。挿入文は「特別な技能は要らず、やってみる気持ちさえあればよい」という、参加への敷居の低さを述べる一般的な内容。<A> の直後では「Reading Week は本好きの生徒だけのものではなく、読書を楽しいと思ったことのない生徒にも向けたものだ」と参加対象の広さを説明しており、挿入文はその導入として自然につながる。<B><C><D> はそれぞれ Book Exchange・Lunchtime Talks・Reading Passport という具体的な活動の説明の途中であり、技能不要という一般論を挟むと話の流れが途切れて不自然になる。"
      },
@@ -1018,12 +1018,12 @@
       "type": "multiple_choice",
       "stem": "コメント (2) に従い、下線部 (2) の文「We expect this year to be even more successful, since the number of students taking part has grown steadily.」を置き換えるのに最も適切な文を選びなさい。",
       "choices": [
-       "Because the number of participants has increased every year, we believe even more books will be exchanged this time.",
        "We are not sure whether anyone will join the Book Exchange Corner this year.",
        "The Book Exchange Corner will be held only if enough teachers agree to help.",
-       "Students who bring books will be asked to pay a small fee at the corner."
+       "Students who bring books will be asked to pay a small fee at the corner.",
+       "Because the number of participants has increased every year, we believe even more books will be exchanged this time."
       ],
-      "answer": 0,
+      "answer": 3,
       "unit": "情報統合",
       "explanation": "正解は「Because the number of participants has increased every year, we believe even more books will be exchanged this time.」。コメント (2) は「主張を繰り返すのではなく、すでに述べた根拠で期待を裏づけよ」と求めている。直前で「昨年は1週間で200冊以上が交換された」「参加者が着実に増えている」と述べているので、参加者増加を根拠に「今年はさらに多くの本が交換されるだろう」とつなげるのが最も適切。他の選択肢は参加者がいるか不明・開催が教員次第・有料化など、本文の前向きな根拠や事実(無料で本を交換する企画)と矛盾する。"
      },
@@ -1032,12 +1032,12 @@
       "type": "multiple_choice",
       "stem": "コメント (3) に従い、本文の主旨をまとめる下線部 (3)「make reading a habit you carry beyond a single week」を置き換えるのに最も適切な語句を選びなさい。",
       "choices": [
-       "finish reading as many books as possible in five days",
        "turn reading into a lasting part of your daily life",
+       "finish reading as many books as possible in five days",
        "win the bookmark prize before anyone else does",
        "avoid going to the library after Reading Week ends"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "要点把握",
       "explanation": "正解は「turn reading into a lasting part of your daily life」。下線部 (3) は「読書を1週間だけで終わらせず続く習慣にする」という意味で、本文全体の主旨にあたる。Reading Passport の説明でも「賞品そのものが目的ではなく、図書館に通い続けてもらうためのもの(encourage you to keep coming back)」と述べられており、読書を一過性で終わらせず日常の一部にするという主旨と一致する。「5日間でできるだけ多く読む」「景品を誰より早く獲得する」は本文が否定する短期的・賞品目当ての見方であり、「終了後は図書館に行かない」は主旨と正反対。"
      }
@@ -1063,11 +1063,11 @@
       "stem": "Look at the underlined part (1). Which phrase best continues the sentence so that it connects naturally to the idea that comes right after it?",
       "choices": [
        "that the city had wasted a great deal of money on the park",
-       "that broken glass is the only danger families need to fear",
        "that a small accident can point to a much larger problem",
+       "that broken glass is the only danger families need to fear",
        "that my sister should have been more careful while running"
       ],
-      "answer": 2,
+      "answer": 1,
       "unit": "事実把握",
       "explanation": "正解は「that a small accident can point to a much larger problem」。直後で小さな事故から公園全体の大きな問題に気づいたと述べるため。"
      },
@@ -1510,14 +1510,14 @@
       "type": "multiple_choice",
       "stem": "Put the following events into the order in which they happened. ㋐ Aya hid behind a vending machine and saw who left the bread. ㋑ Aya found a folded towel placed for her wet hair. ㋒ Aya saw Mr. Sato take the morning bag of bread. ㋓ Aya read Mr. Tani's first handwritten note.",
       "choices": [
-       "㋒ → ㋐ → ㋑ → ㋓",
        "㋐ → ㋒ → ㋑ → ㋓",
        "㋒ → ㋑ → ㋐ → ㋓",
        "㋐ → ㋑ → ㋒ → ㋓",
        "㋑ → ㋒ → ㋐ → ㋓",
+       "㋒ → ㋐ → ㋑ → ㋓",
        "㋒ → ㋐ → ㋓ → ㋑"
       ],
-      "answer": 0,
+      "answer": 4,
       "unit": "時系列把握",
       "explanation": "正解は「㋒ → ㋐ → ㋑ → ㋓」。本文の順序はまず冬の朝にMr. Satoが袋を取るのを見(㋒)、『the next day』に自販機の陰に隠れてMr. Taniを目撃し(㋐)、その後『One rainy day』にタオルを見つけ(㋑)、春の取り壊し前日に初めて手書きのメモを読む(㋓)。よってこの並びが唯一正しい。"
      },
@@ -1586,14 +1586,14 @@
       "type": "multiple_choice",
       "stem": "Put the following events (A〜D) into the order in which they happened in the story.\n\nA. The narrator's well-trained hands caught the ball cleanly in the regional final and led to the winning score.\nB. Mr. Dawson asked the injured Leah to keep statistics and help plan the defence.\nC. At his first practice, the narrator made a hard shot but then missed seven of ten attempts.\nD. At the final dinner, the narrator admitted he had once believed he knew everything.",
       "choices": [
-       "C → A → B → D",
        "C → B → A → D",
        "A → C → B → D",
        "C → A → D → B",
        "A → C → D → B",
-       "C → D → A → B"
+       "C → D → A → B",
+       "C → A → B → D"
       ],
-      "answer": 0,
+      "answer": 5,
       "unit": "時系列把握",
       "explanation": "正解は「C → A → B → D」。本文の流れは、まず最初の練習で難しいシュートを決めた後に10本中7本を外す（C: \"At my first practice...I missed seven of the next ten\"）。次に regional final で鍛えられた手がボールをきれいに捕り勝利につながる（A: \"The storm came in our regional final\"）。その後 \"Later that season\" に Leah が手首を骨折し、コーチが統計と守備計画を頼む（B）。最後に final dinner で narrator が「すべて分かっていると思っていた」と認める（D: \"At our final dinner\"）。よって C→A→B→D が正しい。"
      },
@@ -1662,14 +1662,14 @@
       "type": "multiple_choice",
       "stem": "Put the following four events into the order in which they happened in the story.  (A) Riku tells Sora he can no longer remember the soup's taste.  (B) Grandma Hana presses a worn notebook into Sora's hands.  (C) Sora delivers vegetables to Grandma Hana every Sunday.  (D) Grandma Hana moves into Sora's house because she is ill.",
       "choices": [
-       "C → D → B → A",
        "C → B → D → A",
        "D → C → B → A",
        "C → D → A → B",
        "D → B → C → A",
+       "C → D → B → A",
        "C → A → D → B"
       ],
-      "answer": 0,
+      "answer": 4,
       "unit": "時系列把握",
       "explanation": "正解は「C → D → B → A」。物語冒頭の幼少期、毎週日曜に野菜を届けていた(C)。十五歳の春に祖母が病気で家に移り住んだ(D=「Grandma Hana fell ill and had to move into our house」)。その後の静かな夜にノートを手渡された(B=「she took a small, worn notebook and pressed it into my hands」)。祖母の死から約一年後、弟リクが味を思い出せないと言う(A)。よってC→D→B→Aの順。"
      },
@@ -1738,14 +1738,14 @@
       "type": "multiple_choice",
       "stem": "Put the following four events in the order in which they happened in the story.\n  A. Mr. Okada lent Sora a worn notebook full of his old error notes.\n  B. Sora's supervisor returned her first manuscript covered in corrections.\n  C. Sora placed a notebook of her own notes on Kenji's desk.\n  D. Mr. Okada told Sora that the first mistakes are the cheapest ones.",
       "choices": [
-       "B → D → A → C",
        "D → B → A → C",
        "B → A → D → C",
        "A → B → D → C",
        "D → A → B → C",
-       "B → D → C → A"
+       "B → D → C → A",
+       "B → D → A → C"
       ],
-      "answer": 0,
+      "answer": 5,
       "unit": "時系列把握",
       "explanation": "正解は「B → D → A → C」。まず翌朝に supervisor が訂正だらけの原稿を返し(B)、Sora が階段で泣こうとした時に Okada が「The first hundred mistakes are the cheapest ones」と言い(D)、その「That afternoon」に Okada が古いノートを置き(A)、数か月後に Sora が自分のノートを Kenji の机に置いた(C)。本文の出来事の流れに一致するのはこの順だけ。"
      },
@@ -1799,11 +1799,11 @@
       "stem": "According to the article, which condition is necessary for a new memory to become stable rather than being easily lost? (Choose the best option for ( 1 ) on Slide 2.)",
       "choices": [
        "The learner repeats the material out loud many times before going to bed.",
-       "The information goes through consolidation, much of which takes place during sleep.",
        "The learner studies the same material during the busy hours of the day.",
-       "The memory is kept in its temporary, fragile form for as long as possible."
+       "The memory is kept in its temporary, fragile form for as long as possible.",
+       "The information goes through consolidation, much of which takes place during sleep."
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "事実把握",
       "explanation": "正解は「The information goes through consolidation, much of which takes place during sleep.」。本文に「The memory becomes stable only after it goes through a process called consolidation」とあり、さらに「a large share of consolidation happens during sleep」と述べられている。繰り返し音読・日中の学習・脆弱な形のまま保つことは安定化の条件として本文に書かれておらず、むしろ脆弱な形は失われやすいと述べられている。"
      },
@@ -1813,13 +1813,13 @@
       "stem": "Based on Slide 3, which combination correctly fills ( 2 ) and ( 3 )? (Choose the best option.)",
       "choices": [
        "( 2 ) creative problem-solving  /  ( 3 ) facts and events",
-       "( 2 ) facts and events  /  ( 3 ) connecting ideas and recognizing patterns",
        "( 2 ) refreshing attention and mood  /  ( 3 ) deep, foggy feelings",
        "( 2 ) connecting ideas and recognizing patterns  /  ( 3 ) facts and events",
        "( 2 ) a regular sleep schedule  /  ( 3 ) consolidation of vocabulary",
+       "( 2 ) facts and events  /  ( 3 ) connecting ideas and recognizing patterns",
        "( 2 ) facts and events  /  ( 3 ) the heavy feeling after a long nap"
       ],
-      "answer": 1,
+      "answer": 4,
       "unit": "情報統合",
       "explanation": "正解は「( 2 ) facts and events  /  ( 3 ) connecting ideas and recognizing patterns」。本文は深い眠りについて「deep sleep is when the brain replays and files away facts and events」と述べ、REM睡眠については「REM sleep appears to help the brain connect ideas and recognize patterns, which supports problem-solving and creative thinking」と述べている。よって( 2 )=事実と出来事、( 3 )=アイデアの結合とパターン認識。両者の役割を入れ替えた選択肢や、昼寝・スケジュールに関する記述は本文の各段階の説明と一致しない。"
      },
@@ -1828,12 +1828,12 @@
       "type": "multiple_choice",
       "stem": "Which statement best completes the warning on Slide 4 ( 4 ), according to the article?",
       "choices": [
+       "Staying awake all night denies the brain the time it needs to file new material away, so less is remembered.",
        "Studying all night raises a student's ability above that of students who sleep.",
        "Students who stay awake all night work harder, so they remember more the next day.",
-       "Staying awake all night denies the brain the time it needs to file new material away, so less is remembered.",
        "An all-night study session guarantees that both deep sleep and REM sleep are used efficiently."
       ],
-      "answer": 2,
+      "answer": 0,
       "unit": "要点把握",
       "explanation": "正解は「Staying awake all night denies the brain the time it needs to file new material away, so less is remembered.」。本文は「the brain never gets the chance to file the new material away」と述べ、実験でも「students who slept after learning remembered far more the next day than students of equal ability who stayed awake」とある。徹夜が能力を高める・徹夜組の方がよく覚える、という選択肢は本文と矛盾し、徹夜で両段階が効率的に使われるという選択肢も本文の警告と逆である。"
      },
@@ -1843,11 +1843,11 @@
       "stem": "Which of the following best summarizes the research finding described in the fourth paragraph?",
       "choices": [
        "The students who stayed awake remembered more because they spent more total time with the material.",
+       "Students who slept after studying outperformed equally able students who stayed awake, because sleep let the brain do its night work.",
        "The students who slept did better only because they happened to be more hardworking than the others.",
-       "Both groups remembered the same amount, showing that sleep makes no difference to memory.",
-       "Students who slept after studying outperformed equally able students who stayed awake, because sleep let the brain do its night work."
+       "Both groups remembered the same amount, showing that sleep makes no difference to memory."
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "研究知見の要約",
       "explanation": "正解は「Students who slept after studying outperformed equally able students who stayed awake, because sleep let the brain do its night work.」。本文に「students who slept after learning remembered far more the next day than students of equal ability who stayed awake the same length of time」「their advantage came entirely from giving the brain time to do its night work」とある。眠った側が勤勉だったから、差がなかった、起きていた側の方が覚えた、という選択肢はいずれも本文の記述と矛盾する。"
      },
@@ -1858,12 +1858,12 @@
       "choices": [
        "Aya and Ken",
        "Aya and Mika",
-       "Aya and Ryo",
        "Ken and Mika",
        "Ken and Ryo",
-       "Mika and Ryo"
+       "Mika and Ryo",
+       "Aya and Ryo"
       ],
-      "answer": 2,
+      "answer": 5,
       "unit": "内容一致",
       "explanation": "正解は「Aya and Ryo」。本文の助言は「learn the most important material earlier in the evening, then protect a full night's sleep」「keep a regular schedule」、および昼寝は「a short nap of about twenty minutes ... a brief nap in the early afternoon is usually the safest choice」である。Ayaは重要事項を夕食後に学び規則的に十分眠る点、Ryoは十分な睡眠を守り早い午後に20分の短い昼寝をとる点で合致する。Kenは徹夜、Mikaは不規則かつ深夜2時以降の学習で、いずれも本文の助言に反する。"
      }
@@ -1931,13 +1931,13 @@
       "stem": "Below are four students' habits. According to the advice in the final paragraph, which two students are using music in the way the researchers recommend?\n\nKenta: plays slow, gentle music to help himself fall asleep at night.\nMari: listens to music with many lyrics while writing essays.\nSora: plays fast, upbeat music while running to make exercise feel easier.\nYuki: keeps the music she loves least and avoids songs that move her.",
       "choices": [
        "Kenta and Mari",
-       "Kenta and Sora",
        "Mari and Sora",
        "Mari and Yuki",
        "Sora and Yuki",
+       "Kenta and Sora",
        "Kenta and Yuki"
       ],
-      "answer": 1,
+      "answer": 4,
       "unit": "情報統合",
       "explanation": "正解は「Kenta and Sora」。最終段落の助言は「Choose calm, slow music when you need to relax or sleep(→Kentaが就寝前にゆっくりした音楽=合致)」「save energetic music for exercise(→Soraが運動中に速い音楽=合致)」。Mariは「music with words can disturb activities that also use language, such as writing」に反する。Yukiは「make room for the songs you truly love」に反し、最も好きでない音楽を残している。よって助言に最も合うのはKentaとSora。"
      }
@@ -1976,14 +1976,14 @@
       "type": "multiple_choice",
       "stem": "On Slide 2, which of the following best completes the two blanks ( A ) and ( B )?  ( A ) a signal that starts the action  ( B ) the good feeling you get afterward  ( A ) the action you carry out  ( B ) the place where you act  ( A ) the energy saved by the brain  ( B ) the cue that appears next   Choose the combination in which BOTH ( A ) and ( B ) are correct.",
       "choices": [
-       "( A ) a signal that starts the action / ( B ) the good feeling you get afterward",
        "( A ) a signal that starts the action / ( B ) the place where you act",
        "( A ) the action you carry out / ( B ) the good feeling you get afterward",
        "( A ) the action you carry out / ( B ) the cue that appears next",
        "( A ) the energy saved by the brain / ( B ) the good feeling you get afterward",
-       "( A ) the energy saved by the brain / ( B ) the cue that appears next"
+       "( A ) the energy saved by the brain / ( B ) the cue that appears next",
+       "( A ) a signal that starts the action / ( B ) the good feeling you get afterward"
       ],
-      "answer": 0,
+      "answer": 5,
       "unit": "情報統合",
       "explanation": "正解は「( A ) a signal that starts the action / ( B ) the good feeling you get afterward」。本文第2段落で cue は「a signal that tells the brain to start a certain action」、reward は「the good feeling or benefit you get afterward」と定義されている。ルーチンこそが行動そのものなので、A を「the action」とする選択肢は誤り。"
      },
@@ -2007,13 +2007,13 @@
       "stem": "Four students describe their plans for building a new habit. Student P: 'I'll review English words for ten minutes right after I finish breakfast every day, and let myself enjoy a piece of chocolate as soon as I'm done.' Student Q: 'I'll study whenever I happen to feel like it, with no fixed time, and reward myself with a trip at the end of the year.' Student R: 'I'll do five push-ups right after I brush my teeth each night, and check off a sticker on my chart immediately afterward.' Student S: 'I'll exercise hard, but only if I never miss a single day, and I'll quit completely the first time I skip.' Based on the advice in the article, which TWO students are following the recommended approach?",
       "choices": [
        "P and Q",
-       "P and R",
        "P and S",
        "Q and R",
        "Q and S",
+       "P and R",
        "R and S"
       ],
-      "answer": 1,
+      "answer": 4,
       "unit": "情報統合",
       "explanation": "正解は「P and R」。第5段落の助言は、(1)既存の日課(朝食後・歯磨き後など)に新しいルーチンを結びつける、(2)直後にすぐ得られる小さな報酬を選ぶ、(3)1日抜けても諦めず長期の規則的反復を重視する、というもの。P は朝食後+直後のチョコ、R は歯磨き後+直後のシール印で全条件に合う。Q は固定の cue が無く報酬が年末と遠い、S は1日でも抜けたら完全にやめるため助言に反する。"
      }
@@ -2038,12 +2038,12 @@
       "type": "multiple_choice",
       "stem": "According to the article, when did the brain show the strongest effects of curiosity? (Choose the best answer for ( 1 ) on Slide 2.)",
       "choices": [
-       "While volunteers were first reading each trivia question aloud",
        "During the gap after reading a question and before seeing its answer",
+       "While volunteers were first reading each trivia question aloud",
        "At the moment each answer finally appeared on the screen",
        "One day later, while volunteers were being tested on the answers"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "詳細理解",
       "explanation": "正解は「During the gap after reading a question and before seeing its answer」。本文に「The waiting period was important: it was the gap between reading a question and seeing its answer that revealed the strongest effects.」とあり、最も強い効果は質問を読んでから答えが出るまでの待機時間に現れたと明記されている。他の選択肢(読み上げ時・答え表示の瞬間・翌日のテスト)はいずれもこの「待機の隙間」とは異なる時点であり誤り。"
      },
@@ -2052,14 +2052,14 @@
       "type": "multiple_choice",
       "stem": "According to the article, which two effects appeared in the brain when volunteers felt highly curious? (Choose the best combination for ( 2 ) on Slide 3.) A: Areas linked to reward and pleasure became more active. B: The hippocampus, important for lasting memory, became more active. C: Activity in the hippocampus was reduced to save energy. D: The brain stopped responding to food and music.",
       "choices": [
-       "A and B",
        "A and C",
        "A and D",
        "B and C",
        "B and D",
-       "C and D"
+       "C and D",
+       "A and B"
       ],
-      "answer": 0,
+      "answer": 5,
       "unit": "情報統合",
       "explanation": "正解は「A and B」。本文に「First, areas linked to reward and pleasure became more active ... Second, a region called the hippocampus, which is essential for forming lasting memories, also became more active.」とあり、報酬・快楽の領域と記憶形成に不可欠な海馬の両方の活動が高まったとある。Cは海馬の活動が「reduced」とあるが本文は逆で「more active」、Dは食べ物や音楽への反応が止まるという記述はなく、むしろそれらに反応する領域と同じ領域が活発になったとあり誤り。"
      },
@@ -2099,11 +2099,11 @@
        "Aya and Ben",
        "Aya and Cara",
        "Ben and Cara",
-       "Ben and Dan",
        "Cara and Dan",
+       "Ben and Dan",
        "Aya and Dan"
       ],
-      "answer": 3,
+      "answer": 4,
       "unit": "情報統合",
       "explanation": "正解は「Ben and Dan」。本文の助言は「it helps to first stir up a genuine question in your mind—to wonder about the topic before studying it」「A teacher who opens a lesson with a puzzling question, or a student who pauses to ask 'Why is this true?' before reading a textbook ... switching the brain into a state in which learning ... comes more easily」である。Ben は読む前に不思議な問いを立て、Dan は教師の問いで好奇心が湧くと学習が容易になると述べており助言に合致する。Aya とCara は問いを立てず単に暗記・書き写すだけで、「Simply forcing yourself to memorize facts is not the most effective path」に反するため不適。"
      }
@@ -2142,14 +2142,14 @@
       "type": "multiple_choice",
       "stem": "To complete Slide 3 (\"How Forgetting Helps\"), which two benefits of forgetting are described in the passage?",
       "choices": [
-       "It keeps important information easy to find, and it reduces confusion between old and new details.",
        "It increases the total number of memories, and it makes every memory equally strong.",
        "It speeds up natural fading, and it prevents the brain from ever needing sleep.",
        "It removes serious life events, and it stops people from feeling any emotion at all.",
        "It strengthens all old memories, and it makes recent events harder to recall.",
-       "It blocks new neurons from forming, and it erases pleasant feelings faster than painful ones."
+       "It blocks new neurons from forming, and it erases pleasant feelings faster than painful ones.",
+       "It keeps important information easy to find, and it reduces confusion between old and new details."
       ],
-      "answer": 0,
+      "answer": 5,
       "unit": "情報統合",
       "explanation": "正解は「It keeps important information easy to find, and it reduces confusion between old and new details.」。第2段落に「the brain keeps the information that matters most easy to find」、第4段落に「By weakening yesterday's details, the brain reduces this kind of confusion」とあり、この2点が本文の述べる利点である。他の選択肢は本文と矛盾する(重大な出来事は忘れない、楽しい感情の方が長く残る等)。"
      },
@@ -2159,11 +2159,11 @@
       "stem": "Based on the passage, what happens in the brain during deep sleep?",
       "choices": [
        "The brain stops all activity so that the mind can fully rest and recover.",
-       "The brain reviews the day's experiences and weakens some connections on purpose.",
        "The brain forms entirely new memories that did not exist before the person slept.",
-       "The brain strengthens every connection equally, regardless of how often it was used."
+       "The brain strengthens every connection equally, regardless of how often it was used.",
+       "The brain reviews the day's experiences and weakens some connections on purpose."
       ],
-      "answer": 1,
+      "answer": 3,
       "unit": "事実把握",
       "explanation": "正解は「The brain reviews the day's experiences and weakens some connections on purpose.」。第3段落に「During deep sleep, the brain reviews the day's experiences and decides which connections to keep and which to weaken on purpose.」とあり、睡眠中の脳は休むだけでなく能動的に取捨選択している。"
      },
@@ -2188,12 +2188,12 @@
       "choices": [
        "Mika and Sara",
        "Mika and Daniel",
-       "Daniel and Kenji",
        "Sara and Kenji",
        "Mika and Kenji",
+       "Daniel and Kenji",
        "Daniel and Sara"
       ],
-      "answer": 2,
+      "answer": 4,
       "unit": "情報統合",
       "explanation": "正解は「Daniel and Kenji」。最終段落の助言は「Sleeping enough」「Reviewing important material more than once, with breaks in between」「accepting that some details will slip away」。Danielは複数日に分けて復習し試験前に十分睡眠、Kenjiも十分な睡眠と間隔をあけた反復復習で合致する。Mikaは睡眠4時間で助言に反し、Saraは些細な忘却に動揺し「細部は手放す」という助言に反する。"
      }
@@ -2232,12 +2232,12 @@
       "type": "multiple_choice",
       "stem": "What opinion do Hana and Taro share?",
       "choices": [
-       "Social media can help maintain or build connections that might otherwise be lost.",
        "Social media's main danger is making people compare their lives with others.",
+       "Social media can help maintain or build connections that might otherwise be lost.",
        "The focus problem caused by phones is more serious than any benefit.",
        "Online communication should replace meeting friends in person."
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "情報統合",
       "explanation": "正解は「Social media can help maintain or build connections that might otherwise be lost.」。Hanaは distance would otherwise break する関係を保てると述べ、Taroは社交が苦手な生徒や小さなクラブが an online door を通じてつながれたと述べる。両者ともつながりを保つ・築く効果を共通して認めている。比較の害はMei、集中問題の深刻さの強調は両者の共通主旨ではない。"
      },
@@ -2246,12 +2246,12 @@
       "type": "multiple_choice",
       "stem": "Whose views are most directly supported by the argument in Source A?",
       "choices": [
-       "Hana and Mei",
        "Kenji and Taro",
+       "Hana and Mei",
        "Mei and Taro",
        "Hana and Taro"
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "情報統合",
       "explanation": "正解は「Kenji and Taro」。Source Aは通知が注意をそらし、切り替えの習慣が問題で、通知を切ることが最も確実だと論じる。Kenjiは無意識のロック解除で集中が奪われると述べ注意散漫の論点に一致。Taroは the habit is ours to manage と習慣の管理を説き、通知という引き金より習慣に着目するSource Aの趣旨に沿う。Hanaは関係維持、Meiは比較の話で集中・習慣の論点ではない。"
      },
@@ -2406,10 +2406,10 @@
       "choices": [
        "Maya",
        "Sophia",
-       "Ken",
-       "Daniel"
+       "Daniel",
+       "Ken"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "事実と意見の区別",
       "explanation": "正解は「Ken」。Kenは禁止より「charge a fee on all plastic packaging」を支持し、料金が人々の行動を変えると主張する。Source Aでは、禁止せず袋に少額の料金を課しただけで使用量が約半分に減り、人々がエコバッグを持参するようになったと報告されており、まさに料金制が行動を変えるというKenの立場を裏付ける。"
      },
@@ -2462,12 +2462,12 @@
       "type": "multiple_choice",
       "stem": "Which two students would most likely agree that employees who must work entirely from home can have serious problems?",
       "choices": [
-       "Daniel and Saki",
        "Mika and Ren",
+       "Daniel and Saki",
        "Mika and Daniel",
        "Saki and Ren"
       ],
-      "answer": 0,
+      "answer": 1,
       "unit": "情報統合",
       "explanation": "正解は「Daniel and Saki」。Danielは完全在宅だと若手が小さなマナーを学べず孤独で「almost quit」になると問題視し、Sakiは家に静かな部屋がない人は集中できず不公平だと述べる。両者とも「全員を家に送る」ことの深刻な弊害を指摘している。Mikaは在宅を強く支持、Renは混合案で、完全在宅そのものの害を中心には論じていない。"
      },
@@ -2476,12 +2476,12 @@
       "type": "multiple_choice",
       "stem": "Whose opinion does Ren's idea most directly try to combine?",
       "choices": [
-       "Saki's view about unfair housing, and Source B's survey numbers.",
        "Mika's view that workers should be free from commuting, and Daniel's view that beginners need experienced people nearby.",
+       "Saki's view about unfair housing, and Source B's survey numbers.",
        "Daniel's view about loneliness, and Saki's view about kitchen tables.",
        "Mika's view about trust, and Saki's view that the office gives equal conditions."
       ],
-      "answer": 1,
+      "answer": 0,
       "unit": "推論",
       "explanation": "正解は「Mika's view that workers should be free from commuting, and Daniel's view that beginners need experienced people nearby.」。Renの混合案は「home days」で集中作業の自由(Mikaの通勤からの解放に通じる)を保ちつつ、「office days」でチームが新人を訓練する(Danielの「beginners need to sit near experienced people」)。両者の長所を取り込もうとしており、「Choosing only one side ... throws away the good points of the other」と述べる。"
      },
@@ -2505,11 +2505,11 @@
       "stem": "Using the numbers in Source B, which conclusion is most clearly supported?",
       "choices": [
        "Workers without a private room concentrate just as well as those with one.",
+       "Having a private room at home makes a large difference in whether workers feel they can concentrate.",
        "Most workers want to go back to the office full-time.",
-       "Workers concentrate better in the office than anywhere at home.",
-       "Having a private room at home makes a large difference in whether workers feel they can concentrate."
+       "Workers concentrate better in the office than anywhere at home."
       ],
-      "answer": 3,
+      "answer": 1,
       "unit": "事実と意見の区別",
       "explanation": "正解は「Having a private room at home makes a large difference in whether workers feel they can concentrate.」。Source Bでは専用部屋がある人の81%が集中できると答えたのに対し、ない人は48%で、その差は大きい。全社員のオフィスでの数値72%は専用部屋なし(48%)より高いが専用部屋あり(81%)より低いので「家のどこより上」は誤り。フルタイム復帰希望は19%のみなので「大半が戻りたい」も誤り。"
      }
@@ -2534,12 +2534,12 @@
       "type": "multiple_choice",
       "stem": "What is Daniel's main point?",
       "choices": [
-       "The income from tourism is causing the town's genuine culture to fade as authentic crafts and community festivals are replaced by commercial imitations.",
        "Tourism should be stopped because it never brings any money to small towns.",
        "Local people should sell more T-shirts and key rings to earn money from visitors.",
+       "The income from tourism is causing the town's genuine culture to fade as authentic crafts and community festivals are replaced by commercial imitations.",
        "Festivals are better when they are performed for tourists with cameras."
       ],
-      "answer": 0,
+      "answer": 2,
       "unit": "要点把握",
       "explanation": "正解は「The income from tourism is causing the town's genuine culture to fade as authentic crafts and community festivals are replaced by commercial imitations.」。Danielは「Money is flowing in, yet what makes our town special is quietly disappearing」と述べ、陶器やかご作りの工芸店が安価な土産物店に置き換わり、地域の祭りがカメラ向けの見せ物になったと指摘している。お金は入っても本物の文化が消える点を問題視しており、観光を完全に止めよとは言っていない。"
      },
@@ -2564,10 +2564,10 @@
       "choices": [
        "Daniel and Emma",
        "Mika and Daniel",
-       "Sora and Mika",
-       "Emma and Sora"
+       "Emma and Sora",
+       "Sora and Mika"
       ],
-      "answer": 2,
+      "answer": 3,
       "unit": "情報統合",
       "explanation": "正解は「Sora and Mika」。Source Aのリバートンは、新規ホテル・飲食店を住民が半分以上所有することを義務づけ、観光収入が地域に残るようにした例で、「コミュニティが観光を管理してこそ利益が地元に残る」というSoraの主張を裏づける。また町を出ていた住民が戻り家業を始めた点は、観光で町が再生し仲間が戻ったというMikaの経験と一致する。Danielの懸念(文化の商業化)やEmmaの文化共有論を直接支持する記述はSource Aにない。"
      },
