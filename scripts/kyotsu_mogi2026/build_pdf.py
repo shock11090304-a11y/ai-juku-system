@@ -195,6 +195,25 @@ table.key tr:nth-child(even) td { background: #f6f8fb; }
 .exp .qs { color: #2b3038; margin-bottom: 1.6mm; }
 .exp .ans { color: #b03024; font-weight: bold; margin-bottom: 1.6mm; }
 .exp .body { color: #23272e; }
+.exp-sec {
+  font-size: 9.2pt; color: #12305a; font-weight: bold;
+  margin: 2.4mm 0 1mm; padding-bottom: .6mm; border-bottom: .8px solid #d5dce5;
+}
+.exp-sec:first-child { margin-top: 0; }
+.exp-step { display: flex; gap: 2.5mm; margin-bottom: 1mm; }
+.exp-step .lbl {
+  flex: 0 0 11mm; color: #12305a; font-weight: bold; font-size: 8.8pt;
+  border-right: 2px solid #cfd8e4; padding-right: 1.8mm;
+}
+.exp-step .txt { flex: 1; }
+.exp-line { margin-bottom: .8mm; white-space: pre-wrap; }
+.exp .body ul { margin: 0 0 1.2mm; padding-left: 5mm; }
+.exp .body li { margin-bottom: .5mm; }
+.exp .body code {
+  font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt;
+  background: #eef2f7; padding: 0 .8mm; border-radius: 2px;
+}
+.exp .body strong { color: #0e2f56; }
 .katex { font-size: 1.02em; }
 '''
 
@@ -304,24 +323,90 @@ def render_key_table(daimons):
             '<th>配点</th><th>単元</th></tr>' + ''.join(rows) + '</table>')
 
 
+MATH_SECTIONS = ('方針', '立式', '計算', '答え', '補足')
+
+
+def esc_keep_tex(s):
+    """LaTeX の \\( ... \\) は素通しし、それ以外の地の文だけ HTML エスケープする。"""
+    out, last = [], 0
+    for m in TEX_RE.finditer(s or ''):
+        out.append(esc(s[last:m.start()]))
+        out.append(m.group(0))
+        last = m.end()
+    out.append(esc((s or '')[last:]))
+    return ''.join(out)
+
+
+def format_explanation(body):
+    """解説を組版する。2 つの正規フォーマットをそれぞれの見え方に落とす。
+
+    数学: 「方針/立式/計算/答え/補足」の 5 行 → ラベル付きの段組み
+    英語: 「## 🎯 コアイメージ」等の 4 セクション Markdown → 小見出し + 箇条書き
+    冒頭の「正解は「…」。」は正解欄に別途出すので本文からは落とす。
+
+    ★ 必ず LaTeX 描画**前**の生テキストに対して呼ぶこと。KaTeX が吐く HTML は
+      \\sqrt 等の SVG path に改行を含むため、描画後に行分割すると path データが
+      本文として露出する (2026-08-02 に実際に発生)。
+    """
+    body = re.sub(r'^正解は「.*?」。\s*', '', body or '', flags=re.S)
+
+    if body.lstrip().startswith('##'):          # --- 英語: 4 セクション Markdown ---
+        out = []
+        for chunk in re.split(r'\n(?=##\s)', body.strip()):
+            lines = chunk.split('\n')
+            head = lines[0].lstrip('#').strip()
+            out.append(f'<div class="exp-sec">{md_inline(esc_keep_tex(head))}</div>')
+            in_list = False                     # ★ ul の開閉はフラグ 1 つで管理する
+            for ln in lines[1:]:                #   (直前要素を見る方式は li の後に ul を再度開き入れ子になる)
+                stripped = ln.strip()
+                if stripped.startswith('- '):
+                    if not in_list:
+                        out.append('<ul>')
+                        in_list = True
+                    out.append(f'<li>{md_inline(esc_keep_tex(stripped[2:]))}</li>')
+                elif stripped:
+                    if in_list:
+                        out.append('</ul>')
+                        in_list = False
+                    out.append(f'<div class="exp-line">{md_inline(esc_keep_tex(ln))}</div>')
+            if in_list:
+                out.append('</ul>')
+        return ''.join(out)
+
+    if re.match(r'\s*方針\s*[:：]', body):        # --- 数学: 5 セクション ---
+        out = []
+        for ln in body.strip().split('\n'):
+            m = re.match(r'\s*(' + '|'.join(MATH_SECTIONS) + r')\s*[:：]\s*(.*)$', ln, re.S)
+            if m:
+                out.append(f'<div class="exp-step"><span class="lbl">{m.group(1)}</span>'
+                           f'<span class="txt">{esc_keep_tex(m.group(2))}</span></div>')
+            elif ln.strip():
+                out.append(f'<div class="exp-line">{esc_keep_tex(ln)}</div>')
+        return ''.join(out)
+
+    return f'<div class="exp-line">{esc_keep_tex(body)}</div>'
+
+
+def md_inline(s):
+    """解説内のインライン Markdown (**強調** と `コード`) だけを HTML にする。"""
+    s = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', s)
+    s = re.sub(r'`(.+?)`', r'<code>\1</code>', s)
+    return s
+
+
 def render_explanations(daimons):
     parts = []
     for dm, label, pts in daimons:
         parts.append(f'<section class="daimon"><div class="daimon-head">'
                      f'<span>{esc(label)}</span><span class="pt">配点 {sum(pts)} 点</span></div>')
         for i, q in enumerate(dm['question_data']['questions']):
-            body = q['explanation']
-            m = re.match(r'^(【単元】.*?。)?正解は「(.*?)」。(.*)$', body, re.S)
-            if m:
-                correct, rest = m.group(2), m.group(3)
-            else:
-                correct, rest = q['choices'][q['answer']], body
+            correct = q['choices'][q['answer']]      # 正解は必ず answer から引く (解説文の書式に依存しない)
             parts.append(
                 f'<div class="exp"><div class="h">問{i + 1}'
                 f'<span class="unit">{esc(q["unit"])} / {pts[i]}点</span></div>'
                 f'<div class="qs">{q["stem"]}</div>'
                 f'<div class="ans">正解 {CIRCLED[q["answer"]]} … {correct}</div>'
-                f'<div class="body">{rest}</div></div>')
+                f'<div class="body">{q["explanation"]}</div></div>')
         parts.append('</section>')
     return '\n'.join(parts)
 
@@ -483,6 +568,7 @@ if __name__ == '__main__':
             qd = r['question_data']
             for q in qd['questions']:
                 slots.append((q, 'stem')); buf.append(q['stem'])
+                q['explanation'] = format_explanation(q['explanation'])   # ★ 描画前に段組み
                 slots.append((q, 'explanation')); buf.append(q['explanation'])
                 for i, c in enumerate(q['choices']):
                     slots.append((q['choices'], i)); buf.append(c)
