@@ -115,9 +115,9 @@ def format_passage(passage):
             or any(re.search(r'={4,}|-{4,}', ln) for ln in lines)
         )
         if table_like:
-            out.append(f'<pre class="fixed">{esc(b)}</pre>')
+            out.append(f'<pre class="fixed">{esc_keep_tex(b)}</pre>')
         else:
-            out.append(f'<p class="ps">{esc(b)}</p>')
+            out.append(f'<p class="ps">{esc_keep_tex(b)}</p>')
     return '\n'.join(out)
 
 
@@ -299,7 +299,7 @@ def render_daimon(dm, label, pts, lead=None):
              f'<span class="pt">配点 {sum(pts)} 点</span></div>']
     if lead:
         parts.append(f'<div class="lead">{esc(lead)}</div>')
-    parts.append(f'<div class="passage">{format_passage(qd["passage"])}</div>')
+    parts.append(f'<div class="passage">{qd["passage"]}</div>')
     for i, q in enumerate(qd['questions']):
         ch = ''.join(f'<li><span class="mk">{CIRCLED[j]}</span>{c}</li>'
                      for j, c in enumerate(q['choices']))
@@ -566,6 +566,10 @@ if __name__ == '__main__':
         buf, slots = [], []
         for r in rows:
             qd = r['question_data']
+            # ★ 本文も必ず LaTeX 描画に通す。通し忘れると \( \) が生のまま残り、
+            #   日本語フォントではバックスラッシュが ¥ として表示される (2026-08-02 に発生)。
+            qd['passage'] = format_passage(qd['passage'])
+            slots.append((qd, 'passage')); buf.append(qd['passage'])
             for q in qd['questions']:
                 slots.append((q, 'stem')); buf.append(q['stem'])
                 q['explanation'] = format_explanation(q['explanation'])   # ★ 描画前に段組み

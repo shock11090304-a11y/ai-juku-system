@@ -12,7 +12,7 @@ build 側は「正解が合っているか」「フォーマットが揃って�
   E. 本文の根拠の裏取り  解説が引用した英文が本文に**実在する**か (捏造引用の検出)
   F. 配点               英語は合計ちょうど 100 点 / 数学は 1 小問 4 点
   G. 既存プールとの重複  既存 seed と content hash が衝突しないか
-  H. PDF の組版事故     KaTeX の SVG path 流出 / Markdown 記号の生表示
+  H. PDF の組版事故     KaTeX の SVG path 流出 / 未描画の LaTeX (¥ 表示) / Markdown 記号の生表示
   I. PDF ↔ JSON        PDF の正解一覧が JSON の answer と一致するか
 
 実行: python3 scripts/kyotsu_mogi2026/audit.py
@@ -218,6 +218,8 @@ def check_pdfs():
     # KaTeX の SVG path が本文に流出した時の特徴的な断片
     PATH_LEAK = re.compile(r'[a-z]?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?,')
     RAW_MD = re.compile(r'(?m)^\s*##\s|\*\*[^*\n]{2,}\*\*')
+    # 未描画の LaTeX。日本語フォントではバックスラッシュが ¥ で出るため両方を見る
+    RAW_TEX = re.compile(r'[\\¥]\(|[\\¥]\)|[\\¥](?:dfrac|frac|sqrt|mathrm|angle|circ|le\b|ge\b|cdot|times|sum|int)')
     for pdf in sorted(glob.glob(os.path.join(ROOT, 'kyotsu-mogi2026-*.pdf'))):
         name = os.path.basename(pdf)
         txt = subprocess.run(['pdftotext', '-layout', pdf, '-'],
@@ -227,6 +229,10 @@ def check_pdfs():
             err(f'{name}: KaTeX の SVG path が本文に流出している → {sample}')
         if RAW_MD.search(txt):
             err(f'{name}: Markdown 記号が生のまま表示されている → {RAW_MD.search(txt).group(0)[:40]}')
+        m = RAW_TEX.search(txt)
+        if m:
+            ctx = txt[max(0, m.start() - 40):m.start() + 60].replace('\n', ' ')
+            err(f'{name}: LaTeX が未描画のまま残っている (KaTeX に通し忘れ) → …{ctx}…')
         if '�' in txt or 'ï¿½' in txt:
             err(f'{name}: 文字化け (U+FFFD) を含む')
 
