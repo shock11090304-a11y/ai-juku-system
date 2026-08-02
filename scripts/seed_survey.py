@@ -95,6 +95,8 @@ TEX_CLOSE = re.compile(r'(?<!\\)\\\)')
 # 国語: 傍線部「X」/下線部「X」は passage に verbatim で実在すること (server の絶対ルール)
 BOUSEN = re.compile(r'(?:傍線部|下線部)\s*(?:[(（]?[ア-ンA-Za-z0-9]{1,3}[)）]?)?\s*「([^」\n]+)」')
 
+BACKTICK_QUOTE = re.compile(r"`([^`'\n]{2,60})'")
+
 ENG_SEC = ['🎯 コアイメージ', '🔬 文構造分析', '📍 本文の根拠', '❌ 誤答 NG 理由']
 CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨']
 
@@ -105,6 +107,36 @@ def norm(s):
     s = s.replace('’', "'").replace('‘', "'").replace('“', '"').replace('”', '"')
     s = s.replace('\u3000', ' ')
     return re.sub(r'\s+', ' ', s).strip()
+
+
+def _qkey(s):
+    """引用照合用のキー。大文字小文字と引用符の種類の違いを吸収する。"""
+    return re.sub(r"['\"]", '', (s or '').lower())
+
+
+def _elided_in(frag, passage):
+    """引用の語が本文に同じ順で、かつ近接して並んでいるか。
+
+    "continued, more or less, to improve" を "continued to improve" と詰めて
+    引いた場合を「捏造」と区別するための判定。語順が保たれ、挿入語が引用長の
+    2 倍以内に収まっていれば、根拠は本文に実在すると見なす。
+    """
+    words = re.findall(r"[A-Za-z']+", frag.lower())
+    if len(words) < 3:
+        return False
+    hay = re.findall(r"[A-Za-z']+", passage.lower())
+    limit = len(words) * 2
+    for start in range(len(hay)):
+        if hay[start] != words[0]:
+            continue
+        wi, hi = 1, start + 1
+        while wi < len(words) and hi < len(hay) and hi - start <= limit:
+            if hay[hi] == words[wi]:
+                wi += 1
+            hi += 1
+        if wi == len(words):
+            return True
+    return False
 
 
 def mock_pools():
@@ -203,6 +235,12 @@ def survey(rows):
         coords_visible = bool(COORD.search(passage + '\n' + all_stems))
         np_passage = norm(passage)
 
+        # 本文の引用符が LaTeX 流の `word' になっている (開きがバッククォート)。
+        # 画面でも紙でも開きと閉じが揃わず、解説側の引用照合も素通りできない。
+        for m in BACKTICK_QUOTE.finditer(passage):
+            add('quote-mark', 'mid', r, r['label'],
+                f"本文の引用符が LaTeX 流の `…' 形式: `{m.group(1)[:32]}'")
+
         daimon_ans, ids_here = [], {}
         for si, s in enumerate(subs):
             where = f'{r["label"]}/問{si + 1}'
@@ -286,16 +324,42 @@ def survey(rows):
                 # 文構造分析の ` ` は [S][V] 等の解析記号で逐語引用ではない。
                 block = expl.split(ENG_SEC[2])[1].split(ENG_SEC[3])[0]
                 ngb = expl.split(ENG_SEC[3])[-1] if ENG_SEC[3] in expl else ''
+                # 【日本人弱点コメント】は語法メモの節。` ` の中身は辞書形の見出し語や
+                # 例文 (Young as he is, he is wise.) で、本文からの引用ではない。
+                block = block.split('【日本人弱点コメント】')[0]
+                ngb = ngb.split('【日本人弱点コメント】')[0]
                 for quote in re.findall(r'「(.*?)」', block, re.S) + re.findall(r'`(.*?)`', ngb, re.S):
-                    for frag in re.split(r'\s*[~〜…]\s*', quote):
+                    # `tell us about ~` のように ~ を「何か」のプレースホルダとして
+                    # 使う語法メモは逐語引用ではない (中略記号としての … とは別物)。
+                    if re.search(r'[~〜]', quote) and not re.search(r'\.\.\.|…', quote):
+                        continue
+                    # 中略記号は … 〜 ~ に加えて ASCII の ... も使われる。断片ごとに照合する。
+                    for frag in re.split(r'\s*(?:\.\.\.|[~〜…])\s*', quote):
                         frag = norm(frag)
                         if len(re.findall(r'[A-Za-z]', frag)) < 12:
                             continue
                         # 日本語が混ざる断片は逐語引用ではなく訳語まじりの説明。照合対象外。
                         if re.search(r'[ぁ-んァ-ヶ一-龥、。]', frag):
                             continue
-                        if frag not in np_passage:
-                            add('quote', 'high', r, where, f'解説の引用が本文に無い: {frag[:60]}')
+                        # 「not so much A as B」等の構文パターンは引用ではなく雛形。
+                        # 単独の大文字 A-F が 2 つ以上あればプレースホルダとみなす。
+                        if len(re.findall(r'(?<![A-Za-z])[A-F](?![A-Za-z])', frag)) >= 2:
+                            continue
+                        # 「lawyer + clerk + institutional culture」のような要約の式も引用ではない
+                        if ' + ' in frag or '/' in frag:
+                            continue
+                        # 大文字小文字と引用符の種類の差だけ (文頭の The/the、
+                        # LaTeX 流の `x' と 'x') は引用の瑕疵ではない
+                        if _qkey(frag) in _qkey(np_passage):
+                            continue
+                        # 中略記号を書かずに詰めた引用 (本文 "continued, more or less, to
+                        # improve" → 引用 "continued to improve")。語順は保たれているので
+                        # 根拠は実在する。捏造とは別物なので低深刻度の書式の指摘にする。
+                        if _elided_in(frag, np_passage):
+                            add('quote-elided', 'low', r, where,
+                                f'引用が中略記号なしで詰められている: {frag[:60]}')
+                            continue
+                        add('quote', 'high', r, where, f'解説の引用が本文に無い: {frag[:60]}')
             if fam == 'kokugo' and np_passage:
                 for m in BOUSEN.finditer(stem):
                     frag = norm(m.group(1))
@@ -341,6 +405,8 @@ KIND_LABEL = {
     'format-lines': '理系解説が3行未満',
     'typeset': '組版事故 (¥/文字化け/括弧不一致)',
     'quote': '解説の引用が本文に無い (捏造引用)',
+    'quote-elided': '引用が中略記号なしで詰められている',
+    'quote-mark': "本文の引用符が LaTeX 流の `…' 形式",
     'bousen': '傍線部が本文に無い (国語・出題が破綻)',
     'dup-id': '同一大問内の id 重複',
     'dup-stem': '設問文の重複',
