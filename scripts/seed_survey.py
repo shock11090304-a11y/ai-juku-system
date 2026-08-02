@@ -261,7 +261,11 @@ def survey(rows):
 
         all_stems = '\n'.join((s.get('stem') or '') for s in subs if isinstance(s, dict))
         coords_visible = bool(COORD.search(passage + '\n' + all_stems))
-        np_passage = norm(passage)
+        # 図 (Source B 等) のラベルも解説が引ける根拠。図は本文と並ぶ資料であって
+        # 本文外の捏造ではないので、引用の照合先に含める。
+        fig_text = ' '.join(re.sub(r'<[^>]+>', '', t) for t in
+                            re.findall(r'<text[^>]*>(.*?)</text>', qd.get('figure_svg') or '', re.S))
+        np_passage = norm(passage + '\n' + fig_text)
 
         # 本文の引用符が LaTeX 流の `word' になっている (開きがバッククォート)。
         # 画面でも紙でも開きと閉じが揃わず、解説側の引用照合も素通りできない。

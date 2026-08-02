@@ -91,6 +91,9 @@ def _words_in_order(frag, passage):
     # (that) / (which) は「本文では省略されている語」を補って示す注記なので、
     # 本文側には存在しない。照合の前に括弧ごと落とす。
     frag = re.sub(r'\([^)]{0,20}\)', ' ', frag)
+    # [S] [V] の角括弧は語の途中にも入る ([I]'d)。先に外さないと語が割れて
+    # 本文側の I'd と一致しなくなる。
+    frag = frag.replace('[', '').replace(']', '')
     words = re.findall(r"[A-Za-z']+", frag.lower())
     if len(words) < 3:
         return True
@@ -111,7 +114,7 @@ def _words_in_order(frag, passage):
     return False
 
 
-def check_question(tag, q, passage, errors):
+def check_question(tag, q, passage, errors, figure_svg=''):
     exp = q.get('explanation') or ''
     choices = q.get('choices') or []
     try:
@@ -142,8 +145,12 @@ def check_question(tag, q, passage, errors):
         errors.append(f'{tag}: 冒頭の「正解は…」が answer と食い違う\n'
                       f'      解説: {m.group(1)[:60]}\n      answer: {choices[ans][:60]}')
 
-    # C. 「本文の根拠」の引用は passage に逐語で実在すること (捏造引用の検出)
-    npass = qkey(passage)
+    # C. 「本文の根拠」の引用は passage に逐語で実在すること (捏造引用の検出)。
+    #    図 (Source B 等) のラベルも根拠として引けるので、図中の <text> も照合先に含める。
+    #    図は本文と並ぶ資料であって、本文外の捏造ではない。
+    fig_text = ' '.join(re.sub(r'<[^>]+>', '', t)
+                        for t in re.findall(r'<text[^>]*>(.*?)</text>', figure_svg or '', re.S))
+    npass = qkey(passage + '\n' + fig_text)
     for frag in eng_fragments(exp[pos[2]:pos[3]]):
         if qkey(frag) not in npass:
             errors.append(f'{tag}: 「本文の根拠」の引用が本文に無い\n      引用: {frag[:90]}')
@@ -155,7 +162,7 @@ def check_question(tag, q, passage, errors):
     # 構造分析の対象は本文の文とは限らない。設問文そのもの (設問の読み違い防止) や
     # 選択肢 (部分否定 not always の構造など) を解析するのも正当なので、
     # 照合先は 本文 + stem + choices の 3 つ。
-    hay_struct = '\n'.join([passage, q.get('stem') or ''] + [str(c) for c in choices])
+    hay_struct = '\n'.join([passage, fig_text, q.get('stem') or ''] + [str(c) for c in choices])
     for frag in eng_fragments(exp[pos[1]:pos[2]]):
         if not _words_in_order(frag, hay_struct):
             errors.append(f'{tag}: 「文構造分析」が本文に無い文を解析している\n      引用: {frag[:90]}')
@@ -208,7 +215,8 @@ def main():
             for i, q in enumerate(qd.get('questions') or []):
                 hit = True
                 checked += 1
-                check_question(f'{os.path.basename(path)}/{label} 問{i + 1}', q, passage, errors)
+                check_question(f'{os.path.basename(path)}/{label} 問{i + 1}', q, passage, errors,
+                               qd.get('figure_svg') or '')
         if hit:
             files += 1
 
