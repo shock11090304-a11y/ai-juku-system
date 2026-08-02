@@ -281,10 +281,13 @@ def eng_daimons():
     return out
 
 
-def math_daimons(_part=None):
-    """本番形式 (会話文 + 誘導連鎖) の数学I・A。配点は大問ごとに JSON が持つ points を使う。"""
+def math_daimons(part=None):
+    """本番形式 (会話文 + 誘導連鎖) の数学。配点は大問ごとに JSON が持つ points を使う。
+    part を渡すとその part_key (math_1a = I・A / math_2b = II・B・C) に絞る。"""
     out = []
     for r in load('math_exam'):
+        if part and r['part_key'] != part:
+            continue
         qd = r['question_data']
         out.append((r, qd['group'], qd['points']))
     return out
@@ -466,7 +469,7 @@ def main():
     kcss = katex_css()
 
     eng = eng_daimons()
-    print(f'読み込み: 英語 {len(eng)} 大問 / 数学I・A(本番形式) {len(math_daimons())} 大問')
+    print(f'読み込み: 英語 {len(eng)} 大問 / 数学(本番形式) {len(math_daimons())} 大問')
 
     # ---- 英語 問題編 ----
     eng_total = sum(sum(p) for _, _, p in eng)
@@ -501,42 +504,57 @@ def main():
     write_pdf(page_head('共通テスト模試2026 英語 解答・解説編', kcss) + body + '</body></html>',
               'kyotsu-mogi2026-eng-kaisetsu.pdf', '共通テスト模試 2026 英語 解答・解説編')
 
-    # ---- 数学 問題編 (本番形式・数学I・A) ----
-    ia = math_daimons()
+    # ---- 数学 問題編 (本番形式・I・A + II・B・C) ----
+    ia = math_daimons('math_1a')
+    iib = math_daimons('math_2b')
     ia_total = sum(sum(p) for _, _, p in ia)
-    n_math_q = sum(len(d[0]['question_data']['questions']) for d in ia)
+    iib_total = sum(sum(p) for _, _, p in iib)
+    n_ia = sum(len(d[0]['question_data']['questions']) for d in ia)
+    n_iib = sum(len(d[0]['question_data']['questions']) for d in iib)
     body = cover(
-        '共通テスト模試 2026  数学I・A', '問題編（本番形式・第1問〜第4問 全問必答）',
-        [('試験時間', '70分'), ('満点', f'{ia_total}点'),
-         ('構成', f'第1問〜第4問 / 全{n_math_q}問'),
-         ('配点', ' ／ '.join(f'{lab.split()[-1]} {sum(p)}点' for _, lab, p in ia)),
+        '共通テスト模試 2026  数学', '問題編（本番形式・数学I・A / 数学II・B・C）',
+        [('試験時間', '各編 70分'),
+         ('満点', f'数学I・A {ia_total}点 ／ 数学II・B・C {iib_total}点'),
+         ('構成', f'I・A 第1問〜第4問 全{n_ia}問（全問必答）／ '
+                  f'II・B・C 第1問〜第6問 全{n_iib}問'),
          ('出題形式', '全問マーク式（4択）')],
         ['解答は各設問の①〜④から正しいものを 1 つ選ぶこと。',
-         '第1問・第2問は [1][2] の 2 つの場面からなる。場面ごとに設問がまとまっている。',
+         '数学I・A は第1問〜第4問すべてが必答。'
+         '数学II・B・C は第1問〜第3問が必答、第4問〜第6問から 2 問を選択して解答する。',
+         '第1問・第2問は [1][2] の 2 つの場面からなる大問がある。場面ごとに設問がまとまっている。',
          '各大問は前の設問の結果を次の設問で用いる誘導形式である。'
          '必要な値は各設問に再掲してあるので、途中でつまずいても先に進める。',
          '計算用紙は各自で用意すること。問題冊子の余白を使ってよい。'],
-        [('得点', ''), ('満点', f'{ia_total}'), ('得点率', '      %'), ('実施日', '    /    ')])
+        [('I・A 得点', ''), ('/ 満点', f'{ia_total}'), ('II・B・C 得点', ''),
+         ('/ 満点', f'{iib_total}'), ('実施日', '    /    ')])
+    body += '<h2 class="sec">数学I・A</h2>'
     for dm, label, pts in ia:
         body += render_daimon(dm, label, pts)
-    body += answer_sheet(ia, None)
-    write_pdf(page_head('共通テスト模試2026 数学I・A 問題編', kcss) + body + '</body></html>',
-              'kyotsu-mogi2026-math-mondai.pdf', '共通テスト模試 2026 数学I・A 問題編')
+    body += '<h2 class="sec">数学II・B・C</h2>'
+    for dm, label, pts in iib:
+        body += render_daimon(dm, label, pts)
+    body += answer_sheet(ia + iib, None)
+    write_pdf(page_head('共通テスト模試2026 数学 問題編', kcss) + body + '</body></html>',
+              'kyotsu-mogi2026-math-mondai.pdf', '共通テスト模試 2026 数学 問題編')
 
     # ---- 数学 解答・解説編 ----
     body = cover(
-        '共通テスト模試 2026  数学I・A', '解答・解説編（本番形式）',
-        [('満点', f'{ia_total}点'), ('構成', f'第1問〜第4問 / 全{n_math_q}問'),
+        '共通テスト模試 2026  数学', '解答・解説編（本番形式）',
+        [('満点', f'数学I・A {ia_total}点 ／ 数学II・B・C {iib_total}点'),
+         ('構成', f'I・A {len(ia)}大問 {n_ia}問 ／ II・B・C {len(iib)}大問 {n_iib}問'),
          ('内容', '正解一覧・設問別の解説（方針→立式→計算→答え→補足）')],
         ['解説は「どの定理・公式をなぜ選ぶか」から書いてある。答えが合っていた問題も方針を確認すること。',
          '誘導形式なので、前の設問の結果がどこで使われるかを「補足」に明記してある。'
          'つまずいた設問がどこから崩れたのかを特定できる。',
          '各解説の末尾に、典型的な誤答がどの計算ミスから出るかを示してある。'],
-        [('得点', ''), ('満点', f'{ia_total}'), ('得点率', '      %'), ('実施日', '    /    ')])
-    body += '<h2 class="sec">正解一覧</h2>' + render_key_table(ia)
-    body += render_explanations(ia)
-    write_pdf(page_head('共通テスト模試2026 数学I・A 解答・解説編', kcss) + body + '</body></html>',
-              'kyotsu-mogi2026-math-kaisetsu.pdf', '共通テスト模試 2026 数学I・A 解答・解説編')
+        [('I・A 得点', ''), ('/ 満点', f'{ia_total}'), ('II・B・C 得点', ''),
+         ('/ 満点', f'{iib_total}'), ('実施日', '    /    ')])
+    body += '<h2 class="sec">正解一覧（数学I・A）</h2>' + render_key_table(ia)
+    body += '<h2 class="sec">正解一覧（数学II・B・C）</h2>' + render_key_table(iib)
+    body += '<h2 class="sec">解説（数学I・A）</h2>' + render_explanations(ia)
+    body += '<h2 class="sec">解説（数学II・B・C）</h2>' + render_explanations(iib)
+    write_pdf(page_head('共通テスト模試2026 数学 解答・解説編', kcss) + body + '</body></html>',
+              'kyotsu-mogi2026-math-kaisetsu.pdf', '共通テスト模試 2026 数学 解答・解説編')
 
     print('\n✅ PDF 4 冊を生成しました')
 
