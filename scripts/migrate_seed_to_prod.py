@@ -111,16 +111,58 @@ def rows_of(text):
     return out
 
 
-def auth_headers(cred):
-    """認証ヘッダ。管理トークンでも CRON_SECRET でも通る。
+# 認証の載せ方。server 側は「admin Bearer」と「x-cron-secret」の両方を受け付けるが、
+# 渡された値がどちらなのか呼び出し側では分からない。3 通りを実際に試して、
+# 通った 1 つを以降ずっと使う (どれも通らなければ理由を出して止まる)。
+AUTH_MODES = [
+    ('x-cron-secret のみ', lambda c: {'X-Cron-Secret': c}),
+    ('Bearer のみ', lambda c: {'Authorization': f'Bearer {c}'}),
+    ('Bearer + x-cron-secret', lambda c: {'Authorization': f'Bearer {c}', 'X-Cron-Secret': c}),
+]
+_auth = {'mode': None}
 
-    dump / replace-explanation はどちらも「admin Bearer」または「x-cron-secret」を
-    受け付ける (server 側は Bearer を先に検証し、外れたら x-cron-secret を見る)。
-    CRON_SECRET は既に GitHub の Secrets に登録済みなので、新しくトークンを
-    用意しなくてもこの経路で認証できる。渡された値がどちらか分からないので
-    両方のヘッダに載せる。
+
+def auth_headers(cred):
+    name, fn = _auth['mode'] or AUTH_MODES[0]
+    return fn(cred)
+
+
+def probe_auth(creds):
+    """どの認証情報 × どの載せ方なら 200 が返るかを実際に試して確定する。
+
+    401 が返ったときに「値が違うのか、ヘッダの載せ方が違うのか」を
+    切り分けられないと手が止まるので、ここで全部潰しておく。
+    通った組み合わせを返す (どれも通らなければ None)。
     """
-    return {'Authorization': f'Bearer {cred}', 'X-Cron-Secret': cred}
+    url = (f'{API}/api/admin/exam-questions/dump'
+           f'?exam=daigaku&part=r_long&eiken_grade=kyotsu&offset=0&limit=1')
+    tried = []
+    for ci, cred in enumerate(creds, start=1):
+        if not cred:
+            continue
+        for name, fn in AUTH_MODES:
+            label = f'値{ci} / {name}'
+            try:
+                req = urllib.request.Request(url, headers=fn(cred))
+                with urllib.request.urlopen(req, timeout=60) as resp:
+                    if resp.status == 200:
+                        _auth['mode'] = (name, fn)
+                        print(f'認証: 「{label}」で通りました')
+                        return cred
+                    tried.append(f'{label} → HTTP {resp.status}')
+            except urllib.error.HTTPError as e:
+                tried.append(f'{label} → HTTP {e.code}')
+            except Exception as e:
+                tried.append(f'{label} → {type(e).__name__}: {e}')
+    print('❌ 認証に失敗しました。試した組み合わせ:')
+    for t in tried:
+        print(f'    {t}')
+    print('\n  すべて 401 の場合、渡した値が本番の CRON_SECRET / 管理トークンと')
+    print('  一致していません。GitHub の Secrets と Railway の環境変数は別々に')
+    print('  設定するものなので、値がズレている可能性があります。')
+    print('  Railway の Variables で CRON_SECRET の値を確認し、')
+    print('  同じものを GitHub の Secrets にも登録し直してください。')
+    return None
 
 
 def api_get(path, cred, params):
@@ -160,14 +202,19 @@ def fetch_pool(pool, token):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--token', required=True,
-                    help='管理トークン または CRON_SECRET。どちらでも認証できる')
+    ap.add_argument('--token', required=True, nargs='+',
+                    help='管理トークン / CRON_SECRET。複数渡すと通るものを自動で選ぶ')
     ap.add_argument('--base', default=DEFAULT_BASE, help=f'比較の基準コミット (既定 {DEFAULT_BASE})')
     ap.add_argument('--only', nargs='*', help='対象 seed ファイル名を限定')
     ap.add_argument('--apply', action='store_true', help='実際に差し替える (既定は dry-run)')
     ap.add_argument('--batch-id', help='rollback 用の batch_id (既定は自動生成)')
     ap.add_argument('--out', default='migration_payload.json', help='送信ペイロードの保存先')
     args = ap.parse_args()
+
+    # 認証情報と載せ方を先に確定させる (401 で止まったときの切り分けを省くため)
+    cred = probe_auth(args.token)
+    if not cred:
+        return 2
 
     files = changed_files(args.base)
     if args.only:
@@ -213,7 +260,7 @@ def main():
     detail = []
     for pool, entries in sorted(plan.items(), key=lambda x: -len(x[1])):
         try:
-            db_rows = fetch_pool(pool, args.token)
+            db_rows = fetch_pool(pool, cred)
         except urllib.error.HTTPError as e:
             print(f'  ❌ {"/".join(pool)}: dump 失敗 HTTP {e.code} ({e.reason})')
             return 2
@@ -281,7 +328,7 @@ def main():
 
     print(f'\n差し替えを実行中… ({len(replacements)} 行)')
     try:
-        res = api_post('/api/admin/exam-questions/replace-explanation', args.token, payload)
+        res = api_post('/api/admin/exam-questions/replace-explanation', cred, payload)
     except urllib.error.HTTPError as e:
         print(f'❌ HTTP {e.code}: {e.read().decode("utf-8", "ignore")[:400]}')
         return 2
