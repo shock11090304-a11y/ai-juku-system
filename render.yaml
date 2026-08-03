@@ -57,13 +57,19 @@ services:
         value: https://ai-juku.onrender.com
     plan: starter  # $7/月
 
+  # ⚠️ この cron はもう使わない。予備配信は
+  #    .github/workflows/weekly-reports-backup.yml (日曜 20:05 JST) が担当する。
+  #
+  #    ここは元々 curl でエンドポイントを叩いていたが、リポジトリ直下に
+  #    Python を示すファイル (requirements.txt 等・実体は server/ の中) が無いため
+  #    Nixpacks が言語を判定できず、curl も python3 も入らない最小イメージになる。
+  #    そのため Railway 側の同名 cron は 2026-06 以前から毎週失敗し続けていた:
+  #        2026-08-02  /bin/bash: line 1: curl: command not found
+  #        2026-08-03  python3 に置き換えても同じ理由で CRASHED
+  #    イメージを作り直すより、Python が確実にある GitHub Actions へ移すほうが確実。
   - type: cron
     name: ai-juku-weekly-reports
     runtime: docker
-    # ⚠️ 以前はここが curl だったが、Python アプリとしてビルドされたコンテナには
-    #    curl が入っておらず、Railway 側の同名 cron が 2026-06 以前から毎週
-    #    「/bin/bash: line 1: curl: command not found」で 1 秒で落ち続けていた。
-    #    標準ライブラリだけで同じことをする scripts/trigger_weekly_reports.py に置き換える。
     dockerCommand: python3 scripts/trigger_weekly_reports.py
     schedule: "0 11 * * 0"  # 毎週日曜 20:00 JST (UTC 11:00)
     envVars:
