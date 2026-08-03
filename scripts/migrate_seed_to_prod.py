@@ -81,6 +81,20 @@ def git_show(ref, path):
     return r.stdout if r.returncode == 0 else None
 
 
+def touching_commits(base, path):
+    """base..HEAD の間にそのファイルを触ったコミットを古い順に返す。
+
+    本番 DB の中身は「前回どこまで反映したか」で決まる。base の版だけで照合すると
+    途中まで反映済みの行を取りこぼす。実際 756 大問を反映した後に seed を更に直した
+    ところ、その 342 問がすべて「DB に該当なし」になった (DB は中間の版を持っていて、
+    base の版とも HEAD の版とも一致しないため)。
+    そこで base の版と途中の各コミットの版を**すべて**照合候補にする。
+    """
+    r = subprocess.run(['git', 'log', '--format=%H', '--reverse', f'{base}..HEAD',
+                        '--', path], cwd=ROOT, capture_output=True, text=True)
+    return [c for c in r.stdout.split() if c]
+
+
 def changed_files(base):
     r = subprocess.run(['git', 'diff', '--name-only', base, 'HEAD', '--', 'seed-data/'],
                        cwd=ROOT, capture_output=True, text=True)
@@ -225,7 +239,8 @@ def main():
         return 0
 
     # --- 1. 変更前 → 変更後 の対応表を作る
-    plan = collections.defaultdict(list)   # pool -> [(old_qd, new_qd, file, idx)]
+    #     旧版は base だけでなく途中コミットの版もすべて候補にする (部分反映済み対策)
+    plan = collections.defaultdict(list)   # pool -> [(old_qds, new_qd, file, idx)]
     unsupported = []
     for path in files:
         old_txt, new_txt = git_show(args.base, path), git_show('HEAD', path)
@@ -240,10 +255,22 @@ def main():
             print(f'  ⚠ {os.path.basename(path)}: 大問数が変わっている '
                   f'({len(old_rows)} → {len(new_rows)}) ので対象外')
             continue
+        # 途中コミットの版 (大問数が同じものだけ。HEAD 自身は末尾なので除く)
+        mids = []
+        for c in touching_commits(args.base, path)[:-1]:
+            txt = git_show(c, path)
+            rws = rows_of(txt) if txt else []
+            if len(rws) == len(new_rows):
+                mids.append(rws)
         for (pool_o, i, qd_o), (pool_n, _j, qd_n) in zip(old_rows, new_rows):
             if pool_o != pool_n or qd_o == qd_n:
                 continue
-            plan[pool_o].append((qd_o, qd_n, os.path.basename(path), i))
+            variants = [qd_o]
+            for rws in mids:
+                qd_m = rws[i][2]
+                if qd_m != qd_n and qd_m not in variants:
+                    variants.append(qd_m)
+            plan[pool_o].append((variants, qd_n, os.path.basename(path), i))
 
     total_changed = sum(len(v) for v in plan.values())
     print(f'変更のある大問: {total_changed} 件 / {len(plan)} プール  (基準 {args.base})')
@@ -272,14 +299,21 @@ def main():
             qd = row.get('question_data')
             if isinstance(qd, dict):
                 by_old[json.dumps(qd, ensure_ascii=False, sort_keys=True)].append(row['id'])
-        for qd_o, qd_n, fname, idx in entries:
-            k_o = json.dumps(qd_o, ensure_ascii=False, sort_keys=True)
+        for qd_os, qd_n, fname, idx in entries:
             k_n = json.dumps(qd_n, ensure_ascii=False, sort_keys=True)
-            hit_old = by_old.get(k_o) or []
+            # base の版 → 途中の版 の順に探す。最初に見つかったものを「変更前」とする。
+            hit_old, matched_at = [], 0
+            for vi, qd_o in enumerate(qd_os):
+                got = by_old.get(json.dumps(qd_o, ensure_ascii=False, sort_keys=True)) or []
+                if got:
+                    hit_old, matched_at = got, vi
+                    break
             hit_new = by_old.get(k_n) or []
             if hit_new and not hit_old:
                 stat['既に修正済み (skip)'] += 1
                 continue
+            if hit_old and matched_at > 0:
+                stat['途中まで反映済みの行を更新'] += len(hit_old)
             if not hit_old:
                 stat['DB に該当なし (未取込 or 別物)'] += 1
                 detail.append(('none', fname, idx, pool, 0))
