@@ -148,7 +148,9 @@ def check_question(tag, q, passage, errors, figure_svg=''):
     # C. 「本文の根拠」の引用は passage に逐語で実在すること (捏造引用の検出)。
     #    図 (Source B 等) のラベルも根拠として引けるので、図中の <text> も照合先に含める。
     #    図は本文と並ぶ資料であって、本文外の捏造ではない。
-    fig_text = ' '.join(re.sub(r'<[^>]+>', '', t)
+    # tspan で折り返したラベルはタグを空白に置き換えて繋ぐ。'' で詰めると
+    # 「Reviewing lessons」+「at own pace」が lessonsat になって照合が落ちる。
+    fig_text = ' '.join(re.sub(r'<[^>]+>', ' ', t)
                         for t in re.findall(r'<text[^>]*>(.*?)</text>', figure_svg or '', re.S))
     npass = qkey(passage + '\n' + fig_text)
     for frag in eng_fragments(exp[pos[2]:pos[3]]):

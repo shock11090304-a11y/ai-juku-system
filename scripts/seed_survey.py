@@ -263,8 +263,11 @@ def survey(rows):
         coords_visible = bool(COORD.search(passage + '\n' + all_stems))
         # 図 (Source B 等) のラベルも解説が引ける根拠。図は本文と並ぶ資料であって
         # 本文外の捏造ではないので、引用の照合先に含める。
-        fig_text = ' '.join(re.sub(r'<[^>]+>', '', t) for t in
-                            re.findall(r'<text[^>]*>(.*?)</text>', qd.get('figure_svg') or '', re.S))
+        # ★ タグは '' でなく空白に置き換えること。詰めると <tspan> で 2 行に折った
+        #   ラベルが「Reviewing lessons」+「at own pace」→ lessonsat となって照合が落ちる。
+        fig_text = ' '.join(
+            re.sub(r'<[^>]+>', ' ', t) for t in
+            re.findall(r'<text[^>]*>(.*?)</text>', qd.get('figure_svg') or '', re.S))
         np_passage = norm(passage + '\n' + fig_text)
 
         # 本文の引用符が LaTeX 流の `word' になっている (開きがバッククォート)。
