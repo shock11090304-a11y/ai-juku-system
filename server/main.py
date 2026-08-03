@@ -8065,6 +8065,20 @@ def _collect_health_snapshot() -> dict:
     # サービスローンチからの経過時間
     snapshot["hours_since_launch"] = max(0, int((now.timestamp() - SERVICE_LAUNCH_TS) / 3600))
 
+    # 🩺 定期実行が止まっていないか (2026-08-03)
+    #   週次レポートの外部 cron が 2 か月以上失敗し続けていたのに誰も気づけなかった。
+    #   本命の in-process スケジューラが止まったときは実害が出るので、ここで検知する。
+    #   判定は _scheduler_status_rows / _stalled_schedulers が単一ソース。
+    try:
+        snapshot["stalled_schedulers"] = [
+            {"name": e["name"], "last_run_jst": e["last_run_jst"],
+             "age_hours": e["age_hours"], "max_age_days": e["max_age_days"]}
+            for e in _stalled_schedulers(_scheduler_status_rows())
+        ]
+    except Exception as e:
+        log.warning(f"[Monitor] scheduler staleness query failed: {e}")
+        snapshot["stalled_schedulers"] = []
+
     conn.close()
     return snapshot
 
@@ -8085,6 +8099,30 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "title": "🚨 創設メンバープランの Stripe Price が未設定",
             "detail": "STRIPE_PRICE_FOUNDER_SPECIAL も lookup_key 検索もヒットせず。POST /api/admin/stripe/setup-founder-special を1回叩いて自動作成してください。"
         })
+    # 1-B. 🩺 定期実行の停止 (2026-08-03)
+    #   「以前は動いていたのに想定周期を過ぎても動いていない」ものだけを拾う。
+    #   実行履歴が無いだけのものは、未有効化と区別できないので発報しない。
+    #   キーは 1 つにまとめる。スケジューラごとに分けると同時停止でメールが束になる。
+    stalled = snapshot.get("stalled_schedulers") or []
+    if stalled:
+        _label = {
+            "weekly_reports_run": "週次レポート (日曜19時)",
+            "weekly_worksheet_run": "週次弱点プリント (日曜5時)",
+            "weakness_aggregation_run": "弱点集計 (毎日)",
+            "trial_mgmt_run": "体験フォロー (毎日)",
+            "daily_sns_post": "SNS 投稿 (毎日)",
+        }
+        _lines = "、".join(
+            f"{_label.get(s['name'], s['name'])} は最終実行 {s['last_run_jst']}"
+            f" ({int(s['age_hours'] or 0)}時間前 / 想定は{s['max_age_days']}日以内)"
+            for s in stalled)
+        alerts.append({
+            "key": "scheduler_stalled", "severity": "critical",
+            "title": f"🚨 定期実行が {len(stalled)} 件止まっています",
+            "detail": (f"{_lines}。API プロセス内のスケジューラが停止した疑いがあります。"
+                       f"再起動で復帰します。詳細は GET /api/admin/scheduler/status。")
+        })
+
     # 2. Email/AI 設定
     if not snapshot["email_configured"]:
         alerts.append({
@@ -27737,27 +27775,12 @@ _SCHEDULER_MAX_AGE_DAYS = {
 }
 
 
-@app.get("/api/admin/scheduler/status")
-def admin_scheduler_status(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
-    """各 in-process スケジューラの最終実行と直近の結果を返す (READ-ONLY・DB 書き込み無し)。
+def _scheduler_status_rows() -> list:
+    """各 in-process スケジューラの最終実行を events から読む (READ-ONLY)。
 
-    返り値:
-      {"ok": bool, "now_jst": str, "schedulers": [
-          {"name": str, "last_run_jst": str|None, "age_hours": float|None,
-           "max_age_days": int, "stale": bool, "props": dict}], ...}
-
-    stale=True は「その周期で動いているはずの時刻を過ぎても実行記録が無い」= 停止の疑い。
-    認証: admin Bearer or x-cron-secret"""
-    authed = False
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization[len("Bearer "):].strip()
-        if _verify_admin_token(token):
-            authed = True
-    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
-        authed = True
-    if not authed:
-        raise HTTPException(status_code=401, detail="未認証")
-
+    endpoint と 5 分おきの監視の両方がこれを呼ぶ。判定を 2 箇所に書くと
+    「画面では正常・監視は発報」のような食い違いが起きるので単一ソースにする。
+    """
     _JST_TZ = timezone(timedelta(hours=9))
     now_utc = datetime.now(timezone.utc)
     out = []
@@ -27802,9 +27825,12 @@ def admin_scheduler_status(authorization: Optional[str] = Header(None), x_cron_s
             out.append(entry)
     finally:
         conn.close()
+    return out
 
-    # 週次レポートは「動いたが全員スキップ」= 無音の失敗があり得るので別枠で判定する
-    weekly = next((e for e in out if e["name"] == "weekly_reports_run"), None)
+
+def _weekly_report_verdict(rows: list) -> str:
+    """週次レポートは「動いたが全員スキップ」= 無音の失敗があり得るので別枠で判定する。"""
+    weekly = next((e for e in rows if e["name"] == "weekly_reports_run"), None)
     weekly_verdict = "不明"
     if weekly:
         p = weekly.get("props") or {}
@@ -27818,13 +27844,48 @@ def admin_scheduler_status(authorization: Optional[str] = Header(None), x_cron_s
             weekly_verdict = f"実行されたが送信 0 件 (skipped={skipped}) = 集計ソース断絶の疑い"
         else:
             weekly_verdict = f"正常: 送信 {sent} 件 / スキップ {skipped} 件"
+    return weekly_verdict
 
+
+def _stalled_schedulers(rows: list) -> list:
+    """止まっていると判断できるスケジューラだけを返す。
+
+    ★「実行履歴なし」は停止の証拠にならない。そもそも有効化していない
+      スケジューラも履歴を持たないため、これで発報すると誤報になる。
+      「以前は動いていたのに、想定周期を過ぎても動いていない」= last_run があって
+      stale なものだけを対象にする。
+    """
+    return [e for e in rows if e.get("stale") and e.get("last_run_jst")]
+
+
+@app.get("/api/admin/scheduler/status")
+def admin_scheduler_status(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """各 in-process スケジューラの最終実行と直近の結果を返す (READ-ONLY・DB 書き込み無し)。
+
+    返り値:
+      {"ok": bool, "now_jst": str, "schedulers": [
+          {"name": str, "last_run_jst": str|None, "age_hours": float|None,
+           "max_age_days": int, "stale": bool, "props": dict}], ...}
+
+    stale=True は「その周期で動いているはずの時刻を過ぎても実行記録が無い」= 停止の疑い。
+    認証: admin Bearer or x-cron-secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    rows = _scheduler_status_rows()
     return {
         "ok": True,
-        "now_jst": datetime.now(_JST_TZ).strftime("%Y-%m-%d %H:%M JST"),
-        "schedulers": out,
-        "weekly_report_verdict": weekly_verdict,
-        "any_stale": any(e["stale"] for e in out),
+        "now_jst": datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M JST"),
+        "schedulers": rows,
+        "weekly_report_verdict": _weekly_report_verdict(rows),
+        "any_stale": any(e["stale"] for e in rows),
     }
 
 
