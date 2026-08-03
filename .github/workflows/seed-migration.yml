@@ -1,0 +1,83 @@
+name: 教材の修正を本番DBへ反映
+
+# 🖱️ ターミナルを使わずに、GitHub の画面から実行するための入口。
+#
+# seed-data で直した内容 (正解番号の均し / 理系解説の段組み / 図ラベルの重なり 等) を
+# 本番 DB の既存行へ反映する。中身は scripts/migrate_seed_to_prod.py。
+#
+# 【使い方】
+#   1. リポジトリの Settings → Secrets and variables → Actions で
+#      ADMIN_TOKEN という名前のシークレットに管理トークンを登録する (最初の1回だけ)
+#   2. Actions タブ → 左の「教材の修正を本番DBへ反映」→ 右の "Run workflow"
+#   3. mode を選んで実行し、ログを読む
+#
+# 【安全側】
+#   - 既定は dry-run。mode で「実行」を選ばない限り DB は 1 行も変わらない
+#   - 実行しても元の内容は exam_questions_archive に退避される
+#   - ログの末尾に batch_id が出る。戻すときはそれを rollback-batch に渡す
+#   - 自動では絶対に走らない (workflow_dispatch = 手動起動のみ)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '確認だけか、実際に反映するか'
+        required: true
+        default: '確認のみ (DBは変更しない)'
+        type: choice
+        options:
+          - '確認のみ (DBは変更しない)'
+          - '実行する (DBを更新する)'
+      only:
+        description: '対象を1ファイルに絞る場合はファイル名 (空なら全部)'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 変更前の内容を git 履歴から取り出すので全履歴が要る
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: シークレットの確認
+        run: |
+          if [ -z "${{ secrets.ADMIN_TOKEN }}" ]; then
+            echo "::error::ADMIN_TOKEN が未登録です。"
+            echo "::error::Settings → Secrets and variables → Actions → New repository secret"
+            echo "::error::Name に ADMIN_TOKEN、Secret に管理トークンを入れて保存してください。"
+            exit 1
+          fi
+          echo "ADMIN_TOKEN は登録済み"
+
+      - name: 実行
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          MODE: ${{ inputs.mode }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          ARGS=""
+          if [ -n "$ONLY" ]; then ARGS="$ARGS --only $ONLY"; fi
+          case "$MODE" in
+            *実行する*)
+              echo "::warning::本番 DB を更新します"
+              ARGS="$ARGS --apply" ;;
+            *)
+              echo "確認のみ。DB は変更しません。" ;;
+          esac
+          python3 scripts/migrate_seed_to_prod.py --token "$ADMIN_TOKEN" $ARGS
+
+      - name: 送信内容を成果物として保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-payload
+          path: migration_payload.json
+          if-no-files-found: ignore
