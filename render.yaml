@@ -1,6 +1,14 @@
 # Render.com deployment config
 # https://render.com/docs/blueprint-spec
 #
+# ⚠️ これは現行の本番構成ではない (旧 Render 時代の残置)。
+#    本番 API は Railway (https://ai-juku-api-production.up.railway.app)。
+#    このファイル中の https://ai-juku.onrender.com は既に本番ではないので、
+#    ここの cron 定義をそのまま別サービスへ写すと死んだホストを叩き続ける。
+#    定期実行の設定を触るときは Railway 側のダッシュボードを見ること。
+#    なお週次レポートは server/main.py の _weekly_reports_scheduler が
+#    API プロセス内で毎週日曜 JST 19:00 に実行するのが本命で、外部 cron は予備。
+#
 # 使い方:
 # 1. このリポジトリをGitHubにpush
 # 2. Render.com で "New Blueprint" から選択

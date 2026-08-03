@@ -27721,6 +27721,113 @@ def admin_monitor_daily_summary_now(authorization: Optional[str] = Header(None),
     return {"sent": result.get("sent"), "snapshot": snapshot, "subject": subject}
 
 
+# 🩺 in-process スケジューラの生存確認 (READ-ONLY)。
+#   同じ判定は scripts/health_check/prod_healthcheck.py の check_scheduler_live /
+#   check_weekly_report が持っているが、あちらは Postgres へ直接つなぐ = 端末と
+#   DB 認証情報が要る。外部 cron が「失敗」と出たときに、実際にレポートが出たのか
+#   出ていないのかを DB 端末なしで切り分けられるよう HTTP からも読めるようにする。
+#   閾値は healthcheck 側と同じ値を使う (二重管理を避けるためここを正典とし、
+#   healthcheck 側の watched dict と数値を揃えてある)。
+_SCHEDULER_MAX_AGE_DAYS = {
+    "weakness_aggregation_run": 2,   # 日次
+    "weekly_reports_run": 8,         # 週次 (日曜)
+    "weekly_worksheet_run": 8,       # 週次プリント生成
+    "trial_mgmt_run": 2,             # 体験フォローの日次バッチ
+    "daily_sns_post": 2,             # 日次 SNS 投稿
+}
+
+
+@app.get("/api/admin/scheduler/status")
+def admin_scheduler_status(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """各 in-process スケジューラの最終実行と直近の結果を返す (READ-ONLY・DB 書き込み無し)。
+
+    返り値:
+      {"ok": bool, "now_jst": str, "schedulers": [
+          {"name": str, "last_run_jst": str|None, "age_hours": float|None,
+           "max_age_days": int, "stale": bool, "props": dict}], ...}
+
+    stale=True は「その周期で動いているはずの時刻を過ぎても実行記録が無い」= 停止の疑い。
+    認証: admin Bearer or x-cron-secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    _JST_TZ = timezone(timedelta(hours=9))
+    now_utc = datetime.now(timezone.utc)
+    out = []
+    conn = db()
+    try:
+        c = conn.cursor()
+        for name, max_days in _SCHEDULER_MAX_AGE_DAYS.items():
+            entry = {"name": name, "last_run_jst": None, "age_hours": None,
+                     "max_age_days": max_days, "stale": True, "props": {}}
+            try:
+                c.execute(
+                    "SELECT created_at, props FROM events WHERE name = ? "
+                    "ORDER BY created_at DESC LIMIT 1", (name,))
+                row = c.fetchone()
+            except Exception as e:
+                entry["error"] = f"{type(e).__name__}: {str(e)[:120]}"
+                out.append(entry)
+                continue
+            if not row:
+                entry["error"] = "実行履歴なし"
+                out.append(entry)
+                continue
+            ts, props = row["created_at"], row["props"]
+            if isinstance(ts, str):
+                try:
+                    ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                except ValueError:
+                    ts = None
+            if ts is not None:
+                # SQLite / 古い行は tz-naive で返る。UTC 保存なので UTC を付けて比較する
+                # (naive のまま引き算すると TypeError で全項目が error になる)。
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                age_h = (now_utc - ts).total_seconds() / 3600.0
+                entry["last_run_jst"] = ts.astimezone(_JST_TZ).strftime("%Y-%m-%d %H:%M JST")
+                entry["age_hours"] = round(age_h, 1)
+                entry["stale"] = age_h > max_days * 24
+            try:
+                entry["props"] = json.loads(props) if isinstance(props, str) else (props or {})
+            except Exception:
+                entry["props"] = {"raw": str(props)[:300]}
+            out.append(entry)
+    finally:
+        conn.close()
+
+    # 週次レポートは「動いたが全員スキップ」= 無音の失敗があり得るので別枠で判定する
+    weekly = next((e for e in out if e["name"] == "weekly_reports_run"), None)
+    weekly_verdict = "不明"
+    if weekly:
+        p = weekly.get("props") or {}
+        sent = int(p.get("sent_email", 0) or 0) + int(p.get("sent_line", 0) or 0)
+        skipped = int(p.get("skipped", 0) or 0)
+        if p.get("error"):
+            weekly_verdict = f"直近の実行がエラー: {str(p['error'])[:200]}"
+        elif weekly["stale"]:
+            weekly_verdict = "8日以上実行されていない = スケジューラ停止の疑い"
+        elif sent == 0 and skipped > 0:
+            weekly_verdict = f"実行されたが送信 0 件 (skipped={skipped}) = 集計ソース断絶の疑い"
+        else:
+            weekly_verdict = f"正常: 送信 {sent} 件 / スキップ {skipped} 件"
+
+    return {
+        "ok": True,
+        "now_jst": datetime.now(_JST_TZ).strftime("%Y-%m-%d %H:%M JST"),
+        "schedulers": out,
+        "weekly_report_verdict": weekly_verdict,
+        "any_stale": any(e["stale"] for e in out),
+    }
+
+
 @app.get("/api/admin/monitor/domain-status")
 def admin_domain_status(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """RDAP で WHOIS Domain Status を即時確認 (手動)。
