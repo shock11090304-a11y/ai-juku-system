@@ -111,18 +111,32 @@ def rows_of(text):
     return out
 
 
-def api_get(path, token, params):
+def auth_headers(cred):
+    """認証ヘッダ。管理トークンでも CRON_SECRET でも通る。
+
+    dump / replace-explanation はどちらも「admin Bearer」または「x-cron-secret」を
+    受け付ける (server 側は Bearer を先に検証し、外れたら x-cron-secret を見る)。
+    CRON_SECRET は既に GitHub の Secrets に登録済みなので、新しくトークンを
+    用意しなくてもこの経路で認証できる。渡された値がどちらか分からないので
+    両方のヘッダに載せる。
+    """
+    return {'Authorization': f'Bearer {cred}', 'X-Cron-Secret': cred}
+
+
+def api_get(path, cred, params):
     url = f'{API}{path}?' + '&'.join(f'{k}={urllib.request.quote(str(v))}' for k, v in params.items())
-    req = urllib.request.Request(url, headers={'Authorization': f'Bearer {token}'})
+    req = urllib.request.Request(url, headers=auth_headers(cred))
     with urllib.request.urlopen(req, timeout=60) as resp:
         return json.loads(resp.read().decode('utf-8'))
 
 
-def api_post(path, token, payload):
+def api_post(path, cred, payload):
+    headers = dict(auth_headers(cred))
+    headers['Content-Type'] = 'application/json'
     req = urllib.request.Request(
         f'{API}{path}', method='POST',
         data=json.dumps(payload, ensure_ascii=False).encode('utf-8'),
-        headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'})
+        headers=headers)
     with urllib.request.urlopen(req, timeout=180) as resp:
         return json.loads(resp.read().decode('utf-8'))
 
@@ -146,7 +160,8 @@ def fetch_pool(pool, token):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--token', required=True, help='admin Bearer token')
+    ap.add_argument('--token', required=True,
+                    help='管理トークン または CRON_SECRET。どちらでも認証できる')
     ap.add_argument('--base', default=DEFAULT_BASE, help=f'比較の基準コミット (既定 {DEFAULT_BASE})')
     ap.add_argument('--only', nargs='*', help='対象 seed ファイル名を限定')
     ap.add_argument('--apply', action='store_true', help='実際に差し替える (既定は dry-run)')

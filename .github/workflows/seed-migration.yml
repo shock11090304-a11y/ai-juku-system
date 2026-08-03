@@ -6,10 +6,12 @@ name: 教材の修正を本番DBへ反映
 # 本番 DB の既存行へ反映する。中身は scripts/migrate_seed_to_prod.py。
 #
 # 【使い方】
-#   1. リポジトリの Settings → Secrets and variables → Actions で
-#      ADMIN_TOKEN という名前のシークレットに管理トークンを登録する (最初の1回だけ)
-#   2. Actions タブ → 左の「教材の修正を本番DBへ反映」→ 右の "Run workflow"
-#   3. mode を選んで実行し、ログを読む
+#   Actions タブ → 左の「教材の修正を本番DBへ反映」→ 右の "Run workflow" → mode を選ぶ
+#
+#   認証は既存の CRON_SECRET をそのまま使うので、新しいシークレットの登録は不要。
+#   対象の endpoint (dump / replace-explanation) はどちらも
+#   「admin Bearer」または「x-cron-secret」を受け付ける。
+#   ADMIN_TOKEN を登録してあればそちらを優先して使う。
 #
 # 【安全側】
 #   - 既定は dry-run。mode で「実行」を選ばない限り DB は 1 行も変わらない
@@ -47,22 +49,25 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: シークレットの確認
-        run: |
-          if [ -z "${{ secrets.ADMIN_TOKEN }}" ]; then
-            echo "::error::ADMIN_TOKEN が未登録です。"
-            echo "::error::Settings → Secrets and variables → Actions → New repository secret"
-            echo "::error::Name に ADMIN_TOKEN、Secret に管理トークンを入れて保存してください。"
-            exit 1
-          fi
-          echo "ADMIN_TOKEN は登録済み"
-
       - name: 実行
         env:
+          # ADMIN_TOKEN があればそれを、無ければ既存の CRON_SECRET を使う。
+          # どちらでも認証は通るので、新しいシークレットの登録は要らない。
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
           MODE: ${{ inputs.mode }}
           ONLY: ${{ inputs.only }}
         run: |
+          CRED="$ADMIN_TOKEN"
+          WHICH="ADMIN_TOKEN"
+          if [ -z "$CRED" ]; then CRED="$CRON_SECRET"; WHICH="CRON_SECRET"; fi
+          if [ -z "$CRED" ]; then
+            echo "::error::ADMIN_TOKEN も CRON_SECRET も未登録です。"
+            echo "::error::Settings → Secrets and variables → Actions で登録してください。"
+            exit 1
+          fi
+          echo "認証に $WHICH を使います"
+
           ARGS=""
           if [ -n "$ONLY" ]; then ARGS="$ARGS --only $ONLY"; fi
           case "$MODE" in
@@ -72,7 +77,7 @@ jobs:
             *)
               echo "確認のみ。DB は変更しません。" ;;
           esac
-          python3 scripts/migrate_seed_to_prod.py --token "$ADMIN_TOKEN" $ARGS
+          python3 scripts/migrate_seed_to_prod.py --token "$CRED" $ARGS
 
       - name: 送信内容を成果物として保存
         if: always()
