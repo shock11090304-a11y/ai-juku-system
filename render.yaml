@@ -60,9 +60,11 @@ services:
   - type: cron
     name: ai-juku-weekly-reports
     runtime: docker
-    dockerCommand: >
-      sh -c "curl -X POST -H \"X-Cron-Secret: $CRON_SECRET\"
-             https://ai-juku.onrender.com/api/cron/weekly-reports"
+    # ⚠️ 以前はここが curl だったが、Python アプリとしてビルドされたコンテナには
+    #    curl が入っておらず、Railway 側の同名 cron が 2026-06 以前から毎週
+    #    「/bin/bash: line 1: curl: command not found」で 1 秒で落ち続けていた。
+    #    標準ライブラリだけで同じことをする scripts/trigger_weekly_reports.py に置き換える。
+    dockerCommand: python3 scripts/trigger_weekly_reports.py
     schedule: "0 11 * * 0"  # 毎週日曜 20:00 JST (UTC 11:00)
     envVars:
       - key: CRON_SECRET
