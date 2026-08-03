@@ -1,0 +1,42 @@
+name: 本番の定期実行が生きているか見る
+
+# 🩺 ターミナルを使わずに、GitHub の画面から本番の状態を読むための入口。
+#
+# 週次レポート等の定期実行が実際に動いているかを確認する。
+# 中身は scripts/prod_status.py。
+#
+# 【使い方】
+#   Actions タブ → 左の「本番の定期実行が生きているか見る」→ 右の "Run workflow"
+#
+# 【読むだけ】
+#   呼ぶのは GET /api/admin/scheduler/status と
+#   POST /api/cron/weekly-reports?dry_run=true の 2 つだけ。
+#   dry_run はメールも LINE も送らず、DB にも 1 行も書かない。
+#   自動では走らない (workflow_dispatch = 手動起動のみ)。
+
+on:
+  workflow_dispatch:
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 状態を読む
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          CREDS=""
+          if [ -n "$ADMIN_TOKEN" ]; then CREDS="$CREDS $ADMIN_TOKEN"; fi
+          if [ -n "$CRON_SECRET" ]; then CREDS="$CREDS $CRON_SECRET"; fi
+          if [ -z "$CREDS" ]; then
+            echo "::error::ADMIN_TOKEN も CRON_SECRET も未登録です。"
+            exit 1
+          fi
+          python3 scripts/prod_status.py --token $CREDS
