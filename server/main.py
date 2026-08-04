@@ -1493,6 +1493,18 @@ def init_db():
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_curricula_student ON curricula(student_id, status);
+    -- 🗄 生徒ごとの小さな JSON 状態の保管庫 (2026-08-04「カリキュラムが毎回リセットされる」根治)
+    --   これまで「端末の localStorage にしか無い」「保存ボタンを押すまでブラウザのメモリにしか無い」
+    --   学習プランが、端末変更 / iOS Safari の 7 日ストレージ削除 / リロードで復元不能に消えていた。
+    --   kind ごとに 1 生徒 1 行の upsert。用途は _STUDENT_STATE_KINDS の allowlist で固定する
+    --   (任意 kind を許すと生徒が任意サイズの任意データを置ける汎用ストレージになってしまう)。
+    CREATE TABLE IF NOT EXISTS student_json_state (
+        student_id INTEGER NOT NULL,
+        kind TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (student_id, kind)
+    );
     -- 外部模試結果 (河合/駿台/東進/進研 等) - Phase 4.5 / 塾長指示 2026-05-06
     -- 内蔵 mock_exam_sessions と分離。生徒が手入力 + AI カリキュラム生成時に自動参照。
     CREATE TABLE IF NOT EXISTS exam_results (
@@ -23486,6 +23498,9 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             ("homework_assignments", "DELETE FROM homework_assignments WHERE student_id=?"),
             ("exam_results", "DELETE FROM exam_results WHERE student_id=?"),
             ("curricula", "DELETE FROM curricula WHERE student_id=?"),
+            # 学習プランの JSON 保管庫 (志望校/受験日/週次計画 = 未成年の個人データ)。
+            # 退会後に残らないよう cascade に含める (2026-08-04 追加時の 3並列review 指摘)
+            ("student_json_state", "DELETE FROM student_json_state WHERE student_id=?"),
             ("notifications", "DELETE FROM notifications WHERE student_id=?"),
             ("otp_codes", "DELETE FROM otp_codes WHERE student_id=?"),
             ("usage_monthly", "DELETE FROM usage_monthly WHERE student_id=?"),
@@ -25611,6 +25626,179 @@ def _curriculum_fallback(exam_id, target_grade_name, days_remaining, weeks_remai
         # クライアント (english-exam.js renderCurriculum) がタグ文言を出し分ける
         "fallback_reason": reason,
     }
+
+
+# ==========================================================================
+# 🗄 生徒ごとの小さな JSON 状態 (学習プランの保管庫)
+#
+# 【なぜ必要か / 2026-08-04 塾長報告「カリキュラムが毎回リセットされる」の根治】
+#   ・english-exam の「個別 AI カリキュラム」は端末の localStorage にしか無く、復元 API も
+#     無かった。別端末・別ブラウザ・iOS Safari の 7 日ストレージ削除・匿名バケット
+#     (ee_curriculum_v1__anon) で 1〜3 分かけた生成結果と手作業の週チェックが消えていた。
+#   ・mypage の「合格カリキュラム」は AI 生成しても「✅ 保存する」を押すまで
+#     ブラウザのメモリ変数にしか無く、リロード / 画面移動で消えていた
+#     (/api/curricula/ai-generate は仕様どおり DB に保存しない)。
+#   → どちらも「本人のアカウントに紐づく 1 行」を持たせて解決する。
+#
+# 【設計】
+#   ・kind は allowlist 固定 (任意 kind を許すと任意サイズの汎用ストレージになる)。
+#   ・1 生徒 1 kind 1 行の upsert (ON CONFLICT・SQLite/Postgres 共通)。履歴は持たない
+#     = 常に最新だけ。競合は last-write-wins で、クライアント側が _updated_at で新しい方を選ぶ。
+#   ・payload は JSON オブジェクト限定 + サイズ上限。中身はサーバでは解釈しない
+#     (AI 出力のスキーマは時期によって変わるため、ここで型を縛ると復元できなくなる)。
+#   ・allow_canceled=True: 自分の学習プランの保管は有料機能ではない。解約直後に
+#     「復元できない」を作らないことを優先する。
+# ==========================================================================
+_STUDENT_STATE_KINDS = {
+    "ee_curriculum",      # english-exam.js の個別 AI カリキュラム (weekly_roadmap + completed_weeks)
+    "curriculum_draft",   # mypage.js の合格カリキュラム AI プレビュー (未保存の下書き)
+}
+# 学習管理コース限定の kind (書き込みのみ制限)。ee_curriculum は english-exam.html が
+# 全生徒 (匿名含む) の正規動線なのでコース制限をかけない — かけると今回直した消失が再発する。
+_STUDENT_STATE_COURSE_GATED_KINDS = {"curriculum_draft"}
+# 1 レコードの上限。31 週ぶんの weekly_roadmap 実測が ~40KB なので 256KB は十分な余裕。
+_STUDENT_STATE_MAX_BYTES = 256 * 1024
+
+
+def _student_state_kind_or_400(kind: str) -> str:
+    if kind not in _STUDENT_STATE_KINDS:
+        raise HTTPException(status_code=400, detail="unknown kind")
+    return kind
+
+
+async def _student_state_body_dep(request: Request) -> bytes:
+    """生ボディを **上限つき** で読む依存。
+
+    ★共通の _raw_body_dep (await request.body()) は上限なしで全チャンクを連結するため、
+      Content-Length を出さない chunked 送信で数百MB をメモリに載せられる。uvicorn は
+      単一プロセスなので OOM = API 全停止 (2026-07-26 の 502 と同じ「1人が塾全体を落とす」構造)。
+      ここでは宣言と実態を一致させ、上限を超えた時点で読み捨てる (2周目 review の実測指摘)。
+    """
+    cl = request.headers.get("content-length")
+    if cl:
+        try:
+            if int(cl) > _STUDENT_STATE_MAX_BYTES:
+                raise HTTPException(status_code=413, detail="payload too large")
+        except ValueError:
+            pass   # 壊れた Content-Length は下のストリーム側で頭打ちにする
+    total = 0
+    chunks = []
+    async for chunk in request.stream():
+        total += len(chunk)
+        if total > _STUDENT_STATE_MAX_BYTES:
+            raise HTTPException(status_code=413, detail="payload too large")
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+@app.get("/api/student-state/{kind}")
+def get_student_state(kind: str, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: 自分の保存済み JSON 状態を 1 件取得。未保存なら payload=None を 200 で返す。"""
+    _student_state_kind_or_400(kind)
+    # ★IP 単位にしないこと: 本番は Vercel rewrite 経由で _client_ip が共有 egress に縮退し、
+    #   塾内 NAT でも全生徒が 1 枠を共有して誤 429 になる (3並列review 指摘)。
+    #   caller 単位ならログイン済み = 生徒ID単位で独立する。
+    _check_rate_limit_caller(request, authorization, bucket="student_state_get", limit=120, window=60)
+    student = _get_current_student(authorization, allow_canceled=True)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT payload, updated_at FROM student_json_state WHERE student_id = ? AND kind = ?",
+            (student["id"], kind),
+        )
+        row = c.fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return {"kind": kind, "payload": None, "updated_at": None}
+    try:
+        parsed = json.loads(row["payload"])
+    except (ValueError, TypeError):
+        # 保存時に JSON 検証済みなので通常起きないが、壊れて読めない行で 500 にはしない
+        # (500 にするとクライアントが「サーバに無い」ではなく「エラー」に倒れて復元導線が死ぬ)
+        log.warning(f"[student-state] broken payload student={student['id']} kind={kind}")
+        return {"kind": kind, "payload": None, "updated_at": None}
+    _ua = row["updated_at"]
+    return {"kind": kind, "payload": parsed, "updated_at": (_ua.isoformat() if hasattr(_ua, "isoformat") else _ua)}
+
+
+@app.put("/api/student-state/{kind}")
+def put_student_state(
+    kind: str,
+    request: Request,
+    raw: bytes = Depends(_student_state_body_dep),
+    authorization: Optional[str] = Header(None),
+):
+    """生徒: 自分の JSON 状態を 1 件保存 (upsert)。body = {"payload": {...}}
+
+    ★生ボディで受ける理由: `body: dict` にすると FastAPI が **ハンドラに入る前に**
+      イベントループ上で JSON をパースするため、宣言している 256KB 上限が実際には効かず、
+      巨大 body で単一プロセスのループを塞げてしまう (2026-07-26 の全 API 502 と同じ機序)。
+      読み込み自体の上限は _student_state_body_dep が担保する。
+    """
+    _student_state_kind_or_400(kind)
+    # 念のための二重チェック (dep が上限で打ち切っているので通常ここは通る)
+    if len(raw) > _STUDENT_STATE_MAX_BYTES:
+        raise HTTPException(status_code=413, detail="payload too large")
+    _check_rate_limit_caller(request, authorization, bucket="student_state_put", limit=120, window=60)
+    # 書き込みは canceled を許さない (読み出しだけは救済のため許す)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if kind in _STUDENT_STATE_COURSE_GATED_KINDS:
+        _require_study_log_course(student)
+    try:
+        body = json.loads(raw.decode("utf-8")) if raw else None
+    except (ValueError, UnicodeDecodeError):
+        raise HTTPException(status_code=400, detail="invalid JSON body")
+    except RecursionError:
+        # 深い入れ子 (`[` 1200 個程度) で json.loads が投げる。500 にせず 400 で返す
+        raise HTTPException(status_code=400, detail="invalid JSON body (too deeply nested)")
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="invalid body")
+    payload = body.get("payload")
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="payload must be an object")
+    # NUL バイトは Postgres の TEXT に入らないが、json.dumps は制御文字を必ず 6 文字の
+    # エスケープ表記へ変換するので、生 NUL は列に届かない (実測確認済み・除去処理は不要)
+    serialized = json.dumps(payload, ensure_ascii=False)
+    if len(serialized.encode("utf-8")) > _STUDENT_STATE_MAX_BYTES:
+        raise HTTPException(status_code=413, detail="payload too large")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO student_json_state (student_id, kind, payload, updated_at) "
+            "VALUES (?, ?, ?, CURRENT_TIMESTAMP) "
+            "ON CONFLICT (student_id, kind) DO UPDATE SET "
+            "payload = EXCLUDED.payload, updated_at = CURRENT_TIMESTAMP",
+            (student["id"], kind, serialized),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True}
+
+
+@app.delete("/api/student-state/{kind}")
+def delete_student_state(kind: str, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: 自分の JSON 状態を 1 件削除 (下書きの確定・破棄に使う)。存在しなくても 200。"""
+    _student_state_kind_or_400(kind)
+    _check_rate_limit_caller(request, authorization, bucket="student_state_del", limit=60, window=60)
+    student = _get_current_student(authorization, allow_canceled=True)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("DELETE FROM student_json_state WHERE student_id = ? AND kind = ?", (student["id"], kind))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True}
 
 
 @app.get("/api/admin/exam-questions/pool-status")

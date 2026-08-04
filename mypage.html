@@ -1454,7 +1454,7 @@
   <script src="exam-prep.js?v=20260721-xstudent-batch2"></script>
   <script src="referral-program.js?v=20260721-xstudent-batch2"></script>
   <script src="student-mode.js?v=20260604-junior-preview"></script>
-  <script src="mypage.js?v=20260722-remove-customgpt"></script>
+  <script src="mypage.js?v=20260804-curriculum-draft"></script>
   <script>
     // ウィジェット初期描画
     (function() {
@@ -1509,6 +1509,7 @@
           ReferralProgram.renderReferralWidget('referralWidget', student);
           renderUsageQuotaWidget('usageQuotaWidget');
           renderCurriculumWeekWidget('curriculumWeekWidget');
+          syncCurriculumWeekWidgetFromServer('curriculumWeekWidget'); // ☁️ 端末に無ければアカウントから復元
           renderVocabSrsWidget('vocabSrsWidget', studentId);
         }
         renderLessonPrints(student); // 📚 配布プリント (公開カタログ・モード絞り込み・プレビューでも表示)
@@ -1997,8 +1998,47 @@
       } catch (e) { console.warn('inherit notice banner failed:', e); }
     }
 
-    // 🎯 今週のタスク (english-exam.js が localStorage に保存した curriculum data から表示)
-    function renderCurriculumWeekWidget(containerId) {
+    // ☁️ 2026-08-04 [curriculum-server-state] 端末に無くても本人アカウントから復元する。
+    //   この端末で作っていない (別のスマホ/PC で作った・iOS Safari の 7 日ストレージ削除で
+    //   消えた) 場合、従来は毎回「まだ作られていません」の CTA が出ていた。
+    //   ★ここは書き戻しをしない読み取り専用の補助線: localStorage への書き込みは english-exam.js
+    //     (pin-once の唯一の書き手) に任せる。二重に書くと新旧を取り違える事故の口になる。
+    //   ★描画列の他ウィジェットを巻き込まないよう、失敗は全部握り潰して現状表示のまま。
+    function syncCurriculumWeekWidgetFromServer(containerId) {
+      try {
+        const token = localStorage.getItem('ai_juku_session_token');
+        if (!token) return;
+        const base = (window.location.hostname === 'localhost' && window.location.port === '8090')
+          ? 'http://localhost:8000' : window.location.origin;
+        // 同期の順序付け: english-exam.js が保存のたびに打つ _updated_at (無ければ saved_at) の新しい方
+        const stamp = (o) => {
+          if (!o || typeof o !== 'object') return 0;
+          const t = Date.parse(o._updated_at || '') || Date.parse(o.saved_at || '') || 0;
+          return Number.isFinite(t) ? t : 0;
+        };
+        fetch(base + '/api/student-state/ee_curriculum', { headers: { 'Authorization': 'Bearer ' + token } })
+          .then(res => (res.ok ? res.json() : null))
+          .then(j => {
+            const remote = (j && j.payload && typeof j.payload === 'object') ? j.payload : null;
+            if (!remote || !Array.isArray(remote.weekly_roadmap) || !remote.weekly_roadmap.length) return;
+            let local = null;
+            try {
+              if (typeof window.aiJukuReadScoped === 'function') {
+                local = JSON.parse(window.aiJukuReadScoped('ee_curriculum_v1') || 'null');
+              }
+            } catch (_) {}
+            // ローカルの方が新しければ触らない (この端末で今さっき付けた週チェックを巻き戻さない)
+            if (local && Array.isArray(local.weekly_roadmap) && local.weekly_roadmap.length
+                && stamp(local) >= stamp(remote)) return;
+            renderCurriculumWeekWidget(containerId, remote);
+          })
+          .catch(() => {});
+      } catch (_) { /* 失敗しても現状表示のまま */ }
+    }
+
+    // 🎯 今週のタスク (english-exam.js が保存した curriculum data から表示)
+    // stateOverride: サーバ (本人アカウント) から取り直した状態。省略時はこの端末の localStorage を読む
+    function renderCurriculumWeekWidget(containerId, stateOverride) {
       const el = document.getElementById(containerId);
       if (!el) return;
       let cur = null;
@@ -2007,7 +2047,9 @@
       //   唯一のソース。english-exam.js の loadCurriculumState も同じ導出を使う)。キーを直書き
       //   すると別生徒のプランを拾う or 本人のプランを見失う。未定義なら未生成扱い (CTA表示) に倒す。
       try {
-        if (typeof window.aiJukuReadScoped === 'function') {
+        if (stateOverride && typeof stateOverride === 'object') {
+          cur = stateOverride;
+        } else if (typeof window.aiJukuReadScoped === 'function') {
           cur = JSON.parse(window.aiJukuReadScoped('ee_curriculum_v1') || 'null');
         }
       } catch {}

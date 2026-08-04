@@ -2771,13 +2771,87 @@ function initCurriculum() {
     }
     if (section) section.style.display = '';
     bindCurriculumButtons();
-    loadMyCurricula();
+    // ☁️ 下書き復元は一覧の取得後 (確定済みと同じ内容かを _cuLastList で照合するため)
+    Promise.resolve(loadMyCurricula()).then(restoreCurriculumDraft, restoreCurriculumDraft);
   };
   tryInit(10);
 }
 
 let _cuLastList = [];
 let _cuLastPreview = null;
+
+// ==========================================================================
+// ☁️ 2026-08-04 [curriculum-draft] AI 生成したのに消える問題の根治
+//
+//   /api/curricula/ai-generate は仕様どおり DB に保存せず、生成結果は _cuLastPreview
+//   (ブラウザのメモリ変数) にしか無かった。生徒が緑の「✅ このカリキュラムで保存する」を
+//   押す前にリロード / 画面移動 / タブを閉じると、15〜40 秒待った結果が跡形もなく消える。
+//   塾長報告「カリキュラムが毎回リセットされる」の原因のひとつ (稼働生徒 100 名超が
+//   利用資格を持つのに curricula の実データが 13 行しか無かったのはこの取りこぼし)。
+//   → 生成した時点でサーバに下書きとして置き、次に開いたときに復元する。
+//     確定保存 (POST /api/curricula) が成功したら下書きは削除する。
+// ==========================================================================
+const CU_DRAFT_KIND = 'curriculum_draft';
+
+function _cuSaveDraft(preview) {
+  return slApiFetch('/api/student-state/' + CU_DRAFT_KIND, {
+    method: 'PUT', body: JSON.stringify({ payload: preview }),
+  }).then(() => true).catch(e => { console.warn('[curriculum] 下書き保存に失敗:', e); return false; });
+}
+// 確定保存の直後に呼ぶ。1 回だけ再試行する (取りこぼすと次回「未保存が残っています」の誤表示になる)
+function _cuDeleteDraft() {
+  const del = () => slApiFetch('/api/student-state/' + CU_DRAFT_KIND, { method: 'DELETE' });
+  return del().then(() => true).catch(() => del().then(() => true).catch(() => false));
+}
+function _cuLoadDraft() {
+  return slApiFetch('/api/student-state/' + CU_DRAFT_KIND)
+    .then(d => (d && d.payload && typeof d.payload === 'object') ? d.payload : null)
+    .catch(() => null);
+}
+
+// 前回 AI 生成したが確定保存しなかった下書きを、生成直後と同じプレビュー UI で復元する。
+// ⚠️ 失敗は全部握り潰す (カリキュラム section の他の描画を巻き込まない)
+async function restoreCurriculumDraft() {
+  try {
+    const draft = await _cuLoadDraft();
+    if (!draft || !Array.isArray(draft.phases) || !draft.phases.length) return;
+    const wrap = document.getElementById('cuAiWrap');
+    const previewEl = document.getElementById('cuAiPreview');
+    const msg = document.getElementById('cuAiMsg');
+    if (!wrap || !previewEl) return;
+    // ⚠️ ここで「同じ志望校・同じ日付の確定済みがあるから下書きは不要」と自動削除しないこと。
+    //   同じ志望校・同じ日で条件だけ変えて作り直すのは普通の使い方で、その 15〜40 秒の
+    //   生成結果を無言で捨てることになる (= 今回直している事象そのもの。2周目 review 指摘)。
+    //   確定時の DELETE 取りこぼしで下書きが残った場合は「未保存が残っています」が出るが、
+    //   生徒は破棄ボタンを押せるし、万一 2 行できても一覧から 🗑 で消せる。
+    // ★描画を先に組み立ててから UI を開く。逆順だと、壊れた下書き (サーバは payload の
+    //   中身を検査しないので materials が配列でない等があり得る) で描画が throw したとき、
+    //   「未保存が残っています」の文言だけが出て保存ボタンも破棄ボタンも無い行き止まりになる
+    const html = renderCurriculumPreview(draft)
+      + '<button id="cuDraftDiscardBtn" type="button" style="width:100%; margin-top:0.4rem; padding:0.5rem;'
+      + ' background:rgba(239,68,68,0.12); color:#fca5a5; border:1px solid rgba(239,68,68,0.3);'
+      + ' border-radius:8px; font-size:0.8rem; cursor:pointer;">🗑 この下書きを破棄する</button>';
+    // 生成直後と同じ状態にする (保存ボタンがそのまま _cuLastPreview を確定保存する)
+    _cuLastPreview = draft;
+    wrap.style.display = '';
+    if (msg) {
+      msg.style.color = '#fbbf24';
+      msg.textContent = '⚠️ 前回つくった「未保存」のカリキュラムが残っています。内容を確認して「✅ このカリキュラムで保存する」を押すと確定します。';
+    }
+    previewEl.innerHTML = html;
+    const saveBtn = document.getElementById('cuPreviewSaveBtn');
+    if (saveBtn) saveBtn.addEventListener('click', saveCurriculumFromPreview);
+    const discardBtn = document.getElementById('cuDraftDiscardBtn');
+    if (discardBtn) discardBtn.addEventListener('click', async () => {
+      if (!confirm('この下書きを破棄します。よろしいですか？')) return;
+      await _cuDeleteDraft();
+      _cuLastPreview = null;
+      previewEl.innerHTML = '';
+      if (msg) msg.textContent = '';
+      wrap.style.display = 'none';
+    });
+  } catch (e) { console.warn('[curriculum] 下書き復元に失敗:', e); }
+}
 
 function bindCurriculumButtons() {
   // 📚 マイ参考書 UI (カリキュラム生成フォーム内・塾長指示 2026-05-14)
@@ -2922,6 +2996,9 @@ async function generateCurriculumWithAi() {
     msg.style.color = '#86efac'; msg.textContent = `✅ ${preview.phases.length} フェーズの合格カリキュラムを生成しました (プレビュー → 保存ボタンで確定)`;
     previewEl.innerHTML = renderCurriculumPreview(preview);
     document.getElementById('cuPreviewSaveBtn').addEventListener('click', saveCurriculumFromPreview);
+    // ☁️ 2026-08-04: 「保存」を押す前に画面を離れても消えないよう、この時点で下書きを預ける。
+    //   await しない (保存ボタンはもう押せる状態にしておく = 生徒を待たせない)
+    _cuSaveDraft(preview);
   } catch (e) {
     msg.style.color = '#fca5a5';
     msg.textContent = '❌ ' + (e.message || '生成失敗');
@@ -2953,7 +3030,9 @@ function renderCurriculumPreview(c) {
         <div style="font-weight:800; color:#fbbf24; font-size:1.05rem;">🎓 ${escapeHtml(c.target_university)}${c.target_faculty ? ` <span style="color:#a1a1aa; font-size:0.85rem;">${escapeHtml(c.target_faculty)}</span>` : ''}</div>
         <div style="font-size:0.75rem; color:#a1a1aa;">入試まで <strong style="color:#ec4899;">${remainDays}日</strong></div>
       </div>
-      <div style="font-size:0.78rem; color:#a1a1aa; margin-bottom:0.7rem;">${escapeHtml(startDate)} 〜 ${escapeHtml(examDate)} ・ 1日 ${c.daily_minutes}分</div>
+      <!-- ⚠️ escapeHtml 必須: 2026-08-04 以降この関数はサーバ保存の下書き (生徒が PUT できる JSON) も
+           描画するため、数値のつもりのフィールドに文字列/HTML が入り得る (3並列review 指摘) -->
+      <div style="font-size:0.78rem; color:#a1a1aa; margin-bottom:0.7rem;">${escapeHtml(startDate)} 〜 ${escapeHtml(examDate)} ・ 1日 ${escapeHtml(c.daily_minutes)}分</div>
       ${c.phases.map((p, i) => `
         <div style="background:rgba(255,255,255,0.04); border-left:4px solid #a78bfa; border-radius:8px; padding:0.7rem; margin-bottom:0.5rem;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
@@ -2994,6 +3073,10 @@ async function saveCurriculumFromPreview() {
     if (msg) { msg.style.color = '#86efac'; msg.textContent = '✅ カリキュラムを保存しました'; }
     document.getElementById('cuAiWrap').style.display = 'none';
     _cuLastPreview = null;
+    // ☁️ 2026-08-04: 確定したので下書きは片付ける (次に開いたときに「未保存が残っています」を出さない)。
+    //   削除に失敗しても確定保存は成功しているので、生徒には成功として見せる
+    //   (取りこぼしても restoreCurriculumDraft が確定済みと照合して黙って消す)
+    await _cuDeleteDraft();
     await loadMyCurricula();
   } catch (e) {
     if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ 保存失敗: ' + (e.message || ''); }

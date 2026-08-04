@@ -5043,31 +5043,264 @@ function loadCurriculumState() {
     return JSON.parse(raw || 'null');
   } catch { return null; }
 }
+
+// ==========================================================================
+// ☁️ 2026-08-04 [curriculum-server-state] サーバ (本人アカウント) にも保存する
+//
+//   【なぜ】このプランは 2026-08-04 まで端末の localStorage にしか無く、復元 API も無かった。
+//   そのため「毎回リセットされる」= 別端末/別ブラウザで開く・iOS Safari が 7 日でストレージを
+//   まるごと削除する・ログイン前に作って __anon バケットに入る・端末の保存領域が一杯、の
+//   どれでも 1〜3 分かけた生成結果と手で付けた週チェックが復元不能に消えていた。
+//   → ログイン済みなら /api/student-state/ee_curriculum に同じ JSON を置く。
+//
+//   ★ローカル保存はやめない: 匿名利用 (正規動線) とオフラインの受け皿として必要。
+//     サーバは「もう一つの正」であって置き換えではない。
+//   ★競合は _updated_at (保存のたびに打つ) の新しい方を採用。saved_at は経過週の計算に
+//     使う別物なので絶対に流用しない (週チェックのたびに saved_at を触ると Week1 に戻る)。
+// ==========================================================================
+const CURRICULUM_STATE_KIND = 'ee_curriculum';
+let _cpTimer = null, _cpPending = null, _cpResolvers = [], _cpLastPush = null;
+// 直近に画面へ適用した「完全な」状態。週チェックの土台に使う。
+// ★これが無いと事故る: 端末の保存領域が一杯 / 生徒ID未確定でローカル保存だけ失敗したまま
+//   サーバ由来のプランが描画された状態で週チェックを押すと、loadCurriculumState() が null →
+//   {completed_weeks:[...]} だけのスタブがサーバの完全なプランを上書きして永久消失する
+//   (3並列review が実証)。
+let _eeCurriculumMemState = null;
+// memState が「どの生徒のものか」。pin が後から確定する経路 (token はあるが生徒ID未確定 →
+// 別タブで別生徒がログイン) で、前の生徒の内容が新しい生徒の器へ流れ込むのを止める
+let _eeCurriculumMemSid = null;
+// 生成中フラグ。サーバ復元が「⏳ 生成中…」表示や入力途中のフォームを巻き戻さないための門
+let _eeCurriculumBusy = false;
+// この画面で生成を完了したか (完了後はサーバ側の古いプランで置き換えない)
+let _eeGeneratedThisPage = false;
+// 生徒がカリキュラムのフォームを自分で触ったか (isTrusted なイベントのみ)。
+// 触っていたらサーバ復元でフォームを書き戻さない (入力が勝手に巻き戻る回帰を防ぐ)
+let _eeCurriculumFormDirty = false;
+// セッション期限切れを検知したか (english-exam.html は auth-guard を読まないので、
+// token 文字列が残ったまま実は無効、という状態があり得る)
+let _eeAuthExpired = false;
+// 初回のサーバ突合が終わるまで、デバウンス push を発火させないための門。
+// ★これが無いと事故る: 応答が返る前に週チェックを押すと、内容は古いのに _updated_at だけ
+//   「今」になったローカルが勝ち、別端末で作った新しいプランをサーバごと潰す (3並列review 指摘)
+let _eeSyncGateOpen = false;
+let _eeSyncGateWaiters = [];
+// ページを開いた時点のローカルの新しさ。サーバとの勝敗判定はこれで行う。
+// ★突合の途中で生徒が週チェックを押すとローカルの _updated_at が「今」になり、内容は古いのに
+//   常に勝ってしまう。判定基準を読み込み時点に固定して、その事故を断つ (2周目 review 指摘)
+let _eeLoadStamp = 0;
+function _openCurriculumSyncGate() {
+  _eeSyncGateOpen = true;
+  const ws = _eeSyncGateWaiters; _eeSyncGateWaiters = [];
+  ws.forEach(fn => { try { fn(); } catch (_) {} });
+}
+
+// 現在の生徒ID (数字のみ・未確定なら '')
+function _curriculumCurrentSid() {
+  try {
+    const ss = JSON.parse(localStorage.getItem('ai_juku_session_student') || '{}') || {};
+    if (ss && ss.id !== null && ss.id !== undefined && /^\d+$/.test(String(ss.id))) return String(ss.id);
+  } catch (_) {}
+  return '';
+}
+
+function _curriculumApiBase() {
+  return (window.location.hostname === 'localhost' && window.location.port === '8090')
+    ? 'http://localhost:8000' : window.location.origin;
+}
+// この画面がサーバ通信に使ってよい token。
+// ★pin-once をサーバ側にも効かせる: ローカルのキーはページ寿命で pin されるのに token だけ
+//   毎回読み直すと、共用端末で別タブから別生徒がログインした瞬間に「ローカルは A の器・
+//   サーバは B の行」へ書き分けてしまい、B のプランを A の内容で丸ごと潰す (3並列review 指摘)。
+function _curriculumToken() {
+  let t = null;
+  try { t = localStorage.getItem('ai_juku_session_token'); } catch (_) { return null; }
+  if (!t) return null;
+  if (_eeAuthExpired) return null;   // 401 を見た後は無駄撃ちしない
+  // 🔐 塾長のなりすまし (ceo.html「生徒として入る」) では生徒のアカウントを書き換えない。
+  //   token は "<種別>.<生徒ID>.<期限>.<署名>" を base64 したもの (server/main.py _sign_session_token)
+  try {
+    const head = atob(t.replace(/-/g, '+').replace(/_/g, '/')).split('.')[0];
+    if (head === 'impersonation') return null;
+  } catch (_) { /* デコードできない形式は従来どおり通す */ }
+  const pinned = _eeScopedKeyPins['ee_curriculum_v1'] || null;
+  if (pinned) {
+    // 匿名として始めた画面はサーバに触らない (途中で誰かがログインしても匿名分を流し込まない)
+    if (/__anon$/.test(pinned)) return null;
+    const m = /__(\d+)$/.exec(pinned);
+    const now = _curriculumCurrentSid();
+    if (m && now && m[1] !== now) {
+      console.warn('[curriculum] 生徒が切り替わったためサーバ同期を停止 (pin=' + m[1] + ')');
+      return null;
+    }
+  }
+  return t;
+}
+// 同期の順序付けに使う時刻。旧レコード (このコミット以前に保存されたもの) には _updated_at が
+// 無いので saved_at で代用する。どちらも無ければ 0 = 「順序不明」
+function _curriculumStamp(o) {
+  if (!o || typeof o !== 'object') return 0;
+  const t = Date.parse(o._updated_at || '') || Date.parse(o.saved_at || '') || 0;
+  return Number.isFinite(t) ? t : 0;
+}
+// 「プランとして完全か」。スタブ (週チェックだけ等) をサーバへ送らないための門番
+function _curriculumStateIsComplete(s) {
+  return !!(s && typeof s === 'object' && s.exam_id
+    && Array.isArray(s.weekly_roadmap) && s.weekly_roadmap.length);
+}
+
+// memState は「同じ生徒のもの」のときだけ使う
+function _curriculumMemState() {
+  if (!_eeCurriculumMemState) return null;
+  const now = _curriculumCurrentSid();
+  if (_eeCurriculumMemSid && now && _eeCurriculumMemSid !== now) return null;
+  return _eeCurriculumMemState;
+}
+function _setCurriculumMemState(s) {
+  if (!_curriculumStateIsComplete(s)) return;
+  _eeCurriculumMemState = s;
+  _eeCurriculumMemSid = _curriculumCurrentSid() || null;
+}
+
+// この画面で今いちばん新しい状態。
+// ★localStorage を無条件に優先してはいけない: 端末の保存領域が一杯 / プライベートモード /
+//   生徒ID未確定 で書き込みが失敗すると、画面にはサーバ由来の新プランが出ているのに
+//   localStorage には古いプランが残る。そこで週チェックを押すと古い方が「今の時刻」で
+//   保存され、サーバの新プランを潰す (3並列review が2周にわたり別の口から指摘)。
+function _bestCurriculumState() {
+  const local = loadCurriculumState();
+  const mem = _curriculumMemState();
+  if (!_curriculumStateIsComplete(local)) return _curriculumStateIsComplete(mem) ? mem : local;
+  if (!_curriculumStateIsComplete(mem)) return local;
+  return _curriculumStamp(mem) > _curriculumStamp(local) ? mem : local;
+}
+
+// サーバへ保存。既定は 800ms デバウンス (週チェックの連打で PUT を撃ち続けないため)。
+// 戻り値は「この呼び出しぶんが最終的に保存できたか」の Promise。
+// ⚠️ デバウンスで潰された呼び出しの Promise も必ず解決する (未解決のまま捨てると
+//    generateCurriculum の await が永久に返らない)
+// ⚠️ 送らなかった場合も _cpLastPush を false で更新する (古い成功 promise が残っていると
+//    「アカウントに保存しました」と嘘の案内を出してしまう)
+function _pushCurriculumState(state, immediate) {
+  const token = _curriculumToken();
+  if (!token || !_curriculumStateIsComplete(state)) {
+    _cpLastPush = Promise.resolve(false);
+    return _cpLastPush;
+  }
+  _cpPending = state;
+  const p = new Promise(resolve => { _cpResolvers.push(resolve); });
+  _cpLastPush = p;
+  if (_cpTimer) { clearTimeout(_cpTimer); _cpTimer = null; }
+  const fire = () => {
+    _cpTimer = null;
+    const body = JSON.stringify({ payload: _cpPending });
+    _cpPending = null;
+    const resolvers = _cpResolvers; _cpResolvers = [];
+    const done = (ok) => { resolvers.forEach(r => { try { r(ok); } catch (_) {} }); };
+    fetch(`${_curriculumApiBase()}/api/student-state/${CURRICULUM_STATE_KIND}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body,
+      // 離脱時のフラッシュを届かせる。keepalive の body 上限は 64KB なので小さいときだけ付ける
+      keepalive: body.length < 60000,
+    }).then(res => {
+      if (!res.ok) console.warn('[curriculum] サーバ保存 失敗 status=' + res.status);
+      done(res.ok);
+    }).catch(e => { console.warn('[curriculum] サーバ保存 失敗:', e); done(false); });
+  };
+  // ★デバウンス push は初回のサーバ突合が終わるまで待つ (上の _eeSyncGateOpen 参照)。
+  //   immediate は突合処理自身が使うので門を通さない (通すとデッドロックする)
+  if (immediate) fire();
+  else if (_eeSyncGateOpen) _cpTimer = setTimeout(fire, 800);
+  else _eeSyncGateWaiters.push(() => { if (_cpPending) _cpTimer = setTimeout(fire, 800); });
+  return p;
+}
+
+// 突合でサーバ側を採用したときに、門待ちしていた古い push を取り消す
+// (取り消さないと、門が開いた瞬間に古いローカルがサーバを上書きする)
+function _cancelPendingCurriculumPush() {
+  if (_cpTimer) { clearTimeout(_cpTimer); _cpTimer = null; }
+  _cpPending = null;
+  const resolvers = _cpResolvers; _cpResolvers = [];
+  resolvers.forEach(r => { try { r(false); } catch (_) {} });
+}
+
+// 週チェック直後 (デバウンス 800ms 中) にタブを閉じても失われないよう、離脱時に即送信する
+window.addEventListener('pagehide', () => {
+  try { if (_cpTimer && _cpPending) _pushCurriculumState(_cpPending, true); } catch (_) {}
+});
+
+// サーバから復元。
+// 戻り値: 状態オブジェクト / null (サーバに未保存) / undefined (取得できなかった)
+// ★undefined と null を分けるのが要点: 401/429/5xx/オフラインを「サーバに無い」と誤読すると、
+//   古いローカルで新しいサーバ状態を即上書きしてしまう (3並列review 指摘)。
+function _fetchCurriculumState() {
+  const token = _curriculumToken();
+  if (!token) return Promise.resolve(undefined);
+  return fetch(`${_curriculumApiBase()}/api/student-state/${CURRICULUM_STATE_KIND}`, {
+    headers: { 'Authorization': 'Bearer ' + token },
+  }).then(res => {
+    // 401/403 = セッションが実は無効。english-exam.html は auth-guard を読まないので
+    // ここでしか気づけない。以後の同期を止め、生徒には「この端末にだけ保存される」と伝える
+    if (res.status === 401 || res.status === 403) _eeAuthExpired = true;
+    if (!res.ok) return undefined;
+    return res.json().then(j => (j && j.payload && typeof j.payload === 'object') ? j.payload : null);
+  }).catch(() => undefined);
+}
+
+// サーバ由来の状態で上書きする直前に、消える旧ローカルを退避しておく。
+// cache-purge.js の quarantine と同じ思想 (サーバに正の無いデータを「コピー無しで消さない」)。
+// 読み手のいないキーなので誰の画面にも出ない = 漏洩ゼロ、後から救出は可能。
+function _stashReplacedCurriculum(prev) {
+  try {
+    const k = _pinnedScopedKey('ee_curriculum_v1');
+    if (!k || !prev) return;
+    localStorage.setItem(k + '__replaced', JSON.stringify(prev));
+  } catch (_) { /* 容量不足なら諦める (退避は best effort) */ }
+}
+
+// ローカルへの書き込みだけを行う (サーバ由来の状態を書き戻すときに使う。
+// _updated_at を打ち直さない = サーバとローカルの時刻が一致し、無限に push し合わない)。
+// silent=true: 生徒が保存操作をしていない復元経路用。警告バナー (と自動スクロール) を出さない
 // 戻り値: 保存できたら true、失敗したら「画面に出した警告文」(string)。
-// 呼び出し側がこの後 #curriculumResult を innerHTML で描き直す場合、!== true なら描画後に
-// _curriculumWarn(戻り値) を再掲すること (先のバナーは描き直しで消える上、失敗理由ごとに
-// 文言が違う — quota 失敗にログイン文言を出すと誤誘導になる)。
-function saveCurriculumState(data) {
+function _writeCurriculumLocal(rec, silent) {
   const k = _pinnedScopedKey('ee_curriculum_v1');
   if (!k) {
     const msg = '⚠️ ログイン状態を確認できないため保存できませんでした。この内容はページを再読み込みすると消えます。再ログイン後にもう一度お試しください。';
     console.warn('[curriculum] 生徒が確定できないため保存をスキップ');
-    _curriculumWarn(msg);
+    if (!silent) _curriculumWarn(msg);
     return msg;
   }
-  try { localStorage.setItem(k, JSON.stringify(data)); } catch (e) {
+  try { localStorage.setItem(k, JSON.stringify(rec)); } catch (e) {
     // 保存領域不足・iOSプライベートモードなど。true を返すと「保存できたら true」の契約が破れ、
     // 生成結果が黙って消える (quota 実測プローブで検出された穴)
     const msg = '⚠️ 端末の保存領域に書き込めず、保存できませんでした。この内容はページを再読み込みすると消えます。ブラウザのプライベートモード解除や空き容量の確保をお試しください。';
     console.warn('[curriculum] 保存失敗 (storage):', e);
-    _curriculumWarn(msg);
+    if (!silent) _curriculumWarn(msg);
     return msg;
   }
   return true;
 }
 
+// 戻り値: 保存できたら true、失敗したら「画面に出した警告文」(string)。
+// ★これは **ローカル保存の結果** を返す。サーバ保存は非同期で走るので、失敗文言を出す前に
+//   _cpLastPush を await して「サーバには入った」なら文言を差し替えること (generateCurriculum 参照)。
+// 呼び出し側がこの後 #curriculumResult を innerHTML で描き直す場合、!== true なら描画後に
+// _curriculumWarn(戻り値) を再掲すること (先のバナーは描き直しで消える上、失敗理由ごとに
+// 文言が違う — quota 失敗にログイン文言を出すと誤誘導になる)。
+function saveCurriculumState(data) {
+  const rec = Object.assign({}, data, { _updated_at: new Date().toISOString() });
+  const result = _writeCurriculumLocal(rec);
+  // 端末に書けなくても週チェックの土台は残す (次の週チェックがスタブにならない)
+  _setCurriculumMemState(rec);
+  // ★ローカル保存に失敗してもサーバへは送る: 端末が書けない (容量/プライベートモード/ID未確定)
+  //   ときこそサーバが唯一の保管場所になる
+  _pushCurriculumState(rec);
+  return result;
+}
+
 // 保存できなかったことを画面にも出す (1〜2分かけた生成結果が黙って消えるのを防ぐ)
-function _curriculumWarn(msg) {
+// tone='info' なら青系 (良い知らせを赤いエラーバナーで出さない)
+function _curriculumWarn(msg, tone) {
   try {
     const el = document.getElementById('curriculumResult');
     if (!el) return;
@@ -5077,8 +5310,10 @@ function _curriculumWarn(msg) {
     }
     const d = document.createElement('div');
     d.setAttribute('data-ee-warn', '1');
-    d.style.cssText = 'margin:0.6rem 0;padding:0.6rem 0.8rem;border-radius:8px;'
-      + 'background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.4);color:#fecaca;font-size:0.85rem;';
+    d.style.cssText = 'margin:0.6rem 0;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.85rem;'
+      + (tone === 'info'
+        ? 'background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.4);color:#bfdbfe;'
+        : 'background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.4);color:#fecaca;');
     d.textContent = msg;
     el.prepend(d);
     // sticky ヘッダー (~115px) がコンテナ先頭を覆い隠すため、バナー自体を画面内へスクロール
@@ -5130,20 +5365,112 @@ function bindCurriculumForm() {
 
   genBtn.addEventListener('click', generateCurriculum);
 
+  // ☁️ 2026-08-04: 未ログインで作ったプランはこの端末にしか残らず、ログイン後は本人のバケットを
+  //   読むので見えなくなる (「毎回リセットされる」の原因のひとつ)。作る前に伝えて防ぐ。
+  if (!_curriculumToken()) _showCurriculumLocalOnlyNotice(false);
+
+  // 生徒が自分でフォームを触ったかを記録 (isTrusted=合成イベントは数えない)。
+  // 触っていたらサーバ復元でフォームを書き戻さない
+  const _curForm = document.getElementById('curriculumForm');
+  if (_curForm) {
+    ['input', 'change'].forEach(ev => _curForm.addEventListener(ev, e => {
+      if (e && e.isTrusted) _eeCurriculumFormDirty = true;
+    }, true));
+  }
+
   // 既存のカリキュラムがあれば復元
   const saved = loadCurriculumState();
-  if (saved && saved.exam_id) {
+  _eeLoadStamp = _curriculumStamp(saved);   // 勝敗判定の基準を読み込み時点で固定 (上の説明参照)
+  if (saved && saved.exam_id) _applyCurriculumState(saved);
+
+  // ☁️ 2026-08-04 [curriculum-server-state] サーバ側とすり合わせる。
+  //   ・サーバの方が新しい (別端末で作った / この端末のストレージが消えた) → サーバのを表示 + ローカルへ書き戻し
+  //   ・サーバに無い (この機能より前に作られたプラン) → いま持っているものをアップロード
+  //   ローカル描画は上で済ませてあるので、この非同期処理が失敗しても画面は従来どおり動く
+  _fetchCurriculumState().then(remote => {
+    // undefined = 取得できなかった (401/429/5xx/オフライン)。「サーバに無い」と誤読して
+    // 古いローカルで新しいサーバ状態を潰さないよう、何もしない
+    if (remote === undefined) {
+      if (_eeAuthExpired) _showCurriculumLocalOnlyNotice(true);
+      return;
+    }
+    const local = _bestCurriculumState();
+    const remoteOk = _curriculumStateIsComplete(remote);
+    const localOk = _curriculumStateIsComplete(local);
+    if (!remoteOk) {
+      if (localOk) _pushCurriculumState(local, true);   // 初回同期 (サーバへ引き上げ)
+      return;
+    }
+    if (localOk) {
+      // ★ls は「今のローカル」ではなく **読み込み時点** の新しさ。突合を待っている数秒に
+      //   生徒が週チェックを押しても、内容が古いローカルが勝たないようにするため
+      const ls = _eeLoadStamp;
+      const rs = _curriculumStamp(remote);
+      if (ls > rs) { _pushCurriculumState(local, true); return; }  // ローカルが新しい (オフライン編集など)
+      // ★同一なら何もしない: 毎ロード再適用すると、応答が返るまでの数秒に生徒が入力した
+      //   受験日/レベルがフォームごと巻き戻る (3並列review が実証)
+      if (ls === rs) return;
+    }
+    // 生成中 / この画面で生成し終えた後は、サーバ側で置き換えない
+    // (生成し立てのプランが「読み込み時点は古かった」という理由で捨てられるのを防ぐ)
+    if (_eeCurriculumBusy || _eeGeneratedThisPage) return;
+    // 門待ちの古い push を取り消してからサーバ側を採用する (順序が逆だと上書きし返す)
+    _cancelPendingCurriculumPush();
+    // _updated_at を打ち直さずに書き戻す (打ち直すとローカルが常に「新しい」ことになり push が往復する)
+    const wrote = _writeCurriculumLocal(remote, true);   // silent: 生徒の保存操作ではない
+    // ★退避は本書きの **後**。先にやると 40KB のコピーで容量を食い切り、本書きの方を
+    //   失敗させて「画面は新プラン・ローカルは旧プラン」の危険な状態を自分で作る
+    if (wrote === true && localOk) _stashReplacedCurriculum(local);
+    _setCurriculumMemState(remote);
+    _applyCurriculumState(remote);
+  }).catch(e => { console.warn('[curriculum] サーバ復元に失敗 (ローカルのまま続行):', e); })
+    .then(_openCurriculumSyncGate, _openCurriculumSyncGate);
+}
+
+// 「このプランはこの端末にだけ保存されます」の案内。未ログイン時と、
+// token は残っているがセッションが切れている時 (expired=true) の両方で出す
+function _showCurriculumLocalOnlyNotice(expired) {
+  const genBtn = document.getElementById('curGenerateBtn');
+  if (!genBtn || !genBtn.parentNode || document.getElementById('curAnonNotice')) return;
+  const note = document.createElement('div');
+  note.id = 'curAnonNotice';
+  // ★flex-basis:100% 必須: 挿入先 .cf-row は display:flex なので、幅指定が無いと
+  //   ボタンの右隣に並んで潰れる (ブロックで下に出す想定にならない)
+  note.style.cssText = 'flex-basis:100%;width:100%;margin-top:0.5rem;padding:0.55rem 0.75rem;border-radius:8px;'
+    + 'background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);color:#fde68a;font-size:0.82rem;line-height:1.5;';
+  note.innerHTML = (expired
+    ? 'ℹ️ ログインの有効期限が切れているため、ここで作った学習プランは<strong>この端末にだけ</strong>保存されます。'
+    : 'ℹ️ 未ログインで作った学習プランは<strong>この端末にだけ</strong>保存されます。')
+    + '<a href="login.html" style="color:#fbbf24;font-weight:700;">ログイン</a>してから作ると、'
+    + '機種変更やブラウザのデータ削除の後でも残ります。';
+  genBtn.parentNode.insertBefore(note, genBtn.nextSibling);
+}
+
+// 保存済みの状態をフォーム + 結果カードに反映する (ローカル復元とサーバ復元の共通処理)
+function _applyCurriculumState(saved) {
+  if (!saved || !saved.exam_id) return;
+  const examSel = document.getElementById('curExamSelect');
+  const gradeSel = document.getElementById('curGradeSelect');
+  const dateInp = document.getElementById('curExamDate');
+  if (!examSel || !gradeSel || !dateInp) return;
+  // 週チェックの土台 (ローカル保存が効かない端末でもスタブでサーバを潰さないため)
+  _setCurriculumMemState(saved);
+  // ★生徒が自分でフォームを触っていたら入力は書き戻さない。結果カードだけ差し替える
+  //   (サーバ応答を待つ数秒のあいだに入れた受験日/レベルが巻き戻る回帰を防ぐ)
+  if (!_eeCurriculumFormDirty) {
     examSel.value = saved.exam_id;
     examSel.dispatchEvent(new Event('change'));
     if (saved.target_grade) gradeSel.value = saved.target_grade;
     if (saved.exam_date) {
-      dateInp.value = saved.exam_date.slice(0, 10);
+      dateInp.value = String(saved.exam_date).slice(0, 10);
       dateInp.dispatchEvent(new Event('change'));
     }
-    if (saved.current_level) document.getElementById('curCurrentLevel').value = saved.current_level;
-    if (saved.daily_minutes) document.getElementById('curDailyMinutes').value = saved.daily_minutes;
-    renderCurriculum(saved);
+    const lv = document.getElementById('curCurrentLevel');
+    const dm = document.getElementById('curDailyMinutes');
+    if (saved.current_level && lv) lv.value = saved.current_level;
+    if (saved.daily_minutes && dm) dm.value = saved.daily_minutes;
   }
+  renderCurriculum(saved);
 }
 
 async function generateCurriculum() {
@@ -5179,6 +5506,8 @@ async function generateCurriculum() {
   resultBox.innerHTML = '<p class="ee-loading">⏳ AI が個別カリキュラムを設計中… (1〜2分ほど・画面を閉じずにお待ちください)</p>';
   resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
   genBtn.disabled = true; genBtn.textContent = '⏳ 生成中...';
+  // 生成中はサーバ復元に画面を触らせない (⏳ 表示や入力を旧プランで上書きさせない)
+  _eeCurriculumBusy = true;
   try {
     // 🛟 2026-07-20: カリキュラム生成は非ストリーミングで 1〜3 分かかり、Vercel rewrite (/api/:path*)
     // 経由だと応答前に 502 ROUTER_EXTERNAL_TARGET_ERROR で切られる (本番実測)。長時間応答を
@@ -5214,17 +5543,31 @@ async function generateCurriculum() {
     // 順序は save→render のまま: render は保存済み state から completed_weeks を読むので、
     // 逆にすると旧プランの週チェックが新プランに残って見える。
     const _saved = saveCurriculumState({ ...data, ...payload, saved_at: new Date().toISOString() });
+    _eeGeneratedThisPage = true;
     renderCurriculum(data);
     if (_saved !== true) {
-      // 失敗理由に応じた文言 (save が画面に出した文) をそのまま再掲する。
-      // ここで固定文言を出すと quota 失敗にログイン文言が出る誤誘導になる (close-out review 検出)
-      _curriculumWarn(typeof _saved === 'string' ? _saved
-        : '⚠️ この学習プランは端末に保存されていません。ページを再読み込みすると消えます。');
+      // ☁️ 2026-08-04: 端末に書けなくても、ログイン済みならサーバに入っていれば消えていない。
+      //   その場合に「再読み込みすると消えます」を出すのは嘘なので、push の結果を待って出し分ける。
+      //   ★必ずタイムアウトを噛ませる: モバイル回線で PUT が無応答のままだと await が返らず、
+      //     finally に到達しない = 生成ボタンが「⏳ 生成中...」で固まる (3並列review 指摘)
+      const _remoteOk = await Promise.race([
+        (_cpLastPush || Promise.resolve(false)).catch(() => false),
+        new Promise(r => setTimeout(() => r(false), 8000)),
+      ]);
+      if (_remoteOk) {
+        _curriculumWarn('ℹ️ この端末には保存できませんでしたが、アカウントに保存したので次に開いたときに復元されます。', 'info');
+      } else {
+        // 失敗理由に応じた文言 (save が画面に出した文) をそのまま再掲する。
+        // ここで固定文言を出すと quota 失敗にログイン文言が出る誤誘導になる (close-out review 検出)
+        _curriculumWarn(typeof _saved === 'string' ? _saved
+          : '⚠️ この学習プランは端末に保存されていません。ページを再読み込みすると消えます。');
+      }
     }
   } catch (e) {
     console.error('[curriculum] failed', e);
     resultBox.innerHTML = `<p class="ee-error">⚠️ 生成失敗: ${escapeHtml(String(e.message || e))}</p>`;
   } finally {
+    _eeCurriculumBusy = false;
     genBtn.disabled = false; genBtn.textContent = '🤖 AI に学習プランを生成してもらう';
   }
 }
@@ -5241,7 +5584,9 @@ function renderCurriculum(data) {
   const milestones = Array.isArray(data.milestone_assessments) ? data.milestone_assessments : [];
 
   // 進捗チェック (localStorage の completed_weeks)
-  const progress = loadCurriculumState() || {};
+  // ★_bestCurriculumState (ローカルとメモリの新しい方) を使う。localStorage 直読みだと、
+  //   書き込みに失敗した端末で「新プランのロードマップ + 旧プランの✅」という食い違いが出る
+  const progress = _bestCurriculumState() || {};
   // Array.isArray 必須: new Set(5) / new Set({}) は throw、new Set("23") は Set{"2","3"} になって
   //   生徒が押していない ✅ が出る (mypage 側 renderCurriculumWeekWidget と同じガード)
   const completed = new Set(Array.isArray(progress.completed_weeks) ? progress.completed_weeks : []);
@@ -5389,7 +5734,10 @@ function renderCurriculum(data) {
       const w = cb.dataset.week || '';
       cb.closest('.cur-week-card').classList.toggle('done', cb.checked);
       if (w === '') return;  // 保険 (描画側で必ず非空キーを振っている)
-      const cur = loadCurriculumState() || {};
+      // ★土台は「ローカルとメモリの新しい方」。ローカル直読みだと、書き込みが効かない端末
+      //   (容量一杯 / プライベートモード / 生徒ID未確定) で古いプランや {} を土台にしてしまい、
+      //   サーバの新しいプランを丸ごと潰す (3並列review が2周にわたり別の口から指摘)
+      const cur = _bestCurriculumState() || {};
       // Array.isArray 必須 (書き込み側): 描画側だけガードすると、壊れ値 "23" が初回チェックで
       // new Set("23")={"2","3"} に洗浄されて ["2","3",...] で保存され、両画面に恒久の偽✅が生える。
       // 数値 5 は new Set(5) が throw してチェックが無言で消える (toggle 済みの見た目だけ残る)
