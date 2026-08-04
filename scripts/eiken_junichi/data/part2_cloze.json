@@ -1,0 +1,131 @@
+{
+  "part": 2,
+  "passages": [
+    {
+      "id": "p2_1",
+      "title": "Painting Cities Cool",
+      "theme": "環境・エネルギー",
+      "text": "As summers grow hotter, cities face a problem that rural areas largely escape. Dense concentrations of asphalt roads, dark rooftops, and concrete buildings absorb sunlight during the day and release it slowly at night. As a result, urban centers can be several degrees warmer than the surrounding countryside, a phenomenon known as the urban heat island effect. This extra warmth is more than an inconvenience; it drives up demand for air conditioning, which in turn ( 1 ), worsening the very problem it is meant to relieve. During severe heat waves, the effect can even threaten the lives of elderly and vulnerable residents.\n\nOne increasingly popular response is surprisingly simple: painting rooftops white. Light-colored surfaces reflect far more sunlight than dark ones, so buildings topped with reflective coatings stay noticeably cooler inside. Studies in several large cities have found that such \"cool roofs\" can lower indoor temperatures enough to cut cooling costs substantially. ( 2 ), the benefits extend beyond individual buildings. When reflective roofs are adopted across a whole neighborhood, the surrounding air temperature drops measurably, easing the heat island effect for everyone. Because the cooling is shared, even people without reflective roofs of their own feel the difference on the hottest days.\n\nYet reflective roofs are not a perfect solution. In colder months, the very surfaces that keep buildings cool in summer also reduce the free warmth that darker roofs would provide, ( 3 ) heating bills in winter. For this reason, some researchers argue that cities in temperate climates should weigh the seasonal trade-offs carefully rather than painting every roof white. A roof that saves money in summer, they note, may quietly cost the same household more in winter. Even so, for the many rapidly growing cities in hot regions, the case for reflective surfaces remains compelling.",
+      "word_count": 291,
+      "blanks": [
+        {
+          "n": 1,
+          "choices": [
+            "lowers the temperature outdoors",
+            "releases yet more heat into the streets",
+            "cuts the building's power use",
+            "shields residents from the sun"
+          ],
+          "answer": 1,
+          "rationale": "空所直後に「それが本来和らげるはずの問題そのものを悪化させる」とあり、この文章の問題＝都市の暑さ。エアコンが屋外に熱を排出して暑さを増幅する releases yet more heat into the streets だけが「問題を悪化させる」に整合。lowers the temperature outdoors（屋外を冷やす）や shields residents from the sun（日差しから守る）は暑さを悪化させないので不可。cuts the building's power use（消費電力を減らす）はエアコンの事実にも反し、暑さ悪化とも無関係。"
+        },
+        {
+          "n": 2,
+          "choices": [
+            "In contrast",
+            "For instance",
+            "As a result",
+            "Moreover"
+          ],
+          "answer": 3,
+          "rationale": "前文＝クールルーフが個々の建物の冷房費を下げる、空所文＝利点は建物単体を超えて広がる、とさらなる利点を追加している。追加を表す Moreover が正解。In contrast は逆接で不可、As a result は因果（費用減が近隣の冷却を生むわけではない）で不可、For instance は近隣冷却が費用減の「例」ではないため不可。"
+        },
+        {
+          "n": 3,
+          "choices": [
+            "adding to",
+            "cutting down on",
+            "making up for",
+            "doing away with"
+          ],
+          "answer": 0,
+          "rationale": "空所前＝夏に涼しくする反射面は冬には「ただで得られる暖かさ」を減らす、とあるので冬の暖房費は増える。増加を表す adding to が正解。cutting down on（減らす）・doing away with（無くす）は逆、making up for（埋め合わせる）は文意が成立しない。"
+        }
+      ]
+    },
+    {
+      "id": "p2_2",
+      "title": "The Paradox of the Clumsy Robot",
+      "theme": "テクノロジー・科学",
+      "text": "When people imagine the tasks that computers find most difficult, they often picture activities that challenge the human mind, such as playing chess or solving complex equations. Machines, ( 1 ), mastered these skills long ago. A program defeated the world chess champion decades back, and today ordinary software performs in seconds calculations that would take a person hours. What continues to defeat even advanced robots is something far humbler: picking up an unfamiliar object, walking across a cluttered room, or recognizing a friend's face in a crowd.\n\nThis puzzle has a name among researchers: Moravec's paradox, and its explanation lies in evolution. Skills such as vision, balance, and the delicate control of our hands developed over millions of years, and the brain has grown so efficient at them that they feel effortless. Abstract reasoning, on the other hand, is a very recent achievement, so we perform it slowly and consciously. The result is that we consistently ( 2 ): because the oldest skills run silently beneath our awareness, we wrongly assume they must be the easiest of all. Ironically, the mental feats we are proudest of turn out to be the ones machines find easiest to copy.\n\nThe practical consequences are significant. Factories have automated tasks involving calculation and memory with ease, yet many jobs that rely on nimble fingers and quick judgment ( 3 ). A robot can assemble a car on a fixed line, but it struggles to fold soft laundry or harvest ripe strawberries without crushing them. Tasks a small child manages without thinking can stump the most sophisticated machine ever built. Engineers are steadily closing this gap, but progress is slow, and for now the human body remains a remarkably hard act for machines to follow.",
+      "word_count": 282,
+      "blanks": [
+        {
+          "n": 1,
+          "choices": [
+            "for instance",
+            "as a result",
+            "by contrast",
+            "in the same way"
+          ],
+          "answer": 2,
+          "rationale": "前文＝人はチェスや数式など「人間の頭脳に難しい」ことを機械も苦手だと想像する、空所文＝機械はそれをとっくに習得済み、と予想と現実が対立している。逆接の by contrast が正解。for instance（例示）・as a result（因果）は関係が合わず、in the same way（同様に）はむしろ逆で不可。"
+        },
+        {
+          "n": 2,
+          "choices": [
+            "misjudge how they evolved",
+            "exaggerate their real value",
+            "explain them with ease",
+            "underestimate their true difficulty"
+          ],
+          "answer": 3,
+          "rationale": "コロン以降の「古い技能は無意識下で働くので最も簡単だと誤解する」が空所の言い換え。簡単だと思い込む＝難しさを過小評価する、で underestimate their true difficulty が正解。exaggerate their real value（過大評価）は逆方向、misjudge how they evolved（進化の仕方を誤解）・explain them with ease（容易に説明）は手がかりと無関係。"
+        },
+        {
+          "n": 3,
+          "choices": [
+            "were the first to disappear",
+            "have proved far harder to automate",
+            "are no longer needed at all",
+            "demand very little skill"
+          ],
+          "answer": 1,
+          "rationale": "yet で「計算・記憶は容易に自動化された」事実と対比され、直後の例（車は組めるが柔らかい洗濯物は畳めず、苺を潰さず収穫できない）からも、器用さと判断を要す仕事は自動化が難しいと分かる。have proved far harder to automate が正解。were the first to disappear（真っ先に消えた）・are no longer needed（不要になった）・demand very little skill（ほとんど技能不要）はいずれも文意と逆。"
+        }
+      ]
+    },
+    {
+      "id": "p2_3",
+      "title": "The Penny Universities",
+      "theme": "歴史・文化",
+      "text": "In the middle of the seventeenth century, a new kind of gathering place began to appear in the cities of Europe: the coffee house. Taverns had long offered wine and beer, but their customers often grew loud and unsteady as the evening wore on. Coffee houses were different. Because the drink they served sharpened the mind rather than dulling it, conversation there tended to be ( 1 ). Men lingered for hours over a single cup, reading newspapers and debating the questions of the day. A visitor stepping inside would hear not the slurred songs of a tavern but the steady hum of argument and inquiry.\n\nWhat made these establishments truly remarkable was their openness. For the price of a single cup, usually just a penny, almost anyone could enter, sit at a common table, and join the discussion, regardless of rank. A merchant might find himself seated beside a poet or a scientist. ( 2 ), Londoners nicknamed the coffee houses \"penny universities,\" since a visitor could learn as much from an afternoon of conversation as from an expensive book. News, gossip, and bold new theories all circulated freely across the crowded rooms.\n\nThis free flow of ideas had consequences that reached far beyond idle talk. Several famous institutions trace their origins to a particular coffee house where specialists once gathered; the great insurance market of Lloyd's, for example, grew out of one frequented by sailors and traders. Learned societies, too, often held their earliest meetings around such tables, where scholars could test their ideas on a curious audience. Rulers, ( 3 ), saw little to celebrate in this ferment; they viewed the coffee houses with deep suspicion, fearing that the same free exchange bred criticism of the government, and more than one king tried, without lasting success, to shut them down.",
+      "word_count": 294,
+      "blanks": [
+        {
+          "n": 1,
+          "choices": [
+            "loud and quarrelsome",
+            "brief and unfriendly",
+            "calm and thoughtful",
+            "confused and sleepy"
+          ],
+          "answer": 2,
+          "rationale": "空所前＝コーヒーは頭を鈍らせず冴えさせる、空所後＝一杯で何時間も新聞を読み議論した、から会話は落ち着いて思慮深いと決まる。calm and thoughtful が正解。loud and quarrelsome（騒がしく喧嘩腰）はむしろ酒場側の描写、brief and unfriendly（短くよそよそしい）は「何時間も」に反し、confused and sleepy（混乱し眠い）はコーヒーの効果と逆。"
+        },
+        {
+          "n": 2,
+          "choices": [
+            "For this reason",
+            "In contrast",
+            "By coincidence",
+            "Despite this"
+          ],
+          "answer": 0,
+          "rationale": "安価で誰でも入れて会話から学べる、という前段の性質ゆえに「ペニー大学」と呼ばれた、という因果。For this reason が正解。In contrast（逆接）・Despite this（譲歩）は関係が逆、By coincidence（偶然）は since 節が示す必然的な理由と矛盾する。"
+        },
+        {
+          "n": 3,
+          "choices": [
+            "in addition",
+            "as a result",
+            "for instance",
+            "however"
+          ],
+          "answer": 3,
+          "rationale": "前段＝思想の自由な交流が有益な機関（ロイズや学会）を生んだ、空所文＝支配者はそこに祝うものを見いださず疑いの目で見た、と評価が反転する逆接。however が正解。in addition（追加）・for instance（例示）は評価の反転を表せず、as a result（因果）は「支配者が祝えない」が有益な機関設立の結果ではないため不可。"
+        }
+      ]
+    }
+  ]
+}

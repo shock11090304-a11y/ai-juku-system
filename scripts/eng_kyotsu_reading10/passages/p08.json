@@ -1,0 +1,114 @@
+{
+ "no": 8,
+ "genre": "第4問 相当　語学アプリの利用者レビュー",
+ "title": "A Three-Month Review of a Language Learning App",
+ "theme_ja": "語学アプリのレビュー",
+ "passage": "LinguaStep (language learning app)\nRating: 3 out of 5 stars\nPosted by Kenta_M on May 12\n\nI downloaded LinguaStep three months ago because I wanted to improve my English before a school trip to Australia. The app is free, though a paid plan called Plus costs 600 yen a month.\n\nThe best thing is the daily five-minute lesson. Each lesson has ten short questions, and the app remembers the words I get wrong and shows them again a few days later. I think this system is the smartest part of the whole app. Since February I have finished 68 lessons and learned about 400 new words. My reading speed has clearly improved.\n\nHowever, I have two complaints. First, the free plan gives you only three hearts. If you make three mistakes, you must wait six hours or watch an advertisement before you continue. This rule made me stop studying on days when I was tired. Second, the app almost never asks you to speak. There is a recording exercise, but it appears only in the Plus plan, and even then it sometimes accepts a wrong pronunciation.\n\nWould I recommend it? Yes, but with a warning. LinguaStep is great for building vocabulary, and it fits easily into a busy day. For speaking, though, you will still need a teacher or a partner. I will keep using the free plan until the summer holidays, and then I will decide whether the Plus plan is worth the money.",
+ "word_count": 240,
+ "glossary": [
+  {
+   "word": "LinguaStep",
+   "ja": "リンガステップ(架空の語学学習アプリの名前)"
+  },
+  {
+   "word": "Plus",
+   "ja": "プラス(このアプリの有料プランの名前)"
+  },
+  {
+   "word": "heart",
+   "ja": "ハート(アプリ内で残りの失敗できる回数を表すしるし)"
+  },
+  {
+   "word": "advertisement",
+   "ja": "広告"
+  },
+  {
+   "word": "pronunciation",
+   "ja": "発音"
+  },
+  {
+   "word": "complaint",
+   "ja": "不満・苦情"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "type": "fact_opinion",
+   "q": "Which option best describes an opinion, not a fact, stated by the writer?",
+   "options": [
+    "The Plus plan is available for 600 yen a month.",
+    "The writer stopped studying on days when he was feeling tired.",
+    "The review gives the app three stars out of five, not a perfect score.",
+    "Reviewing missed words is the app's cleverest feature."
+   ],
+   "answer": 4,
+   "evidence": "I think this system is the smartest part of the whole app.",
+   "explanation_ja": "④は 'I think ... is the smartest part' という筆者の主観的な評価であり、意見(opinion)。①②③はいずれも本文に書かれている、確かめられる情報なので事実(fact)。③の 'not a perfect score' は評価語を含むように見えるが、冒頭の 'Rating: 3 out of 5 stars' という表示そのままの内容で、点数という確かめられる事実。",
+   "distractor_ja": "①第1段落「a paid plan called Plus costs 600 yen a month」の通りで、確かめられる事実。　②第3段落「This rule made me stop studying on days when I was tired」の通りで、実際に起きた出来事=事実。　③冒頭の「Rating: 3 out of 5 stars」の通りで、5点満点中3点という事実。「完璧な点数ではない」は評価語のように見えるが、点数を言い換えただけで筆者の判断ではない。"
+  },
+  {
+   "n": 2,
+   "type": "detail",
+   "q": "According to the review, what happens when a free-plan user makes three mistakes?",
+   "options": [
+    "The user must pay for the Plus plan in order to keep studying on that day.",
+    "The user loses all the words learned during that lesson.",
+    "The user waits six hours or watches an advertisement to continue.",
+    "The user answers ten extra questions before the next lesson."
+   ],
+   "answer": 3,
+   "evidence": "If you make three mistakes, you must wait six hours or watch an advertisement before you continue.",
+   "explanation_ja": "第3段落に「三回間違えたら6時間待つか広告を見てから続ける」と明記されている。③がその言い換え。",
+   "distractor_ja": "①有料プランへの支払いが条件だとは書かれていない(待つか広告を見るかの二択)。　②覚えた語が消えるという記述は本文にない。　④「ten short questions」は1レッスンの問題数の話で、罰則ではない。別の箇所の内容とのすり替え。"
+  },
+  {
+   "n": 3,
+   "type": "inference",
+   "q": "Which of the following is most likely true about the writer?",
+   "options": [
+    "He has already decided to pay for the Plus plan this coming summer.",
+    "He believes that the app alone is enough to prepare for his trip.",
+    "His speaking ability has probably improved less than his reading speed has.",
+    "He studied harder on tired days than on days when he felt fine."
+   ],
+   "answer": 3,
+   "evidence": "My reading speed has clearly improved. / the app almost never asks you to speak / For speaking, though, you will still need a teacher or a partner.",
+   "explanation_ja": "「読む速さははっきり伸びた」と述べる一方、アプリはほとんど話させず、話す力には別に先生や相手が必要だと言っている。よって話す力の伸びは読む力ほどではないと推論できる。",
+   "distractor_ja": "①最終文に「夏まで無料プランを使い続けて、それから決める」とあり、有料プランを買うと決めたわけではない。　②最終段落で「話す力についてはやはり先生か話し相手が必要だ」と述べており、アプリだけで旅行の準備が十分だとは考えていない。　④本文は「疲れている日は勉強をやめてしまった」と述べており、逆の内容。"
+  },
+  {
+   "n": 4,
+   "type": "detail",
+   "q": "According to the review, which of the following is true about the recording exercise?",
+   "options": [
+    "It is offered only to Plus users and is not always accurate.",
+    "It is offered to every user, but each session is limited to five minutes.",
+    "It is free to use but appears only once every six hours.",
+    "It works well but is hidden inside the daily five-minute lesson."
+   ],
+   "answer": 1,
+   "evidence": "There is a recording exercise, but it appears only in the Plus plan, and even then it sometimes accepts a wrong pronunciation.",
+   "explanation_ja": "録音練習は有料のPlusプランにしかなく、しかも誤った発音を通してしまうことがある、と本文にある。①がその言い換え。",
+   "distractor_ja": "②全員が使えるとは書かれていない(Plusプラン限定)。本文と逆。「5分」は毎日のレッスンの長さの話。　③無料で使えるとは書かれていない(Plusプラン限定)。「6時間」はハートを3つ失ったときに待つ時間の話で、録音練習の話ではない。　④毎日の5分レッスンの中にあるとは書かれていないうえ、「うまく機能する」も「機械が誤った発音を通すことがある」と食い違う。"
+  },
+  {
+   "n": 5,
+   "type": "purpose",
+   "q": "What is the main purpose of this review?",
+   "options": [
+    "To tell other learners about the good and weak points of this app.",
+    "To warn readers that the app's daily lessons waste their study time.",
+    "To persuade readers to buy the Plus plan for its recording task.",
+    "To explain how the app decides which words to show again later."
+   ],
+   "answer": 1,
+   "evidence": "Would I recommend it? Yes, but with a warning. / The best thing is the daily five-minute lesson. / However, I have two complaints.",
+   "explanation_ja": "筆者は良い点(語彙が増える・続けやすい)と不満(ハート制限・話す練習がない)の両方を挙げ、最後に「勧めるが注意付きで」とまとめている。読者に長所と短所の両方を伝えるのが目的。",
+   "distractor_ja": "②毎日のレッスンは「いちばん良い点」として褒められており、時間の無駄だとは述べていない。　③録音練習は「機械が誤った発音を通してしまうこともある」と批判されており、筆者自身も夏までは無料プランを使うと言っている。購入を勧める投稿ではない。　④間違えた語を数日後に再出題する仕組みは長所の一例として触れられているだけで、その説明が投稿全体の目的ではない。"
+  }
+ ],
+ "translation_ja": "リンガステップ(語学学習アプリ)\n評価:5点満点中3点\n投稿者:Kenta_M 5月12日\n\n私は3か月前にリンガステップをダウンロードした。オーストラリアへの修学旅行の前に英語を上達させたかったからだ。このアプリは無料だが、「プラス」という有料プランは月600円かかる。\n\nいちばん良いのは、1日5分のレッスンだ。1レッスンには短い問題が10問あり、アプリは私が間違えた単語を覚えていて、数日後にもう一度出してくれる。この仕組みこそ、このアプリ全体でいちばん賢い部分だと思う。2月から68レッスンを終え、新しい単語を約400語覚えた。読む速さは明らかに上がった。\n\nしかし、不満が2つある。第一に、無料プランではハートが3つしかもらえない。3回間違えると、続けるには6時間待つか広告を1本見なければならない。この決まりのせいで、疲れている日は勉強をやめてしまった。第二に、このアプリはほとんど話すことを求めてこない。録音練習はあるのだが、それはプラスプランにしか出てこないうえ、機械が誤った発音を通してしまうこともある。\n\n勧めるかって? 勧めるが、注意付きだ。リンガステップは語彙を増やすのにとても良く、忙しい一日にも無理なく入り込む。ただし話す力については、やはり先生か話し相手が必要だ。私は夏休みまで無料プランを使い続けて、それから決めるつもりだ。",
+ "long_theme_ja": "語学学習アプリ「リンガステップ」を3か月使った利用者のレビュー(良い点と物足りない点)",
+ "lead": "You found the following review on a website for language learners."
+}

@@ -1,0 +1,326 @@
+{
+ "no": 1,
+ "date": "7/27",
+ "title": "文型と動詞（5文型・自動詞/他動詞・SVOC）",
+ "goal": "動詞の後ろに何が来るかで文型を判定し、自動詞と他動詞、SVOO⇔SVO、知覚・使役のSVOCを『核心の一言』で使い分けられるようにする。",
+ "points": [
+  {
+   "h": "5文型は「動詞の後ろ」で決まる",
+   "body": "英語の文はまず S(主語)+V(動詞) で始まり、その後ろに何を置くかで5つの型に分かれる。核心は V の性質だ。V が be動詞のような『イコール』なら後ろは補語C(第2文型 SVC・S=C)、V が『動作』で相手を取るなら目的語O(第3文型 SVO・S≠O)。C と O の見分けは『S とイコールになるか』の一点で決まる。",
+   "ex": [
+    [
+     "My brother is a pilot.",
+     "私の兄はパイロットだ。(S=C の第2文型)"
+    ],
+    [
+     "My brother flies planes.",
+     "私の兄は飛行機を操縦する。(S≠O の第3文型)"
+    ]
+   ],
+   "rule": "C は S とイコール、O は S とイコールでない"
+  },
+  {
+   "h": "自動詞か他動詞かは「後ろに前置詞が要るか」で見抜く",
+   "body": "他動詞は目的語をベタっと直に置ける(例: discuss the plan)。自動詞は目的語を直に取れず、前置詞を挟む(例: look at the plan)。核心は『その動詞は相手を直接つかめるか』。日本語の「~について」「~に」につられて前置詞を付けたくなる discuss / reach / enter / marry / mention / resemble は、実は他動詞で前置詞は不要。",
+   "ex": [
+    [
+     "We discussed the problem.",
+     "私たちはその問題について話し合った。(discussed about は誤り)"
+    ],
+    [
+     "We arrived at the station.",
+     "私たちは駅に着いた。(arrive は自動詞なので at が必要)"
+    ]
+   ],
+   "rule": "discuss / reach / enter / marry / mention は前置詞ナシで直に目的語"
+  },
+  {
+   "h": "第4文型 SVOO ⇔ 第3文型 SVO は to か for か",
+   "body": "『人+物』を並べる第4文型(give me a book)は、『物 + to/for + 人』の第3文型に書き換えられる。使い分けの核心は『相手がいないと成立しない動作か』。give / send / show / tell / teach は相手あっての動作 → to。buy / make / cook / find / get は自分ひとりでも完結する動作 → for。",
+   "ex": [
+    [
+     "He gave me a book. → He gave a book to me.",
+     "彼は私に本をくれた。(give は相手あっての動作 → to)"
+    ],
+    [
+     "She made me lunch. → She made lunch for me.",
+     "彼女は私に昼食を作ってくれた。(make は自分でも完結 → for)"
+    ]
+   ],
+   "rule": "give系 → to / buy・make系 → for(相手なしでも成立する動作が for)"
+  },
+  {
+   "h": "知覚・使役は「to なしの原形」——O と C は主語 → 述語の関係",
+   "body": "第5文型 SVOC は、O と C の間に『O が C する/される』という主語 → 述語(S'V')の関係が隠れている。知覚動詞(see / hear / feel / watch)と使役動詞(make / let / have)は、C に to のない原形を取るのが核心。O が『する側』なら原形(進行感を出すなら -ing)、『される側』なら過去分詞。help だけは原形も to 不定詞も可。群動詞(put up with など)は複数語でまとめて1つの他動詞として働く。",
+   "ex": [
+    [
+     "I saw him cross the road.",
+     "私は彼が道路を渡るのを見た。(彼=渡る側 → 原形 cross)"
+    ],
+    [
+     "I had my hair cut yesterday.",
+     "私は昨日、髪を切ってもらった。(髪=切られる側 → 過去分詞 cut)"
+    ]
+   ],
+   "rule": "知覚・使役の後ろは to なしの原形(O と C は主語 → 述語)"
+  }
+ ],
+ "kiso": [
+  {
+   "type": "mc",
+   "stem": "The baby slept quietly in the crib.",
+   "note": "赤ちゃんはベビーベッドで静かに眠っていた。",
+   "choices": [
+    "第1文型 SV",
+    "第2文型 SVC",
+    "第3文型 SVO",
+    "第4文型 SVOO"
+   ],
+   "ans": 0,
+   "point": "文型判定(SV)",
+   "exp": "slept は「眠る」という自動詞で、後ろに目的語も補語もない。quietly(副詞)や in the crib(前置詞句)はどちらも修飾語Mなので文型には数えない。骨組みは S+V だけなので第1文型。"
+  },
+  {
+   "type": "mc",
+   "stem": "This tomato soup tastes delicious.",
+   "note": "このトマトスープはとてもおいしい味がする。",
+   "choices": [
+    "第1文型 SV",
+    "第2文型 SVC",
+    "第3文型 SVO",
+    "第4文型 SVOO"
+   ],
+   "ans": 1,
+   "point": "文型判定(SVC)",
+   "exp": "taste は「~の味がする」で、soup = delicious(スープ＝おいしい)という S=C の関係が成り立つ。delicious は形容詞の補語C。したがって第2文型 SVC。目的語ではないので SVO ではない。"
+  },
+  {
+   "type": "fill",
+   "stem": "Please listen ______ me carefully. This is important.",
+   "ans": "to",
+   "point": "自動詞+前置詞",
+   "exp": "listen は自動詞なので目的語を直に取れず、「~を聞く」と言うには前置詞 to が必要(listen to ~)。hear は他動詞で to を付けない、という対比も押さえておく。"
+  },
+  {
+   "type": "fill",
+   "stem": "I'm looking ______ my bag. I can't find it anywhere.",
+   "ans": "for",
+   "point": "群動詞 look for",
+   "exp": "look は自動詞。「~をさがす」は look for ~ で、for を挟んで目的語につなぐ。look at(~を見る)、look after(~の世話をする)のように、後ろの前置詞で意味が決まる群動詞の典型。"
+  },
+  {
+   "type": "mc",
+   "stem": "We ______ the problem for almost an hour at the meeting.",
+   "note": "私たちは会議でその問題を1時間近く話し合った。",
+   "choices": [
+    "discussed about",
+    "discussed on",
+    "discussed",
+    "were discussed"
+   ],
+   "ans": 2,
+   "point": "他動詞 discuss",
+   "exp": "discuss は他動詞で、目的語を前置詞なしで直に取る。日本語「~について」につられて about / on を付けるのは誤り。were discussed(受動態)は後ろに目的語 the problem を置けないので不可。"
+  },
+  {
+   "type": "fill",
+   "stem": "At the gate, he showed his passport ______ the officer.",
+   "ans": "to",
+   "point": "SVOO→SVO(to)",
+   "exp": "show は「(相手に)見せる」で相手がいて成立する動作。第3文型で『物 + 前置詞 + 人』にするときは to を使う(give / send / tell と同じ仲間)。"
+  },
+  {
+   "type": "fill",
+   "stem": "My mother made a birthday cake ______ me last night.",
+   "ans": "for",
+   "point": "SVOO→SVO(for)",
+   "exp": "make は「作る」で、相手がいなくても自分ひとりで完結する動作。だから第3文型では for を使う(buy / cook / find と同じ仲間)。give系の to と混同しないこと。"
+  },
+  {
+   "type": "mc",
+   "stem": "After a long climb, we finally ______ the top of the mountain.",
+   "note": "長い登りのあと、私たちはついに山頂に着いた。",
+   "choices": [
+    "arrived",
+    "reached at",
+    "got",
+    "reached"
+   ],
+   "ans": 3,
+   "point": "他動詞 reach",
+   "exp": "reach は他動詞で「~に着く」を前置詞なしで表せる(reach the top)。arrive は arrive at、get は get to のように前置詞が必要で、後ろに直接 the top を置けない。reached at は前置詞の付けすぎで誤り。"
+  }
+ ],
+ "hyojun": [
+  {
+   "type": "mc",
+   "stem": "The old cat loves to ______ in the sun on the warm windowsill for hours.",
+   "note": "その年老いた猫は、暖かい窓辺で何時間も日なたにいるのが好きだ。",
+   "choices": [
+    "lie",
+    "lay",
+    "lies",
+    "laid"
+   ],
+   "ans": 0,
+   "point": "自他 lie/lay",
+   "exp": "lie は「横たわる・(その状態で)いる」の自動詞で目的語をとらない。ここは目的語がなく「日なたにいる」だから lie。lay は「~を横たえる」の他動詞で目的語が必須(lay the baby down)。lies/laid は to の直後に置けない形。核心は『自分がゴロンと横になる=lie、何かを横たえる=lay』。"
+  },
+  {
+   "type": "mc",
+   "stem": "The two sisters ______ each other so closely that even their own teachers often mix them up.",
+   "note": "その姉妹はとてもよく似ているので、担任でさえよく取り違える。",
+   "choices": [
+    "resemble to",
+    "resemble",
+    "are resembled",
+    "resemble with"
+   ],
+   "ans": 1,
+   "point": "他動詞 resemble",
+   "exp": "resemble は「~に似ている」を前置詞なしで表す他動詞(resemble each other)。日本語「~に似る」の『に』につられた to / with は不要。さらに resemble は状態動詞なので受動態 are resembled も不可。核心は『discuss / reach / marry と同じ、前置詞をとらない他動詞』。"
+  },
+  {
+   "type": "order",
+   "ja": "近いうちにお目にかかれるのを楽しみにしております。",
+   "tokens": [
+    "I",
+    "am",
+    "looking",
+    "forward",
+    "to",
+    "seeing",
+    "you",
+    "soon"
+   ],
+   "ans": "I am looking forward to seeing you soon",
+   "point": "群動詞 look forward to+動名詞",
+   "exp": "look forward to の to は不定詞ではなく前置詞。だから後ろは動名詞 seeing になる。to のあとを原形 see にするのが典型的な誤り。核心は『to+動名詞をとる群動詞(be used to / object to など)』——to を見たら不定詞と決めつけない。"
+  },
+  {
+   "type": "order",
+   "ja": "私はなんとか彼にその提案へ同意させることができた。",
+   "tokens": [
+    "I",
+    "managed",
+    "to",
+    "get",
+    "him",
+    "to",
+    "agree",
+    "to",
+    "the",
+    "proposal"
+   ],
+   "ans": "I managed to get him to agree to the proposal",
+   "point": "使役 get+O+to do",
+   "exp": "get は make / have / let と違い、使役でも C に to 不定詞をとる(get O to do)。make him agree(原形)と混同しないこと。核心は『make・have・let=原形、get=to、help=どちらも可』——使役でも動詞ごとに後ろの形が違う。"
+  },
+  {
+   "type": "rewrite",
+   "given": "She asked me an awkward question about my past.",
+   "target": "She asked an awkward question ______ ______ about my past.",
+   "blanks": [
+    "of",
+    "me"
+   ],
+   "point": "SVOO→SVO(of)",
+   "exp": "ask は第4文型を第3文型に開くとき、to でも for でもなく of を使う数少ない動詞(ask a favor of ~)。give系の to、buy系の for に対し、ask / inquire / require は of。核心は『第4→第3の前置詞は動詞ごとに to / for / of を選ぶ』。"
+  },
+  {
+   "type": "rewrite",
+   "given": "Someone stole her smartphone while she was traveling in Rome.",
+   "target": "She ______ her smartphone ______ while she was traveling in Rome.",
+   "blanks": [
+    "had",
+    "stolen"
+   ],
+   "point": "被害の have+O+過去分詞",
+   "exp": "have+O+過去分詞 は「~してもらう」だけでなく「~される(被害)」も表す。ここは smartphone が『盗まれる側』なので過去分詞 stolen。依頼の have(髪を切ってもらう)と同じ形が、文脈で被害の意味になる。核心は『O と C が受け身の関係なら過去分詞』。なお have の代わりに get を使った got her smartphone stolen も同義で可。"
+  },
+  {
+   "type": "mc",
+   "stem": "The scandal ______ serious doubts about the honesty of the entire administration.",
+   "note": "そのスキャンダルは政権全体の誠実さに重大な疑念を生じさせた。",
+   "choices": [
+    "arose",
+    "rose",
+    "aroused",
+    "raised"
+   ],
+   "ans": 3,
+   "point": "自他 raise/arise/rise",
+   "exp": "空所の後ろに目的語 serious doubts があるので他動詞が必要。arise（生じる）・rise（昇る）は自動詞で脱落。残る他動詞は raise と arouse だが、決め手はコロケーション——doubts / questions / concerns を「提起する」のは raise。arouse は suspicion / curiosity / anger など「（感情を）かき立てる」語と結ぶ。よって raised が正解。"
+  }
+ ],
+ "nyushi": [
+  {
+   "type": "error",
+   "html": "No matter how hard she tried, she could not make herself [a|understand] to the officials, who [b|grew] more and more [c|impatient] with her [d|hesitant] replies.",
+   "ans": "a",
+   "correct": "understand → understood",
+   "point": "make oneself understood(SVOC・過去分詞)",
+   "exp": "make oneself understood で「自分の言うことを通じさせる」。oneself(herself)は『理解される側』なので、SVOC の C は過去分詞 understood でなければならない。understand(原形)だと『彼女が理解する』の意になり文意が壊れる。b の grew は grow+形容詞(SVC)で正しく、c・d も適切。核心は『O と C が受け身の関係なら過去分詞』。"
+  },
+  {
+   "type": "mc",
+   "stem": "The government's stubborn refusal to compromise only ______ the crisis, plunging the entire region into deeper turmoil.",
+   "note": "政府の頑なな妥協拒否は危機をいっそう悪化させ、地域全体をより深い混乱へと陥れただけだった。",
+   "choices": [
+    "resulted",
+    "occurred",
+    "aggravated",
+    "amounted"
+   ],
+   "ans": 2,
+   "point": "他動詞の識別(目的語を直に取る)",
+   "exp": "空所の直後に目的語 the crisis が前置詞なしで続くので、入るのは他動詞でなければならない。aggravate は「~を悪化させる」の他動詞で目的語を直に取れる。result は result in、amount は amount to と前置詞が必須、occur は自動詞で目的語をとれない。核心は『目的語を前置詞なしでつかめるのは他動詞だけ』——難語でも自他は文構造で決まる。"
+  },
+  {
+   "type": "order",
+   "ja": "最終的にチーム全体を勝利へと導いたのは、彼女の粘り強さにほかならなかった。",
+   "tokens": [
+    "It",
+    "was",
+    "her",
+    "perseverance",
+    "that",
+    "ultimately",
+    "led",
+    "the",
+    "whole",
+    "team",
+    "to",
+    "victory"
+   ],
+   "ans": "It was her perseverance that ultimately led the whole team to victory",
+   "point": "強調構文 It is ~ that / lead O to",
+   "exp": "「It is X that ...」で X を強調する分裂文(強調構文)。ここでは主語 her perseverance を前に出して強調している。強調する語が人以外でも that が使える点に注意(who/which に置き換わるのは人・物のとき)。動詞は lead+O+to ~「Oを~へ導く」で、to は方向を示す前置詞。"
+  },
+  {
+   "type": "mc",
+   "stem": "______ I to witness such blatant dishonesty again, I would not hesitate to report it to the authorities.",
+   "note": "仮に再びそのような露骨な不正を目にするようなことがあれば、私はためらわずに当局へ報告するだろう。",
+   "choices": [
+    "Were",
+    "Should",
+    "Had",
+    "Would"
+   ],
+   "ans": 0,
+   "point": "仮定法未来の倒置(Were S to do)",
+   "exp": "「Were S to do」は if を使わずに、実現性の低い未来の仮定を倒置で表す形(= If I were to witness ...)。直後の to witness と結べるのは Were だけ。Should S do は原形が続く形(to は付かない)、Had S done は過去分詞が続く形で、いずれも to witness と合わない。Would は主語を導く助動詞倒置を作れない。核心は『if の省略 → Were / Should / Had が文頭に立つ倒置』。"
+  },
+  {
+   "type": "ja2en",
+   "ja": "どんなに説明しても彼を納得させることはできなかったので、私は結局、彼自身に確かめさせるしかなかった。",
+   "models": [
+    "No matter how hard I tried to explain, I could not make him understand, so in the end I had no choice but to let him check it for himself.",
+    "However much I explained, I couldn't get him to accept it, so I ended up letting him find out for himself."
+   ],
+   "point": "使役の使い分け(make/let=原形、get=to do)＋『~するしかない』have no choice but to do＋譲歩 no matter how ~。彼は『確かめる側』なので原形/for himself で再帰を添える。",
+   "mistakes": "let him to check / make him to understand のように使役の後ろに to を付ける／let him checked のように過去分詞にする(彼は自分で確かめる『する側』なので原形)／「~するしかなかった」を could only do で処理して不自然になる。",
+   "lines": 3
+  }
+ ]
+}

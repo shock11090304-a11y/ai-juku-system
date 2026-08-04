@@ -1,0 +1,209 @@
+{
+ "no": 3,
+ "date": "8/19",
+ "title": "設問処理",
+ "goal": "指示語・内容一致・下線部の和訳や言い換えといった設問の型を見抜き、本文に根拠を求めて正確に解答する「設問処理」の力を養う。",
+ "points": [
+  {
+   "h": "指示語（this / these / it）は原則「直前」を探し、代入して確かめる",
+   "body": "this・these・it・such などの指示語は、たいてい直前の名詞や文の内容を受ける。まず前を見て候補をつかみ、その候補を指示語の位置に代入して意味が自然に通るかを確認する。設問で「何を指すか」を問われたら、必ず本文の言葉を根拠にして答えをまとめる。",
+   "ex": [
+    [
+     "Perhaps most surprising, this pattern was not mainly caused by automated accounts.",
+     "おそらく最も驚くべきことに、この傾向は主に自動化されたプログラムによって引き起こされたのではない。"
+    ]
+   ],
+   "rule": "指示語はまず前を見る→候補を代入し、意味が通るかを必ず確認する。"
+  },
+  {
+   "h": "内容一致問題は「選択肢を本文に照合」し、言い過ぎ・本文にない情報を切る",
+   "body": "内容一致では、記憶や印象で選ばず、選択肢の一語一語を本文の該当箇所と突き合わせる。「必ず」「すべて」「まったく〜ない」などの強い断定語は、本文が言い過ぎていないかを疑うサイン。本文に書かれていない情報や、逆のことを述べた選択肢は根拠なしとして消していく。",
+   "ex": [
+    [
+     "messages that stir these feelings are passed on more eagerly than calm, balanced ones.",
+     "こうした感情を刺激するメッセージは、冷静で偏りのないものよりも熱心に転送される。"
+    ]
+   ],
+   "rule": "選択肢の断定語（必ず・すべて）を本文と照合し、根拠のない一般化を消す。"
+  },
+  {
+   "h": "下線部の和訳・言い換えは、まず構文をつかんでから意味を取る",
+   "body": "下線部を訳したり言い換えたりする問題では、いきなり単語をつなげず、まず骨組み（S V O C）や特有の構文を特定する。〈the＋比較級 …, the＋比較級 …〉なら「〜すればするほど…」、〈not A but B〉なら「AではなくB」というように、型を見抜けば意味は一気に定まる。",
+   "ex": [
+    [
+     "the more often we encounter a claim, the more true it begins to feel",
+     "ある主張に触れる回数が多いほど、それはますます本当のことのように感じられる。"
+    ]
+   ],
+   "rule": "the 比較級 …, the 比較級 … は「〜すればするほど…」。骨組みを先に取る。"
+  }
+ ],
+ "passage": {
+  "title": "Why False News Travels Fast",
+  "jtitle": "なぜ偽のニュースは速く広まるのか",
+  "paras": [
+   [
+    "Few people set out to deceive their friends, yet false stories often travel across the internet faster than accurate ones.",
+    "In a large study of news shared on social media, researchers found that false reports reached far more people than true reports, and they spread more quickly.",
+    "Perhaps most surprising, this pattern was not mainly caused by automated accounts, but by ordinary human users who chose to pass the stories on."
+   ],
+   [
+    "One reason is novelty: because a piece of false news is often invented, it can describe something more unusual or shocking than the familiar truth.",
+    "The human brain is naturally drawn to information that feels new, and we are more likely to share a story that surprises us.",
+    "False reports also tend to arouse strong emotions such as surprise, fear, or disgust, and messages that stir these feelings are passed on more eagerly than calm, balanced ones.",
+    "The illusion of truth adds to the problem, for the more often we encounter a claim, the more true it begins to feel, even when no evidence supports it."
+   ],
+   [
+    "By the time a correction appears, the false version has usually reached a much larger audience, and few of those readers ever see the correction.",
+    "This gap matters, because decisions about health, money, and politics are increasingly shaped by what spreads online.",
+    "Understanding why misinformation moves so fast is therefore the first step toward slowing it down, and the simplest defense is to pause before we share."
+   ]
+  ],
+  "trans": {
+   "1": "自分の友人をだまそうとする人はほとんどいないが、それでも偽の話は、正確な話よりもインターネット上を速く広まることが多い。",
+   "2": "ソーシャルメディア上で共有されたニュースを対象にした大規模な研究で、研究者たちは、偽の報道が本当の報道よりもはるかに多くの人々に届き、しかもより速く広まることを発見した。",
+   "3": "おそらく最も驚くべきことに、この傾向は主に自動化されたプログラム（ボット）によって引き起こされたのではなく、その話を進んで他人に伝えた普通の人間の利用者によるものだった。",
+   "4": "一つの理由は目新しさである。偽のニュースはしばしば作り話であるため、身近な真実よりも珍しく衝撃的なことを描くことができる。",
+   "5": "人間の脳は生まれつき新しく感じられる情報に引きつけられ、私たちは自分を驚かせる話を共有しやすい。",
+   "6": "また偽の報道は、驚き・恐れ・嫌悪といった強い感情を呼び起こしやすく、こうした感情を刺激するメッセージは、冷静で偏りのないものよりも熱心に転送される。",
+   "7": "さらに「真実の錯覚」がこの問題に拍車をかける。というのも、ある主張に触れる回数が多ければ多いほど、たとえそれを裏づける証拠がなくても、それがますます本当のことのように感じられてくるからだ。",
+   "8": "訂正が現れるころには、偽の方はたいていはるかに多くの人々に届いてしまっており、その読者のうち訂正を目にする人はほとんどいない。",
+   "9": "この差が重要なのは、健康・お金・政治についての判断が、オンラインで広まるものによってますます左右されるようになっているからだ。",
+   "10": "それゆえ、なぜ誤情報がこれほど速く広まるのかを理解することが、それを遅らせる第一歩であり、最も簡単な防御策は、共有する前にいったん立ち止まることである。"
+  }
+ },
+ "vocab": [
+  [
+   "deceive",
+   "動",
+   "だます、欺く"
+  ],
+  [
+   "spread",
+   "動",
+   "広まる、広める"
+  ],
+  [
+   "automated",
+   "形",
+   "自動化された"
+  ],
+  [
+   "novelty",
+   "名",
+   "目新しさ、新奇さ"
+  ],
+  [
+   "arouse",
+   "動",
+   "（感情などを）呼び起こす"
+  ],
+  [
+   "disgust",
+   "名",
+   "嫌悪、むかつき"
+  ],
+  [
+   "eagerly",
+   "副",
+   "熱心に、しきりに"
+  ],
+  [
+   "illusion",
+   "名",
+   "錯覚、思い違い"
+  ],
+  [
+   "claim",
+   "名",
+   "主張"
+  ],
+  [
+   "evidence",
+   "名",
+   "証拠"
+  ],
+  [
+   "correction",
+   "名",
+   "訂正、修正"
+  ],
+  [
+   "misinformation",
+   "名",
+   "誤情報、偽情報"
+  ]
+ ],
+ "q_instr": "次の英文を読み、各設問に答えよ。（文(1)(2)…は本文の通し番号を表す）",
+ "questions": [
+  {
+   "type": "rc_mc",
+   "q": "本文によると、偽の報道が広まる主な担い手について、最も適切なものを選べ。",
+   "choices": [
+    "偽の報道をわざと作り出す、一部の悪意ある集団に限られている。",
+    "大半は自動化されたプログラム（ボット）で、人間はほとんど関与していない。",
+    "自動化されたプログラムではなく、その話を進んで他人に伝える普通の利用者である。",
+    "事実を意図的に書き換えている、報道機関の記者たちである。"
+   ],
+   "ans": 2,
+   "exp": "文(3)に this pattern was not mainly caused by automated accounts, but by ordinary human users who chose to pass the stories on とある。つまり偽の報道を広める主役はボットではなく、話を進んで転送する普通の人間の利用者である。2は文(3)の not mainly caused by automated accounts と真っ向から矛盾。1・4は本文に根拠がなく、偽情報の作り手を悪意ある集団や記者に限定する記述はない。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "本文の内容に合うように、次の英文の空所に入れるのに最も適切なものを選べ。\nFalse news tends to spread quickly partly because it often feels (   ) and stirs up strong emotions.",
+   "choices": [
+    "familiar and boring",
+    "new and surprising",
+    "calm and balanced",
+    "old and forgotten"
+   ],
+   "ans": 1,
+   "exp": "文(4)(5)より、偽のニュースは目新しさ（novelty）ゆえに『新しく感じられ、人を驚かせる』ため共有されやすい。また文(6)より強い感情を呼び起こす（stirs up strong emotions）。したがって空所には new and surprising（新しく驚きを与える）が入る。1 familiar and boring（見慣れて退屈）と4 old and forgotten（古く忘れられた）は novelty と正反対。3 calm and balanced（冷静で偏りのない）は文(6)で『熱心に転送されにくい側』とされる特徴で不適。"
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(3)の this pattern とは、どのような傾向を指すか。本文の内容に即して日本語で説明せよ。",
+   "ans": "偽の報道が、本当の報道よりもはるかに多くの人々に届き、しかもより速く広まるという傾向。",
+   "exp": "this pattern は直前の文(2)の内容を受ける指示語。文(2)で『false reports reached far more people than true reports, and they spread more quickly（偽の報道は本当の報道より多くの人に届き、より速く広まった）』と述べられており、その傾向を this pattern がまとめて指している。指示語は前を見て、その中身を本文の言葉で説明するのが基本。",
+   "lines": 2
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(7)の下線部 the more often we encounter a claim, the more true it begins to feel を和訳せよ。",
+   "ans": "ある主張に触れる回数が多ければ多いほど、それはますます本当のことのように感じられてくる（ということ）。",
+   "exp": "〈the＋比較級 …, the＋比較級 …〉の構文で、『〜すればするほど…だ』の意味。the more often we encounter a claim が『主張に出会う回数が多いほど』、the more true it begins to feel が『それがいっそう本当のように感じ始める』にあたる。begin to feel は『〜と感じ始める・感じられてくる』。証拠の有無にかかわらず、反復接触だけで信じてしまう『真実の錯覚』を説明した部分である。",
+   "lines": 2
+  },
+  {
+   "type": "rc_mc",
+   "q": "偽の報道が真実よりも広まりやすい理由として、本文の内容に合うものを選べ。",
+   "choices": [
+    "恐れや怒りなど強い感情を呼び起こし、人々が進んで転送するから。",
+    "内容が世間によく知られていて、読者に安心感を与えるから。",
+    "必ず信頼できる証拠が添えられていて、説得力があるから。",
+    "報道機関が真実よりも偽の報道を優先して配信するから。"
+   ],
+   "ans": 0,
+   "exp": "文(6)に False reports also tend to arouse strong emotions such as surprise, fear, or disgust, and messages that stir these feelings are passed on more eagerly とある。強い感情を刺激するほど熱心に転送される、というのが本文の説明。2は文(4)(5)の『目新しさ・驚き』と逆の内容で不適。3は文(7)の『証拠がなくても信じてしまう』と矛盾。4は本文に記述がない。"
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(10)の下線部 the simplest defense is to pause before we share とは、具体的にどうすることか。日本語で説明せよ。",
+   "ans": "情報を他の人に転送・共有する前に、いったん立ち止まって、それが本当かどうかを確かめること。",
+   "exp": "pause before we share は『共有する前に立ち止まる』の意。本文は、偽情報が目新しさ・感情・反復によって速く広まると説明したうえで（文(4)〜(7)）、その最も簡単な対策として、勢いで拡散せず一呼吸おくことを挙げている。defense（防御策）の中身を、本文の流れに沿って『確かめてから共有する』と具体化して答える。",
+   "lines": 2
+  },
+  {
+   "type": "rc_mc",
+   "q": "この文章の主旨として、最も適切なものを選べ。",
+   "choices": [
+    "偽の報道は必ずボットによって広められるので、人間の力では防ぎようがない。",
+    "真実は常に偽の情報より速く広まるため、誤情報を心配する必要はない。",
+    "感情を動かす報道はすべて偽物なので、感情に訴える記事は無視すべきだ。",
+    "誤情報が真実より速く広まるのには目新しさ・感情・反復といった理由があり、共有前に立ち止まることが対策になる。"
+   ],
+   "ans": 3,
+   "exp": "本文は、偽情報が真実より速く広まる事実（文(1)(2)）と、その理由＝目新しさ（文(4)(5)）・強い感情（文(6)）・真実の錯覚（文(7)）を示し、最後に対策として『共有前に立ち止まる』（文(10)）で締めくくる。1は文(3)（担い手は人間）と矛盾、2は本文の主張（偽情報こそ速い）と逆、3は『感情に訴える＝すべて偽』という本文にない飛躍で誤り。"
+  }
+ ]
+}

@@ -1,0 +1,315 @@
+{
+ "no": 3,
+ "date": "7/29",
+ "title": "準動詞（不定詞・動名詞・分詞・分詞構文）",
+ "goal": "不定詞・動名詞・分詞・分詞構文の『形』と『意味の根っこ』を押さえ、動名詞と不定詞を正しく選び、分詞構文を使って和文英訳できるようにする。",
+ "points": [
+  {
+   "h": "不定詞 to do は『これから～する』が根っこ",
+   "body": "to do の to は「→」の矢印。だから不定詞は『これから・未来』へ向かうイメージ。使い方は3つ。①名詞用法「～すること」（S・O・Cになる）②形容詞用法「～するための・～すべき」（名詞を後ろから修飾）③副詞用法「～するために・～して」（動詞や文全体を修飾）。意味上の主語は不定詞の直前に for＋人で示す。",
+   "ex": [
+    [
+     "I decided to study abroad.",
+     "私は留学することに決めた。（名詞用法・目的語）"
+    ],
+    [
+     "I have a lot of work to do today.",
+     "今日はやるべき仕事がたくさんある。（形容詞用法）"
+    ]
+   ],
+   "rule": "to do = →（これから）／名・形・副の3用法"
+  },
+  {
+   "h": "動名詞は『過去・現実』、不定詞は『未来・これから』",
+   "body": "-ing（動名詞）は「もう起きた・実際にやっている」現実のイメージ。to do は「これからやる」未来のイメージ。だから動詞によって相性が決まる。enjoy / finish / mind / give up / avoid / practice などは動名詞専用（現実系）。stop は stop doing（～するのをやめる）と stop to do（立ち止まって～する）で意味が変わる点に注意。want / hope / decide / promise / plan などは不定詞専用（未来系）。前置詞の後ろは必ず動名詞（look forward to ～ing など）。",
+   "ex": [
+    [
+     "I finished writing the report.",
+     "レポートを書き終えた。（もう書いた＝動名詞）"
+    ],
+    [
+     "I hope to see you again.",
+     "またお会いしたい。（これから＝不定詞）"
+    ]
+   ],
+   "rule": "動名詞＝済んだ現実／不定詞＝これからの未来"
+  },
+  {
+   "h": "現在分詞 -ing は『能動』、過去分詞 -ed は『受動』",
+   "body": "分詞は名詞を説明する。-ing は「～している」（能動・進行）、過去分詞は「～される・された」（受動・完了）。1語なら名詞の前、2語以上のカタマリなら名詞の後ろに置く。感情を表す動詞は特に注意：原因となるモノ・出来事は -ing、感情を持つ人は -ed。",
+   "ex": [
+    [
+     "the rising sun / a broken window",
+     "のぼる太陽（能動）／割れた窓（受動）"
+    ],
+    [
+     "The result was surprising, so we were surprised.",
+     "結果は驚くべきもので、私たちは驚いた。"
+    ]
+   ],
+   "rule": "-ing＝する側（能動）／-ed＝される側（受動）・感情は 人ed／モノing"
+  },
+  {
+   "h": "分詞構文は『接続詞＋S＋V』を -ing に圧縮したもの",
+   "body": "When / Because / If / As などの副詞節を、①接続詞をとる ②主語が主節と同じなら消す ③動詞を -ing にする、で作る。意味は文脈で「～して・～すると・～なので」と訳す。受動なら（being＋）過去分詞、否定は not を分詞の前に、主節より前の時制は Having＋過去分詞（完了分詞構文）。主語が主節と違うときは主語を残す（独立分詞構文）。付帯状況は with＋O＋分詞で「～しながら・～した状態で」。",
+   "ex": [
+    [
+     "Walking in the park, I met an old friend.",
+     "公園を歩いていると、旧友に会った。"
+    ],
+    [
+     "Written in simple English, this book is easy to read.",
+     "やさしい英語で書かれているので、この本は読みやすい。"
+    ]
+   ],
+   "rule": "接続詞＋S を消して V→-ing／否定は not＋分詞・完了は Having＋p.p."
+  }
+ ],
+ "kiso": [
+  {
+   "type": "fill",
+   "stem": "I want ______ ( become ) a doctor in the future.",
+   "ans": "to become",
+   "point": "不定詞・名詞用法",
+   "exp": "want は不定詞をとる動詞。「これから～したい」という未来志向なので to become。動名詞 becoming は不可。"
+  },
+  {
+   "type": "fill",
+   "stem": "The long movie was really ______ ( bore ).",
+   "ans": "boring",
+   "point": "感情分詞（モノは -ing）",
+   "exp": "感情分詞は「原因（モノ・出来事）は -ing、感情を持つ人は -ed」。映画は退屈さを与える側なので boring。bored（退屈させられた）は人に使う。"
+  },
+  {
+   "type": "fill",
+   "stem": "Don't wake up the ______ ( sleep ) baby.",
+   "ans": "sleeping",
+   "point": "現在分詞・限定用法",
+   "exp": "現在分詞 -ing は「～している」（能動）。baby is sleeping の関係なので sleeping baby「眠っている赤ちゃん」。1語なので名詞の前に置く。"
+  },
+  {
+   "type": "fill",
+   "stem": "This is a novel ______ ( write ) about one hundred years ago.",
+   "ans": "written",
+   "point": "過去分詞・限定用法",
+   "exp": "過去分詞は「～される・された」（受動）。小説は「書かれる」側なので written。2語以上のカタマリ（written about ~ ago）なので名詞の後ろから修飾する。"
+  },
+  {
+   "type": "mc",
+   "stem": "I'm looking forward to ______ you again soon.",
+   "note": "またすぐお会いできるのを楽しみにしています。",
+   "choices": [
+    "seeing",
+    "to see",
+    "seen",
+    "see"
+   ],
+   "ans": 0,
+   "point": "前置詞 to ＋ 動名詞",
+   "exp": "look forward to の to は前置詞。前置詞の後ろは名詞か動名詞なので seeing。to＋原形と混同する典型的な罠。"
+  },
+  {
+   "type": "mc",
+   "stem": "We really enjoyed ______ in the pool yesterday.",
+   "choices": [
+    "to swim",
+    "swimming",
+    "swam",
+    "swim"
+   ],
+   "ans": 1,
+   "point": "enjoy ＋ 動名詞",
+   "exp": "enjoy は動名詞のみをとる動詞。「実際にやったこと」という現実イメージ。to swim は不可。"
+  },
+  {
+   "type": "fill",
+   "stem": "This coffee is too hot ______ ( drink ) right now.",
+   "ans": "to drink",
+   "point": "too ~ to do",
+   "exp": "too ~ to do は「あまりに～すぎて…できない」。熱すぎて今は飲めない、という意味で to drink の形になる。"
+  },
+  {
+   "type": "mc",
+   "stem": "She went to the store ______ some eggs.",
+   "note": "彼女は卵を買うために店へ行った。",
+   "choices": [
+    "buying",
+    "buy",
+    "to buy",
+    "bought"
+   ],
+   "ans": 2,
+   "point": "不定詞・副詞用法（目的）",
+   "exp": "「～するために」と目的を表すのは副詞用法の不定詞 to buy。動名詞 buying や過去形 bought では目的の意味にならない。"
+  }
+ ],
+ "hyojun": [
+  {
+   "type": "mc",
+   "stem": "After talking about this year's budget, the manager went on ______ the new marketing plan.",
+   "note": "今年度の予算について話したあと、部長は続けて新しいマーケティング計画へと話を進めた。",
+   "choices": [
+    "discussing",
+    "to discuss",
+    "discussed",
+    "to be discussing"
+   ],
+   "ans": 1,
+   "point": "go on to do（次に別のことをする）／go on doing（同じことを続ける）",
+   "exp": "核心は『同じ動作か、次の動作か』。go on doing は今やっていることを続ける、go on to do は一区切りつけて次に別のことへ移る。予算の話を終えて『次に』新計画へ進んだので to discuss。discussing だと「新計画の話をし続けた」＝すでに話していた前提になり、直前の『予算の話』とつながらない。"
+  },
+  {
+   "type": "mc",
+   "stem": "The report is full of careless errors; it clearly needs ______ before we submit it.",
+   "note": "その報告書はうっかりミスだらけで、提出前に手直しが必要なのは明らかだ。",
+   "choices": [
+    "to check",
+    "being checked",
+    "to have checked",
+    "checking"
+   ],
+   "ans": 3,
+   "point": "need / want / require ＋ 動名詞＝受動の意味",
+   "exp": "need doing は『～される必要がある』＝need to be done。動名詞なのに意味は受動になる特別ルール。報告書は『直される』側だから checking（＝to be checked）。to check だと『報告書が何かを調べる』と能動になり意味が逆。being checked は need の後ろでは使えない。"
+  },
+  {
+   "type": "order",
+   "ja": "彼が次に何をしでかすか予測することはできない。",
+   "tokens": [
+    "There",
+    "is",
+    "no",
+    "predicting",
+    "what",
+    "he",
+    "will",
+    "do",
+    "next"
+   ],
+   "ans": "There is no predicting what he will do next",
+   "point": "There is no doing（～できない）",
+   "exp": "There is no doing は『～することはできない（＝It is impossible to do）』の慣用表現。丸ごと暗記する形。predicting の目的語として疑問詞節 what he will do next を続ける。"
+  },
+  {
+   "type": "rewrite",
+   "given": "As soon as she caught sight of the police officer, she ran away.",
+   "target": "______ ______ the police officer, she ran away.",
+   "blanks": [
+    "On",
+    "seeing"
+   ],
+   "point": "on doing ＝ ～するとすぐに（＝as soon as S V）",
+   "exp": "on doing は『～すると同時に・するとすぐに』。接触の on が『動作と動作がくっつく＝すぐ』のイメージを出す。前置詞 on の後ろなので動名詞 seeing。as soon as の節を圧縮した形。"
+  },
+  {
+   "type": "mc",
+   "stem": "I clearly saw him ______ the street when a speeding car suddenly hit him.",
+   "note": "スピードを出した車が突然彼をはねたとき、私は彼が道を渡っているのをはっきり見た。",
+   "choices": [
+    "crossing",
+    "to cross",
+    "cross",
+    "crossed"
+   ],
+   "ans": 0,
+   "point": "知覚動詞 see O doing（進行中の一場面）",
+   "exp": "知覚動詞は see O do（一部始終・完遂）と see O doing（途中の一場面）を撮り分ける。はねられた瞬間はまだ道の途中＝渡り終えていないので、進行中を表す crossing。原形 cross だと『渡りきるのを見た』となり、途中で車にはねられた状況と矛盾する。"
+  },
+  {
+   "type": "order",
+   "ja": "彼は若い頃に留学したことを誇りに思っている。",
+   "tokens": [
+    "He",
+    "is",
+    "proud",
+    "of",
+    "having",
+    "studied",
+    "abroad",
+    "in",
+    "his",
+    "youth"
+   ],
+   "ans": "He is proud of having studied abroad in his youth",
+   "point": "完了動名詞 having done（主節より前の時制）",
+   "exp": "誇りに『思っている（今）』より、留学は『前』の出来事。時制のズレを動名詞1つぶん過去へ倒すのが完了動名詞 having done。of は前置詞なので後ろは動名詞、しかも時のズレを出すため having studied。単なる studying では『今留学中』とまぎれる。"
+  },
+  {
+   "type": "rewrite",
+   "given": "It was careless of you to make such a basic mistake.",
+   "target": "You were ______ ______ make such a basic mistake.",
+   "blanks": [
+    "careless",
+    "to"
+   ],
+   "point": "人の性質の形容詞 ＋ of 人 ⇄ 人 is 形容詞 to do",
+   "exp": "careless / kind / rude など『人の性質』を評価する形容詞は、It is 形容詞 of 人 to do ＝ 人 is 形容詞 to do で言い換えられる。意味上の主語が of you なら、そのまま主語 You に格上げして You were careless to do。この to do は『判断の根拠（～するとは）』を表す副詞用法。"
+  }
+ ],
+ "nyushi": [
+  {
+   "type": "mc",
+   "stem": "______ at the head of the long table was the company's founder himself.",
+   "note": "その長いテーブルの上座に座っていたのは、ほかならぬその会社の創業者だった。",
+   "choices": [
+    "Seating",
+    "Seated",
+    "To seat",
+    "Having seated"
+   ],
+   "ans": 1,
+   "point": "過去分詞の文頭倒置（分詞 ＋ V ＋ S）",
+   "exp": "補語の分詞が文頭に出ると、後ろは V＋S の倒置になる（Seated ... was the founder）。ポイントは態：be seated で『座っている（座らされた状態）』なので受動の過去分詞 Seated。能動の Seating（人を座らせている）や To seat・Having seated では主語 the founder との関係が成り立たない。"
+  },
+  {
+   "type": "error",
+   "html": "[a|Being] a popular tourist spot, the old town attracts many visitors [b|hoping] [c|to catch] a glimpse of the historic castle [d|building] in the 15th century.",
+   "ans": "d",
+   "correct": "building → built",
+   "point": "現在分詞 vs 過去分詞（能動・受動の識別）",
+   "exp": "the historic castle ＿ in the 15th century は『15世紀に建てられた城』＝城は建てられる側なので受動の過去分詞 built（関係詞＋be の省略）。building にすると『城が何かを建てている』と能動になり破綻する。a の Being（分詞構文）、b の hoping（visitors を修飾する能動の現在分詞）、c の to catch（目的の不定詞）はすべて正しい。"
+  },
+  {
+   "type": "order",
+   "ja": "自分の決断を後悔するようになるとは、彼女は夢にも思わなかった。",
+   "tokens": [
+    "Little",
+    "did",
+    "she",
+    "dream",
+    "that",
+    "she",
+    "would",
+    "come",
+    "to",
+    "regret",
+    "her",
+    "decision"
+   ],
+   "ans": "Little did she dream that she would come to regret her decision",
+   "point": "否定の副詞 Little の文頭倒置 ＋ come to do",
+   "exp": "Little / Never / Hardly など否定・準否定の副詞が文頭に出ると、後ろは疑問文型の倒置（did ＋ S ＋ 原形 dream）になる。Little did she dream で『夢にも思わなかった』。come to do は自然にそうなる変化を表す『（だんだん）～するようになる』で、意志的でない心理変化に使う慣用表現。"
+  },
+  {
+   "type": "ja2en",
+   "ja": "これほど難しい問題を一人で解くのは、彼にとって不可能とは言わないまでも極めて困難だった。",
+   "models": [
+    "It was extremely difficult, if not impossible, for him to solve such a difficult problem on his own.",
+    "To solve such a difficult problem by himself was extremely difficult, if not impossible, for him."
+   ],
+   "point": "形式主語 It ~ for 人 to do（不定詞の意味上の主語）＋ if not ~ の挿入",
+   "mistakes": "『彼にとって』は困難の主体ではなく不定詞の動作主なので、意味上の主語 for him を to solve の直前に置く（difficult to him は不可）。『～とは言わないまでも』は if not ~ を extremely difficult の直後に挿入する。『これほど難しい問題』は such a difficult problem（a の位置に注意）。"
+  },
+  {
+   "type": "ja2en",
+   "ja": "今振り返ってみると、あのとき留学するという決断をしなかったことを、私は今でも後悔している。",
+   "models": [
+    "Looking back, I still regret not having decided to study abroad at that time.",
+    "In retrospect, I still regret not deciding to study abroad back then."
+   ],
+   "point": "regret ＋ 動名詞（したことを後悔）／否定・完了の動名詞 not having done ／分詞構文 Looking back",
+   "mistakes": "regret to do（残念ながら今から～する）と regret doing（過去にしたことを後悔する）の取り違えが最大の罠で、ここは後者。しかも『決断しなかった』のは主節より前なので、否定 not ＋ 完了動名詞 having decided（＝not having decided）。『振り返ってみると』は慣用の分詞構文 Looking back / In retrospect で処理する。",
+   "lines": 3
+  }
+ ]
+}

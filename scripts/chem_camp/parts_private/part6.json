@@ -1,0 +1,222 @@
+{
+  "area": "第6編 電池と電気分解",
+  "overview": "酸化還元反応から電気エネルギーを取り出す「電池」と、逆に電気エネルギーで反応を進める「電気分解」を扱う。イオン化傾向から極を決める → 各極の反応式を書く → ファラデーの法則で電気量と物質量を結ぶ、という同じ一本道を、ダニエル電池・鉛蓄電池・燃料電池・各種の電気分解のすべてで使えるようにする。",
+  "units": [
+    {
+      "name": "電池の基本(イオン化傾向・ダニエル電池)",
+      "tag": "denchi-kihon",
+      "problems": [
+        {
+          "group": "イオン化傾向から電池の極を決める",
+          "level": "basic",
+          "stem": "亜鉛板と銅板を希硫酸に浸し、2枚の金属板を導線でつないだ電池(ボルタ電池)をつくった。イオン化傾向は $\\mathrm{Zn} > \\mathrm{H_2} > \\mathrm{Cu}$ である。\n(1) 負極になるのはどちらの金属板か。\n(2) 正極で発生する気体の化学式と、正極で起こる変化を表す電子 $e^-$ を含むイオン反応式を書け。\n(3) 導線中を電子が流れる向きと、電流が流れる向きを、それぞれ「亜鉛板→銅板」または「銅板→亜鉛板」で答えよ。\n(4) 亜鉛板をマグネシウム板に取りかえると、この電池の起電力は大きくなるか小さくなるか。イオン化傾向は $\\mathrm{Mg} > \\mathrm{Zn}$ である。",
+          "answer": "(1) 亜鉛板 (2) $\\mathrm{H_2}$、$2\\mathrm{H^+} + 2e^- \\rightarrow \\mathrm{H_2}$ (3) 電子:亜鉛板→銅板、電流:銅板→亜鉛板 (4) 大きくなる",
+          "explanation": "▶ 電池の極は「イオン化傾向の大きい金属が溶けて負極になる」で決まる、という型の問題。\n① $\\mathrm{Zn} > \\mathrm{Cu}$ なので亜鉛のほうが陽イオンになりやすく、$\\mathrm{Zn} \\rightarrow \\mathrm{Zn^{2+}} + 2e^-$ と溶けて電子を放出する。電子を放出する極が負極だから、負極は亜鉛板、正極は銅板。\n② 銅板では、導線を通ってきた電子を希硫酸中の $\\mathrm{H^+}$ が受け取る。$2\\mathrm{H^+} + 2e^- \\rightarrow \\mathrm{H_2}$ となり、水素 $\\mathrm{H_2}$ が発生する(銅自身は溶けない)。\n③ 電子は負極→正極、すなわち亜鉛板→銅板へ流れる。電流の向きは電子の流れと逆なので銅板→亜鉛板。また $\\mathrm{Mg} > \\mathrm{Zn}$ よりマグネシウムのほうが電子を出しやすく、両極の「電子の出しやすさの差」が広がるので起電力は大きくなる。\n★ <b>電子は負極から正極へ、電流は正極から負極へ</b>。イオン化傾向の差が大きい組み合わせほど起電力は大きい。",
+          "skill": "イオン化傾向と電極の決定",
+          "verify_py": null,
+          "verify_expected": null,
+          "verify_tol": null
+        },
+        {
+          "group": "ダニエル電池のしくみ",
+          "level": "basic",
+          "stem": "ダニエル電池は、硫酸亜鉛水溶液に浸した亜鉛板と、硫酸銅(II)水溶液に浸した銅板を、素焼き板で仕切って組み合わせた電池である。\n(1) 放電時に負極・正極で起こる変化を、それぞれ電子 $e^-$ を含むイオン反応式で書け。\n(2) 素焼き板がはたしている役割を2つ、簡潔に述べよ。",
+          "answer": "(1) 負極:$\\mathrm{Zn} \\rightarrow \\mathrm{Zn^{2+}} + 2e^-$、正極:$\\mathrm{Cu^{2+}} + 2e^- \\rightarrow \\mathrm{Cu}$ (2) 2種類の水溶液がすぐに混ざり合うのを防ぐ/イオンを通過させて両液の電気的な偏りを打ち消し、電流を流し続ける",
+          "explanation": "▶ ダニエル電池の2つの半反応と、素焼き板(隔膜)の意味を答える定番の記述型。\n① 負極では、イオン化傾向の大きい亜鉛が溶けて電子を放出する。$\\mathrm{Zn} \\rightarrow \\mathrm{Zn^{2+}} + 2e^-$。\n② 正極では、導線を通ってきた電子を硫酸銅(II)水溶液中の $\\mathrm{Cu^{2+}}$ が受け取り、銅が析出する。$\\mathrm{Cu^{2+}} + 2e^- \\rightarrow \\mathrm{Cu}$。\n③ 素焼き板には細かい穴があり、(i) 2つの水溶液がすぐに混ざって $\\mathrm{Cu^{2+}}$ が亜鉛板に直接触れるのを防ぎ、(ii) $\\mathrm{SO_4^{2-}}$ などのイオンをゆっくり通すことで、負極側にたまる $\\mathrm{Zn^{2+}}$ と正極側で減る $\\mathrm{Cu^{2+}}$ による電気的な偏りを打ち消し、電流を流し続ける。\n★ 素焼き板を外すと <b>$\\mathrm{Cu^{2+}}$ が亜鉛板に直接触れて反応してしまい</b>、電子を導線から取り出せなくなる。",
+          "skill": "ダニエル電池の電極反応",
+          "verify_py": null,
+          "verify_expected": null,
+          "verify_tol": null
+        },
+        {
+          "group": "電気量と電極の質量変化",
+          "level": "standard",
+          "stem": "ダニエル電池を放電させたところ、銅板に銅が $0.64\\ \\mathrm{g}$ 析出した。原子量は $\\mathrm{Cu} = 64$ とする。この間に導線を流れた電子の物質量は何 mol か。有効数字2桁で答えよ。",
+          "answer": "$0.020\\ \\mathrm{mol}$",
+          "explanation": "▶ 「析出した金属の質量 → 流れた電子の物質量」を、半反応式の係数でつなぐ基本型。\n① 正極(銅板)で起こる反応は $\\mathrm{Cu^{2+}} + 2e^- \\rightarrow \\mathrm{Cu}$。\n② 析出した銅の物質量は $\\dfrac{0.64\\ \\mathrm{g}}{64\\ \\mathrm{g/mol}} = 0.010\\ \\mathrm{mol}$。\n③ 反応式より銅 1 mol あたり電子 2 mol が流れているので、$0.010 \\times 2 = 0.020\\ \\mathrm{mol}$。\n★ 金属の物質量から電子に移るときは、必ず<b>イオンの価数倍</b>する。$\\mathrm{Cu^{2+}}$ なら2倍。",
+          "skill": "電気量と電極の質量変化",
+          "verify_py": "m = 0.64\nM = 64.0\nresult = m / M * 2",
+          "verify_expected": 0.02,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "電気量と電極の質量変化",
+          "level": "standard",
+          "stem": "ダニエル電池を $1.0\\ \\mathrm{A}$ の一定電流で $48\\ \\mathrm{分}\\ 15\\ \\mathrm{秒}$ 放電させた。ファラデー定数 $F = 9.65\\times10^{4}\\ \\mathrm{C/mol}$、原子量は $\\mathrm{Cu} = 64$ とする。この間に銅板の質量は何 g 増加するか。有効数字2桁で答えよ。",
+          "answer": "$0.96\\ \\mathrm{g}$",
+          "explanation": "▶ 「電流×時間 → 電気量 → 電子 mol → 物質量 → 質量」の一本道をたどる標準型。\n① まず時間を秒に直す。$48 \\times 60 + 15 = 2895\\ \\mathrm{s}$。\n② 電気量は $Q = It = 1.0\\ \\mathrm{A} \\times 2895\\ \\mathrm{s} = 2895\\ \\mathrm{C}$。電子の物質量は $\\dfrac{2895}{9.65\\times10^{4}} = 0.0300\\ \\mathrm{mol}$。\n③ 正極の $\\mathrm{Cu^{2+}} + 2e^- \\rightarrow \\mathrm{Cu}$ より銅は $\\dfrac{0.0300}{2} = 0.0150\\ \\mathrm{mol}$ 析出し、質量は $0.0150 \\times 64 = 0.96\\ \\mathrm{g}$ 増える。\n★ <b>時間は必ず秒に直してから</b> $Q = It$ に入れる。分のまま代入する事故がいちばん多い。",
+          "skill": "電気量と電極の質量変化",
+          "verify_py": "I = 1.0\nt = 48 * 60 + 15\nF = 9.65e4\nn_e = I * t / F\nresult = n_e / 2 * 64.0",
+          "verify_expected": 0.96,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "電気量と電極の質量変化",
+          "level": "standard",
+          "stem": "ダニエル電池を $0.500\\ \\mathrm{A}$ の一定電流で放電させ、亜鉛板の質量を $0.130\\ \\mathrm{g}$ 減少させたい。何秒間放電すればよいか。ファラデー定数 $F = 9.65\\times10^{4}\\ \\mathrm{C/mol}$、原子量は $\\mathrm{Zn} = 65$ とし、有効数字3桁で答えよ。",
+          "answer": "$772\\ \\mathrm{s}$",
+          "explanation": "▶ 前問の道筋を逆向きにたどる型。質量 → 物質量 → 電子 mol → 電気量 → 時間。\n① 溶けた亜鉛の物質量は $\\dfrac{0.130\\ \\mathrm{g}}{65\\ \\mathrm{g/mol}} = 2.00\\times10^{-3}\\ \\mathrm{mol}$。\n② 負極の $\\mathrm{Zn} \\rightarrow \\mathrm{Zn^{2+}} + 2e^-$ より電子は $2.00\\times10^{-3} \\times 2 = 4.00\\times10^{-3}\\ \\mathrm{mol}$。電気量は $4.00\\times10^{-3} \\times 9.65\\times10^{4} = 386\\ \\mathrm{C}$。\n③ $Q = It$ より $t = \\dfrac{386\\ \\mathrm{C}}{0.500\\ \\mathrm{A}} = 772\\ \\mathrm{s}$。\n★ 向きが逆でも通る道は同じ。<b>必ず一度「電子の物質量」を経由する</b>と迷わない。",
+          "skill": "電気量と電極の質量変化",
+          "verify_py": "m = 0.130\nM = 65.0\nF = 9.65e4\nI = 0.500\nQ = m / M * 2 * F\nresult = Q / I",
+          "verify_expected": 772.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "濃度の変化から電気量を求める",
+          "level": "advanced",
+          "stem": "ダニエル電池の正極側には、$0.600\\ \\mathrm{mol/L}$ の硫酸銅(II)水溶液が $200\\ \\mathrm{mL}$ 入っている。この電池を放電させたところ、正極側の水溶液中の銅(II)イオンの濃度が $0.450\\ \\mathrm{mol/L}$ になった。放電の前後で水溶液の体積は変化しないものとし、ファラデー定数は $F = 9.65\\times10^{4}\\ \\mathrm{C/mol}$ とする。この間に流れた電気量は何 C か。有効数字3桁で答えよ。",
+          "answer": "$5.79\\times10^{3}\\ \\mathrm{C}$",
+          "explanation": "▶ 電極の質量ではなく「水溶液の濃度」から電子の量を読み取らせる応用型。減った $\\mathrm{Cu^{2+}}$ がそのまま手がかりになる。\n① 反応した $\\mathrm{Cu^{2+}}$ の物質量は、濃度の減少分 × 体積で求める。$(0.600 - 0.450)\\ \\mathrm{mol/L} \\times 0.200\\ \\mathrm{L} = 0.0300\\ \\mathrm{mol}$。\n② 正極では $\\mathrm{Cu^{2+}} + 2e^- \\rightarrow \\mathrm{Cu}$ なので、流れた電子は $0.0300 \\times 2 = 0.0600\\ \\mathrm{mol}$。\n③ 電気量は $0.0600\\ \\mathrm{mol} \\times 9.65\\times10^{4}\\ \\mathrm{C/mol} = 5.79\\times10^{3}\\ \\mathrm{C}$。\n★ <b>「減った $\\mathrm{Cu^{2+}}$」と「析出した $\\mathrm{Cu}$」は同じ物質量</b>。どちらから攻めても電子の物質量は同じになる。",
+          "skill": "電気量とイオン濃度の変化",
+          "verify_py": "c1 = 0.600\nc2 = 0.450\nV = 0.200\nF = 9.65e4\nn = (c1 - c2) * V\nresult = n * 2 * F",
+          "verify_expected": 5790.0,
+          "verify_tol": 0.02
+        }
+      ]
+    },
+    {
+      "name": "実用電池(鉛蓄電池・燃料電池)",
+      "tag": "jitsuyo-denchi",
+      "problems": [
+        {
+          "group": "鉛蓄電池のしくみ",
+          "level": "basic",
+          "stem": "鉛蓄電池は、負極に鉛 $\\mathrm{Pb}$、正極に酸化鉛(IV) $\\mathrm{PbO_2}$、電解液に希硫酸を用いた電池である。\n(1) 放電するときに負極・正極で起こる変化を、それぞれ電子 $e^-$ を含むイオン反応式で書け。\n(2) 次のうち、充電によってくり返し使える二次電池をすべて選べ。\n  (ア) マンガン乾電池  (イ) 鉛蓄電池  (ウ) リチウムイオン電池  (エ) アルカリマンガン乾電池",
+          "answer": "(1) 負極:$\\mathrm{Pb} + \\mathrm{SO_4^{2-}} \\rightarrow \\mathrm{PbSO_4} + 2e^-$、正極:$\\mathrm{PbO_2} + 4\\mathrm{H^+} + \\mathrm{SO_4^{2-}} + 2e^- \\rightarrow \\mathrm{PbSO_4} + 2\\mathrm{H_2O}$ (2) (イ)、(ウ)",
+          "explanation": "▶ 鉛蓄電池の2つの半反応と、一次電池・二次電池の区別を確認する基本型。\n① 負極では鉛が酸化されるが、生じた $\\mathrm{Pb^{2+}}$ は電解液中の $\\mathrm{SO_4^{2-}}$ とすぐ結びつき、水に溶けにくい $\\mathrm{PbSO_4}$ となって極板に付着する。$\\mathrm{Pb} + \\mathrm{SO_4^{2-}} \\rightarrow \\mathrm{PbSO_4} + 2e^-$。\n② 正極では $\\mathrm{PbO_2}$ 中の鉛(酸化数 $+4$)が電子を受け取って $+2$ になる。外れた酸素は $\\mathrm{H^+}$ と結びついて水になるので、$\\mathrm{PbO_2} + 4\\mathrm{H^+} + \\mathrm{SO_4^{2-}} + 2e^- \\rightarrow \\mathrm{PbSO_4} + 2\\mathrm{H_2O}$。\n③ 充電できるのは鉛蓄電池(イ)とリチウムイオン電池(ウ)。マンガン乾電池(ア)とアルカリマンガン乾電池(エ)は使い切りの一次電池である。\n★ 鉛蓄電池は<b>放電すると両極とも $\\mathrm{PbSO_4}$ になる</b>。この一点さえ押さえれば、両極の式は自分で組み立てられる。",
+          "skill": "鉛蓄電池の反応式",
+          "verify_py": null,
+          "verify_expected": null,
+          "verify_tol": null
+        },
+        {
+          "group": "鉛蓄電池のしくみ",
+          "level": "basic",
+          "stem": "鉛蓄電池を放電させたところ、導線に電子が $0.20\\ \\mathrm{mol}$ 流れた。原子量は $\\mathrm{O} = 16$、$\\mathrm{S} = 32$、$\\mathrm{Pb} = 207$ とする。この間に負極板の質量は何 g 増加するか。有効数字2桁で答えよ。",
+          "answer": "$9.6\\ \\mathrm{g}$",
+          "explanation": "▶ 極板の質量変化は「変化した物質量 × 1 mol あたりの質量差」で出す型。\n① 負極の反応は $\\mathrm{Pb} + \\mathrm{SO_4^{2-}} \\rightarrow \\mathrm{PbSO_4} + 2e^-$。電子 2 mol につき $\\mathrm{Pb}$ 1 mol が $\\mathrm{PbSO_4}$ 1 mol に変わるので、電子 $0.20\\ \\mathrm{mol}$ なら $\\dfrac{0.20}{2} = 0.10\\ \\mathrm{mol}$ が変化する。\n② モル質量は $\\mathrm{PbSO_4} = 207 + 32 + 16 \\times 4 = 303\\ \\mathrm{g/mol}$、$\\mathrm{Pb} = 207\\ \\mathrm{g/mol}$。1 mol あたり $303 - 207 = 96\\ \\mathrm{g}$ 増える。\n③ 増加量は $0.10\\ \\mathrm{mol} \\times 96\\ \\mathrm{g/mol} = 9.6\\ \\mathrm{g}$。\n★ 増える分は<b>結びついた $\\mathrm{SO_4}$ の分(96)</b>。生じた $\\mathrm{PbSO_4}$ そのものの質量($30.3\\ \\mathrm{g}$)を答えにしてしまう間違いが多い。",
+          "skill": "鉛蓄電池の質量変化",
+          "verify_py": "n_e = 0.20\nM_Pb = 207.0\nM_PbSO4 = 207.0 + 32.0 + 16.0 * 4\nresult = n_e / 2 * (M_PbSO4 - M_Pb)",
+          "verify_expected": 9.6,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "鉛蓄電池のしくみ",
+          "level": "standard",
+          "stem": "鉛蓄電池を $2.0\\ \\mathrm{A}$ の一定電流で $16\\ \\mathrm{分}\\ 5\\ \\mathrm{秒}$ 放電させた。ファラデー定数 $F = 9.65\\times10^{4}\\ \\mathrm{C/mol}$、原子量は $\\mathrm{O} = 16$、$\\mathrm{S} = 32$、$\\mathrm{Pb} = 207$ とする。この間に正極板の質量は何 g 増加するか。有効数字2桁で答えよ。",
+          "answer": "$0.64\\ \\mathrm{g}$",
+          "explanation": "▶ 電流と時間から入って正極板の質量増加を出す型。負極とは1 mol あたりの質量差が違う点に注意する。\n① $16 \\times 60 + 5 = 965\\ \\mathrm{s}$ より $Q = 2.0\\ \\mathrm{A} \\times 965\\ \\mathrm{s} = 1930\\ \\mathrm{C}$。電子は $\\dfrac{1930}{9.65\\times10^{4}} = 0.020\\ \\mathrm{mol}$。\n② 正極の反応 $\\mathrm{PbO_2} + 4\\mathrm{H^+} + \\mathrm{SO_4^{2-}} + 2e^- \\rightarrow \\mathrm{PbSO_4} + 2\\mathrm{H_2O}$ より、$\\mathrm{PbO_2}$ は $\\dfrac{0.020}{2} = 0.010\\ \\mathrm{mol}$ が変化する。モル質量は $\\mathrm{PbO_2} = 207 + 16 \\times 2 = 239\\ \\mathrm{g/mol}$、$\\mathrm{PbSO_4} = 303\\ \\mathrm{g/mol}$ なので 1 mol あたり $303 - 239 = 64\\ \\mathrm{g}$ 増える。\n③ 増加量は $0.010\\ \\mathrm{mol} \\times 64\\ \\mathrm{g/mol} = 0.64\\ \\mathrm{g}$。\n★ 同じ電気量でも <b>1 mol あたり負極は $+96\\ \\mathrm{g}$、正極は $+64\\ \\mathrm{g}$</b>。両極の増加量は等しくない。",
+          "skill": "鉛蓄電池の質量変化",
+          "verify_py": "I = 2.0\nt = 16 * 60 + 5\nF = 9.65e4\nn_e = I * t / F\nM_PbO2 = 207.0 + 16.0 * 2\nM_PbSO4 = 207.0 + 32.0 + 16.0 * 4\nresult = n_e / 2 * (M_PbSO4 - M_PbO2)",
+          "verify_expected": 0.64,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "燃料電池",
+          "level": "standard",
+          "stem": "リン酸型燃料電池は、リン酸水溶液を電解質とし、負極に水素、正極に酸素を供給して電気エネルギーを取り出す電池である。\n(1) 負極・正極で起こる変化を、それぞれ電子 $e^-$ を含むイオン反応式で書け。\n(2) この電池全体で起こる反応を化学反応式で書け。",
+          "answer": "(1) 負極:$\\mathrm{H_2} \\rightarrow 2\\mathrm{H^+} + 2e^-$、正極:$\\mathrm{O_2} + 4\\mathrm{H^+} + 4e^- \\rightarrow 2\\mathrm{H_2O}$ (2) $2\\mathrm{H_2} + \\mathrm{O_2} \\rightarrow 2\\mathrm{H_2O}$",
+          "explanation": "▶ 燃料電池は「水素の燃焼を電池のかたちにしたもの」。電解質が酸性か塩基性かで半反応式が変わる型。\n① 電解質がリン酸水溶液=酸性なので、溶液中を動くイオンは $\\mathrm{H^+}$。負極では水素が酸化されて $\\mathrm{H_2} \\rightarrow 2\\mathrm{H^+} + 2e^-$。\n② 正極では酸素が電子と $\\mathrm{H^+}$ を受け取って水になる。$\\mathrm{O_2} + 4\\mathrm{H^+} + 4e^- \\rightarrow 2\\mathrm{H_2O}$。\n③ 電子の数をそろえるため負極の式を2倍して両式を足すと、$\\mathrm{H^+}$ と $e^-$ が消えて $2\\mathrm{H_2} + \\mathrm{O_2} \\rightarrow 2\\mathrm{H_2O}$ が残る。\n★ 塩基性型(電解質が水酸化カリウム水溶液)では $\\mathrm{OH^-}$ が動き、負極は $\\mathrm{H_2} + 2\\mathrm{OH^-} \\rightarrow 2\\mathrm{H_2O} + 2e^-$ になる。<b>全体の反応はどちらも $2\\mathrm{H_2} + \\mathrm{O_2} \\rightarrow 2\\mathrm{H_2O}$</b>。",
+          "skill": "燃料電池の電極反応",
+          "verify_py": null,
+          "verify_expected": null,
+          "verify_tol": null
+        },
+        {
+          "group": "燃料電池",
+          "level": "standard",
+          "stem": "リン酸型燃料電池の負極に、標準状態($0\\ ^\\circ\\mathrm{C}$、$1.013\\times10^{5}\\ \\mathrm{Pa}$)で $2.24\\ \\mathrm{L}$ の水素を供給し、すべて反応させた。標準状態における気体 1 mol の体積を $22.4\\ \\mathrm{L}$、ファラデー定数を $F = 9.65\\times10^{4}\\ \\mathrm{C/mol}$ とする。このとき外部の回路を流れた電気量は何 C か。有効数字3桁で答えよ。",
+          "answer": "$1.93\\times10^{4}\\ \\mathrm{C}$",
+          "explanation": "▶ 気体の体積 → 物質量 → 電子 mol → 電気量。燃料電池の計算はこの一本道でよい。\n① 供給した水素の物質量は $\\dfrac{2.24\\ \\mathrm{L}}{22.4\\ \\mathrm{L/mol}} = 0.100\\ \\mathrm{mol}$。\n② 負極の反応 $\\mathrm{H_2} \\rightarrow 2\\mathrm{H^+} + 2e^-$ より、$\\mathrm{H_2}$ 1 mol あたり電子 2 mol が流れる。よって電子は $0.100 \\times 2 = 0.200\\ \\mathrm{mol}$。\n③ 電気量は $0.200\\ \\mathrm{mol} \\times 9.65\\times10^{4}\\ \\mathrm{C/mol} = 1.93\\times10^{4}\\ \\mathrm{C}$。\n★ 燃料電池では<b>水素 1 mol が電子 2 mol、酸素 1 mol が電子 4 mol</b> に対応する。酸素側の量から計算するときは4倍する。",
+          "skill": "燃料電池の電気量計算",
+          "verify_py": "V = 2.24\nVm = 22.4\nF = 9.65e4\nn_H2 = V / Vm\nresult = n_H2 * 2 * F",
+          "verify_expected": 19300.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "鉛蓄電池の電解液の変化",
+          "level": "advanced",
+          "stem": "質量パーセント濃度 $30\\ \\%$ の希硫酸 $500\\ \\mathrm{g}$ を電解液とする鉛蓄電池を放電させ、電子を $0.50\\ \\mathrm{mol}$ 流した。生じた $\\mathrm{PbSO_4}$ はすべて極板に付着したままであり、水の蒸発はないものとする。原子量は $\\mathrm{H} = 1.0$、$\\mathrm{O} = 16$、$\\mathrm{S} = 32$ とする。放電後の電解液の質量パーセント濃度は何 % か。有効数字2桁で答えよ。",
+          "answer": "$22\\ \\%$",
+          "explanation": "▶ 放電で硫酸が消費され水が生じる。溶質の質量と溶液全体の質量を別々に追いかける応用型。\n① 両極をまとめた放電の反応は $\\mathrm{Pb(固)} + \\mathrm{PbO_2(固)} + 2\\mathrm{H_2SO_4(aq)} \\rightarrow 2\\mathrm{PbSO_4(固)} + 2\\mathrm{H_2O(液)}$ で、電子 2 mol につき $\\mathrm{H_2SO_4}$ が 2 mol 消費され $\\mathrm{H_2O}$ が 2 mol 生じる。電子 $0.50\\ \\mathrm{mol}$ なら $\\mathrm{H_2SO_4}$ が $0.50\\ \\mathrm{mol}$($98 \\times 0.50 = 49\\ \\mathrm{g}$)減り、$\\mathrm{H_2O}$ が $0.50\\ \\mathrm{mol}$($18 \\times 0.50 = 9.0\\ \\mathrm{g}$)できる。\n② 溶質は $500 \\times 0.30 = 150\\ \\mathrm{g}$ から $150 - 49 = 101\\ \\mathrm{g}$ に減る。溶液全体は、$\\mathrm{H_2SO_4}$ が $49\\ \\mathrm{g}$ 分だけ極板側へ移り、$\\mathrm{H_2O}$ が $9.0\\ \\mathrm{g}$ 加わるので $500 - 49 + 9.0 = 460\\ \\mathrm{g}$。\n③ 濃度は $\\dfrac{101}{460} \\times 100 = 21.9\\cdots \\approx 22\\ \\%$。\n★ 電解液は「薄くなる」だけでなく<b>「軽くなる」</b>。分母(溶液の質量)も変わるので、溶質だけ引いて $500\\ \\mathrm{g}$ で割ると間違える。",
+          "skill": "鉛蓄電池の電解液変化",
+          "verify_py": "m0 = 500.0\nw0 = m0 * 0.30\nn_e = 0.50\nM_h2so4 = 2 * 1.0 + 32.0 + 16.0 * 4\nM_h2o = 2 * 1.0 + 16.0\nused = n_e * M_h2so4\nmade = n_e * M_h2o\nw = w0 - used\nm = m0 - used + made\nresult = w / m * 100",
+          "verify_expected": 21.96,
+          "verify_tol": 0.02
+        }
+      ]
+    },
+    {
+      "name": "電気分解とファラデーの法則",
+      "tag": "denki-bunkai",
+      "problems": [
+        {
+          "group": "電気分解で各極に何が生じるか",
+          "level": "basic",
+          "stem": "白金電極を用いて、塩化ナトリウム水溶液を電気分解した。\n(1) 陽極・陰極で起こる変化を、それぞれ電子 $e^-$ を含むイオン反応式で書け。\n(2) 陰極でナトリウムの単体が析出しない理由を簡潔に述べよ。",
+          "answer": "(1) 陽極:$2\\mathrm{Cl^-} \\rightarrow \\mathrm{Cl_2} + 2e^-$、陰極:$2\\mathrm{H_2O} + 2e^- \\rightarrow \\mathrm{H_2} + 2\\mathrm{OH^-}$ (2) $\\mathrm{Na}$ はイオン化傾向が非常に大きく、$\\mathrm{Na^+}$ は水溶液中では還元されにくいため、代わりに水が還元されるから",
+          "explanation": "▶ 「この水溶液を電気分解すると各極に何が出るか」を、放電のしやすさの順で決める電気分解の出発点。\n① 陽極(直流電源の $+$ 極につないだ側)では酸化が起こる。白金は溶けないので、水溶液中の陰イオンのうち放電しやすい $\\mathrm{Cl^-}$ が反応し、$2\\mathrm{Cl^-} \\rightarrow \\mathrm{Cl_2} + 2e^-$ となって塩素が発生する。\n② 陰極では還元が起こる。$\\mathrm{K}$、$\\mathrm{Ca}$、$\\mathrm{Na}$、$\\mathrm{Mg}$、$\\mathrm{Al}$ のようにイオン化傾向の大きい金属の陽イオンは水溶液中では還元されず、代わりに水が還元される。$2\\mathrm{H_2O} + 2e^- \\rightarrow \\mathrm{H_2} + 2\\mathrm{OH^-}$。\n③ よって陽極に塩素、陰極に水素が発生し、陰極付近には $\\mathrm{OH^-}$ がたまって塩基性になる。\n★ <b>陽極=酸化、陰極=還元</b>。電池の「正極・負極」と混同しないこと。陽極では $\\mathrm{Cl^-}$ が水より先に放電する。",
+          "skill": "電気分解の生成物の判断",
+          "verify_py": null,
+          "verify_expected": null,
+          "verify_tol": null
+        },
+        {
+          "group": "ファラデーの法則の基本計算",
+          "level": "basic",
+          "stem": "炭素電極を用いて塩化銅(II)水溶液を、$1.0\\ \\mathrm{A}$ の一定電流で $9650\\ \\mathrm{s}$ 電気分解した。ファラデー定数 $F = 9.65\\times10^{4}\\ \\mathrm{C/mol}$、原子量は $\\mathrm{Cu} = 64$ とする。陰極に析出する銅の質量は何 g か。有効数字2桁で答えよ。",
+          "answer": "$3.2\\ \\mathrm{g}$",
+          "explanation": "▶ ファラデーの法則の直接適用。$Q = It$ → 電子 mol → 析出量、の3ステップ。\n① 電気量は $Q = 1.0\\ \\mathrm{A} \\times 9650\\ \\mathrm{s} = 9650\\ \\mathrm{C}$。電子の物質量は $\\dfrac{9650}{9.65\\times10^{4}} = 0.10\\ \\mathrm{mol}$。\n② 陰極では $\\mathrm{Cu^{2+}} + 2e^- \\rightarrow \\mathrm{Cu}$ が起こる。電子 2 mol あたり銅 1 mol なので、銅は $\\dfrac{0.10}{2} = 0.050\\ \\mathrm{mol}$。\n③ 質量は $0.050\\ \\mathrm{mol} \\times 64\\ \\mathrm{g/mol} = 3.2\\ \\mathrm{g}$。\n★ 電子の物質量をそのまま析出量にしないこと。<b>イオンの価数で割る</b>のが鉄則($\\mathrm{Ag^+}$ は1で割るのでそのまま、$\\mathrm{Cu^{2+}}$ は2で割る)。",
+          "skill": "ファラデーの法則(析出量)",
+          "verify_py": "I = 1.0\nt = 9650.0\nF = 9.65e4\nn_e = I * t / F\nresult = n_e / 2 * 64.0",
+          "verify_expected": 3.2,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "ファラデーの法則の基本計算",
+          "level": "standard",
+          "stem": "白金電極を用いて硫酸銅(II)水溶液を、$0.50\\ \\mathrm{A}$ の一定電流で $32\\ \\mathrm{分}\\ 10\\ \\mathrm{秒}$ 電気分解した。ファラデー定数 $F = 9.65\\times10^{4}\\ \\mathrm{C/mol}$、標準状態($0\\ ^\\circ\\mathrm{C}$、$1.013\\times10^{5}\\ \\mathrm{Pa}$)における気体 1 mol の体積を $22.4\\ \\mathrm{L}$ とする。陽極に発生する気体の標準状態における体積は何 mL か。有効数字2桁で答えよ。",
+          "answer": "$56\\ \\mathrm{mL}$",
+          "explanation": "▶ まず陽極に何が出るかを決め、それから係数で電子と結ぶ型。$\\mathrm{SO_4^{2-}}$ が放電しないことに気づけるかがカギ。\n① $32 \\times 60 + 10 = 1930\\ \\mathrm{s}$ より $Q = 0.50\\ \\mathrm{A} \\times 1930\\ \\mathrm{s} = 965\\ \\mathrm{C}$。電子は $\\dfrac{965}{9.65\\times10^{4}} = 0.010\\ \\mathrm{mol}$。\n② 陽極では $\\mathrm{SO_4^{2-}}$ が放電できないので、代わりに水が酸化される。$2\\mathrm{H_2O} \\rightarrow \\mathrm{O_2} + 4\\mathrm{H^+} + 4e^-$ より電子 4 mol あたり $\\mathrm{O_2}$ 1 mol なので、酸素は $\\dfrac{0.010}{4} = 2.5\\times10^{-3}\\ \\mathrm{mol}$。\n③ 体積は $2.5\\times10^{-3}\\ \\mathrm{mol} \\times 22.4\\ \\mathrm{L/mol} = 5.6\\times10^{-2}\\ \\mathrm{L} = 56\\ \\mathrm{mL}$。\n★ <b>$\\mathrm{SO_4^{2-}}$ と $\\mathrm{NO_3^-}$ は陽極で放電しない</b>。代わりに水(塩基性なら $\\mathrm{OH^-}$)が酸化されて酸素が発生する。",
+          "skill": "ファラデーの法則(発生気体の体積)",
+          "verify_py": "I = 0.50\nt = 32 * 60 + 10\nF = 9.65e4\nn_e = I * t / F\nn_gas = n_e / 4\nresult = n_gas * 22.4 * 1000",
+          "verify_expected": 56.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "銅の電解精錬",
+          "level": "standard",
+          "stem": "亜鉛・鉄・銀を少量含む粗銅の板を陽極、純銅の薄い板を陰極とし、硫酸銅(II)水溶液を電解液として、低い電圧で電気分解を行った(銅の電解精錬)。\n(1) 陽極で起こる主な変化を、電子 $e^-$ を含むイオン反応式で書け。\n(2) 粗銅に含まれる亜鉛・鉄・銀は、この電気分解でそれぞれどうなるか。イオン化傾向を根拠にして述べよ。",
+          "answer": "(1) $\\mathrm{Cu} \\rightarrow \\mathrm{Cu^{2+}} + 2e^-$ (2) 銅よりイオン化傾向の大きい亜鉛と鉄は陽極で溶けて陽イオンとなり、水溶液中に残る(陰極には析出しない)。銅よりイオン化傾向の小さい銀は溶けず、陽極の下に陽極泥として沈殿する",
+          "explanation": "▶ 電極自身が反応する電気分解。陽極が「溶ける電極」である点が、白金や炭素の電極との決定的な違い。\n① 陽極では粗銅が酸化されて溶け出す。$\\mathrm{Cu} \\rightarrow \\mathrm{Cu^{2+}} + 2e^-$。陰極ではこの $\\mathrm{Cu^{2+}}$ が還元され、純度の高い銅が析出する。\n② 陽極では、銅よりイオン化傾向の大きい $\\mathrm{Zn}$ と $\\mathrm{Fe}$ も同時に酸化され、$\\mathrm{Zn^{2+}}$、$\\mathrm{Fe^{2+}}$ となって溶け出す。しかしこれらは $\\mathrm{Cu^{2+}}$ より還元されにくいため陰極では析出せず、水溶液中にたまっていく。\n③ 銀は銅より酸化されにくく陽極でも溶けないので、粗銅が溶けるにつれて剥がれ落ち、陽極の下に陽極泥としてたまる。\n★ <b>電圧を低くする</b>のは、$\\mathrm{Zn^{2+}}$ や $\\mathrm{Fe^{2+}}$ まで陰極で析出させないため。陽極泥からは銀や金を回収できる。",
+          "skill": "銅の電解精錬",
+          "verify_py": null,
+          "verify_expected": null,
+          "verify_tol": null
+        },
+        {
+          "group": "直列につないだ電解槽",
+          "level": "standard",
+          "stem": "白金電極を入れた硝酸銀水溶液の電解槽 A と、白金電極を入れた硫酸銅(II)水溶液の電解槽 B を直列につなぎ、電気分解を行った。電解槽 A の陰極には銀が $4.32\\ \\mathrm{g}$ 析出した。原子量は $\\mathrm{Cu} = 64$、$\\mathrm{Ag} = 108$ とする。電解槽 B の陰極に析出する銅の質量は何 g か。有効数字3桁で答えよ。",
+          "answer": "$1.28\\ \\mathrm{g}$",
+          "explanation": "▶ 「直列につないだ電解槽には、どれにも同じ電気量(同じ物質量の電子)が流れる」を使う型。\n① 電解槽 A の陰極は $\\mathrm{Ag^+} + e^- \\rightarrow \\mathrm{Ag}$。析出した銀は $\\dfrac{4.32\\ \\mathrm{g}}{108\\ \\mathrm{g/mol}} = 0.0400\\ \\mathrm{mol}$ で、銀は1価なので流れた電子も $0.0400\\ \\mathrm{mol}$。\n② 直列回路なので、電解槽 B にも同じ $0.0400\\ \\mathrm{mol}$ の電子が流れる。B の陰極は $\\mathrm{Cu^{2+}} + 2e^- \\rightarrow \\mathrm{Cu}$ なので、銅は $\\dfrac{0.0400}{2} = 0.0200\\ \\mathrm{mol}$ 析出する。\n③ 質量は $0.0200\\ \\mathrm{mol} \\times 64\\ \\mathrm{g/mol} = 1.28\\ \\mathrm{g}$。\n★ 直列は<b>電気量が共通、析出する物質量は価数で割る</b>。並列の場合は電流が枝分かれするので、各槽の電気量の和が全体の電気量になる。",
+          "skill": "直列電解槽と電気量",
+          "verify_py": "m_Ag = 4.32\nn_Ag = m_Ag / 108.0\nn_e = n_Ag * 1\nresult = n_e / 2 * 64.0",
+          "verify_expected": 1.28,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "イオン交換膜法",
+          "level": "advanced",
+          "stem": "陽イオン交換膜で仕切った電解槽の陽極室に濃い塩化ナトリウム水溶液を、陰極室に純水を入れ、$10.0\\ \\mathrm{A}$ の一定電流で電気分解した(イオン交換膜法)。陽イオン交換膜は $\\mathrm{Na^+}$ だけを陽極室から陰極室へ通す。ファラデー定数を $F = 9.65\\times10^{4}\\ \\mathrm{C/mol}$ とする。陰極室から $2.00\\ \\mathrm{mol/L}$ の水酸化ナトリウム水溶液が $200\\ \\mathrm{mL}$ 得られたとき、電気分解を行った時間は何秒か。有効数字3桁で答えよ。",
+          "answer": "$3.86\\times10^{3}\\ \\mathrm{s}$",
+          "explanation": "▶ イオン交換膜法。「陰極で生じた $\\mathrm{OH^-}$ の物質量 = 流れた電子の物質量」と読み替えられるかがカギ。\n① 得られた水酸化ナトリウムの物質量は $2.00\\ \\mathrm{mol/L} \\times 0.200\\ \\mathrm{L} = 0.400\\ \\mathrm{mol}$。\n② 陰極では $2\\mathrm{H_2O} + 2e^- \\rightarrow \\mathrm{H_2} + 2\\mathrm{OH^-}$ が起こり、電子 2 mol につき $\\mathrm{OH^-}$ が 2 mol、つまり電子 1 mol につき $\\mathrm{OH^-}$ が 1 mol できる。この $\\mathrm{OH^-}$ が膜を通ってきた $\\mathrm{Na^+}$ と対になって $\\mathrm{NaOH}$ になるので、流れた電子も $0.400\\ \\mathrm{mol}$。電気量は $0.400 \\times 9.65\\times10^{4} = 3.86\\times10^{4}\\ \\mathrm{C}$。\n③ $Q = It$ より $t = \\dfrac{3.86\\times10^{4}\\ \\mathrm{C}}{10.0\\ \\mathrm{A}} = 3.86\\times10^{3}\\ \\mathrm{s}$。\n★ 陽イオン交換膜は $\\mathrm{Na^+}$ を通し $\\mathrm{Cl^-}$ を通さない。だから<b>陰極室に $\\mathrm{Cl^-}$ が入らず、純度の高い $\\mathrm{NaOH}$ が得られる</b>。",
+          "skill": "イオン交換膜法と電気量",
+          "verify_py": "c = 2.00\nV = 0.200\nF = 9.65e4\nI = 10.0\nn = c * V\nQ = n * F\nresult = Q / I",
+          "verify_expected": 3860.0,
+          "verify_tol": 0.02
+        }
+      ]
+    }
+  ]
+}

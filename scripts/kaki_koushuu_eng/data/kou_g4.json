@@ -1,0 +1,328 @@
+{
+ "no": 4,
+ "date": "7/30",
+ "title": "関係詞・接続詞・比較",
+ "goal": "関係詞は「先行詞を後ろから説明するカタマリ」、接続詞は「文と文の橋渡し」、比較は「型の暗記」と割り切り、識別と重要構文を使いこなせるようにする。",
+ "points": [
+  {
+   "h": "関係代名詞は「接続詞＋代名詞」の一人二役",
+   "body": "関係代名詞は先行詞(名詞)の直後に置き、後ろから説明する形容詞のカタマリを作る。カタマリの中で欠けている要素で「格」を見抜く。主格(who/which/that)は後ろに動詞が続き、目的格(whom/which/that)は後ろが「主語＋動詞」で目的語が欠ける(省略可)。所有格whoseは「その~の」で後ろに名詞が続く。",
+   "ex": [
+    [
+     "The man who is standing there is my uncle.",
+     "あそこに立っている男性は私のおじだ。"
+    ],
+    [
+     "I have a friend whose hobby is fishing.",
+     "私には趣味が釣りの友人がいる。"
+    ]
+   ],
+   "rule": "先行詞のすぐ後ろ→カタマリの中で「欠けた要素」＝格"
+  },
+  {
+   "h": "後ろが完全文なら関係副詞・前置詞＋関係代名詞",
+   "body": "関係詞の後ろが「要素の欠けていない完全文」なら、関係副詞(where/when/why/how)か「前置詞＋関係代名詞」を使う。場所→where(＝in/at which)、時→when、理由→the reason why、方法→how(the way how は不可でどちらか一方)。コンマ付きの非制限用法は先行詞を「補足説明」し、複合関係詞(whoever/whatever/wherever/however)は「~する人/物は何でも」「たとえ~でも(＝no matter ~)」の意味になる。",
+   "ex": [
+    [
+     "This is the house where he was born.",
+     "これは彼が生まれた家だ。"
+    ],
+    [
+     "Whatever happens, I won't change my mind.",
+     "何が起ころうと、私は考えを変えない。"
+    ]
+   ],
+   "rule": "後ろが完全文→関係副詞(＝前置詞＋関係代名詞)／複合関係詞＝no matter ~ に言い換え"
+  },
+  {
+   "h": "接続詞は「対等をつなぐ」か「カタマリを作る」か",
+   "body": "等位接続詞(and/but/or/so)は文法的に対等なものをつなぐ。従位接続詞(because/although/when/if など)は副詞のカタマリを作って主節にかける。名詞節(S/O/Cになるカタマリ)を作るのは that(~ということ)と if/whether(~かどうか)。名詞節のthatは目的語では省略できる。whetherは主語・前置詞の後・or not の直前でも使えるが、ifはそれらの位置には置けない。",
+   "ex": [
+    [
+     "I think that he is right.",
+     "私は彼が正しいと思う。"
+    ],
+    [
+     "Whether she agrees or not doesn't matter.",
+     "彼女が賛成するかどうかは重要でない。"
+    ]
+   ],
+   "rule": "~かどうか＝whether(位置自由)／ifは動詞の目的語の名詞節だけ"
+  },
+  {
+   "h": "比較は「型」で覚える重要構文",
+   "body": "原級 as ~ as（同じくらい）、比較級 -er/more ~ than、最上級 the -est/most ~。入試頻出の型＝the＋比較級, the＋比較級（~すればするほど…）、比較級＋than any other＋単数名詞（最上級の意味）、no more than＝only（たった…しか）、not more than＝at most（多くても）、no less than＝as much as（~も）。no は『差がゼロ＝意外だ』という驚きを表すだけで、少ない・多いの向きは more／less が決める（no more than＝意外に少ない“たった”、no less than＝意外に多い“~も”）。not more／less than は上限・下限（せいぜい／少なくとも）。",
+   "ex": [
+    [
+     "The more you practice, the better you become.",
+     "練習すればするほど、上達する。"
+    ],
+    [
+     "He has no more than 500 yen.",
+     "彼は500円しか持っていない。"
+    ]
+   ],
+   "rule": "no more than＝たった／not more than＝せいぜい(上限)"
+  }
+ ],
+ "kiso": [
+  {
+   "type": "fill",
+   "stem": "I have a friend ______ can speak five languages.",
+   "ans": "who（that も可）",
+   "point": "主格の関係代名詞(who)",
+   "exp": "先行詞 a friend は「人」で、空所の後ろにはいきなり動詞 can speak が続く。主語が欠けているので主格の関係代名詞 who を使う(that も可)。人＋後ろが動詞→who と押さえる。"
+  },
+  {
+   "type": "fill",
+   "stem": "The movie ______ we watched last night was boring.",
+   "ans": "which（that も可／省略も可）",
+   "point": "目的格の関係代名詞(which)",
+   "exp": "空所の後ろは we watched(主語＋動詞)で、watched の目的語が欠けている。よって目的格の関係代名詞 which(that も可)。先行詞 The movie が watched の目的語にあたる。"
+  },
+  {
+   "type": "fill",
+   "stem": "I know a boy ______ father is a famous doctor.",
+   "ans": "whose",
+   "point": "所有格の関係代名詞(whose)",
+   "exp": "「その少年の父」という所有の関係。空所の後ろに名詞 father が続くので所有格 whose を使う。whose＋名詞で「その~の…」を表す。"
+  },
+  {
+   "type": "mc",
+   "stem": "This is the town ______ I was born.",
+   "note": "これは私が生まれた町だ。",
+   "choices": [
+    "which",
+    "where",
+    "who",
+    "whose"
+   ],
+   "ans": 1,
+   "point": "関係副詞 where",
+   "exp": "先行詞 the town は「場所」で、空所の後ろ I was born は要素の欠けていない完全文。場所＋完全文なので関係副詞 where が正解。which/that なら目的語などの欠けが必要で、ここでは不可。"
+  },
+  {
+   "type": "fill",
+   "stem": "I still remember the day ______ we first met.",
+   "ans": "when（that・省略も可）",
+   "point": "関係副詞 when",
+   "exp": "先行詞 the day は「時」で、後ろの we first met は完全文。時＋完全文なので関係副詞 when を使う。on which と言い換えられる。"
+  },
+  {
+   "type": "mc",
+   "stem": "I think ______ he is honest.",
+   "note": "私は彼が正直だと思う。",
+   "choices": [
+    "what",
+    "which",
+    "that",
+    "who"
+   ],
+   "ans": 2,
+   "point": "名詞節を作る接続詞 that",
+   "exp": "think の目的語となる「彼が正直だということ」という名詞のカタマリを作るのは接続詞 that。what/which/who は関係詞・疑問詞で、後ろに要素の欠けが必要になり、完全文 he is honest には合わない。"
+  },
+  {
+   "type": "fill",
+   "stem": "______ we win or lose is not important.",
+   "ans": "Whether",
+   "point": "主語になる名詞節 whether",
+   "exp": "「私たちが勝つか負けるか」という名詞のカタマリが文の主語(is の前)になっている。主語の位置に置ける「~かどうか」は whether のみ。if は主語の名詞節には使えない。"
+  },
+  {
+   "type": "mc",
+   "stem": "Hurry up, ______ you will miss the train.",
+   "note": "急ぎなさい、さもないと電車に乗り遅れるよ。",
+   "choices": [
+    "and",
+    "but",
+    "so",
+    "or"
+   ],
+   "ans": 3,
+   "point": "等位接続詞 or(命令文, or ~)",
+   "exp": "「命令文, or ~」で「~しなさい、さもないと…」の意味。急がないと乗り遅れる、という文脈なので or が正解。and なら「そうすれば」で逆の意味になり不可。"
+  }
+ ],
+ "hyojun": [
+  {
+   "type": "mc",
+   "stem": "The degree ______ technology affects our daily lives cannot be overstated.",
+   "note": "テクノロジーが私たちの日常生活に影響を与える程度は、いくら強調してもしすぎることはない。",
+   "choices": [
+    "where",
+    "which",
+    "in that",
+    "to which"
+   ],
+   "ans": 3,
+   "point": "前置詞＋関係代名詞（the degree to which）",
+   "exp": "核心は「元の文の前置詞は何か」。affect A to a (great) degree(ある程度Aに影響する)の to a degree が前に出て the degree to which となる。後ろは technology affects our daily lives と要素の欠けない完全文なので、which 単体では前置詞 to が足りず不可。where は「場所」を受ける関係副詞で degree には使えない。〈extent/degree to which＋完全文〉＝「~する程度」は論説文の定番。"
+  },
+  {
+   "type": "mc",
+   "stem": "The success of the project depends on ______ we can secure enough funding.",
+   "note": "その計画の成否は、十分な資金を確保できるかどうかにかかっている。",
+   "choices": [
+    "that",
+    "if",
+    "whether",
+    "what"
+   ],
+   "ans": 2,
+   "point": "前置詞の後の名詞節は whether（if 不可）",
+   "exp": "depends on の目的語、つまり前置詞 on の直後に「~かどうか」の名詞節を置く。前置詞の後に立てるのは whether だけで、if は「動詞の目的語」の名詞節専用なので前置詞の後には置けない。that は「~ということ」で「~かどうか」の意味にならず、what は後ろに要素の欠けが必要。原則＝前置詞の後・主語・or not の前は whether。"
+  },
+  {
+   "type": "order",
+   "ja": "どんなに難しくても、彼は決してあきらめないだろう。",
+   "tokens": [
+    "However",
+    "difficult",
+    "it",
+    "may",
+    "be",
+    "he",
+    "will",
+    "never",
+    "give",
+    "up"
+   ],
+   "ans": "However difficult it may be he will never give up",
+   "point": "複合関係副詞 However（＝no matter how）",
+   "exp": "「どんなに~でも」は〈However＋形容詞/副詞＋SV〉。ここでは However のすぐ後ろに difficult を吸い上げ、However difficult it may be で譲歩の副詞節を作る。However を文末の be の後に残して「difficult ... however」とはできない点に注意。However は「しかし」ではなく「どれほど~でも(＝no matter how)」。"
+  },
+  {
+   "type": "rewrite",
+   "given": "This is the method. Many problems can be solved by it.",
+   "target": "This is the method ______ ______ many problems can be solved.",
+   "blanks": [
+    "by",
+    "which"
+   ],
+   "point": "前置詞＋関係代名詞（by which）",
+   "exp": "2文目の it(＝the method)は solve ~ by the method(その方法で~を解く)の by の目的語。it を関係代名詞 which に変え、ペアの前置詞 by を前に出して by which とし先行詞の直後に置く。関係副詞では by(手段)のニュアンスが出せない。〈前置詞＋関係代名詞〉は「元の文で先行詞が組んでいた前置詞」で前置詞が決まる。"
+  },
+  {
+   "type": "mc",
+   "stem": "He is ______ a scholar as a businessman; he cares only about profit.",
+   "note": "彼は学者というよりむしろ実業家だ。利益のことしか頭にない。",
+   "choices": [
+    "not so much",
+    "no more",
+    "much more",
+    "no less"
+   ],
+   "ans": 0,
+   "point": "not so much A as B（AというよりむしろB）",
+   "exp": "後半の as が決め手。〈not so much A as B〉＝「AというよりむしろB」で、as とペアを組めるのはこれだけ。cares only about profit(利益しか考えない)から「学者<実業家」と傾く文意にも合う。no more/no less/much more は比較級系で than を取り、as とは結べないので不可。核心＝not so much A as B は A<B の気持ち。"
+  },
+  {
+   "type": "mc",
+   "stem": "______ makes this book valuable is its detailed analysis of the war.",
+   "note": "この本を価値あるものにしているのは、戦争の詳細な分析だ。",
+   "choices": [
+    "That",
+    "What",
+    "Which",
+    "As"
+   ],
+   "ans": 1,
+   "point": "先行詞を含む関係代名詞 what",
+   "exp": "関係代名詞 what＝the thing which(~すること/もの)。先行詞を自分の中に含み、makes の主語が欠けた名詞節を作って文全体の主語になる。That や Which は別に先行詞が要るため、単独で「~すること」という主語の名詞節は作れない。先行詞ゼロで「~すること」を作れるのは what だけ、と押さえる。"
+  },
+  {
+   "type": "rewrite",
+   "given": "The company hired 100 people last year. Most of them were engineers.",
+   "target": "The company hired 100 people last year, ______ ______ ______ were engineers.",
+   "blanks": [
+    "most",
+    "of",
+    "whom"
+   ],
+   "point": "非制限用法〈数量詞＋of whom〉",
+   "exp": "2文目の them(＝100 people)を関係代名詞に変えて1文にまとめる。人なので whom を使い、most of them → most of whom としてコンマの後に置く。them(代名詞)を残したまま2文を接続詞なしでつなぐことはできないので、関係代名詞化が必須。〈all/most/some/none＋of whom(which)〉は「そのうちの~は」と補足説明する非制限用法の頻出形。"
+  },
+  {
+   "type": "order",
+   "ja": "たとえ誰が来ても、そのドアを開けてはいけない。",
+   "tokens": [
+    "No",
+    "matter",
+    "who",
+    "comes",
+    "you",
+    "must",
+    "not",
+    "open",
+    "the",
+    "door"
+   ],
+   "ans": "No matter who comes you must not open the door",
+   "point": "no matter＋疑問詞（＝複合関係詞）",
+   "exp": "「たとえ誰が~しても」は No matter who(＝Whoever)で譲歩の副詞節を作る。No matter who comes で「たとえ誰が来ても」となり、who が comes の主語。no matter＋疑問詞は必ず「~しようとも(≒even if)」の副詞節になる点を、名詞節を作る whoever(~する人は誰でも)と区別して押さえる。"
+  }
+ ],
+ "nyushi": [
+  {
+   "type": "mc",
+   "stem": "A whale is ______ a fish than a horse is.",
+   "note": "馬が魚でないのと同様に、クジラも魚ではない。",
+   "choices": [
+    "no more",
+    "not more",
+    "no less",
+    "any more"
+   ],
+   "ans": 0,
+   "point": "no more A than B（クジラ構文）",
+   "exp": "〈A is no more B than C is (B)〉＝「CがBでないのと同様、AもBでない」＝クジラ構文。no more の no は「差はゼロ＝同じだ」を示し、than 以下の“誰でも分かる否定(馬は魚でない)”を基準に、鯨も同じく魚でないと両方を否定する。no less…than なら「~と同様に~だ」と両方肯定になり逆。not more…than は数量の上限「せいぜい」で、ここでは意味を成さない。"
+  },
+  {
+   "type": "error",
+   "html": "[a|He is one of] the few students [b|who] [c|has] [d|passed] the exam.",
+   "ans": "c",
+   "correct": "has → have",
+   "point": "one of the＋複数＋who＋複数動詞",
+   "exp": "関係代名詞 who の先行詞は直前の the few students(複数)なので、関係詞節の動詞は have でなければならない。× has → ○ have。one of the ... の one に引きずられて単数 has にするのが典型ミス。「~する数少ない…の一人」の型では、who 以下は複数(the few students)に一致させるのが鉄則。"
+  },
+  {
+   "type": "mc",
+   "stem": "Not until he apologized ______ how much I had hurt him.",
+   "note": "彼が謝って初めて、私は自分がどれほど彼を傷つけたかに気づいた。",
+   "choices": [
+    "I realized",
+    "did I realize",
+    "I did realize",
+    "that I realized"
+   ],
+   "ans": 1,
+   "point": "否定の副詞句の文頭倒置",
+   "exp": "否定の副詞句 Not until ~ が文頭に出ると、主節は疑問文と同じ語順(倒置)になる。よって did I realize が正解。〈It was not until ~ that S V〉の強調構文なら倒置しないが、ここには It was も that もないので that I realized も平叙のままの I realized も不可。文頭の否定語(Never/Little/Hardly/Not until…)＝直後は倒置、と反応する。"
+  },
+  {
+   "type": "ja2en",
+   "ja": "世間で言われていることとは反対に、成功は才能よりも努力によるところが大きい。",
+   "models": [
+    "Contrary to what is commonly said, success depends more on effort than on talent.",
+    "Contrary to what people say, success owes more to hard work than to talent."
+   ],
+   "point": "関係代名詞 what（~すること）＋比較 more A than B",
+   "exp": "「世間で言われていること」は先行詞を含む what を使い what is (commonly) said とする。「AよりBによる」は depend on / owe to を使い、比較は同じ形をそろえて more on effort than on talent(前置詞 on を両側に置く)と表す。〈what＋不完全文〉と〈more … than …〉の型を組み合わせるのが骨。",
+   "mistakes": "what の代わりに that/which を使う(先行詞が別に無いので不可)／than の後の前置詞 on/to を落として more on effort than talent としてしまう(比較対象の形が不揃い)。",
+   "lines": 2
+  },
+  {
+   "type": "ja2en",
+   "ja": "彼ほど自分の欠点に気づいていない人はいない。",
+   "models": [
+    "No one is less aware of his own faults than he is.",
+    "Nobody is less conscious of his own shortcomings than he is."
+   ],
+   "point": "〈No one is 比較級 … than ~〉で最上級相当＋否定",
+   "exp": "「彼ほど~ない人はいない」は〈No one(否定主語)＋比較級＋than he〉で「彼が最も~だ」という最上級の意味を出す型。ここは「気づいていない」なので less aware(気づいている度合いが低い)を使い、No one is less aware … than he とする。than の後は正式には主格 he(＋is)。less と more を取り違えないことに注意する。",
+   "mistakes": "than he を than him にする(比較の後は主格＋動詞が正式)／less を more にして「彼ほどよく気づいている人はいない」と逆の意味にする／be aware of の of を落とす。",
+   "lines": 2
+  }
+ ]
+}

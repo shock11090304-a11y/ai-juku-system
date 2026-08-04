@@ -1,0 +1,206 @@
+{
+ "no": 3,
+ "date": "8/19",
+ "title": "設問処理",
+ "goal": "選択肢を本文と照らし合わせて内容一致問題を解き、it・they・this などの指示語が指す中身をつかんで、下線部を正しく訳せるようになる。",
+ "points": [
+  {
+   "h": "内容一致は、選択肢を本文の言いかえとして照合する",
+   "body": "内容一致問題では、選択肢の内容が本文のどの文と対応するかを一つずつ確かめる。本文に書かれていない話や、逆の内容にだまされないよう、必ず本文の文にもどって確認する。",
+   "ex": [
+    [
+     "Anyone can take a book from it for free.",
+     "だれでも無料でそこから本を取れる。（→「無料で取れる」が本文と一致）"
+    ]
+   ],
+   "rule": "選択肢は必ず本文の一文と照らし合わせる"
+  },
+  {
+   "h": "it・they・this が指すものは、前にもどって名詞を探す",
+   "body": "it は単数のもの、they は複数のもの、this は前に出た事がら全体を指すことが多い。指示語を見つけたら少し前にもどり、「代わりに入れて意味が通る名詞」を探す。",
+   "ex": [
+    [
+     "It is full of books.",
+     "それ（＝箱）は本でいっぱいだ。"
+    ],
+    [
+     "They enjoy choosing books.",
+     "彼ら（＝子どもやお年寄り）は本を選んで楽しむ。"
+    ]
+   ],
+   "rule": "指示語は前にもどって名詞を当てはめる"
+  },
+  {
+   "h": "下線部の訳は、S+Vをつかみ指示語は中身に置きかえる",
+   "body": "下線部を訳すときは、まず主語S・動詞Vをつかむ。it や them などの指示語は、そのまま「それ」と訳すより、指す中身を( )で補うと意味がはっきりする。",
+   "ex": [
+    [
+     "...you bring it back...",
+     "…あなたはそれ（＝本）を返す…"
+    ]
+   ],
+   "rule": "指示語は指す中身を補って訳す"
+  }
+ ],
+ "passage": {
+  "title": "The Little Street Library",
+  "jtitle": "小さな街の図書館",
+  "paras": [
+   [
+    "Near Aya's house, there is a small wooden box on a pole.",
+    "It looks like a tiny house, and it is full of books.",
+    "Anyone can take a book from it for free.",
+    "When you finish reading, you bring it back or leave another book.",
+    "People call this a 'street library.'"
+   ],
+   [
+    "Aya's grandfather made this box last spring.",
+    "At first, only a few people used it.",
+    "But now, many children and elderly people visit it every day.",
+    "They enjoy choosing books and talking about their favorite stories.",
+    "The books change almost every week, so there is always something new to read.",
+    "Some of them even leave short letters inside the books."
+   ],
+   [
+    "One day, Aya found a letter in an old book.",
+    "It said, 'Thank you. This library gave me a new friend.'",
+    "Aya was very happy to read these words.",
+    "A small box can bring people together."
+   ]
+  ],
+  "trans": {
+   "1": "アヤの家の近くに、柱の上にのった小さな木の箱がある。",
+   "2": "それは小さな家のように見え、本でいっぱいだ。",
+   "3": "だれでもそこから無料で本を取ることができる。",
+   "4": "読み終えたら、あなたはそれを返すか、別の本を置いていく。",
+   "5": "人々はこれを「街の図書館」と呼ぶ。",
+   "6": "アヤの祖父がこの前の春にこの箱を作った。",
+   "7": "最初は、ほんの数人しかそれを使わなかった。",
+   "8": "しかし今では、多くの子どもたちやお年寄りが毎日それを訪れる。",
+   "9": "彼らは本を選んだり、お気に入りの物語について話したりして楽しむ。",
+   "10": "本はほとんど毎週入れかわるので、いつも何か新しく読むものがある。",
+   "11": "彼らの中には、本の間に短い手紙を残していく人さえいる。",
+   "12": "ある日、アヤは古い本の中に一通の手紙を見つけた。",
+   "13": "そこにはこう書いてあった。「ありがとう。この図書館は私に新しい友達をくれました。」",
+   "14": "アヤはこの言葉を読んでとてもうれしかった。",
+   "15": "小さな箱が人々を結びつけることができるのだ。"
+  }
+ },
+ "vocab": [
+  [
+   "wooden",
+   "形",
+   "木でできた・木製の"
+  ],
+  [
+   "pole",
+   "名",
+   "柱・棒"
+  ],
+  [
+   "tiny",
+   "形",
+   "とても小さい"
+  ],
+  [
+   "be full of ~",
+   "熟",
+   "~でいっぱいだ"
+  ],
+  [
+   "for free",
+   "熟",
+   "無料で"
+  ],
+  [
+   "bring ~ back",
+   "熟",
+   "~を返す・持ち帰る"
+  ],
+  [
+   "another",
+   "形",
+   "もう一つの・別の"
+  ],
+  [
+   "at first",
+   "熟",
+   "最初は"
+  ],
+  [
+   "favorite",
+   "形",
+   "お気に入りの"
+  ],
+  [
+   "even",
+   "副",
+   "~さえ・~までも"
+  ],
+  [
+   "together",
+   "副",
+   "いっしょに"
+  ]
+ ],
+ "q_instr": "本文を読み、次の問いに答えなさい。",
+ "questions": [
+  {
+   "type": "rc_mc",
+   "q": "この文章の内容として最も適切なものを選べ。",
+   "choices": [
+    "だれでも無料で箱から本を取ることができる。",
+    "本を借りるにはお金を払わなければならない。",
+    "この箱は図書館の職員が作ったものだ。",
+    "箱の中の本は一度も入れかえられない。"
+   ],
+   "ans": 0,
+   "exp": "文(3) Anyone can take a book from it for free. で「無料で取れる」とある。よって①が正しい。お金の話は本文になく②は誤り。作ったのはアヤの祖父(文(6))なので③は誤り。文(10)で本はほとんど毎週入れかわるとあるので④も誤り。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "「街の図書館（street library）」について、本文の内容と合うものを選べ。",
+   "choices": [
+    "今ではそれを利用する人はほとんどいない。",
+    "本を読み終えたら、返すか別の本を置いていく。",
+    "作られた当初から毎日多くの人が使っていた。",
+    "本の間に手紙を入れることは禁止されている。"
+   ],
+   "ans": 1,
+   "exp": "文(4)に、読み終えたら本を返すか別の本を置くとある。よって②が正しい。文(7)(8)より、最初は数人だが今は多くの人が使うので①③は逆で誤り。文(11)で手紙を残す人もいるとあるので④も誤り。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "文(12)〜(14) の内容と合うものを選べ。",
+   "choices": [
+    "アヤは自分で手紙を書いて本にはさんだ。",
+    "手紙には図書館への不満が書かれていた。",
+    "アヤはその手紙を読んで腹を立てた。",
+    "アヤは古い本の中で、感謝の手紙を見つけた。"
+   ],
+   "ans": 3,
+   "exp": "文(12)でアヤは古い本の中に手紙を見つけ、文(13)にはお礼と「新しい友達をくれた」という感謝の言葉がある。よって④が正しい。手紙を見つけたのであって書いたのではないから①は誤り、不満ではなく感謝なので②は誤り、文(14)で very happy とあるので③も誤り。"
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(3) Anyone can take a book from it for free. の it が指す内容を、日本語で答えよ。",
+   "ans": "アヤの家の近くにある、本でいっぱいの小さな木の箱（＝街の図書館）。",
+   "exp": "it は単数のものを指す。前にもどると、文(1)の a small wooden box、文(2)の It（＝その箱）が続いている。ここでも it を「その箱」と入れかえると「だれでもその箱から本を取れる」となり意味が通る。",
+   "lines": 2
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(9) They enjoy choosing books and talking about their favorite stories. の They が指す内容を、日本語で答えよ。",
+   "ans": "その街の図書館を毎日訪れる、多くの子どもたちやお年寄り。",
+   "exp": "They は複数のものを指すので、直前の文(8)にもどる。そこに many children and elderly people「多くの子どもたちやお年寄り」とあり、これを They に当てはめると「彼らは本を選んで楽しむ」となって意味が通る。",
+   "lines": 2
+  },
+  {
+   "type": "rc_desc",
+   "q": "下線部（文(4)）When you finish reading, you bring it back or leave another book. を日本語に訳せ。",
+   "ans": "読み終えたら、あなたはそれ（＝本）を返すか、別の本を置いていく。",
+   "exp": "骨組みは you bring / (you) leave（S+V）。When you finish reading は「読み終えたら」というかざり。it は文(3)の a book を指すので「それ（本）を返す」と補って訳す。another book は「別の本」。",
+   "lines": 2
+  }
+ ]
+}

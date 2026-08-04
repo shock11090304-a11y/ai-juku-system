@@ -1,0 +1,72 @@
+{
+ "no": 1,
+ "title": "Maplewood Town Library: We Are Open Again!",
+ "passage": "Maplewood Town Library: We Are Open Again!\n\nAfter eight months of building work, Maplewood Town Library will open its doors again on Monday, April 6. The library now has a bright reading room on the second floor and a quiet study area for students on the third floor. We want everyone in town to know what has changed. Please read the notes below before your next visit.\n\nNew Opening Hours\nMonday to Friday: 9:00 a.m. to 8:00 p.m.\nSaturday and Sunday: 10:00 a.m. to 5:00 p.m.\nClosed on the first Wednesday of every month.\n\nThe library used to close at 6:00 p.m. on weekdays. In our view, this later closing time is the most helpful change for people who work or study during the day.\n\nBorrowing Rules\nYou may now borrow ten items at a time instead of five.\nBooks can be kept for three weeks, and DVDs and magazines for one week.\nYou can renew an item once on our website, but only if no one else is waiting for it.\nThere is no fee for a late return, but your card will be locked until every item is brought back.\n\nFor Students\nStudents aged 13 to 18 can get a Study Pass at the front desk. With this pass you can book a desk in the third-floor study area for up to four hours a day. Every Saturday afternoon, student volunteers from a local university answer questions about homework in Room 2. No booking is needed for these sessions, so please just come to the room.",
+ "glossary": [
+  {
+   "word": "renew",
+   "ja": "(貸出を)延長する・更新する"
+  },
+  {
+   "word": "item",
+   "ja": "品物、(貸出の)1点"
+  },
+  {
+   "word": "Study Pass",
+   "ja": "スタディパス(この図書館が学生に発行する架空の利用証)"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "q": "What is the main purpose of this website?",
+   "options": [
+    "To ask local people to help pay for the library's building work.",
+    "To explain to local people how the library's services and hours are different now.",
+    "To invite local people to a special event on the opening day.",
+    "To ask local people for their opinions about the new library building."
+   ]
+  },
+  {
+   "n": 2,
+   "q": "According to the website, what happens when a user returns an item late?",
+   "options": [
+    "The user has to pay a small amount of money for each late day.",
+    "The user must give the library card back to the staff at the desk.",
+    "The user is not allowed to borrow any other items from the library for three weeks.",
+    "The user cannot use the library card until all the items have been returned."
+   ]
+  },
+  {
+   "n": 3,
+   "q": "According to the website, which is true about the Saturday sessions in Room 2?",
+   "options": [
+    "Students can join them without booking a place in advance.",
+    "Students have to show their Study Pass at the door before they enter.",
+    "Students need to send their homework questions to the library in advance.",
+    "Students may stay in the room for four hours."
+   ]
+  },
+  {
+   "n": 4,
+   "q": "Mika has borrowed a book, and another user is now waiting for the same book. According to the borrowing rules, what is true about Mika?",
+   "options": [
+    "She must return the book by the end of the three-week period.",
+    "She can still renew the book once online, because every item may be renewed once.",
+    "She may keep the book for only one week, in the same way as DVDs and magazines.",
+    "She will have to pay a late fee if she keeps the book after the deadline."
+   ]
+  },
+  {
+   "n": 5,
+   "q": "Which option best describes the library's opinion stated on the website?",
+   "options": [
+    "The library will open its doors again on Monday, April 6.",
+    "Users can now borrow ten items at a time instead of only five.",
+    "The new, later closing time on weekdays is the most helpful change.",
+    "The Saturday sessions in Room 2 are the most useful service for the town's students."
+   ]
+  }
+ ],
+ "lead": "You are looking at the website of Maplewood Town Library, which is in the town where you live."
+}

@@ -1,0 +1,42 @@
+[
+ {
+  "key": "chu_r1",
+  "id": "q5",
+  "type": "rc_mc",
+  "status": "MISMATCH",
+  "detail": "solver=2 key=3",
+  "point": ""
+ },
+ {
+  "key": "kou_g4",
+  "id": "kiso1",
+  "type": "fill",
+  "status": "REVIEW",
+  "detail": "solver='who' key='who（that も可）'",
+  "point": "主格の関係代名詞(who)"
+ },
+ {
+  "key": "kou_g4",
+  "id": "kiso2",
+  "type": "fill",
+  "status": "REVIEW",
+  "detail": "solver='which' key='which（that も可／省略も可）'",
+  "point": "目的格の関係代名詞(which)"
+ },
+ {
+  "key": "kou_g4",
+  "id": "kiso5",
+  "type": "fill",
+  "status": "REVIEW",
+  "detail": "solver='when' key='when（that・省略も可）'",
+  "point": "関係副詞 when"
+ },
+ {
+  "key": "kou_r2",
+  "id": "q1",
+  "type": "rc_mc",
+  "status": "MISMATCH",
+  "detail": "solver=2 key=1",
+  "point": ""
+ }
+]

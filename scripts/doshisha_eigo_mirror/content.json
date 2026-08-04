@@ -1,0 +1,690 @@
+{
+ "I": {
+  "label": "大問Ⅰ",
+  "points": 83,
+  "lead": "次の英文を読んで、あとの設問(A〜F)に答えなさい。",
+  "source_note": "本文はオリジナル。畏敬の念(awe)に関する心理学研究を題材に、本試験用に書き下ろしたもの。米式綴りに統一。",
+  "paragraphs": [
+   "Stand at the edge of a canyon at dusk, listen to a symphony swell toward its climax, or watch a small child take her very first steps, and you may feel a sudden rush of emotion that is oddly hard to name. Scientists call this feeling awe, and for a long time it was pushed [[A:W]] the margins of psychology, dismissed as too fuzzy and too private to measure. Emotions such as anger, fear, and joy could be provoked and recorded in a laboratory, but awe seemed to slip through the fingers of any researcher who reached for it. Over the past two decades, however, awe has moved toward the center of research on human emotion, [[B:a=largely]] because psychologists have at last found reliable ways to trigger it and to track its effects on the body and the mind.",
+   "The scientist most closely associated [[A:X]] the modern study of awe is Dacher Keltner, who defines it as the feeling we get in the presence of something vast that [[B:b=transcends]] our current understanding of the world. Crucially, this vastness need not be physical; a brilliant scientific theory, a sprawling piece of music, or a profound act of kindness can be just as overwhelming [[A:Y]] a towering mountain range. What unites such varied experiences, Keltner argues, is that they force the mind to revise its mental maps, [[C:ア=stretching the boundaries of what a person believes is possible]]. When the world suddenly looks bigger than we assumed, the self, by comparison, begins to look reassuringly small.",
+   "Awe also leaves distinct traces on the body. Many people report goosebumps or a shiver running down the spine, [[B:c=reactions]] that appear to be governed in part by the vagus nerve, a long pathway linking the brain to the heart and the gut. Experiments that show volunteers slow, sweeping films of nature have found that awe can quiet the body's stress response, slowing the heart and lowering levels of inflammatory chemicals [[A:Z]] are associated with anxiety and depression. [[F=In other words, a single moment of wonder may do quiet work that lingers long after the feeling itself has faded.]] The effect is modest, but in a culture saturated with stress, even a modest calming may matter.",
+   "Perhaps the most striking findings concern the way awe reshapes our behavior toward other people. In one well-known experiment, participants who had just gazed up at a grove of towering eucalyptus trees were noticeably more likely to help a stranger who [[B:d=stumbled]] nearby than those who had spent the same amount of time staring at a plain office building. Awe, it appears, shrinks the ego. Keltner calls this the 'small self': the sense that one is only a minor part of something far larger, [[C:イ=a realization that loosens our grip on petty concerns]]. Far from making people feel insignificant, this humbling seems to leave them feeling more connected.",
+   "This shrinking of the self may help to explain why awe tends to make people more generous. Researchers argue that awe [[D:あ]] [[D:い]] [[D:う]] [[D:え]] [[D:お]] [[D:か]] from the self and toward the larger world, [[B:e=prompting]] us to cooperate rather than to compete. In laboratory games, participants nudged into a state of awe share more of their money with strangers and behave more fairly. When we feel bound to a group, giving away resources seems less like a sacrifice and more like an [[B:f=obligation]] we are actually glad to meet.",
+   "Awe even appears to bend our perception of time. Across several studies, people who recalled an awe-filled memory reported feeling that they had more time available to them, and they grew more patient and more [[B:g=reluctant]] to base their choices on money alone. Because awe rivets attention on the present moment, it seems to stretch the felt passage of time, [[C:ウ=making an ordinary afternoon feel unexpectedly full]]. A life rich in such moments, the researchers suggest, may feel longer than a life spent hurrying from one task to the next.",
+   "Not all awe is warm and uplifting, however. The same emotion can be shaded with fear, as when a person confronts a raging storm, a violent crowd, or a [[B:h=domineering]] ruler who claims more-than-human authority. This 'threat-based' awe can leave people feeling powerless and more [[B:i=inclined]] to accept authority without question. History offers uncomfortable examples of leaders who staged vast spectacles precisely to produce it. The very emotion that opens the mind to wonder, researchers caution, can under the wrong conditions be turned into an instrument of control.",
+   "Even so, the everyday benefits of awe lie within nearly everyone's reach. You do not need a passport, a telescope, or a mountain on the horizon; a slow walk beneath old trees, a few minutes of music heard with full attention, or the sight of a star-filled sky can be enough. Cultivating a deliberate habit of wonder, the emerging science suggests, may be one of the simplest and cheapest ways to feel healthier, humbler, and more closely tied to the people around us."
+  ],
+  "glossary": [
+   {
+    "term": "awe",
+    "gloss_ja": "畏敬の念、驚嘆(崇高で広大なものに対して感じる、畏れと感動が入り混じった感情)"
+   },
+   {
+    "term": "vagus nerve",
+    "gloss_ja": "迷走神経(脳と心臓・内臓をつなぐ神経)"
+   },
+   {
+    "term": "inflammatory",
+    "gloss_ja": "炎症(性)の"
+   },
+   {
+    "term": "eucalyptus",
+    "gloss_ja": "ユーカリ(の木)"
+   },
+   {
+    "term": "goosebumps",
+    "gloss_ja": "鳥肌"
+   }
+  ],
+  "A_instruction": "本文中の空所( W )〜( Z )に入れるのに最も適切なものを、それぞれ次の1〜4から一つ選べ。",
+  "A_items": [
+   {
+    "slot": "W",
+    "options": [
+     "to",
+     "on",
+     "at",
+     "in"
+    ],
+    "ans": 1
+   },
+   {
+    "slot": "X",
+    "options": [
+     "to",
+     "with",
+     "by",
+     "for"
+    ],
+    "ans": 2
+   },
+   {
+    "slot": "Y",
+    "options": [
+     "than",
+     "like",
+     "as",
+     "so"
+    ],
+    "ans": 3
+   },
+   {
+    "slot": "Z",
+    "options": [
+     "what",
+     "whose",
+     "where",
+     "that"
+    ],
+    "ans": 4
+   }
+  ],
+  "B_instruction": "本文中の下線部(a)〜(i)の語に最も意味の近いものを、それぞれ次の1〜4から一つ選べ。",
+  "B_items": [
+   {
+    "label": "a",
+    "word": "largely",
+    "options": [
+     "mainly",
+     "rarely",
+     "barely",
+     "oddly"
+    ],
+    "ans": 1
+   },
+   {
+    "label": "b",
+    "word": "transcends",
+    "options": [
+     "matches",
+     "reflects",
+     "surpasses",
+     "limits"
+    ],
+    "ans": 3
+   },
+   {
+    "label": "c",
+    "word": "reactions",
+    "options": [
+     "signals",
+     "responses",
+     "questions",
+     "choices"
+    ],
+    "ans": 2
+   },
+   {
+    "label": "d",
+    "word": "stumbled",
+    "options": [
+     "rushed",
+     "paused",
+     "waited",
+     "tripped"
+    ],
+    "ans": 4
+   },
+   {
+    "label": "e",
+    "word": "prompting",
+    "options": [
+     "leading",
+     "forcing",
+     "allowing",
+     "warning"
+    ],
+    "ans": 1
+   },
+   {
+    "label": "f",
+    "word": "obligation",
+    "options": [
+     "option",
+     "reward",
+     "duty",
+     "burden"
+    ],
+    "ans": 3
+   },
+   {
+    "label": "g",
+    "word": "reluctant",
+    "options": [
+     "eager",
+     "unwilling",
+     "likely",
+     "able"
+    ],
+    "ans": 2
+   },
+   {
+    "label": "h",
+    "word": "domineering",
+    "options": [
+     "generous",
+     "cautious",
+     "cheerful",
+     "tyrannical"
+    ],
+    "ans": 4
+   },
+   {
+    "label": "i",
+    "word": "inclined",
+    "options": [
+     "disposed",
+     "reluctant",
+     "afraid",
+     "unable"
+    ],
+    "ans": 1
+   }
+  ],
+  "C_instruction": "本文中の波線部(ア)〜(ウ)の意味に最も近いものを、それぞれ次の1〜4から一つ選べ。",
+  "C_items": [
+   {
+    "label": "ア",
+    "phrase": "stretching the boundaries of what a person believes is possible",
+    "options": [
+     "proving that most of our beliefs are false",
+     "widening a person's sense of what could be true",
+     "setting firm limits on the imagination",
+     "recalling the boundaries drawn by earlier thinkers"
+    ],
+    "ans": 2
+   },
+   {
+    "label": "イ",
+    "phrase": "a realization that loosens our grip on petty concerns",
+    "options": [
+     "an idea that tightens our control over small problems",
+     "a discovery that adds to our everyday stress",
+     "an insight that makes small worries matter less",
+     "a belief that we ought to ignore other people"
+    ],
+    "ans": 3
+   },
+   {
+    "label": "ウ",
+    "phrase": "making an ordinary afternoon feel unexpectedly full",
+    "options": [
+     "causing a normal afternoon to seem surprisingly rich",
+     "making time appear to pass more quickly",
+     "leaving people bored by their daily routine",
+     "filling the day with too many obligations"
+    ],
+    "ans": 1
+   }
+  ],
+  "D_instruction": "次の語群(1〜8)を並べ替えて本文中の空所(あ)〜(か)を補い、意味の通る英文を完成させよ。解答は(い)(う)(お)に入る語の番号のみを記せ。ただし語群には使用しない語が含まれ、同じ語を二度用いてはならない。",
+  "D_bank": [
+   "attention",
+   "because",
+   "to",
+   "away",
+   "our",
+   "which",
+   "helps",
+   "shift"
+  ],
+  "D_answer_slots": [
+   "い",
+   "う",
+   "お"
+  ],
+  "D_slot_map": [
+   {
+    "slot": "あ",
+    "idx": 7
+   },
+   {
+    "slot": "い",
+    "idx": 3
+   },
+   {
+    "slot": "う",
+    "idx": 8
+   },
+   {
+    "slot": "え",
+    "idx": 5
+   },
+   {
+    "slot": "お",
+    "idx": 1
+   },
+   {
+    "slot": "か",
+    "idx": 4
+   }
+  ],
+  "D_dummies": [
+   2,
+   6
+  ],
+  "D_full_sentence": "Researchers argue that awe helps to shift our attention away from the self and toward the larger world.",
+  "E_instruction": "本文の内容と一致するものを、次の1〜8から三つ選べ。",
+  "E_options": [
+   "According to Keltner, awe can arise only from physically enormous objects such as mountain ranges.",
+   "Awe was once brushed aside by psychologists as too vague to be measured.",
+   "Studies have proven that watching films of nature cures anxiety in the majority of viewers.",
+   "People who gazed at towering trees became less willing than others to help a stranger nearby.",
+   "The 'small self' describes the feeling of being a tiny part of something far greater than oneself.",
+   "Awe has been shown to make people value money more highly and to act more competitively.",
+   "Recalling an awe-inspiring memory led people to feel that they had more time to spare.",
+   "Researchers conclude that awe is invariably pleasant, whatever situation happens to trigger it."
+  ],
+  "E_answers": [
+   2,
+   5,
+   7
+  ],
+  "F_target_en": "In other words, a single moment of wonder may do quiet work that lingers long after the feeling itself has faded.",
+  "F_model_ja": "言い換えれば、たった一度の驚嘆の瞬間が、その感情そのものが消え去ったずっと後まで残り続ける静かな働きをしているのかもしれない。"
+ },
+ "II": {
+  "label": "大問Ⅱ",
+  "points": 67,
+  "lead": "次の英文を読んで、あとの設問(A〜E)に答えなさい。",
+  "source_note": "＊本問はオリジナル英文であり、実在する記事等に基づくものではない。",
+  "paragraphs": [
+   "For much of the twentieth century, the midday nap was dismissed as a habit of the idle, a luxury [[A:X]] which hard-working people supposedly had no time. To be caught asleep at one's desk was, in many offices, a small disgrace. Yet a growing body of research now suggests that a short daytime sleep may be one of the cheapest and most effective ways to sharpen both body and mind. Coaches, airline pilots and even surgeons are increasingly being urged to [[B:a=reconsider]] the nap, treating it not as a sign of weakness but as a legitimate part of training, safety and recovery.",
+   "The practice is, of course, far from new. Communities around the Mediterranean and across Latin America have long built a siesta into the rhythm of the day, shutting up shops during the hottest hours so that workers can lie down and rest. What has changed is that scientists have begun to measure, in careful detail, what such traditions appear to have grasped by instinct. Laboratories that once concentrated almost entirely on the harms of sleep loss are now turning their attention to the modest but genuine restorative power of a well-timed rest.",
+   "The physiology behind this shift is gradually becoming clearer. During a nap of roughly twenty minutes, the brain drifts into the lighter stages of sleep, [[C:ア=during which the body clears out chemical by-products that build up while we are awake]]. Chief among these substances is adenosine, a molecule [[A:Y]] gradual build-up over the course of the day makes us feel steadily more drowsy. A brief nap lowers adenosine levels, which is [[A:Z]] many people wake from a short sleep feeling mentally refreshed rather than heavy and slow.",
+   "Timing, however, matters as much as duration. A nap that stretches beyond thirty minutes often tips the sleeper into deep, slow-wave sleep, from which waking is difficult and which leaves one groggy for several minutes. Specialists therefore recommend keeping naps [[B:b=brief]] and scheduling them in the early afternoon, when the body's internal clock produces a natural dip in alertness. Napping too late in the day, by contrast, can [[B:c=disrupt]] the following night's sleep, so that a rest meant to help ends up doing quiet harm.",
+   "For athletes the benefits are [[B:d=striking]]. In one controlled study, sprinters who napped after a poor night's sleep ran measurably faster than those who did not, and reported that the effort felt [[C:イ=less demanding than it actually was]]. Reaction times, which are [[B:e=crucial]] in fast sports such as tennis and boxing, also tend to improve after a short sleep. Because physical recovery depends so heavily on sleep, athletes who train twice a day increasingly rely on a nap [[D:あ]] [[D:い]] [[D:う]] [[D:え]] [[D:お]] from the fatigue that accumulates between sessions.",
+   "Some of the most persuasive evidence comes from the world of aviation. In a landmark experiment, long-haul pilots who were permitted a short, planned nap during the quiet cruise phase of a flight showed sharper alertness and far fewer lapses of attention during the demanding descent and landing. The result was convincing enough that several airlines quietly rewrote their guidelines to allow controlled rest on the flight deck. Hospitals, where an exhausted member of staff can make a costly mistake, have slowly begun to follow the same path.",
+   "The mental gains are equally well documented. Memory researchers have found that facts learned shortly before a nap are retained far more securely than those studied with no rest at all. A nap appears to give the brain time to file away new information, [[C:ウ=moving it from temporary storage into more lasting form]]. Some companies, [[B:f=persuaded]] by such findings, have installed nap pods and darkened rooms so that staff can rest during the mid-afternoon slump instead of reaching, once again, for another cup of coffee.",
+   "None of this, it should be stressed, means that napping can replace a full night's sleep. Sleep experts insist that a nap is a supplement, not a substitute, and that people who feel a [[B:g=constant]] need to nap may in fact be masking a more serious underlying disorder. For the chronically sleep-deprived, the real remedy lies in longer, more regular nights, not in scattered daytime sleeps. Used wisely, though, the midday nap may finally shed its reputation as a guilty pleasure and take its place beside diet and exercise as a genuine pillar of good health."
+  ],
+  "glossary": [
+   {
+    "term": "adenosine",
+    "gloss_ja": "＊アデノシン(覚醒中に蓄積し眠気を強める神経伝達物質)"
+   },
+   {
+    "term": "slow-wave sleep",
+    "gloss_ja": "＊徐波睡眠(脳波が緩やかになる深い睡眠段階)"
+   },
+   {
+    "term": "internal clock",
+    "gloss_ja": "＊体内時計(概日リズムを刻む生理機構)"
+   },
+   {
+    "term": "siesta",
+    "gloss_ja": "＊シエスタ(昼下がりの休息・昼寝の習慣)"
+   },
+   {
+    "term": "nap pod",
+    "gloss_ja": "＊仮眠用ポッド(オフィス等に置く個室型の仮眠設備)"
+   },
+   {
+    "term": "sleep-deprived",
+    "gloss_ja": "＊慢性的に睡眠不足の"
+   },
+   {
+    "term": "cruise phase",
+    "gloss_ja": "＊巡航段階(航空機が一定高度で安定飛行する局面)"
+   }
+  ],
+  "A_instruction": "空所 ( X )〜( Z ) に入れるのに最も適切なものを、それぞれ次の1〜4から一つ選びなさい。",
+  "A_items": [
+   {
+    "slot": "X",
+    "options": [
+     "for",
+     "by",
+     "at",
+     "in"
+    ],
+    "ans": 1
+   },
+   {
+    "slot": "Y",
+    "options": [
+     "which",
+     "that",
+     "whose",
+     "what"
+    ],
+    "ans": 3
+   },
+   {
+    "slot": "Z",
+    "options": [
+     "how",
+     "why",
+     "when",
+     "where"
+    ],
+    "ans": 2
+   }
+  ],
+  "B_instruction": "下線部 (a)〜(g) の語の意味に最も近いものを、それぞれ次の1〜4から一つ選びなさい。",
+  "B_items": [
+   {
+    "label": "a",
+    "word": "reconsider",
+    "options": [
+     "reject",
+     "rethink",
+     "recall",
+     "resemble"
+    ],
+    "ans": 2
+   },
+   {
+    "label": "b",
+    "word": "brief",
+    "options": [
+     "short",
+     "rare",
+     "quiet",
+     "plain"
+    ],
+    "ans": 1
+   },
+   {
+    "label": "c",
+    "word": "disrupt",
+    "options": [
+     "delay",
+     "dismiss",
+     "disturb",
+     "detect"
+    ],
+    "ans": 3
+   },
+   {
+    "label": "d",
+    "word": "striking",
+    "options": [
+     "temporary",
+     "doubtful",
+     "confusing",
+     "remarkable"
+    ],
+    "ans": 4
+   },
+   {
+    "label": "e",
+    "word": "crucial",
+    "options": [
+     "essential",
+     "optional",
+     "obvious",
+     "flexible"
+    ],
+    "ans": 1
+   },
+   {
+    "label": "f",
+    "word": "persuaded",
+    "options": [
+     "reminded",
+     "convinced",
+     "warned",
+     "promised"
+    ],
+    "ans": 2
+   },
+   {
+    "label": "g",
+    "word": "constant",
+    "options": [
+     "instant",
+     "continual",
+     "distant",
+     "pleasant"
+    ],
+    "ans": 2
+   }
+  ],
+  "C_instruction": "波線部 (ア)〜(ウ) の意味に最も近いものを、それぞれ次の1〜4から一つ選びなさい。",
+  "C_items": [
+   {
+    "label": "ア",
+    "phrase": "during which the body clears out chemical by-products that build up while we are awake",
+    "options": [
+     "a time when the body produces the very chemicals that keep us alert",
+     "a stage in which the body removes waste substances that gather while we are conscious",
+     "a period during which the brain stores chemicals for later use",
+     "a phase in which the body slows down its removal of waste"
+    ],
+    "ans": 2
+   },
+   {
+    "label": "イ",
+    "phrase": "less demanding than it actually was",
+    "options": [
+     "easier than it truly was",
+     "harder than they had expected",
+     "as tiring as it usually felt",
+     "impossible for them to keep up"
+    ],
+    "ans": 1
+   },
+   {
+    "label": "ウ",
+    "phrase": "moving it from temporary storage into more lasting form",
+    "options": [
+     "erasing older memories to make room for new ones",
+     "keeping them in short-term memory a little longer",
+     "transferring them from short-term into long-term memory",
+     "mixing new information with unrelated older facts"
+    ],
+    "ans": 3
+   }
+  ],
+  "D_instruction": "本文中の空所 ( あ )〜( お ) を埋めるのに最も適切な語を下の語群1〜8から選び、( い )・( え )・( お ) に入る語の番号を答えなさい。ただし語群には本文で使わない語が含まれており、同じ語を二度使ってはならない。",
+  "D_bank": [
+   "recover",
+   "reduce",
+   "their",
+   "to",
+   "bodies",
+   "them",
+   "help",
+   "avoid"
+  ],
+  "D_answer_slots": [
+   "い",
+   "え",
+   "お"
+  ],
+  "D_slot_map": [
+   {
+    "slot": "あ",
+    "idx": 4
+   },
+   {
+    "slot": "い",
+    "idx": 7
+   },
+   {
+    "slot": "う",
+    "idx": 3
+   },
+   {
+    "slot": "え",
+    "idx": 5
+   },
+   {
+    "slot": "お",
+    "idx": 1
+   }
+  ],
+  "D_dummies": [
+   2,
+   6,
+   8
+  ],
+  "D_full_sentence": "Athletes who train twice a day increasingly rely on a nap to help their bodies recover from the fatigue that accumulates between sessions.",
+  "E_instruction": "本文の内容と一致するものを、次の1〜8から三つ選びなさい。",
+  "E_options": [
+   "Throughout the twentieth century, scientists broadly agreed that a midday nap improved athletic performance.",
+   "A nap of about twenty minutes helps lower adenosine, so people are more likely to wake up feeling refreshed.",
+   "Sleeping for more than thirty minutes guarantees that a person will wake up feeling clear-headed and energetic.",
+   "In one study, sprinters who napped after sleeping badly not only ran faster but also felt that the effort was easier than it really was.",
+   "Experts advise that anyone who feels a constant need to nap should simply nap more often to cure the problem.",
+   "Some companies have set up nap pods so that their employees can rest during the afternoon.",
+   "Research now shows that, for the chronically sleep-deprived, napping can completely take the place of a full night's sleep.",
+   "Napping late in the day is recommended because it strengthens the sleep of the following night."
+  ],
+  "E_answers": [
+   2,
+   4,
+   6
+  ],
+  "F_target_en": "",
+  "F_model_ja": ""
+ },
+ "III": {
+  "label": "大問Ⅲ",
+  "points": 50,
+  "lead": "次の会話文を読み、あとの設問A・Bに答えなさい。",
+  "setting": "友人同士のダン(Dan)とソフィー(Sophie)が、週末に料理教室へ通うことの是非について話している。",
+  "lines": [
+   {
+    "sp": "Dan",
+    "text": "Hey Sophie, you seem to be in a wonderful mood this morning. Did something good happen to you?"
+   },
+   {
+    "sp": "Sophie",
+    "text": "I just signed up for a weekend cooking class down by the river, and honestly I can hardly wait for it to start. [[K:a]]"
+   },
+   {
+    "sp": "Dan",
+    "text": "A cooking class? To be completely honest, I really don't understand why anyone would pay good money for that these days."
+   },
+   {
+    "sp": "Sophie",
+    "text": "What on earth do you mean by that? [[K:b]]"
+   },
+   {
+    "sp": "Dan",
+    "text": "Well, just think about it for a second. There are millions of free videos online, and you can learn to make almost any dish simply by watching your phone at home."
+   },
+   {
+    "sp": "Sophie",
+    "text": "That may be true, but watching someone else cook is not remotely the same as actually doing it yourself. [[K:c]] You can't smell the garlic in the pan or feel how the dough is supposed to stretch through a tiny screen."
+   },
+   {
+    "sp": "Dan",
+    "text": "I suppose you have a point there. Still, in a class you can only cook whatever the teacher happens to have planned for that particular day."
+   },
+   {
+    "sp": "Sophie",
+    "text": "Right, but honestly that is exactly the thing I like most about it. [[K:d]] Last week, for instance, I never in a million years would have tried making fresh pasta completely from scratch on my own."
+   },
+   {
+    "sp": "Dan",
+    "text": "Fair enough, I'll give you that. But aren't those classes ridiculously expensive? They can't possibly be cheap with a professional chef standing over you."
+   },
+   {
+    "sp": "Sophie",
+    "text": "[[K:e]] Once you add up the cost of all the ingredients and the fancy equipment they let you borrow, it works out to be surprisingly good value."
+   },
+   {
+    "sp": "Dan",
+    "text": "Hmm, maybe so. But I'm fairly sure I'd feel horribly awkward cooking in front of a whole room full of complete strangers."
+   },
+   {
+    "sp": "Sophie",
+    "text": "I felt exactly the same way before my very first lesson, believe me. [[K:f]] By the time we had finished, every single one of us was laughing and swapping bites of what we had made."
+   },
+   {
+    "sp": "Dan",
+    "text": "That actually sounds like it could be genuinely fun when you put it that way."
+   },
+   {
+    "sp": "Dan",
+    "text": "I always just assumed cooking classes were only for people who were already good at it in the first place."
+   },
+   {
+    "sp": "Sophie",
+    "text": "Not at all — most of us could barely boil an egg when we started, and that is precisely the point of going."
+   },
+   {
+    "sp": "Sophie",
+    "text": "And here is the part that I love the most of all. [[K:g]] Whenever you make some silly mistake, the instructor is standing right there beside you to correct it on the spot."
+   },
+   {
+    "sp": "Dan",
+    "text": "I'll admit it — no video has ever once managed to tell me why my tomato sauce keeps splitting every single time I try to make it."
+   },
+   {
+    "sp": "Sophie",
+    "text": "That is exactly my point! [[K:h]] So why don't you come along with me next Saturday and find out what it's really like for yourself?"
+   },
+   {
+    "sp": "Dan",
+    "text": "You know what? After listening to all of that, maybe I actually will give it a try."
+   }
+  ],
+  "A_instruction": "会話が自然に成り立つように、空所( a )〜( h )に入れるのに最も適切な発話を、下の選択肢1〜10から一つずつ選び、その番号を書きなさい。ただし、同じ選択肢を二度用いてはならない。また、選択肢の中には用いないものが二つ含まれている。",
+  "A_options": [
+   "You get instant feedback from someone who really knows what they're doing.",
+   "I've decided to quit cooking altogether and just order takeout from now on.",
+   "There's something you simply can't pick up unless you're standing at the stove yourself.",
+   "Actually, it turns out to be far cheaper than you'd ever expect.",
+   "It's the very first time I've ever signed up for anything like this.",
+   "But the strange thing is, everyone in the room relaxes almost immediately.",
+   "The little restaurant near my house finally reopened last month.",
+   "You make it sound as if it were a complete waste of both time and money.",
+   "The class pushes you to try dishes you'd never dare attempt at home.",
+   "Unlike any video, a real teacher can pinpoint exactly what's going wrong."
+  ],
+  "A_slots": [
+   "a",
+   "b",
+   "c",
+   "d",
+   "e",
+   "f",
+   "g",
+   "h"
+  ],
+  "A_slot_map": [
+   {
+    "slot": "a",
+    "idx": 5
+   },
+   {
+    "slot": "b",
+    "idx": 8
+   },
+   {
+    "slot": "c",
+    "idx": 3
+   },
+   {
+    "slot": "d",
+    "idx": 9
+   },
+   {
+    "slot": "e",
+    "idx": 4
+   },
+   {
+    "slot": "f",
+    "idx": 6
+   },
+   {
+    "slot": "g",
+    "idx": 1
+   },
+   {
+    "slot": "h",
+    "idx": 10
+   }
+  ],
+  "A_dummies": [
+   2,
+   7
+  ],
+  "B_ja": "新しいことを本気で学びたいのなら、失敗を恐れるよりも、まず自分で挑戦してみるべきだ。",
+  "B_model_en": "If you really want to learn something new, you should try it yourself first rather than being afraid of failing."
+ }
+}

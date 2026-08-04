@@ -1,0 +1,222 @@
+{
+  "area": "第3編 化学反応とエネルギー",
+  "overview": "反応エンタルピー $\\Delta H$ の表し方(生成・燃焼・中和・溶解)から、ヘスの法則による $\\Delta H$ の計算、結合エンタルピーと格子エネルギーまでを一気に総復習する。新課程にそろえ、熱化学方程式は一切使わず、すべて $\\Delta H$ を付した反応式で扱う。「発熱は $\\Delta H<0$」「着目物質の係数は $1$」「切る=吸熱・つくる=発熱」の3つの型を身体に入れることが目標。",
+  "units": [
+    {
+      "name": "反応エンタルピーの表し方【生成／燃焼／中和／溶解エンタルピー】",
+      "tag": "反応エンタルピー",
+      "problems": [
+        {
+          "group": "ΔH を付した反応式で表す",
+          "level": "basic",
+          "stem": "メタノール $\\mathrm{CH_3OH(液)}$ の生成エンタルピーは $-239\\ \\mathrm{kJ/mol}$ である。この値を表す変化を、$\\Delta H$ を付した反応式で書け。ただし、炭素の単体は黒鉛とし、すべての物質に状態を明記すること。係数は分数のままでよい。",
+          "answer": "$\\mathrm{C(黒鉛)} + 2\\mathrm{H_2(気)} + \\frac{1}{2}\\mathrm{O_2(気)} \\rightarrow \\mathrm{CH_3OH(液)} \\quad \\Delta H = -239\\ \\mathrm{kJ}$",
+          "explanation": "▶ 生成エンタルピーの定義どおりに反応式を組み立てる問題。\n① 生成エンタルピーは「その化合物 $1\\ \\mathrm{mol}$ が、成分元素の単体から生じるときの $\\Delta H$」。だから右辺は $\\mathrm{CH_3OH(液)}$ を係数 $1$ で置く。\n② 左辺には単体だけを並べる。単体は最も安定な状態を選ぶので、炭素は $\\mathrm{C(黒鉛)}$、水素は $\\mathrm{H_2(気)}$、酸素は $\\mathrm{O_2(気)}$。原子数を合わせると、$\\mathrm{C}$ は $1$ 個、$\\mathrm{H}$ は $4$ 個だから $2\\mathrm{H_2(気)}$、$\\mathrm{O}$ は $1$ 個だから $\\frac{1}{2}\\mathrm{O_2(気)}$。\n③ 発熱なので $\\Delta H<0$ をそのまま付けて、$\\mathrm{C(黒鉛)} + 2\\mathrm{H_2(気)} + \\frac{1}{2}\\mathrm{O_2(気)} \\rightarrow \\mathrm{CH_3OH(液)}\\quad \\Delta H = -239\\ \\mathrm{kJ}$。\n★ 合言葉は「<b>着目物質の係数を $1$ にする</b>」。そろえるために他が分数になるのが正しい姿で、全体を $2$ 倍して整数にしたら $\\Delta H$ も $2$ 倍しなければならない。",
+          "skill": "生成エンタルピー",
+          "verify_py": null,
+          "verify_expected": null,
+          "verify_tol": null
+        },
+        {
+          "group": "ΔH を付した反応式で表す",
+          "level": "basic",
+          "stem": "エタノール $\\mathrm{C_2H_5OH(液)}$ の燃焼エンタルピーは $-1368\\ \\mathrm{kJ/mol}$ である。この値を表す変化を、$\\Delta H$ を付した反応式で書け。生成する水は液体、二酸化炭素は気体とし、すべての物質に状態を明記すること。",
+          "answer": "$\\mathrm{C_2H_5OH(液)} + 3\\mathrm{O_2(気)} \\rightarrow 2\\mathrm{CO_2(気)} + 3\\mathrm{H_2O(液)} \\quad \\Delta H = -1368\\ \\mathrm{kJ}$",
+          "explanation": "▶ 燃焼エンタルピーの定義どおりに反応式を組み立てる問題。\n① 燃焼エンタルピーは「その物質 $1\\ \\mathrm{mol}$ が完全燃焼するときの $\\Delta H$」。着目するのはエタノールなので、$\\mathrm{C_2H_5OH(液)}$ の係数を $1$ にする。\n② 完全燃焼の生成物は $\\mathrm{CO_2(気)}$ と $\\mathrm{H_2O(液)}$。$\\mathrm{C}$ は $2$ 個なので $2\\mathrm{CO_2(気)}$、$\\mathrm{H}$ は $6$ 個なので $3\\mathrm{H_2O(液)}$。酸素原子は右辺に $2\\times2 + 3 = 7$ 個あり、左辺のエタノールが $1$ 個持っているので、$\\mathrm{O_2}$ が供給するのは $6$ 個ぶん、すなわち $3\\mathrm{O_2(気)}$。\n③ $\\mathrm{C_2H_5OH(液)} + 3\\mathrm{O_2(気)} \\rightarrow 2\\mathrm{CO_2(気)} + 3\\mathrm{H_2O(液)}\\quad \\Delta H = -1368\\ \\mathrm{kJ}$。\n★ 係数 $1$ にするのは「燃える側」であって、<b>$\\mathrm{O_2}$ の係数を $1$ にしてはいけない</b>。水を気体とすると値が変わるので、状態の指定も必ず読むこと。",
+          "skill": "燃焼エンタルピー",
+          "verify_py": null,
+          "verify_expected": null,
+          "verify_tol": null
+        },
+        {
+          "group": "燃焼エンタルピーから熱量を求める",
+          "level": "standard",
+          "stem": "プロパン $\\mathrm{C_3H_8(気)}$ の燃焼エンタルピーは $-2220\\ \\mathrm{kJ/mol}$ である。プロパン $11.0\\ \\mathrm{g}$ を完全燃焼させたとき発生する熱量は何 $\\mathrm{kJ}$ か。有効数字3桁で答えよ。原子量は H=1.0, C=12.0 とする。",
+          "answer": "$555\\ \\mathrm{kJ}$",
+          "explanation": "▶ 「質量 → 物質量 → 熱量」の三段跳びの型。\n① プロパンの分子量は $12.0\\times3 + 1.0\\times8 = 44.0$ なので、$11.0\\ \\mathrm{g}$ の物質量は $\\dfrac{11.0}{44.0} = 0.250\\ \\mathrm{mol}$。\n② 燃焼エンタルピー $-2220\\ \\mathrm{kJ/mol}$ は「$1\\ \\mathrm{mol}$ 燃やすと $2220\\ \\mathrm{kJ}$ 放出する」という意味なので、発生する熱量は $2220 \\times 0.250 = 555\\ \\mathrm{kJ}$。\n③ $555\\ \\mathrm{kJ}$。\n★ 問われているのが「発生する熱量」なら <b>符号を付けずに正の値で答える</b>。$\\Delta H$ を聞かれたときだけ $-555\\ \\mathrm{kJ}$ と負号を付ける。",
+          "skill": "燃焼エンタルピー",
+          "verify_py": "M = 12.0*3 + 1.0*8\nn = 11.0 / M\nresult = 2220.0 * n",
+          "verify_expected": 555.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "熱量計から反応エンタルピーを求める",
+          "level": "standard",
+          "stem": "$0.50\\ \\mathrm{mol/L}$ の塩酸 $100\\ \\mathrm{mL}$ に、$0.50\\ \\mathrm{mol/L}$ の水酸化ナトリウム水溶液 $100\\ \\mathrm{mL}$ を加えて混合したところ、溶液の温度が $3.4\\ \\mathrm{K}$ 上昇した。この中和反応の中和エンタルピー($\\mathrm{kJ/mol}$)を有効数字2桁で求めよ。ただし、混合後の溶液の密度は $1.0\\ \\mathrm{g/cm^3}$、比熱は $4.2\\ \\mathrm{J/(g\\cdot K)}$ とし、発生した熱はすべて溶液の温度上昇に使われたものとする。",
+          "answer": "$-57\\ \\mathrm{kJ/mol}$",
+          "explanation": "▶ 熱量計の実験値から中和エンタルピーを逆算する型。$Q = mc\\Delta T$ で熱量を出し、「水 $1\\ \\mathrm{mol}$ あたり」に直す2段階。\n① 混合後の溶液は $100 + 100 = 200\\ \\mathrm{mL}$、密度 $1.0\\ \\mathrm{g/cm^3}$ より質量は $200\\ \\mathrm{g}$。発生した熱量は $Q = 200 \\times 4.2 \\times 3.4 = 2856\\ \\mathrm{J} = 2.856\\ \\mathrm{kJ}$。\n② 中和で生じた水の物質量を求める。$\\mathrm{HCl}$ は $0.50 \\times \\dfrac{100}{1000} = 0.050\\ \\mathrm{mol}$、$\\mathrm{NaOH}$ も $0.050\\ \\mathrm{mol}$ で過不足なく反応するので、生じる水は $0.050\\ \\mathrm{mol}$。\n③ 水 $1\\ \\mathrm{mol}$ あたりでは $\\dfrac{2.856}{0.050} = 57.1\\ \\mathrm{kJ}$ の発熱。発熱は $\\Delta H<0$ なので $-57\\ \\mathrm{kJ/mol}$。\n★ 中和エンタルピーは <b>生じる水 $1\\ \\mathrm{mol}$ あたり</b>で定義する。$mc\\Delta T$ の $m$ は「加えた水だけ」ではなく混合後の溶液全体の質量である点にも注意。",
+          "skill": "中和エンタルピー",
+          "verify_py": "m = 100.0 + 100.0\nc = 4.2\ndT = 3.4\nQ = m * c * dT / 1000.0\nn = 0.50 * 0.100\nresult = -Q / n",
+          "verify_expected": -57.12,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "熱量計から反応エンタルピーを求める",
+          "level": "standard",
+          "stem": "水酸化ナトリウム $\\mathrm{NaOH(固)}$ の水への溶解エンタルピーは $-44.5\\ \\mathrm{kJ/mol}$ である。水 $196\\ \\mathrm{g}$ に $\\mathrm{NaOH(固)}$ $4.0\\ \\mathrm{g}$ を溶かしたとき、水溶液の温度は何 $\\mathrm{K}$ 上昇するか。有効数字2桁で答えよ。ただし、水溶液の比熱は $4.2\\ \\mathrm{J/(g\\cdot K)}$ とし、発生した熱はすべて水溶液の温度上昇に使われるものとする。原子量は H=1.0, O=16, Na=23 とする。",
+          "answer": "$5.3\\ \\mathrm{K}$",
+          "explanation": "▶ 溶解エンタルピーから発熱量を出し、$Q = mc\\Delta T$ を逆に使って温度上昇を求める型。\n① $\\mathrm{NaOH}$ の式量は $23 + 16 + 1.0 = 40$ なので、$4.0\\ \\mathrm{g}$ は $\\dfrac{4.0}{40} = 0.10\\ \\mathrm{mol}$。\n② 発生する熱量は $44.5 \\times 0.10 = 4.45\\ \\mathrm{kJ} = 4.45\\times10^{3}\\ \\mathrm{J}$。\n③ 水溶液の質量は $196 + 4.0 = 200\\ \\mathrm{g}$ なので、$\\Delta T = \\dfrac{4.45\\times10^{3}}{200 \\times 4.2} = 5.29\\cdots \\fallingdotseq 5.3\\ \\mathrm{K}$。\n★ 溶かした溶質の質量も <b>溶液の質量に含める</b>($196\\ \\mathrm{g}$ ではなく $200\\ \\mathrm{g}$)。比熱の単位が $\\mathrm{J}$ なので、$\\mathrm{kJ}$ のまま割ってしまうミスも定番。",
+          "skill": "溶解エンタルピー",
+          "verify_py": "n = 4.0 / 40.0\nQ = 44.5 * n * 1000.0\nm = 196.0 + 4.0\nc = 4.2\nresult = Q / (m * c)",
+          "verify_expected": 5.2976190476,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "過不足を考える中和",
+          "level": "advanced",
+          "stem": "$0.30\\ \\mathrm{mol/L}$ の硫酸 $50\\ \\mathrm{mL}$ と、$0.40\\ \\mathrm{mol/L}$ の水酸化ナトリウム水溶液 $50\\ \\mathrm{mL}$ を混合した。中和エンタルピーを $-56.5\\ \\mathrm{kJ/mol}$ とするとき、混合後の溶液の温度は何 $\\mathrm{K}$ 上昇するか。有効数字2桁で答えよ。ただし、混合後の溶液の密度は $1.0\\ \\mathrm{g/cm^3}$、比熱は $4.2\\ \\mathrm{J/(g\\cdot K)}$ とし、発生した熱はすべて溶液の温度上昇に使われるものとする。",
+          "answer": "$2.7\\ \\mathrm{K}$",
+          "explanation": "▶ 酸が2価なので、まず $\\mathrm{H^+}$ と $\\mathrm{OH^-}$ の物質量を比べ、「どちらが先に尽きるか」を決めてから熱量を出す型。\n① $\\mathrm{H^+}$ は $0.30 \\times \\dfrac{50}{1000} \\times 2 = 0.030\\ \\mathrm{mol}$、$\\mathrm{OH^-}$ は $0.40 \\times \\dfrac{50}{1000} \\times 1 = 0.020\\ \\mathrm{mol}$。$\\mathrm{OH^-}$ のほうが少ないので、生じる水は $0.020\\ \\mathrm{mol}$ で頭打ちになる。\n② 発生する熱量は $56.5 \\times 0.020 = 1.13\\ \\mathrm{kJ} = 1.13\\times10^{3}\\ \\mathrm{J}$。\n③ 溶液の質量は $50 + 50 = 100\\ \\mathrm{g}$ なので、$\\Delta T = \\dfrac{1.13\\times10^{3}}{100 \\times 4.2} = 2.69 \\fallingdotseq 2.7\\ \\mathrm{K}$。\n★ 中和エンタルピーは水 $1\\ \\mathrm{mol}$ あたりの値だから、熱量は <b>少ないほうのイオンの物質量</b>で決まる。$\\mathrm{H_2SO_4}$ は2価で「$\\times 2$」を忘れると $\\mathrm{H^+}$ が $0.015\\ \\mathrm{mol}$ となり、余る側を取り違えて答えがずれる。",
+          "skill": "中和エンタルピー",
+          "verify_py": "nH = 0.30 * 0.050 * 2\nnOH = 0.40 * 0.050 * 1\nnw = min(nH, nOH)\nQ = 56.5 * nw * 1000.0\nm = 50.0 + 50.0\nc = 4.2\nresult = Q / (m * c)",
+          "verify_expected": 2.6904761905,
+          "verify_tol": 0.02
+        }
+      ]
+    },
+    {
+      "name": "ヘスの法則【経路によらない／生成エンタルピーからの計算】",
+      "tag": "ヘスの法則",
+      "problems": [
+        {
+          "group": "反応式の足し引きで ΔH を求める",
+          "level": "basic",
+          "stem": "次の2つの反応の $\\Delta H$ が与えられている。\n$\\mathrm{C(黒鉛)} + \\mathrm{O_2(気)} \\rightarrow \\mathrm{CO_2(気)} \\quad \\Delta H_1 = -394\\ \\mathrm{kJ}$\n$\\mathrm{CO(気)} + \\frac{1}{2}\\mathrm{O_2(気)} \\rightarrow \\mathrm{CO_2(気)} \\quad \\Delta H_2 = -283\\ \\mathrm{kJ}$\n一酸化炭素 $\\mathrm{CO(気)}$ の生成エンタルピー($\\mathrm{kJ/mol}$)を求めよ。",
+          "answer": "$-111\\ \\mathrm{kJ/mol}$",
+          "explanation": "▶ ヘスの法則(反応エンタルピーは経路によらない)を使い、与えられた式を足し引きして目的の式をつくる型。\n① 求めたいのは $\\mathrm{C(黒鉛)} + \\frac{1}{2}\\mathrm{O_2(気)} \\rightarrow \\mathrm{CO(気)}$ の $\\Delta H$。\n② 1本目の式から2本目の式を引く。左辺は $(\\mathrm{C} + \\mathrm{O_2}) - (\\mathrm{CO} + \\frac{1}{2}\\mathrm{O_2}) = \\mathrm{C} + \\frac{1}{2}\\mathrm{O_2} - \\mathrm{CO}$、右辺は $\\mathrm{CO_2} - \\mathrm{CO_2} = 0$。$\\mathrm{CO}$ を右辺に移すと $\\mathrm{C(黒鉛)} + \\frac{1}{2}\\mathrm{O_2(気)} \\rightarrow \\mathrm{CO(気)}$ が得られる。\n③ よって $\\Delta H = \\Delta H_1 - \\Delta H_2 = (-394) - (-283) = -111\\ \\mathrm{kJ/mol}$。\n★ 式を引いたら <b>$\\Delta H$ も同じように引く</b>。式を逆向きにすれば $\\Delta H$ は符号が反転し、係数を $n$ 倍すれば $\\Delta H$ も $n$ 倍になる。",
+          "skill": "ヘスの法則(式の組合せ)",
+          "verify_py": "dH1 = -394.0\ndH2 = -283.0\nresult = dH1 - dH2",
+          "verify_expected": -111.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "生成エンタルピーの表から反応エンタルピーを求める",
+          "level": "basic",
+          "stem": "生成エンタルピーは $\\mathrm{Fe_2O_3(固)}$ が $-824\\ \\mathrm{kJ/mol}$、$\\mathrm{Al_2O_3(固)}$ が $-1676\\ \\mathrm{kJ/mol}$ である。次のテルミット反応の反応エンタルピー $\\Delta H$($\\mathrm{kJ}$)を求めよ。\n$2\\mathrm{Al(固)} + \\mathrm{Fe_2O_3(固)} \\rightarrow \\mathrm{Al_2O_3(固)} + 2\\mathrm{Fe(固)}$",
+          "answer": "$-852\\ \\mathrm{kJ}$",
+          "explanation": "▶ 公式 $\\Delta H = \\sum \\Delta H_f(\\text{生成物}) - \\sum \\Delta H_f(\\text{反応物})$ をそのまま当てる型。\n① 単体の生成エンタルピーは $0$ と決められているので、$\\mathrm{Al(固)}$ も $\\mathrm{Fe(固)}$ も $0\\ \\mathrm{kJ/mol}$。\n② 生成物側の和は $(-1676) + 2\\times 0 = -1676\\ \\mathrm{kJ}$、反応物側の和は $2\\times 0 + (-824) = -824\\ \\mathrm{kJ}$。\n③ $\\Delta H = (-1676) - (-824) = -852\\ \\mathrm{kJ}$。\n★ <b>単体の生成エンタルピーは $0$</b>。「生成物 − 反応物」の向きを取り違えると符号が丸ごと逆になるので、引く順番を毎回口に出して確認する。",
+          "skill": "生成エンタルピーからの計算",
+          "verify_py": "Hf_Fe2O3 = -824.0\nHf_Al2O3 = -1676.0\nHf_Al = 0.0\nHf_Fe = 0.0\nresult = (Hf_Al2O3 + 2*Hf_Fe) - (2*Hf_Al + Hf_Fe2O3)",
+          "verify_expected": -852.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "生成エンタルピーの表から反応エンタルピーを求める",
+          "level": "standard",
+          "stem": "生成エンタルピーは $\\mathrm{CH_4(気)}$ が $-75\\ \\mathrm{kJ/mol}$、$\\mathrm{CO_2(気)}$ が $-394\\ \\mathrm{kJ/mol}$、$\\mathrm{H_2O(液)}$ が $-286\\ \\mathrm{kJ/mol}$ である。メタン $\\mathrm{CH_4(気)}$ の燃焼エンタルピー($\\mathrm{kJ/mol}$)を求めよ。ただし、燃焼で生じる水は液体とする。",
+          "answer": "$-891\\ \\mathrm{kJ/mol}$",
+          "explanation": "▶ まず燃焼の反応式を自分で書き、そのうえで生成エンタルピーの公式を当てる2段階の型。\n① 燃焼の反応式は $\\mathrm{CH_4(気)} + 2\\mathrm{O_2(気)} \\rightarrow \\mathrm{CO_2(気)} + 2\\mathrm{H_2O(液)}$。$\\mathrm{CH_4}$ の係数が $1$ なので、この式の $\\Delta H$ がそのまま燃焼エンタルピーになる。\n② 生成物側の和は $(-394) + 2\\times(-286) = -394 - 572 = -966\\ \\mathrm{kJ}$、反応物側の和は $(-75) + 2\\times 0 = -75\\ \\mathrm{kJ}$($\\mathrm{O_2}$ は単体なので $0$)。\n③ $\\Delta H = (-966) - (-75) = -891\\ \\mathrm{kJ/mol}$。\n★ 水を $\\mathrm{H_2O(気)}$ にすると値が変わるので、<b>状態の指定を確認してから式を書く</b>。$\\mathrm{H_2O}$ の係数 $2$ を掛け忘れるミスが最頻出。",
+          "skill": "生成エンタルピーからの計算",
+          "verify_py": "Hf_CH4 = -75.0\nHf_CO2 = -394.0\nHf_H2O = -286.0\nHf_O2 = 0.0\nresult = (Hf_CO2 + 2*Hf_H2O) - (Hf_CH4 + 2*Hf_O2)",
+          "verify_expected": -891.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "燃焼エンタルピーから生成エンタルピーを逆算する",
+          "level": "standard",
+          "stem": "燃焼エンタルピーは $\\mathrm{C_2H_2(気)}$ が $-1301\\ \\mathrm{kJ/mol}$、$\\mathrm{C(黒鉛)}$ が $-394\\ \\mathrm{kJ/mol}$、$\\mathrm{H_2(気)}$ が $-286\\ \\mathrm{kJ/mol}$ である。アセチレン $\\mathrm{C_2H_2(気)}$ の生成エンタルピー($\\mathrm{kJ/mol}$)を求めよ。ただし、燃焼で生じる水はいずれも液体とする。",
+          "answer": "$+227\\ \\mathrm{kJ/mol}$",
+          "explanation": "▶ 燃焼エンタルピーしか与えられていないときに生成エンタルピーを出す型。「単体をそのまま燃やす道」と「いったん化合物にしてから燃やす道」を比べる。\n① 求めたいのは $2\\mathrm{C(黒鉛)} + \\mathrm{H_2(気)} \\rightarrow \\mathrm{C_2H_2(気)}$ の $\\Delta H_f$。どちらの道も終点は同じ $2\\mathrm{CO_2(気)} + \\mathrm{H_2O(液)}$ である。\n② 単体をそのまま燃やす道は $2\\times(-394) + 1\\times(-286) = -788 - 286 = -1074\\ \\mathrm{kJ}$。いったん $\\mathrm{C_2H_2}$ にしてから燃やす道は $\\Delta H_f + (-1301)\\ \\mathrm{kJ}$。\n③ ヘスの法則より $\\Delta H_f + (-1301) = -1074$ なので、$\\Delta H_f = -1074 + 1301 = +227\\ \\mathrm{kJ/mol}$。\n★ 燃焼エンタルピーで解くときの公式は $\\Delta H = \\sum \\Delta H_c(\\text{反応物}) - \\sum \\Delta H_c(\\text{生成物})$ で、<b>生成エンタルピーのときと引く向きが逆</b>。答えが正になったら「この化合物は単体よりエネルギーが高い(不安定)」と読める。",
+          "skill": "燃焼エンタルピーからの計算",
+          "verify_py": "Hc_C2H2 = -1301.0\nHc_C = -394.0\nHc_H2 = -286.0\nresult = (2*Hc_C + 1*Hc_H2) - Hc_C2H2",
+          "verify_expected": 227.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "エネルギー図を読み取る",
+          "level": "standard",
+          "stem": "硫黄の酸化について、エネルギーの高さの関係が次のようになっている。最も高い位置に $\\mathrm{S(斜方硫黄)} + \\frac{3}{2}\\mathrm{O_2(気)}$ があり、そこから $297\\ \\mathrm{kJ}$ だけ低い位置に $\\mathrm{SO_2(気)} + \\frac{1}{2}\\mathrm{O_2(気)}$ が、さらにそこから $99\\ \\mathrm{kJ}$ だけ低い位置に $\\mathrm{SO_3(気)}$ がある。$\\mathrm{SO_3(気)}$ の生成エンタルピー($\\mathrm{kJ/mol}$)を求めよ。",
+          "answer": "$-396\\ \\mathrm{kJ/mol}$",
+          "explanation": "▶ エネルギー図は「下向きの矢印 = 発熱 = $\\Delta H<0$」。段差を足すだけの型。\n① 生成エンタルピーは、単体($\\mathrm{S(斜方硫黄)}$ と $\\mathrm{O_2(気)}$)から $\\mathrm{SO_3(気)}$ を $1\\ \\mathrm{mol}$ つくるときの $\\Delta H$。与えられた関係を縦軸にエネルギーをとった図に自分で描き直すと、最上段から最下段までの落差にあたる。\n② 落差は $297 + 99 = 396\\ \\mathrm{kJ}$。\n③ 向きは下向き(発熱)なので、$\\Delta H = -396\\ \\mathrm{kJ/mol}$。\n★ エネルギー図で意味を持つのは <b>高さの差だけ</b>。途中に $\\mathrm{SO_2}$ という寄り道があっても、始点と終点が同じなら $\\Delta H$ は変わらない — それがヘスの法則そのものである。",
+          "skill": "エネルギー図",
+          "verify_py": "step1 = 297.0\nstep2 = 99.0\nresult = -(step1 + step2)",
+          "verify_expected": -396.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "aq を含む式を組み合わせる",
+          "level": "advanced",
+          "stem": "次の2つの溶解について $\\Delta H$ が与えられている。$\\mathrm{aq}$ は多量の水を表す。\n$\\mathrm{CuSO_4(固)} + \\mathrm{aq} \\rightarrow \\mathrm{CuSO_4\\ aq} \\quad \\Delta H_1 = -66\\ \\mathrm{kJ}$\n$\\mathrm{CuSO_4 \\cdot 5H_2O(固)} + \\mathrm{aq} \\rightarrow \\mathrm{CuSO_4\\ aq} \\quad \\Delta H_2 = +12\\ \\mathrm{kJ}$\nこのとき、次の反応の $\\Delta H$($\\mathrm{kJ}$)を求めよ。\n$\\mathrm{CuSO_4(固)} + 5\\mathrm{H_2O(液)} \\rightarrow \\mathrm{CuSO_4 \\cdot 5H_2O(固)}$",
+          "answer": "$-78\\ \\mathrm{kJ}$",
+          "explanation": "▶ 白色の無水物が青色の五水和物に変わるときの $\\Delta H$ を、行き先が同じ2つの溶解実験から挟み撃ちで求める型。\n① 出発点を $\\mathrm{CuSO_4(固)} + 5\\mathrm{H_2O(液)} + \\mathrm{aq}$、終点を $\\mathrm{CuSO_4\\ aq}$ にそろえて、2通りの道を比べる。\n② 道A(無水物をそのまま溶かす。$5\\mathrm{H_2O(液)}$ は多量の水に混ざるだけ)は $\\Delta H_1 = -66\\ \\mathrm{kJ}$。道B(いったん五水和物にしてから溶かす)は、求める $\\Delta H$ と $\\Delta H_2 = +12\\ \\mathrm{kJ}$ の和。\n③ ヘスの法則より $\\Delta H + (+12) = -66$ なので、$\\Delta H = -66 - 12 = -78\\ \\mathrm{kJ}$。\n★ 2本の道の <b>出発点と終点をそろえる</b>のがヘスの法則の使い方。$\\mathrm{aq}$(多量の水)は「どちらの道からでも同じ水溶液に行き着く」ための共通の受け皿として扱う。",
+          "skill": "ヘスの法則(式の組合せ)",
+          "verify_py": "dH1 = -66.0\ndH2 = 12.0\nresult = dH1 - dH2",
+          "verify_expected": -78.0,
+          "verify_tol": 0.02
+        }
+      ]
+    },
+    {
+      "name": "結合エンタルピーとエネルギー図【結合エンタルピー／格子エネルギー／イオン結晶】",
+      "tag": "結合エンタルピー",
+      "problems": [
+        {
+          "group": "結合エンタルピーの定義",
+          "level": "basic",
+          "stem": "水素分子 $\\mathrm{H_2}$ の H–H 結合の結合エンタルピーは $436\\ \\mathrm{kJ/mol}$ である。この値を表す変化を、$\\Delta H$ を付した反応式で書け。すべての物質に状態を明記すること。",
+          "answer": "$\\mathrm{H_2(気)} \\rightarrow 2\\mathrm{H(気)} \\quad \\Delta H = +436\\ \\mathrm{kJ}$",
+          "explanation": "▶ 結合エンタルピーの定義をそのまま式にする問題。\n① 結合エンタルピーとは「気体状の分子がもつ共有結合 $1\\ \\mathrm{mol}$ を切り、ばらばらの気体状の原子にするのに必要なエネルギー」のこと。\n② $\\mathrm{H_2}$ は $1\\ \\mathrm{mol}$ あたり H–H 結合を $1\\ \\mathrm{mol}$ もつので、左辺は $\\mathrm{H_2(気)}$、右辺は水素原子 $2$ 個ぶんの $2\\mathrm{H(気)}$。\n③ 結合を切るのは吸熱だから $\\Delta H>0$。よって $\\mathrm{H_2(気)} \\rightarrow 2\\mathrm{H(気)}\\quad \\Delta H = +436\\ \\mathrm{kJ}$。\n★ 右辺は $\\mathrm{H_2}$ ではなく <b>ばらばらの原子 $\\mathrm{H(気)}$</b>。「切る=吸熱($+$)、つくる=発熱($-$)」がこの単元すべての出発点になる。",
+          "skill": "結合エンタルピーの定義",
+          "verify_py": null,
+          "verify_expected": null,
+          "verify_tol": null
+        },
+        {
+          "group": "結合エンタルピーから反応エンタルピーを求める",
+          "level": "basic",
+          "stem": "結合エンタルピーは H–H が $436\\ \\mathrm{kJ/mol}$、Cl–Cl が $244\\ \\mathrm{kJ/mol}$、H–Cl が $432\\ \\mathrm{kJ/mol}$ である。次の反応の反応エンタルピー $\\Delta H$($\\mathrm{kJ}$)を求めよ。\n$\\mathrm{H_2(気)} + \\mathrm{Cl_2(気)} \\rightarrow 2\\mathrm{HCl(気)}$",
+          "answer": "$-184\\ \\mathrm{kJ}$",
+          "explanation": "▶ 「(切った結合の和) − (つくった結合の和)」で反応エンタルピーを出す基本型。\n① 切る結合(左辺)は H–H が $1\\ \\mathrm{mol}$、Cl–Cl が $1\\ \\mathrm{mol}$ で、$436 + 244 = 680\\ \\mathrm{kJ}$ の吸熱。\n② つくる結合(右辺)は H–Cl が $2\\ \\mathrm{mol}$ で、$2 \\times 432 = 864\\ \\mathrm{kJ}$ の発熱。\n③ $\\Delta H = 680 - 864 = -184\\ \\mathrm{kJ}$。\n★ 使う式は <b>$\\Delta H = \\sum(\\text{反応物の結合エンタルピー}) - \\sum(\\text{生成物の結合エンタルピー})$</b>。生成エンタルピーの公式(生成物 − 反応物)と引く向きが逆なので混同しないこと。",
+          "skill": "結合エンタルピー",
+          "verify_py": "HH = 436.0\nClCl = 244.0\nHCl = 432.0\nresult = (HH + ClCl) - 2*HCl",
+          "verify_expected": -184.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "結合エンタルピーから反応エンタルピーを求める",
+          "level": "standard",
+          "stem": "結合エンタルピーは N≡N が $946\\ \\mathrm{kJ/mol}$、H–H が $436\\ \\mathrm{kJ/mol}$、N–H が $391\\ \\mathrm{kJ/mol}$ である。次の反応の反応エンタルピー $\\Delta H$($\\mathrm{kJ}$)を求めよ。\n$\\mathrm{N_2(気)} + 3\\mathrm{H_2(気)} \\rightarrow 2\\mathrm{NH_3(気)}$",
+          "answer": "$-92\\ \\mathrm{kJ}$",
+          "explanation": "▶ 分子内にある結合の「本数」を正しく数えられるかが山場の型。\n① 切る結合は N≡N が $1\\ \\mathrm{mol}$、H–H が $3\\ \\mathrm{mol}$ で、$946 + 3\\times436 = 946 + 1308 = 2254\\ \\mathrm{kJ}$。\n② つくる結合を数える。$\\mathrm{NH_3}$ $1$ 分子には N–H が $3$ 本あり、$\\mathrm{NH_3}$ は $2\\ \\mathrm{mol}$ できるので N–H は $3\\times2 = 6\\ \\mathrm{mol}$。$6 \\times 391 = 2346\\ \\mathrm{kJ}$。\n③ $\\Delta H = 2254 - 2346 = -92\\ \\mathrm{kJ}$。\n★ <b>$\\mathrm{NH_3}$ の N–H は $1$ 分子に $3$ 本</b>。係数 $2$ を掛けて $6$ にするのを忘れると答えが大きくずれる。三重結合の N≡N は「まとめて $1\\ \\mathrm{mol}$ 分」として数える。",
+          "skill": "結合エンタルピー",
+          "verify_py": "NN = 946.0\nHH = 436.0\nNH = 391.0\nresult = (NN + 3*HH) - 6*NH",
+          "verify_expected": -92.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "反応エンタルピーから結合エンタルピーを逆算する",
+          "level": "standard",
+          "stem": "次の反応の反応エンタルピーは $\\Delta H = -484\\ \\mathrm{kJ}$ である。\n$2\\mathrm{H_2(気)} + \\mathrm{O_2(気)} \\rightarrow 2\\mathrm{H_2O(気)}$\n結合エンタルピーが H–H で $436\\ \\mathrm{kJ/mol}$、O=O で $496\\ \\mathrm{kJ/mol}$ であるとき、$\\mathrm{H_2O}$ の O–H 結合の結合エンタルピー($\\mathrm{kJ/mol}$)を求めよ。有効数字3桁で答えよ。",
+          "answer": "$463\\ \\mathrm{kJ/mol}$",
+          "explanation": "▶ 結合エンタルピーの公式を、未知数を含む方程式として解く型。\n① O–H の結合エンタルピーを $x\\ \\mathrm{kJ/mol}$ とおく。$\\mathrm{H_2O}$ $1$ 分子には O–H が $2$ 本あり、$\\mathrm{H_2O}$ は $2\\ \\mathrm{mol}$ できるので O–H は $4\\ \\mathrm{mol}$。\n② 「切る − つくる」より、$\\Delta H = (2\\times436 + 496) - 4x = 1368 - 4x$。\n③ $1368 - 4x = -484$ を解いて、$4x = 1368 + 484 = 1852$、$x = 463\\ \\mathrm{kJ/mol}$。\n★ 結合エンタルピーで計算できるのは <b>気体どうしの反応だけ</b>。生成物が $\\mathrm{H_2O(液)}$ だと凝縮の分だけ $\\Delta H$ がずれるので、問題文の $\\mathrm{(気)}$ を必ず確認する。",
+          "skill": "結合エンタルピー(逆算)",
+          "verify_py": "HH = 436.0\nOO = 496.0\ndH = -484.0\nresult = (2*HH + OO - dH) / 4.0",
+          "verify_expected": 463.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "状態変化を含むエネルギー図",
+          "level": "standard",
+          "stem": "ヨウ素について、次の2つの $\\Delta H$ が与えられている。\n$\\mathrm{I_2(固)} \\rightarrow \\mathrm{I_2(気)} \\quad \\Delta H = +62\\ \\mathrm{kJ}$\n$\\mathrm{I_2(固)} \\rightarrow 2\\mathrm{I(気)} \\quad \\Delta H = +215\\ \\mathrm{kJ}$\n$\\mathrm{I_2}$ の I–I 結合の結合エンタルピー($\\mathrm{kJ/mol}$)を求めよ。",
+          "answer": "$153\\ \\mathrm{kJ/mol}$",
+          "explanation": "▶ 「昇華」と「結合の切断」を1本のエネルギー図に並べ、段差の差を取る型。\n① 結合エンタルピーの定義は「気体の分子の結合を切る」ときの $\\Delta H$ なので、求めたいのは $\\mathrm{I_2(気)} \\rightarrow 2\\mathrm{I(気)}$ の $\\Delta H$ であり、固体からのスタートではない。\n② エネルギー図をかくと、$\\mathrm{I_2(固)}$ から $62\\ \\mathrm{kJ}$ 上がったところが $\\mathrm{I_2(気)}$、$215\\ \\mathrm{kJ}$ 上がったところが $2\\mathrm{I(気)}$。\n③ その差が求める値なので、$\\Delta H = 215 - 62 = 153\\ \\mathrm{kJ/mol}$。\n★ 結合エンタルピーの相手は必ず <b>$\\mathrm{(気)}$</b>。固体から出発した $215\\ \\mathrm{kJ}$ をそのまま答えてしまうのが最頻出のミスで、差の $62\\ \\mathrm{kJ}$ はちょうど昇華に使われた分である。",
+          "skill": "エネルギー図(状態変化)",
+          "verify_py": "sublimation = 62.0\ntotal = 215.0\nresult = total - sublimation",
+          "verify_expected": 153.0,
+          "verify_tol": 0.02
+        },
+        {
+          "group": "格子エネルギーとイオン結晶のエネルギー図",
+          "level": "advanced",
+          "stem": "塩化ナトリウムの結晶について、次の値が与えられている。\n・$\\mathrm{NaCl(固)}$ の生成エンタルピー: $-411\\ \\mathrm{kJ/mol}$\n・$\\mathrm{Na(固)}$ の昇華エンタルピー: $+107\\ \\mathrm{kJ/mol}$\n・$\\mathrm{Na(気)}$ のイオン化エネルギー: $496\\ \\mathrm{kJ/mol}$\n・Cl–Cl の結合エンタルピー: $244\\ \\mathrm{kJ/mol}$\n・$\\mathrm{Cl(気)}$ の電子親和力: $349\\ \\mathrm{kJ/mol}$(気体の塩素原子 $1\\ \\mathrm{mol}$ が電子 $1\\ \\mathrm{mol}$ を受け取ると $349\\ \\mathrm{kJ}$ が放出される)\n$\\mathrm{NaCl}$ の結晶の格子エネルギー($\\mathrm{kJ/mol}$)を求めよ。ただし格子エネルギーは、$\\mathrm{NaCl(固)} \\rightarrow \\mathrm{Na^+(気)} + \\mathrm{Cl^-(気)}$ に必要なエネルギーとする。",
+          "answer": "$787\\ \\mathrm{kJ/mol}$",
+          "explanation": "▶ ボルン・ハーバーサイクルの簡易版。$\\mathrm{NaCl(固)}$ から $\\mathrm{Na^+(気)} + \\mathrm{Cl^-(気)}$ へ、遠回りの道を通ったときの $\\Delta H$ を全部足す型。\n① まず結晶を単体に戻す(生成の逆向きなので符号が反転する)。$\\mathrm{NaCl(固)} \\rightarrow \\mathrm{Na(固)} + \\frac{1}{2}\\mathrm{Cl_2(気)}$、$\\Delta H = +411\\ \\mathrm{kJ}$。\n② 次に単体をばらばらの気体原子にする。昇華 $\\mathrm{Na(固)} \\rightarrow \\mathrm{Na(気)}$ が $+107\\ \\mathrm{kJ}$、$\\frac{1}{2}\\mathrm{Cl_2(気)} \\rightarrow \\mathrm{Cl(気)}$ は結合エンタルピーの半分で $\\dfrac{244}{2} = +122\\ \\mathrm{kJ}$。\n③ 最後に原子をイオンにする。$\\mathrm{Na(気)} \\rightarrow \\mathrm{Na^+(気)} + \\mathrm{e^-}$ が $+496\\ \\mathrm{kJ}$、$\\mathrm{Cl(気)} + \\mathrm{e^-} \\rightarrow \\mathrm{Cl^-(気)}$ は放出なので $-349\\ \\mathrm{kJ}$。合計すると $411 + 107 + 122 + 496 - 349 = 787\\ \\mathrm{kJ/mol}$。\n★ <b>電子親和力だけ符号が逆</b>(受け取ると発熱なので $\\Delta H = -349\\ \\mathrm{kJ}$)。$\\mathrm{Cl_2}$ は $\\frac{1}{2}$ しか使わないので結合エンタルピーも半分にする — この2点が最頻出のミス。",
+          "skill": "格子エネルギー",
+          "verify_py": "Hf_NaCl = -411.0\nsub_Na = 107.0\nIE_Na = 496.0\nD_Cl2 = 244.0\nEA_Cl = 349.0\nresult = (-Hf_NaCl) + sub_Na + D_Cl2/2.0 + IE_Na - EA_Cl",
+          "verify_expected": 787.0,
+          "verify_tol": 0.02
+        }
+      ]
+    }
+  ]
+}

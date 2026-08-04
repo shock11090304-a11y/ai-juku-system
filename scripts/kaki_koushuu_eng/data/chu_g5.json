@@ -1,0 +1,304 @@
+{
+ "no": 5,
+ "date": "7/31",
+ "title": "間接疑問文・分詞（後置修飾）／発展：分詞構文の入口",
+ "goal": "間接疑問文の語順（疑問詞＋主語＋動詞）と、分詞による名詞の後置修飾（～している／～される…）を身につけ、発展として分詞構文の入口までつかむ。",
+ "points": [
+  {
+   "h": "間接疑問文の語順（疑問詞のあとはふつうの語順）",
+   "body": "疑問詞（what, where, who, when, why, how など）が文の中に入ると、疑問文の語順（do/does や be の倒置）はなくなり、〈疑問詞＋主語＋動詞〉のふつうの語順にもどる。「彼が何をほしいか」なら what does he want ではなく what he wants となる。また、Yes/No でたずねる疑問文を文の中に入れるときは、疑問詞のかわりに whether（＝if）「～かどうか」を使う。",
+   "ex": [
+    [
+     "I know what he wants.",
+     "私は彼が何をほしいのか知っている。"
+    ],
+    [
+     "Do you know where she lives?",
+     "彼女がどこに住んでいるか知っていますか。"
+    ],
+    [
+     "I'm not sure whether it will rain.",
+     "雨が降るかどうか分からない。"
+    ]
+   ],
+   "rule": "★間接疑問は〈疑問詞＋S＋V〉。do/does は消え、動詞は主語に合わせる。"
+  },
+  {
+   "h": "現在分詞の後置修飾（～している…）",
+   "body": "動詞のing形（現在分詞）が名詞の後ろから「～している」と説明する。〈名詞＋分詞＋語句〉で一つの大きな名詞のかたまりになる。分詞に語句が続くときは名詞の前ではなく後ろに置く。",
+   "ex": [
+    [
+     "The boy running over there is my brother.",
+     "向こうを走っている少年は私の弟だ。"
+    ]
+   ],
+   "rule": "★分詞に語句がつくときは〈名詞＋分詞＋語句〉の順で後ろから修飾。"
+  },
+  {
+   "h": "過去分詞の後置修飾（～される／された…）",
+   "body": "過去分詞が名詞の後ろから「～される／された」と受け身の意味で説明する。名詞が『する側』なら現在分詞、『される側』なら過去分詞を使い分けるのがポイント。",
+   "ex": [
+    [
+     "English is a language spoken all over the world.",
+     "英語は世界中で話されている言語だ。"
+    ]
+   ],
+   "rule": "★『している』は現在分詞、『される・された』は過去分詞。"
+  },
+  {
+   "h": "発展：分詞構文の入口（～して／～しながら…）",
+   "body": "文の先頭などに分詞を置くと、〈接続詞＋主語〉を省いたように「～して」「～しながら」「～なので」の意味を表す。これを分詞構文という。受け身の意味なら過去分詞で始める。難関私立・国立で問われる。",
+   "ex": [
+    [
+     "Walking along the beach, I found a beautiful shell.",
+     "浜辺を歩いていて、私はきれいな貝殻を見つけた。"
+    ],
+    [
+     "Written in easy English, this book is popular among students.",
+     "やさしい英語で書かれているので、この本は生徒に人気だ。"
+    ]
+   ],
+   "rule": "★文頭の分詞は「～して／～しながら」。主語は主節の主語と同じ。受け身なら過去分詞で始める。"
+  }
+ ],
+ "kiso": [
+  {
+   "type": "fill",
+   "stem": "I don't know where he ______ ( live ).",
+   "ans": "lives",
+   "point": "間接疑問の語順",
+   "exp": "間接疑問は〈疑問詞＋主語＋動詞〉のふつうの語順。he は三人称単数なので lives。does he live のような疑問文の形にはしない。"
+  },
+  {
+   "type": "fill",
+   "stem": "Do you know what this word ______ ( mean )?",
+   "ans": "means",
+   "point": "間接疑問の語順",
+   "exp": "know のあとの間接疑問は〈what＋主語＋動詞〉。this word は三人称単数なので means。does this word mean とはしない（does を使わず動詞に s）。"
+  },
+  {
+   "type": "mc",
+   "stem": "Tell me ______.",
+   "note": "駅がどこにあるか教えて。",
+   "choices": [
+    "where the station is",
+    "where is the station",
+    "where is station",
+    "the station where is"
+   ],
+   "ans": 0,
+   "point": "間接疑問の語順",
+   "exp": "間接疑問は〈疑問詞＋主語＋動詞〉なので where the station is が正しい。where is the station は普通の疑問文の語順なので中に入れると誤り。"
+  },
+  {
+   "type": "fill",
+   "stem": "Look at the girl ______ ( play ) the piano.",
+   "ans": "playing",
+   "point": "現在分詞の後置修飾",
+   "exp": "「ピアノを弾いている女の子」。女の子は自分で弾いている（する側）ので現在分詞 playing。分詞＋語句は名詞の後ろに置く。"
+  },
+  {
+   "type": "fill",
+   "stem": "This is a picture ______ ( take ) by my father.",
+   "ans": "taken",
+   "point": "過去分詞の後置修飾",
+   "exp": "「父によって撮られた写真」。写真は撮られる側（受け身）なので過去分詞 taken。take-took-taken の変化に注意。"
+  },
+  {
+   "type": "mc",
+   "stem": "The language ______ in Australia is English.",
+   "note": "オーストラリアで話されている言語は英語だ。",
+   "choices": [
+    "speaking",
+    "speaks",
+    "to speak",
+    "spoken"
+   ],
+   "ans": 3,
+   "point": "過去分詞の後置修飾",
+   "exp": "言語は「話される」側なので受け身＝過去分詞 spoken。speaking だと言語が自分で話していることになり不可。"
+  },
+  {
+   "type": "mc",
+   "stem": "Who is the man ______ with Ken?",
+   "note": "ケンと話している男の人はだれですか。",
+   "choices": [
+    "talks",
+    "talked",
+    "talking",
+    "talk"
+   ],
+   "ans": 2,
+   "point": "現在分詞の後置修飾",
+   "exp": "「ケンと話している男の人」。男の人は自分で話している（する側）なので現在分詞 talking。過去分詞 talked にすると受け身になり不可。"
+  },
+  {
+   "type": "fill",
+   "stem": "Do you know when the movie ______ ( start )?",
+   "ans": "starts",
+   "point": "間接疑問の語順",
+   "exp": "know のあとの間接疑問。〈when＋主語 the movie＋動詞 starts〉のふつうの語順。does the movie start とはせず、does を消して動詞に s をつける。"
+  }
+ ],
+ "hyojun": [
+  {
+   "type": "mc",
+   "stem": "______ the next bus will come?",
+   "note": "次のバスが何時に来ると思いますか。",
+   "choices": [
+    "Do you think what time",
+    "What time do you think",
+    "What time do you think that",
+    "Do you know what time"
+   ],
+   "ans": 1,
+   "point": "間接疑問＋think（疑問詞の前置）",
+   "exp": "think, believe など「思う」の動詞に間接疑問が続くとき、答えが Yes / No でなく『時刻』を求める場合は疑問詞が文の先頭に飛び出す。だから What time do you think ~? となり、Do you think what time ~? とはしない。that は不要。Do you know ~ だと『思う』でなく『知っている』になり和文と合わない。"
+  },
+  {
+   "type": "order",
+   "ja": "だれが窓を割ったのか私に教えてください。",
+   "tokens": [
+    "Please",
+    "tell",
+    "me",
+    "who",
+    "broke",
+    "the",
+    "window"
+   ],
+   "ans": "Please tell me who broke the window",
+   "point": "間接疑問（疑問詞が主語）",
+   "exp": "疑問詞 who がそのまま主語になる間接疑問。who のあとにさらに主語は入れず〈who＋動詞〉の順で who broke the window とする。who did break や who the window broke のようにいじってはいけない。"
+  },
+  {
+   "type": "mc",
+   "stem": "The number of people ______ English as a second language is increasing.",
+   "note": "第二言語として英語を話す人の数は増えている。",
+   "choices": [
+    "speaking",
+    "spoken",
+    "spoke",
+    "to speak"
+   ],
+   "ans": 0,
+   "point": "現在分詞の後置修飾（する側）",
+   "exp": "修飾されるのは people（英語を話す側＝能動）なので現在分詞 speaking が後ろから people を説明する。spoken にすると「話される人」となり意味が通らない。『言語 spoken』の形につられないこと。文全体の主語は The number（単数）なので動詞は is。"
+  },
+  {
+   "type": "rewrite",
+   "given": "Will it rain tomorrow? I'm not sure about it.",
+   "target": "I'm not sure ______ it ______ tomorrow.",
+   "blanks": [
+    "whether",
+    "will rain"
+   ],
+   "point": "間接疑問（～かどうか・未来はそのまま）",
+   "exp": "Yes / No を問う疑問文を文中に入れるときは whether（＝if）でつなぐ。中は疑問文の語順にせず〈主語 it＋動詞 will rain〉のふつうの語順にもどす。未来の will はそのまま残す。"
+  },
+  {
+   "type": "mc",
+   "stem": "Most of the products ______ in this factory are sold abroad.",
+   "note": "この工場で作られる製品のほとんどは海外で売られる。",
+   "choices": [
+    "make",
+    "making",
+    "made",
+    "to make"
+   ],
+   "ans": 2,
+   "point": "過去分詞の後置修飾（される側）",
+   "exp": "製品は「作られる」側（受け身）なので過去分詞 made が後ろから products を説明する。made in this factory で「この工場で作られる」。making だと製品が自分で作っていることになり不可。文の動詞は Most of the products に合わせて are。"
+  },
+  {
+   "type": "mc",
+   "stem": "______ what to do next, the boy just stood there.",
+   "note": "次に何をすべきか分からなくて、その少年はただそこに立っていた。",
+   "choices": [
+    "Not know",
+    "Knowing not",
+    "Don't knowing",
+    "Not knowing"
+   ],
+   "ans": 3,
+   "point": "分詞構文の否定（not＋分詞）",
+   "exp": "文頭の分詞構文で「～ないので／～なくて」と否定するときは、not を分詞の直前に置いて〈Not＋~ing〉とする。だから Not knowing what to do next。Knowing not は語順が逆で誤り、Not know や Don't knowing は分詞の形になっていない。"
+  },
+  {
+   "type": "order",
+   "ja": "あなたはその歌手がどれくらい有名なのか知っていますか。",
+   "tokens": [
+    "Do",
+    "you",
+    "know",
+    "how",
+    "famous",
+    "the",
+    "singer",
+    "is"
+   ],
+   "ans": "Do you know how famous the singer is",
+   "point": "間接疑問（how＋形容詞のかたまり）",
+   "exp": "how famous（どれくらい有名か）はひとかたまりで前に出し、そのあとは〈主語＋動詞〉のふつうの語順にする。よって how famous the singer is。how is the singer famous のように how と is を切り離して倒置してはいけない。"
+  }
+ ],
+ "nyushi": [
+  {
+   "type": "error",
+   "html": "[a|Could] [b|you] [c|tell me] [d|where is the post office]?",
+   "ans": "d",
+   "correct": "where is the post office → where the post office is",
+   "point": "間接疑問の語順",
+   "exp": "tell me のあとは間接疑問なので〈where＋主語＋動詞〉のふつうの語順になる。where the post office is が正しく、疑問文の語順 where is ~ は誤り。"
+  },
+  {
+   "type": "error",
+   "html": "[a|The book] [b|writing] [c|in French] [d|is difficult] for me.",
+   "ans": "b",
+   "correct": "writing → written",
+   "point": "過去分詞の後置修飾",
+   "exp": "本は「書かれる」側（受け身）なので過去分詞 written が正しい。writing だと「（本が）書いている」となり意味が通らない。"
+  },
+  {
+   "type": "order",
+   "ja": "音楽を聞きながら、彼は宿題をした。",
+   "tokens": [
+    "Listening",
+    "to",
+    "music,",
+    "he",
+    "did",
+    "his",
+    "homework"
+   ],
+   "ans": "Listening to music, he did his homework",
+   "point": "分詞構文（～しながら）",
+   "exp": "文頭の分詞は「～して／～しながら」の意味。Listening to music で「音楽を聞きながら」。分詞の主語は主節と同じ he。While he was listening ~ を分詞構文にした形。"
+  },
+  {
+   "type": "mc",
+   "stem": "______ in easy English, this book is easy to read.",
+   "note": "やさしい英語で書かれているので、この本は読みやすい。",
+   "choices": [
+    "Writing",
+    "Written",
+    "To write",
+    "Wrote"
+   ],
+   "ans": 1,
+   "point": "分詞構文（受け身・過去分詞）",
+   "exp": "本は「書かれている」ので受け身。分詞構文では (Being) Written in easy English と過去分詞で始める。Writing だと「本が書いている」で不可。"
+  },
+  {
+   "type": "ja2en",
+   "ja": "私は向こうで走っている少女がだれなのか知りません。",
+   "models": [
+    "I don't know who the girl running over there is.",
+    "I don't know who that girl running over there is."
+   ],
+   "point": "間接疑問（who＋S＋V）と現在分詞の後置修飾を組み合わせる。間接疑問なので文末が is で終わる点に注意。",
+   "mistakes": "who is the girl ~ のように疑問文の語順にしてしまう／running を関係代名詞なしで名詞の前に置いてしまう（× the running girl over there は語句が続くので後置が自然）。",
+   "lines": 2
+  }
+ ]
+}

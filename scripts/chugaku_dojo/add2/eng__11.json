@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: How are you doing today? B: (      ) How about you?",
+  "passage": "",
+  "choices": [
+   "Pretty good, thanks.",
+   "You're welcome.",
+   "Nice to meet you.",
+   "It's over there."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「Pretty good, thanks.」。 How are you doing? は調子をたずねる表現で、自分の状態を答えるのが自然です。You're welcome は「どういたしまして」で場面が合いません。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: What's the matter? B: (      ) I have a stomachache.",
+  "passage": "",
+  "choices": [
+   "Here you are.",
+   "I don't feel well.",
+   "That's a good idea.",
+   "See you later."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】会話表現。正解は「I don't feel well.」。 What's the matter? は「どうしたの?」と体調や問題をたずねる表現で、具合が悪いと答えるのが自然です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: Can I take a message? B: (      ) I'll call him again later.",
+  "passage": "",
+  "choices": [
+   "Here you are.",
+   "No, thank you.",
+   "Nice to meet you.",
+   "You're welcome."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】会話表現。正解は「No, thank you.」。 Can I take a message?(伝言をうかがいましょうか)に対し、あとでかけ直すと続くので伝言を断る返答が自然です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: (      ) B: Sure. It's ten thirty.",
+  "passage": "",
+  "choices": [
+   "What time is it?",
+   "How much is it?",
+   "Where are you from?",
+   "How old are you?"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「What time is it?」。 It's ten thirty.(10時30分です)と時刻を答えているので、時刻をたずねる文が入ります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: Could you help me carry this box? B: (      )",
+  "passage": "",
+  "choices": [
+   "No problem.",
+   "You're welcome.",
+   "Here you are.",
+   "Not at all bad."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「No problem.」。 Could you ~?(~してくれますか)という依頼に「いいですよ」と応じる自然な返事です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: I'm sorry I'm late. B: (      ) The meeting hasn't started yet.",
+  "passage": "",
+  "choices": [
+   "That's too bad.",
+   "That's all right.",
+   "Congratulations!",
+   "Here you are."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】会話表現。正解は「That's all right.」。謝罪 I'm sorry に対して「大丈夫ですよ」と許す表現です。That's too bad は残念な気持ちを表す表現で合いません。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: Shall I open the door for you? B: (      ) My hands are full.",
+  "passage": "",
+  "choices": [
+   "Yes, please.",
+   "No, thanks to you.",
+   "You're welcome.",
+   "Nice to meet you."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「Yes, please.」。 Shall I ~?(~しましょうか)という申し出に、手がふさがっているので「お願いします」と受ける返事が自然です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: How was your weekend? B: (      ) I went hiking with my family.",
+  "passage": "",
+  "choices": [
+   "It was great.",
+   "Here you are.",
+   "You're welcome.",
+   "I'm looking for it."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「It was great.」。 How was ~? は感想をたずねる表現で、過去の週末を was で答えるのが自然です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: Would you mind closing the window? B: (      ) I'll do it now.",
+  "passage": "",
+  "choices": [
+   "Of course not.",
+   "Yes, I do.",
+   "You're welcome.",
+   "That's too bad."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「Of course not.」。 Would you mind ~?(~するのは嫌ですか)は、承諾するとき No で答えます。すぐやると続くので「もちろん構いません」が正解です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: Let's take a break. B: (      ) I'm a little tired.",
+  "passage": "",
+  "choices": [
+   "Sounds good.",
+   "You're welcome.",
+   "Here you are.",
+   "I'm afraid not."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「Sounds good.」。 Let's ~ の提案に「いいね」と賛成する表現です。疲れていると続くので賛成が自然です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: How long does it take from here to the station? B: (      )",
+  "passage": "",
+  "choices": [
+   "About ten minutes on foot.",
+   "It's ten o'clock now.",
+   "Ten dollars, please.",
+   "I'm ten years old."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「About ten minutes on foot.」。 How long does it take? は所要時間をたずねる表現なので、かかる時間を答えます。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: May I try this jacket on? B: (      ) The fitting room is over there.",
+  "passage": "",
+  "choices": [
+   "Sure, go ahead.",
+   "No, thank you.",
+   "You're welcome.",
+   "I'm afraid I can't."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「Sure, go ahead.」。 May I ~?(~してもいいですか)という許可の求めに、試着室の案内が続くので「どうぞ」と許可する返事が自然です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: Happy birthday, Tom! B: (      )",
+  "passage": "",
+  "choices": [
+   "Thank you very much.",
+   "Here you are.",
+   "That's too bad.",
+   "Not at all."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「Thank you very much.」。誕生日のお祝いの言葉に対しては、お礼を述べるのが自然です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "A: Which do you want, tea or coffee? B: (      )",
+  "passage": "",
+  "choices": [
+   "Coffee, please.",
+   "Yes, I do.",
+   "Here you are.",
+   "It's mine."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「Coffee, please.」。 Which ~, A or B? はどちらか一方を選ばせる質問なので、選んだものを答えます。Yes/No では答えられません。"
+ }
+]

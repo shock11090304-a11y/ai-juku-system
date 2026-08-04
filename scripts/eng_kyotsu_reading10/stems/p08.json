@@ -1,0 +1,84 @@
+{
+ "no": 8,
+ "title": "A Three-Month Review of a Language Learning App",
+ "passage": "LinguaStep (language learning app)\nRating: 3 out of 5 stars\nPosted by Kenta_M on May 12\n\nI downloaded LinguaStep three months ago because I wanted to improve my English before a school trip to Australia. The app is free, though a paid plan called Plus costs 600 yen a month.\n\nThe best thing is the daily five-minute lesson. Each lesson has ten short questions, and the app remembers the words I get wrong and shows them again a few days later. I think this system is the smartest part of the whole app. Since February I have finished 68 lessons and learned about 400 new words. My reading speed has clearly improved.\n\nHowever, I have two complaints. First, the free plan gives you only three hearts. If you make three mistakes, you must wait six hours or watch an advertisement before you continue. This rule made me stop studying on days when I was tired. Second, the app almost never asks you to speak. There is a recording exercise, but it appears only in the Plus plan, and even then it sometimes accepts a wrong pronunciation.\n\nWould I recommend it? Yes, but with a warning. LinguaStep is great for building vocabulary, and it fits easily into a busy day. For speaking, though, you will still need a teacher or a partner. I will keep using the free plan until the summer holidays, and then I will decide whether the Plus plan is worth the money.",
+ "glossary": [
+  {
+   "word": "LinguaStep",
+   "ja": "リンガステップ(架空の語学学習アプリの名前)"
+  },
+  {
+   "word": "Plus",
+   "ja": "プラス(このアプリの有料プランの名前)"
+  },
+  {
+   "word": "heart",
+   "ja": "ハート(アプリ内で残りの失敗できる回数を表すしるし)"
+  },
+  {
+   "word": "advertisement",
+   "ja": "広告"
+  },
+  {
+   "word": "pronunciation",
+   "ja": "発音"
+  },
+  {
+   "word": "complaint",
+   "ja": "不満・苦情"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "q": "Which option best describes an opinion, not a fact, stated by the writer?",
+   "options": [
+    "The Plus plan is available for 600 yen a month.",
+    "The writer stopped studying on days when he was feeling tired.",
+    "The review gives the app three stars out of five, not a perfect score.",
+    "Reviewing missed words is the app's cleverest feature."
+   ]
+  },
+  {
+   "n": 2,
+   "q": "According to the review, what happens when a free-plan user makes three mistakes?",
+   "options": [
+    "The user must pay for the Plus plan in order to keep studying on that day.",
+    "The user loses all the words learned during that lesson.",
+    "The user waits six hours or watches an advertisement to continue.",
+    "The user answers ten extra questions before the next lesson."
+   ]
+  },
+  {
+   "n": 3,
+   "q": "Which of the following is most likely true about the writer?",
+   "options": [
+    "He has already decided to pay for the Plus plan this coming summer.",
+    "He believes that the app alone is enough to prepare for his trip.",
+    "His speaking ability has probably improved less than his reading speed has.",
+    "He studied harder on tired days than on days when he felt fine."
+   ]
+  },
+  {
+   "n": 4,
+   "q": "According to the review, which of the following is true about the recording exercise?",
+   "options": [
+    "It is offered only to Plus users and is not always accurate.",
+    "It is offered to every user, but each session is limited to five minutes.",
+    "It is free to use but appears only once every six hours.",
+    "It works well but is hidden inside the daily five-minute lesson."
+   ]
+  },
+  {
+   "n": 5,
+   "q": "What is the main purpose of this review?",
+   "options": [
+    "To tell other learners about the good and weak points of this app.",
+    "To warn readers that the app's daily lessons waste their study time.",
+    "To persuade readers to buy the Plus plan for its recording task.",
+    "To explain how the app decides which words to show again later."
+   ]
+  }
+ ],
+ "lead": "You found the following review on a website for language learners."
+}

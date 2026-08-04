@@ -1,0 +1,222 @@
+{
+ "area": "第4編　化学反応の速さとしくみ",
+ "overview": "反応速度は「単位時間あたりの濃度変化」という一つの定義から出発する。この編では、(1) 速さをどう表すか(単位 $\\mathrm{mol/(L\\cdot s)}$・係数比・データの読み取り)、(2) 速さが何で決まるか(反応速度式 $v = k[\\mathrm{A}]^x[\\mathrm{B}]^y$・反応次数・速度定数 $k$)、(3) なぜ速さが変わるか(活性化エネルギー・触媒・温度・律速段階)、の3段階で整理する。計算で落としやすいのは、物質量 $\\mathrm{[mol]}$ を体積で割ってモル濃度に直す手順と、速度式の $v$ が「どの物質の速度か」の確認の2点。速度式の指数は反応式の係数からは決まらず必ず実験(初速度法)で決まる、という原則を最初に固定しておくと迷わない。",
+ "units": [
+  {
+   "name": "反応速度の表し方",
+   "tag": "rate-definition",
+   "problems": [
+    {
+     "group": "平均の反応速度を求める",
+     "level": "basic",
+     "stem": "過酸化水素水中で、過酸化水素は次のように分解する。\n$2\\mathrm{H_2O_2}(aq) \\rightarrow 2\\mathrm{H_2O}(液) + \\mathrm{O_2}(気)$\nある温度でこの分解を追跡したところ、$\\mathrm{H_2O_2}$ のモル濃度は $20\\ \\mathrm{s}$ の間に $0.50\\ \\mathrm{mol/L}$ から $0.38\\ \\mathrm{mol/L}$ に減少した。この $20\\ \\mathrm{s}$ 間における $\\mathrm{H_2O_2}$ の平均の分解速度は何 $\\mathrm{mol/(L\\cdot s)}$ か。有効数字2桁で答えよ。",
+     "answer": "$6.0\\times10^{-3}\\ \\mathrm{mol/(L\\cdot s)}$",
+     "explanation": "▶ 反応速度の定義「単位時間あたりの濃度変化」をそのまま当てはめるだけの、いちばん基本の型。\n① 濃度の減少量を出す: $0.50\\ \\mathrm{mol/L} - 0.38\\ \\mathrm{mol/L} = 0.12\\ \\mathrm{mol/L}$\n② 経過時間で割る: $v = \\dfrac{0.12\\ \\mathrm{mol/L}}{20\\ \\mathrm{s}} = 6.0\\times10^{-3}\\ \\mathrm{mol/(L\\cdot s)}$\n③ よって $6.0\\times10^{-3}\\ \\mathrm{mol/(L\\cdot s)}$。\n★ 反応速度は<b>「濃度の変化量 ÷ 時間」</b>。減っていく物質の速度でも、答えは正の値で書く(マイナスをつけない)。単位 $\\mathrm{mol/(L\\cdot s)}$ まで書き切ること。",
+     "skill": "平均の反応速度",
+     "verify_py": "c1=0.50\nc2=0.38\nt=20.0\nresult=(c1-c2)/t",
+     "verify_expected": 0.006,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "係数と反応速度の関係",
+     "level": "basic",
+     "stem": "アンモニアの合成は次の反応式で表される。\n$\\mathrm{N_2}(気) + 3\\mathrm{H_2}(気) \\rightarrow 2\\mathrm{NH_3}(気)$\nある条件下で、$\\mathrm{H_2}$ の減少速度は $3.6\\times10^{-2}\\ \\mathrm{mol/(L\\cdot s)}$ であった。このときの $\\mathrm{NH_3}$ の生成速度は何 $\\mathrm{mol/(L\\cdot s)}$ か。有効数字2桁で答えよ。",
+     "answer": "$2.4\\times10^{-2}\\ \\mathrm{mol/(L\\cdot s)}$",
+     "explanation": "▶ 係数の違う物質どうしの速さを、係数比で読み替える型。\n① 反応式の係数より、$\\mathrm{H_2}$ が $3\\ \\mathrm{mol}$ 減るあいだに $\\mathrm{NH_3}$ は $2\\ \\mathrm{mol}$ 生じる。よって $v(\\mathrm{NH_3}) : v(\\mathrm{H_2}) = 2 : 3$。\n② 数値を代入する: $v(\\mathrm{NH_3}) = \\dfrac{2}{3} \\times 3.6\\times10^{-2}\\ \\mathrm{mol/(L\\cdot s)} = 2.4\\times10^{-2}\\ \\mathrm{mol/(L\\cdot s)}$\n③ よって $2.4\\times10^{-2}\\ \\mathrm{mol/(L\\cdot s)}$。\n★ <b>速度の比は係数の比</b>。$\\dfrac{v(\\mathrm{N_2})}{1} = \\dfrac{v(\\mathrm{H_2})}{3} = \\dfrac{v(\\mathrm{NH_3})}{2}$ と「係数で割った値がそろう」形で覚えると、どちらを掛けるか迷わない。",
+     "skill": "係数と反応速度の比",
+     "verify_py": "vH2=3.6e-2\nresult=vH2*2.0/3.0",
+     "verify_expected": 0.024,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "濃度変化の表から平均の速さを読む",
+     "level": "standard",
+     "stem": "酢酸メチルは希硫酸を触媒として、次のように加水分解される。\n$\\mathrm{CH_3COOCH_3}(aq) + \\mathrm{H_2O}(液) \\rightarrow \\mathrm{CH_3COOH}(aq) + \\mathrm{CH_3OH}(aq)$\n一定温度でこの反応を追跡し、酢酸メチルのモル濃度 $[\\mathrm{CH_3COOCH_3}]$ を測定して次の結果を得た。\n　$t = 0\\ \\mathrm{s}$ のとき $1.00\\ \\mathrm{mol/L}$\n　$t = 300\\ \\mathrm{s}$ のとき $0.70\\ \\mathrm{mol/L}$\n　$t = 600\\ \\mathrm{s}$ のとき $0.49\\ \\mathrm{mol/L}$\n　$t = 900\\ \\mathrm{s}$ のとき $0.34\\ \\mathrm{mol/L}$\n$t = 300\\ \\mathrm{s}$ から $t = 600\\ \\mathrm{s}$ までの間における酢酸メチルの平均の反応速度は何 $\\mathrm{mol/(L\\cdot s)}$ か。有効数字2桁で答えよ。",
+     "answer": "$7.0\\times10^{-4}\\ \\mathrm{mol/(L\\cdot s)}$",
+     "explanation": "▶ 測定データの表から、指定された区間の平均の速さを求める型。使うのはその区間の両端の値だけ。\n① 区間の濃度変化を出す: $0.70\\ \\mathrm{mol/L} - 0.49\\ \\mathrm{mol/L} = 0.21\\ \\mathrm{mol/L}$\n② 区間の時間で割る: $v = \\dfrac{0.21\\ \\mathrm{mol/L}}{600\\ \\mathrm{s} - 300\\ \\mathrm{s}} = \\dfrac{0.21}{300} = 7.0\\times10^{-4}\\ \\mathrm{mol/(L\\cdot s)}$\n③ よって $7.0\\times10^{-4}\\ \\mathrm{mol/(L\\cdot s)}$。\n★ <b>指定区間の両端だけを使う</b>のが鉄則。$t=0$ の値まで巻き込んで $(1.00-0.49)\\div 600$ としないこと。なお時間が進むほど濃度が下がるので平均の速さも小さくなる($0$〜$300\\ \\mathrm{s}$ なら $1.0\\times10^{-3}$)。",
+     "skill": "平均の反応速度",
+     "verify_py": "c1=0.70\nc2=0.49\ndt=600.0-300.0\nresult=(c1-c2)/dt",
+     "verify_expected": 0.0007,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "気体の発生量から速さを求める",
+     "level": "standard",
+     "stem": "$1.0\\ \\mathrm{mol/L}$ の塩酸 $0.20\\ \\mathrm{L}$ に亜鉛の粒を入れると、次の反応で水素が発生した。\n$\\mathrm{Zn}(固) + 2\\mathrm{HCl}(aq) \\rightarrow \\mathrm{ZnCl_2}(aq) + \\mathrm{H_2}(気)$\n反応開始から $50\\ \\mathrm{s}$ の間に、水素が $2.0\\times10^{-2}\\ \\mathrm{mol}$ 発生した。この $50\\ \\mathrm{s}$ 間における $\\mathrm{HCl}$ の平均の減少速度は何 $\\mathrm{mol/(L\\cdot s)}$ か。溶液の体積は $0.20\\ \\mathrm{L}$ のまま変化しないものとし、有効数字2桁で答えよ。",
+     "answer": "$4.0\\times10^{-3}\\ \\mathrm{mol/(L\\cdot s)}$",
+     "explanation": "▶ 「物質量 $\\mathrm{[mol]}$」で与えられた量を、いったん「モル濃度 $\\mathrm{[mol/L]}$」に直してから速度にする型。\n① 係数より $\\mathrm{H_2}\\ 1\\ \\mathrm{mol}$ の発生には $\\mathrm{HCl}\\ 2\\ \\mathrm{mol}$ を消費する: $2.0\\times10^{-2}\\ \\mathrm{mol} \\times 2 = 4.0\\times10^{-2}\\ \\mathrm{mol}$\n② 溶液の体積で割って濃度変化にする: $\\dfrac{4.0\\times10^{-2}\\ \\mathrm{mol}}{0.20\\ \\mathrm{L}} = 0.20\\ \\mathrm{mol/L}$\n③ 時間で割る: $v = \\dfrac{0.20\\ \\mathrm{mol/L}}{50\\ \\mathrm{s}} = 4.0\\times10^{-3}\\ \\mathrm{mol/(L\\cdot s)}$\n★ 反応速度は<b>濃度の変化率</b>。$\\mathrm{mol}$ のまま時間で割ると単位が $\\mathrm{mol/s}$ になってしまう。「体積で割る → 時間で割る」の2回の割り算を必ず通すこと。",
+     "skill": "物質量から反応速度",
+     "verify_py": "nH2=2.0e-2\nnHCl=2.0*nH2\nV=0.20\nt=50.0\nresult=(nHCl/V)/t",
+     "verify_expected": 0.004,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "反応速度の単位をそろえる",
+     "level": "standard",
+     "stem": "接触法では、酸化バナジウム(V) $\\mathrm{V_2O_5}$ を触媒として次の反応が起こる。\n$2\\mathrm{SO_2}(気) + \\mathrm{O_2}(気) \\rightarrow 2\\mathrm{SO_3}(気)$\nある条件下で $\\mathrm{SO_3}$ の生成速度は $9.0\\times10^{-2}\\ \\mathrm{mol/(L\\cdot min)}$ であった。このときの $\\mathrm{O_2}$ の減少速度は何 $\\mathrm{mol/(L\\cdot s)}$ か。有効数字2桁で答えよ。",
+     "answer": "$7.5\\times10^{-4}\\ \\mathrm{mol/(L\\cdot s)}$",
+     "explanation": "▶ 係数比の読み替えと、$\\mathrm{min}$ を $\\mathrm{s}$ に直す単位換算の2段階。\n① 係数より $v(\\mathrm{O_2}) : v(\\mathrm{SO_3}) = 1 : 2$ なので、$v(\\mathrm{O_2}) = \\dfrac{1}{2} \\times 9.0\\times10^{-2} = 4.5\\times10^{-2}\\ \\mathrm{mol/(L\\cdot min)}$\n② $1\\ \\mathrm{min} = 60\\ \\mathrm{s}$ だから、$1$ 秒あたりに直すには $60$ で割る: $\\dfrac{4.5\\times10^{-2}}{60} = 7.5\\times10^{-4}\\ \\mathrm{mol/(L\\cdot s)}$\n③ よって $7.5\\times10^{-4}\\ \\mathrm{mol/(L\\cdot s)}$。\n★ $\\mathrm{min}$ → $\\mathrm{s}$ は<b>60で割る(掛けない)</b>。1分あたりの変化を1秒あたりに直すのだから値は小さくなるはず、と向きで検算する。",
+     "skill": "係数と反応速度の比",
+     "verify_py": "vSO3=9.0e-2\nvO2_min=vSO3/2.0\nresult=vO2_min/60.0",
+     "verify_expected": 0.00075,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "全圧の変化から速さを求める",
+     "level": "advanced",
+     "stem": "容積 $2.0\\ \\mathrm{L}$ の密閉容器にある気体 $\\mathrm{A}$ のみを $0.20\\ \\mathrm{mol}$ 入れ、$127\\ ^\\circ\\mathrm{C}$ に保つと次の分解が進行した(逆反応は無視できるものとする)。\n$\\mathrm{A}(気) \\rightarrow 2\\mathrm{B}(気)$\n反応開始から $25\\ \\mathrm{s}$ 後、容器内の全圧は $4.15\\times10^{5}\\ \\mathrm{Pa}$ になっていた。この $25\\ \\mathrm{s}$ 間における $\\mathrm{A}$ の平均の分解速度は何 $\\mathrm{mol/(L\\cdot s)}$ か。気体定数を $R = 8.3\\times10^{3}\\ \\mathrm{Pa\\cdot L/(K\\cdot mol)}$ とし、絶対温度はセ氏温度に $273$ を加えて求めよ。有効数字2桁で答えよ。",
+     "answer": "$1.0\\times10^{-3}\\ \\mathrm{mol/(L\\cdot s)}$",
+     "explanation": "▶ 「全圧 → 全物質量 → 反応した物質量」と読み替えてから速度にする型。気体の反応で係数の和が変わるときの定番。\n① 絶対温度は $127 + 273 = 400\\ \\mathrm{K}$。状態方程式 $PV = nRT$ で $25\\ \\mathrm{s}$ 後の気体の総物質量を出す。\n$n = \\dfrac{PV}{RT} = \\dfrac{4.15\\times10^{5}\\ \\mathrm{Pa} \\times 2.0\\ \\mathrm{L}}{8.3\\times10^{3} \\times 400} = \\dfrac{8.30\\times10^{5}}{3.32\\times10^{6}} = 0.25\\ \\mathrm{mol}$\n② 分解した $\\mathrm{A}$ を $x\\ \\mathrm{mol}$ とすると、$1\\ \\mathrm{mol}$ 分解するごとに気体は $2 - 1 = 1\\ \\mathrm{mol}$ 増える。よって $0.20 + x = 0.25$ より $x = 0.050\\ \\mathrm{mol}$。\n③ 濃度変化に直して時間で割る: $v = \\dfrac{0.050\\ \\mathrm{mol} \\div 2.0\\ \\mathrm{L}}{25\\ \\mathrm{s}} = \\dfrac{0.025\\ \\mathrm{mol/L}}{25\\ \\mathrm{s}} = 1.0\\times10^{-3}\\ \\mathrm{mol/(L\\cdot s)}$\n★ 圧力で与えられたら<b>「増えた全物質量 = (気体係数の差) × (反応した量)」</b>で橋渡しする。全圧の増加分をそのまま $\\mathrm{NO_2}$ の量と勘違いしないこと($\\mathrm{NO_2}$ は $2x = 0.10\\ \\mathrm{mol}$ 生じている)。$127\\ ^\\circ\\mathrm{C}$ の $\\mathrm{K}$ 換算忘れも定番の失点。",
+     "skill": "気体の物質量と反応速度",
+     "verify_py": "R=8.3e3\nV=2.0\nT=400.0\nP=4.15e5\nn0=0.20\nn=P*V/(R*T)\nx=n-n0\nresult=(x/V)/25.0",
+     "verify_expected": 0.001,
+     "verify_tol": 0.02
+    }
+   ]
+  },
+  {
+   "name": "反応速度式と反応次数",
+   "tag": "rate-law",
+   "problems": [
+    {
+     "group": "速度式から反応速度・速度定数を求める",
+     "level": "basic",
+     "stem": "五酸化二窒素の分解\n$2\\mathrm{N_2O_5}(気) \\rightarrow 4\\mathrm{NO_2}(気) + \\mathrm{O_2}(気)$\nの反応速度式は、$\\mathrm{N_2O_5}$ の減少速度を $v$ として $v = k[\\mathrm{N_2O_5}]$ と表される。ある温度で $k = 3.0\\times10^{-4}\\ \\mathrm{/s}$ であるとき、$[\\mathrm{N_2O_5}] = 0.50\\ \\mathrm{mol/L}$ における $v$ は何 $\\mathrm{mol/(L\\cdot s)}$ か。有効数字2桁で答えよ。",
+     "answer": "$1.5\\times10^{-4}\\ \\mathrm{mol/(L\\cdot s)}$",
+     "explanation": "▶ 与えられた速度式に数値を代入するだけの、一次反応の基本問題。\n① 速度式に代入する: $v = k[\\mathrm{N_2O_5}] = 3.0\\times10^{-4}\\ \\mathrm{/s} \\times 0.50\\ \\mathrm{mol/L}$\n② 計算する: $v = 1.5\\times10^{-4}\\ \\mathrm{mol/(L\\cdot s)}$\n③ よって $1.5\\times10^{-4}\\ \\mathrm{mol/(L\\cdot s)}$。\n★ 速度式の指数は<b>反応式の係数からは決まらない</b>。ここでも $\\mathrm{N_2O_5}$ の係数は $2$ なのに次数は $1$ である。「速度式は実験で決まる」を最初に固定しておくこと。",
+     "skill": "速度式と速度定数",
+     "verify_py": "k=3.0e-4\nc=0.50\nresult=k*c",
+     "verify_expected": 0.00015,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "速度式から反応速度・速度定数を求める",
+     "level": "basic",
+     "stem": "ペルオキソ二硫酸イオンとヨウ化物イオンの反応\n$\\mathrm{S_2O_8^{2-}}(aq) + 2\\mathrm{I^-}(aq) \\rightarrow 2\\mathrm{SO_4^{2-}}(aq) + \\mathrm{I_2}(aq)$\nの反応速度式は、$\\mathrm{S_2O_8^{2-}}$ の減少速度を $v$ として $v = k[\\mathrm{S_2O_8^{2-}}][\\mathrm{I^-}]$ と表される。ある温度で $[\\mathrm{S_2O_8^{2-}}] = 0.10\\ \\mathrm{mol/L}$、$[\\mathrm{I^-}] = 0.20\\ \\mathrm{mol/L}$ のとき $v = 2.4\\times10^{-5}\\ \\mathrm{mol/(L\\cdot s)}$ であった。速度定数 $k$ の値を、単位もつけて有効数字2桁で答えよ。",
+     "answer": "$1.2\\times10^{-3}\\ \\mathrm{L/(mol\\cdot s)}$",
+     "explanation": "▶ 速度式を $k$ について解き、単位も式から導く型。\n① $k$ について解いて代入する: $k = \\dfrac{v}{[\\mathrm{S_2O_8^{2-}}][\\mathrm{I^-}]} = \\dfrac{2.4\\times10^{-5}}{0.10 \\times 0.20} = \\dfrac{2.4\\times10^{-5}}{2.0\\times10^{-2}}$\n② 計算する: $k = 1.2\\times10^{-3}$\n③ 単位も同じ割り算で出す: $\\dfrac{\\mathrm{mol/(L\\cdot s)}}{(\\mathrm{mol/L})^2} = \\mathrm{L/(mol\\cdot s)}$。よって $k = 1.2\\times10^{-3}\\ \\mathrm{L/(mol\\cdot s)}$。\n★ <b>$k$ の単位は反応次数によって変わる</b>。全体で $n$ 次なら $\\mathrm{(mol/L)}^{1-n}\\cdot\\mathrm{s}^{-1}$、つまり1次なら $\\mathrm{/s}$、2次なら $\\mathrm{L/(mol\\cdot s)}$、3次なら $\\mathrm{L^2/(mol^2\\cdot s)}$。暗記せず、数値と同じ割り算で毎回導くのが安全。",
+     "skill": "速度定数の単位",
+     "verify_py": "v=2.4e-5\na=0.10\nb=0.20\nresult=v/(a*b)",
+     "verify_expected": 0.0012,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "初速度法で反応次数を決める",
+     "level": "standard",
+     "stem": "一酸化窒素と水素は、次のように反応する。\n$2\\mathrm{NO}(気) + 2\\mathrm{H_2}(気) \\rightarrow \\mathrm{N_2}(気) + 2\\mathrm{H_2O}(気)$\n一定温度で初濃度を変えて反応の初速度 $v$($\\mathrm{NO}$ の減少速度)を測定し、次の結果を得た。\n　実験1: $[\\mathrm{NO}] = 1.0\\times10^{-3}\\ \\mathrm{mol/L}$、$[\\mathrm{H_2}] = 2.0\\times10^{-3}\\ \\mathrm{mol/L}$、$v = 1.2\\times10^{-5}\\ \\mathrm{mol/(L\\cdot s)}$\n　実験2: $[\\mathrm{NO}] = 2.0\\times10^{-3}\\ \\mathrm{mol/L}$、$[\\mathrm{H_2}] = 2.0\\times10^{-3}\\ \\mathrm{mol/L}$、$v = 4.8\\times10^{-5}\\ \\mathrm{mol/(L\\cdot s)}$\n　実験3: $[\\mathrm{NO}] = 1.0\\times10^{-3}\\ \\mathrm{mol/L}$、$[\\mathrm{H_2}] = 6.0\\times10^{-3}\\ \\mathrm{mol/L}$、$v = 3.6\\times10^{-5}\\ \\mathrm{mol/(L\\cdot s)}$\nこの反応の反応速度式を、速度定数を $k$ として $v = k[\\mathrm{NO}]^x[\\mathrm{H_2}]^y$ の形で書け($x$、$y$ は整数)。",
+     "answer": "$v = k[\\mathrm{NO}]^2[\\mathrm{H_2}]$",
+     "explanation": "▶ 初速度法の基本手順は「片方の濃度だけを変えた2つの実験を比べる」。\n① 実験1と実験2は $[\\mathrm{H_2}]$ が同じで $[\\mathrm{NO}]$ が $2$ 倍。速度の比は $\\dfrac{4.8\\times10^{-5}}{1.2\\times10^{-5}} = 4$ 倍。$2^x = 4$ より $x = 2$。\n② 実験1と実験3は $[\\mathrm{NO}]$ が同じで $[\\mathrm{H_2}]$ が $3$ 倍。速度の比は $\\dfrac{3.6\\times10^{-5}}{1.2\\times10^{-5}} = 3$ 倍。$3^y = 3$ より $y = 1$。\n③ よって $v = k[\\mathrm{NO}]^2[\\mathrm{H_2}]$(全体では $2 + 1 = 3$ 次)。\n★ <b>比べてよいのは「1つの濃度だけが違う」実験どうし</b>。2つとも濃度が違う組を比べても次数は出せない。反応式の係数は $\\mathrm{NO}$ も $\\mathrm{H_2}$ もどちらも $2$ なのに次数は $2$ と $1$ で食い違う。これが「速度式は実験でしか決まらない」何よりの証拠。",
+     "skill": "初速度法と反応次数",
+     "verify_py": null,
+     "verify_expected": null,
+     "verify_tol": null
+    },
+    {
+     "group": "初速度法で反応次数を決める",
+     "level": "standard",
+     "stem": "高温では、一酸化炭素と二酸化窒素が次のように反応する。\n$\\mathrm{CO}(気) + \\mathrm{NO_2}(気) \\rightarrow \\mathrm{CO_2}(気) + \\mathrm{NO}(気)$\n一定温度で初速度 $v$($\\mathrm{CO}$ の減少速度)を測定し、次の結果を得た。\n　実験1: $[\\mathrm{CO}] = 0.10\\ \\mathrm{mol/L}$、$[\\mathrm{NO_2}] = 0.20\\ \\mathrm{mol/L}$、$v = 6.0\\times10^{-4}\\ \\mathrm{mol/(L\\cdot s)}$\n　実験2: $[\\mathrm{CO}] = 0.20\\ \\mathrm{mol/L}$、$[\\mathrm{NO_2}] = 0.20\\ \\mathrm{mol/L}$、$v = 1.2\\times10^{-3}\\ \\mathrm{mol/(L\\cdot s)}$\n　実験3: $[\\mathrm{CO}] = 0.10\\ \\mathrm{mol/L}$、$[\\mathrm{NO_2}] = 0.40\\ \\mathrm{mol/L}$、$v = 1.2\\times10^{-3}\\ \\mathrm{mol/(L\\cdot s)}$\nこの温度における速度定数 $k$ の値を、単位もつけて有効数字2桁で答えよ。",
+     "answer": "$3.0\\times10^{-2}\\ \\mathrm{L/(mol\\cdot s)}$",
+     "explanation": "▶ まず次数を決め、そのあとに $k$ を出す2段階の問題。次数が決まらないと $k$ の単位も決まらない。\n① 実験1と実験2($[\\mathrm{NO_2}]$ 一定)では $[\\mathrm{CO}]$ が $2$ 倍で $v$ も $\\dfrac{1.2\\times10^{-3}}{6.0\\times10^{-4}} = 2$ 倍 → $\\mathrm{CO}$ について $1$ 次。実験1と実験3($[\\mathrm{CO}]$ 一定)では $[\\mathrm{NO_2}]$ が $2$ 倍で $v$ も $2$ 倍 → $\\mathrm{NO_2}$ について $1$ 次。よって $v = k[\\mathrm{CO}][\\mathrm{NO_2}]$。\n② 実験1の値を代入する: $k = \\dfrac{6.0\\times10^{-4}}{0.10 \\times 0.20} = \\dfrac{6.0\\times10^{-4}}{2.0\\times10^{-2}} = 3.0\\times10^{-2}$\n③ 全体で $2$ 次だから単位は $\\mathrm{L/(mol\\cdot s)}$。よって $k = 3.0\\times10^{-2}\\ \\mathrm{L/(mol\\cdot s)}$。\n★ $k$ は<b>どの実験のデータを入れても同じ値</b>になる。実験2で検算すると $\\dfrac{1.2\\times10^{-3}}{0.20 \\times 0.20} = 3.0\\times10^{-2}$ で一致する。この検算を癖にすると、次数の読み違いをその場で発見できる。",
+     "skill": "初速度法と反応次数",
+     "verify_py": "v=6.0e-4\nco=0.10\nno2=0.20\nresult=v/(co*no2)",
+     "verify_expected": 0.03,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "濃度依存と半減期",
+     "level": "standard",
+     "stem": "塩化スルフリル $\\mathrm{SO_2Cl_2}$ の分解\n$\\mathrm{SO_2Cl_2}(気) \\rightarrow \\mathrm{SO_2}(気) + \\mathrm{Cl_2}(気)$\nは一次反応であり、ある温度における半減期(濃度が初めの半分になるのに要する時間)は $2.0\\times10^{3}\\ \\mathrm{s}$ で、初濃度によらず一定である。この温度で $[\\mathrm{SO_2Cl_2}] = 0.80\\ \\mathrm{mol/L}$ から反応を始めたとき、$[\\mathrm{SO_2Cl_2}]$ が $0.10\\ \\mathrm{mol/L}$ になるのは反応開始から何秒後か。有効数字2桁で答えよ。",
+     "answer": "$6.0\\times10^{3}\\ \\mathrm{s}$",
+     "explanation": "▶ 一次反応では半減期が初濃度によらず一定。「半分になる操作を何回くり返したか」を数える型。\n① 濃度をたどる: $0.80 \\rightarrow 0.40 \\rightarrow 0.20 \\rightarrow 0.10\\ \\mathrm{mol/L}$。半分にする操作は $3$ 回。\n② 1回あたり $2.0\\times10^{3}\\ \\mathrm{s}$ かかるので、$t = 3 \\times 2.0\\times10^{3}\\ \\mathrm{s} = 6.0\\times10^{3}\\ \\mathrm{s}$\n③ よって $6.0\\times10^{3}\\ \\mathrm{s}$ 後。\n★ <b>「一次反応の半減期は初濃度に無関係」</b>がこの型の急所。濃度比 $\\dfrac{0.10}{0.80} = \\dfrac{1}{8} = \\left(\\dfrac{1}{2}\\right)^3$ から回数を指数で読み取ると速い。二次反応では半減期は一定にならないので、この解法は使えない。",
+     "skill": "一次反応の半減期",
+     "verify_py": "import math\nc0=0.80\nc=0.10\nth=2.0e3\nn=math.log(c0/c)/math.log(2.0)\nresult=n*th",
+     "verify_expected": 6000.0,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "濃度依存と半減期",
+     "level": "advanced",
+     "stem": "ヨウ化水素の分解\n$2\\mathrm{HI}(気) \\rightarrow \\mathrm{H_2}(気) + \\mathrm{I_2}(気)$\nの反応速度式は、$\\mathrm{HI}$ の減少速度を $v$ として $v = k[\\mathrm{HI}]^2$ と表される。ある温度で $[\\mathrm{HI}] = 0.20\\ \\mathrm{mol/L}$ のとき、$\\mathrm{H_2}$ の生成速度は $4.0\\times10^{-5}\\ \\mathrm{mol/(L\\cdot s)}$ であった。この温度における速度定数 $k$ の値を、単位もつけて有効数字2桁で答えよ。",
+     "answer": "$2.0\\times10^{-3}\\ \\mathrm{L/(mol\\cdot s)}$",
+     "explanation": "▶ 与えられたのは $\\mathrm{H_2}$ の生成速度、速度式が定義しているのは $\\mathrm{HI}$ の減少速度。まず「どの物質の速度か」をそろえるのが第一手。\n① 係数より $v(\\mathrm{HI}) : v(\\mathrm{H_2}) = 2 : 1$。よって速度式に入れるべき $v$ は\n$v = v(\\mathrm{HI}) = 2 \\times 4.0\\times10^{-5} = 8.0\\times10^{-5}\\ \\mathrm{mol/(L\\cdot s)}$\n② 速度式を $k$ について解いて代入する: $k = \\dfrac{v}{[\\mathrm{HI}]^2} = \\dfrac{8.0\\times10^{-5}}{(0.20)^2} = \\dfrac{8.0\\times10^{-5}}{4.0\\times10^{-2}} = 2.0\\times10^{-3}$\n③ 全体で $2$ 次なので単位は $\\mathrm{L/(mol\\cdot s)}$。よって $k = 2.0\\times10^{-3}\\ \\mathrm{L/(mol\\cdot s)}$。\n★ <b>速度式に書かれた $v$ の定義を読み飛ばさない</b>。$4.0\\times10^{-5}$ をそのまま代入すると $k$ がちょうど半分($1.0\\times10^{-3}$)になる。ちなみにこの反応は二次なので、$[\\mathrm{HI}]$ を $2$ 倍にすると速さは $4$ 倍になる。",
+     "skill": "反応次数と濃度依存",
+     "verify_py": "vH2=4.0e-5\nvHI=2.0*vH2\nc=0.20\nresult=vHI/(c**2)",
+     "verify_expected": 0.002,
+     "verify_tol": 0.02
+    }
+   ]
+  },
+  {
+   "name": "活性化エネルギーと反応のしくみ",
+   "tag": "activation-energy",
+   "problems": [
+    {
+     "group": "エネルギー図と活性化エネルギー",
+     "level": "basic",
+     "stem": "アンモニアの生成反応は次のように表される。\n$\\mathrm{N_2}(気) + 3\\mathrm{H_2}(気) \\rightarrow 2\\mathrm{NH_3}(気) \\quad \\Delta H = -92\\ \\mathrm{kJ}$\n触媒を用いないときの正反応の活性化エネルギーは $234\\ \\mathrm{kJ}$ である。このとき、逆反応 $2\\mathrm{NH_3}(気) \\rightarrow \\mathrm{N_2}(気) + 3\\mathrm{H_2}(気)$ の活性化エネルギーは何 $\\mathrm{kJ}$ か。ただし、エネルギーの値はいずれも上の反応式に示した係数の量あたりの値とする。",
+     "answer": "$326\\ \\mathrm{kJ}$",
+     "explanation": "▶ エネルギー図の「山」を左右どちらから測るか、という型。$E_\\mathrm{a}(逆) = E_\\mathrm{a}(正) - \\Delta H$。\n① $\\Delta H = -92\\ \\mathrm{kJ}$ なので、生成物 $2\\mathrm{NH_3}$ は反応物 $\\mathrm{N_2} + 3\\mathrm{H_2}$ より $92\\ \\mathrm{kJ}$ だけ低い位置にある。\n② 遷移状態(山頂)の高さは正反応でも逆反応でも共通なので、生成物側から山頂までの高さは\n$E_\\mathrm{a}(逆) = 234\\ \\mathrm{kJ} + 92\\ \\mathrm{kJ} = 326\\ \\mathrm{kJ}$\n③ よって逆反応の活性化エネルギーは $326\\ \\mathrm{kJ}$。\n★ <b>発熱反応($\\Delta H < 0$)では逆反応の $E_\\mathrm{a}$ のほうが必ず大きい</b>(=逆向きは進みにくい)。式を丸暗記するより、山を1つ描いて左右の高さを測るほうが符号ミスが出ない。",
+     "skill": "活性化エネルギーと反応エンタルピー",
+     "verify_py": "Ea_f=234.0\ndH=-92.0\nresult=Ea_f-dH",
+     "verify_expected": 326.0,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "エネルギー図と活性化エネルギー",
+     "level": "basic",
+     "stem": "高温では、炭素と二酸化炭素が次のように反応する。\n$\\mathrm{C(黒鉛)} + \\mathrm{CO_2}(気) \\rightarrow 2\\mathrm{CO}(気)$\nこの反応の正反応の活性化エネルギーは $250\\ \\mathrm{kJ}$、逆反応の活性化エネルギーは $78\\ \\mathrm{kJ}$ である。この反応の反応エンタルピー $\\Delta H$ の値を符号をつけて求め、発熱反応・吸熱反応のどちらであるかも答えよ。エネルギーの値はいずれも上の反応式に示した係数の量あたりの値とする。",
+     "answer": "$\\Delta H = +172\\ \\mathrm{kJ}$(吸熱反応)",
+     "explanation": "▶ 2つの活性化エネルギーの差が反応エンタルピーになることを使う型。$\\Delta H = E_\\mathrm{a}(正) - E_\\mathrm{a}(逆)$。\n① 反応物から山頂までが $250\\ \\mathrm{kJ}$、生成物から山頂までが $78\\ \\mathrm{kJ}$。山頂の高さは両者に共通。\n② よって生成物 $2\\mathrm{CO}$ は反応物より $250\\ \\mathrm{kJ} - 78\\ \\mathrm{kJ} = 172\\ \\mathrm{kJ}$ だけ高い。$\\Delta H = +172\\ \\mathrm{kJ}$。\n③ $\\Delta H > 0$ なので吸熱反応。\n★ <b>$\\Delta H$ の符号は「生成物 − 反応物」</b>。$\\Delta H > 0$ が吸熱、$\\Delta H < 0$ が発熱。一方、活性化エネルギーは正反応・逆反応とも必ず正の値になる(山は必ず上向き)。この2つを混同しないこと。",
+     "skill": "活性化エネルギーと反応エンタルピー",
+     "verify_py": "Ea_f=250.0\nEa_r=78.0\nresult=Ea_f-Ea_r",
+     "verify_expected": 172.0,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "触媒のはたらき",
+     "level": "standard",
+     "stem": "過酸化水素水の分解は次のように表される。\n$2\\mathrm{H_2O_2}(aq) \\rightarrow 2\\mathrm{H_2O}(液) + \\mathrm{O_2}(気) \\quad \\Delta H = -196\\ \\mathrm{kJ}$\n触媒を用いないときの正反応の活性化エネルギーは $76\\ \\mathrm{kJ}$ であるが、酸化マンガン(IV) $\\mathrm{MnO_2}$ を加えると正反応の活性化エネルギーは $54\\ \\mathrm{kJ}$ になる。$\\mathrm{MnO_2}$ を加えたときの逆反応の活性化エネルギーは何 $\\mathrm{kJ}$ か。また、$\\mathrm{MnO_2}$ を加えることでこの反応の $\\Delta H$ の値が変化するかどうかも答えよ。エネルギーの値はいずれも上の反応式に示した係数の量あたりの値とする。",
+     "answer": "逆反応の活性化エネルギーは $250\\ \\mathrm{kJ}$。$\\Delta H$ の値は変化しない。",
+     "explanation": "▶ 「触媒は $E_\\mathrm{a}$ を下げるが $\\Delta H$ は変えない」を数値で確かめる型。\n① 触媒は反応の経路(山の形)を変えるだけで、反応物と生成物そのもののエネルギーの高さは変えない。したがって $\\Delta H = -196\\ \\mathrm{kJ}$ のままである。\n② 触媒ありの経路について、生成物側から山頂までの高さを求める。\n$E_\\mathrm{a}(逆) = E_\\mathrm{a}(正) - \\Delta H = 54\\ \\mathrm{kJ} - (-196\\ \\mathrm{kJ}) = 250\\ \\mathrm{kJ}$\n③ よって $250\\ \\mathrm{kJ}$ で、$\\Delta H$ の値は変化しない。\n★ <b>触媒は正反応と逆反応を同じだけ速くする</b>。触媒なしなら $E_\\mathrm{a}(逆) = 76 + 196 = 272\\ \\mathrm{kJ}$ なので、触媒によって正反応も逆反応もそろって $22\\ \\mathrm{kJ}$ 下がっている。「触媒を入れると発熱量が増える」「触媒で生成量が増える」は誤り。",
+     "skill": "触媒と活性化エネルギー",
+     "verify_py": "Ea_f_cat=54.0\ndH=-196.0\nresult=Ea_f_cat-dH",
+     "verify_expected": 250.0,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "温度と反応速度",
+     "level": "standard",
+     "stem": "ある気体反応は、温度を $10\\ \\mathrm{K}$ 上げるごとに反応速度が $2$ 倍になる。この反応の温度を $27\\ ^\\circ\\mathrm{C}$ から $67\\ ^\\circ\\mathrm{C}$ に上げると、反応速度は $27\\ ^\\circ\\mathrm{C}$ のときの何倍になるか。整数で答えよ。",
+     "answer": "$16$ 倍",
+     "explanation": "▶ 「$10\\ \\mathrm{K}$ 上げるごとに何倍」を、上げた回数だけ掛け算する型。\n① 温度差を求める: $67\\ ^\\circ\\mathrm{C} - 27\\ ^\\circ\\mathrm{C} = 40$ の差。セ氏温度の差はそのまま絶対温度の差 $40\\ \\mathrm{K}$ になる。$10\\ \\mathrm{K}$ 上げる操作は $40 \\div 10 = 4$ 回。\n② 1回で $2$ 倍だから、$2^4 = 16$ 倍。\n③ よって $16$ 倍。\n★ <b>倍率は累乗で効く。足し算・掛け算ではない</b>。$4$ 回だからと $2 \\times 4 = 8$ 倍としないこと。たった $40\\ \\mathrm{K}$ 上げるだけで十数倍になるところに、反応速度の温度依存の大きさが表れている。",
+     "skill": "温度と反応速度",
+     "verify_py": "n=(67.0-27.0)/10.0\nresult=2.0**n",
+     "verify_expected": 16.0,
+     "verify_tol": 0.02
+    },
+    {
+     "group": "温度と反応速度",
+     "level": "standard",
+     "stem": "気体反応の温度を上げると、反応速度は大きくなる。その理由を、分子の運動エネルギーの分布と活性化エネルギーの語を用いて $60$ 字程度で説明せよ。なお、「分子どうしの衝突回数が増えるから」だけでは説明として不十分である点を踏まえて書くこと。",
+     "answer": "温度を上げると分子の運動エネルギーの分布が高エネルギー側に広がり、活性化エネルギー以上のエネルギーをもつ分子の割合が急激に増えるから。",
+     "explanation": "▶ 温度上昇の効果を「衝突回数」ではなく<b>「反応できる衝突の割合」</b>で説明させる、論述の定番。\n① 気体分子の運動エネルギーは1個1個ばらついており、その分布は温度が高いほど山が低くなって右(高エネルギー側)に広がる形になる。\n② 反応が起こるのは、活性化エネルギー $E_\\mathrm{a}$ 以上のエネルギーをもつ分子どうしが衝突したときだけ。分布が右に広がると、グラフで $E_\\mathrm{a}$ より右側の面積(= 反応できる分子の割合)が急激に大きくなる。\n③ したがって「$E_\\mathrm{a}$ 以上のエネルギーをもつ分子の割合が増えるから」と答える。\n★ 衝突回数も温度とともに増えるが、その増え方は絶対温度の平方根程度でごくわずか。温度を $10\\ \\mathrm{K}$ 上げただけで速度が数倍になる主因は、あくまで<b>「割合」の激増</b>のほう。答案には必ず「活性化エネルギー以上のエネルギーをもつ分子の割合」という語句を入れること。",
+     "skill": "温度と分子の運動エネルギー分布",
+     "verify_py": null,
+     "verify_expected": null,
+     "verify_tol": null
+    },
+    {
+     "group": "多段階反応と律速段階",
+     "level": "advanced",
+     "stem": "二酸化窒素とフッ素の反応\n$2\\mathrm{NO_2}(気) + \\mathrm{F_2}(気) \\rightarrow 2\\mathrm{NO_2F}(気)$\nは、次の2つの段階を経て進むことがわかっている。\n　第1段階: $\\mathrm{NO_2} + \\mathrm{F_2} \\rightarrow \\mathrm{NO_2F} + \\mathrm{F}$ (遅い)\n　第2段階: $\\mathrm{NO_2} + \\mathrm{F} \\rightarrow \\mathrm{NO_2F}$ (速い)\nこの反応全体の反応速度式を、速度定数を $k$ として書け。また、そのように考えられる理由を簡潔に述べよ。",
+     "answer": "$v = k[\\mathrm{NO_2}][\\mathrm{F_2}]$。反応全体の速さは、最も遅い段階(律速段階)である第1段階の速さで決まるから。",
+     "explanation": "▶ 多段階反応では<b>いちばん遅い段階(律速段階)が全体の速さを決める</b>、という原則を使う型。\n① 第1段階が遅く、第2段階は速い。第1段階で生じた $\\mathrm{F}$ はできた端から第2段階で消費されるので、全体がどれだけ進むかは第1段階がどれだけ進むかで決まる。\n② 第1段階は $\\mathrm{NO_2}$ 1個と $\\mathrm{F_2}$ 1個が衝突して起こる素反応なので、その速さは $[\\mathrm{NO_2}]$ と $[\\mathrm{F_2}]$ の積に比例する。\n③ よって $v = k[\\mathrm{NO_2}][\\mathrm{F_2}]$。理由は「律速段階である第1段階の速さが全体の速さを決めるから」。\n★ 全体の反応式の係数($\\mathrm{NO_2}$ が $2$)をそのまま指数にして $v = k[\\mathrm{NO_2}]^2[\\mathrm{F_2}]$ としてはいけない。<b>係数をそのまま指数にしてよいのは「素反応」だけ</b>で、いくつもの段階をまとめた全体式には使えない。律速段階に現れない物質は、原則として速度式に出てこない。",
+     "skill": "律速段階と反応機構",
+     "verify_py": null,
+     "verify_expected": null,
+     "verify_tol": null
+    }
+   ]
+  }
+ ]
+}

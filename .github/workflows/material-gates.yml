@@ -1,0 +1,74 @@
+name: material-gates
+
+# 📘 教材 (問題集・プリント・PDF) の品質ゲートと、生徒の個人情報の混入検査。**ブロッキング**。
+#
+#   2026-08-04 の調査で分かった構造的な穴を塞ぐための CI。
+#   教材ごとに check.py / verify.py / *_gate.py を書いてきたが、**呼ぶ人がいなかった**:
+#     - `.claude/settings.json` の Stop フックで回す設計だったが、`.claude/` は .gitignore 対象で
+#       永久にコミットできない。実際 settings.json はディスクにも無く、
+#       scripts/kyotsu_mogi2026/README.md の「層2 Stopフック」は実体の無い記述だった。
+#     - exam-quality.yml の対象は seed-data と kyotsu_mogi2026 だけで、他の教材を1つも見ていない。
+#     - そもそも scripts/<教材>/ が丸ごと未追跡で、検査スクリプト自体が git に入っていなかった。
+#   結果「ルール化したのに次のセッションで効いていない」が繰り返し起きていた。
+#
+#   ★ exam-quality.yml (共通テスト模試・seed-data) とは対象が違う。あちらは本番の出題プール、
+#     こちらは紙で配る問題集。入口は scripts/run_all_gates.py の 1 本に寄せてある。
+#     ローカルでも同じコマンドで回る (`python3 scripts/run_all_gates.py`)。
+#
+#   ★ paths で絞っていない。生徒の氏名は server/ や直下の *.html にも入りうるので、
+#     scripts/** に限ると **氏名混入では発火しない CI** になる（このリポジトリは PUBLIC）。
+#     実測でゲート本体が 2分22秒、apt/pip を足して 4〜6 分。全変更で回す価値がある。
+#   ★ push は main だけにする。branches を付けないと PR ブランチへの push 1 回で
+#     push と pull_request の**2ジョブ**が走る（PR 側で回るので網羅性は落ちない）。
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# 連続 push でジョブが積み上がらないようにする。
+# ★main では打ち切らない。main は本番デプロイ元なので、打ち切ると
+#   「本番に出たのに検査結果が cancelled のまま残る commit」ができる。
+concurrency:
+  group: material-gates-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # sympy     = 数学の正解を独立に再計算して照合する (手入力の正解を信じない)
+      # fonttools = PDF に埋める字が実際にフォントに在るかを見る
+      # pymupdf   = PDF を読むライブラリ。--no-pdf で「PDF ファイルが要る検査」は外しているが、
+      #             ★内容ゲートが兄弟モジュール経由で**間接的に** import する。実測の経路:
+      #             shakai_chiri/check.py → content_no01.py → build_common.py → fitz。
+      #             rika_enshu / rika_kagaku / rika_butsuri / natsu_tokkun / eng_hinshi_bunkai も同型。
+      #             モジュールが無いと内容検査ごと CRASH するので入れる。
+      # numpy     = 共通テスト数学の一部の検算 (kyotsu2026_mirror/content/verify_math*)
+      - name: 依存 (Python)
+        run: python3 -m pip install --quiet sympy fonttools pymupdf numpy
+
+      # ★フォントは入れない。字形の照合は `kaki_koushuu_eng/_print_font_cmap.txt`
+      #   （**刷るフォント**の cmap をコミットしたもの）を正典にしている。
+      #   その場にあるフォントで照合すると、CI の Noto にあって刷る Arial Unicode に無い字
+      #   (㉑ U+3251 / ㊿ U+32BF 等) が素通りして**紙で豆腐になる**。
+      #   fonts-noto-cjk を入れていた頃はまさにその状態だった。
+
+      # --no-pdf: 刷った PDF を開く検査は外す。PDF は生成物なのでリポジトリに置いておらず、
+      #           CI では原理的に回せない。★外した分は run_all_gates.py が一覧に出す
+      #           (黙って減らすと「全部通った」に見えて、今回と同じ事故になる)。
+      #           紙の検査はローカルで build 後に --no-pdf 無しで回す。
+      #
+      # このコマンドは最後に scripts/check_no_pii.py も回す。
+      # ★このリポジトリは PUBLIC。生徒の氏名を1行書いてコミットすると即公開され、
+      #   履歴に永久に残る。2026-08-04 に、教材ビルダー3本に実在の生徒名が直書きされたまま
+      #   「未追跡スクリプトをまとめてコミット」しかけた。既知の検出 (事業者自身の連絡先・
+      #   教材本文の架空アドレス) は scripts/_pii_baseline.txt にあり、落ちるのは新規混入だけ。
+      - name: 教材の品質ゲート + 個人情報の混入検査
+        run: python3 scripts/run_all_gates.py --no-pdf

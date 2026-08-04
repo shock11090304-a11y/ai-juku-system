@@ -1,0 +1,76 @@
+{
+ "no": 5,
+ "title": "Student Health Committee Report",
+ "passage": "Last October, the Student Health Committee of Nishikawa High School carried out a survey about sleep and study. We asked all 600 students several questions. The first two were how many hours they usually sleep on school nights, and how well they can concentrate during morning classes.\n\nThe answers showed that 45 percent of the students sleep less than 6 hours. Only 15 percent sleep more than 7 hours. Third-year students sleep the least; their average is 5.4 hours, while the average for first-year students is 6.6 hours.\n\nNext, we compared sleep with concentration. Among the students who sleep more than 7 hours, 78 percent said they can follow the first class of the day without difficulty. Among those who sleep less than 6 hours, the figure was only 31 percent. Many short sleepers also wrote that they feel sleepy again after lunch.\n\nWe then asked why students go to bed late. The most common answer was homework (54 percent), and the second was using a smartphone in bed (49 percent). Some students chose both.\n\nIn our opinion, the smartphone habit is the more serious of the two causes, because the amount of homework cannot be reduced easily. Only 12 percent of the students had ever kept their phone out of the bedroom, and almost all of them said they had fallen asleep faster.\n\nThe committee will hold a \"Sleep Week\" in February. During that week, we will ask students to record their bedtime on a simple chart. We believe that seeing their own record will help students change their habits.",
+ "glossary": [
+  {
+   "word": "committee",
+   "ja": "委員会"
+  },
+  {
+   "word": "concentrate / concentration",
+   "ja": "集中する／集中(力)"
+  },
+  {
+   "word": "figure",
+   "ja": "(ここでは)数値・割合"
+  },
+  {
+   "word": "Nishikawa High School",
+   "ja": "西川高校(架空の高校)"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "q": "According to the report, which of the following is true about the students' sleeping hours?",
+   "options": [
+    "Only 15 percent of the students sleep for less than 6 hours on school nights.",
+    "The average for third-year students is more than an hour shorter than that for first-year students.",
+    "The third-year students' average is under 5 hours on a school night.",
+    "The average sleep time of the first-year students is under 6 hours a night."
+   ]
+  },
+  {
+   "n": 2,
+   "q": "What did the survey find about concentration in the first class of the day?",
+   "options": [
+    "Nearly eight in ten of the students sleeping over 7 hours could follow it.",
+    "Roughly one third of the students sleeping over 7 hours could follow it.",
+    "Students who sleep longer often become sleepy again after they have eaten lunch.",
+    "Almost eight in ten students in the whole school could follow it without trouble."
+   ]
+  },
+  {
+   "n": 3,
+   "q": "Which option best describes the committee's opinion?",
+   "options": [
+    "Homework was the biggest reason that the students gave for going to bed late.",
+    "Only 12 percent of the students had ever kept their phone out of the bedroom.",
+    "Almost all of the students who kept their phone out of the bedroom fell asleep faster.",
+    "Using a smartphone in bed is the more serious of the two causes of late nights."
+   ]
+  },
+  {
+   "n": 4,
+   "q": "Which of the following is most likely true about how long the students sleep?",
+   "options": [
+    "Most of the students who sleep under 6 hours are in the third year.",
+    "More than half of the students sleep for more than 7 hours a night.",
+    "The students who sleep the longest are the ones given the least homework.",
+    "About four in ten students sleep between 6 and 7 hours."
+   ]
+  },
+  {
+   "n": 5,
+   "q": "The committee will put a title at the top of the report. Which of the following is the best one?",
+   "options": [
+    "Shorter Sleep, Weaker Focus: Our Survey and Our Next Step",
+    "Why the Homework at Our School Should Be Reduced",
+    "How Third-Year Students Get Ready for Their Entrance Exams",
+    "Smartphones in the Classroom: A Growing Problem for Teachers"
+   ]
+  }
+ ],
+ "lead": "You are reading a report on your school website written by the Student Health Committee."
+}

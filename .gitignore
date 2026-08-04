@@ -50,9 +50,42 @@ juku-manager-data.json
 *-data.json
 .claude/settings.local.json
 
+# 2026-08-04: 生徒個人あての資料。★このリポジトリは **PUBLIC**。氏名を入れたら公開される。
+#   （一度コミットすると履歴に残り、消すには履歴の書き換えが要る）
+#   宛名は環境変数 STUDENT_NAME から渡すこと。ビルダーに直接書かない。
+#   機械で止める仕組み: scripts/check_no_pii.py（CI の material-gates.yml が回す）
+scripts/**/指導メモ*
+scripts/**/面談*
+scripts/**/カルテ*
+
 # 2026-05-27: PDF を Cloudflare R2 へ移行・Vercel deploy bundle から除外
 lesson-prints/*.pdf
 
 # 問題集ビルダーの中間生成物（Chrome print-to-pdf に渡す一時HTML）。
 # 成果物のPDFはDesktopと「📚 教材」に出るので、リポジトリには置かない。
 scripts/*/_*.html
+
+# 2026-08-04: 教材ディレクトリの「出来上がったもの」と「検証の生ログ」を除外する。
+#   狙いは逆で、**残したいものを残せるようにするため**。これまで生成物が邪魔で
+#   `scripts/<教材>/` を丸ごと未追跡のまま放置しており、その結果 check.py / verify.py などの
+#   検査スクリプトが一度も git に入っていなかった（2026-08-04 の調査で 201 本が未追跡と判明）。
+#   → 生成物だけを無視して、**単一ソース（.py / data の json）と検査は必ずコミットする**。
+#   ★ここに足すのは「.py と data から再生成できるもの」だけ。元データを足さないこと。
+#   ★方針は「**新しく作るものは入れない。既に git に入っているものは消さない**」。
+#     .gitignore は追跡済みファイルには効かないので、grammar_workbook/units_blind/ や
+#     units_verify*/ のように**既に入っている同種のログはそのまま残る**（履歴を壊さないため）。
+#     ただし副作用として、それらのディレクトリに**新しく足したファイルは git status に出ない**。
+#     追跡をやめたくなったら `git rm --cached` で明示的に外すこと。
+#   ★.gitignore は行末コメントを解釈しない（# より前もパターンの一部になる）。必ず別行に書く。
+scripts/**/*.pdf
+scripts/**/*.png
+scripts/**/*.html
+scripts/**/_pdfstage/
+# 盲検証で3人が出した生の解答（Python が照合したら役目が終わる）
+scripts/**/blind/
+# レビューAIの生の指摘
+scripts/**/critique/
+# 照合結果のログ
+scripts/**/verify/
+# 手で取った退避コピー
+scripts/**/*_bak*/

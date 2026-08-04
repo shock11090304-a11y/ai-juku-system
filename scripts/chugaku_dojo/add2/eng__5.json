@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI hope ( ) you again soon.",
+  "passage": "",
+  "choices": [
+   "to see",
+   "seeing",
+   "saw",
+   "sees"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「to see」。 hope は後ろに to +動詞の原形をとる動詞です。「またすぐに会えるといいな」という意味になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe decided ( ) to the sea this summer.",
+  "passage": "",
+  "choices": [
+   "to go",
+   "going",
+   "went",
+   "goes"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「to go」。 decide は後ろに to +動詞の原形をとります。「今年の夏は海へ行こうと決めた」という意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nHe finished ( ) the book last night.",
+  "passage": "",
+  "choices": [
+   "reading",
+   "to read",
+   "read",
+   "reads"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「reading」。 finish は後ろに動名詞(~ing)をとる動詞です。「彼は昨夜その本を読み終えた」という意味になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nIt stopped ( ), so we went out for a walk.",
+  "passage": "",
+  "choices": [
+   "raining",
+   "to rain",
+   "rain",
+   "rained"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「raining」。 stop の後ろに動名詞(~ing)を置くと「~するのをやめる」の意味です。「雨がやんだので散歩に出かけた」という意味になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nPlease tell me how ( ) to the station.",
+  "passage": "",
+  "choices": [
+   "to get",
+   "getting",
+   "get",
+   "gets"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「to get」。 how to +動詞の原形で「どのように~するか(~の仕方)」を表します。「駅への行き方を教えてください」という意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThis tea is too hot ( ).",
+  "passage": "",
+  "choices": [
+   "to drink",
+   "drinking",
+   "drink",
+   "drinks"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「to drink」。 too ... to +動詞の原形で「~すぎて…できない」を表します。「このお茶は熱すぎて飲めない」という意味になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy grandfather is old enough ( ) his own house.",
+  "passage": "",
+  "choices": [
+   "to have",
+   "having",
+   "have",
+   "has"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「to have」。 ... enough to +動詞の原形で「~するのに十分…」を表します。「祖父は自分の家を持てるほどの年齢だ」という意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nDo you mind ( ) the door?",
+  "passage": "",
+  "choices": [
+   "closing",
+   "to close",
+   "close",
+   "closed"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「closing」。 mind は後ろに動名詞(~ing)をとる動詞です。「ドアを閉めてもらえますか」という依頼の意味になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe are looking forward to ( ) you next month.",
+  "passage": "",
+  "choices": [
+   "seeing",
+   "see",
+   "saw",
+   "seen"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「seeing」。 look forward to の to は前置詞なので、後ろは動名詞(~ing)になります。「来月あなたに会うのを楽しみにしています」という意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nHe left the room without ( ) a word.",
+  "passage": "",
+  "choices": [
+   "saying",
+   "to say",
+   "say",
+   "said"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「saying」。 without は前置詞なので、後ろは動名詞(~ing)になります。「彼は一言も言わずに部屋を出て行った」という意味になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy dream is ( ) an English teacher.",
+  "passage": "",
+  "choices": [
+   "to be",
+   "being",
+   "be",
+   "been"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「to be」。 be動詞の後ろに to +動詞の原形を置くと「~することだ」の意味になります。「私の夢は英語の先生になることだ」という意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nRemember ( ) the letter tomorrow.",
+  "passage": "",
+  "choices": [
+   "to send",
+   "sending",
+   "sent",
+   "sends"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「to send」。 remember to +動詞の原形で「(これから)~するのを忘れずに」の意味です。「明日その手紙を出すのを忘れないで」という意味になります。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWould you like ( ) to the party with us?",
+  "passage": "",
+  "choices": [
+   "to come",
+   "coming",
+   "come",
+   "came"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「to come」。 would like to +動詞の原形で「~したいですか」とていねいに誘う表現です。「私たちと一緒にパーティーに来ませんか」という意味です。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nShe practices ( ) the violin after dinner.",
+  "passage": "",
+  "choices": [
+   "playing",
+   "to play",
+   "play",
+   "plays"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「playing」。 practice は後ろに動名詞(~ing)をとる動詞です。「彼女は夕食後にバイオリンを練習する」という意味になります。"
+ }
+]

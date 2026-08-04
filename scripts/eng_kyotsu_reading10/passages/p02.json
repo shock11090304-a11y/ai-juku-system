@@ -1,0 +1,106 @@
+{
+ "no": 2,
+ "genre": "第2問 相当　記事と読者コメントのサイト",
+ "title": "Cutting Plastic, One Cup at a Time",
+ "theme_ja": "使い捨てプラ削減の記事",
+ "passage": "Cutting Plastic, One Cup at a Time\nPosted by Hana Morita, June 12\n\nLast spring, our town of Aoba started the Green Cup Project. Fifteen coffee shops joined it. Instead of paper or plastic cups, each shop lends customers a strong cup that can be washed and reused. Customers pay a deposit of 200 yen, and when they return the cup to any of the fifteen shops, they get the money back.\n\nThe town office reports that 62,000 single-use cups were saved in the first six months. In my view, that number is impressive for such a small town. Some owners worried that washing cups would take too much time, but the city gave every shop a small dishwasher for free.\n\nNot everything has gone smoothly. About one cup in ten is never returned. The project office says that most of them are simply forgotten at home. I think the deposit should be raised to 500 yen, because 200 yen is too little to make busy people remember to bring the cup back.\n\nThis autumn the project will expand to twenty more stores, including two bookstores. To me, bookstores are the perfect partners for this project.\n\nComment\nKen (June 14): I joined the project in April and use the cups almost every day. My university is on the other side of town, so being able to return a cup at any shop is very helpful. But I disagree with the writer about the deposit. Students do not carry much cash, and a higher deposit would push young people away. A phone reminder would work better.",
+ "word_count": 259,
+ "glossary": [
+  {
+   "word": "single-use",
+   "ja": "使い捨ての"
+  },
+  {
+   "word": "deposit",
+   "ja": "預り金、保証金"
+  },
+  {
+   "word": "dishwasher",
+   "ja": "食器洗い機"
+  },
+  {
+   "word": "Aoba",
+   "ja": "アオバ(架空の町の名)"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "type": "fact_opinion",
+   "q": "According to the article, which of the following actually happened in the town of Aoba?",
+   "options": [
+    "The amount of the deposit ought to be made much larger than it is now.",
+    "The number of cups saved is great for a town of this size.",
+    "Each shop in the program got a dishwasher without paying for it.",
+    "The project started in the town of Aoba about three years ago."
+   ],
+   "answer": 3,
+   "evidence": "Some owners worried that washing cups would take too much time, but the city gave every shop a small dishwasher for free.",
+   "explanation_ja": "第2段落最終文に「市がすべての店に小型の食器洗い機を無料で与えた」とある。これは検証できる出来事なので fact。③はその言い換え(gave ... for free → got ... without paying for it)。",
+   "distractor_ja": "①第3段落の I think the deposit should be raised to 500 yen. と同じ内容で、筆者の意見(ought to は判断を表す)。②In my view, that number is impressive ... と本文に明示されている通り筆者の評価＝意見。④意見ではなく事実の形をしているが、本文冒頭は Last spring, our town of Aoba started the Green Cup Project. で、開始は「昨年の春」。「約3年前」は本文と食い違うので、記事に述べられた fact ではない。"
+  },
+  {
+   "n": 2,
+   "type": "fact_opinion",
+   "q": "Which option best describes an opinion stated in Ken's comment?",
+   "options": [
+    "A larger deposit would keep young people from using the cups.",
+    "He borrows and uses one of the strong cups almost every single day.",
+    "His university stands on the opposite side of the town of Aoba.",
+    "He began taking part in the project in April."
+   ],
+   "answer": 1,
+   "evidence": "Students do not carry much cash, and a higher deposit would push young people away.",
+   "explanation_ja": "コメント後半の a higher deposit would push young people away は、まだ起きていないことについての Ken の予測・判断＝意見。①はその言い換え(預り金が高くなれば若者はカップを使わなくなるだろう)。",
+   "distractor_ja": "②use the cups almost every day は本人の行動の事実報告。③My university is on the other side of town は位置についての事実。④I joined the project in April は参加時期という検証できる事実。"
+  },
+  {
+   "n": 3,
+   "type": "detail",
+   "q": "According to the article, what is planned for this autumn?",
+   "options": [
+    "Every coffee shop in Aoba will be required to join the program.",
+    "A phone app will be introduced to remind customers to return cups.",
+    "Customers will be able to borrow the cups without paying any money.",
+    "Twenty more stores, two of them bookstores, will lend cups."
+   ],
+   "answer": 4,
+   "evidence": "This autumn the project will expand to twenty more stores, including two bookstores.",
+   "explanation_ja": "第4段落に「この秋、プロジェクトはさらに20店舗に広がり、その中に書店が2つ含まれる」とある。④はその言い換えで、店舗数(twenty more)も書店の数(two)も本文と一致する。",
+   "distractor_ja": "①参加は15店から拡大するが「町のすべてのコーヒー店に義務づける」とは書かれていない(言い過ぎ)。②スマホの通知については、コメントで Ken が A phone reminder would work better. と提案しているだけで、アプリを導入するという秋の予定は本文にない。③借りるときは200円の預り金を払う。無料で借りられるとは書かれていない。"
+  },
+  {
+   "n": 4,
+   "type": "inference",
+   "q": "Which of the following is most likely true about the cups that are never returned?",
+   "options": [
+    "The shops that lent them have to buy new cups themselves.",
+    "The project office visits people's homes in order to collect them.",
+    "Most of them were broken and then thrown away by customers.",
+    "The customers who borrowed them did not get their deposit money back."
+   ],
+   "answer": 4,
+   "evidence": "Customers pay a deposit of 200 yen, and when they return the cup to any of the fifteen shops, they get the money back. / About one cup in ten is never returned.",
+   "explanation_ja": "「返せばお金が戻る」+「10個に1個は返却されない」から、返さなかった人には預り金が戻っていないと論理的に導ける(本文に直接は書かれていない)。",
+   "distractor_ja": "①店が自費で買い直すという記述はない。③本文は most of them are simply forgotten at home と述べており、壊れて捨てられたのではない(本文と逆)。②project office は理由を説明しているだけで、家庭を訪問するとは書かれていない。"
+  },
+  {
+   "n": 5,
+   "type": "main_idea",
+   "q": "What is the main idea of the article?",
+   "options": [
+    "The article explains how the town decided which fifteen shops would join.",
+    "The cup program has cut waste in Aoba, though some problems remain.",
+    "The writer and a reader disagree about how to reduce plastic waste in the town.",
+    "Washing cups has become the hardest job for Aoba's shop owners."
+   ],
+   "answer": 2,
+   "evidence": "The town office reports that 62,000 single-use cups were saved in the first six months. / Not everything has gone smoothly. About one cup in ten is never returned.",
+   "explanation_ja": "記事は「カップ貸出でごみが減った」という成果(62,000個)と、「10個に1個が返却されない」という課題の両方を伝え、最後に秋の拡大予定を述べている。②がその全体像。",
+   "distractor_ja": "①15店をどう選んだかという経緯は本文に一切書かれていない。③意見が食い違っているのは預り金の額についてで、しかもそれはコメント欄の話。記事全体の主旨ではない。④店主が心配したのは washing cups would take too much time だが、市が食器洗い機を無料で配って対応しており、「洗浄が一番大変な仕事になった」とは述べられていない。記事の一部にすぎない。"
+  }
+ ],
+ "translation_ja": "【プラスチックを減らす ― カップ1個から】\n投稿者:ハナ・モリタ、6月12日\n\n昨年の春、私たちの町アオバで「グリーンカップ・プロジェクト」が始まりました。15軒のコーヒー店が参加しています。紙やプラスチックのカップの代わりに、各店は洗って再利用できる丈夫なカップを客に貸し出します。客は200円の預り金を払い、15軒のどの店にカップを返しても、そのお金が戻ってきます。\n\n市の報告によると、最初の6か月で62,000個の使い捨てカップが使われずに済みました。私の考えでは、これほど小さな町にしては見事な数字です。カップを洗うのに時間がかかりすぎると心配した店主もいましたが、市がすべての店に小型の食器洗い機を無料で提供しました。\n\nすべてが順調だったわけではありません。10個に1個ほどのカップは返却されません。プロジェクト事務局によれば、その多くは単に家に置き忘れられているとのことです。私は、預り金は500円に引き上げるべきだと思います。200円では、忙しい人にカップを持ち帰って返すことを思い出させるには少なすぎるからです。\n\nこの秋、プロジェクトはさらに20店舗に広がる予定で、その中には書店が2つ含まれます。私に言わせれば、書店はこのプロジェクトにうってつけの相手です。\n\n【コメント】\nケン(6月14日):僕は4月にこのプロジェクトに参加し、ほぼ毎日このカップを使っています。大学が町の反対側にあるので、どこでも返せるのはとても助かります。ただ、預り金については筆者に反対です。学生はあまり現金を持ち歩きませんし、預り金が高くなれば若い人を遠ざけてしまいます。スマホの通知で知らせるほうがうまくいくでしょう。",
+ "long_theme_ja": "使い捨てプラスチック削減の取り組み(カップ貸出プロジェクト)を紹介する記事と読者コメント",
+ "lead": "You are reading an online article about your town, and a comment posted by one of its readers."
+}

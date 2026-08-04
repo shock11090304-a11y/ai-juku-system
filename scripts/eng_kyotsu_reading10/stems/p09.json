@@ -1,0 +1,80 @@
+{
+ "no": 9,
+ "title": "What Animals Tell Each Other",
+ "passage": "Animals do not speak, but they send messages almost all the time. Scientists sort these messages into three groups: sound, movement, and smell. Each has its own strengths, and many species use more than one.\n\nSound travels fast and works in darkness or in a thick forest. A team at the Marlow Wildlife Institute recorded a group of small monkeys for two years. The monkeys made one call when an eagle appeared and a different call when a snake came near. When the team played the eagle call from a hidden speaker, the monkeys looked up at the sky; when they played the snake call, the same animals looked down at the ground. The calls carried information about the kind of danger that was coming.\n\nMovement usually needs light, but not always. Honeybees dance inside the hive to tell others where flowers are. The direction of the dance shows where the food is, and the length of the dance shows how far the bees must fly. Since the hive is dark, the bees around the dancer feel the movement instead of watching it.\n\nSmell has a different advantage. A chemical mark left on a tree <u>lingers</u> for days, so an animal can leave a message and go far away, and days may pass before anyone reads it. This suits animals that live alone and rarely meet, though a mark cannot be corrected once it is left.\n\nNo single method is best. Animals pick the one that fits the moment, and those choices tell scientists much about animal societies.",
+ "glossary": [
+  {
+   "word": "species",
+   "ja": "(生物の)種"
+  },
+  {
+   "word": "Marlow Wildlife Institute",
+   "ja": "マーロウ野生生物研究所(架空の研究機関)"
+  },
+  {
+   "word": "eagle",
+   "ja": "ワシ"
+  },
+  {
+   "word": "hive",
+   "ja": "(ミツバチの)巣"
+  },
+  {
+   "word": "chemical mark",
+   "ja": "におい物質でつけた印"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "q": "According to the article, how did the team at the Marlow Wildlife Institute test the monkeys' calls?",
+   "options": [
+    "They kept the monkeys in a cage and showed them pictures of animals.",
+    "They played the recorded calls through a speaker that the monkeys could not see.",
+    "They compared the calls with those of monkeys living in another forest.",
+    "They counted how many times each call was used in one day."
+   ]
+  },
+  {
+   "n": 2,
+   "q": "In Paragraph 4, what does the underlined word \"lingers\" most likely mean?",
+   "options": [
+    "It disappears again after only a short time.",
+    "It spreads out over a very wide area of forest.",
+    "It changes its meaning from one day to the next.",
+    "It stays in one place for a long time."
+   ]
+  },
+  {
+   "n": 3,
+   "q": "According to the article, what does the example of the honeybees show about movement as a way of sending messages?",
+   "options": [
+    "It can be understood even in a place where there is no light.",
+    "It carries messages over much longer distances than sound does.",
+    "It works better outside the nest than inside it.",
+    "It always needs bright sunlight to be seen."
+   ]
+  },
+  {
+   "n": 4,
+   "q": "According to the article, which of the following is most likely true about messages sent by smell?",
+   "options": [
+    "They are a poor choice when news must reach others at once.",
+    "They give more detailed information than either sound or movement can.",
+    "They work best for animals that meet one another almost every day.",
+    "They are the only method that works in the dark."
+   ]
+  },
+  {
+   "n": 5,
+   "q": "Which of the following is the best title for this article?",
+   "options": [
+    "Why Sound Is the Strongest Signal in Nature",
+    "How Scientists Record the Calls of Monkeys",
+    "The Many Ways Animals Send Messages",
+    "Why Some Animals Choose to Live Alone"
+   ]
+  }
+ ],
+ "lead": "You are writing a report about animals for your English class. You found the following article."
+}

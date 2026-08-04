@@ -1,0 +1,309 @@
+{
+ "no": 4,
+ "date": "7/30",
+ "title": "現在完了・関係代名詞",
+ "goal": "現在完了〈have[has]+過去分詞〉の3用法（継続・経験・完了/結果）を使い分け、関係代名詞（who/which/that）で2つの文を1つにつなげられるようにする。",
+ "points": [
+  {
+   "h": "現在完了〈have[has]+過去分詞〉の3用法",
+   "body": "現在完了は〈have[has]+過去分詞（p.p.）〉の形で、「過去のできごと」と「今」をつなげて表す。意味は3つ。●継続「（今まで）ずっと～している」●経験「（今までに）～したことがある」●完了・結果「（ちょうど）～したところだ／～してしまって、その結果いま…だ」。主語が he / she / it のときは has を使う。過去分詞は規則動詞なら -ed、不規則動詞（go-went-gone など）は形を覚える。過去形（過去の一点の話）とちがい、現在完了は「今」とつながっている点が大事。",
+   "ex": [
+    [
+     "I have lived in this town for ten years.",
+     "私は10年間ずっとこの町に住んでいる。（継続）"
+    ],
+    [
+     "He has just arrived at the station.",
+     "彼はちょうど駅に着いたところだ。（完了）"
+    ]
+   ],
+   "rule": "現在完了は〈have[has]+過去分詞〉で「今」とつながる"
+  },
+  {
+   "h": "継続の for / since と、経験・完了で使う言葉",
+   "body": "継続では for +〈期間〉「～の間」、since +〈始まりの時〉「～から（ずっと）」を使う（for three years／since 2020）。経験では ever「今までに」（おもに疑問文）、never「一度も～ない」、～ times「～回」、before「以前に」をよく使う。完了・結果では just「ちょうど」、already「もう（肯定文）」、yet「もう？（疑問文）／まだ（否定文）」を使う。さらに〈have[has] been +～ing〉の現在完了進行形は「ずっと～し続けている」と、動作が今も続いていることを表す。",
+   "ex": [
+    [
+     "Have you ever been to Kyoto?",
+     "あなたは今までに京都へ行ったことがありますか。（経験）"
+    ],
+    [
+     "It has been raining since this morning.",
+     "今朝からずっと雨が降り続いている。（現在完了進行形）"
+    ]
+   ],
+   "rule": "for＋期間／since＋始まりの時。yet は疑問で「もう」・否定で「まだ」"
+  },
+  {
+   "h": "関係代名詞（主格）who / which / that",
+   "body": "関係代名詞は、うしろから名詞（先行詞）を説明して、2つの文を1つにつなぐ言葉。説明する名詞が「人」なら who、「物・動物」なら which、どちらにも使えるのが that。主格は〈関係代名詞＋動詞～〉の形で、関係代名詞が後ろの文の主語のはたらきをする。後ろの動詞の形は先行詞の数に合わせる（先行詞が単数なら三単現の s がつく）。",
+   "ex": [
+    [
+     "I have a friend who plays the guitar well.",
+     "私にはギターを上手に弾く友だちがいる。"
+    ],
+    [
+     "This is a train which goes to Osaka.",
+     "これは大阪へ行く電車だ。"
+    ]
+   ],
+   "rule": "主格は〈who/which/that＋動詞〉。人→who、物→which、両方→that"
+  },
+  {
+   "h": "関係代名詞（目的格）と接触節",
+   "body": "先行詞が後ろの文の目的語にあたるときは、目的格の関係代名詞 who(m) / which / that を使い、〈関係代名詞＋主語＋動詞〉の形になる。目的格の関係代名詞は省略でき、省略した形を接触節という（名詞のすぐ後ろに〈主語＋動詞〉が続く形）。目的語はもう関係代名詞に置きかわっているので、後ろにさらに it や them を残してはいけない。",
+   "ex": [
+    [
+     "This is the book which I read last week.",
+     "これは私が先週読んだ本だ。"
+    ],
+    [
+     "The cake she made was delicious.",
+     "彼女が作ったケーキはおいしかった。（接触節）"
+    ]
+   ],
+   "rule": "目的格は〈関係代名詞＋主語＋動詞〉。省略できる（接触節）／代名詞を残さない"
+  }
+ ],
+ "kiso": [
+  {
+   "type": "fill",
+   "stem": "I have ______ English for five years. ( study )",
+   "ans": "studied",
+   "point": "現在完了・継続",
+   "exp": "〈have+過去分詞〉で「ずっと～している」を表す継続用法。for five years「5年間ずっと」といっしょに使う。study の過去分詞は studied。"
+  },
+  {
+   "type": "fill",
+   "stem": "She has ______ her key, so she can't get into her house. ( lose )",
+   "ans": "lost",
+   "point": "現在完了・結果",
+   "exp": "〈have[has]+過去分詞〉で「～してしまった（その結果、今も…）」を表す結果用法。has lost で「なくしてしまって今も見つからない」。lose-lost-lost。"
+  },
+  {
+   "type": "mc",
+   "stem": "I have ______ read this book, so I don't need it now.",
+   "note": "もう読んでしまった",
+   "choices": [
+    "ago",
+    "yet",
+    "since",
+    "already"
+   ],
+   "ans": 3,
+   "point": "完了の already",
+   "exp": "already は「もう（～してしまった）」と、完了を強調する肯定文で使う。ふつう have と過去分詞の間に置く。ago は過去形で使う語なので合わない。"
+  },
+  {
+   "type": "fill",
+   "stem": "Ken has ______ to America once. ( be )",
+   "ans": "been",
+   "point": "経験（have been to）",
+   "exp": "have[has] been to ~ で「～へ行ったことがある」（経験）。once「一度」。has gone to ~ にすると「行ってしまって今ここにいない」になるので区別する。"
+  },
+  {
+   "type": "mc",
+   "stem": "Have you finished your homework ______?",
+   "note": "もう終わった？",
+   "choices": [
+    "since",
+    "yet",
+    "ever",
+    "just"
+   ],
+   "ans": 1,
+   "point": "疑問文の yet",
+   "exp": "疑問文の文末の yet は「もう（～しましたか）」。ever「今までに」・just「ちょうど」・since「～以来」は意味が合わない。肯定文で「もう」を表すときは already を使う。"
+  },
+  {
+   "type": "fill",
+   "stem": "It has ______ raining since this morning. ( be )",
+   "ans": "been",
+   "point": "現在完了進行形",
+   "exp": "〈have[has] been +～ing〉は現在完了進行形で、「ずっと～し続けている」と動作が今も続いていることを表す。ここでは has been raining「ずっと雨が降り続いている」。"
+  },
+  {
+   "type": "mc",
+   "stem": "I have known her ______ 2019.",
+   "choices": [
+    "since",
+    "for",
+    "from",
+    "in"
+   ],
+   "ans": 0,
+   "point": "since と for の区別",
+   "exp": "since は「～から（ずっと）」と始まりの時の一点を表す。for は「～の間」と期間の長さを表すので、後ろが 2019（時の一点）なら since を使う。"
+  }
+ ],
+ "hyojun": [
+  {
+   "type": "mc",
+   "stem": "I ______ my grandmother in Kyoto three days ago.",
+   "note": "3日前に訪ねた",
+   "choices": [
+    "have visited",
+    "visited",
+    "have been visiting",
+    "had visited"
+   ],
+   "ans": 1,
+   "point": "現在完了と「過去の一点」の識別",
+   "exp": "three days ago「3日前に」のように、はっきりした過去の一点を表す言葉があるときは、現在完了ではなく過去形を使う。現在完了は『今』とつながる表現なので、切れてしまった過去の時刻とはいっしょに使えない。だから visited が正しい。"
+  },
+  {
+   "type": "mc",
+   "stem": "How long ______ for me? — For about an hour.",
+   "note": "（相手はまだ待っている）どのくらい待っているの？",
+   "choices": [
+    "have you been waiting",
+    "did you wait",
+    "are you waiting",
+    "do you wait"
+   ],
+   "ans": 0,
+   "point": "how long＋現在完了進行形",
+   "exp": "「どのくらいの間ずっと待っているのか」と、過去に始まって今も続く動作の長さをたずねている。こういうときは現在完了進行形〈have been ＋～ing〉を使う。答えの For about an hour「1時間ほど」も、今まで続いた長さを表している。did you wait だと過去に終わった話になり合わない。"
+  },
+  {
+   "type": "order",
+   "ja": "これは私が朝からずっと探している辞書だ。",
+   "tokens": [
+    "This",
+    "is",
+    "the",
+    "dictionary",
+    "I",
+    "have",
+    "been",
+    "looking",
+    "for",
+    "all",
+    "morning"
+   ],
+   "ans": "This is the dictionary I have been looking for all morning",
+   "point": "接触節＋現在完了進行形＋前置詞の残留",
+   "exp": "「私が朝からずっと探している辞書」は、the dictionary の後ろに接触節（目的格の関係代名詞を省いた〈主語＋動詞〉）I have been looking ... を続ける。look for ~「～を探す」の for は、目的語が関係詞側に移っても消えずに文末に残る。have been looking は『ずっと探し続けている』という現在完了進行形。"
+  },
+  {
+   "type": "mc",
+   "stem": "We have known each other ______ we were elementary school students.",
+   "note": "小学生のときからの知り合いだ",
+   "choices": [
+    "for",
+    "when",
+    "while",
+    "since"
+   ],
+   "ans": 3,
+   "point": "接続詞の since（～してからずっと）",
+   "exp": "since は前置詞だけでなく接続詞としても使え、〈since＋主語＋動詞（過去）〉で「～してから（今までずっと）」を表す。ここは『小学生だったときから今までずっと知り合いだ』の意味。for の後ろには期間がくるので節は続けられず、when や while では「その時から現在まで」という続きの意味にならない。"
+  },
+  {
+   "type": "order",
+   "ja": "これは私が今までに見た中でいちばんおもしろい映画だ。",
+   "tokens": [
+    "This",
+    "is",
+    "the",
+    "most",
+    "interesting",
+    "movie",
+    "that",
+    "I",
+    "have",
+    "ever",
+    "seen"
+   ],
+   "ans": "This is the most interesting movie that I have ever seen",
+   "point": "最上級の先行詞＋that／経験の現在完了",
+   "exp": "先行詞に the most ~（最上級）がつくときは、関係代名詞は which よりも that が好んで使われる。中身は I have ever seen「（今までに）見たことがある」という経験の現在完了で、『今まで見た中でいちばん』という最上級の意味とぴったり合う。ever は「今までに」。"
+  },
+  {
+   "type": "rewrite",
+   "given": "I know a woman. She has been teaching English for twenty years.",
+   "target": "I know a woman ______ ______ ______ teaching English for twenty years.",
+   "blanks": [
+    "who",
+    "has",
+    "been"
+   ],
+   "point": "主格 who＋現在完了進行形",
+   "exp": "共通する「人」a woman／She をつなぐ。She は後ろの文の主語なので、主格の who を使う。has been teaching はそのまま続けて、I know a woman who has been teaching English for twenty years.「私は20年間ずっと英語を教えている女性を知っている」となる（主格の関係代名詞は that も可）。"
+  },
+  {
+   "type": "rewrite",
+   "given": "These are the pictures. He has taken them in Africa.",
+   "target": "These are the pictures ______ he ______ ______ in Africa.",
+   "blanks": [
+    "which",
+    "has",
+    "taken"
+   ],
+   "point": "目的格 which＋現在完了（残す代名詞を消す）",
+   "exp": "共通する the pictures／them をつなぐ。them は後ろの文の目的語なので、目的格の which を使う（that も可）。them はもう which に置きかわっているので taken の後ろに残さない。has taken は『（アフリカで）撮ってきた』という現在完了で、その写真が今も手もとにあることを表す。"
+  }
+ ],
+ "nyushi": [
+  {
+   "type": "error",
+   "html": "He [a|has] [b|gone] [c|to] London three [d|times].",
+   "ans": "b",
+   "correct": "gone → been",
+   "point": "経験は have been to",
+   "exp": "「3回行ったことがある」は経験なので has been to が正しい。has gone to ~ は「～へ行ってしまって今ここにいない」という結果の意味になり、times（回数）とは合わない。"
+  },
+  {
+   "type": "error",
+   "html": "The book [a|which] [b|I] [c|bought] [d|it] last week was interesting.",
+   "ans": "d",
+   "correct": "it → （削除）",
+   "point": "目的格の後ろに代名詞を残さない",
+   "exp": "目的格の関係代名詞 which がすでに bought の目的語のはたらきをしている。だから後ろに it を重ねて置くのは誤りで、it を消す。"
+  },
+  {
+   "type": "mc",
+   "stem": "The house ______ we lived in is now a shop.",
+   "choices": [
+    "who",
+    "when",
+    "which",
+    "where"
+   ],
+   "ans": 2,
+   "point": "前置詞が残る目的格",
+   "exp": "空所は the house を説明し、後ろの lived in の in の目的語にあたるので which。where を選ぶと後ろの in が余ってしまうので誤り。"
+  },
+  {
+   "type": "order",
+   "ja": "これは私がずっと欲しかった自転車だ。",
+   "tokens": [
+    "This",
+    "is",
+    "the",
+    "bike",
+    "I",
+    "have",
+    "wanted",
+    "for",
+    "a",
+    "long",
+    "time"
+   ],
+   "ans": "This is the bike I have wanted for a long time",
+   "point": "接触節＋現在完了（継続）",
+   "exp": "「私がずっと欲しかった自転車」は、the bike の後ろに接触節 I have wanted ... を続ける。have wanted は「（今まで）ずっと欲しかった」という現在完了の継続で、for a long time「長い間ずっと」と合う。"
+  },
+  {
+   "type": "ja2en",
+   "ja": "私はこの本を3回読んだことがある。",
+   "models": [
+    "I have read this book three times.",
+    "I've read this book three times."
+   ],
+   "point": "現在完了・経験",
+   "mistakes": "経験は〈have＋過去分詞〉。read の過去分詞は read（形は同じで発音は「レッド」）。過去形 I read だけで済ませない。「3回」three times を書き忘れない。",
+   "lines": 2
+  }
+ ]
+}

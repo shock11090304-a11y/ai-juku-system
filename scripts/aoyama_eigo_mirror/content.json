@@ -1,0 +1,332 @@
+{
+ "I": {
+  "label": "Ⅰ",
+  "lead": "次の英文を読み、設問に答えよ。解答はマーク解答欄1〜10に記入すること。",
+  "source_note": "オリジナル作問（青山学院大学 英語 実戦問題・時事サイエンス論説）。実在の企業・国名・出来事に言及するが、本文は創作であり実在の記事の翻訳・引用ではない。米式綴りを採用。",
+  "paragraphs": [
+   "For most of human history, eating meat has meant raising an animal and then killing it. A cluster of ambitious start-ups now insists that this ancient equation can finally be broken. Their product, variously called cultivated, cultured, or lab-grown meat, is genuine animal tissue grown from cells inside a steel tank rather than carved from a living creature. The field belongs to a broader discipline known as cellular agriculture[[FN:1]], and its champions describe it as one of the most important food technologies since refrigeration. Whether it truly deserves that billing, or amounts instead to an expensive solution in search of a problem, has become the subject of a heated global argument.",
+   "The basic procedure is far easier to describe than to perfect. Technicians take a small sample of cells from a live animal, usually through a harmless biopsy[[FN:2]], and place those cells in a nutrient-rich liquid inside a bioreactor[[FN:3]], essentially a large and carefully controlled vessel. Fed a mixture of sugars, salts, vitamins, and proteins, the cells proliferate[[FN:4]], multiplying until they form muscle and fat. To give a nugget or fillet its familiar texture, the cells are often grown on an edible scaffold[[FN:5]] that coaxes them into the right shape. In principle, a single tiny sample can yield an enormous quantity of meat without any further harm to the animal from which it was drawn.",
+   "Supporters advance two central claims. The first is ecological. Conventional livestock farming occupies roughly a quarter of the planet's ice-free land and generates a large share of agricultural greenhouse gases, chiefly through the methane belched by cattle. If cultivated meat could one day be produced at scale using clean electricity, its advocates argue, it might sharply reduce both land use and emissions while sparing forests that are now cleared to make pasture. Advocates also note that a farm animal converts only a small fraction of its feed into edible flesh; growing muscle directly, they say, could eventually turn fewer calories of input into more calories of food. The second claim is ethical: because no animal is confined or slaughtered, cultivated meat promises to end the suffering of the tens of billions of creatures raised for food each year.",
+   "The young industry has notched several symbolic victories. In 2013 the Dutch scientist Mark Post unveiled the first cultivated hamburger, a patty[[FN:6]] that reportedly cost more than a quarter of a million dollars to produce. Costs have fallen steeply since. In 2020 Singapore became the first country in the world to approve the commercial sale of a cultivated product, chicken made by the company Eat Just. In 2023 American regulators cleared two firms, Upside Foods and GOOD Meat, to sell cultivated chicken in the United States. Enthusiasts point to these approvals as proof that the technology has crossed the line from science fiction into the ordinary marketplace.",
+   "Taste and nutrition, however, remain open questions. Early cultivated products have concentrated on minced forms such as nuggets, sausages, and burgers, because reproducing the intricate marbling[[FN:7]] of a premium steak is much harder than growing a shapeless mass of cells. Some companies now sell hybrid items that blend cultivated animal cells with plant proteins, both to cut costs and to improve texture. In theory the product can even be engineered to carry healthier fats, yet whether wary shoppers will embrace such customization is anything but certain.",
+   "Skeptics remain unconvinced. The most immediate obstacle is cost. Producing cultivated meat still demands expensive growth media, and one ingredient long used to feed the cells, a substance called serum[[FN:8]] derived from animal blood, is both costly and ethically awkward for a product marketed as cruelty-free. Critics also question the environmental case. Because a bioreactor must be kept sterile and warm, the process is energy-hungry; if that energy comes from fossil fuels, some analyses suggest the climate benefit could vanish or even reverse. A technology sold as green, they warn, might simply trade one form of pollution for another.",
+   "Cultural resistance has proved equally stubborn. Ranchers, whose livelihoods depend on the incumbent[[FN:9]] system, object to competitors labeling a tank-grown product 'meat' at all. In 2023 Italy went further than any other nation, passing a law that bans the production and sale of cultivated meat outright, a measure the government framed as a defense of culinary tradition and rural communities. Surveys repeatedly find that many consumers feel a visceral[[FN:10]] unease about food grown in a factory, an instinct that no amount of technical reassurance easily dissolves. For such critics, the very unnaturalness of the process is precisely the point.",
+   "Sober observers caution against both breathless hype and lazy dismissal. Cultivated meat is unlikely to empty the world's farms within a decade; the volumes remain tiny and the price remains stubbornly high. Yet much the same was once said of solar panels and electric cars, whose costs collapsed once manufacturing matured. The honest verdict is that the technology's promise is real but still unproven, and that its ultimate value will depend less on what happens inside the laboratory than on whether ordinary eaters, offered a plate of it, decide in the end to pick up their forks."
+  ],
+  "glossary": [
+   {
+    "n": 1,
+    "term": "cellular agriculture",
+    "gloss_ja": "細胞農業（細胞を培養して農畜産物をつくる技術分野）"
+   },
+   {
+    "n": 2,
+    "term": "biopsy",
+    "gloss_ja": "生検、組織採取"
+   },
+   {
+    "n": 3,
+    "term": "bioreactor",
+    "gloss_ja": "バイオリアクター、培養槽"
+   },
+   {
+    "n": 4,
+    "term": "proliferate",
+    "gloss_ja": "（細胞が）増殖する"
+   },
+   {
+    "n": 5,
+    "term": "scaffold",
+    "gloss_ja": "足場（細胞を支え形づくる基材）"
+   },
+   {
+    "n": 6,
+    "term": "patty",
+    "gloss_ja": "パティ（挽き肉を円盤状に成形したもの）"
+   },
+   {
+    "n": 8,
+    "term": "serum",
+    "gloss_ja": "血清"
+   },
+   {
+    "n": 9,
+    "term": "incumbent",
+    "gloss_ja": "既存の、現行の"
+   },
+   {
+    "n": 7,
+    "term": "marbling",
+    "gloss_ja": "霜降り（肉に脂肪が細かく入り込んだ状態）"
+   },
+   {
+    "n": 10,
+    "term": "visceral",
+    "gloss_ja": "本能的な、直感的な"
+   }
+  ],
+  "questions": [
+   {
+    "q_label": "1",
+    "stem": "In the first paragraph, how do its champions characterize cultivated meat?",
+    "options": [
+     "As a niche luxury that is unlikely ever to affect ordinary diets.",
+     "As a technology already proven to be cheaper than conventional livestock farming.",
+     "As only a modest improvement over burgers made from plant proteins.",
+     "As a milestone in food production rivaling the arrival of the refrigerator."
+    ],
+    "ans": 4
+   },
+   {
+    "q_label": "2",
+    "stem": "What does the writer mean by \"an expensive solution in search of a problem\"?",
+    "options": [
+     "A cheap product that manages to solve many pressing problems at once.",
+     "A costly technology that may not actually address any genuine need.",
+     "A scientific puzzle that researchers have so far been unable to explain.",
+     "A problem so large that no possible solution could ever be afforded."
+    ],
+    "ans": 2
+   },
+   {
+    "q_label": "3",
+    "stem": "According to the passage, how is cultivated meat produced?",
+    "options": [
+     "Whole live animals are fattened more quickly by feeding them extra vitamins.",
+     "Cells taken from an animal are multiplied in a nutrient-filled bioreactor.",
+     "Plant proteins are chemically reshaped until they imitate muscle tissue.",
+     "Synthetic chemicals are 3D-printed into meat without using any cells."
+    ],
+    "ans": 2
+   },
+   {
+    "q_label": "4",
+    "stem": "What is the ecological argument that supporters make?",
+    "options": [
+     "Producing it with clean electricity could cut both land use and emissions.",
+     "It would let cattle herds graze on land newly cleared from forests.",
+     "It removes the need for any electricity at all in food production.",
+     "It captures the methane belched by cattle and stores it underground."
+    ],
+    "ans": 1
+   },
+   {
+    "q_label": "5",
+    "stem": "According to the passage, which country first approved the commercial sale of a cultivated product?",
+    "options": [
+     "The United States, in 2013.",
+     "Italy, in 2023.",
+     "Singapore, in 2020.",
+     "The Netherlands, in 2013."
+    ],
+    "ans": 3
+   },
+   {
+    "q_label": "6",
+    "stem": "Why is the use of serum described as ethically awkward?",
+    "options": [
+     "Because it gives the finished meat an unpleasantly bitter flavor.",
+     "Because it has been banned in both Singapore and the United States.",
+     "Because it forces the cultured cells to multiply far too slowly.",
+     "Because it is drawn from animal blood, contradicting a cruelty-free image."
+    ],
+    "ans": 4
+   },
+   {
+    "q_label": "7",
+    "stem": "What environmental concern do the skeptics raise?",
+    "options": [
+     "Bioreactors release large amounts of methane directly into the atmosphere.",
+     "Used growth media cannot be recycled and end up polluting rivers.",
+     "The process consumes far more farmland than conventional ranching does.",
+     "If it is powered by fossil fuels, its climate benefit could disappear."
+    ],
+    "ans": 4
+   },
+   {
+    "q_label": "8",
+    "stem": "What does the writer mean by warning that the technology \"might simply trade one form of pollution for another\"?",
+    "options": [
+     "That cultivated meat will inevitably pollute more than farming ever does.",
+     "That pollution can be bought and sold between countries like a commodity.",
+     "That its heavy energy use could offset the pollution it aims to avoid.",
+     "That farmers will switch from one crop to another to cut their waste."
+    ],
+    "ans": 3
+   },
+   {
+    "q_label": "9",
+    "stem": "According to the passage, what did Italy do in 2023?",
+    "options": [
+     "It passed a law banning the production and sale of cultivated meat.",
+     "It became the first country to approve the sale of cultivated chicken.",
+     "It required all cultivated meat to be labeled with the phrase \"clean meat.\"",
+     "It funded start-ups in order to lower the cost of growth media."
+    ],
+    "ans": 1
+   },
+   {
+    "q_label": "10",
+    "stem": "What point does the writer make by mentioning solar panels and electric cars?",
+    "options": [
+     "That the costs of a new technology can fall sharply once manufacturing matures.",
+     "That cultivated meat is certain to fail just as those products once seemed to.",
+     "That governments ought to subsidize cultivated meat as they subsidized cars.",
+     "That consumers will always reject any unfamiliar product when it first appears."
+    ],
+    "ans": 1
+   }
+  ]
+ },
+ "II": {
+  "label": "Ⅱ",
+  "lead": "次の英文を読み、下線部(1)・(2)を日本語に訳しなさい。",
+  "paragraphs": [
+   "Few inventions have changed daily life as quickly as the smartphone. In little more than a decade, a device that was once a luxury has become something that most people cannot imagine living without. It keeps us informed, entertained, and connected to friends who may be thousands of miles away. [[UL:1=Convenient though it undoubtedly is, the smartphone has quietly reshaped the way we think, so gradually that few of us have noticed the change.]] We reach for it the moment we wake up, and it is often the last thing we look at before we fall asleep.",
+   "Psychologists warn that this constant connection comes at a cost. When notifications interrupt us every few minutes, our attention is broken into tiny fragments, and deep, sustained thought becomes increasingly rare. [[UL:2=If we were willing to put the device aside for even an hour a day, we might rediscover the kind of quiet concentration that once came naturally to us.]] The problem is not the technology itself but the habits we build around it. A tool designed to serve us can, without our realizing it, begin to govern how we spend our time. Learning to use it wisely, rather than abandoning it altogether, is the real challenge of our age."
+  ],
+  "glossary": [
+   {
+    "term": "luxury",
+    "gloss_ja": "ぜいたく品"
+   },
+   {
+    "term": "psychologist",
+    "gloss_ja": "心理学者"
+   },
+   {
+    "term": "notification",
+    "gloss_ja": "(スマホなどの)通知"
+   },
+   {
+    "term": "sustained",
+    "gloss_ja": "持続的な"
+   },
+   {
+    "term": "govern",
+    "gloss_ja": "〜を支配する"
+   }
+  ],
+  "items": [
+   {
+    "ref": "1",
+    "en": "Convenient though it undoubtedly is, the smartphone has quietly reshaped the way we think, so gradually that few of us have noticed the change.",
+    "model_ja": "確かに便利ではあるものの、スマートフォンは私たちのものの考え方を静かに作り変えてしまっており、しかもそれはあまりにゆっくりと進んだので、その変化に気づいた人はほとんどいない。"
+   },
+   {
+    "ref": "2",
+    "en": "If we were willing to put the device aside for even an hour a day, we might rediscover the kind of quiet concentration that once came naturally to us.",
+    "model_ja": "もし私たちが一日にほんの一時間でも、その機器を脇に置いておく気になりさえすれば、かつて私たちにとって自然に身についていたあの種の静かな集中力を、再び取り戻すことができるかもしれない。"
+   }
+  ]
+ },
+ "III": {
+  "label": "Ⅲ",
+  "prompt": "In the passage, the writer suggests that we should learn to use smartphones wisely rather than abandon them. Do you think schools should ban students from using their smartphones during the school day? Why or why not? Write about 50 words in English. Give concrete reasons or examples other than those mentioned in the text.",
+  "model_en": "Yes, schools should ban smartphones during the school day. In my own class, students who kept their phones on their desks often checked messages instead of listening, and their test scores dropped. Without phones, they talk with one another during breaks and build real friendships. Schools should encourage face-to-face learning.",
+  "note": "賛否(Yes/No)を明示し、理由または具体例が本文で触れられた内容(便利さ・集中力の断片化・習慣づけ)と重複していないかを確認する。設問が求める「本文以外の具体例」(自分の教室での経験・成績・休み時間の交流など)が含まれているかが最大の採点点。語数は45〜55語で調整。時制・主述一致・冠詞・スペル(米式)を機械的に点検し、結論文(School should...)で立場が一貫しているかを見る。"
+ },
+ "IV": {
+  "label": "Ⅳ",
+  "lead": "次の各文の空所（ 11 ）～（ 15 ）に入れるのに最も適当なものを、それぞれ①～④の中から一つ選びなさい。",
+  "items": [
+   {
+    "n": 11,
+    "type": "sentence",
+    "lines": [
+     {
+      "sp": "",
+      "text": "The old bridge was so weak that the city council finally decided to close it before its complete ( 11 ) could put anyone at risk."
+     }
+    ],
+    "options": [
+     "restriction",
+     "construction",
+     "destruction",
+     "instruction"
+    ],
+    "ans": 3
+   },
+   {
+    "n": 12,
+    "type": "sentence",
+    "lines": [
+     {
+      "sp": "",
+      "text": "I couldn't give her an answer right away, so I told her I'd have to ( 12 ) it before making such an important decision."
+     }
+    ],
+    "options": [
+     "sleep on",
+     "sleep off",
+     "sleep in",
+     "sleep out"
+    ],
+    "ans": 1
+   },
+   {
+    "n": 13,
+    "type": "dialog",
+    "lines": [
+     {
+      "sp": "A",
+      "text": "How did your presentation go this morning?"
+     },
+     {
+      "sp": "B",
+      "text": "The slides went fine, but one of the client's questions caught me completely ( 13 ), and I couldn't answer it well."
+     }
+    ],
+    "options": [
+     "at ease",
+     "in place",
+     "off guard",
+     "on purpose"
+    ],
+    "ans": 3
+   },
+   {
+    "n": 14,
+    "type": "dialog",
+    "lines": [
+     {
+      "sp": "A",
+      "text": "Dinner's ready! I've made way too much curry, so please ( 14 ), everyone."
+     },
+     {
+      "sp": "B",
+      "text": "Thanks! It smells wonderful."
+     }
+    ],
+    "options": [
+     "dig up",
+     "give in",
+     "take off",
+     "dig in"
+    ],
+    "ans": 4
+   },
+   {
+    "n": 15,
+    "type": "dialog",
+    "lines": [
+     {
+      "sp": "A",
+      "text": "Excuse me, before you can use the meeting room, you'll need to ( 15 ) at the front desk."
+     },
+     {
+      "sp": "B",
+      "text": "Oh, I see. I'll go and write my name in the book right now."
+     }
+    ],
+    "options": [
+     "sign off",
+     "sign in",
+     "sign out",
+     "sign up"
+    ],
+    "ans": 2
+   }
+  ]
+ }
+}

@@ -1,0 +1,321 @@
+{
+ "no": 3,
+ "date": "7/29",
+ "title": "比較・受け身",
+ "goal": "比較級・最上級と as ... as、そして受動態(be+過去分詞)の形を正しく作り、書きかえと和文英訳まで使いこなせるようにする。",
+ "points": [
+  {
+   "h": "比較級・最上級の作り方",
+   "body": "「~より…」の比較級は、短い語には -er、長い語には more をつける。「一番…」の最上級は、短い語には -est、長い語には most をつけ、前に the を置く。範囲を表すときは in(まとまり・場所)か of(仲間・数)を使う。good→better→best のように不規則に変わる語もある。",
+   "ex": [
+    [
+     "Tom is taller than Ken.",
+     "トムはケンより背が高い。"
+    ],
+    [
+     "This is the longest river in Japan.",
+     "これは日本で一番長い川だ。"
+    ]
+   ],
+   "rule": "★短い語は -er/-est、長い語は more/most"
+  },
+  {
+   "h": "as ... as / not as ... as",
+   "body": "as + 原級(もとの形) + as で「~と同じくらい…」。あいだの語は決して比較級にしない。否定の not as ... as ~ は「~ほど…でない」という意味になる。",
+   "ex": [
+    [
+     "Ken is as tall as Tom.",
+     "ケンはトムと同じくらい背が高い。"
+    ],
+    [
+     "I am not as busy as you.",
+     "私はあなたほど忙しくない。"
+    ]
+   ],
+   "rule": "★as と as のあいだは必ず原級"
+  },
+  {
+   "h": "受動態 be + 過去分詞",
+   "body": "「~される・~された」は〈be動詞 + 過去分詞〉で表す。時制(現在・過去)は be動詞で示す。動作をする人・ものをはっきり言いたいときは by ~ をつける。",
+   "ex": [
+    [
+     "This letter was written by Ken.",
+     "この手紙はケンによって書かれた。"
+    ],
+    [
+     "English is spoken in many countries.",
+     "英語は多くの国で話されている。"
+    ]
+   ],
+   "rule": "★受け身 = be動詞 + 過去分詞"
+  },
+  {
+   "h": "受け身の否定・疑問、by以外の前置詞",
+   "body": "否定は be動詞のあとに not を置く。疑問は be動詞を主語の前に出す。by 以外の前置詞をとる決まった言い方もある(be interested in ~「~に興味がある」、be covered with ~「~でおおわれている」など)。",
+   "ex": [
+    [
+     "Was this cake made by your mother?",
+     "このケーキはあなたのお母さんが作ったの?"
+    ],
+    [
+     "I am interested in science.",
+     "私は理科に興味がある。"
+    ]
+   ],
+   "rule": "★疑問は be動詞を主語の前に"
+  }
+ ],
+ "kiso": [
+  {
+   "type": "fill",
+   "stem": "Tom is ______ ( tall ) than Ken.",
+   "ans": "taller",
+   "point": "比較級 -er",
+   "exp": "tall は短い語なので -er をつけて taller。than は「~より」で、あとに比べる相手が来る。"
+  },
+  {
+   "type": "fill",
+   "stem": "This is the ______ ( high ) mountain in Japan.",
+   "ans": "highest",
+   "point": "最上級 -est",
+   "exp": "high は短い語なので -est をつけて highest。最上級には the を必ずつける。"
+  },
+  {
+   "type": "fill",
+   "stem": "This book is ______ ( interesting ) than that one.",
+   "ans": "more interesting",
+   "point": "比較級 more",
+   "exp": "interesting は長い語なので more を前に置く。interesting に -er はつけない。"
+  },
+  {
+   "type": "fill",
+   "stem": "Soccer is ______ ( good ) than tennis for me.",
+   "ans": "better",
+   "point": "不規則変化 good→better",
+   "exp": "good の比較級は不規則で better。gooder という形は存在しない。"
+  },
+  {
+   "type": "fill",
+   "stem": "Ken is as ______ ( old ) as Tom.",
+   "ans": "old",
+   "point": "as ... as は原級",
+   "exp": "as と as のあいだは変化させない原級のまま。older にしてはいけない。"
+  },
+  {
+   "type": "mc",
+   "stem": "This room ______ every day.",
+   "note": "「この部屋は毎日そうじされる」",
+   "choices": [
+    "is cleaned",
+    "cleans",
+    "cleaning",
+    "clean"
+   ],
+   "ans": 0,
+   "point": "受け身 be+過去分詞",
+   "exp": "「そうじされる」は受け身なので〈be動詞 is + 過去分詞 cleaned〉。cleans だと「部屋がそうじする」になり不自然。"
+  },
+  {
+   "type": "fill",
+   "stem": "This picture was ______ ( paint ) by my father.",
+   "ans": "painted",
+   "point": "受け身の過去分詞",
+   "exp": "〈was + 過去分詞〉で過去の受け身。paint は規則動詞なので過去分詞は painted。"
+  },
+  {
+   "type": "mc",
+   "stem": "This song is loved ______ many people.",
+   "note": "「この歌は多くの人に愛されている」",
+   "choices": [
+    "of",
+    "in",
+    "with",
+    "by"
+   ],
+   "ans": 3,
+   "point": "動作主 by",
+   "exp": "受け身で「~によって・~に」と動作をする人を示すときは by を使う。"
+  }
+ ],
+ "hyojun": [
+  {
+   "type": "mc",
+   "stem": "Your plan is ______ better than mine.",
+   "note": "「君の案は僕の案よりずっとよい」",
+   "choices": [
+    "much",
+    "very",
+    "more",
+    "well"
+   ],
+   "ans": 0,
+   "point": "比較級の強調 much",
+   "exp": "比較級 better を「ずっと・はるかに」と強めるときは much を使う。very は good などの原級は強められるが、比較級 better の前には置けない。more better のような二重の比較もできない。"
+  },
+  {
+   "type": "rewrite",
+   "given": "Mt. Fuji is the highest mountain in Japan.",
+   "target": "Mt. Fuji is higher than ______ ______ mountain in Japan.",
+   "blanks": [
+    "any",
+    "other"
+   ],
+   "point": "最上級=比較級+any other+単数名詞",
+   "exp": "「いちばん高い」は「ほかのどの山よりも高い」と言いかえられる。〈比較級 + than any other + 単数名詞〉で最上級と同じ意味になる。any other のあとの mountain は必ず単数にする。"
+  },
+  {
+   "type": "order",
+   "ja": "彼はクラスメートに笑われた。",
+   "tokens": [
+    "He",
+    "was",
+    "laughed",
+    "at",
+    "by",
+    "his",
+    "classmates"
+   ],
+   "ans": "He was laughed at by his classmates",
+   "point": "群動詞の受け身(at が残る)",
+   "exp": "laugh at ~「~を笑う」はひとかたまりの動詞。受け身にしても at を消さず was laughed at のように残す。そのあとに動作主 by his classmates を続ける。"
+  },
+  {
+   "type": "mc",
+   "stem": "Wine is made ______ grapes.",
+   "note": "「ワインはぶどうから作られる」",
+   "choices": [
+    "of",
+    "in",
+    "from",
+    "by"
+   ],
+   "ans": 2,
+   "point": "be made from(原料が変化)",
+   "exp": "材料が見た目で分からないほど姿を変えるときは be made from ~ を使う。ぶどうがワインに変化するので from。形が残る場合(This desk is made of wood)は of を使う。"
+  },
+  {
+   "type": "order",
+   "ja": "すてきな贈り物が昨日、彼女に贈られた。",
+   "tokens": [
+    "A",
+    "nice",
+    "present",
+    "was",
+    "given",
+    "to",
+    "her",
+    "yesterday"
+   ],
+   "ans": "A nice present was given to her yesterday",
+   "point": "SVOO の受け身（to が必要）",
+   "exp": "give＋人＋物 の「物」を主語にすると、受け取る人の前に to が必要。was given to her「彼女に贈られた」。時を表す yesterday は文末に置く。"
+  },
+  {
+   "type": "mc",
+   "stem": "A lot of stars ______ in the countryside on a clear night.",
+   "note": "「晴れた夜、田舎ではたくさんの星が見られる」",
+   "choices": [
+    "can see",
+    "are seeing",
+    "see",
+    "can be seen"
+   ],
+   "ans": 3,
+   "point": "助動詞+受け身(can be+過去分詞)",
+   "exp": "「見られる」は受け身。助動詞 can のあとの受け身は〈can + be + 過去分詞〉で can be seen。can see だと主語 stars が「見る」ことになり意味が合わない。"
+  },
+  {
+   "type": "rewrite",
+   "given": "Time is the most precious thing of all.",
+   "target": "______ ______ so precious as time.",
+   "blanks": [
+    "Nothing",
+    "is"
+   ],
+   "point": "否定+as ... as で最上級の意味",
+   "exp": "「時間がいちばん貴重だ」は「時間ほど貴重なものは何もない」と言いかえられる。Nothing is so precious as time. のように Nothing を主語にして not/no のニュアンスの as(so) ... as を使うと、最上級と同じ意味を表せる。"
+  },
+  {
+   "type": "order",
+   "ja": "この橋はあの橋の2倍の長さだ。",
+   "tokens": [
+    "This",
+    "bridge",
+    "is",
+    "twice",
+    "as",
+    "long",
+    "as",
+    "that",
+    "one"
+   ],
+   "ans": "This bridge is twice as long as that one",
+   "point": "倍数+as ... as",
+   "exp": "「2倍…」は倍数を表す twice を as ... as の前に置き、twice as long as ~ とする。長さを比べているので、あいだは原級 long のまま。one は bridge のかわりの語。"
+  }
+ ],
+ "nyushi": [
+  {
+   "type": "error",
+   "html": "[a|This] question is [b|more easier] than [c|the] one we [d|did] yesterday.",
+   "ans": "b",
+   "correct": "more easier → easier",
+   "point": "比較級の二重化はNG",
+   "exp": "easy の比較級は easier。more と -er を両方つけるのは誤り。more easier とは言えない。"
+  },
+  {
+   "type": "order",
+   "ja": "この寺は300年以上前に建てられた。",
+   "tokens": [
+    "This",
+    "temple",
+    "was",
+    "built",
+    "more",
+    "than",
+    "300",
+    "years",
+    "ago"
+   ],
+   "ans": "This temple was built more than 300 years ago",
+   "point": "受け身の過去 + more than",
+   "exp": "受け身の過去は was built。more than 300 years ago で「300年以上前に」を表す。"
+  },
+  {
+   "type": "mc",
+   "stem": "The top of the mountain was covered ______ snow.",
+   "note": "「山頂は雪でおおわれていた」",
+   "choices": [
+    "with",
+    "by",
+    "for",
+    "of"
+   ],
+   "ans": 0,
+   "point": "be covered with",
+   "exp": "be covered with ~ で「~でおおわれている」という決まった言い方。動作主を表す by と区別する。for・of はこの意味では使わない。"
+  },
+  {
+   "type": "ja2en",
+   "ja": "この物語は世界中の子どもたちに読まれている。",
+   "models": [
+    "This story is read by children all over the world.",
+    "This story is read by children around the world."
+   ],
+   "point": "現在の受け身 is read by ~",
+   "mistakes": "read の過去分詞も read(発音は red)。is read を is readed としないこと。",
+   "lines": 2
+  },
+  {
+   "type": "ja2en",
+   "ja": "数学は英語ほど難しくないと私は思う。",
+   "models": [
+    "I think that math is not as difficult as English.",
+    "I don't think math is as difficult as English."
+   ],
+   "point": "not as ... as / I think (that) ~",
+   "mistakes": "not as ... as の2つ目を than にしない。difficult は more/most 型なので -er をつけない。",
+   "lines": 2
+  }
+ ]
+}

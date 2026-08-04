@@ -1,0 +1,212 @@
+{
+ "Q1": {
+  "quote": "you were not allowed to step outside unless you were leaving for good",
+  "quote_ja": "完全に立ち去るのでない限り、外へ足を踏み出すことは許されなかった。",
+  "reason": "まず空所の前後の向きを見よう。前は『外に出てはいけない』という禁止、後ろは leaving for good『永久に立ち去る』というただ一つの例外だ。この二つを橋渡しできるのは unless=『〜でない限り』しかない。unless は if not と同じで、例外の一線をスパッと引く語だと覚えよう。つまり『二度と戻らない覚悟で出て行くとき以外は外出禁止』——だからナディアには檻(cage)のように感じられたわけだ。",
+  "distractors": "②because=因果関係ではないので不可。⑤when『〜のとき』では“例外だけ許す”という理不尽さが消える。③for／④as=この二文をつなぐ意味が合わない。",
+  "point": "unless=if not『〜でない限り』。ただ一つの例外を切り出すときの語。"
+ },
+ "Q2": {
+  "quote": "One afternoon Nadia heard of another camp, far away to the west",
+  "quote_ja": "ある午後、ナディアは遠く西の方にある別のキャンプのことを(うわさで)聞いた。",
+  "reason": "hear は後ろで意味が変わる。hear X なら『Xの音を直接聞く』だが、hear of X になると『Xの存在やうわさを人づてに聞き知る』になる。of のコアは『分離=全体から切り出された一片』で、ここでは“情報の一片”が耳に入ってくる感覚だ。本文はこの噂を people whispered(人々がささやいた)と受けているから、直接ではなく間接的に聞いた=of で決まる。",
+  "distractors": "①by／②in／④to／⑤with=いずれも hear と結んで『うわさを聞き知る』を作れない。hear about も同義だが選択肢に無い。",
+  "point": "hear of=『(うわさ・存在を)人づてに聞き知る』。of=分離=情報の一片。"
+ },
+ "Q3": {
+  "quote": "they found that things were no different from before",
+  "quote_ja": "状況は以前と何も変わらないことが分かった。",
+  "reason": "things は『物』ではなく、身の回りの有様を丸ごとふわっと受ける超便利語だ。ここは things were no different from before『暮らしぶりは以前と少しも違わなかった』で、生活の境遇そのものを指す。つまり『物』ではなく『状況』——最も近いのは situation だ。How are things?(調子どう?)の things も同じで、身の回りの状況を漠然と受けている、と押さえよう。",
+  "distractors": "①direction(方向)／②duration(期間)／③expectation(期待)／④generation(世代)=どれも『暮らしの有様全体』を受けきれない。",
+  "point": "漠然の things=『状況・事情』=situation。"
+ },
+ "Q4": {
+  "quote": "that one day she might leave the camp and go on with her education somehow",
+  "quote_ja": "いつかキャンプを離れ、どうにかして自分の教育を続けられるかもしれない、という思い。",
+  "reason": "leave のコアは『(何かを)後に残して立ち去る』。ここは『いつかキャンプを出て、教育を続けたい』というナディアを支える“脱出と前進”の願いだ。後ろの go on with her education(教育を続ける)=『前へ進む』と方向がそろうのは、その場を離れる leave だけ。この一文が彼女の希望の核だと分かれば迷わず選べる。",
+  "distractors": "①build(築く)／②keep(保つ)／④run(走る・運営する)／⑤save(救う)=いずれも肝心の『その場所を離れる』が出ない。",
+  "point": "leave=『後に残して立ち去る』。方向は“その場から外へ”。"
+ },
+ "Q5": {
+  "quote": "There was nothing to do but wait",
+  "quote_ja": "待つこと以外に、することは何もなかった。",
+  "reason": "but を見ると反射的に『しかし』と訳したくなるが、but のコアは『対立・例外』で、ここは“例外”の顔だ。nothing to do but wait は『待つことを除いてすることが無い』=『ただ待つだけ』という定番。この but は except(〜以外)で置き換えられる、と覚えよう。直後に wait for the next meal, wait for news…と“待つ”が畳みかけられているのが決定的なヒントだ。",
+  "distractors": "①and／③for／④than／⑤with=『〜以外』の意味を出せない。but だけが except の役を果たす。",
+  "point": "nothing to do but do=『〜する以外にない』=『ただ〜するだけ』。but=except。"
+ },
+ "Q6": {
+  "quote": "It was hard to keep hope alive when there was so little to feed it",
+  "quote_ja": "それ(希望)を養うものがほとんど無いなかで、希望を持ち続けるのは難しかった。",
+  "reason": "feed のコアは『栄養(燃料)を与えて養う』。人や動物だけでなく、火に薪をくべるように、希望のような抽象的なものにも使える。ここは keep hope alive『希望を生かし続ける』の直後で、その希望を feed する(=燃料をやる)ものが乏しい、という流れだ。it=hope を“養う燃料”と読めれば、feed が一発で決まる。",
+  "distractors": "①buy／②eat／③get=希望を主語に“養う”向きに合わない。④kill(殺す)=keep alive と正反対で意味が逆。",
+  "point": "feed=『養う・燃料を与える』。火にも希望にも使える。"
+ },
+ "Q7": {
+  "quote": "you might stay for a few weeks or, at most, a few months",
+  "quote_ja": "滞在は数週間か、せいぜい数ヶ月だ(と人々は言った)。",
+  "reason": "at most は『多く見積もっても=せいぜい』で、数の“上限”を示すサインだ。ここは『数週間か、at most 数ヶ月』=『長くてもせいぜい数ヶ月』。ところが実際のナディアは had already been waiting for years(もう何年も待っていた)——この“せいぜい数ヶ月”との落差こそ本文の皮肉だ。at least(少なくとも=下限)と正反対なので、ペアで押さえよう。",
+  "distractors": "①at all(全く)／②at ease(くつろいで)／③at least(少なくとも=下限)／⑤at once(すぐに)=いずれも“上限”を表さない。",
+  "point": "at most=『せいぜい・多くても』=上限。at least(下限)と対で暗記。"
+ },
+ "Q8": {
+  "quote": "He almost always seemed to understand what Nadia was trying to say, even when her words came out wrong",
+  "quote_ja": "彼は、彼女の言葉が間違って出てきたときでさえ、ナディアが言おうとしていることをほとんどいつも理解しているように見えた。",
+  "reason": "整序は“動詞のカタマリ”を先に見抜くのがコツだ。ここには seem to do『〜するように見える』と be trying to do『〜しようとしている』の二つの型が隠れている。まず骨組みを always seemed to understand(いつも理解しているように見えた)と作り、understand の目的語に間接疑問 what Nadia was trying to say(ナディアが言おうとしていること)を据える。並びは ⑦always seemed／④to understand／①what／⑤Nadia／③was／⑥trying to／②say。空所直前の『almost』は本文側の語で並べ替え対象外だ。よって2番目=④to understand、6番目=⑥trying to。カタマリを先に固めれば語順は一本道だ。",
+  "distractors": "間接疑問の語順を平叙文のまま(what Nadia was trying to say)にせず、疑問文の語順 what was Nadia… にしてしまうのが典型ミス。to understand を後ろに置く位置ずれも要注意。",
+  "point": "整序は“動詞のカタマリ”(seem to do／be trying to)を先に見抜く。目的語の間接疑問は S V の語順のまま。"
+ },
+ "Q9": {
+  "quote": "practicing drawing the letters in the dust with a stick",
+  "quote_ja": "棒で砂に文字を描く練習をした。",
+  "reason": "draw のコアは『ペンや棒で線を引いて形を描く』(絵を描く draw a picture もここから)。ここは stick(棒)で dust(砂・地面)に letters(文字)を書く場面だから、文字を“線でなぞって形づくる”drawing がドンピシャ。字を習い始めた子が砂に棒でなぞる、あの光景をイメージすれば一発だ。",
+  "distractors": "②hitting(打つ)=文字を叩くは意味不明。③rolling(転がす)=砂に文字を転がすは変。④sending(送る)=通信の話ではない。⑤typing(キー入力)=棒で砂にタイプはできない。",
+  "point": "draw=『線を引いて形を描く』。絵も文字も図形も、なぞって形にするものは全部 draw。"
+ },
+ "Q10": {
+  "quote": "The alphabet she had grown up with had thirty-two letters, while the English one had only twenty-six",
+  "quote_ja": "彼女が育つ中で親しんだ文字体系は32文字あり、一方で英語のそれは26文字しかなかった。",
+  "reason": "決め手は直後の『32文字あり、英語のそれは26文字だけ』という数字だ。文字を数えられる“文字の一式・体系”を表す語こそ alphabet。元々ギリシャ文字の頭二つ(alpha＋beta)から来た語で、文字セット全体を指す。ここは母語と英語の文字体系を“何文字あるか”で比べているのだから、letters の集合体=alphabet で確定だ。",
+  "distractors": "②code(暗号・記号体系)=文字数を数える対象ではない。③custom(習慣)=文化の話でズレる。④figure(数字・姿)=文字体系ではない。⑤pattern(模様・型)=letters を数える文脈に合わない。",
+  "point": "『◯文字ある』と数えられる文字セット=alphabet。数字が並んだら文字体系を疑え。"
+ },
+ "Q11": {
+  "quote": "he would point out some small difference so that it was easy to tell them apart",
+  "quote_ja": "彼はちょっとした違いを指摘してくれるので、それら(二つの文字)を見分けるのが簡単だった。",
+  "reason": "tell は一つの核から二系統に枝分かれする多義語だ。核は『はっきりさせる』。そこから(1)『(違いを)はっきりさせる=見分ける・区別する』と、(2)『(言葉で)はっきり伝える=告げる・話す』の二方向に広がる。下線の tell them apart は tell A apart／tell A from B の形で(1)の『見分ける』。設問は“これと用法が異なる文”を探すので、(1)の仲間に混じった(2)を狙い撃つ。①双子／②絹とナイロン／④本物と偽物／⑤バターとマーガリンは全部『区別する』系、③ tell me what happened だけが『事情を話す』系。だから③。",
+  "distractors": "③以外はすべて tell A from B／tell A apart=『AとBを見分ける』で下線と同系統。③だけが tell 人＋what節=『(人に)告げる・話す』で系統が別。『from／apart が付くか』を目印にすると速い。",
+  "point": "tell A from B・tell A apart=『見分ける』／tell 人＋〜=『告げる』。前置詞の相棒で系統を判定。"
+ },
+ "Q12": {
+  "quote": "The talk of resettlement began as a whisper, but within days it had grown into a roar that filled every corner of the camp",
+  "quote_ja": "移住の話はささやきとして始まったが、数日のうちにキャンプの隅々を満たすとどろきへと成長した。",
+  "reason": "型を先に見抜こう。『began as a … but … had grown into a …』は“小さいものが大きく育つ”という拡大の対比だ。だから(12-ア)は小さく、(12-イ)は大きく、しかも音のイメージでそろう組が正解。④ whisper(ささやき=小さな声)→roar(とどろき=大音量)だけが小から大へきれいに拡大する。噂が静かに始まり、やがてキャンプ中に響き渡った、という流れそのものだ。",
+  "distractors": "①murmur→silence=小さな声から『無音』は逆に消えるのでNG。②shout→echo=最初から大声で拡大にならない。③song→noise=大小の対比が曖昧。⑤sound→voice=どちらも中間で落差が出ない。",
+  "point": "began as A but grew into B=『A(小)→B(大)』の拡大対比。小さい語→大きい語でそろえる。"
+ },
+ "Q13": {
+  "quote": "Nor was it on the next list, or the one after that",
+  "quote_ja": "次の名簿にも、そのまた次の名簿にも、それ(彼女の名前)は載っていなかった。",
+  "reason": "否定の副詞が文頭に出ると、後ろは疑問文の語順(倒置)になる——これは一発ルールだ。空所の直後が was it とひっくり返っているのが動かぬサイン。前文は her name was not there(名前は無かった)という否定で、それを『次の名簿にもその次にも(また)無い』と受け継ぐのが Nor(=そしてまた〜ない)。Nor は前の否定にさらに否定を足す接続語で、倒置とセットで使う。戻せば It was not on the next list either という意味だ。",
+  "distractors": "①Never も文頭で倒置を作るが『一度も〜ない』で、直前の否定を“継ぐ”流れにならない。②Nobody／③None／⑤Nothing は名詞(主語)なので、後ろに was it という倒置が続かない(主語がダブる)。前の否定を受け足しつつ倒置を起こせるのは接続語 Nor だけ。",
+  "point": "否定語が文頭→倒置(疑問文の語順)。前の否定に足すなら Nor『そしてまた〜ない』。"
+ },
+ "Q14": {
+  "quote": "try to catch her breath before she let herself look",
+  "quote_ja": "見る前に息を整えようとした。",
+  "reason": "つづり ea は音が二通りあるのがミソだ。breath の ea は/e/(エ)と短く読む(名詞 breath は『ブレス』)。同じ/e/で読むのは②friend／③head／④meant／⑤tent。ところが①feet は ee=/iː/(イー)と長く伸ばす音で、ここだけ母音が違う。発音問題は見た目のつづりでなく“実際の音”で仕分けるのがコツ。breath(名詞)と breathe(動詞)で音が変わる点も要注意だ。",
+  "distractors": "①feet=/iː/(イー)ここだけ長い。②friend=/e/。③head=/e/。④meant=/e/(mean の過去なのに/e/)。⑤tent=/e/。②〜⑤が全部/e/でそろい、①だけ浮く。",
+  "point": "ea は/e/と/iː/の二音。breath=/e/、feet の ee=/iː/。見た目でなく音で分ける。"
+ },
+ "Q15": {
+  "quote": "she would tell herself, though her hands were shaking",
+  "quote_ja": "と彼女は自分に言い聞かせた——もっとも、その手は震えていたのだが。",
+  "reason": "心情は“体のサイン”から読み取れ、というのが鉄則だ。her hands were shaking(手が震えていた)は、名簿を見る直前の『どうか名前がありますように』という張りつめた緊張の表れ。結果を見るのが怖くて、でも見たくて、心臓バクバクの状態——だから②nervous(緊張・不安)。直前で『急いで見ない』と自分に言い聞かせているのも、結果を怖がっている証拠だ。",
+  "distractors": "①tired(疲れ)=手の震え=疲労とは限らず、文脈は結果待ちの緊張。③confused(混乱)=状況は分かっており混乱ではない。④delighted(歓喜)=まだ結果を見ておらず喜べない。⑤disappointed(落胆)=見る前だから早い。",
+  "point": "手の震え=緊張・不安のサイン。心情問題は“体の描写”を根拠に読む。"
+ },
+ "Q16": {
+  "quote": "Nadia shouldered her way through the crowd until she was standing right in front of the newest list",
+  "quote_ja": "ナディアは人混みを肩で押し分けて進み、ついに最新の名簿の真ん前に立った。",
+  "reason": "名詞 shoulder(肩)が動詞化すると『肩で押して進む』になる。体の部位が動詞になると“その部位を使った動作”になるのがポイント(elbow=ひじで突く、など)。ここは crowd(人混み)を突っ切って名簿の真ん前に立つ場面だから、shoulder one's way through=『肩で人をかき分けて進む』がピタリ。“肩で人をぐいぐい押し分けた”という映像が浮かべば⑤shouldered で確定だ。",
+  "distractors": "①armed(arm=武装させる)=人混みで武装は不自然。②fingered(指で触れる・密告する)=進む動作にならない。③kneed(膝で蹴る)=かき分けて進む意にならない。④nosed(鼻でつつく・そろそろ進む)は近いが、人混みを押し分けるのは肩=⑤が最適。",
+  "point": "体の部位→動詞化=“その部位を使った動作”。shoulder one's way=肩で押し分けて進む。"
+ },
+ "Q17": {
+  "quote": "Nadia gripped the armrests with all her strength and shut her eyes",
+  "quote_ja": "ナディアは肘掛けを渾身の力で握りしめ、目をぎゅっと閉じた。",
+  "reason": "『なぜ肘掛けを全力で握り目を閉じたのか』は、直前の一文にそのまま書いてある。第一便の小さくガタガタ揺れる飛行機(a tiny, rattling plane)が“空から落ちる”と本気で思うほど怖かった、とある。その恐怖を引きずったまま第二便が離陸した瞬間の反応が、この“握りしめ＋目を閉じる”だ。つまり原因は最初の飛行の恐怖。理由を問われたら下線のすぐ前を読む——これが鉄則だ。",
+  "distractors": "①座席が硬い=本文に記述なし。③景色に見とれた=目を閉じているので逆。④早く着きたい=そんな焦りは書かれていない。⑤眠らないため=目を閉じているのはむしろ現実を見たくない恐怖の表れ。",
+  "point": "行動理由は“下線の直前一文”に原因がある。前を見れば答えは落ちている。"
+ },
+ "Q18": {
+  "quote": "On the plane to the city where her new family lived, she looked down for hours at a floor of white cloud",
+  "quote_ja": "新しい家族が暮らす街へ向かう飛行機の中で、彼女は何時間も白い雲の床を見下ろしていた。",
+  "reason": "空所の直後がヒントだ。『何時間も white cloud(白い雲)の床を見下ろした』——雲を上から見下ろせる乗り物は空を行くものしかない。しかも前の段落で『旅は三回のフライト(three flights)』と念押しされている。だから乗っているのは④plane で即決だ。空所補充は“前後がどんな場面か”を映像で思い浮かべると迷わない。",
+  "distractors": "①boat／②bus／③car／⑤train は、いずれも地上・水上を進む乗り物で『雲を見下ろす』が物理的に成り立たない。文脈の flights=飛行機の旅とも矛盾する。",
+  "point": "空所補充は前後の“場面”で決める。雲を見下ろす=空の上=plane。"
+ },
+ "Q19": {
+  "quote": "she could not help studying the families who waited beyond the gate, wondering which of them might be hers",
+  "quote_ja": "彼女は、ゲートの向こうで待つ家族たちをじっと見つめずにはいられず、どれが自分の家族なのだろうと思いめぐらせた。",
+  "reason": "study の核イメージは『じっと目を向けてよく見る』。学校の“勉強”は、教科書をじっと見つめる——そこから派生した一用法にすぎない。ここは空港で『どの家族が自分の受け入れ先だろう』と人々をじっと観察する場面だから、核心そのものの“よく見る”が前面に出ている。だから最も近いのは⑤observing(観察する)。単語は核イメージから意味の枝を伸ばす、と押さえれば一発だ。",
+  "distractors": "②learning(学ぶ)は study の派生語義で、ここの“視線でよく見る”とはズレる。①facing(直面する)／③remembering(思い出す)／④working(取り組む)はいずれも『見つめる』動作を表さない。",
+  "point": "study のコア=『じっと見る』。“勉強”はそこからの派生にすぎない。"
+ },
+ "Q20": {
+  "quote": "She felt her shoulders drop a little at the sight of their eager smiles",
+  "quote_ja": "彼らの熱心な笑顔を見て、彼女は肩の力が少しふっと抜けるのを感じた。",
+  "reason": "肩がストンと落ちる(shoulders drop)のは、張りつめていた緊張が解けた合図だ。では何を見て解けたのか——直後の at the sight of their eager smiles(彼らの熱心な笑顔を見て)が原因を示している。新しい家族が自分に会えて心から喜んでいると分かったから、ナディアは安心できたわけだ。だから正解は②『家族が自分に会えて嬉しそうだったから』。“体のサイン＋その原因を示す前置詞句”をセットで読むのがコツ。",
+  "distractors": "①子どもが泣いていた=本文は bouncing(はしゃぐ)で逆。③迎えがいない=実際は名前カードを持つ夫婦がいた。④旧友に会えた=初対面の受け入れ家族。⑤飛行機が早く着いた=到着時刻の話ではない。",
+  "point": "『shoulders drop=緊張が解ける』。原因は直後の at the sight of … にある。"
+ },
+ "Q21": {
+  "quote": "She wondered if she looked as frightened as she felt",
+  "quote_ja": "彼女は、自分が感じているのと同じくらい怯えているように見えているのだろうか、と思った。",
+  "reason": "wonder(〜かなと思う)の後ろには、思う“中身”をまとめた名詞のカタマリ(名詞節)が必要になる。ここの中身は『自分が感じているのと同じくらい怯えて見えるかどうか』というYESかNOかの問いだ。この『〜かどうか』を作れる接続詞が③if(=whether)。名詞節を作る if は『もし』ではなく『〜かどうか』の顔を出す、と覚えよう。",
+  "distractors": "①as／②for／④to は名詞節(〜かどうか)を作れない。⑤whom は『人』を受ける関係詞で、ここに人の先行詞はなく意味も通らない。",
+  "point": "wonder＋if 節=『〜かどうか思う』。この if は『もし』ではなく whether。"
+ },
+ "Q22": {
+  "quote": "out of doors they stayed on the move all season — skating, sledding, walking to school in the dark",
+  "quote_ja": "戸外で人々は季節じゅうずっと動き回っていた——スケートをし、そりに乗り、暗い中を歩いて学校へ行った。",
+  "reason": "move のコアは『動き』。on the move で『あちこち動き回っている最中』、それを stay(〜のままでいる)で保つから、stayed on the move は『ずっと動き回っていた』となる。直前に did not sit still(じっとしていない)とあり、同じ方向のダメ押しだ。さらに続く skating／sledding／walking も“活発に動く”具体例。だから最も近いのは①be active(活動的である)。前後の具体例まで束ねて意味を確定するのがコツ。",
+  "distractors": "②be alone(独りでいる)／④be pleased(喜ぶ)／⑤be restless(落ち着かない)は“活発に動く”とは別方向。③be hungry(空腹)は無関係。",
+  "point": "on the move=『動き回っている』。前後の具体例(skating等)で語義を裏取り。"
+ },
+ "Q23": {
+  "quote": "Leaving the airport, she thought, felt like leaving her old life behind forever",
+  "quote_ja": "空港を後にすることは、古い暮らしを永遠に置き去りにするように感じられた、と彼女は思った。",
+  "reason": "共通語を選ぶ問題は“両方の空所に同じ語を入れて、どちらも自然か”を試すのが最短ルート。『空港を( )ことは、古い暮らしを背後に( )ように感じた』——どちらも『後にする・去る』でぴたりはまるのが④leaving だ。決め手は 23-イ の behind。leave A behind で『A を置き去りにする』という定番の形になり、leaving 以外は入らない。共通語問題は手掛かりの多い側から攻めると速い。",
+  "distractors": "①approaching(近づく)／③landing(着陸する)は『後にする』の逆または場違い。②entering(入る)／⑤starting(始める)は behind と結びつかず『置き去りにする』が作れない。",
+  "point": "共通語は“両方に入れて試す”。behind とくれば leave A behind=置き去りにする。"
+ },
+ "Q24": {
+  "quote": "Nadia pushed her way to the front of the crowd, but her name was not there. Nor was it on the next list, or the one after that.",
+  "quote_ja": "ナディアは人混みをかき分けて前に出たが、彼女の名前はそこになかった。次の名簿にも、そのまた次にもなかった。",
+  "reason": "内容一致(不一致)問題は、選択肢を本文の“該当一文”と突き合わせるのが鉄則。名簿の場面は her name was not there(名前はそこになかった)、さらに Nor was it on the next list(次にもなかった)と続く。したがって⑤『最初に張り出された名簿に名前が載っていた』は本文と真逆で、これが“合致しないもの”=正解になる。実際に名前が見つかるのはずっと後、gray morning の newest list でのことだ。①〜④はいずれも本文どおり。",
+  "distractors": "①数年間キャンプ暮らし=段落1と一致。②Joseph が読み方とバスケを教えた=段落9・10と一致。③複数回フライト=three flights と一致。④空港に新しい家族が迎えに来た=段落19と一致。よって不一致は⑤だけ。",
+  "point": "内容不一致は“本文の該当一文”と照合。not there／Nor が⑤を撃墜する。"
+ },
+ "A": {
+  "quote": "Many people here had been injured on the long road, and almost every week Nadia heard of others who had been hurt or even killed in the fighting they had fled.",
+  "quote_ja": "ここにいる多くの人が長い道のりで負傷しており、ほとんど毎週のように、彼女が逃れてきた戦闘で傷つけられ、あるいは殺されさえした人たちのことをナディアは耳にした。",
+  "reason": "長文の鉄則は“同じ内容を、少し先で別の語に言い換える”。だから抜き出し問題は近くの言い換え語(パラフレーズ)を狙い撃ちにするのがコツだ。injured は『負傷した』で、少し後ろの had been hurt の hurt がまさにその言い換えになっている。しかも injured も hurt も had been に続く過去分詞で、形までピタリそろっているのが決め手だ。抜き出しでは意味だけでなく形(品詞・語形)もそろえる、と覚えておこう。答えは hurt。",
+  "distractors": "同じ文の killed は『殺された』で程度が強すぎ、injured=負傷の言い換えにはならない。fled や fighting は別の意味・品詞で無関係。抜き出しは『意味が近い＋形がそろう』の二条件で絞る。",
+  "point": "抜き出し=近くの“言い換え語(パラフレーズ)”を探せ。意味だけでなく形(過去分詞など)もそろえる。"
+ },
+ "B": {
+  "quote": "Come — it is good to take a break from work.",
+  "quote_ja": "おいで——仕事(=今やっていること)から少し休憩を取るのはいいことだよ。",
+  "reason": "work や thing のような“ざっくり語”が出たら、必ず直前の具体的な場面に戻して中身を埋めるのが読解の基本動作だ。ここまでの場面で Joseph は毎晩ナディアたちと棒で砂に文字を書き、英語の読み方を教えていた。つまりここでの work(作業)とは、その“英語の読み書きの練習”を指す。休憩(take a break)を勧めているのは、その勉強の手を少し止めよう、という流れだ。だから答えは『英語の読み書き』(7字、条件の7〜12字に収まる)。",
+  "distractors": "直後に登場するバスケットボールは“休憩・気分転換”の側であって work(取り組んでいた作業)ではないので誤り。『勉強』だけだと漠然としすぎ、本文が示す“英語の文字の読み書き”という中身が消える。字数条件(7以上12以内・句読点なし)も必ず数え直すこと。",
+  "point": "work・thing などの漠然語は、直前の具体場面に戻して中身を特定する。"
+ },
+ "C": {
+  "quote": "I'm thinking you'll be good at this — you are tall for your age.",
+  "quote_ja": "きっと君はこれが得意になると思うよ——年のわりに背が高いからね。",
+  "reason": "this(これ)のような指示語は直前の動作・話題を指す、が原則だ。この直前で Joseph は、フープ(hoop)の前でナディアにボールを放って渡している——つまり this=『バスケットボールをすること』だ。ここで大事な文法が be good at の使い方で、at は“一点に接触”のコアから『〜が得意』を表し、後ろには必ず動名詞(-ing)か名詞が来る。だから『バスケをすること』は playing basketball となり、空所は You will be good at (playing) (basketball) で完成する。",
+  "distractors": "at の後ろに動詞の原形 play をそのまま置くのは誤り(前置詞の後ろは -ing)。this を『読むこと』と取るのも場面違い——ここはフープとボールを前にしたバスケの場面だ。",
+  "point": "be good at の後ろは動名詞(-ing)。指示語 this は直前の動作を指す。"
+ },
+ "D": {
+  "quote": "she felt she was being torn in two by the hoping and the not-hoping",
+  "quote_ja": "彼女は、期待する気持ちと期待するまいとする気持ちとで、二つに引き裂かれるように感じた。",
+  "reason": "torn は見た目で turn(回す)と混同しやすいが、正体は tear『引き裂く』の過去分詞だ。この動詞は tear - tore - torn と変化する不規則動詞で、活用の“起点”に戻したものが原形になる。ここは be torn in two で『二つに引き裂かれる』、名簿を見る前の“期待と不安に心が裂かれる”気持ちを表す。原形を問われたら、過去分詞から不規則変化をたどって出発点の tear に戻せばよい。答えは tear。",
+  "distractors": "つづりの似た turn(回転)とは別語なので注意。過去形 tore や過去分詞 torn をそのまま書くのは『原形』の指定に反する。読む tear(涙)と同じつづりだが、ここは動詞『引き裂く』の tear。",
+  "point": "torn の原形は tear(引き裂く)。tear - tore - torn の不規則変化を丸ごと押さえる。"
+ },
+ "E": {
+  "quote": "What if they have changed their minds?",
+  "quote_ja": "もし彼ら(=新しい受け入れ家族)の気が変わってしまっていたら、どうしよう。",
+  "reason": "代名詞 they は直前(近く)に出た複数の名詞に戻して正体を確定するのが鉄則だ。この段落でナディアが空港でずっと案じているのは、ゲートの向こうで自分を待つはずの new family(新しい受け入れ家族)のこと。change one's mind は『気が変わる、考えを変える』という定番熟語で、have changed と現在完了で“もう変わってしまっていたら”という完了の含みになる。だから they=新しい家族と明示して、『(新しい受け入れ家族が)気持ちを変えてしまっていたら(どうしよう)』と訳す。What if …? は『もし〜だったらどうしよう』という不安の表現だ。",
+  "distractors": "they を『子どもたち』や『他の乗客』と取るのは文脈違い——不安の対象は迎えに来るはずの家族。change their minds を『心を変える』と硬く直訳するより『気が変わる』が自然。they の正体を明示せよ、という指定を落とさないこと。",
+  "point": "代名詞は直近の複数名詞に戻す。change one's mind=気が変わる。設問が『they を明らかに』と言えば必ず名詞で埋める。"
+ },
+ "F": {
+  "quote": "Never had she felt anything so cold.",
+  "quote_ja": "あれほど冷たいものを、彼女はそれまで一度も感じたことがなかった。",
+  "reason": "文頭に否定の副詞(never, not, little など)が出たら、後ろは疑問文と同じ語順にひっくり返る——これが倒置の一発ルールだ。ここは Never had she felt … と、本来 she had felt の had と she が入れ替わっているのがサイン。内容は『あんなに冷たいものは(それまで)一度も経験したことがなかった』という過去完了の“経験”なので、空欄には had が入る。倒置を戻せば She had never felt anything so cold. と普通の語順になり、意味がすっきり見える。",
+  "distractors": "時制は過去の話なので has は不可(現在完了になる)。did を入れると後ろは動詞の原形 feel でなければならず、felt(過去分詞)と合わないので不可。空欄に入るのは過去完了を作る had で確定。",
+  "point": "文頭の否定副詞→倒置(疑問文の語順)。felt(過去分詞)が続く経験の否定は had。"
+ }
+}

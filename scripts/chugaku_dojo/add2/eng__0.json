@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy sister ( ) a cat, but I don't.",
+  "passage": "",
+  "choices": [
+   "have",
+   "has",
+   "is",
+   "are"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「has」。 主語 My sister は三人称単数なので、一般動詞 have は has になる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\n( ) they teachers? — No, they aren't.",
+  "passage": "",
+  "choices": [
+   "Is",
+   "Am",
+   "Are",
+   "Do"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「Are」。 主語 they の be動詞は are。答えの aren't とも一致する。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe ( ) not students. We are teachers.",
+  "passage": "",
+  "choices": [
+   "do",
+   "are",
+   "is",
+   "am"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「are」。 主語 We の be動詞は are。後ろに名詞 students が続く否定文。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nHe ( ) his homework before dinner every day.",
+  "passage": "",
+  "choices": [
+   "do",
+   "does",
+   "is",
+   "are"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「does」。 主語 He は三人称単数で「宿題をする」は do。三単現なので does になる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: ( ) your sister go to school by bus?\nB: No, she doesn't.",
+  "passage": "",
+  "choices": [
+   "Do",
+   "Does",
+   "Is",
+   "Are"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「Does」。 一般動詞 go の疑問文で主語が三人称単数 your sister なので Does。答えの doesn't とも一致する。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI ( ) tired now. I want to sleep.",
+  "passage": "",
+  "choices": [
+   "do",
+   "am",
+   "is",
+   "are"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「am」。 主語 I の be動詞は am。tired は形容詞なので be動詞が入る。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy parents ( ) in the kitchen now.",
+  "passage": "",
+  "choices": [
+   "is",
+   "am",
+   "are",
+   "does"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「are」。 My parents は複数の主語なので be動詞は are。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy mother ( ) get up early on Sundays.",
+  "passage": "",
+  "choices": [
+   "don't",
+   "doesn't",
+   "isn't",
+   "aren't"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「doesn't」。 一般動詞 get up の否定文で主語が三人称単数 My mother なので doesn't。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nKen and Yumi ( ) to the same school.",
+  "passage": "",
+  "choices": [
+   "go",
+   "goes",
+   "is",
+   "does"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】be動詞・一般動詞。正解は「go」。 主語 Ken and Yumi は複数なので、一般動詞は s をつけず go のまま。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Where ( ) your bag?\nB: It's on the chair.",
+  "passage": "",
+  "choices": [
+   "do",
+   "does",
+   "is",
+   "are"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「is」。 主語 your bag は単数で、答えが It's なので be動詞 is が入る。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThis ( ) my new bike. It's very nice.",
+  "passage": "",
+  "choices": [
+   "do",
+   "am",
+   "are",
+   "is"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】be動詞・一般動詞。正解は「is」。 主語 This は単数なので be動詞は is。後ろに名詞 my new bike が続く。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe usually ( ) breakfast at seven.",
+  "passage": "",
+  "choices": [
+   "have",
+   "has",
+   "are",
+   "is"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】be動詞・一般動詞。正解は「have」。 主語 We は複数なので have はそのまま。「朝食をとる」は have。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Do you and your brother play tennis?\nB: Yes, we ( ).",
+  "passage": "",
+  "choices": [
+   "are",
+   "do",
+   "does",
+   "is"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「do」。 Do you...? の一般動詞の疑問文には do で答える。主語 we なので do。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThat girl ( ) very fast. She is on the track team.",
+  "passage": "",
+  "choices": [
+   "run",
+   "runs",
+   "is",
+   "are"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「runs」。 主語 That girl は三人称単数なので一般動詞 run に s をつけて runs。"
+ }
+]

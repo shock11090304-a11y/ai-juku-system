@@ -1,0 +1,102 @@
+{
+ "no": 1,
+ "genre": "第2問 相当　図書館の案内サイト",
+ "title": "Maplewood Town Library: We Are Open Again!",
+ "theme_ja": "図書館リニューアル案内",
+ "passage": "Maplewood Town Library: We Are Open Again!\n\nAfter eight months of building work, Maplewood Town Library will open its doors again on Monday, April 6. The library now has a bright reading room on the second floor and a quiet study area for students on the third floor. We want everyone in town to know what has changed. Please read the notes below before your next visit.\n\nNew Opening Hours\nMonday to Friday: 9:00 a.m. to 8:00 p.m.\nSaturday and Sunday: 10:00 a.m. to 5:00 p.m.\nClosed on the first Wednesday of every month.\n\nThe library used to close at 6:00 p.m. on weekdays. In our view, this later closing time is the most helpful change for people who work or study during the day.\n\nBorrowing Rules\nYou may now borrow ten items at a time instead of five.\nBooks can be kept for three weeks, and DVDs and magazines for one week.\nYou can renew an item once on our website, but only if no one else is waiting for it.\nThere is no fee for a late return, but your card will be locked until every item is brought back.\n\nFor Students\nStudents aged 13 to 18 can get a Study Pass at the front desk. With this pass you can book a desk in the third-floor study area for up to four hours a day. Every Saturday afternoon, student volunteers from a local university answer questions about homework in Room 2. No booking is needed for these sessions, so please just come to the room.",
+ "word_count": 254,
+ "glossary": [
+  {
+   "word": "renew",
+   "ja": "(貸出を)延長する・更新する"
+  },
+  {
+   "word": "item",
+   "ja": "品物、(貸出の)1点"
+  },
+  {
+   "word": "Study Pass",
+   "ja": "スタディパス(この図書館が学生に発行する架空の利用証)"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "type": "purpose",
+   "q": "What is the main purpose of this website?",
+   "options": [
+    "To ask local people to help pay for the library's building work.",
+    "To explain to local people how the library's services and hours are different now.",
+    "To invite local people to a special event on the opening day.",
+    "To ask local people for their opinions about the new library building."
+   ],
+   "answer": 2,
+   "evidence": "We want everyone in town to know what has changed. Please read the notes below before your next visit.",
+   "explanation_ja": "第1段落の最後の文「初めて来館する前に、変わった点を町のみなさんに知っておいてほしい」がサイト全体の目的を示しており、以降で開館時間・貸出のきまり・学生向けサービスの変更点が並ぶ。よって②が正解。",
+   "distractor_ja": "①寄付や費用負担の話は本文に一切ない。③開館日の特別イベントの案内はなく、開館日は日付が示されるだけ。④意見を集める(アンケート)という記述もない。"
+  },
+  {
+   "n": 2,
+   "type": "detail",
+   "q": "According to the website, what happens when a user returns an item late?",
+   "options": [
+    "The user has to pay a small amount of money for each late day.",
+    "The user must give the library card back to the staff at the desk.",
+    "The user is not allowed to borrow any other items from the library for three weeks.",
+    "The user cannot use the library card until all the items have been returned."
+   ],
+   "answer": 4,
+   "evidence": "There is no fee for a late return, but your card will be locked until every item is brought back.",
+   "explanation_ja": "Borrowing Rules の最後の文に「返却が遅れても料金はかからないが、すべての品が返却されるまでカードは使えなくなる」とある。locked を「使えない」と言い換えた④が正解。",
+   "distractor_ja": "①本文は「料金はかからない」と述べており逆。②カードを職員に返すとは書かれていない(使えなくなるだけ)。③「3週間」は本の貸出期間の数字を延滞の罰則にすり替えたもの。"
+  },
+  {
+   "n": 3,
+   "type": "detail",
+   "q": "According to the website, which is true about the Saturday sessions in Room 2?",
+   "options": [
+    "Students can join them without booking a place in advance.",
+    "Students have to show their Study Pass at the door before they enter.",
+    "Students need to send their homework questions to the library in advance.",
+    "Students may stay in the room for four hours."
+   ],
+   "answer": 1,
+   "evidence": "No booking is needed for these sessions, so please just come to the room.",
+   "explanation_ja": "For Students の最終文に「この時間は予約は不要で、そのまま教室に来てよい」とある。No booking is needed を without booking と言い換えた①が正解。",
+   "distractor_ja": "②スタディパスの提示が必要とは書かれていない(パスは3階自習席の予約用)。③事前に質問を送るという記述はない。④「1日4時間」は3階自習エリアの席予約の条件であり、2番教室の話ではない。"
+  },
+  {
+   "n": 4,
+   "type": "inference",
+   "q": "Mika has borrowed a book, and another user is now waiting for the same book. According to the borrowing rules, what is true about Mika?",
+   "options": [
+    "She must return the book by the end of the three-week period.",
+    "She can still renew the book once online, because every item may be renewed once.",
+    "She may keep the book for only one week, in the same way as DVDs and magazines.",
+    "She will have to pay a late fee if she keeps the book after the deadline."
+   ],
+   "answer": 1,
+   "evidence": "Books can be kept for three weeks, and DVDs and magazines for one week. / You can renew an item once on our website, but only if no one else is waiting for it.",
+   "explanation_ja": "「本は3週間借りられる」と「延長できるのは他に待っている人がいない場合だけ」の2文を組み合わせる。待っている利用者がいるので延長はできず、本来の3週間の期限までに返さなければならない。よって①。",
+   "distractor_ja": "②延長の規定には but only if no one else is waiting for it という条件がついており、待っている人がいる今回は1回の延長も使えない。③1週間は DVD と雑誌の期間で、本は three weeks と明記されている。④There is no fee for a late return とあるので延滞料金は発生しない(発生するのはカードのロック)。"
+  },
+  {
+   "n": 5,
+   "type": "fact_opinion",
+   "q": "Which option best describes the library's opinion stated on the website?",
+   "options": [
+    "The library will open its doors again on Monday, April 6.",
+    "Users can now borrow ten items at a time instead of only five.",
+    "The new, later closing time on weekdays is the most helpful change.",
+    "The Saturday sessions in Room 2 are the most useful service for the town's students."
+   ],
+   "answer": 3,
+   "evidence": "In our view, this later closing time is the most helpful change for people who work or study during the day.",
+   "explanation_ja": "③は In our view(私たちの考えでは)と the most helpful(最も役に立つ)という評価語を伴って、本文中に実際に述べられている書き手の意見。設問は「このサイトで述べられている意見」なので、本文にある意見でなければならない。",
+   "distractor_ja": "①4月6日(月)の再開館、②1度に10点まで借りられることは、どちらも本文に書かれた事実(fact)。④は the most useful という評価語を含むので意見の形をしているが、土曜の講座が「最も役に立つ」とは本文のどこにも書かれていない=サイトで述べられた意見ではない。本文が土曜の講座について述べているのは、時間・場所・予約不要という事実だけ。"
+  }
+ ],
+ "translation_ja": "メープルウッド町立図書館:再びオープンします!\n\n8か月の工事を経て、メープルウッド町立図書館は4月6日(月)に再び開館します。2階には明るい閲覧室が、3階には学生向けの静かな自習エリアができました。初めてご来館いただく前に、町のみなさんに変更点を知っておいていただきたいと思います。\n\n新しい開館時間\n月曜日〜金曜日:午前9時〜午後8時\n土曜日・日曜日:午前10時〜午後5時\n毎月第1水曜日は休館します。\n\n以前、当館は平日は午後6時に閉館していました。私たちの考えでは、この閉館時刻が遅くなったことは、日中に働いたり勉強したりしている方々にとって最も役に立つ変更です。\n\n貸出のきまり\n一度に借りられるのは、これまでの5点ではなく10点になりました。\n本は3週間、DVDと雑誌は1週間お借りいただけます。\n当館のウェブサイトで1回だけ貸出延長ができますが、他に待っている方がいない場合に限ります。\n返却が遅れても料金はかかりませんが、すべての品が返却されるまで利用カードは使えなくなります。\n\n学生のみなさんへ\n13歳から18歳の学生は、受付でスタディパスを受け取れます。このパスがあれば、3階の自習エリアの席を1日4時間まで予約できます。毎週土曜日の午後には、大学生のボランティアが2番教室で宿題の質問に答えます。この時間は予約は必要ありませんので、そのまま教室にお越しください。",
+ "long_theme_ja": "町立図書館のリニューアル開館案内(開館時間・貸出ルールの変更と学生向け新サービス)",
+ "lead": "You are looking at the website of Maplewood Town Library, which is in the town where you live."
+}

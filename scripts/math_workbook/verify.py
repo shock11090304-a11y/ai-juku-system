@@ -56,15 +56,34 @@ def run(modname):
             print("  ?", m)
     return fail, len(dups)
 
+ALIAS = {"ia2": "content_ia_v2", "iib2": "content_iib_v2",
+         "ia": "content_ia", "iib": "content_iib"}
 if __name__ == "__main__":
     which = sys.argv[1] if len(sys.argv) > 1 else None
-    mods = [f"content_{which}"] if which else ["content_ia", "content_iib"]
+    if which:
+        mods = [ALIAS.get(which, f"content_{which}")]
+    else:
+        # ★引数なしのときは **刷る本を全部** 検査する。以前は ia/iib だけで、
+        #   build_html.py が実際に刷る content_ia_v2 / content_iib_v2 が対象外だった
+        #   （run_all_gates.py は引数を渡さないので、CI の緑が旧版しか見ていなかった）。
+        #   kiso / kiso2 も UNITS + chk() の同じ規約なのでここで見る
+        #   （av 方式の kisoA/I/II/III は verify_kisoA.py の担当。どちらにも属さない本を作らない）。
+        mods = ["content_ia", "content_iib", "content_ia_v2", "content_iib_v2",
+                "content_kiso", "content_kiso2"]
     total_fail = total_dup = 0
+    checked = 0
     for m in mods:
         try:
             f, d = run(m)
             total_fail += f; total_dup += d
+            checked += 1
         except ModuleNotFoundError:
-            print(f"(skip {m}: not found)")
-    print(f"\n==== TOTAL FAIL={total_fail}  DUP={total_dup} ====")
+            # ★以前はここで黙って skip して exit 0 だった。モジュールを改名しただけで
+            #   「1問も検証していないのに ALL PASS」になる（＝検査したつもり）。違反として数える。
+            total_fail += 1
+            print(f"  × {m} が見つからない（改名したなら verify.py の mods を直すこと）")
+    print(f"\n==== TOTAL FAIL={total_fail}  DUP={total_dup}  検査した本={checked}/{len(mods)} ====")
+    if checked == 0:
+        print("  × 1冊も検査できていない")
+        sys.exit(1)
     sys.exit(1 if (total_fail or total_dup) else 0)

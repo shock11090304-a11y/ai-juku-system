@@ -1,0 +1,72 @@
+{
+  "part": 4,
+  "format_note": "英検2級ライティングは2024年リニューアル後『要約問題(Summary)＋意見論述(Essay)』の2題構成。Eメール問題は準2級専用のため2級では出題されない。",
+  "summary_tasks": [
+    {
+      "id": "s1",
+      "source_title": "The Rise of Online Learning",
+      "source_text": "In recent years, online learning has become very popular among students. Many schools and companies now offer classes through the internet, and people can study almost anything from home.\n\nOne of the biggest benefits of online learning is convenience. Students do not have to travel to a school building, so they can save both time and money. They can also study at any time that fits their schedule.\n\nHowever, online learning also has some problems. Because students study alone, some of them find it hard to stay motivated. Without a teacher watching them, they may stop studying or fall behind. In addition, students have fewer chances to talk with classmates and make friends. For these reasons, some people believe that traditional classrooms are still important, and that a mix of both styles may be the best choice for many learners today.",
+      "model_summary": "Online learning is now popular because it is convenient: students can study from home at any time and save money. However, studying alone makes it difficult for some people to stay motivated. They also have fewer opportunities to meet classmates. Therefore, combining online and traditional classes may work best.",
+      "summary_word_count": 49,
+      "key_points": [
+        "オンライン学習は便利(自宅から好きな時間に学べて時間とお金を節約できる)",
+        "一人で学ぶためやる気を保ちにくいという問題がある",
+        "クラスメートと交流する機会が減る"
+      ],
+      "teaching_notes": "要約は『段落ごとの主張を1つずつ拾って言い換える』のがコツ。第1段落=導入/第2段落=利点(便利さ)/第3段落=欠点(やる気・交流)という3ブロックの要点を、原文の語句をそのままコピーせず自分の言葉に置き換える。原文にない自分の意見(I think 〜 / In my opinion)や新情報は絶対に加えない。例や数字などの細部は省き、抽象度を1段上げてまとめる。接続語(However, Therefore)で利点→欠点→結論の流れを示すと読みやすい。語数は45〜55語を守り、書き終えたら必ず1語ずつ数え直す。"
+    },
+    {
+      "id": "s2",
+      "source_title": "The Problem of Food Loss",
+      "source_text": "Every year, a huge amount of food is thrown away around the world. This is called food loss, and it has become a serious problem in many countries, including Japan.\n\nThere are several reasons why food is wasted. In stores and restaurants, food that is not sold by a certain date is often thrown away, even if it is still safe to eat. At home, families sometimes buy too much and cannot finish everything before it goes bad.\n\nFood loss causes many problems. First, it wastes the water, energy, and money that were used to grow and deliver the food. Second, when wasted food is burned or buried, it produces gases that are bad for the environment. To reduce food loss, some supermarkets now sell older items at lower prices, and many people are learning to plan their meals and buy only what they really need.",
+      "model_summary": "A large amount of food is wasted worldwide because shops throw away unsold items and families buy more than they can eat. This wastes valuable resources and creates gases that harm the environment. To solve this, some shops lower prices, and people plan their shopping more carefully.",
+      "summary_word_count": 47,
+      "key_points": [
+        "食品ロスの原因(店は売れ残りを捨て、家庭は買いすぎて食べきれない)",
+        "水・エネルギー・お金などの資源を無駄にし、環境に悪いガスを出す",
+        "対策(古い商品を安く売る・計画的に必要な分だけ買う)"
+      ],
+      "teaching_notes": "説明文の要約では『原因→影響→対策』のように文章全体の論理構造を見抜き、各段落から中心情報を1つずつ抜き出す。列挙されている細かい例(water, energy, money など)は『valuable resources』のように上位語でまとめると語数を節約できる。原文の一文をそのまま書き写すと剽窃扱いで減点されるので、名詞や動詞を必ず言い換える(be thrown away→be wasted、buy too much→buy more than they can eat 等)。序論の背景説明は入れなくてもよいが、3つの要点は必ず全て入れる。45〜55語を守る。"
+    }
+  ],
+  "essay_tasks": [
+    {
+      "id": "e1",
+      "topic": "Do you think people should use public transportation more often?",
+      "points": [
+        "The environment",
+        "Cost",
+        "Convenience"
+      ],
+      "model_essay": "I think people should use public transportation more often. I have two reasons to support this opinion. First, using buses and trains is good for the environment. If more people ride them instead of driving their own cars, the amount of harmful gas in the air will decrease. Second, public transportation saves money. People do not have to pay for gasoline or parking fees every day, so they can reduce their living costs. For these reasons, I believe that using public transportation more often is a good idea.",
+      "essay_word_count": 88,
+      "structure_note": "第1文で自分の立場をはっきり述べる(I think people should 〜)。第2文で『理由が2つある』と予告(I have two reasons)。First で理由1(環境=有害なガスが減る)を1〜2文で具体化し、Second で理由2(お金=ガソリン代・駐車場代を節約)を具体化する。提示されたPOINTS3つのうち2つを選んで理由にすれば十分(ここでは The environment と Cost を使用)。最後に For these reasons 〜 で第1文の意見を言い換えて再確認する。2級の意見論述は80〜100語・4文以上が目安。",
+      "useful_expressions": [
+        "I think that ... / In my opinion, ...",
+        "I have two reasons to support this opinion.",
+        "First, ... Second, ...",
+        "If more people ..., ... will ... / This is because ...",
+        "For these reasons, I believe that ..."
+      ]
+    },
+    {
+      "id": "e2",
+      "topic": "Do you think high school students should be allowed to use smartphones in class?",
+      "points": [
+        "Studying",
+        "Communication",
+        "Concentration"
+      ],
+      "model_essay": "In my opinion, high school students should be allowed to use smartphones in class. I have two reasons for this opinion. First, smartphones are very helpful for studying. Students can quickly search for information on the internet and look up words they do not know, which makes their lessons more efficient. Second, smartphones improve communication. Teachers can easily share class materials and important messages with students through useful apps. For these reasons, I believe that using smartphones in class can support students' learning and make school life more convenient.",
+      "essay_word_count": 89,
+      "structure_note": "第1文で立場表明(In my opinion, students should be allowed to 〜)。第2文で理由2つを予告。First で理由1(勉強=情報検索・単語を調べられて効率的)、Second で理由2(連絡=先生が資料やメッセージを共有できる)を各1〜2文で具体化する。POINTS3つ(Studying/Communication/Concentration)のうち Studying と Communication を選択。最後に For these reasons 〜 で意見を言い換えて締める。理由には必ず具体例や『どうなるか』の説明を1つ添えると説得力が上がり加点されやすい。80〜100語(理想90〜100語)。",
+      "useful_expressions": [
+        "In my opinion, ... should be allowed to ...",
+        "I have two reasons for this opinion.",
+        "First, ... which makes ... more efficient.",
+        "Second, ... can easily ...",
+        "For these reasons, I believe that ..."
+      ]
+    }
+  ]
+}

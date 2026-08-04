@@ -1,0 +1,118 @@
+{
+ "no": 4,
+ "genre": "第6問 相当　物語＋発表スライド",
+ "title": "The Woman Who Listened to the Hills",
+ "theme_ja": "霧から水を集める技術者",
+ "passage": "Nadia Farid grew up in Hasari, a small village on a dry hillside. Every morning she and her sister walked two hours down to a river and carried heavy cans of water back home. At dawn, thick white fog often covered the hills, and Nadia wondered why so much water hung in the air while her village had almost none.\n\nAfter finishing school, she studied engineering in the city and planned to stay there. During a visit home, however, she saw that the river had become much narrower than before. That evening she decided to move back to Hasari.\n\nHer first plan was a deep well. She and several neighbors dug for three months, but they found only dry stones. Next she built a large tank for rainwater, yet rain fell in Hasari during only a few weeks each year, and the tank stayed empty. Some people began to laugh at her.\n\nThen Nadia remembered the fog. She stretched a piece of fine net between two poles on the hill above the village. Tiny drops of water stuck to the net, joined together, and ran down into a pipe. The first net produced only a cupful a day. For two years she compared nets with holes of different sizes, until one design collected almost two hundred liters every morning.\n\nToday thirty nets stand above Hasari, and children who once carried cans sit in classrooms instead. \"I did not invent anything new,\" Nadia says. \"I only listened to the hills.\"",
+ "word_count": 249,
+ "glossary": [
+  {
+   "word": "hillside",
+   "ja": "丘の斜面"
+  },
+  {
+   "word": "fog",
+   "ja": "霧"
+  },
+  {
+   "word": "well",
+   "ja": "井戸"
+  },
+  {
+   "word": "net",
+   "ja": "網"
+  },
+  {
+   "word": "pole",
+   "ja": "支柱"
+  },
+  {
+   "word": "liter",
+   "ja": "リットル"
+  },
+  {
+   "word": "cupful",
+   "ja": "コップ1杯分"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "type": "order",
+   "q": "Put the following events into the order in which they happened.\nA: Nadia and her neighbors dug for three months without success.\nB: Nadia noticed that the river near her village had grown smaller.\nC: Nadia compared nets with holes of different sizes.\nD: Nadia built a container for rainwater that did not fill up.",
+   "options": [
+    "A → B → C → D",
+    "D → B → A → C",
+    "A → D → C → B",
+    "B → A → D → C"
+   ],
+   "answer": 4,
+   "evidence": "\"During a visit home, however, she saw that the river had become much narrower than before.\" / \"Her first plan was a deep well. She and several neighbors dug for three months...\" / \"Next she built a large tank for rainwater...\" / \"For two years she compared nets with holes of different sizes...\"",
+   "explanation_ja": "第2段落で川が細くなったのを見て帰郷を決意し(B)、第3段落で「Her first plan was a deep well」として井戸掘り(A)、続いて「Next she built a large tank for rainwater」で雨水タンク(D)、最後に第4段落で網の比較実験(C)。よって B → A → D → C。",
+   "distractor_ja": "①井戸掘り(A)を先頭に置いているが、井戸は帰郷を決めたあとの「first plan」であり、川を見た B より後。また C と D の順も逆で、網の比較(第4段落)はタンク(第3段落)より後。　②雨水タンク(D)を先頭に置いているが、タンクは井戸が失敗したあとの「Next」の試み。川を見て帰郷する B より前には来ない。　③A→D の順は正しいが、B を最後に置いている点が誤り。川が細くなったのを見たのは帰郷を決めた第2段落の出来事で、すべての試みより前。"
+  },
+  {
+   "n": 2,
+   "type": "detail",
+   "q": "According to the story, why did Nadia's rainwater tank fail to supply the village?",
+   "options": [
+    "Strong winds on the hill damaged it soon after it was built.",
+    "The village receives rain during only a short part of each year.",
+    "The ground under it was full of dry stones and hard rock.",
+    "Her neighbors stopped helping her before the tank was done."
+   ],
+   "answer": 2,
+   "evidence": "\"Next she built a large tank for rainwater, yet rain fell in Hasari during only a few weeks each year, and the tank stayed empty.\"",
+   "explanation_ja": "第3段落に「rain fell in Hasari during only a few weeks each year, and the tank stayed empty」とある。「1年のうち数週間しか雨が降らない」を「receives rain during only a short part of each year」と言い換えた②が正解。",
+   "distractor_ja": "①風で壊れたという記述は本文にない。　③「dry stones」は井戸掘りの結果であり、タンクの話とすり替えている。　④隣人が手伝ったのは井戸掘り。途中でやめたという記述はない。"
+  },
+  {
+   "n": 3,
+   "type": "inference",
+   "q": "Which of the following is most likely true about life in Hasari before Nadia's nets were built?",
+   "options": [
+    "Most of the water used in the village came from wells dug on the hillside.",
+    "Carrying water took up time that children could have used for study.",
+    "The river below the village had already dried up completely by then.",
+    "Most families had already left the village to look for more water."
+   ],
+   "answer": 2,
+   "evidence": "\"Every morning she and her sister walked two hours down to a river and carried heavy cans of water back home.\" / \"Today thirty nets stand above Hasari, and children who once carried cans sit in classrooms instead.\"",
+   "explanation_ja": "第1段落の「毎朝2時間かけて水を運んだ」と最終段落の「かつて缶を運んでいた子どもたちが今は教室に座っている」を結び合わせると、以前は水汲みが子どもの学習時間を奪っていたと論理的に導ける。②が正解。",
+   "distractor_ja": "①村の水は毎朝2時間かけて川から運んでいた。井戸は掘っても「only dry stones」しか出ておらず、水源になっていない。　③川は「much narrower」になったとあるだけで、完全に干上がったとは書かれていない(言い過ぎ)。　④村人が出て行ったという記述はない。人々は村に残って彼女を笑っている。"
+  },
+  {
+   "n": 4,
+   "type": "detail",
+   "q": "Which of the following is true about Nadia's nets?",
+   "options": [
+    "The nets collected far more water once their design was improved.",
+    "Fewer than ten of them are still standing on the hill above the village.",
+    "The first of them was set up beside the river.",
+    "They gather the most water late in the evening, when the air becomes cool."
+   ],
+   "answer": 1,
+   "evidence": "\"The first net produced only a cupful a day. For two years she compared nets with holes of different sizes, until one design collected almost two hundred liters every morning.\"",
+   "explanation_ja": "第4段落で、最初の網は1日にコップ1杯分だったが、穴の大きさを変えて比較した末に、ある設計が毎朝約200リットルを集めるようになったとある。「a cupful → almost two hundred liters」という増加を言い換えた①が正解。",
+   "distractor_ja": "②最終段落に「Today thirty nets stand above Hasari」とあり、現在は30枚。数が本文と矛盾する。　③網は「on the hill above the village」に張られており、川のそばではない(本文と逆)。　④本文は毎朝(every morning)集まるとしており、夕方が最良だとは書かれていない。"
+  },
+  {
+   "n": 5,
+   "type": "slide",
+   "q": "Your group is preparing a presentation slide about Nadia Farid. Choose the best option to complete the slide.\n\n-----------------------------------------\n Nadia Farid: Learning from Failure\n * Walked to the river every morning as a girl\n * Studied engineering in the city, then came home\n * Two early plans brought the village no water\n * Finally succeeded by ______________\n-----------------------------------------",
+   "options": [
+    "spreading nets over the rainwater tank so that less of the rain was lost",
+    "using nets to take water out of the narrow river much more quickly",
+    "turning what was already in the air around the village into water people can use",
+    "cooling the air above the village at night so that new fog would form"
+   ],
+   "answer": 3,
+   "evidence": "\"Then Nadia remembered the fog. She stretched a piece of fine net between two poles on the hill above the village. Tiny drops of water stuck to the net, joined together, and ran down into a pipe.\"",
+   "explanation_ja": "成功の決め手は、もともと丘を覆っていた霧(=すでに空気中にあった水)を網でつかまえ、使える水に変えたこと。第1段落の「so much water hung in the air」とも呼応する③が正解。",
+   "distractor_ja": "①網を張ったのは「on the hill above the village」であり、雨水タンクの上ではない。そもそもタンクは雨が降らないために空のままだった(失敗した計画)。　②網が水を集めた相手は川ではなく霧。川は「much narrower」になったとあるだけで、そこから網で水をとったという記述はない。　④彼女がしたのは、すでに毎朝丘を覆っていた霧をつかまえることであって、空気を冷やして新しく霧を作り出したのではない。"
+  }
+ ],
+ "translation_ja": "ナディア・ファリドは、乾いた丘の斜面にある小さな村ハサリで育った。毎朝、彼女と妹は2時間かけて川まで下り、水を入れた重い缶を家まで運んだ。夜明けには濃く白い霧がしばしば丘を覆い、ナディアは、村にはほとんど水がないのに、どうしてこれほど多くの水が空気中に漂っているのだろうと不思議に思った。\n\n学校を終えると、彼女は都市で工学を学び、そのまま都市に留まるつもりだった。しかし帰省した折に、川が以前よりずっと細くなっているのを目にした。その晩、彼女はハサリに戻ることを決意した。\n\n最初の計画は深い井戸だった。彼女は数人の隣人と3か月間掘り続けたが、見つかったのは乾いた石だけだった。次に、雨水をためる大きなタンクを作ったが、ハサリで雨が降るのは年にわずか数週間だけで、タンクは空のままだった。人々の中には彼女を笑う者も出てきた。\n\nそのときナディアは霧を思い出した。彼女は村を見下ろす丘の上で、2本の支柱の間に目の細かい網を張った。小さな水滴が網に付き、互いにくっつき合って、管の中へと流れ落ちた。最初の網が生み出したのは1日にコップ1杯分だけだった。2年のあいだ、彼女は穴の大きさが異なる網を比べ続け、ついにある設計が毎朝およそ200リットルを集めるようになった。\n\n今日、ハサリの上には30枚の網が立ち、かつて缶を運んでいた子どもたちは、代わりに教室に座っている。「私は新しいものを何も発明していません」とナディアは言う。「ただ丘の声に耳を澄ませただけです」",
+ "long_theme_ja": "架空の女性技術者が失敗を重ねながら、霧から水を集める簡単な装置を作り上げ、村の水不足を解決するまでの話",
+ "lead": "In your English class, you are going to give a presentation about the following story."
+}

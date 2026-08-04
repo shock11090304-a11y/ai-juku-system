@@ -1,0 +1,76 @@
+{
+ "no": 7,
+ "title": "A Change of Plans Before the Homestay",
+ "passage": "From: Yuka Morita\nTo: Helen Baker\nDate: July 12\nSubject: A change to my plans\n\nDear Mrs. Baker,\n\nThank you for agreeing to host me this summer. I am writing because two things about my stay have changed, and I would like to tell you before I get on the plane.\n\nFirst, my flight. I was going to arrive on August 3, but my school suddenly moved our summer training camp to that week. I have already booked a new ticket, and I will land at Greenfield Airport on August 6 at 4:20 p.m.\n\nSecond, at a check-up last month the doctor told me that I must not eat eggs. Milk and wheat cause me no problems. I can cook simple meals for myself, so please do not change your family's usual dinners for me.\n\nYuka\n\nFrom: Helen Baker\nTo: Yuka Morita\nDate: July 13\nSubject: Re: A change to my plans\n\nDear Yuka,\n\nPlease don't worry about the new date. August 6 is easier for us, because our daughter Emma comes home from her music camp on the 5th and can drive to the airport with me.\n\nYour allergy is no trouble either. My husband gave up eggs three years ago, so most of our meals are already made without them. You will not have to prepare your own dinner.\n\nCould you send me a list of any other foods you would rather not eat? I want to finish planning your first week's meals before you land.\n\nHelen",
+ "glossary": [
+  {
+   "word": "host",
+   "ja": "(客・留学生を)家に受け入れる"
+  },
+  {
+   "word": "check-up",
+   "ja": "健康診断"
+  },
+  {
+   "word": "allergy",
+   "ja": "アレルギー"
+  },
+  {
+   "word": "wheat",
+   "ja": "小麦"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "q": "What is the main purpose of Yuka's email to Mrs. Baker?",
+   "options": [
+    "To report two changes to the plans for her summer stay.",
+    "To ask the family to meet her plane on August 3 and cook special meals for her.",
+    "To say that her exams will keep her from coming.",
+    "To ask the family to change their usual dinners because of her allergy."
+   ]
+  },
+  {
+   "n": 2,
+   "q": "According to Yuka, what caused her to change her original plan?",
+   "options": [
+    "Her doctor told her not to fly until she had a second check-up in August.",
+    "Her school suddenly moved a school event to the week she had planned to travel.",
+    "The airline cancelled the ticket she had already bought for August 3.",
+    "The flight she first chose was already full in early August."
+   ]
+  },
+  {
+   "n": 3,
+   "q": "According to Mrs. Baker's reply, which of the following is true about the meals in her family?",
+   "options": [
+    "Everyone in her family gave up eating eggs three years ago.",
+    "Most of their meals are already made without eggs.",
+    "Yuka will have to buy and cook her own dinners there.",
+    "Milk and wheat are never used in her kitchen either."
+   ]
+  },
+  {
+   "n": 4,
+   "q": "Based on the two emails, which of the following is most likely true about Emma?",
+   "options": [
+    "She had already met Yuka at a music camp last summer.",
+    "She will drive Yuka back to the airport again at the end of the summer holiday.",
+    "She asked her mother to change the date of Yuka's flight.",
+    "She would have been away from home on Yuka's original arrival date."
+   ]
+  },
+  {
+   "n": 5,
+   "q": "After reading Mrs. Baker's reply, what will Yuka most likely do next?",
+   "options": [
+    "Book another ticket so that she can arrive on August 5 instead.",
+    "Ask a doctor to write a letter about her egg allergy in English.",
+    "Tell Mrs. Baker which other foods she would rather not eat at their house.",
+    "Look for a supermarket near the Bakers' house in Greenfield."
+   ]
+  }
+ ],
+ "lead": "You are going to stay with a host family this summer. These are the emails you exchanged with your host mother."
+}

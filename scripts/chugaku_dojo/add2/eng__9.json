@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nI have a friend ( ) lives in New York.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "whose",
+   "what"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係代名詞。正解は「who」。 先行詞 a friend は人で、続く lives の主語がない。人が先行詞で主格のときは who を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThis is the train ( ) goes to Tokyo.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "whose",
+   "how"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「which」。 先行詞 the train は物で、続く goes の主語がない。物が先行詞で主格のときは which を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThe cake ( ) my mother made was very delicious.",
+  "passage": "",
+  "choices": [
+   "who",
+   "whose",
+   "which",
+   "where"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「which」。 先行詞 the cake は物で、made の目的語が抜けている。物が先行詞で目的格のときは which を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nI know a boy ( ) father is a famous singer.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "whose",
+   "that"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「whose」。 後ろの father is ... は「その男の子の父」という所有の関係。先行詞が人で「〜の」を表すときは whose を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の対話の( )に入る最も適切な語を選びなさい。\nA: Who is the woman ( ) is playing the piano?\nB: She is my aunt.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "whose",
+   "what"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係代名詞。正解は「who」。 先行詞 the woman は人で、is playing の主語がない。人が先行詞で主格のときは who を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThe camera ( ) I got for my birthday is very small.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "whose",
+   "when"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「which」。 先行詞 the camera は物で、got の目的語が抜けている。物が先行詞で目的格のときは which を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nA dictionary is a book ( ) tells us the meaning of words.",
+  "passage": "",
+  "choices": [
+   "who",
+   "whose",
+   "which",
+   "what"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「which」。 先行詞 a book は物で、tells の主語がない。物が先行詞で主格のときは which を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nI have an uncle ( ) works at a hospital.",
+  "passage": "",
+  "choices": [
+   "which",
+   "who",
+   "whose",
+   "where"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「who」。 先行詞 an uncle は人で、works の主語がない。人が先行詞で主格のときは who を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nHe is a doctor ( ) everyone likes.",
+  "passage": "",
+  "choices": [
+   "which",
+   "who",
+   "whose",
+   "what"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「who」。 先行詞 a doctor は人で、likes の目的語が抜けている。人が先行詞のときは who が使える。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThe girl ( ) eyes are blue is from America.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "whose",
+   "who's"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「whose」。 後ろの eyes は「その女の子の目」という所有の関係。先行詞が人で「〜の」を表すときは whose を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の対話の( )に入る最も適切な語を選びなさい。\nA: Is this the key ( ) opens the door?\nB: Yes, it is.",
+  "passage": "",
+  "choices": [
+   "who",
+   "which",
+   "whose",
+   "when"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「which」。 先行詞 the key は物で、opens の主語がない。物が先行詞で主格のときは which を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThe song ( ) she sang made everyone happy.",
+  "passage": "",
+  "choices": [
+   "who",
+   "whose",
+   "which",
+   "how"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「which」。 先行詞 the song は物で、sang の目的語が抜けている。物が先行詞で目的格のときは which を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nA nurse is a person ( ) helps sick people.",
+  "passage": "",
+  "choices": [
+   "which",
+   "who",
+   "whose",
+   "what"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「who」。 先行詞 a person は人で、helps の主語がない。人が先行詞で主格のときは who を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nSoccer is the sport ( ) is loved by many people in the world.",
+  "passage": "",
+  "choices": [
+   "who",
+   "whose",
+   "which",
+   "what"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「which」。先行詞 the sport は物で、is loved の主語がない。物が先行詞で主格のときは which を使う。"
+ }
+]

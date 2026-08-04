@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "You look tired. You ( ) go to bed early tonight. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "should",
+   "are",
+   "were",
+   "do"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「should」。「~したほうがよい・~すべきだ」と助言や忠告を表すのは should。助動詞の後は動詞の原形 go が続く。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "( ) I take a picture here? — Sorry, you can't. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "May",
+   "Do",
+   "Am",
+   "Will"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「May」。「~してもよいですか」と許可を求めるていねいな言い方は May I ~?。答えの you can't（だめです）とも自然につながる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "( ) you help me carry this box? — Sure. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "Can",
+   "Are",
+   "Do",
+   "Is"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「Can」。「~してくれますか」と依頼するときは Can you ~?。答えの Sure.（いいですよ）とも合う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "It's very cold outside. You ( ) wear a coat. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "should",
+   "are",
+   "were",
+   "does"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「should」。「~したほうがよい」と助言を表すのは should。後ろは動詞の原形 wear。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "My grandmother is 80, but she ( ) read small letters without glasses. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "can",
+   "is",
+   "does",
+   "was"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「can」。「~できる」と能力を表すのは can。主語が she でも can は形が変わらず、後ろは原形 read。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "You ( ) not touch this machine. It's very dangerous. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "must",
+   "are",
+   "do",
+   "have"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「must」。must not ~ で「~してはいけない」という強い禁止を表す。危険だから触ってはいけない、という文脈に合う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "It ( ) be true. He is always honest. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "must",
+   "should",
+   "would",
+   "could"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「must」。must には「~にちがいない」という強い推量の意味がある。彼はいつも正直だから、それは本当にちがいない、という意味。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "( ) I ask you a question? — Of course. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "May",
+   "Am",
+   "Do",
+   "Was"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「May」。May I ~? は「~してもよいですか」とていねいに許可を求める表現。答えの Of course.（もちろん）とも合う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "You don't ( ) to bring your lunch. We will give you some. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "have",
+   "must",
+   "can",
+   "should"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「have」。don't have to ~ で「~する必要はない」という意味。give you some（あげる）と続くので、持ってくる必要はない、が正しい。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "( ) I open the door for you? — Yes, please. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "Shall",
+   "Do",
+   "Am",
+   "Will"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「Shall」。Shall I ~? は「（私が）~しましょうか」と申し出るときの表現。答えの Yes, please. とも自然につながる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "We ( ) not be late for school. Let's hurry. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "must",
+   "are",
+   "do",
+   "were"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「must」。must not ~ は「~してはいけない」。遅刻してはいけないから急ごう、という文脈に合う。後ろは原形 be。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "( ) we go home now? — No, let's stay a little longer. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "Shall",
+   "Do",
+   "Are",
+   "Will"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「Shall」。Shall we ~? は「（一緒に）~しましょうか」と相手を誘う言い方。Let's と同じような意味で使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "When my mother was young, she ( ) not use a computer. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "could",
+   "can",
+   "must",
+   "may"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「could」。was young と過去の話なので、「~できた」の過去形 could を使う。could not ~ で「~できなかった」。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "( ) I speak to Ms. Green? — Speaking. (空所に入る最も適切なものを選びなさい)",
+  "passage": "",
+  "choices": [
+   "May",
+   "Am",
+   "Do",
+   "Was"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「May」。電話で「~さんをお願いできますか」と話すときの May I speak to ~? という決まった言い方。答えの Speaking.（私です）とも合う。"
+ }
+]

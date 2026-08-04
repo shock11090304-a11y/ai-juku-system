@@ -1,0 +1,123 @@
+{
+ "no": 10,
+ "genre": "第8問 相当　賛否をめぐる意見文",
+ "title": "Should High School Students Wear Uniforms?",
+ "theme_ja": "高校の制服をめぐる意見",
+ "passage": "Should high school students have to wear uniforms? In my town this question returns every spring, and people never seem to agree.\n\nSupporters usually talk about money and fairness. Ms. Kato, a teacher at a public high school, says that when everyone wears the same clothes, no one is judged by the price of a jacket. Parents tell her that one set of school clothes costs less than a whole wardrobe of fashionable clothes. Another common argument is time: students in uniforms do not have to decide what to put on every morning. A survey by the Hillside Education Group found that 68 percent of parents supported uniforms, while only 31 percent of students did.\n\nPeople against uniforms answer that clothing is a form of expression. Ken Morita, a second-year student, says that choosing his own clothes helps him understand who he is. Some students add that uniforms are not always comfortable, because a heavy wool jacket in June is a real problem. Others argue that uniforms do not actually stop bullying, since students simply find other differences to laugh at.\n\nI have listened to both sides for many years, and I believe the answer is neither a clear yes nor a clear no. Uniforms solve some problems and create others. What troubles me is that the students themselves are rarely asked. Last year one school in our area let its student council redesign the uniform, and student satisfaction rose sharply. The real question, then, is not whether uniforms are good, but who is allowed to decide.",
+ "word_count": 255,
+ "glossary": [
+  {
+   "word": "fairness",
+   "ja": "公平さ"
+  },
+  {
+   "word": "expression",
+   "ja": "(自己)表現"
+  },
+  {
+   "word": "wool",
+   "ja": "ウール、羊毛(の生地)"
+  },
+  {
+   "word": "bullying",
+   "ja": "いじめ"
+  },
+  {
+   "word": "student council",
+   "ja": "生徒会"
+  },
+  {
+   "word": "satisfaction",
+   "ja": "満足(度)"
+  },
+  {
+   "word": "wardrobe",
+   "ja": "手持ちの服(ひとそろい)"
+  },
+  {
+   "word": "the Hillside Education Group",
+   "ja": "ヒルサイド教育グループ(架空の調査団体)"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "type": "main_idea",
+   "q": "You are writing an essay based on this article. Which of the following is the best title for your essay?",
+   "options": [
+    "School Uniforms: A Debate Without a Simple Answer",
+    "School Uniforms: The Best Way to End Bullying",
+    "School Uniforms: A Problem Solved by New Designs",
+    "School Uniforms: A Rule That Students Never Question"
+   ],
+   "answer": 1,
+   "evidence": "I have listened to both sides for many years, and I believe the answer is neither a clear yes nor a clear no. Uniforms solve some problems and create others.",
+   "explanation_ja": "筆者は賛成・反対の両方の意見を紹介したうえで、最終段落で「答えは明確なイエスでもノーでもない」「制服はいくつかの問題を解決し、また別の問題を生む」と述べている。単純な結論の出ない議論だという全体像を示す①が表題として最適。",
+   "distractor_ja": "②いじめは第3段落で反対派が触れるだけの一論点であり、しかも本文は「制服はいじめを実際には止められない」と述べている(本文と逆)。　③生徒会がデザインを作り直した例は最終段落の一例にすぎず、それで問題が解決したとは書かれていない(言い過ぎ)。　④本文は生徒が制服に疑問を持っている様子を描いており、never question は本文と逆。"
+  },
+  {
+   "n": 2,
+   "type": "detail",
+   "q": "According to the article, what did the survey by the Hillside Education Group find?",
+   "options": [
+    "Fewer than one in ten students said that they supported uniforms.",
+    "The percentage of parents supporting uniforms was higher than that of students.",
+    "Just over half of the parents said that uniforms were a good idea.",
+    "Almost all of the parents who answered were in favor of uniforms."
+   ],
+   "answer": 2,
+   "evidence": "A survey by the Hillside Education Group found that 68 percent of parents supported uniforms, while only 31 percent of students did.",
+   "explanation_ja": "調査結果は「保護者68パーセント」対「生徒31パーセント」。保護者の賛成の割合のほうが生徒より高いと言い換えた②が正解。that of students は the percentage of students の代用。",
+   "distractor_ja": "①生徒の賛成は31パーセント(およそ3人に1人)で、「10人に1人未満」ではない。　③保護者の賛成は68パーセントで、「半数を少し超える程度」では足りない。　④68パーセントは3人に2人ほどで、「ほぼ全員」とは言えない。いずれも「保護者のほうが賛成が多い」という常識だけでは消えず、本文の二つの数値と照合して初めて切れる。"
+  },
+  {
+   "n": 3,
+   "type": "detail",
+   "q": "You are writing the \"Views against uniforms\" part of your essay outline. According to the article, which of the following belongs there?",
+   "options": [
+    "Uniforms are made of thin material that cannot keep students warm in winter.",
+    "Uniforms cost families more money over a year than everyday clothes do.",
+    "Uniforms take students a long time to put on before school every single morning.",
+    "Uniforms do not prevent students from finding other things to make fun of."
+   ],
+   "answer": 4,
+   "evidence": "Others argue that uniforms do not actually stop bullying, since students simply find other differences to laugh at.",
+   "explanation_ja": "第3段落末に「制服はいじめを実際には止められない。生徒は結局ほかの違いを見つけて笑いものにするのだから」とある。制服があっても笑いものにする材料は別に見つかる、と言い換えた④が正解。",
+   "distractor_ja": "①本文が快適さについて挙げるのは「6月に厚いウールを着るのは本当に困る」=生地が厚くて暑いという不満であり、「薄すぎて冬に寒い」は本文と逆。　②第2段落で保護者は「学校用の服一式のほうが流行の服をひとそろえ買うより安く済む」と述べており、費用が高くつくとは書かれていない。　③朝の時間については逆に「毎朝何を着るか決めなくてよい」と賛成派の論拠として出てくる。いずれも反対意見らしく見えるが、本文の記述と照らすと残らない。"
+  },
+  {
+   "n": 4,
+   "type": "inference",
+   "q": "According to Ms. Kato's comment, which of the following is most likely true about schools that have no uniforms?",
+   "options": [
+    "Students there can concentrate on their studies more easily than others can.",
+    "Students there may be judged by others for the price of their clothes.",
+    "Students there usually get along better with their classmates than others do.",
+    "Students there are told by their teachers to buy only simple, cheap clothes."
+   ],
+   "answer": 2,
+   "evidence": "Ms. Kato, a teacher at a public high school, says that when everyone wears the same clothes, no one is judged by the price of a jacket.",
+   "explanation_ja": "「全員が同じ服を着ていれば、上着の値段で判断されることはない」という発言は、裏を返せば「同じ服でない場合には服の値段で判断されうる」ことを含意する。制服のない学校について論理的に導けるのは②。",
+   "distractor_ja": "①学業への集中については本文で何も述べられていない。　③級友との関係が良くなるという記述はなく、加藤先生の発言からも導けない。　④教員が安い服を買うよう指示するという話は本文にない。"
+  },
+  {
+   "n": 5,
+   "type": "outline",
+   "q": "Your essay outline has three sections: \"Views in favor,\" \"Views against,\" and \"The writer's own position.\" Which of the following best fits the last section?\n\nEssay Outline: School Uniforms\n* Views in favor: lower cost, fewer worries about clothes\n* Views against: less freedom to express oneself\n* The writer's own position: ______________",
+   "options": [
+    "Schools must choose between fairness for families and freedom for students.",
+    "Uniforms will disappear from most high schools within a few years.",
+    "What matters most is which people should take part in making the rule.",
+    "Adults understand daily school life better than students themselves do."
+   ],
+   "answer": 3,
+   "evidence": "What troubles me is that the students themselves are rarely asked. ... The real question, then, is not whether uniforms are good, but who is allowed to decide.",
+   "explanation_ja": "筆者は最終段落で「生徒自身がめったに意見を聞かれない」ことを問題視し、「本当の問いは制服の良し悪しではなく、誰が決めてよいのかだ」と結んでいる。決定に誰が参加するかが重要だとする③が筆者の立場。",
+   "distractor_ja": "①筆者は二者択一を迫っておらず、むしろ「どちらか」という問いの立て方自体を退けている。　②制服が数年で消えるといった将来予測は本文のどこにもない。　④大人のほうが理解しているとは述べておらず、生徒の声が聞かれない現状を問題視している(本文と逆)。"
+  }
+ ],
+ "translation_ja": "高校生は制服を着なければならないのだろうか。私の町では、この問いが毎年春になると戻ってきて、人々の意見が一致することはないように見える。\n\n賛成する人たちはたいてい、お金と公平さの話をする。公立高校の教員である加藤先生は、全員が同じ服を着ていれば、上着の値段で人が判断されることはない、と言う。保護者たちは彼女に、学校用の服を一式そろえるほうが、流行の服をひとそろい買いそろえるより安く済むと話す。もう一つのよくある主張は時間だ。制服を着る生徒は、毎朝何を着るか決める必要がない。ヒルサイド教育グループの調査では、保護者の68パーセントが制服に賛成した一方、生徒では31パーセントしか賛成しなかった。\n\n制服に反対する人たちは、服装は自己表現の一つの形だと答える。2年生のケン・モリタは、自分で服を選ぶことが、自分が何者かを理解する助けになると言う。制服は必ずしも快適ではない、6月に厚いウールを着るのは本当に困る、と付け加える生徒もいる。制服はいじめを実際には止められない、生徒は結局ほかの違いを見つけて笑いものにするのだから、と論じる人もいる。\n\n私は長年、両方の立場の声を聞いてきたが、答えは明確なイエスでもノーでもないと思う。制服はいくつかの問題を解決し、また別の問題を生み出す。私が気がかりなのは、生徒自身がめったに意見を聞かれていないということだ。昨年、私たちの地域のある学校が生徒会に制服のデザインを作り直させたところ、満足度が大きく上がった。つまり本当の問いは、制服が良いかどうかではなく、誰が決めてよいのか、ということなのだ。",
+ "long_theme_ja": "高校の制服に対する賛成・反対の意見と、筆者の立場",
+ "hide_title": true,
+ "lead": "You are writing an essay about school uniforms. You found the following opinion piece in a school newspaper."
+}

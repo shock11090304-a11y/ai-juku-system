@@ -37,6 +37,8 @@ def prob_html(q):
     if q.get("type") == "mc":
         chs = "　".join(f'{CIRCLED[i]} {esc(c)}' for i, c in enumerate(q.get("choices", [])))
         out.append(f'<div class="choices">{chs}</div>')
+    if q.get("figure"):  # 図(SVG)はそのまま埋め込む(エスケープしない)
+        out.append(f'<div class="fig">{q["figure"]}</div>')
     out.append("</div>")
     return "".join(out)
 
@@ -117,6 +119,9 @@ def build_html(cfg, units, total_q):
     .choices { text-indent:0; padding-left:20px; margin-top:1px; }
     .ans { color:#c8492e; font-weight:bold; }
     .exp { text-indent:0; padding-left:2px; color:#333; font-size:9.5pt; margin-top:1px; }
+    .fig { text-indent:0; text-align:center; margin:5px 0 3px; }
+    .fig svg { max-width:66mm; max-height:46mm; height:auto; }
+    .fig svg text { font-family:"Hiragino Kaku Gothic ProN",sans-serif; }
     """
     return f"""<!doctype html><html lang="ja"><head><meta charset="utf-8">
 <link rel="stylesheet" href="{KATEX}/katex.min.css">
@@ -178,6 +183,18 @@ CONFIGS = {
         howto=("【使い方】この問題集は「問題編」と「解答・解説編」に分かれています。各分野を解いたら、"
                "必ず解答・解説編で答え合わせをしてください。まず全問を自力で解き、間違えた問題を解き直すと"
                "苦手が埋まります。数式・記号は教科書と同じ表記で組んでいます。")),
+    "ia2": dict(module="content_ia_v2", title="数学 I · A", subtitle="問題演習テキスト 第2集（図形強化）",
+        tagline="高校2年 / 図形問題を図つきで増強・前集と重複なし", out="数学IA_問題演習テキスト_第2集_図形強化.pdf",
+        book="数学 I·A 問題演習テキスト 第2集",
+        howto=("【使い方】この問題集は前集(第1集)と重複しない新しい問題で構成し、図形分野を図つきで手厚くしました。"
+               "「問題編」と「解答・解説編」に分かれています。図をよく見て、まず自力で解き、"
+               "解答・解説編で答え合わせをしてください。数式・記号は教科書と同じ表記です。")),
+    "iib2": dict(module="content_iib_v2", title="数学 II · B", subtitle="問題演習テキスト 第2集（図形強化）",
+        tagline="高校2年 / 図形問題を図つきで増強・前集と重複なし", out="数学IIB_問題演習テキスト_第2集_図形強化.pdf",
+        book="数学 II·B 問題演習テキスト 第2集",
+        howto=("【使い方】この問題集は前集(第1集)と重複しない新しい問題で構成し、図形と方程式・ベクトル等を"
+               "図つきで手厚くしました。「問題編」と「解答・解説編」に分かれています。図をよく見て、まず自力で解き、"
+               "解答・解説編で答え合わせをしてください。数式・記号は教科書と同じ表記です。")),
 }
 
 def main():

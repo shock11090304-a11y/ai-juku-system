@@ -1,0 +1,3462 @@
+[
+ {
+  "no": 1,
+  "title": "動詞・名詞の中核",
+  "items": [
+   {
+    "n": 1,
+    "word": "alleviate",
+    "pos": "動",
+    "gloss": "〜を和らげる、軽減する",
+    "gloss_brief": "〜を和らげる",
+    "choices": [
+     "〜を長引かせる",
+     "〜を和らげる",
+     "〜を挑発する",
+     "〜を強める"
+    ],
+    "answer": 1,
+    "usage_en": "alleviate poverty",
+    "usage_ja": "貧困を軽減する",
+    "note": "名 alleviation／≒ ease, relieve, mitigate"
+   },
+   {
+    "n": 2,
+    "word": "deteriorate",
+    "pos": "動",
+    "gloss": "悪化する、劣化する",
+    "gloss_brief": "悪化する",
+    "choices": [
+     "回復する",
+     "悪化する",
+     "加速する",
+     "分散する"
+    ],
+    "answer": 1,
+    "usage_en": "His health deteriorated.",
+    "usage_ja": "彼の健康が悪化した",
+    "note": "自動詞。名 deterioration"
+   },
+   {
+    "n": 3,
+    "word": "mitigate",
+    "pos": "動",
+    "gloss": "〜を緩和する、軽減する",
+    "gloss_brief": "〜を緩和する",
+    "choices": [
+     "〜を誇張する",
+     "〜を延期する",
+     "〜を模倣する",
+     "〜を緩和する"
+    ],
+    "answer": 3,
+    "usage_en": "mitigate the damage",
+    "usage_ja": "被害を緩和する",
+    "note": "mitigating circumstances＝情状酌量すべき事情"
+   },
+   {
+    "n": 4,
+    "word": "advocate",
+    "pos": "動",
+    "gloss": "〜を主張する、擁護する",
+    "gloss_brief": "〜を主張する",
+    "choices": [
+     "〜を主張する",
+     "〜をためらう",
+     "〜を撤回する",
+     "〜を軽視する"
+    ],
+    "answer": 0,
+    "usage_en": "advocate reform",
+    "usage_ja": "改革を主張する",
+    "note": "名詞では「支持者・提唱者」"
+   },
+   {
+    "n": 5,
+    "word": "undermine",
+    "pos": "動",
+    "gloss": "〜を徐々に損なう、弱体化させる",
+    "gloss_brief": "〜を徐々に損なう",
+    "choices": [
+     "〜を強固にする",
+     "〜を掘り起こす",
+     "〜を徐々に損なう",
+     "〜を見落とす"
+    ],
+    "answer": 2,
+    "usage_en": "undermine trust",
+    "usage_ja": "信頼を損なう",
+    "note": "mine＝掘る。下から掘り崩すイメージ"
+   },
+   {
+    "n": 6,
+    "word": "comply",
+    "pos": "動",
+    "gloss": "（規則などに）従う、順守する",
+    "gloss_brief": "規則などに従う",
+    "choices": [
+     "規則などに従う",
+     "サービスに苦情を言う",
+     "補償する",
+     "完了する"
+    ],
+    "answer": 0,
+    "usage_en": "comply with the rules",
+    "usage_ja": "規則に従う",
+    "note": "comply with が定型。名 compliance"
+   },
+   {
+    "n": 7,
+    "word": "exacerbate",
+    "pos": "動",
+    "gloss": "〜を悪化させる、深刻化させる",
+    "gloss_brief": "〜を悪化させる",
+    "choices": [
+     "〜を正当化する",
+     "〜を免除する",
+     "〜を悪化させる",
+     "〜を発掘する"
+    ],
+    "answer": 2,
+    "usage_en": "exacerbate tensions",
+    "usage_ja": "緊張を悪化させる",
+    "note": "≒ aggravate ⇔ alleviate"
+   },
+   {
+    "n": 8,
+    "word": "deter",
+    "pos": "動",
+    "gloss": "〜を思いとどまらせる、抑止する",
+    "gloss_brief": "〜を思いとどまらせる",
+    "choices": [
+     "〜を決定する",
+     "〜を思いとどまらせる",
+     "〜をそそのかす",
+     "〜を先延ばしにする"
+    ],
+    "answer": 1,
+    "usage_en": "deter crime",
+    "usage_ja": "犯罪を抑止する",
+    "note": "deter A from -ing（Aに〜するのを思いとどまらせる）"
+   },
+   {
+    "n": 9,
+    "word": "allocate",
+    "pos": "動",
+    "gloss": "〜を割り当てる、配分する",
+    "gloss_brief": "〜を割り当てる",
+    "choices": [
+     "〜を没収する",
+     "〜を隠す",
+     "〜を割り当てる",
+     "〜を複製する"
+    ],
+    "answer": 2,
+    "usage_en": "allocate funds",
+    "usage_ja": "資金を配分する",
+    "note": "allocate A to B。名 allocation"
+   },
+   {
+    "n": 10,
+    "word": "scrutiny",
+    "pos": "名",
+    "gloss": "精査、綿密な調査",
+    "gloss_brief": "精査",
+    "choices": [
+     "気まぐれ",
+     "概略",
+     "中傷",
+     "精査"
+    ],
+    "answer": 3,
+    "usage_en": "under close scrutiny",
+    "usage_ja": "厳しい精査を受けて",
+    "note": "動 scrutinize"
+   },
+   {
+    "n": 11,
+    "word": "discrepancy",
+    "pos": "名",
+    "gloss": "食い違い、不一致",
+    "gloss_brief": "食い違い",
+    "choices": [
+     "完全な一致",
+     "遅延",
+     "食い違い",
+     "偏見"
+    ],
+    "answer": 2,
+    "usage_en": "a discrepancy between the two reports",
+    "usage_ja": "2つの報告書の食い違い",
+    "note": "≒ inconsistency"
+   },
+   {
+    "n": 12,
+    "word": "incentive",
+    "pos": "名",
+    "gloss": "動機づけ、誘因、報奨",
+    "gloss_brief": "動機づけ",
+    "choices": [
+     "障害",
+     "動機づけ",
+     "罰則",
+     "偶然の一致"
+    ],
+    "answer": 1,
+    "usage_en": "an incentive to study harder",
+    "usage_ja": "もっと勉強しようという動機づけ",
+    "note": "incentive to do の形で使う"
+   },
+   {
+    "n": 13,
+    "word": "backlash",
+    "pos": "名",
+    "gloss": "（激しい）反発、反感",
+    "gloss_brief": "激しい反発",
+    "choices": [
+     "激しい反発",
+     "大事件の前触れ",
+     "政治的な妥協",
+     "全面的な賛同"
+    ],
+    "answer": 0,
+    "usage_en": "a public backlash",
+    "usage_ja": "世論の激しい反発",
+    "note": "backlash against 〜への反発"
+   },
+   {
+    "n": 14,
+    "word": "prerequisite",
+    "pos": "名",
+    "gloss": "前提条件、必須要件",
+    "gloss_brief": "前提条件",
+    "choices": [
+     "副産物",
+     "前提条件",
+     "例外規定",
+     "見積もり"
+    ],
+    "answer": 1,
+    "usage_en": "a prerequisite for success",
+    "usage_ja": "成功の前提条件",
+    "note": "pre-（前）+ requisite（必要な）"
+   },
+   {
+    "n": 15,
+    "word": "plight",
+    "pos": "名",
+    "gloss": "苦境、窮状",
+    "gloss_brief": "苦境",
+    "choices": [
+     "苦境",
+     "名声",
+     "特権",
+     "節目"
+    ],
+    "answer": 0,
+    "usage_en": "the plight of refugees",
+    "usage_ja": "難民の窮状",
+    "note": "悪い状況にのみ使う"
+   },
+   {
+    "n": 16,
+    "word": "surge",
+    "pos": "名",
+    "gloss": "急増、急激な高まり",
+    "gloss_brief": "急増",
+    "choices": [
+     "停滞",
+     "余剰",
+     "急増",
+     "深刻な不足"
+    ],
+    "answer": 2,
+    "usage_en": "a surge in demand",
+    "usage_ja": "需要の急増",
+    "note": "動詞で「急激に増える」"
+   },
+   {
+    "n": 17,
+    "word": "iron out",
+    "pos": "熟",
+    "gloss": "（意見の相違・問題を）解決する、片づける",
+    "gloss_brief": "意見の相違や問題を解決する",
+    "choices": [
+     "意見の相違や問題を解決する",
+     "収まった話を蒸し返す",
+     "〜を黙って見過ごす",
+     "〜を印刷して配る"
+    ],
+    "answer": 0,
+    "usage_en": "iron out the differences",
+    "usage_ja": "意見の相違を解消する",
+    "note": "アイロンでしわを伸ばすイメージ"
+   },
+   {
+    "n": 18,
+    "word": "weed out",
+    "pos": "熟",
+    "gloss": "〜をふるい落とす、取り除く",
+    "gloss_brief": "〜をふるい落とす",
+    "choices": [
+     "〜を新たに採用する",
+     "〜を植え付ける",
+     "〜を数え上げる",
+     "〜をふるい落とす"
+    ],
+    "answer": 3,
+    "usage_en": "weed out weak candidates",
+    "usage_ja": "不適格な候補者をふるい落とす",
+    "note": "weed＝雑草を抜く"
+   },
+   {
+    "n": 19,
+    "word": "rule out",
+    "pos": "熟",
+    "gloss": "（可能性を）除外する、排除する",
+    "gloss_brief": "可能性を除外する",
+    "choices": [
+     "新しい手順を方針として定める",
+     "〜に判定を下す",
+     "〜を支配する",
+     "可能性を除外する"
+    ],
+    "answer": 3,
+    "usage_en": "rule out the possibility",
+    "usage_ja": "その可能性を排除する",
+    "note": "⇔ rule in（候補に残す）"
+   },
+   {
+    "n": 20,
+    "word": "come down with",
+    "pos": "熟",
+    "gloss": "（病気に）かかる",
+    "gloss_brief": "病気にかかる",
+    "choices": [
+     "〜を持って降りてくる",
+     "けんかのあと仲直りする",
+     "〜に潔く降参する",
+     "病気にかかる"
+    ],
+    "answer": 3,
+    "usage_en": "come down with the flu",
+    "usage_ja": "インフルエンザにかかる",
+    "note": "比較的軽い病気に使う"
+   }
+  ]
+ },
+ {
+  "no": 2,
+  "title": "形容詞・副詞の中核",
+  "items": [
+   {
+    "n": 1,
+    "word": "plausible",
+    "pos": "形",
+    "gloss": "もっともらしい、ありそうな",
+    "gloss_brief": "もっともらしい",
+    "choices": [
+     "賞賛に値する",
+     "もっともらしい",
+     "疑いようのない",
+     "実行可能な"
+    ],
+    "answer": 1,
+    "usage_en": "a plausible explanation",
+    "usage_ja": "もっともらしい説明",
+    "note": "⇔ implausible。「本当らしいが確証はない」含み"
+   },
+   {
+    "n": 2,
+    "word": "meticulous",
+    "pos": "形",
+    "gloss": "細心の、極めて綿密な",
+    "gloss_brief": "細心の",
+    "choices": [
+     "細心の",
+     "大ざっぱな",
+     "疑い深い",
+     "気軽な"
+    ],
+    "answer": 0,
+    "usage_en": "meticulous attention to detail",
+    "usage_ja": "細部への細心の注意",
+    "note": "≒ scrupulous, thorough"
+   },
+   {
+    "n": 3,
+    "word": "susceptible",
+    "pos": "形",
+    "gloss": "（病気などに）かかりやすい、影響を受けやすい",
+    "gloss_brief": "病気などにかかりやすい",
+    "choices": [
+     "病気などにかかりやすい",
+     "証拠が薄く疑わしい",
+     "持続可能な",
+     "抜け目のない"
+    ],
+    "answer": 0,
+    "usage_en": "susceptible to infection",
+    "usage_ja": "感染しやすい",
+    "note": "susceptible to が定型"
+   },
+   {
+    "n": 4,
+    "word": "inevitable",
+    "pos": "形",
+    "gloss": "避けられない、必然の",
+    "gloss_brief": "避けられない",
+    "choices": [
+     "予測できない",
+     "取るに足りない",
+     "評価できない",
+     "避けられない"
+    ],
+    "answer": 3,
+    "usage_en": "an inevitable consequence",
+    "usage_ja": "必然の結果",
+    "note": "副 inevitably"
+   },
+   {
+    "n": 5,
+    "word": "lucrative",
+    "pos": "形",
+    "gloss": "もうかる、利益の大きい",
+    "gloss_brief": "もうかる",
+    "choices": [
+     "幸運な",
+     "ぜいたくな",
+     "もうかる",
+     "なめらかな"
+    ],
+    "answer": 2,
+    "usage_en": "a lucrative business",
+    "usage_ja": "もうかる商売",
+    "note": "≒ profitable"
+   },
+   {
+    "n": 6,
+    "word": "prevalent",
+    "pos": "形",
+    "gloss": "広く行き渡った、はやっている",
+    "gloss_brief": "広く行き渡った",
+    "choices": [
+     "広く行き渡った",
+     "ごくまれな",
+     "一時的な",
+     "予防のための"
+    ],
+    "answer": 0,
+    "usage_en": "a prevalent belief",
+    "usage_ja": "広く浸透している考え",
+    "note": "名 prevalence"
+   },
+   {
+    "n": 7,
+    "word": "redundant",
+    "pos": "形",
+    "gloss": "余分な、（人員が）余剰の",
+    "gloss_brief": "余分な",
+    "choices": [
+     "不可欠な",
+     "潤沢な",
+     "際立った",
+     "余分な"
+    ],
+    "answer": 3,
+    "usage_en": "be made redundant",
+    "usage_ja": "（英）人員整理で解雇される",
+    "note": "IT では「冗長な＝予備の」"
+   },
+   {
+    "n": 8,
+    "word": "tentative",
+    "pos": "形",
+    "gloss": "暫定的な、仮の",
+    "gloss_brief": "暫定的な",
+    "choices": [
+     "決定的な",
+     "強制的な",
+     "暫定的な",
+     "長期的な"
+    ],
+    "answer": 2,
+    "usage_en": "a tentative agreement",
+    "usage_ja": "暫定的な合意",
+    "note": "≒ provisional"
+   },
+   {
+    "n": 9,
+    "word": "resilient",
+    "pos": "形",
+    "gloss": "回復力のある、立ち直りが早い",
+    "gloss_brief": "回復力のある",
+    "choices": [
+     "回復力のある",
+     "反抗的な",
+     "従順な",
+     "もろい"
+    ],
+    "answer": 0,
+    "usage_en": "a resilient economy",
+    "usage_ja": "立ち直りの早い経済",
+    "note": "名 resilience"
+   },
+   {
+    "n": 10,
+    "word": "ambiguous",
+    "pos": "形",
+    "gloss": "あいまいな、複数の意味に取れる",
+    "gloss_brief": "あいまいな",
+    "choices": [
+     "野心的な",
+     "きわめて明快な",
+     "あいまいな",
+     "大規模な"
+    ],
+    "answer": 2,
+    "usage_en": "an ambiguous answer",
+    "usage_ja": "あいまいな返答",
+    "note": "名 ambiguity"
+   },
+   {
+    "n": 11,
+    "word": "compelling",
+    "pos": "形",
+    "gloss": "説得力のある、非常に興味を引く",
+    "gloss_brief": "説得力のある",
+    "choices": [
+     "型どおりの",
+     "見込みの薄い",
+     "複雑で分かりにくい",
+     "説得力のある"
+    ],
+    "answer": 3,
+    "usage_en": "compelling evidence",
+    "usage_ja": "説得力のある証拠",
+    "note": "動 compel（強制する）から意味が離れている点に注意"
+   },
+   {
+    "n": 12,
+    "word": "inadvertently",
+    "pos": "副",
+    "gloss": "うっかり、不注意で",
+    "gloss_brief": "うっかり",
+    "choices": [
+     "意図的に",
+     "うっかり",
+     "執拗に",
+     "ごくまれに"
+    ],
+    "answer": 1,
+    "usage_en": "inadvertently delete a file",
+    "usage_ja": "うっかりファイルを削除する",
+    "note": "⇔ deliberately"
+   },
+   {
+    "n": 13,
+    "word": "unanimously",
+    "pos": "副",
+    "gloss": "満場一致で",
+    "gloss_brief": "満場一致で",
+    "choices": [
+     "満場一致で",
+     "匿名のままで",
+     "圧倒的多数で",
+     "一人ずつ個別に"
+    ],
+    "answer": 0,
+    "usage_en": "vote unanimously",
+    "usage_ja": "満場一致で議決する",
+    "note": "形 unanimous。可決とは限らない（否決も満場一致でありうる）"
+   },
+   {
+    "n": 14,
+    "word": "sparingly",
+    "pos": "副",
+    "gloss": "控えめに、少量だけ",
+    "gloss_brief": "控えめに",
+    "choices": [
+     "惜しみなく",
+     "予備として",
+     "不意に",
+     "控えめに"
+    ],
+    "answer": 3,
+    "usage_en": "use salt sparingly",
+    "usage_ja": "塩を控えめに使う",
+    "note": "spare＝節約する"
+   },
+   {
+    "n": 15,
+    "word": "presumably",
+    "pos": "副",
+    "gloss": "おそらく、推定するに",
+    "gloss_brief": "おそらく",
+    "choices": [
+     "明らかに",
+     "おそらく",
+     "意外にも",
+     "一見したところ"
+    ],
+    "answer": 1,
+    "usage_en": "Presumably he knew.",
+    "usage_ja": "おそらく彼は知っていた",
+    "note": "動 presume"
+   },
+   {
+    "n": 16,
+    "word": "profoundly",
+    "pos": "副",
+    "gloss": "深く、甚大に",
+    "gloss_brief": "深く",
+    "choices": [
+     "浅く",
+     "たまに",
+     "職業として",
+     "深く"
+    ],
+    "answer": 3,
+    "usage_en": "profoundly affect society",
+    "usage_ja": "社会に深い影響を与える",
+    "note": "形 profound"
+   },
+   {
+    "n": 17,
+    "word": "get away with",
+    "pos": "熟",
+    "gloss": "（悪事の）罰をまぬがれる、うまくやり過ごす",
+    "gloss_brief": "悪事の罰をまぬがれる",
+    "choices": [
+     "同じ作業に飽きる",
+     "〜を手放す",
+     "悪事の罰をまぬがれる",
+     "〜と折り合いをつける"
+    ],
+    "answer": 2,
+    "usage_en": "get away with cheating",
+    "usage_ja": "不正をしても罰を免れる",
+    "note": "get away from（〜から逃れる）と区別"
+   },
+   {
+    "n": 18,
+    "word": "cut back on",
+    "pos": "熟",
+    "gloss": "（量・支出を）減らす、切り詰める",
+    "gloss_brief": "量や支出を減らす",
+    "choices": [
+     "計画や事業を後押しする",
+     "〜に切り替える",
+     "量や支出を減らす",
+     "〜を蒸し返す"
+    ],
+    "answer": 2,
+    "usage_en": "cut back on spending",
+    "usage_ja": "支出を切り詰める",
+    "note": "≒ reduce"
+   },
+   {
+    "n": 19,
+    "word": "at odds with",
+    "pos": "熟",
+    "gloss": "〜と食い違って、対立して",
+    "gloss_brief": "〜と食い違って",
+    "choices": [
+     "〜と歩調を合わせて",
+     "〜と食い違って",
+     "〜の見込みで",
+     "〜に賭けて"
+    ],
+    "answer": 1,
+    "usage_en": "at odds with the facts",
+    "usage_ja": "事実と食い違って",
+    "note": "odds＝相違・不一致"
+   },
+   {
+    "n": 20,
+    "word": "on the verge of",
+    "pos": "熟",
+    "gloss": "今にも〜しそうで、〜の瀬戸際で",
+    "gloss_brief": "今にも〜しそうで",
+    "choices": [
+     "〜の頂点に立って",
+     "今にも〜しそうで",
+     "〜の代わりに",
+     "〜を口実にして"
+    ],
+    "answer": 1,
+    "usage_en": "on the verge of collapse",
+    "usage_ja": "崩壊寸前で",
+    "note": "verge＝縁・境目"
+   }
+  ]
+ },
+ {
+  "no": 3,
+  "title": "施策・社会を語る語",
+  "items": [
+   {
+    "n": 1,
+    "word": "implement",
+    "pos": "動",
+    "gloss": "〜を実施する、実行に移す",
+    "gloss_brief": "〜を実施する",
+    "choices": [
+     "〜をほのめかす",
+     "〜を輸入する",
+     "〜を改良する",
+     "〜を実施する"
+    ],
+    "answer": 3,
+    "usage_en": "implement a policy",
+    "usage_ja": "政策を実施する",
+    "note": "名詞では「道具」。名 implementation"
+   },
+   {
+    "n": 2,
+    "word": "facilitate",
+    "pos": "動",
+    "gloss": "〜を促進する、容易にする",
+    "gloss_brief": "〜を促進する",
+    "choices": [
+     "〜を促進する",
+     "〜を複雑にする",
+     "〜を施設に収容する",
+     "〜を偽造する"
+    ],
+    "answer": 0,
+    "usage_en": "facilitate communication",
+    "usage_ja": "意思疎通を円滑にする",
+    "note": "名 facilitator（進行役）"
+   },
+   {
+    "n": 3,
+    "word": "foster",
+    "pos": "動",
+    "gloss": "〜を育成する、助長する",
+    "gloss_brief": "〜を育成する",
+    "choices": [
+     "〜を見捨てる",
+     "〜を独占する",
+     "〜を急がせる",
+     "〜を育成する"
+    ],
+    "answer": 3,
+    "usage_en": "foster innovation",
+    "usage_ja": "技術革新を促す",
+    "note": "foster child＝里子"
+   },
+   {
+    "n": 4,
+    "word": "hamper",
+    "pos": "動",
+    "gloss": "〜を妨げる、阻害する",
+    "gloss_brief": "〜を妨げる",
+    "choices": [
+     "〜を妨げる",
+     "〜を包み込む",
+     "〜を誇張する",
+     "〜を加速させる"
+    ],
+    "answer": 0,
+    "usage_en": "hamper economic growth",
+    "usage_ja": "経済成長を妨げる",
+    "note": "≒ hinder, impede"
+   },
+   {
+    "n": 5,
+    "word": "entail",
+    "pos": "動",
+    "gloss": "〜を必然的に伴う、必要とする",
+    "gloss_brief": "〜を必然的に伴う",
+    "choices": [
+     "〜を詳述する",
+     "〜を尾行する",
+     "〜を必然的に伴う",
+     "〜を要約する"
+    ],
+    "answer": 2,
+    "usage_en": "entail serious risks",
+    "usage_ja": "重大なリスクを伴う",
+    "note": "≒ involve"
+   },
+   {
+    "n": 6,
+    "word": "impair",
+    "pos": "動",
+    "gloss": "〜を損なう、弱める",
+    "gloss_brief": "〜を損なう",
+    "choices": [
+     "〜を損なう",
+     "〜を修復する",
+     "〜を試験する",
+     "〜を高く評価する"
+    ],
+    "answer": 0,
+    "usage_en": "impair judgment",
+    "usage_ja": "判断力を損なう",
+    "note": "visually impaired＝視覚に障害のある"
+   },
+   {
+    "n": 7,
+    "word": "incur",
+    "pos": "動",
+    "gloss": "（損失・非難を）招く、負う",
+    "gloss_brief": "損失や非難を招く",
+    "choices": [
+     "危険や出費を回避する",
+     "〜を治療する",
+     "損失や非難を招く",
+     "〜を励ます"
+    ],
+    "answer": 2,
+    "usage_en": "incur huge debts",
+    "usage_ja": "多額の借金を負う",
+    "note": "incur costs / criticism"
+   },
+   {
+    "n": 8,
+    "word": "inhibit",
+    "pos": "動",
+    "gloss": "（成長・反応を）抑える、妨げる",
+    "gloss_brief": "成長や反応を抑える",
+    "choices": [
+     "成長や反応を抑える",
+     "〜に居住する",
+     "水分や栄養を吸収する",
+     "〜を相続する"
+    ],
+    "answer": 0,
+    "usage_en": "inhibit bacterial growth",
+    "usage_ja": "細菌の増殖を抑える",
+    "note": "★ inhabit（住む）と混同注意"
+   },
+   {
+    "n": 9,
+    "word": "deploy",
+    "pos": "動",
+    "gloss": "〜を配備する、展開する",
+    "gloss_brief": "〜を配備する",
+    "choices": [
+     "〜を破壊する",
+     "〜を雇用する",
+     "〜を配備する",
+     "〜を展示販売する"
+    ],
+    "answer": 2,
+    "usage_en": "deploy troops",
+    "usage_ja": "部隊を配備する",
+    "note": "IT でも「システムを本番投入する」"
+   },
+   {
+    "n": 10,
+    "word": "curb",
+    "pos": "動",
+    "gloss": "〜を抑制する、制御する",
+    "gloss_brief": "〜を抑制する",
+    "choices": [
+     "〜を測定する",
+     "〜を湾曲させる",
+     "〜を許可する",
+     "〜を抑制する"
+    ],
+    "answer": 3,
+    "usage_en": "curb inflation",
+    "usage_ja": "インフレを抑える",
+    "note": "名詞では「（歩道の）縁石」"
+   },
+   {
+    "n": 11,
+    "word": "constraint",
+    "pos": "名",
+    "gloss": "制約、束縛",
+    "gloss_brief": "制約",
+    "choices": [
+     "建設工事",
+     "一貫性",
+     "制約",
+     "貢献"
+    ],
+    "answer": 2,
+    "usage_en": "budget constraints",
+    "usage_ja": "予算上の制約",
+    "note": "動 constrain"
+   },
+   {
+    "n": 12,
+    "word": "disparity",
+    "pos": "名",
+    "gloss": "（不公平な）格差、相違",
+    "gloss_brief": "不公平な格差",
+    "choices": [
+     "力や量の完全な均衡",
+     "不公平な格差",
+     "出発",
+     "絶望"
+    ],
+    "answer": 1,
+    "usage_en": "income disparity",
+    "usage_ja": "所得格差",
+    "note": "⇔ parity（同等）"
+   },
+   {
+    "n": 13,
+    "word": "consensus",
+    "pos": "名",
+    "gloss": "総意、意見の一致",
+    "gloss_brief": "総意",
+    "choices": [
+     "総意",
+     "国勢調査",
+     "検閲",
+     "強い反論"
+    ],
+    "answer": 0,
+    "usage_en": "reach a consensus",
+    "usage_ja": "合意に達する",
+    "note": "★ census（国勢調査）と混同注意"
+   },
+   {
+    "n": 14,
+    "word": "hierarchy",
+    "pos": "名",
+    "gloss": "階層、序列",
+    "gloss_brief": "階層",
+    "choices": [
+     "遺産",
+     "世襲財産",
+     "隠遁生活",
+     "階層"
+    ],
+    "answer": 3,
+    "usage_en": "a rigid hierarchy",
+    "usage_ja": "厳格な階層構造",
+    "note": "形 hierarchical"
+   },
+   {
+    "n": 15,
+    "word": "deficit",
+    "pos": "名",
+    "gloss": "赤字、不足",
+    "gloss_brief": "赤字",
+    "choices": [
+     "黒字",
+     "赤字",
+     "欠陥品",
+     "定義"
+    ],
+    "answer": 1,
+    "usage_en": "a trade deficit",
+    "usage_ja": "貿易赤字",
+    "note": "財政赤字は a budget deficit。⇔ 黒字"
+   },
+   {
+    "n": 16,
+    "word": "initiative",
+    "pos": "名",
+    "gloss": "新たな取り組み、主導権",
+    "gloss_brief": "新たな取り組み",
+    "choices": [
+     "頭文字",
+     "新たな取り組み",
+     "最終段階",
+     "直感"
+    ],
+    "answer": 1,
+    "usage_en": "take the initiative",
+    "usage_ja": "主導権を握る",
+    "note": "a green initiative＝環境施策"
+   },
+   {
+    "n": 17,
+    "word": "contend with",
+    "pos": "熟",
+    "gloss": "（困難・問題に）対処する、立ち向かう",
+    "gloss_brief": "困難や問題に対処する",
+    "choices": [
+     "〜に賛成する",
+     "困難や問題に対処する",
+     "危険や警告を軽視する",
+     "〜に委ねる"
+    ],
+    "answer": 1,
+    "usage_en": "contend with hardship",
+    "usage_ja": "苦難に立ち向かう",
+    "note": "contend that ...＝〜だと主張する"
+   },
+   {
+    "n": 18,
+    "word": "in the wake of",
+    "pos": "熟",
+    "gloss": "〜の直後に、〜の余波を受けて",
+    "gloss_brief": "〜の直後に",
+    "choices": [
+     "〜の前に",
+     "〜の代わりに",
+     "〜の直後に",
+     "〜のおかげで"
+    ],
+    "answer": 2,
+    "usage_en": "in the wake of the disaster",
+    "usage_ja": "その災害の直後に",
+    "note": "wake＝船の航跡"
+   },
+   {
+    "n": 19,
+    "word": "stem from",
+    "pos": "熟",
+    "gloss": "〜に起因する、〜から生じる",
+    "gloss_brief": "〜に起因する",
+    "choices": [
+     "〜を食い止める",
+     "〜へ発展する",
+     "〜を根元から断つ",
+     "〜に起因する"
+    ],
+    "answer": 3,
+    "usage_en": "stem from poverty",
+    "usage_ja": "貧困に起因する",
+    "note": "stem＋目的語なら「食い止める」。from を伴えば「起因する」"
+   },
+   {
+    "n": 20,
+    "word": "take a toll on",
+    "pos": "熟",
+    "gloss": "〜に打撃を与える、〜を損なう",
+    "gloss_brief": "〜に打撃を与える",
+    "choices": [
+     "〜に通行料を課す",
+     "〜に打撃を与える",
+     "〜を数え上げる",
+     "〜を大目に見る"
+    ],
+    "answer": 1,
+    "usage_en": "take a toll on health",
+    "usage_ja": "健康を害する",
+    "note": "toll＝犠牲・代償"
+   }
+  ]
+ },
+ {
+  "no": 4,
+  "title": "議論・変化を語る語",
+  "items": [
+   {
+    "n": 1,
+    "word": "eradicate",
+    "pos": "動",
+    "gloss": "〜を根絶する",
+    "gloss_brief": "〜を根絶する",
+    "choices": [
+     "〜を放射する",
+     "〜を修正する",
+     "〜を根絶する",
+     "〜を輸出する"
+    ],
+    "answer": 2,
+    "usage_en": "eradicate poverty",
+    "usage_ja": "貧困を根絶する",
+    "note": "root（根）ごと抜くイメージ"
+   },
+   {
+    "n": 2,
+    "word": "suppress",
+    "pos": "動",
+    "gloss": "〜を抑圧する、抑え込む",
+    "gloss_brief": "〜を抑圧する",
+    "choices": [
+     "〜を表明する",
+     "〜を圧縮して保存する",
+     "〜を抑圧する",
+     "〜を解き放つ"
+    ],
+    "answer": 2,
+    "usage_en": "suppress emotions",
+    "usage_ja": "感情を抑える",
+    "note": "名 suppression"
+   },
+   {
+    "n": 3,
+    "word": "refute",
+    "pos": "動",
+    "gloss": "〜に反論する、〜の誤りを証明する",
+    "gloss_brief": "〜に反論する",
+    "choices": [
+     "〜を払い戻す",
+     "〜に反論する",
+     "〜を拒んで受け取らない",
+     "〜を強く要求する"
+    ],
+    "answer": 1,
+    "usage_en": "refute an argument",
+    "usage_ja": "主張を論破する",
+    "note": "★ refund（払い戻す）と混同注意"
+   },
+   {
+    "n": 4,
+    "word": "endorse",
+    "pos": "動",
+    "gloss": "〜を支持する、推奨する",
+    "gloss_brief": "〜を支持する",
+    "choices": [
+     "〜を耐え忍ぶ",
+     "〜を強制する",
+     "〜を包囲する",
+     "〜を支持する"
+    ],
+    "answer": 3,
+    "usage_en": "endorse a candidate",
+    "usage_ja": "候補者を支持する",
+    "note": "有名人の商品推薦にも使う"
+   },
+   {
+    "n": 5,
+    "word": "streamline",
+    "pos": "動",
+    "gloss": "〜を効率化する、合理化する",
+    "gloss_brief": "〜を効率化する",
+    "choices": [
+     "〜を放流する",
+     "〜を細分化する",
+     "〜を一列に並べる",
+     "〜を効率化する"
+    ],
+    "answer": 3,
+    "usage_en": "streamline the process",
+    "usage_ja": "手続きを簡素化する",
+    "note": "流線形にする→無駄を省く"
+   },
+   {
+    "n": 6,
+    "word": "offset",
+    "pos": "動",
+    "gloss": "〜を相殺する、埋め合わせる",
+    "gloss_brief": "〜を相殺する",
+    "choices": [
+     "〜を出発させる",
+     "〜を相殺する",
+     "〜を倍増させる",
+     "〜を延期する"
+    ],
+    "answer": 1,
+    "usage_en": "offset the loss",
+    "usage_ja": "損失を相殺する",
+    "note": "carbon offset＝炭素の相殺"
+   },
+   {
+    "n": 7,
+    "word": "thrive",
+    "pos": "動",
+    "gloss": "繁栄する、生き生きと育つ",
+    "gloss_brief": "繁栄する",
+    "choices": [
+     "衰退する",
+     "努力する",
+     "到着する",
+     "繁栄する"
+    ],
+    "answer": 3,
+    "usage_en": "thrive in a harsh climate",
+    "usage_ja": "厳しい気候でもよく育つ",
+    "note": "★ strive（努力する）と混同注意"
+   },
+   {
+    "n": 8,
+    "word": "undertake",
+    "pos": "動",
+    "gloss": "〜を引き受ける、〜に着手する",
+    "gloss_brief": "〜を引き受ける",
+    "choices": [
+     "〜を過小評価する",
+     "〜を引き受ける",
+     "〜を取り消す",
+     "〜の下に置く"
+    ],
+    "answer": 1,
+    "usage_en": "undertake a project",
+    "usage_ja": "事業に着手する",
+    "note": "過去形 undertook / 過去分詞 undertaken"
+   },
+   {
+    "n": 9,
+    "word": "speculate",
+    "pos": "動",
+    "gloss": "推測する、投機する",
+    "gloss_brief": "推測する",
+    "choices": [
+     "推測する",
+     "観察する",
+     "専門とする",
+     "明記する"
+    ],
+    "answer": 0,
+    "usage_en": "speculate about the cause",
+    "usage_ja": "原因を推測する",
+    "note": "名 speculation"
+   },
+   {
+    "n": 10,
+    "word": "deplete",
+    "pos": "動",
+    "gloss": "〜を枯渇させる、激減させる",
+    "gloss_brief": "〜を枯渇させる",
+    "choices": [
+     "〜を完成させる",
+     "〜を枯渇させる",
+     "〜を補充する",
+     "〜を陳列する"
+    ],
+    "answer": 1,
+    "usage_en": "deplete natural resources",
+    "usage_ja": "天然資源を枯渇させる",
+    "note": "⇔ replenish（補充する）"
+   },
+   {
+    "n": 11,
+    "word": "aftermath",
+    "pos": "名",
+    "gloss": "（災害などの）余波、直後の時期",
+    "gloss_brief": "災害などの余波",
+    "choices": [
+     "地震などの前兆",
+     "後回しにすること",
+     "式典の後片づけ",
+     "災害などの余波"
+    ],
+    "answer": 3,
+    "usage_en": "in the aftermath of the war",
+    "usage_ja": "戦争の余波の中で",
+    "note": "ふつう悪い出来事（戦争・災害・事故など）の後に使う"
+   },
+   {
+    "n": 12,
+    "word": "threshold",
+    "pos": "名",
+    "gloss": "境界となる値、敷居",
+    "gloss_brief": "境界となる値",
+    "choices": [
+     "頂点",
+     "空白部分",
+     "網の目",
+     "境界となる値"
+    ],
+    "answer": 3,
+    "usage_en": "the pain threshold",
+    "usage_ja": "痛みを感じ始める限界値",
+    "note": "on the threshold of＝〜の入り口で"
+   },
+   {
+    "n": 13,
+    "word": "momentum",
+    "pos": "名",
+    "gloss": "勢い、はずみ",
+    "gloss_brief": "勢い",
+    "choices": [
+     "勢い",
+     "記念碑",
+     "一瞬",
+     "独占"
+    ],
+    "answer": 0,
+    "usage_en": "gain momentum",
+    "usage_ja": "勢いを増す",
+    "note": "★ monument（記念碑）と混同注意"
+   },
+   {
+    "n": 14,
+    "word": "setback",
+    "pos": "名",
+    "gloss": "挫折、後退",
+    "gloss_brief": "挫折",
+    "choices": [
+     "背景",
+     "予備の計画",
+     "挫折",
+     "分割返済"
+    ],
+    "answer": 2,
+    "usage_en": "suffer a serious setback",
+    "usage_ja": "深刻な挫折を味わう",
+    "note": "⇔ breakthrough"
+   },
+   {
+    "n": 15,
+    "word": "sanction",
+    "pos": "名",
+    "gloss": "制裁／（公式の）認可",
+    "gloss_brief": "制裁／公式の認可",
+    "choices": [
+     "制裁／公式の認可",
+     "聖域／立ち入り禁止区域",
+     "公衆の衛生管理",
+     "国家間の休戦協定"
+    ],
+    "answer": 0,
+    "usage_en": "economic sanctions against the country",
+    "usage_ja": "その国への経済制裁",
+    "note": "「制裁」と「認可」の正反対の2義を持つ"
+   },
+   {
+    "n": 16,
+    "word": "proponent",
+    "pos": "名",
+    "gloss": "支持者、提唱者",
+    "gloss_brief": "支持者",
+    "choices": [
+     "支持者",
+     "反対者",
+     "所有者",
+     "構成部品"
+    ],
+    "answer": 0,
+    "usage_en": "a proponent of reform",
+    "usage_ja": "改革の提唱者",
+    "note": "⇔ opponent"
+   },
+   {
+    "n": 17,
+    "word": "crack down on",
+    "pos": "熟",
+    "gloss": "〜を厳しく取り締まる",
+    "gloss_brief": "〜を厳しく取り締まる",
+    "choices": [
+     "〜に屈服する",
+     "〜を厳しく取り締まる",
+     "〜を解読する",
+     "〜を粉々に砕く"
+    ],
+    "answer": 1,
+    "usage_en": "crack down on fraud",
+    "usage_ja": "詐欺を厳しく取り締まる",
+    "note": "名 crackdown"
+   },
+   {
+    "n": 18,
+    "word": "shed light on",
+    "pos": "熟",
+    "gloss": "〜を解明する、明らかにする",
+    "gloss_brief": "〜を解明する",
+    "choices": [
+     "〜を解明する",
+     "〜を覆い隠す",
+     "〜の重荷を下ろす",
+     "〜を大目に見る"
+    ],
+    "answer": 0,
+    "usage_en": "shed light on the cause",
+    "usage_ja": "原因を解明する",
+    "note": "shed＝（光を）放つ"
+   },
+   {
+    "n": 19,
+    "word": "live up to",
+    "pos": "熟",
+    "gloss": "（期待・評判に）応える",
+    "gloss_brief": "期待や評判に応える",
+    "choices": [
+     "〜歳まで生き延びる",
+     "親や親戚と同居する",
+     "期待や評判に応える",
+     "〜を見上げて憧れる"
+    ],
+    "answer": 2,
+    "usage_en": "live up to expectations",
+    "usage_ja": "期待に応える",
+    "note": "直訳の「〜まで生きる」は誤り"
+   },
+   {
+    "n": 20,
+    "word": "phase out",
+    "pos": "熟",
+    "gloss": "〜を段階的に廃止する",
+    "gloss_brief": "〜を段階的に廃止する",
+    "choices": [
+     "〜を段階的に導入する",
+     "〜を局面ごとに分析する",
+     "〜を段階的に廃止する",
+     "〜を即座に全面禁止する"
+    ],
+    "answer": 2,
+    "usage_en": "phase out plastic bags",
+    "usage_ja": "レジ袋を段階的に廃止する",
+    "note": "⇔ phase in（段階的に導入する）"
+   }
+  ]
+ },
+ {
+  "no": 5,
+  "title": "データ・経済を語る語",
+  "items": [
+   {
+    "n": 1,
+    "word": "accumulate",
+    "pos": "動",
+    "gloss": "〜を蓄積する、たまる",
+    "gloss_brief": "〜を蓄積する",
+    "choices": [
+     "〜を計算する",
+     "〜を蓄積する",
+     "〜を使い果たす",
+     "〜を適応させる"
+    ],
+    "answer": 1,
+    "usage_en": "accumulate wealth",
+    "usage_ja": "富を蓄える",
+    "note": "名 accumulation"
+   },
+   {
+    "n": 2,
+    "word": "compensate",
+    "pos": "動",
+    "gloss": "（損失などの）埋め合わせをする、補償する",
+    "gloss_brief": "損失などの埋め合わせをする",
+    "choices": [
+     "意見を競い合わせる",
+     "損失などの埋め合わせをする",
+     "〜を凝縮する",
+     "〜を理解する"
+    ],
+    "answer": 1,
+    "usage_en": "compensate for the loss",
+    "usage_ja": "損失を埋め合わせる",
+    "note": "compensate for 〜（自動詞）＝〜を埋め合わせる／compensate 人 for 〜（他動詞）＝人に補償する。★他動詞の目的語は「人」で、損失ではない。名 compensation"
+   },
+   {
+    "n": 3,
+    "word": "discern",
+    "pos": "動",
+    "gloss": "〜を識別する、見分ける",
+    "gloss_brief": "〜を識別する",
+    "choices": [
+     "〜を懸念する",
+     "〜を識別する",
+     "〜を辞退する",
+     "〜を解散させる"
+    ],
+    "answer": 1,
+    "usage_en": "discern a pattern",
+    "usage_ja": "規則性を見分ける",
+    "note": "形 discernible（見分けがつく）"
+   },
+   {
+    "n": 4,
+    "word": "denounce",
+    "pos": "動",
+    "gloss": "〜を公然と非難する",
+    "gloss_brief": "〜を公然と非難する",
+    "choices": [
+     "〜を公然と非難する",
+     "〜を正式に発表する",
+     "〜を放棄する",
+     "〜を宣言する"
+    ],
+    "answer": 0,
+    "usage_en": "denounce violence",
+    "usage_ja": "暴力を非難する",
+    "note": "★ announce / renounce と混同注意"
+   },
+   {
+    "n": 5,
+    "word": "reinforce",
+    "pos": "動",
+    "gloss": "〜を補強する、強化する",
+    "gloss_brief": "〜を補強する",
+    "choices": [
+     "〜を再現する",
+     "〜を強要する",
+     "〜を補強する",
+     "〜を改革する"
+    ],
+    "answer": 2,
+    "usage_en": "reinforce the argument",
+    "usage_ja": "主張を補強する",
+    "note": "名 reinforcement"
+   },
+   {
+    "n": 6,
+    "word": "retain",
+    "pos": "動",
+    "gloss": "〜を保持する、維持する",
+    "gloss_brief": "〜を保持する",
+    "choices": [
+     "〜を保持する",
+     "〜を取り戻す",
+     "〜を訓練する",
+     "〜を制限する"
+    ],
+    "answer": 0,
+    "usage_en": "retain customers",
+    "usage_ja": "顧客を維持する",
+    "note": "名 retention（定着率）"
+   },
+   {
+    "n": 7,
+    "word": "trigger",
+    "pos": "動",
+    "gloss": "〜を引き起こす、誘発する",
+    "gloss_brief": "〜を引き起こす",
+    "choices": [
+     "〜を追跡する",
+     "〜を引き起こす",
+     "〜を締め付ける",
+     "〜を交換する"
+    ],
+    "answer": 1,
+    "usage_en": "trigger an allergic reaction",
+    "usage_ja": "アレルギー反応を引き起こす",
+    "note": "名詞では「引き金」"
+   },
+   {
+    "n": 8,
+    "word": "verify",
+    "pos": "動",
+    "gloss": "〜を検証する、正しいと確認する",
+    "gloss_brief": "〜を検証する",
+    "choices": [
+     "〜を多様化する",
+     "〜を変更する",
+     "〜を検証する",
+     "〜を無効にする"
+    ],
+    "answer": 2,
+    "usage_en": "verify the data",
+    "usage_ja": "データを検証する",
+    "note": "名 verification"
+   },
+   {
+    "n": 9,
+    "word": "contaminate",
+    "pos": "動",
+    "gloss": "〜を汚染する",
+    "gloss_brief": "〜を汚染する",
+    "choices": [
+     "〜を内部に含む",
+     "〜を継続する",
+     "〜を封じ込める",
+     "〜を汚染する"
+    ],
+    "answer": 3,
+    "usage_en": "contaminate the water supply",
+    "usage_ja": "水道水を汚染する",
+    "note": "★ contain と混同注意。名 contamination"
+   },
+   {
+    "n": 10,
+    "word": "dwindle",
+    "pos": "動",
+    "gloss": "次第に減少する、先細りになる",
+    "gloss_brief": "次第に減少する",
+    "choices": [
+     "徐々に膨らむ",
+     "あてもなくうろつく",
+     "長く住みつく",
+     "次第に減少する"
+    ],
+    "answer": 3,
+    "usage_en": "dwindling resources",
+    "usage_ja": "先細りしていく資源",
+    "note": "自動詞。目的語を取らない"
+   },
+   {
+    "n": 11,
+    "word": "anomaly",
+    "pos": "名",
+    "gloss": "異常、例外",
+    "gloss_brief": "異常",
+    "choices": [
+     "匿名であること",
+     "類推",
+     "敵意",
+     "異常"
+    ],
+    "answer": 3,
+    "usage_en": "a statistical anomaly",
+    "usage_ja": "統計上の異常値",
+    "note": "形 anomalous"
+   },
+   {
+    "n": 12,
+    "word": "rationale",
+    "pos": "名",
+    "gloss": "（行動・判断の）根拠、論拠",
+    "gloss_brief": "行動や判断の根拠",
+    "choices": [
+     "行動や判断の根拠",
+     "物資の配給",
+     "比率",
+     "合理主義者"
+    ],
+    "answer": 0,
+    "usage_en": "the rationale behind the decision",
+    "usage_ja": "その決定の根拠",
+    "note": "★ rational（合理的な）とは別語"
+   },
+   {
+    "n": 13,
+    "word": "repercussion",
+    "pos": "名",
+    "gloss": "（好ましくない）影響、余波",
+    "gloss_brief": "好ましくない影響",
+    "choices": [
+     "鏡や水面の光の反射",
+     "打楽器",
+     "好ましくない影響",
+     "単なる繰り返し"
+    ],
+    "answer": 2,
+    "usage_en": "serious repercussions",
+    "usage_ja": "深刻な影響",
+    "note": "通例複数形で使う"
+   },
+   {
+    "n": 14,
+    "word": "outbreak",
+    "pos": "名",
+    "gloss": "（病気・戦争の）発生、勃発",
+    "gloss_brief": "病気や戦争の発生",
+    "choices": [
+     "研究上の大発見",
+     "小休止",
+     "病気や戦争の発生",
+     "内訳"
+    ],
+    "answer": 2,
+    "usage_en": "an outbreak of influenza",
+    "usage_ja": "インフルエンザの発生",
+    "note": "動詞 break out（発生する）の名詞形。★ breakthrough（大発見）と混同注意"
+   },
+   {
+    "n": 15,
+    "word": "surplus",
+    "pos": "名",
+    "gloss": "余剰、黒字",
+    "gloss_brief": "余剰",
+    "choices": [
+     "赤字",
+     "追加料金",
+     "表面積",
+     "余剰"
+    ],
+    "answer": 3,
+    "usage_en": "a trade surplus",
+    "usage_ja": "貿易黒字",
+    "note": "⇔ deficit"
+   },
+   {
+    "n": 16,
+    "word": "vicinity",
+    "pos": "名",
+    "gloss": "近所、付近",
+    "gloss_brief": "近所",
+    "choices": [
+     "悪徳",
+     "勝利",
+     "近所",
+     "粘り強さ"
+    ],
+    "answer": 2,
+    "usage_en": "in the vicinity of the station",
+    "usage_ja": "駅の付近に",
+    "note": "in the vicinity of が「およそ〜」になるのは数量の前だけ（in the vicinity of $1 million）。場所なら「〜の付近に」"
+   },
+   {
+    "n": 17,
+    "word": "account for",
+    "pos": "熟",
+    "gloss": "〜を説明する／〜を占める",
+    "gloss_brief": "〜を説明する／〜を占める",
+    "choices": [
+     "〜を説明する／〜を占める",
+     "〜を勘定から外す／無視する",
+     "〜を前提とする",
+     "〜に異議を唱える"
+    ],
+    "answer": 0,
+    "usage_en": "account for 30% of sales",
+    "usage_ja": "売上の30%を占める",
+    "note": "2つの意味を必ずセットで覚える"
+   },
+   {
+    "n": 18,
+    "word": "abide by",
+    "pos": "熟",
+    "gloss": "（規則・決定を）順守する",
+    "gloss_brief": "規則や決定を順守する",
+    "choices": [
+     "職場や学校のそばに住む",
+     "〜を待ちわびる",
+     "〜を我慢する",
+     "規則や決定を順守する"
+    ],
+    "answer": 3,
+    "usage_en": "abide by the rules",
+    "usage_ja": "規則を守る",
+    "note": "abide 単独なら「我慢する」。by を伴えば「順守する」"
+   },
+   {
+    "n": 19,
+    "word": "single out",
+    "pos": "熟",
+    "gloss": "〜を選び出す、名指しする",
+    "gloss_brief": "〜を選び出す",
+    "choices": [
+     "〜を独身のままにする",
+     "〜を選び出す",
+     "〜を一つにまとめる",
+     "〜を締め出す"
+    ],
+    "answer": 1,
+    "usage_en": "single out one student",
+    "usage_ja": "一人の生徒を名指しする",
+    "note": "ほめる場合にも責める場合にも使う"
+   },
+   {
+    "n": 20,
+    "word": "wear off",
+    "pos": "熟",
+    "gloss": "（効果・痛みが）徐々に消える",
+    "gloss_brief": "効果や痛みが徐々に消える",
+    "choices": [
+     "効果や痛みが徐々に消える",
+     "着古してぼろぼろになる",
+     "習慣として身につく",
+     "〜を脱ぎ捨てる"
+    ],
+    "answer": 0,
+    "usage_en": "The medicine wore off.",
+    "usage_ja": "薬の効き目が切れた",
+    "note": "★ wear out（すり減る／疲れ果てる）と区別"
+   }
+  ]
+ },
+ {
+  "no": 6,
+  "title": "評価を下す形容詞・副詞",
+  "items": [
+   {
+    "n": 1,
+    "word": "adverse",
+    "pos": "形",
+    "gloss": "不利な、好ましくない",
+    "gloss_brief": "不利な",
+    "choices": [
+     "多様な",
+     "広告用の",
+     "不利な",
+     "逆行する"
+    ],
+    "answer": 2,
+    "usage_en": "adverse effects",
+    "usage_ja": "悪影響",
+    "note": "★ averse（〜を嫌って）と混同注意"
+   },
+   {
+    "n": 2,
+    "word": "arbitrary",
+    "pos": "形",
+    "gloss": "恣意的な、独断的な",
+    "gloss_brief": "恣意的な",
+    "choices": [
+     "恣意的な",
+     "仲裁による",
+     "芸術的な",
+     "気前のよい"
+    ],
+    "answer": 0,
+    "usage_en": "an arbitrary decision",
+    "usage_ja": "独断的な決定",
+    "note": "副 arbitrarily"
+   },
+   {
+    "n": 3,
+    "word": "compulsory",
+    "pos": "形",
+    "gloss": "義務的な、強制の",
+    "gloss_brief": "義務的な",
+    "choices": [
+     "任意の",
+     "衝動的な",
+     "補完的な",
+     "義務的な"
+    ],
+    "answer": 3,
+    "usage_en": "compulsory education",
+    "usage_ja": "義務教育",
+    "note": "≒ mandatory ⇔ voluntary"
+   },
+   {
+    "n": 4,
+    "word": "detrimental",
+    "pos": "形",
+    "gloss": "有害な、不利益をもたらす",
+    "gloss_brief": "有害な",
+    "choices": [
+     "決定的な",
+     "有益な",
+     "精密な",
+     "有害な"
+    ],
+    "answer": 3,
+    "usage_en": "detrimental to health",
+    "usage_ja": "健康に有害な",
+    "note": "detrimental to が定型"
+   },
+   {
+    "n": 5,
+    "word": "eligible",
+    "pos": "形",
+    "gloss": "資格のある、適格な",
+    "gloss_brief": "資格のある",
+    "choices": [
+     "読みやすい",
+     "選択制の",
+     "資格のある",
+     "好都合な"
+    ],
+    "answer": 2,
+    "usage_en": "eligible for the discount",
+    "usage_ja": "割引を受ける資格がある",
+    "note": "★ illegible（判読できない）と混同注意"
+   },
+   {
+    "n": 6,
+    "word": "feasible",
+    "pos": "形",
+    "gloss": "実行可能な、実現できる",
+    "gloss_brief": "実行可能な",
+    "choices": [
+     "到底できそうにない",
+     "実行可能な",
+     "手ごろな値段の",
+     "融通のきく"
+    ],
+    "answer": 1,
+    "usage_en": "a feasible plan",
+    "usage_ja": "実行可能な計画",
+    "note": "名 feasibility（実現可能性）"
+   },
+   {
+    "n": 7,
+    "word": "imminent",
+    "pos": "形",
+    "gloss": "差し迫った、今にも起こりそうな",
+    "gloss_brief": "差し迫った",
+    "choices": [
+     "差し迫った",
+     "卓越した",
+     "生まれつき備わった",
+     "免疫のある"
+    ],
+    "answer": 0,
+    "usage_en": "an imminent threat",
+    "usage_ja": "差し迫った脅威",
+    "note": "★ eminent（著名な）と混同注意"
+   },
+   {
+    "n": 8,
+    "word": "indispensable",
+    "pos": "形",
+    "gloss": "不可欠な、なくてはならない",
+    "gloss_brief": "不可欠な",
+    "choices": [
+     "不可欠な",
+     "使い捨ての",
+     "分割できない",
+     "不明瞭な"
+    ],
+    "answer": 0,
+    "usage_en": "indispensable to the team",
+    "usage_ja": "チームに不可欠な",
+    "note": "⇔ dispensable"
+   },
+   {
+    "n": 9,
+    "word": "obsolete",
+    "pos": "形",
+    "gloss": "廃れた、時代遅れの",
+    "gloss_brief": "廃れた",
+    "choices": [
+     "絶対的な",
+     "廃れた",
+     "執拗な",
+     "あいまいな"
+    ],
+    "answer": 1,
+    "usage_en": "obsolete technology",
+    "usage_ja": "時代遅れの技術",
+    "note": "≒ outdated"
+   },
+   {
+    "n": 10,
+    "word": "rigorous",
+    "pos": "形",
+    "gloss": "厳格な、厳密な",
+    "gloss_brief": "厳格な",
+    "choices": [
+     "厳格な",
+     "雑な",
+     "活発な",
+     "硬直した"
+    ],
+    "answer": 0,
+    "usage_en": "rigorous testing",
+    "usage_ja": "厳密な検査",
+    "note": "名 rigor。★ rigid（硬直した）と区別"
+   },
+   {
+    "n": 11,
+    "word": "subtle",
+    "pos": "形",
+    "gloss": "微妙な、かすかな",
+    "gloss_brief": "微妙な",
+    "choices": [
+     "明白な",
+     "従属的な",
+     "微妙な",
+     "洗練された"
+    ],
+    "answer": 2,
+    "usage_en": "a subtle difference",
+    "usage_ja": "微妙な違い",
+    "note": "b は発音しない"
+   },
+   {
+    "n": 12,
+    "word": "versatile",
+    "pos": "形",
+    "gloss": "多才な、用途の広い",
+    "gloss_brief": "多才な",
+    "choices": [
+     "多才な",
+     "垂直の",
+     "口頭による",
+     "移り気な"
+    ],
+    "answer": 0,
+    "usage_en": "a versatile player",
+    "usage_ja": "多才な選手",
+    "note": "名 versatility"
+   },
+   {
+    "n": 13,
+    "word": "vulnerable",
+    "pos": "形",
+    "gloss": "傷つきやすい、脆弱な",
+    "gloss_brief": "傷つきやすい",
+    "choices": [
+     "揮発性の",
+     "値打ちのある",
+     "傷つきやすい",
+     "自発的な"
+    ],
+    "answer": 2,
+    "usage_en": "vulnerable to attack",
+    "usage_ja": "攻撃に対して脆弱な",
+    "note": "名 vulnerability"
+   },
+   {
+    "n": 14,
+    "word": "conversely",
+    "pos": "副",
+    "gloss": "逆に、反対に",
+    "gloss_brief": "逆に",
+    "choices": [
+     "慎重に",
+     "逆に",
+     "特に",
+     "会話の中で"
+    ],
+    "answer": 1,
+    "usage_en": "Conversely, prices may fall.",
+    "usage_ja": "逆に価格が下がることもある",
+    "note": "形 converse（逆の）"
+   },
+   {
+    "n": 15,
+    "word": "drastically",
+    "pos": "副",
+    "gloss": "大幅に、思い切って",
+    "gloss_brief": "大幅に",
+    "choices": [
+     "まれに",
+     "定期的に",
+     "芝居がかって",
+     "大幅に"
+    ],
+    "answer": 3,
+    "usage_en": "drastically reduce costs",
+    "usage_ja": "コストを大幅に削減する",
+    "note": "形 drastic"
+   },
+   {
+    "n": 16,
+    "word": "invariably",
+    "pos": "副",
+    "gloss": "常に、決まって",
+    "gloss_brief": "常に",
+    "choices": [
+     "時々",
+     "常に",
+     "多様に",
+     "気づかれずに"
+    ],
+    "answer": 1,
+    "usage_en": "He is invariably late.",
+    "usage_ja": "彼はいつも遅刻する",
+    "note": "vary（変わる）の否定→変わることなく"
+   },
+   {
+    "n": 17,
+    "word": "keep abreast of",
+    "pos": "熟",
+    "gloss": "〜に遅れずについていく、〜を把握し続ける",
+    "gloss_brief": "〜に遅れずについていく",
+    "choices": [
+     "〜を胸にしまっておく",
+     "〜から距離を置く",
+     "〜を前もって知らせる",
+     "〜に遅れずについていく"
+    ],
+    "answer": 3,
+    "usage_en": "keep abreast of the news",
+    "usage_ja": "最新の情報を把握し続ける",
+    "note": "abreast＝横に並んで"
+   },
+   {
+    "n": 18,
+    "word": "make headway",
+    "pos": "熟",
+    "gloss": "前進する、進展する",
+    "gloss_brief": "前進する",
+    "choices": [
+     "見出しをつける",
+     "前進する",
+     "先頭に立って歩く",
+     "道を譲る"
+    ],
+    "answer": 1,
+    "usage_en": "make headway in the talks",
+    "usage_ja": "交渉が進展する",
+    "note": "進みにくい状況で使うことが多い"
+   },
+   {
+    "n": 19,
+    "word": "opt for",
+    "pos": "熟",
+    "gloss": "〜を選ぶ",
+    "gloss_brief": "〜を選ぶ",
+    "choices": [
+     "〜を試す",
+     "〜に反対する",
+     "〜を選ぶ",
+     "〜を任意とする"
+    ],
+    "answer": 2,
+    "usage_en": "opt for the cheaper plan",
+    "usage_ja": "安いほうのプランを選ぶ",
+    "note": "opt out of＝〜に参加しないことを選ぶ"
+   },
+   {
+    "n": 20,
+    "word": "water down",
+    "pos": "熟",
+    "gloss": "〜を骨抜きにする、和らげる",
+    "gloss_brief": "〜を骨抜きにする",
+    "choices": [
+     "〜に水をやる",
+     "〜を書き直す",
+     "〜を撤回する",
+     "〜を骨抜きにする"
+    ],
+    "answer": 3,
+    "usage_en": "water down the proposal",
+    "usage_ja": "提案を骨抜きにする",
+    "note": "薄める→効力を弱める"
+   }
+  ]
+ },
+ {
+  "no": 7,
+  "title": "組織・法制度を語る語",
+  "items": [
+   {
+    "n": 1,
+    "word": "attribute",
+    "pos": "動",
+    "gloss": "〜を…によるものと考える、〜に帰する",
+    "gloss_brief": "〜を…によるものと考える",
+    "choices": [
+     "〜を…によるものと考える",
+     "〜に貢献する",
+     "資料を配布する",
+     "〜を過大に評価する"
+    ],
+    "answer": 0,
+    "usage_en": "attribute success to luck",
+    "usage_ja": "成功を運のおかげだとする",
+    "note": "attribute A to B。名詞では「属性」"
+   },
+   {
+    "n": 2,
+    "word": "bolster",
+    "pos": "動",
+    "gloss": "〜を強化する、下支えする",
+    "gloss_brief": "〜を強化する",
+    "choices": [
+     "〜を借り受ける",
+     "〜を大胆にする",
+     "〜を強化する",
+     "〜をボルトで留める"
+    ],
+    "answer": 2,
+    "usage_en": "bolster confidence",
+    "usage_ja": "自信を高める",
+    "note": "名詞では「長まくら」"
+   },
+   {
+    "n": 3,
+    "word": "confine",
+    "pos": "動",
+    "gloss": "〜を制限する、閉じ込める",
+    "gloss_brief": "〜を制限する",
+    "choices": [
+     "〜を確認する",
+     "〜を定義する",
+     "〜を制限する",
+     "〜を洗練させる"
+    ],
+    "answer": 2,
+    "usage_en": "be confined to bed",
+    "usage_ja": "寝たきりである",
+    "note": "★ confirm と混同注意"
+   },
+   {
+    "n": 4,
+    "word": "delegate",
+    "pos": "動",
+    "gloss": "（権限・仕事を）委任する",
+    "gloss_brief": "権限や仕事を委任する",
+    "choices": [
+     "役職や等級を格下げする",
+     "〜を遅らせる",
+     "〜を審議する",
+     "権限や仕事を委任する"
+    ],
+    "answer": 3,
+    "usage_en": "delegate authority",
+    "usage_ja": "権限を委譲する",
+    "note": "名詞では「代表者」"
+   },
+   {
+    "n": 5,
+    "word": "disclose",
+    "pos": "動",
+    "gloss": "〜を開示する、暴露する",
+    "gloss_brief": "〜を開示する",
+    "choices": [
+     "〜を開示する",
+     "〜を閉鎖する",
+     "〜を割り引く",
+     "〜を処分する"
+    ],
+    "answer": 0,
+    "usage_en": "disclose information",
+    "usage_ja": "情報を開示する",
+    "note": "名 disclosure"
+   },
+   {
+    "n": 6,
+    "word": "enforce",
+    "pos": "動",
+    "gloss": "（法を）施行する、強制的に守らせる",
+    "gloss_brief": "法を施行する",
+    "choices": [
+     "制度や規則を廃止する",
+     "法を施行する",
+     "〜を強く勧める",
+     "〜を一時停止する"
+    ],
+    "answer": 1,
+    "usage_en": "enforce the law",
+    "usage_ja": "法を執行する",
+    "note": "名 enforcement。★ reinforce（補強する）と区別"
+   },
+   {
+    "n": 7,
+    "word": "induce",
+    "pos": "動",
+    "gloss": "〜する気にさせる、〜を引き起こす",
+    "gloss_brief": "〜する気にさせる",
+    "choices": [
+     "〜を演繹する",
+     "〜を導入する",
+     "〜を減らす",
+     "〜する気にさせる"
+    ],
+    "answer": 3,
+    "usage_en": "induce him to sign the contract",
+    "usage_ja": "彼に契約する気を起こさせる",
+    "note": "induce A to do＝Aに〜する気を起こさせる。★ introduce / deduce と混同注意"
+   },
+   {
+    "n": 8,
+    "word": "prohibit",
+    "pos": "動",
+    "gloss": "〜を禁止する",
+    "gloss_brief": "〜を禁止する",
+    "choices": [
+     "〜を促進する",
+     "〜を予言する",
+     "〜を禁止する",
+     "〜を保護する"
+    ],
+    "answer": 2,
+    "usage_en": "prohibit smoking",
+    "usage_ja": "喫煙を禁止する",
+    "note": "prohibit A from -ing"
+   },
+   {
+    "n": 9,
+    "word": "replicate",
+    "pos": "動",
+    "gloss": "〜を複製する、再現する",
+    "gloss_brief": "〜を複製する",
+    "choices": [
+     "〜に返答する",
+     "〜を交換する",
+     "〜を複製する",
+     "〜を否定する"
+    ],
+    "answer": 2,
+    "usage_en": "replicate the results",
+    "usage_ja": "実験結果を再現する",
+    "note": "名 replication"
+   },
+   {
+    "n": 10,
+    "word": "revoke",
+    "pos": "動",
+    "gloss": "〜を取り消す、無効にする",
+    "gloss_brief": "〜を取り消す",
+    "choices": [
+     "〜を回す",
+     "〜を復活させる",
+     "〜を思い出す",
+     "〜を取り消す"
+    ],
+    "answer": 3,
+    "usage_en": "revoke a license",
+    "usage_ja": "免許を取り消す",
+    "note": "★ recall / revive と区別"
+   },
+   {
+    "n": 11,
+    "word": "apprehension",
+    "pos": "名",
+    "gloss": "不安、懸念",
+    "gloss_brief": "不安",
+    "choices": [
+     "不安",
+     "見習い期間",
+     "称賛",
+     "適性"
+    ],
+    "answer": 0,
+    "usage_en": "with apprehension",
+    "usage_ja": "不安を抱いて",
+    "note": "形 apprehensive（心配して）"
+   },
+   {
+    "n": 12,
+    "word": "bias",
+    "pos": "名",
+    "gloss": "偏見、先入観",
+    "gloss_brief": "偏見",
+    "choices": [
+     "双方向性",
+     "偏見",
+     "概略",
+     "買収工作"
+    ],
+    "answer": 1,
+    "usage_en": "a gender bias",
+    "usage_ja": "性別による偏見",
+    "note": "biased＝偏った"
+   },
+   {
+    "n": 13,
+    "word": "commodity",
+    "pos": "名",
+    "gloss": "商品、日用品",
+    "gloss_brief": "商品",
+    "choices": [
+     "共同体",
+     "商品",
+     "委員会",
+     "快適"
+    ],
+    "answer": 1,
+    "usage_en": "a valuable commodity",
+    "usage_ja": "価値のある商品",
+    "note": "経済では「一次産品」"
+   },
+   {
+    "n": 14,
+    "word": "negligence",
+    "pos": "名",
+    "gloss": "怠慢、過失",
+    "gloss_brief": "怠慢",
+    "choices": [
+     "交渉",
+     "近隣地域",
+     "全面否定",
+     "怠慢"
+    ],
+    "answer": 3,
+    "usage_en": "gross negligence",
+    "usage_ja": "重大な過失",
+    "note": "形 negligent"
+   },
+   {
+    "n": 15,
+    "word": "skepticism",
+    "pos": "名",
+    "gloss": "懐疑、疑う気持ち",
+    "gloss_brief": "懐疑",
+    "choices": [
+     "懐疑",
+     "確信",
+     "専門知識",
+     "見取り図"
+    ],
+    "answer": 0,
+    "usage_en": "with skepticism",
+    "usage_ja": "懐疑的に",
+    "note": "形 skeptical"
+   },
+   {
+    "n": 16,
+    "word": "upheaval",
+    "pos": "名",
+    "gloss": "大変動、激変",
+    "gloss_brief": "大変動",
+    "choices": [
+     "上昇",
+     "現状維持",
+     "隆起した丘",
+     "大変動"
+    ],
+    "answer": 3,
+    "usage_en": "social upheaval",
+    "usage_ja": "社会の大変動",
+    "note": "heave＝持ち上げる"
+   },
+   {
+    "n": 17,
+    "word": "fall through",
+    "pos": "熟",
+    "gloss": "（計画・取引が）だめになる、頓挫する",
+    "gloss_brief": "計画や取引がだめになる",
+    "choices": [
+     "計画や取引がだめになる",
+     "トンネルなどを通り抜ける",
+     "〜に恋をする",
+     "徹底的に調べ上げる"
+    ],
+    "answer": 0,
+    "usage_en": "The deal fell through.",
+    "usage_ja": "その商談は流れた",
+    "note": "⇔ go through（成立する）"
+   },
+   {
+    "n": 18,
+    "word": "gloss over",
+    "pos": "熟",
+    "gloss": "〜を取り繕う、都合の悪い点をごまかす",
+    "gloss_brief": "〜を取り繕う",
+    "choices": [
+     "〜を見渡す",
+     "〜につやを出す",
+     "〜を取り繕う",
+     "〜に注釈する"
+    ],
+    "answer": 2,
+    "usage_en": "gloss over the problem",
+    "usage_ja": "問題をうやむやにする",
+    "note": "表面をつやつやにして隠すイメージ"
+   },
+   {
+    "n": 19,
+    "word": "pin down",
+    "pos": "熟",
+    "gloss": "（原因などを）特定する、突き止める",
+    "gloss_brief": "原因などを特定する",
+    "choices": [
+     "〜をピンで留めて飾る",
+     "原因などを特定する",
+     "虫や紙を押しつぶす",
+     "〜を書き留める"
+    ],
+    "answer": 1,
+    "usage_en": "pin down the cause",
+    "usage_ja": "原因を突き止める",
+    "note": "人に対しては「言質を取る」"
+   },
+   {
+    "n": 20,
+    "word": "usher in",
+    "pos": "熟",
+    "gloss": "〜の到来を告げる、〜の先駆けとなる",
+    "gloss_brief": "〜の到来を告げる",
+    "choices": [
+     "〜を締め出す",
+     "〜の到来を告げる",
+     "客を静かに退場させる",
+     "〜を急き立てる"
+    ],
+    "answer": 1,
+    "usage_en": "usher in a new era",
+    "usage_ja": "新時代の幕開けとなる",
+    "note": "usher＝案内係"
+   }
+  ]
+ },
+ {
+  "no": 8,
+  "title": "心情・態度を表す語",
+  "items": [
+   {
+    "n": 1,
+    "word": "alienate",
+    "pos": "動",
+    "gloss": "〜を疎外する、〜の心を遠ざける",
+    "gloss_brief": "〜を疎外する",
+    "choices": [
+     "〜を強く励ます",
+     "〜と手を結ばせる",
+     "〜の負担を軽くする",
+     "〜を疎外する"
+    ],
+    "answer": 3,
+    "usage_en": "alienate voters",
+    "usage_ja": "有権者の心を離れさせる",
+    "note": "alien＝よそ者"
+   },
+   {
+    "n": 2,
+    "word": "ascertain",
+    "pos": "動",
+    "gloss": "〜を確かめる、突き止める",
+    "gloss_brief": "〜を確かめる",
+    "choices": [
+     "〜を上げる",
+     "〜を確かめる",
+     "〜のせいにする",
+     "〜を断言する"
+    ],
+    "answer": 1,
+    "usage_en": "ascertain the facts",
+    "usage_ja": "事実を確認する",
+    "note": "★ assert（断言する）と区別"
+   },
+   {
+    "n": 3,
+    "word": "condone",
+    "pos": "動",
+    "gloss": "〜を大目に見る、黙認する",
+    "gloss_brief": "〜を大目に見る",
+    "choices": [
+     "〜を厳しく罰する",
+     "〜を凝縮する",
+     "〜に条件をつける",
+     "〜を大目に見る"
+    ],
+    "answer": 3,
+    "usage_en": "condone violence",
+    "usage_ja": "暴力を黙認する",
+    "note": "★ condemn（非難する）と正反対。混同注意"
+   },
+   {
+    "n": 4,
+    "word": "deem",
+    "pos": "動",
+    "gloss": "〜だとみなす、考える",
+    "gloss_brief": "〜だとみなす",
+    "choices": [
+     "〜を言いふらす",
+     "〜を深める",
+     "〜を軽んじる",
+     "〜だとみなす"
+    ],
+    "answer": 3,
+    "usage_en": "deem it necessary",
+    "usage_ja": "それを必要だとみなす",
+    "note": "≒ consider（かたい語）"
+   },
+   {
+    "n": 5,
+    "word": "emulate",
+    "pos": "動",
+    "gloss": "〜を見習う、手本にして張り合う",
+    "gloss_brief": "〜を見習う",
+    "choices": [
+     "〜を見習う",
+     "〜を包む",
+     "〜を乳化させる",
+     "〜をからかう"
+    ],
+    "answer": 0,
+    "usage_en": "emulate a role model",
+    "usage_ja": "手本となる人を見習う",
+    "note": "良い意味の「まねる」"
+   },
+   {
+    "n": 6,
+    "word": "instill",
+    "pos": "動",
+    "gloss": "（考え・感情を）徐々に植え付ける",
+    "gloss_brief": "考えや感情を徐々に植え付ける",
+    "choices": [
+     "酒や水を蒸留する",
+     "考えや感情を徐々に植え付ける",
+     "〜を設置する",
+     "〜を静止させる"
+    ],
+    "answer": 1,
+    "usage_en": "instill confidence in students",
+    "usage_ja": "生徒に自信を植え付ける",
+    "note": "★ install（設置する）と混同注意"
+   },
+   {
+    "n": 7,
+    "word": "relinquish",
+    "pos": "動",
+    "gloss": "〜を（しぶしぶ）手放す、放棄する",
+    "gloss_brief": "〜をしぶしぶ手放す",
+    "choices": [
+     "家具などを磨き直す",
+     "〜を強く要求する",
+     "〜をしぶしぶ手放す",
+     "〜を消し去る"
+    ],
+    "answer": 2,
+    "usage_en": "relinquish control",
+    "usage_ja": "支配権を手放す",
+    "note": "≒ give up（かたい語）"
+   },
+   {
+    "n": 8,
+    "word": "resent",
+    "pos": "動",
+    "gloss": "〜に憤慨する、〜を不快に思う",
+    "gloss_brief": "〜に憤慨する",
+    "choices": [
+     "〜を再送する",
+     "〜を提示する",
+     "〜に憤慨する",
+     "〜に快く同意する"
+    ],
+    "answer": 2,
+    "usage_en": "resent the criticism",
+    "usage_ja": "その批判に腹を立てる",
+    "note": "名 resentment"
+   },
+   {
+    "n": 9,
+    "word": "sustain",
+    "pos": "動",
+    "gloss": "〜を維持する／（損害を）受ける",
+    "gloss_brief": "〜を維持する／損害を受ける",
+    "choices": [
+     "〜を停止させる／中断する",
+     "〜を維持する／損害を受ける",
+     "〜を染色する",
+     "〜を仮定する"
+    ],
+    "answer": 1,
+    "usage_en": "sustain economic growth",
+    "usage_ja": "経済成長を維持する",
+    "note": "sustain injuries＝負傷する"
+   },
+   {
+    "n": 10,
+    "word": "wane",
+    "pos": "動",
+    "gloss": "衰える、次第に弱まる",
+    "gloss_brief": "衰える",
+    "choices": [
+     "待ち構える",
+     "強く警告する",
+     "さまよう",
+     "衰える"
+    ],
+    "answer": 3,
+    "usage_en": "Interest in the topic waned.",
+    "usage_ja": "その話題への関心が薄れた",
+    "note": "⇔ wax（満ちる）"
+   },
+   {
+    "n": 11,
+    "word": "adversity",
+    "pos": "名",
+    "gloss": "逆境、苦難",
+    "gloss_brief": "逆境",
+    "choices": [
+     "逆境",
+     "多様",
+     "広告宣伝",
+     "有益な助言"
+    ],
+    "answer": 0,
+    "usage_en": "overcome adversity",
+    "usage_ja": "逆境を乗り越える",
+    "note": "形 adverse"
+   },
+   {
+    "n": 12,
+    "word": "allegation",
+    "pos": "名",
+    "gloss": "（証拠のない）申し立て、疑惑",
+    "gloss_brief": "証拠のない申し立て",
+    "choices": [
+     "主君や国への忠誠",
+     "証拠のない申し立て",
+     "たとえ話",
+     "割り当て"
+    ],
+    "answer": 1,
+    "usage_en": "deny the allegations",
+    "usage_ja": "疑惑を否定する",
+    "note": "動 allege"
+   },
+   {
+    "n": 13,
+    "word": "deterrent",
+    "pos": "名",
+    "gloss": "抑止力、思いとどまらせるもの",
+    "gloss_brief": "抑止力",
+    "choices": [
+     "粉末状の洗剤",
+     "決定的な要因",
+     "抑止力",
+     "品質の劣化"
+    ],
+    "answer": 2,
+    "usage_en": "a nuclear deterrent",
+    "usage_ja": "核抑止力",
+    "note": "動 deter"
+   },
+   {
+    "n": 14,
+    "word": "downturn",
+    "pos": "名",
+    "gloss": "（景気の）低迷、悪化",
+    "gloss_brief": "景気の低迷",
+    "choices": [
+     "歴史の転換点",
+     "頭金",
+     "縮小版",
+     "景気の低迷"
+    ],
+    "answer": 3,
+    "usage_en": "an economic downturn",
+    "usage_ja": "景気後退",
+    "note": "⇔ upturn"
+   },
+   {
+    "n": 15,
+    "word": "quota",
+    "pos": "名",
+    "gloss": "割当、ノルマ",
+    "gloss_brief": "割当",
+    "choices": [
+     "割当",
+     "引用",
+     "割り算の商",
+     "市場の相場"
+    ],
+    "answer": 0,
+    "usage_en": "meet the quota",
+    "usage_ja": "ノルマを達成する",
+    "note": "★ quote（引用）と区別"
+   },
+   {
+    "n": 16,
+    "word": "testimony",
+    "pos": "名",
+    "gloss": "証言、（〜を示す）証拠",
+    "gloss_brief": "証言",
+    "choices": [
+     "遺言",
+     "反対尋問",
+     "証言",
+     "陪審の評決"
+    ],
+    "answer": 2,
+    "usage_en": "give testimony in court",
+    "usage_ja": "法廷で証言する",
+    "note": "動 testify"
+   },
+   {
+    "n": 17,
+    "word": "bank on",
+    "pos": "熟",
+    "gloss": "〜を当てにする、頼りにする",
+    "gloss_brief": "〜を当てにする",
+    "choices": [
+     "〜を当てにする",
+     "〜を銀行に預ける",
+     "〜に賭けて負ける",
+     "〜を岸に寄せる"
+    ],
+    "answer": 0,
+    "usage_en": "bank on his support",
+    "usage_ja": "彼の支持を当てにする",
+    "note": "≒ count on"
+   },
+   {
+    "n": 18,
+    "word": "lash out at",
+    "pos": "熟",
+    "gloss": "〜を激しく非難する、〜に食ってかかる",
+    "gloss_brief": "〜を激しく非難する",
+    "choices": [
+     "〜を激しく非難する",
+     "〜をひもで縛りつける",
+     "〜をむちで打って追い出す",
+     "〜を期限で締め切る"
+    ],
+    "answer": 0,
+    "usage_en": "lash out at critics",
+    "usage_ja": "批判する人々を激しく攻撃する",
+    "note": "lash＝むちで打つ"
+   },
+   {
+    "n": 19,
+    "word": "mull over",
+    "pos": "熟",
+    "gloss": "〜をじっくり考える",
+    "gloss_brief": "〜をじっくり考える",
+    "choices": [
+     "〜を台無しにする",
+     "〜を細かく挽く",
+     "〜をじっくり考える",
+     "〜を蒸し返す"
+    ],
+    "answer": 2,
+    "usage_en": "mull over the offer",
+    "usage_ja": "その申し出をよく考える",
+    "note": "≒ ponder"
+   },
+   {
+    "n": 20,
+    "word": "ramp up",
+    "pos": "熟",
+    "gloss": "〜を増強する、拡大する",
+    "gloss_brief": "〜を増強する",
+    "choices": [
+     "〜をやめる",
+     "〜を増強する",
+     "〜を暴走させる",
+     "〜を巻き上げる"
+    ],
+    "answer": 1,
+    "usage_en": "ramp up production",
+    "usage_ja": "生産を増強する",
+    "note": "⇔ wind down（縮小する）"
+   }
+  ]
+ },
+ {
+  "no": 9,
+  "title": "説明文・資料で出る語",
+  "items": [
+   {
+    "n": 1,
+    "word": "augment",
+    "pos": "動",
+    "gloss": "〜を増大させる、増強する",
+    "gloss_brief": "〜を増大させる",
+    "choices": [
+     "〜を増大させる",
+     "〜を論じ合う",
+     "〜を縮小する",
+     "〜を組み立てる"
+    ],
+    "answer": 0,
+    "usage_en": "augment one's income",
+    "usage_ja": "収入を増やす",
+    "note": "AR＝augmented reality（拡張現実）"
+   },
+   {
+    "n": 2,
+    "word": "compile",
+    "pos": "動",
+    "gloss": "（資料を集めて）〜をまとめる、編集する",
+    "gloss_brief": "資料を集めて〜をまとめる",
+    "choices": [
+     "〜を積み上げて崩す",
+     "同意や自白を強要する",
+     "資料を集めて〜をまとめる",
+     "〜を最後までやり遂げる"
+    ],
+    "answer": 2,
+    "usage_en": "compile a report",
+    "usage_ja": "報告書をまとめる",
+    "note": "名 compilation"
+   },
+   {
+    "n": 3,
+    "word": "depict",
+    "pos": "動",
+    "gloss": "〜を描写する、表現する",
+    "gloss_brief": "〜を描写する",
+    "choices": [
+     "〜を切り取って捨てる",
+     "〜を選び出す",
+     "〜を描写する",
+     "〜を強く非難する"
+    ],
+    "answer": 2,
+    "usage_en": "depict rural life",
+    "usage_ja": "田舎の暮らしを描く",
+    "note": "名 depiction"
+   },
+   {
+    "n": 4,
+    "word": "designate",
+    "pos": "動",
+    "gloss": "〜を指定する、任命する",
+    "gloss_brief": "〜を指定する",
+    "choices": [
+     "〜を辞任させる",
+     "計画を白紙に戻す",
+     "〜を軽視する",
+     "〜を指定する"
+    ],
+    "answer": 3,
+    "usage_en": "a designated area",
+    "usage_ja": "指定された区域",
+    "note": "★ design とは別語。名 designation"
+   },
+   {
+    "n": 5,
+    "word": "impose",
+    "pos": "動",
+    "gloss": "（税・負担を）課す、押し付ける",
+    "gloss_brief": "税や負担を課す",
+    "choices": [
+     "秘密や悩みを打ち明ける",
+     "〜を構成する",
+     "税や負担を課す",
+     "〜に反対する"
+    ],
+    "answer": 2,
+    "usage_en": "impose a tax on imports",
+    "usage_ja": "輸入品に税を課す",
+    "note": "impose A on B"
+   },
+   {
+    "n": 6,
+    "word": "outweigh",
+    "pos": "動",
+    "gloss": "〜に勝る、〜より重要である",
+    "gloss_brief": "〜に勝る",
+    "choices": [
+     "〜を追う",
+     "〜に勝る",
+     "〜より劣る",
+     "〜を量り直す"
+    ],
+    "answer": 1,
+    "usage_en": "The benefits outweigh the risks.",
+    "usage_ja": "利点がリスクを上回る",
+    "note": "out-（勝る）+ weigh"
+   },
+   {
+    "n": 7,
+    "word": "penalize",
+    "pos": "動",
+    "gloss": "〜を罰する、〜に不利益を与える",
+    "gloss_brief": "〜を罰する",
+    "choices": [
+     "〜を貫通する",
+     "〜を審理にかける",
+     "〜を罰する",
+     "〜に報いる"
+    ],
+    "answer": 2,
+    "usage_en": "penalize offenders",
+    "usage_ja": "違反者を罰する",
+    "note": "名 penalty"
+   },
+   {
+    "n": 8,
+    "word": "subsidize",
+    "pos": "動",
+    "gloss": "〜に補助金を出す",
+    "gloss_brief": "〜に補助金を出す",
+    "choices": [
+     "〜を沈下させる",
+     "〜に補助金を出す",
+     "〜の代用品を使う",
+     "〜を細かく分割する"
+    ],
+    "answer": 1,
+    "usage_en": "subsidize farmers",
+    "usage_ja": "農家に補助金を出す",
+    "note": "名 subsidy"
+   },
+   {
+    "n": 9,
+    "word": "validate",
+    "pos": "動",
+    "gloss": "〜の正しさを裏づける、有効にする",
+    "gloss_brief": "〜の正しさを裏づける",
+    "choices": [
+     "〜に価格をつける",
+     "〜の正しさを裏づける",
+     "〜を無効にする",
+     "〜を歓迎する"
+    ],
+    "answer": 1,
+    "usage_en": "validate the theory",
+    "usage_ja": "その理論の正しさを裏づける",
+    "note": "⇔ invalidate"
+   },
+   {
+    "n": 10,
+    "word": "yield",
+    "pos": "動",
+    "gloss": "〜を産出する／（圧力に）屈する",
+    "gloss_brief": "〜を産出する／圧力に屈する",
+    "choices": [
+     "〜を大声で叫ぶ／わめく",
+     "〜を溶接する",
+     "〜を強く望む",
+     "〜を産出する／圧力に屈する"
+    ],
+    "answer": 3,
+    "usage_en": "yield good results",
+    "usage_ja": "良い成果を生む",
+    "note": "名詞では「収穫量・利回り」"
+   },
+   {
+    "n": 11,
+    "word": "implication",
+    "pos": "名",
+    "gloss": "（予想される）影響、言外の意味",
+    "gloss_brief": "予想される影響",
+    "choices": [
+     "言葉を尽くした明示的な説明",
+     "予想される影響",
+     "複製物",
+     "実地への応用"
+    ],
+    "answer": 1,
+    "usage_en": "policy implications",
+    "usage_ja": "政策上の含意",
+    "note": "動 imply"
+   },
+   {
+    "n": 12,
+    "word": "infrastructure",
+    "pos": "名",
+    "gloss": "社会基盤、インフラ",
+    "gloss_brief": "社会基盤",
+    "choices": [
+     "社会基盤",
+     "上部構造",
+     "下請け業者",
+     "建物の内部構造"
+    ],
+    "answer": 0,
+    "usage_en": "aging infrastructure",
+    "usage_ja": "老朽化したインフラ",
+    "note": "infra-＝下部の"
+   },
+   {
+    "n": 13,
+    "word": "integrity",
+    "pos": "名",
+    "gloss": "誠実さ、高潔／完全な状態",
+    "gloss_brief": "誠実さ",
+    "choices": [
+     "統合作業",
+     "高い知性",
+     "誠実さ",
+     "物理的な強度"
+    ],
+    "answer": 2,
+    "usage_en": "a person of integrity",
+    "usage_ja": "高潔な人物",
+    "note": "データの「完全性」の意味でも使う"
+   },
+   {
+    "n": 14,
+    "word": "peril",
+    "pos": "名",
+    "gloss": "（重大な）危険",
+    "gloss_brief": "重大な危険",
+    "choices": [
+     "貝から採れる真珠",
+     "重大な危険",
+     "一定の期間",
+     "正式な許可"
+    ],
+    "answer": 1,
+    "usage_en": "in grave peril",
+    "usage_ja": "重大な危機に瀕して",
+    "note": "形 perilous"
+   },
+   {
+    "n": 15,
+    "word": "remnant",
+    "pos": "名",
+    "gloss": "残り、名残",
+    "gloss_brief": "残り",
+    "choices": [
+     "送金",
+     "記念品",
+     "修繕作業",
+     "残り"
+    ],
+    "answer": 3,
+    "usage_en": "remnants of the past",
+    "usage_ja": "過去の名残",
+    "note": "通例複数形"
+   },
+   {
+    "n": 16,
+    "word": "stagnation",
+    "pos": "名",
+    "gloss": "停滞、不振",
+    "gloss_brief": "停滞",
+    "choices": [
+     "隔離",
+     "段階を追った発展",
+     "水位や気温の急上昇",
+     "停滞"
+    ],
+    "answer": 3,
+    "usage_en": "economic stagnation",
+    "usage_ja": "経済の停滞",
+    "note": "動 stagnate"
+   },
+   {
+    "n": 17,
+    "word": "dwell on",
+    "pos": "熟",
+    "gloss": "〜をくよくよ考える、長々と論じる",
+    "gloss_brief": "〜をくよくよ考える",
+    "choices": [
+     "〜をくよくよ考える",
+     "〜に住み着く",
+     "〜を深く掘り下げて掘る",
+     "〜を膨らませる"
+    ],
+    "answer": 0,
+    "usage_en": "dwell on the past",
+    "usage_ja": "過去にこだわり続ける",
+    "note": "dwell 単独は「住む」"
+   },
+   {
+    "n": 18,
+    "word": "fend off",
+    "pos": "熟",
+    "gloss": "〜をかわす、撃退する",
+    "gloss_brief": "〜をかわす",
+    "choices": [
+     "〜を囲う",
+     "〜を仕上げる",
+     "〜を差し出す",
+     "〜をかわす"
+    ],
+    "answer": 3,
+    "usage_en": "fend off criticism",
+    "usage_ja": "批判をかわす",
+    "note": "fend for oneself＝自活する"
+   },
+   {
+    "n": 19,
+    "word": "sift through",
+    "pos": "熟",
+    "gloss": "〜をふるいにかけて調べる、精査する",
+    "gloss_brief": "〜をふるいにかけて調べる",
+    "choices": [
+     "〜をふるいにかけて調べる",
+     "〜をすり抜ける",
+     "〜を移し替える",
+     "〜をこぼして失う"
+    ],
+    "answer": 0,
+    "usage_en": "sift through the data",
+    "usage_ja": "データを丹念に調べる",
+    "note": "sift＝ふるいにかける"
+   },
+   {
+    "n": 20,
+    "word": "wind up doing",
+    "pos": "熟",
+    "gloss": "結局〜することになる",
+    "gloss_brief": "結局〜することになる",
+    "choices": [
+     "結局〜することになる",
+     "〜する寸前でやめる",
+     "〜するよう説得される",
+     "〜し慣れている"
+    ],
+    "answer": 0,
+    "usage_en": "wind up paying more",
+    "usage_ja": "結局よけいに払うはめになる",
+    "note": "≒ end up doing"
+   }
+  ]
+ },
+ {
+  "no": 10,
+  "title": "抽象度の高い形容詞・熟語",
+  "items": [
+   {
+    "n": 1,
+    "word": "articulate",
+    "pos": "動",
+    "gloss": "〜を明確に述べる",
+    "gloss_brief": "〜を明確に述べる",
+    "choices": [
+     "〜を明確に述べる",
+     "〜を人工的に作り出す",
+     "〜をあえてぼかす",
+     "〜を丸暗記する"
+    ],
+    "answer": 0,
+    "usage_en": "articulate a vision",
+    "usage_ja": "構想を明確に語る",
+    "note": "形容詞では「弁の立つ」"
+   },
+   {
+    "n": 2,
+    "word": "constitute",
+    "pos": "動",
+    "gloss": "〜を構成する、〜に相当する",
+    "gloss_brief": "〜を構成する",
+    "choices": [
+     "〜を中断する",
+     "〜の代用となる",
+     "〜を制限する",
+     "〜を構成する"
+    ],
+    "answer": 3,
+    "usage_en": "Twelve members constitute the committee.",
+    "usage_ja": "12名の委員がその委員会を構成している",
+    "note": "名 constitution"
+   },
+   {
+    "n": 3,
+    "word": "cultivate",
+    "pos": "動",
+    "gloss": "（関係・能力を）育む／〜を耕す",
+    "gloss_brief": "関係や能力を育む／〜を耕す",
+    "choices": [
+     "〜を切り倒す／伐採する",
+     "関係や能力を育む／〜を耕す",
+     "〜を強く非難する",
+     "〜を暗記する"
+    ],
+    "answer": 1,
+    "usage_en": "cultivate relationships",
+    "usage_ja": "人間関係を育む",
+    "note": "名 cultivation"
+   },
+   {
+    "n": 4,
+    "word": "lure",
+    "pos": "動",
+    "gloss": "〜を誘い込む、おびき寄せる",
+    "gloss_brief": "〜を誘い込む",
+    "choices": [
+     "〜を追い払う",
+     "〜を待ち伏せする",
+     "〜を誘い込む",
+     "〜をだまし取る"
+    ],
+    "answer": 2,
+    "usage_en": "lure customers with discounts",
+    "usage_ja": "割引で客を引き寄せる",
+    "note": "名詞では「誘惑・おとり」"
+   },
+   {
+    "n": 5,
+    "word": "perceive",
+    "pos": "動",
+    "gloss": "〜を知覚する、〜だと捉える",
+    "gloss_brief": "〜を知覚する",
+    "choices": [
+     "〜を知覚する",
+     "〜を追い求める",
+     "〜を保存する",
+     "〜に耐え抜く"
+    ],
+    "answer": 0,
+    "usage_en": "perceive it as a threat",
+    "usage_ja": "それを脅威と捉える",
+    "note": "名 perception。★ pursue / preserve と区別"
+   },
+   {
+    "n": 6,
+    "word": "supplement",
+    "pos": "動",
+    "gloss": "〜を補う、補足する",
+    "gloss_brief": "〜を補う",
+    "choices": [
+     "〜を頼む",
+     "〜を交換する",
+     "〜を単純化する",
+     "〜を補う"
+    ],
+    "answer": 3,
+    "usage_en": "supplement one's income",
+    "usage_ja": "収入を補う",
+    "note": "名詞では「補足・栄養補助食品」"
+   },
+   {
+    "n": 7,
+    "word": "terminate",
+    "pos": "動",
+    "gloss": "〜を終了させる、打ち切る",
+    "gloss_brief": "〜を終了させる",
+    "choices": [
+     "〜を要約する",
+     "〜に条件をつける",
+     "〜を最終決定する",
+     "〜を終了させる"
+    ],
+    "answer": 3,
+    "usage_en": "terminate a contract",
+    "usage_ja": "契約を打ち切る",
+    "note": "名 termination"
+   },
+   {
+    "n": 8,
+    "word": "abundant",
+    "pos": "形",
+    "gloss": "豊富な、大量にある",
+    "gloss_brief": "豊富な",
+    "choices": [
+     "豊富な",
+     "乏しい",
+     "突発的な",
+     "見捨てられた"
+    ],
+    "answer": 0,
+    "usage_en": "abundant natural resources",
+    "usage_ja": "豊富な天然資源",
+    "note": "名 abundance"
+   },
+   {
+    "n": 9,
+    "word": "conducive",
+    "pos": "形",
+    "gloss": "（良い結果に）つながる、資する",
+    "gloss_brief": "良い結果につながる",
+    "choices": [
+     "金属などが電気を通しやすい",
+     "良い結果につながる",
+     "誘導しやすい",
+     "結論を示す"
+    ],
+    "answer": 1,
+    "usage_en": "conducive to learning",
+    "usage_ja": "学習に資する",
+    "note": "conducive to が定型"
+   },
+   {
+    "n": 10,
+    "word": "formidable",
+    "pos": "形",
+    "gloss": "手ごわい、恐るべき",
+    "gloss_brief": "手ごわい",
+    "choices": [
+     "手ごわい",
+     "形を変えやすい",
+     "好意的な",
+     "その場限りの"
+    ],
+    "answer": 0,
+    "usage_en": "a formidable opponent",
+    "usage_ja": "手ごわい相手",
+    "note": "圧倒されるほど強い、の含み"
+   },
+   {
+    "n": 11,
+    "word": "impartial",
+    "pos": "形",
+    "gloss": "公平な、偏らない",
+    "gloss_brief": "公平な",
+    "choices": [
+     "偏った",
+     "不完全な",
+     "無関心な",
+     "公平な"
+    ],
+    "answer": 3,
+    "usage_en": "an impartial judge",
+    "usage_ja": "公平な裁判官",
+    "note": "⇔ partial（えこひいきする）"
+   },
+   {
+    "n": 12,
+    "word": "lenient",
+    "pos": "形",
+    "gloss": "寛大な、処分が甘い",
+    "gloss_brief": "寛大な",
+    "choices": [
+     "けちな",
+     "寛大な",
+     "斜めに傾いた",
+     "終始一貫した"
+    ],
+    "answer": 1,
+    "usage_en": "a lenient sentence",
+    "usage_ja": "軽い判決",
+    "note": "⇔ strict, severe"
+   },
+   {
+    "n": 13,
+    "word": "mundane",
+    "pos": "形",
+    "gloss": "平凡な、ありふれた",
+    "gloss_brief": "平凡な",
+    "choices": [
+     "平凡な",
+     "月曜の",
+     "世界的な",
+     "気前のよい"
+    ],
+    "answer": 0,
+    "usage_en": "mundane tasks",
+    "usage_ja": "平凡な雑務",
+    "note": "≒ ordinary, routine"
+   },
+   {
+    "n": 14,
+    "word": "negligible",
+    "pos": "形",
+    "gloss": "無視できるほど小さい",
+    "gloss_brief": "無視できるほど小さい",
+    "choices": [
+     "職務怠慢な",
+     "交渉の余地がある",
+     "無視できるほど小さい",
+     "判読できない"
+    ],
+    "answer": 2,
+    "usage_en": "a negligible amount",
+    "usage_ja": "ごくわずかな量",
+    "note": "★ negligent（怠慢な）と区別"
+   },
+   {
+    "n": 15,
+    "word": "sporadic",
+    "pos": "形",
+    "gloss": "散発的な、時おり起こる",
+    "gloss_brief": "散発的な",
+    "choices": [
+     "胞子の",
+     "散発的な",
+     "素早い",
+     "連続的な"
+    ],
+    "answer": 1,
+    "usage_en": "sporadic outbreaks",
+    "usage_ja": "散発的な発生",
+    "note": "副 sporadically"
+   },
+   {
+    "n": 16,
+    "word": "stringent",
+    "pos": "形",
+    "gloss": "（規則が）厳しい、厳格な",
+    "gloss_brief": "規則が厳しい",
+    "choices": [
+     "分量がおおざっぱな",
+     "強い刺激のある",
+     "弦楽器を使った",
+     "規則が厳しい"
+    ],
+    "answer": 3,
+    "usage_en": "stringent regulations",
+    "usage_ja": "厳しい規制",
+    "note": "≒ strict, rigorous"
+   },
+   {
+    "n": 17,
+    "word": "at the expense of",
+    "pos": "熟",
+    "gloss": "〜を犠牲にして、〜の負担で",
+    "gloss_brief": "〜を犠牲にして",
+    "choices": [
+     "〜のおかげで",
+     "〜に応じて",
+     "〜を犠牲にして",
+     "〜を見越して"
+    ],
+    "answer": 2,
+    "usage_en": "growth at the expense of the environment",
+    "usage_ja": "環境を犠牲にした成長",
+    "note": "expense＝代償・費用"
+   },
+   {
+    "n": 18,
+    "word": "in tandem with",
+    "pos": "熟",
+    "gloss": "〜と連携して、〜と並行して",
+    "gloss_brief": "〜と連携して",
+    "choices": [
+     "〜とは対照的に",
+     "〜の代わりに",
+     "〜と連携して",
+     "〜に反して"
+    ],
+    "answer": 2,
+    "usage_en": "work in tandem with the police",
+    "usage_ja": "警察と連携して動く",
+    "note": "tandem＝縦一列"
+   },
+   {
+    "n": 19,
+    "word": "on a par with",
+    "pos": "熟",
+    "gloss": "〜と同等で、〜に匹敵して",
+    "gloss_brief": "〜と同等で",
+    "choices": [
+     "〜に次いで",
+     "〜より劣って",
+     "〜と同等で",
+     "〜より優れて"
+    ],
+    "answer": 2,
+    "usage_en": "on a par with the world's best",
+    "usage_ja": "世界最高水準に匹敵して",
+    "note": "par＝標準・基準。★辞書の見出しは on a par with（冠詞 a が入る）"
+   },
+   {
+    "n": 20,
+    "word": "jump the gun",
+    "pos": "熟",
+    "gloss": "早まったことをする、フライングする",
+    "gloss_brief": "早まったことをする",
+    "choices": [
+     "銃を飛び越える",
+     "早まったことをする",
+     "あえて危険を冒す",
+     "引き金を引く"
+    ],
+    "answer": 1,
+    "usage_en": "Don't jump the gun.",
+    "usage_ja": "先走るな",
+    "note": "陸上競技のフライングから"
+   }
+  ]
+ }
+]

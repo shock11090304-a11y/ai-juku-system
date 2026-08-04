@@ -1,0 +1,77 @@
+{
+  "area": "第4編　化学反応の速さとしくみ",
+  "problems": [
+    {
+      "id": "4-1-1",
+      "stem": "過酸化水素水中で、過酸化水素は次のように分解する。\n$2\\mathrm{H_2O_2}(aq) \\rightarrow 2\\mathrm{H_2O}(液) + \\mathrm{O_2}(気)$\nある温度でこの分解を追跡したところ、$\\mathrm{H_2O_2}$ のモル濃度は $20\\ \\mathrm{s}$ の間に $0.50\\ \\mathrm{mol/L}$ から $0.38\\ \\mathrm{mol/L}$ に減少した。この $20\\ \\mathrm{s}$ 間における $\\mathrm{H_2O_2}$ の平均の分解速度は何 $\\mathrm{mol/(L\\cdot s)}$ か。有効数字2桁で答えよ。"
+    },
+    {
+      "id": "4-1-2",
+      "stem": "アンモニアの合成は次の反応式で表される。\n$\\mathrm{N_2}(気) + 3\\mathrm{H_2}(気) \\rightarrow 2\\mathrm{NH_3}(気)$\nある条件下で、$\\mathrm{H_2}$ の減少速度は $3.6\\times10^{-2}\\ \\mathrm{mol/(L\\cdot s)}$ であった。このときの $\\mathrm{NH_3}$ の生成速度は何 $\\mathrm{mol/(L\\cdot s)}$ か。有効数字2桁で答えよ。"
+    },
+    {
+      "id": "4-1-3",
+      "stem": "酢酸メチルは希硫酸を触媒として、次のように加水分解される。\n$\\mathrm{CH_3COOCH_3}(aq) + \\mathrm{H_2O}(液) \\rightarrow \\mathrm{CH_3COOH}(aq) + \\mathrm{CH_3OH}(aq)$\n一定温度でこの反応を追跡し、酢酸メチルのモル濃度 $[\\mathrm{CH_3COOCH_3}]$ を測定して次の結果を得た。\n　$t = 0\\ \\mathrm{s}$ のとき $1.00\\ \\mathrm{mol/L}$\n　$t = 300\\ \\mathrm{s}$ のとき $0.70\\ \\mathrm{mol/L}$\n　$t = 600\\ \\mathrm{s}$ のとき $0.49\\ \\mathrm{mol/L}$\n　$t = 900\\ \\mathrm{s}$ のとき $0.34\\ \\mathrm{mol/L}$\n$t = 300\\ \\mathrm{s}$ から $t = 600\\ \\mathrm{s}$ までの間における酢酸メチルの平均の反応速度は何 $\\mathrm{mol/(L\\cdot s)}$ か。有効数字2桁で答えよ。"
+    },
+    {
+      "id": "4-1-4",
+      "stem": "$1.0\\ \\mathrm{mol/L}$ の塩酸 $0.20\\ \\mathrm{L}$ に亜鉛の粒を入れると、次の反応で水素が発生した。\n$\\mathrm{Zn}(固) + 2\\mathrm{HCl}(aq) \\rightarrow \\mathrm{ZnCl_2}(aq) + \\mathrm{H_2}(気)$\n反応開始から $50\\ \\mathrm{s}$ の間に、水素が $2.0\\times10^{-2}\\ \\mathrm{mol}$ 発生した。この $50\\ \\mathrm{s}$ 間における $\\mathrm{HCl}$ の平均の減少速度は何 $\\mathrm{mol/(L\\cdot s)}$ か。溶液の体積は $0.20\\ \\mathrm{L}$ のまま変化しないものとし、有効数字2桁で答えよ。"
+    },
+    {
+      "id": "4-1-5",
+      "stem": "接触法では、酸化バナジウム(V) $\\mathrm{V_2O_5}$ を触媒として次の反応が起こる。\n$2\\mathrm{SO_2}(気) + \\mathrm{O_2}(気) \\rightarrow 2\\mathrm{SO_3}(気)$\nある条件下で $\\mathrm{SO_3}$ の生成速度は $9.0\\times10^{-2}\\ \\mathrm{mol/(L\\cdot min)}$ であった。このときの $\\mathrm{O_2}$ の減少速度は何 $\\mathrm{mol/(L\\cdot s)}$ か。有効数字2桁で答えよ。"
+    },
+    {
+      "id": "4-1-6",
+      "stem": "容積 $2.0\\ \\mathrm{L}$ の密閉容器に四酸化二窒素 $\\mathrm{N_2O_4}$ のみを $0.20\\ \\mathrm{mol}$ 入れ、$127\\ ^\\circ\\mathrm{C}$ に保つと次の分解が進行した(逆反応は無視できるものとする)。\n$\\mathrm{N_2O_4}(気) \\rightarrow 2\\mathrm{NO_2}(気)$\n反応開始から $25\\ \\mathrm{s}$ 後、容器内の全圧は $4.15\\times10^{5}\\ \\mathrm{Pa}$ になっていた。この $25\\ \\mathrm{s}$ 間における $\\mathrm{N_2O_4}$ の平均の分解速度は何 $\\mathrm{mol/(L\\cdot s)}$ か。気体定数を $R = 8.3\\times10^{3}\\ \\mathrm{Pa\\cdot L/(K\\cdot mol)}$ とし、絶対温度はセ氏温度に $273$ を加えて求めよ。有効数字2桁で答えよ。"
+    },
+    {
+      "id": "4-2-1",
+      "stem": "五酸化二窒素の分解\n$2\\mathrm{N_2O_5}(気) \\rightarrow 4\\mathrm{NO_2}(気) + \\mathrm{O_2}(気)$\nの反応速度式は、$\\mathrm{N_2O_5}$ の減少速度を $v$ として $v = k[\\mathrm{N_2O_5}]$ と表される。ある温度で $k = 3.0\\times10^{-4}\\ \\mathrm{/s}$ であるとき、$[\\mathrm{N_2O_5}] = 0.50\\ \\mathrm{mol/L}$ における $v$ は何 $\\mathrm{mol/(L\\cdot s)}$ か。有効数字2桁で答えよ。"
+    },
+    {
+      "id": "4-2-2",
+      "stem": "ペルオキソ二硫酸イオンとヨウ化物イオンの反応\n$\\mathrm{S_2O_8^{2-}}(aq) + 2\\mathrm{I^-}(aq) \\rightarrow 2\\mathrm{SO_4^{2-}}(aq) + \\mathrm{I_2}(aq)$\nの反応速度式は、$\\mathrm{S_2O_8^{2-}}$ の減少速度を $v$ として $v = k[\\mathrm{S_2O_8^{2-}}][\\mathrm{I^-}]$ と表される。ある温度で $[\\mathrm{S_2O_8^{2-}}] = 0.10\\ \\mathrm{mol/L}$、$[\\mathrm{I^-}] = 0.20\\ \\mathrm{mol/L}$ のとき $v = 2.4\\times10^{-5}\\ \\mathrm{mol/(L\\cdot s)}$ であった。速度定数 $k$ の値を、単位もつけて有効数字2桁で答えよ。"
+    },
+    {
+      "id": "4-2-3",
+      "stem": "一酸化窒素と水素は、次のように反応する。\n$2\\mathrm{NO}(気) + 2\\mathrm{H_2}(気) \\rightarrow \\mathrm{N_2}(気) + 2\\mathrm{H_2O}(気)$\n一定温度で初濃度を変えて反応の初速度 $v$($\\mathrm{NO}$ の減少速度)を測定し、次の結果を得た。\n　実験1: $[\\mathrm{NO}] = 1.0\\times10^{-3}\\ \\mathrm{mol/L}$、$[\\mathrm{H_2}] = 2.0\\times10^{-3}\\ \\mathrm{mol/L}$、$v = 1.2\\times10^{-5}\\ \\mathrm{mol/(L\\cdot s)}$\n　実験2: $[\\mathrm{NO}] = 2.0\\times10^{-3}\\ \\mathrm{mol/L}$、$[\\mathrm{H_2}] = 2.0\\times10^{-3}\\ \\mathrm{mol/L}$、$v = 4.8\\times10^{-5}\\ \\mathrm{mol/(L\\cdot s)}$\n　実験3: $[\\mathrm{NO}] = 1.0\\times10^{-3}\\ \\mathrm{mol/L}$、$[\\mathrm{H_2}] = 6.0\\times10^{-3}\\ \\mathrm{mol/L}$、$v = 3.6\\times10^{-5}\\ \\mathrm{mol/(L\\cdot s)}$\nこの反応の反応速度式を、速度定数を $k$ として $v = k[\\mathrm{NO}]^x[\\mathrm{H_2}]^y$ の形で書け($x$、$y$ は整数)。"
+    },
+    {
+      "id": "4-2-4",
+      "stem": "高温では、一酸化炭素と二酸化窒素が次のように反応する。\n$\\mathrm{CO}(気) + \\mathrm{NO_2}(気) \\rightarrow \\mathrm{CO_2}(気) + \\mathrm{NO}(気)$\n一定温度で初速度 $v$($\\mathrm{CO}$ の減少速度)を測定し、次の結果を得た。\n　実験1: $[\\mathrm{CO}] = 0.10\\ \\mathrm{mol/L}$、$[\\mathrm{NO_2}] = 0.20\\ \\mathrm{mol/L}$、$v = 6.0\\times10^{-4}\\ \\mathrm{mol/(L\\cdot s)}$\n　実験2: $[\\mathrm{CO}] = 0.20\\ \\mathrm{mol/L}$、$[\\mathrm{NO_2}] = 0.20\\ \\mathrm{mol/L}$、$v = 1.2\\times10^{-3}\\ \\mathrm{mol/(L\\cdot s)}$\n　実験3: $[\\mathrm{CO}] = 0.10\\ \\mathrm{mol/L}$、$[\\mathrm{NO_2}] = 0.40\\ \\mathrm{mol/L}$、$v = 1.2\\times10^{-3}\\ \\mathrm{mol/(L\\cdot s)}$\nこの温度における速度定数 $k$ の値を、単位もつけて有効数字2桁で答えよ。"
+    },
+    {
+      "id": "4-2-5",
+      "stem": "塩化スルフリル $\\mathrm{SO_2Cl_2}$ の分解\n$\\mathrm{SO_2Cl_2}(気) \\rightarrow \\mathrm{SO_2}(気) + \\mathrm{Cl_2}(気)$\nは一次反応であり、ある温度における半減期(濃度が初めの半分になるのに要する時間)は $2.0\\times10^{3}\\ \\mathrm{s}$ で、初濃度によらず一定である。この温度で $[\\mathrm{SO_2Cl_2}] = 0.80\\ \\mathrm{mol/L}$ から反応を始めたとき、$[\\mathrm{SO_2Cl_2}]$ が $0.10\\ \\mathrm{mol/L}$ になるのは反応開始から何秒後か。有効数字2桁で答えよ。"
+    },
+    {
+      "id": "4-2-6",
+      "stem": "ヨウ化水素の分解\n$2\\mathrm{HI}(気) \\rightarrow \\mathrm{H_2}(気) + \\mathrm{I_2}(気)$\nの反応速度式は、$\\mathrm{HI}$ の減少速度を $v$ として $v = k[\\mathrm{HI}]^2$ と表される。ある温度で $[\\mathrm{HI}] = 0.20\\ \\mathrm{mol/L}$ のとき、$\\mathrm{H_2}$ の生成速度は $4.0\\times10^{-5}\\ \\mathrm{mol/(L\\cdot s)}$ であった。この温度における速度定数 $k$ の値を、単位もつけて有効数字2桁で答えよ。"
+    },
+    {
+      "id": "4-3-1",
+      "stem": "アンモニアの生成反応は次のように表される。\n$\\mathrm{N_2}(気) + 3\\mathrm{H_2}(気) \\rightarrow 2\\mathrm{NH_3}(気) \\quad \\Delta H = -92\\ \\mathrm{kJ}$\n触媒を用いないときの正反応の活性化エネルギーは $234\\ \\mathrm{kJ}$ である。このとき、逆反応 $2\\mathrm{NH_3}(気) \\rightarrow \\mathrm{N_2}(気) + 3\\mathrm{H_2}(気)$ の活性化エネルギーは何 $\\mathrm{kJ}$ か。ただし、エネルギーの値はいずれも上の反応式に示した係数の量あたりの値とする。"
+    },
+    {
+      "id": "4-3-2",
+      "stem": "高温では、炭素と二酸化炭素が次のように反応する。\n$\\mathrm{C(黒鉛)} + \\mathrm{CO_2}(気) \\rightarrow 2\\mathrm{CO}(気)$\nこの反応の正反応の活性化エネルギーは $250\\ \\mathrm{kJ}$、逆反応の活性化エネルギーは $78\\ \\mathrm{kJ}$ である。この反応の反応エンタルピー $\\Delta H$ の値を符号をつけて求め、発熱反応・吸熱反応のどちらであるかも答えよ。エネルギーの値はいずれも上の反応式に示した係数の量あたりの値とする。"
+    },
+    {
+      "id": "4-3-3",
+      "stem": "過酸化水素水の分解は次のように表される。\n$2\\mathrm{H_2O_2}(aq) \\rightarrow 2\\mathrm{H_2O}(液) + \\mathrm{O_2}(気) \\quad \\Delta H = -196\\ \\mathrm{kJ}$\n触媒を用いないときの正反応の活性化エネルギーは $76\\ \\mathrm{kJ}$ であるが、酸化マンガン(IV) $\\mathrm{MnO_2}$ を加えると正反応の活性化エネルギーは $54\\ \\mathrm{kJ}$ になる。$\\mathrm{MnO_2}$ を加えたときの逆反応の活性化エネルギーは何 $\\mathrm{kJ}$ か。また、$\\mathrm{MnO_2}$ を加えることでこの反応の $\\Delta H$ の値が変化するかどうかも答えよ。エネルギーの値はいずれも上の反応式に示した係数の量あたりの値とする。"
+    },
+    {
+      "id": "4-3-4",
+      "stem": "ある気体反応は、温度を $10\\ \\mathrm{K}$ 上げるごとに反応速度が $2$ 倍になる。この反応の温度を $27\\ ^\\circ\\mathrm{C}$ から $67\\ ^\\circ\\mathrm{C}$ に上げると、反応速度は $27\\ ^\\circ\\mathrm{C}$ のときの何倍になるか。整数で答えよ。"
+    },
+    {
+      "id": "4-3-5",
+      "stem": "気体反応の温度を上げると、反応速度は大きくなる。その理由を、分子の運動エネルギーの分布と活性化エネルギーの語を用いて $60$ 字程度で説明せよ。なお、「分子どうしの衝突回数が増えるから」だけでは説明として不十分である点を踏まえて書くこと。"
+    },
+    {
+      "id": "4-3-6",
+      "stem": "二酸化窒素とフッ素の反応\n$2\\mathrm{NO_2}(気) + \\mathrm{F_2}(気) \\rightarrow 2\\mathrm{NO_2F}(気)$\nは、次の2つの段階を経て進むことがわかっている。\n　第1段階: $\\mathrm{NO_2} + \\mathrm{F_2} \\rightarrow \\mathrm{NO_2F} + \\mathrm{F}$ (遅い)\n　第2段階: $\\mathrm{NO_2} + \\mathrm{F} \\rightarrow \\mathrm{NO_2F}$ (速い)\nこの反応全体の反応速度式を、速度定数を $k$ として書け。また、そのように考えられる理由を簡潔に述べよ。"
+    }
+  ]
+}

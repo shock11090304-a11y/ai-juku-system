@@ -1,0 +1,77 @@
+{
+  "area": "第3編 化学反応とエネルギー",
+  "problems": [
+    {
+      "id": "3-1-1",
+      "stem": "メタノール $\\mathrm{CH_3OH(液)}$ の生成エンタルピーは $-239\\ \\mathrm{kJ/mol}$ である。この値を表す変化を、$\\Delta H$ を付した反応式で書け。ただし、炭素の単体は黒鉛とし、すべての物質に状態を明記すること。係数は分数のままでよい。"
+    },
+    {
+      "id": "3-1-2",
+      "stem": "エタノール $\\mathrm{C_2H_5OH(液)}$ の燃焼エンタルピーは $-1368\\ \\mathrm{kJ/mol}$ である。この値を表す変化を、$\\Delta H$ を付した反応式で書け。生成する水は液体、二酸化炭素は気体とし、すべての物質に状態を明記すること。"
+    },
+    {
+      "id": "3-1-3",
+      "stem": "プロパン $\\mathrm{C_3H_8(気)}$ の燃焼エンタルピーは $-2220\\ \\mathrm{kJ/mol}$ である。プロパン $11\\ \\mathrm{g}$ を完全燃焼させたとき発生する熱量は何 $\\mathrm{kJ}$ か。有効数字3桁で答えよ。原子量は H=1.0, C=12 とする。"
+    },
+    {
+      "id": "3-1-4",
+      "stem": "$0.50\\ \\mathrm{mol/L}$ の塩酸 $100\\ \\mathrm{mL}$ に、$0.50\\ \\mathrm{mol/L}$ の水酸化ナトリウム水溶液 $100\\ \\mathrm{mL}$ を加えて混合したところ、溶液の温度が $3.4\\ \\mathrm{K}$ 上昇した。この中和反応の中和エンタルピー($\\mathrm{kJ/mol}$)を有効数字2桁で求めよ。ただし、混合後の溶液の密度は $1.0\\ \\mathrm{g/cm^3}$、比熱は $4.2\\ \\mathrm{J/(g\\cdot K)}$ とし、発生した熱はすべて溶液の温度上昇に使われたものとする。"
+    },
+    {
+      "id": "3-1-5",
+      "stem": "水酸化ナトリウム $\\mathrm{NaOH(固)}$ の水への溶解エンタルピーは $-44.5\\ \\mathrm{kJ/mol}$ である。水 $196\\ \\mathrm{g}$ に $\\mathrm{NaOH(固)}$ $4.0\\ \\mathrm{g}$ を溶かしたとき、水溶液の温度は何 $\\mathrm{K}$ 上昇するか。有効数字2桁で答えよ。ただし、水溶液の比熱は $4.2\\ \\mathrm{J/(g\\cdot K)}$ とし、発生した熱はすべて水溶液の温度上昇に使われるものとする。原子量は H=1.0, O=16, Na=23 とする。"
+    },
+    {
+      "id": "3-1-6",
+      "stem": "$0.30\\ \\mathrm{mol/L}$ の硫酸 $50\\ \\mathrm{mL}$ と、$0.40\\ \\mathrm{mol/L}$ の水酸化ナトリウム水溶液 $50\\ \\mathrm{mL}$ を混合した。中和エンタルピーを $-56.5\\ \\mathrm{kJ/mol}$ とするとき、混合後の溶液の温度は何 $\\mathrm{K}$ 上昇するか。有効数字2桁で答えよ。ただし、混合後の溶液の密度は $1.0\\ \\mathrm{g/cm^3}$、比熱は $4.2\\ \\mathrm{J/(g\\cdot K)}$ とし、発生した熱はすべて溶液の温度上昇に使われるものとする。"
+    },
+    {
+      "id": "3-2-1",
+      "stem": "次の2つの反応の $\\Delta H$ が与えられている。\n$\\mathrm{C(黒鉛)} + \\mathrm{O_2(気)} \\rightarrow \\mathrm{CO_2(気)} \\quad \\Delta H_1 = -394\\ \\mathrm{kJ}$\n$\\mathrm{CO(気)} + \\frac{1}{2}\\mathrm{O_2(気)} \\rightarrow \\mathrm{CO_2(気)} \\quad \\Delta H_2 = -283\\ \\mathrm{kJ}$\n一酸化炭素 $\\mathrm{CO(気)}$ の生成エンタルピー($\\mathrm{kJ/mol}$)を求めよ。"
+    },
+    {
+      "id": "3-2-2",
+      "stem": "生成エンタルピーは $\\mathrm{Fe_2O_3(固)}$ が $-824\\ \\mathrm{kJ/mol}$、$\\mathrm{Al_2O_3(固)}$ が $-1676\\ \\mathrm{kJ/mol}$ である。次のテルミット反応の反応エンタルピー $\\Delta H$($\\mathrm{kJ}$)を求めよ。\n$2\\mathrm{Al(固)} + \\mathrm{Fe_2O_3(固)} \\rightarrow \\mathrm{Al_2O_3(固)} + 2\\mathrm{Fe(固)}$"
+    },
+    {
+      "id": "3-2-3",
+      "stem": "生成エンタルピーは $\\mathrm{CH_4(気)}$ が $-75\\ \\mathrm{kJ/mol}$、$\\mathrm{CO_2(気)}$ が $-394\\ \\mathrm{kJ/mol}$、$\\mathrm{H_2O(液)}$ が $-286\\ \\mathrm{kJ/mol}$ である。メタン $\\mathrm{CH_4(気)}$ の燃焼エンタルピー($\\mathrm{kJ/mol}$)を求めよ。ただし、燃焼で生じる水は液体とする。"
+    },
+    {
+      "id": "3-2-4",
+      "stem": "燃焼エンタルピーは $\\mathrm{C_2H_2(気)}$ が $-1301\\ \\mathrm{kJ/mol}$、$\\mathrm{C(黒鉛)}$ が $-394\\ \\mathrm{kJ/mol}$、$\\mathrm{H_2(気)}$ が $-286\\ \\mathrm{kJ/mol}$ である。アセチレン $\\mathrm{C_2H_2(気)}$ の生成エンタルピー($\\mathrm{kJ/mol}$)を求めよ。ただし、燃焼で生じる水はいずれも液体とする。"
+    },
+    {
+      "id": "3-2-5",
+      "stem": "硫黄と酸素についてのエネルギー図がある。図の最も高い位置に $\\mathrm{S(斜方硫黄)} + \\frac{3}{2}\\mathrm{O_2(気)}$ があり、そこから $297\\ \\mathrm{kJ}$ だけ低い位置に $\\mathrm{SO_2(気)} + \\frac{1}{2}\\mathrm{O_2(気)}$ が、さらにそこから $99\\ \\mathrm{kJ}$ だけ低い位置に $\\mathrm{SO_3(気)}$ がある。$\\mathrm{SO_3(気)}$ の生成エンタルピー($\\mathrm{kJ/mol}$)を求めよ。"
+    },
+    {
+      "id": "3-2-6",
+      "stem": "次の2つの溶解について $\\Delta H$ が与えられている。$\\mathrm{aq}$ は多量の水を表す。\n$\\mathrm{CuSO_4(固)} + \\mathrm{aq} \\rightarrow \\mathrm{CuSO_4\\ aq} \\quad \\Delta H_1 = -66\\ \\mathrm{kJ}$\n$\\mathrm{CuSO_4 \\cdot 5H_2O(固)} + \\mathrm{aq} \\rightarrow \\mathrm{CuSO_4\\ aq} \\quad \\Delta H_2 = +12\\ \\mathrm{kJ}$\nこのとき、次の反応の $\\Delta H$($\\mathrm{kJ}$)を求めよ。\n$\\mathrm{CuSO_4(固)} + 5\\mathrm{H_2O(液)} \\rightarrow \\mathrm{CuSO_4 \\cdot 5H_2O(固)}$"
+    },
+    {
+      "id": "3-3-1",
+      "stem": "水素分子 $\\mathrm{H_2}$ の H–H 結合の結合エンタルピーは $436\\ \\mathrm{kJ/mol}$ である。この値を表す変化を、$\\Delta H$ を付した反応式で書け。すべての物質に状態を明記すること。"
+    },
+    {
+      "id": "3-3-2",
+      "stem": "結合エンタルピーは H–H が $436\\ \\mathrm{kJ/mol}$、Cl–Cl が $244\\ \\mathrm{kJ/mol}$、H–Cl が $432\\ \\mathrm{kJ/mol}$ である。次の反応の反応エンタルピー $\\Delta H$($\\mathrm{kJ}$)を求めよ。\n$\\mathrm{H_2(気)} + \\mathrm{Cl_2(気)} \\rightarrow 2\\mathrm{HCl(気)}$"
+    },
+    {
+      "id": "3-3-3",
+      "stem": "結合エンタルピーは N≡N が $946\\ \\mathrm{kJ/mol}$、H–H が $436\\ \\mathrm{kJ/mol}$、N–H が $391\\ \\mathrm{kJ/mol}$ である。次の反応の反応エンタルピー $\\Delta H$($\\mathrm{kJ}$)を求めよ。\n$\\mathrm{N_2(気)} + 3\\mathrm{H_2(気)} \\rightarrow 2\\mathrm{NH_3(気)}$"
+    },
+    {
+      "id": "3-3-4",
+      "stem": "次の反応の反応エンタルピーは $\\Delta H = -484\\ \\mathrm{kJ}$ である。\n$2\\mathrm{H_2(気)} + \\mathrm{O_2(気)} \\rightarrow 2\\mathrm{H_2O(気)}$\n結合エンタルピーが H–H で $436\\ \\mathrm{kJ/mol}$、O=O で $496\\ \\mathrm{kJ/mol}$ であるとき、$\\mathrm{H_2O}$ の O–H 結合の結合エンタルピー($\\mathrm{kJ/mol}$)を求めよ。有効数字3桁で答えよ。"
+    },
+    {
+      "id": "3-3-5",
+      "stem": "ヨウ素について、次の2つの $\\Delta H$ が与えられている。\n$\\mathrm{I_2(固)} \\rightarrow \\mathrm{I_2(気)} \\quad \\Delta H = +62\\ \\mathrm{kJ}$\n$\\mathrm{I_2(固)} \\rightarrow 2\\mathrm{I(気)} \\quad \\Delta H = +215\\ \\mathrm{kJ}$\n$\\mathrm{I_2}$ の I–I 結合の結合エンタルピー($\\mathrm{kJ/mol}$)を求めよ。"
+    },
+    {
+      "id": "3-3-6",
+      "stem": "塩化ナトリウムの結晶について、次の値が与えられている。\n・$\\mathrm{NaCl(固)}$ の生成エンタルピー: $-411\\ \\mathrm{kJ/mol}$\n・$\\mathrm{Na(固)}$ の昇華エンタルピー: $+107\\ \\mathrm{kJ/mol}$\n・$\\mathrm{Na(気)}$ のイオン化エネルギー: $496\\ \\mathrm{kJ/mol}$\n・Cl–Cl の結合エンタルピー: $244\\ \\mathrm{kJ/mol}$\n・$\\mathrm{Cl(気)}$ の電子親和力: $349\\ \\mathrm{kJ/mol}$(気体の塩素原子 $1\\ \\mathrm{mol}$ が電子 $1\\ \\mathrm{mol}$ を受け取ると $349\\ \\mathrm{kJ}$ が放出される)\n$\\mathrm{NaCl}$ の結晶の格子エネルギー($\\mathrm{kJ/mol}$)を求めよ。ただし格子エネルギーは、$\\mathrm{NaCl(固)} \\rightarrow \\mathrm{Na^+(気)} + \\mathrm{Cl^-(気)}$ に必要なエネルギーとする。"
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+ "no": 3,
+ "genre": "第3問 相当　語学研修の体験ブログ",
+ "title": "Two Weeks in Riverton",
+ "theme_ja": "海外語学研修の体験ブログ",
+ "passage": "Day 1\nAfter a twelve-hour flight, I arrived in Riverton. A teacher from Northfield Language Centre met me at the airport and took me to my host family, the Chens. I was so tired that I fell asleep before dinner, and Mrs. Chen left a sandwich by my door.\n\nDay 3\nClasses began on Monday. That morning we took a placement test, and I was put in the middle level. I had expected the top class, so I felt a little disappointed. My teacher, Ms. Ford, only said, \"You will speak more here than in a higher class.\"\n\nDay 8\nOn Saturday the school took us to a farmers' market. I managed to buy a small cake, but I could not remember the word for \"change.\" The seller waited quietly while I searched for it. Nobody laughed. That night I wrote down twenty words I had not been able to say.\n\nDay 10\nOur class visited a local high school. I sat in on a history lesson and understood almost nothing. Still, a student named Alex asked me about school lunches in Japan, and we talked for half an hour.\n\nDay 13\nWe gave short presentations in class. Mine was about my grandmother's garden. My hands shook, but Ms. Ford told me my pronunciation had improved since the first test.\n\nDay 14\nAt the airport, Mrs. Chen handed me a small notebook. Inside, she had written the twenty words from the market.\n\nI am not fluent yet. But I have stopped waiting for my English to be perfect before I open my mouth.",
+ "word_count": 257,
+ "glossary": [
+  {
+   "word": "Riverton",
+   "ja": "リバートン（架空の町の名）"
+  },
+  {
+   "word": "Northfield Language Centre",
+   "ja": "ノースフィールド語学学校（架空の語学学校）"
+  },
+  {
+   "word": "placement test",
+   "ja": "クラス分けテスト"
+  },
+  {
+   "word": "farmers' market",
+   "ja": "農産物直売市場"
+  },
+  {
+   "word": "pronunciation",
+   "ja": "発音"
+  },
+  {
+   "word": "fluent",
+   "ja": "（言語が）流暢な"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "type": "order",
+   "q": "Put the following events into the order in which they happened.\nA: The writer bought something at a market.\nB: The writer talked with a student at a local high school.\nC: The writer spoke in front of the class.\nD: The writer was placed in a class after taking a test.",
+   "options": [
+    "D → A → B → C",
+    "A → C → D → B",
+    "B → D → C → A",
+    "A → D → C → B"
+   ],
+   "answer": 1,
+   "evidence": "That morning we took a placement test, and I was put in the middle level. (Day 3) / I managed to buy a small cake (Day 8) / a student named Alex asked me about school lunches in Japan, and we talked for half an hour (Day 10) / We gave short presentations in class. (Day 13)",
+   "explanation_ja": "日付の見出しをたどると、Day 3（クラス分けテスト＝D）→ Day 8（市場でケーキを購入＝A）→ Day 10（現地の高校で Alex と会話＝B）→ Day 13（クラスで発表＝C）の順。よって D → A → B → C。",
+   "distractor_ja": "②は市場（Day 8）を最初に置き、発表（Day 13）をクラス分けテスト（Day 3）より前にしている。③は高校訪問（Day 10）を先頭に、クラス分けテストを2番目に置いており、日付の順と合わない。④は市場（Day 8）をクラス分けテスト（Day 3）より前に、発表（Day 13）を高校訪問（Day 10）より前に置いている。"
+  },
+  {
+   "n": 2,
+   "type": "detail",
+   "q": "According to the blog, what happened to the writer on the first morning of classes?",
+   "options": [
+    "The writer was told to give a self-introduction to the whole school.",
+    "The writer was moved up to the top class after a short interview.",
+    "The writer joined a middle-level class and felt let down.",
+    "The writer was handed a list of twenty useful new words by a teacher."
+   ],
+   "answer": 3,
+   "evidence": "\"That morning we took a placement test, and I was put in the middle level. I had expected the top class, so I felt a little disappointed.\"",
+   "explanation_ja": "Day 3 に「クラス分けテストを受けて中級クラスに入れられた」「上級クラスを予想していたので少しがっかりした」と明記されている。中級クラスに入った＋felt a little disappointed を felt let down と言い換えた③が正解。",
+   "distractor_ja": "①の自己紹介は本文に記述なし。②は本文と逆で、上級クラスには入っていない（面接も行われていない）。④は Day 8 の「言えなかった語 20 語を筆者自身が書き留めた」という別の場面をすり替えたもの。"
+  },
+  {
+   "n": 3,
+   "type": "inference",
+   "q": "Which of the following best describes the writer's day at the local high school?",
+   "options": [
+    "The history lesson turned out to be much easier than the writer had expected.",
+    "The students at that school had all studied Japanese food and culture before.",
+    "Talking with a single student was easier for the writer than following a whole class lesson.",
+    "Alex explained the content of the history lesson in simple English."
+   ],
+   "answer": 3,
+   "evidence": "\"I sat in on a history lesson and understood almost nothing. Still, a student named Alex asked me about school lunches in Japan, and we talked for half an hour.\"",
+   "explanation_ja": "授業では understood almost nothing なのに、Alex とは 30 分も会話が続いた。この対比から、一対一のやりとりの方が授業全体を追うより筆者には楽だったと推論できる（本文に直接は書かれていない）。",
+   "distractor_ja": "①は本文と逆（understood almost nothing）。②は all が言い過ぎで、話しかけてきたのは Alex 一人。④は Alex が尋ねたのは日本の給食のことで、歴史の授業の中身を説明してくれたとは書かれていない。"
+  },
+  {
+   "n": 4,
+   "type": "detail",
+   "q": "According to the blog, what did Mrs. Chen do on the writer's last day?",
+   "options": [
+    "She took the writer back to the language centre for one last lesson.",
+    "She asked the writer to write down twenty Japanese words.",
+    "She bought a small cake for the writer to eat on the plane.",
+    "She gave the writer a notebook with the market words written in it."
+   ],
+   "answer": 4,
+   "evidence": "\"At the airport, Mrs. Chen handed me a small notebook. Inside, she had written the twenty words from the market.\"",
+   "explanation_ja": "Day 14 に「空港で Mrs. Chen が小さなノートを手渡してくれた。中には市場での 20 語が書かれていた」と明記。",
+   "distractor_ja": "①は本文に記述なし（最終日は空港の場面のみ）。②は「20 語を書いたのは筆者自身」という Day 8 の内容をすり替えたもの。③のケーキは Day 8 で筆者が自分で買ったもの。"
+  },
+  {
+   "n": 5,
+   "type": "main_idea",
+   "q": "In this blog, what is the writer's main message about the two weeks in Riverton?",
+   "options": [
+    "Careful preparation is the key to passing a language placement test.",
+    "Two weeks abroad changed the writer's attitude toward English.",
+    "Students who live with a host family must follow its rules closely.",
+    "Two weeks abroad is enough to make anyone a fluent English speaker."
+   ],
+   "answer": 2,
+   "evidence": "\"I am not fluent yet. But I have stopped waiting for my English to be perfect before I open my mouth.\"",
+   "explanation_ja": "市場・高校訪問・発表を通じて筆者が書いているのは「英語との向き合い方が変わった」ことで、最終段落の 2 文がそれを総括している。②が主題として最も適切。",
+   "distractor_ja": "①はテスト対策の話ではない。③のホストファミリーの「規則」は本文にない。④は最終段落の I am not fluent yet と正反対。"
+  }
+ ],
+ "translation_ja": "【リバートンでの 2 週間】\n\n1 日目\n12 時間のフライトのあと、私はリバートンに到着した。ノースフィールド語学学校の先生が空港で出迎えてくれ、ホストファミリーのチェン家まで連れて行ってくれた。とても疲れていて、夕食の前に寝てしまい、チェン夫人はドアの外にサンドイッチを置いておいてくれた。\n\n3 日目\n月曜日に授業が始まった。その朝、クラス分けテストを受け、私は中級クラスに入れられた。上級クラスを予想していたので、少しがっかりした。担任のフォード先生は「ここの方が上のクラスよりたくさん話せますよ」とだけ言った。\n\n8 日目\n土曜日、学校が農産物市場に連れて行ってくれた。小さなケーキをなんとか買えたものの、「お釣り」にあたる語が思い出せなかった。店の人は黙って待ってくれた。誰も笑わなかった。その夜、言えなかった語を 20 個書き留めた。\n\n10 日目\nクラスで地元の高校を訪問した。歴史の授業に入ったが、ほとんど何も分からなかった。それでも、アレックスという生徒が日本の給食について尋ねてくれ、私たちは 30 分話した。\n\n13 日目\nクラスで短い発表をした。私のテーマは祖母の庭。手は震えていたけれど、フォード先生は「最初のテストのときより発音がよくなった」と言ってくれた。\n\n14 日目\n空港で、チェン夫人が小さなノートを手渡してくれた。中には、市場でのあの 20 語が書かれていた。\n\nまだ流暢には話せない。でも、英語が完璧になるまで口を開かないのをやめたのだ。",
+ "long_theme_ja": "高校生が 2 週間の海外語学研修に参加し、到着から帰国までを時系列で綴った体験ブログ",
+ "lead": "You found the following blog written by a Japanese high school student who joined a language program abroad."
+}

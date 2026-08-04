@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy sister ( ) to school by bus every morning.",
+  "passage": "",
+  "choices": [
+   "go",
+   "goes",
+   "went",
+   "going"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「goes」。 主語 My sister は三人称単数で、every morning があるので現在の習慣を表す現在形。三単現の s がつくので goes が正しい。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe ( ) a beautiful bird in the tree yesterday.",
+  "passage": "",
+  "choices": [
+   "see",
+   "sees",
+   "saw",
+   "seeing"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「saw」。 yesterday があるので過去の文。see の過去形は不規則変化で saw になる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nHe usually ( ) up at six, but today he got up at eight.",
+  "passage": "",
+  "choices": [
+   "get",
+   "gets",
+   "got",
+   "getting"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「gets」。 usually は習慣を表し現在形。主語 He は三人称単数なので三単現の s がついて gets になる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI think it ( ) sunny tomorrow.",
+  "passage": "",
+  "choices": [
+   "is",
+   "was",
+   "will be",
+   "were"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「will be」。 tomorrow があり未来の予想を表すので will を使う。will のあとは動詞の原形 be が続く。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy mother ( ) dinner in the kitchen now.",
+  "passage": "",
+  "choices": [
+   "cook",
+   "cooks",
+   "is cooking",
+   "cooked"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「is cooking」。 now があり「今〜している最中」なので現在進行形。主語 My mother は三人称単数なので be動詞は is を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThe students ( ) lunch at twelve o'clock every day.",
+  "passage": "",
+  "choices": [
+   "have",
+   "has",
+   "had",
+   "having"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制。正解は「have」。 every day があるので現在の習慣を表す現在形。主語 The students は複数なので原形の have を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWhen I called Yumi last night, she ( ) a book.",
+  "passage": "",
+  "choices": [
+   "reads",
+   "is reading",
+   "was reading",
+   "will read"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「was reading」。 last night に電話したとき「読んでいる最中だった」ので過去進行形。主語 she は単数なので was を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nDon't go out now. It ( ) hard outside.",
+  "passage": "",
+  "choices": [
+   "rain",
+   "rains",
+   "is raining",
+   "rained"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「is raining」。 now があり「今降っている最中」なので現在進行形。天気の it は単数扱いで is を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe ( ) a lot of pictures when we visited Kyoto.",
+  "passage": "",
+  "choices": [
+   "take",
+   "takes",
+   "took",
+   "taking"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「took」。 visited と同じ過去の出来事なので過去形。take の過去形は不規則変化で took になる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nLook at the sky. It ( ) rain soon.",
+  "passage": "",
+  "choices": [
+   "is going to",
+   "was going to",
+   "goes to",
+   "went to"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制。正解は「is going to」。 空の様子から「これから降りそうだ」という近い未来の予測。be going to のあとは動詞の原形 rain が続く。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy father ( ) not watch TV last night.",
+  "passage": "",
+  "choices": [
+   "do",
+   "does",
+   "did",
+   "is"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「did」。 last night があり過去の否定文。一般動詞の過去の否定は did not(didn't)を使い、あとの動詞は原形 watch になる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nKen ( ) his homework two hours ago.",
+  "passage": "",
+  "choices": [
+   "finish",
+   "finishes",
+   "finished",
+   "finishing"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「finished」。 two hours ago(2時間前)は過去を表すので過去形。finish は規則変化で ed をつけて finished になる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: What ( ) you doing at nine last night?\nB: I was taking a bath.",
+  "passage": "",
+  "choices": [
+   "are",
+   "were",
+   "do",
+   "did"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「were」。 at nine last night の過去進行形の疑問文。答えが was taking なので、主語 you に合わせて be動詞の過去形 were を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWater ( ) at 100 degrees Celsius.",
+  "passage": "",
+  "choices": [
+   "boil",
+   "boils",
+   "boiled",
+   "is boiling"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「boils」。 「水は100度で沸騰する」という変わらない事実(科学的真理)は現在形で表す。主語 Water は三人称単数扱いなので boils になる。"
+ }
+]

@@ -1,0 +1,222 @@
+{
+ "no": 5,
+ "date": "8/21",
+ "title": "志望校別 実戦演習",
+ "goal": "難関校レベルの総合長文を、構造・論理・設問処理・速読の総合力で読み解く。",
+ "points": [
+  {
+   "h": "つなぎ語で論理の流れを追う",
+   "body": "However(しかし)・In fact(実際)・On the other hand(一方で)・Therefore(だから)などのつなぎ語は、文と文の関係(逆接・具体・対比・結論)を示す道しるべ。印をつけながら読むと筆者の主張の骨組みが見えてくる。",
+   "ex": [
+    [
+     "However, this idea is completely wrong.",
+     "しかし、この考えは完全に間違っている。"
+    ],
+    [
+     "Therefore, the goal is not to ask many questions, but to ask thoughtful ones.",
+     "だから、目標は多く質問することではなく、思慮深い質問をすることだ。"
+    ]
+   ],
+   "rule": "つなぎ語に○をつけ、その前後で流れがどう変わるか(逆接・対比・結論)を必ず確認する。"
+  },
+  {
+   "h": "指示語(this / it / they)は必ず中身を確認",
+   "body": "this idea や it が何を指すかは、多くの場合すぐ前の文にある。指示語を見たら『=何?』と本文にさかのぼって確認する習慣をつけると、内容一致問題で失点しない。",
+   "ex": [
+    [
+     "However, this idea is completely wrong.",
+     "しかし、この考えは完全に間違っている。(this idea = 直前2文の『質問=弱さ』という考え)"
+    ]
+   ],
+   "rule": "指示語は直前の文に戻し、『何を指すか』を日本語で言い換えてから読み進める。"
+  },
+  {
+   "h": "設問を先に読み、本文を速読して探す",
+   "body": "総合問題では、まず設問に目を通して『何を問われるか』をつかんでから本文を読むと速い。文番号で指定された箇所は、その前後だけを丁寧に読めばよい(スキャニング)。",
+   "ex": [
+    [
+     "To his surprise, half of the class had wondered about the same thing.",
+     "驚いたことに、クラスの半数が同じことを疑問に思っていた。"
+    ]
+   ],
+   "rule": "設問→キーワードを本文で探す→周辺を精読、の順で解くと速く正確になる。"
+  }
+ ],
+ "passage": {
+  "title": "The Power of Small Questions",
+  "jtitle": "小さな問いの力",
+  "paras": [
+   [
+    "Many students think that asking questions in class shows weakness.",
+    "They worry that their classmates will think they are not smart.",
+    "However, this idea is completely wrong."
+   ],
+   [
+    "In fact, the students who ask the most questions often learn the fastest.",
+    "When you ask a question, you show that you are thinking carefully.",
+    "A good question also helps others, because they may share the same doubt but are too shy to speak.",
+    "For example, my friend Kenta was afraid to raise his hand.",
+    "One day, he finally asked why the sky turns red in the evening.",
+    "To his surprise, half of the class had wondered about the same thing."
+   ],
+   [
+    "Of course, some questions are better than others.",
+    "A question that only repeats the teacher's words does not help much.",
+    "On the other hand, a question that connects two ideas can open a new door.",
+    "Therefore, the goal is not to ask many questions, but to ask thoughtful ones."
+   ],
+   [
+    "Learning is not a race that you must win alone.",
+    "It is a journey that becomes easier when people share their doubts and discoveries.",
+    "So the next time you feel confused, remember that your question may be what the class needs."
+   ]
+  ],
+  "trans": {
+   "1": "多くの生徒は、授業で質問することは弱さの表れだと思っている。",
+   "2": "彼らは、質問すると同級生に頭が良くないと思われるのではないかと心配する。",
+   "3": "しかし、この考えは完全に間違っている。",
+   "4": "実際、最も多く質問する生徒こそ、最も速く学ぶことが多い。",
+   "5": "質問をするとき、あなたはその話題について注意深く考えていることを示している。",
+   "6": "良い質問は周りの人の助けにもなる。なぜなら彼らも同じ疑問を抱いているかもしれないが、恥ずかしがって発言できないからだ。",
+   "7": "例えば、私の友人ケンタは手を挙げるのを怖がっていた。",
+   "8": "ある日、彼はついに、なぜ夕方に空が赤くなるのかと尋ねた。",
+   "9": "驚いたことに、クラスの半数が同じことを疑問に思っていた。",
+   "10": "もちろん、質問の中にはより良いものもある。",
+   "11": "先生の言葉をただ繰り返すだけの質問は、あまり役に立たない。",
+   "12": "一方で、二つの考えを結びつける質問は、みんなに新しい扉を開くことができる。",
+   "13": "だから、目標は多くの質問をすることではなく、思慮深い質問をすることだ。",
+   "14": "学びは、あなたが一人で勝たなければならない競争ではない。",
+   "15": "それは、人々が疑問や発見を分かち合うときにより楽になる旅なのだ。",
+   "16": "だから、次に困ったと感じたときは、あなたの質問こそがクラス全体が聞く必要のあるものかもしれないと思い出してほしい。"
+  }
+ },
+ "vocab": [
+  [
+   "weakness",
+   "名",
+   "弱さ"
+  ],
+  [
+   "classmate",
+   "名",
+   "クラスメート・同級生"
+  ],
+  [
+   "in fact",
+   "熟",
+   "実際は・それどころか"
+  ],
+  [
+   "doubt",
+   "名",
+   "疑問・疑い"
+  ],
+  [
+   "shy",
+   "形",
+   "恥ずかしがりの・内気な"
+  ],
+  [
+   "wonder",
+   "動",
+   "不思議に思う・疑問に思う"
+  ],
+  [
+   "of course",
+   "熟",
+   "もちろん"
+  ],
+  [
+   "connect",
+   "動",
+   "つなぐ・結びつける"
+  ],
+  [
+   "on the other hand",
+   "熟",
+   "一方で・他方では"
+  ],
+  [
+   "journey",
+   "名",
+   "旅・道のり"
+  ],
+  [
+   "discovery",
+   "名",
+   "発見"
+  ]
+ ],
+ "q_instr": "本文を読み、あとの問いに答えなさい。文(3)などの番号は本文中の文の通し番号を表す。",
+ "questions": [
+  {
+   "type": "rc_mc",
+   "q": "本文の内容に合うものを1つ選べ。",
+   "choices": [
+    "質問をたくさんする生徒ほど、学ぶのが遅い。",
+    "ケンタは一度も先生に質問しなかった。",
+    "質問をよくする生徒は、速く学ぶことが多い。",
+    "先生の言葉をそのまま繰り返す質問が最も役に立つ。"
+   ],
+   "ans": 2,
+   "exp": "文(4)に『最も多く質問する生徒こそ、最も速く学ぶことが多い』とあるので③が正しい。①は文(4)と逆。②は文(8)で実際に質問しているので誤り。④は文(11)『ただ繰り返す質問はあまり役に立たない』と矛盾。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "文(12)の初めにある On the other hand は、どのような働きをしているか。最も適切なものを選べ。",
+   "choices": [
+    "前の文に具体例を付け加えている。",
+    "前の文(11)の内容と対比している。",
+    "前の文の理由を説明している。",
+    "話題をまったく別のものに変えている。"
+   ],
+   "ans": 1,
+   "exp": "On the other hand(一方で)は対比のつなぎ語。文(11)『ただ繰り返す質問は役に立たない』に対し、文(12)『二つの考えを結びつける質問は新しい扉を開く』という良い質問を対比している。よって②。"
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(3)の this idea が指す内容を、日本語で説明せよ。",
+   "ans": "授業で質問することは弱さの表れであり、質問すると同級生から頭が良くないと思われる、という考え。",
+   "exp": "指示語 this idea は直前の文(1)(2)の内容を指す。文(1)『質問=弱さの表れ』と文(2)『質問すると頭が悪いと思われる心配』をまとめて指している。",
+   "lines": 2
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(6)の下線部 because they may share the same doubt but are too shy to speak を和訳せよ。",
+   "ans": "なぜなら、彼ら(周りの人々)も同じ疑問を抱いているかもしれないが、恥ずかしがって発言できないからだ。",
+   "exp": "because = 理由を表す接続詞。share the same doubt = 同じ疑問を抱く、too shy to speak = 恥ずかしすぎて発言できない（too ~ to … の構文）。they は前に出てきた others（周りの人々）を指す。",
+   "lines": 2
+  },
+  {
+   "type": "rc_mc",
+   "q": "ケンタについて、本文の内容に合うものを選べ。",
+   "choices": [
+    "ケンタは、すぐに手を挙げられる生徒だった。",
+    "ケンタは、夕日についての質問を先生にしなかった。",
+    "ケンタの質問には、クラスの誰も興味を持たなかった。",
+    "ケンタが抱いた疑問を、クラスの半数も同じように抱いていた。"
+   ],
+   "ans": 3,
+   "exp": "文(9)『驚いたことに、クラスの半数が同じことを疑問に思っていた』より④が正しい。①は文(7)『手を挙げるのを怖がっていた』と逆。②は文(8)で実際に質問しているので誤り。③も文(9)と矛盾。"
+  },
+  {
+   "type": "rc_desc",
+   "q": "筆者がこの文章で最も伝えたいことを、日本語でまとめよ。",
+   "ans": "質問することは弱さではなく、深く考えている証であり、良い質問はクラス全体の学びを助ける。だから質問を恐れず、思慮深い質問をしようということ。",
+   "exp": "文(3)(4)(5)で『質問=弱さ』という誤解を否定し、文(13)で『思慮深い質問をせよ』、文(16)で『あなたの質問こそがクラス全体に必要かもしれない』と結んでいる。この全体の流れが筆者の主張。",
+   "lines": 3
+  },
+  {
+   "type": "rc_mc",
+   "q": "筆者が価値があると考える質問はどれか。最も適切なものを選べ。",
+   "choices": [
+    "二つの異なる考えを結びつける質問。",
+    "先生の言葉を正確に繰り返す質問。",
+    "とにかくできるだけ数多く行う質問。",
+    "答えがすでに分かっている質問。"
+   ],
+   "ans": 0,
+   "exp": "文(12)『二つの考えを結びつける質問は新しい扉を開く』、文(13)『多く質問することではなく、思慮深い質問をせよ』より①が正しい。②は文(11)で否定、③は文(13)で否定、④は本文に根拠がなく誤り。"
+  }
+ ]
+}

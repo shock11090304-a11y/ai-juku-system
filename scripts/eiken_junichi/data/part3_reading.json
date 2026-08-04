@@ -1,0 +1,207 @@
+{
+  "part": 3,
+  "passages": [
+    {
+      "id": "p3_1",
+      "title": "Why Testing Yourself Beats Reading Again",
+      "theme": "社会科学",
+      "paragraphs": [
+        "For generations, students preparing for examinations have relied on a single, familiar strategy: reading their notes over and over until the material feels familiar. This approach seems sensible, and the sense of fluency it produces is reassuring. Teachers, too, often encourage this method, advising their students to go through the material just one more time before the day of the test. Yet a growing body of research in cognitive psychology suggests that this widespread habit is far less effective than most learners assume. The comfortable feeling of recognition, it turns out, is a poor guide to how much has actually been remembered.",
+        "In a series of influential experiments, psychologists compared two groups of students who studied the same passages. One group reread the material several times, while the other read it once and then repeatedly tested themselves by trying to recall what they had learned. When both groups were examined a week later, the students who had practiced retrieval remembered substantially more than those who had simply reread. Curiously, when asked to predict their own performance beforehand, the rereaders were the more confident of the two, even though they ultimately performed worse.",
+        "Scientists refer to this phenomenon as the testing effect. The act of pulling information out of memory, rather than passively putting it back in, appears to strengthen the mental pathways that lead to it. This may explain why simply recognizing an answer on the page gives no guarantee that it can be produced from memory when the page is gone. Each successful act of recall makes the next one easier and more durable. Researchers describe such effortful retrieval as a 'desirable difficulty' — a task that feels harder in the moment but produces deeper and longer-lasting learning. The struggle itself, in other words, is not a sign of failure but a mechanism of memory.",
+        "Despite this evidence, self-testing remains unpopular among students. Because retrieval is demanding and often exposes gaps in understanding, it feels less pleasant than the smooth familiarity of rereading. Many learners therefore abandon it precisely when it would help them most. Some educators now argue that schools should build frequent low-stakes quizzes into ordinary lessons, not to rank students but to help them learn. They caution, however, that the benefit comes from the act of recalling, not from the anxiety that high-pressure examinations can create. Used wisely, the humble practice test may be one of the most powerful tools available to any learner."
+      ],
+      "word_count": 407,
+      "questions": [
+        {
+          "q": "What does the passage say about the common strategy of rereading notes?",
+          "choices": [
+            "The feeling of familiarity it produces is not a reliable measure of how much has truly been learned.",
+            "It is the study method most strongly recommended by cognitive psychologists.",
+            "It works well only for students who begin revising long before an examination.",
+            "It helps students discover the gaps in their own understanding."
+          ],
+          "answer": 0,
+          "evidence": "The comfortable feeling of recognition, it turns out, is a poor guide to how much has actually been remembered.",
+          "why_others_wrong": {
+            "B": "本文と逆——研究はむしろ再読の効果が低いと示しており、推奨されていない。",
+            "C": "本文に無い——復習を早く始めるかどうかは論じていない。",
+            "D": "本文と混同——理解の穴に気づくのは自己テスト(retrieval)の効果であって再読ではない。"
+          }
+        },
+        {
+          "q": "What did the experiments described in the passage find?",
+          "choices": [
+            "Both groups remembered roughly the same amount when they were tested a week later.",
+            "The students who tested themselves recalled more than those who had only reread the material.",
+            "The students who reread the material had predicted that they would do badly.",
+            "The students who tested themselves felt more confident beforehand than the rereaders did."
+          ],
+          "answer": 1,
+          "evidence": "the students who had practiced retrieval remembered substantially more than those who had simply reread.",
+          "why_others_wrong": {
+            "A": "本文と逆——retrieval群の方が「かなり多く」覚えていた。",
+            "C": "本文と逆——再読群はより自信があり、良い出来を予想していたと示唆される。",
+            "D": "本文と逆——自信があったのは再読群であって自己テスト群ではない。"
+          }
+        },
+        {
+          "q": "According to the passage, why do many students avoid testing themselves?",
+          "choices": [
+            "It has been shown to create more anxiety than formal examinations do.",
+            "It requires far more time than rereading a set of notes.",
+            "Their teachers seldom permit it during ordinary lessons.",
+            "It feels harder and less pleasant than simply going over the material again."
+          ],
+          "answer": 3,
+          "evidence": "Because retrieval is demanding and often exposes gaps in understanding, it feels less pleasant than the smooth familiarity of rereading.",
+          "why_others_wrong": {
+            "A": "歪曲——本文は『効果は不安からではない』と述べるが、自己テストが試験より不安を生むとは言っていない。",
+            "B": "本文に無い——避ける理由として時間は挙げられていない。",
+            "C": "本文に無い——むしろ一部の教育者は授業に小テストを増やすべきだと主張している。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "p3_2",
+      "title": "Nature's Engineers",
+      "theme": "自然科学",
+      "paragraphs": [
+        "Few animals have been as misunderstood as the beaver. For centuries, these large rodents were hunted relentlessly across Europe and North America, prized for their warm fur and for their scent glands, which were once used in perfumes. By the early twentieth century, they had vanished from much of their former range, and few people mourned their disappearance. To many farmers and landowners, beavers were simply destructive pests that felled valuable trees and flooded useful land. Only recently has this view begun to change, as scientists have come to appreciate the remarkable influence these animals have on the landscapes they inhabit.",
+        "The key to the beaver's importance lies in its most famous habit: building dams. Using branches, mud, and stones, beavers block flowing streams to create deep ponds where they can live safely. These dams do far more than protect their builders. By slowing the movement of water, they cause it to spread out across the surrounding land, forming wetlands that would not otherwise exist. Water that once rushed downstream in a narrow channel instead lingers, soaking into the soil and raising the level of groundwater over a wide area.",
+        "These changes bring a striking range of benefits. The wetlands created by beavers teem with life, providing homes for fish, insects, amphibians, and birds that struggle to survive elsewhere. The ponds also act as natural sponges. During heavy rain, they hold back water that might otherwise cause flooding downstream; during dry spells, they release it slowly, helping the land resist drought. Perhaps most surprising of all, beaver ponds trap sediment and pollutants, so that the water leaving them is often cleaner than the water that flowed in.",
+        "Recognizing these advantages, conservationists in several countries have begun to reintroduce beavers to rivers where they once lived. The results have often been dramatic, with damaged streams recovering far more quickly than expected. Yet the animals' return is not welcomed by everyone. Farmers whose fields lie beside rivers sometimes find their crops flooded or their drainage ditches blocked, and such conflicts can be bitter. Supporters argue that the solution is not to remove the beavers but to manage them, using simple devices that control water levels while allowing the animals to remain. The challenge, they say, is learning to share the landscape with a creature that shapes it so profoundly."
+      ],
+      "word_count": 387,
+      "questions": [
+        {
+          "q": "How were beavers generally regarded until recent times?",
+          "choices": [
+            "They were admired for the rich wetlands they created.",
+            "They were carefully protected because so few of them were left.",
+            "People viewed them as harmful creatures responsible for wrecking woodland and submerging usable farmland.",
+            "They were valued chiefly for their ability to hold back floods."
+          ],
+          "answer": 2,
+          "evidence": "To many farmers and landowners, beavers were simply destructive pests that felled valuable trees and flooded useful land.",
+          "why_others_wrong": {
+            "A": "本文と逆——湿地への評価は最近生まれた見方。",
+            "B": "本文と逆——保護ではなく容赦なく狩られていた。",
+            "D": "本文に無い——洪水抑制という利点が認識されたのは最近のこと。"
+          }
+        },
+        {
+          "q": "According to the passage, what happens to water when beavers build dams?",
+          "choices": [
+            "It spreads out over the nearby land and sinks into the soil instead of rushing away.",
+            "The streams that are blocked dry up completely within a short time.",
+            "It flows downstream more quickly than it did before.",
+            "The ponds grow too deep for other creatures to make use of."
+          ],
+          "answer": 0,
+          "evidence": "By slowing the movement of water, they cause it to spread out across the surrounding land... instead lingers, soaking into the soil and raising the level of groundwater over a wide area.",
+          "why_others_wrong": {
+            "B": "本文と逆——ダムは池や湿地を作り、川が干上がるわけではない。",
+            "C": "本文と逆——ダムは水の流れを遅くする。",
+            "D": "本文と逆——できた湿地は生き物であふれている。"
+          }
+        },
+        {
+          "q": "What is one benefit of beaver ponds that the passage mentions?",
+          "choices": [
+            "They completely prevent flooding in the areas around them.",
+            "They help purify water by catching mud and contaminants before it flows downstream.",
+            "They provide a home for species that exist nowhere else on Earth.",
+            "They increase the amount of water rushing downstream during storms."
+          ],
+          "answer": 1,
+          "evidence": "beaver ponds trap sediment and pollutants, so that the water leaving them is often cleaner than the water that flowed in.",
+          "why_others_wrong": {
+            "A": "言い過ぎ——『洪水を引き起こしかねない水を受け止める』であり、すべての洪水を防ぐとは書いていない。",
+            "C": "言い過ぎ——本文は『他の場所では生きづらい種』と述べ、地球上ここだけの種とは言っていない。",
+            "D": "本文と逆——大雨時にはむしろ水を受け止める。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "p3_3",
+      "title": "The Box That Changed the World",
+      "theme": "経済・ビジネス・歴史",
+      "paragraphs": [
+        "Today, almost everything we buy has spent part of its life inside a steel box. These containers, stacked in their millions aboard enormous ships, are so ordinary that we rarely notice them. Yet the standard shipping container is one of the most important inventions of the twentieth century. Before it existed, moving goods across the ocean was slow, costly, and astonishingly inefficient. Cargo of every shape and size — barrels, sacks, crates, and boxes — had to be loaded onto ships piece by piece by teams of dockworkers. A single vessel might sit in port for a week or more while its hold was painstakingly filled, and a great deal of cargo was damaged or stolen along the way.",
+        "The man usually credited with solving this problem was Malcolm McLean, an American trucking businessman who knew little about ships. Frustrated by the hours he wasted waiting for his trucks to be unloaded at the docks, he had a simple but powerful idea. Instead of unpacking a truck and loading its contents onto a ship, why not lift the entire truck body — a sealed metal box — directly onto the deck? In 1956, McLean sent the first container ship on its way, carrying fifty-eight identical boxes. The savings were immediate and enormous: loading cargo this way cost only a tiny fraction of the old method.",
+        "Despite these advantages, the container was not welcomed everywhere at first. Dockworkers understood that the new boxes would eliminate much of the manual labor on which their jobs depended, and their unions fought hard against the change. Ports faced enormous costs, since old harbors designed for loose cargo had to be rebuilt with cranes and vast open yards to handle the containers. There was also the problem of standardization: a container was useless if it did not fit the cranes, trucks, and ships of every company that might handle it. Only after years of negotiation did the industry agree on common sizes, allowing a box packed in one country to be moved smoothly anywhere in the world.",
+        "The consequences were profound and far-reaching. As the cost of shipping collapsed, distance mattered far less than it once had. A company could now manufacture its products wherever labor was cheapest and still deliver them affordably to customers on the other side of the planet. In this way, the humble container helped to create the global economy we know today, in which the parts of a single device may come from a dozen different nations. The change was not painless. Countless dockworkers lost their livelihoods, and some once-busy ports fell silent, while others that had invested early grew rich. The box had quietly rearranged the map of world trade."
+      ],
+      "word_count": 447,
+      "questions": [
+        {
+          "q": "What does the passage say about transporting goods by sea before the container was invented?",
+          "choices": [
+            "Ships could be loaded within a few hours by large teams of workers.",
+            "Goods were loaded one piece at a time in a slow process, and much cargo was damaged or stolen.",
+            "Only a narrow range of products could be carried across the ocean.",
+            "Most cargo was already being packed inside sealed steel boxes."
+          ],
+          "answer": 1,
+          "evidence": "Cargo... had to be loaded onto ships piece by piece by teams of dockworkers. A single vessel might sit in port for a week or more... and a great deal of cargo was damaged or stolen along the way.",
+          "why_others_wrong": {
+            "A": "本文と逆——一隻が一週間以上も港に留まることがあった。",
+            "C": "本文に無い——多様な貨物が描かれており、運べる品目に限りがあったとは述べていない。",
+            "D": "本文と逆——これはコンテナが存在する前の話。"
+          }
+        },
+        {
+          "q": "According to the passage, what led Malcolm McLean to his idea?",
+          "choices": [
+            "He was frustrated by the long delays his trucks faced while being unloaded at the docks.",
+            "He had worked within the shipping industry for many years.",
+            "He wished to design a stronger kind of ocean-going ship.",
+            "Dockworkers had asked him to make their work less exhausting."
+          ],
+          "answer": 0,
+          "evidence": "Frustrated by the hours he wasted waiting for his trucks to be unloaded at the docks, he had a simple but powerful idea.",
+          "why_others_wrong": {
+            "B": "本文と逆——彼は『船のことをほとんど知らなかった』。",
+            "C": "本文に無い——彼の発想は規格化された箱であって船の設計ではない。",
+            "D": "本文に無い/逆——港湾労働者は後にこの変化に反対した。"
+          }
+        },
+        {
+          "q": "Why did the container meet with opposition, according to the passage?",
+          "choices": [
+            "The boxes were found to damage far more cargo than older methods had.",
+            "Early container ships cost much more to operate than ordinary vessels.",
+            "Workers feared for their jobs, and ports had to spend heavily to rebuild their facilities.",
+            "Governments refused to let containers from other countries enter their ports."
+          ],
+          "answer": 2,
+          "evidence": "Dockworkers understood that the new boxes would eliminate much of the manual labor on which their jobs depended... Ports faced enormous costs, since old harbors... had to be rebuilt with cranes and vast open yards.",
+          "why_others_wrong": {
+            "A": "本文と逆——密閉された箱はむしろ盗難や損傷を減らした。",
+            "B": "本文と逆——節約効果は『即座かつ莫大』だった。",
+            "D": "本文に無い——政府による規制は述べられていない。"
+          }
+        },
+        {
+          "q": "What does the author suggest about the container's overall impact?",
+          "choices": [
+            "Its benefits were shared equally among workers, ports, and companies.",
+            "Its effect on the world economy proved smaller than people had expected.",
+            "It encouraged companies to manufacture their goods close to their customers.",
+            "It reshaped world trade, bringing wealth to some while costing others their livelihoods."
+          ],
+          "answer": 3,
+          "evidence": "the humble container helped to create the global economy we know today... The change was not painless. Countless dockworkers lost their livelihoods, and some once-busy ports fell silent, while others that had invested early grew rich.",
+          "why_others_wrong": {
+            "A": "本文と逆——『その変化は無痛ではなかった』、明確な勝者と敗者がいた。",
+            "B": "本文と逆——影響は『深く広範』だった。",
+            "C": "本文と逆——輸送費の低下で企業は顧客から遠くても人件費の安い場所で作れるようになった。"
+          }
+        }
+      ]
+    }
+  ]
+}

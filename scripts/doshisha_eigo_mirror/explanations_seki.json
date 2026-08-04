@@ -1,0 +1,254 @@
+{
+ "I_A_W": {
+  "quote": "for a long time it was pushed to the margins of psychology",
+  "quote_ja": "長い間、それ(畏敬の念)は心理学の周縁へと押しやられていた。",
+  "reason": "【コアイメージ】to は『到達・方向』の矢印。ゴールにビタッと届くイメージだ。ここは push A to B(A を B へ押しやる)の受動態で、the margins(周縁)という到達点へ『向かって』押しやられている、という流れ。動詞 push/move/send が『場所』を伴うとき、その行き先は to で示すのが鉄則だ。",
+  "distractors": "【他の選択肢】②on=接触(上に乗る)で移動の行き先が出ない。③at=一点の位置を指すだけで矢印にならない。④in=内部にとどまるイメージで『〜へ動かす』方向が出せない。",
+  "point": "【一発ルール】push/move/send +to+場所=『〜へ』。to を見たら『到達の矢印』を思い浮かべよ。"
+ },
+ "I_A_X": {
+  "quote": "The scientist most closely associated with the modern study of awe is Dacher Keltner",
+  "quote_ja": "畏敬の念の現代的研究と最も密接に結びついた科学者が、ダッカー・ケルトナーである。",
+  "reason": "【コアイメージ】これは丸暗記でなく、associate A with B(A と B を結びつける)の受動態と見抜けば一発。with のコアは『付帯・セット』で、2 つがくっついて離れないイメージだ。associate は必ず相棒の with を連れてくる。",
+  "distractors": "【他の選択肢】①to=方向、③by=手段・行為者、④for=交換・目的。いずれも associate の定位置 with を崩してしまう。",
+  "point": "【一発ルール】associate は with とセット(connect/link は to も可)。『A と B を結ぶ』の with は覚える価値あり。"
+ },
+ "I_A_Y": {
+  "quote": "a profound act of kindness can be just as overwhelming as a towering mountain range",
+  "quote_ja": "深い親切な行為も、そびえ立つ山脈と同じくらい圧倒的でありうる。",
+  "reason": "【コアイメージ】カギは直前の just as overwhelming にある as。as … as ~(~と同じくらい…)の同等比較で、as のコアは『イコール(=)』だ。前に as が出たら、後ろも as で受けて 2 つを=で結ぶ。ここは『親切な行為=山脈』を圧倒度で並べている。",
+  "distractors": "【他の選択肢】①than=比較級(more 等)の相棒で、ここには more がない。②like は前置詞だが as…as の後半 as の代わりにはならない。④so=as…so… の呼応で文脈に合わない。",
+  "point": "【一発ルール】as+形容詞+as で『同じくらい』。前の as を見たら後ろの as を即補え。"
+ },
+ "I_A_Z": {
+  "quote": "lowering levels of inflammatory chemicals that are associated with anxiety and depression",
+  "quote_ja": "不安やうつと関連する炎症性の化学物質のレベルを下げる。",
+  "reason": "【コアイメージ】空所直後が are(動詞)なので、主語の働きをする関係代名詞が要る。先行詞は chemicals(モノ)。『先行詞(モノ)+空所+動詞』ときたら主格の that(=which)で決まり。that が chemicals を受け、その中で are の主語になっている。",
+  "distractors": "【他の選択肢】①what=先行詞を含むため、前に名詞 chemicals があると使えない。②whose=直後に名詞が必要(所有格)。③where=場所の副詞関係詞で主語になれない。",
+  "point": "【一発ルール】『名詞(モノ)+空所+動詞』=主格の that/which。直後が動詞なら主格と即断。"
+ },
+ "I_B_a": {
+  "quote": "awe has moved toward the center of research on human emotion, largely because psychologists have at last found reliable ways to trigger it",
+  "quote_ja": "畏敬の念が人間の感情研究の中心へと移ったのは、主に心理学者がついにそれを引き起こす確実な方法を見つけたからだ。",
+  "reason": "largely は『主に・大部分は』。ここでは because 節を修飾し、原因の中心を示す。言い換えは mainly(主に)。",
+  "distractors": "②rarely=めったに〜ない(逆)。③barely=かろうじて。④oddly=奇妙にも。",
+  "point": "largely=mainly=『主に』。程度でなく『大部分』を示す副詞。"
+ },
+ "I_B_b": {
+  "quote": "the feeling we get in the presence of something vast that transcends our current understanding",
+  "quote_ja": "現在の私たちの世界理解を超える、何か広大なものの前で得る感情。",
+  "reason": "transcend=超越する。trans-(越えて)+scend(登る)で『枠を越えて上に行く』イメージ。言い換えは surpass(〜を上回る・超える)。",
+  "distractors": "①match=匹敵する。②reflect=反映する。④limit=制限する(逆方向)。",
+  "point": "接頭辞 trans-=『越えて』。transcend/surpass/exceed は『超える』仲間。"
+ },
+ "I_B_c": {
+  "quote": "Many people report goosebumps or a shiver running down the spine, reactions that appear to be governed in part by the vagus nerve",
+  "quote_ja": "多くの人が鳥肌や背筋を走る震えを報告するが、それらの反応は一部、迷走神経に支配されているようだ。",
+  "reason": "reaction=(刺激への)反応。re-(返って)+action(動き)で『返ってくる動き』。言い換えは response(反応・応答)。",
+  "distractors": "①signal=合図。③question=質問。④choice=選択。",
+  "point": "reaction=response。re-『返す』からくる身体反応。"
+ },
+ "I_B_d": {
+  "quote": "more likely to help a stranger who stumbled nearby",
+  "quote_ja": "近くでつまずいた見知らぬ人を助ける可能性が高かった。",
+  "reason": "stumble=つまずく・よろける。『近くでよろけた人を助ける』という文脈に合う。言い換えは trip(つまずく)。",
+  "distractors": "①rush=急ぐ。②pause=一時止まる。③wait=待つ。どれも『つまずく』ではない。",
+  "point": "stumble=trip=『つまずく』。『助ける』相手=困っている人、で裏取り。"
+ },
+ "I_B_e": {
+  "quote": "shift our attention away from the self and toward the larger world, prompting us to cooperate",
+  "quote_ja": "自己から離れてより大きな世界へ注意を移し、私たちに協力を促す。",
+  "reason": "prompt=(人を)〜するよう促す・仕向ける。prompt A to do の形。言い換えは lead(〜するよう導く)。",
+  "distractors": "②force=強制する(強すぎ)。③allow=許可する。④warn=警告する。",
+  "point": "prompt/lead A to do=『A にそっとさせる』。force(強制)ほど強くない。"
+ },
+ "I_B_f": {
+  "quote": "giving away resources seems less like a sacrifice and more like an obligation we are actually glad to meet",
+  "quote_ja": "資源を分け与えることは、犠牲というより、むしろ喜んで果たす義務のように思える。",
+  "reason": "obligation=義務・果たすべき務め。meet an obligation で『義務を果たす』。言い換えは duty(義務)。",
+  "distractors": "①option=選択肢(任意で逆)。②reward=報酬。④burden=重荷(否定的すぎ。ここは glad to meet)。",
+  "point": "obligation=duty=『義務』。動詞 meet と結べば『義務を果たす』。"
+ },
+ "I_B_g": {
+  "quote": "they grew more patient and more reluctant to base their choices on money alone",
+  "quote_ja": "彼らはより忍耐強くなり、選択をお金だけに基づかせることに、より気が進まなくなった。",
+  "reason": "reluctant=気が進まない・したがらない。be reluctant to do の形が頻出。言い換えは unwilling(〜したがらない)。",
+  "distractors": "①eager=熱望する(逆)。③likely=ありそう。④able=できる。",
+  "point": "reluctant=unwilling=『気が進まない』。to do とセットで覚える。"
+ },
+ "I_B_h": {
+  "quote": "a domineering ruler who claims more-than-human authority",
+  "quote_ja": "人間を超える権威を主張する、横暴な支配者。",
+  "reason": "domineering=横暴な・威圧的な。dominate(支配する)の派生で『上から抑えつける』イメージ。言い換えは tyrannical(暴君的な)。",
+  "distractors": "①generous=寛大な(逆)。②cautious=慎重な。③cheerful=陽気な。",
+  "point": "語源 dominate『支配』を感じれば domineering=tyrannical=『横暴な』が見える。"
+ },
+ "I_B_i": {
+  "quote": "more inclined to accept authority without question",
+  "quote_ja": "疑うことなく権威を受け入れる傾向がより強くなる。",
+  "reason": "be inclined to do=〜する傾向がある・〜しがちだ。incline は『傾く』が原義で、心が一方へ傾くイメージ。言い換えは disposed(〜する気がある・傾向がある)。",
+  "distractors": "②reluctant=気が進まない(逆)。③afraid=恐れて。④unable=できない。",
+  "point": "be inclined/disposed to do=『〜しがち』。incline の『傾く』から。"
+ },
+ "I_C_ア": {
+  "quote": "stretching the boundaries of what a person believes is possible",
+  "quote_ja": "人が可能だと信じる範囲の境界を押し広げること。",
+  "reason": "【考え方】stretch the boundaries of ~=『~の境界を広げる』。stretch は『伸ばして広げる』動きだ。what a person believes is possible は『人が可能だと信じていること』。つまり『可能だと思える範囲を広げる』。これに最も近いのが②widening a person's sense of what could be true(何が真実でありうるかの感覚を広げる)。boundary を広げる=sense of what could be を広げる、で一致する。",
+  "distractors": "【他の選択肢】①『信念のほとんどが偽と証明する』は本文にない。③setting firm limits=境界を固定(逆で狭める)。④earlier thinkers=過去の思想家、で無関係。",
+  "point": "【一発ルール】stretch/widen the boundaries=『枠を広げる』。狭める(limit)系は即×。"
+ },
+ "I_C_イ": {
+  "quote": "a realization that loosens our grip on petty concerns",
+  "quote_ja": "つまらない心配事へのこだわりを緩めてくれるという気づき。",
+  "reason": "【考え方】loosen our grip on ~=『~への握り(こだわり)を緩める』。grip は『しっかり握る』で、それを loosen(緩める)。petty concerns=つまらない心配事。つまり『小さな悩みへの執着が弱まる』。最も近いのは③an insight that makes small worries matter less(小さな心配事の重要性を下げる気づき)。",
+  "distractors": "【他の選択肢】①tightens our control=握りを『締める』(逆)。②adds to our stress=ストレスを増やす(逆)。④ignore other people=他人を無視、で内容すり替え。",
+  "point": "【一発ルール】loosen one's grip=『執着を手放す』。tighten(締める)は真逆で罠。"
+ },
+ "I_C_ウ": {
+  "quote": "making an ordinary afternoon feel unexpectedly full",
+  "quote_ja": "ありふれた午後を、思いがけず充実したものに感じさせること。",
+  "reason": "【考え方】make O feel ~=『O を~のように感じさせる』。ordinary(ふつうの)afternoon が unexpectedly full(予想外に充実)に感じられる流れ。full は『中身が詰まって豊か』の意。最も近いのは①causing a normal afternoon to seem surprisingly rich(ふつうの午後が驚くほど豊かに見える)。full=rich の言い換え。",
+  "distractors": "【他の選択肢】②pass more quickly=速く過ぎる(本文は時間が『伸びる』ので逆)。③bored=退屈(逆)。④too many obligations=義務が多すぎ、で否定的すり替え。",
+  "point": "【一発ルール】full=rich『中身が濃い』。時間が『速く過ぎる』系は本文の『引き伸ばす』と逆で罠。"
+ },
+ "I_D": {
+  "quote": "Researchers argue that awe helps to shift our attention away from the self and toward the larger world.",
+  "quote_ja": "研究者は、畏敬の念が私たちの注意を自己から離れさせ、より大きな世界へ向けさせるのに役立つ、と論じている。",
+  "reason": "【考え方】整序は単語を眺めず『動詞から骨組み』を作る。まず述語動詞は 7=helps。help は help to do も可なので 3=to を続けて helps to do。do にあたる他動詞が 8=shift(移す)。次に shift の目的語=5=our + 1=attention で『私たちの注意』。最後に空所直後が from the self なので、その前に 4=away を置いて away from ~(~から離れて)を完成させる。並びは helps(あ7)→to(い3)→shift(う8)→our(え5)→attention(お1)→away(か4)。提出スロットは い=3, う=8, お=1。",
+  "distractors": "【使わない語】2=because(接続詞)と 6=which(関係詞)は、この一続きの述部に入る余地がなくダミー。from は本文に既出のため、こちらでは away までを置けばよい。",
+  "point": "【一発ルール】help (to) do の型を固定→他動詞 shift の目的語(our attention)→away from で締める。動詞と骨組みから並べるのが整序の鉄則。"
+ },
+ "I_E": {
+  "quote": "awe was once brushed aside as too fuzzy to measure; the 'small self': the sense that one is only a minor part of something far larger; people who recalled an awe-filled memory reported feeling that they had more time available",
+  "quote_ja": "畏敬の念はかつて曖昧すぎて測れないと退けられた／『小さな自己』=自分はより大きなものの小さな一部だという感覚／畏敬の記憶を思い出した人はより時間があると感じた。",
+  "reason": "【考え方】内容一致は本文の該当箇所を一つずつ照合する。②は第1段落 dismissed as too fuzzy and too private to measure(曖昧すぎて測れないと退けられた)と一致=正解。⑤は第4段落 the 'small self': the sense that one is only a minor part of something far larger(自分はより大きなものの小さな一部だという感覚)と一致=正解。⑦は第6段落 people who recalled an awe-filled memory reported feeling that they had more time available(畏敬の記憶を思い出した人はより時間があると感じた)と一致=正解。",
+  "distractors": "【外れる肢】①『物理的に巨大なものからのみ』は本文 this vastness need not be physical と真逆。③『不安を治すと証明』は The effect is modest(効果は控えめ)に対し cures と言い過ぎ。④『助ける気が減った』は more likely to help と逆。⑥『お金をより重視し競争的に』は cooperate rather than compete と逆。⑧『常に快い』は Not all awe is warm(すべてが心地よいわけではない)と矛盾。",
+  "point": "【一発ルール】内容一致は『言い過ぎ(only/always/cures)』『逆』『すり替え』の3パターンで切る。本文の限定語(modest, need not)と必ず照合せよ。"
+ },
+ "I_F": {
+  "quote": "In other words, a single moment of wonder may do quiet work that lingers long after the feeling itself has faded.",
+  "quote_ja": "言い換えれば、たった一度の驚嘆の瞬間が、その感情そのものが消え去ったずっと後まで残り続ける静かな働きをしているのかもしれない。",
+  "reason": "【考え方】骨格は a single moment … may do … work(一度の瞬間が…働きをするかもしれない)。単純に do work で『働きをする・作用する』。that lingers ~ は先行詞 quiet work を修飾する関係代名詞で『~し続ける働き』。linger=居座る・長引く。long after ~=『~したずっと後まで』で、after 節内は the feeling itself has faded(その感情自体が薄れてしまった後)。itself は the feeling を強める再帰。全体を『一度の驚嘆の瞬間が、感情が消えた後も長く残る静かな作用をするのかもしれない』とまとめる。",
+  "distractors": "【減点されやすい訳し落とし】①may を『~かもしれない』と訳し忘れる。②that lingers を work にかけず宙に浮かせる。③long after を単なる『後』と訳し『ずっと後まで』の時間差を出さない。",
+  "point": "【一発ルール】和訳の得点源は構文の可視化。①may=『~かもしれない』を必ず訳出、②that lingers を『~し続ける』と work にかける、③long after を『~したずっと後まで』と時のズレを明示。quiet work は『静かな働き/作用』で可。"
+ },
+ "II_A_X": {
+  "quote": "a luxury for which hard-working people supposedly had no time",
+  "quote_ja": "勤勉な人々には(そのための)時間などないとされる贅沢。",
+  "reason": "【考え方】土台は have time for ~(~のための時間がある)という熟語。for のコアは『方向・目的の対象』で、時間を『何に向けるか』を示す。ここは have no time for a luxury(贅沢に割く時間はない)が、関係代名詞で a luxury for which … had no time とひっくり返っただけ。前置詞 for を関係詞の前に引き出した『前置詞+関係代名詞』の典型だ。",
+  "distractors": "【他の選択肢】②by=手段・近接、③at=一点、④in=内部。どれも『time ~』の相手を示せず、have time for の熟語が壊れる。空所の後ろが had no time で前置詞が余っている点から for を逆算する。",
+  "point": "【一発ルール】『前置詞+関係代名詞』は元の文に戻して熟語を復元せよ。have time for → for which。for=目的・方向の対象。"
+ },
+ "II_A_Y": {
+  "quote": "adenosine, a molecule whose gradual build-up over the course of the day makes us feel steadily more drowsy",
+  "quote_ja": "アデノシン、つまり一日を通じて徐々に蓄積することで私たちを次第に眠くさせる分子。",
+  "reason": "【考え方】空所の後ろは gradual build-up(名詞のカタマリ)+ makes(動詞)で、build-up が主語として動詞 makes を持つ。つまり関係詞の後ろが『名詞+動詞』。必要なのは『その分子の蓄積』という所有関係、すなわち a molecule + its build-up をつなぐ所有格の関係代名詞 whose だ。whose の後ろは必ず名詞、と覚えておけば一発。",
+  "distractors": "【他の選択肢】①which・②that は所有関係を作れず build-up が浮く。④what は先行詞 molecule を取れない(what 自身が先行詞込み)。",
+  "point": "【一発ルール】『whose+名詞』=所有格の関係詞。空所直後が『名詞+動詞』なら whose を疑え。"
+ },
+ "II_A_Z": {
+  "quote": "A brief nap lowers adenosine levels, which is why many people wake from a short sleep feeling mentally refreshed",
+  "quote_ja": "短い仮眠はアデノシン濃度を下げる。それが、多くの人が短い睡眠から頭がすっきりして目覚める理由だ。",
+  "reason": "【考え方】, which is ___ の形で、前文(アデノシンが下がる)を受けて『それが〜な理由だ』とつなぐ場面。空所の後ろは many people wake … という完全文で、これは『目が覚める理由(reason)』の説明。The reason is why … の関係で、理由を導く why が正解。前が『下がる』→後ろが『すっきり目覚める』という原因→結果の流れが決め手だ。",
+  "distractors": "【他の選択肢】①how=方法、③when=時、④where=場所。いずれも『目が覚める理由』という因果の中身に合わない。",
+  "point": "【一発ルール】, which is why S V=『だから〜なのだ』。前後が原因→結果なら why。"
+ },
+ "II_B_a": {
+  "quote": "Coaches, airline pilots and even surgeons are increasingly being urged to reconsider the nap",
+  "quote_ja": "コーチや旅客機のパイロット、外科医までもが、昼寝を考え直すようますます促されている。",
+  "reason": "reconsider=re(再び)+consider(考える)で『考え直す』。同じく re+think の rethink が意味までぴたり一致。",
+  "distractors": "①reject=拒否する(逆向き)。③recall=思い出す。④resemble=似ている。",
+  "point": "接頭辞 re-=『再び・元へ』。reconsider=rethink と分解で見抜ける。"
+ },
+ "II_B_b": {
+  "quote": "Specialists therefore recommend keeping naps brief and scheduling them in the early afternoon",
+  "quote_ja": "だから専門家は、仮眠は短く保ち、午後の早い時間に設定するよう勧める。",
+  "reason": "brief は時間・長さについて『短い』で、そのまま short と置き換え可。直前 keeping naps ~(仮眠を~に保つ)が長さの話である点も裏づけ。",
+  "distractors": "②rare=まれな(頻度)。③quiet=静かな。④plain=質素な。",
+  "point": "brief は『(時間が)短い』の定番。a brief talk=a short talk。"
+ },
+ "II_B_c": {
+  "quote": "Napping too late in the day can disrupt the following night's sleep",
+  "quote_ja": "一日の遅い時間に昼寝をすると、その晩の睡眠を乱すことがある。",
+  "reason": "disrupt=dis(バラバラに)+rupt(破る)で『秩序を壊す=乱す』。同じ dis- の disturb(かき乱す)が最も近い。夜の睡眠を『妨げる』文脈にも合う。",
+  "distractors": "①delay=遅らせる。②dismiss=退ける。④detect=見つける。",
+  "point": "rupt=『破る』(interrupt, erupt も同語源)。disrupt=disturb。"
+ },
+ "II_B_d": {
+  "quote": "For athletes the benefits are striking.",
+  "quote_ja": "アスリートにとって、その効果は目覚ましい。",
+  "reason": "striking=(目を)打つほど印象的、つまり『際立った・目覚ましい』。remarkable(注目に値する)が核まで一致。直後に速く走れた等の顕著な成果が続くのも裏づけ。",
+  "distractors": "①temporary=一時的な。②doubtful=疑わしい。③confusing=紛らわしい。",
+  "point": "strike=『打つ→強い印象を与える』。striking=remarkable/impressive。"
+ },
+ "II_B_e": {
+  "quote": "Reaction times, which are crucial in fast sports such as tennis and boxing, also tend to improve",
+  "quote_ja": "テニスやボクシングのような速いスポーツで極めて重要な反応時間もまた、改善する傾向がある。",
+  "reason": "crucial=決定的に重要な・不可欠な。essential(欠かせない)と重なる。cross(十字路=分かれ道)が語源で『そこで決まる』ほど大事、というイメージ。",
+  "distractors": "②optional=任意の(逆)。③obvious=明白な。④flexible=柔軟な。",
+  "point": "crucial=essential=『無くては困る』。important の強調版。"
+ },
+ "II_B_f": {
+  "quote": "Some companies, persuaded by such findings, have installed nap pods",
+  "quote_ja": "そうした研究結果に説得された一部の企業は、仮眠ポッドを設置している。",
+  "reason": "persuade=(説得して)納得させる・その気にさせる。convince(納得させる)が同義。『研究結果に納得して』設置した、という因果に合う。",
+  "distractors": "①reminded=思い出させた。③warned=警告した。④promised=約束した。",
+  "point": "persuade≒convince=『説得して信じ込ませる』。be persuaded by=~に納得して。"
+ },
+ "II_B_g": {
+  "quote": "people who feel a constant need to nap may in fact be masking a more serious underlying disorder",
+  "quote_ja": "絶えず昼寝を必要とする人は、実はより深刻な潜在的疾患を覆い隠しているのかもしれない。",
+  "reason": "constant=絶え間ない・ひっきりなしの。同じく continu(続く)を含む continual(絶えず続く)が一致。『いつも眠い』という継続の文脈にぴったり。",
+  "distractors": "①instant=即座の。③distant=遠い。④pleasant=心地よい。-ant で綴りは似るが意味は別。",
+  "point": "constant=continual=『ずっと続く』。綴りの似た -ant トラップに注意。"
+ },
+ "II_C_ア": {
+  "quote": "during which the body clears out chemical by-products that build up while we are awake",
+  "quote_ja": "眠りの浅い段階で、その間に体は、起きている間にたまる化学的な老廃物を排出する。",
+  "reason": "【考え方】波線の骨格は body clears out(体が排出する)+by-products(副産物=老廃物)+that build up while we are awake(起きている間にたまる)。clears out=removes(取り除く)、by-products that build up=waste substances that gather(たまる不要物)、awake=conscious(意識がある)と、語をそのまま同義に置き換えた②が完全一致。",
+  "distractors": "【他の選択肢】①『覚醒させる化学物質を作る』で排出と真逆。③『蓄えて後で使う』で除去と逆。④『除去を遅くする』で意味が反対。",
+  "point": "【一発ルール】言い換えは動詞(clear out=remove)と目的語(by-products=waste)を一対一で照合。反対向きの動詞を含む肢を即カット。"
+ },
+ "II_C_イ": {
+  "quote": "reported that the effort felt less demanding than it actually was",
+  "quote_ja": "その努力が実際よりも楽に感じられたと報告した。",
+  "reason": "【考え方】demanding=多くを要求する=きつい・大変な。less demanding=きつさが少ない=楽な。than it actually was(実際よりも)はそのまま than it truly was に対応。よって『実際より楽だった』の①がぴたり。",
+  "distractors": "【他の選択肢】②harder=より難しい(逆)。③as tiring as usual=いつも通り疲れる(差がない=逆)。④impossible=不可能(言い過ぎ)。",
+  "point": "【一発ルール】demanding=『要求が多い→きつい』、less demanding=easier。比較の向き(より楽/よりきつい)を取り違えるな。"
+ },
+ "II_C_ウ": {
+  "quote": "moving it from temporary storage into more lasting form",
+  "quote_ja": "それを一時的な保管場所から、より長持ちする形へと移す。",
+  "reason": "【考え方】temporary storage=short-term memory(短期記憶)、more lasting form=long-term memory(長期記憶)、moving from A into B=transferring from A into B(A から B へ移す)。記憶を『一時保管→定着』へ移す③が完全一致。直前 file away(整理して保存)の文脈とも符合する。",
+  "distractors": "【他の選択肢】①『古い記憶を消す』で移動でなく削除。②『短期に少し長く留める』で移動していない。④『無関係な古い事実と混ぜる』で本文にない。",
+  "point": "【一発ルール】temporary=short-term、lasting=long-term。記憶の『移動(transfer)』を『削除/保持』にすり替える肢に注意。"
+ },
+ "II_D": {
+  "quote": "Athletes who train twice a day increasingly rely on a nap to help their bodies recover from the fatigue that accumulates between sessions.",
+  "quote_ja": "一日に二度練習するアスリートは、練習の合間にたまる疲労から体が回復するのを助けるために、ますます仮眠に頼っている。",
+  "reason": "【考え方】骨組みは rely on a nap(仮眠に頼る)+to help …(~を助けるために)+from the fatigue(疲労から)。手順は(1)rely on a nap の後は目的『~するために』なので 4=to から始める→to help、(2)help は help+O+原形(O が~するのを助ける)の型で、O=their bodies、原形=recover を続ける→to help their bodies recover、(3)後ろが from the fatigue なので recover from(~から回復する)でぴたり接続。よって あ=4(to) い=7(help) う=3(their) え=5(bodies) お=1(recover)。提出スロットは い=7, え=5, お=1。",
+  "distractors": "【使わない語】2=reduce・6=them・8=avoid はダミー。reduce/avoid は『their bodies+原形』の help 構文に噛み合わず、from the fatigue(~から回復)と結べるのは recover だけ。them は『help them recover』にすると their bodies が余って5語の枠に収まらず不可。",
+  "point": "【一発ルール】help+O+(to)原形=『O が~するのを助ける』が核。前置詞 from を見たら recover from(~から回復)を逆算せよ。"
+ },
+ "II_E": {
+  "quote": "A brief nap lowers adenosine levels … wake … feeling mentally refreshed; sprinters who napped … ran measurably faster … felt less demanding than it actually was; Some companies … have installed nap pods",
+  "quote_ja": "短い仮眠はアデノシンを下げ、すっきり目覚める／仮眠したスプリンターは明確に速く走り、努力を実際より楽に感じた／一部企業は仮眠ポッドを設置した。",
+  "reason": "【考え方】本文と一つずつ照合する。②は第3段落『20分ほどの仮眠でアデノシンが下がり、頭がすっきりして目覚める』と一致=正解。④は第5段落『睡眠不足後に仮眠したスプリンターは速く走り、努力を実際より楽に感じた(less demanding than it actually was)』と一致=正解。⑥は第7段落『一部企業が午後の休息用に仮眠ポッドを設置した』と一致=正解。",
+  "distractors": "【外れる肢】①『20世紀を通じ昼寝は運動能力を高めると科学者が合意』は本文と逆(昼寝は怠惰として退けられた)。③『30分超で必ずすっきり目覚める』は逆(深い眠りに落ち、目覚めにくく数分混乱する)。⑤『常に昼寝が必要な人はもっと昼寝すべき』は逆(背後の疾患を隠している恐れ=夜の睡眠改善が本筋)。⑦『慢性睡眠不足には昼寝が夜の睡眠を完全に代替できる』は明確な否定(a supplement, not a substitute)。⑧『遅い時間の昼寝は翌晩の睡眠を強める』は逆(disrupt=乱す)。",
+  "point": "【一発ルール】内容一致は『逆さま(①③⑧)』『言い過ぎ・完全に(⑦)』『すり替え(⑤)』の3類型で誤肢を刈る。本文の対比表現(supplement not substitute)は特に狙われる。"
+ },
+ "III_A": {
+  "quote": "a=⑤ It's the very first time I've ever signed up for anything like this. / b=⑧ You make it sound as if it were a complete waste of both time and money. / c=③ There's something you simply can't pick up unless you're standing at the stove yourself. / d=⑨ The class pushes you to try dishes you'd never dare attempt at home. / e=④ Actually, it turns out to be far cheaper than you'd ever expect. / f=⑥ But the strange thing is, everyone in the room relaxes almost immediately. / g=① You get instant feedback from someone who really knows what they're doing. / h=⑩ A real teacher can spot exactly what's going wrong in a matter of seconds.",
+  "quote_ja": "a=こんなものに申し込んだのは、これが生まれて初めてなの。/ b=まるで時間もお金も完全な無駄だって言ってるみたいね。/ c=自分で実際にコンロの前に立たないと、どうしても身につかないものがあるのよ。/ d=その教室では、家では絶対に挑戦しないような料理をやらされるの。/ e=実はね、あなたが思うよりずっと安上がりなの。/ f=でも不思議なことに、部屋にいる全員がほとんどすぐにリラックスするの。/ g=本当に腕のある人から、その場ですぐにフィードバックがもらえるの。/ h=本物の先生なら、何が悪いのか数秒で見抜けるのよ。",
+  "reason": "【考え方】会話補充は空所そのものより『直前・直後の一文』から逆算するのが鉄則。a=直前で『申し込んだばかりで待ちきれない』→この高揚感の理由づけとして⑤『初めてだから』。b=直前でダンが『なぜ金を払うのか理解できない』と否定→ソフィーが反発して⑧『時間も金も無駄だと言ってるようなものね』と相手の発言を要約し返す(make it sound as if=あなたの言い方だと〜に聞こえる)。c=直後の『鍋のニンニクの匂いや生地の伸びは画面越しには分からない』が具体例→その総論として③『コンロの前に立たないと身につかないものがある』。d=直前でダンが『先生が決めた料理しか作れない』と欠点扱い→ソフィーが『それこそ気に入っている点』と切り返し、直後『自分では絶対パスタ作りに挑戦しなかった』が根拠→⑨『家では挑戦しない料理をやらされる』。e=直前でダンが『高いだろう』→直後『材料や道具のレンタル代を足せば意外とお得』→逆接の④『実は思うより安い』。f=直前『最初のレッスン前は同じで気まずかった』→直後『終わる頃には全員笑っていた』、この落差をつなぐ逆接⑥『でも全員すぐにリラックスする』。g=直後『ミスするとすぐ横で先生が直してくれる』が言い換え→①『腕のある人から即座にフィードバック』。h=直前でダンが『どの動画もソースが分離する“理由”を教えてくれない』と認める→直後『だから一緒に来て』、これを受ける⑩『動画と違い、本物の先生なら何が悪いのかを的確に見抜く』が締め(直前の“動画は理由を教えない”と真っ向から対比)。",
+  "distractors": "【ダミー】②『料理はやめて出前にする』=ソフィーは教室に前向きで文脈と真逆、どこにも接続しない。⑦『近所のレストランがやっと再開した』=教室の話題と無関係な小ネタで前後の論理に噛み合わない。この2つは会話の流れ(教室の是非)から完全に浮く。",
+  "point": "【一発ルール】会話補充は『空所の直後の一文が根拠か言い換えになる』ことが多い。e・d は直後の具体例から逆算、b・f は逆接マーカー(But/as if)で相手の主張との対立を読む。同志社は語の一致でなく前後の因果・逆接を問う。"
+ },
+ "III_B": {
+  "quote": "If you really want to learn something new, you should try it yourself first rather than being afraid of failing.",
+  "quote_ja": "新しいことを本気で学びたいのなら、失敗を恐れるよりも、まず自分で挑戦してみるべきだ。",
+  "reason": "【考え方】英作文は和文を『英語の型』に流し込む。骨組みを3つに分解する。(1)条件『〜なら』=If 節。時・条件の if の中は未来でも現在形(will 不要)なので If you want で十分。『本気で』は really を want の前に。(2)助言『〜すべきだ』=you should+動詞の原形 try。目的語は前文の something new を受けて it、『自分で』は再帰代名詞 yourself、『まず』は first。(3)『A より むしろ B』=B rather than A の型。『恐れるより挑戦すべき』は try … rather than being afraid とする。rather than は接続詞的にも前置詞的にも働くので、①厳密な並列なら前の try(原形)に合わせて rather than be afraid、②前置詞的に見て rather than being afraid(動名詞)——どちらも自然で広く許容される。『失敗を恐れる』は be afraid of+動名詞 failing(前置詞 of の後ろは名詞・動名詞)。",
+  "distractors": "【よくある誤り】(1)If you will want と未来形にする(条件の if 内は現在形が正解)。(2)『挑戦する』を challenge it とする(challenge は『人に挑む・異議を唱える』で物事を目的語にするとズレる。try it が安全)。(3)rather than の後を to be afraid や are afraid とするのは不可(be afraid〈原形〉/being afraid〈動名詞〉のいずれかにする)。(4)afraid to fail でも可だが、対比を名詞的に出すなら being afraid of failing が明快。",
+  "point": "【一発ルール】型=『If+現在形, you should+原形 … rather than+動名詞』。①条件の if 内は未来でも現在形、②rather than の後ろは be afraid(原形)か being afraid(動名詞)で自然につなぐ、③前置詞 of の後ろは動名詞。難語より『崩れない骨組み』で減点を防ぐのが同志社対策。"
+ }
+}

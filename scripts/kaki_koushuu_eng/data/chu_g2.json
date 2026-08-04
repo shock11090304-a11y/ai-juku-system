@@ -1,0 +1,219 @@
+{
+  "no": 2,
+  "date": "7/28",
+  "title": "助動詞・不定詞・動名詞",
+  "goal": "助動詞のあとは原形、不定詞〈to+原形〉の3用法、動名詞〈~ing〉を区別して正しく使えるようにする。",
+  "points": [
+    {
+      "h": "助動詞のきほん",
+      "body": "助動詞（can, will, must, should, may など）のあとは、主語が he / she でも必ず動詞の原形。can=～できる、must=～しなければならない、should=～すべき、may=～してもよい／～かもしれない。ていねいに・控えめに言うときは could / would を使う。have to も「～しなければならない」で、主語が三人称単数なら has to になる。",
+      "ex": [
+        ["She can play the piano well.", "彼女はピアノを上手に弾ける。"],
+        ["You must finish your homework today.", "あなたは今日、宿題を終えなければならない。"]
+      ],
+      "rule": "助動詞の後ろは必ず動詞の原形（s をつけない）"
+    },
+    {
+      "h": "不定詞〈to+動詞の原形〉の3用法",
+      "body": "名詞的用法「～すること」（主語や目的語になる）、形容詞的用法「～するための・～すべき」（名詞のうしろから修飾）、副詞的用法「～するために・～して」（目的や感情の原因を表す）。同じ〈to+原形〉でも、文の中でのはたらきで見分ける。",
+      "ex": [
+        ["I want to be a teacher.", "私は先生になりたい（＝先生になることを望む）。"],
+        ["I have a lot of things to do today.", "私には今日やるべきことがたくさんある。"]
+      ],
+      "rule": "to+原形は「名詞・形容詞・副詞」の3役"
+    },
+    {
+      "h": "動名詞〈動詞のing形〉",
+      "body": "動名詞は「～すること」を表し、主語や目的語になる。動名詞が主語のときは単数扱い。前置詞（in, at, about など）のあとは必ず動名詞。enjoy / finish / stop / mind などは目的語に動名詞をとる。",
+      "ex": [
+        ["Playing tennis is a lot of fun.", "テニスをすることはとても楽しい。"],
+        ["He enjoys reading comic books.", "彼はマンガを読むのを楽しむ。"]
+      ],
+      "rule": "前置詞の後ろは動名詞（~ing）"
+    },
+    {
+      "h": "不定詞と動名詞の使い分け・その他の重要表現",
+      "body": "want / hope / decide / would like は to do をとり、enjoy / finish / stop / mind は ~ing をとる。〈疑問詞+to do〉で「何を／どう～すべきか」（what to do, how to do など）。〈It is ... (for 人) to do〉は形式主語 It を置き、本当の主語 to do を後ろに回した形で「(人が)～するのは…だ」。",
+      "ex": [
+        ["I don't know what to do next.", "私は次に何をすべきか分からない。"],
+        ["It is important to help each other.", "おたがいに助け合うことは大切だ。"]
+      ],
+      "rule": "want→to do ／ enjoy→~ing"
+    }
+  ],
+  "kiso": [
+    {
+      "type": "fill",
+      "stem": "My brother can ______ very fast. ( run )",
+      "ans": "run",
+      "point": "助動詞+原形",
+      "exp": "助動詞 can の後ろは動詞の原形。主語が三人称でも runs にはしない。"
+    },
+    {
+      "type": "fill",
+      "stem": "I want ______ a doctor in the future. ( be )",
+      "ans": "to be",
+      "point": "want to do",
+      "exp": "want to do で「～したい」。to のあとは動詞の原形 be を置き、want to be で「～になりたい」。"
+    },
+    {
+      "type": "mc",
+      "stem": "You look tired. You ______ take a rest.",
+      "note": "休むべきだよ、という助言",
+      "choices": ["should", "are", "being", "to do"],
+      "ans": 0,
+      "point": "助動詞 should",
+      "exp": "「～すべきだ」と助言するときは should。後ろは原形 take。ほかの語では文が成り立たない。"
+    },
+    {
+      "type": "fill",
+      "stem": "I ______ to clean my room every day. ( have )",
+      "ans": "have",
+      "point": "have to",
+      "exp": "have to do で「～しなければならない」。主語が三人称単数なら has to になる。"
+    },
+    {
+      "type": "mc",
+      "stem": "______ I open the window?",
+      "note": "許可を求めて",
+      "choices": ["Being", "To", "Am", "May"],
+      "ans": 3,
+      "point": "許可の May",
+      "exp": "「～してもいいですか」と許可を求めるときは May I ...?。後ろは原形 open。"
+    },
+    {
+      "type": "fill",
+      "stem": "I'm thirsty. I want something ______. ( drink )",
+      "ans": "to drink",
+      "point": "不定詞・形容詞用法",
+      "exp": "名詞 something の後ろに to+原形を置くと「飲むための何か＝飲み物」。名詞を修飾する形容詞的用法。"
+    },
+    {
+      "type": "fill",
+      "stem": "I went to the station ______ my friend. ( see )",
+      "ans": "to see",
+      "point": "不定詞・副詞用法（目的）",
+      "exp": "「～するために」と目的を表す副詞的用法。to see で「会うために」。"
+    },
+    {
+      "type": "fill",
+      "stem": "We enjoyed ______ soccer yesterday. ( play )",
+      "ans": "playing",
+      "point": "enjoy+動名詞",
+      "exp": "enjoy は目的語に動名詞（~ing）をとる。to play とはしない。"
+    }
+  ],
+  "hyojun": [
+    {
+      "type": "mc",
+      "stem": "This is a library. You ______ talk loudly here.",
+      "note": "図書館では大声で話してはいけない",
+      "choices": ["don't have to", "won't", "can", "must not"],
+      "ans": 3,
+      "point": "must not（禁止）",
+      "exp": "「～してはいけない」と強く禁止するときは must not。don't have to は「～しなくてよい（する必要がない）」で意味が正反対になる。図書館という場面から、しなくてよいのではなく禁止だと判断する。"
+    },
+    {
+      "type": "mc",
+      "stem": "My mother wants me ______ the dishes after dinner.",
+      "note": "母は私に皿を洗ってほしい",
+      "choices": ["wash", "to wash", "washing", "washed"],
+      "ans": 1,
+      "point": "want+人+to do",
+      "exp": "〈want+人+to do〉で「（人）に～してほしい」。動詞は原形 wash ではなく to wash にする。自分が「～したい」の want to do と、人に「～してほしい」の want 人 to do を混同しないこと。"
+    },
+    {
+      "type": "mc",
+      "stem": "He stopped ______ TV and began to study for the test.",
+      "note": "テレビを見るのをやめて勉強を始めた",
+      "choices": ["watching", "to watch", "watch", "watches"],
+      "ans": 0,
+      "point": "stop+動名詞（～するのをやめる）",
+      "exp": "stop ～ing で「～するのをやめる」。stopped watching TV で「テレビを見るのをやめた」。stop to do は「～するために立ち止まる」と全く別の意味になるので、ここは動名詞が正しい。"
+    },
+    {
+      "type": "mc",
+      "stem": "There are two roads here. I can't decide ______ to take.",
+      "note": "どちらの道を行くか決められない",
+      "choices": ["what", "how", "which", "where"],
+      "ans": 2,
+      "point": "疑問詞+to do（which）",
+      "exp": "道が2つあり「（2つのうち）どちらを選ぶか」なので which to take。〈疑問詞+to do〉は「～すべきか」。限られた中から選ぶときは what ではなく which を使う。"
+    },
+    {
+      "type": "order",
+      "ja": "私はその本を読み終えるのに3時間かかった。",
+      "tokens": ["It", "to", "me", "hours", "took", "reading", "three", "finish", "the", "book"],
+      "ans": "It took me three hours to finish reading the book",
+      "point": "It takes+人+時間+to do",
+      "exp": "〈It takes+人+時間+to do〉で「（人）が～するのに（時間）かかる」。過去なので took を使う。finish は動名詞をとるので to finish reading the book の形になる。"
+    },
+    {
+      "type": "order",
+      "ja": "彼女は私にこの機械の使い方を教えてくれた。",
+      "tokens": ["how", "this", "taught", "to", "me", "She", "machine", "use"],
+      "ans": "She taught me how to use this machine",
+      "point": "teach+人+疑問詞+to do",
+      "exp": "〈疑問詞+to do〉how to use で「使い方（どう使うべきか）」。〈teach+人+～〉で「（人）に～を教える」なので、She taught me how to use this machine の語順になる。"
+    },
+    {
+      "type": "rewrite",
+      "given": "This tea is so hot that I can't drink it.",
+      "target": "This tea is ______ hot ______ drink.",
+      "blanks": ["too", "to"],
+      "point": "so ... that ~ can't → too ... to",
+      "exp": "〈so+形容詞+that+主語+can't〉は〈too+形容詞+to do〉で言いかえられ、「熱すぎて飲めない」の意味。このとき文末の it は書かない（主語 This tea と同じものを指すから）。"
+    },
+    {
+      "type": "rewrite",
+      "given": "She is so tall that she can reach the top shelf.",
+      "target": "She is ______ ______ to reach the top shelf.",
+      "blanks": ["tall", "enough"],
+      "point": "so ... that ~ can → ... enough to",
+      "exp": "〈so+形容詞+that+主語+can〉は〈形容詞+enough+to do〉で言いかえられる。enough は形容詞の後ろに置くのがポイントで、tall enough to reach「手が届くほど背が高い」となる。"
+    }
+  ],
+  "nyushi": [
+    {
+      "type": "error",
+      "html": "She [a|finished] [b|to read] the book and started [c|to clean] her room [d|yesterday].",
+      "ans": "b",
+      "correct": "to read → reading",
+      "point": "finish+動名詞",
+      "exp": "finish は目的語に動名詞をとるので finished reading が正しい。start は to do / doing どちらも可なので c は誤りではない。"
+    },
+    {
+      "type": "error",
+      "html": "He is [a|good] [b|at] [c|play] the guitar and [d|singing].",
+      "ans": "c",
+      "correct": "play → playing",
+      "point": "前置詞+動名詞",
+      "exp": "前置詞 at の後ろは動名詞。good at playing ... となり、and でつながる singing と形をそろえる。"
+    },
+    {
+      "type": "mc",
+      "stem": "Would you mind ______ the window?",
+      "note": "窓を閉めてくれませんか",
+      "choices": ["to close", "close", "closing", "closed"],
+      "ans": 2,
+      "point": "mind+動名詞",
+      "exp": "mind は目的語に動名詞をとる。Would you mind ~ing? で「～してくれませんか」というていねいな依頼。"
+    },
+    {
+      "type": "order",
+      "ja": "私は彼に会えてうれしかった。",
+      "tokens": ["to", "was", "happy", "I", "him", "see"],
+      "ans": "I was happy to see him",
+      "point": "感情の原因（副詞用法）",
+      "exp": "be happy to do で「～してうれしい」。to see him は感情の原因を表す副詞的用法。"
+    },
+    {
+      "type": "ja2en",
+      "ja": "英語を勉強することは大切だ。",
+      "models": ["It is important to study English.", "Studying English is important."],
+      "point": "It ... to do／動名詞主語のどちらでも表せる",
+      "mistakes": "形式主語の It を忘れて Is important ... としない。動名詞で始めるなら Studying を主語にする（To study English is important. も可だが会話では動名詞が自然）。",
+      "lines": 2
+    }
+  ]
+}

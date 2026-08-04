@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nWe went to the beach ( ) August.",
+  "passage": "",
+  "choices": [
+   "in",
+   "on",
+   "at",
+   "to"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「in」。月の前は in を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nI was born ( ) April 10th.",
+  "passage": "",
+  "choices": [
+   "in",
+   "on",
+   "at",
+   "for"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞・前置詞。正解は「on」。「4月10日に」のように日付の前は on を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nSchool starts ( ) nine o'clock in the morning.",
+  "passage": "",
+  "choices": [
+   "in",
+   "on",
+   "at",
+   "by"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞・前置詞。正解は「at」。「9時に」のように時刻の前は at を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThere is a cat ( ) the table.",
+  "passage": "",
+  "choices": [
+   "under",
+   "of",
+   "to",
+   "and"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「under」。「テーブルの下に」で under が合う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThe bird is flying ( ) the sky.",
+  "passage": "",
+  "choices": [
+   "in",
+   "under",
+   "with",
+   "of"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「in」。「空を飛ぶ」は in the sky。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nI go to school ( ) bike every day.",
+  "passage": "",
+  "choices": [
+   "by",
+   "on",
+   "in",
+   "with"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「by」。交通手段は by bike のように by を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThis is a present ( ) you.",
+  "passage": "",
+  "choices": [
+   "for",
+   "of",
+   "at",
+   "in"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「for」。「あなたへのプレゼント」で for you となる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nHe cut the paper ( ) scissors.",
+  "passage": "",
+  "choices": [
+   "with",
+   "by",
+   "on",
+   "for"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「with」。道具は with scissors のように with を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nI have lived here ( ) 2015.",
+  "passage": "",
+  "choices": [
+   "since",
+   "for",
+   "from",
+   "in"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「since」。「2015年から(ずっと)」と過去の起点を表すので since を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nPlease finish your homework ( ) five o'clock.",
+  "passage": "",
+  "choices": [
+   "by",
+   "for",
+   "since",
+   "during"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「by」。「5時までに(締め切り)」は by を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nI slept well ( ) the night.",
+  "passage": "",
+  "choices": [
+   "during",
+   "while",
+   "for",
+   "between"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「during」。「夜の間」のように名詞の前は during を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nWash your hands ( ) you eat lunch.",
+  "passage": "",
+  "choices": [
+   "before",
+   "during",
+   "for",
+   "of"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「before」。「昼食を食べる前に」で before が合う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nMy mother was cooking ( ) I was studying.",
+  "passage": "",
+  "choices": [
+   "while",
+   "during",
+   "for",
+   "before"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「while」。あとに主語+動詞が続く「〜する間」は接続詞 while を使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\n( ) it was raining, we enjoyed the trip.",
+  "passage": "",
+  "choices": [
+   "Though",
+   "Because",
+   "So",
+   "If"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「Though」。「雨だったけれど楽しんだ」と逆の内容をつなぐので Though を使う。"
+ }
+]

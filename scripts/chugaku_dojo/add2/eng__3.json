@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "I have two little ( ). They go to elementary school. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "child",
+   "childs",
+   "children",
+   "childrens"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「children」。 child の複数形は不規則で children。two のあとは複数形にする。childs という形はない。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "A cat has four ( ). 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "foot",
+   "feet",
+   "foots",
+   "feets"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「feet」。 foot(足)の複数形は不規則で feet。four のあとは複数形にする。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "Look! There are many ( ) on the tree. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "leafs",
+   "leaves",
+   "leafes",
+   "leave"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「leaves」。 leaf は f を v に変えて -es をつけ leaves。many のあとは複数形にする。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "We saw a lot of ( ) in the river. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "fish",
+   "fishs",
+   "fishies",
+   "a fish"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「fish」。 魚 fish は単数も複数も同じ形。a lot of のあとでも fish のまま。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "My mother bought some ( ) at the supermarket. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "tomato",
+   "tomatos",
+   "tomatoes",
+   "tomatoies"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「tomatoes」。 tomato は語尾に -es をつけて tomatoes。some のあとは複数形にする。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "I don't have much ( ) with me now. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "money",
+   "moneys",
+   "monies",
+   "a money"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「money」。 money は数えられない名詞なので複数形にせず、much で量を表す。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "Can you give me some ( ) about this city? 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "informations",
+   "an information",
+   "information",
+   "informationes"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「information」。 information は数えられない名詞。複数形にせず、a や an もつけない。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "I have a lot of ( ) to do this weekend. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "homeworks",
+   "homework",
+   "a homework",
+   "homeworkes"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「homework」。 homework は数えられない名詞。複数形にも a homework にもしない。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "Would you like a cup of ( )? — Yes, please. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "tea",
+   "teas",
+   "a tea",
+   "teaes"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「tea」。 tea は数えられない名詞で、量は a cup of で表す。cup が数える単位になる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "He is a friend of ( ). 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "I",
+   "my",
+   "me",
+   "mine"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「mine」。 a friend of のあとは所有代名詞。「私の友達の一人」は a friend of mine と言う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "That is not my pen. ( ) is on the desk. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "My",
+   "Mine",
+   "Me",
+   "I"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「Mine」。 主語で「私のもの」を1語で表すのは所有代名詞 mine。My は後ろに名詞が必要。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "Tom hurt ( ) when he was playing soccer. 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "him",
+   "his",
+   "he",
+   "himself"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「himself」。 主語 Tom と目的語が同じ人なので再帰代名詞 himself。「自分自身をけがした」の意味。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "I like this bag, but it's too expensive. Please show me a cheaper ( ). 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "it",
+   "one",
+   "that",
+   "this"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「one」。 前に出た名詞(bag)と同じ種類の別の物をさすときは one を使う。it は同じ物そのものをさす。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "I lost my umbrella, so I have to buy ( ). 空所に入る最も適切なものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "it",
+   "one",
+   "its",
+   "them"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「one」。 なくした傘そのものではなく、同じ種類の別の傘を買うので one。it だと同じ傘をさしてしまう。"
+ }
+]

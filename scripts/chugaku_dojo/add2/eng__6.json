@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nThe boy ( ) under the tree is my brother.",
+  "passage": "",
+  "choices": [
+   "sleeping",
+   "slept",
+   "sleeps",
+   "to sleep"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞。正解は「sleeping」。 名詞の後ろから「〜している」と説明するときは現在分詞(-ing形)を使う。the boy sleeping = 眠っている少年。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nThis is a car ( ) in Germany.",
+  "passage": "",
+  "choices": [
+   "make",
+   "making",
+   "made",
+   "to make"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「made」。 車は「作られる」側なので過去分詞。a car made in Germany = ドイツで作られた車。makeの過去分詞はmade。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nWho is the woman ( ) the piano?",
+  "passage": "",
+  "choices": [
+   "play",
+   "played",
+   "playing",
+   "plays"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「playing」。 名詞を後ろから「〜している」と修飾するので現在分詞。the woman playing the piano = ピアノを弾いている女性。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nI want to eat the ( ) eggs.",
+  "passage": "",
+  "choices": [
+   "boil",
+   "boiled",
+   "boiling",
+   "to boil"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞。正解は「boiled」。 卵は「ゆでられた」側なので過去分詞が名詞の前について修飾する。boiled eggs = ゆで卵。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nThe movie was very ( ), so I watched it twice.",
+  "passage": "",
+  "choices": [
+   "excite",
+   "excited",
+   "exciting",
+   "to excite"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「exciting」。 映画が人を「わくわくさせる」側なので-ing形。物が主語で「(人を)わくわくさせる」ときはexciting。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nI was ( ) at the news.",
+  "passage": "",
+  "choices": [
+   "surprise",
+   "surprising",
+   "surprised",
+   "to surprise"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「surprised」。 人が「驚かされた=驚いた」と感じるときは過去分詞。be surprised at 〜 = 〜に驚く。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nThe ( ) window was very dangerous.",
+  "passage": "",
+  "choices": [
+   "break",
+   "broke",
+   "broken",
+   "breaking"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「broken」。 窓は「割られた」側なので過去分詞が名詞の前について修飾する。broken window = 割れた窓。breakの過去分詞はbroken。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の対話の( )に入る最も適切な語を選びなさい。\nA: Who is that girl ( ) a blue cap?\nB: She is my sister, Yumi.",
+  "passage": "",
+  "choices": [
+   "wear",
+   "wore",
+   "wearing",
+   "worn"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「wearing」。 名詞を後ろから「〜を身につけている」と説明するので現在分詞。the girl wearing a blue cap = 青い帽子をかぶっている女の子。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nThe language ( ) in Brazil is Portuguese.",
+  "passage": "",
+  "choices": [
+   "speak",
+   "spoke",
+   "spoken",
+   "speaking"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「spoken」。 言語は「話される」側なので過去分詞。the language spoken in Brazil = ブラジルで話されている言語。speakの過去分詞はspoken。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nHis story was so ( ) that I fell asleep.",
+  "passage": "",
+  "choices": [
+   "bore",
+   "bored",
+   "boring",
+   "to bore"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「boring」。 話が人を「退屈させる」側なので-ing形。物が「つまらない・退屈な」ときはboring。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nI have a doll ( ) in France.",
+  "passage": "",
+  "choices": [
+   "make",
+   "making",
+   "made",
+   "makes"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「made」。 人形は「作られた」側なので過去分詞。a doll made in France = フランス製の人形。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nThe girls ( ) in the pool look happy.",
+  "passage": "",
+  "choices": [
+   "swim",
+   "swam",
+   "swimming",
+   "swum"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「swimming」。 名詞を後ろから「〜している」と説明するので現在分詞。the girls swimming = 泳いでいる女の子たち。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nThere is a lot of ( ) water in the river.",
+  "passage": "",
+  "choices": [
+   "run",
+   "ran",
+   "running",
+   "to run"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「running」。 「流れている水」と動作を表すので現在分詞が名詞の前についている。running water = 流れる水。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の空所に入る最も適切な語を選びなさい。\n\nEveryone was ( ) after the long race.",
+  "passage": "",
+  "choices": [
+   "tire",
+   "tiring",
+   "tired",
+   "to tire"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「tired」。 人が「疲れさせられた=疲れた」と感じるときは過去分詞。be tired = 疲れている。"
+ }
+]

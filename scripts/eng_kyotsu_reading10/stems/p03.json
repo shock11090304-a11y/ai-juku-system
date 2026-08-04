@@ -1,0 +1,84 @@
+{
+ "no": 3,
+ "title": "Two Weeks in Riverton",
+ "passage": "Day 1\nAfter a twelve-hour flight, I arrived in Riverton. A teacher from Northfield Language Centre met me at the airport and took me to my host family, the Chens. I was so tired that I fell asleep before dinner, and Mrs. Chen left a sandwich by my door.\n\nDay 3\nClasses began on Monday. That morning we took a placement test, and I was put in the middle level. I had expected the top class, so I felt a little disappointed. My teacher, Ms. Ford, only said, \"You will speak more here than in a higher class.\"\n\nDay 8\nOn Saturday the school took us to a farmers' market. I managed to buy a small cake, but I could not remember the word for \"change.\" The seller waited quietly while I searched for it. Nobody laughed. That night I wrote down twenty words I had not been able to say.\n\nDay 10\nOur class visited a local high school. I sat in on a history lesson and understood almost nothing. Still, a student named Alex asked me about school lunches in Japan, and we talked for half an hour.\n\nDay 13\nWe gave short presentations in class. Mine was about my grandmother's garden. My hands shook, but Ms. Ford told me my pronunciation had improved since the first test.\n\nDay 14\nAt the airport, Mrs. Chen handed me a small notebook. Inside, she had written the twenty words from the market.\n\nI am not fluent yet. But I have stopped waiting for my English to be perfect before I open my mouth.",
+ "glossary": [
+  {
+   "word": "Riverton",
+   "ja": "リバートン（架空の町の名）"
+  },
+  {
+   "word": "Northfield Language Centre",
+   "ja": "ノースフィールド語学学校（架空の語学学校）"
+  },
+  {
+   "word": "placement test",
+   "ja": "クラス分けテスト"
+  },
+  {
+   "word": "farmers' market",
+   "ja": "農産物直売市場"
+  },
+  {
+   "word": "pronunciation",
+   "ja": "発音"
+  },
+  {
+   "word": "fluent",
+   "ja": "（言語が）流暢な"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "q": "Put the following events into the order in which they happened.\nA: The writer bought something at a market.\nB: The writer talked with a student at a local high school.\nC: The writer spoke in front of the class.\nD: The writer was placed in a class after taking a test.",
+   "options": [
+    "D → A → B → C",
+    "A → C → D → B",
+    "B → D → C → A",
+    "A → D → C → B"
+   ]
+  },
+  {
+   "n": 2,
+   "q": "According to the blog, what happened to the writer on the first morning of classes?",
+   "options": [
+    "The writer was told to give a self-introduction to the whole school.",
+    "The writer was moved up to the top class after a short interview.",
+    "The writer joined a middle-level class and felt let down.",
+    "The writer was handed a list of twenty useful new words by a teacher."
+   ]
+  },
+  {
+   "n": 3,
+   "q": "Which of the following best describes the writer's day at the local high school?",
+   "options": [
+    "The history lesson turned out to be much easier than the writer had expected.",
+    "The students at that school had all studied Japanese food and culture before.",
+    "Talking with a single student was easier for the writer than following a whole class lesson.",
+    "Alex explained the content of the history lesson in simple English."
+   ]
+  },
+  {
+   "n": 4,
+   "q": "According to the blog, what did Mrs. Chen do on the writer's last day?",
+   "options": [
+    "She took the writer back to the language centre for one last lesson.",
+    "She asked the writer to write down twenty Japanese words.",
+    "She bought a small cake for the writer to eat on the plane.",
+    "She gave the writer a notebook with the market words written in it."
+   ]
+  },
+  {
+   "n": 5,
+   "q": "In this blog, what is the writer's main message about the two weeks in Riverton?",
+   "options": [
+    "Careful preparation is the key to passing a language placement test.",
+    "Two weeks abroad changed the writer's attitude toward English.",
+    "Students who live with a host family must follow its rules closely.",
+    "Two weeks abroad is enough to make anyone a fluent English speaker."
+   ]
+  }
+ ],
+ "lead": "You found the following blog written by a Japanese high school student who joined a language program abroad."
+}

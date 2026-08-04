@@ -1,0 +1,1002 @@
+{
+ "I": {
+  "label": "Ⅰ",
+  "lead": "次の英文を読み、設問A・B・Cに答えよ。",
+  "source_note": "Based on The Salt in the Data: How Health Headlines Mislead Us by Margaret Ellsworth (adapted).",
+  "paragraphs": [
+   "Every few weeks a new headline promises that some everyday food will either rescue your health or quietly destroy it. Coffee is a poison on Monday and a medicine by Friday; eggs are condemned one year and praised the next; a single glass of wine is dangerous and protective in the very same newspaper. Readers who try to obey this shifting advice end up bewildered, and [[BL:1]] the scientists nor the reporters seem eager to accept the blame. The real problem is not that researchers are dishonest. It is that the studies behind these stories are far weaker than the confident language used to describe [[BL:2]].",
+   "Most nutrition research relies [[BL:3]] observation rather than experiment. Investigators cannot lock thousands of people in a laboratory for decades and dictate every meal, so instead they recruit volunteers, ask them what they usually eat, and then follow their health over many years. The human [[BL:4]] in these studies are never assigned a diet by the researchers; they choose one for themselves, according to taste, income, culture, and habit. That single fact, easy to overlook, [[UL:ア=undermines]] almost every dramatic claim that later appears in print. When people select their own way of living, the groups being compared come to differ in countless hidden ways that have nothing to do with the food under examination. By the time the data are gathered, a simple label such as 'coffee drinker' can conceal an entire way of life.",
+   "Consider a study reporting that people who eat plenty of leafy vegetables live noticeably longer than those who do not. The headline practically writes itself: greens prevent death. But stop and ask who actually piles spinach and kale onto their plates. Very often they are wealthier, exercise more, smoke less, sleep better, and visit their doctors regularly. Any one of these advantages could [[UL:イ=account for]] the longer lives, quite apart from the vegetables. Statisticians call such lurking influences confounders, and although careful analysts try to [[UL:ウ=adjust for]] them with elaborate mathematics, no calculation can remove a factor that was never measured in the first place. Wealth, in particular, buys not only better food but also cleaner air, safer work, and lower stress. The neat comparison is therefore [[UL:エ=at odds with]] the tidy story of cause and effect that the headline tells.",
+   "There is a subtler trap as well, one that researchers call the healthy-user effect. People who dutifully follow a single piece of medical advice tend to follow many others, so the apparent benefit of any one food may simply [[UL:オ=boil down to]] a general willingness to look after oneself. A vitamin supplement, a breakfast cereal, even a particular brand of yogurt can appear protective merely because the conscientious, cautious sort of person is the one most likely to buy them. Statistical software cannot see intentions, and intentions are precisely what drive both the diet and the apparent good health. Untangling this web of overlapping habits is enormously difficult, and honest scientists readily admit that a lone observational study can rarely [[UL:カ=rule out]] every rival explanation.",
+   "None of this means that such research is worthless. Observation is frequently the only ethical way to study what humans eat over a lifetime, and the patterns it uncovers can point toward questions worth testing far more rigorously in controlled trials. The real danger lies in the translation from laboratory to living room. A cautious sentence about a modest statistical association becomes, by the time it reaches the front page, a blunt command about what you may and may not put in your mouth. If a finding genuinely matters, it will be [[BL:5]] again and again by different teams using different methods; a result that flares up once and then quietly vanishes deserves patience, not obedience. Science advances by repetition, not by revelation.",
+   "So the next time a headline orders you to swear off some ingredient or to swallow another by the handful, pause before rearranging your entire kitchen. Ask whether the people in the study were assigned their diet or merely chose it, and whether anyone else has managed to repeat the work. The single most valuable habit a reader can cultivate is not a fashionable new diet at all, but a steady willingness to greet every miraculous claim with measured doubt."
+  ],
+  "glossary": [
+   {
+    "term": "confounder",
+    "gloss_ja": "＊交絡因子。原因と結果の両方に関係し、見かけ上の相関を生み出す隠れた要因。"
+   },
+   {
+    "term": "healthy-user effect",
+    "gloss_ja": "＊健康的利用者効果。健康に気を配る人ほど他の良い習慣も併せ持つため、ある食品の効果が過大評価される偏り。"
+   },
+   {
+    "term": "observational study",
+    "gloss_ja": "＊観察研究。研究者が介入せず、対象者の行動と健康をただ追跡する研究。"
+   },
+   {
+    "term": "statistical association",
+    "gloss_ja": "＊統計的関連。二つの変数間に見られる数量的な結びつき（因果関係とは限らない）。"
+   },
+   {
+    "term": "leafy vegetables",
+    "gloss_ja": "＊葉物野菜（ホウレンソウ・ケールなど）。"
+   }
+  ],
+  "A_kind": "blank",
+  "A_instruction": "本文中の空所（ 1 ）〜（ 5 ）に入れるのに最も適当なものを、それぞれ下のa〜dから一つ選べ。",
+  "A_items": [
+   {
+    "ref": "1",
+    "options": [
+     "either",
+     "neither",
+     "both",
+     "whether"
+    ],
+    "ans": 2
+   },
+   {
+    "ref": "2",
+    "options": [
+     "it",
+     "those",
+     "one",
+     "them"
+    ],
+    "ans": 4
+   },
+   {
+    "ref": "3",
+    "options": [
+     "on",
+     "in",
+     "of",
+     "for"
+    ],
+    "ans": 1
+   },
+   {
+    "ref": "4",
+    "options": [
+     "objects",
+     "figures",
+     "subjects",
+     "themes"
+    ],
+    "ans": 3
+   },
+   {
+    "ref": "5",
+    "options": [
+     "confirm",
+     "confirmed",
+     "confirming",
+     "confirms"
+    ],
+    "ans": 2
+   }
+  ],
+  "B_kind": "underline",
+  "B_instruction": "本文中の下線部（ア）〜（カ）の意味に最も近いものを、それぞれ下のa〜dから一つ選べ。",
+  "B_items": [
+   {
+    "ref": "ア",
+    "phrase": "undermines",
+    "options": [
+     "reinforces",
+     "weakens",
+     "clarifies",
+     "predicts"
+    ],
+    "ans": 2
+   },
+   {
+    "ref": "イ",
+    "phrase": "account for",
+    "options": [
+     "explain",
+     "intensify",
+     "overlook",
+     "delay"
+    ],
+    "ans": 1
+   },
+   {
+    "ref": "ウ",
+    "phrase": "adjust for",
+    "options": [
+     "deliberately exaggerate",
+     "completely remove",
+     "statistically correct for",
+     "randomly assign"
+    ],
+    "ans": 3
+   },
+   {
+    "ref": "エ",
+    "phrase": "at odds with",
+    "options": [
+     "in harmony with",
+     "identical to",
+     "conditional upon",
+     "in conflict with"
+    ],
+    "ans": 4
+   },
+   {
+    "ref": "オ",
+    "phrase": "boil down to",
+    "options": [
+     "essentially amount to",
+     "bring to a boil",
+     "sharply contradict",
+     "greatly exceed"
+    ],
+    "ans": 1
+   },
+   {
+    "ref": "カ",
+    "phrase": "rule out",
+    "options": [
+     "firmly confirm",
+     "exclude as a possibility",
+     "precisely measure",
+     "openly welcome"
+    ],
+    "ans": 2
+   }
+  ],
+  "C_form": "single",
+  "C_instruction": "本文の内容に関する次の問い（i）〜（iii）に対する答えとして最も適当なものを、それぞれa〜dから一つ選べ。",
+  "C_items": [
+   {
+    "q_label": "(i)",
+    "stem": "According to the passage, the central weakness of most nutrition studies is that",
+    "options": [
+     "researchers deliberately falsify their data in order to attract public attention",
+     "the participants decide for themselves what to eat, so the compared groups differ in many hidden ways",
+     "laboratories are simply too small to hold thousands of volunteers for several decades",
+     "journalists routinely refuse to read the original scientific papers before reporting"
+    ],
+    "ans": 2
+   },
+   {
+    "q_label": "(ii)",
+    "stem": "The \"healthy-user effect\" described in the passage refers to the tendency for",
+    "options": [
+     "foods to lose most of their nutrients when they are studied over many years",
+     "doctors to recommend supplements that they have never personally tested",
+     "people who adopt one healthy habit to adopt many others, making a single food look beneficial",
+     "wealthy people to eat far fewer leafy vegetables than they publicly claim"
+    ],
+    "ans": 3
+   },
+   {
+    "q_label": "(iii)",
+    "stem": "Which statement best expresses the author's overall position?",
+    "options": [
+     "Only laboratory experiments on animals can reveal anything reliable about the human diet.",
+     "Nutrition research should be abandoned because its conclusions can never be trusted at all.",
+     "A single striking study ought to change one's diet at once, provided a major newspaper reports it.",
+     "Observational findings are valuable clues, yet readers should remain skeptical until independent teams repeat the results."
+    ],
+    "ans": 4
+   }
+  ],
+  "C_multi_options": [],
+  "C_multi_answers": []
+ },
+ "II": {
+  "label": "Ⅱ",
+  "lead": "次の英文を読み、設問A〜Cに答えなさい。",
+  "source_note": "Based on Smoke and Certainty: A Short History of Tobacco and Public Health by Margaret E. Holloway (adapted).",
+  "paragraphs": [
+   "For much of the twentieth century, the cigarette occupied a curious place in everyday life. It was marketed as a mark of sophistication, and physicians themselves appeared in advertisements praising one brand [[BL:1]] another. Glossy magazines carried images of film stars exhaling elegant curls of smoke, and the gesture came to signify glamour, independence, and calm. Few ordinary people suspected that the pleasant habit might carry a lethal cost, [[BL:2]] did the tobacco firms have any incentive to raise the alarm. Smoking was woven so deeply into social ritual that questioning it seemed almost impolite.",
+   "The first cracks in this comfortable consensus appeared in statistics rather than in the clinic. During the 1930s and 1940s, doctors in several countries noticed a puzzling rise in cases of lung cancer, a disease that had once been rare. The numbers were hard to explain away, for they climbed year after year in men who had reached middle age. To many observers, [[UL:ア=the culprit]] seemed obvious: the fumes of automobiles or the tar of newly paved roads. Yet a handful of researchers suspected that the answer lay closer to home, in the pocket of nearly every adult man.",
+   "In 1950, two British scientists set out to test the idea with rigor. Rather than relying on vague impressions, they interviewed hundreds of hospital patients, comparing those with lung cancer to those without. The pattern that emerged was unmistakable: the heavier the smoking, the greater the risk. To silence critics who argued that sick people might simply misremember their habits, the pair then followed thousands of healthy doctors for years, recording who smoked and who fell ill. This second approach, tracking healthy volunteers into the future, was far harder to dismiss, since no one could accuse a well person of inventing a diagnosis that had not yet occurred. The verdict, published over the following decade, [[BL:3]] little room for doubt.",
+   "Even so, translating evidence into action proved painfully slow. The tobacco industry funded its own studies, [[BL:4]] the science and insisting that the link was mere coincidence. For a time, the public heard two competing voices — one urging caution, the other counseling calm — and many chose to believe whichever was more convenient. Governments, wary of losing tax revenue and of appearing to lecture their citizens, hesitated for years. It was not until warning labels, advertising bans, and steep taxes were introduced that smoking rates began their long decline. What finally shifted the balance was not a single dramatic discovery but the slow accumulation of proof, [[BL:5]] [[UL:イ=at the public's disposal]] through decades of relentless campaigning.",
+   "The story of tobacco offers [[UL:ウ=a sobering lesson]] about how societies come to accept uncomfortable truths. Knowledge alone, it turns out, rarely changes behavior on its own; it must be carried forward by institutions willing to act upon it, even at a cost to themselves. Progress, in other words, depended less on the brilliance of a single mind than on the patience of a society learning to trust its own measurements."
+  ],
+  "glossary": [
+   {
+    "term": "consensus",
+    "gloss_ja": "(意見の)一致、総意"
+   },
+   {
+    "term": "lethal",
+    "gloss_ja": "致死的な、命にかかわる"
+   },
+   {
+    "term": "tar",
+    "gloss_ja": "タール(たばこの煙に含まれる)"
+   },
+   {
+    "term": "coincidence",
+    "gloss_ja": "偶然の一致"
+   },
+   {
+    "term": "verdict",
+    "gloss_ja": "評決、(調査の)結論"
+   }
+  ],
+  "A_kind": "blank",
+  "A_instruction": "本文中の空所( 1 )〜( 5 )に入れるのに最も適当なものを、それぞれ下のa〜dから1つ選びなさい。",
+  "A_items": [
+   {
+    "ref": "1",
+    "options": [
+     "than",
+     "over",
+     "from",
+     "beyond"
+    ],
+    "ans": 2
+   },
+   {
+    "ref": "2",
+    "options": [
+     "nor",
+     "so",
+     "either",
+     "and"
+    ],
+    "ans": 1
+   },
+   {
+    "ref": "3",
+    "options": [
+     "took",
+     "held",
+     "left",
+     "filled"
+    ],
+    "ans": 3
+   },
+   {
+    "ref": "4",
+    "options": [
+     "to dispute",
+     "disputed",
+     "dispute",
+     "disputing"
+    ],
+    "ans": 4
+   },
+   {
+    "ref": "5",
+    "options": [
+     "placing",
+     "placed",
+     "to place",
+     "place"
+    ],
+    "ans": 2
+   }
+  ],
+  "B_kind": "underline",
+  "B_instruction": "本文中の下線部ア〜ウの意味に最も近いものを、それぞれ下のa〜dから1つ選びなさい。",
+  "B_items": [
+   {
+    "ref": "ア",
+    "phrase": "the culprit",
+    "options": [
+     "the source that was to blame for the increase in the disease",
+     "a criminal who had managed to escape from justice",
+     "a treatment that could reliably cure the illness",
+     "an expert who had been assigned to investigate the cases"
+    ],
+    "ans": 1
+   },
+   {
+    "ref": "イ",
+    "phrase": "at the public's disposal",
+    "options": [
+     "something that ordinary people were forced to throw away",
+     "readily available for ordinary people to make use of",
+     "kept firmly under the strict control of the government",
+     "a matter that the public generally preferred to ignore"
+    ],
+    "ans": 2
+   },
+   {
+    "ref": "ウ",
+    "phrase": "a sobering lesson",
+    "options": [
+     "an amusing anecdote that is quickly forgotten",
+     "a warning specifically about the dangers of alcohol",
+     "a serious insight that prompts thoughtful reflection",
+     "an outdated idea that is no longer of any relevance"
+    ],
+    "ans": 3
+   }
+  ],
+  "C_form": "multi",
+  "C_instruction": "本文の内容と一致するものを、下のa〜fから2つ選びなさい。",
+  "C_items": [],
+  "C_multi_options": [
+   "Tobacco companies funded research chiefly in order to confirm and publicize the dangers of their own product.",
+   "Before the mid-twentieth century, smoking was widely regarded as a respectable and even fashionable habit.",
+   "Governments acted swiftly as soon as the first statistical warnings emerged, imposing heavy taxes within months.",
+   "The British study of the 1950s found that the risk of lung cancer rose in proportion to how much a person smoked.",
+   "Scientists eventually agreed that exhaust from automobiles was the principal cause of the rise in lung cancer.",
+   "Public health experts concluded that scientific evidence by itself was enough to change people's behavior."
+  ],
+  "C_multi_answers": [
+   2,
+   4
+  ]
+ },
+ "III": {
+  "label": "Ⅲ",
+  "lead": "次の英文を読み、あとの設問(A・B・C)に答えなさい。",
+  "source_note": "Based on The Driverless Horizon by Malcolm A. Webb (Ashford Press, 2021)",
+  "paragraphs": [
+   "For more than a century, the automobile has been guided entirely by human hands. That long-standing arrangement is now being called into question. Engineers across the globe are racing to build cars that can [[UL:1=carry out]] the entire task of driving with no human input at all. These vehicles rely on a dense web of sensors, cameras, and software that together [[DU:ア=interpret the surrounding world far faster than any human eye could manage]]. Supporters insist that such machines will eventually make our roads dramatically safer.",
+   "Their confidence rests on a simple statistic: human mistakes [[UL:2=account for]] the overwhelming majority of traffic deaths. A computer never drinks, never grows sleepy at the wheel, nor does it glance down at a buzzing phone. In theory, then, handing control to a machine should remove the single largest cause of danger on the road. [[DU:イ=It is precisely this promise of saving tens of thousands of lives each year that keeps investors pouring money into the field]].",
+   "Yet the technology is far from flawless. Machines can be baffled by situations that a young child would grasp in an instant. A plastic bag drifting across a lane, a police officer waving cars through a red light, or heavy snow that hides the road markings—each can puzzle a system that was never trained on that precise scene. Because such rare events are so hard to anticipate, most researchers believe it will be a long time before we can safely [[UL:3=do away with]] the steering wheel altogether. In the meantime, cars are being designed to hand control back to a human whenever they meet something they cannot understand—[[DU:ウ=an awkward compromise that assumes a distracted passenger can suddenly become an alert driver within a second or two]].",
+   "There is also the thorny question of blame. When a self-driving car causes a crash, who is at fault: the owner, the manufacturer, or the engineer who wrote the code? Lawmakers have been slow to respond, and the few rules that do exist differ sharply from one country to the next. [[UL:4=On the whole]], society has not yet decided how much risk it is willing to accept in exchange for the convenience these vehicles promise.",
+   "Despite these hurdles, the direction of travel seems clear. Delivery companies are already testing driverless trucks on quiet highways, and a handful of cities now allow robotaxis to operate within carefully mapped zones. Whether or not ordinary drivers welcome the shift, the coming decades will almost certainly see the human driver pushed steadily toward the margins—much as the horse was long ago displaced by the engine."
+  ],
+  "glossary": [
+   {
+    "term": "autonomous vehicle / self-driving car",
+    "gloss_ja": "自動運転車"
+   },
+   {
+    "term": "robotaxi",
+    "gloss_ja": "ロボットタクシー(無人運転の営業車)"
+   },
+   {
+    "term": "sensor",
+    "gloss_ja": "センサー、感知装置"
+   },
+   {
+    "term": "lane marking",
+    "gloss_ja": "車線標示、路面の区画線"
+   }
+  ],
+  "A_kind": "underline",
+  "A_instruction": "本文中の下線部(1)〜(4)の意味に最も近いものを、それぞれ a〜d から一つ選びなさい。",
+  "A_items": [
+   {
+    "ref": "1",
+    "options": [
+     "put off",
+     "perform",
+     "oversee",
+     "explain"
+    ],
+    "ans": 2
+   },
+   {
+    "ref": "2",
+    "options": [
+     "make up for",
+     "cover the cost of",
+     "cancel out",
+     "are responsible for"
+    ],
+    "ans": 4
+   },
+   {
+    "ref": "3",
+    "options": [
+     "get rid of",
+     "depend on",
+     "hold on to",
+     "make use of"
+    ],
+    "ans": 1
+   },
+   {
+    "ref": "4",
+    "options": [
+     "By contrast",
+     "As a result",
+     "Generally speaking",
+     "For instance"
+    ],
+    "ans": 3
+   }
+  ],
+  "B_kind": "double",
+  "B_instruction": "本文中の二重下線部(ア)〜(ウ)の内容を最もよく表しているものを、それぞれ a〜d から一つ選びなさい。",
+  "B_items": [
+   {
+    "ref": "ア",
+    "phrase": "interpret the surrounding world far faster than any human eye could manage",
+    "options": [
+     "make sense of their environment more quickly than a human driver could",
+     "travel around the world faster than any human could drive",
+     "detect objects that are completely invisible to the human eye",
+     "copy the way the human eye focuses on distant objects"
+    ],
+    "ans": 1
+   },
+   {
+    "ref": "イ",
+    "phrase": "It is precisely this promise of saving tens of thousands of lives each year that keeps investors pouring money into the field",
+    "options": [
+     "Investors are drawn mainly by the chance to earn large profits very quickly",
+     "The hope of preventing many deaths is exactly what makes investors keep funding the industry",
+     "Investors seriously doubt whether the technology can save any lives at all",
+     "Governments, rather than private investors, pay for most of the research"
+    ],
+    "ans": 2
+   },
+   {
+    "ref": "ウ",
+    "phrase": "an awkward compromise that assumes a distracted passenger can suddenly become an alert driver within a second or two",
+    "options": [
+     "a clever design that keeps every passenger fully alert throughout the trip",
+     "a rule that forbids passengers from doing anything except watching the road",
+     "an unsatisfactory arrangement that expects an inattentive person to take control instantly",
+     "a system that under no circumstances ever returns control to the human"
+    ],
+    "ans": 3
+   }
+  ],
+  "C_form": "truefalse",
+  "C_instruction": "本文の内容について、次の問い(i)(ii)に答えなさい。(i)は本文の内容と一致するものを、(ii)は本文の内容と一致しないものを、それぞれ a〜d から一つ選びなさい。",
+  "C_items": [
+   {
+    "q_label": "(i)",
+    "stem": "本文の内容と一致するものはどれか。",
+    "options": [
+     "Autonomous vehicles have already replaced human drivers in most countries.",
+     "Supporters expect self-driving cars to reduce road deaths greatly because most accidents stem from human error.",
+     "Machines are more easily distracted by mobile phones than human drivers are.",
+     "The laws governing self-driving cars are now identical across all countries."
+    ],
+    "ans": 2
+   },
+   {
+    "q_label": "(ii)",
+    "stem": "本文の内容と一致しないものはどれか。",
+    "options": [
+     "A drifting plastic bag or heavy snow can confuse an autonomous system.",
+     "Some cities now permit robotaxis to operate within limited, mapped areas.",
+     "Delivery companies are already testing driverless trucks on quiet roads.",
+     "Most researchers expect the steering wheel to disappear within a year or two."
+    ],
+    "ans": 4
+   }
+  ],
+  "C_multi_options": [],
+  "C_multi_answers": []
+ },
+ "IV": {
+  "label": "Ⅳ",
+  "instruction": "次の各英文の空所に入れるのに最も適当なものを、a〜dの中から1つ選びなさい。",
+  "items": [
+   {
+    "sentence": "By the time the ambulance arrived, the injured hiker [[BL:1]] on the cold ground for nearly an hour.",
+    "options": [
+     "has lain",
+     "had been lying",
+     "is lying",
+     "would lie"
+    ],
+    "ans": 2
+   },
+   {
+    "sentence": "I was not used [[BL:2]] in front of such a large audience, so my hands were shaking throughout the speech.",
+    "options": [
+     "to speaking",
+     "to speak",
+     "speak",
+     "spoke"
+    ],
+    "ans": 1
+   },
+   {
+    "sentence": "[[BL:3]] from the summit, the villages below looked like tiny models scattered across the valley.",
+    "options": [
+     "Seeing",
+     "To see",
+     "Having seen",
+     "Seen"
+    ],
+    "ans": 4
+   },
+   {
+    "sentence": "This is the little town [[BL:4]] my grandparents first met and later decided to settle down.",
+    "options": [
+     "which",
+     "that",
+     "where",
+     "what"
+    ],
+    "ans": 3
+   },
+   {
+    "sentence": "\"I'm afraid I've broken your favorite mug.\" \"[[BL:5]] It was quite old anyway.\"",
+    "options": [
+     "Never mind.",
+     "Not at all.",
+     "Help yourself.",
+     "Speak up."
+    ],
+    "ans": 1
+   },
+   {
+    "sentence": "Write down her number now, [[BL:6]] you will forget it by tomorrow morning.",
+    "options": [
+     "so",
+     "and",
+     "but",
+     "or"
+    ],
+    "ans": 4
+   },
+   {
+    "sentence": "The passengers were extremely [[BL:7]] to hear that their flight had been canceled without any prior notice.",
+    "options": [
+     "disappointing",
+     "disappointed",
+     "disappoint",
+     "disappointment"
+    ],
+    "ans": 2
+   },
+   {
+    "sentence": "The two negotiators finally decided to call it [[BL:8]] and continue the discussion the following week.",
+    "options": [
+     "a day",
+     "a hand",
+     "the shot",
+     "the line"
+    ],
+    "ans": 1
+   },
+   {
+    "sentence": "The thick fog prevented the rescue team [[BL:9]] reaching the stranded climbers before nightfall.",
+    "options": [
+     "to",
+     "from",
+     "against",
+     "of"
+    ],
+    "ans": 2
+   },
+   {
+    "sentence": "It was not until she reached the station [[BL:10]] she realized she had left her wallet at home.",
+    "options": [
+     "when",
+     "which",
+     "that",
+     "then"
+    ],
+    "ans": 3
+   }
+  ]
+ },
+ "V": {
+  "label": "Ⅴ",
+  "instruction": "次の日本文の意味を表すように、下のa〜hの語句を並べ替えて英文を完成させなさい。解答は2番目と6番目にくる語句の記号を答えなさい。(文頭にくる語も小文字で示してある)",
+  "items": [
+   {
+    "ja": "もしあなたの助けがなかったら、私はその計画を終えることができなかっただろう。",
+    "segments": [
+     {
+      "ltr": "a",
+      "text": "your help,"
+     },
+     {
+      "ltr": "b",
+      "text": "Had"
+     },
+     {
+      "ltr": "c",
+      "text": "have finished"
+     },
+     {
+      "ltr": "d",
+      "text": "it"
+     },
+     {
+      "ltr": "e",
+      "text": "the project"
+     },
+     {
+      "ltr": "f",
+      "text": "not"
+     },
+     {
+      "ltr": "g",
+      "text": "I could not"
+     },
+     {
+      "ltr": "h",
+      "text": "been for"
+     }
+    ],
+    "order": [
+     "b",
+     "d",
+     "f",
+     "h",
+     "a",
+     "g",
+     "c",
+     "e"
+    ],
+    "ans2": "d",
+    "ans6": "g",
+    "full_en": "Had it not been for your help, I could not have finished the project."
+   },
+   {
+    "ja": "何をすべきか分からなかったので、彼女は先生に助言を求めた。",
+    "segments": [
+     {
+      "ltr": "a",
+      "text": "asked"
+     },
+     {
+      "ltr": "b",
+      "text": "advice"
+     },
+     {
+      "ltr": "c",
+      "text": "Not knowing"
+     },
+     {
+      "ltr": "d",
+      "text": "her teacher"
+     },
+     {
+      "ltr": "e",
+      "text": "what"
+     },
+     {
+      "ltr": "f",
+      "text": "she"
+     },
+     {
+      "ltr": "g",
+      "text": "to do,"
+     },
+     {
+      "ltr": "h",
+      "text": "for"
+     }
+    ],
+    "order": [
+     "c",
+     "e",
+     "g",
+     "f",
+     "a",
+     "d",
+     "h",
+     "b"
+    ],
+    "ans2": "e",
+    "ans6": "d",
+    "full_en": "Not knowing what to do, she asked her teacher for advice."
+   },
+   {
+    "ja": "彼の努力が、その計画全体の成功をもたらした。",
+    "segments": [
+     {
+      "ltr": "a",
+      "text": "of"
+     },
+     {
+      "ltr": "b",
+      "text": "resulted"
+     },
+     {
+      "ltr": "c",
+      "text": "the whole"
+     },
+     {
+      "ltr": "d",
+      "text": "His"
+     },
+     {
+      "ltr": "e",
+      "text": "in"
+     },
+     {
+      "ltr": "f",
+      "text": "the success"
+     },
+     {
+      "ltr": "g",
+      "text": "project"
+     },
+     {
+      "ltr": "h",
+      "text": "hard work"
+     }
+    ],
+    "order": [
+     "d",
+     "h",
+     "b",
+     "e",
+     "f",
+     "a",
+     "c",
+     "g"
+    ],
+    "ans2": "h",
+    "ans6": "a",
+    "full_en": "His hard work resulted in the success of the whole project."
+   },
+   {
+    "ja": "彼が言ったことは、私たちが予想していたものとは全く違っていた。",
+    "segments": [
+     {
+      "ltr": "a",
+      "text": "different"
+     },
+     {
+      "ltr": "b",
+      "text": "what we"
+     },
+     {
+      "ltr": "c",
+      "text": "What"
+     },
+     {
+      "ltr": "d",
+      "text": "from"
+     },
+     {
+      "ltr": "e",
+      "text": "was"
+     },
+     {
+      "ltr": "f",
+      "text": "had expected"
+     },
+     {
+      "ltr": "g",
+      "text": "he said"
+     },
+     {
+      "ltr": "h",
+      "text": "completely"
+     }
+    ],
+    "order": [
+     "c",
+     "g",
+     "e",
+     "h",
+     "a",
+     "d",
+     "b",
+     "f"
+    ],
+    "ans2": "g",
+    "ans6": "d",
+    "full_en": "What he said was completely different from what we had expected."
+   },
+   {
+    "ja": "私が家を出るとすぐに雨が降り始めた。",
+    "segments": [
+     {
+      "ltr": "a",
+      "text": "than"
+     },
+     {
+      "ltr": "b",
+      "text": "I left"
+     },
+     {
+      "ltr": "c",
+      "text": "rain"
+     },
+     {
+      "ltr": "d",
+      "text": "No sooner"
+     },
+     {
+      "ltr": "e",
+      "text": "home"
+     },
+     {
+      "ltr": "f",
+      "text": "had"
+     },
+     {
+      "ltr": "g",
+      "text": "to"
+     },
+     {
+      "ltr": "h",
+      "text": "it began"
+     }
+    ],
+    "order": [
+     "d",
+     "f",
+     "b",
+     "e",
+     "a",
+     "h",
+     "g",
+     "c"
+    ],
+    "ans2": "f",
+    "ans6": "h",
+    "full_en": "No sooner had I left home than it began to rain."
+   }
+  ]
+ },
+ "VI": {
+  "label": "Ⅵ",
+  "setting": "大学の友人同士であるMayaとDanielが、キャンパスで顔を合わせ、春休みの旅行計画について話している場面。",
+  "lines": [
+   {
+    "sp": "Maya",
+    "text": "Hey, Daniel! I haven't seen you [[BL:1]] ages. Where have you been hiding?"
+   },
+   {
+    "sp": "Daniel",
+    "text": "Oh, hi, Maya. I've been busy planning a trip for spring break. Actually, I could use your advice."
+   },
+   {
+    "sp": "Maya",
+    "text": "Sure, I'd be happy to help. What have you got [[BL:2]] mind?"
+   },
+   {
+    "sp": "Daniel",
+    "text": "I'm thinking about traveling around Europe by train, but I can't decide where to start."
+   },
+   {
+    "sp": "Maya",
+    "text": "[[BL:3]] I were you, I'd begin in Italy. The trains there connect to almost everywhere."
+   },
+   {
+    "sp": "Daniel",
+    "text": "That's a good point. [[BL:4]], I've always wanted to see Rome."
+   },
+   {
+    "sp": "Maya",
+    "text": "Then it's settled! Just make sure you book your tickets [[BL:5]] advance. They sell out fast in spring."
+   },
+   {
+    "sp": "Daniel",
+    "text": "Right. I nearly forgot [[BL:6]] that. Do you think two weeks is enough time?"
+   },
+   {
+    "sp": "Maya",
+    "text": "[[BL:7]] It really depends on how many cities you want to visit."
+   },
+   {
+    "sp": "Daniel",
+    "text": "I guess I should [[BL:8]] a rough list first and see how it fits."
+   },
+   {
+    "sp": "Maya",
+    "text": "Exactly. And don't try to cram too much in, [[BL:9]] you'll end up exhausted."
+   },
+   {
+    "sp": "Daniel",
+    "text": "Good advice. By the way, would you be interested in coming [[BL:10]]?"
+   },
+   {
+    "sp": "Maya",
+    "text": "Are you serious? I'd love to! Let me check my schedule and get back to you tonight."
+   }
+  ],
+  "instruction": "会話文中の空所(1)〜(10)に入れるのに最も適当なものを、それぞれ下記(a)〜(d)の中から1つ選びなさい。",
+  "items": [
+   {
+    "ref": "1",
+    "options": [
+     "at",
+     "by",
+     "for",
+     "on"
+    ],
+    "ans": 3
+   },
+   {
+    "ref": "2",
+    "options": [
+     "on",
+     "in",
+     "at",
+     "to"
+    ],
+    "ans": 2
+   },
+   {
+    "ref": "3",
+    "options": [
+     "Even if",
+     "As if",
+     "If",
+     "Unless"
+    ],
+    "ans": 3
+   },
+   {
+    "ref": "4",
+    "options": [
+     "On the contrary",
+     "Come to think of it",
+     "In contrast",
+     "For all that"
+    ],
+    "ans": 2
+   },
+   {
+    "ref": "5",
+    "options": [
+     "in",
+     "on",
+     "by",
+     "for"
+    ],
+    "ans": 1
+   },
+   {
+    "ref": "6",
+    "options": [
+     "about",
+     "with",
+     "of",
+     "for"
+    ],
+    "ans": 1
+   },
+   {
+    "ref": "7",
+    "options": [
+     "Never mind.",
+     "Not at all.",
+     "That's hard to say.",
+     "You're welcome."
+    ],
+    "ans": 3
+   },
+   {
+    "ref": "8",
+    "options": [
+     "draw down",
+     "put off",
+     "turn in",
+     "draw up"
+    ],
+    "ans": 4
+   },
+   {
+    "ref": "9",
+    "options": [
+     "so that",
+     "or else",
+     "as long as",
+     "now that"
+    ],
+    "ans": 2
+   },
+   {
+    "ref": "10",
+    "options": [
+     "along",
+     "across",
+     "apart",
+     "over"
+    ],
+    "ans": 1
+   }
+  ]
+ }
+}

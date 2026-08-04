@@ -1,0 +1,114 @@
+{
+ "no": 6,
+ "genre": "第7問 相当　論説記事＋プレゼン資料",
+ "title": "Green Space in the City",
+ "theme_ja": "都市の緑地",
+ "passage": "More and more people around the world live in cities, and city governments now face a simple question: how much green space does a city need? Parks, gardens, and street trees are not just decoration. A research team called the Green City Project reports that these green spaces change how a city works.\n\nFirst, plants cool the air. On a hot summer day, a street lined with tall trees can be several degrees cooler than a street of bare concrete. Because rooms along that street stay cooler too, people there use less electricity for air conditioning.\n\nSecond, green space is good for health. In a survey of two thousand city residents, people who lived within a five-minute walk of a park said that they exercised more often and felt less stress than those living farther away. Parks also give neighbors a place to meet and talk.\n\nHowever, green space is not free. Trees must be watered and pruned, and sometimes they must be removed when they become dangerous. In many cities, the cost of caring for a tree for thirty years is higher than the planting cost. Cities that plant trees without planning for this later cost often end up with dying trees along their streets.\n\nThere is also a question of fairness. A new park can raise the price of housing around it, and the families who waited longest for that park may have to move away. Some planners therefore build small gardens in many neighborhoods instead of one large park, so that more people can share the benefit.",
+ "word_count": 260,
+ "glossary": [
+  {
+   "word": "the Green City Project",
+   "ja": "グリーン・シティ・プロジェクト(架空の研究チーム)"
+  },
+  {
+   "word": "pruned",
+   "ja": "(木の枝を)刈り込まれた、剪定された"
+  },
+  {
+   "word": "resident",
+   "ja": "住民"
+  },
+  {
+   "word": "planner",
+   "ja": "(都市)計画の担当者"
+  },
+  {
+   "word": "fairness",
+   "ja": "公平さ"
+  },
+  {
+   "word": "housing",
+   "ja": "住宅"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "type": "main_idea",
+   "q": "Your group is preparing a presentation based on the article. Which of the following best states its main point?",
+   "options": [
+    "Because caring for street trees costs so much, cities should cool their streets in other ways.",
+    "Parks clearly improve residents' health, so every city ought to build one large central park.",
+    "Adding green space helps cities in several ways, but it also brings real costs and difficult problems.",
+    "Green space has both benefits and costs, so cities should stop planting any new trees until budgets grow."
+   ],
+   "answer": 3,
+   "evidence": "A research team called the Green City Project reports that these green spaces change how a city works. / However, green space is not free.",
+   "explanation_ja": "第1段落で「都市にどれだけ緑地が必要か」という問いを立て、第2・第3段落で利点(涼しさ・健康)を、第4・第5段落で課題(維持費・公平さ)を述べる構成。利点と課題の両方を、どちらにも肩入れせずまとめた③が全体の主題。他の3つは本文にある要素を使いながら、本文が言っていない「~すべきだ」という提言を付け加えている点で誤り。",
+   "distractor_ja": "①費用がかかることは第4段落どおりだが、「街路樹をやめて別の方法で通りを冷やすべきだ」という提言は本文にない。本文は費用を見込んだ計画を促しているだけである。　②健康によいことは第3段落どおりだが、「大きな中央公園を一つ」は本文と逆。第5段落は一つの大きな公園ではなく多くの地区に小さな庭園を、という考え方を紹介している。　④利点と費用の両方に触れる点は本文どおりだが、「予算が増えるまで新しい木を植えるのをやめるべきだ」とは本文のどこにも書かれていない。"
+  },
+  {
+   "n": 2,
+   "type": "detail",
+   "q": "According to the article, what happens on a street lined with tall trees?",
+   "options": [
+    "The surface of the road becomes even hotter than that of a treeless street.",
+    "The cooling effect is felt outdoors but never reaches the rooms along the street.",
+    "The air temperature stays exactly the same as on a street of bare concrete.",
+    "The air can be several degrees cooler, so less electricity is used indoors."
+   ],
+   "answer": 4,
+   "evidence": "On a hot summer day, a street lined with tall trees can be several degrees cooler than a street of bare concrete. Because rooms along that street stay cooler too, people there use less electricity for air conditioning.",
+   "explanation_ja": "第2段落に「数度涼しい」「冷房に使う電気が少なくてすむ」と明記。本文の several degrees をそのまま述べた④が正解。",
+   "distractor_ja": "①本文と逆。木のある通りのほうが涼しいと述べている。　②本文と矛盾。第2段落は「その通りに面した部屋も涼しく保たれる」と明記しており、効果が屋内に及ばないとは述べていない。　③本文と逆。「同じまま」ではなく数度涼しくなると書かれている。"
+  },
+  {
+   "n": 3,
+   "type": "inference",
+   "q": "Based on the article, what is most likely to happen in a city that plants many new street trees but sets aside no money for their care?",
+   "options": [
+    "Its streets may lose the cooling effect that the new trees were planted to provide.",
+    "Its residents will use less and less electricity for air conditioning every year.",
+    "Its trees will need much less water and care once they have stood for about thirty years.",
+    "It will have to build one large park instead of many small gardens."
+   ],
+   "answer": 1,
+   "evidence": "Because rooms along that street stay cooler too, people there use less electricity for air conditioning. Cities that plant trees without planning for this later cost often end up with dying trees along their streets.",
+   "explanation_ja": "二か所を突き合わせる問題。第2段落は「街路樹のおかげで通りも部屋も涼しくなり、冷房の電気が減る」と述べるが、それは木が元気に育っていることが前提である。第4段落は「後々の費用を見込まずに木を植えた都市は、街路に枯れかけた木を並べることになりがちだ」と述べる。木が枯れれば日陰も消えるのだから、世話の費用を用意しない都市は、そもそも木を植えて得ようとした涼しさそのものを失いかねない、と導ける。",
+   "distractor_ja": "②第2段落の電気代減少は健全な木があってこそ。第4段落によればこの都市の木は枯れていくので、電気の使用量が毎年下がり続けるとは導けない。　③第4段落は「一本の木を三十年世話する費用は植えるときの費用より高い」と述べており、年月が経つほど手がかからなくなるという話ではない。　④大きな公園か小さな庭園かは第5段落の「公平さ」への対応策の話で、街路樹の維持費とは別の論点。因果関係は本文にない。"
+  },
+  {
+   "n": 4,
+   "type": "detail",
+   "q": "According to the article, what did the survey of two thousand city residents show?",
+   "options": [
+    "Everyone who lived near a park in the city said that they had made new friends there.",
+    "Those living near a park spent much less money on electricity than other city residents.",
+    "People who lived within a short walk of a park exercised more often and felt less stress than others.",
+    "Those living far from a park asked the city to build a larger park for them."
+   ],
+   "answer": 3,
+   "evidence": "In a survey of two thousand city residents, people who lived within a five-minute walk of a park said that they exercised more often and felt less stress than those living farther away.",
+   "explanation_ja": "第3段落の調査結果そのもの。公園から徒歩五分以内(= within a short walk)の人は「運動の回数が多く、ストレスが少ない」と答えた、とある③が正解。",
+   "distractor_ja": "①Everyone が言い過ぎ。公園は人が会って話す場だとあるだけで、全員が友人をつくったとは書かれていない。　②第2段落の電気代の話(街路樹の効果)とのすり替え。調査の内容ではない。　④もっと大きな公園を求めた、という記述は本文にない。"
+  },
+  {
+   "n": 5,
+   "type": "slide",
+   "q": "Your group is making a slide about the last part of the article. Which is the best option for the blank?\n\n Slide 5: A Question of Fairness\n - Problem: ______________\n - What some planners do: build small gardens in many neighborhoods instead of one large park",
+   "options": [
+    "Old parks in poorer areas are closed down as soon as a new park opens.",
+    "A new park can raise housing costs, so long-time residents may leave.",
+    "A new park lowers nearby housing prices, so long-time residents gain money.",
+    "Large parks are usually built where almost nobody happens to be living now."
+   ],
+   "answer": 2,
+   "evidence": "A new park can raise the price of housing around it, and the families who waited longest for that park may have to move away.",
+   "explanation_ja": "スライドの「対応策(多くの地区に小さな庭園)」が答える対象は、直前に述べられた不公平の問題である。第5段落の「公園周辺の住宅価格が上がり、長く待っていた家族が引っ越さざるをえない」を言い換えた②が空所に入る。",
+   "distractor_ja": "①古い公園が閉鎖されるという記述は本文にない。　③本文と正反対。第5段落は「新しい公園はその周辺の住宅の価格を押し上げる」「長く待っていた家族が引っ越さざるをえなくなる」と述べており、値下がりして住民が得をするという内容ではない。　④大きな公園が人のいない場所につくられる、という記述は本文にない。"
+  }
+ ],
+ "translation_ja": "世界中でますます多くの人が都市に住むようになり、いま都市の行政はある単純な問いに直面している。都市にはどれだけの緑地が必要なのか、という問いだ。公園も庭園も街路樹も、単なる飾りではない。グリーン・シティ・プロジェクトという研究チームは、それらが都市の働き方そのものを変えると報告している。\n\n第一に、植物は空気を冷やす。暑い夏の日には、背の高い木が並ぶ通りは、むき出しのコンクリートの通りより数度涼しくなることがある。その通りに面した部屋も涼しく保たれるため、そこに住む人々は冷房に使う電気が少なくてすむ。\n\n第二に、緑地は健康によい。二千人の都市住民を対象とした調査では、公園から徒歩五分以内に住む人は、それより遠くに住む人よりも運動する回数が多く、ストレスを感じることが少ないと答えた。公園はまた、近所の人どうしが会って話す場所にもなっている。\n\nしかし、緑地はただではない。木には水をやり、枝を刈り込む(剪定する)必要があるし、危険になったときには取り除かなければならないこともある。多くの都市では、一本の木を三十年世話する費用は、植えるときの費用より高い。この後々の費用を見込まずに木を植えた都市は、街路に枯れかけた木を並べることになりがちだ。\n\nさらに、公平さの問題もある。新しい公園はその周辺の住宅の価格を押し上げることがあり、その公園をいちばん長く待っていた家族が引っ越さざるをえなくなることもある。そこで、一つの大きな公園ではなく、多くの地区に小さな庭園をつくり、より多くの人が恩恵を分け合えるようにする計画担当者もいる。",
+ "long_theme_ja": "都市に緑地(公園・街路樹)を増やすことの効果と課題",
+ "lead": "You are preparing a presentation about green space in cities. You found the following article."
+}

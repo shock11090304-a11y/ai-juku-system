@@ -1,0 +1,199 @@
+{
+ "no": 1,
+ "date": "8/17",
+ "title": "構造把握（英文解釈）",
+ "goal": "長い文でも主語S・動詞Vを見つけ、修飾語を( )に入れて骨組みをつかむ読み方を身につける。",
+ "points": [
+  {
+   "h": "まず主語S(だれが)と動詞V(どうする)をつかむ",
+   "body": "英語の文の骨組みは「だれが・どうする」。どんなに長い文でも、S(名詞)とV(動詞)を一つずつ見つければ、その文が言いたいことの中心がわかる。",
+   "ex": [
+    [
+     "A bee dances.",
+     "1匹のハチが踊る。"
+    ],
+    [
+     "The other bees watch this dance.",
+     "ほかのハチたちがこの踊りを見る。"
+    ]
+   ],
+   "rule": "S(名詞)+V(動詞)を最初に探す"
+  },
+  {
+   "h": "修飾語は( )でくくって骨組みだけ残す",
+   "body": "前置詞のかたまり(in ~, of ~, to ~ など)や when ~ の部分は「かざり」。( )に入れて外すと、S+Vがくっきり見えてくる。",
+   "ex": [
+    [
+     "(When a bee finds a good place), it flies back.",
+     "(ハチがよい場所を見つけると)、それは戻ってくる。"
+    ],
+    [
+     "The direction (of its dance) shows the way.",
+     "踊りの向きが道を示す。"
+    ]
+   ],
+   "rule": "前置詞句・接続詞のかたまりは( )に入れる"
+  },
+  {
+   "h": "Sが長いときは、Vの直前までがS",
+   "body": "of ~ などの修飾がつくとSは長くなる。まず動詞Vを見つけ、その手前のまとまり全体を主語Sと考えると迷わない。",
+   "ex": [
+    [
+     "The length (of its dance) shows the distance.",
+     "踊りの長さがきょりを示す。"
+    ]
+   ],
+   "rule": "Vを見つけ、その手前のまとまりがS"
+  }
+ ],
+ "passage": {
+  "title": "The Dancing Bees",
+  "jtitle": "ミツバチのダンス",
+  "paras": [
+   [
+    "Honeybees live together in large groups.",
+    "Every day, some of them fly out to look for flowers.",
+    "When a bee finds a good place with a lot of flowers, it flies back to its home.",
+    "But how does it tell the other bees where the flowers are?"
+   ],
+   [
+    "The answer is surprising.",
+    "The bee dances.",
+    "Inside the dark hive, it moves in a special pattern on the wall.",
+    "The direction of its dance shows the way to the flowers, and the length of its dance shows the distance.",
+    "The other bees watch this dance carefully in the dark.",
+    "Then they fly straight to the flowers that their friend has found."
+   ],
+   [
+    "Scientists studied this dance for many years.",
+    "They were amazed that such a small animal can share information so clearly.",
+    "Language is not only for humans."
+   ]
+  ],
+  "trans": {
+   "1": "ミツバチは大きな集団でいっしょに暮らしている。",
+   "2": "毎日、その中の何匹かが花をさがしに飛び出していく。",
+   "3": "ハチがたくさんの花のあるよい場所を見つけると、それは自分の巣へ飛んで帰る。",
+   "4": "しかし、そのハチはどうやって花のある場所をほかのハチたちに伝えるのだろうか。",
+   "5": "その答えはおどろくべきものだ。",
+   "6": "そのハチは踊るのだ。",
+   "7": "暗い巣の中で、それはかべの上で特別なパターンで動く。",
+   "8": "踊りの向きは花へ行く道を示し、踊りの長さはきょりを示す。",
+   "9": "ほかのハチたちは暗やみの中でこの踊りを注意深く見る。",
+   "10": "それから彼らは、仲間が見つけた花へまっすぐに飛んでいく。",
+   "11": "科学者たちは長年この踊りを研究した。",
+   "12": "彼らは、こんなに小さな生き物がそれほどはっきりと情報を分け合えることに驚いた。",
+   "13": "言葉は人間だけのものではない。"
+  }
+ },
+ "vocab": [
+  [
+   "honeybee",
+   "名",
+   "ミツバチ"
+  ],
+  [
+   "fly out",
+   "熟",
+   "飛び出す"
+  ],
+  [
+   "look for ~",
+   "熟",
+   "~をさがす"
+  ],
+  [
+   "direction",
+   "名",
+   "方向・向き"
+  ],
+  [
+   "distance",
+   "名",
+   "きょり・距離"
+  ],
+  [
+   "carefully",
+   "副",
+   "注意深く"
+  ],
+  [
+   "straight",
+   "副",
+   "まっすぐに"
+  ],
+  [
+   "scientist",
+   "名",
+   "科学者"
+  ],
+  [
+   "amazed",
+   "形",
+   "とても驚いた"
+  ],
+  [
+   "share",
+   "動",
+   "共有する・分け合う"
+  ],
+  [
+   "information",
+   "名",
+   "情報"
+  ],
+  [
+   "clearly",
+   "副",
+   "はっきりと"
+  ]
+ ],
+ "q_instr": "本文を読み、次の問いに答えなさい。",
+ "questions": [
+  {
+   "type": "rc_desc",
+   "q": "文(3) の主節（コンマの後の部分）の主語Sと動詞Vをそれぞれ英語で答えよ。",
+   "ans": "S = it（そのハチ）／V = flies（back）（飛んで帰る）",
+   "exp": "文頭の When a bee finds a good place with a lot of flowers は「~すると」という時を表すかざりのかたまりなので( )に入れて外す。残った骨組みは it flies back to its home。よってS=it、V=flies。",
+   "lines": 2
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(8) の前半 The direction of its dance shows the way to the flowers の主語Sと動詞Vを答えよ。",
+   "ans": "S = The direction（of its dance）「踊りの向き」／V = shows「示す」",
+   "exp": "of its dance は The direction を後ろから説明するかざりなので( )に入れる。すると中心は The direction shows ~ となり、S=The direction、V=shows とわかる。",
+   "lines": 2
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(10) Then they fly straight to the flowers that their friend has found. を日本語に訳せ。",
+   "ans": "それから彼ら（ハチたち）は、仲間が見つけた花へまっすぐに飛んでいく。",
+   "exp": "骨組みは they fly（S+V）。that their friend has found は the flowers を後ろから修飾する関係代名詞のかたまりで「仲間が見つけた（花）」となる。straight「まっすぐに」も動詞を説明するかざり。",
+   "lines": 2
+  },
+  {
+   "type": "rc_mc",
+   "q": "この文章の内容として最も適切なものを選べ。",
+   "choices": [
+    "ミツバチは踊りによって、花のある場所を仲間に伝える。",
+    "ミツバチは大きな声で鳴いて仲間を呼ぶ。",
+    "ミツバチは色の変化で敵を追いはらう。",
+    "ミツバチは人間の言葉をそのまま話すことができる。"
+   ],
+   "ans": 0,
+   "exp": "文(6)〜(8)で、ハチは踊りの向きで方向を、速さできょりを示すと述べられている。よって「踊りで花の場所を伝える」が主旨。鳴き声・色・人間の言葉は本文に書かれておらず誤り。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "文(8) によると、花までの「きょり（distance）」を表すのはどれか。",
+   "choices": [
+    "踊りの向き",
+    "踊りの大きさ",
+    "踊りの速さ",
+    "踊りの長さ"
+   ],
+   "ans": 3,
+   "exp": "文(8)より、踊りの向きが花への道を、踊りの長さ（length）が花までのきょり（distance）を示す。したがってきょりを表すのは「踊りの長さ」。"
+  }
+ ]
+}

@@ -1,0 +1,242 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "My father is ( ) than my mother.",
+  "passage": "",
+  "choices": [
+   "old",
+   "older",
+   "oldest",
+   "more old"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「older」。 than があるので比較級。old は語尾に -er をつけて older。more old や oldest は誤り。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "This river is the ( ) in this town.",
+  "passage": "",
+  "choices": [
+   "long",
+   "longer",
+   "longest",
+   "more long"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「longest」。the と in this town(範囲)があるので最上級。long は -est をつけて longest。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "English is ( ) important than math for me.",
+  "passage": "",
+  "choices": [
+   "much",
+   "more",
+   "most",
+   "very"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「more」。important は長い語なので比較級は more important。than があるので比較級を選ぶ。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Kyoto is one of the ( ) cities in Japan.",
+  "passage": "",
+  "choices": [
+   "old",
+   "older",
+   "oldest",
+   "more old"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「oldest」。one of the の後は最上級 + 複数名詞。old の最上級は oldest。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "This bag is as ( ) as that one.",
+  "passage": "",
+  "choices": [
+   "heavy",
+   "heavier",
+   "heaviest",
+   "more heavy"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較。正解は「heavy」。as ... as の間は原級(もとの形)。heavy をそのまま入れる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Which do you like ( ), tea or coffee?",
+  "passage": "",
+  "choices": [
+   "good",
+   "well",
+   "better",
+   "best"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「better」。2つを比べる Which ... A or B? では比較級。well/good の比較級は better。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Tom studies English the ( ) of all my friends.",
+  "passage": "",
+  "choices": [
+   "hard",
+   "harder",
+   "hardest",
+   "more hard"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「hardest」。the と of all(範囲)があるので最上級。hard は hardest。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Health is the ( ) important thing in our life.",
+  "passage": "",
+  "choices": [
+   "much",
+   "more",
+   "most",
+   "very"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「most」。important は long word なので最上級は most important。the があるので最上級を選ぶ。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "My brother can swim ( ) than me.",
+  "passage": "",
+  "choices": [
+   "fast",
+   "faster",
+   "fastest",
+   "more fast"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「faster」。than があるので比較級。fast は faster。副詞でも -er の形。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "This is the ( ) movie that I have ever seen.",
+  "passage": "",
+  "choices": [
+   "good",
+   "well",
+   "better",
+   "best"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較。正解は「best」。the ... that I have ever seen は「今までで一番〜」で最上級。good の最上級は best。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "A: Is your dog bigger than mine?  B: No. Mine is ( ) than yours.",
+  "passage": "",
+  "choices": [
+   "big",
+   "bigger",
+   "biggest",
+   "the bigger"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「bigger」。than があるので比較級。big は g を重ねて bigger。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Nothing is ( ) important than time.",
+  "passage": "",
+  "choices": [
+   "as",
+   "more",
+   "most",
+   "much"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「more」。than があるので比較級。important は more important。「時間より大切なものはない」の意味。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Ken is ( ) tallest boy in his class.",
+  "passage": "",
+  "choices": [
+   "a",
+   "an",
+   "the",
+   "most"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「the」。最上級 tallest の前には the をつける。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "Lake Biwa is the ( ) lake in Japan.",
+  "passage": "",
+  "choices": [
+   "large",
+   "larger",
+   "largest",
+   "more large"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「largest」。the と in Japan(範囲)があるので最上級。large は e で終わるので -st をつけて largest。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "This test was ( ) than I expected.",
+  "passage": "",
+  "choices": [
+   "easy",
+   "easier",
+   "easiest",
+   "more easy"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「easier」。than があるので比較級。easy は y を i に変えて easier。"
+ }
+]

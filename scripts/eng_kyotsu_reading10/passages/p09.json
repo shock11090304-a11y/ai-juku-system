@@ -1,0 +1,111 @@
+{
+ "no": 9,
+ "genre": "第7問 相当　科学の論説文",
+ "title": "What Animals Tell Each Other",
+ "theme_ja": "動物のコミュニケーション",
+ "passage": "Animals do not speak, but they send messages almost all the time. Scientists sort these messages into three groups: sound, movement, and smell. Each has its own strengths, and many species use more than one.\n\nSound travels fast and works in darkness or in a thick forest. A team at the Marlow Wildlife Institute recorded a group of small monkeys for two years. The monkeys made one call when an eagle appeared and a different call when a snake came near. When the team played the eagle call from a hidden speaker, the monkeys looked up at the sky; when they played the snake call, the same animals looked down at the ground. The calls carried information about the kind of danger that was coming.\n\nMovement usually needs light, but not always. Honeybees dance inside the hive to tell others where flowers are. The direction of the dance shows where the food is, and the length of the dance shows how far the bees must fly. Since the hive is dark, the bees around the dancer feel the movement instead of watching it.\n\nSmell has a different advantage. A chemical mark left on a tree <u>lingers</u> for days, so an animal can leave a message and go far away, and days may pass before anyone reads it. This suits animals that live alone and rarely meet, though a mark cannot be corrected once it is left.\n\nNo single method is best. Animals pick the one that fits the moment, and those choices tell scientists much about animal societies.",
+ "word_count": 258,
+ "glossary": [
+  {
+   "word": "species",
+   "ja": "(生物の)種"
+  },
+  {
+   "word": "Marlow Wildlife Institute",
+   "ja": "マーロウ野生生物研究所(架空の研究機関)"
+  },
+  {
+   "word": "eagle",
+   "ja": "ワシ"
+  },
+  {
+   "word": "hive",
+   "ja": "(ミツバチの)巣"
+  },
+  {
+   "word": "chemical mark",
+   "ja": "におい物質でつけた印"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "type": "detail",
+   "q": "According to the article, how did the team at the Marlow Wildlife Institute test the monkeys' calls?",
+   "options": [
+    "They kept the monkeys in a cage and showed them pictures of animals.",
+    "They played the recorded calls through a speaker that the monkeys could not see.",
+    "They compared the calls with those of monkeys living in another forest.",
+    "They counted how many times each call was used in one day."
+   ],
+   "answer": 2,
+   "evidence": "When the team played the eagle call from a hidden speaker, the monkeys looked up at the sky",
+   "explanation_ja": "第2段落に「チームが隠したスピーカーからワシの鳴き声を流すと…」とある。hidden speaker(隠したスピーカー)を a speaker that the monkeys could not see(サルたちには見えないスピーカー)と言い換えた②が正解。録音した鳴き声を再生して反応を確かめる、というのがこのチームの実験方法である。",
+   "distractor_ja": "①サルをおりに入れた、写真を見せたという記述は本文にない(本文のサルは野生の群れで、二年間録音されている)。③別の森のサルの鳴き声と比べたという記述は本文にない。④1日に何回鳴いたかを数えたという記述もない。本文が述べているのは回数ではなく、ワシ用とヘビ用で鳴き声を使い分けていたという内容である。"
+  },
+  {
+   "n": 2,
+   "type": "vocab",
+   "q": "In Paragraph 4, what does the underlined word \"lingers\" most likely mean?",
+   "options": [
+    "It disappears again after only a short time.",
+    "It spreads out over a very wide area of forest.",
+    "It changes its meaning from one day to the next.",
+    "It stays in one place for a long time."
+   ],
+   "answer": 4,
+   "evidence": "A chemical mark left on a tree lingers for days, so an animal can leave a message and go far away",
+   "explanation_ja": "同じ文に for days(何日も)とあり、さらに「動物はメッセージを置いてから遠くへ行ってしまうことができ、誰かが読むまでに何日も過ぎることもある」と続く。つまり印はその場に長く残り続けるということなので④が正解。",
+   "distractor_ja": "①for days および「読まれるまでに何日も過ぎる」と正反対の内容。②においが広い範囲に広がるという記述は本文にない。③「いったん残した印は訂正できない」とあるので、意味が日ごとに変わるは本文と矛盾する。"
+  },
+  {
+   "n": 3,
+   "type": "detail",
+   "q": "According to the article, what does the example of the honeybees show about movement as a way of sending messages?",
+   "options": [
+    "It can be understood even in a place where there is no light.",
+    "It carries messages over much longer distances than sound does.",
+    "It works better outside the nest than inside it.",
+    "It always needs bright sunlight to be seen."
+   ],
+   "answer": 1,
+   "evidence": "Since the hive is dark, the bees around the dancer feel the movement instead of watching it.",
+   "explanation_ja": "第3段落は「動きによる伝達には、ふつうは光が必要だが、いつもそうとは限らない」で始まり、最後に「巣の中は暗いので、踊り手のまわりのハチたちは、その動きを見るのではなく感じ取っている」と述べている。つまりミツバチの例は、動きによる伝達が光のない場所でも通じることを示す例なので①が正解。",
+   "distractor_ja": "②動きが音より遠くまで届くという記述は本文にない。速く伝わるとされているのはむしろ音(Sound travels fast)である。③本文のミツバチが踊るのは巣の「中」であり、巣の外のほうがよいとは述べていない。④「ふつうは光が必要だが、いつもそうとは限らない」「巣の中は暗い」とあるので、always needs bright sunlight は本文と矛盾する。"
+  },
+  {
+   "n": 4,
+   "type": "inference",
+   "q": "According to the article, which of the following is most likely true about messages sent by smell?",
+   "options": [
+    "They are a poor choice when news must reach others at once.",
+    "They give more detailed information than either sound or movement can.",
+    "They work best for animals that meet one another almost every day.",
+    "They are the only method that works in the dark."
+   ],
+   "answer": 1,
+   "evidence": "an animal can leave a message and go far away, and days may pass before anyone reads it",
+   "explanation_ja": "第4段落に「動物はメッセージを置いてから遠くへ行ってしまうことができ、誰かが読むまでに何日も過ぎることもある」とある。一方で第2段落では音について「速く伝わる(travels fast)」と述べている。つまりにおいは相手に届くまでに時間がかかるので、今すぐ届けたい知らせには向かない。よって①が正解。",
+   "distractor_ja": "②においのほうが音や動きより詳しい情報を伝えるという比較は本文にない。むしろ詳しい情報の例として挙げられているのはサルの鳴き声(危険の種類)やミツバチの踊り(方向と距離)である。③本文は「単独で暮らし、めったに出会わない動物に向く」としており、毎日顔を合わせる動物に最適というのは逆。④暗闇で使えるのはにおいだけではない。第2段落に音は暗闇でも役に立つ(works in darkness)とあり、第3段落でも暗い巣の中で動きが伝わっている。"
+  },
+  {
+   "n": 5,
+   "type": "main_idea",
+   "q": "Which of the following is the best title for this article?",
+   "options": [
+    "Why Sound Is the Strongest Signal in Nature",
+    "How Scientists Record the Calls of Monkeys",
+    "The Many Ways Animals Send Messages",
+    "Why Some Animals Choose to Live Alone"
+   ],
+   "answer": 3,
+   "evidence": "Scientists sort these messages into three groups: sound, movement, and smell",
+   "explanation_ja": "本文は音・動き・においという三つの伝達方法を順に説明し、最後に「どれか一つの方法が最良というわけではない」とまとめている。全体の主題を表すのは③。",
+   "distractor_ja": "①最終段落の「どれか一つの方法が最良というわけではない」と矛盾する。②サルの録音は第2段落の一例にすぎず範囲が狭すぎる。④単独生活は第4段落で一度触れられるだけで主題ではない。"
+  }
+ ],
+ "translation_ja": "動物は言葉を話さないが、ほとんどいつも何らかのメッセージを送っている。科学者はそうしたメッセージを「音」「動き」「におい」の三つに分類する。それぞれに得意なところがあり、多くの種は二つ以上を使い分けている。\n\n音は速く伝わり、暗闇の中でも深い森の中でも役に立つ。マーロウ野生生物研究所のチームは、小型のサルの群れを二年間録音した。サルたちは、ワシが現れたときと、ヘビが近づいてきたときとで、別の鳴き声を出していた。チームが隠したスピーカーからワシの鳴き声を流すと、サルたちは空を見上げた。ヘビの鳴き声を流すと、同じサルたちが地面を見下ろした。その鳴き声は、どんな種類の危険が近づいているのかという情報を運んでいたのである。\n\n動きによる伝達には、ふつうは光が必要だが、いつもそうとは限らない。ミツバチは巣の中で踊り、花のありかを仲間に伝える。踊る向きが食べ物のある場所を示し、踊りの長さが、ハチたちがどれだけ遠くまで飛ばなければならないかを示す。巣の中は暗いので、踊り手のまわりのハチたちは、その動きを見るのではなく感じ取っている。\n\nにおいには別の利点がある。木に付けられた化学的な印は何日も残るので、動物はメッセージを置いてから遠くへ行ってしまうことができ、誰かがそれを読むまでには何日も過ぎることもある。これは、単独で暮らし、めったに出会わない動物に向いている。ただし、いったん残した印は後から訂正できない。\n\nどれか一つの方法が最良というわけではない。動物はその場に合ったものを選んでおり、その選び方は、動物の社会について多くのことを科学者に教えてくれる。",
+ "long_theme_ja": "動物どうしの意思疎通(鳴き声・体の動き・におい)",
+ "hide_title": true,
+ "lead": "You are writing a report about animals for your English class. You found the following article."
+}

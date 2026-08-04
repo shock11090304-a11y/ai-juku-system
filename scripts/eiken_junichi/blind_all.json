@@ -1,0 +1,655 @@
+{
+  "daimon1": [
+    {
+      "key": "v01",
+      "sentence": "The charity's new program aims to _______ the suffering of refugees by providing food, shelter, and medical care to those who have lost everything.",
+      "choices": [
+        "aggravate",
+        "provoke",
+        "alleviate",
+        "intensify"
+      ]
+    },
+    {
+      "key": "v02",
+      "sentence": "Without regular maintenance, the bridge's steel structure began to _______, and engineers warned that it could collapse within a decade.",
+      "choices": [
+        "deteriorate",
+        "accelerate",
+        "consolidate",
+        "flourish"
+      ]
+    },
+    {
+      "key": "v03",
+      "sentence": "Engineers installed additional barriers along the coast to _______ the damage caused by rising sea levels and increasingly violent storm surges.",
+      "choices": [
+        "amplify",
+        "provoke",
+        "designate",
+        "mitigate"
+      ]
+    },
+    {
+      "key": "v04",
+      "sentence": "As a lifelong environmentalist, she continued to _______ for stricter regulations on industrial pollution throughout her long career.",
+      "choices": [
+        "condemn",
+        "advocate",
+        "dismiss",
+        "hesitate"
+      ]
+    },
+    {
+      "key": "v05",
+      "sentence": "The senator's repeated dishonesty gradually began to _______ public confidence in the entire administration.",
+      "choices": [
+        "reinforce",
+        "restore",
+        "undermine",
+        "cultivate"
+      ]
+    },
+    {
+      "key": "v06",
+      "sentence": "Factory owners who fail to _______ with the new safety regulations will face heavy fines and, in serious cases, forced closure.",
+      "choices": [
+        "comply",
+        "interfere",
+        "collide",
+        "sympathize"
+      ]
+    },
+    {
+      "key": "v07",
+      "sentence": "Rather than solving the problem, the government's hasty policy only served to _______ the tensions between the two rival communities.",
+      "choices": [
+        "ease",
+        "exacerbate",
+        "resolve",
+        "suspend"
+      ]
+    },
+    {
+      "key": "v08",
+      "sentence": "Harsh prison sentences alone may not be enough to _______ determined criminals from committing further offenses.",
+      "choices": [
+        "compel",
+        "entice",
+        "provoke",
+        "deter"
+      ]
+    },
+    {
+      "key": "v09",
+      "sentence": "After a lengthy debate, the committee decided to _______ a much larger portion of the annual budget to research and development.",
+      "choices": [
+        "confiscate",
+        "speculate",
+        "allocate",
+        "liquidate"
+      ]
+    },
+    {
+      "key": "v10",
+      "sentence": "The corporation's accounting practices came under intense _______ after independent auditors discovered several irregularities in its reports.",
+      "choices": [
+        "scrutiny",
+        "prosperity",
+        "consensus",
+        "novelty"
+      ]
+    },
+    {
+      "key": "v11",
+      "sentence": "Investigators noticed a significant _______ between the witness's original statement and the account she later gave under oath in court.",
+      "choices": [
+        "consensus",
+        "discrepancy",
+        "affinity",
+        "coalition"
+      ]
+    },
+    {
+      "key": "v12",
+      "sentence": "The firm offered generous year-end bonuses as a powerful _______ for employees to exceed their monthly sales targets.",
+      "choices": [
+        "obstacle",
+        "aftermath",
+        "penalty",
+        "incentive"
+      ]
+    },
+    {
+      "key": "v13",
+      "sentence": "The airline faced a fierce public _______ after it suddenly announced sharp increases in baggage fees at the height of the holiday season.",
+      "choices": [
+        "tribute",
+        "consensus",
+        "backlash",
+        "endorsement"
+      ]
+    },
+    {
+      "key": "v14",
+      "sentence": "A solid understanding of basic statistics is a _______ for enrolling in the university's highly competitive advanced data science course.",
+      "choices": [
+        "prerequisite",
+        "byproduct",
+        "compromise",
+        "deterrent"
+      ]
+    },
+    {
+      "key": "v15",
+      "sentence": "The award-winning documentary drew international attention to the desperate _______ of families displaced by the country's prolonged civil war.",
+      "choices": [
+        "triumph",
+        "plight",
+        "aspiration",
+        "abundance"
+      ]
+    },
+    {
+      "key": "v16",
+      "sentence": "The city experienced a sudden _______ in electricity demand as temperatures soared to record highs during the relentless summer heat wave.",
+      "choices": [
+        "decline",
+        "reduction",
+        "shortfall",
+        "surge"
+      ]
+    },
+    {
+      "key": "v17",
+      "sentence": "Although her explanation for the missing funds sounded quite _______ at first, detectives soon uncovered documents that flatly contradicted it.",
+      "choices": [
+        "reluctant",
+        "obsolete",
+        "plausible",
+        "meticulous"
+      ]
+    },
+    {
+      "key": "v18",
+      "sentence": "The veteran surgeon was renowned for her _______ attention to detail, checking every single instrument twice before beginning any operation.",
+      "choices": [
+        "meticulous",
+        "reckless",
+        "indifferent",
+        "ambiguous"
+      ]
+    },
+    {
+      "key": "v19",
+      "sentence": "Elderly people with weakened immune systems are particularly _______ to respiratory infections during the cold winter months.",
+      "choices": [
+        "immune",
+        "susceptible",
+        "resistant",
+        "hostile"
+      ]
+    },
+    {
+      "key": "v20",
+      "sentence": "Given the company's mounting debts and rapidly shrinking sales, its eventual bankruptcy seemed all but _______.",
+      "choices": [
+        "negotiable",
+        "optional",
+        "reversible",
+        "inevitable"
+      ]
+    },
+    {
+      "key": "v21",
+      "sentence": "After years of struggling as a freelance illustrator, he finally landed a highly _______ contract that secured his finances for a decade.",
+      "choices": [
+        "lucrative",
+        "tedious",
+        "obsolete",
+        "futile"
+      ]
+    },
+    {
+      "key": "v22",
+      "sentence": "Smartphones have become so _______ that it is now rare to see anyone without one, even in the most remote rural villages.",
+      "choices": [
+        "scarce",
+        "defunct",
+        "prevalent",
+        "fragile"
+      ]
+    },
+    {
+      "key": "v23",
+      "sentence": "When the two overlapping departments were merged, several administrative positions became _______, and dozens of employees were eventually laid off.",
+      "choices": [
+        "indispensable",
+        "redundant",
+        "prominent",
+        "versatile"
+      ]
+    },
+    {
+      "key": "v24",
+      "sentence": "The two sides reached a _______ agreement, though several important details still needed to be finalized before any contract could be signed.",
+      "choices": [
+        "definitive",
+        "binding",
+        "irrevocable",
+        "tentative"
+      ]
+    },
+    {
+      "key": "v25",
+      "sentence": "Despite losing their home and possessions in the flood, the family proved remarkably _______, rebuilding their entire lives within a single year.",
+      "choices": [
+        "resilient",
+        "fragile",
+        "vulnerable",
+        "apathetic"
+      ]
+    },
+    {
+      "key": "v26",
+      "sentence": "While hastily reorganizing the shared drive, the new intern _______ deleted an entire folder containing years of important client records.",
+      "choices": [
+        "deliberately",
+        "reluctantly",
+        "inadvertently",
+        "explicitly"
+      ]
+    },
+    {
+      "key": "v27",
+      "sentence": "After a surprisingly brief discussion, the board voted _______ in favor of the merger, with not a single member raising any objection.",
+      "choices": [
+        "narrowly",
+        "unanimously",
+        "reluctantly",
+        "tentatively"
+      ]
+    },
+    {
+      "key": "v28",
+      "sentence": "Because the imported saffron was so extraordinarily expensive, the chef used it _______, adding only a tiny pinch to each elaborate dish.",
+      "choices": [
+        "generously",
+        "recklessly",
+        "abundantly",
+        "sparingly"
+      ]
+    },
+    {
+      "key": "v29",
+      "sentence": "The lights were all off and the car was gone from the driveway, so the owners had _______ already left for their long summer vacation.",
+      "choices": [
+        "presumably",
+        "reluctantly",
+        "scarcely",
+        "deliberately"
+      ]
+    },
+    {
+      "key": "v30",
+      "sentence": "The philosopher's lectures _______ influenced an entire generation of thinkers, fundamentally reshaping how they viewed morality and free will.",
+      "choices": [
+        "marginally",
+        "profoundly",
+        "temporarily",
+        "superficially"
+      ]
+    },
+    {
+      "key": "v31",
+      "sentence": "The negotiators worked late into the night, determined to _______ the last few differences that stood in the way of a final peace agreement.",
+      "choices": [
+        "call off",
+        "hand down",
+        "iron out",
+        "give away"
+      ]
+    },
+    {
+      "key": "v32",
+      "sentence": "The initial screening test is designed to _______ applicants who lack the basic qualifications, leaving only the strongest candidates for the final interview.",
+      "choices": [
+        "weed out",
+        "take after",
+        "hold up",
+        "put up"
+      ]
+    },
+    {
+      "key": "v33",
+      "sentence": "Investigators have not yet been able to _______ arson as the cause of the warehouse fire, even though no clear evidence of it has been found.",
+      "choices": [
+        "bring up",
+        "take on",
+        "put up with",
+        "rule out"
+      ]
+    },
+    {
+      "key": "v34",
+      "sentence": "Just two days before the crucial final examination, she _______ a severe case of the flu and had to be hospitalized for nearly a week.",
+      "choices": [
+        "got away with",
+        "came down with",
+        "made up for",
+        "caught up with"
+      ]
+    },
+    {
+      "key": "v35",
+      "sentence": "The accountant arrogantly believed he could _______ stealing company funds indefinitely, but a routine audit eventually exposed the entire scheme.",
+      "choices": [
+        "get away with",
+        "come up with",
+        "put up with",
+        "do away with"
+      ]
+    },
+    {
+      "key": "v36",
+      "sentence": "The cardiologist strongly advised him to _______ his daily consumption of salt and heavily processed food in order to lower his blood pressure.",
+      "choices": [
+        "catch up on",
+        "get on with",
+        "cut back on",
+        "look up to"
+      ]
+    },
+    {
+      "key": "v37",
+      "sentence": "The team's latest findings are entirely _______ what scientists had long believed, forcing researchers to revise several well-established theories.",
+      "choices": [
+        "in favor of",
+        "at odds with",
+        "on behalf of",
+        "in line with"
+      ]
+    },
+    {
+      "key": "v38",
+      "sentence": "After many months of failed negotiations and steadily mounting losses, the once-thriving manufacturer was clearly _______ bankruptcy.",
+      "choices": [
+        "in charge of",
+        "at the mercy of",
+        "for the sake of",
+        "on the verge of"
+      ]
+    },
+    {
+      "key": "v39",
+      "sentence": "Prices have risen so sharply this year that many families on fixed incomes can no longer _______ the soaring cost of everyday necessities.",
+      "choices": [
+        "do without",
+        "keep abreast of",
+        "contend with",
+        "give rise to"
+      ]
+    },
+    {
+      "key": "v40",
+      "sentence": "_______ the devastating earthquake, thousands of volunteers from across the country arrived to help rebuild the shattered coastal towns.",
+      "choices": [
+        "In place of",
+        "By means of",
+        "In spite of",
+        "In the wake of"
+      ]
+    }
+  ],
+  "daimon2": [
+    {
+      "id": "p2_1",
+      "title": "Painting Cities Cool",
+      "text": "As summers grow hotter, cities face a problem that rural areas largely escape. Dense concentrations of asphalt roads, dark rooftops, and concrete buildings absorb sunlight during the day and release it slowly at night. As a result, urban centers can be several degrees warmer than the surrounding countryside, a phenomenon known as the urban heat island effect. This extra warmth is more than an inconvenience; it drives up demand for air conditioning, which in turn ( 1 ), worsening the very problem it is meant to relieve. During severe heat waves, the effect can even threaten the lives of elderly and vulnerable residents.\n\nOne increasingly popular response is surprisingly simple: painting rooftops white. Light-colored surfaces reflect far more sunlight than dark ones, so buildings topped with reflective coatings stay noticeably cooler inside. Studies in several large cities have found that such \"cool roofs\" can lower indoor temperatures enough to cut cooling costs substantially. ( 2 ), the benefits extend beyond individual buildings. When reflective roofs are adopted across a whole neighborhood, the surrounding air temperature drops measurably, easing the heat island effect for everyone. Because the cooling is shared, even people without reflective roofs of their own feel the difference on the hottest days.\n\nYet reflective roofs are not a perfect solution. In colder months, the very surfaces that keep buildings cool in summer also reduce the free warmth that darker roofs would provide, ( 3 ) heating bills in winter. For this reason, some researchers argue that cities in temperate climates should weigh the seasonal trade-offs carefully rather than painting every roof white. A roof that saves money in summer, they note, may quietly cost the same household more in winter. Even so, for the many rapidly growing cities in hot regions, the case for reflective surfaces remains compelling.",
+      "blanks": [
+        {
+          "key": "p2_1_b1",
+          "n": 1,
+          "choices": [
+            "lowers the temperature outdoors",
+            "releases yet more heat into the streets",
+            "cuts the building's power use",
+            "shields residents from the sun"
+          ]
+        },
+        {
+          "key": "p2_1_b2",
+          "n": 2,
+          "choices": [
+            "In contrast",
+            "For instance",
+            "As a result",
+            "Moreover"
+          ]
+        },
+        {
+          "key": "p2_1_b3",
+          "n": 3,
+          "choices": [
+            "adding to",
+            "cutting down on",
+            "making up for",
+            "doing away with"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p2_2",
+      "title": "The Paradox of the Clumsy Robot",
+      "text": "When people imagine the tasks that computers find most difficult, they often picture activities that challenge the human mind, such as playing chess or solving complex equations. Machines, ( 1 ), mastered these skills long ago. A program defeated the world chess champion decades back, and today ordinary software performs in seconds calculations that would take a person hours. What continues to defeat even advanced robots is something far humbler: picking up an unfamiliar object, walking across a cluttered room, or recognizing a friend's face in a crowd.\n\nThis puzzle has a name among researchers: Moravec's paradox, and its explanation lies in evolution. Skills such as vision, balance, and the delicate control of our hands developed over millions of years, and the brain has grown so efficient at them that they feel effortless. Abstract reasoning, on the other hand, is a very recent achievement, so we perform it slowly and consciously. The result is that we consistently ( 2 ): because the oldest skills run silently beneath our awareness, we wrongly assume they must be the easiest of all. Ironically, the mental feats we are proudest of turn out to be the ones machines find easiest to copy.\n\nThe practical consequences are significant. Factories have automated tasks involving calculation and memory with ease, yet many jobs that rely on nimble fingers and quick judgment ( 3 ). A robot can assemble a car on a fixed line, but it struggles to fold soft laundry or harvest ripe strawberries without crushing them. Tasks a small child manages without thinking can stump the most sophisticated machine ever built. Engineers are steadily closing this gap, but progress is slow, and for now the human body remains a remarkably hard act for machines to follow.",
+      "blanks": [
+        {
+          "key": "p2_2_b1",
+          "n": 1,
+          "choices": [
+            "for instance",
+            "as a result",
+            "by contrast",
+            "in the same way"
+          ]
+        },
+        {
+          "key": "p2_2_b2",
+          "n": 2,
+          "choices": [
+            "misjudge how they evolved",
+            "exaggerate their real value",
+            "explain them with ease",
+            "underestimate their true difficulty"
+          ]
+        },
+        {
+          "key": "p2_2_b3",
+          "n": 3,
+          "choices": [
+            "were the first to disappear",
+            "have proved far harder to automate",
+            "are no longer needed at all",
+            "demand very little skill"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p2_3",
+      "title": "The Penny Universities",
+      "text": "In the middle of the seventeenth century, a new kind of gathering place began to appear in the cities of Europe: the coffee house. Taverns had long offered wine and beer, but their customers often grew loud and unsteady as the evening wore on. Coffee houses were different. Because the drink they served sharpened the mind rather than dulling it, conversation there tended to be ( 1 ). Men lingered for hours over a single cup, reading newspapers and debating the questions of the day. A visitor stepping inside would hear not the slurred songs of a tavern but the steady hum of argument and inquiry.\n\nWhat made these establishments truly remarkable was their openness. For the price of a single cup, usually just a penny, almost anyone could enter, sit at a common table, and join the discussion, regardless of rank. A merchant might find himself seated beside a poet or a scientist. ( 2 ), Londoners nicknamed the coffee houses \"penny universities,\" since a visitor could learn as much from an afternoon of conversation as from an expensive book. News, gossip, and bold new theories all circulated freely across the crowded rooms.\n\nThis free flow of ideas had consequences that reached far beyond idle talk. Several famous institutions trace their origins to a particular coffee house where specialists once gathered; the great insurance market of Lloyd's, for example, grew out of one frequented by sailors and traders. Learned societies, too, often held their earliest meetings around such tables, where scholars could test their ideas on a curious audience. Rulers, ( 3 ), saw little to celebrate in this ferment; they viewed the coffee houses with deep suspicion, fearing that the same free exchange bred criticism of the government, and more than one king tried, without lasting success, to shut them down.",
+      "blanks": [
+        {
+          "key": "p2_3_b1",
+          "n": 1,
+          "choices": [
+            "loud and quarrelsome",
+            "brief and unfriendly",
+            "calm and thoughtful",
+            "confused and sleepy"
+          ]
+        },
+        {
+          "key": "p2_3_b2",
+          "n": 2,
+          "choices": [
+            "For this reason",
+            "In contrast",
+            "By coincidence",
+            "Despite this"
+          ]
+        },
+        {
+          "key": "p2_3_b3",
+          "n": 3,
+          "choices": [
+            "in addition",
+            "as a result",
+            "for instance",
+            "however"
+          ]
+        }
+      ]
+    }
+  ],
+  "daimon3": [
+    {
+      "id": "p3_1",
+      "title": "Why Testing Yourself Beats Reading Again",
+      "paragraphs": [
+        "For generations, students preparing for examinations have relied on a single, familiar strategy: reading their notes over and over until the material feels familiar. This approach seems sensible, and the sense of fluency it produces is reassuring. Teachers, too, often encourage this method, advising their students to go through the material just one more time before the day of the test. Yet a growing body of research in cognitive psychology suggests that this widespread habit is far less effective than most learners assume. The comfortable feeling of recognition, it turns out, is a poor guide to how much has actually been remembered.",
+        "In a series of influential experiments, psychologists compared two groups of students who studied the same passages. One group reread the material several times, while the other read it once and then repeatedly tested themselves by trying to recall what they had learned. When both groups were examined a week later, the students who had practiced retrieval remembered substantially more than those who had simply reread. Curiously, when asked to predict their own performance beforehand, the rereaders were the more confident of the two, even though they ultimately performed worse.",
+        "Scientists refer to this phenomenon as the testing effect. The act of pulling information out of memory, rather than passively putting it back in, appears to strengthen the mental pathways that lead to it. This may explain why simply recognizing an answer on the page gives no guarantee that it can be produced from memory when the page is gone. Each successful act of recall makes the next one easier and more durable. Researchers describe such effortful retrieval as a 'desirable difficulty' — a task that feels harder in the moment but produces deeper and longer-lasting learning. The struggle itself, in other words, is not a sign of failure but a mechanism of memory.",
+        "Despite this evidence, self-testing remains unpopular among students. Because retrieval is demanding and often exposes gaps in understanding, it feels less pleasant than the smooth familiarity of rereading. Many learners therefore abandon it precisely when it would help them most. Some educators now argue that schools should build frequent low-stakes quizzes into ordinary lessons, not to rank students but to help them learn. They caution, however, that the benefit comes from the act of recalling, not from the anxiety that high-pressure examinations can create. Used wisely, the humble practice test may be one of the most powerful tools available to any learner."
+      ],
+      "questions": [
+        {
+          "key": "p3_1_q1",
+          "q": "What does the passage say about the common strategy of rereading notes?",
+          "choices": [
+            "The feeling of familiarity it produces is not a reliable measure of how much has truly been learned.",
+            "It is the study method most strongly recommended by cognitive psychologists.",
+            "It works well only for students who begin revising long before an examination.",
+            "It helps students discover the gaps in their own understanding."
+          ]
+        },
+        {
+          "key": "p3_1_q2",
+          "q": "What did the experiments described in the passage find?",
+          "choices": [
+            "Both groups remembered roughly the same amount when they were tested a week later.",
+            "The students who tested themselves recalled more than those who had only reread the material.",
+            "The students who reread the material had predicted that they would do badly.",
+            "The students who tested themselves felt more confident beforehand than the rereaders did."
+          ]
+        },
+        {
+          "key": "p3_1_q3",
+          "q": "According to the passage, why do many students avoid testing themselves?",
+          "choices": [
+            "It has been shown to create more anxiety than formal examinations do.",
+            "It requires far more time than rereading a set of notes.",
+            "Their teachers seldom permit it during ordinary lessons.",
+            "It feels harder and less pleasant than simply going over the material again."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p3_2",
+      "title": "Nature's Engineers",
+      "paragraphs": [
+        "Few animals have been as misunderstood as the beaver. For centuries, these large rodents were hunted relentlessly across Europe and North America, prized for their warm fur and for their scent glands, which were once used in perfumes. By the early twentieth century, they had vanished from much of their former range, and few people mourned their disappearance. To many farmers and landowners, beavers were simply destructive pests that felled valuable trees and flooded useful land. Only recently has this view begun to change, as scientists have come to appreciate the remarkable influence these animals have on the landscapes they inhabit.",
+        "The key to the beaver's importance lies in its most famous habit: building dams. Using branches, mud, and stones, beavers block flowing streams to create deep ponds where they can live safely. These dams do far more than protect their builders. By slowing the movement of water, they cause it to spread out across the surrounding land, forming wetlands that would not otherwise exist. Water that once rushed downstream in a narrow channel instead lingers, soaking into the soil and raising the level of groundwater over a wide area.",
+        "These changes bring a striking range of benefits. The wetlands created by beavers teem with life, providing homes for fish, insects, amphibians, and birds that struggle to survive elsewhere. The ponds also act as natural sponges. During heavy rain, they hold back water that might otherwise cause flooding downstream; during dry spells, they release it slowly, helping the land resist drought. Perhaps most surprising of all, beaver ponds trap sediment and pollutants, so that the water leaving them is often cleaner than the water that flowed in.",
+        "Recognizing these advantages, conservationists in several countries have begun to reintroduce beavers to rivers where they once lived. The results have often been dramatic, with damaged streams recovering far more quickly than expected. Yet the animals' return is not welcomed by everyone. Farmers whose fields lie beside rivers sometimes find their crops flooded or their drainage ditches blocked, and such conflicts can be bitter. Supporters argue that the solution is not to remove the beavers but to manage them, using simple devices that control water levels while allowing the animals to remain. The challenge, they say, is learning to share the landscape with a creature that shapes it so profoundly."
+      ],
+      "questions": [
+        {
+          "key": "p3_2_q1",
+          "q": "How were beavers generally regarded until recent times?",
+          "choices": [
+            "They were admired for the rich wetlands they created.",
+            "They were carefully protected because so few of them were left.",
+            "People viewed them as harmful creatures responsible for wrecking woodland and submerging usable farmland.",
+            "They were valued chiefly for their ability to hold back floods."
+          ]
+        },
+        {
+          "key": "p3_2_q2",
+          "q": "According to the passage, what happens to water when beavers build dams?",
+          "choices": [
+            "It spreads out over the nearby land and sinks into the soil instead of rushing away.",
+            "The streams that are blocked dry up completely within a short time.",
+            "It flows downstream more quickly than it did before.",
+            "The ponds grow too deep for other creatures to make use of."
+          ]
+        },
+        {
+          "key": "p3_2_q3",
+          "q": "What is one benefit of beaver ponds that the passage mentions?",
+          "choices": [
+            "They completely prevent flooding in the areas around them.",
+            "They help purify water by catching mud and contaminants before it flows downstream.",
+            "They provide a home for species that exist nowhere else on Earth.",
+            "They increase the amount of water rushing downstream during storms."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p3_3",
+      "title": "The Box That Changed the World",
+      "paragraphs": [
+        "Today, almost everything we buy has spent part of its life inside a steel box. These containers, stacked in their millions aboard enormous ships, are so ordinary that we rarely notice them. Yet the standard shipping container is one of the most important inventions of the twentieth century. Before it existed, moving goods across the ocean was slow, costly, and astonishingly inefficient. Cargo of every shape and size — barrels, sacks, crates, and boxes — had to be loaded onto ships piece by piece by teams of dockworkers. A single vessel might sit in port for a week or more while its hold was painstakingly filled, and a great deal of cargo was damaged or stolen along the way.",
+        "The man usually credited with solving this problem was Malcolm McLean, an American trucking businessman who knew little about ships. Frustrated by the hours he wasted waiting for his trucks to be unloaded at the docks, he had a simple but powerful idea. Instead of unpacking a truck and loading its contents onto a ship, why not lift the entire truck body — a sealed metal box — directly onto the deck? In 1956, McLean sent the first container ship on its way, carrying fifty-eight identical boxes. The savings were immediate and enormous: loading cargo this way cost only a tiny fraction of the old method.",
+        "Despite these advantages, the container was not welcomed everywhere at first. Dockworkers understood that the new boxes would eliminate much of the manual labor on which their jobs depended, and their unions fought hard against the change. Ports faced enormous costs, since old harbors designed for loose cargo had to be rebuilt with cranes and vast open yards to handle the containers. There was also the problem of standardization: a container was useless if it did not fit the cranes, trucks, and ships of every company that might handle it. Only after years of negotiation did the industry agree on common sizes, allowing a box packed in one country to be moved smoothly anywhere in the world.",
+        "The consequences were profound and far-reaching. As the cost of shipping collapsed, distance mattered far less than it once had. A company could now manufacture its products wherever labor was cheapest and still deliver them affordably to customers on the other side of the planet. In this way, the humble container helped to create the global economy we know today, in which the parts of a single device may come from a dozen different nations. The change was not painless. Countless dockworkers lost their livelihoods, and some once-busy ports fell silent, while others that had invested early grew rich. The box had quietly rearranged the map of world trade."
+      ],
+      "questions": [
+        {
+          "key": "p3_3_q1",
+          "q": "What does the passage say about transporting goods by sea before the container was invented?",
+          "choices": [
+            "Ships could be loaded within a few hours by large teams of workers.",
+            "Goods were loaded one piece at a time in a slow process, and much cargo was damaged or stolen.",
+            "Only a narrow range of products could be carried across the ocean.",
+            "Most cargo was already being packed inside sealed steel boxes."
+          ]
+        },
+        {
+          "key": "p3_3_q2",
+          "q": "According to the passage, what led Malcolm McLean to his idea?",
+          "choices": [
+            "He was frustrated by the long delays his trucks faced while being unloaded at the docks.",
+            "He had worked within the shipping industry for many years.",
+            "He wished to design a stronger kind of ocean-going ship.",
+            "Dockworkers had asked him to make their work less exhausting."
+          ]
+        },
+        {
+          "key": "p3_3_q3",
+          "q": "Why did the container meet with opposition, according to the passage?",
+          "choices": [
+            "The boxes were found to damage far more cargo than older methods had.",
+            "Early container ships cost much more to operate than ordinary vessels.",
+            "Workers feared for their jobs, and ports had to spend heavily to rebuild their facilities.",
+            "Governments refused to let containers from other countries enter their ports."
+          ]
+        },
+        {
+          "key": "p3_3_q4",
+          "q": "What does the author suggest about the container's overall impact?",
+          "choices": [
+            "Its benefits were shared equally among workers, ports, and companies.",
+            "Its effect on the world economy proved smaller than people had expected.",
+            "It encouraged companies to manufacture their goods close to their customers.",
+            "It reshaped world trade, bringing wealth to some while costing others their livelihoods."
+          ]
+        }
+      ]
+    }
+  ]
+}

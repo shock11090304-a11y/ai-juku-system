@@ -1,0 +1,220 @@
+{
+  "no": 2,
+  "date": "7/28",
+  "title": "時制・態・助動詞",
+  "goal": "完了形・受動態・助動詞+have p.p. を『時間の幅』と『される側』の発想でとらえ、時制のズレを自在に操れるようにする。",
+  "points": [
+    {
+      "h": "完了形は『点』ではなく『線』",
+      "body": "have / had / will have + 過去分詞。過去の一点ではなく、過去→現在(現在完了)・大過去→過去(過去完了)・現在→未来(未来完了)という『幅』をとらえる形。現在完了は『今どうなっているか』が主役なので、yesterday など明確な過去の一点を表す語とは一緒に使えない。",
+      "ex": [
+        ["I have just finished lunch.", "ちょうど昼食を終えたところだ。"],
+        ["By noon, she had already left.", "正午までに彼女はもう出発していた。"]
+      ],
+      "rule": "★『いつ』(過去の一点)を言うなら過去形、『今どうか』なら現在完了。"
+    },
+    {
+      "h": "『状態』は進行形にしない／時・条件の副詞節は現在形",
+      "body": "know, belong, resemble, contain のような状態動詞は原則進行形にしない(動作の途中がないから)。また『〜するとき/もし〜なら』という時・条件を表す副詞節の中では、未来のことでも will を使わず現在形で表す。",
+      "ex": [
+        ["If it rains tomorrow, we'll stay home.", "もし明日雨なら家にいます。"],
+        ["I'll tell her when she comes back.", "彼女が戻ったら伝えます。"]
+      ],
+      "rule": "★時・条件の『副詞節』の中は未来でも現在形。ただし名詞節(〜かどうか)は will でよい。"
+    },
+    {
+      "h": "受動態は『される側』を主語に",
+      "body": "be + 過去分詞。look after(世話をする)のような群動詞は、かたまりのまま受動態にして最後の前置詞を残す→ be looked after。動作主が by 以外になる決まり文句(be surprised at / be interested in / be known to など)も丸ごと覚える。",
+      "ex": [
+        ["The baby is looked after by her aunt.", "その赤ちゃんは叔母に世話をされている。"],
+        ["I was surprised at the result.", "私はその結果に驚いた。"]
+      ],
+      "rule": "★群動詞は前置詞ごと受け身に。動作主は by とは限らない。"
+    },
+    {
+      "h": "助動詞 + have + p.p. = 過去への推量・後悔",
+      "body": "must have p.p.(〜したにちがいない)/ should have p.p.(〜すべきだったのに=後悔・非難)/ could have p.p.(〜できたのに)/ may(might) have p.p.(〜したかもしれない)/ cannot have p.p.(〜したはずがない)。すべて『過去の内容』を助動詞で推量・評価する形。",
+      "ex": [
+        ["He must have missed the bus.", "彼はバスに乗り遅れたにちがいない。"],
+        ["You should have told me earlier.", "もっと早く言ってくれればよかったのに。"]
+      ],
+      "rule": "★過去のことを推量・後悔するなら『助動詞 + have + 過去分詞』。"
+    }
+  ],
+  "kiso": [
+    {
+      "type": "fill",
+      "stem": "I ______ my homework already. ( finish )",
+      "ans": "have finished",
+      "point": "現在完了(完了)",
+      "exp": "『すでに終わって、今その状態にある』は現在完了(完了用法)。already も現在完了と相性がよい。have + 過去分詞 finished。"
+    },
+    {
+      "type": "fill",
+      "stem": "She ______ in Tokyo since 2015. ( live )",
+      "ans": "has lived",
+      "point": "現在完了(継続)",
+      "exp": "since 2015『2015年からずっと』は過去から今までの継続。主語 She は3人称単数なので has + 過去分詞。"
+    },
+    {
+      "type": "fill",
+      "stem": "By the time I woke up, my mother ______ breakfast. ( make )",
+      "ans": "had made",
+      "point": "過去完了(大過去)",
+      "exp": "『起きた(過去)』より前に『作り終えていた』ので、過去のさらに前=大過去を表す過去完了 had + 過去分詞 made。"
+    },
+    {
+      "type": "fill",
+      "stem": "By next year, they ______ the new bridge. ( build )",
+      "ans": "will have built",
+      "point": "未来完了",
+      "exp": "『来年までには完成しているだろう』という未来のある時点での完了は未来完了 will have + 過去分詞 built。"
+    },
+    {
+      "type": "fill",
+      "stem": "This song ______ by many people. ( love )",
+      "ans": "is loved",
+      "point": "受動態(現在)",
+      "exp": "『多くの人に愛されている』=される側 This song が主語。現在の受動態は is + 過去分詞 loved。"
+    },
+    {
+      "type": "fill",
+      "stem": "The window ______ by the storm last night. ( break )",
+      "ans": "was broken",
+      "point": "受動態(過去)",
+      "exp": "last night(過去の一点)なので過去の受動態 was + 過去分詞。break の過去分詞は broken。"
+    },
+    {
+      "type": "mc",
+      "stem": "I ______ him since we were children.",
+      "note": "私たちが子どもの頃から彼を知っている。",
+      "choices": ["have known", "know", "knew", "had known"],
+      "ans": 0,
+      "point": "現在完了(継続)",
+      "exp": "since『〜以来ずっと』は過去から今までの継続なので現在完了 have known。know は状態動詞で進行形にしない点も確認。"
+    },
+    {
+      "type": "mc",
+      "stem": "English ______ in many countries.",
+      "note": "英語は多くの国で話されている。",
+      "choices": ["speaks", "is speaking", "has spoken", "is spoken"],
+      "ans": 3,
+      "point": "受動態(現在)",
+      "exp": "英語は『話される』側なので受動態 is + 過去分詞 spoken。speaks(能動)は『英語が話す』となり不自然。"
+    }
+  ],
+  "hyojun": [
+    {
+      "type": "mc",
+      "stem": "Hardly had I sat down ______ the telephone began to ring.",
+      "note": "私が腰を下ろすやいなや、電話が鳴り始めた。",
+      "choices": ["than", "when", "then", "that"],
+      "ans": 1,
+      "point": "hardly ... when（否定語句前置の倒置）",
+      "exp": "核心は『hardly[scarcely] A when[before] B＝AするやいなやB』。文頭 Hardly に引かれて had I sat down と倒置が起き、後続の接続詞は than ではなく when。よく似た no sooner A than B と対で覚え、hardly には when、no sooner には than と紐づける。"
+    },
+    {
+      "type": "mc",
+      "stem": "According to the chairperson, the complaint ______ at the next board meeting.",
+      "note": "議長によれば、その苦情は次回の役員会で扱われる予定だ。",
+      "choices": ["is dealing with", "will deal with", "will be dealt with", "will be dealt"],
+      "ans": 2,
+      "point": "群動詞の受動態（deal with）",
+      "exp": "核心は『deal with は2語で1つの他動詞』。苦情は『扱われる』側だから受動態 be dealt with にし、前置詞 with を必ず残す。with を落とした will be dealt は deal が自動詞化できず不成立、will deal with は能動で『苦情が扱う』となり意味が逆。"
+    },
+    {
+      "type": "mc",
+      "stem": "You ______ have paid in advance; they accept payment on the day, too.",
+      "note": "前払いする必要はなかったのに。当日払いも受け付けているんだよ。",
+      "choices": ["mustn't", "shouldn't", "can't", "needn't"],
+      "ans": 3,
+      "point": "needn't have + 過去分詞",
+      "exp": "核心は『needn't have p.p.＝(実際はしたが)する必要はなかったのに』という過去の不要な行為への評価。当日払い可という文脈が『前払いは不要だった』を裏づける。shouldn't have は非難、can't have は『したはずがない』で文意に合わず、mustn't have はそもそも標準的でない。"
+    },
+    {
+      "type": "mc",
+      "stem": "He ______ about the merger; otherwise he would never have sold his shares so cheaply.",
+      "note": "彼はその合併を知っていたはずがない。さもなければあんなに安く株を売るはずがなかった。",
+      "choices": ["can't have known", "must have known", "should have known", "may have known"],
+      "ans": 0,
+      "point": "cannot have + 過去分詞",
+      "exp": "核心は『can't[cannot] have p.p.＝〜したはずがない』という過去への強い否定推量。otherwise 以下の would never have sold（仮定法過去完了）が『実際には知らなかった』ことを裏づける。must have known だと逆の『知っていたにちがいない』になり文脈と衝突する。"
+    },
+    {
+      "type": "order",
+      "ja": "その若い教授は、学生全員から尊敬されている。",
+      "tokens": ["The", "young", "professor", "is", "looked", "up", "to", "by", "all", "the", "students"],
+      "ans": "The young professor is looked up to by all the students",
+      "point": "群動詞の受動態（look up to）",
+      "exp": "核心は『look up to＝3語で1つの他動詞(尊敬する)』。受動態にしても up to をかたまりで残し be looked up to by 〜 とする。動詞句を分解して前置詞を捨てないのがコツ。動作主は by。"
+    },
+    {
+      "type": "order",
+      "ja": "宿題を終えたらすぐに、君に折り返し電話するよ。",
+      "tokens": ["I'll", "call", "you", "back", "as", "soon", "as", "I", "have", "finished", "my", "homework"],
+      "ans": "I'll call you back as soon as I have finished my homework",
+      "point": "時の副詞節は未来完了の代わりに現在完了",
+      "exp": "核心は『時・条件の副詞節では will を使わない』の応用。as soon as が導く時の副詞節では、未来の完了でも will have finished とせず現在完了 have finished で表す。未来を背負うのは主節の I'll call だけ。"
+    },
+    {
+      "type": "rewrite",
+      "given": "The police are now looking into the cause of the accident.",
+      "target": "The cause of the accident ______ now ______ ______ ______ by the police.",
+      "blanks": ["is", "being", "looked", "into"],
+      "point": "進行形の受動態＋群動詞",
+      "exp": "核心は『be being + 過去分詞＝〜されているところ』。群動詞 look into(調査する)はかたまりのまま looked into を残す。能動 are looking into を受動にすると、単数主語 The cause に合わせて is now being looked into となる。"
+    },
+    {
+      "type": "rewrite",
+      "given": "My grandfather died ten years ago.",
+      "target": "My grandfather ______ ______ ______ for ten years.",
+      "blanks": ["has", "been", "dead"],
+      "point": "瞬間動詞→状態表現の現在完了",
+      "exp": "核心は『die は一瞬の動作動詞だから期間と組めない』。『10年間ずっと死んだ状態にある』は、状態を表す be dead を現在完了にして has been dead for ten years とする。die を継続で has died for … とはできない点が狙い。"
+    }
+  ],
+  "nyushi": [
+    {
+      "type": "mc",
+      "stem": "Not until she apologized ______ to forgive her for what she had done.",
+      "note": "彼女が謝って初めて、私は彼女のしたことを許す気になった。",
+      "choices": ["I began", "began I", "did I begin", "I had begun"],
+      "ans": 2,
+      "point": "否定の副詞句前置による倒置",
+      "exp": "核心は『Not until A B＝Aして初めてB』。文頭に否定の副詞句 Not until 節が出ると、主節が疑問文と同じ語順に倒置される。時制は過去なので助動詞 do を立てて did I begin。began I のように一般動詞をそのまま前に出すのは誤り。"
+    },
+    {
+      "type": "mc",
+      "stem": "If the construction goes as planned, the new terminal ______ by the end of next March.",
+      "note": "工事が予定通り進めば、新ターミナルは来年3月末までには完成してしまっているだろう。",
+      "choices": ["will complete", "will have been completed", "will be completing", "will have completed"],
+      "ans": 1,
+      "point": "未来完了の受動態",
+      "exp": "核心は『未来のある時点までの完了＝未来完了 will have p.p.』に『される側＝受動態』を重ねる二段構え。ターミナルは『完成させられる』側だから will have been completed。will have completed(能動)だと『ターミナルが何かを完成させる』となり不可。条件節 goes(現在形)も時・条件の副詞節の原則どおり。"
+    },
+    {
+      "type": "error",
+      "html": "The results of the poll [a|have] just [b|been announced], and they [c|will make] [d|public] on the official website tonight.",
+      "ans": "c",
+      "correct": "will make → will be made",
+      "point": "能動と受動の識別",
+      "exp": "核心は『they(＝the results)は公表される側』。make の後ろに目的語がなく意味上も『結果が公表される』のだから、能動 will make ではなく受動 will be made public が正しい。周囲の have / been announced が正しい完了・受動なので、そこに紛れた『抜けた受動』を見抜けるかが勝負。"
+    },
+    {
+      "type": "order",
+      "ja": "彼の迅速な判断がなかったら、その会社は倒産していただろう。",
+      "tokens": ["Had", "it", "not", "been", "for", "his", "quick", "decision", "the", "company", "would", "have", "gone", "bankrupt"],
+      "ans": "Had it not been for his quick decision, the company would have gone bankrupt",
+      "point": "If it had not been for の倒置（仮定法過去完了）",
+      "exp": "核心は『If it had not been for A(もしAがなかったら)は if を省いて Had を前に出す倒置になる』。過去の事実に反する仮定なので、帰結節は would have + 過去分詞。Had it not been for his quick decision で条件、would have gone bankrupt で結果を表す。"
+    },
+    {
+      "type": "ja2en",
+      "ja": "あのとき彼の忠告に従っていれば、君は今こんなに苦労してはいないはずだ。",
+      "models": ["If you had followed his advice then, you would not be struggling so much now.", "Had you taken his advice back then, you wouldn't be having such a hard time now."],
+      "point": "過去の条件（if + 過去完了）と現在の帰結（would + 動詞原形）を組み合わせる mixed conditional を作れているか。then と now の時のズレを訳し分けているか。",
+      "mistakes": "帰結を would not have struggled にすると『あのとき苦労しなかった』という過去の話にずれてしまう。『今こうなっていないはず』という現在の帰結は would not be struggling のように would + 動詞原形/進行形で表す。仮定法なので will ではなく would を使う点、条件節は had followed(過去完了)にする点も要注意。",
+      "lines": 2
+    }
+  ]
+}

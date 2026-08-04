@@ -1,0 +1,88 @@
+{
+ "no": 4,
+ "title": "The Woman Who Listened to the Hills",
+ "passage": "Nadia Farid grew up in Hasari, a small village on a dry hillside. Every morning she and her sister walked two hours down to a river and carried heavy cans of water back home. At dawn, thick white fog often covered the hills, and Nadia wondered why so much water hung in the air while her village had almost none.\n\nAfter finishing school, she studied engineering in the city and planned to stay there. During a visit home, however, she saw that the river had become much narrower than before. That evening she decided to move back to Hasari.\n\nHer first plan was a deep well. She and several neighbors dug for three months, but they found only dry stones. Next she built a large tank for rainwater, yet rain fell in Hasari during only a few weeks each year, and the tank stayed empty. Some people began to laugh at her.\n\nThen Nadia remembered the fog. She stretched a piece of fine net between two poles on the hill above the village. Tiny drops of water stuck to the net, joined together, and ran down into a pipe. The first net produced only a cupful a day. For two years she compared nets with holes of different sizes, until one design collected almost two hundred liters every morning.\n\nToday thirty nets stand above Hasari, and children who once carried cans sit in classrooms instead. \"I did not invent anything new,\" Nadia says. \"I only listened to the hills.\"",
+ "glossary": [
+  {
+   "word": "hillside",
+   "ja": "丘の斜面"
+  },
+  {
+   "word": "fog",
+   "ja": "霧"
+  },
+  {
+   "word": "well",
+   "ja": "井戸"
+  },
+  {
+   "word": "net",
+   "ja": "網"
+  },
+  {
+   "word": "pole",
+   "ja": "支柱"
+  },
+  {
+   "word": "liter",
+   "ja": "リットル"
+  },
+  {
+   "word": "cupful",
+   "ja": "コップ1杯分"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "q": "Put the following events into the order in which they happened.\nA: Nadia and her neighbors dug for three months without success.\nB: Nadia noticed that the river near her village had grown smaller.\nC: Nadia compared nets with holes of different sizes.\nD: Nadia built a container for rainwater that did not fill up.",
+   "options": [
+    "A → B → C → D",
+    "D → B → A → C",
+    "A → D → C → B",
+    "B → A → D → C"
+   ]
+  },
+  {
+   "n": 2,
+   "q": "According to the story, why did Nadia's rainwater tank fail to supply the village?",
+   "options": [
+    "Strong winds on the hill damaged it soon after it was built.",
+    "The village receives rain during only a short part of each year.",
+    "The ground under it was full of dry stones and hard rock.",
+    "Her neighbors stopped helping her before the tank was done."
+   ]
+  },
+  {
+   "n": 3,
+   "q": "Which of the following is most likely true about life in Hasari before Nadia's nets were built?",
+   "options": [
+    "Most of the water used in the village came from wells dug on the hillside.",
+    "Carrying water took up time that children could have used for study.",
+    "The river below the village had already dried up completely by then.",
+    "Most families had already left the village to look for more water."
+   ]
+  },
+  {
+   "n": 4,
+   "q": "Which of the following is true about Nadia's nets?",
+   "options": [
+    "The nets collected far more water once their design was improved.",
+    "Fewer than ten of them are still standing on the hill above the village.",
+    "The first of them was set up beside the river.",
+    "They gather the most water late in the evening, when the air becomes cool."
+   ]
+  },
+  {
+   "n": 5,
+   "q": "Your group is preparing a presentation slide about Nadia Farid. Choose the best option to complete the slide.\n\n-----------------------------------------\n Nadia Farid: Learning from Failure\n * Walked to the river every morning as a girl\n * Studied engineering in the city, then came home\n * Two early plans brought the village no water\n * Finally succeeded by ______________\n-----------------------------------------",
+   "options": [
+    "spreading nets over the rainwater tank so that less of the rain was lost",
+    "using nets to take water out of the narrow river much more quickly",
+    "turning what was already in the air around the village into water people can use",
+    "cooling the air above the village at night so that new fog would form"
+   ]
+  }
+ ],
+ "lead": "In your English class, you are going to give a presentation about the following story."
+}

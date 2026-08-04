@@ -1,0 +1,321 @@
+{
+ "no": 5,
+ "date": "7/31",
+ "title": "仮定法・倒置・省略・強調（否定含む）",
+ "goal": "仮定法の3つの基本形を土台に、if省略の倒置・否定語頭の倒置・強調構文・省略・部分否定までを一気通貫で仕上げ、入試の記述と和文英訳で使いこなせるようにする。",
+ "points": [
+  {
+   "h": "仮定法は『時制を1つ過去へズラす』サイン",
+   "body": "現実に反する妄想を語るとき、時制をわざと1つ過去へずらす。現在の妄想（仮定法過去）＝If S 過去形, S would/could/might＋原形。過去の妄想（仮定法過去完了）＝If S had p.p., S would have p.p.。be動詞は主語に関係なく were を使うのが基本。",
+   "ex": [
+    [
+     "If I were you, I would take that offer.",
+     "もし私が君なら、その申し出を受けるのに。"
+    ],
+    [
+     "If I had studied harder, I could have passed the exam.",
+     "もっと勉強していたら、試験に受かっていたのに。"
+    ]
+   ],
+   "rule": "★現在の妄想は『過去形』／過去の妄想は『had＋過去分詞』"
+  },
+  {
+   "h": "if を消すと were / had / should が先頭へ飛び出す（倒置）",
+   "body": "格式ばった文では if を省略でき、そのとき were・had・should が主語の前に出て『疑問文の語順』になる。Were I you＝If I were you、Had I known＝If I had known、Should you need＝If you should need。意味は if 節と同じ。without／but for も『〜がなければ』で仮定法とセット。",
+   "ex": [
+    [
+     "Had I known the truth, I would have told you.",
+     "真実を知っていたら、君に話していたのに。"
+    ],
+    [
+     "Without your advice, I could not have finished it.",
+     "君の助言がなければ、終えられなかっただろう。"
+    ]
+   ],
+   "rule": "★if を消したら were / had / should を主語の前へ"
+  },
+  {
+   "h": "否定の副詞を文頭に出すと『疑問文の顔』になる",
+   "body": "Never・Hardly・Little・Not only・Only then などの否定・準否定の副詞を強調で文頭に置くと、その後ろは疑問文と同じ倒置（助動詞＋主語）になる。Not only did he help me, but he also ... のように、一般動詞なら do/does/did が顔を出す。",
+   "ex": [
+    [
+     "Never have I seen such a beautiful sunset.",
+     "こんなに美しい夕日を見たことがない。"
+    ],
+    [
+     "Not only did he apologize, but he also paid for the damage.",
+     "彼は謝っただけでなく、損害も弁償した。"
+    ]
+   ],
+   "rule": "★否定語が前 → 助動詞＋主語（疑問文の語順）"
+  },
+  {
+   "h": "It is ~ that の強調／not always の部分否定",
+   "body": "強調したい語句を It is ~ that で挟むと『…なのは~だ』。挟んだ部分を抜いても文が成立するのが目印。not always／not all／not every は部分否定で『いつも〜とは限らない』。二重否定（never ... without など）は逆に強い肯定。as／though 節では反復語がしばしば省略される。",
+   "ex": [
+    [
+     "It was in this room that he was born.",
+     "彼が生まれたのはこの部屋だ。"
+    ],
+    [
+     "The rich are not always happy.",
+     "金持ちがいつも幸せとは限らない。"
+    ]
+   ],
+   "rule": "★It is ~ that で挟んで強調／not＋always・all は部分否定"
+  }
+ ],
+ "kiso": [
+  {
+   "type": "fill",
+   "stem": "If I ______ (be) you, I would accept the offer immediately.",
+   "ans": "were",
+   "point": "仮定法過去",
+   "exp": "現在の事実に反する仮定なので、be動詞は主語に関係なく were を使う。帰結が would＋原形になっているのも仮定法過去のサイン。"
+  },
+  {
+   "type": "fill",
+   "stem": "If she ______ (know) his phone number, she would call him right now.",
+   "ans": "knew",
+   "point": "仮定法過去",
+   "exp": "『今その番号を知らない』という現在の事実に反する仮定なので、if節の動詞を過去形 knew にする。"
+  },
+  {
+   "type": "mc",
+   "stem": "If I had left home earlier, I ______ the last train.",
+   "note": "もっと早く家を出ていたら、終電に間に合っていたのに。",
+   "choices": [
+    "would catch",
+    "would have caught",
+    "caught",
+    "will catch"
+   ],
+   "ans": 1,
+   "point": "仮定法過去完了",
+   "exp": "if節が had p.p.（過去の事実に反する仮定）なので、帰結の主節は would have＋過去分詞。would catch では時制が合わない。"
+  },
+  {
+   "type": "fill",
+   "stem": "I wish I ______ (can) speak Chinese as fluently as you do.",
+   "ans": "could",
+   "point": "I wish＋仮定法過去",
+   "exp": "I wish の後は現在の事実に反する願望なので仮定法過去。can を過去形 could にして『（今）話せたらなあ』を表す。"
+  },
+  {
+   "type": "mc",
+   "stem": "If it ______ snow next week, the outdoor event would be canceled.",
+   "note": "万一来週雪が降れば、屋外イベントは中止になるだろう。",
+   "choices": [
+    "snows",
+    "is snowing",
+    "should snow",
+    "will snow"
+   ],
+   "ans": 2,
+   "point": "仮定法未来（should）",
+   "exp": "起こる可能性が低い未来の仮定は if S should＋原形（万一）。帰結に would があることからも仮定法。現在形 snows は単なる条件文、is snowing は進行形で不適、if 節に will は使えない（will snow は誤り）。"
+  },
+  {
+   "type": "fill",
+   "stem": "If I ______ (have) more time yesterday, I would have visited the museum.",
+   "ans": "had had",
+   "point": "仮定法過去完了",
+   "exp": "yesterday という過去の事実に反する仮定なので had＋過去分詞。have の過去分詞は had なので『had had』となる。"
+  },
+  {
+   "type": "mc",
+   "stem": "I would travel around the world if I ______ enough money now.",
+   "note": "もし今十分なお金があれば、世界中を旅するのに。",
+   "choices": [
+    "had",
+    "have",
+    "will have",
+    "have had"
+   ],
+   "ans": 0,
+   "point": "仮定法過去",
+   "exp": "now があり『今お金がない』という現在の事実に反する仮定。if節の動詞は過去形 had にする。主節が would＋原形なのと呼応している。"
+  },
+  {
+   "type": "fill",
+   "stem": "Without air, no living thing ______ (survive) on the earth.",
+   "ans": "could survive",
+   "point": "without＝仮定法",
+   "exp": "Without air は『もし空気がなければ』という仮定法の条件を表す。帰結なので could＋原形にして『生き延びられないだろう』とする。"
+  }
+ ],
+ "hyojun": [
+  {
+   "type": "mc",
+   "stem": "She looked pale and exhausted, as if she ______ for days.",
+   "note": "彼女は青ざめて疲れきっていて、まるで何日も眠っていないかのようだった。",
+   "choices": [
+    "hasn't slept",
+    "didn't sleep",
+    "hadn't slept",
+    "wouldn't sleep"
+   ],
+   "ans": 2,
+   "point": "as if＋仮定法過去完了",
+   "exp": "『まるで〜だったかのように』の as if は事実に反する妄想。基準の時（looked=過去）より前の『眠っていなかった』を表すので、時制を1つ前へずらして過去完了 had p.p.。現在完了 hasn't は時制がずれ、didn't は事実の記述になってしまう。"
+  },
+  {
+   "type": "order",
+   "ja": "もっと早く医者に診てもらっていればよかったと思う。",
+   "tokens": [
+    "I",
+    "wish",
+    "I",
+    "had",
+    "seen",
+    "a",
+    "doctor",
+    "earlier"
+   ],
+   "ans": "I wish I had seen a doctor earlier",
+   "point": "I wish＋仮定法過去完了",
+   "exp": "wish の後は妄想の世界。過去の事実（診てもらわなかった）への後悔なので、時制を1つ前へずらして had＋過去分詞にする。現在の願望なら仮定法過去だが、ここは『しておけばよかった』の過去の後悔。"
+  },
+  {
+   "type": "rewrite",
+   "given": "If you should have any questions, please feel free to ask.",
+   "target": "______ you ______ any questions, please feel free to ask.",
+   "blanks": [
+    "Should",
+    "have"
+   ],
+   "point": "if省略（should）の倒置",
+   "exp": "If ... should ~ から if を落とすと、should が主語の前に飛び出して疑問文の語順になる。Should you have ... で『万一〜なら』。原形 have はそのまま残る。"
+  },
+  {
+   "type": "mc",
+   "stem": "Expensive wines are ______ better than cheap ones; taste is highly personal.",
+   "note": "高価なワインが安いものより必ずしも良いとは限らない。味の好みはきわめて個人的なものだ。",
+   "choices": [
+    "never",
+    "hardly",
+    "by no means",
+    "not necessarily"
+   ],
+   "ans": 3,
+   "point": "部分否定（not necessarily）",
+   "exp": "『必ずしも〜とは限らない』は not＋necessarily の部分否定。全否定の never／強い否定の hardly・by no means を入れると『決して良くない』となり、後半『好みは人それぞれ』と論理が合わない。not は always・all・necessarily と組むと『一部否定』になるのがコア。"
+  },
+  {
+   "type": "order",
+   "ja": "彼女が去って初めて、私は彼女の大切さに気づいた。",
+   "tokens": [
+    "It",
+    "was",
+    "not",
+    "until",
+    "she",
+    "left",
+    "that",
+    "I",
+    "realized",
+    "her",
+    "importance"
+   ],
+   "ans": "It was not until she left that I realized her importance",
+   "point": "It is not until ~ that の強調",
+   "exp": "『〜して初めて…』は not until を It is ~ that で挟む定型。強調するのは until 節全体で、『彼女が去るまで気づかなかった』＝『去って初めて気づいた』。until 単独でなく not until を丸ごと前に出すのがコア。"
+  },
+  {
+   "type": "mc",
+   "stem": "Only after graduating from college ______ how much his parents had sacrificed for him.",
+   "note": "大学を卒業して初めて、彼は両親がどれほど自分のために犠牲を払ってきたか気づいた。",
+   "choices": [
+    "did he realize",
+    "he realized",
+    "realized he",
+    "he did realize"
+   ],
+   "ans": 0,
+   "point": "Only＋副詞句の文頭倒置",
+   "exp": "Only を含む副詞句を文頭に出すと、後ろは疑問文の語順に倒置する。一般動詞なので do/does/did が顔を出し did he realize。Only after ~ で『〜して初めて』。he realized のままでは倒置になっていない。"
+  },
+  {
+   "type": "rewrite",
+   "given": "Hardly had she entered the room when everyone fell silent.",
+   "target": "No sooner had she entered the room ______ everyone ______ silent.",
+   "blanks": [
+    "than",
+    "fell"
+   ],
+   "point": "hardly ... when ＝ no sooner ... than",
+   "exp": "『〜するやいなや…』は Hardly[Scarcely] ... when と No sooner ... than が対応する。No sooner は相棒の than とペアで使うのが鉄則。倒置部 had she entered はそのまま、後半は everyone fell silent（静まり返った）。"
+  }
+ ],
+ "nyushi": [
+  {
+   "type": "error",
+   "html": "[a|I wish] I [b|would have studied] medicine [c|when] I [d|had] the chance in my twenties.",
+   "ans": "b",
+   "correct": "would have studied → had studied",
+   "point": "wish＋仮定法過去完了",
+   "exp": "wish の後の『過去の事実に反する願望』は had＋過去分詞で表す。would have studied は帰結節（主節）で使う形で、wish 節の中には置けない。『あのとき医学を学んでいればよかった』＝ I wish I had studied。学習者が最も混同する典型ミス。"
+  },
+  {
+   "type": "mc",
+   "stem": "So ______ that the entire audience rose to give her a standing ovation.",
+   "note": "彼女の演技はあまりに感動的で、観客全員が立ち上がって喝采を送った。",
+   "choices": [
+    "her performance was moving",
+    "moving was her performance",
+    "was her performance moving",
+    "moving her performance was"
+   ],
+   "ans": 1,
+   "point": "So＋形容詞の文頭倒置（SVC倒置）",
+   "exp": "補語である『So＋形容詞』を強調で文頭に出すと、後ろは be動詞＋主語の倒置になる：So moving was her performance that ...。倒置は『疑問文の顔』なので was が主語の前、ただし that 以下は普通の語順に戻る。her performance was moving では倒置が起きていない。"
+  },
+  {
+   "type": "order",
+   "ja": "彼女の助言がなかったなら、私は今頃まったく違う職業に就いていただろう。",
+   "tokens": [
+    "Had",
+    "it",
+    "not",
+    "been",
+    "for",
+    "her",
+    "advice",
+    "I",
+    "would",
+    "be",
+    "in",
+    "a",
+    "completely",
+    "different",
+    "profession",
+    "now"
+   ],
+   "ans": "Had it not been for her advice I would be in a completely different profession now",
+   "point": "Had it not been for ~（if省略倒置）＋ミックス仮定法",
+   "exp": "If it had not been for ~（But for ~）から if を落とした倒置形が Had it not been for ~。条件は過去だが、帰結に now があり『今の状態』を語るので主節は would be（現在）。過去条件×現在帰結のミックス仮定法を見抜くのがコア。機械的に would have been としない。"
+  },
+  {
+   "type": "ja2en",
+   "ja": "その事故を目撃していなかったら、彼らは今でもその運転手は無実だと信じていたかもしれない。",
+   "models": [
+    "If they had not witnessed the accident, they might still believe the driver was innocent.",
+    "Had they not witnessed the accident, they might still believe in the driver's innocence."
+   ],
+   "point": "過去の条件（had p.p.）×現在の帰結（might still believe）のミックス仮定法を、still で『今も』と示して書けているか",
+   "mistakes": "帰結を might have believed にすると『過去にそう信じたかもしれない』になり、『今も信じている』という現在の意味が消える。仮定法過去完了だからと反射的に主節も have p.p. にしないこと。still を落とすと現在の含みが弱くなる。",
+   "lines": 2
+  },
+  {
+   "type": "ja2en",
+   "ja": "彼女はその古い写真を見るたびに、必ず亡き母のことを思い出す。",
+   "models": [
+    "She never looks at that old photograph without remembering her late mother.",
+    "She cannot look at that old photograph without being reminded of her late mother."
+   ],
+   "point": "never[cannot] ... without ~ing の二重否定（＝強い肯定）で『〜するたびに必ず…する』を表せているか",
+   "mistakes": "without は前置詞なので後ろは動名詞 ~ing。without remember のように原形にするミスが多い。every time で書いても意味は通るが、ここは二重否定構文を狙う。『亡き母』は late mother（dead mother は無配慮）。",
+   "lines": 2
+  }
+ ]
+}

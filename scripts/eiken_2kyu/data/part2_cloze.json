@@ -1,0 +1,86 @@
+{
+  "part": 2,
+  "passages": [
+    {
+      "id": "p2_1",
+      "title": "A Solution for Missed Deliveries",
+      "theme": "身近な社会・生活",
+      "text": "These days, many people buy things online instead of going to stores. When they order something, it is delivered to their homes. However, there is one common problem. Delivery drivers often arrive when no one is at home. ( 1 ), they cannot leave the package and must come back later. This wastes both time and energy. In large cities, this kind of problem happens almost every day, and it is a headache for both customers and delivery companies. To solve this problem, some apartment buildings have started using delivery lockers. When a driver comes, he or she puts the package inside a locker and locks it. The customer later ( 2 ) a code by email or a message on a smartphone app. With this code, the customer can open the locker and take out the package at any time. This system is useful because people do not have to wait at home all day. They can also pick up their packages early in the morning or late at night, on their way to work or school. It is also good for drivers. ( 3 ), they do not need to visit the same house many times. As a result, they can deliver more packages in a shorter time. Because of these benefits, delivery lockers are becoming more and more popular in many cities around the world.",
+      "word_count": 222,
+      "blanks": [
+        {
+          "n": 1,
+          "choices": ["In such cases", "In contrast", "For example", "By chance"],
+          "answer": 0,
+          "rationale": "前文「配達員が来ても留守のことが多い」を受け、「そのような場合には荷物を置いていけず後で来直す」と状況・結果をつなぐ In such cases が正解。In contrast(対比)・For example(例示)・By chance(偶然)は前後の論理に合わない。"
+        },
+        {
+          "n": 2,
+          "choices": ["sends", "hides", "receives", "returns"],
+          "answer": 2,
+          "rationale": "内容語(動詞)の空所。ロッカーに荷物を入れて施錠した後、「客は後でコードをメールやアプリのメッセージで受け取る」という流れなので receives が正解。直後の「With this code(このコードを使って)」とも整合する。sends(送る)・hides(隠す)・returns(返す)は文法上可能でも文脈に合わない。"
+        },
+        {
+          "n": 3,
+          "choices": ["However", "For example", "Instead", "On the other hand"],
+          "answer": 1,
+          "rationale": "「配達員にとっても良い」と述べた直後に、その具体例(同じ家を何度も訪ねなくてよい)を挙げるので For example が正解。However・On the other hand は逆接、Instead は置換で、いずれも文脈に合わない。"
+        }
+      ]
+    },
+    {
+      "id": "p2_2",
+      "title": "Sleeping Through the Winter",
+      "theme": "科学・自然",
+      "text": "In winter, food becomes hard to find for many wild animals. Plants stop growing, and most insects disappear. ( 1 ), some animals such as bears and squirrels have found a clever way to survive the cold season. They sleep for a long time during the coldest months. This deep sleep is called hibernation. Before winter comes, these animals eat as much food as they can. Their bodies ( 2 ) the extra food as fat under the skin. Then, when they are sleeping, their bodies can use this fat for energy. In fact, a large bear can live for months without eating anything at all. During hibernation, an animal's heart beats very slowly, and its body becomes cold. In this way, the animal saves energy and does not need to eat. Because it hardly moves, it uses very little energy each day. Some animals sleep for only a few weeks, ( 3 ) others sleep for several months. When spring arrives and the weather becomes warm again, they wake up. They are hungry and thin after the long sleep. By then, plants have started to grow and insects have returned, so the animals can find food easily again. Scientists say that hibernation is one of the cleverest ways for animals to live through a season when there is almost nothing to eat.",
+      "word_count": 217,
+      "blanks": [
+        {
+          "n": 1,
+          "choices": ["Therefore", "In addition", "However", "For example"],
+          "answer": 2,
+          "rationale": "「冬は食料が乏しい」という厳しい状況に対して、「しかし一部の動物は生き延びる方法をもつ」と逆接でつなぐ However が正解。Therefore(因果)・In addition(追加)・For example(例示)は前後関係に合わない。"
+        },
+        {
+          "n": 2,
+          "choices": ["sell", "store", "cook", "waste"],
+          "answer": 1,
+          "rationale": "内容語(動詞)の空所。「できるだけ食べる」→「体は余分な食料を脂肪として蓄える」という流れなので store が正解。直後の「眠っている間その脂肪をエネルギーに使う」とも整合する。sell(売る)・cook(料理する)・waste(無駄にする)は文法上可能でも文脈に合わない。"
+        },
+        {
+          "n": 3,
+          "choices": ["so", "because", "if", "while"],
+          "answer": 3,
+          "rationale": "「数週間だけ眠るものもいれば、一方で数か月眠るものもいる」と二つを対比する while(〜の一方で)が正解。so(結果)・because(理由)・if(条件)は文意に合わない。"
+        }
+      ]
+    },
+    {
+      "id": "p2_3",
+      "title": "More Than Just Books",
+      "theme": "文化・社会",
+      "text": "When people hear the word \"library,\" they usually think of a quiet room full of books. For a long time, that was exactly what libraries were. People visited them mainly to borrow books or to read newspapers and magazines. ( 1 ), libraries today are changing, and they offer much more than books. One reason for this change is the Internet. Now that people can find almost any information on their smartphones, fewer of them come just to look something up. To stay useful, many libraries have started to ( 2 ) new kinds of services. For example, some libraries lend DVDs, music, and even tools or toys. Others hold English classes, story time for small children, or workshops where people can learn to use computers. Modern libraries have also become places where people can meet and work together. Many of them now have comfortable seats, free Wi-Fi, and quiet rooms for studying. Students often go there to prepare for their tests, ( 3 ) some adults use the meeting rooms for their own work. In this way, a library is no longer only a place to keep books. It has become a center of the community, where people of all ages can learn, relax, and spend time together. Because of these efforts, libraries remain important even in the age of the Internet.",
+      "word_count": 217,
+      "blanks": [
+        {
+          "n": 1,
+          "choices": ["As a result", "For example", "In addition", "However"],
+          "answer": 3,
+          "rationale": "「昔の図書館は主に本を借りたり新聞を読んだりする場所だった」に対し、「しかし今日の図書館は変化し、本以外の多くを提供する」と逆接でつなぐ However が正解。As a result(因果)・For example(例示)・In addition(追加)は文脈に合わない。"
+        },
+        {
+          "n": 2,
+          "choices": ["refuse", "offer", "forget", "avoid"],
+          "answer": 1,
+          "rationale": "内容語(動詞)の空所。「役に立ち続けるため、多くの図書館は新しい種類のサービスを( )し始めた」の流れで、直後にDVD貸出や英語教室などの具体例が続くので offer(提供する)が正解。refuse(断る)・forget(忘れる)・avoid(避ける)は文法上可能でも文脈と矛盾する。"
+        },
+        {
+          "n": 3,
+          "choices": ["while", "so", "because", "if"],
+          "answer": 0,
+          "rationale": "「生徒はテスト勉強のために来る一方、大人は会議室を仕事に使う」と二つの利用を対比する while(〜の一方で)が正解。so(結果)・because(理由)・if(条件)は文意に合わない。"
+        }
+      ]
+    }
+  ]
+}

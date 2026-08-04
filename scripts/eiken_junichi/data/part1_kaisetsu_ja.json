@@ -1,0 +1,207 @@
+{
+  "part": 1,
+  "title": "大問1 解答・解説（短文の語句空所補充 40問）",
+  "note": "part1_vocab.json の各 item に対する追加解説データ。id で結合する。ja=完成文の和訳／usage=語法・コロケーション・派生語／trap=設問の決め手（どこを見れば選べたか）",
+  "items": {
+    "v01": {
+      "ja": "その慈善団体の新しい事業は、すべてを失った人々に食料・住居・医療を提供することで、難民の苦しみを和らげることを目的としている。",
+      "usage": "alleviate は「痛み・苦しみ・貧困・混雑」など〈望ましくないものの程度〉を主語にとる。alleviate pain／poverty／traffic congestion。名詞 alleviation。ほぼ同義で ease, relieve, mitigate（問3参照）。",
+      "trap": "aims to（〜を目指す）＋支援の内容（食料・住居・医療）から、空所は〈善い方向〉の動詞。✗aggravate／intensify（悪化方向）は文脈と逆。"
+    },
+    "v02": {
+      "ja": "定期的な整備がなかったため、その橋の鋼鉄構造は劣化し始め、技師たちは10年以内に崩落しうると警告した。",
+      "usage": "deteriorate は自動詞〔主語自身が主体的に動く動詞〕で「（品質・健康・関係・状況が）悪くなる」。His health deteriorated rapidly.／relations between the two countries deteriorated。名詞 deterioration。〈de-（下へ）〉の語感で覚える。",
+      "trap": "Without regular maintenance（整備なし）→ could collapse（崩落しうる）という悪化の流れ。✗consolidate（強固にする）✗flourish（栄える）は逆方向。"
+    },
+    "v03": {
+      "ja": "技師たちは、海面上昇とますます激しくなる高潮によって引き起こされる被害を軽減するため、海岸沿いに防護壁を追加設置した。",
+      "usage": "mitigate は「damage／risk／impact／effects／climate change」など〈被害・悪影響〉を目的語にとる硬い語。mitigate the impact of ~ が定番。名詞 mitigation は環境分野で「（温暖化）緩和策」。alleviate（問1参照）は苦痛寄り、mitigate は被害・深刻さ寄り。",
+      "trap": "「防護壁を追加設置した」目的なので被害を減らす方向。✗amplify（増幅する）を選ぶと文意が真逆。"
+    },
+    "v04": {
+      "ja": "生涯を通じて環境保護活動家であった彼女は、長いキャリアの間ずっと、産業公害へのより厳しい規制を訴え続けた。",
+      "usage": "空所直後の for が決め手。advocate for ~ で「〜を訴える・支持する」（他動詞で advocate stricter regulations とも言える）。名詞は「擁護者・提唱者」で an advocate of/for human rights。同系 advocacy（擁護・提言活動）。",
+      "trap": "四択のうち直後の for と自然に結びつくのは advocate だけ。condemn / dismiss は他動詞で目的語を直に取り、hesitate は hesitate to do の形をとる。"
+    },
+    "v05": {
+      "ja": "その上院議員が繰り返し不正直な振る舞いをしたことは、政権全体に対する国民の信頼を次第に損ない始めた。",
+      "usage": "undermine は「confidence／trust／authority／credibility／efforts」を目的語にとり、〈土台を下から掘り崩す〉イメージで「じわじわ弱める」。gradually / slowly と相性がよい。破壊を一気に表す destroy との差はこの「徐々に」。",
+      "trap": "repeated dishonesty（繰り返しの不誠実）が主語なので、信頼は下がる方向。reinforce / restore / cultivate はすべて信頼を高める側で不可。"
+    },
+    "v06": {
+      "ja": "新しい安全規制を順守しない工場主は高額の罰金に直面し、深刻な場合には強制的な閉鎖に処される。",
+      "usage": "comply with ~（規則・法・要求に従う）。前置詞 with は必須。名詞 compliance（順守・コンプライアンス）、形容詞 compliant。同義は obey / conform to / abide by / adhere to。",
+      "trap": "空所直後の with と、罰金という結果から「従わない」意味を作る動詞を選ぶ。interfere with は「妨げる」、collide with は「衝突する」、sympathize with は「同情する」で、いずれも規制の順守を表せない。"
+    },
+    "v07": {
+      "ja": "その政府の場当たり的な政策は、問題を解決するどころか、対立する二つの共同体間の緊張を悪化させるばかりだった。",
+      "usage": "exacerbate は「problem／tension／situation／inequality」を目的語にとり「（すでに悪いものを）さらに悪化させる」。only served to do（〜する結果にしかならなかった）と組んで悪化を強調する型は頻出。aggravate / worsen が言い換え。",
+      "trap": "Rather than solving the problem（問題を解決するどころか）が方向を決めている。ease / resolve は解決方向で、この譲歩の対比を壊す。"
+    },
+    "v08": {
+      "ja": "厳しい懲役刑だけでは、決意の固い犯罪者がさらなる罪を犯すのを抑止するのに十分でないかもしれない。",
+      "usage": "deter A from doing（Aが〜するのを思いとどまらせる）。名詞 deterrent（抑止力）、deterrence（抑止）は安全保障でも使う。prevent A from doing と同型だが、deter は「恐れさせて」やめさせる点が中心。",
+      "trap": "後ろの from committing が決め手。from doing を伴えるのは deter だけ。compel は compel A to do、entice は entice A into/to do、provoke は「挑発する」で from とつながらない。"
+    },
+    "v09": {
+      "ja": "長時間の議論の末、委員会は年間予算のはるかに大きな割合を研究開発に配分することを決定した。",
+      "usage": "allocate A to B（AをBに割り当てる）。allocate resources／funds／time が定番で、allocate B A の語順も可。名詞 allocation（配分）。似た budget 語彙に allot（割り当てる）。",
+      "trap": "budget（予算）と to research and development（研究開発へ）の間をつなぐのは「配分する」。confiscate（没収する）や liquidate（清算する）では予算を部門に振り向ける意味にならない。"
+    },
+    "v10": {
+      "ja": "独立監査人がその会社の報告書にいくつもの不備を発見した後、同社の会計処理は厳しい精査を受けることになった。",
+      "usage": "come under (intense/close) scrutiny で「（厳しい）精査を受ける」。under scrutiny のかたまりで覚える。動詞 scrutinize（細かく調べる）。close / intense / public / regulatory といった形容詞と結びつく。",
+      "trap": "「監査人が不備を発見した後」という流れから、会計処理は調べられる側。prosperity（繁栄）・novelty（新奇さ）は come under と結びつかない。"
+    },
+    "v11": {
+      "ja": "捜査官たちは、その証人の当初の供述と、後に法廷で宣誓のうえ語った説明との間に、重大な食い違いがあることに気づいた。",
+      "usage": "a discrepancy between A and B（AとBの食い違い）。形容詞は significant / major / glaring。動詞 discrepancy は無く、形容詞 discrepant はまれ。近い語に inconsistency（不整合）。",
+      "trap": "between A and B（当初の供述と後の説明）という枠組みと、それに気づく捜査官という文脈。consensus（合意）を入れると「二つの供述が一致した」ことに気づく話になり、significant（重大な）や捜査の文脈と噛み合わない。"
+    },
+    "v12": {
+      "ja": "その会社は、従業員が毎月の売上目標を超えるための強力な動機づけとして、手厚い年末賞与を提示した。",
+      "usage": "an incentive for A to do（Aが〜するための動機づけ）。financial / powerful / strong incentive、provide/offer/create an incentive。形容詞 incentivize（動機づける）も英字新聞で頻出。",
+      "trap": "generous year-end bonuses（手厚い賞与）は目標超過を促す〈ごほうび〉。obstacle（障害）や penalty（罰則）では、賞与を出す目的として成り立たない。"
+    },
+    "v13": {
+      "ja": "その航空会社は、繁忙期の真っただ中に手荷物料金の大幅な値上げを突然発表した後、世間の激しい反発に直面した。",
+      "usage": "face／provoke／spark a backlash、a public backlash against ~（〜に対する世間の反発）。もともと「（機械の）跳ね返り」で、〈反動〉の語感。fierce / furious / growing とよく結びつく。",
+      "trap": "sharp increases in baggage fees（大幅値上げ）＋突然の発表＋繁忙期。顧客が歓迎する要素がないので、endorsement（支持）や tribute（賛辞）は不可。"
+    },
+    "v14": {
+      "ja": "基礎統計の確かな理解は、その大学の競争率が非常に高い上級データサイエンス講座を受講するための必須条件である。",
+      "usage": "a prerequisite for ~（〜の前提条件）。大学の履修要件でそのまま使う語。pre-（前）＋requisite（必要なもの）。requirement とほぼ同義だが、prerequisite は「これがないと次に進めない」順序性を含む。",
+      "trap": "for enrolling in ~（受講するための）が示すのは資格要件。byproduct（副産物）は結果を表し、順序が逆になる。"
+    },
+    "v15": {
+      "ja": "その受賞ドキュメンタリーは、その国の長引く内戦によって住む場所を失った家族たちの絶望的な窮状に、国際的な注目を集めた。",
+      "usage": "the plight of ~（〜の苦境）。desperate / terrible / dire plight という強い形容詞と組む。難民・被災者・動物など〈助けを必要とする存在〉について使うのが典型。",
+      "trap": "desperate（絶望的な）という形容詞と、displaced by civil war（内戦で家を失った）が決め手。triumph（勝利）や abundance（豊富さ）は desperate と共起しない。"
+    },
+    "v16": {
+      "ja": "容赦ない夏の熱波の間、気温が記録的な高さまで急上昇したため、その都市は電力需要の急激な高まりを経験した。",
+      "usage": "a surge in ~（〜の急増）。in を伴う点に注意（a surge in demand／prices／cases）。動詞でも「急上昇する」。同義は sharp rise / spike / upsurge。",
+      "trap": "temperatures soared to record highs（気温が記録的高値まで急上昇）＋猛暑なので需要は増える。decline / reduction / shortfall はいずれも減少・不足の側で不可。"
+    },
+    "v17": {
+      "ja": "使途不明金についての彼女の説明は当初かなりもっともらしく聞こえたが、刑事たちはすぐに、それを真っ向から否定する書類を発見した。",
+      "usage": "sound／seem plausible（もっともらしく聞こえる）、a plausible explanation／excuse。「実際に正しい」とは言っておらず〈一見よさそう〉が核心なので、後に but で覆される展開と相性がよい。反意は implausible。",
+      "trap": "Although ... at first, ... soon uncovered documents that flatly contradicted it の譲歩構造。「後で覆される」＝当初は本当らしく見えた、という語が入る。"
+    },
+    "v18": {
+      "ja": "そのベテラン外科医は、細部への細心の注意で名高く、どの手術を始める前にも器具を一つ残らず二度確認していた。",
+      "usage": "meticulous attention to detail は決まり文句。meticulous records／planning／research。人にも使い be meticulous about/in ~。副詞 meticulously。同義 scrupulous / painstaking。",
+      "trap": "checking every single instrument twice（器具を一つ残らず二度確認）という具体例が空所を定義している。reckless（無謀な）や indifferent（無関心な）は具体例と正反対。"
+    },
+    "v19": {
+      "ja": "免疫系が弱まった高齢者は、寒い冬の時期、とりわけ呼吸器感染症にかかりやすい。",
+      "usage": "be susceptible to ~（〜の影響を受けやすい・〜にかかりやすい）。to の後は病気・批判・影響など。名詞 susceptibility。vulnerable to ~ が近い。",
+      "trap": "immune（免疫がある）と resistant（抵抗力がある）は be immune／resistant to の形はとれるが、weakened immune systems（免疫が弱った）という前提と矛盾する。文法ではなく論理で切る問題。"
+    },
+    "v20": {
+      "ja": "膨らむ負債と急激に縮小する売上を考えれば、その会社の最終的な倒産はほぼ避けられないように見えた。",
+      "usage": "all but ＝ almost（ほとんど）。all but inevitable／impossible／certain。「〜以外すべて」の意味ではないので注意。inevitable は名詞的に the inevitable（避けられない事態）とも使う。副詞 inevitably。",
+      "trap": "Given（〜を考えると）＋負債増・売上減の二重の悪材料。negotiable / optional / reversible はいずれも「まだどうにでもなる」側で、悪材料の積み上げと噛み合わない。"
+    },
+    "v21": {
+      "ja": "フリーランスのイラストレーターとして何年も苦労した末、彼はついに10年分の生活を支えるほど非常に利益の大きい契約を勝ち取った。",
+      "usage": "a lucrative contract／business／career／market（もうかる〜）。金銭的利益に限って使う。profitable とほぼ同義。land a contract は「契約を獲得する」の口語的定番。",
+      "trap": "secured his finances for a decade（10年間の生活費を確保した）が金銭的成功を示す。tedious（退屈な）や futile（無駄な）では finally（ついに）という達成の文脈が壊れる。"
+    },
+    "v22": {
+      "ja": "スマートフォンはあまりに広く普及したため、最も辺境の農村でさえ、持っていない人を見かけることは今では珍しい。",
+      "usage": "widely prevalent、prevalent among ~（〜の間で広まっている）。病気・慣行・考え方など〈広がり〉に使う。名詞 prevalence（普及率・有病率）。common より硬く、統計の文脈でよく出る。",
+      "trap": "so ... that の結果節が「持っていない人を見るのが珍しい」＝ほぼ全員が持っている。scarce（乏しい）を入れると結果節と正反対になる。"
+    },
+    "v23": {
+      "ja": "業務が重複していた二つの部署が統合されたとき、いくつかの管理職の職位は余剰となり、最終的に数十人の従業員が解雇された。",
+      "usage": "職や人について redundant は「余剰の」。イギリス英語では be made redundant で「（人員整理で）解雇される」。名詞 redundancy（余剰・人員削減）。文章について「冗長な」の意味もある。",
+      "trap": "overlapping departments were merged（重複する部署の統合）→ 同じ仕事の席が二つある状態。しかも結果は laid off（解雇）。indispensable（不可欠）では解雇の説明にならない。"
+    },
+    "v24": {
+      "ja": "双方は暫定的な合意に達したが、契約を締結できるようになるには、いくつかの重要な詳細をなお最終決定する必要があった。",
+      "usage": "a tentative agreement／date／conclusion（暫定的な合意・仮の日程・仮の結論）。副詞 tentatively（暫定的に）。「まだ確定していない」が核。provisional が近い。",
+      "trap": "though 以下が「重要な詳細はまだ詰める必要がある」＝未確定。definitive / binding / irrevocable はいずれも確定・拘束を表し、譲歩節と矛盾する。"
+    },
+    "v25": {
+      "ja": "洪水で家と財産を失ったにもかかわらず、その家族は驚くほど回復力が強く、わずか1年で生活をすべて建て直した。",
+      "usage": "resilient は「（打撃から）立ち直る力がある」。a resilient economy／resilient children、be resilient in the face of ~。名詞 resilience（回復力・レジリエンス）。物については「弾力のある」。",
+      "trap": "Despite losing ...（失ったにもかかわらず）＋rebuilding their entire lives within a single year（1年で建て直した）。逆接の後は強さを表す語。fragile / vulnerable / apathetic はすべて弱さ・無気力側。"
+    },
+    "v26": {
+      "ja": "共有ドライブを慌てて整理し直している最中に、その新人インターンはうっかり、重要な顧客記録が何年分も入ったフォルダを丸ごと削除してしまった。",
+      "usage": "inadvertently ＝ by accident（意図せず）。inadvertently delete／disclose／reveal のように〈やってしまった〉動詞と組む。形容詞 inadvertent。反意は deliberately / intentionally / on purpose。",
+      "trap": "While hastily reorganizing（慌てて整理している最中に）が過失の手がかり。deliberately（故意に）だと新人が意図的に消したことになり、hastily と噛み合わない。"
+    },
+    "v27": {
+      "ja": "驚くほど短い議論の後、取締役会は合併に満場一致で賛成票を投じ、異議を唱える者は一人もいなかった。",
+      "usage": "vote unanimously／be unanimously approved（全員一致で可決される）。形容詞 unanimous（a unanimous decision）。un-（一つ）＋anim（心）＝心が一つ。",
+      "trap": "with not a single member raising any objection（異議を唱える者は一人もいなかった）が答えを直接言い換えている。narrowly（僅差で）は「反対も多かった」ことになり矛盾。"
+    },
+    "v28": {
+      "ja": "輸入したサフランが並外れて高価だったため、そのシェフはそれを控えめに使い、手の込んだ料理のそれぞれにほんのひとつまみだけ加えた。",
+      "usage": "use ~ sparingly（〜を控えめに使う）。形容詞 sparing（be sparing with/of ~）、動詞 spare（惜しむ・割く）。反意は liberally / generously / lavishly。",
+      "trap": "adding only a tiny pinch（ほんのひとつまみだけ）が量の少なさを明示。generously / abundantly は「たっぷり」で正反対、recklessly は量ではなく態度の語。"
+    },
+    "v29": {
+      "ja": "明かりはすべて消えており車も車庫前からなくなっていたので、その家の住人はおそらくもう長い夏の休暇に出かけてしまっていたのだろう。",
+      "usage": "presumably は「（状況から）おそらく」と話し手の推量を示す副詞。文頭・助動詞の後どちらにも置ける。presume（推定する）、presumption（推定）。probably よりやや形式的で〈根拠からの推論〉を含む。",
+      "trap": "so（だから）の前が根拠（明かりが消え車もない）で、後ろは推論。ここで必要なのは推量を表す副詞。scarcely（ほとんど〜ない）は had scarcely left なら「まだ出発していない」となり、根拠と矛盾する。"
+    },
+    "v30": {
+      "ja": "その哲学者の講義は、思想家たちの一世代全体に深い影響を与え、道徳と自由意志についての彼らの見方を根本的に作り変えた。",
+      "usage": "profoundly influenced／affected／changed（深く影響した）。形容詞 profound（a profound impact／effect／change）。deeply とほぼ同義だが、profound は知的・精神的な深さに使う。",
+      "trap": "後半の fundamentally reshaping（根本的に作り変えた）が影響の大きさを裏づける。marginally（わずかに）・superficially（表面的に）・temporarily（一時的に）はすべてこの言い換えと衝突する。"
+    },
+    "v31": {
+      "ja": "交渉担当者たちは夜遅くまで働き、最終的な和平合意を妨げている最後のいくつかの相違点を解決しようと決意していた。",
+      "usage": "iron out differences／problems／details（相違点や問題を解決する）。アイロンでしわを伸ばすイメージ。out（外へ）＝厄介なものを取り除く語感の句動詞（weed out, rule out も同系）。",
+      "trap": "determined to（〜しようと決意して）＋合意を妨げる相違点。前へ進める方向の動詞が必要で、call off（中止する）では交渉を投げ出すことになり逆。"
+    },
+    "v32": {
+      "ja": "最初の選抜試験は、基礎的な資格を欠く志願者をふるい落とし、最終面接に最も優秀な候補者だけを残すように設計されている。",
+      "usage": "weed out ~（不要・不適格なものを取り除く）。weed（雑草／草取りをする）から。weed out candidates／errors／weak applicants。remove の口語的な言い換えとして選抜・審査の話題で頻出。",
+      "trap": "leaving only the strongest candidates（最も優秀な候補者だけを残す）が「取り除く」を裏側から言っている。hold up（遅らせる）・put up（掲げる・泊める）では、この結果を説明できない。"
+    },
+    "v33": {
+      "ja": "明確な証拠は見つかっていないものの、捜査当局はその倉庫火災の原因として放火を除外することはまだできていない。",
+      "usage": "rule out ~（可能性を除外する）。cannot rule out ~ は報道で頻出の型で「〜の可能性は排除できない」。rule out the possibility that ...。反対に rule in はまれ。",
+      "trap": "not yet been able to ... even though no clear evidence has been found（証拠がないのに、まだ〜できていない）という譲歩。「証拠がない＝候補から外せるはずだが外せない」という論理から、外す方向の句動詞が入る。"
+    },
+    "v34": {
+      "ja": "極めて重要な最終試験のわずか2日前に、彼女は重いインフルエンザにかかり、1週間近く入院しなければならなかった。",
+      "usage": "come down with ~（短期間で急性発症する病気にかかる）。come down with a cold／the flu が典型。重病には fall ill with や be diagnosed with を使うことが多い。似た形の get away with（問35参照）と混同しないこと。",
+      "trap": "後ろの had to be hospitalized（入院しなければならなかった）が病気の急激な発症を示す。✗caught up with「追いつく」は目的語が a severe case of the flu では意味をなさない。"
+    },
+    "v35": {
+      "ja": "その会計士は、会社の資金を盗み続けても永久に罰を免れられると傲慢にも信じていたが、定例監査が最終的にその企み全体を暴いた。",
+      "usage": "get away with ~（悪事をしても罰を免れる）。目的語は名詞または doing。get away with murder は「好き放題やってとがめられない」の慣用句。",
+      "trap": "but a routine audit eventually exposed the entire scheme（監査が企みを暴いた）から、それまでは見つかっていなかった。✗put up with「我慢する」では自分の横領を我慢する話になり不自然。"
+    },
+    "v36": {
+      "ja": "その心臓専門医は彼に、血圧を下げるために塩分と高度に加工された食品の毎日の摂取量を減らすよう強く勧めた。",
+      "usage": "cut back on ~（量・支出を減らす）。cut down on ~ もほぼ同義。目的語は salt／spending／working hours など〈量として測れるもの〉。on を落とさないこと。",
+      "trap": "in order to lower his blood pressure（血圧を下げるために）が減量の目的。catch up on（遅れを取り戻す）や look up to（尊敬する）では、摂取量と医師の助言がつながらない。"
+    },
+    "v37": {
+      "ja": "その研究チームの最新の発見は、科学者たちが長年信じてきたことと完全に食い違っており、研究者たちはいくつもの確立された理論の見直しを迫られている。",
+      "usage": "be at odds with ~（〜と食い違う・対立する）。odds は「差・不一致」。at odds with the evidence／with each other。反意は in line with ~（v37 の④）／consistent with ~。",
+      "trap": "forcing researchers to revise ... theories（理論の見直しを迫る）が矛盾を示す。in line with（一致して）を選ぶと「従来の説と一致した」ことになり、見直しの必要がなくなる。"
+    },
+    "v38": {
+      "ja": "何か月にもわたる交渉の失敗と着実に膨らむ損失の後、かつては繁盛していたその製造業者は明らかに倒産の瀬戸際にあった。",
+      "usage": "on the verge of ~（〜の寸前で）。verge は「縁・境界」。on the verge of bankruptcy／collapse／tears／extinction。on the brink of ~ とほぼ同義。後ろは名詞または doing。",
+      "trap": "failed negotiations（交渉失敗）と mounting losses（損失増大）の積み上げ、そして once-thriving（かつては繁盛していた）という対比。倒産が目前という語が入る。"
+    },
+    "v39": {
+      "ja": "今年は物価が非常に急激に上昇したため、収入が固定された多くの家庭は、日用必需品の高騰する価格にもはや対処できなくなっている。",
+      "usage": "contend with ~（困難・問題に対処する・立ち向かう）。have to contend with rising costs／bad weather／competition。contend that ...（〜と主張する）、contend for ~（〜を争う）と語法が変わる点に注意。名詞 contention。",
+      "trap": "can no longer（もはや〜できない）＋families on fixed incomes（収入が固定の家庭）。困難への対処を表す語が必要。do without（〜なしで済ませる）では「必需品の価格なしで済ます」となり、目的語が cost なので不自然。"
+    },
+    "v40": {
+      "ja": "その壊滅的な地震の後、全国から数千人のボランティアが、破壊された沿岸の町の再建を手伝うために到着した。",
+      "usage": "in the wake of ~（〜の直後に・〜の余波を受けて）。wake は船が通った後の「航跡」。in the wake of the disaster／the scandal／the pandemic のように、大きな出来事の後に起きたことを述べる。",
+      "trap": "「ボランティアが再建を手伝いに来た」のは地震の後。In spite of（〜にもかかわらず）を入れると、地震が支援を妨げる要因だったことになり、原因と結果の関係が崩れる。"
+    }
+  }
+}

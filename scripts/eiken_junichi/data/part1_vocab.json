@@ -1,0 +1,1005 @@
+{
+  "part": 1,
+  "items": [
+    {
+      "id": "v01",
+      "sentence": "The charity's new program aims to _______ the suffering of refugees by providing food, shelter, and medical care to those who have lost everything.",
+      "choices": [
+        "aggravate",
+        "provoke",
+        "alleviate",
+        "intensify"
+      ],
+      "answer": 2,
+      "target_word": "alleviate",
+      "gloss_ja": "(苦痛・問題を)和らげる、軽減する",
+      "distractors_ja": {
+        "aggravate": "悪化させる",
+        "provoke": "引き起こす、挑発する",
+        "intensify": "強める、激化させる"
+      },
+      "why_correct": "食料・住居・医療を提供して難民の苦しみを『和らげる』が文脈に最適。",
+      "why_others_wrong": {
+        "aggravate": "『悪化させる』は支援内容と矛盾",
+        "provoke": "『挑発する・引き起こす』方向の語で、苦しみを和らげる alleviate とは意味が逆になり不適",
+        "intensify": "『激化させる』は支援の目的と正反対"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v02",
+      "sentence": "Without regular maintenance, the bridge's steel structure began to _______, and engineers warned that it could collapse within a decade.",
+      "choices": [
+        "deteriorate",
+        "accelerate",
+        "consolidate",
+        "flourish"
+      ],
+      "answer": 0,
+      "target_word": "deteriorate",
+      "gloss_ja": "劣化する、悪化する",
+      "distractors_ja": {
+        "accelerate": "加速する",
+        "consolidate": "強固にする、統合する",
+        "flourish": "繁栄する、栄える"
+      },
+      "why_correct": "整備を欠いて『崩壊しかねない』とあり、鋼構造が『劣化した』が最適。",
+      "why_others_wrong": {
+        "accelerate": "『加速する』は動かない構造物には不自然",
+        "consolidate": "『強固になる』は collapse という帰結と矛盾",
+        "flourish": "『繁栄する』は無生物の構造物に不適で崩壊とも矛盾"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v03",
+      "sentence": "Engineers installed additional barriers along the coast to _______ the damage caused by rising sea levels and increasingly violent storm surges.",
+      "choices": [
+        "amplify",
+        "provoke",
+        "designate",
+        "mitigate"
+      ],
+      "answer": 3,
+      "target_word": "mitigate",
+      "gloss_ja": "(被害・深刻さを)緩和する、軽減する",
+      "distractors_ja": {
+        "amplify": "増幅する、拡大する",
+        "provoke": "引き起こす、挑発する",
+        "designate": "指定する、任命する"
+      },
+      "why_correct": "防壁を築く目的は被害を『軽減する』こと。mitigate the damage が定番。",
+      "why_others_wrong": {
+        "amplify": "『増幅する』では防壁を築く目的と正反対",
+        "provoke": "『引き起こす』は damage を築いて『誘発』するので目的と矛盾",
+        "designate": "『指定する』は damage を目的語に取れず無意味"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v04",
+      "sentence": "As a lifelong environmentalist, she continued to _______ for stricter regulations on industrial pollution throughout her long career.",
+      "choices": [
+        "condemn",
+        "advocate",
+        "dismiss",
+        "hesitate"
+      ],
+      "answer": 1,
+      "target_word": "advocate",
+      "gloss_ja": "(〜を)主張する、擁護する、支持する",
+      "distractors_ja": {
+        "condemn": "非難する",
+        "dismiss": "退ける、解雇する",
+        "hesitate": "ためらう"
+      },
+      "why_correct": "環境保護者が規制強化『を支持し続けた』が自然。advocate for が定型。",
+      "why_others_wrong": {
+        "condemn": "『非難する』は環境保護者の立場と矛盾し、for とも結びつかない",
+        "dismiss": "『退ける』も立場と矛盾",
+        "hesitate": "『ためらう』は for stricter regulations と意味が通らない"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v05",
+      "sentence": "The senator's repeated dishonesty gradually began to _______ public confidence in the entire administration.",
+      "choices": [
+        "reinforce",
+        "restore",
+        "undermine",
+        "cultivate"
+      ],
+      "answer": 2,
+      "target_word": "undermine",
+      "gloss_ja": "(信頼などを)徐々に損なう、弱体化させる",
+      "distractors_ja": {
+        "reinforce": "強化する",
+        "restore": "回復させる",
+        "cultivate": "育む、培う"
+      },
+      "why_correct": "度重なる不正が国民の信頼を『徐々に損なった』が文脈に合う。",
+      "why_others_wrong": {
+        "reinforce": "『強化する』は不正という原因と正反対",
+        "restore": "『回復させる』も正反対",
+        "cultivate": "『培う』は信頼を高める方向で不正と矛盾"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v06",
+      "sentence": "Factory owners who fail to _______ with the new safety regulations will face heavy fines and, in serious cases, forced closure.",
+      "choices": [
+        "comply",
+        "interfere",
+        "collide",
+        "sympathize"
+      ],
+      "answer": 0,
+      "target_word": "comply",
+      "gloss_ja": "(規則などに)従う、順守する",
+      "distractors_ja": {
+        "interfere": "干渉する、妨げる",
+        "collide": "衝突する",
+        "sympathize": "同情する、共感する"
+      },
+      "why_correct": "規則に『従わなければ』罰金という文脈で comply with が最適。",
+      "why_others_wrong": {
+        "interfere": "『干渉する』は規則を守らず罰を受ける文脈に合わない",
+        "collide": "『衝突する』は物理的で規則には不適",
+        "sympathize": "『同情する』は規則を目的語にできず無意味"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v07",
+      "sentence": "Rather than solving the problem, the government's hasty policy only served to _______ the tensions between the two rival communities.",
+      "choices": [
+        "ease",
+        "exacerbate",
+        "resolve",
+        "suspend"
+      ],
+      "answer": 1,
+      "target_word": "exacerbate",
+      "gloss_ja": "(事態を)悪化させる、深刻化させる",
+      "distractors_ja": {
+        "ease": "和らげる",
+        "resolve": "解決する",
+        "suspend": "一時停止する、保留する"
+      },
+      "why_correct": "『解決するどころか』とあり、緊張を『悪化させた』しか通らない。",
+      "why_others_wrong": {
+        "ease": "『和らげる』は Rather than solving の対比と矛盾",
+        "resolve": "『解決する』は前半と直接矛盾",
+        "suspend": "『一時停止する』は tensions を目的語に取れず不自然"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v08",
+      "sentence": "Harsh prison sentences alone may not be enough to _______ determined criminals from committing further offenses.",
+      "choices": [
+        "compel",
+        "entice",
+        "provoke",
+        "deter"
+      ],
+      "answer": 3,
+      "target_word": "deter",
+      "gloss_ja": "(〜するのを)思いとどまらせる、抑止する",
+      "distractors_ja": {
+        "compel": "強制する",
+        "entice": "誘惑する、そそのかす",
+        "provoke": "挑発する、誘発する"
+      },
+      "why_correct": "犯罪を犯すのを『思いとどまらせる』。deter A from doing が定型。",
+      "why_others_wrong": {
+        "compel": "『強制する』は from doing と結びつかず、意味も逆",
+        "entice": "『そそのかす』は犯罪を促す方向で文脈と逆",
+        "provoke": "『誘発する』も犯罪を促す方向で from とも不整合"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v09",
+      "sentence": "After a lengthy debate, the committee decided to _______ a much larger portion of the annual budget to research and development.",
+      "choices": [
+        "confiscate",
+        "speculate",
+        "allocate",
+        "liquidate"
+      ],
+      "answer": 2,
+      "target_word": "allocate",
+      "gloss_ja": "(資源・予算を)割り当てる、配分する",
+      "distractors_ja": {
+        "confiscate": "没収する",
+        "speculate": "推測する、投機する",
+        "liquidate": "(資産を)清算する"
+      },
+      "why_correct": "予算を研究開発に『割り当てる』。allocate A to B が定番。",
+      "why_others_wrong": {
+        "confiscate": "『没収する』は自組織の予算配分の文脈に合わない",
+        "speculate": "『推測する』は自動詞的で a portion を直接取りにくく意味も不適",
+        "liquidate": "『清算する』は予算を to R&D と結びつけられない"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v10",
+      "sentence": "The corporation's accounting practices came under intense _______ after independent auditors discovered several irregularities in its reports.",
+      "choices": [
+        "scrutiny",
+        "prosperity",
+        "consensus",
+        "novelty"
+      ],
+      "answer": 0,
+      "target_word": "scrutiny",
+      "gloss_ja": "精査、綿密な調査",
+      "distractors_ja": {
+        "prosperity": "繁栄",
+        "consensus": "総意、合意",
+        "novelty": "目新しさ、新奇さ"
+      },
+      "why_correct": "不正発覚後に厳しい『精査』を受けた。come under scrutiny が定型。",
+      "why_others_wrong": {
+        "prosperity": "『繁栄』は不正発覚の文脈に合わない",
+        "consensus": "『合意』は under intense と結びつかない",
+        "novelty": "『目新しさ』は監査・不正の文脈と無関係"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v11",
+      "sentence": "Investigators noticed a significant _______ between the witness's original statement and the account she later gave under oath in court.",
+      "choices": [
+        "consensus",
+        "discrepancy",
+        "affinity",
+        "coalition"
+      ],
+      "answer": 1,
+      "target_word": "discrepancy",
+      "gloss_ja": "(食い違い・不一致)矛盾",
+      "distractors_ja": {
+        "consensus": "合意、総意",
+        "affinity": "親近感、相性",
+        "coalition": "連立、連合"
+      },
+      "why_correct": "当初の供述と法廷での証言の『食い違い』に気づいた、が自然。",
+      "why_others_wrong": {
+        "consensus": "『合意』は人の間のもので、二つの供述の相違を指せない",
+        "affinity": "『親近感・類似』では捜査官が問題視する文脈に合わない",
+        "coalition": "『連合』は集団の同盟で供述には不適"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v12",
+      "sentence": "The firm offered generous year-end bonuses as a powerful _______ for employees to exceed their monthly sales targets.",
+      "choices": [
+        "obstacle",
+        "aftermath",
+        "penalty",
+        "incentive"
+      ],
+      "answer": 3,
+      "target_word": "incentive",
+      "gloss_ja": "動機づけ、誘因、報奨",
+      "distractors_ja": {
+        "obstacle": "障害、妨げ",
+        "aftermath": "余波、(災害などの)影響",
+        "penalty": "罰則、罰金"
+      },
+      "why_correct": "手厚いボーナスは目標超過を促す『誘因』。incentive to do が定型。",
+      "why_others_wrong": {
+        "obstacle": "『障害』ではボーナスが目標達成を妨げることになり矛盾",
+        "aftermath": "『余波』は動機づけの意味を持たず不自然",
+        "penalty": "『罰則』は generous bonuses という報酬と正反対"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v13",
+      "sentence": "The airline faced a fierce public _______ after it suddenly announced sharp increases in baggage fees at the height of the holiday season.",
+      "choices": [
+        "tribute",
+        "consensus",
+        "backlash",
+        "endorsement"
+      ],
+      "answer": 2,
+      "target_word": "backlash",
+      "gloss_ja": "(激しい)反発、反感",
+      "distractors_ja": {
+        "tribute": "賛辞、貢ぎ物",
+        "consensus": "合意、総意",
+        "endorsement": "支持、推奨"
+      },
+      "why_correct": "料金値上げへの『激しい反発』が fierce public と自然に結びつく。",
+      "why_others_wrong": {
+        "tribute": "『賛辞』は値上げへの反応として肯定的すぎて矛盾",
+        "consensus": "『合意』は fierce とそぐわず値上げの帰結にも合わない",
+        "endorsement": "『支持』は値上げへの反応として肯定的で不自然"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v14",
+      "sentence": "A solid understanding of basic statistics is a _______ for enrolling in the university's highly competitive advanced data science course.",
+      "choices": [
+        "prerequisite",
+        "byproduct",
+        "compromise",
+        "deterrent"
+      ],
+      "answer": 0,
+      "target_word": "prerequisite",
+      "gloss_ja": "前提条件、必須要件",
+      "distractors_ja": {
+        "byproduct": "副産物",
+        "compromise": "妥協、譲歩",
+        "deterrent": "抑止力、妨げ"
+      },
+      "why_correct": "上級講座に登録するための『前提条件』。prerequisite for が定型。",
+      "why_others_wrong": {
+        "byproduct": "『副産物』は前もって必要な条件という意味を持たない",
+        "compromise": "『妥協』は登録要件の文脈に合わない",
+        "deterrent": "『抑止力』では理解が登録を妨げることになり矛盾"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v15",
+      "sentence": "The award-winning documentary drew international attention to the desperate _______ of families displaced by the country's prolonged civil war.",
+      "choices": [
+        "triumph",
+        "plight",
+        "aspiration",
+        "abundance"
+      ],
+      "answer": 1,
+      "target_word": "plight",
+      "gloss_ja": "苦境、窮状",
+      "distractors_ja": {
+        "triumph": "勝利、大成功",
+        "aspiration": "願望、大志",
+        "abundance": "豊富さ、多量"
+      },
+      "why_correct": "内戦で家を追われた家族の『窮状』。desperate plight が自然。",
+      "why_others_wrong": {
+        "triumph": "『勝利』は desperate や displaced と矛盾",
+        "aspiration": "『願望』は苦境を訴える文脈に合わない",
+        "abundance": "『豊富さ』は避難民の窮状と正反対"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v16",
+      "sentence": "The city experienced a sudden _______ in electricity demand as temperatures soared to record highs during the relentless summer heat wave.",
+      "choices": [
+        "decline",
+        "reduction",
+        "shortfall",
+        "surge"
+      ],
+      "answer": 3,
+      "target_word": "surge",
+      "gloss_ja": "(急激な)高まり、急増",
+      "distractors_ja": {
+        "decline": "減少",
+        "reduction": "削減",
+        "shortfall": "不足分、不足額"
+      },
+      "why_correct": "記録的な高温で冷房需要が『急増した』。a surge in demand が定番。",
+      "why_others_wrong": {
+        "decline": "『減少』は気温上昇で需要が増える文脈と正反対",
+        "reduction": "『削減』も需要増と矛盾",
+        "shortfall": "『不足分』は需要が急増する状況に合わない"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v17",
+      "sentence": "Although her explanation for the missing funds sounded quite _______ at first, detectives soon uncovered documents that flatly contradicted it.",
+      "choices": [
+        "reluctant",
+        "obsolete",
+        "plausible",
+        "meticulous"
+      ],
+      "answer": 2,
+      "target_word": "plausible",
+      "gloss_ja": "もっともらしい、まことしやかな",
+      "distractors_ja": {
+        "reluctant": "気が進まない",
+        "obsolete": "時代遅れの、廃れた",
+        "meticulous": "細心の、几帳面な"
+      },
+      "why_correct": "最初は『もっともらしく』聞こえたが後で矛盾が判明、が自然な流れ。",
+      "why_others_wrong": {
+        "reluctant": "『気が進まない』は人の態度を表し、説明そのものには不適",
+        "obsolete": "『時代遅れの』は説明の信憑性の文脈に合わない",
+        "meticulous": "『几帳面な』は人や作業を修飾し、explanation とは相性が悪い"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v18",
+      "sentence": "The veteran surgeon was renowned for her _______ attention to detail, checking every single instrument twice before beginning any operation.",
+      "choices": [
+        "meticulous",
+        "reckless",
+        "indifferent",
+        "ambiguous"
+      ],
+      "answer": 0,
+      "target_word": "meticulous",
+      "gloss_ja": "細心の、極めて綿密な",
+      "distractors_ja": {
+        "reckless": "無謀な、不注意な",
+        "indifferent": "無関心な",
+        "ambiguous": "曖昧な"
+      },
+      "why_correct": "器具を二度確認する『細心の』注意深さ、が文脈にぴたりと合う。",
+      "why_others_wrong": {
+        "reckless": "『無謀な』は二度確認する慎重さと正反対",
+        "indifferent": "『無関心な』も注意深さと矛盾",
+        "ambiguous": "『曖昧な』は attention to detail を修飾できず不自然"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v19",
+      "sentence": "Elderly people with weakened immune systems are particularly _______ to respiratory infections during the cold winter months.",
+      "choices": [
+        "immune",
+        "susceptible",
+        "resistant",
+        "hostile"
+      ],
+      "answer": 1,
+      "target_word": "susceptible",
+      "gloss_ja": "(病気などに)かかりやすい、影響を受けやすい",
+      "distractors_ja": {
+        "immune": "免疫のある",
+        "resistant": "抵抗力のある",
+        "hostile": "敵対的な"
+      },
+      "why_correct": "免疫が弱った高齢者は感染症に『かかりやすい』。susceptible to が定型。",
+      "why_others_wrong": {
+        "immune": "『免疫のある』は weakened immune systems と矛盾",
+        "resistant": "『抵抗力のある』も感染しやすい文脈と正反対",
+        "hostile": "『敵対的な』は infections に対して用いられず無意味"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v20",
+      "sentence": "Given the company's mounting debts and rapidly shrinking sales, its eventual bankruptcy seemed all but _______.",
+      "choices": [
+        "negotiable",
+        "optional",
+        "reversible",
+        "inevitable"
+      ],
+      "answer": 3,
+      "target_word": "inevitable",
+      "gloss_ja": "避けられない、必然の",
+      "distractors_ja": {
+        "negotiable": "交渉の余地がある",
+        "optional": "任意の、選択できる",
+        "reversible": "元に戻せる、可逆の"
+      },
+      "why_correct": "負債増大と売上激減で倒産は『ほぼ避けられない』。all but inevitable が定型。",
+      "why_others_wrong": {
+        "negotiable": "『交渉の余地がある』は倒産という帰結の文脈に合わない",
+        "optional": "『任意の』は選べる意味で状況と矛盾",
+        "reversible": "『元に戻せる』は負債増大の帰結と不整合"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v21",
+      "sentence": "After years of struggling as a freelance illustrator, he finally landed a highly _______ contract that secured his finances for a decade.",
+      "choices": [
+        "lucrative",
+        "tedious",
+        "obsolete",
+        "futile"
+      ],
+      "answer": 0,
+      "target_word": "lucrative",
+      "gloss_ja": "もうかる、利益の大きい",
+      "distractors_ja": {
+        "tedious": "退屈な、うんざりする",
+        "obsolete": "時代遅れの",
+        "futile": "無駄な、無益な"
+      },
+      "why_correct": "10年分の生計を支える『もうかる』契約、が自然。",
+      "why_others_wrong": {
+        "tedious": "『退屈な』は財政を安定させた成功と噛み合わない",
+        "obsolete": "『時代遅れの』は契約を修飾しても意味が通らない",
+        "futile": "『無駄な』は secured his finances という成果と正反対"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v22",
+      "sentence": "Smartphones have become so _______ that it is now rare to see anyone without one, even in the most remote rural villages.",
+      "choices": [
+        "scarce",
+        "defunct",
+        "prevalent",
+        "fragile"
+      ],
+      "answer": 2,
+      "target_word": "prevalent",
+      "gloss_ja": "普及した、広く行き渡った",
+      "distractors_ja": {
+        "scarce": "乏しい、希少な",
+        "defunct": "現存しない、廃れた",
+        "fragile": "壊れやすい、もろい"
+      },
+      "why_correct": "『持たない人が珍しい』ほど『普及した』が文脈に合う。",
+      "why_others_wrong": {
+        "scarce": "『乏しい』は rare to see anyone without one と正反対",
+        "defunct": "『廃れた』も普及の文脈と矛盾",
+        "fragile": "『壊れやすい』は普及度の話に無関係"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v23",
+      "sentence": "When the two overlapping departments were merged, several administrative positions became _______, and dozens of employees were eventually laid off.",
+      "choices": [
+        "indispensable",
+        "redundant",
+        "prominent",
+        "versatile"
+      ],
+      "answer": 1,
+      "target_word": "redundant",
+      "gloss_ja": "(人員が)余剰の、不要になった",
+      "distractors_ja": {
+        "indispensable": "不可欠な",
+        "prominent": "著名な、目立つ",
+        "versatile": "多才な、用途の広い"
+      },
+      "why_correct": "部門統合で職が『余剰になり』解雇へ、が自然。become redundant が定型。",
+      "why_others_wrong": {
+        "indispensable": "『不可欠な』は laid off という帰結と正反対",
+        "prominent": "『目立つ』は人員整理の文脈に合わない",
+        "versatile": "『多才な』は解雇につながる文脈と矛盾"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v24",
+      "sentence": "The two sides reached a _______ agreement, though several important details still needed to be finalized before any contract could be signed.",
+      "choices": [
+        "definitive",
+        "binding",
+        "irrevocable",
+        "tentative"
+      ],
+      "answer": 3,
+      "target_word": "tentative",
+      "gloss_ja": "暫定的な、仮の",
+      "distractors_ja": {
+        "definitive": "決定的な、最終的な",
+        "binding": "拘束力のある",
+        "irrevocable": "取り消せない、変更不能の"
+      },
+      "why_correct": "詳細が未確定で署名前とあり、『暫定的な』合意が最適。",
+      "why_others_wrong": {
+        "definitive": "『最終的な』は details still needed to be finalized と矛盾",
+        "binding": "『拘束力のある』は before any contract could be signed と不整合",
+        "irrevocable": "『取り消せない』も詳細未確定という状況と矛盾"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v25",
+      "sentence": "Despite losing their home and possessions in the flood, the family proved remarkably _______, rebuilding their entire lives within a single year.",
+      "choices": [
+        "resilient",
+        "fragile",
+        "vulnerable",
+        "apathetic"
+      ],
+      "answer": 0,
+      "target_word": "resilient",
+      "gloss_ja": "回復力のある、立ち直りが早い",
+      "distractors_ja": {
+        "fragile": "脆い、壊れやすい",
+        "vulnerable": "傷つきやすい、弱い",
+        "apathetic": "無気力な、無関心な"
+      },
+      "why_correct": "被災後1年で生活を再建、から『回復力のある』が導ける。",
+      "why_others_wrong": {
+        "fragile": "『脆い』は1年で立ち直った事実と正反対",
+        "vulnerable": "『傷つきやすい』も再建できた点と矛盾",
+        "apathetic": "『無気力な』は積極的に再建した姿勢と噛み合わない"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v26",
+      "sentence": "While hastily reorganizing the shared drive, the new intern _______ deleted an entire folder containing years of important client records.",
+      "choices": [
+        "deliberately",
+        "reluctantly",
+        "inadvertently",
+        "explicitly"
+      ],
+      "answer": 2,
+      "target_word": "inadvertently",
+      "gloss_ja": "うっかり、不注意で",
+      "distractors_ja": {
+        "deliberately": "故意に、わざと",
+        "reluctantly": "しぶしぶ、いやいや",
+        "explicitly": "明確に、はっきりと"
+      },
+      "why_correct": "『慌てて整理中に』重要データを消したミスは『うっかり』が自然。",
+      "why_others_wrong": {
+        "deliberately": "『故意に』は新人のミスという文脈と矛盾",
+        "reluctantly": "『しぶしぶ』は削除の様態として不自然",
+        "explicitly": "『明確に』は delete を修飾しても意味が通らない"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v27",
+      "sentence": "After a surprisingly brief discussion, the board voted _______ in favor of the merger, with not a single member raising any objection.",
+      "choices": [
+        "narrowly",
+        "unanimously",
+        "reluctantly",
+        "tentatively"
+      ],
+      "answer": 1,
+      "target_word": "unanimously",
+      "gloss_ja": "満場一致で、全員一致で",
+      "distractors_ja": {
+        "narrowly": "かろうじて、僅差で",
+        "reluctantly": "しぶしぶ",
+        "tentatively": "暫定的に、おずおずと"
+      },
+      "why_correct": "『反対者が一人もいない』ので『満場一致で』可決が唯一整合する。",
+      "why_others_wrong": {
+        "narrowly": "『僅差で』は not a single member objecting と正反対",
+        "reluctantly": "『しぶしぶ』は反対ゼロの賛成と噛み合わない",
+        "tentatively": "『暫定的に』は採決の様態として不自然"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v28",
+      "sentence": "Because the imported saffron was so extraordinarily expensive, the chef used it _______, adding only a tiny pinch to each elaborate dish.",
+      "choices": [
+        "generously",
+        "recklessly",
+        "abundantly",
+        "sparingly"
+      ],
+      "answer": 3,
+      "target_word": "sparingly",
+      "gloss_ja": "控えめに、わずかずつ",
+      "distractors_ja": {
+        "generously": "気前よく、たっぷりと",
+        "recklessly": "無謀に、向こう見ずに",
+        "abundantly": "豊富に、ふんだんに"
+      },
+      "why_correct": "『ひとつまみだけ』使うのだから『控えめに』が唯一合う。",
+      "why_others_wrong": {
+        "generously": "『たっぷりと』は only a tiny pinch と正反対",
+        "recklessly": "『無謀に』は高価さゆえ節約する文脈に合わない",
+        "abundantly": "『ふんだんに』も少量使用と矛盾"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v29",
+      "sentence": "The lights were all off and the car was gone from the driveway, so the owners had _______ already left for their long summer vacation.",
+      "choices": [
+        "presumably",
+        "reluctantly",
+        "scarcely",
+        "deliberately"
+      ],
+      "answer": 0,
+      "target_word": "presumably",
+      "gloss_ja": "おそらく、推定するに",
+      "distractors_ja": {
+        "reluctantly": "しぶしぶ",
+        "scarcely": "ほとんど〜ない",
+        "deliberately": "故意に、わざと"
+      },
+      "why_correct": "証拠から結論を導く『so』の推論で『おそらく』が最適。",
+      "why_others_wrong": {
+        "reluctantly": "『しぶしぶ』は様態を表し、証拠に基づく推論の文脈に合わない",
+        "scarcely": "『ほとんど〜ない』は car was gone(明らかに外出)と矛盾",
+        "deliberately": "『故意に』も証拠からの推論という枠組みに合わない"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v30",
+      "sentence": "The philosopher's lectures _______ influenced an entire generation of thinkers, fundamentally reshaping how they viewed morality and free will.",
+      "choices": [
+        "marginally",
+        "profoundly",
+        "temporarily",
+        "superficially"
+      ],
+      "answer": 1,
+      "target_word": "profoundly",
+      "gloss_ja": "深く、甚大に",
+      "distractors_ja": {
+        "marginally": "わずかに、ほんの少し",
+        "temporarily": "一時的に",
+        "superficially": "表面的に、うわべだけ"
+      },
+      "why_correct": "『道徳観を根本から作り変えた』ほど『深く』影響したが自然。",
+      "why_others_wrong": {
+        "marginally": "『わずかに』は fundamentally reshaping と矛盾",
+        "temporarily": "『一時的に』は世代全体への持続的影響と噛み合わない",
+        "superficially": "『表面的に』も根本的な変革という記述と正反対"
+      },
+      "level": "単語"
+    },
+    {
+      "id": "v31",
+      "sentence": "The negotiators worked late into the night, determined to _______ the last few differences that stood in the way of a final peace agreement.",
+      "choices": [
+        "call off",
+        "hand down",
+        "iron out",
+        "give away"
+      ],
+      "answer": 2,
+      "target_word": "iron out",
+      "gloss_ja": "(意見の相違・問題を)解決する、円満に片づける",
+      "distractors_ja": {
+        "call off": "中止する",
+        "hand down": "(判決・伝統を)申し渡す・伝える",
+        "give away": "ただで譲る・(秘密を)漏らす"
+      },
+      "why_correct": "合意を妨げる『残りの相違点を解決する』が文脈に最適。iron out は differences / problems と結びつく定番の句動詞。",
+      "why_others_wrong": {
+        "call off": "『中止する』では交渉をまとめようとする文脈と逆になり不適",
+        "hand down": "『申し渡す・伝える』の意で、相違点を解決する文脈にならない",
+        "give away": "『譲る・漏らす』では合意に向けて相違を解消する文脈に合わない"
+      },
+      "level": "句動詞"
+    },
+    {
+      "id": "v32",
+      "sentence": "The initial screening test is designed to _______ applicants who lack the basic qualifications, leaving only the strongest candidates for the final interview.",
+      "choices": [
+        "weed out",
+        "take after",
+        "hold up",
+        "put up"
+      ],
+      "answer": 0,
+      "target_word": "weed out",
+      "gloss_ja": "(不要・不適格なものを)ふるい落とす、除く",
+      "distractors_ja": {
+        "take after": "(親などに)似ている",
+        "hold up": "遅らせる・持ちこたえる・強盗する",
+        "put up": "建てる・掲げる・泊める"
+      },
+      "why_correct": "資格を欠く応募者を『ふるい落とす』が文脈に最適。weed out は不適格者・欠陥を取り除く意味の定番。",
+      "why_others_wrong": {
+        "take after": "『似ている』の意で、応募者を選別する文脈に合わない",
+        "hold up": "『遅らせる・持ちこたえる』の意になり、選別して残す文脈と噛み合わない",
+        "put up": "『建てる・掲げる』の意で、不適格者を除く文脈に合わない"
+      },
+      "level": "句動詞"
+    },
+    {
+      "id": "v33",
+      "sentence": "Investigators have not yet been able to _______ arson as the cause of the warehouse fire, even though no clear evidence of it has been found.",
+      "choices": [
+        "bring up",
+        "take on",
+        "put up with",
+        "rule out"
+      ],
+      "answer": 3,
+      "target_word": "rule out",
+      "gloss_ja": "(可能性を)除外する、排除する",
+      "distractors_ja": {
+        "bring up": "話題に出す、育てる",
+        "take on": "引き受ける、雇う",
+        "put up with": "我慢する"
+      },
+      "why_correct": "放火という可能性を『除外できていない』が文脈に合う。rule out A as B が定型。",
+      "why_others_wrong": {
+        "bring up": "『話題に出す』では『原因として除外する』意味にならない",
+        "take on": "『引き受ける』は arson as the cause と噛み合わない",
+        "put up with": "『我慢する』は原因の特定という文脈に無関係"
+      },
+      "level": "句動詞"
+    },
+    {
+      "id": "v34",
+      "sentence": "Just two days before the crucial final examination, she _______ a severe case of the flu and had to be hospitalized for nearly a week.",
+      "choices": [
+        "got away with",
+        "came down with",
+        "made up for",
+        "caught up with"
+      ],
+      "answer": 1,
+      "target_word": "came down with",
+      "gloss_ja": "(病気に)かかる",
+      "distractors_ja": {
+        "got away with": "(罰などを)まぬがれる、うまく逃れる",
+        "made up for": "埋め合わせる、償う",
+        "caught up with": "追いつく、(悪事などが)報いる"
+      },
+      "why_correct": "『重いインフルにかかり』入院、が自然。come down with a cold/flu が定型。",
+      "why_others_wrong": {
+        "got away with": "『(罰などを)まぬがれる』の意で、病気に『かかる』文脈に合わない",
+        "made up for": "『埋め合わせる』は病気にかかる文脈に合わない",
+        "caught up with": "『追いつく』では病気を『発症する』意味にならない"
+      },
+      "level": "句動詞"
+    },
+    {
+      "id": "v35",
+      "sentence": "The accountant arrogantly believed he could _______ stealing company funds indefinitely, but a routine audit eventually exposed the entire scheme.",
+      "choices": [
+        "get away with",
+        "come up with",
+        "put up with",
+        "do away with"
+      ],
+      "answer": 0,
+      "target_word": "get away with",
+      "gloss_ja": "(悪事などの)罰をまぬがれる、うまくやり過ごす",
+      "distractors_ja": {
+        "come up with": "思いつく、考え出す",
+        "put up with": "我慢する",
+        "do away with": "廃止する、なくす"
+      },
+      "why_correct": "『横領しても罰をまぬがれられる』と思ったが露見、が自然。",
+      "why_others_wrong": {
+        "come up with": "『思いつく』は stealing funds を続ける意味にならない",
+        "put up with": "『我慢する』は横領を続ける文脈と噛み合わない",
+        "do away with": "『廃止する』は but exposed という展開と整合しない"
+      },
+      "level": "句動詞"
+    },
+    {
+      "id": "v36",
+      "sentence": "The cardiologist strongly advised him to _______ his daily consumption of salt and heavily processed food in order to lower his blood pressure.",
+      "choices": [
+        "catch up on",
+        "get on with",
+        "cut back on",
+        "look up to"
+      ],
+      "answer": 2,
+      "target_word": "cut back on",
+      "gloss_ja": "(量・支出を)減らす、切り詰める",
+      "distractors_ja": {
+        "catch up on": "(遅れ・不足を)取り戻す",
+        "get on with": "先へ進める、うまくやる",
+        "look up to": "尊敬する"
+      },
+      "why_correct": "血圧を下げるため塩分摂取を『減らす』。cut back on が定型。",
+      "why_others_wrong": {
+        "catch up on": "『取り戻す』は摂取を増やす方向で lower blood pressure と矛盾",
+        "get on with": "『先へ進める』は減塩の文脈に合わない",
+        "look up to": "『尊敬する』は consumption を目的語にできず無意味"
+      },
+      "level": "句動詞"
+    },
+    {
+      "id": "v37",
+      "sentence": "The team's latest findings are entirely _______ what scientists had long believed, forcing researchers to revise several well-established theories.",
+      "choices": [
+        "in favor of",
+        "at odds with",
+        "on behalf of",
+        "in line with"
+      ],
+      "answer": 1,
+      "target_word": "at odds with",
+      "gloss_ja": "〜と食い違って、矛盾して",
+      "distractors_ja": {
+        "in favor of": "〜に賛成して、有利に",
+        "on behalf of": "〜を代表して、〜のために",
+        "in line with": "〜と一致して、沿って"
+      },
+      "why_correct": "『理論の見直しを迫る』ので、通説と『食い違う』が唯一整合する。",
+      "why_others_wrong": {
+        "in favor of": "『賛成して』では理論の revise を迫る展開と矛盾",
+        "on behalf of": "『代表して』は findings と belief の関係を表せず無意味",
+        "in line with": "『一致して』では見直しが不要になり後半と矛盾"
+      },
+      "level": "イディオム"
+    },
+    {
+      "id": "v38",
+      "sentence": "After many months of failed negotiations and steadily mounting losses, the once-thriving manufacturer was clearly _______ bankruptcy.",
+      "choices": [
+        "in charge of",
+        "at the mercy of",
+        "for the sake of",
+        "on the verge of"
+      ],
+      "answer": 3,
+      "target_word": "on the verge of",
+      "gloss_ja": "〜の瀬戸際で、今にも〜しそうで",
+      "distractors_ja": {
+        "in charge of": "〜を担当して、管理して",
+        "at the mercy of": "〜のなすがままに",
+        "for the sake of": "〜のために"
+      },
+      "why_correct": "損失が膨らみ『倒産寸前だった』が自然。on the verge of bankruptcy が定型。",
+      "why_others_wrong": {
+        "in charge of": "『担当して』は bankruptcy と結びつかず無意味",
+        "at the mercy of": "『なすがままに』は瀬戸際の意味を持たず不自然",
+        "for the sake of": "『〜のために』では倒産を目的とする不合理な意味になる"
+      },
+      "level": "イディオム"
+    },
+    {
+      "id": "v39",
+      "sentence": "Prices have risen so sharply this year that many families on fixed incomes can no longer _______ the soaring cost of everyday necessities.",
+      "choices": [
+        "do without",
+        "keep abreast of",
+        "contend with",
+        "give rise to"
+      ],
+      "answer": 2,
+      "target_word": "contend with",
+      "gloss_ja": "(困難・問題に)対処する、立ち向かう",
+      "distractors_ja": {
+        "do without": "〜なしで済ませる",
+        "keep abreast of": "(情報・進展に)遅れずについていく",
+        "give rise to": "引き起こす"
+      },
+      "why_correct": "固定収入の家庭が高騰する生活費に『対処しきれない』が文脈に最適。contend with は困難な状況に立ち向かう意味。",
+      "why_others_wrong": {
+        "do without": "『〜なしで済ます』では生活必需品を諦める意味になり文脈と合わない",
+        "keep abreast of": "『(情報に)遅れずついていく』は最新情報に使う語で、費用への対処には不適",
+        "give rise to": "『引き起こす』では家庭が費用を生じさせる意味になり主語と不整合"
+      },
+      "level": "句動詞"
+    },
+    {
+      "id": "v40",
+      "sentence": "_______ the devastating earthquake, thousands of volunteers from across the country arrived to help rebuild the shattered coastal towns.",
+      "choices": [
+        "In place of",
+        "By means of",
+        "In spite of",
+        "In the wake of"
+      ],
+      "answer": 3,
+      "target_word": "in the wake of",
+      "gloss_ja": "〜の(直)後に、〜の余波を受けて",
+      "distractors_ja": {
+        "In place of": "〜の代わりに",
+        "By means of": "〜によって、〜を用いて",
+        "In spite of": "〜にもかかわらず"
+      },
+      "why_correct": "震災『の後に』ボランティアが復興支援に集まった、が文脈に合う。",
+      "why_others_wrong": {
+        "In place of": "『〜の代わりに』では地震と支援の因果が成り立たない",
+        "By means of": "『〜によって』は手段を表し、地震を手段にできず無意味",
+        "In spite of": "『〜にもかかわらず』では復興が地震への対応である因果と噛み合わない"
+      },
+      "level": "イディオム"
+    }
+  ]
+}

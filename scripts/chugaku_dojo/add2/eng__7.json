@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "This bridge (    ) about a hundred years ago.",
+  "passage": "",
+  "choices": [
+   "built",
+   "was built",
+   "is built",
+   "builds"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「was built」。 「約100年前に建てられた」という過去の受け身。ago があり過去なので be動詞は was、動詞は過去分詞 built。〈was/were+過去分詞〉。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "Many stars (    ) in the sky last night.",
+  "passage": "",
+  "choices": [
+   "saw",
+   "were seen",
+   "was seen",
+   "are seen"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「were seen」。 「たくさんの星が見えた」=見られた。主語 stars は複数、last night は過去なので were seen。see の過去分詞は seen。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "This car (    ) in Germany.",
+  "passage": "",
+  "choices": [
+   "make",
+   "made",
+   "is made",
+   "was making"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「is made」。 「この車はドイツで作られる(製造される)」という現在の一般的事実。主語が単数なので is made。make の過去分詞は made。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "These rooms (    ) every morning by the students.",
+  "passage": "",
+  "choices": [
+   "clean",
+   "cleaned",
+   "are cleaned",
+   "is cleaned"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「are cleaned」。 「これらの部屋は毎朝掃除される」。主語 rooms は複数なので be動詞は are、動詞は過去分詞 cleaned。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "The dishes (    ) by my father after dinner.",
+  "passage": "",
+  "choices": [
+   "washed",
+   "were washed",
+   "are washing",
+   "wash"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「were washed」。 「皿は父によって洗われた」。by で行為者を表す受け身。dishes は複数で過去の話なので were washed。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "French (    ) in Canada, too.",
+  "passage": "",
+  "choices": [
+   "speak",
+   "spoke",
+   "is spoken",
+   "are spoken"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「is spoken」。 「フランス語はカナダでも話される」。言語は数えられない単数扱いなので is、speak の過去分詞は spoken。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "That old temple (    ) by many tourists every year.",
+  "passage": "",
+  "choices": [
+   "visits",
+   "visited",
+   "is visited",
+   "are visited"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「is visited」。 「その古い寺は毎年多くの観光客に訪れられる」。主語 temple は単数、every year は現在の習慣なので is visited。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "The letters (    ) yesterday.",
+  "passage": "",
+  "choices": [
+   "sends",
+   "sent",
+   "was sent",
+   "were sent"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態。正解は「were sent」。 「手紙は昨日送られた」。主語 letters は複数、yesterday は過去なので were sent。send の過去分詞は sent。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "(    ) this door opened every day?",
+  "passage": "",
+  "choices": [
+   "Is",
+   "Are",
+   "Do",
+   "Does"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態。正解は「Is」。 受け身の疑問文は be動詞を主語の前に出す。主語 door は単数なので Is this door opened ...? となる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "(    ) these songs sung in English?",
+  "passage": "",
+  "choices": [
+   "Is",
+   "Are",
+   "Do",
+   "Did"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「Are」。 受け身の疑問文は be動詞を文頭に出す。主語 songs は複数なので Are these songs sung ...? となる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "This computer (    ) by many people.",
+  "passage": "",
+  "choices": [
+   "don't use",
+   "doesn't use",
+   "isn't used",
+   "aren't used"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「isn't used」。 受け身の否定は〈be動詞+not+過去分詞〉。主語 computer は単数なので isn't used。use の過去分詞は used。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "These flowers (    ) in winter.",
+  "passage": "",
+  "choices": [
+   "don't see",
+   "aren't seen",
+   "isn't seen",
+   "doesn't see"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「aren't seen」。 「これらの花は冬には見られない」。受け身の否定〈be動詞+not+過去分詞〉。flowers は複数で aren't seen。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "A: Where was this picture taken?  B: It (    ) in Kyoto.",
+  "passage": "",
+  "choices": [
+   "took",
+   "was taken",
+   "is taking",
+   "takes"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「was taken」。 「その写真は京都で撮られた」。過去の受け身なので was taken。take の過去分詞は taken。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "The top of the mountain (    ) with snow now.",
+  "passage": "",
+  "choices": [
+   "covers",
+   "is covered",
+   "covered",
+   "is covering"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「is covered」。 「be covered with ~」で「~でおおわれている」。決まった言い方で is covered with snow となる。"
+ }
+]

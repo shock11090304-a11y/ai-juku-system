@@ -1,0 +1,227 @@
+{
+ "no": 2,
+ "date": "8/18",
+ "title": "論理展開・つなぎ言葉",
+ "goal": "評論文のつなぎ語(ディスコースマーカー)を手がかりに、段落の主題文と抽象→具体の展開をとらえ、筆者の主張を正確に読み取る。",
+ "points": [
+  {
+   "h": "つなぎ語(ディスコースマーカー)を論理の道しるべにする",
+   "body": "however / in contrast は逆接・対比、therefore / thus は帰結、for instance / for example は具体例、moreover / in addition は追加を示す。読む前にこれらに丸をつけ、次に来る内容の役割を予測すると、筆者の論理の流れを追いやすくなる。",
+   "ex": [
+    [
+     "However, boredom is not our enemy but a valuable signal.",
+     "しかし、退屈は私たちの敵ではなく、価値ある信号だ。"
+    ],
+    [
+     "Therefore, boredom often works as a quiet workshop.",
+     "それゆえ、退屈はしばしば静かな作業場として働く。"
+    ]
+   ],
+   "rule": "つなぎ語を見たら『逆接／帰結／例示／追加』のどれかを即断し、次の文の役割を予測せよ。"
+  },
+  {
+   "h": "段落の主題文をつかみ、抽象→具体を見抜く",
+   "body": "評論の段落は多くの場合、冒頭に主張(抽象)を置き、続く文で例や理由(具体)を並べて支える。各段落の1文目を主題文と仮定して読み、for instance などの後に来る具体例が『どの主張を支えているか』を結びつけるとよい。",
+   "ex": [
+    [
+     "Constant entertainment, in contrast, leaves no empty space for such thinking.",
+     "対照的に、絶え間ない娯楽はそのような思考の余地を残さない。"
+    ]
+   ],
+   "rule": "段落は『主題文(抽象)→具体例・理由(具体)』が基本。1文目で主張を、以降で根拠を探せ。"
+  },
+  {
+   "h": "結論段落の言い直しで筆者の主張を確定する",
+   "body": "This does not mean … / Rather … / Instead … といった表現は、筆者が予想される誤解を打ち消し、自分の主張を言い直す合図。最終段落のこうした言い換えを押さえると、設問『筆者の主張』に強くなる。",
+   "ex": [
+    [
+     "Rather, it suggests that we should treat these empty moments with less fear.",
+     "むしろそれは、こうした空白の時間をもっと恐れずに扱うべきだと示唆している。"
+    ]
+   ],
+   "rule": "Rather / Instead の後ろに筆者の本当の主張が来ることが多い。"
+  }
+ ],
+ "passage": {
+  "title": "The Hidden Value of Boredom",
+  "jtitle": "退屈が秘める価値",
+  "paras": [
+   [
+    "Many people regard boredom as a purely negative state, something to be avoided at all costs.",
+    "In today's world, a smartphone offers an easy escape the moment we begin to feel restless.",
+    "However, a growing number of researchers argue that boredom is not our enemy but a valuable signal.",
+    "Far from being useless, it can push the mind toward creativity and quiet reflection."
+   ],
+   [
+    "Consider what happens when we are forced to wait with nothing to do.",
+    "At first, the mind grows uneasy and searches for stimulation.",
+    "Soon, however, it begins to wander, connecting ideas that would otherwise remain separate.",
+    "For instance, several famous writers have described how their best plots arrived during long, dull train journeys.",
+    "Therefore, boredom often works as a quiet workshop in which new thoughts are slowly assembled."
+   ],
+   [
+    "Constant entertainment, in contrast, leaves no empty space for such thinking.",
+    "When every idle moment is filled with videos and messages, the mind never learns to rely on itself.",
+    "Moreover, the habit of reaching for a screen can weaken our ability to concentrate on a single task.",
+    "Children who are never allowed to feel bored, for example, may struggle to invent their own games."
+   ],
+   [
+    "This does not mean that we should seek out boredom deliberately.",
+    "Rather, it suggests that we should treat these empty moments with less fear.",
+    "Instead of instantly filling them, we might let the mind rest and drift.",
+    "In this way, the very state we try so hard to avoid may become a source of insight."
+   ]
+  ],
+  "trans": {
+   "1": "多くの人は退屈を純粋に否定的な状態、何としても避けるべきものだとみなしている。",
+   "2": "今日の世界では、そわそわし始めた瞬間に、スマートフォンが手軽な逃げ道を与えてくれる。",
+   "3": "しかし、退屈は私たちの敵ではなく価値ある信号だと主張する研究者が増えている。",
+   "4": "無益であるどころか、退屈はむしろ心を創造性と静かな内省へと押しやることができる。",
+   "5": "何もすることがないまま待たされるとき、何が起こるかを考えてみよう。",
+   "6": "最初のうち、心は落ち着かなくなり、刺激を探し求める。",
+   "7": "しかしやがて、心はさまよい始め、そうでなければばらばらのままだった考えを結びつけていく。",
+   "8": "たとえば、何人もの著名な作家が、長く退屈な列車の旅の途中で最良の筋書きが浮かんだと語っている。",
+   "9": "それゆえ退屈は、しばしば新しい考えがゆっくりと組み立てられる静かな作業場として働く。",
+   "10": "対照的に、絶え間ない娯楽はそのような思考のための空白をまったく残さない。",
+   "11": "あらゆる暇な瞬間が動画やメッセージで埋められると、心は自分自身に頼ることを決して学ばない。",
+   "12": "さらに、画面に手を伸ばす習慣は、一つの作業に集中する能力を弱めかねない。",
+   "13": "たとえば、退屈を感じることを一度も許されない子どもは、自分自身の遊びを考え出すのに苦労することがある。",
+   "14": "これは、私たちがわざわざ退屈を求めるべきだという意味ではない。",
+   "15": "むしろそれは、こうした空白の時間をもっと恐れずに扱うべきだと示唆している。",
+   "16": "それらをすぐに埋めてしまう代わりに、心を休ませ、漂わせておいてもよいのだ。",
+   "17": "このようにして、私たちが避けようと必死になっているまさにその状態が、洞察の源になりうるのである。"
+  }
+ },
+ "vocab": [
+  [
+   "regard",
+   "動",
+   "〜を(…と)みなす (regard A as B)"
+  ],
+  [
+   "restless",
+   "形",
+   "落ち着かない・そわそわした"
+  ],
+  [
+   "signal",
+   "名",
+   "信号・合図"
+  ],
+  [
+   "reflection",
+   "名",
+   "熟考・内省"
+  ],
+  [
+   "stimulation",
+   "名",
+   "刺激"
+  ],
+  [
+   "wander",
+   "動",
+   "(心などが)さまよう・とりとめもなく巡る"
+  ],
+  [
+   "assemble",
+   "動",
+   "組み立てる・集める"
+  ],
+  [
+   "constant",
+   "形",
+   "絶え間ない・不断の"
+  ],
+  [
+   "idle",
+   "形",
+   "何もしていない・暇な"
+  ],
+  [
+   "concentrate",
+   "動",
+   "集中する (concentrate on 〜)"
+  ],
+  [
+   "deliberately",
+   "副",
+   "意図的に・わざと"
+  ],
+  [
+   "insight",
+   "名",
+   "洞察・見識"
+  ]
+ ],
+ "q_instr": "本文を読み、各設問に答えよ。文(3)などは本文の通し番号を指す。",
+ "questions": [
+  {
+   "type": "rc_mc",
+   "q": "文(9)までと文(10)以降は、どのような論理関係でつながっているか。文(10)冒頭の in contrast に着目して、最も適切なものを選べ。",
+   "choices": [
+    "具体例（前の内容の例を挙げる）",
+    "対比・対立（正反対の内容へ転じる）",
+    "因果（前が原因で後が結果）",
+    "追加（同じ方向の情報を付け足す）"
+   ],
+   "ans": 1,
+   "exp": "文(9)までは「退屈が思考を生む」という肯定的な内容、文(10)以降は正反対の「絶え間ない娯楽は思考の余地を残さない」へ転じる。前後が対立するので in contrast（対照的に）は対比・対立を示す。具体例・因果・追加はいずれも論理関係が異なる。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "第2段落(文(5)〜(9))が本文全体で果たしている役割として最も適切なものはどれか。",
+   "choices": [
+    "第1段落の主張に真っ向から反論している",
+    "第1段落の主張を、待ち時間の例と心の変化の過程で裏づけている",
+    "第1段落とは無関係の新しい話題を導入している",
+    "本文全体の結論を先に要約している"
+   ],
+   "ans": 1,
+   "exp": "第1段落は「退屈は創造や内省を促す価値ある状態だ」と主張(抽象)する。第2段落は「待たされたとき心が刺激を求め→やがてさまよい→考えを結びつける」という過程と、作家の具体例(文(8))でその主張を支える(具体)。つまり主題文を裏づける具体化の段落であり、反論・新話題・結論の要約ではない。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "文(7)の however は、文(6)と文(7)をどのように結んでいるか。",
+   "choices": [
+    "理由と結果の関係を示している",
+    "具体例を導入している",
+    "二つの文をほぼ同じ内容で言い換えている",
+    "最初の反応(不安)から次の展開(思考の広がり)への転換を示している"
+   ],
+   "ans": 3,
+   "exp": "文(6)は退屈の「最初(At first)」の反応=心が落ち着かず刺激を求める段階。文(7)は「やがて(Soon)」心がさまよい考えを結びつける段階へと局面が変わる。however はこの前段階から次段階への逆転・転換を示す。理由と結果、具体例の導入、言い換えのいずれでもない。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "本文における筆者の主張として最も適切なものはどれか。",
+   "choices": [
+    "退屈は避けるべき無益な状態にすぎない",
+    "退屈は創造や内省を促しうる価値ある状態であり、恐れず受け入れてよい",
+    "スマートフォンは完全に手放すべきだ",
+    "子どもには娯楽を一切与えるべきではない"
+   ],
+   "ans": 1,
+   "exp": "文(3)(4)で退屈を「価値ある信号」「創造性と内省へ押しやる」と述べ、最終段落(文(14)〜(17))で「わざわざ求めるのではなく、恐れずに扱えば洞察の源になりうる」とまとめている。これが筆者の主張。選択肢1は文(1)が紹介する一般的見解で筆者はそれに反対している。3・4は本文で述べられておらず言い過ぎ。"
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(9)の a quiet workshop in which new thoughts are slowly assembled とは、退屈のどのような働きを比喩的に述べたものか。日本語で説明せよ。",
+   "ans": "退屈な時間の中で、それまでばらばらだった考えが静かに結びつき、新しい考えが少しずつ組み立てられていくという、退屈が創造を生む働きのこと。",
+   "exp": "workshop(作業場)という比喩は、文(7)の「心がさまよい、離れていた考えを結びつける」働きを言い換えたもの。assemble(組み立てる)が「考えが作られる」ことを表し、退屈が創造の場として機能することを示している。",
+   "lines": 2
+  },
+  {
+   "type": "rc_mc",
+   "q": "文(4)の Far from being useless は、本文中でどのような意味で用いられているか。",
+   "choices": [
+    "役に立たないどころか、むしろ有用である",
+    "役に立たないので、避けるべきだ",
+    "役に立つには、まだほど遠い",
+    "役に立つかどうかは分からない"
+   ],
+   "ans": 0,
+   "exp": "far from 〜 は「〜どころではない／〜とはほど遠い」という強い否定。ここでは far from being useless=「無益とはほど遠い」、つまり「無益どころか、むしろ有用だ」の意。直後に it can push the mind toward creativity と肯定的な内容が続くことからも確認できる。選択肢3は far from useful(有用にほど遠い)の意味で正反対、2・4も文脈に合わない。"
+  }
+ ]
+}

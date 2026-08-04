@@ -1,0 +1,197 @@
+{
+ "no": 1,
+ "date": "8/17",
+ "title": "構造把握（英文解釈）",
+ "goal": "長い主語や関係詞節・名詞節のカタマリを見抜き、英文の骨組み（SVOC）を正確につかんで読む力を養う。",
+ "points": [
+  {
+   "h": "長い主語（S）は述語動詞（V）の直前でいったん区切る",
+   "body": "英文では主語に関係詞節や不定詞句・名詞節がくっついて長くなることが多い。まず文の骨組みとなる述語動詞Vを探し、その左側をひとかたまりの主語Sとみなす。主語がどれだけ長くても、Vの直前までを［　］でくくれば、文全体の構造が一気に見えてくる。",
+   "ex": [
+    [
+     "What actually helps the brain is a full night of sleep.",
+     "脳を実際に助けるものは、一晩の十分な睡眠である。"
+    ]
+   ],
+   "rule": "本動詞V（is / does など）を先に見つけ、その左を丸ごとSとみなす。"
+  },
+  {
+   "h": "what / that / which が作る名詞節は「一つの名詞」として扱う",
+   "body": "接続詞thatや関係代名詞whatは、後ろの〈S＋V…〉をまとめて一つの名詞のカタマリにする。文(3)の What actually helps the brain hold on to new information は「脳が新しい情報を保持するのを助けるもの」という一つの主語。名詞節を［　］でくくると、その外側にある本動詞（is）がはっきり見える。",
+   "ex": [
+    [
+     "Memories that the brain judges to be important are strengthened.",
+     "脳が重要だと判断する記憶は強化される。"
+    ]
+   ],
+   "rule": "that / what / which ＋SV は［名詞のカタマリ］とみなし、外側の本動詞を探す。"
+  },
+  {
+   "h": "関係詞節・分詞は、直前の名詞を後ろから説明するカタマリ",
+   "body": "名詞の直後にある〈who / that / which ＋…〉や〈-ing / -ed …〉は、その名詞を後ろから修飾する。修飾のカタマリがどこで終わるかを見極め、〈名詞＋修飾〉を一つの意味の単位として読むと、長い文でも骨組み（SVOC）を見失わない。",
+   "ex": [
+    [
+     "A student who stays awake all night loses the very hours.",
+     "一晩中起きている生徒は、まさにその時間を失う。"
+    ]
+   ],
+   "rule": "名詞＋（who / that / which / -ing / -ed …）は「後ろから前の名詞にかかる」と即断する。"
+  }
+ ],
+ "passage": {
+  "title": "Why Sleep Beats Cramming",
+  "jtitle": "なぜ睡眠は一夜漬けに勝るのか",
+  "paras": [
+   [
+    "Many students believe that the best way to prepare for an important exam is to study as long as possible on the night before it.",
+    "Scientists who study the human brain, however, have found that this popular strategy often does more harm than good.",
+    "What actually helps the brain hold on to new information is not extra hours of study but a full night of sleep."
+   ],
+   [
+    "During sleep, the brain quietly reviews the experiences of the day and decides which of them are worth keeping.",
+    "Memories that the brain judges to be important are strengthened, while those that seem useless are gradually removed.",
+    "This process, which researchers call \"memory consolidation,\" is one of the main reasons that sleep matters so much for learning.",
+    "Interestingly, the brain does not treat every memory in the same way, and a fact that is connected to something we already understand is far more likely to survive the night."
+   ],
+   [
+    "A student who stays awake all night therefore loses the very hours in which these memories would normally be organized.",
+    "As a result, the facts that she worked so hard to learn often become weak and surprisingly difficult to recall.",
+    "Getting enough sleep, in other words, is not a waste of precious study time but an essential part of it."
+   ]
+  ],
+  "trans": {
+   "1": "多くの生徒は、大切な試験に備える最良の方法は、その前夜にできるだけ長く勉強することだと信じている。",
+   "2": "しかし、人間の脳を研究する科学者たちは、この広く知られたやり方がしばしば益よりも害をもたらすことを発見した。",
+   "3": "脳が新しい情報を保持するのを実際に助けるのは、余分な勉強時間ではなく、一晩の十分な睡眠である。",
+   "4": "睡眠中、脳は静かにその日の経験を見直し、そのうちのどれが残しておく価値があるかを決める。",
+   "5": "脳が重要だと判断した記憶は強化される一方、役に立たないと思われる記憶は徐々に取り除かれる。",
+   "6": "研究者が「記憶の固定（memory consolidation）」と呼ぶこの過程は、睡眠が学習にとってこれほど重要である主な理由の一つである。",
+   "7": "興味深いことに、脳はすべての記憶を同じように扱うわけではなく、すでに理解していることと結びついた事実のほうが、その夜を生き延びる可能性がはるかに高い。",
+   "8": "それゆえ、一晩中起きている生徒は、これらの記憶が通常なら整理されるはずの、まさにその時間を失ってしまう。",
+   "9": "その結果、彼女が一生懸命に覚えた事実は、しばしば弱くなり、驚くほど思い出しにくくなる。",
+   "10": "言い換えれば、十分な睡眠をとることは、貴重な勉強時間の無駄ではなく、その不可欠な一部なのである。"
+  }
+ },
+ "vocab": [
+  [
+   "prepare",
+   "動",
+   "準備する、備える"
+  ],
+  [
+   "strategy",
+   "名",
+   "戦略、やり方"
+  ],
+  [
+   "information",
+   "名",
+   "情報"
+  ],
+  [
+   "review",
+   "動",
+   "見直す、復習する"
+  ],
+  [
+   "experience",
+   "名",
+   "経験"
+  ],
+  [
+   "strengthen",
+   "動",
+   "強化する、強める"
+  ],
+  [
+   "gradually",
+   "副",
+   "徐々に、しだいに"
+  ],
+  [
+   "consolidation",
+   "名",
+   "定着、固定、統合"
+  ],
+  [
+   "connect",
+   "動",
+   "結びつける、つなぐ"
+  ],
+  [
+   "organize",
+   "動",
+   "整理する、まとめる"
+  ],
+  [
+   "recall",
+   "動",
+   "思い出す"
+  ],
+  [
+   "essential",
+   "形",
+   "不可欠な、必要不可欠な"
+  ]
+ ],
+ "q_instr": "次の英文を読み、各設問に答えよ。（文(1)(2)…は本文の通し番号を表す）",
+ "questions": [
+  {
+   "type": "rc_desc",
+   "q": "文(3) What actually helps the brain hold on to new information is not extra hours of study but a full night of sleep. について、文全体の主語S（の中心）と述語動詞Vをそれぞれ答えよ。",
+   "ans": "S＝What actually helps the brain hold on to new information（＝「脳が新しい情報を保持するのを助けるもの」というwhat名詞節の全体）／V＝is",
+   "exp": "文頭のwhatが導く名詞節が、文全体の主語Sになっている。関係代名詞whatは〈the thing which〉に相当し、後ろの helps the brain hold on to new information をまとめて一つの名詞のカタマリにする。そのカタマリの外側にある本動詞がisで、is not A but B（AではなくB）の形で補語を導いている。長い主語はVの直前でいったん区切るのがコツ。",
+   "lines": 2
+  },
+  {
+   "type": "rc_mc",
+   "q": "文(2)の下線部 this popular strategy が指す内容として、最も適切なものを選べ。",
+   "choices": [
+    "試験の前の晩に、できるだけ長い時間勉強すること",
+    "毎日少しずつ復習を積み重ねていくこと",
+    "勉強を始める前に、まず十分な睡眠をとること",
+    "覚えたい情報を、すでに知っていることと結びつけること"
+   ],
+   "ans": 0,
+   "exp": "this popular strategy は前文(1)の内容を受ける指示語。文(1)で述べられた『the best way … is to study as long as possible on the night before it（前夜にできるだけ長く勉強すること）』が、世間に広まった（popular）やり方の中身である。2・3・4はいずれも本文が学習に有効だと述べている側の内容であり、「害になりうるやり方」を指すstrategyとは逆になるので誤り。"
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(8) A student who stays awake all night therefore loses the very hours in which these memories would normally be organized. を和訳せよ。",
+   "ans": "それゆえ、一晩中起きている生徒は、これらの記憶が通常なら整理されるはずの、まさにその時間を失ってしまう。",
+   "exp": "文の骨組みは A student … loses the very hours（生徒は…その時間を失う）。主語A studentには who stays awake all night という関係詞節が後ろからかかる。目的語the very hoursには〈in which these memories would normally be organized〉がかかり、in whichは「その時間の中で（記憶が整理される）」の意味。the very は「まさにその」と強調する語。thereforeは前文からの帰結（それゆえ）を示す。",
+   "lines": 3
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(8)の these memories とは、具体的にどのような記憶か。本文の内容に即して日本語で説明せよ。",
+   "ans": "脳がその日の経験の中で重要だと判断し、睡眠中に強化して残そうとする記憶（＝記憶の固定の対象となる記憶）。",
+   "exp": "these（これらの）は前に述べた記憶を指す指示語。文(4)(5)より、睡眠中に脳はその日の経験を見直し、重要だと判断した記憶を強化する、と説明されている。したがってthese memoriesは「脳が重要と判断し、強化・整理される記憶」を指す。『経験したすべての記憶』ではなく、脳に選別されて残る側の記憶である点に注意する。",
+   "lines": 2
+  },
+  {
+   "type": "rc_mc",
+   "q": "この文章の大意として、最も適切なものを選べ。",
+   "choices": [
+    "前夜に長時間勉強すればするほど、試験の成績は確実に上がる。",
+    "脳は記憶を一切選別せず、経験したことをすべて等しく保存する。",
+    "新しく学んだ情報を脳に定着させるには、勉強時間より十分な睡眠が重要である。",
+    "記憶の固定という現象は、まだ科学的にはまったく解明されていない。"
+   ],
+   "ans": 2,
+   "exp": "本文全体の主張は『詰め込みの徹夜より、睡眠こそが学習に効く』である。文(3)の is not extra hours of study but a full night of sleep、文(6)の sleep matters so much for learning、結論の文(10)がこれを支える。1は文(2)（this popular strategy often does more harm than good）と矛盾、2は文(5)(7)の「脳は記憶を選別する」と矛盾、4は本文に記述がなく、むしろ研究者が仕組みを説明しているので誤り。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "本文によると、睡眠中に残りやすい（生き延びやすい）記憶はどのようなものか。最も適切なものを選べ。",
+   "choices": [
+    "その日に最も新しく経験した記憶",
+    "感情をまったく伴わない記憶",
+    "脳が役に立たないと判断した記憶",
+    "すでに理解している事柄と結びついている記憶"
+   ],
+   "ans": 3,
+   "exp": "文(7)に a fact that is connected to something we already understand is far more likely to survive the night とある。よって「すでに理解している事柄と結びついた記憶」が残りやすい。3は文(5)（役に立たないと思われる記憶は取り除かれる）より逆に消える側、1・2は本文に根拠がないので誤り。"
+  }
+ ]
+}

@@ -1,0 +1,107 @@
+{
+ "no": 5,
+ "genre": "第2問 相当　校内アンケートの調査結果",
+ "title": "Student Health Committee Report",
+ "theme_ja": "睡眠時間と集中度の調査",
+ "passage": "Last October, the Student Health Committee of Nishikawa High School carried out a survey about sleep and study. We asked all 600 students several questions. The first two were how many hours they usually sleep on school nights, and how well they can concentrate during morning classes.\n\nThe answers showed that 45 percent of the students sleep less than 6 hours. Only 15 percent sleep more than 7 hours. Third-year students sleep the least; their average is 5.4 hours, while the average for first-year students is 6.6 hours.\n\nNext, we compared sleep with concentration. Among the students who sleep more than 7 hours, 78 percent said they can follow the first class of the day without difficulty. Among those who sleep less than 6 hours, the figure was only 31 percent. Many short sleepers also wrote that they feel sleepy again after lunch.\n\nWe then asked why students go to bed late. The most common answer was homework (54 percent), and the second was using a smartphone in bed (49 percent). Some students chose both.\n\nIn our opinion, the smartphone habit is the more serious of the two causes, because the amount of homework cannot be reduced easily. Only 12 percent of the students had ever kept their phone out of the bedroom, and almost all of them said they had fallen asleep faster.\n\nThe committee will hold a \"Sleep Week\" in February. During that week, we will ask students to record their bedtime on a simple chart. We believe that seeing their own record will help students change their habits.",
+ "word_count": 247,
+ "glossary": [
+  {
+   "word": "committee",
+   "ja": "委員会"
+  },
+  {
+   "word": "concentrate / concentration",
+   "ja": "集中する／集中(力)"
+  },
+  {
+   "word": "figure",
+   "ja": "(ここでは)数値・割合"
+  },
+  {
+   "word": "Nishikawa High School",
+   "ja": "西川高校(架空の高校)"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "type": "detail",
+   "q": "According to the report, which of the following is true about the students' sleeping hours?",
+   "options": [
+    "Only 15 percent of the students sleep for less than 6 hours on school nights.",
+    "The average for third-year students is more than an hour shorter than that for first-year students.",
+    "The third-year students' average is under 5 hours on a school night.",
+    "The average sleep time of the first-year students is under 6 hours a night."
+   ],
+   "answer": 2,
+   "evidence": "Third-year students sleep the least; their average is 5.4 hours, while the average for first-year students is 6.6 hours.",
+   "explanation_ja": "第2段落最終文に「3年生が最も睡眠時間が短く平均5.4時間、1年生の平均は6.6時間」とある。6.6−5.4=1.2時間なので、3年生の平均は1年生より『1時間以上』短い。②がこれと一致する。どの選択肢も本文の数値を引き比べないと判定できないので、5.4／6.6／45／15の4つを必ず拾ってから照合すること。",
+   "distractor_ja": "①数値の入れ替え。15パーセントは『7時間を超えて眠る』生徒の割合で、6時間未満は45パーセント。　③3年生の平均は5.4時間で、5時間を下回ってはいない。　④1年生の平均は6.6時間で、6時間を上回っている。"
+  },
+  {
+   "n": 2,
+   "type": "detail",
+   "q": "What did the survey find about concentration in the first class of the day?",
+   "options": [
+    "Nearly eight in ten of the students sleeping over 7 hours could follow it.",
+    "Roughly one third of the students sleeping over 7 hours could follow it.",
+    "Students who sleep longer often become sleepy again after they have eaten lunch.",
+    "Almost eight in ten students in the whole school could follow it without trouble."
+   ],
+   "answer": 1,
+   "evidence": "Among the students who sleep more than 7 hours, 78 percent said they can follow the first class of the day without difficulty. Among those who sleep less than 6 hours, the figure was only 31 percent.",
+   "explanation_ja": "第3段落。7時間を超えて眠る生徒のうち78パーセントが1時間目の授業に無理なくついていけると答えている。78パーセント=『10人に8人近く』なので①が一致する。6時間未満の層では31パーセントにとどまる、という対比も押さえる。",
+   "distractor_ja": "②数値のすり替え。約3分の1(31パーセント)は『6時間未満』の層の数字で、7時間超の層は78パーセント。　③主語のすり替え。昼食後にまた眠くなると書いたのは睡眠が短い生徒の方。　④範囲の拡大。78パーセントは『7時間を超えて眠る生徒の中での』割合であって、全校生徒の割合ではない(そもそも7時間超は15パーセントしかいない)。"
+  },
+  {
+   "n": 3,
+   "type": "fact_opinion",
+   "q": "Which option best describes the committee's opinion?",
+   "options": [
+    "Homework was the biggest reason that the students gave for going to bed late.",
+    "Only 12 percent of the students had ever kept their phone out of the bedroom.",
+    "Almost all of the students who kept their phone out of the bedroom fell asleep faster.",
+    "Using a smartphone in bed is the more serious of the two causes of late nights."
+   ],
+   "answer": 4,
+   "evidence": "In our opinion, the smartphone habit is the more serious of the two causes, because the amount of homework cannot be reduced easily.",
+   "explanation_ja": "④だけが『2つの原因のうちどちらがより深刻か』という価値判断で、本文でも In our opinion という合図とともに述べられている。①〜③はいずれもアンケートで得られた結果=事実。①の biggest のように評価語めいた語が入っていても、54パーセントという集計値で裏づけられる報告なら事実であり、逆に③のように数値を含まなくても事実でありうる。『数字があるかどうか』ではなく『調べれば確かめられる報告か、書き手の判断か』で切り分ける。",
+   "distractor_ja": "①第4段落の集計結果。biggest は評価語のように見えるが、ここでは『回答数が最も多い』という意味で、54パーセントという数値で確かめられる事実。　②第5段落の集計結果(12パーセント)で、事実。　③第5段落で報告された回答内容。数値は入っていないが、委員会の判断ではなくアンケートで得られた事実。"
+  },
+  {
+   "n": 4,
+   "type": "inference",
+   "q": "Which of the following is most likely true about how long the students sleep?",
+   "options": [
+    "Most of the students who sleep under 6 hours are in the third year.",
+    "More than half of the students sleep for more than 7 hours a night.",
+    "The students who sleep the longest are the ones given the least homework.",
+    "About four in ten students sleep between 6 and 7 hours."
+   ],
+   "answer": 4,
+   "evidence": "The answers showed that 45 percent of the students sleep less than 6 hours. Only 15 percent sleep more than 7 hours.",
+   "explanation_ja": "第2段落。6時間未満が45パーセント、7時間超が15パーセントなので、残る40パーセントが『6時間以上7時間以下』の層になる。本文に直接は書かれていないが、100から引けば導ける。40パーセント=ちょうど『10人に4人』。",
+   "distractor_ja": "①学年ごとの平均は示されているが、6時間未満の層がどの学年で構成されているかは本文から判断できない。　②本文と矛盾。7時間を超えて眠るのは15パーセントだけで、半数を超えることはない。　③睡眠時間と宿題の量の関係は本文で述べられていない。"
+  },
+  {
+   "n": 5,
+   "type": "main_idea",
+   "q": "The committee will put a title at the top of the report. Which of the following is the best one?",
+   "options": [
+    "Shorter Sleep, Weaker Focus: Our Survey and Our Next Step",
+    "Why the Homework at Our School Should Be Reduced",
+    "How Third-Year Students Get Ready for Their Entrance Exams",
+    "Smartphones in the Classroom: A Growing Problem for Teachers"
+   ],
+   "answer": 1,
+   "evidence": "Next, we compared sleep with concentration. Among the students who sleep more than 7 hours, 78 percent said they can follow the first class of the day without difficulty.",
+   "explanation_ja": "このレポートは『校内アンケートで睡眠時間と集中度を調べたら、睡眠が短い生徒ほど集中できていなかった』という結果(第2〜5段落)と、『だから2月に Sleep Week を行う』という次の一手(最終段落)の2つで構成されている。①はその両方を含んでおり、全体像を最もよく表している。",
+   "distractor_ja": "②宿題は夜更かしの理由の一つとして触れられるだけで、しかも『簡単には減らせない』とされている。主題ではない。　③3年生の平均睡眠時間には触れているが、入試準備の話は本文にない。　④問題にされているのは『寝床でのスマホ』であって授業中のスマホではなく、教員の悩みという話も出てこない。"
+  }
+ ],
+ "translation_ja": "昨年10月、西川高校の保健委員会は睡眠と勉強についてのアンケートを実施した。私たちは全校生徒600人に、ふだん学校のある日の夜に何時間眠っているか、そして午前中の授業でどれくらい集中できるか、という2つの質問をした。\n\n回答からは、生徒の45パーセントが6時間未満しか眠っていないことが分かった。7時間を超えて眠っている生徒は15パーセントしかいない。最も睡眠時間が短いのは3年生で、その平均は5.4時間、一方1年生の平均は6.6時間である。\n\n次に、私たちは睡眠時間と集中度を比べた。7時間を超えて眠っている生徒のうち、78パーセントが1時間目の授業に無理なくついていけると答えた。6時間未満の生徒では、その数値はわずか31パーセントだった。睡眠の短い生徒の多くは、昼食後にまた眠くなるとも書いていた。\n\n続いて、なぜ夜遅くに寝るのかを尋ねた。最も多かった答えは宿題(54パーセント)で、2番目は寝床でスマートフォンを使うこと(49パーセント)だった。両方を選んだ生徒もいた。\n\n私たちの意見では、2つの原因のうちより深刻なのはスマートフォンの習慣の方だ。というのも、宿題の量は簡単には減らせないからである。寝室の外にスマートフォンを置いてみたことがある生徒は12パーセントしかいなかったが、そのほとんど全員が、より早く眠りにつけたと答えている。\n\n委員会は2月に「睡眠週間」を実施する予定だ。その週の間、生徒には簡単な表に就寝時刻を記録してもらう。自分自身の記録を見ることが、生徒が習慣を変える助けになると私たちは考えている。",
+ "long_theme_ja": "ある高校の保健委員会が実施した校内アンケート(生活習慣)の報告",
+ "hide_title": true,
+ "lead": "You are reading a report on your school website written by the Student Health Committee."
+}

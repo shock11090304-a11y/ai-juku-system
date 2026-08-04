@@ -1,0 +1,77 @@
+{
+  "area": "第5編 化学平衡",
+  "problems": [
+    {
+      "id": "5-1-1",
+      "stem": "窒素と水素からアンモニアが生成する可逆反応\n$\\mathrm{N_2(気)} + 3\\mathrm{H_2(気)} \\rightleftharpoons 2\\mathrm{NH_3(気)}$\nについて、次の問いに答えよ。\n(1) 濃度平衡定数 $K_c$ を、各成分のモル濃度 $[\\mathrm{N_2}]$、$[\\mathrm{H_2}]$、$[\\mathrm{NH_3}]$ を用いた式で表せ。\n(2) 濃度を $\\mathrm{mol/L}$ で表すとき、$K_c$ の単位を答えよ。"
+    },
+    {
+      "id": "5-1-2",
+      "stem": "容積 $10\\ \\mathrm{L}$ の密閉容器に水素とヨウ素を入れて一定温度に保ったところ\n$\\mathrm{H_2(気)} + \\mathrm{I_2(気)} \\rightleftharpoons 2\\mathrm{HI(気)}$\nの平衡に達し、$\\mathrm{H_2}$ が $0.20\\ \\mathrm{mol}$、$\\mathrm{I_2}$ が $0.20\\ \\mathrm{mol}$、$\\mathrm{HI}$ が $1.60\\ \\mathrm{mol}$ 存在した。この温度における濃度平衡定数 $K_c$ を有効数字2桁で求めよ。"
+    },
+    {
+      "id": "5-1-3",
+      "stem": "容積 $2.0\\ \\mathrm{L}$ の密閉容器に $\\mathrm{SO_2}$ を $2.0\\ \\mathrm{mol}$、$\\mathrm{O_2}$ を $1.0\\ \\mathrm{mol}$ 入れ、一定温度で\n$2\\mathrm{SO_2(気)} + \\mathrm{O_2(気)} \\rightleftharpoons 2\\mathrm{SO_3(気)}$\nの平衡に達したとき、$\\mathrm{SO_3}$ が $1.6\\ \\mathrm{mol}$ 生成していた。この温度における濃度平衡定数 $K_c$ を、単位をつけて有効数字2桁で求めよ。"
+    },
+    {
+      "id": "5-1-4",
+      "stem": "容積 $5.0\\ \\mathrm{L}$ の密閉容器に $\\mathrm{PCl_5}$ を $1.0\\ \\mathrm{mol}$ 入れ、一定温度に保つと\n$\\mathrm{PCl_5(気)} \\rightleftharpoons \\mathrm{PCl_3(気)} + \\mathrm{Cl_2(気)}$\nの平衡に達し、$\\mathrm{PCl_5}$ の解離度は $\\alpha = 0.50$ であった。この温度における濃度平衡定数 $K_c$ を、単位をつけて有効数字2桁で求めよ。"
+    },
+    {
+      "id": "5-1-5",
+      "stem": "$\\mathrm{N_2O_4(気)} \\rightleftharpoons 2\\mathrm{NO_2(気)}$ の平衡について、密閉容器にはじめ $\\mathrm{N_2O_4}$ のみを入れ、ある温度で全圧を $1.0\\times10^{5}\\ \\mathrm{Pa}$ に保ったところ、$\\mathrm{N_2O_4}$ の解離度は $0.40$ であった。この温度における圧平衡定数 $K_p$ を、単位をつけて有効数字2桁で求めよ。"
+    },
+    {
+      "id": "5-1-6",
+      "stem": "酢酸とエタノールから酢酸エチルが生じる可逆反応\n$\\mathrm{CH_3COOH} + \\mathrm{C_2H_5OH} \\rightleftharpoons \\mathrm{CH_3COOC_2H_5} + \\mathrm{H_2O}$\nの濃度平衡定数は、ある温度で $K_c = 4.0$ である。この温度で酢酸 $1.0\\ \\mathrm{mol}$ とエタノール $2.0\\ \\mathrm{mol}$ を混合して平衡に達したとき、生成した酢酸エチルは何 $\\mathrm{mol}$ か。混合物の全体積を $V\\ \\mathrm{[L]}$ とし、有効数字2桁で答えよ。必要なら $\\sqrt{3} = 1.73$ を用いよ。"
+    },
+    {
+      "id": "5-2-1",
+      "stem": "アンモニアの合成は次の可逆反応で表される。\n$\\mathrm{N_2(気)} + 3\\mathrm{H_2(気)} \\rightleftharpoons 2\\mathrm{NH_3(気)} \\quad \\Delta H = -92\\ \\mathrm{kJ}$\n平衡状態にあるこの混合気体に次の(1)〜(4)の操作を行ったとき、平衡は右(生成物側)・左(反応物側)のどちらへ移動するか、または移動しないかをそれぞれ答えよ。\n(1) 体積を一定に保って温度を上げる\n(2) 温度を一定に保って容器の体積を小さくする\n(3) 温度・体積を一定に保って触媒を加える\n(4) 温度・体積を一定に保ったまま、反応に関与しないアルゴンを加える"
+    },
+    {
+      "id": "5-2-2",
+      "stem": "$\\mathrm{CO(気)} + \\mathrm{H_2O(気)} \\rightleftharpoons \\mathrm{CO_2(気)} + \\mathrm{H_2(気)}$ の濃度平衡定数は、ある温度で $K_c = 4.0$ である。この温度に保った容積 $1.0\\ \\mathrm{L}$ の密閉容器に、$\\mathrm{CO}$ を $0.20\\ \\mathrm{mol}$、$\\mathrm{H_2O}$ を $0.20\\ \\mathrm{mol}$、$\\mathrm{CO_2}$ を $0.40\\ \\mathrm{mol}$、$\\mathrm{H_2}$ を $0.10\\ \\mathrm{mol}$ 入れた。\n(1) このときの反応商 $Q = \\dfrac{[\\mathrm{CO_2}][\\mathrm{H_2}]}{[\\mathrm{CO}][\\mathrm{H_2O}]}$ の値を有効数字2桁で求めよ。\n(2) 平衡に達するまでに、反応は右・左のどちらへ進むか。"
+    },
+    {
+      "id": "5-2-3",
+      "stem": "ホスゲンの分解 $\\mathrm{COCl_2(気)} \\rightleftharpoons \\mathrm{CO(気)} + \\mathrm{Cl_2(気)}$ の濃度平衡定数は、ある温度で $K_c = 2.0\\times10^{-2}\\ \\mathrm{mol/L}$ である。この温度に保った容積 $5.0\\ \\mathrm{L}$ の密閉容器に $\\mathrm{COCl_2}$ を $1.0\\ \\mathrm{mol}$ 入れて平衡に達した。\n(1) $\\mathrm{COCl_2}$ の解離度 $\\alpha$ を有効数字2桁で求めよ。必要なら $\\sqrt{0.41} = 0.640$ を用いよ。\n(2) 温度を変えずに容器の容積を $10\\ \\mathrm{L}$ にすると、$\\alpha$ は大きくなるか小さくなるか。理由も述べよ。"
+    },
+    {
+      "id": "5-2-4",
+      "stem": "密閉容器に $\\mathrm{N_2}$ を $1.0\\ \\mathrm{mol}$、$\\mathrm{H_2}$ を $3.0\\ \\mathrm{mol}$ 入れ、\n$\\mathrm{N_2(気)} + 3\\mathrm{H_2(気)} \\rightleftharpoons 2\\mathrm{NH_3(気)} \\quad \\Delta H = -92\\ \\mathrm{kJ}$\nの平衡に達したところ、$\\mathrm{NH_3}$ が $0.80\\ \\mathrm{mol}$ 生成していた。\n(1) 平衡混合気体中の $\\mathrm{NH_3}$ の体積百分率を有効数字2桁で求めよ。\n(2) ハーバー・ボッシュ法では、鉄を主成分とする触媒を用い、約 $500\\ ^\\circ\\mathrm{C}$ の高温で反応させる。この温度を選ぶ理由を、平衡の移動と反応の速さの両面にふれて簡潔に述べよ。"
+    },
+    {
+      "id": "5-2-5",
+      "stem": "$\\mathrm{N_2(気)} + \\mathrm{O_2(気)} \\rightleftharpoons 2\\mathrm{NO(気)} \\quad \\Delta H = +180\\ \\mathrm{kJ}$ が平衡状態にある。次の(1)〜(3)について、平衡が右・左のどちらへ移動するか、または移動しないかを答えよ。(2)と(3)については理由も述べよ。\n(1) 体積を一定に保って温度を上げる\n(2) 温度を一定に保って容器の容積を半分にする\n(3) 温度・体積を一定に保って触媒を加える"
+    },
+    {
+      "id": "5-2-6",
+      "stem": "$\\mathrm{SO_2Cl_2(気)} \\rightleftharpoons \\mathrm{SO_2(気)} + \\mathrm{Cl_2(気)}$ の平衡について、密閉容器にはじめ $\\mathrm{SO_2Cl_2}$ のみを入れ、ある温度・圧力で平衡に達した混合気体の平均分子量を測定したところ $108$ であった。原子量は $\\mathrm{O} = 16$、$\\mathrm{S} = 32$、$\\mathrm{Cl} = 35.5$ とする。\n(1) $\\mathrm{SO_2Cl_2}$ の解離度 $\\alpha$ を有効数字2桁で求めよ。\n(2) 温度を変えずに全圧を下げると、$\\alpha$ は大きくなるか小さくなるか。"
+    },
+    {
+      "id": "5-3-1",
+      "stem": "1価の弱酸 $\\mathrm{HA}$ は水溶液中で $\\mathrm{HA} \\rightleftharpoons \\mathrm{H^+} + \\mathrm{A^-}$ の電離平衡にあり、その電離定数は $K_a = 5.0\\times10^{-6}\\ \\mathrm{mol/L}$ である。濃度 $0.20\\ \\mathrm{mol/L}$ の $\\mathrm{HA}$ 水溶液について、$[\\mathrm{H^+}]$ と pH を求めよ。電離度は $1$ に比べて十分小さいとして近似してよい。$[\\mathrm{H^+}]$ は有効数字2桁、pH は小数第2位まで答えよ。"
+    },
+    {
+      "id": "5-3-2",
+      "stem": "酢酸の電離定数を $K_a = 2.0\\times10^{-5}\\ \\mathrm{mol/L}$ とする。$0.10\\ \\mathrm{mol/L}$ の酢酸水溶液における酢酸の電離度 $\\alpha$ を有効数字2桁で求めよ。電離度は $1$ に比べて十分小さいとしてよい。必要なら $\\sqrt{2} = 1.41$ を用いよ。"
+    },
+    {
+      "id": "5-3-3",
+      "stem": "$0.20\\ \\mathrm{mol/L}$ の酢酸水溶液 $100\\ \\mathrm{mL}$ と $0.10\\ \\mathrm{mol/L}$ の酢酸ナトリウム水溶液 $100\\ \\mathrm{mL}$ を混合した。この混合溶液の pH を小数第2位まで求めよ。酢酸の電離定数は $K_a = 2.0\\times10^{-5}\\ \\mathrm{mol/L}$、$\\log_{10}2 = 0.30$ とし、混合による体積変化はないものとする。"
+    },
+    {
+      "id": "5-3-4",
+      "stem": "次の(ア)〜(エ)の塩の水溶液が、酸性・中性・塩基性のいずれを示すかをそれぞれ答えよ。また、(ア)の水溶液中で起こる加水分解をイオン反応式で表せ。\n(ア) $\\mathrm{CH_3COONa}$  (イ) $\\mathrm{NH_4Cl}$  (ウ) $\\mathrm{NaCl}$  (エ) $\\mathrm{Na_2CO_3}$"
+    },
+    {
+      "id": "5-3-5",
+      "stem": "硫酸バリウム $\\mathrm{BaSO_4}$ の溶解度積は $25\\ ^\\circ\\mathrm{C}$ で $K_{sp} = [\\mathrm{Ba^{2+}}][\\mathrm{SO_4^{2-}}] = 1.0\\times10^{-10}\\ \\mathrm{mol^2/L^2}$ である。$25\\ ^\\circ\\mathrm{C}$ の純水に対する $\\mathrm{BaSO_4}$ の溶解度は何 $\\mathrm{mol/L}$ か。有効数字2桁で求めよ。"
+    },
+    {
+      "id": "5-3-6",
+      "stem": "塩化銀 $\\mathrm{AgCl}$ の溶解度積を $K_{sp} = [\\mathrm{Ag^+}][\\mathrm{Cl^-}] = 1.8\\times10^{-10}\\ \\mathrm{mol^2/L^2}$ とする。$0.020\\ \\mathrm{mol/L}$ の塩化ナトリウム $\\mathrm{NaCl}$ 水溶液 $100\\ \\mathrm{mL}$ に、硝酸銀 $\\mathrm{AgNO_3}$ 水溶液 $100\\ \\mathrm{mL}$ を加えて混合する。$\\mathrm{AgCl}$ の沈殿が生じ始めるのは、加える $\\mathrm{AgNO_3}$ 水溶液の濃度が何 $\\mathrm{mol/L}$ を超えたときか。有効数字2桁で求めよ。混合による体積変化はなく、$\\mathrm{NaCl}$ と $\\mathrm{AgNO_3}$ はいずれも完全に電離しているものとする。"
+    }
+  ]
+}

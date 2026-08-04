@@ -1,0 +1,106 @@
+{
+ "no": 7,
+ "genre": "第5問 相当　往復メール2通",
+ "title": "A Change of Plans Before the Homestay",
+ "theme_ja": "ホームステイ相談のメール",
+ "passage": "From: Yuka Morita\nTo: Helen Baker\nDate: July 12\nSubject: A change to my plans\n\nDear Mrs. Baker,\n\nThank you for agreeing to host me this summer. I am writing because two things about my stay have changed, and I would like to tell you before I get on the plane.\n\nFirst, my flight. I was going to arrive on August 3, but my school suddenly moved our summer training camp to that week. I have already booked a new ticket, and I will land at Greenfield Airport on August 6 at 4:20 p.m.\n\nSecond, at a check-up last month the doctor told me that I must not eat eggs. Milk and wheat cause me no problems. I can cook simple meals for myself, so please do not change your family's usual dinners for me.\n\nYuka\n\nFrom: Helen Baker\nTo: Yuka Morita\nDate: July 13\nSubject: Re: A change to my plans\n\nDear Yuka,\n\nPlease don't worry about the new date. August 6 is easier for us, because our daughter Emma comes home from her music camp on the 5th and can drive to the airport with me.\n\nYour allergy is no trouble either. My husband gave up eggs three years ago, so most of our meals are already made without them. You will not have to prepare your own dinner.\n\nCould you send me a list of any other foods you would rather not eat? I want to finish planning your first week's meals before you land.\n\nHelen",
+ "word_count": 244,
+ "glossary": [
+  {
+   "word": "host",
+   "ja": "(客・留学生を)家に受け入れる"
+  },
+  {
+   "word": "check-up",
+   "ja": "健康診断"
+  },
+  {
+   "word": "allergy",
+   "ja": "アレルギー"
+  },
+  {
+   "word": "wheat",
+   "ja": "小麦"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "type": "purpose",
+   "q": "What is the main purpose of Yuka's email to Mrs. Baker?",
+   "options": [
+    "To report two changes to the plans for her summer stay.",
+    "To ask the family to meet her plane on August 3 and cook special meals for her.",
+    "To say that her exams will keep her from coming.",
+    "To ask the family to change their usual dinners because of her allergy."
+   ],
+   "answer": 1,
+   "evidence": "I am writing because two things about my stay have changed, and I would like to tell you before I get on the plane.",
+   "explanation_ja": "第1段落で「滞在について2つのことが変わったので、飛行機に乗る前に伝えたい」と書き、以下で(1)到着日の変更 (2)卵アレルギー の2点を報告している。したがってメールの目的は「滞在に関わる2つの変更を伝えること」。",
+   "distractor_ja": "②到着日は8月6日に変更されており、しかも空港まで迎えに来てほしいとも特別な食事を作ってほしいとも頼んでいない(本文と逆・本文にない)。③試験が動いたのは渡航日をずらした理由であって、ホームステイ自体を取りやめるとは書いていない(本文にない)。④「どうか私のためにご家族のふだんの夕食を変えないでください」と書いており、食事を変えるよう頼むのは逆(本文と逆)。"
+  },
+  {
+   "n": 2,
+   "type": "detail",
+   "q": "According to Yuka, what caused her to change her original plan?",
+   "options": [
+    "Her doctor told her not to fly until she had a second check-up in August.",
+    "Her school suddenly moved a school event to the week she had planned to travel.",
+    "The airline cancelled the ticket she had already bought for August 3.",
+    "The flight she first chose was already full in early August."
+   ],
+   "answer": 2,
+   "evidence": "I was going to arrive on August 3, but my school suddenly moved our summer training camp to that week.",
+   "explanation_ja": "「8月3日に着く予定だったが、学校が急に期末試験をその週に動かした」とあるので、当初の予定を変えることになった原因は、学校が期末試験を渡航予定の週に移したことである。",
+   "distractor_ja": "①健康診断は卵アレルギーが分かった場面の話で、医師に搭乗を止められたとは書かれていない(別の箇所とのすり替え)。③航空券は自分で新しく予約したのであって、航空会社が取り消したとは書かれていない(本文にない)。④便が満席だったという記述はない(本文にない)。"
+  },
+  {
+   "n": 3,
+   "type": "detail",
+   "q": "According to Mrs. Baker's reply, which of the following is true about the meals in her family?",
+   "options": [
+    "Everyone in her family gave up eating eggs three years ago.",
+    "Most of their meals are already made without eggs.",
+    "Yuka will have to buy and cook her own dinners there.",
+    "Milk and wheat are never used in her kitchen either."
+   ],
+   "answer": 2,
+   "evidence": "My husband gave up eggs three years ago, so most of our meals are already made without them.",
+   "explanation_ja": "返信の第2段落で「夫が3年前に卵をやめたので、うちの食事のほとんどはもともと卵を使わずに作っている」と述べている。したがって家庭の料理の大半はすでに卵抜きである。",
+   "distractor_ja": "①卵をやめたのは「夫」であって家族全員ではなく、卵抜きなのも「食事のほとんど(most)」にとどまる(範囲の言い過ぎ)。③「自分の夕食を用意する必要はありません」と書かれており逆(本文と逆)。④牛乳と小麦は「私は問題ありません」とゆか自身が書いた食品で、ベイカー家の台所で使わないという記述はない(別の箇所とのすり替え)。"
+  },
+  {
+   "n": 4,
+   "type": "inference",
+   "q": "Based on the two emails, which of the following is most likely true about Emma?",
+   "options": [
+    "She had already met Yuka at a music camp last summer.",
+    "She will drive Yuka back to the airport again at the end of the summer holiday.",
+    "She asked her mother to change the date of Yuka's flight.",
+    "She would have been away from home on Yuka's original arrival date."
+   ],
+   "answer": 4,
+   "evidence": "our daughter Emma comes home from her music camp on the 5th and can drive to the airport with me",
+   "explanation_ja": "エマが音楽キャンプから帰宅するのは5日。もとの到着日である8月3日にゆかが着いていたら、エマはまだキャンプにいて家にいなかったことになる。明記はされていないが日付から論理的に導ける。",
+   "distractor_ja": "①二人が以前に会ったという記述はない(本文にない)。②帰国のときの送迎や夏休みの終わりについては何も書かれていない(本文にない)。③日程が変わったのはゆかの学校が試験を動かしたためで、エマが頼んだからではない(本文と逆)。"
+  },
+  {
+   "n": 5,
+   "type": "inference",
+   "q": "After reading Mrs. Baker's reply, what will Yuka most likely do next?",
+   "options": [
+    "Book another ticket so that she can arrive on August 5 instead.",
+    "Ask a doctor to write a letter about her egg allergy in English.",
+    "Tell Mrs. Baker which other foods she would rather not eat at their house.",
+    "Look for a supermarket near the Bakers' house in Greenfield."
+   ],
+   "answer": 3,
+   "evidence": "Could you send me a list of any other foods you would rather not eat? I want to finish planning your first week's meals before you land.",
+   "explanation_ja": "返信の最後でベイカー夫人は「ほかに食べたくない食品のリストを送ってもらえますか」と頼み、到着前に最初の一週間の献立を決めたいと述べている。したがって、ゆかが次にするのはその情報を伝えることだと考えられる。",
+   "distractor_ja": "①8月6日で問題ないと言われているので、航空券を取り直す必要はない(本文と逆)。②医師の手紙を書いてもらうようには求められていない(本文にない)。④自分の夕食を作る必要はないと言われており、買い出しの必要は生じない(本文と逆)。"
+  }
+ ],
+ "translation_ja": "差出人: モリタ・ユカ\n宛先: ヘレン・ベイカー\n日付: 7月12日\n件名: 予定の変更について\n\nベイカーさま\n\nこの夏、私を受け入れてくださりありがとうございます。滞在について2つのことが変わりましたので、飛行機に乗る前にお知らせしたくてメールを書いています。\n\nまず、飛行機についてです。8月3日に到着する予定でしたが、学校が急に期末試験をその週に移しました。すでに新しい航空券を予約しており、8月6日午後4時20分にグリーンフィールド空港に到着します。\n\n次に、先月の健康診断で、医師から卵を食べてはいけないと言われました。牛乳と小麦は問題ありません。簡単な食事なら自分で作れますので、どうか私のためにご家族のふだんの夕食を変えないでください。\n\nユカ\n\n差出人: ヘレン・ベイカー\n宛先: モリタ・ユカ\n日付: 7月13日\n件名: Re: 予定の変更について\n\nユカさんへ\n\n新しい日付のことは心配しないでください。8月6日のほうが私たちには都合がよいのです。というのも、娘のエマが5日に音楽キャンプから帰ってきて、私と一緒に空港まで車で行けるからです。\n\nアレルギーのほうも少しも問題ありません。夫が3年前に卵をやめたので、うちの食事のほとんどはもともと卵を使わずに作っています。自分の夕食を用意する必要はありませんよ。\n\nほかに食べたくない食品があればリストにして送ってもらえますか。あなたが到着する前に、最初の一週間の献立を決めてしまいたいのです。\n\nヘレン",
+ "long_theme_ja": "ホームステイ先への到着日変更と食物アレルギーの相談メール、およびその返信",
+ "lead": "You are going to stay with a host family this summer. These are the emails you exchanged with your host mother."
+}

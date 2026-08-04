@@ -1,0 +1,109 @@
+{
+ "I_1": {
+  "quote": "its champions describe it as one of the most important food technologies since refrigeration.",
+  "quote_ja": "擁護者たちはそれを、冷蔵技術以来もっとも重要な食品技術の一つだと評している。",
+  "reason": "設問の champions（擁護者・推進派）を本文でスキャンすると第1段落第4文に its champions describe it as... が見つかる。describe A as B「AをBだと述べる」＝設問の characterize の言い換え。「the most important X since Y」は『Y以来最重要のX』＝Yを基準点に並べる型で、④の a milestone ... rivaling the arrival of the refrigerator（冷蔵庫の登場に匹敵する画期）がその言い換え。",
+  "distractors": "①「一般の食生活に影響しないニッチな贅沢品」は推進派の主張と正反対。②「従来の畜産より安いと既に証明済み」…価格に触れるのは批判側の an expensive solution だけで、しかも already proven（もう証明された）が本文の「まだ大論争中」と矛盾。③「植物性バーガーのわずかな改良」…plant proteins の比較はこの段落に無く、only a modest も最大級の評価と矛盾。",
+  "point": "英問英答の鉄則＝設問の固有キーワード（champions）で該当文を特定→選択肢は『言い換え』を探す。already／only／ever などの限定・断定語は誤答肢の常連マーカー。"
+ },
+ "I_2": {
+  "quote": "Whether it truly deserves that billing, or amounts instead to an expensive solution in search of a problem, has become the subject of a heated global argument.",
+  "quote_ja": "それが本当にその評価に値するのか、それとも『問題を探している高価な解決策』にすぎないのかが、世界的な大論争の的になっている。",
+  "reason": "a solution in search of a problem は『解決すべき問題がまだ見つかっていない解決策』＝誰も必要としていないかもしれない技術、という決まり文句。expensive が付くので②「費用がかかるのに真の必要性に応えていないかもしれない技術」が正解。",
+  "distractors": "①は cheap の時点で逆。③は「科学的な謎」と誤読させる引っかけ（solution を『解答』と取らせる）。④は expensive を『問題が高くつく』とすり替えている。",
+  "point": "慣用句は直訳せず『構図』で捉える。in search of ～＝『～を探し求めて』→ 解決策が問題を探す＝本末転倒、という皮肉。"
+ },
+ "I_3": {
+  "quote": "Technicians take a small sample of cells from a live animal ... and place those cells in a nutrient-rich liquid inside a bioreactor ... the cells proliferate, multiplying until they form muscle and fat.",
+  "quote_ja": "技術者は生きた動物から細胞の小さなサンプルを採取し…バイオリアクター内の栄養豊富な液体に入れる…細胞は増殖し、筋肉と脂肪を形づくる。",
+  "reason": "製法の説明は第2段落に集中。cells（細胞）→ nutrient-rich liquid（栄養液）→ multiply（増える）の流れが②とそのまま対応する。",
+  "distractors": "①「動物を早く太らせる」は従来畜産の話にすり替え。③「植物タンパクを化学的に成形」は plant-based（植物肉）との混同を誘う。④「細胞を使わず3Dプリント」は without using any cells が本文と正面衝突。",
+  "point": "手順説明の段落は『動詞の連鎖』（take → place → fed → proliferate）を追う。選択肢は名詞でなく動詞が本文と一致するかで判定すると速い。"
+ },
+ "I_4": {
+  "quote": "If cultivated meat could one day be produced at scale using clean electricity, its advocates argue, it might sharply reduce both land use and emissions",
+  "quote_ja": "培養肉がいつの日かクリーンな電力で大規模生産できれば、土地利用と排出の両方を大きく減らせるかもしれない、と擁護者は主張する。",
+  "reason": "設問は ecological argument（生態学的＝環境面の主張）。第3段落の The first is ecological. が目印で、その直後の if 節＋might reduce both land use and emissions が①の cut both land use and emissions に対応。",
+  "distractors": "②は sparing forests（森林を守れる）の逆（新たに切り開く）。③「電力が一切不要になる」は using clean electricity の曲解。④「牛のメタンを回収して地下貯留」は本文にない技術。",
+  "point": "The first is ～. / The second claim is ～. という『看板文』を見つけたら、その直後が答えの供給源。both A and B は選択肢照合の強いアンカーになる。"
+ },
+ "I_5": {
+  "quote": "In 2020 Singapore became the first country in the world to approve the commercial sale of a cultivated product, chicken made by the company Eat Just.",
+  "quote_ja": "2020年、シンガポールは培養製品（イート・ジャスト社の鶏肉）の商業販売を承認した世界初の国となった。",
+  "reason": "the first country to approve をそのまま探す。第4段落に In 2020 Singapore became the first country とあるので③が正解。",
+  "distractors": "①米国の承認は2023年（年がズレ）。②イタリアの2023年は承認でなく禁止法。④オランダの2013年はマーク・ポストの試作バーガー公開であり、販売承認ではない。",
+  "point": "年号・国名・固有名詞が並ぶ段落は『出来事×年』の対応表を作って照合する。誤答は必ず『実在する別の事実』とペアで作られる——うろ覚えの記憶で選ばず本文に戻ること。"
+ },
+ "I_6": {
+  "quote": "a substance called serum derived from animal blood, is both costly and ethically awkward for a product marketed as cruelty-free.",
+  "quote_ja": "動物の血液に由来する血清と呼ばれる物質は、高価であるうえに、『残酷さゼロ』を売りにする製品にとって倫理的に都合が悪い。",
+  "reason": "serum の直後に derived from animal blood（動物の血液由来）とあり、cruelty-free（動物を苦しめない）という宣伝文句と矛盾する——これが ethically awkward の中身。④が正解。",
+  "distractors": "①味、②禁止、③増殖が遅くなる、はいずれも本文に記述がない。特に②は問5のシンガポール・米国と結びつけた捏造。",
+  "point": "awkward の理由は必ず直前直後にある。for a product marketed as cruelty-free の for は『～にとって』——この前置詞が矛盾の構図を作っている。"
+ },
+ "I_7": {
+  "quote": "if that energy comes from fossil fuels, some analyses suggest the climate benefit could vanish or even reverse.",
+  "quote_ja": "そのエネルギーが化石燃料由来なら、気候面の便益は消えるか、逆転さえしうると示す分析もある。",
+  "reason": "skeptics（懐疑派）の環境面の懸念は第6段落後半。エネルギー多消費（energy-hungry）＋化石燃料なら便益が消える、という条件付きの主張が④。",
+  "distractors": "①メタンを出すのはバイオリアクターでなく牛。②培地の川への汚染は本文にない。③農地の消費はむしろ削減が期待される側の話。",
+  "point": "could / might / suggest を含む『控えめな主張』が本文なら、正解肢も could を保つ。断定に格上げした肢（will inevitably 等）は原則誤り。"
+ },
+ "I_8": {
+  "quote": "A technology sold as green, they warn, might simply trade one form of pollution for another.",
+  "quote_ja": "環境に優しいと売り込まれる技術は、単に一つの汚染を別の汚染と交換するだけかもしれない、と彼らは警告する。",
+  "reason": "trade A for B『AをBと交換する』。ここでは家畜由来の排出（避けたい汚染）を、化石燃料による発電の汚染と取り替えるだけ——つまり③「多量のエネルギー使用が、回避しようとする汚染を相殺しうる」。",
+  "distractors": "①は inevitably ... more than farming ever does と断定・比較を強めすぎ（本文は might simply）。②排出権取引の話にすり替え。④農家の作物転換は無関係。",
+  "point": "比喩表現の設問は『何と何を交換するのか』と項を埋めて読む。trade / exchange / swap A for B の for は交換の相手。"
+ },
+ "I_9": {
+  "quote": "In 2023 Italy went further than any other nation, passing a law that bans the production and sale of cultivated meat outright",
+  "quote_ja": "2023年、イタリアは他のどの国よりも踏み込み、培養肉の生産と販売を全面的に禁止する法律を可決した。",
+  "reason": "第7段落。ban ～ outright（全面禁止）がそのまま①。",
+  "distractors": "②は問5のシンガポールと逆の出来事。③のラベル表示義務や④の補助金は本文にない。",
+  "point": "went further than any other nation（どの国より踏み込んだ）のような比較級の強調は、直後に『具体的に何をしたか』が続く合図。"
+ },
+ "I_10": {
+  "quote": "Yet much the same was once said of solar panels and electric cars, whose costs collapsed once manufacturing matured.",
+  "quote_ja": "しかし、かつて太陽光パネルや電気自動車についてもほぼ同じことが言われていた——製造が成熟すると、そのコストは急落したのだ。",
+  "reason": "太陽光・EVは『高すぎると言われた技術も量産が進めば安くなった』という前例として引かれている。①「製造が成熟すればコストは急落しうる」が正解。",
+  "distractors": "②は certain to fail と真逆（前例はむしろ成功例）。③補助金の話はない。④「消費者は常に拒む」は always が強すぎ、かつ論旨と無関係。",
+  "point": "具体例は『何の主張を支えるための例か』を一つ上の抽象文に戻して確認する。Yet で始まる文は直前の悲観論への反論——流れの向きを見失わないこと。"
+ },
+ "II_1": {
+  "quote": "Convenient though it undoubtedly is, the smartphone has quietly reshaped the way we think, so gradually that few of us have noticed the change.",
+  "reason": "骨格は3つ。(1) Convenient though it is ＝ though it is convenient の譲歩倒置（形容詞が文頭に出る型）→『確かに便利ではあるものの』。undoubtedly は『疑いなく・確かに』で譲歩を強める。(2) reshape the way we think『考え方を作り変える』——the way S V は『SがVするやり方』。(3) so gradually that few of us have noticed『あまりに徐々になので、気づいた者はほとんどいない』——few は準否定語なので必ず否定的に訳す。",
+  "distractors": "『便利だけれども』の譲歩を落とす、few を『少しの人が気づいた』と肯定に訳す、quietly／gradually の副詞を訳し漏らす、が三大失点。",
+  "point": "一発ルール：〈形容詞/副詞/名詞 + though + S + V〉は譲歩倒置。so ～ that ... と few（準否定）は和訳の頻出採点ポイント——この3点セットを機械的に検出する。"
+ },
+ "II_2": {
+  "quote": "If we were willing to put the device aside for even an hour a day, we might rediscover the kind of quiet concentration that once came naturally to us.",
+  "reason": "If we were ... , we might ... は仮定法過去＝『現実にはその気がない』という含みを持つ。be willing to do『～する気がある』、put ～ aside『～を脇に置く』、for even an hour a day『一日にたった1時間でも』。主節の rediscover は re-（再び）＋discover。the kind of quiet concentration that once came naturally to us は関係詞節で、come naturally to 人『人にとって自然に身についている』。once は『かつて』。",
+  "distractors": "仮定法を直説法（〜すれば取り戻せる）で訳して断定調にする、even の『〜でさえ・たった』を落とす、once を『一度』と誤訳する、が典型失点。might の『かもしれない』は必ず残す。",
+  "point": "一発ルール：If + 過去形, S + might/could + 動詞原形 ＝ 仮定法過去。『現実はそうではない』という裏の意味まで訳語（〜さえすれば…かもしれない）でにじませると満点答案になる。"
+ },
+ "IV_11": {
+  "reason": "so weak that ...（あまりに老朽化して…）→ 完全な『崩壊』が人を危険にさらす前に閉鎖、と読む。destruction が正解。",
+  "distractors": "①restriction（制限）②construction（建設）④instruction（指示）はいずれも -struction/-striction の同語尾ファミリーだが、weak（脆弱）→閉鎖の因果に合うのは destruction だけ。construction は『建設が完了する前に』となり close it（閉鎖）と矛盾。",
+  "point": "コアイメージ：struct＝『積み上げる』。con-（共に積む＝建設）／de-（積んだものを崩す＝破壊）／in-（頭の中に積む＝指示・教育）。接頭辞で意味を割り出す語源問題は青学頻出。"
+ },
+ "IV_12": {
+  "reason": "『即答できない→重要な決断の前に一晩考えたい』の流れ。sleep on it＝『（結論を出さず）一晩寝かせて考える』が正解。",
+  "distractors": "②sleep off は『（酒・頭痛などを）寝て治す』、③sleep in は『朝寝坊する』、④sleep out は『外泊する』。どれも it（=決断）を目的語に取る発想が出ない。",
+  "point": "コアイメージ：on＝『接触・継続』。決断の上に乗ったまま眠る→『答えを保留して一晩考える』。前置詞のコアで熟語を束ねて覚えるのが最短ルート。"
+ },
+ "IV_13": {
+  "reason": "『スライドは問題なかったが、クライアントの質問の一つに ( 13 )、うまく答えられなかった』。catch ～ off guard＝『～の不意を突く』で、答えられなかった理由になる③が正解。",
+  "distractors": "①at ease は put ～ at ease（安心させる）の形でしか使わない。②in place は『所定の位置に・整って』で catch と結びつかない。④on purpose（わざと）は無生物主語 questions と意味が破綻。",
+  "point": "コアイメージ：guard＝『構え』、off＝『離れて』。構えが外れた瞬間を captured される→『不意打ちを食らう』。be caught off guard の受け身形でも頻出。"
+ },
+ "IV_14": {
+  "reason": "『カレーを作りすぎたから、みんな ( 14 )』→ 食事を勧める場面の定番 dig in『さあ食べて・がっつり食べ始める』が正解。",
+  "distractors": "②dig up は『掘り出す・（情報を）探り出す』、③give in は『屈する』、④take off は『離陸する・脱ぐ』。食事を促す自動詞用法があるのは dig in だけ。",
+  "point": "コアイメージ：dig＝『掘る』＋in＝『中へ』→ 皿の中へスプーンを突っ込む姿。Dig in! は Help yourself! と並ぶ食卓の決まり文句として会話問題の常連。"
+ },
+ "IV_15": {
+  "reason": "受付で『帳簿に名前を書いてくる』と応じている→ 入館時の記帳＝sign in が正解。before you can use ～（使う前に）という手続きの文脈とも一致。",
+  "distractors": "①sign off は『（放送・仕事を）終える』、③sign out は『退出の記帳をする』で入館前と逆、④sign up は『（講座などに）登録する』で通例 sign up for ～ の形を取り、その場の入館手続きには使わない。",
+  "point": "コアイメージ：in／out は『入る／出る』の対、up は『リストに載せ切る＝登録完了』、off は『切り上げ』。sign 系4兄弟は方向のイメージで一網打尽にできる。"
+ }
+}

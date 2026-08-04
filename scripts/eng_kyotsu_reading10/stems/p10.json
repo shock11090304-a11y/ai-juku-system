@@ -1,0 +1,92 @@
+{
+ "no": 10,
+ "title": "Should High School Students Wear Uniforms?",
+ "passage": "Should high school students have to wear uniforms? In my town this question returns every spring, and people never seem to agree.\n\nSupporters usually talk about money and fairness. Ms. Kato, a teacher at a public high school, says that when everyone wears the same clothes, no one is judged by the price of a jacket. Parents tell her that one set of school clothes costs less than a whole wardrobe of fashionable clothes. Another common argument is time: students in uniforms do not have to decide what to put on every morning. A survey by the Hillside Education Group found that 68 percent of parents supported uniforms, while only 31 percent of students did.\n\nPeople against uniforms answer that clothing is a form of expression. Ken Morita, a second-year student, says that choosing his own clothes helps him understand who he is. Some students add that uniforms are not always comfortable, because a heavy wool jacket in June is a real problem. Others argue that uniforms do not actually stop bullying, since students simply find other differences to laugh at.\n\nI have listened to both sides for many years, and I believe the answer is neither a clear yes nor a clear no. Uniforms solve some problems and create others. What troubles me is that the students themselves are rarely asked. Last year one school in our area let its student council redesign the uniform, and student satisfaction rose sharply. The real question, then, is not whether uniforms are good, but who is allowed to decide.",
+ "glossary": [
+  {
+   "word": "fairness",
+   "ja": "公平さ"
+  },
+  {
+   "word": "expression",
+   "ja": "(自己)表現"
+  },
+  {
+   "word": "wool",
+   "ja": "ウール、羊毛(の生地)"
+  },
+  {
+   "word": "bullying",
+   "ja": "いじめ"
+  },
+  {
+   "word": "student council",
+   "ja": "生徒会"
+  },
+  {
+   "word": "satisfaction",
+   "ja": "満足(度)"
+  },
+  {
+   "word": "wardrobe",
+   "ja": "手持ちの服(ひとそろい)"
+  },
+  {
+   "word": "the Hillside Education Group",
+   "ja": "ヒルサイド教育グループ(架空の調査団体)"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "q": "You are writing an essay based on this article. Which of the following is the best title for your essay?",
+   "options": [
+    "School Uniforms: A Debate Without a Simple Answer",
+    "School Uniforms: The Best Way to End Bullying",
+    "School Uniforms: A Problem Solved by New Designs",
+    "School Uniforms: A Rule That Students Never Question"
+   ]
+  },
+  {
+   "n": 2,
+   "q": "According to the article, what did the survey by the Hillside Education Group find?",
+   "options": [
+    "Fewer than one in ten students said that they supported uniforms.",
+    "The percentage of parents supporting uniforms was higher than that of students.",
+    "Just over half of the parents said that uniforms were a good idea.",
+    "Almost all of the parents who answered were in favor of uniforms."
+   ]
+  },
+  {
+   "n": 3,
+   "q": "You are writing the \"Views against uniforms\" part of your essay outline. According to the article, which of the following belongs there?",
+   "options": [
+    "Uniforms are made of thin material that cannot keep students warm in winter.",
+    "Uniforms cost families more money over a year than everyday clothes do.",
+    "Uniforms take students a long time to put on before school every single morning.",
+    "Uniforms do not prevent students from finding other things to make fun of."
+   ]
+  },
+  {
+   "n": 4,
+   "q": "According to Ms. Kato's comment, which of the following is most likely true about schools that have no uniforms?",
+   "options": [
+    "Students there can concentrate on their studies more easily than others can.",
+    "Students there may be judged by others for the price of their clothes.",
+    "Students there usually get along better with their classmates than others do.",
+    "Students there are told by their teachers to buy only simple, cheap clothes."
+   ]
+  },
+  {
+   "n": 5,
+   "q": "Your essay outline has three sections: \"Views in favor,\" \"Views against,\" and \"The writer's own position.\" Which of the following best fits the last section?\n\nEssay Outline: School Uniforms\n* Views in favor: lower cost, fewer worries about clothes\n* Views against: less freedom to express oneself\n* The writer's own position: ______________",
+   "options": [
+    "Schools must choose between fairness for families and freedom for students.",
+    "Uniforms will disappear from most high schools within a few years.",
+    "What matters most is which people should take part in making the rule.",
+    "Adults understand daily school life better than students themselves do."
+   ]
+  }
+ ],
+ "lead": "You are writing an essay about school uniforms. You found the following opinion piece in a school newspaper."
+}

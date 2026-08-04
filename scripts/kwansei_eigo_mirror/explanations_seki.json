@@ -1,0 +1,401 @@
+{
+ "I_A_1": {
+  "quote": "neither the scientists nor the reporters seem eager to accept the blame",
+  "quote_ja": "科学者も記者も、その責任を進んで引き受けようとはしないように見える。",
+  "reason": "空所の少し後ろに nor があるのが最大のヒント。nor を見たら前は neither、と条件反射で結びつける。neither A nor B(AもBも～ない)は必ずセットで登場する相関接続詞で、ここも「科学者も記者も責任を取ろうとしない」と両方まとめて否定する流れにぴったりはまる。",
+  "distractors": "either は either A or B(AかBか)で相方が or、後ろの nor と噛み合わない。both は both A and B で相方が and、しかも否定の nor と両立しない。whether は「～かどうか」の名詞節を作る語で相関ペアではない。",
+  "point": "後ろに nor を見たら前は neither。相関接続詞はペアで一発反応。"
+ },
+ "I_A_2": {
+  "quote": "far weaker than the confident language used to describe them",
+  "quote_ja": "それら（＝研究）を説明するのに使われる自信たっぷりの言葉よりもはるかに弱い。",
+  "reason": "代名詞は「数」と「格」の一致で決める。describe の目的語が要り、指すのは前に出た the studies(複数のモノ)。複数のモノを受ける目的格は them 一択。「研究の実態は、それを語る言葉ほど強くない」という文意にも自然につながる。",
+  "distractors": "it と one は単数を受ける形なので複数の studies を指せない。those は後ろに修飾が続いたり離れた複数を指す語で、直前の studies を受ける自然な目的語にならない。",
+  "point": "代名詞は「数＋格」で決める。複数のモノの目的語は them。"
+ },
+ "I_A_3": {
+  "quote": "Most nutrition research relies on observation rather than experiment.",
+  "quote_ja": "栄養研究の大半は、実験ではなく観察に頼っている。",
+  "reason": "rely の相方の前置詞を選ぶ問題。on のコアイメージは「接触」、そこから「何かにピタッと寄りかかる→頼る・依存する」が生まれる。rely on / depend on / count on は同じ仲間。「研究が観察に寄りかかっている」とイメージすれば on で即決。",
+  "distractors": "in / of / for はいずれも rely と結びつかない。rely の相方は on(接触＝寄りかかる)だけ、と押さえれば迷わない。",
+  "point": "「頼る」系 rely / depend / count は前置詞 on(接触)とセット。"
+ },
+ "I_A_4": {
+  "quote": "The human subjects in these studies are never assigned a diet by the researchers",
+  "quote_ja": "こうした研究における被験者たちは、研究者から食事を割り当てられることは決してない。",
+  "reason": "研究で観察・実験の対象となる「被験者」を表す語が要る。subject には「主題」のほかに「(実験・研究の)対象者＝被験者」という重要な意味がある。後ろの they choose one for themselves(自分で選ぶ)も、指すのが人=被験者であることを裏づける。",
+  "distractors": "objects は「物・対象物」でモノ寄り、人間の参加者には使わない。figures は「数字・人物像」、themes は「(抽象的な)テーマ」で、研究の「被験者」にはならない。",
+  "point": "subject＝「主題」だけでなく「被験者」の多義語。研究文脈では後者を疑う。"
+ },
+ "I_A_5": {
+  "quote": "it will be confirmed again and again by different teams",
+  "quote_ja": "それ（＝発見）は、異なるチームによって何度も何度も確かめられるだろう。",
+  "reason": "空所の前が it will be ___、後ろに by different teams。この「be＋___＋by」が受動態のサイン。発見は「確かめる」側ではなく「確かめられる」側なので be動詞の後ろは過去分詞 confirmed。「本物の発見なら何度も追試される」という主旨にも合う。",
+  "distractors": "confirm(原形)は be の後に置けない。confirming(能動‑ing)は「確かめる側」で by と矛盾。confirms(三単現)は will be の後には入らない。",
+  "point": "「be＋___＋by」は受動態＝過去分詞。「される」側かで判断。"
+ },
+ "I_B_ア": {
+  "quote": "That single fact ... undermines almost every dramatic claim",
+  "quote_ja": "そのたった一つの事実が、後に活字になるほぼすべての劇的な主張を掘り崩す。",
+  "reason": "undermine は under(下)＋mine(坑道を掘る)が語源で、コアは「土台を下から掘り崩す」。そこから「(主張・信頼を)弱める・むしばむ」。ここも「被験者が自分で食事を選ぶ事実が派手な主張の土台を崩す」文脈なので weakens(弱める)が最も近い。",
+  "distractors": "reinforces「強める」は正反対。clarifies「明確にする」、predicts「予測する」は掘り崩すイメージと無関係。",
+  "point": "undermine＝土台を下から掘る→「弱める」。接頭辞 under‑ で直感。"
+ },
+ "I_B_イ": {
+  "quote": "Any one of these advantages could account for the longer lives",
+  "quote_ja": "これらの利点のどれか一つが、より長い寿命の理由を説明できるかもしれない。",
+  "reason": "account for は多義だが、ここは「～の理由を説明する・～の原因となる」。「野菜以外の利点(裕福・運動・禁煙)が長寿の説明になりうる」文脈にぴたりで、explain(説明する)が同義。",
+  "distractors": "intensify「強める」、overlook「見落とす」、delay「遅らせる」はいずれも「説明する」の意味を持たない。",
+  "point": "account for＝「説明する／(割合を)占める」の多義熟語。文脈で「理由づけ」を取る。"
+ },
+ "I_B_ウ": {
+  "quote": "careful analysts try to adjust for them with elaborate mathematics",
+  "quote_ja": "慎重な分析者は、複雑な数学を用いて交絡因子を補正しようとする。",
+  "reason": "adjust for は統計用語で「(ある要因の影響を)統計的に補正・調整する」。直後に with elaborate mathematics とあり、数式で隠れた要因(confounders)の影響を差し引く話。よって statistically correct for(統計的に補正する)が同義。",
+  "distractors": "deliberately exaggerate「わざと誇張」は分析の誠実さと逆。completely remove「完全除去」は本文が「測っていない要因は消せない」と否定。randomly assign「無作為割り当て」は観察研究では行われない。",
+  "point": "adjust for＝「(交絡を)統計的に補正する」専門表現。for は対象・目的。"
+ },
+ "I_B_エ": {
+  "quote": "The neat comparison is therefore at odds with the tidy story of cause and effect",
+  "quote_ja": "その一見きれいな比較は、それゆえ、因果関係というすっきりした物語と食い違っている。",
+  "reason": "at odds with ～ で「～と対立している・食い違っている」。odds には「不一致・対立」の意味があり、「きちんとした比較」と「因果の物語」がかみ合わない、という文脈。したがって in conflict with(～と衝突して)が同義。",
+  "distractors": "in harmony with「調和して」、identical to「まったく同じ」は正反対。conditional upon「～次第で」は「対立」にならない。",
+  "point": "at odds with＝「食い違って・対立して」。odds(不一致)を核に覚える。"
+ },
+ "I_B_オ": {
+  "quote": "the apparent benefit of any one food may simply boil down to a general willingness to look after oneself",
+  "quote_ja": "ある食品の見かけ上の効果は、結局のところ、自分を大事にしようという一般的な心がけに帰着するのかもしれない。",
+  "reason": "boil down は「煮詰める」が原義で、煮詰めて残る本質＝「要するに～に行き着く」。boil down to ～ で「結局～に帰着する」。「食品の効果は突き詰めれば健康志向という心がけに行き着く」流れなので essentially amount to(本質的に～に等しくなる)が同義。",
+  "distractors": "bring to a boil「沸騰させる」は字面だけの誤り。sharply contradict「鋭く矛盾」、greatly exceed「大きく上回る」は「帰着」と無関係。",
+  "point": "boil down to＝「煮詰めて残る本質→要するに～に行き着く」。to は到達点。"
+ },
+ "I_B_カ": {
+  "quote": "a lone observational study can rarely rule out every rival explanation",
+  "quote_ja": "単独の観察研究が、対立するあらゆる説明を排除できることはめったにない。",
+  "reason": "rule out は「線(rule)を引いて外(out)へ締め出す」イメージで「(可能性を)除外する」。「一つの観察研究では他の説明の可能性を消し切れない」文脈なので exclude as a possibility(可能性として除外する)が同義。",
+  "distractors": "firmly confirm「しっかり確認」は逆(締め出す→取り込む)。precisely measure「正確に測る」、openly welcome「快く受け入れる」は排除の逆・無関係。",
+  "point": "rule out＝「線を引いて外へ→(可能性を)除外する」。out(外へ)がキー。"
+ },
+ "I_C_i": {
+  "quote": "the participants decide for themselves what to eat, so the compared groups differ in many hidden ways",
+  "quote_ja": "被験者が自分で食べるものを決めるので、比較されるグループが多くの隠れた点で食い違う。",
+  "reason": "第2段落が核心。「被験者は研究者から食事を割り当てられず、taste, income, culture, habit に応じて自分で選ぶ→比較されるグループが数え切れない隠れた点で食い違う」。これがほぼ全ての主張を掘り崩す最大の弱点で、まさに b が本文の主旨を言い換えている。",
+  "distractors": "a「研究者がデータを故意に改ざん」は本文が「研究者は不誠実ではない」と明確に否定。c「実験室が小さすぎる」は施設の話で中心的弱点でない。d「記者が原論文を読まない」は翻訳段階の別問題。",
+  "point": "central weakness＝第2段落「被験者が自分で選ぶ→隠れた差」に直結。"
+ },
+ "I_C_ii": {
+  "quote": "People who dutifully follow a single piece of medical advice tend to follow many others",
+  "quote_ja": "一つの医学的助言を忠実に守る人は、他の多くの助言も守る傾向がある。",
+  "reason": "第4段落の定義そのものを問う問題。healthy-user effect(健康的利用者効果)とは「一つの良い習慣を守る人は他の良い習慣もたくさん守る→ある単一の食品が実際以上に効果的に見える」偏り。語注とも一致し、c がこの定義を正確に言い換えている。",
+  "distractors": "a「食品が栄養を失う」は記述なし。b「医師が未検証サプリを勧める」は例の一部を歪めた無関係な話。d「裕福な人ほど葉物野菜を食べない」は本文と逆。",
+  "point": "用語定義問題は「定義文＋語注」を照合。一つの良習慣→他も守る人の偏り。"
+ },
+ "I_C_iii": {
+  "quote": "Observation is frequently the only ethical way ... a steady willingness to greet every miraculous claim with measured doubt",
+  "quote_ja": "観察はしばしば唯一倫理的な方法であり…あらゆる奇跡的主張を、慎重な疑いをもって迎える姿勢が大切だ。",
+  "reason": "筆者の立場は最終段落と結論に出る。第5段落で「観察研究は無価値ではなく貴重な手がかり」と認めつつ、「本物なら異なるチームが繰り返し確認する」「科学は反復で進む」と述べ、最後は measured doubt(慎重な疑い)で締める。この「価値は認める＋独立した追試まで懐疑を保て」を両立させた d が筆者の立場そのもの。",
+  "distractors": "a「動物実験だけが信頼できる」は本文にない極端。b「栄養研究は捨てるべき」は「無価値ではない」と真逆。c「一つの衝撃的研究で即食事を変えよ」は筆者が最も戒める態度。",
+  "point": "立場問題は「譲歩(価値は認める)＋主張(追試まで懐疑)」の両立肢=バランス型が正解。"
+ },
+ "II_A_1": {
+  "quote": "physicians themselves appeared in advertisements praising one brand over another",
+  "quote_ja": "医師たち自身が広告に登場し、ある銘柄を別の銘柄より上だと称賛していた。",
+  "reason": "over のコアは「覆う→～を超えて」。二つを比べて一方が他方の「上に立つ」イメージから、prefer A over B / choose A over B のように優劣を表す。ここも one brand over another(ある銘柄を別の銘柄より上に置いて)という比較・対比。",
+  "distractors": "than は比較級(better/more)が無いので不可。from は「～から離れて」で優劣にならない。beyond は「～を越えた先」で範囲の話になり合わない。",
+  "point": "A over B＝「AをBより上に(優先)」。prefer/choose A over B で覚える。"
+ },
+ "II_A_2": {
+  "quote": "Few ordinary people suspected that the pleasant habit might carry a lethal cost, nor did the tobacco firms have any incentive to raise the alarm",
+  "quote_ja": "普通の人々でその心地よい習慣が命にかかわる代償を伴うと疑う者はほとんどおらず、たばこ会社にも警鐘を鳴らす動機はなかった。",
+  "reason": "前半が Few(＝ほとんど～ない)で否定の内容。否定文に「～もまた…ない」を続けるときは nor を使い、その直後は必ず疑問文の語順(倒置)になる。だから nor did the firms have… と did が前に出ている。この倒置が nor を選ぶ最大の手がかり。",
+  "distractors": "so は「～もそうだ」で肯定の同意、否定内容に続かない。either は否定同意でも文頭・倒置では使えない(文末型)。and は単なる並列で「～もまた…ない」が出ず倒置とも噛み合わない。",
+  "point": "否定＋nor＋倒置(did+S+V)。「～もまた…ない」は nor が先頭で語順がひっくり返る。"
+ },
+ "II_A_3": {
+  "quote": "The verdict, published over the following decade, left little room for doubt",
+  "quote_ja": "その後の十年にわたり公表された結論は、疑いの余地をほとんど残さなかった。",
+  "reason": "room は「部屋」ではなく「余地・スペース」。leave room for ～ で「～の余地を残す」という決まった言い方。ここは little(ほとんどない)とセットで「疑いの余地をほとんど残さなかった＝ほぼ決定的だった」。動詞は leave が定番。",
+  "distractors": "took「余地を取る」は意味不明。held「保持する」は leave room の慣用に合わない。filled「埋めた」なら「余地を無くした」方向で little と重複・不自然。",
+  "point": "leave (little/no) room for doubt＝「疑いの余地を残さない」。room は不可算の「余地」。"
+ },
+ "II_A_4": {
+  "quote": "The tobacco industry funded its own studies, disputing the science and insisting that the link was mere coincidence",
+  "quote_ja": "たばこ業界は自前の研究に資金を出し、その科学に異を唱え、関連はただの偶然だと言い張った。",
+  "reason": "カンマの後ろに主語を付けず「～しながら」と補足を足すのが分詞構文で、能動なら ‑ing 形。ここは業界が「異を唱えている(能動)」ので disputing。後ろの and insisting(同じ‑ing)と並ぶのも決め手。",
+  "distractors": "to dispute は目的「～するために」で文法接続も合わない。disputed(定形)は動詞が重複し接続詞なしに繋がらない。dispute(原形)は主語がないと置けない。",
+  "point": "カンマ＋‑ing＝分詞構文「～しながら」。後続の and insisting と形をそろえる。"
+ },
+ "II_A_5": {
+  "quote": "the slow accumulation of proof, placed at the public's disposal through decades of relentless campaigning",
+  "quote_ja": "何十年にもわたる粘り強い運動を通じて人々が自由に使えるようにされた、証拠の緩やかな積み重ね。",
+  "reason": "直前の proof(証拠)は「人々の手に委ねられる＝される側」なので受け身の関係。名詞を後ろから「～された」と修飾するときは過去分詞。だから proof (which was) placed… の was が省かれた placed。",
+  "distractors": "placing(能動‑ing)だと「証拠が委ねる」で主客が逆。to place は「委ねられた証拠」という受動の修飾にならない。place(原形)は名詞を修飾できない。",
+  "point": "名詞＋過去分詞＝「～された名詞」。関係代名詞＋be動詞の省略と見抜く。"
+ },
+ "II_B_ア": {
+  "quote": "the culprit seemed obvious: the fumes of automobiles or the tar of newly paved roads",
+  "quote_ja": "犯人は明白に思えた。自動車の排ガスや新しく舗装された道路のタールだ、と。",
+  "reason": "culprit はもともと「犯人」だが、ここでは病気の増加を引き起こした「原因・元凶」の比喩。コロン以下で排ガスやタールという“容疑者(原因候補)”を挙げているので、the source that was to blame(責めを負うべき元凶)が最も近い。",
+  "distractors": "脱走した犯罪者=文字通りの犯人で文脈に合わない。確実に治す治療法=原因でなく解決策で逆。調査担当の専門家=原因でなく人物で外れ。",
+  "point": "culprit＝「(問題の)原因・元凶」。人に限らず“悪さの張本人”を指す比喩で頻出。"
+ },
+ "II_B_イ": {
+  "quote": "placed at the public's disposal through decades of relentless campaigning",
+  "quote_ja": "何十年もの粘り強い運動を通じて、人々が自由に使えるようになった。",
+  "reason": "disposal は「処分」より「自由に使える状態」が核。at one's disposal で「～が自由に使える」という慣用句。ここは証拠が人々の手元でいつでも使える状態になった、の意なので readily available for ordinary people to make use of が最も近い。",
+  "distractors": "捨てさせられた=disposal を「廃棄」と誤読した罠。政府の厳重な管理下=「自由に使える」の逆。無視したがった=available と関係ない。",
+  "point": "at one's disposal＝「～が自由に使える」。disposal の「処分」に引きずられない。"
+ },
+ "II_B_ウ": {
+  "quote": "The story of tobacco offers a sobering lesson about how societies come to accept uncomfortable truths",
+  "quote_ja": "たばこの物語は、社会が不都合な真実を受け入れていく過程について、身の引き締まる教訓を与えてくれる。",
+  "reason": "sober は「酔っていない→冷静な・まじめな」。sobering は「人を冷静・真剣にさせるような」で、a sobering lesson は「はっと考えさせる重い教訓」。よって a serious insight that prompts thoughtful reflection が最も近い。",
+  "distractors": "すぐ忘れる愉快な小話=まじめさと逆。アルコールの危険への警告=sober を「飲酒」と誤読した罠。時代遅れの無意味な考え=教訓の価値を否定し文意に反する。",
+  "point": "sobering＝「身の引き締まる・考えさせる」。sober の「しらふ→冷静・真剣」から発想。"
+ },
+ "II_C": {
+  "quote": "the gesture came to signify glamour, independence, and calm ... the heavier the smoking, the greater the risk",
+  "quote_ja": "その仕草はグラマー・自立・落ち着きの象徴となった…喫煙が多いほど、リスクも大きかった。",
+  "reason": "正解は b と d。b「20世紀半ば以前、喫煙は立派で流行のある習慣とみなされていた」は第1段の「洗練の証／グラマー・自立の象徴」と一致。d「1950年代の英国研究は喫煙量に比例して肺がんリスクが上がると突き止めた」は第3段の the heavier the smoking, the greater the risk にそのまま対応。この二つが本文に明記された事実。",
+  "distractors": "a=たばこ会社は危険を確認・公表でなく異を唱え偶然だと主張(第4段)で逆。c=政府は数か月で速やかにでなく何年もためらった(第4段)で逆。e=排ガス主因説は序盤の“誤った推測”で科学者の合意ではない。f=「証拠だけで行動は変わる」は最終段 Knowledge alone rarely changes behavior と正反対。",
+  "point": "内容一致は“本文の言い換え”を探す。逆(a・f)・言い過ぎ(c)・途中の誤説(e)が典型の外し肢。"
+ },
+ "III_A_1": {
+  "quote": "cars that can carry out the entire task of driving with no human input at all",
+  "quote_ja": "人間の入力を一切必要とせず、運転という作業の全体をこなせる車。",
+  "reason": "carry out は out(外へ＝最後まで出し切る)のコアから「(任務・計画を)最後までやり遂げる・遂行する」。ここは「運転という task を全部こなす」なので、単なる do より強い perform(実行する)がぴったり重なる。out が「やり切る」方向を示すと知っていれば一発。",
+  "distractors": "put off は「延期する」で真逆。oversee は「監督する」=自分でやらず見張る側で no human input と矛盾。explain は「説明する」で「こなす」文脈に合わない。",
+  "point": "carry out＝perform。out の「最後まで出し切る」で熟語を丸暗記から解放。"
+ },
+ "III_A_2": {
+  "quote": "human mistakes account for the overwhelming majority of traffic deaths",
+  "quote_ja": "人間のミスが、交通事故死の圧倒的多数を占めている（その原因になっている）。",
+  "reason": "account for のコアは「(数量の)割合を占める」と「(理由を)説明する=原因である」の2本。ここは「人間のミスが交通死の大多数を占める→その原因になっている」で are responsible for(～の原因である・責任がある)と一致。前後の「コンピュータは飲酒も居眠りもしない」から「人間のミスこそ元凶」と読める。",
+  "distractors": "make up for は「埋め合わせる」で別熟語。cover the cost of は「費用を負担」で文脈違い。cancel out は「相殺してゼロに」で、大多数を占めるのと正反対。",
+  "point": "account for＝「占める／～の原因である」。この長文は「human error が主因」が柱。"
+ },
+ "III_A_3": {
+  "quote": "it will be a long time before we can safely do away with the steering wheel altogether",
+  "quote_ja": "ハンドルを完全になくしても安全だと言えるまでには、まだ長い時間がかかるだろう。",
+  "reason": "do away with の away は「離す・遠ざける=消し去る」方向。だから「(制度・物を)廃止する・なくす」=get rid of(取り除く)と同義。直前で「まれな状況では機械が戸惑う」と述べ、続く altogether(完全に)も撤廃とかみ合う。",
+  "distractors": "depend on「頼る」は「なくす」と逆。hold on to「しがみつく・保持する」も逆。make use of「利用する」は廃止の意味を持たない。",
+  "point": "do away with＝get rid of。away＝「遠ざけて消す」で廃止系熟語をまとめて処理。"
+ },
+ "III_A_4": {
+  "quote": "On the whole, society has not yet decided how much risk it is willing to accept",
+  "quote_ja": "全体として見れば、社会はどれだけのリスクを受け入れるつもりなのか、まだ決めかねている。",
+  "reason": "on the whole は「(細部はさておき)全体としては・概して」というまとめ表現。前段で「国ごとに法律がバラバラ」と個々の話をした後、それを束ねて「総じて社会はまだ決めていない」と一般化する流れなので Generally speaking(一般的に言えば)が同義。",
+  "distractors": "By contrast「対照的に」は前文と対立させる語だが、ここは総括。As a result「その結果」は因果を示すが未決定は結果というより全体像。For instance「例えば」は具体例導入でまとめに不適。",
+  "point": "On the whole＝Generally speaking＝「概して」。個々→全体の「まとめ副詞」を見抜く。"
+ },
+ "III_B_ア": {
+  "quote": "interpret the surrounding world far faster than any human eye could manage",
+  "quote_ja": "人間の目にできるよりはるかに速く周囲の世界を読み取る。",
+  "reason": "interpret the surrounding world は「周囲の世界を解釈する=状況を把握する」、far faster than any human eye could manage は「人間の目より速く」。この2点をそのまま言い換えたのが a「環境を人間ドライバーより速く理解する」。interpret を「翻訳」でなく「情報を意味づけして理解する」と取れれば他は全部ズレると分かる。",
+  "distractors": "b は travel around the world「世界中を旅する」と誤読=surrounding world を地理的世界と取り違えた罠。c「人間に全く見えない物を感知」は「速さ」の話を「不可視」にすり替え、言い過ぎ。d「目の焦点合わせを真似る」は本文にない発想。",
+  "point": "interpret＝「解釈する=状況把握」。二重下線は「速く周囲を理解」の一点に集約。"
+ },
+ "III_B_イ": {
+  "quote": "It is precisely this promise of saving tens of thousands of lives each year that keeps investors pouring money into the field",
+  "quote_ja": "毎年何万人もの命を救えるというまさにこの約束こそが、投資家に資金を注ぎ込ませ続けている。",
+  "reason": "It is ～ that … の強調構文で、this promise of saving ... lives(命を救う見込み)を強調している。keep O ~ing は「Oに～し続けさせる」、pour money into は「資金を注ぐ」。つまり「多くの命を救えるという希望が投資家に資金提供を続けさせる」。これを平易にした b が正解。",
+  "distractors": "a「手早く大儲け」は saving lives(人命救済)という動機を金儲けにすり替え。c「技術が命を救えるか疑っている」は本文と真逆(投資家は期待して出資)。d「政府が大半を出資」は本文になく investors(民間投資家)と食い違う。",
+  "point": "It is X that …＝X を強調。ここの X=「人命救済の見込み」が投資の原動力。"
+ },
+ "III_B_ウ": {
+  "quote": "an awkward compromise that assumes a distracted passenger can suddenly become an alert driver within a second or two",
+  "quote_ja": "注意散漫な同乗者が1〜2秒で急に注意力のあるドライバーになれる、と決めてかかる、ぎこちない妥協策。",
+  "reason": "awkward compromise は「ぎこちない・不都合な妥協案」。assume は「(証拠なく)当然そうだと決めてかかる」。distracted(気の散った)passenger が within a second or two で alert(油断のない)driver になる、という無理な前提を批判している。これを「不注意な人に即座に運転を代われと期待する不満足な取り決め」とした c が一致。",
+  "distractors": "a「全員を常に覚醒させる巧妙な設計」は awkward(不都合)を clever(巧妙)と正反対に。b「前方注視以外禁止の規則」は本文にない義務を創作。d「どんな時も人間に制御を返さない」は制御を返す本文と逆。",
+  "point": "awkward＝「無理があって不都合」。筆者は「急に運転を代われ」という前提を批判している。"
+ },
+ "III_C_i": {
+  "quote": "human mistakes account for the overwhelming majority of traffic deaths ... such machines will eventually make our roads dramatically safer",
+  "quote_ja": "人間のミスが交通死の圧倒的多数を占める…そうした機械はいずれ道路を劇的に安全にする。",
+  "reason": "第2段落の柱「事故の大多数は human error が原因→機械に任せれば最大の危険源が消える」を素直にまとめたのが b。most accidents stem from human error が account for the majority と一致し、reduce road deaths greatly が make roads dramatically safer と対応する。",
+  "distractors": "a「すでに大半の国でドライバーを置き換えた」は本文の「まだ長い時間がかかる」と矛盾する言い過ぎ。c「機械は人間よりスマホに気を取られやすい」は逆(機械はスマホを見ない)。d「各国の法律は今や同一」は「国ごとに大きく異なる」と正反対。",
+  "point": "一致問題は「本文の因果」をなぞる肢が正解。人間のミス→機械で安全化、が本論。"
+ },
+ "III_C_ii": {
+  "quote": "most researchers believe it will be a long time before we can safely do away with the steering wheel altogether",
+  "quote_ja": "たいていの研究者は、ハンドルを完全になくしても安全と言えるまでには長い時間がかかると考えている。",
+  "reason": "(ii)は「一致しないもの=誤りを選ぶ」問題。本文は「ハンドル撤廃には a long time がかかる」と言っているのに、d は「within a year or two(1〜2年で)ハンドルが消える」と期間を正反対にしている。だから d が本文に反する=正解。long time 対 a year or two の期間すり替えを見抜く。",
+  "distractors": "a「レジ袋や大雪がシステムを混乱させる」は第3段と一致で誤りでない。b「一部都市が限定エリアでロボタクシー許可」は最終段と一致。c「配送会社が静かな道で無人トラックを試験中」も本文どおり。いずれも本文にあり不一致ではない。",
+  "point": "NOT true 問題は「期間・数量のすり替え」が定番の罠。long time↔a year or two を照合。"
+ },
+ "IV_1": {
+  "quote": "By the time the ambulance arrived, the injured hiker had been lying on the cold ground for nearly an hour.",
+  "quote_ja": "救急車が到着したときには、その負傷した登山者は1時間近く冷たい地面に横たわっていた。",
+  "reason": "By the time the ambulance arrived(過去の一点)が基準。その過去の時点までずっと横たわり続けていた「過去から過去までの継続」を表すのが過去完了進行形 had been Ving。for nearly an hour という継続の期間もあり、ずっと続く感じを出す進行形がベスト。",
+  "distractors": "has lain(現在完了)は「今」基準で過去の arrived とズレる。is lying は現在進行形で時制違い。would lie は推量・意志で継続を表せない。",
+  "point": "「過去の一点までズッと継続」は had been Ving。基準の過去＋for＋期間が合図。"
+ },
+ "IV_2": {
+  "quote": "I was not used to speaking in front of such a large audience, so my hands were shaking throughout the speech.",
+  "quote_ja": "私はそんな大勢の聴衆の前で話すことに慣れていなかったので、スピーチの間ずっと手が震えていた。",
+  "reason": "この to は不定詞の to ではなく「方向・くっつく先」を表す前置詞の to。be used to は「to(その状態)にくっついて慣れている」イメージなので、後ろは名詞か動名詞 Ving。だから speaking。used to do(昔はよく～した)と混同しないこと。",
+  "distractors": "to speak は used to do と混線した誤り。speak / spoke は前置詞 to の後ろに原形・過去形は置けない。",
+  "point": "be used to Ving「～に慣れている」の to は前置詞。used to do「昔よく～した」とは別物。"
+ },
+ "IV_3": {
+  "quote": "Seen from the summit, the villages below looked like tiny models scattered across the valley.",
+  "quote_ja": "山頂から見ると、眼下の村々は谷に散らばった小さな模型のように見えた。",
+  "reason": "分詞構文の主語は文の主語 the villages(村々)。村は「見る」のではなく「見られる」側なので受け身の関係。受け身の分詞構文は過去分詞 Seen で始める(元は Being seen の Being 省略)。",
+  "distractors": "Seeing(能動)は「村が見る」で主語と合わない。To see は「見るために」の目的で文意に合わない。Having seen(能動の完了)もやはり「村が見た」で不自然。",
+  "point": "分詞構文は主語との関係で決める。主語が「される」側なら過去分詞スタート。"
+ },
+ "IV_4": {
+  "quote": "This is the little town where my grandparents first met and later decided to settle down.",
+  "quote_ja": "ここは、私の祖父母が初めて出会い、後に定住することを決めた小さな町だ。",
+  "reason": "先行詞は town(場所)。後ろの my grandparents first met… は主語＋動詞がそろった完全な文。先行詞が「場所」で後ろが欠けのない完全文なら関係副詞 where。関係代名詞 which/that は後ろに名詞の欠けが要るが、ここは穴がない。",
+  "distractors": "which / that は後ろに名詞の欠けが必要だが完全文で穴がない。what は先行詞をとらない(the town があるので不可)。",
+  "point": "先行詞が場所＋後ろが完全文=関係副詞 where。後ろが「欠け」なら関係代名詞。"
+ },
+ "IV_5": {
+  "quote": "\"I'm afraid I've broken your favorite mug.\" \"Never mind. It was quite old anyway.\"",
+  "quote_ja": "「あなたのお気に入りのマグカップを割ってしまったみたいで」「気にしないで。どうせかなり古かったし」",
+  "reason": "相手が「割ってしまってごめん」と謝る場面。それに「どうせ古かったし」と続くので、空所には「気にしないで・大丈夫」というフォローが入る。Never mind. がまさに「気にしないで」。会話は前後の流れ(謝罪→なぐさめ)で即決。",
+  "distractors": "Not at all.「どういたしまして／全然」はお礼への返答。Help yourself.「ご自由にどうぞ」は飲食の勧め。Speak up.「もっと大きな声で」は全く別。",
+  "point": "謝罪への「気にしないで」は Never mind。会話は状況(誰が何をした後か)から選ぶ。"
+ },
+ "IV_6": {
+  "quote": "Write down her number now, or you will forget it by tomorrow morning.",
+  "quote_ja": "今すぐ彼女の番号を書き留めておきなさい、さもないと明日の朝までに忘れてしまうよ。",
+  "reason": "前半は Write down という命令文。命令文の後の接続詞は2択で覚える。「命令文, and ～=そうすれば」「命令文, or ～=さもないと」。ここは後半が「忘れてしまう」という悪い結果なので or がぴったり。and だと「書けば忘れる」と逆になる。",
+  "distractors": "and は「そうすれば」でプラスの結果向け、悪い結果と合わない。so / but は命令文＋接続詞のこの定型では使わない。",
+  "point": "命令文, and＝そうすれば／命令文, or＝さもないと。後ろが良い結果か悪い結果かで一発判定。"
+ },
+ "IV_7": {
+  "quote": "The passengers were extremely disappointed to hear that their flight had been canceled without any prior notice.",
+  "quote_ja": "乗客たちは、何の事前通知もなく便が欠航になったと聞いて、ひどくがっかりした。",
+  "reason": "感情動詞は「‑ing=原因側(～させる)」「‑ed=人側(～させられる=そう感じる)」が核心。主語は The passengers(人)で欠航の知らせに「がっかりさせられた」側なので ‑ed の disappointed。人が主語で感情を受けているときは必ず過去分詞形。",
+  "distractors": "disappointing は「(人を)がっかりさせるような」で物事が主語のとき。disappoint(原形)は be の後ろに置けない。disappointment(名詞)は be extremely の後ろに不自然。",
+  "point": "感情動詞は「人=‑ed／物=‑ing」。主語が人ならガッカリ「させられる」側で disappointed。"
+ },
+ "IV_8": {
+  "quote": "The two negotiators finally decided to call it a day and continue the discussion the following week.",
+  "quote_ja": "二人の交渉担当者はついにその日は切り上げて、翌週に議論を続けることに決めた。",
+  "reason": "call it a day は「(その日の仕事を)切り上げる・終わりにする」という決まり文句。後ろに「翌週に続ける」とあり、「いったんこの日は終わりにする」流れとぴったり。熟語はカタマリで覚えるのが最短。",
+  "distractors": "a hand=call it a hand という熟語はない。the shot=call the shots(仕切る)なら別の熟語で形も意味も違う。the line=そのような言い回しはない。",
+  "point": "call it a day＝「今日はここまで・切り上げる」。カタマリで丸ごとインプット。"
+ },
+ "IV_9": {
+  "quote": "The thick fog prevented the rescue team from reaching the stranded climbers before nightfall.",
+  "quote_ja": "濃い霧のせいで、救助隊は日没前に取り残された登山者のもとへたどり着けなかった。",
+  "reason": "prevent A from Ving で「A が～するのを妨げる」。この from は「分離・引き離す」のコアで、A を「～する」行為から引き離す=させない感覚。「霧が救助隊を到達から引き離した=たどり着けなかった」となり自然。stop A from Ving も同じ形。",
+  "distractors": "to=prevent は不定詞をとらない(この型は from)。against / of=prevent とセットになる前置詞ではない。",
+  "point": "prevent(stop / keep)A from Ving「A が～するのを妨げる」。from は「引き離す」イメージ。"
+ },
+ "IV_10": {
+  "quote": "It was not until she reached the station that she realized she had left her wallet at home.",
+  "quote_ja": "駅に着いて初めて、彼女は財布を家に置いてきたことに気づいた。",
+  "reason": "not until ～「～して初めて…」を強調構文 It is ～ that … に入れた形。It was not until [その時] that SV で「[その時]になって初めてSVした」。強調構文の目印は that なので空所は that。",
+  "distractors": "when は It was ... that の強調構文の枠に入らない。which は先行詞となる名詞がなく不可。then は接続詞ではなく文をつなげない。",
+  "point": "It was not until ～ that …＝「～して初めて…」。強調構文の受け皿は必ず that。"
+ },
+ "V_1": {
+  "quote": "Had it not been for your help, I could not have finished the project.",
+  "quote_ja": "もしあなたの助けがなかったら、私はその計画を終えることができなかっただろう。",
+  "reason": "まず「～がなかったら」に反応する。これは仮定法過去完了 If it had not been for A の決まり文句。一発ルールとして、仮定法で if を消すと残った had が主語の前に出て倒置=Had it not been for A。だから文頭は接続詞でなく Had。骨組みは Had→it→not→been for→your help(=Aの部分)、後半は結論の主節 I could not have finished the project。前半=条件、後半=結果と2つのカタマリで捉えれば迷わない。並びは bdfhagce、2番目は it(d)、6番目は I could not(g)。",
+  "distractors": "文頭を If にしたくなるが語群に if は無く、代わりに Had があるのが倒置のサイン。it(d)/not(f)/been for(h) は「it had not been for」の had が文頭へ飛んだ残りで、この順に固定。後半 I could not(g)＋have finished(c)＋the project(e) は主節としてワンセットにして最後に置く。",
+  "point": "「～がなかったら」=If it had not been for A。if を省略したら had を前に出して倒置=Had it not been for A、が関学頻出の型。"
+ },
+ "V_2": {
+  "quote": "Not knowing what to do, she asked her teacher for advice.",
+  "quote_ja": "何をすべきか分からなかったので、彼女は先生に助言を求めた。",
+  "reason": "「～だったので」と理由を表しながら文をつなぐときは、接続詞を使わず動詞を ‑ing にする分詞構文が便利。否定はその ‑ing の直前に not を置くのがコア=Not knowing ～(知らないので)。ここでは Not knowing が語群では一つのカタマリ(トークン)で与えられている。続く what to do は「疑問詞＋to do(何をすべきか)」で knowing の目的語。ここまでが前半の飾りで、主節は she asked her teacher for advice。この for は ask 人 for A(人にAを求める)の語法。並びは cegfadhb、2番目は what(e)、6番目は her teacher(d)。",
+  "distractors": "分詞構文の否定は文頭の Not knowing(=c)に含まれ、独立した not のカードは無いので探さないこと。what(e)＋to do(g) はセットで knowing の直後。asked(a)→her teacher(d)→for(h)→advice(b) は ask 人 for A の語順で一列に確定する。",
+  "point": "分詞構文の否定は「Not＋‑ing」を文頭に。ask 人 for A=人にAを求める、をワンセットで覚える。"
+ },
+ "V_3": {
+  "quote": "His hard work resulted in the success of the whole project.",
+  "quote_ja": "彼の努力が、その計画全体の成功をもたらした。",
+  "reason": "キーは熟語 result in A(Aという結果になる=Aをもたらす)。in のコアは「中へ入り込む→行き着く」で、原因が進んで A に行き着くイメージ。主語 His hard work(彼の努力)＋動詞 resulted in、その後ろに行き着いた先 the success(成功)を置き、of＋名詞で of the whole project(その計画全体の)とつなぐ。原因→result in→結果、の因果の流れで並べれば一直線。並びは dhbefacg、2番目は hard work(h)、6番目は of(a)。",
+  "distractors": "前置詞 of(a) は the success of the whole project の of なので success の直後。似た形の result from A(Aから生じる)と混同して from を探しても語群に無く、in を選ぶのが正解。the whole(c)＋project(g) はセットで of の後ろに。",
+  "point": "result in A=Aをもたらす(結果)／result from A=Aから生じる(原因)。in か from で因果の向きが逆になる。"
+ },
+ "V_4": {
+  "quote": "What he said was completely different from what we had expected.",
+  "quote_ja": "彼が言ったことは、私たちが予想していたものとは全く違っていた。",
+  "reason": "「彼が言ったこと」は関係代名詞 what(～すること・もの)で What he said とカタマリにし、これが文全体の主語。what は先行詞を含み the thing which の働き。動詞は was、後ろに different from A(Aとは違う)。この from は「分離・出発点」のコアで「A から離れている→A と違う」。程度を強める completely(全く)は different の直前。A の部分も what we had expected(私たちが予想していたもの)ともう一つの what で受けるのがきれいな対比。並びは cgehadbf、2番目は he said(g)、6番目は from(d)。",
+  "distractors": "文頭は疑問詞でなく関係代名詞 What(c) で名詞のカタマリを作る役。前置詞 from(d) は different の後ろに固定で、これが6番目の決め手。what we(b)＋had expected(f) はセットで from の目的語となり文末に置く。",
+  "point": "関係代名詞 what=「～すること／もの」で主語にも目的語にもなる名詞節。be different from A=A と違う、の from もセットで。"
+ },
+ "V_5": {
+  "quote": "No sooner had I left home than it began to rain.",
+  "quote_ja": "私が家を出るとすぐに雨が降り始めた。",
+  "reason": "「～するとすぐに…」の代表構文が No sooner A than B(AするやいなやB)。ポイントは否定の副詞 No sooner が文頭に出ると後ろが疑問文のような語順になる=倒置。だから No sooner＋had＋主語＋過去分詞で No sooner had I left home。than は「～よりも」の比較から来た接続詞で、後ろに it began to rain。前の出来事が過去完了(had left)、後が過去形(began)という時のズレも自然。並びは dfbeahgc、2番目は had(f)、6番目は it began(h)。",
+  "distractors": "文頭 No sooner(d) の直後は倒置で had(f) が主語 I の前に来るのが最大の決め手。ここを「I had」の平叙語順にすると誤り。後半の合図は than(a) で、as ではない点に注意。it began(h)＋to(g)＋rain(c) は begin to do の形でひとまとまりにして文末へ。",
+  "point": "否定の副詞(No sooner／Hardly／Never 等)が文頭→後ろは倒置。No sooner A than B=AするやいなやB、の相方は必ず than。"
+ },
+ "VI_1": {
+  "quote": "I haven't seen you for ages.",
+  "quote_ja": "ずいぶん長い間、君に会ってなかったね。",
+  "reason": "for のコアは「方向・交換」だが、時間と結びつくと「どれだけの期間続いたか」を表す。ここは ages(＝とても長い時間)という期間の長さを言っているので、時間の幅を示す for がぴったり。have not seen という現在完了(継続)とも相性がよく、「その長さの間ずっと会っていない」ときれいに通る。",
+  "distractors": "at は時刻など「一点」、on は日付・曜日など「接触する日」、by は「期限(～までに)」で、いずれも「期間の長さ」を言えない。",
+  "point": "「for＋期間」はコアの「幅」。for ages / for a while は会話の超頻出フレーズ。"
+ },
+ "VI_2": {
+  "quote": "What have you got in mind?",
+  "quote_ja": "何か考えていることはある？",
+  "reason": "in のコアは「空間や範囲の中」。mind(心・頭の中)という容器の「中に」考えを持っている、というイメージで have ... in mind(～を考えている)という定型表現になる。旅行の計画を尋ねる流れで「頭の中に何を持っているの？＝どんな考えがあるの？」とつながる。",
+  "distractors": "on は接触、at は一点、to は方向を表す前置詞で、「心の中に抱く」というイメージを作れない。",
+  "point": "in mind＝頭の「中」。have A in mind / bear in mind をセットで。"
+ },
+ "VI_3": {
+  "quote": "If I were you, I'd begin in Italy.",
+  "quote_ja": "私があなたなら、イタリアから始めるけどね。",
+  "reason": "後半に I'd(＝I would)begin という仮定法の形が見えるのが最大のヒント。「もし私があなたなら」という現実にはありえない仮定を作るのが If。動詞が were になっているのも仮定法過去の目印。助言の決まり文句 If I were you(私だったら)が完成する。",
+  "distractors": "Even if(たとえ～でも)・As if(まるで～のように)・Unless(～でない限り)はいずれも「私があなたなら始める」という助言の意味を壊す。",
+  "point": "助言の If I were you, I'd ～ は暗記フレーズ。were＋would で仮定法過去。"
+ },
+ "VI_4": {
+  "quote": "Come to think of it, I've always wanted to see Rome.",
+  "quote_ja": "そういえば、前からずっとローマを見てみたかったんだ。",
+  "reason": "直前で Maya の助言に「いい指摘だね」と同意し、直後で「前から見たかった」と新しく思い出した事実を付け足している。この「あ、そういえば」とふと思い出す談話マーカーが Come to think of it。会話を前向きに補強する役割でスムーズにつながる。",
+  "distractors": "On the contrary(それどころか逆に)・In contrast(対照的に)は前と反対の内容を導くので流れに合わず、For all that(それにもかかわらず)も逆接で不適。",
+  "point": "Come to think of it＝「そういえば」。ふと思い出す時の定番つなぎ言葉。"
+ },
+ "VI_5": {
+  "quote": "Just make sure you book your tickets in advance.",
+  "quote_ja": "チケットは必ず前もって予約しておいてね。",
+  "reason": "in の「範囲の中」というコアから、in advance で「(実際の時より)前の段階に入って＝前もって」という慣用句になる。直後に They sell out fast(すぐ売り切れる)とあり、「早めに予約を」という助言と完全に一致する。",
+  "distractors": "on は接触、by は期限、for は方向・交換で、いずれも「前もって」という決まった意味にならない。",
+  "point": "in advance＝前もって。ひとかたまりの熟語として覚える。"
+ },
+ "VI_6": {
+  "quote": "I nearly forgot about that.",
+  "quote_ja": "そのこと、危うく忘れるところだったよ。",
+  "reason": "about のコアは「～のまわり・～に関して」。forget about ～ で「～に関することを忘れる」となり、直前の「前もって予約する」という話題(that)を受けている。「危うくそれを忘れかけた」と話の内容全体をふんわり指すのに about がぴったり。",
+  "distractors": "with は付随、of は所属・部分、for は方向で、いずれも「(話題)について忘れる」という自然な意味を作れない。",
+  "point": "forget / think / talk about ～ の about は「～に関して」というコア。"
+ },
+ "VI_7": {
+  "quote": "That's hard to say. It really depends on how many cities you want to visit.",
+  "quote_ja": "それは何とも言えないな。訪れたい都市がいくつかによって本当に変わるよ。",
+  "reason": "「2週間で足りる？」という質問に対し、直後で「訪れる都市数による」と即答を避けている。つまり「はっきりとは言えない」という返答が必要で、That's hard to say(それは言うのが難しい＝何とも言えない)が文脈にぴったりはまる。",
+  "distractors": "Never mind(気にしないで)・Not at all(どういたしまして／全然)・You're welcome(どういたしまして)はいずれも「判断を保留する」文脈に合わない。",
+  "point": "即答できない時の定番 That's hard to say＝「何とも言えない」。"
+ },
+ "VI_8": {
+  "quote": "I guess I should draw up a rough list first.",
+  "quote_ja": "まずはざっくりしたリストを作るべきだろうね。",
+  "reason": "draw up は「(書類・計画・リストを)作成する」という句動詞。up には「完成させる・仕上げる」というニュアンスがあり、線を引いて一つの形に仕上げるイメージから「リストを作り上げる」となる。直後の and see how it fits(それがどう収まるか見る)とも自然につながる。",
+  "distractors": "draw down(引き下ろす・減らす)・put off(延期する)・turn in(提出する)はいずれも「リストを作成する」の意味にならない。",
+  "point": "draw up a list / plan＝作成する。up は「仕上げる」の完成イメージ。"
+ },
+ "VI_9": {
+  "quote": "Don't try to cram too much in, or else you'll end up exhausted.",
+  "quote_ja": "詰め込みすぎないように、さもないと結局はへとへとになるよ。",
+  "reason": "「命令文, or ～」は「～しなさい、さもないと…」の形。or else はその「さもないと」をさらに強めた表現。「詰め込むな→さもないとクタクタになる」という警告の流れで、前半の否定命令と後ろの悪い結果がきれいにつながる。",
+  "distractors": "so that(～するように／その結果)・as long as(～する限り)・now that(今や～だから)はいずれも「さもないと」という警告の意味を作れない。",
+  "point": "命令文, or (else) …＝「さもないと…」。and なら「そうすれば」と真逆。"
+ },
+ "VI_10": {
+  "quote": "Would you be interested in coming along?",
+  "quote_ja": "一緒に来ることに興味ある？（＝よかったら一緒に来ない？）",
+  "reason": "along のコアは「(道などに)沿って一緒に進む」。come along で「(誰かと)一緒についてくる」となる。ここは Daniel が自分の旅行に Maya を誘う場面で「(僕と)一緒に来ない？」という誘いにぴったり。直後に Maya が I'd love to!(ぜひ！)と応じているのも決め手。",
+  "distractors": "across(横切って)・apart(離れて)・over(越えて・向こうへ)はいずれも「一緒についてくる」という誘いにならない。",
+  "point": "come along＝一緒に来る。along は「沿って連れ立つ」のコアイメージ。"
+ }
+}

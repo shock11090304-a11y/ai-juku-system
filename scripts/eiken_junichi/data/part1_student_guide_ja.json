@@ -1,0 +1,1052 @@
+{
+  "v01": {
+    "core_meaning": "【コア意味】(苦痛・問題を)和らげる、軽減する",
+    "grammar_note": "【文法的視点】alleviate は「痛み・苦しみ・貧困・混雑」など〈望ましくないものの程度〉を目的語にとる。alleviate pain／poverty／traffic congestion。名詞 alleviation。ほぼ同義で ease, relieve, mitigate（問3参照）。",
+    "usage_context": "【使用場面】alleviate は「痛み・苦しみ・貧困・混雑」など〈望ましくないものの程度〉を目的語にとる。alleviate pain／poverty／traffic congestion。名詞 alleviation。ほぼ同義で ease, relieve, mitigate（問3参照）。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The organization's medical programs aim to alleviate suffering in developing countries.",
+        "ja": "その組織の医療事業は発展途上国の苦しみを軽減することを目指している。"
+      },
+      {
+        "en": "Taking breaks during work can alleviate mental fatigue.",
+        "ja": "仕事中に休憩を取ることで精神的疲労を軽減できる。"
+      },
+      {
+        "en": "The government implemented new policies to alleviate poverty.",
+        "ja": "政府は貧困を軽減するための新しい政策を実施した。"
+      }
+    ],
+    "similar_words": {
+      "aggravate": "【aggravate】悪化させる — alleviateとは区別すべき語",
+      "provoke": "【provoke】引き起こす、挑発する — alleviateとは区別すべき語",
+      "intensify": "【intensify】強める、激化させる — alleviateとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "aggravate": "『悪化させる』は支援内容と矛盾",
+      "provoke": "『挑発する・引き起こす』方向の語で、苦しみを和らげる alleviate とは意味が逆になり不適",
+      "intensify": "『激化させる』は支援の目的と正反対"
+    },
+    "solve_strategy": "【解法のコツ】aims to（〜を目指す）＋支援の内容（食料・住居・医療）から、空所は〈善い方向〉の動詞。✗aggravate／intensify（悪化方向）は文脈と逆。"
+  },
+  "v02": {
+    "core_meaning": "【コア意味】劣化する、悪化する",
+    "grammar_note": "【文法的視点】deteriorate は自動詞〔主語自身が主体的に動く動詞〕で「（品質・健康・関係・状況が）悪くなる」。His health deteriorated rapidly.／relations between the two countries deteriorated。名詞 deterioration。〈de-（下へ）〉の語感で覚える。",
+    "usage_context": "【使用場面】deteriorate は自動詞〔主語自身が主体的に動く動詞〕で「（品質・健康・関係・状況が）悪くなる」。His health deteriorated rapidly.／relations between the two countries deteriorated。名詞 deterioration。〈de-（下へ）〉の語感で覚える。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Her health deteriorated rapidly after the accident.",
+        "ja": "事故の後、彼女の健康状態は急速に悪化した。"
+      },
+      {
+        "en": "Without maintenance, the old building's structure continues to deteriorate.",
+        "ja": "整備がなければ、古い建物の構造は悪化し続ける。"
+      },
+      {
+        "en": "Relations between the two nations deteriorated over trade disputes.",
+        "ja": "二国間の関係は貿易紛争により悪化した。"
+      }
+    ],
+    "similar_words": {
+      "accelerate": "【accelerate】加速する — deteriorateとは区別すべき語",
+      "consolidate": "【consolidate】強固にする、統合する — deteriorateとは区別すべき語",
+      "flourish": "【flourish】繁栄する、栄える — deteriorateとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "accelerate": "『加速する』は動かない構造物には不自然",
+      "consolidate": "『強固になる』は collapse という帰結と矛盾",
+      "flourish": "『繁栄する』は無生物の構造物に不適で崩壊とも矛盾"
+    },
+    "solve_strategy": "【解法のコツ】Without regular maintenance（整備なし）→ could collapse（崩落しうる）という悪化の流れ。✗consolidate（強固にする）✗flourish（栄える）は逆方向。"
+  },
+  "v03": {
+    "core_meaning": "【コア意味】(被害・深刻さを)緩和する、軽減する",
+    "grammar_note": "【文法的視点】mitigate は「damage／risk／impact／effects／climate change」など〈被害・悪影響〉を目的語にとる硬い語。mitigate the impact of ~ が定番。名詞 mitigation は環境分野で「（温暖化）緩和策」。alleviate（問1参照）は苦痛寄り、mitigate は被害・深刻さ寄り。",
+    "usage_context": "【使用場面】mitigate は「damage／risk／impact／effects／climate change」など〈被害・悪影響〉を目的語にとる硬い語。mitigate the impact of ~ が定番。名詞 mitigation は環境分野で「（温暖化）緩和策」。alleviate（問1参照）は苦痛寄り、mitigate は被害・深刻さ寄り。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Climate mitigation strategies are essential to combat global warming.",
+        "ja": "気候変動緩和戦略は温暖化に対抗するために不可欠である。"
+      },
+      {
+        "en": "Strong environmental policies help mitigate the impact of pollution.",
+        "ja": "厳しい環境政策は汚染の影響を軽減するのに役立つ。"
+      },
+      {
+        "en": "Protective equipment can mitigate the risk of workplace injuries.",
+        "ja": "保護具は職場での怪我のリスクを軽減することができる。"
+      }
+    ],
+    "similar_words": {
+      "amplify": "【amplify】増幅する、拡大する — mitigateとは区別すべき語",
+      "provoke": "【provoke】引き起こす、挑発する — mitigateとは区別すべき語",
+      "designate": "【designate】指定する、任命する — mitigateとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "amplify": "『増幅する』では防壁を築く目的と正反対",
+      "provoke": "『引き起こす』は damage を築いて『誘発』するので目的と矛盾",
+      "designate": "『指定する』は damage を目的語に取れず無意味"
+    },
+    "solve_strategy": "【解法のコツ】「防護壁を追加設置した」目的なので被害を減らす方向。✗amplify（増幅する）を選ぶと文意が真逆。"
+  },
+  "v04": {
+    "core_meaning": "【コア意味】(〜を)主張する、擁護する、支持する",
+    "grammar_note": "【文法的視点】空所直後の for が決め手。advocate for ~ で「〜を訴える・支持する」（他動詞で advocate stricter regulations とも言える）。名詞は「擁護者・提唱者」で an advocate of/for human rights。同系 advocacy（擁護・提言活動）。",
+    "usage_context": "【使用場面】空所直後の for が決め手。advocate for ~ で「〜を訴える・支持する」（他動詞で advocate stricter regulations とも言える）。名詞は「擁護者・提唱者」で an advocate of/for human rights。同系 advocacy（擁護・提言活動）。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The activist strongly advocates for women's education.",
+        "ja": "その活動家は女性教育を強く支持している。"
+      },
+      {
+        "en": "Environmental groups advocate for stricter emissions regulations.",
+        "ja": "環境団体は排出規制の強化を支持している。"
+      },
+      {
+        "en": "He advocates for renewable energy as a solution to climate change.",
+        "ja": "彼は気候変動の解決策として再生可能エネルギーを支持している。"
+      }
+    ],
+    "similar_words": {
+      "condemn": "【condemn】非難する — advocateとは区別すべき語",
+      "dismiss": "【dismiss】退ける、解雇する — advocateとは区別すべき語",
+      "hesitate": "【hesitate】ためらう — advocateとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "condemn": "『非難する』は環境保護者の立場と矛盾し、for とも結びつかない",
+      "dismiss": "『退ける』も立場と矛盾",
+      "hesitate": "『ためらう』は for stricter regulations と意味が通らない"
+    },
+    "solve_strategy": "【解法のコツ】四択のうち直後の for と自然に結びつくのは advocate だけ。condemn / dismiss は他動詞で目的語を直に取り、hesitate は hesitate to do の形をとる。"
+  },
+  "v05": {
+    "core_meaning": "【コア意味】(信頼などを)徐々に損なう、弱体化させる",
+    "grammar_note": "【文法的視点】undermine は「confidence／trust／authority／credibility／efforts」を目的語にとり、〈土台を下から掘り崩す〉イメージで「じわじわ弱める」。gradually / slowly と相性がよい。破壊を一気に表す destroy との差はこの「徐々に」。",
+    "usage_context": "【使用場面】undermine は「confidence／trust／authority／credibility／efforts」を目的語にとり、〈土台を下から掘り崩す〉イメージで「じわじわ弱める」。gradually / slowly と相性がよい。破壊を一気に表す destroy との差はこの「徐々に」。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Corruption gradually undermined public confidence in the government.",
+        "ja": "汚職は政府への国民の信頼を次第に損なった。"
+      },
+      {
+        "en": "Constant criticism undermined his authority as a leader.",
+        "ja": "絶え間ない批判はリーダーとしての彼の権威を損なった。"
+      },
+      {
+        "en": "Misinformation can undermine the credibility of scientific research.",
+        "ja": "偽情報は科学研究の信頼性を損なうことができる。"
+      }
+    ],
+    "similar_words": {
+      "reinforce": "【reinforce】強化する — undermineとは区別すべき語",
+      "restore": "【restore】回復させる — undermineとは区別すべき語",
+      "cultivate": "【cultivate】育む、培う — undermineとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "reinforce": "『強化する』は不正という原因と正反対",
+      "restore": "『回復させる』も正反対",
+      "cultivate": "『培う』は信頼を高める方向で不正と矛盾"
+    },
+    "solve_strategy": "【解法のコツ】repeated dishonesty（繰り返しの不誠実）が主語なので、信頼は下がる方向。reinforce / restore / cultivate はすべて信頼を高める側で不可。"
+  },
+  "v06": {
+    "core_meaning": "【コア意味】(規則などに)従う、順守する",
+    "grammar_note": "【文法的視点】comply with ~（規則・法・要求に従う）。前置詞 with は必須。名詞 compliance（順守・コンプライアンス）、形容詞 compliant。同義は obey / conform to / abide by / adhere to。",
+    "usage_context": "【使用場面】comply with ~（規則・法・要求に従う）。前置詞 with は必須。名詞 compliance（順守・コンプライアンス）、形容詞 compliant。同義は obey / conform to / abide by / adhere to。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Companies must comply with international safety standards.",
+        "ja": "企業は国際安全基準に従わなければならない。"
+      },
+      {
+        "en": "Employees are required to comply with company policies.",
+        "ja": "従業員は会社方針に従う必要がある。"
+      },
+      {
+        "en": "The manufacturer refuses to comply with environmental regulations.",
+        "ja": "その製造業者は環境規制への順守を拒否している。"
+      }
+    ],
+    "similar_words": {
+      "interfere": "【interfere】干渉する、妨げる — complyとは区別すべき語",
+      "collide": "【collide】衝突する — complyとは区別すべき語",
+      "sympathize": "【sympathize】同情する、共感する — complyとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "interfere": "『干渉する』は規則を守らず罰を受ける文脈に合わない",
+      "collide": "『衝突する』は物理的で規則には不適",
+      "sympathize": "『同情する』は規則を目的語にできず無意味"
+    },
+    "solve_strategy": "【解法のコツ】空所直後の with と、罰金という結果から「従わない」意味を作る動詞を選ぶ。interfere with は「妨げる」、collide with は「衝突する」、sympathize with は「同情する」で、いずれも規制の順守を表せない。"
+  },
+  "v07": {
+    "core_meaning": "【コア意味】(事態を)悪化させる、深刻化させる",
+    "grammar_note": "【文法的視点】exacerbate は「problem／tension／situation／inequality」を目的語にとり「（すでに悪いものを）さらに悪化させる」。only served to do（〜する結果にしかならなかった）と組んで悪化を強調する型は頻出。aggravate / worsen が言い換え。",
+    "usage_context": "【使用場面】exacerbate は「problem／tension／situation／inequality」を目的語にとり「（すでに悪いものを）さらに悪化させる」。only served to do（〜する結果にしかならなかった）と組んで悪化を強調する型は頻出。aggravate / worsen が言い換え。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The harsh conditions exacerbated the refugees' suffering.",
+        "ja": "厳しい条件は難民の苦しみを悪化させた。"
+      },
+      {
+        "en": "Poor management only served to exacerbate the company's financial problems.",
+        "ja": "経営不十分はただ会社の財政問題を悪化させるだけだった。"
+      },
+      {
+        "en": "Stress and lack of sleep exacerbated his illness.",
+        "ja": "ストレスと睡眠不足は彼の病気を悪化させた。"
+      }
+    ],
+    "similar_words": {
+      "ease": "【ease】和らげる — exacerbateとは区別すべき語",
+      "resolve": "【resolve】解決する — exacerbateとは区別すべき語",
+      "suspend": "【suspend】一時停止する、保留する — exacerbateとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "ease": "『和らげる』は Rather than solving の対比と矛盾",
+      "resolve": "『解決する』は前半と直接矛盾",
+      "suspend": "『一時停止する』は tensions を目的語に取れず不自然"
+    },
+    "solve_strategy": "【解法のコツ】Rather than solving the problem（問題を解決するどころか）が方向を決めている。ease / resolve は解決方向で、この譲歩の対比を壊す。"
+  },
+  "v08": {
+    "core_meaning": "【コア意味】(〜するのを)思いとどまらせる、抑止する",
+    "grammar_note": "【文法的視点】deter A from doing（Aが〜するのを思いとどまらせる）。名詞 deterrent（抑止力）、deterrence（抑止）は安全保障でも使う。prevent A from doing と同型だが、deter は「恐れさせて」やめさせる点が中心。",
+    "usage_context": "【使用場面】deter A from doing（Aが〜するのを思いとどまらせる）。名詞 deterrent（抑止力）、deterrence（抑止）は安全保障でも使う。prevent A from doing と同型だが、deter は「恐れさせて」やめさせる点が中心。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Severe penalties are intended to deter criminals from committing crimes.",
+        "ja": "厳しい罰則は犯罪者が犯罪を犯すのを抑止することを意図している。"
+      },
+      {
+        "en": "High insurance premiums deter people from driving recklessly.",
+        "ja": "高い保険料は人々が無謀運転をするのを抑止する。"
+      },
+      {
+        "en": "The security cameras were installed to deter theft in the store.",
+        "ja": "防犯カメラは店での盗難を抑止するために設置された。"
+      }
+    ],
+    "similar_words": {
+      "compel": "【compel】強制する — deterとは区別すべき語",
+      "entice": "【entice】誘惑する、そそのかす — deterとは区別すべき語",
+      "provoke": "【provoke】挑発する、誘発する — deterとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "compel": "『強制する』は from doing と結びつかず、意味も逆",
+      "entice": "『そそのかす』は犯罪を促す方向で文脈と逆",
+      "provoke": "『誘発する』も犯罪を促す方向で from とも不整合"
+    },
+    "solve_strategy": "【解法のコツ】後ろの from committing が決め手。from doing を伴えるのは deter だけ。compel は compel A to do、entice は entice A into/to do、provoke は「挑発する」で from とつながらない。"
+  },
+  "v09": {
+    "core_meaning": "【コア意味】(資源・予算を)割り当てる、配分する",
+    "grammar_note": "【文法的視点】allocate A to B（AをBに割り当てる）。allocate resources／funds／time が定番で、allocate B A の語順も可。名詞 allocation（配分）。似た budget 語彙に allot（割り当てる）。",
+    "usage_context": "【使用場面】allocate A to B（AをBに割り当てる）。allocate resources／funds／time が定番で、allocate B A の語順も可。名詞 allocation（配分）。似た budget 語彙に allot（割り当てる）。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The budget allocation for education increased this year.",
+        "ja": "教育への予算配分は今年増加した。"
+      },
+      {
+        "en": "The government allocated funds to infrastructure projects.",
+        "ja": "政府は基盤整備プロジェクトに資金を配分した。"
+      },
+      {
+        "en": "Resources should be allocated more efficiently.",
+        "ja": "資源はより効率的に配分されるべきである。"
+      }
+    ],
+    "similar_words": {
+      "confiscate": "【confiscate】没収する — allocateとは区別すべき語",
+      "speculate": "【speculate】推測する、投機する — allocateとは区別すべき語",
+      "liquidate": "【liquidate】(資産を)清算する — allocateとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "confiscate": "『没収する』は自組織の予算配分の文脈に合わない",
+      "speculate": "『推測する』は自動詞的で a portion を直接取りにくく意味も不適",
+      "liquidate": "『清算する』は予算を to R&D と結びつけられない"
+    },
+    "solve_strategy": "【解法のコツ】budget（予算）と to research and development（研究開発へ）の間をつなぐのは「配分する」。confiscate（没収する）や liquidate（清算する）では予算を部門に振り向ける意味にならない。"
+  },
+  "v10": {
+    "core_meaning": "【コア意味】精査、綿密な調査",
+    "grammar_note": "【文法的視点】come under (intense/close) scrutiny で「（厳しい）精査を受ける」。under scrutiny のかたまりで覚える。動詞 scrutinize（細かく調べる）。close / intense / public / regulatory といった形容詞と結びつく。",
+    "usage_context": "【使用場面】come under (intense/close) scrutiny で「（厳しい）精査を受ける」。under scrutiny のかたまりで覚える。動詞 scrutinize（細かく調べる）。close / intense / public / regulatory といった形容詞と結びつく。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The company's financial reports came under close scrutiny.",
+        "ja": "その会社の財務報告は綿密な精査を受けた。"
+      },
+      {
+        "en": "The politician's background came under intense scrutiny from the media.",
+        "ja": "その政治家の背景はメディアの厳しい精査を受けた。"
+      },
+      {
+        "en": "Scientific findings undergo rigorous scrutiny before publication.",
+        "ja": "科学的発見は出版前に厳格な精査を受ける。"
+      }
+    ],
+    "similar_words": {
+      "prosperity": "【prosperity】繁栄 — scrutinyとは区別すべき語",
+      "consensus": "【consensus】総意、合意 — scrutinyとは区別すべき語",
+      "novelty": "【novelty】目新しさ、新奇さ — scrutinyとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "prosperity": "『繁栄』は不正発覚の文脈に合わない",
+      "consensus": "『合意』は under intense と結びつかない",
+      "novelty": "『目新しさ』は監査・不正の文脈と無関係"
+    },
+    "solve_strategy": "【解法のコツ】「監査人が不備を発見した後」という流れから、会計処理は調べられる側。prosperity（繁栄）・novelty（新奇さ）は come under と結びつかない。"
+  },
+  "v11": {
+    "core_meaning": "【コア意味】(食い違い・不一致)矛盾",
+    "grammar_note": "【文法的視点】a discrepancy between A and B（AとBの食い違い）。形容詞は significant / major / glaring。動詞 discrepancy は無く、形容詞 discrepant はまれ。近い語に inconsistency（不整合）。",
+    "usage_context": "【使用場面】a discrepancy between A and B（AとBの食い違い）。形容詞は significant / major / glaring。動詞 discrepancy は無く、形容詞 discrepant はまれ。近い語に inconsistency（不整合）。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "There is a significant discrepancy between the two accounts.",
+        "ja": "2つの説明の間に重大な食い違いがある。"
+      },
+      {
+        "en": "The discrepancy in the financial records needs to be explained.",
+        "ja": "財務記録の食い違いが説明される必要がある。"
+      },
+      {
+        "en": "Investigators found a discrepancy between the witness's statements.",
+        "ja": "捜査官は証人の証言の間に食い違いを発見した。"
+      }
+    ],
+    "similar_words": {
+      "consensus": "【consensus】合意、総意 — discrepancyとは区別すべき語",
+      "affinity": "【affinity】親近感、相性 — discrepancyとは区別すべき語",
+      "coalition": "【coalition】連立、連合 — discrepancyとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "consensus": "『合意』は人の間のもので、二つの供述の相違を指せない",
+      "affinity": "『親近感・類似』では捜査官が問題視する文脈に合わない",
+      "coalition": "『連合』は集団の同盟で供述には不適"
+    },
+    "solve_strategy": "【解法のコツ】between A and B（当初の供述と後の説明）という枠組みと、それに気づく捜査官という文脈。consensus（合意）を入れると「二つの供述が一致した」ことに気づく話になり、significant（重大な）や捜査の文脈と噛み合わない。"
+  },
+  "v12": {
+    "core_meaning": "【コア意味】動機づけ、誘因、報奨",
+    "grammar_note": "【文法的視点】an incentive for A to do（Aが〜するための動機づけ）。financial / powerful / strong incentive、provide/offer/create an incentive。動詞 incentivize（動機づける、例：incentivize energy conservation）も英字新聞で頻出。",
+    "usage_context": "【使用場面】an incentive for A to do（Aが〜するための動機づけ）。financial / powerful / strong incentive、provide/offer/create an incentive。動詞 incentivize（動機づける、例：incentivize energy conservation）も英字新聞で頻出。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Financial incentives motivated employees to improve performance.",
+        "ja": "経済的動機づけは従業員が成果を改善するよう促した。"
+      },
+      {
+        "en": "The government offers incentives for businesses to adopt green technology.",
+        "ja": "政府は企業が環境技術を採用するための動機づけを提供している。"
+      },
+      {
+        "en": "A signing bonus can serve as a powerful incentive for talented professionals.",
+        "ja": "署名ボーナスは才能のあるプロフェッショナルにとって強力な誘因となることができる。"
+      }
+    ],
+    "similar_words": {
+      "obstacle": "【obstacle】障害、妨げ — incentiveとは区別すべき語",
+      "aftermath": "【aftermath】余波、(災害などの)影響 — incentiveとは区別すべき語",
+      "penalty": "【penalty】罰則、罰金 — incentiveとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "obstacle": "『障害』ではボーナスが目標達成を妨げることになり矛盾",
+      "aftermath": "『余波』は動機づけの意味を持たず不自然",
+      "penalty": "『罰則』は generous bonuses という報酬と正反対"
+    },
+    "solve_strategy": "【解法のコツ】generous year-end bonuses（手厚い賞与）は目標超過を促す〈ごほうび〉。obstacle（障害）や penalty（罰則）では、賞与を出す目的として成り立たない。"
+  },
+  "v13": {
+    "core_meaning": "【コア意味】(激しい)反発、反感",
+    "grammar_note": "【文法的視点】face／provoke／spark a backlash、a public backlash against ~（〜に対する世間の反発）。もともと「（機械の）跳ね返り」で、〈反動〉の語感。fierce / furious / growing とよく結びつく。",
+    "usage_context": "【使用場面】face／provoke／spark a backlash、a public backlash against ~（〜に対する世間の反発）。もともと「（機械の）跳ね返り」で、〈反動〉の語感。fierce / furious / growing とよく結びつく。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The controversial decision provoked public backlash.",
+        "ja": "その論争的な決定は世論の反発を引き起こした。"
+      },
+      {
+        "en": "The company faced backlash from consumers over pricing policies.",
+        "ja": "その会社は価格政策に対する消費者からの反発に直面した。"
+      },
+      {
+        "en": "The proposed law sparked significant backlash among civil rights groups.",
+        "ja": "その提案された法律は公民権グループの間で重大な反発を引き起こした。"
+      }
+    ],
+    "similar_words": {
+      "tribute": "【tribute】賛辞、貢ぎ物 — backlashとは区別すべき語",
+      "consensus": "【consensus】合意、総意 — backlashとは区別すべき語",
+      "endorsement": "【endorsement】支持、推奨 — backlashとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "tribute": "『賛辞』は値上げへの反応として肯定的すぎて矛盾",
+      "consensus": "『合意』は fierce とそぐわず値上げの帰結にも合わない",
+      "endorsement": "『支持』は値上げへの反応として肯定的で不自然"
+    },
+    "solve_strategy": "【解法のコツ】sharp increases in baggage fees（大幅値上げ）＋突然の発表＋繁忙期。顧客が歓迎する要素がないので、endorsement（支持）や tribute（賛辞）は不可。"
+  },
+  "v14": {
+    "core_meaning": "【コア意味】前提条件、必須要件",
+    "grammar_note": "【文法的視点】a prerequisite for ~（〜の前提条件）。大学の履修要件でそのまま使う語。pre-（前）＋requisite（必要なもの）。requirement とほぼ同義だが、prerequisite は「これがないと次に進めない」順序性を含む。",
+    "usage_context": "【使用場面】a prerequisite for ~（〜の前提条件）。大学の履修要件でそのまま使う語。pre-（前）＋requisite（必要なもの）。requirement とほぼ同義だが、prerequisite は「これがないと次に進めない」順序性を含む。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "A high school diploma is a prerequisite for most college programs.",
+        "ja": "高校卒業資格はほとんどの大学プログラムの前提条件である。"
+      },
+      {
+        "en": "Good communication skills are a prerequisite for success in management.",
+        "ja": "良好なコミュニケーションスキルはマネジメントでの成功の前提条件である。"
+      },
+      {
+        "en": "Understanding basic algebra is a prerequisite for this advanced math course.",
+        "ja": "基礎的な代数の理解はこの高度な数学コースの前提条件である。"
+      }
+    ],
+    "similar_words": {
+      "byproduct": "【byproduct】副産物 — prerequisiteとは区別すべき語",
+      "compromise": "【compromise】妥協、譲歩 — prerequisiteとは区別すべき語",
+      "deterrent": "【deterrent】抑止力、妨げ — prerequisiteとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "byproduct": "『副産物』は前もって必要な条件という意味を持たない",
+      "compromise": "『妥協』は登録要件の文脈に合わない",
+      "deterrent": "『抑止力』では理解が登録を妨げることになり矛盾"
+    },
+    "solve_strategy": "【解法のコツ】for enrolling in ~（受講するための）が示すのは資格要件。byproduct（副産物）は結果を表し、順序が逆になる。"
+  },
+  "v15": {
+    "core_meaning": "【コア意味】苦境、窮状",
+    "grammar_note": "【文法的視点】the plight of ~（〜の苦境）。desperate / terrible / dire plight という強い形容詞と組む。難民・被災者・動物など〈助けを必要とする存在〉について使うのが典型。",
+    "usage_context": "【使用場面】the plight of ~（〜の苦境）。desperate / terrible / dire plight という強い形容詞と組む。難民・被災者・動物など〈助けを必要とする存在〉について使うのが典型。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The documentary highlighted the plight of homeless families.",
+        "ja": "そのドキュメンタリーはホームレス家族の窮状を強調した。"
+      },
+      {
+        "en": "International organizations work to address the plight of refugees.",
+        "ja": "国際組織は難民の窮状に対処するために働いている。"
+      },
+      {
+        "en": "The charity's mission is to alleviate the plight of impoverished communities.",
+        "ja": "その慈善団体の使命は貧困地域の窮状を軽減することである。"
+      }
+    ],
+    "similar_words": {
+      "triumph": "【triumph】勝利、大成功 — plightとは区別すべき語",
+      "aspiration": "【aspiration】願望、大志 — plightとは区別すべき語",
+      "abundance": "【abundance】豊富さ、多量 — plightとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "triumph": "『勝利』は desperate や displaced と矛盾",
+      "aspiration": "『願望』は苦境を訴える文脈に合わない",
+      "abundance": "『豊富さ』は避難民の窮状と正反対"
+    },
+    "solve_strategy": "【解法のコツ】desperate（絶望的な）という形容詞と、displaced by civil war（内戦で家を失った）が決め手。triumph（勝利）や abundance（豊富さ）は desperate と共起しない。"
+  },
+  "v16": {
+    "core_meaning": "【コア意味】(急激な)高まり、急増",
+    "grammar_note": "【文法的視点】a surge in ~（〜の急増）。in を伴う点に注意（a surge in demand／prices／cases）。動詞でも「急上昇する」。同義は sharp rise / spike / upsurge。",
+    "usage_context": "【使用場面】a surge in ~（〜の急増）。in を伴う点に注意（a surge in demand／prices／cases）。動詞でも「急上昇する」。同義は sharp rise / spike / upsurge。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "There was a surge in demand for medical supplies during the pandemic.",
+        "ja": "パンデミック中に医療用品の需要が急増した。"
+      },
+      {
+        "en": "A surge in electricity usage occurred during the heat wave.",
+        "ja": "熱波の間に電気使用量の急増が起きた。"
+      },
+      {
+        "en": "Stock prices experienced a sudden surge following the positive earnings report.",
+        "ja": "株価は好決算報告に続いて急激な上昇を経験した。"
+      }
+    ],
+    "similar_words": {
+      "decline": "【decline】減少 — surgeとは区別すべき語",
+      "reduction": "【reduction】削減 — surgeとは区別すべき語",
+      "shortfall": "【shortfall】不足分、不足額 — surgeとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "decline": "『減少』は気温上昇で需要が増える文脈と正反対",
+      "reduction": "『削減』も需要増と矛盾",
+      "shortfall": "『不足分』は需要が急増する状況に合わない"
+    },
+    "solve_strategy": "【解法のコツ】temperatures soared to record highs（気温が記録的高値まで急上昇）＋猛暑なので需要は増える。decline / reduction / shortfall はいずれも減少・不足の側で不可。"
+  },
+  "v17": {
+    "core_meaning": "【コア意味】もっともらしい、まことしやかな",
+    "grammar_note": "【文法的視点】sound／seem plausible（もっともらしく聞こえる）、a plausible explanation／excuse。「実際に正しい」とは言っておらず〈一見よさそう〉が核心なので、後に but で覆される展開と相性がよい。反意は implausible。",
+    "usage_context": "【使用場面】sound／seem plausible（もっともらしく聞こえる）、a plausible explanation／excuse。「実際に正しい」とは言っておらず〈一見よさそう〉が核心なので、後に but で覆される展開と相性がよい。反意は implausible。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "His explanation sounded plausible, but further investigation revealed inconsistencies.",
+        "ja": "彼の説明はもっともらしく聞こえたが、さらなる調査は矛盾を明らかにした。"
+      },
+      {
+        "en": "The suspect's alibi seemed plausible until the evidence was examined.",
+        "ja": "容疑者のアリバイは証拠が検討されるまでもっともらしく見えた。"
+      },
+      {
+        "en": "The theory is plausible given the available data.",
+        "ja": "入手可能なデータを考えると、その理論はもっともらしい。"
+      }
+    ],
+    "similar_words": {
+      "reluctant": "【reluctant】気が進まない — plausibleとは区別すべき語",
+      "obsolete": "【obsolete】時代遅れの、廃れた — plausibleとは区別すべき語",
+      "meticulous": "【meticulous】細心の、几帳面な — plausibleとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "reluctant": "『気が進まない』は人の態度を表し、説明そのものには不適",
+      "obsolete": "『時代遅れの』は説明の信憑性の文脈に合わない",
+      "meticulous": "『几帳面な』は人や作業を修飾し、explanation とは相性が悪い"
+    },
+    "solve_strategy": "【解法のコツ】Although ... at first, ... soon uncovered documents that flatly contradicted it の譲歩構造。「後で覆される」＝当初は本当らしく見えた、という語が入る。"
+  },
+  "v18": {
+    "core_meaning": "【コア意味】細心の、極めて綿密な",
+    "grammar_note": "【文法的視点】meticulous attention to detail は決まり文句。meticulous records／planning／research。人にも使い be meticulous about/in ~。副詞 meticulously。同義 scrupulous / painstaking。",
+    "usage_context": "【使用場面】meticulous attention to detail は決まり文句。meticulous records／planning／research。人にも使い be meticulous about/in ~。副詞 meticulously。同義 scrupulous / painstaking。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The surgeon's meticulous approach to surgery saved many lives.",
+        "ja": "その外科医の手術に対する細心のアプローチは多くの命を救った。"
+      },
+      {
+        "en": "She kept meticulous records of all her financial transactions.",
+        "ja": "彼女はすべての財務取引の細心なる記録を保持していた。"
+      },
+      {
+        "en": "The researcher conducted meticulous experiments to verify the hypothesis.",
+        "ja": "その研究者は仮説を検証するために細心な実験を実施した。"
+      }
+    ],
+    "similar_words": {
+      "reckless": "【reckless】無謀な、不注意な — meticulousとは区別すべき語",
+      "indifferent": "【indifferent】無関心な — meticulousとは区別すべき語",
+      "ambiguous": "【ambiguous】曖昧な — meticulousとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "reckless": "『無謀な』は二度確認する慎重さと正反対",
+      "indifferent": "『無関心な』も注意深さと矛盾",
+      "ambiguous": "『曖昧な』は attention to detail を修飾できず不自然"
+    },
+    "solve_strategy": "【解法のコツ】checking every single instrument twice（器具を一つ残らず二度確認）という具体例が空所を定義している。reckless（無謀な）や indifferent（無関心な）は具体例と正反対。"
+  },
+  "v19": {
+    "core_meaning": "【コア意味】(病気などに)かかりやすい、影響を受けやすい",
+    "grammar_note": "【文法的視点】be susceptible to ~（〜の影響を受けやすい・〜にかかりやすい）。to の後は病気・批判・影響など。名詞 susceptibility。vulnerable to ~ が近い。",
+    "usage_context": "【使用場面】be susceptible to ~（〜の影響を受けやすい・〜にかかりやすい）。to の後は病気・批判・影響など。名詞 susceptibility。vulnerable to ~ が近い。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Infants are susceptible to various infections due to their undeveloped immune systems.",
+        "ja": "乳幼児は発達していない免疫系のため、様々な感染症にかかりやすい。"
+      },
+      {
+        "en": "People with certain medical conditions are more susceptible to severe complications.",
+        "ja": "特定の医学的状態を持つ人々は深刻な合併症にかかりやすい。"
+      },
+      {
+        "en": "The elderly population is susceptible to cold and flu viruses.",
+        "ja": "高齢者は風邪やインフルエンザウイルスにかかりやすい。"
+      }
+    ],
+    "similar_words": {
+      "immune": "【immune】免疫のある — susceptibleとは区別すべき語",
+      "resistant": "【resistant】抵抗力のある — susceptibleとは区別すべき語",
+      "hostile": "【hostile】敵対的な — susceptibleとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "immune": "『免疫のある』は weakened immune systems と矛盾",
+      "resistant": "『抵抗力のある』も感染しやすい文脈と正反対",
+      "hostile": "『敵対的な』は infections に対して用いられず無意味"
+    },
+    "solve_strategy": "【解法のコツ】immune（免疫がある）と resistant（抵抗力がある）は be immune／resistant to の形はとれるが、weakened immune systems（免疫が弱った）という前提と矛盾する。文法ではなく論理で切る問題。"
+  },
+  "v20": {
+    "core_meaning": "【コア意味】避けられない、必然の",
+    "grammar_note": "【文法的視点】all but ＝ almost（ほとんど）。all but inevitable／impossible／certain。「〜以外すべて」の意味ではないので注意。inevitable は名詞的に the inevitable（避けられない事態）とも使う。副詞 inevitably。",
+    "usage_context": "【使用場面】all but ＝ almost（ほとんど）。all but inevitable／impossible／certain。「〜以外すべて」の意味ではないので注意。inevitable は名詞的に the inevitable（避けられない事態）とも使う。副詞 inevitably。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "With mounting debts and declining revenue, bankruptcy seemed inevitable.",
+        "ja": "負債の増加と売上の低下により、倒産は避けられないと見えた。"
+      },
+      {
+        "en": "Given the team's poor performance, defeat was inevitable.",
+        "ja": "チームの成績が悪いことを考えると、敗北は避けられなかった。"
+      },
+      {
+        "en": "The consequences of ignoring climate change are inevitable.",
+        "ja": "気候変動を無視することの結果は避けられない。"
+      }
+    ],
+    "similar_words": {
+      "negotiable": "【negotiable】交渉の余地がある — inevitableとは区別すべき語",
+      "optional": "【optional】任意の、選択できる — inevitableとは区別すべき語",
+      "reversible": "【reversible】元に戻せる、可逆の — inevitableとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "negotiable": "『交渉の余地がある』は倒産という帰結の文脈に合わない",
+      "optional": "『任意の』は選べる意味で状況と矛盾",
+      "reversible": "『元に戻せる』は負債増大の帰結と不整合"
+    },
+    "solve_strategy": "【解法のコツ】Given（〜を考えると）＋負債増・売上減の二重の悪材料。negotiable / optional / reversible はいずれも「まだどうにでもなる」側で、悪材料の積み上げと噛み合わない。"
+  },
+  "v21": {
+    "core_meaning": "【コア意味】もうかる、利益の大きい",
+    "grammar_note": "【文法的視点】a lucrative contract／business／career／market（もうかる〜）。金銭的利益に限って使う。profitable とほぼ同義。land a contract は「契約を獲得する」の口語的定番。",
+    "usage_context": "【使用場面】a lucrative contract／business／career／market（もうかる〜）。金銭的利益に限って使う。profitable とほぼ同義。land a contract は「契約を獲得する」の口語的定番。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The tech startup signed a lucrative contract with a major corporation.",
+        "ja": "そのテックスタートアップは大企業と利益の大きい契約に署名した。"
+      },
+      {
+        "en": "The author negotiated a lucrative book deal with a major publisher.",
+        "ja": "その著者は大手出版社と利益の大きい書籍契約を交渉した。"
+      },
+      {
+        "en": "Tourism is a lucrative industry for many developing nations.",
+        "ja": "観光は多くの発展途上国にとって利益の大きい産業である。"
+      }
+    ],
+    "similar_words": {
+      "tedious": "【tedious】退屈な、うんざりする — lucrativeとは区別すべき語",
+      "obsolete": "【obsolete】時代遅れの — lucrativeとは区別すべき語",
+      "futile": "【futile】無駄な、無益な — lucrativeとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "tedious": "『退屈な』は財政を安定させた成功と噛み合わない",
+      "obsolete": "『時代遅れの』は契約を修飾しても意味が通らない",
+      "futile": "『無駄な』は secured his finances という成果と正反対"
+    },
+    "solve_strategy": "【解法のコツ】secured his finances for a decade（10年間の生活費を確保した）が金銭的成功を示す。tedious（退屈な）や futile（無駄な）では finally（ついに）という達成の文脈が壊れる。"
+  },
+  "v22": {
+    "core_meaning": "【コア意味】普及した、広く行き渡った",
+    "grammar_note": "【文法的視点】widely prevalent、prevalent among ~（〜の間で広まっている）。病気・慣行・考え方など〈広がり〉に使う。名詞 prevalence（普及率・有病率）。common より硬く、統計の文脈でよく出る。",
+    "usage_context": "【使用場面】widely prevalent、prevalent among ~（〜の間で広まっている）。病気・慣行・考え方など〈広がり〉に使う。名詞 prevalence（普及率・有病率）。common より硬く、統計の文脈でよく出る。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Smartphone usage has become prevalent among teenagers worldwide.",
+        "ja": "スマートフォンの使用は世界中のティーンエイジャーの間で普及している。"
+      },
+      {
+        "en": "The disease is prevalent in tropical regions.",
+        "ja": "その病気は熱帯地域で広く流行している。"
+      },
+      {
+        "en": "Social media addiction has become prevalent in modern society.",
+        "ja": "ソーシャルメディア中毒は現代社会で普及している。"
+      }
+    ],
+    "similar_words": {
+      "scarce": "【scarce】乏しい、希少な — prevalentとは区別すべき語",
+      "defunct": "【defunct】現存しない、廃れた — prevalentとは区別すべき語",
+      "fragile": "【fragile】壊れやすい、もろい — prevalentとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "scarce": "『乏しい』は rare to see anyone without one と正反対",
+      "defunct": "『廃れた』も普及の文脈と矛盾",
+      "fragile": "『壊れやすい』は普及度の話に無関係"
+    },
+    "solve_strategy": "【解法のコツ】so ... that の結果節が「持っていない人を見るのが珍しい」＝ほぼ全員が持っている。scarce（乏しい）を入れると結果節と正反対になる。"
+  },
+  "v23": {
+    "core_meaning": "【コア意味】(人員が)余剰の、不要になった",
+    "grammar_note": "【文法的視点】職や人について redundant は「余剰の」。イギリス英語では be made redundant で「（人員整理で）解雇される」。名詞 redundancy（余剰・人員削減）。文章について「冗長な」の意味もある。",
+    "usage_context": "【使用場面】職や人について redundant は「余剰の」。イギリス英語では be made redundant で「（人員整理で）解雇される」。名詞 redundancy（余剰・人員削減）。文章について「冗長な」の意味もある。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "After the merger, many positions became redundant.",
+        "ja": "合併後、多くの職位が余剰となった。"
+      },
+      {
+        "en": "The new software made his job redundant, and he was laid off.",
+        "ja": "新しいソフトウェアは彼の仕事を余剰にし、彼はレイオフされた。"
+      },
+      {
+        "en": "Technological advances have made many traditional jobs redundant.",
+        "ja": "技術進歩は多くの伝統的な職を余剰にした。"
+      }
+    ],
+    "similar_words": {
+      "indispensable": "【indispensable】不可欠な — redundantとは区別すべき語",
+      "prominent": "【prominent】著名な、目立つ — redundantとは区別すべき語",
+      "versatile": "【versatile】多才な、用途の広い — redundantとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "indispensable": "『不可欠な』は laid off という帰結と正反対",
+      "prominent": "『目立つ』は人員整理の文脈に合わない",
+      "versatile": "『多才な』は解雇につながる文脈と矛盾"
+    },
+    "solve_strategy": "【解法のコツ】overlapping departments were merged（重複する部署の統合）→ 同じ仕事の席が二つある状態。しかも結果は laid off（解雇）。indispensable（不可欠）では解雇の説明にならない。"
+  },
+  "v24": {
+    "core_meaning": "【コア意味】暫定的な、仮の",
+    "grammar_note": "【文法的視点】a tentative agreement／date／conclusion（暫定的な合意・仮の日程・仮の結論）。副詞 tentatively（暫定的に）。「まだ確定していない」が核。provisional が近い。",
+    "usage_context": "【使用場面】a tentative agreement／date／conclusion（暫定的な合意・仮の日程・仮の結論）。副詞 tentatively（暫定的に）。「まだ確定していない」が核。provisional が近い。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The two parties reached a tentative agreement on the terms.",
+        "ja": "双方は条件について暫定的な合意に達した。"
+      },
+      {
+        "en": "A tentative date for the meeting was set, but it may change.",
+        "ja": "会議の暫定的な日付が設定されたが、変更される可能性がある。"
+      },
+      {
+        "en": "The plan is tentative and subject to further review.",
+        "ja": "その計画は暫定的で、さらなる見直しの対象である。"
+      }
+    ],
+    "similar_words": {
+      "definitive": "【definitive】決定的な、最終的な — tentativeとは区別すべき語",
+      "binding": "【binding】拘束力のある — tentativeとは区別すべき語",
+      "irrevocable": "【irrevocable】取り消せない、変更不能の — tentativeとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "definitive": "『最終的な』は details still needed to be finalized と矛盾",
+      "binding": "『拘束力のある』は before any contract could be signed と不整合",
+      "irrevocable": "『取り消せない』も詳細未確定という状況と矛盾"
+    },
+    "solve_strategy": "【解法のコツ】though 以下が「重要な詳細はまだ詰める必要がある」＝未確定。definitive / binding / irrevocable はいずれも確定・拘束を表し、譲歩節と矛盾する。"
+  },
+  "v25": {
+    "core_meaning": "【コア意味】回復力のある、立ち直りが早い",
+    "grammar_note": "【文法的視点】resilient は「（打撃から）立ち直る力がある」。a resilient economy／resilient children、be resilient in the face of ~。名詞 resilience（回復力・レジリエンス）。物については「弾力のある」。",
+    "usage_context": "【使用場面】resilient は「（打撃から）立ち直る力がある」。a resilient economy／resilient children、be resilient in the face of ~。名詞 resilience（回復力・レジリエンス）。物については「弾力のある」。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Despite facing numerous challenges, the community proved remarkably resilient.",
+        "ja": "多くの課題に直面したにもかかわらず、その地域は驚くほど回復力が強かった。"
+      },
+      {
+        "en": "Resilient individuals can bounce back from setbacks quickly.",
+        "ja": "回復力のある個人は挫折からすぐに立ち直ることができる。"
+      },
+      {
+        "en": "The resilient ecosystem recovered after the natural disaster.",
+        "ja": "その回復力のある生態系は自然災害の後に回復した。"
+      }
+    ],
+    "similar_words": {
+      "fragile": "【fragile】脆い、壊れやすい — resilientとは区別すべき語",
+      "vulnerable": "【vulnerable】傷つきやすい、弱い — resilientとは区別すべき語",
+      "apathetic": "【apathetic】無気力な、無関心な — resilientとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "fragile": "『脆い』は1年で立ち直った事実と正反対",
+      "vulnerable": "『傷つきやすい』も再建できた点と矛盾",
+      "apathetic": "『無気力な』は積極的に再建した姿勢と噛み合わない"
+    },
+    "solve_strategy": "【解法のコツ】Despite losing ...（失ったにもかかわらず）＋rebuilding their entire lives within a single year（1年で建て直した）。逆接の後は強さを表す語。fragile / vulnerable / apathetic はすべて弱さ・無気力側。"
+  },
+  "v26": {
+    "core_meaning": "【コア意味】うっかり、不注意で",
+    "grammar_note": "【文法的視点】inadvertently ＝ by accident（意図せず）。inadvertently delete／disclose／reveal のように〈やってしまった〉動詞と組む。形容詞 inadvertent。反意は deliberately / intentionally / on purpose。",
+    "usage_context": "【使用場面】inadvertently ＝ by accident（意図せず）。inadvertently delete／disclose／reveal のように〈やってしまった〉動詞と組む。形容詞 inadvertent。反意は deliberately / intentionally / on purpose。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "He inadvertently revealed confidential information during the interview.",
+        "ja": "彼はインタビュー中にうっかり機密情報を明かした。"
+      },
+      {
+        "en": "The mistake was made inadvertently, not on purpose.",
+        "ja": "その間違いはうっかりして作られたもので、故意ではなかった。"
+      },
+      {
+        "en": "She inadvertently sent the email to the wrong recipient.",
+        "ja": "彼女はうっかりメールを間違った受信者に送った。"
+      }
+    ],
+    "similar_words": {
+      "deliberately": "【deliberately】故意に、わざと — inadvertentlyとは区別すべき語",
+      "reluctantly": "【reluctantly】しぶしぶ、いやいや — inadvertentlyとは区別すべき語",
+      "explicitly": "【explicitly】明確に、はっきりと — inadvertentlyとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "deliberately": "『故意に』は新人のミスという文脈と矛盾",
+      "reluctantly": "『しぶしぶ』は削除の様態として不自然",
+      "explicitly": "『明確に』は delete を修飾しても意味が通らない"
+    },
+    "solve_strategy": "【解法のコツ】While hastily reorganizing（慌てて整理している最中に）が過失の手がかり。deliberately（故意に）だと新人が意図的に消したことになり、hastily と噛み合わない。"
+  },
+  "v27": {
+    "core_meaning": "【コア意味】満場一致で、全員一致で",
+    "grammar_note": "【文法的視点】vote unanimously／be unanimously approved（全員一致で可決される）。形容詞 unanimous（a unanimous decision）。un-（一つ）＋anim（心）＝心が一つ。",
+    "usage_context": "【使用場面】vote unanimously／be unanimously approved（全員一致で可決される）。形容詞 unanimous（a unanimous decision）。un-（一つ）＋anim（心）＝心が一つ。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The board voted unanimously to approve the budget proposal.",
+        "ja": "取締役会は予算案を承認するために満場一致で投票した。"
+      },
+      {
+        "en": "The decision was unanimously supported by all members.",
+        "ja": "その決定はすべてのメンバーに満場一致で支持された。"
+      },
+      {
+        "en": "The team unanimously agreed to continue the project.",
+        "ja": "チームはプロジェクトを続行することに満場一致で同意した。"
+      }
+    ],
+    "similar_words": {
+      "narrowly": "【narrowly】かろうじて、僅差で — unanimouslyとは区別すべき語",
+      "reluctantly": "【reluctantly】しぶしぶ — unanimouslyとは区別すべき語",
+      "tentatively": "【tentatively】暫定的に、おずおずと — unanimouslyとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "narrowly": "『僅差で』は not a single member objecting と正反対",
+      "reluctantly": "『しぶしぶ』は反対ゼロの賛成と噛み合わない",
+      "tentatively": "『暫定的に』は採決の様態として不自然"
+    },
+    "solve_strategy": "【解法のコツ】with not a single member raising any objection（異議を唱える者は一人もいなかった）が答えを直接言い換えている。narrowly（僅差で）は「反対も多かった」ことになり矛盾。"
+  },
+  "v28": {
+    "core_meaning": "【コア意味】控えめに、わずかずつ",
+    "grammar_note": "【文法的視点】use ~ sparingly（〜を控えめに使う）。形容詞 sparing（be sparing with/of ~）、動詞 spare（惜しむ・割く）。反意は liberally / generously / lavishly。",
+    "usage_context": "【使用場面】use ~ sparingly（〜を控えめに使う）。形容詞 sparing（be sparing with/of ~）、動詞 spare（惜しむ・割く）。反意は liberally / generously / lavishly。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Use salt sparingly to maintain a healthy diet.",
+        "ja": "健康的な食事を維持するために塩を控えめに使用する。"
+      },
+      {
+        "en": "Apply the medication sparingly to the affected area.",
+        "ja": "患部に薬を控えめに適用する。"
+      },
+      {
+        "en": "The budget was used sparingly to stretch resources throughout the year.",
+        "ja": "予算は年間を通じてリソースを延ばすために控えめに使用された。"
+      }
+    ],
+    "similar_words": {
+      "generously": "【generously】気前よく、たっぷりと — sparinglyとは区別すべき語",
+      "recklessly": "【recklessly】無謀に、向こう見ずに — sparinglyとは区別すべき語",
+      "abundantly": "【abundantly】豊富に、ふんだんに — sparinglyとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "generously": "『たっぷりと』は only a tiny pinch と正反対",
+      "recklessly": "『無謀に』は高価さゆえ節約する文脈に合わない",
+      "abundantly": "『ふんだんに』も少量使用と矛盾"
+    },
+    "solve_strategy": "【解法のコツ】adding only a tiny pinch（ほんのひとつまみだけ）が量の少なさを明示。generously / abundantly は「たっぷり」で正反対、recklessly は量ではなく態度の語。"
+  },
+  "v29": {
+    "core_meaning": "【コア意味】おそらく、推定するに",
+    "grammar_note": "【文法的視点】presumably は「（状況から）おそらく」と話し手の推量を示す副詞。文頭・助動詞の後どちらにも置ける。presume（推定する）、presumption（推定）。probably よりやや形式的で〈根拠からの推論〉を含む。",
+    "usage_context": "【使用場面】presumably は「（状況から）おそらく」と話し手の推量を示す副詞。文頭・助動詞の後どちらにも置ける。presume（推定する）、presumption（推定）。probably よりやや形式的で〈根拠からの推論〉を含む。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Judging from the cloudy sky, rain will presumably arrive tomorrow.",
+        "ja": "曇った空から判断すると、雨はおそらく明日やってくるだろう。"
+      },
+      {
+        "en": "He left early this morning, presumably to catch an early flight.",
+        "ja": "彼は今朝早く出発した、おそらく早い飛行機に乗るためだろう。"
+      },
+      {
+        "en": "The executive's absence is, presumably, due to urgent business.",
+        "ja": "その経営者の不在は、おそらく緊急な事業のためである。"
+      }
+    ],
+    "similar_words": {
+      "reluctantly": "【reluctantly】しぶしぶ — presumablyとは区別すべき語",
+      "scarcely": "【scarcely】ほとんど〜ない — presumablyとは区別すべき語",
+      "deliberately": "【deliberately】故意に、わざと — presumablyとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "reluctantly": "『しぶしぶ』は様態を表し、証拠に基づく推論の文脈に合わない",
+      "scarcely": "『ほとんど〜ない』は car was gone(明らかに外出)と矛盾",
+      "deliberately": "『故意に』も証拠からの推論という枠組みに合わない"
+    },
+    "solve_strategy": "【解法のコツ】so（だから）の前が根拠（明かりが消え車もない）で、後ろは推論。ここで必要なのは推量を表す副詞。scarcely（ほとんど〜ない）は had scarcely left なら「まだ出発していない」となり、根拠と矛盾する。"
+  },
+  "v30": {
+    "core_meaning": "【コア意味】深く、甚大に",
+    "grammar_note": "【文法的視点】profoundly influenced／affected／changed（深く影響した）。形容詞 profound（a profound impact／effect／change）。deeply とほぼ同義だが、profound は知的・精神的な深さに使う。",
+    "usage_context": "【使用場面】profoundly influenced／affected／changed（深く影響した）。形容詞 profound（a profound impact／effect／change）。deeply とほぼ同義だが、profound は知的・精神的な深さに使う。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Her research profoundly influenced the field of neuroscience.",
+        "ja": "彼女の研究は神経科学の分野に深く影響した。"
+      },
+      {
+        "en": "The book profoundly changed my perspective on life.",
+        "ja": "その本は私の人生への見方を根本的に変えた。"
+      },
+      {
+        "en": "The historical event profoundly impacted the nation's future.",
+        "ja": "その歴史的出来事は国家の未来に深く影響した。"
+      }
+    ],
+    "similar_words": {
+      "marginally": "【marginally】わずかに、ほんの少し — profoundlyとは区別すべき語",
+      "temporarily": "【temporarily】一時的に — profoundlyとは区別すべき語",
+      "superficially": "【superficially】表面的に、うわべだけ — profoundlyとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "marginally": "『わずかに』は fundamentally reshaping と矛盾",
+      "temporarily": "『一時的に』は世代全体への持続的影響と噛み合わない",
+      "superficially": "『表面的に』も根本的な変革という記述と正反対"
+    },
+    "solve_strategy": "【解法のコツ】後半の fundamentally reshaping（根本的に作り変えた）が影響の大きさを裏づける。marginally（わずかに）・superficially（表面的に）・temporarily（一時的に）はすべてこの言い換えと衝突する。"
+  },
+  "v31": {
+    "core_meaning": "【コア意味】(意見の相違・問題を)解決する、円満に片づける",
+    "grammar_note": "【文法的視点】iron out differences／problems／details（相違点や問題を解決する）。アイロンでしわを伸ばすイメージ。out（外へ）＝厄介なものを取り除く語感の句動詞（weed out, rule out も同系）。",
+    "usage_context": "【使用場面】iron out differences／problems／details（相違点や問題を解決する）。アイロンでしわを伸ばすイメージ。out（外へ）＝厄介なものを取り除く語感の句動詞（weed out, rule out も同系）。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The team worked to iron out the remaining problems before launch.",
+        "ja": "チームは発表前に残りの問題を解決するために働いた。"
+      },
+      {
+        "en": "Negotiators spent weeks ironing out differences between the parties.",
+        "ja": "交渉者は当事者間の相違点を解決するのに数週間を費やした。"
+      },
+      {
+        "en": "We need to iron out the details of the agreement.",
+        "ja": "私たちは合意の詳細を解決する必要がある。"
+      }
+    ],
+    "similar_words": {
+      "call off": "【call off】中止する — iron outとは区別すべき語",
+      "hand down": "【hand down】(判決・伝統を)申し渡す・伝える — iron outとは区別すべき語",
+      "give away": "【give away】ただで譲る・(秘密を)漏らす — iron outとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "call off": "『中止する』では交渉をまとめようとする文脈と逆になり不適",
+      "hand down": "『申し渡す・伝える』の意で、相違点を解決する文脈にならない",
+      "give away": "『譲る・漏らす』では合意に向けて相違を解消する文脈に合わない"
+    },
+    "solve_strategy": "【解法のコツ】determined to（〜しようと決意して）＋合意を妨げる相違点。前へ進める方向の動詞が必要で、call off（中止する）では交渉を投げ出すことになり逆。"
+  },
+  "v32": {
+    "core_meaning": "【コア意味】(不要・不適格なものを)ふるい落とす、除く",
+    "grammar_note": "【文法的視点】weed out ~（不要・不適格なものを取り除く）。weed（雑草／草取りをする）から。weed out candidates／errors／weak applicants。remove の口語的な言い換えとして選抜・審査の話題で頻出。",
+    "usage_context": "【使用場面】weed out ~（不要・不適格なものを取り除く）。weed（雑草／草取りをする）から。weed out candidates／errors／weak applicants。remove の口語的な言い換えとして選抜・審査の話題で頻出。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The interview process is designed to weed out unsuitable candidates.",
+        "ja": "インタビュープロセスは不適切な候補者をふるい落とすために設計されている。"
+      },
+      {
+        "en": "The quality control team works to weed out defective products.",
+        "ja": "品質管理チームは欠陥製品をふるい落とすために働いている。"
+      },
+      {
+        "en": "Regular audits help weed out inefficiencies in the system.",
+        "ja": "定期的な監査はシステム内の非効率性をふるい落とすのに役立つ。"
+      }
+    ],
+    "similar_words": {
+      "take after": "【take after】(親などに)似ている — weed outとは区別すべき語",
+      "hold up": "【hold up】遅らせる・持ちこたえる・強盗する — weed outとは区別すべき語",
+      "put up": "【put up】建てる・掲げる・泊める — weed outとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "take after": "『似ている』の意で、応募者を選別する文脈に合わない",
+      "hold up": "『遅らせる・持ちこたえる』の意になり、選別して残す文脈と噛み合わない",
+      "put up": "『建てる・掲げる』の意で、不適格者を除く文脈に合わない"
+    },
+    "solve_strategy": "【解法のコツ】leaving only the strongest candidates（最も優秀な候補者だけを残す）が「取り除く」を裏側から言っている。hold up（遅らせる）・put up（掲げる・泊める）では、この結果を説明できない。"
+  },
+  "v33": {
+    "core_meaning": "【コア意味】(可能性を)除外する、排除する",
+    "grammar_note": "【文法的視点】rule out ~（可能性を除外する）。cannot rule out ~ は報道で頻出の型で「〜の可能性は排除できない」。rule out the possibility that ...。反対に rule in はまれ。",
+    "usage_context": "【使用場面】rule out ~（可能性を除外する）。cannot rule out ~ は報道で頻出の型で「〜の可能性は排除できない」。rule out the possibility that ...。反対に rule in はまれ。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "Investigators could not rule out arson as a cause of the fire.",
+        "ja": "捜査官は火災の原因として放火を除外することができなかった。"
+      },
+      {
+        "en": "Scientists cannot rule out the possibility of extraterrestrial life.",
+        "ja": "科学者は地外生命の可能性を除外することはできない。"
+      },
+      {
+        "en": "The doctor has not ruled out a serious illness.",
+        "ja": "医者は深刻な病気の可能性を除外していない。"
+      }
+    ],
+    "similar_words": {
+      "bring up": "【bring up】話題に出す、育てる — rule outとは区別すべき語",
+      "take on": "【take on】引き受ける、雇う — rule outとは区別すべき語",
+      "put up with": "【put up with】我慢する — rule outとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "bring up": "『話題に出す』では『原因として除外する』意味にならない",
+      "take on": "『引き受ける』は arson as the cause と噛み合わない",
+      "put up with": "『我慢する』は原因の特定という文脈に無関係"
+    },
+    "solve_strategy": "【解法のコツ】not yet been able to ... even though no clear evidence has been found（証拠がないのに、まだ〜できていない）という譲歩。「証拠がない＝候補から外せるはずだが外せない」という論理から、外す方向の句動詞が入る。"
+  },
+  "v34": {
+    "core_meaning": "【コア意味】(病気に)かかる",
+    "grammar_note": "【文法的視点】come down with ~（短期間で急性発症する病気にかかる）。come down with a cold／the flu が典型。重病には fall ill with や be diagnosed with を使うことが多い。似た形の get away with（問35参照）と混同しないこと。",
+    "usage_context": "【使用場面】come down with ~（短期間で急性発症する病気にかかる）。come down with a cold／the flu が典型。重病には fall ill with や be diagnosed with を使うことが多い。似た形の get away with（問35参照）と混同しないこと。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "She came down with the flu just before the important exam.",
+        "ja": "彼女は重要な試験の直前にインフルエンザにかかった。"
+      },
+      {
+        "en": "He came down with a severe cold last week.",
+        "ja": "彼は先週ひどい風邪にかかった。"
+      },
+      {
+        "en": "The entire team came down with the virus during the conference.",
+        "ja": "会議中にチーム全体がそのウイルスにかかった。"
+      }
+    ],
+    "similar_words": {
+      "got away with": "【got away with】(罰などを)まぬがれる、うまく逃れる — came down withとは区別すべき語",
+      "made up for": "【made up for】埋め合わせる、償う — came down withとは区別すべき語",
+      "caught up with": "【caught up with】追いつく、(悪事などが)報いる — came down withとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "got away with": "『(罰などを)まぬがれる』の意で、病気に『かかる』文脈に合わない",
+      "made up for": "『埋め合わせる』は病気にかかる文脈に合わない",
+      "caught up with": "『追いつく』では病気を『発症する』意味にならない"
+    },
+    "solve_strategy": "【解法のコツ】後ろの had to be hospitalized（入院しなければならなかった）が病気の急激な発症を示す。✗caught up with「追いつく」は目的語が a severe case of the flu では意味をなさない。"
+  },
+  "v35": {
+    "core_meaning": "【コア意味】(悪事などの)罰をまぬがれる、うまくやり過ごす",
+    "grammar_note": "【文法的視点】get away with ~（悪事をしても罰を免れる）。目的語は名詞または doing。get away with murder は「好き放題やってとがめられない」の慣用句。",
+    "usage_context": "【使用場面】get away with ~（悪事をしても罰を免れる）。目的語は名詞または doing。get away with murder は「好き放題やってとがめられない」の慣用句。から、ニュース・学術文脈・日常会話など幅広く使われる。形式的・改まった語。",
+    "example_sentences": [
+      {
+        "en": "The criminal got away with the theft for several years.",
+        "ja": "その犯罪者は盗難で数年間逃げおおせた。"
+      },
+      {
+        "en": "He got away with cheating on the test without being caught.",
+        "ja": "彼はテストのカンニングで見つからずに逃げおおせた。"
+      },
+      {
+        "en": "The company got away with illegal practices for too long.",
+        "ja": "その会社は違法行為を長い間逃げおおせた。"
+      }
+    ],
+    "similar_words": {
+      "come up with": "【come up with】思いつく、考え出す — get away withとは区別すべき語",
+      "put up with": "【put up with】我慢する — get away withとは区別すべき語",
+      "do away with": "【do away with】廃止する、なくす — get away withとは区別すべき語"
+    },
+    "distractor_analysis": {
+      "come up with": "『思いつく』は stealing funds を続ける意味にならない",
+      "put up with": "『我慢する』は横領を続ける文脈と噛み合わない",
+      "do away with": "『廃止する』は but exposed という展開と整合しない"
+    },
+    "solve_strategy": "【解法のコツ】but a routine audit eventually exposed the entire scheme（監査が企みを暴いた）から、それまでは見つかっていなかった。✗put up with「我慢する」では自分の横領を我慢する話になり不自然。"
+  }
+}

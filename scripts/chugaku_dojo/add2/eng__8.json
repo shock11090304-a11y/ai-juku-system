@@ -1,0 +1,226 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy sister ( ) already read this book.",
+  "passage": "",
+  "choices": [
+   "has",
+   "have",
+   "is",
+   "does"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「has」。 主語 My sister は三人称単数なので、現在完了は has + 過去分詞。read はここでは過去分詞。have は複数・一人称二人称用で誤り。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe have ( ) in this town for five years.",
+  "passage": "",
+  "choices": [
+   "lived",
+   "live",
+   "living",
+   "lives"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「lived」。 現在完了は have + 過去分詞で表す。live の過去分詞は lived。live や living は過去分詞ではないので誤り。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI have ( ) my key. I can't find it.",
+  "passage": "",
+  "choices": [
+   "lost",
+   "lose",
+   "losing",
+   "loses"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「lost」。 have のあとは過去分詞。lose の過去分詞は lost で、なくして今も見つからない完了・結果を表す。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nKen has ( ) English since he was ten.",
+  "passage": "",
+  "choices": [
+   "studied",
+   "study",
+   "studying",
+   "studies"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「studied」。 has のあとは過去分詞。study は語尾 y を i に変えて studied。継続を表す since と一緒に使う。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMr. Brown has ( ) in Japan for three years.",
+  "passage": "",
+  "choices": [
+   "been",
+   "is",
+   "was",
+   "being"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「been」。 be動詞の過去分詞は been。「3年間ずっと日本にいる」という継続で has been。is や was は過去分詞ではない。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Has your father ( ) home yet?\nB: No, not yet.",
+  "passage": "",
+  "choices": [
+   "come",
+   "came",
+   "comes",
+   "coming"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「come」。 has のあとは過去分詞。come の過去分詞は come(原形と同じ形)。came は過去形なので誤り。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy grandmother has ( ) me a nice sweater.",
+  "passage": "",
+  "choices": [
+   "made",
+   "make",
+   "making",
+   "makes"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「made」。 has のあとは過去分詞。make の過去分詞は made。作ってくれたという完了を表す。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThe students have ( ) the classroom already.",
+  "passage": "",
+  "choices": [
+   "cleaned",
+   "clean",
+   "cleaning",
+   "cleans"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「cleaned」。 have のあとは過去分詞。clean の過去分詞は規則変化で cleaned。already は「もう〜した」の完了を表す。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI have ( ) this song many times.",
+  "passage": "",
+  "choices": [
+   "heard",
+   "hear",
+   "hearing",
+   "hears"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「heard」。 have のあとは過去分詞。hear の過去分詞は heard。many times は経験を表す。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nHave you ( ) breakfast yet?",
+  "passage": "",
+  "choices": [
+   "had",
+   "have",
+   "having",
+   "has"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「had」。 Have you のあとは過去分詞。have(食べる)の過去分詞は had。yet は疑問文で「もう」を表す。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy uncle has ( ) to Australia twice.",
+  "passage": "",
+  "choices": [
+   "been",
+   "gone",
+   "went",
+   "being"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「been」。 have[has] been to 〜 で「〜へ行ったことがある」という経験。回数の twice があるので経験の been to が正しい。gone to は「行ってしまって今ここにいない」という意味で誤り。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy parents ( ) gone to the airport. They are not at home now.",
+  "passage": "",
+  "choices": [
+   "have",
+   "has",
+   "are",
+   "did"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「have」。 主語 My parents は複数なので have + 過去分詞。have gone to 〜 で「〜へ行ってしまって今ここにいない」を表す。has は三人称単数用で誤り。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI have wanted a dog ( ) I was a child.",
+  "passage": "",
+  "choices": [
+   "since",
+   "for",
+   "when",
+   "from"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「since」。 I was a child は「〜だったとき」という過去の起点。継続の起点には since を使う。for は期間の長さに使うので誤り。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe haven't seen each other ( ) a long time.",
+  "passage": "",
+  "choices": [
+   "for",
+   "since",
+   "during",
+   "in"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「for」。 a long time は「長い間」という期間の長さ。継続の期間には for を使う。since は過去の一点(起点)に使うので誤り。"
+ }
+]

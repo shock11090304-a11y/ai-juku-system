@@ -1,0 +1,213 @@
+{
+ "no": 4,
+ "date": "8/20",
+ "title": "速読トレーニング",
+ "goal": "共通テスト型の英文を、チャンク読み・パラグラフリーディング・設問先読みを使って、約5分で通読し、大意と要点を素早くつかむ速読力を養う。",
+ "points": [
+  {
+   "h": "意味のまとまり（チャンク）ごとに、前から読み下す",
+   "body": "速読の基本は、英文を単語単位ではなく〈主語＋動詞〉〈前置詞＋名詞〉〈関係詞＋SV〉といった意味のまとまり（チャンク）で区切り、返り読みをせずに前から順に処理することである。慣れるまではスラッシュ（/）を入れて読む練習をすると、目の動きが速く安定し、一文を一気に理解できるようになる。",
+   "ex": [
+    [
+     "A Repair Café is a free meeting place / where volunteers / help visitors / fix their broken belongings.",
+     "リペア・カフェとは無料の集まりの場であり／そこではボランティアが／訪問者が／壊れた持ち物を直すのを手伝う。"
+    ]
+   ],
+   "rule": "前置詞・関係詞・接続詞の前で「/」を入れ、チャンク単位で前から意味を取る（返り読みをしない）。"
+  },
+  {
+   "h": "各段落は「1つのメッセージ」。先頭文（トピックセンテンス）に注目する",
+   "body": "情報系の英文では、1つの段落は原則として1つの言いたいこと（メッセージ）を伝える。その中心はたいてい段落の最初の文（トピックセンテンス）に置かれ、あとの文はその具体例や理由になっている。段落ごとに「要するに何の話か」を一言でメモしながら読むと、全体像が速くつかめる。",
+   "ex": [
+    [
+     "The idea quickly became popular, and its benefits go far beyond saving money.",
+     "その考えはたちまち人気となり、その利点はお金の節約をはるかに超える（＝この段落は「利点」の話）。"
+    ]
+   ],
+   "rule": "各段落の先頭文で「この段落の主題」を予測し、残りはその裏づけ（理由・具体例）として読む。"
+  },
+  {
+   "h": "本文を読む前に、設問に目を通して「探すべき情報」を決める",
+   "body": "速読では、最初から全部を精読しない。先に設問（と選択肢のキーワード）に目を通し、「どの情報を探せばよいか」を決めてから本文に入る。とくに固有名詞・数字・『第2段落』のような場所を示す語は本文中の位置の手がかりになり、必要な箇所を素早く見つけられる。",
+   "ex": [
+    [
+     "more than two thousand Repair Cafés operate in over thirty countries",
+     "二千を超えるリペア・カフェが三十を超える国々で運営されている（数字は本文の位置の目印になる）"
+    ]
+   ],
+   "rule": "設問のキーワード（数字・固有名詞・段落番号）を先に押さえ、本文ではその周辺を重点的に読む。"
+  }
+ ],
+ "passage": {
+  "title": "The Repair Café Movement",
+  "jtitle": "リペア・カフェという運動",
+  "paras": [
+   [
+    "Every year, people throw away millions of household items simply because they no longer work.",
+    "A broken toaster, a torn jacket, or a bicycle with a flat tire often ends up in the trash, even though the damage is small.",
+    "In many cases, the owners would happily keep these things if only they knew how to fix them."
+   ],
+   [
+    "To deal with this problem, a woman in the Netherlands started the first \"Repair Café\" in 2009.",
+    "A Repair Café is a free meeting place where volunteers with practical skills help visitors fix their broken belongings.",
+    "Instead of paying someone to do the work, visitors sit down beside a volunteer and repair the item together, learning how it is done."
+   ],
+   [
+    "The idea quickly became popular, and its benefits go far beyond saving money.",
+    "Because fewer objects are thrown away, less waste is sent to landfills, and fewer new products need to be made.",
+    "Just as importantly, neighbors who might never have spoken meet over a cup of coffee and share their knowledge, so the events strengthen the local community."
+   ],
+   [
+    "Today, more than two thousand Repair Cafés operate in over thirty countries, from Japan to Brazil.",
+    "Most of them ask for no payment, though visitors are welcome to leave a small donation.",
+    "Organizers say that anyone can take part: you do not need special training to bring a broken object, and you do not need a workshop to offer a helping hand."
+   ]
+  ],
+  "trans": {
+   "1": "毎年、人々は何百万もの家庭用品を、単にもう動かないというだけで捨てている。",
+   "2": "壊れたトースターや破れた上着、パンクした自転車などは、損傷がわずかであっても、しばしばゴミ箱行きになる。",
+   "3": "多くの場合、持ち主は、直し方さえ分かれば、それらを喜んで使い続けるだろう。",
+   "4": "この問題に対処するため、オランダのある女性が2009年に最初の「リペア・カフェ（Repair Café）」を始めた。",
+   "5": "リペア・カフェとは、実用的な技術を持つボランティアが、訪問者が壊れた持ち物を直すのを手伝う、無料の集まりの場である。",
+   "6": "誰かにお金を払って作業してもらう代わりに、訪問者はボランティアの隣に座り、一緒にその品物を修理しながら、その直し方を学ぶ。",
+   "7": "その考えはたちまち人気となり、その利点はお金の節約をはるかに超える。",
+   "8": "捨てられる物が減るため、埋め立て地に送られる廃棄物が減り、新しく作られる製品も少なくて済む。",
+   "9": "同じくらい大切なことに、それまで一度も口をきいたことがないような近所の人どうしが、コーヒーを片手に出会って知識を分かち合うので、この催しは地域のつながりを強める。",
+   "10": "今日では、日本からブラジルまで、三十を超える国々で二千を超えるリペア・カフェが運営されている。",
+   "11": "そのほとんどは料金を求めないが、訪問者は少額の寄付を置いていってもかまわない。",
+   "12": "主催者たちは、誰でも参加できると言う。壊れた品物を持ち込むのに特別な訓練は要らないし、手助けを申し出るのに作業場は要らない。"
+  }
+ },
+ "vocab": [
+  [
+   "household",
+   "形",
+   "家庭の、家庭用の"
+  ],
+  [
+   "item",
+   "名",
+   "品物、項目"
+  ],
+  [
+   "damage",
+   "名",
+   "損傷、被害"
+  ],
+  [
+   "belongings",
+   "名",
+   "持ち物、所持品"
+  ],
+  [
+   "practical",
+   "形",
+   "実用的な、実践的な"
+  ],
+  [
+   "benefit",
+   "名",
+   "利益、恩恵"
+  ],
+  [
+   "waste",
+   "名",
+   "廃棄物、ごみ"
+  ],
+  [
+   "landfill",
+   "名",
+   "埋め立て地、ごみ処分場"
+  ],
+  [
+   "strengthen",
+   "動",
+   "強化する、強める"
+  ],
+  [
+   "donation",
+   "名",
+   "寄付"
+  ],
+  [
+   "operate",
+   "動",
+   "運営される、活動する"
+  ],
+  [
+   "organizer",
+   "名",
+   "主催者、運営者"
+  ]
+ ],
+ "q_instr": "次の英文を約5分で通読し、各設問に答えよ。（文(1)(2)…は本文の通し番号を表す）",
+ "questions": [
+  {
+   "type": "rc_mc",
+   "q": "第2段落（文(4)〜(6)）が主に述べている「1つのメッセージ」として、最も適切なものを選べ。",
+   "choices": [
+    "まだ使える家庭用品が、次々とゴミとして捨てられている現状",
+    "リペア・カフェが世界中の多くの国へ広がっていく様子",
+    "リペア・カフェとはどのような場所で、そこで何が行われるのか",
+    "近所の人どうしの交流が地域のつながりを強めること"
+   ],
+   "ans": 2,
+   "exp": "第2段落は、文(4)で最初のリペア・カフェが始まった経緯を述べ、文(5)でそれが「ボランティアが訪問者の修理を手伝う無料の場」だと定義し、文(6)で「一緒に直しながら方法を学ぶ」という実際の様子を説明している。つまりこの段落の主題は『リペア・カフェとは何であり、そこで何が行われるか』。1は第1段落、4は第3段落、2は第4段落のメッセージなので誤り。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "リペア・カフェでの費用について、本文の内容と一致するものを選べ。",
+   "choices": [
+    "多くの場合は料金がかからず、訪問者は少額の寄付を置いていってもよい。",
+    "訪問者は、あらかじめ決められた料金を必ず支払わなければならない。",
+    "ボランティアに修理を任せると、作業内容に応じて追加料金がかかる。",
+    "寄付をしない訪問者は、修理を断られてしまう。"
+   ],
+   "ans": 0,
+   "exp": "文(11)に Most of them ask for no payment, though visitors are welcome to leave a small donation.（ほとんどは料金を求めないが、少額の寄付は歓迎される）とあるので1が正しい。また文(6)の instead of paying someone とも合致する。2・4は『料金を求めない・寄付は任意』という本文と矛盾し、3は訪問者が自分で一緒に直す仕組み（文(6)）と食い違うので誤り。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "本文が述べるリペア・カフェの利点として、当てはまらないものを選べ。",
+   "choices": [
+    "埋め立て地に送られる廃棄物の量が減る。",
+    "新しく作られる製品の数が少なくて済む。",
+    "近所の人どうしが交流し、地域のつながりが強まる。",
+    "修理の技術を身につければ、資格を取って収入を得られる。"
+   ],
+   "ans": 3,
+   "exp": "1と2は文(8)（捨てられる物が減るため廃棄物と新製品が減る）、3は文(9)（近所の人が知識を分かち合い地域のつながりが強まる）に述べられている利点である。一方4の『資格・収入』については本文に一切記述がない。文(6)は「一緒に直して方法を学ぶ」と述べるだけで、資格取得や収入には触れていないので、当てはまらないのは4。"
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(4) To deal with this problem … の this problem が指す内容を、本文に即して日本語で説明せよ。",
+   "ans": "少し壊れただけで、直し方さえ分かれば持ち主が使い続けたいと思うような家庭用品が、修理されずにゴミとして捨てられてしまうという問題。",
+   "exp": "this problem は前の第1段落（文(1)〜(3)）の内容をまとめて受ける指示語。文(1)(2)より『損傷はわずかなのに、動かないというだけで多くの家庭用品が捨てられている』こと、文(3)より『直し方さえ分かれば持ち主は使い続けたいと思っている』ことが述べられている。したがって this problem は「直し方が分からず、まだ使えるものが捨てられてしまう」問題を指す。",
+   "lines": 2
+  },
+  {
+   "type": "rc_mc",
+   "q": "この文章の大意として、最も適切なものを選べ。",
+   "choices": [
+    "家庭用品はすぐに壊れるので、なるべく早く新品に買い替えたほうがよい。",
+    "リペア・カフェは、物を直して使い続ける手助けをし、環境と地域社会にも良い影響を与える取り組みとして世界に広がっている。",
+    "ボランティア活動は、専門的な訓練を受けた一部の人だけが行うべきである。",
+    "修理をするよりも新しい製品を買うほうが、結果的に環境に優しい。"
+   ],
+   "ans": 1,
+   "exp": "本文は、捨てられがちな物を無料で一緒に直すリペア・カフェを紹介し（第1・2段落）、その利点が環境と地域社会に及ぶこと（第3段落）、世界中に広がっていること（第4段落）を述べている。これらを一言でまとめた2が大意。1は『直して使い続ける』という趣旨と逆、3は文(12)（特別な訓練は要らない）と矛盾、4は文(8)（新製品を減らせるのが利点）と矛盾するので誤り。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "世界に広がったリペア・カフェについて、本文の内容と一致するものを選べ。",
+   "choices": [
+    "最初のリペア・カフェは日本で始まった。",
+    "リペア・カフェは、三十か国に満たない範囲でしか開かれていない。",
+    "リペア・カフェに参加するには、専門的な訓練を受けている必要がある。",
+    "現在、三十を超える国々で、二千を超えるリペア・カフェが運営されている。"
+   ],
+   "ans": 3,
+   "exp": "文(10)に more than two thousand Repair Cafés operate in over thirty countries とあるので4が正しい。1は文(4)（最初はオランダで始まった）と矛盾、2は「三十を超える国々」という本文（over thirty countries）と矛盾、3は文(12)（特別な訓練は要らない）と矛盾するので誤り。"
+  }
+ ]
+}

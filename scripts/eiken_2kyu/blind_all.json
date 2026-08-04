@@ -1,0 +1,655 @@
+{
+  "daimon1": [
+    {
+      "key": "v01",
+      "sentence": "Even after the company grew much larger, the founder wanted to _______ the friendly atmosphere among the staff.",
+      "choices": [
+        "maintain",
+        "reduce",
+        "avoid",
+        "delay"
+      ]
+    },
+    {
+      "key": "v02",
+      "sentence": "To use the school's research lab, students must first _______ special permission from their teacher.",
+      "choices": [
+        "reject",
+        "obtain",
+        "ignore",
+        "waste"
+      ]
+    },
+    {
+      "key": "v03",
+      "sentence": "Because a powerful typhoon was approaching, the organizers decided to _______ the outdoor concert until the following weekend.",
+      "choices": [
+        "celebrate",
+        "advertise",
+        "postpone",
+        "broadcast"
+      ]
+    },
+    {
+      "key": "v04",
+      "sentence": "Scientists reported that global temperatures had risen by a _______ amount over the past fifty years.",
+      "choices": [
+        "silent",
+        "narrow",
+        "polite",
+        "significant"
+      ]
+    },
+    {
+      "key": "v05",
+      "sentence": "The old wooden bridge was so dangerous that the town decided to _______ it with a new steel one.",
+      "choices": [
+        "remove",
+        "replace",
+        "refuse",
+        "recall"
+      ]
+    },
+    {
+      "key": "v06",
+      "sentence": "I really _______ all the help you gave me while I was preparing for the exam; I could not have passed without you.",
+      "choices": [
+        "appreciate",
+        "complain",
+        "refuse",
+        "ignore"
+      ]
+    },
+    {
+      "key": "v07",
+      "sentence": "By training hard every single day for a year, she was finally able to _______ her goal of running a full marathon.",
+      "choices": [
+        "measure",
+        "translate",
+        "decorate",
+        "accomplish"
+      ]
+    },
+    {
+      "key": "v08",
+      "sentence": "The small bakery became so popular that the owner decided to _______ the business by opening two more shops.",
+      "choices": [
+        "reduce",
+        "cancel",
+        "expand",
+        "delay"
+      ]
+    },
+    {
+      "key": "v09",
+      "sentence": "It had been twenty years since they last met, so she almost did not _______ her old classmate at the party.",
+      "choices": [
+        "recognize",
+        "forget",
+        "ignore",
+        "describe"
+      ]
+    },
+    {
+      "key": "v10",
+      "sentence": "Good teachers always try to _______ their students to ask questions whenever they do not understand something.",
+      "choices": [
+        "force",
+        "forbid",
+        "warn",
+        "encourage"
+      ]
+    },
+    {
+      "key": "v11",
+      "sentence": "Studying abroad gave her a wonderful _______ to improve her English and make new friends from many countries.",
+      "choices": [
+        "problem",
+        "mistake",
+        "opportunity",
+        "excuse"
+      ]
+    },
+    {
+      "key": "v12",
+      "sentence": "One big _______ of living near the station is that you can get to work quickly every morning.",
+      "choices": [
+        "disadvantage",
+        "advantage",
+        "danger",
+        "mistake"
+      ]
+    },
+    {
+      "key": "v13",
+      "sentence": "Her happy _______ told everyone at the party that she had finally passed the difficult driving test.",
+      "choices": [
+        "signature",
+        "direction",
+        "celebration",
+        "expression"
+      ]
+    },
+    {
+      "key": "v14",
+      "sentence": "If we keep damaging nature now, future generations will have to face the serious _______ of our actions.",
+      "choices": [
+        "consequences",
+        "instruments",
+        "traditions",
+        "celebrations"
+      ]
+    },
+    {
+      "key": "v15",
+      "sentence": "Recycling plastic bottles is one simple way to protect the _______ for future generations.",
+      "choices": [
+        "government",
+        "equipment",
+        "environment",
+        "entertainment"
+      ]
+    },
+    {
+      "key": "v16",
+      "sentence": "This restaurant is always crowded on weekends, so you should _______ a table in advance if you want to be sure of a seat.",
+      "choices": [
+        "polish",
+        "reserve",
+        "deliver",
+        "borrow"
+      ]
+    },
+    {
+      "key": "v17",
+      "sentence": "Please read the _______ carefully before you start putting the new bookshelf together.",
+      "choices": [
+        "invitations",
+        "decorations",
+        "celebrations",
+        "instructions"
+      ]
+    },
+    {
+      "key": "v18",
+      "sentence": "Because of the long, dry summer, there was a serious _______ of water throughout the whole region.",
+      "choices": [
+        "shortage",
+        "amount",
+        "collection",
+        "addition"
+      ]
+    },
+    {
+      "key": "v19",
+      "sentence": "The store sells bags in _______ colors and sizes, so it is easy to find one that suits you.",
+      "choices": [
+        "single",
+        "various",
+        "equal",
+        "similar"
+      ]
+    },
+    {
+      "key": "v20",
+      "sentence": "It was _______ from the dark clouds and the strong wind that a big storm was on its way.",
+      "choices": [
+        "nervous",
+        "generous",
+        "obvious",
+        "precious"
+      ]
+    },
+    {
+      "key": "v21",
+      "sentence": "The new medicine was very _______; nearly all of the patients who took it got better within a few days.",
+      "choices": [
+        "expensive",
+        "negative",
+        "sensitive",
+        "effective"
+      ]
+    },
+    {
+      "key": "v22",
+      "sentence": "She wrote a _______ letter of apology, and her friend could tell that she truly meant every word.",
+      "choices": [
+        "sincere",
+        "silent",
+        "sudden",
+        "strict"
+      ]
+    },
+    {
+      "key": "v23",
+      "sentence": "The hotel was very _______ for us because it stood within walking distance of the station, the shops, and our office.",
+      "choices": [
+        "expensive",
+        "convenient",
+        "ancient",
+        "private"
+      ]
+    },
+    {
+      "key": "v24",
+      "sentence": "The prices at that restaurant are quite _______, so even students can afford to eat there regularly.",
+      "choices": [
+        "valuable",
+        "powerful",
+        "reasonable",
+        "terrible"
+      ]
+    },
+    {
+      "key": "v25",
+      "sentence": "After living in Kyoto for ten years, she found that the narrow streets had become quite _______ to her.",
+      "choices": [
+        "familiar",
+        "strange",
+        "distant",
+        "foreign"
+      ]
+    },
+    {
+      "key": "v26",
+      "sentence": "At first the baby could only crawl, but _______ she learned to stand and then to walk on her own.",
+      "choices": [
+        "suddenly",
+        "hardly",
+        "rarely",
+        "gradually"
+      ]
+    },
+    {
+      "key": "v27",
+      "sentence": "I have not spoken to him myself, but _______ he has decided to move to Canada early next year.",
+      "choices": [
+        "exactly",
+        "hardly",
+        "apparently",
+        "nearly"
+      ]
+    },
+    {
+      "key": "v28",
+      "sentence": "The witness insisted that the fire had been a complete accident and that no one had _______ started it.",
+      "choices": [
+        "immediately",
+        "deliberately",
+        "hardly",
+        "rarely"
+      ]
+    },
+    {
+      "key": "v29",
+      "sentence": "This bus route is very popular, so the buses run _______, about every five minutes during the day.",
+      "choices": [
+        "frequently",
+        "rarely",
+        "hardly",
+        "slightly"
+      ]
+    },
+    {
+      "key": "v30",
+      "sentence": "The team lost many games early in the season, but they kept practicing hard and _______ won the championship.",
+      "choices": [
+        "immediately",
+        "rarely",
+        "hardly",
+        "eventually"
+      ]
+    },
+    {
+      "key": "v31",
+      "sentence": "The whole family is _______ their trip to Okinawa next month.",
+      "choices": [
+        "looking after",
+        "looking forward to",
+        "looking up to",
+        "looking down on"
+      ]
+    },
+    {
+      "key": "v32",
+      "sentence": "My new roommate is very kind and cheerful, and I _______ her very well.",
+      "choices": [
+        "get along with",
+        "get rid of",
+        "get over",
+        "get through"
+      ]
+    },
+    {
+      "key": "v33",
+      "sentence": "Our room was right next to a busy road, but we had to _______ the noise for three whole nights.",
+      "choices": [
+        "put off",
+        "put away",
+        "put up with",
+        "put on"
+      ]
+    },
+    {
+      "key": "v34",
+      "sentence": "We had to stop the car on the way home because we _______ gas in the middle of the countryside.",
+      "choices": [
+        "ran into",
+        "ran after",
+        "ran over",
+        "ran out of"
+      ]
+    },
+    {
+      "key": "v35",
+      "sentence": "More than fifty students decided to _______ the volunteer activity in the park last weekend.",
+      "choices": [
+        "take part in",
+        "take care of",
+        "take after",
+        "take over"
+      ]
+    },
+    {
+      "key": "v36",
+      "sentence": "As a hotel manager, she has to _______ many difficult problems almost every single day.",
+      "choices": [
+        "do without",
+        "deal with",
+        "come across",
+        "give up"
+      ]
+    },
+    {
+      "key": "v37",
+      "sentence": "It took the team several hours to _______ a really good idea for the new advertisement.",
+      "choices": [
+        "come across",
+        "get away with",
+        "come up with",
+        "look up to"
+      ]
+    },
+    {
+      "key": "v38",
+      "sentence": "The instructions were so confusing that I simply could not _______ how to use the new machine.",
+      "choices": [
+        "turn down",
+        "hand in",
+        "carry out",
+        "figure out"
+      ]
+    },
+    {
+      "key": "v39",
+      "sentence": "Even after she moved abroad, she promised to _______ with all of her old friends by email.",
+      "choices": [
+        "catch up",
+        "keep in touch",
+        "break up",
+        "hang out"
+      ]
+    },
+    {
+      "key": "v40",
+      "sentence": "Ms. Tanaka is _______ the sales department, so please ask her if you have any questions about it.",
+      "choices": [
+        "in spite of",
+        "on behalf of",
+        "in charge of",
+        "in place of"
+      ]
+    }
+  ],
+  "daimon2": [
+    {
+      "id": "p2_1",
+      "title": "A Solution for Missed Deliveries",
+      "text": "These days, many people buy things online instead of going to stores. When they order something, it is delivered to their homes. However, there is one common problem. Delivery drivers often arrive when no one is at home. ( 1 ), they cannot leave the package and must come back later. This wastes both time and energy. In large cities, this kind of problem happens almost every day, and it is a headache for both customers and delivery companies. To solve this problem, some apartment buildings have started using delivery lockers. When a driver comes, he or she puts the package inside a locker and locks it. The customer later ( 2 ) a code by email or a message on a smartphone app. With this code, the customer can open the locker and take out the package at any time. This system is useful because people do not have to wait at home all day. They can also pick up their packages early in the morning or late at night, on their way to work or school. It is also good for drivers. ( 3 ), they do not need to visit the same house many times. As a result, they can deliver more packages in a shorter time. Because of these benefits, delivery lockers are becoming more and more popular in many cities around the world.",
+      "blanks": [
+        {
+          "key": "p2_1_b1",
+          "n": 1,
+          "choices": [
+            "In such cases",
+            "In contrast",
+            "For example",
+            "By chance"
+          ]
+        },
+        {
+          "key": "p2_1_b2",
+          "n": 2,
+          "choices": [
+            "sends",
+            "hides",
+            "receives",
+            "returns"
+          ]
+        },
+        {
+          "key": "p2_1_b3",
+          "n": 3,
+          "choices": [
+            "However",
+            "For example",
+            "Instead",
+            "On the other hand"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p2_2",
+      "title": "Sleeping Through the Winter",
+      "text": "In winter, food becomes hard to find for many wild animals. Plants stop growing, and most insects disappear. ( 1 ), some animals such as bears and squirrels have found a clever way to survive the cold season. They sleep for a long time during the coldest months. This deep sleep is called hibernation. Before winter comes, these animals eat as much food as they can. Their bodies ( 2 ) the extra food as fat under the skin. Then, when they are sleeping, their bodies can use this fat for energy. In fact, a large bear can live for months without eating anything at all. During hibernation, an animal's heart beats very slowly, and its body becomes cold. In this way, the animal saves energy and does not need to eat. Because it hardly moves, it uses very little energy each day. Some animals sleep for only a few weeks, ( 3 ) others sleep for several months. When spring arrives and the weather becomes warm again, they wake up. They are hungry and thin after the long sleep. By then, plants have started to grow and insects have returned, so the animals can find food easily again. Scientists say that hibernation is one of the cleverest ways for animals to live through a season when there is almost nothing to eat.",
+      "blanks": [
+        {
+          "key": "p2_2_b1",
+          "n": 1,
+          "choices": [
+            "Therefore",
+            "In addition",
+            "However",
+            "For example"
+          ]
+        },
+        {
+          "key": "p2_2_b2",
+          "n": 2,
+          "choices": [
+            "sell",
+            "store",
+            "cook",
+            "waste"
+          ]
+        },
+        {
+          "key": "p2_2_b3",
+          "n": 3,
+          "choices": [
+            "so",
+            "because",
+            "if",
+            "while"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p2_3",
+      "title": "More Than Just Books",
+      "text": "When people hear the word \"library,\" they usually think of a quiet room full of books. For a long time, that was exactly what libraries were. People visited them mainly to borrow books or to read newspapers and magazines. ( 1 ), libraries today are changing, and they offer much more than books. One reason for this change is the Internet. Now that people can find almost any information on their smartphones, fewer of them come just to look something up. To stay useful, many libraries have started to ( 2 ) new kinds of services. For example, some libraries lend DVDs, music, and even tools or toys. Others hold English classes, story time for small children, or workshops where people can learn to use computers. Modern libraries have also become places where people can meet and work together. Many of them now have comfortable seats, free Wi-Fi, and quiet rooms for studying. Students often go there to prepare for their tests, ( 3 ) some adults use the meeting rooms for their own work. In this way, a library is no longer only a place to keep books. It has become a center of the community, where people of all ages can learn, relax, and spend time together. Because of these efforts, libraries remain important even in the age of the Internet.",
+      "blanks": [
+        {
+          "key": "p2_3_b1",
+          "n": 1,
+          "choices": [
+            "As a result",
+            "For example",
+            "In addition",
+            "However"
+          ]
+        },
+        {
+          "key": "p2_3_b2",
+          "n": 2,
+          "choices": [
+            "refuse",
+            "offer",
+            "forget",
+            "avoid"
+          ]
+        },
+        {
+          "key": "p2_3_b3",
+          "n": 3,
+          "choices": [
+            "while",
+            "so",
+            "because",
+            "if"
+          ]
+        }
+      ]
+    }
+  ],
+  "daimon3": [
+    {
+      "id": "p3_1",
+      "title": "A Baker's New Path",
+      "paragraphs": [
+        "Ken Tanaka grew up in a small town in northern Japan. When he was a child, his grandmother owned a tiny bakery near the train station. Every morning, Ken woke up early and watched her make bread. He loved the warm smell that filled the kitchen. He often helped her carry heavy bags of flour, and she taught him how to shape the dough with his hands.",
+        "After Ken finished high school, however, he did not become a baker. His parents wanted him to work at a large company in Tokyo, so he moved to the city and took a job at a bank. The work paid well, but Ken was not happy. He spent his days in front of a computer, and he rarely talked to anyone. Every night, he thought about his grandmother's warm kitchen.",
+        "One winter, Ken's grandmother became sick and could no longer run the bakery. Ken decided to return home to help her. At first, he only planned to stay for a few weeks. But when he started baking again, he remembered how much he loved it. He asked his grandmother to teach him her old recipes, and she happily agreed.",
+        "Ken worked hard to improve his skills. He tried new ideas, such as adding local fruit to his bread, and soon customers from other towns came to buy it. The little bakery became busy again. Today, Ken runs the shop by himself, and his grandmother sometimes sits by the window and watches him work. Ken often says that leaving his bank job was the best decision of his life, because now he does something he truly loves."
+      ],
+      "questions": [
+        {
+          "key": "p3_1_q1",
+          "q": "What is one thing Ken did when he was a child?",
+          "choices": [
+            "He baked bread and sold it at the train station.",
+            "He taught his grandmother new bread recipes.",
+            "He helped his grandmother carry heavy bags of flour.",
+            "He worked part-time at a large bakery in Tokyo."
+          ]
+        },
+        {
+          "key": "p3_1_q2",
+          "q": "Why was Ken not happy when he worked at the bank in Tokyo?",
+          "choices": [
+            "He spent his days at a computer and rarely talked to people.",
+            "The job did not pay him enough money.",
+            "His grandmother did not want him to work there.",
+            "He had to travel to other towns every day."
+          ]
+        },
+        {
+          "key": "p3_1_q3",
+          "q": "What happened after Ken started baking at his grandmother's shop again?",
+          "choices": [
+            "His grandmother moved to Tokyo to open a new shop.",
+            "He closed the bakery and went back to the bank.",
+            "He stopped using his grandmother's old recipes.",
+            "Customers from other towns came to buy his bread."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p3_2",
+      "title": "The Clever Octopus",
+      "paragraphs": [
+        "The octopus is one of the most interesting animals in the ocean. It has eight arms and a soft body with no bones. Because it has no bones, an octopus can change its shape easily. This ability helps it hide from larger animals that might try to eat it. Some octopuses can even squeeze their whole body through a hole as small as a coin.",
+        "Octopuses are also very good at changing color. Special cells in their skin allow them to match the colors around them in less than a second. When an octopus rests on a rock, it can look almost exactly like that rock. This skill is useful not only for hiding but also for surprising the small fish and crabs that it hunts for food.",
+        "Scientists have discovered that octopuses are much smarter than most people think. In one experiment, researchers gave an octopus a glass jar with a tasty crab inside. The lid was closed tightly, but the octopus learned to open it with its arms. Some octopuses have even been seen carrying empty shells across the sea floor. Later, they use these shells as a kind of shelter to protect themselves.",
+        "However, the life of an octopus is usually short. Most kinds live for only one or two years. A female octopus lays thousands of eggs and then guards them carefully until they hatch. During this time, she does not leave to find food, and she often becomes very weak. Sadly, many mother octopuses die soon after their babies are born. Even so, these amazing animals continue to surprise the scientists who study them."
+      ],
+      "questions": [
+        {
+          "key": "p3_2_q1",
+          "q": "Why can an octopus change its shape easily?",
+          "choices": [
+            "Because it can change its color quickly.",
+            "Because it has no bones in its body.",
+            "Because it has eight strong arms.",
+            "Because it lives deep in the ocean."
+          ]
+        },
+        {
+          "key": "p3_2_q2",
+          "q": "According to the passage, what did an octopus do in the experiment?",
+          "choices": [
+            "It changed its color to look like a glass jar.",
+            "It carried a glass jar across the sea floor.",
+            "It made a shelter out of a glass jar.",
+            "It learned to open a closed jar to reach a crab."
+          ]
+        },
+        {
+          "key": "p3_2_q3",
+          "q": "Why do many mother octopuses become very weak?",
+          "choices": [
+            "They live for more than ten years.",
+            "They fight with larger animals to protect their eggs.",
+            "They do not leave to find food while guarding their eggs.",
+            "They travel a long way to lay their eggs."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p3_3",
+      "title": "The History of Chocolate",
+      "paragraphs": [
+        "Today, chocolate is one of the most popular sweets in the world. However, the chocolate that people ate long ago was very different from the chocolate we enjoy now. Chocolate comes from the seeds of the cacao tree, which grows in warm areas of Central and South America. Thousands of years ago, people there discovered that these seeds could be made into a special drink.",
+        "The people of the ancient Maya and Aztec cultures loved this drink very much. They dried the cacao seeds, ground them into powder, and mixed the powder with water. But their drink was not sweet like modern hot chocolate. Instead, it was bitter, and they often added spices such as chili peppers to make it stronger. For these people, cacao was very valuable. In fact, the Aztecs sometimes used cacao seeds as money to buy food and other goods.",
+        "In the sixteenth century, explorers from Europe tasted the drink and carried cacao seeds back to their own countries. At first, Europeans also found the drink too bitter. Then someone had the idea of adding sugar and honey, and suddenly the drink became popular among rich people. Because cacao was expensive, only wealthy families could afford to drink it for many years.",
+        "Everything changed in the nineteenth century. New machines made it possible to produce chocolate quickly and cheaply. For the first time, a company created solid chocolate bars that people could eat instead of drink. Soon, chocolate was no longer only for the rich, and ordinary people could enjoy it too. Today, factories around the world turn cacao seeds into thousands of different products. Although modern chocolate has changed a lot, it still begins with the same small seeds that people first used long ago."
+      ],
+      "questions": [
+        {
+          "key": "p3_3_q1",
+          "q": "According to the passage, where does the cacao tree grow?",
+          "choices": [
+            "In warm areas of Central and South America.",
+            "In the cool mountains of Europe.",
+            "In dry deserts around the world.",
+            "Only inside modern factories."
+          ]
+        },
+        {
+          "key": "p3_3_q2",
+          "q": "What is one way the Aztecs used cacao seeds?",
+          "choices": [
+            "They planted them to grow sugar.",
+            "They used them as money to buy things.",
+            "They made them into solid bars.",
+            "They gave them only to children."
+          ]
+        },
+        {
+          "key": "p3_3_q3",
+          "q": "Why did the chocolate drink become popular among rich people in Europe?",
+          "choices": [
+            "Because chili peppers were added to it.",
+            "Because it was cheaper than other drinks.",
+            "Because someone had the idea of adding sugar and honey.",
+            "Because machines made it very quickly."
+          ]
+        },
+        {
+          "key": "p3_3_q4",
+          "q": "According to the passage, what happened in the nineteenth century?",
+          "choices": [
+            "Explorers first carried cacao seeds to Europe.",
+            "Cacao seeds began to be used as money.",
+            "People stopped eating chocolate completely.",
+            "Ordinary people could enjoy chocolate too."
+          ]
+        }
+      ]
+    }
+  ]
+}

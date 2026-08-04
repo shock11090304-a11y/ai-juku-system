@@ -1,0 +1,213 @@
+{
+ "no": 5,
+ "date": "8/21",
+ "title": "志望校別 実戦演習",
+ "goal": "一般論と筆者の主張の対立を軸に、指示語・言い換え・段落の型を手がかりとして、MARCH〜中堅国公立レベルの評論を制限時間内で正確に読み解く総合力を仕上げる。",
+ "points": [
+  {
+   "h": "「一般論 → 逆接 → 筆者の主張」の型を追う",
+   "body": "評論はまず世間の一般論を示し、Yet / However などの逆接で切り返して筆者の主張へ進むことが多い。本文でも文(1)〜(3)が一般論（選択肢は多いほど良い）、文(4)の Yet で流れが逆転し、文(11)(12)が結論になっている。逆接語を見たら「ここから筆者の本音が来る」と身構えると、主張を取り違えない。",
+   "ex": [
+    [
+     "Yet a growing body of research suggests that this assumption is only half true.",
+     "しかし、研究の蓄積は、この前提がせいぜい半分しか正しくないことを示している。"
+    ]
+   ],
+   "rule": "However / Yet / But の直後に筆者の主張が来る。一般論は反論のための前振りと見る。"
+  },
+  {
+   "h": "指示語と言い換えを結び、主張を一本の線でつかむ",
+   "body": "this / such / none of this などの指示語は、必ず前の内容を受ける。指示語の中身を毎回押さえ、In other words / What … does suggest is のような言い換え表現をたどると、筆者の主張が一本につながる。設問の多くは、この『指示語の中身』と『言い換え』を問うので、読みながら印を付けておく。",
+   "ex": [
+    [
+     "In other words, the very abundance that promises to satisfy us can leave us dissatisfied.",
+     "言い換えれば、私たちを満たすと約束するまさにその豊かさが、私たちを不満にしうるのだ。"
+    ]
+   ],
+   "rule": "指示語は直前の内容を指す。In other words / that is の後ろは前文の要約とみなして主張を確定する。"
+  },
+  {
+   "h": "段落の型を利用し、設問を先読みして速く解く",
+   "body": "序論（一般論）・本論（根拠・実験）・結論（主張）という型を意識すれば、どの段落に答えがあるか見当がつく。内容一致は本論の具体例、主題は結論の段落を見る。設問を先に読み、問われている文番号へ直行すれば、限られた時間の中でも根拠を取り違えずに解答できる。",
+   "ex": [
+    [
+     "The societies that flourish are those that learn when to stop searching.",
+     "栄える社会とは、いつ探すのをやめるべきかを学ぶ社会である。"
+    ]
+   ],
+   "rule": "主題は結論段落、事実確認は具体例の段落。設問を先読みして根拠の段落へ直行する。"
+  }
+ ],
+ "passage": {
+  "title": "The Paradox of Choice",
+  "jtitle": "選択のパラドックス ― 多すぎる自由の落とし穴",
+  "paras": [
+   [
+    "In wealthy societies, the freedom to choose is often treated as one of the greatest achievements of modern life.",
+    "We assume, almost without thinking, that the more options a person is offered, the happier and more satisfied that person will be.",
+    "A supermarket that stocks fifty kinds of coffee, we believe, must serve its customers far better than one that stocks only five."
+   ],
+   [
+    "Yet a growing body of research in psychology suggests that this comfortable assumption is, at best, only half true.",
+    "In one well-known study, shoppers who were shown a small selection of jams were far more likely to buy one than shoppers who faced a huge display of dozens of varieties.",
+    "The reason, researchers argue, is that an overwhelming number of options forces the mind to work harder and raises the fear of making the wrong decision.",
+    "When we finally choose, we cannot help imagining the attractive alternatives we have given up, and this quiet sense of loss steals much of the pleasure that our choice should have brought.",
+    "In other words, the very abundance that promises to satisfy us can leave us anxious, exhausted, and oddly dissatisfied."
+   ],
+   [
+    "None of this means that choice itself is harmful or that we would be better off with no freedom at all.",
+    "A world in which someone else decided everything for us would clearly be worse, not better.",
+    "What the evidence does suggest is that choice, like many good things, obeys a law of diminishing returns: beyond a certain point, each additional option adds more difficulty than value.",
+    "The societies and individuals that flourish, therefore, are not those that pursue endless options, but those that learn when to stop searching and be content with a choice that is simply good enough."
+   ]
+  ],
+  "trans": {
+   "1": "豊かな社会では、選ぶ自由は現代生活における最大の達成の一つとしてしばしば扱われる。",
+   "2": "私たちはほとんど考えることもなく、人に与えられる選択肢が多ければ多いほど、その人はより幸福でより満足するはずだ、と思い込んでいる。",
+   "3": "五十種類のコーヒーを置くスーパーマーケットは、五種類しか置かない店よりも、はるかによく客のためになるにちがいない、と私たちは信じている。",
+   "4": "しかし、心理学における研究の蓄積は、この心地よい前提がせいぜい半分しか正しくないことを示唆している。",
+   "5": "ある有名な研究では、少ない種類のジャムを見せられた買い物客のほうが、何十種類もの巨大な陳列に直面した買い物客よりも、実際に一つ買う可能性がはるかに高かった。",
+   "6": "研究者たちが論じるところによれば、その理由は、あまりに多い選択肢が頭をより働かせ、間違った決定をすることへの恐れを高めるからだ、という。",
+   "7": "いざ選ぶ段になると、私たちは自分が手放した魅力的な選択肢を想像せずにはいられず、この静かな喪失感が、その選択が本来もたらすはずだった喜びの多くを奪ってしまう。",
+   "8": "言い換えれば、私たちを満たすと約束するまさにその豊かさが、私たちを不安にし、疲れさせ、奇妙にも不満なままにしうるのだ。",
+   "9": "こうしたことはどれも、選択そのものが有害だとか、まったく自由がないほうが私たちにとって良いということを意味するわけではない。",
+   "10": "他の誰かが私たちの代わりにすべてを決めてしまう世界は、明らかに良いどころか、より悪いものになるだろう。",
+   "11": "証拠が実際に示唆しているのは、選択は多くの良いものと同じように収穫逓減の法則に従う、ということだ。つまり、ある一定の点を超えると、選択肢が一つ増えるごとに、価値よりも難しさのほうが大きく加わってしまうのである。",
+   "12": "それゆえ、栄える社会や個人とは、際限のない選択肢を追い求める者ではなく、いつ探すのをやめるべきかを学び、ただ『十分に良い』選択で満足できる者なのである。"
+  }
+ },
+ "vocab": [
+  [
+   "assume",
+   "動",
+   "（と）思い込む、当然のことと考える"
+  ],
+  [
+   "option",
+   "名",
+   "選択肢"
+  ],
+  [
+   "satisfy",
+   "動",
+   "満足させる"
+  ],
+  [
+   "overwhelming",
+   "形",
+   "圧倒的な、（数が）あまりに多い"
+  ],
+  [
+   "alternative",
+   "名",
+   "（代わりとなる）選択肢"
+  ],
+  [
+   "abundance",
+   "名",
+   "豊富さ、あり余ること"
+  ],
+  [
+   "anxious",
+   "形",
+   "不安な、心配な"
+  ],
+  [
+   "exhausted",
+   "形",
+   "疲れ果てた"
+  ],
+  [
+   "evidence",
+   "名",
+   "証拠"
+  ],
+  [
+   "diminishing",
+   "形",
+   "しだいに減っていく"
+  ],
+  [
+   "pursue",
+   "動",
+   "追い求める、追求する"
+  ],
+  [
+   "flourish",
+   "動",
+   "栄える、繁栄する"
+  ]
+ ],
+ "q_instr": "次の英文を読み、各設問に答えよ。（文(1)(2)…は本文の通し番号を表す）",
+ "questions": [
+  {
+   "type": "rc_mc",
+   "q": "文(4) の下線部 this comfortable assumption が指す内容として、最も適切なものを選べ。",
+   "choices": [
+    "人に与えられる選択肢が多ければ多いほど、その人はより幸福で満足するという考え",
+    "豊かな社会では、選ぶ自由がしだいに失われつつあるという考え",
+    "心理学の研究の成果は、日常生活にはほとんど役に立たないという考え",
+    "少ない種類の商品しか置かない店のほうが、客のためになるという考え"
+   ],
+   "ans": 0,
+   "exp": "this comfortable assumption は前の内容を受ける指示語。文(2)の『選択肢が多いほど幸福で満足する』と文(3)のスーパーの例がその中身で、世間が心地よく信じている前提にあたる（＝正解①）。②『選ぶ自由が失われつつある』と④『品ぞろえの少ない店が客のためになる』は、筆者・研究が示す“逆”の見方で世間の前提ではない。③『心理学は役に立たない』は本文にない。"
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(7) When we finally choose, we cannot help imagining the attractive alternatives we have given up, and this quiet sense of loss steals much of the pleasure that our choice should have brought. を和訳せよ。",
+   "ans": "いざ選ぶ段になると、私たちは自分が手放した魅力的な選択肢を想像せずにはいられず、この静かな喪失感が、その選択が本来もたらすはずだった喜びの多くを奪ってしまう。",
+   "exp": "cannot help -ing は「〜せずにはいられない」の意。the attractive alternatives（which/that）we have given up は目的格の関係代名詞が省略された形で「私たちが手放した魅力的な選択肢」。後半は this quiet sense of loss（この静かな喪失感）が主語S、steals が動詞V。the pleasure that our choice should have brought の should have brought は「本来もたらすはずだった（が実際にはもたらさなかった）」という含みを表す。",
+   "lines": 3
+  },
+  {
+   "type": "rc_mc",
+   "q": "文(5) で紹介されているジャムの実験の結果として、本文の内容に一致するものを選べ。",
+   "choices": [
+    "何十種類ものジャムを並べた店のほうが、売り上げが大きく伸びた。",
+    "ジャムの種類の数は、客が買うかどうかにまったく影響しなかった。",
+    "少ない種類のジャムを見せられた客のほうが、実際に買う割合が高かった。",
+    "客は種類が多いほど、より高価なジャムを選ぶ傾向があった。"
+   ],
+   "ans": 2,
+   "exp": "文(5)に shoppers who were shown a small selection of jams were far more likely to buy one than shoppers who faced a huge display of dozens of varieties とある。『少ない選択肢を見せられた客のほうが購入する可能性がはるかに高かった』ので3が正解。0は結果が逆、1は種類の数が結果を左右したので誤り、3の価格については本文に記述がない。正解は2。"
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(11) の a law of diminishing returns（収穫逓減の法則）は、ここでは「選択」について具体的に何を述べているのか。本文に即して日本語で説明せよ。",
+   "ans": "ある一定の点を超えると、選択肢が一つ増えるごとに、そこから得られる価値よりも選ぶことの難しさのほうが大きくなり、選択肢が増えるほどかえって満足が損なわれてしまう、ということ。",
+   "exp": "『収穫逓減の法則』とは、一定量を超えると追加分から得られる効用が次第に小さくなっていく、という法則。文(11)はコロン（:）の後で beyond a certain point, each additional option adds more difficulty than value と自ら言い換えており、選択肢についてこの法則を当てはめて、増えすぎた選択肢はもたらす価値よりも負担（難しさ）のほうが上回る、と述べている。",
+   "lines": 3
+  },
+  {
+   "type": "rc_mc",
+   "q": "本文の内容に合うように、次の英文の空所に入れるのに最も適切なものを選べ。 According to the passage, having more options is not always better because, past a certain point, extra choices tend to make us ______ .",
+   "choices": [
+    "healthier and wealthier",
+    "more generous toward other people",
+    "much quicker at making decisions",
+    "more anxious and less satisfied"
+   ],
+   "ans": 3,
+   "exp": "空所を含む文は「一定の点を超えると、余分な選択肢はかえって私たちを〜にする傾向がある」という意味。本文の文(8)に can leave us anxious, exhausted, and oddly dissatisfied とあり、文(6)(7)でも選択肢が多いほど不安が高まり満足が奪われると述べられている。したがって『より不安で満足しにくくなる』の3（more anxious and less satisfied）が正解。0・1・2はいずれも本文に根拠がない。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "この文章で筆者が最も伝えたいこととして、最も適切なものを選べ。",
+   "choices": [
+    "選ぶ自由は本質的に有害なので、社会はできるだけ選択肢をなくすべきだ。",
+    "選択肢は良いものだが、増えすぎると価値より負担が上回るため、『十分に良い』選択で満足することが大切だ。",
+    "社会が豊かになりさえすれば、人々は必ずより幸福になっていく。",
+    "ジャムの好みは人によって大きく異なるので、種類は多いほど望ましい。"
+   ],
+   "ans": 1,
+   "exp": "筆者は文(9)(10)で『選択そのものが悪いわけではなく、自由が全くないほうが良いわけでもない』と留保したうえで、文(11)(12)で『選択は収穫逓減の法則に従い、際限なく追い求めるより good enough で満足できる者が栄える』と結論づけている。したがって1が主旨。0は文(9)(10)と矛盾、2は本文全体が反論している一般論、3は本論の具体例の枝葉であり主題ではない。正解は1。"
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(12) The societies and individuals that flourish, therefore, are not those that pursue endless options, but those that learn when to stop searching and be content with a choice that is simply good enough. について、文全体の主語S（の中心）と述語動詞Vをそれぞれ答えよ。",
+   "ans": "S＝The societies and individuals（that flourish が後ろから修飾する「栄える社会と個人」）／V＝are",
+   "exp": "that flourish は直前の The societies and individuals を後ろから説明する関係詞節なので、主語Sの一部として一かたまりに扱う。そのカタマリの外側にある本動詞がareで、文全体は are not A but B（Aではなく Bである）の構造。A＝those that pursue endless options、B＝those that learn … good enough。thereforeは前の内容からの帰結を示す挿入の接続副詞である。",
+   "lines": 2
+  }
+ ]
+}

@@ -1,0 +1,65 @@
+{
+  "part": 4,
+  "summary_tasks": [
+    {
+      "id": "s1",
+      "source_title": "The Shift Toward Remote Work",
+      "source_text": "Over the past decade, the way people work has changed dramatically. Remote work, once seen as an unusual arrangement for a small number of employees, has become common in many industries. When a global health crisis forced offices to close, companies that had never considered it were suddenly required to let their staff work from home. What began as a temporary emergency measure gradually turned into a permanent feature of modern working life.\n\nSupporters point to a range of advantages. Employees no longer have to spend hours commuting, which saves both time and money and reduces daily stress. Workers can organize their schedules more freely and often report a better balance between their jobs and their personal lives. Companies also benefit, since they can hire talented people regardless of where they live and can cut the costs of maintaining large offices.\n\nHowever, remote work is not without problems. Some employees feel lonely and disconnected from their colleagues, and communication through screens can lead to misunderstandings. Others find it hard to separate their working hours from their private time, which can eventually cause exhaustion. For these reasons, a number of companies are now asking their staff to return to the office, at least for part of the week.",
+      "source_word_count": 207,
+      "model_summary": "Working from home, formerly rare, spread widely after a health emergency shut offices, and it has since remained a common practice. It brings clear benefits: employees avoid long commutes and enjoy greater flexibility, while firms save money and can recruit talented people anywhere. Nevertheless, it also creates difficulties, such as isolation, poor communication, and trouble dividing work from personal life, leading some companies to recall their staff.",
+      "summary_word_count": 67,
+      "key_points": [
+        "リモートワークはパンデミックで一気に普及し、その後も一般的な働き方として定着した",
+        "通勤の削減・柔軟な働き方に加え、企業側もコスト削減や居住地に縛られない採用ができるという利点がある",
+        "孤独感・意思疎通の難しさ・仕事と私生活の境界喪失などの欠点があり、一部企業は出社回帰を求めている"
+      ],
+      "teaching_notes": "各段落の中心文(トピックセンテンス)を1つずつ拾い、3要点を過不足なく入れるのが基本。原文の語句をそのまま写すと減点対象なので、spend hours commuting→avoid long commutes のように必ず言い換える。自分の意見(I think...)や原文にない具体例は禁止。60-70語に収めるコツは、However/Nevertheless などの逆接語で3要点を1つの流れにまとめて圧縮すること。段落順(現状→利点→欠点)を保つと論理が崩れない。"
+    },
+    {
+      "id": "s2",
+      "source_title": "The Problem of Overtourism",
+      "source_text": "In recent years, traveling abroad has become easier and cheaper than ever before. Budget airlines, online booking sites, and social media have encouraged millions of people to visit famous cities and natural wonders around the world. For many regions, this flood of tourists brings welcome income, creating jobs and supporting local businesses such as hotels, restaurants, and shops.\n\nYet the sheer number of visitors has begun to cause serious problems. In some historic towns, narrow streets are packed with crowds, and the prices of housing and everyday goods have risen sharply. Popular natural sites suffer from litter and damage, while local residents complain that their neighborhoods have lost the quiet atmosphere they once enjoyed. In extreme cases, people feel like strangers in their own hometowns.\n\nTo deal with these issues, various measures are being introduced. Some cities now limit the number of tourists allowed each day or charge special fees to enter crowded areas. Others try to guide travelers toward less famous destinations in order to spread visitors more evenly. At the same time, governments and tour companies are encouraging people to travel more responsibly, respecting local customs and protecting the environment. Whether such efforts will be enough remains to be seen.",
+      "source_word_count": 202,
+      "model_summary": "Thanks to inexpensive flights and technology, tourism has boomed, bringing valuable income and jobs to many destinations. However, the massive crowds create serious difficulties, including congested streets, higher living costs, environmental harm, and frustrated residents. In response, authorities are limiting daily visitor numbers, charging entry fees, directing travelers to lesser-known places, and promoting more responsible tourism, though whether these steps will succeed is uncertain.",
+      "summary_word_count": 64,
+      "key_points": [
+        "格安の移動手段や技術の普及で観光が急増し、地域に収入と雇用をもたらした",
+        "混雑・物価上昇・環境破壊など『観光公害』が生じ、住民が生活を脅かされている",
+        "入場者数の制限・入場料徴収・観光客の分散誘導・責任ある観光の推進などの対策が導入されている"
+      ],
+      "teaching_notes": "3段落=(急増と恩恵)→(発生した問題)→(対策)という典型的な『問題解決型』の文章。各段落から1要点ずつ抽出する。this flood of tourists→massive crowds、spread visitors more evenly→directing travelers to lesser-known places のように言い換える。列挙(congested streets, higher living costs...)を使うと複数の具体を少ない語数で圧縮でき、60-70語に収めやすい。原文末尾の『効果は未知数』のニュアンスも要点なので落とさない。意見・評価語(I think this is terrible 等)は入れない。"
+    }
+  ],
+  "essay_tasks": [
+    {
+      "id": "e1",
+      "topic": "Should governments invest more in renewable energy sources?",
+      "points": ["Environment", "Cost", "Employment", "Reliability"],
+      "model_essay": "Some people question whether investing in renewable energy is worthwhile. In my opinion, governments should definitely spend more on sources such as solar and wind power. I feel this way for two reasons, which I will explain below. First, renewable energy is essential for protecting the environment. Unlike coal and oil, clean sources produce almost no greenhouse gases, so expanding them would help slow climate change and reduce the air pollution that harms public health. Second, developing this industry can create many new jobs. Building and maintaining solar panels and wind turbines requires a large workforce, so government investment would boost local economies and provide stable employment for years to come. For these reasons, I strongly believe that governments ought to increase their support for renewable energy in order to secure a cleaner and more prosperous future.",
+      "essay_word_count": 137,
+      "structure_note": "導入=トピックを言い換えて自分の立場(賛成)を明示し、『理由は2つ』と予告。理由1=Environment(化石燃料と違い温室効果ガスをほぼ出さず、気候変動と大気汚染を抑える)。理由2=Employment(産業育成で雇用が生まれ地域経済を支える)。結論=別表現で立場を再確認(a cleaner and more prosperous future)。POINTSの4語のうち2つ(Environment / Employment)を各1段落で理由+具体展開するのが準1級高得点の型。全段落を First / Second / For these reasons で明確に区切る。",
+      "useful_expressions": [
+        "In my opinion, governments should definitely ...",
+        "I feel this way for two reasons, which I will explain below.",
+        "First, ... / Second, ...",
+        "so expanding them would help ... (理由→結果を so でつなぐ)",
+        "For these reasons, I strongly believe that ..."
+      ]
+    },
+    {
+      "id": "e2",
+      "topic": "Should schools require students to participate in volunteer work?",
+      "points": ["Community", "Skills", "Time", "Responsibility"],
+      "model_essay": "These days, many schools are considering whether students should be required to do volunteer work. In my opinion, making such activities compulsory is a good idea, for the following two reasons. To begin with, volunteering helps young people develop valuable skills. When students assist at nursing homes or clean up local parks, they learn how to cooperate, communicate, and solve real problems, all of which will benefit them greatly in their future careers. In addition, these activities strengthen the community. By working together for a common cause, students form closer bonds with local residents and gain a deeper sense of responsibility toward the society they live in. This experience often encourages them to keep helping others as adults. For these reasons, I firmly believe that schools should include compulsory volunteer work, since it benefits both the students themselves and the wider community.",
+      "essay_word_count": 142,
+      "structure_note": "導入=トピックを言い換えて立場(賛成)を明示し、『理由は2つ』と予告。理由1=Skills(協働・意思疎通・課題解決力が将来のキャリアで役立つ)+具体例(nursing homes/parks)。理由2=Community(共通の目的で協働し、地域住民との絆と責任感が育つ)。結論=学生と地域社会の双方に利益があると再確認。POINTSの4語のうち Skills と Community を主軸に据え、Responsibility を理由2に自然に織り込む。抽象論だけでなく具体例を1つ入れると説得力(内容点)が上がる。",
+      "useful_expressions": [
+        "In my opinion, making such activities compulsory is a good idea, for the following two reasons.",
+        "To begin with, ... / In addition, ...",
+        "all of which will benefit them ... (関係詞で理由を補強)",
+        "gain a deeper sense of responsibility toward ...",
+        "For these reasons, I firmly believe that ..."
+      ]
+    }
+  ]
+}

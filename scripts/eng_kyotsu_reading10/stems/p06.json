@@ -1,0 +1,84 @@
+{
+ "no": 6,
+ "title": "Green Space in the City",
+ "passage": "More and more people around the world live in cities, and city governments now face a simple question: how much green space does a city need? Parks, gardens, and street trees are not just decoration. A research team called the Green City Project reports that these green spaces change how a city works.\n\nFirst, plants cool the air. On a hot summer day, a street lined with tall trees can be several degrees cooler than a street of bare concrete. Because rooms along that street stay cooler too, people there use less electricity for air conditioning.\n\nSecond, green space is good for health. In a survey of two thousand city residents, people who lived within a five-minute walk of a park said that they exercised more often and felt less stress than those living farther away. Parks also give neighbors a place to meet and talk.\n\nHowever, green space is not free. Trees must be watered and pruned, and sometimes they must be removed when they become dangerous. In many cities, the cost of caring for a tree for thirty years is higher than the planting cost. Cities that plant trees without planning for this later cost often end up with dying trees along their streets.\n\nThere is also a question of fairness. A new park can raise the price of housing around it, and the families who waited longest for that park may have to move away. Some planners therefore build small gardens in many neighborhoods instead of one large park, so that more people can share the benefit.",
+ "glossary": [
+  {
+   "word": "the Green City Project",
+   "ja": "グリーン・シティ・プロジェクト(架空の研究チーム)"
+  },
+  {
+   "word": "pruned",
+   "ja": "(木の枝を)刈り込まれた、剪定された"
+  },
+  {
+   "word": "resident",
+   "ja": "住民"
+  },
+  {
+   "word": "planner",
+   "ja": "(都市)計画の担当者"
+  },
+  {
+   "word": "fairness",
+   "ja": "公平さ"
+  },
+  {
+   "word": "housing",
+   "ja": "住宅"
+  }
+ ],
+ "questions": [
+  {
+   "n": 1,
+   "q": "Your group is preparing a presentation based on the article. Which of the following best states its main point?",
+   "options": [
+    "Because caring for street trees costs so much, cities should cool their streets in other ways.",
+    "Parks clearly improve residents' health, so every city ought to build one large central park.",
+    "Adding green space helps cities in several ways, but it also brings real costs and difficult problems.",
+    "Green space has both benefits and costs, so cities should stop planting any new trees until budgets grow."
+   ]
+  },
+  {
+   "n": 2,
+   "q": "According to the article, what happens on a street lined with tall trees?",
+   "options": [
+    "The surface of the road becomes even hotter than that of a treeless street.",
+    "The cooling effect is felt outdoors but never reaches the rooms along the street.",
+    "The air temperature stays exactly the same as on a street of bare concrete.",
+    "The air can be several degrees cooler, so less electricity is used indoors."
+   ]
+  },
+  {
+   "n": 3,
+   "q": "Based on the article, what is most likely to happen in a city that plants many new street trees but sets aside no money for their care?",
+   "options": [
+    "Its streets may lose the cooling effect that the new trees were planted to provide.",
+    "Its residents will use less and less electricity for air conditioning every year.",
+    "Its trees will need much less water and care once they have stood for about thirty years.",
+    "It will have to build one large park instead of many small gardens."
+   ]
+  },
+  {
+   "n": 4,
+   "q": "According to the article, what did the survey of two thousand city residents show?",
+   "options": [
+    "Everyone who lived near a park in the city said that they had made new friends there.",
+    "Those living near a park spent much less money on electricity than other city residents.",
+    "People who lived within a short walk of a park exercised more often and felt less stress than others.",
+    "Those living far from a park asked the city to build a larger park for them."
+   ]
+  },
+  {
+   "n": 5,
+   "q": "Your group is making a slide about the last part of the article. Which is the best option for the blank?\n\n Slide 5: A Question of Fairness\n - Problem: ______________\n - What some planners do: build small gardens in many neighborhoods instead of one large park",
+   "options": [
+    "Old parks in poorer areas are closed down as soon as a new park opens.",
+    "A new park can raise housing costs, so long-time residents may leave.",
+    "A new park lowers nearby housing prices, so long-time residents gain money.",
+    "Large parks are usually built where almost nobody happens to be living now."
+   ]
+  }
+ ],
+ "lead": "You are preparing a presentation about green space in cities. You found the following article."
+}

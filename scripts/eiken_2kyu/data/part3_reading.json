@@ -1,0 +1,207 @@
+{
+  "part": 3,
+  "passages": [
+    {
+      "id": "p3_1",
+      "title": "A Baker's New Path",
+      "theme": "人物・エピソード（体験）",
+      "paragraphs": [
+        "Ken Tanaka grew up in a small town in northern Japan. When he was a child, his grandmother owned a tiny bakery near the train station. Every morning, Ken woke up early and watched her make bread. He loved the warm smell that filled the kitchen. He often helped her carry heavy bags of flour, and she taught him how to shape the dough with his hands.",
+        "After Ken finished high school, however, he did not become a baker. His parents wanted him to work at a large company in Tokyo, so he moved to the city and took a job at a bank. The work paid well, but Ken was not happy. He spent his days in front of a computer, and he rarely talked to anyone. Every night, he thought about his grandmother's warm kitchen.",
+        "One winter, Ken's grandmother became sick and could no longer run the bakery. Ken decided to return home to help her. At first, he only planned to stay for a few weeks. But when he started baking again, he remembered how much he loved it. He asked his grandmother to teach him her old recipes, and she happily agreed.",
+        "Ken worked hard to improve his skills. He tried new ideas, such as adding local fruit to his bread, and soon customers from other towns came to buy it. The little bakery became busy again. Today, Ken runs the shop by himself, and his grandmother sometimes sits by the window and watches him work. Ken often says that leaving his bank job was the best decision of his life, because now he does something he truly loves."
+      ],
+      "word_count": 272,
+      "questions": [
+        {
+          "q": "What is one thing Ken did when he was a child?",
+          "choices": [
+            "He baked bread and sold it at the train station.",
+            "He taught his grandmother new bread recipes.",
+            "He helped his grandmother carry heavy bags of flour.",
+            "He worked part-time at a large bakery in Tokyo."
+          ],
+          "answer": 2,
+          "evidence": "He often helped her carry heavy bags of flour, and she taught him how to shape the dough with his hands.",
+          "why_others_wrong": {
+            "A": "本文にない。子どもの頃はパン作りを見て手伝っただけで、駅でパンを売ったとは書かれていない。",
+            "B": "逆。教えたのは祖母の方で、ケンがレシピを教えたのではない。",
+            "D": "別箇所と混同。東京での仕事は大人になってからの銀行勤めで、子ども時代のパン屋ではない。"
+          }
+        },
+        {
+          "q": "Why was Ken not happy when he worked at the bank in Tokyo?",
+          "choices": [
+            "He spent his days at a computer and rarely talked to people.",
+            "The job did not pay him enough money.",
+            "His grandmother did not want him to work there.",
+            "He had to travel to other towns every day."
+          ],
+          "answer": 0,
+          "evidence": "He spent his days in front of a computer, and he rarely talked to anyone.",
+          "why_others_wrong": {
+            "B": "逆。仕事の給料は良かった（paid well）と書かれている。",
+            "C": "本文にない。東京で働くことを望んだのは両親で、祖母の意見は述べられていない。",
+            "D": "本文にない。他の町へ毎日出かけたとは書かれていない。"
+          }
+        },
+        {
+          "q": "What happened after Ken started baking at his grandmother's shop again?",
+          "choices": [
+            "His grandmother moved to Tokyo to open a new shop.",
+            "He closed the bakery and went back to the bank.",
+            "He stopped using his grandmother's old recipes.",
+            "Customers from other towns came to buy his bread."
+          ],
+          "answer": 3,
+          "evidence": "He tried new ideas, such as adding local fruit to his bread, and soon customers from other towns came to buy it.",
+          "why_others_wrong": {
+            "A": "本文にない。祖母は家に残り、窓辺でケンの仕事を見ていると書かれている。",
+            "B": "逆。店は再びにぎわい、今もケンが経営している。",
+            "C": "逆。ケンは祖母に古いレシピを教えてくれるよう頼んだ。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "p3_2",
+      "title": "The Clever Octopus",
+      "theme": "科学・自然・動物",
+      "paragraphs": [
+        "The octopus is one of the most interesting animals in the ocean. It has eight arms and a soft body with no bones. Because it has no bones, an octopus can change its shape easily. This ability helps it hide from larger animals that might try to eat it. Some octopuses can even squeeze their whole body through a hole as small as a coin.",
+        "Octopuses are also very good at changing color. Special cells in their skin allow them to match the colors around them in less than a second. When an octopus rests on a rock, it can look almost exactly like that rock. This skill is useful not only for hiding but also for surprising the small fish and crabs that it hunts for food.",
+        "Scientists have discovered that octopuses are much smarter than most people think. In one experiment, researchers gave an octopus a glass jar with a tasty crab inside. The lid was closed tightly, but the octopus learned to open it with its arms. Some octopuses have even been seen carrying empty shells across the sea floor. Later, they use these shells as a kind of shelter to protect themselves.",
+        "However, the life of an octopus is usually short. Most kinds live for only one or two years. A female octopus lays thousands of eggs and then guards them carefully until they hatch. During this time, she does not leave to find food, and she often becomes very weak. Sadly, many mother octopuses die soon after their babies are born. Even so, these amazing animals continue to surprise the scientists who study them."
+      ],
+      "word_count": 269,
+      "questions": [
+        {
+          "q": "Why can an octopus change its shape easily?",
+          "choices": [
+            "Because it can change its color quickly.",
+            "Because it has no bones in its body.",
+            "Because it has eight strong arms.",
+            "Because it lives deep in the ocean."
+          ],
+          "answer": 1,
+          "evidence": "Because it has no bones, an octopus can change its shape easily.",
+          "why_others_wrong": {
+            "A": "別の能力と混同。色を変えることは、形を変えることとは別の能力として説明されている。",
+            "C": "本文にない。八本の腕は述べられているが、形を変えられる理由としては挙げられていない。",
+            "D": "本文にない。深い海に住むから形を変えられるとは書かれていない。"
+          }
+        },
+        {
+          "q": "According to the passage, what did an octopus do in the experiment?",
+          "choices": [
+            "It changed its color to look like a glass jar.",
+            "It carried a glass jar across the sea floor.",
+            "It made a shelter out of a glass jar.",
+            "It learned to open a closed jar to reach a crab."
+          ],
+          "answer": 3,
+          "evidence": "The lid was closed tightly, but the octopus learned to open it with its arms.",
+          "why_others_wrong": {
+            "A": "本文にない。実験で色を変えてビンに似せたとは書かれていない。",
+            "B": "混同。運んでいたのは空の貝殻で、ガラスのビンではない。",
+            "C": "混同。シェルター（隠れ家）に使うのは貝殻であり、ガラスのビンではない。"
+          }
+        },
+        {
+          "q": "Why do many mother octopuses become very weak?",
+          "choices": [
+            "They live for more than ten years.",
+            "They fight with larger animals to protect their eggs.",
+            "They do not leave to find food while guarding their eggs.",
+            "They travel a long way to lay their eggs."
+          ],
+          "answer": 2,
+          "evidence": "During this time, she does not leave to find food, and she often becomes very weak.",
+          "why_others_wrong": {
+            "A": "逆。ほとんどのタコは一年か二年しか生きないと書かれている。",
+            "B": "本文にない。卵を守るために大きな動物と戦うとは述べられていない。",
+            "D": "本文にない。卵を産むために遠くまで移動するとは書かれていない。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "p3_3",
+      "title": "The History of Chocolate",
+      "theme": "社会・文化・歴史",
+      "paragraphs": [
+        "Today, chocolate is one of the most popular sweets in the world. However, the chocolate that people ate long ago was very different from the chocolate we enjoy now. Chocolate comes from the seeds of the cacao tree, which grows in warm areas of Central and South America. Thousands of years ago, people there discovered that these seeds could be made into a special drink.",
+        "The people of the ancient Maya and Aztec cultures loved this drink very much. They dried the cacao seeds, ground them into powder, and mixed the powder with water. But their drink was not sweet like modern hot chocolate. Instead, it was bitter, and they often added spices such as chili peppers to make it stronger. For these people, cacao was very valuable. In fact, the Aztecs sometimes used cacao seeds as money to buy food and other goods.",
+        "In the sixteenth century, explorers from Europe tasted the drink and carried cacao seeds back to their own countries. At first, Europeans also found the drink too bitter. Then someone had the idea of adding sugar and honey, and suddenly the drink became popular among rich people. Because cacao was expensive, only wealthy families could afford to drink it for many years.",
+        "Everything changed in the nineteenth century. New machines made it possible to produce chocolate quickly and cheaply. For the first time, a company created solid chocolate bars that people could eat instead of drink. Soon, chocolate was no longer only for the rich, and ordinary people could enjoy it too. Today, factories around the world turn cacao seeds into thousands of different products. Although modern chocolate has changed a lot, it still begins with the same small seeds that people first used long ago."
+      ],
+      "word_count": 290,
+      "questions": [
+        {
+          "q": "According to the passage, where does the cacao tree grow?",
+          "choices": [
+            "In warm areas of Central and South America.",
+            "In the cool mountains of Europe.",
+            "In dry deserts around the world.",
+            "Only inside modern factories."
+          ],
+          "answer": 0,
+          "evidence": "Chocolate comes from the seeds of the cacao tree, which grows in warm areas of Central and South America.",
+          "why_others_wrong": {
+            "B": "本文にない。ヨーロッパ人は後から種を受け取っただけで、木がヨーロッパの山で育つとは書かれていない。",
+            "C": "本文にない。乾いた砂漠で育つとは述べられていない。",
+            "D": "混同。工場は種を加工するが、木が育つのは温かい地域である。"
+          }
+        },
+        {
+          "q": "What is one way the Aztecs used cacao seeds?",
+          "choices": [
+            "They planted them to grow sugar.",
+            "They used them as money to buy things.",
+            "They made them into solid bars.",
+            "They gave them only to children."
+          ],
+          "answer": 1,
+          "evidence": "In fact, the Aztecs sometimes used cacao seeds as money to buy food and other goods.",
+          "why_others_wrong": {
+            "A": "本文にない。砂糖を育てるために植えたとは書かれていない。",
+            "C": "混同。固形のチョコバーが作られたのは十九世紀の工場でのことで、アステカ人ではない。",
+            "D": "本文にない。子どもだけに与えたとは述べられていない。"
+          }
+        },
+        {
+          "q": "Why did the chocolate drink become popular among rich people in Europe?",
+          "choices": [
+            "Because chili peppers were added to it.",
+            "Because it was cheaper than other drinks.",
+            "Because someone had the idea of adding sugar and honey.",
+            "Because machines made it very quickly."
+          ],
+          "answer": 2,
+          "evidence": "Then someone had the idea of adding sugar and honey, and suddenly the drink became popular among rich people.",
+          "why_others_wrong": {
+            "A": "混同。チリペッパーを加えたのは古代のマヤ・アステカで、味を強くするためだった（甘くするためではない）。",
+            "B": "逆。カカオは高価で、裕福な家庭だけが買えた。",
+            "D": "別箇所。機械が使われたのは十九世紀で、すでに富裕層に人気になった後のこと。"
+          }
+        },
+        {
+          "q": "According to the passage, what happened in the nineteenth century?",
+          "choices": [
+            "Explorers first carried cacao seeds to Europe.",
+            "Cacao seeds began to be used as money.",
+            "People stopped eating chocolate completely.",
+            "Ordinary people could enjoy chocolate too."
+          ],
+          "answer": 3,
+          "evidence": "Soon, chocolate was no longer only for the rich, and ordinary people could enjoy it too.",
+          "why_others_wrong": {
+            "A": "別箇所。探検家が種をヨーロッパへ運んだのは十六世紀で、十九世紀ではない。",
+            "B": "混同。カカオの種がお金として使われたのは、ずっと前のアステカの時代。",
+            "C": "本文と逆。チョコレートはより人気になったのであり、食べられなくなったのではない。"
+          }
+        }
+      ]
+    }
+  ]
+}

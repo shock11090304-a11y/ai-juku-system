@@ -1,0 +1,310 @@
+{
+ "no": 1,
+ "date": "7/27",
+ "title": "be動詞・一般動詞・時制",
+ "goal": "be動詞と一般動詞をはっきり区別し、現在・過去・未来・進行形を主語と時に合わせて正しく使い分けられるようになる。",
+ "points": [
+  {
+   "h": "be動詞と一般動詞を区別する",
+   "body": "be動詞(am / is / are)は「〜です・〜にいる」を表す動詞。一般動詞(play, like, go など)は「〜する」という動作や状態を表す。ふつう1つの文に動詞は1つだけ。be動詞と一般動詞を続けて並べてはいけない(×I am like … / ○I like …)。",
+   "ex": [
+    [
+     "I am a junior high school student.",
+     "私は中学生です。"
+    ],
+    [
+     "I play tennis after school.",
+     "私は放課後テニスをします。"
+    ]
+   ],
+   "rule": "★ be動詞と一般動詞は同じ場所に並べない"
+  },
+  {
+   "h": "否定文・疑問文の作り方が2種類ある",
+   "body": "be動詞の文は、否定は be のうしろに not、疑問は be を主語の前に出す。一般動詞の文は、否定・疑問に do / does / did を使い、動詞はいつも原形にもどす。",
+   "ex": [
+    [
+     "She is not busy today.",
+     "彼女は今日忙しくない。"
+    ],
+    [
+     "Do you like music?",
+     "あなたは音楽が好きですか。"
+    ]
+   ],
+   "rule": "★ 一般動詞の否定・疑問は do / does / did を借りてくる"
+  },
+  {
+   "h": "三人称単数のs と 過去形",
+   "body": "主語が he / she / it などの三人称単数で「現在」の文のとき、一般動詞に s や es をつける(study → studies)。過去の文では、規則動詞は ed(play → played)、不規則動詞は形が変わる(go → went, see → saw)。",
+   "ex": [
+    [
+     "He plays soccer every day.",
+     "彼は毎日サッカーをする。"
+    ],
+    [
+     "I went to Kyoto last week.",
+     "私は先週京都へ行った。"
+    ]
+   ],
+   "rule": "★ 三単現は動詞にs / 過去は ed か不規則変化"
+  },
+  {
+   "h": "未来と進行形",
+   "body": "未来は will + 動詞の原形、または be going to + 原形で表す。進行形は be動詞 + 動詞のing形で「〜している」。今のことは現在進行形(am / is / are + ing)、そのときのことは過去進行形(was / were + ing)。",
+   "ex": [
+    [
+     "It will rain tomorrow.",
+     "明日は雨が降るだろう。"
+    ],
+    [
+     "They are playing soccer now.",
+     "彼らは今サッカーをしている。"
+    ]
+   ],
+   "rule": "★ 未来は will / be going to、進行形は be + 〜ing"
+  }
+ ],
+ "kiso": [
+  {
+   "type": "fill",
+   "stem": "I ______ a junior high school student.",
+   "ans": "am",
+   "point": "be動詞(現在)",
+   "exp": "主語が I のときのbe動詞は am。「私は〜です」を表す。is や are にはしない。"
+  },
+  {
+   "type": "mc",
+   "stem": "She ______ kind to everyone.",
+   "note": "彼女はみんなに親切だ。",
+   "choices": [
+    "is",
+    "am",
+    "are",
+    "be"
+   ],
+   "ans": 0,
+   "point": "be動詞(三人称単数)",
+   "exp": "主語 She は三人称単数なので is を使う。am は I 用、are は you や複数用、be は原形なのでここでは使えない。"
+  },
+  {
+   "type": "fill",
+   "stem": "He ______ ( play ) the guitar every day.",
+   "ans": "plays",
+   "point": "三単現のs",
+   "exp": "主語 He は三人称単数で、every day があり現在の文なので、play に s をつけて plays にする。"
+  },
+  {
+   "type": "mc",
+   "stem": "I ______ like coffee.",
+   "note": "私はコーヒーが好きではない。",
+   "choices": [
+    "am not",
+    "isn't",
+    "aren't",
+    "don't"
+   ],
+   "ans": 3,
+   "point": "一般動詞の否定",
+   "exp": "like は一般動詞なので、否定は don't(do not)を使う。am not / isn't / aren't はbe動詞用なので誤り。"
+  },
+  {
+   "type": "fill",
+   "stem": "We ______ ( watch ) TV last night.",
+   "ans": "watched",
+   "point": "規則動詞の過去形",
+   "exp": "last night(昨夜)は過去のこと。watch は規則動詞なので ed をつけて watched にする。"
+  },
+  {
+   "type": "fill",
+   "stem": "She ______ ( go ) to school yesterday.",
+   "ans": "went",
+   "point": "不規則動詞の過去形",
+   "exp": "yesterday(昨日)は過去のこと。go は不規則動詞で、過去形は went。goed とはしない。"
+  },
+  {
+   "type": "mc",
+   "stem": "They ______ very tired after the game.",
+   "note": "彼らは試合の後、とても疲れていた。",
+   "choices": [
+    "is",
+    "was",
+    "were",
+    "are"
+   ],
+   "ans": 2,
+   "point": "be動詞の過去(複数)",
+   "exp": "主語 They は複数。『試合の後、疲れていた』という過去の文なので、複数の過去の be動詞 were を使う。was は I・三人称単数用、are/is は現在。"
+  },
+  {
+   "type": "fill",
+   "stem": "Look! The baby ______ ( sleep ) now.",
+   "ans": "is sleeping",
+   "point": "現在進行形",
+   "exp": "now があり「今〜している最中」を表すので現在進行形にする。主語 The baby は三人称単数なので be動詞は is、sleep に ing をつけて is sleeping。"
+  }
+ ],
+ "hyojun": [
+  {
+   "type": "mc",
+   "stem": "One of my friends ______ from Australia.",
+   "note": "私の友だちの1人はオーストラリア出身だ。",
+   "choices": [
+    "come",
+    "are coming",
+    "comes",
+    "were coming"
+   ],
+   "ans": 2,
+   "point": "主語の中心語と三単現(one of ~ は単数)",
+   "exp": "主語の中心は One(1人)。of my friends は「友だちのうちの」という説明のかたまりで、動詞の相手ではない。だから三人称単数として comes になる。うしろの friends につられて come や are coming にしないのがねらい。come from ~ は「~出身だ」。"
+  },
+  {
+   "type": "mc",
+   "stem": "My father usually ______ home at seven, but today he is still working.",
+   "note": "父はふだん7時に帰宅するが、今日はまだ働いている。",
+   "choices": [
+    "comes",
+    "is coming",
+    "came",
+    "come"
+   ],
+   "ans": 0,
+   "point": "習慣は現在形(usually)/ 進行形との区別",
+   "exp": "usually(ふだん・いつも)は「くり返す習慣」を表す言葉なので現在形にする。主語 My father は三人称単数だから comes。「今まさに~している最中」ではないので is coming は使えない。but のあとの today he is still working が「今のこと」なので、そこだけ進行形になっている点にも注目。"
+  },
+  {
+   "type": "order",
+   "ja": "なぜあなたは昨日、私に電話してくれなかったのですか。",
+   "tokens": [
+    "Why",
+    "didn't",
+    "you",
+    "call",
+    "me",
+    "yesterday"
+   ],
+   "ans": "Why didn't you call me yesterday",
+   "point": "過去の否定疑問文の語順",
+   "exp": "「なぜ~しなかったのですか」は Why + didn't + 主語 + 動詞の原形 の順。didn't は did not の短縮形で、過去でも did のうしろの動詞は原形にもどすので call のまま。called にしない点がねらい。"
+  },
+  {
+   "type": "order",
+   "ja": "私が電話したとき、あなたは何をしていましたか。",
+   "tokens": [
+    "What",
+    "were",
+    "you",
+    "doing",
+    "when",
+    "I",
+    "called",
+    "you"
+   ],
+   "ans": "What were you doing when I called you",
+   "point": "過去進行形の疑問文 + 時を表す節",
+   "exp": "「何をしていましたか」は過去進行形の疑問文なので What + were + you + doing。主語 you に合わせて were を使う。when I called you(私が電話したとき)は過去の一点を表すまとまりなので、その中の動詞は過去形 called。2つの時制がまざる文で、主の部分は「していた=進行形」、when の部分は「した=過去形」と使い分けるのがねらい。"
+  },
+  {
+   "type": "rewrite",
+   "given": "He teaches us math.",
+   "target": "He ______ us math when he ______ young.",
+   "blanks": [
+    "taught",
+    "was"
+   ],
+   "point": "不規則動詞の過去形 + be動詞の過去",
+   "exp": "when he ~ young(彼が若かったころ)から過去の文とわかる。teach は不規則動詞で過去形は taught(teached にしない)。「若かった」という状態は be動詞で表し、主語 he は単数なので was。1文の中で一般動詞の過去と be動詞の過去を同時に正しく作れるかがねらい。"
+  },
+  {
+   "type": "rewrite",
+   "given": "My mother drinks coffee.",
+   "target": "My mother ______ ______ coffee; she drinks tea.",
+   "blanks": [
+    "doesn't",
+    "drink"
+   ],
+   "point": "三単現の否定文(doesn't + 原形)",
+   "exp": "主語 My mother は三人称単数で現在の否定文なので doesn't(does not)を使う。does がすでに三単現の s を持っているので、うしろの動詞は原形にもどして drink。drinks のまま置いてしまう(s の二重づけ)ミスを防ぐのがねらい。"
+  },
+  {
+   "type": "mc",
+   "stem": "Don't worry. I ______ help you with your homework.",
+   "note": "心配しないで。宿題を手伝ってあげるよ。",
+   "choices": [
+    "am helping",
+    "help",
+    "helped",
+    "will help"
+   ],
+   "ans": 3,
+   "point": "その場で決めた意志の未来(will)",
+   "exp": "「(よし)手伝ってあげよう」と、その場で決めた気持ち(意志)は will help で表す。今~している最中ではないので am helping は誤り、help だけでは未来の意志を表せず、helped は過去なので文の意味(これから手伝う)に合わない。help ~ with … は「…を手伝う」。"
+  },
+  {
+   "type": "mc",
+   "stem": "How often ______ the students in this class practice the piano?",
+   "note": "この教室の生徒たちは、どのくらいの頻度でピアノを練習しますか。",
+   "choices": [
+    "does",
+    "do",
+    "is",
+    "are"
+   ],
+   "ans": 1,
+   "point": "疑問文の主語と一致(修飾語で離れる複数主語)",
+   "exp": "疑問文の主語は the students(生徒たち=複数)。in this class は説明のかたまりで、class(単数)につられて does にしないのがねらい。複数の主語なので do を使い、動詞は原形 practice。practice は一般動詞なので、be動詞の is / are は使えない。"
+  }
+ ],
+ "nyushi": [
+  {
+   "type": "error",
+   "html": "[a|My brother] [b|study] [c|English] [d|every day].",
+   "ans": "b",
+   "correct": "study → studies",
+   "point": "三単現のs",
+   "exp": "主語 My brother は三人称単数で、every day があり現在の文。study は y を i にかえて es をつけ studies にする。"
+  },
+  {
+   "type": "error",
+   "html": "[a|Look!] [b|The children] [c|are play] [d|in the park].",
+   "ans": "c",
+   "correct": "are play → are playing",
+   "point": "現在進行形の形",
+   "exp": "「〜している」は be動詞 + 動詞のing形。are play ではなく、play に ing をつけて are playing とする。"
+  },
+  {
+   "type": "error",
+   "html": "[a|Tom] [b|does] [c|not] [d|likes] natto.",
+   "ans": "d",
+   "correct": "likes → like",
+   "point": "does not + 動詞の原形",
+   "exp": "does not のうしろの動詞は原形にもどす。三単現の s はすでに does が持っているので、likes ではなく like が正しい。"
+  },
+  {
+   "type": "mc",
+   "stem": "I will call you when he ______ home.",
+   "note": "彼が帰宅したら、あなたに電話します。",
+   "choices": [
+    "will come",
+    "came",
+    "comes",
+    "is coming"
+   ],
+   "ans": 2,
+   "point": "時を表す副詞節は現在形",
+   "exp": "when(〜のとき)で始まる時を表すまとまりの中では、未来のことも現在形で表す。主語 he は三人称単数なので comes。難関私立で頻出のルール。"
+  },
+  {
+   "type": "ja2en",
+   "ja": "彼は先週の日曜日、公園で野球をしていました。",
+   "models": [
+    "He was playing baseball in the park last Sunday.",
+    "He was playing baseball at the park last Sunday."
+   ],
+   "point": "過去進行形(was + 〜ing)+ 場所・時の語句",
+   "mistakes": "played と単純過去にしてしまう(「〜していた」は進行形)/ 主語 He なのに were を使う(正しくは was)。",
+   "lines": 2
+  }
+ ]
+}

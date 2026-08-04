@@ -1,0 +1,229 @@
+{
+ "no": 2,
+ "date": "8/18",
+ "title": "論理展開・つなぎ言葉",
+ "goal": "but・so・because・however・for example などのつなぎ言葉を追いかけ、文と文の「反対・理由・結果・具体例」の関係を正しくつかむ。",
+ "points": [
+  {
+   "h": "but・however は「話が反対に曲がる」合図",
+   "body": "but や however が出てきたら、その前後は反対の内容。前で言ったことをいったん受けて、後ろで「でも実は…」と逆のことを述べる。だから but・however の後ろに筆者の言いたいことが来ることが多い。",
+   "ex": [
+    [
+     "Sweet foods give you energy quickly, but that energy does not last long.",
+     "甘い食べ物はすぐにエネルギーをくれる。でも、そのエネルギーは長続きしない。"
+    ],
+    [
+     "I was tired. However, I finished my homework.",
+     "私はつかれていた。しかし、宿題を終わらせた。"
+    ]
+   ],
+   "rule": "but・however の後ろは「反対の内容」"
+  },
+  {
+   "h": "because・so は「理由 → 結果」の向きをつかむ",
+   "body": "because の後ろには「理由(なぜなら)」、so の後ろには「結果(だから)」が来る。矢印の向きを意識すると、原因と結果がはっきりする。Because of this も「このために」と、前の内容を理由として受けるつなぎ言葉。",
+   "ex": [
+    [
+     "I skipped breakfast, so I felt hungry.",
+     "私は朝食を抜いた。だから、おなかがすいた。"
+    ],
+    [
+     "I felt hungry because I skipped breakfast.",
+     "私はおなかがすいた。なぜなら、朝食を抜いたからだ。"
+    ]
+   ],
+   "rule": "because の後ろ=理由／so の後ろ=結果"
+  },
+  {
+   "h": "for example・in other words は「わかりやすく説明」の合図",
+   "body": "for example(たとえば)の後ろには具体例、in other words(言いかえれば)の後ろには前の内容の言い直しが来る。むずかしい話や大事な話の後にこれらが来たら、「今から分かりやすくするよ」というサインだと考えよう。",
+   "ex": [
+    [
+     "Breakfast helps your brain. For example, it can improve your test scores.",
+     "朝食は脳を助ける。たとえば、テストの点を上げることもある。"
+    ],
+    [
+     "Breakfast is fuel. In other words, it gives your brain energy.",
+     "朝食は燃料だ。言いかえれば、脳にエネルギーを与えるものだ。"
+    ]
+   ],
+   "rule": "for example → 具体例／in other words → 言いかえ"
+  }
+ ],
+ "passage": {
+  "title": "A Good Start to the Day",
+  "jtitle": "一日のよいスタート",
+  "paras": [
+   [
+    "Many students skip breakfast because they want to sleep a little longer in the morning.",
+    "However, this small choice can change their whole day.",
+    "When you sleep, your body keeps using energy, so you wake up with an empty stomach.",
+    "Your brain needs energy too."
+   ],
+   [
+    "Breakfast gives your brain the energy it needs.",
+    "For example, one study found that students who ate breakfast got better scores on math tests.",
+    "They could think more clearly and remember new words more easily.",
+    "In other words, breakfast is not only food for your body but also fuel for your mind."
+   ],
+   [
+    "Of course, what you eat is important too.",
+    "A breakfast with rice, eggs, and fruit is better than only sweet snacks.",
+    "Sweet foods give you energy quickly, but that energy does not last long.",
+    "Because of this, you may feel tired again before lunch."
+   ],
+   [
+    "So, try to wake up ten minutes earlier and eat a simple breakfast.",
+    "It is a small habit, but it can help you study better every day."
+   ]
+  ],
+  "trans": {
+   "1": "多くの生徒は、朝もう少し長く眠りたいので、朝食を抜いてしまう。",
+   "2": "しかし、このちょっとした選択が一日全体を変えてしまうことがある。",
+   "3": "眠っている間も体はエネルギーを使い続けるので、あなたは空腹の状態で目を覚ます。",
+   "4": "あなたの脳もエネルギーを必要としている。",
+   "5": "朝食は、脳が必要とするエネルギーを脳に与えてくれる。",
+   "6": "たとえば、ある研究では、朝食を食べた生徒のほうが数学のテストでよい点を取ったことがわかった。",
+   "7": "彼らはより はっきりと考え、新しい単語をより簡単に覚えることができた。",
+   "8": "言いかえれば、朝食は体のための食べ物であるだけでなく、心（頭）のための燃料でもある。",
+   "9": "もちろん、何を食べるかも大切だ。",
+   "10": "ご飯、卵、果物のある朝食は、甘いお菓子だけよりもよい。",
+   "11": "甘い食べ物はすぐにエネルギーをくれるが、そのエネルギーは長くは続かない。",
+   "12": "このために、あなたは昼食の前にまた疲れを感じるかもしれない。",
+   "13": "だから、10分早く起きて、簡単な朝食を食べるようにしよう。",
+   "14": "それは小さな習慣だが、あなたが毎日よりよく勉強する助けになる。"
+  }
+ },
+ "vocab": [
+  [
+   "skip",
+   "動",
+   "抜かす・(食事を)抜く"
+  ],
+  [
+   "choice",
+   "名",
+   "選択"
+  ],
+  [
+   "energy",
+   "名",
+   "エネルギー・活力"
+  ],
+  [
+   "empty",
+   "形",
+   "からの"
+  ],
+  [
+   "stomach",
+   "名",
+   "胃・おなか"
+  ],
+  [
+   "fuel",
+   "名",
+   "燃料"
+  ],
+  [
+   "mind",
+   "名",
+   "心・頭（脳）"
+  ],
+  [
+   "clearly",
+   "副",
+   "はっきりと"
+  ],
+  [
+   "last",
+   "動",
+   "続く・長持ちする"
+  ],
+  [
+   "habit",
+   "名",
+   "習慣"
+  ],
+  [
+   "score",
+   "名",
+   "得点・点数"
+  ],
+  [
+   "snack",
+   "名",
+   "軽食・おやつ"
+  ]
+ ],
+ "q_instr": "本文を読み、つなぎ言葉に注意しながら次の問いに答えなさい。",
+ "questions": [
+  {
+   "type": "rc_mc",
+   "q": "文(3)の so は、前後をどのような関係でつないでいるか。最も適切なものを選べ。",
+   "choices": [
+    "具体例（前の内容の例を挙げる）",
+    "理由→結果（前が理由で、後がその結果）",
+    "逆接（前と反対の内容が続く）",
+    "追加（同じ方向の情報を付け足す）"
+   ],
+   "ans": 1,
+   "exp": "文(3)は「眠っている間も体はエネルギーを使い続ける（理由）→ だから空腹で目を覚ます（結果）」という流れ。so は『だから』と、理由から結果へつなぐ語。逆接・具体例・追加ではない。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "文(11) Sweet foods give you energy quickly, but that energy does not last long. で使われている but は、どんな関係を表しているか。",
+   "choices": [
+    "前の内容の具体例をあげている",
+    "前の内容の理由を述べている",
+    "前の内容を分かりやすく言いかえている",
+    "前の内容と反対のことを述べている"
+   ],
+   "ans": 3,
+   "exp": "but は逆接のつなぎ言葉。「すぐにエネルギーをくれる」という良い面を述べたあと、「でも長続きしない」と反対方向へ話を曲げている。具体例・理由・言いかえではなく「反対のこと」を表す。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "文(6)の For example ... は、直前のどの文の具体例になっているか。",
+   "choices": [
+    "文(4) Your brain needs energy too.",
+    "文(9) Of course, what you eat is important too.",
+    "文(5) Breakfast gives your brain the energy it needs.",
+    "文(11) Sweet foods give you energy quickly ..."
+   ],
+   "ans": 2,
+   "exp": "for example は「たとえば」と直前の内容の具体例を示す合図。直前の文(5)「朝食は脳に必要なエネルギーを与える」という主張の具体例として、朝食を食べた生徒が数学でよい点を取った研究を挙げている。文(9)や(11)は For example より後ろにあり、直前ではない。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "文(12) Because of this の this が指す内容として最も適切なものを選べ。",
+   "choices": [
+    "甘い食べ物はすぐにエネルギーをくれるが、そのエネルギーは長続きしないこと",
+    "朝食は体だけでなく心（頭）の燃料にもなること",
+    "多くの生徒が朝もう少し眠りたくて朝食を抜くこと",
+    "ご飯や卵の朝食が甘いお菓子だけよりよいこと"
+   ],
+   "ans": 0,
+   "exp": "this は直前の文(11)の内容を指している。「甘い物のエネルギーは長続きしない」→ Because of this（このために）→「昼食前にまた疲れる」と、理由と結果が自然につながる。ほかの選択肢は文(12)の直前ではなく、因果の流れに合わない。"
+  },
+  {
+   "type": "rc_mc",
+   "q": "この文章全体で筆者が最も伝えたいことはどれか。",
+   "choices": [
+    "朝食を抜けば少し長く眠れるので、そのほうが健康によい。",
+    "朝食は脳のエネルギーになり、勉強や気分によい影響を与える。",
+    "甘いお菓子は、朝食として最もよい食べ物である。",
+    "朝食は体には必要だが、脳の働きとは関係がない。"
+   ],
+   "ans": 1,
+   "exp": "文(5)〜(8)で朝食が脳のエネルギー（fuel for your mind）になり、成績や記憶をよくすると述べ、文(13)(14)で「よい習慣として朝食を食べよう」とまとめている。よって主旨は「朝食は脳によく、勉強や気分に good」。ほかは本文の内容と反対で誤り。"
+  },
+  {
+   "type": "rc_desc",
+   "q": "文(8) In other words, breakfast is not only food for your body but also fuel for your mind. を日本語に訳せ。",
+   "ans": "言いかえれば、朝食は体のための食べ物であるだけでなく、心（頭）のための燃料でもある。",
+   "exp": "In other words「言いかえれば」は前の内容を分かりやすく言い直すつなぎ言葉。not only A but also B は「AだけでなくBも」。fuel for your mind「心（頭）のための燃料」は、脳を働かせるエネルギーを燃料にたとえた表現。",
+   "lines": 2
+  }
+ ]
+}

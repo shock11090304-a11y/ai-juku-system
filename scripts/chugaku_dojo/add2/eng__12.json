@@ -1,0 +1,242 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の内容に合うものはどれですか。",
+  "passage": "Kenta is a second-year student at Midori Junior High School. Last spring, he joined the school's gardening club. At first, he did not know anything about plants, and he thought the club would be boring. However, his teacher, Ms. Tanaka, showed him how to grow tomatoes and cucumbers. Every morning before class, Kenta and three other members watered the vegetables and pulled out weeds. In June, the first red tomato appeared. Kenta was very excited and took a picture of it with his phone. The club also gave some of the vegetables to teachers and to the school kitchen. The cooks used them to make lunch for everyone. One day, a first-year student named Aya tasted the club's tomatoes at lunch and decided to join the club, too. Now the club has eight members. Kenta says that working in the garden makes him calm and happy. He hopes that next year the club can grow strawberries as well.",
+  "choices": [
+   "Kenta joined the gardening club last spring.",
+   "Kenta has been a member of the club for three years.",
+   "Kenta started the gardening club by himself.",
+   "Kenta joined the club in his third year of school."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「Kenta joined the gardening club last spring.」。 本文に Last spring, he joined the school's gardening club とあり、去年の春に入部したと書かれている。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "Who taught Kenta how to grow tomatoes and cucumbers?",
+  "passage": "Kenta is a second-year student at Midori Junior High School. Last spring, he joined the school's gardening club. At first, he did not know anything about plants, and he thought the club would be boring. However, his teacher, Ms. Tanaka, showed him how to grow tomatoes and cucumbers. Every morning before class, Kenta and three other members watered the vegetables and pulled out weeds. In June, the first red tomato appeared. Kenta was very excited and took a picture of it with his phone. The club also gave some of the vegetables to teachers and to the school kitchen. The cooks used them to make lunch for everyone. One day, a first-year student named Aya tasted the club's tomatoes at lunch and decided to join the club, too. Now the club has eight members. Kenta says that working in the garden makes him calm and happy. He hopes that next year the club can grow strawberries as well.",
+  "choices": [
+   "His mother",
+   "Ms. Tanaka, his teacher",
+   "Aya, a first-year student",
+   "The school cooks"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】長文読解。正解は「Ms. Tanaka, his teacher」。 本文に his teacher, Ms. Tanaka, showed him how to grow tomatoes and cucumbers とある。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "What did the club do with some of the vegetables?",
+  "passage": "Kenta is a second-year student at Midori Junior High School. Last spring, he joined the school's gardening club. At first, he did not know anything about plants, and he thought the club would be boring. However, his teacher, Ms. Tanaka, showed him how to grow tomatoes and cucumbers. Every morning before class, Kenta and three other members watered the vegetables and pulled out weeds. In June, the first red tomato appeared. Kenta was very excited and took a picture of it with his phone. The club also gave some of the vegetables to teachers and to the school kitchen. The cooks used them to make lunch for everyone. One day, a first-year student named Aya tasted the club's tomatoes at lunch and decided to join the club, too. Now the club has eight members. Kenta says that working in the garden makes him calm and happy. He hopes that next year the club can grow strawberries as well.",
+  "choices": [
+   "They sold them at a shop.",
+   "They threw them away.",
+   "They gave some to teachers and the school kitchen.",
+   "They kept all of them for the members."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】長文読解。正解は「They gave some to teachers and the school kitchen.」。 本文に The club also gave some of the vegetables to teachers and to the school kitchen とある。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "Why did Aya decide to join the club?",
+  "passage": "Kenta is a second-year student at Midori Junior High School. Last spring, he joined the school's gardening club. At first, he did not know anything about plants, and he thought the club would be boring. However, his teacher, Ms. Tanaka, showed him how to grow tomatoes and cucumbers. Every morning before class, Kenta and three other members watered the vegetables and pulled out weeds. In June, the first red tomato appeared. Kenta was very excited and took a picture of it with his phone. The club also gave some of the vegetables to teachers and to the school kitchen. The cooks used them to make lunch for everyone. One day, a first-year student named Aya tasted the club's tomatoes at lunch and decided to join the club, too. Now the club has eight members. Kenta says that working in the garden makes him calm and happy. He hopes that next year the club can grow strawberries as well.",
+  "choices": [
+   "Because her friend asked her to join.",
+   "Because she tasted the club's tomatoes at lunch.",
+   "Because Ms. Tanaka told her to join.",
+   "Because she wanted to grow strawberries."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】長文読解。正解は「Because she tasted the club's tomatoes at lunch.」。 本文に Aya tasted the club's tomatoes at lunch and decided to join the club, too とある。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "What does Kenta hope to do next year?",
+  "passage": "Kenta is a second-year student at Midori Junior High School. Last spring, he joined the school's gardening club. At first, he did not know anything about plants, and he thought the club would be boring. However, his teacher, Ms. Tanaka, showed him how to grow tomatoes and cucumbers. Every morning before class, Kenta and three other members watered the vegetables and pulled out weeds. In June, the first red tomato appeared. Kenta was very excited and took a picture of it with his phone. The club also gave some of the vegetables to teachers and to the school kitchen. The cooks used them to make lunch for everyone. One day, a first-year student named Aya tasted the club's tomatoes at lunch and decided to join the club, too. Now the club has eight members. Kenta says that working in the garden makes him calm and happy. He hopes that next year the club can grow strawberries as well.",
+  "choices": [
+   "Grow strawberries in the garden",
+   "Become the teacher of the club",
+   "Leave the gardening club",
+   "Sell vegetables to the school kitchen"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「Grow strawberries in the garden」。 本文の最後に He hopes that next year the club can grow strawberries as well とある。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "Why does Mrs. Sato take a cloth bag when she goes shopping?",
+  "passage": "The Sato family lives in a small town near the mountains. Two years ago, they began to think more carefully about the environment. Now, they try to reduce the amount of garbage they make. Mrs. Sato takes a cloth bag when she goes shopping, so she does not need plastic bags from the store. Mr. Sato repairs old furniture instead of buying new things. Their daughter, Yuki, collects empty cans and bottles and takes them to the recycling center every Saturday. The family also started a small compost box in their garden. They put fruit skins and vegetable pieces into the box, and after a few months these become good soil for their flowers. At first, Yuki thought these habits were troublesome. But now she is proud of what her family does. She even gave a short speech about recycling at school. Her classmates were interested, and some of them started to bring cloth bags, too. Yuki believes that small actions by many people can help the earth.",
+  "choices": [
+   "Because a cloth bag is more colorful",
+   "So she does not need plastic bags from the store",
+   "Because the store does not sell bags",
+   "So she can carry her umbrella"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】長文読解。正解は「So she does not need plastic bags from the store」。 本文に so she does not need plastic bags from the store とある。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "What does Yuki do every Saturday?",
+  "passage": "The Sato family lives in a small town near the mountains. Two years ago, they began to think more carefully about the environment. Now, they try to reduce the amount of garbage they make. Mrs. Sato takes a cloth bag when she goes shopping, so she does not need plastic bags from the store. Mr. Sato repairs old furniture instead of buying new things. Their daughter, Yuki, collects empty cans and bottles and takes them to the recycling center every Saturday. The family also started a small compost box in their garden. They put fruit skins and vegetable pieces into the box, and after a few months these become good soil for their flowers. At first, Yuki thought these habits were troublesome. But now she is proud of what her family does. She even gave a short speech about recycling at school. Her classmates were interested, and some of them started to bring cloth bags, too. Yuki believes that small actions by many people can help the earth.",
+  "choices": [
+   "She buys new furniture.",
+   "She makes a speech at school.",
+   "She takes empty cans and bottles to the recycling center.",
+   "She plants flowers in the garden."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】長文読解。正解は「She takes empty cans and bottles to the recycling center.」。 本文に Yuki collects empty cans and bottles and takes them to the recycling center every Saturday とある。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "What happens to the fruit skins and vegetable pieces in the compost box?",
+  "passage": "The Sato family lives in a small town near the mountains. Two years ago, they began to think more carefully about the environment. Now, they try to reduce the amount of garbage they make. Mrs. Sato takes a cloth bag when she goes shopping, so she does not need plastic bags from the store. Mr. Sato repairs old furniture instead of buying new things. Their daughter, Yuki, collects empty cans and bottles and takes them to the recycling center every Saturday. The family also started a small compost box in their garden. They put fruit skins and vegetable pieces into the box, and after a few months these become good soil for their flowers. At first, Yuki thought these habits were troublesome. But now she is proud of what her family does. She even gave a short speech about recycling at school. Her classmates were interested, and some of them started to bring cloth bags, too. Yuki believes that small actions by many people can help the earth.",
+  "choices": [
+   "They are sold at the market.",
+   "They become good soil for the flowers.",
+   "They are given to the neighbors.",
+   "They are burned in the garden."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】長文読解。正解は「They become good soil for the flowers.」。 本文に after a few months these become good soil for their flowers とある。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "How did Yuki feel about these habits at first?",
+  "passage": "The Sato family lives in a small town near the mountains. Two years ago, they began to think more carefully about the environment. Now, they try to reduce the amount of garbage they make. Mrs. Sato takes a cloth bag when she goes shopping, so she does not need plastic bags from the store. Mr. Sato repairs old furniture instead of buying new things. Their daughter, Yuki, collects empty cans and bottles and takes them to the recycling center every Saturday. The family also started a small compost box in their garden. They put fruit skins and vegetable pieces into the box, and after a few months these become good soil for their flowers. At first, Yuki thought these habits were troublesome. But now she is proud of what her family does. She even gave a short speech about recycling at school. Her classmates were interested, and some of them started to bring cloth bags, too. Yuki believes that small actions by many people can help the earth.",
+  "choices": [
+   "She thought they were troublesome.",
+   "She thought they were exciting.",
+   "She thought they were easy.",
+   "She thought they were dangerous."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「She thought they were troublesome.」。 本文に At first, Yuki thought these habits were troublesome とある。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "What does Mr. Yamada do every morning?",
+  "passage": "Mr. Yamada is a bus driver in our city. He is sixty years old, and he has driven a bus for more than thirty years. Every morning, he starts work at six o'clock. Many students and workers take his bus. Mr. Yamada always says \"Good morning\" with a big smile, so the passengers feel happy at the start of the day. He is famous for being kind. When an old woman drops her wallet, he stops the bus safely and helps her pick it up. When it rains hard, he waits a few more seconds for people who are running to the bus stop. One winter morning, a young boy left his glove on a seat. Mr. Yamada kept the glove and gave it back to the boy the next day. Because of his kindness, many people in the city know his name. Last month, the city gave him a special thank-you letter. Mr. Yamada said he was glad, but the best reward for him is the smiles of his passengers.",
+  "choices": [
+   "He starts work at eight o'clock.",
+   "He says \"Good morning\" with a big smile.",
+   "He gives money to the passengers.",
+   "He sleeps on the bus."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】長文読解。正解は「He says \"Good morning\" with a big smile.」。 本文に Mr. Yamada always says \"Good morning\" with a big smile とある。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "What does Mr. Yamada do when it rains hard?",
+  "passage": "Mr. Yamada is a bus driver in our city. He is sixty years old, and he has driven a bus for more than thirty years. Every morning, he starts work at six o'clock. Many students and workers take his bus. Mr. Yamada always says \"Good morning\" with a big smile, so the passengers feel happy at the start of the day. He is famous for being kind. When an old woman drops her wallet, he stops the bus safely and helps her pick it up. When it rains hard, he waits a few more seconds for people who are running to the bus stop. One winter morning, a young boy left his glove on a seat. Mr. Yamada kept the glove and gave it back to the boy the next day. Because of his kindness, many people in the city know his name. Last month, the city gave him a special thank-you letter. Mr. Yamada said he was glad, but the best reward for him is the smiles of his passengers.",
+  "choices": [
+   "He drives faster than usual.",
+   "He closes the door quickly.",
+   "He waits a few more seconds for people running to the bus stop.",
+   "He stops driving the bus."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】長文読解。正解は「He waits a few more seconds for people running to the bus stop.」。 本文に When it rains hard, he waits a few more seconds for people who are running to the bus stop とある。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "What happened to the young boy's glove?",
+  "passage": "Mr. Yamada is a bus driver in our city. He is sixty years old, and he has driven a bus for more than thirty years. Every morning, he starts work at six o'clock. Many students and workers take his bus. Mr. Yamada always says \"Good morning\" with a big smile, so the passengers feel happy at the start of the day. He is famous for being kind. When an old woman drops her wallet, he stops the bus safely and helps her pick it up. When it rains hard, he waits a few more seconds for people who are running to the bus stop. One winter morning, a young boy left his glove on a seat. Mr. Yamada kept the glove and gave it back to the boy the next day. Because of his kindness, many people in the city know his name. Last month, the city gave him a special thank-you letter. Mr. Yamada said he was glad, but the best reward for him is the smiles of his passengers.",
+  "choices": [
+   "Mr. Yamada kept it and gave it back the next day.",
+   "Mr. Yamada threw it away.",
+   "The boy never found it again.",
+   "Another passenger took it home."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「Mr. Yamada kept it and gave it back the next day.」。 本文に Mr. Yamada kept the glove and gave it back to the boy the next day とある。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "According to Mr. Yamada, what is the best reward for him?",
+  "passage": "Mr. Yamada is a bus driver in our city. He is sixty years old, and he has driven a bus for more than thirty years. Every morning, he starts work at six o'clock. Many students and workers take his bus. Mr. Yamada always says \"Good morning\" with a big smile, so the passengers feel happy at the start of the day. He is famous for being kind. When an old woman drops her wallet, he stops the bus safely and helps her pick it up. When it rains hard, he waits a few more seconds for people who are running to the bus stop. One winter morning, a young boy left his glove on a seat. Mr. Yamada kept the glove and gave it back to the boy the next day. Because of his kindness, many people in the city know his name. Last month, the city gave him a special thank-you letter. Mr. Yamada said he was glad, but the best reward for him is the smiles of his passengers.",
+  "choices": [
+   "The special thank-you letter",
+   "The money he earns",
+   "The smiles of his passengers",
+   "A new bus from the city"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】長文読解。正解は「The smiles of his passengers」。 本文に the best reward for him is the smiles of his passengers とある。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の内容に合うものを選びなさい。Why did the writer's group choose to grow tomatoes?",
+  "passage": "Last spring, our class started a small garden behind the school. Our teacher, Mr. Sato, gave each group a corner to grow vegetables. My group chose to grow tomatoes because everyone liked them. At first, we did not know much about plants. We watered them too much, and some leaves turned yellow. Mr. Sato told us that plants need water, but too much water is bad for them. After that, we watered the tomatoes only in the morning. Slowly, small green tomatoes began to appear. We were very happy. One rainy week, we could not visit the garden for five days. When we came back, we found that weeds had grown around our plants. We spent a whole afternoon pulling them out. In July, we finally picked ripe red tomatoes. We shared them with all the students in our class. They said the tomatoes were sweeter than the ones in the shop. Now I understand that growing food takes time and care. I want to make the garden bigger next year.",
+  "choices": [
+   "Because everyone in the group liked them",
+   "Because Mr. Sato told them to grow tomatoes",
+   "Because tomatoes are the easiest vegetable to grow",
+   "Because the shop tomatoes were too expensive"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「Because everyone in the group liked them」。 本文に My group chose to grow tomatoes because everyone liked them とあり、みんなが好きだったからだと分かる。"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文によると、なぜ葉の一部が黄色くなったのか。What made some of the leaves turn yellow?",
+  "passage": "Last spring, our class started a small garden behind the school. Our teacher, Mr. Sato, gave each group a corner to grow vegetables. My group chose to grow tomatoes because everyone liked them. At first, we did not know much about plants. We watered them too much, and some leaves turned yellow. Mr. Sato told us that plants need water, but too much water is bad for them. After that, we watered the tomatoes only in the morning. Slowly, small green tomatoes began to appear. We were very happy. One rainy week, we could not visit the garden for five days. When we came back, we found that weeds had grown around our plants. We spent a whole afternoon pulling them out. In July, we finally picked ripe red tomatoes. We shared them with all the students in our class. They said the tomatoes were sweeter than the ones in the shop. Now I understand that growing food takes time and care. I want to make the garden bigger next year.",
+  "choices": [
+   "The group gave the plants too much water",
+   "The weather was too cold in spring",
+   "Weeds took the water from the tomatoes",
+   "The group forgot to water the plants"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「The group gave the plants too much water」。 本文に We watered them too much, and some leaves turned yellow とあり、水のやりすぎが原因だと分かる。"
+ }
+]

@@ -1,0 +1,31 @@
+# 既知の検出（生徒の個人情報ではないと確認したもの）。
+# 形式: パス|種別|見つかった文字列
+# ★生徒の氏名・連絡先は 1 件でもここに入れないこと。
+api/admin-charge-readonly.py|メールアドレス|shock11090304@gmail.com
+api/admin-charge-readonly.py|メールアドレス|shock918324@ezweb.ne.jp
+ceo.html|メールアドレス|shock11090304@gmail.com
+enrollment.html|メールアドレス|example@mail.com
+marketing-kit.html|メールアドレス|press@ai-juku.jp
+pitch.html|メールアドレス|press@ai-juku.jp
+press-kit.html|メールアドレス|press@ai-juku.jp
+server/main.py|メールアドレス|a@b.com
+server/main.py|メールアドレス|shock11090304@gmail.com
+server/main.py|メールアドレス|verification-noreply@onamae.com
+server/main.py|電話番号|03-6745-9522
+server/seed_questions_batch27.json|メールアドレス|customer-service@bookworld.com
+server/seed_questions_batch27.json|メールアドレス|david.roberts.92@email.com
+server/seed_questions_batch27.json|メールアドレス|jennifer.lee@email.com
+server/seed_questions_batch27.json|メールアドレス|marketing-team@company.com
+server/seed_questions_batch28.json|メールアドレス|careers@greenleafcafe.com
+server/seed_questions_batch28.json|メールアドレス|orders@stationerymax.com
+server/seed_questions_batch28.json|メールアドレス|tanaka@globalsupply.com
+server/seed_questions_batch29.json|メールアドレス|r.chen@globaltech.com
+server/seed_questions_batch29.json|メールアドレス|reservations@grandplaza.com
+server/seed_questions_batch31.json|メールアドレス|hr@company.com
+server/seed_questions_batch31.json|メールアドレス|maria.lopez@company.com
+server/seed_questions_batch4.json|メールアドレス|k.watanabe@university.ac.jp
+server/seed_questions_batch8.json|メールアドレス|media@greentech-industries.com
+app.js|宛名の直書き|佐藤 花子 (中3)
+app.js|宛名の直書き|鈴木 一郎 (高3)
+api/past-due-invoice.py|宛名の直書き|佐藤 花子
+server/main.py|宛名の直書き|生徒メール一致
