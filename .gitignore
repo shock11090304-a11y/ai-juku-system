@@ -52,3 +52,7 @@ juku-manager-data.json
 
 # 2026-05-27: PDF を Cloudflare R2 へ移行・Vercel deploy bundle から除外
 lesson-prints/*.pdf
+
+# 問題集ビルダーの中間生成物（Chrome print-to-pdf に渡す一時HTML）。
+# 成果物のPDFはDesktopと「📚 教材」に出るので、リポジトリには置かない。
+scripts/*/_*.html
