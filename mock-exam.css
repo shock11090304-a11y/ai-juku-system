@@ -173,6 +173,18 @@
   margin-bottom: 0.5rem;
 }
 .me-prompt { margin-bottom: 0.75rem; color: var(--text); }
+/* 🖼 大問の図版 (カレンダー/ポスター/比較表/グラフ/イラスト)。
+   SVG は currentColor で描いてあるので color を継承させる = 暗背景でも線と文字が沈まない。 */
+.me-figure {
+  margin: 0.75rem 0;
+  text-align: center;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 10px;
+  padding: 0.9rem;
+  color: var(--text);
+}
+.me-figure svg { max-width: 100%; height: auto; }
 .me-passage {
   background: rgba(255,255,255,0.04);
   border-left: 3px solid var(--primary);

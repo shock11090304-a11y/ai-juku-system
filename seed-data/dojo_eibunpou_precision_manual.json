@@ -16,12 +16,12 @@
 "type": "multiple_choice",
 "stem": "The student ( ) won the speech contest is my cousin.",
 "choices": [
-"who",
 "which",
 "whom",
+"who",
 "whose"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "関係詞(関係代名詞who 主格・人)",
 "explanation": "【単元】関係詞(関係代名詞who 主格・人)\n答え: who\n解説: 先行詞 The student は「人」で、空所の後ろは ( ) won ... と動詞が続き主語が欠けています。人を先行詞とする主格の関係代名詞は who です。\n補足: 主格は who/that が使え、目的格 whom や所有格 whose とは働きが異なります。"
 },
@@ -31,11 +31,11 @@
 "stem": "This is the book ( ) made me interested in history.",
 "choices": [
 "who",
-"which",
 "whose",
-"whom"
+"whom",
+"which"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "関係詞(関係代名詞which 主格・物)",
 "explanation": "【単元】関係詞(関係代名詞which 主格・物)\n答え: which\n解説: 先行詞 the book は「物」で、後ろは主語が欠けた made ... が続くので、物を先行詞とする主格の関係代名詞 which が適切です。\n補足: who は人専用なので不可。that も使えますが選択肢にありません。"
 },
@@ -45,11 +45,11 @@
 "stem": "I know a girl ( ) father is a famous pianist.",
 "choices": [
 "who",
-"which",
 "whose",
+"which",
 "whom"
 ],
-"answer": 2,
+"answer": 1,
 "unit": "関係詞(関係代名詞whose 所有格)",
 "explanation": "【単元】関係詞(関係代名詞whose 所有格)\n答え: whose\n解説: 「その少女の父」という所有関係(a girl's father)を表すので所有格の関係代名詞 whose を使います。whose father が a famous pianist の主語になります。\n補足: whose は人・物どちらの所有も表せます。"
 },
@@ -58,12 +58,12 @@
 "type": "multiple_choice",
 "stem": "The man ( ) we met at the station was very kind.",
 "choices": [
+"whom",
 "who",
 "whose",
-"which",
-"whom"
+"which"
 ],
-"answer": 3,
+"answer": 0,
 "unit": "関係詞(関係代名詞whom 目的格・人)",
 "explanation": "【単元】関係詞(関係代名詞whom 目的格・人)\n答え: whom\n解説: 後ろは we met ( ) と目的語が欠けた節です。先行詞 The man は人で、他動詞 met の目的語にあたるので目的格の whom が正解です。\n補足: 口語では who や that、または省略も可能ですが、ここでは whom が文法的に正確です。"
 },
@@ -73,11 +73,11 @@
 "stem": "The house ( ) stands on the hill belongs to my uncle.",
 "choices": [
 "who",
-"which",
 "whom",
+"which",
 "whose"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "関係詞(関係代名詞which 主格・物)",
 "explanation": "【単元】関係詞(関係代名詞which 主格・物)\n答え: which\n解説: 先行詞 The house は物で、後ろは主語の欠けた stands ... が続くため、物を先行詞とする主格 which を用います。\n補足: stands が三人称単数現在なのは先行詞 The house に一致しているためです。"
 },
@@ -87,11 +87,11 @@
 "stem": "He is the only person ( ) can solve this problem.",
 "choices": [
 "which",
-"that",
 "whose",
-"whom"
+"whom",
+"that"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "関係詞(関係代名詞that 主格・the onlyの後)",
 "explanation": "【単元】関係詞(関係代名詞that 主格・the onlyの後)\n答え: that\n解説: 先行詞に the only がつくとき、関係代名詞は that が好まれます。後ろは主語の欠けた can solve ... なので主格です。\n補足: only, first, 最上級, all, every などの後では that が好まれます。"
 }
@@ -115,11 +115,11 @@
 "stem": "Is this the key ( ) you were looking for?",
 "choices": [
 "who",
-"whom",
 "that",
+"whom",
 "whose"
 ],
-"answer": 2,
+"answer": 1,
 "unit": "関係詞(関係代名詞that 目的格・物)",
 "explanation": "【単元】関係詞(関係代名詞that 目的格・物)\n答え: that\n解説: looking for の目的語が欠けており、先行詞 the key は物です。物の目的格として that が使えます。who/whom は人専用なので不可。\n補足: この that は省略も可能(the key you were looking for)です。"
 },
@@ -143,11 +143,11 @@
 "stem": "I remember the day ( ) we first met.",
 "choices": [
 "which",
-"when",
 "where",
-"whose"
+"whose",
+"when"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "関係詞(関係副詞when 時)",
 "explanation": "【単元】関係詞(関係副詞when 時)\n答え: when\n解説: 後ろの we first met は完結した節で、欠けているのは「時を表す副詞」です。時の先行詞 the day を受ける関係副詞 when が適切です。\n補足: when = on which。on the day を一語で表しています。"
 },
@@ -156,12 +156,12 @@
 "type": "multiple_choice",
 "stem": "Tell me the reason ( ) you were late.",
 "choices": [
+"why",
 "which",
 "when",
-"why",
 "where"
 ],
-"answer": 2,
+"answer": 0,
 "unit": "関係詞(関係副詞why 理由)",
 "explanation": "【単元】関係詞(関係副詞why 理由)\n答え: why\n解説: 先行詞 the reason を受け、後ろの you were late が完結しているので、理由を表す関係副詞 why を用います。\n補足: why = for which。the reason for which と書き換えられます。"
 },
@@ -184,12 +184,12 @@
 "type": "multiple_choice",
 "stem": "The chair ( ) he was sitting was broken.",
 "choices": [
-"on which",
 "which",
 "in that",
+"on which",
 "on that"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "関係詞(前置詞+関係代名詞)",
 "explanation": "【単元】関係詞(前置詞+関係代名詞)\n答え: on which\n解説: 元は He was sitting on the chair です。前置詞 on を関係代名詞の前に置く形は on which となります。\n補足: 前置詞の直後に that は置けないため on that は不可。on which か which ... on の形を取ります。"
 }
@@ -213,11 +213,11 @@
 "stem": "She is the friend ( ) I can always rely.",
 "choices": [
 "whom",
-"on whom",
 "that",
-"who"
+"who",
+"on whom"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "関係詞(前置詞+関係代名詞 人)",
 "explanation": "【単元】関係詞(前置詞+関係代名詞 人)\n答え: on whom\n解説: rely on ~(~を頼る)の on が必要です。先行詞は人なので前置詞+関係代名詞は on whom となります。\n補足: 前置詞を後ろに残せば the friend whom/who/that I can always rely on とも書けます。"
 },
@@ -241,11 +241,11 @@
 "stem": "( ) he said at the meeting surprised everyone.",
 "choices": [
 "That",
-"What",
 "Which",
+"What",
 "Who"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "関係詞(関係代名詞what)",
 "explanation": "【単元】関係詞(関係代名詞what)\n答え: What\n解説: 先行詞を含む関係代名詞 what(=the thing which)です。「彼が会議で言ったこと」が主語になり、それ自体に先行詞は不要です。\n補足: that は先行詞を必要とし、文頭で名詞節主語を作るこの用法では what が正解です。"
 },
@@ -254,12 +254,12 @@
 "type": "multiple_choice",
 "stem": "This camera is not ( ) it used to be.",
 "choices": [
+"what",
 "which",
 "that",
-"what",
 "how"
 ],
-"answer": 2,
+"answer": 0,
 "unit": "関係詞(関係代名詞what 慣用)",
 "explanation": "【単元】関係詞(関係代名詞what 慣用)\n答え: what\n解説: what it used to be は「以前のそれ」を意味する定型表現です。what が「~であるもの」を表し、先行詞を内包します。\n補足: what S used to be(昔のS)/what S is(今のS)はよく問われる連語です。"
 },
@@ -269,11 +269,11 @@
 "stem": "Reading is to the mind ( ) food is to the body.",
 "choices": [
 "which",
-"what",
 "that",
-"as"
+"as",
+"what"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "関係詞(関係代名詞what 比例表現)",
 "explanation": "【単元】関係詞(関係代名詞what 比例表現)\n答え: what\n解説: A is to B what C is to D(AのBに対する関係はCのDに対する関係に等しい)という what を用いた定型構文です。\n補足: 「読書と心の関係は、食物と体の関係と同じ」という意味になります。"
 },
@@ -282,12 +282,12 @@
 "type": "multiple_choice",
 "stem": "My brother, ( ) lives in Osaka, is a teacher.",
 "choices": [
-"who",
 "that",
+"who",
 "which",
 "whom"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "関係詞(非制限用法 コンマ+who)",
 "explanation": "【単元】関係詞(非制限用法 コンマ+who)\n答え: who\n解説: コンマで挿入された非制限用法です。先行詞が人なので who を使います。非制限用法では that は使えません。\n補足: 非制限用法は先行詞に説明を付け足す用法で、関係代名詞の省略もできません。"
 }
@@ -311,11 +311,11 @@
 "stem": "He passed the exam, ( ) made his parents happy.",
 "choices": [
 "that",
-"which",
 "what",
+"which",
 "it"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "関係詞(非制限用法 which 前文を受ける)",
 "explanation": "【単元】関係詞(非制限用法 which 前文を受ける)\n答え: which\n解説: コンマの後の which は前の節全体(彼が試験に合格したこと)を先行詞として受ける非制限用法です。\n補足: 文や節を受けるこの用法では that や what は使えません。and it とほぼ同義です。"
 },
@@ -325,11 +325,11 @@
 "stem": "I have two sisters, both of ( ) are nurses.",
 "choices": [
 "them",
-"whom",
 "which",
-"who"
+"who",
+"whom"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "関係詞(非制限用法 数量詞+of whom)",
 "explanation": "【単元】関係詞(非制限用法 数量詞+of whom)\n答え: whom\n解説: both of ~ の of の目的語であり、先行詞が人(two sisters)なので of whom となります。非制限用法で先行詞をまとめて説明しています。\n補足: of them では2文をつなぐ接続詞がなく、1文にできません。"
 },
@@ -338,12 +338,12 @@
 "type": "multiple_choice",
 "stem": "( ) wants to come is welcome at the party.",
 "choices": [
-"Whoever",
 "Whomever",
+"Whoever",
 "Whatever",
 "However"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "関係詞(複合関係代名詞whoever 主格)",
 "explanation": "【単元】関係詞(複合関係代名詞whoever 主格)\n答え: Whoever\n解説: 複合関係代名詞 whoever(=anyone who)で、後ろの wants の主語になります。主語の働きなので主格 whoever です。\n補足: whomever は目的格なので、ここでは不可です。"
 },
@@ -352,12 +352,12 @@
 "type": "multiple_choice",
 "stem": "( ) you decide, I will support you.",
 "choices": [
-"However",
 "Whatever",
+"However",
 "Whichever",
 "Whoever"
 ],
-"answer": 1,
+"answer": 0,
 "unit": "関係詞(複合関係代名詞whatever 譲歩)",
 "explanation": "【単元】関係詞(複合関係代名詞whatever 譲歩)\n答え: Whatever\n解説: 「あなたが何を決めようとも」という譲歩(=No matter what)を表します。decide の目的語が欠けているので whatever が入ります。\n補足: whatever は名詞節「~するものは何でも」と譲歩節「何を~しようとも」の両方を作ります。"
 },
@@ -382,10 +382,10 @@
 "choices": [
 "whatever",
 "whoever",
-"whichever",
-"however"
+"however",
+"whichever"
 ],
-"answer": 2,
+"answer": 3,
 "unit": "関係詞(複合関係代名詞whichever 選択)",
 "explanation": "【単元】関係詞(複合関係代名詞whichever 選択)\n答え: whichever\n解説: 「3色のうちどれでも好きな方を」と限られた範囲から選ぶので、選択を表す whichever(=any one that)が適切です。\n補足: 範囲が限定されないときは whatever、限定されているときは whichever を使います。"
 }
@@ -423,11 +423,11 @@
 "stem": "This is the player ( ) everyone thinks will be the next captain.",
 "choices": [
 "whom",
-"who",
 "whose",
+"who",
 "which"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "関係詞(連鎖関係代名詞 thinks型)",
 "explanation": "【単元】関係詞(連鎖関係代名詞 thinks型)\n答え: who\n解説: everyone thinks を挿入とみなすと、元は everyone thinks he will be ... で will be の主語が欠けています。よって主格の who です。\n補足: 連鎖関係代名詞は〈関係代名詞+S+think/believe/say など+(欠けた)V〉の形をとります。"
 },
@@ -437,11 +437,11 @@
 "stem": "There are many things ( ) we should learn from history.",
 "choices": [
 "what",
-"that",
 "who",
-"where"
+"where",
+"that"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "関係詞(関係代名詞that 目的格・物)",
 "explanation": "【単元】関係詞(関係代名詞that 目的格・物)\n答え: that\n解説: learn from の目的語が欠けており、先行詞 many things は物です。物の目的格として that が使えます。先行詞があるので what は不可。\n補足: many や all の後では that が好まれます。この that は省略も可能です。"
 },
@@ -450,12 +450,12 @@
 "type": "multiple_choice",
 "stem": "Spring is the season ( ) many flowers bloom.",
 "choices": [
-"which",
 "when",
+"which",
 "where",
 "what"
 ],
-"answer": 1,
+"answer": 0,
 "unit": "関係詞(関係副詞when 時)",
 "explanation": "【単元】関係詞(関係副詞when 時)\n答え: when\n解説: 後ろの many flowers bloom は完結した節で、欠けているのは「時を表す副詞」です。時の先行詞 the season を受ける when が正解です。\n補足: when = in which。in the season を一語で表しています。"
 },
@@ -465,11 +465,11 @@
 "stem": "The library ( ) I often study is closed today.",
 "choices": [
 "which",
-"that",
 "where",
+"that",
 "when"
 ],
-"answer": 2,
+"answer": 1,
 "unit": "関係詞(関係副詞where 場所)",
 "explanation": "【単元】関係詞(関係副詞where 場所)\n答え: where\n解説: I often study は完結した節で、欠けているのは「場所の副詞(at the library)」です。場所の先行詞を受ける where を用います。\n補足: 関係代名詞なら at which。The library at which I often study と同義です。"
 },
@@ -479,11 +479,11 @@
 "stem": "Paris, ( ) I visited last year, is a beautiful city.",
 "choices": [
 "that",
-"which",
 "where",
+"which",
 "what"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "関係詞(非制限用法 which 目的格)",
 "explanation": "【単元】関係詞(非制限用法 which 目的格)\n答え: which\n解説: コンマ付きの非制限用法で、visited の目的語が欠けています。先行詞 Paris は物(地名)なので目的格 which が適切です。\n補足: 非制限用法では that は使えません。また visited の目的語が欠けているので関係副詞 where も不可です。"
 }
@@ -507,11 +507,11 @@
 "stem": "This is the village in ( ) the famous poet spent his childhood.",
 "choices": [
 "that",
-"which",
 "where",
-"whom"
+"whom",
+"which"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "関係詞(前置詞+関係代名詞 場所)",
 "explanation": "【単元】関係詞(前置詞+関係代名詞 場所)\n答え: which\n解説: 前置詞 in の直後なので、置けるのは which です(in that は不可)。in which 全体で関係副詞 where と同じ働きをします。\n補足: the village where the famous poet spent ... と書き換えられます。前置詞の直後に that や where は置けません。"
 }
@@ -549,11 +549,11 @@
 "stem": "If she had studied harder, she ___ the entrance exam last year.",
 "choices": [
 "would pass",
-"would have passed",
 "passed",
+"would have passed",
 "will pass"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "仮定法(仮定法過去完了)",
 "explanation": "【単元】仮定法(仮定法過去完了)\n答え: would have passed\n解説: last year という過去の事実に反する仮定なので「仮定法過去完了」を用います。if節は had + 過去分詞(had studied)、主節は would have + 過去分詞になります。\n補足: would pass は現在の仮定法過去の主節形で、過去の話には合いません。"
 },
@@ -564,10 +564,10 @@
 "choices": [
 "rained",
 "would rain",
-"rains",
-"had rained"
+"had rained",
+"rains"
 ],
-"answer": 2,
+"answer": 3,
 "unit": "仮定法(直説法の条件文との区別)",
 "explanation": "【単元】仮定法(直説法の条件文との区別)\n答え: rains\n解説: 実現の可能性が十分ある未来の条件は仮定法ではなく直説法(条件文)を使います。if節は現在形 rains、主節は will + 原形です。\n補足: rained を選ぶと未来の単なる予定に仮定法を当てはめる誤りになります。明日雨が降ることは普通にあり得るため直説法が自然です。"
 },
@@ -590,12 +590,12 @@
 "type": "multiple_choice",
 "stem": "If you ___ harder, you would have won the prize.",
 "choices": [
-"had tried",
 "tried",
+"had tried",
 "have tried",
 "would try"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "仮定法(仮定法過去完了)",
 "explanation": "【単元】仮定法(仮定法過去完了)\n答え: had tried\n解説: 主節が would have won(仮定法過去完了の主節)なので、if節も had + 過去分詞 had tried にそろえます。過去の事実に反する仮定です。\n補足: tried だと仮定法過去になり、主節の時制と不一致になります。"
 },
@@ -605,11 +605,11 @@
 "stem": "I wish I ___ how to drive a car. It would be so convenient.",
 "choices": [
 "know",
-"knew",
 "have known",
+"knew",
 "will know"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "仮定法(I wish + 仮定法過去)",
 "explanation": "【単元】仮定法(I wish + 仮定法過去)\n答え: knew\n解説: I wish のあとは現在の事実に反する願望なら仮定法過去(過去形)を使います。実際は運転を知らないので knew が正解です。\n補足: know は直説法で、I wish の構文では現在形は使いません。"
 }
@@ -633,11 +633,11 @@
 "stem": "I wish I ___ harder when I was a student. I regret it now.",
 "choices": [
 "studied",
-"had studied",
 "study",
-"would study"
+"would study",
+"had studied"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "仮定法(I wish + 仮定法過去完了)",
 "explanation": "【単元】仮定法(I wish + 仮定法過去完了)\n答え: had studied\n解説: 過去の事実に対する後悔の願望は I wish + 仮定法過去完了(had + 過去分詞)で表します。when I was a student という過去への悔いです。\n補足: studied(過去形)は I wish の構文では現在の事実に反する願望を表すので時制がずれます。"
 },
@@ -646,12 +646,12 @@
 "type": "multiple_choice",
 "stem": "He talks ___ he knew everything, but he actually knows very little.",
 "choices": [
-"as if",
 "even if",
+"as if",
 "as long as",
 "in case"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "仮定法(as if / as though)",
 "explanation": "【単元】仮定法(as if / as though)\n答え: as if\n解説: 「まるで〜であるかのように」は as if(= as though)で表します。現在の事実に反するので後ろは仮定法過去 he knew です。\n補足: even if(たとえ〜でも)や as long as(〜する限り)は意味が合いません。"
 },
@@ -660,12 +660,12 @@
 "type": "multiple_choice",
 "stem": "She looked ___ she had seen a ghost.",
 "choices": [
-"as though",
 "unless",
 "provided",
+"as though",
 "whereas"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "仮定法(as if / as though)",
 "explanation": "【単元】仮定法(as if / as though)\n答え: as though\n解説: 「まるで〜だったかのように」は as though(= as if)で表します。looked(過去)より前の状態なので、後ろは仮定法過去完了 had seen です。\n補足: unless(〜しない限り)などは譲歩・条件で意味が通りません。"
 },
@@ -688,12 +688,12 @@
 "type": "multiple_choice",
 "stem": "___ water, no living thing could survive on the earth.",
 "choices": [
-"Without",
 "Within",
 "Beside",
-"Beyond"
+"Beyond",
+"Without"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "仮定法(without / but for)",
 "explanation": "【単元】仮定法(without / but for)\n答え: Without\n解説: Without ... は「〜がなければ」を表し、but for に書き換えられます。主節 could survive から仮定法だとわかります。\n補足: Within(〜以内に)や Beside(〜のそばに)は意味が通りません。"
 },
@@ -731,11 +731,11 @@
 "stem": "If the sun ___ to rise in the west, I would still love you.",
 "choices": [
 "was",
-"were",
 "is",
+"were",
 "had been"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "仮定法(未来の仮定 were to)",
 "explanation": "【単元】仮定法(未来の仮定 were to)\n答え: were to\n解説: were to は「(ありえないことだが)仮に〜するとしたら」という未来の強い仮定を表します。主節は would + 原形です。\n補足: be動詞は主語が the sun でも were を用います。was は仮定法 were to の形としては不適切です。"
 },
@@ -744,12 +744,12 @@
 "type": "multiple_choice",
 "stem": "If you ___ change your mind, please let me know right away.",
 "choices": [
-"should",
 "would",
 "might",
-"could"
+"could",
+"should"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "仮定法(未来の仮定 should)",
 "explanation": "【単元】仮定法(未来の仮定 should)\n答え: should\n解説: if + 主語 + should は「万一〜するなら」という可能性の低い未来の仮定を表します。主節には命令文や will などが続けられます。\n補足: would や could は「万一」の意味でこの位置には使われません。"
 },
@@ -758,12 +758,12 @@
 "type": "multiple_choice",
 "stem": "___ you change your mind, you can always call me.",
 "choices": [
-"Should",
 "Would",
+"Should",
 "Were",
 "Had"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "仮定法(if省略の倒置・should)",
 "explanation": "【単元】仮定法(if省略の倒置・should)\n答え: Should\n解説: If you should change ... の if を省略すると should を主語の前に出して倒置します(Should you change ...)。「万一〜なら」の意味です。\n補足: Were は be動詞の倒置、Had は過去完了の倒置に使うので、ここでは不適切です。"
 },
@@ -772,12 +772,12 @@
 "type": "multiple_choice",
 "stem": "The teacher insisted that every student ___ present at the meeting.",
 "choices": [
-"is",
 "be",
+"is",
 "was",
 "were"
 ],
-"answer": 1,
+"answer": 0,
 "unit": "仮定法(仮定法現在・要求)",
 "explanation": "【単元】仮定法(仮定法現在・要求)\n答え: be\n解説: insist などの要求・提案を表す動詞の that節では、動詞は原形(仮定法現在)を使います。主語が単数でも be のままです。\n補足: アメリカ英語では原形 be が標準です。is や was は仮定法現在では用いません。"
 },
@@ -801,11 +801,11 @@
 "stem": "If I ___ you, I would apologize to her at once.",
 "choices": [
 "am",
-"were",
 "was being",
-"had been"
+"had been",
+"were"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "仮定法(仮定法過去)",
 "explanation": "【単元】仮定法(仮定法過去)\n答え: were\n解説: 「もし私があなただったら」という現在の事実に反する仮定です。仮定法過去では主語が I でも be動詞は were を使うのが標準です。\n補足: am は直説法、had been は過去完了で時制が合いません。"
 }
@@ -842,12 +842,12 @@
 "type": "multiple_choice",
 "stem": "___ I known you were coming, I would have prepared dinner.",
 "choices": [
-"Had",
 "If had",
 "Have",
+"Had",
 "Did"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "仮定法(if省略の倒置・過去完了)",
 "explanation": "【単元】仮定法(if省略の倒置・過去完了)\n答え: Had\n解説: If I had known ... の if を省略すると had を主語の前に出して倒置します(Had I known ...)。過去の事実に反する仮定法過去完了です。\n補足: 倒置では if を残しません。If had という形は誤りです。"
 },
@@ -857,11 +857,11 @@
 "stem": "Had it not been for his advice, we ___ the right decision.",
 "choices": [
 "would not make",
-"would not have made",
 "did not make",
-"will not make"
+"will not make",
+"would not have made"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "仮定法(but for の倒置・過去完了)",
 "explanation": "【単元】仮定法(but for の倒置・過去完了)\n答え: would not have made\n解説: Had it not been for ... は If it had not been for(= But for)を倒置した形で「〜がなかったら」を意味します。過去の事実に反するので主節は would have + 過去分詞です。\n補足: would not make は現在の仮定法過去の主節形で、過去の話には合いません。"
 },
@@ -884,12 +884,12 @@
 "type": "multiple_choice",
 "stem": "If he had taken the earlier train, he ___ here by now.",
 "choices": [
-"would be",
 "would have been",
+"would be",
 "was",
 "is"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "仮定法(混合仮定法)",
 "explanation": "【単元】仮定法(混合仮定法)\n答え: would be\n解説: if節は過去の事実に反する仮定(had taken)ですが、主節は now という現在の結果を表すため仮定法過去の主節 would be を使う「混合仮定法」です。\n補足: would have been は過去の結果を表すので、by now(今ごろ)という現在の状況には合いません。"
 },
@@ -899,11 +899,11 @@
 "stem": "I suggest that the report ___ submitted by Friday.",
 "choices": [
 "is",
-"be",
 "will be",
+"be",
 "being"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "仮定法(仮定法現在・提案)",
 "explanation": "【単元】仮定法(仮定法現在・提案)\n答え: be\n解説: suggest の that節では動詞を原形にする仮定法現在を使います。受動態でも (should) be + 過去分詞となり、be が入ります。\n補足: is や will be は直説法で、提案の that節では用いません。"
 }
@@ -927,11 +927,11 @@
 "stem": "But for the traffic jam, I ___ the meeting.",
 "choices": [
 "wouldn't miss",
-"wouldn't have missed",
 "didn't miss",
-"won't miss"
+"won't miss",
+"wouldn't have missed"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "仮定法(but for・過去完了)",
 "explanation": "【単元】仮定法(but for・過去完了)\n答え: wouldn't have missed\n解説: But for は「〜がなければ」。ここでは過去に実際は会議に遅れた事実に反する仮定なので、主節は would have + 過去分詞(の否定)になります。\n補足: wouldn't miss は現在・未来の仮定の主節形で、過去の出来事には合いません。"
 },
@@ -955,11 +955,11 @@
 "stem": "If I ___ about the meeting, I would have attended it.",
 "choices": [
 "knew",
-"had known",
 "would know",
+"had known",
 "know"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "仮定法(仮定法過去完了)",
 "explanation": "【単元】仮定法(仮定法過去完了)\n答え: had known\n解説: 主節が would have attended(仮定法過去完了の主節)なので、if節も had + 過去分詞 had known にそろえます。過去の事実に反する仮定です。\n補足: knew だと仮定法過去になり、主節 would have attended と時制が合いません。"
 },
@@ -983,11 +983,11 @@
 "stem": "My boss demanded that the document ___ revised before noon.",
 "choices": [
 "was",
-"be",
 "is",
-"were"
+"were",
+"be"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "仮定法(仮定法現在・要求)",
 "explanation": "【単元】仮定法(仮定法現在・要求)\n答え: be\n解説: demand など要求を表す動詞の that節では動詞を原形にします。受動態でも (should) be revised となり be を使います。\n補足: was や were は直説法・仮定法過去で、要求の that節の仮定法現在には合いません。"
 },
@@ -1024,12 +1024,12 @@
 "type": "multiple_choice",
 "stem": "He acted ___ nothing had happened, even though he had broken the vase.",
 "choices": [
-"as though",
 "provided that",
 "so that",
+"as though",
 "in case"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "仮定法(as though + 仮定法過去完了)",
 "explanation": "【単元】仮定法(as though + 仮定法過去完了)\n答え: as though\n解説: 「まるで〜だったかのように」は as though(= as if)。acted より前の事柄なので後ろは仮定法過去完了 had happened です。\n補足: so that(〜するために)や in case(〜の場合に備えて)は意味が合いません。"
 },
@@ -1038,12 +1038,12 @@
 "type": "multiple_choice",
 "stem": "Without your encouragement, I ___ never have started this business.",
 "choices": [
-"would",
 "will",
 "did",
-"do"
+"do",
+"would"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "仮定法(without・過去完了)",
 "explanation": "【単元】仮定法(without・過去完了)\n答え: would\n解説: Without ...(〜がなければ)は but for に書き換えられる仮定表現です。過去の事実に反する仮定なので主節は would have + 過去分詞(would never have started)になります。\n補足: will や did では仮定法過去完了の主節 would have started を作れません。"
 }
@@ -1066,12 +1066,12 @@
 "type": "multiple_choice",
 "stem": "He ( ) to Canada three times, so he knows the country well.",
 "choices": [
-"has been",
 "has gone",
+"has been",
 "went",
 "is going"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "時制(現在完了・経験)",
 "explanation": "【単元】時制(現在完了・経験)\n答え: has been\n解説: 「3回行ったことがある」という経験を表すので現在完了 have/has been to が適切。回数を表す three times も経験用法の手がかり。\n補足: has gone to は「行ってしまって今ここにいない(結果)」の意味になり、文意に合わない。went は単なる過去の事実で経験のニュアンスが出ない。"
 },
@@ -1080,12 +1080,12 @@
 "type": "multiple_choice",
 "stem": "I ( ) in this town since I was a child.",
 "choices": [
-"have lived",
 "lived",
 "live",
+"have lived",
 "am living"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "時制(現在完了・継続)",
 "explanation": "【単元】時制(現在完了・継続)\n答え: have lived\n解説: since I was a child(子どものころから今まで)という継続を表すので現在完了 have lived が正しい。since は完了形の代表的な目印。\n補足: lived(過去)では「今も住んでいる」継続の意味が出ない。現在形 live は過去からの継続を表せない。"
 },
@@ -1094,12 +1094,12 @@
 "type": "multiple_choice",
 "stem": "By the time we arrived, the movie ( ) already started.",
 "choices": [
-"had",
 "has",
 "was",
-"would have"
+"would have",
+"had"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "時制(過去完了)",
 "explanation": "【単元】時制(過去完了)\n答え: had\n解説: 過去のある時点(arrived)よりも前に映画が始まっていたので、大過去を表す過去完了 had started が必要。had が正解。\n補足: has started は現在完了で、過去の基準時 arrived と整合しない。was started は受動態になってしまい意味が変わる。"
 },
@@ -1122,12 +1122,12 @@
 "type": "multiple_choice",
 "stem": "If it ( ) tomorrow, we will cancel the picnic.",
 "choices": [
-"rains",
 "will rain",
+"rains",
 "is raining",
 "rained"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "時制(条件の副詞節中の現在形)",
 "explanation": "【単元】時制(条件の副詞節中の現在形)\n答え: rains\n解説: 条件を表す副詞節(if 節)の中では、未来のことでも現在形で表す。よって rains が正しい。\n補足: will rain は副詞節内なので不可。主節 will cancel が未来を担う。is raining は現在進行で未来の条件を表さない。"
 },
@@ -1136,12 +1136,12 @@
 "type": "multiple_choice",
 "stem": "I'll call you as soon as I ( ) at the station.",
 "choices": [
-"arrive",
 "will arrive",
 "arrived",
+"arrive",
 "am arriving"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "時制(時の副詞節中の現在形)",
 "explanation": "【単元】時制(時の副詞節中の現在形)\n答え: arrive\n解説: as soon as に導かれる時の副詞節では、未来の内容でも現在形を用いる。よって arrive が正解。\n補足: will arrive は時の副詞節内では使えない。主節 I'll call が未来を表している。"
 }
@@ -1164,12 +1164,12 @@
 "type": "multiple_choice",
 "stem": "This is the first time I ( ) sushi.",
 "choices": [
-"have eaten",
 "ate",
 "eat",
-"had eaten"
+"had eaten",
+"have eaten"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "時制(現在完了・完了/経験)",
 "explanation": "【単元】時制(現在完了・完了/経験)\n答え: have eaten\n解説: This is the first time に続く節は現在完了形を用いるのが原則で、「今までに食べた中で初めて」という経験・完了を表す。\n補足: ate(過去)や eat(現在)はこの構文では不自然。had eaten は過去完了で、基準が現在(This is)なので合わない。"
 },
@@ -1178,12 +1178,12 @@
 "type": "multiple_choice",
 "stem": "Water ( ) at 100 degrees Celsius at sea level.",
 "choices": [
-"boils",
 "is boiling",
+"boils",
 "boiled",
 "has boiled"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "時制(現在形・不変の真理)",
 "explanation": "【単元】時制(現在形・不変の真理)\n答え: boils\n解説: 科学的事実や不変の真理は現在形で表す。「水は100度で沸騰する」は普遍的事実なので boils。\n補足: is boiling は今まさに沸いている進行の意味になる。過去形・現在完了は一般的真理の表現に適さない。"
 },
@@ -1192,12 +1192,12 @@
 "type": "multiple_choice",
 "stem": "Look at those dark clouds! It ( ) rain soon.",
 "choices": [
-"is going to",
 "will",
 "would",
+"is going to",
 "was going to"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "時制(未来・be going to)",
 "explanation": "【単元】時制(未来・be going to)\n答え: is going to\n解説: 目の前の根拠(黒い雲)から判断する近い未来の予測は be going to を使うのが自然。雲という証拠があるのが手がかり。\n補足: will はその場で決めた意志や単純未来に使うことが多く、証拠に基づく予測では be going to が好まれる。"
 },
@@ -1220,12 +1220,12 @@
 "type": "multiple_choice",
 "stem": "I ( ) my homework, so I can go out and play now.",
 "choices": [
-"have finished",
 "finish",
 "am finishing",
-"had finished"
+"had finished",
+"have finished"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "時制(現在完了・完了/結果)",
 "explanation": "【単元】時制(現在完了・完了/結果)\n答え: have finished\n解説: 宿題を終えて、その結果として今遊びに行けるという完了・結果を表すので現在完了 have finished。\n補足: finish(現在)では完了の意味が出ない。had finished は過去完了で、基準が現在(can go now)なので不適切。"
 },
@@ -1234,12 +1234,12 @@
 "type": "multiple_choice",
 "stem": "When I was young, I ( ) to school every day.",
 "choices": [
-"walked",
 "have walked",
+"walked",
 "was walking",
 "had walked"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "時制(過去形・過去の習慣)",
 "explanation": "【単元】時制(過去形・過去の習慣)\n答え: walked\n解説: 過去の習慣的動作は単純過去で表す。every day も習慣を示す。was young という過去の時を明示しているので過去形 walked。\n補足: have walked は現在完了で過去の明確な時を表す副詞節と共存できない。was walking は一時的進行の意味になる。"
 }
@@ -1262,12 +1262,12 @@
 "type": "multiple_choice",
 "stem": "She told me that she ( ) the report by Friday.",
 "choices": [
-"would finish",
 "will finish",
 "finishes",
+"would finish",
 "has finished"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "時制(時制の一致)",
 "explanation": "【単元】時制(時制の一致)\n答え: would finish\n解説: 主節の動詞が told(過去)なので、that 節内の未来を表す will は時制の一致により would になる。\n補足: will finish は主節が過去のとき一致しない。finishes(現在)や has finished も過去の主節と整合しない。"
 },
@@ -1276,12 +1276,12 @@
 "type": "multiple_choice",
 "stem": "I didn't know that you ( ) Spanish so well.",
 "choices": [
-"spoke",
 "speak",
 "have spoken",
-"will speak"
+"will speak",
+"spoke"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "時制(時制の一致)",
 "explanation": "【単元】時制(時制の一致)\n答え: spoke\n解説: 主節 didn't know が過去なので、that 節の内容(現在の事実でも)は時制の一致で過去形 spoke になる。\n補足: speak は現在形で過去の主節と一致しない。これは「現在も話せる」事実でも、形式上は過去に合わせるのが原則。"
 },
@@ -1304,12 +1304,12 @@
 "type": "multiple_choice",
 "stem": "They ( ) married for ten years before they decided to separate.",
 "choices": [
-"had been",
 "have been",
+"had been",
 "were being",
 "are"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "時制(過去完了・継続)",
 "explanation": "【単元】時制(過去完了・継続)\n答え: had been\n解説: 別れを決めた過去の時点(decided)より前から10年間続いていた状態なので過去完了 had been が正しい。before も過去の前後関係を示す。\n補足: have been は現在完了で過去の基準時に合わない。were being は状態動詞 be の進行で不自然。"
 },
@@ -1318,12 +1318,12 @@
 "type": "multiple_choice",
 "stem": "He ( ) the piano since he was five years old.",
 "choices": [
-"has been playing",
 "plays",
 "played",
+"has been playing",
 "is playing"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "時制(現在完了進行形・継続)",
 "explanation": "【単元】時制(現在完了進行形・継続)\n答え: has been playing\n解説: since he was five から今までずっと続けてきた動作の継続を強調するので現在完了進行形 has been playing が最適。\n補足: plays(現在)や played(過去)は過去から現在への継続を表せない。is playing は今この瞬間の進行にすぎない。"
 },
@@ -1332,12 +1332,12 @@
 "type": "multiple_choice",
 "stem": "Wait here until the rain ( ).",
 "choices": [
-"stops",
 "will stop",
 "stopped",
-"has stopped"
+"has stopped",
+"stops"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "時制(時の副詞節中の現在形)",
 "explanation": "【単元】時制(時の副詞節中の現在形)\n答え: stops\n解説: until に導かれる時の副詞節では、未来の内容でも現在形を使う。よって stops が正解。\n補足: will stop は時の副詞節内では不可。命令文 Wait が未来の行為を担っている。"
 }
@@ -1374,12 +1374,12 @@
 "type": "multiple_choice",
 "stem": "This song ( ) to me right now; could you turn it down?",
 "choices": [
-"is too loud",
 "is being too loud",
+"is too loud",
 "being too loud",
 "loud"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "時制(状態を表す be・進行不可の文脈)",
 "explanation": "【単元】時制(状態を表す be・進行不可の文脈)\n答え: is too loud\n解説: 「うるさい」という性質・状態は be 動詞の現在形で表す。一時的でも形容詞の状態は通常 is で表す。\n補足: is being too loud は人の一時的なふるまい(振る舞いが偉そう等)に使う形で、音量の客観的状態には不自然。"
 },
@@ -1388,12 +1388,12 @@
 "type": "multiple_choice",
 "stem": "I ( ) what you mean now. Thank you for explaining.",
 "choices": [
-"understand",
 "am understanding",
 "have understood",
+"understand",
 "was understanding"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "時制(状態動詞・進行形にしない)",
 "explanation": "【単元】時制(状態動詞・進行形にしない)\n答え: understand\n解説: understand は心理・認識を表す状態動詞で、原則として進行形にしない。今理解している状態は現在形 understand で表す。\n補足: am understanding は状態動詞の進行で誤り。have understood も「理解した」完了で now の現在状態とややずれる。"
 },
@@ -1402,12 +1402,12 @@
 "type": "multiple_choice",
 "stem": "She ( ) two glasses of water already, but she's still thirsty.",
 "choices": [
-"has drunk",
 "drinks",
 "is drinking",
-"drank"
+"drank",
+"has drunk"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "時制(現在完了・完了)",
 "explanation": "【単元】時制(現在完了・完了)\n答え: has drunk\n解説: already を伴い、今までに飲み終えたという完了を表すので現在完了 has drunk が適切。drink-drank-drunk の過去分詞は drunk。\n補足: drinks(現在)は習慣の意味になる。drank(過去)は already や still と結ぶ現在完了の文脈で不自然。"
 },
@@ -1430,12 +1430,12 @@
 "type": "multiple_choice",
 "stem": "By the time you read this letter, I ( ) the country.",
 "choices": [
-"will have left",
 "will leave",
+"will have left",
 "have left",
 "leave"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "時制(未来完了・完了)",
 "explanation": "【単元】時制(未来完了・完了)\n答え: will have left\n解説: 未来の基準時(read this letter)までに完了している動作なので未来完了 will have left が正しい。\n補足: will leave は単純未来で「読む時点までに完了」のニュアンスが出ない。なお時の副詞節 by the time you read は現在形 read が正しい点にも注意。"
 }
@@ -1458,12 +1458,12 @@
 "type": "multiple_choice",
 "stem": "We ( ) dinner when the phone suddenly rang.",
 "choices": [
-"were having",
 "had",
 "have had",
+"were having",
 "are having"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "時制(過去進行形)",
 "explanation": "【単元】時制(過去進行形)\n答え: were having\n解説: 電話が鳴った(rang)という過去の一点で進行中だった動作なので過去進行形 were having が正しい。have「食べる」は進行可。\n補足: had(過去)では同時進行の背景描写にならない。have had は現在完了、are having は現在進行で過去の場面に合わない。"
 },
@@ -1472,12 +1472,12 @@
 "type": "multiple_choice",
 "stem": "How long ( ) you ( ) for this company?",
 "choices": [
-"have / worked",
 "did / work",
 "are / working",
-"do / work"
+"do / work",
+"have / worked"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "時制(現在完了・継続/疑問)",
 "explanation": "【単元】時制(現在完了・継続/疑問)\n答え: have / worked\n解説: 「どのくらいの期間(今も)働いているか」という現在までの継続を尋ねるので現在完了 have you worked が適切。How long は継続を問う典型。\n補足: did you work は過去で「今は働いていない」含意になる。do you work は習慣で期間の継続を問えない。"
 },
@@ -1500,12 +1500,12 @@
 "type": "multiple_choice",
 "stem": "When I got to the platform, the train ( ) already left.",
 "choices": [
-"had",
 "has",
+"had",
 "was",
 "would have"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "時制(過去完了・完了)",
 "explanation": "【単元】時制(過去完了・完了)\n答え: had\n解説: ホームに着いた過去の時点より前に電車が出てしまっていたので、大過去を表す過去完了 had left が必要。already も完了を示す。\n補足: has left は現在完了で過去の基準時 got と整合しない。was left は受動態で意味が変わる。"
 },
@@ -1514,12 +1514,12 @@
 "type": "multiple_choice",
 "stem": "I ( ) him for ages. We were classmates in high school.",
 "choices": [
-"have known",
 "know",
 "am knowing",
+"have known",
 "knew"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "時制(状態動詞・現在完了/継続)",
 "explanation": "【単元】時制(状態動詞・現在完了/継続)\n答え: have known\n解説: know は状態動詞で進行形にしない。for ages(長年)という現在までの継続は現在完了 have known で表す。\n補足: am knowing は状態動詞の進行で誤り。know(現在)は過去からの継続期間 for ages と結べない。"
 },
@@ -1528,12 +1528,12 @@
 "type": "multiple_choice",
 "stem": "If you ( ) hard, you will pass the exam.",
 "choices": [
-"study",
 "will study",
 "studied",
-"have studied"
+"have studied",
+"study"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "時制(条件の副詞節中の現在形)",
 "explanation": "【単元】時制(条件の副詞節中の現在形)\n答え: study\n解説: 条件を表す if 節の中では、未来のことでも現在形で表す。よって study が正解で、主節 will pass が未来を担う。\n補足: will study は条件の副詞節では使えない。これは現在の事実を仮定する直説法で、仮定法ではない点にも注意。"
 }
@@ -1570,12 +1570,12 @@
 "type": "multiple_choice",
 "stem": "He asked me where I ( ) the previous night.",
 "choices": [
-"had been",
 "have been",
+"had been",
 "was",
 "am"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "時制(時制の一致・過去完了)",
 "explanation": "【単元】時制(時制の一致・過去完了)\n答え: had been\n解説: 主節 asked(過去)に対し、さらに前の「前夜どこにいたか」は時制の一致で過去完了 had been になる。the previous night も過去の前を示す。\n補足: have been は時制の一致に反する。was でも語れるが、より前の時点を明確にする過去完了が正式。"
 }
@@ -1599,11 +1599,11 @@
 "stem": "Choose the option that best completes the sentence: \"My brother is ( ) as our father.\"",
 "choices": [
 "as tall",
-"as tall as",
 "so tall as",
+"as tall as",
 "taller as"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "比較(原級 as~as の基本)",
 "explanation": "【単元】比較(原級 as~as の基本)\n答え: as tall as\n解説: 「~と同じくらい…」を表す原級比較は〈as + 形容詞/副詞の原級 + as〉。My brother is as tall as our father.(兄は父と同じくらい背が高い)が正しい。\n補足: so~as は否定文で使われることが多く、肯定文では as~as が標準。taller as のように比較級に as を続けるのは誤り。"
 },
@@ -1612,12 +1612,12 @@
 "type": "multiple_choice",
 "stem": "Choose the correct option: \"This box is not ( ) that one.\"",
 "choices": [
-"as heavy as",
 "heavier than as",
 "as heavy than",
-"so heavy than"
+"so heavy than",
+"as heavy as"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "比較(原級の否定 not as~as)",
 "explanation": "【単元】比較(原級の否定 not as~as)\n答え: as heavy as\n解説: 否定の原級比較は〈not as + 原級 + as〉で「~ほど…でない」。This box is not as heavy as that one.(この箱はあの箱ほど重くない)。\n補足: not so heavy as も可。比較級 heavier に as や than を混在させた形はすべて誤り。"
 },
@@ -1626,12 +1626,12 @@
 "type": "multiple_choice",
 "stem": "Choose the correct comparative form: \"Health is ( ) than wealth.\"",
 "choices": [
-"important",
 "more important",
+"important",
 "most important",
 "importanter"
 ],
-"answer": 1,
+"answer": 0,
 "unit": "比較(比較級の作り方 long形容詞)",
 "explanation": "【単元】比較(比較級の作り方 long形容詞)\n答え: more important\n解説: 3音節以上の長い形容詞 important は語尾 -er ではなく前に more を置いて比較級にする。than があるので比較級が必要で more important than が正しい。\n補足: importanter という形は存在しない。most important は最上級なので than とは結びつかない。"
 },
@@ -1655,11 +1655,11 @@
 "stem": "Choose the option that completes the sentence correctly: \"This is ( ) movie I have ever seen.\"",
 "choices": [
 "the more exciting",
-"the most exciting",
 "most exciting",
+"the most exciting",
 "more exciting"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "比較(最上級+have ever seen)",
 "explanation": "【単元】比較(最上級+have ever seen)\n答え: the most exciting\n解説: 「今まで見た中で最も…な~」は〈the + 最上級 + 名詞 + (that) S have ever + 過去分詞〉。exciting は most をつけて最上級にし、the most exciting movie となる。\n補足: 最上級には通常 the が必要。more exciting は比較級で「今まで見た中で一番」という意味にはならない。"
 },
@@ -1670,10 +1670,10 @@
 "choices": [
 "clever",
 "cleverer",
-"cleverest",
-"most clever"
+"most clever",
+"cleverest"
 ],
-"answer": 2,
+"answer": 3,
 "unit": "比較(最上級の作り方 -est)",
 "explanation": "【単元】比較(最上級の作り方 -est)\n答え: cleverest\n解説: clever は -er/-est をつけて比較変化させる形容詞で、最上級は cleverest。〈the + 最上級 + 名詞〉で the cleverest student in his class となる。\n補足: most clever も使われることがあるが、選択肢の中では cleverest が標準。cleverer は比較級で最上級ではない。"
 }
@@ -1696,12 +1696,12 @@
 "type": "multiple_choice",
 "stem": "Choose the correct option to emphasize the comparative: \"This question is ( ) more difficult than the last one.\"",
 "choices": [
-"very",
 "much",
+"very",
 "too",
 "so"
 ],
-"answer": 1,
+"answer": 0,
 "unit": "比較(比較級の強調 much)",
 "explanation": "【単元】比較(比較級の強調 much)\n答え: much\n解説: 比較級を「ずっと、はるかに」と強調するには much / far / even / a lot などを使う。much more difficult than ~ が正しい。\n補足: very は原級(very difficult)を強調する語で比較級には使えない。too や so も比較級の強調には不適。"
 },
@@ -1711,11 +1711,11 @@
 "stem": "Choose the word that does NOT belong as a comparative emphasizer: \"It is ( ) colder today than yesterday.\"",
 "choices": [
 "far",
+"very",
 "even",
-"much",
-"very"
+"much"
 ],
-"answer": 3,
+"answer": 1,
 "unit": "比較(比較級を強調できない very)",
 "explanation": "【単元】比較(比較級を強調できない very)\n答え: very\n解説: 比較級 colder を強調できるのは far / even / much など。very は比較級を強調できないため、ここでは不適切な語。far/even/much colder は正しいが very colder は誤り。\n補足: very は原級専用の強調語。比較級を「もっとずっと」と強める場合は much/far/even/a lot/still を使う。"
 },
@@ -1724,12 +1724,12 @@
 "type": "multiple_choice",
 "stem": "Choose the correct option: \"( ) you study, ( ) your grades will be.\"",
 "choices": [
-"The harder / the better",
 "Harder / better",
 "The more hard / the more good",
+"The harder / the better",
 "More hard / more good"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "比較(the+比較級, the+比較級)",
 "explanation": "【単元】比較(the+比較級, the+比較級)\n答え: The harder / the better\n解説: 「~すればするほど…」は〈The + 比較級…, the + 比較級…〉。hard の比較級 harder、good の比較級 better を用い、The harder you study, the better your grades will be. となる。\n補足: 各節とも the を伴い比較級を文頭に出す。more hard や more good は語形として誤り。"
 },
@@ -1738,12 +1738,12 @@
 "type": "multiple_choice",
 "stem": "Choose the correct option: \"The older he gets, ( ).\"",
 "choices": [
-"the wiser he becomes",
 "the more wise he becomes",
 "he becomes wiser",
-"wiser he becomes"
+"wiser he becomes",
+"the wiser he becomes"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "比較(the+比較級 後半節の語順)",
 "explanation": "【単元】比較(the+比較級 後半節の語順)\n答え: the wiser he becomes\n解説: 〈The + 比較級…, the + 比較級 + S + V〉の後半は the + 比較級を前に出し、その後ろは通常の語順 S V。wise の比較級 wiser を用い the wiser he becomes が正しい。\n補足: wise は -er 型なので more wise は誤り。the を落とした形も構文として不適。"
 },
@@ -1752,12 +1752,12 @@
 "type": "multiple_choice",
 "stem": "Which paraphrase of \"There were no less than fifty people at the party.\" is correct?",
 "choices": [
-"only fifty people",
 "as many as fifty people",
+"only fifty people",
 "fewer than fifty people",
 "at most fifty people"
 ],
-"answer": 1,
+"answer": 0,
 "unit": "比較(no less than = as many as)",
 "explanation": "【単元】比較(no less than = as many as)\n答え: as many as fifty people\n解説: no less than は「~も(の多さ)」と数量の多さを強調する表現で as many as に言い換えられる。There were no less than fifty people. は「50人もいた」。\n補足: only や at most は「~しか/せいぜい」で少なさを表すため意味が逆。no more than こそ only に相当する。"
 },
@@ -1766,12 +1766,12 @@
 "type": "multiple_choice",
 "stem": "Choose the correct option: \"I have ( ) than five dollars in my wallet—just three.\"",
 "choices": [
-"less",
 "fewer",
+"less",
 "lesser",
 "little"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "比較(less と fewer の使い分け)",
 "explanation": "【単元】比較(less と fewer の使い分け)\n答え: less\n解説: dollars は可算名詞だが、金額や距離・時間など数量をひとまとまりの「量」として扱うときは less を用いるのが自然で、less than five dollars(5ドル未満)が標準。\n補足: 個々の数を数える文脈では fewer も使われるが、金額表現では慣用的に less than ~ dollars が普通。lesser は「より劣った」の意で数量比較には使わない。"
 }
@@ -1809,11 +1809,11 @@
 "stem": "Choose the correct option: \"This product is ( ) the other one in quality.\"",
 "choices": [
 "superior than",
-"superior to",
 "more superior than",
+"superior to",
 "superior as"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "比較(ラテン比較級 superior to)",
 "explanation": "【単元】比較(ラテン比較級 superior to)\n答え: superior to\n解説: superior(より優れた)はラテン語起源の比較級で、比較の対象は than ではなく to をとる。superior to the other one(他方より優れている)が正しい。\n補足: それ自体が比較級なので more はつけない。同様に inferior to / senior to / junior to / prior to も to を用いる。"
 },
@@ -1836,12 +1836,12 @@
 "type": "multiple_choice",
 "stem": "Choose the correct option: \"He works ( ) any other student in the class.\"",
 "choices": [
-"as hard than",
 "harder than",
+"as hard than",
 "as hard as",
 "more hard than"
 ],
-"answer": 1,
+"answer": 0,
 "unit": "比較(比較級+than any other 単数)",
 "explanation": "【単元】比較(比較級+than any other 単数)\n答え: harder than (→ He works harder than any other student.)\n解説: 「他のどの~よりも」は〈比較級 + than any other + 単数名詞〉。hard の比較級 harder を用い harder than any other student で最上級の意味を表す。\n補足: any other の後ろは単数名詞。as hard as は同等比較で「より一層」の意味にならない。more hard は語形として誤り。"
 },
@@ -1864,12 +1864,12 @@
 "type": "multiple_choice",
 "stem": "Choose the correct option: \"There were ( ) three students absent today.\"",
 "choices": [
-"no fewer than",
 "no less than",
 "not fewer than",
-"no more as"
+"no more as",
+"no fewer than"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "比較(no fewer than 可算名詞)",
 "explanation": "【単元】比較(no fewer than 可算名詞)\n答え: no fewer than (→ no fewer than three students)\n解説: 可算名詞の数の「多さ」を強調して「~も」と言うときは no fewer than を用いる。no fewer than three students は「3人もの学生が」。\n補足: no less than は本来不可算・数量に使うことが多く、厳密には可算の数には no fewer than が好まれる。no more as は語形として誤り。"
 }
@@ -1906,12 +1906,12 @@
 "type": "multiple_choice",
 "stem": "Choose the correct option: \"This bridge is three times ( ) that one.\"",
 "choices": [
-"as long as",
 "longer as",
+"as long as",
 "as longer as",
 "so long as"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "比較(倍数表現 times as~as)",
 "explanation": "【単元】比較(倍数表現 times as~as)\n答え: as long as (→ three times as long as)\n解説: 倍数は〈倍数詞 + as + 原級 + as〉で表す。three times as long as that one(あの橋の3倍の長さ)。\n補足: 倍数+比較級(three times longer than)も口語では使われるが、選択肢では as long as が標準形。longer as / as longer as は語形として誤り。"
 },
@@ -1921,11 +1921,11 @@
 "stem": "Choose the correct option: \"My new phone is far ( ) than my old one.\"",
 "choices": [
 "good",
-"better",
 "best",
+"better",
 "more good"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "比較(不規則変化 good→better+強調 far)",
 "explanation": "【単元】比較(不規則変化 good→better+強調 far)\n答え: better\n解説: good の比較級は不規則変化で better。than があるので比較級が必要で、far は比較級 better を「はるかに」と強調している。far better than ~ が正しい。\n補足: more good という形は存在せず、best は最上級。far は比較級専用の強調語として正しく機能している。"
 },
@@ -1935,11 +1935,11 @@
 "stem": "Choose the correct option: \"He is ( ) of the two brothers.\"",
 "choices": [
 "taller",
-"the taller",
 "the tallest",
-"tallest"
+"tallest",
+"the taller"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "比較(2者間 the+比較級)",
 "explanation": "【単元】比較(2者間 the+比較級)\n答え: the taller\n解説: 2者のうちで「より…な方」は〈the + 比較級 + of the two〉で表す。He is the taller of the two brothers.(2人の兄弟のうち背が高い方だ)。\n補足: 比較級でも of the two の文脈では特定されるため the をつける。3者以上なら最上級 the tallest を使う。"
 },
@@ -1962,12 +1962,12 @@
 "type": "multiple_choice",
 "stem": "Choose the correct option: \"No other mountain in Japan is ( ) Mt. Fuji.\"",
 "choices": [
-"as high as",
 "higher than as",
+"as high as",
 "so higher than",
 "as higher as"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "比較(最上級相当 No other ~ as~as)",
 "explanation": "【単元】比較(最上級相当 No other ~ as~as)\n答え: as high as (→ No other mountain in Japan is as high as Mt. Fuji.)\n解説: 「他のどの~も…ほど―でない」は最上級相当表現。原級では No other ... is as high as Mt. Fuji.(富士山ほど高い山は日本にない)。\n補足: 同義に No other mountain ... is higher than Mt. Fuji.(比較級)、Mt. Fuji is the highest mountain in Japan.(最上級)。as の後ろは原級 high。"
 }
@@ -1991,11 +1991,11 @@
 "stem": "Choose the correct option: \"I like coffee ( ) than tea.\"",
 "choices": [
 "well",
-"better",
 "best",
+"better",
 "gooder"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "比較(副詞 well→better)",
 "explanation": "【単元】比較(副詞 well→better)\n答え: better\n解説: 「~の方が好きだ」は like ~ better than …。well の比較級は不規則で better。I like coffee better than tea.(紅茶よりコーヒーが好きだ)。\n補足: best は最上級で like ~ (the) best of all のように使う。gooder という形は存在しない。"
 },
@@ -2005,11 +2005,11 @@
 "stem": "Choose the correct option: \"This car is much ( ) than I expected.\"",
 "choices": [
 "expensive",
-"more expensive",
 "most expensive",
-"expensiver"
+"expensiver",
+"more expensive"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "比較(much+long形容詞の比較級)",
 "explanation": "【単元】比較(much+long形容詞の比較級)\n答え: more expensive\n解説: expensive は more をつけて比較級にする長い形容詞。than があり、much が比較級を強調しているので much more expensive than ~ が正しい。\n補足: expensiver という形は存在しない。most expensive は最上級で than と結びつかない。much は比較級を強める語。"
 },
@@ -2046,12 +2046,12 @@
 "type": "multiple_choice",
 "stem": "Choose the correct option: \"He is ( ) to me in the company; he joined three years before I did.\"",
 "choices": [
-"senior",
 "junior",
 "prior",
+"senior",
 "inferior"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "比較(ラテン比較級 senior の意味)",
 "explanation": "【単元】比較(ラテン比較級 senior の意味)\n答え: senior\n解説: senior to ~ は「(地位・年齢などが)~より上の/先輩の」。3年早く入社した人なので He is senior to me.(私より先輩だ)が文意に合う。\n補足: junior は「後輩・年下」で逆。inferior は「(質が)劣る」、prior は「(時間的に)前の」で文意に合わない。いずれも to をとるラテン比較級。"
 },
@@ -2062,10 +2062,10 @@
 "choices": [
 "good",
 "better",
-"the best",
-"best"
+"best",
+"the best"
 ],
-"answer": 2,
+"answer": 3,
 "unit": "比較(最上級の強調 by far the+最上級)",
 "explanation": "【単元】比較(最上級の強調 by far the+最上級)\n答え: the best\n解説: by far は最上級を「断然」と強調する表現で〈by far the + 最上級〉の形をとる。good の最上級は the best で、by far the best restaurant が正しい。\n補足: 最上級には the が必要なので the のない best は不適。by far は比較級も強められるが、ここは restaurant を限定する最上級が文意に合う。"
 }
@@ -2103,11 +2103,11 @@
 "stem": "The police found a ( ) wallet on the street and tried to identify the owner.",
 "choices": [
 "stealing",
-"stole",
 "stolen",
+"stole",
 "steal"
 ],
-"answer": 2,
+"answer": 1,
 "unit": "分詞(過去分詞の形容詞用法)",
 "explanation": "【単元】分詞(過去分詞の形容詞用法)\n答え: stolen\n解説: wallet は「盗まれた財布」で受動の関係なので過去分詞 stolen。\n補足: 現在分詞 stealing なら「盗んでいる」能動になり財布には不自然。stole は過去形で修飾語にはなりません。"
 },
@@ -2131,11 +2131,11 @@
 "stem": "The movie was so ( ) that everyone in the theater was on the edge of their seats.",
 "choices": [
 "excited",
-"exciting",
 "excite",
-"to excite"
+"to excite",
+"exciting"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "分詞(感情動詞 現在分詞)",
 "explanation": "【単元】分詞(感情動詞 現在分詞)\n答え: exciting\n解説: 映画が人をワクワク「させる」側なので能動の現在分詞 exciting。\n補足: excited は「(人が)ワクワクさせられた」状態で主語が人のときに使います。物・事が主語なら -ing が原則です。"
 },
@@ -2144,12 +2144,12 @@
 "type": "multiple_choice",
 "stem": "I was really ( ) at the news that our team had won the championship.",
 "choices": [
+"surprised",
 "surprising",
 "surprise",
-"surprised",
 "to surprise"
 ],
-"answer": 2,
+"answer": 0,
 "unit": "分詞(感情動詞 過去分詞)",
 "explanation": "【単元】分詞(感情動詞 過去分詞)\n答え: surprised\n解説: 主語 I は「驚かされた」側なので受動の過去分詞 surprised。be surprised at ~ の形。\n補足: surprising は「驚かせるような」で物事を主語にするときに使います。"
 },
@@ -2186,12 +2186,12 @@
 "type": "multiple_choice",
 "stem": "( ) what to say, she remained silent for a long moment.",
 "choices": [
-"Not knowing",
 "Knowing not",
 "Not known",
+"Not knowing",
 "Don't knowing"
 ],
-"answer": 0,
+"answer": 2,
 "unit": "分詞(分詞構文:否定)",
 "explanation": "【単元】分詞(分詞構文:否定)\n答え: Not knowing\n解説: 分詞構文の否定は分詞の直前に not を置くので Not knowing。理由「何を言うべきか分からなかったので」を表します。\n補足: Knowing not の語順や Not known(受動)は誤り。know は能動で使います。"
 },
@@ -2201,11 +2201,11 @@
 "stem": "( ) the bus, I had to take a taxi to get to the airport on time.",
 "choices": [
 "Missing",
-"Having missed",
 "Missed",
-"To miss"
+"To miss",
+"Having missed"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "分詞(完了形分詞構文)",
 "explanation": "【単元】分詞(完了形分詞構文)\n答え: Having missed\n解説: バスに乗り遅れたのは主節より前の出来事なので、時のずれを示す完了形分詞構文 Having missed を使います。\n補足: 単純形 Missing でも文法的には可能ですが、「乗り遅れた後で」の前後関係を明示するなら完了形が適切です。"
 },
@@ -2214,12 +2214,12 @@
 "type": "multiple_choice",
 "stem": "( ) many times, the road is still easy to find if you have a map.",
 "choices": [
+"Having been changed",
 "Changing",
 "Having changed",
-"Having been changed",
 "To change"
 ],
-"answer": 2,
+"answer": 0,
 "unit": "分詞(完了形・受動の分詞構文)",
 "explanation": "【単元】分詞(完了形・受動の分詞構文)\n答え: Having been changed\n解説: 意味上の主語 the road は「変えられた」側で受動、かつ主節より前の出来事なので完了受動 Having been changed。\n補足: Having changed は能動で「道が変えた」、Changing も能動で意味が合いません。"
 },
@@ -2243,11 +2243,11 @@
 "stem": "( ), the experiment was a success despite a few minor problems.",
 "choices": [
 "General speaking",
-"Generally speaking",
 "Generally spoken",
+"Generally speaking",
 "Speaking generally not"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "分詞(慣用的分詞構文 generally speaking)",
 "explanation": "【単元】分詞(慣用的分詞構文 generally speaking)\n答え: Generally speaking\n解説: 「概して言えば」は慣用的分詞構文 generally speaking。副詞 generally + 現在分詞 speaking の固定表現です。\n補足: 形容詞 general や過去分詞 spoken は誤り。frankly speaking, strictly speaking なども同型です。"
 },
@@ -2256,12 +2256,12 @@
 "type": "multiple_choice",
 "stem": "( ) of his English, he should consider studying abroad to improve his accent.",
 "choices": [
-"Speaking",
 "Spoken",
 "Spoke",
-"Having spoken"
+"Having spoken",
+"Speaking"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "分詞(慣用的分詞構文 speaking of)",
 "explanation": "【単元】分詞(慣用的分詞構文 speaking of)\n答え: Speaking\n解説: speaking of ~ は「~と言えば」という慣用表現で現在分詞 speaking を使います。\n補足: talking of ~ も同義。受動の spoken や完了形 having spoken は慣用句として成立しません。"
 }
@@ -2284,12 +2284,12 @@
 "type": "multiple_choice",
 "stem": "I heard my name ( ) from across the crowded room and turned around.",
 "choices": [
-"call",
 "called",
+"call",
 "to call",
 "calls"
 ],
-"answer": 1,
+"answer": 0,
 "unit": "分詞(知覚動詞+過去分詞)",
 "explanation": "【単元】分詞(知覚動詞+過去分詞)\n答え: called\n解説: 目的語 my name は「呼ばれる」側で受動の関係なので、知覚動詞 hear の後ろは過去分詞 called。\n補足: 原形 call は「名前が呼ぶ」能動になり不自然。hear O 過去分詞 で「O が~されるのを聞く」です。"
 },
@@ -2299,11 +2299,11 @@
 "stem": "We watched the children ( ) happily in the park for over an hour.",
 "choices": [
 "played",
-"to play",
 "playing",
+"to play",
 "play to"
 ],
-"answer": 2,
+"answer": 1,
 "unit": "分詞(知覚動詞+現在分詞)",
 "explanation": "【単元】分詞(知覚動詞+現在分詞)\n答え: playing\n解説: 目的語 the children が遊んでいる「進行中の動作」を強調するので、知覚動詞 watch の後ろは現在分詞 playing。\n補足: 原形 play も文法的に可能ですが、選択肢にないため進行を表す playing が正解。過去分詞 played は受動で不自然です。"
 },
@@ -2328,10 +2328,10 @@
 "choices": [
 "talked",
 "to talk",
-"talking",
-"talk to"
+"talk to",
+"talking"
 ],
-"answer": 2,
+"answer": 3,
 "unit": "分詞(have+現在分詞:許容)",
 "explanation": "【単元】分詞(have+現在分詞:許容)\n答え: talking\n解説: won't have O doing で「O が~するのを許さない」。you が能動で「話す」のと進行のニュアンスを表すため現在分詞 talking。\n補足: 過去分詞 talked は受動で意味が合いません。この have ~ doing は「~させておく/許す」の構文です。"
 },
@@ -2340,12 +2340,12 @@
 "type": "multiple_choice",
 "stem": "The manager got the new employees ( ) on the latest software within a week.",
 "choices": [
-"train",
 "trained",
+"train",
 "to training",
 "training to"
 ],
-"answer": 1,
+"answer": 0,
 "unit": "分詞(get+過去分詞)",
 "explanation": "【単元】分詞(get+過去分詞)\n答え: trained\n解説: get O done で「O を~してもらう/~される状態にする」。employees は「訓練される」側なので過去分詞 trained。\n補足: get は使役でも原形ではなく to不定詞または過去分詞をとります(get O to do / get O done)。原形 train は不可。"
 },
@@ -2355,11 +2355,11 @@
 "stem": "He sat in the chair with his arms ( ) and refused to say anything.",
 "choices": [
 "fold",
-"folding",
 "folded",
+"folding",
 "to fold"
 ],
-"answer": 2,
+"answer": 1,
 "unit": "分詞(付帯状況の with+過去分詞)",
 "explanation": "【単元】分詞(付帯状況の with+過去分詞)\n答え: folded\n解説: with O done で付帯状況を表す。his arms は「組まれた」側で受動なので過去分詞 folded。with his arms folded で「腕を組んで」。\n補足: 現在分詞 folding は「腕が(何かを)折りたたんで」能動になり不自然です。"
 }
@@ -2383,11 +2383,11 @@
 "stem": "She fell asleep with the television ( ) all night.",
 "choices": [
 "turning on",
-"turned on",
 "turn on",
+"turned on",
 "to turn on"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "分詞(付帯状況の with+過去分詞)",
 "explanation": "【単元】分詞(付帯状況の with+過去分詞)\n答え: turned on\n解説: the television は「つけられた」側で受動なので with O done の形、過去分詞 turned on。「テレビをつけたまま」。\n補足: turning on は能動で「テレビが(何かを)つける」となり不自然です。"
 },
@@ -2397,11 +2397,11 @@
 "stem": "With night ( ), we hurried to set up the tent before it got too dark.",
 "choices": [
 "fell",
-"falling",
 "fallen",
-"to fall"
+"to fall",
+"falling"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "分詞(付帯状況の with+現在分詞)",
 "explanation": "【単元】分詞(付帯状況の with+現在分詞)\n答え: falling\n解説: with O doing で「O が~しながら」。night は「迫ってくる」能動・進行なので現在分詞 falling。with night falling で「夜が迫る中」。\n補足: fall は自動詞でここは進行・能動なので過去分詞 fallen ではなく現在分詞が適切です。"
 },
@@ -2410,12 +2410,12 @@
 "type": "multiple_choice",
 "stem": "The boy stood there with tears ( ) down his cheeks.",
 "choices": [
+"running",
 "run",
 "ran",
-"running",
 "to run"
 ],
-"answer": 2,
+"answer": 0,
 "unit": "分詞(付帯状況の with+現在分詞)",
 "explanation": "【単元】分詞(付帯状況の with+現在分詞)\n答え: running\n解説: tears は「流れている」能動・進行なので with O doing、現在分詞 running。with tears running down で「涙を流しながら」。\n補足: run は自動詞で受動の過去分詞は作れません。能動の進行を表す現在分詞が正解です。"
 },
@@ -2439,11 +2439,11 @@
 "stem": "( ) from the top of the hill, the town looks like a miniature model.",
 "choices": [
 "Seeing",
-"Seen",
 "To see",
+"Seen",
 "Sees"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "分詞(分詞構文:受動・条件)",
 "explanation": "【単元】分詞(分詞構文:受動・条件)\n答え: Seen\n解説: 意味上の主語 the town は「見られる」側なので受動の過去分詞 Seen。= When it is seen from the top。\n補足: Seeing にすると「町が見る」能動になり不自然。「見られると」という条件・時を表す受動分詞構文です。"
 },
@@ -2453,11 +2453,11 @@
 "stem": "( ) by the loud noise, the birds flew away from the tree all at once.",
 "choices": [
 "Frightening",
-"Frightened",
 "To frighten",
-"Frighten"
+"Frighten",
+"Frightened"
 ],
-"answer": 1,
+"answer": 3,
 "unit": "分詞(分詞構文:受動・理由)",
 "explanation": "【単元】分詞(分詞構文:受動・理由)\n答え: Frightened\n解説: the birds は「怖がらされた」側で受動なので過去分詞 Frightened。理由「大きな音に驚かされて」。\n補足: 現在分詞 Frightening は「鳥が(何かを)怖がらせて」能動になり不自然です。"
 }
@@ -2480,12 +2480,12 @@
 "type": "multiple_choice",
 "stem": "( ) his homework, Tom went out to play soccer with his friends.",
 "choices": [
-"Finishing",
 "Having finished",
+"Finishing",
 "Finished",
 "Being finished"
 ],
-"answer": 1,
+"answer": 0,
 "unit": "分詞(完了形分詞構文:時)",
 "explanation": "【単元】分詞(完了形分詞構文:時)\n答え: Having finished\n解説: 宿題を終えたのは外出より前なので、時の前後を示す完了形分詞構文 Having finished。「宿題を終えてから」。\n補足: Finished(過去分詞)では受動になり「終えられて」と不自然。能動で先行する動作は having done で表します。"
 },
@@ -2495,11 +2495,11 @@
 "stem": "There was a young man ( ) on the bench, reading a newspaper quietly.",
 "choices": [
 "sit",
-"sat",
 "sitting",
+"sat",
 "to sit"
 ],
-"answer": 2,
+"answer": 1,
 "unit": "分詞(現在分詞の後置修飾)",
 "explanation": "【単元】分詞(現在分詞の後置修飾)\n答え: sitting\n解説: a young man を後ろから修飾し「ベンチに座っている若い男性」と能動・進行を表すので現在分詞 sitting。= who was sitting。\n補足: sit は自動詞なので過去分詞 sat で受動修飾はできません。能動の現在分詞が正解です。"
 },
@@ -2509,11 +2509,11 @@
 "stem": "This is a novel ( ) by a famous author more than a hundred years ago.",
 "choices": [
 "writing",
-"written",
 "wrote",
+"written",
 "to write"
 ],
-"answer": 1,
+"answer": 2,
 "unit": "分詞(過去分詞の後置修飾)",
 "explanation": "【単元】分詞(過去分詞の後置修飾)\n答え: written\n解説: a novel を後ろから修飾し「~によって書かれた小説」と受動を表すので過去分詞 written。= which was written by ~。\n補足: by ~ があることからも受動が明確。現在分詞 writing は能動で不自然です。"
 },
@@ -2522,12 +2522,12 @@
 "type": "multiple_choice",
 "stem": "( ), I admit that the plan has several weaknesses we cannot ignore.",
 "choices": [
-"Frankly speaking",
 "Frank speaking",
 "Frankly spoken",
-"Speaking frank"
+"Speaking frank",
+"Frankly speaking"
 ],
-"answer": 0,
+"answer": 3,
 "unit": "分詞(慣用的分詞構文 frankly speaking)",
 "explanation": "【単元】分詞(慣用的分詞構文 frankly speaking)\n答え: Frankly speaking\n解説: 「率直に言えば」は慣用的分詞構文 frankly speaking。副詞 frankly + 現在分詞 speaking の固定形です。\n補足: 形容詞 frank や過去分詞 spoken は誤り。to be frank with you も同義の慣用表現です。"
 },
@@ -2536,12 +2536,12 @@
 "type": "multiple_choice",
 "stem": "( ) into ten groups, the students started working on their projects together.",
 "choices": [
-"Dividing",
 "Divided",
+"Dividing",
 "To divide",
 "Divide"
 ],
-"answer": 1,
+"answer": 0,
 "unit": "分詞(分詞構文:受動・時)",
 "explanation": "【単元】分詞(分詞構文:受動・時)\n答え: Divided\n解説: the students は「分けられた」側で受動なので過去分詞 Divided。= After they were divided into ten groups。\n補足: Dividing は能動で「生徒が(何かを)分けて」となり不自然です。"
 },
@@ -2550,12 +2550,12 @@
 "type": "multiple_choice",
 "stem": "( ) no further questions, the chairperson decided to end the meeting early.",
 "choices": [
-"There being",
 "There is",
+"There being",
 "There to be",
 "Being there"
 ],
-"answer": 0,
+"answer": 1,
 "unit": "分詞(独立分詞構文 there being)",
 "explanation": "【単元】分詞(独立分詞構文 there being)\n答え: There being\n解説: There is no ~ の構文を分詞構文にすると there being ~ となる慣用形。「これ以上質問がなかったので」と理由を表します。\n補足: 主語 there を残したまま being を続けるのが正しい形。There is のままや Being there は分詞構文として誤りです。"
 }

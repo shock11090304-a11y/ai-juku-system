@@ -1,6 +1,14 @@
 # Render.com deployment config
 # https://render.com/docs/blueprint-spec
 #
+# ⚠️ これは現行の本番構成ではない (旧 Render 時代の残置)。
+#    本番 API は Railway (https://ai-juku-api-production.up.railway.app)。
+#    このファイル中の https://ai-juku.onrender.com は既に本番ではないので、
+#    ここの cron 定義をそのまま別サービスへ写すと死んだホストを叩き続ける。
+#    定期実行の設定を触るときは Railway 側のダッシュボードを見ること。
+#    なお週次レポートは server/main.py の _weekly_reports_scheduler が
+#    API プロセス内で毎週日曜 JST 19:00 に実行するのが本命で、外部 cron は予備。
+#
 # 使い方:
 # 1. このリポジトリをGitHubにpush
 # 2. Render.com で "New Blueprint" から選択
@@ -49,12 +57,20 @@ services:
         value: https://ai-juku.onrender.com
     plan: starter  # $7/月
 
+  # ⚠️ この cron はもう使わない。予備配信は
+  #    .github/workflows/weekly-reports-backup.yml (日曜 20:05 JST) が担当する。
+  #
+  #    ここは元々 curl でエンドポイントを叩いていたが、リポジトリ直下に
+  #    Python を示すファイル (requirements.txt 等・実体は server/ の中) が無いため
+  #    Nixpacks が言語を判定できず、curl も python3 も入らない最小イメージになる。
+  #    そのため Railway 側の同名 cron は 2026-06 以前から毎週失敗し続けていた:
+  #        2026-08-02  /bin/bash: line 1: curl: command not found
+  #        2026-08-03  python3 に置き換えても同じ理由で CRASHED
+  #    イメージを作り直すより、Python が確実にある GitHub Actions へ移すほうが確実。
   - type: cron
     name: ai-juku-weekly-reports
     runtime: docker
-    dockerCommand: >
-      sh -c "curl -X POST -H \"X-Cron-Secret: $CRON_SECRET\"
-             https://ai-juku.onrender.com/api/cron/weekly-reports"
+    dockerCommand: python3 scripts/trigger_weekly_reports.py
     schedule: "0 11 * * 0"  # 毎週日曜 20:00 JST (UTC 11:00)
     envVars:
       - key: CRON_SECRET

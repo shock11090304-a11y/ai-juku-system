@@ -1,0 +1,69 @@
+name: 週次レポートの予備配信 (日曜20時)
+
+# 📮 週次レポートの **予備** 経路。
+#
+# 本命は server/main.py の _weekly_reports_scheduler で、API プロセス内から
+# 毎週日曜 JST 19:00 に走る。ここはその 1 時間後に同じ endpoint を叩き、
+# 本命が動かなかった週だけ実際に配信する。
+#
+# 【なぜ Railway の cron ではなくここなのか】
+# Railway の cron サービス ai-juku-weekly-reports は 2026-06 以前からずっと失敗していた。
+#   2026-08-02  /bin/bash: line 1: curl: command not found
+# リポジトリ直下に Python を示すファイル (requirements.txt 等) が無いため
+# Nixpacks が言語を判定できず、curl も python3 も入らない最小イメージになる。
+# curl を Python に置き換えても同じ理由で動かない。
+#
+# GitHub Actions なら Python は確実にあり、CRON_SECRET も既に実績がある
+# (prod-status.yml が同じ鍵で認証に成功している)。設定がリポジトリに入るので
+# ダッシュボードを触る必要も無く、変更の履歴も残る。
+#
+# 【二重送信にはならない】
+# POST /api/cron/weekly-reports は notifications テーブルで週次 dedup している。
+# 本命が 19:00 に送り終えていれば、この 20:05 の呼び出しは 0 件送信で終わる。
+#
+# 【手動起動は既定が「確認のみ」】
+# 誤って押しても 1 通も送らない。実際に送るときだけ選び直す。
+
+on:
+  schedule:
+    # 毎週日曜 11:05 UTC = JST 20:05。本命 (19:00 JST) の 1 時間後。
+    - cron: '5 11 * * 0'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '確認だけか、実際に送るか'
+        required: true
+        default: '確認のみ (送信しない)'
+        type: choice
+        options:
+          - '確認のみ (送信しない)'
+          - '実際に送る'
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 配信
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          MODE: ${{ inputs.mode }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET が未登録です。"
+            exit 1
+          fi
+          # 定時実行は必ず本番送信。手動起動は選ばれたときだけ本番送信。
+          if [ "$EVENT" = "schedule" ] || [ "$MODE" = "実際に送る" ]; then
+            echo "本番送信します (本命が済んでいれば 0 件で終わります)"
+          else
+            echo "確認のみ。1 通も送りません。"
+            export DRY_RUN=1
+          fi
+          python3 scripts/trigger_weekly_reports.py

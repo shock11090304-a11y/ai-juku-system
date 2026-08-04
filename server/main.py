@@ -8077,6 +8077,20 @@ def _collect_health_snapshot() -> dict:
     # サービスローンチからの経過時間
     snapshot["hours_since_launch"] = max(0, int((now.timestamp() - SERVICE_LAUNCH_TS) / 3600))
 
+    # 🩺 定期実行が止まっていないか (2026-08-03)
+    #   週次レポートの外部 cron が 2 か月以上失敗し続けていたのに誰も気づけなかった。
+    #   本命の in-process スケジューラが止まったときは実害が出るので、ここで検知する。
+    #   判定は _scheduler_status_rows / _stalled_schedulers が単一ソース。
+    try:
+        snapshot["stalled_schedulers"] = [
+            {"name": e["name"], "last_run_jst": e["last_run_jst"],
+             "age_hours": e["age_hours"], "max_age_days": e["max_age_days"]}
+            for e in _stalled_schedulers(_scheduler_status_rows())
+        ]
+    except Exception as e:
+        log.warning(f"[Monitor] scheduler staleness query failed: {e}")
+        snapshot["stalled_schedulers"] = []
+
     conn.close()
     return snapshot
 
@@ -8097,6 +8111,30 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "title": "🚨 創設メンバープランの Stripe Price が未設定",
             "detail": "STRIPE_PRICE_FOUNDER_SPECIAL も lookup_key 検索もヒットせず。POST /api/admin/stripe/setup-founder-special を1回叩いて自動作成してください。"
         })
+    # 1-B. 🩺 定期実行の停止 (2026-08-03)
+    #   「以前は動いていたのに想定周期を過ぎても動いていない」ものだけを拾う。
+    #   実行履歴が無いだけのものは、未有効化と区別できないので発報しない。
+    #   キーは 1 つにまとめる。スケジューラごとに分けると同時停止でメールが束になる。
+    stalled = snapshot.get("stalled_schedulers") or []
+    if stalled:
+        _label = {
+            "weekly_reports_run": "週次レポート (日曜19時)",
+            "weekly_worksheet_run": "週次弱点プリント (日曜5時)",
+            "weakness_aggregation_run": "弱点集計 (毎日)",
+            "trial_mgmt_run": "体験フォロー (毎日)",
+            "daily_sns_post": "SNS 投稿 (毎日)",
+        }
+        _lines = "、".join(
+            f"{_label.get(s['name'], s['name'])} は最終実行 {s['last_run_jst']}"
+            f" ({int(s['age_hours'] or 0)}時間前 / 想定は{s['max_age_days']}日以内)"
+            for s in stalled)
+        alerts.append({
+            "key": "scheduler_stalled", "severity": "critical",
+            "title": f"🚨 定期実行が {len(stalled)} 件止まっています",
+            "detail": (f"{_lines}。API プロセス内のスケジューラが停止した疑いがあります。"
+                       f"再起動で復帰します。詳細は GET /api/admin/scheduler/status。")
+        })
+
     # 2. Email/AI 設定
     if not snapshot["email_configured"]:
         alerts.append({
@@ -13438,6 +13476,28 @@ def _get_recent_exam_combinations(student_id: Optional[int], days: int = 7) -> l
 # ─────────────────────────────────────────────────────────────────────────
 DAIGAKU_KOKUGO_PARTS = ("kobun", "kanbun", "gendai")
 
+# 🏛️ 社会 (2026-08-02 追加)。これらは exam_id="daigaku" だが英語ではない。
+#    それまで専用分岐が無く、英語用 system プロンプト (「英文は ETS / Cambridge / Oxford 級の
+#    自然な英語」「解説は 🎯 コアイメージ → 🔬 文構造分析 → 📍 本文の根拠 → ❌ 誤答 NG 理由 の
+#    4セクション必須」) がそのまま日本史/世界史/地理/倫理/政経に適用されていた。
+#    結果、生成物の解説形式が既存 seed 1,467 問の慣行 (【単元】→答え→解説→補足) と食い違う。
+#    _generate_shakai_exam_question に委譲して正典を 1 つに揃える。
+DAIGAKU_SHAKAI_PARTS = ("nihonshi", "sekaishi", "chiri", "kouminka",
+                        "rinri", "seiji_keizai", "koukyou", "gendaishakai")
+
+# 📚 単元ドリル系プール (本文を伴わない一問一答形式)。国語も社会と同じ事情で、
+#    kobun_unit/kanbun_unit/gendai_unit は DAIGAKU_KOKUGO_PARTS に入っていないため
+#    英語プロンプトに流れていた。大問生成器 (現代語訳→解答の根拠→誤答NG) は本文が
+#    前提なので、本文の無い単元ドリルには合わない。
+DAIGAKU_KOKUGO_UNIT_PARTS = ("kobun_unit", "kanbun_unit", "gendai_unit")
+
+# 単元ドリルの解説フォーマット (正典)。社会・国語単元・理科基礎で共通。
+# 実測でこれらのプールはいずれも既存 seed の多数派がこの型だった
+# (社会 68.5% / bio_basic 62.1% / kobun_unit 65.2% / kanbun_unit 64.9% / gendai_unit 64.7%)。
+# 変更するときは seed-data 側も一緒に動かすこと (scripts/seed_survey.py で適合率を測れる)。
+UNIT_DRILL_EXPLANATION_SECTIONS = ("【単元】", "答え:", "解説:", "補足:")
+SHAKAI_EXPLANATION_SECTIONS = UNIT_DRILL_EXPLANATION_SECTIONS   # 後方互換の別名
+
 # ⚠️ dojo-drill.html markUnderlines (line ~207) の正規表現と **完全一致** させること。
 #    validator は renderer が passage.indexOf() で探すのと同一の文字列を抽出する必要がある
 #    (ズレると「描画では下線が引けないのに validator は OK」= 不良見逃し / 逆の誤検出 が起きる)。
@@ -13816,6 +13876,213 @@ def _generate_kokugo_exam_question(
 
 
 # =====================================================================
+# 🏛️📚 単元ドリル系 (社会 + 国語単元) 専用生成器
+#   どちらも「本文を伴わない一問一答」で、既存 seed の多数派が
+#   【単元】→答え→解説→補足 の形式。科目ごとの出題ルールだけを差し替える。
+# =====================================================================
+UNIT_DRILL_SUBJECT_RULES = {
+    "nihonshi": "【日本史】古代〜近現代の通史。年代の前後関係・史料 (古文書/絵図) の読み取り・"
+                "政治/経済/文化の関連づけを問う。人名と事項の単純暗記だけで解ける問題にしない。",
+    "sekaishi": "【世界史】諸地域世界の交流を軸に (新課程「世界史探究」)。同時代の東西比較・"
+                "地図上の位置・文化の伝播を問う。",
+    "chiri": "【地理】自然地理/人文地理/地誌 (新課程「地理総合,地理探究」)。統計表・雨温図・"
+             "地形図・分布図の読み取りを必ず含める。数値は passage 側に表として書き出す。",
+    "rinri": "【倫理】青年期/源流思想/日本思想/西洋近代思想/現代思想。思想家の言葉を提示し、"
+             "その文脈での解釈を問う形式を優先する。",
+    "seiji_keizai": "【政治・経済】憲法/国会/内閣/裁判所/地方自治/選挙 + 市場経済/金融/財政/国際経済。"
+                    "統計やグラフの読み取りと制度の理解を組み合わせる。",
+    "kobun_unit": "【古文 単元ドリル】助動詞の識別・敬語の方向・古文単語の語義・和歌修辞・文学史を"
+                  "一問一答で問う。**長い本文は付けない** (単元の知識そのものを問う形式)。"
+                  "例文を出す場合は stem の中に 1〜2 文で収め、歴史的仮名遣いで書く。",
+    "kanbun_unit": "【漢文 単元ドリル】句法 (再読文字/使役/受身/比較/抑揚/反語)・置き字・訓読の順序・"
+                   "故事成語を一問一答で問う。**長い本文は付けない**。"
+                   "例文は stem 内に白文 (返り点付き) で 1 文だけ置く。",
+    "gendai_unit": "【現代文 単元ドリル】語彙 (漢字の読み書き/慣用句/四字熟語)・接続語の働き・"
+                   "指示語の指示内容・論理マーカーの識別を一問一答で問う。**長い本文は付けない**。",
+}
+
+
+def _validate_shakai_question(qd: dict) -> tuple:
+    """生成された社会の大問が出題可能かを機械検証。(ok, reasons) を返す。
+
+    見るのは「壊れていたら配信できないもの」だけ:
+      - 4択 multiple_choice で choices が 4 要素、answer が範囲内の index
+      - explanation が正典の 4 セクション (【単元】/答え:/解説:/補足:) を全部持つ
+      - unit が非空 (弱点分析のタグに使う)
+    内容の正しさ (史実・年代) は機械では見られないので対象外。"""
+    reasons = []
+    if not isinstance(qd, dict):
+        return False, ["not_a_dict"]
+    qs = qd.get("questions") or []
+    if not isinstance(qs, list) or not qs:
+        return False, ["no_questions"]
+    for i, q in enumerate(qs):
+        if not isinstance(q, dict):
+            reasons.append(f"q{i + 1}:not_a_dict")
+            continue
+        tag = f"q{i + 1}"
+        ch = q.get("choices")
+        if not isinstance(ch, list) or len(ch) != 4 or any(not str(c).strip() for c in ch):
+            reasons.append(f"{tag}:choices_not_4")
+        else:
+            try:
+                a = int(q.get("answer"))
+            except (TypeError, ValueError):
+                a = None
+            if a is None or not (0 <= a < len(ch)):
+                reasons.append(f"{tag}:answer_out_of_range:{q.get('answer')!r}")
+            if len({str(c).strip() for c in ch}) != len(ch):
+                reasons.append(f"{tag}:duplicate_choices")
+        if not str(q.get("unit") or "").strip():
+            reasons.append(f"{tag}:empty_unit")
+        exp = q.get("explanation") or ""
+        missing = [s for s in UNIT_DRILL_EXPLANATION_SECTIONS if s not in exp]
+        if missing:
+            reasons.append(f"{tag}:explanation_missing:{'/'.join(missing)}")
+    return (len(reasons) == 0), reasons
+
+
+def _generate_shakai_exam_question(
+    part_key: str,
+    univ_key: Optional[str] = None,
+    exclude_combinations: Optional[list] = None,
+    topic_hint: Optional[str] = None,
+) -> Optional[dict]:
+    """🏛️ 共通テスト型の社会を1セット生成。
+
+    2026-08-02 まで、社会は exam_id="daigaku" というだけで **英語用の system プロンプト**
+    に流れていた (「英文は ETS / Cambridge / Oxford 級の自然な英語」「解説は 🎯 コアイメージ →
+    🔬 文構造分析 → 📍 本文の根拠 → ❌ 誤答 NG 理由 の4セクション必須」)。
+    そのため生成物の解説形式が既存 seed 1,467 問の慣行と食い違っていた。
+    ここで社会の正典 (【単元】→答え→解説→補足) を明示し、生成後に機械検証する。
+    検証 NG なら作り直し、それでも NG なら None (= pool を汚さず fail-closed)。"""
+    if not ANTHROPIC_API_KEY:
+        return None
+    import random
+
+    univ_key = univ_key or "kyotsu"
+    univ_info = DAIGAKU_UNIV_STYLES.get(univ_key, {"name": univ_key})
+    univ_name = univ_info.get("name", univ_key)
+    part_label = DAIGAKU_PART_HINTS.get(part_key, part_key)
+
+    year_candidates = list(range(2021, 2027)) if univ_key == "kyotsu" else list(range(2005, 2027))
+    excluded = set()
+    if exclude_combinations:
+        for (eu, ey) in exclude_combinations:
+            if eu == univ_key:
+                try:
+                    excluded.add(int(ey))
+                except Exception:
+                    pass
+    remaining = [y for y in year_candidates if y not in excluded]
+    year = random.choice(remaining) if remaining else 2024
+
+    subject_rules = UNIT_DRILL_SUBJECT_RULES.get(
+        part_key, "【公民系】制度の理解と資料の読み取りを組み合わせる。時事も扱う。")
+
+    topic_clause = (f"\n【単元指定 (絶対遵守)】この大問の中心単元は「{topic_hint}」に固定する。\n"
+                    if topic_hint else "")
+
+    system = f"""あなたは日本の大学入試の作問に精通した専門家です。
+**{univ_name} {year}年度** の **{part_label}** に準拠した良質な類題を1セット新規作成してください
+(過去問の丸写しは著作権上禁止・形式準拠の新作)。
+
+{subject_rules}
+
+【出題の絶対条件】
+- 4択マーク式。各設問 type は "multiple_choice"、choices は必ず 4 要素。
+- answer は **正解選択肢の 0始まり index** ([[ai-juku-answer-index-convention]] 標準形式)。
+- **正解の位置を毎回 0 に寄せない**。1 大問の中で 0〜3 が偏らないように散らす。
+- 誤答 3 つは「ありがちな取り違え」にする (時代のズレ/人物の取り違え/因果の逆転/範囲の過大化)。
+  明らかに的外れな選択肢を混ぜて実質3択にしない。
+- 資料 (統計表・年表・史料の抜粋) を使う場合は **passage に本文として書き出す**。
+  設問が参照する数値・語句は必ず passage 内に実在させること (本文に無い資料を前提にしない)。
+
+【🔥 explanation の絶対遵守フォーマット】
+以下 4 セクションを **この順で必ず** 含める。1 つでも欠けたら不合格:
+
+【単元】<この小問が問う単元。例: 古代(律令制)/近世(幕藩体制)/西洋近代思想(カント)>
+答え: <正解選択肢の内容を 1 文で言い切る>
+解説: <なぜそれが正しいか。年代・因果・制度の仕組みを根拠として示す。2〜4 文>
+補足: <残り 3 つの誤答が **それぞれ** なぜ誤りかを具体的に。「誤り」とだけ書かない>
+
+- 出力は純粋な JSON のみ (前置き・コードフェンス不要)。"""
+
+    user = f"""**{univ_name} {year}年度** 形式の **{part_key}** ({part_label}) の類題を1セット生成してください。
+{topic_clause}
+【出力形式】純粋な JSON のみ:
+{{
+  "passage": "(資料・リード文。資料を使わない場合は空文字でよい)",
+  "subject": "{part_key}",
+  "year_simulated": {year},
+  "univ_simulated": "{univ_name}",
+  "questions": [
+    {{
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "設問文",
+      "choices": ["選択肢1", "選択肢2", "選択肢3", "選択肢4"],
+      "answer": 0,
+      "unit": "この小問が問う単元を簡潔に (弱点分析に使う)",
+      "explanation": "【単元】…\\n答え: …\\n解説: …\\n補足: …"
+    }}
+  ]
+}}
+
+【🔁 出力前 self-check (全て YES でなければ作り直す)】
+✅ 各設問の choices は 4 要素・重複なしか?
+✅ answer は 0〜3 の整数で、その選択肢が本当に正解か?
+✅ 1 大問の中で answer が 0 ばかりに偏っていないか?
+✅ explanation に 【単元】/答え:/解説:/補足: が 4 つとも入っているか?
+✅ 補足で誤答 3 つそれぞれの誤りを具体的に説明しているか?
+✅ 設問が参照する資料の数値・語句は passage に実在するか?"""
+
+    _ATTEMPTS = 3
+    last_reasons = None
+    for attempt in range(1, _ATTEMPTS + 1):
+        data = None
+        try:
+            data = _call_anthropic_safe(
+                {
+                    "model": EXAM_QUESTIONS_MODEL,
+                    "max_tokens": 12000,
+                    "system": system,
+                    "messages": [{"role": "user", "content": user}],
+                },
+                kind=f"examq_shakai_{part_key}",
+            )
+            text = data["content"][0]["text"].strip()
+            if text.startswith("```"):
+                text = text.split("```", 2)[1]
+                if text.startswith("json"):
+                    text = text[4:]
+                text = text.strip().rstrip("`").strip()
+            qd = json.loads(text)
+        except HTTPException as e:
+            log.error(f"[ExamQ:Shakai] {part_key}/{univ_key} HTTP {e.status_code}: {e.detail}")
+            return None
+        except Exception as e:
+            preview = ""
+            try:
+                preview = (data.get('content', [{}])[0].get('text', '')[:200] if isinstance(data, dict) else "")
+            except Exception:
+                preview = ""
+            log.error(f"[ExamQ:Shakai] parse failed {part_key}/{univ_key} attempt {attempt}: "
+                      f"{type(e).__name__}: {e} (preview={preview!r})")
+            continue
+        ok, reasons = _validate_shakai_question(qd)
+        if ok:
+            if attempt > 1:
+                log.info(f"[ExamQ:Shakai] {part_key}/{univ_key} OK on attempt {attempt}")
+            return qd
+        last_reasons = reasons
+        log.warning(f"[ExamQ:Shakai] {part_key}/{univ_key} validation FAIL attempt {attempt}: {reasons[:4]}")
+    log.error(f"[ExamQ:Shakai] {part_key}/{univ_key} exhausted {_ATTEMPTS} attempts; "
+              f"skipping (last={last_reasons})")
+    return None
+
+
+# =====================================================================
 # 🧮 Wolfram|Alpha 検算 (2026-06-24・AI 生成問題の誤答キー検出)
 # AI が作る問題の最大リスク = もっともらしいが答えが間違った解答キー。
 # Wolfram は確率推測でなく厳密計算なので、記述式数学/理科の答えを検算できる。
@@ -14068,6 +14335,11 @@ def _generate_exam_question(
         # 英語専用プロンプトに相乗りすると passage 空・傍線部不一致の不良大問が量産される (2026-06-15 致命バグ)。
         if part_key in DAIGAKU_KOKUGO_PARTS:
             return _generate_kokugo_exam_question(part_key, eiken_grade, exclude_combinations, topic_hint)
+        # 🏛️ 社会も同様に専用生成器へ。以下は英語専用プロンプトなので、社会が相乗りすると
+        # 「英文は ETS 級の自然な英語」「解説は 🎯 コアイメージ…の4セクション必須」が
+        # 日本史/世界史/地理/倫理/政経に適用され、既存 seed の慣行と食い違う (2026-08-02 修正)。
+        if part_key in DAIGAKU_SHAKAI_PARTS or part_key in DAIGAKU_KOKUGO_UNIT_PARTS:
+            return _generate_shakai_exam_question(part_key, eiken_grade, exclude_combinations, topic_hint)
         univ_key = eiken_grade or "todai"
         univ_info = DAIGAKU_UNIV_STYLES.get(univ_key, {"name": univ_key, "style": "汎用大学入試型"})
         univ_name = univ_info["name"]
@@ -14258,6 +14530,19 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
 - 計算問題は単位 (km, hPa, %, 年代) を厳密に""",
         }.get(subject, "")
 
+        # 段構成は科目で変える。生物/地学は立式・計算をしない科目なので
+        # 「立式→計算」を要求すると解説が不自然になる (2026-08-02 実測で bio_basic の
+        # 既存 seed 272 問の多数派も 【単元】/答え/解説/補足 だった)。
+        explanation_steps = {
+            "数学": "  「考え方 → 立式 → 計算 → 答え → 補足」の 5 段。",
+            "物理": "  「考え方 → 立式 → 計算 → 答え → 補足」の 5 段。",
+            "化学": "  「考え方 → 立式 → 計算 → 答え → 補足」の 5 段。",
+            "生物": "  「考え方 → 答え → 解説 → 補足」の 4 段。立式・計算の段は作らない"
+                    " (計算を伴う遺伝/酵素の問題だけ「計算」の段を足してよい)。",
+            "地学": "  「考え方 → 答え → 解説 → 補足」の 4 段。"
+                    "計算を伴う問題 (地震波/天体) だけ「計算」の段を足してよい。",
+        }.get(subject, "  「考え方 → 答え → 解説 → 補足」の 4 段。")
+
         system = f"""あなたは日本の大学入試 理系科目 (特に {subject}) の出題傾向に精通した専門家です。
 **{univ_name}** の **{year}年度** 入試 (科目: {subject}) の出題形式・難易度・テーマ傾向に完全準拠した類題を生成してください。
 
@@ -14265,7 +14550,8 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
 - 過去問の丸写しは著作権上禁止。**「{univ_name} {year}年度の {subject} の出題形式に完全準拠した類題」** を新規作成すること。
 - {univ_name} の出題スタイル: {univ_style}
 - 対象 大問形式: {part_label}
-- 解説は日本語で「考え方→立式→計算→答え→補足」を必ず段階分け (3行以上)
+- 解説は日本語で必ず段階分けする (3行以上・各段をラベル付きの**別の行**に置く。1行に詰めると誌面でもアプリでも塊で出て読めない)
+{explanation_steps}
 {subject_specific}
 
 【出力形式 (純粋な JSON のみ・前後に説明文NG)】
@@ -27661,6 +27947,136 @@ def admin_monitor_daily_summary_now(authorization: Optional[str] = Header(None),
     return {"sent": result.get("sent"), "snapshot": snapshot, "subject": subject}
 
 
+# 🩺 in-process スケジューラの生存確認 (READ-ONLY)。
+#   同じ判定は scripts/health_check/prod_healthcheck.py の check_scheduler_live /
+#   check_weekly_report が持っているが、あちらは Postgres へ直接つなぐ = 端末と
+#   DB 認証情報が要る。外部 cron が「失敗」と出たときに、実際にレポートが出たのか
+#   出ていないのかを DB 端末なしで切り分けられるよう HTTP からも読めるようにする。
+#   閾値は healthcheck 側と同じ値を使う (二重管理を避けるためここを正典とし、
+#   healthcheck 側の watched dict と数値を揃えてある)。
+_SCHEDULER_MAX_AGE_DAYS = {
+    "weakness_aggregation_run": 2,   # 日次
+    "weekly_reports_run": 8,         # 週次 (日曜)
+    "weekly_worksheet_run": 8,       # 週次プリント生成
+    "trial_mgmt_run": 2,             # 体験フォローの日次バッチ
+    "daily_sns_post": 2,             # 日次 SNS 投稿
+}
+
+
+def _scheduler_status_rows() -> list:
+    """各 in-process スケジューラの最終実行を events から読む (READ-ONLY)。
+
+    endpoint と 5 分おきの監視の両方がこれを呼ぶ。判定を 2 箇所に書くと
+    「画面では正常・監視は発報」のような食い違いが起きるので単一ソースにする。
+    """
+    _JST_TZ = timezone(timedelta(hours=9))
+    now_utc = datetime.now(timezone.utc)
+    out = []
+    conn = db()
+    try:
+        c = conn.cursor()
+        for name, max_days in _SCHEDULER_MAX_AGE_DAYS.items():
+            entry = {"name": name, "last_run_jst": None, "age_hours": None,
+                     "max_age_days": max_days, "stale": True, "props": {}}
+            try:
+                c.execute(
+                    "SELECT created_at, props FROM events WHERE name = ? "
+                    "ORDER BY created_at DESC LIMIT 1", (name,))
+                row = c.fetchone()
+            except Exception as e:
+                entry["error"] = f"{type(e).__name__}: {str(e)[:120]}"
+                out.append(entry)
+                continue
+            if not row:
+                entry["error"] = "実行履歴なし"
+                out.append(entry)
+                continue
+            ts, props = row["created_at"], row["props"]
+            if isinstance(ts, str):
+                try:
+                    ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                except ValueError:
+                    ts = None
+            if ts is not None:
+                # SQLite / 古い行は tz-naive で返る。UTC 保存なので UTC を付けて比較する
+                # (naive のまま引き算すると TypeError で全項目が error になる)。
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                age_h = (now_utc - ts).total_seconds() / 3600.0
+                entry["last_run_jst"] = ts.astimezone(_JST_TZ).strftime("%Y-%m-%d %H:%M JST")
+                entry["age_hours"] = round(age_h, 1)
+                entry["stale"] = age_h > max_days * 24
+            try:
+                entry["props"] = json.loads(props) if isinstance(props, str) else (props or {})
+            except Exception:
+                entry["props"] = {"raw": str(props)[:300]}
+            out.append(entry)
+    finally:
+        conn.close()
+    return out
+
+
+def _weekly_report_verdict(rows: list) -> str:
+    """週次レポートは「動いたが全員スキップ」= 無音の失敗があり得るので別枠で判定する。"""
+    weekly = next((e for e in rows if e["name"] == "weekly_reports_run"), None)
+    weekly_verdict = "不明"
+    if weekly:
+        p = weekly.get("props") or {}
+        sent = int(p.get("sent_email", 0) or 0) + int(p.get("sent_line", 0) or 0)
+        skipped = int(p.get("skipped", 0) or 0)
+        if p.get("error"):
+            weekly_verdict = f"直近の実行がエラー: {str(p['error'])[:200]}"
+        elif weekly["stale"]:
+            weekly_verdict = "8日以上実行されていない = スケジューラ停止の疑い"
+        elif sent == 0 and skipped > 0:
+            weekly_verdict = f"実行されたが送信 0 件 (skipped={skipped}) = 集計ソース断絶の疑い"
+        else:
+            weekly_verdict = f"正常: 送信 {sent} 件 / スキップ {skipped} 件"
+    return weekly_verdict
+
+
+def _stalled_schedulers(rows: list) -> list:
+    """止まっていると判断できるスケジューラだけを返す。
+
+    ★「実行履歴なし」は停止の証拠にならない。そもそも有効化していない
+      スケジューラも履歴を持たないため、これで発報すると誤報になる。
+      「以前は動いていたのに、想定周期を過ぎても動いていない」= last_run があって
+      stale なものだけを対象にする。
+    """
+    return [e for e in rows if e.get("stale") and e.get("last_run_jst")]
+
+
+@app.get("/api/admin/scheduler/status")
+def admin_scheduler_status(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """各 in-process スケジューラの最終実行と直近の結果を返す (READ-ONLY・DB 書き込み無し)。
+
+    返り値:
+      {"ok": bool, "now_jst": str, "schedulers": [
+          {"name": str, "last_run_jst": str|None, "age_hours": float|None,
+           "max_age_days": int, "stale": bool, "props": dict}], ...}
+
+    stale=True は「その周期で動いているはずの時刻を過ぎても実行記録が無い」= 停止の疑い。
+    認証: admin Bearer or x-cron-secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    rows = _scheduler_status_rows()
+    return {
+        "ok": True,
+        "now_jst": datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M JST"),
+        "schedulers": rows,
+        "weekly_report_verdict": _weekly_report_verdict(rows),
+        "any_stale": any(e["stale"] for e in rows),
+    }
+
+
 @app.get("/api/admin/monitor/domain-status")
 def admin_domain_status(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """RDAP で WHOIS Domain Status を即時確認 (手動)。
@@ -36272,6 +36688,12 @@ def mock_exam_generate(payload: dict, request: Request, authorization: Optional[
                 "passage": qdata.get("passage", ""),
                 "audio_script": qdata.get("audio_script", ""),
                 "prompt": qdata.get("prompt", ""),
+                # 🖼 2026-08-02: 図版を view に含める。共通テスト英語はカレンダー/ポスター/
+                #   比較表/グラフが大問ごとに付き、これが無いと設問の根拠が読み取れない。
+                #   これまで payload に入っておらず、図付きの大問 (dojo_eng_kyotsu2026_graph
+                #   の 6 大問など) は Web 受験だと図が出ないまま出題されていた。
+                #   描画側 (mock-exam.js) は dojo-drill.html と同じ DOM allowlist で sanitize する。
+                "figure_svg": qdata.get("figure_svg", ""),
                 "year_simulated": qdata.get("year_simulated"),
                 "univ_simulated": qdata.get("univ_simulated"),
                 "questions": sub_questions,

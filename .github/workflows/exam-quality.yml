@@ -1,0 +1,73 @@
+name: exam-quality
+
+# 🎓 教材 (共通テスト模試・単元別ドリル) の品質ゲート。**ブロッキング**。
+#
+#   2026-08-02 の塾長指摘 (解説フォーマット未準拠 / 模試が本番形式でない / 正解番号の偏り /
+#   解説の引用が本文に無い / PDF の未描画 LaTeX) は、すべて「作る人がルールを見なかった」ことが原因。
+#   CLAUDE.md に書いても読み落としは起こりうるので、機械が強制できるものは CI で止める。
+#
+#   ★ この CI の要は「seed JSON を再生成しても差分が出ないこと」の確認。
+#     seed JSON を手で編集すれば build_*.py のフォーマット検査を素通りできてしまうため、
+#     「コミットされた JSON = ビルダーの出力」を強制することで抜け道を塞ぐ。
+#     フォーマットを変えたければビルダーを直すしかなくなる。
+#
+#   非ブロッキングの vercel-function-cap.yml とは扱いが違う点に注意。
+#   あちらは「方針からの逸脱を可視化する」もの、こちらは「不良問題を本番に出さない」もの。
+on:
+  push:
+    paths:
+      - 'seed-data/**'
+      - 'scripts/kyotsu_mogi2026/**'
+      - 'scripts/seed_survey.py'
+      - 'kyotsu-mogi2026-*.pdf'
+      - '.github/workflows/exam-quality.yml'
+  pull_request:
+    paths:
+      - 'seed-data/**'
+      - 'scripts/kyotsu_mogi2026/**'
+      - 'scripts/seed_survey.py'
+      - 'kyotsu-mogi2026-*.pdf'
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 依存 (sympy = 数学の正解照合 / poppler-utils = PDF のテキスト抽出)
+        run: |
+          python3 -m pip install --quiet sympy
+          sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+
+      - name: 問題を再生成 (フォーマット違反があればここで落ちる)
+        run: |
+          python3 scripts/kyotsu_mogi2026/build_eng.py
+          python3 scripts/kyotsu_mogi2026/build_math.py
+          python3 scripts/kyotsu_mogi2026/build_math_exam.py
+
+      - name: seed JSON が手編集されていないか (再生成して差分ゼロであること)
+        run: |
+          if ! git diff --exit-code -- seed-data/kyotsu_mogi2026_*.json; then
+            echo "::error::seed JSON がビルダーの出力と一致しません。"
+            echo "::error::JSON を直接編集すると build_*.py のフォーマット検査を素通りします。"
+            echo "::error::scripts/kyotsu_mogi2026/build_*.py を直して再生成してください。"
+            exit 1
+          fi
+
+      - name: 取込契約の確認 (rotation / 自己完結ゲート / 採点整合)
+        run: python3 scripts/kyotsu_mogi2026/preflight.py
+
+      - name: 総点検 (解説フォーマット / 引用の実在 / 正解番号の偏り / PDF の組版)
+        run: python3 scripts/kyotsu_mogi2026/audit.py
+
+      # 上までは kyotsu_mogi2026 の 3 ファイルだけを見る。ここから先は seed-data 全体
+      # (37 ファイル・5,848 小問) を同じ物差しで測る。
+      # 「高」= 出題が壊れる/取込が通らないもの (解説の捏造引用・傍線部が本文に無い・
+      # answer が範囲外・選択肢が同文 など)。2026-08-02 に 0 件まで直したので、
+      # そこを維持する。中/低 (型の不揃い・4択でない 等) は報告するだけで止めない。
+      - name: seed-data 全体の実測 (深刻度「高」が 1 件でもあれば落とす)
+        run: python3 scripts/seed_survey.py --max-high 0

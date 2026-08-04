@@ -1,0 +1,64 @@
+name: 本番に異常が出ていないか点検
+
+# 🩺 ターミナルを使わずに、GitHub の画面から本番の健全性を読むための入口。
+#
+# 2 つを続けて出す:
+#   1. 本番の健全性 … scripts/health_check/prod_healthcheck.py --static-only
+#      デプロイの反映漏れ (本番と HEAD の md5 不一致) / API の死活と混み具合 /
+#      主要ページの応答 / Vercel 関数数 を実測する。
+#   2. 定期実行の生存 … scripts/prod_status.py
+#      週次レポート等が実際に動いているかを events から読む。
+#
+# 【使い方】
+#   Actions タブ → 左の「本番に異常が出ていないか点検」→ 右の "Run workflow"
+#
+# 【読むだけ】
+#   叩くのは GET (health / 静的ファイル / scheduler status) と
+#   POST /api/cron/weekly-reports?dry_run=true だけ。
+#   dry_run はメールも LINE も送らず、DB にも 1 行も書かない。
+#   自動では走らない (workflow_dispatch = 手動起動のみ)。
+#
+# 【判定】
+#   健全性チェックは FAIL が 1 件でもあれば終了コード 1 = ジョブが赤になる。
+#   WARN は赤にしない。STRIPE_SECRET_KEY を渡していないので
+#   stripe_webhook_events は常に WARN (スキップ表示) が 1 件残る。これは正常。
+
+on:
+  workflow_dispatch:
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # deploy_freshness が本番の静的ファイルと HEAD の md5 を比べるので
+          # 浅いクローンではなく実ファイルが要る (checkout 既定で足りる)。
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 本番の健全性 (デプロイ反映・API・主要ページ)
+        run: |
+          echo "=================================================="
+          echo " 本番の健全性"
+          echo "=================================================="
+          python3 scripts/health_check/prod_healthcheck.py --static-only
+
+      - name: 定期実行の生存 (週次レポート等)
+        # 上が赤でもこちらは必ず出す。片方の失敗でもう片方が読めないと診断できない。
+        if: always()
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          CREDS=""
+          if [ -n "$ADMIN_TOKEN" ]; then CREDS="$CREDS $ADMIN_TOKEN"; fi
+          if [ -n "$CRON_SECRET" ]; then CREDS="$CREDS $CRON_SECRET"; fi
+          if [ -z "$CREDS" ]; then
+            echo "::error::ADMIN_TOKEN も CRON_SECRET も未登録です。"
+            exit 1
+          fi
+          python3 scripts/prod_status.py --token $CREDS

@@ -1,0 +1,89 @@
+name: 教材の修正を本番DBへ反映
+
+# 🖱️ ターミナルを使わずに、GitHub の画面から実行するための入口。
+#
+# seed-data で直した内容 (正解番号の均し / 理系解説の段組み / 図ラベルの重なり 等) を
+# 本番 DB の既存行へ反映する。中身は scripts/migrate_seed_to_prod.py。
+#
+# 【使い方】
+#   Actions タブ → 左の「教材の修正を本番DBへ反映」→ 右の "Run workflow" → mode を選ぶ
+#
+#   認証は既存の CRON_SECRET をそのまま使うので、新しいシークレットの登録は不要。
+#   対象の endpoint (dump / replace-explanation) はどちらも
+#   「admin Bearer」または「x-cron-secret」を受け付ける。
+#   ADMIN_TOKEN を登録してあればそちらを優先して使う。
+#
+# 【安全側】
+#   - 既定は dry-run。mode で「実行」を選ばない限り DB は 1 行も変わらない
+#   - 実行しても元の内容は exam_questions_archive に退避される
+#   - ログの末尾に batch_id が出る。戻すときはそれを rollback-batch に渡す
+#   - 自動では絶対に走らない (workflow_dispatch = 手動起動のみ)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '確認だけか、実際に反映するか'
+        required: true
+        default: '確認のみ (DBは変更しない)'
+        type: choice
+        options:
+          - '確認のみ (DBは変更しない)'
+          - '実行する (DBを更新する)'
+      only:
+        description: '対象を1ファイルに絞る場合はファイル名 (空なら全部)'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 変更前の内容を git 履歴から取り出すので全履歴が要る
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 実行
+        env:
+          # ADMIN_TOKEN があればそれを、無ければ既存の CRON_SECRET を使う。
+          # どちらでも認証は通るので、新しいシークレットの登録は要らない。
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          MODE: ${{ inputs.mode }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          # 登録されている値をすべて渡す。スクリプト側が
+          # 「どの値 × どのヘッダ」で通るかを実際に試して選ぶ。
+          CREDS=""
+          if [ -n "$ADMIN_TOKEN" ]; then CREDS="$CREDS $ADMIN_TOKEN"; fi
+          if [ -n "$CRON_SECRET" ]; then CREDS="$CREDS $CRON_SECRET"; fi
+          if [ -z "$CREDS" ]; then
+            echo "::error::ADMIN_TOKEN も CRON_SECRET も未登録です。"
+            echo "::error::Settings → Secrets and variables → Actions で登録してください。"
+            exit 1
+          fi
+
+          ARGS=""
+          if [ -n "$ONLY" ]; then ARGS="$ARGS --only $ONLY"; fi
+          case "$MODE" in
+            *実行する*)
+              echo "::warning::本番 DB を更新します"
+              ARGS="$ARGS --apply" ;;
+            *)
+              echo "確認のみ。DB は変更しません。" ;;
+          esac
+          python3 scripts/migrate_seed_to_prod.py --token $CREDS $ARGS
+
+      - name: 送信内容を成果物として保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-payload
+          path: migration_payload.json
+          if-no-files-found: ignore
