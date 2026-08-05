@@ -1242,7 +1242,15 @@
     manageCb.addEventListener('change', toggleManage);
 
     // ----- 申込日のデフォルト：今日 -----
-    document.getElementById('apply_date').valueAsDate = new Date();
+    // ★valueAsDate は UTC の年月日を使うので、JST 00:00〜09:00 に開くと「前日」が入り、
+    //   そのまま塾長に届く。ローカル日付を自前で組む（toLocaleDateString('sv-SE') は
+    //   ICU のロケールデータに依存し、欠けた環境では date input に拒否されて必須欄が空になる）。
+    (function setToday() {
+      const d = new Date();
+      const p = n => String(n).padStart(2, '0');
+      document.getElementById('apply_date').value =
+        `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    })();
 
     // ----- 送信処理（Railway API: course_applications に登録 → CEO「申込待ち」に反映） -----
     // 本番(trillion-ai-juku.com)では window.location.origin 経由で Railway API にプロキシされる。
@@ -1527,6 +1535,15 @@
     // 初回計算
     recalc();
     toggleManage();
+
+    // ★「戻る」でフォームが復元されたときの再同期。
+    //   ブラウザの値復元は load より後（pageshow の直前）に起きるので、初回の recalc() は
+    //   復元後の値を見られない。結果、チェックボックスは復元されているのに金額の hidden 3欄が
+    //   既定値(0 / 1350 / 11350)のまま残り、note に誤った月謝が載る。条件付き必須も同じ理由で外れる。
+    //   bfcache 復帰(persisted=true)でも非 bfcache の履歴復元でも発火するので両方を塞げる。
+    window.addEventListener('pageshow', function () {
+      try { recalc(); toggleManage(); syncSnsRequired(); } catch (_) {}
+    });
   </script>
 </body>
 </html>
