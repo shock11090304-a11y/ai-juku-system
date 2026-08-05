@@ -587,6 +587,15 @@
     }
     .success-overlay .so-raw { font-size: 0.72rem; margin-top: 0.7rem; word-break: break-all; }
     .so-raw a { color: var(--navy); }
+    /* 「別のお子様のお申し込み」。★常時表示（送信直後もオーバーレイがフォームを覆うため、
+       ここを隠すと続けて兄弟を申し込みたい人が行き止まりになる）。 */
+    .so-again { margin-top: 1.4rem; }
+    .success-overlay .so-again p { font-size: 0.8rem; margin-bottom: 0.5rem; }
+    .so-again button {
+      background: none; border: 1px solid var(--navy); color: var(--navy);
+      border-radius: 999px; padding: 0.55rem 1.2rem; font-size: 0.85rem;
+      font-family: inherit; cursor: pointer;
+    }
 
     /* Print */
     @media print {
@@ -1201,15 +1210,22 @@
   <div class="success-overlay" id="successOverlay">
     <div class="so-inner">
       <div class="icon">✓</div>
-      <h2>送信完了しました</h2>
-      <p>お申し込みありがとうございます。内容は塾長に届いています。<br>受講料などの詳細は、1〜2営業日以内に塾長よりご連絡いたします。</p>
+      <h2 id="soHeading">送信完了しました</h2>
+      <p id="soLead">お申し込みありがとうございます。内容は塾長に届いています。<br>受講料などの詳細は、1〜2営業日以内に塾長よりご連絡いたします。</p>
 
       <div class="so-next">
         <div class="so-step">STEP 2</div>
-        <div class="so-next-title">つづけて、塾生アプリのご登録を</div>
+        <div class="so-next-title" id="soNextTitle">つづけて、塾生アプリのご登録を</div>
         <p class="so-next-desc">出欠の確認・宿題・塾からのご連絡は、すべて塾生アプリで行います。<br>お名前・メールアドレス・受講クラスをご登録ください（1分ほどで終わります）。</p>
         <a class="so-cta" href="https://trillion-ai-juku.com/juku-register.html">塾生アプリの登録に進む</a>
         <p class="so-raw">ボタンが開かない場合はこちら<br><a href="https://trillion-ai-juku.com/juku-register.html">https://trillion-ai-juku.com/juku-register.html</a></p>
+      </div>
+
+      <!-- ★常に出す。「戻ったとき限定」にすると、送信直後に続けて兄弟を申し込みたい人が
+           オーバーレイに覆われて行き止まりになる（オーバーレイは inset:0 でフォームを覆う）。 -->
+      <div class="so-again" id="soAgain">
+        <p>ご家族に別のお子様がいらっしゃる場合は、こちらから新しくご記入いただけます。</p>
+        <button type="button" id="soNewApplication">別のお子様のお申し込みをする</button>
       </div>
     </div>
   </div>
@@ -1275,6 +1291,32 @@
       if (!el) return '';
       // RadioNodeList の .value は選択中ラジオの value を返す
       return ((el.value != null ? el.value : '') + '').trim();
+    }
+
+    // ===== 二重申込の防止 =====
+    // 完了画面が STEP2(塾生アプリ登録)へのリンクを勧めるので、そこから「戻る」で
+    // 帰ってくる保護者がいる。ブラウザは入力値を復元しオーバーレイは消えるため、
+    // ★「送信済み」の手がかりが画面から完全に消え、もう一度押せてしまう。
+    // サーバ側にも同じコミットで pending の重複ガードを足してある(main.py の
+    // course-applications)。それでも画面側で止めるのは、往復して 409 を受けてから
+    // 気づかせるより、押す前に「送信済み」と判る方が保護者の負担が小さいため。
+    // この経路はブラウザ実測で確認した（本番データに実害の記録はまだ無い。
+    // 一見それらしい「23秒差の重複」は氏名の違う合成テスト行で、これとは別物だった）。
+    // 保存先は sessionStorage。タブを閉じれば消えるので、後日の申込は妨げない。
+    const SUBMITTED_KEY = 'trillion_enroll_submitted_v1';
+    function markSubmitted(name, email) {
+      try {
+        sessionStorage.setItem(SUBMITTED_KEY, JSON.stringify({ name: name, email: email }));
+      } catch (_) { /* プライベートモード等。防止が効かなくなるだけで送信は妨げない */ }
+    }
+    function submittedInfo() {
+      try {
+        const raw = sessionStorage.getItem(SUBMITTED_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (_) { return null; }
+    }
+    function clearSubmitted() {
+      try { sessionStorage.removeItem(SUBMITTED_KEY); } catch (_) {}
     }
 
     // トーストは innerHTML で組むので、値を差し込むときは必ず通す
@@ -1569,6 +1611,16 @@
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
       if (val('bot-field')) return;  // honeypot
+      // ★このタブで「同じ生徒・同じ保護者メール」を既に送信済みなら、二度目は送らず
+      //   完了画面に戻す（STEP2 から戻ったあと、復元されたフォームで再度押された場合）。
+      //   ★氏名とメールまで見ること。真偽だけで弾くと、戻ってきて **別のお子様** の
+      //   氏名に書き換えて送った人まで無言で握り潰し、しかも「送信完了しました」と
+      //   出るので、送られていないことに永久に気づけない。
+      const _prev = submittedInfo();
+      if (_prev && _prev.name === val('生徒_氏名') && _prev.email === val('保護者_Email')) {
+        showAlreadySubmitted();
+        return;
+      }
       // 戻る/オートフィル/bfcache による復元は change を飛ばさないので、判定の直前に取り直す
       try { trimSnsHandle(); syncSnsRequired(); } catch (_) {}
       // 未入力チェック（novalidate なので自前で判定 → スマホでの“無音失敗”を防ぐ）
@@ -1607,6 +1659,11 @@
           e.httpStatus = res.status;
           throw e;
         }
+        markSubmitted(payload.name, payload.email);
+        // ★showAlreadySubmitted() が書き換えた文言を必ず戻してから出す。戻さないと、
+        //   兄弟を続けて送ったときに前の子の「◯◯さんのお申し込みは送信済みです」が
+        //   出たままになり、いま送った申込が送られていないと読める。
+        resetOverlayCopy();
         document.getElementById('successOverlay').classList.add('show');
       } catch (err) {
         const readable = err && err.userFacing && err.message;
@@ -1643,7 +1700,69 @@
     //   bfcache 復帰(persisted=true)でも非 bfcache の履歴復元でも発火するので両方を塞げる。
     window.addEventListener('pageshow', function () {
       try { recalc(); toggleManage(); syncSnsRequired(); } catch (_) {}
+      // ★STEP2 から戻ってきたら完了画面を出し直す。出さないと「送信済み」の手がかりが
+      //   画面から消え、復元されたフォームでもう一度送信できてしまう（二重申込）。
+      try { if (submittedInfo()) showAlreadySubmitted(); } catch (_) {}
     });
+
+    // 完了画面の文言（送信直後の既定）。showAlreadySubmitted() が書き換えたあと戻すのに使う。
+    const OVERLAY_DEFAULT = {
+      heading: '送信完了しました',
+      lead: 'お申し込みありがとうございます。内容は塾長に届いています。<br>受講料などの詳細は、1〜2営業日以内に塾長よりご連絡いたします。',
+      nextTitle: 'つづけて、塾生アプリのご登録を',
+    };
+    function resetOverlayCopy() {
+      const h = document.getElementById('soHeading');
+      const lead = document.getElementById('soLead');
+      const nextTitle = document.getElementById('soNextTitle');
+      if (h) h.textContent = OVERLAY_DEFAULT.heading;
+      if (lead) lead.innerHTML = OVERLAY_DEFAULT.lead;
+      if (nextTitle) nextTitle.textContent = OVERLAY_DEFAULT.nextTitle;
+    }
+
+    // 送信済みの表示。★送信直後と同じ「送信完了しました」を出すと、戻ってきた人が
+    //   「また送られた」と読む。すでに送信済みであることを言い切る文言に差し替える。
+    function showAlreadySubmitted() {
+      const ov = document.getElementById('successOverlay');
+      if (!ov) return;
+      const info = submittedInfo();
+      const h = document.getElementById('soHeading');
+      const lead = document.getElementById('soLead');
+      const nextTitle = document.getElementById('soNextTitle');
+      if (h) {
+        h.textContent = (info && info.name)
+          ? `${info.name} さんのお申し込みは送信済みです`
+          : 'このお申し込みは送信済みです';
+      }
+      if (lead) {
+        // ★「この画面からは内容が変えられない」を必ず書く。内容を訂正して出し直した人が
+        //   これを読まずに離脱すると、直したつもりの内容が永久に届かない。
+        //   ★状態の説明にする。「今回の操作では送信されていません」と書くと、STEP2 から
+        //   戻ってきただけ（何も操作していない）人には見出しと噛み合わず読めない。
+        lead.innerHTML = 'すでにお申し込みを承っておりますので、この画面から再度お送りいただいても内容は更新されません。'
+          + '<br>受講料などの詳細は、1〜2営業日以内に塾長よりご連絡いたします。'
+          + '<br><b>内容の変更をご希望の場合は、塾までご連絡ください。</b>';
+      }
+      // ★STEP2 を済ませて戻ってきた人にも同じ勧誘を出すと二重登録を招く。条件付きの文言にする。
+      if (nextTitle) nextTitle.textContent = '塾生アプリのご登録がお済みでない場合はこちら';
+      ov.classList.add('show');
+      try { ov.scrollTop = 0; } catch (_) {}   // オーバーレイ自身がスクロール領域
+      try { window.scrollTo(0, 0); } catch (_) {}
+      if (errorToast) errorToast.classList.remove('show');
+    }
+
+    // 「別のお子様のお申し込みをする」= 送信済みの印を消してまっさらな状態から
+    (function bindNewApplication() {
+      const btn2 = document.getElementById('soNewApplication');
+      if (!btn2) return;
+      btn2.addEventListener('click', function () {
+        clearSubmitted();
+        // reload で入力値も復元されないまっさらな状態にする（form.reset() だと
+        // ブラウザの復元が後から効いて前の子の内容が混ざりうる）。
+        // search は残す（Threads/IG からの ?utm_* を2人目で落とさない）。
+        window.location.replace(window.location.pathname + window.location.search);
+      });
+    })();
   </script>
 </body>
 </html>

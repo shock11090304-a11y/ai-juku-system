@@ -47005,16 +47005,43 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
         # 🛡️ 2026-05-19 fix: 削除済み生徒 (student_id=NULL = anonymized) は重複扱いしない
         # 小川碧斗事例: 削除後の再申込で「メールアドレス登録済み」と弾かれる現象を修正。
         # student_id IS NOT NULL を重複条件に追加し、削除済み生徒の古い申込は無視する。
+        #
+        # 🛡️ 2026-08-05 fix: 上の条件だけだと **承認前の二重申込が素通りする**。
+        #   公開フォームが作る pending 行は student_id が NULL (approve で初めて入る) ので、
+        #   student_id IS NOT NULL に当たらない。完了画面が STEP2 を勧める → 保護者が
+        #   「戻る」→ 復元されたフォームでもう一度送信、で行が2本できる
+        #   (この経路はブラウザ実測で確認。本番データに実害の記録はまだ無い。
+        #    「送信は届いたが応答が落ちて利用者が再送」も同じ形で救える)。
+        #   絞りを二重にかける。どちらも外すと正当な申込を潰す:
+        #   ★氏名で絞る = 同じ保護者メールで **兄弟** を申し込むケースを通すため。
+        #   ★referrer で絞る = **STEP1(入塾申込) → STEP2(塾生アプリ登録)** が
+        #     同じ endpoint に同じ生徒氏名で POST するため。ここを弾くと、完了画面が
+        #     まさに勧めている導線が 409 になり、しかも juku-register.html は detail を
+        #     捨てて固定文言を出すので保護者はそこで離脱し、subjects→class_labels が
+        #     永久に空のまま = クラス指定の配信対象から静かに落ちる。
+        #   ★referrer が「フォーム種別」として使えるのは enrollment.html('入塾申込フォーム') と
+        #     juku-register.html('塾生アプリ') の2経路だけ。course-kokuritsu-nankan.html の
+        #     referrer は利用者が打つ**紹介者の自由記述**なので、そこを書き変えて再送されると
+        #     この絞りをすり抜ける。失敗の向きは安全側(pending 行が1本余分に増えるだけで、
+        #     生徒レコードも課金も発生せず CEO「申込待ち」に並ぶ)ため許容する。
+        #   approved 側の条件は 2026-05-19 の意図どおり据え置き。
+        _name_key = (name or "").strip()
+        _ref_key = (referrer or "").strip()
         c.execute(
-            "SELECT id, status FROM course_applications WHERE LOWER(email) = ? AND status IN ('pending','approved') AND student_id IS NOT NULL ORDER BY id DESC LIMIT 1",
-            (email_lower,)
+            "SELECT id, status FROM course_applications "
+            "WHERE LOWER(email) = ? AND ("
+            "  (status = 'approved' AND student_id IS NOT NULL)"
+            "  OR (status = 'pending' AND TRIM(COALESCE(name, '')) = ?"
+            "      AND TRIM(COALESCE(referrer, '')) = ?)"
+            ") ORDER BY id DESC LIMIT 1",
+            (email_lower, _name_key, _ref_key)
         )
         existing = c.fetchone()
         if existing:
             if existing["status"] == "approved":
                 raise HTTPException(status_code=409, detail="このメールアドレスは既に承認済みです")
             else:
-                raise HTTPException(status_code=409, detail="このメールアドレスで既にお申込済みです (1-2営業日以内に塾長から連絡があります)")
+                raise HTTPException(status_code=409, detail=f"「{name}」さんのお申し込みは既に受け付けています (1-2営業日以内に塾長から連絡があります)")
 
         c.execute(
             "INSERT INTO course_applications (name, email, grade, target_university, phone, referrer, note, subjects, ip) "
