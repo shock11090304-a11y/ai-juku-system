@@ -429,6 +429,23 @@ def run_pii_gate(env):
 
 
 def main():
+    try:
+        return _main()
+    finally:
+        _cleanup_pycache()
+
+
+_PYCACHE = []
+
+
+def _cleanup_pycache():
+    import shutil
+    for d in _PYCACHE:
+        shutil.rmtree(d, ignore_errors=True)
+    _PYCACHE.clear()
+
+
+def _main():
     ap = argparse.ArgumentParser()
     ap.add_argument("filters", nargs="*", help="教材ディレクトリ名の部分一致")
     ap.add_argument("--list", action="store_true", help="対象を出すだけ")
@@ -455,8 +472,11 @@ def main():
     #   （meiji で発見し、nihonshi_koukou_workbook でも実際に見逃しを再現した）。
     #   毎回まっさらなキャッシュ置き場を渡せば、全ゲートに一度に効く。
     #   ※`-B` / PYTHONDONTWRITEBYTECODE は**書き込みを止めるだけで既存 pyc の読み込みは止まらない**。
+    #   ★作りっぱなしにすると実行のたびに1個増える（実測で97MB溜まっていた）。
+    #     最後に必ず消す（下の finally）。
     _pycache = tempfile.mkdtemp(prefix="gates-pyc-")
     env["PYTHONPYCACHEPREFIX"] = _pycache
+    _PYCACHE.append(_pycache)
 
     off = selftest_bad_out()
     if off:

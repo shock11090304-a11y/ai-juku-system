@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""大学ミラー教材の「その肢を否定しているか」判定（青学・同志社・関学・明治で共有）。
+"""大学ミラー教材の「その肢を否定しているか」判定（青学・関学・明治で共有）。
+
+★同志社は使っていない。あちらは「正解の丸数字が誤答欄に出たら無条件 fail」という
+  厳格な等号を保っており（実データ 29/29 が厳密一致）、そのほうが検出力は高い。
+  この3本は正当な対比言及が実在しうるため否定判定を挟んでいる。
 
 ★このモジュールが要る理由（2026-08-05 に実測で分かったこと）
   「正解バッジと同じカードで、その正解を誤答として解説している」を捕まえる判定を
@@ -60,10 +64,24 @@ def negates(text, needle, word_boundary=False):
         #   位置を見ないと、別の肢を否定する説明の中の言及を拾う。実例:
         #   「when は It was ... that の強調構文の枠に入らない。」
         #   → 否定されているのは when で、that は説明の一部（実データで誤検出した）。
-        head = sent.lstrip("、,。 　\n")
-        if not re.match(r"^\W{0,3}" + pat, head):
+        # ★否定の対象は「文頭の肢」だけではない。この教材群の主要文体は**列挙**で、
+        #   「at は…、on は日付、by は期限で、いずれも期間を言えない。」のように
+        #   2つ目以降が中黒や読点のあとに来る。実データの非文頭の割合は
+        #   関学 26/75・明治 21/42・青学 6/14 で、文頭だけ見ると列挙形を 0/40 で見逃した。
+        head = re.sub(r"^[\s\u3000、,。]*(?:【[^】]*】|\[[^\]]*\])?[\s\u3000]*", "", sent)
+        ok = bool(re.match(r"^\W{0,3}" + pat, head))
+        if not ok:
+            for part in re.split(r"[・／/、，,]", head):
+                if re.match(r"^\W{0,3}" + pat, part.strip()):
+                    ok = True
+                    break
+        if not ok:
             continue
-        if any(p in sent for p in POS_WORDS):
+        # ★肯定語があれば文ごと免除、にすると譲歩構文の否定を打ち消す
+        #   （「④が正解のように見えるが、本文と矛盾する。」が見逃しになる）。
+        #   逆接より後ろに否定語が無いときだけ免除する。
+        tail = re.split(r"(?:が、|けれど|ものの|だが|しかし|に見えて|と思いがち)", sent)[-1]
+        if any(p in sent for p in POS_WORDS) and not any(n in tail for n in NEG_WORDS):
             continue
         if any(n in sent for n in NEG_WORDS):
             return True
