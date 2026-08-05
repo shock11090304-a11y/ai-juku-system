@@ -595,14 +595,24 @@
       .site-header { background: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .section { break-inside: avoid; box-shadow: none; page-break-inside: avoid; }
       .section-header { background: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      /* ★<select> は紙に「選択してください」しか出ない（閉じたまま印刷される）。
+         他の選択項目は全てラジオなので紙でも選択肢が見えるが、ここだけ見えず、
+         白紙を刷って手書きしてもらう導線で回答不能になる。印刷時だけ一覧を出す。 */
+      .print-only { display: block !important; color: #111; }
+      .print-only span { white-space: nowrap; }
+      /* 記入済み(=選択済み)なら紙に選択肢一覧は要らない。required なので未選択＝:invalid */
+      #found_via:valid ~ .print-only { display: none !important; }
     }
+    .print-only { display: none; }
 
     /* Honeypot (Netlify) */
     .hp-field { position: absolute; left: -9999px; }
 
     /* 入力エラー表示（未入力の無音失敗を防ぐ） */
     /* スクロール先が上部トースト/下部固定フッターに隠れないよう余白を確保（モバイル配慮） */
-    .field, .consent { scroll-margin-top: 150px; scroll-margin-bottom: 96px; }
+    /* 190px: 最長ラベル「SNS ユーザー名（Instagram / Threads など）」で 320px 幅だと
+       トーストが5行になり、150px ではスクロール先のラベルが隠れる（実測）。 */
+    .field, .consent { scroll-margin-top: 190px; scroll-margin-bottom: 96px; }
     .has-error input:not([type=radio]):not([type=checkbox]):not([type=hidden]),
     .has-error select,
     .has-error textarea,
@@ -1066,6 +1076,59 @@
         </div>
       </div>
 
+      <!-- 当塾を知ったきっかけ（集客経路の把握。主流入は Instagram / Threads） -->
+      <div class="section">
+        <div class="section-header">当塾を知ったきっかけ</div>
+        <div class="section-body">
+          <div class="field-note" style="margin-bottom:1rem;">
+            Instagram・Threads をご覧になってお申し込みの方は、<b>ユーザー名</b>もご記入ください。
+            DM でのやり取りの確認や、お申し込み後のご連絡に使わせていただきます。
+          </div>
+          <div class="field-grid grid-2">
+            <div class="field">
+              <label class="field-label" for="found_via">最初に当塾を知ったきっかけ <span class="req">*</span></label>
+              <!-- ★value を明示する。JS はこの value で判定するので、表示文言を変えても
+                   条件付き必須が無言で壊れない（テキスト一致にしていると気づけない）。 -->
+              <select id="found_via" name="きっかけ" required>
+                <option value="">選択してください</option>
+                <option value="instagram">Instagram</option>
+                <option value="threads">Threads</option>
+                <option value="x">X（旧Twitter）</option>
+                <option value="tiktok">TikTok</option>
+                <option value="youtube">YouTube</option>
+                <option value="line">LINE</option>
+                <option value="referral">ご紹介（知人・在塾生）</option>
+                <option value="teacher">学校・塾の先生から</option>
+                <option value="search">検索（Google など）</option>
+                <option value="flyer">チラシ・看板</option>
+                <option value="other">その他</option>
+              </select>
+              <!-- 未選択のときだけ紙に出す（記入済みの控えを刷る人には○の案内はノイズ）。
+                   各項目は nowrap。行またぎで割れると「そ／の他」に○が付いて読み違える。 -->
+              <div class="field-note print-only">（あてはまるものを○で囲んでください）<br>
+                <span>Instagram</span> ／ <span>Threads</span> ／ <span>X（旧Twitter）</span> ／
+                <span>TikTok</span> ／ <span>YouTube</span> ／ <span>LINE</span> ／
+                <span>ご紹介（知人・在塾生）</span> ／ <span>学校・塾の先生から</span> ／
+                <span>検索（Google など）</span> ／ <span>チラシ・看板</span> ／ <span>その他</span></div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="sns_handle">SNS ユーザー名（Instagram / Threads など） <span class="req" id="snsReq" style="display:none;">*</span></label>
+              <!-- pattern: 空白だけで required を通せてしまうと、note からユーザー名が黙って
+                   消え「必須にしていない場合」と見分けが付かなくなる。1文字以上の非空白を要求する。 -->
+              <input type="text" id="sns_handle" name="SNSユーザー名" placeholder="@your_id" maxlength="120"
+                     pattern="\s*\S[\s\S]*"
+                     autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="email">
+              <div class="field-note">プロフィール画面の「@」から始まる文字列をご記入ください（プロフィールの URL を貼り付けても構いません）。Threads の場合は Instagram と同じユーザー名です。<br><b>アカウントをお持ちでない場合・分からない場合は「なし」</b>とご記入ください。</div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="found_detail">きっかけの詳細（任意）</label>
+            <input type="text" id="found_detail" name="きっかけ詳細" maxlength="200"
+                   placeholder="例：○○さんの紹介 ／ 英文法の投稿を見て">
+          </div>
+        </div>
+      </div>
+
       <!-- Ⅴ 個人情報 -->
       <div class="section">
         <div class="section-header"><span class="num">Ⅴ</span> 個人情報の取り扱いについて</div>
@@ -1077,7 +1140,10 @@
               <li>入塾手続きおよび講座運営に関する事務連絡</li>
               <li>当塾からの講座・イベント等のご案内</li>
               <li>緊急時のご連絡</li>
+              <li>お申し込みのきっかけの確認と、SNS のダイレクトメッセージ等によるご連絡</li>
+              <li>当塾のご案内方法の改善（お申し込みのきっかけの集計）</li>
             </ol>
+            <p>「当塾を知ったきっかけ」（「きっかけの詳細」欄を含みます）に、ご紹介者などお客様以外の方のお名前をご記入いただいた場合、そのお名前も上記の目的の範囲内でのみ利用いたします。</p>
             <p>お預かりした個人情報は、法令に基づく場合を除き、第三者に提供することはありません。</p>
           </div>
           <div class="consent">
@@ -1193,7 +1259,47 @@
       return ((el.value != null ? el.value : '') + '').trim();
     }
 
-    // 申込明細を note にまとめる（API の note カラムへ。約1000字以内）
+    // チェックボックスの入力値（val() は .value を返すので、未チェックでも "同意する" が取れてしまう）
+    function checked(name) {
+      const el = form.elements[name];
+      return !!(el && el.checked);
+    }
+
+    // 「お持ちでない」の意思表示。条件付き必須の逃げ道（下の bindSnsRequired の案内文と対応）。
+    const NO_HANDLE_RE = /^(なし|無し|ない|ありません|持っていません|none|n\/?a|-|ー|―)$/i;
+
+    // SNS ユーザー名の正規化。プロフィール URL を貼られても handle に落とす。
+    // 例: https://www.instagram.com/trillion_eng/?hl=ja → @trillion_eng
+    // ★投稿/リール/ストーリーの URL (/p/ /reel/ /stories/ …) は handle ではない。
+    //   ここを handle 扱いすると全員が "@p" "@reel" になる（アプリの「リンクをコピー」は
+    //   プロフィールではなく投稿の URL を返すので、これが最頻経路になる）。
+    //   判別できなかったときは原文をそのまま残す＝塾長が目で見て復元できる状態を優先する。
+    const IG_RESERVED = new Set(['p', 'reel', 'reels', 'stories', 'story', 'tv', 'explore',
+                                 'share', 'accounts', 'direct', 'about', 'legal', 'invites', 't',
+                                 's', '_u', 'i', 'home', 'search', 'messages', 'notifications',
+                                 'intent', 'hashtag', 'status']);
+    function normalizeHandle(raw) {
+      const orig = (raw || '').trim();
+      if (!orig) return '';
+      if (NO_HANDLE_RE.test(orig)) return '（お持ちでない）';
+      let s = orig;
+      const m = s.match(/(?:^|[\/.@])(?:instagram\.com|threads\.net|threads\.com|twitter\.com|x\.com)\/+@?([A-Za-z0-9._]+)/i);
+      if (m) {
+        if (IG_RESERVED.has(m[1].toLowerCase())) return orig;  // 投稿URL等 → 原文のまま渡す
+        s = m[1];
+      } else if (/^https?:\/\//i.test(s) || /\s/.test(s)) {
+        return orig;  // 解釈できない URL や自由文に "@" を付けて化けさせない
+      }
+      s = s.replace(/^[@＠]+/, '').replace(/[\/\s]+$/, '');
+      // handle の形をしていないもの（日本語の自由文など）に "@" を付けて化けさせない
+      return /^[A-Za-z0-9._]+$/.test(s) ? '@' + s : orig;
+    }
+
+    // 申込明細を note にまとめる（API の note カラムへ）。
+    // ★フォームに入力欄がある項目は、必ずここにも足すこと。
+    //   書き漏らすと「入力させたのに塾長に届かない」静かな欠落になる
+    //   （2026-08-05 まで 模試①② / TOEIC / TOEFL / その他資格 / 英検取得日 / 署名 / 同意 が丸ごと欠落していた）。
+    const NOTE_MAX = 2400;  // サーバ側 _sanitize_text(note, 2500) より内側に収める
     function buildNote() {
       const courses = [];
       form.querySelectorAll('.course-card input[type="checkbox"]:checked').forEach(cb => {
@@ -1201,7 +1307,19 @@
         if (nm) courses.push(`${nm.textContent.trim()}(${Number(cb.dataset.fee || 0).toLocaleString('ja-JP')}円)`);
       });
       const rel = val('保護者_続柄') === 'その他' ? ('その他:' + val('保護者_続柄_その他')) : val('保護者_続柄');
+
+      // 🔎 集客経路は先頭に置く（末尾を切り詰めても最初に失われない位置）
+      //   select の value はコード（instagram 等）なので、note には表示文言のほうを書く。
+      const viaSel = form.elements['きっかけ'];
+      const viaLabel = (viaSel && viaSel.selectedOptions && viaSel.selectedOptions[0] && viaSel.value)
+        ? viaSel.selectedOptions[0].text.trim() : '';
+      // ★表示文言に加えてコードも書く。表示文言だけだと、あとで「X（旧Twitter）」を
+      //   「X」に直しただけで集計が黙って割れる（select の value を明示したのと同じ理由）。
+      const viaCode = viaSel ? viaSel.value : '';
+      const handle = normalizeHandle(val('SNSユーザー名'));
+      const viaDetail = val('きっかけ詳細');
       const lines = [
+        `■きっかけ: ${viaLabel || '-'}${viaCode ? ` [${viaCode}]` : ''}${handle ? ` / ユーザー名 ${handle}` : ''}${viaDetail ? ` / ${viaDetail}` : ''}`,
         `■申込日: ${val('申込日')}`,
         `■生徒: ${val('生徒_氏名')}(${val('生徒_フリガナ')}) ${val('生徒_性別')} ${val('生徒_生年月日')}`,
         `■在籍校: ${val('生徒_在籍学校')} / ${val('生徒_校種')}${val('生徒_学年')}年`,
@@ -1213,9 +1331,47 @@
       const m1 = val('学習管理_科目1'), m2 = val('学習管理_科目2');
       if (m1 || m2) lines.push(`■学習管理科目: ${m1 || '-'} / ${m2 || '-'}`);
       lines.push(`■金額: 受講料 ${val('金額_受講料')}円 / 毎月 ${val('金額_毎月合計')}円 / 初月 ${val('金額_初月合計')}円`);
-      const eiken = val('英検級'), strong = val('英語_得意'), weak = val('英語_苦手');
-      if (eiken || strong || weak) lines.push(`■英語: 英検${eiken || '-'} 得意:${strong || '-'} 苦手:${weak || '-'}`);
-      return lines.join('\n').slice(0, 980);
+
+      // 資格（英検・TOEIC・TOEFL/IELTS・その他）
+      const certs = [];
+      const eikenG = val('英検級'), eikenD = val('英検取得日');
+      if (eikenG || eikenD) certs.push(`英検${eikenG || '-'}${eikenD ? `(${eikenD})` : ''}`);
+      const toeic = val('TOEIC'), toeicD = val('TOEIC受験日');
+      if (toeic || toeicD) certs.push(`TOEIC ${toeic || '-'}${toeicD ? `(${toeicD})` : ''}`);
+      const toefl = val('TOEFL_IELTS'), toeflD = val('TOEFL_IELTS受験日');
+      if (toefl || toeflD) certs.push(`TOEFL/IELTS ${toefl || '-'}${toeflD ? `(${toeflD})` : ''}`);
+      const otherCert = val('その他資格');
+      if (otherCert) certs.push(`その他 ${otherCert}`);
+      if (certs.length) lines.push(`■資格: ${certs.join(' / ')}`);
+
+      const strong = val('英語_得意'), weak = val('英語_苦手');
+      if (strong || weak) lines.push(`■英語: 得意 ${strong || '-'} / 苦手 ${weak || '-'}`);
+
+      // 模試①②（点数・偏差値。全部空の回は行ごと省く）
+      const SUBJ = ['英語', '数学', '国語', '理科', '社会', '総合'];
+      [['1', '①'], ['2', '②']].forEach(([n, mark]) => {
+        const nm = val(`模試${n}_名`), dt = val(`模試${n}_受験日`);
+        const pt = SUBJ.map(s => val(`模試${n}_点数_${s}`));
+        const dv = SUBJ.map(s => val(`模試${n}_偏差値_${s}`));
+        if (!nm && !dt && !pt.some(Boolean) && !dv.some(Boolean)) return;
+        const fmt = arr => SUBJ.map((s, i) => arr[i] ? `${s}${arr[i]}` : '').filter(Boolean).join(' ') || '-';
+        lines.push(`■模試${mark}: ${nm || '（模試名 未記入）'}${dt ? ` (${dt})` : ''}`);
+        lines.push(`　点数: ${fmt(pt)}`);
+        lines.push(`　偏差値: ${fmt(dv)}`);
+      });
+
+      lines.push(`■署名: 保護者 ${val('署名_保護者') || '-'} / 生徒 ${val('署名_生徒') || '-'}`);
+      lines.push(`■個人情報の取り扱い: ${checked('同意') ? '同意済み' : '未同意'}`);
+
+      const text = lines.join('\n');
+      if (text.length <= NOTE_MAX) return text;
+      // 切り詰めが起きたことを塾長が判るようにする（黙って消えるのが一番まずい）。
+      // ★サロゲートペアの途中で切ると孤立サロゲートが残り、JSON→Python で
+      //   "surrogates not allowed" になって送信が 500 で落ちる。末尾1文字を捨てて避ける。
+      let cut = text.slice(0, NOTE_MAX - 10);
+      const last = cut.charCodeAt(cut.length - 1);
+      if (last >= 0xD800 && last <= 0xDBFF) cut = cut.slice(0, -1);
+      return cut + '\n…(以下略)';
     }
 
     // ----- 入力チェックのUI（未入力を赤表示＋自動スクロール＋画面上部に警告） -----
@@ -1235,6 +1391,50 @@
       form.querySelectorAll('[aria-invalid="true"]').forEach(el => el.removeAttribute('aria-invalid'));
       if (errorToast) errorToast.classList.remove('show');
     }
+
+    // 🔎 きっかけが Instagram / Threads のときだけ、ユーザー名を必須にする。
+    //   ・欄は常に表示したまま required を付け外しする。非表示要素を required にすると
+    //     ブラウザが focus できず検証が詰まるため、隠さない。
+    //   ・「お持ちでない場合は『なし』」の逃げ道を欄の説明に書いてある（NO_HANDLE_RE が受ける）。
+    //     逃げ道を用意しないと、詰まった人が きっかけ を「その他」に付け替えて突破するので、
+    //     測りたかった流入元そのものが過少計上になる。
+    //   ・判定は select の value（instagram / threads）。表示文言を変えても壊れない。
+    function syncSnsRequired() {
+      const via = document.getElementById('found_via');
+      const handle = document.getElementById('sns_handle');
+      const reqMark = document.getElementById('snsReq');
+      if (!via || !handle) return;
+      const need = via.value === 'instagram' || via.value === 'threads';
+      handle.required = need;   // toggleAttribute より対応ブラウザが広い
+      if (reqMark) reqMark.style.display = need ? '' : 'none';
+      if (!need) {
+        handle.removeAttribute('aria-invalid');
+        const box = handle.closest('.field');
+        if (box) box.classList.remove('has-error');
+        // 必須から外れた欄をトーストが指したままだと「赤い項目が無いのに怒られている」状態になる
+        // （送信失敗の表示は消さない。原因が判らなくなる）
+        if (errorToast && errorToast.dataset.kind === 'validation' && form.checkValidity()) {
+          errorToast.classList.remove('show');
+        }
+      }
+    }
+    // ★try/catch で隔離する。ここで例外が出ると以降の文（submit ハンドラの登録）が
+    //   実行されず、送信がネイティブ POST に落ちて申込が無言で失われる。
+    // 空白だけの入力は「未入力」に正規化する。しないと pattern が発火して、
+    //   ★必須でない(＊が出ていない)ときにも送信がブロックされ、しかも空白は目に見えないので
+    //   「未入力の項目が1件」と言われて何を直せばいいか判らない状態になる。
+    //   正規化しておけば、必須時は valueMissing=「未入力」で文言と実態が一致する。
+    function trimSnsHandle() {
+      const el = document.getElementById('sns_handle');
+      if (el && el.value !== el.value.trim()) el.value = el.value.trim();
+    }
+    try {
+      const viaEl = document.getElementById('found_via');
+      if (viaEl) viaEl.addEventListener('change', syncSnsRequired);
+      const snsEl = document.getElementById('sns_handle');
+      if (snsEl) snsEl.addEventListener('blur', trimSnsHandle);
+      syncSnsRequired();
+    } catch (_) { /* 条件付き必須が効かないだけで、送信自体は殺さない */ }
     function showErrors() {
       form.querySelectorAll('.has-error').forEach(b => b.classList.remove('has-error'));
       // 未入力/不正の項目を全て拾う（ラジオ群は同名で複数 :invalid → box 単位で重複排除）
@@ -1254,6 +1454,7 @@
       });
       if (errorToast && boxes.length) {
         errorToast.innerHTML = '⚠ 未入力・未選択の項目が <b>' + boxes.length + '件</b> あります。赤く表示された項目をご入力のうえ、もう一度「送信」を押してください。<br>（最初の項目：<b>' + firstLabel + '</b>）';
+        errorToast.dataset.kind = 'validation';  // 入力が揃ったら自動で下げてよい種類
         errorToast.classList.add('show');
       }
       if (boxes.length) {
@@ -1269,11 +1470,19 @@
       if (e.target && !e.target.matches(':invalid')) e.target.removeAttribute('aria-invalid');
       const box = e.target.closest('.has-error');
       if (box && box.querySelector(':invalid') == null) box.classList.remove('has-error');
+      // 全部埋まったらトーストも下げる。残したままだと「赤い項目が1つも無いのに
+      //   N件あります と言われ続ける」状態になる（「なし」と打って解消した人が必ず踏む）。
+      //   ★送信失敗トースト(errorToast に別文言を入れる)を消さないよう、フラグで区別する。
+      if (errorToast && errorToast.dataset.kind === 'validation' && form.checkValidity()) {
+        errorToast.classList.remove('show');
+      }
     });
 
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
       if (val('bot-field')) return;  // honeypot
+      // 戻る/オートフィル/bfcache による復元は change を飛ばさないので、判定の直前に取り直す
+      try { trimSnsHandle(); syncSnsRequired(); } catch (_) {}
       // 未入力チェック（novalidate なので自前で判定 → スマホでの“無音失敗”を防ぐ）
       if (!form.checkValidity()) { showErrors(); return; }
       clearErrors();
@@ -1306,6 +1515,7 @@
       } catch (err) {
         if (errorToast) {
           errorToast.innerHTML = '❌ 送信に失敗しました：' + (err.message || '通信エラーが発生しました。少し時間をおいて、もう一度お試しください。');
+          errorToast.dataset.kind = 'submit-failed';  // 入力操作で勝手に消してはいけない
           errorToast.classList.add('show');
         } else {
           alert('❌ 送信に失敗しました: ' + (err.message || '時間をおいて再度お試しください'));

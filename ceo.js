@@ -2298,7 +2298,7 @@ async function loadCourseApps() {
           ${a.phone ? `<span style="color:#a1a1aa;">📞 電話:</span> <span style="color:#e4e4e7;">${escapeHtml(a.phone)}</span>` : ''}
           ${a.referrer && a.referrer !== '塾生アプリ' ? `<span style="color:#a1a1aa;">👥 紹介者:</span> <span style="color:#e4e4e7;">${escapeHtml(a.referrer)}</span>` : ''}
         </div>
-        ${a.note ? `<div style="background:rgba(0,0,0,0.25); padding:0.45rem 0.6rem; border-radius:6px; font-size:0.82rem; color:#d4d4d8; margin-bottom:0.5rem;">💬 ${escapeHtml(a.note)}</div>` : ''}
+        ${a.note ? `<div style="background:rgba(0,0,0,0.25); padding:0.45rem 0.6rem; border-radius:6px; font-size:0.82rem; color:#d4d4d8; margin-bottom:0.5rem; white-space:pre-wrap; word-break:break-word;">💬 ${escapeHtml(a.note)}</div>` : ''}
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
           <button data-id="${a.id}" data-name="${escapeHtml(a.name)}" data-referrer="${escapeHtml(a.referrer||'')}" class="ca-approve-btn" style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border:0; padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:700;">✅ 承認 (アカウント作成 + magic link 送信)</button>
           <button data-id="${a.id}" data-name="${escapeHtml(a.name)}" class="ca-reject-btn" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:0; padding:0.5rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.85rem;">✕ 却下</button>

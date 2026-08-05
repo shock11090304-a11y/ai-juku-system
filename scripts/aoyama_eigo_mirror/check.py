@@ -28,6 +28,10 @@ import os
 import re
 import sys
 
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from _mirror_negation import negates  # noqa: E402
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # ★実測値を定数で持ち、等式で押さえる。「印字するだけ」だと検査量が黙って減っても
@@ -37,6 +41,7 @@ EXPECT_Q = 15          # 選択式の設問数（問題Ⅰ 10 + 問題Ⅳ 5）
 EXPECT_POS = 15        # G3 が位置照合できる件数（問題Ⅳ の英単語形）
 MARU = "①②③④⑤⑥⑦⑧⑨"
 FAILS, WARNS = [], []
+
 
 
 def fail(m):
@@ -100,9 +105,9 @@ def main():
         got = {ch for ch in dis if ch in MARU}
         if MARU[a - 1] in got:
             # 「なお②は④（正解）と紛らわしい」のような対比言及は正当なので落とさない
-            around = "".join(dis[m.end():m.end() + 8]
-                             for m in re.finditer(re.escape(MARU[a - 1]), dis))
-            if not re.search(r"(?:（正解）|\(正解\)|が正解|＝正解)", around):
+            # ★肯定語の白リストで例外にすると、列挙に無い自然な対比表現を全部落とす（実測10/10）。
+            #   「その番号を否定している一文があるか」で見る（共通ヘルパ）。
+            if negates(dis, MARU[a - 1]):
                 fail(f"[G2] {k}: 正解 {MARU[a-1]} が「他の選択肢」欄に出ている"
                      f"（紙は『正解 {MARU[a-1]}』と印字するので同じカードで自己矛盾する）")
         if got - want - {MARU[a - 1]}:

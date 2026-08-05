@@ -43,6 +43,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -125,7 +126,19 @@ _BAD_OUT = re.compile(
     r"|^[ \t]*\[?(?:(?<![A-Za-z])(?:NG|FAIL|ERROR)(?![A-Za-z])|違反)\]?[ \t]*[:：]"
     r"(?![ \t]*(?:0(?:[ \t]|件|$)|なし|none\b|N/?A\b))[ \t]*\S"
     r"|^[ \t]*\[(?:(?<![A-Za-z])(?:NG|FAIL|ERROR)(?![A-Za-z])|違反)\][ \t]*"
-    r"(?!0(?:[ \t]|件|$)|なし|none\b)\S", re.M | re.I)
+    r"(?!0(?:[ \t]|件|$)|なし|none\b)\S"
+    # ★`(件数 N)` 形（grammar_workbook/validate.py が使う）。0件は合格の集計行なので除く。
+    r"|[（(]件数[ \t]*[1-9]\d*[）)]"
+    # ★`[MC MATCH]` `[COUNT]` `[NO EXPL]` のような **ASCII 大文字のタグ**は違反の目印。
+    #   日本語のタグ（[構造] [配点] [info]）は正常出力にも出るので当てない。
+    #   実測: 主要ゲート8本の全出力で ASCII 大文字タグは1つも出ない。
+    #   ★`(?-i:)` で**大文字小文字を区別**する。全体に re.I が効いているので、これが無いと
+    #     `[check]` `[info]` `[LaTeX]` `[chart]` まで当たり、通っているゲート5本を落とす（実測）。
+    #     さらに `[OK ]` `[PASS]` のような正常タグは明示的に除く。
+    #   件数0の集計行（`[NG] 0 件`）は合格なので、ここでも除外を効かせる。
+    r"|^[ \t]*(?-i:\[(?!OK|PASS|INFO|WARN|DONE|SKIP|NOTE)[A-Z][A-Z0-9 _]{1,14}\])"
+    r"[ \t]*(?!0(?:[ \t]|件|$)|なし|none\b)\S",
+    re.M | re.I)
 
 # ★この正規表現は 4 巡続けて「正常なゲートを落とす／違反を見逃す」を作った。
 #   目視レビューでは止まらなかったので、**表を持って起動時に自己テストする**。
@@ -155,6 +168,25 @@ _BAD_OUT_CASES = [
     ("❌ standard コースの name が一致しない", True),
     ("=== FAIL 1 ===", True),
     ("違反 3 件", True),
+    # 2026-08-05 に増えたゲートの実際の出力（全角括弧・集計行）。表は実物に合わせる。
+    ("=== ALL PASS（0 warnings）===", False),
+    ("########## 検査した本 5/5 冊（PASS 5 ＋ FAIL 0 ＋ 未実行 0 ＝ 5）##########", False),
+    ("=== 禁止文字 (件数 0) ===", False),
+    ("=== 問題点 (件数 0) ===", False),
+    ("=== 検査量の食い違い (件数 0) ===", False),
+    ("=== 問題点 (件数 7) ===", True),
+    ("=== 禁止文字 (件数 23) ===", True),
+    ("  [MC MATCH] 比較#3: choices[1]='more' != answer_text='most'", True),
+    # ★ここから下は「正常なのに落とした」実物。re.I が効いて [check] [info] [LaTeX] [chart]
+    #   まで「ASCII 大文字タグ」に当たり、通っているゲート5本を落とした（2026-08-05・5回目）。
+    ("[check] 全10回 / 200問 / 見出し語 200 語", False),
+    ("[check] PASS  (FAIL 0 / WARN 2)", False),
+    ("[info] 文法 5講 / 長文 5講 検査完了", False),
+    ("[OK ] Q3 ア: derived='②' claim='②'", False),
+    ("  [LaTeX] 全81問＋POINTS9件 $の対応OK／数式内に日本語なし", False),
+    ("  [chart] Ａ モスクワ       年平均  6.3℃ 年降水  713.0mm OK", False),
+    ("  [COUNT] 01_sentence-patterns.json: 24 questions (expected 25)", True),
+    ("  [NO EXPL] 助動詞#9", True),
 ]
 
 
@@ -318,37 +350,51 @@ def uses_argv(src):
 
 
 _IGNORED_CACHE = {}
+_GIT_OK = [True]        # git が使えたか（使えないと無視判定ができない）
 
 
 def is_ignored(rel):
     """.gitignore で無視されるパスか（正当な中間物を誤って責めないため）。"""
     if rel not in _IGNORED_CACHE:
-        r = subprocess.run(["git", "check-ignore", "-q", rel],
-                           cwd=os.path.dirname(HERE), capture_output=True)
-        _IGNORED_CACHE[rel] = (r.returncode == 0)
+        try:
+            r = subprocess.run(["git", "check-ignore", "-q", rel],
+                               cwd=os.path.dirname(HERE), capture_output=True)
+            _IGNORED_CACHE[rel] = (r.returncode == 0)
+        except OSError:
+            # ★git が無い環境で例外を投げると、45本を走らせ切った後に traceback だけ残して
+            #   集計も一覧も全部消える。無視判定ができないだけなので False にして続ける。
+            _IGNORED_CACHE[rel] = False
+            _GIT_OK[0] = False
     return _IGNORED_CACHE[rel]
 
 
 def worktree_state():
-    """作業ツリーのファイルの状態（path -> (サイズ, mtime)）。検査が書き換えたかを実測するため。
+    """`scripts/` 配下のファイルの状態（path -> (サイズ, mtime)）。検査が書き換えたかを実測する。
 
     ★静的解析（side_effects）は helper 越しの書き込み・Path.open・shutil・subprocess を
       取りこぼす。語彙を足すのは追いかけっこなので、**実際に変わったかを測る**方を主にする。
     ★`git status --porcelain` の**行**を比べてはいけない。未追跡ディレクトリは `?? dir/` に
       畳まれるので、その中で何を書き換えても行が変わらない。教材データが巻き戻った
       `scripts/eiken_junichi/` はまさにその位置だった。ファイル単位で測る。
+    ★見るのは `scripts/` と `seed-data/` だけ。このリポジトリは**並行セッション運用が前提**で、
+      リポジトリ全体を見ると別セッションが直下の *.html を編集しただけで全体 FAIL になる
+      （実測で enrollment.html を踏んだ）。ゲートが書き換えうる教材データはこの2つに収まる
+      （seed-data は模試シードの置き場で、将来ここを書くゲートが入ると無音で通るため足した）。
     """
-    root = os.path.dirname(HERE)
     state = {}
-    for base, dirs, files in os.walk(root):
-        dirs[:] = [d for d in dirs if d not in WALK_SKIP and d != ".git"]
+    roots = [HERE, os.path.join(os.path.dirname(HERE), "seed-data")]
+    for root in roots:
+      if not os.path.isdir(root):
+          continue
+      for base, dirs, files in os.walk(root):
+        dirs[:] = [d for d in dirs if d not in WALK_SKIP and not d.startswith(".")]
         for f in files:
             fp = os.path.join(base, f)
             try:
                 st = os.stat(fp)
             except OSError:
                 continue
-            state[os.path.relpath(fp, root)] = (st.st_size, st.st_mtime_ns)
+            state[os.path.relpath(fp, os.path.dirname(HERE))] = (st.st_size, st.st_mtime_ns)
     return state
 
 
@@ -402,6 +448,15 @@ def main():
 
     src_cache = {p: read(p) for _, p in gates}
     env = {k: v for k, v in os.environ.items() if k not in DROP_ENV}
+    # ★ゲートが兄弟モジュール（content.py / build.py）を import して中の答えを検査する形は
+    #   24本ある。`import` は **pyc キャッシュ**を使い、有効性の判定はソースの mtime(秒)と
+    #   サイズだけなので、`ans=3 → 4` のような**サイズが変わらない書き換え**を同じ秒に保存すると
+    #   古い pyc が再利用され、**ゲートが古いデータを見て ALL PASS** になる
+    #   （meiji で発見し、nihonshi_koukou_workbook でも実際に見逃しを再現した）。
+    #   毎回まっさらなキャッシュ置き場を渡せば、全ゲートに一度に効く。
+    #   ※`-B` / PYTHONDONTWRITEBYTECODE は**書き込みを止めるだけで既存 pyc の読み込みは止まらない**。
+    _pycache = tempfile.mkdtemp(prefix="gates-pyc-")
+    env["PYTHONPYCACHEPREFIX"] = _pycache
 
     off = selftest_bad_out()
     if off:
@@ -526,7 +581,13 @@ def main():
                      if tree_before.get(k) != tree_after.get(k))
     # gitignore 済みの中間物（_katex_gate.html 等）は正当なので除く
     changed = [k for k in changed if not is_ignored(k)]
-    if changed:
+    if changed and not _GIT_OK[0]:
+        # git が無いと .gitignore 済みの中間物を除けないので、参考情報にとどめる
+        print(f"\n--- 参考: {len(changed)} 件のファイルが変わった"
+              f"（git が使えず、無視すべき中間物を区別できない）---")
+        for x in changed[:5]:
+            print(f"      {x}")
+    elif changed:
         bad.append(("(ランナー全体)", "WROTE",
                     ["検査を回しただけでファイルが変わった＝どれかが書き換えている"]
                     + [f"  {x}" for x in changed[:5]]))
@@ -544,6 +605,61 @@ def main():
         pii = run_pii_gate(env)
         if pii:
             bad.append(pii)
+
+    # ★このランナーは「検査を書いたのに呼ばれていない」を撲滅するために作ったのに、
+    #   **自分が回す本数**は無検査だった。未追跡のゲートは CI のチェックアウトに存在しないので
+    #   手元では走るが CI では1度も走らない（実測で新設3本が該当し、誰も報告しなかった）。
+    #   ★git が無い環境で例外を投げると、45本を走らせ切った後に traceback だけ残して
+    #     集計も一覧も全部消える。このファイルの作法どおり「ここでは検査していない」と出す。
+    tracked = None
+    try:
+        r = subprocess.run(["git", "ls-files", "-z", "scripts"],
+                           cwd=os.path.dirname(HERE), capture_output=True)
+        if r.returncode == 0:
+            tracked = {p.decode("utf-8", "surrogateescape")
+                       for p in r.stdout.split(b"\0") if p}
+    except OSError as e:
+        print(f"\n--- ここでは検査していない: ゲートの追跡状態（git が使えない: {e}）---")
+    if tracked is None:
+        if not os.path.isdir(os.path.join(os.path.dirname(HERE), ".git")):
+            print("\n--- ここでは検査していない: ゲートの追跡状態（.git が無い）---")
+    else:
+        untracked = [label for label, path in gates
+                     if os.path.relpath(path, os.path.dirname(HERE)) not in tracked]
+        if untracked:
+            bad.append(("(ランナー全体)", "UNTRACKED",
+                        ["git に入っていないゲートは CI では1度も走らない（コミットすること）"]
+                        + [f"  {x}" for x in untracked[:8]]))
+            print(f"\n  ✗ git に入っていないゲートが {len(untracked)} 本"
+                  f"（手元では走るが CI では走らない）:")
+            for x in untracked[:8]:
+                print(f"      {x}")
+        # ★「ゲートが1本消えた」は内訳の等式では**原理的に**捕まえられない
+        #   （counted も len(gates) も同じ discover() から出るので恒等式になる）。
+        #   git に入っているゲートの一覧と突き合わせて、消えた・改名されたものを落とす。
+        known = {p for p in tracked
+                 if GATE_RE.match(os.path.basename(p)) and p not in SKIP}
+        found = {os.path.relpath(path, os.path.dirname(HERE)) for _, path in gates}
+        lost = sorted(known - found)
+        if lost and not a.filters:
+            bad.append(("(ランナー全体)", "LOST",
+                        ["git にあるのに発見されないゲート（消した？改名した？）"]
+                        + [f"  {x}" for x in lost[:8]]))
+            print(f"\n  ✗ git にあるのに発見されないゲートが {len(lost)} 本:")
+            for x in lost[:8]:
+                print(f"      {x}")
+
+    # 内訳の等式。★除外は**ラベル文字列でなく対象集合**で判定する。
+    #   `run_pii_gate` が返すラベルは "(ランナー全体)" ではないので、文字列比較にすると
+    #   **PII 違反のたびに「内訳が合わない」が余分に出る**（生徒の氏名が混入した最悪の場面で
+    #   デバッグを誤誘導する）。実測で FAIL 1件が2件になった。
+    _labels = {label for label, _ in gates}
+    counted = npass + len([b for b in bad if b[0] in _labels]) + len(lib) + len(skipped_pdf)
+    if counted != len(gates):
+        bad.append(("(ランナー全体)", "COUNT",
+                    [f"内訳の合計 {counted} が対象 {len(gates)} 本と合わない"
+                     "（どこかで黙って落ちている）"]))
+        print(f"\n  ✗ 内訳の合計 {counted} ≠ 対象 {len(gates)} 本")
 
     print(f"\n=== PASS {npass} / FAIL {len(bad)} / LIB {len(lib)}（check 経由で走る）===")
     if skipped_pdf:

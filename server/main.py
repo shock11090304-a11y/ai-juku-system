@@ -46989,7 +46989,12 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
     target_uni = _sanitize_text(payload.target_university, 100)
     phone = _sanitize_text(payload.phone, 30)
     referrer = _sanitize_text(payload.referrer, 100)
-    note = _sanitize_text(payload.note, 1000)
+    # 📝 2026-08-05: 1000字 → 2500字。enrollment.html(入塾申込フォーム) の note は
+    #   申込書1枚分の明細(生徒/保護者/住所/コース/資格/模試①②/署名/同意/集客経路)を
+    #   1本にまとめて送る。1000字だと模試まで書くと末尾から静かに欠ける。
+    #   クライアント側は NOTE_MAX=2400 で切って「…(以下略)」を付けるので、ここは内側の余白込み。
+    #   note は TEXT カラム・rate limit(IP 40/日, email 10/日)があるので保存量の懸念は無い。
+    note = _sanitize_text(payload.note, 2500)
     subjects = _sanitize_text(payload.subjects, 200)  # 現在受講科目 (塾生アプリ登録)
     ip = _client_ip(request)
 

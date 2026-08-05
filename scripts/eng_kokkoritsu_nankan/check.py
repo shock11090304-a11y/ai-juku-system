@@ -1,34 +1,72 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""難関国公立大 英文法 実戦問題集 — 機械ゲート。
+"""英文法／古文 実戦問題集シリーズ — 機械ゲート（この機械を共有する本を**全冊**検査する）。
 
-  python3 scripts/eng_kokkoritsu_nankan/check.py
+  python3 scripts/eng_kokkoritsu_nankan/check.py            # BOOKS の全冊（1冊1プロセス）
+  WORKBOOK_DIR=scripts/<本> python3 .../check.py            # その1冊だけ
 
 ★存在理由: 盲ソルバー（AI が実際に解いて鍵と照合する層）は「鍵が正しいか」しか測らない。
   「トークンと解答がそもそも一致していない」「答えが問題編に印字されている」「配点が合わない」
   「誤りの位置が偏っている」は、AI に探させる前に Python で確定的に潰せる。
   ここが FAIL のうちは build.py を走らせない（build.py が先頭でこのゲートを呼ぶ）。
+
+★2026-08-05 まで、引数なしで走らせると既定の1冊（難関国公立）しか検査していなかった。
+  run_all_gates.py は DROP_ENV で WORKBOOK_DIR を落として無引数で回す
+  （env で検査対象が黙ってすり替わるのを防ぐため。この設計は正しいので外さない）ので、
+  **同じ機械で作って配布済みの他4冊が、CI で一度も検査されていなかった**。
+  ＝「ALL PASS」は出ているが、その PASS は1冊分でしかなかった。
+  対策: 検査対象の一覧を env でなくコード（BOOKS）に持ち、引数なしなら全冊を回す。
 """
 import os
 import re
 import sys
 import difflib
+import subprocess
 from collections import Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+SCRIPTS = os.path.dirname(HERE)
+
+# ★この機械（check.py / build.py / blind.py）を共有している本の一覧＝引数なしの検査対象の正典。
+#   env で決めないこと。env だと「別の本を検査して PASS」がログから判別できない。
+#   本を1冊足したらここにも足す（足し忘れは下の _machine_users() が機械で捕まえる）。
+# ★問数まで書く。冊数の等式だけだと「中身が空の本」を PASS 5/5 と数える。
+#   実測で all_items() が [] を返す本を作ったら、26行すべて「0問 … OK」と印字して
+#   ALL PASS になった（＝1問も検査していないのに緑）。問数は content の実測値。
+BOOKS = {
+    "eng_kokkoritsu_nankan": 103,     # 難関国公立大 英文法 実戦問題集（この機械の本家）
+    "eng_chuken_kokkoritsu": 109,     # 地方国公立・中堅大 英文法 実戦問題集
+    "chugaku2_eigo_soufukushu": 108,  # 中学2年生 英文法 総復習問題集
+    "kobun_jodoushi": 126,            # 古文助動詞 完全演習プリント（lang=ja）
+    "kobun_bunpo_12": 156,            # 古典文法 十二講 完全演習（lang=ja）
+}
+
 # ★機械（ゲート・組版・盲検証）は共有し、中身だけ差し替える。
 #   WORKBOOK_DIR=<別冊のディレクトリ> を付けて実行すると、そちらの content.py を読む。
 BOOK_DIR = os.path.abspath(os.environ.get("WORKBOOK_DIR") or HERE)
 sys.path.insert(0, BOOK_DIR)
-sys.path.insert(0, os.path.dirname(HERE))
+sys.path.insert(0, SCRIPTS)
 
 from _workbook_gates import Gate                      # noqa: E402
-from content import (BOOK, all_items, question_text, frame_text,  # noqa: E402
-                     Q_FIELDS, ELEMENT_KINDS)
 
-# ★英語専用の判定（与えられた語の語幹照合・英単語数の下限・機能語の除外）は
-#   日本語教材では意味をなさない。content.py の lang で切り替える。
-JA = BOOK.get("lang") == "ja"
+# ★content.py は module 直下でなく main() の中（_load）で読む。ここで読むと、
+#   1冊目のデータが壊れているだけで**親プロセスが即クラッシュし、残りの本が1冊も走らない**
+#   （math_workbook/verify_kisoA.py が同じ罠で先に対処している）。
+#   JA = 英語専用の判定（与えられた語の語幹照合・英単語数の下限・機能語の除外）を切る印。
+#   日本語教材では意味をなさないので content.py の lang で切り替える。
+BOOK = all_items = question_text = frame_text = Q_FIELDS = ELEMENT_KINDS = None
+JA = False
+
+
+def _load():
+    """BOOK_DIR の content.py を読んでモジュール大域に載せる。"""
+    global BOOK, all_items, question_text, frame_text, Q_FIELDS, ELEMENT_KINDS, JA
+    import content                                    # noqa: E402
+    BOOK, all_items = content.BOOK, content.all_items
+    question_text, frame_text = content.question_text, content.frame_text
+    Q_FIELDS, ELEMENT_KINDS = content.Q_FIELDS, content.ELEMENT_KINDS
+    JA = BOOK.get("lang") == "ja"
+
 
 # 問題編の見出し・指示文に書いてはいけない語（書いた瞬間に何の文法かが割れる＝解答漏洩）
 FORBIDDEN_IN_QUESTION = [
@@ -74,11 +112,26 @@ def norm(s):
 
 
 def main():
+    """BOOK_DIR の1冊を検査する（build.py もここを呼ぶ）。全冊は run_all() が回す。"""
+    _load()
     g = Gate()
     qtext = question_text()
     qnorm = norm(qtext)
     items = list(all_items())
-    print(f"■ {BOOK['title']}／{len(BOOK['parts'])}部・{len(items)}問\n")
+    # ★どの content.py を読んだかを必ず出す。出さないと「見本を検査して緑」が判別できない。
+    book_key = os.path.basename(BOOK_DIR)
+    print(f"■ {BOOK['title']}／{len(BOOK['parts'])}部・{len(items)}問"
+          f"  ← scripts/{os.path.relpath(BOOK_DIR, SCRIPTS)}/content.py\n")
+    # ★問数を等式で押さえる。冊数だけ数えていると「中身が空の本」を PASS と数える
+    #   （実測: all_items() が [] を返す本は26行すべて「0問 … OK」で ALL PASS になった）。
+    want = BOOKS.get(book_key)
+    if want is None:
+        g._fail(f"[登録] scripts/{book_key} が BOOKS に無い（問数の期待値を書くこと）")
+    elif len(items) != want:
+        g._fail(f"[問数] {len(items)}問しか読めていない（BOOKS の期待値は {want}問）"
+                f"— content が壊れたか、増減したのに BOOKS を直していない")
+    if not items:
+        g._fail("[問数] 1問も読めていない（＝何も検査していないのと同じ）")
 
     # ---------------------------------------------------------- G1 構造
     bad = []
@@ -572,5 +625,87 @@ def main():
     return g.report()
 
 
+# ============================================================ 全冊まとめて回す
+def _machine_users():
+    """「この機械を使う」と content.py 自身に書いてある本を拾う（BOOKS への登録漏れ検出用）。
+
+    ★本を1冊足して BOOKS に書き忘れると、その本は**黙って無検査**になる。
+      それがまさに今回の事故（4冊が CI で一度も検査されていなかった）なので、
+      人の注意力ではなく機械で捕まえる。
+    ★拾えるのは content.py に使い方を書いてある本だけ＝**下限**であって上限ではない。
+      ここが空でも「登録漏れが無い」証明にはならない。
+    """
+    me = os.path.basename(HERE)
+    found = set()
+    for name in sorted(os.listdir(SCRIPTS)):
+        p = os.path.join(SCRIPTS, name, "content.py")
+        if name == me or not os.path.isfile(p):
+            continue
+        try:
+            with open(p, encoding="utf-8", errors="replace") as f:
+                src = f.read()
+        except OSError:
+            continue
+        if me + "/" in src:          # 例: "WORKBOOK_DIR=... python3 scripts/<me>/build.py"
+            found.add(name)
+    return found
+
+
+def run_all():
+    """BOOKS を1冊1プロセスで検査する。
+
+    ★1プロセスで2冊読んではいけない。content / content_p1 … はどの本も同じモジュール名なので、
+      同一プロセスで2冊目を import すると sys.modules に残った**1冊目を掴む**
+      （math_workbook/verify_kisoA.py が同じ形で対処している）。
+    ★子には WORKBOOK_DIR を**こちらから明示的に**渡す。run_all_gates.py が DROP_ENV で
+      落とすのは「外の shell の env で対象がすり替わる」のを防ぐためで、
+      コードが持つ一覧に沿って渡す分にはその趣旨に反しない。
+    """
+    print(f"=== 英文法／古文 実戦問題集シリーズ 機械ゲート ／ 対象 {len(BOOKS)}冊 ===")
+    for b in BOOKS:
+        print(f"    - scripts/{b}")
+
+    problems = []
+    missing = [b for b in BOOKS if not os.path.isfile(os.path.join(SCRIPTS, b, "content.py"))]
+    if missing:
+        problems.append("BOOKS にあるのに content.py が無い（本が消えた／名前が変わった）: "
+                        + "／".join(missing))
+    unlisted = sorted(_machine_users() - set(BOOKS))
+    if unlisted:
+        problems.append(f"scripts/{os.path.basename(HERE)}/ の機械を使うと content.py に"
+                        "書いてあるのに BOOKS に無い（＝誰も検査していない本）: "
+                        + "／".join(unlisted))
+
+    ok, ng = [], []
+    for b in BOOKS:
+        if b in missing:
+            continue                 # 実行できないものは「未実行」として集計に残す（黙って消さない）
+        print(f"\n########## {b} ##########", flush=True)   # ★パイプでも順序が崩れないように
+        env = dict(os.environ, WORKBOOK_DIR=os.path.join(SCRIPTS, b))
+        code = subprocess.run([sys.executable, __file__], env=env).returncode
+        (ok if code == 0 else ng).append(b)
+
+    print("\n########## 集計 ##########")
+    for b in BOOKS:
+        print(f"  {'PASS' if b in ok else 'FAIL' if b in ng else '未実行'}  scripts/{b}")
+    n = len(ok) + len(ng) + len(missing)
+    # ★「印字するだけ」だと検査量が黙って減っても緑になる。等式で押さえる。
+    print(f"\n########## 検査した本 {len(ok)}/{len(BOOKS)} 冊"
+          f"（PASS {len(ok)} ＋ FAIL {len(ng)} ＋ 未実行 {len(missing)} ＝ {n}）##########")
+    if n != len(BOOKS):
+        problems.append(f"集計が合わない（{n} ≠ 対象{len(BOOKS)}冊）。検査量が黙って減っている")
+    if not ok:
+        problems.append("1冊も検査できていない（＝何も検査していないのと同じ）")
+    for p in problems:
+        print("  ×", p)
+    return 1 if (problems or ng) else 0
+
+
 if __name__ == "__main__":
-    main()
+    if os.environ.get("WORKBOOK_DIR"):
+        # ★戻り値を捨てると、exit の責任が _workbook_gates.Gate.report() 任せになる。
+        #   同リポジトリに report(exit_on_fail=False) を使う実例があり、その形を持ち込んだ
+        #   瞬間「違反を印字して exit 0」になる。ここで閉じておく。
+        sys.exit(0 if main() else 1)  # 明示された1冊だけ（README がこの形で書いてある）
+    else:
+        sys.exit(run_all())

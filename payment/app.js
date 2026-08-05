@@ -450,8 +450,11 @@ function parseEnrollmentApp(app) {
     }
   }
   // 月謝 = 受講料 (設備費を含まない = この名簿の月謝慣習に一致)
+  // ★行頭の ■金額 にアンカーする。アンカー無しだと note 内の最初の一致を拾うため、
+  //   自由記述欄 (住所・志望校・きっかけ詳細など) に「受講料7,500円が決め手で」等と
+  //   書かれると、そちらを月謝として取り込んでしまう。
   let fee = 0;
-  const mFee = note.match(/受講料\s*([\d,]+)\s*円/);
+  const mFee = note.match(/^■金額[:：].*?受講料\s*([\d,]+)\s*円/m);
   if (mFee) fee = parseInt(mFee[1].replace(/,/g, ''), 10) || 0;
   // 振込人名(カナ): 保護者行の (カナ) を拾う (best-effort)
   let payerName = '';
