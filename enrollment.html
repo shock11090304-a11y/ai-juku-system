@@ -610,9 +610,10 @@
 
     /* 入力エラー表示（未入力の無音失敗を防ぐ） */
     /* スクロール先が上部トースト/下部固定フッターに隠れないよう余白を確保（モバイル配慮） */
-    /* 190px: 最長ラベル「SNS ユーザー名（Instagram / Threads など）」で 320px 幅だと
-       トーストが5行になり、150px ではスクロール先のラベルが隠れる（実測）。 */
-    .field, .consent { scroll-margin-top: 190px; scroll-margin-bottom: 96px; }
+    /* 実際の余白は showErrors() がトーストの実測高から算出して inline で上書きする
+       （固定 px だと文言が伸びたときや、ブラウザの文字サイズを「大」にしたときに
+        トーストが対象欄を覆う。実測で確認）。ここはその取得に失敗したときの保険。 */
+    .field, .consent { scroll-margin-top: 230px; scroll-margin-bottom: 96px; }
     .has-error input:not([type=radio]):not([type=checkbox]):not([type=hidden]),
     .has-error select,
     .has-error textarea,
@@ -636,6 +637,10 @@
     }
     .form-error-toast.show { display: block; }
     .form-error-toast b { color: #dc2626; }
+    /* 409(既にお申込済み)は失敗ではないので、赤い箱のままにしない。
+       絵文字だけ ℹ️ に変えても、赤地の中では「失敗」と読まれる（実測指摘）。 */
+    .form-error-toast[data-tone="notice"] { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+    .form-error-toast[data-tone="notice"] b { color: #b45309; }
   </style>
 </head>
 <body>
@@ -707,7 +712,7 @@
               <div class="inline-date">
                 <label style="display:inline-flex;gap:0.3rem;align-items:center;"><input type="radio" name="生徒_校種" value="中" required> 中</label>
                 <label style="display:inline-flex;gap:0.3rem;align-items:center;margin-left:0.6rem;"><input type="radio" name="生徒_校種" value="高"> 高</label>
-                <input type="number" name="生徒_学年" min="1" max="6" placeholder="年" style="max-width:70px;margin-left:0.5rem;" required>
+                <input type="number" name="生徒_学年" min="1" max="6" placeholder="年" data-example="1〜6 の数字" style="max-width:70px;margin-left:0.5rem;" required>
                 <span class="sep">年</span>
               </div>
             </div>
@@ -741,7 +746,7 @@
           <div class="field-grid grid-1-2">
             <div class="field">
               <label class="field-label" for="p_zip">郵便番号 <span class="req">*</span></label>
-              <input type="text" id="p_zip" name="保護者_郵便番号" placeholder="123-4567" pattern="\d{3}-?\d{4}" required>
+              <input type="text" id="p_zip" name="保護者_郵便番号" placeholder="123-4567" data-example="123-4567" pattern="\d{3}-?\d{4}" required>
             </div>
             <div class="field">
               <label class="field-label" for="p_addr">住所 <span class="req">*</span></label>
@@ -755,7 +760,12 @@
             </div>
             <div class="field">
               <label class="field-label" for="p_email">メールアドレス <span class="req">*</span></label>
-              <input type="email" id="p_email" name="保護者_Email" placeholder="example@mail.com" required>
+              <!-- ★pattern でドメインにピリオドを要求する。type="email" だけだと HTML5 は
+                   TLD を必須にしないので "test@test" や "a@b" を通してしまい、サーバ側の
+                   EmailStr が 422 で弾いて送信が失敗する（実測。ブラウザは通す/サーバは弾く）。
+                   ここで止めれば、他の必須欄と同じ赤表示で「どこを直すか」が伝わる。 -->
+              <input type="email" id="p_email" name="保護者_Email" placeholder="example@mail.com"
+                     data-example="example@mail.com" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" required>
             </div>
           </div>
         </div>
@@ -956,7 +966,7 @@
           <div class="field-grid grid-2">
             <div class="field">
               <label class="field-label" for="toeic_score">TOEICスコア</label>
-              <input type="number" id="toeic_score" name="TOEIC" min="0" max="990" placeholder="例：800">
+              <input type="number" id="toeic_score" name="TOEIC" min="0" max="990" placeholder="例：800" data-example="0〜990 の数字">
             </div>
             <div class="field">
               <label class="field-label" for="toeic_date">TOEIC受験日</label>
@@ -1116,7 +1126,7 @@
               <!-- pattern: 空白だけで required を通せてしまうと、note からユーザー名が黙って
                    消え「必須にしていない場合」と見分けが付かなくなる。1文字以上の非空白を要求する。 -->
               <input type="text" id="sns_handle" name="SNSユーザー名" placeholder="@your_id" maxlength="120"
-                     pattern="\s*\S[\s\S]*"
+                     data-example="@your_id" pattern="\s*\S[\s\S]*"
                      autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="email">
               <div class="field-note">プロフィール画面の「@」から始まる文字列をご記入ください（プロフィールの URL を貼り付けても構いません）。Threads の場合は Instagram と同じユーザー名です。<br><b>アカウントをお持ちでない場合・分からない場合は「なし」</b>とご記入ください。</div>
             </div>
@@ -1265,6 +1275,47 @@
       if (!el) return '';
       // RadioNodeList の .value は選択中ラジオの value を返す
       return ((el.value != null ? el.value : '') + '').trim();
+    }
+
+    // トーストは innerHTML で組むので、値を差し込むときは必ず通す
+    function escapeHtmlText(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // API のエラー応答を、保護者が読んで直せる日本語にする。
+    // ★FastAPI の 422 は detail が「配列」で返る。素直に new Error(data.detail) すると
+    //   .message が "[object Object]" になり、何が悪いのか誰にも判らない行き止まりになる
+    //   （2026-08-05 に実際に踏んだ。原因はメールアドレスだったが画面からは判別不能だった）。
+    //   409/429 など detail が文字列のものはそのまま出す。
+    const API_FIELD_LABELS = {
+      email: '保護者のメールアドレス',
+      name: '生徒氏名',
+      phone: '電話番号',
+      grade: '学年',
+      target_university: '志望校',
+      note: '申込内容',
+    };
+    function apiErrorMessage(res, data) {
+      const d = data && data.detail;
+      if (typeof d === 'string' && d.trim()) return d.trim();
+      if (Array.isArray(d) && d.length) {
+        const seen = new Set();
+        const msgs = [];
+        d.forEach(e => {
+          const loc = Array.isArray(e && e.loc) ? e.loc[e.loc.length - 1] : '';
+          const label = API_FIELD_LABELS[loc] || '入力内容';
+          if (seen.has(label)) return;
+          seen.add(label);
+          msgs.push(loc === 'email'
+            ? `${label}の形式をご確認ください（例：example@mail.com）`
+            : `${label}をご確認ください`);
+        });
+        if (msgs.length) return msgs.join(' / ');
+      }
+      if (res && res.status >= 500) return `サーバー側で問題が起きています（HTTP ${res.status}）。少し時間をおいて、もう一度お試しください。`;
+      return `送信できませんでした（HTTP ${res ? res.status : '?'}）。少し時間をおいて、もう一度お試しください。`;
     }
 
     // チェックボックスの入力値（val() は .value を返すので、未チェックでも "同意する" が取れてしまう）
@@ -1451,23 +1502,52 @@
       const boxes = [];
       const seen = new Set();
       let firstLabel = '';
+      let firstInvalidEl = null;   // 先頭でエラーになった要素そのもの（例示の取り出しに使う）
+      let firstIsFormat = false;   // 先頭の項目が「記入済みだが形式が違う」か
+      let anyMissing = false;      // 未入力・未選択が1つでもあるか
       invalids.forEach(el => {
         el.setAttribute('aria-invalid', 'true');  // 支援技術に個別項目のエラーを伝える
+        // ★「未入力」と「形式違い」を混ぜない。記入済みの欄を「未入力です」と言うと、
+        //   保護者は何を直せばいいか判らない（メールの形式違いで実際に詰まる）。
+        const missing = el.validity.valueMissing;
+        if (missing) anyMissing = true;
         const info = fieldInfo(el);
         if (!info.box || seen.has(info.box)) return;
         seen.add(info.box);
         info.box.classList.add('has-error');
         boxes.push(info.box);
-        if (!firstLabel) firstLabel = info.label;
+        if (!firstLabel) { firstLabel = info.label; firstInvalidEl = el; firstIsFormat = !missing; }
       });
       if (errorToast && boxes.length) {
-        errorToast.innerHTML = '⚠ 未入力・未選択の項目が <b>' + boxes.length + '件</b> あります。赤く表示された項目をご入力のうえ、もう一度「送信」を押してください。<br>（最初の項目：<b>' + firstLabel + '</b>）';
+        const head = anyMissing
+          ? '⚠ 未入力、または入力に誤りのある項目が <b>' + boxes.length + '件</b> あります。'
+          : '⚠ 入力に誤りのある項目が <b>' + boxes.length + '件</b> あります。';
+        // ★形式エラーのときは「例」まで出す。pattern を足したことで保護者が最初に当たるのは
+        //   この文言になったのに、例が無いと "test@test" を睨んだまま何を直すか判らない。
+        //   例は data-example だけを読む。placeholder から推測すると単位や既に「例：」で
+        //   始まる欄で誤った文言になる（学年 placeholder="年" → 「例：年」、
+        //   TOEIC placeholder="例：800" → 「例：例：800」を実際に出していた）。
+        //   形式エラーを起こしうる欄（pattern / min / max を持つ欄）には data-example を付けること。
+        const example = firstInvalidEl ? (firstInvalidEl.getAttribute('data-example') || '') : '';
+        const hint = firstIsFormat
+          ? '（最初の項目：<b>' + firstLabel + '</b> — 記入内容の形式をご確認ください'
+            + (example ? '。例：<b>' + escapeHtmlText(example) + '</b>' : '') + '）'
+          : '（最初の項目：<b>' + firstLabel + '</b>）';
+        errorToast.innerHTML = head + '赤く表示された項目をご確認のうえ、もう一度「送信」を押してください。<br>' + hint;
         errorToast.dataset.kind = 'validation';  // 入力が揃ったら自動で下げてよい種類
+        errorToast.dataset.tone = 'error';       // 直前が 409 の notice(黄) でも赤に戻す
         errorToast.classList.add('show');
       }
       if (boxes.length) {
         // block:'start' + scroll-margin で、対象項目が上部トーストの真下に来る（フッターにも隠れない）
         // behavior は 'auto'(即時)。'smooth' は一部モバイル/webview で無効化され全くスクロールしない事故がある。
+        // ★余白はトーストの実測高から決める。CSS の固定 px だと、文言が伸びたときや
+        //   ブラウザの文字サイズを「大」にしたときにトーストが対象欄を覆う（実測で確認）。
+        //   取得できないときは CSS 側の既定値に任せる。
+        try {
+          const th = errorToast && errorToast.classList.contains('show') ? errorToast.offsetHeight : 0;
+          if (th > 0) boxes[0].style.scrollMarginTop = (th + 28) + 'px';
+        } catch (_) {}
         boxes[0].scrollIntoView({ behavior: 'auto', block: 'start' });
         const focusable = boxes[0].querySelector('input, select, textarea');
         if (focusable) { try { focusable.focus({ preventScroll: true }); } catch (_) { focusable.focus(); } }
@@ -1518,15 +1598,35 @@
           body: JSON.stringify(payload),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+        if (!res.ok) {
+          // ★自前で組んだ「読める」文言だけに印を付ける。印の無い例外(=通信断など)は
+          //   そのまま出すと "Failed to fetch" / iOS Safari では "Load failed" が出て、
+          //   [object Object] と同じ「読めない文字列」の再発になる。
+          const e = new Error(apiErrorMessage(res, data));
+          e.userFacing = true;
+          e.httpStatus = res.status;
+          throw e;
+        }
         document.getElementById('successOverlay').classList.add('show');
       } catch (err) {
+        const readable = err && err.userFacing && err.message;
+        const msg = readable
+          || '通信できませんでした。電波の状況をご確認のうえ、少し時間をおいてもう一度お試しください。';
+        // 409(既にお申込済み/承認済み)は「失敗」ではないので ❌ は付けない。
+        // ただし ★今回書いた内容は送られていない ことは必ず伝える。ここを省くと
+        // 「もう登録済みなのね」と読んで離脱し、受講クラスが空のまま詰む経路に入る。
+        const already = err && err.httpStatus === 409;
+        const head = already ? 'ℹ️ ' : '❌ 送信に失敗しました：';
+        const tail = already
+          ? '<br>※ 今回ご記入いただいた内容は送信されていません。お心当たりがない場合や、内容の変更をご希望の場合は塾までご連絡ください。'
+          : '';
         if (errorToast) {
-          errorToast.innerHTML = '❌ 送信に失敗しました：' + (err.message || '通信エラーが発生しました。少し時間をおいて、もう一度お試しください。');
+          errorToast.dataset.tone = already ? 'notice' : 'error';
+          errorToast.innerHTML = head + escapeHtmlText(msg) + tail;
           errorToast.dataset.kind = 'submit-failed';  // 入力操作で勝手に消してはいけない
           errorToast.classList.add('show');
         } else {
-          alert('❌ 送信に失敗しました: ' + (err.message || '時間をおいて再度お試しください'));
+          alert(head + msg);
         }
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'この内容で送信'; }
       }
