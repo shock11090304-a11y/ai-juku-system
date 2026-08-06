@@ -1854,6 +1854,21 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_class_recordings_session ON class_recordings(session_id, is_published, created_at DESC);
+    -- 📺 塾長専用の YouTube 再生リスト一覧 (2026-08-06 塾長指示「プレイリストは僕しか見れないように」)。
+    --   ★ID を静的 HTML に書くと、このリポジトリは PUBLIC・ページも公開配信なので
+    --     限定公開の授業録画が実質公開になる。ID は必ずこの表に置き、
+    --     admin 認証必須の GET /api/admin/youtube-playlists 経由でだけ返す。
+    --   生徒に見せる動画は class_recordings (塾長が授業に紐づけて公開したもの) だけで、
+    --   この表は生徒向け API から一切参照しない。
+    CREATE TABLE IF NOT EXISTS admin_youtube_playlists (
+        id {pk},
+        playlist_id TEXT NOT NULL,
+        name TEXT DEFAULT '',
+        grp TEXT DEFAULT '',
+        sort_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_yt_playlist_uniq ON admin_youtube_playlists(playlist_id);
     -- 出欠: 生徒の自己申告。(student_id, session_id) ユニークで再申告は UPDATE 上書き。
     CREATE TABLE IF NOT EXISTS class_attendance (
         id {pk},
@@ -46215,6 +46230,32 @@ def admin_class_recording_delete(recording_id: int, authorization: Optional[str]
         c.execute("DELETE FROM class_recordings WHERE id = ?", (int(recording_id),))
         conn.commit()
         return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/youtube-playlists")
+def admin_youtube_playlists(authorization: Optional[str] = Header(None)):
+    """📺 塾長専用: YouTube 再生リスト一覧 (youtube-playlists.html が読む)。
+
+    ★なぜ静的 HTML でなく API なのか (2026-08-06 塾長指示):
+      リポジトリは PUBLIC・`youtube-playlists.html` も公開配信なので、再生リスト ID を
+      HTML に書くと「限定公開 (unlisted)」の授業録画が誰でも辿れる状態になる。
+      admin-only.js は画面を隠すだけで、HTML を直接取得されると読めてしまう。
+      → ID は DB (admin_youtube_playlists) に置き、admin Bearer 必須のこの API でだけ返す。
+    ★生徒に見せる動画は class_recordings (塾長が授業に紐づけて公開したもの) のみ。
+      この表は生徒向け API から一切参照しない。
+    """
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT playlist_id, COALESCE(name, '') AS name, COALESCE(grp, '') AS grp "
+            "FROM admin_youtube_playlists ORDER BY sort_order, id"
+        )
+        items = [{"id": r["playlist_id"], "name": r["name"], "group": r["grp"]} for r in c.fetchall()]
+        return {"ok": True, "playlists": items}
     finally:
         conn.close()
 

@@ -58,13 +58,15 @@
 <main class="yt-container">
   <h1 class="yt-title">📺 YouTube プレイリスト一覧</h1>
   <p class="yt-sub">
-    授業・講義動画のプレイリストまとめ。「8月以降」の15件は名前を<strong>ページ内に登録済み</strong>（どの端末でも同じ名前が出ます）。
+    授業・講義動画のプレイリストまとめ。<strong>塾長のログインが必要</strong>です（未ログインだと CEO ダッシュボードに戻され、
+    ページのソースを直接見ても再生リストは入っていません。ログイン済みのときだけサーバーから受け取ります）。
+    名前はサーバー側に登録してあるので、どの端末で開いても同じ名前が出ます。
     各行は直接書き換えられ、<strong>書き換えた分だけこの端末のブラウザに保存</strong>されます。
     「開く ▶」で YouTube のプレイリストを新しいタブで表示します。
   </p>
 
   <div class="yt-toolbar">
-    <span class="yt-count" id="ytCount">31 件</span>
+    <span class="yt-count" id="ytCount">— 件</span>
     <button type="button" class="yt-btn" id="ytCopyBtn">📋 名前＋URL をコピー</button>
     <button type="button" class="yt-btn" id="ytClearBtn">↩︎ 入力した名前をリセット</button>
     <span class="yt-save" id="ytSave">✓ 保存しました</span>
@@ -84,55 +86,29 @@
   </div>
 
   <p class="yt-note">
-    ℹ️ 「8月以降」の15件は名前をページ内に埋め込み済みなので、<strong>どの端末で開いても同じ名前</strong>が出ます。
-    行を書き換えた場合、その上書きだけは<strong>この端末のブラウザ内だけ</strong>に保存されます（他の人には見えません）。
-    書き換えた名前も全員に見せたい場合は、「📋 名前＋URL をコピー」でコピーした内容を渡してください（ページに埋め込みます）。
-    「↩︎ 入力した名前をリセット」で端末の上書きを消すと、埋め込みの名前に戻ります。
+    🔒 この一覧は<strong>塾長だけが見られます</strong>。再生リストは HTML のソースには含まれておらず、
+    ログイン済みのときだけサーバーから受け取って画面に出しています。
+    生徒が見られるのは<strong>塾長が各クラスの授業に紐づけて公開した録画だけ</strong>で、この一覧とは別系統です。<br>
+    行を書き換えた場合、その上書きは<strong>この端末のブラウザ内だけ</strong>に保存されます。
+    どの端末でも同じ名前にしたいときは「📋 名前＋URL をコピー」でコピーした内容を開発担当（Claude）に渡してください
+    ＝サーバー側の名前を書き換えます。「↩︎ 入力した名前をリセット」で端末の上書きを消すと、サーバー側の名前に戻ります。
   </p>
 </main>
 
 <textarea id="ytClipFallback" style="position:fixed;left:-9999px;top:-9999px;" aria-hidden="true"></textarea>
 
 <script>
-  // 各行 { id, name, group }。name は HTML 埋め込みの既定名 (全端末で見える)。
+  // 各行 { id, name, group }。name は DB 側の既定名 (全端末で同じ)。
   //   端末で入力した名前があれば localStorage 側が優先される (個人メモとして上書き可)。
-  // 「8月以降」15件 = 2026-08-06 に塾長が自分宛に送ったメールの再生リストリンク。
-  //   name は YouTube の実タイトルと oEmbed で全件照合済み (曜日×限は時間割 _TIMETABLE_CLASSES と
-  //   一致しない箇所があるため、科目名は付けずタイトルのまま載せている)。
-  var PLAYLISTS = [
-    { id: 'PLHUXOz9CPaWE', name: '8月以降月曜日1時間目',  group: '8月以降（2026年8月〜）' },
-    { id: 'PLfslFUkIoJN8', name: '8月以降月曜日２限',      group: '8月以降（2026年8月〜）' },
-    { id: 'PLWH04kVmECpA', name: '8月以降月曜日３限',      group: '8月以降（2026年8月〜）' },
-    { id: 'PLCHNQHj3JXmQ', name: '8月以降火曜日１時間目',  group: '8月以降（2026年8月〜）' },
-    { id: 'PLO_a8uJco8hY', name: '8月以降火曜日２時間目',  group: '8月以降（2026年8月〜）' },
-    { id: 'PLLr055aaFS2A', name: '8月以降火曜日３時間目',  group: '8月以降（2026年8月〜）' },
-    { id: 'PLL22Q_jMYtsw', name: '8月以降水曜日１時間目',  group: '8月以降（2026年8月〜）' },
-    { id: 'PLCDURl6Km1as', name: '8月以降水曜日2時間目',  group: '8月以降（2026年8月〜）' },
-    { id: 'PLPP4hbmxK_f0', name: '8月以降水曜日3時間目',  group: '8月以降（2026年8月〜）' },
-    { id: 'PLDub1db56dII', name: '8月以降木曜日１時間目',  group: '8月以降（2026年8月〜）' },
-    { id: 'PLFXX037HHnUE', name: '8月以降木曜日2時間目',  group: '8月以降（2026年8月〜）' },
-    { id: 'PLcTC8fMCPw4c', name: '8月以降金曜日1時間目',  group: '8月以降（2026年8月〜）' },
-    { id: 'PLLZmWZqCd8HA', name: '8月以降金曜日2時間目',  group: '8月以降（2026年8月〜）' },
-    { id: 'PLRmTReqKSR74', name: '8月以降金曜日3時間目',  group: '8月以降（2026年8月〜）' },
-    { id: 'PLHUGsOvGEnmg', name: '8月以降日曜日１時間目',  group: '8月以降（2026年8月〜）' },
-    // 以前の 16 件（貼り付け順を維持・名前は端末入力のまま）
-    { id: 'PLj1sTb-oInWKwHn7FugLNDHInn3M7fmPT', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWL2JhEy5j3ZWiOFTs-66G1b', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWKlCjlfEAv7OSqjJwIR5jZM', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWL6pa0Cir7ML1pehcLeMdp3', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWJzRaD2pMZC2sOUM46mWRUV', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWLMLD3qIQ0A1AVrLshmaWvc', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWLj3vfGE-udTl_VomCgCtl4', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWLPMaOZBYaRIBiIlUSJeCMp', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWItRlAz0VZHoSvVxY4mEMzZ', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWJo4oq_TSj1KMBnB0KNEZzE', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWKS7ugVeytMDnj2ja6qW6sW', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWJCjcssIf3DLi2-qdBacLPH', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWJjy60hYRpIQKjNE47Br3xS', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWKGpY5LYVmN4D8mReUv2dEh', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWJdqYj3R2PSODSBzDmH4pHZ', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
-    { id: 'PLj1sTb-oInWJAXL1B232-gZpLsB6Yrk5j', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' }
-  ];
+  // ★再生リストの ID はこのページに書かない (2026-08-06 塾長指示「プレイリストは僕しか見れないように」)。
+  //   このリポジトリは PUBLIC で、このページも公開URLで取得できるため、ID を静的HTMLに書くと
+  //   限定公開(unlisted)の授業録画が誰でも辿れてしまう。admin-only.js は画面を隠すだけで中身は隠せない。
+  //   → ID/名前は DB に置き、admin 認証必須の GET /api/admin/youtube-playlists から取得する。
+  //   生徒に見せる動画は塾生アプリの「各クラスに配信した録画」(class_recordings) だけで、この一覧とは無関係。
+  var API_BASE = (window.location.origin.indexOf(':8090') >= 0 || window.location.origin.indexOf('localhost:8090') >= 0)
+    ? 'http://localhost:8000'
+    : window.location.origin;
+  var PLAYLISTS = [];   // API 取得後に埋まる
 
   var STORE_KEY = function (id) { return 'yt_playlist_name::' + id; };
   var urlFor = function (id) { return 'https://www.youtube.com/playlist?list=' + id; };
@@ -146,18 +122,18 @@
     saveTimer = setTimeout(function () { saveIndicator.classList.remove('show'); }, 1200);
   }
 
-  // 表示に使う名前: 端末で入力した名前 > HTML 埋め込みの既定名。
+  // 表示に使う名前: 端末で入力した名前 > DB 側の既定名。
   //   ★空文字も「端末で消した」という意思なので尊重する (空を無視すると、消しても
-  //     埋め込み名が復活するのに「✓保存しました」と出る = 嘘の成功表示になる)。
-  //     埋め込み名に戻したいときは「↩︎ 入力した名前をリセット」を使う。
+  //     既定名が復活するのに「✓保存しました」と出る = 嘘の成功表示になる)。
+  //     既定名に戻したいときは「↩︎ 入力した名前をリセット」を使う。
   function effectiveName(p) {
     var stored = null;
     try { stored = localStorage.getItem(STORE_KEY(p.id)); } catch (e) {}
     return stored !== null ? stored : (p.name || '');
   }
 
-  var lastGroup = null;
-  PLAYLISTS.forEach(function (p, i) {
+  var lastGroup = null;   // グループ見出しは group が変わった行の前にだけ差し込む
+  function renderRow(p, i) {
     var id = p.id;
 
     if (p.group && p.group !== lastGroup) {
@@ -206,10 +182,93 @@
     tr.appendChild(nameTd);
     tr.appendChild(actTd);
     tbody.appendChild(tr);
-  });
+  }
 
-  // 件数バッジ (行数と必ず一致させる)
-  document.getElementById('ytCount').textContent = PLAYLISTS.length + ' 件';
+  // 表全体を描き直す (件数バッジは必ず行数と一致させる)
+  function renderAll() {
+    tbody.innerHTML = '';
+    lastGroup = null;
+    PLAYLISTS.forEach(renderRow);
+    document.getElementById('ytCount').textContent = PLAYLISTS.length + ' 件';
+    setToolsEnabled(PLAYLISTS.length > 0);
+  }
+
+  // 一覧が無いとき (読み込み中・未ログイン・取得失敗・0件) は操作ボタンを止める。
+  //   押せてしまうと「0件を空コピーして ✓コピーしました」「何も消していないのに ✓保存しました」
+  //   という嘘の成功表示になる (このページが effectiveName で潰したのと同じ種類の嘘)。
+  function setToolsEnabled(on) {
+    ['ytCopyBtn', 'ytClearBtn'].forEach(function (id) {
+      var b = document.getElementById(id);
+      if (!b) return;
+      b.disabled = !on;
+      b.style.opacity = on ? '' : '0.45';
+      b.style.cursor = on ? '' : 'not-allowed';
+    });
+  }
+
+  // 表の代わりに1行メッセージを出す (読み込み中・未ログイン・取得失敗)
+  function showMessage(text, withLoginLink) {
+    PLAYLISTS = [];          // 画面と手元データを食い違わせない (コピーが古い一覧を吐くのを防ぐ)
+    setToolsEnabled(false);
+    tbody.innerHTML = '';
+    lastGroup = null;
+    var tr = document.createElement('tr');
+    var td = document.createElement('td');
+    td.colSpan = 3;
+    td.style.padding = '1.4rem 1rem';
+    td.style.color = '#a1a1aa';
+    td.textContent = text;
+    if (withLoginLink) {
+      td.appendChild(document.createTextNode(' '));
+      var a = document.createElement('a');
+      a.href = 'ceo.html';
+      a.textContent = 'CEOダッシュボードでログイン →';
+      a.style.color = '#a78bfa';
+      a.style.fontWeight = '800';
+      td.appendChild(a);
+    }
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    document.getElementById('ytCount').textContent = '— 件';
+  }
+
+  // 一覧を取得 (admin Bearer 必須。ID は DB にしか無いので未認証では何も出ない)
+  function loadPlaylists() {
+    showMessage('読み込み中…', false);
+    var token = null;
+    try { token = localStorage.getItem('ai_juku_admin_token'); } catch (e) {}
+    if (!token) {
+      showMessage('この一覧は塾長専用です。', true);
+      return;
+    }
+    fetch(API_BASE + '/api/admin/youtube-playlists', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(function (res) {
+      if (res.status === 401 || res.status === 403) {
+        try {
+          localStorage.removeItem('ai_juku_admin_token');
+          localStorage.removeItem('ai_juku_admin_expires');
+        } catch (e) {}
+        showMessage('ログインの有効期限が切れています。', true);
+        return null;
+      }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function (data) {
+      if (!data) return;
+      var items = (data.playlists || []).filter(function (p) { return p && p.id; });
+      if (!items.length) {
+        showMessage('再生リストがまだ登録されていません。', false);
+        return;
+      }
+      PLAYLISTS = items;
+      renderAll();
+    }).catch(function (e) {
+      showMessage('一覧を取得できませんでした（' + (e && e.message ? e.message : 'error') + '）。時間をおいて再読み込みしてください。', false);
+    });
+  }
+
+  loadPlaylists();
 
   // 名前＋URL をコピー（塾長に渡して共有版を作るとき用）
   document.getElementById('ytCopyBtn').addEventListener('click', function () {
@@ -237,10 +296,19 @@
     try { document.execCommand('copy'); done(); } catch (e) { window.prompt('コピーしてください:', text); }
   }
 
-  // 入力した名前をリセット (= 端末の上書きを消して、埋め込みの既定名に戻す)
+  // 入力した名前をリセット (= 端末の上書きを消して、DB 側の既定名に戻す)
   document.getElementById('ytClearBtn').addEventListener('click', function () {
+    if (!PLAYLISTS.length) return;   // 一覧が無いときは何も消さない (ボタンも disabled)
     if (!window.confirm('この端末で入力した名前を消し、既定の名前に戻します。よろしいですか？')) return;
-    PLAYLISTS.forEach(function (p) { try { localStorage.removeItem(STORE_KEY(p.id)); } catch (e) {} });
+    // 一覧に無くなった過去の再生リストの上書きも掃除する (prefix 総なめ)
+    try {
+      var stale = [];
+      for (var k = 0; k < localStorage.length; k++) {
+        var key = localStorage.key(k);
+        if (key && key.indexOf('yt_playlist_name::') === 0) stale.push(key);
+      }
+      stale.forEach(function (key) { localStorage.removeItem(key); });
+    } catch (e) {}
     var inputs = document.querySelectorAll('.yt-name-input');
     for (var i = 0; i < inputs.length; i++) inputs[i].value = PLAYLISTS[i] ? (PLAYLISTS[i].name || '') : '';
     flashSaved();
