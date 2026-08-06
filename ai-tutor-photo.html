@@ -111,6 +111,9 @@
   </section>
 </main>
 
+<!-- 🧒 学習モード判定 (小学/中学/高校) の単一ソース。依存なし・副作用なしのユーティリティ。
+     「⏱ この単元を解く」の遷移先を中学生と高校生で分けるために読む (2026-08-06)。 -->
+<script src="student-mode.js"></script>
 <script>
 'use strict';
 (function(){
@@ -466,12 +469,102 @@
         return;
       }
       renderResult(data);
+      // 🎯 2026-08-06 塾長指示: 写真質問も弱点集計の対象 (server: _run_weakness_aggregation の
+      //   「系統 1: 過去 30 日の ai_tutor_solve_log (写真質問)」) だが、反映は毎朝 JST 4:00 の cron 待ちで、
+      //   生徒からは「撮ったのに何も起きない」に見えていた。記録直後に自分の弱点だけ即時再集計する。
+      //   renderResult の後に呼ぶこと (#tpWeaknessNote を書き換えるため)。失敗は非致命 = 翌朝の cron で必ず入る。
+      refreshWeaknessSelf(solveToken, (data.topic_guess || '').trim(), ++solveSeq);
     } catch (e) {
       $result.innerHTML = '<div class="tp-error">通信エラー: ' + escapeHTML(String(e)) + '</div>';
     } finally {
       $solve.disabled = false;
     }
   });
+
+  // 🎯 弱点の即時再集計 (毎朝の cron を待たない)。
+  // ★このページは BACKEND_URL 定数を持たず、相対パス /api/... を vercel.json の rewrite で Railway に
+  //   飛ばす構成。dojo-drill.html の同等コードは `${BACKEND_URL}/api/...` なので、そのまま移植すると
+  //   BACKEND_URL is not defined で落ちる。ここは相対パスが正しい (上の solve-from-image と同じ)。
+  // 何回目の解答かを数える。投げっぱなしの refresh-self が遅れて返ってきたとき、
+  // 2 枚目の結果画面に 1 枚目の集計結果を貼らないようにするため (最新の解答の分だけ表示する)。
+  let solveSeq = 0;
+
+  async function refreshWeaknessSelf(token, topicGuess, seq) {
+    if (!token) return;  // 未ログイン: サーバ側も 403 なので呼ばない
+    try {
+      const r = await fetch('/api/student/weakness/refresh-self', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+      });
+      if (!r.ok) return;  // 403/429/500 は黙って諦める (翌朝の cron が拾う)
+      // ★200 でも「0 件」がありうる (該当ログ無しで {note:"no logs in last 30 days"})。
+      //   件数を確認せずに成功文を出すと、また「できたフリ」を作ることになる。
+      const j = await r.json().catch(function(){ return null; });
+      const res = (j && j.result) || {};
+      const n = (res.weaknesses_inserted || 0) + (res.weaknesses_updated || 0);
+      if (!n) return;
+      if (seq !== solveSeq) return;  // 2 枚目の解答が既に描画されている: 古い結果を貼らない
+      // ★$note は await の後に取り直す: 続けて 2 枚目を解析すると renderResult が #tpWeaknessNote を
+      //   作り直すため、await 前に掴んだ参照は detach 済みノードになり表示が消える。
+      const $note = document.getElementById('tpWeaknessNote');
+      if (!$note) return;
+      // ★#weaknessSection まで指定する。素の mypage.html だと、XP が低い新規生 (aj-adv1 が
+      //   body.aj-hide-adv1 で隠される) には弱点パネルが出ず、直前に TOP3 の話をした先で
+      //   「弱点」の字が 1 つも無い画面に着地する。mypage.js の _uiDeepLinkWantsFull() が
+      //   hash の指す section.aj-adv1 を見て、その訪問だけ全表示にする (簡易表示の解除だけで、
+      //   取得するデータは変わらない = 権限ゲートではない)。
+      //   ※ハッシュへのスクロールまでは起きない: #weaknessSection は inline display:none で、
+      //     表示に変わるのは弱点 fetch 完了後なので、ブラウザのフラグメント解決には間に合わない。
+      // ★white-space:nowrap: 375px 幅で「マイペ / ージを見る →」と割れてリンクだと気づけなくなる。
+      const mypageLink = ' <a href="mypage.html#weaknessSection" style="color:#7dd3fc; text-decoration:underline; font-weight:700; white-space:nowrap;">マイページを見る →</a>';
+      // 演習 CTA は topic_guess があるときしか出ない (下の renderResult の条件と同じ)。
+      // 出ていないのに「下の『⏱ 似た問題を解く』を」と案内すると、探しても見つからない。
+      // ★「そのまま」と限定する。dojo-drill が単元を自動解決できたときだけ drillOrigin が立ち、
+      //   その分の採点が写真の弱点に credit される (startDrill 冒頭で drillOrigin=null にされ、
+      //   再スタンプは auto-start 経路だけ)。単元が解決できず一覧が出たときに別の単元を選ぶと、
+      //   記録されるのは選んだ単元のほうで、写真の単元は qa_attempts=0 のまま上がらない。
+      const drillLine = topicGuess
+        // 「一覧が出たときは選んだ単元が記録される」という但し書きは入れない。まだ一覧を見ていない
+        //   時点では判断材料にならず、字数だけ増える (伝えるなら dojo-drill の一覧側)。
+        //   「そのまま」がその条件を担っている。
+        ? '<br>下の「⏱ 似た問題を解く」から<b>そのまま</b>数問解くと、TOP3 に出やすくなります。' : '';
+      // ★「弱点 TOP3 に反映済み」とは書かない。集計側 (_run_weakness_aggregation の系統1) は
+      //   写真質問に正誤を持たないため qa_attempts=0 のまま保存され、weakness-top3 の ORDER BY は
+      //   採点済み (qa_attempts>=2) の単元を先に並べる。既に採点済みの弱点が 3 件ある生徒では
+      //   この行は TOP3 に出ない = 断言すると嘘になる。
+      //   ※「対策問題が届きます」とも書かない。ルーティン配信は canonical 科目・単元一致・
+      //     未完了ドリル無し・3 日間隔がすべて揃って初めて走るので、来ない生徒がいる。
+      const noteMode = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';
+      if (noteMode === 'chugaku') {
+        // ★中学生モードだけマイページへのリンクを出さない。TOP3 は pool=chugaku で絞るため
+        //   (mypage.html が中学生のときだけ &pool=chugaku を付ける) 写真由来 (subject=math/
+        //   english…) は構造上 100% 出ず、飛ばすと空状態の「まだ弱点データがありません」に
+        //   着地して直前の「追加しました」と正面から矛盾する。
+        $note.innerHTML = '✅ この質問を苦手として記録しました。' +
+          '<br>「🎯 弱点 TOP3」には<b>中学生ドリルの結果だけ</b>が出るので、この質問はまだ表示されません。' + drillLine;
+      } else if (noteMode === 'shougaku') {
+        // ★小学生モードはマイページにも弱点パネルが出ない。mypage.html の initWidgets は
+        //   kosei と chugaku でしか renderWeaknessTop3 を呼ばず、#weaknessSection は
+        //   display:none のまま。演習 CTA も小学生には出さないので、リンクも演習案内も張らない
+        //   (押しても「苦手」の字が 1 つも無い画面に着地して行き止まりになる)。
+        // ★製品内に無い画面名 (「苦手ノート」等) は出さない。小学生には弱点画面が無いので、
+        //   名前を出すと探しに行って永遠に見つからない。行為として書く。
+        // ★「先生にも伝わる」とも書かない。塾長側で写真質問が見えるのは全生徒合算の
+        //   弱点ヒートマップ (/api/admin/weakness-heatmap は GROUP BY subject, topic で
+        //   student_id を返さない) と利用回数だけで、誰がどこでつまずいたかは届かない。
+        // ★「遠慮」は中学配当漢字なので小学生向けには使わない。
+        $note.innerHTML = '✅ この質問を、あなたの苦手として記録しました。' +
+          '<br>同じところでつまずいたら、何回でも送ってね。';
+      } else {
+        // 「ただし〜まだ出ないことがあります」まで書かないと、生徒はマイページに探しに行って
+        //   見つけられず「記録されていない」と受け取る (肯定文を 2 つ並べただけでは警告にならない)。
+        //   リンク色は同ページの他リンクと同じ #7dd3fc + 下線 (親文字色と同色だと押せると気づけない)。
+        $note.innerHTML = '✅ この質問を苦手として記録しました。' +
+          '<br>「🎯 弱点 TOP3」は<b>ドリルで採点した単元</b>から先に並ぶので、写真の質問はまだ出ないことがあります。' +
+          drillLine + mypageLink;
+      }
+    } catch (_) { /* 非致命: 翌朝 JST 4:00 の自動集計で反映される */ }
+  }
 
   // 🛡️ 致命 fix (2026-05-13 v2): 生 JSON テキストを「最終解答」として絶対表示しない
   // ただし数学解答 {x=3} や集合 {1,2,3} を誤判定しないよう、JSON object として valid な
@@ -590,6 +683,10 @@
     }
     html += '</div>';
 
+    // 🎯 2026-08-06 塾長指示: 弱点の即時反映メッセージ (refreshWeaknessSelf が後から埋める)。
+    //   解答の直後に置く (演習 CTA は解説を読み終えた後 = 3 AI 解答の下に置く)。
+    html += '<div id="tpWeaknessNote" style="margin-top:0.9rem;color:#86efac;font-size:0.84rem;line-height:1.55;" aria-live="polite"></div>';
+
     // 各 AI の解答 (Round 2 があればそれ・なければ Round 1)
     html += '<h3 style="color:#a78bfa;font-size:1rem;margin:1rem 0 0.5rem;">📊 3 AI それぞれの解答 <span style="font-size:0.75rem;color:#a1a1aa;font-weight:400;">(応答 ' + successCount + ' 件 / 失敗 ' + errorCount + ' 件)</span></h3>';
     finalRound.forEach(function(ai) {
@@ -623,6 +720,54 @@
       }
       html += '</div>';
     });
+
+    // 🎯 2026-08-06 塾長指示: 結果画面が「撮る → 答えが出る」で行き止まりだった (演習への出口が
+    //   1 つも無く、href は index/mypage/login/upgrade のみ)。解説を読み終えた位置に演習導線を置く。
+    //   ・subject_guess は server の AI prompt が英語小文字の enum (math/english/japanese/physics/
+    //     chemistry/biology/social/other) で返し、dojo-drill の SUBJ_HINT も同じ英語キーなので raw で渡す。
+    //   ・★中学生モードは w_subject='chugaku' に付け替える。dojo-drill の中学生ガード
+    //     (findPresetForWeakness の isChu 判定) は 'chugaku' 一致でしか効かないため、raw の 'math' を
+    //     渡すと中3が共通テスト数学IAに突入し、さらに question_attempts に大学プール由来の
+    //     subject が記録されて「本人には見えない弱点行」が生える。
+    //   ・小学生モードは対応するドリルプールが無いので CTA 自体を出さない。
+    //   ・topic が無いと dojo-drill は単元を解決できず通常メニューに落ちるだけなので CTA を出さない
+    //     (subject_guess は AI 全滅時も "other" が入り常に非空 = 条件に使えない)。
+    const drillTopic = (data.topic_guess || '').trim();
+    const tpMode = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';
+    if (drillTopic && tpMode !== 'shougaku') {
+      const drillSubj = (tpMode === 'chugaku') ? 'chugaku' : (data.subject_guess || '').trim();
+      // ★tab=weakness: 単元が解決できず一覧に落ちたとき、既定の「共通テスト大問」ではなく
+      //   弱点克服タブ (高校生=単元別 / 中学生=中学生) に着地させる。本文の「一覧から選べます」と
+      //   実際の着地を一致させるため。auto-start が成功した場合は maybeAutoStartFromWeakness が上書きする。
+      const drillHref = 'dojo-drill.html?tab=weakness&w_subject=' + encodeURIComponent(drillSubj) + '&w_topic=' + encodeURIComponent(drillTopic);
+      html += '<div style="margin-top:1.2rem; padding:1rem 1.1rem; background:linear-gradient(90deg, rgba(34,197,94,0.14), rgba(59,130,246,0.08)); border:1px solid rgba(74,222,128,0.35); border-radius:12px;">';
+      html += '<div style="color:#86efac; font-weight:800; font-size:0.95rem; margin-bottom:0.35rem;">🎯 次の一手: 似た問題を解いてみる</div>';
+      // ★「この単元を解く」と断言しない: 単元名は AI の自由記述なので、dojo-drill 側で該当ドリルが
+      //   見つからず一覧に着地することがある。着地のばらつきを文言で先に伝えておく。
+      html += '<div style="color:#bbf7d0; font-size:0.83rem; line-height:1.55; margin-bottom:0.75rem;">解けなかった原因が「その単元の弱さ」なのかは、近い単元の問題を数問解くのが一番早く分かります。単元が見つからないときは一覧から選べます。';
+      html += '<br>推定単元: <strong>' + escapeHTML(drillTopic) + '</strong>';
+      html += '</div>';
+      // ★別画面で開くかどうかは PWA かどうかで分ける。
+      //   通常のブラウザ: target="_blank"。このページの写真と 3 AI の解説はメモリ上だけ (state.items)
+      //     なので、同じタブで遷移すると戻ったとき全部消える (既存コメント「UX 致命 fix C-2」と同じ穴)。
+      //   ★ホーム画面に追加した PWA (manifest.json は display:standalone): iOS の standalone PWA は
+      //     Safari とストレージ区画が別なので、_blank で PWA の外に出ると ai_juku_session_token を
+      //     持っていない → 着地先 dojo-drill.html の auth-guard が login.html に飛ばす = 行き止まり。
+      //     PWA では同じ画面で遷移する (戻るで bfcache から復帰できる)。
+      const tpStandalone = !!(window.navigator.standalone ||
+        (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches));
+      const tpNewTabAttrs = tpStandalone ? '' : ' target="_blank" rel="noopener"';
+      // ★白文字は #22c55e 上でコントラスト 2.3:1 (WCAG 不合格) だったので、濃い緑〜青に落とす (実測 5.0:1 / 6.7:1)。
+      html += '<a href="' + escapeHTML(drillHref) + '"' + tpNewTabAttrs + ' style="display:inline-block; padding:0.6rem 1.15rem; background:linear-gradient(135deg,#15803d,#1d4ed8); border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; text-decoration:none; min-height:44px; line-height:1.9;">⏱ 似た問題を解く →</a>';
+      // PWA は同じ画面で開くので解説が一度消える。予告なしだと戻り方が分からないため必ず書く
+      // (standalone はブラウザの戻るボタンが無く、端スワイプしか手段がない)。
+      html += '<div style="margin-top:0.5rem; color:#a1a1aa; font-size:0.76rem;">' +
+        (tpStandalone
+          ? '※ 同じ画面で開きます。戻るときは画面の左はしから右へスワイプ（Android は戻るボタン）でこの解説に戻れます。'
+          : '※ 新しい画面で開きます。この解説はここに残るので、あとで読み返せます。') +
+        '</div>';
+      html += '</div>';
+    }
 
     // 🎯 半自動学習記録 prompt (塾長指示 2026-05-19): 「使ってるが記録ゼロ」85% 現象の本丸対応
     // AI チューターを使った直後 = 学習している証拠なので 1-tap で記録を促す。

@@ -7145,30 +7145,78 @@ async function handleMoshiUpload(event) {
   status.innerHTML = '🔍 AIが画像を解析中... (10-20秒)';
 
   try {
-    const base64 = await fileToBase64(file);
-    const preview = `<img id="moshiPreview" src="${base64}" alt="模試画像">`;
+    const { mediaType, base64Data, previewUrl } = await fileToVisionImage(file);
+    const preview = `<img id="moshiPreview" src="${previewUrl}" alt="模試画像">`;
     status.innerHTML = preview + '<p style="margin-top:0.5rem;">🔍 AIが画像を解析中...</p>';
-
-    const mediaType = file.type || 'image/jpeg';
-    const base64Data = base64.split(',')[1];
 
     const result = await callClaudeVision(base64Data, mediaType);
 
     // Auto-populate the diagnostic form
-    if (result.diagnosticText) {
-      document.getElementById('diagnosticData').value = result.diagnosticText;
+    // 総評・詳細が両方 null のことがある (prompt が「解析できない項目は null」と指示しているため)。
+    // その場合でも科目・点数が読めていれば診断の材料になるので組み立てる (handleMoshiQuickFill と同じ)。
+    // ★空のまま「✅ 解析完了」と言わないこと。何も入っていないのに成功と表示すると、生徒は
+    //   そのまま「AI で弱点を分析」を押して「学習データを入力してください」で弾かれる。
+    const _diagText = visionDiagnosticText(result);
+    // ★#diagnosticData は生徒が週の演習内容を手で書く欄で、写真ボタンがそのすぐ上にある。
+    //   書いた直後に「ついでに写真も」で消えると被害が大きいので、既存の入力があるときは確認する。
+    //   ★追記方式にしてはいけない: この textarea は生徒ごとに分かれておらず生徒切替でも
+    //     クリアされないので、A の成績が残ったまま B の分が足され、診断プロンプト
+    //     (runDiagnostic の「今週の学習データ」) に他生徒の点数が混ざる。加えて上限が無く、
+    //     撮り直すたびに伸びて messages 40000 字を超えると diagnostic は kind 分岐から漏れて
+    //     デモ応答 (固定文) を「本物の診断」として表示してしまう。上書きが正しい。
+    let _diagApplied = false;
+    const _t = String(_diagText || '').trim();  // AI が文字列以外を返しても落ちないよう String() を噛ませる
+    if (_t) {
+      const diagEl = document.getElementById('diagnosticData');
+      const cur = (diagEl.value || '').trim();
+      // 既存の中身は「前の写真の自動入力」であることもあるので、そう分かる文言にする。
+      // 読み取った内容の冒頭を見せないと、生徒はどちらを残すべきか判断できない。
+      const _peek = _t.length > 120 ? _t.slice(0, 120) + '…' : _t;
+      if (!cur || cur === _t ||
+          confirm('「科目別正答率・演習内容」欄には、前に読み取った内容（またはご自分の入力）が入っています。\n' +
+                  '今回の写真の内容に置き換えますか？（今の内容は消え、元に戻せません）\n\n' +
+                  '今回読み取った内容（先頭だけ表示）:\n' + _peek)) {
+        diagEl.value = _t;
+        _diagApplied = true;
+      }
     }
-    if (result.goalText) {
+    // ★志望校欄は「学習データ欄に反映した」ときだけ触る。読み取れなかったとき、および
+    //   置き換えをキャンセルされたときに書き込むと、「変更していません」と言った直後に
+    //   志望校が書き換わり、その値がそのまま診断プロンプトの「志望校:」に乗る。
+    if (_diagApplied && result.goalText) {
       const goalEl = document.getElementById('goalInput');
       if (!goalEl.value) goalEl.value = result.goalText;
     }
 
-    status.className = 'success';
-    status.innerHTML = preview + `<div style="margin-top:0.75rem;"><strong>✅ 解析完了</strong><br>${escapeHtml(result.summary || '').replace(/\n/g, '<br>')}</div>`;
+    // is_demo (未ログインのサンプル応答) を「✅ 解析完了」と言わない: 画像は解析していない。
+    // ★判定は _diagText ではなく trim 済みの _t で行う。AI が " " のような空白だけを返すと
+    //   _diagText は truthy なので「✅ 解析完了」が出るのに欄には何も入らず、生徒は
+    //   ダイアログを見ていないのに「変更していません」を読むことになる。
+    status.className = result.is_demo ? 'loading' : (_t ? 'success' : 'error');
+    const _headline = result.is_demo ? '📄 サンプル表示中（アップロードした画像は解析していません）'
+      : (_t ? '✅ 解析完了' : '⚠️ 読み取れませんでした');
+    const _summary = String(result.summary || '').trim() || _t ||
+      '成績表の文字が大きく写るように撮って、もう一度お試しください。';
+    // ★反映先は画面の下 (rows=8 の textarea 末尾) でスクロール外になりやすい。何をしたのかを
+    //   一言添えないと、生徒は「入らなかった」と判断して同じ内容を手で書き足す。
+    const _applied = !_t ? ''
+      : (_diagApplied ? '<br><small>↓「科目別正答率・演習内容」欄に反映しました。</small>'
+                      : '<br><small>「科目別正答率・演習内容」欄は変更していません。</small>');
+    status.innerHTML = preview + `<div style="margin-top:0.75rem;"><strong>${_headline}</strong><br>${escapeHtml(_summary).replace(/\n/g, '<br>')}${_applied}</div>`;
   } catch (e) {
     console.error('Moshi vision error:', e);
     status.className = 'error';
-    status.innerHTML = `⚠️ 解析に失敗しました: ${e.message}<br><small>画像が鮮明に写っているか、もう一度ご確認ください。</small>`;
+    // ★「撮り直してください」は AI が画像を読めなかったときだけ出す (ホワイトリスト)。
+    //   形式・サイズのエラーは自前で具体策を書いており、ログイン切れ・プラン外・利用上限・
+    //   通信断・サーバ障害 (5xx) は撮り直しても直らない。ブラックリストにすると
+    //   「(コード 500)」に「画像が鮮明か確認」が付き、直らない操作を延々繰り返すことになる。
+    const _hint = visionRetryHint(e.message);
+    status.innerHTML = `⚠️ ${escapeHtml(e.message || '画像を読み込めませんでした。')}` +
+      (_hint ? `<br><small>${escapeHtml(_hint.trim())}</small>` : '');
+  } finally {
+    // ★同じファイルを選び直したとき change が発火せず「押しても無反応」になるため必ず空にする。
+    //   従来は vision が実質必ず demo で成功していたので踏まなかったが、実解析にしてエラーが増えた。
+    event.target.value = '';
   }
 }
 
@@ -7176,21 +7224,107 @@ function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
+    // reject(ProgressEvent) だと e.message が無く、画面が「⚠️ 」だけになる
+    reader.onerror = () => reject(new Error('画像を読み込めませんでした。別の画像でお試しください。'));
     reader.readAsDataURL(file);
   });
 }
 
-async function callClaudeVision(base64Data, mediaType) {
-  // Demo mode fallback
-  if (state.mode === 'demo' || !state.apiKey) {
-    return {
-      summary: 'デモ応答: 全統記述模試 (2026年3月)\n・英語: 145/200 (偏差値 65)\n・数学: 128/200 (偏差値 58)\n・国語: 156/200 (偏差値 68)\n\n【弱点】 数学の二次関数・場合の数\n【強み】 英語長文・現代文評論\n\n💡 APIキーを設定すると、実際の画像から本格的な解析が可能です。',
-      diagnosticText: '全統記述模試 (2026年3月)\n英語: 145/200 (偏差値65) - 長文は得点できているが文法問題で失点\n数学: 128/200 (偏差値58) - 二次関数・場合の数で大きく失点\n国語: 156/200 (偏差値68) - 現代文は安定、古文で失点\n\n弱点: 数Bの漸化式、英文法の時制、古文の敬語',
-      goalText: '',
-    };
+// 📷 2026-08-06: 送信前に長辺 1568px / JPEG へ縮小する。
+//   スマホで模試を撮ると 3〜8MB → base64 で +33% になり、Anthropic の 1 画像上限 (Claude API 直は
+//   base64 で 10MB・Bedrock/Vertex は 5MB) や長辺 8000px を超えて
+//   必ず失敗する。従来は callClaudeVision が先頭で demo に落ちていたため「成功したフリ」で
+//   隠れていたが、proxy 経由の実解析にした以上そのままだと毎回ハードエラーになる。
+//   縮小に失敗した場合は元の data URL をそのまま返す (非致命)。
+const VISION_MAX_EDGE = 1568;  // Sonnet 4.6 の受け入れ上限。超えた分はサーバ側で縮小されるので上げても無意味
+// Anthropic が受け付ける形式。縮小できず原本を送る場合、これ以外だと必ず 400 になるので
+// 「AI の解析に失敗しました (コード 400)」ではなく原因の分かるメッセージで止める。
+const VISION_OK_MIME = /^image\/(jpeg|png|gif|webp)$/i;
+function visionFormatError(mediaType) {
+  if (/heic|heif/i.test(mediaType)) {
+    return 'iPhone の写真形式 (HEIC) には対応していません。カメラで撮り直すか、スクリーンショットにしてお試しください。';
   }
+  return 'この形式の画像には対応していません。JPEG / PNG で撮り直すか、スクリーンショットにしてお試しください。';
+}
+async function fileToVisionImage(file) {
+  const dataUrl = String(await fileToBase64(file));
+  const m = /^data:([^;,]+)[;,]/.exec(dataUrl);
+  // ★data URL にも file.type にも型が無いとき jpeg と推測しない。推測すると中身が HEIC でも
+  //   「JPEG です」と偽って送ることになり、この関数が防ぐはずの不透明な 400 に戻る。
+  let mediaType = (m && m[1]) || file.type || '';
+  // 一部の Android ピッカー / スキャナが返す別名を正規化 (正規の JPEG を門前払いしない)
+  if (/^image\/(jpg|pjpeg)$/i.test(mediaType)) mediaType = 'image/jpeg';
+  // 縮小せず原本を送る経路。★ここにもサイズ上限を置く: 縮小に失敗した大きな写真をそのまま
+  //   投げると Anthropic の 1 画像上限 (base64 10MB) に当たり、生徒には原因の分からないエラーしか
+  //   出ない。閾値は安全側に 4.5MB。ここに来るのは縮小が降りたとき (デコード不可の破損画像等) だけ。
+  const asIs = () => {
+    if (!VISION_OK_MIME.test(mediaType)) throw new Error(visionFormatError(mediaType));
+    const b64 = dataUrl.split(',')[1] || '';
+    if (b64.length > 4.5 * 1024 * 1024) {
+      throw new Error('画像のサイズが大きすぎます。もう少し寄って撮り直すか、スクリーンショットにしてお試しください。');
+    }
+    return { mediaType, base64Data: b64, previewUrl: dataUrl };
+  };
+  if (!/^data:image\//i.test(dataUrl)) return asIs();
+  let img;
+  try {
+    img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = dataUrl;
+    });
+  } catch (e) {
+    // デコード不可 (HEIC 等)。asIs() が対応外形式として分かりやすく止める。
+    console.warn('vision image decode failed:', e);
+    return asIs();
+  }
+  try {
+    const longEdge = Math.max(img.naturalWidth, img.naturalHeight);
+    // 内在サイズを持たない画像 (SVG 等) は scale=Infinity→1 で 1x1 の JPEG になり、
+    // 「模試の写真」として送られてしまう。正直に対応外として止める。
+    if (!longEdge) return asIs();
+    // 十分小さく、かつ元データも軽い (base64 で 4MB 未満) ならそのまま送る (再エンコードによる劣化回避)
+    if (longEdge <= VISION_MAX_EDGE && dataUrl.length < 4 * 1024 * 1024 && VISION_OK_MIME.test(mediaType)) return asIs();
+    const scale = Math.min(1, VISION_MAX_EDGE / longEdge);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const ctx = canvas.getContext('2d');
+    // ★成績表の得点・偏差値は縮小後 8〜10px の細字になる。既定の imageSmoothingQuality='low' は
+    //   この字を潰すので high を明示し、JPEG 品質も 0.85 → 0.92 (リンギングで細線が崩れるため)。
+    //   1568px × q0.92 でも base64 は 2MB 程度で、上限 (10MB) に対して十分余裕がある。
+    //   なお視覚トークンはピクセル寸法で決まるので、品質を上げても AI の課金は増えない。
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    // ★JPEG はアルファを持たないので、透過 PNG を塗らずに描くと透明部分が黒に潰れる。
+    //   画像編集アプリで切り出した成績表が「黒地に黒文字」になり、AI が何も読めず、
+    //   何度撮り直しても同じ結果になる詰みループを作る。先に白で塗る。
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    // ※「単色なら描画失敗」とみなすサンプリング検査は入れないこと。
+    //   出力 canvas は長辺 1568px = 最大 2.5Mpx なので iOS の canvas 面積上限 (約 16.7Mpx) には
+    //   当たらず、守る対象が起きない。一方で成績表は余白が広く文字が疎なので、数点のサンプルは
+    //   簡単に全部白を引き当てて「真っ白」と誤判定し、縮小結果を捨てて原本送信 → 大きい写真が
+    //   「サイズが大きすぎます」で一切通らなくなる (実測で誤検出を確認済み)。
+    const out = canvas.toDataURL('image/jpeg', 0.92);
+    if (!/^data:image\/jpeg;base64,/.test(out)) return asIs();
+    return { mediaType: 'image/jpeg', base64Data: out.split(',')[1], previewUrl: out };
+  } catch (e) {
+    console.warn('vision image downscale failed, sending original:', e);
+    return asIs();
+  }
+}
 
+async function callClaudeVision(base64Data, mediaType) {
+  // 🚨 2026-08-06 致命 fix: ここは以前「if (state.mode === 'demo' || !state.apiKey) → 固定デモ文を返す」
+  //   が関数の先頭にあった。AI管理生は state.mode='hosted' (L889) かつ state.apiKey は null のまま
+  //   (L357 既定・localStorage にも入らない) なので **必ず** この分岐に入り、アップした画像と無関係な
+  //   「全統記述模試 (2026年3月) 英語 145/200…」という架空の数値を受け取り、呼び出し側 (L7514) が
+  //   それを「✅ 解析完了。科目・弱点を自動反映しました。」と表示していた = 捏造データが弱点欄に入る。
+  //   原因は callClaudeVision だけが backend AI proxy を経由せず API_URL を直叩きしていたこと。
+  //   callClaude (L1377〜) と同じ「proxy → 個別APIキー → 明示 demo モード」の順に揃える。
   const systemPrompt = `あなたは学習塾のデータ分析担当です。生徒の模試結果の画像から、以下を抽出してJSON形式で返してください:
 - 模試名（読み取れた場合）
 - 各科目のスコア・偏差値
@@ -7200,7 +7334,7 @@ async function callClaudeVision(base64Data, mediaType) {
 必ず以下のJSON形式で返答してください。解析できない項目は null にしてください:
 {
   "moshi_name": "模試名",
-  "date": "実施日（推測でも可）",
+  "date": "実施日を YYYY-MM-DD 形式で。日が読み取れなければ月初 (例 2026-03-01)。年月とも不明なら null",
   "subjects": [{"name": "英語", "score": 145, "max": 200, "deviation": 65}],
   "weak_areas": ["弱点1", "弱点2"],
   "strengths": ["強み1"],
@@ -7211,49 +7345,218 @@ async function callClaudeVision(base64Data, mediaType) {
 コードブロック (\`\`\`) は不要。純粋なJSONのみ返してください。`;
 
   // Vision: Sonnet 4.6使用（画像OCR用途にOpusは過剰、コスト抑制）
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': state.apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: MODEL_STANDARD,
-      max_tokens: 2000,
-      system: systemPrompt,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64Data } },
-          { type: 'text', text: 'この模試結果の画像を解析し、指定のJSON形式で結果を返してください。' }
-        ]
-      }],
-    }),
-  });
+  const visionMessages = [{
+    role: 'user',
+    content: [
+      { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64Data } },
+      { type: 'text', text: 'この模試結果の画像を解析し、指定のJSON形式で結果を返してください。' }
+    ]
+  }];
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`APIエラー (${res.status}): ${err.slice(0, 200)}`);
-  }
-
-  const data = await res.json();
-  if (data.usage) trackCostWithPricing(data.usage.input_tokens, data.usage.output_tokens, PRICING_STANDARD);
-
-  const text = data.content?.[0]?.text || '{}';
-  let parsed;
-  try {
-    parsed = JSON.parse(text.replace(/^```json\s*|\s*```$/g, ''));
-  } catch {
-    parsed = { summary: text, diagnostic_notes: text };
-  }
-
-  return {
-    summary: parsed.summary || text.slice(0, 500),
-    diagnosticText: parsed.diagnostic_notes || text,
-    goalText: parsed.moshi_name ? `${parsed.moshi_name}のデータ分析結果` : '',
+  // AI が返した JSON テキスト → 呼び出し側が使う {summary, diagnosticText, goalText}
+  const toVisionResult = (text) => {
+    const raw = String(text || '');
+    let parsed;
+    let parsedFromJson = false;  // JSON として読めたら raw は一切使わない (生 JSON 流出の防止)
+    try {
+      // fence は ```json だけでなく素の ``` も剥がす。★trim() を先に通すこと:
+      //   `$` は m フラグ無しだと入力末尾のみに一致するので、閉じ fence の後に改行が 1 つあるだけで
+      //   剥がれず JSON.parse が失敗し、生 JSON 全文が「総評」として保存される。
+      parsed = JSON.parse(raw.trim().replace(/^```[a-zA-Z]*\s*|\s*```$/g, ''));
+      parsedFromJson = true;
+    } catch {
+      // 前置き文つきで返ってきた場合に備え、最初の { 〜 最後の } を拾って再試行する
+      const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+      try {
+        parsed = (s >= 0 && e > s) ? JSON.parse(raw.slice(s, e + 1)) : null;
+        parsedFromJson = !!parsed;
+      } catch { parsed = null; }
+    }
+    // JSON.parse("null") / 配列 / 数値 でも落ちないよう object 以外は生テキスト扱いに落とす。
+    // ★ただし生 JSON をそのまま総評に載せない (ai-tutor-photo.html の looksLikeRawJson と同じ規約)。
+    //   判定は先頭アンカーにしないこと: 「解析結果です。\n```json\n{...}```」のように前置き文が付くと
+    //   ^``` も ^{ も外れて素通りする (救出分岐がまさにその形を想定している)。
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      const looksJson = /[\{\[]\s*"|```/.test(raw);
+      parsed = looksJson ? {} : { summary: raw, diagnostic_notes: raw };
+      parsedFromJson = false;
+    }
+    // ★prompt が「解析できない項目は null にしてください」と指示しているので、不鮮明な写真には
+    //   全項目 null の JSON が返る。これを raw フォールバックで総評に流すと、生 JSON が
+    //   「✅ 解析完了」と一緒に表示され、そのまま診断フォーム・問題生成の材料に自動入力される。
+    //   読み取れていないときは成功と言わず、撮り直しを促すエラーにする
+    //   (文言は handleMoshiUpload の撮り直し案内ホワイトリストと対応させること)。
+    const _hasContent = !!(parsed.summary || parsed.diagnostic_notes || parsed.moshi_name ||
+      (Array.isArray(parsed.subjects) && parsed.subjects.length) ||
+      (Array.isArray(parsed.weak_areas) && parsed.weak_areas.length));
+    if (!_hasContent) {
+      throw new Error('画像から成績を読み取れませんでした。もう一度お試しください。');
+    }
+    // <input type="date"> は YYYY-MM-DD 以外を無言で捨てるので、形式が違えば空にして
+    // 呼び出し側が「入らなかった」ことを扱えるようにする (「2026年3月」等が消える事故の防止)
+    // 形式だけでなく実在日かも見る (2026-02-30 / 2026-13-01 は date input が無言で捨てるため)
+    // ★UTC 成分で比較すること。`new Date('2026-03-01T00:00:00')` はオフセット無しなので
+    //   ローカル時刻 (JST) として解釈され、toISOString() は前日 2026-02-28 を返す。
+    //   その比較だと日本国内では正しい日付が 100% 弾かれ、自動入力が丸ごと死ぬ。
+    const dateStr = String(parsed.date || '').trim();
+    let dateOk = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
+    if (dateOk) {
+      const [_y, _mo, _da] = dateStr.split('-').map(Number);
+      const d = new Date(Date.UTC(_y, _mo - 1, _da));
+      dateOk = d.getUTCFullYear() === _y && d.getUTCMonth() === _mo - 1 && d.getUTCDate() === _da;
+    }
+    // ★偏差値だけ載っている成績表 (score/max 表記なし) は珍しくない。score が無いだけで行ごと落とすと
+    //   偏差値の自動入力まで巻き添えで消えるので、「name があり、点数か偏差値のどちらかがある」行を通す。
+    //   点数が欠けている行は呼び出し側が「英語: null/null」と書かないよう hasScore を添える。
+    const subjects = (Array.isArray(parsed.subjects) ? parsed.subjects : [])
+      .filter(s => s && typeof s === 'object' && s.name && (( s.score != null && s.max != null) || s.deviation != null))
+      .map(s => Object.assign({}, s, { hasScore: s.score != null && s.max != null }));
+    // ★raw へのフォールバックにも同じ「生 JSON を見せない」ガードを掛ける。prompt が
+    //   「解析できない項目は null に」と指示しているので、「科目名は読めたが総評は null」という
+    //   半端な応答が普通に返る。ここで raw を使うと生 JSON が総評として表示・保存され、
+    //   診断フォームや問題生成の材料にまで混入する。
+    //   ★JSON として読めた時点で raw は使わない。読めなかった場合も、JSON らしき断片を含むなら捨てる。
+    const rawSafe = (parsedFromJson || /[\{\[]\s*"|```/.test(raw)) ? '' : raw;
+    return {
+      summary: parsed.summary || rawSafe.slice(0, 500),
+      diagnosticText: parsed.diagnostic_notes || rawSafe,
+      goalText: parsed.moshi_name ? `${parsed.moshi_name}のデータ分析結果` : '',
+      // ⚠️ 併せて修正: handleMoshiHistoryUpload は result.moshi_name / date / subjects /
+      //   weak_areas を読んでフォームに自動入力する設計だが、この関数はそれらを返しておらず
+      //   全て undefined = 模試履歴の自動入力が丸ごと無言で効いていなかった。検証したうえで返す。
+      moshi_name: String(parsed.moshi_name || ''),
+      date: dateOk ? dateStr : '',
+      dateRaw: dateStr,  // 形式外でも原文は残す (呼び出し側が備考に回せる)
+      subjects,
+      // 文字列で返ってくることがあるので配列に寄せる (黙って捨てると生徒が手入力し直しになる)
+      weak_areas: Array.isArray(parsed.weak_areas) ? parsed.weak_areas
+                : (parsed.weak_areas ? [String(parsed.weak_areas)] : []),
+      strengths: Array.isArray(parsed.strengths) ? parsed.strengths
+               : (parsed.strengths ? [String(parsed.strengths)] : []),
+    };
   };
+
+  // 1. バックエンド AI proxy を優先（顧客は API キー不要）。callClaude L1377〜 と同じ経路。
+  //    /api/ai/call は content 配列の image ブロックをそのまま Anthropic に渡す (server 側で
+  //    1 リクエスト 10 ブロックまでの上限チェックあり)。
+  const backendOK = await detectBackendAI();
+  if (backendOK) {
+    const _visionToken = (window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token') || '';
+    const _visionHeaders = { 'Content-Type': 'application/json' };
+    if (_visionToken) _visionHeaders['Authorization'] = 'Bearer ' + _visionToken;
+    let res;
+    try {
+      res = await fetch(`${BACKEND_URL}/api/ai/call`, {
+        method: 'POST',
+        headers: _visionHeaders,
+        body: JSON.stringify({
+          system: systemPrompt,
+          messages: visionMessages,
+          model: MODEL_STANDARD,
+          // ★2000 では 7 科目分の summary + diagnostic_notes で切れることがある。切れた JSON は
+          //   parse も救出も失敗し、今は「読み取れませんでした」で throw する = 通っていた模試が
+          //   毎回エラーになる。余裕を持たせる (視覚トークンは寸法で決まるので入力費は不変)。
+          max_tokens: 4000,
+          kind: 'vision',
+          student_id: state.currentStudentId,
+        }),
+      });
+    } catch (e) {
+      // ネットワーク断: demo に落とすと「解析できたフリ」になるので必ずエラーを投げる
+      // (呼び出し側 handleMoshiUpload / handleMoshiQuickFill / handleMoshiHistoryUpload は
+      //  いずれも try/catch して e.message を画面に出す)
+      // 生の "Failed to fetch" は生徒に意味が通らないので console 送りにし、文言は callClaude と揃える。
+      console.warn('Vision backend proxy failed:', e);
+      throw new Error('ネットワーク接続を確認できませんでした。Wi-Fi / モバイル通信を確認して、もう一度お試しください。');
+    }
+    if (res.ok) {
+      const data = await res.json();
+      if (data.usage) trackCostWithPricing(data.usage.input_tokens || 0, data.usage.output_tokens || 0, PRICING_STANDARD);
+      const textBlock = (data.content || []).find(b => b.type === 'text');
+      const text = textBlock?.text || data.content?.[0]?.text;
+      if (!text) throw new Error('AI から解析結果が返りませんでした。もう一度お試しください。');
+      return toVisionResult(text);
+    }
+    let errDetail = '';
+    try { const j = await res.json(); errDetail = j.detail || ''; } catch {}
+    console.warn(`Vision backend proxy returned ${res.status}: ${errDetail}`);
+    // 塾長の admin モード (個別 API キーあり) は callClaude (L1435〜) と同様に直叩きへ落とす。
+    // ここで必ず throw すると、proxy が落ちた瞬間に管理者用の経路まで死ぬ (変更前は動いていた)。
+    // ★落とすのは 5xx (サーバ障害) のときだけ。401/403/429 はサーバの方針判断なので、
+    //   個人キーで迂回させると「塾生アプリのみ枠 (403 ai_disabled)」や日次予算を骨抜きにする。
+    // ★条件は下の分岐 (state.apiKey && state.mode !== 'demo') と必ず揃えること。ずれると
+    //   どちらにも入らず、最後の demo 分岐で架空の模試結果を返してしまう。
+    const _canUseOwnKey = !!state.apiKey && state.mode !== 'demo' && res.status >= 500;
+    if (!_canUseOwnKey) {
+      if (res.status === 401) {
+        // 401 は「未ログイン」だけでなく体験期間切れ・解約でも返る (_get_current_student)。
+        // ★表示側は改行を潰す (innerHTML / textContent とも white-space 指定なし) ので 1 文にまとめる。
+        throw new Error('ログインの有効期限が切れています。ログインし直してください。直らないときは塾長にご連絡ください。');
+      }
+      if (res.status === 403) {
+        // ai_disabled (塾生アプリのみ枠) / Origin 拒否。恒久的な状態なので「時間をおいて」は誤誘導。
+        throw new Error('このアカウントでは AI 機能をご利用いただけません（塾生アプリ専用のプランです）。宿題・予定・出欠・授業動画はこれまでどおりご利用いただけます。');
+      }
+      if (res.status === 429) {
+        // 予算は 24h ローリング (main.py の _check_ai_budget) なので「JST 0 時にリセット」とは書かない。
+        // callClaude が使っているプラン情報つきダイアログがあれば、そちらを優先して出す。
+        if (typeof showQuotaExhaustedDialog === 'function') {
+          try { showQuotaExhaustedDialog('daily_budget', errDetail); } catch (_) {}
+        }
+        throw new Error('本日の AI 利用ぶんを使い切りました。時間をおいてから、もう一度お試しください。');
+      }
+      // サーバ内部の detail (validation error: … 等) は生徒に意味が無いので console のみ。
+      throw new Error(`AI の解析に失敗しました。少し時間をおいて、もう一度お試しください。何度も続く場合は塾長にご連絡ください。(コード ${res.status})`);
+    }
+    console.warn('Vision: falling back to personal API key');
+  }
+
+  // 2. フォールバック: 個別 API キー（開発者・管理者モードのみ）
+  if (state.apiKey && state.mode !== 'demo') {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': state.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: MODEL_STANDARD,
+        max_tokens: 4000,
+        system: systemPrompt,
+        messages: visionMessages,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`APIエラー (${res.status}): ${err.slice(0, 200)}`);
+    }
+
+    const data = await res.json();
+    if (data.usage) trackCostWithPricing(data.usage.input_tokens, data.usage.output_tokens, PRICING_STANDARD);
+    return toVisionResult(data.content?.[0]?.text || '{}');
+  }
+
+  // 3. 未ログインの体験画面のみサンプル応答。
+  //    ★条件を state.mode === 'demo' だけにしてはいけない: updateModeIndicator (L960〜) は
+  //     hosted 判定に失敗すると apiKey 無しの生徒を無条件で state.mode='demo' に落とす。
+  //     init 時の detectBackendAI は 3 秒 timeout なので、モバイル回線で 1 回こけただけで
+  //     ログイン済み・課金中の生徒が demo 扱いになり、ここで架空の模試結果を「解析結果」として
+  //     受け取ってしまう (= 今回直した事故がそのまま再発する)。
+  //     セッショントークンの有無で「本当に未ログインか」を判定する。
+  const _hasSession = !!((window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token'));
+  if (state.mode === 'demo' && !_hasSession) {
+    return {
+      is_demo: true,  // 呼び出し側はこれを見て「✅ 解析完了」と言わないこと
+      summary: 'デモ応答（サンプルデータ・アップロードした画像は解析していません）: 全統記述模試 (2026年3月)\n・英語: 145/200 (偏差値 65)\n・数学: 128/200 (偏差値 58)\n・国語: 156/200 (偏差値 68)\n\n【弱点】 数学の二次関数・場合の数\n【強み】 英語長文・現代文評論\n\n💡 ログインすると、実際の画像から本格的な解析が可能です。',
+      diagnosticText: '（デモ用サンプル・実画像の解析結果ではありません）全統記述模試 (2026年3月)\n英語: 145/200 (偏差値65) - 長文は得点できているが文法問題で失点\n数学: 128/200 (偏差値58) - 二次関数・場合の数で大きく失点\n国語: 156/200 (偏差値68) - 現代文は安定、古文で失点\n\n弱点: 数Bの漸化式、英文法の時制、古文の敬語',
+      goalText: '',
+      moshi_name: '', date: '', dateRaw: '', subjects: [], weak_areas: [], strengths: [],
+    };
+  }
+  throw new Error('AI に接続できませんでした。通信環境とログイン状態をご確認のうえ、もう一度お試しください。');
 }
 
 // ==========================================================================
@@ -7492,13 +7795,14 @@ async function handleMoshiQuickFill(event) {
   status.textContent = '🔍 Vision AI が画像を解析中... (10-20秒)';
 
   try {
-    const base64 = await fileToBase64(file);
-    const base64Data = base64.split(',')[1];
-    const mediaType = file.type || 'image/jpeg';
+    const { mediaType, base64Data } = await fileToVisionImage(file);
     const result = await callClaudeVision(base64Data, mediaType);
 
     // Fill in the subject + topic + weakness fields from vision result
-    const diagText = result.diagnosticText || result.summary || '';
+    // 総評・詳細が両方 null のときは弱点欄に載せるテキストが無い。「✅ 科目・弱点を自動反映」と
+    // 言うと嘘になるので、読み取れた科目名だけを材料にする (それも無ければ撮り直しを促す)。
+    const diagText = visionDiagnosticText(result);
+    if (!diagText) throw new Error('画像から成績を読み取れませんでした。もう一度お試しください。');
     if (diagText.match(/英語|英文法|英作文|英検/)) {
       document.getElementById('probSubject').value = '英語（文法）';
       populateUnits('英語（文法）');
@@ -7511,12 +7815,46 @@ async function handleMoshiQuickFill(event) {
     }
 
     document.getElementById('probTopic').value = '📷 模試から自動抽出:\n' + diagText;
-    status.className = 'qf-status success';
-    status.innerHTML = `✅ 解析完了。科目・弱点を自動反映しました。<br><small>詳細を調整して「問題を生成」してください。</small>`;
+    if (result.is_demo) {
+      status.className = 'qf-status loading';
+      status.innerHTML = `📄 サンプルを表示しています（アップロードした画像は解析していません）。<br><small>ログインすると実際の模試画像から抽出できます。</small>`;
+    } else {
+      status.className = 'qf-status success';
+      status.innerHTML = `✅ 解析完了。科目・弱点を自動反映しました。<br><small>詳細を調整して「問題を生成」してください。</small>`;
+    }
   } catch (e) {
     status.className = 'qf-status error';
-    status.textContent = `⚠️ エラー: ${e.message}`;
+    status.textContent = `⚠️ ${e.message || '画像を読み込めませんでした。'}${visionRetryHint(e.message)}`;
+  } finally {
+    event.target.value = '';  // 同じファイルの選び直しで change が発火しない問題への対処
   }
+}
+
+// 解析結果 → 診断フォームに入れるテキスト。総評・詳細が null でも、科目・点数・弱点が読めていれば
+// そこから組み立てる (prompt が「解析できない項目は null」と指示しているので半端な応答が普通に返る)。
+// 何も取れなければ空文字 = 呼び出し側は「読み取れませんでした」と表示すること。
+function visionDiagnosticText(result) {
+  // ★ここで trim すること。AI は null ではなく " " や "\n" を返すことがあり、それを truthy として
+  //   採用すると subjects / weak_areas へのフォールバックに降りず、実際には読めている写真が
+  //   「読み取れませんでした」になる。生産側で潰せば全呼び出し元で挙動が揃う。
+  const _s = v => String(v == null ? '' : v).trim();
+  let t = _s(result && result.diagnosticText) || _s(result && result.summary);
+  if (!t && result && Array.isArray(result.subjects) && result.subjects.length) {
+    t = result.subjects.map(s => s.hasScore
+      ? `${s.name}: ${s.score}/${s.max}${s.deviation ? ` (偏差値 ${s.deviation})` : ''}`
+      : `${s.name}: 偏差値 ${s.deviation}`).join('\n');
+  }
+  if (!t && result && Array.isArray(result.weak_areas) && result.weak_areas.length) {
+    t = '弱点: ' + result.weak_areas.join('、');
+  }
+  return t;
+}
+
+// 読み取れなかったときだけ撮り方のヒントを足す (3 ハンドラ共通・textContent 用のプレーン文)。
+// ログイン切れ・プラン外・上限・通信断・5xx では出さない: 撮り直しても直らない。
+function visionRetryHint(msg) {
+  return /解析結果が返りませんでした|読み取れませんでした/.test(msg || '')
+    ? ' 成績表の文字が大きく写るように撮ると読み取りやすくなります。' : '';
 }
 
 function quickFillFromDiagnostic() {
@@ -9828,6 +10166,9 @@ function clearMoshiForm() {
   });
   window._moshiPendingImage = null;
   window._moshiPendingAnalysis = null;
+  // ★自動入力の記録も捨てる。残すと、保存後に前回と同じ模試名を手入力した塾長の入力が
+  //   「前回この関数が入れた値」と一致してしまい、次の写真添付で無言で消える。
+  window._moshiAutofilled = null;
   const status = document.getElementById('moshiHistoryUploadStatus');
   if (status) status.style.display = 'none';
 }
@@ -9986,39 +10327,84 @@ async function handleMoshiHistoryUpload(event) {
   status.textContent = '🔍 Vision AI が画像を解析中... (10-20秒)';
 
   try {
-    const base64 = await fileToBase64(file);
-    const base64Data = base64.split(',')[1];
-    const mediaType = file.type || 'image/jpeg';
-    window._moshiPendingImage = base64;
+    const { mediaType, base64Data, previewUrl } = await fileToVisionImage(file);
+    window._moshiPendingImage = previewUrl;
 
     const result = await callClaudeVision(base64Data, mediaType);
-    window._moshiPendingAnalysis = result.diagnosticText || result.summary || '';
+    // ★trim すること (生の `a || b` だと " " を採用し、模試履歴に空の「🤖 AI解析結果」見出しが出る)。
+    //   ★ただし visionDiagnosticText の subjects / weak_areas フォールバックは使わない。ここは
+    //     点数を別欄 (#moshiScores / #moshiWeakness) に入れるので、同じ文字列を aiAnalysis にも
+    //     入れると詳細画面に「📈 科目別スコア」と「🤖 AI解析結果」で同じ表が 2 回並び、
+    //     保存前に点数を手直しすると両者が食い違って見える。総評・詳細があるときだけ格納する。
+    //   ★候補ごとに trim してから `||` すること。`a || b` を先に評価すると diagnosticText=" " を
+    //     採用して summary に降りず、実在する総評が落ちる (visionDiagnosticText と同じ理由)。
+    window._moshiPendingAnalysis =
+      String(result.diagnosticText || '').trim() || String(result.summary || '').trim();
 
-    // フォームに自動入力
-    if (result.moshi_name) document.getElementById('moshiName').value = result.moshi_name;
-    if (result.date) document.getElementById('moshiDate').value = result.date;
+    // ★自動入力の前に、この関数が埋めるフィールドを空にする。全代入が `if (result.X)` ガード付きで、
+    //   AI が読み取れなかった項目には**前回の解析結果が残る**。模試 A を解析 → 保存せず模試 B を
+    //   解析 → B に weak_areas が無い → 「B の画像・B の総評に A の弱点が付いた 1 レコード」が
+    //   できる。これらの項目を返すようにしたのは今回なので、混線もここで初めて起きるようになった。
+    // ★ただし「前回この関数が入れた値のまま」のフィールドだけを消す。無条件に消すと、
+    //   先に手入力してから写真を添付した塾長の入力 (模試名・実施日・所感) が丸ごと飛ぶ。
+    //   解析には 10〜20 秒かかり、その間の入力も同様に守る必要がある。
+    if (!result.is_demo) {
+      const _prevFill = window._moshiAutofilled || {};
+      ['moshiName', 'moshiDate', 'moshiScores', 'moshiDeviation', 'moshiWeakness', 'moshiNotes']
+        .forEach(id => {
+          const el = document.getElementById(id);
+          if (el && el.value === (_prevFill[id] || '')) el.value = '';
+        });
+    }
+
+    // フォームに自動入力。★書いた欄だけを _filled に記録する。「6 欄の現在値」を丸ごと記録すると、
+    //   AI が読めず生き残った手入力値まで「自動入力」と誤認し、次の写真で無言で消える。
+    const _filled = {};
+    const _setField = (id, value) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = value;
+      _filled[id] = value;
+    };
+    if (result.moshi_name) _setField('moshiName', result.moshi_name);
+    if (result.date) _setField('moshiDate', result.date);
     if (result.subjects?.length) {
-      const scoreText = result.subjects.map(s => `${s.name}: ${s.score}/${s.max}${s.deviation ? ` (偏差値 ${s.deviation})` : ''}`).join('\n');
-      document.getElementById('moshiScores').value = scoreText;
+      // 点数が読み取れなかった科目は偏差値だけ書く (「英語: null/null」を作らない)
+      const scoreText = result.subjects.map(s => s.hasScore
+        ? `${s.name}: ${s.score}/${s.max}${s.deviation ? ` (偏差値 ${s.deviation})` : ''}`
+        : `${s.name}: 偏差値 ${s.deviation}`).join('\n');
+      _setField('moshiScores', scoreText);
       // 全体偏差値の平均
       const devs = result.subjects.map(s => parseFloat(s.deviation)).filter(n => !isNaN(n));
       if (devs.length > 0) {
-        const avg = (devs.reduce((a, b) => a + b, 0) / devs.length).toFixed(1);
-        document.getElementById('moshiDeviation').value = avg;
+        _setField('moshiDeviation', (devs.reduce((a, b) => a + b, 0) / devs.length).toFixed(1));
       }
     }
     if (result.weak_areas?.length) {
-      document.getElementById('moshiWeakness').value = result.weak_areas.join('、');
+      _setField('moshiWeakness', result.weak_areas.join('、'));
     }
     if (result.summary) {
-      document.getElementById('moshiNotes').value = result.summary;
+      // date が YYYY-MM-DD 以外だと <input type="date"> が無言で捨てるので、原文を備考に逃がす
+      const _dateNote = (!result.date && result.dateRaw) ? `実施日(読み取り): ${result.dateRaw}\n` : '';
+      _setField('moshiNotes', _dateNote + result.summary);
     }
+    window._moshiAutofilled = _filled;
 
-    status.className = 'qf-status success';
-    status.innerHTML = '✅ 画像解析完了。内容を確認して「保存」ボタンを押してください。';
+    if (result.is_demo) {
+      status.className = 'qf-status loading';
+      status.innerHTML = '📄 サンプルを表示しています（アップロードした画像は解析していません）。ログインすると実際の画像から解析できます。';
+    } else {
+      status.className = 'qf-status success';
+      status.innerHTML = '✅ 画像解析完了。内容を確認して「保存」ボタンを押してください。';
+    }
   } catch (e) {
+    // 解析に失敗した画像を握ったままにすると、次に手入力する別の模試レコードに添付されてしまう
+    window._moshiPendingImage = null;
+    window._moshiPendingAnalysis = '';
     status.className = 'qf-status error';
-    status.textContent = `⚠️ エラー: ${e.message}`;
+    status.textContent = `⚠️ ${e.message || '画像を読み込めませんでした。'}${visionRetryHint(e.message)}`;
+  } finally {
+    event.target.value = '';  // 同じファイルの選び直しで change が発火しない問題への対処
   }
 }
 
