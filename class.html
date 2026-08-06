@@ -725,8 +725,26 @@
         (s.recordings || []).forEach(function (r) { recs.push({ rec: r, sess: s.title, date: s.session_date }); });
       });
       ((feedData && feedData.loose_recordings) || []).forEach(function (r) { recs.push({ rec: r, sess: null, date: null }); });
-      if (!recs.length) { body.innerHTML = '<div class="empty">🎬 まだ録画はありません。<br>授業の録画が登録されるとここに並びます。</div>'; return; }
-      body.innerHTML = recs.map(function (x, i) {
+      // 🎬 2026-08-06 から録画は「自分の受講クラスの分だけ」表示する (サーバ側で絞り込み)。
+      //   昨日まで他クラスの録画も見えていた生徒がいるので、空でも一覧でも
+      //   「絞って出している」ことを画面で必ず伝える (でないと『動画が消えた』になる)。
+      var myCls = (feedData && feedData.my_classes) || [];
+      // 全員向けの録画 (授業に紐づけずに登録したもの) が混ざるときは「〇〇のみ」と書くと嘘になる
+      var hasCommon = recs.some(function (x) { return !x.sess; });
+      var filterNote = myCls.length
+        ? '<div class="card-meta" style="margin-bottom:0.6rem;">👤 ' + esc(myCls.join('・'))
+            + (hasCommon ? ' と 全体向け ' : ' ') + 'の録画を表示しています</div>'
+        : '';
+      if (!recs.length) {
+        body.innerHTML = filterNote
+          + '<div class="empty">🎬 '
+          + (myCls.length
+              ? esc(myCls.join('・')) + ' の録画はまだありません。<br>授業の録画が登録されるとここに並びます。'
+              : 'まだ録画はありません。<br>授業の録画が登録されるとここに並びます。')
+          + '</div>';
+        return;
+      }
+      body.innerHTML = filterNote + recs.map(function (x, i) {
         var r = x.rec;
         var id = r.provider === 'youtube' ? ytId(r.video_url) : null;
         var dur = r.duration_sec ? (' ・ ' + esc(fmtDur(r.duration_sec))) : '';

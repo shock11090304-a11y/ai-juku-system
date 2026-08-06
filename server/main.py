@@ -45779,6 +45779,15 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             else:
                 loose_files.append(item)            # 授業にもクラスにも紐づかない資料
         # 公開中の録画
+        # 🎬 [2026-08-06 塾長指示] 「生徒が見れるのは僕が各クラスに配布した動画のみ」
+        #   → 授業に紐づく録画は **自分の受講クラスの分だけ** 返す。授業タイトルは時間割ラベル
+        #     (_TIMETABLE_CLASSES) と完全一致する運用なので、students.class_labels と直接照合できる
+        #     (本番実測でセッション13件・生徒の全ラベルとも表記ゆれ 0)。
+        #   ★受講クラス未設定 (my_classes 空) は従来どおり全部見せる = 移行フォールバック。
+        #     ここを「空なら何も見せない」にすると、未設定の通塾生 (2026-08-06 時点で 80名中35名) が
+        #     今日まで見られていた録画を一斉に失う。絞りを実効にするには先に受講クラスを埋めること。
+        #   ★授業に紐づかない録画 (session_id NULL) は全員向けの扱いで従来どおり全員に出す。
+        #     クラス限定にしたい録画は必ず授業 (class_sessions) に紐づけて登録する。
         loose_recordings = []
         c.execute(
             "SELECT id, session_id, title, video_url, provider, duration_sec "
@@ -45788,8 +45797,10 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             item = {"id": r["id"], "title": r["title"], "video_url": r["video_url"],
                     "provider": r["provider"], "duration_sec": r["duration_sec"]}
             if r["session_id"] is None:
-                loose_recordings.append(item)        # 授業に紐づかない録画
+                loose_recordings.append(item)        # 授業に紐づかない録画 (全員向け)
             elif r["session_id"] in sessions:
+                if my_classes and sessions[r["session_id"]]["title"] not in my_classes:
+                    continue                         # 受講していないクラスの録画は出さない
                 sessions[r["session_id"]]["recordings"].append(item)
             # else: 親授業が非公開 → 出さない
         # 自分の出欠
