@@ -26,6 +26,7 @@
   .yt-table tbody tr:last-child td { border-bottom: none; }
   .yt-table tbody tr:hover { background: rgba(99,102,241,0.06); }
   .yt-num { width: 2.2rem; text-align: center; color: #6b7280; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .yt-group { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.03em; color: #a78bfa; background: rgba(139,92,246,0.10); border-bottom: 1px solid rgba(139,92,246,0.25); padding: 0.45rem 0.9rem; }
   .yt-name-input { width: 100%; box-sizing: border-box; padding: 0.5rem 0.7rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #e4e4e7; font-size: 0.95rem; font-family: inherit; }
   .yt-name-input:focus { outline: none; border-color: #818cf8; box-shadow: 0 0 0 2px rgba(99,102,241,0.25); }
   .yt-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.68rem; color: #6b7280; margin-top: 0.3rem; word-break: break-all; }
@@ -57,12 +58,13 @@
 <main class="yt-container">
   <h1 class="yt-title">📺 YouTube プレイリスト一覧</h1>
   <p class="yt-sub">
-    授業・講義動画のプレイリストまとめ。科目・単元名は各行に直接入力でき、<strong>この端末のブラウザに自動保存</strong>されます。
+    授業・講義動画のプレイリストまとめ。「8月以降」の15件は名前を<strong>ページ内に登録済み</strong>（どの端末でも同じ名前が出ます）。
+    各行は直接書き換えられ、<strong>書き換えた分だけこの端末のブラウザに保存</strong>されます。
     「開く ▶」で YouTube のプレイリストを新しいタブで表示します。
   </p>
 
   <div class="yt-toolbar">
-    <span class="yt-count" id="ytCount">16 件</span>
+    <span class="yt-count" id="ytCount">31 件</span>
     <button type="button" class="yt-btn" id="ytCopyBtn">📋 名前＋URL をコピー</button>
     <button type="button" class="yt-btn" id="ytClearBtn">↩︎ 入力した名前をリセット</button>
     <span class="yt-save" id="ytSave">✓ 保存しました</span>
@@ -82,33 +84,54 @@
   </div>
 
   <p class="yt-note">
-    ⚠️ 入力した名前は<strong>この端末のブラウザ内だけ</strong>に保存されます（他の人には共有されません）。
-    全員が見える形にしたい場合は、「📋 名前＋URL をコピー」でコピーした内容を渡してもらえれば、
-    HTML に直接埋め込んだ共有版を作成します。
+    ℹ️ 「8月以降」の15件は名前をページ内に埋め込み済みなので、<strong>どの端末で開いても同じ名前</strong>が出ます。
+    行を書き換えた場合、その上書きだけは<strong>この端末のブラウザ内だけ</strong>に保存されます（他の人には見えません）。
+    書き換えた名前も全員に見せたい場合は、「📋 名前＋URL をコピー」でコピーした内容を渡してください（ページに埋め込みます）。
+    「↩︎ 入力した名前をリセット」で端末の上書きを消すと、埋め込みの名前に戻ります。
   </p>
 </main>
 
 <textarea id="ytClipFallback" style="position:fixed;left:-9999px;top:-9999px;" aria-hidden="true"></textarea>
 
 <script>
-  // 貼り付けられた 21 件から重複を除いた 16 件（貼り付け順を維持）
+  // 各行 { id, name, group }。name は HTML 埋め込みの既定名 (全端末で見える)。
+  //   端末で入力した名前があれば localStorage 側が優先される (個人メモとして上書き可)。
+  // 「8月以降」15件 = 2026-08-06 に塾長が自分宛に送ったメールの再生リストリンク。
+  //   name は YouTube の実タイトルと oEmbed で全件照合済み (曜日×限は時間割 _TIMETABLE_CLASSES と
+  //   一致しない箇所があるため、科目名は付けずタイトルのまま載せている)。
   var PLAYLISTS = [
-    'PLj1sTb-oInWKwHn7FugLNDHInn3M7fmPT',
-    'PLj1sTb-oInWL2JhEy5j3ZWiOFTs-66G1b',
-    'PLj1sTb-oInWKlCjlfEAv7OSqjJwIR5jZM',
-    'PLj1sTb-oInWL6pa0Cir7ML1pehcLeMdp3',
-    'PLj1sTb-oInWJzRaD2pMZC2sOUM46mWRUV',
-    'PLj1sTb-oInWLMLD3qIQ0A1AVrLshmaWvc',
-    'PLj1sTb-oInWLj3vfGE-udTl_VomCgCtl4',
-    'PLj1sTb-oInWLPMaOZBYaRIBiIlUSJeCMp',
-    'PLj1sTb-oInWItRlAz0VZHoSvVxY4mEMzZ',
-    'PLj1sTb-oInWJo4oq_TSj1KMBnB0KNEZzE',
-    'PLj1sTb-oInWKS7ugVeytMDnj2ja6qW6sW',
-    'PLj1sTb-oInWJCjcssIf3DLi2-qdBacLPH',
-    'PLj1sTb-oInWJjy60hYRpIQKjNE47Br3xS',
-    'PLj1sTb-oInWKGpY5LYVmN4D8mReUv2dEh',
-    'PLj1sTb-oInWJdqYj3R2PSODSBzDmH4pHZ',
-    'PLj1sTb-oInWJAXL1B232-gZpLsB6Yrk5j'
+    { id: 'PLHUXOz9CPaWE', name: '8月以降月曜日1時間目',  group: '8月以降（2026年8月〜）' },
+    { id: 'PLfslFUkIoJN8', name: '8月以降月曜日２限',      group: '8月以降（2026年8月〜）' },
+    { id: 'PLWH04kVmECpA', name: '8月以降月曜日３限',      group: '8月以降（2026年8月〜）' },
+    { id: 'PLCHNQHj3JXmQ', name: '8月以降火曜日１時間目',  group: '8月以降（2026年8月〜）' },
+    { id: 'PLO_a8uJco8hY', name: '8月以降火曜日２時間目',  group: '8月以降（2026年8月〜）' },
+    { id: 'PLLr055aaFS2A', name: '8月以降火曜日３時間目',  group: '8月以降（2026年8月〜）' },
+    { id: 'PLL22Q_jMYtsw', name: '8月以降水曜日１時間目',  group: '8月以降（2026年8月〜）' },
+    { id: 'PLCDURl6Km1as', name: '8月以降水曜日2時間目',  group: '8月以降（2026年8月〜）' },
+    { id: 'PLPP4hbmxK_f0', name: '8月以降水曜日3時間目',  group: '8月以降（2026年8月〜）' },
+    { id: 'PLDub1db56dII', name: '8月以降木曜日１時間目',  group: '8月以降（2026年8月〜）' },
+    { id: 'PLFXX037HHnUE', name: '8月以降木曜日2時間目',  group: '8月以降（2026年8月〜）' },
+    { id: 'PLcTC8fMCPw4c', name: '8月以降金曜日1時間目',  group: '8月以降（2026年8月〜）' },
+    { id: 'PLLZmWZqCd8HA', name: '8月以降金曜日2時間目',  group: '8月以降（2026年8月〜）' },
+    { id: 'PLRmTReqKSR74', name: '8月以降金曜日3時間目',  group: '8月以降（2026年8月〜）' },
+    { id: 'PLHUGsOvGEnmg', name: '8月以降日曜日１時間目',  group: '8月以降（2026年8月〜）' },
+    // 以前の 16 件（貼り付け順を維持・名前は端末入力のまま）
+    { id: 'PLj1sTb-oInWKwHn7FugLNDHInn3M7fmPT', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWL2JhEy5j3ZWiOFTs-66G1b', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWKlCjlfEAv7OSqjJwIR5jZM', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWL6pa0Cir7ML1pehcLeMdp3', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWJzRaD2pMZC2sOUM46mWRUV', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWLMLD3qIQ0A1AVrLshmaWvc', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWLj3vfGE-udTl_VomCgCtl4', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWLPMaOZBYaRIBiIlUSJeCMp', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWItRlAz0VZHoSvVxY4mEMzZ', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWJo4oq_TSj1KMBnB0KNEZzE', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWKS7ugVeytMDnj2ja6qW6sW', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWJCjcssIf3DLi2-qdBacLPH', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWJjy60hYRpIQKjNE47Br3xS', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWKGpY5LYVmN4D8mReUv2dEh', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWJdqYj3R2PSODSBzDmH4pHZ', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' },
+    { id: 'PLj1sTb-oInWJAXL1B232-gZpLsB6Yrk5j', name: '', group: '以前の再生リスト（名前は未登録・空欄が正常）' }
   ];
 
   var STORE_KEY = function (id) { return 'yt_playlist_name::' + id; };
@@ -123,7 +146,31 @@
     saveTimer = setTimeout(function () { saveIndicator.classList.remove('show'); }, 1200);
   }
 
-  PLAYLISTS.forEach(function (id, i) {
+  // 表示に使う名前: 端末で入力した名前 > HTML 埋め込みの既定名。
+  //   ★空文字も「端末で消した」という意思なので尊重する (空を無視すると、消しても
+  //     埋め込み名が復活するのに「✓保存しました」と出る = 嘘の成功表示になる)。
+  //     埋め込み名に戻したいときは「↩︎ 入力した名前をリセット」を使う。
+  function effectiveName(p) {
+    var stored = null;
+    try { stored = localStorage.getItem(STORE_KEY(p.id)); } catch (e) {}
+    return stored !== null ? stored : (p.name || '');
+  }
+
+  var lastGroup = null;
+  PLAYLISTS.forEach(function (p, i) {
+    var id = p.id;
+
+    if (p.group && p.group !== lastGroup) {
+      lastGroup = p.group;
+      var gtr = document.createElement('tr');
+      var gtd = document.createElement('td');
+      gtd.className = 'yt-group';
+      gtd.colSpan = 3;
+      gtd.textContent = p.group;
+      gtr.appendChild(gtd);
+      tbody.appendChild(gtr);
+    }
+
     var tr = document.createElement('tr');
 
     var num = document.createElement('td');
@@ -135,7 +182,7 @@
     input.type = 'text';
     input.className = 'yt-name-input';
     input.placeholder = '科目・単元名を入力（例: 数学ⅠA 二次関数）';
-    try { input.value = localStorage.getItem(STORE_KEY(id)) || ''; } catch (e) { input.value = ''; }
+    input.value = effectiveName(p);
     input.addEventListener('input', function () {
       try { localStorage.setItem(STORE_KEY(id), input.value); flashSaved(); } catch (e) {}
     });
@@ -161,12 +208,13 @@
     tbody.appendChild(tr);
   });
 
+  // 件数バッジ (行数と必ず一致させる)
+  document.getElementById('ytCount').textContent = PLAYLISTS.length + ' 件';
+
   // 名前＋URL をコピー（塾長に渡して共有版を作るとき用）
   document.getElementById('ytCopyBtn').addEventListener('click', function () {
-    var lines = PLAYLISTS.map(function (id, i) {
-      var name = '';
-      try { name = (localStorage.getItem(STORE_KEY(id)) || '').trim(); } catch (e) {}
-      return (i + 1) + '\t' + name + '\t' + urlFor(id);
+    var lines = PLAYLISTS.map(function (p, i) {
+      return (i + 1) + '\t' + effectiveName(p).trim() + '\t' + urlFor(p.id);
     });
     var text = lines.join('\n');
     var done = function () {
@@ -189,12 +237,12 @@
     try { document.execCommand('copy'); done(); } catch (e) { window.prompt('コピーしてください:', text); }
   }
 
-  // 入力した名前をリセット
+  // 入力した名前をリセット (= 端末の上書きを消して、埋め込みの既定名に戻す)
   document.getElementById('ytClearBtn').addEventListener('click', function () {
-    if (!window.confirm('この端末に保存した名前をすべて消去します。よろしいですか？')) return;
-    PLAYLISTS.forEach(function (id) { try { localStorage.removeItem(STORE_KEY(id)); } catch (e) {} });
+    if (!window.confirm('この端末で入力した名前を消し、既定の名前に戻します。よろしいですか？')) return;
+    PLAYLISTS.forEach(function (p) { try { localStorage.removeItem(STORE_KEY(p.id)); } catch (e) {} });
     var inputs = document.querySelectorAll('.yt-name-input');
-    for (var i = 0; i < inputs.length; i++) inputs[i].value = '';
+    for (var i = 0; i < inputs.length; i++) inputs[i].value = PLAYLISTS[i] ? (PLAYLISTS[i].name || '') : '';
     flashSaved();
   });
 </script>
