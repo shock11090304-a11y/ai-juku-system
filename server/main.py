@@ -670,6 +670,15 @@ PLAN_DAILY_TOKEN_BUDGET = {
     "trial":             100_000,
 }
 
+# 🏷 /api/ai/call が受け付ける kind の allowlist。events.name (`ai_call_{kind}`) と
+#   anthropic_usage_log.kind に入るため、未知の値を素通しすると CEO ダッシュの集計が汚れる。
+#   実績のある値 (本番 events 30日) + フロント (app.js / mypage.js) が送る値を網羅する。
+AI_CALL_KINDS = {
+    "chat", "vision", "diagnostic", "curriculum", "essay", "problems",
+    "parent", "prep", "speaking", "textbook", "silent_fail",
+    "exam_photo_scan", "exam_pdf_scan",
+}
+
 # ==========================================================================
 # 認証（マジックリンク方式）
 # ==========================================================================
@@ -34802,17 +34811,18 @@ def _check_ai_budget(student_id: int) -> None:
     conn.close()
     if total >= budget:
         # Plan 別に upgrade 文言を出し分け (premium tier は upgrade 不要)
+        # ★「明日 (JST 0時) にリセット」とは書かないこと。集計は移動窓 (直近24h・上の
+        #   one_day_ago 参照) なので 0 時では戻らず、22 時に到達した生徒は翌 22 時まで解除
+        #   されない。「0時に戻る」と案内すると、戻らないのを不具合と受け取られる。
+        # ★{plan} を素で埋めないこと。founder_special 等の内部スラッグが生徒に出る。
+        # ★待ち時間の桁まで書くこと。「時間をおいて」だけだと数分後に押し直して裏切られる。
+        #   移動窓なので上界は厳密に 24 時間 (最後に使った分が窓から外れるまで)。
+        _wait = ("使った分は 24 時間かけて順に戻ります。数分では再開しないので、"
+                 "数時間〜最大 24 時間あけてからお試しください。")
         if is_premium_tier:
-            detail = (
-                f"AI_BUDGET_PREMIUM:1日あたりのAI利用上限({budget:,}トークン)に達しました。"
-                f"明日(JST 0時頃)にリセットされます。{plan}プランは大量生成にも耐える設計ですが、"
-                f"教材一括生成等で稀に到達することがあります。"
-            )
+            detail = f"AI_BUDGET_PREMIUM:直近24時間のAI利用が上限({budget:,}トークン)に達しました。{_wait}"
         else:
-            detail = (
-                f"AI_BUDGET_TRIAL:1日あたりのAI利用上限({budget:,}トークン)に達しました。"
-                f"明日リセットされます。プレミアムプランなら 1日 2,000,000 トークンまで利用可能です。"
-            )
+            detail = f"AI_BUDGET_TRIAL:直近24時間のAI利用が上限({budget:,}トークン)に達しました。{_wait}"
         raise HTTPException(status_code=429, detail=detail)
 
 
@@ -35004,6 +35014,14 @@ def ai_proxy(payload: AIProxyRequest, request: Request, authorization: Optional[
     #      なりすまし を _verify_student_active と等価以上にゲートするため、これだけで在籍検証も兼ねる。
     #      認証後 payload.student_id を token 由来 id に上書きし、以降の全 downstream(budget/usage/events)を安全化。
     #      DBエラー時は 500 を裸文字列ではなく JSON で返す。
+    # 🏷 kind の正規化 (2026-08-07): kind はクライアントが自由に決められ、検証が無かった。
+    #   任意文字列がそのまま events.name (`ai_call_{kind}`) と anthropic_usage_log.kind に入るため、
+    #   CEO ダッシュの利用内訳・原価内訳が生徒の入力で汚れる。allowlist 外は "other" に寄せる。
+    #   ★新しい kind をフロントに足したらここにも足すこと (足し忘れると "other" に丸められ、
+    #     CEO ダッシュの内訳から消える)。
+    _k = (payload.kind or "chat").strip().lower()
+    payload.kind = _k if _k in AI_CALL_KINDS else "other"
+
     student_row = None
     try:
         student_row = _get_current_student(authorization)

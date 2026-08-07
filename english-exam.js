@@ -718,7 +718,19 @@ async function callClaudeJson({ system, user, model = MODEL_DEFAULT, maxTokens =
       });
       if (!res.ok) {
         const t = await res.text();
-        throw new Error(`Backend AI ${res.status}: ${t.slice(0, 200)}`);
+        // 🚨 2026-08-07: body をそのまま載せると英語の生 JSON (例 429 の
+        //   "Too many AI requests. Please wait a minute.") が語中で切れて生徒に出る。
+        //   原文は console に残し、画面には平易な文言だけ出す。
+        console.warn('[exam] backend AI error:', res.status, t.slice(0, 300));
+        let _d = '';
+        try { _d = String((JSON.parse(t) || {}).detail || ''); } catch (_) { _d = ''; }
+        if (res.status === 429) {
+          throw new Error(_d.startsWith('AI_BUDGET_')
+            ? _d.replace(/^AI_BUDGET_[A-Z0-9_]+:/, '')
+            : '短い間に何度も実行されました。少し待ってからお試しください。');
+        }
+        if (res.status === 401) throw new Error('ログインの有効期限が切れています。ログインし直してください。');
+        throw new Error(`AI との通信に失敗しました。少し時間をおいてお試しください。(コード ${res.status})`);
       }
       data = await res.json();
     } else {
@@ -761,7 +773,24 @@ async function callClaudeJson({ system, user, model = MODEL_DEFAULT, maxTokens =
   if (text.startsWith('```')) {
     text = text.replace(/^```(?:json)?\s*/, '').replace(/```\s*$/, '').trim();
   }
-  return JSON.parse(text);
+  // 🚨 2026-08-07: max_tokens で切られた JSON は必ず JSON.parse に失敗する。
+  //   それを黙って「AI 生成失敗」に流すと、生徒には通信エラーと同じ見た目になり、再試行ボタンを
+  //   押す → また上限で切られる、の無限ループになる (実測: ある生徒の 43 回中 17 回が
+  //   output ちょうど 4000 = 打ち切り。出力トークンの約 47% が捨てられていた)。
+  //   stop_reason を見て、切られたときは原因が分かる文言で投げる。
+  //   ★この関数は問題生成と記述採点の共通口なので、文言は「問題数を減らす」のような
+  //     生成側限定の指示にしないこと。
+  //   ★parse を先に試すこと。上限ちょうどで JSON が閉じている場合は従来どおり成功させたい
+  //     (無条件に投げると、これまで通っていたものを捨てて採点が落ちる)。
+  //   ★OpenAI 互換フォールバック時は finish_reason が 'length' で来る (server 側が素通しする)。
+  try {
+    return JSON.parse(text);
+  } catch (parseErr) {
+    if (data.stop_reason === 'max_tokens' || data.stop_reason === 'length') {
+      throw new Error('AI の回答が最後まで届きませんでした。もう一度お試しください');
+    }
+    throw parseErr;
+  }
 }
 
 // ==========================================================================
@@ -2157,6 +2186,12 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
   // 2) Pool miss or 復習モード → AI 生成
   if (!payload && isLiveMode()) {
     try {
+      // ⚠️ 2026-08-07: この経路は出力の約 34% が maxTokens=4000 で打ち切られて捨てられている
+      //   (実測 53 件中 18 件 = 34% が output ちょうど 4000)。maxTokens を上げれば解消するが、
+      //   timeoutMs (既定 30 秒) も一緒に上げる必要があり、そうすると showRunner が
+      //   generateAndShowQuestions を await する前に startTimer を呼んでいるため、生成待ち時間が
+      //   そのまま試験時間から引かれる (今も最大 30 秒引かれている)。タイマー開始位置の修正と
+      //   セットでないと生徒の得点に響くので、別コミットに分ける。ここは据え置き。
       payload = await callClaudeJson({ system, user, model: MODEL_DEFAULT, maxTokens: 4000 });
       questionSource = isReviewMode ? 'ai_review' : 'ai_fresh';
       console.log(`[exam] 🤖 AI generated (${questionSource}): ${(payload && payload.questions || []).length} questions`);
@@ -5596,7 +5631,10 @@ function renderCurriculum(data) {
   // note は必ず可視の1行で出す (title 属性はスマホで見えない = 肝心の案内が主要端末で全損するため)。
   // 文面は過去形: この結果は localStorage に保存され後日そのまま再描画されるので、「今混んでいる」と断定しない
   const FALLBACK_LABELS = {
-    // 上限はリセットされるまで解けない (=すぐ押し直しても同じ簡易版が返る) ので、「翌朝以降に」と条件を明示する
+    // 上限が戻るまで解けない (=すぐ押し直しても同じ簡易版が返る) ので、「翌朝以降に」と条件を明示する。
+    // ★ここは _check_ai_budget (直近24hの移動窓) とは別物。daily_cap を出すのは
+    //   /api/curriculum/generate の _CURRICULUM_DAILY_CAP_STATE で、UTC 日付が変わった瞬間に
+    //   カウンタが 0 に戻る = JST 09:00 の一括リセット。「朝9時」で正しいので書き換えないこと。
     daily_cap: { text: '⚠ 混雑中・簡易版', note: 'その時点で本日ぶんの AI 生成上限に達していたため、簡易プランを表示しています。上限は日本時間の朝 9 時ごろにリセットされるので、翌朝以降にあらためて生成すると AI 版が作れます。' },
     ai_error: { text: '⚠ AI応答なし・簡易版', note: 'AI から応答が得られなかったため、簡易プランを表示しています。少し時間をおいて、もう一度生成してみてください。' },
     no_key: { text: '⚠ 簡易版', note: 'AI 生成が使えない状態のため、簡易プランを表示しています。' },

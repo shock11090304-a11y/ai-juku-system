@@ -1281,9 +1281,13 @@ function showQuotaExhaustedDialog(feature, message) {
   const existing = document.getElementById('quotaExhaustedModal');
   if (existing) existing.remove();
   // backend の prefix で premium tier 判定 (PREMIUM_TIER_PLANS に該当するプランは upgrade 不要)
-  const isPremium = String(message || '').startsWith('AI_BUDGET_PREMIUM:');
+  // ★判定も総称で持つこと。剥がし (下の replace) だけ総称にして判定を決め打ちにすると、
+  //   新しい tier 接頭辞を足したときプレミアム相当の生徒に ¥39,800 の勧誘が出る。
+  const isPremium = /^AI_BUDGET_(PREMIUM|FOUNDER|FAMILY)[A-Z0-9_]*:/.test(String(message || ''));
   // prefix を文言から除去
-  const cleanMessage = String(message || '').replace(/^AI_BUDGET_(PREMIUM|TRIAL):/, '');
+  // ★接頭辞は総称で剥がす。接頭辞を増やしたときにここを直し忘れると、生徒の画面に
+  //   「AI_BUDGET_XXX:」という内部文字列がそのまま出る。アンダースコアも含めて剥がすこと。
+  const cleanMessage = String(message || '').replace(/^AI_BUDGET_[A-Z0-9_]+:/, '');
   // 既存 student の plan 状況も別経路で取得 (frontend cache)
   const student = (typeof getCurrentStudent === 'function') ? getCurrentStudent() : null;
   const planFromStudent = student && student.plan ? String(student.plan) : '';
@@ -1295,23 +1299,25 @@ function showQuotaExhaustedDialog(feature, message) {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
 
   if (userIsPremium) {
-    // プレミアム: アップグレード勧誘なし、明日リセット案内のみ
+    // プレミアム: アップグレード勧誘なし。
+    // ★上限値・回復タイミングをここにハードコードしないこと。上限はプラン別に違い、
+    //   窓は移動窓 (直近24h) なので「1日 2,000,000 トークンまで」「JST 0時にリセット」と
+    //   固定で書くと、実際に止められた理由と食い違う。数値と時間の説明はサーバが返す
+    //   cleanMessage に一本化する。
     modal.innerHTML = `
       <div style="background:linear-gradient(135deg,#1a1432,#2a1a48);border:1px solid rgba(167,139,250,0.4);border-radius:18px;padding:1.8rem;max-width:480px;width:100%;color:#f5f5fa;">
         <div style="font-size:2rem;margin-bottom:0.5rem;">⏰</div>
-        <h3 style="font-size:1.3rem;margin:0 0 0.5rem 0;color:#fbbf24;">本日の AI 利用上限に達しました</h3>
+        <h3 style="font-size:1.3rem;margin:0 0 0.5rem 0;color:#fbbf24;">AI の利用上限に達しました</h3>
         <p style="font-size:0.92rem;color:#cbd5e1;margin-bottom:1rem;line-height:1.6;">${escapeHtml(cleanMessage)}</p>
         <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:0.9rem;margin-bottom:1.2rem;">
-          <div style="font-weight:800;color:#4ade80;margin-bottom:0.3rem;">✓ あなたは ${escapeHtml(planFromStudent || 'プレミアム')} プランをご利用中</div>
           <p style="margin:0;font-size:0.85rem;color:#cbd5e1;line-height:1.6;">
-            本日 1日 2,000,000 トークンまで利用可能。<strong>JST 0時頃に自動リセット</strong>されます。
-            濃密な学習・教材一括生成 等で稀に到達することがあります。
+            弱点克服ドリル・⏱ 隙間時間ドリル・AI 単語帳は、上限に関係なくいつでも解けます。
           </p>
         </div>
-        <div style="display:flex;gap:0.5rem;">
-          <button onclick="document.getElementById('quotaExhaustedModal').remove()" style="background:linear-gradient(135deg,#6366f1,#a78bfa);color:white;border:none;padding:0.7rem 1.2rem;border-radius:8px;font-weight:800;font-size:0.95rem;cursor:pointer;flex:1;">了解</button>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <a href="dojo-drill.html?tab=weakness" style="background:linear-gradient(135deg,#22c55e,#3b82f6);color:white;padding:0.7rem 1.2rem;border-radius:8px;text-decoration:none;font-weight:800;font-size:0.95rem;flex:1;text-align:center;">✍️ 弱点克服ドリルへ</a>
+          <button onclick="document.getElementById('quotaExhaustedModal').remove()" style="background:rgba(255,255,255,0.08);color:#cbd5e1;border:1px solid rgba(255,255,255,0.15);padding:0.7rem 1.2rem;border-radius:8px;font-weight:700;font-size:0.95rem;cursor:pointer;">閉じる</button>
         </div>
-        <p style="font-size:0.78rem;color:#71717a;margin-top:0.8rem;text-align:center;">明日 (JST 0:00 頃) に上限がリセットされます</p>
       </div>
     `;
   } else {
@@ -1319,21 +1325,26 @@ function showQuotaExhaustedDialog(feature, message) {
     modal.innerHTML = `
       <div style="background:linear-gradient(135deg,#1a1432,#2a1a48);border:1px solid rgba(167,139,250,0.4);border-radius:18px;padding:1.8rem;max-width:480px;width:100%;color:#f5f5fa;">
         <div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div>
-        <h3 style="font-size:1.3rem;margin:0 0 0.5rem 0;color:#fbbf24;">本日の AI 利用上限に達しました</h3>
+        <h3 style="font-size:1.3rem;margin:0 0 0.5rem 0;color:#fbbf24;">AI の利用上限に達しました</h3>
         <p style="font-size:0.92rem;color:#cbd5e1;margin-bottom:1rem;line-height:1.6;">${escapeHtml(cleanMessage)}</p>
         <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:0.9rem;margin-bottom:1.2rem;">
           <div style="font-weight:800;color:#a78bfa;margin-bottom:0.3rem;">プレミアム ¥39,800/月</div>
           <ul style="margin:0;padding-left:1.2rem;font-size:0.88rem;color:#cbd5e1;line-height:1.7;">
-            <li>1日 <strong style="color:#fbbf24;">2,000,000 トークン</strong> (体験の 20倍)</li>
+            <li>AI の利用枠が<strong style="color:#fbbf24;">大幅に増えます</strong> (体験の数倍〜20倍・現在のプランにより異なります)</li>
             <li>最上位AIモデル Opus 4.7 (Extended Thinking)</li>
             <li>優先処理 + 保護者向け詳細レポート</li>
           </ul>
         </div>
+        <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:0.9rem;margin-bottom:1.2rem;">
+          <p style="margin:0;font-size:0.85rem;color:#cbd5e1;line-height:1.6;">
+            弱点克服ドリル・⏱ 隙間時間ドリル・AI 単語帳は、上限に関係なくいつでも解けます。
+          </p>
+        </div>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
           <a href="upgrade.html" style="background:linear-gradient(135deg,#8b5cf6,#ec4899);color:white;padding:0.7rem 1.2rem;border-radius:8px;text-decoration:none;font-weight:800;font-size:0.95rem;flex:1;text-align:center;">プレミアムにアップグレード →</a>
+          <a href="dojo-drill.html?tab=weakness" style="background:rgba(34,197,94,0.15);color:#86efac;border:1px solid rgba(34,197,94,0.4);padding:0.7rem 1.2rem;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.95rem;text-align:center;">✍️ ドリルへ</a>
           <button onclick="document.getElementById('quotaExhaustedModal').remove()" style="background:rgba(255,255,255,0.08);color:#cbd5e1;border:1px solid rgba(255,255,255,0.15);padding:0.7rem 1.2rem;border-radius:8px;font-weight:700;font-size:0.95rem;cursor:pointer;">閉じる</button>
         </div>
-        <p style="font-size:0.78rem;color:#71717a;margin-top:0.8rem;text-align:center;">明日 (JST 0:00 頃) に上限がリセットされます</p>
       </div>
     `;
   }
@@ -1403,13 +1414,15 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
       if (res.status === 429) {
         const errData = await res.json().catch(() => ({}));
         const detail = String(errData.detail || '');
-        const isDailyBudget = detail.startsWith('AI_BUDGET_PREMIUM:') || detail.startsWith('AI_BUDGET_TRIAL:');
+        // ★総称で判定する (接頭辞は後から増える)。個別列挙だと新種を取りこぼし、
+        //   429 が「AI への問い合わせが拒否されました (429)」という無関係な文言になる。
+        const isDailyBudget = detail.startsWith('AI_BUDGET_');
         if (feature || isDailyBudget) {
-          const msg = detail || '本日の AI 利用上限に達しました。明日リセットされます。';
+          const msg = detail || 'AI の利用上限に達しました。時間をおいてからお試しください。';
           if (typeof showQuotaExhaustedDialog === 'function') {
             showQuotaExhaustedDialog(feature || 'daily_budget', msg);
           } else {
-            alert('⚠️ ' + msg.replace(/^AI_BUDGET_(PREMIUM|TRIAL):/, ''));
+            alert('⚠️ ' + msg.replace(/^AI_BUDGET_[A-Z0-9_]+:/, ''));
           }
           if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
           throw new Error('QUOTA_EXHAUSTED:' + (feature || 'daily_budget'));
@@ -1453,6 +1466,20 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
       }
     } catch (e) {
       if (e.name === 'AbortError') throw e;
+      // ★上限 (429) は自分で投げた QUOTA_EXHAUSTED が同じ try に落ちてくる。ここで文字列 return に
+      //   すると呼び出し側は成功扱いになり、生徒に「Wi-Fi/モバイル通信を確認」+ 内部識別子
+      //   "QUOTA_EXHAUSTED:daily_budget" が出たうえ、その文が chatHistory とサーバ履歴に保存される。
+      //   sendChatMessage 側の catch で扱うため投げ直す。
+      //   ★chat と vision に限定する。vision (写真/PDF つき質問) の呼び出し元も sendChatMessage
+      //     なので、ここで投げないと demoResponse の「【画像解説】画像を拝見しました…」という
+      //     中身の無い定型文が正規の回答として描画され、chatHistory とサーバの指導ログにも残る
+      //     (直前コミット 2f24158 で止めた「偽解析」と同じ形)。
+      //   ★他の kind (essay/diagnostic/curriculum/parent/prep/speaking) はまだ投げない。
+      //     呼び出し元が try/catch を持たず、throw すると画面が固着する (essay は月20回上限なので
+      //     毎月必ず踏む)。なお現状それらが返しているのは空のプレースホルダではなく
+      //     demoResponse の**作り話**(架空の点数入り添削など)なので、catch を足すだけでは足りず
+      //     step2 の demoResponse フォールバックごと塞ぐ必要がある。別コミットで。
+      if ((kind === 'chat' || kind === 'vision') && String(e && e.message || '').startsWith('QUOTA_EXHAUSTED')) throw e;
       console.warn('Backend AI proxy failed:', e);
       if (isJsonKind) {
         if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
@@ -3275,8 +3302,12 @@ async function sendChatMessage() {
 
   const thinkingEl = appendMessage('assistant', '考え中...', false);
   thinkingEl.querySelector('.msg-body').classList.add('thinking');
+  // ★宣言は try の外に置くこと。中で const/let すると catch より後ろ (回答の描画・履歴保存) から
+  //   参照できず、成功パスが必ず ReferenceError で落ちる = 全生徒のチャットが無応答になる。
+  let systemPrompt, response;
+  try {
 
-  const systemPrompt = `あなたは優秀な学習塾のAIチューターです。生徒は${student.grade || '学年未設定'}の${student.name || 'ゲスト'}さんで、志望校は${student.goal || '未設定'}です。
+  systemPrompt = `あなたは優秀な学習塾のAIチューターです。生徒は${student.grade || '学年未設定'}の${student.name || 'ゲスト'}さんで、志望校は${student.goal || '未設定'}です。
 
 【最優先: 質問内容から科目・話題を自動判定】
 生徒の質問を必ず先に読み、以下のどれに該当するかを自分で判定してから回答してください:
@@ -3379,7 +3410,6 @@ ${/英語|英文|英作文|長文|語彙|単語|英検|TOEFL|TOEIC|IELTS/.test(s
 ` : ''}
 ${attached.length ? (attached.some(a => a.isPdf) ? '- 添付された PDF (問題プリント・参考書ページ等) の内容を正確に読み取り、解説してください。PDF が複数ページの場合は全ページを参照する' : ('- 添付された' + (attached.length > 1 ? attached.length + ' 枚の画像' : '画像') + '（問題の写真・スクリーンショット）の内容を正確に読み取り、' + (attached.length > 1 ? 'すべての画像を関連づけて 1 つの問題として ' : '') + '解説してください')) : ''}`;
 
-  let response;
   if (attached.length) {
     // Vision / Document AI: 画像 (type:image・最大5枚) または PDF (type:document・単一) で callClaude
     // 🛡️ 2026-05-28: PDF 添付は Claude Sonnet native PDF サポート (type:document) で処理
@@ -3411,6 +3441,30 @@ ${attached.length ? (attached.some(a => a.isPdf) ? '- 添付された PDF (問�
       { role: 'user', content: text }
     ];
     response = await callClaude(systemPrompt, text, { messages, kind: 'chat', maxTokens: 4000 });  // 2026-06-02: 1500→4000 (長い解説の途切れ対策・超過時は「続き」ボタン)
+  }
+  } catch (e) {
+    // 🚨 2026-08-07: ここに catch が無く、callClaude が throw すると (日次上限 429 の
+    //   QUOTA_EXHAUSTED など) thinkingEl.remove() に到達せず「考え中...」の吹き出しが
+    //   消えないまま固まっていた。上限に達した生徒は毎回これを踏む。
+    thinkingEl.remove();
+    console.warn('sendChatMessage failed:', e);
+    // 連投すると前の質問が abort される (abortKey=kind)。その分のエラーを末尾に足すと、
+    // 生徒は「今送った質問が失敗した」と読む。abort は黙って終わる。
+    if (e && e.name === 'AbortError') return;
+    // ★save=false: エラー文を chatHistory に残すと、リロード後も居座り、次ターンの
+    //   文脈 (slice(-8)) に assistant 発話として混ざって AI が誤った前提で話す。
+    if (String(e && e.message || '').startsWith('QUOTA_EXHAUSTED')) {
+      // 上限系は showQuotaExhaustedDialog が既に説明を出しているので、チャット側は短く残す
+      appendMessage('assistant', '⚠️ AI の利用上限に達しました。上のタブの「📖 AI単語帳 (SRS)」は上限に関係なく使えます。ドリルはマイページの「弱点克服ドリル」から解けます。', false);
+    } else {
+      // ★catch を足したことで unhandledrejection がサーバに上がらなくなる。想定外の例外は
+      //   明示的に報告しないと「生徒には⚠️、塾長のダッシュには無風」になる。
+      try { if (typeof _reportSilentFail === 'function') _reportSilentFail('chat_send', e); } catch (_) {}
+      appendMessage('assistant', '⚠️ 応答を取得できませんでした。少し時間をおいて、もう一度お試しください。', false);
+    }
+    const _c = document.getElementById('chatMessages');
+    if (_c) _c.scrollTop = _c.scrollHeight;
+    return;
   }
 
   thinkingEl.remove();

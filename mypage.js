@@ -1,3 +1,25 @@
+// 🚨 2026-08-07: AI 系 fetch の失敗を、生徒に見せてよい文言へ変換する共通ヘルパ。
+//   サーバは日次上限を 429 + detail "AI_BUDGET_<TIER>:<本文>" で返す。接頭辞は内部識別子なので
+//   必ず剥がすこと (app.js 側は showQuotaExhaustedDialog が同じことをしている)。
+function _mpAiErrorMessage(status, bodyText) {
+  // 原文は console に残す。整形後だけだと 500 系の切り分け材料が消える。
+  try { console.warn('[ai] raw error:', status, String(bodyText || '').slice(0, 300)); } catch (_) {}
+  let detail = '';
+  try { detail = String((JSON.parse(bodyText) || {}).detail || ''); } catch (_) { detail = ''; }
+  if (status === 429 && detail.startsWith('AI_BUDGET_')) {
+    return detail.replace(/^AI_BUDGET_[A-Z0-9_]+:/, '');
+  }
+  if (status === 429) return '混み合っています。少し時間をおいて、もう一度お試しください。';
+  if (status === 401) return 'ログインの有効期限が切れています。ログインし直してください。';
+  // 403 は「AIなし枠」だけでなく Origin 不許可・jailbreak 判定でも返る。プランのせいだと
+  // 断定すると、解約されたと誤解させたうえ塾長も設定を疑って空振りする。detail で見分ける。
+  if (status === 403 && detail.indexOf('塾生アプリ') >= 0) {
+    return 'このアカウントは塾生アプリ専用のため、AI 機能は使えません。宿題・予定・出欠・授業動画はこれまでどおり使えます。';
+  }
+  if (status === 403) return 'この操作は許可されていません。画面を開き直してもう一度お試しください。';
+  return `うまくいきませんでした。少し時間をおいて、もう一度お試しください。(コード ${status})`;
+}
+
 // ==========================================================================
 // Student Mypage - Gamified Learning Dashboard
 // ==========================================================================
@@ -1236,7 +1258,10 @@ async function handleMaterialPhoto(e) {
     });
     if (!res.ok) {
       const errTxt = await res.text();
-      throw new Error(`HTTP ${res.status}: ${errTxt.slice(0, 100)}`);
+      // 🚨 2026-08-07: mypage.html は app.js を読まないので showQuotaExhaustedDialog が無い。
+      //   429 の body をそのまま Error に載せると「HTTP 429: {"detail":"AI_BUDGET_PREMIUM:…」という
+      //   内部文字列つきの生 JSON が文の途中で切れて生徒の画面に出る。
+      throw new Error(_mpAiErrorMessage(res.status, errTxt));
     }
     const data = await res.json();
     const txt = (data.content || []).map(c => c.text || '').join('').trim();
@@ -1865,7 +1890,7 @@ async function _spCallAi(systemPrompt, userText, maxTokens) {
   });
   if (!res.ok) {
     const errTxt = await res.text();
-    throw new Error(`HTTP ${res.status}: ${errTxt.slice(0, 100)}`);
+    throw new Error(_mpAiErrorMessage(res.status, errTxt));  // 同上 (429 の生 JSON を出さない)
   }
   const data = await res.json();
   const txt = (data.content || []).map(c => c.text || '').join('').trim();
@@ -3350,7 +3375,7 @@ async function handleExamPhoto(e) {
     });
     if (!res.ok) {
       const errTxt = await res.text();
-      throw new Error(`HTTP ${res.status}: ${errTxt.slice(0, 120)}`);
+      throw new Error(_mpAiErrorMessage(res.status, errTxt));  // 同上 (429 等の生 JSON を出さない)
     }
     const data = await res.json();
     const txt = (data.content || []).map(c => c.text || '').join('').trim();

@@ -181,7 +181,19 @@
       });
       if (!res.ok) {
         const err = await res.text();
-        throw new Error(`API error: ${res.status} ${err.slice(0, 200)}`);
+        // 🚨 2026-08-07: 429 等の body をそのまま出すと「AI_BUDGET_PREMIUM:」という内部識別子つきの
+        //   生 JSON が生徒に見える。原文は console に残し、画面には平易な文言だけ出す。
+        console.warn('[material-scan] raw error:', res.status, String(err || '').slice(0, 300));
+        let _d = '';
+        try { _d = String((JSON.parse(err) || {}).detail || ''); } catch (_) { _d = ''; }
+        if (res.status === 429 && _d.startsWith('AI_BUDGET_')) {
+          throw new Error(_d.replace(/^AI_BUDGET_[A-Z0-9_]+:/, ''));
+        }
+        if (res.status === 403 && _d.indexOf('塾生アプリ') >= 0) {
+          throw new Error('このアカウントは塾生アプリ専用のため、AI 機能は使えません。');
+        }
+        if (res.status === 401) throw new Error('ログインの有効期限が切れています。ログインし直してください。');
+        throw new Error(`読み取りに失敗しました。少し時間をおいて、もう一度お試しください。(コード ${res.status})`);
       }
       const data = await res.json();
       const text = (data.content || []).map(c => c.text).join('').trim();
@@ -210,7 +222,11 @@
       resultCard.style.display = '';
       resultCard.scrollIntoView({behavior:'smooth', block:'start'});
     } catch (e) {
-      resultEl.innerHTML = `<div style="color:#fca5a5;background:rgba(239,68,68,0.1);padding:0.8rem;border-radius:8px;">⚠️ ${e.message}<br><small>※ ローカル開発時は backend (http://localhost:8000) と ANTHROPIC_API_KEY 設定が必要です。</small></div>`;
+      // ★開発者向けの注記を生徒に出さない。「AI_BUDGET_ を見せない」ために平易化した文言の
+      //   すぐ下に localhost:8000 や ANTHROPIC_API_KEY が出ると、生徒は自分の設定を疑う。
+      const _devNote = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+        ? '<br><small>※ ローカル開発時は backend (http://localhost:8000) と ANTHROPIC_API_KEY 設定が必要です。</small>' : '';
+      resultEl.innerHTML = `<div style="color:#fca5a5;background:rgba(239,68,68,0.1);padding:0.8rem;border-radius:8px;">⚠️ ${escapeHtml(String(e.message || ''))}${_devNote}</div>`;
       resultCard.style.display = '';
     } finally {
       scanBtn.disabled = false;
