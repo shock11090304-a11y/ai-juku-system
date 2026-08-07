@@ -45749,7 +45749,8 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
     conn = db()
     try:
         c = conn.cursor()
-        # 🎒 受講クラス (出欠の絞り込みに使用)。未設定([]/None) は全クラス扱い(移行フォールバック)。
+        # 🎒 受講クラス (出欠の絞り込みに使用)。未設定([]/None) は出欠 UI だけ全クラス扱い。
+        #   ★録画は 2026-08-07 から未設定でも全表示しない (下の録画ブロック参照)。
         c.execute("SELECT class_labels FROM students WHERE id = ?", (student["id"],))
         _clrow = c.fetchone()
         try:
@@ -45801,9 +45802,12 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
         #   → 授業に紐づく録画は **自分の受講クラスの分だけ** 返す。授業タイトルは時間割ラベル
         #     (_TIMETABLE_CLASSES) と完全一致する運用なので、students.class_labels と直接照合できる
         #     (本番実測でセッション13件・生徒の全ラベルとも表記ゆれ 0)。
-        #   ★受講クラス未設定 (my_classes 空) は従来どおり全部見せる = 移行フォールバック。
-        #     ここを「空なら何も見せない」にすると、未設定の通塾生 (2026-08-06 時点で 80名中35名) が
-        #     今日まで見られていた録画を一斉に失う。絞りを実効にするには先に受講クラスを埋めること。
+        #   ★[2026-08-07 塾長指示]「クラス未設定には見せなくていい」= 移行フォールバックを撤去。
+        #     受講クラス未設定 (my_classes 空) の生徒には授業に紐づく録画を一切出さない。
+        #     旧実装は「未設定なら全部見せる」で、82名中36名 (2026-08-07 実測) が全クラスの録画を
+        #     見られていた = クラス限定が半分しか効いていなかった。
+        #     ★この変更で、その36名は録画が0件になる。名簿 (students.class_labels) を埋めれば戻る。
+        #       埋め方: CEO「🏫 クラス別 受講生 一括登録」。
         #   ★授業に紐づかない録画 (session_id NULL) は全員向けの扱いで従来どおり全員に出す。
         #     クラス限定にしたい録画は必ず授業 (class_sessions) に紐づけて登録する。
         loose_recordings = []
@@ -45817,8 +45821,8 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             if r["session_id"] is None:
                 loose_recordings.append(item)        # 授業に紐づかない録画 (全員向け)
             elif r["session_id"] in sessions:
-                if my_classes and sessions[r["session_id"]]["title"] not in my_classes:
-                    continue                         # 受講していないクラスの録画は出さない
+                if sessions[r["session_id"]]["title"] not in my_classes:
+                    continue                         # 受講していないクラス / 未設定は出さない
                 sessions[r["session_id"]]["recordings"].append(item)
             # else: 親授業が非公開 → 出さない
         # 自分の出欠

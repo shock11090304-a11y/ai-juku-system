@@ -731,17 +731,26 @@
       var myCls = (feedData && feedData.my_classes) || [];
       // 全員向けの録画 (授業に紐づけずに登録したもの) が混ざるときは「〇〇のみ」と書くと嘘になる
       var hasCommon = recs.some(function (x) { return !x.sess; });
+      // ★受講クラス未設定 (myCls 空) のときこそ説明が要る。2026-08-07 から未設定の生徒には
+      //   授業に紐づく録画を出さない運用にしたので、黙って空にすると「動画が消えた」になる。
+      //   ここで「まだ録画はありません」と書くのは嘘 (録画は存在し、昨日まで見えていた)。
       var filterNote = myCls.length
         ? '<div class="card-meta" style="margin-bottom:0.6rem;">👤 ' + esc(myCls.join('・'))
             + (hasCommon ? ' と 全体向け ' : ' ') + 'の録画を表示しています</div>'
-        : '';
+        : '<div class="card-meta" style="margin-bottom:0.6rem;">👤 録画は受講クラスごとに配信しています</div>';
       if (!recs.length) {
         body.innerHTML = filterNote
           + '<div class="empty">🎬 '
           + (myCls.length
               ? esc(myCls.join('・')) + ' の録画はまだありません。<br>授業の録画が登録されるとここに並びます。'
-              : 'まだ録画はありません。<br>授業の録画が登録されるとここに並びます。')
+              : '授業の録画は、受けているクラスごとにお届けしています。<br>いまは<b>あなたのクラスがアプリに設定されていない</b>ため、表示できる録画がありません。<br><span style="color:#a1a1aa;">（録画がなくなったわけではありません。設定されると、そのクラスの録画がここに並びます。）</span>'
+              + '<div style="margin-top:0.8rem;"><button class="btn btn-primary" id="vidAskBtn">💬 塾長に知らせる</button></div>')
           + '</div>';
+        // ★「塾長にご連絡ください」だけ書いて導線が無いと、生徒は探して諦める。
+        //   このアプリには 💬 メッセージタブ (生徒→塾長の送信) があるのでそこへ送る。
+        //   ★showTab は IIFE 内なので inline onclick では ReferenceError になる。addEventListener で。
+        var _ask = body.querySelector('#vidAskBtn');
+        if (_ask) _ask.addEventListener('click', function () { showTab('messages'); });
         return;
       }
       body.innerHTML = filterNote + recs.map(function (x, i) {
