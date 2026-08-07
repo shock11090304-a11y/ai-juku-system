@@ -101,7 +101,22 @@ class Canvas:
         pts = " ".join(f"{self.X(px)},{self.Y(py)}" for px, py in [p1, p2, p3])
         self.parts.append(f'<polyline points="{pts}" fill="none" stroke="{NAVY}" stroke-width="1.1"/>')
 
-    def svg(self):
+    def svg(self, w_mm=None):
+        """w_mm を渡すと紙に出す幅を mm で固定する(高さは viewBox の縦横比から計算)。
+
+        ★既定(None)だと、紙の大きさは CSS の `.fig svg{max-height:44mm}` が決める。
+          つまり実効スケールは 44mm/H で、**size を大きくするほど図は小さく印刷される**。
+          縦長の図(H が大きい)ほど強く縮み、font-size=10 の軸ラベルまで一緒に潰れる
+          (A14 の散布図が H=190 で 6.0pt まで落ちた。H=125 の箱ひげ図は 9.0pt)。
+          自分で寸法を決めたいときは w_mm を渡す —— CSS の上限も inline style で外すので、
+          描画スケールは w_mm/W(pt 換算)で決まり、viewBox をいじっても紙の寸法は動かない。
+        """
         body = "".join(self.parts)
-        return (f'<svg viewBox="0 0 {self.W} {self.H}" xmlns="http://www.w3.org/2000/svg">'
+        box = ""
+        if w_mm:
+            h_mm = round(w_mm * self.H / self.W, 2)
+            box = (f' width="{w_mm}mm" height="{h_mm}mm"'
+                   f' style="width:{w_mm}mm;height:{h_mm}mm;'
+                   f'max-width:{w_mm}mm;max-height:{h_mm}mm"')
+        return (f'<svg viewBox="0 0 {self.W} {self.H}"{box} xmlns="http://www.w3.org/2000/svg">'
                 f'{body}</svg>')

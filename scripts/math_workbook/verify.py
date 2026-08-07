@@ -69,7 +69,7 @@ if __name__ == "__main__":
         #   kiso / kiso2 も UNITS + chk() の同じ規約なのでここで見る
         #   （av 方式の kisoA/I/II/III は verify_kisoA.py の担当。どちらにも属さない本を作らない）。
         mods = ["content_ia", "content_iib", "content_ia_v2", "content_iib_v2",
-                "content_kiso", "content_kiso2"]
+                "content_kiso", "content_kiso2", "content_ia_jaku"]
     total_fail = total_dup = 0
     checked = 0
     for m in mods:

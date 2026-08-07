@@ -91,6 +91,8 @@ WRITE_OK = {
     "chem_camp/katex_gate.py": "KaTeX 描画用の一時HTMLを書くだけ",
     "eng_hinshi_bunkai/qa.py": "出力ディレクトリを作るだけ",
     "kyotsu2026_mirror/build/qa_machine.py": "QA レポートを書くだけ",
+    "math_workbook/ia_jaku_gate.py": "KaTeX 描画用の一時HTML/PDFを書いて消すだけ",
+    "math_workbook/unit_check_ia_jaku.py": "KaTeX 描画用の一時HTML/PDFを書いて消すだけ",
 }
 
 # 合格を自称しながら違反を印字している状態を捕まえる。

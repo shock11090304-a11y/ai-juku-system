@@ -5,3 +5,5 @@ rewrite_out.json
 qa_ia.json
 qa_iib.json
 _build_*.html
+# 刷ったPDFは生成物(Desktopに納品)。リポジトリには置かない。
+数学IA_弱点発見トレーニング*.pdf
