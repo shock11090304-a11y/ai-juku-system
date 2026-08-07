@@ -168,8 +168,8 @@
 <body>
   <header class="appbar">
     <div class="brand">📚 トリリオン塾生アプリ</div>
-    <!-- 純粋な通塾生(is_tsujuku_app)には不要なので既定で非表示。AIプランも持つ生徒のみ feed 後に表示。 -->
-    <a class="back" id="mypageLink" href="mypage.html" style="display:none;">マイページ</a>
+    <!-- AI が使えない生徒(塾生アプリのみ枠)には不要なので既定で非表示。feed の ai_home_available で出す。 -->
+    <a class="back" id="mypageLink" href="mypage.html" style="display:none;">🤖 AI学習</a>
   </header>
 
   <main class="wrap">
@@ -1306,9 +1306,18 @@
       }
       // 認可OK → アプリ表示
       showAppChrome();
-      // マイページ導線: 純粋な通塾生(is_tsujuku_app===true)には出さない(owner方針)。
-      //   AIプランも持つ生徒(false)や旧バックエンド(undefined)では出す=AI管理へ戻れる。
-      if (feedData && feedData.is_tsujuku_app !== true) {
+      // マイページ導線: 「AI が使えるか」(feed.ai_home_available) で出し分ける。
+      //   ★[2026-08-07] 以前は is_tsujuku_app (=登録経路 referrer='塾生アプリ') で判定していたため、
+      //     塾長が承認時に「AIあり」を選んだ塾生アプリ生 (ai_disabled=0) にもボタンが出ず、
+      //     mypage.html 側の送り返しと合わせて AI管理に入る手段が 1 つも無かった
+      //     (2026-08-07 実測: 該当11名・うちログインできる6名・うち2名は入口が無いまま
+      //      直 URL で AI を使っていた)。
+      //     AIなし枠 (ai_disabled=1) は ai_home_available=false なので従来どおり出ない。
+      //   ★mypage.html の送り返し条件と必ず同じ値を見ること (片方だけだと押しても戻される)。
+      //   旧バックエンド (ai_home_available 未実装) では従来の登録経路判定に倒す = デプロイ順で
+      //     静的が先に出ても既存のAI生がボタンを失わない。
+      if (feedData && (feedData.ai_home_available === true
+                       || (feedData.ai_home_available === undefined && feedData.is_tsujuku_app !== true))) {
         var _ml = document.getElementById('mypageLink'); if (_ml) _ml.style.display = '';
       }
       renderSchedule();

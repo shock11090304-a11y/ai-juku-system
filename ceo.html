@@ -8787,6 +8787,22 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         row('志望校・目標', esc(st.goal || '未登録') + editGoalBtn),
         row('選択プラン',   planLabel),
         row('現在の状態',   `<strong>${esc(statusLabel)}</strong>`),
+        // 🤖 [2026-08-07] AI 可否を fold 内に出す。トグル (下の「🤖 AI利用」) は本クラス登録より
+        //   下にあって見えず、「この子は AI も使えるはずでは?」を一目で確かめられなかった。
+        //   ★ラベルはトグル側と同じ「AI利用」に揃える。AIなし枠は塾長が選んだ正常な状態なので
+        //     赤 (異常の色) では出さない。補足は通塾生 (塾生アプリを見られる人) のときだけ。
+        //   ★この行は「AI 枠が付いているか」(students.ai_disabled) だけを表す。在籍/期限は
+        //     1 行上の「現在の状態」の担当なので、ここで「利用可」と断定しない (体験切れ・
+        //     決済失敗・cron 未反映など、AI 枠はあるが今は使えない状態が複数あり、どれも
+        //     この行からは判定できない)。表記はすぐ下の AI トグルと揃える。
+        row('AI利用',       (function () {
+          if (st.ai_disabled) return `<span style="color:#fbbf24;">🏫 なし (塾生アプリのみ)</span>`;
+          var _honClass = (st.course === 'kokuritsu_nankan');
+          var _tsujuku  = _honClass || String(st.plan || '').toLowerCase() === 'student_addon';
+          var _inactive = !_honClass && (st.status === 'canceled' || st.status === 'expired');
+          return `<span style="color:#86efac;">✅ あり</span>`
+            + ((_tsujuku && !_inactive) ? ` <span style="color:#71717a;font-size:0.78rem;">(塾生アプリに「🤖 AI学習」ボタンが出ます)</span>` : '');
+        })()),
         row('体験終了日',   fmtDate(st.trial_end)),
         row('本契約開始日', fmtDate(st.paid_since)),
         row('最終ログイン', lastLoginHtml),

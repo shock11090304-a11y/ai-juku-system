@@ -45670,6 +45670,31 @@ def _is_juku_app_student(student_id) -> bool:
         conn.close()
 
 
+def _ai_home_available(student_id) -> bool:
+    """🤖 [2026-08-07] 「この生徒に AI管理(mypage) への導線を出してよいか」の単一ソース。
+    ★これは _is_juku_app_student (=登録経路) とは別の問い。塾生アプリ(class.html)の
+      マイページボタンと mypage 側の class.html への送り返しは、長らく登録経路
+      (referrer='塾生アプリ') で判定していたが、AI 可否の正典は 2026-07-04 新設の
+      students.ai_disabled であって登録経路ではない。塾長が承認時に「AIあり」を選んだ
+      塾生アプリ生 (ai_disabled=0) まで mypage から締め出していた。
+      2026-08-07 実測: _JUKU_APP_IDS_SQL ∧ ai_disabled=0 が 11 名、うちログインできる
+      (通塾生ゲートを通る) のが 6 名、うち 2 名は入口が無いまま直 URL で AI を使っていた
+      (最終 2026-08-07)。2026-06-27 の「AI を使っていた生徒が使えなくなる」事故と同型。
+    ★在籍/期限は**ここで見ない**。この関数を呼ぶ feed は _get_current_student (paid /
+      past_due grace / trial 期限内 / 本クラス永久 / なりすまし) を既に通っているので、
+      在籍判定を二重にすると許可集合が食い違う。実際 _verify_student_active を流用すると
+      past_due 猶予切れの本クラス生を弾き (_get_current_student は通す)、塾長のなりすまし
+      入室でも mypage が見られなくなる (同関数は impersonation を素通りさせない)。
+      ここで足すべき情報は「AI が使えるか」の 1 ビットだけ。
+      ※ai_disabled=1 の生徒へのなりすましでは今も mypage に留まれない (student_id しか
+        渡らず impersonation を判別できない)。必要になったら token_type を引き回すこと。
+    判定は AI 遮断 middleware と同じ正典 _is_student_ai_disabled (30秒 TTL cache・
+      判定不能時はフェイルオープン=従来どおり表示) を使う。"""
+    if not student_id:
+        return False
+    return not _is_student_ai_disabled(student_id)
+
+
 def _class_valid_date_or_none(s: Optional[str]) -> Optional[str]:
     """授業日 (YYYY-MM-DD) を検証。空なら None・不正なら 400。
     Postgres の DATE 列に不正文字列を入れると例外になるため取り込み口で弾く。"""
@@ -45844,9 +45869,13 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             "labeled_files": labeled_files,
             "loose_files": loose_files,
             "loose_recordings": loose_recordings,
-            # 塾生アプリ自己登録(referrer=塾生アプリ)の通塾生のみ true = class.html がホーム
-            # (マイページボタン非表示)。既存のAI生(難関コース等)は false=マイページ導線/AI管理を残す。
+            # 塾生アプリ自己登録(referrer=塾生アプリ)の通塾生のみ true = ログイン後の着地先が
+            # class.html。★マイページ導線の出し分けにはもう使わない (下の ai_home_available を見る)。
             "is_tsujuku_app": _is_juku_app_student(student["id"]),
+            # 🤖 [2026-08-07] マイページ(AI管理)導線の可否。class.html のボタン表示と
+            #   mypage.html の class.html 送り返しは必ずこの 1 値を見る (述語を2箇所に書くと片方だけ
+            #   直したときにボタンを押しても戻される「壊れたボタン」になる)。判定は _ai_home_available。
+            "ai_home_available": _ai_home_available(student["id"]),
         }
     finally:
         conn.close()

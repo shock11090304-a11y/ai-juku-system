@@ -2978,10 +2978,14 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d) return;  // 非通塾生 (feed 403 等) → カード非表示のまま・mypage はそのまま
-        // 🏫 純粋な通塾生(無料・AI管理対象外)は AI管理(mypage)を見せず塾生アプリ(class.html)へ。
-        //   ドリル結果の「マイページ」導線等からここに来ても class.html へ送り返す(AI機能は有料者のみ)。
-        //   class.html 側はマイページ導線を非表示にしてあるのでループしない。
-        if (d.is_tsujuku_app === true) { window.location.replace('class.html'); return; }
+        // 🏫 AI を使えない通塾生(塾生アプリのみ枠)は AI管理(mypage)を見せず class.html へ送り返す。
+        //   ドリル結果の「マイページ」導線等からここに来ても戻す(AI機能は AI 可の生徒のみ)。
+        //   ★[2026-08-07] 判定を is_tsujuku_app(登録経路) から feed.ai_home_available(AI可否+在籍)へ。
+        //     class.html のボタン表示と同じ 1 値を見る = 押しても戻される「壊れたボタン」を作らない。
+        //     旧バックエンド (undefined) では従来の登録経路判定に倒す。
+        var _aiHome = (d.ai_home_available === undefined)
+          ? (d.is_tsujuku_app !== true) : (d.ai_home_available === true);
+        if (!_aiHome) { window.location.replace('class.html'); return; }
         card.style.display = '';  // AIプランも持つ通塾生 → カード表示(mypage は使える)
       })
       .catch(function () {});
