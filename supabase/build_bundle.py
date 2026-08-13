@@ -33,6 +33,8 @@ DESCRIPTIONS = {
     "english_learning_grading":        "採点 RPC submit_attempt() と、点数を直接書けなくする権限",
     "english_learning_retake_fix":     "再受験中に正解が見えてしまう穴の修正",
     "english_learning_strokes_format": "手書きストロークの形 (設計書 §5)・正規化座標だけを通す",
+    "english_learning_strokes_missing_keys":
+                                       "手書きの検査でキーの欠落を弾けていなかったのを直す",
     "seed":                            "動作確認用の中身 (仮定法の演習 1 冊 5 問 + 未公開の模試 1 冊)",
 }
 

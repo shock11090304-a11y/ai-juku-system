@@ -862,4 +862,117 @@ begin
 end
 $$;
 
-\echo '=== 全ての検査を通過 (A 14 / B 3 / C 20 / D 9 / E 4 / F 3 / G 5 / H 6 / I 9 / J 12) ==='
+-- =============================================================================
+-- K. 手書きの形 — 「キーが無い」を弾くこと
+-- =============================================================================
+-- ★ J 群は「壊れた値が入っている」入力ばかりで、**キーそのものが無い**入力を
+--   1 つも試していなかった。そのせいで `jsonb_typeof(s->'c') <> 'string'` の
+--   NULL 素通り (キーが無いと NULL になり、<> が NULL を返して違反に数えられない) を
+--   見逃し、空のストロークが保存できる状態で本番に入った。
+--   ★ jsonb を検査するときは「値が変」と「キーが無い」を必ず別々に試すこと。
+do $$
+declare
+    n_ok int := 0;
+    v_att uuid := 'eeeeeee2-eeee-4eee-8eee-eeeeeeeeeee2';
+begin
+    -- K1: strokes キー自体が無い
+    begin
+        insert into public.annotations (attempt_id, page, strokes) values (v_att, 111, '{"v":1}');
+        raise exception '[fail] K1 strokes キーの無い行が入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- K2: 空のストロークオブジェクト (読み出しても何も描けない)
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 112, '{"v":1,"strokes":[{}]}');
+        raise exception '[fail] K2 空のストロークが入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- K3: c が無い
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 113, '{"v":1,"strokes":[{"w":0.003,"p":[[0.5,0.5]]}]}');
+        raise exception '[fail] K3 c の無いストロークが入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- K4: w が無い
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 114, '{"v":1,"strokes":[{"c":"#1b2233","p":[[0.5,0.5]]}]}');
+        raise exception '[fail] K4 w の無いストロークが入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- K5: p が無い
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 115, '{"v":1,"strokes":[{"c":"#1b2233","w":0.003}]}');
+        raise exception '[fail] K5 p の無いストロークが入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- K6: v が数値でなく文字列 "1"
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 116, '{"v":"1","strokes":[]}');
+        raise exception '[fail] K6 v が文字列の行が入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- K7: 点の要素が数値でない (null が混ざる)
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 117, '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,"p":[[0.5,null]]}]}');
+        raise exception '[fail] K7 点に null が混ざった行が入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- K8: 点が 1 要素だけ
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 118, '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,"p":[[0.5]]}]}');
+        raise exception '[fail] K8 1 要素の点が入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- K9: strokes が配列でなくオブジェクト
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 119, '{"v":1,"strokes":{"0":{"c":"#000","w":0.003,"p":[[0.5,0.5]]}}}');
+        raise exception '[fail] K9 strokes がオブジェクトの行が入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- K10: ストロークが配列でなく文字列
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 120, '{"v":1,"strokes":["線"]}');
+        raise exception '[fail] K10 文字列のストロークが入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- K11: 点の配列が配列でない
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 121, '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,"p":["0.5,0.5"]}]}');
+        raise exception '[fail] K11 点が文字列の行が入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    if n_ok <> 11 then
+        raise exception '[fail] K: 想定 11 件のうち % 件しか検査できていない', n_ok;
+    end if;
+
+    -- K12: 正常系は通ること (上の 11 件が「全部弾く」だけの空振りでないことの確認)
+    insert into public.annotations (attempt_id, page, strokes)
+    values (v_att, 122, '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,"p":[[0.5,0.5],[0.6,0.6]]}]}');
+
+    raise notice '[ok] K キーの欠落 12 件';
+end
+$$;
+
+\echo '=== 全ての検査を通過 (A 14 / B 3 / C 20 / D 9 / E 4 / F 3 / G 5 / H 6 / I 9 / J 12 / K 12) ==='
+
