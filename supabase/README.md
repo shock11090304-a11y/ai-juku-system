@@ -1,0 +1,457 @@
+# 英語学習アプリ — DB スキーマ (Supabase)
+
+問題集 (PDF + 設問) を配って、生徒が解いて、手書きで書き込んで、誤答が復習キューに溜まる、
+までを支える Postgres スキーマ。**Supabase 前提** (`auth.users` / `auth.uid()` /
+`anon`・`authenticated` ロール / Storage を使う)。
+
+> ★ このリポジトリの本体 API (Railway の `server/main.py`) とは**別の DB**。
+>   `server/main.py` の `init_db()` が作るテーブル群とは無関係で、名前もぶつかっていない。
+
+## ファイル
+
+| ファイル | 中身 |
+| --- | --- |
+| `migrations/20260813010000_english_learning_core.sql` | テーブル 7 本・制約・インデックス・`updated_at` トリガ |
+| `migrations/20260813010100_english_learning_rls.sql` | 権限・RLS ポリシー 28 本・`auth.users` 連携・生徒向け view |
+| `migrations/20260813010200_english_learning_storage.sql` | 問題 PDF の bucket (`book-pdfs`) と読み書き権限 |
+| `migrations/20260813010300_english_learning_grading.sql` | 採点 RPC `submit_attempt()` と、点数を直接書けなくする権限 |
+| `migrations/20260813010400_english_learning_retake_fix.sql` | 再受験中に正解が見えてしまう穴を塞ぐ (view の作り直し) |
+| `migrations/20260813010500_english_learning_strokes_format.sql` | 手書きストロークの形 (設計書 §5)。正規化座標だけを通す |
+| `seed.sql` | 動作確認用の中身 (仮定法の演習 1 冊 5 問 + 未公開の模試 1 冊) |
+| `build_bundle.py` → `bundle.sql` | 上の 5 本 + seed を 1 本にまとめたもの。**SQL Editor に貼る用** |
+| `demo/index.html` | 動作確認ページ (Vercel が配信する。秘密は持たず URL とキーは実行時入力) |
+| `demo/build_sample_pdf.py` → `demo/sample-book.pdf` | 動作確認用の問題冊子 (2 ページ / 5 問)。seed の設問番号・ページと一対一 |
+| `tests/00_local_stubs.sql` | 素の Postgres で試すための Supabase 相当スタブ (**本番に流さない**) |
+| `tests/10_schema_expectations.sql` | 振る舞いテスト 85 件 |
+
+6 本とも**何度流しても安全**（`if not exists` / `or replace` / `drop … if exists`）。
+
+**PDF 運用**を前提にしている。設問文と選択肢は問題冊子 (PDF) の中にあり、DB 側は
+「何ページの第何問か (`questions.page` / `number`)」と「答案の形 (`answer_type` /
+`choice_count`)」だけを持つ。
+
+## 流し方
+
+```bash
+# Supabase CLI
+supabase db push
+
+# または SQL Editor に 010000 → 010100 → 010200 → 010300 → 010400 → 010500 の順で貼る
+```
+
+★ **core だけ流して止めない**こと。RLS は 2 本目に入っているので、core だけの状態は
+「ログインした全員が全生徒の答案を読める」DB になる。
+
+省いてよいのは 3 本目 (Storage) だけ — PDF を Supabase Storage 以外で配る場合。
+6 本目 (strokes_format) は手書きを使わないなら省けます。
+**010300 (grading) が無いと採点できる経路が存在せず**、
+**010400 (retake_fix) が無いと再受験中に正解が見えたまま**になる。
+
+## 使ってみる
+
+`supabase/demo/index.html` が動作確認ページ。RLS・正解の伏せ方・採点 RPC・手書き保存を
+実際に触って確かめられる。ページ自体は**秘密を 1 つも持たない**静的ファイルで、
+Project URL と anon key は実行時に画面から受け取る。
+
+★ `.vercelignore` は SQL とテストだけ除外し、**このページと `sample-book.pdf` は配信する**。
+  Vercel のプレビューURL (ブランチごとに発行される) から触れるようにするため。
+  **`main` にマージすると本番ドメインにも出る**。出したくないならマージ前に
+  `.vercelignore` を `supabase/` の 1 行に戻すこと。
+
+### A. ターミナルを使わない (SQL Editor に 1 回貼るだけ・いちばん確実)
+
+Supabase CLI も Docker も要らない。ダッシュボードだけで終わる。
+
+1. Supabase のプロジェクトを作る (使い捨ての新規プロジェクト)
+2. **SQL Editor** に `supabase/bundle.sql` を全部貼って **Run**
+   — migration 5 本 + seed が正しい順で流れる。何度貼っても増えないし壊れない
+3. **Authentication → Providers → Email** の "Confirm email" を **OFF**
+4. Vercel のプレビューURL + `/supabase/demo/` を開く
+5. デモの「1. 接続」に Project URL と anon key を貼る
+
+★ `bundle.sql` は生成物。`migrations/` か `seed.sql` を直したら
+  `python3 supabase/build_bundle.py` で作り直すこと
+  (古いままだと `check_schema.py` が落ちる)。
+★ 本番に入れるときは末尾の seed 部分を消して貼る。
+
+### B. Supabase CLI で流す (Docker が要る・手元だけで完結)
+
+```bash
+# CLI の導入 (★ npm install -g supabase は「サポートしていない」と言われて失敗する)
+brew install supabase/tap/supabase     # macOS / Linuxbrew
+#   入れずに使うなら、以下の supabase を npx supabase に読み替える
+
+cd <このリポジトリ>
+supabase init                    # supabase/config.toml が無ければ (既存ファイルは上書きされない)
+supabase start                   # 初回は数分。API URL と anon key が表示される
+supabase db reset                # migrations/*.sql → seed.sql を流す
+
+python3 -m http.server 8080      # 別のターミナルで
+# → http://localhost:8080/supabase/demo/ を開く
+```
+
+`supabase start` の出力を後から見たいときは `supabase status`。
+
+`supabase start` が出す **API URL** (既定 `http://127.0.0.1:54321`) と **anon key** を
+デモの「1. 接続」に貼る。ローカルはメール確認が既定で無効なので、
+そのまま新規登録 → ログインできる。
+
+### C. web から見る (ホスト版 Supabase + Vercel プレビュー)
+
+★ **ローカルの `supabase start` では web から繋がらない**。HTTPS のページから
+`http://127.0.0.1:54321` を呼ぶのは混在コンテンツでブラウザが止める。
+web で見るならホスト版のプロジェクトが要る。
+
+1. **新しい Supabase プロジェクトを作る** (supabase.com・無料枠でよい)
+   ★ 使い捨ての新規プロジェクトにすること。`SUPABASE_MIRROR_URL` で
+     `exam_questions` の staging に使っているプロジェクトには流さない
+     (`auth.users` にトリガを足すので、他の用途と同居させない方がよい)。
+
+2. **migration を流す** — **A の「SQL Editor に `bundle.sql` を貼る」がいちばん確実**。
+   CLI を使うなら:
+
+   ```bash
+   supabase link --project-ref <プロジェクトID>
+   supabase db push                 # migrations だけ流れる (seed は流れない)
+   ```
+
+   この場合シードは別途 SQL Editor に `supabase/seed.sql` を貼る。
+
+3. **メール確認を切る** — Authentication → Providers → Email の "Confirm email" を
+   オフにする。既定は有効で、新規登録してもすぐログインできない。
+
+4. **Vercel のプレビューURL を開く** — このブランチを push すると Vercel が
+   ブランチ用のデプロイを作る。URL は Vercel のダッシュボード → 該当プロジェクト →
+   Deployments でブランチを選ぶか、GitHub の該当コミットのステータス欄から辿る。
+   開くパスは `/supabase/demo/`。
+
+5. デモの「1. 接続」に **Settings → API** の Project URL と **anon public** キーを貼る
+   (`service_role` キーは絶対に貼らない。RLS を全部素通りしてしまう。
+    ページ側でも anon 以外のキーは弾くようにしてある)。
+
+★ プレビューURL を知っていれば誰でも開ける (`noindex` は入れてあるが認証は無い)。
+  誰かが開けば **そのプロジェクトに勝手にサインアップできる**。使い捨てのプロジェクトで
+  試すこと。終わったらプロジェクトごと消すのがいちばん確実。
+
+### 触る順番
+
+0. **先に問題冊子を上げる**（下の「講師として見る」で講師にしてから）。
+   「8. 講師の操作」の**「同梱の sample-book.pdf を上げる」**を押すだけ
+   (ページと同じ場所に置いてある PDF をそのまま Storage に入れる)。
+   パスの既定 `books/kateiho-enshu5.pdf` は seed のブックが指している先と一致している。
+   手元の PDF を使いたければファイルを選んで「選んだ PDF を上げる」
+1. **生徒として新規登録** → `handle_new_user` が `profiles` を自動で作る (role=student)
+2. **3. ブック一覧** → 「英文法 仮定法 演習5」だけ出る。未公開の模試は出ない (RLS)
+3. **受験する** → 問題冊子が署名付き URL で開く。答案は「何ページの第何問か」だけを出し、
+   正解は伏せられている (`correct_answer = null`。画面にもそう出る)
+4. **手書き** で書いて保存 → `annotations.strokes` に入る。読み直すと戻る
+5. **採点して提出する** → `submit_attempt()` が走り、点数と正解と解説が出る
+6. **6. 復習キュー** → 間違えた設問が積まれている。もう一度受験して同じ問題を落とすと
+   `wrong_count` が 2 になる
+7. **もう一度受験する** → ★ 一度見えた正解がまた伏せられる (`retake_fix`)。提出すると戻る
+8. **7. 守られているかを試す** → 6 つの攻撃が全部弾かれることを確認する
+
+未公開の模試 (`books/eiken-junichi-04.pdf`) は Storage にオブジェクトが無くても、
+生徒からはブックごと見えない。講師で「PDF を開く」を押すと、
+オブジェクトが無いことによるエラーになる (ポリシーではなく実体が無いため)。
+
+### 講師として見る
+
+講師への昇格は SQL でしかできない (生徒が自分で上げられないようにしてあるため)。
+SQL Editor か `supabase db reset` 後のローカル Studio で:
+
+```sql
+update public.profiles set role = 'teacher' where id = (
+    select id from auth.users where email = 'あなたのアドレス');
+```
+
+講師でログインし直すと、未公開ブックも `questions` テーブルも直接見えるようになる。
+
+## 検査
+
+```bash
+python3 scripts/english_schema/check_schema.py     # 単体
+python3 scripts/run_all_gates.py english_schema    # リポジトリ共通の入口から
+```
+
+- **静的検査** … RLS を有効にし忘れたテーブル、ポリシーの無い操作、`search_path` を
+  固定していない `security definer` 関数、`anon` 向けポリシー、冪等でない DDL などを落とす。
+  DB が無くても回るので CI (`material-gates.yml`) でも走る。
+- **実DB検査** … 使い捨ての Postgres に stubs → migrations を **2 周**流して
+  (冪等性の確認)、`tests/10_schema_expectations.sql` の 85 件を回す。
+  Postgres が見つからないときは実行しないが、**飛ばしたことを必ず印字する**。
+  手元で明示的に指定するなら:
+
+  ```bash
+  ENGLISH_SCHEMA_TEST_DSN=postgresql://localhost/postgres \
+    python3 scripts/english_schema/check_schema.py
+  ```
+
+  DSN が Railway / Supabase / RDS 等の本番らしいホストを指していたら実行を拒否する
+  (使い捨て DB を `create` / `drop` するため)。
+
+検査の内訳: 制約 14 / トリガ 3 / 生徒の RLS 20 / 講師の RLS 9 / 未ログイン 4 /
+Storage 3 / 参照整合性 5 / 採点 6 / 受験フローと再受験 9 / 手書きの形 12。
+
+---
+
+## ★ 生徒に設問を返すときは `student_questions` を使う
+
+`questions` テーブルには `correct_answer` と `explanation` が同じ行に入っている。
+生徒に `select * from questions` を許すと**受験前に正解が全部読める**ので、
+生徒向けの RLS は **`questions` を 1 行も返さない**ようにしてある。
+
+代わりに view `public.student_questions` を使う:
+
+```js
+// ❌ 生徒のクライアントからは 0 行しか返らない
+const { data } = await supabase.from('questions').select('*').eq('book_id', id)
+
+// ✅ こちら
+const { data } = await supabase.from('student_questions').select('*').eq('book_id', id)
+```
+
+この view が返すもの:
+
+- 公開済み (`is_published = true`) のブックの設問だけ
+- `correct_answer` / `accepted_answers` / `explanation` は、次の**両方**を満たすときだけ返る。
+  それ以外は `NULL`。判定結果は `revealed` 列にも出るので UI の出し分けに使える
+  1. その生徒が提出済みの答案でその設問に解答している
+  2. そのブックを**いま受験中でない**（未提出の答案が 1 つも無い）
+
+  条件 2 が無いと、一度提出した本をもう一度受験するときに正解が出たままになる
+  (期待値テストの I3 がこの穴を捕まえた)。
+
+講師 (`profiles.role = 'teacher'`) は `questions` テーブルを直接読める。
+
+> Supabase のセキュリティリンタは `student_questions` を
+> 「security definer view」として警告する。正解列を隠すのが目的なので意図的。
+
+## 誰が何を触れるか (RLS)
+
+| テーブル | 生徒 | 講師 |
+| --- | --- | --- |
+| `profiles` | 自分の行を読む・表示名を変える (`role` は変えられない) | 全員を読む・`role` を変えられる |
+| `books` | 公開済みだけ読む | 全部読む・作る・直す・消す |
+| `questions` | **直接は読めない** (`student_questions` 経由) | 全部読む・作る・直す・消す |
+| `attempts` | 開始 (insert) だけ。**直接の UPDATE 権限は無く**、提出は `submit_attempt()` 経由 | 全員の分を読む |
+| `answers` | 自分の未提出 attempt にだけ書ける。書けるのは `user_answer` と `time_spent_sec` の 2 列だけ | 全員の分を読む |
+| `annotations` | 同上 (手書き) | 全員の分を読む |
+| `review_items` | 自分の分だけ読み書き | 全員の分を読む |
+
+未ログイン (`anon`) はどのテーブルにも触れない (`grant` ごと剥がしてある)。
+
+## 採点は `submit_attempt()` でしかできない
+
+```js
+const { data } = await supabase.rpc('submit_attempt', { p_attempt: attemptId })
+// → { total_score, max_score, correct_count, answered_count, question_count }
+```
+
+この RPC が、自分の未提出の答案かを確かめたうえで
+
+1. `answers.is_correct` を `questions.correct_answer` と突き合わせて埋め
+2. `attempts` に点数・満点・所要時間・`submitted_at` を書き
+3. 誤答を `review_items` に積む（同じ設問を落とすたびに `wrong_count` が増える）
+
+を 1 トランザクションで行う。`for update` で行を掴むので、二重に押しても二重採点しない。
+
+**クライアントは点数を書けない。** `attempts` の UPDATE 権限は誰にも配っておらず、
+`answers` に書けるのは `user_answer` と `time_spent_sec` の 2 列だけ（列単位の grant）。
+`total_score` と `is_correct` を書けるのはこの関数だけになっている。
+
+そもそも生徒は提出前に `correct_answer` を読めない（view が伏せる）ので、
+クライアント側に「正解と突き合わせる」瞬間が存在しない。採点をサーバに置くのは
+方針というより、この設計だとそれ以外に経路が無い。
+
+短答の照合は「前後の空白を落として小文字化」＋ `accepted_answers` の別解。
+ここを緩めると採点が甘くなる。厳しくする分はアプリ側で吸収できるが、
+甘くしたものは後から締められない（生徒の点数が下がるため）。
+
+## 参照整合性の効き方 (何が消せて何が消せないか)
+
+実測値 (`tests/10_schema_expectations.sql` の G 群が裏を取っている):
+
+| 消すもの | 起きること |
+| --- | --- |
+| 一度も受験されていないブック | 設問ごと消える (cascade) |
+| **受験履歴のあるブック** | **消せない** (`attempts` / `answers` が止める) |
+| attempt | 解答と手書きが一緒に消える (cascade) |
+| **解答された設問** | **消せない** (`answers` が止める) |
+| まだ解答されていない設問 | 消える。その設問の復習キューも一緒に落ちる (cascade) |
+| 履歴の無い `auth.users` | `profiles` ごと消える (cascade) |
+| **受験履歴のある `auth.users`** | **消せない** (`attempts.user_id` が止める) |
+
+配布済みのブックは削除ではなく `is_published = false` で下げる運用になる。
+退会で本当に履歴ごと消すなら、消す順は
+`answers` / `annotations` → `attempts` → `review_items` → `auth.users`。
+(`attempts` を消せば `answers` と `annotations` は cascade で落ちるので実際は
+`attempts` → `review_items` → `auth.users` の 3 手)
+
+---
+
+## 元の設計からの差分
+
+もらった設計をそのまま起こしたうえで、以下だけ足している。**削ったものは無い**。
+
+### 1. 参照とデフォルト
+
+| 箇所 | 差分 | 理由 |
+| --- | --- | --- |
+| `profiles.id → auth.users` | `on delete cascade` を追加 | 付けないと退会 (auth.users の削除) が参照で失敗して退会処理が通らない |
+| `books.created_by` | `on delete set null` | 講師が抜けてもブックは残す |
+| `review_items.user_id` / `.question_id` | `on delete cascade` | 誤答ノートは派生データ。元が消えたら残す意味が無い |
+| 全 `created_at` / `started_at` / `last_wrong_at` / `updated_at` | `not null` を追加 | `default` があっても明示 `NULL` は入れられる |
+| `is_published` / `points` / `wrong_count` / `is_resolved` | `not null` を追加 | 同上。3 値論理を持ち込まない |
+| 各 FK 列 (`questions.book_id`・`attempts.book_id`/`user_id`・`answers.*`・`annotations.attempt_id`・`review_items.*`) | `not null` を追加 | 親の無い子行に意味が無く、UNIQUE 制約も NULL では重複を止められない |
+
+`attempts.book_id` / `attempts.user_id` / `answers.question_id` は**設計どおり
+`on delete` を付けていない** (＝削除を止める)。上の「参照整合性の効き方」がその結果。
+
+### 2. 追加した CHECK 制約
+
+| 制約 | 中身 |
+| --- | --- |
+| `questions_answer_shape` | `choice` なら `choice_count` 2〜10 かつ `correct_answer` が 1〜`choice_count` の番号。`short` なら `choice_count` は NULL で正解は非空 |
+| `questions_accepted_answers_no_null` | 別解の配列に NULL 要素を入れさせない (`= any(...)` が NULL を返して採点が静かに落ちるため) |
+| `books_subject_check` | `subject` を `grammar`/`reading`/`eiken`/`mock` に限定 |
+| `attempts_submitted_after_started` | `submitted_at >= started_at` |
+| 各種 | `page` / `number` / `page_count` / `time_limit_sec` / `points` は正数、スコアと秒数は非負、`display_name` と `title` は空白だけ禁止 |
+
+`subject` は元の設計ではコメントでの列挙だったが、`role` と `answer_type` が
+`check` で書かれているのに合わせて閉じた集合と読んだ。増やすときは:
+
+```sql
+alter table public.books drop constraint books_subject_check;
+alter table public.books add constraint books_subject_check
+    check (subject in ('grammar', 'reading', 'eiken', 'mock', 'listening'));
+```
+
+`level` は「基礎 / 標準 / 難関 **など**」と書かれていたので自由記述のままにしてある。
+
+`questions_answer_shape` の判定を plpgsql 関数
+(`public.question_answer_is_valid`) に出しているのは、素の SQL の `and` は
+**評価順が仕様として保証されない**ため。順序が入れ替わると
+`answer_type='choice'`・`correct_answer='あ'` の行が `check_violation` ではなく
+`22P02 (invalid input syntax for type integer)` で落ちるようになり、アプリ側で
+「入力ミス」と「バグ」の区別が壊れる。plpgsql なら文の順序が保証される。
+
+### 3. インデックス 9 本
+
+Postgres は外部キーに自動でインデックスを張らない。UNIQUE 制約が先頭列をカバーしている
+分 (`answers.attempt_id` / `review_items.user_id` / `questions.book_id`) は張らず、
+カバーされていない参照と実際の画面のクエリだけ張ってある。
+`review_items` の復習キューは `where not is_resolved` の部分インデックス
+(解決済みが時間とともに大半を占めるため)、`tags` は GIN。
+
+### 4. トリガ 3 本
+
+| トリガ | 何をするか |
+| --- | --- |
+| `on_auth_user_created` (`auth.users`) | サインアップ時に `profiles` を作る。表示名は `options.data.display_name` → `name` → メールのローカル部の順で拾う。`display_name` が `not null` なので、これが無いとサインアップが失敗する |
+| `profiles_guard_role` (`profiles`) | 生徒が自分の `role` を `teacher` に書き換えるのを止める。★ RLS の `with check` だけでは止まらない (「自分の行を更新してよい」ポリシーは列の値まで見ない)。JWT の無い呼び出し (`service_role` / サーバ側の管理タスク) は素通しするので、講師の任命はそこから行う |
+| `annotations_touch_updated_at` | `updated_at` を DB 側で打つ (クライアントの時計を信じない) |
+
+### 5. 採点 RPC と、点数を書けなくする権限 (`…_grading.sql`)
+
+`submit_attempt()` を足し、同時に `attempts` の UPDATE 権限を剥がして
+`answers` を列単位の grant にした。詳細は上の「採点は `submit_attempt()` でしかできない」。
+
+**元の設計には採点の置き場が無かった**。生徒は提出前に正解を読めず、提出後は答案が
+凍結されるので、クライアントが採点できる瞬間がどこにも無い。これを足さないと
+「解いて提出する」までしか動かない。
+
+### 6. 再受験中に正解を伏せる (`…_retake_fix.sql`)
+
+`student_questions` の `revealed` を「提出済みの答案でその設問に解答したことがあるか」
+だけで決めていたので、**同じ本をもう一度受験している最中も正解が出たまま**だった。
+復習キューから戻る・時間を置いて再挑戦する動線は普通にあるので、そこで答えが見えるのは実害がある。
+
+「そのブックに未提出の答案が 1 つでもあれば伏せる」を足した。提出し終わればまた見える。
+
+★ この穴は期待値テストが捕まえたもので、目で読んで気づいたものではない。
+  検査 (I 群) ごと残してある。
+
+### 7. 手書きの形 — 設計書 §5 (`…_strokes_format.sql`)
+
+元の設計では「§5 のフォーマット」とだけ書かれていて、§5 自体がリポジトリに無かった。
+**2026-08-13 に塾長と決めた内容**をここで確定させ、DB 側で強制している。
+
+```json
+{
+  "v": 1,
+  "strokes": [
+    {"c": "#1b2233", "w": 0.003, "p": [[0.3124, 0.4551], [0.3180, 0.4612]]}
+  ]
+}
+```
+
+| 項目 | 決めたこと |
+| --- | --- |
+| 座標 | **ページの幅・高さを 1 とした正規化値 (0〜1)** |
+| 線幅 `w` | 同じく**ページ幅に対する比**。幅 1200px のページで 3.6px の線なら `0.003` |
+| 筆圧・傾き | **持たない**。点は `[x, y]` の 2 要素だけ |
+| `v` | フォーマットの版。将来変えるときはここを上げて `strokes_are_valid()` に分岐を足す |
+
+**なぜ正規化するか** — iPad で書いて PC で見る、拡大率を変える、PDF を差し替える、
+どれをしても位置がずれないため。ピクセル座標で持つと、書いたときの表示サイズを
+一緒に記録しない限り**後から復元できない**。データが溜まってからでは直せない種類の
+決定なので、運用前に確定させた。
+
+`strokes_are_valid()` が弾くもの (テスト J 群 12 件が裏を取っている):
+旧形式の裸の配列 / `v` 無し / **ピクセル座標の混入** / 範囲外 (`1.0001`, `-0.01`) /
+筆圧付きの 3 要素 / 点の無いストローク / `w` が文字列 / `w` がページ幅の 10% 超。
+境界の `0` と `1` はちょうど通る。
+
+★ 制約は **NOT VALID** で足してある。動作確認で入れた旧形式の行は残るが、
+新規の書き込みは全部この形でしか通らない。旧行を消して全件を検査対象にするなら:
+
+```sql
+delete from public.annotations
+ where jsonb_typeof(strokes) <> 'object' or (strokes ->> 'v') is distinct from '1';
+alter table public.annotations validate constraint annotations_strokes_shape;
+```
+
+### 8. Storage
+
+bucket `book-pdfs` (非公開・50MB・`application/pdf` のみ)。
+読めるのは `books.pdf_path` が指していて、かつ**公開済み**のブックの PDF だけ
+(講師は未公開も読める)。書けるのは講師だけ。
+
+★「bucket が `book-pdfs` なら誰でも読める」にはしていない。オブジェクト名は一覧 API で
+列挙できるので、それだと未公開の模試 PDF が受験前に落とせてしまう。
+
+配信は署名付き URL で:
+
+```js
+const { data } = await supabase.storage.from('book-pdfs').createSignedUrl(book.pdf_path, 3600)
+```
+
+---
+
+## 決めたこと (2026-08-13)
+
+「データが溜まってからでは直せない」2 つを、運用を始める前に確定させた。
+
+- **生徒の識別子: 何も足さない。** 英語アプリは既存の塾システム (Railway の
+  `server/main.py` / `students` テーブル / OTP・LINE ログイン) とは**完全に別のサービス**
+  として運用する。`profiles` に塾生への参照列は置かない。
+  → 将来統合したくなったら列を足せるが、そのとき「どの Supabase ユーザーがどの塾生か」を
+    手で突き合わせる作業が発生する。生徒数が少ないうちなら軽い、という判断。
+- **手書きの形: §5 を確定** (上の「差分 7」)。正規化座標・筆圧なし。
+
+## 未確定
+
+- **PDF を使わないブックは作れない**。元の設計の
+  `pdf_path … NULL可（JSON問題のみの場合）` に対して、その「JSON問題」の設問文と
+  選択肢を入れる列が `questions` に無い。PDF 運用でいく判断なので今は足していない。
+  必要になったら `question_data jsonb`（`{"stem","choices","figure_svg"}`・正解は入れない）
+  を 1 列足すのが最小の手当てになる。名前は既存の `exam_questions.question_data` に合わせる。
+- ページ 1 枚分のストロークがそのまま 1 行に入る。長時間の書き込みでサイズが膨らむ場合、
+  間引き (点の間引き / 折れ線の簡略化) はクライアント側で行う前提
+  (DB 側の上限は 1 ページ 5000 ストローク)。
+- **PDF を使わないブックは今のところ作れない**。元の設計の
+  `pdf_path … NULL可（JSON問題のみの場合）` に対して、その「JSON問題」の設問文と
+  選択肢を入れる列が `questions` に無い。PDF 運用でいく判断なので今は足していない。
+  必要になったら `question_data jsonb`（`{"stem","choices","figure_svg"}`・正解は入れない）
+  を 1 列足すのが最小の手当てになる。名前は既存の `exam_questions.question_data` に合わせる。
