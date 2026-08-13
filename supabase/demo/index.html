@@ -102,7 +102,7 @@
     <button class="ghost" id="btnLogout">ログアウト</button>
   </div>
   <div class="note">新規登録すると <code>handle_new_user</code> トリガが <code>profiles</code> を自動で作ります（role は必ず student）。
-    講師にするには SQL を 1 行流します（下の 6 参照）。</div>
+    講師にするには SQL を 1 行流します（supabase/README.md の「講師として見る」）。</div>
   <div class="log" id="logAuth">未ログイン</div>
 </section>
 
@@ -119,6 +119,7 @@
 <section id="secExam" hidden>
   <h2>4. 受験</h2>
   <div id="examHead"></div>
+  <div id="pdfBox"></div>
   <div id="questions"></div>
   <div id="examActions"></div>
   <div class="log" id="logExam">—</div>
@@ -154,6 +155,25 @@
   <p class="note" style="margin-top:0">生徒アカウントで押してください。全部「弾かれる」のが正しい動きです。</p>
   <div><button class="danger" id="btnAttack">6 つまとめて試す</button></div>
   <div class="log" id="logSec">—</div>
+</section>
+
+<!-- ─────────────────────────── 講師の操作 ─────────────────────────── -->
+<section id="secTeacher" hidden>
+  <h2>8. 講師の操作</h2>
+  <p class="note" style="margin-top:0">生徒アカウントで押すと Storage のポリシーに弾かれます（それが正しい動き）。</p>
+  <div class="row">
+    <div>
+      <label>アップロード先のパス（books.pdf_path と一致させる）</label>
+      <input type="text" id="upPath" value="books/kateiho-enshu5.pdf">
+    </div>
+  </div>
+  <label>PDF ファイル（<code>supabase/demo/sample-book.pdf</code> を選ぶ）</label>
+  <input type="file" id="upFile" accept="application/pdf">
+  <div>
+    <button id="btnUpload">book-pdfs に上げる</button>
+    <button class="ghost" id="btnTogglePub">選択中のブックの公開/非公開を切り替える</button>
+  </div>
+  <div class="log" id="logTeacher">—</div>
 </section>
 
 </div>
@@ -208,7 +228,7 @@ $("btnConn").onclick = async () => {
   }
   localStorage.setItem(LS.url, url); localStorage.setItem(LS.key, key);
   log("logConn", "接続しました: " + url, "ok");
-  ["secAuth", "secBooks", "secReview", "secSec"].forEach(s => $(s).hidden = false);
+  ["secAuth", "secBooks", "secReview", "secSec", "secTeacher"].forEach(s => $(s).hidden = false);
   refreshMe();
 };
 
@@ -277,6 +297,25 @@ async function loadBooks() {
   log("logBooks", `${data.length} 件（role=${me ? me.role : "?"} から見えている数）`, "ok");
 }
 
+// 問題冊子は Storage の署名付き URL で配る (bucket は非公開)
+async function showPdf(b) {
+  if (!b.pdf_path) {
+    $("pdfBox").innerHTML = `<div class="note">このブックには PDF が登録されていません（books.pdf_path が NULL）。</div>`;
+    return;
+  }
+  const { data, error } = await sb.storage.from("book-pdfs").createSignedUrl(b.pdf_path, 3600);
+  if (error) {
+    $("pdfBox").innerHTML = `<div class="note ng">問題冊子を開けません: ${esc(errText(error))}
+      <br>まだ上げていないなら「8. 講師の操作」から <code>${esc(b.pdf_path)}</code> として上げてください。</div>`;
+    return;
+  }
+  $("pdfBox").innerHTML =
+    `<iframe src="${data.signedUrl}#view=FitH" style="width:100%;height:520px;border:1px solid var(--line);
+      border-radius:8px;background:#fff" title="問題冊子"></iframe>
+     <div class="note">署名付き URL（1 時間有効）。下の答案は PDF の設問番号に対応しています。
+       <a href="${data.signedUrl}" target="_blank" style="color:var(--accent)">別タブで開く</a></div>`;
+}
+
 async function openPdf(path) {
   const { data, error } = await sb.storage.from("book-pdfs").createSignedUrl(path, 3600);
   if (error) return log("logBooks", "PDF の署名URLが作れません（未公開ブックなら正しい動き）: " + errText(error), "warn");
@@ -287,7 +326,10 @@ async function openPdf(path) {
 async function startExam(b) {
   book = b; attempt = null; answers = {};
   $("secExam").hidden = false;
-  $("examHead").innerHTML = `<p><strong>${esc(b.title)}</strong></p>`;
+  $("examHead").innerHTML = `<p><strong>${esc(b.title)}</strong>` +
+    `<span class="badge">${b.page_count ? b.page_count + " ページ" : "ページ数未設定"}</span>` +
+    `<span class="badge">${b.time_limit_sec ? Math.round(b.time_limit_sec / 60) + " 分" : "制限なし"}</span></p>`;
+  showPdf(b);
 
   // 未提出の答案が残っていれば再開する
   const { data: open } = await sb.from("attempts").select("*")
@@ -335,15 +377,14 @@ function render() {
   const done = !!attempt.submitted_at;
   $("questions").innerHTML = questions.map(q => {
     const a = answers[q.id] || {};
-    const qd = q.question_data || {};
-    const stem = qd.stem || (q.page ? `（PDF ${q.page} ページ目の第${q.number}問）` : `第${q.number}問`);
+    // 設問文は PDF の中にある。DB 側は「何ページの第何問か」と「答案の形」だけを持つ。
+    const stem = q.page ? `問題冊子 ${q.page} ページ目 の 第${q.number}問` : `第${q.number}問`;
     let body;
     if (q.answer_type === "choice") {
       body = `<div class="choices">` + Array.from({ length: q.choice_count }, (_, i) => {
         const v = String(i + 1);
-        const label = (qd.choices && qd.choices[i]) ? `${v}. ${esc(qd.choices[i])}` : v;
         return `<label><input type="radio" name="q${q.id}" value="${v}"
-          ${a.user_answer === v ? "checked" : ""} ${done ? "disabled" : ""}>${label}</label>`;
+          ${a.user_answer === v ? "checked" : ""} ${done ? "disabled" : ""}>${v}</label>`;
       }).join("") + `</div>`;
     } else {
       body = `<input type="text" data-short="${q.id}" value="${esc(a.user_answer || "")}"
@@ -454,15 +495,15 @@ async function loadReview() {
   if (error) return log("logReview", "読めません: " + errText(error), "ng");
   if (!data.length) { $("review").innerHTML = ""; return log("logReview", "0 件（まだ誤答がありません）"); }
 
-  // 設問文は student_questions 側にある（review_items は question_id しか持たない）
-  const { data: qs } = await sb.from("student_questions").select("id,number,question_data,unit_tag");
+  // review_items は question_id しか持たない。設問の場所は student_questions 側にある。
+  const { data: qs } = await sb.from("student_questions").select("id,number,page,unit_tag,book_id");
   const byId = {}; (qs || []).forEach(q => byId[q.id] = q);
 
   $("review").innerHTML = `<table><tr><th>設問</th><th>単元</th><th>誤答回数</th><th>最後に間違えた</th><th>解決</th></tr>` +
     data.map(r => {
       const q = byId[r.question_id];
-      const stem = q && q.question_data ? q.question_data.stem : "（未公開ブックの設問）";
-      return `<tr><td>${esc(String(stem).slice(0, 46))}</td><td>${esc(q ? (q.unit_tag || "") : "")}</td>
+      const where = q ? `第${q.number}問${q.page ? `（${q.page} ページ）` : ""}` : "（見えないブックの設問）";
+      return `<tr><td>${esc(where)}</td><td>${esc(q ? (q.unit_tag || "") : "")}</td>
         <td>${r.wrong_count}</td><td>${esc(String(r.last_wrong_at).slice(0, 16).replace("T", " "))}</td>
         <td>${r.is_resolved ? "済" : "—"}</td></tr>`;
     }).join("") + `</table>`;
@@ -516,6 +557,36 @@ $("btnAttack").onclick = async () => {
     log("logSec", `${r.ok ? "○ 防げた" : "× 防げていない"} — ${name}: ${r.msg}`, r.ok ? "ok" : "ng");
   }
   log("logSec", `結果: ${pass} / ${total} 件を防いだ`, pass === total ? "ok" : "ng");
+};
+
+/* ───────────────────────── 8. 講師の操作 ───────────────────────── */
+$("btnUpload").onclick = async () => {
+  const f = $("upFile").files[0];
+  const path = $("upPath").value.trim();
+  if (!f) return log("logTeacher", "PDF を選んでください", "warn");
+  if (!path) return log("logTeacher", "アップロード先のパスが要ります", "warn");
+
+  const { error } = await sb.storage.from("book-pdfs")
+    .upload(path, f, { contentType: "application/pdf", upsert: true });
+  if (error) {
+    return log("logTeacher",
+      `上げられません（生徒アカウントならこれが正しい動き）: ${errText(error)}`, "warn");
+  }
+  log("logTeacher", `上げました: book-pdfs/${path}`, "ok");
+  if (book && book.pdf_path === path) showPdf(book);   // 開いている冊子を差し替える
+};
+
+$("btnTogglePub").onclick = async () => {
+  if (!book) return log("logTeacher", "先に 3. でブックを選んでください", "warn");
+  const next = !book.is_published;
+  const { error } = await sb.from("books").update({ is_published: next }).eq("id", book.id);
+  if (error) {
+    return log("logTeacher",
+      `変えられません（生徒アカウントならこれが正しい動き）: ${errText(error)}`, "warn");
+  }
+  book.is_published = next;
+  log("logTeacher", `「${book.title}」を ${next ? "公開" : "非公開"} にしました`, "ok");
+  loadBooks();
 };
 </script>
 </body>

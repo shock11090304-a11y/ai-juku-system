@@ -15,13 +15,18 @@
 | `migrations/20260813010100_english_learning_rls.sql` | 権限・RLS ポリシー 28 本・`auth.users` 連携・生徒向け view |
 | `migrations/20260813010200_english_learning_storage.sql` | 問題 PDF の bucket (`book-pdfs`) と読み書き権限 |
 | `migrations/20260813010300_english_learning_grading.sql` | 採点 RPC `submit_attempt()` と、点数を直接書けなくする権限 |
-| `migrations/20260813010400_english_learning_question_data.sql` | JSON 問題の設問本体 `questions.question_data` と view の更新 |
+| `migrations/20260813010400_english_learning_retake_fix.sql` | 再受験中に正解が見えてしまう穴を塞ぐ (view の作り直し) |
 | `seed.sql` | 動作確認用の中身 (仮定法の演習 1 冊 5 問 + 未公開の模試 1 冊) |
 | `demo/index.html` | 動作確認ページ (開発用。本番サイトには載せない) |
+| `demo/build_sample_pdf.py` → `demo/sample-book.pdf` | 動作確認用の問題冊子 (2 ページ / 5 問)。seed の設問番号・ページと一対一 |
 | `tests/00_local_stubs.sql` | 素の Postgres で試すための Supabase 相当スタブ (**本番に流さない**) |
-| `tests/10_schema_expectations.sql` | 振る舞いテスト 74 件 |
+| `tests/10_schema_expectations.sql` | 振る舞いテスト 73 件 |
 
 5 本とも**何度流しても安全**（`if not exists` / `or replace` / `drop … if exists`）。
+
+**PDF 運用**を前提にしている。設問文と選択肢は問題冊子 (PDF) の中にあり、DB 側は
+「何ページの第何問か (`questions.page` / `number`)」と「答案の形 (`answer_type` /
+`choice_count`)」だけを持つ。
 
 ## 流し方
 
@@ -35,9 +40,9 @@ supabase db push
 ★ **core だけ流して止めない**こと。RLS は 2 本目に入っているので、core だけの状態は
 「ログインした全員が全生徒の答案を読める」DB になる。
 
-3 本目 (Storage) は PDF を配らないなら省いてよい。
-5 本目 (question_data) は PDF 運用しかしないなら省いてよい。
-**1 本目と 2 本目と 4 本目は必須**（4 本目が無いと採点できる経路が存在しない）。
+省いてよいのは 3 本目 (Storage) だけ — PDF を Supabase Storage 以外で配る場合。
+**010300 (grading) が無いと採点できる経路が存在せず**、
+**010400 (retake_fix) が無いと再受験中に正解が見えたまま**になる。
 
 ## 使ってみる
 
@@ -83,15 +88,23 @@ supabase db push                 # migrations だけ流れる (seed は流れな
 
 ### 触る順番
 
+0. **先に問題冊子を上げる**（下の「講師として見る」で講師にしてから）。
+   「8. 講師の操作」で `supabase/demo/sample-book.pdf` を選び、
+   パス `books/kateiho-enshu5.pdf` で上げる。seed のブックがこのパスを指している
 1. **生徒として新規登録** → `handle_new_user` が `profiles` を自動で作る (role=student)
 2. **3. ブック一覧** → 「英文法 仮定法 演習5」だけ出る。未公開の模試は出ない (RLS)
-3. **受験する** → 設問文と選択肢は出るが、正解は伏せられている
-   (`correct_answer = null`。画面にもそう出る)
+3. **受験する** → 問題冊子が署名付き URL で開く。答案は「何ページの第何問か」だけを出し、
+   正解は伏せられている (`correct_answer = null`。画面にもそう出る)
 4. **手書き** で書いて保存 → `annotations.strokes` に入る。読み直すと戻る
 5. **採点して提出する** → `submit_attempt()` が走り、点数と正解と解説が出る
 6. **6. 復習キュー** → 間違えた設問が積まれている。もう一度受験して同じ問題を落とすと
    `wrong_count` が 2 になる
-7. **7. 守られているかを試す** → 6 つの攻撃が全部弾かれることを確認する
+7. **もう一度受験する** → ★ 一度見えた正解がまた伏せられる (`retake_fix`)。提出すると戻る
+8. **7. 守られているかを試す** → 6 つの攻撃が全部弾かれることを確認する
+
+未公開の模試 (`books/eiken-junichi-04.pdf`) は Storage にオブジェクトが無くても、
+生徒からはブックごと見えない。講師で「PDF を開く」を押すと、
+オブジェクトが無いことによるエラーになる (ポリシーではなく実体が無いため)。
 
 ### 講師として見る
 
@@ -116,7 +129,7 @@ python3 scripts/run_all_gates.py english_schema    # リポジトリ共通の入
   固定していない `security definer` 関数、`anon` 向けポリシー、冪等でない DDL などを落とす。
   DB が無くても回るので CI (`material-gates.yml`) でも走る。
 - **実DB検査** … 使い捨ての Postgres に stubs → migrations を **2 周**流して
-  (冪等性の確認)、`tests/10_schema_expectations.sql` の 74 件を回す。
+  (冪等性の確認)、`tests/10_schema_expectations.sql` の 73 件を回す。
   Postgres が見つからないときは実行しないが、**飛ばしたことを必ず印字する**。
   手元で明示的に指定するなら:
 
@@ -129,7 +142,7 @@ python3 scripts/run_all_gates.py english_schema    # リポジトリ共通の入
   (使い捨て DB を `create` / `drop` するため)。
 
 検査の内訳: 制約 14 / トリガ 3 / 生徒の RLS 20 / 講師の RLS 9 / 未ログイン 4 /
-Storage 3 / 参照整合性 5 / 採点 6 / JSON問題と受験フロー 10。
+Storage 3 / 参照整合性 5 / 採点 6 / 受験フローと再受験 9。
 
 ---
 
@@ -152,14 +165,13 @@ const { data } = await supabase.from('student_questions').select('*').eq('book_i
 この view が返すもの:
 
 - 公開済み (`is_published = true`) のブックの設問だけ
-- `question_data`（設問文・選択肢）は常に返る。無いと解けないため
 - `correct_answer` / `accepted_answers` / `explanation` は、次の**両方**を満たすときだけ返る。
   それ以外は `NULL`。判定結果は `revealed` 列にも出るので UI の出し分けに使える
   1. その生徒が提出済みの答案でその設問に解答している
   2. そのブックを**いま受験中でない**（未提出の答案が 1 つも無い）
 
   条件 2 が無いと、一度提出した本をもう一度受験するときに正解が出たままになる
-  (期待値テストの I8 がこの穴を捕まえた)。
+  (期待値テストの I3 がこの穴を捕まえた)。
 
 講師 (`profiles.role = 'teacher'`) は `questions` テーブルを直接読める。
 
@@ -300,21 +312,16 @@ Postgres は外部キーに自動でインデックスを張らない。UNIQUE �
 凍結されるので、クライアントが採点できる瞬間がどこにも無い。これを足さないと
 「解いて提出する」までしか動かない。
 
-### 6. `questions.question_data` (`…_question_data.sql`)
+### 6. 再受験中に正解を伏せる (`…_retake_fix.sql`)
 
-元の設計の `pdf_path text -- Supabase Storage 上のパス。NULL可（JSON問題のみの場合）`
-に対して、その「JSON問題」を入れる列が無かった。PDF があるブックは本文が PDF 側にあり
-`questions.page` が飛び先を持っているので足りているが、PDF が無いブックだけ
-設問文と選択肢の置き場が無い。
+`student_questions` の `revealed` を「提出済みの答案でその設問に解答したことがあるか」
+だけで決めていたので、**同じ本をもう一度受験している最中も正解が出たまま**だった。
+復習キューから戻る・時間を置いて再挑戦する動線は普通にあるので、そこで答えが見えるのは実害がある。
 
-```
-question_data jsonb  -- {"stem": "設問文", "choices": ["…"], "figure_svg": "…"}
-```
+「そのブックに未提出の答案が 1 つでもあれば伏せる」を足した。提出し終わればまた見える。
 
-正解は入れない (`correct_answer` は今までどおり別列で、view が伏せる)。
-名前は既存の `exam_questions.question_data` に合わせた。
-選択肢の数が `choice_count` と食い違う行は CHECK で弾く
-(ボタンの数と正解番号の範囲がずれるため)。
+★ この穴は期待値テストが捕まえたもので、目で読んで気づいたものではない。
+  検査 (I 群) ごと残してある。
 
 ### 7. Storage
 
@@ -342,6 +349,8 @@ const { data } = await supabase.storage.from('book-pdfs').createSignedUrl(book.p
   ページ 1 枚分のストロークがそのまま 1 行に入るので、
   長時間の書き込みでサイズが膨らむ場合は間引き (点の間引き / 折れ線の簡略化) は
   クライアント側で行う前提。
-- **`questions.question_data` は追加した列**（差分の 6 を参照）。元の設計に
-  設問文の置き場が無く、`pdf_path` が NULL の「JSON問題のみ」のブックを表現できなかったため。
-  PDF 運用しかしないなら 5 本目の migration ごと省いてよい。
+- **PDF を使わないブックは今のところ作れない**。元の設計の
+  `pdf_path … NULL可（JSON問題のみの場合）` に対して、その「JSON問題」の設問文と
+  選択肢を入れる列が `questions` に無い。PDF 運用でいく判断なので今は足していない。
+  必要になったら `question_data jsonb`（`{"stem","choices","figure_svg"}`・正解は入れない）
+  を 1 列足すのが最小の手当てになる。名前は既存の `exam_questions.question_data` に合わせる。

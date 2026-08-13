@@ -9,6 +9,12 @@
 -- ★ 何度流しても増えない (on conflict do nothing)。
 -- ★ 講師アカウントはここでは作らない (auth.users はサインアップで作るため)。
 --   created_by は NULL のまま。誰が作ったかを入れたければ後から update する。
+--
+-- ★ PDF 運用。設問文と選択肢は **PDF の中**にあり、DB 側は
+--   「何ページ目か (questions.page)」と「答案の形 (選択肢の数 / 短答)」だけを持つ。
+--   冊子は supabase/demo/sample-book.pdf (supabase/demo/build_sample_pdf.py が作る)。
+--   ★ 設問番号とページは PDF と一対一で対応している。片方だけ直すとずれる。
+--     デモ画面の「講師」パネルからこの PDF を books/kateiho-enshu5.pdf として上げる。
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
@@ -18,8 +24,7 @@ insert into public.books (id, title, subject, level, pdf_path, page_count,
                           time_limit_sec, is_published)
 values ('5eed0001-5eed-4eed-8eed-5eed00000001',
         '英文法 仮定法 演習5', 'grammar', '標準',
-        null,          -- PDF は使わない (question_data に設問を持つ JSON 問題)
-        null, 600, true)
+        'books/kateiho-enshu5.pdf', 2, 600, true)
 on conflict (id) do nothing;
 
 -- -----------------------------------------------------------------------------
@@ -37,16 +42,16 @@ on conflict (id) do nothing;
 -- -----------------------------------------------------------------------------
 -- 解説は CLAUDE.md の英語 4 セクション形式:
 --   ## 🎯 コアイメージ → ## 🔬 文構造分析 → ## 📍 本文の根拠 → ## ❌ 誤答 NG 理由
+-- 提出するまで生徒には返らない (student_questions view が伏せる)。
 insert into public.questions
     (id, book_id, number, page, answer_type, choice_count, correct_answer,
-     accepted_answers, points, unit_tag, question_data, explanation)
+     accepted_answers, points, unit_tag, explanation)
 values
--- 第1問 --------------------------------------------------------------------
+-- 第1問 (PDF 1 ページ目) ------------------------------------------------------
+--   If I (   ) you, I would accept that offer right away.
+--   1. am  2. was  3. were  4. will be
 ('5eedaa01-5eed-4eed-8eed-5eed0000aa01', '5eed0001-5eed-4eed-8eed-5eed00000001',
- 1, null, 'choice', 4, '3', null, 1, 'SUBJ-01',
- jsonb_build_object(
-   'stem', 'If I (      ) you, I would accept that offer right away.',
-   'choices', jsonb_build_array('am', 'was', 'were', 'will be')),
+ 1, 1, 'choice', 4, '3', null, 1, 'SUBJ-01',
 '## 🎯 コアイメージ
 「今の事実に反すること」を言うときは、時制をひとつ後ろへずらして**距離**を作る。
 現在の話なのに過去形を使うのは「これは現実ではない」という合図。
@@ -65,12 +70,11 @@ if 節を現在形のままにはできない。
 - **was** … 口語では見かけるが、仮定法過去の be は were が原則。4 択では were を選ぶ。
 - **will be** … 条件を表す副詞節の中では未来を will で表さない。'),
 
--- 第2問 --------------------------------------------------------------------
+-- 第2問 (PDF 1 ページ目) ------------------------------------------------------
+--   If she had started ten minutes earlier, she (   ) the last train.
+--   1. catches  2. caught  3. would catch  4. would have caught
 ('5eedaa02-5eed-4eed-8eed-5eed0000aa02', '5eed0001-5eed-4eed-8eed-5eed00000001',
- 2, null, 'choice', 4, '4', null, 2, 'SUBJ-02',
- jsonb_build_object(
-   'stem', 'If she had started ten minutes earlier, she (      ) the last train.',
-   'choices', jsonb_build_array('catches', 'caught', 'would catch', 'would have caught')),
+ 2, 1, 'choice', 4, '4', null, 2, 'SUBJ-02',
 '## 🎯 コアイメージ
 **過去**の事実に反することを言うときは、もう一段だけ時制を後ろへずらす。
 「あのとき〜していたら、〜だったのに」は済んでしまった話なので、
@@ -90,11 +94,10 @@ if 節の `she **had started** ten minutes earlier` が過去完了。
 - **would catch** … 仮定法**過去**の主節。現在の反実仮想の形なので、
   `had started` という過去完了と時制が噛み合わない。'),
 
--- 第3問 --------------------------------------------------------------------
+-- 第3問 (PDF 1 ページ目・短答) -------------------------------------------------
+--   I wish I (   ) speak French fluently.  can を適切な形にして書きなさい。
 ('5eedaa03-5eed-4eed-8eed-5eed0000aa03', '5eed0001-5eed-4eed-8eed-5eed00000001',
- 3, null, 'short', null, 'could', array['could speak'], 2, 'SUBJ-03',
- jsonb_build_object(
-   'stem', 'I wish I (      ) speak French fluently.  （can を適切な形にして入れなさい）'),
+ 3, 1, 'short', null, 'could', array['could speak'], 2, 'SUBJ-03',
 '## 🎯 コアイメージ
 `wish` は「そうでない今」を嘆く動詞。願っている中身は**現実ではない**ので、
 wish のうしろは必ず時制をひとつ後ろへずらす。
@@ -113,12 +116,11 @@ wish のうしろは必ず時制をひとつ後ろへずらす。
 - **had been able to** … それは「あのとき話せたらよかったのに」という過去の話。
   この文は「今」話せないことを嘆いている。'),
 
--- 第4問 --------------------------------------------------------------------
+-- 第4問 (PDF 2 ページ目) ------------------------------------------------------
+--   (   ) it not been for your advice, I would have made a serious mistake.
+--   1. If  2. Had  3. Were  4. Should
 ('5eedaa04-5eed-4eed-8eed-5eed0000aa04', '5eed0001-5eed-4eed-8eed-5eed00000001',
- 4, null, 'choice', 4, '2', null, 1, 'SUBJ-04',
- jsonb_build_object(
-   'stem', '(      ) it not been for your advice, I would have made a serious mistake.',
-   'choices', jsonb_build_array('If', 'Had', 'Were', 'Should')),
+ 4, 2, 'choice', 4, '2', null, 1, 'SUBJ-04',
 '## 🎯 コアイメージ
 仮定法の if は**省略できる**。省略すると、代わりに助動詞が主語の前に出てくる（倒置）。
 `If it had not been for …` → `**Had** it not been for …`。
@@ -138,11 +140,10 @@ would have + 過去分詞なので、空所は過去完了側でなければな�
   主節の would have made と時制が合わない。
 - **Should** … `Should it …` は「万一〜なら」で、これから起きることの話。'),
 
--- 第5問 --------------------------------------------------------------------
+-- 第5問 (PDF 2 ページ目・短答) -------------------------------------------------
+--   If it (   ) tomorrow, we will go hiking.  not rain を適切な形にして書きなさい。
 ('5eedaa05-5eed-4eed-8eed-5eed0000aa05', '5eed0001-5eed-4eed-8eed-5eed00000001',
- 5, null, 'short', null, 'does not rain', array['doesn''t rain'], 2, 'SUBJ-05',
- jsonb_build_object(
-   'stem', 'If it (      ) tomorrow, we will go hiking.  （not rain を適切な形にして入れなさい）'),
+ 5, 2, 'short', null, 'does not rain', array['doesn''t rain'], 2, 'SUBJ-05',
 '## 🎯 コアイメージ
 仮定法とまぎらわしいが、これは**ただの条件**。
 「明日雨が降らない」は十分ありうる話で、事実に反していない。だから時制をずらさない。

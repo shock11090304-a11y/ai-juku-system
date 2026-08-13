@@ -179,7 +179,75 @@ def static_checks(mig_files):
         if not os.path.exists(p):
             ng(f"実DBテストのファイルが無い: {os.path.relpath(p, ROOT)}")
 
+    # --- 11. seed の設問と、問題冊子 PDF の設問がずれていないか -------------
+    check_seed_matches_pdf()
+
     return {"tables": created, "rls": rls_on, "policies": len(pol)}
+
+
+SEED = os.path.join(ROOT, "supabase", "seed.sql")
+PDF_BUILDER = os.path.join(ROOT, "supabase", "demo", "build_sample_pdf.py")
+
+# seed.sql の 1 冊目 (5eed0001…) の設問タプルから
+#   number, page, answer_type, choice_count, correct_answer, points
+# を取る。値の並びは seed.sql の insert の列順に依存しているので、
+# 列を足すときはここも直すこと (ずれたら「取れない」で落ちる)。
+_SEED_Q = re.compile(
+    r"\('5eedaa\w+-[^']+',\s*'5eed0001-[^']+',\s*"
+    r"(\d+),\s*(\d+),\s*'(\w+)',\s*(\d+|null),\s*'([^']*)',\s*"
+    r"(?:null|array\[[^\]]*\]),\s*(\d+),", re.S)
+
+
+def check_seed_matches_pdf():
+    """答案 (seed.sql) と問題冊子 (PDF ビルダー) の設問が一対一で対応しているか。
+
+    ★ 設問文は PDF の中にあり、DB 側は「何ページの第何問か」しか持たない。
+      片方だけ直すと **画面の第3問と冊子の第3問が違う問題を指す**。
+      生徒には気づけない形でずれるので、機械で止める。
+    """
+    if not os.path.exists(SEED):
+        return                                  # seed は必須ではない
+    if not os.path.exists(PDF_BUILDER):
+        ng("supabase/seed.sql はあるのに問題冊子のビルダーが無い "
+           "(supabase/demo/build_sample_pdf.py)")
+        return
+
+    seed_rows = {}
+    for m in _SEED_Q.finditer(read(SEED)):
+        no, page, atype, cc, _ans, pts = m.groups()
+        seed_rows[int(no)] = (int(page), atype, None if cc == "null" else int(cc), int(pts))
+    if not seed_rows:
+        ng("supabase/seed.sql から設問を 1 件も読めない (列順が変わった可能性)")
+        return
+
+    # ビルダーの QUESTIONS を import せずに読む (import すると副作用の心配がある)
+    src = read(PDF_BUILDER)
+    ns = {}
+    try:
+        block = re.search(r"^QUESTIONS = \[.*?^\]", src, re.S | re.M).group(0)
+        exec(compile(block, PDF_BUILDER, "exec"), ns)     # リテラルだけの代入
+    except Exception as e:
+        ng(f"問題冊子のビルダーから QUESTIONS を読めない: {type(e).__name__}: {e}")
+        return
+
+    pdf_rows = {no: (page, ("choice" if ch else "short"), len(ch) if ch else None, pts)
+                for no, page, _stem, ch, pts in ns["QUESTIONS"]}
+
+    if set(seed_rows) != set(pdf_rows):
+        ng(f"設問番号が食い違う — seed={sorted(seed_rows)} / 冊子={sorted(pdf_rows)}")
+        return
+    for no in sorted(seed_rows):
+        if seed_rows[no] != pdf_rows[no]:
+            ng(f"第{no}問がずれている — "
+               f"seed=(ページ{seed_rows[no][0]}, {seed_rows[no][1]}, "
+               f"選択肢{seed_rows[no][2]}, {seed_rows[no][3]}点) / "
+               f"冊子=(ページ{pdf_rows[no][0]}, {pdf_rows[no][1]}, "
+               f"選択肢{pdf_rows[no][2]}, {pdf_rows[no][3]}点)")
+
+    pdf = os.path.join(ROOT, "supabase", "demo", "sample-book.pdf")
+    if not os.path.exists(pdf):
+        ng("問題冊子 PDF が無い (python3 supabase/demo/build_sample_pdf.py で作る)")
+    print(f"  [check] 答案と問題冊子の対応 {len(seed_rows)} 問（番号・ページ・形式・配点）")
 
 
 # =============================================================================

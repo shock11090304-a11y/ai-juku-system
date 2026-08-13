@@ -659,76 +659,60 @@ end
 $$;
 
 -- =============================================================================
--- I. question_data (JSON 問題) と、デモ画面が実際に投げる文の形
+-- I. 受験フロー (PDF 運用) と、再受験中に正解を伏せること
 -- =============================================================================
 -- ★ ここは supabase/demo/index.html が投げるのと同じ形の SQL を流している。
---   列単位の grant を足したので、「画面からは permission denied になる」形を
---   机上で見落としやすい (RLS は通るのに grant で落ちる)。実際の形で確かめる。
+--   列単位の grant を足したので、「RLS は通るのに grant で落ちる」形が
+--   机上で見落としやすい。実際の形で確かめる。
+-- ★ I2 は「前は見えていた」ことを先に確認してから伏せる。順序を逆にすると、
+--   もともと見えていなかっただけの状態でも通ってしまう (空振りする検査になる)。
 do $$
 declare
     n int;
-    v_qd jsonb;
     v_correct text;
 begin
-    -- I1: 選択肢の数が choice_count と違う JSON 問題は入らない
-    begin
-        insert into public.questions (book_id, number, answer_type, choice_count,
-                                      correct_answer, question_data)
-        values ('ccccccc1-cccc-4ccc-8ccc-ccccccccccc1', 921, 'choice', 4, '1',
-                '{"stem":"x","choices":["a","b","c"]}'::jsonb);
-        raise exception '[fail] I1 choices が 3 個なのに choice_count=4 の設問が入った';
-    exception when check_violation then null;
-    end;
-
-    -- I2: 設問文の無い JSON 問題は入らない
-    begin
-        insert into public.questions (book_id, number, answer_type, choice_count,
-                                      correct_answer, question_data)
-        values ('ccccccc1-cccc-4ccc-8ccc-ccccccccccc1', 922, 'choice', 4, '1',
-                '{"choices":["a","b","c","d"]}'::jsonb);
-        raise exception '[fail] I2 stem の無い JSON 問題が入った';
-    exception when check_violation then null;
-    end;
-
-    -- I3: choices が配列でない (jsonb_array_length が 22023 で落ちないこと)
-    begin
-        insert into public.questions (book_id, number, answer_type, choice_count,
-                                      correct_answer, question_data)
-        values ('ccccccc1-cccc-4ccc-8ccc-ccccccccccc1', 923, 'choice', 4, '1',
-                '{"stem":"x","choices":"a,b,c,d"}'::jsonb);
-        raise exception '[fail] I3 choices が文字列の設問が入った';
-    exception when check_violation then null;
-    end;
-
-    -- 以降は生徒として、デモ画面と同じ手順を踏む
     perform set_config('request.jwt.claims',
         '{"sub":"bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1","role":"authenticated"}', true);
     execute 'set local role authenticated';
 
-    -- I4: 受験を開始する (attempts への insert)
+    -- I1: 前提 — 生徒1 は既に attempt1 を提出済みなので、いま Q1 の正解は見えている
+    select correct_answer into v_correct from public.student_questions
+     where id = 'ddddddd1-dddd-4ddd-8ddd-ddddddddddd1';
+    if v_correct is distinct from '3' then
+        raise exception '[fail] I1 前提が崩れている: 提出済みなのに正解が見えない (%)', v_correct;
+    end if;
+
+    -- I2: 受験を開始する (attempts への insert)
     insert into public.attempts (id, book_id, user_id)
     values ('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5',
             'ccccccc1-cccc-4ccc-8ccc-ccccccccccc1',
             'bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1');
 
-    -- I5: 解答用紙の行をまとめて作る。★ デモは列を 4 つだけ送る (is_correct は送らない)
+    -- I3: ★ 受験を始めた瞬間、さっきまで見えていた正解が伏せられる (再受験の穴)
+    select correct_answer into v_correct from public.student_questions
+     where id = 'ddddddd1-dddd-4ddd-8ddd-ddddddddddd1';
+    if v_correct is not null then
+        raise exception '[fail] I3 再受験中なのに正解が見えている (%)', v_correct;
+    end if;
+
+    -- I4: 解答用紙の行をまとめて作る。★ デモは列を 4 つだけ送る (is_correct は送らない)
     insert into public.answers (attempt_id, question_id, user_answer, time_spent_sec)
     select 'eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5', q.id, null, 0
       from public.student_questions q
      where q.book_id = 'ccccccc1-cccc-4ccc-8ccc-ccccccccccc1';
     get diagnostics n = row_count;
     if n <> 2 then
-        raise exception '[fail] I5 解答欄が % 行しか作れない (期待 2)', n;
+        raise exception '[fail] I4 解答欄が % 行しか作れない (期待 2)', n;
     end if;
 
-    -- I6: 解答を書く (user_answer だけの update)
+    -- I5: 解答を書く (user_answer だけの update)
     update public.answers set user_answer = '3', time_spent_sec = 40
      where attempt_id = 'eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5'
        and question_id = 'ddddddd1-dddd-4ddd-8ddd-ddddddddddd1';
     get diagnostics n = row_count;
-    if n <> 1 then raise exception '[fail] I6 解答を保存できない'; end if;
+    if n <> 1 then raise exception '[fail] I5 解答を保存できない'; end if;
 
-    -- I7: 手書きの upsert (insert … on conflict do update)。列の grant で落ちないこと
+    -- I6: 手書きの upsert (insert … on conflict do update)。列の grant で落ちないこと
     insert into public.annotations (attempt_id, page, strokes)
     values ('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5', 1, '[]'::jsonb)
     on conflict (attempt_id, page) do update
@@ -738,34 +722,31 @@ begin
             '[{"points":[[1,2]],"color":"#1b2233"}]'::jsonb)
     on conflict (attempt_id, page) do update
        set strokes = excluded.strokes, attempt_id = excluded.attempt_id, page = excluded.page;
+    select jsonb_array_length(strokes) into n from public.annotations
+     where attempt_id = 'eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5' and page = 1;
+    if n <> 1 then raise exception '[fail] I6 手書きの upsert が効いていない (% 本)', n; end if;
 
-    -- I8: ★ 提出前でも設問文と選択肢は返る (無いと解けない)。正解だけ伏せられている
-    select question_data, correct_answer into v_qd, v_correct
-      from public.student_questions
-     where id = 'ddddddd1-dddd-4ddd-8ddd-ddddddddddd1';
-    if v_correct is not null then
-        raise exception '[fail] I8 提出前なのに正解が返っている';
-    end if;
-
-    -- I9: 採点して提出 → 正解が出る
+    -- I7: 採点して提出
     perform public.submit_attempt('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5');
+
+    -- I8: 提出し終わったので正解がまた見える
     select correct_answer into v_correct from public.student_questions
      where id = 'ddddddd1-dddd-4ddd-8ddd-ddddddddddd1';
     if v_correct is distinct from '3' then
-        raise exception '[fail] I9 提出後も正解が返らない (%)', v_correct;
+        raise exception '[fail] I8 提出後も正解が返らない (%)', v_correct;
     end if;
 
-    -- I10: 提出したので手書きはもう保存できない (答案ごと凍結)
+    -- I9: 提出したので手書きはもう保存できない (答案ごと凍結)
     begin
         insert into public.annotations (attempt_id, page, strokes)
         values ('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5', 2, '[]'::jsonb);
-        raise exception '[fail] I10 提出後に手書きを保存できてしまった';
+        raise exception '[fail] I9 提出後に手書きを保存できてしまった';
     exception when insufficient_privilege then null;
     end;
 
     reset role;
-    raise notice '[ok] I JSON問題と受験フロー 10 件';
+    raise notice '[ok] I 受験フローと再受験 9 件';
 end
 $$;
 
-\echo '=== 全ての検査を通過 (A 14 / B 3 / C 20 / D 9 / E 4 / F 3 / G 5 / H 6 / I 10) ==='
+\echo '=== 全ての検査を通過 (A 14 / B 3 / C 20 / D 9 / E 4 / F 3 / G 5 / H 6 / I 9) ==='
