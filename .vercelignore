@@ -15,5 +15,7 @@ lesson-prints/*.pdf
 supabase/migrations/
 supabase/tests/
 supabase/seed.sql
+supabase/bundle.sql
+supabase/build_bundle.py
 supabase/README.md
 supabase/demo/build_sample_pdf.py

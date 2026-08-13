@@ -182,7 +182,32 @@ def static_checks(mig_files):
     # --- 11. seed の設問と、問題冊子 PDF の設問がずれていないか -------------
     check_seed_matches_pdf()
 
+    # --- 12. 貼る用の bundle.sql が元の SQL と一致しているか -----------------
+    check_bundle_fresh()
+
     return {"tables": created, "rls": rls_on, "policies": len(pol)}
+
+
+BUNDLE_BUILDER = os.path.join(ROOT, "supabase", "build_bundle.py")
+
+
+def check_bundle_fresh():
+    """SQL Editor に貼る用の bundle.sql が古くなっていないか。
+
+    ★ ダッシュボードは塾長のブラウザからしか触れない (この環境はプロキシのポリシーで
+      supabase.com に出られない)。だから「貼るファイル」が正典から外れていると、
+      **こちらでは全部緑なのに、本番の DB だけ古い**という状態が作れてしまう。
+      生成物を置く以上、古さを機械で見る。
+    """
+    if not os.path.exists(BUNDLE_BUILDER):
+        return
+    r = subprocess.run([sys.executable, BUNDLE_BUILDER, "--check"],
+                       cwd=ROOT, capture_output=True, text=True, timeout=60)
+    out = (r.stdout + r.stderr).strip()
+    if r.returncode:
+        ng(out.replace("✗ ", "") or "bundle.sql の検査が失敗した")
+    else:
+        print("  " + out.replace("[ok] ", "[check] "))
 
 
 SEED = os.path.join(ROOT, "supabase", "seed.sql")

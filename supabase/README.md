@@ -17,6 +17,7 @@
 | `migrations/20260813010300_english_learning_grading.sql` | 採点 RPC `submit_attempt()` と、点数を直接書けなくする権限 |
 | `migrations/20260813010400_english_learning_retake_fix.sql` | 再受験中に正解が見えてしまう穴を塞ぐ (view の作り直し) |
 | `seed.sql` | 動作確認用の中身 (仮定法の演習 1 冊 5 問 + 未公開の模試 1 冊) |
+| `build_bundle.py` → `bundle.sql` | 上の 5 本 + seed を 1 本にまとめたもの。**SQL Editor に貼る用** |
 | `demo/index.html` | 動作確認ページ (Vercel が配信する。秘密は持たず URL とキーは実行時入力) |
 | `demo/build_sample_pdf.py` → `demo/sample-book.pdf` | 動作確認用の問題冊子 (2 ページ / 5 問)。seed の設問番号・ページと一対一 |
 | `tests/00_local_stubs.sql` | 素の Postgres で試すための Supabase 相当スタブ (**本番に流さない**) |
@@ -55,7 +56,23 @@ Project URL と anon key は実行時に画面から受け取る。
   **`main` にマージすると本番ドメインにも出る**。出したくないならマージ前に
   `.vercelignore` を `supabase/` の 1 行に戻すこと。
 
-### A. 手元だけで動かす (Docker が要る・いちばん手軽)
+### A. ターミナルを使わない (SQL Editor に 1 回貼るだけ・いちばん確実)
+
+Supabase CLI も Docker も要らない。ダッシュボードだけで終わる。
+
+1. Supabase のプロジェクトを作る (使い捨ての新規プロジェクト)
+2. **SQL Editor** に `supabase/bundle.sql` を全部貼って **Run**
+   — migration 5 本 + seed が正しい順で流れる。何度貼っても増えないし壊れない
+3. **Authentication → Providers → Email** の "Confirm email" を **OFF**
+4. Vercel のプレビューURL + `/supabase/demo/` を開く
+5. デモの「1. 接続」に Project URL と anon key を貼る
+
+★ `bundle.sql` は生成物。`migrations/` か `seed.sql` を直したら
+  `python3 supabase/build_bundle.py` で作り直すこと
+  (古いままだと `check_schema.py` が落ちる)。
+★ 本番に入れるときは末尾の seed 部分を消して貼る。
+
+### B. Supabase CLI で流す (Docker が要る・手元だけで完結)
 
 ```bash
 # CLI の導入 (★ npm install -g supabase は「サポートしていない」と言われて失敗する)
@@ -77,7 +94,7 @@ python3 -m http.server 8080      # 別のターミナルで
 デモの「1. 接続」に貼る。ローカルはメール確認が既定で無効なので、
 そのまま新規登録 → ログインできる。
 
-### B. web から見る (ホスト版 Supabase + Vercel プレビュー)
+### C. web から見る (ホスト版 Supabase + Vercel プレビュー)
 
 ★ **ローカルの `supabase start` では web から繋がらない**。HTTPS のページから
 `http://127.0.0.1:54321` を呼ぶのは混在コンテンツでブラウザが止める。
@@ -88,14 +105,15 @@ web で見るならホスト版のプロジェクトが要る。
      `exam_questions` の staging に使っているプロジェクトには流さない
      (`auth.users` にトリガを足すので、他の用途と同居させない方がよい)。
 
-2. **migration を流す**
+2. **migration を流す** — **A の「SQL Editor に `bundle.sql` を貼る」がいちばん確実**。
+   CLI を使うなら:
 
    ```bash
    supabase link --project-ref <プロジェクトID>
    supabase db push                 # migrations だけ流れる (seed は流れない)
    ```
 
-   シードは SQL Editor に `supabase/seed.sql` を貼る。
+   この場合シードは別途 SQL Editor に `supabase/seed.sql` を貼る。
 
 3. **メール確認を切る** — Authentication → Providers → Email の "Confirm email" を
    オフにする。既定は有効で、新規登録してもすぐログインできない。
