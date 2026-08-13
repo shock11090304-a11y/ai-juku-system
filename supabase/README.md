@@ -17,7 +17,7 @@
 | `migrations/20260813010300_english_learning_grading.sql` | 採点 RPC `submit_attempt()` と、点数を直接書けなくする権限 |
 | `migrations/20260813010400_english_learning_retake_fix.sql` | 再受験中に正解が見えてしまう穴を塞ぐ (view の作り直し) |
 | `seed.sql` | 動作確認用の中身 (仮定法の演習 1 冊 5 問 + 未公開の模試 1 冊) |
-| `demo/index.html` | 動作確認ページ (開発用。本番サイトには載せない) |
+| `demo/index.html` | 動作確認ページ (Vercel が配信する。秘密は持たず URL とキーは実行時入力) |
 | `demo/build_sample_pdf.py` → `demo/sample-book.pdf` | 動作確認用の問題冊子 (2 ページ / 5 問)。seed の設問番号・ページと一対一 |
 | `tests/00_local_stubs.sql` | 素の Postgres で試すための Supabase 相当スタブ (**本番に流さない**) |
 | `tests/10_schema_expectations.sql` | 振る舞いテスト 73 件 |
@@ -47,7 +47,13 @@ supabase db push
 ## 使ってみる
 
 `supabase/demo/index.html` が動作確認ページ。RLS・正解の伏せ方・採点 RPC・手書き保存を
-実際に触って確かめられる。**開発用**なので本番サイトには載せない (`.vercelignore` で除外済み)。
+実際に触って確かめられる。ページ自体は**秘密を 1 つも持たない**静的ファイルで、
+Project URL と anon key は実行時に画面から受け取る。
+
+★ `.vercelignore` は SQL とテストだけ除外し、**このページと `sample-book.pdf` は配信する**。
+  Vercel のプレビューURL (ブランチごとに発行される) から触れるようにするため。
+  **`main` にマージすると本番ドメインにも出る**。出したくないならマージ前に
+  `.vercelignore` を `supabase/` の 1 行に戻すこと。
 
 ### A. 手元だけで動かす (Docker が要る・いちばん手軽)
 
@@ -71,26 +77,49 @@ python3 -m http.server 8080      # 別のターミナルで
 デモの「1. 接続」に貼る。ローカルはメール確認が既定で無効なので、
 そのまま新規登録 → ログインできる。
 
-### B. ホストの Supabase プロジェクトで動かす
+### B. web から見る (ホスト版 Supabase + Vercel プレビュー)
 
-```bash
-supabase link --project-ref <プロジェクトID>
-supabase db push                 # migrations だけ流れる (seed は流れない)
-```
+★ **ローカルの `supabase start` では web から繋がらない**。HTTPS のページから
+`http://127.0.0.1:54321` を呼ぶのは混在コンテンツでブラウザが止める。
+web で見るならホスト版のプロジェクトが要る。
 
-シードを入れるなら SQL Editor に `supabase/seed.sql` を貼る。
-デモには **Settings → API** の Project URL と **anon public** キーを貼る
-(`service_role` キーは絶対に貼らない。RLS を全部素通りしてしまう)。
+1. **新しい Supabase プロジェクトを作る** (supabase.com・無料枠でよい)
+   ★ 使い捨ての新規プロジェクトにすること。`SUPABASE_MIRROR_URL` で
+     `exam_questions` の staging に使っているプロジェクトには流さない
+     (`auth.users` にトリガを足すので、他の用途と同居させない方がよい)。
 
-★ メール確認が既定で有効なので、新規登録してもすぐログインできない。
-確認メールを踏むか、Authentication → Providers → Email の "Confirm email" を
-一時的に切る。
+2. **migration を流す**
+
+   ```bash
+   supabase link --project-ref <プロジェクトID>
+   supabase db push                 # migrations だけ流れる (seed は流れない)
+   ```
+
+   シードは SQL Editor に `supabase/seed.sql` を貼る。
+
+3. **メール確認を切る** — Authentication → Providers → Email の "Confirm email" を
+   オフにする。既定は有効で、新規登録してもすぐログインできない。
+
+4. **Vercel のプレビューURL を開く** — このブランチを push すると Vercel が
+   ブランチ用のデプロイを作る。URL は Vercel のダッシュボード → 該当プロジェクト →
+   Deployments でブランチを選ぶか、GitHub の該当コミットのステータス欄から辿る。
+   開くパスは `/supabase/demo/`。
+
+5. デモの「1. 接続」に **Settings → API** の Project URL と **anon public** キーを貼る
+   (`service_role` キーは絶対に貼らない。RLS を全部素通りしてしまう。
+    ページ側でも anon 以外のキーは弾くようにしてある)。
+
+★ プレビューURL を知っていれば誰でも開ける (`noindex` は入れてあるが認証は無い)。
+  誰かが開けば **そのプロジェクトに勝手にサインアップできる**。使い捨てのプロジェクトで
+  試すこと。終わったらプロジェクトごと消すのがいちばん確実。
 
 ### 触る順番
 
 0. **先に問題冊子を上げる**（下の「講師として見る」で講師にしてから）。
-   「8. 講師の操作」で `supabase/demo/sample-book.pdf` を選び、
-   パス `books/kateiho-enshu5.pdf` で上げる。seed のブックがこのパスを指している
+   「8. 講師の操作」の**「同梱の sample-book.pdf を上げる」**を押すだけ
+   (ページと同じ場所に置いてある PDF をそのまま Storage に入れる)。
+   パスの既定 `books/kateiho-enshu5.pdf` は seed のブックが指している先と一致している。
+   手元の PDF を使いたければファイルを選んで「選んだ PDF を上げる」
 1. **生徒として新規登録** → `handle_new_user` が `profiles` を自動で作る (role=student)
 2. **3. ブック一覧** → 「英文法 仮定法 演習5」だけ出る。未公開の模試は出ない (RLS)
 3. **受験する** → 問題冊子が署名付き URL で開く。答案は「何ページの第何問か」だけを出し、

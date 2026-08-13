@@ -3,7 +3,17 @@
 # 詳細: deploy 容量上限超過で 14:37 以降 6 連続失敗 → PDF 外部化で復旧
 lesson-prints/*.pdf
 
-# 2026-08-13: 英語学習アプリの DB スキーマ (Supabase) は開発用の資産で、
-# 静的サイトからは 1 つも参照しない。動作確認ページ (supabase/demo/) も開発用なので
-# 本番サイトに載せない。DB への適用は `supabase db push` で行う。
-supabase/
+# 2026-08-13: 英語学習アプリの DB スキーマ (Supabase)。
+# SQL とテストは静的サイトから 1 つも参照しないので配信しない。
+# ★ 動作確認ページ (supabase/demo/) だけは **web から触れるように残す**。
+#   Vercel のプレビューURL で確認するため。ホスト版の Supabase につなぐので、
+#   ページ自体は URL とキーを実行時に受け取るだけの静的ファイル (秘密は持たない)。
+#   ★ main にマージすると本番ドメイン (trillion-ai-juku.com/supabase/demo/) にも出る。
+#     出したくないなら、マージ前にこの 2 行を消して `supabase/` に戻すこと。
+# ★ `!` の否定は使わない。Vercel の ignore は否定の扱いが .gitignore と揃わないことがあり、
+#   「除外したつもりが配信されている / その逆」が起きる。除外するものを列挙する。
+supabase/migrations/
+supabase/tests/
+supabase/seed.sql
+supabase/README.md
+supabase/demo/build_sample_pdf.py

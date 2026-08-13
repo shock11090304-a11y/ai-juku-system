@@ -7,9 +7,12 @@
 <title>英語学習アプリ — スキーマ動作確認</title>
 <!--
   supabase/migrations/*.sql を実際に触るための確認用ページ。
-  ★ 開発用。本番サイトに置くものではない (.vercelignore で supabase/ ごと除外している)。
+  ★ 開発用。秘密は 1 つも持たない (Project URL と anon key は実行時に画面から受け取る)。
+     .vercelignore は SQL とテストだけ除外し、このページと sample-book.pdf は配信する
+     (Vercel のプレビューURL で確認するため)。
+  ★ main にマージすると本番ドメインにも出る。出したくないなら .vercelignore を戻すこと。
   ★ 使い方は supabase/README.md の「使ってみる」を参照。
-     python3 -m http.server 8080 で開くのが確実 (file:// でも動くようにはしてある)。
+     手元で開くなら python3 -m http.server 8080 (file:// だと同梱PDFの取得が失敗する)。
 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -167,10 +170,13 @@
       <input type="text" id="upPath" value="books/kateiho-enshu5.pdf">
     </div>
   </div>
-  <label>PDF ファイル（<code>supabase/demo/sample-book.pdf</code> を選ぶ）</label>
+  <div>
+    <button id="btnUploadBundled">同梱の sample-book.pdf を上げる</button>
+  </div>
+  <label>または手元の PDF を選ぶ</label>
   <input type="file" id="upFile" accept="application/pdf">
   <div>
-    <button id="btnUpload">book-pdfs に上げる</button>
+    <button id="btnUpload">選んだ PDF を上げる</button>
     <button class="ghost" id="btnTogglePub">選択中のブックの公開/非公開を切り替える</button>
   </div>
   <div class="log" id="logTeacher">—</div>
@@ -560,20 +566,39 @@ $("btnAttack").onclick = async () => {
 };
 
 /* ───────────────────────── 8. 講師の操作 ───────────────────────── */
-$("btnUpload").onclick = async () => {
-  const f = $("upFile").files[0];
+async function uploadPdf(blob, label) {
   const path = $("upPath").value.trim();
-  if (!f) return log("logTeacher", "PDF を選んでください", "warn");
   if (!path) return log("logTeacher", "アップロード先のパスが要ります", "warn");
 
   const { error } = await sb.storage.from("book-pdfs")
-    .upload(path, f, { contentType: "application/pdf", upsert: true });
+    .upload(path, blob, { contentType: "application/pdf", upsert: true });
   if (error) {
     return log("logTeacher",
       `上げられません（生徒アカウントならこれが正しい動き）: ${errText(error)}`, "warn");
   }
-  log("logTeacher", `上げました: book-pdfs/${path}`, "ok");
+  log("logTeacher", `上げました: book-pdfs/${path}（${label}）`, "ok");
   if (book && book.pdf_path === path) showPdf(book);   // 開いている冊子を差し替える
+}
+
+// 同じ場所に置いてある sample-book.pdf をそのまま上げる。
+// ★ web から触るときはローカルにファイルが無いので、こちらが主な経路になる。
+$("btnUploadBundled").onclick = async () => {
+  let blob;
+  try {
+    const res = await fetch("./sample-book.pdf");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    blob = await res.blob();
+  } catch (e) {
+    return log("logTeacher",
+      `同梱の PDF を取れません（file:// で開いていると失敗します）: ${e.message}`, "warn");
+  }
+  uploadPdf(blob, `同梱 ${Math.round(blob.size / 1024)} KB`);
+};
+
+$("btnUpload").onclick = async () => {
+  const f = $("upFile").files[0];
+  if (!f) return log("logTeacher", "PDF を選んでください", "warn");
+  uploadPdf(f, f.name);
 };
 
 $("btnTogglePub").onclick = async () => {
