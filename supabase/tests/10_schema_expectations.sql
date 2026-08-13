@@ -61,7 +61,8 @@ insert into public.answers (attempt_id, question_id, user_answer, is_correct, ti
      '3', true, 45);
 
 insert into public.annotations (attempt_id, page, strokes) values
-    ('eeeeeee1-eeee-4eee-8eee-eeeeeeeeeee1', 2, '[{"points":[[10,10],[20,20]],"color":"#000"}]');
+    ('eeeeeee1-eeee-4eee-8eee-eeeeeeeeeee1', 2,
+     '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,"p":[[0.10,0.10],[0.20,0.20]]}]}');
 
 insert into public.review_items (user_id, question_id, wrong_count, tags) values
     ('bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1', 'ddddddd2-dddd-4ddd-8ddd-ddddddddddd2',
@@ -192,7 +193,7 @@ begin
     -- A13: 同じ attempt の同じページに 2 行
     begin
         insert into public.annotations (attempt_id, page, strokes)
-        values ('eeeeeee1-eeee-4eee-8eee-eeeeeeeeeee1', 2, '[]');
+        values ('eeeeeee1-eeee-4eee-8eee-eeeeeeeeeee1', 2, '{"v":1,"strokes":[]}');
         raise exception '[fail] A13 (attempt_id, page) が重複した annotation が入ってしまった';
     exception when unique_violation then n_ok := n_ok + 1;
     end;
@@ -244,7 +245,7 @@ begin
      where attempt_id = 'eeeeeee1-eeee-4eee-8eee-eeeeeeeeeee1' and page = 2;
     perform pg_sleep(0.01);
     update public.annotations
-       set strokes = '[{"points":[[1,1]],"color":"#f00"}]',
+       set strokes = '{"v":1,"strokes":[{"c":"#ef4444","w":0.003,"p":[[0.01,0.01]]}]}',
            updated_at = '2000-01-01'::timestamptz   -- 嘘の時刻を送りつけても
      where attempt_id = 'eeeeeee1-eeee-4eee-8eee-eeeeeeeeeee1' and page = 2;
     select updated_at into v_after from public.annotations
@@ -554,7 +555,7 @@ begin
     values ('eeeeeee9-eeee-4eee-8eee-eeeeeeeeeee9',
             'ddddddd2-dddd-4ddd-8ddd-ddddddddddd2', 'was');
     insert into public.annotations (attempt_id, page, strokes)
-    values ('eeeeeee9-eeee-4eee-8eee-eeeeeeeeeee9', 1, '[]');
+    values ('eeeeeee9-eeee-4eee-8eee-eeeeeeeeeee9', 1, '{"v":1,"strokes":[]}');
     delete from public.attempts where id = 'eeeeeee9-eeee-4eee-8eee-eeeeeeeeeee9';
     select count(*) into n from public.answers
      where attempt_id = 'eeeeeee9-eeee-4eee-8eee-eeeeeeeeeee9';
@@ -714,15 +715,15 @@ begin
 
     -- I6: 手書きの upsert (insert … on conflict do update)。列の grant で落ちないこと
     insert into public.annotations (attempt_id, page, strokes)
-    values ('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5', 1, '[]'::jsonb)
+    values ('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5', 1, '{"v":1,"strokes":[]}'::jsonb)
     on conflict (attempt_id, page) do update
        set strokes = excluded.strokes, attempt_id = excluded.attempt_id, page = excluded.page;
     insert into public.annotations (attempt_id, page, strokes)
     values ('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5', 1,
-            '[{"points":[[1,2]],"color":"#1b2233"}]'::jsonb)
+            '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,"p":[[0.01,0.02]]}]}'::jsonb)
     on conflict (attempt_id, page) do update
        set strokes = excluded.strokes, attempt_id = excluded.attempt_id, page = excluded.page;
-    select jsonb_array_length(strokes) into n from public.annotations
+    select jsonb_array_length(strokes -> 'strokes') into n from public.annotations
      where attempt_id = 'eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5' and page = 1;
     if n <> 1 then raise exception '[fail] I6 手書きの upsert が効いていない (% 本)', n; end if;
 
@@ -739,7 +740,7 @@ begin
     -- I9: 提出したので手書きはもう保存できない (答案ごと凍結)
     begin
         insert into public.annotations (attempt_id, page, strokes)
-        values ('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5', 2, '[]'::jsonb);
+        values ('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5', 2, '{"v":1,"strokes":[]}'::jsonb);
         raise exception '[fail] I9 提出後に手書きを保存できてしまった';
     exception when insufficient_privilege then null;
     end;
@@ -749,4 +750,116 @@ begin
 end
 $$;
 
-\echo '=== 全ての検査を通過 (A 14 / B 3 / C 20 / D 9 / E 4 / F 3 / G 5 / H 6 / I 9) ==='
+-- =============================================================================
+-- J. 手書きストロークの形 (§5) — 正規化座標だけを通すこと
+-- =============================================================================
+-- ★ ここが緩いと「書いた端末以外では位置を復元できないデータ」が溜まる。
+--   溜まってからでは基準サイズが無いので変換できない = 直せない種類の事故なので、
+--   書き込みの時点で止める。
+do $$
+declare
+    n_ok int := 0;
+    v_att uuid := 'eeeeeee2-eeee-4eee-8eee-eeeeeeeeeee2';   -- 生徒2 の attempt
+begin
+    -- 正常系を先に確かめる (これが通らないと以下の「弾けた」に意味が無い)
+    insert into public.annotations (attempt_id, page, strokes)
+    values (v_att, 7, '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,
+            "p":[[0.3124,0.4551],[0.318,0.4612]]}]}');
+
+    -- 空のページ (何も書いていない) も通る
+    insert into public.annotations (attempt_id, page, strokes)
+    values (v_att, 8, '{"v":1,"strokes":[]}');
+
+    -- J1: 旧形式 (裸の配列)
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 91, '[{"points":[[10,10]],"color":"#000"}]');
+        raise exception '[fail] J1 旧形式の裸の配列が入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- J2: 版が無い
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 92, '{"strokes":[]}');
+        raise exception '[fail] J2 v の無いストロークが入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- J3: ★本命 — ピクセル座標が紛れ込む
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 93, '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,
+                "p":[[387,798],[394,808]]}]}');
+        raise exception '[fail] J3 ピクセル座標 (387, 798) が入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- J4: わずかに範囲外 (1.0 は可、1.0001 は不可)
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 94, '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,
+                "p":[[1.0001,0.5]]}]}');
+        raise exception '[fail] J4 座標 1.0001 が入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- J5: 負の座標
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 95, '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,
+                "p":[[-0.01,0.5]]}]}');
+        raise exception '[fail] J5 負の座標が入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- J6: 筆圧付き (3 要素)。持たないと決めたので弾く
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 96, '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,
+                "p":[[0.3,0.4,0.75]]}]}');
+        raise exception '[fail] J6 筆圧付きの 3 要素の点が入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- J7: 点の無いストローク
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 97, '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,"p":[]}]}');
+        raise exception '[fail] J7 点の無いストロークが入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- J8: 線幅が数値でない
+    --     ★ (s -> 'w')::numeric を型の確認前に評価すると 22023 で落ちて
+    --       check_violation にならない。段階を分けている理由がこれ。
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 98, '{"v":1,"strokes":[{"c":"#1b2233","w":"ふつう",
+                "p":[[0.3,0.4]]}]}');
+        raise exception '[fail] J8 w が文字列のストロークが入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- J9: 線幅がページ幅の 10% 超
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values (v_att, 99, '{"v":1,"strokes":[{"c":"#1b2233","w":0.5,
+                "p":[[0.3,0.4]]}]}');
+        raise exception '[fail] J9 w=0.5 のストロークが入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    -- J10: 端の値 0 と 1 はちょうど通る (境界の取り違えを止める)
+    insert into public.annotations (attempt_id, page, strokes)
+    values (v_att, 100, '{"v":1,"strokes":[{"c":"#1b2233","w":0.003,
+            "p":[[0,0],[1,1]]}]}');
+
+    if n_ok <> 9 then
+        raise exception '[fail] J: 想定 9 件のうち % 件しか検査できていない', n_ok;
+    end if;
+    raise notice '[ok] J 手書きの形 (§5) 12 件';
+end
+$$;
+
+\echo '=== 全ての検査を通過 (A 14 / B 3 / C 20 / D 9 / E 4 / F 3 / G 5 / H 6 / I 9 / J 12) ==='

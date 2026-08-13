@@ -16,14 +16,15 @@
 | `migrations/20260813010200_english_learning_storage.sql` | 問題 PDF の bucket (`book-pdfs`) と読み書き権限 |
 | `migrations/20260813010300_english_learning_grading.sql` | 採点 RPC `submit_attempt()` と、点数を直接書けなくする権限 |
 | `migrations/20260813010400_english_learning_retake_fix.sql` | 再受験中に正解が見えてしまう穴を塞ぐ (view の作り直し) |
+| `migrations/20260813010500_english_learning_strokes_format.sql` | 手書きストロークの形 (設計書 §5)。正規化座標だけを通す |
 | `seed.sql` | 動作確認用の中身 (仮定法の演習 1 冊 5 問 + 未公開の模試 1 冊) |
 | `build_bundle.py` → `bundle.sql` | 上の 5 本 + seed を 1 本にまとめたもの。**SQL Editor に貼る用** |
 | `demo/index.html` | 動作確認ページ (Vercel が配信する。秘密は持たず URL とキーは実行時入力) |
 | `demo/build_sample_pdf.py` → `demo/sample-book.pdf` | 動作確認用の問題冊子 (2 ページ / 5 問)。seed の設問番号・ページと一対一 |
 | `tests/00_local_stubs.sql` | 素の Postgres で試すための Supabase 相当スタブ (**本番に流さない**) |
-| `tests/10_schema_expectations.sql` | 振る舞いテスト 73 件 |
+| `tests/10_schema_expectations.sql` | 振る舞いテスト 85 件 |
 
-5 本とも**何度流しても安全**（`if not exists` / `or replace` / `drop … if exists`）。
+6 本とも**何度流しても安全**（`if not exists` / `or replace` / `drop … if exists`）。
 
 **PDF 運用**を前提にしている。設問文と選択肢は問題冊子 (PDF) の中にあり、DB 側は
 「何ページの第何問か (`questions.page` / `number`)」と「答案の形 (`answer_type` /
@@ -35,13 +36,14 @@
 # Supabase CLI
 supabase db push
 
-# または SQL Editor に 010000 → 010100 → 010200 → 010300 → 010400 の順で貼る
+# または SQL Editor に 010000 → 010100 → 010200 → 010300 → 010400 → 010500 の順で貼る
 ```
 
 ★ **core だけ流して止めない**こと。RLS は 2 本目に入っているので、core だけの状態は
 「ログインした全員が全生徒の答案を読める」DB になる。
 
 省いてよいのは 3 本目 (Storage) だけ — PDF を Supabase Storage 以外で配る場合。
+6 本目 (strokes_format) は手書きを使わないなら省けます。
 **010300 (grading) が無いと採点できる経路が存在せず**、
 **010400 (retake_fix) が無いと再受験中に正解が見えたまま**になる。
 
@@ -176,7 +178,7 @@ python3 scripts/run_all_gates.py english_schema    # リポジトリ共通の入
   固定していない `security definer` 関数、`anon` 向けポリシー、冪等でない DDL などを落とす。
   DB が無くても回るので CI (`material-gates.yml`) でも走る。
 - **実DB検査** … 使い捨ての Postgres に stubs → migrations を **2 周**流して
-  (冪等性の確認)、`tests/10_schema_expectations.sql` の 73 件を回す。
+  (冪等性の確認)、`tests/10_schema_expectations.sql` の 85 件を回す。
   Postgres が見つからないときは実行しないが、**飛ばしたことを必ず印字する**。
   手元で明示的に指定するなら:
 
@@ -189,7 +191,7 @@ python3 scripts/run_all_gates.py english_schema    # リポジトリ共通の入
   (使い捨て DB を `create` / `drop` するため)。
 
 検査の内訳: 制約 14 / トリガ 3 / 生徒の RLS 20 / 講師の RLS 9 / 未ログイン 4 /
-Storage 3 / 参照整合性 5 / 採点 6 / 受験フローと再受験 9。
+Storage 3 / 参照整合性 5 / 採点 6 / 受験フローと再受験 9 / 手書きの形 12。
 
 ---
 
@@ -370,7 +372,47 @@ Postgres は外部キーに自動でインデックスを張らない。UNIQUE �
 ★ この穴は期待値テストが捕まえたもので、目で読んで気づいたものではない。
   検査 (I 群) ごと残してある。
 
-### 7. Storage
+### 7. 手書きの形 — 設計書 §5 (`…_strokes_format.sql`)
+
+元の設計では「§5 のフォーマット」とだけ書かれていて、§5 自体がリポジトリに無かった。
+**2026-08-13 に塾長と決めた内容**をここで確定させ、DB 側で強制している。
+
+```json
+{
+  "v": 1,
+  "strokes": [
+    {"c": "#1b2233", "w": 0.003, "p": [[0.3124, 0.4551], [0.3180, 0.4612]]}
+  ]
+}
+```
+
+| 項目 | 決めたこと |
+| --- | --- |
+| 座標 | **ページの幅・高さを 1 とした正規化値 (0〜1)** |
+| 線幅 `w` | 同じく**ページ幅に対する比**。幅 1200px のページで 3.6px の線なら `0.003` |
+| 筆圧・傾き | **持たない**。点は `[x, y]` の 2 要素だけ |
+| `v` | フォーマットの版。将来変えるときはここを上げて `strokes_are_valid()` に分岐を足す |
+
+**なぜ正規化するか** — iPad で書いて PC で見る、拡大率を変える、PDF を差し替える、
+どれをしても位置がずれないため。ピクセル座標で持つと、書いたときの表示サイズを
+一緒に記録しない限り**後から復元できない**。データが溜まってからでは直せない種類の
+決定なので、運用前に確定させた。
+
+`strokes_are_valid()` が弾くもの (テスト J 群 12 件が裏を取っている):
+旧形式の裸の配列 / `v` 無し / **ピクセル座標の混入** / 範囲外 (`1.0001`, `-0.01`) /
+筆圧付きの 3 要素 / 点の無いストローク / `w` が文字列 / `w` がページ幅の 10% 超。
+境界の `0` と `1` はちょうど通る。
+
+★ 制約は **NOT VALID** で足してある。動作確認で入れた旧形式の行は残るが、
+新規の書き込みは全部この形でしか通らない。旧行を消して全件を検査対象にするなら:
+
+```sql
+delete from public.annotations
+ where jsonb_typeof(strokes) <> 'object' or (strokes ->> 'v') is distinct from '1';
+alter table public.annotations validate constraint annotations_strokes_shape;
+```
+
+### 8. Storage
 
 bucket `book-pdfs` (非公開・50MB・`application/pdf` のみ)。
 読めるのは `books.pdf_path` が指していて、かつ**公開済み**のブックの PDF だけ
@@ -387,15 +429,27 @@ const { data } = await supabase.storage.from('book-pdfs').createSignedUrl(book.p
 
 ---
 
+## 決めたこと (2026-08-13)
+
+「データが溜まってからでは直せない」2 つを、運用を始める前に確定させた。
+
+- **生徒の識別子: 何も足さない。** 英語アプリは既存の塾システム (Railway の
+  `server/main.py` / `students` テーブル / OTP・LINE ログイン) とは**完全に別のサービス**
+  として運用する。`profiles` に塾生への参照列は置かない。
+  → 将来統合したくなったら列を足せるが、そのとき「どの Supabase ユーザーがどの塾生か」を
+    手で突き合わせる作業が発生する。生徒数が少ないうちなら軽い、という判断。
+- **手書きの形: §5 を確定** (上の「差分 7」)。正規化座標・筆圧なし。
+
 ## 未確定
 
-- **`annotations.strokes` の形は制約していない**。設計書 §5 のフォーマットが
-  このリポジトリに無いため。推測で `jsonb_typeof(strokes) = 'array'` を強制すると、
-  実際が `{"version":1,"strokes":[…]}` 形式だった場合に書き込みが全部落ちる。
-  §5 が確定したら CHECK をここに足すこと (テストは `tests/10_schema_expectations.sql`)。
-  ページ 1 枚分のストロークがそのまま 1 行に入るので、
-  長時間の書き込みでサイズが膨らむ場合は間引き (点の間引き / 折れ線の簡略化) は
-  クライアント側で行う前提。
+- **PDF を使わないブックは作れない**。元の設計の
+  `pdf_path … NULL可（JSON問題のみの場合）` に対して、その「JSON問題」の設問文と
+  選択肢を入れる列が `questions` に無い。PDF 運用でいく判断なので今は足していない。
+  必要になったら `question_data jsonb`（`{"stem","choices","figure_svg"}`・正解は入れない）
+  を 1 列足すのが最小の手当てになる。名前は既存の `exam_questions.question_data` に合わせる。
+- ページ 1 枚分のストロークがそのまま 1 行に入る。長時間の書き込みでサイズが膨らむ場合、
+  間引き (点の間引き / 折れ線の簡略化) はクライアント側で行う前提
+  (DB 側の上限は 1 ページ 5000 ストローク)。
 - **PDF を使わないブックは今のところ作れない**。元の設計の
   `pdf_path … NULL可（JSON問題のみの場合）` に対して、その「JSON問題」の設問文と
   選択肢を入れる列が `questions` に無い。PDF 運用でいく判断なので今は足していない。
