@@ -14,10 +14,14 @@
 | `migrations/20260813010000_english_learning_core.sql` | テーブル 7 本・制約・インデックス・`updated_at` トリガ |
 | `migrations/20260813010100_english_learning_rls.sql` | 権限・RLS ポリシー 28 本・`auth.users` 連携・生徒向け view |
 | `migrations/20260813010200_english_learning_storage.sql` | 問題 PDF の bucket (`book-pdfs`) と読み書き権限 |
+| `migrations/20260813010300_english_learning_grading.sql` | 採点 RPC `submit_attempt()` と、点数を直接書けなくする権限 |
+| `migrations/20260813010400_english_learning_question_data.sql` | JSON 問題の設問本体 `questions.question_data` と view の更新 |
+| `seed.sql` | 動作確認用の中身 (仮定法の演習 1 冊 5 問 + 未公開の模試 1 冊) |
+| `demo/index.html` | 動作確認ページ (開発用。本番サイトには載せない) |
 | `tests/00_local_stubs.sql` | 素の Postgres で試すための Supabase 相当スタブ (**本番に流さない**) |
-| `tests/10_schema_expectations.sql` | 振る舞いテスト 58 件 |
+| `tests/10_schema_expectations.sql` | 振る舞いテスト 74 件 |
 
-3 本とも**何度流しても安全**（`if not exists` / `or replace` / `drop … if exists`）。
+5 本とも**何度流しても安全**（`if not exists` / `or replace` / `drop … if exists`）。
 
 ## 流し方
 
@@ -25,11 +29,76 @@
 # Supabase CLI
 supabase db push
 
-# または SQL Editor に 20260813010000 → 010100 → 010200 の順で貼る
+# または SQL Editor に 010000 → 010100 → 010200 → 010300 → 010400 の順で貼る
 ```
 
 ★ **core だけ流して止めない**こと。RLS は 2 本目に入っているので、core だけの状態は
 「ログインした全員が全生徒の答案を読める」DB になる。
+
+3 本目 (Storage) は PDF を配らないなら省いてよい。
+5 本目 (question_data) は PDF 運用しかしないなら省いてよい。
+**1 本目と 2 本目と 4 本目は必須**（4 本目が無いと採点できる経路が存在しない）。
+
+## 使ってみる
+
+`supabase/demo/index.html` が動作確認ページ。RLS・正解の伏せ方・採点 RPC・手書き保存を
+実際に触って確かめられる。**開発用**なので本番サイトには載せない (`.vercelignore` で除外済み)。
+
+### A. 手元だけで動かす (Docker が要る・いちばん手軽)
+
+```bash
+npm install -g supabase          # 未導入なら
+cd <このリポジトリ>
+supabase init                    # supabase/config.toml が無ければ
+supabase start                   # 初回は数分。API URL と anon key が表示される
+supabase db reset                # migrations/*.sql → seed.sql を流す
+
+python3 -m http.server 8080      # 別のターミナルで
+# → http://localhost:8080/supabase/demo/ を開く
+```
+
+`supabase start` が出す **API URL** (既定 `http://127.0.0.1:54321`) と **anon key** を
+デモの「1. 接続」に貼る。ローカルはメール確認が既定で無効なので、
+そのまま新規登録 → ログインできる。
+
+### B. ホストの Supabase プロジェクトで動かす
+
+```bash
+supabase link --project-ref <プロジェクトID>
+supabase db push                 # migrations だけ流れる (seed は流れない)
+```
+
+シードを入れるなら SQL Editor に `supabase/seed.sql` を貼る。
+デモには **Settings → API** の Project URL と **anon public** キーを貼る
+(`service_role` キーは絶対に貼らない。RLS を全部素通りしてしまう)。
+
+★ メール確認が既定で有効なので、新規登録してもすぐログインできない。
+確認メールを踏むか、Authentication → Providers → Email の "Confirm email" を
+一時的に切る。
+
+### 触る順番
+
+1. **生徒として新規登録** → `handle_new_user` が `profiles` を自動で作る (role=student)
+2. **3. ブック一覧** → 「英文法 仮定法 演習5」だけ出る。未公開の模試は出ない (RLS)
+3. **受験する** → 設問文と選択肢は出るが、正解は伏せられている
+   (`correct_answer = null`。画面にもそう出る)
+4. **手書き** で書いて保存 → `annotations.strokes` に入る。読み直すと戻る
+5. **採点して提出する** → `submit_attempt()` が走り、点数と正解と解説が出る
+6. **6. 復習キュー** → 間違えた設問が積まれている。もう一度受験して同じ問題を落とすと
+   `wrong_count` が 2 になる
+7. **7. 守られているかを試す** → 6 つの攻撃が全部弾かれることを確認する
+
+### 講師として見る
+
+講師への昇格は SQL でしかできない (生徒が自分で上げられないようにしてあるため)。
+SQL Editor か `supabase db reset` 後のローカル Studio で:
+
+```sql
+update public.profiles set role = 'teacher' where id = (
+    select id from auth.users where email = 'あなたのアドレス');
+```
+
+講師でログインし直すと、未公開ブックも `questions` テーブルも直接見えるようになる。
 
 ## 検査
 
@@ -42,7 +111,7 @@ python3 scripts/run_all_gates.py english_schema    # リポジトリ共通の入
   固定していない `security definer` 関数、`anon` 向けポリシー、冪等でない DDL などを落とす。
   DB が無くても回るので CI (`material-gates.yml`) でも走る。
 - **実DB検査** … 使い捨ての Postgres に stubs → migrations を **2 周**流して
-  (冪等性の確認)、`tests/10_schema_expectations.sql` の 58 件を回す。
+  (冪等性の確認)、`tests/10_schema_expectations.sql` の 74 件を回す。
   Postgres が見つからないときは実行しないが、**飛ばしたことを必ず印字する**。
   手元で明示的に指定するなら:
 
@@ -55,7 +124,7 @@ python3 scripts/run_all_gates.py english_schema    # リポジトリ共通の入
   (使い捨て DB を `create` / `drop` するため)。
 
 検査の内訳: 制約 14 / トリガ 3 / 生徒の RLS 20 / 講師の RLS 9 / 未ログイン 4 /
-Storage 3 / 参照整合性 5。
+Storage 3 / 参照整合性 5 / 採点 6 / JSON問題と受験フロー 10。
 
 ---
 
@@ -78,9 +147,14 @@ const { data } = await supabase.from('student_questions').select('*').eq('book_i
 この view が返すもの:
 
 - 公開済み (`is_published = true`) のブックの設問だけ
-- `correct_answer` / `accepted_answers` / `explanation` は、**その生徒が提出済みの
-  答案でその設問に解答している場合だけ**返る。それ以外は `NULL`。
-  判定結果は `revealed` 列にも出るので、UI の出し分けに使える。
+- `question_data`（設問文・選択肢）は常に返る。無いと解けないため
+- `correct_answer` / `accepted_answers` / `explanation` は、次の**両方**を満たすときだけ返る。
+  それ以外は `NULL`。判定結果は `revealed` 列にも出るので UI の出し分けに使える
+  1. その生徒が提出済みの答案でその設問に解答している
+  2. そのブックを**いま受験中でない**（未提出の答案が 1 つも無い）
+
+  条件 2 が無いと、一度提出した本をもう一度受験するときに正解が出たままになる
+  (期待値テストの I8 がこの穴を捕まえた)。
 
 講師 (`profiles.role = 'teacher'`) は `questions` テーブルを直接読める。
 
@@ -94,24 +168,39 @@ const { data } = await supabase.from('student_questions').select('*').eq('book_i
 | `profiles` | 自分の行を読む・表示名を変える (`role` は変えられない) | 全員を読む・`role` を変えられる |
 | `books` | 公開済みだけ読む | 全部読む・作る・直す・消す |
 | `questions` | **直接は読めない** (`student_questions` 経由) | 全部読む・作る・直す・消す |
-| `attempts` | 自分の分だけ。**提出後は自分でも書き換えられない** | 全員の分を読む |
-| `answers` | 自分の未提出 attempt にだけ書ける | 全員の分を読む |
+| `attempts` | 開始 (insert) だけ。**直接の UPDATE 権限は無く**、提出は `submit_attempt()` 経由 | 全員の分を読む |
+| `answers` | 自分の未提出 attempt にだけ書ける。書けるのは `user_answer` と `time_spent_sec` の 2 列だけ | 全員の分を読む |
 | `annotations` | 同上 (手書き) | 全員の分を読む |
 | `review_items` | 自分の分だけ読み書き | 全員の分を読む |
 
 未ログイン (`anon`) はどのテーブルにも触れない (`grant` ごと剥がしてある)。
 
-提出の凍結は `attempts` の update ポリシーの `using` 側にだけ `submitted_at is null` を
-置くことで実現している。「未提出 → 提出」の 1 回だけ通り、以後は点数も答案も動かせない。
+## 採点は `submit_attempt()` でしかできない
 
-### まだ DB では守れていないこと
+```js
+const { data } = await supabase.rpc('submit_attempt', { p_attempt: attemptId })
+// → { total_score, max_score, correct_count, answered_count, question_count }
+```
 
-**採点はクライアントが送った点数をそのまま保存している**。生徒は自分の未提出 attempt を
-更新できるので、`total_score` に好きな値を入れて提出できる。DB だけでこれを塞ぐには
-`security definer` の採点 RPC (`submit_attempt(attempt_id)` が `questions.correct_answer` と
-`answers.user_answer` を突き合わせて `is_correct` / `total_score` を **サーバ側で**
-書き、その中で `submitted_at` を打つ) を足して、`attempts.total_score` /
-`answers.is_correct` への直接の update を落とす必要がある。今回のスキーマには入れていない。
+この RPC が、自分の未提出の答案かを確かめたうえで
+
+1. `answers.is_correct` を `questions.correct_answer` と突き合わせて埋め
+2. `attempts` に点数・満点・所要時間・`submitted_at` を書き
+3. 誤答を `review_items` に積む（同じ設問を落とすたびに `wrong_count` が増える）
+
+を 1 トランザクションで行う。`for update` で行を掴むので、二重に押しても二重採点しない。
+
+**クライアントは点数を書けない。** `attempts` の UPDATE 権限は誰にも配っておらず、
+`answers` に書けるのは `user_answer` と `time_spent_sec` の 2 列だけ（列単位の grant）。
+`total_score` と `is_correct` を書けるのはこの関数だけになっている。
+
+そもそも生徒は提出前に `correct_answer` を読めない（view が伏せる）ので、
+クライアント側に「正解と突き合わせる」瞬間が存在しない。採点をサーバに置くのは
+方針というより、この設計だとそれ以外に経路が無い。
+
+短答の照合は「前後の空白を落として小文字化」＋ `accepted_answers` の別解。
+ここを緩めると採点が甘くなる。厳しくする分はアプリ側で吸収できるが、
+甘くしたものは後から締められない（生徒の点数が下がるため）。
 
 ## 参照整合性の効き方 (何が消せて何が消せないか)
 
@@ -197,7 +286,32 @@ Postgres は外部キーに自動でインデックスを張らない。UNIQUE �
 | `profiles_guard_role` (`profiles`) | 生徒が自分の `role` を `teacher` に書き換えるのを止める。★ RLS の `with check` だけでは止まらない (「自分の行を更新してよい」ポリシーは列の値まで見ない)。JWT の無い呼び出し (`service_role` / サーバ側の管理タスク) は素通しするので、講師の任命はそこから行う |
 | `annotations_touch_updated_at` | `updated_at` を DB 側で打つ (クライアントの時計を信じない) |
 
-### 5. Storage
+### 5. 採点 RPC と、点数を書けなくする権限 (`…_grading.sql`)
+
+`submit_attempt()` を足し、同時に `attempts` の UPDATE 権限を剥がして
+`answers` を列単位の grant にした。詳細は上の「採点は `submit_attempt()` でしかできない」。
+
+**元の設計には採点の置き場が無かった**。生徒は提出前に正解を読めず、提出後は答案が
+凍結されるので、クライアントが採点できる瞬間がどこにも無い。これを足さないと
+「解いて提出する」までしか動かない。
+
+### 6. `questions.question_data` (`…_question_data.sql`)
+
+元の設計の `pdf_path text -- Supabase Storage 上のパス。NULL可（JSON問題のみの場合）`
+に対して、その「JSON問題」を入れる列が無かった。PDF があるブックは本文が PDF 側にあり
+`questions.page` が飛び先を持っているので足りているが、PDF が無いブックだけ
+設問文と選択肢の置き場が無い。
+
+```
+question_data jsonb  -- {"stem": "設問文", "choices": ["…"], "figure_svg": "…"}
+```
+
+正解は入れない (`correct_answer` は今までどおり別列で、view が伏せる)。
+名前は既存の `exam_questions.question_data` に合わせた。
+選択肢の数が `choice_count` と食い違う行は CHECK で弾く
+(ボタンの数と正解番号の範囲がずれるため)。
+
+### 7. Storage
 
 bucket `book-pdfs` (非公開・50MB・`application/pdf` のみ)。
 読めるのは `books.pdf_path` が指していて、かつ**公開済み**のブックの PDF だけ
@@ -223,4 +337,6 @@ const { data } = await supabase.storage.from('book-pdfs').createSignedUrl(book.p
   ページ 1 枚分のストロークがそのまま 1 行に入るので、
   長時間の書き込みでサイズが膨らむ場合は間引き (点の間引き / 折れ線の簡略化) は
   クライアント側で行う前提。
-- **採点の server-side 化** (上の「まだ DB では守れていないこと」)。
+- **`questions.question_data` は追加した列**（差分の 6 を参照）。元の設計に
+  設問文の置き場が無く、`pdf_path` が NULL の「JSON問題のみ」のブックを表現できなかったため。
+  PDF 運用しかしないなら 5 本目の migration ごと省いてよい。

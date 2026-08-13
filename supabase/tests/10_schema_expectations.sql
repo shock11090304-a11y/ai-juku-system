@@ -320,13 +320,14 @@ begin
         raise exception '[fail] C10 未解答なのに正解が見えている (correct=%)', v_correct;
     end if;
 
-    -- C11: 提出済みの attempt は自分でも書き換えられない
-    update public.attempts set total_score = 999
-     where id = 'eeeeeee1-eeee-4eee-8eee-eeeeeeeeeee1';
-    get diagnostics n = row_count;
-    if n <> 0 then
-        raise exception '[fail] C11 提出済みの答案が書き換えられた (% 行)', n;
-    end if;
+    -- C11: ★ attempts の直接 UPDATE 権限をそもそも配っていない (点数の捏造を閉じる)
+    --      提出も点数も submit_attempt() 経由だけ。提出済み・未提出を問わず書けない。
+    begin
+        update public.attempts set total_score = 999
+         where id = 'eeeeeee1-eeee-4eee-8eee-eeeeeeeeeee1';
+        raise exception '[fail] C11 生徒が attempts を直接 UPDATE できてしまった';
+    exception when insufficient_privilege then null;
+    end;
 
     -- C12: 提出済みの attempt に解答を足せない
     begin
@@ -389,15 +390,13 @@ begin
     values ('eeeeeee2-eeee-4eee-8eee-eeeeeeeeeee2',
             'ddddddd1-dddd-4ddd-8ddd-ddddddddddd1', '2', 30);
 
-    -- C20: 提出は 1 回だけ通る
-    update public.attempts set submitted_at = now(), total_score = 0, max_score = 3
-     where id = 'eeeeeee2-eeee-4eee-8eee-eeeeeeeeeee2';
-    get diagnostics n = row_count;
-    if n <> 1 then raise exception '[fail] C20 提出できない (% 行)', n; end if;
-    update public.attempts set total_score = 999
-     where id = 'eeeeeee2-eeee-4eee-8eee-eeeeeeeeeee2';
-    get diagnostics n = row_count;
-    if n <> 0 then raise exception '[fail] C20 提出後に点数を書き換えられた'; end if;
+    -- C20: is_correct は自分では書けない (正誤の自己申告を閉じる)
+    begin
+        update public.answers set is_correct = true
+         where attempt_id = 'eeeeeee2-eeee-4eee-8eee-eeeeeeeeeee2';
+        raise exception '[fail] C20 生徒が is_correct を書けてしまった';
+    exception when insufficient_privilege then null;
+    end;
 
     reset role;
     raise notice '[ok] C 生徒の RLS 20 件';
@@ -585,4 +584,188 @@ begin
 end
 $$;
 
-\echo '=== 全ての検査を通過 (A 14 / B 3 / C 20 / D 9 / E 4 / F 3 / G 5) ==='
+-- =============================================================================
+-- H. 採点 (submit_attempt) — 生徒が自分では書けない値をサーバ側が書くこと
+-- =============================================================================
+-- 生徒2 の attempt2 は未提出で、解答が 1 件だけ入っている:
+--   Q1 (4択・正解 '3'・1点) に '2' と答えた → 誤答
+--   Q2 (短答・2点) は白紙 (answers 行なし)
+-- ブック1 の満点は 1 + 2 = 3 点。
+do $$
+declare
+    r record;
+    v_correct boolean;
+    n int;
+begin
+    perform set_config('request.jwt.claims',
+        '{"sub":"bbbbbbb2-bbbb-4bbb-8bbb-bbbbbbbbbbb2","role":"authenticated"}', true);
+    execute 'set local role authenticated';
+
+    -- H1: 提出できて、点数がサーバ側で計算される
+    select * into r from public.submit_attempt('eeeeeee2-eeee-4eee-8eee-eeeeeeeeeee2');
+    if r.total_score <> 0 then
+        raise exception '[fail] H1 誤答なのに % 点ついた', r.total_score;
+    end if;
+    if r.max_score <> 3 then
+        raise exception '[fail] H1 満点が % (期待 3 = 1点 + 2点・白紙も分母)', r.max_score;
+    end if;
+    if r.correct_count <> 0 or r.answered_count <> 1 or r.question_count <> 2 then
+        raise exception '[fail] H1 集計がおかしい (correct=% answered=% questions=%)',
+            r.correct_count, r.answered_count, r.question_count;
+    end if;
+
+    -- H2: is_correct がサーバ側で埋まっている
+    select is_correct into v_correct from public.answers
+     where attempt_id = 'eeeeeee2-eeee-4eee-8eee-eeeeeeeeeee2';
+    if v_correct is not false then
+        raise exception '[fail] H2 is_correct が埋まっていない (%)', v_correct;
+    end if;
+
+    -- H3: 誤答が復習キューに積まれる。既にある行は wrong_count が増える
+    --     (下ごしらえで 生徒2 × Q1 が wrong_count=1 で入っている → 2 になるはず)
+    select wrong_count into n from public.review_items
+     where user_id = 'bbbbbbb2-bbbb-4bbb-8bbb-bbbbbbbbbbb2'
+       and question_id = 'ddddddd1-dddd-4ddd-8ddd-ddddddddddd1';
+    if n <> 2 then
+        raise exception '[fail] H3 wrong_count が % (期待 2 = 既存 1 + 今回の誤答)', n;
+    end if;
+
+    -- H4: 二重提出できない
+    begin
+        perform public.submit_attempt('eeeeeee2-eeee-4eee-8eee-eeeeeeeeeee2');
+        raise exception '[fail] H4 同じ答案を 2 回提出できてしまった';
+    exception when insufficient_privilege then null;
+    end;
+
+    -- H5: 提出したので、解答した設問の正解が view に出る
+    select correct_answer into v_correct from (
+        select (correct_answer is not null) as correct_answer
+          from public.student_questions
+         where id = 'ddddddd1-dddd-4ddd-8ddd-ddddddddddd1') s;
+    if v_correct is not true then
+        raise exception '[fail] H5 提出後なのに正解が伏せられたまま';
+    end if;
+
+    -- H6: 他人の答案は採点できない
+    begin
+        perform public.submit_attempt('eeeeeee1-eeee-4eee-8eee-eeeeeeeeeee1');
+        raise exception '[fail] H6 他人の答案を提出できてしまった';
+    exception when insufficient_privilege then null;
+    end;
+
+    reset role;
+    raise notice '[ok] H 採点 6 件';
+end
+$$;
+
+-- =============================================================================
+-- I. question_data (JSON 問題) と、デモ画面が実際に投げる文の形
+-- =============================================================================
+-- ★ ここは supabase/demo/index.html が投げるのと同じ形の SQL を流している。
+--   列単位の grant を足したので、「画面からは permission denied になる」形を
+--   机上で見落としやすい (RLS は通るのに grant で落ちる)。実際の形で確かめる。
+do $$
+declare
+    n int;
+    v_qd jsonb;
+    v_correct text;
+begin
+    -- I1: 選択肢の数が choice_count と違う JSON 問題は入らない
+    begin
+        insert into public.questions (book_id, number, answer_type, choice_count,
+                                      correct_answer, question_data)
+        values ('ccccccc1-cccc-4ccc-8ccc-ccccccccccc1', 921, 'choice', 4, '1',
+                '{"stem":"x","choices":["a","b","c"]}'::jsonb);
+        raise exception '[fail] I1 choices が 3 個なのに choice_count=4 の設問が入った';
+    exception when check_violation then null;
+    end;
+
+    -- I2: 設問文の無い JSON 問題は入らない
+    begin
+        insert into public.questions (book_id, number, answer_type, choice_count,
+                                      correct_answer, question_data)
+        values ('ccccccc1-cccc-4ccc-8ccc-ccccccccccc1', 922, 'choice', 4, '1',
+                '{"choices":["a","b","c","d"]}'::jsonb);
+        raise exception '[fail] I2 stem の無い JSON 問題が入った';
+    exception when check_violation then null;
+    end;
+
+    -- I3: choices が配列でない (jsonb_array_length が 22023 で落ちないこと)
+    begin
+        insert into public.questions (book_id, number, answer_type, choice_count,
+                                      correct_answer, question_data)
+        values ('ccccccc1-cccc-4ccc-8ccc-ccccccccccc1', 923, 'choice', 4, '1',
+                '{"stem":"x","choices":"a,b,c,d"}'::jsonb);
+        raise exception '[fail] I3 choices が文字列の設問が入った';
+    exception when check_violation then null;
+    end;
+
+    -- 以降は生徒として、デモ画面と同じ手順を踏む
+    perform set_config('request.jwt.claims',
+        '{"sub":"bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1","role":"authenticated"}', true);
+    execute 'set local role authenticated';
+
+    -- I4: 受験を開始する (attempts への insert)
+    insert into public.attempts (id, book_id, user_id)
+    values ('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5',
+            'ccccccc1-cccc-4ccc-8ccc-ccccccccccc1',
+            'bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1');
+
+    -- I5: 解答用紙の行をまとめて作る。★ デモは列を 4 つだけ送る (is_correct は送らない)
+    insert into public.answers (attempt_id, question_id, user_answer, time_spent_sec)
+    select 'eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5', q.id, null, 0
+      from public.student_questions q
+     where q.book_id = 'ccccccc1-cccc-4ccc-8ccc-ccccccccccc1';
+    get diagnostics n = row_count;
+    if n <> 2 then
+        raise exception '[fail] I5 解答欄が % 行しか作れない (期待 2)', n;
+    end if;
+
+    -- I6: 解答を書く (user_answer だけの update)
+    update public.answers set user_answer = '3', time_spent_sec = 40
+     where attempt_id = 'eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5'
+       and question_id = 'ddddddd1-dddd-4ddd-8ddd-ddddddddddd1';
+    get diagnostics n = row_count;
+    if n <> 1 then raise exception '[fail] I6 解答を保存できない'; end if;
+
+    -- I7: 手書きの upsert (insert … on conflict do update)。列の grant で落ちないこと
+    insert into public.annotations (attempt_id, page, strokes)
+    values ('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5', 1, '[]'::jsonb)
+    on conflict (attempt_id, page) do update
+       set strokes = excluded.strokes, attempt_id = excluded.attempt_id, page = excluded.page;
+    insert into public.annotations (attempt_id, page, strokes)
+    values ('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5', 1,
+            '[{"points":[[1,2]],"color":"#1b2233"}]'::jsonb)
+    on conflict (attempt_id, page) do update
+       set strokes = excluded.strokes, attempt_id = excluded.attempt_id, page = excluded.page;
+
+    -- I8: ★ 提出前でも設問文と選択肢は返る (無いと解けない)。正解だけ伏せられている
+    select question_data, correct_answer into v_qd, v_correct
+      from public.student_questions
+     where id = 'ddddddd1-dddd-4ddd-8ddd-ddddddddddd1';
+    if v_correct is not null then
+        raise exception '[fail] I8 提出前なのに正解が返っている';
+    end if;
+
+    -- I9: 採点して提出 → 正解が出る
+    perform public.submit_attempt('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5');
+    select correct_answer into v_correct from public.student_questions
+     where id = 'ddddddd1-dddd-4ddd-8ddd-ddddddddddd1';
+    if v_correct is distinct from '3' then
+        raise exception '[fail] I9 提出後も正解が返らない (%)', v_correct;
+    end if;
+
+    -- I10: 提出したので手書きはもう保存できない (答案ごと凍結)
+    begin
+        insert into public.annotations (attempt_id, page, strokes)
+        values ('eeeeeee5-eeee-4eee-8eee-eeeeeeeeeee5', 2, '[]'::jsonb);
+        raise exception '[fail] I10 提出後に手書きを保存できてしまった';
+    exception when insufficient_privilege then null;
+    end;
+
+    reset role;
+    raise notice '[ok] I JSON問題と受験フロー 10 件';
+end
+$$;
+
+\echo '=== 全ての検査を通過 (A 14 / B 3 / C 20 / D 9 / E 4 / F 3 / G 5 / H 6 / I 10) ==='

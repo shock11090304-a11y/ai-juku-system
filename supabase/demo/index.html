@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>英語学習アプリ — スキーマ動作確認</title>
+<!--
+  supabase/migrations/*.sql を実際に触るための確認用ページ。
+  ★ 開発用。本番サイトに置くものではない (.vercelignore で supabase/ ごと除外している)。
+  ★ 使い方は supabase/README.md の「使ってみる」を参照。
+     python3 -m http.server 8080 で開くのが確実 (file:// でも動くようにはしてある)。
+-->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#171d2c; --line:#2a3448; --fg:#e7ecf5; --dim:#93a0b8;
+    --accent:#4c8dff; --ok:#22c55e; --ng:#ef4444; --warn:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+       line-height:1.7;font-size:15px}
+  .wrap{max-width:860px;margin:0 auto;padding:24px 16px 80px}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:16px;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .sub{color:var(--dim);font-size:13px;margin:0 0 24px}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+          padding:16px 18px;margin-bottom:16px}
+  section[hidden]{display:none}
+  label{display:block;font-size:12px;color:var(--dim);margin:10px 0 4px}
+  input[type=text],input[type=password],input[type=email]{
+    width:100%;padding:9px 11px;background:#0d1220;border:1px solid var(--line);
+    border-radius:6px;color:var(--fg);font-size:14px;font-family:inherit}
+  button{background:var(--accent);color:#fff;border:0;border-radius:6px;
+         padding:9px 15px;font-size:14px;cursor:pointer;font-family:inherit;margin:4px 6px 4px 0}
+  button:hover{filter:brightness(1.12)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--fg)}
+  button.danger{background:#7f1d1d}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .row>div{flex:1;min-width:160px}
+  .log{background:#0a0e18;border:1px solid var(--line);border-radius:6px;padding:10px 12px;
+       font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+       white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto;margin-top:10px}
+  .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;
+         border:1px solid var(--line);color:var(--dim);margin-left:6px;vertical-align:middle}
+  .badge.pub{color:var(--ok);border-color:#14532d}
+  .badge.draft{color:var(--warn);border-color:#78350f}
+  .q{border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px;background:#131a28}
+  .q .stem{margin:0 0 10px;white-space:pre-wrap}
+  .q .meta{font-size:12px;color:var(--dim);margin-bottom:8px}
+  .choices label{display:block;color:var(--fg);font-size:14px;margin:5px 0;cursor:pointer}
+  .choices input{margin-right:8px}
+  .reveal{margin-top:10px;padding:10px 12px;border-radius:6px;background:#0a0e18;
+          border-left:3px solid var(--accent);font-size:13px;white-space:pre-wrap}
+  .correct{border-left-color:var(--ok)} .wrong{border-left-color:var(--ng)}
+  .hidden-ans{color:var(--dim);font-size:12px;font-style:italic}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--dim);font-weight:500;font-size:12px}
+  canvas{border:1px solid var(--line);border-radius:6px;background:#fdfdfb;touch-action:none;
+         width:100%;max-width:100%;display:block;cursor:crosshair}
+  .note{font-size:12px;color:var(--dim);margin-top:8px}
+  .ok{color:var(--ok)} .ng{color:var(--ng)} .warn{color:var(--warn)}
+  code{background:#0a0e18;padding:1px 5px;border-radius:4px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>英語学習アプリ — スキーマ動作確認</h1>
+<p class="sub">supabase/migrations/*.sql をそのまま触るページ。RLS・正解の伏せ方・採点 RPC・手書き保存が実際に効いているかを見る。</p>
+
+<!-- ─────────────────────────── 接続 ─────────────────────────── -->
+<section id="secConn">
+  <h2>1. 接続</h2>
+  <div class="row">
+    <div>
+      <label>Project URL</label>
+      <input type="text" id="url" placeholder="http://127.0.0.1:54321">
+    </div>
+  </div>
+  <label>anon key（公開鍵。service_role キーは絶対に貼らないこと）</label>
+  <input type="password" id="key" placeholder="eyJhbGciOi…">
+  <div><button id="btnConn">接続</button><button class="ghost" id="btnForget">保存を消す</button></div>
+  <div class="note">ローカルなら <code>supabase start</code> が出力する API URL と anon key。ブラウザの localStorage に保存されます。</div>
+  <div class="log" id="logConn">未接続</div>
+</section>
+
+<!-- ─────────────────────────── アカウント ─────────────────────────── -->
+<section id="secAuth" hidden>
+  <h2>2. アカウント</h2>
+  <div class="row">
+    <div><label>メールアドレス</label><input type="email" id="email" placeholder="student@example.test"></div>
+    <div><label>パスワード（6文字以上）</label><input type="password" id="pass" placeholder="••••••"></div>
+    <div><label>表示名（新規登録時のみ使用）</label><input type="text" id="dname" placeholder="山田 太郎"></div>
+  </div>
+  <div>
+    <button id="btnSignup">新規登録</button>
+    <button id="btnLogin">ログイン</button>
+    <button class="ghost" id="btnLogout">ログアウト</button>
+  </div>
+  <div class="note">新規登録すると <code>handle_new_user</code> トリガが <code>profiles</code> を自動で作ります（role は必ず student）。
+    講師にするには SQL を 1 行流します（下の 6 参照）。</div>
+  <div class="log" id="logAuth">未ログイン</div>
+</section>
+
+<!-- ─────────────────────────── ブック ─────────────────────────── -->
+<section id="secBooks" hidden>
+  <h2>3. ブック一覧</h2>
+  <div><button id="btnBooks">読み込む</button></div>
+  <div id="books"></div>
+  <div class="note">生徒には公開済みだけが返ります（RLS）。講師でログインすると未公開も出ます。</div>
+  <div class="log" id="logBooks">—</div>
+</section>
+
+<!-- ─────────────────────────── 受験 ─────────────────────────── -->
+<section id="secExam" hidden>
+  <h2>4. 受験</h2>
+  <div id="examHead"></div>
+  <div id="questions"></div>
+  <div id="examActions"></div>
+  <div class="log" id="logExam">—</div>
+</section>
+
+<!-- ─────────────────────────── 手書き ─────────────────────────── -->
+<section id="secDraw" hidden>
+  <h2>5. 手書き（annotations）</h2>
+  <canvas id="pad" width="820" height="300"></canvas>
+  <div>
+    <button id="btnSaveStroke">保存</button>
+    <button class="ghost" id="btnLoadStroke">読み直す</button>
+    <button class="ghost" id="btnClearStroke">消す</button>
+  </div>
+  <div class="note">ページ単位で 1 行にまとめて <code>annotations.strokes</code>(jsonb) に入ります。
+    <code>updated_at</code> はサーバ側のトリガが打つので、クライアントの時計は使われません。
+    提出後は RLS で書き込めなくなります（＝答案と一緒に凍結）。</div>
+  <div class="log" id="logDraw">—</div>
+</section>
+
+<!-- ─────────────────────────── 復習キュー ─────────────────────────── -->
+<section id="secReview" hidden>
+  <h2>6. 復習キュー（誤答ノート）</h2>
+  <div><button id="btnReview">読み込む</button></div>
+  <div id="review"></div>
+  <div class="note">提出すると <code>submit_attempt()</code> が誤答を積みます。同じ設問を落とすたびに <code>wrong_count</code> が増えます。</div>
+  <div class="log" id="logReview">—</div>
+</section>
+
+<!-- ─────────────────────────── セキュリティ検証 ─────────────────────────── -->
+<section id="secSec" hidden>
+  <h2>7. 守られているかを試す</h2>
+  <p class="note" style="margin-top:0">生徒アカウントで押してください。全部「弾かれる」のが正しい動きです。</p>
+  <div><button class="danger" id="btnAttack">6 つまとめて試す</button></div>
+  <div class="log" id="logSec">—</div>
+</section>
+
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const LS = { url: "engdemo_url", key: "engdemo_key" };
+let sb = null, me = null, book = null, attempt = null, questions = [], answers = {};
+
+function log(el, msg, cls) {
+  const t = new Date().toTimeString().slice(0, 8);
+  const line = cls ? `<span class="${cls}">${esc(msg)}</span>` : esc(msg);
+  $(el).innerHTML = `[${t}] ${line}\n` + $(el).innerHTML;
+}
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+// PostgREST のエラーは code / message / details を持つ。全部出さないと原因が分からない。
+function errText(e) {
+  if (!e) return "不明なエラー";
+  return [e.code, e.message, e.details, e.hint].filter(Boolean).join(" / ");
+}
+
+/* ───────────────────────── 1. 接続 ───────────────────────── */
+$("url").value = localStorage.getItem(LS.url) || "";
+$("key").value = localStorage.getItem(LS.key) || "";
+
+$("btnForget").onclick = () => {
+  localStorage.removeItem(LS.url); localStorage.removeItem(LS.key);
+  $("url").value = ""; $("key").value = "";
+  log("logConn", "保存を消しました");
+};
+
+$("btnConn").onclick = async () => {
+  const url = $("url").value.trim().replace(/\/+$/, "");
+  const key = $("key").value.trim();
+  if (!url || !key) return log("logConn", "URL と anon key の両方が要ります", "ng");
+  // service_role キーの貼り付け事故を止める (このページから使うと RLS を全部素通りする)
+  try {
+    const claims = JSON.parse(atob(key.split(".")[1]));
+    if (claims.role && claims.role !== "anon") {
+      return log("logConn", `このキーは role="${claims.role}" です。anon key を使ってください`, "ng");
+    }
+  } catch (_) { /* JWT でない形式でも続行する */ }
+
+  sb = window.supabase.createClient(url, key);
+  const { error } = await sb.from("books").select("id").limit(1);
+  // 未ログインなら 0 行か権限エラーが正しい。接続そのものが失敗したときだけ落とす。
+  if (error && !["42501", "PGRST301"].includes(error.code)) {
+    return log("logConn", "接続できません: " + errText(error), "ng");
+  }
+  localStorage.setItem(LS.url, url); localStorage.setItem(LS.key, key);
+  log("logConn", "接続しました: " + url, "ok");
+  ["secAuth", "secBooks", "secReview", "secSec"].forEach(s => $(s).hidden = false);
+  refreshMe();
+};
+
+/* ───────────────────────── 2. アカウント ───────────────────────── */
+$("btnSignup").onclick = async () => {
+  const { error } = await sb.auth.signUp({
+    email: $("email").value.trim(),
+    password: $("pass").value,
+    options: { data: { display_name: $("dname").value.trim() } }
+  });
+  if (error) return log("logAuth", "登録できません: " + errText(error), "ng");
+  log("logAuth", "登録しました。そのままログインできない場合はメール確認が有効です", "ok");
+  refreshMe();
+};
+
+$("btnLogin").onclick = async () => {
+  const { error } = await sb.auth.signInWithPassword({
+    email: $("email").value.trim(), password: $("pass").value
+  });
+  if (error) return log("logAuth", "ログインできません: " + errText(error), "ng");
+  refreshMe();
+};
+
+$("btnLogout").onclick = async () => {
+  await sb.auth.signOut();
+  me = null; attempt = null; book = null;
+  $("secExam").hidden = true; $("secDraw").hidden = true;
+  log("logAuth", "ログアウトしました");
+};
+
+async function refreshMe() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { me = null; return log("logAuth", "未ログイン"); }
+  const { data, error } = await sb.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  if (error) return log("logAuth", "profiles が読めません: " + errText(error), "ng");
+  if (!data) return log("logAuth", "profiles の行がありません（トリガが動いていない可能性）", "ng");
+  me = data;
+  log("logAuth", `${data.display_name}（role=${data.role} / id=${data.id.slice(0, 8)}…）`, "ok");
+}
+
+/* ───────────────────────── 3. ブック ───────────────────────── */
+$("btnBooks").onclick = loadBooks;
+
+async function loadBooks() {
+  const { data, error } = await sb.from("books").select("*").order("created_at");
+  if (error) return log("logBooks", "読めません: " + errText(error), "ng");
+  if (!data.length) {
+    $("books").innerHTML = "";
+    return log("logBooks", "0 件。seed を流したか、公開済みブックがあるか確認してください", "warn");
+  }
+  $("books").innerHTML = data.map(b => `
+    <div class="q">
+      <div><strong>${esc(b.title)}</strong>
+        <span class="badge ${b.is_published ? "pub" : "draft"}">${b.is_published ? "公開済み" : "未公開"}</span>
+        <span class="badge">${esc(b.subject)}</span>
+        ${b.level ? `<span class="badge">${esc(b.level)}</span>` : ""}</div>
+      <div class="meta">${b.time_limit_sec ? Math.round(b.time_limit_sec / 60) + " 分" : "制限なし"}
+        ${b.pdf_path ? " / PDF: " + esc(b.pdf_path) : " / JSON 問題"}</div>
+      <button data-book="${b.id}">この本を受験する</button>
+      ${b.pdf_path ? `<button class="ghost" data-pdf="${esc(b.pdf_path)}">PDF を開く</button>` : ""}
+    </div>`).join("");
+  $("books").querySelectorAll("[data-book]").forEach(el =>
+    el.onclick = () => startExam(data.find(b => b.id === el.dataset.book)));
+  $("books").querySelectorAll("[data-pdf]").forEach(el =>
+    el.onclick = () => openPdf(el.dataset.pdf));
+  log("logBooks", `${data.length} 件（role=${me ? me.role : "?"} から見えている数）`, "ok");
+}
+
+async function openPdf(path) {
+  const { data, error } = await sb.storage.from("book-pdfs").createSignedUrl(path, 3600);
+  if (error) return log("logBooks", "PDF の署名URLが作れません（未公開ブックなら正しい動き）: " + errText(error), "warn");
+  window.open(data.signedUrl, "_blank");
+}
+
+/* ───────────────────────── 4. 受験 ───────────────────────── */
+async function startExam(b) {
+  book = b; attempt = null; answers = {};
+  $("secExam").hidden = false;
+  $("examHead").innerHTML = `<p><strong>${esc(b.title)}</strong></p>`;
+
+  // 未提出の答案が残っていれば再開する
+  const { data: open } = await sb.from("attempts").select("*")
+    .eq("book_id", b.id).eq("user_id", me.id).is("submitted_at", null)
+    .order("started_at", { ascending: false }).limit(1);
+
+  if (open && open.length) {
+    attempt = open[0];
+    log("logExam", "受験中の答案を再開します", "warn");
+  } else {
+    const { data, error } = await sb.from("attempts")
+      .insert({ book_id: b.id, user_id: me.id }).select().single();
+    if (error) return log("logExam", "開始できません: " + errText(error), "ng");
+    attempt = data;
+    log("logExam", "受験を開始しました", "ok");
+  }
+  await loadQuestions();
+  $("secDraw").hidden = false;
+  loadStrokes();
+}
+
+async function loadQuestions() {
+  // 生徒は student_questions（正解が伏せられる view）、講師は questions を直接
+  const src = me.role === "teacher" ? "questions" : "student_questions";
+  const { data, error } = await sb.from(src).select("*").eq("book_id", book.id).order("number");
+  if (error) return log("logExam", `${src} が読めません: ` + errText(error), "ng");
+  questions = data;
+
+  const { data: rows } = await sb.from("answers").select("*").eq("attempt_id", attempt.id);
+  answers = {};
+  (rows || []).forEach(r => answers[r.question_id] = r);
+
+  // 解答用紙の行を先に作る（以後の保存は user_answer の UPDATE だけになる）
+  const missing = questions.filter(q => !answers[q.id])
+    .map(q => ({ attempt_id: attempt.id, question_id: q.id, user_answer: null, time_spent_sec: 0 }));
+  if (missing.length && !attempt.submitted_at) {
+    const { data: made, error: e2 } = await sb.from("answers").insert(missing).select();
+    if (e2) log("logExam", "解答欄が作れません: " + errText(e2), "ng");
+    else (made || []).forEach(r => answers[r.question_id] = r);
+  }
+  render();
+}
+
+function render() {
+  const done = !!attempt.submitted_at;
+  $("questions").innerHTML = questions.map(q => {
+    const a = answers[q.id] || {};
+    const qd = q.question_data || {};
+    const stem = qd.stem || (q.page ? `（PDF ${q.page} ページ目の第${q.number}問）` : `第${q.number}問`);
+    let body;
+    if (q.answer_type === "choice") {
+      body = `<div class="choices">` + Array.from({ length: q.choice_count }, (_, i) => {
+        const v = String(i + 1);
+        const label = (qd.choices && qd.choices[i]) ? `${v}. ${esc(qd.choices[i])}` : v;
+        return `<label><input type="radio" name="q${q.id}" value="${v}"
+          ${a.user_answer === v ? "checked" : ""} ${done ? "disabled" : ""}>${label}</label>`;
+      }).join("") + `</div>`;
+    } else {
+      body = `<input type="text" data-short="${q.id}" value="${esc(a.user_answer || "")}"
+              ${done ? "disabled" : ""} placeholder="解答を入力">`;
+    }
+    let rev;
+    if (!done) {
+      rev = `<div class="hidden-ans">※ 正解と解説は提出するまで返ってきません（correct_answer = null）</div>`;
+    } else {
+      const hit = a.is_correct === true;
+      rev = `<div class="reveal ${hit ? "correct" : "wrong"}">
+        <strong>${hit ? "○ 正解" : "× 不正解"}</strong> — 正解: ${esc(q.correct_answer ?? "（未取得）")}
+        ${q.accepted_answers && q.accepted_answers.length ? "（別解: " + q.accepted_answers.map(esc).join(" / ") + "）" : ""}
+        ${q.explanation ? "\n\n" + esc(q.explanation) : ""}</div>`;
+    }
+    return `<div class="q">
+      <div class="meta">第${q.number}問 ・ ${q.points}点 ・ ${esc(q.answer_type)}${q.unit_tag ? " ・ " + esc(q.unit_tag) : ""}</div>
+      <p class="stem">${esc(stem)}</p>${body}${rev}</div>`;
+  }).join("");
+
+  $("questions").querySelectorAll("input[type=radio]").forEach(el =>
+    el.onchange = () => save(el.name.slice(1), el.value));
+  $("questions").querySelectorAll("input[data-short]").forEach(el =>
+    el.onchange = () => save(el.dataset.short, el.value));
+
+  $("examActions").innerHTML = done
+    ? `<button class="ghost" id="btnAgain">もう一度この本を受験する</button>`
+    : `<button id="btnSubmit">採点して提出する</button>`;
+  if (done) $("btnAgain").onclick = () => startExam(book);
+  else $("btnSubmit").onclick = submit;
+}
+
+async function save(qid, val) {
+  const { error } = await sb.from("answers")
+    .update({ user_answer: val }).eq("attempt_id", attempt.id).eq("question_id", qid);
+  if (error) return log("logExam", "保存できません: " + errText(error), "ng");
+  answers[qid] = Object.assign(answers[qid] || {}, { user_answer: val });
+  log("logExam", `第${questions.find(q => q.id === qid).number}問を保存`);
+}
+
+async function submit() {
+  const { data, error } = await sb.rpc("submit_attempt", { p_attempt: attempt.id });
+  if (error) return log("logExam", "提出できません: " + errText(error), "ng");
+  const r = Array.isArray(data) ? data[0] : data;
+  log("logExam", `提出しました — ${r.total_score} / ${r.max_score} 点（正答 ${r.correct_count} / ${r.question_count} 問）`, "ok");
+
+  const { data: at } = await sb.from("attempts").select("*").eq("id", attempt.id).single();
+  attempt = at;
+  await loadQuestions();      // 提出後は view が正解と解説を返す
+  loadReview();
+}
+
+/* ───────────────────────── 5. 手書き ───────────────────────── */
+const pad = $("pad"), ctx = pad.getContext("2d");
+let strokes = [], cur = null;
+
+function redraw() {
+  ctx.clearRect(0, 0, pad.width, pad.height);
+  ctx.lineWidth = 2.4; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  strokes.forEach(s => {
+    ctx.strokeStyle = s.color || "#1b2233";
+    ctx.beginPath();
+    (s.points || []).forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.stroke();
+  });
+}
+function pos(e) {
+  const r = pad.getBoundingClientRect();
+  return [Math.round((e.clientX - r.left) * pad.width / r.width),
+          Math.round((e.clientY - r.top) * pad.height / r.height)];
+}
+pad.addEventListener("pointerdown", e => {
+  pad.setPointerCapture(e.pointerId);
+  cur = { color: "#1b2233", points: [pos(e)] }; strokes.push(cur);
+});
+pad.addEventListener("pointermove", e => { if (cur) { cur.points.push(pos(e)); redraw(); } });
+pad.addEventListener("pointerup", () => { cur = null; });
+pad.addEventListener("pointercancel", () => { cur = null; });
+
+$("btnClearStroke").onclick = () => { strokes = []; redraw(); };
+
+$("btnSaveStroke").onclick = async () => {
+  if (!attempt) return log("logDraw", "先に受験を開始してください", "warn");
+  const { error } = await sb.from("annotations")
+    .upsert({ attempt_id: attempt.id, page: 1, strokes }, { onConflict: "attempt_id,page" });
+  if (error) return log("logDraw", "保存できません（提出後なら正しい動き）: " + errText(error), "warn");
+  log("logDraw", `${strokes.length} ストロークを保存しました`, "ok");
+};
+
+$("btnLoadStroke").onclick = loadStrokes;
+
+async function loadStrokes() {
+  if (!attempt) return;
+  const { data, error } = await sb.from("annotations").select("*")
+    .eq("attempt_id", attempt.id).eq("page", 1).maybeSingle();
+  if (error) return log("logDraw", "読めません: " + errText(error), "ng");
+  strokes = data ? data.strokes : [];
+  redraw();
+  log("logDraw", data ? `読み込みました（updated_at=${data.updated_at}）` : "保存されたストロークはありません");
+}
+
+/* ───────────────────────── 6. 復習キュー ───────────────────────── */
+$("btnReview").onclick = loadReview;
+
+async function loadReview() {
+  const { data, error } = await sb.from("review_items").select("*")
+    .order("last_wrong_at", { ascending: false });
+  if (error) return log("logReview", "読めません: " + errText(error), "ng");
+  if (!data.length) { $("review").innerHTML = ""; return log("logReview", "0 件（まだ誤答がありません）"); }
+
+  // 設問文は student_questions 側にある（review_items は question_id しか持たない）
+  const { data: qs } = await sb.from("student_questions").select("id,number,question_data,unit_tag");
+  const byId = {}; (qs || []).forEach(q => byId[q.id] = q);
+
+  $("review").innerHTML = `<table><tr><th>設問</th><th>単元</th><th>誤答回数</th><th>最後に間違えた</th><th>解決</th></tr>` +
+    data.map(r => {
+      const q = byId[r.question_id];
+      const stem = q && q.question_data ? q.question_data.stem : "（未公開ブックの設問）";
+      return `<tr><td>${esc(String(stem).slice(0, 46))}</td><td>${esc(q ? (q.unit_tag || "") : "")}</td>
+        <td>${r.wrong_count}</td><td>${esc(String(r.last_wrong_at).slice(0, 16).replace("T", " "))}</td>
+        <td>${r.is_resolved ? "済" : "—"}</td></tr>`;
+    }).join("") + `</table>`;
+  log("logReview", `${data.length} 件`, "ok");
+}
+
+/* ───────────────────────── 7. セキュリティ検証 ───────────────────────── */
+$("btnAttack").onclick = async () => {
+  $("logSec").innerHTML = "";
+  if (!me) return log("logSec", "先にログインしてください", "warn");
+  if (me.role === "teacher") log("logSec", "講師アカウントです。生徒で試すと本来の挙動が見えます", "warn");
+
+  const checks = [
+    ["questions を直接読んで正解を抜く", async () => {
+      const { data, error } = await sb.from("questions").select("id,correct_answer");
+      if (error) return { ok: true, msg: "拒否: " + errText(error) };
+      return { ok: data.length === 0, msg: `${data.length} 行返った` };
+    }],
+    ["未公開ブックを読む", async () => {
+      const { data, error } = await sb.from("books").select("id").eq("is_published", false);
+      if (error) return { ok: true, msg: "拒否: " + errText(error) };
+      return { ok: data.length === 0, msg: `${data.length} 行返った` };
+    }],
+    ["自分を講師に昇格する", async () => {
+      const { error } = await sb.from("profiles").update({ role: "teacher" }).eq("id", me.id);
+      return error ? { ok: true, msg: "拒否: " + errText(error) } : { ok: false, msg: "通ってしまった" };
+    }],
+    ["attempts を直接いじって満点にする", async () => {
+      const { error } = await sb.from("attempts").update({ total_score: 999 }).eq("user_id", me.id);
+      return error ? { ok: true, msg: "拒否: " + errText(error) } : { ok: false, msg: "通ってしまった" };
+    }],
+    ["is_correct を自分で true にする", async () => {
+      if (!attempt) return { ok: null, msg: "先に受験を開始すると試せます" };
+      const { error } = await sb.from("answers").update({ is_correct: true }).eq("attempt_id", attempt.id);
+      return error ? { ok: true, msg: "拒否: " + errText(error) } : { ok: false, msg: "通ってしまった" };
+    }],
+    ["他人名義の答案を作る", async () => {
+      if (!book) return { ok: null, msg: "先にブックを選ぶと試せます" };
+      const fake = "fadefade-fade-4ade-8ade-fadefadefade";   // 実在しない他人の id
+      const { error } = await sb.from("attempts").insert({ book_id: book.id, user_id: fake });
+      return error ? { ok: true, msg: "拒否: " + errText(error) } : { ok: false, msg: "通ってしまった" };
+    }],
+  ];
+
+  let pass = 0, total = 0;
+  for (const [name, fn] of checks) {
+    let r;
+    try { r = await fn(); } catch (e) { r = { ok: true, msg: "拒否: " + e.message }; }
+    if (r.ok === null) { log("logSec", `— ${name}: ${r.msg}`, "warn"); continue; }
+    total++; if (r.ok) pass++;
+    log("logSec", `${r.ok ? "○ 防げた" : "× 防げていない"} — ${name}: ${r.msg}`, r.ok ? "ok" : "ng");
+  }
+  log("logSec", `結果: ${pass} / ${total} 件を防いだ`, pass === total ? "ok" : "ng");
+};
+</script>
+</body>
+</html>

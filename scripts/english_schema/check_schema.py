@@ -42,6 +42,7 @@ EXPECTED_TABLES = [
 # ポリシーが無くてよい操作。**理由を必ず書く**。理由なしに足さないこと。
 POLICY_EXEMPT = {
     ("profiles", "delete"): "退会は auth.users を消して cascade で落とす。delete 権限自体を配っていない",
+    ("attempts", "update"): "提出も採点も submit_attempt() 経由。直接の UPDATE 権限を配っていない",
 }
 
 problems = []
