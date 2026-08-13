@@ -47,15 +47,20 @@ supabase db push
 ### A. 手元だけで動かす (Docker が要る・いちばん手軽)
 
 ```bash
-npm install -g supabase          # 未導入なら
+# CLI の導入 (★ npm install -g supabase は「サポートしていない」と言われて失敗する)
+brew install supabase/tap/supabase     # macOS / Linuxbrew
+#   入れずに使うなら、以下の supabase を npx supabase に読み替える
+
 cd <このリポジトリ>
-supabase init                    # supabase/config.toml が無ければ
+supabase init                    # supabase/config.toml が無ければ (既存ファイルは上書きされない)
 supabase start                   # 初回は数分。API URL と anon key が表示される
 supabase db reset                # migrations/*.sql → seed.sql を流す
 
 python3 -m http.server 8080      # 別のターミナルで
 # → http://localhost:8080/supabase/demo/ を開く
 ```
+
+`supabase start` の出力を後から見たいときは `supabase status`。
 
 `supabase start` が出す **API URL** (既定 `http://127.0.0.1:54321`) と **anon key** を
 デモの「1. 接続」に貼る。ローカルはメール確認が既定で無効なので、
