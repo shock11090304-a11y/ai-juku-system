@@ -105,7 +105,11 @@
     <button class="ghost" id="btnLogout">ログアウト</button>
   </div>
   <div class="note">新規登録すると <code>handle_new_user</code> トリガが <code>profiles</code> を自動で作ります（role は必ず student）。
-    講師にするには SQL を 1 行流します（supabase/README.md の「講師として見る」）。</div>
+    講師にするには SQL を 1 行流します（supabase/README.md の「講師として見る」）。<br>
+    ★ 事前に <strong>Authentication → Sign In / Providers → Email</strong> の
+    <strong>「Confirm email」を OFF にして Save</strong> しておくこと。ON のままだと登録はできても
+    ログインできません。<br>
+    ★ メールアドレスは <strong>実在するドメイン</strong>で。<code>example.com</code> 等は Supabase が拒否します。</div>
   <div class="log" id="logAuth">未ログイン</div>
 </section>
 
@@ -239,14 +243,29 @@ $("btnConn").onclick = async () => {
 };
 
 /* ───────────────────────── 2. アカウント ───────────────────────── */
+const CONFIRM_HINT =
+  "Supabase → Authentication → Sign In / Providers → Email の「Confirm email」を OFF にして "
+  + "Save し、この画面の「ログイン」を押してください（登録し直す必要はありません）。";
+
 $("btnSignup").onclick = async () => {
-  const { error } = await sb.auth.signUp({
+  const { data, error } = await sb.auth.signUp({
     email: $("email").value.trim(),
     password: $("pass").value,
     options: { data: { display_name: $("dname").value.trim() } }
   });
-  if (error) return log("logAuth", "登録できません: " + errText(error), "ng");
-  log("logAuth", "登録しました。そのままログインできない場合はメール確認が有効です", "ok");
+  if (error) {
+    // Supabase は example.com など一部のドメインを弾く。実在するドメインを使う。
+    const hint = /invalid/i.test(error.code || error.message || "")
+      ? "  ← example.com 等は Supabase 側で拒否されます。実在するドメインを使ってください。" : "";
+    return log("logAuth", "登録できません: " + errText(error) + hint, "ng");
+  }
+  // ★ session が返らない = メール確認が有効。アカウント自体はできているので、
+  //   設定を切って「ログイン」を押せば入れる (作り直すと "already registered" になる)。
+  if (!data.session) {
+    return log("logAuth",
+      "アカウントは作られましたが、メール確認が有効なのでログインできていません。" + CONFIRM_HINT, "warn");
+  }
+  log("logAuth", "登録してログインしました", "ok");
   refreshMe();
 };
 
@@ -254,7 +273,10 @@ $("btnLogin").onclick = async () => {
   const { error } = await sb.auth.signInWithPassword({
     email: $("email").value.trim(), password: $("pass").value
   });
-  if (error) return log("logAuth", "ログインできません: " + errText(error), "ng");
+  if (error) {
+    const hint = /not confirmed/i.test(error.message || "") ? "  ← " + CONFIRM_HINT : "";
+    return log("logAuth", "ログインできません: " + errText(error) + hint, "ng");
+  }
   refreshMe();
 };
 
