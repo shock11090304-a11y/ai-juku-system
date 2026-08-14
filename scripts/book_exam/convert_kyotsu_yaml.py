@@ -520,6 +520,16 @@ def convert_file(path, forced_base=None):
     return finish(path, subject, out, problems, fmt, f"{base} — {why}"), [], False
 
 
+def short_path(path):
+    """同じ名前の YAML が 2 か所にあるので、末尾 3 段まで残して見分けられるようにする。
+
+    ★ ファイル名だけにしていたら、国語が 2 冊出たときに **どちらがどちらか
+      分からず**、--out の書き出しも同じ名前で上書きし合っていた (2026-08-14)。
+    """
+    parts = os.path.normpath(path).split(os.sep)
+    return "/".join(parts[-3:]) if len(parts) >= 3 else path
+
+
 def finish(path, subject, questions, problems, fmt, base_note):
     preview = [dict(q["_preview"], number=q["number"],
                     correct_answer=q["correct_answer"])
@@ -527,7 +537,7 @@ def finish(path, subject, questions, problems, fmt, base_note):
     for q in questions:
         q.pop("_preview", None)
     return {
-        "source": os.path.basename(path),
+        "source": short_path(path),
         "subject_name": subject,
         "format": fmt,
         "base_note": base_note,
@@ -547,32 +557,64 @@ def finish(path, subject, questions, problems, fmt, base_note):
 # =============================================================================
 # --probe : 推測しないで構造だけ出す
 # =============================================================================
+def inventory(doc):
+    """木を歩いて「どの場所に どんなキーがあるか」を全部集める。
+
+    ★ 1 件目だけを見せる形にしていたら、選択肢のキー名が分からず
+      「選択肢を持つ設問が 1 つも見つからない」としか言えなかった (2026-08-14)。
+      推測しない作りにしている以上、**キー名は全部見せる**のが probe の仕事。
+    @returns {場所: {"n": その場所の dict の数, "keys": {キー: (型, 見本)}}}
+    """
+    inv = {}
+
+    def walk(o, p):
+        if isinstance(o, dict):
+            e = inv.setdefault(p or "(トップ)", {"n": 0, "keys": {}})
+            e["n"] += 1
+            for k, v in o.items():
+                if isinstance(v, dict):
+                    e["keys"].setdefault(k, ("dict", ""))
+                    walk(v, f"{p}.{k}")
+                elif isinstance(v, list):
+                    kinds = sorted({type(x).__name__ for x in v})
+                    e["keys"].setdefault(k, (f"list[{len(v)}] of {'/'.join(kinds) or '空'}",
+                                             "" if any(isinstance(x, (dict, list)) for x in v)
+                                             else " | ".join(str(x)[:24] for x in v[:3])))
+                    for x in v[:80]:
+                        walk(x, f"{p}.{k}[]")
+                else:
+                    prev = e["keys"].get(k)
+                    if prev is None or not prev[1]:
+                        e["keys"][k] = (type(v).__name__,
+                                        str(v)[:70].replace("\n", "⏎"))
+        elif isinstance(o, list):
+            for x in o[:80]:
+                walk(x, f"{p}[]")
+
+    walk(doc, "")
+    return inv
+
+
 def probe(path):
     print(f"\n=== {os.path.basename(path)} ===")
+    print(f"    {path}")
     try:
         doc = load_yaml(path)
     except Exception as e:
         print(f"  ✗ YAML が読めない: {e}")
         return
 
-    def shape(o, depth=0, path_s="", out=None, seen=0):
-        pad = "  " * (depth + 1)
-        if isinstance(o, dict):
-            for k, v in list(o.items())[:14]:
-                t = type(v).__name__
-                if isinstance(v, (dict, list)):
-                    print(f"{pad}{k}: {t}[{len(v)}]")
-                    if depth < 3:
-                        shape(v, depth + 1)
-                else:
-                    print(f"{pad}{k}: {t} = {str(v)[:60]!r}")
-        elif isinstance(o, list):
-            if o:
-                print(f"{pad}[0] ({type(o[0]).__name__}) — 以下 {len(o)} 件ぶん同型とみなす")
-                if depth < 3:
-                    shape(o[0], depth + 1)
+    inv = inventory(doc)
+    for place, e in list(inv.items())[:14]:
+        print(f"  {place}  ({e['n']} 個)")
+        for k, (t, sample) in list(e["keys"].items())[:24]:
+            line = f"      {k}: {t}"
+            if sample:
+                line += f" = {sample}"
+            print(line[:150])
+    if len(inv) > 14:
+        print(f"  … 場所があと {len(inv) - 14} 種類 (深すぎるので省略)")
 
-    shape(doc)
     qs = harvest(doc)
     print(f"  --- 選択肢を持つ設問: {len(qs)} 問")
     if qs:
@@ -619,6 +661,24 @@ def report(bundles, problems, excluded, meta):
             pages = f"PDF {m['pages']}頁" if m.get("pages") else "PDF 不明"
             print(f"    {(b['subject_name'] or '?'):8} {len(b['questions']):3} 問  "
                   f"形{b['format']}  {pages}  起算: {b['base_note']}")
+            print(f"             {b['source']}")
+
+    # ★ 同じ科目の YAML が 2 本以上あると、冊子も 2 冊できてしまう。
+    #   中身が同じか違うかは機械には決められないので、人に選ばせる。
+    dup = {}
+    for b in bundles:
+        dup.setdefault(b["subject_name"] or "?", []).append(b)
+    dup = {k: v for k, v in dup.items() if len(v) > 1}
+    if dup:
+        print(f"\n=== 同じ科目の YAML が複数ある ({len(dup)} 科目) — どちらを使うか選ぶこと ===")
+        print("   両方取り込むと同じ題名の冊子が 2 冊できます。")
+        for subj, bs in dup.items():
+            print(f"   {subj}:")
+            for b in bs:
+                pv = b["preview"][0]["correct_text"] if b["preview"] else ""
+                print(f"     - {b['source']}  ({len(b['questions'])} 問)  例: {pv}")
+        print("   ★ 片方だけ入れたいときは科目名でなくフォルダ名で絞れます:")
+        print("     python3 scripts/book_exam/convert_kyotsu_yaml.py <フォルダ名の一部> --out DIR")
 
     # ★ 別セッションが数えた問数と突き合わせる。合わなければ抜けている。
     bad_count = []
