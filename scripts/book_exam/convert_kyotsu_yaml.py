@@ -77,7 +77,10 @@ SUBJECT_BY_NAME = {
 
 # ★ 組版済み PDF (lesson-prints/_metadata.json) と別セッションの調査で分かった問数。
 #   合わなければ「抜けている」ということなので必ず落とす。
-EXPECTED_COUNT = {"英語R": 22, "国語": 24, "物理": 20, "世界史": 20, "日本史": 20}
+#   化学 25 / 生物 20 は 2026-08-14 の実機変換の実測を凍結したもの (回帰検出用)。
+#   ★ 取り込むとき 1 冊 1 回、PDF の最終問番号と突き合わせて確かめること。
+EXPECTED_COUNT = {"英語R": 22, "国語": 24, "物理": 20, "世界史": 20, "日本史": 20,
+                  "化学": 25, "生物": 20}
 
 # ★ バックアップ / 作業途中のフォルダは見ない。
 #   実物には _ruby_fix_backup2/ に国語の旧版があり、同じ冊子が 2 つできていた
@@ -623,11 +626,14 @@ def adapt_f_solution(doc):
         found = answers_in(sec.get("solution"))
         n, how = section_choice_count(sec)
         if not found:
-            # ★ オリエンテーション等の大問でない節は飛ばしてよい。だが
-            #   選択肢が取れる節は大問のはずで、そこから正解を抜けないのは
-            #   書式の取りこぼし。黙って飛ばすと問数が減る。
-            if n is not None:
-                return None, (f"{label}: 選択肢は取れる ({how}) のに solution から"
+            # ★ 正解が 1 つも無い節を「取りこぼし」と断じるのは、
+            #   **範囲表記 (「①〜④ から選べ」) があるときだけ**。
+            #   列挙だけでは大問と断定できない — 実物の英語R 第0章は
+            #   オリエンテーションの攻略手順が ①〜⑤ で列挙されていて、
+            #   ここで誤検知した (2026-08-14)。範囲表記は「選べ」という
+            #   指示そのものなので、あれば大問で確定。
+            if choice_count_from_range(sec.get("problem")) is not None:
+                return None, (f"{label}: 「①〜」の範囲表記があるのに solution から"
                               f"正解を抜けない。書式を ANSWER_IN_TEXT に足すこと")
             continue
         if n is None:
