@@ -1,0 +1,36 @@
+# 正解の並びだけ読める形 (英語R の実物の形) — JSON では取り込めず、一括入力用
+#         (2026-08-14 に実機の --probe 出力から書き起こした)
+#
+# ★ 実物の要点:
+#   ・answer_key: [{number: 1, answer: '第1問 問1 = ③ (June 15)', explanation}, …]
+#     — answer が自由文で、丸数字 1 つを含む
+#   ・選択肢の数は元データのどこにも書かれていない (本文の図に入っている)
+#   → JSON 取り込みは不可。正解の並びだけ出して、登録画面の
+#     「正解だけをまとめて入れる」(§17.8) に貼る。
+#   --selftest は「承知のうえで外され、正解の並びが読めること」を検査する。
+
+meta:
+  title: 共通テスト 英語リーディング 実戦模試
+  subtitle: 本番形式（全問マーク式）
+  date: 2026年6月3日
+  org: Trillion 塾
+  template: english_self_study.html
+
+sections:
+  - label: 第0章 (オリエンテーション)
+    instruction: 共通テスト英語リーディングは全問マーク式。
+    problem: ★ 共通テスト 英語リーディングの出題構造（本番・全問マーク式）
+    solution: |
+      ★ 問1 正解: ③ June 15
+      ・本文 "Newly arrived books will be placed on display" が根拠。
+
+answer_key:
+  - number: 1
+    answer: 第1問 問1 = ③ (June 15)
+    explanation: 短い実用文・事実の読み取り。
+  - number: 2
+    answer: 第1問 問2 = ① (sign up at the desk)
+    explanation: 利用者がすべきことの読み取り。
+  - number: 3
+    answer: 第2問 問1 = ④ (compare the two plans)
+    explanation: 比較表の読み取り。

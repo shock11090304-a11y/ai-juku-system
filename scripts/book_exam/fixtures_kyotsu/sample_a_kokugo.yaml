@@ -1,0 +1,76 @@
+# 形 A — passages[].questions[] が choices を持ち、トップの answer_key と対応する
+#         (国語の実物の形。2026-08-14 に実機の --probe 出力から書き起こした)
+#
+# ★ 実物の要点:
+#   ・設問は passages[].questions[] にあり、キーは number/type/prompt/ans_box/choices
+#   ・answer_key はトップに {number, answer: '⑤', explanation} の一覧
+#   ・解説は answer_key 側にだけある (設問側には無い)
+#   ・設問の number は大問ごとに 1 から振り直されている可能性がある (問1〜問6 × 4)
+#     → この見本もわざと振り直しておく。番号で引くと 1 問目の解説が
+#       全大問に付くので、並び順で付けることを検査する。
+
+meta:
+  title: 共通テスト 国語 マーク式 オリジナル模試
+  subtitle: 本番形式 ── 評論・小説 / 全問マーク (五択) 選択式
+  date: 2026年6月3日
+  org: Trillion 塾
+
+include_blank_page: true
+
+passages:
+  - label: 第1問
+    instruction: 次の文章を読んで、後の問い(問1〜問2)に答えよ。(配点 50)
+    body: 私たちは「話し合う」という言葉を、たいてい言葉を口に出して応酬することだと思っている。
+    questions:
+      - number: 1
+        type: choice
+        prompt: 傍線部(a)「チンモク」を漢字で書いたとき、その傍線部と同じ漢字を含むものを、次の①〜⑤のうちから一つ選べ。
+        ans_box: "1"
+        choices:
+          - 委員会の沈滞を打開する
+          - 株価が沈下する
+          - 良心の呵責に苦しむ
+          - 事件の真相に沈潜する
+          - 会議で沈黙を守る
+      - number: 2
+        type: choice
+        prompt: 傍線部(b)「応酬」の本文中における意味として最も適当なものを、次の①〜⑤のうちから一つ選べ。
+        ans_box: "2"
+        choices:
+          - やり取りを重ねること
+          - 相手を言い負かすこと
+          - 黙って聞き続けること
+          - 話題を変えること
+          - 席を譲り合うこと
+
+  - label: 第2問
+    instruction: 次の文章を読んで、後の問い(問1)に答えよ。(配点 50)
+    body: 少年は窓の外の雨をながめていた。
+    questions:
+      - number: 1                       # ★ わざと振り直す (実物と同じ)
+        type: choice
+        prompt: この場面の少年の心情として最も適当なものを、次の①〜⑤のうちから一つ選べ。
+        ans_box: "3"
+        choices:
+          - 退屈
+          - 不安
+          - 期待
+          - 怒り
+          - 安堵
+
+answer_key:
+  - number: 1
+    answer: ⑤
+    explanation: |
+      【正解】 ⑤ 会議で沈黙を守る
+      【解説】漢字問題(同一漢字の判別)。傍線部(a)「チンモク」=「沈黙」。
+  - number: 2
+    answer: ①
+    explanation: |
+      【正解】 ① やり取りを重ねること
+      【解説】直後の「相手が何か言い、こちらが何か返す」が言い換え。
+  - number: 3
+    answer: ③
+    explanation: |
+      【正解】 ③ 期待
+      【解説】雨上がりを待つ描写が直前にある。

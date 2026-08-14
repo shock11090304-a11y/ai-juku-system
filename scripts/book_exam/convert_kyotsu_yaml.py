@@ -75,29 +75,40 @@ SUBJECT_BY_NAME = {
     "世界史": "social",
 }
 
-# ★ 別セッションの調査報告。変換後にこの数と突き合わせる。
+# ★ 組版済み PDF (lesson-prints/_metadata.json) と別セッションの調査で分かった問数。
 #   合わなければ「抜けている」ということなので必ず落とす。
-EXPECTED_COUNT = {"英語R": 22, "国語": 24, "物理": 20}
+EXPECTED_COUNT = {"英語R": 22, "国語": 24, "物理": 20, "世界史": 20, "日本史": 20}
 
-# 正解の在り処 (上の表)。--probe の見立てと食い違ったら警告を出す。
-EXPECTED_FORMAT = {
-    "英語R": "A", "国語": "A", "物理": "A",
-    "数学IA": "B", "数学IIB": "B",
-    "化学": "C", "生物": "C", "日本史": "C", "世界史": "C",
-}
+# ★ バックアップ / 作業途中のフォルダは見ない。
+#   実物には _ruby_fix_backup2/ に国語の旧版があり、同じ冊子が 2 つできていた
+#   (2026-08-14)。中身はルビ記法が残った組版前のもので、生徒に出すものではない。
+EXCLUDE_PATH = re.compile(r"(backup|bak|old|旧|作業中|tmp|temp|work)", re.I)
 
 CIRCLED = {c: i + 1 for i, c in enumerate("①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳")}
 ZENKAKU = {c: i for i, c in enumerate("０１２３４５６７８９")}
 
-# 解説本文から正解を抜く形 (書式が科目ごとに違うので複数持つ)。
-#   「問1 → 正解 ②」「**問 A 正解: ②**」「問3 正解 4」など。
+# 解説本文から正解を抜く形。★ 実物は科目ごとに違う (2026-08-14 に --probe で確認):
+#     化学   <strong>問1 → 正解 ②</strong>
+#     物理   <strong>$\text{問 1}$ 正解 ②</strong>
+#     生物   <strong>問 1 → 正解 ②</strong>
+#     世界史 **問 A 正解: ②**
+#     日本史 問 1　正解: **①**　中大兄皇子と…
+#   飾り (<strong> / ** / $ / \text{}) を先に剥がせば 1 本の形で足りる。
 #   ★ 「正解」の直後に来る番号だけを拾う。誤答の説明にも番号は出るので、
 #     語を挟まない位置に限る。
-ANSWER_IN_TEXT = [
-    re.compile(r"問\s*([0-9０-９A-Za-z]+)\s*(?:→|➡|:|：)?\s*正解\s*(?:は|:|：)?\s*"
-               r"([①-⑳]|[0-9０-９]{1,2})"),
-    re.compile(r"正解\s*(?:は|:|：)\s*([①-⑳]|[0-9０-９]{1,2})"),
-]
+ANSWER_IN_TEXT = re.compile(
+    r"問\s*([0-9０-９A-Za-z]{1,3})\s*(?:→|➡)?\s*正解\s*(?:は)?\s*[::]?\s*([①-⑳])")
+
+# 「①〜④ から 1 つ選べ」— 選択肢の数がここに書いてある大問がある。
+CHOICE_RANGE = re.compile(r"([①-⑳])\s*[〜~ー–—−-]\s*([①-⑳])")
+
+# 飾りを剥がす (LaTeX と HTML と Markdown が混ざっている)
+DECOR = re.compile(r"</?strong>|</?b>|\*\*|\\text\{|\\mathrm\{|[$}{]")
+
+
+def norm_text(s):
+    """<strong> / ** / $ / \\text{…} を剥がして、正解を探せる素の文にする。"""
+    return DECOR.sub("", str(s or ""))
 
 
 # =============================================================================
@@ -144,7 +155,15 @@ def find_files(root):
     out = []
     for p in pats:
         out += glob.glob(p, recursive=True)
-    return sorted(set(out))
+    # ★ バックアップ / 作業途中のフォルダは外す。中に旧版が入っていて、
+    #   同じ冊子が 2 つできていた (実物の _ruby_fix_backup2/)。
+    keep, dropped = [], []
+    for p in sorted(set(out)):
+        rel = p[len(root):] if p.startswith(root) else p
+        (dropped if EXCLUDE_PATH.search(rel) else keep).append(p)
+    for p in dropped:
+        print(f"  [除外] {short_path(p)} — バックアップ / 作業途中のフォルダ")
+    return keep
 
 
 def print_metadata_table():
@@ -317,66 +336,247 @@ def adapt_a_top_level(doc, questions):
     return [v for _label, v in pairs], None
 
 
-def adapt_b_per_section(doc, questions):
-    """B: 大問ごとの answer_key: (ア・イ… の空欄記号 → 値)。
+def answers_in(text):
+    """解説本文から [(問の見出し, 1起算の正解番号)] を出てくる順に拾う。
 
-    ★ 共通テストの数学はマーク欄 1 つが 1 つの答え。設問 (小問) と 1 対 1 では
-      ないので、**空欄記号ごとに 1 問**として出す。記号は題意の一部なので
-      unit_tag に残し、生徒には「ア に入る値」を書かせる。
+    ★ 丸数字だけを拾う。①は必ず 1 番目なので起算の疑いが無い。
+      素の数字も拾うと「誤答②は…」のような文で誤爆する。
     """
-    keys = []
-
-    def walk(o):
-        if isinstance(o, dict):
-            ak = o.get("answer_key")
-            if isinstance(ak, dict) and ak:
-                sec = o.get("id") or o.get("title") or o.get("section") or ""
-                for sym, val in ak.items():
-                    keys.append((str(sec).strip(), str(sym).strip(), val))
-                return
-            for v in o.values():
-                walk(v)
-        elif isinstance(o, list):
-            for v in o:
-                walk(v)
-
-    walk(doc)
-    if not keys:
-        return None, None                     # 形 B ではない
-    # 記号がカタカナ (ア〜ン) でなければ、これは想定した形ではない
-    kata = [s for _sec, s, _v in keys if re.fullmatch(r"[ア-ン]+", s)]
-    if len(kata) < len(keys) * 0.8:
-        return None, (f"大問ごとの answer_key はあるが、記号がカタカナでない "
-                      f"(例 {keys[0][1]!r})。想定した ア・イ 方式ではない")
-    return keys, None
+    out = []
+    for m in ANSWER_IN_TEXT.finditer(norm_text(text)):
+        out.append((m.group(1), CIRCLED[m.group(2)]))
+    return out
 
 
-def adapt_c_from_text(doc, questions, subject):
-    """C: answer_key が無い。解説本文から「正解 ②」を抜く。
+def choice_count_from_range(text):
+    """「①〜④ から 1 つ選べ」→ 4。書いていなければ None。
 
-    ★ 書式が科目ごとに違うので、**設問ごとに自分の解説から抜く**。
-      文書全体を舐めて順番に当てると、誤答の説明を拾って静かにずれる。
+    ★ ①から始まっていないもの (③〜⑥ 等) は選択肢の範囲ではないので採らない。
     """
-    got, missing = [], []
-    for i, q in enumerate(questions):
-        exp = get_explanation(q) or ""
-        val = None
-        for pat in ANSWER_IN_TEXT:
-            m = pat.search(exp)
-            if m:
-                val = m.group(m.lastindex)    # 最後の group が正解の番号
-                break
-        if val is None:
-            missing.append(i + 1)
-        got.append(val)
-    if len(missing) == len(questions):
-        return None, None                     # 形 C でもない (1 つも抜けない)
-    if missing:
-        return None, (f"解説から正解を抜けなかった設問が {len(missing)} 問 "
-                      f"(問 {', '.join(str(x) for x in missing[:8])}"
-                      f"{' …' if len(missing) > 8 else ''})。"
-                      f"{subject} の書式を ANSWER_IN_TEXT に足すこと")
-    return got, None
+    for m in CHOICE_RANGE.finditer(norm_text(text)):
+        a, b = CIRCLED[m.group(1)], CIRCLED[m.group(2)]
+        if a == 1 and 2 <= b <= 10:
+            return b
+    return None
+
+
+def choice_count_from_list(text):
+    """「① 科挙制度は… ② X 正・Y 正 ③ …」のように 1 本の文字列に詰まった
+    選択肢を数える。
+
+    ★ ①②③… が **1 から連番で並んでいること** を要求する。
+      選択肢の本文にも丸数字が出るので、連番でなければ数えない。
+    """
+    seen = [CIRCLED[c] for c in norm_text(text) if c in CIRCLED]
+    if not seen or seen[0] != 1:
+        return None
+    n = 1
+    for v in seen[1:]:
+        if v == n + 1:
+            n = v
+        elif v > n + 1:
+            return None                       # 飛んでいる = 連番ではない
+    return n if 2 <= n <= 10 else None
+
+
+def sections_of(doc):
+    for key in ("sections", "passages", "大問"):
+        v = (doc or {}).get(key) if isinstance(doc, dict) else None
+        if isinstance(v, list) and v:
+            return v
+    return []
+
+
+def section_label(sec, i):
+    for k in ("qnum", "label", "id", "title", "section"):
+        v = sec.get(k)
+        if v not in (None, ""):
+            s = str(v).strip()
+            return s if not s.isdigit() else f"第{s}問"
+    return f"第{i + 1}問"
+
+
+def even_points(score, n):
+    """大問の配点を小問に等分できるときだけ配る。割り切れなければ 1 点。
+
+    ★ 端数を勝手に寄せない。合計が本番と変わるより、全問 1 点のほうが
+      「素点ではない」と分かってよい。
+    """
+    if isinstance(score, int) and n and score >= n and score % n == 0:
+        return score // n
+    return 1
+
+
+# --- 形 D: sub_items + sub_items_choices (世界史 / 日本史) --------------------
+def adapt_d_sub_items(doc):
+    """大問ごとに「小問の一覧」と「選択肢を詰めた文字列の一覧」を持つ形。
+
+    実物 (世界史):
+        sub_items:         ['問 A　下線部ア『唐』に…', …]           5 個
+        sub_items_choices: ['① 科挙制度は… ② … ③ … ④ …', …]      5 個
+        solution:          '**問 A 正解: ②**⏎唐 — 均田制…'
+    """
+    specs = []
+    for i, sec in enumerate(sections_of(doc)):
+        if not isinstance(sec, dict):
+            return None, None
+        subs = sec.get("sub_items")
+        chs = sec.get("sub_items_choices")
+        if not (isinstance(subs, list) and isinstance(chs, list)):
+            return None, None                 # 形 D ではない
+        label = section_label(sec, i)
+        if len(subs) != len(chs):
+            return None, (f"{label}: 小問 {len(subs)} 個に対し選択肢 {len(chs)} 個。"
+                          f"数が合わない")
+        found = answers_in(sec.get("solution"))
+        if len(found) != len(subs):
+            return None, (f"{label}: 小問 {len(subs)} 個に対し solution から抜けた正解が "
+                          f"{len(found)} 個。書式を ANSWER_IN_TEXT に足すこと")
+        pts = even_points(sec.get("score"), len(subs))
+        for (head, ans), text, ch in zip(found, subs, chs):
+            n = choice_count_from_list(ch)
+            if n is None:
+                return None, (f"{label} 問{head}: 選択肢の数を数えられない "
+                              f"(①から連番で並んでいない): {str(ch)[:60]}")
+            specs.append({"section": label, "head": str(head), "answer": ans,
+                          "choice_count": n, "points": pts,
+                          "stem": str(text)[:80], "explanation": None})
+    return (specs, None) if specs else (None, None)
+
+
+# --- 形 E: トップの answer_key が q<大問>_<小問> (物理) ----------------------
+QKEY = re.compile(r"^q(\d+)[_-](\d+)$", re.I)
+
+
+def adapt_e_qkey(doc):
+    """answer_key: {q1_1: 2, q1_2: 2, …}。値は 1 起算の選択肢番号。
+
+    ★ 選択肢の数は大問の problem に「①〜④ から選べ」と書いてある。
+      書いていなければ数えられないので、その大問は通さない。
+    ★ solution にも「問 1 正解 ②」があるので **突き合わせる**。
+      2 つの独立した出どころが一致することが、起算が正しい何よりの証拠になる。
+    """
+    key = (doc or {}).get("answer_key") if isinstance(doc, dict) else None
+    if not isinstance(key, dict) or not key:
+        return None, None
+    parsed = []
+    for k, v in key.items():
+        m = QKEY.match(str(k).strip())
+        if not m:
+            return None, None                 # 形 E ではない (ア・イ 方式など)
+        n, _circled = to_int(v)
+        if n is None:
+            return None, f"answer_key の {k} が番号でない ({v!r})"
+        parsed.append((int(m.group(1)), int(m.group(2)), n))
+    parsed.sort()
+
+    secs = {}
+    for i, sec in enumerate(sections_of(doc)):
+        if isinstance(sec, dict):
+            q, _c = to_int(sec.get("qnum"))
+            if q is not None:
+                secs[q] = (sec, section_label(sec, i))
+
+    per_sec = {}
+    for big, _small, _v in parsed:
+        per_sec[big] = per_sec.get(big, 0) + 1
+
+    specs = []
+    for big, small, val in parsed:
+        if big not in secs:
+            return None, f"answer_key に第{big}問があるのに、大問 {big} が本文に無い"
+        sec, label = secs[big]
+        n = choice_count_from_range(sec.get("problem"))
+        if n is None:
+            return None, (f"{label}: 選択肢の数が problem に書かれていない "
+                          f"(「①〜④ から 1 つ選べ」の形が無い)")
+        if not (1 <= val <= n):
+            return None, f"{label} 問{small}: 正解 {val} が選択肢 {n} 個の範囲外"
+        specs.append({"section": label, "head": str(small), "answer": val,
+                      "choice_count": n,
+                      "points": even_points(sec.get("score"), per_sec[big]),
+                      "stem": f"{label} 問{small}", "explanation": None})
+
+    # ★ solution の「問 1 正解 ②」と突き合わせる。食い違えば通さない。
+    mismatch = []
+    for big in sorted(per_sec):
+        sec, label = secs[big]
+        found = answers_in(sec.get("solution"))
+        mine = [v for b, _s, v in parsed if b == big]
+        if len(found) != len(mine):
+            continue                          # 解説の書式が違うだけ。突き合わせは諦める
+        for (head, a), b in zip(found, mine):
+            if a != b:
+                mismatch.append(f"{label} 問{head}: answer_key={b} だが解説は {a}")
+    if mismatch:
+        return None, ("answer_key と解説の正解が食い違う — "
+                      + " / ".join(mismatch[:4]))
+    return specs, None
+
+
+# --- 形 F: answer_key が無く solution にだけ正解がある (化学 / 生物) ---------
+NO_CHOICE_COUNT = "選択肢の数が problem に書かれていない"
+
+
+def adapt_f_solution(doc):
+    """大問ごとの solution から「問1 → 正解 ②」を拾う。
+
+    ★ 選択肢の数は problem の「①〜④ から 1 つ選べ」から取る。
+      書いていなければ (生物) 通さない。正解だけは分かるので、
+      convert_file が「一括入力用」として承知のうえで外す。
+    """
+    specs = []
+    for i, sec in enumerate(sections_of(doc)):
+        if not isinstance(sec, dict):
+            return None, None
+        label = section_label(sec, i)
+        found = answers_in(sec.get("solution"))
+        n = choice_count_from_range(sec.get("problem"))
+        if not found:
+            # ★ オリエンテーション等の大問でない節は飛ばしてよい。だが
+            #   「①〜④ から選べ」がある節は大問のはずで、そこから正解を
+            #   抜けないのは書式の取りこぼし。黙って飛ばすと問数が減る。
+            if n is not None:
+                return None, (f"{label}: problem に「①〜…」があるのに solution から"
+                              f"正解を抜けない。書式を ANSWER_IN_TEXT に足すこと")
+            continue
+        if n is None:
+            return None, (f"{label}: {NO_CHOICE_COUNT} "
+                          f"(「①〜④ から 1 つ選べ」の形が無い)。"
+                          f"正解は読めているので、一括入力なら使える")
+        pts = even_points(sec.get("score"), len(found))
+        for head, ans in found:
+            if not (1 <= ans <= n):
+                return None, f"{label} 問{head}: 正解 {ans} が選択肢 {n} 個の範囲外"
+            specs.append({"section": label, "head": str(head), "answer": ans,
+                          "choice_count": n, "points": pts,
+                          "stem": f"{label} 問{head}", "explanation": None})
+    return (specs, None) if specs else (None, None)
+
+
+# --- 正解だけは分かる形 (一括入力用) -----------------------------------------
+def answers_only(doc):
+    """選択肢の数までは分からないが、正解の並びは分かる場合にそれを返す。
+
+    実物:
+      英語R  answer_key: [{number:1, answer:'第1問 問1 = ③ (June 15)'}, …]
+      生物   solution に「問 1 → 正解 ②」はあるが選択肢の数が書かれていない
+    ★ 登録画面の「正解だけをまとめて入れる」に貼れば 1 分で入る (§17.8)。
+    """
+    key = (doc or {}).get("answer_key") if isinstance(doc, dict) else None
+    out = []
+    if isinstance(key, list) and key:
+        for x in key:
+            v = x.get("answer") if isinstance(x, dict) else x
+            found = [CIRCLED[c] for c in norm_text(v) if c in CIRCLED]
+            if len(found) != 1:
+                return None                   # 丸数字が 0 個か 2 個以上 = 当てられない
+            out.append(found[0])
+        return out
+    for sec in sections_of(doc):
+        if isinstance(sec, dict):
+            out += [a for _h, a in answers_in(sec.get("solution"))]
+    return out or None
 
 
 # =============================================================================
@@ -453,15 +653,56 @@ def build_choice_question(q, number, raw_answer, shift):
     return out, None
 
 
-def mark_box_reason(keys):
-    """形 B を取り込めない理由。★ここを消して通すなら検証器の設計から変えること。"""
-    digits = sum(1 for _s, _y, v in keys if re.fullmatch(r"[0-9０-９]", str(v).strip()))
-    return (f"マーク欄方式 ({len(keys)} 欄・うち 1 桁の数字が {digits} 欄)。"
-            f"記述の正解が数字だけだと validateQuestions が弾くため、"
-            f"今のアプリには入れられない "
-            f"(exam-book-admin-model.mjs:143 — 選択肢の取りこぼしを捕まえる砦)。"
-            f"選択式にしても PDF の「ア」と画面の 1〜10 が食い違い、0 が表せない。"
-            f"入れるなら検証器の設計変更が要る")
+def is_fill_in_marks(doc):
+    """数学の穴埋めマーク式か。取り込めないと分かっている形。
+
+    実物 (数学IA / IIB):
+        sections[].answer_key: str = 'ア = 6 / イ = 4 / ウエ = −1 / …'
+        選択肢そのものが無い (空欄に数字を書き込む)
+    """
+    for sec in sections_of(doc):
+        if isinstance(sec, dict) and isinstance(sec.get("answer_key"), str):
+            if re.search(r"[ア-ン]\s*=", sec["answer_key"]):
+                return True
+    return False
+
+
+FILL_IN_REASON = (
+    "穴埋めマーク式。選択肢が無く、answer_key は 'ア = 6 / イ = 4 / ウエ = −1' の"
+    "自由文で、空欄 1 つずつに数字を書き込む形。冊子受験アプリは 1 問 1 答 "
+    "(選択式か記述) しか持てないうえ、validateQuestions は数字だけの記述解答を弾く "
+    "(exam-book-admin-model.mjs:143 — 選択肢の取りこぼしを捕まえる砦)。"
+    "アプリの形式に合わないので **紙で配るのが正解**")
+
+
+def build_from_specs(specs):
+    """アダプタが出した仕様 → アプリの設問。
+
+    ★ 正解は必ず 1 起算の丸数字か、範囲を照合済みの整数として渡ってくる。
+      ここで起算をいじらない (いじる場所が 2 つあると片方だけ直して壊す)。
+    """
+    out, problems = [], []
+    for s in specs:
+        n, cc = s["answer"], s["choice_count"]
+        if not (1 <= n <= cc):
+            problems.append(f"{s['section']} 問{s['head']}: "
+                            f"正解 {n} が選択肢 {cc} 個の範囲外")
+            continue
+        q = {
+            "number": len(out) + 1,
+            "page": None,                      # YAML に「何問目が何ページか」が無い
+            "points": s.get("points") or 1,
+            "answer_type": "choice",
+            "choice_count": cc,
+            "correct_answer": str(n),
+            "accepted_answers": [],
+            "unit_tag": s["section"] or None,
+            "explanation": s.get("explanation"),
+        }
+        q["_preview"] = {"stem": s.get("stem") or "", "choices": [],
+                         "correct_text": f"{s['section']} 問{s['head']} → {n} 番"}
+        out.append(q)
+    return out, problems
 
 
 def convert_file(path, forced_base=None):
@@ -471,53 +712,117 @@ def convert_file(path, forced_base=None):
       「変換に失敗した」ものを同じ扱いにすると、前者で毎回ゲートが赤くなり、
       赤いのが普通になって本物の失敗を見落とす。
     """
+    name = os.path.basename(path)
     subject = subject_of(path)
     try:
         doc = load_yaml(path)
     except Exception as e:
-        return None, [f"{os.path.basename(path)}: YAML が読めない ({e})"], False
+        return None, [f"{name}: YAML が読めない ({e})"], False
 
+    # --- 取り込めないと分かっている形は先に外す -----------------------------
+    if is_fill_in_marks(doc):
+        return None, [f"{name}: [数学] {FILL_IN_REASON}"], True
+
+    # --- A: 設問が choices を持ち、トップの answer_key と番号で対応 (国語) ---
     questions = harvest(doc)
-
-    # --- B を先に見る。数学は選択肢を持たない小問があり harvest が空でも成立する ---
-    keys, err = adapt_b_per_section(doc, questions)
-    if err:
-        return None, [f"{os.path.basename(path)}: [形B] {err}"], False
-    if keys:
-        # ★ 変換しない。理由は mark_box_reason() に書いてある。
-        return None, [f"{os.path.basename(path)}: [形B] {mark_box_reason(keys)}"], True
-
-    if not questions:
-        return None, [f"{os.path.basename(path)}: 選択肢を持つ設問が 1 つも見つからない。"
-                      f"--probe で構造を見て harvest() の探すキーを直すこと"], False
-
-    values, err = adapt_a_top_level(doc, questions)
-    fmt = "A"
-    if err:
-        return None, [f"{os.path.basename(path)}: [形A] {err}"], False
-    if values is None:
-        values, err = adapt_c_from_text(doc, questions,
-                                        subject or os.path.basename(path))
-        fmt = "C"
+    if questions:
+        values, err = adapt_a_top_level(doc, questions)
         if err:
-            return None, [f"{os.path.basename(path)}: [形C] {err}"], False
-    if values is None:
-        return None, [f"{os.path.basename(path)}: 正解の在り処が 3 通りのどれにも当たらない。"
-                      f"--probe で構造を見ること (推測はしない)"], False
+            return None, [f"{name}: [形A] {err}"], False
+        if values is None:
+            return None, [f"{name}: 選択肢を持つ設問は {len(questions)} 問あるが "
+                          f"answer_key が見つからない。--probe で構造を見ること"], False
+        base, why = decide_base(values, questions, forced_base)
+        if base is None:
+            return None, [f"{name}: 選択肢番号の起算を決められない — {why}"], False
+        shift = 0 if base == "one" else 1
+        # 解説は answer_key 側に付いている (設問側には無い)
+        exps = explanations_from_key(doc, questions)
+        out, problems = [], []
+        for i, (q, val) in enumerate(zip(questions, values)):
+            built, bad = build_choice_question(q, len(out) + 1, val, shift)
+            if built is None:
+                problems.append(bad)
+            else:
+                if built["explanation"] is None and i < len(exps):
+                    built["explanation"] = exps[i]
+                out.append(built)
+        return finish(path, subject, out, problems, "A", f"{base} — {why}"), [], False
 
-    base, why = decide_base(values, questions, forced_base)
-    if base is None:
-        return None, [f"{os.path.basename(path)}: 選択肢番号の起算を決められない — {why}"], False
-    shift = 0 if base == "one" else 1
+    # --- D / E / F: 設問の一覧そのものが無い形 -------------------------------
+    for fmt, fn in (("D", adapt_d_sub_items), ("E", adapt_e_qkey),
+                    ("F", adapt_f_solution)):
+        specs, err = fn(doc)
+        if err:
+            # ★ 「選択肢の数が元データに無い」(生物・英語R) は直せない欠落で、
+            #   正解が読めているなら一括入力 (§17.8) で入れるのが正しい。
+            #   失敗ではなく承知のうえの除外にする (毎回 exit 1 になっていると
+            #   赤いのが普通になり、本物の失敗を見落とす)。
+            if NO_CHOICE_COUNT in err and answers_only(doc):
+                return None, [f"{name}: [形{fmt}] {err} → 下の「正解だけを流し込む用」"
+                              f"に並びを出した"], True
+            return None, [f"{name}: [形{fmt}] {err}"], False
+        if specs:
+            out, problems = build_from_specs(specs)
+            note = "one — 丸数字 (①は必ず 1 番目) なので 1 起算で確定"
+            if fmt == "E":
+                note = "one — answer_key と解説の 2 つが一致 (独立した裏取り)"
+            return finish(path, subject, out, problems, fmt, note), [], False
 
-    out, problems = [], []
-    for q, val in zip(questions, values):
-        built, bad = build_choice_question(q, len(out) + 1, val, shift)
-        if built is None:
-            problems.append(bad)
-        else:
-            out.append(built)
-    return finish(path, subject, out, problems, fmt, f"{base} — {why}"), [], False
+    return None, [f"{name}: 正解の在り処がどの形にも当たらない。"
+                  f"--probe で構造を見ること (推測はしない)"], False
+
+
+def bulk_key_for(path):
+    """変換しきれない冊子でも「正解の並び」だけは出す。
+
+    ★ 選択肢の数が元データに書かれていない冊子 (生物・英語R) は JSON では
+      取り込めないが、正解は読めている。登録画面の「正解だけをまとめて入れる」
+      (§17.8) に貼れば、手入力 7 分が 1 分になる。
+    @returns (科目, [正解…]) または None
+    """
+    try:
+        doc = load_yaml(path)
+    except Exception:
+        return None
+    if is_fill_in_marks(doc):
+        return None                            # 数学は選択式ですらない
+    vals = answers_only(doc)
+    if not vals:
+        return None
+    return subject_of(path), vals
+
+
+def explanations_from_key(doc, questions):
+    """answer_key[].explanation を設問の並びに合わせて返す (国語)。
+
+    ★ 解説を取り落としていた (2026-08-14)。設問側に explanation が無く、
+      answer_key 側にあるので、get_explanation では拾えなかった。
+      解説が無くても採点は動くので **静かに欠けるのがいちばん危ない**。
+
+    ★ 番号で当てるのは **両側の番号が一意なときだけ**。設問の number は
+      大問ごとに 1 から振り直されている可能性があり (問1〜問6 × 4 大問)、
+      重複した番号で引くと最初の大問の解説が全大問に付く。
+      決められないときは並び順 (adapt_a_top_level と同じ順) で付ける。
+    """
+    key = (doc or {}).get("answer_key") if isinstance(doc, dict) else None
+    if not isinstance(key, list):
+        return []
+    ordered, by, knums = [], {}, []
+    for i, x in enumerate(key):
+        if not isinstance(x, dict):
+            return []
+        exp = x.get("explanation") or x.get("解説")
+        exp = str(exp).strip() if exp else None
+        num = next((x[k] for k in NUM_KEYS if k in x), i + 1)
+        ordered.append(exp)
+        knums.append(num)
+        by[num] = exp
+    qnums = [get_number(q) for q in questions]
+    if (len(set(knums)) == len(knums) and len(set(qnums)) == len(qnums)
+            and all(n in by for n in qnums)):
+        return [by[n] for n in qnums]
+    return ordered[:len(questions)]
 
 
 def short_path(path):
@@ -623,18 +928,24 @@ def probe(path):
         print(f"      設問文: {(get_stem(q) or '(見つからない)')[:60]!r}")
         print(f"      選択肢: {len(get_choices(q))} 個")
         print(f"      解説: {(get_explanation(q) or '(見つからない)')[:80]!r}")
-    for name, fn in (("A トップレベル answer_key", adapt_a_top_level),
-                     ("B 大問ごと answer_key", adapt_b_per_section)):
-        v, e = fn(doc, qs)
+    if is_fill_in_marks(doc):
+        print("  --- 数学の穴埋めマーク式 (取り込めない形)")
+    v, e = adapt_a_top_level(doc, qs) if qs else (None, None)
+    print("  --- A choices + answer_key: " + ("該当せず" if v is None and not e
+                                              else (f"✗ {e}" if e else f"○ {len(v)} 個")))
+    for name, fn in (("D sub_items + 選択肢文字列", adapt_d_sub_items),
+                     ("E answer_key (q1_1 形式)", adapt_e_qkey),
+                     ("F solution から抜く", adapt_f_solution)):
+        v, e = fn(doc)
         print(f"  --- {name}: " + ("該当せず" if v is None and not e
                                    else (f"✗ {e}" if e else f"○ {len(v)} 個")))
-    v, e = adapt_c_from_text(doc, qs, subject_of(path) or "?")
-    print("  --- C 解説から抜く: " + ("該当せず" if v is None and not e
-                                      else (f"✗ {e}" if e else f"○ {len(v)} 個")))
+    vals = answers_only(doc)
+    if vals:
+        print(f"  --- 正解の並びだけなら {len(vals)} 個読める (一括入力用)")
 
 
 # =============================================================================
-def report(bundles, problems, excluded, meta):
+def report(bundles, problems, excluded, meta, bulk=()):
     """@returns 落とすべきか (True なら exit 1)
 
     ★ 「印字はしたが exit 0」を作らないこと。CLAUDE.md が INCONSISTENT と呼んで
@@ -694,17 +1005,15 @@ def report(bundles, problems, excluded, meta):
         for x in bad_count:
             print(f"     {x}")
 
-    # ★ こちらは落とさない。正解の在り処は別セッションの見立てで、
-    #   実物が違っても変換は正しく通っている (中身は照合済み)。
-    wrong_fmt = [f"{b['subject_name']}: 形{b['format']} (想定 形{EXPECTED_FORMAT[b['subject_name']]})"
-                 for b in bundles
-                 if b["subject_name"] in EXPECTED_FORMAT
-                 and b["format"] != EXPECTED_FORMAT[b["subject_name"]]]
-    if wrong_fmt:
-        print(f"\n=== 正解の在り処が想定と違った ({len(wrong_fmt)} 件・落とさない) ===")
-        print("   変換自体は通っている。想定表 (EXPECTED_FORMAT) のほうを直すこと。")
-        for x in wrong_fmt:
-            print(f"     {x}")
+    # ★ 変換しきれなかった冊子でも「正解の並び」だけは出す。
+    #   登録画面の「正解だけをまとめて入れる」に貼れば 1 分で入る (§17.8)。
+    if bulk:
+        print(f"\n=== 正解だけを流し込む用 ({len(bulk)} 冊) ===")
+        print("   選択肢の数が元データに無いので JSON では取り込めないが、正解は読めている。")
+        print("   登録画面で設問の行を作ってから「正解だけをまとめて入れる」に貼れます。")
+        for subj, vals in bulk:
+            print(f"   {subj or '?'} ({len(vals)} 問)")
+            print(f"     {' '.join(str(v) for v in vals)}")
 
     if problems:
         print(f"\n=== ★ 変換できなかったファイル ({len(problems)} 件) ===")
@@ -737,22 +1046,27 @@ def report(bundles, problems, excluded, meta):
 def selftest():
     """fixtures_kyotsu/*.yaml を変換して、期待どおりかを見る。
 
-    ★ 見本は「実物がこうなっているはず」という **想定** を書き下したもの。
-      実物と違っていても、この自己検査は通る。通ることが証明するのは
-      「3 通りのアダプタが動く」ことだけで、「実物が変換できる」ことではない。
+    ★ 見本は 2026-08-14 に **実機の --probe 出力から書き起こした**もの。
+      それでも実物の全文ではないので、通ることが証明するのは
+      「実物と同じ形のアダプタが動く」ことまで。実物での最終確認は
+      変換結果の preview を人が 1 冊 1 問照合すること。
     """
     want = {
-        # ファイル名の一部: (問数, 形, 1 問目の正解)
-        "sample_a_top_level": (3, "A", "2"),
-        "sample_c_in_text": (3, "C", "3"),
+        # ファイル名: (問数, 形, 1 問目の正解)
+        "sample_a_kokugo": (3, "A", "5"),
+        "sample_d_sub_items": (3, "D", "2"),
+        "sample_e_qkey": (4, "E", "2"),
+        "sample_f_solution": (3, "F", "2"),
     }
-    # ★ 形 B は「取り込めないと分かって外す」ほうが正しい。
-    #   通ってしまったら検証器の砦が外れたということなので、失敗にする。
-    refuse = {"sample_b_per_section": "マーク欄方式"}
+    # ★ 「取り込めないと分かって外す」を検査する。通ってしまったら砦が外れている。
+    refuse = {
+        "sample_math_fill_in": "穴埋めマーク式",
+        "sample_g_answers_only": "一括入力",
+    }
 
     files = sorted(glob.glob(os.path.join(FIXTURES, "*.yaml")))
     if len(files) != len(want) + len(refuse):
-        print(f"✗ 見本が {len(files)} 本しかない (想定 {len(want) + len(refuse)} 本)")
+        print(f"✗ 見本が {len(files)} 本 (想定 {len(want) + len(refuse)} 本)")
         return 1
     bad = []
     for f in files:
@@ -761,8 +1075,8 @@ def selftest():
 
         if key in refuse:
             if b is not None:
-                bad.append(f"{key}: 取り込めないはずの形 B が変換できてしまった "
-                           f"(検証器の砦が外れている)")
+                bad.append(f"{key}: 取り込めないはずの形が変換できてしまった "
+                           f"(砦が外れている)")
             elif not excluded:
                 bad.append(f"{key}: 除外ではなく失敗として扱われた — {errs[0] if errs else '?'}")
             elif refuse[key] not in (errs[0] if errs else ""):
@@ -786,9 +1100,20 @@ def selftest():
             bad.append(f"{key}: 1 問目の正解 {b['questions'][0]['correct_answer']} "
                        f"(想定 {first_want})")
 
-    # ★ 起算を間違えたら気づけるか。①表記の見本から丸数字を消すと
-    #   「決められない」になって落ちるはず。落ちなければ検査が無力。
-    doc = load_yaml(os.path.join(FIXTURES, "sample_a_top_level.yaml"))
+    # ★ 国語: 解説が answer_key 側から設問に付くこと。
+    #   設問の number は大問ごとに振り直されている (見本もわざとそうしてある) ので、
+    #   番号で引くと 3 問目に 1 問目の解説が付く。並び順で付いていることを見る。
+    b, _e, _x = convert_file(os.path.join(FIXTURES, "sample_a_kokugo.yaml"))
+    if b:
+        exps = [q.get("explanation") or "" for q in b["questions"]]
+        if not all(exps):
+            bad.append("国語: answer_key 側の解説が設問に付いていない (取り落とし)")
+        elif "雨上がり" not in exps[2]:
+            bad.append(f"国語: 3 問目に別の問の解説が付いている (番号で引いた疑い) "
+                       f"— {exps[2][:40]!r}")
+
+    # ★ 起算を決められない値で推測しないこと (全問ずれても画面は壊れないため)
+    doc = load_yaml(os.path.join(FIXTURES, "sample_a_kokugo.yaml"))
     qs = harvest(doc)
     base, _why = decide_base([2, 2, 2], qs)     # 0 も len(choices) も出ない値
     if base is not None:
@@ -803,14 +1128,54 @@ def selftest():
     if key_as_list([{"number": 1, "memo": "x"}]) != []:
         bad.append("正解のキーが無い dict を推測で通してしまった")
 
-    # ★ 番号で突き合わせているか。answer_key の番号を設問と食い違わせたら
-    #   落ちるはず。並び順で当ててしまうと数だけ合って全問ずれる。
-    doc2 = load_yaml(os.path.join(FIXTURES, "sample_a_top_level.yaml"))
-    doc2["answer_key"] = [{"number": n, "answer": "②"} for n in (1, 2, 99)]
-    v, e = adapt_a_top_level(doc2, harvest(doc2))
-    if v is not None or not e or "食い違う" not in e:
-        bad.append("answer_key の問番号が設問と食い違うのに通してしまった "
-                   f"(並び順で当てている疑い) — {e!r}")
+    # ★ E: answer_key と解説の突き合わせ。食い違わせたら落ちるはず。
+    #   これが素通りすると、起算がずれても「2 つの出どころが一致」と嘘をつく。
+    doc_e = load_yaml(os.path.join(FIXTURES, "sample_e_qkey.yaml"))
+    doc_e["answer_key"]["q1_1"] = 4              # 解説は ② と言っている
+    specs, e = adapt_e_qkey(doc_e)
+    if specs is not None or not e or "食い違う" not in e:
+        bad.append(f"E: answer_key と解説が食い違うのに通してしまった — {e!r}")
+
+    # ★ D: 選択肢の数は「①から連番」だけを数えること。
+    if choice_count_from_list("① a ② b ③ c ④ d") != 4:
+        bad.append("D: 連番の選択肢を数えられない")
+    if choice_count_from_list("② a ③ b") is not None:
+        bad.append("D: ①から始まらないのに数えてしまった")
+    if choice_count_from_list("① a ② b ④ d") is not None:
+        bad.append("D: 番号が飛んでいるのに数えてしまった")
+
+    # ★ 解説から正解を抜く形 — 実機で確認した 4 科目ぶんの書式を全部
+    for label, text, head_want, ans_want in (
+            ("化学",   "<strong>問1 → 正解 ②</strong>",       "1", 2),
+            ("物理",   r"<strong>$\text{問 1}$ 正解 ②</strong>", "1", 2),
+            ("世界史", "**問 A 正解: ②**",                     "A", 2),
+            ("日本史", "問 1　正解: **①**　中大兄皇子",        "1", 1)):
+        got = answers_in(text)
+        if got != [(head_want, ans_want)]:
+            bad.append(f"{label} の書式 {text!r} から正解を抜けない (got {got})")
+
+    # ★ 「正解 ②」の丸数字だけを拾い、誤答の説明の素の数字は拾わないこと
+    if answers_in("問1 → 正解 ②。誤答 3 は問 4 と混同したもの。") != [("1", 2)]:
+        bad.append("誤答の説明の数字まで拾っている (静かにずれる)")
+    # ★ 素の数字は正解としても拾わない。丸数字と違い起算を確定できないので、
+    #   拾った瞬間に「1 つずれても気づけない」経路が開く。
+    if answers_in("問2 正解 4") != []:
+        bad.append("素の数字を正解として拾ってしまった (起算を確定できないのに)")
+
+    # ★ F: 「①〜④」がある大問から正解を抜けないときに黙って飛ばさないこと。
+    #   これが素通りすると、解説の書式が 1 大問だけ違ったとき問数が静かに減る。
+    doc_f = load_yaml(os.path.join(FIXTURES, "sample_f_solution.yaml"))
+    doc_f["sections"][1]["solution"] = "この大問の解説は準備中。"   # 正解が無い
+    specs, e = adapt_f_solution(doc_f)
+    if specs is not None or not e or "抜けない" not in e:
+        bad.append(f"F: 大問から正解を抜けないのに黙って飛ばした (問数が減る) — {e!r}")
+
+    # ★ 英語R 型: 正解の並びだけは救い出せること
+    bk = bulk_key_for(os.path.join(FIXTURES, "sample_g_answers_only.yaml"))
+    if not bk or bk[1] != [3, 1, 4]:
+        bad.append(f"英語R 型の正解の並びを救い出せない (got {bk!r})")
+    if bulk_key_for(os.path.join(FIXTURES, "sample_math_fill_in.yaml")) is not None:
+        bad.append("数学の穴埋めから正解の並びを出してしまった (選択式ではないのに)")
 
     # ★ アプリと同じ検証器を通す
     try:
@@ -831,8 +1196,8 @@ def selftest():
         for b in bad:
             print(f"    - {b}")
         return 1
-    print(f"[ok] 共通テスト変換の自己検査 — 見本 {len(files)} 本 (形 A/B/C) を変換し、"
-          f"アプリと同じ検証器を通過")
+    print(f"[ok] 共通テスト変換の自己検査 — 実機の --probe から起こした見本 {len(files)} 本 "
+          f"(形 A/D/E/F + 除外 2) を変換し、アプリと同じ検証器を通過")
     return 0
 
 
@@ -870,14 +1235,20 @@ def main():
                       f"小問 {m['sub_questions'] or '?'}  {m['pdf']}")
         return 0
 
-    bundles, problems, excluded = [], [], []
+    bundles, problems, excluded, bulk = [], [], [], []
     for f in files:
         b, errs, is_excluded = convert_file(f, a.base)
         (excluded if is_excluded else problems).extend(errs)
         if b:
             bundles.append(b)
+        else:
+            # ★ 変換できなくても、正解の並びだけは救い出せることがある
+            #   (数学の穴埋めは bulk_key_for 自身が断る)
+            bk = bulk_key_for(f)
+            if bk:
+                bulk.append(bk)
 
-    fatal = report(bundles, problems, excluded, meta)
+    fatal = report(bundles, problems, excluded, meta, bulk)
 
     if a.out and bundles:
         os.makedirs(a.out, exist_ok=True)

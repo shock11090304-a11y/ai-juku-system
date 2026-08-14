@@ -1,0 +1,36 @@
+# 形 F — answer_key が無く、solution にだけ「問1 → 正解 ②」がある (化学の実物の形)
+#         (2026-08-14 に実機の --probe 出力から書き起こした)
+#
+# ★ 実物の要点:
+#   ・正解は solution の「<strong>問1 → 正解 ②</strong>」だけ
+#   ・選択肢の数は problem の「マークする数字を $①〜④$ から 1 つ選べ」
+#   ・オリエンテーション等、正解を持たない節は飛ばしてよい。ただし
+#     「①〜④」がある節から正解を抜けないのは取りこぼしなので落とす
+
+meta:
+  title: 共通テスト化学 マーク式実戦模試
+  subtitle: 本番形式 全問マーク選択式
+  date: 2026年6月3日
+  org: Trillion 塾
+  template: science_self_study.html
+
+sections:
+  - qnum: "1"
+    score: 20
+    problem: |
+      物質の構成と変化に関する次の問い (問1〜問2) に答えよ。マークする数字を $①〜④$ から 1 つ選べ。
+      原子量: H=1.0, C=12, O=16
+    approach: <strong>問1</strong> 標準状態では気体 1 mol が 22.4 L。
+    solution: |
+      <strong>問1 → 正解 ②</strong>
+      V = 0.50 mol × 22.4 L/mol = 11.2 L
+      <strong>問2 → 正解 ④</strong>
+      モル濃度 = 溶質の物質量 ÷ 溶液の体積。
+
+  - qnum: "2"
+    score: 20
+    problem: |
+      無機物質に関する次の問い (問1) に答えよ。マークする数字を $①〜⑤$ から 1 つ選べ。
+    solution: |
+      <strong>問1 → 正解 ③</strong>
+      ハロゲンの酸化力は F₂ > Cl₂ > Br₂ > I₂。

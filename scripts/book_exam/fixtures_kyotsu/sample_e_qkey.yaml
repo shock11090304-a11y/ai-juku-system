@@ -1,0 +1,40 @@
+# 形 E — トップの answer_key が q<大問>_<小問> 形式 (物理の実物の形)
+#         (2026-08-14 に実機の --probe 出力から書き起こした)
+#
+# ★ 実物の要点:
+#   ・answer_key: {q1_1: 2, q1_2: 2, …} — 値は 1 起算の選択肢番号
+#   ・選択肢の数は各大問の problem の「①〜④ から選べ」(LaTeX の $ 付き)
+#   ・solution にも「$\text{問 1}$ 正解 ②」がある
+#     → 変換器は **answer_key と solution を突き合わせる**。
+#       独立した 2 つの出どころが一致すれば、起算のずれはあり得ない。
+
+meta:
+  title: 共通テスト形式 物理 マーク式 オリジナル模試
+  subtitle: 全問マーク選択式
+  date: 2026年6月3日
+  org: Trillion 塾
+  template: science_self_study.html
+
+sections:
+  - qnum: "1"
+    score: 20
+    problem: |
+      次の問い($\text{問 1}$ 〜 $\text{問 2}$)に答えよ。各問の解答として最も適当なものを、
+      それぞれの直後の $①$ 〜 $④$ のうちから一つずつ選べ。
+    solution: |
+      <strong>$\text{問 1}$ 正解 ②</strong> 初速度の鉛直成分は $v_{0y} = v_0\sin 30^\circ$。
+      <strong>$\text{問 2}$ 正解 ③</strong> 最高点では鉛直速度が 0 になる。
+
+  - qnum: "2"
+    score: 20
+    problem: |
+      次の問い($\text{問 1}$ 〜 $\text{問 2}$)に答えよ。最も適当なものを $①$ 〜 $④$ のうちから選べ。
+    solution: |
+      <strong>$\text{問 1}$ 正解 ①</strong> オームの法則より。
+      <strong>$\text{問 2}$ 正解 ④</strong> 合成抵抗は直列で和になる。
+
+answer_key:
+  q1_1: 2
+  q1_2: 3
+  q2_1: 1
+  q2_2: 4
