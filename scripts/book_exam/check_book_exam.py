@@ -35,6 +35,7 @@ ROUNDTRIP = os.path.join(ROOT, "scripts", "book_exam", "roundtrip_strokes.mjs")
 ROUNDTRIP_Q = os.path.join(ROOT, "scripts", "book_exam", "roundtrip_questions.mjs")
 ADMIN_MODEL = os.path.join(ROOT, "exam-book-admin-model.mjs")
 CONVERTER = os.path.join(ROOT, "scripts", "book_exam", "convert_workbook.py")
+KYOTSU = os.path.join(ROOT, "scripts", "book_exam", "convert_kyotsu_yaml.py")
 MIG_DIR = os.path.join(ROOT, "supabase", "migrations")
 STUBS = os.path.join(ROOT, "supabase", "tests", "00_local_stubs.sql")
 VENDOR = os.path.join(ROOT, "vendor", "pdfjs")
@@ -321,6 +322,19 @@ def static_checks(files):
                       f"(アプリと同じ検証器を通過)")
             else:
                 ng("紙教材の変換の出力が読めない (件数を印字していない)")
+
+    # --- 11c. 共通テスト 9 科目の変換器 ---------------------------------------
+    # ★ 元データ (~/Desktop/問題生成/) はこの作業環境から読めないので、
+    #   見本 (fixtures_kyotsu/*.yaml) で「3 通りのアダプタが動くか」だけ見る。
+    #   実物が変換できることの証明ではない。--probe で構造を確かめること。
+    if os.path.exists(KYOTSU):
+        r = subprocess.run([sys.executable, KYOTSU, "--selftest"], capture_output=True,
+                           text=True, cwd=ROOT, timeout=120)
+        if r.returncode:
+            tail = [l for l in (r.stdout + r.stderr).splitlines() if l.strip()][-6:]
+            ng("共通テスト変換の自己検査が通らない: " + " / ".join(tail))
+        else:
+            print("  [check] " + (r.stdout.strip().splitlines() or ["ok"])[-1].lstrip("[ok] "))
 
     # --- 12. 構文が通るか (node) --------------------------------------------
     node = shutil.which("node")

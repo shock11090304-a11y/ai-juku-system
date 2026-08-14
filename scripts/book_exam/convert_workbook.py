@@ -515,4 +515,8 @@ def main():
     return 1 if (bad or skipped) else 0
 
 
-sys.exit(main())
+if __name__ == "__main__":
+    # ★ import しても main() が走らないようにしてある。
+    #   convert_kyotsu_yaml.py が validate_with_real_model() を借りるため。
+    #   ここを外すと import しただけで全教材の変換が走り、ゲートが二重に回る。
+    sys.exit(main())
