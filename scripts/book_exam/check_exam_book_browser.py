@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""冊子受験画面 (exam-book*) を **実ブラウザで通しで動かす**ゲート。
+"""冊子受験画面と先生用の登録画面 (exam-book*) を **実ブラウザで通しで動かす**ゲート。
 
     python3 scripts/book_exam/check_exam_book_browser.py
 
@@ -33,6 +33,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 SMOKE = os.path.join(HERE, "browser_smoke.mjs")
 LOGIN = os.path.join(HERE, "login_smoke.mjs")
 EDGE = os.path.join(HERE, "edge_smoke.mjs")
+ADMIN = os.path.join(HERE, "admin_smoke.mjs")
 MOCK = os.path.join(HERE, "mock_supabase.mjs")
 
 
@@ -156,6 +157,15 @@ def main():
         sys.stdout.write(r3.stdout)
         if r3.returncode:
             sys.stdout.write(r3.stderr[-1500:])
+            rc = rc or 1
+
+        # 先生用の登録画面。壊れた冊子 (0 起算の正解・設問 0 問) を作れないことを見る。
+        print("\n--- 先生用の冊子登録画面 ---")
+        r4 = subprocess.run([node, ADMIN, ROOT, tmp], env=env, timeout=180,
+                            capture_output=True, text=True)
+        sys.stdout.write(r4.stdout)
+        if r4.returncode:
+            sys.stdout.write(r4.stderr[-1500:])
             rc = rc or 1
 
         print("\n--- ログイン画面 (セッションが無い状態から) ---")

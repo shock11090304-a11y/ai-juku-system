@@ -3,25 +3,47 @@
 const S = (globalThis.__DB = {
   books: [{ id: 'b1', title: 'テスト冊子', pdf_path: 'demo/book.pdf',
             time_limit_sec: null, page_count: 2, is_published: true,
-            created_at: '2026-08-01T00:00:00Z' }],
+            created_at: '2026-08-01T00:00:00Z' },
+          // 設問が 1 問も無い未公開の本。「設問 0 の冊子は公開できない」の確認に使う。
+          { id: 'b2', title: '設問なしの本 (未公開)', subject: 'grammar', level: null,
+            pdf_path: 'books/b2.pdf', page_count: 2, time_limit_sec: null,
+            is_published: false, created_at: '2026-08-02T00:00:00Z' }],
   questions: [
     { id: 'q1', book_id: 'b1', number: 1, page: 1, answer_type: 'choice', choice_count: 4,
-      points: 1, unit_tag: null, revealed: false, correct_answer: null,
-      accepted_answers: null, explanation: null, _correct: '2', _exp: '解説 1' },
+      points: 1, unit_tag: null, correct_answer: '2', accepted_answers: null,
+      explanation: '解説 1' },
     { id: 'q2', book_id: 'b1', number: 2, page: 2, answer_type: 'short', choice_count: null,
-      points: 2, unit_tag: null, revealed: false, correct_answer: null,
-      accepted_answers: null, explanation: null, _correct: 'apple', _exp: '解説 2' },
+      points: 2, unit_tag: null, correct_answer: 'apple', accepted_answers: null,
+      explanation: '解説 2' },
     { id: 'q3', book_id: 'b1', number: 3, page: null, answer_type: 'choice', choice_count: 3,
-      points: 1, unit_tag: null, revealed: false, correct_answer: null,
-      accepted_answers: null, explanation: null, _correct: '1', _exp: '解説 3' },
+      points: 1, unit_tag: null, correct_answer: '1', accepted_answers: null,
+      explanation: '解説 3' },
   ],
+  revealed: false,          // 提出すると true になる (student_questions が返し始める)
   attempts: [], answers: [], annotations: [],
-  get student_questions() { return this.questions; },
+  // 先生用の登録画面はここの role を見る。検査から差し替えられるようにする。
+  profiles: [{ id: 'u1', display_name: '見本 先生', role: 'student' }],
+  // ★ 生徒向けの view。提出するまで正解と解説を返さない (実物の student_questions と同じ)。
+  get student_questions() {
+    return this.questions.map((q) => ({
+      ...q,
+      revealed: this.revealed,
+      correct_answer: this.revealed ? q.correct_answer : null,
+      accepted_answers: this.revealed ? q.accepted_answers : null,
+      explanation: this.revealed ? q.explanation : null,
+    }));
+  },
   log: [], rpcCalls: [],
   offline: false,        // 機内モード (annotations の書き込みを通信断にする)
   offlineAnswers: false, // 答案の保存だけを通信断にする
   clock: 0,
 });
+// 検査用: ログイン中のユーザーの役割を差し込む (講師専用画面の確認に使う)
+try {
+  const r = globalThis.localStorage.getItem('__smoke_role');
+  if (r) S.profiles[0].role = r;
+} catch (_) { /* localStorage が無い環境 */ }
+
 // 検査用: 制限時間を差し込む (時間切れ自動提出の経路を通すため)
 try {
   const t = Number(globalThis.localStorage.getItem('__smoke_time_limit'));
@@ -143,12 +165,13 @@ export function createClient() {
         max += q.points;
         const a = S.answers.find((x) => x.attempt_id === at.id && x.question_id === q.id);
         if (!a) continue;
-        const ok = String(a.user_answer ?? '').trim().toLowerCase() === q._correct.toLowerCase();
+        const ok = String(a.user_answer ?? '').trim().toLowerCase()
+                   === String(q.correct_answer).toLowerCase();
         a.is_correct = ok;
         if (ok) { total += q.points; correct++; }
       }
       at.submitted_at = now(); at.total_score = total; at.max_score = max; at.elapsed_sec = 42;
-      for (const q of S.questions) { q.revealed = true; q.correct_answer = q._correct; q.explanation = q._exp; }
+      S.revealed = true;
       return { data: [{ total_score: total, max_score: max, correct_count: correct,
                         answered_count: S.answers.length, question_count: S.questions.length }],
                error: null };

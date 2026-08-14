@@ -32,6 +32,8 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL = os.path.join(ROOT, "exam-book-model.mjs")
 ROUNDTRIP = os.path.join(ROOT, "scripts", "book_exam", "roundtrip_strokes.mjs")
+ROUNDTRIP_Q = os.path.join(ROOT, "scripts", "book_exam", "roundtrip_questions.mjs")
+ADMIN_MODEL = os.path.join(ROOT, "exam-book-admin-model.mjs")
 MIG_DIR = os.path.join(ROOT, "supabase", "migrations")
 STUBS = os.path.join(ROOT, "supabase", "tests", "00_local_stubs.sql")
 VENDOR = os.path.join(ROOT, "vendor", "pdfjs")
@@ -241,7 +243,15 @@ def static_checks(files):
         ng("choiceValue() が無い (選択肢の値を作る場所を 1 つに絞ること)")
     elif len(defs) > 1:
         ng(f"choiceValue() が {len(defs)} 箇所にある: {defs}")
+    # ★ この規則は「選択肢を **描く** ファイル」だけに掛ける。生徒がタップした値が
+    #   answers.user_answer に入るのはそこだけだから。
+    #   先生用の登録画面も choice_count を扱うが、あちらは値を **作らず検証する** 側で、
+    #   同じ規則を当てると誤検出になる (下の 9b で別に守る)。
+    #   判定はファイル名ではなく **挙動** で行う (名前で除外すると、名前を変えただけで穴が開く)。
     for p, s in js.items():
+        renders_choices = ("data-value" in s) or ("aria-checked" in s)
+        if not renders_choices:
+            continue
         lines = s.split("\n")
         for i, line in enumerate(lines):
             if "choice_count" not in line:
@@ -250,6 +260,18 @@ def static_checks(files):
             if "choiceValue(" not in near:
                 ng(f"{os.path.basename(p)}:{i + 1} choice_count から値を作っているのに "
                    f"choiceValue() を通していない (0 起算や 'A' を書くと全員 0 点)")
+
+    # --- 9b. questions への書き込みが validateQuestions を通っているか -------
+    # ★ correct_answer を 0 起算や 'A' で入れると **その冊子を解いた生徒が全員 0 点**になる。
+    #   採点 RPC は突き合わせるだけ、DB の CHECK も「1 起算か」までは判断できないので、
+    #   入力の時点で弾くしかない。annotations ← validateStrokes と同じ形の守り方。
+    for p, s in js.items():
+        for m in re.finditer(r"\.from\(\s*['\"]questions['\"]\s*\)([\s\S]{0,400}?)\.(insert|update)\(", s):
+            before = s[max(0, m.start() - 1500):m.start()]
+            if "validateQuestions(" not in before:
+                line = s[:m.start()].count("\n") + 1
+                ng(f"{os.path.basename(p)}:{line} questions への書き込みが "
+                   f"validateQuestions() を通っていない (0 起算の正解が入ると全員 0 点)")
 
     # --- 10. annotations の書き込みが validateStrokes を通っているか ---------
     for p, s in js.items():
@@ -415,6 +437,12 @@ def roundtrip(conn):
                f"(意地の悪い入力が検査に入っていない疑い)")
         print(f"  [live] モデルが送らずに落とした入力 {len(dropped)} 件")
         print(f"  [live] 読み込み側 {len(reads)} 件")
+
+        # --- 設問の往復 (先生用の登録画面) ---------------------------------
+        # 「画面が通すもの ⊆ DB が受け取るもの」。崩れると「登録できたのに保存で
+        # 弾かれる」か、もっと悪い「保存できたのに全員 0 点」になる。
+        if os.path.exists(ROUNDTRIP_Q) and os.path.exists(ADMIN_MODEL):
+            roundtrip_questions(conn, db)
     except subprocess.TimeoutExpired:
         ng("往復検査がタイムアウトした")
     finally:
@@ -422,6 +450,60 @@ def roundtrip(conn):
             psql(conn, None, ["-c", f'drop database if exists {db}'])
         except Exception:
             pass
+
+
+def roundtrip_questions(conn, db):
+    """登録画面が通した設問が、DB の question_answer_is_valid() も通ることを見る。"""
+    node = shutil.which("node")
+    r = subprocess.run([node, ROUNDTRIP_Q], capture_output=True, text=True,
+                       cwd=ROOT, timeout=60)
+    if r.returncode:
+        ng(f"roundtrip_questions.mjs が落ちた: {(r.stderr or r.stdout).strip()[-300:]}")
+        return
+    rows = [json.loads(l) for l in r.stdout.splitlines() if l.strip()]
+    passed = [x for x in rows if x["accepted"] and x.get("payload")]
+    dropped = [x for x in rows if not x["accepted"]]
+    if not passed:
+        ng("設問の往復検査で 1 件も通っていない (検証が厳しすぎる)")
+        return
+    if len(dropped) < 15:
+        ng(f"設問の検証が弾いた入力が {len(dropped)} 件しかない "
+           f"(0 起算・全角数字・範囲外などが検査に入っていない疑い)")
+
+    lines = []
+    for i, x in enumerate(passed):
+        pl = x["payload"]
+        cc = "null" if pl["choice_count"] is None else str(int(pl["choice_count"]))
+        ca = json.dumps(pl["correct_answer"], ensure_ascii=False)
+        if "$q$" in ca or "$q$" in pl["answer_type"]:
+            ng(f"payload に $q$ が含まれる ({x['name']})")
+            return
+        lines.append(
+            f"select {i} as i, public.question_answer_is_valid("
+            f"$q${pl['answer_type']}$q$, {cc}, $q${pl['correct_answer']}$q$) as ok")
+    sql = "\nunion all\n".join(lines) + "\norder by i;\n"
+
+    rr = psql(conn, db, ["-tA", "-F", "|", "-f", "-"], timeout=60, stdin=sql)
+    if rr.returncode:
+        ng(f"設問の往復検査の SQL が落ちた: {(rr.stderr or '').strip()[:200]}")
+        return
+    got = {}
+    for line in (rr.stdout or "").splitlines():
+        if "|" in line:
+            a, b = line.split("|", 1)
+            got[int(a)] = b.strip()
+    rejected = 0
+    for i, x in enumerate(passed):
+        if got.get(i) != "t":
+            rejected += 1
+            ng(f"★登録画面が通した設問を DB が拒否した: 「{x['name']}」 "
+               f"→ {got.get(i, '(結果なし)')}")
+    if len(got) != len(passed):
+        ng(f"設問の往復検査の結果が {len(got)} 件しか返っていない (送ったのは {len(passed)} 件)")
+    print(f"  [live] 登録画面が通す設問 {len(passed)} 件すべてを DB が受け取る "
+          f"(拒否 {rejected} 件)")
+    print(f"  [live] 登録画面が弾いた入力 {len(dropped)} 件 "
+          f"(0 起算・全角数字・範囲外・重複ほか)")
 
 
 # =============================================================================
