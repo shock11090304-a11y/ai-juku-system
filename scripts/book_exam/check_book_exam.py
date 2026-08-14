@@ -34,6 +34,7 @@ MODEL = os.path.join(ROOT, "exam-book-model.mjs")
 ROUNDTRIP = os.path.join(ROOT, "scripts", "book_exam", "roundtrip_strokes.mjs")
 ROUNDTRIP_Q = os.path.join(ROOT, "scripts", "book_exam", "roundtrip_questions.mjs")
 ADMIN_MODEL = os.path.join(ROOT, "exam-book-admin-model.mjs")
+CONVERTER = os.path.join(ROOT, "scripts", "book_exam", "convert_workbook.py")
 MIG_DIR = os.path.join(ROOT, "supabase", "migrations")
 STUBS = os.path.join(ROOT, "supabase", "tests", "00_local_stubs.sql")
 VENDOR = os.path.join(ROOT, "vendor", "pdfjs")
@@ -302,6 +303,24 @@ def static_checks(files):
             for a, v in re.findall(r"querySelector(?:All)?\(\s*['\"]\[(data-[\w-]+)=\\?[\"']([^\"'\]\\]+)", s):
                 if (a, v) not in attrs:
                     ng(f"{os.path.basename(p)}: [{a}=\"{v}\"] を掴んでいるが HTML に無い")
+
+    # --- 11b. 紙教材の変換が壊れていないか -----------------------------------
+    # ★ 変換器は自分でアプリと同じ検証器を通し、通らなければ 1 で終わる。
+    #   ここで回すのは「変換器自体が落ちる / 変換結果が検証を通らない」を
+    #   コミット前に捕まえるため。--out を付けないので何も書かない。
+    if os.path.exists(CONVERTER):
+        r = subprocess.run([sys.executable, CONVERTER], capture_output=True,
+                           text=True, cwd=ROOT, timeout=180)
+        if r.returncode:
+            tail = [l for l in (r.stdout + r.stderr).splitlines() if l.strip()][-6:]
+            ng("紙教材の変換が通らない: " + " / ".join(tail))
+        else:
+            m = re.search(r"変換できた: (\d+) 冊 / (\d+) 問", r.stdout)
+            if m:
+                print(f"  [check] 紙教材の変換 {m.group(1)} 冊 / {m.group(2)} 問 "
+                      f"(アプリと同じ検証器を通過)")
+            else:
+                ng("紙教材の変換の出力が読めない (件数を印字していない)")
 
     # --- 12. 構文が通るか (node) --------------------------------------------
     node = shutil.which("node")

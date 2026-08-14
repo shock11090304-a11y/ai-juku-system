@@ -19,7 +19,7 @@ import { Book } from '/exam-book-pdf.mjs?v=1';
 import {
   SUBJECTS, ANSWER_TYPES, MAX_PDF_BYTES,
   normalizeQuestion, validateQuestions, questionPayload, validateBook,
-  checkPdfFile, pdfPath,
+  checkPdfFile, pdfPath, parseImport,
 } from '/exam-book-admin-model.mjs?v=1';
 
 const $ = (s) => document.querySelector(s);
@@ -183,6 +183,7 @@ function wire() {
 
   $('#nb-file').addEventListener('change', (e) => inspectPdf(e.target.files[0]));
   $('#nb-create').addEventListener('click', createBook);
+  $('#q-import').addEventListener('change', (e) => importJson(e.target.files[0]));
   $('#q-add').addEventListener('click', () => { addRow(); renderRows(); });
   $('#q-save').addEventListener('click', saveQuestions);
   $('#q-close').addEventListener('click', () => {
@@ -279,6 +280,57 @@ async function createBook() {
   } finally {
     btn.disabled = false;
   }
+}
+
+/**
+ * 変換した JSON をまとめて読み込む。
+ * ★ **既に保存された設問がある冊子には入れない**。番号がぶつかって
+ *   どちらが正か分からなくなり、生徒の答案が参照している行を壊しかねない。
+ * ★ 読み込んだだけでは保存しない。必ず人が見てから「保存する」を押す。
+ */
+async function importJson(file) {
+  const note = $('#q-import-note');
+  note.hidden = true;
+  $('#q-import').value = '';
+  if (!file || !app.current) return;
+
+  if (app.rows.some((r) => r.id)) {
+    say('この冊子には既に保存された設問があります。'
+      + '一括読み込みは、設問がまだ 1 問も無い冊子にだけ使えます', 'warn');
+    return;
+  }
+
+  let text;
+  try {
+    text = await file.text();
+  } catch (e) {
+    say('ファイルを読めませんでした', 'bad');
+    return;
+  }
+  const r = parseImport(text);
+  if (!r.ok) { say(`読み込めません: ${r.reason}`, 'bad'); return; }
+
+  // 送る前にアプリと同じ検証器を通す (壊れたものを表に入れない)
+  const v = validateQuestions(r.rows.map(normalizeQuestion), { pageCount: app.current.page_count });
+
+  app.rows = r.rows;
+  renderRows();
+  markDirty();
+  if (!v.ok) showErrors(v.errors);
+
+  // ★ 起算の確認。機械では証明しきれないので、人が 1 件だけ実物と照合する。
+  if (r.preview && r.preview.length) {
+    const p = r.preview[0];
+    note.hidden = false;
+    note.textContent =
+      `${r.rows.length} 問を読み込みました。★ 選択肢の番号がずれていないか、`
+      + `1 問だけ実物と照合してください — 問${p.number}「${p.stem}」の正解は `
+      + `${p.correct_answer} 番 =「${p.correct_text}」です。`
+      + 'ここが違っていたら、その冊子は全問ずれています。';
+  }
+  say(v.ok ? `${r.rows.length} 問を読み込みました。中身を確認してから保存してください`
+           : `${r.rows.length} 問を読み込みましたが ${v.errors.length} 件おかしいところがあります`,
+      v.ok ? 'ok' : 'warn');
 }
 
 // =============================================================================

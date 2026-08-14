@@ -108,3 +108,8 @@ body[data-stage="boot"] #bar, body[data-stage="login"] #bar, body[data-stage="fa
 #login-form h1 { font-size: 20px; margin: 0; }
 #login-form button[type="submit"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 #login-msg { color: var(--warn); font-size: 13px; min-height: 1.6em; margin: 0; }
+
+label.inline { display: inline-flex; flex-direction: row; align-items: center; gap: 8px; }
+label.inline input[type="file"] { width: auto; }
+.small { font-size: 12px; }
+code { background: #0e131b; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }

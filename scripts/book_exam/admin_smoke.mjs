@@ -128,6 +128,53 @@ ok('足した設問が DB に入る',
    (await st()).questions.filter(q=>q.book_id==='b1').length===before+1,
    `${(await st()).questions.filter(q=>q.book_id==='b1').length} 問`);
 
+// --- JSON の一括読み込み -------------------------------------------------------
+// ★ 既に保存された設問がある冊子には入れない (番号がぶつかって、生徒の答案が
+//   参照している行を壊しかねない)。b1 は保存済みなので断られるのが正しい。
+const BUNDLE = JSON.stringify({
+  book: { title: '取り込みの見本', subject: 'japanese' },
+  preview: [{ number: 1, stem: '木の葉、庭に＿落ち＿て。', correct_answer: '3',
+              correct_text: '上二段活用' }],
+  questions: [
+    { number: 1, page: 1, answer_type: 'choice', choice_count: 4, correct_answer: '3',
+      points: 1, explanation: '上二段活用と決まる' },
+    { number: 2, page: null, answer_type: 'short', correct_answer: 'けり',
+      accepted_answers: ['ケリ'], points: 2, explanation: '詠嘆' },
+  ],
+});
+const upload = async (name, body) => {
+  await page.setInputFiles('#q-import', { name, mimeType: 'application/json',
+                                          buffer: Buffer.from(body, 'utf8') });
+  await page.waitForTimeout(500);
+};
+await upload('bundle.json', BUNDLE);
+ok('保存済みの冊子には一括読み込みできない',
+   /既に保存された設問/.test(await page.textContent('#banner')),
+   await page.textContent('#banner'));
+
+// 設問が 0 問の冊子 (b2) には入れられる
+await page.click('.bookrow[data-id="b2"] button:last-child');
+await page.waitForSelector('#editor:not([hidden])');
+
+await upload('broken.json', '{ questions: ');
+ok('壊れた JSON は断る', /読み込めません/.test(await page.textContent('#banner')),
+   await page.textContent('#banner'));
+
+await upload('bundle.json', BUNDLE);
+ok('空の冊子には読み込める', (await page.$$('#q-rows .qrow')).length===2,
+   `${(await page.$$('#q-rows .qrow')).length} 行`);
+ok('起算の確認を画面に出す',
+   /1 問だけ実物と照合|正解 3 番|3 番 =/.test(await page.textContent('#q-import-note')),
+   await page.textContent('#q-import-note'));
+ok('読み込んだだけでは DB に書かない',
+   (await st()).questions.filter(q=>q.book_id==='b2').length===0,
+   `${(await st()).questions.filter(q=>q.book_id==='b2').length} 問`);
+await page.click('#q-save');
+await page.waitForTimeout(800);
+ok('保存を押すと DB に入る',
+   (await st()).questions.filter(q=>q.book_id==='b2').length===2,
+   `${(await st()).questions.filter(q=>q.book_id==='b2').length} 問`);
+
 // --- 削除ボタンを置いていない -------------------------------------------------
 // ★ 消すと生徒の答案・手書きが cascade で巻き添えになる。出さないことが仕様。
 ok('冊子と設問に削除ボタンが無い',

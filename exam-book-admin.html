@@ -72,6 +72,17 @@
       記述の別解はカンマ区切りで。採点は大文字小文字と前後の空白を無視します。
     </p>
 
+    <p class="muted">
+      <label class="inline">JSON をまとめて読み込む
+        <input id="q-import" type="file" accept="application/json,.json">
+      </label>
+      <span class="small">
+        (<code>scripts/book_exam/convert_workbook.py --out DIR</code> が吐いたもの。
+        <strong>設問がまだ 1 問も保存されていない冊子にだけ</strong>読み込めます)
+      </span>
+    </p>
+    <p id="q-import-note" class="warn" hidden></p>
+
     <div id="q-rows" class="qtable"></div>
 
     <div class="row">

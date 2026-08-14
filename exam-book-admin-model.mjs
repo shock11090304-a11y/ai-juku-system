@@ -16,11 +16,18 @@
 //   壊れたものを送らないのがクライアントの責任。
 // =============================================================================
 
+// ★ DB 側の CHECK (supabase/migrations/…_books_subject_widen.sql) と必ず揃える。
+//   片方だけ足すと、画面では選べるのに保存で 23514 になる。
 export const SUBJECTS = Object.freeze([
-  { value: 'grammar', label: '英文法' },
-  { value: 'reading', label: '長文読解' },
-  { value: 'eiken',   label: '英検' },
-  { value: 'mock',    label: '模試' },
+  { value: 'grammar',  label: '英文法' },
+  { value: 'reading',  label: '長文読解' },
+  { value: 'eiken',    label: '英検' },
+  { value: 'mock',     label: '模試' },
+  { value: 'math',     label: '数学' },
+  { value: 'japanese', label: '国語 (現代文・古文・漢文)' },
+  { value: 'science',  label: '理科' },
+  { value: 'social',   label: '社会' },
+  { value: 'other',    label: 'その他' },
 ]);
 
 export const ANSWER_TYPES = Object.freeze([
@@ -205,4 +212,53 @@ export function checkPdfFile(file) {
  */
 export function pdfPath(bookId) {
   return `books/${bookId}.pdf`;
+}
+
+
+// =============================================================================
+// 一括取り込み (scripts/book_exam/convert_workbook.py が吐く JSON)
+// =============================================================================
+/**
+ * 取り込む JSON を画面の行の形へ。**検証はしない** (呼び出し側が
+ * normalizeQuestion → validateQuestions を通す。検証器を 2 つ持たない)。
+ * @returns {{ok:boolean, rows:Array, book:object|null, preview:Array, reason:string|null}}
+ */
+export function parseImport(text) {
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    return { ok: false, rows: [], book: null, preview: [], reason: 'JSON として読めません' };
+  }
+  const list = Array.isArray(data) ? data
+    : (Array.isArray(data.questions) ? data.questions : null);
+  if (!list) {
+    return { ok: false, rows: [], book: null, preview: [],
+             reason: 'questions の配列が見つかりません' };
+  }
+  if (!list.length) {
+    return { ok: false, rows: [], book: null, preview: [], reason: '設問が 0 件です' };
+  }
+
+  const rows = list.map((q, i) => ({
+    id: null,                                   // ★ 取り込みは必ず新規 (既存を書き換えない)
+    number: String(q.number != null ? q.number : i + 1),
+    page: q.page == null ? '' : String(q.page),
+    answer_type: q.answer_type === 'short' ? 'short' : 'choice',
+    choice_count: q.choice_count == null ? '' : String(q.choice_count),
+    correct_answer: q.correct_answer == null ? '' : String(q.correct_answer),
+    accepted_answers: Array.isArray(q.accepted_answers) ? q.accepted_answers.join(', ')
+                                                        : String(q.accepted_answers || ''),
+    points: String(q.points == null ? 1 : q.points),
+    unit_tag: q.unit_tag == null ? '' : String(q.unit_tag),
+    explanation: q.explanation == null ? '' : String(q.explanation),
+  }));
+
+  return {
+    ok: true, rows,
+    book: (data && typeof data.book === 'object') ? data.book : null,
+    // ★ 起算の確認用。機械では証明しきれないので、人が 1 件だけ実物と照合する。
+    preview: Array.isArray(data && data.preview) ? data.preview.slice(0, 3) : [],
+    reason: null,
+  };
 }

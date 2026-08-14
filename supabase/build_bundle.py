@@ -35,6 +35,7 @@ DESCRIPTIONS = {
     "english_learning_strokes_format": "手書きストロークの形 (設計書 §5)・正規化座標だけを通す",
     "english_learning_strokes_missing_keys":
                                        "手書きの検査でキーの欠落を弾けていなかったのを直す",
+    "books_subject_widen":             "教科を英語 4 種類から数学・国語・理科・社会へ広げる",
     "seed":                            "動作確認用の中身 (仮定法の演習 1 冊 5 問 + 未公開の模試 1 冊)",
 }
 
