@@ -527,6 +527,67 @@ end
 $$;
 
 -- =============================================================================
+-- F'. Storage — 登録画面のアップロード手順そのものが通ること
+--
+-- ★ 2026-08-14 に本番で踏んだ穴の回帰検査。アプリの手順は
+--     ① books の行を作る (pdf_path はまだ無い)
+--     ② PDF を上げる — Storage API は INSERT ... RETURNING を使う
+--     ③ books.pdf_path を書く
+--   ②の RETURNING には SELECT ポリシーが適用される。読み取りを
+--   「books.pdf_path が指すものだけ」に縛ると、pdf_path がまだ無い②で
+--   講師が自分の上げた行を見られず、アップロード全体が
+--   new row violates row-level security policy で落ちる。
+--   insert 単体を検査しても捕まらない (RETURNING で初めて落ちる)。
+-- =============================================================================
+do $$
+declare
+    v_book uuid;
+    v_name text;
+    n int;
+begin
+    perform set_config('request.jwt.claims',
+        '{"sub":"aaaaaaa1-aaaa-4aaa-8aaa-aaaaaaaaaaa1","role":"authenticated"}', true);
+    execute 'set local role authenticated';
+
+    -- F4: ①→②→③ がこの順で全部通ること (② は必ず RETURNING 付きで)
+    insert into public.books (title, subject, page_count, is_published)
+    values ('アップロード手順の検査', 'reading', 13, false)
+    returning id into v_book;
+
+    insert into storage.objects (bucket_id, name, owner)
+    values ('book-pdfs', 'books/' || v_book || '.pdf', auth.uid())
+    returning name into v_name;
+    if v_name is null then
+        raise exception '[fail] F4 アップロードの RETURNING が行を返さない';
+    end if;
+
+    update public.books set pdf_path = v_name where id = v_book;
+
+    -- F5: 生徒には、この未公開の新しい PDF が見えないこと
+    perform set_config('request.jwt.claims',
+        '{"sub":"bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1","role":"authenticated"}', true);
+    select count(*) into n from storage.objects where name = v_name;
+    if n <> 0 then
+        raise exception '[fail] F5 未公開の新しい PDF が生徒に見えている';
+    end if;
+
+    -- F6: 生徒は PDF を上げられないこと
+    begin
+        insert into storage.objects (bucket_id, name, owner)
+        values ('book-pdfs', 'books/hack.pdf', auth.uid());
+        raise exception '[fail] F6 生徒が PDF を上げられてしまった';
+    exception when insufficient_privilege then null;
+    end;
+
+    reset role;
+    -- 後片付け (次の検査に影響しないように)
+    delete from storage.objects where name = v_name;
+    delete from public.books where id = v_book;
+    raise notice '[ok] F'' アップロード手順 3 件';
+end
+$$;
+
+-- =============================================================================
 -- G. 参照整合性 — 消したときに何が起きるか (README「参照整合性の効き方」の裏取り)
 -- =============================================================================
 do $$
@@ -974,5 +1035,5 @@ begin
 end
 $$;
 
-\echo '=== 全ての検査を通過 (A 14 / B 3 / C 20 / D 9 / E 4 / F 3 / G 5 / H 6 / I 9 / J 12 / K 12) ==='
+\echo '=== 全ての検査を通過 (A 14 / B 3 / C 20 / D 9 / E 4 / F 3+3 / G 5 / H 6 / I 9 / J 12 / K 12) ==='
 

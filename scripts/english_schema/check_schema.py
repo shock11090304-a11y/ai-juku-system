@@ -9,7 +9,7 @@
                 「search_path を固定していない security definer 関数」等を落とす。
                 DB は要らないので CI (material-gates.yml) でも必ず回る。
   2. 実DB検査 … 使い捨ての Postgres に stubs → migrations → 期待値テストを流す。
-                supabase/tests/10_schema_expectations.sql が本体 (58 件)。
+                supabase/tests/10_schema_expectations.sql が本体 (A〜K 100 件)。
                 Postgres が無ければ **回さないことを明示して** 静的検査だけで終わる。
 
 ■ なぜ静的検査が要るか (実DBテストがあるのに)

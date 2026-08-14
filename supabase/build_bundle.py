@@ -36,6 +36,7 @@ DESCRIPTIONS = {
     "english_learning_strokes_missing_keys":
                                        "手書きの検査でキーの欠落を弾けていなかったのを直す",
     "books_subject_widen":             "教科を英語 4 種類から数学・国語・理科・社会へ広げる",
+    "storage_teacher_read_fix":        "講師が PDF を上げられない穴の修正 (アップロードの RETURNING が読み取りポリシーで弾かれていた)",
     "seed":                            "動作確認用の中身 (仮定法の演習 1 冊 5 問 + 未公開の模試 1 冊)",
 }
 
