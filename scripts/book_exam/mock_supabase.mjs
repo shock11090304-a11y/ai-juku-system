@@ -20,9 +20,19 @@ const S = (globalThis.__DB = {
   log: [], rpcCalls: [],
   offline: false,        // 機内モード (annotations の書き込みを通信断にする)
   offlineAnswers: false, // 答案の保存だけを通信断にする
-  clock: 1000,
+  clock: 0,
 });
-const now = () => new Date(1760000000000 + (S.clock += 1000)).toISOString();
+// 検査用: 制限時間を差し込む (時間切れ自動提出の経路を通すため)
+try {
+  const t = Number(globalThis.localStorage.getItem('__smoke_time_limit'));
+  if (t > 0) S.books[0].time_limit_sec = t;
+} catch (_) { /* localStorage が無い環境 */ }
+
+// ★ 実時間を使う。固定の過去だと started_at からの経過が常に制限時間を超え、
+//   残り時間の計算とタイマーの経路を一度も試せない。
+//   clock は同じミリ秒に 2 回書いたとき updated_at が並ばないようにする足し込み
+//   (並ぶと CAS が「版が変わっていない」と誤認する)。
+const now = () => new Date(Date.now() + (S.clock++)).toISOString();
 const err = (code, message) => ({ code, message, details: '', hint: '' });
 
 class Q {
@@ -76,6 +86,14 @@ class Q {
             if (at && at.submitted_at) throw err('42501', 'permission denied');
           }
           const row = { id: `${this.t}-${rows.length + made.length + 1}`, ...r, updated_at: now() };
+          // ★ DB 側の default now() を再現する。無いと started_at が undefined になり、
+          //   残り時間が NaN になる (本物では default が入るので起きない)。
+          if (this.t === 'attempts' && row.started_at == null) {
+            // 検査用: 開始時刻が返ってこない状況も作れるようにする
+            let omit = false;
+            try { omit = !!globalThis.localStorage.getItem('__smoke_no_started_at'); } catch (_) {}
+            if (!omit) row.started_at = now();
+          }
           made.push(row);
         }
         rows.push(...made);

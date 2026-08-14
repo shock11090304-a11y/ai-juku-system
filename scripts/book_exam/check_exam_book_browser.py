@@ -32,6 +32,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 SMOKE = os.path.join(HERE, "browser_smoke.mjs")
 LOGIN = os.path.join(HERE, "login_smoke.mjs")
+EDGE = os.path.join(HERE, "edge_smoke.mjs")
 MOCK = os.path.join(HERE, "mock_supabase.mjs")
 
 
@@ -147,6 +148,16 @@ def main():
 
         # ★ 本編の偽 Supabase は常にセッションを返すので、ログイン画面は 1 度も通らない。
         #   生徒が最初に触る画面なので、別に 1 本回す。
+        # ★ 本編は 1 台で解き切る筋しか通らない。消失がいちばん怖い
+        #   「別端末が同じページを触った」と「時間切れの自動提出」を別に回す。
+        print("\n--- 別端末との競合 / 時間切れの自動提出 ---")
+        r3 = subprocess.run([node, EDGE, ROOT, tmp], env=env, timeout=180,
+                            capture_output=True, text=True)
+        sys.stdout.write(r3.stdout)
+        if r3.returncode:
+            sys.stdout.write(r3.stderr[-1500:])
+            rc = rc or 1
+
         print("\n--- ログイン画面 (セッションが無い状態から) ---")
         r2 = subprocess.run([node, LOGIN, ROOT], env=env, timeout=120,
                             capture_output=True, text=True)

@@ -11,6 +11,7 @@ import { createRequire } from 'node:module';
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 const { chromium } = createRequire(import.meta.url)('playwright-core');
 const ROOT = process.argv[2];
+const TEST_EMAIL = 'student@example.invalid';
 const TYPES={'.html':'text/html','.css':'text/css','.mjs':'text/javascript','.pdf':'application/pdf','.bcmap':'application/octet-stream'};
 const server = http.createServer((req,res)=>{const u=decodeURIComponent(req.url.split('?')[0]);const p=path.join(ROOT,u);
  if(!p.startsWith(ROOT)||!fs.existsSync(p)||fs.statSync(p).isDirectory()){res.writeHead(404);res.end();return;}
@@ -59,7 +60,9 @@ ok('フォームが画面に出ている', vis.w>100 && vis.h>100 && vis.display
 ok('フォームの上に別の層が被っていない', /INPUT|LABEL|FORM|BUTTON|H1/.test(vis.topEl), vis.topEl);
 
 // 間違ったパスワード
-await page.fill('#login-email','a@b.com');
+// ★ RFC 2606 が予約している .invalid を使う (実在しない保証がある)。
+//   .com 等にすると連絡先の混入検査 (check_no_pii.py) に引っかかる。
+await page.fill('#login-email', TEST_EMAIL);
 await page.fill('#login-pass','wrong');
 await page.click('#login-form button[type=submit]');
 await page.waitForTimeout(500);
@@ -67,7 +70,7 @@ const msg = await page.textContent('#login-msg');
 ok('間違いのときエラーが日本語で出る', msg.includes('メールアドレスかパスワードが違います'), `「${msg}」`);
 const calls = await page.evaluate(()=>globalThis.__CALLS);
 ok('signInWithPassword が呼ばれている', calls.length===1, JSON.stringify(calls));
-ok('入力がそのまま渡っている (前後の空白なども)', calls[0] && calls[0].email==='a@b.com', JSON.stringify(calls[0]));
+ok('入力がそのまま渡っている (前後の空白なども)', calls[0] && calls[0].email===TEST_EMAIL, JSON.stringify(calls[0]));
 
 // 正しいパスワード → reload
 await page.fill('#login-pass','good');

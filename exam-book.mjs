@@ -583,7 +583,18 @@ function startTimer() {
   const limit = app.book.time_limit_sec;
   const box = $('#clock');
   if (!limit) { box.textContent = '時間無制限'; return; }   // NULL なら自動提出しない
+
+  // ★ started_at が読めないと left が NaN になり、表示が「残り NaN:NaN」になるうえ
+  //   `left <= 0` が永久に false なので **自動提出も走らない**。黙って壊れるので必ず出す。
+  //   時間を数えられないときに打ち切るのは生徒に不利なので、自動提出はしない。
   const started = Date.parse(app.attempt.started_at);
+  if (!Number.isFinite(started)) {
+    box.textContent = '残り時間を計算できません';
+    box.dataset.tone = 'warn';
+    say('開始時刻が読めないため、残り時間を表示できません。自分で時間を見て提出してください', 'warn');
+    return;
+  }
+
   const tick = () => {
     if (app.finished) { clearInterval(app.timer); return; }
     const left = Math.max(0, Math.round(limit - (serverNow().getTime() - started) / 1000));
