@@ -97,9 +97,12 @@ ZENKAKU = {c: i for i, c in enumerate("０１２３４５６７８９")}
 #   ★ 「正解」の直後に来る番号だけを拾う。誤答の説明にも番号は出るので、
 #     語を挟まない位置に限る。
 #   見出しは全角英字 (問 Ａ) もあり得る。「問 C の正解: ②」の「の」も許す。
+#   正誤問題の注記「正解(誤り): ③」も実物にある (世界史 問E、2026-08-14)。
+#   注記は (誤り) / (誤) だけ許す — 見た実物に限る。別の注記が出たら
+#   診断が該当行ごと運んでくるので、そのとき足す。
 ANSWER_IN_TEXT = re.compile(
     r"問\s*([0-9０-９A-Za-zＡ-Ｚａ-ｚ]{1,3})\s*(?:の)?\s*(?:→|➡)?\s*"
-    r"正解\s*(?:は)?\s*[::]?\s*([①-⑳])")
+    r"正解\s*(?:は)?\s*(?:[((]誤り?[))])?\s*[::]?\s*([①-⑳])")
 
 # 「①〜④ から 1 つ選べ」— 選択肢の数がここに書いてある大問がある。
 CHOICE_RANGE = re.compile(r"([①-⑳])\s*[〜~ー–—−-]\s*([①-⑳])")
@@ -381,6 +384,38 @@ def choice_count_from_list(text):
     return n if 2 <= n <= 10 else None
 
 
+def choice_count_from_runs(text):
+    """大問の本文に問ごとの選択肢が「① … ② … ③ … ④ …」と列挙されている
+    とき、その **連番の列 (run)** を数える。
+
+    ★ 「①〜④ から選べ」の範囲表記が無い大問のための代替。推測ではなく、
+      生徒が実際に見る列挙そのものを数える。
+      ・① から始まり +1 ずつ続く列だけを run と数える (長さ 2 以上)
+      ・全部の run が同じ長さのときだけ採用。違う長さが混ざる = 大問の中で
+        選択肢数が問ごとに違うので、1 つの数では表せない → None
+      ・独立した ① 1 つ (本文の参照など) は run にならず無視される。
+        列挙の途中が欠けた列は run が短くなって不一致になり、表に出る。
+    @returns (数, run の一覧)。決められなければ (None, run の一覧)
+    """
+    runs, cur = [], 0
+    for c in norm_text(text):
+        if c not in CIRCLED:
+            continue
+        v = CIRCLED[c]
+        if v == 1:
+            if cur >= 2:
+                runs.append(cur)
+            cur = 1
+        elif v == cur + 1:
+            cur = v
+        # それ以外 (飛び・逆行) は run の外の丸数字とみなして無視
+    if cur >= 2:
+        runs.append(cur)
+    if runs and len(set(runs)) == 1 and 2 <= runs[0] <= 10:
+        return runs[0], runs
+    return None, runs
+
+
 def sections_of(doc):
     for key in ("sections", "passages", "大問"):
         v = (doc or {}).get(key) if isinstance(doc, dict) else None
@@ -444,7 +479,7 @@ def adapt_d_sub_items(doc):
         sub_items_choices: ['① 科挙制度は… ② … ③ … ④ …', …]      5 個
         solution:          '**問 A 正解: ②**⏎唐 — 均田制…'
     """
-    specs = []
+    specs, errors = [], []
     for i, sec in enumerate(sections_of(doc)):
         if not isinstance(sec, dict):
             return None, None
@@ -454,23 +489,32 @@ def adapt_d_sub_items(doc):
             return None, None                 # 形 D ではない
         label = section_label(sec, i)
         if len(subs) != len(chs):
-            return None, (f"{label}: 小問 {len(subs)} 個に対し選択肢 {len(chs)} 個。"
+            errors.append(f"{label}: 小問 {len(subs)} 個に対し選択肢 {len(chs)} 個。"
                           f"数が合わない")
+            continue
         found = answers_in(sec.get("solution"))
         if len(found) != len(subs):
             # ★ どの問が抜けたかと、その実物の文を出す。これが無いと
             #   「書式を足せ」と言われても何を足せばいいか分からない (2026-08-14 実測)。
-            return None, (f"{label}: 小問 {len(subs)} 個に対し solution から抜けた正解が "
+            errors.append(f"{label}: 小問 {len(subs)} 個に対し solution から抜けた正解が "
                           f"{len(found)} 個。{missing_head_detail(subs, found, sec)}")
+            continue
         pts = even_points(sec.get("score"), len(subs))
         for (head, ans), text, ch in zip(found, subs, chs):
             n = choice_count_from_list(ch)
             if n is None:
-                return None, (f"{label} 問{head}: 選択肢の数を数えられない "
+                errors.append(f"{label} 問{head}: 選択肢の数を数えられない "
                               f"(①から連番で並んでいない): {str(ch)[:60]}")
+                continue
             specs.append({"section": label, "head": str(head), "answer": ans,
                           "choice_count": n, "points": pts,
                           "stem": str(text)[:80], "explanation": None})
+    if errors:
+        # ★ 最初の 1 件で止めない。大問ごとに書式が違うことがあり、1 件ずつ
+        #   直すと往復が大問の数だけ要る (実測: 世界史で 1 往復無駄にした)。
+        head = errors[:4]
+        more = f" (ほか {len(errors) - 4} 件)" if len(errors) > 4 else ""
+        return None, " ⏎ ".join(head) + more
     return (specs, None) if specs else (None, None)
 
 
@@ -516,10 +560,9 @@ def adapt_e_qkey(doc):
         if big not in secs:
             return None, f"answer_key に第{big}問があるのに、大問 {big} が本文に無い"
         sec, label = secs[big]
-        n = choice_count_from_range(sec.get("problem"))
+        n, how = section_choice_count(sec)
         if n is None:
-            return None, (f"{label}: {NO_CHOICE_COUNT} "
-                          f"(「①〜④ から 1 つ選べ」の形が無い)。"
+            return None, (f"{label}: {NO_CHOICE_COUNT} ({how})。"
                           f"problem の冒頭: 「{norm_text(sec.get('problem'))[:80]}」")
         if not (1 <= val <= n):
             return None, f"{label} 問{small}: 正解 {val} が選択肢 {n} 個の範囲外"
@@ -546,7 +589,23 @@ def adapt_e_qkey(doc):
 
 
 # --- 形 F: answer_key が無く solution にだけ正解がある (化学 / 生物) ---------
-NO_CHOICE_COUNT = "選択肢の数が problem に書かれていない"
+NO_CHOICE_COUNT = "選択肢の数が problem から取れない"
+
+
+def section_choice_count(sec):
+    """大問の選択肢の数。範囲表記 → 本文の列挙 の順で実物から取る。
+
+    @returns (数 | None, どう取れた/取れなかったかの説明)
+    """
+    n = choice_count_from_range(sec.get("problem"))
+    if n is not None:
+        return n, "「①〜」の範囲表記"
+    n, runs = choice_count_from_runs(sec.get("problem"))
+    if n is not None:
+        return n, f"本文の列挙 ({len(runs)} 列 × {n} 個)"
+    if runs:
+        return None, f"本文の列挙の長さが揃わない {runs} (問ごとに選択肢数が違う)"
+    return None, "範囲表記も列挙も無い"
 
 
 def adapt_f_solution(doc):
@@ -562,18 +621,17 @@ def adapt_f_solution(doc):
             return None, None
         label = section_label(sec, i)
         found = answers_in(sec.get("solution"))
-        n = choice_count_from_range(sec.get("problem"))
+        n, how = section_choice_count(sec)
         if not found:
             # ★ オリエンテーション等の大問でない節は飛ばしてよい。だが
-            #   「①〜④ から選べ」がある節は大問のはずで、そこから正解を
-            #   抜けないのは書式の取りこぼし。黙って飛ばすと問数が減る。
+            #   選択肢が取れる節は大問のはずで、そこから正解を抜けないのは
+            #   書式の取りこぼし。黙って飛ばすと問数が減る。
             if n is not None:
-                return None, (f"{label}: problem に「①〜…」があるのに solution から"
+                return None, (f"{label}: 選択肢は取れる ({how}) のに solution から"
                               f"正解を抜けない。書式を ANSWER_IN_TEXT に足すこと")
             continue
         if n is None:
-            return None, (f"{label}: {NO_CHOICE_COUNT} "
-                          f"(「①〜④ から 1 つ選べ」の形が無い)。"
+            return None, (f"{label}: {NO_CHOICE_COUNT} ({how})。"
                           f"正解は読めているので、一括入力なら使える。"
                           f"problem の冒頭: 「{norm_text(sec.get('problem'))[:80]}」")
         pts = even_points(sec.get("score"), len(found))
@@ -1088,7 +1146,7 @@ def selftest():
         "sample_a_kokugo": (3, "A", "5"),
         "sample_d_sub_items": (3, "D", "2"),
         "sample_e_qkey": (4, "E", "2"),
-        "sample_f_solution": (3, "F", "2"),
+        "sample_f_solution": (4, "F", "2"),
     }
     # ★ 「取り込めないと分かって外す」を検査する。通ってしまったら砦が外れている。
     refuse = {
@@ -1195,6 +1253,18 @@ def selftest():
     #   拾った瞬間に「1 つずれても気づけない」経路が開く。
     if answers_in("問2 正解 4") != []:
         bad.append("素の数字を正解として拾ってしまった (起算を確定できないのに)")
+    # ★ 正誤問題の注記 (実物: 世界史 問E)
+    if answers_in("**問 E 正解(誤り): ③**") != [("E", 3)]:
+        bad.append("「正解(誤り): ③」の注記付きを抜けない (実物の世界史 問E の形)")
+
+    # ★ 本文の列挙から選択肢数を数える (実物: 物理 第2問は範囲表記が無い)
+    if choice_count_from_runs("① a ② b ③ c ④ d 問2 ① w ② x ③ y ④ z")[0] != 4:
+        bad.append("列挙 (run) から選択肢数を数えられない")
+    if choice_count_from_runs("① a ② b ③ c 問2 ① w ② x ③ y ④ z")[0] is not None:
+        bad.append("長さの違う列挙が混ざるのに 1 つの数に決めてしまった "
+                   "(問ごとに選択肢数が違うのに)")
+    if choice_count_from_runs("参照は ① を見よ")[0] is not None:
+        bad.append("本文の参照の ① 1 個を列挙と数えてしまった")
 
     # ★ F: 「①〜④」がある大問から正解を抜けないときに黙って飛ばさないこと。
     #   これが素通りすると、解説の書式が 1 大問だけ違ったとき問数が静かに減る。

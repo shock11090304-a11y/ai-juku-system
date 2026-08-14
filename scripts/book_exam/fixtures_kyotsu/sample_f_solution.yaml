@@ -34,3 +34,13 @@ sections:
     solution: |
       <strong>問1 → 正解 ③</strong>
       ハロゲンの酸化力は F₂ > Cl₂ > Br₂ > I₂。
+
+  # ★ 範囲表記が無く、選択肢が本文に列挙されている大問 (実物の物理 第2問と同じ形)
+  - qnum: "3"
+    score: 20
+    problem: |
+      有機化合物に関する次の問い (問1) に答えよ。
+      問1 エタノールの分子式はどれか。 ① CH₄O ② C₂H₆O ③ C₃H₈O ④ C₂H₄O₂
+    solution: |
+      <strong>問1 → 正解 ②</strong>
+      エタノール C₂H₅OH の分子式は C₂H₆O。
