@@ -17,8 +17,12 @@
 // =============================================================================
 
 export const SUPABASE = {
-  url: '',        // 例: https://xxxxxxxxxxxx.supabase.co
-  anonKey: '',    // Settings → API の anon public (publishable)
+  url: 'https://ljrsrlaftirzwotoykty.supabase.co',
+  // Settings → API Keys の anon public。role=anon を確認済み (secret ではない)。
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'
+         + '.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqcnNybGFmdGlyendvdG95a3R5Iiwicm9sZSI6'
+         + 'ImFub24iLCJpYXQiOjE3ODY2NjA0NDEsImV4cCI6MjEwMjIzNjQ0MX0'
+         + '.JeWjNryUN1xH7a-07lpBgUizI0W8T7t7qjFzouVhfuM',
 };
 
 /** anon 以外のキーを貼る事故を形で止める。 */
