@@ -96,8 +96,10 @@ ZENKAKU = {c: i for i, c in enumerate("０１２３４５６７８９")}
 #   飾り (<strong> / ** / $ / \text{}) を先に剥がせば 1 本の形で足りる。
 #   ★ 「正解」の直後に来る番号だけを拾う。誤答の説明にも番号は出るので、
 #     語を挟まない位置に限る。
+#   見出しは全角英字 (問 Ａ) もあり得る。「問 C の正解: ②」の「の」も許す。
 ANSWER_IN_TEXT = re.compile(
-    r"問\s*([0-9０-９A-Za-z]{1,3})\s*(?:→|➡)?\s*正解\s*(?:は)?\s*[::]?\s*([①-⑳])")
+    r"問\s*([0-9０-９A-Za-zＡ-Ｚａ-ｚ]{1,3})\s*(?:の)?\s*(?:→|➡)?\s*"
+    r"正解\s*(?:は)?\s*[::]?\s*([①-⑳])")
 
 # 「①〜④ から 1 つ選べ」— 選択肢の数がここに書いてある大問がある。
 CHOICE_RANGE = re.compile(r"([①-⑳])\s*[〜~ー–—−-]\s*([①-⑳])")
@@ -407,6 +409,32 @@ def even_points(score, n):
     return 1
 
 
+HEAD_IN_SUB = re.compile(r"問\s*([0-9０-９A-Za-zＡ-Ｚａ-ｚ]{1,3})")
+
+
+def missing_head_detail(subs, found, sec):
+    """どの問の正解を抜けなかったか + 実物の該当行。エラーに足す診断。
+
+    ★ 「書式を ANSWER_IN_TEXT に足すこと」だけでは、元データを見られる人 (塾長)
+      と直せる人 (Claude) が別なので直せない。実物の文をエラーごと運ばせる。
+    """
+    want = []
+    for t in subs:
+        m = HEAD_IN_SUB.search(str(t))
+        want.append(m.group(1) if m else "?")
+    got = {h for h, _a in found}
+    missing = [h for h in want if h not in got] or ["?"]
+    all_lines = [ln.strip() for ln in norm_text(sec.get("solution")).splitlines()
+                 if ln.strip()]
+    # ★ 抜けた問の行そのものを見せる。「正解」を含む行に絞ってはいけない —
+    #   抜けたのは大抵「正解」の書き方が違う行で、絞ると成功した行しか出ない。
+    hit = [ln for ln in all_lines
+           if any(f"問 {h}" in ln or f"問{h}" in ln for h in missing)]
+    show = (hit or [ln for ln in all_lines if "正解" in ln])[:2]
+    return (f"抜けた問: {', '.join(missing)}。該当行: "
+            + " / ".join(f"「{ln[:70]}」" for ln in show))
+
+
 # --- 形 D: sub_items + sub_items_choices (世界史 / 日本史) --------------------
 def adapt_d_sub_items(doc):
     """大問ごとに「小問の一覧」と「選択肢を詰めた文字列の一覧」を持つ形。
@@ -430,8 +458,10 @@ def adapt_d_sub_items(doc):
                           f"数が合わない")
         found = answers_in(sec.get("solution"))
         if len(found) != len(subs):
+            # ★ どの問が抜けたかと、その実物の文を出す。これが無いと
+            #   「書式を足せ」と言われても何を足せばいいか分からない (2026-08-14 実測)。
             return None, (f"{label}: 小問 {len(subs)} 個に対し solution から抜けた正解が "
-                          f"{len(found)} 個。書式を ANSWER_IN_TEXT に足すこと")
+                          f"{len(found)} 個。{missing_head_detail(subs, found, sec)}")
         pts = even_points(sec.get("score"), len(subs))
         for (head, ans), text, ch in zip(found, subs, chs):
             n = choice_count_from_list(ch)
@@ -488,8 +518,9 @@ def adapt_e_qkey(doc):
         sec, label = secs[big]
         n = choice_count_from_range(sec.get("problem"))
         if n is None:
-            return None, (f"{label}: 選択肢の数が problem に書かれていない "
-                          f"(「①〜④ から 1 つ選べ」の形が無い)")
+            return None, (f"{label}: {NO_CHOICE_COUNT} "
+                          f"(「①〜④ から 1 つ選べ」の形が無い)。"
+                          f"problem の冒頭: 「{norm_text(sec.get('problem'))[:80]}」")
         if not (1 <= val <= n):
             return None, f"{label} 問{small}: 正解 {val} が選択肢 {n} 個の範囲外"
         specs.append({"section": label, "head": str(small), "answer": val,
@@ -543,7 +574,8 @@ def adapt_f_solution(doc):
         if n is None:
             return None, (f"{label}: {NO_CHOICE_COUNT} "
                           f"(「①〜④ から 1 つ選べ」の形が無い)。"
-                          f"正解は読めているので、一括入力なら使える")
+                          f"正解は読めているので、一括入力なら使える。"
+                          f"problem の冒頭: 「{norm_text(sec.get('problem'))[:80]}」")
         pts = even_points(sec.get("score"), len(found))
         for head, ans in found:
             if not (1 <= ans <= n):
@@ -1149,7 +1181,9 @@ def selftest():
             ("化学",   "<strong>問1 → 正解 ②</strong>",       "1", 2),
             ("物理",   r"<strong>$\text{問 1}$ 正解 ②</strong>", "1", 2),
             ("世界史", "**問 A 正解: ②**",                     "A", 2),
-            ("日本史", "問 1　正解: **①**　中大兄皇子",        "1", 1)):
+            ("日本史", "問 1　正解: **①**　中大兄皇子",        "1", 1),
+            ("全角見出し", "**問 Ｄ 正解: ③**",                "Ｄ", 3),
+            ("の入り", "問 C の正解: ②",                       "C", 2)):
         got = answers_in(text)
         if got != [(head_want, ans_want)]:
             bad.append(f"{label} の書式 {text!r} から正解を抜けない (got {got})")
