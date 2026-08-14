@@ -248,13 +248,33 @@ def get_points(q):
 # =============================================================================
 # 正解の在り処 3 通り
 # =============================================================================
+# answer_key の要素が dict のときに正解と問番号を持つキー
+#   実物 (2026-08-14 に --probe で確認): answer_key: [{number: 1, answer: '⑤'}, …]
+ANS_KEYS = ("answer", "ans", "正解", "correct", "value")
+NUM_KEYS = ("number", "no", "num", "q_no", "問")
+
+
 def key_as_list(v):
     """answer_key の中身を [(見出し, 生の値)] に均す。
 
-    list なら [(1, x), (2, y)…] / dict なら宣言順のまま。
+    受け付ける形:
+      list of 値       [3, 1, 4]                     → [(1,3), (2,1), (3,4)]
+      list of dict     [{number:1, answer:'⑤'}, …]  → [(1,'⑤'), …]   ★実物はこれ
+      dict             {1: '⑤', 2: '②'}             → 宣言順のまま
+    ★ dict なのに正解らしいキーが無いものは **空を返す** (推測しない)。
     """
     if isinstance(v, list):
-        return [(i + 1, x) for i, x in enumerate(v)]
+        out = []
+        for i, x in enumerate(v):
+            if isinstance(x, dict):
+                val = next((x[k] for k in ANS_KEYS if k in x), None)
+                if val is None:
+                    return []
+                label = next((x[k] for k in NUM_KEYS if k in x), i + 1)
+                out.append((label, val))
+            else:
+                out.append((i + 1, x))
+        return out
     if isinstance(v, dict):
         return [(k, x) for k, x in v.items()]
     return []
@@ -273,10 +293,27 @@ def adapt_a_top_level(doc, questions):
         return None, None                     # 形 A ではない (エラーではない)
     pairs = key_as_list(key)
     if not pairs:
-        return None, f"answer_key が読めない形 ({type(key).__name__})"
+        return None, (f"answer_key が読めない形 ({type(key).__name__})。"
+                      f"要素が dict なら正解のキーを ANS_KEYS に足すこと")
     if len(pairs) != len(questions):
         return None, (f"answer_key が {len(pairs)} 個で設問が {len(questions)} 問。"
                       f"数が合わないので当てられない")
+
+    # ★ 番号が付いているなら **番号で突き合わせる**。並び順に頼ると、
+    #   設問を拾う順 (passages → questions) と answer_key の順が食い違ったとき
+    #   全問ずれた正解になり、しかも数は合うので誰も気づけない。
+    labels = [lab for lab, _v in pairs]
+    if len(set(labels)) == len(labels) and all(isinstance(x, int) for x in labels):
+        qnums = [get_number(q) for q in questions]
+        if all(n is not None for n in qnums) and len(set(qnums)) == len(qnums):
+            if set(qnums) != set(labels):
+                return None, (f"answer_key の問番号と設問の問番号が食い違う "
+                              f"(answer_key にしか無い: "
+                              f"{sorted(set(labels) - set(qnums))[:5]} / "
+                              f"設問にしか無い: {sorted(set(qnums) - set(labels))[:5]})")
+            by = dict(pairs)
+            return [by[n] for n in qnums], None
+
     return [v for _label, v in pairs], None
 
 
@@ -697,6 +734,23 @@ def selftest():
     if base is not None:
         bad.append("起算を決められないはずの値で決めてしまった "
                    "(decide_base が甘い。全問ずれても気づけない)")
+
+    # ★ answer_key の形。実物は {number, answer} の一覧だが、素の並びも受ける。
+    if key_as_list([3, 1, 4]) != [(1, 3), (2, 1), (3, 4)]:
+        bad.append("answer_key が素の並びのとき読めていない")
+    if key_as_list([{"number": 7, "answer": "②"}]) != [(7, "②")]:
+        bad.append("answer_key が {number, answer} の一覧のとき読めていない (実物の形)")
+    if key_as_list([{"number": 1, "memo": "x"}]) != []:
+        bad.append("正解のキーが無い dict を推測で通してしまった")
+
+    # ★ 番号で突き合わせているか。answer_key の番号を設問と食い違わせたら
+    #   落ちるはず。並び順で当ててしまうと数だけ合って全問ずれる。
+    doc2 = load_yaml(os.path.join(FIXTURES, "sample_a_top_level.yaml"))
+    doc2["answer_key"] = [{"number": n, "answer": "②"} for n in (1, 2, 99)]
+    v, e = adapt_a_top_level(doc2, harvest(doc2))
+    if v is not None or not e or "食い違う" not in e:
+        bad.append("answer_key の問番号が設問と食い違うのに通してしまった "
+                   f"(並び順で当てている疑い) — {e!r}")
 
     # ★ アプリと同じ検証器を通す
     try:
