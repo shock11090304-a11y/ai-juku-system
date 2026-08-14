@@ -223,15 +223,24 @@ async function scanPdfs(files) {
       const doc = new Book();
       const pages = await doc.open(url);
       // ★ 文字が取り出せるかを見る。画像だけの PDF (スキャン) は自動取り込みができない。
+      // ★ 「文字が取れない」には 2 通りあり、対処が全く違う:
+      //   ・断片が 0 個            → 画像だけ (スキャン)。OCR が要る
+      //   ・断片はあるが文字が空   → 文字はあるがフォントに ToUnicode が無い。
+      //                              日本語 PDF でよく起きる。OCR は要らないが
+      //                              ブラウザからは読み取れない
+      //   ここを一緒くたにすると、打つ手を間違える。
       let text = '';
+      let items = 0;
       try {
         for (let n = 1; n <= Math.min(2, pages); n++) {
           const c = await (await doc.doc.getPage(n)).getTextContent();
+          items += c.items.length;
           text += c.items.map((x) => x.str).join(' ') + '\n';
         }
       } catch (_) { /* 文字が無い PDF */ }
       URL.revokeObjectURL(url);
-      rows.push({ f, ok: true, pages, chars: text.trim().length });
+      const kb = Math.round(f.size / 1024 / Math.max(pages, 1));
+      rows.push({ f, ok: true, pages, chars: text.trim().length, items, kb });
       const kind = (PAIR.exec(f.name.replace(/\.pdf$/i, '')) || [])[2];
       if (firstText === null && /解説|解答|答/.test(kind || '') && text.trim()) {
         firstText = text.trim().slice(0, 4000);
@@ -253,11 +262,13 @@ async function scanPdfs(files) {
   }
 
   const okCount = rows.filter((r) => r.ok).length;
-  const noText = rows.filter((r) => r.ok && r.chars < 50).length;
+  const scan = rows.filter((r) => r.ok && r.chars < 50 && r.items === 0).length;
+  const nomap = rows.filter((r) => r.ok && r.chars < 50 && r.items > 0).length;
   const head = el('p', 'muted',
     `${rows.length} 件中 ${okCount} 件が使えます`
     + (rows.length - okCount ? ` / ${rows.length - okCount} 件は使えません` : '')
-    + (noText ? ` / ${noText} 件は文字を取り出せません (画像だけの PDF)` : ''));
+    + (scan ? ` / ${scan} 件は画像だけ (OCR が要る)` : '')
+    + (nomap ? ` / ${nomap} 件は文字はあるが読み取れない (ToUnicode 無し)` : ''));
   host.appendChild(head);
 
   for (const [key, list] of groups) {
@@ -265,10 +276,20 @@ async function scanPdfs(files) {
     const main = el('div', 'bookrow-main');
     main.appendChild(el('div', 'bookrow-title', key));
     for (const r of list) {
+      let state;
+      if (!r.ok) {
+        state = `✗ ${r.why}`;
+      } else if (r.chars >= 50) {
+        state = `・文字を読める (${r.chars} 字)`;
+      } else if (r.items > 0) {
+        state = `・★文字はあるが読み取れない (断片 ${r.items} 個・フォントに ToUnicode が無い)`;
+      } else {
+        state = '・★画像だけ (スキャン)。読み取るには OCR が要る';
+      }
       const line = r.ok
         ? `${r.kind || 'PDF'}: ${r.pages} ページ / ${(r.f.size / 1048576).toFixed(1)}MB`
-          + (r.chars < 50 ? ' ・★文字を取り出せない (画像だけ)' : ` ・文字あり`)
-        : `${r.kind || 'PDF'}: ✗ ${r.why}`;
+          + ` (1 ページ ${r.kb}KB) ${state}`
+        : `${r.kind || 'PDF'}: ${state}`;
       const d = el('div', 'bookrow-meta', line);
       if (!r.ok) d.style.color = 'var(--bad)';
       main.appendChild(d);
