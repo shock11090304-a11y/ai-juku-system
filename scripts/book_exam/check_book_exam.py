@@ -57,6 +57,54 @@ def app_files():
     return out
 
 
+def vercel_sources(conf_text):
+    """vercel.json の rewrites / redirects / headers の source を全部集める。"""
+    try:
+        conf = json.loads(conf_text)
+    except Exception:
+        ng("vercel.json が JSON として読めない")
+        return []
+    out = []
+    for key in ("rewrites", "redirects", "headers", "routes"):
+        for row in conf.get(key) or []:
+            if isinstance(row, dict) and isinstance(row.get("source"), str):
+                out.append(row["source"])
+    return out
+
+
+def bad_group(src):
+    """path-to-regexp が受け付けない括弧があれば (位置, 理由) を返す。無ければ None。
+
+    ★ 想像で書かない。path-to-regexp 6.2.1 に実際に食わせて、次の 2 つだけが
+      弾かれることを確かめてある (2026-08-14):
+        ・グループの中の捕捉グループ  … "Capturing groups are not allowed"
+            例 /(exam-book.*\\.(mjs|css))   ← これで本番デプロイを落とした
+        ・一番外側で `(?` から始まるもの … 'Pattern cannot start with "?"'
+            例 /a(?:b|c)
+      逆に **中の** `(?:…)` は通る (例 /a((?:b|c)) は OK)。
+    """
+    depth = 0
+    i = 0
+    while i < len(src):
+        c = src[i]
+        if c == "\\":
+            i += 2
+            continue
+        if c == "(":
+            noncapturing = src[i + 1:i + 3] == "?:"
+            if depth == 0 and src[i + 1:i + 2] == "?" and not noncapturing:
+                return i, 'グループが "?" で始まっている'
+            if depth == 0 and noncapturing:
+                return i, '一番外側のグループを "(?:" で始めている'
+            if depth > 0 and not noncapturing:
+                return i, "グループの中で括弧を入れ子にしている"
+            depth += 1
+        elif c == ")" and depth > 0:
+            depth -= 1
+        i += 1
+    return None
+
+
 # =============================================================================
 # 静的検査
 # =============================================================================
@@ -127,6 +175,18 @@ def static_checks(files):
         if "exam-book" not in conf:
             ng("vercel.json に exam-book* の no-cache 指定が無い "
                "(古いモデルを掴んだ端末が古い形式で書き続ける)")
+
+        # ★ Vercel の source は **正規表現ではなく path-to-regexp**。入れ子の括弧を書くと
+        #   "Invalid route source pattern" で **デプロイが丸ごと失敗する** (2026-08-14 に実際に
+        #   `/(exam-book.*\.(mjs|css))` で本番ビルドを落とした)。JSON としては正しいので
+        #   構文検査では気づけない。ここで全ルートを見る。
+        for src in vercel_sources(conf):
+            hit = bad_group(src)
+            if hit is not None:
+                pos, why = hit
+                ng(f"vercel.json の source \"{src}\" — {pos} 文字目で{why}。"
+                   f"path-to-regexp が受け付けず **デプロイが丸ごと失敗する** "
+                   f"(分けて 2 本書くこと)")
 
     # --- 7. anon 以外のキーを貼れないようにしているか ------------------------
     # ★ 「service_role という文字列があるか」を見ない。それだと注意書きに反応して

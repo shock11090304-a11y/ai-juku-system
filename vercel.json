@@ -118,7 +118,13 @@
       ]
     },
     {
-      "source": "/(exam-book.*\\.(mjs|css))",
+      "source": "/(exam-book.*\\.mjs)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(exam-book.*\\.css)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
       ]

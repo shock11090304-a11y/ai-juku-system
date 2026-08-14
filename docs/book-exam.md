@@ -57,8 +57,15 @@
 **`vercel.json` に追記** (これを忘れると保存形式を直した日に古い `exam-book-model.mjs` を掴んだ端末が古い形式で書き続ける):
 
 ```json
-{ "source": "/(exam-book.*\\.(mjs|css))", "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }] }
+{ "source": "/(exam-book.*\\.mjs)", "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }] },
+{ "source": "/(exam-book.*\\.css)", "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }] }
 ```
+★ **1 本にまとめて `/(exam-book.*\.(mjs|css))` と書いてはいけない。** Vercel の `source` は
+正規表現ではなく **path-to-regexp** で、グループの中の括弧を
+`Capturing groups are not allowed` で弾く。JSON としては正しいので構文検査では気づけず、
+**デプロイが丸ごと失敗する** (2026-08-14 に実際に本番ビルドを落とした)。
+`check_book_exam.py` が vercel.json の全 source を検査する (判定は path-to-regexp 6.2.1 の
+実挙動と 25 パターンで突き合わせ済み)。
 
 ---
 
