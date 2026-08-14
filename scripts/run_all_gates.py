@@ -88,6 +88,8 @@ SKIP = {
 # 「検査なのにファイルを書く」ことが正当なもの（一時ファイル・出力先の作成のみ）。
 # ここに無いのに書き込むゲートは実行せずに落とす（上の fix_recheck.py と同じ事故を防ぐ）。
 WRITE_OK = {
+    "book_exam/check_exam_book_browser.py":
+        "tempfile の使い捨てディレクトリに検査用PDFと偽supabaseを置くだけ（リポジトリには書かない）",
     "chem_camp/katex_gate.py": "KaTeX 描画用の一時HTMLを書くだけ",
     "eng_hinshi_bunkai/qa.py": "出力ディレクトリを作るだけ",
     "kyotsu2026_mirror/build/qa_machine.py": "QA レポートを書くだけ",

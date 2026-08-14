@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<!-- ★ user-scalable=no を書かない。読むモードのネイティブピンチが虫めがねなので、
+     切ると弱視の生徒が本文を読めなくなる。書くモードは CSS の touch-action で止める。 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>冊子受験</title>
+<link rel="stylesheet" href="/exam-book.css?v=1">
+</head>
+<body data-stage="boot">
+
+<!-- ========== ヘッダ ========== -->
+<header id="bar">
+  <div class="bar-l">
+    <span id="book-title">冊子受験</span>
+    <span id="clock"></span>
+    <span id="saveState"></span>
+  </div>
+  <div class="bar-r">
+    <div class="seg">
+      <button type="button" data-mode="read">読む</button>
+      <button type="button" data-mode="write">書く</button>
+    </div>
+    <div class="seg">
+      <button type="button" data-zoom="out" aria-label="縮小">−</button>
+      <span id="zoom-label">100%</span>
+      <button type="button" data-zoom="in" aria-label="拡大">＋</button>
+    </div>
+    <button type="button" id="submit">提出する</button>
+  </div>
+</header>
+
+<div id="banner" hidden></div>
+
+<!-- 書くモードの道具箱 -->
+<div id="tools" hidden>
+  <button type="button" data-pen="thin">細</button>
+  <button type="button" data-pen="normal">中</button>
+  <button type="button" data-pen="bold">太</button>
+  <button type="button" data-pen="red">赤</button>
+  <button type="button" data-pen="marker">蛍光</button>
+  <span class="sep"></span>
+  <button type="button" data-tool="eraser">消しゴム</button>
+  <button type="button" data-tool="undo">戻す</button>
+  <button type="button" data-tool="redo">やり直す</button>
+  <span class="hint">1 本指は紙押さえ / 2 本指で移動</span>
+</div>
+
+<!-- ========== 本体 (左: 冊子 / 右: 答案) ========== -->
+<main id="stage">
+  <section id="viewer" aria-label="冊子"></section>
+  <section id="pane">
+    <!-- 横画面では仕切り / 縦画面ではボトムシートの取っ手。同じ 1 つを CSS で使い分ける。 -->
+    <div id="grip" role="separator" tabindex="0" aria-label="答案ペインの大きさ"></div>
+    <!-- ★ 取っ手と本体で向きが直交する。答案と結果は必ずこの箱の中で縦に積む
+         (直に置くと横画面で結果が答案の右隣に並ぶ)。 -->
+    <div id="pane-body">
+      <div id="answers" aria-label="答案"></div>
+      <div id="result" hidden>
+        <h2>採点結果</h2>
+        <p id="result-score"></p>
+        <p id="result-detail"></p>
+        <p id="result-warn" hidden></p>
+        <p class="retake-wrap"><button type="button" id="retake">もう一度受験する</button></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ========== 起動中 ========== -->
+<div id="boot">
+  <div class="boot-box">
+    <p id="boot-label">読み込んでいます</p>
+    <div id="boot-bar"><div id="boot-bar-fill"></div></div>
+  </div>
+</div>
+
+<!-- ========== ログイン ========== -->
+<div id="login">
+  <form id="login-form">
+    <h1>冊子受験</h1>
+    <label>メールアドレス
+      <input id="login-email" type="email" autocomplete="username" required
+             autocapitalize="off" autocorrect="off" spellcheck="false">
+    </label>
+    <label>パスワード
+      <input id="login-pass" type="password" autocomplete="current-password" required>
+    </label>
+    <button type="submit">ログイン</button>
+    <p id="login-msg"></p>
+    <p class="note">アカウントは先生が発行します。</p>
+  </form>
+</div>
+
+<!-- ========== 起動失敗 ========== -->
+<div id="fatal">
+  <div class="fatal-box">
+    <h1 id="fatal-title"></h1>
+    <p id="fatal-detail"></p>
+    <button type="button" id="fatal-reload">再読み込み</button>
+  </div>
+</div>
+
+<!-- ========== ダイアログ ========== -->
+<dialog id="dialog">
+  <h2 id="dialog-title"></h2>
+  <div id="dialog-body"></div>
+  <div id="dialog-buttons"></div>
+</dialog>
+
+<script type="module" src="/exam-book.mjs?v=1"></script>
+</body>
+</html>
