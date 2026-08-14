@@ -31,6 +31,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 SMOKE = os.path.join(HERE, "browser_smoke.mjs")
+LOGIN = os.path.join(HERE, "login_smoke.mjs")
 MOCK = os.path.join(HERE, "mock_supabase.mjs")
 
 
@@ -139,11 +140,21 @@ def main():
         env = dict(os.environ, CHROME_BIN=chrome, NODE_PATH=node_path)
         r = subprocess.run([node, SMOKE, ROOT, tmp], env=env, timeout=260,
                            capture_output=True, text=True)
-    sys.stdout.write(r.stdout)
-    if r.returncode:
-        sys.stdout.write(r.stderr[-2000:])
-        return 1
-    return 0
+        sys.stdout.write(r.stdout)
+        rc = r.returncode
+        if rc:
+            sys.stdout.write(r.stderr[-2000:])
+
+        # ★ 本編の偽 Supabase は常にセッションを返すので、ログイン画面は 1 度も通らない。
+        #   生徒が最初に触る画面なので、別に 1 本回す。
+        print("\n--- ログイン画面 (セッションが無い状態から) ---")
+        r2 = subprocess.run([node, LOGIN, ROOT], env=env, timeout=120,
+                            capture_output=True, text=True)
+        sys.stdout.write(r2.stdout)
+        if r2.returncode:
+            sys.stdout.write(r2.stderr[-1500:])
+            rc = rc or 1
+    return rc
 
 
 sys.exit(main())

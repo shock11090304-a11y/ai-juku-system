@@ -773,17 +773,51 @@ async function showResult(inkLeft) {
 // =============================================================================
 // ログイン (この画面は Supabase Auth のセッションだけを見る)
 // =============================================================================
+/** Supabase のエラー文は英語で、生徒には読めない。よく出るものだけ日本語にする。 */
+function loginMessage(error) {
+  const m = String((error && error.message) || '');
+  if (/invalid login credentials/i.test(m)) {
+    return 'メールアドレスかパスワードが違います';
+  }
+  if (/email not confirmed/i.test(m)) {
+    return 'このアカウントはまだ有効になっていません。先生に連絡してください';
+  }
+  if (/email logins are disabled|signups not allowed/i.test(m)) {
+    return 'この方法でのログインが止められています。先生に連絡してください';
+  }
+  if (/rate limit|too many/i.test(m)) {
+    return '試行回数が多すぎます。少し待ってからやり直してください';
+  }
+  if (/failed to fetch|networkerror|load failed/i.test(m)) {
+    return '通信できませんでした。電波を確認してやり直してください';
+  }
+  return `ログインできません (${m})`;   // 想定外はそのまま出す (黙って隠さない)
+}
+
 function showLogin() {
   setStage('login');
   const form = $('#login-form');
+  const btn = form.querySelector('button[type="submit"]');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    btn.disabled = true;                       // 二重送信でロック扱いにされないように
     $('#login-msg').textContent = 'ログインしています…';
-    const { error } = await sb().auth.signInWithPassword({
-      email: $('#login-email').value.trim(),
-      password: $('#login-pass').value,
-    });
-    if (error) { $('#login-msg').textContent = `ログインできません: ${error.message}`; return; }
+    let res;
+    try {
+      res = await sb().auth.signInWithPassword({
+        // ★ iPad で貼り付けると前後に空白が付くことがある。メールは trim する。
+        //   パスワードは trim しない (末尾の空白も本人が決めた文字の一部)。
+        email: $('#login-email').value.trim(),
+        password: $('#login-pass').value,
+      });
+    } catch (err) {
+      res = { error: err };
+    }
+    if (res.error) {
+      $('#login-msg').textContent = loginMessage(res.error);
+      btn.disabled = false;
+      return;
+    }
     location.reload();
   });
 }
