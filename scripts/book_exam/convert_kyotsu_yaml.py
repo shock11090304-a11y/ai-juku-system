@@ -771,6 +771,35 @@ FILL_IN_REASON = (
     "アプリの形式に合わないので **紙で配るのが正解**")
 
 
+def crosscheck_with_answer_key(doc, out):
+    """D/F で solution から作った正解を、トップの answer_key と突き合わせる。
+
+    ★ 英語R は正解の出どころが 2 つある (solution と、トップの answer_key)。
+      E (物理) と同じ理屈で、独立した 2 系統が全問一致することを要求する。
+      一致すれば抜き間違いは構造的にあり得ない。
+      トップに answer_key が無い冊子 (化学・生物・世界史・日本史) は対象外 —
+      answers_only が solution へ落ちて同じ出どころ同士の比較になり、
+      「一致」が何も証明しなくなるため。
+    @returns (突き合わせたか, エラー文 | None)
+    """
+    key = (doc or {}).get("answer_key") if isinstance(doc, dict) else None
+    if not isinstance(key, list) or not key:
+        return False, None
+    vals = answers_only(doc)                   # answer_key 側だけから読む
+    if not vals:
+        return False, None
+    if len(vals) != len(out):
+        return True, (f"solution から {len(out)} 問取れたが answer_key は "
+                      f"{len(vals)} 個。数が合わない")
+    diff = [f"問{q['number']}: solution={q['correct_answer']} / answer_key={v}"
+            for q, v in zip(out, vals) if str(v) != q["correct_answer"]]
+    if diff:
+        return True, ("solution と answer_key の正解が食い違う — "
+                      + " / ".join(diff[:4])
+                      + (f" (ほか {len(diff) - 4} 問)" if len(diff) > 4 else ""))
+    return True, None
+
+
 def build_from_specs(specs):
     """アダプタが出した仕様 → アプリの設問。
 
@@ -863,6 +892,12 @@ def convert_file(path, forced_base=None):
             note = "one — 丸数字 (①は必ず 1 番目) なので 1 起算で確定"
             if fmt == "E":
                 note = "one — answer_key と解説の 2 つが一致 (独立した裏取り)"
+            else:
+                checked, err2 = crosscheck_with_answer_key(doc, out)
+                if err2:
+                    return None, [f"{name}: [形{fmt}] {err2}"], False
+                if checked:
+                    note += " + answer_key と全問一致 (独立した裏取り)"
             return finish(path, subject, out, problems, fmt, note), [], False
 
     return None, [f"{name}: 正解の在り処がどの形にも当たらない。"
@@ -1280,12 +1315,28 @@ def selftest():
     if specs is not None or not e or "抜けない" not in e:
         bad.append(f"F: 大問から正解を抜けないのに黙って飛ばした (問数が減る) — {e!r}")
 
-    # ★ 英語R 型: 正解の並びだけは救い出せること
+    # ★ 選択肢が数えられない冊子でも、正解の並びだけは救い出せること
     bk = bulk_key_for(os.path.join(FIXTURES, "sample_g_answers_only.yaml"))
     if not bk or bk[1] != [3, 1, 4]:
-        bad.append(f"英語R 型の正解の並びを救い出せない (got {bk!r})")
+        bad.append(f"answers-only 型の正解の並びを救い出せない (got {bk!r})")
     if bulk_key_for(os.path.join(FIXTURES, "sample_math_fill_in.yaml")) is not None:
         bad.append("数学の穴埋めから正解の並びを出してしまった (選択式ではないのに)")
+
+    # ★ F: solution とトップ answer_key の突き合わせ (実物の英語R は両方持つ)。
+    #   食い違わせたら落ちるはず。素通りすると「一致」が嘘になる。
+    doc_f2 = load_yaml(os.path.join(FIXTURES, "sample_f_solution.yaml"))
+    specs_f, _e = adapt_f_solution(doc_f2)
+    out_f, _p = build_from_specs(specs_f)
+    doc_f2["answer_key"] = [{"number": i + 1, "answer": "①"} for i in range(len(out_f))]
+    applied, err2 = crosscheck_with_answer_key(doc_f2, out_f)
+    if not applied or not err2 or "食い違う" not in err2:
+        bad.append(f"F: solution と answer_key が食い違うのに通してしまった — {err2!r}")
+    # 一致する answer_key なら通ること
+    doc_f2["answer_key"] = [{"number": i + 1, "answer": "①②③④⑤"[int(q["correct_answer"]) - 1]}
+                            for i, q in enumerate(out_f)]
+    applied, err2 = crosscheck_with_answer_key(doc_f2, out_f)
+    if not applied or err2:
+        bad.append(f"F: 一致しているのに突き合わせが落とした — {err2!r}")
 
     # ★ アプリと同じ検証器を通す
     try:
