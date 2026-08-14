@@ -330,6 +330,38 @@ ok('提出後の書き込みが例外を出さない', errors.length === before,
 
 } catch (e) { ok('通し実行が最後まで届く', false, String(e).slice(0, 300)); }
 
+// --- iPad の縦画面 (ボトムシート) ---------------------------------------------
+// ★ **読み込みからやり直す**。横画面のままリサイズしただけでは答案リストが
+//   スクロールしないので、勝手にスクロールする不具合が起きていても scrollTop は
+//   0 のままで、検査になっていない (実測で見逃した)。
+try {
+  await page.setViewportSize({ width: 820, height: 1180 });   // iPad 縦
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('body[data-stage="ready"]', { timeout: 25000 });
+  await page.waitForTimeout(2000);
+  const nar = await page.evaluate(() => {
+    const l = document.querySelector('.ans-list');
+    const g = document.querySelector('.qgroup').getBoundingClientRect();
+    const lr = l.getBoundingClientRect();
+    return {
+      overflow: document.body.scrollWidth - document.body.clientWidth,
+      sheetH: document.querySelector('#pane').getBoundingClientRect().height,
+      scrollTop: l.scrollTop,
+      scrollable: l.scrollHeight > l.clientHeight,
+      firstVisible: g.top >= lr.top - 1 && g.top < lr.bottom,
+    };
+  });
+  ok('縦画面で横スクロールが出ない', nar.overflow <= 1, `+${nar.overflow}px`);
+  ok('縦画面でボトムシートが潰れない', nar.sheetH > 120, `${Math.round(nar.sheetH)}px`);
+  ok('答案リストがスクロールする状態で見ている (検査の前提)', nar.scrollable === true,
+    JSON.stringify(nar));
+  ok('起動直後に答案ペインが勝手にスクロールしない', nar.scrollTop === 0,
+    `scrollTop=${nar.scrollTop}`);
+  ok('「ページ指定なし」が最初から見えている', nar.firstVisible === true, JSON.stringify(nar));
+} catch (e) {
+  ok('iPad 縦画面の確認', false, String(e).slice(0, 200));
+}
+
 // --- F6: 書き込みの取得に失敗したら受験を始めさせない -------------------------
 // ★ 「取得失敗」と「白紙」を取り違えると、失敗したページに 1 本書いた瞬間に
 //   ページ丸ごと上書きされて既存の書き込みが全消しになる。

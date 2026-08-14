@@ -373,11 +373,19 @@ function wireUi() {
   wireGrip();
 
   // --- ページ描画 (可視分だけ) ----------------------------------------------
+  // ★ 冊子を一度も動かしていないうちは答案ペインを追従させない。
+  //   起動直後に IntersectionObserver が 1 回発火するので、追従させると
+  //   「ページ指定なし」の設問が画面の外へ流れて **最初から見えない**。
+  //   (縦画面のボトムシートだと特に気づけない)
+  let viewerMoved = false;
+  $('#viewer').addEventListener('scroll', () => { viewerMoved = true; }, { passive: true });
+
   const io = new IntersectionObserver((entries) => {
     for (const en of entries) {
       if (en.isIntersecting) app.doc.render(en.target).catch(() => {});
       else queueFlushPage(Number(en.target.dataset.page));
     }
+    if (!viewerMoved) return;
     const first = entries.find((e) => e.isIntersecting);
     if (first) app.pane.followPage(Number(first.target.dataset.page));
   }, { root: $('#viewer'), rootMargin: '150% 0px' });
