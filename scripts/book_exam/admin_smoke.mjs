@@ -64,6 +64,27 @@ ok('講師なら開ける', await page.evaluate(()=>document.body.dataset.stage)
 ok('冊子が一覧に出る', (await page.$$('#books .bookrow')).length>=1,
    `${(await page.$$('#books .bookrow')).length} 件`);
 
+// --- PDF をまとめて調べる -----------------------------------------------------
+// ★ 先生の PC のファイルには作業環境から触れないが、ブラウザなら触れる。
+//   選んでもらった PDF をこの画面の中だけで開いて判定する (どこにも送らない)。
+{
+  const pdf = fs.readFileSync(path.join(FIX,'book.pdf'));
+  await page.setInputFiles('#scan-files', [
+    { name: '共通テスト英語R_問題.pdf', mimeType: 'application/pdf', buffer: pdf },
+    { name: '共通テスト英語R_解説.pdf', mimeType: 'application/pdf', buffer: pdf },
+    { name: 'こわれたもの.pdf', mimeType: 'application/pdf', buffer: Buffer.from('not a pdf') },
+  ]);
+  await page.waitForTimeout(4000);
+  const txt = await page.textContent('#scan-result');
+  ok('まとめて調べた結果が出る', /3 件中 2 件が使えます/.test(txt), txt.slice(0,100));
+  ok('ページ数を出す', /2 ページ/.test(txt), '');
+  ok('開けない PDF を使えないと言う', /1 件は使えません/.test(txt), '');
+  ok('問題と解説の対を見つける', /対がそろっています/.test(txt), '');
+  ok('解説から読み取った文字を見せる',
+     (await page.inputValue('#scan-text')).includes('Page One'),
+     (await page.inputValue('#scan-text')).slice(0,60));
+}
+
 // --- 設問 0 問の冊子は公開できない -------------------------------------------
 // ★ 公開してしまうと、生徒の画面には「この冊子は現在公開停止です」と出て何も解けない。
 //   偽 DB の b2 が「設問 0・未公開」。

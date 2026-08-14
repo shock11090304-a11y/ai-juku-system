@@ -27,6 +27,31 @@
     <div id="books"></div>
   </section>
 
+  <!-- ========== PDF をまとめて調べる ========== -->
+  <section class="panel">
+    <h2>PDF をまとめて調べる</h2>
+    <p class="muted">
+      手元の PDF をまとめて選ぶと、<strong>1 つずつブラウザで開いて</strong>
+      使えるかどうかを出します。何も送信しません (この画面の中だけで完結します)。
+      <code>_問題</code> / <code>_解説</code> の対も見つけます。
+    </p>
+    <div class="form">
+      <label>PDF (複数選べます)
+        <input id="scan-files" type="file" accept="application/pdf,.pdf" multiple>
+      </label>
+    </div>
+    <p id="scan-progress" class="muted"></p>
+    <div id="scan-result"></div>
+    <details id="scan-text-box" hidden>
+      <summary>解説 PDF から読み取れた文字 (先頭 2 ページ)</summary>
+      <p class="muted small">
+        ここに規則的な形で正解が並んでいれば、解説 PDF から設問データを自動で
+        取り出せる見込みがあります。空なら画像だけの PDF なので手入力になります。
+      </p>
+      <textarea id="scan-text" rows="12" readonly></textarea>
+    </details>
+  </section>
+
   <!-- ========== 新しい冊子 ========== -->
   <section class="panel">
     <h2>新しい冊子を作る</h2>

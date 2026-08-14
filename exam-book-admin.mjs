@@ -181,6 +181,7 @@ function wire() {
     sel.appendChild(o);
   }
 
+  $('#scan-files').addEventListener('change', (e) => scanPdfs([...e.target.files]));
   $('#nb-file').addEventListener('change', (e) => inspectPdf(e.target.files[0]));
   $('#nb-create').addEventListener('click', createBook);
   $('#q-import').addEventListener('change', (e) => importJson(e.target.files[0]));
@@ -191,6 +192,99 @@ function wire() {
     $('#editor').hidden = true;
   });
   $('#fatal-reload').addEventListener('click', () => location.reload());
+}
+
+// =============================================================================
+// PDF をまとめて調べる
+//
+// ★ この作業環境からは先生の PC のファイルに触れない。だが **ブラウザは触れる**。
+//   選んでもらった PDF をこの画面の中だけで開いて、使えるかどうかを出す。
+//   どこにも送信しない。
+// =============================================================================
+const PAIR = /^(.*?)[_\-\s]*(問題|解説|解答|問|答)(編)?$/;
+
+async function scanPdfs(files) {
+  const host = $('#scan-result');
+  const prog = $('#scan-progress');
+  host.innerHTML = '';
+  $('#scan-text-box').hidden = true;
+  if (!files.length) { prog.textContent = ''; return; }
+
+  const rows = [];
+  let firstText = null;
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    prog.textContent = `${i + 1} / ${files.length} 件目を開いています… (${f.name})`;
+    const basic = checkPdfFile(f);
+    if (!basic.ok) { rows.push({ f, ok: false, why: basic.reason }); continue; }
+    try {
+      const buf = new Uint8Array(await f.arrayBuffer());
+      const url = URL.createObjectURL(new Blob([buf], { type: 'application/pdf' }));
+      const doc = new Book();
+      const pages = await doc.open(url);
+      // ★ 文字が取り出せるかを見る。画像だけの PDF (スキャン) は自動取り込みができない。
+      let text = '';
+      try {
+        for (let n = 1; n <= Math.min(2, pages); n++) {
+          const c = await (await doc.doc.getPage(n)).getTextContent();
+          text += c.items.map((x) => x.str).join(' ') + '\n';
+        }
+      } catch (_) { /* 文字が無い PDF */ }
+      URL.revokeObjectURL(url);
+      rows.push({ f, ok: true, pages, chars: text.trim().length });
+      const kind = (PAIR.exec(f.name.replace(/\.pdf$/i, '')) || [])[2];
+      if (firstText === null && /解説|解答|答/.test(kind || '') && text.trim()) {
+        firstText = text.trim().slice(0, 4000);
+      }
+    } catch (e) {
+      rows.push({ f, ok: false, why: `開けない (${(e && e.message) || e})` });
+    }
+  }
+  prog.textContent = '';
+
+  // 問題 / 解説 の対を見つける
+  const groups = new Map();
+  for (const r of rows) {
+    const base = r.f.name.replace(/\.pdf$/i, '');
+    const m = PAIR.exec(base);
+    const key = m ? m[1] : base;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ ...r, kind: m ? m[2] : '' });
+  }
+
+  const okCount = rows.filter((r) => r.ok).length;
+  const noText = rows.filter((r) => r.ok && r.chars < 50).length;
+  const head = el('p', 'muted',
+    `${rows.length} 件中 ${okCount} 件が使えます`
+    + (rows.length - okCount ? ` / ${rows.length - okCount} 件は使えません` : '')
+    + (noText ? ` / ${noText} 件は文字を取り出せません (画像だけの PDF)` : ''));
+  host.appendChild(head);
+
+  for (const [key, list] of groups) {
+    const box = el('div', 'bookrow');
+    const main = el('div', 'bookrow-main');
+    main.appendChild(el('div', 'bookrow-title', key));
+    for (const r of list) {
+      const line = r.ok
+        ? `${r.kind || 'PDF'}: ${r.pages} ページ / ${(r.f.size / 1048576).toFixed(1)}MB`
+          + (r.chars < 50 ? ' ・★文字を取り出せない (画像だけ)' : ` ・文字あり`)
+        : `${r.kind || 'PDF'}: ✗ ${r.why}`;
+      const d = el('div', 'bookrow-meta', line);
+      if (!r.ok) d.style.color = 'var(--bad)';
+      main.appendChild(d);
+    }
+    const kinds = list.map((x) => x.kind);
+    if (kinds.some((k) => /問題|問/.test(k)) && kinds.some((k) => /解説|解答|答/.test(k))) {
+      main.appendChild(el('div', 'bookrow-meta', '→ 問題と解説の対がそろっています'));
+    }
+    box.appendChild(main);
+    host.appendChild(box);
+  }
+
+  if (firstText) {
+    $('#scan-text-box').hidden = false;
+    $('#scan-text').value = firstText;
+  }
 }
 
 /** 選ばれた PDF を **送る前に** ブラウザで開いて確かめる。 */
