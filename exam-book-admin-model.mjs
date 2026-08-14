@@ -262,3 +262,61 @@ export function parseImport(text) {
     reason: null,
   };
 }
+
+
+/**
+ * 正解をまとめて流し込む。マーク式の冊子で「正解だけ先に入れる」ための入口。
+ *
+ * ★ 手入力の重さは 1 問ずつ欄を移動することにある。正解一覧は紙にあるので、
+ *   `3 1 4 2 …` と打つ (or 読み上げる) 方が桁で速い。
+ *
+ * 受け付ける形 (どれでも同じに扱う):
+ *   "3 1 4 2"      空白区切り
+ *   "3,1,4,2"      カンマ
+ *   "3\n1\n4\n2"  改行
+ *   "1.3 2.1 3.4"  「問番号.正解」の対 (番号が飛んでいても入る)
+ *   "①③②"        丸数字
+ *
+ * @param {string} text
+ * @param {number} count 設問数
+ * @returns {{ok:boolean, values:Array<string|null>, reason:string|null, paired:boolean}}
+ *   values は設問の並び順。対の形なら番号で埋め、無い所は null。
+ */
+export function parseAnswerKey(text, count) {
+  const CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩';
+  const raw = String(text || '')
+    .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))   // 全角→半角
+    // 丸数字は区切りが無いことが多い (①③②④)。数字に直すときに空白も入れる。
+    .replace(/[①-⑩]/g, (c) => String(CIRCLED.indexOf(c) + 1) + ' ')
+    .trim();
+  if (!raw) return { ok: false, values: [], reason: '空です', paired: false };
+
+  // 「問番号.正解」の対か? (1.3 2.1 … / 1-3 / 1:3)
+  const pairs = [...raw.matchAll(/(\d+)\s*[.\-:：]\s*(\d+)/g)];
+  if (pairs.length >= 2) {
+    const values = new Array(count).fill(null);
+    let out = 0;
+    for (const m of pairs) {
+      const i = Number(m[1]) - 1;
+      if (i >= 0 && i < count) { values[i] = m[2]; out++; }
+    }
+    if (!out) return { ok: false, values: [], reason: '設問番号が範囲外です', paired: true };
+    return { ok: true, values, reason: null, paired: true };
+  }
+
+  let list = raw.split(/[\s,、，\/|]+/).filter((x) => x !== '');
+  // 区切り無しで「3142」と打たれることがある。桁数が設問数と一致し、
+  // すべて 1〜9 なら 1 文字ずつと解釈する (10 択は稀なので曖昧さは実害にならない)。
+  if (list.length === 1 && /^[1-9]+$/.test(list[0]) && list[0].length === count) {
+    list = list[0].split('');
+  }
+  if (!list.every((x) => /^\d{1,2}$/.test(x))) {
+    return { ok: false, values: [], reason: '数字だけを並べてください (1 3 4 2 …)',
+             paired: false };
+  }
+  if (list.length !== count) {
+    return { ok: false, values: [],
+             reason: `${list.length} 個ありますが、設問は ${count} 問です`, paired: false };
+  }
+  return { ok: true, values: list, reason: null, paired: false };
+}

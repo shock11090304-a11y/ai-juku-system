@@ -196,6 +196,35 @@ ok('保存を押すと DB に入る',
    (await st()).questions.filter(q=>q.book_id==='b2').length===2,
    `${(await st()).questions.filter(q=>q.book_id==='b2').length} 問`);
 
+// --- 正解をまとめて流し込む ---------------------------------------------------
+// ★ マーク式の冊子は「正解一覧が紙にある」。1 問ずつ欄を移動するのが手入力の重さなので、
+//   そのまま打てるようにする。★ 記述の行には入れない (数字で埋めると採点が全部外れる)。
+{
+  // b2 は 1 問目=選択式(4択) / 2 問目=記述 で取り込んである
+  await page.fill('#q-key', '2 9');
+  await page.click('#q-key-apply');
+  await page.waitForTimeout(400);
+  ok('選択式の数を超える数は流し込めない',
+     /2 個ありますが、設問は 1 問です|おかしいところ/.test(await page.textContent('#banner')),
+     await page.textContent('#banner'));
+
+  await page.fill('#q-key', '4');
+  await page.click('#q-key-apply');
+  await page.waitForTimeout(400);
+  ok('選択式の行に入る',
+     (await page.inputValue('.qrow[data-i="0"] [data-k="correct_answer"]'))==='4',
+     await page.inputValue('.qrow[data-i="0"] [data-k="correct_answer"]'));
+  ok('★記述の行には入らない',
+     (await page.inputValue('.qrow[data-i="1"] [data-k="correct_answer"]'))==='けり',
+     await page.inputValue('.qrow[data-i="1"] [data-k="correct_answer"]'));
+
+  await page.fill('#q-key', '9');
+  await page.click('#q-key-apply');
+  await page.waitForTimeout(400);
+  ok('選択肢の数を超える正解はその場で赤くする',
+     await page.evaluate(()=>!!document.querySelector('.qrow[data-i="0"] [data-k="correct_answer"].bad')));
+}
+
 // --- 削除ボタンを置いていない -------------------------------------------------
 // ★ 消すと生徒の答案・手書きが cascade で巻き添えになる。出さないことが仕様。
 ok('冊子と設問に削除ボタンが無い',

@@ -108,6 +108,18 @@
     </p>
     <p id="q-import-note" class="warn" hidden></p>
 
+    <p class="muted">
+      <label class="inline">正解だけをまとめて入れる
+        <input id="q-key" type="text" placeholder="3 1 4 2 …  /  3142  /  1.3 2.1 3.4"
+               autocapitalize="off" autocorrect="off" spellcheck="false">
+      </label>
+      <button type="button" id="q-key-apply">流し込む</button>
+      <span class="small">
+        紙の正解一覧をそのまま打てます。空白・カンマ・改行・区切り無し・丸数字・全角、
+        「問番号.正解」のどれでも。<strong>選択式の行にだけ入ります</strong>
+      </span>
+    </p>
+
     <div id="q-rows" class="qtable"></div>
 
     <div class="row">

@@ -19,7 +19,7 @@ import { Book } from '/exam-book-pdf.mjs?v=1';
 import {
   SUBJECTS, ANSWER_TYPES, MAX_PDF_BYTES,
   normalizeQuestion, validateQuestions, questionPayload, validateBook,
-  checkPdfFile, pdfPath, parseImport,
+  checkPdfFile, pdfPath, parseImport, parseAnswerKey,
 } from '/exam-book-admin-model.mjs?v=1';
 
 const $ = (s) => document.querySelector(s);
@@ -185,6 +185,8 @@ function wire() {
   $('#nb-file').addEventListener('change', (e) => inspectPdf(e.target.files[0]));
   $('#nb-create').addEventListener('click', createBook);
   $('#q-import').addEventListener('change', (e) => importJson(e.target.files[0]));
+  $('#q-key-apply').addEventListener('click', applyAnswerKey);
+  $('#q-key').addEventListener('keydown', (e) => { if (e.key === 'Enter') applyAnswerKey(); });
   $('#q-add').addEventListener('click', () => { addRow(); renderRows(); });
   $('#q-save').addEventListener('click', saveQuestions);
   $('#q-close').addEventListener('click', () => {
@@ -446,6 +448,41 @@ async function importJson(file) {
   say(v.ok ? `${r.rows.length} 問を読み込みました。中身を確認してから保存してください`
            : `${r.rows.length} 問を読み込みましたが ${v.errors.length} 件おかしいところがあります`,
       v.ok ? 'ok' : 'warn');
+}
+
+/**
+ * 正解一覧をまとめて流し込む。
+ * ★ 手入力の重さは 1 問ずつ欄を移動すること。紙の正解一覧をそのまま打てるようにする。
+ * ★ 選択式の行にだけ入れる。記述の正解を数字で埋めると採点が全部外れる。
+ */
+function applyAnswerKey() {
+  if (!app.current || !app.rows.length) return;
+  const targets = app.rows
+    .map((r, i) => ({ r, i }))
+    .filter((x) => x.r.answer_type === 'choice');
+  if (!targets.length) { say('選択式の設問がありません', 'warn'); return; }
+
+  const r = parseAnswerKey($('#q-key').value, targets.length);
+  if (!r.ok) { say(`流し込めません: ${r.reason}`, 'bad'); return; }
+
+  let n = 0;
+  targets.forEach((x, k) => {
+    const v = r.values[k];
+    if (v == null) return;
+    x.r.correct_answer = String(v);
+    n++;
+  });
+  renderRows();
+  markDirty();
+
+  // 入れた値がその行の選択肢数に収まっているかを、その場で見せる
+  const v = validateQuestions(app.rows.map(normalizeQuestion),
+                              { pageCount: app.current.page_count });
+  if (!v.ok) showErrors(v.errors);
+  say(v.ok ? `${n} 問に正解を入れました。中身を確認してから保存してください`
+           : `${n} 問に入れましたが ${v.errors.length} 件おかしいところがあります`,
+      v.ok ? 'ok' : 'warn');
+  $('#q-key').value = '';
 }
 
 // =============================================================================
