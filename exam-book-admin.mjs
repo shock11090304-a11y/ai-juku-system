@@ -241,8 +241,16 @@ async function scanPdfs(files) {
         }
       } catch (_) { /* 文字が無い PDF */ }
       URL.revokeObjectURL(url);
+      // ★ 何で作られた PDF かを聞く。生成元を探す手がかりになる
+      //   (Chrome なら HTML→PDF のビルダー、スキャナ名ならスキャン、等)。
+      let maker = '';
+      try {
+        const md = await doc.doc.getMetadata();
+        const i = md && md.info ? md.info : {};
+        maker = [i.Creator, i.Producer].filter(Boolean).join(' / ').slice(0, 60);
+      } catch (_) { /* メタが無い PDF */ }
       const kb = Math.round(f.size / 1024 / Math.max(pages, 1));
-      rows.push({ f, ok: true, pages, chars: text.trim().length, items, kb });
+      rows.push({ f, ok: true, pages, chars: text.trim().length, items, kb, maker });
       const kind = (PAIR.exec(f.name.replace(/\.pdf$/i, '')) || [])[2];
       if (firstText === null && /解説|解答|答/.test(kind || '') && text.trim()) {
         firstText = text.trim().slice(0, 4000);
@@ -291,6 +299,7 @@ async function scanPdfs(files) {
       const line = r.ok
         ? `${r.kind || 'PDF'}: ${r.pages} ページ / ${(r.f.size / 1048576).toFixed(1)}MB`
           + ` (1 ページ ${r.kb}KB) ${state}`
+          + (r.maker ? ` ・作成: ${r.maker}` : ' ・作成元の記録なし')
         : `${r.kind || 'PDF'}: ${state}`;
       const d = el('div', 'bookrow-meta', line);
       if (!r.ok) d.style.color = 'var(--bad)';
