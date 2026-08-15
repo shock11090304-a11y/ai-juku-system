@@ -1201,3 +1201,23 @@ exam-app/                      ← 専用 Vercel プロジェクトの Root Dire
 講師画面「神テスト 講師用 — 冊子の登録」。ローマ字は kamitest。
 ドメイン (kamitest.jp 等) と商標 (J-PlatPat 9/41/42 類) の確認は塾長側で。
 販売時は 1 顧客 = 1 Supabase プロジェクトで分離する方針 (§20.3 の構成のまま)。
+
+### 20.5 公開完了の記録 (2026-08-15)
+
+**神テストは独立アプリとして本番公開された。**
+
+| 項目 | 値 |
+|------|-----|
+| 生徒用 URL | **https://exam.trillion-ai-juku.com** (/ が受験画面へ転送) |
+| 講師用 URL | https://exam.trillion-ai-juku.com/exam-book-admin.html |
+| Vercel プロジェクト | kamitest (Root Directory = exam-app / Framework Other / env 変数ゼロ) |
+| DNS | お名前.com に CNAME exam → 57e8f7e7fd4fd4be.vercel-dns-016.com (2026-08-15 追加・即日反映) |
+| 公開中の冊子 | 共通テスト 7 冊 151 問 + 英文法 仮定法 演習5 |
+
+途中で踏んだ穴 (再発防止の記録):
+- 新プロジェクト作成時、Environment Variables に本体の変数名 23 個が
+  「Detected」される (.env.example 由来・値は空)。**全部削除してよい** —
+  神テストは環境変数ゼロで動く
+- root の .vercelignore に exam-app を書くと kamitest まで空になる (§20.4 の前・修正済み)
+- お名前.com は導線に有料勧誘が多い (ドメインプロテクション / .online 無料配布 /
+  ネットde診断)。**DNS レコード設定に必要なものは無料機能だけ**
