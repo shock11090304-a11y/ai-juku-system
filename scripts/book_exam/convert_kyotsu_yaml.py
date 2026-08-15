@@ -450,6 +450,12 @@ def even_points(score, n):
 HEAD_IN_SUB = re.compile(r"問\s*([0-9０-９A-Za-zＡ-Ｚａ-ｚ]{1,3})")
 
 
+def norm_head(s):
+    """問の見出しを比べられる形に (Ａ→A、１→1、大文字化)。"""
+    import unicodedata
+    return unicodedata.normalize("NFKC", str(s).strip()).upper()
+
+
 def missing_head_detail(subs, found, sec):
     """どの問の正解を抜けなかったか + 実物の該当行。エラーに足す診断。
 
@@ -504,6 +510,16 @@ def adapt_d_sub_items(doc):
             continue
         pts = even_points(sec.get("score"), len(subs))
         for (head, ans), text, ch in zip(found, subs, chs):
+            # ★ 解説から出た正解と小問は **位置** で組んでいる。位置頼みが正しい
+            #   ことを、両側の問見出しの一致で毎問証明する。解説が小問と違う順で
+            #   書かれていたら、正解が 1 つずつずれて全問違う答えになる —
+            #   しかも数は合うので、この検査が無いと誰も気づけない。
+            m = HEAD_IN_SUB.search(str(text))
+            if m and norm_head(m.group(1)) != norm_head(head):
+                errors.append(f"{label}: 解説の正解の並びが小問の並びと食い違う — "
+                              f"小問 問{m.group(1)} の位置に、解説では 問{head} の"
+                              f"正解が来ている。位置で組めないので変換しない")
+                continue
             n = choice_count_from_list(ch)
             if n is None:
                 errors.append(f"{label} 問{head}: 選択肢の数を数えられない "
@@ -640,6 +656,17 @@ def adapt_f_solution(doc):
             return None, (f"{label}: {NO_CHOICE_COUNT} ({how})。"
                           f"正解は読めているので、一括入力なら使える。"
                           f"problem の冒頭: 「{norm_text(sec.get('problem'))[:80]}」")
+        # ★ 問番号どおりの順で並んでいることを証明する。設問の番号は出現順に
+        #   振るので、解説が 問3 → 問1 の順で書かれていたら正解がその順に並び、
+        #   PDF の問番号と食い違う (数は合うので気づけない)。
+        heads_i = [to_int(h)[0] for h, _a in found]
+        if all(x is not None for x in heads_i):
+            bad_pos = [i for i in range(1, len(heads_i))
+                       if heads_i[i] <= heads_i[i - 1]]
+            if bad_pos:
+                return None, (f"{label}: 解説の正解が問番号順に並んでいない "
+                              f"(問{'→問'.join(str(x) for x in heads_i)})。"
+                              f"PDF の問番号と食い違うので変換しない")
         pts = even_points(sec.get("score"), len(found))
         for head, ans in found:
             if not (1 <= ans <= n):
@@ -1174,6 +1201,17 @@ def report(bundles, problems, excluded, meta, bulk=()):
 # =============================================================================
 # --selftest : 見本 YAML で 3 通りを全部通す
 # =============================================================================
+def convert_file_from_doc_for_test(doc, name):
+    """selftest 用: 変異させた doc を一時ファイルに書いて convert_file に通す。"""
+    import tempfile
+    import yaml as _yaml
+    with tempfile.TemporaryDirectory() as td:
+        p = os.path.join(td, name)
+        with open(p, "w", encoding="utf-8") as f:
+            _yaml.safe_dump(doc, f, allow_unicode=True)
+        return convert_file(p)
+
+
 def selftest():
     """fixtures_kyotsu/*.yaml を変換して、期待どおりかを見る。
 
@@ -1321,6 +1359,29 @@ def selftest():
         bad.append(f"answers-only 型の正解の並びを救い出せない (got {bk!r})")
     if bulk_key_for(os.path.join(FIXTURES, "sample_math_fill_in.yaml")) is not None:
         bad.append("数学の穴埋めから正解の並びを出してしまった (選択式ではないのに)")
+
+    # ★ D: 解説の正解の並びが小問の並びと食い違ったら落ちること。
+    #   位置で組んでいるので、順序の食い違いは全問ずれに直結する。
+    doc_d2 = load_yaml(os.path.join(FIXTURES, "sample_d_sub_items.yaml"))
+    sol = doc_d2["sections"][0]["solution"]
+    assert "問 A" in sol and "問 B" in sol
+    doc_d2["sections"][0]["solution"] = (
+        sol.replace("問 A", "問_TMP").replace("問 B", "問 A").replace("問_TMP", "問 B"))
+    b_d2, errs_d2, _x = convert_file_from_doc_for_test(doc_d2, "sample_d_swapped.yaml")
+    if b_d2 is not None or not errs_d2 or "食い違う" not in errs_d2[0]:
+        bad.append(f"D: 解説の順序が小問と食い違うのに通してしまった — "
+                   f"{errs_d2[0] if errs_d2 else '(エラーなし)'}")
+
+    # ★ F: 解説の正解が問番号順でなかったら落ちること。
+    doc_f3 = load_yaml(os.path.join(FIXTURES, "sample_f_solution.yaml"))
+    s1 = doc_f3["sections"][0]["solution"]
+    assert "問1" in s1 and "問2" in s1
+    doc_f3["sections"][0]["solution"] = (
+        s1.replace("問1", "問_TMP").replace("問2", "問1").replace("問_TMP", "問2"))
+    b_f3, errs_f3, _x = convert_file_from_doc_for_test(doc_f3, "sample_f_swapped.yaml")
+    if b_f3 is not None or not errs_f3 or "問番号順" not in errs_f3[0]:
+        bad.append(f"F: 解説が問番号順でないのに通してしまった — "
+                   f"{errs_f3[0] if errs_f3 else '(エラーなし)'}")
 
     # ★ F: solution とトップ answer_key の突き合わせ (実物の英語R は両方持つ)。
     #   食い違わせたら落ちるはず。素通りすると「一致」が嘘になる。
