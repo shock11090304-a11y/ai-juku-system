@@ -195,11 +195,15 @@ TINY_PDF = (b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
             b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
             b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 100 100]>>endobj\n"
             b"trailer<</Root 1 0 R>>\n%%EOF\n")
+# ★ 選んではいけない側の PDF (ヒント付き)。中身を変えて、取り違えたら分かるように
+HINT_PDF = TINY_PDF + b"%HINT\n"
 
 
 def bundle_sekaishi():
+    # source は実物と同じ形。PDF はこの stem + _問題.pdf の完全一致で選ばれる
     return {
-        "source": "test/sekaishi.yaml", "subject_name": "世界史",
+        "source": "samples/2026-06-03_共通テスト世界史_マーク式.yaml",
+        "subject_name": "世界史",
         "preview": [{"number": 1, "correct_answer": "2", "correct_text": "第1問 問A → 2 番"}],
         "book": {"title": "検査用 世界史", "subject": "social", "level": None,
                  "time_limit_min": None},
@@ -245,7 +249,8 @@ def setup_dir(td, bundles, pdf_names):
     meta = {"prints": []}
     for n in pdf_names:
         with open(os.path.join(pdfs, n), "wb") as f:
-            f.write(TINY_PDF)
+            # ★ ヒント付きは中身を変える。取り違えて上げたら S1 が捕まえる
+            f.write(HINT_PDF if "ヒント" in n else TINY_PDF)
         meta["prints"].append({"file_path": f"/lesson-prints/{n}", "pages": 13})
     mp = os.path.join(td, "meta.json")
     with open(mp, "w", encoding="utf-8") as f:
@@ -276,14 +281,19 @@ def check_all():
     td = tempfile.mkdtemp(prefix="import_check_")
     try:
         # --- S1: 正常系 (2 冊・choice/short 混在) -----------------------------
-        scenario("S1 正常系 2 冊 → 非公開で入る")
+        scenario("S1 正常系 2 冊 → 非公開で入る (ヒント付き PDF の罠つき)")
         st = FakeSupabase()
         sv = Server(st)
+        # ★ 実物で踏んだ罠を混ぜる (2026-08-15):
+        #   ・「_ヒント付き問題.pdf」も『問題』を含む → 完全一致か _問題.pdf 終わりで選ぶ
+        #   ・世界史は source の stem からの完全一致 / 国語は科目名 fallback の経路
         src, pdfs, mp = setup_dir(
             td + "/s1" if os.makedirs(td + "/s1") is None else td,
             [bundle_sekaishi(), bundle_kokugo()],
             ["2026-06-03_共通テスト世界史_マーク式_問題.pdf",
-             "2026-06-03_共通テスト国語_マーク式_問題.pdf"])
+             "2026-06-03_共通テスト世界史_マーク式_ヒント付き問題.pdf",
+             "2026-06-03_共通テスト国語_マーク式_問題.pdf",
+             "2026-06-03_共通テスト国語_マーク式_ヒント付き問題.pdf"])
         r = run_importer(sv, src, pdfs, mp)
         sv.stop()
         if r.returncode != 0:
@@ -291,7 +301,8 @@ def check_all():
         if len(st.books) != 2 or any(b["is_published"] for b in st.books):
             ng(f"S1: 冊子が非公開 2 冊になっていない: {st.books}")
         if len(st.storage) != 2 or any(v != TINY_PDF for v in st.storage.values()):
-            ng("S1: PDF が 2 本、そのままの中身で上がっていない")
+            ng("S1: PDF が 2 本、そのままの中身で上がっていない "
+               "(HINT が混ざっていたら「ヒント付き問題」を取り違えている)")
         if len(st.questions) != 4:
             ng(f"S1: 設問が 4 問入っていない ({len(st.questions)})")
         short = next((q for q in st.questions if q["answer_type"] == "short"), None)

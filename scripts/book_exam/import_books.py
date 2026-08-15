@@ -237,32 +237,52 @@ def find_pdf(bundle, pdf_dir):
 
     ★ 2 つ以上当たったら選ばない。間違った PDF が付くと、生徒は「設問と
       違う冊子」を開くことになり、画面は壊れないのに全部が狂う。
+
+    探す順 (2026-08-15 に実物 8,000 本のフォルダで学んだ):
+      1. **元 YAML の名前から組んだ完全一致**。変換器の source が
+         「…共通テスト世界史_マーク式.yaml」なら PDF は
+         「…共通テスト世界史_マーク式_問題.pdf」(組版の命名規則)。これが一番堅い。
+      2. 科目名を含み **_問題.pdf で終わる** もの (「ヒント付き問題」は除く —
+         "_ヒント付き問題.pdf" も「問題」を含むので、含む/含まないでは選べない)。
     """
+    pdfs = sorted(glob.glob(os.path.join(pdf_dir, "**", "*.pdf"), recursive=True))
+    if not pdfs:
+        return None, f"PDF が 1 つもありません (探した場所 {pdf_dir})"
+
+    # --- 1. 元 YAML の名前からの完全一致 -----------------------------------
+    stem = os.path.splitext(os.path.basename(bundle.get("source") or ""))[0]
+    if stem:
+        for want in (f"{stem}_問題.pdf", f"{stem}.pdf"):
+            got = [p for p in pdfs if os.path.basename(p) == want]
+            if len(got) == 1:
+                return got[0], None
+            if len(got) > 1:
+                return None, (f"同じ名前の PDF が {len(got)} 個あります "
+                              f"({want})。--pdf-dir をどちらかのフォルダに絞ってください")
+
+    # --- 2. 科目名 + _問題.pdf 終わり (ヒント付きは除く) ---------------------
     subj = bundle.get("subject_name") or ""
     title = (bundle.get("book") or {}).get("title") or ""
-    pdfs = sorted(glob.glob(os.path.join(pdf_dir, "**", "*.pdf"), recursive=True))
-    def hits(words):
-        out = []
-        for p in pdfs:
-            base = os.path.basename(p)
-            if all(w in base for w in words if w):
-                out.append(p)
-        return out
-    for words in ([subj, "問題"], [subj], [title, "問題"], [title]):
-        if not any(words):
+    for word in (subj, title):
+        if not word:
             continue
-        got = hits(words)
-        if len(got) == 1:
-            return got[0], None
+        got = [p for p in pdfs
+               if word in os.path.basename(p)
+               and os.path.basename(p).endswith("_問題.pdf")
+               and "ヒント" not in os.path.basename(p)]
         if len(got) > 1:
             # 「数学IA」が「数学IIB」にも部分一致する類いを、より長い一致で絞る
-            exact = [p for p in got if f"共通テスト{subj}_" in os.path.basename(p)]
+            exact = [p for p in got if f"共通テスト{word}_" in os.path.basename(p)]
             if len(exact) == 1:
                 return exact[0], None
             return None, (f"PDF の候補が {len(got)} 個あって選べません "
-                          f"({' / '.join(os.path.basename(x) for x in got[:4])})")
+                          f"({' / '.join(os.path.basename(x) for x in got[:3])})。"
+                          f"元 YAML と同名の「{stem or '◯◯'}_問題.pdf」があれば"
+                          f"それを最優先で選ぶので、--pdf-dir をその場所にしてください")
+        if len(got) == 1:
+            return got[0], None
     return None, (f"PDF が見つかりません (探した場所 {pdf_dir}、"
-                  f"手がかり {subj or title!r})")
+                  f"探した名前 {stem + '_問題.pdf' if stem else (subj or title)!r})")
 
 
 # =============================================================================
