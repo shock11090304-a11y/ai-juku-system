@@ -30,6 +30,7 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
+APP = os.path.join(ROOT, "exam-app")   # ★ 配信するのはアプリのフォルダ (§20)
 SMOKE = os.path.join(HERE, "browser_smoke.mjs")
 LOGIN = os.path.join(HERE, "login_smoke.mjs")
 EDGE = os.path.join(HERE, "edge_smoke.mjs")
@@ -140,7 +141,7 @@ def main():
         shutil.copy(MOCK, os.path.join(tmp, "mock_supabase.mjs"))
         make_pdf(os.path.join(tmp, "book.pdf"))
         env = dict(os.environ, CHROME_BIN=chrome, NODE_PATH=node_path)
-        r = subprocess.run([node, SMOKE, ROOT, tmp], env=env, timeout=260,
+        r = subprocess.run([node, SMOKE, APP, tmp], env=env, timeout=260,
                            capture_output=True, text=True)
         sys.stdout.write(r.stdout)
         rc = r.returncode
@@ -152,7 +153,7 @@ def main():
         # ★ 本編は 1 台で解き切る筋しか通らない。消失がいちばん怖い
         #   「別端末が同じページを触った」と「時間切れの自動提出」を別に回す。
         print("\n--- 別端末との競合 / 時間切れの自動提出 ---")
-        r3 = subprocess.run([node, EDGE, ROOT, tmp], env=env, timeout=180,
+        r3 = subprocess.run([node, EDGE, APP, tmp], env=env, timeout=180,
                             capture_output=True, text=True)
         sys.stdout.write(r3.stdout)
         if r3.returncode:
@@ -161,7 +162,7 @@ def main():
 
         # 先生用の登録画面。壊れた冊子 (0 起算の正解・設問 0 問) を作れないことを見る。
         print("\n--- 先生用の冊子登録画面 ---")
-        r4 = subprocess.run([node, ADMIN, ROOT, tmp], env=env, timeout=180,
+        r4 = subprocess.run([node, ADMIN, APP, tmp], env=env, timeout=180,
                             capture_output=True, text=True)
         sys.stdout.write(r4.stdout)
         if r4.returncode:
@@ -169,7 +170,7 @@ def main():
             rc = rc or 1
 
         print("\n--- ログイン画面 (セッションが無い状態から) ---")
-        r2 = subprocess.run([node, LOGIN, ROOT], env=env, timeout=120,
+        r2 = subprocess.run([node, LOGIN, APP], env=env, timeout=120,
                             capture_output=True, text=True)
         sys.stdout.write(r2.stdout)
         if r2.returncode:

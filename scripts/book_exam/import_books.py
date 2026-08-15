@@ -48,7 +48,7 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-CONFIG_MJS = os.path.join(ROOT, "exam-book-config.mjs")
+CONFIG_MJS = os.path.join(ROOT, "exam-app", "exam-book-config.mjs")
 # EXAM_PDF_METADATA は検査 (check_import_books.py) が差し替えるためだけの口
 METADATA = os.environ.get("EXAM_PDF_METADATA") \
     or os.path.join(ROOT, "lesson-prints", "_metadata.json")

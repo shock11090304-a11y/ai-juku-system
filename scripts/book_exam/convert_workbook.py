@@ -352,7 +352,7 @@ def validate_with_real_model(bundles):
     payload = json.dumps([{"source": b["source"], "questions": b["questions"]}
                           for b in bundles], ensure_ascii=False)
     script = r"""
-import { validateQuestions } from './exam-book-admin-model.mjs';
+import { validateQuestions } from './exam-app/exam-book-admin-model.mjs';
 let buf = ''; process.stdin.setEncoding('utf8');
 process.stdin.on('data', (d) => { buf += d; });
 process.stdin.on('end', () => {

@@ -1145,3 +1145,50 @@ CONNECT 403)。塾長が環境設定を変えると、Claude が変換から投�
   RLS が縛る = 登録画面でできること以上は何もできない。無効化はパスワード変更。
 ★ PDF が塾長の Mac にしか無い教材 (今回の 9 科目など) は段階 1 (Mac で 1 コマンド)。
   Claude がセッション内で組版した教材は PDF もセッションにあるので段階 2 で完結。
+
+---
+
+## 20. 独立アプリ化 — `exam-app/` + 専用 Vercel プロジェクト (2026-08-15)
+
+塾長の希望「trillion-ai-juku とは別のアプリとして使いたい」。
+中身は元々独立している (認証/DB/Storage = Supabase で、Railway 側と共有ゼロ)。
+置き場所と URL を分けた。
+
+### 20.1 何をどう分けたか
+
+```
+exam-app/                      ← 専用 Vercel プロジェクトの Root Directory
+  exam-book*.html/css/mjs      (14 本、中身は無変更 — 絶対パスは新ルートでそのまま効く)
+  vendor/pdfjs                 (受験アプリ専用なので同梱)
+  vendor/supabase-js           (同上)
+  vercel.json                  (no-cache + 「/」→ /exam-book.html)
+```
+
+- root の `vercel.json` から exam-book の記述を除去
+- root に `.vercelignore` (exam-app) — 本体のデプロイから丸ごと外す。
+  trillion-ai-juku.com からは受験アプリは一切配信されない
+- `vendor/katex` は本体が使うので root に残す
+- ゲート/変換器/取り込みのパスは APP=exam-app に追従 (該当 8 ファイル)。
+  ブラウザ検査は「exam-app を / として配る」だけの変更で、検査自体は 1 行も変えていない
+
+### 20.2 塾長の Vercel 設定 (main 統合後に 1 回だけ)
+
+1. vercel.com → **Add New… → Project** → `ai-juku-system` を Import
+   (同じリポジトリをもう 1 つのプロジェクトとして読み込む)
+2. プロジェクト名: `trillion-exam` など
+3. ★ **Root Directory** を **`exam-app`** に設定 (Edit を押して選ぶ)。ここが要
+4. Framework Preset: **Other** / Build Command なし (静的) → **Deploy**
+5. デプロイ後: プロジェクトの **Settings → Domains** → `exam.trillion-ai-juku.com` を追加。
+   trillion-ai-juku.com が同じ Vercel アカウントにあるので、自動で DNS が付く
+   (確認画面が出たらそのまま追加)
+6. `https://exam.trillion-ai-juku.com` を開く → 受験画面へ転送されれば完了
+
+★ 順序に注意: 新プロジェクトの本番は main を配信するので、**main への統合が先**。
+  統合前に作ると Root Directory が見つからずエラーになる。
+
+### 20.3 これで何が変わるか
+
+- 生徒に配る URL: `exam.trillion-ai-juku.com` (末尾パス不要。/ が受験画面へ転送)
+- 講師用: `exam.trillion-ai-juku.com/exam-book-admin.html`
+- デプロイが独立: 本体の変更で受験アプリが巻き添えになる経路が消える (逆も)
+- 取り込み・変換の使い方は不変 (リポジトリは 1 つのまま)

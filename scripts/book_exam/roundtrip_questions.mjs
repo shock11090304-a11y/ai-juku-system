@@ -8,7 +8,7 @@
 // ★ 写経しない。**実物の exam-book-admin-model.mjs** を import する。
 // =============================================================================
 import { normalizeQuestion, validateQuestions, questionPayload }
-  from '../../exam-book-admin-model.mjs';
+  from '../../exam-app/exam-book-admin-model.mjs';
 
 const PAGES = 4;   // 検査用の冊子は 4 ページという想定
 

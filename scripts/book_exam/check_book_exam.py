@@ -30,15 +30,17 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-MODEL = os.path.join(ROOT, "exam-book-model.mjs")
+# ★ 受験アプリは exam-app/ に分離した (専用 Vercel プロジェクト。2026-08-15 §20)
+APP = os.path.join(ROOT, "exam-app")
+MODEL = os.path.join(APP, "exam-book-model.mjs")
 ROUNDTRIP = os.path.join(ROOT, "scripts", "book_exam", "roundtrip_strokes.mjs")
 ROUNDTRIP_Q = os.path.join(ROOT, "scripts", "book_exam", "roundtrip_questions.mjs")
-ADMIN_MODEL = os.path.join(ROOT, "exam-book-admin-model.mjs")
+ADMIN_MODEL = os.path.join(APP, "exam-book-admin-model.mjs")
 CONVERTER = os.path.join(ROOT, "scripts", "book_exam", "convert_workbook.py")
 KYOTSU = os.path.join(ROOT, "scripts", "book_exam", "convert_kyotsu_yaml.py")
 MIG_DIR = os.path.join(ROOT, "supabase", "migrations")
 STUBS = os.path.join(ROOT, "supabase", "tests", "00_local_stubs.sql")
-VENDOR = os.path.join(ROOT, "vendor", "pdfjs")
+VENDOR = os.path.join(APP, "vendor", "pdfjs")
 
 problems = []
 
@@ -55,9 +57,9 @@ def read(path):
 def app_files():
     """配信する exam-book* を全部。存在するものだけ返す。"""
     out = []
-    for f in sorted(os.listdir(ROOT)):
+    for f in sorted(os.listdir(APP)):
         if re.match(r"^exam-book.*\.(mjs|html|css)$", f):
-            out.append(os.path.join(ROOT, f))
+            out.append(os.path.join(APP, f))
     return out
 
 
@@ -173,7 +175,7 @@ def static_checks(files):
 
     # --- 6. no-cache ヘッダ --------------------------------------------------
     # 保存形式を直した日に、古い exam-book-model.mjs を掴んだ端末が古い形式で書き続ける。
-    vj = os.path.join(ROOT, "vercel.json")
+    vj = os.path.join(APP, "vercel.json")
     if js and os.path.exists(vj):
         conf = read(vj)
         if "exam-book" not in conf:
@@ -195,7 +197,7 @@ def static_checks(files):
     # --- 7. anon 以外のキーを貼れないようにしているか ------------------------
     # ★ 「service_role という文字列があるか」を見ない。それだと注意書きに反応して
     #   赤くなり、注意書きを消す方向に圧力がかかる。**実際に貼られている値**を見る。
-    cfg = os.path.join(ROOT, "exam-book-config.mjs")
+    cfg = os.path.join(APP, "exam-book-config.mjs")
     if os.path.exists(cfg):
         s = read(cfg)
         if "assertAnonKey" not in s:

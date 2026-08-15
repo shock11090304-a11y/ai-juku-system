@@ -20,7 +20,7 @@
 import {
   toNorm, OUT, thin, validateStrokes, parseStrokes, strokeHit, mergeAppend,
   createPageModel, pushStroke, eraseStrokes, undo, redo, PENS, MAX_STROKES, STROKE_V,
-} from '../../exam-book-model.mjs';
+} from '../../exam-app/exam-book-model.mjs';
 
 const rect = { left: 100, top: 50, width: 800, height: 1131 };
 

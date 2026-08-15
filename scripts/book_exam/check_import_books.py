@@ -30,7 +30,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 IMPORTER = os.path.join(HERE, "import_books.py")
-MODEL = os.path.join(ROOT, "exam-book-admin-model.mjs")
+MODEL = os.path.join(ROOT, "exam-app", "exam-book-admin-model.mjs")
 
 problems = []
 
