@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/exam-app/:path*",
+      "destination": "https://exam.trillion-ai-juku.com/:path*",
+      "permanent": false
+    },
+    {
       "source": "/lesson-prints/:filename",
       "destination": "https://pub-f58791ee7e7c4937bd07514487ce3f8a.r2.dev/:filename",
       "permanent": false

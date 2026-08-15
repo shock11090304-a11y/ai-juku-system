@@ -15,8 +15,8 @@ lesson-prints/*.pdf
 #   否定の扱いが .gitignore と揃わず、「除外したつもりが出ている」が起きる。
 supabase/
 
-# 2026-08-15: 受験アプリは専用の Vercel プロジェクト (Root Directory = exam-app) で配信する。
-# 本体 (trillion-ai-juku.com) のデプロイからは丸ごと外す。
-# ★ これが無いと trillion-ai-juku.com/exam-app/… でも同じアプリが開けてしまい、
-#   「別アプリとして分けた」意味が薄れる (docs/book-exam.md §20)。
-exam-app
+# 2026-08-15: 受験アプリ (exam-app) をここで除外しては **いけない**。
+# ★ .vercelignore はリポジトリ全体に効き、Root Directory = exam-app の
+#   kamitest プロジェクトまで空になって全ページ 404 になった (実測)。
+#   本体ドメインに exam-app を出さない役目は vercel.json の
+#   /exam-app/* → exam サブドメインへの転送が担う (docs/book-exam.md §20)。
