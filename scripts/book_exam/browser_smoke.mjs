@@ -252,6 +252,53 @@ db = await st();
 ok('戻すで復活する', db.annotations[0].strokes.strokes.length === 2,
   String(db.annotations[0].strokes.strokes.length));
 
+// --- スクロール後も座標が合うこと ---------------------------------------------
+// ★ 実機 (iPad) で発覚した回帰 (2026-08-15): ページ枠の getBoundingClientRect を
+//   キャッシュしていて、スクロールで無効化していなかった。
+//   「書く → スクロール → 書く」の 2 本目がスクロール量ぶんずれて記録される。
+//   紙の同じ場所を指して書いた 2 本の正規化座標が一致することを見る。
+{
+  await page.click('[data-pen="red"]');            // 消しゴムのままだと線が増えない
+  const bA = await (await page.$('#viewer .page')).boundingBox();
+  const cx = 150, cy = 240;                        // 紙の上の同じ場所 (ページ左上基準)
+  await page.mouse.move(bA.x + cx, bA.y + cy);
+  await page.mouse.down();
+  await page.mouse.move(bA.x + cx + 30, bA.y + cy + 10);
+  await page.mouse.up();
+
+  const delta = await page.evaluate(() => {
+    const v = document.querySelector('#viewer');
+    const before = v.scrollTop;
+    v.scrollTop = before + 150;
+    return v.scrollTop - before;
+  });
+  ok('ビューアがスクロールできる (検査の前提)', delta > 0, `動いた量 ${delta}px`);
+
+  const bB = await (await page.$('#viewer .page')).boundingBox();   // ★ スクロール後に測り直す
+  await page.mouse.move(bB.x + cx, bB.y + cy);
+  await page.mouse.down();
+  await page.mouse.move(bB.x + cx + 30, bB.y + cy + 10);
+  await page.mouse.up();
+  await page.waitForTimeout(2200);
+
+  db = await st();
+  const ss = db.annotations[0].strokes.strokes;
+  const yA = ss[2] && ss[2].p[0][1];
+  const yB = ss[3] && ss[3].p[0][1];
+  ok('スクロールしても線が同じ場所に記録される',
+    ss.length === 4 && Math.abs(yA - yB) < 0.02,
+    `1 本目 y=${yA} / 2 本目 y=${yB} (差 ${yA != null && yB != null ? Math.abs(yA - yB).toFixed(3) : '?'})`);
+
+  // 後の検査は「2 本ある」前提なので、足した 2 本を戻して状態を返す
+  await page.click('[data-tool="undo"]');
+  await page.click('[data-tool="undo"]');
+  await page.evaluate(() => { document.querySelector('#viewer').scrollTop = 0; });
+  await page.waitForTimeout(2200);
+  db = await st();
+  ok('回帰検査の後片付け (2 本に戻る)', db.annotations[0].strokes.strokes.length === 2,
+    String(db.annotations[0].strokes.strokes.length));
+}
+
 // --- 提出 ---------------------------------------------------------------------
 // ★ **保存が済む前に**提出する。DRAIN が予約を取り消すので、FLUSH_INK が無いと
 //   この 1 本は永久に届かない。待ってから提出すると、その穴は必ず見逃す。

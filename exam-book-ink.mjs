@@ -44,6 +44,11 @@ export class Ink {
     for (const t of ['pointerup', 'pointercancel', 'pointerleave', 'lostpointercapture']) {
       viewer.addEventListener(t, (e) => this._up(e), { passive: false });
     }
+    // ★ スクロールすると getBoundingClientRect は全ページ変わる (ビューポート基準)。
+    //   リサイズと DPR は無効化していたのに、スクロールが漏れていた。
+    //   実機 (iPad) で「書く → スクロール → 書く」の 2 本目が
+    //   スクロール量ぶんずれて記録された (2026-08-15)。
+    viewer.addEventListener('scroll', () => this._rects.clear(), { passive: true });
   }
 
   setMode(m) {
@@ -107,6 +112,11 @@ export class Ink {
 
     const page = this._pageAt(e);
     if (page == null || !this.ready.has(page)) return;   // 未読込のページには書かせない
+
+    // ★ 線の始まりでは必ず測り直す。キャッシュが効くのは 1 ストロークの中だけ
+    //   (ストローク中は preventDefault しているのでページは動かない)。
+    //   これでキャッシュの古さがどこから来ても 1 ストロークを跨げない。
+    this._rects.delete(page);
 
     e.preventDefault();
     // 既に離されたポインタを掴もうとすると NotFoundError。掴めなくても描画は続けられる。
