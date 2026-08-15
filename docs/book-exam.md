@@ -1069,3 +1069,70 @@ PDF は塾長の Mac の `lesson-prints/2026-06-03_共通テスト◯◯_マー�
 
 途中で踏んだ Storage の RLS バグ (講師が PDF を上げられない) は
 `…_storage_teacher_read_fix.sql` で修正済み・本番適用済み・回帰検査 F' あり (§18.9 参照)。
+
+---
+
+## 19. 取り込みの自動化 (`scripts/book_exam/import_books.py`) — 2026-08-15
+
+登録画面の手作業 (冊子を作る → PDF → JSON → 保存 → 公開) を 1 コマンドに寄せた。
+塾長の依頼「Claude がセッションで作ったものを Claude が流し込めるように」の実装。
+
+### 19.1 使い方
+
+```bash
+python3 scripts/book_exam/import_books.py ~/Desktop/kyotsu_json --dry-run   # ★ まず予行
+python3 scripts/book_exam/import_books.py ~/Desktop/kyotsu_json             # 非公開で投入
+python3 scripts/book_exam/import_books.py ~/Desktop/kyotsu_json --publish   # 検証後に公開まで
+```
+
+ログインは環境変数 `EXAM_TEACHER_EMAIL` / `EXAM_TEACHER_PASSWORD`。
+無ければその場で聞く (パスワードは画面に出ない)。**コマンド列に書かないこと**。
+
+### 19.2 安全の作り (譲らない)
+
+- **service_role は使わない**。講師のメール+パスワードでログインし、
+  **登録画面と同じ RLS の中**で動く。script にできること = UI でできること。
+- 冊子は必ず**非公開**で作る。`--publish` を付けたときだけ、読み返し検証を
+  通った冊子に限って公開。
+- **冪等**: 保存済み設問のある同名冊子には触らない (skip)。設問 0 の同名冊子が
+  あればそこへ入れ直す (失敗からの再開)。何度回しても二重には入らない。
+- 投入前に Python 版 validateQuestions で検証 (0 起算・丸数字は 1 バイトも
+  送らずに拒否)。投入後に読み返して問数と正解を突き合わせ。
+- PDF は 1 つに絞れないとき (候補 2 つ以上) は選ばない。ページ数は
+  `_metadata.json` → pypdf の順で取り、当てずっぽうでは数えない。
+
+### 19.3 ★ node 無しで動く代償と、その払い方
+
+検証と DB 形への写像の正典は `exam-book-admin-model.mjs` だが、塾長の Mac に
+node が無いので Python で再実装した。**二重管理のずれは
+`check_import_books.py` のパリティ検査が実物の .mjs と突き合わせて検出する**
+(CI で毎回・10 ケース)。model を直したらパリティが割れて落ちる、が想定の壊れ方。
+
+### 19.4 検査 (`scripts/book_exam/check_import_books.py`)
+
+偽の Supabase API (auth / rest / storage) をローカルに立て、import_books.py を
+子プロセスで実走させる。シナリオ 12: 正常系 / --publish / skip / resume /
+storage 失敗と復旧 / 生徒アカウント拒否 / 検証 NG は無送信 / --dry-run 無送信 /
+PDF 候補複数 / 読み返しの食い違い / 投入返却の欠け / 読み返し行数の欠け。
+サボタージュ 6 通り (公開で作る・別解を落とす・検証を飛ばす・保護を消す・
+問数照合を消す 等) で全部落ちることを確認済み。S12 は「問数照合を消しても
+素通りだった」実測から足した検査。
+
+### 19.5 段階 2: Claude のセッションから直接入れる
+
+この作業環境から supabase.co へは**プロキシのポリシーで出られない** (実測
+CONNECT 403)。塾長が環境設定を変えると、Claude が変換から投入まで全部やれる:
+
+1. claude.ai/code → この環境 (ai-juku-system) の設定 → **Network access** で
+   `ljrsrlaftirzwotoykty.supabase.co` を許可する
+2. 同じ環境設定の **Environment variables** に登録:
+   - `EXAM_TEACHER_EMAIL` = 講師アカウントのメール
+   - `EXAM_TEACHER_PASSWORD` = そのパスワード (secret として)
+3. 以後のセッションでは Claude が
+   `python3 scripts/book_exam/import_books.py <json> --pdf-dir <pdfs>` を直接回す。
+   公開は既定で人間のクリック (--publish は塾長が言ったときだけ)。
+
+★ 預けるのは**講師権限のパスワードだけ** (service_role ではない)。効く範囲は
+  RLS が縛る = 登録画面でできること以上は何もできない。無効化はパスワード変更。
+★ PDF が塾長の Mac にしか無い教材 (今回の 9 科目など) は段階 1 (Mac で 1 コマンド)。
+  Claude がセッション内で組版した教材は PDF もセッションにあるので段階 2 で完結。

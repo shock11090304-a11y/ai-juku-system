@@ -90,6 +90,8 @@ SKIP = {
 WRITE_OK = {
     "book_exam/check_exam_book_browser.py":
         "tempfile の使い捨てディレクトリに検査用PDFと偽supabaseを置くだけ（リポジトリには書かない）",
+    "book_exam/check_import_books.py":
+        "tempfile の使い捨てディレクトリに検査用JSON/PDFを置き、localhostに偽Supabaseを立てるだけ（リポジトリには書かない）",
     "chem_camp/katex_gate.py": "KaTeX 描画用の一時HTMLを書くだけ",
     "eng_hinshi_bunkai/qa.py": "出力ディレクトリを作るだけ",
     "kyotsu2026_mirror/build/qa_machine.py": "QA レポートを書くだけ",
