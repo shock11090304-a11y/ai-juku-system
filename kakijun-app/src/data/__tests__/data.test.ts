@@ -122,10 +122,12 @@ describe('濁音・半濁音の合成 (§14.4)', () => {
   });
 });
 
-describe('種類ごとの収録数 (Phase 7 完了時の全量チェック)', () => {
-  it('現時点の収録数を下回らない', () => {
-    // Phase 7 完了時: ひらがな80 / カタカナ80 / 数字11 / 運筆12 = 183
-    expect(listByType('hiragana').length).toBeGreaterThanOrEqual(5);
-    expect(listByType('number').length).toBeGreaterThanOrEqual(6);
+describe('種類ごとの収録数 (§13 Phase 7: 全183項目)', () => {
+  it('ひらがな80 / カタカナ80 / 数字11 / 運筆12 = 183', () => {
+    expect(listByType('hiragana').length).toBe(80);
+    expect(listByType('katakana').length).toBe(80);
+    expect(listByType('number').length).toBe(11);
+    expect(listByType('unpitsu').length).toBe(12);
+    expect(characters.length).toBe(183);
   });
 });

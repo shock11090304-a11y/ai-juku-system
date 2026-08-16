@@ -3,7 +3,9 @@
  * （バンドルに含まれるので、オフラインでも fetch 不要で全データが使える）。
  */
 import hiraganaJson from './characters/hiragana.json';
+import katakanaJson from './characters/katakana.json';
 import numbersJson from './characters/numbers.json';
+import unpitsuJson from './characters/unpitsu.json';
 import marksJson from './characters/marks.json';
 import type { CharacterDef, CharType, RawCharacterDef } from '../engine/types';
 import {
@@ -15,7 +17,9 @@ import {
 
 const rawAll: RawCharacterDef[] = [
   ...(hiraganaJson as unknown as RawCharacterDef[]),
+  ...(katakanaJson as unknown as RawCharacterDef[]),
   ...(numbersJson as unknown as RawCharacterDef[]),
+  ...(unpitsuJson as unknown as RawCharacterDef[]),
 ];
 
 const registry = new Map(rawAll.map((c) => [c.id, toCharacterDef(c)]));
