@@ -1351,3 +1351,19 @@ account.html「無料体験中・期限 8/19 (=3日後)」/ ポータル解約 =
 ★ログイン画面を**開きっぱなしの古いタブ**で再ログインすると、更新前の JS が動いて
 banned の文言が英語のまま出る (実測)。ページをリロードすれば最新になる。
 本番切替は §22.3 の手順 7 (本番モードの Price・webhook・鍵 3 つを入れ替えて再デプロイ)。
+
+### 22.7 本番切替の記録 (2026-08-16)
+
+本番モードで商品 (¥1,250/毎月・price_1U5090R3lrRgwu4SFxgz76bu)・webhook (4 イベント)・
+Vercel の鍵 3 本を入れ替え、塾長の実カードで申込 → ログイン → 体験中解約 (請求ゼロ) まで確認。
+**神テストのサブスク販売は本番稼働**。申込入口は https://exam.trillion-ai-juku.com/signup.html。
+
+ハマりどころの記録:
+- ★今の Stripe は**既存の本番シークレットキーを再表示できない**。「…」メニューの
+  「API キー ID をコピー」で取れるのは管理用 ID (mk_...) で、これを env に貼ると
+  Stripe が 401 を返す (実測)。正解は「＋ シークレットキーを作成」で **追加の標準キー**
+  (名前 kamitest) を作り、作成直後に 1 回だけ表示される sk_live_ を使う。
+  既存キーはロールしないこと (AI塾の月謝が同じキーで動いている)。
+- 本番のカスタマーポータル構成は AI塾の運用で既に存在 (bpc_...) → 追加設定不要だった。
+- webhook のイベント選択で customer.bank_account/card/source.updated を誤選択しやすい。
+  必要なのは checkout.session.completed + customer.subscription.{created,updated,deleted} の 4 つ。
