@@ -1,0 +1,112 @@
+{
+ "source": "英文法_名詞冠詞_第1集.yaml",
+ "subject_name": "英語",
+ "book": {
+  "title": "英文法 名詞・冠詞 演習 第1集",
+  "subject": "grammar",
+  "level": "標準",
+  "time_limit_min": 20
+ },
+ "questions": [
+  {
+   "number": 1,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "MEISHI-FUKASAN",
+   "explanation": "## 🎯 コアイメージ\n**furniture は数えられない名詞** (家具の総称)。a も複数の -s も付かない。数えるなら a piece of furniture。information / advice / baggage も同じ仲間。\n\n## 🔬 文構造分析\nThey bought **some furniture** for their new apartment.\n不可算名詞に「いくらか」を添える some。形は単数のまま。\n\n## 📍 正解の根拠\n不可算の furniture に付けられるのは **some** (無冠詞・単数形)。\n\n## ❌ 誤答 NG 理由\n1. a furniture — 不可算名詞に a は付かない。\n2. furnitures — 不可算名詞に複数の -s は付かない。\n4. a few furnitures — a few は可算用で、-s も付けられない。二重の誤り。"
+  },
+  {
+   "number": 2,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "MEISHI-PIECE",
+   "explanation": "## 🎯 コアイメージ\nadvice も**数えられない名詞**。「1 つの助言」と数えたいときは **a piece of advice** と入れ物 (piece) の方を数える。\n\n## 🔬 文構造分析\nLet me give you **a piece of advice** before you leave.\na piece of (1 つの) + advice (不可算のまま)。\n\n## 📍 正解の根拠\n不可算の advice を 1 つ分だけ差し出す → **a piece of**。\n\n## ❌ 誤答 NG 理由\n1. an — 不可算名詞に an は付かない。\n3. a number of —「多数の」+ 可算複数 (a number of books)。advice には付かない。\n4. many — 可算複数用。many advice とは言えない (much advice なら可)。"
+  },
+  {
+   "number": 3,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "MEISHI-MUKANSHI",
+   "explanation": "## 🎯 コアイメージ\n**by + 交通手段は無冠詞**: by bus / by train / by car。「バスという手段で」と抽象化されるので a も the も付かない。\n\n## 🔬 文構造分析\nShe goes to her office **by bus** every morning.\n手段の by + 無冠詞の bus。特定の 1 台を指していない。\n\n## 📍 正解の根拠\n交通手段の言い方は **by bus** (無冠詞) で固定。\n\n## ❌ 誤答 NG 理由\n1. by a bus — 手段の by に冠詞は付けない。\n2. by the bus — 同上。特定の便に乗っている状態なら on the bus と言う。\n3. on bus — on を使うなら on the bus と冠詞が要る。無冠詞の on bus は無い。"
+  },
+  {
+   "number": 4,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "MEISHI-IMICHIGAI",
+   "explanation": "## 🎯 コアイメージ\n**room は無冠詞だと「余地・スペース」(不可算)**、a room なら「部屋」(可算)。冠詞の有無で意味が変わる名詞の代表格。\n\n## 🔬 文構造分析\nThere is **room for improvement** in your essay.\nroom for 〜 =「〜の余地」。改善の余地がある、という決まり文句。\n\n## 📍 正解の根拠\n「改善の**余地**」= 不可算・無冠詞の **room**。\n\n## ❌ 誤答 NG 理由\n2. a room —「部屋」。作文の中に部屋があることになり意味不明。\n3. rooms — 複数の部屋。同じく「余地」の意味が消える。\n4. the rooms — 特定の部屋たち。文意と全く合わない。"
+  },
+  {
+   "number": 5,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "MEISHI-TANI",
+   "explanation": "## 🎯 コアイメージ\n**by the + 単位 =「〜単位で・〜ぎめで」**: by the hour (時間ぎめ) / by the pound (ポンド単位)。単位を代表する the が付くのがポイント。\n\n## 🔬 文構造分析\nPart-time workers are paid **by the hour**.\n支払いの基準単位 = 1 時間。by the hour で「時給で」。\n\n## 📍 正解の根拠\n単位ぎめの表現は **by the** + 単位 → by the hour。\n\n## ❌ 誤答 NG 理由\n1. hour — 無冠詞では単位の言い方にならない (by bus の無冠詞と混同しない)。\n3. an hour —「1 時間につき」なら an hour だけでは形にならない (per hour / an hour あたりの言い方は別構文)。\n4. hours — 複数形。単位を代表する形は単数 + the。"
+  },
+  {
+   "number": 6,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "MEISHI-TSUKAIWAKE",
+   "explanation": "## 🎯 コアイメージ\n日本語の「客」は英語で分業: **乗客 = passenger** / 店の買い物客 = customer / 招待客・宿泊客 = guest / 専門職の依頼人 = client。\n\n## 🔬 文構造分析\nThe **passengers** on the crowded train were all looking at their phones.\non the crowded train (満員電車の) が決め手 — 乗り物の客 = passengers。\n\n## 📍 正解の根拠\n電車に乗っている客 → **passengers**。\n\n## ❌ 誤答 NG 理由\n1. customers — 店で物やサービスを買う客。乗り物には使わない。\n2. guests — 招かれた客・ホテルの宿泊客。電車の乗客には使わない。\n4. clients — 弁護士・会計士など専門職の依頼人。文脈に合わない。"
+  },
+  {
+   "number": 7,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "MEISHI-POPULATION",
+   "explanation": "## 🎯 コアイメージ\n「人口が多い・少ない」は **population + large / small** で言う (many / few は使わない)。that of 〜 =「〜の人口」という代用表現とセットで頻出。\n\n## 🔬 文構造分析\nThe **population** of Tokyo is much larger than **that** (= the population) of Kyoto.\nlarger と呼応する主語 = 人口という「大きさ」を持つ名詞。\n\n## 📍 正解の根拠\nlarger than that of 〜 と比べられる「東京の何か」→ **population** (人口)。\n\n## ❌ 誤答 NG 理由\n2. peoples —「諸民族」。larger と組んで人口の大小は表せない。\n3. citizen — 1 人の市民。「東京の市民が京都のそれより大きい」では意味を成さない。\n4. member — 一員。of Tokyo とも larger とも噛み合わない。"
+  },
+  {
+   "number": 8,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "MEISHI-SAME",
+   "explanation": "## 🎯 コアイメージ\n**same には必ず the が付く**: the same class。「同じ」= 比べる相手と重なる唯一のものだから、常に特定の the とセット。\n\n## 🔬 文構造分析\nWe are in **the same class**, so we see each other every day.\nthe same + 名詞 =「同じ〜」。毎日顔を合わせる理由になる。\n\n## 📍 正解の根拠\nsame の前は常に **the** → the same class。\n\n## ❌ 誤答 NG 理由\n1. same — 冠詞なしの same + 名詞は不可。\n2. a same — same に a は付かない (「同じ」は 1 つに特定されるから)。\n3. same the — 語順が逆。冠詞は same の前。"
+  },
+  {
+   "number": 9,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "MEISHI-FUKASAN",
+   "explanation": "## 🎯 コアイメージ\n**information も数えられない名詞**。a も -s も付かず、量は a lot of / much / a piece of で表す。日本語の「情報 1 件」の感覚で数えないこと。\n\n## 🔬 文構造分析\nThe website gives us a lot of useful **information** about studying abroad.\na lot of + 不可算名詞 (単数形のまま)。\n\n## 📍 正解の根拠\n不可算の information は**そのままの形** → information。\n\n## ❌ 誤答 NG 理由\n1. informations — 不可算名詞に複数の -s は付かない。\n2. an information — 不可算名詞に an は付かない (a piece of information なら可)。\n4. information's — 所有格。ここでは意味を成さない。"
+  },
+  {
+   "number": 10,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "MEISHI-SHOYU",
+   "explanation": "## 🎯 コアイメージ\n時間・距離の名詞は**所有格で形容詞の働き**をする: ten minutes' walk (10 分の徒歩)。複数形 -s で終わる語の所有格は**アポストロフィだけ**足す。\n\n## 🔬 文構造分析\nThe library is about **ten minutes' walk** from the station.\nten minutes' (10 分の) が walk を修飾。s の後ろは ' のみ。\n\n## 📍 正解の根拠\n複数形 minutes の所有格 → **ten minutes'** walk。\n\n## ❌ 誤答 NG 理由\n1. ten minutes — 所有格の ' が無いと walk と直結できない。\n3. ten minute — 数詞 ten があるのに単数形のままで、所有格にもなっていない。\n4. ten minutes's — -s で終わる複数形に 's は付けない (' だけ)。"
+  }
+ ]
+}
