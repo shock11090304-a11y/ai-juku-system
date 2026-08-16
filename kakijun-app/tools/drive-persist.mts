@@ -62,9 +62,6 @@ await page.waitForTimeout(800);
 await page.click('[data-testid=tile-hiragana]');
 await page.waitForTimeout(300);
 await page.screenshot({ path: `${outdir}/p5-after-reload.png` });
-const starText = await page
-  .locator('[data-testid=char-hira_a]')
-  .getAttribute('data-stars');
 console.log('stamp seen:', sawStamp);
 
 // スタンプ帳

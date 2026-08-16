@@ -68,6 +68,11 @@ type AppState = {
   /** 時間制限に達しているか (§10.4)。現在の文字が終わってから発動させる */
   isTimeUp: () => boolean;
   remainingSeconds: () => number | null;
+  weeklySeconds: () => Promise<number>;
+  resetTodayTime: () => void;
+  exportData: () => Promise<string>;
+  importData: (json: string) => Promise<void>;
+  clearAllData: () => Promise<void>;
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -131,6 +136,78 @@ export const useAppStore = create<AppState>((set, get) => ({
         .then((db) => db.put('sessions', { date: today(), seconds: todaySeconds }))
         .catch(() => {});
     }
+  },
+
+  /** 今週（直近7日）の練習秒数（保護者ダッシュボード用 §10.2） */
+  weeklySeconds: async () => {
+    try {
+      const db = await getDB();
+      const all = await db.getAll('sessions');
+      const cutoff = Date.now() - 7 * 24 * 3600 * 1000;
+      return all
+        .filter((s) => new Date(`${s.date}T00:00:00`).getTime() >= cutoff)
+        .reduce((sum, s) => sum + s.seconds, 0);
+    } catch {
+      return get().todaySeconds;
+    }
+  },
+
+  /** 保護者操作: 今日のカウントとセッションをリセットして続きを遊べるようにする */
+  resetTodayTime: () => {
+    set({ sessionSeconds: 0, todaySeconds: 0 });
+    void getDB()
+      .then((db) => db.put('sessions', { date: today(), seconds: 0 }))
+      .catch(() => {});
+  },
+
+  /** 進捗+設定+時間の JSON エクスポート (§10.3, §12.6 唯一確実なバックアップ) */
+  exportData: async () => {
+    const db = await getDB();
+    const [progress, sessions] = await Promise.all([
+      db.getAll('progress'),
+      db.getAll('sessions'),
+    ]);
+    return JSON.stringify(
+      {
+        app: 'kakijun',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        settings: get().settings,
+        progress,
+        sessions,
+      },
+      null,
+      2,
+    );
+  },
+
+  importData: async (json: string) => {
+    const data = JSON.parse(json) as {
+      app?: string;
+      version?: number;
+      settings?: Settings;
+      progress?: CharProgress[];
+      sessions?: { date: string; seconds: number }[];
+    };
+    if (data.app !== 'kakijun' || !Array.isArray(data.progress)) {
+      throw new Error('かきじゅんのバックアップ JSON ではありません');
+    }
+    const db = await getDB();
+    const tx = db.transaction(['progress', 'sessions', 'settings'], 'readwrite');
+    for (const p of data.progress) await tx.objectStore('progress').put(p);
+    for (const s of data.sessions ?? []) await tx.objectStore('sessions').put(s);
+    if (data.settings) await tx.objectStore('settings').put(data.settings, 'settings');
+    await tx.done;
+    await get().init();
+  },
+
+  clearAllData: async () => {
+    const db = await getDB();
+    await Promise.all([
+      db.clear('progress'),
+      db.clear('sessions'),
+    ]);
+    set({ progress: {}, sessionSeconds: 0, todaySeconds: 0 });
   },
 
   isTimeUp: () => {

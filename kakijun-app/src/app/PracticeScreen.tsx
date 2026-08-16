@@ -120,6 +120,11 @@ export function PracticeScreen() {
 
   // ── 文字が変わったとき ───────────────────────────────────
   useEffect(() => {
+    // 時間切れ後に新しい文字を始めさせない (§10.4)
+    if (isTimeUp()) {
+      navigate({ name: 'timeUp' });
+      return;
+    }
     const startLevel = useAppStore.getState().progress[charId]?.guideLevel ?? 1;
     setLevel(startLevel);
     levelRef.current = startLevel;
