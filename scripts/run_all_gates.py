@@ -80,6 +80,8 @@ SKIP = {
     "scripts/chugaku_dojo/post_insert_check.py": "本番DB接続が要る（取込後に手で回す）",
     "scripts/audit_pool_health.py": "本番APIに223回つなぐ・教材でなく出題プールの在庫監査",
     "scripts/chugaku_dojo/futeishi/post_check.py": "本番APIにつなぐ（取込後に手で回す）",
+    "scripts/eiken_junichi/mogi/verify_imported.py":
+        "冊子受験アプリのDBを読み返す（取込後に手で回す。講師アカウントの認証が要る）",
     # ★検査ではなく**データを書き換える**スクリプト。名前に check が入るので拾われてしまう。
     #   回すたびに教材データがスクリプト内蔵の版へ巻き戻る（実測で part1_vocab.json が戻った）。
     "scripts/eiken_junichi/fix_recheck.py": "検査でなくデータ修正（適用済み・再実行で巻き戻る）",
