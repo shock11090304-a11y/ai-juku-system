@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { characters, getChar, listByType } from '../index';
 import { prepareStrokes } from '../../engine/loader';
+import { StrokeMatcher, resolveParams } from '../../engine/strokeMatcher';
 
 describe('文字データの整合性', () => {
   it('id が重複していない', () => {
@@ -49,6 +50,31 @@ describe('文字データの整合性', () => {
       expect(c.group.length, c.id).toBeGreaterThan(0);
     }
   });
+});
+
+describe('全文字: 理想軌跡が判定エンジンを通る（自己整合性）', () => {
+  // データに鋭すぎる折り返しや退化があると、正しくなぞっても
+  // 逆走・逸脱と誤判定されて練習不能になる。全文字を実際になぞって検査する
+  for (const c of characters) {
+    it(`${c.id} (${c.char})`, () => {
+      const strokes = prepareStrokes(c);
+      const m = new StrokeMatcher(strokes, resolveParams('normal', 1));
+      for (const s of strokes) {
+        const down = m.pointerDown(s.pts[0]);
+        expect(down.type, `${c.id} ${s.index}画目の始点`).toBe('ok');
+        for (let i = 1; i < 64; i++) {
+          const r = m.pointerMove(s.pts[i]);
+          expect(r.type, `${c.id} ${s.index}画目 ${i}/63`).toBe('ok');
+        }
+        const up = m.pointerUp();
+        expect(up.type, `${c.id} ${s.index}画目の完走`).toMatch(
+          /stroke-ok|char-complete/,
+        );
+      }
+      expect(m.state.completed, c.id).toBe(true);
+      expect(m.summary().mistakes, c.id).toHaveLength(0);
+    });
+  }
 });
 
 describe('画数の重点確認 (§14.4)', () => {

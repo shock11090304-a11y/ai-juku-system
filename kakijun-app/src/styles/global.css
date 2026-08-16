@@ -57,6 +57,29 @@ button {
   min-height: 64px;
 }
 
+/* ─── アニメーション ─────────────────────────────────────── */
+@keyframes popin {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* ─── 縦向きのときの案内 (§2.3) ──────────────────────────── */
 .rotate-hint {
   display: none;
