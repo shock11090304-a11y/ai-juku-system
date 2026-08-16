@@ -89,3 +89,7 @@ scripts/**/critique/
 scripts/**/verify/
 # 手で取った退避コピー
 scripts/**/*_bak*/
+
+# ★神テスト教材 (scripts/book_exam/materials/) の問題 PDF は生成物だがコミットする。
+#   取り込みセッションが git 経由で受け取る実体そのもの (supabase/demo/sample-book.pdf と同じ理由)。
+!scripts/book_exam/materials/**/*_問題.pdf
