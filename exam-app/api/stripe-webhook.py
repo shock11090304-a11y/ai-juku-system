@@ -213,14 +213,19 @@ def on_subscription_event(event):
         _log(f"webhook: stale event for canceled sub={sub_id} — skip")
         return
 
-    fields = {"user_id": uid, "status": status, "stripe_subscription_id": sub_id}
+    # ★ email は upsert に**毎回**入れる。Postgres の INSERT … ON CONFLICT は既存行の
+    #   更新でも挿入側の NOT NULL 検査を先に通すため、email (default 無し) を省くと
+    #   400 Bad Request になる (実測 2026-08-16: subscription 系イベントだけ 500 で
+    #   「お支払い手続き中」のまま止まった)。値は metadata → 既存行 → '' の順で選ぶ。
+    fields = {"user_id": uid, "status": status, "stripe_subscription_id": sub_id,
+              "email": (_meta(obj).get("email", "")
+                        or (row or {}).get("email") or "")}
     if obj.get("customer"):
         fields["stripe_customer_id"] = obj["customer"]
     pe = _period_end_iso(obj)
     if pe:
         fields["current_period_end"] = pe
     if not row:                                   # 行が無い = checkout より先に届いた
-        fields["email"] = _meta(obj).get("email", "")
         fields["student_name"] = _meta(obj).get("student_name", "")
         fields["grade"] = _meta(obj).get("grade", "")
         fields["school"] = _meta(obj).get("school", "")

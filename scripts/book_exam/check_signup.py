@@ -207,6 +207,13 @@ class FakeSupabase(BaseHTTPRequestHandler):
                 return
             rows = body if isinstance(body, list) else [body]
             fields = rows[0]
+            # ★ 本物の Postgres と同じ厳しさ: upsert の INSERT 側は既存行の更新でも
+            #   NOT NULL (default 無し) の email を要求する。省くと 400。
+            #   (これを緩くしていたせいで production の 400 を見逃した 2026-08-16)
+            if "email" not in fields:
+                self._send(400, {"code": "23502",
+                                 "message": "null value in column \"email\" violates not-null constraint"})
+                return
             uid = fields.get("user_id", "")
             merged = dict(STATE.rows.get(uid) or {})
             merged.update(fields)
