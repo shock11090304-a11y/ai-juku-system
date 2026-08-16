@@ -91,6 +91,12 @@
     <button type="submit">ログイン</button>
     <p id="login-msg"></p>
     <p class="note">アカウントは先生が発行します。</p>
+    <!-- ★ サブスク申込の入口。自塾 (trillion) のドメインでだけ表示する
+         (他塾ドメインでは exam-book.mjs が hidden のまま残す)。 -->
+    <p class="note" id="signup-links" hidden>
+      <a href="/signup.html">新規申し込みはこちら（月額1,250円・3日間無料体験）</a><br>
+      <a href="/account.html">契約管理（お支払い・解約）</a>
+    </p>
   </form>
 </div>
 

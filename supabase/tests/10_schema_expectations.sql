@@ -1035,5 +1035,74 @@ begin
 end
 $$;
 
-\echo '=== 全ての検査を通過 (A 14 / B 3 / C 20 / D 9 / E 4 / F 3+3 / G 5 / H 6 / I 9 / J 12 / K 12) ==='
+-- =============================================================================
+-- L. サブスク契約表 (subscriptions) — 書けるのは service_role (webhook) だけ
+-- =============================================================================
+do $$
+declare
+    n int;
+    n_ok int := 0;
+begin
+    -- L1: service_role (webhook) が行を書けること
+    execute 'set local role service_role';
+    insert into public.subscriptions (user_id, email, student_name, grade, school,
+                                      stripe_customer_id, stripe_subscription_id, status)
+    values ('bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1', 'student1@example.test', '生徒1',
+            '高校3年', 'テスト高校', 'cus_test1', 'sub_test1', 'trialing'),
+           ('bbbbbbb2-bbbb-4bbb-8bbb-bbbbbbbbbbb2', 'student2@example.test', '',
+            '', '', 'cus_test2', 'sub_test2', 'active');
+    reset role;
+
+    -- L2: 生徒1 には自分の行しか見えないこと
+    perform set_config('request.jwt.claims',
+        '{"sub": "bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1", "role": "authenticated"}', true);
+    execute 'set local role authenticated';
+    select count(*) into n from public.subscriptions;
+    if n <> 1 then
+        raise exception '[fail] L2 生徒1 に % 行見えている (自分の 1 行だけのはず)', n;
+    end if;
+
+    -- L3: 生徒は契約行を作れないこと (insert 権限そのものを配っていない)
+    begin
+        insert into public.subscriptions (user_id, email)
+        values ('bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1', 'x@example.test');
+        raise exception '[fail] L3 生徒が契約行を作れてしまった';
+    exception when insufficient_privilege then n_ok := n_ok + 1;
+    end;
+
+    -- L4: 生徒は自分の行も書き換えられないこと (status を active に偽装できない)
+    begin
+        update public.subscriptions set status = 'active'
+         where user_id = 'bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1';
+        raise exception '[fail] L4 生徒が契約行を書き換えられてしまった';
+    exception when insufficient_privilege then n_ok := n_ok + 1;
+    end;
+
+    -- L5: 先生には全員の行が見えること (契約者の一覧)
+    perform set_config('request.jwt.claims',
+        '{"sub": "aaaaaaa1-aaaa-4aaa-8aaa-aaaaaaaaaaa1", "role": "authenticated"}', true);
+    execute 'set local role authenticated';
+    select count(*) into n from public.subscriptions;
+    if n <> 2 then
+        raise exception '[fail] L5 先生に % 行しか見えない (2 行のはず)', n;
+    end if;
+    reset role;
+
+    -- L6: 知らない status は入らないこと (Stripe の語彙だけを通す)
+    begin
+        update public.subscriptions set status = 'ganbaru'
+         where user_id = 'bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbb1';
+        raise exception '[fail] L6 未知の status が入ってしまった';
+    exception when check_violation then n_ok := n_ok + 1;
+    end;
+
+    if n_ok <> 3 then
+        raise exception '[fail] L: 弾かれるべき 3 件のうち % 件しか検査できていない', n_ok;
+    end if;
+
+    raise notice '[ok] L サブスク契約表 6 件';
+end
+$$;
+
+\echo '=== 全ての検査を通過 (A 14 / B 3 / C 20 / D 9 / E 4 / F 3+3 / G 5 / H 6 / I 9 / J 12 / K 12 / L 6) ==='
 

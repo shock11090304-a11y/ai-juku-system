@@ -12,6 +12,7 @@
 //      永久に出ない」の三重障害になる。
 // =============================================================================
 import { sb, serverNow, haveServerClock } from '/exam-book-sb.mjs?v=1';
+import { SUPABASE } from '/exam-book-config.mjs?v=1';
 import { Book, signedUrl, ZOOM_STEPS } from '/exam-book-pdf.mjs?v=1';
 import { Ink, MODE } from '/exam-book-ink.mjs?v=1';
 import { PENS, parseStrokes, mergeAppend } from '/exam-book-model.mjs?v=1';
@@ -796,6 +797,11 @@ function loginMessage(error) {
   if (/email logins are disabled|signups not allowed/i.test(m)) {
     return 'この方法でのログインが止められています。先生に連絡してください';
   }
+  if (/banned/i.test(m)) {
+    // サブスクの解約・支払い停止で webhook がアカウントを ban した状態
+    return 'ご契約が確認できません。解約済み・お支払いが止まっている場合はログインできません。'
+         + '契約管理ページでご確認ください';
+  }
   if (/rate limit|too many/i.test(m)) {
     return '試行回数が多すぎます。少し待ってからやり直してください';
   }
@@ -807,6 +813,8 @@ function loginMessage(error) {
 
 function showLogin() {
   setStage('login');
+  // サブスク申込の入口は自塾 (trillion) のドメインでだけ出す (§21 の他塾には出さない)
+  if (SUPABASE.name === 'trillion') $('#signup-links').hidden = false;
   const form = $('#login-form');
   const btn = form.querySelector('button[type="submit"]');
   form.addEventListener('submit', async (e) => {

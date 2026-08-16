@@ -92,11 +92,22 @@ WRITE_OK = {
         "tempfile の使い捨てディレクトリに検査用PDFと偽supabaseを置くだけ（リポジトリには書かない）",
     "book_exam/check_import_books.py":
         "tempfile の使い捨てディレクトリに検査用JSON/PDFを置き、localhostに偽Supabaseを立てるだけ（リポジトリには書かない）",
+    "book_exam/check_signup.py":
+        "localhost に偽 Stripe/偽 Supabase を立てて往復するだけ（外部には出ない・リポジトリには書かない）",
     "chem_camp/katex_gate.py": "KaTeX 描画用の一時HTMLを書くだけ",
     "eng_hinshi_bunkai/qa.py": "出力ディレクトリを作るだけ",
     "kyotsu2026_mirror/build/qa_machine.py": "QA レポートを書くだけ",
     "math_workbook/ia_jaku_gate.py": "KaTeX 描画用の一時HTML/PDFを書いて消すだけ",
     "math_workbook/unit_check_ia_jaku.py": "KaTeX 描画用の一時HTML/PDFを書いて消すだけ",
+}
+
+# 「検査なのに通信する」ことが正当なもの。★127.0.0.1 に自分で立てた偽サーバとの
+# 往復**だけ**に限る (本番 API・外部ドメインに出るものは絶対に入れない —
+# CI から本番 API を 223 回叩いた事故の再発防止がこの検出の目的)。
+# 理由には「どこにつなぐか」を必ず書くこと。
+NET_OK = {
+    "book_exam/check_signup.py":
+        "127.0.0.1 に立てた偽 Stripe/偽 Supabase と、検査対象ハンドラ (同じく 127.0.0.1) への往復のみ",
 }
 
 # 合格を自称しながら違反を印字している状態を捕まえる。
@@ -514,12 +525,15 @@ def _main():
         if is_library(src):
             lib_pending.append((label, path))     # 呼び出し元の判定は全ゲート実行後
             continue
-        eff = side_effects(src) - ({"書き込み"} if label in WRITE_OK else set())
+        eff = (side_effects(src)
+               - ({"書き込み"} if label in WRITE_OK else set())
+               - ({"外部通信"} if label in NET_OK else set()))
         if eff:
             # ★実行しない。検査の入口が教材データを書き換えたり本番を叩いたりするのは論外。
             bad.append((label, "SIDE-EFFECT",
                         [f"検査なのに{'と'.join(sorted(eff))}をする。実行していない。",
-                         "本当に検査なら WRITE_OK に理由を書く。そうでなければ SKIP に入れる。"]))
+                         "本当に検査なら WRITE_OK (書き込み) / NET_OK (127.0.0.1 限定の通信) に"
+                         "理由を書く。そうでなければ SKIP に入れる。"]))
             ran_ok[label] = local_imports(src)   # 実行しないが「呼び出し元」ではある
             print(f"  FAIL  {label}  [SIDE-EFFECT] {'/'.join(sorted(eff))}")
             continue

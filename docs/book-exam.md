@@ -1261,3 +1261,81 @@ exam-app/                      ← 専用 Vercel プロジェクトの Root Dire
 Supabase プロジェクト作成・bundle 貼り・講師作成は塾長のブラウザ作業 (顧客 1 社 30 分)。
 月 2〜3 社を超えるあたりで Supabase Management API による自動化を検討する。
 契約書・特商法表記・料金請求はビジネス側の準備 (このリポジトリの範囲外)。
+
+## §22 サブスク販売 — 生徒個人への月額課金 (2026-08-16)
+
+塾長の要望「AI塾アプリみたいにサブスクリプション登録と自動紐つけ」。
+月額 **1,250 円 (税込)**・初回のみ **3 日間無料体験**・申込情報は
+メール / パスワード / 氏名 / 学年 / 通塾学校名。自塾生への課金と一般販売の両方に使う。
+
+### 22.1 仕組み
+
+```
+signup.html ─POST→ /api/checkout ─┬→ Supabase: アカウントを ban 付きで先に作る
+                                  │   (パスワードは本人入力。Stripe に流さないための順序)
+                                  └→ Stripe Checkout (subscription・初回のみ trial 3日)
+支払い完了 → Stripe webhook → /api/stripe-webhook ─┬→ subscriptions 行を upsert
+                                                   └→ ban 解除 → 本人のパスワードで即ログイン可
+解約/不払い (期間末) → webhook → ban → ログイン不可 (「ご契約が確認できません」)
+解約したい → account.html → /api/portal → Stripe カスタマーポータル (特商法の解約方法の実体)
+```
+
+- **利用可否は auth の ban で判定** (RLS は変えない)。`subscriptions` 表は履歴と表示用。
+- **先生発行の無料アカウントはそのまま併存** (行が無い = 無料。checkout はパスワード一致
+  を確認するので、他人が塾生のメールで申し込んで乗っ取ることはできない)。
+- **AI塾の月謝と同じ Stripe アカウントで安全に共存**: 全 metadata に
+  `system=kamitest-subscription` を付け、両側の webhook が自分のイベントだけ処理する。
+- 申込は trillion のドメインだけ (Host 検査 + 画面側も hidden)。§21 の他塾ドメインでは
+  申込リンクも出ない。
+
+### 22.2 置き場所
+
+| もの | 場所 |
+|---|---|
+| 申込 / 完了 / 契約管理 / 特商法 | `exam-app/signup.html` `signup-done.html` `account.html` `legal.html` |
+| Vercel 関数 (kamitest 側) | `exam-app/api/checkout.py` `stripe-webhook.py` `portal.py` (自己完結・stdlib のみ) |
+| 契約表 | `supabase/migrations/20260816010000_subscriptions.sql` (RLS 検査は 10_schema_expectations の L 6 件) |
+| ゲート | `scripts/book_exam/check_signup.py` (偽 Stripe/Supabase で実 HTTP 46 件・妨害検査済み) |
+
+### 22.3 稼働までの手順 (塾長のブラウザ作業・上から順)
+
+1. **DB**: Supabase SQL Editor で `supabase/bundle.sql` の subscriptions 部分
+   (`20260816010000_subscriptions.sql` の中身) を貼って Run
+2. **Stripe (まずテストモード)**: 商品「神テスト」+ 定期価格 月額 1,250 円 (JPY) を作成
+   → Price ID (`price_...`) を控える
+3. **Stripe → Settings → Billing → Customer portal** を有効化 (解約ボタンの実体)
+4. **Vercel (kamitest プロジェクト) → Settings → Environment Variables** に 5 つ:
+   `STRIPE_SECRET_KEY` / `STRIPE_PRICE_ID` / `STRIPE_WEBHOOK_SECRET` (次の手順の後で) /
+   `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`
+   ★ service_role と Stripe secret は **ここ以外のどこにも置かない** (チャット・リポジトリ禁止)
+5. **Stripe → Developers → Webhooks → Add endpoint**:
+   URL `https://exam.trillion-ai-juku.com/api/stripe-webhook`、
+   イベントは `checkout.session.completed` / `customer.subscription.created` /
+   `customer.subscription.updated` / `customer.subscription.deleted` の 4 つ。
+   → 表示される `whsec_...` を手順 4 の env に入れて **Redeploy**
+6. **テストモードで通し確認**: signup.html → テストカード 4242… → ログインできる →
+   Stripe でサブスクを即時キャンセル → ログインできなくなる、まで
+7. 本番モードの鍵と Price に入れ替えて再デプロイ → 少額で 1 回本番テスト → 公開
+
+### 22.4 機械が守っていること (check_signup.py)
+
+- 不正署名の webhook は 401 で**副作用ゼロ** / AI塾のイベントは素通り
+- 新規は ban 付き作成・支払い完了で解除・解約で再 ban (それぞれ実 HTTP で確認)
+- 解約済み契約は**遅延再送イベントで復活しない** / 保存失敗は 500 で Stripe に再送させる
+- 既存アカウントのメールでは**パスワードが一致しないと申込に進めない** (乗っ取り防止)
+- 契約中の再申込 409 / 体験の 2 回目なし / Host 制限 / 入力検査で外部呼び出しゼロ
+- signup.html の学年 = checkout.py の GRADE_OPTIONS、価格・体験日数の表示一致、
+  秘密鍵がリポジトリに無いこと
+- DB 側: 生徒は自分の行しか読めない・書けない (スキーマ検査 L 6 件・妨害で赤を確認済み)
+
+### 22.5 運用メモ
+
+- 解約は期間末まで利用可 (Stripe が期間末に deleted を送ってきた時点で ban)。
+- `past_due` (カード失効等) は Stripe の再請求中なので**使える扱い**。再請求が尽きると
+  自動キャンセル → ban。Stripe 側の再試行設定は Dashboard → Settings → Subscriptions。
+- 返金・個別対応は Stripe Dashboard から手動 (特商法表記どおり原則返金なし)。
+- 申込ページの価格表示と Stripe の Price は**手で一致させる** (ゲートはページ間の一致
+  しか見られない)。値上げ時は signup.html / legal.html / Stripe Price / STRIPE_PRICE_ID
+  の 4 点セット。
+- パスワードを忘れた契約者: Supabase のリセットメールは無料枠だと時間あたり数通なので、
+  当面は Users 画面から手動リセット。件数が増えたら Custom SMTP (Resend 等) を設定。

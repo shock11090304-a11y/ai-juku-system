@@ -285,8 +285,12 @@ def _handle_payment_succeeded(event):
     """invoice.payment_succeeded — 月次サブスク or 過去未納分の請求書が支払われた時"""
     obj = event.get("data", {}).get("object", {})
     # 🚨 Round 4 fix (C-EXIST-1): juku-payment 系のみ処理 (AIコーチング invoice 混入防止)
+    # 🆕 2026-08-16: subscription_details.metadata も見る (_handle_payment_failed と対称)。
+    #   invoice 自体の metadata は空が普通で、神テスト (kamitest-subscription) のサブスク
+    #   請求書がここを素通りして月謝の pay:succeeded 台帳に混ざっていた。
     metadata = obj.get("metadata", {}) or {}
-    sys_tag = (metadata.get("system") or "").strip()
+    sub_meta = (obj.get("subscription_details") or {}).get("metadata", {}) or {}
+    sys_tag = (metadata.get("system") or sub_meta.get("system") or "").strip()
     if sys_tag and not sys_tag.startswith("juku-payment"):
         _log(f"webhook: invoice.payment_succeeded skipped (system={sys_tag} - not juku-payment)")
         return

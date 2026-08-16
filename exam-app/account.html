@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>神テスト 契約管理</title>
+<style>
+  :root { --bg:#0e1116; --panel:#151a22; --line:#2a3240; --fg:#e7ecf3;
+          --muted:#93a0b3; --accent:#3b82f6; --warn:#f59e0b; --ok:#22c55e; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--fg);
+    font:15px/1.7 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; }
+  main { max-width: 520px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 16px; }
+  form, .card { background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px; margin: 0 0 16px;
+    display: flex; flex-direction: column; gap: 12px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  input { font: inherit; color: var(--fg); background: #1e2531;
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-height: 44px; }
+  button { font: inherit; font-weight: 700; color: #fff; background: var(--accent);
+    border: 1px solid var(--accent); border-radius: 8px; padding: 12px; min-height: 48px;
+    cursor: pointer; }
+  button.ghost { background: transparent; color: var(--muted); border-color: var(--line);
+    font-weight: 400; }
+  button:disabled { opacity: .45; cursor: default; }
+  #msg { color: var(--warn); font-size: 13px; min-height: 1.6em; margin: 0; }
+  dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 14px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; }
+  a { color: var(--accent); }
+  .back { margin-top: 20px; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>契約管理</h1>
+
+  <form id="login" hidden>
+    <label>メールアドレス
+      <input id="email" type="email" autocomplete="username" required
+             autocapitalize="off" autocorrect="off" spellcheck="false">
+    </label>
+    <label>パスワード
+      <input id="pass" type="password" autocomplete="current-password" required>
+    </label>
+    <button type="submit">ログイン</button>
+    <p id="msg"></p>
+  </form>
+
+  <div class="card" id="panel" hidden>
+    <dl>
+      <dt>アカウント</dt><dd id="who"></dd>
+      <dt>契約の状態</dt><dd id="status"></dd>
+      <dt>次回更新 / 期限</dt><dd id="until"></dd>
+    </dl>
+    <button type="button" id="portal">お支払い・解約の管理（Stripe を開く）</button>
+    <button type="button" id="logout" class="ghost">ログアウト</button>
+    <p id="msg2" style="color:var(--warn); font-size:13px; margin:0;"></p>
+  </div>
+
+  <p class="back"><a href="/exam-book.html">テストを受ける</a> ／ <a href="/signup.html">新規申し込み</a> ／ <a href="/legal.html">特定商取引法に基づく表記</a></p>
+</main>
+
+<script type="module">
+  import { createClient } from '/vendor/supabase-js/supabase.mjs?v=2';
+  import { SUPABASE, assertAnonKey } from '/exam-book-config.mjs?v=1';
+
+  const $ = (s) => document.querySelector(s);
+  assertAnonKey(SUPABASE.anonKey);
+  const sb = createClient(SUPABASE.url, SUPABASE.anonKey,
+                          { auth: { persistSession: true, autoRefreshToken: true } });
+
+  // Stripe の status → 生徒に見せる言葉
+  const LABELS = {
+    trialing: '無料体験中', active: '契約中',
+    past_due: 'お支払い確認中（カードをご確認ください）',
+    canceled: '解約済み', unpaid: '停止中（お支払いが確認できません）',
+    incomplete: 'お支払い手続き中', incomplete_expired: 'お支払い手続きの期限切れ',
+    paused: '一時停止中',
+  };
+
+  async function show() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { $('#login').hidden = false; $('#panel').hidden = true; return; }
+    $('#login').hidden = true; $('#panel').hidden = false;
+    $('#who').textContent = session.user.email || '';
+    // 自分の契約行。無い = 先生発行の無料アカウント。
+    // ★ user_id で絞る: RLS でも自分の行だけだが、先生は全員の行が見えるので
+    //   絞らないと maybeSingle が「複数行」で落ちる。
+    const { data, error } = await sb.from('subscriptions')
+      .select('status, current_period_end')
+      .eq('user_id', session.user.id).maybeSingle();
+    if (error) { $('#status').textContent = `取得できませんでした (${error.message})`; return; }
+    if (!data) {
+      $('#status').textContent = '月額契約はありません（先生発行のアカウント）';
+      $('#until').textContent = '—';
+      $('#portal').disabled = true;
+      return;
+    }
+    $('#status').textContent = LABELS[data.status] || data.status;
+    $('#until').textContent = data.current_period_end
+      ? new Date(data.current_period_end).toLocaleString('ja-JP') : '—';
+  }
+
+  $('#login').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $('#msg').textContent = 'ログインしています…';
+    const { error } = await sb.auth.signInWithPassword({
+      email: $('#email').value.trim(), password: $('#pass').value,
+    });
+    if (error) {
+      $('#msg').textContent = /banned/i.test(error.message || '')
+        ? 'ご契約が確認できません（解約済み・お支払い停止中はログインできません）'
+        : 'ログインできません。メールアドレスとパスワードを確認してください';
+      return;
+    }
+    $('#msg').textContent = '';
+    show();
+  });
+
+  $('#portal').addEventListener('click', async () => {
+    $('#msg2').textContent = 'Stripe のページを開いています…';
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { location.reload(); return; }
+    try {
+      const res = await fetch('/api/portal', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.portalUrl) { location.href = body.portalUrl; return; }
+      $('#msg2').textContent = body.message || `開けませんでした (HTTP ${res.status})`;
+    } catch (_) {
+      $('#msg2').textContent = '通信できませんでした。電波を確認してやり直してください';
+    }
+  });
+
+  $('#logout').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    location.reload();
+  });
+
+  show();
+</script>
+</body>
+</html>
