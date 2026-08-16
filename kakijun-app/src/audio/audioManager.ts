@@ -7,31 +7,16 @@
  * - 効果音は WebAudio で合成（柔らかい音色・控えめ §9.2）
  */
 
+import {
+  PRAISE,
+  RETRY,
+  feedbackLine,
+  guideText,
+  pickDifferent,
+  type FeedbackVoiceKind,
+} from './voiceLines';
+
 export type SfxKind = 'pop' | 'star' | 'complete' | 'help' | 'stamp' | 'tap';
-
-const PRAISE: [string, string][] = [
-  ['praise_01', 'じょうず！'],
-  ['praise_02', 'できたね！'],
-  ['praise_03', 'すごい！'],
-  ['praise_04', 'かっこいい！'],
-  ['praise_05', 'きれいに かけたね！'],
-  ['praise_06', 'そのちょうし！'],
-  ['praise_07', 'ばっちり！'],
-  ['praise_08', 'はなまる！'],
-  ['praise_09', 'めきめき じょうずに なってるよ！'],
-];
-
-const RETRY: [string, string][] = [
-  ['retry_01', 'もういちど やってみよう'],
-  ['retry_02', 'ゆっくりで いいよ'],
-  ['retry_03', 'だいじょうぶ、できるよ'],
-  ['retry_04', 'おしい！'],
-  ['retry_05', 'すこしずつで いいよ'],
-  ['retry_06', 'いっしょに がんばろう'],
-];
-
-/** 数の読み（指示音声「◯かくめ」用） */
-const KAKU: string[] = ['', 'いっかくめ', 'にかくめ', 'さんかくめ', 'よんかくめ', 'ごかくめ', 'ろっかくめ'];
 
 class AudioManager {
   private ctx: AudioContext | null = null;
@@ -121,27 +106,17 @@ class AudioManager {
    * 画の成功直後は称賛をかき消さないよう interrupt=false で呼ぶ
    */
   playStrokeGuide(strokeNumber: number, isFirst: boolean, interrupt = true): void {
-    const kaku = KAKU[strokeNumber] ?? `${strokeNumber}かくめ`;
-    const text = isFirst ? kaku : `つぎは ${kaku}`;
-    this.playVoice(`guide/stroke_${strokeNumber}`, text, interrupt);
+    this.playVoice(
+      `guide/stroke_${strokeNumber}`,
+      guideText(strokeNumber, isFirst),
+      interrupt,
+    );
   }
 
   /** フィードバックの指示音声 (§7.4)。「だめ」「ちがう」は使わない */
-  playFeedback(kind: 'start' | 'order' | 'offpath' | 'reverse' | 'short', strokeNumber: number): void {
-    switch (kind) {
-      case 'start':
-        return this.playVoice('guide/start_here', 'ここから はじめてね', true);
-      case 'order': {
-        const kaku = KAKU[strokeNumber] ?? `${strokeNumber}かくめ`;
-        return this.playVoice(`guide/next_is_${strokeNumber}`, `つぎは ${kaku}だよ`, true);
-      }
-      case 'offpath':
-        return this.playVoice('guide/on_line', 'せんの うえを なぞろうね', true);
-      case 'reverse':
-        return this.playVoice('guide/this_way', 'こっちむきだよ', true);
-      case 'short':
-        return this.playVoice('guide/to_end', 'さいごまで なぞろうね', true);
-    }
+  playFeedback(kind: FeedbackVoiceKind, strokeNumber: number): void {
+    const line = feedbackLine(kind, strokeNumber);
+    this.playVoice(line.file, line.text, true);
   }
 
   /** ガイドが易しくなったとき (§7.4) */
@@ -151,7 +126,7 @@ class AudioManager {
 
   /** 称賛。直前と同じものは選ばない (§8.1)。キュー再生 (§8.2) */
   playPraise(): void {
-    const idx = this.pickIndex(PRAISE.length, this.lastPraise);
+    const idx = pickDifferent(PRAISE.length, this.lastPraise);
     this.lastPraise = idx;
     const [file, text] = PRAISE[idx];
     this.playVoice(`praise/${file}`, text, false);
@@ -159,16 +134,10 @@ class AudioManager {
 
   /** やり直しの促し。直前と同じものは選ばない */
   playRetryVoice(): void {
-    const idx = this.pickIndex(RETRY.length, this.lastRetry);
+    const idx = pickDifferent(RETRY.length, this.lastRetry);
     this.lastRetry = idx;
     const [file, text] = RETRY[idx];
     this.playVoice(`retry/${file}`, text, false);
-  }
-
-  private pickIndex(n: number, exclude: number): number {
-    let idx = Math.floor(Math.random() * (n - 1));
-    if (idx >= exclude && exclude >= 0) idx++;
-    return idx % n;
   }
 
   // ── 効果音（WebAudio 合成・柔らかい音色 §9.2） ─────────────

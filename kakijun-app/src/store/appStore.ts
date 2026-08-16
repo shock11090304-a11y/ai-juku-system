@@ -19,6 +19,12 @@ import {
   type Settings,
 } from './settings';
 import { getDB } from './db';
+import { audioManager } from '../audio/audioManager';
+
+function applyAudioSettings(s: Settings): void {
+  audioManager.voiceEnabled = s.voiceEnabled;
+  audioManager.sfxEnabled = s.sfxEnabled;
+}
 
 export type Screen =
   | { name: 'home' }
@@ -82,6 +88,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         getDB(),
       ]);
       const day = await db.get('sessions', today());
+      applyAudioSettings(settings);
       set({
         settings,
         progress,
@@ -110,6 +117,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   updateSettings: (patch) => {
     const next = { ...get().settings, ...patch };
+    applyAudioSettings(next);
     set({ settings: next });
     void saveSettings(next).catch(() => {});
   },

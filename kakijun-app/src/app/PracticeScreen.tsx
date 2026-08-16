@@ -19,6 +19,8 @@ import { GuideRenderer } from '../canvas/renderGuide';
 import { InkRenderer } from '../canvas/renderInk';
 import { attachPointerInput } from '../canvas/pointerInput';
 import { audioManager } from '../audio/audioManager';
+import { characters } from '../data';
+import { computeStamps, earnedKeys } from '../store/rewards';
 import { BackButton, IconButton, StarRow } from './widgets';
 
 export function PracticeScreen() {
@@ -45,7 +47,10 @@ export function PracticeScreen() {
   const [level, setLevel] = useState<GuideLevel>(
     progress[charId]?.guideLevel ?? 1,
   );
-  const [celebration, setCelebration] = useState<{ stars: Stars } | null>(null);
+  const [celebration, setCelebration] = useState<{
+    stars: Stars;
+    newStamp: string | null;
+  } | null>(null);
   const celebrationRef = useRef(false);
   const [lowTime, setLowTime] = useState(false);
   levelRef.current = level;
@@ -175,9 +180,15 @@ export function PracticeScreen() {
         const stars = computeStars(r.summary);
         audioManager.sfx('complete');
         audioManager.playPraise();
+        const before = earnedKeys(
+          computeStamps(characters, useAppStore.getState().progress),
+        );
         recordAttempt(charId, stars, r.summary, levelRef.current);
+        const after = computeStamps(characters, useAppStore.getState().progress);
+        const gained = after.find((s) => s.earned && !before.has(s.key));
+        if (gained) audioManager.sfx('stamp');
         celebrationRef.current = true;
-        setCelebration({ stars });
+        setCelebration({ stars, newStamp: gained?.emoji ?? null });
         break;
       }
       case 'feedback':
@@ -389,6 +400,7 @@ export function PracticeScreen() {
       {celebration && (
         <CelebrationOverlay
           stars={celebration.stars}
+          newStamp={celebration.newStamp}
           onAgain={() => closeCelebration('again')}
           onNext={() => closeCelebration('next')}
         />
@@ -439,10 +451,12 @@ export function PracticeScreen() {
 /** 花丸 + 星 + もういっかい / つぎのじ (§7.3)。演出は3秒以内 (§9.2) */
 function CelebrationOverlay({
   stars,
+  newStamp,
   onAgain,
   onNext,
 }: {
   stars: Stars;
+  newStamp: string | null;
   onAgain: () => void;
   onNext: () => void;
 }) {
@@ -464,6 +478,35 @@ function CelebrationOverlay({
     >
       <div style={{ fontSize: 110, animation: 'popin 0.6s' }}>💮</div>
       <StarRow stars={stars} size={44} animated />
+      {newStamp && (
+        <div
+          data-testid="new-stamp"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            fontSize: 26,
+            animation: 'popin 0.6s 0.8s backwards',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 54,
+              background: '#fff8e1',
+              border: '4px solid var(--accent-warm)',
+              borderRadius: '50%',
+              width: 90,
+              height: 90,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {newStamp}
+          </span>
+          すたんぷ げっと！
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 24, marginTop: 12 }}>
         <button
           className="tap-target"
