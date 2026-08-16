@@ -8,6 +8,8 @@
 
     --pdf-dir DIR   問題 PDF の場所 (既定 lesson-prints)
     --only 国語     科目やファイル名で絞る (部分一致)
+    --customer X    接続する顧客 (販売先)。config の name かドメインで指定。
+                    省略時は自塾 (既定)。顧客の増やし方は docs/book-exam.md §21
 
 ■ ログイン (講師のアカウント)
     環境変数 EXAM_TEACHER_EMAIL / EXAM_TEACHER_PASSWORD。無ければその場で聞く
@@ -48,7 +50,9 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-CONFIG_MJS = os.path.join(ROOT, "exam-app", "exam-book-config.mjs")
+# EXAM_CONFIG_MJS は検査 (check_import_books.py) が差し替えるためだけの口
+CONFIG_MJS = os.environ.get("EXAM_CONFIG_MJS") \
+    or os.path.join(ROOT, "exam-app", "exam-book-config.mjs")
 # EXAM_PDF_METADATA は検査 (check_import_books.py) が差し替えるためだけの口
 METADATA = os.environ.get("EXAM_PDF_METADATA") \
     or os.path.join(ROOT, "lesson-prints", "_metadata.json")
@@ -65,24 +69,64 @@ MAX_PDF_BYTES = 52428800          # bucket の上限 (…_storage.sql と揃え�
 # =============================================================================
 # 設定 (exam-book-config.mjs が正典。書き写さない)
 # =============================================================================
-def load_config():
-    """exam-book-config.mjs から url と anonKey を読む。
+def parse_customers(src):
+    """config の CUSTOMERS を読む (node 無しで動かすための正典パーサ)。
 
-    ★ テスト用に EXAM_SUPABASE_URL / EXAM_SUPABASE_ANON で上書きできる。
-      本番の値を env に書く必要はない (config が正典)。
+    ★ 読める形は「1 顧客 1 オブジェクト・入れ子なし・値は 'シングルクォート'」
+      に固定してある (config 側の注記)。形が崩れてこのパーサとブラウザの解釈が
+      ずれたら check_import_books.py のパリティ検査 (実物の node と突き合わせ)
+      が落ちる。ここを直したらあちらも見ること。
+    """
+    # ★ 行頭 // のコメントを先に落とす。config には「記入例」をコメントで
+    #   置いてあり、素通しすると **コメントの中の例を本物の顧客として拾う**
+    #   (実測でパリティ検査が捕まえた)。値の中の https:// は行頭でないので残る。
+    src = re.sub(r"^\s*//.*$", "", src, flags=re.M)
+    out = []
+    for block in re.findall(r"\{[^{}]*\}", src):
+        if "url" not in block or "anonKey" not in block:
+            continue
+        m_url = re.search(r"url:\s*'([^']+)'", block)
+        m_key = re.search(r"anonKey:\s*((?:'[^']*'\s*\+?\s*)+)", block)
+        m_name = re.search(r"name:\s*'([^']*)'", block)
+        m_hosts = re.search(r"hosts:\s*\[([^\]]*)\]", block)
+        if not (m_url and m_key):
+            continue
+        out.append({
+            "name": m_name.group(1) if m_name else "",
+            "hosts": re.findall(r"'([^']*)'", m_hosts.group(1)) if m_hosts else [],
+            "url": m_url.group(1).rstrip("/"),
+            "anonKey": "".join(re.findall(r"'([^']*)'", m_key.group(1))),
+        })
+    return out
+
+
+def load_config(customer=None):
+    """接続先 (url, anon key) を決める。
+
+    優先順: EXAM_SUPABASE_URL/EXAM_SUPABASE_ANON (検査用の上書き)
+          → --customer で選んだ顧客 (name か host で指定)
+          → '*' を持つ既定の顧客
     """
     url = os.environ.get("EXAM_SUPABASE_URL", "").strip()
     key = os.environ.get("EXAM_SUPABASE_ANON", "").strip()
     if url and key:
         return url.rstrip("/"), key
     src = open(CONFIG_MJS, encoding="utf-8").read()
-    m_url = re.search(r"url:\s*'([^']+)'", src)
-    # anonKey は '...' + '...' + '...' と分割して書いてある (改行対策)。全部つなぐ。
-    m_key = re.search(r"anonKey:\s*((?:'[^']*'\s*\+?\s*)+)", src)
-    if not (m_url and m_key):
-        raise SystemExit("✗ exam-book-config.mjs から url / anonKey を読めませんでした")
-    key = "".join(re.findall(r"'([^']*)'", m_key.group(1)))
-    return m_url.group(1).rstrip("/"), key
+    customers = parse_customers(src)
+    if not customers:
+        raise SystemExit("✗ exam-book-config.mjs から CUSTOMERS を読めませんでした "
+                         "(形は §21 のとおり 1 顧客 1 ブロックに)")
+    if customer:
+        for c in customers:
+            if customer == c["name"] or customer in c["hosts"]:
+                return c["url"], c["anonKey"]
+        names = ", ".join(f"{c['name']} ({'/'.join(h for h in c['hosts'] if h != '*')})"
+                          for c in customers)
+        raise SystemExit(f"✗ 顧客 {customer!r} が見つかりません。指定できるもの: {names}")
+    for c in customers:
+        if "*" in c["hosts"]:
+            return c["url"], c["anonKey"]
+    return customers[0]["url"], customers[0]["anonKey"]
 
 
 # =============================================================================
@@ -426,6 +470,8 @@ def main():
     ap.add_argument("--pdf-dir", default=os.path.join(ROOT, "lesson-prints"),
                     help="問題 PDF の場所 (既定 lesson-prints)")
     ap.add_argument("--only", nargs="*", default=[], help="名前で絞る (部分一致)")
+    ap.add_argument("--customer", help="接続する顧客 (config の name かドメイン)。"
+                                       "省略時は '*' を持つ既定の顧客")
     ap.add_argument("--publish", action="store_true",
                     help="検証を通った冊子を公開まで切り替える (既定は非公開で置く)")
     ap.add_argument("--dry-run", action="store_true", help="何も書かずに計画だけ出す")
@@ -436,7 +482,7 @@ def main():
         print(f"✗ {a.src} に JSON がありません")
         return 1
 
-    url, anon = load_config()
+    url, anon = load_config(a.customer)
     api = Api(url, anon)
 
     if not a.dry_run:

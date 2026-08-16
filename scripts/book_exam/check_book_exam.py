@@ -203,21 +203,33 @@ def static_checks(files):
         if "assertAnonKey" not in s:
             ng("exam-book-config.mjs に assertAnonKey() が無い "
                "(service_role を貼ると RLS が全部素通りする)")
-        m = re.search(r"anonKey\s*:\s*['\"]([^'\"]*)['\"]", s)
-        key = m.group(1) if m else ""
-        if key.startswith("sb_secret_"):
-            ng("exam-book-config.mjs に secret キーが貼られている")
-        parts = key.split(".")
-        if len(parts) == 3:
-            import base64
-            try:
-                pad = parts[1] + "=" * (-len(parts[1]) % 4)
-                claims = json.loads(base64.urlsafe_b64decode(pad))
-                if claims.get("role") not in (None, "anon"):
-                    ng(f"exam-book-config.mjs の anonKey の role が "
-                       f"\"{claims.get('role')}\" になっている")
-            except Exception:
-                pass
+        # ★ 顧客 (CUSTOMERS) が複数になったので **全部の鍵** を見る。
+        #   1 件目だけ見ていると「2 社目に secret を貼る」事故を素通しする。
+        #   コメント行は落とす (記入例に反応しないため。import_books と同じ扱い)。
+        body = re.sub(r"^\s*//.*$", "", s, flags=re.M)
+        keys = []
+        for m in re.finditer(r"anonKey\s*:\s*((?:['\"][^'\"]*['\"]\s*\+?\s*)+)", body):
+            keys.append("".join(re.findall(r"['\"]([^'\"]*)['\"]", m.group(1))))
+        if not keys:
+            ng("exam-book-config.mjs に anonKey が 1 つも無い")
+        for i, key in enumerate(keys, 1):
+            if key.startswith("sb_secret_"):
+                ng(f"exam-book-config.mjs の {i} 件目に secret キーが貼られている")
+            parts = key.split(".")
+            if len(parts) == 3:
+                import base64
+                try:
+                    pad = parts[1] + "=" * (-len(parts[1]) % 4)
+                    claims = json.loads(base64.urlsafe_b64decode(pad))
+                    if claims.get("role") not in (None, "anon"):
+                        ng(f"exam-book-config.mjs の {i} 件目の anonKey の role が "
+                           f"\"{claims.get('role')}\" になっている")
+                except Exception:
+                    pass
+        # 接続先は必ず https (顧客のドメインを http で書くと全通信が平文になる)
+        for m in re.finditer(r"url\s*:\s*'([^']+)'", body):
+            if not m.group(1).startswith("https://"):
+                ng(f"exam-book-config.mjs の url が https でない ({m.group(1)})")
 
     # --- 8. answers の update に余計な列を混ぜていないか ----------------------
     # 行オブジェクトをそのまま .update(row) に渡すと id / is_correct が payload に入り、

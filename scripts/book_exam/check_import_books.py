@@ -258,13 +258,19 @@ def setup_dir(td, bundles, pdf_names):
     return src, pdfs, mp
 
 
-def run_importer(server, src, pdfs, metadata, *extra, password="pw-ok"):
+def run_importer(server, src, pdfs, metadata, *extra, password="pw-ok", config=None):
     env = dict(os.environ,
-               EXAM_SUPABASE_URL=f"http://127.0.0.1:{server.port}",
-               EXAM_SUPABASE_ANON="testanon",
                EXAM_TEACHER_EMAIL="t@example.invalid",
                EXAM_TEACHER_PASSWORD=password,
                EXAM_PDF_METADATA=metadata)
+    if config:
+        # --customer の経路を検査する: config の CUSTOMERS から選ばせる
+        env["EXAM_CONFIG_MJS"] = config
+        env.pop("EXAM_SUPABASE_URL", None)
+        env.pop("EXAM_SUPABASE_ANON", None)
+    else:
+        env["EXAM_SUPABASE_URL"] = f"http://127.0.0.1:{server.port}"
+        env["EXAM_SUPABASE_ANON"] = "testanon"
     r = subprocess.run([sys.executable, IMPORTER, src, "--pdf-dir", pdfs, *extra],
                        capture_output=True, text=True, env=env, timeout=120)
     return r
@@ -443,6 +449,45 @@ def check_all():
         if r.returncode == 0:
             ng("S11: 返却行数の不足を見逃した")
 
+        # --- S13: --customer で接続先が切り替わる (販売の要) -------------------
+        #   ★ 既定 ('*') は閉じたポート、顧客 B だけが偽 Supabase を指す config で、
+        #     「指定なし → 繋がらない / --customer B → 入る / 不明な顧客 → 名指しで
+        #     エラー」の 3 点を見る。選択を間違えると **他塾のデータベースに教材を
+        #     入れる** ことになるので、ここは絶対に落とせない。
+        scenario("S13 --customer で顧客を選べる")
+        st = FakeSupabase()
+        sv = Server(st)
+        cfgp = os.path.join(td, "customers.mjs")
+        with open(cfgp, "w", encoding="utf-8") as f:
+            f.write(f"""
+export const CUSTOMERS = [
+  {{
+    name: 'default-juku',
+    hosts: ['exam.default.example', '*'],
+    url: 'http://127.0.0.1:1',
+    anonKey: 'test' + 'anon',
+  }},
+  {{
+    name: 'juku-b',
+    hosts: ['exam.juku-b.example'],
+    url: 'http://127.0.0.1:{sv.port}',
+    anonKey: 'test' + 'anon',
+  }},
+];
+""")
+        r = run_importer(sv, src, pdfs, mp, "--only", "世界史",
+                         "--customer", "exam.juku-b.example", config=cfgp)
+        if r.returncode != 0 or len(st.books) != 1:
+            ng(f"S13: --customer で顧客 B に入らない (exit {r.returncode}, "
+               f"{len(st.books)} 冊) {r.stdout[-200:]}")
+        r = run_importer(sv, src, pdfs, mp, "--only", "世界史", config=cfgp)
+        if r.returncode == 0 or len(st.books) != 1:
+            ng(f"S13: 指定なしなのに既定以外へ入った (exit {r.returncode}, {len(st.books)} 冊)")
+        r = run_importer(sv, src, pdfs, mp, "--customer", "存在しない塾", config=cfgp)
+        sv.stop()
+        if r.returncode == 0 or "見つかりません" not in (r.stdout + r.stderr):
+            ng(f"S13: 不明な顧客を名指しで断らない (exit {r.returncode})")
+
         # --- S12: 読み返しの行数が欠けたら失敗にする ---------------------------
         #   ★ S10 (中身の食い違い) だけだと、「問数の照合」を消しても素通りする
         #     ことがサボタージュで実証された (2026-08-15)。行数の欠けを別に見る。
@@ -562,14 +607,82 @@ process.stdin.on('end', () => {{
         ng("パリティ: 検査件数が少なすぎる (空振りの疑い)")
 
 
+def check_config_parity():
+    """config の CUSTOMERS を、実物の node と python パーサの両方で読んで突き合わせる。
+
+    ★ import_books.py は node 無しで動くために config を正規表現で読む。
+      ブラウザ (本物の JS) と読み方がずれたら「Mac からは顧客 A に入れたつもりで、
+      生徒は顧客 B に繋がっている」が起きる。データと **選択の結果** の両方を比べる。
+    """
+    node = shutil.which("node")
+    if not node:
+        ng("node が無いので config パリティ検査を回せない (CI には必ずある)")
+        return
+    cfg = os.path.join(ROOT, "exam-app", "exam-book-config.mjs")
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("imp2", IMPORTER)
+    imp = importlib.util.module_from_spec(spec)
+    old_argv = sys.argv
+    sys.argv = ["imp2"]
+    try:
+        spec.loader.exec_module(imp)
+    finally:
+        sys.argv = old_argv
+    py = imp.parse_customers(open(cfg, encoding="utf-8").read())
+
+    script = f"""
+const mod = await import({json.dumps('file://' + cfg)});
+const data = mod.CUSTOMERS.map((c) => ({{ name: c.name, hosts: c.hosts,
+  url: c.url.replace(/\\/$/, ''), anonKey: c.anonKey }}));
+const hosts = [...new Set(mod.CUSTOMERS.flatMap((c) => c.hosts))].filter((h) => h !== '*');
+hosts.push('unknown.example.invalid');
+const picks = Object.fromEntries(hosts.map((h) => [h, mod.resolveCustomer(h).url]));
+console.log(JSON.stringify({{ data, picks }}));
+"""
+    tmp = os.path.join(tempfile.gettempdir(), f"cfg_parity_{os.getpid()}.mjs")
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(script)
+    try:
+        r = subprocess.run([node, tmp], capture_output=True, text=True, timeout=60)
+        if r.returncode:
+            ng(f"config パリティ: node が落ちた — {(r.stderr or '')[:200]}")
+            return
+        real = json.loads(r.stdout)
+    finally:
+        os.remove(tmp)
+
+    if py != real["data"]:
+        ng("config パリティ: python パーサと実物の JS で CUSTOMERS の中身が食い違う\n"
+           f"      python: {json.dumps(py, ensure_ascii=False)[:200]}\n"
+           f"      実物  : {json.dumps(real['data'], ensure_ascii=False)[:200]}")
+        return
+
+    # 選択の結果も比べる (--customer <host> が選ぶ url と、ブラウザが選ぶ url)
+    def py_pick(host):
+        for c in py:
+            if host == c["name"] or host in c["hosts"]:
+                return c["url"]
+        for c in py:
+            if "*" in c["hosts"]:
+                return c["url"]
+        return py[0]["url"]
+    bad_pick = [h for h, u in real["picks"].items() if py_pick(h) != u]
+    if bad_pick:
+        ng(f"config パリティ: ホスト {bad_pick} で選ばれる顧客が python と JS で違う")
+        return
+    print(f"  [parity] config: 顧客 {len(py)} 件のデータと {len(real['picks'])} ホストの"
+          f"選択が実物の JS と一致")
+
+
 def main():
     print("=== import_books.py の検査 (偽 Supabase + パリティ) ===")
     check_all()
     check_parity()
+    check_config_parity()
     if problems:
         print(f"\n=== ✗ 問題 {len(problems)} 件 ===")
         return 1
-    print("\n=== ALL PASS (シナリオ 12 + パリティ) ===")
+    print("\n=== ALL PASS (シナリオ 13 + パリティ 2 系) ===")
     return 0
 
 

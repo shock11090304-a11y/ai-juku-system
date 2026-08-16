@@ -1221,3 +1221,43 @@ exam-app/                      ← 専用 Vercel プロジェクトの Root Dire
 - root の .vercelignore に exam-app を書くと kamitest まで空になる (§20.4 の前・修正済み)
 - お名前.com は導線に有料勧誘が多い (ドメインプロテクション / .online 無料配布 /
   ネットde診断)。**DNS レコード設定に必要なものは無料機能だけ**
+
+---
+
+## 21. 販売: 顧客 (他塾) を 1 社増やす手順 — 2026-08-16
+
+方針は §20.3 のとおり **1 顧客 = 1 Supabase プロジェクト** (データ完全分離)。
+アプリの配信は 1 つ (Vercel kamitest) のまま、**開いているドメインで接続先が
+切り替わる** (exam-app/exam-book-config.mjs の CUSTOMERS)。
+
+### 21.1 手順 (1 社 30 分・順番どおりに)
+
+1. **Supabase**: 新プロジェクト作成 (名前は顧客名・リージョン Tokyo)
+2. **SQL Editor** に `supabase/bundle.sql` を貼って Run
+   ★ 末尾の **seed 部分は消してから** 貼る (顧客に見本データは不要。bundle 冒頭に説明あり)
+3. **Authentication**: サインアップを招待制にする / 講師アカウントを作成 →
+   SQL で `update public.profiles set role='teacher' where id='…';`
+4. **exam-app/exam-book-config.mjs** の CUSTOMERS に 1 ブロック追加
+   (name / hosts=顧客のドメイン / url / anon key)。形は書式注記のとおり。
+   → commit → main へ統合 (パリティ検査と鍵検査が CI で守る)
+5. **Vercel** kamitest → Settings → Domains に顧客のドメインを追加
+   (顧客側の DNS に CNAME を 1 行入れてもらう。§20.5 と同じ要領)
+6. **教材投入**: `python3 scripts/book_exam/import_books.py <json> --pdf-dir <pdfs> --customer <顧客ドメイン>`
+   ★ --customer を忘れると自塾に入る (既定が '*' = trillion)。ゲート S13 が
+     切り替えの動作を毎回検査している
+7. 顧客ドメインでログイン → 1 冊受験 → 提出まで通しで確認
+
+### 21.2 機械が守っていること
+
+- config の**全顧客の鍵**が anon であること (service_role が 1 社でも混ざれば CI 赤)
+- url が https であること
+- Python パーサ (import_books) とブラウザ (実物 JS) の**読み方と選択の一致**
+  (check_import_books の config パリティ。コメントの記入例を顧客として拾う事故は
+  実測で捕まえて修正済み)
+- `--customer` の切り替え動作 (S13: 指定なし→既定 / 指定→その顧客 / 不明→名指しで拒否)
+
+### 21.3 まだ手動なもの (増えたら自動化を検討)
+
+Supabase プロジェクト作成・bundle 貼り・講師作成は塾長のブラウザ作業 (顧客 1 社 30 分)。
+月 2〜3 社を超えるあたりで Supabase Management API による自動化を検討する。
+契約書・特商法表記・料金請求はビジネス側の準備 (このリポジトリの範囲外)。
