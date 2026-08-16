@@ -549,6 +549,12 @@ def run_static_tests(checkout_mod):
     expect("SUPABASE.name === 'trillion'" in ebm and "#signup-links" in ebm,
            "exam-book.mjs が trillion のときだけ申込リンクを出す")
 
+    # account.html: hidden 属性が display:flex の作者スタイルに負けない保険があるか
+    # (実測 2026-08-16: ログインフォームと契約カードが両方表示された)
+    account = open(os.path.join(ROOT, "exam-app", "account.html"), encoding="utf-8").read()
+    expect("[hidden]" in account and "!important" in account,
+           "account.html に [hidden] を必ず効かせる CSS がある")
+
     # AI塾側 (api/stripe-webhook.py) が神テストの請求書を月謝の台帳に混ぜないか。
     # invoice の metadata は空が普通なので subscription_details 側も見る必要がある。
     # payment_failed だけ見て succeeded を見ない「片対称」に戻ったら赤 (2026-08-16 の穴)。
