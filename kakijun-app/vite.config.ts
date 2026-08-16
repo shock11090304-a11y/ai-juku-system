@@ -12,6 +12,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
+        lang: 'ja',
         name: 'かきじゅん れんしゅう',
         short_name: 'かきじゅん',
         display: 'standalone',

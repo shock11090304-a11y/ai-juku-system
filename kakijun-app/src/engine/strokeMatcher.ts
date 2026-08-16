@@ -75,6 +75,17 @@ export function tol(L: number, p: MatchParams): number {
   return clamp(L * p.TOL_RATIO, p.TOL_MIN, p.TOL_MAX);
 }
 
+/**
+ * 書き始め (pointerDown) 専用の許容半径。
+ * 濁点や小書き字では tol が 0.03 (600px 画面で約18px) まで縮み、
+ * 幼児の指では狙えない「始点弾かれループ」になるため、
+ * 始点判定に限り指のタップサイズ相当の下限を敷く。
+ */
+const START_TOL_FLOOR = 0.045;
+export function startTol(L: number, p: MatchParams): number {
+  return Math.max(tol(L, p), START_TOL_FLOOR);
+}
+
 /** 入力補間の刻み (§6.3 ★ 固定値にしない) */
 export function step(L: number): number {
   return (L / LAST) * 0.5;
@@ -96,6 +107,8 @@ type MatchState = {
   offDist: number; // 経路から外れたまま進んだ累積移動距離
   reverseRun: number; // 進行方向が逆を向いた連続回数
   pPrev: Pt | null; // 直前の判定点
+  /** 逆走の向き判定の基準点。ここから一定距離動くたびに向きを1回評価する */
+  dirAnchor: Pt | null;
   attempts: number; // 現在の画のやり直し回数
   mistakes: MistakeLog[]; // 文字全体のミス記録（採点用）
   drawing: boolean;
@@ -119,6 +132,7 @@ export class StrokeMatcher {
       offDist: 0,
       reverseRun: 0,
       pPrev: null,
+      dirAnchor: null,
       attempts: 0,
       mistakes: [],
       drawing: false,
@@ -151,9 +165,25 @@ export class StrokeMatcher {
     this.st.offDist = 0;
     this.st.reverseRun = 0;
     this.st.pPrev = null;
+    this.st.dirAnchor = null;
     this.st.drawing = false;
     this.st.attempts++;
     this.consecutiveFailures++;
+  }
+
+  /**
+   * pointercancel (エッジスワイプ・通知バナー等) 用の中断。
+   * ミスとして記録せず、やり直し回数も進めない。
+   * これを呼ばないと drawing=true のまま残り、次のタッチが
+   * 前の画の続きとして誤判定される。
+   */
+  cancelStroke(): void {
+    this.st.progress = 0;
+    this.st.offDist = 0;
+    this.st.reverseRun = 0;
+    this.st.pPrev = null;
+    this.st.dirAnchor = null;
+    this.st.drawing = false;
   }
 
   private fail(feedback: Feedback): MatcherResult {
@@ -163,15 +193,19 @@ export class StrokeMatcher {
   /** ── ペンを置いたとき (§6.4) ─────────────────────────── */
   pointerDown(p: Pt): MatcherResult {
     if (this.st.completed) return { type: 'ignored' };
+    // pointercancel を取りこぼした後などに drawing のまま来たら黙って仕切り直す
+    if (this.st.drawing) this.cancelStroke();
     const s = this.strokes[this.st.strokeIdx];
-    const T = tol(s.length, this.params);
+    const T = startTol(s.length, this.params);
     const dStart = dist(p, s.pts[0]);
     const dEnd = dist(p, s.pts[LAST]);
 
     // ① まず「この画を逆から書こうとしている」を見る（順序チェックより先に）。
-    //    ただし始点と終点がほぼ同じ閉じた画（運筆の円など）では区別できないので除外する
+    //    ただし始点と終点がほぼ同じ閉じた画（運筆の円など）では区別できないので除外する。
+    //    ★dStart > T も条件に入れる: 短い画では始点・終点の許容円が重なり、
+    //      正しい始点タッチが「わずかに終点寄り」なだけで逆書き扱いになるため
     const closed = dist(s.pts[0], s.pts[LAST]) <= T;
-    if (!closed && dEnd <= T && dEnd < dStart) {
+    if (!closed && dEnd <= T && dEnd < dStart && dStart > T) {
       this.log('reverse_start');
       this.consecutiveFailures++;
       return this.fail('reverse'); // 「こっちから かいてみよう」
@@ -184,6 +218,7 @@ export class StrokeMatcher {
       this.st.offDist = 0;
       this.st.reverseRun = 0;
       this.st.pPrev = p;
+      this.st.dirAnchor = p;
       return { type: 'ok' };
     }
 
@@ -191,15 +226,17 @@ export class StrokeMatcher {
     //    ★ strokeIdx より前（確定済み）の画は対象にしない
     for (let i = this.st.strokeIdx + 1; i < this.strokes.length; i++) {
       const t = this.strokes[i];
-      if (dist(p, t.pts[0]) <= tol(t.length, this.params)) {
+      if (dist(p, t.pts[0]) <= startTol(t.length, this.params)) {
         this.log('order');
         this.consecutiveFailures++;
         return this.fail('order'); // 「つぎは ◯かくめだよ」
       }
     }
 
+    // 始点外れは記録するが、連続失敗カウント (自動レベルダウン) には数えない。
+    // 手のひらの接地など「書く意思のないタッチ」で3回に達して
+    // 勝手に易しくなるのを防ぐ。書きはじめた後の失敗だけを数える
     this.log('start');
-    this.consecutiveFailures++;
     return this.fail('start'); // 始点の丸を大きく点滅
   }
 
@@ -220,29 +257,46 @@ export class StrokeMatcher {
     }
 
     // --- 逆走: 「位置」ではなく「進む向き」で判定する (★★ §6.4) ---
-    //   補間で増やした中間点は同一直線上で向きが同じなので、そのまま数えると
-    //   1回のノイズ的な後退が REVERSE_RUN 回ぶんに化けてしまう。
-    //   reverseRun (§6.2「連続回数」) は生の入力イベント単位で数える。
-    if (this.params.reverseEnabled && lastOnPathJ >= 0) {
-      const tangent = normalize(
-        sub(
-          s.pts[Math.min(lastOnPathJ + 1, LAST)],
-          s.pts[Math.max(lastOnPathJ - 1, 0)],
-        ),
-      );
-      const motion = sub(pRaw, pEventStart);
-      if (
-        vlen(motion) > 0 &&
-        dot(normalize(motion), tangent) < this.params.REVERSE_DOT
-      ) {
-        this.st.reverseRun++;
-        if (this.st.reverseRun >= this.params.REVERSE_RUN) {
-          this.log('reverse');
-          this.resetCurrentStroke();
-          return this.fail('reverse'); // 「ぎゃくむきだよ」
+    //   ★イベント単位でも補間点単位でも数えない。高頻度入力 (Apple Pencil は
+    //     240Hz) では1イベントの移動が手ぶれより小さく、向きがノイズになる。
+    //     「基準点から一定距離 (指の揺れより大きい) 動くごとに1回」向きを評価し、
+    //     それが REVERSE_RUN 回連続で逆だったら逆走と確定する。
+    //   ★終点近くまで到達した後 (progress ≥ DONE_RATE) は数えない:
+    //     はらいの勢い余りが逆走扱いになるのを防ぐ (pointerUp で完走になる)
+    const doneZone = this.st.progress >= LAST * this.params.DONE_RATE;
+    if (this.params.reverseEnabled && !doneZone && this.st.dirAnchor) {
+      // このイベントに経路上の点が無くても (すでに外れている最中でも)、
+      // 到達済みの progress 位置の接線で向きを見続ける。
+      // ここで止めると逆走中に reverseRun が伸びず、常に offpath 扱いになる
+      const jDir = lastOnPathJ >= 0 ? lastOnPathJ : this.st.progress;
+      const D = Math.max(3 * h, 0.045); // 向き1評価あたりの移動距離
+      const motion = sub(pRaw, this.st.dirAnchor);
+      if (vlen(motion) >= D) {
+        const tangent = normalize(
+          sub(s.pts[Math.min(jDir + 1, LAST)], s.pts[Math.max(jDir - 1, 0)]),
+        );
+        // ループ (す・ぬ・結び) では吸着点 j が実際の筆先より遅れ、遅れた j の
+        // 接線と実運筆方向が見かけ上反転する。「この先の経路へ近づいているか」も
+        // 見て、前進中の揺れを逆走に数えない
+        const ahead = s.pts[Math.min(jDir + 3, LAST)];
+        const toAhead = sub(ahead, this.st.dirAnchor);
+        const approaching =
+          vlen(toAhead) === 0 ||
+          dot(normalize(motion), normalize(toAhead)) > 0;
+        if (
+          !approaching &&
+          dot(normalize(motion), tangent) < this.params.REVERSE_DOT
+        ) {
+          this.st.reverseRun++;
+          if (this.st.reverseRun >= this.params.REVERSE_RUN) {
+            this.log('reverse');
+            this.resetCurrentStroke();
+            return this.fail('reverse'); // 「ぎゃくむきだよ」
+          }
+        } else {
+          this.st.reverseRun = 0;
         }
-      } else {
-        this.st.reverseRun = 0;
+        this.st.dirAnchor = pRaw;
       }
     }
     return { type: 'ok' };
@@ -270,6 +324,13 @@ export class StrokeMatcher {
 
     // --- 経路逸脱: 「累積移動距離」で測る (★ サンプル数で測らない §6.6) ---
     if (d > T) {
+      // 終点近くまで到達済みなら、はみ出しは「終筆の勢い」なので数えない
+      // (濁点のはらいが数十px はみ出しただけで全消しになるのを防ぐ。
+      //  完走判定は pointerUp の DONE_RATE がそのまま行う)
+      if (st.progress >= LAST * this.params.DONE_RATE) {
+        st.pPrev = p;
+        return null;
+      }
       if (st.pPrev) st.offDist += dist(p, st.pPrev);
       st.pPrev = p;
       if (st.offDist > this.params.OFF_DIST) {
@@ -297,6 +358,7 @@ export class StrokeMatcher {
       st.offDist = 0;
       st.reverseRun = 0;
       st.pPrev = null;
+      st.dirAnchor = null;
       st.attempts = 0;
       st.drawing = false;
       this.consecutiveFailures = 0;

@@ -32,14 +32,20 @@ export function App() {
     void init();
   }, [init]);
 
-  // iOS の自動再生制限: 最初のユーザー操作で音をアンロックする (§8.2)
+  // iOS の自動再生制限: ユーザー操作で音をアンロックする (§8.2)。
+  // 一発勝負にせず張りっぱなしにする: unlock は冪等で、
+  // 背面化で止まった AudioContext の復帰 (resume) も兼ねる。
+  // touch では pointerup/click 側が user activation として確実
   useEffect(() => {
-    const unlock = () => {
-      audioManager.unlock();
-      window.removeEventListener('pointerdown', unlock);
-    };
+    const unlock = () => audioManager.unlock();
     window.addEventListener('pointerdown', unlock);
-    return () => window.removeEventListener('pointerdown', unlock);
+    window.addEventListener('pointerup', unlock);
+    window.addEventListener('click', unlock);
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('pointerup', unlock);
+      window.removeEventListener('click', unlock);
+    };
   }, []);
 
   return (

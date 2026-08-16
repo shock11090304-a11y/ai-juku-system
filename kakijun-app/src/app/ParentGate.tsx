@@ -28,6 +28,7 @@ export function ParentGate() {
   }
 
   function submit() {
+    if (input === '') return; // 空のまま OK を押しても失敗に数えない
     if (input === answer) {
       navigate({ name: 'parentDashboard' });
       return;

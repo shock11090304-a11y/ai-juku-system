@@ -20,7 +20,7 @@ export type SfxKind = 'pop' | 'star' | 'complete' | 'help' | 'stamp' | 'tap';
 
 class AudioManager {
   private ctx: AudioContext | null = null;
-  private unlocked = false;
+  private warmedTTS = false;
   voiceEnabled = true;
   sfxEnabled = true;
   private lastPraise = -1;
@@ -28,25 +28,44 @@ class AudioManager {
   private currentGuideAudio: HTMLAudioElement | null = null;
   /** 存在しないことが分かった音源ファイル（毎回 404 を踏まないため） */
   private missing = new Set<string>();
+  /** cancel 直後の speak を1tick遅らせるためのトークン (iOS の無音化バグ回避) */
+  private speakSeq = 0;
 
-  /** 最初のユーザー操作で呼ぶ。iOS の自動再生制限を解除する (§8.2 必須) */
+  constructor() {
+    // バックグラウンド復帰で AudioContext が 'interrupted'、
+    // SpeechSynthesis が paused のまま固まるのを防ぐ (iPadOS PWA の既知挙動)
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          void this.ctx?.resume().catch(() => {});
+          if ('speechSynthesis' in window) speechSynthesis.resume();
+        }
+      });
+    }
+  }
+
+  /**
+   * ユーザー操作を起点に呼ぶ。iOS の自動再生制限を解除する (§8.2 必須)。
+   * 何度呼んでもよい（背面化で止まった AudioContext の復帰を兼ねる）
+   */
   unlock(): void {
-    if (this.unlocked) return;
     try {
-      this.ctx = new AudioContext();
-      const buf = this.ctx.createBuffer(1, 1, 22050);
-      const src = this.ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(this.ctx.destination);
-      src.start(0);
-      void this.ctx.resume();
-      // SpeechSynthesis も空発話でウォームアップ
-      if ('speechSynthesis' in window) {
+      if (!this.ctx) {
+        this.ctx = new AudioContext();
+        const buf = this.ctx.createBuffer(1, 1, 22050);
+        const src = this.ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(this.ctx.destination);
+        src.start(0);
+      }
+      void this.ctx.resume().catch(() => {});
+      // SpeechSynthesis も空発話でウォームアップ（初回のみ）
+      if (!this.warmedTTS && 'speechSynthesis' in window) {
         const u = new SpeechSynthesisUtterance('');
         u.volume = 0;
         speechSynthesis.speak(u);
+        this.warmedTTS = true;
       }
-      this.unlocked = true;
     } catch {
       // 音が出なくてもアプリは動き続ける
     }
@@ -56,11 +75,25 @@ class AudioManager {
 
   private speak(text: string, interrupt: boolean): void {
     if (!('speechSynthesis' in window)) return;
-    if (interrupt) speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ja-JP';
-    u.rate = 0.85;
-    speechSynthesis.speak(u);
+    const seq = ++this.speakSeq;
+    const doSpeak = () => {
+      if (seq !== this.speakSeq) return; // その後に新しい発話が来ていたら破棄
+      // iOS Safari は cancel やバックグラウンド復帰後に paused のまま固まる
+      // 既知問題がある。speak 前に必ず resume しておく
+      speechSynthesis.resume();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ja-JP';
+      u.rate = 0.85;
+      speechSynthesis.speak(u);
+    };
+    if (interrupt) {
+      speechSynthesis.cancel();
+      // ★cancel と同一 tick の speak は iOS で散発的に無音で落ちるため、
+      //   少し置いてから発話する
+      setTimeout(doSpeak, 60);
+    } else {
+      doSpeak();
+    }
   }
 
   /**
@@ -76,18 +109,42 @@ class AudioManager {
     if (file && !this.missing.has(file)) {
       const url = `${import.meta.env.BASE_URL}audio/${file}.mp3`;
       const audio = new Audio(url);
-      audio.onerror = () => {
+      // 404 では error イベントと play() の reject が両方発火する。
+      // 2重に speak しないよう、フォールバックは1回に抑える
+      let fellBack = false;
+      const fallback = () => {
+        if (fellBack) return;
+        fellBack = true;
         this.missing.add(file);
         this.speak(text, interrupt);
       };
+      audio.onerror = fallback;
       if (interrupt) this.currentGuideAudio = audio;
-      audio.play().catch(() => {
-        this.missing.add(file);
-        this.speak(text, interrupt);
-      });
+      audio.play().catch(fallback);
       return;
     }
     this.speak(text, interrupt);
+  }
+
+  /**
+   * 画の成功時の「じょうず！つぎは ◯かくめ」。
+   * 称賛と画数ガイドを1発話にまとめる: 別々にキューへ積むと速書きで
+   * TTS が渋滞し、2画ぶん遅れて喋り続けるため。
+   * キューが詰まっているときは前を捨てて言い直す
+   */
+  playStrokeSuccess(nextStrokeNumber: number): void {
+    const idx = pickDifferent(PRAISE.length, this.lastPraise);
+    this.lastPraise = idx;
+    const [, praise] = PRAISE[idx];
+    const text = `${praise} ${guideText(nextStrokeNumber, false)}`;
+    if (
+      'speechSynthesis' in window &&
+      (speechSynthesis.pending || speechSynthesis.speaking)
+    ) {
+      this.playVoice(null, text, true);
+    } else {
+      this.playVoice(null, text, false);
+    }
   }
 
   /** 文字の読み上げ（🔊 タップ・文字表示時） */
@@ -144,6 +201,9 @@ class AudioManager {
 
   sfx(kind: SfxKind): void {
     if (!this.sfxEnabled || !this.ctx) return;
+    // 背面化・画面ロックで 'interrupted'/'suspended' になったままだと全て無音になる。
+    // sfx はユーザー操作 (pointerup 等) の中で呼ばれるので resume が効く
+    if (this.ctx.state !== 'running') void this.ctx.resume().catch(() => {});
     const t = this.ctx.currentTime;
     switch (kind) {
       case 'pop':

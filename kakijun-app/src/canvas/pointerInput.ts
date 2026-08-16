@@ -1,15 +1,22 @@
 /**
  * ★ Pointer Events の正規化・パームリジェクション (§12.2)。
- * - 'pen' を一度でも観測したら、以降 'touch' を完全に無視する
- *   （penDetected はセッション中保持。文字の切り替えではリセットしない）
+ * - 'pen' を観測している間は 'touch' を無視する。
+ *   ★ただし永久ではなく「最後にペンを見てから5分」で解除する。
+ *   モジュール変数を無期限に保持すると、ホーム画面 PWA は何日も生き続けるため
+ *   一度ペンを使っただけで以後ずっと指で描けなくなる
+ * - 手のひら→指の順で触れたとき、動かないポインタ (パーム) を捨てて
+ *   後から来たポインタに乗り換える (先着1本勝ちだと描く指が無視される)
  * - setPointerCapture でキャンバス外へのはみ出しに追随する
  * - 筆圧は pen のときだけ採用（指は 0 か 0.5 固定が返るため）
  */
 import type { Pt } from '../engine/types';
 import type { CanvasSurface } from './CanvasSurface';
 
-// セッション中保持（モジュールスコープ）
-let penDetected = false;
+// 最後に pen を観測した時刻 (モジュールスコープ・セッション内共有)
+let lastPenAt = 0;
+const PEN_STICKY_MS = 5 * 60 * 1000;
+
+const penActive = () => Date.now() - lastPenAt < PEN_STICKY_MS;
 
 export type PointerSample = {
   p: Pt;
@@ -21,6 +28,7 @@ export type PointerHandlers = {
   onDown: (s: PointerSample) => void;
   onMove: (s: PointerSample) => void;
   onUp: () => void;
+  /** 中断。ミス扱いにしないこと (matcher.cancelStroke + ink.clearCurrent) */
   onCancel: () => void;
 };
 
@@ -37,15 +45,39 @@ export function attachPointerInput(
 ): () => void {
   const el = surface.ink;
   let activeId: number | null = null;
+  let activeType = '';
+  let downPos: Pt | null = null;
+  let movedDist = 0;
+
+  const begin = (e: PointerEvent) => {
+    activeId = e.pointerId;
+    activeType = e.pointerType;
+    downPos = surface.toNorm(e.clientX, e.clientY);
+    movedDist = 0;
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // capture できなくても描けるだけ描く
+    }
+    handlers.onDown({ p: downPos, widthFactor: widthFactor(e) });
+  };
 
   const down = (e: PointerEvent) => {
-    if (e.pointerType === 'pen') penDetected = true;
-    if (penDetected && e.pointerType === 'touch') return; // パーム拒否
-    if (activeId !== null) return; // 2本目以降は無視
-    activeId = e.pointerId;
-    el.setPointerCapture(e.pointerId);
+    if (e.pointerType === 'pen') lastPenAt = Date.now();
+    if (penActive() && e.pointerType === 'touch') return; // パーム拒否
     e.preventDefault();
-    handlers.onDown({ p: surface.toNorm(e.clientX, e.clientY), widthFactor: widthFactor(e) });
+    if (activeId !== null) {
+      // すでに1本つかんでいる。原則後着は無視するが、
+      // つかんでいるのが「置いただけで動いていない touch」(=パームの疑い) で、
+      // 新しいポインタが pen または別の touch なら、そちらに乗り換える
+      const grabbedIsStalePalm = activeType === 'touch' && movedDist < 0.015;
+      const newcomerWins = e.pointerType === 'pen' || grabbedIsStalePalm;
+      if (!newcomerWins) return;
+      handlers.onCancel(); // 前のポインタの書きかけは無かったことにする
+      begin(e);
+      return;
+    }
+    begin(e);
   };
 
   const move = (e: PointerEvent) => {
@@ -57,10 +89,12 @@ export function attachPointerInput(
         ? e.getCoalescedEvents()
         : [e];
     for (const ev of events) {
-      handlers.onMove({
-        p: surface.toNorm(ev.clientX, ev.clientY),
-        widthFactor: widthFactor(ev),
-      });
+      const p = surface.toNorm(ev.clientX, ev.clientY);
+      if (downPos) {
+        movedDist += Math.hypot(p.x - downPos.x, p.y - downPos.y);
+        downPos = p;
+      }
+      handlers.onMove({ p, widthFactor: widthFactor(ev) });
     }
   };
 

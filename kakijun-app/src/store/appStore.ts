@@ -42,6 +42,62 @@ function today(): string {
   ).padStart(2, '0')}`;
 }
 
+/** インポートした進捗レコードを安全な形に矯正する */
+function sanitizeProgress(p: Record<string, unknown>): CharProgress {
+  const base = emptyProgress(p.charId as string);
+  const stars = [0, 1, 2, 3].includes(p.bestStars as number)
+    ? (p.bestStars as CharProgress['bestStars'])
+    : 0;
+  const level = [1, 2, 3].includes(p.guideLevel as number)
+    ? (p.guideLevel as CharProgress['guideLevel'])
+    : 1;
+  const counts =
+    p.mistakeCounts && typeof p.mistakeCounts === 'object'
+      ? (p.mistakeCounts as Record<string, unknown>)
+      : {};
+  const saneCounts = { ...base.mistakeCounts };
+  for (const k of Object.keys(saneCounts) as (keyof typeof saneCounts)[]) {
+    if (typeof counts[k] === 'number' && Number.isFinite(counts[k])) {
+      saneCounts[k] = counts[k] as number;
+    }
+  }
+  return {
+    ...base,
+    bestStars: stars,
+    guideLevel: level,
+    mastered: p.mastered === true,
+    attempts: typeof p.attempts === 'number' && Number.isFinite(p.attempts) ? p.attempts : 0,
+    lastPlayedAt:
+      typeof p.lastPlayedAt === 'number' && Number.isFinite(p.lastPlayedAt)
+        ? p.lastPlayedAt
+        : 0,
+    mistakeCounts: saneCounts,
+  };
+}
+
+/** インポートした設定を安全な形に矯正する (showTypes: null 等でホームが壊れないように) */
+function sanitizeSettings(s: Partial<Settings> | null | undefined): Settings | null {
+  if (!s || typeof s !== 'object') return null;
+  const limit = (v: unknown, fallback: number | null): number | null =>
+    v === null || (typeof v === 'number' && Number.isFinite(v) && v > 0)
+      ? (v as number | null)
+      : fallback;
+  return {
+    ...DEFAULT_SETTINGS,
+    strictness: ['easy', 'normal', 'strict'].includes(s.strictness as string)
+      ? (s.strictness as Settings['strictness'])
+      : DEFAULT_SETTINGS.strictness,
+    sessionLimitMin: limit(s.sessionLimitMin, DEFAULT_SETTINGS.sessionLimitMin),
+    dailyLimitMin: limit(s.dailyLimitMin, DEFAULT_SETTINGS.dailyLimitMin),
+    voiceEnabled: s.voiceEnabled !== false,
+    sfxEnabled: s.sfxEnabled !== false,
+    showTypes: {
+      ...DEFAULT_SETTINGS.showTypes,
+      ...(s.showTypes && typeof s.showTypes === 'object' ? s.showTypes : {}),
+    },
+  };
+}
+
 type AppState = {
   screen: Screen;
   ready: boolean;
@@ -51,6 +107,10 @@ type AppState = {
   sessionSeconds: number;
   /** 端末ローカル日付での今日の合計練習時間（秒） */
   todaySeconds: number;
+  /** 最後に計時した実時刻。PWA が何日も生き続けるため「1回」の区切りに使う */
+  lastTickAt: number;
+  /** todaySeconds がどの日付のものか（日付跨ぎの検出用） */
+  todayKey: string;
 
   navigate: (screen: Screen) => void;
   init: () => Promise<void>;
@@ -82,6 +142,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   progress: {},
   sessionSeconds: 0,
   todaySeconds: 0,
+  lastTickAt: 0,
+  todayKey: today(),
 
   navigate: (screen) => set({ screen }),
 
@@ -129,11 +191,26 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   tickPracticeTime: () => {
     const s = get();
-    const todaySeconds = s.todaySeconds + 1;
-    set({ sessionSeconds: s.sessionSeconds + 1, todaySeconds });
+    const now = Date.now();
+    const day = today();
+    let sessionSeconds = s.sessionSeconds;
+    let todaySeconds = s.todaySeconds;
+    // ホーム画面 PWA はサスペンドされたまま何日も生きる。
+    // 30分以上空いたら新しい「1回のれんしゅう」として数え直す
+    if (s.lastTickAt > 0 && now - s.lastTickAt > 30 * 60 * 1000) {
+      sessionSeconds = 0;
+    }
+    // 日付が変わっていたら今日ぶんをリセット（翌朝いきなり時間切れを防ぐ）
+    if (s.todayKey !== day) {
+      sessionSeconds = 0;
+      todaySeconds = 0;
+    }
+    sessionSeconds += 1;
+    todaySeconds += 1;
+    set({ sessionSeconds, todaySeconds, lastTickAt: now, todayKey: day });
     if (todaySeconds % 10 === 0) {
       void getDB()
-        .then((db) => db.put('sessions', { date: today(), seconds: todaySeconds }))
+        .then((db) => db.put('sessions', { date: day, seconds: todaySeconds }))
         .catch(() => {});
     }
   },
@@ -185,18 +262,35 @@ export const useAppStore = create<AppState>((set, get) => ({
     const data = JSON.parse(json) as {
       app?: string;
       version?: number;
-      settings?: Settings;
-      progress?: CharProgress[];
-      sessions?: { date: string; seconds: number }[];
+      settings?: Partial<Settings> | null;
+      progress?: unknown[];
+      sessions?: { date?: unknown; seconds?: unknown }[];
     };
     if (data.app !== 'kakijun' || !Array.isArray(data.progress)) {
       throw new Error('かきじゅんのバックアップ JSON ではありません');
     }
+    // ★レコードは無検証で保存しない。壊れた1件 (mistakeCounts 欠落など) が
+    //   IndexedDB に入ると、以後ダッシュボードが開くたびにクラッシュする
+    const progress = data.progress
+      .filter(
+        (p): p is Record<string, unknown> =>
+          !!p && typeof p === 'object' && typeof (p as { charId?: unknown }).charId === 'string',
+      )
+      .map((p) => sanitizeProgress(p));
+    const sessions = (data.sessions ?? []).filter(
+      (s): s is { date: string; seconds: number } =>
+        !!s && typeof s.date === 'string' && typeof s.seconds === 'number',
+    );
+    const settings = sanitizeSettings(data.settings);
+
     const db = await getDB();
     const tx = db.transaction(['progress', 'sessions', 'settings'], 'readwrite');
-    for (const p of data.progress) await tx.objectStore('progress').put(p);
-    for (const s of data.sessions ?? []) await tx.objectStore('sessions').put(s);
-    if (data.settings) await tx.objectStore('settings').put(data.settings, 'settings');
+    // 「復元」なのでマージではなく置き換える (残すとバックアップ後の記録が混ざる)
+    await tx.objectStore('progress').clear();
+    await tx.objectStore('sessions').clear();
+    for (const p of progress) await tx.objectStore('progress').put(p);
+    for (const s of sessions) await tx.objectStore('sessions').put(s);
+    if (settings) await tx.objectStore('settings').put(settings, 'settings');
     await tx.done;
     await get().init();
   },

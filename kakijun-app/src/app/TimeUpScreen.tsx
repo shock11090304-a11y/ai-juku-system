@@ -22,9 +22,17 @@ export function TimeUpScreen() {
       <div style={{ fontSize: 60 }}>😴 ⭐</div>
       <button
         data-testid="btn-gear"
+        className="tap-target"
         onClick={() => navigate({ name: 'parentGate' })}
         aria-label="おうちのひとの がめん"
-        style={{ background: 'none', fontSize: 20, opacity: 0.45, marginTop: 30 }}
+        style={{
+          background: 'none',
+          fontSize: 26,
+          opacity: 0.45,
+          marginTop: 30,
+          width: 64,
+          height: 64,
+        }}
       >
         ⚙️
       </button>

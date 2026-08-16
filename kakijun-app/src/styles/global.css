@@ -9,6 +9,8 @@ body {
   user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
+  /* ダブルタップズームを CSS 側でも抑止（タップの反応は保つ） */
+  touch-action: manipulation;
   margin: 0;
   padding: 0;
   width: 100%;

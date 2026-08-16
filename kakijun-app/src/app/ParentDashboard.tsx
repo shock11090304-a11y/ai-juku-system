@@ -43,7 +43,7 @@ export function ParentDashboard() {
     .map((p) => ({
       p,
       char: characters.find((c) => c.id === p.charId)?.char ?? p.charId,
-      orderMistakes: p.mistakeCounts.order,
+      orderMistakes: p.mistakeCounts?.order ?? 0, // 旧データ/外部データでも落ちない
     }))
     .filter((x) => x.orderMistakes > 0)
     .sort((a, b) => b.orderMistakes - a.orderMistakes)
@@ -236,13 +236,18 @@ export function ParentDashboard() {
               style={btnStyle('#e8f5e9')}
               data-testid="btn-export"
               onClick={async () => {
-                const json = await exportData();
-                setIoText(json);
                 try {
-                  await navigator.clipboard.writeText(json);
-                  setIoMsg('エクスポートしました（クリップボードにもコピー済み）');
-                } catch {
-                  setIoMsg('エクスポートしました。下の欄からコピーしてください');
+                  const json = await exportData();
+                  setIoText(json);
+                  try {
+                    await navigator.clipboard.writeText(json);
+                    setIoMsg('エクスポートしました（クリップボードにもコピー済み）');
+                  } catch {
+                    // iPad Safari はユーザー操作から時間が経つと writeText を拒否する
+                    setIoMsg('エクスポートしました。下の欄を長押しでコピーしてください');
+                  }
+                } catch (e) {
+                  setIoMsg(`エクスポートできません: ${String(e)}`);
                 }
               }}
             >
@@ -265,9 +270,12 @@ export function ParentDashboard() {
             <button
               style={btnStyle('#ffebee')}
               onClick={async () => {
-                if (confirm('進捗をすべて消します。よろしいですか？')) {
+                if (!confirm('進捗をすべて消します。よろしいですか？')) return;
+                try {
                   await clearAllData();
                   setIoMsg('全消去しました');
+                } catch (e) {
+                  setIoMsg(`消去できません: ${String(e)}`);
                 }
               }}
             >

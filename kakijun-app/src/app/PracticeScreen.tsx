@@ -21,6 +21,7 @@ import { attachPointerInput } from '../canvas/pointerInput';
 import { audioManager } from '../audio/audioManager';
 import { characters } from '../data';
 import { computeStamps, earnedKeys } from '../store/rewards';
+import { usePracticeWakeLock } from './useWakeLock';
 import { BackButton, IconButton, StarRow } from './widgets';
 
 export function PracticeScreen() {
@@ -47,10 +48,15 @@ export function PracticeScreen() {
   const [level, setLevel] = useState<GuideLevel>(
     progress[charId]?.guideLevel ?? 1,
   );
+  // ★pointer ハンドラはマウント時の effect に closure されるため、
+  //   最新の handleResult をここ経由で呼ばないと「つぎのじ」で文字が変わった後も
+  //   古い charId の handleResult が呼ばれ、成績が前の文字に記録される
+  const handleResultRef = useRef<(r: MatcherResult) => void>(() => {});
   const [celebration, setCelebration] = useState<{
     stars: Stars;
     newStamp: string | null;
   } | null>(null);
+  usePracticeWakeLock(); // §12.7 練習中はスリープ防止を試みる（失敗が正常系）
   const celebrationRef = useRef(false);
   const [lowTime, setLowTime] = useState(false);
   levelRef.current = level;
@@ -87,7 +93,7 @@ export function PracticeScreen() {
         if (r.type === 'ok') {
           ink.addPoint(s.p.x, s.p.y, s.widthFactor);
         } else {
-          handleResult(r);
+          handleResultRef.current(r);
         }
       },
       onMove: (s) => {
@@ -97,15 +103,17 @@ export function PracticeScreen() {
         if (r.type === 'ok') {
           ink.addPoint(s.p.x, s.p.y, s.widthFactor);
         } else if (r.type === 'feedback') {
-          handleResult(r);
+          handleResultRef.current(r);
         }
       },
       onUp: () => {
         const m = matcherRef.current;
-        if (!m) return;
-        handleResult(m.pointerUp());
+        if (!m || !m.state.drawing) return;
+        handleResultRef.current(m.pointerUp());
       },
       onCancel: () => {
+        // エッジスワイプ・通知・パーム乗り換えによる中断。ミス扱いにしない
+        matcherRef.current?.cancelStroke();
         inkRef.current?.clearCurrent();
       },
     });
@@ -175,8 +183,8 @@ export function PracticeScreen() {
         const done = strokesRef.current[r.committedIdx];
         guide.burst(done.pts[63]);
         audioManager.sfx('pop');
-        audioManager.playPraise();
-        audioManager.playStrokeGuide(r.nextIdx + 1, false, false);
+        // 称賛+次の画数を1発話で（別々に積むと速書きで TTS が渋滞する）
+        audioManager.playStrokeSuccess(r.nextIdx + 1);
         guide.playDemo();
         break;
       }
@@ -203,6 +211,9 @@ export function PracticeScreen() {
         break;
     }
   }
+
+  // 毎レンダーで最新版に差し替える（マウント時 closure の stale 化対策）
+  handleResultRef.current = handleResult;
 
   function onFeedback(fb: Feedback): void {
     const guide = guideRef.current!;

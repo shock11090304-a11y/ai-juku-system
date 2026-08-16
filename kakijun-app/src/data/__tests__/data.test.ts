@@ -77,6 +77,59 @@ describe('全文字: 理想軌跡が判定エンジンを通る（自己整合�
   }
 });
 
+describe('全文字: 手ぶれ入力でも完走できる（実機の指書き相当）', () => {
+  // 経路の法線方向に ±0.02 の揺れ + 密なイベント列 (240Hz 相当) を合成。
+  // ループのある す・ず 等で吸着遅れによる逆走誤発火が起きないことの回帰テスト
+  function rng(seed: number): () => number {
+    let a = seed >>> 0;
+    return () => {
+      a |= 0;
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  for (const c of characters) {
+    it(`${c.id} (${c.char})`, () => {
+      const strokes = prepareStrokes(c);
+      const m = new StrokeMatcher(strokes, resolveParams('normal', 1));
+      const rand = rng(c.id.split('').reduce((a, ch) => a + ch.charCodeAt(0), 7));
+      for (const s of strokes) {
+        // 4倍に細分し法線ジッタを加えた密な軌跡
+        const path: { x: number; y: number }[] = [];
+        for (let i = 0; i < 63; i++) {
+          const a = s.pts[i];
+          const b = s.pts[i + 1];
+          const tx = b.x - a.x;
+          const ty = b.y - a.y;
+          const l = Math.hypot(tx, ty) || 1;
+          for (let k = 0; k < 4; k++) {
+            const t = k / 4;
+            const j = (rand() * 2 - 1) * 0.02;
+            path.push({
+              x: a.x + tx * t + (-ty / l) * j,
+              y: a.y + ty * t + (tx / l) * j,
+            });
+          }
+        }
+        path.push(s.pts[63]);
+        const down = m.pointerDown(path[0]);
+        expect(down.type, `${c.id} ${s.index}画目の始点`).toBe('ok');
+        for (let i = 1; i < path.length; i++) {
+          const r = m.pointerMove(path[i]);
+          expect(r.type, `${c.id} ${s.index}画目 点${i}`).toBe('ok');
+        }
+        const up = m.pointerUp();
+        expect(up.type, `${c.id} ${s.index}画目の完走`).toMatch(
+          /stroke-ok|char-complete/,
+        );
+      }
+    });
+  }
+});
+
 describe('画数の重点確認 (§14.4)', () => {
   // 「現行の国語教科書（教科書体）で一般に通用している筆順」を基準とする
   const EXPECTED: Record<string, number> = {

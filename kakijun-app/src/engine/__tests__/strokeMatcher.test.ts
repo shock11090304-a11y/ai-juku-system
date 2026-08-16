@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { StrokeMatcher, resolveParams } from '../strokeMatcher';
 import { computeStars } from '../scoring';
+import { prepareStrokes, toCharacterDef } from '../loader';
 import {
   decimate,
   feedStroke,
@@ -102,8 +103,9 @@ describe('ケース5: 終点から始点へ描く → FEEDBACK_REVERSE', () => {
     const strokes = loadStrokes('hira_shi');
     const m = newMatcher('hira_shi');
     const pts = strokes[0].pts;
-    // 20番目まで正しく進み、そこから引き返す
-    const path = [...pts.slice(0, 21), ...pts.slice(8, 20).reverse()];
+    // 25番目まで正しく進み、そこから引き返す
+    // (向きの評価は移動距離で量子化されるため、確定には数サンプルぶんの逆走が要る)
+    const path = [...pts.slice(0, 26), ...pts.slice(2, 25).reverse()];
     const events = feedStroke(m, path);
     expect(feedbackKinds(events)).toContain('reverse');
     expect(m.summary().counts.reverse).toBe(1);
@@ -207,6 +209,110 @@ describe('§14.1: 難易度によって同じ軌跡の合否が変わる', () =>
     expect(feedbackKinds(events)).not.toContain('reverse');
   });
 });
+
+describe('実機で起きる端点（総点検で確定した不具合の回帰テスト）', () => {
+  it('cancelStroke は途中中断をミス扱いにしない (pointercancel)', () => {
+    const strokes = loadStrokes('hira_shi');
+    const m = newMatcher('hira_shi');
+    m.pointerDown(strokes[0].pts[0]);
+    for (let i = 1; i < 30; i++) m.pointerMove(strokes[0].pts[i]);
+    m.cancelStroke();
+    expect(m.state.drawing).toBe(false);
+    expect(m.state.attempts).toBe(0);
+    expect(m.summary().mistakes).toHaveLength(0);
+    expect(m.consecutiveFailures).toBe(0);
+    // 中断後は最初からやり直して普通に完走できる
+    const events = feedStroke(m, strokes[0].pts);
+    expect(lastEvent(events).type).toBe('char-complete');
+  });
+
+  it('drawing のまま次の pointerDown が来ても仕切り直す (cancel 取りこぼし)', () => {
+    const strokes = loadStrokes('hira_shi');
+    const m = newMatcher('hira_shi');
+    m.pointerDown(strokes[0].pts[0]);
+    for (let i = 1; i < 20; i++) m.pointerMove(strokes[0].pts[i]);
+    // pointerup を挟まず新しいタッチ
+    const r = m.pointerDown(strokes[0].pts[0]);
+    expect(r.type).toBe('ok');
+    for (let i = 1; i < 64; i++) m.pointerMove(strokes[0].pts[i]);
+    expect(m.pointerUp().type).toBe('char-complete');
+    expect(m.summary().mistakes).toHaveLength(0);
+  });
+
+  it('濁点サイズの画でも始点ターゲットは指サイズ (0.045) 以上ある', () => {
+    // 弧長 0.12 程度の短い画 (tol は 0.03 に張り付く)
+    const short = prepareTiny([
+      { x: 0.8, y: 0.1 },
+      { x: 0.87, y: 0.2 },
+    ]);
+    const m = new StrokeMatcher(short, resolveParams('normal', 1));
+    // 始点から 0.04 ずれたタップ (旧実装では弾かれていた)
+    const r = m.pointerDown({ x: 0.8 - 0.028, y: 0.1 - 0.028 });
+    expect(r.type).toBe('ok');
+  });
+
+  it('短い画では「始点許容内なのに終点寄り」を逆書きにしない', () => {
+    const short = prepareTiny([
+      { x: 0.4, y: 0.4 },
+      { x: 0.48, y: 0.4 },
+    ]);
+    const m = new StrokeMatcher(short, resolveParams('normal', 1));
+    // 中央やや終点寄り: dStart=0.042 ≤ T(0.045), dEnd=0.038 < dStart
+    const r = m.pointerDown({ x: 0.442, y: 0.4 });
+    expect(r.type).toBe('ok');
+  });
+
+  it('終点まで到達した後のはみ出し (終筆の勢い) は逸脱・逆走にしない', () => {
+    const strokes = loadStrokes('hira_shi');
+    const m = newMatcher('hira_shi');
+    const pts = strokes[0].pts;
+    const path = [...pts];
+    // 終点の先へ接線方向に大きく滑る
+    const end = pts[63];
+    const prev = pts[60];
+    const tx = end.x - prev.x;
+    const ty = end.y - prev.y;
+    const l = Math.hypot(tx, ty) || 1;
+    for (let k = 1; k <= 10; k++) {
+      path.push({ x: end.x + (tx / l) * 0.02 * k, y: end.y + (ty / l) * 0.02 * k });
+    }
+    const events = feedStroke(m, path);
+    expect(lastEvent(events).type).toBe('char-complete');
+    expect(m.summary().counts.offpath).toBe(0);
+    expect(m.summary().counts.reverse).toBe(0);
+  });
+
+  it('始点外れタップは連続失敗カウント (自動レベルダウン) に数えない', () => {
+    const m = newMatcher('hira_shi');
+    for (let i = 0; i < 5; i++) {
+      const r = m.pointerDown({ x: 0.95, y: 0.95 });
+      expect(r).toMatchObject({ type: 'feedback', feedback: 'start' });
+    }
+    expect(m.consecutiveFailures).toBe(0);
+    expect(m.summary().counts.start).toBe(5); // 記録には残る
+  });
+});
+
+function prepareTiny(control: { x: number; y: number }[]) {
+  // テスト用: 制御点から直接 ResampledStroke を作る
+  return prepareStrokes(
+    toCharacterDef({
+      id: 'test_tiny',
+      char: '゛',
+      reading: 'てん',
+      type: 'hiragana',
+      group: 'test',
+      strokes: [
+        {
+          index: 1,
+          hint: 'naname',
+          ending: 'tome',
+          points: control.map((p) => [p.x, p.y] as [number, number]),
+        },
+      ],
+    }),
+  );
+}
 
 describe('やり直しの挙動 (§6.4 resetCurrentStroke)', () => {
   it('失敗しても確定済みの画は残り、同じ画からやり直せる', () => {

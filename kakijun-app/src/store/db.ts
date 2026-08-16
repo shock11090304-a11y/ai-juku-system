@@ -19,12 +19,19 @@ interface KakijunDB extends DBSchema {
 let dbPromise: Promise<IDBPDatabase<KakijunDB>> | null = null;
 
 export function getDB(): Promise<IDBPDatabase<KakijunDB>> {
-  dbPromise ??= openDB<KakijunDB>('kakijun', 1, {
-    upgrade(db) {
-      db.createObjectStore('progress', { keyPath: 'charId' });
-      db.createObjectStore('settings');
-      db.createObjectStore('sessions', { keyPath: 'date' });
-    },
-  });
+  if (!dbPromise) {
+    dbPromise = openDB<KakijunDB>('kakijun', 1, {
+      upgrade(db) {
+        db.createObjectStore('progress', { keyPath: 'charId' });
+        db.createObjectStore('settings');
+        db.createObjectStore('sessions', { keyPath: 'date' });
+      },
+    });
+    // 失敗した Promise を永久キャッシュすると以後の保存が全部無言で失われる。
+    // 失敗時はキャッシュを捨てて次回の呼び出しで開き直す
+    dbPromise.catch(() => {
+      dbPromise = null;
+    });
+  }
   return dbPromise;
 }
