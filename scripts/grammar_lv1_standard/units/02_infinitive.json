@@ -15,7 +15,7 @@
    ],
    "answer_index": 1,
    "answer_text": "to live in",
-   "explanation": "live は自動詞なので「~に住む」には前置詞 in が必要で、live in a house の形がもとになっている。house を後ろから修飾する形容詞用法にしても in は消えずに残るため to live in が正しい。to live では前置詞が抜けており、living は「住んでいる家」と現在の状態を表してしまう。to be lived は受動で「住まれる家」となり不自然。",
+   "explanation": "live は自動詞なので「~に住む」には前置詞 in が必要で、live in a house の形がもとになっている。house を後ろから修飾する形容詞用法にしても in は消えずに残るため to live in が正しい。to live では前置詞が抜けており、living にすると house が「住んでいる」ことになり、修飾する語と名詞の関係が逆になる。to be lived は受動で「住まれる家」となり不自然。",
    "point": "自動詞 + 前置詞は不定詞でも前置詞を残す"
   },
   {
@@ -47,7 +47,7 @@
    ],
    "answer_index": 0,
    "answer_text": "for him",
-   "explanation": "difficult は事柄の難易を表す形容詞なので、不定詞の意味上の主語は for + 人で表し for him になる。He is difficult. とは言い換えられないので of him は使えない。to him は「彼にとって」と感じ方を添える形で不定詞の主語を示さず、that he は後ろが節になる形なので to solve と続けられない。",
+   "explanation": "difficult は事柄の難易を表す形容詞なので、不定詞の意味上の主語は for + 人で表し for him になる。He is difficult. とは言い換えられないので of him は使えない。to him は不定詞の意味上の主語を示す形ではなく、that he は後ろが節になる形なので to solve と続けられない。",
    "point": "難易・必要を表す形容詞は for + 人"
   },
   {
@@ -111,7 +111,7 @@
    ],
    "answer_index": 2,
    "answer_text": "To tell",
-   "explanation": "To tell the truth は「実を言うと」という意味の独立不定詞で、文全体に話し手の態度を添える決まった形。文の主語 I が tell の動作主なので、Telling や Told のような分詞にすると主語との関係がずれる。To be told は受動で「告げられると」の意味になり、the truth を目的語にとれない。",
+   "explanation": "To tell the truth は「実を言うと」という意味の独立不定詞で、文全体に話し手の態度を添える決まった形。Told は受動の意味になり、主語 I が「告げられる」側になってしまう。Telling は分詞構文としては作れるが「真実を語りながら反対する」という意味になり、前置きとして文全体に態度を添える働きにならない。To be told も受動なので the truth を目的語にとれない。",
    "point": "To tell the truth =「実を言うと」"
   },
   {

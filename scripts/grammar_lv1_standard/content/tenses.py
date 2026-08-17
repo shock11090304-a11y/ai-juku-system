@@ -61,7 +61,7 @@ QUESTIONS = [
         "answer": "will have finished",
         "explanation": "by the time は時の副詞節を作るので節内は未来でも現在形 come になり、主節は「その時までには終えてしまっているだろう」という未来完了 will have finished で表す。"
                        "will finish だと未来のある時点で終える動作を指すだけで、「その時までに完了している」という期限の意味が出ない。"
-                       "現在形 finish は主節の未来を表せず、will be finishing は「その時ちょうど書いている最中だ」となって完了の意味が出ない。",
+                       "現在形 finish は主節の未来を表せず、will be finishing は「その時ちょうど終えつつある最中だ」となり、終わっているという完了の意味が出ない。",
         "point": "「~までには終えている」は will have p.p.",
     },
     {
@@ -119,7 +119,7 @@ QUESTIONS = [
         "stem": "A: Is Mr. Sato in?  B: No, he ( ) to Nagoya on business. He will be back on Friday.",
         "choices": ["has been", "has gone", "has come", "had gone"],
         "answer": "has gone",
-        "explanation": "主語が he なので has gone to ~ の形になり、「~へ行ってしまって今ここにいない」を表すため、不在を説明するこの場面に合う。"
+        "explanation": "have gone to ~ は「~へ行ってしまって今ここにいない」を表すので不在を説明するこの場面に合い、主語が he なので has gone になる。"
                        "has been to ~ は「~へ行ったことがある・行ってきた」で、今ここにいることが前提になるため He will be back on Friday と矛盾する。"
                        "has come は「来た」で移動の向きが逆、had gone は過去の基準時が文中に無いため不適。",
         "point": "have gone to は「行って今いない」",
@@ -207,10 +207,10 @@ QUESTIONS = [
     },
     {
         "type": "order", "level": "standard",
-        "prompt_ja": "私が駅に着いたときには、電車はすでに出発していた。",
-        "answer": "When I got to the station, the train had already left.",
+        "prompt_ja": "私が駅に着いたときには、電車はちょうど出発したところだった。",
+        "answer": "When I got to the station, the train had just left.",
         "explanation": "「着いた」という過去の時点を When I got to the station で示し、それより前に完了していた出来事を過去完了 had left で表す。"
-                       "already は had と過去分詞の間に置く。"
+                       "just は助動詞と過去分詞の間にしか置けないので、had just left の語順に決まる。"
                        "大文字で始まる When が文頭、コンマの付いた station, が前半の切れ目、left が文末になるため語順は一つに定まる。",
         "point": "過去より前は had + 過去分詞",
     },
@@ -234,20 +234,20 @@ QUESTIONS = [
     },
     {
         "type": "order", "level": "standard",
-        "prompt_ja": "その新しい橋は今、建設中だ。",
-        "answer": "The new bridge is being built now.",
-        "explanation": "橋は「建てられる」側なので受動態にし、今まさに進行中なので be being + 過去分詞の形にする。"
-                       "is being built で「建てられているところだ」を表し、now を文末に置く。"
-                       "大文字で始まる The が文頭、now が文末になるため語順は一つに定まる。",
+        "prompt_ja": "その新しい橋は建設中だ。",
+        "answer": "The new bridge is being built.",
+        "explanation": "橋は「建てられる」側なので受動態にし、進行中であることを表すため be being + 過去分詞の形にする。"
+                       "is being built で「建てられているところだ」を表す。"
+                       "大文字で始まる The が文頭、built が文末になるため語順は一つに定まる。",
         "point": "be being + 過去分詞で進行中の受動",
     },
     {
         "type": "order", "level": "advanced",
-        "prompt_ja": "彼に最後に会ってから5年になる。",
-        "answer": "It has been five years since I last saw him.",
-        "explanation": "「~してから…年になる」は It has been + 期間 + since + 主語 + 過去形 の形で表す。"
-                       "since 節は起点となる過去の出来事なので saw と過去形にし、「最後に」を表す last は動詞の直前に置く。"
-                       "大文字で始まる It が文頭、him が文末になるため語順は一つに定まる。",
+        "prompt_ja": "彼女から便りがなくて1か月になる。",
+        "answer": "It has been a month since I heard from her.",
+        "explanation": "「~してから…になる」は It has been + 期間 + since + 主語 + 過去形 の形で表す。"
+                       "since 節は起点となる過去の出来事なので heard と過去形にし、主節は現在完了 has been で現在までの経過を表す。"
+                       "大文字で始まる It が文頭、her が文末になるため語順は一つに定まる。",
         "point": "It has been + 期間 + since + 過去形",
     },
     {
@@ -288,7 +288,7 @@ QUESTIONS = [
         "answer": "This is the first time I have visited Kyoto.",
         "explanation": "This is the first time (that) S have p.p. は「~するのはこれが初めてだ」を表す決まった形。"
                        "名詞 visit を動詞 visit に変え、現在完了 have visited にして時間のつながりを出す。"
-                       "書き出しと現在完了が指定されているので答えは一つに定まる。",
+                       "time と I の間の接続詞 that は省略してもしなくてもよいので、どちらで書いても正解とする。",
         "point": "This is the first time + S have p.p.",
     },
     {
@@ -308,7 +308,7 @@ QUESTIONS = [
         "answer": "This is the most delicious cake I have ever eaten.",
         "explanation": "「今まで~したことがないほど…だ」という経験の否定は、最上級 + I have ever p.p. に言い換えられる。"
                        "否定文の never が肯定文になるので、ever に変えて the most delicious cake を後ろから修飾する。"
-                       "書き出しと使う形が指定されているので答えは一つに定まる。",
+                       "cake と I の間の関係代名詞 that は省略してもしなくてもよいので、どちらで書いても正解とする。",
         "point": "never ~ before = the 最上級 + I have ever p.p.",
     },
 ]

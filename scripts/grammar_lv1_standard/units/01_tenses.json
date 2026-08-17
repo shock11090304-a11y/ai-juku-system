@@ -79,7 +79,7 @@
    ],
    "answer_index": 0,
    "answer_text": "will have finished",
-   "explanation": "by the time は時の副詞節を作るので節内は未来でも現在形 come になり、主節は「その時までには終えてしまっているだろう」という未来完了 will have finished で表す。will finish だと未来のある時点で終える動作を指すだけで、「その時までに完了している」という期限の意味が出ない。現在形 finish は主節の未来を表せず、will be finishing は「その時ちょうど書いている最中だ」となって完了の意味が出ない。",
+   "explanation": "by the time は時の副詞節を作るので節内は未来でも現在形 come になり、主節は「その時までには終えてしまっているだろう」という未来完了 will have finished で表す。will finish だと未来のある時点で終える動作を指すだけで、「その時までに完了している」という期限の意味が出ない。現在形 finish は主節の未来を表せず、will be finishing は「その時ちょうど終えつつある最中だ」となり、終わっているという完了の意味が出ない。",
    "point": "「~までには終えている」は will have p.p."
   },
   {
@@ -175,7 +175,7 @@
    ],
    "answer_index": 1,
    "answer_text": "has gone",
-   "explanation": "主語が he なので has gone to ~ の形になり、「~へ行ってしまって今ここにいない」を表すため、不在を説明するこの場面に合う。has been to ~ は「~へ行ったことがある・行ってきた」で、今ここにいることが前提になるため He will be back on Friday と矛盾する。has come は「来た」で移動の向きが逆、had gone は過去の基準時が文中に無いため不適。",
+   "explanation": "have gone to ~ は「~へ行ってしまって今ここにいない」を表すので不在を説明するこの場面に合い、主語が he なので has gone になる。has been to ~ は「~へ行ったことがある・行ってきた」で、今ここにいることが前提になるため He will be back on Friday と矛盾する。has come は「来た」で移動の向きが逆、had gone は過去の基準時が文中に無いため不適。",
    "point": "have gone to は「行って今いない」"
   },
   {
@@ -315,12 +315,12 @@
    "no": 20,
    "type": "order",
    "level": "standard",
-   "prompt_ja": "私が駅に着いたときには、電車はすでに出発していた。",
+   "prompt_ja": "私が駅に着いたときには、電車はちょうど出発したところだった。",
    "tokens": [
     "the",
     "got",
     "When",
-    "already",
+    "just",
     "train",
     "station,",
     "to",
@@ -329,8 +329,8 @@
     "had",
     "the"
    ],
-   "answer_text": "When I got to the station, the train had already left.",
-   "explanation": "「着いた」という過去の時点を When I got to the station で示し、それより前に完了していた出来事を過去完了 had left で表す。already は had と過去分詞の間に置く。大文字で始まる When が文頭、コンマの付いた station, が前半の切れ目、left が文末になるため語順は一つに定まる。",
+   "answer_text": "When I got to the station, the train had just left.",
+   "explanation": "「着いた」という過去の時点を When I got to the station で示し、それより前に完了していた出来事を過去完了 had left で表す。just は助動詞と過去分詞の間にしか置けないので、had just left の語順に決まる。大文字で始まる When が文頭、コンマの付いた station, が前半の切れ目、left が文末になるため語順は一つに定まる。",
    "point": "過去より前は had + 過去分詞"
   },
   {
@@ -383,39 +383,38 @@
    "no": 23,
    "type": "order",
    "level": "standard",
-   "prompt_ja": "その新しい橋は今、建設中だ。",
+   "prompt_ja": "その新しい橋は建設中だ。",
    "tokens": [
-    "new",
-    "being",
-    "The",
-    "is",
-    "now",
     "bridge",
-    "built"
+    "new",
+    "The",
+    "built",
+    "being",
+    "is"
    ],
-   "answer_text": "The new bridge is being built now.",
-   "explanation": "橋は「建てられる」側なので受動態にし、今まさに進行中なので be being + 過去分詞の形にする。is being built で「建てられているところだ」を表し、now を文末に置く。大文字で始まる The が文頭、now が文末になるため語順は一つに定まる。",
+   "answer_text": "The new bridge is being built.",
+   "explanation": "橋は「建てられる」側なので受動態にし、進行中であることを表すため be being + 過去分詞の形にする。is being built で「建てられているところだ」を表す。大文字で始まる The が文頭、built が文末になるため語順は一つに定まる。",
    "point": "be being + 過去分詞で進行中の受動"
   },
   {
    "no": 24,
    "type": "order",
    "level": "advanced",
-   "prompt_ja": "彼に最後に会ってから5年になる。",
+   "prompt_ja": "彼女から便りがなくて1か月になる。",
    "tokens": [
-    "years",
-    "last",
+    "month",
+    "heard",
     "It",
-    "five",
+    "a",
     "I",
-    "him",
+    "her",
     "been",
     "since",
-    "saw",
+    "from",
     "has"
    ],
-   "answer_text": "It has been five years since I last saw him.",
-   "explanation": "「~してから…年になる」は It has been + 期間 + since + 主語 + 過去形 の形で表す。since 節は起点となる過去の出来事なので saw と過去形にし、「最後に」を表す last は動詞の直前に置く。大文字で始まる It が文頭、him が文末になるため語順は一つに定まる。",
+   "answer_text": "It has been a month since I heard from her.",
+   "explanation": "「~してから…になる」は It has been + 期間 + since + 主語 + 過去形 の形で表す。since 節は起点となる過去の出来事なので heard と過去形にし、主節は現在完了 has been で現在までの経過を表す。大文字で始まる It が文頭、her が文末になるため語順は一つに定まる。",
    "point": "It has been + 期間 + since + 過去形"
   },
   {
@@ -468,7 +467,7 @@
    "original": "This is my first visit to Kyoto.",
    "instruction": "This is the first time で始め、現在完了を使った一文に書き換えなさい。",
    "answer_text": "This is the first time I have visited Kyoto.",
-   "explanation": "This is the first time (that) S have p.p. は「~するのはこれが初めてだ」を表す決まった形。名詞 visit を動詞 visit に変え、現在完了 have visited にして時間のつながりを出す。書き出しと現在完了が指定されているので答えは一つに定まる。",
+   "explanation": "This is the first time (that) S have p.p. は「~するのはこれが初めてだ」を表す決まった形。名詞 visit を動詞 visit に変え、現在完了 have visited にして時間のつながりを出す。time と I の間の接続詞 that は省略してもしなくてもよいので、どちらで書いても正解とする。",
    "point": "This is the first time + S have p.p."
   },
   {
@@ -488,7 +487,7 @@
    "original": "I have never eaten such a delicious cake before.",
    "instruction": "This is で始め、最上級と現在完了を使った一文に書き換えなさい。",
    "answer_text": "This is the most delicious cake I have ever eaten.",
-   "explanation": "「今まで~したことがないほど…だ」という経験の否定は、最上級 + I have ever p.p. に言い換えられる。否定文の never が肯定文になるので、ever に変えて the most delicious cake を後ろから修飾する。書き出しと使う形が指定されているので答えは一つに定まる。",
+   "explanation": "「今まで~したことがないほど…だ」という経験の否定は、最上級 + I have ever p.p. に言い換えられる。否定文の never が肯定文になるので、ever に変えて the most delicious cake を後ろから修飾する。cake と I の間の関係代名詞 that は省略してもしなくてもよいので、どちらで書いても正解とする。",
    "point": "never ~ before = the 最上級 + I have ever p.p."
   }
  ]

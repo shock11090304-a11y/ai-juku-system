@@ -81,6 +81,40 @@ PROPER_NOUNS = {"Tokyo"}
 # I / I am の短縮など、常に大文字になる一人称。
 ALWAYS_CAP = {"I"}
 
+# ★整序で「答えが2通りになる」原因の語。英語では位置が動くので、
+#   模範解答と違う語順を書いた生徒を不当に×にしてしまう。
+#   2026-08-17 の再点検で、120問中6問がこれで2通りの正解を持っていた:
+#     had already left / had left already      (時制)
+#     is being built now / is now being built  (時制)
+#     since I last saw him / since I saw him last (時制)
+#     three hours doing ... yesterday / three hours yesterday doing ... (動名詞)
+#     would be in Tokyo now / would now be in Tokyo (仮定法)
+#     turn down the offer / turn the offer down    (仮定法・分離可能な句動詞)
+#   → これらの語を含む整序は**1問ずつ理由を書いて宣言する**。宣言の無いものは落とす。
+MOBILE_ADVERBS = {
+    "now", "already", "just", "yesterday", "today", "tomorrow", "again",
+    "soon", "still", "last", "once", "always", "often", "never", "ever",
+    "early", "earlier",
+}
+# 分離可能な句動詞の副詞小辞。目的語の前後どちらにも置けるので同じ事故を起こす。
+PARTICLES = {"down", "up", "off", "out", "away", "back", "over", "on", "in"}
+
+# 宣言済み（位置が動かない、または動かしても別の語順にならないと確認したもの）。
+# ★「うるさいから」で足さないこと。1問ずつ英語で確かめてから理由を書く。
+ORDER_ADVERB_OK = {
+    ("時制", 19): "soon は as soon as という一つの接続詞の一部。単独では動かせない",
+    ("時制", 20): "just は助動詞と過去分詞の間にしか置けない (had just left)。文末に出せない",
+    ("時制", 21): "back は get back という自動詞句の一部。目的語をとらないので分離しない",
+    ("時制", 25): "tomorrow は文末。to the party の間に割り込む語順は英語として作られない",
+    ("不定詞", 20): "in は swim in の前置詞が文末に残った形。前に出す先の名詞が tokens に無い",
+    ("不定詞", 22): "early は動詞句の直後に固定 (Leave home early)。so as 以下へは動かせない",
+    ("不定詞", 25): "up は grow up という自動詞句の一部。目的語をとらないので分離しない",
+    ("動名詞", 20): "again は see の目的語の後ろに固定。to seeing の間には入れない",
+    ("動名詞", 22): "up は get up の一語扱いで分離しない自動詞句。early はその直後に固定",
+    ("動名詞", 25): "On は分詞句を導く前置詞で、答えの文頭語そのもの。動かしようがない",
+    ("仮定法", 23): "at once は文末の副詞句。let me know の間に割り込む語順は作られない",
+}
+
 
 def find_bad_chars(s, allow=()):
     bad = []
@@ -118,6 +152,7 @@ def main():
     longest_tell = Counter()   # 正解が最長タイ以上だった数(単元ごと)
     mc_seen = Counter()
     proper_noun_hits = Counter()
+    adverb_declared = {}
     allowed_hits = {ch: 0 for ch in ALLOW_IN_JA}
     all_stems = []          # (tag, 設問文) 重複検出用
     all_answers = []        # (tag, 答え)   重複検出用
@@ -314,6 +349,18 @@ def main():
                     problems.append(f"[ORDER HEAD] {tag}: 大文字語 {heads[0]!r} が答えの1語目 {first!r} と違う")
                 elif not heads and first not in ALWAYS_CAP:
                     problems.append(f"[ORDER HEAD] {tag}: 大文字で始まる語が tokens に無い")
+                # 語順が2通りになりうる語を含むなら、1問ずつ宣言を要求する
+                risky = sorted({w for w in (t_.strip(",.;:?!").lower() for t_ in toks)
+                                if w in MOBILE_ADVERBS or w in PARTICLES})
+                if risky:
+                    key = (unit, q.get("no"))
+                    if key in ORDER_ADVERB_OK:
+                        adverb_declared[key] = (risky, ORDER_ADVERB_OK[key])
+                    else:
+                        problems.append(
+                            f"[ORDER AMBIG] {tag}: 位置が動きうる語 {risky} を含むのに宣言が無い。"
+                            "別の語順でも正しい英文になると生徒を不当に×にする。"
+                            "英語で確かめて ORDER_ADVERB_OK に理由を書くか、その語を使わない文にすること")
                 all_stems.append((tag, q.get("prompt_ja") or ""))
                 all_answers.append((tag, ans))
 
@@ -439,6 +486,13 @@ def main():
             print(f"  整序の文頭候補から除外した固有名詞 {w!r}: {n} 回")
     else:
         print("  整序の文頭候補から除外した固有名詞: なし")
+    print(f"  整序で位置が動きうる語を含むが「動かない」と宣言した問題: {len(adverb_declared)} 問")
+    for (u, no), (words, why) in sorted(adverb_declared.items()):
+        print(f"    {u}#{no} {words} — {why}")
+    unused = sorted(set(ORDER_ADVERB_OK) - set(adverb_declared))
+    if unused:
+        # ★使われない宣言を放置すると、次の人が「宣言があるから安全」と誤解する
+        ledger.append(f"ORDER_ADVERB_OK に、対象の問題が無い宣言が残っている: {unused}")
     print()
 
     print(f"=== 禁止文字 ({len(bad_chars)} 件) ===")

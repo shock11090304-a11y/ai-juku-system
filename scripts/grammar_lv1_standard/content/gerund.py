@@ -213,11 +213,11 @@ QUESTIONS = [
     },
     {
         "type": "order", "level": "advanced",
-        "prompt_ja": "今から彼に電話しても無駄だ。",
-        "answer": "It is no use calling him now.",
-        "explanation": "It is no use ~ing で「~しても無駄だ」を表し、It は形式主語で本当の主語は calling him now である。"
-                       "no use の後ろは必ず動名詞になるので calling を置く。"
-                       "大文字で始まる It が文頭、now が文末になるため語順は一つに定まる。",
+        "prompt_ja": "その本を探しても無駄だ。",
+        "answer": "It is no use looking for that book.",
+        "explanation": "It is no use ~ing で「~しても無駄だ」を表し、It は形式主語で本当の主語は looking for that book である。"
+                       "no use の後ろは必ず動名詞になるので looking を置き、look for は前置詞ごと一つの意味を作るので for を離さない。"
+                       "大文字で始まる It が文頭、book が文末になるため語順は一つに定まる。",
         "point": "It is no use + ~ing",
     },
     {
@@ -231,11 +231,11 @@ QUESTIONS = [
     },
     {
         "type": "order", "level": "advanced",
-        "prompt_ja": "彼女は昨日、宿題をするのに3時間費やした。",
-        "answer": "She spent three hours doing her homework yesterday.",
+        "prompt_ja": "彼女は宿題をするのに3時間費やした。",
+        "answer": "She spent three hours doing her homework.",
         "explanation": "spend + 時間 + ~ing の形で「~するのに時間を費やす」を表すので、three hours の直後に動名詞 doing を置く。"
-                       "doing の目的語 her homework を続け、時を表す yesterday を文末に置く。"
-                       "大文字で始まる She が文頭、yesterday が文末になるため語順は一つに定まる。",
+                       "doing の目的語 her homework を続ける。"
+                       "大文字で始まる She が文頭、homework が文末になるため語順は一つに定まる。",
         "point": "spend + 時間 + ~ing の語順",
     },
     {
