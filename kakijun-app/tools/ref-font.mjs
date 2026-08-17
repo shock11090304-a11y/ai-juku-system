@@ -18,6 +18,21 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const REF_FONT_FAMILY = 'KakijunSample';
+
+/**
+ * ★ お手本の描き方。src/canvas/sampleGlyph.ts の写し。
+ *   plain node で動くツール (.mjs) は TS を import できないので写しを置く。
+ *   ずれていないことは src/canvas/__tests__/sampleGlyph.test.ts が機械で見る。
+ *   ★数値を直すときは必ず両方直すこと。片方だけ直すと、測る側と見せる側が
+ *     別の字を指すようになる (2026-08-17 に実際そうなっていた)。
+ */
+export const SAMPLE_FONT_RATIO = 0.86;
+export const SAMPLE_BASELINE_RATIO = 0.52;
+
+/** お手本と同じ条件で canvas に字を描く (マスク作成・計測用) */
+export function sampleGlyphDrawSource() {
+  return { fontRatio: SAMPLE_FONT_RATIO, baselineRatio: SAMPLE_BASELINE_RATIO };
+}
 export const REF_FONT_FILE = path.join(here, '../public/fonts/KleeOne-subset.woff2');
 
 /** @font-face 宣言 (data URL 埋め込み。外部参照なしで完結する) */

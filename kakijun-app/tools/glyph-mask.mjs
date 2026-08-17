@@ -4,7 +4,7 @@
  *   node tools/glyph-mask.mjs お /tmp/mask-o.json
  */
 import { chromium } from 'playwright';
-import { useRefFont, REF_FONT_FAMILY } from './ref-font.mjs';
+import { useRefFont, REF_FONT_FAMILY, SAMPLE_FONT_RATIO, SAMPLE_BASELINE_RATIO } from './ref-font.mjs';
 import fs from 'node:fs';
 
 const [ch, out] = process.argv.slice(2);
@@ -21,22 +21,23 @@ await page.setContent(
 // フォントが効いていなければここで落ちる (代替フォントで測らない)
 await useRefFont(page, [ch]);
 const mask = await page.evaluate(
-  ({ ch, S, font }) => {
+  ({ ch, S, font, fr, br }) => {
     const c = document.getElementById('c');
     const g = c.getContext('2d');
     g.fillStyle = '#fff';
     g.fillRect(0, 0, S, S);
     g.fillStyle = '#000';
-    g.font = `${S * 0.88}px "${font}"`;
+    // ★ アプリの renderBackground と同一条件 (src/canvas/sampleGlyph.ts)
+    g.font = `${S * fr}px "${font}"`;
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    g.fillText(ch, S / 2, S / 2);
+    g.fillText(ch, S / 2, S * br);
     const d = g.getImageData(0, 0, S, S).data;
     const bits = new Array(S * S);
     for (let i = 0; i < S * S; i++) bits[i] = d[i * 4] < 128 ? 1 : 0;
     return bits;
   },
-  { ch, S, font },
+  { ch, S, font, fr: SAMPLE_FONT_RATIO, br: SAMPLE_BASELINE_RATIO },
 );
 await browser.close();
 

@@ -4,6 +4,7 @@
  * 赤色は「間違い」の意味で使わない (§11-6)。強調はオレンジ・黄色。
  */
 import type { GuideLevel, Pt, ResampledStroke } from '../engine/types';
+import { drawSampleGlyph } from './sampleGlyph';
 
 const GUIDE_SOLID = '#cfd8dc'; // お手本の字 (全レベル共通・消さない)
 const ACCENT = '#ffb74d';
@@ -107,13 +108,8 @@ export class GuideRenderer {
     // ★ お手本はどのレベルでも消さない (塾長方針: 何度でも練習できるように)。
     //   濃さも変えない。薄くすると「消えた」と同じで練習にならない。
     if (this.char) {
-      ctx.save();
-      ctx.fillStyle = GUIDE_SOLID;
-      ctx.font = `${size * 0.86}px KakijunSample, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(this.char, size / 2, size * 0.52);
-      ctx.restore();
+      // 描き方は src/canvas/sampleGlyph.ts が正典 (字形ツールと共有)
+      drawSampleGlyph(ctx, this.char, size, GUIDE_SOLID);
     } else {
       // ★ 運筆 (なみなみ・ぐるぐる・かいだん等) は「字」ではないので手本フォントが無い。
       //   文字コード (〽 ◎ 🪜 ⛰) を借りて描くと、絵文字や別物の記号が出てしまい、

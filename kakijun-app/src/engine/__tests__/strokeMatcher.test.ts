@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { StrokeMatcher, resolveParams } from '../strokeMatcher';
 import { computeStars } from '../scoring';
 import { prepareStrokes, toCharacterDef } from '../loader';
+import { shakyPaths } from '../traceProfiles';
 import {
   decimate,
   feedStroke,
@@ -360,5 +361,83 @@ describe('やり直しの挙動 (§6.4 resetCurrentStroke)', () => {
     const m = newMatcher('hira_shi');
     expect(m.pointerMove({ x: 0.5, y: 0.5 }).type).toBe('ignored');
     expect(m.pointerUp().type).toBe('ignored');
+  });
+});
+
+describe('★曲率のきつい画: 正しくなぞった手ぶれを逆走と誤判定しない (2026-08-17)', () => {
+  // 字形をお手本に合わせ込むほど輪が忠実になり、す・そ・カ・る で
+  // 「手ぶれ入力が逆走扱い」になってデータを入れられなかった。
+  // 原因は尺度の不一致: 手の動きは距離 0.045 以上の弦で測るのに、
+  // 経路側は隣り合う2点の接線と比べていた。曲率のきつい所では
+  // 正しく前進していても大きな角度差が出る。
+  // ここでは輪を持つ画を合成し、手ぶれを乗せても完走できることを見る。
+  function loopStroke(radius: number): { x: number; y: number }[] {
+    // 上から入って一周し、右下へ抜ける「結び」の形
+    const pts: { x: number; y: number }[] = [{ x: 0.5 - radius, y: 0.2 }];
+    for (let k = 0; k <= 8; k++) {
+      const a = -Math.PI / 2 + (k / 8) * Math.PI * 2;
+      pts.push({ x: 0.5 + Math.cos(a) * radius, y: 0.5 + Math.sin(a) * radius });
+    }
+    pts.push({ x: 0.5 + radius * 1.6, y: 0.8 });
+    return pts;
+  }
+
+  for (const radius of [0.05, 0.06, 0.07, 0.08, 0.11, 0.15]) {
+    it(`半径 ${radius} の輪を手ぶれ付きでなぞって完走する`, () => {
+      const strokes = prepareTiny(loopStroke(radius));
+      const m = new StrokeMatcher(strokes, resolveParams('normal', 1));
+      const paths = shakyPaths(strokes, `loop_${radius}`);
+      const events = feedStroke(m, paths[0]);
+      expect(feedbackKinds(events), `半径 ${radius}`).not.toContain('reverse');
+      expect(lastEvent(events).type).toBe('char-complete');
+    });
+  }
+
+  /**
+   * ★ これが実際に起きた形。合成した円では再現しない。
+   * す の2画目を手本フォントの墨から引き直したもの (忠実度 24%→94%)。
+   * 「結び」で経路が鋭く折り返す所で、旧エンジンは手ぶれを逆走と誤判定し、
+   * この字形を入れられなかった。★数値はここに固定で持つ (JSON を直しても
+   * この回帰テストは生き続ける)。
+   */
+  const SU_STROKES: [number, number][][] = [
+    [[0.242, 0.373], [0.721, 0.316]],
+    [
+      [0.539, 0.189], [0.561, 0.357], [0.48, 0.467], [0.43, 0.584], [0.5, 0.641],
+      [0.578, 0.559], [0.543, 0.439], [0.578, 0.605], [0.531, 0.73], [0.424, 0.859],
+    ],
+  ];
+
+  it('す の結び (お手本から引き直した実データ) を手ぶれ付きでなぞって完走する', () => {
+    // ★手ぶれの乱数は1字で1本。1画目を通したあとの揺れでないと再現しない
+    const def = toCharacterDef({
+      id: 'hira_su',
+      char: 'す',
+      reading: 'す',
+      type: 'hiragana',
+      group: 'sa-gyo',
+      strokes: SU_STROKES.map((points, i) => ({
+        index: i + 1,
+        hint: 'magari' as const,
+        ending: 'tome' as const,
+        points,
+      })),
+    });
+    const strokes = prepareStrokes(def);
+    const m = new StrokeMatcher(strokes, resolveParams('normal', 1));
+    const paths = shakyPaths(strokes, 'hira_su');
+    const events = [...feedStroke(m, paths[0]), ...feedStroke(m, paths[1])];
+    expect(feedbackKinds(events)).not.toContain('reverse');
+    expect(lastEvent(events).type).toBe('char-complete');
+  });
+
+  it('本当に引き返したときは輪の中でも逆走を出す', () => {
+    const strokes = prepareTiny(loopStroke(0.11));
+    const m = new StrokeMatcher(strokes, resolveParams('normal', 1));
+    const pts = strokes[0].pts;
+    // 30番まで進んでから、来た道を戻る
+    const path = [...pts.slice(0, 31), ...pts.slice(4, 30).reverse()];
+    const events = feedStroke(m, path);
+    expect(feedbackKinds(events)).toContain('reverse');
   });
 });

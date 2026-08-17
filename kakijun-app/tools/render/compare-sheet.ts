@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { charSvg } from './charSvg';
 // @ts-expect-error 型定義のない開発用ヘルパ
-import { refFontFaceCss, REF_FONT_FAMILY } from '../ref-font.mjs';
+import { refFontFaceCss, REF_FONT_FAMILY, SAMPLE_FONT_RATIO, SAMPLE_BASELINE_RATIO } from '../ref-font.mjs';
 import type { RawCharacterDef, RawStroke } from '../../src/engine/types';
 import { toCharacterDef, resolveCharacter, toStroke, type MarkDef } from '../../src/engine/loader';
 import type { CharacterDef } from '../../src/engine/types';
@@ -48,7 +48,9 @@ function refCell(ch: string): string {
     `<svg width="${S}" height="${S}" xmlns="http://www.w3.org/2000/svg">` +
     `<rect width="${S}" height="${S}" fill="#fff" stroke="#ccc"/>` +
     `<path d="M${S / 2},0 V${S} M0,${S / 2} H${S}" stroke="#eee" fill="none"/>` +
-    `<text x="${S / 2}" y="${S / 2}" font-family="${FONT}" font-size="${S * 0.88}" fill="#333" text-anchor="middle" dominant-baseline="central">${ch}</text>` +
+    // ★アプリと同じ条件で描く (src/canvas/sampleGlyph.ts)。ここが 0.88em・中央だと
+    //   目視QAの根拠として別の字を見ることになる
+    `<text x="${S / 2}" y="${S * SAMPLE_BASELINE_RATIO}" font-family="${FONT}" font-size="${S * SAMPLE_FONT_RATIO}" fill="#333" text-anchor="middle" dominant-baseline="central">${ch}</text>` +
     `</svg>`
   );
 }

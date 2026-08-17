@@ -23,7 +23,7 @@ import { splineSample } from '../src/engine/geometry';
 import { toCharacterDef, resolveCharacter, toStroke, type MarkDef } from '../src/engine/loader';
 import type { CharacterDef, RawCharacterDef, RawStroke } from '../src/engine/types';
 // @ts-expect-error 型定義のない開発用ヘルパ
-import { useRefFont, REF_FONT_FAMILY } from './ref-font.mjs';
+import { useRefFont, REF_FONT_FAMILY, SAMPLE_FONT_RATIO, SAMPLE_BASELINE_RATIO } from './ref-font.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(here, '../src/data/characters');
@@ -56,23 +56,23 @@ await page.setContent(
 );
 await useRefFont(page, [...chars]);
 await page.evaluate(
-  ({ S, font }) => {
+  ({ S, font, fr, br }) => {
     const g = (document.getElementById('c') as HTMLCanvasElement).getContext('2d')!;
     (window as unknown as { maskOf: (ch: string) => Uint8Array }).maskOf = (ch: string) => {
       g.fillStyle = '#fff';
       g.fillRect(0, 0, S, S);
       g.fillStyle = '#000';
-      g.font = `${S * 0.86}px "${font}"`; // アプリの renderBackground と同じ
+      g.font = `${S * fr}px "${font}"`; // アプリと同じ (sampleGlyph.ts)
       g.textAlign = 'center';
       g.textBaseline = 'middle';
-      g.fillText(ch, S / 2, S * 0.52);
+      g.fillText(ch, S / 2, S * br);
       const d = g.getImageData(0, 0, S, S).data;
       const m = new Uint8Array(S * S);
       for (let i = 0; i < S * S; i++) m[i] = d[i * 4] < 128 ? 1 : 0;
       return m;
     };
   },
-  { S, font: REF_FONT_FAMILY },
+  { S, font: REF_FONT_FAMILY, fr: SAMPLE_FONT_RATIO, br: SAMPLE_BASELINE_RATIO },
 );
 
 /** 記号の墨 (濁音グリフにだけある墨) までの距離マップ */

@@ -17,7 +17,7 @@ import { chromium } from 'playwright';
 import { toCharacterDef, resolveCharacter, toStroke, type MarkDef } from '../src/engine/loader';
 import type { CharacterDef, RawCharacterDef, RawStroke } from '../src/engine/types';
 // @ts-expect-error 型定義のない開発用ヘルパ
-import { useRefFont, REF_FONT_FAMILY } from './ref-font.mjs';
+import { useRefFont, REF_FONT_FAMILY, SAMPLE_FONT_RATIO, SAMPLE_BASELINE_RATIO } from './ref-font.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(here, '../src/data/characters');
@@ -55,22 +55,22 @@ await useRefFont(
 /** 墨までの距離マップ (px)。墨の中は 0 */
 async function inkDistance(ch: string): Promise<Float32Array> {
   const mask = await page.evaluate(
-    ({ ch, S, font }) => {
+    ({ ch, S, font, fr, br }) => {
       const g = (document.getElementById('c') as HTMLCanvasElement).getContext('2d')!;
       g.fillStyle = '#fff';
       g.fillRect(0, 0, S, S);
       g.fillStyle = '#000';
       // ★ アプリの renderBackground と同じ配置 (0.86em・中央・y=0.52)
-      g.font = `${S * 0.86}px "${font}"`;
+      g.font = `${S * fr}px "${font}"`;
       g.textAlign = 'center';
       g.textBaseline = 'middle';
-      g.fillText(ch, S / 2, S * 0.52);
+      g.fillText(ch, S / 2, S * br);
       const d = g.getImageData(0, 0, S, S).data;
       const out: number[] = [];
       for (let i = 0; i < S * S; i++) out.push(d[i * 4] < 128 ? 1 : 0);
       return out;
     },
-    { ch, S, font: REF_FONT_FAMILY },
+    { ch, S, font: REF_FONT_FAMILY, fr: SAMPLE_FONT_RATIO, br: SAMPLE_BASELINE_RATIO },
   );
   const dt = new Float32Array(S * S);
   for (let i = 0; i < S * S; i++) dt[i] = mask[i] ? 0 : 1e6;
@@ -145,8 +145,13 @@ for (const b of bad) {
   if (known === undefined) fresh.push(b);
   else if (b.gap > known + WORSE) worse.push(b);
 }
+// ★ 今回測った画に属する行だけを見る。id を指定して絞って回したときに
+//   「測っていない行」まで直ったことにすると、一覧から消えて追跡できなくなる
+const measured = new Set(
+  targets.flatMap((c) => c.strokes.map((s) => `${c.id} ${s.index}`)),
+);
 const fixed = [...baseline.keys()].filter(
-  (k) => !bad.some((b) => `${b.id} ${b.stroke}` === k),
+  (k) => measured.has(k) && !bad.some((b) => `${b.id} ${b.stroke}` === k),
 );
 
 if (bad.length) {

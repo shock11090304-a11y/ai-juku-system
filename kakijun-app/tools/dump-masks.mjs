@@ -4,7 +4,7 @@
  * 対象: hiragana/katakana/numbers の合成でない字 (小書き・濁音は基字から派生)。
  */
 import { chromium } from 'playwright';
-import { useRefFont, REF_FONT_FAMILY } from './ref-font.mjs';
+import { useRefFont, REF_FONT_FAMILY, SAMPLE_FONT_RATIO, SAMPLE_BASELINE_RATIO } from './ref-font.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,15 +35,16 @@ await useRefFont(page, chars.map((c) => c.char));
 
 for (const { id, char } of chars) {
   const bits = await page.evaluate(
-    ({ ch, S, font }) => {
+    ({ ch, S, font, fr, br }) => {
       const g = document.getElementById('c').getContext('2d');
       g.fillStyle = '#fff';
       g.fillRect(0, 0, S, S);
       g.fillStyle = '#000';
-      g.font = `${S * 0.88}px "${font}"`;
+      // ★ アプリの renderBackground と同一条件 (src/canvas/sampleGlyph.ts)
+      g.font = `${S * fr}px "${font}"`;
       g.textAlign = 'center';
       g.textBaseline = 'middle';
-      g.fillText(ch, S / 2, S / 2);
+      g.fillText(ch, S / 2, S * br);
       const d = g.getImageData(0, 0, S, S).data;
       // 行ごとの ink 区間 (x開始,x終了) に圧縮して軽くする
       const runs = [];
@@ -59,7 +60,7 @@ for (const { id, char } of chars) {
       }
       return runs;
     },
-    { ch: char, S, font },
+    { ch: char, S, font, fr: SAMPLE_FONT_RATIO, br: SAMPLE_BASELINE_RATIO },
   );
   fs.writeFileSync(path.join(outDir, `${id}.json`), JSON.stringify({ id, char, size: S, runs: bits }));
 }
