@@ -7,6 +7,7 @@ import type { GuideLevel, Pt, ResampledStroke } from '../engine/types';
 
 const GUIDE_DOT = '#b0bec5'; // Lv1 点線
 const GUIDE_SOLID = '#cfd8dc'; // Lv2 うすいお手本
+const GUIDE_FAINT = '#dde5ea'; // Lv1 下敷きのお手本 (点線の下に薄く)
 const ACCENT = '#ffb74d';
 const ACCENT_STRONG = '#fb8c00';
 const NUM_COLOR = '#4fc3f7';
@@ -27,6 +28,8 @@ function tangentAt(s: ResampledStroke, i: number): Pt {
 
 export class GuideRenderer {
   strokes: ResampledStroke[] = [];
+  /** お手本として描く字。線データではなくフォントで描く (字形が崩れないように) */
+  char = '';
   level: GuideLevel = 1;
   strokeIdx = 0;
   private effects: Effect[] = [];
@@ -36,8 +39,9 @@ export class GuideRenderer {
     return this.effects.length > 0 || this.demo !== null;
   }
 
-  setCharacter(strokes: ResampledStroke[], level: GuideLevel): void {
+  setCharacter(strokes: ResampledStroke[], level: GuideLevel, char = ''): void {
     this.strokes = strokes;
+    this.char = char;
     this.level = level;
     this.strokeIdx = 0;
     this.effects = [];
@@ -77,17 +81,15 @@ export class GuideRenderer {
     ctx.lineTo(size, size / 2);
     ctx.stroke();
     ctx.setLineDash([]);
-    if (this.level === 2) {
-      // うすいグレーの文字
-      for (const s of this.strokes) this.path(ctx, size, s, 0, 63);
-      ctx.strokeStyle = GUIDE_SOLID;
-      ctx.lineWidth = size * 0.11;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      for (const s of this.strokes) {
-        this.path(ctx, size, s, 0, 63);
-        ctx.stroke();
-      }
+    // お手本の字はフォントで描く。線データ (判定用) の形に依存させない
+    if (this.level <= 2 && this.char) {
+      ctx.save();
+      ctx.fillStyle = this.level === 2 ? GUIDE_SOLID : GUIDE_FAINT;
+      ctx.font = `${size * 0.86}px KakijunSample, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(this.char, size / 2, size * 0.52);
+      ctx.restore();
     }
   }
 
@@ -98,10 +100,9 @@ export class GuideRenderer {
     const cur = this.strokes[this.strokeIdx];
 
     if (this.level === 1) {
-      // まだ書いていない画の太い点線
-      for (let i = this.strokeIdx; i < this.strokes.length; i++) {
-        this.dottedStroke(ctx, size, this.strokes[i], i === this.strokeIdx);
-      }
+      // 点線は「今どの画を書くか」の案内だけ。字形はフォントのお手本が担うので、
+      // 全画を太い点線で塗ると字が潰れる (塾長指摘)。今の画のみ細く出す。
+      if (cur) this.dottedStroke(ctx, size, cur, true);
     }
     if (this.level <= 2) {
       // 画数の数字（確定済みは消す）
@@ -206,7 +207,7 @@ export class GuideRenderer {
     s: ResampledStroke,
     isCurrent: boolean,
   ): void {
-    const lw = size * 0.085;
+    const lw = size * 0.05;
     ctx.strokeStyle = isCurrent ? '#90caf9' : GUIDE_DOT;
     ctx.lineWidth = lw;
     ctx.lineCap = 'round';
