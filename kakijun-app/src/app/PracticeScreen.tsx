@@ -163,9 +163,13 @@ export function PracticeScreen() {
     );
     const guide = guideRef.current!;
     const surface = surfaceRef.current!;
-    guide.setCharacter(prepared, lv);
+    guide.setCharacter(prepared, lv, def.char);
     inkRef.current!.clearAll();
     if (surface.size > 0) guide.renderBackground(surface.bgCtx, surface.size);
+    // フォント未読込のまま描くと代替フォントで出てしまうので、読み込み後に描き直す
+    void document.fonts.ready.then(() => {
+      if (surface.size > 0) guide.renderBackground(surface.bgCtx, surface.size);
+    });
     if (announce) {
       audioManager.playReading(def.id, def.reading);
       audioManager.playStrokeGuide(1, true, false);
