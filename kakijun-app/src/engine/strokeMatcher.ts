@@ -25,29 +25,36 @@ const COMMON = {
   REVERSE_RUN: 3,
 } as const;
 
-/** 難易度3段階 (§6.5) */
+/**
+ * 難易度3段階 (§6.5)
+ * ★ お手本の字はフォントで描き、判定は線データで行う。両者には
+ *   最大1割弱のズレがあるので、許容幅はそのズレ + 線の太さ (0.11) を
+ *   吸収できる値にしてある。ここを絞ると「見えているお手本の通りに
+ *   なぞったのに弾かれる」ことになる。
+ *   書き順・方向の判定は許容幅とは独立なので、緩めても目的は損なわない。
+ */
 const PRESETS: Record<Strictness, Omit<MatchParams, keyof typeof COMMON>> = {
   easy: {
     TOL_RATIO: 0.35,
-    TOL_MIN: 0.045,
-    TOL_MAX: 0.22,
+    TOL_MIN: 0.075,
+    TOL_MAX: 0.26,
     OFF_DIST: 0.1,
     DONE_RATE: 0.75,
     reverseEnabled: false,
   },
   normal: {
     TOL_RATIO: 0.25,
-    TOL_MIN: 0.03,
-    TOL_MAX: 0.16,
-    OFF_DIST: 0.06,
+    TOL_MIN: 0.06,
+    TOL_MAX: 0.20,
+    OFF_DIST: 0.12,
     DONE_RATE: 0.88,
     reverseEnabled: true,
   },
   strict: {
     TOL_RATIO: 0.18,
-    TOL_MIN: 0.022,
-    TOL_MAX: 0.11,
-    OFF_DIST: 0.04,
+    TOL_MIN: 0.045,
+    TOL_MAX: 0.15,
+    OFF_DIST: 0.06,
     DONE_RATE: 0.95,
     reverseEnabled: true,
   },
@@ -81,7 +88,7 @@ export function tol(L: number, p: MatchParams): number {
  * 幼児の指では狙えない「始点弾かれループ」になるため、
  * 始点判定に限り指のタップサイズ相当の下限を敷く。
  */
-const START_TOL_FLOOR = 0.045;
+const START_TOL_FLOOR = 0.075;
 export function startTol(L: number, p: MatchParams): number {
   return Math.max(tol(L, p), START_TOL_FLOOR);
 }
