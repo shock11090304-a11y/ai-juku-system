@@ -78,3 +78,11 @@
 - `scripts/check_vercel_function_cap.sh` と CI (`.github/workflows/vercel-function-cap.yml`) は基準値超過を**警告するだけの非ブロッキング**(常に exit 0) に変更済み。正当に関数を増やしたときは同スクリプトの `BASELINE` を実数に更新して警告を止める。
 - 既存の `__ep` action 同居 (例: `admin-charge-month-end-preview` / `admin-charge-history` は `admin-charge-readonly.py` に同居) はそのまま稼働中・触らない。新規に Vercel 専用関数が本当に必要なら素直に足してよい (同居の曲芸は不要になった)。
 - 本番が古いままの症状 (新URL 404 / app.js が古い / `gh` の "Vercel" status=failure) を見たら、関数数ではなく Vercel ビルドログと healthcheck の `deploy_freshness` を見る。
+
+## かきじゅん (書き順学習 PWA・`kakijun-app/`)
+- **作業前に `kakijun-app/HANDOFF.md` を必ず読む**。設計の分離 (お手本=フォント / 判定=線データ /
+  経路は見せない) を崩すと必ず破綻する。今日それで何度も塾長を往復させた。
+- 配信は**ビルド済み成果物をリポジトリ直下 `/kakijun/` に入れて**行う。
+  ソースを直しただけでは本番は変わらない。`node tools/publish-to-repo.mjs` を必ず回す。
+- 出荷前に Playwright で**実画面のスクリーンショットを撮って自分の目で確認する**。
+  検査が緑でも見た目が壊れていることがある。
