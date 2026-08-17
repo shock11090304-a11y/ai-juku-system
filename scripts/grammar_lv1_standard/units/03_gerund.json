@@ -1,0 +1,476 @@
+{
+ "unit": "動名詞",
+ "unit_slug": "gerund",
+ "questions": [
+  {
+   "no": 1,
+   "type": "mc",
+   "level": "standard",
+   "stem": "Would you mind ( ) the window? It is a little cold in here.",
+   "choices": [
+    "to close",
+    "close",
+    "closed",
+    "closing"
+   ],
+   "answer_index": 3,
+   "answer_text": "closing",
+   "explanation": "mind は動名詞だけを目的語にとる動詞なので closing が入り、Would you mind ~ing? で「~していただけませんか」という丁寧な依頼になる。そのため不定詞 to close は続けられない。原形 close や過去分詞 closed は mind の目的語になる形ではない。",
+   "point": "mind は動名詞のみを目的語にとる"
+  },
+  {
+   "no": 2,
+   "type": "mc",
+   "level": "standard",
+   "stem": "I am looking forward to ( ) from you soon.",
+   "choices": [
+    "hear",
+    "hearing",
+    "heard",
+    "be heard"
+   ],
+   "answer_index": 1,
+   "answer_text": "hearing",
+   "explanation": "look forward to の to は不定詞の to ではなく前置詞なので、後ろには動名詞 hearing を置く。前置詞の後ろに原形 hear や過去分詞 heard は置けない。be heard は受動で「(自分が)聞かれる」の意味になり、「あなたから連絡をもらう」という内容と合わない。",
+   "point": "look forward to の to は前置詞"
+  },
+  {
+   "no": 3,
+   "type": "mc",
+   "level": "advanced",
+   "stem": "He is used to ( ) in front of a large audience.",
+   "choices": [
+    "speak",
+    "spoken",
+    "speaking",
+    "be speaking"
+   ],
+   "answer_index": 2,
+   "answer_text": "speaking",
+   "explanation": "be used to ~ing は「~することに慣れている」で、この to も前置詞なので後ろは動名詞になる。used to + 動詞の原形「以前は~したものだ」とは形も意味も別物なので、原形 speak は選べない。spoken や be speaking は前置詞の後ろに続く形として成り立たない。",
+   "point": "be used to ~ing =「~に慣れている」"
+  },
+  {
+   "no": 4,
+   "type": "mc",
+   "level": "advanced",
+   "stem": "She is proud of ( ) the first prize last year.",
+   "choices": [
+    "having won",
+    "to win",
+    "to have won",
+    "being won"
+   ],
+   "answer_index": 0,
+   "answer_text": "having won",
+   "explanation": "前置詞 of の後ろには不定詞を置けないので、to win や to have won は形の時点で外れる。誇りに思っているのは今だが、賞を取ったのは last year なので、述語より前の内容を表す完了動名詞 having won にする。彼女は賞を「取った」側なので、受動の being won では意味が逆になる。",
+   "point": "述語より前の内容は having p.p."
+  },
+  {
+   "no": 5,
+   "type": "mc",
+   "level": "standard",
+   "stem": "He stopped ( ) because his doctor told him to quit.",
+   "choices": [
+    "to smoke",
+    "smoking",
+    "smoke",
+    "smoked"
+   ],
+   "answer_index": 1,
+   "answer_text": "smoking",
+   "explanation": "stop ~ing は「~するのをやめる」なので、動名詞 smoking が stop の目的語になる。stop to do は「~するために立ち止まる」で、to smoke にすると「タバコを吸うために立ち止まった」と逆の意味になる。原形 smoke や過去形 smoked は stopped の後ろに続く形ではない。",
+   "point": "stop ~ing はやめる／stop to do は立ち止まる"
+  },
+  {
+   "no": 6,
+   "type": "mc",
+   "level": "advanced",
+   "stem": "I clearly remember ( ) him at the party last summer.",
+   "choices": [
+    "to meet",
+    "to have met",
+    "met",
+    "meeting"
+   ],
+   "answer_index": 3,
+   "answer_text": "meeting",
+   "explanation": "remember ~ing は「(過去に)~したことを覚えている」で、last summer という済んだ出来事を指すこの文に合うので meeting が正しい。remember to meet のように to 不定詞にすると「(これから)~するのを忘れずにいる」となり、未来のことを指すため過去の出来事には使えない。to have met はこの動詞では使わない形で、met は remember の目的語になる形ではない。",
+   "point": "remember ~ing は過去／remember to do は未来"
+  },
+  {
+   "no": 7,
+   "type": "mc",
+   "level": "advanced",
+   "stem": "The room was hot, so I tried ( ) the window, and the air became much cooler.",
+   "choices": [
+    "opening",
+    "to open",
+    "open",
+    "opened"
+   ],
+   "answer_index": 0,
+   "answer_text": "opening",
+   "explanation": "try ~ing は「試しに~してみる」で、実際にやってみた結果が and 以下に述べられているこの文に合うので opening が正しい。try to open のように to 不定詞にすると「~しようと努力する」となり、実際にできたかどうかは含まないため、涼しくなったという結果と噛み合わない。原形 open や過去形 opened は tried の目的語になる形ではない。",
+   "point": "try ~ing は試しにやってみる"
+  },
+  {
+   "no": 8,
+   "type": "mc",
+   "level": "advanced",
+   "stem": "I regret ( ) you that your application was not accepted.",
+   "choices": [
+    "telling",
+    "to have told",
+    "to tell",
+    "having told"
+   ],
+   "answer_index": 2,
+   "answer_text": "to tell",
+   "explanation": "regret to do は「残念ながら(これから)~する」で、相手にこれから知らせる場面で使うので to tell が正しい。regret ~ing は「~したことを後悔する」で、telling や having told にすると「伝えたことを後悔している」という別の意味になる。to have told は「伝えてしまったことを残念に思う」という完了の形で、これから伝える場面には合わない。",
+   "point": "regret to do は「残念ながらこれから~する」"
+  },
+  {
+   "no": 9,
+   "type": "mc",
+   "level": "standard",
+   "stem": "It is no use ( ) about what has already happened.",
+   "choices": [
+    "to worry",
+    "worry",
+    "worried",
+    "worrying"
+   ],
+   "answer_index": 3,
+   "answer_text": "worrying",
+   "explanation": "It is no use ~ing は「~しても無駄だ」を表す決まった形で、必ず動名詞を続ける。この It は形式主語で、本当の主語は worrying 以下である。不定詞 to worry や原形 worry、過去分詞 worried はこの構文では使えない。",
+   "point": "It is no use ~ing =「~しても無駄だ」"
+  },
+  {
+   "no": 10,
+   "type": "mc",
+   "level": "standard",
+   "stem": "I could not help ( ) when I saw his face.",
+   "choices": [
+    "to laugh",
+    "laughing",
+    "laugh",
+    "laughed"
+   ],
+   "answer_index": 1,
+   "answer_text": "laughing",
+   "explanation": "cannot help ~ing は「~せずにはいられない」を表す決まった形で、この help は「避ける」の意味なので後ろは動名詞 laughing になる。不定詞 to laugh を続けると「笑うのを手伝えなかった」という別の意味に読まれてしまう。原形 laugh や過去形 laughed はこの構文の形に当てはまらない。",
+   "point": "cannot help ~ing =「~せずにいられない」"
+  },
+  {
+   "no": 11,
+   "type": "mc",
+   "level": "advanced",
+   "stem": "There is no ( ) what will happen tomorrow.",
+   "choices": [
+    "telling",
+    "tell",
+    "to tell",
+    "told"
+   ],
+   "answer_index": 0,
+   "answer_text": "telling",
+   "explanation": "There is no ~ing は「~することはできない」を表す決まった形で、no の後ろは必ず動名詞になる。この telling は「言い当てること・分かること」の意味で、後ろに疑問詞節 what will happen tomorrow を目的語としてとる。原形 tell や不定詞 to tell、過去分詞 told はこの構文の形に当てはまらない。",
+   "point": "There is no ~ing =「~できない」"
+  },
+  {
+   "no": 12,
+   "type": "mc",
+   "level": "advanced",
+   "stem": "This museum is worth ( ) at least twice.",
+   "choices": [
+    "to visit",
+    "being visited",
+    "visiting",
+    "visited"
+   ],
+   "answer_index": 2,
+   "answer_text": "visiting",
+   "explanation": "be worth ~ing は「~する価値がある」を表す決まった形で、後ろは動名詞 visiting になる。この動名詞は能動の形のまま「訪れられる価値がある」という受け身の意味を含むので、being visited のように受動にはしない。不定詞 to visit や過去分詞 visited はこの構文では使えない。",
+   "point": "be worth ~ing は能動の形で受け身の意味"
+  },
+  {
+   "no": 13,
+   "type": "mc",
+   "level": "advanced",
+   "stem": "The roof of this old house needs ( ).",
+   "choices": [
+    "to repair",
+    "repairing",
+    "repair",
+    "being repaired"
+   ],
+   "answer_index": 1,
+   "answer_text": "repairing",
+   "explanation": "need ~ing は「~される必要がある」という受け身の意味を能動の動名詞の形で表すので、repairing が正しい (= need to be repaired)。to repair にすると「屋根が何かを修理する必要がある」となり主語との関係が逆になる。原形 repair は needs の目的語になる形ではなく、being repaired はこの構文では使わない形である。",
+   "point": "need ~ing =「~される必要がある」"
+  },
+  {
+   "no": 14,
+   "type": "mc",
+   "level": "advanced",
+   "stem": "( ) the news, she burst into tears.",
+   "choices": [
+    "In hearing",
+    "At hearing",
+    "To hear",
+    "On hearing"
+   ],
+   "answer_index": 3,
+   "answer_text": "On hearing",
+   "explanation": "On hearing のように on ~ing で「~するとすぐに」を表し、直後に起きた出来事とつなぐ決まった形になる。In hearing の in は「~する際に・~するときに」と幅のある時を表すため、burst into tears という瞬間の反応とは合わない。At hearing はこの意味では使わない形で、To hear では「聞くために泣き出した」という目的の意味になってしまう。",
+   "point": "on ~ing =「~するとすぐに」"
+  },
+  {
+   "no": 15,
+   "type": "mc",
+   "level": "advanced",
+   "stem": "I am sorry for ( ) you sooner.",
+   "choices": [
+    "not to call",
+    "do not calling",
+    "not calling",
+    "calling not"
+   ],
+   "answer_index": 2,
+   "answer_text": "not calling",
+   "explanation": "動名詞を否定するときは not を動名詞の直前に置いて not ~ing とする。前置詞 for の後ろには不定詞を置けないので not to call は形の時点で外れる。do not calling や calling not は否定語の位置と形がどちらも成り立たない。",
+   "point": "動名詞の否定は not + ~ing"
+  },
+  {
+   "no": 16,
+   "type": "mc",
+   "level": "advanced",
+   "stem": "No one likes ( ) in front of other people.",
+   "choices": [
+    "being scolded",
+    "scolding",
+    "to scold",
+    "having scolded"
+   ],
+   "answer_index": 0,
+   "answer_text": "being scolded",
+   "explanation": "叱るのではなく叱られる側の話なので、受動の動名詞 being scolded にする。scolding や to scold は能動で「人を叱ること」を表し、主語 No one との関係が逆になる。having scolded は能動の完了動名詞で、意味も時間関係も合わない。",
+   "point": "受動の動名詞は being + 過去分詞"
+  },
+  {
+   "no": 17,
+   "type": "mc",
+   "level": "standard",
+   "stem": "She spent three hours ( ) for the exam yesterday.",
+   "choices": [
+    "to prepare",
+    "prepare",
+    "prepared",
+    "preparing"
+   ],
+   "answer_index": 3,
+   "answer_text": "preparing",
+   "explanation": "spend + 時間 + ~ing は「~して(時間)を過ごす・~するのに時間を費やす」を表す決まった形なので preparing が入る。時間を表す語句の直後に動名詞を置くので、不定詞 to prepare は使えない。原形 prepare や過去分詞 prepared はこの構文の形に当てはまらない。",
+   "point": "spend + 時間 + ~ing"
+  },
+  {
+   "no": 18,
+   "type": "mc",
+   "level": "advanced",
+   "stem": "What do you say to ( ) out for dinner tonight?",
+   "choices": [
+    "go",
+    "going",
+    "to go",
+    "gone"
+   ],
+   "answer_index": 1,
+   "answer_text": "going",
+   "explanation": "What do you say to ~ing? は「~するのはどうですか」と提案する決まった形で、この to も前置詞なので後ろは動名詞 going になる。前置詞の後ろに原形 go や過去分詞 gone は置けない。to go とすると to が二重になり、形として成り立たない。",
+   "point": "What do you say to ~ing?(提案)"
+  },
+  {
+   "no": 19,
+   "type": "order",
+   "level": "standard",
+   "prompt_ja": "彼は一言も言わずに部屋を出て行った。",
+   "tokens": [
+    "a",
+    "room",
+    "He",
+    "saying",
+    "the",
+    "word",
+    "without",
+    "left"
+   ],
+   "answer_text": "He left the room without saying a word.",
+   "explanation": "「~せずに」は前置詞 without を使い、後ろに動名詞を置いて without ~ing の形にする。「一言も」は a word で表し、否定語 not を使わずに without だけで否定の意味を出す点が要点。大文字で始まる He が文頭、word が文末になるため語順は一つに定まる。",
+   "point": "without ~ing =「~せずに」"
+  },
+  {
+   "no": 20,
+   "type": "order",
+   "level": "standard",
+   "prompt_ja": "またあなたにお会いできるのを楽しみにしています。",
+   "tokens": [
+    "you",
+    "forward",
+    "I",
+    "seeing",
+    "looking",
+    "again",
+    "to",
+    "am"
+   ],
+   "answer_text": "I am looking forward to seeing you again.",
+   "explanation": "look forward to の to は前置詞なので、後ろに動名詞 seeing を置く。「楽しみにしている」という気持ちが続いている状態なので、現在進行形 am looking にする。文頭に置けるのは大文字の I だけで、again が文末になるため語順は一つに定まる。",
+   "point": "looking forward to + ~ing"
+  },
+  {
+   "no": 21,
+   "type": "order",
+   "level": "advanced",
+   "prompt_ja": "今から彼に電話しても無駄だ。",
+   "tokens": [
+    "is",
+    "calling",
+    "It",
+    "use",
+    "now",
+    "no",
+    "him"
+   ],
+   "answer_text": "It is no use calling him now.",
+   "explanation": "It is no use ~ing で「~しても無駄だ」を表し、It は形式主語で本当の主語は calling him now である。no use の後ろは必ず動名詞になるので calling を置く。大文字で始まる It が文頭、now が文末になるため語順は一つに定まる。",
+   "point": "It is no use + ~ing"
+  },
+  {
+   "no": 22,
+   "type": "order",
+   "level": "advanced",
+   "prompt_ja": "私は早起きすることに慣れていない。",
+   "tokens": [
+    "up",
+    "used",
+    "I",
+    "getting",
+    "not",
+    "early",
+    "to",
+    "am"
+   ],
+   "answer_text": "I am not used to getting up early.",
+   "explanation": "be used to ~ing「~に慣れている」の否定なので、be 動詞の後ろに not を置いて am not used to とする。この to は前置詞なので、後ろは原形 get ではなく動名詞 getting になる。文頭に置けるのは大文字の I だけで、early が文末になるため語順は一つに定まる。",
+   "point": "be not used to + ~ing"
+  },
+  {
+   "no": 23,
+   "type": "order",
+   "level": "advanced",
+   "prompt_ja": "彼女は昨日、宿題をするのに3時間費やした。",
+   "tokens": [
+    "homework",
+    "hours",
+    "She",
+    "her",
+    "three",
+    "yesterday",
+    "doing",
+    "spent"
+   ],
+   "answer_text": "She spent three hours doing her homework yesterday.",
+   "explanation": "spend + 時間 + ~ing の形で「~するのに時間を費やす」を表すので、three hours の直後に動名詞 doing を置く。doing の目的語 her homework を続け、時を表す yesterday を文末に置く。大文字で始まる She が文頭、yesterday が文末になるため語順は一つに定まる。",
+   "point": "spend + 時間 + ~ing の語順"
+  },
+  {
+   "no": 24,
+   "type": "order",
+   "level": "advanced",
+   "prompt_ja": "私は彼が遅刻したことに腹を立てた。",
+   "tokens": [
+    "was",
+    "his",
+    "I",
+    "at",
+    "late",
+    "angry",
+    "being"
+   ],
+   "answer_text": "I was angry at his being late.",
+   "explanation": "腹を立てた相手ではなく「彼が遅刻したこと」に対して怒っているので、前置詞 at の後ろに動名詞 being late を置く。動名詞の動作主が文の主語と違うときは、意味上の主語を所有格 his で動名詞の直前に示す。文頭に置けるのは大文字の I だけで、late が文末になるため語順は一つに定まる。",
+   "point": "動名詞の意味上の主語は所有格"
+  },
+  {
+   "no": 25,
+   "type": "order",
+   "level": "standard",
+   "prompt_ja": "駅に着くとすぐに、彼は母親に電話した。",
+   "tokens": [
+    "he",
+    "his",
+    "On",
+    "at",
+    "station,",
+    "called",
+    "mother",
+    "arriving",
+    "the"
+   ],
+   "answer_text": "On arriving at the station, he called his mother.",
+   "explanation": "「~するとすぐに」は on ~ing で表し、前置詞 on の後ろに動名詞 arriving を置く。arrive は自動詞なので「駅に着く」は arrive at the station となり、前置詞 at が必要になる。大文字で始まる On が文頭、コンマの付いた station, が前半の切れ目、mother が文末になるため語順は一つに定まる。",
+   "point": "On ~ing, S V =「~するとすぐに」"
+  },
+  {
+   "no": 26,
+   "type": "rewrite",
+   "level": "standard",
+   "original": "I am sorry that I did not tell you the truth.",
+   "instruction": "動名詞の否定形を使い (完了動名詞は使わないこと)、I am sorry for で始まる一文に書き換えなさい。",
+   "answer_text": "I am sorry for not telling you the truth.",
+   "explanation": "that 節を前置詞 for + 動名詞のかたまりに変えると、did not tell は否定の動名詞 not telling になる。動名詞の否定は not を動名詞の直前に置くので、not telling の語順が要点。完了動名詞を使わないと指定されているので having told の形は選ばない。",
+   "point": "not + ~ing で動名詞を否定する"
+  },
+  {
+   "no": 27,
+   "type": "rewrite",
+   "level": "standard",
+   "original": "As soon as he saw the police officer, he ran away.",
+   "instruction": "On で始め、動名詞を使った一文に書き換えなさい。",
+   "answer_text": "On seeing the police officer, he ran away.",
+   "explanation": "as soon as が導く副詞節は、主語が主節と同じとき on ~ing の句に言い換えられる。節が句になるので主語 he と過去形 saw が消え、動名詞 seeing になる。主節 he ran away はそのまま残す。",
+   "point": "as soon as S V = On ~ing"
+  },
+  {
+   "no": 28,
+   "type": "rewrite",
+   "level": "advanced",
+   "original": "It is impossible to tell what he is thinking.",
+   "instruction": "There で始め、動名詞を使った一文に書き換えなさい。",
+   "answer_text": "There is no telling what he is thinking.",
+   "explanation": "It is impossible to do は There is no ~ing で言い換えられ、どちらも「~することはできない」を表す。no の後ろは動名詞なので、to tell を telling に変える。目的語である疑問詞節 what he is thinking はそのまま後ろに残す。",
+   "point": "It is impossible to do = There is no ~ing"
+  },
+  {
+   "no": 29,
+   "type": "rewrite",
+   "level": "advanced",
+   "original": "He is ashamed that he failed the test last year.",
+   "instruction": "完了動名詞を使い、He is ashamed of で始まる一文に書き換えなさい。",
+   "answer_text": "He is ashamed of having failed the test last year.",
+   "explanation": "恥じているのは今だが、失敗したのは last year なので、述語より前の内容を表す完了動名詞 having + 過去分詞にする。前置詞 of の後ろなので不定詞ではなく動名詞を置く。of failing にすると時間のずれが表せないため、完了動名詞を使うよう指定されている。",
+   "point": "前置詞 + having p.p. で時のずれを表す"
+  },
+  {
+   "no": 30,
+   "type": "rewrite",
+   "level": "advanced",
+   "original": "This window needs to be cleaned.",
+   "instruction": "needs の後を動名詞にして、一文に書き換えなさい。",
+   "answer_text": "This window needs cleaning.",
+   "explanation": "need to be p.p. は need ~ing で言い換えられ、どちらも「~される必要がある」を表す。need ~ing は能動の形のまま受け身の意味を持つので、being cleaned のように受動にはしない。主語 This window はそのまま残す。",
+   "point": "need to be p.p. = need ~ing"
+  }
+ ]
+}

@@ -248,12 +248,12 @@
       "level": "basic",
       "prompt_ja": "水がなければ、私たちは生きられないだろう。",
       "tokens": [
-        "Without",
-        "water,",
         "we",
-        "could",
+        "water,",
+        "Without",
+        "live.",
         "not",
-        "live."
+        "could"
       ],
       "answer_text": "Without water, we could not live.",
       "explanation": "Without は「もし~がなければ」を表し、if 節の代用として仮定法の条件になる。文頭の前置詞句 Without water, をコンマごと先頭に置き、主節は「主語 + could not + 動詞の原形」で「~できないだろう」を表す。先頭は大文字の Without のみ、water, はコンマ付きで主語 we の前、could の後に not、文末は live. となるため語順は一意に定まる。倒置形ではなく基礎的な標準形で仮定法を問う。",
@@ -265,14 +265,14 @@
       "level": "basic",
       "prompt_ja": "もし時間があれば、私はあなたを手伝うのに。",
       "tokens": [
-        "If",
-        "I",
-        "had",
-        "time,",
-        "I",
-        "would",
         "help",
-        "you."
+        "time,",
+        "If",
+        "would",
+        "had",
+        "you.",
+        "I",
+        "I"
       ],
       "answer_text": "If I had time, I would help you.",
       "explanation": "仮定法過去は「If + 主語 + 過去形, 主語 + would + 原形」の形。If I had time が現在の事実に反する条件、I would help you がその結果を表す。be 動詞以外の一般動詞は過去形(had)を使い、主節は would + 原形(help)とする。",
@@ -301,13 +301,13 @@
       "level": "standard",
       "prompt_ja": "もし彼が早く出発していたら、間に合っただろうに。",
       "tokens": [
+        "he",
+        "he",
         "If",
-        "he",
-        "had left",
         "early,",
-        "he",
-        "would have",
-        "made it."
+        "made it.",
+        "had left",
+        "would have"
       ],
       "answer_text": "If he had left early, he would have made it.",
       "explanation": "過去の事実に反する仮定は仮定法過去完了で表す。語順は「If + 主語 + had + 過去分詞, 主語 + would have + 過去分詞」。If he had left early が条件、he would have made it が結果を表す。実際は早く出発しなかったので間に合わなかった、という意味になる。",
@@ -319,12 +319,12 @@
       "level": "standard",
       "prompt_ja": "彼女はまるで医者であるかのように話す。",
       "tokens": [
-        "She",
-        "talks",
         "as if",
-        "she",
+        "talks",
+        "She",
+        "a doctor.",
         "were",
-        "a doctor."
+        "she"
       ],
       "answer_text": "She talks as if she were a doctor.",
       "explanation": "as if + 仮定法過去で「まるで~であるかのように」を表す。be 動詞は主語に関係なく were を使い、語順は「主語 + 動詞 + as if + 主語 + were ~」となる。文頭にくる主語は大文字の She、as if の後ろの主語は小文字の she で区別する。よって She talks as if she were a doctor. の語順に一意に定まる。",

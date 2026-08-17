@@ -201,6 +201,13 @@ def main():
                 from_ans = norm_words(ans)
                 if from_tokens != from_ans:
                     problems.append(f"[ORDER MATCH] {tag}: tokens words {from_tokens} != answer words {from_ans} | ans={ans!r} toks={toks}")
+                # ★語の多重集合が合っていても、**並びが答えのままなら問題編に答えが印字される**。
+                #   実際この検査が無かったため、配布済みの500問PDFで仮定法の整序4問
+                #   (no.16/17/19/20) が答えの語順そのままで刷られていた。
+                #   多重集合の一致だけを見ていると、この型は永久に見つからない。
+                if toks and " ".join(toks) == ans:
+                    problems.append(f"[ORDER LEAK] {tag}: tokens が答えと同じ並び"
+                                    f"(問題編に答えがそのまま出る): {ans!r}")
                 if not ans or ans[0].islower():
                     problems.append(f"[ORDER CAP] {tag}: answer not capitalized: {ans!r}")
                 if ans and ans[-1] not in ".?!":

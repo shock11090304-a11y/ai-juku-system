@@ -1,0 +1,314 @@
+# -*- coding: utf-8 -*-
+"""時制 — 高校英文法レベル1 標準演習 (偏差値55-60)。
+
+基礎定着問題集 (scripts/grammar_workbook) の「時制」との住み分け:
+  基礎  = 現在形/過去形/現在進行形の使い分け、規則変化・不規則変化。
+  ここ  = 名詞節と副詞節の見分け、完了進行形、未来完了、時制の一致、
+          状態動詞、進行形の受動、過去完了の基準時。
+mc は choices を自然な並びで書く。正解位置は make_units.py が単元ごとに配り直すので、
+ここで位置を気にしない (explanation は選択肢の**文字列**を参照し、番号を書かない)。
+"""
+
+UNIT = "時制"
+UNIT_SLUG = "tenses"
+
+QUESTIONS = [
+    # ---------------- mc ----------------
+    {
+        "type": "mc", "level": "advanced",
+        "stem": "I don't know when he ( ) back, but I'll call you as soon as he arrives.",
+        "choices": ["will come", "comes", "came", "would come"],
+        "answer": "will come",
+        "explanation": "この when 節は know の目的語になる名詞節「いつ戻るのか」なので、未来のことは will come と表す。"
+                       "現在形 comes が正しいのは as soon as he arrives のような時の副詞節の中だけで、名詞節には当てはまらない。"
+                       "過去形 came は文全体の未来という時間軸と合わず、would come は主節が現在形 don't know なので時制の一致が起きず不適。",
+        "point": "名詞節の未来は will／副詞節の未来は現在形",
+    },
+    {
+        "type": "mc", "level": "standard",
+        "stem": "My grandfather ( ) this camera in 1985, and he still uses it every day.",
+        "choices": ["has bought", "bought", "has been buying", "had bought"],
+        "answer": "bought",
+        "explanation": "in 1985 は明確な過去の一時点を指す語句で、現在完了はこの種の語句と一緒に使えないため過去形 bought が正しい。"
+                       "has bought は「いつ買ったか」を言わない形なので in 1985 と衝突する。"
+                       "buy は一瞬で終わる動作なので has been buying のような継続の形にできず、had bought は基準となる過去の時点が文中に無いため不適。",
+        "point": "in 1985 など明確な過去には過去形",
+    },
+    {
+        "type": "mc", "level": "standard",
+        "stem": "We ( ) for over an hour, but the bus still hasn't come.",
+        "choices": ["have been waiting", "are waiting", "waited", "had been waiting"],
+        "answer": "have been waiting",
+        "explanation": "「1時間以上前から今もずっと待っている」という過去から現在まで続く動作なので、現在完了進行形 have been waiting を使う。"
+                       "現在進行形 are waiting は今この瞬間のことしか表さず、for over an hour という過去からの積み重ねを表せない。"
+                       "過去形 waited は現在とのつながりが切れ、過去完了進行形 had been waiting は基準時が過去になるため、現在形の hasn't come と噛み合わない。",
+        "point": "過去から今まで続く動作は have been ~ing",
+    },
+    {
+        "type": "mc", "level": "standard",
+        "stem": "When I got to the theater, the movie ( ) already.",
+        "choices": ["started", "has started", "had started", "would start"],
+        "answer": "had started",
+        "explanation": "「着いた」という過去の時点より、さらに前に「始まっていた」ので過去完了 had started を使う。"
+                       "過去形 started では2つの出来事が同時に起きたことになり、already と合わない。"
+                       "has started は現在が基準なので過去の got と衝突し、would start は「これから始まる」という逆の時間関係を表すため不適。",
+        "point": "過去のある時点より前は過去完了",
+    },
+    {
+        "type": "mc", "level": "advanced",
+        "stem": "By the time you come back, I ( ) this report.",
+        "choices": ["will finish", "will have finished", "finish", "will be finishing"],
+        "answer": "will have finished",
+        "explanation": "by the time は時の副詞節を作るので節内は未来でも現在形 come になり、主節は「その時までには終えてしまっているだろう」という未来完了 will have finished で表す。"
+                       "will finish だと未来のある時点で終える動作を指すだけで、「その時までに完了している」という期限の意味が出ない。"
+                       "現在形 finish は主節の未来を表せず、will be finishing は「その時ちょうど書いている最中だ」となって完了の意味が出ない。",
+        "point": "「~までには終えている」は will have p.p.",
+    },
+    {
+        "type": "mc", "level": "standard",
+        "stem": "This soup ( ) delicious. Did you make it yourself?",
+        "choices": ["is tasting", "tastes", "is tasted", "has been tasting"],
+        "answer": "tastes",
+        "explanation": "taste は「~の味がする」という状態を表す動詞なので、進行形にせず現在形 tastes を使う。"
+                       "is tasting や has been tasting は状態動詞を進行形にした誤り。"
+                       "is tasted のような受動態にすると「味見される」の意味になり、スープが主語のこの文には合わない。",
+        "point": "状態を表す taste は進行形にしない",
+    },
+    {
+        "type": "mc", "level": "standard",
+        "stem": "She told me that she ( ) me the book the next day.",
+        "choices": ["will bring", "would bring", "brings", "has brought"],
+        "answer": "would bring",
+        "explanation": "主節が told という過去形なので、従属節も過去にそろえる (時制の一致)。"
+                       "「翌日持ってくる」という過去から見た未来は would + 動詞の原形で表すので would bring になる。"
+                       "will bring は主節が過去のとき使えず、現在形 brings も時制の一致に反する。has brought は「すでに持ってきた」で、the next day という未来を指す語句と矛盾する。",
+        "point": "過去から見た未来は would + 原形",
+    },
+    {
+        "type": "mc", "level": "advanced",
+        "stem": "Next April, I ( ) English for ten years.",
+        "choices": ["will study", "will be studying", "will have been studying", "will have been studied"],
+        "answer": "will have been studying",
+        "explanation": "「来年の4月で10年間ずっと勉強し続けていることになる」という、未来のある時点までの動作の継続なので、未来完了進行形 will have been studying を使う。"
+                       "will study は未来の一回の動作、will be studying は未来のその瞬間に進行中の動作を表すだけで、for ten years という積み重ねを表せない。"
+                       "will have been studied は受動態で「英語が誰かに勉強される」の意味になり、主語 I との関係が逆になる。",
+        "point": "未来の時点までの継続は will have been ~ing",
+    },
+    {
+        "type": "mc", "level": "standard",
+        "stem": "A: What are your plans for tomorrow?  B: I ( ) my aunt in Osaka.",
+        "choices": ["visit", "am visiting", "will have visited", "visited"],
+        "answer": "am visiting",
+        "explanation": "すでに決まっている個人の予定は現在進行形で表せるので am visiting が正しい。"
+                       "現在形 visit は習慣や不変の事実を表す形で、tomorrow の一回きりの予定には使えない。"
+                       "will have visited は「明日までに訪ね終えている」という完了の意味になり、過去形 visited は予定を聞かれた答えとして時間軸が合わない。",
+        "point": "決まった予定は現在進行形で表せる",
+    },
+    {
+        "type": "mc", "level": "advanced",
+        "stem": "By the time I finally arrived, she ( ) for two hours.",
+        "choices": ["has been waiting", "had been waiting", "is waiting", "will have waited"],
+        "answer": "had been waiting",
+        "explanation": "arrived という過去の時点までの2時間、動作が続いていたので過去完了進行形 had been waiting を使う。"
+                       "has been waiting は現在までの継続なので、過去の arrived を基準にできない。"
+                       "is waiting は現在進行中の動作で過去の話に使えず、will have waited は未来が基準になるため不適。",
+        "point": "過去の時点までの継続は had been ~ing",
+    },
+    {
+        "type": "mc", "level": "standard",
+        "stem": "A: Is Mr. Sato in?  B: No, he ( ) to Nagoya on business. He will be back on Friday.",
+        "choices": ["has been", "has gone", "has come", "had gone"],
+        "answer": "has gone",
+        "explanation": "主語が he なので has gone to ~ の形になり、「~へ行ってしまって今ここにいない」を表すため、不在を説明するこの場面に合う。"
+                       "has been to ~ は「~へ行ったことがある・行ってきた」で、今ここにいることが前提になるため He will be back on Friday と矛盾する。"
+                       "has come は「来た」で移動の向きが逆、had gone は過去の基準時が文中に無いため不適。",
+        "point": "have gone to は「行って今いない」",
+    },
+    {
+        "type": "mc", "level": "advanced",
+        "stem": "This time next week, I ( ) on a beach in Okinawa.",
+        "choices": ["will lie", "will be lying", "will have lain", "am lying"],
+        "answer": "will be lying",
+        "explanation": "「来週の今ごろ」という未来のある時点で進行中の動作なので、未来進行形 will be lying を使う。"
+                       "will lie はその時点で始める一回の動作を表すだけで「~している最中だ」にならない。"
+                       "will have lain は未来のその時までに完了していることを表し、am lying は現在進行中の動作なので、どちらも This time next week と合わない。",
+        "point": "未来のその時に進行中なら will be ~ing",
+    },
+    {
+        "type": "mc", "level": "standard",
+        "stem": "The new library ( ) now, and it will open next spring.",
+        "choices": ["has been building", "is being built", "has built", "builds"],
+        "answer": "is being built",
+        "explanation": "図書館は「建てる」ではなく「建てられる」側なので受動態にし、now があるので進行形と組み合わせた be being + 過去分詞にして is being built とする。"
+                       "has been building や builds は能動態で「図書館が何かを建てる」という意味になってしまう。"
+                       "has built も能動の現在完了で主語と動詞の関係が逆であり、進行中であることも表せない。",
+        "point": "進行中の受動は be being + 過去分詞",
+    },
+    {
+        "type": "mc", "level": "advanced",
+        "stem": "This is the first time I ( ) natto, and I like it more than I expected.",
+        "choices": ["eat", "ate", "have eaten", "will be eating"],
+        "answer": "have eaten",
+        "explanation": "This is the first time (that) S have p.p. で「~するのはこれが初めてだ」を表すので、現在完了 have eaten にする。"
+                       "現在形 eat や未来を表す will be eating では「初めての経験がすでに起きている」ことを表せない。"
+                       "過去形 ate は This is という現在形の主節と時間がつながらず、この構文では使わない。",
+        "point": "This is the first time + 現在完了",
+    },
+    {
+        "type": "mc", "level": "standard",
+        "stem": "Ken has been in the hospital since he ( ) his leg in the game.",
+        "choices": ["breaks", "has broken", "broke", "had broken"],
+        "answer": "broke",
+        "explanation": "since が「~して以来」と起点を示すとき、since 節の中は過去形にし、主節を現在完了にして現在までの継続を表す。"
+                       "現在形 breaks では過去の出来事という起点にならない。"
+                       "has broken は主節と同じ現在完了で起点を示せず、had broken は主節よりさらに前を表す形なので、この組み合わせでは不自然。",
+        "point": "since 節は過去形・主節は現在完了",
+    },
+    {
+        "type": "mc", "level": "advanced",
+        "stem": "I ( ) such a beautiful sunset in years.",
+        "choices": ["didn't see", "haven't seen", "don't see", "hadn't seen"],
+        "answer": "haven't seen",
+        "explanation": "in years は否定文で「何年も~していない」という現在までの期間を表すので、現在完了の否定形 haven't seen にする。"
+                       "過去形 didn't see は過去のある時のことだけを述べ、今日までの期間を表せない。"
+                       "現在形 don't see は習慣の否定になり、hadn't seen は過去の一時点までの話になるため、どちらも in years と噛み合わない。",
+        "point": "in years は現在完了の否定と使う",
+    },
+    {
+        "type": "mc", "level": "standard",
+        "stem": "We ( ) each other since we were in elementary school.",
+        "choices": ["have been knowing", "have known", "are knowing", "know"],
+        "answer": "have known",
+        "explanation": "know は状態動詞なので進行形にせず、since 節が示す過去からの継続は現在完了 have known で表す。"
+                       "have been knowing や are knowing は状態動詞を進行形にした誤り。"
+                       "現在形 know は今の状態だけを述べ、since we were in elementary school という起点からの継続を表せない。",
+        "point": "状態動詞の継続は have + 過去分詞",
+    },
+    {
+        "type": "mc", "level": "advanced",
+        "stem": "I ( ) call you last night, but my phone battery died.",
+        "choices": ["was going to", "am going to", "will", "would have"],
+        "answer": "was going to",
+        "explanation": "was going to + 動詞の原形は「~するつもりだったが実際にはしなかった」を表し、but 以下の事情と噛み合う。"
+                       "am going to や will は現在から見た未来なので last night と合わない。"
+                       "would have は後ろに過去分詞が必要な形で、原形 call を続けることはできない。",
+        "point": "「~するつもりだった」は was going to",
+    },
+
+    # ---------------- order ----------------
+    {
+        "type": "order", "level": "standard",
+        "prompt_ja": "彼が帰宅したらすぐに、私は彼に電話します。",
+        "answer": "I will call him as soon as he comes home.",
+        "explanation": "主節「私は彼に電話します」を I will call him と未来で作り、as soon as が導く時の副詞節を後ろに置く。"
+                       "時の副詞節の中では未来のことでも現在形で表すので、he will come ではなく he comes とするのがこの問題の要。"
+                       "文頭に置けるのは大文字の I だけで、home で文が終わるため語順は一つに定まる。",
+        "point": "時の副詞節の中は現在形",
+    },
+    {
+        "type": "order", "level": "standard",
+        "prompt_ja": "私が駅に着いたときには、電車はすでに出発していた。",
+        "answer": "When I got to the station, the train had already left.",
+        "explanation": "「着いた」という過去の時点を When I got to the station で示し、それより前に完了していた出来事を過去完了 had left で表す。"
+                       "already は had と過去分詞の間に置く。"
+                       "大文字で始まる When が文頭、コンマの付いた station, が前半の切れ目、left が文末になるため語順は一つに定まる。",
+        "point": "過去より前は had + 過去分詞",
+    },
+    {
+        "type": "order", "level": "advanced",
+        "prompt_ja": "あなたが戻ってくるまでには、私は宿題を終えているでしょう。",
+        "answer": "I will have finished my homework by the time you get back.",
+        "explanation": "「~までには終えているだろう」は未来完了 will have finished で表し、期限を示す by the time 以下を続ける。"
+                       "by the time は時の副詞節を作るので、節の中は you will get ではなく現在形 you get にする。"
+                       "文頭に置けるのは大文字の I だけで、back が文末になるため語順は一つに定まる。",
+        "point": "will have p.p. + by the time S 現在形",
+    },
+    {
+        "type": "order", "level": "advanced",
+        "prompt_ja": "私が電話したとき、彼女は2時間ずっとピアノを練習していた。",
+        "answer": "She had been practicing the piano for two hours when I called.",
+        "explanation": "過去の一時点 (when I called) までの2時間、動作が続いていたので過去完了進行形 had been practicing を使う。"
+                       "継続した期間は for two hours、基準となる過去の時点は when I called で示す。"
+                       "大文字で始まる She が文頭、called が文末になるため語順は一つに定まる。",
+        "point": "過去の時点までの継続は had been ~ing",
+    },
+    {
+        "type": "order", "level": "standard",
+        "prompt_ja": "その新しい橋は今、建設中だ。",
+        "answer": "The new bridge is being built now.",
+        "explanation": "橋は「建てられる」側なので受動態にし、今まさに進行中なので be being + 過去分詞の形にする。"
+                       "is being built で「建てられているところだ」を表し、now を文末に置く。"
+                       "大文字で始まる The が文頭、now が文末になるため語順は一つに定まる。",
+        "point": "be being + 過去分詞で進行中の受動",
+    },
+    {
+        "type": "order", "level": "advanced",
+        "prompt_ja": "彼に最後に会ってから5年になる。",
+        "answer": "It has been five years since I last saw him.",
+        "explanation": "「~してから…年になる」は It has been + 期間 + since + 主語 + 過去形 の形で表す。"
+                       "since 節は起点となる過去の出来事なので saw と過去形にし、「最後に」を表す last は動詞の直前に置く。"
+                       "大文字で始まる It が文頭、him が文末になるため語順は一つに定まる。",
+        "point": "It has been + 期間 + since + 過去形",
+    },
+    {
+        "type": "order", "level": "advanced",
+        "prompt_ja": "私は彼が明日のパーティーに来るかどうか知らない。",
+        "answer": "I do not know if he will come to the party tomorrow.",
+        "explanation": "この if 節は know の目的語になる名詞節「~かどうか」なので、未来のことは will come と表す。"
+                       "「もし~なら」という条件の副詞節ではないため、現在形で未来を表す規則は当てはまらない。"
+                       "文頭に置けるのは大文字の I だけで、tomorrow が文末になるため語順は一つに定まる。",
+        "point": "「~かどうか」の if 節は名詞節",
+    },
+
+    # ---------------- rewrite ----------------
+    {
+        "type": "rewrite", "level": "standard",
+        "original": "It began to rain three hours ago, and it is still raining.",
+        "instruction": "現在完了進行形と for を使い、It を主語にした一文にまとめなさい。",
+        "answer": "It has been raining for three hours.",
+        "explanation": "3時間前に始まって今も続いている動作なので、現在完了進行形 has been raining にまとめる。"
+                       "three hours ago (3時間前) は起点を表すが、継続した長さとして言い換えると for three hours になる。"
+                       "指定どおり It を主語にし、現在完了進行形と for を使うので答えは一つに定まる。",
+        "point": "~ ago の継続は for + 期間で言い換える",
+    },
+    {
+        "type": "rewrite", "level": "standard",
+        "original": "I lost my wallet, and I do not have it now.",
+        "instruction": "現在完了を使い、I を主語にした一文にまとめなさい。",
+        "answer": "I have lost my wallet.",
+        "explanation": "「なくして、その結果として今も持っていない」という過去の動作が現在に影響している状態なので、現在完了の完了・結果用法を使う。"
+                       "have lost の一語で「なくして今も見つかっていない」まで表せるので、and 以下を別に書く必要がなくなる。"
+                       "現在完了なので yesterday のような明確な過去を表す語句は付けない。",
+        "point": "結果が今に及ぶなら現在完了",
+    },
+    {
+        "type": "rewrite", "level": "advanced",
+        "original": "This is my first visit to Kyoto.",
+        "instruction": "This is the first time で始め、現在完了を使った一文に書き換えなさい。",
+        "answer": "This is the first time I have visited Kyoto.",
+        "explanation": "This is the first time (that) S have p.p. は「~するのはこれが初めてだ」を表す決まった形。"
+                       "名詞 visit を動詞 visit に変え、現在完了 have visited にして時間のつながりを出す。"
+                       "書き出しと現在完了が指定されているので答えは一つに定まる。",
+        "point": "This is the first time + S have p.p.",
+    },
+    {
+        "type": "rewrite", "level": "advanced",
+        "original": "Five years have passed since my grandfather died.",
+        "instruction": "It を主語にし、現在完了を使った一文に書き換えなさい。",
+        "answer": "It has been five years since my grandfather died.",
+        "explanation": "「~してから…年たつ」は Five years have passed since ~ と It has been + 期間 + since ~ で言い換えられる。"
+                       "主語が It になるので動詞は has been と三人称単数の形にする。"
+                       "since 節は起点を示すのでもとの died をそのまま過去形で残す。",
+        "point": "Five years have passed = It has been five years",
+    },
+    {
+        "type": "rewrite", "level": "advanced",
+        "original": "I have never eaten such a delicious cake before.",
+        "instruction": "This is で始め、最上級と現在完了を使った一文に書き換えなさい。",
+        "answer": "This is the most delicious cake I have ever eaten.",
+        "explanation": "「今まで~したことがないほど…だ」という経験の否定は、最上級 + I have ever p.p. に言い換えられる。"
+                       "否定文の never が肯定文になるので、ever に変えて the most delicious cake を後ろから修飾する。"
+                       "書き出しと使う形が指定されているので答えは一つに定まる。",
+        "point": "never ~ before = the 最上級 + I have ever p.p.",
+    },
+]
