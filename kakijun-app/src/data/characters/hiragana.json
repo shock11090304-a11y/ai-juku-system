@@ -1,0 +1,4248 @@
+[
+  {
+    "id": "hira_a",
+    "char": "あ",
+    "reading": "あ",
+    "type": "hiragana",
+    "group": "a-gyo",
+    "sample": {
+      "word": "あり",
+      "image": "emoji:🐜",
+      "audio": "words/ari.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.22,
+            0.3
+          ],
+          [
+            0.48,
+            0.28
+          ],
+          [
+            0.74,
+            0.28
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "tate",
+        "ending": "tome",
+        "points": [
+          [
+            0.47,
+            0.13
+          ],
+          [
+            0.44,
+            0.44
+          ],
+          [
+            0.4,
+            0.7
+          ],
+          [
+            0.36,
+            0.86
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "maru",
+        "ending": "harau",
+        "points": [
+          [
+            0.58,
+            0.42
+          ],
+          [
+            0.48,
+            0.68
+          ],
+          [
+            0.3,
+            0.82
+          ],
+          [
+            0.19,
+            0.76
+          ],
+          [
+            0.22,
+            0.62
+          ],
+          [
+            0.36,
+            0.53
+          ],
+          [
+            0.52,
+            0.5
+          ],
+          [
+            0.68,
+            0.52
+          ],
+          [
+            0.8,
+            0.62
+          ],
+          [
+            0.79,
+            0.76
+          ],
+          [
+            0.64,
+            0.87
+          ],
+          [
+            0.5,
+            0.88
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_i",
+    "char": "い",
+    "reading": "い",
+    "type": "hiragana",
+    "group": "a-gyo",
+    "sample": {
+      "word": "いぬ",
+      "image": "emoji:🐶",
+      "audio": "words/inu.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "tate",
+        "ending": "hane",
+        "points": [
+          [
+            0.3,
+            0.22
+          ],
+          [
+            0.26,
+            0.48
+          ],
+          [
+            0.3,
+            0.66
+          ],
+          [
+            0.42,
+            0.72
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "tate",
+        "ending": "tome",
+        "points": [
+          [
+            0.66,
+            0.24
+          ],
+          [
+            0.74,
+            0.42
+          ],
+          [
+            0.78,
+            0.58
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_u",
+    "char": "う",
+    "reading": "う",
+    "type": "hiragana",
+    "group": "a-gyo",
+    "sample": {
+      "word": "うし",
+      "image": "emoji:🐄",
+      "audio": "words/ushi.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.4,
+            0.12
+          ],
+          [
+            0.5,
+            0.1
+          ],
+          [
+            0.6,
+            0.14
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "harau",
+        "points": [
+          [
+            0.32,
+            0.3
+          ],
+          [
+            0.48,
+            0.24
+          ],
+          [
+            0.62,
+            0.28
+          ],
+          [
+            0.68,
+            0.42
+          ],
+          [
+            0.62,
+            0.6
+          ],
+          [
+            0.5,
+            0.74
+          ],
+          [
+            0.38,
+            0.84
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_e",
+    "char": "え",
+    "reading": "え",
+    "type": "hiragana",
+    "group": "a-gyo",
+    "sample": {
+      "word": "えんぴつ",
+      "image": "emoji:✏️",
+      "audio": "words/enpitsu.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.44,
+            0.1
+          ],
+          [
+            0.56,
+            0.16
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.3,
+            0.3
+          ],
+          [
+            0.6,
+            0.27
+          ],
+          [
+            0.45,
+            0.47
+          ],
+          [
+            0.28,
+            0.66
+          ],
+          [
+            0.42,
+            0.6
+          ],
+          [
+            0.5,
+            0.68
+          ],
+          [
+            0.62,
+            0.78
+          ],
+          [
+            0.76,
+            0.76
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_o",
+    "char": "お",
+    "reading": "お",
+    "type": "hiragana",
+    "group": "a-gyo",
+    "sample": {
+      "word": "おにぎり",
+      "image": "emoji:🍙",
+      "audio": "words/onigiri.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.2,
+            0.3
+          ],
+          [
+            0.42,
+            0.28
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "harau",
+        "points": [
+          [
+            0.36,
+            0.12
+          ],
+          [
+            0.37,
+            0.36
+          ],
+          [
+            0.37,
+            0.55
+          ],
+          [
+            0.26,
+            0.64
+          ],
+          [
+            0.2,
+            0.76
+          ],
+          [
+            0.3,
+            0.85
+          ],
+          [
+            0.47,
+            0.83
+          ],
+          [
+            0.58,
+            0.72
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.64,
+            0.14
+          ],
+          [
+            0.72,
+            0.24
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ka",
+    "char": "か",
+    "reading": "か",
+    "type": "hiragana",
+    "group": "ka-gyo",
+    "sample": {
+      "word": "かさ",
+      "image": "emoji:☂️",
+      "audio": "words/kasa.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "magari",
+        "ending": "hane",
+        "points": [
+          [
+            0.16,
+            0.31
+          ],
+          [
+            0.3,
+            0.28
+          ],
+          [
+            0.44,
+            0.26
+          ],
+          [
+            0.48,
+            0.42
+          ],
+          [
+            0.44,
+            0.62
+          ],
+          [
+            0.34,
+            0.76
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "naname",
+        "ending": "harau",
+        "points": [
+          [
+            0.34,
+            0.12
+          ],
+          [
+            0.28,
+            0.4
+          ],
+          [
+            0.16,
+            0.7
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.66,
+            0.3
+          ],
+          [
+            0.76,
+            0.44
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ki",
+    "char": "き",
+    "reading": "き",
+    "type": "hiragana",
+    "group": "ka-gyo",
+    "sample": {
+      "word": "きのこ",
+      "image": "emoji:🍄",
+      "audio": "words/kinoko.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.3,
+            0.26
+          ],
+          [
+            0.64,
+            0.22
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.24,
+            0.4
+          ],
+          [
+            0.7,
+            0.35
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "naname",
+        "ending": "hane",
+        "points": [
+          [
+            0.56,
+            0.1
+          ],
+          [
+            0.5,
+            0.32
+          ],
+          [
+            0.44,
+            0.54
+          ]
+        ]
+      },
+      {
+        "index": 4,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.28,
+            0.68
+          ],
+          [
+            0.4,
+            0.79
+          ],
+          [
+            0.58,
+            0.75
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ku",
+    "char": "く",
+    "reading": "く",
+    "type": "hiragana",
+    "group": "ka-gyo",
+    "sample": {
+      "word": "くるま",
+      "image": "emoji:🚗",
+      "audio": "words/kuruma.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.62,
+            0.2
+          ],
+          [
+            0.4,
+            0.42
+          ],
+          [
+            0.34,
+            0.5
+          ],
+          [
+            0.42,
+            0.6
+          ],
+          [
+            0.64,
+            0.8
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ke",
+    "char": "け",
+    "reading": "け",
+    "type": "hiragana",
+    "group": "ka-gyo",
+    "sample": {
+      "word": "けーき",
+      "image": "emoji:🍰",
+      "audio": "words/keeki.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "tate",
+        "ending": "hane",
+        "points": [
+          [
+            0.24,
+            0.2
+          ],
+          [
+            0.21,
+            0.45
+          ],
+          [
+            0.25,
+            0.66
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.42,
+            0.3
+          ],
+          [
+            0.78,
+            0.27
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "magari",
+        "ending": "harau",
+        "points": [
+          [
+            0.62,
+            0.14
+          ],
+          [
+            0.62,
+            0.45
+          ],
+          [
+            0.54,
+            0.72
+          ],
+          [
+            0.42,
+            0.84
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ko",
+    "char": "こ",
+    "reading": "こ",
+    "type": "hiragana",
+    "group": "ka-gyo",
+    "sample": {
+      "word": "ことり",
+      "image": "emoji:🐦",
+      "audio": "words/kotori.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.28,
+            0.3
+          ],
+          [
+            0.68,
+            0.27
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.24,
+            0.64
+          ],
+          [
+            0.34,
+            0.76
+          ],
+          [
+            0.56,
+            0.77
+          ],
+          [
+            0.72,
+            0.7
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_sa",
+    "char": "さ",
+    "reading": "さ",
+    "type": "hiragana",
+    "group": "sa-gyo",
+    "sample": {
+      "word": "さかな",
+      "image": "emoji:🐟",
+      "audio": "words/sakana.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.26,
+            0.3
+          ],
+          [
+            0.68,
+            0.24
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "naname",
+        "ending": "hane",
+        "points": [
+          [
+            0.56,
+            0.12
+          ],
+          [
+            0.5,
+            0.34
+          ],
+          [
+            0.46,
+            0.55
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.26,
+            0.62
+          ],
+          [
+            0.34,
+            0.77
+          ],
+          [
+            0.54,
+            0.78
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_shi",
+    "char": "し",
+    "reading": "し",
+    "type": "hiragana",
+    "group": "sa-gyo",
+    "sample": {
+      "word": "しんかんせん",
+      "image": "emoji:🚄",
+      "audio": "words/shinkansen.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "tate",
+        "ending": "hane",
+        "points": [
+          [
+            0.38,
+            0.15
+          ],
+          [
+            0.36,
+            0.45
+          ],
+          [
+            0.4,
+            0.68
+          ],
+          [
+            0.55,
+            0.8
+          ],
+          [
+            0.72,
+            0.72
+          ],
+          [
+            0.78,
+            0.58
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_su",
+    "char": "す",
+    "reading": "す",
+    "type": "hiragana",
+    "group": "sa-gyo",
+    "sample": {
+      "word": "すいか",
+      "image": "emoji:🍉",
+      "audio": "words/suika.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.24,
+            0.28
+          ],
+          [
+            0.72,
+            0.25
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "maru",
+        "ending": "harau",
+        "points": [
+          [
+            0.52,
+            0.12
+          ],
+          [
+            0.51,
+            0.35
+          ],
+          [
+            0.49,
+            0.5
+          ],
+          [
+            0.38,
+            0.56
+          ],
+          [
+            0.42,
+            0.66
+          ],
+          [
+            0.52,
+            0.62
+          ],
+          [
+            0.51,
+            0.5
+          ],
+          [
+            0.47,
+            0.7
+          ],
+          [
+            0.4,
+            0.86
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_se",
+    "char": "せ",
+    "reading": "せ",
+    "type": "hiragana",
+    "group": "sa-gyo",
+    "sample": {
+      "word": "せっけん",
+      "image": "emoji:🧼",
+      "audio": "words/sekken.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.18,
+            0.38
+          ],
+          [
+            0.78,
+            0.33
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.64,
+            0.14
+          ],
+          [
+            0.65,
+            0.4
+          ],
+          [
+            0.6,
+            0.56
+          ],
+          [
+            0.5,
+            0.6
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.32,
+            0.2
+          ],
+          [
+            0.32,
+            0.55
+          ],
+          [
+            0.38,
+            0.74
+          ],
+          [
+            0.58,
+            0.8
+          ],
+          [
+            0.72,
+            0.76
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_so",
+    "char": "そ",
+    "reading": "そ",
+    "type": "hiragana",
+    "group": "sa-gyo",
+    "sample": {
+      "word": "そら",
+      "image": "emoji:🌤️",
+      "audio": "words/sora.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.32,
+            0.12
+          ],
+          [
+            0.54,
+            0.1
+          ],
+          [
+            0.36,
+            0.28
+          ],
+          [
+            0.64,
+            0.26
+          ],
+          [
+            0.46,
+            0.44
+          ],
+          [
+            0.36,
+            0.58
+          ],
+          [
+            0.4,
+            0.74
+          ],
+          [
+            0.52,
+            0.82
+          ],
+          [
+            0.62,
+            0.78
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ta",
+    "char": "た",
+    "reading": "た",
+    "type": "hiragana",
+    "group": "ta-gyo",
+    "sample": {
+      "word": "たいよう",
+      "image": "emoji:☀️",
+      "audio": "words/taiyou.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.16,
+            0.3
+          ],
+          [
+            0.44,
+            0.27
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "naname",
+        "ending": "harau",
+        "points": [
+          [
+            0.34,
+            0.12
+          ],
+          [
+            0.28,
+            0.42
+          ],
+          [
+            0.18,
+            0.68
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.54,
+            0.44
+          ],
+          [
+            0.8,
+            0.41
+          ]
+        ]
+      },
+      {
+        "index": 4,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.52,
+            0.62
+          ],
+          [
+            0.58,
+            0.76
+          ],
+          [
+            0.78,
+            0.72
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_chi",
+    "char": "ち",
+    "reading": "ち",
+    "type": "hiragana",
+    "group": "ta-gyo",
+    "sample": {
+      "word": "ちょうちょ",
+      "image": "emoji:🦋",
+      "audio": "words/choucho.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.26,
+            0.26
+          ],
+          [
+            0.66,
+            0.21
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.48,
+            0.1
+          ],
+          [
+            0.42,
+            0.34
+          ],
+          [
+            0.38,
+            0.5
+          ],
+          [
+            0.56,
+            0.46
+          ],
+          [
+            0.7,
+            0.56
+          ],
+          [
+            0.68,
+            0.72
+          ],
+          [
+            0.52,
+            0.84
+          ],
+          [
+            0.38,
+            0.82
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_tsu",
+    "char": "つ",
+    "reading": "つ",
+    "type": "hiragana",
+    "group": "ta-gyo",
+    "sample": {
+      "word": "つき",
+      "image": "emoji:🌙",
+      "audio": "words/tsuki.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "magari",
+        "ending": "harau",
+        "points": [
+          [
+            0.2,
+            0.36
+          ],
+          [
+            0.44,
+            0.26
+          ],
+          [
+            0.66,
+            0.3
+          ],
+          [
+            0.74,
+            0.46
+          ],
+          [
+            0.62,
+            0.62
+          ],
+          [
+            0.42,
+            0.68
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_te",
+    "char": "て",
+    "reading": "て",
+    "type": "hiragana",
+    "group": "ta-gyo",
+    "sample": {
+      "word": "て",
+      "image": "emoji:✋",
+      "audio": "words/te.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.24,
+            0.27
+          ],
+          [
+            0.55,
+            0.23
+          ],
+          [
+            0.72,
+            0.24
+          ],
+          [
+            0.5,
+            0.4
+          ],
+          [
+            0.38,
+            0.58
+          ],
+          [
+            0.38,
+            0.72
+          ],
+          [
+            0.48,
+            0.82
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_to",
+    "char": "と",
+    "reading": "と",
+    "type": "hiragana",
+    "group": "ta-gyo",
+    "sample": {
+      "word": "とけい",
+      "image": "emoji:⏰",
+      "audio": "words/tokei.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.44,
+            0.1
+          ],
+          [
+            0.54,
+            0.28
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.58,
+            0.38
+          ],
+          [
+            0.38,
+            0.5
+          ],
+          [
+            0.26,
+            0.66
+          ],
+          [
+            0.4,
+            0.82
+          ],
+          [
+            0.62,
+            0.84
+          ],
+          [
+            0.76,
+            0.74
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_na",
+    "char": "な",
+    "reading": "な",
+    "type": "hiragana",
+    "group": "na-gyo",
+    "sample": {
+      "word": "なす",
+      "image": "emoji:🍆",
+      "audio": "words/nasu.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.16,
+            0.28
+          ],
+          [
+            0.42,
+            0.25
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "naname",
+        "ending": "harau",
+        "points": [
+          [
+            0.32,
+            0.12
+          ],
+          [
+            0.26,
+            0.38
+          ],
+          [
+            0.16,
+            0.62
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.6,
+            0.18
+          ],
+          [
+            0.7,
+            0.3
+          ]
+        ]
+      },
+      {
+        "index": 4,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.62,
+            0.4
+          ],
+          [
+            0.6,
+            0.56
+          ],
+          [
+            0.54,
+            0.68
+          ],
+          [
+            0.44,
+            0.76
+          ],
+          [
+            0.48,
+            0.85
+          ],
+          [
+            0.6,
+            0.83
+          ],
+          [
+            0.62,
+            0.74
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ni",
+    "char": "に",
+    "reading": "に",
+    "type": "hiragana",
+    "group": "na-gyo",
+    "sample": {
+      "word": "にんじん",
+      "image": "emoji:🥕",
+      "audio": "words/ninjin.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "tate",
+        "ending": "hane",
+        "points": [
+          [
+            0.24,
+            0.2
+          ],
+          [
+            0.22,
+            0.48
+          ],
+          [
+            0.26,
+            0.7
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.46,
+            0.3
+          ],
+          [
+            0.78,
+            0.27
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.44,
+            0.64
+          ],
+          [
+            0.56,
+            0.73
+          ],
+          [
+            0.76,
+            0.7
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_nu",
+    "char": "ぬ",
+    "reading": "ぬ",
+    "type": "hiragana",
+    "group": "na-gyo",
+    "sample": {
+      "word": "ぬいぐるみ",
+      "image": "emoji:🧸",
+      "audio": "words/nuigurumi.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "naname",
+        "ending": "harau",
+        "points": [
+          [
+            0.38,
+            0.14
+          ],
+          [
+            0.3,
+            0.4
+          ],
+          [
+            0.18,
+            0.72
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "maru",
+        "ending": "harau",
+        "points": [
+          [
+            0.6,
+            0.12
+          ],
+          [
+            0.38,
+            0.35
+          ],
+          [
+            0.3,
+            0.62
+          ],
+          [
+            0.42,
+            0.82
+          ],
+          [
+            0.62,
+            0.78
+          ],
+          [
+            0.72,
+            0.55
+          ],
+          [
+            0.62,
+            0.38
+          ],
+          [
+            0.5,
+            0.55
+          ],
+          [
+            0.55,
+            0.72
+          ],
+          [
+            0.72,
+            0.8
+          ],
+          [
+            0.85,
+            0.7
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ne",
+    "char": "ね",
+    "reading": "ね",
+    "type": "hiragana",
+    "group": "na-gyo",
+    "sample": {
+      "word": "ねこ",
+      "image": "emoji:🐱",
+      "audio": "words/neko.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "tate",
+        "ending": "tome",
+        "points": [
+          [
+            0.28,
+            0.14
+          ],
+          [
+            0.26,
+            0.5
+          ],
+          [
+            0.26,
+            0.84
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.18,
+            0.34
+          ],
+          [
+            0.34,
+            0.3
+          ],
+          [
+            0.44,
+            0.32
+          ],
+          [
+            0.38,
+            0.48
+          ],
+          [
+            0.3,
+            0.6
+          ],
+          [
+            0.44,
+            0.54
+          ],
+          [
+            0.58,
+            0.56
+          ],
+          [
+            0.68,
+            0.66
+          ],
+          [
+            0.66,
+            0.78
+          ],
+          [
+            0.56,
+            0.84
+          ],
+          [
+            0.5,
+            0.76
+          ],
+          [
+            0.58,
+            0.7
+          ],
+          [
+            0.68,
+            0.76
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_no",
+    "char": "の",
+    "reading": "の",
+    "type": "hiragana",
+    "group": "na-gyo",
+    "sample": {
+      "word": "のこぎり",
+      "image": "emoji:🪚",
+      "audio": "words/nokogiri.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "maru",
+        "ending": "harau",
+        "points": [
+          [
+            0.52,
+            0.16
+          ],
+          [
+            0.42,
+            0.38
+          ],
+          [
+            0.32,
+            0.6
+          ],
+          [
+            0.38,
+            0.78
+          ],
+          [
+            0.54,
+            0.84
+          ],
+          [
+            0.7,
+            0.72
+          ],
+          [
+            0.74,
+            0.52
+          ],
+          [
+            0.64,
+            0.3
+          ],
+          [
+            0.5,
+            0.22
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ha",
+    "char": "は",
+    "reading": "は",
+    "type": "hiragana",
+    "group": "ha-gyo",
+    "sample": {
+      "word": "はな",
+      "image": "emoji:🌸",
+      "audio": "words/hana.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "tate",
+        "ending": "hane",
+        "points": [
+          [
+            0.22,
+            0.16
+          ],
+          [
+            0.2,
+            0.5
+          ],
+          [
+            0.24,
+            0.8
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.44,
+            0.38
+          ],
+          [
+            0.8,
+            0.34
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.62,
+            0.14
+          ],
+          [
+            0.62,
+            0.45
+          ],
+          [
+            0.61,
+            0.62
+          ],
+          [
+            0.52,
+            0.72
+          ],
+          [
+            0.46,
+            0.82
+          ],
+          [
+            0.56,
+            0.88
+          ],
+          [
+            0.66,
+            0.8
+          ],
+          [
+            0.62,
+            0.72
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_hi",
+    "char": "ひ",
+    "reading": "ひ",
+    "type": "hiragana",
+    "group": "ha-gyo",
+    "sample": {
+      "word": "ひこうき",
+      "image": "emoji:✈️",
+      "audio": "words/hikouki.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "magari",
+        "ending": "hane",
+        "points": [
+          [
+            0.22,
+            0.3
+          ],
+          [
+            0.36,
+            0.26
+          ],
+          [
+            0.32,
+            0.44
+          ],
+          [
+            0.28,
+            0.62
+          ],
+          [
+            0.36,
+            0.78
+          ],
+          [
+            0.52,
+            0.84
+          ],
+          [
+            0.68,
+            0.76
+          ],
+          [
+            0.76,
+            0.55
+          ],
+          [
+            0.72,
+            0.34
+          ],
+          [
+            0.66,
+            0.28
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_fu",
+    "char": "ふ",
+    "reading": "ふ",
+    "type": "hiragana",
+    "group": "ha-gyo",
+    "sample": {
+      "word": "ふうせん",
+      "image": "emoji:🎈",
+      "audio": "words/fuusen.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.38,
+            0.1
+          ],
+          [
+            0.48,
+            0.13
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "hane",
+        "points": [
+          [
+            0.5,
+            0.22
+          ],
+          [
+            0.56,
+            0.34
+          ],
+          [
+            0.5,
+            0.5
+          ],
+          [
+            0.38,
+            0.6
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.2,
+            0.62
+          ],
+          [
+            0.26,
+            0.74
+          ]
+        ]
+      },
+      {
+        "index": 4,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.66,
+            0.58
+          ],
+          [
+            0.74,
+            0.7
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_he",
+    "char": "へ",
+    "reading": "へ",
+    "type": "hiragana",
+    "group": "ha-gyo",
+    "sample": {
+      "word": "へび",
+      "image": "emoji:🐍",
+      "audio": "words/hebi.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "magari",
+        "ending": "harau",
+        "points": [
+          [
+            0.2,
+            0.42
+          ],
+          [
+            0.4,
+            0.26
+          ],
+          [
+            0.56,
+            0.32
+          ],
+          [
+            0.78,
+            0.56
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ho",
+    "char": "ほ",
+    "reading": "ほ",
+    "type": "hiragana",
+    "group": "ha-gyo",
+    "sample": {
+      "word": "ほし",
+      "image": "emoji:⭐",
+      "audio": "words/hoshi.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "tate",
+        "ending": "hane",
+        "points": [
+          [
+            0.2,
+            0.16
+          ],
+          [
+            0.18,
+            0.5
+          ],
+          [
+            0.22,
+            0.8
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.44,
+            0.22
+          ],
+          [
+            0.8,
+            0.19
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.44,
+            0.4
+          ],
+          [
+            0.8,
+            0.37
+          ]
+        ]
+      },
+      {
+        "index": 4,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.61,
+            0.14
+          ],
+          [
+            0.61,
+            0.48
+          ],
+          [
+            0.6,
+            0.64
+          ],
+          [
+            0.51,
+            0.73
+          ],
+          [
+            0.46,
+            0.83
+          ],
+          [
+            0.57,
+            0.88
+          ],
+          [
+            0.66,
+            0.81
+          ],
+          [
+            0.62,
+            0.72
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ma",
+    "char": "ま",
+    "reading": "ま",
+    "type": "hiragana",
+    "group": "ma-gyo",
+    "sample": {
+      "word": "まと",
+      "image": "emoji:🎯",
+      "audio": "words/mato.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.24,
+            0.24
+          ],
+          [
+            0.76,
+            0.21
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.26,
+            0.38
+          ],
+          [
+            0.74,
+            0.35
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.5,
+            0.1
+          ],
+          [
+            0.5,
+            0.52
+          ],
+          [
+            0.49,
+            0.64
+          ],
+          [
+            0.4,
+            0.73
+          ],
+          [
+            0.44,
+            0.84
+          ],
+          [
+            0.56,
+            0.81
+          ],
+          [
+            0.52,
+            0.7
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_mi",
+    "char": "み",
+    "reading": "み",
+    "type": "hiragana",
+    "group": "ma-gyo",
+    "sample": {
+      "word": "みかん",
+      "image": "emoji:🍊",
+      "audio": "words/mikan.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.26,
+            0.2
+          ],
+          [
+            0.44,
+            0.16
+          ],
+          [
+            0.4,
+            0.36
+          ],
+          [
+            0.32,
+            0.52
+          ],
+          [
+            0.22,
+            0.64
+          ],
+          [
+            0.18,
+            0.78
+          ],
+          [
+            0.3,
+            0.86
+          ],
+          [
+            0.42,
+            0.8
+          ],
+          [
+            0.44,
+            0.68
+          ],
+          [
+            0.5,
+            0.62
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "naname",
+        "ending": "harau",
+        "points": [
+          [
+            0.46,
+            0.44
+          ],
+          [
+            0.58,
+            0.6
+          ],
+          [
+            0.7,
+            0.76
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_mu",
+    "char": "む",
+    "reading": "む",
+    "type": "hiragana",
+    "group": "ma-gyo",
+    "sample": {
+      "word": "むし",
+      "image": "emoji:🐛",
+      "audio": "words/mushi.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.22,
+            0.28
+          ],
+          [
+            0.6,
+            0.24
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "maru",
+        "ending": "hane",
+        "points": [
+          [
+            0.42,
+            0.1
+          ],
+          [
+            0.42,
+            0.4
+          ],
+          [
+            0.4,
+            0.56
+          ],
+          [
+            0.3,
+            0.62
+          ],
+          [
+            0.32,
+            0.74
+          ],
+          [
+            0.44,
+            0.76
+          ],
+          [
+            0.58,
+            0.72
+          ],
+          [
+            0.7,
+            0.62
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.66,
+            0.16
+          ],
+          [
+            0.72,
+            0.28
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_me",
+    "char": "め",
+    "reading": "め",
+    "type": "hiragana",
+    "group": "ma-gyo",
+    "sample": {
+      "word": "めがね",
+      "image": "emoji:👓",
+      "audio": "words/megane.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "naname",
+        "ending": "harau",
+        "points": [
+          [
+            0.38,
+            0.14
+          ],
+          [
+            0.3,
+            0.42
+          ],
+          [
+            0.18,
+            0.72
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "maru",
+        "ending": "harau",
+        "points": [
+          [
+            0.58,
+            0.12
+          ],
+          [
+            0.45,
+            0.36
+          ],
+          [
+            0.36,
+            0.58
+          ],
+          [
+            0.4,
+            0.78
+          ],
+          [
+            0.56,
+            0.86
+          ],
+          [
+            0.7,
+            0.76
+          ],
+          [
+            0.72,
+            0.56
+          ],
+          [
+            0.62,
+            0.4
+          ],
+          [
+            0.48,
+            0.44
+          ],
+          [
+            0.38,
+            0.62
+          ],
+          [
+            0.3,
+            0.78
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_mo",
+    "char": "も",
+    "reading": "も",
+    "type": "hiragana",
+    "group": "ma-gyo",
+    "sample": {
+      "word": "もも",
+      "image": "emoji:🍑",
+      "audio": "words/momo.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "magari",
+        "ending": "hane",
+        "points": [
+          [
+            0.46,
+            0.1
+          ],
+          [
+            0.44,
+            0.4
+          ],
+          [
+            0.42,
+            0.62
+          ],
+          [
+            0.48,
+            0.78
+          ],
+          [
+            0.62,
+            0.8
+          ],
+          [
+            0.7,
+            0.7
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.28,
+            0.34
+          ],
+          [
+            0.68,
+            0.3
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.28,
+            0.5
+          ],
+          [
+            0.66,
+            0.46
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ya",
+    "char": "や",
+    "reading": "や",
+    "type": "hiragana",
+    "group": "ya-gyo",
+    "sample": {
+      "word": "やま",
+      "image": "emoji:⛰️",
+      "audio": "words/yama.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "magari",
+        "ending": "hane",
+        "points": [
+          [
+            0.22,
+            0.36
+          ],
+          [
+            0.36,
+            0.28
+          ],
+          [
+            0.56,
+            0.24
+          ],
+          [
+            0.72,
+            0.3
+          ],
+          [
+            0.74,
+            0.42
+          ],
+          [
+            0.62,
+            0.5
+          ],
+          [
+            0.5,
+            0.48
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.5,
+            0.1
+          ],
+          [
+            0.56,
+            0.26
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "naname",
+        "ending": "harau",
+        "points": [
+          [
+            0.38,
+            0.42
+          ],
+          [
+            0.36,
+            0.62
+          ],
+          [
+            0.3,
+            0.82
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_yu",
+    "char": "ゆ",
+    "reading": "ゆ",
+    "type": "hiragana",
+    "group": "ya-gyo",
+    "sample": {
+      "word": "ゆき",
+      "image": "emoji:⛄",
+      "audio": "words/yuki.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.32,
+            0.18
+          ],
+          [
+            0.28,
+            0.4
+          ],
+          [
+            0.28,
+            0.6
+          ],
+          [
+            0.36,
+            0.76
+          ],
+          [
+            0.52,
+            0.8
+          ],
+          [
+            0.64,
+            0.68
+          ],
+          [
+            0.66,
+            0.48
+          ],
+          [
+            0.58,
+            0.34
+          ],
+          [
+            0.48,
+            0.36
+          ],
+          [
+            0.44,
+            0.46
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "tate",
+        "ending": "harau",
+        "points": [
+          [
+            0.5,
+            0.12
+          ],
+          [
+            0.49,
+            0.5
+          ],
+          [
+            0.46,
+            0.88
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_yo",
+    "char": "よ",
+    "reading": "よ",
+    "type": "hiragana",
+    "group": "ya-gyo",
+    "sample": {
+      "word": "よっと",
+      "image": "emoji:⛵",
+      "audio": "words/yotto.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.48,
+            0.24
+          ],
+          [
+            0.7,
+            0.22
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.46,
+            0.1
+          ],
+          [
+            0.46,
+            0.4
+          ],
+          [
+            0.46,
+            0.6
+          ],
+          [
+            0.36,
+            0.7
+          ],
+          [
+            0.4,
+            0.82
+          ],
+          [
+            0.52,
+            0.8
+          ],
+          [
+            0.5,
+            0.68
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ra",
+    "char": "ら",
+    "reading": "ら",
+    "type": "hiragana",
+    "group": "ra-gyo",
+    "sample": {
+      "word": "らいおん",
+      "image": "emoji:🦁",
+      "audio": "words/raion.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.4,
+            0.1
+          ],
+          [
+            0.52,
+            0.16
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.36,
+            0.26
+          ],
+          [
+            0.38,
+            0.44
+          ],
+          [
+            0.36,
+            0.56
+          ],
+          [
+            0.52,
+            0.52
+          ],
+          [
+            0.66,
+            0.6
+          ],
+          [
+            0.66,
+            0.74
+          ],
+          [
+            0.52,
+            0.84
+          ],
+          [
+            0.38,
+            0.82
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ri",
+    "char": "り",
+    "reading": "り",
+    "type": "hiragana",
+    "group": "ra-gyo",
+    "sample": {
+      "word": "りんご",
+      "image": "emoji:🍎",
+      "audio": "words/ringo.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "tate",
+        "ending": "hane",
+        "points": [
+          [
+            0.36,
+            0.2
+          ],
+          [
+            0.34,
+            0.44
+          ],
+          [
+            0.38,
+            0.6
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "harau",
+        "points": [
+          [
+            0.6,
+            0.16
+          ],
+          [
+            0.62,
+            0.44
+          ],
+          [
+            0.58,
+            0.68
+          ],
+          [
+            0.46,
+            0.84
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ru",
+    "char": "る",
+    "reading": "る",
+    "type": "hiragana",
+    "group": "ra-gyo",
+    "sample": {
+      "word": "るびー",
+      "image": "emoji:💎",
+      "audio": "words/rubii.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.3,
+            0.14
+          ],
+          [
+            0.58,
+            0.12
+          ],
+          [
+            0.4,
+            0.32
+          ],
+          [
+            0.28,
+            0.52
+          ],
+          [
+            0.32,
+            0.72
+          ],
+          [
+            0.48,
+            0.84
+          ],
+          [
+            0.64,
+            0.76
+          ],
+          [
+            0.66,
+            0.6
+          ],
+          [
+            0.54,
+            0.54
+          ],
+          [
+            0.46,
+            0.62
+          ],
+          [
+            0.52,
+            0.72
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_re",
+    "char": "れ",
+    "reading": "れ",
+    "type": "hiragana",
+    "group": "ra-gyo",
+    "sample": {
+      "word": "れもん",
+      "image": "emoji:🍋",
+      "audio": "words/remon.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "tate",
+        "ending": "tome",
+        "points": [
+          [
+            0.28,
+            0.14
+          ],
+          [
+            0.26,
+            0.5
+          ],
+          [
+            0.26,
+            0.84
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "hane",
+        "points": [
+          [
+            0.16,
+            0.34
+          ],
+          [
+            0.34,
+            0.3
+          ],
+          [
+            0.44,
+            0.32
+          ],
+          [
+            0.38,
+            0.5
+          ],
+          [
+            0.3,
+            0.62
+          ],
+          [
+            0.44,
+            0.56
+          ],
+          [
+            0.56,
+            0.6
+          ],
+          [
+            0.64,
+            0.72
+          ],
+          [
+            0.7,
+            0.82
+          ],
+          [
+            0.78,
+            0.72
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ro",
+    "char": "ろ",
+    "reading": "ろ",
+    "type": "hiragana",
+    "group": "ra-gyo",
+    "sample": {
+      "word": "ろけっと",
+      "image": "emoji:🚀",
+      "audio": "words/roketto.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.3,
+            0.14
+          ],
+          [
+            0.58,
+            0.12
+          ],
+          [
+            0.4,
+            0.32
+          ],
+          [
+            0.28,
+            0.52
+          ],
+          [
+            0.32,
+            0.72
+          ],
+          [
+            0.48,
+            0.84
+          ],
+          [
+            0.64,
+            0.76
+          ],
+          [
+            0.64,
+            0.62
+          ],
+          [
+            0.54,
+            0.58
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_wa",
+    "char": "わ",
+    "reading": "わ",
+    "type": "hiragana",
+    "group": "wa-gyo",
+    "sample": {
+      "word": "わに",
+      "image": "emoji:🐊",
+      "audio": "words/wani.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "tate",
+        "ending": "tome",
+        "points": [
+          [
+            0.28,
+            0.14
+          ],
+          [
+            0.26,
+            0.5
+          ],
+          [
+            0.26,
+            0.84
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "harau",
+        "points": [
+          [
+            0.16,
+            0.34
+          ],
+          [
+            0.34,
+            0.3
+          ],
+          [
+            0.46,
+            0.32
+          ],
+          [
+            0.4,
+            0.48
+          ],
+          [
+            0.32,
+            0.6
+          ],
+          [
+            0.46,
+            0.54
+          ],
+          [
+            0.6,
+            0.56
+          ],
+          [
+            0.7,
+            0.66
+          ],
+          [
+            0.68,
+            0.8
+          ],
+          [
+            0.54,
+            0.86
+          ],
+          [
+            0.44,
+            0.78
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_wo",
+    "char": "を",
+    "reading": "を",
+    "type": "hiragana",
+    "group": "wa-gyo",
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.28,
+            0.22
+          ],
+          [
+            0.66,
+            0.19
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "harau",
+        "points": [
+          [
+            0.46,
+            0.22
+          ],
+          [
+            0.38,
+            0.38
+          ],
+          [
+            0.3,
+            0.52
+          ],
+          [
+            0.48,
+            0.44
+          ],
+          [
+            0.62,
+            0.5
+          ],
+          [
+            0.68,
+            0.62
+          ],
+          [
+            0.64,
+            0.76
+          ],
+          [
+            0.5,
+            0.84
+          ],
+          [
+            0.36,
+            0.8
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.28,
+            0.58
+          ],
+          [
+            0.46,
+            0.72
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_n",
+    "char": "ん",
+    "reading": "ん",
+    "type": "hiragana",
+    "group": "wa-gyo",
+    "sample": {
+      "word": "ぱん",
+      "image": "emoji:🍞",
+      "audio": "words/pan.mp3"
+    },
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "magari",
+        "ending": "harau",
+        "points": [
+          [
+            0.44,
+            0.12
+          ],
+          [
+            0.36,
+            0.36
+          ],
+          [
+            0.26,
+            0.62
+          ],
+          [
+            0.2,
+            0.82
+          ],
+          [
+            0.34,
+            0.72
+          ],
+          [
+            0.44,
+            0.62
+          ],
+          [
+            0.52,
+            0.66
+          ],
+          [
+            0.56,
+            0.78
+          ],
+          [
+            0.66,
+            0.82
+          ],
+          [
+            0.76,
+            0.72
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_ga",
+    "char": "が",
+    "reading": "が",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_ka",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_gi",
+    "char": "ぎ",
+    "reading": "ぎ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_ki",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_gu",
+    "char": "ぐ",
+    "reading": "ぐ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_ku",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_ge",
+    "char": "げ",
+    "reading": "げ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_ke",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_go",
+    "char": "ご",
+    "reading": "ご",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_ko",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_za",
+    "char": "ざ",
+    "reading": "ざ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_sa",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_ji",
+    "char": "じ",
+    "reading": "じ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_shi",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_zu",
+    "char": "ず",
+    "reading": "ず",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_su",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_ze",
+    "char": "ぜ",
+    "reading": "ぜ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_se",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_zo",
+    "char": "ぞ",
+    "reading": "ぞ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_so",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_da",
+    "char": "だ",
+    "reading": "だ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_ta",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_dji",
+    "char": "ぢ",
+    "reading": "ぢ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_chi",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_dzu",
+    "char": "づ",
+    "reading": "づ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_tsu",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_de",
+    "char": "で",
+    "reading": "で",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_te",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_do",
+    "char": "ど",
+    "reading": "ど",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_to",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_ba",
+    "char": "ば",
+    "reading": "ば",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_ha",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_bi",
+    "char": "び",
+    "reading": "び",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_hi",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_bu",
+    "char": "ぶ",
+    "reading": "ぶ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_fu",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_be",
+    "char": "べ",
+    "reading": "べ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_he",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_bo",
+    "char": "ぼ",
+    "reading": "ぼ",
+    "type": "hiragana",
+    "group": "dakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_ho",
+      "marks": [
+        "mark_dakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_pa",
+    "char": "ぱ",
+    "reading": "ぱ",
+    "type": "hiragana",
+    "group": "handakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_ha",
+      "marks": [
+        "mark_handakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_pi",
+    "char": "ぴ",
+    "reading": "ぴ",
+    "type": "hiragana",
+    "group": "handakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_hi",
+      "marks": [
+        "mark_handakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_pu",
+    "char": "ぷ",
+    "reading": "ぷ",
+    "type": "hiragana",
+    "group": "handakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_fu",
+      "marks": [
+        "mark_handakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_pe",
+    "char": "ぺ",
+    "reading": "ぺ",
+    "type": "hiragana",
+    "group": "handakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_he",
+      "marks": [
+        "mark_handakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_po",
+    "char": "ぽ",
+    "reading": "ぽ",
+    "type": "hiragana",
+    "group": "handakuon",
+    "strokes": [],
+    "composedFrom": {
+      "base": "hira_ho",
+      "marks": [
+        "mark_handakuten"
+      ]
+    }
+  },
+  {
+    "id": "hira_small_ya",
+    "char": "ゃ",
+    "reading": "ちいさい や",
+    "type": "hiragana",
+    "group": "youon",
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "magari",
+        "ending": "hane",
+        "points": [
+          [
+            0.206,
+            0.533
+          ],
+          [
+            0.293,
+            0.484
+          ],
+          [
+            0.417,
+            0.459
+          ],
+          [
+            0.516,
+            0.496
+          ],
+          [
+            0.529,
+            0.57
+          ],
+          [
+            0.454,
+            0.62
+          ],
+          [
+            0.38,
+            0.608
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.38,
+            0.372
+          ],
+          [
+            0.417,
+            0.471
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "naname",
+        "ending": "harau",
+        "points": [
+          [
+            0.306,
+            0.57
+          ],
+          [
+            0.293,
+            0.694
+          ],
+          [
+            0.256,
+            0.818
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_small_yu",
+    "char": "ゅ",
+    "reading": "ちいさい ゆ",
+    "type": "hiragana",
+    "group": "youon",
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.268,
+            0.422
+          ],
+          [
+            0.244,
+            0.558
+          ],
+          [
+            0.244,
+            0.682
+          ],
+          [
+            0.293,
+            0.781
+          ],
+          [
+            0.392,
+            0.806
+          ],
+          [
+            0.467,
+            0.732
+          ],
+          [
+            0.479,
+            0.608
+          ],
+          [
+            0.43,
+            0.521
+          ],
+          [
+            0.368,
+            0.533
+          ],
+          [
+            0.343,
+            0.595
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "tate",
+        "ending": "harau",
+        "points": [
+          [
+            0.38,
+            0.384
+          ],
+          [
+            0.374,
+            0.62
+          ],
+          [
+            0.355,
+            0.856
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_small_yo",
+    "char": "ょ",
+    "reading": "ちいさい よ",
+    "type": "hiragana",
+    "group": "youon",
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.368,
+            0.459
+          ],
+          [
+            0.504,
+            0.446
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.355,
+            0.372
+          ],
+          [
+            0.355,
+            0.558
+          ],
+          [
+            0.355,
+            0.682
+          ],
+          [
+            0.293,
+            0.744
+          ],
+          [
+            0.318,
+            0.818
+          ],
+          [
+            0.392,
+            0.806
+          ],
+          [
+            0.38,
+            0.732
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_small_tsu",
+    "char": "っ",
+    "reading": "ちいさい つ",
+    "type": "hiragana",
+    "group": "youon",
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "magari",
+        "ending": "harau",
+        "points": [
+          [
+            0.194,
+            0.533
+          ],
+          [
+            0.343,
+            0.471
+          ],
+          [
+            0.479,
+            0.496
+          ],
+          [
+            0.529,
+            0.595
+          ],
+          [
+            0.454,
+            0.694
+          ],
+          [
+            0.33,
+            0.732
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_small_a",
+    "char": "ぁ",
+    "reading": "ちいさい あ",
+    "type": "hiragana",
+    "group": "youon",
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.206,
+            0.496
+          ],
+          [
+            0.368,
+            0.484
+          ],
+          [
+            0.529,
+            0.484
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "tate",
+        "ending": "tome",
+        "points": [
+          [
+            0.361,
+            0.391
+          ],
+          [
+            0.343,
+            0.583
+          ],
+          [
+            0.318,
+            0.744
+          ],
+          [
+            0.293,
+            0.843
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "maru",
+        "ending": "harau",
+        "points": [
+          [
+            0.43,
+            0.57
+          ],
+          [
+            0.368,
+            0.732
+          ],
+          [
+            0.256,
+            0.818
+          ],
+          [
+            0.188,
+            0.781
+          ],
+          [
+            0.206,
+            0.694
+          ],
+          [
+            0.293,
+            0.639
+          ],
+          [
+            0.392,
+            0.62
+          ],
+          [
+            0.492,
+            0.632
+          ],
+          [
+            0.566,
+            0.694
+          ],
+          [
+            0.56,
+            0.781
+          ],
+          [
+            0.467,
+            0.849
+          ],
+          [
+            0.38,
+            0.856
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_small_i",
+    "char": "ぃ",
+    "reading": "ちいさい い",
+    "type": "hiragana",
+    "group": "youon",
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "tate",
+        "ending": "hane",
+        "points": [
+          [
+            0.256,
+            0.446
+          ],
+          [
+            0.231,
+            0.608
+          ],
+          [
+            0.256,
+            0.719
+          ],
+          [
+            0.33,
+            0.756
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "tate",
+        "ending": "tome",
+        "points": [
+          [
+            0.479,
+            0.459
+          ],
+          [
+            0.529,
+            0.57
+          ],
+          [
+            0.554,
+            0.67
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_small_u",
+    "char": "ぅ",
+    "reading": "ちいさい う",
+    "type": "hiragana",
+    "group": "youon",
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.318,
+            0.384
+          ],
+          [
+            0.38,
+            0.372
+          ],
+          [
+            0.442,
+            0.397
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "harau",
+        "points": [
+          [
+            0.268,
+            0.496
+          ],
+          [
+            0.368,
+            0.459
+          ],
+          [
+            0.454,
+            0.484
+          ],
+          [
+            0.492,
+            0.57
+          ],
+          [
+            0.454,
+            0.682
+          ],
+          [
+            0.38,
+            0.769
+          ],
+          [
+            0.306,
+            0.831
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_small_e",
+    "char": "ぇ",
+    "reading": "ちいさい え",
+    "type": "hiragana",
+    "group": "youon",
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.343,
+            0.372
+          ],
+          [
+            0.417,
+            0.409
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "tome",
+        "points": [
+          [
+            0.256,
+            0.496
+          ],
+          [
+            0.442,
+            0.477
+          ],
+          [
+            0.349,
+            0.601
+          ],
+          [
+            0.244,
+            0.719
+          ],
+          [
+            0.33,
+            0.682
+          ],
+          [
+            0.38,
+            0.732
+          ],
+          [
+            0.454,
+            0.794
+          ],
+          [
+            0.541,
+            0.781
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hira_small_o",
+    "char": "ぉ",
+    "reading": "ちいさい お",
+    "type": "hiragana",
+    "group": "youon",
+    "strokes": [
+      {
+        "index": 1,
+        "hint": "yoko",
+        "ending": "tome",
+        "points": [
+          [
+            0.194,
+            0.496
+          ],
+          [
+            0.33,
+            0.484
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "magari",
+        "ending": "harau",
+        "points": [
+          [
+            0.293,
+            0.384
+          ],
+          [
+            0.299,
+            0.533
+          ],
+          [
+            0.299,
+            0.651
+          ],
+          [
+            0.231,
+            0.707
+          ],
+          [
+            0.194,
+            0.781
+          ],
+          [
+            0.256,
+            0.837
+          ],
+          [
+            0.361,
+            0.825
+          ],
+          [
+            0.43,
+            0.756
+          ]
+        ]
+      },
+      {
+        "index": 3,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.467,
+            0.397
+          ],
+          [
+            0.516,
+            0.459
+          ]
+        ]
+      }
+    ]
+  }
+]

@@ -20,3 +20,6 @@ supabase/
 #   kamitest プロジェクトまで空になって全ページ 404 になった (実測)。
 #   本体ドメインに exam-app を出さない役目は vercel.json の
 #   /exam-app/* → exam サブドメインへの転送が担う (docs/book-exam.md §20)。
+
+# かきじゅんアプリの開発ソース (配信するのはビルド済み /kakijun/ のみ)
+kakijun-app/

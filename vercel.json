@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/kakijun",
+      "destination": "/kakijun/",
+      "permanent": false
+    },
+    {
       "source": "/exam-app/:path*",
       "destination": "https://exam.trillion-ai-juku.com/:path*",
       "permanent": false
