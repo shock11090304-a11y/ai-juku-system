@@ -133,3 +133,75 @@ test('完走の記録がリロード後も残る (§14.5)', async ({ page }) => 
     );
   expect(stars).toBeGreaterThanOrEqual(1);
 });
+
+/**
+ * ★ 回帰テスト: お手本が消える事故 (2026-08-17)。
+ * ResizeObserver が「寸法が変わっていないのに」発火すると canvas.width への
+ * 再代入で背景層 (マス目 + お手本) が消え、誰も描き直さないまま真っ白になっていた。
+ * 1字目は正常で 2字目以降が真っ白になるので、必ず「戻って別の字」まで見ること。
+ * 見た目の事故なので、DOM ではなく実際の画素を数える。
+ */
+async function bgInk(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const c = document.querySelector(
+      '[data-testid=practice-canvas] canvas',
+    ) as HTMLCanvasElement; // 1枚目 = 背景層
+    const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+    let n = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++;
+    return n;
+  });
+}
+
+test('2字目以降もお手本とマス目が消えない (背景層の画素を数える)', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-testid=tile-hiragana]');
+  await page.click('[data-testid=char-hira_a]');
+  await page.waitForSelector('[data-testid=practice-canvas] canvas');
+  await page.waitForTimeout(800);
+  expect(await bgInk(page), '1字目のお手本').toBeGreaterThan(1000);
+
+  for (const id of ['hira_i', 'hira_u']) {
+    await page.click('[data-testid=btn-back]');
+    await page.click(`[data-testid=char-${id}]`);
+    await page.waitForSelector('[data-testid=practice-canvas] canvas');
+    await page.waitForTimeout(800);
+    expect(await bgInk(page), `${id} のお手本`).toBeGreaterThan(1000);
+  }
+
+  // 同じ字に入り直しても消えない (「もういっかい」相当)
+  await page.click('[data-testid=btn-back]');
+  await page.click('[data-testid=char-hira_u]');
+  await page.waitForSelector('[data-testid=practice-canvas] canvas');
+  await page.waitForTimeout(800);
+  expect(await bgInk(page), '入り直したときのお手本').toBeGreaterThan(1000);
+});
+
+test('運筆のお手本は絵文字ではなく書く線そのもの', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-testid=tile-unpitsu]');
+  // かいだん: 文字コードは 🪜 (絵文字)。お手本フォントに無いので
+  // フォント描画すると絵文字が出るか、何も出ない
+  await page.click('[data-testid=char-unpitsu_kaidan]');
+  await page.waitForSelector('[data-testid=practice-canvas] canvas');
+  await page.waitForTimeout(800);
+  expect(await bgInk(page), 'かいだんのお手本').toBeGreaterThan(1000);
+  // 背景層に色が付いていない = 絵文字が描かれていない (お手本は無彩色のみ)
+  const colored = await page.evaluate(() => {
+    const c = document.querySelector(
+      '[data-testid=practice-canvas] canvas',
+    ) as HTMLCanvasElement;
+    const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+    let n = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      // 薄い画素は輪郭の平滑化。低アルファでは色が量子化されて
+      // わずかに色付くので、目に見える濃さ (α>64) だけを数える
+      if (d[i + 3] <= 64) continue;
+      const max = Math.max(d[i], d[i + 1], d[i + 2]);
+      const min = Math.min(d[i], d[i + 1], d[i + 2]);
+      if (max - min > 24) n++; // 彩度のある画素
+    }
+    return n;
+  });
+  expect(colored, '背景層の有彩色画素 (絵文字が描かれた印)').toBe(0);
+});

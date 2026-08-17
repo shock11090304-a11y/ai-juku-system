@@ -91,7 +91,29 @@ export class GuideRenderer {
       ctx.textBaseline = 'middle';
       ctx.fillText(this.char, size / 2, size * 0.52);
       ctx.restore();
+    } else {
+      // ★ 運筆 (なみなみ・ぐるぐる・かいだん等) は「字」ではないので手本フォントが無い。
+      //   文字コード (〽 ◎ 🪜 ⛰) を借りて描くと、絵文字や別物の記号が出てしまい、
+      //   しかも判定する線とは似ても似つかない形になる。
+      //   運筆に限りお手本を線データそのものから描く。この場合お手本と判定は
+      //   同一データなので「お手本と違う線を見せる」問題 (PR #39) は起きない。
+      this.sampleFromStrokes(ctx, size);
     }
+  }
+
+  /** 運筆用: 判定に使う線データ自体をお手本として描く */
+  private sampleFromStrokes(ctx: CanvasRenderingContext2D, size: number): void {
+    if (this.strokes.length === 0) return;
+    ctx.save();
+    ctx.strokeStyle = GUIDE_SOLID;
+    ctx.lineWidth = size * 0.075; // 手本フォントの縦画とほぼ同じ太さ
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (const s of this.strokes) {
+      this.path(ctx, size, s, 0, 63);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   /** ガイド層: 毎フレーム (§5.1) */

@@ -163,7 +163,9 @@ export function PracticeScreen() {
     );
     const guide = guideRef.current!;
     const surface = surfaceRef.current!;
-    guide.setCharacter(prepared, lv, def.char);
+    // 運筆は「字」ではないのでお手本フォントを持たない (§renderGuide)。
+    // char を渡さないことで、お手本を線データそのものから描かせる。
+    guide.setCharacter(prepared, lv, def.type === 'unpitsu' ? '' : def.char);
     inkRef.current!.clearAll();
     if (surface.size > 0) guide.renderBackground(surface.bgCtx, surface.size);
     // フォント未読込のまま描くと代替フォントで出てしまうので、読み込み後に描き直す
