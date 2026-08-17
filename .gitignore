@@ -93,3 +93,9 @@ scripts/**/*_bak*/
 # ★神テスト教材 (scripts/book_exam/materials/) の問題 PDF は生成物だがコミットする。
 #   取り込みセッションが git 経由で受け取る実体そのもの (supabase/demo/sample-book.pdf と同じ理由)。
 !scripts/book_exam/materials/**/*_問題.pdf
+
+# 教材ビルドの出力先 (PDF は生成物・リポジトリに置かない)
+scripts/book_exam/materials/_out/
+
+# 英検模試の取り込み用 PDF (生成物・元は data_no*.json と build.py)
+scripts/eiken_junichi/mogi/bundle/*.pdf

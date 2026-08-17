@@ -1,0 +1,112 @@
+{
+ "source": "英文法_接続詞_第1集.yaml",
+ "subject_name": "英語",
+ "book": {
+  "title": "英文法 接続詞 演習 第1集",
+  "subject": "grammar",
+  "level": "標準",
+  "time_limit_min": 20
+ },
+ "questions": [
+  {
+   "number": 1,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "SETSU-MEISHI",
+   "explanation": "## 🎯 コアイメージ\n**that 節 =「〜ということ」という名詞のかたまり**。後ろに**完全な文**を従えて、文の主語・目的語・補語になれる。\n\n## 🔬 文構造分析\nThe problem is **that we don't have enough time** to prepare.\nthat 以下が補語 (問題 = 時間が足りないということ)。節の中は欠けの無い完全な文。\n\n## 📍 正解の根拠\n後ろが完全な文で、「〜ということ」の意味 → 接続詞 **that**。\n\n## ❌ 誤答 NG 理由\n1. what — 関係代名詞 what の節は中に名詞の欠けが要る。ここは完全な文なので置けない。\n2. if —「〜かどうか」の名詞節は目的語の位置が基本で、補語には whether を使う。意味も合わない。\n4. which — 疑問詞・関係詞のどちらでも、先行詞や選択の文脈が無くつながらない。"
+  },
+  {
+   "number": 2,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "SETSU-WHETHER",
+   "explanation": "## 🎯 コアイメージ\n**whether A or not =「A であろうとなかろうと」**という譲歩の副詞節。or not との呼応が whether のサイン。\n\n## 🔬 文構造分析\n**Whether you like it or not**, you have to do your homework.\n好き (like it) と嫌い (or not) の両方をカバーして「どちらでも宿題はやる」。\n\n## 📍 正解の根拠\n文末の **or not** と呼応して譲歩を作れるのは **Whether** だけ。\n\n## ❌ 誤答 NG 理由\n2. If — 条件「もし好きなら」。or not と呼応する譲歩の用法は無い。\n3. That —「〜ということ」の名詞節。副詞節の位置には置けない。\n4. Unless —「〜しない限り」。or not とつながらない。"
+  },
+  {
+   "number": 3,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "SETSU-UNLESS",
+   "explanation": "## 🎯 コアイメージ\n**unless =「〜しない限り・〜の場合を除いて」**= if ... not。例外の 1 ケースだけを切り出す接続詞。\n\n## 🔬 文構造分析\nI'll be at the office by nine **unless the train is delayed**.\n基本は「9 時までに着く」。例外 = 電車が遅れた場合、だけを unless が除外する。\n\n## 📍 正解の根拠\n「電車が遅れ**ない限り** 9 時までに着く」→ **unless**。\n\n## ❌ 誤答 NG 理由\n1. if —「遅れた**ら**着く」となり因果が逆立ちする。\n3. because —「遅れる**から**着く」。理由として成り立たない。\n4. so — 等位接続詞「だから」。ここに置くと「着く、だから遅れる」となり意味も語順も壊れる。"
+  },
+  {
+   "number": 4,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "SETSU-SUCHTHAT",
+   "explanation": "## 🎯 コアイメージ\n**such + a + 形容詞 + 名詞 + that … =「とても〜な…なので」**。名詞を含むかたまりを強調するのは such (so は形容詞・副詞だけを強調)。\n\n## 🔬 文構造分析\nIt was **such a beautiful day that** we decided to go on a picnic.\nsuch + a beautiful day (名詞のかたまり) + that 節 (結果)。\n\n## 📍 正解の根拠\n空所の直後が **a + 形容詞 + 名詞**の並び → **such**。(so なら so beautiful a day の語順になる)\n\n## ❌ 誤答 NG 理由\n1. so — so の後ろは形容詞が先: so beautiful a day。so a beautiful day の語順は無い。\n2. very — very a beautiful day という語順は無く、that 節とも呼応しない。\n3. too — too 〜 to do とペアを組む語。that 節とは呼応しない。"
+  },
+  {
+   "number": 5,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "SETSU-KANYO",
+   "explanation": "## 🎯 コアイメージ\n**as far as =「〜の範囲では」(範囲) / as long as =「〜しさえすれば」(条件)**。as far as I know「私の知る限り」は範囲の代表慣用。\n\n## 🔬 文構造分析\n**As far as I know**, he has never been late for school.\n「私の知識の範囲では」という限定を文全体にかぶせる。\n\n## 📍 正解の根拠\nknow (知識) の**範囲**を限る → **As far as** I know。\n\n## ❌ 誤答 NG 理由\n1. As long as — 条件「〜でありさえすれば」。As long as I know だと「私が知ってさえいれば」となり意味不明。\n3. By the time —「〜する時までには」。時の締め切りで、文意に合わない。\n4. In case —「〜するといけないから」。備えの意味で、知識の範囲を表せない。"
+  },
+  {
+   "number": 6,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "SETSU-NOTONLY",
+   "explanation": "## 🎯 コアイメージ\n**not only A but also B =「A だけでなく B も」**。not only と but also が呼応のペアで、A と B には文法的に同じ形が入る。\n\n## 🔬 文構造分析\nShe is **not only** a talented pianist **but also** a good teacher.\nA = a talented pianist / B = a good teacher (どちらも名詞句)。\n\n## 📍 正解の根拠\n前半の **not only** を受けるのは **but also** — 固定の呼応。\n\n## ❌ 誤答 NG 理由\n1. and also — not only との呼応にならない (only の否定が宙に浮く)。\n2. but then —「しかしその一方」という談話表現。呼応のペアではない。\n4. and yet —「それでいて」。同じく not only と呼応しない。"
+  },
+  {
+   "number": 7,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "SETSU-INCASE",
+   "explanation": "## 🎯 コアイメージ\n**in case 〜 =「〜するといけないから・〜の場合に備えて」**。起きてほしくない事態への**備え**を表す。節の中は現在形 (will を使わない)。\n\n## 🔬 文構造分析\nTake an umbrella with you **in case it rains**.\n傘を持つ = 備え。雨が降る = 備える対象。因果がまっすぐ通る。\n\n## 📍 正解の根拠\n「降るといけないから持って行け」= **in case**。\n\n## ❌ 誤答 NG 理由\n2. so that — 目的「雨が降る**ように**傘を持て」となり意味が通らない (普通 can / will を伴う)。\n3. as if —「まるで降るかのように」。様態の表現で、備えの意味が出ない。\n4. unless —「降らない限り持って行け」となり論理が逆さまになる。"
+  },
+  {
+   "number": 8,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "SETSU-JOHO",
+   "explanation": "## 🎯 コアイメージ\n譲歩「〜だけれども」— 後ろに**節 (S + V) が続くなら接続詞 although**、名詞だけなら前置詞 despite / in spite of。品詞の見極めが全て。\n\n## 🔬 文構造分析\n**Although he was very tired**, he kept on working.\n空所の直後が he was 〜 という節 → 接続詞が要る。\n\n## 📍 正解の根拠\n節を従えられる譲歩の語は選択肢の中で **Although** だけ。\n\n## ❌ 誤答 NG 理由\n1. Despite — 前置詞。後ろに置けるのは名詞 (Despite his tiredness) で、節は取れない。\n2. During — 前置詞「〜の間」。節を取れず、譲歩の意味も無い。\n3. Because of — 前置詞句。節を取れない上、「疲れたから働き続けた」は因果も不自然。"
+  },
+  {
+   "number": 9,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "SETSU-MOKUTEKI",
+   "explanation": "## 🎯 コアイメージ\n**so that + S + can / will =「S が〜できるように」**という目的の副詞節。can / will が付くのが目的の so that のサイン。\n\n## 🔬 文構造分析\nSpeak louder **so that everyone can hear** you.\n大声で話す (手段) → 全員に聞こえる (目的)。can が目的の型を完成させる。\n\n## 📍 正解の根拠\n「皆に聞こえる**ように**」+ 節内の can → **so that**。\n\n## ❌ 誤答 NG 理由\n1. as if —「まるで皆に聞こえるかのように」。様態で、目的の意味が出ない。\n2. even though — 譲歩「聞こえるけれども大声で話せ」となり不合理。\n4. in order — 単独では節を取れない (in order **that** なら可)。"
+  },
+  {
+   "number": 10,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "SETSU-MEIREI",
+   "explanation": "## 🎯 コアイメージ\n**命令文 + or 〜 =「…しなさい、さもないと〜」**。命令文 + and 〜 =「…しなさい、そうすれば〜」とペアで覚える。\n\n## 🔬 文構造分析\nHurry up, **or you will be late** for the meeting.\n急げ (命令) + or (さもないと) + 遅れる (悪い帰結)。\n\n## 📍 正解の根拠\n帰結が「遅れる」という**悪い側** → 「さもないと」の **or**。\n\n## ❌ 誤答 NG 理由\n1. and —「急げ、そうすれば遅れる」となり因果が逆さまになる。\n3. but — 逆接。命令とその帰結をつなぐ働きが無い。\n4. so —「急げ、だから遅れる」となり意味が通らない。"
+  }
+ ]
+}

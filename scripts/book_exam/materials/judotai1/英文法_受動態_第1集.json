@@ -1,0 +1,112 @@
+{
+ "source": "英文法_受動態_第1集.yaml",
+ "subject_name": "英語",
+ "book": {
+  "title": "英文法 受動態 演習 第1集",
+  "subject": "grammar",
+  "level": "標準",
+  "time_limit_min": 20
+ },
+ "questions": [
+  {
+   "number": 1,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "JUDO-KIHON",
+   "explanation": "## 🎯 コアイメージ\n主語が動作を「**される側**」なら受動態 be + 過去分詞。寺は「建てられる」側。時間は be 動詞が背負う (ago → 過去形 was)。\n\n## 🔬 文構造分析\nThis temple **was built** about five hundred years ago.\n主語 This temple = build される側。ago (過去の一点) → was + built。\n\n## 📍 正解の根拠\n「寺が建てられた」という過去の受け身 → **was built**。\n\n## ❌ 誤答 NG 理由\n1. built — 能動の過去形。「寺が (何かを) 建てた」ことになり、目的語も無い。\n3. has built — 能動の現在完了。ago と共起できない上、寺が建てる側になる。\n4. is building — 能動の現在進行。500 年前の話に現在形は置けない。"
+  },
+  {
+   "number": 2,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "JUDO-SHINKO",
+   "explanation": "## 🎯 コアイメージ\n**進行形の受動態 = be + being + 過去分詞**「今まさに〜されている最中」。be 動詞が進行を、being 以下が受け身を背負う二段構え。\n\n## 🔬 文構造分析\nA new bridge **is being built** over the river now.\nis (現在) + being (進行) + built (受け身)。橋は「建てられている」最中。\n\n## 📍 正解の根拠\nnow + 建設の真っ最中 + 橋は建てられる側 → **is being built**。\n\n## ❌ 誤答 NG 理由\n1. is building — 能動の進行形。「橋が (何かを) 建てている」ことになる。\n2. builds — 能動の現在形。同じく橋が建てる側になり、now の進行も出ない。\n3. is built — 単純な受動の現在形は習慣・状態向き。「今まさに」の進行が表せない。"
+  },
+  {
+   "number": 3,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "JUDO-JOTAI",
+   "explanation": "## 🎯 コアイメージ\n**be covered with 〜 =「〜で覆われている」**という状態の受動態。動作主の by ではなく、材料・中身を with で示す慣用ペア。\n\n## 🔬 文構造分析\nThe top of the mountain **is covered with** snow all year round.\n山頂は雪に「覆われる」側。all year round (一年中) = 恒常的な状態。\n\n## 📍 正解の根拠\n覆われた**状態**が一年中続く → 単純現在の受動 **is covered** (+ with)。\n\n## ❌ 誤答 NG 理由\n1. covers — 能動。「山頂が (何かを) 覆う」ことになり、with とも合わない。\n2. is covering — 能動の進行形。同じく山頂が覆う側になる。\n4. is being covered — 進行の受動「今まさに覆われつつある」。all year round の恒常状態と合わない。"
+  },
+  {
+   "number": 4,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "JUDO-GUNDOSHI",
+   "explanation": "## 🎯 コアイメージ\n**群動詞 (take care of など) は 1 つの動詞のかたまり**として受動態にする。最後の前置詞 of を**落とさない**のがポイント。\n\n## 🔬 文構造分析\nThe baby was **taken care of** by her grandmother.\nHer grandmother took care of the baby. → the baby を主語に。take care of が丸ごと過去分詞化して taken care of。\n\n## 📍 正解の根拠\ntake care **of** のかたまりを保ったまま受動化 → was **taken care of**。\n\n## ❌ 誤答 NG 理由\n2. taken care — of が欠けている。かたまりの一部を落とすと「誰を」がつながらない。\n3. taking care of — 能動の進行。「赤ん坊が世話をしている」ことになる。\n4. took care of — 過去形。直前の was と述語が二重になる。"
+  },
+  {
+   "number": 5,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "JUDO-JODOSHI",
+   "explanation": "## 🎯 コアイメージ\n**助動詞付きの受動態 = 助動詞 + be + 過去分詞**。must / can / will の後ろでも受け身の芯 (be + p.p.) は変わらない。\n\n## 🔬 文構造分析\nThis work must **be finished** by tomorrow morning.\n仕事は「終えられる」側。must (義務) + be finished (受け身)。\n\n## 📍 正解の根拠\n主語 This work は finish される側 → must の後ろは **be finished**。\n\n## ❌ 誤答 NG 理由\n1. finish — 能動。「仕事が (何かを) 終える」ことになり、目的語も無い。\n2. be finishing — 能動の進行。同じく仕事が終える側になる。\n4. have finished — 能動の完了。主語との「される」関係が作れない。"
+  },
+  {
+   "number": 6,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "JUDO-CHIKAKU",
+   "explanation": "## 🎯 コアイメージ\n**知覚動詞の受動態では、隠れていた to が現れる**: see him enter (原形) → he was seen **to** enter。make の受動 (be made to do) と同じ現象。\n\n## 🔬 文構造分析\nThe man was seen **to enter** the building late at night.\nSomeone saw the man enter 〜 の受動態。原形 enter が to enter に変わる。\n\n## 📍 正解の根拠\nbe seen の後ろに動作を続けるなら **to enter** (to 不定詞)。\n\n## ❌ 誤答 NG 理由\n1. enter — 原形が置けるのは能動 (saw him enter) のときだけ。受動では to が要る。\n3. entered — 過去形・過去分詞。was seen と並べる形が無い。\n4. to be entered —「建物に入られる」という受動になり意味が通らない。"
+  },
+  {
+   "number": 7,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "JUDO-KANJO",
+   "explanation": "## 🎯 コアイメージ\n感情の受動態は**前置詞をセットで暗記**: be surprised **at** (〜に驚く) / be satisfied with / be interested in。by 以外の前置詞が慣用で決まっている。\n\n## 🔬 文構造分析\nEveryone was surprised **at the news** of his sudden resignation.\n驚きの向かう先 (原因) を at が指す。\n\n## 📍 正解の根拠\nbe surprised **at** 〜 が固定の型。\n\n## ❌ 誤答 NG 理由\n1. with — be satisfied with (満足) などの型。surprised とは組まない。\n2. for — surprised for という慣用は無い。\n3. to — be surprised to hear (不定詞) の形はあるが、名詞 the news を直接は続けられない。"
+  },
+  {
+   "number": 8,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "JUDO-SHIEKI",
+   "explanation": "## 🎯 コアイメージ\n**使役 make の受動態でも、隠れていた to が現れる**: made him clean (原形) → he was made **to** clean。知覚動詞の受動と同じ現象。\n\n## 🔬 文構造分析\nHe was made **to clean** the room by his mother.\nHis mother made him clean 〜 の受動態。原形 clean が to clean に変わる。\n\n## 📍 正解の根拠\nbe made の後ろに動作を続けるなら **to clean** (to 不定詞)。\n\n## ❌ 誤答 NG 理由\n2. clean — 原形が置けるのは能動 (made him clean) のときだけ。\n3. cleaning — be made -ing という型は無い。\n4. cleaned —「彼が掃除される」方向になり、部屋という目的語ともつながらない。"
+  },
+  {
+   "number": 9,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "JUDO-KNOWN",
+   "explanation": "## 🎯 コアイメージ\n**be known to 人 =「〜に知られている」**。know の受動は動作主でも by でなく to を使う慣用 (be known by は「〜で見分けがつく」という別の意味)。\n\n## 🔬 文構造分析\nThe singer is known **to people** of all ages.\n知られている**相手** (あらゆる世代の人々) を to が指す。\n\n## 📍 正解の根拠\n「人々に知られている」= be known **to** 〜 の固定ペア。\n\n## ❌ 誤答 NG 理由\n1. by — be known by は「〜によって見分けられる」という別表現になる。\n3. with — known with という慣用は無い。\n4. as — be known as は「〜として知られる」。後ろに肩書き・名前が来る形で、people には合わない。"
+  },
+  {
+   "number": 10,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "JUDO-KANRYO",
+   "explanation": "## 🎯 コアイメージ\n**完了形の受動態 = have + been + 過去分詞**。yet (まだ) は完了形の否定文と組んで「まだ〜されていない」。\n\n## 🔬 文構造分析\nThe missing wallet **has not been found** yet.\n財布は「見つけられる」側。has not (完了の否定) + been found (受け身)。\n\n## 📍 正解の根拠\nyet + 財布は見つけられる側 → 完了の受動 **has not been found**。\n\n## ❌ 誤答 NG 理由\n1. did not find — 能動。「財布が (何かを) 見つけなかった」ことになる。\n2. has not found — 能動の完了。同じく財布が見つける側になる。\n4. was not finding — 能動の過去進行。主語との関係も yet との相性も壊れる。"
+  }
+ ]
+}

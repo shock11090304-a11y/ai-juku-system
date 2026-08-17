@@ -1,0 +1,112 @@
+{
+ "source": "英文法_時制_第1集.yaml",
+ "subject_name": "英語",
+ "book": {
+  "title": "英文法 時制 演習 第1集",
+  "subject": "grammar",
+  "level": "標準",
+  "time_limit_min": 20
+ },
+ "questions": [
+  {
+   "number": 1,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "JISEI-FUKUSHI",
+   "explanation": "## 🎯 コアイメージ\n**時・条件の副詞節の中では、未来のことでも現在形**で表す。as soon as / when / if / until などが作る「いつ・どんな条件で」の節がこの対象。\n\n## 🔬 文構造分析\nI will call you **as soon as I arrive** at the station.\n主節 I will call (未来) + as soon as の副詞節。節の中は未来の内容でも現在形 arrive。\n\n## 📍 正解の根拠\nas soon as 〜 は時の副詞節 → will を使わず現在形 **arrive**。\n\n## ❌ 誤答 NG 理由\n2. will arrive — 時の副詞節の中に will は置けない。\n3. arrived — 過去形。主節が will call (未来) なので時間が合わない。\n4. will have arrived — will を含む形はどれも副詞節の中には置けない。"
+  },
+  {
+   "number": 2,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "JISEI-KEIZOKU",
+   "explanation": "## 🎯 コアイメージ\n**since (〜以来) は現在完了の目印**。過去の起点から今までずっと続いていることは、過去形でも現在形でもなく現在完了で表す。\n\n## 🔬 文構造分析\nWe **have known** each other **since we were children**.\n起点 = since we were children (子供の頃)、そこから現在までの継続 = have + 過去分詞。\n\n## 📍 正解の根拠\n「子供の頃から (今も) 知り合いだ」という**過去→現在の継続** → 現在完了 **have known**。\n\n## ❌ 誤答 NG 理由\n1. know — 現在形は「今」だけを切り取り、since からの継続を表せない。\n2. knew — 過去形は過去で話が終わり、「今も知り合い」がこぼれ落ちる。\n4. are knowing — know は状態動詞なので進行形にしない。"
+  },
+  {
+   "number": 3,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "JISEI-DAIKAKO",
+   "explanation": "## 🎯 コアイメージ\n過去のある時点より**さらに前**の出来事は過去完了 (had + 過去分詞) = 大過去。「失くした」より「もらった」が前。\n\n## 🔬 文構造分析\nI **lost** the watch my father **had given** me for my birthday.\n基準 = lost (過去)。もらったのはその前 → had given。関係詞節が the watch を修飾する。\n\n## 📍 正解の根拠\n「失くした (過去)」時点より前の「もらった」→ 過去完了 **had given**。\n\n## ❌ 誤答 NG 理由\n1. gives — 現在形。過去の話の中で時間が浮いてしまう。\n3. has given — 現在完了は「今」とつながる形。失くした過去の話の基準に合わない。\n4. will give —「これからくれる」。もう失くしている以上あり得ない。"
+  },
+  {
+   "number": 4,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "JISEI-JOUTAI",
+   "explanation": "## 🎯 コアイメージ\nbelong / know / like のような**状態動詞は進行形にしない**。「〜している最中」という動作の途中経過が無いから。\n\n## 🔬 文構造分析\nThis bicycle **belongs to** my brother.\nbelong to 〜 =「〜のものである」。主語が三人称単数なので belongs。\n\n## 📍 正解の根拠\n所属という**状態**を表すので、単純な現在形 **belongs**。\n\n## ❌ 誤答 NG 理由\n1. is belonging — 状態動詞 belong は進行形にできない。\n2. belonging — -ing 単独では述語動詞にならない。\n3. is belonged — belong は自動詞なので受け身を作れない。"
+  },
+  {
+   "number": 5,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "JISEI-KAKO",
+   "explanation": "## 🎯 コアイメージ\n**〜 ago (〜前に) のような「明確な過去」を指す語句は、過去形とだけ組む**。現在完了は「今」とつながる形なので、過去の一点を指す語句とは合わない。\n\n## 🔬 文構造分析\nMr. Sato **moved** to Osaka **three days ago**.\nthree days ago が過去の一点を指定 → 述語は単純過去。\n\n## 📍 正解の根拠\nago がある以上、過去形 **moved** の一択。\n\n## ❌ 誤答 NG 理由\n1. has moved — 現在完了は ago と共起できない (定番の禁止ペア)。\n2. has been moving — 同じく現在完了 (進行) なので ago と組めない。\n4. will move — 未来形。ago (過去) と矛盾する。"
+  },
+  {
+   "number": 6,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "JISEI-MIRAIKANRYO",
+   "explanation": "## 🎯 コアイメージ\n**未来のある時点までの継続・完了は未来完了 (will have + 過去分詞)**。by 〜 (〜までには) が未来の締め切り線を引く。\n\n## 🔬 文構造分析\n**By next month**, I **will have lived** here **for ten years**.\n基準 = 来月 (未来)。その時点で「10 年住んだことになる」= will have lived。\n\n## 📍 正解の根拠\nby next month という**未来の基準点**での継続の完成 → 未来完了 **will have lived**。\n\n## ❌ 誤答 NG 理由\n2. have lived — 現在完了は「今まで」の話。来月という未来の基準には届かない。\n3. am living —「今住んでいる」だけで、10 年・来月という枠組みを背負えない。\n4. lived — 過去形。未来の話に置けない。"
+  },
+  {
+   "number": 7,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "JISEI-KANRYOSHINKO",
+   "explanation": "## 🎯 コアイメージ\n**動作の継続は現在完了進行形 (have been -ing)**。「昨夜からずっと降り続いている」= 起点 since + 今も進行中。\n\n## 🔬 文構造分析\nIt **has been raining** since last night.\nsince last night (起点) → 現在まで続く動作 rain → has been + -ing。\n\n## 📍 正解の根拠\nsince があり、かつ「降る」という動作が今も続いている → **has been** raining。\n\n## ❌ 誤答 NG 理由\n1. is — 現在進行形は「今」だけ。since last night からの継続を表せない。\n2. was — 過去進行形は過去で切れてしまい、since 〜 now がつながらない。\n3. had been — 過去完了進行は「過去のある基準時まで」の形。基準が今なので使えない。"
+  },
+  {
+   "number": 8,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "JISEI-FUKUSHI",
+   "explanation": "## 🎯 コアイメージ\nby the time 〜 (〜する時までには) も**時の副詞節**。未来の内容でも節の中は現在形 — as soon as / when と同じ規則。\n\n## 🔬 文構造分析\n**By the time you come back**, I will have finished the report.\n主節は will have finished (未来完了)。by the time の節は現在形 come で未来を表す。\n\n## 📍 正解の根拠\nby the time 〜 は時の副詞節 → will を使わず現在形 **come**。\n\n## ❌ 誤答 NG 理由\n1. will come — 時の副詞節の中に will は置けない。\n3. came — 過去形。主節 will have finished (未来) と時間が合わない。\n4. will have come — will を含む形は副詞節の中には置けない。"
+  },
+  {
+   "number": 9,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "JISEI-KEIKEN",
+   "explanation": "## 🎯 コアイメージ\n**最上級 + I have ever seen** =「今までに見た中で一番〜」。ever (今までに) と経験の現在完了がセット。\n\n## 🔬 文構造分析\nThis is the most beautiful sunset (that) I **have ever seen**.\n主節 This is (現在) + 関係詞節「今までに見た」= 現在までの経験 → 現在完了 + ever。\n\n## 📍 正解の根拠\n「今までの経験の中で一番」— 現在が基準の経験なので **have ever seen**。\n\n## ❌ 誤答 NG 理由\n1. never saw — never だと「見た中で一番きれいなのに一度も見ていない」と矛盾する。\n2. had ever seen — 過去完了。主節が This **is** (現在) なので基準がずれる。\n4. ever see — 現在形。「今までに」という経験の幅を表せない。"
+  },
+  {
+   "number": 10,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "JISEI-MEISHI",
+   "explanation": "## 🎯 コアイメージ\nwhen の節が**名詞節 (「いつ〜か」= know の目的語) のときは、未来のことは素直に will** で表す。「副詞節では現在形」の規則は副詞節限定。\n\n## 🔬 文構造分析\nI don't know **when he will come back**.\nwhen 〜 back が know の目的語 (名詞節)。「いつ戻って来るのか」という未来の内容 → will come。\n\n## 📍 正解の根拠\nこの when 節は名詞節。まだ休暇中 (still on vacation) = 戻りは未来 → **will come**。\n\n## ❌ 誤答 NG 理由\n1. comes —「未来でも現在形」は時・条件の**副詞節**の規則。名詞節には適用しない。\n3. came — 過去形。まだ休暇中なので「いつ戻ったか」は成り立たない。\n4. has come — 現在完了「もう戻って来た」。still on vacation と矛盾する。"
+  }
+ ]
+}

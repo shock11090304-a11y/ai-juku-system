@@ -1,0 +1,575 @@
+{
+ "meta": {
+  "no": "3",
+  "level_note": "2024年度以降の新形式に準拠",
+  "sections": "大問1〜5（筆記）",
+  "minutes": "90",
+  "full": 31,
+  "instruction": "解答は各問につき一つだけ選び、解答用紙の番号を塗りつぶしなさい。大問4・5は英語で書きなさい。",
+  "theme_note": "本回のテーマ: 夜間照明 / 河川の再生 / 修道院の写本 / 都市の野生動物 / 対面授業"
+ },
+ "part1": [
+  {
+   "sentence": "The senator's remarks were widely seen as an attempt to ( ) attention from the failures of her own department.",
+   "choices": [
+    "divert",
+    "condense",
+    "restore",
+    "allocate"
+   ],
+   "answer": 0,
+   "pos": "【動詞（他動詞）】",
+   "gloss_ja": "（注意・話題などを）そらす、転じる（divert A from B）",
+   "trans_ja": "その上院議員の発言は、自身の省庁の失策から注意をそらそうとする試みだと広く受け取られた。",
+   "distractors_ja": {
+    "condense": "凝縮する、要約する",
+    "restore": "元に戻す、修復する",
+    "allocate": "（資源を）割り当てる"
+   }
+  },
+  {
+   "sentence": "Although the museum is small, its collection of medieval manuscripts is truly ( ), attracting scholars from around the world.",
+   "choices": [
+    "mediocre",
+    "obsolete",
+    "exceptional",
+    "tentative"
+   ],
+   "answer": 2,
+   "pos": "【形容詞】",
+   "gloss_ja": "並外れた、卓越した",
+   "trans_ja": "その美術館は小規模だが、中世写本のコレクションは実に卓越しており、世界中から研究者を引きつけている。",
+   "distractors_ja": {
+    "mediocre": "平凡な、二流の",
+    "obsolete": "廃れた、時代遅れの",
+    "tentative": "暫定的な"
+   }
+  },
+  {
+   "sentence": "The company was fined heavily after inspectors found that safety reports had been ( ) to hide repeated violations.",
+   "choices": [
+    "endorsed",
+    "falsified",
+    "circulated",
+    "duplicated"
+   ],
+   "answer": 1,
+   "pos": "【動詞（他動詞）】",
+   "gloss_ja": "（文書・データを）改ざんする、偽造する",
+   "trans_ja": "検査官が、繰り返された違反を隠すために安全報告書が改ざんされていたことを発見し、その企業は多額の罰金を科された。",
+   "distractors_ja": {
+    "endorse": "（公に）支持する、裏書きする",
+    "circulate": "（情報を）回覧する、流通させる",
+    "duplicate": "複製する"
+   }
+  },
+  {
+   "sentence": "Heavy rain in the mountains caused the river to ( ), flooding farmland along both banks within hours.",
+   "choices": [
+    "evaporate",
+    "recede",
+    "freeze",
+    "overflow"
+   ],
+   "answer": 3,
+   "pos": "【動詞（自動詞）】",
+   "gloss_ja": "（川などが）氾濫する、あふれる",
+   "trans_ja": "山地での大雨により川が氾濫し、数時間のうちに両岸の農地が浸水した。",
+   "distractors_ja": {
+    "evaporate": "蒸発する",
+    "recede": "後退する、引く",
+    "freeze": "凍る"
+   }
+  },
+  {
+   "sentence": "The professor's lectures were so ( ) that students often left the hall with more questions than they had brought.",
+   "choices": [
+    "thought-provoking",
+    "repetitive",
+    "incoherent",
+    "monotonous"
+   ],
+   "answer": 0,
+   "pos": "【形容詞】",
+   "gloss_ja": "考えさせる、示唆に富む",
+   "trans_ja": "その教授の講義はきわめて示唆に富んでいたので、学生たちはしばしば、来たときより多くの疑問を抱えて講堂を後にした。",
+   "distractors_ja": {
+    "repetitive": "繰り返しの多い",
+    "incoherent": "支離滅裂な",
+    "monotonous": "単調な"
+   }
+  },
+  {
+   "sentence": "After decades of neglect, the canal was gradually ( ) to something close to its original condition.",
+   "choices": [
+    "demolished",
+    "abandoned",
+    "restored",
+    "contaminated"
+   ],
+   "answer": 2,
+   "pos": "【動詞（他動詞）】",
+   "gloss_ja": "（元の状態に）修復する、回復させる",
+   "trans_ja": "数十年にわたる放置の後、その運河は少しずつ、元の状態に近いものへと修復されていった。",
+   "distractors_ja": {
+    "demolish": "取り壊す",
+    "abandon": "見捨てる、放棄する",
+    "contaminate": "汚染する"
+   }
+  },
+  {
+   "sentence": "The evidence against the defendant was entirely ( ); no one had actually seen him at the scene.",
+   "choices": [
+    "conclusive",
+    "irrefutable",
+    "documented",
+    "circumstantial"
+   ],
+   "answer": 3,
+   "pos": "【形容詞】",
+   "gloss_ja": "状況証拠の、間接的な",
+   "trans_ja": "被告に不利な証拠はすべて状況証拠にすぎなかった。実際に彼を現場で目撃した者は誰もいなかったのである。",
+   "distractors_ja": {
+    "conclusive": "決定的な",
+    "irrefutable": "反駁できない",
+    "documented": "文書で裏づけられた"
+   }
+  },
+  {
+   "sentence": "Local residents were ( ) to the plan at first, but dropped their objections once the noise study showed the impact would be minimal.",
+   "choices": [
+    "receptive",
+    "hostile",
+    "essential",
+    "relevant"
+   ],
+   "answer": 1,
+   "pos": "【形容詞】",
+   "gloss_ja": "敵意のある、強く反対して（be hostile to ~）",
+   "trans_ja": "地元住民は当初その計画に強く反対していたが、騒音調査で影響がごくわずかだと示されると異議を取り下げた。",
+   "distractors_ja": {
+    "receptive": "受け入れる用意のある（to）",
+    "essential": "不可欠な（to）",
+    "relevant": "関連のある（to）"
+   }
+  },
+  {
+   "sentence": "The new director has begun to ( ) the department, merging three teams and closing two regional offices.",
+   "choices": [
+    "commemorate",
+    "postpone",
+    "restructure",
+    "illuminate"
+   ],
+   "answer": 2,
+   "pos": "【動詞（他動詞）】",
+   "gloss_ja": "（組織を）再編する、改組する",
+   "trans_ja": "新任の局長は、三つのチームを統合し二つの地方事務所を閉鎖して、その部門の再編に着手した。",
+   "distractors_ja": {
+    "commemorate": "記念する",
+    "postpone": "延期する",
+    "illuminate": "照らす、解明する"
+   }
+  },
+  {
+   "sentence": "The report's conclusions were ( ) by later studies, and the agency quietly withdrew its recommendation.",
+   "choices": [
+    "undermined",
+    "reinforced",
+    "replicated",
+    "anticipated"
+   ],
+   "answer": 0,
+   "pos": "【動詞（他動詞）】",
+   "gloss_ja": "（信頼・根拠を）むしばむ、掘り崩す",
+   "trans_ja": "その報告書の結論は後続の研究によって覆され、当局は静かに勧告を撤回した。",
+   "distractors_ja": {
+    "reinforce": "補強する",
+    "replicate": "（実験を）再現する",
+    "anticipate": "予期する"
+   }
+  },
+  {
+   "sentence": "Her explanation was ( ) enough for the committee to approve the budget without further discussion.",
+   "choices": [
+    "ambiguous",
+    "redundant",
+    "premature",
+    "compelling"
+   ],
+   "answer": 3,
+   "pos": "【形容詞】",
+   "gloss_ja": "説得力のある、有無を言わせぬ",
+   "trans_ja": "彼女の説明は、委員会がそれ以上の議論なしに予算を承認するのに十分なほど説得力があった。",
+   "distractors_ja": {
+    "ambiguous": "あいまいな",
+    "redundant": "冗長な、余分な",
+    "premature": "時期尚早の"
+   }
+  },
+  {
+   "sentence": "Wolves were once ( ) throughout the region, but hunting reduced them to a few isolated packs.",
+   "choices": [
+    "scarce",
+    "abundant",
+    "captive",
+    "docile"
+   ],
+   "answer": 1,
+   "pos": "【形容詞】",
+   "gloss_ja": "豊富な、たくさんいる",
+   "trans_ja": "かつてオオカミはその地域一帯に数多く生息していたが、狩猟によって孤立した数群にまで減少した。",
+   "distractors_ja": {
+    "scarce": "乏しい、まれな",
+    "captive": "捕らわれた",
+    "docile": "従順な"
+   }
+  },
+  {
+   "sentence": "The two ministers issued a joint statement in an effort to ( ) rumours of a split within the cabinet.",
+   "choices": [
+    "confirm",
+    "provoke",
+    "dispel",
+    "amplify"
+   ],
+   "answer": 2,
+   "pos": "【動詞（他動詞）】",
+   "gloss_ja": "（不安・噂を）払拭する、追い払う",
+   "trans_ja": "二人の大臣は、内閣内の分裂という噂を払拭しようとして共同声明を発表した。",
+   "distractors_ja": {
+    "confirm": "裏づける、確認する",
+    "provoke": "引き起こす、挑発する",
+    "amplify": "増幅する"
+   }
+  },
+  {
+   "sentence": "Because the manuscript is extremely ( ), visitors may view it only through glass and under dim light.",
+   "choices": [
+    "durable",
+    "portable",
+    "legible",
+    "fragile"
+   ],
+   "answer": 3,
+   "pos": "【形容詞】",
+   "gloss_ja": "壊れやすい、もろい",
+   "trans_ja": "その写本はきわめて傷みやすいため、来館者はガラス越しに、薄暗い照明のもとでしか見ることができない。",
+   "distractors_ja": {
+    "durable": "耐久性のある",
+    "portable": "持ち運びできる",
+    "legible": "判読できる"
+   }
+  },
+  {
+   "sentence": "The negotiations dragged on for months before the two sides finally ( ) a compromise.",
+   "choices": [
+    "arrived at",
+    "ruled out",
+    "did without",
+    "made up"
+   ],
+   "answer": 0,
+   "pos": "【句動詞】",
+   "gloss_ja": "（結論・合意に）到達する",
+   "trans_ja": "交渉は数か月にわたって長引いたが、ついに双方は妥協点に到達した。",
+   "distractors_ja": {
+    "rule out": "除外する、可能性を否定する",
+    "do without": "〜なしで済ませる",
+    "make up": "でっち上げる、埋め合わせる"
+   }
+  },
+  {
+   "sentence": "Nobody expected the small bookshop to ( ) after the shopping mall opened, but it is still trading today.",
+   "choices": [
+    "give in",
+    "hold on",
+    "break down",
+    "set off"
+   ],
+   "answer": 1,
+   "pos": "【句動詞】",
+   "gloss_ja": "持ちこたえる、粘り続ける",
+   "trans_ja": "ショッピングモールの開業後、あの小さな書店が持ちこたえるとは誰も思っていなかったが、今日もなお営業を続けている。",
+   "distractors_ja": {
+    "give in": "屈する、降参する",
+    "break down": "故障する、決裂する",
+    "set off": "出発する、引き起こす"
+   }
+  },
+  {
+   "sentence": "The committee will ( ) the proposal once the environmental survey has been completed.",
+   "choices": [
+    "look down on",
+    "look up to",
+    "look after",
+    "look into"
+   ],
+   "answer": 3,
+   "pos": "【句動詞】",
+   "gloss_ja": "〜を調査する、検討する",
+   "trans_ja": "環境調査が完了しだい、委員会はその提案を精査することになっている。",
+   "distractors_ja": {
+    "look down on": "見下す",
+    "look up to": "尊敬する",
+    "look after": "世話をする"
+   }
+  },
+  {
+   "sentence": "A: The lights in the parking area stay on all night, don't they?\nB: They do, and the neighbours have started to ( ) it. The council meets next week.",
+   "choices": [
+    "take part in",
+    "give way to",
+    "complain about",
+    "come up with"
+   ],
+   "answer": 2,
+   "pos": "【句動詞】",
+   "gloss_ja": "〜について苦情を言う",
+   "trans_ja": "A: 駐車場の照明は一晩中ついたままだよね。／ B: そうなんだ。近隣の住民が苦情を言い始めていて、来週、議会が開かれるんだ。",
+   "distractors_ja": {
+    "take part in": "〜に参加する",
+    "give way to": "〜に道を譲る、屈する",
+    "come up with": "〜を思いつく"
+   }
+  }
+ ],
+ "part2": [
+  {
+   "id": "p2_1",
+   "title": "Turning Down the Night",
+   "summary_ja": "夜間の過剰照明は生態系と人の睡眠に影響する。だが対策は「消す」ことではなく、光の向き・色・時間帯を調整する設計であり、安全性と両立しうる。",
+   "text": [
+    "For most of history, the night sky was part of ordinary experience. Today, satellite images show continents outlined in light, and in many cities the brightest stars are no longer visible. Astronomers were the first to complain, but the concern has since widened. Research on insects, migrating birds, and human sleep suggests that artificial light at night is ( 19 ) than a matter of lost scenery.",
+    "The obvious remedy — switching lights off — is rarely acceptable, since streets and car parks must remain usable after dark. Lighting engineers therefore focus on how light is delivered rather than on whether it exists. Shields that direct beams downward keep light on the pavement instead of the sky; warmer colours disturb wildlife less than the blue-white tones that became popular with early LEDs; and sensors can raise brightness only when someone is present. ( 20 ), several towns that adopted such measures have reported lower electricity bills alongside darker skies.",
+    "Resistance usually comes from a fear that darker streets will be more dangerous. Studies of this question have produced mixed results, and researchers caution that crime depends on many factors besides illumination. What the evidence does suggest is that glare from badly aimed lamps can make it ( 21 ), because the eye adjusts to the bright source and loses detail in the shadows beyond it. Good lighting, in other words, is not the same as more lighting."
+   ],
+   "blanks": [
+    {
+     "no": 19,
+     "choices": [
+      "far less serious",
+      "something more",
+      "easier to measure",
+      "no longer common"
+     ],
+     "answer": 1,
+     "exp_ja": "空所は『夜間の人工光は景観の喪失という問題（　）である』の補語。前文までで天文学者に始まった懸念が昆虫・渡り鳥・人の睡眠へと広がったと述べており、than と呼応して『単なる景観の問題以上の何か』とするのが自然。1『はるかに軽い』は懸念の拡大と逆、3『測定しやすい』・4『もはや一般的でない』は than の比較として文意をなさない。"
+    },
+    {
+     "no": 20,
+     "choices": [
+      "Nevertheless",
+      "In fact",
+      "By contrast",
+      "Otherwise"
+     ],
+     "answer": 1,
+     "exp_ja": "前文までが遮光・色温度・センサーという具体策の列挙、空所の後は『そうした対策を採用した町は、空が暗くなったうえに電気代も下がったと報告している』。前の内容を裏づけて一歩進める流れなので In fact（実際）。1 Nevertheless（逆接）・3 By contrast（対比）・4 Otherwise（さもなければ）は関係が合わない。"
+    },
+    {
+     "no": 21,
+     "choices": [
+      "harder to see",
+      "cheaper to operate",
+      "simpler to install",
+      "brighter overall"
+     ],
+     "answer": 0,
+     "exp_ja": "空所を含む文は『向きの悪い灯具のまぶしさが（　）にしうる』。直後の because 以下が『目が明るい光源に順応し、その先の影の中の細部が見えなくなるから』と理由を述べており、結果は『かえって見えにくくなる』。2『運用が安価』・3『設置が簡単』は because の理由と噛み合わず、4『全体に明るい』では最終文『よい照明は、より多くの照明と同じではない』という結論につながらない。"
+    }
+   ]
+  },
+  {
+   "id": "p2_2",
+   "title": "Letting the River Move",
+   "summary_ja": "直線化された河川は洪水を下流へ押しやる。近年は堤防を後退させ氾濫原を回復させる手法が採られるが、用地の確保という社会的合意が最大の課題になる。",
+   "text": [
+    "For much of the twentieth century, engineers treated rivers as channels to be straightened. Meanders were cut off, banks were faced with concrete, and water was moved downstream as quickly as possible. The approach protected the fields immediately beside the works, but it also ( 22 ). Water that once spread slowly across a floodplain now arrives at the next town in a concentrated surge, and the damage is simply relocated rather than prevented.",
+    "Recent projects have reversed the logic. Embankments are moved back from the water, old meanders are reconnected, and low-lying land is allowed to flood on purpose during high flows. Wetlands created in this way hold water like a sponge and release it gradually, while also filtering pollutants and providing habitat for fish and birds. ( 23 ), the same works that reduce flood peaks tend to improve water quality and biodiversity at the same time.",
+    "The obstacle is rarely engineering. Land beside a river is usually farmed or built upon, and a scheme that deliberately floods it requires agreement, compensation, and sometimes relocation. Officials who have completed such projects say that the technical design was the shortest part of the work, and that ( 24 ) took years. Where that agreement has been reached, however, the results have generally outlasted the concrete walls they replaced."
+   ],
+   "blanks": [
+    {
+     "no": 22,
+     "choices": [
+      "reduced construction costs",
+      "moved the problem downstream",
+      "increased the fish population",
+      "shortened the river's length"
+     ],
+     "answer": 1,
+     "exp_ja": "空所は『その手法は工事のすぐ隣の農地は守ったが、同時に（　）もした』。直後の文が『かつて氾濫原にゆっくり広がっていた水が、いまや集中した奔流となって次の町に到達し、被害は防がれるのではなく単に移されている』と説明しており、2 が一致する。1『建設費を下げた』・3『魚を増やした』は本文にない。4『川の長さを短くした』は直線化の事実だが、but 以下の否定的な帰結としては直後の説明と噛み合わない。"
+    },
+    {
+     "no": 23,
+     "choices": [
+      "In short",
+      "Nonetheless",
+      "For example",
+      "In contrast"
+     ],
+     "answer": 0,
+     "exp_ja": "前文までが『湿地が水を蓄えて徐々に放出し、汚染物質を濾過し、魚や鳥の生息地にもなる』という複数の効果の列挙。空所の後は『洪水のピークを下げる同じ工事が、同時に水質と生物多様性も改善する傾向がある』というまとめ。列挙→要約なので In short（要するに）。2『それにもかかわらず』・4『対照的に』は逆接・対比で不適、3『例えば』は具体例が続かないため不適。"
+    },
+    {
+     "no": 24,
+     "choices": [
+      "designing the embankments",
+      "obtaining the land",
+      "measuring the rainfall",
+      "training the engineers"
+     ],
+     "answer": 1,
+     "exp_ja": "空所は『技術的な設計は仕事の中で最も短い部分で、（　）に何年もかかった』。直前の文が『川沿いの土地はたいてい耕作地か宅地であり、意図的に浸水させる計画には合意・補償・時には移転が必要だ』と述べており、時間を要したのは用地の確保である。1『堤防の設計』は「設計は最短だった」と明示された部分と矛盾する。3『降雨量の測定』・4『技術者の訓練』は本文にない。"
+    }
+   ]
+  }
+ ],
+ "part3": [
+  {
+   "id": "p3_1",
+   "title": "The Monks Who Copied Everything",
+   "summary_ja": "第1段: 中世修道院の写字生は古典を保存した英雄として語られる。第2段: だが動機は文化保存ではなく修道生活の規律だった。第3段: 何が残るかは需要と偶然に左右され、選別は意図的でない。第4段: それゆえ「保存された」というより「捨てられなかった」と言う方が正確。",
+   "paras": [
+    "The image is a familiar one: in a cold northern scriptorium, a monk bends over a desk, copying a text of Cicero that would otherwise have been lost. Popular histories present these copyists as the guardians of classical learning, and in a narrow sense the claim holds. A great many ancient works survive today only because someone in a monastery made a new copy before the old one crumbled.",
+    "The motives behind that work, however, were rarely the ones we assign to it. Copying was above all a discipline. Monastic rules filled the day with labour, and writing was labour that could be performed indoors, in silence, by men who were not strong enough for the fields. The texts chosen were overwhelmingly religious; classical authors entered the shelves mainly because they were used to teach the Latin in which scripture was read. Preserving pagan literature for its own sake was not the point, and some writers of the period said so plainly.",
+    "What survived, therefore, depended less on judgement than on circumstance. A work that happened to be useful for teaching grammar was recopied and multiplied; a work that no one needed sat unread until damp or fire settled the matter. Some texts survive in a single copy made at a single house, which means that the loss of that one building would have erased them entirely. Scholars who study the pattern find little sign of a deliberate canon being defended. They find instead the ordinary accidents of demand, storage, and luck.",
+    "None of this diminishes the debt. The monasteries did preserve, and without their copies the ancient world would be far dimmer to us than it is. But the preservation was a by-product rather than a mission, and describing it accurately matters, because the romantic version encourages a comfortable belief that valuable things are somehow protected by their value. The record suggests the opposite. What survives is what somebody, for reasons of their own, kept on copying."
+   ],
+   "questions": [
+    {
+     "no": 25,
+     "q": "What does the author acknowledge in the first paragraph?",
+     "q_ja": "第1段で筆者が認めているのはどのようなことか。",
+     "choices": [
+      "Monastic copyists were more skilled than the scribes employed by universities.",
+      "Many ancient works survive only because monasteries made fresh copies of them.",
+      "Most classical texts were copied at the request of scholars outside the monastery.",
+      "The popular image of the scriptorium was invented in the nineteenth century."
+     ],
+     "answer": 1,
+     "exp_ja": "第1段は通俗的な像を紹介したうえで『狭い意味ではその主張は成り立つ』とし、『非常に多くの古代の作品が今日残っているのは、古い写本が崩れる前に修道院の誰かが新しい写本を作ったからにほかならない』と述べる。したがって 2。1『大学の写字生より熟練』・3『外部の学者の依頼』・4『19世紀に作られた像』はいずれも本文にない。"
+    },
+    {
+     "no": 26,
+     "q": "According to the second paragraph, why did monks spend their time copying texts?",
+     "q_ja": "第2段によれば、修道士たちが写本に時間を費やしたのはなぜか。",
+     "choices": [
+      "Because copying was a form of labour suited to monastic discipline.",
+      "Because the monasteries earned most of their income from selling manuscripts.",
+      "Because church authorities ordered them to rescue the works of pagan authors.",
+      "Because few monks were able to read the religious texts in their libraries."
+     ],
+     "answer": 0,
+     "exp_ja": "第2段は『写本は何よりもまず規律だった』とし、『修道院の規則は一日を労働で満たし、書写は屋内で、沈黙のうちに、畑仕事に耐えられない者でも行える労働だった』と説明する。したがって 1。2『写本の販売で収入を得ていた』・4『修道士の多くは読めなかった』は本文にない。3 は同段末尾『異教文学をそれ自体のために保存することは目的ではなかった』に反する。"
+    },
+    {
+     "no": 27,
+     "q": "What point is made about the classical works that were copied?",
+     "q_ja": "書写された古典作品について、どのような点が述べられているか。",
+     "choices": [
+      "They were copied because monks admired their literary style.",
+      "They were copied mainly because they were useful for teaching Latin.",
+      "They were copied only after being approved by a council of scholars.",
+      "They were copied more often than religious texts in most monasteries."
+     ],
+     "answer": 1,
+     "exp_ja": "第2段に『古典作家が書棚に入ったのは、主として、聖書を読むためのラテン語を教えるのに使われたからである』とあり、2 が一致する。1『文体を称賛したから』は本文になく、同段の趣旨（それ自体のための保存ではない）とも反する。3『学者会議の承認』も本文にない。4 は同段『選ばれた本文は圧倒的に宗教的なものだった』と逆。"
+    },
+    {
+     "no": 28,
+     "q": "What conclusion does the author draw in the final paragraph?",
+     "q_ja": "最終段で筆者が導いている結論はどれか。",
+     "choices": [
+      "The monasteries deserve no credit for the survival of ancient literature.",
+      "Valuable works are generally protected because of their value.",
+      "Preservation was a by-product, and what survives is what someone kept copying.",
+      "Modern libraries face exactly the same problems as medieval scriptoria."
+     ],
+     "answer": 2,
+     "exp_ja": "最終段は『保存は使命ではなく副産物だった』と述べ、末尾で『残るのは、誰かが自分なりの理由で書き写し続けたものである』と結ぶ。したがって 3。1『功績はない』は同段冒頭『このことは負債を減じるものではない』に反する。2 は『ロマンチックな説明は、価値あるものは価値ゆえに守られるという心地よい信念を促すが、記録はその逆を示す』に真っ向から反する。4『近代の図書館も同じ問題』は本文にない。"
+    }
+   ]
+  },
+  {
+   "id": "p3_2",
+   "title": "The Animals That Moved In",
+   "summary_ja": "第1段: 都市に適応する野生動物が増えている。第2段: 共通点は柔軟な食性と人への慣れ。第3段: 都市生活には夜行化などの代償も伴う。第4段: 対策は駆除より餌の管理であり、住民の行動変更が要点。",
+   "paras": [
+    "Foxes trot along suburban pavements at dusk; wild boar cross car parks in European cities; monkeys ride the roofs of buses in parts of Asia. Reports of wildlife in urban areas have multiplied over the past two decades, and while some of the increase reflects better recording — everyone now carries a camera — ecologists agree that the underlying trend is real. Certain species are not merely straying into cities. They are living there, breeding there, and in some cases reaching densities higher than in the countryside nearby.",
+    "The species that succeed have features in common. They eat a wide range of foods, so the contents of a bin are as acceptable as a natural diet. They tolerate the presence of people, and quickly learn that a human who does not chase them is not a threat. They also breed quickly enough to absorb the losses caused by traffic. Specialists, by contrast — animals that need one kind of food or one kind of nesting site — disappear from cities early and rarely return, which is why urban wildlife tends to be dominated by a small number of adaptable species.",
+    "Life in the city, however, is not the easy option it might appear. Urban foxes and raccoons often carry heavier loads of disease, a consequence of crowding around reliable food. Many shift their activity into the night to avoid people, which reduces the hours available for foraging. Diets rich in discarded human food have been linked to poorer health in several populations. Ecologists describe the result as a trade-off rather than a triumph: abundant food and few large predators, paid for in stress, illness, and short lives.",
+    "For city authorities, the practical question is how to live alongside these residents. Removing individual animals rarely works, because the vacant territory is occupied within weeks by others drawn from surrounding areas. Attention has therefore turned to what attracts them in the first place. Secure bins, restrictions on deliberate feeding, and building designs that close off nesting spaces have all proved more durable than trapping. The animals, in other words, are responding rationally to what the city offers, and the most reliable way to change their behaviour is to change the offer."
+   ],
+   "questions": [
+    {
+     "no": 29,
+     "q": "What do ecologists say about reports of urban wildlife?",
+     "q_ja": "都市部の野生動物についての報告に関して、生態学者は何と述べているか。",
+     "choices": [
+      "The apparent increase is entirely explained by the spread of cameras.",
+      "The trend is genuine, and some species now breed in cities.",
+      "Urban populations are always smaller than those in the countryside.",
+      "Most sightings involve animals that have escaped from zoos."
+     ],
+     "answer": 1,
+     "exp_ja": "第1段は『増加の一部はより良い記録を反映している——今や誰もがカメラを持っている——が、生態学者は根底にある傾向は本物だという点で一致している』とし、『それらは都市に迷い込んでいるだけではない。そこで生活し、繁殖している』と続ける。したがって 2。1『すべてカメラの普及で説明できる』は while 節の趣旨を取り違えている。3 は『近隣の田園部より高い密度に達する場合もある』に反する。4『動物園からの脱走』は本文にない。"
+    },
+    {
+     "no": 30,
+     "q": "Why do specialist species tend to disappear from cities?",
+     "q_ja": "特定の環境に特化した種が都市から姿を消しやすいのはなぜか。",
+     "choices": [
+      "They require one kind of food or nesting site.",
+      "They are hunted more intensively than adaptable species.",
+      "They are unable to survive in areas without large predators.",
+      "They breed too quickly for the available space."
+     ],
+     "answer": 0,
+     "exp_ja": "第2段は成功する種の特徴（雑食・人への耐性・繁殖の速さ）を挙げた後、『対照的に、特化した動物——一種類の食物または一種類の営巣場所を必要とする動物——は早い段階で都市から消え、めったに戻らない』と述べる。したがって 1。2『狩猟圧』・3『大型捕食者がいないと生きられない』・4『繁殖が速すぎる』はいずれも本文にない（4 は成功する種の特徴の取り違え）。"
+    },
+    {
+     "no": 31,
+     "q": "What approach to urban wildlife does the final paragraph support?",
+     "q_ja": "最終段が支持している、都市の野生動物への対処法はどれか。",
+     "choices": [
+      "Trapping and removing individual animals as soon as they appear.",
+      "Introducing large predators to control the populations naturally.",
+      "Managing what attracts the animals, such as bins and feeding.",
+      "Leaving the situation alone, since the animals cause no problems."
+     ],
+     "answer": 2,
+     "exp_ja": "最終段は『個体の除去はめったに機能しない。空いた縄張りは数週間のうちに周辺から来た別の個体に占められるからだ』とし、『そのため関心は、そもそも何が動物を引き寄せるのかに移った——蓋の閉まるごみ箱、意図的な餌やりの制限、営巣場所を塞ぐ建物設計は、いずれも罠より長続きすることが証明されている』と述べる。したがって 3。1 は否定されている方法。2『大型捕食者の導入』は本文にない。4『問題がないので放置』は第3段・第4段の記述に反する。"
+    }
+   ]
+  }
+ ],
+ "part4": {
+  "summary": {
+   "paras": [
+    "When universities moved teaching online during the pandemic, many observers predicted that campuses would never fill again. Lectures could be recorded once and watched anywhere, and students would no longer pay for the cost of travelling to a room at a fixed hour. Several institutions announced permanent shifts, and commentators wrote about the end of the physical university.",
+    "Five years later, the picture is more complicated. Surveys of students consistently show that recorded lectures are popular for delivering information, especially when they can be paused and replayed before an examination. Attendance at large lecture courses has not returned to earlier levels, and few universities expect it to. In that sense the predictions were correct: the one-way lecture has largely moved to the screen.",
+    "What has not moved is everything else. Students report that discussion classes, laboratory work, and studio sessions lose most of their value online, and staff say the same about supervising research. Universities also found that informal contact — questions after class, chance conversations in corridors, study groups formed by accident — disappeared almost entirely, and that first-year students in particular struggled without it. Several institutions that had planned to close buildings have since reversed those decisions.",
+    "The result is a division of labour rather than a replacement. Information is increasingly delivered online, while campuses are being redesigned around the activities that require people to be in the same place. The question is no longer whether teaching should be online or in person, but which parts of it belong in each."
+   ],
+   "outline_ja": "【段落要旨】第1段: 予測——録画講義が普及し対面キャンパスは終わると言われた。第2段: 半分は的中——一方通行の講義は画面へ移り、大教室の出席は戻らない。第3段: 移らなかったもの——討論・実験・実技・研究指導、そして偶発的な接触（特に1年生が困窮）。第4段: 結論——置き換えではなく分業。論点は「オンラインか対面か」から「どの部分がどちらに属するか」へ。",
+   "model": "When teaching moved online, many predicted the end of the physical university. Surveys since then show that recorded lectures are indeed popular, and attendance at large lectures has not recovered. However, discussion classes, laboratory work and research supervision lose value online, and informal contact disappears, which particularly harms first-year students. Universities are therefore dividing the work, delivering information online while redesigning campuses for activities that require being together.",
+   "model_words": 68,
+   "points_ja": "▶採点の要点：①予測（対面の終わり）／②当たった部分（録画講義は有効・大教室の出席は戻らない）／③当たらなかった部分（討論・実験・研究指導・偶発的接触、特に1年生）／④結論（置き換えではなく分業）。第2段と第3段の対比（However）を必ず残すこと。60〜70語なので固有の例（廊下での会話・建物閉鎖の撤回）は削り、抽象度を上げて言い換える（recorded once → recorded lectures、chance conversations → informal contact）。"
+  },
+  "essay": {
+   "topic": "Should companies allow their employees to work from home?",
+   "points": [
+    "Productivity",
+    "Commuting",
+    "Communication",
+    "Company costs"
+   ],
+   "outline_ja": "【構成の型】①立場を1文で明言（設問文を流用してよい）→②理由1をPOINTSから（例: Commuting）→具体の一文→③理由2（例: Productivity または Company costs）→具体の一文→④結論（立場の言い換え）。POINTS は2つだけ選ぶ。反対の立場なら Communication（相談や新人教育が滞る）＋ Productivity（自宅では集中しにくい人もいる）で同じ型が組める。",
+   "model": "I believe that companies should allow their employees to work from home. I have two reasons to support this opinion. First, working from home removes the burden of commuting. In large cities, many workers spend more than two hours a day on crowded trains, and that time can be used for sleep, family, or study instead. Employees who begin the day without exhaustion are able to concentrate better. Second, allowing home work reduces company costs. A firm whose staff come to the office only two or three days a week needs far less floor space, and the money saved can be spent on equipment or wages. For these reasons, companies should give their employees the choice of working from home, at least for part of the week.",
+   "model_words": 127,
+   "points_ja": "▶採点の要点：①立場が最初と最後で一貫（賛成で統一）／②POINTS を2つ選び First / Second で明示（本例は Commuting と Company costs）／③各理由に具体の一文（「大都市では通勤に一日2時間超」「週2〜3日出社なら床面積が減る」）／④結論は言い換えで締め、本例は「少なくとも週の一部は選択肢を与えるべき」と限定を付けて現実味を出している。語数は120〜150語。反対で書く場合は Communication（相談・新人教育）＋ Productivity（自宅の環境差）が組みやすい。"
+  }
+ }
+}

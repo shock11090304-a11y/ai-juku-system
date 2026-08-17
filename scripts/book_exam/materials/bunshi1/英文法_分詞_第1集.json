@@ -1,0 +1,112 @@
+{
+ "source": "英文法_分詞_第1集.yaml",
+ "subject_name": "英語",
+ "book": {
+  "title": "英文法 分詞 演習 第1集",
+  "subject": "grammar",
+  "level": "標準",
+  "time_limit_min": 20
+ },
+ "questions": [
+  {
+   "number": 1,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "BUNSHI-GENZAI",
+   "explanation": "## 🎯 コアイメージ\n分詞 + 語句のかたまりは名詞を**後ろから**修飾できる。名詞が動作を「**する側**」なら現在分詞 (-ing)、「**される側**」なら過去分詞。\n\n## 🔬 文構造分析\nThe girl **playing the piano** over there is my sister.\nplaying the piano over there が The girl を後ろから修飾 (= who is playing 〜)。文全体の述語は is。\n\n## 📍 正解の根拠\nThe girl はピアノを「弾く側」(能動) で、目的語 the piano を従えている → 現在分詞 **playing**。\n\n## ❌ 誤答 NG 理由\n1. played — 過去分詞なら「弾かれる少女」となり不成立。過去形の述語と読んでも、文の述語 is と衝突する。\n2. plays — 述語動詞がもう 1 つ増え、接続詞なしで is と並ぶことになり形が壊れる。\n4. to playing — この並びの形は存在しない (to 不定詞なら to play)。"
+  },
+  {
+   "number": 2,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "BUNSHI-KAKO",
+   "explanation": "## 🎯 コアイメージ\n名詞が動作を「**される側**」なら過去分詞で後ろから修飾。by 〜 (〜によって) が続くのは受け身のサイン。\n\n## 🔬 文構造分析\nThis is a novel **written by** a famous French author.\nwritten by 〜 が a novel を後ろから修飾 (= which was written by 〜)。\n\n## 📍 正解の根拠\nnovel は作家に「書かれる側」。動作主を示す **by** もあるので、受け身の過去分詞 **written**。\n\n## ❌ 誤答 NG 理由\n2. writing — 現在分詞は「書いている側」。小説自身が書くことになり、by 〜 とも合わない。\n3. wrote — 過去形の述語動詞。関係代名詞なしには novel の後ろに置けない。\n4. writes — 現在形の述語動詞。同じく接続詞・関係詞なしでは置けない。"
+  },
+  {
+   "number": 3,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "BUNSHI-KOUBUN",
+   "explanation": "## 🎯 コアイメージ\n分詞構文は「接続詞 + S + V」を分詞に圧縮した形。主節の主語が動作を「**する側**」なら現在分詞で始める。\n\n## 🔬 文構造分析\n**Feeling tired** after the long walk, she went to bed early.\n= Because she felt tired 〜。主節の主語 she が feel の主語を兼ねる。\n\n## 📍 正解の根拠\nshe が「疲れを感じる」側 (能動) → 現在分詞 **Feeling**。feel tired で「疲れている」。\n\n## ❌ 誤答 NG 理由\n1. Being felt — 受け身「感じられて」。she が誰かに感じられることになり意味が通らない。\n2. To feel — 不定詞だと「感じるために」という目的になり、早く寝た理由の説明にならない。\n3. Felt — 過去分詞 1 語も受け身の意味。「感じられて」となり不成立。"
+  },
+  {
+   "number": 4,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "BUNSHI-KOUBUN",
+   "explanation": "## 🎯 コアイメージ\n分詞構文の意味上の主語は**主節の主語**。主節の主語が動作を「される側」なら、(Being を省いた) 過去分詞で始める。\n\n## 🔬 文構造分析\n**Seen from** a distance, the rock looks like a human face.\n= When it (= the rock) is seen from a distance 〜。主語 the rock は「見られる」側。\n\n## 📍 正解の根拠\n見るのは人で、岩は**見られる**側 → 受け身の分詞構文 **Seen**。「遠くから見ると」の定番形。\n\n## ❌ 誤答 NG 理由\n1. Seeing — 現在分詞だと the rock が「見る側」になってしまう。\n3. To see —「見るために岩が〜」と主語がねじれる (To see 〜, you would … のように主語が人なら別)。\n4. Having seen — 完了・能動「見てしまった後で」。岩が見る側になる点で同じく不成立。"
+  },
+  {
+   "number": 5,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "BUNSHI-FUZOKU",
+   "explanation": "## 🎯 コアイメージ\n付帯状況の with + O + 分詞 =「O を〜した (された) 状態で」。O と分詞の間の**能動か受動か**の関係で分詞を選ぶ。\n\n## 🔬 文構造分析\nHe was listening to music **with his eyes closed**.\nhis eyes と closed の間は「目が**閉じられている**」という受動の関係。\n\n## 📍 正解の根拠\n目は close one's eyes の目的語 = 閉じる動作の「される側」→ 過去分詞 **closed**。\n\n## ❌ 誤答 NG 理由\n2. closing — 現在分詞だと「目が (何かを) 閉じつつある」という能動になり不成立。\n3. close — 形容詞の close は「近い」。「閉じた状態」の意味にはならない。\n4. to close — with + O + to 不定詞という形は無い。"
+  },
+  {
+   "number": 6,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "BUNSHI-KANRYO",
+   "explanation": "## 🎯 コアイメージ\n分詞構文で「主節より**前**の時間」をはっきり示すときは完了形 **Having + 過去分詞**。\n\n## 🔬 文構造分析\n**Having seen** the movie **before**, I didn't want to see it again.\n= Because I had seen the movie before 〜。「見た」のは「見たくなかった」時点より前。\n\n## 📍 正解の根拠\nbefore (以前に) がある以上、映画を見たのは主節より前の時間 → 完了形 **Having seen**。\n\n## ❌ 誤答 NG 理由\n1. Seeing — 単純形は主節と**同じ時**を表すのが基本。before との時間差に合わない。\n2. Seen — 受け身「見られて」。I が見られることになり不成立。\n4. To see —「見るために」。「もう見たくない」理由の説明にならない。"
+  },
+  {
+   "number": 7,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "BUNSHI-CHIKAKU",
+   "explanation": "## 🎯 コアイメージ\n知覚動詞 see / hear + O + **-ing** =「O が〜している**ところ**を見る・聞く」。動作の途中を切り取るニュアンス。\n\n## 🔬 文構造分析\nI saw a stranger **wandering around** the house last night.\nsee + O (a stranger) + 現在分詞 (wandering)。a stranger が「うろつく」側。\n\n## 📍 正解の根拠\n見知らぬ人が「うろついている最中」を目撃した — O と分詞が能動・進行の関係なので **wandering**。\n\n## ❌ 誤答 NG 理由\n1. wandered — 過去分詞は「O が〜される」の受動。wander (うろつく) に受け身の関係は作れない。\n3. to wander — see + O + to 不定詞の形は取れない (受動態 be seen to do のときだけ to が現れる)。\n4. wanders — 定形動詞。接続詞なしで saw の後ろには置けない。"
+  },
+  {
+   "number": 8,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "BUNSHI-SHIEKI",
+   "explanation": "## 🎯 コアイメージ\nhave + O + **過去分詞** =「O を〜して**もらう**」(使役)。O が動作を「される側」のときの形。\n\n## 🔬 文構造分析\nI **had** my smartphone **repaired** at the shop yesterday.\nmy smartphone は「修理**される**」側。have + O + p.p. の型。\n\n## 📍 正解の根拠\nスマホは店に「直してもらう」= 修理される側 → 過去分詞 **repaired**。\n\n## ❌ 誤答 NG 理由\n1. repair — have + O + 原形は「O (人) に〜させる」。スマホが修理する側になってしまう。\n2. repairing —「スマホが修理している最中」という能動になり不成立。\n3. to repair — have + O + to 不定詞という形は無い (get + O + to do なら O は人)。"
+  },
+  {
+   "number": 9,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "BUNSHI-KANJO",
+   "explanation": "## 🎯 コアイメージ\n感情を表す動詞の分詞は「感情を**与える側 = -ing / 受ける側 = -ed**」。物・事が主語なら、驚きを与える側で -ing。\n\n## 🔬 文構造分析\nThe result of the experiment was really **surprising** to us all.\n主語は The result (物事)。結果が私たちに驚きを**与える**側。\n\n## 📍 正解の根拠\n主語が感情の**原因** (物事) → 現在分詞 **surprising**「(人を) 驚かせるような」。\n\n## ❌ 誤答 NG 理由\n1. surprised —「驚かされた」= 感情を受ける側。人が主語のときの形 (We were surprised)。\n3. surprise — 名詞なら a surprise と冠詞が要り、副詞 really との並びに合わない。\n4. to surprising — この並びの形は存在しない。"
+  },
+  {
+   "number": 10,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "BUNSHI-DOKURITSU",
+   "explanation": "## 🎯 コアイメージ\n主節の主語と**別の主語**を分詞の前に置く形が独立分詞構文。**weather permitting** =「天気が許せば」は決まり文句。\n\n## 🔬 文構造分析\nWe will hold the game tomorrow, **weather permitting**.\n= if the weather permits。分詞 permitting の意味上の主語 weather を前に置いている。\n\n## 📍 正解の根拠\nweather が「許す」側 (能動) → 現在分詞 **permitting**。慣用表現としてこの形で覚える。\n\n## ❌ 誤答 NG 理由\n1. permits — 定形動詞。接続詞 if なしでは 2 つ目の文を作れない。\n2. permitted — 受け身「天気が許されれば」となり主客が逆。\n4. to permit — 不定詞に意味上の主語を裸で前置するこの形は無い。"
+  }
+ ]
+}

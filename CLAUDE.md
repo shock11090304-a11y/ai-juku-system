@@ -35,6 +35,12 @@
   - ★ `mock-exam.js` は `figure_svg` を描画しない (未対応)。Web 受験に載せるならフロント側の対応が要る。
 - **PDF を作るなら passage / stem / choices / explanation の 4 つを漏れなく KaTeX に通す**。通し忘れると日本語フォントで `¥(AB=6¥)` と出る。整形は必ず LaTeX 描画の**前**に行う (後だと SVG path が本文に漏れる)。
 - 作ったら `scripts/kyotsu_mogi2026/preflight.py` (取込契約) と `audit.py` (総点検) を必ず通す。詳細な経緯は `scripts/kyotsu_mogi2026/README.md`。
+- ★**納品前に必ず「相互チェック」を入れる — 単一経路の生成物を信じない (2026-08-16 塾長指示)**。
+  独立した経路どうしを突き合わせて初めて「できた」と言う。教材なら最低この 3 層:
+  ① 出力物どうしの照合 — 同一の正典データから全出力を生成し、刷り上がり (PDF 等) からも抽出して全問・全選択肢を逆照合。
+  ② 機械検査 — ビルド時 verify (解説の番号と選択肢のずれ・正解位置の偏り等) + コミット済み `check*` ゲート + 取り込み後の DB 読み返し。
+  ③ 人手の再点検 — **正解の一意性** (誤答が別解釈で正解にならないか・正解が 2 つないか) は機械では見えないので、全問を敵対的に読み直す。
+  book_exam の実装例: `scripts/book_exam/materials/_grammar_build.py::verify` / 同 `check_grammar_books.py` / `import_books.py` の読み返し検証。
 
 ### 検査は `scripts/run_all_gates.py` に寄せる (2026-08-04)
 - **教材の全ゲートを回す入口は 1 本**: `python3 scripts/run_all_gates.py` (絞るなら `... rika_kagaku`)。

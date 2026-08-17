@@ -21,11 +21,17 @@ export class Ink {
    * @param {(page:number)=>void} onDirty そのページに変更が入った (保存キューへ)
    * @param {(page:number)=>void} onLimit 上限に達して書けなかった
    *   ★ 黙って捨てない。生徒は書けたつもりでいるので、必ず画面に出す。
+   * @param {(factor:number, cx:number, cy:number)=>void} onPinch 2 本指の拡大縮小
+   *   ★ 書くモードは touch-action:none なのでネイティブピンチが来ない (手のひらを
+   *     置けるようにするため)。その代わりを 2 本指ジェスチャで補う。倍率の適用は
+   *     呼び出し側 (setZoom) の仕事 — インクの矩形キャッシュ無効化と再描画まで
+   *     面倒を見る必要があるので、ここでは通知だけして自分では拡大しない。
    */
-  constructor(viewer, onDirty, onLimit = () => {}) {
+  constructor(viewer, onDirty, onLimit = () => {}, onPinch = () => {}) {
     this.viewer = viewer;
     this.onDirty = onDirty;
     this.onLimit = onLimit;
+    this.onPinch = onPinch;
     this.models = new Map();       // page -> model
     this.ready = new Set();        // ★読み込みが終わったページだけ書ける (F6)
     this.mode = MODE.READ;
@@ -102,7 +108,9 @@ export class Ink {
       const pts = [...this._pointers.values()];
       this._panFrom = { x: (pts[0].clientX + pts[1].clientX) / 2,
                         y: (pts[0].clientY + pts[1].clientY) / 2,
-                        sl: this.viewer.scrollLeft, st: this.viewer.scrollTop };
+                        sl: this.viewer.scrollLeft, st: this.viewer.scrollTop,
+                        d: Math.hypot(pts[0].clientX - pts[1].clientX,
+                                      pts[0].clientY - pts[1].clientY) };
       return;
     }
 
@@ -143,6 +151,24 @@ export class Ink {
       const cy = (pts[0].clientY + pts[1].clientY) / 2;
       this.viewer.scrollLeft = this._panFrom.sl - (cx - this._panFrom.x);
       this.viewer.scrollTop = this._panFrom.st - (cy - this._panFrom.y);
+
+      // 指の間隔が十分に変わったら拡大縮小として通知する。
+      // ★ しきい値を置かないと、平行移動のたびの数 px のぶれで倍率が動き、
+      //   紙が呼吸しているように見える。1 回通知したら基準を取り直す。
+      const d = Math.hypot(pts[0].clientX - pts[1].clientX,
+                           pts[0].clientY - pts[1].clientY);
+      if (this._panFrom.d > 0 && d > 0) {
+        const f = d / this._panFrom.d;
+        if (f > 1.15 || f < 0.87) {
+          this.onPinch(f, cx, cy);
+          this._panFrom.d = d;
+          // 倍率が変わるとページの寸法が変わる。次の移動量を今の位置から測り直す
+          // (取り直さないと拡大した瞬間に大きく飛ぶ)。
+          this._panFrom.x = cx; this._panFrom.y = cy;
+          this._panFrom.sl = this.viewer.scrollLeft;
+          this._panFrom.st = this.viewer.scrollTop;
+        }
+      }
       e.preventDefault();
       return;
     }

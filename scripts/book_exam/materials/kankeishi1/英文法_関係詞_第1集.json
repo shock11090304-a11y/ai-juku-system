@@ -1,0 +1,112 @@
+{
+ "source": "英文法_関係詞_第1集.yaml",
+ "subject_name": "英語",
+ "book": {
+  "title": "英文法 関係詞 演習 第1集",
+  "subject": "grammar",
+  "level": "標準",
+  "time_limit_min": 20
+ },
+ "questions": [
+  {
+   "number": 1,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "KANKEI-SHUKAKU",
+   "explanation": "## 🎯 コアイメージ\n関係代名詞は「格」で選ぶ。**空所の後ろに何が欠けているか**を見る: 動詞がいきなり続く → 主語が欠けている → 主格。\n\n## 🔬 文構造分析\nThe woman **who lives** next door is a doctor.\nwho lives next door が The woman を修飾。空所の直後が動詞 lives — 節の中で**主語**の働きをする主格の関係代名詞が要る。\n\n## 📍 正解の根拠\n先行詞 The woman = 人、節内の役割 = 主語。人 + 主格 = **who**。\n\n## ❌ 誤答 NG 理由\n1. whom — 目的格。後ろに「主語 + 動詞」が続く形 (The woman whom I met) で使う。\n3. whose — 所有格。後ろには名詞が続く (whose husband など)。動詞 lives とはつながらない。\n4. which — 先行詞が物のときの関係代名詞。The woman (人) は受けられない。"
+  },
+  {
+   "number": 2,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "KANKEI-WHAT",
+   "explanation": "## 🎯 コアイメージ\nwhat は**先行詞を自分の中に含む**関係代名詞: what = the thing(s) which「〜すること・もの」。名詞のかたまりを作って、文の主語や目的語になれる。\n\n## 🔬 文構造分析\n**What he said** at the meeting **surprised** everyone.\nWhat he said (彼が言ったこと) 全体がこの文の主語。said の目的語が欠けた**不完全な文**を what が引き受けている。\n\n## 📍 正解の根拠\n空所の前に先行詞が無く、節の中は said の目的語が欠けた不完全な文 — 先行詞を含む **What** の出番。\n\n## ❌ 誤答 NG 理由\n1. That — that 節が主語になるなら中は**完全な文**のはず。said の目的語が無く形が壊れる。\n2. Which — 関係代名詞の which には先行詞が必要。文頭に先行詞なしでは置けない。\n3. Who —「〜する人」の意味で先行詞なしには使えない (those who なら可)。"
+  },
+  {
+   "number": 3,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "KANKEI-FUKUSHI",
+   "explanation": "## 🎯 コアイメージ\n関係副詞は「**後ろが完全な文**」のときに使う。関係代名詞 (which など) は節内に名詞の欠けが要る — この違いだけで大半の問題は解ける。\n\n## 🔬 文構造分析\nThis is the town **where I was born**.\nI was born は主語も述語もそろった**完全な文**。場所の先行詞 the town + 完全な文 = 関係副詞 where。\n\n## 📍 正解の根拠\nwhere = in which。「その町**で**生まれた」という副詞の働きを関係詞が兼ねるので、後ろは完全な文でよい。\n\n## ❌ 誤答 NG 理由\n2. which — 節内に名詞の欠けが必要。使うなら the town in which I was born と前置詞が要る。\n3. what — 先行詞を含む関係代名詞。the town という先行詞と同時には使えない。\n4. who — 人を受ける関係代名詞。先行詞 the town (場所) に合わない。"
+  },
+  {
+   "number": 4,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "KANKEI-ZENCHI",
+   "explanation": "## 🎯 コアイメージ\nlive **in** the house の in を関係代名詞の前に引き出した形が「前置詞 + 関係代名詞」。前置詞の直後に置ける関係代名詞は **which (物) / whom (人)** だけ。\n\n## 🔬 文構造分析\nThe house **in which they live** was built fifty years ago.\nthey live in the house → in を which の前へ。in which they live が The house を修飾する。\n\n## 📍 正解の根拠\n先行詞 The house = 物、前置詞 in の直後 → **which**。in which = where と置き換えられる。\n\n## ❌ 誤答 NG 理由\n1. that — 関係代名詞 that は**前置詞の直後には置けない** (in that ×)。\n2. where — 関係副詞は in の意味をすでに含む。in where では前置詞が二重になる。\n4. whom — 人を受ける目的格。先行詞 The house (物) に合わない。"
+  },
+  {
+   "number": 5,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "KANKEI-HISEIGEN",
+   "explanation": "## 🎯 コアイメージ\nコンマ付きの関係詞 (非制限用法) は先行詞に**補足説明**を加える。which は名詞だけでなく、**前の文の内容まるごと**を先行詞にできる。\n\n## 🔬 文構造分析\nHe failed the exam, **which disappointed** his parents.\nwhich の先行詞は「彼が試験に落ちたこと」という前半の内容全体。それが主語になって disappointed につながる。\n\n## 📍 正解の根拠\nコンマの後ろで、前文の内容を受けて「そのことが両親を落胆させた」と言えるのは **which** だけ。\n\n## ❌ 誤答 NG 理由\n1. that — 関係代名詞 that は**コンマ付きの非制限用法では使えない**。\n2. what — 先行詞を含む関係代名詞。前の内容に補足を付けるコンマ用法は無い。\n3. who — 人を受ける。「落ちたこと」という出来事は受けられない。"
+  },
+  {
+   "number": 6,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "KANKEI-FUKUGO",
+   "explanation": "## 🎯 コアイメージ\n複合関係代名詞 whoever = **anyone who**「〜する人は誰でも」。それ自体が名詞のかたまりを作り、文の主語になれる。\n\n## 🔬 文構造分析\n**Whoever comes first** will get the best seat.\nWhoever comes first (最初に来る人は誰でも) が主語。空所の直後が動詞 comes なので、節の中では**主格**。\n\n## 📍 正解の根拠\n「誰でも」の意味 + 節内で主語の働き = 主格の **Whoever**。\n\n## ❌ 誤答 NG 理由\n1. Who — 疑問詞だと「誰が最初に来るか」という**問い**が主語になり、「席を取る」動作の主体にならない。\n3. Whomever — 目的格。直後に動詞 comes が続く主語の位置には置けない。\n4. However —「どんなに〜でも」。直後には形容詞・副詞が来る形で、名詞のかたまりを作れない。"
+  },
+  {
+   "number": 7,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "KANKEI-MOKKAKU",
+   "explanation": "## 🎯 コアイメージ\n空所の後ろに「主語 + 動詞」が続き、その動詞の**目的語が欠けている**なら目的格の関係代名詞。目的格は省略もできる (今回は選ぶ問題)。\n\n## 🔬 文構造分析\nThe book **which you lent** me last week was really interesting.\nyou lent me (   ) — lent の「貸したもの」が欠けている。その欠けを which が埋め、The book を修飾する。\n\n## 📍 正解の根拠\n先行詞 The book = 物、節内の役割 = lent の目的語 → 物の目的格 **which**。\n\n## ❌ 誤答 NG 理由\n1. whose — 所有格。後ろに無冠詞の名詞が続く形で、主語 you とはつながらない。\n2. whom — 人の目的格。先行詞 The book (物) に合わない。\n4. what — 先行詞を含む。The book という先行詞と同時には使えない。"
+  },
+  {
+   "number": 8,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "KANKEI-FUKUSHI",
+   "explanation": "## 🎯 コアイメージ\n関係副詞は先行詞とペアで覚える: 場所 → where / 時 → when / **理由 (the reason) → why**。後ろには完全な文が続く。\n\n## 🔬 文構造分析\nNobody knows the reason **why she quit** her job.\nshe quit her job は目的語までそろった**完全な文**。先行詞 the reason に理由の関係副詞 why をつなぐ。\n\n## 📍 正解の根拠\n先行詞が the reason で後ろが完全な文 → **why** (= for which)。\n\n## ❌ 誤答 NG 理由\n2. which — 節内に名詞の欠けが必要。完全な文の前には置けない (the reason for which なら可)。\n3. what — 先行詞を含む関係代名詞。the reason という先行詞と同時には使えない。\n4. where — 場所の関係副詞。先行詞 the reason (理由) に合わない。"
+  },
+  {
+   "number": 9,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "KANKEI-FUKUGO",
+   "explanation": "## 🎯 コアイメージ\nhowever は「**どんなに〜でも**」の譲歩。直後に**形容詞・副詞**を引き連れて however + 形/副 + S + V の語順を作る。\n\n## 🔬 文構造分析\n**However hard** you try, you cannot please everyone.\n= No matter how hard you try。副詞 hard を However が前に引き出し、そのあとに you try が続く。\n\n## 📍 正解の根拠\n空所の直後が副詞 hard — 形容詞・副詞を従えられる譲歩の複合関係詞は **However** だけ。\n\n## ❌ 誤答 NG 理由\n1. Whatever — 従えるのは名詞 (Whatever excuse you make)。副詞 hard は従えない。\n2. Whichever — 同じく名詞を従える形 (Whichever way you choose)。hard とはつながらない。\n4. Whenever —「〜するときはいつでも」。直後は S + V で、hard を挟む形にならない。"
+  },
+  {
+   "number": 10,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "KANKEI-SHOYU",
+   "explanation": "## 🎯 コアイメージ\n所有格 whose は「先行詞**の**〜」。後ろには**冠詞の付かない名詞**が直接続き、whose + 名詞 でひとかたまりになる。\n\n## 🔬 文構造分析\nI have a friend **whose father** is a famous musician.\nwhose father (その友人の父) が節の主語。a friend's father の 's の働きを whose がしている。\n\n## 📍 正解の根拠\n空所の直後が無冠詞の名詞 father で、「友人**の**父」という所有関係 → **whose**。\n\n## ❌ 誤答 NG 理由\n1. who — 主格。直後に動詞が来る形で、名詞 father との「誰の」の関係は作れない。\n3. whom — 目的格。後ろに主語 + 動詞が続く形で、father との所有関係は表せない。\n4. which — 物を受ける関係代名詞。先行詞 a friend (人) に合わない。"
+  }
+ ]
+}

@@ -1,0 +1,112 @@
+{
+ "source": "英文法_形容詞副詞_第1集.yaml",
+ "subject_name": "英語",
+ "book": {
+  "title": "英文法 形容詞・副詞 演習 第1集",
+  "subject": "grammar",
+  "level": "標準",
+  "time_limit_min": 20
+ },
+ "questions": [
+  {
+   "number": 1,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "KEIYO-GOCHI",
+   "explanation": "## 🎯 コアイメージ\n**-thing / -one / -body を修飾する形容詞は後ろに置く**: something cold / someone famous。普段の「形容詞 + 名詞」と逆になる特別ルール。\n\n## 🔬 文構造分析\nI want to drink **something cold** because it's so hot today.\nsomething (代名詞) + cold (後置の形容詞) =「何か冷たいもの」。\n\n## 📍 正解の根拠\n-thing 系は形容詞を**後置** → **something cold**。\n\n## ❌ 誤答 NG 理由\n1. cold something — -thing 系に前置はできない。語順が逆。\n3. something coldly — coldly は副詞。名詞 something を修飾できない。\n4. cold of something — この形は存在しない。"
+  },
+  {
+   "number": 2,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "KEIYO-HITEI",
+   "explanation": "## 🎯 コアイメージ\n**hardly =「ほとんど〜ない」という準否定の副詞**。hard (熱心に・激しく) とは別の単語と考える。can hardly do =「ほとんど〜できない」。\n\n## 🔬 文構造分析\nI was so tired that I could **hardly keep** my eyes open.\nso 〜 that (とても疲れていたので) + could hardly (ほとんど〜できなかった)。\n\n## 📍 正解の根拠\n「目を開けていられ**ないほど**」という準否定 → **hardly**。\n\n## ❌ 誤答 NG 理由\n1. hard —「熱心に・激しく」。否定の意味は無く、「懸命に目を開けた」となり that 節の因果が壊れる。\n2. hardly ever — 頻度「めったに〜ない」。この場は一度きりの状況なので合わない。\n4. harder — hard の比較級。同じく否定の意味が出ない。"
+  },
+  {
+   "number": 3,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "KEIYO-GENTEI",
+   "explanation": "## 🎯 コアイメージ\n**a- で始まる形容詞 (asleep / alive / awake) は叙述専用** — 名詞の前 (限定用法) には置けない。名詞の前で「眠っている」は sleeping を使う。\n\n## 🔬 文構造分析\nLook at that **sleeping baby** on the sofa.\nbaby を**前から**修飾する位置 (限定用法) → 分詞由来の sleeping。\n\n## 📍 正解の根拠\n名詞の前の位置 → asleep は不可、**sleeping** の一択。\n\n## ❌ 誤答 NG 理由\n2. asleep — 叙述専用 (The baby is asleep は可)。名詞の前には置けない。\n3. slept —「眠られた赤ん坊」という受動になり不成立。\n4. sleepily — 副詞。名詞 baby を修飾できない。"
+  },
+  {
+   "number": 4,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "KEIYO-SURYO",
+   "explanation": "## 🎯 コアイメージ\n数えられない名詞は little / a little、数えられる名詞は few / a few。**a が付けば肯定 (少しある)、無ければ否定 (ほとんど無い)**。\n\n## 🔬 文構造分析\nThere is **little milk** left in the bottle, so we **have to buy** some today.\nmilk = 不可算。後半「買わなければ」= 足りていない、という否定方向。\n\n## 📍 正解の根拠\n不可算の milk + 「買い足しが必要」という不足の文脈 → **little** (ほとんど無い)。\n\n## ❌ 誤答 NG 理由\n1. a few — 可算名詞用。milk は数えられない。\n2. few — これも可算名詞用。\n3. a little —「少しは**ある**」という肯定の含み。買い足しが必要な文脈と合わない。"
+  },
+  {
+   "number": 5,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "KEIYO-FUKUSHI",
+   "explanation": "## 🎯 コアイメージ\n**同じ語源で意味が分かれる副詞**: high (物理的に高く) / **highly (程度が大きく・非常に)**。late/lately、near/nearly も同じ仲間。\n\n## 🔬 文構造分析\nThe pianist is **highly respected** all over the world.\nrespected (尊敬されている) の**程度**を強める → highly。\n\n## 📍 正解の根拠\n評価の高さ (程度) を表す → **highly** respected。\n\n## ❌ 誤答 NG 理由\n1. high — 物理的な高さ (jump high)。評価の程度には使わない。\n2. highest — 最上級の形容詞。respected を修飾する副詞の位置に合わない。\n4. more high — high の比較級は higher。この形自体が誤り。"
+  },
+  {
+   "number": 6,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "KEIYO-LATELY",
+   "explanation": "## 🎯 コアイメージ\n**lately =「最近」**(現在完了と相性が良い) / late =「遅く」(時刻が遅い)。high/highly と同じ「-ly で意味が変わる」ペア。\n\n## 🔬 文構造分析\n**Have you seen** any good movies **lately**?\n現在完了 (経験・近況) + lately (最近) の定番コンビ。\n\n## 📍 正解の根拠\n「**最近**いい映画を見た?」→ **lately**。\n\n## ❌ 誤答 NG 理由\n1. late —「(時刻が) 遅く」。see movies late では「夜遅くに見る」となり近況を聞く文にならない。\n3. later —「あとで」。未来向きの語で、現在完了の疑問文と合わない。\n4. latest —「最新の」(形容詞)。文末で副詞の働きはできない。"
+  },
+  {
+   "number": 7,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "KEIYO-ALMOST",
+   "explanation": "## 🎯 コアイメージ\n**almost は副詞 —「all・every・no などの語を**修飾する**」**: almost all (ほとんど全部) / almost every。名詞そのものは修飾できない。\n\n## 🔬 文構造分析\n**Almost all the seats** in the theater were taken.\nalmost (副詞) が all を修飾 → almost all the + 名詞。\n\n## 📍 正解の根拠\n直後に all がある → all を強める副詞 **Almost**。\n\n## ❌ 誤答 NG 理由\n1. Most — Most all という並びは標準では不可 (Most of the seats か Most seats)。\n2. Almost of — この形は存在しない。\n3. The most — 最上級の形。all の前には置けない。"
+  },
+  {
+   "number": 8,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "KEIYO-SUSHI",
+   "explanation": "## 🎯 コアイメージ\n**数詞 + hundred / thousand は単数形のまま**: three hundred people。「何百もの」と漠然と言うときだけ hundreds of と複数になる。\n\n## 🔬 文構造分析\nAbout **three hundred people** attended the annual festival.\nthree (具体的な数詞) + hundred (単数形) + 名詞。\n\n## 📍 正解の根拠\n数詞 three が前にある → **hundred** (s も of も付けない)。\n\n## ❌ 誤答 NG 理由\n2. hundreds — 数詞の直後では複数形にしない (three hundreds は誤り)。\n3. hundred of — of は不要。hundreds of との混同形。\n4. hundreds of — hundreds of は「何百もの」(数詞なし) の言い方。three とは併用できない。"
+  },
+  {
+   "number": 9,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "KEIYO-KONDO",
+   "explanation": "## 🎯 コアイメージ\n形が似て意味が違う形容詞ペア: **sensitive (敏感な) / sensible (分別のある)**。be sensitive to 〜 =「〜に敏感だ」で前置詞 to とペア。\n\n## 🔬 文構造分析\nShe is very **sensitive to cold**, so she always wears thick socks.\n寒さ (cold) に敏感 → 厚い靴下、と因果がつながる。\n\n## 📍 正解の根拠\nto cold と組んで「寒さに**敏感**」→ **sensitive**。\n\n## ❌ 誤答 NG 理由\n1. sensible —「分別のある」。sensible to cold という言い方は無く、意味も通らない。\n3. sense — 名詞。very の後ろ・be 動詞の補語の形容詞の位置に置けない。\n4. sensibly — 副詞。be 動詞の補語になれない。"
+  },
+  {
+   "number": 10,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "KEIYO-GOJUN",
+   "explanation": "## 🎯 コアイメージ\n**so + 形容詞 + a + 名詞**の語順 (so beautiful a picture)。such なら such a beautiful picture — so と such で a の位置が入れ替わる。\n\n## 🔬 文構造分析\nI have never seen **so beautiful a picture** as this one.\nso (副詞) が形容詞 beautiful を先に引き出し、a picture が後ろに続く。as this one が比較の相手。\n\n## 📍 正解の根拠\nso を使うときの語順は **so + 形 + a + 名詞** → so beautiful a picture。\n\n## ❌ 誤答 NG 理由\n1. a so beautiful picture — a が先に来る語順は such 用 (such a beautiful picture)。so では不可。\n2. so a beautiful picture — so の直後に a は置けない。\n4. beautiful so a picture — この語順は存在しない。"
+  }
+ ]
+}

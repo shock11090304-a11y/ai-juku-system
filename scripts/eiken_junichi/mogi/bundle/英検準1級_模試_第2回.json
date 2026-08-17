@@ -1,0 +1,322 @@
+{
+ "source": "英検準1級_模試_第2回.yaml",
+ "subject_name": "英語",
+ "book": {
+  "title": "英検準1級 オリジナル模試 第2回 (筆記 大問1〜3)",
+  "subject": "eiken",
+  "level": "難関",
+  "time_limit_min": 90
+ },
+ "questions": [
+  {
+   "number": 1,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 3　defer\n【動詞（他動詞）】 （決定・審議などを）延期する、先送りする\n\n## 📘 全文和訳\n委員会は、委員が財政面の詳細をより綿密に検討する時間を持てるまで、その提案の審議を先送りすることに決めた。\n\n## ❌ 他の選択肢\nendorse: （公に）支持する、是認する　dispatch: （使者・荷物を）急送する　revoke: （許可・法を）取り消す、撤回する"
+  },
+  {
+   "number": 2,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 4　hollow\n【形容詞】 （言葉などが）中身のない、うわべだけの\n\n## 📘 全文和訳\n批評家たちは、同じ省庁が三年前にも同一の約束をしていたことを指摘して、大臣の謝罪をうわべだけのものとして退けた。\n\n## ❌ 他の選択肢\nsincere: 誠実な、心からの　candid: 率直な、忌憚のない　prudent: 慎重な、思慮深い"
+  },
+  {
+   "number": 3,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 1　depleted\n【動詞（他動詞）】 （資源・体力を）使い果たす、激減させる\n\n## 📘 全文和訳\n干ばつがその地域の貯水量を著しく減少させ、いくつかの町では家庭での使用を一日数時間に制限せざるをえなくなっている。\n\n## ❌ 他の選択肢\nreplenish: （減った分を）補充する　dilute: （液体を）薄める　consolidate: （地位・組織を）強固にする、統合する"
+  },
+  {
+   "number": 4,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 3　distantly\n【副詞】 遠く隔たって、（血縁が）遠く\n\n## 📘 全文和訳\nその二つの種はほとんど見分けがつかないほど似ているが、数百万年前に共通の祖先から分かれており、遠い類縁関係にあるにすぎない。\n\n## ❌ 他の選択肢\ndensely: 密集して　abruptly: 突然に、ぶっきらぼうに　narrowly: かろうじて、狭く"
+  },
+  {
+   "number": 5,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 4　meticulous\n【形容詞】 細部まで行き届いた、綿密な\n\n## 📘 全文和訳\nその目撃者は事故について綿密な説明を行い、出来事の順序を非常に詳しく述べたため、捜査員はそれを正確に再現することができた。\n\n## ❌ 他の選択肢\nvague: 漠然とした、あいまいな　biased: 偏った　tentative: 暫定的な、ためらいがちな"
+  },
+  {
+   "number": 6,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 2　wary\n【形容詞】 警戒して、用心深い（be wary about / of ~）\n\n## 📘 全文和訳\n長年の政治的不安定さのために、投資家たちはその国のインフラ事業に多額の資金を投じることに慎重になっている。\n\n## ❌ 他の選択肢\neager: 熱心な、しきりに〜したがる　adept: 熟達した　lenient: 寛大な、甘い"
+  },
+  {
+   "number": 7,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 3　compel\n【動詞（他動詞）】 （人に）〜を強いる、余儀なくさせる（compel A to do）\n\n## 📘 全文和訳\n新しい規制は、量がどれほど少なくとも、製品に使用したすべての化学物質を開示することを製造業者に義務づけている。\n\n## ❌ 他の選択肢\nexempt: （義務を）免除する　entitle: （人に）権利を与える　dissuade: （説得して）思いとどまらせる"
+  },
+  {
+   "number": 8,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 4　downfall\n【名詞】 （人・組織の）没落、失脚（の原因）\n\n## 📘 全文和訳\nそのスキャンダルは、かつては国の最高の職に就く運命にあると思われた経歴の、没落の原因となった。\n\n## ❌ 他の選択肢\npinnacle: 頂点、絶頂　cornerstone: 礎、基礎　renewal: 再生、更新"
+  },
+  {
+   "number": 9,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 1　contradictory\n【形容詞】 矛盾する、食い違う\n\n## 📘 全文和訳\nその会議についての二つの説明が真っ向から食い違っていたため、理事会は実際に何が話されたのかについて独立した調査を命じた。\n\n## ❌ 他の選択肢\nconsistent: 一貫した、矛盾のない　supplementary: 補足の　conclusive: 決定的な"
+  },
+  {
+   "number": 10,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 3　assembled\n【動詞（他動詞）】 （人・物を）集める、寄せ集めて作る\n\n## 📘 全文和訳\nその美術館の収蔵品は、見過ごされた作品を求めて絶えず旅をした一人の学芸員によって、四十年をかけて集められたものだった。\n\n## ❌ 他の選択肢\ndemolish: （建物を）取り壊す　obscure: （動詞）覆い隠す、わかりにくくする　confiscate: （権力で）没収する"
+  },
+  {
+   "number": 11,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 4　delegate\n【動詞（他動詞）】 （権限・仕事を）委任する、任せる（delegate A to B）\n\n## 📘 全文和訳\nその部長は問題に直接向き合うよりも、難しい決定を部下に任せる傾向があった。\n\n## ❌ 他の選択肢\nmonopolize: 独占する　aggravate: 悪化させる　undertake: （仕事・責任を）引き受ける"
+  },
+  {
+   "number": 12,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 2　reliant\n【形容詞】 依存している（be reliant on ~）\n\n## 📘 全文和訳\nその島の経済は観光業に大きく依存しており、一度不振の季節があるだけで数千人が職を失いかねない。\n\n## ❌ 他の選択肢\nimmune: 免疫のある、影響を受けない（to）　indifferent: 無関心な（to）　superior: より優れた（to）"
+  },
+  {
+   "number": 13,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 3　speculative\n【形容詞】 推測に基づく、憶測にすぎない\n\n## 📘 全文和訳\nその発見についての初期の報告はきわめて憶測的だったため、大半の研究者は査読を経た証拠が出るまで論評を控えた。\n\n## ❌ 他の選択肢\nverified: 検証済みの　exhaustive: 網羅的な、徹底的な　mandatory: 義務的な、必須の"
+  },
+  {
+   "number": 14,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 4　overlap\n【動詞（自動詞）】 （業務・範囲が）重複する\n\n## 📘 全文和訳\n合併の後、いくつかの部署の業務が重複していることがわかり、数百人の従業員が社内の別の職を提示された。\n\n## ❌ 他の選択肢\ndiverge: 分岐する、（意見が）異なる　expire: 期限が切れる　prevail: 打ち勝つ、広く行き渡る"
+  },
+  {
+   "number": 15,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 1　give out\n【句動詞】 （情報・声明を）公表する、発表する\n\n## 📘 全文和訳\n弁護士は依頼人に対し、警察の報告書がすべて開示されるまで、事件に関するいかなる情報も記者に流さないよう助言した。\n\n## ❌ 他の選択肢\nput off: 延期する　take up: （趣味・仕事を）始める、（場所を）取る　look into: 調査する"
+  },
+  {
+   "number": 16,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 3　make up for\n【句動詞】 〜を埋め合わせる、償う\n\n## 📘 全文和訳\n失敗したソフトウェア更新によって生じた財務上の損失を埋め合わせるのに、その会社はほぼ一年を要した。\n\n## ❌ 他の選択肢\ncome down with: （病気に）かかる　get away with: （罰を受けずに）やり過ごす　put up with: （不満を言わず）我慢する"
+  },
+  {
+   "number": 17,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 4　resume\n【動詞（他動詞）】 （中断していたものを）再開する\n\n## 📘 全文和訳\n交渉は先週ほぼ決裂しかけたが、双方は現在、新しい議長のもとで協議を再開することに合意している。\n\n## ❌ 他の選択肢\ncall off: （予定を）中止する　waive: （権利を）放棄する　postpone: 延期する"
+  },
+  {
+   "number": 18,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 1,
+   "unit_tag": "EIKEN-P1-VOCAB",
+   "explanation": "## ✅ 正解 2　do away with\n【句動詞】 〜を廃止する、なくす\n\n## 📘 全文和訳\nA: 部署はあの古い書類管理システムを完全に廃止するらしいよ。／ B: やっとだね。四十歳未満で仕組みを理解できた人なんて一人もいないもの。\n\n## ❌ 他の選択肢\nstand up for: 〜を擁護する　run out of: 〜を切らす　keep up with: 〜に遅れずについていく"
+  },
+  {
+   "number": 19,
+   "page": 4,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 1,
+   "unit_tag": "EIKEN-P2-CLOZE",
+   "explanation": "## ✅ 正解 2　increasingly common\n\n## 🔎 根拠\n空所は「そのため（For this reason）〜になっている」の補語。直前で街路樹が電気を使わずに冷却効果を生むと述べ、直後の段落でも各都市の植樹計画が語られる。したがって「（都市の気候計画の中で）ますます一般的になっている」が流れに合う。1『論争の的』・3『法外に高価』・4『正当化が難しい』はいずれも直前の肯定的な説明と衝突する。\n\n## 📗 この英文の要旨\n都市の街路樹は日陰と蒸散によって気温を下げ、冷房需要を減らす。ただし効果は樹木の配置に左右され、近年は「どこに植えるか」を重視した計画へと関心が移っている。"
+  },
+  {
+   "number": 20,
+   "page": 4,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 1,
+   "unit_tag": "EIKEN-P2-CLOZE",
+   "explanation": "## ✅ 正解 3　In response\n\n## 🔎 根拠\n前文までが「樹冠の少ない地区ほど室温も電気代も高い」という問題の指摘、空所の後は「均等にばらまくのではなく、樹冠が最も少ない地区を狙って植える」という自治体の対応。問題→対応の流れなので In response（それに応じて）。1 Nevertheless（逆接）・2 By contrast（対比）・4 For example（例示）は論理関係が合わない。\n\n## 📗 この英文の要旨\n都市の街路樹は日陰と蒸散によって気温を下げ、冷房需要を減らす。ただし効果は樹木の配置に左右され、近年は「どこに植えるか」を重視した計画へと関心が移っている。"
+  },
+  {
+   "number": 21,
+   "page": 4,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 1,
+   "unit_tag": "EIKEN-P2-CLOZE",
+   "explanation": "## ✅ 正解 1　the direction a wall faces\n\n## 🔎 根拠\n空所を含む文は「植える場所を選ぶ前に（　）を考慮せよ」。直前の文が「午後遅くに西向きの壁を日陰にする位置の樹は、日陰の北側に置かれた同じ樹よりはるかに冷房負荷を下げる」と述べており、決め手は壁の向きである。2『住民の年齢』・3『苗木の価格』・4『植える季節』はいずれも直前の比較で触れられていない。\n\n## 📗 この英文の要旨\n都市の街路樹は日陰と蒸散によって気温を下げ、冷房需要を減らす。ただし効果は樹木の配置に左右され、近年は「どこに植えるか」を重視した計画へと関心が移っている。"
+  },
+  {
+   "number": 22,
+   "page": 5,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 1,
+   "unit_tag": "EIKEN-P2-CLOZE",
+   "explanation": "## ✅ 正解 2　an insurance policy\n\n## 🔎 根拠\n空所の直後が「各国のコレクションを置き換えるためのものではなく、それらを破壊しうる事故を生き延びるためだけのもの」。つまり普段は使わないが万一に備える仕組み＝保険（an insurance policy）。1『絶滅植物の博物館』は展示施設で意味が違い、3『商業用倉庫』は営利、4『研究所』は次段の「運営者は研究できない」と矛盾する。\n\n## 📗 この英文の要旨\n北極圏の種子貯蔵庫は各国の遺伝子銀行の複製を預かる「保険」であり、所有権は預けた側に残る。実際にシリアの内戦時に引き出しが行われ、その意義が示された。"
+  },
+  {
+   "number": 23,
+   "page": 5,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 1,
+   "unit_tag": "EIKEN-P2-CLOZE",
+   "explanation": "## ✅ 正解 2　For this reason\n\n## 🔎 根拠\n前文までが「種子は預けた機関の所有物で、運営者は勝手に開けることも売ることも研究することもできない」。空所の後は「だからこの施設は銀行というより、預けた側だけが鍵を持つ貸金庫だと評されてきた」。理由→帰結なので For this reason。1『それにもかかわらず』・3『他方で』・4『比較すると』は関係が合わない。\n\n## 📗 この英文の要旨\n北極圏の種子貯蔵庫は各国の遺伝子銀行の複製を預かる「保険」であり、所有権は預けた側に残る。実際にシリアの内戦時に引き出しが行われ、その意義が示された。"
+  },
+  {
+   "number": 24,
+   "page": 5,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 1,
+   "unit_tag": "EIKEN-P2-CLOZE",
+   "explanation": "## ✅ 正解 1　works as intended\n\n## 🔎 根拠\n空所は Supporters（支持者）が「その一連の経緯を〜の証拠として挙げる」の内容。直前でシリアの研究機関が引き出し・再建・再預託を実際に行えたことが述べられており、支持者にとってこれは仕組みが意図どおり機能した証拠。2・3・4 はいずれも批判的な内容で、支持者の主張としても直前の経緯とも噛み合わない（批判は while 以下に別に書かれている）。\n\n## 📗 この英文の要旨\n北極圏の種子貯蔵庫は各国の遺伝子銀行の複製を預かる「保険」であり、所有権は預けた側に残る。実際にシリアの内戦時に引き出しが行われ、その意義が示された。"
+  },
+  {
+   "number": 25,
+   "page": 6,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 1,
+   "unit_tag": "EIKEN-P3-READ",
+   "explanation": "## ✅ 正解 1\n\n## ❓ 設問\n第1段で述べられている通説について、筆者は何を示唆しているか。\n\n## 🔎 根拠と誤答の処理\n第1段は『これほど自信をもって繰り返される説明はほとんどない』『料理書でも学校の授業でも見られる』と広く流布していることを述べ、さらに『過去を心地よく遠いものに見せてくれるという利点もある』とする。1 はこの二点をまとめたもので正解。2『本を売るために料理書の著者が創作した』は本文にない。3『新資料で裏づけられた』は第2段の内容（史料はむしろ逆）に反する。4『最貧困層にのみ当てはまる』も本文にない。\n\n## 📗 この英文の要旨\n第1段: 中世欧州で香辛料が高価だったのは「腐肉の味を隠すため」という通説がある。第2段: だが史料は逆で、香辛料を買えた層は新鮮な肉も買えた。第3段: 高価さの理由は長い交易路と仲介にあった。第4段: 海路開拓で価格は下落し、香辛料は地位の象徴ではなくなった。"
+  },
+  {
+   "number": 26,
+   "page": 6,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 1,
+   "unit_tag": "EIKEN-P3-READ",
+   "explanation": "## ✅ 正解 2\n\n## ❓ 設問\n通説に反する証拠として挙げられているのは次のうちどれか。\n\n## 🔎 根拠と誤答の処理\n第2段に『現存するレシピは、傷みがほとんど問題にならない料理、たとえば甘い料理や飲み物にも香辛料を求めている』とあり、2 が本文の記述と一致する。1『地元産のハーブを好んだ』・3『新鮮な肉のみ販売する法的義務』・4『アジアで修業した料理人』はいずれも本文にない。\n\n## 📗 この英文の要旨\n第1段: 中世欧州で香辛料が高価だったのは「腐肉の味を隠すため」という通説がある。第2段: だが史料は逆で、香辛料を買えた層は新鮮な肉も買えた。第3段: 高価さの理由は長い交易路と仲介にあった。第4段: 海路開拓で価格は下落し、香辛料は地位の象徴ではなくなった。"
+  },
+  {
+   "number": 27,
+   "page": 7,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 1,
+   "unit_tag": "EIKEN-P3-READ",
+   "explanation": "## ✅ 正解 3\n\n## ❓ 設問\n第3段によれば、香辛料はなぜそれほど高価だったのか。\n\n## 🔎 根拠と誤答の処理\n第3段は『地元の商人、アラビア海を渡る船主、隊商業者、地中海の商人がそれぞれ取り分を得た』『移し替えのたびに費用と危険が加わった』と述べ、末尾で『植物の特別な性質ではなく距離が生んだ希少性が価格を高く保った』と明言する。したがって 3。1 は同じ末尾の文で明確に否定されている。2『輸入食品への重税』・4『生産者による意図的な出荷制限』は本文にない。\n\n## 📗 この英文の要旨\n第1段: 中世欧州で香辛料が高価だったのは「腐肉の味を隠すため」という通説がある。第2段: だが史料は逆で、香辛料を買えた層は新鮮な肉も買えた。第3段: 高価さの理由は長い交易路と仲介にあった。第4段: 海路開拓で価格は下落し、香辛料は地位の象徴ではなくなった。"
+  },
+  {
+   "number": 28,
+   "page": 7,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 1,
+   "unit_tag": "EIKEN-P3-READ",
+   "explanation": "## ✅ 正解 2\n\n## ❓ 設問\n香辛料の価格下落について、筆者は何と述べているか。\n\n## 🔎 根拠と誤答の処理\n第4段最終文に『その変化はしばしば探検と勇気の物語として語られるが、経済的に言えばそれは長い仲介の連鎖が取り除かれたということにすぎなかった』とあり、2 が一致する。1『異国の風味への関心を失った』は本文になく、価格下落の理由は流通量の増加。3『同時代人は全く気づかなかった』も本文にない。4『生産地が胡椒を放棄した』も述べられていない。\n\n## 📗 この英文の要旨\n第1段: 中世欧州で香辛料が高価だったのは「腐肉の味を隠すため」という通説がある。第2段: だが史料は逆で、香辛料を買えた層は新鮮な肉も買えた。第3段: 高価さの理由は長い交易路と仲介にあった。第4段: 海路開拓で価格は下落し、香辛料は地位の象徴ではなくなった。"
+  },
+  {
+   "number": 29,
+   "page": 7,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 1,
+   "unit_tag": "EIKEN-P3-READ",
+   "explanation": "## ✅ 正解 2\n\n## ❓ 設問\n深海採掘の推進派が行っている主要な主張は何か。\n\n## 🔎 根拠と誤答の処理\n第2段は陸上鉱山が住民を立ち退かせ、大量の淡水を消費し、労働条件にも問題があると述べたうえで、『金属が必要ならば、人が住んでいる場所からよりも、誰も住んでいない場所から取る方がよい』という論法だとまとめている。したがって 2。1『機械が海底に達しない』は第1段の記述（集めて船へ送る機械）に反する。3『品質が高い』・4『雇用を多く生む』は本文にない。\n\n## 📗 この英文の要旨\n第1段: 深海底の金属団塊が電池需要で注目される。第2段: 推進派は陸上鉱山より社会的被害が小さいと主張。第3段: 生物学者は回復に要する時間の長さと知識の不足を指摘。第4段: 各国は規則制定を急ぐが、需要側の変化が前提を崩す可能性もある。"
+  },
+  {
+   "number": 30,
+   "page": 8,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 1,
+   "unit_tag": "EIKEN-P3-READ",
+   "explanation": "## ✅ 正解 3\n\n## ❓ 設問\n海洋生物学者が、採掘された海域は回復しないと考えるのはなぜか。\n\n## 🔎 根拠と誤答の処理\n第3段に『団塊自体が形成に数百万年かかるため、機械で除去された区域は人間の時間尺度では回復しえない』とあり、続けて『数十年前に海底に刻まれた試験用の跡は今日でも見え、生命が戻る兆候はほとんどない』と具体例を挙げる。したがって 3。1『生物が生存できない』は『生命はまばらだが古い』に反する。2『企業が科学者の訪問を拒否』は本文にない。4 は堆積物の記述の趣旨（生物の摂食構造を詰まらせる恐れ）と異なる。\n\n## 📗 この英文の要旨\n第1段: 深海底の金属団塊が電池需要で注目される。第2段: 推進派は陸上鉱山より社会的被害が小さいと主張。第3段: 生物学者は回復に要する時間の長さと知識の不足を指摘。第4段: 各国は規則制定を急ぐが、需要側の変化が前提を崩す可能性もある。"
+  },
+  {
+   "number": 31,
+   "page": 8,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 1,
+   "unit_tag": "EIKEN-P3-READ",
+   "explanation": "## ✅ 正解 1\n\n## ❓ 設問\n最終段は、この産業の将来について何を示唆しているか。\n\n## 🔎 根拠と誤答の処理\n最終段は『この産業を正当化してきた需要そのものが変化し始めている』とし、コバルトをほとんど使わない電池や再生利用の拡大を挙げたうえで、『海底の機械が採算に合うかどうかは、水中ではなく電池設計者の研究室で決まるかもしれない』と結ぶ。したがって 1。2『規則は完成済み』は『今まさに起草中（drafting）』に反する。3『再生利用は全く供給できない』は本文と逆。4『海底を各国で分割することで合意』も本文にない（法的にどの国にも属さないと述べられている）。\n\n## 📗 この英文の要旨\n第1段: 深海底の金属団塊が電池需要で注目される。第2段: 推進派は陸上鉱山より社会的被害が小さいと主張。第3段: 生物学者は回復に要する時間の長さと知識の不足を指摘。第4段: 各国は規則制定を急ぐが、需要側の変化が前提を崩す可能性もある。"
+  }
+ ]
+}

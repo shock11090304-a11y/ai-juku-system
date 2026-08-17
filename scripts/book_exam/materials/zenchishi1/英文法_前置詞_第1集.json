@@ -1,0 +1,112 @@
+{
+ "source": "英文法_前置詞_第1集.yaml",
+ "subject_name": "英語",
+ "book": {
+  "title": "英文法 前置詞 演習 第1集",
+  "subject": "grammar",
+  "level": "標準",
+  "time_limit_min": 20
+ },
+ "questions": [
+  {
+   "number": 1,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "ZENCHI-TOKI",
+   "explanation": "## 🎯 コアイメージ\n時の前置詞は**幅**で選ぶ: at (時刻の点) < on (日・曜日) < in (月・年・季節)。morning は普通 in だが、**特定の日の朝は「日」扱いで on** になる。\n\n## 🔬 文構造分析\nThe ceremony will be held **on the morning of May 5**.\nof May 5 が付いて「5 月 5 日の朝」という**特定の日付**になっている。\n\n## 📍 正解の根拠\n特定日の朝 (the morning of May 5) → 日付扱いで **on**。\n\n## ❌ 誤答 NG 理由\n2. in — in the morning は「(一般に) 朝に」。of May 5 で特定された日には使わない。\n3. at — 時刻の一点 (at seven) に使う。朝という幅には合わない。\n4. by —「〜までに」(期限)。日時の指定にならない。"
+  },
+  {
+   "number": 2,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "ZENCHI-KIGEN",
+   "explanation": "## 🎯 コアイメージ\n**by =「〜までに」(期限・一回の動作) / until =「〜までずっと」(継続)**。動詞が一回きりの動作か、続く状態かで選ぶ。\n\n## 🔬 文構造分析\nPlease hand in your report **by next Friday**.\nhand in (提出する) は一回きりの動作 → 締め切りの by。\n\n## 📍 正解の根拠\n提出という 1 回の動作の**期限** → **by**。\n\n## ❌ 誤答 NG 理由\n1. until —「金曜までずっと提出し続ける」となり、一回の動作と合わない。\n2. till — until と同じ継続の意味。同じ理由で置けない。\n4. during —「〜の間じゅう」。後ろには期間の名詞 (the meeting など) が来る。"
+  },
+  {
+   "number": 3,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "ZENCHI-KEIRO",
+   "explanation": "## 🎯 コアイメージ\n**through =「〜を通り抜けて」**という経路の前置詞。トンネル・窓・森など、くぐり抜ける通り道を指す。\n\n## 🔬 文構造分析\nThe thief entered the house **through the window**.\nenter の経路 (どこを通って入ったか) を through が示す。\n\n## 📍 正解の根拠\n窓という通り道を**くぐり抜けて**入った → **through**。\n\n## ❌ 誤答 NG 理由\n1. from — 起点「〜から」。窓は出発地ではなく通り道なので合わない。\n2. in — 場所の中「〜の中で」。経路を表せない。\n3. at — 地点「〜のところで」。同じく通り抜けの意味が出ない。"
+  },
+  {
+   "number": 4,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "ZENCHI-JUKUGO",
+   "explanation": "## 🎯 コアイメージ\n**be famous for 〜 =「〜で有名」**。有名である**理由・売り物**を for が指す (for = 理由の用法)。\n\n## 🔬 文構造分析\nKyoto is famous **for its old temples** and shrines.\n有名さの理由 = 古い寺社。famous for がひとつのかたまり。\n\n## 📍 正解の根拠\n有名の理由を示す固定ペア → be famous **for**。\n\n## ❌ 誤答 NG 理由\n1. with — famous with という慣用は無い (be filled with などと混同しない)。\n3. to — famous to では「有名さの向かう相手」になり、理由を示せない。\n4. of — famous of という形は無い (proud of と混同しやすい)。"
+  },
+  {
+   "number": 5,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "ZENCHI-DIFFER",
+   "explanation": "## 🎯 コアイメージ\n**be different from 〜 =「〜と違う」**。from は分離「〜から離れて」— 違い = 離れているイメージ。differ from も同じ from。\n\n## 🔬 文構造分析\nHer opinion is quite different **from mine** (= my opinion).\n比べる相手 (私の意見) を from が指す。\n\n## 📍 正解の根拠\ndifferent とペアを組む前置詞は **from**。\n\n## ❌ 誤答 NG 理由\n1. with — different with という慣用は無い。\n2. in — different in は「〜の点で違う」(different in size)。比べる相手は指せない。\n4. of — different of という形は無い。"
+  },
+  {
+   "number": 6,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "ZENCHI-KIKAN",
+   "explanation": "## 🎯 コアイメージ\n**during + 名詞 =「〜の間に」/ while + S + V**。同じ意味でも、後ろに来る形で前置詞 during と接続詞 while を使い分ける。\n\n## 🔬 文構造分析\nHe fell asleep **during the meeting** yesterday afternoon.\n空所の直後が the meeting という**名詞** → 前置詞 during。\n\n## 📍 正解の根拠\n名詞 (the meeting) を従えて「〜の間に」→ **during**。\n\n## ❌ 誤答 NG 理由\n2. while — 接続詞。後ろには節 (while he was in the meeting) が要る。\n3. for — 期間の長さ (for two hours) に使う。出来事の名詞には during。\n4. between —「2 つの間」。会議 1 つの間には使えない。"
+  },
+  {
+   "number": 7,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "ZENCHI-ABSENT",
+   "explanation": "## 🎯 コアイメージ\n**be absent from 〜 =「〜を欠席する」**。from の分離「〜から離れて」がそのまま「その場にいない」を作る。\n\n## 🔬 文構造分析\nKen was absent **from school** because he had a cold.\n欠席した場所 (学校) を from が指す。\n\n## 📍 正解の根拠\nabsent とペアを組む前置詞は **from**。\n\n## ❌ 誤答 NG 理由\n1. in — absent in という慣用は無い (present in と混同しない)。\n3. at — 「学校に居る」なら at school。欠席の「離れて」は表せない。\n4. of — absent of という形は無い。"
+  },
+  {
+   "number": 8,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "ZENCHI-GENIN",
+   "explanation": "## 🎯 コアイメージ\n**die of + 病気 =「〜で死ぬ」**。of は原因・出どころを指す用法。病名・飢えなど直接の原因は of で受けるのが基本形。\n\n## 🔬 文構造分析\nHis grandfather died **of cancer** two years ago.\n死因 (がん) を of が指す。die of がひとつのかたまり。\n\n## 📍 正解の根拠\n病気が原因の「〜で亡くなる」→ die **of**。\n\n## ❌ 誤答 NG 理由\n1. for — die for は「〜のために (大義に) 命を捧げる」。病名とは組まない。\n2. by — 受動態の動作主に使う by。die は受動でないので病名を by では受けない。\n3. at — 地点・時点の at。原因を表す用法が無い。"
+  },
+  {
+   "number": 9,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "ZENCHI-PROUD",
+   "explanation": "## 🎯 コアイメージ\n**be proud of 〜 =「〜を誇りに思う」**。of は「〜について」の対象を指す。動詞形なら pride oneself on / take pride in と前置詞が変わるので区別する。\n\n## 🔬 文構造分析\nThey are very proud **of their son's success**.\n誇りの対象 (息子の成功) を of が指す。\n\n## 📍 正解の根拠\nproud とペアを組む前置詞は **of**。\n\n## ❌ 誤答 NG 理由\n1. with — proud with という慣用は無い (pleased with と混同しない)。\n3. for — proud for という形は標準では無い。\n4. in — take pride **in** の in。形容詞 proud には付かない。"
+  },
+  {
+   "number": 10,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "ZENCHI-SA",
+   "explanation": "## 🎯 コアイメージ\n**差・程度の by =「〜の差で」**。比較・増減・勝ち負けの「どれだけ」を by が背負う (win by two points / older by three years)。\n\n## 🔬 文構造分析\nHe is taller than his father **by five centimeters**.\ntaller than 〜 (比較) にその**差** (5cm) を by で添える。\n\n## 📍 正解の根拠\n「5 センチ**の差で**高い」→ 差の **by**。\n\n## ❌ 誤答 NG 理由\n1. with — 道具・同伴の with。差の意味は無い。\n2. in —「〜の点で」(in height なら可)。数値の差は受けない。\n4. at — 地点・時点の at。差を表す用法が無い。"
+  }
+ ]
+}

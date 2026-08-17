@@ -48,6 +48,8 @@ button[data-tone="warn"] { background: #7c4a06; border-color: var(--warn); }
   padding-right: max(12px, env(safe-area-inset-right));
 }
 .bar-l, .bar-r { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* 冊子一覧へ戻る。書名の前に置く (戻る導線は左が定位置) */
+#home { flex: 0 0 auto; padding: 5px 10px; min-height: 34px; font-size: 13px; }
 #book-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #clock { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 #clock[data-tone="warn"] { color: var(--warn); font-weight: 700; }
@@ -111,8 +113,14 @@ button[data-tone="warn"] { background: #7c4a06; border-color: var(--warn); }
    個別の transform もスクロール補正も掛けない。掛けた瞬間に手書きがずれる。 */
 .page > canvas.lyr {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  display: block; touch-action: none;
+  display: block;
 }
+/* ★ touch-action は **モードで切り替える #viewer 側にだけ**持たせる。
+   canvas はページ全面を覆うので、ここに無条件の none を置くと指は必ず canvas に
+   当たり、読むモードの pinch-zoom 許可 (上の #viewer の指定) が打ち消される
+   ＝「ネイティブピンチを虫めがねに使う」設計が丸ごと死ぬ (実測でピンチ不可だった)。
+   書くモードだけは canvas でも触りを殺し、手のひらを置けるようにする。 */
+#viewer[data-mode="write"] .page > canvas.lyr { touch-action: none; }
 .page > canvas.pdf { z-index: 0; }
 .page > canvas.dry { z-index: 1; }
 .page > canvas.wet { z-index: 2; }

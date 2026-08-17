@@ -1,0 +1,575 @@
+{
+ "meta": {
+  "no": "2",
+  "level_note": "2024年度以降の新形式に準拠",
+  "sections": "大問1〜5（筆記）",
+  "minutes": "90",
+  "full": 31,
+  "instruction": "解答は各問につき一つだけ選び、解答用紙の番号を塗りつぶしなさい。大問4・5は英語で書きなさい。",
+  "theme_note": "本回のテーマ: 都市の緑地 / 保存された種子 / 香辛料交易 / 深海採掘 / 労働時間"
+ },
+ "part1": [
+  {
+   "sentence": "The committee decided to ( ) the proposal until members had time to examine the financial details more closely.",
+   "choices": [
+    "endorse",
+    "dispatch",
+    "defer",
+    "revoke"
+   ],
+   "answer": 2,
+   "pos": "【動詞（他動詞）】",
+   "gloss_ja": "（決定・審議などを）延期する、先送りする",
+   "trans_ja": "委員会は、委員が財政面の詳細をより綿密に検討する時間を持てるまで、その提案の審議を先送りすることに決めた。",
+   "distractors_ja": {
+    "endorse": "（公に）支持する、是認する",
+    "dispatch": "（使者・荷物を）急送する",
+    "revoke": "（許可・法を）取り消す、撤回する"
+   }
+  },
+  {
+   "sentence": "Critics dismissed the minister's apology as ( ), pointing out that the same department had made identical promises three years earlier.",
+   "choices": [
+    "sincere",
+    "candid",
+    "prudent",
+    "hollow"
+   ],
+   "answer": 3,
+   "pos": "【形容詞】",
+   "gloss_ja": "（言葉などが）中身のない、うわべだけの",
+   "trans_ja": "批評家たちは、同じ省庁が三年前にも同一の約束をしていたことを指摘して、大臣の謝罪をうわべだけのものとして退けた。",
+   "distractors_ja": {
+    "sincere": "誠実な、心からの",
+    "candid": "率直な、忌憚のない",
+    "prudent": "慎重な、思慮深い"
+   }
+  },
+  {
+   "sentence": "The drought has severely ( ) the region's water reserves, forcing several towns to restrict household use to a few hours a day.",
+   "choices": [
+    "depleted",
+    "replenished",
+    "diluted",
+    "consolidated"
+   ],
+   "answer": 0,
+   "pos": "【動詞（他動詞）】",
+   "gloss_ja": "（資源・体力を）使い果たす、激減させる",
+   "trans_ja": "干ばつがその地域の貯水量を著しく減少させ、いくつかの町では家庭での使用を一日数時間に制限せざるをえなくなっている。",
+   "distractors_ja": {
+    "replenish": "（減った分を）補充する",
+    "dilute": "（液体を）薄める",
+    "consolidate": "（地位・組織を）強固にする、統合する"
+   }
+  },
+  {
+   "sentence": "Although the two species look almost identical, they are only ( ) related, having separated from a common ancestor millions of years ago.",
+   "choices": [
+    "densely",
+    "abruptly",
+    "distantly",
+    "narrowly"
+   ],
+   "answer": 2,
+   "pos": "【副詞】",
+   "gloss_ja": "遠く隔たって、（血縁が）遠く",
+   "trans_ja": "その二つの種はほとんど見分けがつかないほど似ているが、数百万年前に共通の祖先から分かれており、遠い類縁関係にあるにすぎない。",
+   "distractors_ja": {
+    "densely": "密集して",
+    "abruptly": "突然に、ぶっきらぼうに",
+    "narrowly": "かろうじて、狭く"
+   }
+  },
+  {
+   "sentence": "The witness gave a ( ) account of the accident, describing the sequence of events in such detail that investigators could reconstruct it exactly.",
+   "choices": [
+    "vague",
+    "biased",
+    "tentative",
+    "meticulous"
+   ],
+   "answer": 3,
+   "pos": "【形容詞】",
+   "gloss_ja": "細部まで行き届いた、綿密な",
+   "trans_ja": "その目撃者は事故について綿密な説明を行い、出来事の順序を非常に詳しく述べたため、捜査員はそれを正確に再現することができた。",
+   "distractors_ja": {
+    "vague": "漠然とした、あいまいな",
+    "biased": "偏った",
+    "tentative": "暫定的な、ためらいがちな"
+   }
+  },
+  {
+   "sentence": "Years of political instability have made investors ( ) about committing large sums to the country's infrastructure projects.",
+   "choices": [
+    "eager",
+    "wary",
+    "adept",
+    "lenient"
+   ],
+   "answer": 1,
+   "pos": "【形容詞】",
+   "gloss_ja": "警戒して、用心深い（be wary about / of ~）",
+   "trans_ja": "長年の政治的不安定さのために、投資家たちはその国のインフラ事業に多額の資金を投じることに慎重になっている。",
+   "distractors_ja": {
+    "eager": "熱心な、しきりに〜したがる",
+    "adept": "熟達した",
+    "lenient": "寛大な、甘い"
+   }
+  },
+  {
+   "sentence": "The new regulations ( ) manufacturers to disclose every chemical used in their products, however small the quantity.",
+   "choices": [
+    "exempt",
+    "entitle",
+    "compel",
+    "dissuade"
+   ],
+   "answer": 2,
+   "pos": "【動詞（他動詞）】",
+   "gloss_ja": "（人に）〜を強いる、余儀なくさせる（compel A to do）",
+   "trans_ja": "新しい規制は、量がどれほど少なくとも、製品に使用したすべての化学物質を開示することを製造業者に義務づけている。",
+   "distractors_ja": {
+    "exempt": "（義務を）免除する",
+    "entitle": "（人に）権利を与える",
+    "dissuade": "（説得して）思いとどまらせる"
+   }
+  },
+  {
+   "sentence": "The scandal proved to be the ( ) of a career that had once seemed destined for the highest office in the land.",
+   "choices": [
+    "pinnacle",
+    "cornerstone",
+    "renewal",
+    "downfall"
+   ],
+   "answer": 3,
+   "pos": "【名詞】",
+   "gloss_ja": "（人・組織の）没落、失脚（の原因）",
+   "trans_ja": "そのスキャンダルは、かつては国の最高の職に就く運命にあると思われた経歴の、没落の原因となった。",
+   "distractors_ja": {
+    "pinnacle": "頂点、絶頂",
+    "cornerstone": "礎、基礎",
+    "renewal": "再生、更新"
+   }
+  },
+  {
+   "sentence": "Because the two accounts of the meeting were flatly ( ), the board ordered an independent review of what had actually been said.",
+   "choices": [
+    "contradictory",
+    "consistent",
+    "supplementary",
+    "conclusive"
+   ],
+   "answer": 0,
+   "pos": "【形容詞】",
+   "gloss_ja": "矛盾する、食い違う",
+   "trans_ja": "その会議についての二つの説明が真っ向から食い違っていたため、理事会は実際に何が話されたのかについて独立した調査を命じた。",
+   "distractors_ja": {
+    "consistent": "一貫した、矛盾のない",
+    "supplementary": "補足の",
+    "conclusive": "決定的な"
+   }
+  },
+  {
+   "sentence": "The museum's collection was ( ) over four decades by a single curator who travelled constantly in search of overlooked works.",
+   "choices": [
+    "demolished",
+    "obscured",
+    "assembled",
+    "confiscated"
+   ],
+   "answer": 2,
+   "pos": "【動詞（他動詞）】",
+   "gloss_ja": "（人・物を）集める、寄せ集めて作る",
+   "trans_ja": "その美術館の収蔵品は、見過ごされた作品を求めて絶えず旅をした一人の学芸員によって、四十年をかけて集められたものだった。",
+   "distractors_ja": {
+    "demolish": "（建物を）取り壊す",
+    "obscure": "（動詞）覆い隠す、わかりにくくする",
+    "confiscate": "（権力で）没収する"
+   }
+  },
+  {
+   "sentence": "Rather than confronting the problem directly, the manager tended to ( ) difficult decisions to his deputies.",
+   "choices": [
+    "monopolize",
+    "aggravate",
+    "undertake",
+    "delegate"
+   ],
+   "answer": 3,
+   "pos": "【動詞（他動詞）】",
+   "gloss_ja": "（権限・仕事を）委任する、任せる（delegate A to B）",
+   "trans_ja": "その部長は問題に直接向き合うよりも、難しい決定を部下に任せる傾向があった。",
+   "distractors_ja": {
+    "monopolize": "独占する",
+    "aggravate": "悪化させる",
+    "undertake": "（仕事・責任を）引き受ける"
+   }
+  },
+  {
+   "sentence": "The island's economy is heavily ( ) on tourism, and a single bad season can leave thousands without work.",
+   "choices": [
+    "immune",
+    "reliant",
+    "indifferent",
+    "superior"
+   ],
+   "answer": 1,
+   "pos": "【形容詞】",
+   "gloss_ja": "依存している（be reliant on ~）",
+   "trans_ja": "その島の経済は観光業に大きく依存しており、一度不振の季節があるだけで数千人が職を失いかねない。",
+   "distractors_ja": {
+    "immune": "免疫のある、影響を受けない（to）",
+    "indifferent": "無関心な（to）",
+    "superior": "より優れた（to）"
+   }
+  },
+  {
+   "sentence": "Early reports of the discovery were so ( ) that most researchers waited for peer-reviewed evidence before commenting.",
+   "choices": [
+    "verified",
+    "exhaustive",
+    "speculative",
+    "mandatory"
+   ],
+   "answer": 2,
+   "pos": "【形容詞】",
+   "gloss_ja": "推測に基づく、憶測にすぎない",
+   "trans_ja": "その発見についての初期の報告はきわめて憶測的だったため、大半の研究者は査読を経た証拠が出るまで論評を控えた。",
+   "distractors_ja": {
+    "verified": "検証済みの",
+    "exhaustive": "網羅的な、徹底的な",
+    "mandatory": "義務的な、必須の"
+   }
+  },
+  {
+   "sentence": "After the merger, several departments were found to ( ), and hundreds of employees were offered new roles elsewhere in the company.",
+   "choices": [
+    "diverge",
+    "expire",
+    "prevail",
+    "overlap"
+   ],
+   "answer": 3,
+   "pos": "【動詞（自動詞）】",
+   "gloss_ja": "（業務・範囲が）重複する",
+   "trans_ja": "合併の後、いくつかの部署の業務が重複していることがわかり、数百人の従業員が社内の別の職を提示された。",
+   "distractors_ja": {
+    "diverge": "分岐する、（意見が）異なる",
+    "expire": "期限が切れる",
+    "prevail": "打ち勝つ、広く行き渡る"
+   }
+  },
+  {
+   "sentence": "The lawyer advised her client not to ( ) any information about the case to reporters until the full police report had been made available.",
+   "choices": [
+    "give out",
+    "put off",
+    "take up",
+    "look into"
+   ],
+   "answer": 0,
+   "pos": "【句動詞】",
+   "gloss_ja": "（情報・声明を）公表する、発表する",
+   "trans_ja": "弁護士は依頼人に対し、警察の報告書がすべて開示されるまで、事件に関するいかなる情報も記者に流さないよう助言した。",
+   "distractors_ja": {
+    "put off": "延期する",
+    "take up": "（趣味・仕事を）始める、（場所を）取る",
+    "look into": "調査する"
+   }
+  },
+  {
+   "sentence": "It took the company almost a year to ( ) the financial losses caused by the failed software update.",
+   "choices": [
+    "come down with",
+    "get away with",
+    "make up for",
+    "put up with"
+   ],
+   "answer": 2,
+   "pos": "【句動詞】",
+   "gloss_ja": "〜を埋め合わせる、償う",
+   "trans_ja": "失敗したソフトウェア更新によって生じた財務上の損失を埋め合わせるのに、その会社はほぼ一年を要した。",
+   "distractors_ja": {
+    "come down with": "（病気に）かかる",
+    "get away with": "（罰を受けずに）やり過ごす",
+    "put up with": "（不満を言わず）我慢する"
+   }
+  },
+  {
+   "sentence": "Negotiations nearly collapsed last week, but both sides have now agreed to ( ) the talks under a new chairperson.",
+   "choices": [
+    "call off",
+    "waive",
+    "postpone",
+    "resume"
+   ],
+   "answer": 3,
+   "pos": "【動詞（他動詞）】",
+   "gloss_ja": "（中断していたものを）再開する",
+   "trans_ja": "交渉は先週ほぼ決裂しかけたが、双方は現在、新しい議長のもとで協議を再開することに合意している。",
+   "distractors_ja": {
+    "call off": "（予定を）中止する",
+    "waive": "（権利を）放棄する",
+    "postpone": "延期する"
+   }
+  },
+  {
+   "sentence": "A: I heard the department is going to ( ) the old filing system entirely.\nB: About time. Nobody under forty has ever understood how it works.",
+   "choices": [
+    "stand up for",
+    "do away with",
+    "run out of",
+    "keep up with"
+   ],
+   "answer": 1,
+   "pos": "【句動詞】",
+   "gloss_ja": "〜を廃止する、なくす",
+   "trans_ja": "A: 部署はあの古い書類管理システムを完全に廃止するらしいよ。／ B: やっとだね。四十歳未満で仕組みを理解できた人なんて一人もいないもの。",
+   "distractors_ja": {
+    "stand up for": "〜を擁護する",
+    "run out of": "〜を切らす",
+    "keep up with": "〜に遅れずについていく"
+   }
+  }
+ ],
+ "part2": [
+  {
+   "id": "p2_1",
+   "title": "The Trees That Cool a City",
+   "summary_ja": "都市の街路樹は日陰と蒸散によって気温を下げ、冷房需要を減らす。ただし効果は樹木の配置に左右され、近年は「どこに植えるか」を重視した計画へと関心が移っている。",
+   "text": [
+    "When cities look for ways to lower summer temperatures, they often turn first to technology: reflective paint, cooling centres, more efficient air conditioners. Trees, however, do the same work without electricity. A mature street tree shades the pavement beneath it and releases water vapour through its leaves, and the two effects together can make a street noticeably cooler than a treeless one nearby. For this reason, planting programmes have become ( 19 ) in urban climate plans around the world.",
+    "The benefits are not distributed evenly, though. Surveys of several large cities have found that older, wealthier neighbourhoods tend to have far more canopy cover than poorer districts built later, where streets were designed for traffic rather than shade. Residents of those districts therefore face higher indoor temperatures and higher electricity bills during heat waves. ( 20 ), a number of city governments now target new planting at the districts with the least existing cover, rather than spreading trees evenly across the map.",
+    "Placement matters in another way as well. A tree planted where it shades a west-facing wall in the late afternoon reduces a building's cooling load far more than the same tree placed on a shaded north side. Recent guidance therefore urges planners to consider ( 21 ) before choosing planting sites, since a poorly placed tree still costs money to plant and water but delivers only a fraction of the possible benefit."
+   ],
+   "blanks": [
+    {
+     "no": 19,
+     "choices": [
+      "a matter of dispute",
+      "increasingly common",
+      "prohibitively expensive",
+      "difficult to justify"
+     ],
+     "answer": 1,
+     "exp_ja": "空所は「そのため（For this reason）〜になっている」の補語。直前で街路樹が電気を使わずに冷却効果を生むと述べ、直後の段落でも各都市の植樹計画が語られる。したがって「（都市の気候計画の中で）ますます一般的になっている」が流れに合う。1『論争の的』・3『法外に高価』・4『正当化が難しい』はいずれも直前の肯定的な説明と衝突する。"
+    },
+    {
+     "no": 20,
+     "choices": [
+      "Nevertheless",
+      "By contrast",
+      "In response",
+      "For example"
+     ],
+     "answer": 2,
+     "exp_ja": "前文までが「樹冠の少ない地区ほど室温も電気代も高い」という問題の指摘、空所の後は「均等にばらまくのではなく、樹冠が最も少ない地区を狙って植える」という自治体の対応。問題→対応の流れなので In response（それに応じて）。1 Nevertheless（逆接）・2 By contrast（対比）・4 For example（例示）は論理関係が合わない。"
+    },
+    {
+     "no": 21,
+     "choices": [
+      "the direction a wall faces",
+      "the age of the residents",
+      "the cost of the seedlings",
+      "the season of planting"
+     ],
+     "answer": 0,
+     "exp_ja": "空所を含む文は「植える場所を選ぶ前に（　）を考慮せよ」。直前の文が「午後遅くに西向きの壁を日陰にする位置の樹は、日陰の北側に置かれた同じ樹よりはるかに冷房負荷を下げる」と述べており、決め手は壁の向きである。2『住民の年齢』・3『苗木の価格』・4『植える季節』はいずれも直前の比較で触れられていない。"
+    }
+   ]
+  },
+  {
+   "id": "p2_2",
+   "title": "A Vault for Seeds",
+   "summary_ja": "北極圏の種子貯蔵庫は各国の遺伝子銀行の複製を預かる「保険」であり、所有権は預けた側に残る。実際にシリアの内戦時に引き出しが行われ、その意義が示された。",
+   "text": [
+    "Deep inside a mountain on a remote Arctic island lies a storage facility built for a single purpose: to hold copies of the world's crop seeds. National seed banks send duplicate samples there, where cold rock keeps them viable for decades without constant refrigeration. The vault is best understood as ( 22 ). It is not intended to replace the national collections, only to survive the accidents that may destroy them.",
+    "That distinction matters legally as well as practically. Seeds placed in the vault remain the property of the institution that deposited them, and only that institution may withdraw them. The operators cannot open a box on their own authority, nor sell or study its contents. ( 23 ), the facility has been described less as a bank than as a set of safety deposit boxes to which the depositors alone hold keys.",
+    "The arrangement was tested sooner than anyone expected. When civil war made a major research centre in Syria unusable, the centre asked for its deposits back, rebuilt its collection at new sites in Lebanon and Morocco, and later returned fresh duplicates to the Arctic. Supporters point to that sequence as evidence that the system ( 24 ), while critics note that it protects seeds already collected and does nothing for varieties that were never gathered in the first place."
+   ],
+   "blanks": [
+    {
+     "no": 22,
+     "choices": [
+      "a museum of extinct plants",
+      "an insurance policy",
+      "a commercial warehouse",
+      "a research laboratory"
+     ],
+     "answer": 1,
+     "exp_ja": "空所の直後が「各国のコレクションを置き換えるためのものではなく、それらを破壊しうる事故を生き延びるためだけのもの」。つまり普段は使わないが万一に備える仕組み＝保険（an insurance policy）。1『絶滅植物の博物館』は展示施設で意味が違い、3『商業用倉庫』は営利、4『研究所』は次段の「運営者は研究できない」と矛盾する。"
+    },
+    {
+     "no": 23,
+     "choices": [
+      "Despite this",
+      "For this reason",
+      "On the other hand",
+      "By comparison"
+     ],
+     "answer": 1,
+     "exp_ja": "前文までが「種子は預けた機関の所有物で、運営者は勝手に開けることも売ることも研究することもできない」。空所の後は「だからこの施設は銀行というより、預けた側だけが鍵を持つ貸金庫だと評されてきた」。理由→帰結なので For this reason。1『それにもかかわらず』・3『他方で』・4『比較すると』は関係が合わない。"
+    },
+    {
+     "no": 24,
+     "choices": [
+      "works as intended",
+      "costs too much to maintain",
+      "should be relocated",
+      "is no longer necessary"
+     ],
+     "answer": 0,
+     "exp_ja": "空所は Supporters（支持者）が「その一連の経緯を〜の証拠として挙げる」の内容。直前でシリアの研究機関が引き出し・再建・再預託を実際に行えたことが述べられており、支持者にとってこれは仕組みが意図どおり機能した証拠。2・3・4 はいずれも批判的な内容で、支持者の主張としても直前の経緯とも噛み合わない（批判は while 以下に別に書かれている）。"
+    }
+   ]
+  }
+ ],
+ "part3": [
+  {
+   "id": "p3_1",
+   "title": "The Spice That Moved Ships",
+   "summary_ja": "第1段: 中世欧州で香辛料が高価だったのは「腐肉の味を隠すため」という通説がある。第2段: だが史料は逆で、香辛料を買えた層は新鮮な肉も買えた。第3段: 高価さの理由は長い交易路と仲介にあった。第4段: 海路開拓で価格は下落し、香辛料は地位の象徴ではなくなった。",
+   "paras": [
+    "Few explanations of history are repeated as confidently as the claim that medieval Europeans prized pepper and cloves because such spices disguised the taste of meat that had begun to rot. The story is memorable, and it appears in cookbooks and school lessons alike. It also has the advantage of making the past seem comfortably distant: people then, we are invited to think, endured food that we would refuse.",
+    "The documentary record, however, points the other way. Spices were extraordinarily expensive, affordable only to households that could equally afford fresh meat delivered daily from a butcher, and such households had no need to rescue spoiled food. Household accounts from noble kitchens show large purchases of live animals slaughtered on site. Meanwhile, the surviving recipes call for spices in dishes where spoilage was hardly the issue, including sweet preparations and drinks. A cook who wanted to hide decay would not have chosen the single most costly ingredient available to do it.",
+    "The real reason for the price lay in the length of the journey. Pepper grown on the Malabar coast passed through the hands of local traders, shippers crossing the Arabian Sea, caravan operators, and Mediterranean merchants, each taking a share, before it reached a market in Venice or Bruges. Every transfer added cost and risk, and the routes themselves could be closed for years by war or by the decisions of the states that controlled them. Rarity created by distance, not by any special property of the plants, kept prices high.",
+    "That structure collapsed once European ships reached the producing regions directly. As cargoes arrived in larger volumes and by fewer hands, prices fell steadily, and spices lost much of their power to mark a household as wealthy. Pepper, once counted out grain by grain, became an ordinary item on the shelf. The change is often told as a story of exploration and courage, but in economic terms it was simply the removal of a long chain of intermediaries."
+   ],
+   "questions": [
+    {
+     "no": 25,
+     "q": "What does the author suggest about the popular explanation described in the first paragraph?",
+     "q_ja": "第1段で述べられている通説について、筆者は何を示唆しているか。",
+     "choices": [
+      "It is widely repeated and makes the past feel remote from the present.",
+      "It was invented by cookbook writers in order to sell more books.",
+      "It has recently been confirmed by the discovery of new documents.",
+      "It applies only to the poorest households of medieval Europe."
+     ],
+     "answer": 0,
+     "exp_ja": "第1段は『これほど自信をもって繰り返される説明はほとんどない』『料理書でも学校の授業でも見られる』と広く流布していることを述べ、さらに『過去を心地よく遠いものに見せてくれるという利点もある』とする。1 はこの二点をまとめたもので正解。2『本を売るために料理書の著者が創作した』は本文にない。3『新資料で裏づけられた』は第2段の内容（史料はむしろ逆）に反する。4『最貧困層にのみ当てはまる』も本文にない。"
+    },
+    {
+     "no": 26,
+     "q": "Which of the following is given as evidence against the popular explanation?",
+     "q_ja": "通説に反する証拠として挙げられているのは次のうちどれか。",
+     "choices": [
+      "Medieval cooks preferred herbs that were grown locally rather than imported spices.",
+      "Recipes used spices in sweet dishes and drinks, where spoilage was not a concern.",
+      "Butchers in medieval towns were legally required to sell only fresh meat.",
+      "Noble households employed cooks who had been trained in Asian kitchens."
+     ],
+     "answer": 1,
+     "exp_ja": "第2段に『現存するレシピは、傷みがほとんど問題にならない料理、たとえば甘い料理や飲み物にも香辛料を求めている』とあり、2 が本文の記述と一致する。1『地元産のハーブを好んだ』・3『新鮮な肉のみ販売する法的義務』・4『アジアで修業した料理人』はいずれも本文にない。"
+    },
+    {
+     "no": 27,
+     "q": "According to the third paragraph, why were spices so expensive?",
+     "q_ja": "第3段によれば、香辛料はなぜそれほど高価だったのか。",
+     "choices": [
+      "The plants themselves possessed properties that made them difficult to grow.",
+      "European governments placed heavy taxes on all imported foods.",
+      "Many intermediaries along a long route each added cost and risk.",
+      "Producers deliberately limited harvests in order to keep prices high."
+     ],
+     "answer": 2,
+     "exp_ja": "第3段は『地元の商人、アラビア海を渡る船主、隊商業者、地中海の商人がそれぞれ取り分を得た』『移し替えのたびに費用と危険が加わった』と述べ、末尾で『植物の特別な性質ではなく距離が生んだ希少性が価格を高く保った』と明言する。したがって 3。1 は同じ末尾の文で明確に否定されている。2『輸入食品への重税』・4『生産者による意図的な出荷制限』は本文にない。"
+    },
+    {
+     "no": 28,
+     "q": "What does the author say about the fall in spice prices?",
+     "q_ja": "香辛料の価格下落について、筆者は何と述べているか。",
+     "choices": [
+      "It happened because European consumers lost interest in exotic flavours.",
+      "It was, in economic terms, the result of removing a chain of intermediaries.",
+      "It occurred so slowly that contemporaries did not notice it at all.",
+      "It forced producing regions to abandon pepper in favour of other crops."
+     ],
+     "answer": 1,
+     "exp_ja": "第4段最終文に『その変化はしばしば探検と勇気の物語として語られるが、経済的に言えばそれは長い仲介の連鎖が取り除かれたということにすぎなかった』とあり、2 が一致する。1『異国の風味への関心を失った』は本文になく、価格下落の理由は流通量の増加。3『同時代人は全く気づかなかった』も本文にない。4『生産地が胡椒を放棄した』も述べられていない。"
+    }
+   ]
+  },
+  {
+   "id": "p3_2",
+   "title": "Mining the Deep Sea",
+   "summary_ja": "第1段: 深海底の金属団塊が電池需要で注目される。第2段: 推進派は陸上鉱山より社会的被害が小さいと主張。第3段: 生物学者は回復に要する時間の長さと知識の不足を指摘。第4段: 各国は規則制定を急ぐが、需要側の変化が前提を崩す可能性もある。",
+   "paras": [
+    "On parts of the ocean floor, four kilometres beneath the surface, lie fields of dark lumps about the size of a potato. These nodules formed over millions of years as metals settled out of seawater around a fragment of shell or bone. They contain nickel, cobalt, and manganese — the same metals that battery manufacturers now buy in growing quantities — and several companies have built machines designed to collect them and pump them to ships waiting above.",
+    "Supporters of the industry frame it as the lesser of two evils. Land-based mines, they observe, displace communities, consume enormous quantities of fresh water, and in some regions rely on labour under conditions that buyers would rather not examine. The deep seabed, by contrast, has no residents to relocate and no farms to poison. If the metals are needed, the argument runs, better to take them from a place where nobody lives than from places where people do.",
+    "Marine biologists respond that the comparison assumes more knowledge than anyone possesses. Life on the abyssal plain is sparse but ancient, and the creatures that grow on the nodules exist nowhere else. Because the nodules themselves take millions of years to form, an area cleared by machines cannot recover on any human timescale; test tracks cut into the seabed decades ago remain visible today, with little sign of returning life. Researchers also warn about plumes of fine sediment, which currents may carry far beyond the mining site and which could clog the feeding structures of animals across a wide area.",
+    "Governments have been slow to settle the question, partly because the seabed beyond national waters belongs, in law, to no single country and must be managed collectively. Negotiators are now drafting rules that would set environmental standards before any commercial operation begins. Meanwhile the demand that justified the industry has itself begun to shift: battery chemistries requiring little or no cobalt are already in production, and recycling recovers a growing share of the metals in use. Whether the machines on the seabed will ever pay for themselves may be decided not underwater but in the laboratories of battery designers."
+   ],
+   "questions": [
+    {
+     "no": 29,
+     "q": "What is the main argument made by supporters of deep-sea mining?",
+     "q_ja": "深海採掘の推進派が行っている主要な主張は何か。",
+     "choices": [
+      "The nodules can be collected without any machinery reaching the seabed.",
+      "Taking metals from an uninhabited seabed is preferable to mining where people live.",
+      "The metals in the nodules are of higher quality than those from land-based mines.",
+      "Deep-sea operations would create more jobs than existing mines on land."
+     ],
+     "answer": 1,
+     "exp_ja": "第2段は陸上鉱山が住民を立ち退かせ、大量の淡水を消費し、労働条件にも問題があると述べたうえで、『金属が必要ならば、人が住んでいる場所からよりも、誰も住んでいない場所から取る方がよい』という論法だとまとめている。したがって 2。1『機械が海底に達しない』は第1段の記述（集めて船へ送る機械）に反する。3『品質が高い』・4『雇用を多く生む』は本文にない。"
+    },
+    {
+     "no": 30,
+     "q": "Why do marine biologists doubt that mined areas will recover?",
+     "q_ja": "海洋生物学者が、採掘された海域は回復しないと考えるのはなぜか。",
+     "choices": [
+      "The water at that depth is too cold for any organism to survive.",
+      "Mining companies have refused to allow scientists to visit the sites.",
+      "Nodules take millions of years to form, and old test tracks still show little life.",
+      "Sediment plumes make it impossible to photograph the seabed after mining."
+     ],
+     "answer": 2,
+     "exp_ja": "第3段に『団塊自体が形成に数百万年かかるため、機械で除去された区域は人間の時間尺度では回復しえない』とあり、続けて『数十年前に海底に刻まれた試験用の跡は今日でも見え、生命が戻る兆候はほとんどない』と具体例を挙げる。したがって 3。1『生物が生存できない』は『生命はまばらだが古い』に反する。2『企業が科学者の訪問を拒否』は本文にない。4 は堆積物の記述の趣旨（生物の摂食構造を詰まらせる恐れ）と異なる。"
+    },
+    {
+     "no": 31,
+     "q": "What does the final paragraph suggest about the future of the industry?",
+     "q_ja": "最終段は、この産業の将来について何を示唆しているか。",
+     "choices": [
+      "Its profitability may depend on developments in battery design rather than on the sea.",
+      "International rules have already been completed and will take effect next year.",
+      "Recycling has been shown to be incapable of supplying any of the needed metals.",
+      "Countries have agreed to divide the seabed among themselves before mining starts."
+     ],
+     "answer": 0,
+     "exp_ja": "最終段は『この産業を正当化してきた需要そのものが変化し始めている』とし、コバルトをほとんど使わない電池や再生利用の拡大を挙げたうえで、『海底の機械が採算に合うかどうかは、水中ではなく電池設計者の研究室で決まるかもしれない』と結ぶ。したがって 1。2『規則は完成済み』は『今まさに起草中（drafting）』に反する。3『再生利用は全く供給できない』は本文と逆。4『海底を各国で分割することで合意』も本文にない（法的にどの国にも属さないと述べられている）。"
+    }
+   ]
+  }
+ ],
+ "part4": {
+  "summary": {
+   "paras": [
+    "In many countries, employers have begun to experiment with a four-day working week. Under most versions of the plan, staff work about 32 hours instead of 40 but keep the same pay, on the understanding that the same amount of work will be completed. Trials have now been run by hundreds of companies, from small design studios to large call centres, and the results have been followed closely by managers and governments alike.",
+    "Reported benefits are consistent across the trials. Employees describe less exhaustion and better sleep, and companies record fewer resignations and fewer days lost to illness. Several firms found that recruitment became easier, since a shorter week attracted applicants who would otherwise have gone to larger employers. Productivity, measured by output rather than hours at a desk, generally held steady or improved slightly, in part because meetings were shortened and interruptions reduced.",
+    "The picture is less encouraging where the work cannot be compressed. A hospital ward, a bus route, or a shop counter must be staffed for the same number of hours whatever the length of an individual's week, so a shorter week there requires hiring more people rather than working more efficiently. Some employees in trials also reported that their four days had become denser and more stressful, with breaks squeezed out. Critics add that most published trials involved firms that volunteered, which are unlikely to be typical.",
+    "For these reasons, few analysts expect the four-day week to spread evenly. It is likely to become common in workplaces where output can be measured and where tasks are flexible, and to remain rare in services that must simply be present for fixed hours. The debate has already shifted from whether shorter weeks are possible to which kinds of work they suit."
+   ],
+   "outline_ja": "【段落要旨】第1段: 週4日制の実験——賃金は据え置きで週32時間、多数の企業が試行。第2段: 効果——疲労減・離職減・採用が容易・生産性は維持か微増。第3段: 限界——人が「そこにいる」ことが必要な仕事では増員が必要。試行企業は自ら志願した企業で典型的でない。第4段: 結論——一様には広がらず、成果を測れる柔軟な職場では普及、固定時間の対人サービスではまれなまま。論点は「可能か」から「どの仕事に適するか」へ移った。",
+   "model": "A four-day week, in which staff work about 32 hours for the same pay, has been widely tried. Trials report less exhaustion, fewer resignations and easier recruitment, while output stays steady or rises. However, jobs that require someone present for fixed hours cannot be compressed and need extra staff, and the firms studied volunteered. The arrangement therefore suits some workplaces but not others.",
+   "model_words": 62,
+   "points_ja": "▶採点の要点：①制度の定義（賃金据え置きで約32時間）／②利点（疲労・離職・採用・生産性）／③限界（固定時間の仕事は圧縮できず増員が要る・試行企業は志願者で偏りがある）／④結論（一律には広がらず職種による）。第2〜4段の対比（利点 ↔ 限界 ↔ 結論）を落とさないこと。本文の語句をそのまま長く写さず、experiment→try、resignations→people leaving のように言い換える。60〜70語の指定なので、具体例（コールセンター・病院など）は削り、段落ごとの主張だけを残す。"
+  },
+  "essay": {
+   "topic": "Should schools require students to take part in volunteer activities?",
+   "points": [
+    "Community",
+    "Motivation",
+    "Study time",
+    "Future career"
+   ],
+   "outline_ja": "【構成の型】①立場を1文で明言（設問文を流用してよい）→②理由1をPOINTSから（例: Community）→具体の一文→③理由2（例: Motivation または Study time）→具体の一文→④結論（立場の言い換え）。POINTS は2つだけ選ぶ。反対の立場でも同じ型で書ける（例: Study time + Motivation で「強制は逆効果」）。",
+   "model": "I do not think that schools should require students to take part in volunteer activities. I have two reasons for this opinion. First, forced participation damages motivation. When students are told that they must join an activity in order to graduate, many of them treat it as another duty and count the hours rather than think about the people they are helping. Volunteering that is chosen freely is far more likely to continue after graduation. Second, students already have limited study time. Those preparing for entrance examinations must manage club activities and long commutes, and adding a compulsory programme may simply increase stress without teaching anything new. Schools should therefore introduce students to volunteer opportunities and give credit to those who take part, but the decision itself should remain with the student.",
+   "model_words": 132,
+   "points_ja": "▶採点の要点：①立場が最初と最後で一貫している（NOT で統一）／②POINTS を2つ選び、それぞれ First / Second で明示（本例は Motivation と Study time）／③各理由に具体の一文（「卒業要件だと時間を数えるだけになる」「受験・部活・通学で時間が限られる」）／④結論は言い換えで締める（本例は「機会の紹介と加点はするが、決定は生徒に委ねる」と譲歩を入れて説得力を上げている）。語数は120〜150語。賛成側で書く場合は Community（地域とのつながりが生まれる）＋ Future career（進路選択の手がかりになる）が組みやすい。"
+  }
+ }
+}

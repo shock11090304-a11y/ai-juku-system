@@ -178,10 +178,93 @@ ok('進捗は自前で数えている',
     (await st()).answers.find((a) => a.question_id === 'q2').user_answer);
 }
 
+// --- 冊子一覧へ戻る -----------------------------------------------------------
+// ★ 冊子を選ぶダイアログは起動時に 1 回しか出ない。選んだあと別の冊子へ移る道が
+//   無く「戻れない」と指摘された (2026-08-17)。受験中は中断の確認を挟み、
+//   **書いたものを流し切ってから**移ること。
+ok('ヘッダに冊子一覧へ戻るボタンがある',
+  await page.evaluate(() => {
+    const b = document.querySelector('#home');
+    if (!b) return false;
+    const r = b.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && getComputedStyle(b).visibility !== 'hidden';
+  }));
+
+{
+  // 受験中に押すと確認が出る (いきなり離脱しない)
+  await page.click('#home');
+  await page.waitForTimeout(200);
+  const dlg = await page.evaluate(() => {
+    const d = document.querySelector('#dialog');
+    return { open: !!(d && d.open),
+             title: document.querySelector('#dialog-title').textContent,
+             labels: [...document.querySelectorAll('#dialog-buttons button')].map((b) => b.textContent) };
+  });
+  ok('受験中に押すと中断の確認が出る', dlg.open && dlg.title.includes('一覧に戻り'),
+    `${dlg.open} / ${dlg.title}`);
+  ok('確認には「続ける」と「戻る」が並ぶ', dlg.labels.length === 2, dlg.labels.join(' / '));
+
+  // 「このまま続ける」を押したら**移動しない**
+  const before = page.url();
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll('#dialog-buttons button')]
+      .find((x) => x.textContent.includes('続ける'));
+    b.click();
+  });
+  await page.waitForTimeout(300);
+  ok('「このまま続ける」なら移動しない',
+    page.url() === before
+    && await page.evaluate(() => !document.querySelector('#dialog').open), page.url());
+}
+
+// --- ピンチ (指で拡大) ---------------------------------------------------------
+// ★ canvas は .page を全面で覆う。ここに無条件の touch-action:none があると、
+//   指は必ず canvas に当たるので #viewer の pinch-zoom 許可が打ち消され、
+//   読むモードの「ネイティブピンチを虫めがねに使う」設計が丸ごと死ぬ。
+//   実測で潰れていた (2026-08-17)。#viewer だけ見る検査では通ってしまうので
+//   **ページの上 (canvas) の実効値**を見ること。
+ok('読むモードはページの上でピンチが許される',
+  await page.evaluate(() => {
+    const ta = getComputedStyle(document.querySelector('#viewer .page > canvas.lyr')).touchAction;
+    return ta !== 'none' && (ta === 'auto' || ta.includes('pinch-zoom'));
+  }),
+  await page.evaluate(() => getComputedStyle(document.querySelector('#viewer .page > canvas.lyr')).touchAction));
+
 // --- 手書き -------------------------------------------------------------------
 await page.click('[data-mode="write"]');
 ok('書くモードで touch-action が none になる',
   await page.evaluate(() => getComputedStyle(document.querySelector('#viewer')).touchAction) === 'none');
+ok('書くモードはページの上も触りを殺す (手のひらを置ける)',
+  await page.evaluate(() => getComputedStyle(document.querySelector('#viewer .page > canvas.lyr')).touchAction) === 'none');
+
+// 書くモードはネイティブピンチが来ないので、2 本指の拡大縮小を JS で受ける。
+{
+  const pbox = await (await page.$('#viewer .page')).boundingBox();
+  const zoomOf = () => page.evaluate(() =>
+    getComputedStyle(document.querySelector('#viewer')).getPropertyValue('--page-zoom').trim());
+  const pinch = (b, from, to) => page.evaluate(([b, from, to]) => {
+    const v = document.querySelector('#viewer');
+    const mk = (type, id, x, y) => new PointerEvent(type, { pointerId: id, pointerType: 'touch',
+      clientX: x, clientY: y, bubbles: true, cancelable: true });
+    const y = b.y + 60, x1 = b.x + 40;
+    const el = document.elementFromPoint(x1, y) || v;
+    el.dispatchEvent(mk('pointerdown', 21, x1, y));
+    el.dispatchEvent(mk('pointerdown', 22, x1 + from, y));
+    v.dispatchEvent(mk('pointermove', 22, x1 + to, y));
+    v.dispatchEvent(mk('pointerup', 21, x1, y));
+    v.dispatchEvent(mk('pointerup', 22, x1 + to, y));
+  }, [b, from, to]);
+
+  const z0 = await zoomOf();
+  await pinch(pbox, 100, 240);                 // 指を広げる → 拡大
+  const z1 = await zoomOf();
+  ok('書くモードは 2 本指を広げると拡大する', Number(z1) > Number(z0), `${z0} → ${z1}`);
+  await pinch(pbox, 240, 100);                 // 指を狭める → 縮小 (元へ戻す)
+  const z2 = await zoomOf();
+  ok('書くモードは 2 本指を狭めると縮小する', Number(z2) < Number(z1), `${z1} → ${z2}`);
+  ok('ピンチのあと倍率が元に戻っている (以降の手書き検査の前提)', Number(z2) === Number(z0),
+    `${z0} → ${z2}`);
+}
 
 const box = await (await page.$('#viewer .page')).boundingBox();
 // ★ 1 本指の touch は何も起こさない (手のひらで紙を押さえられること)
