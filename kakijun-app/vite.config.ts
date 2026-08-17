@@ -4,8 +4,17 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // base './' なので、どのパス（サブディレクトリ配信・file 配布・別ドメイン）でも動く
+// 配信中のビルドを画面から判別するための刻印 (キャッシュ切り分け用)
+const BUILD_STAMP = new Date()
+  .toISOString()
+  .slice(0, 16)
+  .replace('T', ' ');
+
 export default defineConfig({
   base: './',
+  define: {
+    __BUILD_STAMP__: JSON.stringify(BUILD_STAMP),
+  },
   plugins: [
     react(),
     VitePWA({

@@ -97,6 +97,20 @@ export function HomeScreen() {
           );
         })}
       </div>
+      {/* 配信中のビルド刻印。古いキャッシュを掴んでいないかを画面から判別するため */}
+      <div
+        data-testid="build-stamp"
+        style={{
+          position: 'fixed',
+          right: 8,
+          bottom: 6,
+          fontSize: 11,
+          color: 'rgba(0,0,0,0.28)',
+          userSelect: 'text',
+        }}
+      >
+        {__BUILD_STAMP__}
+      </div>
     </div>
   );
 }
