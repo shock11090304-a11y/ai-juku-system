@@ -192,6 +192,9 @@ async function boot() {
     $('#viewer'),
     (page) => app.queue.touch(page),
     (page) => say(`${page} ページはこれ以上書き込めません (1 ページの上限に達しました)`, 'bad'),
+    // ★ 書くモードは touch-action:none でネイティブピンチが来ない (手のひらを置くため)。
+    //   2 本指の拡大縮小をボタンと同じ段階ズームに落として受ける。
+    (f) => setZoom(app.zoom + (f > 1 ? 1 : -1)),
   );
   app.queue = new InkQueue({
     attemptId: app.attempt.id,

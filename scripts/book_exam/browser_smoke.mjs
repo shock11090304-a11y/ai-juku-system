@@ -178,10 +178,54 @@ ok('進捗は自前で数えている',
     (await st()).answers.find((a) => a.question_id === 'q2').user_answer);
 }
 
+// --- ピンチ (指で拡大) ---------------------------------------------------------
+// ★ canvas は .page を全面で覆う。ここに無条件の touch-action:none があると、
+//   指は必ず canvas に当たるので #viewer の pinch-zoom 許可が打ち消され、
+//   読むモードの「ネイティブピンチを虫めがねに使う」設計が丸ごと死ぬ。
+//   実測で潰れていた (2026-08-17)。#viewer だけ見る検査では通ってしまうので
+//   **ページの上 (canvas) の実効値**を見ること。
+ok('読むモードはページの上でピンチが許される',
+  await page.evaluate(() => {
+    const ta = getComputedStyle(document.querySelector('#viewer .page > canvas.lyr')).touchAction;
+    return ta !== 'none' && (ta === 'auto' || ta.includes('pinch-zoom'));
+  }),
+  await page.evaluate(() => getComputedStyle(document.querySelector('#viewer .page > canvas.lyr')).touchAction));
+
 // --- 手書き -------------------------------------------------------------------
 await page.click('[data-mode="write"]');
 ok('書くモードで touch-action が none になる',
   await page.evaluate(() => getComputedStyle(document.querySelector('#viewer')).touchAction) === 'none');
+ok('書くモードはページの上も触りを殺す (手のひらを置ける)',
+  await page.evaluate(() => getComputedStyle(document.querySelector('#viewer .page > canvas.lyr')).touchAction) === 'none');
+
+// 書くモードはネイティブピンチが来ないので、2 本指の拡大縮小を JS で受ける。
+{
+  const pbox = await (await page.$('#viewer .page')).boundingBox();
+  const zoomOf = () => page.evaluate(() =>
+    getComputedStyle(document.querySelector('#viewer')).getPropertyValue('--page-zoom').trim());
+  const pinch = (b, from, to) => page.evaluate(([b, from, to]) => {
+    const v = document.querySelector('#viewer');
+    const mk = (type, id, x, y) => new PointerEvent(type, { pointerId: id, pointerType: 'touch',
+      clientX: x, clientY: y, bubbles: true, cancelable: true });
+    const y = b.y + 60, x1 = b.x + 40;
+    const el = document.elementFromPoint(x1, y) || v;
+    el.dispatchEvent(mk('pointerdown', 21, x1, y));
+    el.dispatchEvent(mk('pointerdown', 22, x1 + from, y));
+    v.dispatchEvent(mk('pointermove', 22, x1 + to, y));
+    v.dispatchEvent(mk('pointerup', 21, x1, y));
+    v.dispatchEvent(mk('pointerup', 22, x1 + to, y));
+  }, [b, from, to]);
+
+  const z0 = await zoomOf();
+  await pinch(pbox, 100, 240);                 // 指を広げる → 拡大
+  const z1 = await zoomOf();
+  ok('書くモードは 2 本指を広げると拡大する', Number(z1) > Number(z0), `${z0} → ${z1}`);
+  await pinch(pbox, 240, 100);                 // 指を狭める → 縮小 (元へ戻す)
+  const z2 = await zoomOf();
+  ok('書くモードは 2 本指を狭めると縮小する', Number(z2) < Number(z1), `${z1} → ${z2}`);
+  ok('ピンチのあと倍率が元に戻っている (以降の手書き検査の前提)', Number(z2) === Number(z0),
+    `${z0} → ${z2}`);
+}
 
 const box = await (await page.$('#viewer .page')).boundingBox();
 // ★ 1 本指の touch は何も起こさない (手のひらで紙を押さえられること)
