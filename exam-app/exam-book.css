@@ -48,6 +48,8 @@ button[data-tone="warn"] { background: #7c4a06; border-color: var(--warn); }
   padding-right: max(12px, env(safe-area-inset-right));
 }
 .bar-l, .bar-r { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* 冊子一覧へ戻る。書名の前に置く (戻る導線は左が定位置) */
+#home { flex: 0 0 auto; padding: 5px 10px; min-height: 34px; font-size: 13px; }
 #book-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #clock { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 #clock[data-tone="warn"] { color: var(--warn); font-weight: 700; }

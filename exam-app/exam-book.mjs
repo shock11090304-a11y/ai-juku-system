@@ -24,6 +24,7 @@ const app = {
   book: null, attempt: null, questions: [], doc: null, ink: null,
   queue: null, answers: null, pane: null, local: null, lock: null,
   pageEls: [], zoom: 0, timer: null, submitting: false, finished: false,
+  leaving: false,             // 一覧へ戻る操作中 (beforeunload の確認を出さない)
   resultRows: null,           // ★ メモリに保持する (再受験で消える値を再取得しない)
 };
 
@@ -371,6 +372,9 @@ function wireUi() {
   $('[data-zoom="in"]').addEventListener('click', () => setZoom(app.zoom + 1));
   $('[data-zoom="out"]').addEventListener('click', () => setZoom(app.zoom - 1));
 
+  // --- 冊子一覧へ戻る -------------------------------------------------------
+  $('#home').addEventListener('click', () => goHome());
+
   // --- 提出 -----------------------------------------------------------------
   $('#submit').addEventListener('click', () => submitFlow({ auto: false }));
 
@@ -433,6 +437,7 @@ function wireUi() {
   });
   window.addEventListener('beforeunload', (e) => {
     if (app.finished) return;
+    if (app.leaving) return;          // 一覧へ戻る操作。先に流し切ってあるので聞かない
     if (app.queue.pending() || app.answers.pending()) { e.preventDefault(); e.returnValue = ''; }
   });
 }
@@ -483,6 +488,42 @@ function wireGrip() {
       try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (_) {}
     });
   }
+}
+
+/**
+ * 冊子の一覧 (起動時の選択ダイアログ) へ戻る。
+ *
+ * ★ 受験中に押されうる。**書いたものを置き去りにしない**のがここの仕事:
+ *   ① 提出済みなら何も聞かずに戻る
+ *   ② 未提出なら「中断する」ことを明示して確認を取る (時間は進み続ける)
+ *   ③ 戻る前に答案と手書きを **待って** 流し切る。beforeunload は最後の砦に
+ *      数えない (pagehide の sendBeacon は使えない) ので、ここで自分で待つ。
+ * ★ ?book= が付いたまま再読込すると同じ冊子に戻ってしまうので、必ず外す。
+ */
+async function goHome() {
+  const btn = $('#home');
+  if (btn.disabled) return;                       // 二度押しで二重に流さない
+  if (app.attempt && !app.finished) {
+    const pend = (app.queue && app.queue.pending()) || (app.answers && app.answers.pending());
+    const k = await ask({
+      title: '冊子の一覧に戻りますか',
+      body: '受験を中断して一覧に戻ります。答案と書き込みは保存されます。'
+            + (app.timer ? ' なお制限時間は止まりません。' : ''),
+      buttons: [{ key: 'no', label: 'このまま続ける' },
+                { key: 'yes', label: pend ? '保存して戻る' : '一覧に戻る', tone: 'warn' }],
+    });
+    if (k !== 'yes') return;
+  }
+  btn.disabled = true;
+  try {
+    if (app.answers) await app.answers.flush();
+    if (app.queue) await app.queue.flushAll(8000);
+  } catch (_) {
+    // 流し切れなくてもローカル写しに残る。戻れないより戻す (保険は local 側)。
+  }
+  // ★ 未提出でも beforeunload の確認を出さない (今ここで流し終えているため)。
+  app.leaving = true;
+  location.href = '/exam-book.html';
 }
 
 function setZoom(step) {

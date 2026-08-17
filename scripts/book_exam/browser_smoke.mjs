@@ -178,6 +178,45 @@ ok('進捗は自前で数えている',
     (await st()).answers.find((a) => a.question_id === 'q2').user_answer);
 }
 
+// --- 冊子一覧へ戻る -----------------------------------------------------------
+// ★ 冊子を選ぶダイアログは起動時に 1 回しか出ない。選んだあと別の冊子へ移る道が
+//   無く「戻れない」と指摘された (2026-08-17)。受験中は中断の確認を挟み、
+//   **書いたものを流し切ってから**移ること。
+ok('ヘッダに冊子一覧へ戻るボタンがある',
+  await page.evaluate(() => {
+    const b = document.querySelector('#home');
+    if (!b) return false;
+    const r = b.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && getComputedStyle(b).visibility !== 'hidden';
+  }));
+
+{
+  // 受験中に押すと確認が出る (いきなり離脱しない)
+  await page.click('#home');
+  await page.waitForTimeout(200);
+  const dlg = await page.evaluate(() => {
+    const d = document.querySelector('#dialog');
+    return { open: !!(d && d.open),
+             title: document.querySelector('#dialog-title').textContent,
+             labels: [...document.querySelectorAll('#dialog-buttons button')].map((b) => b.textContent) };
+  });
+  ok('受験中に押すと中断の確認が出る', dlg.open && dlg.title.includes('一覧に戻り'),
+    `${dlg.open} / ${dlg.title}`);
+  ok('確認には「続ける」と「戻る」が並ぶ', dlg.labels.length === 2, dlg.labels.join(' / '));
+
+  // 「このまま続ける」を押したら**移動しない**
+  const before = page.url();
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll('#dialog-buttons button')]
+      .find((x) => x.textContent.includes('続ける'));
+    b.click();
+  });
+  await page.waitForTimeout(300);
+  ok('「このまま続ける」なら移動しない',
+    page.url() === before
+    && await page.evaluate(() => !document.querySelector('#dialog').open), page.url());
+}
+
 // --- ピンチ (指で拡大) ---------------------------------------------------------
 // ★ canvas は .page を全面で覆う。ここに無条件の touch-action:none があると、
 //   指は必ず canvas に当たるので #viewer の pinch-zoom 許可が打ち消され、
