@@ -140,6 +140,50 @@ describe('退化した画が無い (長さ0の画は判定エンジンを止め�
   }
 });
 
+describe('お手本 (フォント) の通りになぞっても弾かれない', () => {
+  // 見本はフォント、判定は線データなので両者にズレがある。
+  // 実測のズレ幅ぶん横にずらしてなぞっても通ること。
+  // 0.035 = 線の太さ 0.11 の半分より少し小さい。これ以上ずらすと、
+  // そ・ぬ・め のような小さい輪では内側にずらした線が反転してしまい、
+  // 「人がなぞった軌跡」とは言えない形になるため検査の意味がなくなる。
+  const OFFSET = 0.035;
+  for (const c of characters) {
+    it(`${c.id} (${c.char})`, () => {
+      const strokes = prepareStrokes(c);
+      const m = new StrokeMatcher(strokes, resolveParams('normal', 1));
+      for (const s of strokes) {
+        const path = s.pts.map((p, i) => {
+          const a = s.pts[Math.max(0, i - 1)];
+          const b = s.pts[Math.min(63, i + 1)];
+          const tx = b.x - a.x;
+          const ty = b.y - a.y;
+          const l = Math.hypot(tx, ty) || 1;
+          // 折れ角では寄せ幅を絞る。等距離オフセットは角で自己交差して
+          // 「人がなぞった軌跡」ではなくなるため (て・ぬ 等で偽陽性になる)。
+          const c = s.pts[Math.max(0, i - 2)];
+          const d = s.pts[Math.min(63, i + 2)];
+          const u = Math.hypot(p.x - c.x, p.y - c.y) || 1;
+          const v = Math.hypot(d.x - p.x, d.y - p.y) || 1;
+          const cos =
+            ((p.x - c.x) * (d.x - p.x) + (p.y - c.y) * (d.y - p.y)) / (u * v);
+          const k = Math.max(0, Math.min(1, (cos + 0.2) / 1.2));
+          return {
+            x: p.x + (-ty / l) * OFFSET * k,
+            y: p.y + (tx / l) * OFFSET * k,
+          };
+        });
+        expect(m.pointerDown(path[0]).type, `${c.id} ${s.index}画目の始点`).toBe('ok');
+        for (let i = 1; i < path.length; i++) {
+          expect(m.pointerMove(path[i]).type, `${c.id} ${s.index}画目 点${i}`).toBe('ok');
+        }
+        expect(m.pointerUp().type, `${c.id} ${s.index}画目の完走`).toMatch(
+          /stroke-ok|char-complete/,
+        );
+      }
+    });
+  }
+});
+
 describe('画数の重点確認 (§14.4)', () => {
   // 「現行の国語教科書（教科書体）で一般に通用している筆順」を基準とする
   const EXPECTED: Record<string, number> = {
