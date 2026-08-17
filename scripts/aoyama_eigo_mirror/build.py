@@ -9,7 +9,29 @@
 import os, re, json, subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.expanduser("~/Desktop/青山学院大学2026_英語実戦問題")
+def find_chrome():
+    """刷るためのブラウザを探す。Mac / Linux / Playwright 同梱のどれでも動くように。"""
+    import shutil
+    for c in ("google-chrome", "chromium", "chromium-browser", "chrome"):
+        p = shutil.which(c)
+        if p:
+            return p
+    direct = "/opt/pw-browsers/chromium"
+    if os.path.exists(direct):
+        return direct
+    root = "/opt/pw-browsers"
+    if os.path.isdir(root):
+        for d in sorted(os.listdir(root), reverse=True):
+            p = os.path.join(root, d, "chrome-linux", "chrome")
+            if os.path.exists(p):
+                return p
+    mac = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    return mac if os.path.exists(mac) else None
+
+
+# ★ 出力先。Mac のデスクトップ決め打ちだと Linux (CI / セッション) で刷れない。
+OUT = os.environ.get("AOYAMA_OUT") or os.path.expanduser(
+    "~/Desktop/青山学院大学2026_英語実戦問題")
 os.makedirs(OUT, exist_ok=True)
 MARU = ["①","②","③","④","⑤"]
 SUP = {"1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","10":"¹⁰","11":"¹¹"}
@@ -198,8 +220,12 @@ def render_pdf(html, name):
     hp = os.path.join(HERE, f"_{name}.html")
     open(hp, "w", encoding="utf-8").write(html)
     pdf = os.path.join(OUT, f"{name}.pdf")
-    chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-    subprocess.run([chrome, "--headless", "--disable-gpu", "--no-pdf-header-footer",
+    chrome = find_chrome()
+    if not chrome:
+        raise SystemExit("✗ Chrome / Chromium が見つからない。PDF を刷れない。")
+    # ★ --no-sandbox: root で回る環境 (CI / セッション) では付けないと起動できない
+    subprocess.run([chrome, "--headless", "--disable-gpu", "--no-sandbox",
+                    "--no-pdf-header-footer",
                     f"--print-to-pdf={pdf}", "file://" + hp], check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     print("wrote", pdf)
