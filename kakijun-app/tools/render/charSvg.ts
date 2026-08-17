@@ -41,7 +41,7 @@ export function charSvg(def: RawCharacterDef, opts: CharSvgOpts = {}): string {
     parts.push(
       `<text x="${size / 2}" y="${size / 2}" font-family="IPAGothic, sans-serif" font-size="${
         size * 0.9
-      }" fill="#000" opacity="0.12" text-anchor="middle" dominant-baseline="central">${def.char}</text>`,
+      }" fill="#000" opacity="0.22" text-anchor="middle" dominant-baseline="central">${def.char}</text>`,
     );
   }
   def.strokes.forEach((stroke, i) => {
