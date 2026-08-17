@@ -88,7 +88,9 @@ export function startTol(L: number, p: MatchParams): number {
 
 /** 入力補間の刻み (§6.3 ★ 固定値にしない) */
 export function step(L: number): number {
-  return (L / LAST) * 0.5;
+  // ★ 下限を切る。退化した画 (長さ0) が来ても h=0 にしない
+  //   (h=0 だと補間・前進判定が進まず、入力を食い続けて固まる)
+  return Math.max((L / LAST) * 0.5, 1e-4);
 }
 
 export type Feedback = 'start' | 'order' | 'reverse' | 'offpath' | 'short';
