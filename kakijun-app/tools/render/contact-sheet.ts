@@ -59,7 +59,7 @@ const cells = selected
     };
     return `<div class="cell"><div class="label">${c.char} <small>${c.id} / ${c.strokes.length}画</small></div>${charSvg(
       raw,
-      { size: 300, refGlyph: true, showControlPoints: false },
+      { size: 260, refGlyph: process.env.NOREF !== '1', showControlPoints: false },
     )}</div>`;
   })
   .join('\n');
