@@ -6,9 +6,7 @@
 import type { GuideLevel, Pt, ResampledStroke } from '../engine/types';
 
 const GUIDE_DOT = '#b0bec5'; // Lv1 点線
-const GUIDE_SOLID = '#cfd8dc'; // Lv2 うすいお手本
-const GUIDE_FAINT = '#dde5ea';
-const GUIDE_GHOST = '#f0f4f6'; // Lv3 仕上げ: ほぼ見えないが位置は分かる // Lv1 下敷きのお手本 (点線の下に薄く)
+const GUIDE_SOLID = '#cfd8dc'; // お手本の字 (全レベル共通・消さない)
 const ACCENT = '#ffb74d';
 const ACCENT_STRONG = '#fb8c00';
 const NUM_COLOR = '#4fc3f7';
@@ -83,11 +81,11 @@ export class GuideRenderer {
     ctx.stroke();
     ctx.setLineDash([]);
     // お手本の字はフォントで描く。線データ (判定用) の形に依存させない。
-    // Lv3 (仕上げ) でも消さずに極薄で残す: 真っ白だと何の字か分からなくなる
+    // ★ お手本はどのレベルでも消さない (塾長方針: 何度でも練習できるように)。
+    //   濃さも変えない。薄くすると「消えた」と同じで練習にならない。
     if (this.char) {
       ctx.save();
-      ctx.fillStyle =
-        this.level === 2 ? GUIDE_SOLID : this.level === 1 ? GUIDE_FAINT : GUIDE_GHOST;
+      ctx.fillStyle = GUIDE_SOLID;
       ctx.font = `${size * 0.86}px KakijunSample, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
