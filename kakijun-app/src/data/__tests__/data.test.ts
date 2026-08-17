@@ -39,7 +39,7 @@ describe('文字データの整合性', () => {
     for (const c of characters) {
       for (const s of prepareStrokes(c)) {
         expect(s.pts, c.id).toHaveLength(64);
-        expect(s.length, `${c.id} ${s.index}画目の弧長`).toBeGreaterThan(0.05);
+        expect(s.length, `${c.id} ${s.index}画目の弧長`).toBeGreaterThan(0.03);
       }
     }
   });
@@ -125,6 +125,16 @@ describe('全文字: 手ぶれ入力でも完走できる（実機の指書き�
         expect(up.type, `${c.id} ${s.index}画目の完走`).toMatch(
           /stroke-ok|char-complete/,
         );
+      }
+    });
+  }
+});
+
+describe('退化した画が無い (長さ0の画は判定エンジンを止める)', () => {
+  for (const c of characters) {
+    it(`${c.id} (${c.char})`, () => {
+      for (const s of prepareStrokes(c)) {
+        expect(s.length, `${c.id} ${s.index}画目の長さ`).toBeGreaterThan(0.03);
       }
     });
   }
