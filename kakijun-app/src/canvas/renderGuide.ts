@@ -5,7 +5,6 @@
  */
 import type { GuideLevel, Pt, ResampledStroke } from '../engine/types';
 
-const GUIDE_DOT = '#b0bec5'; // Lv1 点線
 const GUIDE_SOLID = '#cfd8dc'; // お手本の字 (全レベル共通・消さない)
 const ACCENT = '#ffb74d';
 const ACCENT_STRONG = '#fb8c00';
@@ -48,7 +47,8 @@ export class GuideRenderer {
   }
 
   playDemo(): void {
-    if (this.level === 1) this.demo = { t0: performance.now() };
+    // 経路をなぞるアニメも同じ理由で出さない
+    this.demo = null;
   }
   pulseStart(): void {
     this.effects.push({ kind: 'pulse', t0: performance.now(), dur: 1300 });
@@ -100,11 +100,10 @@ export class GuideRenderer {
     this.effects = this.effects.filter((e) => now - e.t0 < e.dur);
     const cur = this.strokes[this.strokeIdx];
 
-    if (this.level === 1) {
-      // 点線は「今どの画を書くか」の案内だけ。字形はフォントのお手本が担うので、
-      // 全画を太い点線で塗ると字が潰れる (塾長指摘)。今の画のみ細く出す。
-      if (cur) this.dottedStroke(ctx, size, cur, true);
-    }
+    // ★ 画の経路をなぞって見せる表示はしない。
+    //   お手本はフォント、判定は線データで、両者の経路が一致しないため、
+    //   経路を描くと「お手本と違う線」を子どもに見せることになる (塾長指摘)。
+    //   書き順は「番号 + 書き出しの点」だけで示す (なぞり書きプリントと同じ方式)。
     if (this.level <= 2) {
       // 画数の数字（確定済みは消す）
       for (let i = this.strokeIdx; i < this.strokes.length; i++) {
@@ -202,23 +201,6 @@ export class GuideRenderer {
     }
   }
 
-  private dottedStroke(
-    ctx: CanvasRenderingContext2D,
-    size: number,
-    s: ResampledStroke,
-    isCurrent: boolean,
-  ): void {
-    const lw = size * 0.05;
-    ctx.strokeStyle = isCurrent ? '#90caf9' : GUIDE_DOT;
-    ctx.lineWidth = lw;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    // 点線が「線」として読めるよう、点の間隔は点径の半分強にする
-    ctx.setLineDash([0.01, lw * 0.62]);
-    this.path(ctx, size, s, 0, 63);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
 
   private strokeNumber(
     ctx: CanvasRenderingContext2D,
