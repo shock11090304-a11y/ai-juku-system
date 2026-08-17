@@ -1,0 +1,106 @@
+name: server-tests
+
+# 🖥️ server/main.py の回帰テスト。**ブロッキング**。
+#
+#   ★なぜ専用 workflow が要るのか (2026-08-18):
+#     `scripts/health_check/test_*.py` は誰も呼んでいなかった。
+#       - scripts/run_all_gates.py の探索は check*/verify*/validate*/audit*/qa*/*_gate だけで、
+#         `test_*` は **マッチしない**。マッチしないので DEAD 判定にすら計上されない
+#         (DEAD は「拾ったのに呼ばれていない」を見る仕組みのため)。
+#       - material-gates.yml は sympy/fonttools/pymupdf/numpy しか入れないので、
+#         仮に check_*.py へ改名して拾わせても fastapi/pydantic/psycopg が無く CRASH する。
+#     結果 test_event_loop_blocking.py (2026-07-26 の本番502事故の回帰テスト) は
+#     コミットされているのに **一度も自動実行されたことがなかった**。
+#     CLAUDE.md が繰り返し戒めている「書いたのに誰も呼んでいない検査」そのもの。
+#
+#   ★本番に触れさせないための栓 (secrets を渡さないだけでは足りない):
+#     test_event_loop_blocking.py は **uvicorn を実起動**する。main.py は起動30秒後に
+#     post-deploy smoke test を仕掛けており、その合成 E2E は backend_base に
+#     **ハードコードされた本番 URL** へ申込 POST を撃つ (secrets 不要で届いてしまう)。
+#     そこで両テストが import 前に POST_DEPLOY_SMOKE_ENABLED=0 / MONITORING_ENABLED=0 /
+#     DATABASE_URL="" を自分で設定する。ここでも env で二重に落としておく。
+on:
+  push:
+    branches: [main]
+    paths: &watched
+      - 'server/**'
+      - 'scripts/health_check/test_*.py'
+      - '.github/workflows/server-tests.yml'
+      # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
+      - 'lp.html'
+      - 'checkout.html'
+      - 'checkout.js'
+      - 'analytics.js'
+  pull_request:
+    paths: *watched
+  workflow_dispatch:
+
+env:
+  POST_DEPLOY_SMOKE_ENABLED: "0"
+  MONITORING_ENABLED: "0"
+  EXAM_QUESTIONS_ENABLED: "0"
+  DATABASE_URL: ""
+  STRIPE_SECRET_KEY: ""
+  RESEND_API_KEY: ""
+  ANTHROPIC_API_KEY: ""
+
+concurrency:
+  group: server-tests-${{ github.ref }}
+  # main は本番デプロイ元なので打ち切らない (「本番に出たのに cancelled の commit」を作らない)
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    # 回帰があると health が 17秒 × 5 回ブロックして伸びる。無限に待たない。
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: server/requirements.txt
+
+      # モジュールレベルの import は fastapi/pydantic と標準ライブラリだけ (stripe/psycopg/fitz は
+      # 遅延 import) だが、テストは init_db や _collect_health_snapshot まで実際に走らせるので、
+      # 本番と同じ requirements をそのまま入れる (部分インストールは実行時に落ちる)。
+      - name: 依存 (server/requirements.txt)
+        run: python3 -m pip install --quiet -r server/requirements.txt
+
+      # NameError の作り込みを push 前に落とす (CLAUDE.md / memory の pyflakes ゲート)
+      # ★`pyflakes ... | grep -c "undefined name"` と書くと、**pyflakes 自体が落ちても**
+      #   grep が 0 を印字してステップが緑になる (パスを間違えた・pyflakes が入っていない等)。
+      #   CLAUDE.md が名指ししている「exit 0 なのに検査していない」型そのものなので、
+      #   出力を一度ファイルに落として「pyflakes が正常に走ったか」を先に判定する。
+      - name: undefined name が無いこと
+        run: |
+          python3 -m pip install --quiet pyflakes
+          set +e
+          python3 -m pyflakes server/main.py > /tmp/pyflakes.out 2> /tmp/pyflakes.err
+          RC=$?
+          set -e
+          if [ -s /tmp/pyflakes.err ] || [ "$RC" -gt 1 ]; then
+            echo "::error::pyflakes が正常に走っていません (rc=$RC)"
+            cat /tmp/pyflakes.err
+            exit 1
+          fi
+          if grep -q "invalid syntax" /tmp/pyflakes.out; then
+            echo "::error::構文エラーで解析できていません"
+            grep "invalid syntax" /tmp/pyflakes.out
+            exit 1
+          fi
+          grep "undefined name" /tmp/pyflakes.out || true
+          N=$(grep -c "undefined name" /tmp/pyflakes.out || true)
+          echo "undefined name: $N 件 (pyflakes 全指摘 $(wc -l < /tmp/pyflakes.out) 件)"
+          test "$N" -eq 0
+
+      - name: イベントループ・ブロッキング回帰テスト
+        run: python3 scripts/health_check/test_event_loop_blocking.py
+
+      # 上が落ちてもこちらは必ず出す (片方の失敗でもう片方が読めないと診断できない)。
+      # always() ではなく !cancelled(): cancel-in-progress で打ち切ったジョブを走らせ直さない。
+      - name: E2E 合成監視 (誤報抑止 / 検知能力) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: python3 scripts/health_check/test_synthetic_monitor_retry.py
