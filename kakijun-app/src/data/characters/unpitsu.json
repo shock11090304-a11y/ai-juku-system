@@ -1,0 +1,122 @@
+[
+  {
+    "id": "unpitsu_tate",
+    "char": "｜",
+    "reading": "うえから したの せん",
+    "type": "unpitsu",
+    "group": "sen",
+    "strokes": [
+      { "index": 1, "hint": "tate", "ending": "tome", "points": [[0.5, 0.15], [0.5, 0.85]] }
+    ]
+  },
+  {
+    "id": "unpitsu_yoko",
+    "char": "―",
+    "reading": "よこの せん",
+    "type": "unpitsu",
+    "group": "sen",
+    "strokes": [
+      { "index": 1, "hint": "yoko", "ending": "tome", "points": [[0.15, 0.5], [0.85, 0.5]] }
+    ]
+  },
+  {
+    "id": "unpitsu_naname_r",
+    "char": "＼",
+    "reading": "ななめの せん",
+    "type": "unpitsu",
+    "group": "sen",
+    "strokes": [
+      { "index": 1, "hint": "naname", "ending": "tome", "points": [[0.2, 0.2], [0.8, 0.8]] }
+    ]
+  },
+  {
+    "id": "unpitsu_naname_l",
+    "char": "／",
+    "reading": "ななめの せん",
+    "type": "unpitsu",
+    "group": "sen",
+    "strokes": [
+      { "index": 1, "hint": "naname", "ending": "tome", "points": [[0.8, 0.2], [0.2, 0.8]] }
+    ]
+  },
+  {
+    "id": "unpitsu_zigzag",
+    "char": "〽",
+    "reading": "じぐざぐ",
+    "type": "unpitsu",
+    "group": "sen",
+    "strokes": [
+      { "index": 1, "hint": "naname", "ending": "tome", "points": [[0.14, 0.35], [0.32, 0.65], [0.5, 0.35], [0.68, 0.65], [0.86, 0.35]] }
+    ]
+  },
+  {
+    "id": "unpitsu_nami",
+    "char": "〜",
+    "reading": "なみなみ",
+    "type": "unpitsu",
+    "group": "sen",
+    "strokes": [
+      { "index": 1, "hint": "magari", "ending": "tome", "points": [[0.12, 0.5], [0.25, 0.34], [0.38, 0.5], [0.5, 0.66], [0.62, 0.5], [0.75, 0.34], [0.88, 0.5]] }
+    ]
+  },
+  {
+    "id": "unpitsu_maru",
+    "char": "○",
+    "reading": "まる",
+    "type": "unpitsu",
+    "group": "katachi",
+    "strokes": [
+      { "index": 1, "hint": "maru", "ending": "tome", "points": [[0.5, 0.15], [0.28, 0.28], [0.2, 0.5], [0.28, 0.72], [0.5, 0.85], [0.72, 0.72], [0.8, 0.5], [0.72, 0.28], [0.5, 0.15]] }
+    ]
+  },
+  {
+    "id": "unpitsu_sankaku",
+    "char": "△",
+    "reading": "さんかく",
+    "type": "unpitsu",
+    "group": "katachi",
+    "strokes": [
+      { "index": 1, "hint": "magari", "ending": "tome", "points": [[0.5, 0.16], [0.36, 0.47], [0.22, 0.78], [0.5, 0.78], [0.78, 0.78], [0.64, 0.47], [0.5, 0.16]] }
+    ]
+  },
+  {
+    "id": "unpitsu_shikaku",
+    "char": "□",
+    "reading": "しかく",
+    "type": "unpitsu",
+    "group": "katachi",
+    "strokes": [
+      { "index": 1, "hint": "magari", "ending": "tome", "points": [[0.22, 0.22], [0.22, 0.5], [0.22, 0.78], [0.5, 0.78], [0.78, 0.78], [0.78, 0.5], [0.78, 0.22], [0.5, 0.22], [0.22, 0.22]] }
+    ]
+  },
+  {
+    "id": "unpitsu_uzumaki",
+    "char": "◎",
+    "reading": "ぐるぐる",
+    "type": "unpitsu",
+    "group": "katachi",
+    "strokes": [
+      { "index": 1, "hint": "maru", "ending": "tome", "points": [[0.5, 0.12], [0.24, 0.3], [0.2, 0.58], [0.38, 0.8], [0.64, 0.78], [0.76, 0.58], [0.68, 0.38], [0.5, 0.32], [0.36, 0.44], [0.4, 0.6], [0.54, 0.62], [0.58, 0.52]] }
+    ]
+  },
+  {
+    "id": "unpitsu_yama",
+    "char": "⛰",
+    "reading": "やまのぼり",
+    "type": "unpitsu",
+    "group": "katachi",
+    "strokes": [
+      { "index": 1, "hint": "naname", "ending": "tome", "points": [[0.14, 0.78], [0.34, 0.3], [0.5, 0.6], [0.66, 0.22], [0.86, 0.78]] }
+    ]
+  },
+  {
+    "id": "unpitsu_kaidan",
+    "char": "🪜",
+    "reading": "かいだん",
+    "type": "unpitsu",
+    "group": "katachi",
+    "strokes": [
+      { "index": 1, "hint": "magari", "ending": "tome", "points": [[0.15, 0.8], [0.15, 0.6], [0.35, 0.6], [0.35, 0.4], [0.55, 0.4], [0.55, 0.2], [0.85, 0.2]] }
+    ]
+  }
+]

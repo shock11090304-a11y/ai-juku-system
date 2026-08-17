@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/kakijun",
+      "destination": "/kakijun/",
+      "permanent": false
+    },
+    {
       "source": "/exam-app/:path*",
       "destination": "https://exam.trillion-ai-juku.com/:path*",
       "permanent": false
@@ -109,6 +114,24 @@
     },
     {
       "source": "/(.*\\.html)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/kakijun/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/kakijun/sw.js",
       "headers": [
         {
           "key": "Cache-Control",

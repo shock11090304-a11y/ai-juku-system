@@ -1,0 +1,101 @@
+/* §12.1 iPad Safari でのスクロール・ズーム・選択の抑制 */
+html,
+body {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  /* ダブルタップズームを CSS 側でも抑止（タップの反応は保つ） */
+  touch-action: manipulation;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+canvas {
+  touch-action: none; /* これが無いとスクロール判定に描画を奪われる */
+  display: block;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* ─── 配色: ベース1色 + アクセント2色 (§11-5) ─────────────── */
+:root {
+  --base-bg: #fffdf7; /* クリーム地 */
+  --accent-warm: #ffb74d; /* オレンジ (主アクセント・ガイドの光) */
+  --accent-cool: #4fc3f7; /* 水色 (副アクセント) */
+  --ink: #37474f; /* 文字・筆跡の濃色 */
+  --ink-soft: #90a4ae; /* うすい線・お手本 */
+  --card-bg: #ffffff;
+  --shadow: 0 4px 12px rgba(55, 71, 79, 0.12);
+}
+
+body {
+  background: var(--base-bg);
+  font-family:
+    'Hiragino Maru Gothic ProN', 'BIZ UDGothic', 'Hiragino Sans',
+    'Yu Gothic', system-ui, sans-serif;
+  color: var(--ink);
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* タップ対象は最低 64×64px (§11-1) */
+.tap-target {
+  min-width: 64px;
+  min-height: 64px;
+}
+
+/* ─── アニメーション ─────────────────────────────────────── */
+@keyframes popin {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ─── 縦向きのときの案内 (§2.3) ──────────────────────────── */
+.rotate-hint {
+  display: none;
+}
+@media (orientation: portrait) {
+  .rotate-hint {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--base-bg);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 24px;
+  }
+}
