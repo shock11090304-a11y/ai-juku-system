@@ -19,6 +19,7 @@ import { chromium } from 'playwright';
 import { splineSample } from '../src/engine/geometry';
 import { prepareStrokes, toCharacterDef } from '../src/engine/loader';
 import { StrokeMatcher, resolveParams } from '../src/engine/strokeMatcher';
+import { idealPaths, shakyPaths, offsetPaths } from '../src/engine/traceProfiles';
 import type { RawCharacterDef, Pt } from '../src/engine/types';
 // @ts-expect-error 型定義のない開発用ヘルパ
 import { useRefFont, REF_FONT_FAMILY } from './ref-font.mjs';
@@ -116,58 +117,22 @@ function distanceTransform(mask: Uint8Array): Float32Array {
 
 /**
  * ★ 直した字形が判定エンジンを通るかを、単体テストと同じ3通りで確かめる:
- *   ① 理想軌跡 ② 手ぶれ (法線±0.02・4倍密) ③ お手本ずらし (0.035)
- * ここを省くと「墨には乗ったが練習できないデータ」を入れてしまう。
+ *   ① 理想軌跡 ② 手ぶれ ③ お手本ずらし
+ * ★軌跡の作り方は src/engine/traceProfiles.ts をテストと共有する。
+ *   ここを自前で書いていたら乱数の引き方がずれ、「ツールでは通ったのに
+ *   単体テストが落ちる」字 (す) を通してしまった (2026-08-17)。
  */
 function enginePasses(raw: RawCharacterDef): boolean {
   const strokes = prepareStrokes(toCharacterDef(raw));
-  const seed = raw.id.split('').reduce((a, ch) => a + ch.charCodeAt(0), 7);
-  const paths: ((s: (typeof strokes)[number]) => Pt[])[] = [
-    (s) => s.pts,
-    (s) => {
-      let a = seed >>> 0;
-      const rand = () => {
-        a = (a + 0x6d2b79f5) | 0;
-        let t = Math.imul(a ^ (a >>> 15), 1 | a);
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-      };
-      const out: Pt[] = [];
-      for (let i = 0; i < 63; i++) {
-        const p = s.pts[i];
-        const q = s.pts[i + 1];
-        const tx = q.x - p.x;
-        const ty = q.y - p.y;
-        const l = Math.hypot(tx, ty) || 1;
-        for (let k = 0; k < 4; k++) {
-          const t = k / 4;
-          const j = (rand() * 2 - 1) * 0.02;
-          out.push({ x: p.x + tx * t + (-ty / l) * j, y: p.y + ty * t + (tx / l) * j });
-        }
-      }
-      out.push(s.pts[63]);
-      return out;
-    },
-    (s) =>
-      s.pts.map((p, i) => {
-        const a = s.pts[Math.max(0, i - 1)];
-        const b = s.pts[Math.min(63, i + 1)];
-        const tx = b.x - a.x;
-        const ty = b.y - a.y;
-        const l = Math.hypot(tx, ty) || 1;
-        const u0 = s.pts[Math.max(0, i - 2)];
-        const v0 = s.pts[Math.min(63, i + 2)];
-        const u = Math.hypot(p.x - u0.x, p.y - u0.y) || 1;
-        const v = Math.hypot(v0.x - p.x, v0.y - p.y) || 1;
-        const cos = ((p.x - u0.x) * (v0.x - p.x) + (p.y - u0.y) * (v0.y - p.y)) / (u * v);
-        const k = Math.max(0, Math.min(1, (cos + 0.2) / 1.2));
-        return { x: p.x + (-ty / l) * 0.035 * k, y: p.y + (tx / l) * 0.035 * k };
-      }),
+  const variants = [
+    idealPaths(strokes),
+    shakyPaths(strokes, raw.id),
+    offsetPaths(strokes),
   ];
-  for (const make of paths) {
+  for (const paths of variants) {
     const m = new StrokeMatcher(strokes, resolveParams('normal', 1));
-    for (const s of strokes) {
-      const path = make(s);
+    for (let si = 0; si < strokes.length; si++) {
+      const path = paths[si];
       if (m.pointerDown(path[0]).type !== 'ok') return false;
       for (let i = 1; i < path.length; i++) {
         if (m.pointerMove(path[i]).type !== 'ok') return false;
@@ -188,6 +153,79 @@ function fidelity(pts: Pt[], mask: Uint8Array): number {
     if (x >= 0 && y >= 0 && x < S && y < S && mask[y * S + x]) inside++;
   }
   return inside / dense.length;
+}
+
+/**
+ * ★ 画の「端」をお手本の墨の端に合わせる。
+ *
+ * refit() は進行方向と直交にしか寄せないので、書き出しが墨の外にある画
+ * (か の3画目など) はどれだけ回しても動かない。書き出しの点はいま書き順を
+ * 伝える唯一の手がかりなので、そこが白いところに浮くと「どの画のことか
+ * 分からない」になる (2026-08-17 塾長指摘)。
+ *
+ * やり方: 端点から画の向きに沿って前後へ探り、いちばん近い「墨の区間」を見つけ、
+ * その端を新しい端点にする。向きに沿って探るので隣の画へ飛び移りにくい。
+ */
+function fitEndpoints(pts: Pt[], mask: Uint8Array): Pt[] {
+  const MAX_MOVE = 0.22; // これ以上動かさない (別の画に飛ぶのを防ぐ)
+  const STEP = 0.002;
+  const inside = (x: number, y: number): boolean => {
+    const xi = Math.round(x * S);
+    const yi = Math.round(y * S);
+    return xi >= 0 && yi >= 0 && xi < S && yi < S && mask[yi * S + xi] === 1;
+  };
+  const dense = splineSample(pts, 24);
+  const out = pts.map((p) => ({ ...p }));
+
+  /** 端点 p から向き d に沿って探り、墨の区間の「外側の端」を返す */
+  const findInkEdge = (p: Pt, d: Pt): Pt | null => {
+    // s>0 = 画の内側へ進む向き。s<0 = 画を伸ばす向き
+    let entry: number | null = null;
+    if (inside(p.x, p.y)) {
+      // すでに墨の上: 墨が続く限り外へ伸ばして端を探す
+      let s = 0;
+      while (s > -MAX_MOVE && inside(p.x + d.x * (s - STEP), p.y + d.y * (s - STEP))) {
+        s -= STEP;
+      }
+      entry = s;
+    } else {
+      // 墨の外: 内側へ進んで最初に墨に入る所を探す
+      for (let s = STEP; s <= MAX_MOVE; s += STEP) {
+        if (inside(p.x + d.x * s, p.y + d.y * s)) {
+          entry = s;
+          break;
+        }
+      }
+    }
+    if (entry === null) return null;
+    return { x: p.x + d.x * entry, y: p.y + d.y * entry };
+  };
+
+  const dir = (a: Pt, b: Pt): Pt => {
+    const l = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    return { x: (b.x - a.x) / l, y: (b.y - a.y) / l };
+  };
+  const head = findInkEdge(dense[0], dir(dense[0], dense[Math.min(6, dense.length - 1)]));
+  const tail = findInkEdge(
+    dense[dense.length - 1],
+    dir(dense[dense.length - 1], dense[Math.max(0, dense.length - 7)]),
+  );
+  const cand = out.map((p) => ({ ...p }));
+  if (head) cand[0] = { x: Number(head.x.toFixed(3)), y: Number(head.y.toFixed(3)) };
+  if (tail) cand[cand.length - 1] = { x: Number(tail.x.toFixed(3)), y: Number(tail.y.toFixed(3)) };
+  // ★ 潰れた画を作らない。短い画 (ウ の1画目の点など) では墨の区間が短く出て
+  //   両端が寄り、長さ 0.026 まで縮んだ。長さ 0.03 以下の画は判定エンジンを止める
+  //   ので、その倍を下限にする。★「元より短くするな」ではない —
+  //   書き出しが墨の外にある画 (か の3画目) は正しく詰める必要がある
+  const MIN_ARC = 0.06;
+  const arc = (v: Pt[]) => {
+    const d = splineSample(v, 24);
+    let L = 0;
+    for (let i = 1; i < d.length; i++) L += Math.hypot(d[i].x - d[i - 1].x, d[i].y - d[i - 1].y);
+    return L;
+  };
+  if (arc(cand) < MIN_ARC) return out;
+  return cand;
 }
 
 function refit(pts: Pt[], _mask: Uint8Array, dt: Float32Array): Pt[] {
@@ -245,7 +283,9 @@ for (const { c } of targets) {
   for (const st of c.strokes) {
     const pts: Pt[] = st.points.map(([x, y]) => ({ x, y }));
     const before = fidelity(pts, mask);
-    const fitted = refit(pts, mask, dt);
+    // ★ 直交に寄せる → 端を墨の端に合わせる → もう一度直交に寄せる。
+    //   端を動かすと途中も少しずれるので、最後にもう一度ならす
+    const fitted = refit(fitEndpoints(refit(pts, mask, dt), mask), mask, dt);
     const after = fidelity(fitted, mask);
     beforeSum += before;
     // 悪化する画は触らない (元の形のほうが墨に乗っている場合)
