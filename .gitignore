@@ -99,3 +99,6 @@ scripts/book_exam/materials/_out/
 
 # 英検模試の取り込み用 PDF (生成物・元は data_no*.json と build.py)
 scripts/eiken_junichi/mogi/bundle/*.pdf
+
+# 青学実戦の取り込み用 PDF (生成物・元は content.json と build.py)
+scripts/aoyama_eigo_mirror/bundle/*.pdf
