@@ -115,15 +115,27 @@
       <h1 class="admin-gate-title">塾長専用ページ</h1>
       <p class="admin-gate-sub">
         CEO経営ダッシュボードにアクセスするにはパスワードが必要です。<br>
-        一度ログインすると、<strong>30日間はパスワード入力不要</strong>です。
+        一度ログインすれば、<strong>使い続けている限り入力は不要</strong>です
+        （開くたびに期限が延びます）。<br>
+        パスワードは iPhone / Mac のパスワード管理に保存できます（次回から Face ID で入力）。
       </p>
-      <form id="adminLoginForm" autocomplete="off">
-        <!-- Safari keychain の自動入力で誤った値が連続送信されて 401 → rate limit に陥る事故対策。
-             type=text + JS で見た目は password / 名前を非標準に / autocomplete=off / readonly→focus で解除 -->
-        <input type="text" id="adminPassword" name="admin-secret-12345" placeholder="塾長パスワード"
-               required autocomplete="off" data-lpignore="true" data-1p-ignore="true"
-               readonly onfocus="this.removeAttribute('readonly');this.type='password';"
-               style="-webkit-text-security:disc;text-security:disc;">
+      <form id="adminLoginForm" action="#" method="post">
+        <!-- ★ パスワード管理アプリ (iCloud キーチェーン / 1Password) に**あえて任せる**。
+             以前は「Safari の自動入力が誤った値を連続送信して 401 → rate limit」を嫌って
+             type=text + autocomplete=off + readonly の仕掛けで自動入力を全面禁止していたが、
+             その結果**毎回パスワードを手打ち**することになり、そちらの方が事故のもとだった
+             (2026-08-17 塾長指摘「毎回ログインに苦戦する」)。
+             ・username を置くのは、管理アプリが「サイト＋利用者」の組で正しく保存するため。
+               これが無いと保存が曖昧になり、昔の誤った値を拾う事故が起きやすい。
+             ・自動入力されても**勝手に送信しない**。送信は必ずボタン操作。
+             ・連続失敗時は下の JS が「保存されているパスワードが古いかもしれません」と出して
+               打ち止めにする (rate limit まで殴り続けない)。 -->
+        <input type="text" id="adminUser" name="username" value="塾長"
+               autocomplete="username" readonly
+               style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"
+               tabindex="-1" aria-hidden="true">
+        <input type="password" id="adminPassword" name="password" placeholder="塾長パスワード"
+               required autocomplete="current-password" enterkeyhint="go">
         <button type="submit" id="adminLoginBtn">🔓 ログイン</button>
       </form>
       <div class="admin-gate-msg" id="adminGateMsg"></div>
@@ -197,6 +209,7 @@
       const input = document.getElementById('adminPassword');
       const btn = document.getElementById('adminLoginBtn');
       const msg = document.getElementById('adminGateMsg');
+      let _fails = 0;                 // 連続失敗回数 (案内の出し分けにだけ使う)
 
       async function unlock() {
         document.body.classList.remove('admin-locked');
@@ -210,7 +223,17 @@
           const res = await fetch(API_BASE + '/api/admin/verify', {
             headers: { 'Authorization': 'Bearer ' + token }
           });
-          if (res.ok) { unlock(); return true; }
+          if (res.ok) {
+            // ★ 使うたびに期限が延びる (sliding session)。開き続けている限り
+            //   ログイン画面に戻らない。サーバは残り半分を切ったときだけ返す。
+            try {
+              const d = await res.json();
+              if (d && d.renewed && d.renewed.token) {
+                saveSession(d.renewed.token, d.renewed.expires_at);
+              }
+            } catch (_) { /* 延長が無くても検証は成功している */ }
+            unlock(); return true;
+          }
         } catch (e) { /* fall through */ }
         clearSession();
         return false;
@@ -237,15 +260,21 @@
           const data = await res.json().catch(() => ({}));
           if (res.ok) {
             saveSession(data.token, data.expires_at);
+            _fails = 0;
             msg.className = 'admin-gate-msg';
             await unlock();
             if (typeof window.renderAll === 'function') window.renderAll();
           } else {
             msg.className = 'admin-gate-msg error';
             if (res.status === 429) {
-              msg.textContent = '⏳ 試行回数上限。5分ほど待ってから再度お試しください (keychain 自動入力で誤値が連続送信されている可能性)。';
+              msg.textContent = '⏳ 試行回数の上限です。5分ほど待ってから、もう一度お試しください。';
             } else if (res.status === 401) {
-              msg.textContent = '⚠️ パスワードが正しくありません。keychain の候補ではなく手入力してください。';
+              // ★ 2 回続けて外したら、保存されている値が古い可能性を伝えて打ち止めにする
+              //   (rate limit まで殴り続けさせない)。
+              _fails = (_fails || 0) + 1;
+              msg.textContent = _fails >= 2
+                ? '⚠️ パスワードが違います。パスワード管理アプリに保存されている値が古いかもしれません。手入力して成功したら、保存し直してください。'
+                : '⚠️ パスワードが正しくありません。';
             } else if (res.status >= 500) {
               msg.textContent = '⚠️ サーバーが応答していません (HTTP ' + res.status + ')。しばらくしてから再度お試しください。';
             } else {

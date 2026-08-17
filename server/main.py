@@ -10919,13 +10919,30 @@ def admin_login(payload: AdminLoginRequest, request: Request):
 
 @app.get("/api/admin/verify")
 def admin_verify(authorization: Optional[str] = Header(None)):
-    """管理者トークンの有効性を確認。ceo.htmlのセッションチェック用。"""
+    """管理者トークンの有効性を確認。ceo.htmlのセッションチェック用。
+
+    ★ 有効なら「使うたびに期限を延ばす」(sliding session)。
+      固定30日だと、使い続けていても31日目に必ず入力を求められる。塾長は
+      このページを日常的に開くので、その 1 回のためにパスワードを手打ちさせない。
+      延長するのは**既に本人と確認できたトークン**に対してだけなので、
+      パスワード認証を迂回することにはならない。
+      返す token は残り期間が半分を切ったときだけ (毎回発行しても意味がない)。
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="未認証")
     token = authorization[len("Bearer "):].strip()
     if not _verify_admin_token(token):
         raise HTTPException(status_code=401, detail="セッション期限切れ")
-    return {"ok": True}
+    out = {"ok": True}
+    try:
+        import time
+        padded = token + "=" * (-len(token) % 4)
+        exp = int(base64.urlsafe_b64decode(padded).decode().split(".")[1])
+        if exp - int(time.time()) < ADMIN_SESSION_TTL // 2:
+            out["renewed"] = _sign_admin_token()
+    except Exception:
+        pass          # 延長できなくても検証は成功している。ログインを妨げない
+    return out
 
 
 def _as_naive_dt(v):
