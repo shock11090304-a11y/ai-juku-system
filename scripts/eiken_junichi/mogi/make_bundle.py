@@ -30,6 +30,9 @@ import shutil
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from build import BLANK_RE  # noqa: E402  ★空所の規則は build.py が正典。書き写さない
+
 OUT = os.path.join(HERE, "bundle")
 PDF_SRC = os.path.join(os.path.dirname(os.path.dirname(HERE)),
                        "scripts", "book_exam", "materials", "_out")
@@ -63,7 +66,9 @@ def measure_pages(pdf_path, d):
 
     pg, n, miss = {}, 1, []
     for it in d["part1"]:
-        pg[n] = find(it["sentence"][:45]); n += 1
+        # ★ 空所 "( )" は下線で刷られ、刷り上がりの文字列には残らない (build.stem_with_fill)。
+        #   probe から同じ規則で消しておかないと、掲載ページを永久に見失う。
+        pg[n] = find(BLANK_RE.sub(" ", it["sentence"])[:45]); n += 1
     for ps in d["part2"]:
         for b in ps["blanks"]:
             pg[n] = find(max(b["choices"], key=len)); n += 1   # 最長の選択肢を目印にする

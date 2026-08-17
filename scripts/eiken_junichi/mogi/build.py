@@ -50,26 +50,43 @@ body { font-family: "Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
 .metarow .cell { border:1px solid #cbd5e1; border-radius:6px; padding:4px 10px; flex:1; }
 .metarow .cell.score { flex:0 0 128px; text-align:center; }
 .note { font-size:8.6pt; color:#64748b; margin:2px 2px 8px; }
-.bigq { display:flex; align-items:center; gap:9px; margin:16px 0 7px; page-break-after:avoid; }
-.bigq .n { background:#0b1f4b; color:#fff; width:26px; height:26px; border-radius:5px;
-  text-align:center; line-height:26px; font-weight:700; font-size:13pt; }
-.bigq .t { font-weight:700; font-size:11pt; }
-.bigq .t small { font-weight:400; color:#64748b; margin-left:7px; font-size:8.8pt; }
-.instr { font-size:9.3pt; background:#f1f5f9; border-left:4px solid #1d4ed8;
-  padding:6px 10px; border-radius:4px; margin:5px 0 9px; }
-.item { margin:0 0 9px; page-break-inside:avoid; }
-.item .q { display:flex; gap:6px; }
-.item .no { flex:0 0 30px; font-weight:700; }
-.item .body { flex:1; }
-.ch { display:flex; flex-wrap:wrap; margin-top:2px; }
-.ch span { flex:0 0 25%; font-size:9.5pt; }
-.ch.v span { flex:0 0 100%; }
-.psg { border:1px solid #cbd5e1; border-radius:7px; padding:9px 12px; margin:6px 0 10px;
-  page-break-inside:avoid; }
-.psg h4 { margin:0 0 5px; font-size:10.5pt; }
-.psg .en { text-align:justify; line-height:1.9; font-size:9.8pt; }
-.blank { display:inline-block; border:1px solid #64748b; border-radius:4px; padding:0 5px;
-  font-weight:700; background:#fff; font-family:"Hiragino Kaku Gothic ProN",sans-serif; }
+
+/* 大問見出し — 帯の中に指示文まで入れる (対策問題集 build.py と同じ設計) */
+.partttl { background:#0b1f4b; color:#fff; border-radius:6px; padding:6px 14px;
+  margin:15px 0 9px; page-break-after:avoid; }
+.partttl .t { font-size:13pt; font-weight:700; letter-spacing:.02em; }
+.partttl .t small { font-weight:600; font-size:9pt; opacity:.85; margin-left:9px; }
+.partttl .i { display:block; font-weight:400; font-size:8.9pt; opacity:.93; margin-top:3px;
+  line-height:1.5; }
+
+/* 設問 — 番号は濃紺のバッジ。設問文は幅いっぱいに置く (折り返しの段差を作らない) */
+.item { margin:0 0 11px; page-break-inside:avoid; }
+.item .no { display:inline-block; background:#0b1f4b; color:#fff; border-radius:4px;
+  min-width:22px; text-align:center; padding:1px 6px; font-size:9pt; font-weight:700;
+  margin-bottom:3px; }
+.item .stem { font-size:10.2pt; line-height:1.75; }
+.ch { display:flex; flex-wrap:wrap; gap:2px 20px; margin-top:3px; }
+.ch span { font-size:10pt; }
+.ch.v { flex-direction:column; gap:2px; }
+.ch.v span { margin-left:12px; }
+.ch .cn { font-weight:700; margin-right:3px; }
+
+.instr { font-size:9.3pt; background:#f1f5f9; border-left:4px solid #0b1f4b;
+  padding:6px 11px; border-radius:4px; margin:0 0 9px; color:#334155;
+  page-break-after:avoid; }
+
+/* 空所 — 枠で囲まず下線にする (本番の見え方に近い) */
+.fill { display:inline-block; min-width:74px; border-bottom:1.4px solid #0f172a;
+  margin:0 3px; vertical-align:baseline; }
+.cloze { font-weight:700; color:#0b1f4b; white-space:nowrap; }
+
+/* 長文 */
+.ptitle { font-size:11.5pt; font-weight:700; color:#0f172a; margin:12px 0 5px;
+  border-bottom:2px solid #0b1f4b; padding-bottom:3px; page-break-after:avoid; }
+.ptitle .pwc { float:right; font-size:8.4pt; color:#94a3b8; font-weight:600; padding-top:4px; }
+.psg { margin:5px 0 10px; }
+.psg .en { text-align:justify; line-height:1.8; font-size:10.1pt; }
+.psg .en p { margin:0 0 6px; }
 .wbox { border:1px solid #cbd5e1; border-radius:7px; padding:9px 12px; margin:6px 0; }
 .wbox ul { margin:4px 0 6px 18px; padding:0; font-size:9.4pt; }
 .lines { border:1px solid #cbd5e1; border-radius:6px; height:118px; margin-top:5px;
@@ -123,7 +140,35 @@ def foot(d, kind):
 
 
 def circled(i):
-    return "１２３４"[i] if False else ["1", "2", "3", "4"][i]
+    """選択肢の番号。① 〜 ④ (U+2460〜) を使う。
+
+    ★ 丸数字は JIS X 0208 にあり、刷るフォント (Hiragino / Yu Gothic) に必ず在るので
+      豆腐にならない。対策問題集 build.py も同じ字を使って刷れている。
+    """
+    return "①②③④"[i]
+
+
+def part_head(n, title, en, instr):
+    """大問の見出し帯。指示文まで帯の中に入れる。"""
+    return (f'<div class="partttl"><div class="t">大問{n}　{esc(title)}'
+            f'<small>{esc(en)}</small>'
+            f'<span class="i">{esc(instr)}</span></div></div>')
+
+
+def choices_inline(choices, vertical=False):
+    cls = "ch v" if vertical else "ch"
+    body = "".join(f'<span class="en"><span class="cn">{circled(k)}</span>{esc(c)}</span>'
+                   for k, c in enumerate(choices))
+    return f'<div class="{cls}">{body}</div>'
+
+
+def stem_with_fill(sentence):
+    """本文中の ( ) を下線の空所にする。枠で囲まない。
+
+    ★ ここを変えると**刷り上がり PDF の文字列が変わる**。掲載ページを実測している
+      make_bundle.py の probe は、この関数と同じ規則 (BLANK_RE を消す) で作ること。
+    """
+    return BLANK_RE.sub('<span class="fill">&nbsp;</span>', esc(sentence))
 
 
 # ============================ 問題編 ============================
@@ -136,58 +181,50 @@ def build_mondai(d):
     h += f'<div class="note">{esc(NOTE)}　{esc(m["instruction"])}</div>'
 
     # --- 大問1 ---
-    h += ('<div class="bigq"><div class="n">1</div><div class="t">短文の語句空所補充'
-          '<small>Vocabulary &amp; Phrasal Verbs</small></div></div>')
-    h += ('<div class="instr">次の (1) から (18) までの ( ) に入れるのに最も適切なものを、'
-          '1、2、3、4 の中から一つ選びなさい。</div>')
+    h += part_head(1, "短文の語句空所補充", "Vocabulary & Phrasal Verbs",   # esc() が通すので生の &
+                   "次の各文の空所に入れるのに最も適切なものを ①〜④ から一つ選びなさい。")
     for i, it in enumerate(d["part1"], 1):
-        h += (f'<div class="item"><div class="q"><div class="no">({i})</div>'
-              f'<div class="body"><span class="en">{esc(it["sentence"])}</span>'
-              f'<div class="ch v"><span class="en">')
-        h += "&nbsp;&nbsp;".join(f'<b>{n + 1}</b> {esc(c)}' for n, c in enumerate(it["choices"]))
-        h += '</span></div></div></div></div>'
+        h += (f'<div class="item"><span class="no">{i}</span>'
+              f'<div class="stem en">{stem_with_fill(it["sentence"])}</div>'
+              f'{choices_inline(it["choices"])}</div>')
 
     # --- 大問2 ---
     h += '<div class="pb"></div>'
-    h += ('<div class="bigq"><div class="n">2</div><div class="t">長文の語句空所補充'
-          '<small>Gap-fill in Context</small></div></div>')
-    h += ('<div class="instr">次の英文を読み、その文意にそって (19) から (24) までの ( ) に'
-          '入れるのに最も適切なものを、1、2、3、4 の中から一つ選びなさい。</div>')
+    h += part_head(2, "長文の語句空所補充", "Gap-fill in Context",
+                   "次の英文を読み、その文意にそって空所に入れるのに最も適切なものを "
+                   "①〜④ から一つ選びなさい。")
     n = 19
     for ps in d["part2"]:
-        h += f'<div class="psg"><h4 class="en">{esc(ps["title"])}</h4><div class="en">'
-        h += render_gap_text(ps["text"], n)
-        h += '</div></div>'
+        wc = len(" ".join(ps["text"]).split())
+        h += (f'<div class="ptitle en">{esc(ps["title"])}'
+              f'<span class="pwc">約{int(round(wc / 10.0) * 10)} words</span></div>')
+        h += f'<div class="psg"><div class="en">{render_gap_text(ps["text"], n)}</div></div>'
         for b in ps["blanks"]:
-            h += (f'<div class="item"><div class="q"><div class="no">({n})</div>'
-                  f'<div class="body"><span class="en">')
-            h += "&nbsp;&nbsp;".join(f'<b>{k + 1}</b> {esc(c)}' for k, c in enumerate(b["choices"]))
-            h += '</span></div></div></div>'
+            h += (f'<div class="item"><span class="no">{n}</span>'
+                  f'{choices_inline(b["choices"])}</div>')
             n += 1
 
     # --- 大問3 ---
     h += '<div class="pb"></div>'
-    h += ('<div class="bigq"><div class="n">3</div><div class="t">長文の内容一致選択'
-          '<small>Reading Comprehension</small></div></div>')
-    h += ('<div class="instr">次の英文の内容に関して、(25) から (31) までの質問に対して最も適切なもの、'
-          'または英文の内容と一致するものを、1、2、3、4 の中から一つ選びなさい。</div>')
+    h += part_head(3, "長文の内容一致選択", "Reading Comprehension",
+                   "次の英文の内容に関して、質問に対して最も適切なもの、または英文の内容と"
+                   "一致するものを ①〜④ から一つ選びなさい。")
     for ps in d["part3"]:
-        h += f'<div class="psg"><h4 class="en">{esc(ps["title"])}</h4><div class="en">'
-        h += "".join(f"<p>{esc(p)}</p>" for p in ps["paras"])
-        h += '</div></div>'
+        wc = len(" ".join(ps["paras"]).split())
+        h += (f'<div class="ptitle en">{esc(ps["title"])}'
+              f'<span class="pwc">約{int(round(wc / 10.0) * 10)} words</span></div>')
+        h += ('<div class="psg"><div class="en">'
+              + "".join(f"<p>{esc(p)}</p>" for p in ps["paras"]) + '</div></div>')
         for q in ps["questions"]:
-            h += (f'<div class="item"><div class="q"><div class="no">({n})</div>'
-                  f'<div class="body"><span class="en">{esc(q["q"])}</span>'
-                  f'<div class="ch v">')
-            for k, c in enumerate(q["choices"]):
-                h += f'<span class="en"><b>{k + 1}</b> {esc(c)}</span>'
-            h += '</div></div></div></div>'
+            h += (f'<div class="item"><span class="no">{n}</span>'
+                  f'<div class="stem en">{esc(q["q"])}</div>'
+                  f'{choices_inline(q["choices"], vertical=True)}</div>')
             n += 1
 
     # --- 大問4 要約 ---
     h += '<div class="pb"></div>'
     w = d["part4"]
-    h += ('<div class="bigq"><div class="n">4</div><div class="t">English Summary（要約）'
+    h += ('<div class="partttl"><div class="t">大問4　English Summary（要約）'
           '<small>60〜70 words</small></div></div>')
     h += ('<div class="instr">● 以下の英文を読み、その内容を <b>60語〜70語</b> の英語で要約しなさい。'
           '<br>● できる限り自分自身の言葉で書くこと。</div>')
@@ -198,7 +235,7 @@ def build_mondai(d):
     # --- 大問5 意見論述 ---
     h += '<div class="pb"></div>'
     e = w["essay"]
-    h += ('<div class="bigq"><div class="n">5</div><div class="t">English Composition（意見論述）'
+    h += ('<div class="partttl"><div class="t">大問5　English Composition（意見論述）'
           '<small>120〜150 words</small></div></div>')
     h += ('<div class="instr">● 以下の TOPIC について、あなたの意見とその理由を述べる英文を書きなさい。'
           '<br>● POINTS から <b>2つ</b> を選び、それぞれについて理由を述べること。'
@@ -212,13 +249,16 @@ def build_mondai(d):
     return doc(f'英検準1級 模擬試験 第{m["no"]}回 問題編', h)
 
 
-GAP_RE = re.compile(r"\(\s*(\d+)\s*\)")
+# ★ 空所の正典パターン。make_bundle.py が probe を作るときにもこれを import して使う
+#   (別々に書くと、刷り上がりの文字列と probe がずれて掲載ページを見失う)。
+BLANK_RE = re.compile(r"\(\s*\)")            # 大問1 の空所 "( )"
+GAP_RE = re.compile(r"\(\s*(\d+)\s*\)")     # 大問2 の空所 "( 19 )"
 
 
 def render_gap_text(text, start_no):
     """本文中の ( 19 ) を空所枠に描く。番号は JSON に書かれたものをそのまま使う。"""
     def rep(mo):
-        return f'<span class="blank">（ {mo.group(1)} ）</span>'
+        return f'<span class="cloze">（&nbsp;{mo.group(1)}&nbsp;）</span>'
     return "".join(f"<p>{GAP_RE.sub(rep, esc(p))}</p>" for p in text)
 
 
