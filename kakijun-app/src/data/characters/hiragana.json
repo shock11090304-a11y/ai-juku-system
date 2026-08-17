@@ -5029,6 +5029,10 @@
       "base": "hira_ka",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.073,
+        0.209
       ]
     }
   },
@@ -5043,6 +5047,10 @@
       "base": "hira_ki",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.107,
+        0.136
       ]
     }
   },
@@ -5057,6 +5065,10 @@
       "base": "hira_ku",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.171,
+        0.247
       ]
     }
   },
@@ -5071,6 +5083,10 @@
       "base": "hira_ke",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.065,
+        0.141
       ]
     }
   },
@@ -5085,6 +5101,10 @@
       "base": "hira_ko",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.108,
+        0.181
       ]
     }
   },
@@ -5099,6 +5119,10 @@
       "base": "hira_sa",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.07,
+        0.135
       ]
     }
   },
@@ -5113,6 +5137,10 @@
       "base": "hira_shi",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.233,
+        0.252
       ]
     }
   },
@@ -5127,6 +5155,10 @@
       "base": "hira_su",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.097,
+        0.108
       ]
     }
   },
@@ -5141,6 +5173,10 @@
       "base": "hira_se",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.071,
+        0.168
       ]
     }
   },
@@ -5155,6 +5191,10 @@
       "base": "hira_so",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.134,
+        0.2
       ]
     }
   },
@@ -5169,6 +5209,10 @@
       "base": "hira_ta",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.133,
+        0.153
       ]
     }
   },
@@ -5183,6 +5227,10 @@
       "base": "hira_chi",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.141,
+        0.174
       ]
     }
   },
@@ -5197,6 +5245,10 @@
       "base": "hira_tsu",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.069,
+        0.18
       ]
     }
   },
@@ -5211,6 +5263,10 @@
       "base": "hira_te",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.058,
+        0.135
       ]
     }
   },
@@ -5225,6 +5281,10 @@
       "base": "hira_to",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.084,
+        0.24
       ]
     }
   },
@@ -5239,6 +5299,10 @@
       "base": "hira_ha",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.07,
+        0.135
       ]
     }
   },
@@ -5253,6 +5317,10 @@
       "base": "hira_hi",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.07,
+        0.188
       ]
     }
   },
@@ -5267,6 +5335,10 @@
       "base": "hira_fu",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.11,
+        0.237
       ]
     }
   },
@@ -5281,6 +5353,10 @@
       "base": "hira_he",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.205,
+        0.259
       ]
     }
   },
@@ -5295,6 +5371,10 @@
       "base": "hira_ho",
       "marks": [
         "mark_dakuten"
+      ],
+      "markOffset": [
+        -0.058,
+        0.132
       ]
     }
   },
@@ -5309,6 +5389,10 @@
       "base": "hira_ha",
       "marks": [
         "mark_handakuten"
+      ],
+      "markOffset": [
+        -0.065,
+        0.134
       ]
     }
   },
@@ -5323,6 +5407,10 @@
       "base": "hira_hi",
       "marks": [
         "mark_handakuten"
+      ],
+      "markOffset": [
+        -0.065,
+        0.203
       ]
     }
   },
@@ -5337,6 +5425,10 @@
       "base": "hira_fu",
       "marks": [
         "mark_handakuten"
+      ],
+      "markOffset": [
+        -0.098,
+        0.247
       ]
     }
   },
@@ -5351,6 +5443,10 @@
       "base": "hira_he",
       "marks": [
         "mark_handakuten"
+      ],
+      "markOffset": [
+        -0.197,
+        0.251
       ]
     }
   },
@@ -5365,6 +5461,10 @@
       "base": "hira_ho",
       "marks": [
         "mark_handakuten"
+      ],
+      "markOffset": [
+        -0.054,
+        0.125
       ]
     }
   },

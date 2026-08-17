@@ -42,10 +42,17 @@ export function resolveCharacter(
   if (!base) throw new Error(`base not found: ${def.composedFrom.base}`);
   const baseResolved = resolveCharacter(base, registry, marks);
   const strokes: Stroke[] = baseResolved.strokes.map((s) => ({ ...s }));
+  // 記号の位置は字ごとに違う (フォントの゛の打ち方に合わせる §types)
+  const [dx, dy] = def.composedFrom.markOffset ?? [0, 0];
   for (const markId of def.composedFrom.marks) {
     const markStrokes = marks.get(markId);
     if (!markStrokes) throw new Error(`mark not found: ${markId}`);
-    for (const ms of markStrokes) strokes.push({ ...ms });
+    for (const ms of markStrokes) {
+      strokes.push({
+        ...ms,
+        points: ms.points.map((p) => ({ x: p.x + dx, y: p.y + dy })),
+      });
+    }
   }
   strokes.forEach((s, i) => (s.index = i + 1));
   return { ...def, strokes };

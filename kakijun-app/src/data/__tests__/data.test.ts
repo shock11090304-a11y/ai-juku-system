@@ -209,7 +209,7 @@ describe('画数の重点確認 (§14.4)', () => {
 });
 
 describe('濁音・半濁音の合成 (§14.4)', () => {
-  it('濁音は base+2画・半濁音は base+1画で、濁点が右上にある', () => {
+  it('濁音は base+2画・半濁音は base+1画', () => {
     for (const c of characters) {
       if (!c.composedFrom) continue;
       const base = getChar(c.composedFrom.base);
@@ -218,13 +218,34 @@ describe('濁音・半濁音の合成 (§14.4)', () => {
         0,
       );
       expect(c.strokes.length, c.id).toBe(base.strokes.length + extra);
-      // 合成された marks の座標はマスの右上 (x 0.72〜1.0, y 0〜0.32)
-      for (const s of c.strokes.slice(base.strokes.length)) {
-        for (const p of s.points) {
-          expect(p.x, c.id).toBeGreaterThanOrEqual(0.72);
-          expect(p.y, c.id).toBeLessThanOrEqual(0.32);
-        }
+    }
+  });
+
+  it('濁点・半濁点は字の右上側にあり、マスからはみ出さない', () => {
+    // ★ 以前は「x≥0.72 かつ y≤0.32 の固定枠に入っていること」を見ていたが、
+    //   フォントが゛を打つ位置は字ごとに違い、固定枠のほうが誤りだった
+    //   (見えている゛と書き出しの点が最大 34% ずれていた)。
+    //   位置の正解はフォントしか知らないので、ここでは「常識の範囲」だけを見て、
+    //   実際の一致は tools/check-start-dots.mts (お手本の墨と照合) で担保する。
+    for (const c of characters) {
+      if (!c.composedFrom) continue;
+      const base = getChar(c.composedFrom.base);
+      const markPts = c.strokes.slice(base.strokes.length).flatMap((s) => s.points);
+      const basePts = base.strokes.flatMap((s) => s.points);
+      const avg = (v: number[]) => v.reduce((a, b) => a + b, 0) / v.length;
+      for (const p of markPts) {
+        expect(p.x, `${c.id} 記号がマス外`).toBeGreaterThanOrEqual(0.05);
+        expect(p.x, `${c.id} 記号がマス外`).toBeLessThanOrEqual(0.95);
+        expect(p.y, `${c.id} 記号がマス外`).toBeGreaterThanOrEqual(0.05);
+        expect(p.y, `${c.id} 記号がマス外`).toBeLessThanOrEqual(0.95);
       }
+      // 基字より右かつ上 (濁点は右上に打つ)
+      expect(avg(markPts.map((p) => p.x)), `${c.id} 記号が基字より右`).toBeGreaterThan(
+        avg(basePts.map((p) => p.x)),
+      );
+      expect(avg(markPts.map((p) => p.y)), `${c.id} 記号が基字より上`).toBeLessThan(
+        avg(basePts.map((p) => p.y)),
+      );
     }
   });
 });

@@ -7,6 +7,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { charSvg } from './charSvg';
+// @ts-expect-error 型定義のない開発用ヘルパ
+import { refFontFaceCss, REF_FONT_FAMILY } from '../ref-font.mjs';
 import type { RawCharacterDef, RawStroke } from '../../src/engine/types';
 import { toCharacterDef, resolveCharacter, toStroke, type MarkDef } from '../../src/engine/loader';
 import type { CharacterDef } from '../../src/engine/types';
@@ -37,7 +39,9 @@ const selected = [...registry.values()]
   );
 
 const S = Number(process.env.CELL ?? 250);
-const FONT = process.env.REF_FONT ?? 'Klee One';
+// ★ 出荷している woff2 を埋め込む。system の "Klee One" を名前で引くと、
+//   フォントが入っていない環境で黙って別の字形と比べてしまう (tools/ref-font.mjs)
+const FONT = REF_FONT_FAMILY;
 
 function refCell(ch: string): string {
   return (
@@ -65,6 +69,7 @@ const cells = selected
   .join('\n');
 
 const html = `<!doctype html><meta charset="utf-8"><style>
+${refFontFaceCss()}
 body{font-family:sans-serif;background:#f5f5f5;margin:8px}
 .grid{display:flex;flex-wrap:wrap;gap:10px}
 .pair{background:#fff;padding:4px;border-radius:4px}

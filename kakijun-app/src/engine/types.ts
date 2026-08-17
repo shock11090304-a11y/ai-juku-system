@@ -44,8 +44,13 @@ export type CharacterDef = {
   /** 学習順のグループ。CharSelectScreen の並び順に使う */
   group: string; // 'a-gyo', 'ka-gyo', 'dakuon', '0-5', ...
   strokes: Stroke[];
-  /** 濁音・半濁音のための合成定義 (§4.3) */
-  composedFrom?: { base: string; marks: string[] };
+  /**
+   * 濁音・半濁音のための合成定義 (§4.3)。
+   * markOffset = 記号を動かす量。フォントが゛を打つ位置は字ごとに違うので、
+   * 共有の marks.json をそのまま置くと見えている記号と書き出しの点がずれる。
+   * tools/fit-marks.mts が実測して入れる。
+   */
+  composedFrom?: { base: string; marks: string[]; markOffset?: [number, number] };
   /** 絵カード（例: あ → あり） */
   sample?: { word: string; image: string; audio: string };
 };

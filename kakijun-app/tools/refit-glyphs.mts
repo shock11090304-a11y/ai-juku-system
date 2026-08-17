@@ -18,13 +18,17 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { splineSample } from '../src/engine/geometry';
 import type { RawCharacterDef, Pt } from '../src/engine/types';
+// @ts-expect-error 型定義のない開発用ヘルパ
+import { useRefFont, REF_FONT_FAMILY } from './ref-font.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(here, '../src/data/characters');
 const args = process.argv.slice(2).filter((a) => a !== '--');
 const APPLY = args.includes('--apply');
 const only = args.filter((a) => !a.startsWith('--'));
-const FONT = process.env.REF_FONT ?? 'Klee One';
+// ★ system にインストールされたフォントを名前で引かない (tools/ref-font.mjs 参照)。
+//   出荷している woff2 = 画面に出ている字そのものを測る。
+const FONT = REF_FONT_FAMILY;
 const S = 512;
 const PASSES = 3;
 
@@ -49,7 +53,11 @@ const page = await browser.newPage({ viewport: { width: S, height: S } });
 await page.setContent(
   `<!doctype html><meta charset="utf-8"><body style="margin:0"><canvas id="c" width="${S}" height="${S}"></canvas>`,
 );
-await page.evaluate(() => document.fonts.ready);
+// 手本フォントが本当に効いているかを、測る字そのもので確かめる
+await useRefFont(
+  page,
+  targets.map((t) => t.c.char),
+);
 
 async function maskOf(ch: string): Promise<Uint8Array> {
   const bits = await page.evaluate(

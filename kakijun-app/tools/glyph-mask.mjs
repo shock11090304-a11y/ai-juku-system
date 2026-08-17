@@ -1,12 +1,15 @@
 /**
  * 手本フォントのグリフを 512x512 の白黒マスクにして JSON で吐く。
  * 字形照合 (中心線スナップ・忠実度検査) の入力にする。
- *   node tools/glyph-mask.mjs お /tmp/mask-o.json ["Klee One"]
+ *   node tools/glyph-mask.mjs お /tmp/mask-o.json
  */
 import { chromium } from 'playwright';
+import { useRefFont, REF_FONT_FAMILY } from './ref-font.mjs';
 import fs from 'node:fs';
 
-const [ch, out, font = 'Klee One'] = process.argv.slice(2);
+const [ch, out] = process.argv.slice(2);
+// ★ 出荷している woff2 を測る (tools/ref-font.mjs)
+const font = REF_FONT_FAMILY;
 const S = 512;
 
 const browser = await chromium.launch();
@@ -15,10 +18,8 @@ await page.setContent(
   `<!doctype html><meta charset="utf-8"><body style="margin:0">
    <canvas id="c" width="${S}" height="${S}"></canvas>`,
 );
-await page.evaluate(async () => {
-  // フォント読込を待つ (未読込だと代替フォントで測ってしまう)
-  await document.fonts.ready;
-});
+// フォントが効いていなければここで落ちる (代替フォントで測らない)
+await useRefFont(page, [ch]);
 const mask = await page.evaluate(
   ({ ch, S, font }) => {
     const c = document.getElementById('c');
