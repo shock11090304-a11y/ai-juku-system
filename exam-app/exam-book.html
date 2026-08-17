@@ -17,6 +17,9 @@
     <!-- ★ 起動時の「冊子を選ぶ」ダイアログは 1 回しか出ない。選んだあと別の冊子へ
          移る道が無かったので、ここから戻れるようにする (受験中は確認を挟む)。 -->
     <button type="button" id="home" title="冊子の一覧に戻る">冊子一覧</button>
+    <!-- ★ 講師アカウントのときだけ出す。ホーム画面のアイコンは受験画面に着くので、
+         ここが無いと講師用 (別 URL) へ行く道が画面上に 1 つも無い。 -->
+    <button type="button" id="to-admin" title="講師用の登録画面へ" hidden>講師用</button>
     <span id="book-title">神テスト</span>
     <span id="clock"></span>
     <span id="saveState"></span>

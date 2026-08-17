@@ -223,6 +223,10 @@ async function boot() {
   wireUi();
   startTimer();
   setStage('ready');
+
+  // --- 講師なら登録画面への入口を出す ----------------------------------------
+  // ★ 受験の邪魔をしないよう **最後に・待たずに** 調べる。失敗しても受験は続く。
+  showAdminLinkIfTeacher(uid);
   progress(1, '');
   renderStatus();
 }
@@ -488,6 +492,25 @@ function wireGrip() {
       try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (_) {}
     });
   }
+}
+
+/**
+ * 講師アカウントなら、ヘッダに「講師用」ボタンを出す。
+ *
+ * ★ なぜ要るか: 配信の入口 (/) は受験画面に転送される。ホーム画面のアイコンもそこへ着く。
+ *   講師用の登録画面は別 URL (/exam-book-admin.html) なのに、画面上のどこにも道が無く、
+ *   URL を手で打つしかなかった (2026-08-17 塾長指摘)。
+ * ★ 生徒には出さない。押しても RLS で弾かれるが、押せる時点で迷いのもとになる。
+ * ★ 役割が読めなくても **黙って何もしない**。受験を止める理由にはならない。
+ */
+async function showAdminLinkIfTeacher(uid) {
+  try {
+    const me = await sb().from('profiles').select('role').eq('id', uid).maybeSingle();
+    if (me.error || !me.data || me.data.role !== 'teacher') return;
+    const btn = $('#to-admin');
+    btn.hidden = false;
+    btn.addEventListener('click', () => { location.href = '/exam-book-admin.html'; });
+  } catch (_) { /* 役割が読めなくても受験には関係ない */ }
 }
 
 /**

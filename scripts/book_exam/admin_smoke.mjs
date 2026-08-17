@@ -19,8 +19,15 @@ const ROOT = process.argv[2], FIX = process.argv[3];
 const TYPES = { '.html':'text/html','.css':'text/css','.mjs':'text/javascript',
   '.pdf':'application/pdf','.bcmap':'application/octet-stream' };
 const server = http.createServer((req,res)=>{
-  const u=decodeURIComponent(req.url.split('?')[0]); const p=path.join(ROOT,u);
-  if(!p.startsWith(ROOT)||!fs.existsSync(p)||fs.statSync(p).isDirectory()){res.writeHead(404);res.end();return;}
+  const u=decodeURIComponent(req.url.split('?')[0]);
+  // ★ アプリ配下に無いものは検査用フィクスチャ (book.pdf 等) を見る。
+  //   これが無いと受験画面が冊子を開けず、講師導線の確認が「実装の不備」に見える。
+  let p=path.join(ROOT,u);
+  if(!p.startsWith(ROOT)||!fs.existsSync(p)||fs.statSync(p).isDirectory()){
+    const q=path.join(FIX,path.basename(u));
+    if(q.startsWith(FIX)&&fs.existsSync(q)&&!fs.statSync(q).isDirectory()) p=q;
+    else {res.writeHead(404);res.end();return;}
+  }
   res.writeHead(200,{'content-type':TYPES[path.extname(p)]||'application/octet-stream'});
   fs.createReadStream(p).pipe(res);
 });
@@ -54,6 +61,13 @@ ok('生徒アカウントでは開けない',
    `stage=${await page.evaluate(()=>document.body.dataset.stage)}`);
 ok('理由が画面に出る', /講師/.test(await page.textContent('#fatal-title').catch(()=>'')),
    await page.textContent('#fatal-title').catch(()=>''));
+// ★ SQL Editor を案内しても塾長はその場で直せない。入り直す道を出すこと。
+ok('その場でログインし直せる',
+   /ログイン/.test(await page.textContent('#fatal-reload').catch(()=>'')),
+   await page.textContent('#fatal-reload').catch(()=>''));
+ok('案内が SQL の話になっていない',
+   !/SQL/.test(await page.textContent('#fatal-detail').catch(()=>'')),
+   await page.textContent('#fatal-detail').catch(()=>''));
 
 // --- 講師で開く ---------------------------------------------------------------
 await page.evaluate(()=>localStorage.setItem('__smoke_role','teacher'));
@@ -63,6 +77,21 @@ ok('講師なら開ける', await page.evaluate(()=>document.body.dataset.stage)
    `stage=${await page.evaluate(()=>document.body.dataset.stage)}`);
 ok('冊子が一覧に出る', (await page.$$('#books .bookrow')).length>=1,
    `${(await page.$$('#books .bookrow')).length} 件`);
+ok('講師画面から受験画面へ戻れる',
+   await page.getAttribute('#to-exam','href')==='/exam-book.html',
+   await page.getAttribute('#to-exam','href'));
+
+// --- 受験画面 → 講師用 の導線 (講師のときだけ出る) ---------------------------
+// ★ ホーム画面のアイコンは受験画面に着く。ここに道が無いと URL を手打ちするしかない。
+await page.goto(`${base}/exam-book.html`,{waitUntil:'domcontentloaded'});
+await page.waitForSelector('body[data-stage="ready"]',{timeout:25000}).catch(()=>{});
+await page.waitForFunction(()=>{const b=document.querySelector('#to-admin');return b&&!b.hidden;},
+  {timeout:8000}).catch(()=>{});
+ok('講師には「講師用」ボタンが出る',
+   await page.evaluate(()=>{const b=document.querySelector('#to-admin');return !!b&&!b.hidden;}));
+await page.click('#to-admin').catch(()=>{});
+await page.waitForTimeout(600);
+ok('押すと講師用の登録画面へ行く', /exam-book-admin\.html/.test(page.url()), page.url());
 
 // --- PDF をまとめて調べる -----------------------------------------------------
 // ★ 先生の PC のファイルには作業環境から触れないが、ブラウザなら触れる。
