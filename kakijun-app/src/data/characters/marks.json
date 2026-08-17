@@ -2,14 +2,68 @@
   {
     "id": "mark_dakuten",
     "strokes": [
-      { "index": 1, "hint": "naname", "ending": "tome", "points": [[0.78, 0.1], [0.85, 0.2]] },
-      { "index": 2, "hint": "naname", "ending": "tome", "points": [[0.88, 0.07], [0.95, 0.17]] }
+      {
+        "index": 1,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.79,
+            0.08
+          ],
+          [
+            0.86,
+            0.18
+          ]
+        ]
+      },
+      {
+        "index": 2,
+        "hint": "naname",
+        "ending": "tome",
+        "points": [
+          [
+            0.89,
+            0.05
+          ],
+          [
+            0.96,
+            0.15
+          ]
+        ]
+      }
     ]
   },
   {
     "id": "mark_handakuten",
     "strokes": [
-      { "index": 1, "hint": "maru", "ending": "tome", "points": [[0.86, 0.08], [0.8, 0.13], [0.86, 0.19], [0.92, 0.13], [0.86, 0.08]] }
+      {
+        "index": 1,
+        "hint": "maru",
+        "ending": "tome",
+        "points": [
+          [
+            0.88,
+            0.045
+          ],
+          [
+            0.805,
+            0.12
+          ],
+          [
+            0.88,
+            0.195
+          ],
+          [
+            0.955,
+            0.12
+          ],
+          [
+            0.88,
+            0.045
+          ]
+        ]
+      }
     ]
   }
 ]
