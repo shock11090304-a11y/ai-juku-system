@@ -1,3 +1,12 @@
+/* お手本の字形は「線データの描画」ではなくフォントで出す。
+   線データは判定専用にして、見本が崩れないようにする (塾長指摘)。
+   Klee One (SIL Open Font License 1.1) をかな+数字にサブセットして同梱。 */
+@font-face {
+  font-family: 'KakijunSample';
+  src: url('../fonts/KleeOne-subset.woff2') format('woff2');
+  font-display: block;
+}
+
 /* §12.1 iPad Safari でのスクロール・ズーム・選択の抑制 */
 html,
 body {
