@@ -52,9 +52,19 @@ async function boot() {
     .eq('id', sess.session.user.id).maybeSingle();
   if (me.error) { fatal('プロフィールを読めませんでした', me.error.message); return; }
   if (!me.data || me.data.role !== 'teacher') {
-    fatal('この画面は講師だけが使えます',
-          `今のアカウントは ${me.data ? me.data.role : '不明'} です。`
-        + 'SQL Editor で profiles.role を teacher にしてください。');
+    // ★ いちばん多いのは「生徒のアカウントのまま講師画面を開いた」。
+    //   以前は SQL Editor を案内していたが、その場で直せる話ではないので
+    //   **ログインし直す道**を先に出す (2026-08-17 塾長指摘: 切り替えの文言で詰まる)。
+    const who = me.data && me.data.display_name ? `${me.data.display_name} / ` : '';
+    fatal('講師のアカウントで入り直してください',
+          `今ログインしているのは ${who}${me.data ? me.data.role : '不明'} のアカウントです。`
+        + '下のボタンでログインし直すと、講師用の登録画面に入れます。');
+    const btn = $('#fatal-reload');
+    btn.textContent = '別のアカウントでログイン';
+    btn.onclick = async () => {
+      try { await sb().auth.signOut(); } catch (_) { /* 消せなくても読み直す */ }
+      location.reload();
+    };
     return;
   }
   $('#who').textContent = `${me.data.display_name || ''} (講師)`;
