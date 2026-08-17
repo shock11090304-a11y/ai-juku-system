@@ -115,16 +115,64 @@ for (const c of targets) {
 }
 await browser.close();
 
+/**
+ * 既知のズレは baseline に記録し、落とすのは「新しく入ったもの」と
+ * 「悪化したもの」だけにする (scripts/_pii_baseline.txt と同じ考え方)。
+ * ★ 直したら baseline から消すこと。消し忘れも検出する。
+ * ★ 数字を書き換えて黙らせないこと。ここに載っている字は
+ *   「書き出しの点がお手本の上に無い = 直っていない」という意味。
+ */
+const baselineFile = path.join(here, '_start_dots_baseline.txt');
+const baseline = new Map<string, number>();
+if (fs.existsSync(baselineFile)) {
+  for (const line of fs.readFileSync(baselineFile, 'utf8').split('\n')) {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) continue;
+    const [id, stroke, gap] = t.split(/\s+/);
+    baseline.set(`${id} ${stroke}`, Number(gap));
+  }
+}
+const WORSE = 0.01; // 1% を超えて悪化したら落とす
+
 console.log(
   `書き出しの点がお手本の墨から離れていないか: ${targets.length}字 / 許容 ${(MAX * 100).toFixed(1)}%`,
 );
-if (bad.length === 0) {
-  console.log(`OK: 全画が許容内 (最大 ${(worstOk * 100).toFixed(1)}%)`);
-} else {
-  bad.sort((a, b) => b.gap - a.gap);
-  console.log(`★ ${bad.length}画が浮いている (悪い順):`);
-  for (const b of bad) {
-    console.log(`  ${b.char} ${b.id.padEnd(16)} ${b.stroke}画目  ${(b.gap * 100).toFixed(1)}%`);
+bad.sort((a, b) => b.gap - a.gap);
+const fresh: Bad[] = [];
+const worse: Bad[] = [];
+for (const b of bad) {
+  const known = baseline.get(`${b.id} ${b.stroke}`);
+  if (known === undefined) fresh.push(b);
+  else if (b.gap > known + WORSE) worse.push(b);
+}
+const fixed = [...baseline.keys()].filter(
+  (k) => !bad.some((b) => `${b.id} ${b.stroke}` === k),
+);
+
+if (bad.length) {
+  console.log(`  既知のズレ ${bad.length - fresh.length}画 (baseline に記録済み・未修正):`);
+  for (const b of bad.slice(0, 8)) {
+    console.log(`    ${b.char} ${b.id.padEnd(16)} ${b.stroke}画目  ${(b.gap * 100).toFixed(1)}%`);
   }
+  if (bad.length > 8) console.log(`    … 他 ${bad.length - 8}画 (全部見るなら --max 1 で)`);
+}
+for (const b of fresh) {
+  console.log(`NG 新しく浮いた: ${b.char} ${b.id} ${b.stroke}画目 ${(b.gap * 100).toFixed(1)}%`);
+}
+for (const b of worse) {
+  console.log(
+    `NG 悪化: ${b.char} ${b.id} ${b.stroke}画目 ${((baseline.get(`${b.id} ${b.stroke}`) ?? 0) * 100).toFixed(1)}% → ${(b.gap * 100).toFixed(1)}%`,
+  );
+}
+if (fixed.length) {
+  console.log(`★ 直ったのに baseline に残っている ${fixed.length}件: ${fixed.join(' / ')}`);
+  console.log('  → tools/_start_dots_baseline.txt から消すこと');
+}
+if (fresh.length || worse.length || fixed.length) {
   process.exit(1); // ★ 検査は必ず落とす。印字だけして exit 0 にしない
 }
+console.log(
+  bad.length === 0
+    ? `OK: 全画が許容内 (最大 ${(worstOk * 100).toFixed(1)}%)`
+    : `OK: 新しいズレ・悪化なし (既知の未修正 ${bad.length}画)`,
+);

@@ -17,6 +17,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { splineSample } from '../src/engine/geometry';
+import { prepareStrokes, toCharacterDef } from '../src/engine/loader';
+import { StrokeMatcher, resolveParams } from '../src/engine/strokeMatcher';
 import type { RawCharacterDef, Pt } from '../src/engine/types';
 // @ts-expect-error 型定義のない開発用ヘルパ
 import { useRefFont, REF_FONT_FAMILY } from './ref-font.mjs';
@@ -67,10 +69,13 @@ async function maskOf(ch: string): Promise<Uint8Array> {
       g.fillStyle = '#fff';
       g.fillRect(0, 0, S, S);
       g.fillStyle = '#000';
-      g.font = `${S * 0.88}px "${font}"`;
+      // ★ アプリの renderBackground と同一条件で描く。
+      //   ここが 0.88em・中央だった頃は、子どもが見ている字 (0.86em・y=0.52) とは
+      //   別の字に合わせ込んでいた (縦に約2%ずれる)
+      g.font = `${S * 0.86}px "${font}"`;
       g.textAlign = 'center';
       g.textBaseline = 'middle';
-      g.fillText(ch, S / 2, S / 2);
+      g.fillText(ch, S / 2, S * 0.52);
       const d = g.getImageData(0, 0, S, S).data;
       const out: number[] = [];
       for (let i = 0; i < S * S; i++) out.push(d[i * 4] < 128 ? 1 : 0);
@@ -107,6 +112,70 @@ function distanceTransform(mask: Uint8Array): Float32Array {
       dt[i] = v;
     }
   return dt;
+}
+
+/**
+ * ★ 直した字形が判定エンジンを通るかを、単体テストと同じ3通りで確かめる:
+ *   ① 理想軌跡 ② 手ぶれ (法線±0.02・4倍密) ③ お手本ずらし (0.035)
+ * ここを省くと「墨には乗ったが練習できないデータ」を入れてしまう。
+ */
+function enginePasses(raw: RawCharacterDef): boolean {
+  const strokes = prepareStrokes(toCharacterDef(raw));
+  const seed = raw.id.split('').reduce((a, ch) => a + ch.charCodeAt(0), 7);
+  const paths: ((s: (typeof strokes)[number]) => Pt[])[] = [
+    (s) => s.pts,
+    (s) => {
+      let a = seed >>> 0;
+      const rand = () => {
+        a = (a + 0x6d2b79f5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+      const out: Pt[] = [];
+      for (let i = 0; i < 63; i++) {
+        const p = s.pts[i];
+        const q = s.pts[i + 1];
+        const tx = q.x - p.x;
+        const ty = q.y - p.y;
+        const l = Math.hypot(tx, ty) || 1;
+        for (let k = 0; k < 4; k++) {
+          const t = k / 4;
+          const j = (rand() * 2 - 1) * 0.02;
+          out.push({ x: p.x + tx * t + (-ty / l) * j, y: p.y + ty * t + (tx / l) * j });
+        }
+      }
+      out.push(s.pts[63]);
+      return out;
+    },
+    (s) =>
+      s.pts.map((p, i) => {
+        const a = s.pts[Math.max(0, i - 1)];
+        const b = s.pts[Math.min(63, i + 1)];
+        const tx = b.x - a.x;
+        const ty = b.y - a.y;
+        const l = Math.hypot(tx, ty) || 1;
+        const u0 = s.pts[Math.max(0, i - 2)];
+        const v0 = s.pts[Math.min(63, i + 2)];
+        const u = Math.hypot(p.x - u0.x, p.y - u0.y) || 1;
+        const v = Math.hypot(v0.x - p.x, v0.y - p.y) || 1;
+        const cos = ((p.x - u0.x) * (v0.x - p.x) + (p.y - u0.y) * (v0.y - p.y)) / (u * v);
+        const k = Math.max(0, Math.min(1, (cos + 0.2) / 1.2));
+        return { x: p.x + (-ty / l) * 0.035 * k, y: p.y + (tx / l) * 0.035 * k };
+      }),
+  ];
+  for (const make of paths) {
+    const m = new StrokeMatcher(strokes, resolveParams('normal', 1));
+    for (const s of strokes) {
+      const path = make(s);
+      if (m.pointerDown(path[0]).type !== 'ok') return false;
+      for (let i = 1; i < path.length; i++) {
+        if (m.pointerMove(path[i]).type !== 'ok') return false;
+      }
+      if (!/stroke-ok|char-complete/.test(m.pointerUp().type)) return false;
+    }
+  }
+  return true;
 }
 
 /** 墨に乗っている割合 (忠実度) */
@@ -165,11 +234,14 @@ function refit(pts: Pt[], _mask: Uint8Array, dt: Float32Array): Pt[] {
 }
 
 const report: { id: string; char: string; before: number; after: number }[] = [];
+const rejected: string[] = [];
 for (const { c } of targets) {
   const mask = await maskOf(c.char);
   const dt = distanceTransform(mask);
   let beforeSum = 0;
   let afterSum = 0;
+  const original = c.strokes.map((st) => st.points.map((p) => [...p] as [number, number]));
+  const fittedAll: ([number, number][] | null)[] = [];
   for (const st of c.strokes) {
     const pts: Pt[] = st.points.map(([x, y]) => ({ x, y }));
     const before = fidelity(pts, mask);
@@ -179,10 +251,26 @@ for (const { c } of targets) {
     // 悪化する画は触らない (元の形のほうが墨に乗っている場合)
     if (after > before) {
       afterSum += after;
-      if (APPLY) st.points = fitted.map((p) => [p.x, p.y] as [number, number]);
+      fittedAll.push(fitted.map((p) => [p.x, p.y] as [number, number]));
     } else {
       afterSum += before;
+      fittedAll.push(null);
     }
+  }
+  // ★ 墨に寄せた結果、判定エンジンが通らない形になっていないかを必ず確かめる。
+  //   墨への一致度が上がっても、折り返しが鋭くなって「正しくなぞったのに
+  //   逆走・逸脱」と言われるデータになったら、それは改悪。忠実度の数字だけを
+  //   見て入れ替えると、そ・ぞ・え・カ で実際にそうなった (2026-08-17)。
+  for (let i = 0; i < c.strokes.length; i++) {
+    if (fittedAll[i]) c.strokes[i].points = fittedAll[i]!;
+  }
+  const ok = enginePasses(c);
+  if (!ok) {
+    for (let i = 0; i < c.strokes.length; i++) c.strokes[i].points = original[i];
+    rejected.push(`${c.char} ${c.id}`);
+    afterSum = beforeSum;
+  } else if (!APPLY) {
+    for (let i = 0; i < c.strokes.length; i++) c.strokes[i].points = original[i];
   }
   report.push({
     id: c.id,
@@ -199,6 +287,9 @@ for (const r of report)
   console.log(
     `  ${r.char} ${r.id.padEnd(16)} ${(r.before * 100).toFixed(0).padStart(3)}% → ${(r.after * 100).toFixed(0).padStart(3)}%`,
   );
+if (rejected.length) {
+  console.log(`★ 判定エンジンを通らなくなるため戻した ${rejected.length}字: ${rejected.join(' / ')}`);
+}
 const avgB = report.reduce((s, r) => s + r.before, 0) / report.length;
 const avgA = report.reduce((s, r) => s + r.after, 0) / report.length;
 console.log(`平均: ${(avgB * 100).toFixed(1)}% → ${(avgA * 100).toFixed(1)}%  (${report.length}字)`);
