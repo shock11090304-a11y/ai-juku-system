@@ -4880,7 +4880,26 @@ def _run_weekly_worksheet_generation() -> dict:
                     if (wsubj or "").lower() == "chugaku" and not wtopic:
                         continue
                     subject_topics.append({"subject": wsubj, "topic": wtopic})
-                    for (pool_exam, pool_part) in pool_keys[:2]:  # 最大 2 pool まで試す
+                    # 🎯 2026-08-18: 英語弱点に topic があるときは、まず**単元一致の r_grammar**
+                    #   (自己完結の4択・661問・「受動態」等の単元名が question_data に入っており LIKE で引ける)
+                    #   を試す。従来は english の先頭 pool r_long (3,594問・topic 無視のランダム長文) が
+                    #   常に非空 → 取得できた時点で break するため 2 番手以降が永遠に選ばれず
+                    #   (実測: 全247プリント中 r_grammar 0件・r_long 187件)、
+                    #   「受動態(make A into B)」の弱点に無関係な長文が 9 問配られていた。
+                    #   topic の単元接頭辞 (「受動態(make A into B…)」→「受動態」。dojo-drill の
+                    #   findPresetForWeakness と同じ区切り文字) で絞り、一致ゼロなら従来どおり
+                    #   pool_keys へフォールバック (配信ゼロ方向への縮小はしない)。
+                    _attempts = []
+                    if (wsubj or "").lower() == "english" and wtopic:
+                        _tprefix = re.split(r"[（(：:]", wtopic)[0].strip()
+                        if len(_tprefix) >= 2:
+                            _attempts.append(("daigaku", "r_grammar", _tprefix))
+                    for (_pe, _pp) in pool_keys[:2]:  # 最大 2 pool まで試す (従来挙動)
+                        # 🧒 2026-07-03 中学生プール(exam=chugaku)は part 非依存の単一バケット=単元 topic を
+                        #   必ず LIKE 絞りしないと数学弱点に理科/社会…と科目混在する。topic 無しは配信しない
+                        #   (bank の unit=filter は question_data 内に埋め込まれ LIKE 一致する)。
+                        _attempts.append((_pe, _pp, wtopic if _pe == "chugaku" else None))
+                    for (pool_exam, pool_part, _like_kw) in _attempts:
                         try:
                             # まず該当 pool の COUNT を取得 (高速・index 利用)
                             count_params = ["exam_id=?"]
@@ -4888,14 +4907,11 @@ def _run_weekly_worksheet_generation() -> dict:
                             if pool_part:
                                 count_params.append("part_key=?")
                                 count_args.append(pool_part)
-                            # 🧒 2026-07-03 中学生プール(exam=chugaku)は part 非依存の単一バケット=単元 topic を
-                            #   必ず LIKE 絞りしないと数学弱点に理科/社会…と科目混在する。topic 無しは配信しない
-                            #   (bank の unit=filter は question_data 内に埋め込まれ LIKE 一致する)。
-                            if pool_exam == "chugaku":
-                                if not wtopic:
-                                    continue
+                            if pool_exam == "chugaku" and not _like_kw:
+                                continue
+                            if _like_kw:
                                 count_params.append("question_data LIKE ?")
-                                count_args.append(f"%{wtopic}%")
+                                count_args.append(f"%{_like_kw}%")
                             count_sql = f"SELECT COUNT(*) FROM exam_questions WHERE {' AND '.join(count_params)}"
                             c.execute(count_sql, tuple(count_args))
                             cnt_row = c.fetchone()
