@@ -8857,9 +8857,17 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         // 🚫 [塾生アプリ AIなし枠 2026-07-04] 本クラス生の AI 利用 ON/OFF。OFF=塾生アプリ(宿題/予定/出欠/動画)のみ。
         (st.course === 'kokuritsu_nankan'
           ? `<div style="margin-top:10px;padding:12px 14px;background:rgba(129,140,248,0.06);border:1px solid rgba(129,140,248,0.25);border-radius:10px;">
-          <div style="color:#c7d2fe;font-weight:600;font-size:0.85rem;margin-bottom:8px;">🤖 AI利用 <span style="color:#71717a;font-weight:400;">(現在: ${st.ai_disabled ? '🚫 塾生アプリのみ(AIなし)' : '✅ AIあり'})</span></div>
-          <button type="button" class="sd-toggle-ai-btn" data-student-id="${esc(st.id)}" data-student-name="${esc(st.name || '')}" data-ai-disabled="${st.ai_disabled ? 1 : 0}" style="width:100%;padding:10px 14px;background:${st.ai_disabled ? 'linear-gradient(135deg,#4f46e5,#6366f1)' : 'rgba(239,68,68,0.13)'};color:${st.ai_disabled ? '#fff' : '#fca5a5'};border:${st.ai_disabled ? 'none' : '1px solid rgba(239,68,68,0.4)'};border-radius:8px;font-weight:bold;font-size:0.9rem;cursor:pointer;">${st.ai_disabled ? '🤖 AIを使えるようにする' : '🚫 塾生アプリのみ(AIなし)にする'}</button>
+          <div style="color:#c7d2fe;font-weight:600;font-size:0.85rem;margin-bottom:8px;">🤖 AI利用 <span style="color:#71717a;font-weight:400;">(現在: ${!st.ai_disabled ? '✅ AIあり' : (st.ai_trial_active ? '⏱ 期限付き体験中 (AI利用可)' : '🚫 塾生アプリのみ(AIなし)')})</span></div>
+          <button type="button" class="sd-toggle-ai-btn" data-student-id="${esc(st.id)}" data-student-name="${esc(st.name || '')}" data-ai-disabled="${st.ai_disabled ? 1 : 0}" style="width:100%;padding:10px 14px;background:${st.ai_disabled ? 'linear-gradient(135deg,#4f46e5,#6366f1)' : 'rgba(239,68,68,0.13)'};color:${st.ai_disabled ? '#fff' : '#fca5a5'};border:${st.ai_disabled ? 'none' : '1px solid rgba(239,68,68,0.4)'};border-radius:8px;font-weight:bold;font-size:0.9rem;cursor:pointer;">${st.ai_disabled ? '🤖 AIを使えるようにする (期限なし)' : '🚫 塾生アプリのみ(AIなし)にする'}</button>
           <div style="margin-top:6px;color:#71717a;font-size:0.74rem;line-height:1.5;">「塾生アプリのみ」= 宿題/予定表/出欠/動画だけ利用可。ドリル/AIチューター/教材生成などAI機能を全てブロックします(模試・宿題中心の通塾生向け)。</div>
+          ${(st.ai_disabled || st.ai_trial_until) ? `<div style="margin-top:10px;padding:10px 12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.25);border-radius:8px;">
+            ${(!st.ai_trial_active && st.ai_trial_until) ? `<div style="color:#a1a1aa;font-size:0.76rem;margin-bottom:6px;">前回の期限付き体験: ${esc(String(st.ai_trial_until).replace('T', ' ').slice(0, 16))} (UTC) に終了済み</div>` : ''}
+            ${st.ai_trial_active
+              ? `<div style="color:#86efac;font-size:0.8rem;line-height:1.5;margin-bottom:8px;">⏱ <strong>期限付き体験中</strong> — ${esc(String(st.ai_trial_until || '').replace('T', ' ').slice(0, 16))} (UTC) まで AI 利用可。期限が来れば<strong>自動で</strong>塾生アプリのみに戻ります。</div>
+                 <button type="button" class="sd-ai-trial-btn" data-student-id="${esc(st.id)}" data-student-name="${esc(st.name || '')}" data-days="0" style="width:100%;padding:9px 14px;background:rgba(239,68,68,0.13);color:#fca5a5;border:1px solid rgba(239,68,68,0.4);border-radius:8px;font-weight:bold;font-size:0.85rem;cursor:pointer;">⏹ 体験を今すぐ終了する</button>`
+              : `<button type="button" class="sd-ai-trial-btn" data-student-id="${esc(st.id)}" data-student-name="${esc(st.name || '')}" data-days="7" style="width:100%;padding:9px 14px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.85rem;cursor:pointer;">⏱ 7日だけAIを開ける (自動で戻る)</button>
+                 <div style="margin-top:6px;color:#71717a;font-size:0.74rem;line-height:1.5;">上の「AIを使えるようにする」と違い<strong>期限付き</strong>。7日後に自動で塾生アプリのみへ戻るので、戻し忘れて無期限開放になりません。<strong>AIを試したい通塾生にはこちらを使ってください</strong> (即課金¥5,000/月の招待コードを渡す必要はありません)。</div>`}
+          </div>` : ''}
         </div>`
           : ''),
       ].join('');
@@ -9013,7 +9021,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           const newDisabled = !curDisabled;                      // トグル後の状態
           const msg = newDisabled
             ? `${nm} さん (ID ${sid}) を「塾生アプリのみ(AIなし)」にします。\nドリル/AIチューター等のAI機能が全てブロックされ、宿題/予定/出欠/動画のみ利用可になります。よろしいですか？`
-            : `${nm} さん (ID ${sid}) に AI機能を使えるようにします。よろしいですか？`;
+            : `${nm} さん (ID ${sid}) に AI機能を使えるようにします。\n\n⚠️ これは【期限なし】です。戻すにはこの画面で手動操作が必要になります。\n数日だけ試させたいだけなら、キャンセルして下の「⏱ 7日だけAIを開ける (自動で戻る)」を使ってください。\n\nこのまま無期限で開けますか？`;
           if (!confirm(msg)) return;
           const _orig = btn.textContent;
           btn.disabled = true; btn.textContent = '⏳ 更新中...';
@@ -9027,6 +9035,42 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             if (r.ok) {
               if (st) st.ai_disabled = newDisabled ? 1 : 0;
               alert(`✅ ${nm} さんを ${newDisabled ? '「🏫 塾生アプリのみ(AIなし)」' : '「🤖 AIあり」'} に変更しました。画面を更新します。`);
+              location.reload();
+            } else {
+              alert('変更失敗: ' + (d.detail || ('HTTP ' + r.status)));
+              btn.disabled = false; btn.textContent = _orig;
+            }
+          } catch (e) {
+            alert('変更エラー: ' + (e && e.message ? e.message : e));
+            btn.disabled = false; btn.textContent = _orig;
+          }
+        });
+      });
+
+      // ⏱ [期限付き AI 体験 2026-08-18] AIなし枠の通塾生に「N日だけ」AI を開ける / 途中終了。
+      //   ai_disabled は触らず ai_trial_until だけを動かすので、期限が来れば自動で元に戻る。
+      infoPane.querySelectorAll('.sd-ai-trial-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const sid = Number(btn.dataset.studentId) || 0;
+          const nm = btn.dataset.studentName || '';
+          const days = Number(btn.dataset.days);
+          if (sid <= 0) { alert('student_id 不正'); return; }
+          if (!Number.isFinite(days) || days < 0) { alert('日数が不正です'); return; }
+          const msg = days > 0
+            ? `${nm} さん (ID ${sid}) に ${days}日間だけ AI を開けます。\n${days}日後に自動で「塾生アプリのみ」へ戻ります (戻す操作は不要)。よろしいですか？`
+            : `${nm} さん (ID ${sid}) の期限付き AI 体験を今すぐ終了します。よろしいですか？`;
+          if (!confirm(msg)) return;
+          const _orig = btn.textContent;
+          btn.disabled = true; btn.textContent = '⏳ 更新中...';
+          try {
+            const r = await AdminAuth.fetch(`/api/admin/students/${sid}/ai-trial`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ days }),
+            });
+            const d = await r.json().catch(() => ({}));
+            if (r.ok) {
+              alert(`✅ ${nm} さん: ${days > 0 ? `${days}日間の AI 体験を開始しました。` : 'AI 体験を終了しました。'}\n${d.note || ''}\n画面を更新します。`);
               location.reload();
             } else {
               alert('変更失敗: ' + (d.detail || ('HTTP ' + r.status)));

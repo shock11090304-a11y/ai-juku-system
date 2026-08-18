@@ -55,6 +55,54 @@ function updateSummary() {
   if (immBlock) {
     immBlock.style.display = (plan === 'student_addon') ? 'none' : '';
   }
+  // ★2026-08-18: 送信ボタン直上の「ご注文内容」を plan に合わせて必ず書き換える。
+  //   ここが「7日間 無料体験 ¥0 / 本日お支払い金額 ¥0」のまま即課金プランを出していたため、
+  //   通塾生が「無料体験のつもり」で決済画面まで進んでしまった (重複3アカウント事故の核心)。
+  const isAddon = (plan === 'student_addon');
+  const _set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  _set('summaryPlanLabel', isAddon ? '選択プラン（本契約・体験なし）' : '選択プラン（体験後・本契約時）');
+  _set('summaryPriceLabel', isAddon ? '月額（税込）' : '月額（体験後・税込）');
+  _set('summaryTotal', isAddon ? yen(info.price) : '¥0');
+  const trialRow = document.getElementById('summaryTrialRow');
+  if (trialRow) trialRow.style.display = isAddon ? 'none' : '';
+  // 招待コード欄: 通塾生プランでは必須。「(任意)・空欄で OK」のままだと、
+  // 書いてあるとおりにして弾かれる画面になる。
+  const invLabel = document.getElementById('inviteCodeLabel');
+  if (invLabel) {
+    invLabel.innerHTML = isAddon
+      ? '🎓 通塾生 招待コード<span style="color:#f87171;font-weight:800;margin-left:0.3rem;">必須 *</span>'
+      : '🎓 通塾生 招待コード(任意)<span style="font-weight:400;font-size:0.78rem;color:#94a3b8;margin-left:0.4rem;">塾長から発行された招待コード</span>';
+  }
+  const invHint = document.getElementById('inviteCodeHint');
+  if (invHint) {
+    invHint.innerHTML = isAddon
+      ? '⚠️ 通塾生プランは<strong>招待コードが無いとお申込みできません</strong>。塾長から DM で受け取った招待 URL の <code>?invite=</code> 以降を貼付ください。<br>お持ちでない方は、上のプラン一覧から <strong>創設メンバープラン</strong> を選ぶと 7日間の無料体験を始められます (カード登録不要)。'
+      : '💡 <strong>通塾生プラン (¥5,000/月)</strong> をご希望の方のみ。塾長から DM で受け取った招待 URL の <code>?invite=</code> 以降を貼付ください。お持ちでない方は空欄で OK です。';
+  }
+  const invErr = document.getElementById('inviteCodeError');
+  if (invErr && !isAddon) { invErr.style.display = 'none'; }
+  // ★即課金プランでは「+7日延長 = 14日間は一切課金されません」ブロックを隠す。
+  //   送信ボタン直前にあり、チェックすると confirm で「14日間は課金されません」に同意させるため、
+  //   出したままだと上の警告より強い誤誘導になる。チェック済みなら外して送信内容とも矛盾させない。
+  const cardExtBlock = document.getElementById('cardExtensionBlock');
+  const cardExtCb = document.getElementById('enableCardExtension');
+  if (cardExtBlock) cardExtBlock.style.display = isAddon ? 'none' : '';
+  if (isAddon && cardExtCb && cardExtCb.checked) cardExtCb.checked = false;
+  // ★ページ見出しも plan 連動。?plan=student_addon で来たときのファーストビューが
+  //   「7日間 完全無料・クレカ登録不要」だと、下の警告を読む前に無料だと理解されてしまう。
+  _set('checkoutEyebrow', isAddon ? '🎓 通塾生プラン' : '🎖 FOUNDER TRIAL');
+  _set('checkoutTitle', isAddon ? '通塾生プラン お申込み (本契約)' : '創設メンバー トライアル申込み');
+  const subEl = document.getElementById('checkoutSub');
+  if (subEl) {
+    subEl.innerHTML = isAddon
+      ? '塾長発行の招待コードが必要 / <strong>無料体験はありません・初月 ¥5,000 を即時お支払い</strong>（カード登録に進みます）'
+      : '創業記念・先着50名限定 / <strong>7日間 完全無料</strong>で全機能体験（クレカ登録不要）';
+  }
+  _set('loadingMsg', isAddon ? 'Stripeの安全な決済ページに移動しています...' : 'お申込みを送信しています...');
+  // プランを切り替えたら前のプランのエラーは消す (下の errorBox に「招待コードが必要」が
+  // 残ったまま創設メンバーを選ぶと、無料体験ボタンの直下で招待コードを要求する画面になる)
+  const _eb = document.getElementById('errorBox');
+  if (_eb) _eb.style.display = 'none';
 }
 
 // Pre-fill from URL params (from LP link)
@@ -160,6 +208,11 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   const submitBtn = document.getElementById('submitBtn');
   const errorBox = document.getElementById('errorBox');
   const loadingBox = document.getElementById('loadingBox');
+  // ★毎回の送信でエラー表示を消す。招待欄直下のエラーを消し忘れると、コードを入れ直して
+  //   再送信しても「コードを入力してください」が残り続け、生徒は「このメールでは弾かれる」と
+  //   誤解して別メールで登録し直す (=今回の重複3アカウント事故と同じ行動)。
+  { const _ie = document.getElementById('inviteCodeError'); if (_ie) _ie.style.display = 'none'; }
+  errorBox.style.display = 'none';
 
   // 🚀 2026-05-29: 即時本契約フラグを one-shot で消費 (この submit だけに適用・次回 submit に漏らさない)
   const _immediateSubmit = (window.__skipTrialImmediate === true);
@@ -201,6 +254,31 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     submitBtn.disabled = false;
     { const _ib = document.getElementById('immediateBtn'); if (_ib) { _ib.disabled = false; _ib.textContent = '⚡ 体験をスキップして今すぐ本契約で始める →'; } }
     return;
+  }
+  // 🎓 招待コードの解決と必須チェック。
+  // ★2026-08-18 修正: この検証は以前 signup (/api/trial/signup) の **後ろ** にあったため、
+  //   招待コード無しで通塾生プランを選ぶと「弾かれたのに生徒行だけ作られる」状態になり、
+  //   同じ人が別メールで3回登録し直す重複アカウント量産を招いた (実害: 2026-08-17〜18 に3件)。
+  //   ネットワークを叩く前の他の入力検証と同じ位置・同じ見せ方 (errorBox) に移した。
+  const inviteCode = ((document.getElementById('inviteCode')?.value || '').trim().replace(/[\s　]+/g, ''))
+    || window.__inviteToken || '';
+  const selectedPlanForBody = (document.querySelector('input[name="plan"]:checked')?.value || window.__urlPlanOverride || 'founder_special');
+  if (selectedPlanForBody === 'student_addon' && !inviteCode) {
+    const _msg = '⚠️ <strong>通塾生プランには塾長発行の招待コードが必要です。</strong><br>'
+      + 'この欄に DM で受け取ったコードをご入力ください。<br>'
+      + 'お持ちでない方は、上のプラン一覧から <strong>創設メンバープラン</strong> を選ぶと 7日間の無料体験を始められます '
+      + '(クレジットカード登録不要)。';
+    errorBox.innerHTML = _msg;
+    errorBox.style.display = 'block';
+    // ★招待コード欄の**直下**にも同じ文言を出す。errorBox は送信ボタンのさらに下 (実測で
+    //   招待欄から約1500px下) にあり、招待欄へスクロールすると画面外に消えて読まれない。
+    const invErr = document.getElementById('inviteCodeError');
+    if (invErr) { invErr.innerHTML = _msg; invErr.style.display = 'block'; }
+    submitBtn.disabled = false;
+    { const _ib = document.getElementById('immediateBtn'); if (_ib) { _ib.disabled = false; _ib.textContent = '⚡ 体験をスキップして今すぐ本契約で始める →'; } }
+    const inviteEl = document.getElementById('inviteCode');
+    if (inviteEl) { inviteEl.focus(); inviteEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+    return;   // ★signup を呼ぶ前に return = 生徒行を作らない
   }
   // 紹介コード: URL ?ref= or localStorage に保存されていれば payload に乗せる (30日 TTL)
   let refCode = '';
@@ -245,6 +323,8 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     grade,
     goal: document.getElementById('goal').value,
     ref: refCode || undefined,
+    // 🎓 通塾生プランは signup の時点でサーバが招待コードを検証する (無効なら生徒行を作らない)
+    invite_code: inviteCode || undefined,
     ...attribution,  // utm_source / utm_content / utm_campaign / lp_variant / referrer
   };
 
@@ -352,22 +432,12 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
       enable_card_for_extension: enableCardExt,  // true: Stripe Subscription 21 日 trial / false: free 14 日
     };
     // Reviewer B H2: 全角空白も除去 (DM コピペで全角混入対策)
-    const inviteFromInput = (document.getElementById('inviteCode')?.value || '')
-      .trim()
-      .replace(/[\s　]+/g, '');
-    const inviteCode = inviteFromInput || window.__inviteToken || '';
+    // 招待コード / プランは signup を呼ぶ前 (入力検証と同じ位置) で解決済み。
+    // ★ここで再計算しないこと。再計算すると「signup の後で弾く」古い挙動が復活し、
+    //   弾かれた申込でも生徒行だけが残る = 重複アカウント量産に戻る (2026-08-18 修正)。
     // payload に plan ヒントを送る (= server side で student_addon の場合に invite_code 必須化)
-    const selectedPlanForBody = (document.querySelector('input[name="plan"]:checked')?.value || window.__urlPlanOverride || 'founder_special');
     if (selectedPlanForBody) {
       checkoutBody.plan = selectedPlanForBody;
-    }
-    // 通塾生プラン選択時は招待コード必須 (2026-05-07: 不正契約防止)
-    const selectedPlanGuard = (document.querySelector('input[name="plan"]:checked')?.value || window.__urlPlanOverride || 'founder_special');
-    if (selectedPlanGuard === 'student_addon' && !inviteCode) {
-      alert('🎓 通塾生プランをご利用には、塾長から発行された招待コードが必要です。\n\n「🎓 通塾生 招待コード」欄に DM で受け取ったコードをご入力ください。\nお持ちでない方は塾長 (Instagram/Threads DM) までお問い合わせください。');
-      const inviteEl = document.getElementById('inviteCode');
-      if (inviteEl) { inviteEl.focus(); inviteEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
-      throw new Error('INVITE_CODE_REQUIRED');
     }
     if (inviteCode) {
       checkoutBody.invite_code = inviteCode;
@@ -453,7 +523,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
       errorBox.innerHTML = `
         <strong>⏱ ただ今混み合っています</strong><br>
         ${_esc(detail)}<br>
-        <strong>5 分ほど待ってから</strong>もう一度「無料体験を開始する」ボタンをお押しください。${supportLine}
+        <strong>5 分ほど待ってから</strong>もう一度 送信ボタンをお押しください。${supportLine}
       `;
       errorBox.style.display = 'block';
     } else if (msg.startsWith('INPUT_ERROR:')) {
@@ -468,14 +538,14 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
       errorBox.innerHTML = `
         <strong>⏱ 接続が遅延しています</strong><br>
         ネットワークが不安定か、サーバ起動中の可能性があります。<br>
-        <strong>もう一度「無料体験を開始する」ボタン</strong>を押してください。${supportLine}
+        <strong>もう一度 送信ボタン</strong>を押してください。${supportLine}
       `;
       errorBox.style.display = 'block';
     } else if (msg === 'BACKEND_DOWN' || msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
       errorBox.innerHTML = `
         <strong>⚠️ 決済サービスに接続できませんでした</strong><br>
         ただ今混み合っているか、ネットワークが不安定な可能性があります。<br>
-        <strong>もう一度「無料体験を開始する」ボタンを押してお試しいただくか</strong>、少し時間をおいて再度お試しください。${supportLine}
+        <strong>もう一度 送信ボタンを押してお試しいただくか</strong>、少し時間をおいて再度お試しください。${supportLine}
       `;
       errorBox.style.display = 'block';
     } else if (msg.includes('募集終了')) {
@@ -484,8 +554,6 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
         通常プランからお申込みいただけます。${supportLine}
       `;
       errorBox.style.display = 'block';
-    } else if (msg === 'INVITE_CODE_REQUIRED') {
-      // すでに alert で案内済み (招待コード欄に focus)
     } else {
       errorBox.innerHTML = `<strong>エラー:</strong> ${_esc(msg || '不明なエラー')}<br>もう一度お試しください。${supportLine}`;
       errorBox.style.display = 'block';

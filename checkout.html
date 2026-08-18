@@ -32,9 +32,13 @@
   <main class="checkout-main">
     <div class="checkout-wrapper">
       <div class="checkout-header">
-        <div class="eyebrow">🎖 FOUNDER TRIAL</div>
-        <h1>創設メンバー トライアル申込み</h1>
-        <p class="checkout-sub">創業記念・先着50名限定 / <strong>7日間 完全無料</strong>で全機能体験（クレカ登録不要）</p>
+        <!-- ★2026-08-18: 見出しも plan に連動させる (updateSummary が書き換える)。
+             通塾生が ?plan=student_addon の DM リンクから来ると、ファーストビューが
+             「7日間 完全無料・クレカ登録不要」だけで埋まり、下の警告を読む前に
+             「無料体験の申込書」だと理解してしまう (2026-08-18 事故の入口)。 -->
+        <div class="eyebrow" id="checkoutEyebrow">🎖 FOUNDER TRIAL</div>
+        <h1 id="checkoutTitle">創設メンバー トライアル申込み</h1>
+        <p class="checkout-sub" id="checkoutSub">創業記念・先着50名限定 / <strong>7日間 完全無料</strong>で全機能体験（クレカ登録不要）</p>
         <!-- 🔥 ソーシャルプルーフ -->
         <div data-social-proof style="margin-top:1rem;"></div>
       </div>
@@ -97,10 +101,15 @@
           <div class="plan-card">
             <div class="plan-recommend" style="background:linear-gradient(135deg,#d946ef,#a855f7);">🎓 通塾生限定</div>
             <div class="plan-card-header">
-              <div class="plan-card-name">🎓 通塾生プラン</div>
+              <div class="plan-card-name">🎓 通塾生プラン <span style="font-size:0.72rem;font-weight:700;color:#fca5a5;background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.4);border-radius:5px;padding:1px 6px;vertical-align:middle;white-space:nowrap;display:inline-block;">体験なし・即課金</span></div>
               <div class="plan-card-price">¥5,000<span>/月(永年)</span></div>
             </div>
-            <div class="plan-card-desc"><strong>塾長から発行された招待コードが必要</strong>です。AI 全機能無制限 + 学習管理 + ZOOM 授業参加可。入塾金免除。お持ちでない方は塾長 (Instagram/Threads DM) までお問い合わせください。</div>
+            <!-- ⚠️ 2026-08-18: このカードを「自分は通塾生だ」という身分申告だと思って選び、
+                 無料体験のつもりでカード登録画面に飛ばされる事故が起きた (通塾生が別メールで3回登録し直した)。
+                 体験ではなく本契約であることと、体験したい通塾生の行き先を必ずここに出す。 -->
+            <div class="plan-card-desc" style="color:#fca5a5;font-weight:600;margin-bottom:6px;">⚠️ これは無料体験ではありません。選ぶと<strong>カード登録に進み、初月 ¥5,000 が即時課金</strong>されます (7日間無料体験の対象外)。</div>
+            <div class="plan-card-desc"><strong>塾長から発行された招待コードが必要</strong>です。AI 全機能無制限 + 学習管理 + ZOOM 授業参加可。入塾金免除。<br>
+              <strong style="color:#86efac;">📱 すでに通塾中で「AIを試したい」方は、このプランではなく塾長にご連絡ください</strong> (塾生アプリのメッセージ / Instagram・Threads DM)。<strong>無料で数日間だけ AI を開けられます</strong>。カード登録は不要です。</div>
           </div>
         </label>
       </div>
@@ -149,22 +158,27 @@
 
                 <!-- 🎓 通塾生 招待コード入力欄 (2026-05-07 追加) -->
         <div class="form-group" id="inviteCodeGroup">
-          <label>🎓 通塾生 招待コード(任意)<span style="font-weight:400;font-size:0.78rem;color:#94a3b8;margin-left:0.4rem;">塾長から発行された招待コード</span></label>
+          <!-- ★ラベルとヒントは updateSummary() が plan に応じて書き換える。通塾生プラン選択時に
+               「(任意)」「空欄で OK」のままだと、書いてあるとおりにして弾かれる画面になる (2026-08-18)。 -->
+          <label id="inviteCodeLabel">🎓 通塾生 招待コード(任意)<span style="font-weight:400;font-size:0.78rem;color:#94a3b8;margin-left:0.4rem;">塾長から発行された招待コード</span></label>
           <input type="text" id="inviteCode" placeholder="塾長 DM で受け取ったコードを貼付 (URL でアクセスした場合は自動入力)" maxlength="500" autocomplete="off" spellcheck="false">
-          <p class="field-hint">💡 <strong>通塾生プラン (¥5,000/月)</strong> をご希望の方のみ。塾長から DM で受け取った招待 URL の <code>?invite=</code> 以降を貼付ください。お持ちでない方は空欄で OK です。</p>
+          <p class="field-hint" id="inviteCodeHint">💡 <strong>通塾生プラン (¥5,000/月)</strong> をご希望の方のみ。塾長から DM で受け取った招待 URL の <code>?invite=</code> 以降を貼付ください。お持ちでない方は空欄で OK です。</p>
+          <div id="inviteCodeError" style="display:none;margin-top:0.5rem;padding:0.7rem 0.85rem;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.45);border-radius:8px;color:#fca5a5;font-size:0.85rem;line-height:1.6;"></div>
         </div>
 
 <div class="summary-box">
           <h3>📋 ご注文内容</h3>
           <div class="summary-row">
-            <span>選択プラン（体験後・本契約時）</span>
+            <span id="summaryPlanLabel">選択プラン（体験後・本契約時）</span>
             <span id="summaryPlan">プレミアム</span>
           </div>
           <div class="summary-row">
-            <span>月額（体験後・税込）</span>
+            <span id="summaryPriceLabel">月額（体験後・税込）</span>
             <span id="summaryPrice">¥39,800</span>
           </div>
-          <div class="summary-row emphasis">
+          <!-- ★体験なしの通塾生プランではこの行と下の合計を必ず書き換える。ここが「¥0」のままだと
+               送信ボタン直上の最終確認が「無料」と言い続け、カードの警告より強く効いてしまう (2026-08-18 事故)。 -->
+          <div class="summary-row emphasis" id="summaryTrialRow">
             <span>🎖 創設メンバー 7日間 無料体験</span>
             <span style="color:var(--success);font-weight:800;">¥0</span>
           </div>
@@ -175,7 +189,7 @@
           <div class="summary-divider"></div>
           <div class="summary-row">
             <span>本日お支払い金額</span>
-            <span class="total">¥0</span>
+            <span class="total" id="summaryTotal">¥0</span>
           </div>
           <p class="summary-note" id="trialNote">
             <strong>📅 料金スケジュール（クレジットカード登録なし・7日間体験の場合）</strong><br>
@@ -209,7 +223,11 @@
              クレカ事前登録 → 14日 + 7日 = 21日 完全無料・終了 1〜2 日前に課金前通知メール (cron trial-reminders の trial_ending_card)
              解約は体験中いつでも mypage「解約する」(/api/billing/cancel-trial 即時解約・体験中は請求なし) — Stripe Portal は trial 中の mypage に出ない
              デフォルト OFF (off 時はクレカ不要の 14 日体験)・チェックで Stripe Subscription 経路 (常に founder_special を subscribe) -->
-        <div style="margin: 1.2rem 0; padding: 1rem 1.1rem; background: linear-gradient(135deg, rgba(34,197,94,0.10), rgba(251,191,36,0.08)); border: 1px solid rgba(74,222,128,0.40); border-radius: 10px;">
+        <!-- ★2026-08-18: 通塾生プラン(即課金)ではこのブロックごと隠す (updateSummary が制御)。
+             ここは送信ボタンの直前にあり「14 日間は一切課金されません」と書いてある上、
+             チェックすると confirm でその内容に同意させる。即課金プランで出すと、
+             上の警告より強い誤誘導になる (2026-08-18 事故の再発経路)。 -->
+        <div id="cardExtensionBlock" style="margin: 1.2rem 0; padding: 1rem 1.1rem; background: linear-gradient(135deg, rgba(34,197,94,0.10), rgba(251,191,36,0.08)); border: 1px solid rgba(74,222,128,0.40); border-radius: 10px;">
           <label style="display:flex; align-items:flex-start; gap:0.7rem; cursor:pointer;">
             <input type="checkbox" id="enableCardExtension" style="margin-top:0.3rem; min-width:1.1rem; min-height:1.1rem; accent-color:#22c55e;">
             <div style="flex:1; min-width:0;">
@@ -255,7 +273,8 @@
         <div id="errorBox" class="error-box" style="display:none;"></div>
         <div id="loadingBox" class="loading-box" style="display:none;">
           <div class="spinner"></div>
-          <p>Stripeの安全な決済ページに移動しています...</p>
+          <!-- ★無料体験 (Stripe を経由しない) でも「決済ページに移動」と出ていた → plan 連動にした -->
+          <p id="loadingMsg">お申込みを送信しています...</p>
         </div>
       </form>
     </div>

@@ -2043,6 +2043,12 @@ def init_db():
         #   1 = AI 全機能ブロック (mypage/ドリル/チューター等)。class.html の宿題/予定/出欠/動画/メッセージは
         #   別ゲート(_require_tsujuku_student)なので不変。承認時に塾長が指定 (既定は塾生アプリ登録=ON)。
         ("students_ai_disabled", "ALTER TABLE students ADD COLUMN ai_disabled INTEGER DEFAULT 0"),
+        # ⏱ [期限付き AI 体験 2026-08-18 塾長指示] AIなし枠(ai_disabled=1)の通塾生に「N日だけ AI を試させる」。
+        #   これが無かったため、体験したい通塾生に渡せるものが即課金¥5,000/月の招待コードしか無く、
+        #   生徒が公開LPから登録し直して決済画面に飛ばされる事故が起きた (2026-08-18・重複3アカウント)。
+        #   ai_disabled=1 のままこの日時が未来の間だけ AI を開ける → 期限が来れば自動で塾生アプリのみに戻る
+        #   (手で戻す運用が要らない)。判定は _ai_blocked_now() 一箇所のみ。naive UTC で保存する。
+        ("students_ai_trial_until", "ALTER TABLE students ADD COLUMN ai_trial_until TIMESTAMP"),
         # 📝 [宿題ドリル単元 2026-06-26] 宿題を特定の dojo-drill 単元に紐づけ (生徒アプリの「ドリルで解く」が
         #   ?w_subject=&w_topic= でその単元を自動起動。例 topic="英文法 関係詞")。
         ("homework_assignments_topic", "ALTER TABLE homework_assignments ADD COLUMN topic TEXT"),
@@ -2486,9 +2492,74 @@ _AI_DISABLED_CACHE: dict = {}     # student_id -> (is_disabled: bool, fetched_at
 _AI_DISABLED_CACHE_TTL = 30.0     # 秒。承認/トグルの反映は最大この遅延 (実害無)
 
 
+def _ai_trial_active(ai_trial_until) -> bool:
+    """⏱ 期限付き AI 体験が今この瞬間 有効か。
+
+    列は naive TIMESTAMP なので **naive は UTC とみなす** (aware をそのまま入れると本番だけ
+    期限がズレる既知の罠。trial_end の判定と同じ流儀に揃えている)。
+    読めない値は False = 体験なし扱い (フェイルセーフ: 壊れた値で AI を開けっ放しにしない)。
+    """
+    if not ai_trial_until:
+        return False
+    v = ai_trial_until
+    if isinstance(v, str):
+        try:
+            v = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        except ValueError:
+            return False
+    try:
+        if v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) < v
+    except Exception:
+        return False
+
+
+_HAS_AI_TRIAL_COL: dict = {}
+
+
+def _students_has_ai_trial_until() -> bool:
+    """students.ai_trial_until が実在するか (プロセス内で1回だけ判定してキャッシュ)。
+
+    migration (init_db の ALTER) は失敗しても debug ログにしか出ない。列が無いまま
+    列名を明示した SELECT を撃つと **AI 経路が丸ごと 500** になり、原因も見えないので、
+    列の有無で SELECT を切り替えるための判定。"""
+    if "v" in _HAS_AI_TRIAL_COL:
+        return _HAS_AI_TRIAL_COL["v"]
+    try:
+        _c = db(); _cc = _c.cursor()
+        _cc.execute("SELECT ai_trial_until FROM students LIMIT 1")
+        _cc.fetchall()
+        _c.close()
+    except Exception as _e:
+        # ★失敗を**キャッシュしない**。DB の一過性障害 (Railway のホストNWフラップ・コールドスタート時の
+        #   プール枯渇) で一度落ちただけで False を焼き付けると、列は在るのに体験中の生徒が
+        #   プロセス生存中ずっと 403 になり、再デプロイまで自然回復しない。次回に再判定させる。
+        log.warning(f"[AITrial] ai_trial_until の存在確認に失敗 (今回だけ無効扱い・次回再試行): {_e}")
+        return False
+    _HAS_AI_TRIAL_COL["v"] = True
+    return True
+
+
+def _ai_blocked_now(ai_disabled, ai_trial_until) -> bool:
+    """★リクエスト単位で AI を遮断すべきかの唯一の述語。ai_disabled=1 でも ai_trial_until が未来なら開ける。
+
+    ★この判定を2箇所に書かないこと。過去に述語を複数箇所に散らして
+      「押しても戻される壊れたボタン」を作った ([[tsujuku-app-only-ai-disabled]])。
+      row を持っている呼び出し側 (_verify_student_active / _check_ai_budget) も必ずこれを通す。
+    ★例外 (Python を通らない一括抽出 SQL): 週次弱点プリント配信は SQL 側で同じ条件を書いている
+      (体験中も配信する)。休眠再活性ナッジ・夏期コホート合流は素の ai_disabled のままで、
+      体験中でも対象外/拒否のまま = 意図どおり。SQL を足すときはここに追記すること。
+    """
+    if not (ai_disabled or 0):
+        return False
+    return not _ai_trial_active(ai_trial_until)
+
+
 def _is_student_ai_disabled(student_id) -> bool:
     """その生徒が「塾生アプリ専用(AIなし)」か。毎 AI リクエストの DB 往復を避ける 30秒 TTL cache 付き。
-    判定不能時は False (フェイルオープン=既存機能を壊さない)。"""
+    判定不能時は False (フェイルオープン=既存機能を壊さない)。
+    ⏱ 期限付き体験中は False (=AI 可)。cache TTL は 30 秒なので、期限切れは最大30秒で自動的に効く。"""
     import time as _t
     try:
         sid = int(student_id)
@@ -2501,10 +2572,13 @@ def _is_student_ai_disabled(student_id) -> bool:
     val = False
     try:
         _conn = db(); _c = _conn.cursor()
-        _c.execute("SELECT ai_disabled FROM students WHERE id = ?", (sid,))
+        _c.execute("SELECT ai_disabled, ai_trial_until FROM students WHERE id = ?", (sid,))
         _r = _c.fetchone()
         _conn.close()
-        val = bool(_r["ai_disabled"]) if (_r and "ai_disabled" in _r.keys()) else False
+        val = _ai_blocked_now(
+            (_r["ai_disabled"] if (_r and "ai_disabled" in _r.keys()) else 0),
+            (_r["ai_trial_until"] if (_r and "ai_trial_until" in _r.keys()) else None),
+        ) if _r else False
     except Exception:
         val = False
     _AI_DISABLED_CACHE[sid] = (val, now)
@@ -2929,6 +3003,10 @@ class TrialSignup(BaseModel):
     #   未指定 (通常の checkout.html 導線) では従来どおり FOUNDER_TRIAL_DAYS。
     cohort: Optional[str] = None
     cohort_code: Optional[str] = None
+    # 🎓 通塾生プラン (student_addon) の招待コード。★signup の時点で検証するために受け取る。
+    #   以前はフロントだけが checkout 直前に検証していたため、弾かれた申込でも生徒行だけが残り、
+    #   同じ人が別メールで登録し直す重複アカウントを量産していた (2026-08-18・実害3件)。
+    invite_code: Optional[str] = None
 
     @field_validator("name")
     @classmethod
@@ -11367,7 +11445,7 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
         # 🌻 signup_utm_campaign は表示用プラン名 (_summer_cohort_plan_label) の判定に使う。
         #   これが無いと CEO ロスターは trial_end 一致だけで判定することになり、後から trial_end が
         #   変わったコホート生が mypage と CEO で違う名前に見える (2026-07-25 review)。
-        c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived, enrollment_fee_force_charge, ai_disabled, signup_utm_campaign FROM students ORDER BY id DESC")
+        c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived, enrollment_fee_force_charge, ai_disabled, ai_trial_until, signup_utm_campaign FROM students ORDER BY id DESC")
         rows = c.fetchall()
         has_last_login = True
     except Exception:
@@ -11479,6 +11557,9 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
             "course": (row["course"] if "course" in row.keys() else None),
             # 🚫 [塾生アプリ AIなし枠 2026-07-04] 生徒詳細モーダルの AI利用トグル表示用 (列なし fallback は 0)
             "ai_disabled": (1 if (("ai_disabled" in row.keys()) and row["ai_disabled"]) else 0),
+            # ⏱ 期限付き AI 体験。ai_trial_active が true の間だけ ai_disabled=1 でも AI が使える
+            "ai_trial_until": (str(row["ai_trial_until"]) if (("ai_trial_until" in row.keys()) and row["ai_trial_until"]) else None),
+            "ai_trial_active": bool(_ai_trial_active(row["ai_trial_until"] if "ai_trial_until" in row.keys() else None)),
             "is_tsujuku_app": (row["id"] in tsujuku_app_ids),  # 塾生アプリ登録経由=ロスター分離表示用
             # 🆓 2026-05-29: 入塾金免除バッジ表示用 (生徒詳細モーダル)
             "enrollment_fee_waived": (bool(row["enrollment_fee_waived"]) if "enrollment_fee_waived" in row.keys() else False),
@@ -29130,6 +29211,55 @@ def trial_signup(payload: TrialSignup, request: Request):
     grade = (payload.grade or "")[:50]
     goal = (payload.goal or "")[:500]
     plan = (payload.plan or "hybrid")[:50]
+    # 🎓 [2026-08-18] 通塾生プランは招待コードが正しいときだけ生徒行を作る。
+    #   ★フロント (checkout.js) にも同じガードがあるが、古いタブ・戻る操作・curl では迂回できる。
+    #     どのみち決済側 (/api/stripe/checkout) で弾かれる申込なので、ここで作らせない方が正しい。
+    #     ここを通さないと「弾かれたのに生徒行だけ残る」= 重複アカウント量産に戻る。
+    #   ★決済側 (/api/stripe/checkout) と**同じ厳しさ**で見ること。valid だけ見て通すと、
+    #     「有効だが宛先メールが違う招待」で生徒行だけ作られて決済で 403 になり、
+    #     結局これまでと同じ重複アカウントが生まれる。
+    if plan == "student_addon":
+        _inv = (payload.invite_code or "").strip()
+        _guide = "お持ちでない場合は「創設メンバープラン」をお選びいただくと 7 日間の無料体験を始められます。"
+        # 既存の paid 通塾生の再申込は決済側で招待コードを免除しているので、ここでも同じ扱いにする
+        # (免除に到達する前に 400 で止めると、既存契約者がプラン変更できなくなる)。
+        _existing_paid_addon = False
+        try:
+            _cx = db(); _ccx = _cx.cursor()
+            _ccx.execute("SELECT status, plan FROM students WHERE LOWER(email) = ? LIMIT 1", (email_norm,))
+            _rx = _ccx.fetchone()
+            _cx.close()
+            if _rx and _rx["status"] == "paid" and (_rx["plan"] or "") == "student_addon":
+                _existing_paid_addon = True
+        except Exception as _ex:
+            log.warning(f"[Signup] existing paid addon check failed: {_ex}")
+        if not _existing_paid_addon:
+            if not _inv:
+                raise HTTPException(status_code=400,
+                                    detail="通塾生プランのお申込みには、塾長から発行された招待コードが必要です。" + _guide)
+            _chk = _verify_invite_token(_inv)
+            if not _chk.get("valid"):
+                _reason = _chk.get("reason", "invalid")
+                log.info(f"[Signup] student_addon の招待コードを拒否 reason={_reason} (生徒行は作らない)")
+                # ★期限切れは「再発行を依頼」が正しい案内。ここで一律に創設メンバー(¥14,500)へ流すと、
+                #   ¥5,000 で入れるはずの通塾生を高い方へ誘導してしまう (決済側と同じ文言に揃える)。
+                raise HTTPException(status_code=400, detail={
+                    "expired": "招待コードの有効期限が切れています。塾長に再発行を依頼してください。",
+                    "signature_mismatch": "招待コードが無効です (署名検証失敗)。塾長にご確認ください。",
+                    "malformed": "招待コードの形式が不正です。塾長から届いたコードをそのまま貼り付けてください。",
+                }.get(_reason, "招待コードが無効です。塾長にご確認ください。" + _guide))
+            _inv_email = (_chk.get("email") or "").strip().lower()
+            # ★決済側 (/api/stripe/checkout) は保護者メールとしか照合しない。ここで生徒メールも
+            #   許してしまうと「signup は通るが決済で 403」= 生徒行だけ残る、という塞いだはずの
+            #   穴が復活する。**決済側より緩くしないこと**。
+            if _inv_email and _inv_email != email_norm:
+                log.info("[Signup] student_addon の招待コード宛先メール不一致で拒否 (生徒行は作らない)")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"招待コードに紐づくメールアドレスと入力されたメールアドレスが一致しません。"
+                           f"招待コードの発行元 {_inv_email} でお申込みください。")
+            if _chk.get("kind") != "student_addon":
+                raise HTTPException(status_code=400, detail="招待コードの種類が不正です。塾長にご確認ください。")
     # 📊 集客 attribution (2026-05-19): フロントから送信された utm を最大長 cap 付きで保存
     utm_source = (payload.utm_source or "")[:50] or None
     utm_content = (payload.utm_content or "")[:100] or None
@@ -34928,6 +35058,11 @@ def _verify_student_active(student_id: int) -> dict:
     conn = db()
     c = conn.cursor()
     c.execute(
+        # ai_trial_until は 2026-08-18 追加の列。migration が失敗した環境で
+        # **全 AI リクエストが 500** になるのを避けるため、列が無ければ従来の SELECT に落とす
+        # (init_db の ALTER 失敗は debug ログにしか出ないので、ここで倒れると原因が見えない)。
+        "SELECT id, status, trial_end, plan, course, past_due_since, ai_disabled, ai_trial_until FROM students WHERE id = ?"
+        if _students_has_ai_trial_until() else
         "SELECT id, status, trial_end, plan, course, past_due_since, ai_disabled FROM students WHERE id = ?",
         (student_id,),
     )
@@ -34937,7 +35072,10 @@ def _verify_student_active(student_id: int) -> dict:
         raise HTTPException(status_code=404, detail="生徒が見つかりません")
     # 🚫 [塾生アプリ AIなし枠] ai_disabled=1 は AI 全機能を拒否。通塾生アプリ(class.html)は別ゲート
     #   (_require_tsujuku_student) で通すのでここでは弾いてよい (このゲートは AI コスト経路専用)。
-    if (row["ai_disabled"] if "ai_disabled" in row.keys() else 0):
+    if _ai_blocked_now(
+        (row["ai_disabled"] if "ai_disabled" in row.keys() else 0),
+        (row["ai_trial_until"] if "ai_trial_until" in row.keys() else None),
+    ):
         raise HTTPException(status_code=403, detail="この生徒は塾生アプリ(宿題/予定/出欠/動画)専用です。AI機能はご利用いただけません。")
     _row_course = row["course"] if "course" in row.keys() else None
     status = row["status"]
@@ -34989,14 +35127,18 @@ def _check_ai_budget(student_id: int) -> None:
     _status = None
     _trial_end_raw = None
     try:
-        c.execute("SELECT plan, course, ai_disabled, signup_utm_campaign, status, trial_end "
+        c.execute("SELECT plan, course, ai_disabled, ai_trial_until, signup_utm_campaign, status, trial_end "
                   "FROM students WHERE id = ?", (student_id,))
         row = c.fetchone()
         if row and row["plan"]:
             plan = str(row["plan"])
         if row:
             _course = row["course"] if "course" in row.keys() else None
-            _ai_disabled = (row["ai_disabled"] if "ai_disabled" in row.keys() else 0) or 0
+            # ⏱ 期限付き AI 体験中は遮断しない (述語は _ai_blocked_now に集約)
+            _ai_disabled = 1 if _ai_blocked_now(
+                (row["ai_disabled"] if "ai_disabled" in row.keys() else 0),
+                (row["ai_trial_until"] if "ai_trial_until" in row.keys() else None),
+            ) else 0
             _campaign = row["signup_utm_campaign"] if "signup_utm_campaign" in row.keys() else None
             _status = row["status"] if "status" in row.keys() else None
             _trial_end_raw = row["trial_end"] if "trial_end" in row.keys() else None
@@ -42392,11 +42534,14 @@ def _run_weakness_drill_routine(only_student_id: Optional[int] = None, dry_run: 
         #   (休眠再活性 cron と同じ方針)。2026-07-31 に塾生アプリの宿題タブへドリルを出すように
         #   したことで、塾長が出した覚えのない自動ドリルが AIなし枠の生徒に「宿題」として見える
         #   ようになったため、抽出側で塞ぐ。既存の割当は残るので必要なら個別に削除する。
+        #   ⏱ [2026-08-18] ただし期限付き AI 体験中 (ai_trial_until が未来) の生徒は対象に含める。
+        #     体験中に一番見せたいのが週次弱点プリントなので、ここで外すと体験の意味が無くなる。
+        #     ai_trial_until は _utc_naive_iso() と同じ「UTC 壁時計 naive」で保存しているので同形式で比較する。
         sql = ("SELECT id, name, email, line_user_id, grade FROM students "
                f"WHERE status IN ('trial', 'paid') AND {_synth_exclude_sql('students')} "
-               "AND COALESCE(ai_disabled, 0) = 0 "
+               "AND (COALESCE(ai_disabled, 0) = 0 OR (ai_trial_until IS NOT NULL AND ai_trial_until > ?)) "
                "AND (last_login_at IS NULL OR last_login_at >= ?) ")
-        params = [login_cutoff]
+        params = [_utc_naive_iso(), login_cutoff]
         if only_student_id:
             sql += "AND id = ? "
             params.append(int(only_student_id))
@@ -43670,7 +43815,14 @@ def admin_set_student_ai_disabled(student_id: int, payload: dict, authorization:
         c.execute("SELECT id FROM students WHERE id = ?", (student_id,))
         if not c.fetchone():
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
-        c.execute("UPDATE students SET ai_disabled = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (_val, student_id))
+        # ★このトグルを押したら期限付き体験は**どちらの向きでも**必ず打ち切る。
+        #   ai_disabled=1 側: 残すと _ai_blocked_now() が「体験中」と判定して遮断が無言で効かない
+        #     (画面は「塾生アプリのみに変更しました」と成功を出すのに AI が使えたまま)。
+        #   ai_disabled=0 側: 残すと「⏱ 期限付き体験中・期限が来れば自動で戻ります」と表示されるのに
+        #     実際は無期限開放。さらに「体験を今すぐ終了する」を押しても AI が止まらない
+        #     (= 押しても何も起きない壊れたボタン)。無期限にした時点で体験の概念は消える。
+        c.execute("UPDATE students SET ai_disabled = ?, ai_trial_until = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                  (_val, student_id))
         conn.commit()
     finally:
         conn.close()
@@ -43680,6 +43832,54 @@ def admin_set_student_ai_disabled(student_id: int, payload: dict, authorization:
         pass
     log.info(f"[AIDisabled] admin set student {student_id} ai_disabled={_val}")
     return {"ok": True, "student_id": student_id, "ai_disabled": _val}
+
+
+@app.post("/api/admin/students/{student_id}/ai-trial")
+def admin_grant_student_ai_trial(student_id: int, payload: dict, authorization: Optional[str] = Header(None)):
+    """⏱ [期限付き AI 体験 2026-08-18 塾長指示] AIなし枠の通塾生に「N 日だけ」AI を開ける。payload: {days: int}。
+
+    ★ai_disabled は変えない。ai_trial_until が未来の間だけ _ai_blocked_now() が通す設計なので、
+      **期限が来れば自動で塾生アプリのみに戻る** (手で戻す運用が要らない = 戻し忘れで無期限開放にならない)。
+    days<=0 で体験を即終了 (ai_trial_until=NULL)。
+    これが無かったため、体験したい通塾生に渡せるものが即課金¥5,000/月の招待コードしか無かった。
+    """
+    _verify_admin_required(authorization)
+    try:
+        # OverflowError: JSON の 1e400 は float('inf') になり int() が落ちる (500 を返さないため捕捉)
+        _days = int(payload.get("days", 7))
+    except (TypeError, ValueError, OverflowError):
+        raise HTTPException(status_code=400, detail="days は整数で指定してください")
+    if _days > 90:
+        raise HTTPException(status_code=400, detail="days は 90 日以内で指定してください")
+    _until = _utc_naive_iso(datetime.now(timezone.utc) + timedelta(days=_days)) if _days > 0 else None
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, ai_disabled FROM students WHERE id = ?", (student_id,))
+        _row = c.fetchone()
+        if not _row:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        c.execute("UPDATE students SET ai_trial_until = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                  (_until, student_id))
+        conn.commit()
+        _was_disabled = (_row["ai_disabled"] if "ai_disabled" in _row.keys() else 0) or 0
+    finally:
+        conn.close()
+    try:
+        _AI_DISABLED_CACHE.pop(int(student_id), None)  # 30秒 TTL を待たず即時反映
+    except Exception:
+        pass
+    log.info(f"[AITrial] admin grant student {student_id} days={_days} until={_until}")
+    return {
+        "ok": True,
+        "student_id": student_id,
+        "days": _days,
+        "ai_trial_until": _until,
+        # ai_disabled=0 の生徒に付けても意味が無い (元から AI が使える) ことを塾長に返す
+        "note": ("期限が来れば自動で塾生アプリのみに戻ります。" if (_days > 0 and _was_disabled)
+                 else ("体験を終了しました。" if _days <= 0
+                       else "この生徒は元から AI が使えます (ai_disabled=0) ので、この設定は効果がありません。")),
+    }
 
 
 @app.post("/api/admin/students/{student_id}/course")
@@ -47700,6 +47900,11 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
                 c.execute("UPDATE students SET course = ?, class_labels = ?, ai_disabled = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, _app_classes_json, _ai_disabled, student_id))
             else:
                 c.execute("UPDATE students SET course = ?, ai_disabled = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, _ai_disabled, student_id))
+            # ★AIなし枠で承認したなら期限付き体験も打ち切る (残すと遮断が無言で効かない・admin_set_student_ai_disabled と同じ規約)。
+            #   ただし既存値を保持しただけ (_ai_disabled_preserved) のときは塾長は AI 可否を触っていないので、
+            #   進行中の体験を無言で打ち切らない。
+            if _ai_disabled and not _ai_disabled_preserved:
+                c.execute("UPDATE students SET ai_trial_until = NULL WHERE id = ?", (student_id,))
             # 🎓 本クラスは無期限利用: trial_end を 10 年後にして体験期限で切れないようにし、既に expired/canceled に
             #    落ちている既存生徒は在籍(trial)へ復帰させる (admin_set_student_course と同じ規約)。
             #    以前は「status は変更しない」だったため、SaaS 体験終了済みの生徒を本クラスに承認しても
