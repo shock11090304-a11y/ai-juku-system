@@ -441,3 +441,80 @@ describe('★曲率のきつい画: 正しくなぞった手ぶれを逆走と�
     expect(feedbackKinds(events)).toContain('reverse');
   });
 });
+
+describe('★開始のみモード pathJudge:false (アプリの既定。2026-08-18 塾長指示)', () => {
+  // 経路は画面に見せていないのに「せんのうえをなぞってね」「ぎゃくむきだよ」と
+  // 叱られるのは子どもには意味が分からない。アプリの判定は
+  // 「書き出しの位置」と「画の順番」だけにする。
+  const startOnly = { ...resolveParams('normal', 1), pathJudge: false };
+
+  it('正しい書き出しから、経路と無関係にぐちゃぐちゃ描いても完走する', () => {
+    const strokes = loadStrokes('hira_shi');
+    const m = new StrokeMatcher(strokes, startOnly);
+    const start = strokes[0].pts[0];
+    // 従来判定なら即 offpath/reverse になるジグザグ
+    const path = [start];
+    for (let i = 1; i <= 20; i++) {
+      path.push({
+        x: start.x + (i % 2 ? 0.3 : 0.05),
+        y: start.y + i * 0.02,
+      });
+    }
+    const events = feedStroke(m, path);
+    expect(feedbackKinds(events)).toEqual([]);
+    expect(lastEvent(events).type).toBe('char-complete');
+  });
+
+  it('タップだけでは画が進まない (short で書き出しへ誘導)', () => {
+    const strokes = loadStrokes('hira_shi');
+    const m = new StrokeMatcher(strokes, startOnly);
+    const start = strokes[0].pts[0];
+    const events = feedStroke(m, [start, { x: start.x + 0.005, y: start.y }]);
+    expect(lastEvent(events)).toMatchObject({ type: 'feedback', feedback: 'short' });
+    // やり直して普通に描けば通る
+    const path = [start];
+    for (let i = 1; i <= 20; i++) {
+      path.push({ x: start.x + i * 0.02, y: start.y + i * 0.025 });
+    }
+    expect(lastEvent(feedStroke(m, path)).type).toBe('char-complete');
+  });
+
+  it('書き出しの位置と順番の判定は生きている', () => {
+    const strokes = loadStrokes('hira_i');
+    const m = new StrokeMatcher(strokes, startOnly);
+    // 2画目から書こうとする → order
+    expect(m.pointerDown(strokes[1].pts[0])).toMatchObject({
+      type: 'feedback',
+      feedback: 'order',
+    });
+    // 何もない所 → start
+    expect(m.pointerDown({ x: 0.95, y: 0.95 })).toMatchObject({
+      type: 'feedback',
+      feedback: 'start',
+    });
+    // 逆側 (現在の画の終点) から → reverse
+    const shi = new StrokeMatcher(loadStrokes('hira_shi'), startOnly);
+    expect(shi.pointerDown(loadStrokes('hira_shi')[0].pts[63])).toMatchObject({
+      type: 'feedback',
+      feedback: 'reverse',
+    });
+  });
+
+  it('複数画の字も、順に書き出せば自由な線で完走する', () => {
+    const strokes = loadStrokes('hira_i');
+    const m = new StrokeMatcher(strokes, startOnly);
+    for (const s of strokes) {
+      const start = s.pts[0];
+      const path = [start];
+      for (let i = 1; i <= 16; i++) {
+        path.push({
+          x: Math.min(0.98, start.x + (i % 2 ? 0.22 : 0.06)),
+          y: Math.min(0.98, start.y + i * 0.02),
+        });
+      }
+      const events = feedStroke(m, path);
+      expect(feedbackKinds(events)).toEqual([]);
+    }
+    expect(m.state.completed).toBe(true);
+  });
+});

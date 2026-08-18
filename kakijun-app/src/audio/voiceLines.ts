@@ -63,7 +63,7 @@ export function feedbackLine(
     case 'reverse':
       return { file: 'guide/this_way', text: 'こっちむきだよ' };
     case 'short':
-      return { file: 'guide/to_end', text: 'さいごまで なぞろうね' };
+      return { file: 'guide/to_end', text: 'さいごまで かこうね' };
   }
 }
 
