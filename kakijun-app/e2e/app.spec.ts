@@ -205,3 +205,27 @@ test('運筆のお手本は絵文字ではなく書く線そのもの', async ({
   });
   expect(colored, '背景層の有彩色画素 (絵文字が描かれた印)').toBe(0);
 });
+
+test('正しい書き出しなら、経路から外れた自由な線でも合格 (開始のみ判定)', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-testid=tile-hiragana]');
+  await page.click('[data-testid=char-hira_shi]');
+  await page.waitForSelector('[data-testid=practice-canvas] canvas');
+  await page.waitForTimeout(1200);
+  const strokes = prepareStrokes(toCharacterDef(loadChar('hira_shi')));
+  const box = (await page.locator('[data-testid=practice-canvas]').boundingBox())!;
+  const start = strokes[0].pts[0];
+  const sx = box.x + start.x * box.width;
+  const sy = box.y + start.y * box.height;
+  await page.mouse.move(sx, sy);
+  await page.mouse.down();
+  // 経路 (し の縦カーブ) とは無関係のジグザグ。従来判定なら offpath/reverse
+  for (let i = 1; i <= 12; i++) {
+    await page.mouse.move(
+      sx + (i % 2 ? 0.3 : 0.08) * box.width,
+      sy + i * 0.05 * box.height,
+    );
+  }
+  await page.mouse.up();
+  await expect(page.getByTestId('celebration')).toBeVisible({ timeout: 4000 });
+});

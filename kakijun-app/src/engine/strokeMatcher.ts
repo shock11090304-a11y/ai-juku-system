@@ -23,6 +23,9 @@ const COMMON = {
   LOOKAHEAD: 10,
   REVERSE_DOT: -0.3,
   REVERSE_RUN: 3,
+  // 既定は従来どおりのなぞり判定 (単体テスト・データ検査が使う)。
+  // アプリ側は PracticeScreen が pathJudge:false で上書きする
+  pathJudge: true,
 } as const;
 
 /**
@@ -120,6 +123,8 @@ type MatchState = {
   dirAnchor: Pt | null;
   /** dirAnchor を置いた時点の到達インデックス (前進したかを見るため) */
   dirAnchorProgress: number;
+  /** この画で実際に描いた線の長さ (開始のみモードの完了判定に使う) */
+  drawnLen: number;
   attempts: number; // 現在の画のやり直し回数
   mistakes: MistakeLog[]; // 文字全体のミス記録（採点用）
   drawing: boolean;
@@ -145,6 +150,7 @@ export class StrokeMatcher {
       pPrev: null,
       dirAnchor: null,
       dirAnchorProgress: 0,
+      drawnLen: 0,
       attempts: 0,
       mistakes: [],
       drawing: false,
@@ -179,6 +185,7 @@ export class StrokeMatcher {
     this.st.pPrev = null;
     this.st.dirAnchor = null;
     this.st.dirAnchorProgress = 0;
+    this.st.drawnLen = 0;
     this.st.drawing = false;
     this.st.attempts++;
     this.consecutiveFailures++;
@@ -197,6 +204,7 @@ export class StrokeMatcher {
     this.st.pPrev = null;
     this.st.dirAnchor = null;
     this.st.dirAnchorProgress = 0;
+    this.st.drawnLen = 0;
     this.st.drawing = false;
   }
 
@@ -234,6 +242,7 @@ export class StrokeMatcher {
       this.st.pPrev = p;
       this.st.dirAnchor = p;
       this.st.dirAnchorProgress = 0;
+      this.st.drawnLen = 0;
       return { type: 'ok' };
     }
 
@@ -259,6 +268,16 @@ export class StrokeMatcher {
   pointerMove(pRaw: Pt): MatcherResult {
     if (!this.st.drawing || this.st.completed) return { type: 'ignored' };
     const s = this.strokes[this.st.strokeIdx];
+    // ★開始のみモード (アプリの既定):
+    //   書き出しが正しければ、線がどう走ろうと口を出さない。
+    //   経路は画面に見せていないので、逸脱・逆走を指摘しても子どもには
+    //   「意味のわからないエラー」になる (2026-08-18 塾長指示)。
+    //   完了判定用に描いた長さだけ数える
+    if (!this.params.pathJudge) {
+      if (this.st.pPrev) this.st.drawnLen += dist(pRaw, this.st.pPrev);
+      this.st.pPrev = pRaw;
+      return { type: 'ok' };
+    }
     const h = step(s.length);
     const pEventStart = this.st.pPrev ?? pRaw;
 
@@ -386,6 +405,19 @@ export class StrokeMatcher {
   pointerUp(): MatcherResult {
     if (!this.st.drawing || this.st.completed) return { type: 'ignored' };
     const st = this.st;
+    // ★開始のみモード: 正しい場所から書き始めて、それなりの長さを描いたら完了。
+    //   「それなり」= 画の弧長の 35% (長い画は 0.45 まで・点は 0.04 から)。
+    //   タップだけで画が進んでしまうのを防ぐ最低限で、経路は見ない
+    if (!this.params.pathJudge) {
+      const s = this.strokes[st.strokeIdx];
+      const need = Math.max(0.04, Math.min(s.length * 0.35, 0.45));
+      if (st.drawnLen < need) {
+        this.log('short');
+        this.resetCurrentStroke();
+        return this.fail('short'); // 「さいごまで かこうね」
+      }
+      st.progress = LAST; // 完了扱い (以降の共通処理に乗せる)
+    }
     if (st.progress >= LAST * this.params.DONE_RATE) {
       const committedIdx = st.strokeIdx;
       st.strokeIdx++;
@@ -395,6 +427,7 @@ export class StrokeMatcher {
       st.pPrev = null;
       st.dirAnchor = null;
       st.dirAnchorProgress = 0;
+      st.drawnLen = 0;
       st.attempts = 0;
       st.drawing = false;
       this.consecutiveFailures = 0;

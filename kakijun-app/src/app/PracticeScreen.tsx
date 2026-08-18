@@ -12,6 +12,7 @@ import {
   type Feedback,
   type MatcherResult,
 } from '../engine/strokeMatcher';
+import type { MatchParams, Strictness } from '../engine/types';
 import { computeStars } from '../engine/scoring';
 import type { GuideLevel, ResampledStroke, Stars } from '../engine/types';
 import { CanvasSurface } from '../canvas/CanvasSurface';
@@ -35,6 +36,15 @@ export function PracticeScreen() {
   const remainingSeconds = useAppStore((s) => s.remainingSeconds);
 
   const charId = screen.name === 'practice' ? screen.charId : '';
+
+  // ★アプリの判定は「書き出しの位置と順番だけ」(2026-08-18 塾長指示)。
+  //   経路は画面に見せていないので、なぞり判定 (逸脱・逆走) をすると
+  //   子どもには意味の分からないエラーになる。pathJudge:true は
+  //   単体テストとデータ品質検査だけが使う
+  const appParams = (strictness: Strictness, lv: GuideLevel): MatchParams => ({
+    ...resolveParams(strictness, lv),
+    pathJudge: false,
+  });
   const def = getChar(charId);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -159,7 +169,7 @@ export function PracticeScreen() {
     strokesRef.current = prepared;
     matcherRef.current = new StrokeMatcher(
       prepared,
-      resolveParams(useAppStore.getState().settings.strictness, lv),
+      appParams(useAppStore.getState().settings.strictness, lv),
     );
     const guide = guideRef.current!;
     const surface = surfaceRef.current!;
@@ -235,16 +245,14 @@ export function PracticeScreen() {
       case 'order':
         guide.zoomNumber();
         guide.pulseStart();
-        guide.playDemo(); // お手本アニメを1回再生 (§7.4)
         break;
+      // ★offpath は開始のみモードでは発生しない。reverse (逆側から書き始めた) と
+      //   short (タップだけ等) は「正しい書き出しへ誘導」で返す。
+      //   glowPath / arrowHint は隠している判定経路を画面に出してしまうので使わない
       case 'offpath':
-        guide.glowPath();
-        break;
       case 'reverse':
-        guide.arrowHint();
-        break;
       case 'short':
-        guide.glowPath();
+        guide.pulseStart();
         break;
     }
     // 3回連続で失敗 → 自動的にガイドを1段階易しくする (§7.4 ★)
@@ -256,7 +264,7 @@ export function PracticeScreen() {
         setLevel(next);
         levelRef.current = next;
         m.setParams(
-          resolveParams(useAppStore.getState().settings.strictness, next),
+          appParams(useAppStore.getState().settings.strictness, next),
         );
         guide.level = next;
         const surface = surfaceRef.current!;
