@@ -1797,13 +1797,17 @@
       const subjJa = (s) => SUBJ_JA[String(s == null ? '' : s).toLowerCase()] || (s || '');
       const token = localStorage.getItem('ai_juku_session_token') || '';
       const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+      // ★関数スコープに置く: 下の buildWorksheetPrintHtml (印刷) が try ブロックの外から参照する。
+      //   try 内で const 宣言すると印刷時に ReferenceError で無音で何も出ない (実測)。
+      let ws = null;
+      const CIRCLED = '①②③④⑤⑥⑦⑧';
 
       try {
         const res = await fetch(`${API_BASE}/api/student/worksheet/this-week`, { headers });
         if (!res.ok) { section.style.display = 'none'; return; }
         const data = await res.json();
         section.style.display = '';
-        const ws = data.worksheet;
+        ws = data.worksheet;
         // 🧒 2026-07-03 中学生モードは chugaku バケットの問題/リンクのみ表示 (万一 旧プリントに大学問題が
         //   混在していても中学生には見せない=二重の流入遮断。生成側は _subj_scope で既に chugaku 限定)。
         const _wsMode = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';
@@ -1840,15 +1844,39 @@
             <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">${solveLinks}</div>
           </div>`;
         }
+        // ★2026-08-18 生徒報告「解けない」の修正: 旧実装は最初の小問 stem だけを表示し、
+        //   本文 (passage) も 2問目以降の小問も選択肢も捨てていた。r_long (長文読解・本文683〜4055字)
+        //   では「下線部(1)を訳しなさい」だけがポツンと出て解答不能だった (実測: 全247プリント中
+        //   187件・41生徒が r_long 混入 = ほぼ全員に影響)。本文+全小問+選択肢を出す。
+        //   answer/explanation はプリントなので出さない (解答漏洩防止)。
         (ws.questions || []).forEach((q, i) => {
           const qd = q.question_data || {};
-          const stem = qd.questions && qd.questions[0] ? (qd.questions[0].stem || qd.questions[0].question || '') : (qd.passage || qd.prompt || '');
+          const subs = (Array.isArray(qd.questions) && qd.questions.length) ? qd.questions : null;
+          const passage = String(qd.passage || '').trim();
           const wsubj = q.weakness_subject ? subjJa(q.weakness_subject) : '?';
           const wtopic = q.weakness_topic ? `「${escHtml(q.weakness_topic)}」` : '';
+          let inner = '';
+          if (passage) {
+            inner += `<details style="margin:0 0 0.5rem;"><summary style="cursor:pointer;font-size:0.8rem;color:#93c5fd;font-weight:700;min-height:40px;display:flex;align-items:center;">📄 本文を読む (${passage.length}字) — 読んでから下の設問へ</summary><div style="margin-top:0.4rem;padding:0.6rem 0.7rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;font-size:0.85rem;color:#e2e8f0;white-space:pre-wrap;line-height:1.7;max-height:24rem;overflow-y:auto;">${escHtml(passage)}</div></details>`;
+          }
+          if (subs) {
+            subs.forEach((sq, j) => {
+              const stem = String(sq.stem || sq.question || sq.stem_jp || '').trim();  // stem_jp: gendai/r_long の一部 (実測4行30小問) はここに入っている
+              inner += `<div style="margin:0 0 0.55rem;"><div style="font-size:0.88rem;color:#e2e8f0;white-space:pre-wrap;line-height:1.55;">${subs.length > 1 ? `<span style="color:#a7f3d0;font-weight:700;">(${j + 1})</span> ` : ''}${escHtml(stem)}</div>`;
+              const chs = Array.isArray(sq.choices) ? sq.choices : [];
+              if (chs.length) {
+                inner += `<div style="margin:0.3rem 0 0 0.8rem;display:grid;gap:0.2rem;">${chs.map((ch, k) => `<div style="font-size:0.84rem;color:#cbd5e1;line-height:1.5;">${CIRCLED[k] || (k + 1)} ${escHtml(String(ch))}</div>`).join('')}</div>`;
+              }
+              inner += `</div>`;
+            });
+          } else {
+            const fallback = String(qd.prompt || qd.instruction || '').trim();
+            inner += `<div style="font-size:0.88rem;color:#e2e8f0;white-space:pre-wrap;line-height:1.55;">${escHtml(fallback.slice(0, 600))}${fallback.length > 600 ? '…' : ''}</div>`;
+          }
           html += `
             <div class="ws-problem" style="padding:0.7rem;background:rgba(0,0,0,0.30);border:1px solid rgba(16,185,129,0.25);border-radius:10px;">
-              <div style="font-size:0.78rem;color:#10b981;margin-bottom:0.3rem;font-weight:700;">問題 ${i + 1} — <span style="color:#a7f3d0;">${escHtml(wsubj)}</span> ${wtopic} <span style="color:#94a3b8;font-weight:500;">(${escHtml(q.exam_id || '')}/${escHtml(q.part_key || '')})</span></div>
-              <div style="font-size:0.88rem;color:#e2e8f0;white-space:pre-wrap;line-height:1.55;">${escHtml(String(stem).slice(0, 600))}${String(stem).length > 600 ? '…' : ''}</div>
+              <div style="font-size:0.78rem;color:#10b981;margin-bottom:0.3rem;font-weight:700;">問題 ${i + 1} — <span style="color:#a7f3d0;">${escHtml(wsubj)}</span> ${wtopic}</div>
+              ${inner}
             </div>`;
         });
         probEl.innerHTML = html;
@@ -1859,21 +1887,79 @@
       }
 
       // 印刷ボタン
-      if (printBtn) {
-        printBtn.addEventListener('click', () => {
-          // 弱点プリント部分のみ印刷したいので、印刷用 stylesheet を当てる
-          const w = window.open('', '_blank');
-          if (!w) { window.print(); return; }
-          const cloned = section.cloneNode(true);
-          // ボタン・アプリ内導線(解くリンク)は印刷不要なので除去
-          cloned.querySelectorAll('button').forEach(b => b.remove());
-          cloned.querySelectorAll('.ws-solve').forEach(b => b.remove());
-          const histDiv = cloned.querySelector('#worksheetHistoryList');
-          if (histDiv) histDiv.remove();
-          w.document.write(`<html><head><title>今週の弱点プリント</title><style>body{font-family:system-ui,sans-serif;padding:1.5rem;color:#222;background:#fff;}h3{color:#0a5a3a;}.ws-problem{margin:0 0 1.2rem;padding:0.8rem;border:1px solid #ccc;border-radius:6px;background:#fafafa;}div{line-height:1.6;}</style></head><body>${cloned.innerHTML}</body></html>`);
-          w.document.close();
-          setTimeout(() => { w.print(); }, 400);
+      // ★2026-08-18 生徒報告「印刷できない」の修正: 旧実装は画面 DOM の clone を印刷ウィンドウへ
+      //   持ち込んでいた。clone にはダークテーマの inline style (title=白文字・箱=黒背景30%・
+      //   本文=薄灰文字) が付いており、<style> の白地指定は inline style に勝てない
+      //   → 白紙に白タイトル (消える)・灰色の箱に薄灰文字 (読めない) の紙が出ていた。
+      //   さらに clone は本文を含まない旧プレビューの複製なので、読めても解けない紙だった。
+      //   → データ (ws) から明色テーマの自己完結 HTML を組み立てる。解答は載せない。
+      function buildWorksheetPrintHtml() {
+        const topics = (ws.subject_topics || []).map(s => escHtml(subjJa(s.subject) + (s.topic ? '・' + s.topic : ''))).join(' / ') || '（弱点情報なし）';
+        let body = '';
+        (ws.questions || []).forEach((q, i) => {
+          const qd = q.question_data || {};
+          const subs = (Array.isArray(qd.questions) && qd.questions.length) ? qd.questions : null;
+          const passage = String(qd.passage || '').trim();
+          const wsubj = q.weakness_subject ? subjJa(q.weakness_subject) : '?';
+          const wtopic = q.weakness_topic ? `「${escHtml(q.weakness_topic)}」` : '';
+          body += `<div class="q"><div class="qh">問題 ${i + 1} — ${escHtml(wsubj)} ${wtopic}</div>`;
+          if (passage) body += `<div class="psg">${escHtml(passage)}</div>`;
+          if (subs) {
+            subs.forEach((sq, j) => {
+              const stem = String(sq.stem || sq.question || sq.stem_jp || '').trim();  // stem_jp: gendai/r_long の一部 (実測4行30小問) はここに入っている
+              body += `<div class="sq">${subs.length > 1 ? `(${j + 1}) ` : ''}${escHtml(stem)}</div>`;
+              const chs = Array.isArray(sq.choices) ? sq.choices : [];
+              if (chs.length) {
+                body += `<div class="chs">${chs.map((ch, k) => `<div>${CIRCLED[k] || (k + 1)} ${escHtml(String(ch))}</div>`).join('')}</div>`;
+              } else {
+                body += `<div class="ans"></div>`;
+              }
+            });
+          } else {
+            body += `<div class="sq">${escHtml(String(qd.prompt || qd.instruction || '').trim())}</div><div class="ans"></div>`;
+          }
+          body += `</div>`;
         });
+        return `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>今週の弱点プリント</title><style>
+          body{font-family:'Hiragino Sans','Yu Gothic',system-ui,sans-serif;color:#111;background:#fff;padding:1.2rem;line-height:1.7;max-width:720px;margin:0 auto;}
+          h1{font-size:1.15rem;border-bottom:2px solid #333;padding-bottom:0.3rem;margin:0 0 0.2rem;}
+          .meta{font-size:0.8rem;color:#333;margin:0 0 1rem;}
+          .q{margin:0 0 1.4rem;}
+          .qh{font-size:0.85rem;font-weight:800;color:#0a5a3a;border-left:4px solid #0a5a3a;padding-left:0.5rem;margin:0 0 0.4rem;}
+          .psg{font-size:0.85rem;border:1px solid #bbb;border-radius:4px;padding:0.6rem 0.7rem;margin:0 0 0.5rem;white-space:pre-wrap;}
+          .sq{font-size:0.9rem;margin:0 0 0.3rem;white-space:pre-wrap;}
+          .chs{font-size:0.85rem;margin:0 0 0.6rem 1.2rem;}
+          .ans{height:5.5em;border:1px solid #999;border-radius:4px;margin:0.2rem 0 0.7rem;}
+          /* ★改ページ制御は小さい単位だけ。大問カード (.q) に break-inside:avoid を付けると
+             1ページ級の高さで改ページ前に大量の空白ができ紙が半分死ぬ (過去の実測 59p→46p)。 */
+          .sq,.chs,.ans{break-inside:avoid;}
+          .qh{break-after:avoid;}
+          @media print{body{padding:0.5rem;}}
+        </style></head><body>
+        <h1>📅 今週の弱点プリント</h1>
+        <div class="meta">${escHtml(ws.week_start_date || '')} の週 / 対象弱点: ${topics} / 全 ${ws.question_count} 問　　名前:＿＿＿＿＿＿＿＿＿＿</div>
+        ${body}
+        </body></html>`;
+      }
+      if (printBtn) {
+        // onclick 代入 = 再描画で listener が積み上がらない (addEventListener だと2重印刷になる)
+        printBtn.onclick = () => {
+          const w = window.open('', '_blank');
+          if (!w) {
+            // ★iPad Safari には「サイト別のポップアップ許可」設定が存在しない (全体設定のみ)。
+            //   ホーム画面アプリ (PWA standalone) では window.open 自体が使えないことがある。
+            //   実行可能な案内だけを出す。
+            if (navigator.standalone === true) {
+              alert('ホーム画面のアプリからは印刷画面を開けません。Safari で ' + location.hostname + ' を開いてから印刷してください。');
+            } else {
+              alert('印刷画面を開けませんでした。設定アプリ → Safari → 「ポップアップブロック」を一時的にオフにしてから、もう一度お試しください。');
+            }
+            return;
+          }
+          w.document.write(buildWorksheetPrintHtml());
+          w.document.close();
+          setTimeout(() => { try { w.focus(); w.print(); } catch (e) { /* 印刷ダイアログはユーザー操作でも開ける */ } }, 400);
+        };
       }
 
       // 履歴ボタン

@@ -562,6 +562,10 @@ MONITORING_INTERVAL_MIN = int(os.getenv("MONITORING_INTERVAL_MIN", "5"))
 # 502 を返し「申込→決済フローが壊れている」と誤発報するため (塾長を夜中に起こす原因)。
 # deploy 直後の検証は _post_deploy_smoke_test (起動30秒後) が担当するので監視の穴にはならない。
 _SYNTHETIC_BOOT_GRACE_S = _env_int("SYNTHETIC_BOOT_GRACE_S", 90, lo=0, hi=600)
+# 起動30秒後の post-deploy smoke test を回すか (既定 1 = 回す)。
+# ★0 にするのは **本番以外で main.app を起動するとき**。smoke test は合成 E2E を通じて
+#   ハードコードされた本番 URL へ申込 POST を撃つので、CI/ローカルで回すと本番を汚す。
+POST_DEPLOY_SMOKE_ENABLED = os.getenv("POST_DEPLOY_SMOKE_ENABLED", "1") == "1"
 # deploy 直後 smoke test が失敗したとき、アラート前に再検査するまでの待ち秒 (2026-07-26)。
 # 「黙らせる」のではなく「もう一度確かめる」= deploy検証の役目を殺さずに切替窓の誤報だけ消す。
 _POSTDEPLOY_RECHECK_S = _env_int("POSTDEPLOY_RECHECK_S", 60, lo=5, hi=600)
@@ -2686,9 +2690,20 @@ async def _start_background_tasks():
     # Railway / Vercel 再 deploy のたびに必ず合成テスト + JS エラー状況チェックを走らせ、
     # 結果を events に記録 + 失敗時は monitor email で即時アラート。
     # 「更新のたびにエラー有無をチェック」を自動化する仕組み (2026-04-27 追加)。
-    task = asyncio.create_task(_post_deploy_smoke_test())
-    _BACKGROUND_TASKS.append(task)
-    log.info("[Startup] Post-deploy smoke test scheduled (will run in 30 seconds)")
+    # ★2026-08-18: env で無効化できるようにした。この task は 30 秒後に
+    #   _run_synthetic_checkout_test を走らせ、**backend_base にハードコードされた本番 URL**
+    #   (ai-juku-api-production.up.railway.app) へ実際に申込 POST を撃つ。
+    #   つまり CI やローカルで main.app を uvicorn 起動して 30 秒以上動かすと、
+    #   **本番の students に sentinel が作られる**。そこで作られた orphan は cleanup 対象外
+    #   (作った側のプロセスが別 DB を見ているため) で、CEO ダッシュの churn を汚す。
+    #   実際 scripts/health_check/test_event_loop_blocking.py は uvicorn を起動するので、
+    #   回帰を検出して実行が伸びた回にだけ本番を汚す、という一番たちの悪い形になっていた。
+    if POST_DEPLOY_SMOKE_ENABLED:
+        task = asyncio.create_task(_post_deploy_smoke_test())
+        _BACKGROUND_TASKS.append(task)
+        log.info("[Startup] Post-deploy smoke test scheduled (will run in 30 seconds)")
+    else:
+        log.info("[Startup] Post-deploy smoke test は無効 (POST_DEPLOY_SMOKE_ENABLED=0)")
 
     # 🎓 本クラス(国公立難関)生の誤「体験終了」を起動時に自己修復 (無期限アクセス保証・毎日 cron を待たない)
     task = asyncio.create_task(_heal_honclass_on_boot())
@@ -4805,6 +4820,68 @@ def _run_weekly_worksheet_generation() -> dict:
         worksheets_created = 0
         notifications_sent = 0
         errors = []
+        # 📊 観測: 英語弱点が ①タグ一致 / ②全文LIKE のどちらで選定されたか (運用で①の実効性を監視。
+        #   新規 r_grammar 行がタグ無しだと①から無言で漏れる=①比率の低下で気づく)
+        unit_tag_picks = 0
+        like_fallback_picks = 0
+        pool_fallback_picks = 0
+
+        # 🎯 2026-08-18 (2段目): 英語弱点→r_grammar の単元一致を「question_data 全文 LIKE」から
+        #   「【単元】タグ一致 + 大問内の全小問が当該単元」に格上げ。全文 LIKE は explanation 内の
+        #   偶然の言及にも当たり、実測の単元精度は受動態36%/助動詞39%/時制11%/比較4%/関係詞7%
+        #   (= 選ばれた問題のうち本当にその単元だった割合)。また行(大問)単位マッチのため 10 問構成の
+        #   混在大問だと 1/10 しか当該単元でないことがある。タグの正典は dojo-drill と同じ
+        #   _derive_question_unit (q.unit > 解説/設問の【単元】)。候補行の全小問を Python で照合し
+        #   混在大問を弾く。run 内キャッシュで同一単元の走査は全生徒で 1 回。
+        _unit_rows_cache = {}
+        # 弱点 topic がタグ語彙より細かい別名のときの正規化 (例:「関係代名詞(主格)」→ prefix「関係代名詞」
+        # はタグ「関係詞」に startswith しない)。値はタグ語彙 21 語のいずれか。
+        _UNIT_TAG_ALIASES = {
+            "関係代名詞": "関係詞", "関係副詞": "関係詞", "複合関係詞": "関係詞",
+            "仮定法過去完了": "仮定法", "仮定法過去": "仮定法", "仮定法現在": "仮定法",
+            "現在完了": "時制", "過去完了": "時制", "未来完了": "時制", "進行形": "時制",
+            "代名詞": "名詞・代名詞", "不定代名詞": "名詞・代名詞", "受け身": "受動態",
+            "強調構文": "強調", "間接疑問": "疑問詞", "熟語": "語法", "イディオム": "語法", "慣用表現": "語法",
+        }
+
+        def _grammar_unit_rows(prefix):
+            """r_grammar から「全小問の単元が prefix に一致する大問」の id リスト (run 内キャッシュ)。"""
+            if prefix in _unit_rows_cache:
+                return _unit_rows_cache[prefix]
+            ids = []
+            try:
+                # 「否定・倒置」のような複合 topic は ・区切りの各パートでも試す。別名はタグ語彙に正規化。
+                pats = [prefix] + [p for p in prefix.split("・") if len(p) >= 2 and p != prefix]
+                pats += [_UNIT_TAG_ALIASES[p] for p in list(pats) if p in _UNIT_TAG_ALIASES and _UNIT_TAG_ALIASES[p] not in pats]
+                seen = set()
+                for pat in pats:
+                    c.execute(
+                        "SELECT id, question_data FROM exam_questions "
+                        "WHERE exam_id='daigaku' AND part_key='r_grammar' AND question_data LIKE ? LIMIT 400",
+                        (f"%【単元】{pat}%",)
+                    )
+                    for _r in (c.fetchall() or []):
+                        _rid = _r["id"] if hasattr(_r, "keys") else _r[0]
+                        if _rid in seen:
+                            continue
+                        seen.add(_rid)
+                        _qraw = _r["question_data"] if hasattr(_r, "keys") else _r[1]
+                        try:
+                            _qd = json.loads(_qraw) if isinstance(_qraw, str) else (_qraw or {})
+                        except Exception:
+                            continue
+                        _qs = [q for q in (_qd.get("questions") or []) if isinstance(q, dict)]
+                        if not _qs:
+                            continue
+                        _units = [(_derive_question_unit(q) or "") for q in _qs]
+                        if all(any(u.startswith(p) for p in pats) for u in _units):
+                            ids.append(_rid)
+            except Exception as _e:
+                # 一過性 DB エラーで空リストを run 全体に固定しない (キャッシュせず返す=次の生徒で再試行)
+                log.warning(f"[WeeklyWorksheet] unit-tag scan failed for '{prefix}': {_e}")
+                return []
+            _unit_rows_cache[prefix] = ids
+            return ids
 
         for st in students:
             try:
@@ -4831,6 +4908,23 @@ def _run_weekly_worksheet_generation() -> dict:
                 if c.fetchone():
                     continue
 
+                # 🔁 直近4週に配布済みの question_id を①タグ一致選定の除外候補に。在庫の薄い単元
+                #   (例: 在庫ちょうど3大問) だと弱点が卒業するまで毎週**同一の3大問**が届き、生徒には
+                #   故障に見える。除外の結果 3 大問を切るときは②従来 LIKE へフォールバック (反復より広域)。
+                _recent_qids = set()
+                try:
+                    c.execute("SELECT questions_json FROM worksheet_archives WHERE student_id=? ORDER BY id DESC LIMIT 4", (sid,))
+                    for _ar in (c.fetchall() or []):
+                        _aq = _ar["questions_json"] if hasattr(_ar, "keys") else _ar[0]
+                        try:
+                            for _it in (json.loads(_aq) if isinstance(_aq, str) else (_aq or [])):
+                                if isinstance(_it, dict) and _it.get("question_id") is not None:
+                                    _recent_qids.add(_it.get("question_id"))
+                        except Exception:
+                            pass
+                except Exception:
+                    _recent_qids = set()
+
                 # 弱点 TOP3 取得 (未克服順・習得済みは除外)
                 # 🎯 [習得クローズドループ 2026-06-17] weakness-top3 と同基準: qa_accuracy>=0.8 かつ
                 #   qa_attempts>=5 の「習得済み(卒業)」単元は週次プリントに再出題しない。順序も未克服優先に。
@@ -4854,6 +4948,10 @@ def _run_weekly_worksheet_generation() -> dict:
                 import random as _rnd
                 all_problem_ids = []  # P0-4: questions_json 軽量化用 (id のみ保存)
                 subject_topics = []
+                # 🎯 TOP3 に同じ単元接頭辞の弱点が 2 つ入るケース (「受動態(A)」「受動態(B)」は別 topic key)
+                #   では両方が同じ _grammar_unit_rows キャッシュから抽選する。除外しないと同一プリント内で
+                #   同じ大問が重複する (在庫がちょうど 3 なら 2 弱点とも同一の 3 大問)。
+                _picked_rgram_ids = set()
                 for w in weaknesses:
                     wsubj = w["subject"] if hasattr(w, "keys") else w[0]
                     wtopic = (w["topic"] if hasattr(w, "keys") else w[1]) or None
@@ -4865,7 +4963,41 @@ def _run_weekly_worksheet_generation() -> dict:
                     if (wsubj or "").lower() == "chugaku" and not wtopic:
                         continue
                     subject_topics.append({"subject": wsubj, "topic": wtopic})
-                    for (pool_exam, pool_part) in pool_keys[:2]:  # 最大 2 pool まで試す
+                    # 🎯 2026-08-18: 英語弱点に topic があるときは、まず**単元一致の r_grammar**
+                    #   (自己完結の4択・661大問/1,614小問) を試す。従来は english の先頭 pool r_long
+                    #   (3,594問・topic 無視のランダム長文) が常に非空 → 取得できた時点で break するため
+                    #   2 番手以降が永遠に選ばれず (実測: 全247プリント中 r_grammar 0件・r_long 187件)、
+                    #   「受動態(make A into B)」の弱点に無関係な長文が 9 問配られていた。
+                    #   topic の単元接頭辞 (「受動態(make A into B…)」→「受動態」。dojo-drill の
+                    #   findPresetForWeakness と同じ区切り文字) で絞る。
+                    #   選定は 2 段: ①【単元】タグ一致 + 大問内の全小問が当該単元 (_grammar_unit_rows・
+                    #   在庫 3 大問以上のときだけ) → ② 従来の question_data 全文 LIKE → ③ pool_keys
+                    #   フォールバック (配信ゼロ方向への縮小はしない)。
+                    _attempts = []
+                    if (wsubj or "").lower() == "english" and wtopic:
+                        _tprefix = re.split(r"[（(：:]", wtopic)[0].strip()
+                        if len(_tprefix) >= 2:
+                            _uids = [i for i in _grammar_unit_rows(_tprefix)
+                                     if i not in _picked_rgram_ids and i not in _recent_qids]
+                            if len(_uids) >= 3:
+                                for qid in _rnd.sample(_uids, 3):
+                                    _picked_rgram_ids.add(qid)
+                                    all_problem_ids.append({
+                                        "question_id": qid,
+                                        "exam_id": "daigaku",
+                                        "part_key": "r_grammar",
+                                        "weakness_subject": wsubj,
+                                        "weakness_topic": wtopic,
+                                    })
+                                unit_tag_picks += 1
+                                continue  # ① タグ一致で選定完了 → 次の弱点へ
+                            _attempts.append(("daigaku", "r_grammar", _tprefix))
+                    for (_pe, _pp) in pool_keys[:2]:  # 最大 2 pool まで試す (従来挙動)
+                        # 🧒 2026-07-03 中学生プール(exam=chugaku)は part 非依存の単一バケット=単元 topic を
+                        #   必ず LIKE 絞りしないと数学弱点に理科/社会…と科目混在する。topic 無しは配信しない
+                        #   (bank の unit=filter は question_data 内に埋め込まれ LIKE 一致する)。
+                        _attempts.append((_pe, _pp, wtopic if _pe == "chugaku" else None))
+                    for (pool_exam, pool_part, _like_kw) in _attempts:
                         try:
                             # まず該当 pool の COUNT を取得 (高速・index 利用)
                             count_params = ["exam_id=?"]
@@ -4873,14 +5005,11 @@ def _run_weekly_worksheet_generation() -> dict:
                             if pool_part:
                                 count_params.append("part_key=?")
                                 count_args.append(pool_part)
-                            # 🧒 2026-07-03 中学生プール(exam=chugaku)は part 非依存の単一バケット=単元 topic を
-                            #   必ず LIKE 絞りしないと数学弱点に理科/社会…と科目混在する。topic 無しは配信しない
-                            #   (bank の unit=filter は question_data 内に埋め込まれ LIKE 一致する)。
-                            if pool_exam == "chugaku":
-                                if not wtopic:
-                                    continue
+                            if pool_exam == "chugaku" and not _like_kw:
+                                continue
+                            if _like_kw:
                                 count_params.append("question_data LIKE ?")
-                                count_args.append(f"%{wtopic}%")
+                                count_args.append(f"%{_like_kw}%")
                             count_sql = f"SELECT COUNT(*) FROM exam_questions WHERE {' AND '.join(count_params)}"
                             c.execute(count_sql, tuple(count_args))
                             cnt_row = c.fetchone()
@@ -4905,6 +5034,8 @@ def _run_weekly_worksheet_generation() -> dict:
                                 row_id = c.fetchone()
                                 if row_id:
                                     qid = row_id[0] if not hasattr(row_id, 'keys') else row_id[0]
+                                    if qid in _picked_rgram_ids:
+                                        continue  # ①で選定済みの大問を②で再選定しない (同一プリント内重複防止)
                                     if _is_kokugo_pool:
                                         try:
                                             _qd_raw = row_id[1]
@@ -4915,6 +5046,13 @@ def _run_weekly_worksheet_generation() -> dict:
                                             continue  # 解答不能の不良大問はスキップ (次 offset / 次 pool へ fallthrough)
                                     picked_ids.append(qid)
                             if picked_ids:
+                                if (wsubj or "").lower() == "english":
+                                    if _like_kw and pool_exam == "daigaku" and pool_part == "r_grammar":
+                                        like_fallback_picks += 1  # ② 英語弱点が全文LIKEで選定された
+                                    else:
+                                        pool_fallback_picks += 1  # ③ topic 無視の pool (r_long 等) に落ちた
+                                if pool_exam == "daigaku" and pool_part == "r_grammar":
+                                    _picked_rgram_ids.update(picked_ids)  # ②選定分も以降の重複除外対象に
                                 # P0-4: id のみ記録 (full question_data 保存を回避し容量 1/200 に削減)
                                 for qid in picked_ids:
                                     all_problem_ids.append({
@@ -5011,6 +5149,9 @@ def _run_weekly_worksheet_generation() -> dict:
             "notifications_sent": notifications_sent,
             "errors": errors[:10],  # 最初の 10 件のみ
             "week_start_date": week_start,
+            "unit_tag_picks": unit_tag_picks,          # 英語弱点: ①【単元】タグ一致で選定した数
+            "like_fallback_picks": like_fallback_picks,  # 英語弱点: ②全文LIKEに落ちた数 (①比率低下の監視用)
+            "pool_fallback_picks": pool_fallback_picks,  # 英語弱点: ③topic無視のpool (r_long等) に落ちた数
         }
     finally:
         conn.close()
@@ -7857,7 +7998,11 @@ def _alert_recently_sent(alert_key: str, cooldown_min: int = None) -> bool:
     c = conn.cursor()
     try:
         c.execute(
-            "SELECT props FROM events WHERE name = 'monitor_alert' AND created_at >= ? ORDER BY created_at DESC LIMIT 50",
+            # ★2026-08-18 LIMIT 50 → 200。cooldown が既定 60分だけだった頃は窓内の行数が
+            #   高々十数件で問題にならなかったが、signup_submitted_no_record で 360分 cooldown を
+            #   使い始めたため、窓内の monitor_alert が 50 件を超えると**古い行が切り落とされて
+            #   cooldown が黙って破れる**。info の banner_only もこの表に入る点に注意。
+            "SELECT props FROM events WHERE name = 'monitor_alert' AND created_at >= ? ORDER BY created_at DESC LIMIT 200",
             (since,)
         )
         for r in c.fetchall():
@@ -7980,6 +8125,35 @@ def _collect_health_snapshot() -> dict:
     h6 = now - timedelta(hours=6)
     snapshot["pv_6h"] = event_count("page_view", h6)
     snapshot["form_submit_6h"] = event_count("form_submit", h6)
+    # ★2026-08-18: 「申込ボタンは押されたのに何も起きていない」を測るための 3 点セット。
+    #   analytics.js は document の submit を無差別に拾う (form_submit_6h) ので、
+    #   申込フォームだけを見るには form_id で絞る必要がある。実測 (90日 61件) の内訳は
+    #   checkoutForm 45 / trialForm 16。**trialForm は lp.html の method="get" の
+    #   ページ遷移で API を 1 度も叩かない**ため、絞らないと構造的な永久誤報になる。
+    #   support.html / business.html / blog.html のフォームも同じ form_submit を撃つ。
+    #   照合は素の部分一致にする。'"form_id": "checkoutForm"' と綴ると json.dumps の
+    #   区切り文字やキー順が変わっただけで**静かに 0 件になり、アラートが死ぬ**。
+    #   ★症状側は「直近5分」を除く (lag guard)。form_submit は送信ボタンの瞬間に記録され、
+    #     students の行はその後に書かれる (実測の差は 0.3ms〜0.3秒)。tick がその隙間に
+    #     入ると「送信されたのに登録ゼロ」になる。**90日の再現では実際に減った発火は 0 件**で、
+    #     これは実績のある修正ではなく予防措置。5分あれば申込処理は確実に終わっている。
+    _fs_lag_cutoff = now - timedelta(minutes=5)
+    snapshot["form_submit_checkout_6h"] = safe_count(
+        "SELECT COUNT(*) FROM events WHERE name='form_submit' AND created_at >= ? "
+        "AND created_at <= ? AND COALESCE(props,'') LIKE '%checkoutForm%'", (h6, _fs_lag_cutoff)
+    )
+    #   API が申込を受理した証拠 (どちらか 1 つでもあれば「通っている」)。
+    #   既存メールでの再申込は students が増えないまま成功するので、students だけを見ると
+    #   実測で 3 件に 1 件が誤報になる (90日 checkoutForm 45件中 14〜16件がこの形)。
+    #   ★証拠側は窓を 15 分ぶん**広く**取る。同じ人が数分あけて再送信すると、
+    #     最初の (成功した) 申込だけが 6h 窓の後端から先に落ち、後の送信だけが残る
+    #     (実測 3.2分差の実例あり)。90日の再現で**実際に誤報を1件減らしたのはこの拡張**。
+    #     症状より証拠を広く取る非対称は意図的 (誤報を減らす向きにしか効かない)。
+    _ev6 = h6 - timedelta(minutes=15)
+    snapshot["signups_6h"] = safe_count(
+        f"SELECT COUNT(*) FROM students WHERE created_at >= ? AND {_synth_exclude_sql()}", (_ev6,)
+    )
+    snapshot["checkout_initiated_6h"] = event_count("checkout_initiated", _ev6)
     snapshot["page_loaded_ok_6h"] = event_count("page_loaded_ok", h6)
 
     # 🔧 JS エラー 6h カウントは「最後の sweep 以降」のみ集計 (2026-04-28 self-healing 強化)。
@@ -8175,10 +8349,82 @@ def _evaluate_alerts(snapshot: dict) -> list:
     # 3. 申込フリーズ: ローンチ48h経過後、24時間 申込ゼロ
     if (snapshot["hours_since_launch"] > MONITORING_QUIET_HOURS_AFTER_LAUNCH_HOURS
             and snapshot["signups_24h"] == 0):
+        # ★2026-08-18 severity 降格 (warning → info): メールは止め、CEO ダッシュのバナーには
+        #   従来どおり出す (ceo.html は severity で絞らず全件描画する)。
+        #   理由: 実申込レートは直近14日で 13件/14日 = 0.93 件/日 → 24時間ゼロの確率は理論 39%。
+        #   直近30日の実測でも 12〜14/30 日 (約4割・暦日の切り方で±1) がゼロ。
+        #   つまり「平常状態の 4 割で点灯し、その間 60 分おきに鳴り続ける」設計だった
+        #   (直近14日に塾長へ飛んだ監視メールの約98%がこれ = 本物の障害通知が埋もれる)。
+        #   これは故障ではなく事業の平常値であり、深夜に知っても打てる手が無い。
+        #   前例: funnel_drop_form は 2026-04-27 に info へ降格し、2026-07-02 に
+        #   「info はメールしない」を _run_monitor_check 側で実装した。それに揃える。
+        #   ★ただし降格だけだと穴が空く。「実ユーザーは送信しているのに API が全員弾いている」
+        #     クラスは E2E 合成テスト (Railway 直叩きで共有 egress IP の 429 を再現しない) でも
+        #     funnel_drop_form (form_submit==0 が条件・DOM 発火なので API 失敗時も 0 にならない) でも
+        #     拾えず、従来はこの no_signups_24h だけが唯一の通知経路だった。
+        #     → (a) 合成監視に「Vercel 経由 /api/health」probe を足して rewrite 障害を塞ぎ、
+        #       (b) 直下に signup_submitted_no_record を新設して「押したのに届いていない」を
+        #           **バナーに**出す (メールに上げるのは実績で当たりを確かめてから・下記参照)。
         alerts.append({
-            "key": "no_signups_24h", "severity": "warning",
+            "key": "no_signups_24h", "severity": "info",
             "title": "⚠️ 過去24時間 申込ゼロ",
-            "detail": f"ローンチから{snapshot['hours_since_launch']}時間経過。LPアクセス {snapshot['pv_24h']} / CTA {snapshot['cta_24h']}。集客動線を確認してください。"
+            "detail": (f"ローンチから{snapshot['hours_since_launch']}時間経過。"
+                       f"LPアクセス {snapshot['pv_24h']} / CTA {snapshot['cta_24h']}。"
+                       f"※実申込は 0.9件/日 程度なので、暦日の約4割は申込ゼロになります。"
+                       f"これ単独では故障の証拠になりません。"
+                       f"申込フローが壊れているかどうかは E2E 合成監視と、下の"
+                       f"「申込フォーム送信◯件なのに登録が1件も無い」で見てください。"
+                       f"この行は集客動線を見直す材料としてご覧ください。")
+        })
+    # 3-B. ★2026-08-18 新設: 申込フォームは送信されたのに、API が受理した痕跡が 1 つも無い。
+    #   no_signups_24h を info へ降格したことで空いた穴のうち、
+    #   **E2E 合成監視では原理的に再現できないクラス**だけを狙って埋める。
+    #   合成監視は Railway を直接叩くので、実ユーザーが通る Vercel rewrite → 共有 egress IP の
+    #   レート制限 (trial_signup 5件/5分/IP) を再現しない。ここが本命の対象。
+    #   (5xx や route 消失は合成監視が status != 200 で既に捕まえるので、こちらの主目的ではない)
+    #
+    #   ★条件は 3 つの実測から決めた (90日 form_submit 61件・60日シミュレーション):
+    #     - checkoutForm に限定しないと trialForm (API を叩かないページ遷移) で永久に誤報る
+    #     - students だけを見ると「既存メールでの再申込」(45件中15件) が誤報になるので
+    #       checkout_initiated も「受理された証拠」に数える
+    #     - cooldown は窓長と揃えて 6 時間。60分のままだと 1 回の送信で最大 6 通鳴る
+    #   絞らないと 60日で十数通・その大半が誤報。3つ入れると 90日で 2 通前後まで落ちる
+    #   (正確な数は再現の組み方で 2〜3 とぶれる。students は後から消えるので過去の完全再現は不可)。
+    #
+    #   ★★severity は **info (バナーのみ・メールしない)** から始める。
+    #     絞り込み後に残る過去の発火を1件ずつ当たったが、
+    #     **本物と確認できたものが 1 つも無い** (「すべて誤報だった」とまでは言い切れない。
+    #     下記のとおり過去データからは真偽を確定できないケースがある)。検証の限界:
+    #       - students は sentinel cleanup 等で後から消えるので過去の再現に使えない
+    #       - events 側は監視自身の sentinel 申込が 5 分おきに混ざり分離が難しい
+    #     実申込 0.7件/日 という母数では、6h 窓の統計で「届いていない」を断定できない。
+    #     的中率が 0/2 のものをメールにするのは、この変更が消そうとしている
+    #     alert fatigue を自分で作り直すことになる。
+    #     まず CEO ダッシュのバナーに出して現場で当たりを確かめ、実績が出てから
+    #     severity を warning に上げること (上げるのは 1 語の変更で済む)。
+    _fs_checkout = snapshot.get("form_submit_checkout_6h", 0)
+    if (_fs_checkout > 0
+            and snapshot.get("signups_6h", 0) == 0
+            and snapshot.get("checkout_initiated_6h", 0) == 0):
+        alerts.append({
+            "key": "signup_submitted_no_record", "severity": "info",
+            "cooldown_min": 360,  # 窓長と揃える (level trigger を 6 時間ぶん記録し続けない)
+            # ★「API に届いていない」とは書かない。form_submit 自体が POST /api/track で
+            #   記録される以上、この条件が立つ時点で API には届いている。落ちているのは受理側。
+            #   🚨 も付けない (的中率が未証明のバナー表示なので、緊急度を偽らない)。
+            "title": f"📋 申込フォーム送信 {_fs_checkout}件 なのに登録が1件も無い (直近6h・検証中)",
+            "detail": (
+                f"直近6時間で申込フォーム (checkout.html) の送信が {_fs_checkout} 件ありましたが、"
+                f"生徒レコードの作成も checkout_initiated も 1 件も記録されていません。"
+                f"申込が受理されていない可能性があります。候補: "
+                f"共有 egress IP のレート制限 (trial_signup 5件/5分/IP) / Stripe セッション作成失敗 / "
+                f"入力バリデーションの退化 / 単に利用者が途中でやめた。"
+                f"うち共有 IP のレート制限だけは E2E 合成監視が Railway 直叩きのため再現できません。"
+                f"CEO ダッシュの申込ログと Railway のログを確認してください。"
+                f"※この検知はまだ的中実績がありません"
+                f"(過去データを遡った限りでは、本物と確認できた発火が1件もありませんでした)。"
+                f"そのためメールは送らず、ここにだけ出しています。"
+            )
         })
     # 4. ファネル落差: 直近6h で PV はあるが form_submit ゼロ (フォームエラーの兆候)
     #    24h 窓だと「壊れていた期間」のデータが残り続けて修正後も警告が出続ける。
@@ -8284,7 +8530,29 @@ def _format_alert_email(alerts: list, snapshot: dict) -> tuple:
     """アラートメールの subject + html を生成"""
     severity_max = "critical" if any(a["severity"] == "critical" for a in alerts) else "warning"
     icon = "🚨" if severity_max == "critical" else "⚠️"
-    subject = f"{icon} AIコーチング 監視アラート ({len(alerts)}件) - {datetime.now(timezone.utc).strftime('%H:%M UTC')}"
+    # ★2026-08-18: 件名に中身を入れる。従来は全通が同じ件名 ("監視アラート (1件) - HH:MM UTC") で
+    #   受信箱に並び、開かないと何が起きたか分からなかった (14日 165通がほぼ同一件名)。
+    #   - title は既に絵文字を含む ("⚠️ 過去24時間 申込ゼロ") ので 1 件のときは icon を重ねない。
+    #   - "AIコーチング監視" は残す: 件名で振り分け/検索している場合に効かなくなるため。
+    #   - 時刻は JST。塾長は JST で動いており、UTC 表記は毎回 9 時間の暗算を強いる。
+    #     ★ここで直るのは `_evaluate_alerts` 由来のアラートメールだけ。
+    #       E2E 合成監視の「🚨 申込→決済 E2E 監視 失敗」は _run_synthetic_checkout_test の
+    #       別経路で送られ、件名に時刻自体が入っていない (今回の 00:17 JST の通知がそれ)。
+    # ★alerts は **空リストで呼ばれる**: _format_daily_summary が snapshot 表の HTML だけを
+    #   再利用するために _format_alert_email([], snapshot)[1] を呼ぶ。ここで alerts[0] を
+    #   無条件に引くと朝 7 時のサマリが IndexError で無音停止する (スケジューラが例外を握り潰すため
+    #   塾長からは「ある日から来なくなった」としか見えない)。必ず空リストを先に弾くこと。
+    # ★cooldown はアラートごとに変えられる (cooldown_min)。フッタにグローバル定数を
+    #   固定で書くと「60分」と嘘を印字するので、実際に使われる値を出す。
+    _cooldown_note = ((alerts[0].get("cooldown_min") if alerts else None)
+                      or MONITORING_ALERT_COOLDOWN_MIN)
+    _hhmm = datetime.now(timezone(timedelta(hours=9))).strftime('%H:%M JST')
+    if not alerts:
+        subject = f"{icon} AIコーチング監視 {_hhmm}"
+    elif len(alerts) == 1:
+        subject = f"{alerts[0]['title']} - AIコーチング監視 {_hhmm}"
+    else:
+        subject = f"{icon} 監視アラート {len(alerts)}件: {alerts[0]['title']} 他 - AIコーチング監視 {_hhmm}"
     rows = ""
     for a in alerts:
         bg = "#fee2e2" if a["severity"] == "critical" else "#fef3c7"
@@ -8323,7 +8591,7 @@ def _format_alert_email(alerts: list, snapshot: dict) -> tuple:
   <h2 style="font-size:1.05rem;margin:0 0 1rem;border-bottom:2px solid #6366f1;padding-bottom:0.4rem;">📊 現在のスナップショット</h2>
   {snapshot_html}
 </div>
-<p style="font-size:0.78rem;color:#999;text-align:center;">🤖 ai-juku-api 監視システム / cooldown {MONITORING_ALERT_COOLDOWN_MIN}分 / 同じアラートは1回まで送信</p>
+<p style="font-size:0.78rem;color:#999;text-align:center;">🤖 ai-juku-api 監視システム / cooldown {_cooldown_note}分 / 同じアラートは1回まで送信</p>
 </body></html>"""
     return subject, html
 
@@ -8333,7 +8601,11 @@ def _format_daily_summary(snapshot: dict) -> tuple:
     JST = timezone(timedelta(hours=9))
     today = datetime.now(JST).strftime("%Y-%m-%d (%a)")
     subject = f"📊 AIコーチング 朝のサマリ {today} / 申込{snapshot['signups_24h']}名・契約{snapshot['paid_24h']}名"
-    snapshot_html = _format_alert_email([], snapshot)[1]
+    # ★2026-08-18: ここには `snapshot_html = _format_alert_email([], snapshot)[1]` があったが、
+    #   戻り値をどこにも使っていない**死んだ行**だった (本文は下で独自に組み立てている)。
+    #   その使われない呼び出しが空リストを渡すせいで、_format_alert_email 側で alerts[0] を
+    #   引くと朝サマリが丸ごと IndexError で止まる、という事故を実際に作り込んだ。
+    #   行ごと削除する (向こう側の空リストガードは、別の呼び出し元が現れたときの保険として残す)。
     # _format_alert_email は alerts を中心にするので、サマリ用に整形しなおす
     body_html = f"""<!DOCTYPE html>
 <html lang="ja"><head><meta charset="UTF-8"></head>
@@ -8375,7 +8647,10 @@ def _run_monitor_check() -> dict:
     skipped_alerts = []
     info_suppressed = []
     for a in alerts:
-        if _alert_recently_sent(a["key"]):
+        # ★2026-08-18: アラートごとに cooldown を変えられるようにした。
+        #   6h ローリング窓で判定するもの (signup_submitted_no_record) を既定の 60分で回すと、
+        #   1 回のイベントに対して 6 時間ぶん = 最大 6 通鳴る (実測で 2 回起きていた)。
+        if _alert_recently_sent(a["key"], a.get("cooldown_min")):
             skipped_alerts.append(a["key"])
             continue
         # 🛡️ 2026-07-02 fix: info レベルは CEO ダッシュのバナー表示専用でありメール送信しない
@@ -9147,13 +9422,24 @@ async def _run_synthetic_checkout_test(*, alert: bool = True) -> dict:
                     body = body_raw.decode("utf-8", errors="replace")
                     return {"status": resp.status, "body": body, "url": url, "attempt": attempt + 1}
             except urllib.error.HTTPError as e:
-                # 4xx/5xx は HTTPError として返す (retry しない・Vercel が明示的に返してる)
-                return {"status": e.code, "body": "", "url": url, "error": str(e)}
+                # 4xx は明示的な応答なので retry しない。
+                # ★2026-08-18: 502/503/504 は _http_post_json と同じく transport 障害として retry。
+                #   ここを非対称のままにすると、POST 側で消した「edge の 1 回のしゃっくりで
+                #   深夜に鳴る」誤報を GET 側で作り直すことになる。とくに 1-B で足した
+                #   Vercel 経由 /api/health は Railway edge の別 PoP を通る (実測 sin1 / 直叩きは hnd1)
+                #   ので、retry が無いと新しい無防備な監視面が増えるだけになる。
+                if e.code in (502, 503, 504) and attempt < retries:
+                    last_error = f"HTTPError {e.code}"
+                    import time as _t
+                    _t.sleep(1.5 ** attempt)  # backoff: 1.0s, 1.5s
+                    continue
+                return {"status": e.code, "body": "", "url": url, "error": str(e),
+                        "attempts": attempt + 1}
             except Exception as e:
                 last_error = f"{type(e).__name__}: {e}"
                 if attempt < retries:
                     import time as _t
-                    _t.sleep(1.5 ** attempt)  # backoff: 1.5s, 2.25s
+                    _t.sleep(1.5 ** attempt)  # backoff: 1.0s, 1.5s (1.5**0=1.0 / 1.5**1=1.5)
                     continue
                 return {"status": 0, "body": "", "url": url, "error": last_error, "attempts": retries + 1}
 
@@ -9172,6 +9458,30 @@ async def _run_synthetic_checkout_test(*, alert: bool = True) -> dict:
         failures.append(f"lp.html status={r1['status']}")
     elif "checkout.html" not in r1["body"]:
         failures.append("lp.html does not link to checkout.html")
+
+    # 1-B. ★2026-08-18 追加: **Vercel 経由**で API に届くかを見る (vercel.json の /api/:path* rewrite)。
+    #   この監視は API を全部 backend_base (Railway 直) に投げているので、
+    #   「静的は配れているが rewrite が死んでいて実ユーザーの API が 1 本も通らない」状態を
+    #   **1 つも検知できなかった**。実ユーザーは全員 Vercel 経由なので全滅する障害クラスなのに、
+    #   合成監視は緑・funnel_drop_form は pv_6h>=20 を満たさず沈黙 (/api/track も同時に死ぬため)。
+    #   no_signups_24h (warning) が唯一の通知だったが、それを info へ降格したので明示的に塞ぐ。
+    #   ★誤検知しない条件付け: lp.html が 200 で取れた回だけ failure にする。
+    #     lp.html も落ちているなら「Railway→Vercel の内部接続が悪いだけ」で実顧客影響は無く、
+    #     それは既に上で warning に格下げ済みの既知の偽陽性 (2026-05-06)。
+    #     「静的は取れるのに API だけ落ちている」ときだけ rewrite の障害と断定できる。
+    r1b = await loop.run_in_executor(None, _http_get, frontend_base + "/api/health")
+    details["vercel_api_status"] = r1b["status"]
+    _vercel_reachable = (r1["status"] == 200)
+    if r1b["status"] == 200 and '"status"' not in r1b["body"]:
+        # 200 だが JSON でない = Vercel の checkpoint / SPA fallback HTML を掴んでいる
+        (failures if _vercel_reachable else warnings_list).append(
+            "Vercel 経由 /api/health が JSON を返していない (rewrite 不通 / checkpoint の疑い)")
+    elif r1b["status"] == 0:
+        warnings_list.append("api/health: Railway→Vercel 内部接続失敗 (実顧客影響なし)")
+    elif r1b["status"] != 200:
+        (failures if _vercel_reachable else warnings_list).append(
+            f"Vercel 経由 /api/health status={r1b['status']} "
+            f"(静的は 200 = rewrite だけが不通 / 実ユーザーの API が全滅)")
 
     # 2. checkout.html (Vercel 経由)
     r2 = await loop.run_in_executor(None, _http_get, frontend_base + "/checkout.html")
@@ -9240,18 +9550,39 @@ async def _run_synthetic_checkout_test(*, alert: bool = True) -> dict:
                 with urllib.request.urlopen(req, timeout=timeout) as resp:
                     return {"status": resp.status, "body": resp.read().decode("utf-8", errors="replace"), "attempt": attempt + 1}
             except urllib.error.HTTPError as e:
-                # 4xx/5xx は明示的なエラー (retry しない・サーバー側の判断)
-                return {"status": e.code, "body": e.read().decode("utf-8", errors="replace") if hasattr(e, "read") else ""}
+                body_text = e.read().decode("utf-8", errors="replace") if hasattr(e, "read") else ""
+                # 4xx と アプリ由来の 500 は「サーバー側の判断」なので retry しない。
+                # ★2026-08-18: 502/503/504 だけは別扱いにする。これはアプリの判断ではなく
+                #   Railway edge が「アプリに繋げなかった」と言っているだけ。
+                #   実測 (14日 4017 サイクル) で失敗は 2 件のみ・両方ともこれで、どちらも
+                #   次サイクルで自動復帰し、リクエストはハンドラに 1 度も到達していなかった
+                #   (sentinel の student_id が連番のまま = INSERT を試行すらしていない)。
+                #   ★連番が示すのは「ハンドラに届かなかった」ことだけで「アプリは健全だった」ではない。
+                #     2026-07-26 の本物の 502 (イベントループ閉塞) でも id は連番だった。
+                #     だからこの retry は「502 を無害と決めつける」ものではなく、
+                #     「1 回では判定しない」だけ。持続的な 502 は 3 試行とも落ちて従来どおり発報する。
+                #   edge の 1 回のしゃっくりで「機会損失中・即時対応必要」を深夜に鳴らさないため
+                #   transport 障害として retry する。検知能力は下がらない
+                #   (本物の障害での遅延は backoff 分の +1.0〜2.5 秒のみ)。
+                if e.code in (502, 503, 504) and attempt < retries:
+                    last_error = f"HTTPError {e.code}: {body_text[:80]}"
+                    import time as _t
+                    _t.sleep(1.5 ** attempt)  # backoff: 1.0s, 1.5s
+                    continue
+                return {"status": e.code, "body": body_text, "attempts": attempt + 1}
             except Exception as e:
                 last_error = f"{type(e).__name__}: {e}"
                 if attempt < retries:
                     import time as _t
-                    _t.sleep(1.5 ** attempt)
+                    _t.sleep(1.5 ** attempt)  # backoff: 1.0s, 1.5s
                     continue
                 return {"status": 0, "body": "", "error": last_error, "attempts": retries + 1}
 
     r4 = await loop.run_in_executor(None, _http_post_json, backend_base + "/api/trial/signup", sentinel_payload)
     details["signup_status"] = r4["status"]
+    # ★2026-08-18: 何回目の試行で確定したかを残す。これが無いと事後に
+    #   「1発目の 502 か、粘った末の 502 か」が判別できず、原因調査が推測で終わる。
+    details["signup_attempts"] = r4.get("attempts") or r4.get("attempt") or 1
     sentinel_student_id = None
     signup_email_sent = None
     if r4["status"] != 200:
@@ -9452,6 +9783,20 @@ def _failures_are_all_external(failures: list) -> bool:
         "Railway→Vercel", "signup_email_status", "Resend",
         "status=500", "status=502", "status=503", "status=504", "status=429", "status=0",
         "timeout", "Timeout", "URLError", "ConnectionError", "内部接続",
+        # ★2026-08-18: Vercel 経由 /api/health の失敗は **rollback しない** (通知はする)。
+        #   このクラスの実体は Vercel 側の設定/防御であることが多く、直前 commit の revert では直らない:
+        #     - 200 + HTML  = Attack Challenge Mode (datacenter egress が challenge される)
+        #     - 401 / 403   = Deployment Protection / Firewall
+        #   いずれもダッシュボードの設定で、revert すると過去版へ後退するだけ。
+        #   ★rewrite を壊す vercel.json の commit なら revert が効くケースもあるが、
+        #     events.auto_rollback は 2026-04〜05 に 68 件の暴走前科があり、
+        #     「効くかもしれない revert」より「鳴らして人が見る」を優先する。
+        #   ★★限界: この関数は **全 failure が external のときだけ** True を返す。
+        #     Vercel の challenge が静的 HTML まで書き換える形なら
+        #     「lp.html does not link to checkout.html」等のコード退化クラスも同時に立つので、
+        #     その場合は従来どおり rollback 判定に入る。ここで守れるのは
+        #     「静的は正常・API 経路だけ落ちている」= probe の失敗が単独のときだけ。
+        "Vercel 経由",
     ]
     for f in failures:
         fs = str(f)
@@ -17870,9 +18215,12 @@ def admin_autopilot_dashboard(authorization: Optional[str] = Header(None)):
                 pass
 
         # churn (過去 30 日 expired)
+        # ★2026-08-18: 合成監視 sentinel を除外。cleanup 失敗で残った orphan は status='expired' に
+        #   なるため、除外前は「churn 62名」と表示されていたが実数は 3名だった (59件が sentinel)。
+        #   離脱数を 20 倍に見せる計器は、無いより悪い。
         try:
             c.execute(
-                "SELECT COUNT(*) FROM students WHERE status='expired' AND updated_at > ?",
+                f"SELECT COUNT(*) FROM students WHERE status='expired' AND updated_at > ? AND {_synth_exclude_sql()}",
                 (cutoff_30d,)
             )
             row = c.fetchone()
@@ -35705,18 +36053,34 @@ def js_error_report(report: JSErrorReport, request: Request):
             recent = c2.fetchone()[0] or 0
             conn2.close()
             if recent >= 10:
-                # 既存 monitor のメール送信機構に乗せて即時アラート (cooldown 60min は Resend 側 dedup で実装)
+                # ★2026-08-18 cooldown 実装。旧コメントは「cooldown 60min は Resend 側 dedup で実装」と
+                #   書いていたが実体が無く、閾値を超えた後は **js_error の POST 1件ごとに 1 通**
+                #   飛ぶ設計だった (10件/5分を超えた瞬間から N-9 通)。本物のリリース事故の日にだけ
+                #   受信箱が爆発し、肝心の通知が埋もれる。monitor 系と同じ events ベースの
+                #   cooldown (60分) に乗せて 1 時間 1 通にする。閾値も条件も変えていないので検知は同じ。
                 try:
-                    subject = f"🚨 JS エラー多発 ({recent}件/5分) — 即時対応必要"
-                    body_html = (
-                        f"<h2>🚨 直近5分で JS エラーが {recent} 件発生</h2>"
-                        f"<p><strong>最新メッセージ:</strong> {props.get('message','')[:200]}</p>"
-                        f"<p><strong>page:</strong> {props.get('page','')[:200]}</p>"
-                        f"<p><strong>source:</strong> {props.get('source','')[:200]}:{props.get('lineno',0)}</p>"
-                        f"<p>全ユーザーが踏んでいるリリース起因の致命バグの可能性が高い。"
-                        f"<a href='{BASE_URL}/ceo.html#js-errors'>CEO ダッシュ → JS エラーログ</a> を今すぐ確認してください。</p>"
-                    )
-                    _send_monitor_email(subject, body_html)
+                    if not _alert_recently_sent("js_error_burst", 60):
+                        subject = f"🚨 JS エラー多発 ({recent}件/5分) — 即時対応必要"
+                        body_html = (
+                            f"<h2>🚨 直近5分で JS エラーが {recent} 件発生</h2>"
+                            f"<p><strong>最新メッセージ:</strong> {props.get('message','')[:200]}</p>"
+                            f"<p><strong>page:</strong> {props.get('page','')[:200]}</p>"
+                            f"<p><strong>source:</strong> {props.get('source','')[:200]}:{props.get('lineno',0)}</p>"
+                            f"<p>全ユーザーが踏んでいるリリース起因の致命バグの可能性が高い。"
+                            f"<a href='{BASE_URL}/ceo.html#js-errors'>CEO ダッシュ → JS エラーログ</a> を今すぐ確認してください。</p>"
+                            f"<p style='font-size:0.9rem;color:#666;'>※ この通知は<strong>1時間に1通</strong>に制限しています。"
+                            f"この後もエラーが続いていても (別のエラーが増えても) メールは届きません。"
+                            f"収まったかどうかは必ず上のダッシュボードで確認してください。</p>"
+                        )
+                        # ★送信できたときだけ cooldown を刻む。無条件に記録すると Resend の一時障害や
+                        #   RESEND_API_KEY 未設定 (= sent:False が即返る) のときに、1通も届いていないのに
+                        #   60分黙ることになる。_run_monitor_check も同じく result.get("sent") で守っている。
+                        if _send_monitor_email(subject, body_html).get("sent"):
+                            _record_alert_sent("js_error_burst", {
+                                "severity": "critical",
+                                "title": f"🚨 JS エラー多発 ({recent}件/5分)",
+                                "page": (props.get("page") or "")[:200],
+                            })
                 except Exception as e2:
                     log.warning(f"[js_error] alert email failed: {e2}")
         except Exception:
@@ -39816,7 +40180,12 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
         # 新: PDF を PyMuPDF で JPG 化 → Claude/GPT-4o/Gemini すべてで処理可能
         if mime_pdf:
             # 🛡️ 2026-05-28 塾長指示「PDF 上限拡張」: max_pages 3 → 7
-            conv = _pdf_to_image_b64(decoded, dpi=150, max_pages=7)
+            # ★2026-08-18: to_thread 必須。ここは `async def` の中なので、直接呼ぶと
+            #   PyMuPDF の 7 ページ描画 + PIL 合成 + JPEG 再エンコード(最大5回)の間
+            #   **イベントループが占有され、塾全体の API が止まる** (単一プロセス・単一ループ)。
+            #   20 行下の AI 呼び出しは run_in_executor 済みで、ここだけ素通しだった。
+            #   参考: 2026-07-26 の本番502は同種 (async def なのに同期ブロッキング) が真因。
+            conv = await _asyncio.to_thread(_pdf_to_image_b64, decoded, dpi=150, max_pages=7)
             if conv.get("ok"):
                 image_b64 = conv["image_b64"]
                 mime = conv["mime"]

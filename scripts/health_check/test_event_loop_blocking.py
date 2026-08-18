@@ -37,6 +37,21 @@ SERVER_DIR = os.path.join(REPO, "server")
 sys.path.insert(0, SERVER_DIR)
 os.chdir(SERVER_DIR)
 
+# ★2026-08-18: main を import する **前に** 本番へ触れる経路を全部塞ぐ。
+#   このテストは uvicorn を実起動するので startup イベントが走る。main.py は起動30秒後に
+#   post-deploy smoke test を仕掛けており、その中の合成 E2E は backend_base に
+#   ハードコードされた **本番 URL** へ申込 POST を撃つ。通常は数秒で終わるので届かないが、
+#   回帰を検出して実行が伸びた回 (= 一番大事な回) にだけ本番の students を汚す。
+#   DATABASE_URL も落として一時 SQLite に固定する (無いと本番 Postgres に init_db が走る)。
+os.environ["POST_DEPLOY_SMOKE_ENABLED"] = "0"
+os.environ["MONITORING_ENABLED"] = "0"
+# 出題生成スケジューラは既定 ON。このテストは ANTHROPIC_API_KEY にダミーを入れるので
+# ゲートが成立して起動し、30秒後に Anthropic を叩きにいく (実測)。ここで切る。
+os.environ["EXAM_QUESTIONS_ENABLED"] = "0"
+os.environ["DATABASE_URL"] = ""
+os.environ["RESEND_API_KEY"] = ""
+os.environ["DB_PATH"] = os.path.join(SERVER_DIR, "_test_event_loop.db")
+
 SLOW_SECONDS = 6.0   # 1回のAI呼び出しが何秒ブロックする想定か
 PORT = 8771
 CONCURRENT_AI_CALLS = 3

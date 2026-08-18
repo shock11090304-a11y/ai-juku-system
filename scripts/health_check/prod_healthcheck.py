@@ -11,6 +11,9 @@
                        (弱点集計・CEO科目配信が空振りする原因)
   orphan_rows        … 削除済み生徒を参照する活動行(KPI水増し・ゾンビassignment)
   drill_stored_live  … grammar_drills の「N問」表記と実出題(active=1)のズレ
+  r_grammar_unit_tags … daigaku/r_grammar 小問の unit/【単元】タグ漏れ(週次プリントの
+                       単元一致選定①から無言で漏れ精度27%水準に劣化。手順:
+                       scripts/r_grammar_unit_tags/README.md)
   answer_bias        … 直近取込 grammar_questions の正解位置の偏り(取込前均等化漏れ)
   weekly_report      … 週次レポートが全生徒スキップ(集計ソース断絶で無音no-op)
   monitor_storm      … 監視 monitor_alert の誤発報ストーム(本物のcriticalが埋もれる)
@@ -414,6 +417,44 @@ def check_drill_stored_live(cur):
         add("drill_stored_live", WARN, f"照会失敗 {type(e).__name__}: {e}")
 
 
+def check_r_grammar_unit_tags(cur):
+    """daigaku/r_grammar の全小問に unit フィールド or【単元】タグがあるか。
+    2026-08-18 から週次弱点プリントの英語選定が【単元】タグ一致 (server/main.py
+    _grammar_unit_rows) になったため、タグ無しの新規行は単元一致選定から**無言で**漏れる
+    (フォールバックには乗るので配信は止まらないが、精度改善が不発になる)。"""
+    if not _table_exists(cur, "exam_questions"):
+        return
+    try:
+        cur.execute("SELECT id, question_data FROM exam_questions "
+                    "WHERE exam_id='daigaku' AND part_key='r_grammar'")
+        tag_re = re.compile(r"【単元】\s*[^】\n(（]+")
+        bad_rows = []
+        n_rows = 0
+        for rid, qd_raw in cur.fetchall():
+            n_rows += 1
+            try:
+                qd = json.loads(qd_raw) if isinstance(qd_raw, str) else (qd_raw or {})
+            except Exception:
+                bad_rows.append(rid)
+                continue
+            for q in (qd.get("questions") or []):
+                if not isinstance(q, dict):
+                    continue
+                if str(q.get("unit") or "").strip():
+                    continue
+                if tag_re.search(str(q.get("explanation") or "") + "\n" + str(q.get("stem") or "")):
+                    continue
+                bad_rows.append(rid)
+                break
+        add("r_grammar_unit_tags",
+            PASS if not bad_rows else WARN,
+            f"daigaku/r_grammar {n_rows}大問: 単元タグ無し {len(bad_rows)}大問"
+            + (f" (例: id={bad_rows[:5]} — 週次プリントの単元一致選定から漏れる。"
+               f"付与手順: scripts/r_grammar_unit_tags/README.md)" if bad_rows else ""))
+    except Exception as e:
+        add("r_grammar_unit_tags", WARN, f"照会失敗 {type(e).__name__}: {e}")
+
+
 def check_answer_bias(cur):
     if not _table_exists(cur, "grammar_questions"):
         return
@@ -529,8 +570,8 @@ def run_db_checks():
     try:
         cur = conn.cursor()
         for fn in (check_subject_canonical, check_orphan_rows, check_drill_stored_live,
-                   check_answer_bias, check_weekly_report, check_monitor_storm,
-                   check_scheduler_live):
+                   check_r_grammar_unit_tags, check_answer_bias, check_weekly_report,
+                   check_monitor_storm, check_scheduler_live):
             try:
                 fn(cur)
             except Exception as e:
