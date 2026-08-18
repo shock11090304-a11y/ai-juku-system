@@ -92,8 +92,15 @@ export function tol(L: number, p: MatchParams): number {
  * 始点判定に限り指のタップサイズ相当の下限を敷く。
  */
 const START_TOL_FLOOR = 0.075;
+/**
+ * ★上限 (開始のみ判定のとき)。経路を見ない判定では「書き出しの位置」が判定の
+ * 全てなのに、長い画では tol が TOL_MAX (ふつう 0.28 = マス1/3) まで膨らみ、
+ * 全く別の場所から書いても通ってしまう。指のタップ精度に必要な広さだけ残す。
+ */
+const START_TOL_CAP = 0.13;
 export function startTol(L: number, p: MatchParams): number {
-  return Math.max(tol(L, p), START_TOL_FLOOR);
+  const raw = Math.max(tol(L, p), START_TOL_FLOOR);
+  return p.pathJudge ? raw : Math.min(raw, START_TOL_CAP);
 }
 
 /** 入力補間の刻み (§6.3 ★ 固定値にしない) */

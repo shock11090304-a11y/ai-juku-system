@@ -100,6 +100,27 @@ async function inkDistance(ch: string): Promise<Float32Array> {
 type Bad = { id: string; char: string; stroke: number; gap: number };
 const bad: Bad[] = [];
 let worstOk = 0;
+/**
+ * ★書き出しどうしの重なり検査 (2026-08-18 追加)。
+ * 判定が「書き出しの位置と順番」だけになったので、別の画の書き出しが同じ点に
+ * 置かれていると、後の画の番号バッジが前の画の頭に重なって表示され、
+ * 子どもは「同じ場所から2回書け」と言われることになる。
+ * 実際 ち で1画目(横棒)の書き出しが合わせ込み事故で縦画の頭 (=2画目の書き出し)
+ * に置かれ、縦を先に書いても1画目として通っていた。
+ * 近い書き出し (例: ふ の1画目と2画目) は実際の字形がそうなので許し、
+ * 「視覚上同じ点」(距離 SAME 以下) だけをデータ事故として落とす。
+ */
+const SAME = 0.045;
+/** 本当に同じ角から書き始める字 (ロ・ク・タ の角、5 の縦と横)。字形の事実であって事故ではない */
+const CORNER_OK = new Set([
+  'kata_ro 1-2',
+  'kata_ku 1-2',
+  'kata_ta 1-2',
+  'kata_gu 1-2',
+  'kata_da 1-2',
+  'num_5 1-2',
+]);
+const overlap: string[] = [];
 for (const c of targets) {
   const dt = await inkDistance(c.char);
   for (const s of c.strokes) {
@@ -112,8 +133,26 @@ for (const c of targets) {
     if (gap > MAX) bad.push({ id: c.id, char: c.char, stroke: s.index, gap });
     else worstOk = Math.max(worstOk, gap);
   }
+  for (let i = 0; i < c.strokes.length; i++) {
+    for (let j = i + 1; j < c.strokes.length; j++) {
+      const d = Math.hypot(
+        c.strokes[j].points[0].x - c.strokes[i].points[0].x,
+        c.strokes[j].points[0].y - c.strokes[i].points[0].y,
+      );
+      if (d <= SAME && !CORNER_OK.has(`${c.id} ${i + 1}-${j + 1}`)) {
+        overlap.push(
+          `${c.char} ${c.id}: ${i + 1}画目と${j + 1}画目の書き出しが同じ点にある (距離 ${(d * 100).toFixed(1)}%)`,
+        );
+      }
+    }
+  }
 }
 await browser.close();
+
+if (overlap.length) {
+  console.log(`★ 書き出しが同じ点に重なる字 ${overlap.length}件 (番号バッジが同じ場所に2つ出る):`);
+  for (const o of overlap) console.log(`  NG ${o}`);
+}
 
 /**
  * 既知のズレは baseline に記録し、落とすのは「新しく入ったもの」と
@@ -173,7 +212,7 @@ if (fixed.length) {
   console.log(`★ 直ったのに baseline に残っている ${fixed.length}件: ${fixed.join(' / ')}`);
   console.log('  → tools/_start_dots_baseline.txt から消すこと');
 }
-if (fresh.length || worse.length || fixed.length) {
+if (fresh.length || worse.length || fixed.length || overlap.length) {
   process.exit(1); // ★ 検査は必ず落とす。印字だけして exit 0 にしない
 }
 console.log(
