@@ -81,6 +81,8 @@ scripts/**/*.pdf
 scripts/**/*.png
 scripts/**/*.html
 scripts/**/_pdfstage/
+# 教材ビルドの中間生成物 (PDF/HTML は上の規則で隠れるが manifest.json が漏れる)
+scripts/**/_build/
 # 盲検証で3人が出した生の解答（Python が照合したら役目が終わる）
 scripts/**/blind/
 # レビューAIの生の指摘
