@@ -1,0 +1,112 @@
+{
+ "source": "英文法_動名詞_第1集.yaml",
+ "subject_name": "英語",
+ "book": {
+  "title": "英文法 動名詞 演習 第1集",
+  "subject": "grammar",
+  "level": "標準",
+  "time_limit_min": 20
+ },
+ "questions": [
+  {
+   "number": 1,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "DOMEI-MOKUTEKIGO",
+   "explanation": "## 🎯 コアイメージ\n**enjoy は動名詞 (-ing) だけを目的語に取る**動詞。enjoy / finish / mind / give up / avoid / practice がこの仲間 (megafeps の一部)。\n\n## 🔬 文構造分析\nMy grandfather **enjoys walking** in the park every morning.\nenjoys の目的語 = walking (歩くこと)。動名詞が名詞の働きをしている。\n\n## 📍 正解の根拠\nenjoy + -ing は固定の型 → **walking**。\n\n## ❌ 誤答 NG 理由\n1. to walk — enjoy は to 不定詞を目的語に取らない。\n2. walk — 原形。enjoys という述語の後ろに裸の動詞は置けない。\n3. walked — 過去形・過去分詞。目的語の位置に置けない。"
+  },
+  {
+   "number": 2,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "DOMEI-ZENCHISHI",
+   "explanation": "## 🎯 コアイメージ\n**前置詞の後ろに動詞を置くなら動名詞**。前置詞の目的語になれるのは名詞の働きをする形 = -ing だけ。\n\n## 🔬 文構造分析\nShe is good **at drawing** pictures.\nbe good at 〜 (〜が得意だ) の at は前置詞。その目的語が drawing pictures。\n\n## 📍 正解の根拠\n前置詞 at の直後 → 動名詞 **drawing**。\n\n## ❌ 誤答 NG 理由\n1. draw — 原形は前置詞の目的語になれない。\n3. to draw — 前置詞の直後に to 不定詞は置けない。\n4. drawn — 過去分詞。名詞の働きが無く、at の目的語になれない。"
+  },
+  {
+   "number": 3,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "DOMEI-MIND",
+   "explanation": "## 🎯 コアイメージ\n**Would you mind -ing? =「〜していただけませんか」**。mind (〜を嫌がる) は動名詞だけを目的語に取る動詞。直訳は「〜するのは嫌ですか」。\n\n## 🔬 文構造分析\nWould you **mind closing** the window?\nmind の目的語 = closing the window (窓を閉めること)。\n\n## 📍 正解の根拠\nmind + -ing は固定の型 → **closing**。\n\n## ❌ 誤答 NG 理由\n1. to close — mind は to 不定詞を目的語に取らない。\n2. close — 原形。mind の目的語の位置に裸の動詞は置けない。\n4. closed — 過去分詞。「閉められる」方向になり、依頼の意味を作れない。"
+  },
+  {
+   "number": 4,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "DOMEI-TAIHI",
+   "explanation": "## 🎯 コアイメージ\nforget / remember は後ろの形で意味が変わる: **-ing =「〜した (過去の) こと」 / to do =「(これから) 〜すること」**。動名詞は過去向き、不定詞は未来向き。\n\n## 🔬 文構造分析\nI'll never forget **seeing the Alps** for the first time **last summer**.\nlast summer (去年の夏) = もう起きた経験 → forget + -ing「見たことを忘れない」。\n\n## 📍 正解の根拠\n去年の夏に**見た**という過去の経験の記憶 → **seeing**。\n\n## ❌ 誤答 NG 理由\n2. to see — forget to do は「これから見ることを忘れる」。last summer と時間が逆。\n3. see — 原形。forget の目的語の位置に裸の動詞は置けない。\n4. to seeing — forget はこの形を取らない (look forward to -ing と混同しない)。"
+  },
+  {
+   "number": 5,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "DOMEI-STOP",
+   "explanation": "## 🎯 コアイメージ\n**stop -ing =「〜するのをやめる」 / stop to do =「〜するために立ち止まる」**。-ing はやめる対象 (目的語)、to do は立ち止まる目的 (副詞) で役割が違う。\n\n## 🔬 文構造分析\nThe doctor advised my father to **stop smoking**.\nstop の目的語 = smoking。「喫煙という習慣をやめる」ことを医者が勧めた。\n\n## 📍 正解の根拠\n医者が勧めるのは「タバコを**やめる**こと」→ stop + 動名詞 **smoking**。\n\n## ❌ 誤答 NG 理由\n1. smoke — 原形。stop の目的語の位置に裸の動詞は置けない。\n2. to smoking — stop はこの形を取らない。\n3. to smoke —「タバコを吸うために立ち止まる」となり、医者の助言として意味が通らない。"
+  },
+  {
+   "number": 6,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "DOMEI-TOING",
+   "explanation": "## 🎯 コアイメージ\n**look forward to の to は前置詞**。だから後ろは動名詞。be used to -ing / object to -ing も同じ仲間 —「to があれば原形」という思い込みを突く定番。\n\n## 🔬 文構造分析\nI'm looking forward **to seeing** you again soon.\nto (前置詞) + seeing (動名詞) =「会えること」を楽しみに待つ。\n\n## 📍 正解の根拠\nこの to は前置詞 → 動名詞 **seeing**。\n\n## ❌ 誤答 NG 理由\n1. see — to を不定詞と誤解した形。前置詞の後ろに原形は置けない。\n3. have seen — 完了形。前置詞の目的語になれない。\n4. be seen — 受け身の原形。「あなたに会う」という能動の内容にも、前置詞の後ろという位置にも合わない。"
+  },
+  {
+   "number": 7,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "DOMEI-KANYO",
+   "explanation": "## 🎯 コアイメージ\n**There is no -ing =「〜することはできない」**という動名詞の慣用表現。= It is impossible to do。There is no telling 〜 (〜は分からない) が代表例。\n\n## 🔬 文構造分析\nThere is no **telling** what will happen in the future.\nno + telling (動名詞)。「未来に何が起きるかは誰にも分からない」。\n\n## 📍 正解の根拠\nThere is no + **動名詞**の慣用 → **telling**。\n\n## ❌ 誤答 NG 理由\n2. to tell — この慣用は動名詞で固定。to 不定詞は続かない。\n3. told — 過去分詞。no の後ろの名詞の位置に置けない。\n4. tell — 原形。同じく名詞の働きが無く置けない。"
+  },
+  {
+   "number": 8,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "DOMEI-SHUGO",
+   "explanation": "## 🎯 コアイメージ\n動名詞に**意味上の主語**を付けるときは**所有格 (または目的格)** を -ing の直前に置く: our winning =「私たちが勝つこと」。\n\n## 🔬 文構造分析\nThere is no hope of **our winning** the game.\nof (前置詞) + our (意味上の主語) + winning (動名詞)。「私たちがその試合に勝つ見込みは無い」。\n\n## 📍 正解の根拠\n前置詞 of の後ろで「私たちが勝つこと」→ 所有格 + 動名詞 = **our winning**。\n\n## ❌ 誤答 NG 理由\n1. we win — 主語 + 動詞の節は前置詞の目的語になれない。\n2. we winning — 意味上の主語に主格 we は使えない (所有格 our か目的格 us)。\n4. us to win — of の後ろに「目的格 + to 不定詞」の形は置けない。"
+  },
+  {
+   "number": 9,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "DOMEI-WORTH",
+   "explanation": "## 🎯 コアイメージ\n**be worth -ing =「〜する価値がある」**。worth の後ろは動名詞で固定。well worth と強調しても型は変わらない。\n\n## 🔬 文構造分析\nThis museum is well worth **visiting**.\n主語 This museum が visiting の意味上の目的語を兼ねる (visit it としない) のがこの構文の癖。\n\n## 📍 正解の根拠\nworth の後ろは動名詞 → **visiting**。\n\n## ❌ 誤答 NG 理由\n1. to visit — worth に to 不定詞は続かない。\n3. visited — 過去分詞。worth の後ろの名詞の位置に置けない。\n4. to visiting — worth はこの形を取らない (to 自体が不要)。"
+  },
+  {
+   "number": 10,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "DOMEI-NEED",
+   "explanation": "## 🎯 コアイメージ\n**need -ing =「〜される必要がある」**。主語が動作を「される側」なのに、形は能動の -ing で受け身の意味を表す変わり者 (= need to be repaired)。\n\n## 🔬 文構造分析\nThis old watch **needs repairing**.\nwatch は「修理される」側。needs + repairing で「修理 (されること) を必要としている」。\n\n## 📍 正解の根拠\n物が主語の need の後ろは動名詞 → **repairing** (受け身の意味)。\n\n## ❌ 誤答 NG 理由\n1. to repair — 能動「時計が (何かを) 修理する」ことになり不成立 (needs to **be** repaired なら可)。\n2. repaired — needs の目的語に過去分詞単独は置けない。\n4. to be repairing —「修理している最中である必要」となり意味を成さない。"
+  }
+ ]
+}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>神テスト 講師用 — 冊子の登録</title>
+<link rel="stylesheet" href="/exam-book-admin.css?v=1">
+</head>
+<body data-stage="boot">
+
+<header id="bar">
+  <span id="bar-title">神テスト 講師用</span>
+  <span id="who"></span>
+  <span class="spacer"></span>
+  <a id="to-exam" href="/exam-book.html">受験画面へ</a>
+  <button type="button" id="logout">ログアウト</button>
+</header>
+
+<div id="banner" hidden></div>
+
+<main id="stage">
+
+  <!-- ========== 冊子一覧 ========== -->
+  <section class="panel">
+    <h2>冊子</h2>
+    <div id="books"></div>
+  </section>
+
+  <!-- ========== PDF をまとめて調べる ========== -->
+  <section class="panel">
+    <h2>PDF をまとめて調べる</h2>
+    <p class="muted">
+      手元の PDF をまとめて選ぶと、<strong>1 つずつブラウザで開いて</strong>
+      使えるかどうかを出します。何も送信しません (この画面の中だけで完結します)。
+      <code>_問題</code> / <code>_解説</code> の対も見つけます。
+    </p>
+    <div class="form">
+      <label>PDF (複数選べます)
+        <input id="scan-files" type="file" accept="application/pdf,.pdf" multiple>
+      </label>
+    </div>
+    <p id="scan-progress" class="muted"></p>
+    <div id="scan-result"></div>
+    <details id="scan-text-box" hidden>
+      <summary>解説 PDF から読み取れた文字 (先頭 2 ページ)</summary>
+      <p class="muted small">
+        ここに規則的な形で正解が並んでいれば、解説 PDF から設問データを自動で
+        取り出せる見込みがあります。空なら画像だけの PDF なので手入力になります。
+      </p>
+      <textarea id="scan-text" rows="12" readonly></textarea>
+    </details>
+  </section>
+
+  <!-- ========== 新しい冊子 ========== -->
+  <section class="panel">
+    <h2>新しい冊子を作る</h2>
+    <p class="muted">
+      PDF を選ぶと、送る前にブラウザで開いて確かめます (ページ数・サイズ・壊れていないか)。
+      作った直後は<strong>非公開</strong>です。設問を入れてから公開してください。
+    </p>
+    <div class="form">
+      <label>問題の PDF
+        <input id="nb-file" type="file" accept="application/pdf,.pdf">
+      </label>
+      <p id="nb-pdfinfo" class="pdfinfo"></p>
+
+      <label>タイトル
+        <input id="nb-title" type="text" placeholder="例: 英文法 仮定法 演習5"
+               autocapitalize="off" autocorrect="off" spellcheck="false">
+      </label>
+      <div class="row">
+        <label>科目
+          <select id="nb-subject"></select>
+        </label>
+        <label>レベル (任意)
+          <input id="nb-level" type="text" placeholder="標準 / 難関 など"
+                 autocapitalize="off" autocorrect="off" spellcheck="false">
+        </label>
+        <label>制限時間 (分・空で無制限)
+          <input id="nb-limit" type="text" inputmode="numeric" placeholder="60">
+        </label>
+      </div>
+      <button type="button" id="nb-create">この内容で作る</button>
+    </div>
+  </section>
+
+  <!-- ========== 設問の編集 ========== -->
+  <section class="panel" id="editor" hidden>
+    <h2>設問 — <span id="ed-title"></span></h2>
+    <p class="muted" id="ed-meta"></p>
+    <p class="warn" id="ed-warn" hidden></p>
+
+    <p class="muted">
+      <strong>選択式の正解は「1」「2」… の数字</strong>で入れてください
+      (受験画面の選択肢は 1 起算です。0 起算や A・① を入れると全員不正解になります)。
+      記述の別解はカンマ区切りで。採点は大文字小文字と前後の空白を無視します。
+    </p>
+
+    <p class="muted">
+      <label class="inline">JSON をまとめて読み込む
+        <input id="q-import" type="file" accept="application/json,.json">
+      </label>
+      <span class="small">
+        (<code>scripts/book_exam/convert_workbook.py --out DIR</code> が吐いたもの。
+        <strong>設問がまだ 1 問も保存されていない冊子にだけ</strong>読み込めます)
+      </span>
+    </p>
+    <p id="q-import-note" class="warn" hidden></p>
+
+    <p class="muted">
+      <label class="inline">正解だけをまとめて入れる
+        <input id="q-key" type="text" placeholder="3 1 4 2 …  /  3142  /  1.3 2.1 3.4"
+               autocapitalize="off" autocorrect="off" spellcheck="false">
+      </label>
+      <button type="button" id="q-key-apply">流し込む</button>
+      <span class="small">
+        紙の正解一覧をそのまま打てます。空白・カンマ・改行・区切り無し・丸数字・全角、
+        「問番号.正解」のどれでも。<strong>選択式の行にだけ入ります</strong>
+      </span>
+    </p>
+
+    <div id="q-rows" class="qtable"></div>
+
+    <div class="row">
+      <button type="button" id="q-add">設問を足す</button>
+      <button type="button" id="q-save">保存する</button>
+      <button type="button" id="q-close">閉じる</button>
+      <span class="spacer"></span>
+      <span id="q-count" class="muted"></span>
+    </div>
+
+    <p class="muted small">
+      ★ 設問と冊子の<strong>削除ボタンは置いていません</strong>。消すと生徒の答案・手書きが
+      巻き添えで消えるためです (外部キーの cascade)。使わなくなった冊子は非公開にしてください。
+    </p>
+  </section>
+
+</main>
+
+<!-- ========== 起動中 ========== -->
+<div id="boot"><p>読み込んでいます…</p></div>
+
+<!-- ========== ログイン ========== -->
+<div id="login">
+  <form id="login-form">
+    <h1>神テスト 講師用</h1>
+    <label>メールアドレス
+      <input id="login-email" type="email" autocomplete="username" required
+             autocapitalize="off" autocorrect="off" spellcheck="false">
+    </label>
+    <label>パスワード
+      <input id="login-pass" type="password" autocomplete="current-password" required>
+    </label>
+    <button type="submit">ログイン</button>
+    <p id="login-msg"></p>
+  </form>
+</div>
+
+<!-- ========== 失敗 ========== -->
+<div id="fatal">
+  <div class="fatal-box">
+    <h1 id="fatal-title"></h1>
+    <p id="fatal-detail"></p>
+    <button type="button" id="fatal-reload">再読み込み</button>
+  </div>
+</div>
+
+<script type="module" src="/exam-book-admin.mjs?v=1"></script>
+</body>
+</html>

@@ -40,6 +40,7 @@ CI/cron の判定は**終了コード / FAIL 件数**で行うこと(`WARN>0` �
 | `weekly_report` | 週次レポートが全生徒スキップでないか | 集計ソース断絶で無音no-op(一度も配信されず) |
 | `monitor_storm` | 監視アラートの誤発報ストーム | login_rate 誤発報で本物の critical が埋没 |
 | `scheduler_live` | in-process スケジューラの最終実行 | cron 停止の検知 |
+| `r_grammar_unit_tags` | daigaku/r_grammar 全小問の unit/【単元】タグ存在 (週次プリント①単元一致選定の前提。cron result の unit_tag_picks/like_fallback_picks で①比率も監視) | 2026-08-18 導入。タグ無しの新規行は単元一致選定から無言で漏れ精度27%水準に劣化 |
 | `stripe_webhook_events` | Stripe webhook endpoint の必須イベント購読(opt-in: STRIPE_SECRET_KEY がある時だけ) | LIVE endpoint に payment_intent.succeeded/payment_failed/canceled が未購読で、3DS完了・キャンセル等の自動反映ハンドラが本番で無音不発 (2026-07-02 実測) |
 
 ## 定期実行(任意)

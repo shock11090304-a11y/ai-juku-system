@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>神テスト お申し込み</title>
+<style>
+  /* exam-book.css と同じ配色 (このページは自己完結にする) */
+  :root { --bg:#0e1116; --panel:#151a22; --line:#2a3240; --fg:#e7ecf3;
+          --muted:#93a0b3; --accent:#3b82f6; --warn:#f59e0b; --ok:#22c55e; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--fg);
+    font:15px/1.7 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; }
+  main { max-width: 520px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lead { color: var(--muted); margin: 0 0 20px; font-size: 13px; }
+  .price { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+           padding: 14px 16px; margin: 0 0 20px; }
+  .price b { font-size: 20px; }
+  .price ul { margin: 8px 0 0; padding-left: 1.3em; color: var(--muted); font-size: 13px; }
+  form { display: flex; flex-direction: column; gap: 14px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  input, select { font: inherit; color: var(--fg); background: #1e2531;
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-height: 44px; }
+  button { font: inherit; font-weight: 700; color: #fff; background: var(--accent);
+    border: 1px solid var(--accent); border-radius: 8px; padding: 12px; min-height: 48px;
+    cursor: pointer; }
+  button:disabled { opacity: .45; cursor: default; }
+  #msg { color: var(--warn); font-size: 13px; min-height: 1.6em; margin: 0; white-space: pre-wrap; }
+  .legal { color: var(--muted); font-size: 12px; }
+  a { color: var(--accent); }
+  .back { margin-top: 28px; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>神テスト お申し込み</h1>
+  <p class="lead">冊子×手書きで受験できるオンライン演習アプリ</p>
+
+  <div class="price">
+    <b>月額 1,250円</b>（税込）
+    <ul>
+      <li>初回のお申し込みに限り <b>3日間の無料体験</b> つき</li>
+      <li>体験中に解約すれば<b>請求はありません</b>（体験にはカード登録が必要です）</li>
+      <li>体験終了後は自動で月額のお支払いが始まります。いつでも解約できます</li>
+    </ul>
+  </div>
+
+  <form id="f">
+    <label>メールアドレス
+      <input id="email" type="email" autocomplete="email" required
+             autocapitalize="off" autocorrect="off" spellcheck="false">
+    </label>
+    <label>パスワード（8文字以上・ログインに使います）
+      <input id="pass" type="password" autocomplete="new-password" minlength="8" required>
+    </label>
+    <label>パスワード（確認のためもう一度）
+      <input id="pass2" type="password" autocomplete="new-password" minlength="8" required>
+    </label>
+    <label>氏名
+      <input id="name" type="text" autocomplete="name" required>
+    </label>
+    <label>学年
+      <!-- ★ 選択肢は api/checkout.py の GRADE_OPTIONS と一致させる (check_signup.py が照合) -->
+      <select id="grade" required>
+        <option value="">選んでください</option>
+        <option>中学1年</option>
+        <option>中学2年</option>
+        <option>中学3年</option>
+        <option>高校1年</option>
+        <option>高校2年</option>
+        <option>高校3年</option>
+        <option>既卒・浪人</option>
+        <option>その他</option>
+      </select>
+    </label>
+    <label>通塾学校名（通っている学校・塾の名前）
+      <input id="school" type="text" required>
+    </label>
+    <p class="legal">お申し込みボタンを押すと、<a href="/legal.html" target="_blank" rel="noopener">特定商取引法に基づく表記・利用規約・プライバシーポリシー</a>に同意したものとみなします。</p>
+    <button type="submit" id="go">お支払いへ進む（3日間無料体験）</button>
+    <p id="msg"></p>
+  </form>
+
+  <p class="back"><a href="/exam-book.html">ログインはこちら</a> ／ <a href="/account.html">契約管理（解約など）</a></p>
+</main>
+
+<script type="module">
+  import { SUPABASE } from '/exam-book-config.mjs?v=1';
+  const $ = (s) => document.querySelector(s);
+  const msg = (t) => { $('#msg').textContent = t; };
+
+  // ★ 他塾ドメイン (§21 の B2B 顧客) では申込を出さない。
+  //   サーバ側 (/api/checkout の Host 検査) が本丸で、これは案内のための二重化。
+  if (SUPABASE.name !== 'trillion') {
+    $('#f').querySelectorAll('input, select, button').forEach((el) => { el.disabled = true; });
+    msg('このドメインではお申し込みできません。塾の先生にお問い合わせください。');
+  }
+
+  if (new URLSearchParams(location.search).get('canceled')) {
+    msg('お支払いは行われていません。もう一度やり直せます。');
+  }
+
+  $('#f').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if ($('#pass').value !== $('#pass2').value) {
+      msg('パスワード（確認）が一致しません');
+      return;
+    }
+    const btn = $('#go');
+    btn.disabled = true;
+    msg('決済ページを準備しています…');
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: $('#email').value.trim(),
+          password: $('#pass').value,          // ★ trim しない
+          name: $('#name').value.trim(),
+          grade: $('#grade').value,
+          school: $('#school').value.trim(),
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.checkoutUrl) {
+        location.href = body.checkoutUrl;
+        return;
+      }
+      const detail = Array.isArray(body.details) ? '\n' + body.details.join('\n') : '';
+      msg((body.message || `お申し込みに失敗しました (HTTP ${res.status})`) + detail);
+    } catch (err) {
+      msg('通信できませんでした。電波を確認してやり直してください');
+    }
+    btn.disabled = false;
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+/* =============================================================================
+   冊子の登録 (講師用)
+   受験画面と同じ配色。こちらは PC で使う前提なので、横に広い表を許す。
+   ============================================================================= */
+:root {
+  --bg: #0e1116; --panel: #151a22; --line: #2a3240; --fg: #e7ecf3;
+  --muted: #93a0b3; --accent: #3b82f6; --warn: #f59e0b; --bad: #ef4444; --ok: #22c55e;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; min-height: 100%; background: var(--bg); color: var(--fg);
+  font: 15px/1.6 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+}
+
+button {
+  font: inherit; color: var(--fg); background: #1e2531;
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 14px; min-height: 40px; cursor: pointer;
+}
+button:hover:not(:disabled) { background: #263043; }
+button:disabled { opacity: .45; cursor: default; }
+button.todo { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+input, select, textarea {
+  font: inherit; color: var(--fg); background: #0e131b;
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 100%;
+}
+input.bad, select.bad, textarea.bad { border-color: var(--bad); background: #24151a; }
+textarea { resize: vertical; min-height: 38px; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+
+/* ---------- ヘッダ ---------- */
+#bar {
+  display: flex; align-items: center; gap: 12px; padding: 8px 16px;
+  border-bottom: 1px solid var(--line); background: var(--panel);
+}
+#bar-title { font-weight: 700; }
+#who { color: var(--muted); font-size: 13px; }
+.spacer { flex: 1 1 auto; }
+#to-exam { color: var(--accent); text-decoration: none; font-size: 14px; }
+
+#banner { padding: 10px 16px; background: #1c2432; border-bottom: 1px solid var(--line); font-size: 14px; }
+#banner[data-tone="ok"] { background: #12301c; color: #a8f0c0; }
+#banner[data-tone="warn"] { background: #3a2d0c; color: #ffd68a; }
+#banner[data-tone="bad"] { background: #3a1414; color: #ffb4b4; }
+
+/* ---------- 本体 ---------- */
+#stage { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.panel {
+  border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 16px;
+}
+.panel h2 { margin: 0 0 8px; font-size: 16px; }
+.muted { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+.muted.small { font-size: 12px; margin-top: 12px; }
+.warn { color: var(--warn); font-size: 13px; background: #2a2109; border: 1px solid #4a3a10;
+  border-radius: 8px; padding: 8px 10px; }
+
+.form { display: flex; flex-direction: column; gap: 12px; max-width: 720px; }
+.row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.row > label { flex: 1 1 180px; }
+.pdfinfo { margin: 0; font-size: 13px; color: var(--muted); min-height: 1.6em; }
+.pdfinfo[data-tone="ok"] { color: var(--ok); }
+.pdfinfo[data-tone="bad"] { color: var(--bad); }
+
+/* ---------- 冊子一覧 ---------- */
+.bookrow {
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px;
+  background: #131922;
+}
+.bookrow-main { flex: 1 1 auto; min-width: 0; }
+.bookrow-title { font-weight: 600; }
+.bookrow-meta { color: var(--muted); font-size: 12px; }
+.pub { min-width: 6.5em; }
+.pub.on { background: #12301c; border-color: var(--ok); color: #a8f0c0; }
+
+/* ---------- 設問の表 ---------- */
+/* ★ 横に長いので、この箱の中だけで横スクロールさせる (ページ全体は横に伸ばさない) */
+.qtable { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
+.qhead, .qrow {
+  display: flex; gap: 8px; align-items: flex-start; min-width: 900px; padding: 4px 0;
+}
+.qhead { color: var(--muted); font-size: 12px; border-bottom: 1px solid var(--line);
+  padding-bottom: 6px; margin-bottom: 6px; position: relative; }
+.qrow { flex-wrap: wrap; border-bottom: 1px dashed #202836; padding-bottom: 8px; margin-bottom: 4px; }
+.qcell { flex: 0 0 auto; }
+.qcell.grow { flex: 1 1 260px; min-width: 200px; }
+.qerr { flex: 1 1 100%; color: var(--bad); font-size: 12px; }
+.qerr[hidden] { display: none; }
+
+/* ---------- 起動 / ログイン / 失敗 ---------- */
+#boot, #login, #fatal {
+  position: fixed; inset: 0; z-index: 50; display: none;
+  align-items: center; justify-content: center; background: var(--bg); padding: 24px;
+}
+body[data-stage="boot"] #boot,
+body[data-stage="login"] #login,
+body[data-stage="fatal"] #fatal { display: flex; }
+body[data-stage="boot"] #stage, body[data-stage="login"] #stage, body[data-stage="fatal"] #stage,
+body[data-stage="boot"] #bar, body[data-stage="login"] #bar, body[data-stage="fatal"] #bar
+  { visibility: hidden; }
+
+.fatal-box { width: min(460px, 100%); text-align: center; }
+.fatal-box h1 { font-size: 18px; color: var(--bad); }
+.fatal-box p { color: var(--muted); white-space: pre-wrap; }
+
+#login-form { width: min(360px, 100%); display: flex; flex-direction: column; gap: 12px; }
+#login-form h1 { font-size: 20px; margin: 0; }
+#login-form button[type="submit"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+#login-msg { color: var(--warn); font-size: 13px; min-height: 1.6em; margin: 0; }
+
+label.inline { display: inline-flex; flex-direction: row; align-items: center; gap: 8px; }
+label.inline input[type="file"] { width: auto; }
+.small { font-size: 12px; }
+code { background: #0e131b; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }

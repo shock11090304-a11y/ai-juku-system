@@ -1,0 +1,112 @@
+{
+ "source": "英文法_不定詞_第1集.yaml",
+ "subject_name": "英語",
+ "book": {
+  "title": "英文法 不定詞 演習 第1集",
+  "subject": "grammar",
+  "level": "標準",
+  "time_limit_min": 20
+ },
+ "questions": [
+  {
+   "number": 1,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "FUTEI-KEISHIKI",
+   "explanation": "## 🎯 コアイメージ\n**It is 〜 to do … の形式主語構文**。頭でっかちな不定詞の主語を後ろへ回し、仮の主語 It を立てる。It =「to 以下のこと」。\n\n## 🔬 文構造分析\n**It** is important **to eat breakfast** every morning.\nIt = to eat breakfast every morning。「毎朝朝食をとること」が本当の主語。\n\n## 📍 正解の根拠\n形式主語 It を受けて「〜すること」を表すのは **to eat** (名詞的用法)。\n\n## ❌ 誤答 NG 理由\n1. eat — 原形のままでは It との文法関係が作れない (述語は is がもうある)。\n2. ate — 過去形の述語動詞。is と衝突する。\n4. eaten — 過去分詞単独。「食べられる」方向になり、It とのつながりも作れない。"
+  },
+  {
+   "number": 2,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "FUTEI-GIMONSHI",
+   "explanation": "## 🎯 コアイメージ\n**疑問詞 + to 不定詞**で「〜すべきか」の名詞のかたまりを作る: how to do (やり方) / what to do (何をすべきか) / where to go (どこへ行くべきか)。\n\n## 🔬 文構造分析\nI don't know **how to use this machine**.\nhow to use this machine (この機械の使い方) 全体が know の目的語。use の目的語は this machine で埋まっている。\n\n## 📍 正解の根拠\n「使い**方**が分からない」+ use の目的語 (this machine) が後ろに残っている → **how to use**。\n\n## ❌ 誤答 NG 理由\n2. what to use — what は use の目的語になるはずだが、this machine が既に目的語で衝突する。\n3. how using — 疑問詞に -ing は続かない。to 不定詞の形にする。\n4. for using —「〜のために」。know の目的語 (名詞のかたまり) が無くなり文が壊れる。"
+  },
+  {
+   "number": 3,
+   "page": 1,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "FUTEI-TOO",
+   "explanation": "## 🎯 コアイメージ\n**too 〜 (for 人) to do =「…が〜するには…すぎる」= 熱すぎて飲めない**。too が限度超えを宣言し、to 以下が「何をするには」を示す。\n\n## 🔬 文構造分析\nThis coffee is **too hot for me to drink**.\nfor me = to drink の意味上の主語。drink の目的語は主語 This coffee と同じなので**書かない** (to drink it としない)。\n\n## 📍 正解の根拠\ntoo + 形容詞とセットで「〜するには」を作るのは **to drink** (to 不定詞)。\n\n## ❌ 誤答 NG 理由\n1. drinking — too 〜 と呼応する形は to 不定詞。-ing では構文にならない。\n2. drink — 原形だけでは for me とも too hot ともつながらない。\n3. to drinking — to の後ろは原形。-ing を続けるのは前置詞の to だけ。"
+  },
+  {
+   "number": 4,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "FUTEI-ENOUGH",
+   "explanation": "## 🎯 コアイメージ\n**形容詞 + enough to do =「〜するのに十分…」**。enough は形容詞・副詞の**後ろ**に置く、という語順まで含めて 1 つの型。\n\n## 🔬 文構造分析\nHe was **kind enough to carry** my bag upstairs.\nkind enough (十分に親切) + to carry (運んでくれるほど)。「親切にも〜してくれた」と訳す定番形。\n\n## 📍 正解の根拠\n形容詞 kind の直後に置けて to 不定詞と呼応するのは **enough** だけ。\n\n## ❌ 誤答 NG 理由\n1. so — kind so to carry という語順は無い (so kind **as** to carry なら別の型)。\n3. too — too は形容詞の**前**に置く語。kind too という語順が壊れている上、意味も「〜すぎて…できない」で逆。\n4. very — very も形容詞の前に置く語。後ろには置けず、to 不定詞とも呼応しない。"
+  },
+  {
+   "number": 5,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "FUTEI-KANRYO",
+   "explanation": "## 🎯 コアイメージ\n**to have + 過去分詞 (完了不定詞) = 述語動詞より前の時間**を表す。seems (今そう見える) より前の last week の話は to have been。\n\n## 🔬 文構造分析\nHe **seems to have been** ill **last week**.\n= It seems that he **was** ill last week。seems (現在) と was (過去) の時間差を to have been が背負う。\n\n## 📍 正解の根拠\nlast week (過去) の内容を現在の seems の後ろに置く → 完了不定詞 **to have been**。\n\n## ❌ 誤答 NG 理由\n1. to be — seems と同じ時 (今病気に見える) になり、last week と合わない。\n2. being — seem の後ろに -ing は続かない。\n4. to being — to 不定詞の to の後ろは原形。-ing は置けない。"
+  },
+  {
+   "number": 6,
+   "page": 2,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "1",
+   "points": 2,
+   "unit_tag": "FUTEI-SEISHITSU",
+   "explanation": "## 🎯 コアイメージ\n不定詞の意味上の主語は普通 **for 人**。ただし kind / careless / foolish など**人の性質をほめる・責める形容詞のときは of 人**になる。\n\n## 🔬 文構造分析\nIt was careless **of you** to leave your umbrella on the train.\ncareless は「あなた」の性質の評価 → of you。You were careless と言い換えられるのが of のサイン。\n\n## 📍 正解の根拠\ncareless = 人の性質を表す形容詞 → 意味上の主語は **of** you。\n\n## ❌ 誤答 NG 理由\n2. for — 性質の形容詞でないとき (important / necessary など) の形。\n3. to — careless to you では「あなたに対して不注意」となり、忘れ物をした本人の性質を表せない。\n4. with — この構文で意味上の主語を導く働きは無い。"
+  },
+  {
+   "number": 7,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "FUTEI-SHIEKI",
+   "explanation": "## 🎯 コアイメージ\n**使役動詞 make + O + 動詞の原形 =「O に (強制的に) 〜させる」**。make / let / have の後ろは to の無い**原形不定詞**。\n\n## 🔬 文構造分析\nMy mother **made me clean** my room before dinner.\nmade (使役) + me (させられる人) + clean (原形)。me と clean は「私が掃除する」という能動の関係。\n\n## 📍 正解の根拠\n使役の make の後ろは原形 → **clean**。\n\n## ❌ 誤答 NG 理由\n1. cleaned — 過去分詞だと「私が掃除される」という受動になり不成立。\n3. to clean — make に to 不定詞は続かない (受動態 be made **to** clean のときだけ to が現れる)。\n4. cleaning — make + O + -ing という型は無い。"
+  },
+  {
+   "number": 8,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "4",
+   "points": 2,
+   "unit_tag": "FUTEI-DOKURITSU",
+   "explanation": "## 🎯 コアイメージ\n**独立不定詞** = 文全体を修飾する決まり文句: to tell the truth (実を言うと) / to be honest (正直に言うと) / to make matters worse (さらに悪いことに)。\n\n## 🔬 文構造分析\n**To tell the truth**, I have never read the book.\nTo tell the truth が文頭でコンマまでのかたまりを作り、後ろの文全体に「実を言うと」の注釈を付ける。\n\n## 📍 正解の根拠\n「実を言うと」は **to tell the truth** で固定の慣用表現。\n\n## ❌ 誤答 NG 理由\n1. Telling the truth —「実を言うと」の慣用は to 不定詞で固定 (frankly speaking と混同しない)。\n2. Told the truth — 過去分詞では「真実を告げられて」となり意味を成さない。\n3. For telling the truth —「真実を言ったことに対して」となり、注釈の働きをしない。"
+  },
+  {
+   "number": 9,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "3",
+   "points": 2,
+   "unit_tag": "FUTEI-SVOC",
+   "explanation": "## 🎯 コアイメージ\n**tell + O + to do =「O に〜するように言う」**。tell / ask / advise / want は「O + to 不定詞」の型を取る (原形は続かない — make / let との違い)。\n\n## 🔬 文構造分析\nThe doctor **told him to give up** smoking.\nhim = to give up の意味上の主語。「彼がタバコをやめる」よう医者が指示した。\n\n## 📍 正解の根拠\ntell + O の後ろに動作を続けるなら **to give up** (to 不定詞)。\n\n## ❌ 誤答 NG 理由\n1. giving up — tell + O + -ing という型は無い。\n2. give up — 原形が続くのは使役 (make / let / have) と知覚動詞。tell は違う。\n4. to giving up — to 不定詞の to の後ろは原形。-ing は置けない。"
+  },
+  {
+   "number": 10,
+   "page": 3,
+   "answer_type": "choice",
+   "choice_count": 4,
+   "correct_answer": "2",
+   "points": 2,
+   "unit_tag": "FUTEI-MOKUTEKI",
+   "explanation": "## 🎯 コアイメージ\n目的「〜するために」は so as to do。**否定「〜しないように」は not を to の直前**に置いて so as **not to** do。\n\n## 🔬 文構造分析\nShe left home early **so as not to miss** the first train.\n= in order not to miss 〜。「始発を逃さないように」早く家を出た。\n\n## 📍 正解の根拠\n不定詞の否定は **to の直前に not** → so as **not to** miss。\n\n## ❌ 誤答 NG 理由\n1. so as to not — not は to の後ろでなく直前に置く。\n3. not so as to — not が構文全体の前に出るこの語順は無い。\n4. so not as to — so と as の間に not は挟めない。"
+  }
+ ]
+}

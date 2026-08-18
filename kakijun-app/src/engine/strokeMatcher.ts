@@ -1,0 +1,457 @@
+/**
+ * ★ 書き順判定エンジン本体 (§6)。
+ * Canvas・DOM・React に一切依存しない。座標はすべて正規化座標 (0〜1)。
+ */
+import type {
+  AttemptSummary,
+  GuideLevel,
+  MatchParams,
+  MistakeKind,
+  MistakeLog,
+  Pt,
+  ResampledStroke,
+  Strictness,
+} from './types';
+import { emptyMistakeCounts } from './types';
+import { clamp, dist, dot, interpolateSegment, normalize, sub, vlen } from './geometry';
+
+const N = 64; // 1画あたりのサンプル数 (§6.1)
+const LAST = N - 1;
+
+/** 難易度によらない共通パラメータ (§6.3) */
+const COMMON = {
+  LOOKAHEAD: 10,
+  REVERSE_DOT: -0.3,
+  REVERSE_RUN: 3,
+  // 既定は従来どおりのなぞり判定 (単体テスト・データ検査が使う)。
+  // アプリ側は PracticeScreen が pathJudge:false で上書きする
+  pathJudge: true,
+} as const;
+
+/**
+ * 難易度3段階 (§6.5)
+ * ★ お手本の字はフォントで描き、判定は線データで行う。両者には
+ *   最大1割弱のズレがあるので、許容幅はそのズレ + 線の太さ (0.11) を
+ *   吸収できる値にしてある。ここを絞ると「見えているお手本の通りに
+ *   なぞったのに弾かれる」ことになる。
+ *   書き順・方向の判定は許容幅とは独立なので、緩めても目的は損なわない。
+ */
+const PRESETS: Record<Strictness, Omit<MatchParams, keyof typeof COMMON>> = {
+  easy: {
+    TOL_RATIO: 0.35,
+    TOL_MIN: 0.075,
+    TOL_MAX: 0.32,
+    OFF_DIST: 0.35,
+    DONE_RATE: 0.75,
+    reverseEnabled: false,
+  },
+  normal: {
+    TOL_RATIO: 0.25,
+    TOL_MIN: 0.06,
+    TOL_MAX: 0.28,
+    OFF_DIST: 0.30,
+    DONE_RATE: 0.88,
+    reverseEnabled: true,
+  },
+  strict: {
+    TOL_RATIO: 0.18,
+    TOL_MIN: 0.045,
+    TOL_MAX: 0.22,
+    OFF_DIST: 0.18,
+    DONE_RATE: 0.95,
+    reverseEnabled: true,
+  },
+};
+
+const ORDER: Strictness[] = ['easy', 'normal', 'strict'];
+
+/**
+ * きびしさ + ガイドレベルから実際のパラメータを決める。
+ * Lv3（お手本なし）では自動的に1段階緩める (§5.4, §6.5)。
+ */
+export function resolveParams(
+  strictness: Strictness,
+  guideLevel: GuideLevel,
+): MatchParams {
+  let s = strictness;
+  if (guideLevel === 3) {
+    s = ORDER[Math.max(0, ORDER.indexOf(strictness) - 1)];
+  }
+  return { ...PRESETS[s], ...COMMON };
+}
+
+/** 許容半径。画の弧長 L に対する相対値 (§6.3 ★ 固定値にしない) */
+export function tol(L: number, p: MatchParams): number {
+  return clamp(L * p.TOL_RATIO, p.TOL_MIN, p.TOL_MAX);
+}
+
+/**
+ * 書き始め (pointerDown) 専用の許容半径。
+ * 濁点や小書き字では tol が 0.03 (600px 画面で約18px) まで縮み、
+ * 幼児の指では狙えない「始点弾かれループ」になるため、
+ * 始点判定に限り指のタップサイズ相当の下限を敷く。
+ */
+const START_TOL_FLOOR = 0.075;
+/**
+ * ★上限 (開始のみ判定のとき)。経路を見ない判定では「書き出しの位置」が判定の
+ * 全てなのに、長い画では tol が TOL_MAX (ふつう 0.28 = マス1/3) まで膨らみ、
+ * 全く別の場所から書いても通ってしまう。指のタップ精度に必要な広さだけ残す。
+ */
+const START_TOL_CAP = 0.13;
+export function startTol(L: number, p: MatchParams): number {
+  const raw = Math.max(tol(L, p), START_TOL_FLOOR);
+  return p.pathJudge ? raw : Math.min(raw, START_TOL_CAP);
+}
+
+/** 入力補間の刻み (§6.3 ★ 固定値にしない) */
+export function step(L: number): number {
+  // ★ 下限を切る。退化した画 (長さ0) が来ても h=0 にしない
+  //   (h=0 だと補間・前進判定が進まず、入力を食い続けて固まる)
+  return Math.max((L / LAST) * 0.5, 1e-4);
+}
+
+export type Feedback = 'start' | 'order' | 'reverse' | 'offpath' | 'short';
+
+export type MatcherResult =
+  | { type: 'ok' }
+  | { type: 'ignored' }
+  | { type: 'feedback'; feedback: Feedback; strokeIdx: number }
+  | { type: 'stroke-ok'; committedIdx: number; nextIdx: number }
+  | { type: 'char-complete'; summary: AttemptSummary };
+
+/** 判定の状態 (§6.2) */
+type MatchState = {
+  strokeIdx: number; // いま書くべき画（0始まり）
+  progress: number; // 現在の画の到達インデックス（0〜63）
+  offDist: number; // 経路から外れたまま進んだ累積移動距離
+  reverseRun: number; // 進行方向が逆を向いた連続回数
+  pPrev: Pt | null; // 直前の判定点
+  /** 逆走の向き判定の基準点。ここから一定距離動くたびに向きを1回評価する */
+  dirAnchor: Pt | null;
+  /** dirAnchor を置いた時点の到達インデックス (前進したかを見るため) */
+  dirAnchorProgress: number;
+  /** この画で実際に描いた線の長さ (開始のみモードの完了判定に使う) */
+  drawnLen: number;
+  attempts: number; // 現在の画のやり直し回数
+  mistakes: MistakeLog[]; // 文字全体のミス記録（採点用）
+  drawing: boolean;
+  completed: boolean;
+};
+
+export class StrokeMatcher {
+  private readonly strokes: ResampledStroke[];
+  private params: MatchParams;
+  private st: MatchState;
+  /** 連続失敗回数。3回でガイドを1段階易しくする (§7.4)。画の成功でリセット */
+  consecutiveFailures = 0;
+
+  constructor(strokes: ResampledStroke[], params: MatchParams) {
+    if (strokes.length === 0) throw new Error('strokes must not be empty');
+    this.strokes = strokes;
+    this.params = params;
+    this.st = {
+      strokeIdx: 0,
+      progress: 0,
+      offDist: 0,
+      reverseRun: 0,
+      pPrev: null,
+      dirAnchor: null,
+      dirAnchorProgress: 0,
+      drawnLen: 0,
+      attempts: 0,
+      mistakes: [],
+      drawing: false,
+      completed: false,
+    };
+  }
+
+  /** ガイドレベル自動変更時などに、書きかけの状態を保ったまま許容量だけ変える */
+  setParams(params: MatchParams): void {
+    this.params = params;
+  }
+
+  get state(): Readonly<MatchState> {
+    return this.st;
+  }
+
+  get currentStroke(): ResampledStroke {
+    return this.strokes[Math.min(this.st.strokeIdx, this.strokes.length - 1)];
+  }
+
+  private log(kind: MistakeKind): void {
+    this.st.mistakes.push({ kind, strokeIdx: this.st.strokeIdx });
+  }
+
+  /**
+   * 現在の画の筆跡だけを消してやり直し。確定済みの画は残す (§6.4 ★)。
+   */
+  private resetCurrentStroke(): void {
+    this.st.progress = 0;
+    this.st.offDist = 0;
+    this.st.reverseRun = 0;
+    this.st.pPrev = null;
+    this.st.dirAnchor = null;
+    this.st.dirAnchorProgress = 0;
+    this.st.drawnLen = 0;
+    this.st.drawing = false;
+    this.st.attempts++;
+    this.consecutiveFailures++;
+  }
+
+  /**
+   * pointercancel (エッジスワイプ・通知バナー等) 用の中断。
+   * ミスとして記録せず、やり直し回数も進めない。
+   * これを呼ばないと drawing=true のまま残り、次のタッチが
+   * 前の画の続きとして誤判定される。
+   */
+  cancelStroke(): void {
+    this.st.progress = 0;
+    this.st.offDist = 0;
+    this.st.reverseRun = 0;
+    this.st.pPrev = null;
+    this.st.dirAnchor = null;
+    this.st.dirAnchorProgress = 0;
+    this.st.drawnLen = 0;
+    this.st.drawing = false;
+  }
+
+  private fail(feedback: Feedback): MatcherResult {
+    return { type: 'feedback', feedback, strokeIdx: this.st.strokeIdx };
+  }
+
+  /** ── ペンを置いたとき (§6.4) ─────────────────────────── */
+  pointerDown(p: Pt): MatcherResult {
+    if (this.st.completed) return { type: 'ignored' };
+    // pointercancel を取りこぼした後などに drawing のまま来たら黙って仕切り直す
+    if (this.st.drawing) this.cancelStroke();
+    const s = this.strokes[this.st.strokeIdx];
+    const T = startTol(s.length, this.params);
+    const dStart = dist(p, s.pts[0]);
+    const dEnd = dist(p, s.pts[LAST]);
+
+    // ① まず「この画を逆から書こうとしている」を見る（順序チェックより先に）。
+    //    ただし始点と終点がほぼ同じ閉じた画（運筆の円など）では区別できないので除外する。
+    //    ★dStart > T も条件に入れる: 短い画では始点・終点の許容円が重なり、
+    //      正しい始点タッチが「わずかに終点寄り」なだけで逆書き扱いになるため
+    const closed = dist(s.pts[0], s.pts[LAST]) <= T;
+    if (!closed && dEnd <= T && dEnd < dStart && dStart > T) {
+      this.log('reverse_start');
+      this.consecutiveFailures++;
+      return this.fail('reverse'); // 「こっちから かいてみよう」
+    }
+
+    // ② 正しい始点
+    if (dStart <= T) {
+      this.st.drawing = true;
+      this.st.progress = 0;
+      this.st.offDist = 0;
+      this.st.reverseRun = 0;
+      this.st.pPrev = p;
+      this.st.dirAnchor = p;
+      this.st.dirAnchorProgress = 0;
+      this.st.drawnLen = 0;
+      return { type: 'ok' };
+    }
+
+    // ③ これから書く画の始点に近い → 書き順の飛ばし。
+    //    ★ strokeIdx より前（確定済み）の画は対象にしない
+    for (let i = this.st.strokeIdx + 1; i < this.strokes.length; i++) {
+      const t = this.strokes[i];
+      if (dist(p, t.pts[0]) <= startTol(t.length, this.params)) {
+        this.log('order');
+        this.consecutiveFailures++;
+        return this.fail('order'); // 「つぎは ◯かくめだよ」
+      }
+    }
+
+    // 始点外れは記録するが、連続失敗カウント (自動レベルダウン) には数えない。
+    // 手のひらの接地など「書く意思のないタッチ」で3回に達して
+    // 勝手に易しくなるのを防ぐ。書きはじめた後の失敗だけを数える
+    this.log('start');
+    return this.fail('start'); // 始点の丸を大きく点滅
+  }
+
+  /** ── ペンを動かしたとき (§6.4) ───────────────────────── */
+  pointerMove(pRaw: Pt): MatcherResult {
+    if (!this.st.drawing || this.st.completed) return { type: 'ignored' };
+    const s = this.strokes[this.st.strokeIdx];
+    // ★開始のみモード (アプリの既定):
+    //   書き出しが正しければ、線がどう走ろうと口を出さない。
+    //   経路は画面に見せていないので、逸脱・逆走を指摘しても子どもには
+    //   「意味のわからないエラー」になる (2026-08-18 塾長指示)。
+    //   完了判定用に描いた長さだけ数える
+    if (!this.params.pathJudge) {
+      if (this.st.pPrev) this.st.drawnLen += dist(pRaw, this.st.pPrev);
+      this.st.pPrev = pRaw;
+      return { type: 'ok' };
+    }
+    const h = step(s.length);
+    const pEventStart = this.st.pPrev ?? pRaw;
+
+    // ★ 生のイベント点だけで判定しない。前回の判定点との間を h 刻みで線形補間する。
+    //   （速く書くとイベントが飛び、経路をショートカットしたと誤判定するため）
+    const pts = interpolateSegment(pEventStart, pRaw, h);
+    let lastOnPathJ = -1;
+    for (const p of pts) {
+      const r = this.judgePoint(p, s, (j) => (lastOnPathJ = j));
+      if (r) return r;
+    }
+
+    // --- 逆走: 「位置」ではなく「進む向き」で判定する (★★ §6.4) ---
+    //   ★イベント単位でも補間点単位でも数えない。高頻度入力 (Apple Pencil は
+    //     240Hz) では1イベントの移動が手ぶれより小さく、向きがノイズになる。
+    //     「基準点から一定距離 (指の揺れより大きい) 動くごとに1回」向きを評価し、
+    //     それが REVERSE_RUN 回連続で逆だったら逆走と確定する。
+    //   ★終点近くまで到達した後 (progress ≥ DONE_RATE) は数えない:
+    //     はらいの勢い余りが逆走扱いになるのを防ぐ (pointerUp で完走になる)
+    const doneZone = this.st.progress >= LAST * this.params.DONE_RATE;
+    if (this.params.reverseEnabled && !doneZone && this.st.dirAnchor) {
+      // このイベントに経路上の点が無くても (すでに外れている最中でも)、
+      // 到達済みの progress 位置の接線で向きを見続ける。
+      // ここで止めると逆走中に reverseRun が伸びず、常に offpath 扱いになる
+      const jDir = lastOnPathJ >= 0 ? lastOnPathJ : this.st.progress;
+      const D = Math.max(3 * h, 0.045); // 向き1評価あたりの移動距離
+      const motion = sub(pRaw, this.st.dirAnchor);
+      if (vlen(motion) >= D) {
+        // ★★ 同じ弧長どうしで比べる (曲率対応 §6.4)。
+        //   手の動きは「距離 D の弦」で測っている。これを経路の
+        //   「隣り合う2点の接線」と比べると、曲がった画では正しく前進していても
+        //   大きな角度差が出る (半径が D と同程度の輪では 45度以上)。
+        //   実際、字形をお手本に合わせ込むほど輪が忠実になり、す・そ・カ で
+        //   手ぶれが逆走と誤判定されてデータを入れられなかった。
+        //   経路側も同じ弧長 D の弦で測れば、輪の内側でも向きが揃う。
+        const per = s.length / LAST; // 1サンプルあたりの弧長
+        const span = Math.max(1, Math.round(D / Math.max(per, 1e-6)));
+        const half = Math.max(1, Math.round(span / 2));
+        const forward = sub(
+          s.pts[Math.min(jDir + half, LAST)],
+          s.pts[Math.max(jDir - half, 0)],
+        );
+        // ループ (す・ぬ・結び) では吸着点 j が実際の筆先より遅れ、遅れた j の
+        // 向きと実運筆方向が見かけ上反転する。「この先の経路へ近づいているか」も
+        // 見て、前進中の揺れを逆走に数えない。★先読みも同じ弧長にそろえる
+        const ahead = s.pts[Math.min(jDir + span, LAST)];
+        const toAhead = sub(ahead, this.st.dirAnchor);
+        const approaching =
+          vlen(toAhead) === 0 ||
+          dot(normalize(motion), normalize(toAhead)) > 0;
+        // ★★ いちばん強い手がかり: この評価区間で「到達点が前へ進んだか」。
+        //   progress は単調増加なので、逆走している間は増えない。逆に、
+        //   増えているなら手は経路を前に進んでいるので、向きの角度が
+        //   どう出ようと逆走ではない (輪や結びの内側では、正しく前進していても
+        //   弦の向きが反転して見えることがある。る・ヤ・9 がそれ)。
+        const advanced = this.st.progress - this.st.dirAnchorProgress;
+        if (
+          advanced < Math.max(1, half) &&
+          !approaching &&
+          vlen(forward) > 0 &&
+          dot(normalize(motion), normalize(forward)) < this.params.REVERSE_DOT
+        ) {
+          this.st.reverseRun++;
+          if (this.st.reverseRun >= this.params.REVERSE_RUN) {
+            this.log('reverse');
+            this.resetCurrentStroke();
+            return this.fail('reverse'); // 「ぎゃくむきだよ」
+          }
+        } else {
+          this.st.reverseRun = 0;
+        }
+        this.st.dirAnchor = pRaw;
+        this.st.dirAnchorProgress = this.st.progress;
+      }
+    }
+    return { type: 'ok' };
+  }
+
+  private judgePoint(
+    p: Pt,
+    s: ResampledStroke,
+    onPathMatched: (j: number) => void,
+  ): MatcherResult | null {
+    const T = tol(s.length, this.params);
+    const st = this.st;
+
+    // --- 前方一致 ---
+    const kMax = Math.min(st.progress + this.params.LOOKAHEAD, LAST);
+    let j = st.progress;
+    let d = dist(p, s.pts[j]);
+    for (let k = st.progress + 1; k <= kMax; k++) {
+      const dk = dist(p, s.pts[k]);
+      if (dk < d) {
+        d = dk;
+        j = k;
+      }
+    }
+
+    // --- 経路逸脱: 「累積移動距離」で測る (★ サンプル数で測らない §6.6) ---
+    if (d > T) {
+      // 終点近くまで到達済みなら、はみ出しは「終筆の勢い」なので数えない
+      // (濁点のはらいが数十px はみ出しただけで全消しになるのを防ぐ。
+      //  完走判定は pointerUp の DONE_RATE がそのまま行う)
+      if (st.progress >= LAST * this.params.DONE_RATE) {
+        st.pPrev = p;
+        return null;
+      }
+      if (st.pPrev) st.offDist += dist(p, st.pPrev);
+      st.pPrev = p;
+      if (st.offDist > this.params.OFF_DIST) {
+        this.log('offpath');
+        this.resetCurrentStroke();
+        return this.fail('offpath'); // 「せんの うえを なぞってね」
+      }
+      return null;
+    }
+    st.offDist = 0;
+    onPathMatched(j);
+    st.progress = Math.max(st.progress, j);
+    st.pPrev = p;
+    return null;
+  }
+
+  /** ── ペンを離したとき (§6.4) ─────────────────────────── */
+  pointerUp(): MatcherResult {
+    if (!this.st.drawing || this.st.completed) return { type: 'ignored' };
+    const st = this.st;
+    // ★開始のみモード: 正しい場所から書き始めて、それなりの長さを描いたら完了。
+    //   「それなり」= 画の弧長の 35% (長い画は 0.45 まで・点は 0.04 から)。
+    //   タップだけで画が進んでしまうのを防ぐ最低限で、経路は見ない
+    if (!this.params.pathJudge) {
+      const s = this.strokes[st.strokeIdx];
+      const need = Math.max(0.04, Math.min(s.length * 0.35, 0.45));
+      if (st.drawnLen < need) {
+        this.log('short');
+        this.resetCurrentStroke();
+        return this.fail('short'); // 「さいごまで かこうね」
+      }
+      st.progress = LAST; // 完了扱い (以降の共通処理に乗せる)
+    }
+    if (st.progress >= LAST * this.params.DONE_RATE) {
+      const committedIdx = st.strokeIdx;
+      st.strokeIdx++;
+      st.progress = 0;
+      st.offDist = 0;
+      st.reverseRun = 0;
+      st.pPrev = null;
+      st.dirAnchor = null;
+      st.dirAnchorProgress = 0;
+      st.drawnLen = 0;
+      st.attempts = 0;
+      st.drawing = false;
+      this.consecutiveFailures = 0;
+      if (st.strokeIdx >= this.strokes.length) {
+        st.completed = true;
+        return { type: 'char-complete', summary: this.summary() };
+      }
+      return { type: 'stroke-ok', committedIdx, nextIdx: st.strokeIdx }; // 「じょうず！」
+    }
+    this.log('short');
+    this.resetCurrentStroke();
+    return this.fail('short'); // 「さいごまで なぞろうね」
+  }
+
+  summary(): AttemptSummary {
+    const counts = emptyMistakeCounts();
+    for (const m of this.st.mistakes) counts[m.kind]++;
+    return { mistakes: this.st.mistakes.slice(), counts };
+  }
+}

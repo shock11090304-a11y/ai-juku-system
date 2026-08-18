@@ -1,6 +1,16 @@
 {
   "redirects": [
     {
+      "source": "/kakijun",
+      "destination": "/kakijun/",
+      "permanent": false
+    },
+    {
+      "source": "/exam-app/:path*",
+      "destination": "https://exam.trillion-ai-juku.com/:path*",
+      "permanent": false
+    },
+    {
       "source": "/lesson-prints/:filename",
       "destination": "https://pub-f58791ee7e7c4937bd07514487ce3f8a.r2.dev/:filename",
       "permanent": false
@@ -88,33 +98,72 @@
     {
       "source": "/marketing-assets/:campaign/:file(.+\\.svg)",
       "headers": [
-        { "key": "Content-Disposition", "value": "attachment" },
-        { "key": "Content-Security-Policy", "value": "default-src 'none'; sandbox" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" }
+        {
+          "key": "Content-Disposition",
+          "value": "attachment"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'none'; sandbox"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
       ]
     },
     {
       "source": "/(.*\\.html)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/kakijun/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/kakijun/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
       ]
     },
     {
       "source": "/",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
       ]
     },
     {
       "source": "/cache-purge.js",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
       ]
     },
     {
       "source": "/auth-guard.js",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
       ]
     }
   ]
