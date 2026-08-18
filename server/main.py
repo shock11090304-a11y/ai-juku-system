@@ -4820,6 +4820,68 @@ def _run_weekly_worksheet_generation() -> dict:
         worksheets_created = 0
         notifications_sent = 0
         errors = []
+        # 📊 観測: 英語弱点が ①タグ一致 / ②全文LIKE のどちらで選定されたか (運用で①の実効性を監視。
+        #   新規 r_grammar 行がタグ無しだと①から無言で漏れる=①比率の低下で気づく)
+        unit_tag_picks = 0
+        like_fallback_picks = 0
+        pool_fallback_picks = 0
+
+        # 🎯 2026-08-18 (2段目): 英語弱点→r_grammar の単元一致を「question_data 全文 LIKE」から
+        #   「【単元】タグ一致 + 大問内の全小問が当該単元」に格上げ。全文 LIKE は explanation 内の
+        #   偶然の言及にも当たり、実測の単元精度は受動態36%/助動詞39%/時制11%/比較4%/関係詞7%
+        #   (= 選ばれた問題のうち本当にその単元だった割合)。また行(大問)単位マッチのため 10 問構成の
+        #   混在大問だと 1/10 しか当該単元でないことがある。タグの正典は dojo-drill と同じ
+        #   _derive_question_unit (q.unit > 解説/設問の【単元】)。候補行の全小問を Python で照合し
+        #   混在大問を弾く。run 内キャッシュで同一単元の走査は全生徒で 1 回。
+        _unit_rows_cache = {}
+        # 弱点 topic がタグ語彙より細かい別名のときの正規化 (例:「関係代名詞(主格)」→ prefix「関係代名詞」
+        # はタグ「関係詞」に startswith しない)。値はタグ語彙 21 語のいずれか。
+        _UNIT_TAG_ALIASES = {
+            "関係代名詞": "関係詞", "関係副詞": "関係詞", "複合関係詞": "関係詞",
+            "仮定法過去完了": "仮定法", "仮定法過去": "仮定法", "仮定法現在": "仮定法",
+            "現在完了": "時制", "過去完了": "時制", "未来完了": "時制", "進行形": "時制",
+            "代名詞": "名詞・代名詞", "不定代名詞": "名詞・代名詞", "受け身": "受動態",
+            "強調構文": "強調", "間接疑問": "疑問詞", "熟語": "語法", "イディオム": "語法", "慣用表現": "語法",
+        }
+
+        def _grammar_unit_rows(prefix):
+            """r_grammar から「全小問の単元が prefix に一致する大問」の id リスト (run 内キャッシュ)。"""
+            if prefix in _unit_rows_cache:
+                return _unit_rows_cache[prefix]
+            ids = []
+            try:
+                # 「否定・倒置」のような複合 topic は ・区切りの各パートでも試す。別名はタグ語彙に正規化。
+                pats = [prefix] + [p for p in prefix.split("・") if len(p) >= 2 and p != prefix]
+                pats += [_UNIT_TAG_ALIASES[p] for p in list(pats) if p in _UNIT_TAG_ALIASES and _UNIT_TAG_ALIASES[p] not in pats]
+                seen = set()
+                for pat in pats:
+                    c.execute(
+                        "SELECT id, question_data FROM exam_questions "
+                        "WHERE exam_id='daigaku' AND part_key='r_grammar' AND question_data LIKE ? LIMIT 400",
+                        (f"%【単元】{pat}%",)
+                    )
+                    for _r in (c.fetchall() or []):
+                        _rid = _r["id"] if hasattr(_r, "keys") else _r[0]
+                        if _rid in seen:
+                            continue
+                        seen.add(_rid)
+                        _qraw = _r["question_data"] if hasattr(_r, "keys") else _r[1]
+                        try:
+                            _qd = json.loads(_qraw) if isinstance(_qraw, str) else (_qraw or {})
+                        except Exception:
+                            continue
+                        _qs = [q for q in (_qd.get("questions") or []) if isinstance(q, dict)]
+                        if not _qs:
+                            continue
+                        _units = [(_derive_question_unit(q) or "") for q in _qs]
+                        if all(any(u.startswith(p) for p in pats) for u in _units):
+                            ids.append(_rid)
+            except Exception as _e:
+                # 一過性 DB エラーで空リストを run 全体に固定しない (キャッシュせず返す=次の生徒で再試行)
+                log.warning(f"[WeeklyWorksheet] unit-tag scan failed for '{prefix}': {_e}")
+                return []
+            _unit_rows_cache[prefix] = ids
+            return ids
 
         for st in students:
             try:
@@ -4846,6 +4908,23 @@ def _run_weekly_worksheet_generation() -> dict:
                 if c.fetchone():
                     continue
 
+                # 🔁 直近4週に配布済みの question_id を①タグ一致選定の除外候補に。在庫の薄い単元
+                #   (例: 在庫ちょうど3大問) だと弱点が卒業するまで毎週**同一の3大問**が届き、生徒には
+                #   故障に見える。除外の結果 3 大問を切るときは②従来 LIKE へフォールバック (反復より広域)。
+                _recent_qids = set()
+                try:
+                    c.execute("SELECT questions_json FROM worksheet_archives WHERE student_id=? ORDER BY id DESC LIMIT 4", (sid,))
+                    for _ar in (c.fetchall() or []):
+                        _aq = _ar["questions_json"] if hasattr(_ar, "keys") else _ar[0]
+                        try:
+                            for _it in (json.loads(_aq) if isinstance(_aq, str) else (_aq or [])):
+                                if isinstance(_it, dict) and _it.get("question_id") is not None:
+                                    _recent_qids.add(_it.get("question_id"))
+                        except Exception:
+                            pass
+                except Exception:
+                    _recent_qids = set()
+
                 # 弱点 TOP3 取得 (未克服順・習得済みは除外)
                 # 🎯 [習得クローズドループ 2026-06-17] weakness-top3 と同基準: qa_accuracy>=0.8 かつ
                 #   qa_attempts>=5 の「習得済み(卒業)」単元は週次プリントに再出題しない。順序も未克服優先に。
@@ -4869,6 +4948,10 @@ def _run_weekly_worksheet_generation() -> dict:
                 import random as _rnd
                 all_problem_ids = []  # P0-4: questions_json 軽量化用 (id のみ保存)
                 subject_topics = []
+                # 🎯 TOP3 に同じ単元接頭辞の弱点が 2 つ入るケース (「受動態(A)」「受動態(B)」は別 topic key)
+                #   では両方が同じ _grammar_unit_rows キャッシュから抽選する。除外しないと同一プリント内で
+                #   同じ大問が重複する (在庫がちょうど 3 なら 2 弱点とも同一の 3 大問)。
+                _picked_rgram_ids = set()
                 for w in weaknesses:
                     wsubj = w["subject"] if hasattr(w, "keys") else w[0]
                     wtopic = (w["topic"] if hasattr(w, "keys") else w[1]) or None
@@ -4881,18 +4964,33 @@ def _run_weekly_worksheet_generation() -> dict:
                         continue
                     subject_topics.append({"subject": wsubj, "topic": wtopic})
                     # 🎯 2026-08-18: 英語弱点に topic があるときは、まず**単元一致の r_grammar**
-                    #   (自己完結の4択・661問・「受動態」等の単元名が question_data に入っており LIKE で引ける)
-                    #   を試す。従来は english の先頭 pool r_long (3,594問・topic 無視のランダム長文) が
-                    #   常に非空 → 取得できた時点で break するため 2 番手以降が永遠に選ばれず
-                    #   (実測: 全247プリント中 r_grammar 0件・r_long 187件)、
+                    #   (自己完結の4択・661大問/1,614小問) を試す。従来は english の先頭 pool r_long
+                    #   (3,594問・topic 無視のランダム長文) が常に非空 → 取得できた時点で break するため
+                    #   2 番手以降が永遠に選ばれず (実測: 全247プリント中 r_grammar 0件・r_long 187件)、
                     #   「受動態(make A into B)」の弱点に無関係な長文が 9 問配られていた。
                     #   topic の単元接頭辞 (「受動態(make A into B…)」→「受動態」。dojo-drill の
-                    #   findPresetForWeakness と同じ区切り文字) で絞り、一致ゼロなら従来どおり
-                    #   pool_keys へフォールバック (配信ゼロ方向への縮小はしない)。
+                    #   findPresetForWeakness と同じ区切り文字) で絞る。
+                    #   選定は 2 段: ①【単元】タグ一致 + 大問内の全小問が当該単元 (_grammar_unit_rows・
+                    #   在庫 3 大問以上のときだけ) → ② 従来の question_data 全文 LIKE → ③ pool_keys
+                    #   フォールバック (配信ゼロ方向への縮小はしない)。
                     _attempts = []
                     if (wsubj or "").lower() == "english" and wtopic:
                         _tprefix = re.split(r"[（(：:]", wtopic)[0].strip()
                         if len(_tprefix) >= 2:
+                            _uids = [i for i in _grammar_unit_rows(_tprefix)
+                                     if i not in _picked_rgram_ids and i not in _recent_qids]
+                            if len(_uids) >= 3:
+                                for qid in _rnd.sample(_uids, 3):
+                                    _picked_rgram_ids.add(qid)
+                                    all_problem_ids.append({
+                                        "question_id": qid,
+                                        "exam_id": "daigaku",
+                                        "part_key": "r_grammar",
+                                        "weakness_subject": wsubj,
+                                        "weakness_topic": wtopic,
+                                    })
+                                unit_tag_picks += 1
+                                continue  # ① タグ一致で選定完了 → 次の弱点へ
                             _attempts.append(("daigaku", "r_grammar", _tprefix))
                     for (_pe, _pp) in pool_keys[:2]:  # 最大 2 pool まで試す (従来挙動)
                         # 🧒 2026-07-03 中学生プール(exam=chugaku)は part 非依存の単一バケット=単元 topic を
@@ -4936,6 +5034,8 @@ def _run_weekly_worksheet_generation() -> dict:
                                 row_id = c.fetchone()
                                 if row_id:
                                     qid = row_id[0] if not hasattr(row_id, 'keys') else row_id[0]
+                                    if qid in _picked_rgram_ids:
+                                        continue  # ①で選定済みの大問を②で再選定しない (同一プリント内重複防止)
                                     if _is_kokugo_pool:
                                         try:
                                             _qd_raw = row_id[1]
@@ -4946,6 +5046,13 @@ def _run_weekly_worksheet_generation() -> dict:
                                             continue  # 解答不能の不良大問はスキップ (次 offset / 次 pool へ fallthrough)
                                     picked_ids.append(qid)
                             if picked_ids:
+                                if (wsubj or "").lower() == "english":
+                                    if _like_kw and pool_exam == "daigaku" and pool_part == "r_grammar":
+                                        like_fallback_picks += 1  # ② 英語弱点が全文LIKEで選定された
+                                    else:
+                                        pool_fallback_picks += 1  # ③ topic 無視の pool (r_long 等) に落ちた
+                                if pool_exam == "daigaku" and pool_part == "r_grammar":
+                                    _picked_rgram_ids.update(picked_ids)  # ②選定分も以降の重複除外対象に
                                 # P0-4: id のみ記録 (full question_data 保存を回避し容量 1/200 に削減)
                                 for qid in picked_ids:
                                     all_problem_ids.append({
@@ -5042,6 +5149,9 @@ def _run_weekly_worksheet_generation() -> dict:
             "notifications_sent": notifications_sent,
             "errors": errors[:10],  # 最初の 10 件のみ
             "week_start_date": week_start,
+            "unit_tag_picks": unit_tag_picks,          # 英語弱点: ①【単元】タグ一致で選定した数
+            "like_fallback_picks": like_fallback_picks,  # 英語弱点: ②全文LIKEに落ちた数 (①比率低下の監視用)
+            "pool_fallback_picks": pool_fallback_picks,  # 英語弱点: ③topic無視のpool (r_long等) に落ちた数
         }
     finally:
         conn.close()
