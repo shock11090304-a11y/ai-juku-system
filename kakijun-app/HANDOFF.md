@@ -166,7 +166,7 @@ cd .. && git add -A && git commit && git push -u origin <branch>
   始点は墨の上にあるので `check-start-dots` の浮き検査は通ってしまう。
   いまは同検査が**書き出しどうしの距離 (0.045 未満 = 同じ点) も落とす**
   (ロ・ク・タ・5 のように本当に同じ角から書く字は許可リスト)。
-  直すときの手順: `tools/_rows.mts` 相当で墨の行プロファイルから中心線を実測 →
+  直すときの手順: `tools/_rows.mts` で墨の行プロファイルから中心線を実測 →
   手で置く → `refit-glyphs` で忠実度を測る (経路探索の候補は交差部で蛇行することが
   あるので、採用したら必ず overlay-sheet を目で見る。ま で実際に蛇行した)。
   小書き字 (ょ・ッ・ゥ) は基字を直してから相似変換で丸ごと運ぶ:
@@ -222,6 +222,7 @@ cd .. && git add -A && git commit && git push -u origin <branch>
 | `tools/render/overlay-sheet.mts` | お手本と判定線をアプリと同じ条件で重ねる |
 | `tools/check-start-dots.mts` | 書き出しの点がお手本の墨に乗っているか + 別の画の書き出しと同じ点に重なっていないかの全数検査 |
 | `tools/fit-marks.mts` | 濁点・半濁点をフォントが打つ位置へ実測して合わせる |
+| `tools/_rows.mts` | 字の墨の連結成分と行ごとの x 区間を印字 (画を手で置き直すときの実測用) |
 | `tools/ref-font.mjs` | ★手本フォントの供給元。出荷 woff2 を読み、効かなければ止める |
 
 手本フォント Klee One は OFL。★QA は system 版ではなく出荷している woff2 を使う
