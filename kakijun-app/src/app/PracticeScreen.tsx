@@ -199,8 +199,9 @@ export function PracticeScreen() {
         const done = strokesRef.current[r.committedIdx];
         guide.burst(done.pts[63]);
         audioManager.sfx('pop');
-        // 称賛+次の画数を1発話で（別々に積むと速書きで TTS が渋滞する）
-        audioManager.playStrokeSuccess(r.nextIdx + 1);
+        // ★書いている途中は声を出さない (2026-08-18 塾長指示)。
+        //   1画ごとに「つぎは にかくめ」と喋ると、子どもの手より発話が遅れて
+        //   ずっと喋り続けることになる。次の画は番号と書き出しの点で示す
         guide.playDemo();
         break;
       }
@@ -236,8 +237,9 @@ export function PracticeScreen() {
     const ink = inkRef.current!;
     const m = matcherRef.current!;
     ink.clearCurrent();
-    const strokeNumber = m.state.strokeIdx + 1;
-    audioManager.playFeedback(fb, strokeNumber);
+    // ★書いている途中は声を出さない (2026-08-18 塾長指示)。
+    //   書き出しを外すたびに喋られると、子どもは何を直せばいいのか分からない。
+    //   誘導は「書き出しの点の点滅」と「番号の拡大」だけにする
     switch (fb) {
       case 'start':
         guide.pulseStart();
@@ -271,10 +273,8 @@ export function PracticeScreen() {
         if (surface.size > 0) guide.renderBackground(surface.bgCtx, surface.size);
         guide.playDemo();
         setGuideLevel(charId, next);
+        // ★声は出さない (上記)。易しくなったことは画面 (お手本の濃さ) で伝わる
         audioManager.sfx('help');
-        audioManager.playTogether();
-      } else {
-        audioManager.playRetryVoice();
       }
     }
   }
