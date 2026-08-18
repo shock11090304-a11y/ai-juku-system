@@ -1,0 +1,31 @@
+name: kakijun gates
+
+# かきじゅん (書き順学習 PWA) の検査。入口は kakijun-app/tools/run-all-gates.mjs 1本。
+# ★これを入れるまで、単体テストも E2E も「手元で気が向いたら回す」だけだった。
+on:
+  push:
+    paths:
+      - 'kakijun-app/**'
+      - '.github/workflows/kakijun-gates.yml'
+  pull_request:
+    paths:
+      - 'kakijun-app/**'
+  workflow_dispatch:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kakijun-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: kakijun-app/package-lock.json
+      - run: npm ci
+      # 字形の検査と E2E は実ブラウザで動く (お手本の画素まで見るため)
+      - run: npx playwright install --with-deps chromium
+      - run: node tools/run-all-gates.mjs

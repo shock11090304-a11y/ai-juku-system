@@ -1,7 +1,39 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { registerSW } from 'virtual:pwa-register';
 import { App } from './app/App';
 import './styles/global.css';
+
+// ── 新しいビルドへの自動切り替え (§12.5) ─────────────────────────
+// PWA は Service Worker が全アセットを事前キャッシュするので、開きっぱなしの
+// タブは新しいビルドが出ても古いまま動き続ける (更新チェックはページ読み込み時
+// だけ)。塾長が「直っていない」を見る原因の大半がこれだった。
+//   - 1分ごと + タブが前面に戻ったときに更新を確認する
+//   - 新しい SW に切り替わったら一度だけ再読み込みして新ビルドで動く
+//     (練習中でも切り替える。進捗は文字の完走ごとに保存済みなので失うのは
+//      書きかけの1字だけ。古いお手本で練習を続けるほうが害が大きい)
+{
+  let hadController = !!navigator.serviceWorker?.controller;
+  navigator.serviceWorker?.addEventListener('controllerchange', () => {
+    // 初回インストール時にも発火する (clientsClaim)。そこで reload すると
+    // 初回訪問が二重読み込みになるので、既に SW 配下だった場合だけ reload
+    if (!hadController) {
+      hadController = true;
+      return;
+    }
+    location.reload();
+  });
+  registerSW({
+    immediate: true,
+    onRegisteredSW(_url, reg) {
+      const check = () => reg?.update().catch(() => {});
+      setInterval(check, 60_000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') check();
+      });
+    },
+  });
+}
 
 // iOS Safari の ITP によるストレージ削除に備えて永続化を要求する (§12.6)
 if (navigator.storage?.persist) {

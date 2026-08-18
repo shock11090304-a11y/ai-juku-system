@@ -53,21 +53,28 @@ export class CanvasSurface {
     const S = Math.floor(Math.min(rect.width, rect.height));
     if (S <= 0) return;
     const dpr = window.devicePixelRatio || 1;
-    const changed = S !== this.size || this.bg.width !== Math.round(S * dpr);
+    const px = Math.round(S * dpr);
+    const changed = S !== this.size || this.bg.width !== px;
+    // ★★ 寸法が変わっていないなら canvas に一切触らない。
+    //   canvas.width への代入は「同じ値でも」中身を消す (HTML 仕様)。
+    //   ResizeObserver は寸法が変わらなくても発火するので、ここで抜けないと
+    //   「背景 (マス目 + お手本) だけ消えて誰も描き直さない」状態になる。
+    //   実際これが「2字目からお手本が消える」の正体だった。
+    if (!changed) return;
     this.size = S;
     for (const [c, ctx] of [
       [this.bg, this.bgCtx],
       [this.guide, this.guideCtx],
       [this.ink, this.inkCtx],
     ] as const) {
-      c.width = Math.round(S * dpr);
-      c.height = Math.round(S * dpr);
+      c.width = px;
+      c.height = px;
       c.style.width = `${S}px`;
       c.style.height = `${S}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     // サイズ再確保で内容が消えるので必ず再描画 (§12.3)
-    if (changed) this.onLayout?.(S);
+    this.onLayout?.(S);
   }
 
   /** クライアント座標 → 正規化座標 (0〜1) */

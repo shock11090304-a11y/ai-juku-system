@@ -4,6 +4,7 @@
  * 赤色は「間違い」の意味で使わない (§11-6)。強調はオレンジ・黄色。
  */
 import type { GuideLevel, Pt, ResampledStroke } from '../engine/types';
+import { drawSampleGlyph } from './sampleGlyph';
 
 const GUIDE_SOLID = '#cfd8dc'; // お手本の字 (全レベル共通・消さない)
 const ACCENT = '#ffb74d';
@@ -17,11 +18,34 @@ type Effect =
   | { kind: 'zoom'; t0: number; dur: number }
   | { kind: 'burst'; t0: number; dur: number; at: Pt };
 
-function tangentAt(s: ResampledStroke, i: number): Pt {
-  const a = s.pts[Math.max(0, i - 1)];
-  const b = s.pts[Math.min(63, i + 1)];
+/**
+ * 進行方向。★隣り合う2点で測らないこと。
+ * 判定用の線データは手本フォントの墨に合わせ込んであり、1〜2点ぶんの
+ * 細かい凹凸が乗っている。2点だけで測ると、まっすぐ右へ進む画なのに
+ * 「上向き」と出て、矢印も番号も見当違いの向きになる
+ * (か の1画目で -72度。画全体は +60度。2026-08-17 塾長指摘)。
+ * 弧長で 1割ぶん (±6点) 離して測り、細かい揺れを均す。
+ */
+const DIR_SPAN = 6;
+function tangentAt(s: ResampledStroke, i: number, span = DIR_SPAN): Pt {
+  const a = s.pts[Math.max(0, i - span)];
+  const b = s.pts[Math.min(63, i + span)];
   const l = Math.hypot(b.x - a.x, b.y - a.y) || 1;
   return { x: (b.x - a.x) / l, y: (b.y - a.y) / l };
+}
+
+/**
+ * 書き出しの向き = 始点から弧長 2割ぶん先の点へ向かう向き。
+ * ★局所の接線を使わないこと。線データは書き出し付近でお手本から外れている字が
+ *   あり (か の1画目は局所 -52度・お手本の横画は -9度)、局所接線で矢印を描くと
+ *   「お手本と違う向き」を指す。始点から離れた点へ向かう向きなら、
+ *   多少の凹凸があっても「点から、こっちへ」を正しく示せる。
+ */
+const START_DIR_SPAN = 12;
+function startDirection(s: ResampledStroke): Pt {
+  const b = s.pts[Math.min(63, START_DIR_SPAN)];
+  const l = Math.hypot(b.x - s.pts[0].x, b.y - s.pts[0].y) || 1;
+  return { x: (b.x - s.pts[0].x) / l, y: (b.y - s.pts[0].y) / l };
 }
 
 export class GuideRenderer {
@@ -84,14 +108,31 @@ export class GuideRenderer {
     // ★ お手本はどのレベルでも消さない (塾長方針: 何度でも練習できるように)。
     //   濃さも変えない。薄くすると「消えた」と同じで練習にならない。
     if (this.char) {
-      ctx.save();
-      ctx.fillStyle = GUIDE_SOLID;
-      ctx.font = `${size * 0.86}px KakijunSample, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(this.char, size / 2, size * 0.52);
-      ctx.restore();
+      // 描き方は src/canvas/sampleGlyph.ts が正典 (字形ツールと共有)
+      drawSampleGlyph(ctx, this.char, size, GUIDE_SOLID);
+    } else {
+      // ★ 運筆 (なみなみ・ぐるぐる・かいだん等) は「字」ではないので手本フォントが無い。
+      //   文字コード (〽 ◎ 🪜 ⛰) を借りて描くと、絵文字や別物の記号が出てしまい、
+      //   しかも判定する線とは似ても似つかない形になる。
+      //   運筆に限りお手本を線データそのものから描く。この場合お手本と判定は
+      //   同一データなので「お手本と違う線を見せる」問題 (PR #39) は起きない。
+      this.sampleFromStrokes(ctx, size);
     }
+  }
+
+  /** 運筆用: 判定に使う線データ自体をお手本として描く */
+  private sampleFromStrokes(ctx: CanvasRenderingContext2D, size: number): void {
+    if (this.strokes.length === 0) return;
+    ctx.save();
+    ctx.strokeStyle = GUIDE_SOLID;
+    ctx.lineWidth = size * 0.075; // 手本フォントの縦画とほぼ同じ太さ
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (const s of this.strokes) {
+      this.path(ctx, size, s, 0, 63);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   /** ガイド層: 毎フレーム (§5.1) */
@@ -111,8 +152,12 @@ export class GuideRenderer {
       }
       // 始点の光る丸（パルス）
       if (cur) this.startDot(ctx, size, cur, now);
-      // 方向の矢印 (Lv1)
-      if (this.level === 1 && cur) this.arrow(ctx, size, cur, 0.2, ACCENT_STRONG);
+      // 方向の矢印 (Lv1)。★書き出しの点のすぐ先に、書き出しの向きで置く。
+      //   「点から、こっちへ」を示すもの。画の途中の接線で描くと、
+      //   折れ角に当たったときお手本と無関係な向きを指す
+      if (this.level === 1 && cur) {
+        this.arrow(ctx, size, cur.pts[Math.min(63, 10)], startDirection(cur), ACCENT_STRONG);
+      }
     }
 
     // お手本アニメ (Lv1)
@@ -166,7 +211,8 @@ export class GuideRenderer {
         // 矢印が進行方向へ流れる (§7.4 逆向き)
         for (let a = 0; a < 3; a++) {
           const pos = ((t * 1.5 + a / 3) % 1) * 0.9;
-          this.arrow(ctx, size, cur, pos, ACCENT_STRONG);
+          const i = Math.min(62, Math.max(1, Math.floor(pos * 63)));
+          this.arrow(ctx, size, cur.pts[i], tangentAt(cur, i), ACCENT_STRONG);
         }
       } else if (e.kind === 'zoom' && cur) {
         // 正しい画の番号を拡大表示 (§7.4 書き順違い)
@@ -211,10 +257,12 @@ export class GuideRenderer {
     scale = 1,
   ): void {
     const p = s.pts[0];
-    const t = tangentAt(s, 0);
-    // 始点から進行方向と逆側に少しずらして置く
-    const ox = -t.x * size * 0.07 - t.y * size * 0.03;
-    const oy = -t.y * size * 0.07 + t.x * size * 0.03;
+    const t = startDirection(s);
+    // 始点から進行方向と逆側に少しずらして置く。
+    // ★ずらし幅は「番号の丸が書き出しの点に触れる」程度に留める。
+    //   離すと、どの画の番号なのか分からなくなる (塾長指摘)
+    const ox = -t.x * size * 0.055 - t.y * size * 0.022;
+    const oy = -t.y * size * 0.055 + t.x * size * 0.022;
     const x = Math.min(size * 0.95, Math.max(size * 0.05, p.x * size + ox));
     const y = Math.min(size * 0.95, Math.max(size * 0.05, p.y * size + oy));
     const r = size * (isCurrent ? 0.045 : 0.032) * scale;
@@ -255,13 +303,10 @@ export class GuideRenderer {
   private arrow(
     ctx: CanvasRenderingContext2D,
     size: number,
-    s: ResampledStroke,
-    posRatio: number,
+    p: Pt,
+    t: Pt,
     color: string,
   ): void {
-    const i = Math.min(62, Math.max(1, Math.floor(posRatio * 63)));
-    const p = s.pts[i];
-    const t = tangentAt(s, i);
     const a = Math.atan2(t.y, t.x);
     ctx.save();
     ctx.translate(p.x * size, p.y * size);

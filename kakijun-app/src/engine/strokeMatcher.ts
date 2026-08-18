@@ -118,6 +118,8 @@ type MatchState = {
   pPrev: Pt | null; // 直前の判定点
   /** 逆走の向き判定の基準点。ここから一定距離動くたびに向きを1回評価する */
   dirAnchor: Pt | null;
+  /** dirAnchor を置いた時点の到達インデックス (前進したかを見るため) */
+  dirAnchorProgress: number;
   attempts: number; // 現在の画のやり直し回数
   mistakes: MistakeLog[]; // 文字全体のミス記録（採点用）
   drawing: boolean;
@@ -142,6 +144,7 @@ export class StrokeMatcher {
       reverseRun: 0,
       pPrev: null,
       dirAnchor: null,
+      dirAnchorProgress: 0,
       attempts: 0,
       mistakes: [],
       drawing: false,
@@ -175,6 +178,7 @@ export class StrokeMatcher {
     this.st.reverseRun = 0;
     this.st.pPrev = null;
     this.st.dirAnchor = null;
+    this.st.dirAnchorProgress = 0;
     this.st.drawing = false;
     this.st.attempts++;
     this.consecutiveFailures++;
@@ -192,6 +196,7 @@ export class StrokeMatcher {
     this.st.reverseRun = 0;
     this.st.pPrev = null;
     this.st.dirAnchor = null;
+    this.st.dirAnchorProgress = 0;
     this.st.drawing = false;
   }
 
@@ -228,6 +233,7 @@ export class StrokeMatcher {
       this.st.reverseRun = 0;
       this.st.pPrev = p;
       this.st.dirAnchor = p;
+      this.st.dirAnchorProgress = 0;
       return { type: 'ok' };
     }
 
@@ -281,20 +287,39 @@ export class StrokeMatcher {
       const D = Math.max(3 * h, 0.045); // 向き1評価あたりの移動距離
       const motion = sub(pRaw, this.st.dirAnchor);
       if (vlen(motion) >= D) {
-        const tangent = normalize(
-          sub(s.pts[Math.min(jDir + 1, LAST)], s.pts[Math.max(jDir - 1, 0)]),
+        // ★★ 同じ弧長どうしで比べる (曲率対応 §6.4)。
+        //   手の動きは「距離 D の弦」で測っている。これを経路の
+        //   「隣り合う2点の接線」と比べると、曲がった画では正しく前進していても
+        //   大きな角度差が出る (半径が D と同程度の輪では 45度以上)。
+        //   実際、字形をお手本に合わせ込むほど輪が忠実になり、す・そ・カ で
+        //   手ぶれが逆走と誤判定されてデータを入れられなかった。
+        //   経路側も同じ弧長 D の弦で測れば、輪の内側でも向きが揃う。
+        const per = s.length / LAST; // 1サンプルあたりの弧長
+        const span = Math.max(1, Math.round(D / Math.max(per, 1e-6)));
+        const half = Math.max(1, Math.round(span / 2));
+        const forward = sub(
+          s.pts[Math.min(jDir + half, LAST)],
+          s.pts[Math.max(jDir - half, 0)],
         );
         // ループ (す・ぬ・結び) では吸着点 j が実際の筆先より遅れ、遅れた j の
-        // 接線と実運筆方向が見かけ上反転する。「この先の経路へ近づいているか」も
-        // 見て、前進中の揺れを逆走に数えない
-        const ahead = s.pts[Math.min(jDir + 3, LAST)];
+        // 向きと実運筆方向が見かけ上反転する。「この先の経路へ近づいているか」も
+        // 見て、前進中の揺れを逆走に数えない。★先読みも同じ弧長にそろえる
+        const ahead = s.pts[Math.min(jDir + span, LAST)];
         const toAhead = sub(ahead, this.st.dirAnchor);
         const approaching =
           vlen(toAhead) === 0 ||
           dot(normalize(motion), normalize(toAhead)) > 0;
+        // ★★ いちばん強い手がかり: この評価区間で「到達点が前へ進んだか」。
+        //   progress は単調増加なので、逆走している間は増えない。逆に、
+        //   増えているなら手は経路を前に進んでいるので、向きの角度が
+        //   どう出ようと逆走ではない (輪や結びの内側では、正しく前進していても
+        //   弦の向きが反転して見えることがある。る・ヤ・9 がそれ)。
+        const advanced = this.st.progress - this.st.dirAnchorProgress;
         if (
+          advanced < Math.max(1, half) &&
           !approaching &&
-          dot(normalize(motion), tangent) < this.params.REVERSE_DOT
+          vlen(forward) > 0 &&
+          dot(normalize(motion), normalize(forward)) < this.params.REVERSE_DOT
         ) {
           this.st.reverseRun++;
           if (this.st.reverseRun >= this.params.REVERSE_RUN) {
@@ -306,6 +331,7 @@ export class StrokeMatcher {
           this.st.reverseRun = 0;
         }
         this.st.dirAnchor = pRaw;
+        this.st.dirAnchorProgress = this.st.progress;
       }
     }
     return { type: 'ok' };
@@ -368,6 +394,7 @@ export class StrokeMatcher {
       st.reverseRun = 0;
       st.pPrev = null;
       st.dirAnchor = null;
+      st.dirAnchorProgress = 0;
       st.attempts = 0;
       st.drawing = false;
       this.consecutiveFailures = 0;

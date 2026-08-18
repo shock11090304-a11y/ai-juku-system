@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { characters, getChar, listByType } from '../index';
 import { prepareStrokes } from '../../engine/loader';
 import { StrokeMatcher, resolveParams } from '../../engine/strokeMatcher';
+import { shakyPaths, offsetPaths } from '../../engine/traceProfiles';
 
 describe('文字データの整合性', () => {
   it('id が重複していない', () => {
@@ -78,43 +79,17 @@ describe('全文字: 理想軌跡が判定エンジンを通る（自己整合�
 });
 
 describe('全文字: 手ぶれ入力でも完走できる（実機の指書き相当）', () => {
-  // 経路の法線方向に ±0.02 の揺れ + 密なイベント列 (240Hz 相当) を合成。
-  // ループのある す・ず 等で吸着遅れによる逆走誤発火が起きないことの回帰テスト
-  function rng(seed: number): () => number {
-    let a = seed >>> 0;
-    return () => {
-      a |= 0;
-      a = (a + 0x6d2b79f5) | 0;
-      let t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
+  // 経路の法線方向に ±0.02 の揺れ + 密なイベント列 (240Hz 相当)。
+  // ループのある す・ず 等で吸着遅れによる逆走誤発火が起きないことの回帰テスト。
+  // ★軌跡の作り方は src/engine/traceProfiles.ts に置いて字形ツールと共有する
+  //   (別々に持っていたら「ツールでは通るのにテストが落ちる」字が出た)
   for (const c of characters) {
     it(`${c.id} (${c.char})`, () => {
       const strokes = prepareStrokes(c);
       const m = new StrokeMatcher(strokes, resolveParams('normal', 1));
-      const rand = rng(c.id.split('').reduce((a, ch) => a + ch.charCodeAt(0), 7));
-      for (const s of strokes) {
-        // 4倍に細分し法線ジッタを加えた密な軌跡
-        const path: { x: number; y: number }[] = [];
-        for (let i = 0; i < 63; i++) {
-          const a = s.pts[i];
-          const b = s.pts[i + 1];
-          const tx = b.x - a.x;
-          const ty = b.y - a.y;
-          const l = Math.hypot(tx, ty) || 1;
-          for (let k = 0; k < 4; k++) {
-            const t = k / 4;
-            const j = (rand() * 2 - 1) * 0.02;
-            path.push({
-              x: a.x + tx * t + (-ty / l) * j,
-              y: a.y + ty * t + (tx / l) * j,
-            });
-          }
-        }
-        path.push(s.pts[63]);
+      const paths = shakyPaths(strokes, c.id);
+      strokes.forEach((s, si) => {
+        const path = paths[si];
         const down = m.pointerDown(path[0]);
         expect(down.type, `${c.id} ${s.index}画目の始点`).toBe('ok');
         for (let i = 1; i < path.length; i++) {
@@ -125,7 +100,7 @@ describe('全文字: 手ぶれ入力でも完走できる（実機の指書き�
         expect(up.type, `${c.id} ${s.index}画目の完走`).toMatch(
           /stroke-ok|char-complete/,
         );
-      }
+      });
     });
   }
 });
@@ -146,32 +121,13 @@ describe('お手本 (フォント) の通りになぞっても弾かれない', 
   // 0.035 = 線の太さ 0.11 の半分より少し小さい。これ以上ずらすと、
   // そ・ぬ・め のような小さい輪では内側にずらした線が反転してしまい、
   // 「人がなぞった軌跡」とは言えない形になるため検査の意味がなくなる。
-  const OFFSET = 0.035;
   for (const c of characters) {
     it(`${c.id} (${c.char})`, () => {
       const strokes = prepareStrokes(c);
       const m = new StrokeMatcher(strokes, resolveParams('normal', 1));
-      for (const s of strokes) {
-        const path = s.pts.map((p, i) => {
-          const a = s.pts[Math.max(0, i - 1)];
-          const b = s.pts[Math.min(63, i + 1)];
-          const tx = b.x - a.x;
-          const ty = b.y - a.y;
-          const l = Math.hypot(tx, ty) || 1;
-          // 折れ角では寄せ幅を絞る。等距離オフセットは角で自己交差して
-          // 「人がなぞった軌跡」ではなくなるため (て・ぬ 等で偽陽性になる)。
-          const c = s.pts[Math.max(0, i - 2)];
-          const d = s.pts[Math.min(63, i + 2)];
-          const u = Math.hypot(p.x - c.x, p.y - c.y) || 1;
-          const v = Math.hypot(d.x - p.x, d.y - p.y) || 1;
-          const cos =
-            ((p.x - c.x) * (d.x - p.x) + (p.y - c.y) * (d.y - p.y)) / (u * v);
-          const k = Math.max(0, Math.min(1, (cos + 0.2) / 1.2));
-          return {
-            x: p.x + (-ty / l) * OFFSET * k,
-            y: p.y + (tx / l) * OFFSET * k,
-          };
-        });
+      const paths = offsetPaths(strokes);
+      strokes.forEach((s, si) => {
+        const path = paths[si];
         expect(m.pointerDown(path[0]).type, `${c.id} ${s.index}画目の始点`).toBe('ok');
         for (let i = 1; i < path.length; i++) {
           expect(m.pointerMove(path[i]).type, `${c.id} ${s.index}画目 点${i}`).toBe('ok');
@@ -179,7 +135,7 @@ describe('お手本 (フォント) の通りになぞっても弾かれない', 
         expect(m.pointerUp().type, `${c.id} ${s.index}画目の完走`).toMatch(
           /stroke-ok|char-complete/,
         );
-      }
+      });
     });
   }
 });
@@ -209,7 +165,7 @@ describe('画数の重点確認 (§14.4)', () => {
 });
 
 describe('濁音・半濁音の合成 (§14.4)', () => {
-  it('濁音は base+2画・半濁音は base+1画で、濁点が右上にある', () => {
+  it('濁音は base+2画・半濁音は base+1画', () => {
     for (const c of characters) {
       if (!c.composedFrom) continue;
       const base = getChar(c.composedFrom.base);
@@ -218,13 +174,34 @@ describe('濁音・半濁音の合成 (§14.4)', () => {
         0,
       );
       expect(c.strokes.length, c.id).toBe(base.strokes.length + extra);
-      // 合成された marks の座標はマスの右上 (x 0.72〜1.0, y 0〜0.32)
-      for (const s of c.strokes.slice(base.strokes.length)) {
-        for (const p of s.points) {
-          expect(p.x, c.id).toBeGreaterThanOrEqual(0.72);
-          expect(p.y, c.id).toBeLessThanOrEqual(0.32);
-        }
+    }
+  });
+
+  it('濁点・半濁点は字の右上側にあり、マスからはみ出さない', () => {
+    // ★ 以前は「x≥0.72 かつ y≤0.32 の固定枠に入っていること」を見ていたが、
+    //   フォントが゛を打つ位置は字ごとに違い、固定枠のほうが誤りだった
+    //   (見えている゛と書き出しの点が最大 34% ずれていた)。
+    //   位置の正解はフォントしか知らないので、ここでは「常識の範囲」だけを見て、
+    //   実際の一致は tools/check-start-dots.mts (お手本の墨と照合) で担保する。
+    for (const c of characters) {
+      if (!c.composedFrom) continue;
+      const base = getChar(c.composedFrom.base);
+      const markPts = c.strokes.slice(base.strokes.length).flatMap((s) => s.points);
+      const basePts = base.strokes.flatMap((s) => s.points);
+      const avg = (v: number[]) => v.reduce((a, b) => a + b, 0) / v.length;
+      for (const p of markPts) {
+        expect(p.x, `${c.id} 記号がマス外`).toBeGreaterThanOrEqual(0.05);
+        expect(p.x, `${c.id} 記号がマス外`).toBeLessThanOrEqual(0.95);
+        expect(p.y, `${c.id} 記号がマス外`).toBeGreaterThanOrEqual(0.05);
+        expect(p.y, `${c.id} 記号がマス外`).toBeLessThanOrEqual(0.95);
       }
+      // 基字より右かつ上 (濁点は右上に打つ)
+      expect(avg(markPts.map((p) => p.x)), `${c.id} 記号が基字より右`).toBeGreaterThan(
+        avg(basePts.map((p) => p.x)),
+      );
+      expect(avg(markPts.map((p) => p.y)), `${c.id} 記号が基字より上`).toBeLessThan(
+        avg(basePts.map((p) => p.y)),
+      );
     }
   });
 });

@@ -7,8 +7,29 @@ import { useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import { groupsOf, listByType } from '../data';
 import { audioManager } from '../audio/audioManager';
-import type { CharType } from '../engine/types';
+import { prepareStrokes } from '../engine/loader';
+import type { CharacterDef, CharType } from '../engine/types';
 import { BackButton } from './widgets';
+
+/** 運筆タイル用: 書く線そのものの小さな絵 */
+function StrokeThumb({ def }: { def: CharacterDef }) {
+  const strokes = prepareStrokes(def);
+  return (
+    <svg width="44" height="44" viewBox="0 0 1 1" aria-hidden="true">
+      {strokes.map((s) => (
+        <polyline
+          key={s.index}
+          points={s.pts.map((p) => `${p.x},${p.y}`).join(' ')}
+          fill="none"
+          stroke="var(--ink)"
+          strokeWidth={0.075}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
+    </svg>
+  );
+}
 
 const SEION_TABS: Record<string, (group: string) => boolean> = {
   せいおん: (g) => g.endsWith('-gyo'),
@@ -122,9 +143,15 @@ export function CharSelectScreen() {
                       position: 'relative',
                     }}
                   >
-                    <span style={{ fontSize: 38, fontWeight: 700, color: 'var(--ink)' }}>
-                      {c.char}
-                    </span>
+                    {c.type === 'unpitsu' ? (
+                      // 運筆は文字コードを借りているだけなので、タイルにも
+                      // 絵文字 (🪜 ⛰) ではなく実際に書く線を出す
+                      <StrokeThumb def={c} />
+                    ) : (
+                      <span style={{ fontSize: 38, fontWeight: 700, color: 'var(--ink)' }}>
+                        {c.char}
+                      </span>
+                    )}
                     <span style={{ fontSize: 12, letterSpacing: 1 }}>
                       {[1, 2, 3].map((i) => (
                         <span
