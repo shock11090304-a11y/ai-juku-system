@@ -2,7 +2,7 @@
  * 書き順判定エンジンの必須テスト (§6.7 の8ケース + §14.1)。
  */
 import { describe, expect, it } from 'vitest';
-import { StrokeMatcher, resolveParams } from '../strokeMatcher';
+import { StrokeMatcher, resolveParams, startTol } from '../strokeMatcher';
 import { computeStars } from '../scoring';
 import { prepareStrokes, toCharacterDef } from '../loader';
 import { shakyPaths } from '../traceProfiles';
@@ -498,6 +498,16 @@ describe('★開始のみモード pathJudge:false (アプリの既定。2026-08
       type: 'feedback',
       feedback: 'reverse',
     });
+  });
+
+  it('書き出しの受付半径は 0.13 で頭打ちになる (経路を見ないぶん狭める)', () => {
+    // 長い画では tol が TOL_MAX=0.28 (マス1/3) まで膨らむ。経路判定があった頃は
+    // 書き出しが甘くても経路で正されたが、開始のみ判定では書き出しが全てなので、
+    // マスの別の場所から書いても通ってしまう
+    expect(startTol(2.0, resolveParams('normal', 1))).toBeCloseTo(0.28);
+    expect(startTol(2.0, startOnly)).toBeCloseTo(0.13);
+    // 短い画の下限 (指のタップ精度) はそのまま
+    expect(startTol(0.05, startOnly)).toBeCloseTo(0.075);
   });
 
   it('複数画の字も、順に書き出せば自由な線で完走する', () => {
