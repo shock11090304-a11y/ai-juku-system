@@ -34,7 +34,7 @@ sys.path.insert(0, BOOK_DIR)
 sys.path.insert(0, os.path.dirname(HERE))
 
 import check as gates                                  # noqa: E402
-from content import BOOK                               # noqa: E402
+from content import BOOK, ELEMENT_KINDS                # noqa: E402
 
 DESKTOP = os.path.expanduser("~/Desktop")
 TMP_Q = os.path.join(BOOK_DIR, "_out_q.pdf")
@@ -77,7 +77,9 @@ def clean(s):
     return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", s)
 
 
-_CJK = r"\u3041-\u309f\u30a1-\u30ff\u4e00-\u9fff\u3005\u30fc"
+# ★中黒「・」(U+30FB) はカタカナ範囲の中にあるが、和欧の空白を入れる対象から外す。
+#   入れると「GMARCH ・地方国公立」と中黒の前が空いて不格好になる（実測）。
+_CJK = r"\u3041-\u309f\u30a1-\u30fa\u30fc-\u30ff\u4e00-\u9fff\u3005"
 _PUNC = r"、。「」『』（）・…！？"
 
 
@@ -91,7 +93,8 @@ def wa_ei(s):
 
 # 和欧の境目に空白を入れると、そこが改行位置になる。1語として読ませたい
 # 組み合わせだけは分割を禁止する（「be／動詞」「-ing／形」で割れて別項目に見えた）。
-_GLUE = ("be 動詞", "-ing 形", "to 不定詞", "-ed 形", "be 動詞の")
+# ★角括弧は「[」だけが行末に残りやすい。空所そのものごと1かたまりで動かす。
+_GLUE = ("be 動詞", "-ing 形", "to 不定詞", "-ed 形", "[  ] 内", "] 内")
 
 
 def esc(s):
@@ -165,6 +168,10 @@ def styles():
                              textColor=BLUE, leftIndent=17, spaceAfter=4)
     S["note"] = ParagraphStyle("n", fontName=FONT, fontSize=10.5, leading=17.5,
                                textColor=colors.HexColor("#333"))
+    # 前書き・部扉の地の文は、英語の冊子でも中身が日本語の散文なので禁則を効かせる。
+    # ★note そのものに効かせてはいけない。note は表のセルにも使われ、
+    #   中学英語の本の活用表のように英単語が入るセルで単語が途中から割れる。
+    S["intro"] = ParagraphStyle("in", parent=S["note"], wordWrap="CJK")
     S["h2"] = ParagraphStyle("h2", fontName=FONT, fontSize=12.5, leading=19, textColor=NAVY,
                              spaceBefore=9, spaceAfter=2)
     return S
@@ -181,10 +188,24 @@ if BOOK.get("lang") == "ja":
     for _k in ("q", "qs", "tok", "a", "exp", "pt", "note", "inst", "kick", "partsub"):
         if _k in S:
             S[_k].wordWrap = "CJK"
+# ★部扉の説明文（p["aim"]）だけは、英語の冊子でも中身が純日本語の長文なので禁則を効かせる。
+#   効かせないと行頭に「。」が落ちる（実測1行／全659行）。
+#   ★partsub そのものに効かせてはいけない。partsub は解答編の部見出し
+#   （「〜レベル　／　100点満点」）にも使われ、CJK 折り返しだと「100点／満点」で割れる
+#   （実測: 中堅編の解答編 p2 が退行した）。
+S["aim"] = ParagraphStyle("aim", parent=S["partsub"], wordWrap="CJK")
 
 PAGE_SEC = {}
 # ★表紙や前書きに「N問」と手で書かない。実データから出す（初版は112問と刷って実際は103問だった）
 TOTAL_Q = sum(len(s["items"]) for p in BOOK["parts"] for s in p["sections"])
+# ★大きな区切りの単位語。既定は「部」。模試形式の本は content.py で "回" にする。
+#   持たせないと、データが「第1回 標準レベル」なのに機械が「第1部」と刷って
+#   紙面が「第1部 第1回 標準レベル」と二重表記になる。
+UNIT = BOOK.get("unit", "部")
+# 採点要素で採る設問（英文和訳・和文英訳）の実数。0 なら解答編の表紙から
+# 「採点のポイントつき」を落とす（中身に無いものを表紙が名乗らないように）。
+N_ELEMENT = sum(len(s["items"]) for p in BOOK["parts"] for s in p["sections"]
+                if s["kind"] in ELEMENT_KINDS)
 
 
 class Marker(Flowable):
@@ -315,8 +336,14 @@ def error_stem_html(it):
 
 
 def completed_sentence(it):
-    """整序の frame の [ ] に解答を差し込んだ完成文。"""
-    return re.sub(r"\[\s*\]", esc(it["ans"]), esc(it["frame"]))
+    """整序の frame の [ ] に解答を差し込んだ完成文。
+
+    ★問題編は「文頭に来るべき語も小文字で示す」約束なので ans は小文字始まりだが、
+      解答編に載せる完成文は模範解答なので文頭を大文字に戻す。戻さないと
+      「no matter what happens, we will not …」と誤った英語を模範解答として刷る。
+    """
+    s = re.sub(r"\[\s*\]", esc(it["ans"]), esc(it["frame"]))
+    return re.sub(r"^([a-z])", lambda m: m.group(1).upper(), s.lstrip())
 
 
 def fill_note(it):
@@ -335,7 +362,8 @@ def _cover_pts():
     """表紙の満点表記。★「各部100点満点」と決め打ちすると、部ごとに満点が違う本で
     表紙だけが嘘になる（表紙の数字はデータから出す。過去に問数で同じ事故を出した）。"""
     tots = sorted({p["total"] for p in BOOK["parts"]})
-    return f"各部{tots[0]}点満点" if len(tots) == 1 else f"計{sum(p['total'] for p in BOOK['parts'])}点"
+    return f"各{UNIT}{tots[0]}点満点" if len(tots) == 1 \
+        else f"計{sum(p['total'] for p in BOOK['parts'])}点"
 
 
 # ------------------------------------------------------------------ 問題編
@@ -347,7 +375,7 @@ def flow_questions():
          Spacer(1, 3 * mm),
          Paragraph(esc(BOOK["sub"]), S["sub"]),
          Spacer(1, 3 * mm),
-         Paragraph(f"全{len(BOOK['parts'])}部・{TOTAL_Q}問／{_cover_pts()}", S["sub"]),
+         Paragraph(f"全{len(BOOK['parts'])}{UNIT}・{TOTAL_Q}問／{_cover_pts()}", S["sub"]),
          Spacer(1, 34 * mm),
          Paragraph(esc(BOOK["series"]), S["cov"]),
          NextPageTemplate("normal"), PageBreak()]
@@ -356,22 +384,21 @@ def flow_questions():
     f.append(Paragraph("本書の使い方", S["part"]))
     f.append(Spacer(1, 6 * mm))
     for h, b in BOOK["intro"]:
-        f.append(Paragraph(esc(h), S["h2"]))
         # ★本文に改行があれば1行ずつ組む。1段落に流すと「② 」「③ 」だけが
         #   行末に取り残されて、箇条書きに見えない（番号を付けても意味がない）。
-        for _line in str(b).split("\n"):
-            f.append(Paragraph(esc(_line), S["note"]))
+        # ★見出しと本文1行目は KeepTogether で括る（見出しだけがページ末に残るのを防ぐ）。
+        body = [Paragraph(esc(_line), S["intro"]) for _line in str(b).split("\n")]
+        f.append(KeepTogether([Paragraph(esc(h), S["h2"])] + body[:1]))
+        f.extend(body[1:])
     f.append(rule())
-    f.append(Paragraph("三部の構成と目安時間", S["h2"]))
-    f.append(Paragraph("上から順に解いてください。前の部で8割取れてから次の部へ進みます。",
-                       S["note"]))
-    f.append(Spacer(1, 2 * mm))
+    # ★見出し・導入文はここで append しない。下の KeepTogether が同じ2行を持っており、
+    #   両方あると 2ページにわたって二度刷られる（実際に p2 末尾と p3 冒頭に出た）。
     # 講義対応の本では「対応講義」列を出す（p["ref"] があるときだけ）
     ref = any(p.get("ref") for p in BOOK["parts"])
-    rows = [["部", "レベル"] + (["対応講義"] if ref else []) + ["問数", "満点", "目安時間"]]
+    rows = [[UNIT, "レベル"] + (["対応講義"] if ref else []) + ["問数", "満点", "目安時間"]]
     for p in BOOK["parts"]:
         n = sum(len(s["items"]) for s in p["sections"])
-        rows.append([f'第{p["no"]}部', p["level"]] + ([p.get("ref", "")] if ref else [])
+        rows.append([f'第{p["no"]}{UNIT}', p["level"]] + ([p.get("ref", "")] if ref else [])
                     + [f"{n}問", f'{p["total"]}点', f'{p["time"]}分'])
     cw = ([16 * mm, 52 * mm, 26 * mm, 16 * mm, 16 * mm, 20 * mm] if ref
           else [18 * mm, 46 * mm, 20 * mm, 20 * mm, 24 * mm])
@@ -383,24 +410,32 @@ def flow_questions():
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
     ]))
-    f.append(t)
+    # ★見出し＋表を KeepTogether で括る。括らないと、前書きが長い本で表が改ページ位置に
+    #   かかり、1行目だけ前ページに残って次ページが「見出し行＋残り2行」の白紙同然になる
+    #   （実測: 前書きを1節足しただけで 91字のページが1枚生まれた）。
+    f.append(KeepTogether([Paragraph(f'全{len(BOOK["parts"])}{UNIT}の構成と目安時間', S["h2"]),
+                           Paragraph("上から順に解いてください。"
+                                     f'前の{UNIT}で8割取れてから次の{UNIT}へ進みます。', S["intro"]),
+                           Spacer(1, 2 * mm), t]))
     # 前書きが長い本では、この表だけが1ページに独立して大半が白紙になる。
     # 表のあとに置きたい案内があれば続けて組む（無い本は今までどおり）。
+    # ★見出しと本文を KeepTogether で括る。括らないと見出しだけがページ末に取り残される
+    #   （実測: 「この問題集で扱う範囲」が p2 の最終行で、本文は p3 頭から始まっていた）。
     for h, b in BOOK.get("after_table", []):
-        f.append(Paragraph(esc(h), S["h2"]))
-        for _line in str(b).split("\n"):
-            f.append(Paragraph(esc(_line), S["note"]))
+        f.append(KeepTogether([Paragraph(esc(h), S["h2"])]
+                              + [Paragraph(esc(_line), S["intro"])
+                                 for _line in str(b).split("\n")]))
     f.append(PageBreak())
 
     for p in BOOK["parts"]:
-        f.append(Marker(f'第{p["no"]}部 {p["level"]}'))
+        f.append(Marker(f'第{p["no"]}{UNIT} {p["level"]}'))
         f.append(Spacer(1, 52 * mm))
-        f.append(Paragraph(f'第 {p["no"]} 部', S["partsub"]))
+        f.append(Paragraph(f'第 {p["no"]} {UNIT}', S["partsub"]))
         f.append(Paragraph(esc(p["level"]), S["part"]))
         f.append(Spacer(1, 5 * mm))
         f.append(Paragraph(esc(p["univ"]), S["partsub"]))
         f.append(Spacer(1, 8 * mm))
-        f.append(Paragraph(esc(p["aim"]), S["partsub"]))
+        f.append(Paragraph(esc(p["aim"]), S["aim"]))
         f.append(Spacer(1, 14 * mm))
         sc = Table([[Paragraph('<font size=10>目安時間</font>', S["note"]),
                      Paragraph(f'<font size=10>{p["time"]}分</font>', S["note"]),
@@ -410,7 +445,7 @@ def flow_questions():
         # 部扉に「この部の解き方」を三手順で置く（手順だけなので答えは割れない）
         if p.get("steps"):
             f.append(Spacer(1, 6 * mm))
-            f.append(Paragraph(f'<font color="{hx(NAVY)}">この部の解き方</font>', S["h2"]))
+            f.append(Paragraph(f'<font color="{hx(NAVY)}">この{UNIT}の解き方</font>', S["h2"]))
             for i, st in enumerate(p["steps"], 1):
                 f.append(Paragraph(f'<font color="{hx(NAVY)}">{i}.</font> {esc(st)}', S["q"]))
             f.append(Spacer(1, 8 * mm))
@@ -426,7 +461,7 @@ def flow_questions():
             # ★見出し＋指示文だけを1かたまりにすると、ページ末尾に見出しだけが
             #   ぶら下がって小問は次ページ、という紙面が出る（実測2か所）。
             #   第1問まで含めて1かたまりにする。
-            head = [band(f'第{p["no"]}部 {p["level"]}',
+            head = [band(f'第{p["no"]}{UNIT} {p["level"]}',
                          f'大問 {s["no"]}　{s["title"]}　（各{s["pt"]}点・計{pts}点）'),
                     Paragraph(esc(s["inst"]), S["inst"])]
             for i, it in enumerate(s["items"], 1):
@@ -492,7 +527,11 @@ def flow_answers():
          Spacer(1, 7 * mm),
          Paragraph("解 答 ・ 解 説 編", S["sub"]),
          Spacer(1, 3 * mm),
-         Paragraph("採点のポイントつき", S["sub"]),
+         # ★「採点のポイント」は英文和訳・和文英訳の採点要素のこと。その形式を持たない本で
+         #   刷ると、表紙が中身に無いものを名乗る（実測: 四択・整序・誤り指摘だけの本で出ていた）。
+         # ★ELEMENT_KINDS の宣言ではなく実際の設問数で判定する。宣言はどの本も
+         #   ("trans","jtrans") と書いてあるだけで、その設問が入っている保証にならない。
+         Paragraph("採点のポイントつき" if N_ELEMENT else "全問くわしい解説つき", S["sub"]),
          Spacer(1, 38 * mm),
          Paragraph(esc(BOOK["series"]), S["cov"]),
          NextPageTemplate("normal"), PageBreak()]
@@ -525,15 +564,15 @@ def flow_answers():
         f.append(PageBreak())
 
     for p in BOOK["parts"]:
-        f.append(Marker(f'第{p["no"]}部 {p["level"]}'))
-        f.append(Paragraph(f'第{p["no"]}部　{p["level"]}', S["part"]))
+        f.append(Marker(f'第{p["no"]}{UNIT} {p["level"]}'))
+        f.append(Paragraph(f'第{p["no"]}{UNIT}　{p["level"]}', S["part"]))
         f.append(Paragraph(f'{p["univ"]}　／　{p["total"]}点満点', S["partsub"]))
         f.append(Spacer(1, 5 * mm))
 
         for s in p["sections"]:
             # ★見出しバンドは第1問と同じかたまりにする。バンドだけがページ末に残り、
             #   問1が次ページ頭から始まる紙面が実際に出た（解答解説編 p20）。
-            bandhead = [band(f'第{p["no"]}部 解答・解説',
+            bandhead = [band(f'第{p["no"]}{UNIT} 解答・解説',
                              f'大問 {s["no"]}　{s["title"]}　'
                              f'（各{s["pt"]}点）')]
             for i, it in enumerate(s["items"], 1):
@@ -548,8 +587,14 @@ def flow_answers():
                         f'{no}<font color="{hx(ACCENT)}">'
                         f'（{"abcd"[it["ans"]]}）{esc(it["fix"])}</font>', S["a"]))
                 elif s["kind"] == "order":
+                    # ★空所が文頭に来る問は ans が小文字始まりなので、解答行も大文字に戻す。
+                    #   戻さないと、同じ設問で解答行「no matter what happens」と
+                    #   完成文「No matter what happens, …」が食い違って刷られる。
+                    _a = it["ans"]
+                    if it["frame"].lstrip().startswith("[") and _a[:1].islower():
+                        _a = _a[0].upper() + _a[1:]
                     blk.append(Paragraph(
-                        f'{no}<font color="{hx(ACCENT)}">{esc(it["ans"])}</font>', S["a"]))
+                        f'{no}<font color="{hx(ACCENT)}">{esc(_a)}</font>', S["a"]))
                     blk.append(Paragraph(
                         f'<font size=9.5 color="#555">完成文: {completed_sentence(it)}</font>',
                         S["exp"]))

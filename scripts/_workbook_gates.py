@@ -256,3 +256,92 @@ class Gate:
                 self._fail(f"[文字] PDFで黒四角/豆腐になる: {k} ×{v}")
         else:
             self._ok("[文字] 絵文字・制御文字・私用領域 なし OK")
+
+
+def break_answer_runs(parts, place=None):
+    """四択の正解番号が3つ以上続くのを解消する（分布は変えない）。
+
+    ★分布が均等でも「①①①」と並ぶと偏って見え、1問当てると次も同じ番号だと
+      思わせる誘導になる（CLAUDE.md が名指しで禁じている型）。
+      分布ゲートは連続を見ないので、データ側で潰しておく。
+    ★交換ではなく「多い番号から順に置く」貪欲法で並べ直す。交換の繰り返しは
+      局所解に落ちて、解けるはずの並びを取りこぼす（実測 8000件中28件）。
+      各番号の出現数は入力のまま使うので**分布は不変**。
+    ★決定的（同じ入力なら常に同じ出力）。解説が選択肢番号を参照していないことが前提。
+    """
+    def _place(it, target):
+        ch, a = it["choices"], it["ans"]
+        rest = ch[:a] + ch[a + 1:]
+        it["choices"] = rest[:target] + [ch[a]] + rest[target:]
+        it["ans"] = target
+
+    place = place or _place
+
+    # 意味のある固定順を持つ語（古文の活用形・時制など）。この順で並んでいる選択肢は
+    # 並べ替えると学習の妨げになるので、選択肢でなく**設問の並び順**を入れ替える。
+    ORDERED_TERMS = ("未然", "連用", "終止", "連体", "已然", "命令")
+
+    def _fixed_order(items):
+        """選択肢が意味のある固定順（活用形など）で並んでいるか。
+
+        ★「同じ選択肢セットが何問あるか」で判定すると、たまたま似た問が多い大問まで
+          巻き込む（実測で活用順の崩れが1件→10件に増えた）。語そのもので判定する。
+        """
+        hit = 0
+        for it in items:
+            # ★選択肢が「未然形」だけの短い語のときだけ活用形の並びとみなす。
+            #   「断定の助動詞『なり』の連用形」のような識別問題まで拾うと、
+            #   活用順でない大問を並べ替え対象から外してしまう（実測で崩れ10件）。
+            idx = [next((j for j, k in enumerate(ORDERED_TERMS)
+                         if c.strip() in (k + "形", k)), None)
+                   for c in it["choices"]]
+            known = [x for x in idx if x is not None]
+            if len(known) >= 3 and known == sorted(known):
+                hit += 1
+        return hit >= len(items) * 0.5
+    for p in parts:
+        for s in p["sections"]:
+            if s.get("kind") != "mc":
+                continue
+            items = s["items"]
+            seq = [it["ans"] for it in items]
+            if not any(seq[k] == seq[k - 1] == seq[k - 2] for k in range(2, len(seq))):
+                continue                        # すでに3連続なし＝触らない
+            if _fixed_order(items):
+                # 選択肢を触らず、設問の並び順だけを入れ替える
+                # ★「先頭から取れるものを取る」だけだと、残り数の多い番号が末尾に
+                #   固まって詰む（実測で ①が4つ残って4連続のままだった）。
+                #   残りが多い番号から先に置く。
+                rest = list(items)
+                out = []
+                while rest:
+                    left = Counter(x["ans"] for x in rest)
+                    order = sorted(rest, key=lambda x: (-left[x["ans"]], x["ans"]))
+                    pick = next((x for x in order
+                                 if not (len(out) >= 2
+                                         and out[-1]["ans"] == out[-2]["ans"] == x["ans"])),
+                                None)
+                    if pick is None:
+                        out += rest
+                        break
+                    out.append(pick)
+                    rest.remove(pick)
+                s["items"] = out
+                continue
+            # 残り個数が多い番号から順に置く。直前2つと同じになる番号は避ける。
+            left = Counter(seq)
+            out = []
+            for _ in range(len(seq)):
+                cand = sorted(left, key=lambda v: (-left[v], v))
+                pick = next((v for v in cand
+                             if not (len(out) >= 2 and out[-1] == out[-2] == v)), None)
+                if pick is None:                # 残りが全部同じ番号＝解消不能
+                    out += [cand[0]] * left[cand[0]]
+                    left.clear()
+                    break
+                out.append(pick)
+                left[pick] -= 1
+                if not left[pick]:
+                    del left[pick]
+            for it, target in zip(items, out):
+                place(it, target)

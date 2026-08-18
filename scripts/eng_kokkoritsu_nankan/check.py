@@ -23,6 +23,7 @@ import sys
 import difflib
 import subprocess
 from collections import Counter
+from math import comb
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS = os.path.dirname(HERE)
@@ -36,6 +37,7 @@ SCRIPTS = os.path.dirname(HERE)
 BOOKS = {
     "eng_kokkoritsu_nankan": 103,     # 難関国公立大 英文法 実戦問題集（この機械の本家）
     "eng_chuken_kokkoritsu": 109,     # 地方国公立・中堅大 英文法 実戦問題集
+    "eng_moshi_bunpo": 60,            # 高3 記述模試対策 英文法・語法 実戦問題集
     "chugaku2_eigo_soufukushu": 108,  # 中学2年生 英文法 総復習問題集
     "kobun_jodoushi": 126,            # 古文助動詞 完全演習プリント（lang=ja）
     "kobun_bunpo_12": 156,            # 古典文法 十二講 完全演習（lang=ja）
@@ -120,7 +122,8 @@ def main():
     items = list(all_items())
     # ★どの content.py を読んだかを必ず出す。出さないと「見本を検査して緑」が判別できない。
     book_key = os.path.basename(BOOK_DIR)
-    print(f"■ {BOOK['title']}／{len(BOOK['parts'])}部・{len(items)}問"
+    unit = BOOK.get("unit", "部")   # ★紙面と同じ単位語で位置を出す（紙に無い表記を指さない）
+    print(f"■ {BOOK['title']}／{len(BOOK['parts'])}{unit}・{len(items)}問"
           f"  ← scripts/{os.path.relpath(BOOK_DIR, SCRIPTS)}/content.py\n")
     # ★問数を等式で押さえる。冊数だけ数えていると「中身が空の本」を PASS と数える
     #   （実測: all_items() が [] を返す本は26行すべて「0問 … OK」で ALL PASS になった）。
@@ -149,9 +152,9 @@ def main():
         tot = sum(len(s["items"]) * s["pt"] for s in p["sections"])
         n = sum(len(s["items"]) for s in p["sections"])
         if tot != p["total"]:
-            bad.append(f'第{p["no"]}部 実配点{tot} ≠ 表示{p["total"]}')
+            bad.append(f'第{p["no"]}{unit} 実配点{tot} ≠ 表示{p["total"]}')
         else:
-            g._ok(f'[配点] 第{p["no"]}部 {n}問 = {tot}点 OK')
+            g._ok(f'[配点] 第{p["no"]}{unit} {n}問 = {tot}点 OK')
     if bad:
         g._fail("[配点] 小問配点の合計が満点と一致しない（生徒が自己採点できない）: "
                 + "／".join(bad))
@@ -182,6 +185,62 @@ def main():
         else:
             g._ok(f"[テル] 正解肢が単独最長の四択は {len(mc_long)}/{len(mcs)}問"
                   f"（期待値{len(mcs)*0.25:.0f}）OK")
+        # ★「ある特徴を持つ問だけ」の位置の偏りを見る。冊子全体の分布ゲートは
+        #   全体が均等なら緑になるので、この型の tell を構造的に見落とす。
+        #   実測: 助動詞＋have＋過去分詞が正解の4問のうち3問が④に揃い、
+        #   「見慣れない完了形が最後にあればそれが正解」で英文を読まずに当てられる状態だった
+        #   （盲ソルバーが自発的に報告して発覚。機械は素通りしていた）。
+        def _cluster(pred, name):
+            """偏りは割合でなく確率で判定する。
+
+            ★「n の半分より多い」式のしきい値は母数が小さいと過敏になる。
+              実測: 古文の本で 5問中3問が2番（偶然でも 4割の確率で起きる）を FAIL にして、
+              出荷済みの本を誤って落とした。逆に n=4 で 4問全部が同じ位置（本物の tell）は
+              「半分より多い」では拾えるが、しきい値をゆるめると今度は見落とす。
+              → 一様分布のもとでこの偏りが起きる確率を出し、5%を切ったときだけ落とす。
+            """
+            hit = [m for m in mcs if pred(m)]
+            if len(hit) < 4:
+                return None            # 母数が小さいと偏りの判定に意味がない
+            pos = Counter(m["ans"] for m in hit)
+            n_, k = len(hit), max(pos.values())
+            # P(ある位置に k 問以上)× 位置4通り。二項分布 Bin(n, 1/4) の上側確率。
+            tail = sum(comb(n_, j) * 0.25 ** j * 0.75 ** (n_ - j) for j in range(k, n_ + 1))
+            # ★母数が小さいと確率だけでは「全問が同じ位置」しか落とせない
+            #   （n=4 なら k=4、n=5 なら k=5）。この機構を作る動機になった実際の欠陥は
+            #   「4問中3問が④」で、確率は 20% なので FAIL にはできない
+            #   （偶然でも5回に1回起きる。落とすと正しい本を誤って止める）。
+            #   → 確率が十分低いときだけ FAIL、母数が小さく割合が高いときは WARN で見せる。
+            msg = (f"{name}が正解の{n_}問中{k}問が{max(pos, key=pos.get) + 1}番に集中"
+                   f"（偶然なら {tail * 4:.1%}）")
+            if tail * 4 < 0.05:
+                return ("fail", msg)
+            # ★n<8 に限ると、母数が増えるほど検出が緩む（n=10/k=6=60% が完全に沈黙した）。
+            #   割合の基準は母数によらず一定にする。
+            if k >= n_ * 0.6:
+                return ("warn", msg + "。確率では断定できないが割合が高い。"
+                                      "形だけで当てられないか目視すること")
+            return None
+        def _perfect(m):
+            w = m["choices"][m["ans"]].lower().split()
+            return "have" in w or "been" in w or "had" in w
+        def _longest(m):
+            L = [len(c) for c in m["choices"]]
+            return L[m["ans"]] == max(L) and L.count(max(L)) == 1
+        clus = [x for x in (_cluster(_perfect, "完了形"), _cluster(_longest, "単独最長の肢"))
+                if x]
+        bad = [m for lv, m in clus if lv == "fail"]
+        warn = [m for lv, m in clus if lv == "warn"]
+        if bad:
+            g._fail("[正解位置] 特徴を持つ問だけ位置が偏っている（形だけで当てられる）: "
+                    + "／".join(bad))
+        elif warn:
+            g._warn("[正解位置] 特徴を持つ問の位置が偏り気味: " + "／".join(warn))
+        else:
+            n_pf = sum(1 for m in mcs if _perfect(m))
+            n_lg = sum(1 for m in mcs if _longest(m))
+            g._ok(f"[正解位置] 完了形{n_pf}問・単独最長{n_lg}問に位置の偏りなし OK"
+                  + ("（母数4未満は判定不能）" if min(n_pf, n_lg) < 4 else ""))
         g.exp_choice_refs(mcs)
         dup = [m["where"] for m in mcs
                if len({norm(x) for x in m["choices"]}) != len(m["choices"])]
@@ -246,8 +305,12 @@ def main():
         full = it["stem"]
         for j, c in enumerate("abcd"):
             full = full.replace("{%s}" % c, it["parts"][j])
-        before = re.split(r"[→>]", it["fix"])[0].strip()
-        after = re.sub(r"（.*?）", "", re.split(r"[→>]", it["fix"])[1]).strip()
+        _sp = re.split(r"[→>]", it["fix"])
+        if len(_sp) < 2:
+            bad.append(f"{where} fix に矢印(→)が無い")
+            continue          # ★[1] を直接引くと IndexError で以降のゲートが全部死ぬ
+        before = _sp[0].strip()
+        after = re.sub(r"（.*?）", "", _sp[1]).strip()
         if before not in full:
             bad.append(f"{where} fix の「{before}」が本文に無い")
             continue
@@ -260,6 +323,62 @@ def main():
         g._fail(f"[誤り指摘] 訂正後の英文が壊れている {len(bad)}件: " + "／".join(bad))
     else:
         g._ok(f"[誤り指摘] {len(errs)}問 訂正後の全文に語の重複なし OK")
+
+    # ★fix の括弧に書いた別解（「〜も可」）を、本解と同じ検査に通す。
+    #   上の検査は `re.sub(r"（.*?）", "", ...)` で括弧内を**捨てている**ので、
+    #   別解は今まで一度も機械で見られていなかった（実測: 5件が無検査のまま）。
+    #   前書きが「解答編に『〜も可』と併記した別解でも正解とせよ」と指示している以上、
+    #   別解が非文だと生徒に非文を正解として採点させることになる。
+    # ★「検査できなかった別解」を OK に数えない。日本語の但し書き（「または…」「〜の語順も可」）は
+    #   下線部の置換では再構成できず、機械では判定できない。数えて印字し、緑の意味を保つ。
+    alts, skipped, bad = 0, [], []
+    for where, it in errs:
+        # ★括弧は複数あり得る。search だと2つ目以降が丸ごと無検査になる
+        #   （このゲートの存在理由そのものと同じ型の穴。ミューテーションで見逃しを実測）。
+        groups = re.findall(r"（(.+?)）", it["fix"])
+        if not groups:
+            continue
+        full = it["stem"]
+        for j, c in enumerate("abcd"):
+            full = full.replace("{%s}" % c, it["parts"][j])
+        before = re.split(r"[→>]", it["fix"])[0].strip()
+        for cand in re.split(r"[／/]", "／".join(groups)):
+            cand = re.sub(r"(も可|でも可)$", "", cand.strip()).strip()
+            if not cand:
+                continue
+            # 語順を変える但し書き・日本語混じりは「下線部を置き換えた形」ではない＝機械では見られない
+            if CJK.search(cand) or before not in full:
+                skipped.append(f"{where}「{cand[:24]}」")
+                continue
+            # ★下線部の開始位置から探す。単に find すると before が本文に2度出るとき
+            #   別の場所を書き換えてしまう（誤検出・見逃しの両方が起きる）。
+            # ★下線部の開始位置は「検索」でなくマーカーから確定させる。
+            #   parts[ans] が短いと同じ語の**前の出現**に付き、壊れた別解を見逃す。
+            pre = it["stem"].split("{%s}" % "abcd"[it["ans"]])[0]
+            for j2, c2 in enumerate("abcd"):
+                pre = pre.replace("{%s}" % c2, it["parts"][j2])
+            k = full.find(before, len(pre))
+            if k < 0:
+                skipped.append(f"{where}「{cand[:24]}」（訂正前の形が本文に無い）")
+                continue                  # ★-1 のまま進むと別物の文を作って判定してしまう
+            alts += 1                     # ★検査できたものだけ数える（二重計上を防ぐ）
+            fixed = full[:k] + cand + full[k + len(before):]
+            for dup in (" that that ", " to to ", " the the ", " is is ", " of of ",
+                        " them them ", " it it "):
+                if dup in " " + fixed + " ":
+                    bad.append(f'{where} 別解「{cand}」で「{dup.strip()}」が重複')
+            # every / each ＋単数名詞は複数扱いの動詞と組めない（実際に非文の別解を1件出した）。
+            # ★別の節の動詞に誤爆しないよう、別解の直後10語だけを見る。
+            tail = " ".join(fixed[k + len(cand):].split()[:10])
+            if re.search(r"\b(every|each)\b", cand) and re.search(r"\b(were|are)\b", tail):
+                bad.append(f'{where} 別解「{cand}」は単数扱いだが後ろが複数形の動詞')
+    if bad:
+        g._fail(f"[誤り指摘] 別解が英文として壊れている {len(bad)}件"
+                "（前書きは別解も正解とせよと指示している）: " + "／".join(bad))
+    else:
+        g._ok(f"[誤り指摘] fix に併記した別解 {alts}件 重複語・単複の2観点のみ検査 OK"
+              + (f"／機械で見られない但し書き {len(skipped)}件（要目視）: "
+                 + "／".join(skipped[:4]) if skipped else ""))
 
     # ---------------------------------------------------- G5/G6 語句整序
     orders = [(w, it) for _p, s, it, w in items if s["kind"] == "order"]
@@ -281,6 +400,73 @@ def main():
         g._ok(f"[整序] {len(orders)}問 トークン集合＝解答の語 完全一致 OK")
     if bad_frame:
         g._fail("[整序] " + "／".join(bad_frame))
+    # ★空所が文頭に来る整序があるなら、指示文に「文頭に来るべき語も小文字で示してある」の
+    #   注記が要る。注記が無いと生徒は大文字始まりの語を探して手が止まる。
+    #   逆に build.completed_sentence() は「解答は小文字始まり」を前提に文頭を復元するので、
+    #   この注記と組版が食い違うと模範解答が壊れる。
+    # ★固有名詞の証拠は「文の途中で大文字になっている」こと。
+    #   tokens / choices は文頭が定まらないので証拠に使えない。
+    PROPER = set()
+    for _p, s_, it, _w in items:
+        for f in ("stem", "frame", "ans", "src", "model", "context"):
+            v = it.get(f)
+            if not isinstance(v, str):
+                continue
+            for sent in re.split(r"[.!?]\s+", v):
+                for w in sent.split()[1:]:          # 文頭語は証拠にならない
+                    w = w.strip(",.;:!?\"'()[]{}")
+                    if w[:1].isupper() and w.lower() != "i":
+                        PROPER.add(w.lower())
+    need, mismatch = [], []
+    for _p, s_, it, where in items:
+        if s_["kind"] != "order":
+            continue
+        # ★注記の言い回しは本ごとに違う（「文頭に来るべき語」／「文の最初に来る語」）。
+        #   片方だけを探すと、正しく注記している本を誤って落とす（中2英語で実際に起きた）。
+        #   小文字で与える本・大文字で与える本の両方があるので、約束の有無だけを見る。
+        inst = s_.get("inst", "")
+        noted = any(k in inst for k in ("文頭", "文の最初", "最初に来る語", "先頭"))
+        if it["frame"].lstrip().startswith("[") and not noted:
+            need.append(where)
+            continue
+        # ★注記の「有無」だけでなく「中身とデータの一致」を見る。約束と実物が食い違うと
+        #   指示文が嘘になり、しかも大文字の語が文頭を教える tell になる
+        #   （注記を残したままトークンを大文字化するミューテーションで緑だった）。
+        if not noted or not it["frame"].lstrip().startswith("["):
+            continue
+        # ★見るのは tokens（生徒に見せる語）であって ans ではない。
+        #   ans は解答編に刷る完成文で、文頭が大文字なのが正しい
+        #   （build.completed_sentence() が復元する本もある）。
+        #   ans を見ると、約束を守っている本を全部落とす（実測で姉妹編2冊が誤検出された）。
+        words_ = it["ans"].split()
+        if not words_:
+            continue
+        head = words_[0]
+        if not head[:1].isalpha():
+            continue
+        tok = next((t for t in it["tokens"] if t.lower() == head.lower()), None)
+        if tok is None:
+            continue                      # トークンと解答の不一致は別のゲートが見る
+        # ★I と固有名詞はどの本でも常に大文字なので、約束の対象外。
+        #   ただし「他の設問のトークンに小文字で出るか」で判定してはいけない。
+        #   there / at / young / no のような普通の語まで固有名詞と誤判定して、
+        #   **本物の違反を素通りさせる**（実測で検出率が 22/22 → 15/22 に落ち、
+        #   文頭空所が1問しかない本ではゲートが実質0%になった）。
+        #   根拠は「文の途中で大文字になっているか」に置く（PROPER は下で1度だけ作る）。
+        if tok.lower() == "i" or tok.lower() in PROPER:
+            continue
+        if "小文字" in inst and tok[0].isupper():
+            mismatch.append(f"{where}（小文字で示すと書いてあるのにトークン「{tok}」が大文字）")
+        elif "大文字" in inst and tok[0].islower():
+            mismatch.append(f"{where}（大文字で示すと書いてあるのにトークン「{tok}」が小文字）")
+    if need:
+        g._fail("[整序] 空所が文頭に来るのに、指示文に文頭語の注記が無い: " + "／".join(need))
+    elif mismatch:
+        g._fail("[整序] 指示文の約束と実データの大文字・小文字が食い違う"
+                "（指示文が嘘になり、大文字の語が文頭を教える tell になる）: "
+                + "／".join(mismatch[:6]))
+    else:
+        g._ok("[整序] 空所が文頭に来る問と指示文の注記・大小文字が整合 OK")
     if leak_order:
         g._fail("[整序] トークンが解答の語順のまま並んでいる（並べ替え不要で解ける）: "
                 + "／".join(leak_order))
@@ -405,7 +591,7 @@ def main():
                 for i, it in enumerate(s["items"], 1):
                     a = norm(it.get("ans", ""))
                     if len(a) >= 4 and a in norm(head):
-                        bad.append(f'第{p["no"]}部 大問{s["no"]}-{i} の答え「{it["ans"]}」')
+                        bad.append(f'第{p["no"]}{unit} 大問{s["no"]}-{i} の答え「{it["ans"]}」')
         if bad:
             g._fail(f"[漏洩構造] 大問の見出し・指示文が、その大問の答えを印字している "
                     f"{len(bad)}件: " + "／".join(bad[:6]))
@@ -477,33 +663,66 @@ def main():
             full = it["stem"]
             for j, c in enumerate("abcd"):
                 full = full.replace("{%s}" % c, it["parts"][j])
-            after = re.sub(r"（.*?）", "", re.split(r"[→>]", it["fix"])[1]).strip()
-            filled.append((where, full.replace(
-                re.split(r"[→>]", it["fix"])[0].strip(), after, 1)))
+            _sp = re.split(r"[→>]", it["fix"])
+            if len(_sp) < 2:
+                continue          # ★[1] を直接引くと IndexError で以降のゲートが全部死ぬ
+            after = re.sub(r"（.*?）", "", _sp[1]).strip()
+            filled.append((where, full.replace(_sp[0].strip(), after, 1)))
 
-    hits = []
+    hits, scanned = [], 0
     for where, full in filled:
         # 答えを含む3語のかたまりだけを見る（設問文の共通句で誤検出しないため）
         _it, _k = next((it, s_["kind"]) for _p, s_, it, w in items if w == where)
-        _ansstr = _it["choices"][_it["ans"]] if _k == "mc" else _it["ans"]
+        # ★誤り指摘の ans は parts の添字（int）。そのまま使うと answ が {"2"} になり、
+        #   3-gram と永久に一致せず**その種別が丸ごと無検査**になる
+        #   （実測: 模試15問・難関26問・中2 6問が素通り。しかも OK 行は全問検査した顔で数える）。
+        #   誤り指摘の「答え」は訂正後の形なので、fix の右辺を使う。
+        if _k == "error":
+            _after = re.split(r"[→>]", _it["fix"])
+            _ansstr = re.sub(r"（.*?）", "", _after[1]).strip() if len(_after) > 1 else ""
+        elif _k == "mc":
+            _ansstr = _it["choices"][_it["ans"]]
+        else:
+            _ansstr = _it["ans"]
+        if not str(_ansstr).strip():
+            continue
+        gram_n = 3
         if JA:
             # 答えの文字列を含む 6字のかたまりだけを見る
             grams = {g for g in _grams(full) if any(ch in g for ch in _ansstr[:4])}
         else:
             answ = set(words(_ansstr)) - STOP
-            grams = {g for g in _grams(full)
-                     if (answ & set(g.split())) and (set(g.split()) - STOP)}
+            if answ:
+                grams = {g for g in _grams(full)
+                         if (answ & set(g.split())) and (set(g.split()) - STOP)}
+            else:
+                # ★答えが機能語だけ（which / by / that / one …）のとき、上の式は grams を
+                #   空集合にして**その問を丸ごと走査対象から外していた**。文法問題集では
+                #   正解が機能語1語になるのはむしろ普通で、実測 30問中7問が無検査だった
+                #   （実害: 「must be submitted by」が別の回の設問文にそのまま印字されていた）。
+                #   → 答えを埋めた文の4語のかたまりで照合する。機能語だけの gram も、
+                #     4語そろって他の設問と一致するなら偶然ではない。
+                aset = set(words(_ansstr))
+                grams = {gg for gg in _grams(full, 4) if aset & set(gg.split())}
+                gram_n = 4
+        if grams:
+            scanned += 1
         for w2, txt in printed:
             if w2 == where:
                 continue
-            for gram in grams & _grams(txt):     # ★変数名を g にすると Gate を潰す
+            # ★比較する側も同じ語数で切る。片方だけ4語にすると、
+            #   4-gram と 3-gram を突き合わせることになり**永遠に一致しない**
+            #   （穴を塞いだつもりで実際は何も見ていない状態になる）。
+            for gram in grams & _grams(txt, gram_n):  # ★変数名を g にすると Gate を潰す
                 hits.append(f'{where}の答え「{gram}」が {w2} の問題文に印字')
                 break
     if hits:
         g._fail(f"[解答漏洩] 答えを埋めた形が他の設問の問題文に印字されている {len(hits)}件"
                 "（ページをめくれば答えが読める）: " + "／".join(hits[:10]))
     else:
-        g._ok(f"[解答漏洩] {len(filled)}問 答えの形は他の設問の問題文に出現しない OK")
+        g._ok(f"[解答漏洩] {scanned}/{len(filled)}問 答えの形は他の設問の問題文に出現しない OK"
+              + ("（残りは答えが本文に出ない形式で走査対象外）"
+                 if scanned < len(filled) else ""))
 
     # ------------- G18 四択の選択肢が、同一部内の記述問題の答えを印字していないか
     # ★単一項目（助動詞だけ等）の演習書に固有の穴。同じ項目を四択と記述の両方で問うのは
@@ -611,13 +830,157 @@ def main():
             pos = Counter(it["ans"] for it in s["items"])
             n = len(s["items"])
             if max(pos.values()) > n * 0.45:
-                bad.append(f'第{p["no"]}部 大問{s["no"]} '
+                bad.append(f'第{p["no"]}{unit} 大問{s["no"]} '
                            + "／".join(f"{k+1}番:{pos.get(k,0)}" for k in range(4)))
     if bad:
         g._fail("[正解位置] 大問の中で正解の番号が偏っている（読まずに当てられる）: "
                 + "／".join(bad))
     else:
         g._ok("[正解位置] 四択のある全大問で、大問内の正解番号の偏りなし OK")
+
+    # ------------- G24 四択の正解番号が3つ以上連続していないか
+    # ★分布が均等でも「①①①」と並ぶと偏って見え、1問当てると次も同じと思わせる誘導になる
+    #   （CLAUDE.md が名指しで禁じている型）。分布ゲートは連続を見ないので別に測る。
+    bad = []
+    for p in BOOK["parts"]:
+        for s in p["sections"]:
+            if s["kind"] != "mc" or len(s["items"]) < 3:
+                continue
+            seq = [it["ans"] for it in s["items"]]
+            run = mx = 1
+            for a, b in zip(seq, seq[1:]):
+                run = run + 1 if a == b else 1
+                mx = max(mx, run)
+            if mx >= 3:
+                bad.append(f'第{p["no"]}{unit} 大問{s["no"]}（最長{mx}連続）'
+                           + "".join(str(x + 1) for x in seq))
+    if bad:
+        g._fail("[正解位置] 同じ番号が3つ以上続いている（読まずに次も同じと思わせる）: "
+                + "／".join(bad))
+    elif mcs:
+        g._ok("[正解位置] 同じ番号の3連続なし OK")
+
+    # ------------- G23 数の一致を問う誤り指摘で、下線部に主語を入れていないか
+    # ★be動詞・助動詞の「数」を直させる問で、下線部に主語まで含めると、
+    #   主語のほうを単数に書き換えて元の動詞を正当化する経路が開く
+    #   （but half of them was … の下線が but だけなら (d) 一本に固定されるが、
+    #   but half of them まで広げると but half of the class was … で成立してしまう）。
+    NUM_PAIRS = (("was", "were"), ("were", "was"), ("is", "are"), ("are", "is"),
+                 ("has", "have"), ("have", "has"), ("does", "do"), ("do", "does"))
+    bad = []
+    for where, it in errs:
+        sp = re.split(r"[→>]", it["fix"])
+        if len(sp) < 2:
+            continue
+        b_, a_ = words(sp[0]), words(re.sub(r"（.*?）", "", sp[1]))
+        if not any(x in b_ and y in a_ for x, y in NUM_PAIRS):
+            continue                      # 数の一致を直させる問だけを見る
+        # ★見るのは「正解の下線部」ではなく**他の下線部**。生徒が書き換えられるのはそちらで、
+        #   主語を含む下線部があると、そこを単数に変えて元の動詞を正当化できてしまう。
+        for j, other in enumerate(it["parts"]):
+            # ★見るのは「訂正対象の直前のスロット」だけ。主語は動詞の前にしか立たないので、
+            #   それ以外の下線部（目的語 NP など）まで見ると誤検出する
+            #   （実測: bought the new books / the room quickly を主語と判定した）。
+            if j != it["ans"] - 1:
+                continue
+            # ★前置詞で始まる句は主語になれない（near the old temple 等）。
+            #   主語として書き換えられるのは、前置詞に支配されていない名詞句だけ。
+            if re.match(r"\s*(in|on|at|near|by|for|with|from|to|of|under|over|about|"
+                        r"during|before|after|through|between|among)\b", other, re.I):
+                continue
+            if re.search(r"\b(the|a|an|this|that|these|those|his|her|their|its|our|my|your)\s+"
+                         r"\w+s?\b", other, re.I) or re.search(
+                    r"\b(they|he|she|it|we|you|them|him|us|people|students|members)\b",
+                    other, re.I):
+                bad.append(f'{where}({"abcd"[j]})「{other}」')
+    if bad:
+        g._fail(f"[誤り指摘] 数の一致を問う問の下線部に主語が入っている {len(bad)}件"
+                "（主語のほうを書き換えて元の形を正当化できてしまう）: " + "／".join(bad[:6]))
+    else:
+        g._ok("[誤り指摘] 数の一致を問う問の下線部に主語が入っていない OK")
+
+    # ------------- G22 解説に作者メモ・内部用語が混じっていないか
+    # ★exp / point は解答編にそのまま刷られる。作問中のメモ（★…）やデータ構造の名前
+    #   （frame / tokens / stem / parts）を書くと、生徒が読む紙面に内部用語が出る
+    #   （実測で2問に混入。姉妹編には1件も無かったので、差し替え時に紛れ込んだもの）。
+    # ★英単語を部分文字列で照合すると the system→stem、framework→frame、
+    #   parts of speech→parts と誤検出する（実測4件）。コード形か語境界で絞る。
+    # ★「差し替え」は「語の差し替えも含む」という正当な指示文にも出るので入れない
+    #   （実測で誤検出した）。作業メモに固有の書き方だけを拾う。
+    NOTE_MARKS = ("★", "TODO", "FIXME", "要確認", "仮置き", "あとで直す")
+    # ★データ構造の名前は「日本語の文の中で使われている」ときだけ拾う。
+    #   部分文字列で見ると the system→stem、framework→frame、parts of speech→parts を
+    #   誤検出し、クォート付きだけで見ると「frame の [ ] を見よ」を取り逃す（両方実測）。
+    CODE_RE = re.compile(r"(?:^|[^A-Za-z])(frame|tokens|stem|parts)\s*(?:の|を|に|は|が|で)")
+    bad = []
+    # 生徒が読むのは設問の解説だけではない。前書き・扉・指示文も同じ紙に刷られる。
+    for label, v in [("前書き・扉・指示文", frame_text())]:
+        for w in NOTE_MARKS:
+            if w in v:
+                bad.append(f"{label} に「{w}」")
+        m = CODE_RE.search(v)
+        if m:
+            bad.append(f"{label} に「{m.group(1)}」")
+    for _p, s_, it, where in items:
+        for f in ("exp", "point", "fix"):
+            v = str(it.get(f, ""))
+            for w in NOTE_MARKS:
+                if w in v:
+                    bad.append(f"{where} {f} に「{w}」")
+            m = CODE_RE.search(v)
+            if m:
+                bad.append(f"{where} {f} に「{m.group(1)}」")
+    if bad:
+        g._fail(f"[解説] 生徒が読む解説に作者メモ・内部用語が混じっている {len(bad)}件"
+                "（解答編にそのまま刷られる）: " + "／".join(bad[:6]))
+    else:
+        g._ok(f"[解説] {len(items)}問 解説に作者メモ・内部用語なし OK")
+
+    # ------------------- G21 姉妹編と同じ項目を出していないか（本をまたぐ照合）
+    # ★これまで機械が本をまたいで見なかったため、実測で6組の重複が出荷寸前まで残った
+    #   （同じ生徒が中堅編→難関編→本書と解くので、既視感のある問は価値が落ちる）。
+    #   ▶ポイントは「その問で学ぶこと」を1文で書いた欄なので、これを鍵に横断照合する。
+    if not JA:
+        mine = {norm(it.get("point", "")): w for _p, _s, it, w in items if it.get("point")}
+        dup, unread = [], []
+        for other in BOOKS:
+            if other == book_key:
+                continue
+            src = os.path.join(SCRIPTS, other)
+            try:
+                texts = "".join(
+                    open(os.path.join(src, f), encoding="utf-8").read()
+                    for f in sorted(os.listdir(src)) if f.startswith("content"))
+            except OSError:
+                continue
+            # ★1行完結の point しか拾わない正規表現だと、暗黙連結で複数行に分かれた本を
+            #   丸ごと読み落とす（実測: 中2英文法は108件中0件しか拾えず、それでも
+            #   「姉妹編5冊と照合 OK」と名乗っていた）。連結された文字列も1つにまとめる。
+            texts = re.sub(r'"\s*\n\s*"', "", texts)
+            # ★行末のカンマを必須にすると、カンマの無い書き方の本を丸ごと読み落とす
+            #   （中2英文法は108件中0件だった）。カンマは任意にする。
+            _found = re.findall(r'"point": "(.+?)"\s*,?', texts)
+            if not _found:
+                unread.append(other)
+            for m in re.finditer(r'"point": "(.+?)"\s*,?', texts):
+                op = norm(m.group(1))
+                for mp, w in mine.items():
+                    if not mp or not op:
+                        continue
+                    if difflib.SequenceMatcher(None, mp, op).ratio() >= 0.80:
+                        dup.append(f"{w}「{mp[:26]}」≒ {other}")
+                        break
+        dup = sorted(set(dup))
+        if unread:
+            g._warn("[重複] 姉妹編のうち▶ポイントを1件も読めなかった本がある"
+                    "（この本とは照合できていない）: " + "／".join(unread))
+        if dup:
+            g._warn(f"[重複] 姉妹編と同じ項目を出している {len(dup)}件"
+                    "（同じ生徒が両方を解くので既視感が出る。残すなら理由を README に）: "
+                    + "／".join(dup[:8]))
+        else:
+            g._ok(f"[重複] 姉妹編{len(BOOKS)-1-len(unread)}冊と同じ▶ポイントの問なし OK"
+                  + (f"（{len(unread)}冊は▶ポイントを読めず未照合）" if unread else ""))
 
     # --------------------------------------------------------- G14 グリフ
     g.glyphs(BOOK)

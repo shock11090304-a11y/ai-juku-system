@@ -280,6 +280,11 @@ def _balance_mc():
 
 _balance_mc()
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from _workbook_gates import break_answer_runs  # noqa: E402
+break_answer_runs(BOOK["parts"])
+
+
 # 採点要素で採る（唯一解が無い）出題形式
 ELEMENT_KINDS = ("trans", "jtrans")
 

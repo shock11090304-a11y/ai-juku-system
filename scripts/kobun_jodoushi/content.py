@@ -78,6 +78,13 @@ BOOK = {
 for _p in BOOK["parts"]:
     _p["steps"] = STEPS[_p["no"]]
 
+# ★選択肢が「未然形・連用形・終止形・連体形」の固定順なので、
+#   break_answer_runs() は選択肢を触らず**設問の並び順**を入れ替えて連続を解消する。
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from _workbook_gates import break_answer_runs  # noqa: E402
+
+break_answer_runs(BOOK["parts"])
+
 KIND_LABEL = {
     "mc": "四択",
     "fill": "記述",
