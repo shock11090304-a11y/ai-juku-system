@@ -33,6 +33,11 @@ const GATES = [
     ['npx', 'vite-node', 'tools/check-mark-clearance.mts'],
     true,
   ],
+  [
+    '画の切り分けがお手本と合っているか (途中から書かせていないか)',
+    ['npx', 'vite-node', 'tools/check-stroke-segmentation.mts'],
+    true,
+  ],
 ];
 
 console.log(`かきじゅん 検査一覧 (${GATES.length}本)${NO_BROWSER ? ' ※ブラウザ検査は飛ばす' : ''}`);
