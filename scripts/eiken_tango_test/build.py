@@ -16,7 +16,6 @@ from content import TESTS  # noqa: E402
 
 META = {
     "series": "英検準1級 単語テスト",
-    "subtitle": "4択・全10回 × 20語 = 200語",
     "brand": "トリリオンAI塾",
     "note": "本教材は公益財団法人 日本英語検定協会とは無関係の、学習用オリジナル教材です。",
 }
@@ -136,15 +135,17 @@ body { font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif; color:#1a
 .qlist { border-top:1px solid #e2e8f0; }
 .q { display:flex; align-items:flex-start; gap:6px; padding:1.6px 0;
      border-bottom:1px solid #eef2f7; page-break-inside:avoid; }
-.qw { flex:0 0 50mm; display:flex; align-items:baseline; gap:5px; }
+.qw { flex:0 0 46mm; display:flex; align-items:baseline; gap:5px; }
 .qw .no { flex:0 0 7mm; text-align:right; font-size:9pt; color:#64748b; font-weight:700; }
 .qw .wd { font-family:Georgia,serif; font-size:11.3pt; font-weight:700; color:#0f172a; }
 .qw .ps { font-size:7.6pt; color:#1e3a8a; border:1px solid #c7d2fe; background:#eef2ff;
           border-radius:3px; padding:0 3px; }
-/* ★級数はこれが上限。qc を 8.9pt にすると各回が2ページに割れて「1回＝A4 1枚」が壊れる
-   （誤答肢に限定句を足した分で余白を使い切っている）。実測: 8.7pt=11ページ / 8.9pt=21ページ。 */
+/* ★「1回＝A4 1枚」を守るための級数と欄幅。ここを緩めると回が2ページに割れる。
+   選択肢が1行に収まらないと行が2倍になり、20問のどこか1問で溢れると次ページが
+   ほぼ空白のまま1枚増える（実測: 全20回で qw=50mm/qc=8.7pt のとき 25ページ・空白4枚）。
+   ★hold check: build 後に必ず scripts/_pdf_qa.py を通し「ほぼ空白のページ」が0であること。 */
 .qc { flex:1; display:grid; grid-template-columns:1fr 1fr; column-gap:8px; row-gap:0;
-      font-size:8.7pt; line-height:1.38; }
+      font-size:8.5pt; line-height:1.34; }
 .qc div { color:#1f2937; }
 .qc .mk { color:#1e3a8a; font-weight:700; margin-right:2px; }
 
@@ -199,13 +200,17 @@ def foot(txt):
 
 # ==================== 問題編 ====================
 def render_test(t):
+    # ★満点・目標点・解答欄のマス数も実データから。ベタ書きだと問数を変えたとき
+    #   「得点／20」だけ残って紙が矛盾する（表紙で同じ事故を踏んでいる）。
+    n = len(t["items"])
+    goal = int(n * 0.8)
     h = band("第%d回" % t["no"], "準1級 / Pre-1<br>%s" % esc(META["brand"]))
     h += ('<div class="metarow"><div class="cell">氏　名　　　　　　　　　　　　　　　　　　</div>'
           '<div class="cell">日　付　　　　月　　　　日</div>'
-          '<div class="cell score">得点　　　　　／ 20</div></div>')
+          '<div class="cell score">得点　　　　　／ %d</div></div>' % n)
     h += ('<div class="instr">次の英単語・熟語の意味として最も適切なものを ①〜④ から一つ選び、'
-          '<b>番号を下の解答欄に書きなさい</b>。（1問1点・20点満点／目標 16点以上）'
-          '　　＜%s＞</div>' % esc(t["title"]))
+          '<b>番号を下の解答欄に書きなさい</b>。（1問1点・%d点満点／目標 %d点以上）'
+          '　　＜%s＞</div>' % (n, goal, esc(t["title"])))
     h += '<div class="qlist">'
     for it in t["items"]:
         h += '<div class="q"><div class="qw"><span class="no">%d</span>' % it["n"]
@@ -216,12 +221,14 @@ def render_test(t):
             h += '<div><span class="mk">%s</span>%s</div>' % (CIRCLE[j], esc(c))
         h += '</div></div>'
     h += '</div>'
-    # 解答欄（2段 × 10列）
+    # 解答欄（2段。列数は問数から）
     h += '<div class="ansbox"><div class="ttl">解答欄</div>'
-    for lo in (1, 11):
+    per = (n + 1) // 2
+    for lo in range(1, n + 1, per):
+        cols = list(range(lo, min(lo + per, n + 1)))
         h += '<table class="grid"><tr>'
-        h += "".join('<th>%d</th>' % n for n in range(lo, lo + 10))
-        h += '</tr><tr>' + '<td></td>' * 10 + '</tr></table>'
+        h += "".join('<th>%d</th>' % c for c in cols)
+        h += '</tr><tr>' + '<td></td>' * len(cols) + '</tr></table>'
     h += '</div>'
     h += foot("%s 第%d回" % (META["series"], t["no"]))
     return h
@@ -239,13 +246,61 @@ def stats(tests):
             "idiom_per": idi // n_test, "word_per": (total - idi) // n_test}
 
 
+def cefr_stats(tests):
+    """★表紙のレベル記述も実データから数える。_cefr_levels.tsv と突き合わせて
+    「リストで裏が取れた語」と「根拠が無い語」を分けて返す。
+
+    ★Oxford 3000/5000 は**頻度上位5000語の抜粋**であって A1〜B1 の網羅リストではない。
+      そこに載っていない語を「B2 以上」と断じてはいけない (2026-08-19 のレビュー指摘。
+      pillow / kettle / strawberry のような日常語も載っていない)。
+      表紙では「リスト内で裏が取れた分」と「リスト外」を必ず分けて書く。
+    """
+    ORDER = ["A1", "A2", "B1", "B2", "C1"]
+    POS = {"動": "verb", "名": "noun", "形": "adjective", "副": "adverb"}
+    lv = {}
+    with open(os.path.join(HERE, "_cefr_levels.tsv"), encoding="utf-8") as f:
+        for line in f:
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            w, pos, level = (x.strip() for x in line.rstrip("\n").split("\t"))
+            lv[(w.lower(), pos)] = level.upper()
+    total = listed = b2plus = notlisted = 0
+    for t in tests:
+        for it in t["items"]:
+            if it["pos"] == "熟":
+                continue
+            total += 1
+            w = it["word"].strip().lower()
+            ent = {p: x for (ww, p), x in lv.items() if ww == w}
+            if not ent:
+                continue                      # check_cefr.py が FAIL させる
+            pos_en = POS.get(it["pos"])
+            if pos_en in ent:
+                cur = ent[pos_en]
+            elif "-" in ent:
+                cur = ent["-"]
+            else:
+                cur = sorted(ent.values(), key=lambda x: ORDER.index(x) if x in ORDER else 99)[0]
+            if cur == "NOT_LISTED":
+                notlisted += 1
+            else:
+                listed += 1
+                if ORDER.index(cur) >= ORDER.index("B2"):
+                    b2plus += 1
+    return {"total": total, "listed": listed, "b2plus": b2plus, "notlisted": notlisted}
+
+
 def build_cover(tests):
     s = stats(tests)
+    cs = cefr_stats(tests)
     return ('<div class="cover"><div class="ttl">英検準1級</div>'
             '<div class="ttl2">単語テスト</div><div class="rule"></div>'
             '<div class="sub">4択・全%d回 × %d問 = %d問（単語%d・熟語%d）</div>'
             '<div class="spec">品詞とテーマでまとめた全%d回。'
-            '収録語はすべて CEFR B2〜C1（準1級相当）以上です。<br>'
+            # ★数字は cefr_stats() が _cefr_levels.tsv から数える (ハードコード禁止)。
+            #   check_cefr.py が同じ数を独立に数え直して刷り上がりと突き合わせる。
+            '収録語%d語のうち、Oxford 3000/5000 に載る%d語は%d語が CEFR B2 以上。'
+            '残り%d語は同リスト外（頻出上位5000語より外）の語です。<br>'
             '各回 単語%d問 ＋ 熟語・句動詞%d問　・　1問1点 %d点満点<br>'
             '解答・用例・派生語メモつき（解答解説編は別冊）</div>'
             '<div class="howto"><b>▶ 使い方</b><br>'
@@ -259,7 +314,9 @@ def build_cover(tests):
             '<div class="brand">%s</div>'
             '<div class="disc">%s</div></div>'
             % (s["tests"], s["per"], s["total"], s["word"], s["idiom"],
-               s["tests"], s["word_per"], s["idiom_per"], s["per"],
+               s["tests"],
+               cs["total"], cs["listed"], cs["b2plus"], cs["notlisted"],
+               s["word_per"], s["idiom_per"], s["per"],
                int(s["per"] * 0.8), s["per"], int(s["per"] * 0.8) - 1,
                esc(META["brand"]), esc(META["note"])))
 
@@ -271,11 +328,16 @@ def build_mondai(tests):
 
 # ==================== 解答解説編 ====================
 def build_answer_index(tests):
-    h = band("解答一覧", "採点用<br>%s" % esc(META["brand"]))
-    h += ('<div class="instr">各回の正解番号の一覧です。丸つけはこのページだけで完結します。'
-          '（縦＝回、横＝問題番号）</div>')
+    # ★このページだけは生徒に渡してはいけない（全回の正解が1枚に載るため）。
+    #   冊子を丸ごと渡すと、第1回の返却時点で残り全部の答えが手に渡る。
+    h = band("解答一覧", "指導者控え<br>%s" % esc(META["brand"]))
+    h += ('<div class="instr"><b>★このページは指導者控えです。生徒に渡さないでください。</b>'
+          '全%d回の正解が1枚に載っているため、渡すと以降の回の答えが伝わります。'
+          '丸つけはこのページだけで完結します。（縦＝回、横＝問題番号）</div>'
+          % len(tests))
     h += '<table class="all"><tr><th style="width:13mm"></th>'
-    h += "".join('<th>%d</th>' % n for n in range(1, 21))
+    # 列数は実データから。20固定にすると回ごとの問数を変えたとき表と中身がずれる
+    h += "".join('<th>%d</th>' % n for n in range(1, max(len(t["items"]) for t in tests) + 1))
     h += '</tr>'
     for t in tests:
         h += '<tr><td class="lbl">第%d回</td>' % t["no"]
@@ -307,17 +369,23 @@ def render_key(t):
 
 def build_kaisetsu(tests):
     PB = '<div class="pb"></div>'
+    s = stats(tests)
+    # ★ここも実データから数える。以前「全10回 × 20語 = 200語」とベタ書きしていて、
+    #   400語に増やしたとき**解答解説編の表紙だけ 200語のまま**刷られた（問題編は正しかった）。
     cover = ('<div class="cover"><div class="ttl">英検準1級</div>'
              '<div class="ttl2">単語テスト　解答・解説編</div><div class="rule"></div>'
-             '<div class="sub">全10回 × 20語 = 200語　／　用例・派生語つき</div>'
+             '<div class="sub">全%d回 × %d語 = %d語　／　用例・派生語つき</div>'
+             % (s["tests"], s["per"], s["total"]) +
              '<div class="howto"><b>▶ 指導者の方へ</b><br>'
-             'この冊子は<b>テストを実施する前は生徒に渡さないでください</b>。'
-             '採点・返却のときに一緒に配って復習させる想定です'
-             '（問題編の「使い方」④はこの前提で書いてあります）。<br>'
-             '次ページの「解答一覧」だけで丸つけが完結します。<br>'
+             '★<b>この冊子を丸ごと生徒に渡さないでください</b>。全%d回分の答えが綴じてあるため、'
+             '第1回の返却で渡すと残り%d回の答えが全部伝わります。<br>'
+             '<b>生徒には、実施した回のページ（1回＝1ページ）だけを切り離して渡してください。</b>'
+             '★この冊子は<b>片面で印刷</b>してください。両面だと1枚の裏に次の回の答えが載ります。<br>'
+             '次ページの「解答一覧」は<b>指導者控え</b>です。<br>'
              '「用例」は必ず音読させてください。準1級の語彙は単語単体でなく'
              '<b>コロケーション（かたまり）で問われます</b>。<br>'
              '「メモ」の ★ は綴りや意味が紛らわしく、実際に受験生が取り違える語です。</div>'
+             % (s["tests"], s["tests"] - 1) +
              '<div class="brand">%s</div><div class="disc">%s</div></div>'
              % (esc(META["brand"]), esc(META["note"])))
     return (cover + PB + build_answer_index(tests) + PB
@@ -362,6 +430,28 @@ def main():
         "mondai.html": doc("%s 問題編" % META["series"], build_mondai(tests)),
         "kaisetsu.html": doc("%s 解答解説編" % META["series"], build_kaisetsu(tests)),
     }
+    # ★表紙の数字が実データとずれていないか、書き出した HTML を読み返して確かめる。
+    #   200語→400語に増やしたとき、問題編の表紙は stats() 由来で正しかったのに
+    #   **解答解説編の表紙だけベタ書きの「全10回 × 20語 = 200語」が残って刷られた**。
+    #   「数えて作る」だけでは足りず、「刷る直前に読み返す」層が要る。
+    #   ★走査するのは**表紙の中だけ**にすること。HTML 全体に掛けると <style> に埋めた
+    #     コメント（「実測: 全20回で qw=50mm…」）まで拾い、表紙を触っていないのにビルドが
+    #     止まって犯人を偽る。回数を変えた瞬間に必ず踏む。
+    s = stats(tests)
+    for fn, content in outputs.items():
+        m = re.search(r'<div class="cover">.*?</div>\s*(?=<div class="pb">|$)', content, re.S)
+        cover = m.group(0) if m else ""
+        if not cover:
+            print("[build] ★%s に表紙が見つからない（検査が空回りするので中止）" % fn)
+            sys.exit(1)
+        stale = [x for x in re.findall(r"全(\d+)回", cover) if int(x) != s["tests"]]
+        stale += [x for x in re.findall(r"=\s*(\d+)語", cover) if int(x) != s["total"]]
+        stale += [x for x in re.findall(r"=\s*(\d+)問", cover) if int(x) != s["total"]]
+        if stale:
+            print("[build] ★%s の表紙の数字が実データ（全%d回 %d語）と違う: %s"
+                  % (fn, s["tests"], s["total"], stale))
+            sys.exit(1)
+
     for fn, content in outputs.items():
         with open(os.path.join(HERE, fn), "w", encoding="utf-8") as f:
             f.write(content)

@@ -38,12 +38,111 @@ ALLOW_CORE_SHARE = {
 }
 
 
+# G20（同語源の対が回をまたぐ）の例外。★必ず理由を書く。理由を書けないものは例外にしない。
+#
+# 判断の分かれ目は「先の回の解説を見たら当たるか」ではなく「**語彙知識ゼロでも**当たるか」。
+#   ・熟語が丸ごと再利用される（account for → account for the bulk of）＝英語を1語も
+#     知らなくても同じ熟語だと分かる → 例外にせず差し替えた。
+#   ・deter の意味欄に「抑止する」と書いたために deterrent「抑止力」が渡るのは、
+#     こちらが付随的に書いてしまっただけ → 言い換えて消した。同じ理由で
+#     assert の「主張する」、consist of の「構成」、advocate の「支持者」も消した。
+#   ・infer / inference は infer が inference に丸ごと入っており、答えの「推論」も
+#     第12回の解説に出る → 例外にせず inference を connotation に差し替えた。
+#
+# ★残した下の2組には**反対意見がある**。レビューで「testi- / alleg- という綴りの近さに
+#   気づけば足り、語形の対応を見抜く語彙力は要らない」と指摘された。もっともな指摘で、
+#   本筋の対処は**同じ回に置く**こと（G20 のメッセージ自身がそう勧めている）。
+#   いまは回のテーマ（第8回=心情・態度の語／第12回=主張・判断の動詞）が崩れるのを避けて
+#   据え置いているが、**次に回を組み替えるときに同居させる**。
+ALLOW_SAME_ROOT_TODO = "testimony/testify と allegation/allege は同じ回に移すのが本筋（未実施）"
+ALLOW_SAME_ROOT = {
+    ("testimony", "testify"): "名詞形と動詞形。意味が同じなので意味欄からは消せない。"
+                              "当てるには語形の対応を見抜く必要があり、それは語彙力そのもの",
+    ("allegation", "allege"): "同上（名詞形と動詞形）",
+}
+
+
 # 物理的な具体物・日常動作を指す語。正解の語義（抽象・改まった語）には現れないので、
 # ここに当たる肢は構造的に必ず誤答になる → 1問に何本まで置いてよいかを G17 が見張る。
 CONCRETE = re.compile(
     "洗剤|真珠|打楽器|記念碑|月曜|弦楽器|胞子|粉末|水を|水中|洗い流|着古|長旅|柵|ピン|ボルト|"
     "まくら|縁石|雑草|アイロン|印刷|口座|前払|遺言|身分証明|貝|地震|蒸留|染色|溶接|湾曲|山積み|"
     "切り倒|包み込|鉛筆|貫通|沈下|上昇気流|隆起|丘|乳化|銃|独身|茎")
+
+
+RANK_NAMES = ("最小", "2番目に小さい", "3番目に小さい", "最大")
+
+
+def rank_scores(items, key):
+    """選択肢を key で数値化し、「正解が k 番目に小さい」戦略の期待得点を4つ返す。
+    同じ値の肢が n 本あるときは勘で1本選ぶので 1/n 点。"""
+    out = [0.0, 0.0, 0.0, 0.0]
+    for it in items:
+        v = [key(c) for c in it["choices"]]
+        srt = sorted(v)
+        a = v[it["answer"]]
+        for k in range(4):
+            if a == srt[k]:
+                out[k] += 1.0 / v.count(srt[k])
+    return out
+
+
+def rank_limits(items, key, z):
+    """しきい値を**実データの同点構造から**、しかも**順位ごとに**計算して4つ返す。
+
+    ★30%などと決め打ちしてはいけない。問数が少ない部分集合（熟語だけ80問）では
+      1問=1.25pt 動くので、ゆらぎを欠陥と誤認して延々に直し続けることになる。
+      逆に400問では30%でも緩すぎる。
+
+    正解位置を一様乱数にしたときの1問あたりの寄与を X とすると
+      E[X] = 1/4、E[X^2] = 1/(4c)（c＝その順位に並ぶ同値の肢の本数）
+    なので分散は 1/(4c) - 1/16。
+
+    ★★4順位の分散を**平均してはいけない**。同点の多い順位は分散が小さく、無い順位は大きい。
+      平均すると同点の多い順位が緩くなって**見逃し**、無い順位が厳しくなって**誤検出**する。
+      実測で実効 z が 2.2〜3.2 にばらついていた。漢字数は同点が構造的に多く、
+      緩くなるのは rank0（＝「漢字が最少」）——まさに40.2%の事故が起きた順位だった。
+
+    z は順列検定で較正した値を使う（4順位×3範囲×2キー＝24回の検定になるので、
+    z=2.6 だとゲート全体の偽陽性が11.7%あった。z=2.9 で約5%）。"""
+    var = [0.0, 0.0, 0.0, 0.0]
+    for it in items:
+        v = [key(c) for c in it["choices"]]
+        srt = sorted(v)
+        for k in range(4):
+            c = v.count(srt[k])
+            var[k] += 1.0 / (4.0 * c) - 1.0 / 16.0
+    n = len(items)
+    if not n:
+        return [100.0] * 4
+    return [25.0 + z * 100.0 * (x ** 0.5) / n for x in var]
+
+
+def rank_gate(g, tag, what, tests, key):
+    """4順位すべて × 全問/熟語のみ/単語のみ で「読まずに当たる」戦略を測る。
+
+    ★片側だけ見てはいけない（最短を潰したら2番目が立ち、それを潰したら中間が立った＝3回踏んだ）。
+    ★全体で薄まるので部分集合でも見る（熟語だけ「漢字が最少」が40.2%、全問では31%に見えた）。"""
+    for scope, want in (("全問", None), ("熟語のみ", True), ("単語のみ", False)):
+        items = [it for t in tests for it in t["items"]
+                 if want is None or (it["pos"] == "熟") == want]
+        if len(items) < 40:
+            # ★黙って飛ばさない。飛ばしたことに気づかないと「検査した」と誤解する
+            g.note(tag, "%s は %d問しか無いので %s の検査を飛ばした（統計にならない）"
+                   % (scope, len(items), what))
+            continue
+        obs = rank_scores(items, key)
+        # z は順列検定で較正。4順位×3範囲×2キー＝24回の検定なので z=2.6 だと
+        # ゲート全体の偽陽性が11.7%あった。z=2.9 でおおむね5%。
+        lim_bad = rank_limits(items, key, 2.9)
+        lim_note = rank_limits(items, key, 2.0)
+        for k, pct in enumerate((100.0 * x / len(items) for x in obs)):
+            name = "%sが%s" % (what, RANK_NAMES[k])
+            if pct > lim_bad[k]:
+                g.bad(tag, "「%s肢」を選ぶ戦略が %s で %.1f%%（ランダム25%% / 上限%.1f%%）＝読まずに当たる"
+                      % (name, scope, pct, lim_bad[k]))
+            elif pct > lim_note[k]:
+                g.note(tag, "「%s肢」を選ぶ %s %.1f%%（上限%.1f%%）" % (name, scope, pct, lim_bad[k]))
 
 
 def cores(s):
@@ -64,6 +163,17 @@ def cores(s):
 
 def jlen(s):
     return len(re.sub(r"[（()）〜、。・/／]", "", s))
+
+
+def _bone(s):
+    """日本語から**漢字とカタカナだけ**を残した骨格を作る。
+
+    ★語尾だけ落とす「語幹化」では足りない。実測で、`allegation` の意味欄を
+      「申し立て」→「申立て」と書き換える（意味は同じ）だけでゲートが緑になった。
+      語中の送り仮名（引き受ける→引受）も表記ゆれも吸収するには、かなを全部落とすしかない。
+      「証言／証言する」「申し立て／申立て」「抑止／抑止力」「主張する／自己主張の強い」を
+      すべて同じ土俵に載せる。"""
+    return "".join(re.findall(r"[一-鿿ァ-ヶ]+", re.sub(r"[（(][^）)]*[）)]", "", s)))
 
 
 class Gate:
@@ -157,36 +267,19 @@ def run(tests, verbose=False):
     # ★「単独最長／単独最短の件数」だけでは足りない。同点を含めた戦略の期待得点で測る。
     #   実際に「最短を選ぶ（同点は勘）」が 68.9/200＝34.5% を取った（第6回だけなら51.5%）。
     #   単独最短は21%で基準内だったのに、同点を拾う分で10点も上振れしていた。
-    longest = shortest = total = 0
-    exp = {"最長": 0.0, "最短": 0.0}
-    per_test = {"最長": {}, "最短": {}}
+    # ★★さらに「最短と最長だけ見る」のも足りなかった。両端を平らにしたら**真ん中**が立つ。
+    #   実測: 最短10.2%・最長8.1%で両方合格なのに「中間の長さを選ぶ」が44.4%取れた原稿があった。
+    #   → 4順位すべてを測る。1つでも30%を超えたら不合格。
+    longest = shortest = 0
     for t in tests:
-        for label in exp:
-            per_test[label].setdefault(t["no"], 0.0)
         for it in t["items"]:
             ls = [jlen(c) for c in it["choices"]]
             a = ls[it["answer"]]
-            total += 1
             if a == max(ls) and ls.count(max(ls)) == 1:
                 longest += 1
             if a == min(ls) and ls.count(min(ls)) == 1:
                 shortest += 1
-            for label, tgt in (("最長", max(ls)), ("最短", min(ls))):
-                if a == tgt:
-                    exp[label] += 1.0 / ls.count(tgt)
-                    per_test[label][t["no"]] += 1.0 / ls.count(tgt)
-    for label in ("最長", "最短"):
-        pct = 100.0 * exp[label] / total
-        if pct > 30.0:
-            g.bad("G5", "「%sの肢を選ぶ」戦略の得点 %.1f/%d（%.1f%%・ランダム25%%）＝読まずに当たる"
-                  % (label, exp[label], total, pct))
-        elif pct > 28.0:
-            g.note("G5", "「%sの肢を選ぶ」戦略 %.1f/%d（%.1f%%）" % (label, exp[label], total, pct))
-        worst = max(per_test[label].items(), key=lambda kv: kv[1])
-        n_items = len(tests[0]["items"])
-        if worst[1] > n_items * 0.40:
-            g.bad("G5", "第%d回だけで「%sを選ぶ」が %.1f/%d（%.0f%%）＝回ごとの偏り"
-                  % (worst[0], label, worst[1], n_items, 100.0 * worst[1] / n_items))
+    rank_gate(g, "G5", "長さ", tests, jlen)
 
     # ---------- G6 冊子内の解答漏洩（同一回で正解語義が他問の誤答と一致） ----------
     for t in tests:
@@ -220,16 +313,26 @@ def run(tests, verbose=False):
     # G6 は完全一致しか見ない。核の共有まで見ると、消去法で2問が連動して解ける型を拾える。
     for t in tests:
         ans_cores = [(it["n"], it["word"], cores(it["gloss_brief"])) for it in t["items"]]
+        ans_gloss = {it["n"]: it["gloss_brief"] for it in t["items"]}
         for it in t["items"]:
             for j, c in enumerate(it["choices"]):
                 if j == it["answer"]:
                     continue
                 cc = cores(c)
                 for n2, w2, k2 in ans_cores:
-                    if n2 == it["n"] or not (cc & k2):
+                    if n2 == it["n"]:
                         continue
-                    g.note("G11", "第%d回: 問%d(%s) の誤答『%s』が 問%d(%s) の正解と核 %s を共有"
-                           % (t["no"], it["n"], it["word"], c, n2, w2, "・".join(sorted(cc & k2))))
+                    # ★送り仮名違いは cores() では捕まらない。同じ紙に「割り当て」（誤答）と
+                    #   「割当」（別問の正解）が並び、quota を知っている生徒は誤答を機械的に
+                    #   消せた。かなを落とした骨格で比べると同一と分かる。
+                    #   ★骨格1文字だと「思いがけない」と「思いやりのある」が同一になる。2文字以上に限る。
+                    if len(_bone(c)) >= 2 and _bone(c) == _bone(ans_gloss[n2]):
+                        g.bad("G11", "第%d回: 問%d(%s) の誤答『%s』が 問%d(%s) の正解『%s』と"
+                              "同じ（送り仮名違い）＝消去法で連動して解ける"
+                              % (t["no"], it["n"], it["word"], c, n2, w2, ans_gloss[n2]))
+                    elif cc & k2:
+                        g.note("G11", "第%d回: 問%d(%s) の誤答『%s』が 問%d(%s) の正解と核 %s を共有"
+                               % (t["no"], it["n"], it["word"], c, n2, w2, "・".join(sorted(cc & k2))))
 
     # ---------- G12 表記の目印が正解と相関していないか ----------
     # ★盲ソルバーが実際に見つけた本物の欠陥: 丸カッコ付きの肢は正解にしか無く、39問すべてで
@@ -270,12 +373,137 @@ def run(tests, verbose=False):
                     g.bad("G13", "第%d回 '%s' のメモ/用例が第%d回の見出し語 '%s' を先出ししている"
                           % (t["no"], it["word"], first_no, w))
 
+    # ---------- G19 メモが「後の回の正解語義」を日本語で書いていないか ----------
+    # ★G13（英単語の先出し）だけでは足りない。**英単語を出さずに日本語の語義だけ書いても漏れる**。
+    #   実例: 第16回 considerable のメモ「「思いやりのある」意味の似た形の語と混同注意」が、
+    #   第18回 considerate の正解「思いやりのある」をそのまま書いていた。
+    #   綴りの近い語を注意するとき、相手の**語義を書かない**（「綴りの近い別語」とだけ書く）。
+    #   ★下限はメモと用例訳で分ける。メモは「この語はこういう意味だ」という**断定**なので
+    #     3字から見る。用例訳は普通の文で、「重大な」「厳格な」のような日常の修飾語が
+    #     偶然一致するだけの誤検出が出る（実測: 下限3字にすると4件が誤検出）ので4字から。
+    #     ★下限4字のままだと『支持者』(3字) を書いた advocate のメモを見逃していた。
+    later_gloss = [(t["no"], it["word"], it["gloss_brief"])
+                   for t in tests for it in t["items"]]
+    for t in tests:
+        for it in t["items"]:
+            for no, w, b in later_gloss:
+                if no <= t["no"] or w == it["word"]:
+                    continue
+                where = None
+                if len(b) >= 3 and b in it["note"]:
+                    where = "メモ"
+                elif len(b) >= 4 and b in it["usage_ja"]:
+                    where = "用例訳"
+                # ★意味欄をここで全数照合すると誤検出になる。別々の英単語が同じ和訳を持つのは
+                #   普通で（dwindle と diminish の「減少する」、prudent と sensible の
+                #   「分別のある」）、それは漏洩ではない。意味欄は G20 が**同語源ペアに限って**見る。
+                if where:
+                    g.bad("G19", "第%d回 '%s' の%sが第%d回 '%s' の正解語義『%s』を書いている"
+                          % (t["no"], it["word"], where, no, w, b))
+
+    # ---------- G20 同語源・部分文字列の見出し語が回をまたいでいないか ----------
+    # ★これが G19 の取りこぼしの本体だった。解答解説編は意味欄も刷るので、
+    #   第8回 testimony の意味「証言」を配った時点で、第12回 testify の正解「証言する」は
+    #   語形を見るだけで決まる。用例訳を言い換えても意味欄が残るので直らない。
+    #   ★とくに **後の見出し語が前の見出し語をそのまま含む**（account for →
+    #   account for the bulk of）のは、語彙知識ゼロで当たるので致命的。
+    #   対策は「同語源の対は同じ回に置く」。回をまたいだ時点で落とす。
+    #   ★「語幹が同じ」だけでは広すぎる。comply / compile / compensate のような無関係語まで
+    #     拾って30件の誤検出になった。**語幹が共通かつ日本語の意味の核も重なる**組だけを落とす。
+    #     considerable(かなり多い)/considerate(思いやりのある) のような、意味の違う
+    #     「紛らわしい対」は落とさない（意味が違えば先の回を見ても後の回は決まらない）。
+    def _pref(a, b):
+        n = 0
+        for x, y in zip(a, b):
+            if x != y:
+                break
+            n += 1
+        return n
+
+    items_all = [(t["no"], it) for t in tests for it in t["items"]]
+    for i, (no_a, ia) in enumerate(items_all):
+        for no_b, ib in items_all[i + 1:]:
+            if no_a == no_b:
+                continue
+            wa, wb = ia["word"].lower(), ib["word"].lower()
+            # (1) 片方の見出し語が他方に文字列として含まれる＝語彙知識ゼロで当たる。
+            #     ★語末境界だけ見ていたので infer⊂inference / assert⊂assertive を取り逃していた。
+            # ★判定は「**日本語を文字列照合するだけで当たるか**」に一本化する。
+            #   語形から derive できる分（deter→deterrent を「思いとどまらせるもの＝抑止力」と
+            #   推す）は、このテストが測りたい語彙力そのものなので落とさない。
+            #   落とすのは「先の回の解説に書いてある日本語が、後の回の答えにそのまま出る」場合。
+            #   ★見出し語の包含（infer⊂inference）と語幹4字共通（constitute/consist of）の
+            #     両方を対象にする。語末境界だけ見ていて包含を取り逃していた。
+            short, long_ = (wa, wb) if len(wa) <= len(wb) else (wb, wa)
+            # ★**複数語の熟語が丸ごと再利用される**のは無条件で不可。
+            #   account for → account for the bulk of は、英語を1語も知らなくても
+            #   「同じ熟語だ」と分かる。単語の派生（deter→deterrent）とは質が違う。
+            if " " in short and short in long_:
+                g.bad("G20", "熟語が別の回の熟語に丸ごと入っている: 第%d回 '%s' と 第%d回 '%s'"
+                      "（英語を知らなくても同じ熟語だと分かる。片方を差し替える）"
+                      % (no_a, ia["word"], no_b, ib["word"]))
+                continue
+            # 単語の派生（deter/deterrent、assert/assertive）は、語形の対応を見抜く力＝語彙力。
+            # 落とすのは「先の回の解説に書いてある日本語が、後の回の答えにそのまま出る」場合だけ。
+            related = (len(short) >= 5 and short in long_) or _pref(wa, wb) >= 4
+            if not related:
+                continue
+            early, late = (ia, ib) if no_a < no_b else (ib, ia)
+            pair = (early["word"], late["word"])
+            if pair in ALLOW_SAME_ROOT:
+                continue
+            bone = _bone(late["gloss_brief"])
+            page = _bone("%s ／ %s ／ %s" % (early["gloss"], early["usage_ja"], early["note"]))
+            # 骨格そのものと、その連続部分（「自己主張強」→「主張」も拾う）で照合する。
+            # ★骨格が1文字以下になる語義（「思いやりのある」→思、「〜から成る」→成、
+            #   「おさまる」→空）は keys が空になり、**意味欄に答えを丸ごと書いても鳴らなかった**。
+            #   そういう語義は、かなも含めた語義そのもので照合する（助詞と〜は落とす）。
+            keys = {bone[i:j] for i in range(len(bone)) for j in range(i + 2, len(bone) + 1)}
+            whole = re.sub(r"^[〜～]+", "", late["gloss_brief"])   # 〜だけ落とし助詞は残す
+            raw_page = "%s ／ %s ／ %s" % (early["gloss"], early["usage_ja"], early["note"])
+            hit = any(k in page for k in keys) or (len(whole) >= 3 and whole in raw_page)
+            if hit:
+                g.bad("G20", "同語源で、後の回の答えが先の回の解説ページに書いてある: "
+                      "第%d回 '%s' の解説に『%s』→ 第%d回 '%s' の正解（同じ回に置くこと）"
+                      % (min(no_a, no_b), early["word"], late["gloss_brief"],
+                         max(no_a, no_b), late["word"]))
+
     # ★「印字語義と用例訳が別の語義になっている」型（induce の gloss を並べ替えたら用例
     #   "induce sleep（眠気を誘う）" が取り残された）は、ここでは検査しない。
     #   cores() は漢字2字以上しか核にしないため「〜を罰する／違反者を罰する」のような
     #   完全に対応した組を「核が無い」と誤検出し、実装すると73件中ほぼ全部が誤報になった。
     #   ＝本物の警告が埋もれてゲート全体が信用されなくなる。この型は辞書照合レビュー層で拾う。
     #   ★語義の順序を入れ替えたら usage_en / usage_ja を必ず読み直すこと。
+
+    # ---------- G18 文字種（漢字の量）で解けてしまわないか ----------
+    # ★長さを平らにしたら、今度は**字面**が目印になった。
+    #   熟語の語義は自然と和語（ひらがな主体）になるのに、誤答だけ漢語で書いていたため
+    #   「漢字が最少の肢を選ぶ」だけで熟語40問中40.2%取れた（単語は27%で無害）。
+    #   ★全体で薄まって見えるので、**熟語だけの部分集合でも測る**こと。
+    #   ★片側だけ潰すと反対側が立つ（G5 の長さで2回踏んだ）。最少を潰したら
+    #     「2番目に少ない」が33%になった。**漢字の量も4順位すべて**測る。
+    #   ★しきい値は決め打ちしない。rank_limit() が実データの同点構造から計算する
+    #     （30%固定にしていたら、熟語80問ではゆらぎを欠陥と誤認して直し続けることになる）。
+    kanji = re.compile(r"[一-鿿]")
+    rank_gate(g, "G18", "漢字", tests, lambda c: len(kanji.findall(c)))
+
+    # ★「意味欄が、同語源でない後の回の答えを書いている」型は**ゲートにしない**（判断を明記する）。
+    #   G19 はメモと用例訳だけ、G20 は意味欄を見るが同語源ペアだけ。この交差は無検査で、
+    #   実際に3件そこから落ちた（下記）。だが機械化を試した結果、入れない方がよいと判断した:
+    #     ・素朴に全数照合 → **82件**。大半は「別々の英単語が同じ和訳を持つ」だけの正常なもの
+    #       （advocate と endorse の「〜を支持する」、dwindle と diminish の「減少する」）。
+    #     ・「全400語中2箇所だけの希少な言い回し」に絞っても **25件**残り、やはり大半が
+    #       近義語ペア。先の回で「減少する＝dwindle」と知っても diminish の答えは決まらない
+    #       （むしろ「それは dwindle の意味だから違う」と誤誘導する）。
+    #   ★本物の警告が埋もれてゲート全体が信用されなくなる方が害が大きい（G16 で同じ轍を踏んだ）。
+    #   落ちた3件は個別に直した:
+    #     ・第9回 implication の意味欄「言外の意味」→ 第15回 connotation の正解（一字一句同じ）
+    #       → implication の第2義を「波及効果」に変更
+    #     ・第3回 disparity のメモ「⇔ parity（同等）」→ 第10回 on a par with の正解「〜と同等で」
+    #       → メモを「dis-（打ち消し）＋ par（等しい）から」に変更
+    #     ・第8回 allegation の誤答「割り当て」→ 同じ紙の quota の正解「割当」（送り仮名違い）
+    #       → 誤答を差し替え、あわせて G11 が送り仮名を吸収して比べるようにした
+    #   ★**回や語を足したら、この交差だけは人が見ること**。機械では precision が出ない。
 
     # ---------- G17 具体物ダミーは1問に1本まで ----------
     # ★正解の語義は抽象・改まった語なので、物理的な具体物を指す肢は必ず誤答になる。

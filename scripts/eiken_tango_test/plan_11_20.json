@@ -1,0 +1,272 @@
+{
+ "11": {
+  "title": "変化・増減を表す動詞",
+  "words": [
+   "diminish",
+   "escalate",
+   "fluctuate",
+   "plummet",
+   "soar",
+   "amplify",
+   "intensify",
+   "subside",
+   "magnify",
+   "stabilize",
+   "proliferate",
+   "erode",
+   "surpass",
+   "exceed",
+   "curtail",
+   "swell"
+  ],
+  "idioms": [
+   "taper off",
+   "level off",
+   "fall short of",
+   "give rise to"
+  ]
+ },
+ "12": {
+  "title": "主張・判断を表す動詞",
+  "words": [
+   "assert",
+   "allege",
+   "affirm",
+   "concede",
+   "dispute",
+   "infer",
+   "deduce",
+   "imply",
+   "justify",
+   "acknowledge",
+   "dismiss",
+   "uphold",
+   "condemn",
+   "proclaim",
+   "testify",
+   "contradict"
+  ],
+  "idioms": [
+   "stand by",
+   "stand for",
+   "back down",
+   "go along with"
+  ]
+ },
+ "13": {
+  "title": "対処・実行を表す動詞",
+  "words": [
+   "tackle",
+   "cope",
+   "execute",
+   "administer",
+   "oversee",
+   "supervise",
+   "coordinate",
+   "devise",
+   "formulate",
+   "commence",
+   "pursue",
+   "consolidate",
+   "prioritize",
+   "mobilize",
+   "orchestrate",
+   "expedite"
+  ],
+  "idioms": [
+   "follow through on",
+   "work out",
+   "set out",
+   "take on"
+  ]
+ },
+ "14": {
+  "title": "社会・制度の名詞",
+  "words": [
+   "legislation",
+   "jurisdiction",
+   "mandate",
+   "referendum",
+   "regime",
+   "bureaucracy",
+   "autonomy",
+   "sovereignty",
+   "treaty",
+   "coalition",
+   "statute",
+   "amendment",
+   "ballot",
+   "census",
+   "verdict",
+   "welfare"
+  ],
+  "idioms": [
+   "in accordance with",
+   "on behalf of",
+   "in the face of",
+   "subject to"
+  ]
+ },
+ "15": {
+  "title": "思考・議論の名詞",
+  "words": [
+   "premise",
+   "hypothesis",
+   "paradigm",
+   "notion",
+   "doctrine",
+   "ideology",
+   "discourse",
+   "rhetoric",
+   "fallacy",
+   "analogy",
+   "connotation",
+   "conjecture",
+   "paradox",
+   "dilemma",
+   "criterion",
+   "perspective"
+  ],
+  "idioms": [
+   "in light of",
+   "by virtue of",
+   "in terms of",
+   "with regard to"
+  ]
+ },
+ "16": {
+  "title": "評価・程度の形容詞",
+  "words": [
+   "substantial",
+   "considerable",
+   "marginal",
+   "moderate",
+   "extensive",
+   "comprehensive",
+   "exhaustive",
+   "thorough",
+   "ample",
+   "meager",
+   "sparse",
+   "widespread",
+   "pervasive",
+   "ubiquitous",
+   "staggering",
+   "modest"
+  ],
+  "idioms": [
+   "boil down to",
+   "add up to",
+   "amount to",
+   "by and large"
+  ]
+ },
+ "17": {
+  "title": "性質・態度の形容詞",
+  "words": [
+   "diligent",
+   "conscientious",
+   "prudent",
+   "discreet",
+   "candid",
+   "blunt",
+   "assertive",
+   "arrogant",
+   "humble",
+   "stubborn",
+   "adaptable",
+   "complacent",
+   "indifferent",
+   "reluctant",
+   "cynical",
+   "ruthless"
+  ],
+  "idioms": [
+   "look down on",
+   "look up to",
+   "put up with",
+   "take after"
+  ]
+ },
+ "18": {
+  "title": "紛らわしい形容詞・副詞",
+  "words": [
+   "literal",
+   "discrete",
+   "principal",
+   "sensible",
+   "economical",
+   "historic",
+   "continual",
+   "respective",
+   "industrious",
+   "considerate",
+   "comprehensible",
+   "momentous",
+   "alternate",
+   "virtual",
+   "nominal",
+   "apparent"
+  ],
+  "idioms": [
+   "on the contrary",
+   "for the sake of",
+   "in the long run",
+   "at the mercy of"
+  ]
+ },
+ "19": {
+  "title": "対応・包含を表す動詞",
+  "words": [
+   "conform",
+   "adhere",
+   "coincide",
+   "correspond",
+   "resemble",
+   "distinguish",
+   "integrate",
+   "incorporate",
+   "encompass",
+   "comprise",
+   "denote",
+   "exemplify",
+   "illustrate",
+   "portray",
+   "characterize",
+   "embody"
+  ],
+  "idioms": [
+   "consist of",
+   "result in",
+   "derive from",
+   "cater to"
+  ]
+ },
+ "20": {
+  "title": "耐える・守る・立て直す",
+  "words": [
+   "undergo",
+   "withstand",
+   "endure",
+   "tolerate",
+   "persist",
+   "prevail",
+   "succumb",
+   "forfeit",
+   "preserve",
+   "conserve",
+   "safeguard",
+   "restore",
+   "revive",
+   "replenish",
+   "salvage",
+   "thwart"
+  ],
+  "idioms": [
+   "hold out",
+   "hang on to",
+   "ride out",
+   "come to terms with"
+  ]
+ }
+}
