@@ -1400,6 +1400,7 @@ def selftest():
         bad.append(f"F: 一致しているのに突き合わせが落とした — {err2!r}")
 
     # ★ アプリと同じ検証器を通す
+    verr = None
     try:
         from convert_workbook import validate_with_real_model
         bundles = [b for b in (convert_file(f)[0] for f in files) if b]
@@ -1418,6 +1419,17 @@ def selftest():
         for b in bad:
             print(f"    - {b}")
         return 1
+    # ★検証器を回せなかったときに「検証器を通過」と言わない。
+    #   node が無い環境では validate_with_real_model が skip するのに、最後の行だけ
+    #   「アプリと同じ検証器を通過」と印字していた = 検査していないのに通ったと言う状態
+    #   (呼び出し側 check_book_exam.py は stdout の最終行をそのまま [check] に出す)。
+    if verr:
+        # ★verr は node の stderr 断片で複数行のことがある。呼び出し側 (check_book_exam.py) は
+        #   stdout の**最終行**を拾うので、そのまま埋めると但し書きが消えてスタックトレースが出る。
+        _v = " ".join(str(verr).split())[:120]
+        print(f"[ok] 共通テスト変換の自己検査 — 見本 {len(files)} 本 (形 A/D/E/F + 除外 2) を変換できた。"
+              f"★ただし検証器は回せていない ({_v})")
+        return 0
     print(f"[ok] 共通テスト変換の自己検査 — 実機の --probe から起こした見本 {len(files)} 本 "
           f"(形 A/D/E/F + 除外 2) を変換し、アプリと同じ検証器を通過")
     return 0

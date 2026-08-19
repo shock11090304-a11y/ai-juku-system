@@ -21,6 +21,11 @@
   - class_recordings に UNIQUE 制約が無いので、**2つの端末で同時に --apply すると重複する**。
     1人が順に実行する運用なら安全 (2回目以降は登録済みとして弾く)。
   - 再生リストの1ページ目 (先頭100本) しか読まない。100本に達したら警告して投入を止める。
+  - **再生リストに名前が無いと丸ごと対象外**になる (名前から曜日+限を読むため)。新学期に
+    再生リストを作り直して名前を付け忘れると、古い再生リストが全授業をカバーしたまま
+    「新着0・見に行けた 15/15」で緑になる。唯一の手がかりは「どのクラスも新着が無い」ことなので、
+    クラスごとの最新録画日を印字し、STALE_DAYS(28日)より古ければ警告する (長期休みなら無視してよい)。
+    名前は CEO の再生リスト一覧から保存できる (2026-08-19 に DB 保存へ修正)。
 """
 import datetime
 import json
@@ -48,6 +53,7 @@ DAY = {"月": 0, "火": 1, "水": 2, "木": 3, "金": 4, "土": 5, "日": 6}
 DAY_LABEL = {v: k for k, v in DAY.items()}
 PAGE_LIMIT = 100          # 1ページに載る上限。継続トークンは追わない。
 MAX_AGE_DAYS = 120        # これより古い日付ラベルは打ち間違いを疑って手作業に回す
+STALE_DAYS = 28           # このクラスの最新録画がこれより古ければ「止まっている」と知らせる
 _COMMITTED = False        # commit 済みか (中断・異常終了時の文言を事実に合わせるため)
 
 
@@ -300,18 +306,36 @@ def main():
         # ★公開中の授業だけを相手にする。非公開セッションに入れると「投入した」と出るのに誰にも見えない。
         cur.execute("select id, title from class_sessions where is_published = 1 order by id")
         sessions = cur.fetchall()
-        cur.execute("select video_url, coalesce(provider, '') from class_recordings")
-        recs = cur.fetchall()
-        urls = [u for u, _ in recs]
-        known_ids = {v for v in (video_id(u) for u in urls) if v}
+        # ★クラスごとの最新録画日。再生リストを作り直して**名前を付け忘れる**と、
+        #   古い再生リストが全授業をカバーしたまま「新着0・見に行けた 15/15」で緑になる。
+        #   そのとき唯一おかしいのは「どのクラスも何週間も新着が無い」ことなので、時間で気づく。
+        cur.execute("select session_id, max(created_at) from class_recordings "
+                    "where session_id is not null group by session_id")
+        last_rec = {sid: dt for sid, dt in cur.fetchall()}
+        # ★(授業, 動画) の組で持つ。動画IDだけで「登録済」と判定すると、**別のクラスに
+        #   登録された動画**までこのクラスの登録済みに化け、そのクラスの生徒には1本も
+        #   見えていないのに「新着なし」で緑になる (録画は受講クラス限定で配信されるため)。
+        cur.execute("select session_id, video_url, coalesce(provider, '') from class_recordings")
+        recs = [(sid, u, pv) for sid, u, pv in cur.fetchall()]
+        urls = [u for _, u, _ in recs]
+        known_pairs = {(sid, video_id(u)) for sid, u, _ in recs if video_id(u) and sid is not None}
+        # session_id が NULL の録画は「全員向け」として全塾生に配信される (server/main.py の
+        # loose_recordings)。見えていないわけではないので、誤登録として騒がない。
+        loose_vids = {video_id(u) for sid, u, _ in recs if video_id(u) and sid is None}
+        db_vids = {v for v in (video_id(u) for u in urls) if v}
         # ★provider=vimeo/link は正当な録画。YouTube 以外を「読めないURL」に数えると、
         #   1件あるだけで --apply が恒久的に止まり、直しようのない指示が出る。
-        unparsed = sum(1 for u, pv in recs if (pv or "youtube") == "youtube" and not video_id(u))
+        unparsed = sum(1 for _, u, pv in recs if (pv or "youtube") == "youtube" and not video_id(u))
 
-        print(f"再生リスト {len(rows)}件中 {len(named)}件を走査 (名前未登録の{len(rows) - len(named)}件は対象外)")
-        print(f"公開中の授業 {len(sessions)}件 / 登録済み録画 {len(urls)}件 (動画IDを読めた {len(known_ids)}件)")
+        # ★「走査」は実際に YouTube を見に行った本数。名前が読めずに飛ばしたものを
+        #   走査に数えると「見ていないものを見たと言う」ことになる (最後にまとめて印字)。
+        print(f"再生リスト {len(rows)}件 (名前未登録の{len(rows) - len(named)}件は対象外)")
+        print(f"公開中の授業 {len(sessions)}件 / 登録済み録画 {len(urls)}件 (動画IDを読めた {len(db_vids)}件)")
 
         planned, problems, notes, blocking = [], [], [], 0
+        fetched = 0          # 実際に YouTube を見に行った再生リスト数
+        skipped_name = 0     # 名前から曜日+限を読めず飛ばした数
+        hazard = 0   # ★取り返せない損害 (二重登録) の恐れ。--allow-partial でも免除しない
         # ★「実際に YouTube を見に行けた授業」だけを数える。対応表があった時点で数えると、
         #   全リストが取得失敗しても「15/15」と出て、出力中で最も安心させる数字が嘘になる。
         covered_sids = set()
@@ -320,13 +344,23 @@ def main():
             # 自分で「二重登録の恐れ」と書いておいて素通りさせない (UNIQUE 制約が無く取り返せない損害)
             problems.append(f"登録済み録画のうち {unparsed}件の URL から動画IDを読めない "
                             f"= 同じ動画を新着と誤認して二重登録する恐れ。CEO 画面でその録画のURLを "
-                            f"https://youtu.be/〜 の形に直してから実行する")
+                            f"https://youtu.be/〜 の形にする。CEO の授業詳細で削除して登録し直す "
+                            f"(授業に紐づいていない録画は CEO 画面に出ないので開発担当に連絡)")
             blocking += 1
+            hazard += 1
         for pid, name in named:
             s = slot_of(name)
             if not s:
-                problems.append(f"{name}: 再生リスト名から曜日+限を読めない")
-                blocking += 1
+                # ★blocking にしない。名前が読めない再生リスト = 授業用ではない、が普通
+                #   (旧「以前の再生リスト」16件がこれ)。ここで投入を止めると、名前を1つ
+                #   打ち間違えただけで**15クラス全部の配布が止まる**。
+                #   配布漏れは下の「授業側カバレッジ」で必ず捕まるので、そちらに任せる。
+                # ★notes(参考)に出す。授業用でない再生リスト (講義まとめ等) に名前を付けると
+                #   毎回 ⚠ が並び、同じ一覧に出る STALE 警告 (配布が止まっている合図) が埋もれる。
+                #   改名ミスで授業の再生リストが外れた場合は、下の授業側カバレッジが blocking で捕まえる。
+                skipped_name += 1
+                notes.append(f"{name}: 名前から曜日+限を読めないので自動割り当ての対象外 "
+                             f"(授業用なら「月曜1限 …」のように曜日と限を先頭に入れる)")
                 continue
             day_index, raw_slot, slot = s
             matches = [(i, t) for i, t in sessions if t.startswith(slot)]
@@ -351,14 +385,27 @@ def main():
                 blocking += 1
                 print(f"  {raw_slot:<7} 取得できず  [{stitle}]{_note}")
                 continue
+            fetched += 1
             covered_sids.add(sid)   # ★取得できた授業だけを「見に行けた」と数える
             if fatal:      # items はあるが不完全 (1ページ上限)
                 problems.append(f"{raw_slot}: {fatal}")
                 blocking += 1
             fresh = skipped = known = 0
             for vid, vtitle in items:
-                if vid in known_ids:
+                if (sid, vid) in known_pairs:
                     known += 1
+                    continue
+                if vid in loose_vids:
+                    known += 1          # 授業に紐づかない=全塾生に配信済み。配布漏れではない
+                    continue
+                if vid in db_vids:
+                    # ★DB では別の授業に登録済み。このクラスの生徒には見えていない
+                    #   (録画は受講クラス限定で配信される)。勝手に足さずに知らせる。
+                    #   ※この実行で他クラスに計画しただけの分はここに来ない (合同授業を壊さないため)。
+                    problems.append(f"{raw_slot}: 動画 {vid[:4]}… ({vtitle!r}) が別の授業に登録されている "
+                                    f"= このクラスの生徒には見えていない。合同授業ならこのクラスにも "
+                                    f"手で追加し、取り違えなら CEO 画面で登録先を直す")
+                    skipped += 1
                     continue
                 label, why = date_label(vtitle, day_index, today)
                 if not label:
@@ -369,16 +416,41 @@ def main():
                     # 書いた URL は次回必ず video_id() で読み戻せる、が全体の前提。
                     problems.append(f"{raw_slot}: 動画IDの形が想定外 — この行をそのまま開発者に伝えてください")
                     blocking += 1
+                    hazard += 1
                     skipped += 1
                     continue
-                known_ids.add(vid)  # ★同じ動画が2つの再生リストに居ても二重に積まない
+                known_pairs.add((sid, vid))   # 同じ授業に二重に積まない。
+                #   ★db_vids には足さない。足すと、同じ動画を2クラスに配る合同授業のとき
+                #     2クラス目が「別の授業に登録されている」と**嘘**を言い、しかも
+                #     「登録先を直す」に従うと1クラス目から剥がすことになる。
                 planned.append((sid, stitle, raw_slot, label, vid))
                 fresh += 1
-            print(f"  {raw_slot:<7} {len(items):>3}本  新着 {fresh} / 登録済 {known} / 保留 {skipped}  [{stitle}]{_note}")
+            _last = last_rec.get(sid)
+            _last_s = "録画なし"
+            if not _last and fresh == 0:
+                # ★いちばん重い状態 (一度も配布されていない) が、STALE 判定の外に落ちて
+                #   無警告になっていた。STALE は「最新録画日」が要るので、録画0本のクラスには
+                #   時間の見張りが一切効かない = 新設クラスは永久に緑のままになる。
+                problems.append(f"{raw_slot}: このクラスの録画が1本も登録されていない "
+                                f"(再生リストは {len(items)}本) — 講師が別の再生リストに上げていないか、"
+                                f"別のクラスに登録されていないか確認する (新設で初回前なら無視してよい)")
+            if _last:
+                _d = _last.date() if hasattr(_last, "date") else None
+                if _d:
+                    _age = (today - _d).days
+                    _last_s = f"最新 {_d:%-m/%-d} ({_age}日前)"
+                    if fresh == 0 and _age > STALE_DAYS:
+                        problems.append(f"{raw_slot}: 最新の録画が {_age}日前 ({_d}) で止まっている — "
+                                        f"再生リストを作り直して名前を付け忘れていないか / "
+                                        f"アップロード漏れが無いか確認する (長期休みなら無視してよい)")
+            print(f"  {raw_slot:<7} {len(items):>3}本  新着 {fresh} / 登録済 {known} / 保留 {skipped}  "
+                  f"{_last_s:<18} [{stitle}]{_note}")
 
         # ★授業側のカバレッジ。ここを印字だけにすると「1本も見に行っていない」が
         #   「新着なし・exit 0」と**完全に同じ見た目**になる (前回の指摘が授業軸で再発していた)。
         #   見に行けなかった授業は必ず problems に積んで投入も止める。
+        print(f"\nYouTube を見に行った再生リスト: {fetched}件 "
+              f"(名前から曜日+限を読めず飛ばした {skipped_name}件 / 名前未登録 {len(rows) - len(named)}件)")
         uncovered = [t for i, t in sessions if i not in covered_sids]
         no_playlist = [t for i, t in sessions if i not in attempted_sids]
         print(f"\nYouTube を見に行けた授業: {len(covered_sids)}/{len(sessions)}")
@@ -393,7 +465,7 @@ def main():
             problems.append(f"{len(uncovered)}件の授業は再生リストを見に行けなかった = 配布漏れは検出できていない")
 
         if notes:
-            print("\n(参考) YouTube からのお知らせ:")
+            print("\n(参考) 補足 (対応は不要):")
             for n in notes:
                 print(f"   - {n}")
         if problems:
@@ -426,6 +498,10 @@ def main():
             else:
                 print("\n投入するなら --apply を付けて再実行。")
             return _finish(1 if problems else 0)
+        if hazard:
+            print(f"\n❌ 二重登録の恐れがある項目が {hazard}件あるので投入しない。"
+                  "\n   これは --allow-partial でも免除しません (重複は取り返せないため)。")
+            return _finish(2)
         if blocking and not allow_partial:
             print(f"\n❌ 見落としの恐れがある項目が {blocking}件あるので投入しない。"
                   "\n   直してから再実行する。承知のうえで取れた分だけ入れるなら --allow-partial。")

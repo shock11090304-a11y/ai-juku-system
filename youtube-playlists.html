@@ -60,8 +60,10 @@
   <p class="yt-sub">
     授業・講義動画のプレイリストまとめ。<strong>塾長のログインが必要</strong>です（未ログインだと CEO ダッシュボードに戻され、
     ページのソースを直接見ても再生リストは入っていません。ログイン済みのときだけサーバーから受け取ります）。
-    名前はサーバー側に登録してあるので、どの端末で開いても同じ名前が出ます。
-    各行は直接書き換えられ、<strong>書き換えた分だけこの端末のブラウザに保存</strong>されます。
+    名前はサーバー側に登録してあり、<strong>書き換えて入力欄から離れる（または Enter）とサーバーに保存</strong>されます（どの端末でも同じ名前が出ます）。<br>
+    ★<strong>名前の先頭は「月曜1限」のように曜日＋限にしてください</strong>。授業録画の自動割り当てが
+    この名前から曜日と限を読んで、どのクラスの録画かを決めています（例:「8月以降月曜日1時間目」）。
+    読めない名前にすると、その再生リストは自動割り当ての対象外になります。
     「開く ▶」で YouTube のプレイリストを新しいタブで表示します。
   </p>
 
@@ -89,17 +91,18 @@
     🔒 この一覧は<strong>塾長だけが見られます</strong>。再生リストは HTML のソースには含まれておらず、
     ログイン済みのときだけサーバーから受け取って画面に出しています。
     生徒が見られるのは<strong>塾長が各クラスの授業に紐づけて公開した録画だけ</strong>で、この一覧とは別系統です。<br>
-    行を書き換えた場合、その上書きは<strong>この端末のブラウザ内だけ</strong>に保存されます。
-    どの端末でも同じ名前にしたいときは「📋 名前＋URL をコピー」でコピーした内容を開発担当（Claude）に渡してください
-    ＝サーバー側の名前を書き換えます。「↩︎ 入力した名前をリセット」で端末の上書きを消すと、サーバー側の名前に戻ります。
+    行を書き換えるとサーバーに保存されます（保存できなかったときは赤で知らせます）。
+    <strong>枠がオレンジの行</strong>は、以前この端末で入力したままサーバーに届いていない名前が残っている行です
+    （マウスを乗せると中身が出ます）。使いたい名前なら入力し直すとサーバーに保存されます。
+    「↩︎ 入力した名前をリセット」はサーバーから取り直して画面を最新の状態に戻します。
   </p>
 </main>
 
 <textarea id="ytClipFallback" style="position:fixed;left:-9999px;top:-9999px;" aria-hidden="true"></textarea>
 
 <script>
-  // 各行 { id, name, group }。name は DB 側の既定名 (全端末で同じ)。
-  //   端末で入力した名前があれば localStorage 側が優先される (個人メモとして上書き可)。
+  // 各行 { id, name, group }。★name はサーバ (DB) が正。端末に残った未保存の名前は
+  //   表示には使わず、オレンジ枠 + tooltip で知らせるだけ (unsavedLocalName)。
   // ★再生リストの ID はこのページに書かない (2026-08-06 塾長指示「プレイリストは僕しか見れないように」)。
   //   このリポジトリは PUBLIC で、このページも公開URLで取得できるため、ID を静的HTMLに書くと
   //   限定公開(unlisted)の授業録画が誰でも辿れてしまう。admin-only.js は画面を隠すだけで中身は隠せない。
@@ -116,20 +119,94 @@
   var tbody = document.getElementById('ytBody');
   var saveIndicator = document.getElementById('ytSave');
   var saveTimer = null;
-  function flashSaved() {
+  function flashSaved(msg, isError) {
+    saveIndicator.textContent = msg || '✓ 保存しました';
+    saveIndicator.style.color = isError ? '#fca5a5' : '';
     saveIndicator.classList.add('show');
     if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(function () { saveIndicator.classList.remove('show'); }, 1200);
+    // ★失敗は長めに出す。1.2秒で消えると「保存された」と誤解される
+    saveTimer = setTimeout(function () { saveIndicator.classList.remove('show'); }, isError ? 6000 : 1200);
   }
 
-  // 表示に使う名前: 端末で入力した名前 > DB 側の既定名。
-  //   ★空文字も「端末で消した」という意思なので尊重する (空を無視すると、消しても
-  //     既定名が復活するのに「✓保存しました」と出る = 嘘の成功表示になる)。
-  //     既定名に戻したいときは「↩︎ 入力した名前をリセット」を使う。
+  // 名前をサーバ (DB) に保存する (入力確定時に1回)。
+  // ★成功したときだけ「✓ 保存しました」と出す。失敗を黙って握ると、
+  //   名前がこの端末にしか無い状態のまま塾長が「保存できた」と思い込み、
+  //   授業録画の割り当てが静かに対象外になる (2026-08-19 に判明した穴)。
+  var saveGeneration = 0;   // リセット時に進める。古い世代の保存は送らない
+  var reqSeq = {};          // id ごとの送信通番。応答の追い越しで古い値を正としないため
+  var inFlight = {};        // その行の保存が飛行中か
+  var queued = {};          // 飛行中に来た最新の値 (完了後にこれだけ送る)
+  function savePlaylistName(id, value, inputEl) {
+    // ★行内にも状態を出す。ツールバーの表示は位置が固定で、31行あると
+    //   下のほうを直したとき失敗が画面外に出て見えない (= 元の穴と同じ状態に戻る)。
+    var mark = function (ok, msg) {
+      if (!inputEl) return;
+      inputEl.style.borderColor = ok ? '' : '#ef4444';
+      inputEl.title = msg || '';
+    };
+    var myGen = saveGeneration;
+    (function () {
+      // ★同じ行の保存は直列化する。2本同時に飛ばすとサーバ側で順序が入れ替わり、
+      //   古い値が最後に書かれて「画面は新しい名前・DB は古い名前」になる。
+      if (inFlight[id]) { queued[id] = { value: value, el: inputEl, gen: myGen }; return; }
+      inFlight[id] = true;
+      var seq = (reqSeq[id] = (reqSeq[id] || 0) + 1);
+      var token = null;
+      try { token = localStorage.getItem('ai_juku_admin_token'); } catch (e) {}
+      if (!token) { inFlight[id] = false; mark(false, 'ログインが切れています'); flashSaved('⚠ ログインが切れています。名前はこの端末にしか保存されていません', true); return; }
+      fetch(API_BASE + '/api/admin/youtube-playlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ id: id, name: value })
+      }).then(function (r) {
+        // ★自分より新しい保存が既に走っていたら、この応答は捨てる。
+        //   古い応答を正として扱うと「画面は新しい名前・DB は古い名前」になり、
+        //   しかも控え(localStorage)まで消えてオレンジ枠も出なくなる。
+        if (seq !== reqSeq[id] || myGen !== saveGeneration) return;
+        if (r.ok) {
+          mark(true);
+          // 控えは「今保存した値と同じとき」だけ消す (別の未保存値を巻き添えにしない)
+          try { if (localStorage.getItem(STORE_KEY(id)) === value) localStorage.removeItem(STORE_KEY(id)); } catch (e) {}
+          for (var i = 0; i < PLAYLISTS.length; i++) if (PLAYLISTS[i].id === id) PLAYLISTS[i].name = value;
+          flashSaved(); return;
+        }
+        mark(false, '保存できませんでした (HTTP ' + r.status + ')');
+        flashSaved('⚠ 保存できませんでした (HTTP ' + r.status + ')。この端末にしか残っていません', true);
+      }).catch(function () {
+        if (seq !== reqSeq[id] || myGen !== saveGeneration) return;
+        mark(false, '通信できず保存できませんでした');
+        flashSaved('⚠ 通信できず保存できませんでした。この端末にしか残っていません', true);
+      }).then(function () {
+        inFlight[id] = false;
+        var q = queued[id];
+        queued[id] = null;
+        // ★リセットを挟んだ待ち分は送らない (捨てたはずの値が後から DB に入るのを防ぐ)
+        if (q && q.gen === saveGeneration) { savePlaylistName(id, q.value, q.el); return; }
+        // ★飛行中にリセットが走っていた場合、その GET は**この保存の着地前**の値を読んでいる。
+        //   そのままだと画面だけ古い値になるので、着地後にもう一度取り直して DB と揃える。
+        if (myGen !== saveGeneration) loadPlaylists();
+      });
+    })();
+  }
+
+  // ★2026-08-19: 表示は**サーバの名前が正**。以前は localStorage の上書きを優先していたが、
+  //   名前がサーバ保存になった今それをやると「画面は正しい名前・DB は違う名前」になり、
+  //   授業録画の割り当てが対象外なのに塾長の画面だけ正常に見える (= 直そうとした穴の再現)。
+  //   端末にだけ残っている名前は捨てずに、行を赤くして知らせる (下の renderRow)。
   function effectiveName(p) {
+    return p.name || '';
+  }
+
+  // 端末にだけ残っていて、サーバと違う名前 (旧仕様の置き土産 / 保存に失敗した分)
+  function unsavedLocalName(p) {
     var stored = null;
     try { stored = localStorage.getItem(STORE_KEY(p.id)); } catch (e) {}
-    return stored !== null ? stored : (p.name || '');
+    if (stored === null) return null;
+    if (stored === (p.name || '')) {
+      try { localStorage.removeItem(STORE_KEY(p.id)); } catch (e) {}   // 一致したら用済み
+      return null;
+    }
+    return stored;
   }
 
   var lastGroup = null;   // グループ見出しは group が変わった行の前にだけ差し込む
@@ -157,10 +234,27 @@
     var input = document.createElement('input');
     input.type = 'text';
     input.className = 'yt-name-input';
-    input.placeholder = '科目・単元名を入力（例: 数学ⅠA 二次関数）';
+    input.placeholder = '例: 8月以降月曜日1時間目（曜日＋限を必ず入れる）';
     input.value = effectiveName(p);
+    var _unsaved = unsavedLocalName(p);
+    if (_unsaved !== null) {
+      input.style.borderColor = '#f59e0b';
+      input.title = 'この端末にだけ残っている名前があります: 「' + _unsaved + '」\n'
+                  + 'サーバーには保存されていません。使うなら入力し直してください。';
+    }
+    // ★2026-08-19 修正: 以前は localStorage に書くだけで「✓ 保存しました」と出していた。
+    //   名前は端末に閉じるうえ、授業録画の割り当てスクリプトは **DB の name** から
+    //   曜日+限を読むので、名前のない再生リストは丸ごと対象外になり、
+    //   新学期に再生リストを作り直すと「配布漏れなのに緑」になる。サーバに保存する。
+    // ★打鍵ごとではなく「入力を終えたとき」(フォーカスを外す / Enter) に1回だけ保存する。
+    //   打鍵ごとのデバウンス保存は、保存が重なったときに順序と世代の管理が必要になり、
+    //   その管理を1つ間違えるだけで「画面は新しい名前・DB は古い名前」の嘘になる。
+    //   入力中の値は打鍵ごとに端末に控えるので、保存前に閉じても失われない。
     input.addEventListener('input', function () {
-      try { localStorage.setItem(STORE_KEY(id), input.value); flashSaved(); } catch (e) {}
+      try { localStorage.setItem(STORE_KEY(id), input.value); } catch (e) {}
+    });
+    input.addEventListener('change', function () {
+      savePlaylistName(id, input.value, input);
     });
     var idEl = document.createElement('div');
     idEl.className = 'yt-id';
@@ -299,7 +393,7 @@
   // 入力した名前をリセット (= 端末の上書きを消して、DB 側の既定名に戻す)
   document.getElementById('ytClearBtn').addEventListener('click', function () {
     if (!PLAYLISTS.length) return;   // 一覧が無いときは何も消さない (ボタンも disabled)
-    if (!window.confirm('この端末で入力した名前を消し、既定の名前に戻します。よろしいですか？')) return;
+    if (!window.confirm('この端末に残った未保存の入力を消し、サーバーの名前を取り直します。\n(すでに保存された分は取り消せません)\nよろしいですか？')) return;
     // 一覧に無くなった過去の再生リストの上書きも掃除する (prefix 総なめ)
     try {
       var stale = [];
@@ -309,9 +403,14 @@
       }
       stale.forEach(function (key) { localStorage.removeItem(key); });
     } catch (e) {}
-    var inputs = document.querySelectorAll('.yt-name-input');
-    for (var i = 0; i < inputs.length; i++) inputs[i].value = PLAYLISTS[i] ? (PLAYLISTS[i].name || '') : '';
-    flashSaved();
+    // ★待機中(直列化キュー)の保存だけを捨ててから取り直す。
+    //   ★既に送信済みの保存は取り消せない (サーバが受理済み)。その分は着地後に
+    //     もう一度取り直して画面と DB を揃える (savePlaylistName の最後を参照)。
+    saveGeneration++;   // 待機中の保存 (直列化キュー) を無効化する
+    queued = {};
+    // ★サーバから取り直す。以前は画面だけ戻して「✓ 保存しました」と出していたが、
+    //   名前がサーバ保存になった今それは嘘 (DB は書き換わったまま画面だけ旧名に戻る)。
+    loadPlaylists();
   });
 </script>
 </body>

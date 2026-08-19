@@ -328,12 +328,26 @@ def static_checks(files):
                            text=True, cwd=ROOT, timeout=180)
         if r.returncode:
             tail = [l for l in (r.stdout + r.stderr).splitlines() if l.strip()][-6:]
-            ng("紙教材の変換が通らない: " + " / ".join(tail))
+            # ★最後の行 (例外メッセージ) を先頭に (ランナーが長い行を切るため・下の 共通テスト側と同じ)
+            # ★例外と文脈を**別の行**にする。同じ行に繋ぐと run_all_gates.py の
+            #   _PDF_MISSING = (FileNotFoundError|No such file)[^\n]*\.pdf に一致してしまい、
+            #   本物の失敗が「刷ったPDFが無い＝ここでは検査していない」に化けて exit 0 になる。
+            ng("紙教材の変換が通らない: " + (tail[-1] if tail else "(出力なし)"))
+            for _l in tail[:-1]:
+                ng("  ↑ 直前の出力: " + _l)
         else:
             m = re.search(r"変換できた: (\d+) 冊 / (\d+) 問", r.stdout)
             if m:
-                print(f"  [check] 紙教材の変換 {m.group(1)} 冊 / {m.group(2)} 問 "
-                      f"(アプリと同じ検証器を通過)")
+                # ★convert_workbook.py 自身が「★ 検証を回せなかった」と申告していたら
+                #   「検証器を通過」と言わない。検証していないのに通ったと言うのは、
+                #   すぐ下の共通テスト側で潰したのと同じ穴 (2026-08-19)。
+                _vm = re.search(r"★ 検証を回せなかった: (.+)", r.stdout)
+                if _vm:
+                    print(f"  [check] 紙教材の変換 {m.group(1)} 冊 / {m.group(2)} 問 を作れた。"
+                          f"★ただし検証器は回せていない ({' '.join(_vm.group(1).split())[:80]})")
+                else:
+                    print(f"  [check] 紙教材の変換 {m.group(1)} 冊 / {m.group(2)} 問 "
+                          f"(アプリと同じ検証器を通過)")
             else:
                 ng("紙教材の変換の出力が読めない (件数を印字していない)")
 
@@ -346,7 +360,13 @@ def static_checks(files):
                            text=True, cwd=ROOT, timeout=120)
         if r.returncode:
             tail = [l for l in (r.stdout + r.stderr).splitlines() if l.strip()][-6:]
-            ng("共通テスト変換の自己検査が通らない: " + " / ".join(tail))
+            # ★最後の行 (例外メッセージ) を先頭に出す。ランナーは長い行を途中で切るので、
+            #   traceback をそのまま繋ぐと肝心の原因が切り落とされる。実際に
+            #   「ModuleNotFoundError: No module named 'yaml'」が見えず、内容の問題だと
+            #   誤解されたまま CI が赤いまま放置された (2026-08-19)。
+            ng("共通テスト変換の自己検査が通らない: " + (tail[-1] if tail else "(出力なし)"))
+            for _l in tail[:-1]:
+                ng("  ↑ 直前の出力: " + _l)
         else:
             print("  [check] " + (r.stdout.strip().splitlines() or ["ok"])[-1].lstrip("[ok] "))
 

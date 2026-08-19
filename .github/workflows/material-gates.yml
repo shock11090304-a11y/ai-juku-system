@@ -51,8 +51,12 @@ jobs:
       #             rika_enshu / rika_kagaku / rika_butsuri / natsu_tokkun / eng_hinshi_bunkai も同型。
       #             モジュールが無いと内容検査ごと CRASH するので入れる。
       # numpy     = 共通テスト数学の一部の検算 (kyotsu2026_mirror/content/verify_math*)
+      # pyyaml    = book_exam/check_book_exam.py → convert_kyotsu_yaml.py --selftest が
+      #             見本 (fixtures_kyotsu/*.yaml) を読む。★これが無いと ModuleNotFoundError で
+      #             「共通テスト変換の自己検査が通らない」と**内容の問題のように見える VIOLATION**
+      #             になり、実際には自己検査が一度も走っていなかった (2026-08-19 に判明)。
       - name: 依存 (Python)
-        run: python3 -m pip install --quiet sympy fonttools pymupdf numpy
+        run: python3 -m pip install --quiet sympy fonttools pymupdf numpy pyyaml
 
       # ★フォントは入れない。字形の照合は `kaki_koushuu_eng/_print_font_cmap.txt`
       #   （**刷るフォント**の cmap をコミットしたもの）を正典にしている。

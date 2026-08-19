@@ -46908,6 +46908,50 @@ def admin_youtube_playlists(authorization: Optional[str] = Header(None)):
         conn.close()
 
 
+@app.post("/api/admin/youtube-playlists")
+def admin_youtube_playlist_save(payload: dict, authorization: Optional[str] = Header(None)):
+    """📺 塾長専用: 再生リストの名前を保存する (無ければ新規登録)。payload: {id, name, group?}。
+
+    ★2026-08-19 まで、`youtube-playlists.html` は名前を **localStorage にしか保存していない**のに
+      「✓ 保存しました」と表示していた。名前が DB に届かないため:
+      - 端末を変えると名前が消える
+      - 授業録画の割り当てスクリプト (scripts/class_recordings/assign_from_playlists.py) は
+        DB の name から曜日+限を読むので、**名前のない再生リストは丸ごと対象外**になる。
+        新学期に再生リストを作り直すと、全授業が配布漏れなのにスクリプトは
+        「見に行けた授業 15/15・新しい録画はありません」と緑を出す。
+    ★再生リストIDは秘密 (限定公開の授業録画に辿れる) なので admin 認証必須・GET と同じ扱い。
+    """
+    _verify_admin_required(authorization)
+    pid = (payload.get("id") or "").strip()
+    name = (payload.get("name") or "").strip()[:200]
+    grp = (payload.get("group") or "").strip()[:200] or None
+    if not pid or not re.fullmatch(r"[A-Za-z0-9_-]{2,64}", pid):
+        raise HTTPException(status_code=400, detail="再生リストIDの形式が不正です")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id FROM admin_youtube_playlists WHERE playlist_id = ?", (pid,))
+        row = c.fetchone()
+        if row:
+            if grp is None:
+                c.execute("UPDATE admin_youtube_playlists SET name = ? WHERE playlist_id = ?", (name, pid))
+            else:
+                c.execute("UPDATE admin_youtube_playlists SET name = ?, grp = ? WHERE playlist_id = ?",
+                          (name, grp, pid))
+            created = False
+        else:
+            c.execute("SELECT COALESCE(MAX(sort_order), -1) + 1 AS nx FROM admin_youtube_playlists")
+            nx = (c.fetchone() or {"nx": 0})["nx"] or 0
+            c.execute("INSERT INTO admin_youtube_playlists (playlist_id, name, grp, sort_order) "
+                      "VALUES (?,?,?,?)", (pid, name, grp or "", nx))
+            created = True
+        conn.commit()
+    finally:
+        conn.close()
+    log.info(f"[YTPlaylist] admin saved name (created={created})")
+    return {"ok": True, "created": created, "name": name}
+
+
 @app.get("/api/admin/class/attendance")
 def admin_class_attendance_list(session_id: int, authorization: Optional[str] = Header(None)):
     """塾長: ある授業の出欠一覧 (生徒名つき・申告の新しい順)。"""
