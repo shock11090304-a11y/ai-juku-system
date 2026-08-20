@@ -730,6 +730,14 @@ async function callClaudeJson({ system, user, model = MODEL_DEFAULT, maxTokens =
             : '短い間に何度も実行されました。少し待ってからお試しください。');
         }
         if (res.status === 401) throw new Error('ログインの有効期限が切れています。ログインし直してください。');
+        // ★403 はプランの制限 (トリリオン・ライトでは英語演習の AI 採点・AI 解説が使えない)。
+        //   サーバの説明を捨てて「少し時間をおいて」と出すと、待っても永久に直らないものを
+        //   一時障害と偽り、再試行と塾長への問い合わせを促してしまう。
+        // ★機械可読な marker を付ける。受け側 (採点失敗パネル) が日本語本文の一致で
+        //   「プランの制限か」を判定すると、文言を推敲した瞬間や、将来この経路に
+        //   日次トークン上限 (「…上限(100,000トークン)に達しました」) が乗ったときに、
+        //   一時的な上限に当たっただけの有料生徒へ「プランでは使えません」と言ってしまう。
+        if (res.status === 403 && _d) throw new Error('PLAN_BLOCKED:' + _d);
         throw new Error(`AI との通信に失敗しました。少し時間をおいてお試しください。(コード ${res.status})`);
       }
       data = await res.json();
@@ -2215,8 +2223,13 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
     questionSource = (!isLiveMode() && prevSource === 'unknown') ? 'fallback_no_live' : 'fallback';
     // lastAiError がある時は「タイムアウト/通信エラーで再試行を」と payload に明示メッセージ
     if (state.lastAiError) {
-      payload._warning = `⚠️ AI 生成に失敗 (${state.lastAiError.slice(0, 80)})。下記は参考問題です。`;
-      payload._retryable = true;
+      // ★プランで使えない場合 (PLAN_BLOCKED:) は「生成に失敗／再試行」と言わない。
+      //   押しても永久に直らないうえ、marker が生徒の画面に出てしまう。
+      const _pb = /^PLAN_BLOCKED:/.test(String(state.lastAiError));
+      payload._warning = _pb
+        ? `${String(state.lastAiError).replace(/^PLAN_BLOCKED:/, '')} 下記は収録済みの問題です。`
+        : `⚠️ AI 生成に失敗 (${state.lastAiError.slice(0, 80)})。下記は参考問題です。`;
+      payload._retryable = !_pb;
     }
   } else {
     // 成功 path で lastAiError を clear (前回失敗 → 今回成功なら badge 不要)
@@ -3227,9 +3240,24 @@ async function submitAnswers() {
     // フレンドリーな error message を box 内に表示
     const box = document.getElementById('questionBox');
     if (box) {
+      // ★プランで使えない機能 (403) を「一時的なエラー」と言わない。押しても永久に直らない
+      //   再試行ボタンを出し、塾長 LINE への問い合わせまで促す形になっていた
+      //   (トリリオン・ライトでは英語演習の AI 採点・AI 解説・AI 出題が使えない)。
+      //   サーバの日本語の説明があるときは、それを理由として前に出す。
+      const _isPlanBlock = /^PLAN_BLOCKED:/.test(String(errMsg));
+      const _planMsg = String(errMsg).replace(/^PLAN_BLOCKED:/, '');
       const errBanner = document.createElement('div');
       errBanner.style.cssText = 'margin: 1rem 0; padding: 1.2rem; background: rgba(245,158,11,0.10); border: 1px solid rgba(245,158,11,0.40); border-radius: 12px; color: #fde68a;';
-      errBanner.innerHTML = `
+      errBanner.innerHTML = _isPlanBlock ? `
+        <div style="font-size:1.05rem; font-weight:800; color:#fbbf24; margin-bottom:0.5rem;">この機能は現在のプランではご利用いただけません</div>
+        <p style="margin:0.5rem 0; font-size:0.88rem; line-height:1.6;">${escapeHtml(_planMsg)}</p>
+        <p style="margin:0.5rem 0; font-size:0.86rem; line-height:1.6; color:#cbd5e1;">
+          入力した答案は消えていません。選択式の問題・単元ドリル・AI単語帳・弱点克服は、このまま続けられます。
+        </p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin:0.8rem 0;">
+          <button id="ee-back-top" style="padding:0.7rem 1.1rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.20); border-radius:8px; color:#a1a1aa; font-weight:700; cursor:pointer; min-height:44px;">← 一覧に戻る</button>
+        </div>
+      ` : `
         <div style="font-size:1.05rem; font-weight:800; color:#fbbf24; margin-bottom:0.5rem;">⚠️ 採点処理が止まってしまいました</div>
         <p style="margin:0.5rem 0; font-size:0.88rem; line-height:1.6;">
           一時的なエラーのようです。あなたの回答自体は問題なく入力できています。<br>
@@ -3250,12 +3278,15 @@ async function submitAnswers() {
       `;
       box.prepend(errBanner);
       // 「もう一度」ボタン
-      const retryBtn = document.getElementById('ee-retry-submit');
+      // ★document 全体ではなく **このバナー内**から探す。全体だと、通常エラーのバナーが
+      //   残ったままプラン制限のバナーが出たとき、1枚目のボタンに2つ目のリスナが付き、
+      //   1クリックで採点が2回走る。
+      const retryBtn = errBanner.querySelector('#ee-retry-submit');
       if (retryBtn) retryBtn.addEventListener('click', () => {
         errBanner.remove();
         document.getElementById('submitAnswersBtn').click();
       });
-      const backBtn = document.getElementById('ee-back-top');
+      const backBtn = errBanner.querySelector('#ee-back-top');
       if (backBtn) backBtn.addEventListener('click', () => {
         document.getElementById('examRunnerSection').style.display = 'none';
         document.getElementById('examPickSection').style.display = '';
@@ -5565,11 +5596,24 @@ async function generateCurriculum() {
       console.warn('[curriculum] http error', res.status, err.slice(0, 200));
       // 生徒に生の http_429 / JSON を見せない。特に 429 は「後でもう一度」と案内する以上、
       // 何回まで・いつまで待つのかを日本語で返す (caller cap = 5回/時)
-      const friendly = res.status === 429
-        ? '短い時間に何度も生成しています (1 時間に 5 回まで)。少し時間をおいてからお試しください。'
-        : res.status === 403
-          ? 'このページからは生成できませんでした。マイページから開き直してお試しください。'
-          : null;
+      // ★429 は2種類ある。caller cap (5回/時=待てば直る) と プラン上限 (待っても直らない)。
+      //   後者はサーバが detail に AI_BUDGET_ 接頭辞を付けてくるので、**接頭辞を先に見る**。
+      //   接頭辞を無視して固定文言にすると「1時間に5回まで」= 永久に叶わない案内になる
+      //   (2026-08-20: 実際にそうなっていた。mypage.js:9 と同じ形に揃える)。
+      let _detail = '';
+      try { _detail = String((JSON.parse(err) || {}).detail || ''); } catch (_) { _detail = ''; }
+      const _isPlanLimit = /^AI_BUDGET_[A-Z0-9_]+:/.test(_detail);
+      const friendly = _isPlanLimit
+        ? _detail.replace(/^AI_BUDGET_[A-Z0-9_]+:/, '')
+        : res.status === 429
+          ? '短い時間に何度も生成しています (1 時間に 5 回まで)。少し時間をおいてからお試しください。'
+          : res.status === 403
+            // ★このエンドポイントが full の生徒に返す 403 は origin check ("Origin not allowed")
+            //   だけで、英語の内部文字列。既存の日本語ガイダンスはまさにその状況のために
+            //   書かれているので、**日本語の detail のときだけ**サーバ文言に差し替える。
+            ? ((/[ぁ-んァ-ン一-龥]/.test(_detail) ? _detail : '')
+               || 'このページからは生成できませんでした。マイページから開き直してお試しください。')
+            : null;
       throw new Error(friendly || ('http_' + res.status + ' ' + err.slice(0, 100)));
     }
     const data = await res.json();

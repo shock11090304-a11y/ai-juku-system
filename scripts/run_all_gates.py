@@ -61,7 +61,10 @@ WALK_SKIP = {"__pycache__", ".git", "node_modules", ".venv", "venv"}
 # ★教材の検査対象を env で切り替える設計が実在する（eng_kokkoritsu_nankan/check.py の
 #   WORKBOOK_DIR は4冊を1本で検査する）。それを export したままの shell でランナーを回すと、
 #   **別の本を検査して PASS** が出るのにログからは判別できない。明示的に落とす。
-DROP_ENV = ("WORKBOOK_DIR", "BOOK_DIR", "CONTENT", "CONTENT_MOD", "STUDENT_NAME")
+# ★DATABASE_URL を必ず落とす: server/main.py を import するゲートがあり、USE_POSTGRES は
+#   DATABASE_URL の有無だけで決まる (DB_PATH は無視される)。railway run 系の作業中や .env を
+#   source した端末でランナーを回すと、テストの INSERT/DELETE が本番 Postgres に飛ぶ。
+DROP_ENV = ("WORKBOOK_DIR", "BOOK_DIR", "CONTENT", "CONTENT_MOD", "STUDENT_NAME", "DATABASE_URL")
 
 # 対象から外すもの（理由を必ず書く。理由なしに足さないこと）
 SKIP = {

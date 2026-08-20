@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="cache-purge.js?v=20260820-light"></script>
+  <script src="frontend-error-monitor.js?v=20260427-init"></script>
+  <title>トリリオン・ライト お申込み | AIコーチング</title>
+  <!-- ★item1 (プラン配線) が終わるまでは検索に出さない。決済がまだ通らないため。
+       公開するときにこの行を消すこと。 -->
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="トリリオン・ライト 月額¥3,000（税込・永年）。単元ドリル・AI単語帳・弱点克服・配信ドリルが使い放題。AI機能は合計で月10回まで。">
+  <link rel="stylesheet" href="lp.css">
+  <link rel="stylesheet" href="checkout.css">
+  <!-- ★plans.js / social-proof.js は読み込まない。
+       あの2本が出す「現在閲覧中 N 人」「累計 N 人突破」は plans.js:196-201 のハードコード
+       (lastUpdate 2026-05-06) で、実データではない。このページは「50名限定」を実数で名乗る
+       導線なので、同じ画面に擬似値を混ぜると限定表示そのものの信用が消える。 -->
+  <script src="analytics.js" defer></script>
+  <style>
+    .lt-wrap { max-width: 620px; margin: 0 auto; padding: 0 1rem 4rem; }
+    .lt-seats {
+      display: none; /* 実数が取れたときだけ JS が表示する。取れなければ何も出さない */
+      margin: 1rem auto 0; max-width: 420px;
+      background: rgba(16,185,129,0.10); border: 1px solid rgba(16,185,129,0.38);
+      border-radius: 12px; padding: 0.7rem 1rem; text-align: center;
+      font-size: 0.92rem; color: #a7f3d0;
+    }
+    .lt-seats strong { color: #34d399; font-size: 1.15rem; font-weight: 900; }
+    .lt-card {
+      background: linear-gradient(135deg, rgba(139,92,246,0.14), rgba(59,130,246,0.10));
+      border: 2px solid rgba(139,92,246,0.55); border-radius: 16px;
+      padding: 1.3rem 1.2rem; margin: 1.4rem 0 1.1rem;
+    }
+    .lt-card-name { font-size: 1.18rem; font-weight: 900; color: #e9d5ff; }
+    .lt-card-price { font-size: 2.3rem; font-weight: 900; color: #a78bfa; line-height: 1.15; margin: 0.35rem 0 0.1rem; }
+    /* ★単位は必ず1行に収める。inline のままだと 375px 幅で「税込・永 / 年）」と
+       改行で割れる (実機描画で確認)。block にして価格の下に丸ごと置く。 */
+    .lt-card-price span { display: block; font-size: 0.95rem; font-weight: 700; color: #c4b5fd; margin-top: 0.15rem; }
+    .lt-card-note { font-size: 0.88rem; color: #cbd5e1; margin-top: 0.5rem; line-height: 1.65; }
+    .lt-grid { display: grid; grid-template-columns: 1fr; gap: 0.9rem; margin: 1.2rem 0; }
+    @media (min-width: 620px) { .lt-grid { grid-template-columns: 1fr 1fr; } }
+    .lt-box { border-radius: 12px; padding: 0.95rem 1rem; }
+    .lt-can { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.32); }
+    .lt-cannot { background: rgba(148,163,184,0.07); border: 1px solid rgba(148,163,184,0.28); }
+    .lt-box h3 { font-size: 0.95rem; font-weight: 900; margin: 0 0 0.55rem; }
+    .lt-can h3 { color: #6ee7b7; }
+    .lt-cannot h3 { color: #cbd5e1; }
+    .lt-box ul { margin: 0; padding-left: 1.15rem; }
+    .lt-box li { font-size: 0.87rem; line-height: 1.75; color: #e2e8f0; }
+    .lt-cannot li { color: #94a3b8; }
+    .lt-terms {
+      background: rgba(15,23,42,0.55); border: 1px solid rgba(148,163,184,0.25);
+      border-radius: 12px; padding: 0.95rem 1.05rem; margin: 1.2rem 0;
+    }
+    .lt-terms h3 { font-size: 0.92rem; font-weight: 900; color: #fbbf24; margin: 0 0 0.5rem; }
+    .lt-terms li { font-size: 0.85rem; line-height: 1.8; color: #cbd5e1; }
+    .lt-warn {
+      background: rgba(239,68,68,0.10); border: 1px solid rgba(239,68,68,0.35);
+      border-radius: 12px; padding: 0.85rem 1rem; margin: 1.1rem 0;
+      font-size: 0.86rem; line-height: 1.7; color: #fecaca;
+    }
+    .lt-summary {
+      background: rgba(15,23,42,0.6); border: 1px solid rgba(148,163,184,0.3);
+      border-radius: 12px; padding: 1rem 1.05rem; margin: 1.3rem 0;
+    }
+    .lt-summary-row { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.9rem; color: #cbd5e1; padding: 0.35rem 0; }
+    /* ★ラベル側は絶対に折り返さない。既定の flex だと 375px 幅で「プラ / ン」と
+       ラベルが縦に割れる (実機描画で確認)。折り返してよいのは値の側だけ。 */
+    .lt-summary-row > span:first-child { white-space: nowrap; flex: 0 0 auto; }
+    /* ★ただし合計行は例外。受付停止中に JS がラベルを長い文言へ差し替えるため、
+       nowrap のままだと 375px (iPhone SE/mini 等) で金額がカード枠の外へ飛び出し、
+       337px ではページごと横スクロールになる (実測)。合計行だけ折り返しを許す。 */
+    .lt-summary-total { flex-wrap: wrap; }
+    .lt-summary-total > span:first-child { white-space: normal; }
+    .lt-summary-row > span:last-child { text-align: right; }
+    .lt-summary-total { border-top: 1px solid rgba(148,163,184,0.3); margin-top: 0.5rem; padding-top: 0.65rem; font-size: 1.05rem; font-weight: 900; color: #fff; }
+    .lt-field { margin-bottom: 1rem; }
+    .lt-field label { display: block; font-size: 0.88rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.35rem; }
+    /* ★受付停止中は「無効に見える」ようにする。見た目が有効時と同じだと、
+       スマホでタップしてもキーボードが出ないだけで理由が分からず「壊れている」と読まれる。 */
+    .lt-field input:disabled, .lt-field select:disabled { opacity: 0.45; cursor: not-allowed; }
+    .lt-field input, .lt-field select {
+      width: 100%; box-sizing: border-box; padding: 0.75rem 0.9rem; font-size: 1rem;
+      background: rgba(15,23,42,0.75); border: 1px solid rgba(148,163,184,0.35);
+      border-radius: 10px; color: #f1f5f9;
+    }
+    .lt-field .lt-hint { font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem; line-height: 1.6; }
+    .lt-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+    .lt-submit {
+      width: 100%; padding: 1.05rem 1rem; font-size: 1.06rem; font-weight: 900;
+      background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff;
+      border: none; border-radius: 12px; cursor: pointer; margin-top: 0.6rem;
+    }
+    .lt-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+    .lt-error {
+      display: none; background: rgba(239,68,68,0.14); border: 1px solid rgba(239,68,68,0.45);
+      border-radius: 10px; padding: 0.8rem 1rem; margin-top: 0.9rem; font-size: 0.9rem; color: #fecaca;
+    }
+    .lt-loading { display: none; text-align: center; margin-top: 0.9rem; font-size: 0.9rem; color: #a5b4fc; }
+    .lt-closed {
+      display: none; background: rgba(148,163,184,0.10); border: 1px solid rgba(148,163,184,0.35);
+      border-radius: 12px; padding: 1.2rem 1.1rem; text-align: center; color: #e2e8f0; line-height: 1.8;
+    }
+    .lt-foot { font-size: 0.78rem; color: #94a3b8; text-align: center; margin-top: 1.3rem; line-height: 1.9; }
+    .lt-foot a { color: #a5b4fc; }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="lp.html" class="nav-logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">AIコーチング</span>
+      </a>
+      <div class="nav-cta">
+        <a href="lp.html" class="btn-ghost">← トップに戻る</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="checkout-main">
+    <div class="lt-wrap">
+
+      <div class="checkout-header">
+        <div class="eyebrow">先行 50 名</div>
+        <h1>トリリオン・ライト<br>お申込み</h1>
+        <p class="checkout-sub">
+          月額 <strong>¥3,000</strong>（税込・永年）／
+          <strong>無料体験はありません</strong>。お申込み時に初月分を決済します。
+        </p>
+        <!-- 残り枠。サーバから実数が取れたときだけ表示する (取れなければ何も出さない) -->
+        <div class="lt-seats" id="ltSeats">
+          残り <strong id="ltRemaining">--</strong> 名分の枠があります
+        </div>
+      </div>
+
+      <div class="lt-card">
+        <div class="lt-card-name">トリリオン・ライト</div>
+        <div class="lt-card-price">¥3,000<span>/月（税込・永年）</span></div>
+        <div class="lt-card-note">
+          ご契約後も<strong>ずっと月額¥3,000</strong>です。値上げはしません。<br>
+          入塾金（システム登録費 ¥10,000）は<strong>かかりません</strong>。
+        </div>
+      </div>
+
+      <div class="lt-grid">
+        <div class="lt-box lt-can">
+          <h3>✅ ライトで使えるもの</h3>
+          <ul>
+            <li>単元ドリル（自動採点・解説つき）</li>
+            <li>演習ドリル（問題プールから出題）</li>
+            <li>AI単語帳（4択テスト・間違えた語の復習つき）</li>
+            <li>弱点克服（間違いから弱点を自動で見つけて出し直し）</li>
+            <li>週1回の弱点プリント（自動配信）</li>
+            <li>ドリルの配信（塾長が単元を指定して割り当て・自動採点）</li>
+            <li>学習計画の自動作成（<strong>1回かぎり</strong>／作り直しはできません）</li>
+            <li><strong>AI機能のご利用（すべて合わせて月10回まで）</strong><br>
+              <span style="font-size:0.82rem;color:#a7f3d0;">
+                AIチューターへの質問・写真をつけた質問・英作文の添削・問題づくり・学習診断など、
+                AIを使う操作の<strong>合計</strong>です。毎月1日に10回へ戻ります（繰り越しなし）。<br>
+                上の 単元ドリル・演習ドリル・AI単語帳・弱点克服・弱点プリント・配信ドリル は、この10回を消費しません。
+              </span>
+            </li>
+          </ul>
+        </div>
+        <div class="lt-box lt-cannot">
+          <h3>ライトでは使えないもの</h3>
+          <ul>
+            <li>AI機能の11回目以降（翌月1日まで）</li>
+            <li>英語演習（英検・共通テスト形式）の<strong>AI採点・AI解説・AI出題</strong><br>
+              <span style="font-size:0.8rem;">（収録済みの問題を解くことはできます）</span></li>
+            <li>英検二次（面接）のAIフィードバック</li>
+            <li>3つのAIが同時に解く「写真で質問」<br>
+              <span style="font-size:0.8rem;">（チャットに写真を添えて聞くのは、上の10回の枠内で使えます）</span></li>
+            <li>模試（作成・受験・AI採点・AI分析）</li>
+            <li>学習計画の作り直し（2回目以降）</li>
+            <li>学習記録・学習管理</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="lt-terms">
+        <h3>📌 お申込みの前にご確認ください</h3>
+        <ul>
+          <li><strong>無料体験はありません。</strong>お申込み時にカードを登録し、初月 ¥3,000 を決済します。</li>
+          <li>2回目以降は、ご契約日を起算日として毎月同じ日に ¥3,000 が自動課金されます。</li>
+          <li>入塾金（システム登録費 ¥10,000）はかかりません。</li>
+          <li>解約はマイページからいつでも可能です。メールでのご連絡でも承ります。</li>
+          <li>AI機能のご利用は<strong>すべて合わせて月10回</strong>までで、<strong>毎月1日に10回へリセット</strong>されます（繰り越しなし）。ドリル・単語帳・弱点克服・配信ドリルはこの10回を消費しません。</li>
+          <li>先行してお申し込みいただいた方の月額は、ご契約後も¥3,000のまま変わりません。<strong>正式販売時の価格は改めて決定します</strong>（¥3,000とは限りません）。募集人数は受付開始時にお知らせします。</li>
+        </ul>
+      </div>
+
+      <div class="lt-warn">
+        ⚠️ <strong>すでに当塾の月額プランをご契約中の方・通塾生の方は、このページからお申込みいただけません。</strong>
+        プランの変更をご希望の場合は、塾生アプリのメッセージ、または
+        <a href="mailto:info@trillion-ai-juku.com" style="color:#fca5a5;">info@trillion-ai-juku.com</a>
+        までご連絡ください（このページから重ねてお申込みされると、二重に請求が発生してしまいます）。
+      </div>
+
+      <!-- 満席時に JS が出す -->
+      <div class="lt-closed" id="ltClosed">
+        <div style="font-size:1.05rem;font-weight:900;color:#e2e8f0;margin-bottom:0.5rem;">先行50名の募集は終了しました</div>
+        たくさんのお申込みをありがとうございました。<br>
+        正式販売の開始は、<a href="https://www.threads.com/@trillion_eng" style="color:#a5b4fc;" target="_blank" rel="noopener noreferrer">Threads (@trillion_eng)</a> でお知らせします。
+      </div>
+
+      <form id="ltForm" novalidate>
+        <h2 style="font-size:1.05rem;font-weight:900;color:#e2e8f0;margin:1.6rem 0 0.9rem;">お客様情報</h2>
+
+        <div class="lt-row2">
+          <div class="lt-field">
+            <label for="ltLastName">姓（お子様） <span style="color:#f87171;">*</span></label>
+            <input type="text" id="ltLastName" autocomplete="family-name" required>
+          </div>
+          <div class="lt-field">
+            <label for="ltFirstName">名（お子様） <span style="color:#f87171;">*</span></label>
+            <input type="text" id="ltFirstName" autocomplete="given-name" required>
+          </div>
+        </div>
+
+        <div class="lt-field">
+          <label for="ltGrade">学年 <span style="color:#f87171;">*</span></label>
+          <select id="ltGrade" required>
+            <option value="">選択してください</option>
+            <option value="小学5年">小学5年</option>
+            <option value="小学6年">小学6年</option>
+            <option value="中学1年">中学1年</option>
+            <option value="中学2年">中学2年</option>
+            <option value="中学3年">中学3年</option>
+            <option value="高校1年">高校1年</option>
+            <option value="高校2年">高校2年</option>
+            <option value="高校3年">高校3年</option>
+            <option value="既卒生">既卒生</option>
+          </select>
+        </div>
+
+        <div class="lt-field">
+          <label for="ltEmail">保護者様メールアドレス <span style="color:#f87171;">*</span></label>
+          <input type="email" id="ltEmail" autocomplete="email" required>
+          <div class="lt-hint">📧 このアドレスに ログインリンク・決済確認 が届きます。受信できる端末で確認できるアドレスをご入力ください。</div>
+        </div>
+
+        <div class="lt-field">
+          <label for="ltStudentEmail">生徒様メールアドレス（任意）</label>
+          <input type="email" id="ltStudentEmail" autocomplete="email">
+          <div class="lt-hint">💡 生徒本人がスマホ／PC でログインしたい場合に推奨。保護者と生徒の両方にログインリンクが届きます。空欄なら保護者メールのみに送信されます。</div>
+        </div>
+
+        <div class="lt-field">
+          <label for="ltGoal">志望校・目標（任意）</label>
+          <input type="text" id="ltGoal" placeholder="例: 兵庫県立大学">
+        </div>
+
+        <div class="lt-summary">
+          <div style="font-size:0.9rem;font-weight:900;color:#e2e8f0;margin-bottom:0.5rem;">📋 ご注文内容</div>
+          <div class="lt-summary-row"><span>プラン</span><span>トリリオン・ライト（永年¥3,000）</span></div>
+          <div class="lt-summary-row"><span>月額（税込）</span><span>¥3,000</span></div>
+          <div class="lt-summary-row"><span>入塾金</span><span>¥0（かかりません）</span></div>
+          <div class="lt-summary-row lt-summary-total"><span>本日お支払い金額</span><span>¥3,000</span></div>
+        </div>
+
+        <button type="submit" class="lt-submit" id="ltSubmit">¥3,000/月で申し込む →</button>
+        <div class="lt-error" id="ltError"></div>
+        <div class="lt-loading" id="ltLoading">📮 送信中…（1〜2秒）</div>
+      </form>
+
+      <div class="lt-foot">
+        🔒 SSL暗号化 ／ 💳 Stripe決済 ／ 決済情報は弊社サーバーに保存されません<br>
+        ご登録により、<a href="legal.html#terms">利用規約</a>・<a href="legal.html#privacy">プライバシーポリシー</a>・<a href="legal.html#tokusho">特商法に基づく表記</a> に同意したものとみなされます。<br>
+        📞 お困りの場合: <a href="mailto:info@trillion-ai-juku.com">info@trillion-ai-juku.com</a>
+      </div>
+
+    </div>
+  </main>
+
+<script>
+(function () {
+  'use strict';
+
+  // checkout.js と同じ解決規約 (dev は :8090 → FastAPI :8000 / prod は同一オリジン
+  // → vercel.json の /api/:path* rewrite で Railway へ)
+  var API_BASE = window.location.origin.indexOf(':8090') !== -1
+    ? 'http://localhost:8000'
+    : window.location.origin;
+
+  var PLAN_KEY = 'trillion_light';
+
+  // ★★ 受付スイッチ。item1 (Stripe の price + プラン配線 + 50枠カウント) が終わるまで false。
+  //   false のあいだ submit は **サーバを一切叩かない**。
+  //   ★★ 下のうち mypage の利用状況ウィジェットの件だけは、受付開始より前 —
+  //      **塾長が /api/admin/students/{id}/feature-tier で誰か1人を light にした瞬間** に
+  //      その生徒の画面に出る。tier を付ける前に直すこと。
+  //   ここを true にする前に必ず確認すること:
+  //     - PRICE_MAP / _VALID_PLAN_KEYS / ENROLLMENT_FEE_EXEMPT に trillion_light がある
+  //     - /api/light/count が実在し、50枠がサーバ側で締まる
+  //     - 申込時に feature_tier='light' が付く (付かないと上限が一切効かない)
+  //     - /api/trial/signup が無料体験を付けない (このページは「無料体験なし」と書いている)
+  //     - legal.html#tokusho にライトの行を足す (価格・支払時期・解約・月次上限の開示)
+  //     - PLAN_DAILY_TOKEN_BUDGET['trillion_light'] の実値を決める
+  //     - mypage に残回数 (/api/usage/me の light_usage) を出す
+  //     - ★mypage.html の「今月の利用状況」ウィジェットを直す。現状ライトには
+  //       「問題生成 x/50回・添削 x/20回・参考書 x/5回」(LP の「合計10回」と矛盾) と
+  //       「プレミアム ¥39,800/月で全機能無制限」の勧誘が出て、プラン名も内部キー
+  //       trillion_light が生で出る (mypage.html:1548 の planName に無いため)
+  //     - ★宿題を使わせるなら _require_study_log_course (server/main.py:41154 の
+  //       _STUDY_LOG_ALLOWED_PLANS) に light の例外が要る。今は 403 になるので
+  //       このページでは「ドリルの配信」と書いている (塾長の当初指定は「宿題」だった)。
+  //       ただし同じゲートは学習記録・学習管理32ルートも守っているので、
+  //       単純に plan を足すと学習管理まで開く。宿題ルートだけの例外にすること。
+  //   ★false のまま叩かせてはいけない理由: /api/trial/signup は plan を検証せず、
+  //     status='trial' + 14日間の **無料フルAIアカウント** を作り、
+  //     「14日間の無料体験が始まりました」という welcome メールまで送る。
+  //     決済は Invalid plan で 400 になるので、料金は取れず孤児アカウントだけが残る。
+  var LIGHT_SIGNUP_ENABLED = false;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var form = $('ltForm'), submitBtn = $('ltSubmit'), errorBox = $('ltError'),
+      loadingBox = $('ltLoading'), closedBox = $('ltClosed');
+
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = String(s == null ? '' : s);
+    return d.innerHTML;
+  }
+  function showError(msg) {
+    errorBox.innerHTML = esc(msg);
+    errorBox.style.display = 'block';
+    errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function clearError() { errorBox.style.display = 'none'; }
+
+  function fetchWithTimeout(url, opts, ms) {
+    var ctrl = new AbortController();
+    var tm = setTimeout(function () { ctrl.abort(); }, ms || 20000);
+    opts = opts || {};
+    opts.signal = ctrl.signal;
+    return fetch(url, opts).finally(function () { clearTimeout(tm); });
+  }
+  function readDetail(res, fallback) {
+    return res.json().then(function (d) {
+      if (d && typeof d.detail === 'string' && d.detail) return d.detail;
+      if (d && typeof d.message === 'string' && d.message) return d.message;
+      return fallback;
+    }).catch(function () { return fallback; });
+  }
+
+  // ── 残り枠。★実数が取れたときだけ表示する。取れなければ何も出さない。
+  //    「残りわずか」等の推測値は絶対に出さない (このページの限定表示の根拠が崩れるため)。
+  function loadSeats() {
+    fetchWithTimeout(API_BASE + '/api/light/count', {}, 8000)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || typeof d.remaining !== 'number' || typeof d.limit !== 'number') return;
+        if (d.remaining > 0) {
+          $('ltRemaining').textContent = String(d.remaining);
+          $('ltSeats').style.display = 'block';
+        } else {
+          // 満席: フォームを閉じて締切表示に差し替える
+          form.style.display = 'none';
+          closedBox.style.display = 'block';
+        }
+      })
+      .catch(function () { /* 取れなければ残席は出さない。申込自体はサーバ側の枠判定に委ねる */ });
+  }
+  if (LIGHT_SIGNUP_ENABLED) loadSeats();
+
+  function collectAttribution() {
+    var a = { utm_source: null, utm_content: null, utm_campaign: null, lp_variant: null, referrer: null };
+    try {
+      var sp = new URLSearchParams(window.location.search);
+      a.utm_source = sp.get('utm_source') || null;
+      a.utm_content = sp.get('utm_content') || null;
+      a.utm_campaign = sp.get('utm_campaign') || null;
+      a.referrer = document.referrer ? document.referrer.slice(0, 500) : null;
+    } catch (_e) { /* graceful */ }
+    return a;
+  }
+
+  // 受付前はフォームを無効化し、サーバを叩かせない
+  if (!LIGHT_SIGNUP_ENABLED) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '準備中です';
+    var notice = document.createElement('div');
+    notice.style.cssText = 'background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.45);'
+      + 'border-radius:12px;padding:0.95rem 1.05rem;margin:1.1rem 0;font-size:0.9rem;'
+      + 'line-height:1.75;color:#fde68a;text-align:center;';
+    notice.innerHTML = '🔧 <strong>ただいま受付の準備中です。</strong><br>'
+      + '開始はThreads (@trillion_eng) でお知らせします。'
+      + 'お急ぎの方は <a href="mailto:info@trillion-ai-juku.com" style="color:#fcd34d;">'
+      + 'info@trillion-ai-juku.com</a> までご連絡ください。';
+    form.parentNode.insertBefore(notice, form);
+    // ★最上部にも出す。実測でフォーム直前の告知は全高の約59%地点にあり、スマホだと
+    //   2画面半スクロールするまで「まだ申し込めない」と分からない。それまでの間ずっと
+    //   価格・特典・締切を読ませてしまう。
+    var notice0 = notice.cloneNode(true);
+    var _hdr = document.querySelector('.checkout-header');
+    if (_hdr) _hdr.appendChild(notice0);
+    // ★入力欄も無効化する。通知はフォームのはるか上 (スマホで約1000px上) にあるため、
+    //   有効なままだと保護者が氏名・学年・メールを全部入れた末に灰色のボタンに突き当たる。
+    var _fields = form.querySelectorAll('input, select');
+    for (var _i = 0; _i < _fields.length; _i++) _fields[_i].disabled = true;
+    // ボタンの直上にも同じ案内を再掲する (最後まで読んだ人にも理由が届くように)
+    var notice2 = notice.cloneNode(true);
+    submitBtn.parentNode.insertBefore(notice2, submitBtn);
+    // 買えない画面で「本日お支払い金額」を出すと、確定した支払いのように読める
+    var _todayRow = document.querySelector('.lt-summary-total span:first-child');
+    if (_todayRow) _todayRow.textContent = 'お支払い予定額';
+    // 「先行 50 名」バッジは、枠のカウントが動くまで出さない (数えていない限定は出さない)
+    var _eyebrow = document.querySelector('.eyebrow');
+    if (_eyebrow) _eyebrow.style.display = 'none';
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    clearError();
+    if (!LIGHT_SIGNUP_ENABLED) {
+      showError('🔧 ただいま受付の準備中です。開始までお待ちください。');
+      return;
+    }
+
+    var lastName = ($('ltLastName').value || '').trim();
+    var firstName = ($('ltFirstName').value || '').trim();
+    var grade = $('ltGrade').value;
+    var email = ($('ltEmail').value || '').trim();
+    var studentEmail = ($('ltStudentEmail').value || '').trim();
+    var goal = ($('ltGoal').value || '').trim();
+
+    // ★novalidate + 自前検証。HTML5 の required だけだと、画面外の未入力欄で
+    //   何も起きずに送信が止まる「無音のブロック」になる (2026-07 入塾フォームの実害)。
+    if (!lastName || !firstName) { showError('⚠️ 姓と名の両方をご入力ください。'); return; }
+    if (!grade) { showError('⚠️ 学年をお選びください。'); return; }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      showError('⚠️ 保護者様メールアドレスの形式をご確認ください。（例: parent@example.com）'); return;
+    }
+    if (studentEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(studentEmail)) {
+      showError('⚠️ 生徒様メールアドレスの形式をご確認ください。'); return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = '📮 送信中…';
+    loadingBox.style.display = 'block';
+    window.__checkout_in_flight = true;  // cache-purge.js の reload race を防ぐ
+
+    var attr = collectAttribution();
+    var signupPayload = {
+      plan: PLAN_KEY,
+      name: lastName + firstName,
+      email: email,
+      student_email: studentEmail || null,
+      grade: grade,
+      goal: goal,
+      utm_source: attr.utm_source,
+      utm_content: attr.utm_content,
+      utm_campaign: attr.utm_campaign,
+      lp_variant: attr.lp_variant,
+      referrer: attr.referrer
+    };
+
+    fetchWithTimeout(API_BASE + '/api/trial/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(signupPayload)
+    }, 20000)
+      .then(function (res) {
+        if (res.ok) return res.json();
+        if (res.status === 403) {
+          return readDetail(res, '先行50名の募集は終了しました。').then(function (m) { throw new Error('CLOSED:' + m); });
+        }
+        if (res.status === 429) {
+          return readDetail(res, 'ただ今混み合っています。5分ほど待ってから再度お試しください。').then(function (m) { throw new Error(m); });
+        }
+        if (res.status === 400 || res.status === 409 || res.status === 422) {
+          return readDetail(res, '入力内容をご確認ください。').then(function (m) {
+            // ★サーバ側のプラン配線が未完了だと "Invalid plan: trillion_light" が返る。
+            //   内部エラー文字列を生徒・保護者の画面にそのまま出さない。
+            if (/invalid plan/i.test(String(m))) {
+              throw new Error('ただいま受付の準備中です。お手数ですが info@trillion-ai-juku.com までご連絡ください。');
+            }
+            throw new Error(m);
+          });
+        }
+        throw new Error('ただ今サーバーが混み合っています。少し時間をおいて再度お試しください。');
+      })
+      .then(function (signupData) {
+        try {
+          sessionStorage.setItem('ai_juku_signup_meta', JSON.stringify({
+            email: email,
+            name: lastName + firstName,
+            student_id: signupData.student_id || null,
+            email_sent: !!signupData.email_sent,
+            purchase_type: 'trillion_light',
+            ts: Date.now()
+          }));
+        } catch (_e) { /* sessionStorage 無効でも遷移は続行 */ }
+
+        // ★体験は挟まない。student_addon と同じ即時課金の経路 (/api/stripe/checkout) に直行する。
+        return fetchWithTimeout(API_BASE + '/api/stripe/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            plan: PLAN_KEY,
+            email: email,
+            name: lastName + firstName,
+            student_id: signupData.student_id || null
+          })
+        }, 25000);
+      })
+      .then(function (res) {
+        if (res.ok) return res.json();
+        if (res.status === 403) {
+          return readDetail(res, '先行50名の募集は終了しました。').then(function (m) { throw new Error('CLOSED:' + m); });
+        }
+        if (res.status === 409) {
+          return readDetail(res, 'このメールアドレスは既にご契約中です。').then(function (m) { throw new Error(m); });
+        }
+        return readDetail(res, 'お申込みの処理に失敗しました。時間をおいて再度お試しください。')
+          .then(function (m) {
+            if (/invalid plan/i.test(String(m))) {
+              throw new Error('ただいま受付の準備中です。お手数ですが info@trillion-ai-juku.com までご連絡ください。');
+            }
+            throw new Error(m);
+          });
+      })
+      .then(function (data) {
+        if (data && data.checkout_url) {
+          window.location.href = data.checkout_url;
+          return;
+        }
+        throw new Error('決済ページの生成に失敗しました。お手数ですが info@trillion-ai-juku.com までご連絡ください。');
+      })
+      .catch(function (err) {
+        window.__checkout_in_flight = false;
+        loadingBox.style.display = 'none';
+        var msg = (err && err.message) ? err.message : '通信に失敗しました。';
+        if (msg.indexOf('CLOSED:') === 0) {
+          form.style.display = 'none';
+          closedBox.style.display = 'block';
+          closedBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = '¥3,000/月で申し込む →';
+        showError(msg);
+      });
+  });
+})();
+</script>
+</body>
+</html>

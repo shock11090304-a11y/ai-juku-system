@@ -1275,6 +1275,11 @@ function addStudent() {
 // Claude API Call
 // ==========================================================================
 // クォータ超過時のダイアログ (premium tier vs trial で出し分け)
+// ★カリキュラム生成の abortKey。書き手 (callClaude 呼び出し) と読み手 (保存ガード) で
+//   文字列がずれると _cMeta が空になり、作り話・上限警告の保存ガードが**静かに消える**。
+const CURRICULUM_ABORT_KEY = 'curriculum_main';
+
+
 function showQuotaExhaustedDialog(feature, message) {
   const labels = { problems: '問題生成', essays: '添削', textbooks: '参考書生成' };
   const featureName = labels[feature] || feature;
@@ -1284,6 +1289,12 @@ function showQuotaExhaustedDialog(feature, message) {
   // ★判定も総称で持つこと。剥がし (下の replace) だけ総称にして判定を決め打ちにすると、
   //   新しい tier 接頭辞を足したときプレミアム相当の生徒に ¥39,800 の勧誘が出る。
   const isPremium = /^AI_BUDGET_(PREMIUM|FOUNDER|FAMILY)[A-Z0-9_]*:/.test(String(message || ''));
+  // 🪶 トリリオン・ライト (月¥3,000) の上限。★¥39,800 のプレミアム勧誘を出さない側に倒す。
+  //   月¥3,000 の生徒に 13 倍の額をぶつけるのは案内として成立しない。
+  //   ★判定は日本語本文ではなく **接頭辞** で行う (サーバは AI_BUDGET_LIGHT: を必ず付ける)。
+  //     本文の文字列一致にすると、文言を1文字推敲しただけで静かに勧誘が復活する
+  //     — 2行上のコメントが警告している「判定を決め打ちにするな」と同じ罠。
+  const isLightLimit = /^AI_BUDGET_LIGHT:/.test(String(message || ''));
   // prefix を文言から除去
   // ★接頭辞は総称で剥がす。接頭辞を増やしたときにここを直し忘れると、生徒の画面に
   //   「AI_BUDGET_XXX:」という内部文字列がそのまま出る。アンダースコアも含めて剥がすこと。
@@ -1292,7 +1303,7 @@ function showQuotaExhaustedDialog(feature, message) {
   const student = (typeof getCurrentStudent === 'function') ? getCurrentStudent() : null;
   const planFromStudent = student && student.plan ? String(student.plan) : '';
   const PREMIUM_TIER = ['premium', 'family', 'founder_special', 'founder1', 'hybrid', 'intensive'];
-  const userIsPremium = isPremium || PREMIUM_TIER.includes(planFromStudent);
+  const userIsPremium = isPremium || isLightLimit || PREMIUM_TIER.includes(planFromStudent);
 
   const modal = document.createElement('div');
   modal.id = 'quotaExhaustedModal';
@@ -1380,6 +1391,33 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
   // 必ず JSON 文字列を返す必要がある。プレフィックス付きエラー文字列を返すと
   // 呼び出し側の JSON.parse が壊れるため、この関数で "kind 整合性" を保証する。
   const isJsonKind = kind === 'problems';
+  // 🚫 上限 (429) で止めたリクエストか。true の間は作り話 (demoResponse / buildDemoProblems) を
+  //    絶対に返さない。★「止めた」と言いながら本物に見える偽物を返すのが一番害が大きい。
+  let quotaBlocked = false;
+  // ★呼び出し元が「この応答は上限で止まったか / 作り話 (demo) か」を判定するための side-channel。
+  //   日本語本文の一致で判定すると、文言を1文字推敲した瞬間に静かに壊れる
+  //   (このファイルの 1288 行目付近のコメントが警告しているのと同じ罠)。
+  //   ★**リクエスト単位** (abortKey) で持つこと。グローバル1枠にすると、
+  //     「チャットが上限で 429 → 同時に走っていたカリキュラム生成が本物を返す」ときに
+  //     本物の保存を握り潰す。生涯1回の枠では復旧不能になる。
+  window._aiCallMeta = window._aiCallMeta || {};
+  // ★上限を付ける (このリポジトリは _AI_DISABLED_CACHE / _RATE_LIMIT_STORE でも必ず付けている)。
+  //   problems のバッチは生成のたびに一意キーなので、放っておくとセッション中増え続ける。
+  try {
+    const _mk = Object.keys(window._aiCallMeta);
+    // ★CURRICULUM_ABORT_KEY は prune の対象外。挿入順が古いので真っ先に消える側にあり、
+    //   カリキュラム生成の**飛行中**に問題生成が閾値を跨ぐと _cMeta が {} になり、
+    //   作り話の計画がまた保存される (このコミットが直した挙動への静かな逆戻り)。
+    if (_mk.length > 200) {
+      for (const k of _mk.slice(0, _mk.length - 100)) {
+        if (k !== CURRICULUM_ABORT_KEY) delete window._aiCallMeta[k];
+      }
+    }
+  } catch (_) {}
+  const _metaKey = abortKey || ('anon_' + Math.random().toString(36).slice(2));
+  window._aiCallMeta[_metaKey] = { quotaBlocked: false, usedDemo: false };
+  const _meta = window._aiCallMeta[_metaKey];
+  let quotaKnown = false;   // 上限だと断定してよい 429 か (接頭辞 or feature がある)
   const jsonSafeFallback = (reason) => {
     console.warn(`callClaude JSON-kind fallback (${reason})`);
     return JSON.stringify(buildDemoProblems(userMessage));
@@ -1417,15 +1455,37 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
         // ★総称で判定する (接頭辞は後から増える)。個別列挙だと新種を取りこぼし、
         //   429 が「AI への問い合わせが拒否されました (429)」という無関係な文言になる。
         const isDailyBudget = detail.startsWith('AI_BUDGET_');
-        if (feature || isDailyBudget) {
-          const msg = detail || 'AI の利用上限に達しました。時間をおいてからお試しください。';
-          if (typeof showQuotaExhaustedDialog === 'function') {
-            showQuotaExhaustedDialog(feature || 'daily_budget', msg);
-          } else {
+        // ★429 は種類を問わず必ずここで止める (2026-08-20)。以前は feature か AI_BUDGET_ 接頭辞の
+        //   ときだけダイアログを出していたため、トリリオン・ライトの上限 (どちらにも当たらない) が
+        //   kind='chat' では下の 4xx 分岐に落ちて「別の表現で質問し直すか…」という嘘の案内になっていた
+        //   (言い直しても翌月まで通らない)。
+        // ★あわせて quotaBlocked を立てる。これを見て下の catch と step2 が
+        //   **demoResponse / jsonSafeFallback (どちらも作り話を返す) に落ちるのを禁止**する。
+        //   上限で止めたのに架空の学習計画・診断・添削が本物として描画・保存されるのが最悪の形。
+        quotaBlocked = true;
+        _meta.quotaBlocked = true;
+        {
+          const quotaKey = feature || (isDailyBudget ? 'daily_budget' : 'ai_limit');
+          // ★接頭辞も feature も無い 429 は、プラン上限ではなくインフラ由来 (edge/proxy) の
+          //   可能性がある。それを「上限に達しました」と断定すると、プラン情報がローカルに無い
+          //   生徒に ¥39,800 の勧誘まで出る。断定しない文言に倒す (作り話を返さない点は同じ)。
+          const isKnownLimit = !!feature || isDailyBudget || /^AI_BUDGET_/.test(detail);
+          quotaKnown = isKnownLimit;
+          const msg = detail || (isKnownLimit
+            ? 'AI の利用上限に達しました。時間をおいてからお試しください。'
+            : 'ただいま混み合っています。少し時間をおいてから、もう一度お試しください。');
+          if (isKnownLimit && typeof showQuotaExhaustedDialog === 'function') {
+            showQuotaExhaustedDialog(quotaKey, msg);
+          } else if (isKnownLimit) {
             alert('⚠️ ' + msg.replace(/^AI_BUDGET_[A-Z0-9_]+:/, ''));
           }
+          // ★上限だと断定できない 429 (インフラ由来) では alert を出さない。
+          //   呼び出し元が同じ内容をインラインで出すので、モーダルと吹き出しの二重通知になる。
           if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
-          throw new Error('QUOTA_EXHAUSTED:' + (feature || 'daily_budget'));
+          // ★上限だと断定できない 429 (インフラ由来) は別 marker にする。同じ marker にすると
+          //   alert が「混み合っています」と言った直後に、吹き出しが「上限に達しました」と
+          //   逆のことを言う (呼び出し元は marker だけを見て文言を決めるため)。
+          throw new Error((isKnownLimit ? 'QUOTA_EXHAUSTED:' : 'AI_BUSY:') + quotaKey);
         }
       }
       if (res.ok) {
@@ -1479,7 +1539,26 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
       //     毎月必ず踏む)。なお現状それらが返しているのは空のプレースホルダではなく
       //     demoResponse の**作り話**(架空の点数入り添削など)なので、catch を足すだけでは足りず
       //     step2 の demoResponse フォールバックごと塞ぐ必要がある。別コミットで。
-      if ((kind === 'chat' || kind === 'vision') && String(e && e.message || '').startsWith('QUOTA_EXHAUSTED')) throw e;
+      if ((kind === 'chat' || kind === 'vision')
+          && /^(QUOTA_EXHAUSTED|AI_BUSY):/.test(String(e && e.message || ''))) throw e;
+      // ★上限で止めた場合は、chat/vision 以外も **作り話に落とさない**。
+      //   これらの呼び出し元 (curriculum/diagnostic/parent/prep/speaking) は try/catch を持たず
+      //   `out.innerHTML = 応答` を書くだけなので、throw すると画面が固着する。だから文字列を返す。
+      //   JSON kind (problems) は下の jsonSafeFallback が buildDemoProblems の**架空の問題**を返すため、
+      //   ここで先に抜ける。呼び出し元の parse は失敗するが、偽の問題を配るよりはるかにましで、
+      //   理由は既に上のダイアログで伝えてある。
+      if (quotaBlocked) {
+        if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
+        // ★JSON を期待している呼び出し元に文字列を返すと parse に失敗し、
+        //   「もう一度押してください／問題数を減らしてください」という **翌月まで叶わない案内**になる。
+        //   (problems は standard/trial の月50回上限で既存生徒も毎月踏む経路)
+        //   投げ直して呼び出し元の catch に正しい文言を出させる。
+        if (isJsonKind) throw e;
+        // ★alert 側で「断定しない」と決めたのに返り値だけ断定すると矛盾する。同じ判定を使う。
+        return quotaKnown
+          ? '⚠️ AI の利用上限に達しました。\n\n単元ドリル・演習ドリル・AI単語帳・弱点克服は上限に関係なく使えます。\n（上限の詳細は、先ほど表示されたご案内をご確認ください）'
+          : '⚠️ ただいま混み合っています。\n\n少し時間をおいてから、もう一度お試しください。';
+      }
       console.warn('Backend AI proxy failed:', e);
       if (isJsonKind) {
         if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
@@ -1494,8 +1573,15 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
   }
 
   // 2. フォールバック: 個別APIキー（開発者・管理者モードのみ）
+  // ★上限で止めたリクエストは絶対にここへ来させない (demoResponse = 作り話)。
+  //   上の catch で return しているので通常は到達しないが、経路が増えたときの最後の砦。
+  if (quotaBlocked) {
+    if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
+    return '⚠️ AI の利用上限に達しました。\n\n単元ドリル・演習ドリル・AI単語帳・弱点克服は上限に関係なく使えます。';
+  }
   if (state.mode === 'demo' || !state.apiKey) {
     if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
+    _meta.usedDemo = true;   // ★作り話。保存・取込に回してはいけない
     return demoResponse(systemPrompt, userMessage, options);
   }
 
@@ -3456,6 +3542,10 @@ ${attached.length ? (attached.some(a => a.isPdf) ? '- 添付された PDF (問�
     if (String(e && e.message || '').startsWith('QUOTA_EXHAUSTED')) {
       // 上限系は showQuotaExhaustedDialog が既に説明を出しているので、チャット側は短く残す
       appendMessage('assistant', '⚠️ AI の利用上限に達しました。上のタブの「📖 AI単語帳 (SRS)」は上限に関係なく使えます。ドリルはマイページの「弱点克服ドリル」から解けます。', false);
+    } else if (String(e && e.message || '').startsWith('AI_BUSY')) {
+      // ★上限だと断定できない 429 (インフラ由来)。alert 側と同じことを言う。
+      //   ここを上限扱いにすると「混み合っています」と「上限に達しました」が同時に出て矛盾する。
+      appendMessage('assistant', '⚠️ ただいま混み合っています。少し時間をおいてから、もう一度お試しください。', false);
     } else {
       // ★catch を足したことで unhandledrejection がサーバに上がらなくなる。想定外の例外は
       //   明示的に報告しないと「生徒には⚠️、塾長のダッシュには無風」になる。
@@ -3840,12 +3930,44 @@ ${level}
 **重要**: 主要教材 DB に記載のある教材は、その「全○講/問」の実数値を厳守すること。マドンナ古文が全33講なら第34講以降を出すのは禁止。教材総数を超えない範囲で週次の進捗を逆算配分すること。
 **スタサプ講座**: 上記スタサプ講座 DB に記載のある講座名のみ使用すること。DB にない講座名 (架空) は絶対に出力しないこと。`;
 
-  const response = await callClaude(systemPrompt, userMsg, { kind: 'curriculum', maxTokens: 6000 });
+  const response = await callClaude(systemPrompt, userMsg, { kind: 'curriculum', maxTokens: 6000, abortKey: CURRICULUM_ABORT_KEY });
   out.innerHTML = formatMarkdown(escapeHtml(response));
   renderMathInNode(out); // 🔢 2026-06-04 数式文字化け横展開: AI応答の $...$ / \(...\) を KaTeX 組版
   // 「学習計画・管理」タブが取込で参照する最終生成結果を保存
-  window._lastCurriculumMarkdown = response;
-  try { localStorage.setItem('ai_juku_last_curriculum', response); } catch {}
+  // ★上限で止まったときの警告文は保存しない。保存すると、以前つくった本物のカリキュラムが
+  //   警告文で上書きされ、「学習計画・管理」タブの取込がそれを計画として読み込む。
+  // ★保存してよいのは「本物の応答」だけ。以前つくった計画を上書きすると、
+  //   生涯1回の枠では復旧できない。判定は日本語本文ではなく meta で行う
+  //   (文言を推敲した瞬間に静かに壊れる書き方を避ける)。
+  //   - quotaBlocked: 上限で止めた警告文
+  //   - usedDemo: demoResponse の**作り話の計画** (5xx/401 でここに落ちる。⚠️ で始まらないので
+  //     文字列判定では捕まらなかった)
+  //   - /^⚠️/: ネットワーク等の警告文 (保険)
+  const _cMeta = (window._aiCallMeta && window._aiCallMeta[CURRICULUM_ABORT_KEY]) || {};
+  const _cSkip = _cMeta.quotaBlocked || _cMeta.usedDemo || /^⚠️/.test(String(response || ''));
+  if (_cSkip) {
+    // ★保存しないことを画面にも出す。黙って保存だけ止めると、「学習計画・管理」の取込が
+    //   古い計画を静かに読むか「先にカリキュラムを作成してください」と言い、
+    //   いま画面に出ているものとの食い違いで生徒が詰まる。
+    try {
+      const _note = document.createElement('div');
+      _note.style.cssText = 'margin-top:1rem;padding:0.9rem 1rem;background:rgba(251,191,36,0.12);'
+        + 'border:1px solid rgba(251,191,36,0.45);border-radius:10px;color:#fde68a;font-size:0.88rem;line-height:1.7;';
+      // ★「以前の計画は残っています」は、実際に残っているときだけ言う。
+      //   一度も作っていない生徒に言うと、取込が「先に作成してください」と返して食い違う。
+      let _hasPrev = false;
+      try { _hasPrev = !!localStorage.getItem('ai_juku_last_curriculum'); } catch (_) {}
+      _note.textContent = _cMeta.usedDemo
+        ? '⚠️ これは通信できなかったときの仮の表示です。保存していないので「学習計画・管理」には取り込めません。時間をおいてもう一度作成してください。'
+        : (_hasPrev
+            ? '⚠️ 上限のため今回は作成できませんでした。保存していないので、以前に作成した計画はそのまま残っています。'
+            : '⚠️ 上限のため今回は作成できませんでした。保存していないので「学習計画・管理」には取り込めません。');
+      out.insertBefore(_note, out.firstChild);
+    } catch (_) {}
+  } else {
+    window._lastCurriculumMarkdown = response;
+    try { localStorage.setItem('ai_juku_last_curriculum', response); } catch {}
+  }
 }
 
 
@@ -8569,7 +8691,15 @@ JSON文字列の中でバックスラッシュを使う場合は必ず二重に�
       const allProblems = [];
       batchResults.forEach(b => { if (b && Array.isArray(b.problems)) allProblems.push(...b.problems); });
       allProblems.forEach((p, i) => { p.number = i + 1; });
-      if (allProblems.length === 0) throw new Error('No problems generated (all batches failed)');
+      // ★Promise.allSettled は reject しないので、reason を拾わないと外側 catch には
+    //   常に 'No problems generated' しか届かない = 上限パネルも中断も判別できない
+    //   (2026-08-20: throw を足したのに到達不能だった)。意味のある理由を優先して投げ直す。
+    if (allProblems.length === 0) {
+      const _meaningful = settled.find(s => s.status === 'rejected' && s.reason && (
+        s.reason.name === 'AbortError' ||
+        String(s.reason.message || '').startsWith('QUOTA_EXHAUSTED')));
+      throw (_meaningful ? _meaningful.reason : new Error('No problems generated (all batches failed)'));
+    }
       const firstOk = batchResults.find(b => b);
       data = {
         title: firstOk?.title || `${subject} 練習問題`,
@@ -8583,7 +8713,14 @@ JSON文字列の中でバックスラッシュを使う場合は必ず二重に�
     clearInterval(elapsedTimer);
     window.removeEventListener('beforeunload', beforeUnloadHandler);
     if (e.name === 'AbortError') return;
-    out.innerHTML = `<div class="placeholder" style="padding:1.5rem;line-height:1.7;">
+    // ★上限で止まったときは「押し直せ・問題数を減らせ」と言わない。翌月まで何をしても直らない。
+    const _isQuota = String(e && e.message || '').startsWith('QUOTA_EXHAUSTED');
+    out.innerHTML = _isQuota ? `<div class="placeholder" style="padding:1.5rem;line-height:1.7;">
+      <p style="font-size:1.05rem;margin-bottom:0.5rem;">⚠️ AI の利用上限に達しました</p>
+      <p style="color:var(--text-dim);font-size:0.9rem;">上限のリセットまでお待ちください。詳しい内容は、先ほど表示されたご案内をご確認ください。<br>
+      単元ドリル・演習ドリル・AI単語帳・弱点克服は、上限に関係なくいつでも解けます。</p>
+      <div style="margin-top:1rem;"><a href="dojo-drill.html?tab=weakness" style="display:inline-block;background:linear-gradient(135deg,#22c55e,#3b82f6);color:#fff;padding:0.6rem 1.1rem;border-radius:8px;text-decoration:none;font-weight:800;font-size:0.9rem;">✍️ 弱点克服ドリルへ</a></div>
+    </div>` : `<div class="placeholder" style="padding:1.5rem;line-height:1.7;">
       <p style="font-size:1.05rem;margin-bottom:0.5rem;">⚠️ 問題の生成に失敗しました</p>
       <p style="color:var(--text-dim);font-size:0.9rem;">もう一度「🎲 問題を生成」を押してください。繰り返し失敗する場合は問題数を減らすか、難易度を下げてお試しください。</p>
       <details style="margin-top:1rem;font-size:0.8rem;color:var(--text-dim);">

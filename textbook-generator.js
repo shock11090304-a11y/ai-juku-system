@@ -443,6 +443,11 @@ ${/数学/.test(subject) ? `
   // - 5xx + timeout は自動リトライ (最大 3 回、指数バックオフ)
   // - model 切替可能 (Sonnet 4.6 = Opus 4.7 の 3-5x 高速、textbook 品質に十分)
   // - max_tokens=8000 (元 16000)
+  // ★未使用 (2026-08-20 確認)。ライブ AI 生成は 2026-05-01 に廃止され、実経路は
+  //   /api/textbooks/search (pool 検索) と /api/textbooks/request-generation の2本で、
+  //   この関数はどこからも呼ばれていない。中の 403/429 ハンドリングも実行されない。
+  //   ★scripts/light_tier/check_frontend_limit_messages.py がこのファイルを「接頭辞判定=有」と
+  //     数える根拠がここなので、消すときはゲートの期待値も一緒に見直すこと。
   const callAI = async (sysPrompt, msg, label, options = {}) => {
     const maxTokens = options.maxTokens || 8000;
     const useModel = options.useModel || MODEL_PREMIUM;
@@ -507,6 +512,13 @@ ${/数学/.test(subject) ? `
             console.warn(`[callAI:${label}] retryable ${res.status} (attempt ${attempt}/3) → ${2 ** (attempt-1)}s 待機`);
             await new Promise(r => setTimeout(r, (2 ** (attempt - 1)) * 1000));
             continue;
+          }
+          // ★403/429 は「プランで使えない/上限」= サーバが日本語の理由を detail で返す。
+          //   生の JSON を生徒に見せない (「参考書 API 403: {"detail":"この機能は…」になっていた)。
+          let _d = '';
+          try { _d = String((JSON.parse(errText) || {}).detail || ''); } catch (_) { _d = ''; }
+          if ((res.status === 403 || res.status === 429) && _d) {
+            throw new Error(_d.replace(/^AI_BUDGET_[A-Z0-9_]+:/, ''));
           }
           throw new Error(`${label} API ${res.status}: ${errText.slice(0, 200)}`);
         }

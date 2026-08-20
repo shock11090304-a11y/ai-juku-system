@@ -511,7 +511,13 @@
       renderScore(box, obj);
     }).catch(function (e) {
       if (btn) { btn.disabled = false; btn.textContent = '🤖 AIに面接を採点してもらう'; }
-      if (box) box.innerHTML = '<div class="eiv-warn">採点に失敗しました(' + esc((e && e.message) || 'エラー') + ')。通信環境を確認してもう一度お試しください。</div>';
+      // ★プランの制限 (403) を「通信環境を確認して」と回線のせいにしない。押しても永久に直らない。
+      var _em = (e && e.message) || 'エラー';
+      var _isPlan = /^PLAN_BLOCKED:/.test(_em);
+      _em = _em.replace(/^PLAN_BLOCKED:/, '');
+      if (box) box.innerHTML = _isPlan
+        ? '<div class="eiv-warn">' + esc(_em) + '</div>'
+        : '<div class="eiv-warn">採点に失敗しました(' + esc(_em) + ')。通信環境を確認してもう一度お試しください。</div>';
     });
   }
   function renderScore(box, o) {
@@ -552,7 +558,28 @@
         body: body, signal: ctrl.signal,
       }).then(function (r) {
         clearTimeout(timer);
-        if (!r.ok) throw new Error('AI ' + r.status);
+        // ★403/429 はプランの制限/上限。サーバの日本語説明を出す ('AI 403' は生徒に意味不明)。
+        if (!r.ok) {
+          if (r.status === 403 || r.status === 429) {
+            return r.text().then(function (t) {
+              var d = '';
+              try { d = String((JSON.parse(t) || {}).detail || ''); } catch (_) { d = ''; }
+              // ★403 と 429 を同じ文言にしない。一過性の 429 (混雑・edge) まで
+              //   「プランで使えません」と言うと、払っている生徒に契約の問題だと誤解させる。
+              //   プラン由来の上限はサーバが AI_BUDGET_ 接頭辞を付けてくるので、それで見分ける。
+              var _isPlanLimit = /^AI_BUDGET_[A-Z0-9_]+:/.test(String(d || ''));
+              if (r.status === 429 && !_isPlanLimit) {
+                throw new Error('ただいま混み合っています。少し時間をおいてから、もう一度お試しください。');
+              }
+              // ★marker を付ける。受け側が日本語本文で判定すると、将来この経路に
+              //   日次トークン上限 (本文に「上限」が入る) が乗った瞬間に、
+              //   一時的に当たっただけの有料生徒へ「プランでは使えません」と言ってしまう。
+              throw new Error('PLAN_BLOCKED:' + (d ? String(d).replace(/^AI_BUDGET_[A-Z0-9_]+:/, '')
+                                                  : 'この機能は現在のプランではご利用いただけません。'));
+            });
+          }
+          throw new Error('AI ' + r.status);
+        }
         return r.json();
       }).then(function (data) {
         var c = data && data.content;

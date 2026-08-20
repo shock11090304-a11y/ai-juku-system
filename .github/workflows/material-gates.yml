@@ -55,8 +55,17 @@ jobs:
       #             見本 (fixtures_kyotsu/*.yaml) を読む。★これが無いと ModuleNotFoundError で
       #             「共通テスト変換の自己検査が通らない」と**内容の問題のように見える VIOLATION**
       #             になり、実際には自己検査が一度も走っていなかった (2026-08-19 に判明)。
+      # fastapi / pydantic[email] / httpx = light_tier/check_light_tier*.py が
+      #             server/main.py を import して上限層 (トリリオン・ライト) を検査するため。
+      #             ★これが無いと 2 本とも ImportError で **CRASH** し、ランナーが赤になる。
+      #             実測で必要なのはこの3つだけ (stripe / psycopg / boto3 / fitz 等が無くても
+      #             main.py 側で握られるので通る)。pydantic[email] は EmailStr が
+      #             email-validator を要求するため (無いと import 自体が落ちる)。
+      #             httpx は TestClient (middleware を実リクエストで検査する方) が使う。
+      #             python-multipart は main.py の Form() を使う endpoint (admin_marketing_assets_upload)
+      #             が **import 時に** 要求する。無いと RuntimeError で 2 本とも CRASH。
       - name: 依存 (Python)
-        run: python3 -m pip install --quiet sympy fonttools pymupdf numpy pyyaml
+        run: python3 -m pip install --quiet sympy fonttools pymupdf numpy pyyaml fastapi 'pydantic[email]' httpx python-multipart
 
       # ★フォントは入れない。字形の照合は `kaki_koushuu_eng/_print_font_cmap.txt`
       #   （**刷るフォント**の cmap をコミットしたもの）を正典にしている。

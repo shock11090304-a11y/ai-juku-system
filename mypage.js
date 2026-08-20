@@ -16,7 +16,21 @@ function _mpAiErrorMessage(status, bodyText) {
   if (status === 403 && detail.indexOf('塾生アプリ') >= 0) {
     return 'このアカウントは塾生アプリ専用のため、AI 機能は使えません。宿題・予定・出欠・授業動画はこれまでどおり使えます。';
   }
-  if (status === 403) return 'この操作は許可されていません。画面を開き直してもう一度お試しください。';
+  // ★サーバが日本語で理由を返しているならそれを出す。捨てて「開き直して」と言うと、
+  //   プランの制限 (押しても永久に直らない) を一時的な不具合と誤認させる。
+  if (status === 403) {
+    // ★日本語の detail だけを出す (英語の内部文字列 "Origin not allowed" 等は出さない)。
+    //   ★さらに内部 enum の露出も落とす: サーバは「契約状態が無効です (status=past_due)」の
+    //     ように内部値を括弧書きで足すことがある。生徒には意味が無いので削る。
+    const _jp = /[ぁ-んァ-ン一-龥]/.test(String(detail || ''));
+    if (_jp) {
+      return String(detail)
+        .replace(/^AI_BUDGET_[A-Z0-9_]+:/, '')
+        .replace(/\s*\((?:status|code|reason)=[^)]*\)/g, '')
+        .trim();
+    }
+    return 'この操作は許可されていません。画面を開き直してもう一度お試しください。';
+  }
   return `うまくいきませんでした。少し時間をおいて、もう一度お試しください。(コード ${status})`;
 }
 

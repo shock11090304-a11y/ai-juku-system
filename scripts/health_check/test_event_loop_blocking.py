@@ -61,8 +61,13 @@ import main            # noqa: E402
 import uvicorn         # noqa: E402
 
 
-def _fake_slow_anthropic(body, *, kind="chat", student_id=None):
-    """本物と同じく**同期でブロックする**スタブ (実際のAnthropicは呼ばない)。"""
+def _fake_slow_anthropic(body, *, kind="chat", student_id=None, skip_light=False):
+    """本物と同じく**同期でブロックする**スタブ (実際のAnthropicは呼ばない)。
+
+    ★引数は本物 (_call_anthropic_safe) と同じ形に保つこと。**_kw で受け流すと、
+      本物のシグネチャが変わったことに気づけないまま「AI呼び出しが遅延処理に到達していない」
+      という無関係な失敗になる (2026-08-20: skip_light 追加で実際にそうなった)。
+      明示的に受けておけば、次に増えたときも同じ場所で気づける。"""
     time.sleep(SLOW_SECONDS)
     return {"content": [{"type": "text", "text": "ok"}],
             "usage": {"input_tokens": 1, "output_tokens": 1}}

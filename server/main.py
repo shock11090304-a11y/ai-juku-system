@@ -632,6 +632,9 @@ PLAN_QUOTAS = {
     "ai":              {"problems": 50, "essays": 20, "textbooks": 5},         # 後方互換 (旧 standard)
     # トライアル中もスタンダードと同等の制限
     "trial":         {"problems": 50, "essays": 20, "textbooks": 5},
+    # 🪶 トリリオン・ライト。実効の縛りは「AI呼び出し 月10回」なので、ここは
+    #   trial fallback (50/20/5) が誤適用されないよう明示するだけ (回数の方が先に効く)。
+    "trillion_light": {"problems": 50, "essays": 20, "textbooks": 5},
 }
 # クォータ check 対象の機能名 (これ以外は制限なし)
 QUOTA_FEATURES = {"problems", "essays", "textbooks"}
@@ -672,6 +675,11 @@ PLAN_DAILY_TOKEN_BUDGET = {
     "student_addon":     200_000,
     # 体験
     "trial":             100_000,
+    # 🪶 トリリオン・ライト。★AI 呼び出し回数は別途 月 LIGHT_AI_CALLS_PER_MONTH 回で縛るので、
+    #   ここは「1回あたりが極端に大きい生成で焼かれない」ための保険。回数上限より先に
+    #   ここへ当たると、生徒には LP に書いていない「トークン」という単位で断ることになるため
+    #   やや余裕を持たせる (10回 × 24,000 tokens 相当)。
+    "trillion_light":    250_000,
 }
 
 # 🏷 /api/ai/call が受け付ける kind の allowlist。events.name (`ai_call_{kind}`) と
@@ -2049,6 +2057,12 @@ def init_db():
         #   ai_disabled=1 のままこの日時が未来の間だけ AI を開ける → 期限が来れば自動で塾生アプリのみに戻る
         #   (手で戻す運用が要らない)。判定は _ai_blocked_now() 一箇所のみ。naive UTC で保存する。
         ("students_ai_trial_until", "ALTER TABLE students ADD COLUMN ai_trial_until TIMESTAMP"),
+        # 🪶 [トリリオン・ライト 2026-08-20 塾長指示] 月¥3,000 の下位プラン (先行50名・外部流入の受け皿)。
+        #   'light' = AI は使えるが上限つき (AI呼び出し 月 LIGHT_AI_CALLS_PER_MONTH 回 / カリキュラム生成は
+        #   生涯 LIGHT_CURRICULUM_LIFETIME 回)。NULL / '' / 'full' = 従来どおり無制限。
+        #   ★権限を students.plan で判定してはいけない: /api/trial/signup の plan は生徒が自由に送れる
+        #     文字列で検証が無い (POST {"plan":"premium"} で自称できる)。だから専用列で持つ。
+        ("students_feature_tier", "ALTER TABLE students ADD COLUMN feature_tier TEXT"),
         # 📝 [宿題ドリル単元 2026-06-26] 宿題を特定の dojo-drill 単元に紐づけ (生徒アプリの「ドリルで解く」が
         #   ?w_subject=&w_topic= でその単元を自動起動。例 topic="英文法 関係詞")。
         ("homework_assignments_topic", "ALTER TABLE homework_assignments ADD COLUMN topic TEXT"),
@@ -2488,8 +2502,88 @@ _AI_DISABLED_ALLOWED_PREFIXES = (
     "/api/auth/",                   # ログイン/セッション/ルーティング (is_tsujuku_app 判定を含む)
     "/api/admin/",                  # 管理系 (塾長・なりすまし。student session token では認可されない)
 )
-_AI_DISABLED_CACHE: dict = {}     # student_id -> (is_disabled: bool, fetched_at: float)
+_AI_DISABLED_CACHE: dict = {}     # student_id -> (is_disabled: bool, feature_tier: str, fetched_at: float)
 _AI_DISABLED_CACHE_TTL = 30.0     # 秒。承認/トグルの反映は最大この遅延 (実害無)
+# 判定に失敗したときの TTL。★比較対象は「キャッシュしない」ではなく **変更前の 30 秒** である。
+#   旧 _is_student_ai_disabled は例外時も (False, now) を焼いていたので、DB 障害中の
+#   同期ブロックは生徒あたり30秒に1回だった。ここを短くすると障害時のブロック量が増え、
+#   [[event-loop-blocking-async-def-trap]] (生徒1人のAI利用で塾全体が停止) を悪化させる。
+#   判定値はフェイルオープン (full) なので、長く持っても誤ブロックは起きない。
+#   ★現在は _AI_DISABLED_CACHE_TTL と同値 (=30秒) にしてある = 変更前とまったく同じ保護。
+#     短くすると障害時のブロック量が増えるので、下げるなら理由を書くこと。
+_GATE_FAIL_TTL = 30.0
+
+# 🪶 トリリオン・ライト (月¥3,000) の権限層。
+#   ★cache は 1 本に保つこと。ai_disabled 用と tier 用に別々の cache を持つと、30秒 TTL の間に
+#     両者が食い違い「押しても戻される壊れたボタン」を再生産する ([[tsujuku-app-only-ai-disabled]])。
+_TIER_FULL = "full"
+_TIER_LIGHT = "light"
+# 月次 AI 呼び出し上限 (kind='curriculum' 以外の全 Anthropic 呼び出しが対象)。
+# ★塾長の意図は「原価対策」ではなく「上位プランとのカニバリ防止」(2026-08-20)。実測の粗利は
+#   月10回で 99%、月50回でも 95% 残る。数字を動かすときはカニバリ設計として判断すること。
+LIGHT_AI_CALLS_PER_MONTH = _env_int("LIGHT_AI_CALLS_PER_MONTH", 10, lo=0, hi=100000)
+# カリキュラム生成の生涯上限 (入会時に1回だけ学習計画を出す)。単価が全機能トップ ($0.154〜0.369/回)
+# かつ本体プランの看板機能なので、月次ではなく生涯で絞る。
+LIGHT_CURRICULUM_LIFETIME = _env_int("LIGHT_CURRICULUM_LIFETIME", 1, lo=0, hi=100000)
+# usage_monthly (PK = student_id, feature, year_month) に相乗りする feature キー。
+_LIGHT_AI_FEATURE = "light_ai_calls"
+_LIGHT_CURRICULUM_FEATURE = "light_curriculum"
+# 生涯カウンタ用の擬似 year_month。'YYYYMM' と衝突しない値にする。
+_LIFETIME_PERIOD = "lifetime"
+
+# 🚫 ライトでは丸ごと使えない AI ルート。★ここは「上限を消費させる前に、はっきり断る」ための
+#   早期ゲート。★「ここに書き忘れても backstop が拾うから安全」ではない —
+#   backstop (_call_anthropic_safe) が効くのは **student_id が渡ってきた呼び出しだけ**で、
+#   Gemini 直行 (/api/ai/call の model="gemini-*") と _call_ai_safe の Gemini-first は通らない。
+#   生徒が到達できる AI ルートを足すときは、ここと呼び出し側の student_id の両方を見ること。
+_LIGHT_DENIED_EXACT = frozenset({
+    "/api/ai/messages",                    # 英語演習の AI 解説。★model をクライアントが指定でき
+                                           #   (Opus 可)・max_tokens 24,000・日次予算の対象外という
+                                           #   三重に開いた経路なので、ライトには絶対に開けない。
+    "/api/ai-tutor/solve-from-image",      # 3AI 写真解答 (1リクエストで最大6 LLM call)
+    "/api/mock-exam/generate",             # 模試生成
+    "/api/mock-exam/grade-essay",          # 英作文 AI 採点
+    "/api/mock-exam/grade-essay-multiview",
+    "/api/curricula/ai-generate",          # 学習管理側のカリキュラム生成 (本体プランの看板)
+})
+_LIGHT_DENIED_PREFIXES = (
+    "/api/curricula/",                     # gap-analyze / apply-gap-fix / expand-to-plans (全部 AI)
+)
+# ↑ の PREFIX で巻き添えになるが通してよいものを完全一致で逃がすための穴。
+# ★裸 prefix の startswith は兄弟名にも当たるという既知の事故があるため、例外は必ず完全一致で持つ。
+# ★現在は空。/api/curricula/me を入れかけたが不要と判明した — あのルートは既に
+#   _require_study_log_course (プレミアム以上 or 国公立難関コース) で 403 になるので、
+#   例外に入れても light は結局読めない。入れると「ライトは学習管理を読める」という
+#   誤った印象がコードに残るだけなので入れない。
+_LIGHT_DENIED_PREFIX_EXCEPTIONS = frozenset()
+
+
+def _is_impersonation_auth(authorization) -> bool:
+    """塾長のなりすまし入室か (token_type='impersonation')。
+
+    ★middleware は既になりすましをライトの deny から除外している (2026-08-20)。ハンドラ側の
+      上限チェックと消費も同じ扱いに揃えないと、塾長が生徒の画面を確認しただけで
+      **その生徒の残回数が減り、確認中に 429 で止まる**。ai_disabled 層と同じ非対称を作らない。"""
+    try:
+        a = (authorization or "").strip()
+        if not a.startswith("Bearer "):
+            return False
+        claims = _verify_session_token(a[len("Bearer "):].strip())
+        return bool(claims and claims.get("token_type") == "impersonation")
+    except Exception:
+        return False
+
+
+def _is_light_denied_path(path: str) -> bool:
+    """トリリオン・ライトで丸ごと使えないルートか。★完全一致 と 末尾スラッシュ PREFIX を分けて判定する
+    (裸 prefix の startswith は兄弟名にも当たる。/api/student/homework が
+     /api/student/homework-ai-hint にも一致して黙って開通した既知の事故と同型)。"""
+    _p = path or ""
+    if _p in _LIGHT_DENIED_PREFIX_EXCEPTIONS:
+        return False
+    if _p in _LIGHT_DENIED_EXACT:
+        return True
+    return _p.startswith(_LIGHT_DENIED_PREFIXES)
 
 
 def _ai_trial_active(ai_trial_until) -> bool:
@@ -2556,35 +2650,127 @@ def _ai_blocked_now(ai_disabled, ai_trial_until) -> bool:
     return not _ai_trial_active(ai_trial_until)
 
 
-def _is_student_ai_disabled(student_id) -> bool:
-    """その生徒が「塾生アプリ専用(AIなし)」か。毎 AI リクエストの DB 往復を避ける 30秒 TTL cache 付き。
-    判定不能時は False (フェイルオープン=既存機能を壊さない)。
-    ⏱ 期限付き体験中は False (=AI 可)。cache TTL は 30 秒なので、期限切れは最大30秒で自動的に効く。"""
+_HAS_FEATURE_TIER_COL: dict = {}
+
+
+def _students_has_feature_tier() -> bool:
+    """students.feature_tier が実在するか (プロセス内で1回だけ判定してキャッシュ)。
+
+    ★_students_has_ai_trial_until() と同型。init_db の ALTER は失敗しても debug ログにしか
+    出ないため、列が無いまま列名を明示した SELECT を撃つと **AI 経路が丸ごと 500** になる。
+    ★失敗はキャッシュしない (DB の一過性障害で False を焼き付けると再デプロイまで自然回復しない)。"""
+    if "v" in _HAS_FEATURE_TIER_COL:
+        return _HAS_FEATURE_TIER_COL["v"]
+    import time as _t1
+    if _t1.time() < _HAS_FEATURE_TIER_COL.get("fail_until", 0.0):
+        return False   # 直近で失敗した → しばらく再試行しない (障害中の DB 往復を増やさない)
+    _c = None
+    try:
+        _c = db(); _cc = _c.cursor()
+        _cc.execute("SELECT feature_tier FROM students LIMIT 1")
+        _cc.fetchall()
+    except Exception as _e:
+        # ★失敗を焼き付けない (列は在るのに DB の一過性障害で永久に False になるのを避ける) が、
+        #   まったくキャッシュしないと DB 障害中に **1 AI リクエストあたり DB 往復が2回**になる
+        #   (この確認 + _load_student_gate 本体)。短期だけ覚えて往復を1回に戻す。
+        import time as _t2
+        _HAS_FEATURE_TIER_COL["fail_until"] = _t2.time() + _GATE_FAIL_TTL
+        log.warning(f"[Tier] feature_tier の存在確認に失敗 (しばらく full 扱い・自動で再試行): {_e}")
+        return False
+    finally:
+        # ★finally で必ず返す。execute が投げると close に到達せずプール(max 16)に戻らない。
+        #   失敗をキャッシュしない設計なので、DB 不調の間は毎リクエスト1本ずつ漏れて枯渇する。
+        if _c is not None:
+            try: _c.close()
+            except Exception: pass
+    _HAS_FEATURE_TIER_COL["v"] = True
+    return True
+
+
+def _normalize_tier(v) -> str:
+    """feature_tier の生値 → 'full' | 'light'。未知/NULL/空は全部 full (既存生徒を巻き込まない)。"""
+    return _TIER_LIGHT if (str(v or "").strip().lower() == _TIER_LIGHT) else _TIER_FULL
+
+
+def _load_student_gate(student_id):
+    """★AI 権限の唯一の解決点。(ai_blocked, feature_tier) を 30秒 TTL cache 付きで返す。
+
+    ai_blocked = 塾生アプリのみ枠 (ai_disabled=1 かつ期限付き体験も無効) → AI を丸ごと遮断。
+    feature_tier = 'light' なら AI は使えるが上限つき。
+
+    ★cache は 1 本 (_AI_DISABLED_CACHE) に統一する。2本持つと TTL 中に食い違う。
+    ★DB 障害時は (False, full) を返す = 既存生徒の機能を落とさない側に倒す。
+      **失敗も _GATE_FAIL_TTL だけキャッシュする** (キャッシュしないと障害中に全リクエストが
+      同期 db() を叩き、async middleware 上でイベントループを塞ぐ)。ここを「キャッシュしない」に
+      戻さないこと。
+      ライトが一時的に上限を外れる可能性は残るが、単価 $0.021/回 なので実害は極小。逆向き
+      (障害中に有料生を light 扱いで絞る) の方が被害が大きい。
+    """
     import time as _t
     try:
         sid = int(student_id)
     except (TypeError, ValueError):
-        return False
+        return (False, _TIER_FULL)
     now = _t.time()
     _ent = _AI_DISABLED_CACHE.get(sid)
-    if _ent and (now - _ent[1]) < _AI_DISABLED_CACHE_TTL:
-        return _ent[0]
-    val = False
+    if _ent and (now - _ent[2]) < _AI_DISABLED_CACHE_TTL:
+        return (_ent[0], _ent[1])
+    blocked = False
+    tier = _TIER_FULL
     try:
-        _conn = db(); _c = _conn.cursor()
-        _c.execute("SELECT ai_disabled, ai_trial_until FROM students WHERE id = ?", (sid,))
-        _r = _c.fetchone()
-        _conn.close()
-        val = _ai_blocked_now(
-            (_r["ai_disabled"] if (_r and "ai_disabled" in _r.keys()) else 0),
-            (_r["ai_trial_until"] if (_r and "ai_trial_until" in _r.keys()) else None),
-        ) if _r else False
-    except Exception:
-        val = False
-    _AI_DISABLED_CACHE[sid] = (val, now)
+        _has_tier = _students_has_feature_tier()
+        _cols = "ai_disabled, ai_trial_until" + (", feature_tier" if _has_tier else "")
+        _conn = None
+        try:
+            _conn = db(); _c = _conn.cursor()
+            _c.execute(f"SELECT {_cols} FROM students WHERE id = ?", (sid,))
+            _r = _c.fetchone()
+        finally:
+            # ★finally で返す。execute が投げると close に到達せず、プール(max16)に戻らない。
+            if _conn is not None:
+                try: _conn.close()
+                except Exception: pass
+        if _r:
+            _keys = _r.keys()
+            blocked = _ai_blocked_now(
+                (_r["ai_disabled"] if "ai_disabled" in _keys else 0),
+                (_r["ai_trial_until"] if "ai_trial_until" in _keys else None),
+            )
+            tier = _normalize_tier(_r["feature_tier"] if "feature_tier" in _keys else None)
+    except Exception as _e:
+        # ★失敗も **短い TTL** でキャッシュする。ここは async middleware から同期 db() が呼ばれる
+        #   ホットパスなので、DB 障害中にキャッシュしないと全リクエストが connect timeout(最大10秒)
+        #   ぶんイベントループを塞ぐ = [[event-loop-blocking-async-def-trap]] の再現条件。
+        #   ★TTL は _GATE_FAIL_TTL (現在 _AI_DISABLED_CACHE_TTL と同値=30秒) で、
+        #     変更前とまったく同じ保護。判定はフェイルオープン (full) なので長くても誤ブロックしない。
+        log.warning(f"[Tier] 権限の読み取りに失敗 (今回だけ full 扱い): {type(_e).__name__}: {_e}")
+        # ★時刻は **ここで取り直す**。now は DB を叩く前の時刻で、db() は
+        #   pool 10秒 + connect 10秒 = 最大約20秒かかりうる。now を使うと
+        #   「書いた瞬間にもう期限切れ」になり、障害中は1リクエストも救われない
+        #   (= 全部が async middleware から同期 db() を叩いてイベントループを塞ぐ)。
+        _now_after = _t.time()
+        _AI_DISABLED_CACHE[sid] = (False, _TIER_FULL, _now_after - (_AI_DISABLED_CACHE_TTL - _GATE_FAIL_TTL))
+        return (False, _TIER_FULL)
+    # ★時刻はここで取り直す。now は DB を叩く前の時刻で、db() は pool 10秒 + connect 10秒 =
+    #   最大約20秒かかりうる (プール飽和は「失敗」ではなく「遅い成功」として現れる)。
+    #   now を使うと、遅い成功のとき生まれた瞬間に寿命がほぼ尽きたエントリになり、
+    #   同期 db() を叩き続ける同じ穴が成功パスに残る。
+    _AI_DISABLED_CACHE[sid] = (blocked, tier, _t.time())
     if len(_AI_DISABLED_CACHE) > 5000:  # cache 肥大化 backstop
         _AI_DISABLED_CACHE.clear()
-    return val
+    return (blocked, tier)
+
+
+def _is_student_ai_disabled(student_id) -> bool:
+    """その生徒が「塾生アプリ専用(AIなし)」か。毎 AI リクエストの DB 往復を避ける 30秒 TTL cache 付き。
+    判定不能時は False (フェイルオープン=既存機能を壊さない)。
+    ⏱ 期限付き体験中は False (=AI 可)。cache TTL は 30 秒なので、期限切れは最大30秒で自動的に効く。"""
+    return _load_student_gate(student_id)[0]
+
+
+def _student_tier(student_id) -> str:
+    """その生徒の機能層 ('full' | 'light')。判定不能時は 'full'。"""
+    return _load_student_gate(student_id)[1]
 
 
 app = FastAPI(title="AIコーチング API", version="1.0.0")
@@ -2605,9 +2791,20 @@ async def _ai_disabled_route_gate(request: Request, call_next):
             if _auth.startswith("Bearer "):
                 _claims = _verify_session_token(_auth[len("Bearer "):].strip())
                 if _claims and _claims.get("token_type") != "impersonation" and _claims.get("student_id"):
-                    if _is_student_ai_disabled(_claims["student_id"]):
+                    # ★権限は1回の解決で両方 (塾生アプリのみ枠 / 機能層) を取る。
+                    #   別々に引くと DB 往復が2倍になり、TTL 中に食い違う余地も生まれる。
+                    _blocked, _tier = _load_student_gate(_claims["student_id"])
+                    if _blocked:
                         return JSONResponse(
                             {"detail": "この生徒は塾生アプリ(宿題/予定/出欠/動画)専用です。AI機能はご利用いただけません。"},
+                            status_code=403,
+                        )
+                    # 🪶 トリリオン・ライトで使えない AI ルートは、上限を消費させる前にここで断る。
+                    #   ★許可集合 (_AI_DISABLED_ALLOWED_*) は 1 バイトも変えていない = 塾生アプリのみ枠
+                    #     (40名) の挙動は完全に不変。full の生徒もこの分岐に入らない。
+                    if _tier == _TIER_LIGHT and _is_light_denied_path(_p):
+                        return JSONResponse(
+                            {"detail": "この機能は トリリオン・ライト ではご利用いただけません。上位プランでご利用いただけます。"},
                             status_code=403,
                         )
     except Exception:
@@ -13044,7 +13241,8 @@ def admin_dalle_generate(payload: dict, authorization: Optional[str] = Header(No
     }
 
 
-def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = None) -> dict:
+def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = None,
+                         skip_light: bool = False) -> dict:
     """全 Anthropic API 呼び出しの統一エントリ。絶対に止まらない設計。
     - 3 段モデルフォールバック (要求 → Sonnet 4.6 → Haiku 4.5)
     - 各 tier で指数バックオフリトライ (1s/2s/4s)
@@ -13055,6 +13253,43 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
     import time as _t
     if not ANTHROPIC_API_KEY:
         raise HTTPException(status_code=503, detail="AI service not configured")
+
+    # 🪶 [トリリオン・ライト 2026-08-20] AI 上限の最終防壁。
+    #   ★**「ここに置けば全部効く」ではない**。効くのは student_id が渡ってきた呼び出しだけで、
+    #     実際には _call_anthropic_safe の呼び出しの多くが student_id=None (バッチ/匿名可ルート/
+    #     生徒に紐づかない生成)。新しい AI ルートを足すときは、生徒が到達できるなら
+    #     **呼び出し側で student_id を渡す**必要がある。ここは「渡ってさえいれば漏らさない」層。
+    #   ★逆にサーバ起点のバッチ (週次レポート等) は skip_light=True にする。生徒が押していない
+    #     処理で残回数を減らすと「使っていないのに減った」になる。
+    if student_id is not None and not skip_light:
+        try:
+            if _student_tier(student_id) == _TIER_LIGHT:
+                _over, _msg = _light_quota_exceeded(student_id, kind)
+                if _over:
+                    raise HTTPException(status_code=429, detail=_msg)
+        except HTTPException:
+            raise
+        except Exception as _te:
+            # ゲート自体の障害で AI を落とさない (既存生徒を巻き込まない)
+            log.warning(f"[Light] backstop の判定に失敗 (通過させる): {type(_te).__name__}: {_te}")
+
+    _light_counted = {"done": False}
+
+    def _light_count_once():
+        """このリクエストで1回だけ上限を消費する。
+
+        ★**成功した return は全部ここを通すこと**。Anthropic 成功だけを数えていたせいで、
+          Gemini/OpenAI へ降格した成功 (credit_low の5分間・Tier4/5 フォールバック) が
+          カウントされず、障害中だけライトが実質無制限になるバグを作った (2026-08-20 レビュー指摘)。
+        ★失敗時は数えない (使えていないのに減るのは苦情になる)。"""
+        if student_id is None or skip_light or _light_counted["done"]:
+            return
+        try:
+            if _student_tier(student_id) == _TIER_LIGHT:
+                _light_consume(student_id, kind)
+                _light_counted["done"] = True
+        except Exception:
+            pass
 
     requested_model = body.get("model") or "claude-sonnet-4-6"
     # ⏱ per-call timeout (2026-07-20): 非ストリーミングなので応答は生成完了まで届かない。
@@ -13133,6 +13368,7 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
                         )
                     except Exception:
                         pass
+                    _light_count_once()   # 🪶 ライトの上限を1つ消費 (成功時のみ)
                     return data
             except urllib.error.HTTPError as e:
                 err_body = e.read().decode("utf-8", errors="ignore")
@@ -13162,6 +13398,7 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
                                 "kind": kind,
                                 "student_id": student_id,
                             })
+                            _light_count_once()   # 🪶 降格した成功も必ず数える
                             return gdata
                         except Exception as ge:
                             log.error(f"[AI failsafe] credit_low → Gemini も失敗: {type(ge).__name__}: {str(ge)[:200]}")
@@ -13177,6 +13414,7 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
                                 "kind": kind,
                                 "student_id": student_id,
                             })
+                            _light_count_once()   # 🪶 降格した成功も必ず数える
                             return odata
                         except Exception as oe:
                             log.error(f"[AI failsafe] credit_low → OpenAI も失敗: {type(oe).__name__}: {str(oe)[:200]}")
@@ -13224,6 +13462,7 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
                 "kind": kind,
                 "student_id": student_id,
             })
+            _light_count_once()   # 🪶 降格した成功も必ず数える
             return data
         except Exception as ge:
             log.error(f"[AI failsafe] Gemini Tier 4 もエラー: {type(ge).__name__}: {str(ge)[:200]}")
@@ -13243,6 +13482,7 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
                 "kind": kind,
                 "student_id": student_id,
             })
+            _light_count_once()   # 🪶 降格した成功も必ず数える
             return data
         except Exception as oe:
             log.error(f"[AI failsafe] OpenAI Tier 5 もエラー: {type(oe).__name__}: {str(oe)[:200]}")
@@ -13277,7 +13517,7 @@ _GEMINI_FIRST_TASKS = {
 
 
 def _call_ai_safe(body: dict, *, task_type: str = "default", kind: str = None,
-                   student_id: int = None) -> dict:
+                   student_id: int = None, skip_light: bool = False) -> dict:
     """task_type ベースで Gemini / Anthropic を振り分ける統一 AI ルーター。
 
     使い分け:
@@ -13307,7 +13547,7 @@ def _call_ai_safe(body: dict, *, task_type: str = "default", kind: str = None,
             })
 
     # 2) Anthropic 経路 (高 stake タスクの主経路 + Gemini-first 失敗時の救済)
-    return _call_anthropic_safe(body, kind=kind, student_id=student_id)
+    return _call_anthropic_safe(body, kind=kind, student_id=student_id, skip_light=skip_light)
 
 
 def _ai_credit_low_active() -> bool:
@@ -13398,7 +13638,8 @@ def ai_messages_proxy(payload: dict, authorization: Optional[str] = Header(None)
 
     # Anthropic 呼び出し (フェイルセーフ経由・3段モデル降格 + リトライ込み)
     student_id = student.get("id") if student else None
-    data = _call_anthropic_safe(body, kind="proxy_messages", student_id=student_id)
+    data = _call_anthropic_safe(body, kind="proxy_messages", student_id=student_id,
+                                skip_light=_is_impersonation_auth(authorization))
     actual_model = data.get("_actual_model") or model
 
     # 使用ログ (events に記録、CEO ダッシュボード analytics で見える)
@@ -26217,10 +26458,15 @@ def public_curriculum_generate(payload: dict, request: Request, authorization: O
     # 📚 マイ参考書 inject (塾長指示 2026-05-14): Authorization header があれば opportunistic に取得
     # public endpoint (匿名 OK) のまま、認証済生徒のみ snippet 注入
     own_materials_snippet = ""
+    _curr_student_id = None   # 🪶 判った場合だけ _call_anthropic_safe に渡す (ライトの上限 + 原価紐づけ)
+    # ★なりすまし (塾長の確認入室) では上限を消費しない。ここは **生涯1回** の枠なので、
+    #   塾長が生徒の画面で学習計画を1回作っただけで、その生徒の1回が永久に消える (翌月も戻らない)。
+    _curr_impersonating = _is_impersonation_auth(authorization)
     if authorization:
         try:
             _student = _get_current_student(authorization)
             if _student:
+                _curr_student_id = _student["id"]
                 own_materials_snippet = _build_own_materials_prompt_snippet(_student["id"])
         except Exception as _e:
             log.warning(f"[PublicCurriculum] own_materials opportunistic inject failed: {_e}")
@@ -26308,6 +26554,11 @@ def public_curriculum_generate(payload: dict, request: Request, authorization: O
                 "messages": [{"role": "user", "content": user}],
             },
             kind="curriculum_generate",
+            # 🪶 [2026-08-20] 匿名OKの public endpoint だが、Authorization があれば生徒が判っている。
+            #   student_id を渡さないと (a) ライトの上限 backstop が効かず ~$0.12/回 が無制限に漏れ、
+            #   (b) anthropic_usage_log の原価が誰にも紐づかない。判らないときは従来どおり None。
+            student_id=_curr_student_id,
+            skip_light=_curr_impersonating,
         )
         if d.get("stop_reason") == "max_tokens":
             # 切断されたら JSON parse はほぼ確実に失敗し fallback に落ちる。原因を一目で判別できるよう明示ログ
@@ -26329,6 +26580,22 @@ def public_curriculum_generate(payload: dict, request: Request, authorization: O
         result["exam_date"] = exam_date
         result["generated_at"] = now.isoformat()
         return result
+    except HTTPException as _he:
+        # ★プラン上限 (429) / 権限 (403) **だけ**は握り潰さない。汎用フォールバックを 200 で返すと、
+        #   フロントは reason="ai_error" を見て「AI から応答が得られなかったため…少し時間をおいて
+        #   もう一度生成してみてください」と表示する = **翌月まで直らないものを一時障害と偽り、
+        #   押しても永久に同じ結果になる再試行を促す**。しかも汎用プランが本人の計画として保存される。
+        # ★逆に 503 (全 tier 失敗) は握り潰して簡易プランを返す。ここを塞ぐと
+        #   「AI never-fail 原則」が壊れ、Anthropic 障害時に生徒が何も受け取れなくなる
+        #   (2026-08-20: 一度 503 まで再スローしてこの安全機能を消した。同じ轍を踏まないこと)。
+        if _he.status_code in (403, 429):
+            raise
+        log.error(f"[Curriculum] AI generation failed (HTTP {_he.status_code}): {str(_he.detail)[:200]}")
+        return _curriculum_fallback(
+            exam_id, target_grade_name, days_remaining, weeks_remaining,
+            current_level, daily_minutes, weak_parts,
+            reason="ai_error",
+        )
     except Exception as e:
         log.error(f"[Curriculum] AI generation failed: {type(e).__name__}: {e}")
         return _curriculum_fallback(
@@ -27221,7 +27488,10 @@ def admin_probe_call(payload: dict, request: Request,
 
     t0 = time.time()
     try:
-        data = _call_anthropic_safe(body, kind=f"probe_call_{kind}", student_id=student_id)
+        # ★塾長の疎通確認。生徒の残回数を減らさない (減らすと確認するたび枠が消え、
+        #   上限到達生徒では probe が 429 を「AI障害」と誤報告する)。
+        data = _call_anthropic_safe(body, kind=f"probe_call_{kind}", student_id=student_id,
+                                    skip_light=True)
         text = (data.get("content") or [{}])[0].get("text", "")
         return {
             **result,
@@ -29070,13 +29340,24 @@ def usage_me(authorization: Optional[str] = Header(None)):
         conn.close()
     except Exception as _e:
         log.warning(f"[usage_me] ai_call count failed: {_e}")
-    return {
+    _resp = {
         "ok": True,
         "plan": plan,
         "year_month": _jst_year_month(),
         "usage": out,
         "ai_questions": {"total": ai_total, "today": ai_today},
     }
+    # 🪶 [トリリオン・ライト] 残り回数をフロントに返す。★キーを既存に混ぜず独立させる
+    #   (辞書展開や既存キーの上書きで 1 個消えただけで画面から締め出される事故が過去にある)。
+    #   full の生徒には feature_tier を返すだけで light_usage は付けない = 既存表示は完全に不変。
+    try:
+        _tier = _student_tier(student["id"])
+        _resp["feature_tier"] = _tier
+        if _tier == _TIER_LIGHT:
+            _resp["light_usage"] = _light_usage_snapshot(int(student["id"]))
+    except Exception as _le:
+        log.warning(f"[usage_me] light usage の取得に失敗 (省略して継続): {type(_le).__name__}: {_le}")
+    return _resp
 
 
 # =====================================================================
@@ -32917,6 +33198,11 @@ def _weekly_coach_comments(ctx: dict) -> dict:
             {"model": "claude-haiku-4-5-20251001", "max_tokens": 1000, "system": system,
              "messages": [{"role": "user", "content": user}]},
             task_type="weekly_report_comment", student_id=ctx.get("student_id"),
+            # ★サーバ起点のバッチ。生徒が押していないので上限を消費させない。
+            #   これが無いと、1問も質問していないライトの生徒の月10回が週次レポートだけで
+            #   毎月4〜5回削られる (LP の「月10回」が黙って嘘になる)。
+            #   student_id は原価の紐づけのために残す。
+            skip_light=True,
         )
         # content は複数ブロックのことがある (reasoning モデルは thinking ブロックが先頭 =
         #  content[0].text が空)。type=='text' の全ブロックを連結して確実に本文を取る。
@@ -35330,6 +35616,16 @@ def _check_ai_budget(student_id: int) -> None:
             detail = f"AI_BUDGET_PREMIUM:直近24時間のAI利用が上限({budget:,}トークン)に達しました。{_wait}"
         else:
             detail = f"AI_BUDGET_TRIAL:直近24時間のAI利用が上限({budget:,}トークン)に達しました。{_wait}"
+        # 🪶 ライトは接頭辞を LIGHT に差し替える。★これが無いと AI_BUDGET_TRIAL: のまま返り、
+        #   フロントが「プレミアム相当ではない」と判定して **月¥3,000 の生徒に ¥39,800 の勧誘**を出す。
+        #   (この日次判定はライトの月次判定より先に走るので、先にこちらへ当たることがある)
+        try:
+            if _student_tier(student_id) == _TIER_LIGHT:
+                detail = detail.replace("AI_BUDGET_TRIAL:", "AI_BUDGET_LIGHT:", 1) \
+                               .replace("AI_BUDGET_STANDARD:", "AI_BUDGET_LIGHT:", 1) \
+                               .replace("AI_BUDGET_PREMIUM:", "AI_BUDGET_LIGHT:", 1)
+        except Exception:
+            pass
         raise HTTPException(status_code=429, detail=detail)
 
 
@@ -35450,6 +35746,114 @@ def _increment_usage(student_id: int, feature: str) -> int:
     return new_count
 
 
+# ── 🪶 トリリオン・ライト (月¥3,000) の AI 上限 ─────────────────────────────────
+#  ★カウントの根拠を「クライアントが送る値」に置かないこと。
+#    - payload.feature は省略できる (省略すると _check_quota が丸ごと走らない)
+#    - payload.kind は allowlist されるだけで値は client が選べる
+#    → よって「kind が curriculum かどうか」だけで2つの上限に振り分け、**どちらの枝に落ちても
+#      必ず上限がある** 形にする。片方を無制限にすると、そちらに寄せるだけで回避できてしまう。
+
+def _light_bucket_for_kind(kind) -> tuple:
+    """ライトの AI 呼び出しを、どのカウンタで数えるか。→ (feature, period, limit, 表示名)
+
+    ★完全一致で書いてはいけない。呼び出し側が kind を素通しで渡してこないため:
+      - /api/ai/call は kind=f"call_{payload.kind}" を渡す → "call_curriculum"
+      - /api/curriculum/generate は kind="curriculum_generate"
+      - 疎通確認は kind=f"probe_call_{kind}"
+      完全一致 ("curriculum") で判定していたせいで、**生涯1回の枠が一度も発火しない**バグを
+      作った (2026-08-20 レビュー指摘)。部分一致にして、どの接頭/接尾が付いても同じ枝に落とす。
+      誤って月次側がカリキュラム扱いになる方向 (=より厳しい) は安全側なので許容する。"""
+    k = str(kind or "").strip().lower()
+    if "curricul" in k:   # curriculum / curricula / curriculum_generate / call_curriculum
+        return (_LIGHT_CURRICULUM_FEATURE, _LIFETIME_PERIOD, LIGHT_CURRICULUM_LIFETIME, "学習計画の自動作成")
+    # ★ラベルは「AIチューターへの質問」ではない。この枠を食うのはチャットだけでなく、写真つき質問・
+    #   英作文添削・問題生成・週次診断・教材写真の自動判別・模試結果の写真読み取りなど **AI を使う操作すべて**。
+    #   「質問した覚えはないのに上限と言われた」という問い合わせにならない名前にする。
+    return (_LIGHT_AI_FEATURE, _jst_year_month(), LIGHT_AI_CALLS_PER_MONTH, "AI機能のご利用")
+
+
+def _light_usage_snapshot(student_id: int) -> dict:
+    """ライトの残回数 (フロント表示用)。full の生徒には使わない。"""
+    try:
+        sid = int(student_id)
+    except (TypeError, ValueError):
+        return {}
+    used_ai = _get_monthly_usage(sid, _LIGHT_AI_FEATURE, _jst_year_month())
+    used_cur = _get_monthly_usage(sid, _LIGHT_CURRICULUM_FEATURE, _LIFETIME_PERIOD)
+    return {
+        "ai_calls_limit": LIGHT_AI_CALLS_PER_MONTH,
+        "ai_calls_used": used_ai,
+        "ai_calls_remaining": max(0, LIGHT_AI_CALLS_PER_MONTH - used_ai),
+        "curriculum_limit": LIGHT_CURRICULUM_LIFETIME,
+        "curriculum_used": used_cur,
+        "curriculum_remaining": max(0, LIGHT_CURRICULUM_LIFETIME - used_cur),
+    }
+
+
+def _light_quota_exceeded(student_id, kind) -> tuple:
+    """ライトの上限に達しているか。→ (超過か, ユーザ向け文言)。判定不能なら (False, "") = 通す。
+
+    ★通すのは「DB が読めなかったとき」だけ。上限に達していることが読めた場合は必ず止める。"""
+    try:
+        sid = int(student_id)
+    except (TypeError, ValueError):
+        return (False, "")
+    feature, period, limit, label = _light_bucket_for_kind(kind)
+    if limit is None:
+        return (False, "")
+    try:
+        used = _get_monthly_usage(sid, feature, period)
+    except Exception as _e:
+        log.warning(f"[Light] 上限の読み取りに失敗 (今回は通す) student_id={sid}: {type(_e).__name__}: {_e}")
+        return (False, "")
+    if used < limit:
+        return (False, "")
+    # ★接頭辞 AI_BUDGET_LIGHT: を必ず付ける。フロントは既に `/^AI_BUDGET_[A-Z0-9_]+:/` という
+    #   **総称**で接頭辞を剥がし、その有無で「上限系の 429 か」を判定している (app.js / mypage.js)。
+    #   ここを日本語本文だけにしていたため、mypage 側は「混み合っています」と誤案内していた。
+    #   ★文言の推敲でこの接頭辞を消さないこと。消すと判定が静かに壊れる (画面は正常に見えるまま)。
+    if period == _LIFETIME_PERIOD:
+        msg = (f"AI_BUDGET_LIGHT:{label}は トリリオン・ライト では {limit} 回かぎりです"
+               f"（すでに {used} 回ご利用済み）。作り直しは上位プランでご利用いただけます。")
+    else:
+        msg = (f"AI_BUDGET_LIGHT:{label}は トリリオン・ライト では 合計 月 {limit} 回までです"
+               f"（今月 {used} 回ご利用済み）。翌月1日にリセットされます。"
+               f"単元ドリル・演習ドリル・AI単語帳・弱点克服は上限に関係なくお使いいただけます。")
+    return (True, msg)
+
+
+def _light_consume(student_id, kind) -> None:
+    """ライトの上限を1つ消費する。★非throw (計上に失敗しても AI 応答自体は返す)。"""
+    try:
+        sid = int(student_id)
+    except (TypeError, ValueError):
+        return
+    feature, period, _limit, _label = _light_bucket_for_kind(kind)
+    conn = None
+    try:
+        conn = db(); c = conn.cursor()
+        # ★ON CONFLICT を使う。UPDATE→INSERT→(失敗したら)UPDATE の従来流儀 (_increment_usage) は、
+        #   Postgres だと INSERT の unique violation でトランザクションが abort し、救済の UPDATE も
+        #   InFailedSqlTransaction で落ちる = 月初の同時初回が静かに数えられない (=タダの1回)。
+        #   PK が (student_id, feature, year_month) なので単発の UPSERT で原子的に済む。
+        #   SQLite / Postgres とも ON CONFLICT DO UPDATE 構文は同じ。
+        c.execute(
+            "INSERT INTO usage_monthly (student_id, feature, year_month, used_count) "
+            "VALUES (?, ?, ?, 1) "
+            "ON CONFLICT (student_id, feature, year_month) "
+            "DO UPDATE SET used_count = usage_monthly.used_count + 1",
+            (sid, feature, period),
+        )
+        conn.commit()
+    except Exception as _e:
+        log.warning(f"[Light] 上限の計上に失敗 student_id={sid} feature={feature}: {type(_e).__name__}: {_e}")
+    finally:
+        try:
+            if conn is not None: conn.close()
+        except Exception:
+            pass
+
+
 def _record_ai_call_failure(stage: str, status_code: int, detail: str, payload_obj=None,
                               request_obj: Request = None):
     """ai_proxy の前段 check or AI 呼出で発生した失敗を events テーブルに記録。
@@ -35529,6 +35933,8 @@ def ai_proxy(payload: AIProxyRequest, request: Request, authorization: Optional[
     _k = (payload.kind or "chat").strip().lower()
     payload.kind = _k if _k in AI_CALL_KINDS else "other"
 
+    # 🪶 なりすまし (塾長の確認入室) はライトの上限判定・消費の対象外にする
+    _impersonating = _is_impersonation_auth(authorization)
     student_row = None
     try:
         student_row = _get_current_student(authorization)
@@ -35536,6 +35942,15 @@ def ai_proxy(payload: AIProxyRequest, request: Request, authorization: Optional[
             raise HTTPException(status_code=401, detail="ログインが必要です。お手数ですが再ログインしてください。")
         payload.student_id = student_row["id"]
         _check_ai_budget(payload.student_id)
+        # 🪶 [トリリオン・ライト] AI 上限。★payload.feature は省略できてしまう (省略すると下の
+        #   _check_quota が丸ごと走らない) ので、ライトの上限は feature に依存させず、
+        #   正規化済みの kind だけで必ずどちらかのカウンタに落とす。
+        #   ここは「上限に当たったことが生徒に分かる」ための早期判定。backstop (_call_anthropic_safe)
+        #   は student_id が渡った呼び出しにしか効かないので、この早期判定を消してはいけない。
+        if not _impersonating and _student_tier(payload.student_id) == _TIER_LIGHT:
+            _light_over, _light_msg = _light_quota_exceeded(payload.student_id, payload.kind)
+            if _light_over:
+                raise HTTPException(status_code=429, detail=_light_msg)
         # 機能別月次クォータ check (problems / essays / textbooks)
         if payload.feature:
             _check_quota(student_row, payload.feature)
@@ -35631,7 +36046,9 @@ def ai_proxy(payload: AIProxyRequest, request: Request, authorization: Optional[
                 fallback_body = dict(body)
                 fallback_body["model"] = "claude-sonnet-4-6"
                 try:
-                    data = _call_anthropic_safe(fallback_body, kind=payload.kind)
+                    # 🪶 student_id を渡す = ライトの上限 backstop と原価の生徒紐づけを効かせる
+                    #   (渡していなかったため、この経路だけ上限も原価計上もすり抜けていた)
+                    data = _call_anthropic_safe(fallback_body, kind=payload.kind, student_id=payload.student_id, skip_light=_impersonating)
                     if isinstance(data, dict):
                         data["_fallback_from"] = "gemini_circuit_breaker"
                     return data
@@ -35674,6 +36091,14 @@ def ai_proxy(payload: AIProxyRequest, request: Request, authorization: Optional[
                     _conn.close()
                 except Exception as _ev:
                     log.warning(f"[AIProxy][Gemini] cost tracking failed: {_ev}")
+            # 🪶 [トリリオン・ライト] Gemini 直行は _call_anthropic_safe を通らないので、ここで数える。
+            #   ★これが無いと model:"gemini-*" を指定するだけで上限が一切効かない
+            #     (mypage.js の学習プラン補助が実際に gemini を指定している = 攻撃でなく通常経路)。
+            try:
+                if payload.student_id and not _impersonating and _student_tier(payload.student_id) == _TIER_LIGHT:
+                    _light_consume(payload.student_id, payload.kind)
+            except Exception as _lc:
+                log.warning(f"[Light] Gemini 経路の計上に失敗: {type(_lc).__name__}: {_lc}")
             return data
         except HTTPException:
             raise
@@ -35707,7 +36132,7 @@ def ai_proxy(payload: AIProxyRequest, request: Request, authorization: Optional[
                 # Anthropic に切替 (Sonnet 4.6 default)
                 fallback_body = dict(body)
                 fallback_body["model"] = "claude-sonnet-4-6"
-                data = _call_anthropic_safe(fallback_body, kind=payload.kind)
+                data = _call_anthropic_safe(fallback_body, kind=payload.kind, student_id=payload.student_id, skip_light=_impersonating)
                 # 結果に fallback flag を埋める
                 if isinstance(data, dict):
                     data["_fallback_from"] = "gemini"
@@ -35765,7 +36190,8 @@ def ai_proxy(payload: AIProxyRequest, request: Request, authorization: Optional[
     # AI never-fail 原則: _call_anthropic_safe() 経由で 4 段降格 (Opus→Sonnet→Haiku→Gemini)。
     # 直叩きから _call_anthropic_safe() に移行 (memory: feedback_ai_never_fail.md)
     try:
-        data = _call_anthropic_safe(body, kind=f"call_{payload.kind}", student_id=payload.student_id)
+        data = _call_anthropic_safe(body, kind=f"call_{payload.kind}", student_id=payload.student_id,
+                                    skip_light=_impersonating)
 
         # Track cost per student (for CEO analytics)
         usage = data.get("usage", {})
@@ -40629,7 +41055,14 @@ def mock_exam_grade_essay(payload: dict, request: Request, authorization: Option
             "system": system,
             "messages": [{"role": "user", "content": user}],
         }
-        data = _call_anthropic_safe(body, kind="grade_essay", student_id=payload.get("student_id"))
+        # ★認証で判った id を使う。payload.student_id はクライアント申告なので、これを上限カウンタに
+        #   渡すと **他生徒の残回数を任意に減らして 429 に追い込める**。原価の紐づけも詐称できる。
+        # ★上限カウンタに使うのは **認証で判った id** だけ (payload はクライアント申告なので
+        #   他生徒の枠を焼ける)。ただし admin 経路は auth_student_id が None になるため、
+        #   原価の紐づけだけは payload を使う (admin は上限の対象外なので安全)。
+        _ge_sid = auth_student_id or ((payload.get("student_id") if is_admin else None) or None)
+        data = _call_anthropic_safe(body, kind="grade_essay", student_id=_ge_sid,
+                                    skip_light=(is_admin or _is_impersonation_auth(authorization)))
         resp_text = (data.get("content") or [{}])[0].get("text", "") if data.get("content") else "{}"
     except HTTPException:
         raise
@@ -43959,6 +44392,53 @@ def admin_set_student_ai_disabled(student_id: int, payload: dict, authorization:
         pass
     log.info(f"[AIDisabled] admin set student {student_id} ai_disabled={_val}")
     return {"ok": True, "student_id": student_id, "ai_disabled": _val}
+
+
+@app.post("/api/admin/students/{student_id}/feature-tier")
+def admin_set_student_feature_tier(student_id: int, payload: dict, authorization: Optional[str] = Header(None)):
+    """🪶 [トリリオン・ライト 2026-08-20] 生徒の機能層を切替。payload: {feature_tier: "light"|"full"}。
+
+    'light' = AI は使えるが上限つき (AI呼び出し 月 LIGHT_AI_CALLS_PER_MONTH 回 /
+              カリキュラム生成は生涯 LIGHT_CURRICULUM_LIFETIME 回)。
+    'full'  = 従来どおり無制限 (NULL 相当に戻す)。
+
+    ★これが無いと feature_tier を書く経路が本番に1つも無く、上限層が完全に死んだままになる
+      (ライト契約者が全員 full 扱いで無制限に使える)。Stripe 側の配線 (plan=trillion_light →
+      tier 付与) は別作業なので、それまではここから手で切り替える。
+    ★ai_disabled とは独立。塾生アプリのみ枠 (ai_disabled=1) は tier に関係なく AI を遮断する。
+    ★★これを実生徒に使う前に mypage.html の「今月の利用状況」ウィジェットを直すこと。
+      現状ライトには「問題生成 x/50回・添削 x/20回・参考書 x/5回」(LP の「合計 月10回」と矛盾) と
+      「プレミアム ¥39,800/月で全機能無制限」の勧誘が出て、プラン名も内部キーが生で出る。
+      /api/usage/me は既に light_usage (残り回数) を返しているので、フロントが読むだけ。
+    ★上限のカウンタ (usage_monthly) はここでは触らない。full に戻しても消費履歴は残り、
+      再び light にすると同じ月の残回数を引き継ぐ (行ったり来たりで上限をリセットさせない)。
+    """
+    _verify_admin_required(authorization)
+    _raw = str(payload.get("feature_tier") or "").strip().lower()
+    if _raw not in (_TIER_LIGHT, _TIER_FULL):
+        raise HTTPException(status_code=400, detail=f"feature_tier は '{_TIER_LIGHT}' か '{_TIER_FULL}' を指定してください")
+    if not _students_has_feature_tier():
+        # 列が無い環境で UPDATE すると 500。原因が分かる文言で返す (migration 未適用の可視化)。
+        raise HTTPException(status_code=503, detail="feature_tier 列がまだありません (デプロイ反映待ちの可能性)")
+    _val = _TIER_LIGHT if _raw == _TIER_LIGHT else None   # full は NULL に戻す (既定と同じ形にする)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id FROM students WHERE id = ?", (student_id,))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        c.execute("UPDATE students SET feature_tier = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                  (_val, student_id))
+        conn.commit()
+    finally:
+        conn.close()
+    try:
+        _AI_DISABLED_CACHE.pop(int(student_id), None)  # ★30秒 TTL を待たず即時反映 (忘れると古い層で判定される)
+    except Exception:
+        pass
+    log.info(f"[Light] admin set student {student_id} feature_tier={_val or 'full'}")
+    return {"ok": True, "student_id": student_id, "feature_tier": (_val or _TIER_FULL),
+            "usage": (_light_usage_snapshot(student_id) if _val == _TIER_LIGHT else None)}
 
 
 @app.post("/api/admin/students/{student_id}/ai-trial")
