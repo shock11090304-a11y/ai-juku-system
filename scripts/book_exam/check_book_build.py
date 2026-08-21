@@ -172,13 +172,39 @@ def main():
     case("本文があっても通る",
          B.verify(PASS_META, [q_choice(1), q_choice(2, ans=2)]), [])
     case("本文に script が入っていたら落とす",
-         B.verify(dict(META, passages=[{"page": 1, "html": "<script>x</script>"}]),
+         B.verify(dict(META, passages=[{"page": 1, "title": "資料",
+                                        "html": "<script>x</script>"}]),
                   [q_choice(1), q_choice(2, ans=2)]),
          ["<script> / on* 属性"])
-    case("本文の page が無ければ落とす",
-         B.verify(dict(META, passages=[{"html": "<p>本文</p>"}]),
+    case("本文の page は省略できる (刷り上がりから割り当てる)",
+         B.verify(dict(META, passages=[{"title": "資料", "html": "<p>本文</p>"}]),
+                  [q_choice(1), q_choice(2, ans=2)]), [])
+    case("本文の title が無ければ落とす (照合に使う)",
+         B.verify(dict(META, passages=[{"page": 1, "html": "<p>本文</p>"}]),
                   [q_choice(1), q_choice(2, ans=2)]),
-         ["page が 1 以上の整数でない"])
+         ["title が空"])
+
+    # --- ⑫ ページの自動割り当て --------------------------------------------
+    #   ★ 本文が数ページに渡る冊子では、正典に書いたページと刷り上がりが合わず、
+    #     手で合わせ直す作業が何度も要った。刷ってから読み取れば必ず一致する。
+    auto = [dict(q_choice(1), page=None), dict(q_choice(2, ans=2), page=None)]
+    case("page を書かない冊子は通る", B.verify(META, auto), [])
+    case("page を書く設問と書かない設問が混ざったら落とす",
+         B.verify(META, [q_choice(1), dict(q_choice(2, ans=2), page=None)]),
+         ["page を書く設問と書かない設問が混ざっている"])
+    auto_meta = dict(META, passages=[{"title": "資料", "html": "<p>本文</p>"}])
+    auto2 = [dict(q_choice(1), page=None), dict(q_choice(2, ans=2), page=None)]
+    got = B.resolve_pages(auto_meta, auto2,
+                          ["資料 本文 第1問（2点） 第1問の設問文。",
+                           "第2問（2点） 第2問の設問文。"])
+    case("刷り上がりから実ページを割り当てる", got, [])
+    case("割り当てた結果が刷り上がりどおり",
+         [f"{auto2[0]['page']},{auto2[1]['page']},{auto_meta['passages'][0]['page']}"],
+         ["1,2,1"])
+    case("刷り上がりに見出しが無ければ落とす",
+         B.resolve_pages(dict(META, passages=[]),
+                         [dict(q_choice(1), page=None)], ["何も無いページ"]),
+         ["刷り上がりに「第1問（2点）」が見つからない"])
 
     case("記述の答えが他問の設問文に刷られていたら落とす (解答漏洩)",
          B.verify(META, [q_choice(1, stem="電気抵抗について答えよ。"), q_short(2)]),
@@ -292,7 +318,7 @@ def main():
          B.verify_pages(META, two, [trap]), [])
     case("見出しが無ければ「見つからない」と言う",
          B.verify_pages(META, two, [trap.replace("第2問（2点）", "")]),
-         ["第2問: PDF の 1 ページに「第2問（2点）」が見つからない"])
+         ["第2問: PDF の 1 ページに「第2問（2点）」が無い"])
 
     # --- ⑩ 埋め込みフォント (字形が日本語か) --------------------------------
     #   ★ 2026-08-21: 日本語フォントが 1 つも入っていない環境で刷ったため、
@@ -310,6 +336,32 @@ def main():
          ["フォントが 1 つも埋め込まれていない"])
     case("空文字だけでも落とす", B.font_problems({""}),
          ["フォントが 1 つも埋め込まれていない"])
+
+    # --- ⑪ 長い選択肢 (共通テスト型) の誤答照合 ----------------------------
+    LONG = ["本文の主張と反対の立場を紹介し、それを退けることで補強している。",
+            "本文の主張を要約し、読み手が筋を見失わないよう整理している。",
+            "前段落の具体例を一般化し、次の結論へ橋を渡している。",
+            "筆者の体験を挙げ、読み手の共感を得ようとしている。"]
+
+    def long_q(no, ans, ngs):
+        body = "\n".join(f"{h}説明。" for h in H[:-1])
+        body += "\n" + H[-1] + "\n" + "\n".join(ngs)
+        return dict(number=no, page=1, points=3, unit_tag="LONG-TEST",
+                    stem=f"第{no}問の設問文。", choices=list(LONG), answer=ans,
+                    explanation=body)
+
+    ok_ngs = [f"{i}. {c[:14]} — 誤り。" for i, c in enumerate(LONG, 1) if i != 1]
+    case("長い選択肢は書き出しを引けば通る (全文を写さなくてよい)",
+         B.verify(META, [long_q(1, 1, ok_ngs), q_choice(2, ans=2)]), [])
+    bad_ngs = ["2. 要約し、読み手が — 誤り。"] + ok_ngs[1:]
+    case("書き出しを省いて途中から引いたら落とす",
+         B.verify(META, [long_q(1, 1, bad_ngs), q_choice(2, ans=2)]),
+         ["誤答 2 の説明が選択肢と合っていない"])
+    case("書き出しがかぶる選択肢は、かぶりが解けるまで引かせる",
+         [B.distinguishing_prefix(["S = -2x^2 + 40x", "S = -2x^2 + 20x"], 0)],
+         ["S = -2x^2 + 4"])
+    case("書き出しが違えば 1 字で足りる",
+         [B.distinguishing_prefix(["ア案", "イ案"], 0)], ["ア"])
 
     print(f"--- 見たもの: _book_build.verify / spread_note / build_json / "
           f"verify_pages — シナリオ {N_CASE} 件 ---")

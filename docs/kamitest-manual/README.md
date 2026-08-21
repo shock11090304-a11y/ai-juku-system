@@ -184,7 +184,7 @@ Mac はヒラギノが既定で在るので何もしなくてよい (埋め込�
 | キー | 規則 (これを外すと取り込みが落ちる) |
 |---|---|
 | `number` | 1 以上の整数。**冊子の中で重複禁止**。PDF の「第N問」と必ず一致させる |
-| `page` | 1 以上の整数か `null`。**PDF の実ページ数を超えられない**。設問タップで冊子がその頁へ飛ぶ動線に使う。`null` だと飛べないだけで受験はできる |
+| `page` | 1 以上の整数か `null`。**PDF の実ページ数を超えられない**。設問タップで冊子がその頁へ飛ぶ動線に使う。`null` だと飛べないだけで受験はできる。★ 正典では**書かないのが既定**。書かなければ build が刷り上がりから読み取って入れる (下記) |
 | `answer_type` | `choice` か `short` のどちらか。他の値は不可 |
 | `choice_count` | `choice` のとき **2〜10**。`short` のときは `null` (値を入れると落ちる) |
 | `correct_answer` | `choice` → **`"1"`〜`"choice_count"` の数字文字列 (1 起算)**。`"0"`・`"A"`・`"①"` は不可。`short` → 正解の文字列。**数字だけの文字列は弾かれる** (選択式の取りこぼしを捕まえる砦) |
@@ -210,6 +210,25 @@ DB の CHECK も採点 RPC も何も言わずに通り、**その冊子を解い
 
 ★ **前書きや資料に「第1問」と書いてよい** (「第1問〜第3問は資料を見て答えよ」)。
 逆照合は `第N問（N点）` という見出しの形で設問を切り分けるので、混同しない。
+
+### ★ ページは書かない — 刷り上がりから割り当てる
+
+設問に `page` を書くと、本文や資料が 1 行増えただけで刷り上がりとずれる。
+ずれたぶんを手で直す作業が何度も要るし、直し忘れると**設問タップで別のページへ飛ぶ**。
+
+**正典に `page` を書かなければ**、build は
+本文 → 設問の順に流し込んで刷り、**刷り上がりから `第N問（N点）` を探して**
+実ページを JSON に入れる。ページはつねに実物と一致する。
+
+```
+[ok] ページ割り当て: 1頁 第1問 / 2頁 第1・2・3・4問 / 3頁 第5・6・7・8問
+```
+
+- 途中で改ページしたい本文には `"break_before": True` を付ける
+- 冊子の中で `page` を書く設問と書かない設問を混ぜると落ちる (どちらかに揃える)
+- `page` を書かない冊子では `SKIP_PDF_VERIFY=1` は使えない (ページが決まらない)
+- コミット済み JSON の `page` が刷り上がりと合っているかは
+  `check_pdf_canon_match.py` が見る (**正典 → PDF → JSON の 3 者が一致**)
 
 ---
 
@@ -275,7 +294,7 @@ python3 scripts/run_all_gates.py               # 全教材 (CI と同じ)
 |---|---|
 | `_book_build.py::verify()` | build 時。正典 (`QUESTIONS`) を直接見る唯一の層。番号の連番・ページの逆行・選択肢の重複・正解番号・配点・単元タグの形・**教科ごとの解説見出し**・**誤答の節の番号と選択肢の一致**・**解説の生 LaTeX**・**記述の答えの漏洩**・正解位置の配り |
 | `_book_build.py::verify_pdf()` | build 時。**刷り上がり PDF を読み返して**全問・全選択肢が正典どおりのページに在るか + **生の LaTeX が残っていないか** (= KaTeX が全部描けたか) |
-| `scripts/book_exam/check_book_build.py` | **ビルダー自身の自己検査**。記述 (`short`) を混ぜた冊子で誤検出しないこと・それでも本当の違反は捕まえること (シナリオ 26 件)。Chrome も PDF ライブラリも要らないので CI でも同じものが走る |
+| `scripts/book_exam/check_book_build.py` | **ビルダー自身の自己検査**。記述を混ぜた冊子・長い選択肢・図・本文・フォント・ページ割り当てで、誤検出しないことと本当の違反を捕まえることを対で確かめる (シナリオ 59 件)。Chrome も PDF ライブラリも要らないので CI でも同じものが走る |
 | `scripts/book_exam/materials/check_grammar_books.py` | コミット済み JSON 全数 (**全教科**)。取り込みと同じ検証 + 隣に `_問題.pdf` が在るか + 教科ごとの解説の形 + 正解位置 |
 | `scripts/book_exam/materials/check_pdf_canon_match.py` | 英文法 15 冊 (`_grammar_build` 系) の PDF 逆照合 |
 | `scripts/book_exam/check_import_books.py` | 取り込みスクリプトと `exam-book-admin-model.mjs` のずれ |
@@ -337,7 +356,15 @@ python3 scripts/run_all_gates.py               # 全教材 (CI と同じ)
 | 社会 (`social`) | 公民 日本の政治のしくみ 演習 第1集 | `scripts/book_exam/materials/shakai_seiji1/build_shakai_seiji1.py` | 資料の表 (`passages`) / 空欄の資料読み取り |
 | 国語 (`japanese`) | 古文 徒然草を読む 演習 第1集 | `scripts/book_exam/materials/kokugo_kobun1/build_kokugo_kobun1.py` | 本文 (`passages`) + 注 + 出典 / 記述 |
 
-★ `reading` / `eiken` / `mock` (英語の長文・英検・模試) の 1 冊目はまだ無い。
+**共通テスト本番相当** (実データ・複数テクスト・考察・転用まで入れたもの):
+
+| 教科 | 冊子 | 正典 | 本番の要素 |
+|---|---|---|---|
+| 数学 | 数学I 第2問 2次関数 | `scripts/book_exam/materials/sugaku_honban1/build_sugaku_honban1.py` | 実測データの表から立式 / 条件の積み上げ (売上→利益) / 主張の当否の判断 / 条件を変えた転用 |
+| 国語 | 現代文 評論 | `scripts/book_exam/materials/kokugo_honban1/build_kokugo_honban1.py` | 本文 + 【資料】の複数テクスト / 段落番号と傍線記号 / 漢字・理由・内容・資料照合・構成・表現・主旨 / 60〜90 字の選択肢 |
+| 理科 | 物理基礎 記録タイマーの実験 | `scripts/book_exam/materials/rika_honban1/build_rika_honban1.py` | 装置図 + 測定データ / データから量を導く / グラフの予測 / **誤差の向きの考察** / 転用 |
+
+★ `reading` / `eiken` / `mock` (英語の長文・英検・模試) と社会の本番相当はまだ無い。
 作るときは [eigo.md](eigo.md) §6〜§8 と、本文・図の載せ方 (§3) を見ること。
 
 ---

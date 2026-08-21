@@ -21,6 +21,7 @@ run_all_gates.py が check* として自動で拾う。何を見たかを必ず�
   コミット済みなので CI でも実検査できる)。どちらも無ければ**落とす** — 黙って緑を出さない。
 """
 import glob
+import json
 import importlib.util
 import os
 import re
@@ -107,6 +108,28 @@ def main():
         if meta is not None:
             if squeeze(title) not in squeeze(pages[0]):
                 bad.append(f"{stem}: 1 ページ目に冊子タイトルが無い")
+            # ★ page を書かない冊子は、刷り上がりから割り当ててから照合する。
+            #   さらに **コミット済み JSON の page が刷り上がりと一致するか**も見る
+            #   (正典 → PDF → JSON の 3 者が揃ってはじめて取り込んでよい)。
+            if BB.auto_page(questions):
+                errs = BB.resolve_pages(meta, questions, pages)
+                for e in errs:
+                    bad.append(f"{stem}: {e}")
+                if not errs:
+                    jpath = os.path.join(os.path.dirname(path), f"{stem}.json")
+                    try:
+                        rows = json.load(open(jpath, encoding="utf-8"))["questions"]
+                        have = {r["number"]: r.get("page") for r in rows}
+                    except Exception as e:                    # noqa: BLE001
+                        bad.append(f"{stem}: 取り込み JSON を読めない ({e})")
+                        have = None
+                    if have is not None:
+                        for q in questions:
+                            if have.get(q["number"]) != q["page"]:
+                                bad.append(
+                                    f"{stem} 第{q['number']}問: JSON の page が"
+                                    f" {have.get(q['number'])} だが刷り上がりは"
+                                    f" {q['page']} ページ目 (build を回し直す)")
             for e in BB.verify_pdf(meta, questions, pdf):
                 bad.append(f"{stem}: {e}")
             if not any(x.startswith(stem) or x.startswith(label) for x in bad):

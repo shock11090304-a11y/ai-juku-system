@@ -119,6 +119,23 @@ def ng_section(exp, heads):
     return tail
 
 
+def distinguishing_prefix(items, i):
+    """items[i] を他と区別できる最短の書き出し。区別できなければ全文。
+
+    ★ 共通テスト型の選択肢は 60〜90 字ある。誤答を潰す節に全文を書き写すのは
+      現実的でないので、「どの選択肢の話か」が**一意に決まる書き出し**まで
+      引いてあればよい、とする。書き出しが他とかぶっている選択肢は、
+      かぶりが解けるところまで引かせる (そこまで書けば取り違えは起きない)。
+    """
+    me = items[i]
+    others = [o for j, o in enumerate(items) if j != i]
+    for n in range(1, len(me) + 1):
+        pre = me[:n]
+        if not any(o.startswith(pre) for o in others):
+            return pre
+    return me
+
+
 def markup_problem(html, what):
     """@returns 理由 (None なら OK)。"""
     if UNSAFE_MARKUP.search(html or ""):
@@ -271,13 +288,18 @@ def verify(meta, questions, extra=None):
     # --- 本文・資料 (passages) ----------------------------------------------
     for i, p in enumerate(meta.get("passages") or []):
         at = f"本文 {i + 1}"
-        if not isinstance(p.get("page"), int) or p["page"] < 1:
+        if p.get("page") is not None and \
+                (not isinstance(p["page"], int) or p["page"] < 1):
             errs.append(f"{at}: page が 1 以上の整数でない")
+        if not str(p.get("title") or "").strip():
+            errs.append(f"{at}: title が空 (刷り上がりの照合に使う)")
         if not str(p.get("html") or "").strip():
             errs.append(f"{at}: html が空")
         why = markup_problem(p.get("html"), at)
         if why:
             errs.append(why)
+        for t in svg_texts(p.get("html")):      # 本文の図の中の答えも漏洩
+            printed.append(strip_math(t))
         printed.append(strip_math(re.sub(r"<[^>]+>", " ", p.get("html") or "")))
 
     for i, q in enumerate(questions):
@@ -286,10 +308,18 @@ def verify(meta, questions, extra=None):
         if no != i + 1:
             errs.append(f"{at}: 番号が飛んでいる (期待 {i + 1})")
         page = q.get("page")
-        if not (isinstance(page, int) and page >= 1):
-            errs.append(f"{at}: page が 1 以上の整数でない")
-        elif i and page < questions[i - 1].get("page", 0):
-            errs.append(f"{at}: page が前の設問より戻っている")
+        # ★ page は省略できる (自動割り当て)。省くと、刷り上がりから実ページを
+        #   読み取って JSON に書く。本文が長い冊子で「正典のページと刷り上がりが
+        #   合わない」を手で追いかけずに済む (§run)。
+        if page is not None:
+            if not (isinstance(page, int) and page >= 1):
+                errs.append(f"{at}: page が 1 以上の整数でない")
+            elif i and questions[i - 1].get("page") is not None \
+                    and page < questions[i - 1]["page"]:
+                errs.append(f"{at}: page が前の設問より戻っている")
+        elif any(x.get("page") is not None for x in questions):
+            errs.append(f"{at}: page を書く設問と書かない設問が混ざっている "
+                        f"(冊子ごとにどちらかに揃える)")
         stem = str(q.get("stem") or "").strip()
         if not stem:
             errs.append(f"{at}: 設問文が空")
@@ -404,14 +434,18 @@ def verify(meta, questions, extra=None):
             if len(plain) != len(choices):
                 errs.append(f"{at}: choices_plain の数が選択肢と違う")
                 plain = [strip_math(str(c)) for c in choices]
+            plain = [str(c) for c in plain]
             for n in range(1, len(choices) + 1):
                 if n == ans:
                     continue
                 if n not in lines:
                     errs.append(f"{at}: 誤答 {n} の説明が無い")
-                elif str(plain[n - 1]) not in strip_math(lines[n]):
-                    errs.append(f"{at}: 誤答 {n} の説明が選択肢と合っていない "
-                                f"(選択肢 {plain[n-1]!r})")
+                    continue
+                key = distinguishing_prefix(plain, n - 1)
+                if key not in strip_math(lines[n]):
+                    errs.append(f"{at}: 誤答 {n} の説明が選択肢と合っていない。"
+                                f"行の頭で選択肢の書き出しを引くこと "
+                                f"(最低でも {key!r} まで)")
 
     # --- 記述の正解が問題編のどこかに刷られていないか (解答漏洩) -------------
     for q in questions:
@@ -578,7 +612,59 @@ def render_question(q):
     return "".join(out)
 
 
+def auto_page(questions):
+    """page を書いていない冊子か。"""
+    return all(q.get("page") is None for q in questions)
+
+
+def build_head(meta, questions, page=None):
+    total = sum(q["points"] for q in questions)
+    if page is None:
+        return (f'<div class="head"><h1>{_esc(meta["title"])}</h1>'
+                f'<div class="meta">{_esc(meta["level"])} / 全{len(questions)}問 '
+                f'{total}点 / 制限時間 {meta["time_limit_min"]} 分'
+                f' — 解答は別画面の答案に入力してください</div></div>')
+    return (f'<div class="head"><h1>{_esc(meta["title"])}'
+            f'<span style="font-size:10pt;font-weight:400"> — '
+            f'{page} ページ目</span></h1></div>')
+
+
+def render_passage(p):
+    src = (f'<div class="src">{_esc(p["source"])}</div>'
+           if p.get("source") else "")
+    brk = '<div class="pagebreak"></div>' if p.get("break_before") else ""
+    return (f'{brk}<div class="passage"><h2>{_esc(p.get("title") or "")}</h2>'
+            f'<div class="body">{p["html"]}</div>{src}</div>')
+
+
+def build_html_flow(meta, questions):
+    """page を書かない冊子の組み方。本文 → 設問を順に流し込むだけ。
+
+    ★ どこで改ページになるかは中身の量で決まる。実ページは刷ってから読み取る
+      (resolve_pages)。本文が数ページに渡る冊子で、ページ割りを手で合わせ直す
+      作業が要らなくなる。
+    """
+    body = [build_head(meta, questions)]
+    if meta.get("intro"):
+        body.append(f'<div class="intro">{_esc(meta["intro"])}</div>')
+    for p in meta.get("passages") or []:
+        body.append(render_passage(p))
+    for q in questions:
+        body.append(render_question(q))
+    return page_shell(meta, "".join(body))
+
+
+def page_shell(meta, body):
+    return (f'<!doctype html><html lang="ja"><head><meta charset="utf-8">'
+            f'<title>{_esc(meta["title"])}</title>'
+            f'<link rel="stylesheet" href="katex.min.css">'
+            f'<style>{CSS}</style>{_KATEX_BOOT}</head>'
+            f'<body>{body}</body></html>')
+
+
 def build_html(meta, questions):
+    if auto_page(questions):
+        return build_html_flow(meta, questions)
     total = sum(q["points"] for q in questions)
     by_page = {}
     for q in questions:
@@ -591,32 +677,19 @@ def build_html(meta, questions):
     pages = sorted(set(by_page) | set(passages))
     for idx, page in enumerate(pages):
         if idx == 0:
-            body.append(
-                f'<div class="head"><h1>{_esc(meta["title"])}</h1>'
-                f'<div class="meta">{_esc(meta["level"])} / 全{len(questions)}問 '
-                f'{total}点 / 制限時間 {meta["time_limit_min"]} 分'
-                f' — 解答は別画面の答案に入力してください</div></div>')
+            body.append(build_head(meta, questions))
             if meta.get("intro"):
                 body.append(f'<div class="intro">{_esc(meta["intro"])}</div>')
         else:
-            body.append(f'<div class="head"><h1>{_esc(meta["title"])}'
-                        f'<span style="font-size:10pt;font-weight:400"> — '
-                        f'{page} ページ目</span></h1></div>')
+            body.append(build_head(meta, questions, page))
         for p in passages.get(page, []):
-            src = (f'<div class="src">{_esc(p["source"])}</div>'
-                   if p.get("source") else "")
-            body.append(f'<div class="passage"><h2>{_esc(p.get("title") or "")}</h2>'
-                        f'<div class="body">{p["html"]}</div>{src}</div>')
+            body.append(render_passage(p))
         for q in by_page.get(page, []):
             body.append(render_question(q))
         if idx < len(pages) - 1:
             body.append('<div class="pagebreak"></div>')
 
-    return (f'<!doctype html><html lang="ja"><head><meta charset="utf-8">'
-            f'<title>{_esc(meta["title"])}</title>'
-            f'<link rel="stylesheet" href="katex.min.css">'
-            f'<style>{CSS}</style>{_KATEX_BOOT}</head>'
-            f'<body>{"".join(body)}</body></html>')
+    return page_shell(meta, "".join(body))
 
 
 def find_chrome():
@@ -759,6 +832,9 @@ def verify_pages(meta, questions, pages):
       CI でもここを直接叩ける。verify_pdf はファイルを読んで渡すだけ。
     """
     errs = []
+    if any(q.get("page") is None for q in questions):
+        return ["ページが決まっていない設問がある "
+                "(page を書かない冊子は resolve_pages を先に通すこと)"]
     want_pages = max(q["page"] for q in questions)
     if len(pages) != want_pages:
         errs.append(f"PDF が {len(pages)} ページ (正典は {want_pages} ページ)")
@@ -807,14 +883,28 @@ def verify_pages(meta, questions, pages):
             if ps.get("source") and norm_pdf(ps["source"]) not in text:
                 errs.append(f"{page} ページ: 本文の出典が PDF に無い "
                             f"({ps['source'][:24]!r})")
+            # ★ 本文の中に置いた図も照合する。設問の figure と違って
+            #   検査が無かったため、図が丸ごと落ちても緑のままだった。
+            for t in svg_texts(ps.get("html")):
+                if norm_pdf(t) not in text:
+                    errs.append(f"{page} ページ: 本文の図の文字が PDF に無い "
+                                f"({t[:24]!r})")
+                    break
 
         segs = slice_by_question(text, qs)
         for q in qs:
             at = f"第{q['number']}問"
             seg = segs.get(q["number"])
             if seg is None:
-                errs.append(f"{at}: PDF の {page} ページに"
-                            f"「{question_mark(q)}」が見つからない")
+                # ★ どこに刷られたかを言う。ページ割りを直すのに要る情報で、
+                #   「見つからない」だけだと 1 問ずつ総当たりになる。
+                mark = norm_pdf(question_mark(q))
+                where = [i + 1 for i, t in enumerate(flat) if mark in t]
+                errs.append(
+                    f"{at}: PDF の {page} ページに「{question_mark(q)}」が無い"
+                    + (f" (実際は {where[0]} ページ目。正典の page を直すか、"
+                       f"1 ページに載せる設問を減らす)" if where else
+                       " (どのページにも無い)"))
                 continue
             # 設問文 — 数式以外はその設問の範囲に、数式はページのどこかに
             for t in plain_segments(q["stem"]):
@@ -842,6 +932,39 @@ def verify_pages(meta, questions, pages):
                 miss += [t for t in checkable_math(c) if norm_pdf(t) not in text]
                 if miss:
                     errs.append(f"{at}: 選択肢 {i} が PDF に無い ({miss[0][:24]!r})")
+    return errs
+
+
+def resolve_pages(meta, questions, pages_text):
+    """刷り上がりから設問・本文の実ページを読み取って割り当てる。
+
+    ★ page を書かない冊子 (auto_page) 用。本文が数ページに渡ると、正典に書いた
+      ページと刷り上がりが合わず、手で合わせ直す作業が何度も要る。刷ってから
+      読み取れば、ページはつねに実物と一致する。
+    @returns エラー文の一覧 (空なら questions / passages の page を書き換え済み)
+    """
+    errs = []
+    flat = [norm_pdf(t) for t in pages_text]
+    for q in questions:
+        mark = norm_pdf(question_mark(q))
+        hit = next((i + 1 for i, t in enumerate(flat) if mark in t), None)
+        if hit is None:
+            errs.append(f"第{q['number']}問: 刷り上がりに"
+                        f"「{question_mark(q)}」が見つからない")
+        else:
+            q["page"] = hit
+    for i, p in enumerate(meta.get("passages") or []):
+        title = norm_pdf(p.get("title") or "")
+        hit = next((j + 1 for j, t in enumerate(flat) if title and title in t), None)
+        if hit is None:
+            errs.append(f"本文 {i + 1}: 刷り上がりに見出し"
+                        f"「{p.get('title')}」が見つからない")
+        else:
+            p["page"] = hit
+    nums = [q["page"] for q in questions if isinstance(q.get("page"), int)]
+    if nums and nums != sorted(nums):
+        errs.append(f"設問のページが前後している {nums} "
+                    f"(刷り上がりの順序が正典と違う)")
     return errs
 
 
@@ -879,9 +1002,9 @@ def run(here, meta, questions, verify_extra=None):
     stem = meta["stem"]
     out_json = os.path.join(here, f"{stem}.json")
     out_pdf = os.path.join(here, f"{stem}_問題.pdf")
-    with open(out_json, "w", encoding="utf-8") as f:
-        json.dump(build_json(meta, questions), f, ensure_ascii=False, indent=1)
-    print(f"[ok] {os.path.basename(out_json)}")
+    auto = auto_page(questions)
+    if auto:
+        print("[ok] ページは刷り上がりから割り当てる (正典に page を書いていない)")
 
     why = write_pdf(meta, questions, out_pdf)
     if why:
@@ -902,11 +1025,41 @@ def run(here, meta, questions, verify_extra=None):
                 print(f"✗ {e}")
             return 1
 
+    def dump_json():
+        # ★ JSON はすべての検査を通ってから書く。落ちた冊子の JSON が
+        #   中途半端に残ると、次に取り込むとき古い内容が入る。
+        with open(out_json, "w", encoding="utf-8") as f:
+            json.dump(build_json(meta, questions), f, ensure_ascii=False, indent=1)
+        print(f"[ok] {os.path.basename(out_json)}")
+
     if os.environ.get("SKIP_PDF_VERIFY") == "1":
+        if auto:
+            print("✗ ページを刷り上がりから割り当てる冊子では "
+                  "SKIP_PDF_VERIFY=1 は使えない (page が決まらない)")
+            return 1
         print("! 刷り上がり PDF の読み返しを飛ばした (SKIP_PDF_VERIFY=1)。"
               "相互チェックの①層が抜けている")
+        dump_json()
         return 0
-    errs = verify_pdf(meta, questions, out_pdf)
+
+    pages_text = pdf_pages(out_pdf)
+    if pages_text is None:
+        print("✗ PDF を読み返せない (pypdf も pymupdf も無い)。"
+              "python3 -m pip install pypdf")
+        return 1
+    if auto:
+        errs = resolve_pages(meta, questions, pages_text)
+        if errs:
+            for e in errs:
+                print(f"✗ ページ割り当て: {e}")
+            return 1
+        spread = {}
+        for q in questions:
+            spread.setdefault(q["page"], []).append(q["number"])
+        print("[ok] ページ割り当て: "
+              + " / ".join(f"{p}頁 第{'・'.join(map(str, v))}問"
+                           for p, v in sorted(spread.items())))
+    errs = verify_pages(meta, questions, pages_text)
     if errs:
         for e in errs:
             print(f"✗ PDF 読み返し: {e}")
@@ -916,4 +1069,5 @@ def run(here, meta, questions, verify_extra=None):
         print(f"!    {note}")
     print(f"[ok] PDF 読み返し — 全{len(questions)}問・全選択肢が正典どおりの"
           f"ページに在る / 生の LaTeX なし")
+    dump_json()
     return 0
