@@ -173,6 +173,11 @@ def main():
     case("指示文の subject 一覧が実物と同じ",
          [] if subs and subs >= set(B.SUBJECT_HEADINGS) else
          [f"指示文の subject {sorted(subs)} が実物を含んでいない"], [])
+    noted = PROMPT.build("math", 10, False, "検査",
+                        "誤答は計算ミスから作る\n図を 1 つ入れる")
+    for must in ("この冊子への追加の注文", "誤答は計算ミスから作る", "図を 1 つ入れる"):
+        case(f"追加の注文「{must}」が指示文に入る",
+             [] if must in noted else [f"「{must}」が無い"], [])
     hon = PROMPT.build("math", 10, True, "検査")
     for must in ("誘導連鎖", "判断・考察", "転用", "単独でも解ける"):
         case(f"本番相当の指示文に「{must}」が入っている",

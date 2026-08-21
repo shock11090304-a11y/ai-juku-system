@@ -71,7 +71,7 @@ EXAMPLE = '''```json
 ```'''
 
 
-def build(subject, n, honban, unit):
+def build(subject, n, honban, unit, note=""):
     heads = B.SUBJECT_HEADINGS[subject]
     ng = B.ng_heading(heads)
     label = dict(subjects()).get(subject, subject)
@@ -104,6 +104,13 @@ def build(subject, n, honban, unit):
                  "必要な数値は設問文にも書く（1 問落とすと以降が全部落ちる冊子にしない）。")
     else:
         p.append("- レベル: 単元別の演習（各設問が独立していてよい）")
+    if note:
+        p.append("")
+        p.append("## この冊子への追加の注文")
+        p.append("")
+        for line in str(note).splitlines():
+            if line.strip():
+                p.append(f"- {line.strip()}")
     p.append("")
 
     p.append("# 絶対に守る規則（破ると機械が弾きます）")
@@ -211,9 +218,11 @@ def main():
     ap.add_argument("--honban", action="store_true",
                     help="共通テスト本番相当の構成を求める")
     ap.add_argument("--unit", default="", help="単元・題材の指定")
+    ap.add_argument("--note", default="",
+                    help="この冊子への追加の注文 (改行で複数書ける)")
     ap.add_argument("--out", help="書き出し先 (既定 標準出力)")
     a = ap.parse_args()
-    text = build(a.subject, a.n, a.honban, a.unit)
+    text = build(a.subject, a.n, a.honban, a.unit, a.note)
     if a.out:
         with open(a.out, "w", encoding="utf-8") as f:
             f.write(text)
