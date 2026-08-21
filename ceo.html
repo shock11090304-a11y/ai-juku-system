@@ -941,6 +941,9 @@
       </div>
 
       <!-- アラート一覧 -->
+      <!-- 🔓 権限/上限ゲートのフェイルオープン (直近24h)。events に書くだけでは誰も見ないので、
+           ceo.html が実際に叩いている monitor/status 経由でここに出す。 -->
+      <div id="monGateFailuresBox"></div>
       <div id="monAlertsBox"></div>
 
       <!-- 📚 教材プール 未作成リクエスト一覧 (2026-05-01: pool 主導戦略) -->
@@ -3971,6 +3974,58 @@
     window.testOpenAI = testOpenAI;
 
     // 申込→決済 監視ヘルス
+    // 🔓 権限/上限ゲートの event 名 → 表示名。
+    //   ★**この IIFE の中**に置くこと。下の eventNameLabel (L9901付近) と esc (L8773付近) は
+    //     別の script ブロックの IIFE の中にあり window へ export されていないので、
+    //     ここから参照すると ReferenceError になる。しかも renderGateFailures は
+    //     「フェイルオープンが1件でもあるとき」だけ本文を組み立てるので、
+    //     **上限が効いていないという最も知らせたい瞬間にだけ監視パネル全体が沈黙する**。
+    //     エスケープは **この IIFE 内の escapeHtml()** (L4333付近) が解決される。
+    //     ceo.js にも同名のグローバルがあるが、内側の関数宣言が影にするので届かない。
+    //     ★内側の版は ' をエスケープしない。ここの出力先3箇所はいずれもテキスト位置
+    //       (属性値ではない) なので実害は無いが、属性に入れるときは使わないこと。
+    var GATE_FAILURE_LABELS = {
+      'route_gate_middleware_failed': '🔓 権限ゲート素通し (最外殻)',
+      'student_gate_read_failed': '🔓 権限の読み取り失敗',
+      'light_tier_column_check_failed': '🔓 feature_tier 列の確認失敗',
+      'light_quota_read_failed': '🔓 ライト上限の読み取り失敗',
+      'light_consume_failed': '🔓 ライト上限の計上失敗',
+      'light_count_once_failed': '🔓 ライト消費の記録失敗',
+      'light_backstop_check_failed': '🔓 ライト最終防壁の判定失敗',
+      'light_budget_label_failed': '🔓 上限メッセージの層判定失敗',
+      'ai_disabled_read_failed': '🔓 契約情報の読み取り失敗 (AIなし枠が素通し)',
+      'ai_budget_check_failed': '🔓 AI 予算の判定失敗 (上限なしで通した)',
+    };
+
+    // 🔓 権限/上限ゲートのフェイルオープンを出す。
+    //   ★「0件だから健全」と「測れていない」を同じ見た目にしないこと。集計に失敗したときは
+    //     total が null で返るので、そのときだけ黄色で「集計できませんでした」と出す。
+    function renderGateFailures(gf) {
+      const box = document.getElementById('monGateFailuresBox');
+      if (!box) return;
+      if (!gf) { box.innerHTML = ''; return; }
+      if (gf.total === null || gf.total === undefined) {
+        box.innerHTML = '<div style="margin-bottom:1rem;padding:0.8rem 1rem;border-radius:10px;'
+          + 'background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);color:#fde68a;font-size:0.86rem;">'
+          + '⚠️ 権限/上限ゲートの記録を集計できませんでした（DB 側の問題の可能性）。'
+          + escapeHtml(gf.error || '') + '</div>';
+        return;
+      }
+      if (gf.total === 0) { box.innerHTML = ''; return; }   // 正常時は何も出さない
+      const rows = (gf.by_name || []).map(function (r) {
+        return '<li style="margin:0.15rem 0;">' + escapeHtml(GATE_FAILURE_LABELS[r.name] || r.name)
+          + ' <strong>' + r.count + '</strong> 件 <span style="color:#94a3b8;font-size:0.8rem;">('
+          + escapeHtml(String(r.last_at || '').slice(0, 16)) + ')</span></li>';
+      }).join('');
+      box.innerHTML = '<div style="margin-bottom:1rem;padding:0.85rem 1rem;border-radius:10px;'
+        + 'background:rgba(248,113,113,0.10);border:1px solid rgba(248,113,113,0.40);color:#fecaca;font-size:0.88rem;">'
+        + '<div style="font-weight:800;margin-bottom:0.35rem;">🔓 権限/上限ゲートが直近'
+        + (gf.hours || 24) + '時間で <strong>' + gf.total + '</strong> 回フェイルオープンしました</div>'
+        + '<div style="font-size:0.82rem;color:#fca5a5;margin-bottom:0.4rem;">'
+        + 'この間、AIなし枠の遮断やライトの上限が効いていない可能性があります。</div>'
+        + '<ul style="margin:0;padding-left:1.1rem;">' + rows + '</ul></div>';
+    }
+
     async function loadMonitorHealth() {
       if (!window.AdminAuth || !AdminAuth.getToken()) return;
       try {
@@ -3979,6 +4034,7 @@
         const data = await res.json();
         const s = data.snapshot || {};
         const alerts = data.alerts || [];
+        renderGateFailures(data.gate_failures);
         // 設定状況
         const ok = '<span style="color:#34d399;">✅</span>';
         const ng = '<span style="color:#f87171;">❌</span>';
@@ -9876,6 +9932,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         'ai_fallback_used': '🛡️ AI モデル降格',
         'ai_credit_low': '🚨 AI クレジット不足',
         'ai_total_failure': '❌ AI 全失敗',
+        // ★権限/上限ゲートの event 名をここに足しても**絶対に表示されない**。この map の唯一の
+        //   利用者 renderActivityPane のデータ元は /api/admin/students/{id}/activity で、
+        //   SQL が session_id = 'student:N' で絞る一方、gate event は session_id='ai_failsafe'
+        //   で書かれるため行が一致しようがない。ラベルは実際に描画する renderGateFailures 側に置く。
       };
       return map[name] || name;
     }

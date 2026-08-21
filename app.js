@@ -456,11 +456,9 @@ AIコーチング`,
 いつもお世話になっております。
 ${s.name}さんの今月の学習状況をご報告いたします。
 
-■ 週平均学習時間: ${s.weeklyHours || 0}時間
-■ 志望校: ${s.goal || '未設定'}
+${s.weeklyHours ? `■ 週平均学習時間（ご申告の目安）: ${s.weeklyHours}時間\n` : ''}■ 志望校: ${s.goal || '未設定'}
 ■ 今月のハイライト
-・AIチューターへの質問が積極的
-・弱点分野の克服に向けて計画的に取り組み中
+（ここに今月の様子を記入してください。例: 取り組んだ単元、伸びた点、次の課題）
 
 ■ 来月の方針
 ${s.goal ? `${s.goal}合格に向けて、` : ''}弱点分野を重点的にフォローしてまいります。
@@ -543,7 +541,7 @@ AIコーチング`;
 
 ${s.name}さんの${new Date().getMonth() + 1}月分のご利用料金をお知らせいたします。
 
-■ 金額: ¥${(s.fee || 39800).toLocaleString()}（税込）
+■ 金額: ${s.fee ? '¥' + s.fee.toLocaleString() + '（税込）' : '別途ご案内いたします'}
 ■ 引落し予定日: ${new Date().getMonth() + 2}月1日
 
 ご不明な点がございましたら、このメールにご返信ください。
@@ -1258,9 +1256,14 @@ function addStudent() {
   const grade = prompt('学年 (例: 高校2年):') || '中学3年';
   const goal = prompt('志望校・目標:') || '未設定';
   const newId = Math.max(0, ...state.students.map(s => s.id)) + 1;
+  // 🚨 2026-08-21: ここは weeklyHours: 15 と subjects {英語:60,数学:60,国語:60} を書いていた。
+  //   測ってもいない学習時間と、受けてもいない模試の偏差値を新規生徒に**発明**する形で、
+  //   そのままレーダーグラフ (見出し「科目別 偏差値 (自己申告)」) と保護者レポートの
+  //   プロンプト (「科目別偏差値 (生徒の自己申告)」) に流れていた。
+  //   直書きの数値をプロンプトから消しても、データ源がこれでは同じ捏造が復活する。
   state.students.push({
-    id: newId, name, grade, goal, weeklyHours: 15,
-    subjects: { 英語: 60, 数学: 60, 国語: 60 }
+    id: newId, name, grade, goal, weeklyHours: 0,
+    subjects: {}
   });
   state.currentStudentId = newId;
   storage.set(STORAGE_KEYS.STUDENTS, state.students);
@@ -1415,7 +1418,7 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
     }
   } catch (_) {}
   const _metaKey = abortKey || ('anon_' + Math.random().toString(36).slice(2));
-  window._aiCallMeta[_metaKey] = { quotaBlocked: false, usedDemo: false };
+  window._aiCallMeta[_metaKey] = { quotaBlocked: false, usedDemo: false, quotaKnown: false };
   const _meta = window._aiCallMeta[_metaKey];
   let quotaKnown = false;   // 上限だと断定してよい 429 か (接頭辞 or feature がある)
   const jsonSafeFallback = (reason) => {
@@ -1471,6 +1474,10 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
           //   生徒に ¥39,800 の勧誘まで出る。断定しない文言に倒す (作り話を返さない点は同じ)。
           const isKnownLimit = !!feature || isDailyBudget || /^AI_BUDGET_/.test(detail);
           quotaKnown = isKnownLimit;
+          // ★meta にも載せる。呼び出し元 (カリキュラム生成の注意書き) は戻り値しか見られないので、
+          //   これが無いと「上限だと断定できない 429」でも本文=「混み合っています」・
+          //   注意書き=「上限のため」という食い違いが出る。
+          _meta.quotaKnown = isKnownLimit;
           const msg = detail || (isKnownLimit
             ? 'AI の利用上限に達しました。時間をおいてからお試しください。'
             : 'ただいま混み合っています。少し時間をおいてから、もう一度お試しください。');
@@ -1579,9 +1586,37 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
     if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
     return '⚠️ AI の利用上限に達しました。\n\n単元ドリル・演習ドリル・AI単語帳・弱点克服は上限に関係なく使えます。';
   }
+  // 🚨 2026-08-21: ログイン済みの生徒には demoResponse を返さない。
+  //   demoResponse は「その生徒について事実を述べる」形の出力を含む — 点数入りの添削、
+  //   弱点診断、実在しない数値の保護者レポート、スピーキングの採点。backend が 5xx/401 で
+  //   落ちただけのときにこれを返すと、呼び出し側 6 箇所が全部 formatMarkdown で本物として
+  //   描画し、生徒は印刷も書き写しもできる。黙って作るより、正直に失敗するほうがよい。
+  //   ★条件を state.mode === 'demo' だけにしてはいけない: updateModeIndicator (L960〜) は
+  //     hosted 判定に失敗すると apiKey 無しの生徒を無条件で state.mode='demo' に落とす。
+  //     detectBackendAI は 3 秒 timeout なので、モバイル回線で1回こけただけで課金中の生徒が
+  //     demo 扱いになる。**セッションの有無**で「本当に未ログインか」を判定する
+  //     (callClaudeVision の同じ事故で確立した作法。下の未ログイン体験画面の分岐と同一)。
+  //   ★kind の一覧で絞らない。「事実を述べる kind」を列挙すると、kind が増えたときに
+  //     必ず入れ忘れて同じ穴が開く (完全一致の列挙が壊れるのはこのリポジトリで再発済み)。
+  const _hasSession = !!((window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken())
+    || localStorage.getItem('ai_juku_session_token'));
   if (state.mode === 'demo' || !state.apiKey) {
     if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
-    _meta.usedDemo = true;   // ★作り話。保存・取込に回してはいけない
+    // ★ガードは **この分岐の中**に置くこと。分岐の外 (上) に出すと、下の「個別APIキー直叩き」
+    //   (塾長の admin モードの逃げ道) がセッション保持者に到達不能になる。index.html は
+    //   auth-guard 必須なので塾長も必ずトークンを持っており、backend 障害時に自分のキーでも
+    //   動かせなくなる。callClaudeVision は個人キー分岐をセッション判定より**先**に置き、
+    //   「ここで必ず throw すると、proxy が落ちた瞬間に管理者用の経路まで死ぬ」と明記している。
+    //   同じ作法に揃える (2026-08-21 レビュー指摘で修正)。
+    if (_hasSession) {
+      // ★JSON を待っている呼び出し元 (problems) に文字列を返すと JSON.parse が落ちて
+      //   「もう一度押してください」系の無関係な案内になる。既存の 2 箇所 (backend 非 OK /
+      //   backend 例外) と同じく **練習問題のサンプル**を返す。
+      if (isJsonKind) return jsonSafeFallback('no backend (logged in)');
+      // ★先頭を ⚠️ にする。カリキュラム生成はこれを見て保存を止める (/^⚠️/ の保険)。
+      return '⚠️ ただいま AI に接続できませんでした。\n\n通信環境とログイン状態をご確認のうえ、もう一度お試しください。';
+    }
+    _meta.usedDemo = true;   // ★作り話。保存・取込に回してはいけない (未ログインの体験画面のみ)
     return demoResponse(systemPrompt, userMessage, options);
   }
 
@@ -3591,7 +3626,8 @@ function updateStats() {
   document.getElementById('totalQuestions').textContent = stats.total;
   document.getElementById('todayQuestions').textContent =
     stats.today.date === today ? stats.today.count : 0;
-  document.getElementById('kpiQuestions').textContent = stats.total || 47;
+  // ★|| 47 だった。質問0件の生徒に「47・積極性◎」と出る (0 は falsy なので必ず踏む)。
+  document.getElementById('kpiQuestions').textContent = stats.total || 0;
 }
 
 function clearChat() {
@@ -3680,15 +3716,26 @@ function _computeRequiredStudyHours(goal, level, targetDateStr) {
   else if (/MARCH|明治|青山|立教|中央|法政|関関同立|千葉大|筑波大|横浜国立|神戸大|大阪大|名古屋大|東北大|北海道大|九州大/.test(g)) targetDev = 62;
   else if (/日東駒専|日本大学|東洋|駒澤|専修|近畿/.test(g)) targetDev = 55;
 
-  const gap = currentDev !== null ? Math.max(0, targetDev - currentDev) : 8;
+  // 🚨 2026-08-21: 既定値 8 は「偏差値を書かなかった生徒」に**測ってもいないギャップ**を与える。
+  //   下の confirm は「現在の推定偏差値」を知らないときは隠すのに、そこから導いた
+  //   「偏差値ギャップ: +8」は断定して出していた (入力は隠して結論だけ断定する形)。
+  //   分からないときは 0 にして上乗せしない。
+  //   ★currentDev の出どころは **「現在の学力」テキストエリア (#currentLevel)** であって
+  //     student.subjects ではない (L3701-3709)。ここに「addStudent を subjects:{} に直した
+  //     ぶん currentDev=null が増える」と書いていたが**事実誤り**だったので訂正した。
+  const devKnown = currentDev !== null;
+  const gap = devKnown ? Math.max(0, targetDev - currentDev) : 0;
   const gapBonus = gap * 0.7; // 偏差値+10なら+7h
 
   // 残り期間でプレッシャー追加
+  // ★試験日が未入力なら「約10ヶ月」と断定しない。内部計算の既定値としては使うが、
+  //   画面と AI プロンプトには monthsKnown が true のときだけ出す。
   let monthsLeft = 10;
+  let monthsKnown = false;
   if (targetDateStr) {
     const td = new Date(targetDateStr);
     const diff = (td - new Date()) / (86400000 * 30);
-    if (!isNaN(diff) && diff > 0) monthsLeft = Math.max(1, Math.round(diff));
+    if (!isNaN(diff) && diff > 0) { monthsLeft = Math.max(1, Math.round(diff)); monthsKnown = true; }
   }
   let pressureBonus = 0;
   if (monthsLeft <= 3) pressureBonus = 10;
@@ -3702,7 +3749,9 @@ function _computeRequiredStudyHours(goal, level, targetDateStr) {
     currentDev,
     targetDev,
     gap,
+    devKnown,
     monthsLeft,
+    monthsKnown,
     gapBonus: Math.round(gapBonus),
     pressureBonus,
   };
@@ -3733,8 +3782,8 @@ async function generateCurriculum() {
       `・志望校: ${goal}`,
       `・推定必要偏差値: ${analysis.targetDev}`,
       analysis.currentDev ? `・現在の推定偏差値: ${analysis.currentDev}` : '',
-      `・偏差値ギャップ: +${analysis.gap}`,
-      `・試験まで: 約${analysis.monthsLeft}ヶ月`,
+      analysis.devKnown ? `・偏差値ギャップ: +${analysis.gap}` : '・偏差値ギャップ: 未算出 (現在の偏差値が未入力)',
+      analysis.monthsKnown ? `・試験まで: 約${analysis.monthsLeft}ヶ月` : '・試験まで: 未算出 (受験日が未入力)',
       ``,
       `⚠️ 推奨学習時間: 週${analysis.required}h`,
       `⚠️ 現在の入力値: 週${weeklyHours}h (${shortage}h不足)`,
@@ -3823,7 +3872,7 @@ async function generateCurriculum() {
 ${textbookContext}`;
 
   const upliftNote = (userAcknowledged && adjustedHours > weeklyHours)
-    ? `\n\n【⚡ 学習時間を合格ライン逆算で調整】\n生徒申告: 週${weeklyHours}h → 合格必要時間: 週${adjustedHours}h\n偏差値ギャップ +${analysis.gap} / 試験まで${analysis.monthsLeft}ヶ月\n→ 週${adjustedHours}hで実行可能なカリキュラムを設計してください。\n→ 冒頭の「現状分析と戦略」セクションで、なぜ週${adjustedHours}hが必要か生徒に説明してください。`
+    ? `\n\n【⚡ 学習時間を合格ライン逆算で調整】\n生徒申告: 週${weeklyHours}h → 合格必要時間: 週${adjustedHours}h\n${analysis.devKnown ? `偏差値ギャップ +${analysis.gap}` : '偏差値ギャップ: 未算出'} / ${analysis.monthsKnown ? `試験まで${analysis.monthsLeft}ヶ月` : '受験日: 未入力'}\n→ 週${adjustedHours}hで実行可能なカリキュラムを設計してください。\n→ 冒頭の「現状分析と戦略」セクションで、なぜ週${adjustedHours}hが必要か生徒に説明してください。`
     : '';
 
   // 📚 マイ参考書 (使用中) を取得して AI prompt に注入 (塾長指示 2026-05-14)
@@ -3931,8 +3980,18 @@ ${level}
 **スタサプ講座**: 上記スタサプ講座 DB に記載のある講座名のみ使用すること。DB にない講座名 (架空) は絶対に出力しないこと。`;
 
   const response = await callClaude(systemPrompt, userMsg, { kind: 'curriculum', maxTokens: 6000, abortKey: CURRICULUM_ABORT_KEY });
-  out.innerHTML = formatMarkdown(escapeHtml(response));
-  renderMathInNode(out); // 🔢 2026-06-04 数式文字化け横展開: AI応答の $...$ / \(...\) を KaTeX 組版
+  // ★描画する **前に** meta を読む (2026-08-21)。2026-08-20 に demoResponse の保存だけを止めたが、
+  //   本文はそのまま描画していたので、生徒の画面には実在しない講座名入りの学習計画が
+  //   「作成できました」の顔で残り、印刷も書き写しもできた。読めることのほうが実害が大きい。
+  const _cMeta = (window._aiCallMeta && window._aiCallMeta[CURRICULUM_ABORT_KEY]) || {};
+  const _cSkip = _cMeta.quotaBlocked || _cMeta.usedDemo || /^⚠️/.test(String(response || ''));
+  if (_cMeta.usedDemo) {
+    out.innerHTML = '';   // 作り話は本文ごと出さない。下の注意書きだけを残す
+  } else {
+    // 上限の警告文もネットワーク警告も **サーバ/クライアントの本物の応答**なのでそのまま出す。
+    out.innerHTML = formatMarkdown(escapeHtml(response));
+    renderMathInNode(out); // 🔢 2026-06-04 数式文字化け横展開: AI応答の $...$ / \(...\) を KaTeX 組版
+  }
   // 「学習計画・管理」タブが取込で参照する最終生成結果を保存
   // ★上限で止まったときの警告文は保存しない。保存すると、以前つくった本物のカリキュラムが
   //   警告文で上書きされ、「学習計画・管理」タブの取込がそれを計画として読み込む。
@@ -3943,8 +4002,6 @@ ${level}
   //   - usedDemo: demoResponse の**作り話の計画** (5xx/401 でここに落ちる。⚠️ で始まらないので
   //     文字列判定では捕まらなかった)
   //   - /^⚠️/: ネットワーク等の警告文 (保険)
-  const _cMeta = (window._aiCallMeta && window._aiCallMeta[CURRICULUM_ABORT_KEY]) || {};
-  const _cSkip = _cMeta.quotaBlocked || _cMeta.usedDemo || /^⚠️/.test(String(response || ''));
   if (_cSkip) {
     // ★保存しないことを画面にも出す。黙って保存だけ止めると、「学習計画・管理」の取込が
     //   古い計画を静かに読むか「先にカリキュラムを作成してください」と言い、
@@ -3957,11 +4014,28 @@ ${level}
       //   一度も作っていない生徒に言うと、取込が「先に作成してください」と返して食い違う。
       let _hasPrev = false;
       try { _hasPrev = !!localStorage.getItem('ai_juku_last_curriculum'); } catch (_) {}
-      _note.textContent = _cMeta.usedDemo
-        ? '⚠️ これは通信できなかったときの仮の表示です。保存していないので「学習計画・管理」には取り込めません。時間をおいてもう一度作成してください。'
-        : (_hasPrev
-            ? '⚠️ 上限のため今回は作成できませんでした。保存していないので、以前に作成した計画はそのまま残っています。'
-            : '⚠️ 上限のため今回は作成できませんでした。保存していないので「学習計画・管理」には取り込めません。');
+      // ★理由ごとに文言を変える。以前はどれも「上限のため」と書いていたので、
+      //   インフラ由来の 429 (上限だと断定できない) やネットワーク警告のときに、
+      //   本文=「混み合っています」・注意書き=「上限のため」という食い違いが出ていた。
+      //   判定は日本語本文の一致ではなく meta で行う (文言を推敲した瞬間に静かに壊れる書き方を避ける)。
+      const _isKnownLimit = !!(_cMeta.quotaBlocked && _cMeta.quotaKnown);
+      let _reason;
+      if (_cMeta.usedDemo) {
+        _reason = '通信できなかったため、今回は作成できませんでした。';
+      } else if (_isKnownLimit) {
+        _reason = '上限のため今回は作成できませんでした。';
+      } else {
+        // ★原因を断定しない。ここに来るのは「上限だと断定できない 429」「ネットワーク警告」
+        //   「AI に接続できなかった」の3種で、原因は本文が語る。注意書きが別の原因を名指しすると
+        //   本文と食い違う (それを直すためにこの分岐を作ったので、ここで再発させない)。
+        _reason = '今回は作成できませんでした。';
+      }
+      _note.textContent = '⚠️ ' + _reason
+        + (_hasPrev
+            ? '保存していないので、以前に作成した計画はそのまま残っています。'
+            : '保存していないので「学習計画・管理」には取り込めません。')
+        // 上限は待っても直らない (翌月・生涯枠なら永久)。そこだけ「時間をおいて」と言わない。
+        + (_isKnownLimit ? '' : '時間をおいてもう一度お試しください。');
       out.insertBefore(_note, out.firstChild);
     } catch (_) {}
   } else {
@@ -6708,16 +6782,30 @@ async function generateParentReport() {
 出力は Markdown。`;
 
   const subjects = Object.entries(student.subjects || {}).map(([k, v]) => `${k}: ${v}`).join(', ');
+  // 🚨 2026-08-21: ここには「今週の学習時間: 12.5時間 (先週比+2.5h) / 平均正答率: 78% (先週比+5%) /
+  //   AIへの質問数: 47件」が **直書き**されていた。通信失敗時の代替ではなく、AI が
+  //   **成功したときにこそ**効く。学習時間0の生徒にも「今週は12.5時間、先週比+2.5時間の成長」と
+  //   書かれた保護者レポートが出て、印刷ボタンと保護者向け共有URLまで付いていた。
+  //   しかも上の systemPrompt 自身が「『正答率78%』のような抽象スコアは使わず」と書いており、
+  //   与えるデータと指示が正面から矛盾していた。
+  //   ★手元に本当にある数字だけを渡し、無い項目は**渡さない**。渡さないだけでは AI が埋めるので、
+  //     「与えられていない数値を書かない」と明示すること。
+  const _pStats = storage.get(STORAGE_KEYS.STATS, { total: 0 });
+  const _pFacts = [
+    `氏名: ${student.name}`,
+    `学年: ${student.grade}`,
+    `志望校: ${student.goal}`,
+    subjects ? `科目別偏差値 (生徒の自己申告): ${subjects}` : '',
+    `AIへの質問数 (この端末に残っている記録): ${_pStats.total || 0}件`,
+  ].filter(Boolean).join('\n');
   const userMsg = `生徒情報:
-氏名: ${student.name}
-学年: ${student.grade}
-志望校: ${student.goal}
-科目別偏差値: ${subjects}
-今週の学習時間: 12.5時間 (先週比+2.5h)
-平均正答率: 78% (先週比+5%)
-AIへの質問数: 47件
+${_pFacts}
 
-上記から、保護者向けの今週の成長レポートを作成してください。`;
+上記から、保護者向けの今週の成長レポートを作成してください。
+
+【厳守】上に書かれていない数値 (学習時間・正答率・順位・偏差値の増減・正誤の件数など) は
+**絶対に書かないこと**。推定・例示・「およそ」「約」も禁止です。
+数値が無い項目については、数字を出さずに、取り組みの様子と次の一歩を言葉で書いてください。`;
 
   const response = await callClaude(systemPrompt, userMsg, { kind: 'parent', maxTokens: 2000 });
   out.innerHTML = formatMarkdown(escapeHtml(response));
@@ -6781,12 +6869,21 @@ async function generateSessionPrep() {
 ### 3. 🎯 来週への提案
 ## 面談の進め方 (時間配分つき)`;
 
+  // 🚨 2026-08-21: ここにも「質問数47件, 学習時間12.5h/週, 平均正答率78%」と、
+  //   「国語の単元別正答率（例）: 現代文評論 82% / …」が直書きされていた。
+  //   （例）と書きつつ「必ず上記の単元別データに基づき具体的に語ってください」と指示していたため、
+  //   AI は例示を実測値として扱い、面談メモに架空の正答率が並んでいた。
+  const _prepStats = storage.get(STORAGE_KEYS.STATS, { total: 0 });
   const userMsg = `生徒: ${student.name} (${student.grade})
 志望校: ${student.goal}
-最近の学習データ: 質問数47件, 学習時間12.5h/週, 平均正答率78%
-国語の単元別正答率（例）: 現代文評論 82% / 現代文記述100字 60% / 古文助動詞識別 55% / 古文敬語方向性 70% / 漢文返り点 65% / 漢文再読文字 80%
+AIへの質問数 (この端末に残っている記録): ${_prepStats.total || 0}件
 
-この生徒との次回面談で話すべきポイントを整理してください。国語に言及する場合は必ず上記の単元別データに基づき具体的に語ってください（「国語が弱い」のような曖昧表現は禁止）。`;
+この生徒との次回面談で話すべきポイントを整理してください。
+
+【厳守】上に書かれていない数値 (正答率・学習時間・単元別の点数など) は**絶対に書かないこと**。
+実測値が無いので、「どの単元を確認すべきか」「何を聞き取るべきか」という
+**面談で確かめる項目**の形で書いてください (例:「古文の助動詞識別の正答状況を確認する」)。
+断定的な数字を置くと、面談の場で事実と食い違います。`;
 
   const response = await callClaude(systemPrompt, userMsg, { kind: 'prep', maxTokens: 1500 });
   out.innerHTML = formatMarkdown(escapeHtml(response));
@@ -6801,23 +6898,68 @@ function setupCharts() {
 }
 
 function initChartsIfNeeded() {
-  if (state.charts.hours) return;
-
+  // 🚨 2026-08-21: 再入ガードを `if (state.charts.hours) return;` にしてはいけない。
+  //   データが無いときはチャートを**作らない**ようにしたので、それを目印にすると
+  //   state.charts.hours が永久に未設定 → 保護者タブを開くたびに関数が丸ごと再走し、
+  //   すでにチャートが載っている canvas に new Chart() して Chart.js 4 が
+  //   "Canvas is already in use" を throw する。throw すると同じ setTimeout 内の
+  //   後続処理 (wcpUpdateStatus = LINE連携ステータス) も2回目以降ずっと止まる。
+  //   ★「作成済みか」は**チャートごと**に見ること。こうしておくと、
+  //     あとからデータが入った生徒は次にタブを開いたときに描画される (再試行が効く)。
   const hoursCtx = document.getElementById('studyHoursChart');
   const subjectCtx = document.getElementById('subjectChart');
   if (!hoursCtx || !subjectCtx) return;
+  // ★CDN が届かない環境 (オフライン・広告ブロッカー) では Chart が未定義。
+  //   生徒切替からも呼ぶようにしたので、ガードが無いと切替のたびに
+  //   ReferenceError が frontend-error-monitor へ飛んでノイズ源になる。
+  if (typeof Chart === 'undefined') return;
 
+  // ★データが無いときに「それらしい数字」を描かないための共通処理。
+  //   canvas を隠し、同じ枠に理由を出す。次にここへ実データを繋ぐ人への目印にもなる。
+  const _showChartPlaceholder = (canvas, message) => {
+    try {
+      canvas.style.display = 'none';
+      const box = canvas.parentElement;
+      if (!box) return;
+      let ph = box.querySelector('.chart-placeholder');
+      if (!ph) {
+        ph = document.createElement('p');
+        ph.className = 'chart-placeholder';
+        ph.style.cssText = 'margin:1.2rem 0;color:#9ca3af;font-size:0.86rem;text-align:center;';
+        box.appendChild(ph);
+      }
+      ph.textContent = message;
+    } catch (_) {}
+  };
+  // ★プレースホルダを出したあとにデータが入ったとき、canvas を必ず戻す。
+  //   戻さないと display:none のままチャートが生成され、「未登録です」の文字だけが残る。
+  const _clearChartPlaceholder = (canvas) => {
+    try {
+      canvas.style.display = '';
+      const box = canvas.parentElement;
+      const ph = box && box.querySelector('.chart-placeholder');
+      if (ph) ph.remove();
+    } catch (_) {}
+  };
   Chart.defaults.color = '#9ca3af';
   Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
   Chart.defaults.font.family = "'Inter', 'Noto Sans JP', sans-serif";
 
-  state.charts.hours = new Chart(hoursCtx, {
+  // 🚨 2026-08-21: 週別学習時間の実データはクライアントに無いのに [8, 9.5, 10, 12.5] を
+  //   固定で描いていたため、一度も学習していない生徒にも右肩上がりの線が
+  //   「あなたの記録」として出ていた。実データを繋ぐまでは描かない
+  //   (空欄のほうが、嘘のグラフより情報量が多い)。
+  const _weeklyHours = (Array.isArray(state.weeklyStudyHours) && state.weeklyStudyHours.length === 4)
+    ? state.weeklyStudyHours : null;
+  if (state.charts.hours) { /* 生成済み。二重生成すると Chart.js が throw する */ }
+  else if (!_weeklyHours) _showChartPlaceholder(hoursCtx, '学習時間の記録はまだありません');
+  else (_clearChartPlaceholder(hoursCtx), state.charts.hours = new Chart(hoursCtx, {
     type: 'line',
     data: {
       labels: ['3週前', '2週前', '先週', '今週'],
       datasets: [{
         label: '学習時間 (h)',
-        data: [8, 9.5, 10, 12.5],
+        data: _weeklyHours,
         borderColor: '#6366f1',
         backgroundColor: 'rgba(99, 102, 241, 0.2)',
         tension: 0.3,
@@ -6830,11 +6972,15 @@ function initChartsIfNeeded() {
       plugins: { legend: { display: false } },
       scales: { y: { beginAtZero: true } }
     }
-  });
+  }));
 
   const student = getCurrentStudent();
-  const subjects = student.subjects || { 英語: 70, 数学: 65, 国語: 75 };
-  state.charts.subject = new Chart(subjectCtx, {
+  // 🚨 2026-08-21: 既定値 { 英語: 70, 数学: 65, 国語: 75 } を置いていたため、
+  //   偏差値を1つも登録していない生徒に**架空の偏差値**が自分の記録として表示されていた。
+  const subjects = (student.subjects && Object.keys(student.subjects).length) ? student.subjects : null;
+  if (state.charts.subject) { /* 生成済み。データ更新は studentSelect 側 (state.charts.subject 経由) */ }
+  else if (!subjects) _showChartPlaceholder(subjectCtx, '科目別の偏差値が未登録です');
+  else (_clearChartPlaceholder(subjectCtx), state.charts.subject = new Chart(subjectCtx, {
     type: 'radar',
     data: {
       labels: Object.keys(subjects),
@@ -6859,7 +7005,7 @@ function initChartsIfNeeded() {
         }
       }
     }
-  });
+  }));
 }
 
 // ==========================================================================
@@ -6910,11 +7056,26 @@ function bindEvents() {
     storage.set(STORAGE_KEYS.CURRENT_STUDENT, state.currentStudentId);
     updateStudentInfo();
     // Refresh charts with new student data
-    if (state.charts.subject) {
+    // ★チャートは「偏差値が登録されている生徒のときだけ」作るようになったので、
+    //   `if (state.charts.subject)` だけだと2方向に食い違う:
+    //   ・未登録の生徒でプレースホルダのまま切替 → 登録済みの生徒の画面に
+    //     「科目別の偏差値が未登録です」が残り続ける
+    //   ・登録済み → 未登録へ切替 → labels/data が空配列になり、説明の無い空グラフが残る
+    //   生成済みなら破棄してから initChartsIfNeeded() に作り直させる (再入可能にしてある)。
+    {
       const s = getCurrentStudent();
-      state.charts.subject.data.labels = Object.keys(s.subjects);
-      state.charts.subject.data.datasets[0].data = Object.values(s.subjects);
-      state.charts.subject.update();
+      const _hasSubjects = !!(s.subjects && Object.keys(s.subjects).length);
+      if (state.charts.subject && _hasSubjects) {
+        state.charts.subject.data.labels = Object.keys(s.subjects);
+        state.charts.subject.data.datasets[0].data = Object.values(s.subjects);
+        state.charts.subject.update();
+      } else {
+        if (state.charts.subject) {
+          try { state.charts.subject.destroy(); } catch (_) {}
+          state.charts.subject = null;
+        }
+        initChartsIfNeeded();   // 未登録ならプレースホルダ、登録済みなら生成し直す
+      }
     }
   });
   document.getElementById('addStudentBtn').addEventListener('click', addStudent);
@@ -7207,6 +7368,16 @@ async function stopSpeaking() {
   await getSpeakingFeedback(transcript);
 }
 
+// ★採点が取れなかったときに前回の点数を残さないための共通処理。
+//   speakingStats は毎回 display:'grid' で出るので、書き換えないと
+//   **1回目のスコアが2回目の採点結果として読める** (別の形の作り話)。
+function _resetSpeakingScores() {
+  for (const id of ['pronScore', 'grammarScore', 'fluencyScore']) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '--';
+  }
+}
+
 async function getSpeakingFeedback(transcript) {
   const mode = document.getElementById('speakingMode').value;
   const level = document.getElementById('speakingLevel').value;
@@ -7216,6 +7387,7 @@ async function getSpeakingFeedback(transcript) {
   feedbackArea.style.display = 'block';
   feedbackContent.innerHTML = '<p class="placeholder">🧠 AIが分析中... (10-20秒)</p>';
   document.getElementById('speakingStats').style.display = 'grid';
+  _resetSpeakingScores();   // ★分析中に前回の点数を出したままにしない
 
   const systemPrompt = `You are an expert English speaking coach for Japanese students.
 
@@ -7265,8 +7437,18 @@ Student's response (transcribed from speech, audio not available to AI): "${tran
 Please evaluate using text-only transcript. Flag any transcription artifacts that suggest pronunciation issues (th/r/l, long/short vowels) but do NOT score pronunciation as if you heard audio. Provide detailed feedback in Japanese.`;
 
   let response;
-  if (state.mode === 'demo' || !state.apiKey) {
-    response = `{"pronunciation": 72, "grammar": 68, "fluency": 75}
+  // 🚨 2026-08-21: ここは backend AI proxy を **一度も呼ばずに** 固定スコアを返していた。
+  //   AI管理生は state.mode='hosted' (L889) でも state.apiKey は null のまま (L357 既定・
+  //   localStorage にも入らない) なので **必ず** この分岐に入り、録音した内容と無関係な
+  //   「発音 72 / 文法 68 / 流暢さ 75」と、言ってもいない英文の添削 ("I was go to school" 等) が
+  //   採点欄に書き込まれていた。callClaudeVision で 2026-08-06 に直した事故 (L7523 のコメント) と
+  //   同型で、speaking だけ直っていなかった。判定はセッションの有無で行う。
+  const _spHasSession = !!((window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken())
+    || localStorage.getItem('ai_juku_session_token'));
+  if (!_spHasSession && (state.mode === 'demo' || !state.apiKey)) {
+    response = `（デモ用サンプル・実際の音声は採点していません）
+
+{"pronunciation": 72, "grammar": 68, "fluency": 75}
 
 ## 📊 採点
 - 発音: 72/100 — "r"の発音がやや弱め
@@ -7289,7 +7471,19 @@ Please evaluate using text-only transcript. Flag any transcription artifacts tha
 
 💡 録音いただくと、音声からより精度の高い採点をご提供します。`;
   } else {
-    response = await callClaude(systemPrompt, userMsg, { kind: 'speaking', maxTokens: 2000 });
+    try {
+      response = await callClaude(systemPrompt, userMsg, { kind: 'speaking', maxTokens: 2000 });
+    } catch (e) {
+      // ★callClaude は AbortError だけ呼び出し元へ再送出する。speaking は今回はじめて
+      //   callClaude を通す = abortKey 'speaking' に登録されるので、採点中に録り直すと
+      //   1回目が abort される。捕まえないと unhandled rejection になり、
+      //   frontend-error-monitor が塾長のエラーダッシュへ誤報を積む。
+      if (e && e.name === 'AbortError') return;   // 新しい採点が走っている。画面はそちらが更新する
+      _resetSpeakingScores();
+      feedbackContent.innerHTML = formatMarkdown(escapeHtml(
+        '⚠️ 採点できませんでした。少し時間をおいて、もう一度お試しください。'));
+      return;
+    }
   }
 
   // Parse scores
@@ -7300,8 +7494,11 @@ Please evaluate using text-only transcript. Flag any transcription artifacts tha
       document.getElementById('pronScore').textContent = scores.pronunciation || '--';
       document.getElementById('grammarScore').textContent = scores.grammar || '--';
       document.getElementById('fluencyScore').textContent = scores.fluency || '--';
-    } catch {}
+    } catch { _resetSpeakingScores(); }
     response = response.replace(scoreMatch[0], '').trim();
+  } else {
+    // ★採点 JSON が無い (通信失敗の警告文・AI が JSON を落とした) ときは必ず '--' に戻す。
+    _resetSpeakingScores();
   }
 
   feedbackContent.innerHTML = formatMarkdown(escapeHtml(response));
@@ -8036,7 +8233,9 @@ function visionRetryHint(msg) {
 function quickFillFromDiagnostic() {
   const diagResult = document.getElementById('diagnosticResult');
   const text = diagResult?.textContent || '';
-  if (!text || text.includes('placeholder') || text.length < 50) {
+  // ★長さだけで判定していたため、AI が失敗したときの警告文 (56文字) が
+  //   「前回の診断結果」として出題テーマに貼られ、「✅ 反映しました」と出ていた。
+  if (!text || text.includes('placeholder') || text.length < 50 || /^\s*⚠️/.test(text)) {
     alert('先に「学習診断」タブでAI分析を実行してください。');
     return;
   }
@@ -9924,17 +10123,19 @@ function importStudentsFromData(data) {
     if (existingIds.has(newId)) { skipped++; continue; }
 
     const courses = Array.isArray(s.courses) ? s.courses.join(', ') : '';
-    const subjects = { 英語: 60, 数学: 60, 国語: 60 };
-    // Infer subject level from courses
-    if (courses.includes('英検準1級') || courses.includes('国公立難関大学')) subjects.英語 = 75;
-    else if (courses.includes('英検2級') || courses.includes('英文解釈')) subjects.英語 = 70;
+    // 🚨 2026-08-21: ここは講座名から偏差値を**推定**して書き込んでいた
+    //   ({英語:60,数学:60,国語:60} を既定にし、「英検準1級」を取っていれば英語=75 等)。
+    //   模試を受けていない実在の塾生に、テストではなく受講講座から作った偏差値が付き、
+    //   グラフにも保護者レポートのプロンプトにも「自己申告の偏差値」として流れていた。
+    //   実測値が無いなら空にする (空ならプレースホルダが出るし、プロンプトにも載らない)。
+    const subjects = {};
 
     existing.push({
       id: newId, // Offset to avoid collision with seed
       name: s.name,
       grade: s.grade || '未設定',
       goal: courses || '未設定',
-      weeklyHours: 10,
+      weeklyHours: 0,   // ★測っていない。10 を入れると保護者レポートに「週10時間」と出る
       subjects,
       importedAt: new Date().toISOString(),
       fee: s.fee || 0,

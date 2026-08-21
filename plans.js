@@ -197,7 +197,9 @@ const PLAN_CONFIG = {
     // 🔷 2026-07-02 偽装の「残り枠N名」は撤去。残席は lp の実数連動カウンター(/api/founders/count)に一本化。
     thisWeekSignups: 5,         // 今週の新規申込数
     todaySignups: 2,            // 本日の新規申込数
-    onlineNow: 12,              // 現在閲覧中の人数 (擬似値)
+    // 🚨 2026-08-21 削除: onlineNow (擬似値 12) は social-proof.js が
+    //   「現在閲覧中 N 人」としてライブ表示していた。2026-07-02 の方針に反するので撤去。
+    //   ★実数を出せるようになるまで、この鍵を復活させないこと。
     lastUpdate: '2026-05-06',   // 最終更新日 (塾長が更新時に書き換え)
     showBanner: true,           // false にすれば全画面で非表示
   },

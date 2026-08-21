@@ -753,23 +753,27 @@
         <div class="kpi-cards">
           <div class="kpi-card">
             <div class="kpi-label">今週の学習時間</div>
-            <div class="kpi-value" id="kpiHours">12.5h</div>
-            <div class="kpi-trend up">↑ 先週比 +2.5h</div>
+            <!-- 🚨 2026-08-21: 12.5h / ↑先週比+2.5h の固定値だった。*.js のどこからも代入されず
+                 全生徒に同じ数字が永久表示されていた。実データを繋ぐまでは -- を出す。 -->
+            <div class="kpi-value" id="kpiHours">--</div>
+            <div class="kpi-trend">記録が接続されていません</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">平均正答率</div>
-            <div class="kpi-value" id="kpiAccuracy">78%</div>
-            <div class="kpi-trend up">↑ +5%</div>
+            <div class="kpi-value" id="kpiAccuracy">--</div>
+            <div class="kpi-trend">記録が接続されていません</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">目標達成度</div>
-            <div class="kpi-value" id="kpiProgress">64%</div>
-            <div class="kpi-trend">志望校到達まで</div>
+            <div class="kpi-value" id="kpiProgress">--</div>
+            <div class="kpi-trend">記録が接続されていません</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">AIへの質問数</div>
-            <div class="kpi-value" id="kpiQuestions">47</div>
-            <div class="kpi-trend">積極性◎</div>
+            <!-- updateStats() が実測値で上書きする。初期値に 47 を置くと、上書き前と
+                 質問0件のときに「47・積極性◎」が出る。 -->
+            <div class="kpi-value" id="kpiQuestions">--</div>
+            <div class="kpi-trend">この端末の記録</div>
           </div>
         </div>
         <div class="charts-row">
@@ -778,7 +782,9 @@
             <canvas id="studyHoursChart"></canvas>
           </div>
           <div class="chart-container">
-            <h3>科目別正答率</h3>
+            <!-- ★中身は student.subjects (生徒が自己申告した偏差値) なので見出しを揃える。
+                 「正答率」と書いたまま偏差値を描いていた。 -->
+            <h3>科目別 偏差値 (自己申告)</h3>
             <canvas id="subjectChart"></canvas>
           </div>
         </div>

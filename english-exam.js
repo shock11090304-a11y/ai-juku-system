@@ -737,7 +737,20 @@ async function callClaudeJson({ system, user, model = MODEL_DEFAULT, maxTokens =
         //   「プランの制限か」を判定すると、文言を推敲した瞬間や、将来この経路に
         //   日次トークン上限 (「…上限(100,000トークン)に達しました」) が乗ったときに、
         //   一時的な上限に当たっただけの有料生徒へ「プランでは使えません」と言ってしまう。
-        if (res.status === 403 && _d) throw new Error('PLAN_BLOCKED:' + _d);
+        // ★出すのは **日本語の detail だけ** (mypage.js:25 と同じ規約)。英語の内部文字列
+        //   ("Origin not allowed" / "Not authenticated" 等) をそのまま出すと、生徒には
+        //   意味が分からないうえ内部構造が漏れる。あわせて内部 enum の括弧書き
+        //   (「契約状態が無効です (status=past_due)」) も削る。
+        if (res.status === 403 && /[ぁ-んァ-ン一-龥]/.test(String(_d || ''))) {
+          const _jd = String(_d)
+            .replace(/^AI_BUDGET_[A-Z0-9_]+:/, '')
+            .replace(/\s*\((?:status|code|reason)=[^)]*\)/g, '')
+            .trim();
+          if (_jd) throw new Error('PLAN_BLOCKED:' + _jd);
+        }
+        // ★403 は待っても直らない。「少し時間をおいて」と言うと無駄な再試行を促す。
+        // ★コードを残す。塾長共有用の「エラー詳細」に出るので、Origin 設定ミス等の切り分けに要る。
+        if (res.status === 403) throw new Error(`この操作は許可されていません。画面を開き直してもう一度お試しください。(コード ${res.status})`);
         throw new Error(`AI との通信に失敗しました。少し時間をおいてお試しください。(コード ${res.status})`);
       }
       data = await res.json();
@@ -3238,14 +3251,16 @@ async function submitAnswers() {
     // 単なる alert ではなく、生徒が「諦めずに次に進める」UX
     const errMsg = (e && (e.message || String(e))) || '不明なエラー';
     // フレンドリーな error message を box 内に表示
+    // ★プランで使えない機能 (403) を「一時的なエラー」と言わない。押しても永久に直らない
+    //   再試行ボタンを出し、塾長 LINE への問い合わせまで促す形になっていた
+    //   (トリリオン・ライトでは英語演習の AI 採点・AI 解説・AI 出題が使えない)。
+    //   サーバの日本語の説明があるときは、それを理由として前に出す。
+    // ★宣言は if (box) の **外**に置く。中に置くと、box が無いときの fallback alert から
+    //   参照できず ReferenceError になり、採点失敗の案内が丸ごと消える。
+    const _isPlanBlock = /^PLAN_BLOCKED:/.test(String(errMsg));
+    const _planMsg = String(errMsg).replace(/^PLAN_BLOCKED:/, '');
     const box = document.getElementById('questionBox');
     if (box) {
-      // ★プランで使えない機能 (403) を「一時的なエラー」と言わない。押しても永久に直らない
-      //   再試行ボタンを出し、塾長 LINE への問い合わせまで促す形になっていた
-      //   (トリリオン・ライトでは英語演習の AI 採点・AI 解説・AI 出題が使えない)。
-      //   サーバの日本語の説明があるときは、それを理由として前に出す。
-      const _isPlanBlock = /^PLAN_BLOCKED:/.test(String(errMsg));
-      const _planMsg = String(errMsg).replace(/^PLAN_BLOCKED:/, '');
       const errBanner = document.createElement('div');
       errBanner.style.cssText = 'margin: 1rem 0; padding: 1.2rem; background: rgba(245,158,11,0.10); border: 1px solid rgba(245,158,11,0.40); border-radius: 12px; color: #fde68a;';
       errBanner.innerHTML = _isPlanBlock ? `
@@ -3294,7 +3309,13 @@ async function submitAnswers() {
       });
     } else {
       // box が存在しないなら fallback alert
-      alert('採点中にエラーが発生しました: ' + errMsg + '\n\n塾長 LINE までご連絡ください。');
+      // ★内部 marker を素で出さない。以前は 'PLAN_BLOCKED:この機能は…' がそのまま出ていた。
+      //   プランの制限は「エラー」でも「塾長に連絡」でもないので、文面ごと分ける。
+      if (_isPlanBlock) {
+        alert('⚠️ ' + _planMsg);
+      } else {
+        alert('採点中にエラーが発生しました: ' + errMsg + '\n\n塾長 LINE までご連絡ください。');
+      }
     }
     document.getElementById('submitAnswersBtn').disabled = false;
     document.getElementById('submitAnswersBtn').textContent = '📤 回答を提出して採点';

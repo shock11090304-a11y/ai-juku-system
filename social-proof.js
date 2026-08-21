@@ -43,14 +43,14 @@
           <span>🔥 累計 <strong data-sp-total style="color:#fbbf24; font-size:1rem;">${sp.totalUsers}</strong> 人突破</span>
         </div>`;
     } else {
+      // 🚨 2026-08-21 撤去: 「現在閲覧中 N 人」は plans.js の onlineNow
+      //   (自ら「擬似値」と注記された固定値 12) を、脈打つ緑ドット付きでライブ表示していた。
+      //   2026-07-02 の「偽装の残り枠表示は撤去」方針と正面から矛盾する。実数が取れるまで出さない。
+      //   ★説明は **JS コメント**に置くこと。テンプレートリテラルの中に HTML コメントで書くと、
+      //     内部の言葉がそのまま訪問者のページソースに出る (一度やりかけた)。
       el.innerHTML = `
         <div style="background:linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(59,130,246,0.06) 100%); border:1px solid rgba(34,197,94,0.3); border-radius:14px; padding:0.9rem 1.2rem; margin: 0.8rem 0;">
           <div style="display:flex; flex-wrap:wrap; gap:0.5rem 1.4rem; align-items:center; justify-content:center;">
-            <div style="display:flex; align-items:center; gap:0.4rem;">
-              <span style="width:10px; height:10px; background:#34d399; border-radius:50%; animation:sp-pulse 2s infinite; box-shadow:0 0 8px rgba(52,211,153,0.6);"></span>
-              <span style="color:#94a3b8; font-size:0.82rem;">現在閲覧中</span>
-              <strong style="color:#34d399; font-size:1rem;">${sp.onlineNow} 人</strong>
-            </div>
             <div style="display:flex; align-items:center; gap:0.4rem;">
               <span style="font-size:1.1rem;">🎉</span>
               <span style="color:#94a3b8; font-size:0.82rem;">累計利用者</span>

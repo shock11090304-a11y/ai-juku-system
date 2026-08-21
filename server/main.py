@@ -2513,6 +2513,92 @@ _AI_DISABLED_CACHE_TTL = 30.0     # 秒。承認/トグルの反映は最大こ�
 #     短くすると障害時のブロック量が増えるので、下げるなら理由を書くこと。
 _GATE_FAIL_TTL = 30.0
 
+# 🚨 ゲートがフェイルオープンした事実を events に残す (2026-08-21)。
+#   stdout だけだと誰も見ない: Railway のログは保持が短く、CEO ダッシュの monitor は events しか
+#   読まない。「権限/上限の判定に失敗したので通した」は課金に直結する (ライトが実質無制限になる)
+#   ので、恒久的な失敗は必ず events に落として気づけるようにする。
+# ★ただし **ここで同期 db() を呼んではいけない**。呼び出し元のひとつ _load_student_gate は
+#   async middleware (_ai_disabled_route_gate) から呼ばれるので、DB 障害中に db() を足すと
+#   イベントループを最大約20秒塞ぐ = [[event-loop-blocking-async-def-trap]] そのもの。
+#   しかもこの経路が火を吹くのは「DB が不調のとき」= まさにブロックが最も危ないとき。
+#   よって (1) daemon thread に逃がして呼び出し元を待たせない (2) 同じ event を連投しない、の2段構え。
+# ★スレッド予算の会計 (anyio(40)+executor(32)+loop(1)≒73) には**この daemon は入らない**。
+#   現在 **10 種** (_record_gate_failure_async の呼び出し10箇所と同数。数が合っているかは
+#   check_frontend_limit_messages.py が _GATE_EVENT_NAMES との集合一致で照合する)。
+#   通常は event 名ごとに同時1本なので最大 +10 本。
+#   ★ただし「同時1本」が成り立つのは書き込みが _GATE_EVENT_MIN_INTERVAL 以内に
+#   終わる場合だけ。execute/commit には statement timeout が無い (connect_timeout=10 のみ) ので、
+#   commit がハングすると 10 × ceil(ハング秒 / 600) 本まで積む。スレッド数を触るときはこれも数えること。
+_GATE_EVENT_MIN_INTERVAL = 600.0   # 秒。同じ event 名はこの間隔でしか記録しない
+# 書けなかったときの再試行間隔。★打刻を **pop してはいけない**。pop すると次のフェイルオープンで
+#   即座に再試行になり、「1回のフェイルオープン = 1スレッド + 1 DB 接続試行」になる。
+#   route_gate_middleware_failed は /api/ リクエストごとに発火するので事実上の無制限。
+#   しかも INSERT が**速く**失敗する状況 (Postgres が read-only / DB_POOL_ENABLED=0 の緊急レバー中に
+#   too many clients) でこそ暴走する = 運用手順書がそのスイッチを倒せと言っている瞬間に、
+#   記録のための保険が接続枯渇を増幅する。実測 7349 スレッド/秒。時計で間隔を空けること。
+_GATE_EVENT_RETRY_INTERVAL = 30.0
+# ★event 名の単一ソース。(a) recent-failures の allowlist と (b) monitor/status の集計は
+#   **このタプルから自動で組む**ので足すだけでよい。手作業が要るのは (c) ceo.html の
+#   GATE_FAILURE_LABELS だけ (忘れると塾長の画面に生の英語名が出る)。
+#   ★(a)(b)(c) と書き手の一致は scripts/light_tier/check_frontend_limit_messages.py が全部照合する
+#     (ラベルの網羅も 2026-08-21 から検査対象。以前は「照合する」と書きながら見ていなかった)。
+_GATE_EVENT_NAMES = (
+    "route_gate_middleware_failed",
+    "student_gate_read_failed",
+    "light_tier_column_check_failed",
+    "light_quota_read_failed",
+    "light_consume_failed",
+    "light_count_once_failed",
+    "light_backstop_check_failed",
+    "light_budget_label_failed",
+    "ai_disabled_read_failed",
+    "ai_budget_check_failed",
+)
+_GATE_EVENT_LAST: dict = {}        # event_name -> 最後に記録した時刻
+_GATE_EVENT_LOCK = threading.Lock()
+
+
+def _record_gate_failure_async(event_name: str, props: dict) -> None:
+    """権限/上限ゲートのフェイルオープンを、呼び出し元をブロックせずに events へ残す。
+
+    ★キーは _GATE_EVENT_NAMES の固定文字列 (現在9種) だけなので _GATE_EVENT_LAST は肥大化しない。
+      **変数をキーにしないこと** (student_id 等を混ぜると生徒数ぶん増え、間隔制限も効かなくなる)。
+    ★守る区間は dict の参照・比較・代入だけで I/O をまったく含まないので、素直にロックを取る。
+      (「ロックは async middleware を待たせるから避ける」は**ここでは誤り**。待たせようがない。
+       その理由を他所へ流用すると、本当にロックが要る場所で避ける根拠になってしまう。)
+    ★★打刻は「起動した」ではなく「**書けた**」を意味させること。書けていないのに打刻だけ残すと、
+      ゲートが火を吹く最有力の原因である DB 障害のときに限って events が 0 行になり、
+      600 秒沈黙する。障害が 600 秒より短ければ最後まで 1 行も残らない。"""
+    try:
+        import time as _t3
+        if event_name not in _GATE_EVENT_NAMES:
+            # ★名前を足したのに _GATE_EVENT_NAMES へ登録し忘れると、集計にも管理画面にも出ない。
+            #   静かに消えるより、記録はしたうえで警告を残す。
+            log.warning(f"[Gate] 未登録の gate event 名: {event_name} (_GATE_EVENT_NAMES に足すこと)")
+        _now = _t3.time()
+        with _GATE_EVENT_LOCK:
+            if _now - _GATE_EVENT_LAST.get(event_name, 0.0) < _GATE_EVENT_MIN_INTERVAL:
+                return
+            # 先に打刻する = このスレッドが走っている間、同じ event 名の新しいスレッドは立たない
+            # (同時実行は event 名あたり1本に有界)。書けなかったら下で **後退させる** (pop しない)。
+            _GATE_EVENT_LAST[event_name] = _now
+
+        def _write():
+            if _record_ai_critical_event(event_name, props):
+                return
+            with _GATE_EVENT_LOCK:
+                # ★自分が打った打刻だけを動かす (別スレッドが上書きしていたら触らない)。
+                #   pop ではなく **_GATE_EVENT_RETRY_INTERVAL 後に再試行できる位置まで戻す**。
+                #   こうすると「書けるまで沈黙し続ける」も「毎回スレッドを立てる」も避けられる。
+                if _GATE_EVENT_LAST.get(event_name) == _now:
+                    _GATE_EVENT_LAST[event_name] = (
+                        _now - _GATE_EVENT_MIN_INTERVAL + _GATE_EVENT_RETRY_INTERVAL)
+
+        threading.Thread(target=_write, daemon=True).start()
+    except Exception as _qe:
+        # ★記録のための保険が本体を落としては本末転倒。ここは必ず飲む。
+        log.warning(f"[Gate] failed to queue gate-failure event {event_name}: {_qe}")
+
 # 🪶 トリリオン・ライト (月¥3,000) の権限層。
 #   ★cache は 1 本に保つこと。ai_disabled 用と tier 用に別々の cache を持つと、30秒 TTL の間に
 #     両者が食い違い「押しても戻される壊れたボタン」を再生産する ([[tsujuku-app-only-ai-disabled]])。
@@ -2658,7 +2744,11 @@ def _students_has_feature_tier() -> bool:
 
     ★_students_has_ai_trial_until() と同型。init_db の ALTER は失敗しても debug ログにしか
     出ないため、列が無いまま列名を明示した SELECT を撃つと **AI 経路が丸ごと 500** になる。
-    ★失敗はキャッシュしない (DB の一過性障害で False を焼き付けると再デプロイまで自然回復しない)。"""
+    ★失敗は **短い TTL (_GATE_FAIL_TTL=30秒) の間だけ**キャッシュする。永久に焼き付けると
+      列は在るのに再デプロイまで False のままになるが、まったく覚えないと DB 障害中に
+      1 AI リクエストあたり DB 往復が2回になる (この確認 + _load_student_gate 本体)。
+      ★以前ここには「失敗はキャッシュしない」と書いてあった。実装を変えたのにコメントを
+        直し忘れると、次に読む人が「短時間の False は起きない」と誤って前提を置く。"""
     if "v" in _HAS_FEATURE_TIER_COL:
         return _HAS_FEATURE_TIER_COL["v"]
     import time as _t1
@@ -2676,10 +2766,15 @@ def _students_has_feature_tier() -> bool:
         import time as _t2
         _HAS_FEATURE_TIER_COL["fail_until"] = _t2.time() + _GATE_FAIL_TTL
         log.warning(f"[Tier] feature_tier の存在確認に失敗 (しばらく full 扱い・自動で再試行): {_e}")
+        # ★恒久的な失敗 (マイグレーション未適用など) は stdout だと埋もれる。
+        #   この間ライトの上限は一切効かないので、必ず events に残して気づけるようにする。
+        _record_gate_failure_async("light_tier_column_check_failed", {
+            "error": f"{type(_e).__name__}: {_e}"[:200],
+        })
         return False
     finally:
         # ★finally で必ず返す。execute が投げると close に到達せずプール(max 16)に戻らない。
-        #   失敗をキャッシュしない設計なので、DB 不調の間は毎リクエスト1本ずつ漏れて枯渇する。
+        #   失敗の TTL は 30 秒しか無いので、漏らすと DB 不調の間に少しずつ枯渇していく。
         if _c is not None:
             try: _c.close()
             except Exception: pass
@@ -2744,6 +2839,11 @@ def _load_student_gate(student_id):
         #   ★TTL は _GATE_FAIL_TTL (現在 _AI_DISABLED_CACHE_TTL と同値=30秒) で、
         #     変更前とまったく同じ保護。判定はフェイルオープン (full) なので長くても誤ブロックしない。
         log.warning(f"[Tier] 権限の読み取りに失敗 (今回だけ full 扱い): {type(_e).__name__}: {_e}")
+        # ★フェイルオープン= この間は ai_disabled も light も効かない。events に残す
+        #   (間隔制限があるので、障害が続いても10分に1行しか増えない)。
+        _record_gate_failure_async("student_gate_read_failed", {
+            "error": f"{type(_e).__name__}: {_e}"[:200],
+        })
         # ★時刻は **ここで取り直す**。now は DB を叩く前の時刻で、db() は
         #   pool 10秒 + connect 10秒 = 最大約20秒かかりうる。now を使うと
         #   「書いた瞬間にもう期限切れ」になり、障害中は1リクエストも救われない
@@ -2784,6 +2884,10 @@ app = FastAPI(title="AIコーチング API", version="1.0.0")
 #     ai_disabled 生徒の実害無し (この変更が導入/悪化させた穴ではない)。
 @app.middleware("http")
 async def _ai_disabled_route_gate(request: Request, call_next):
+    # ★_p は try の**外**で初期化する。except の中で request.url.path を読み直すと、
+    #   「その1回目のアクセス自体が投げた」場合に except の中で再度投げてフェイルオープンを
+    #   すり抜け、500 になる (URL は遅延生成でキャッシュされるため、成功時は再読み込みで済む)。
+    _p = ""
     try:
         _p = request.url.path
         if _p.startswith("/api/") and _p not in _AI_DISABLED_ALLOWED_EXACT and not _p.startswith(_AI_DISABLED_ALLOWED_PREFIXES):
@@ -2807,8 +2911,16 @@ async def _ai_disabled_route_gate(request: Request, call_next):
                             {"detail": "この機能は トリリオン・ライト ではご利用いただけません。上位プランでご利用いただけます。"},
                             status_code=403,
                         )
-    except Exception:
-        pass  # ゲート自体の障害で全リクエストを落とさない (フェイルオープン)
+    except Exception as _me:
+        # ゲート自体の障害で全リクエストを落とさない (フェイルオープン)
+        # ★ここが素通しになると、塾生アプリのみ枠(AIなし)の 403 も ライトの deny も丸ごと効かない。
+        #   最外殻なので黙って pass すると誰も気づけない。async 関数なので、記録は必ず
+        #   ブロックしない _record_gate_failure_async 経由で行う (同期 db() を書くと全API停止)。
+        log.warning(f"[Gate] middleware の権限判定に失敗 (素通し): {type(_me).__name__}: {_me}")
+        _record_gate_failure_async("route_gate_middleware_failed", {
+            "path": _p[:200],
+            "error": f"{type(_me).__name__}: {_me}"[:200],
+        })
     return await call_next(request)
 
 
@@ -8335,6 +8447,12 @@ def _collect_health_snapshot() -> dict:
         "email_configured": bool(RESEND_API_KEY),
         "founder_special_price_configured": bool(STRIPE_PRICE_FOUNDER_SPECIAL) or bool(_lookup_founder_special_price_id()),
         "founder1_price_configured": bool(STRIPE_PRICE_FOUNDER_SPECIAL) or bool(_lookup_founder_special_price_id()),  # 後方互換 (旧名)
+        # 🔓 権限/上限ゲートのフェイルオープン (直近24h)。★snapshot に載せるのは
+        #   _evaluate_alerts から見えるようにするため。載せないと、フェイルオープンが何百件
+        #   あっても総合バッジは「✅ 全システム正常」のままになる (2026-08-21 レビュー指摘)。
+        #   CEO ダッシュの「監視・運用」セクションは既定で display:none なので、
+        #   **アラートに昇格させないと実質誰も見ない**。
+        "gate_failures": _collect_gate_failures(),
     }
 
     def safe_count(query, params=()):
@@ -8571,6 +8689,35 @@ def _collect_health_snapshot() -> dict:
 def _evaluate_alerts(snapshot: dict) -> list:
     """snapshot から発動すべきアラートを判定"""
     alerts = []
+    # 0. 🔓 権限/上限ゲートのフェイルオープン (2026-08-21)
+    #   ★これをアラートに入れないと、CEO ダッシュの総合バッジが「✅ 全システム正常」のまま
+    #     になる。ゲートが素通ししている間は AIなし枠の 403 もライトの上限も効いていないので、
+    #     「正常」と表示するのは誤報。severity は warning: 判定は必ずフェイルオープン側に
+    #     倒れるので生徒の利用は止まらず、ページャを鳴らすほどではない。
+    _gf = snapshot.get("gate_failures") or {}
+    _gf_total = _gf.get("total")
+    if _gf_total:
+        _gf_lines = "、".join(f"{x['name']} {x['count']}件" for x in (_gf.get("by_name") or [])[:5])
+        alerts.append({
+            "key": "gate_failure_open", "severity": "warning",
+            # ★cooldown は **判定窓と揃える** (既定 60 分のままにしない)。
+            #   この判定は「直近24時間に1行でもあれば発火」する level trigger なので、
+            #   60 分だと **1回のフェイルオープンで 24 通**の監視メールが飛ぶ (実測 24 通)。
+            #   障害が1秒で復旧しても、events に残る24時間ぶん鳴り続ける。
+            #   同じ関数の no_signups_24h が「60分おきに鳴り続け、監視メールの98%を占めて
+            #   本物の障害通知が埋もれた」という理由で info に降格された前例がある
+            #   (下の scheduler_stalled も cooldown_min=360 で窓長と揃えてある)。
+            "cooldown_min": 1440,
+            "title": f"🔓 権限/上限ゲートが直近{_gf.get('hours', 24)}時間で {_gf_total} 回フェイルオープン",
+            "detail": f"この間、塾生アプリのみ枠(AIなし)の遮断やライトの上限が効いていない可能性があります。内訳: {_gf_lines}",
+        })
+    elif _gf_total is None and _gf:
+        # ★「0件だから健全」と「測れていない」を混同させない。
+        alerts.append({
+            "key": "gate_failure_unmeasured", "severity": "info",
+            "title": "🔓 権限/上限ゲートの記録を集計できませんでした",
+            "detail": f"events の集計に失敗しています ({_gf.get('error', '')})。ゲートの健全性は未確認です。",
+        })
     # 1. Stripe 設定
     if not snapshot["stripe_configured"]:
         alerts.append({
@@ -12335,9 +12482,15 @@ def _record_anthropic_usage(model: str, input_tokens: int, output_tokens: int,
 _GEMINI_QUOTA_FAIL = {"count_in_window": 0, "window_start": 0.0, "skip_until": 0.0}
 
 
-def _record_ai_critical_event(event_name: str, props: dict):
+def _record_ai_critical_event(event_name: str, props: dict) -> bool:
     """ai_credit_low / ai_total_failure 等の critical event を events に記録。
-    CEO ダッシュ monitor がここを見て緊急バナー表示する。"""
+    CEO ダッシュ monitor がここを見て緊急バナー表示する。
+
+    ★戻り値は「**本当に1行書けたか**」。既存の呼び出し側は無視してよい (挙動は不変) が、
+      _record_gate_failure_async はこれを見て、書けなかったときに再試行を許す。
+      成否を見ないと、DB 障害中 (= 記録役も同じ DB で失敗する) に限って
+      1行も残らないまま沈黙が続く = 記録する目的そのものが達成できない。"""
+    conn = None
     try:
         conn = db()
         c = conn.cursor()
@@ -12346,9 +12499,18 @@ def _record_ai_critical_event(event_name: str, props: dict):
             (event_name, json.dumps(props), "ai_failsafe"),
         )
         conn.commit()
-        conn.close()
+        return True
     except Exception as e:
         log.error(f"[AI failsafe] failed to record critical event {event_name}: {e}")
+        return False
+    finally:
+        # ★finally で必ず返す。execute/commit が投げると close に到達せずプール(max 16)に戻らない。
+        #   近傍の同種コード (_students_has_feature_tier / _load_student_gate) と作法を揃える。
+        #   __del__ が救済してくれるが、**DB 不調のときにだけ発火する呼び出し元**を通した以上、
+        #   CPython の refcount という暗黙の前提だけに載せない。
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
 
 
 def _send_payment_failed_dunning_email(student_id: int, student_name: str, to_email: str) -> dict:
@@ -13272,6 +13434,13 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
         except Exception as _te:
             # ゲート自体の障害で AI を落とさない (既存生徒を巻き込まない)
             log.warning(f"[Light] backstop の判定に失敗 (通過させる): {type(_te).__name__}: {_te}")
+            # ★「通過させた」= ライトが上限なしで AI を使った回。3層の最後の砦がここなので、
+            #   ここが継続的に失敗しているなら上限は事実上機能していない。events に残す。
+            _record_gate_failure_async("light_backstop_check_failed", {
+                "student_id": student_id,
+                "kind": kind,
+                "error": f"{type(_te).__name__}: {_te}"[:200],
+            })
 
     _light_counted = {"done": False}
 
@@ -13288,8 +13457,14 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
             if _student_tier(student_id) == _TIER_LIGHT:
                 _light_consume(student_id, kind)
                 _light_counted["done"] = True
-        except Exception:
-            pass
+        except Exception as _ce:
+            # ★log すら無かった。ここが黙って落ちると「成功したのに数えない」= 実質無制限。
+            log.warning(f"[Light] 消費の記録に失敗 (通過させる) student_id={student_id}: "
+                        f"{type(_ce).__name__}: {_ce}")
+            _record_gate_failure_async("light_count_once_failed", {
+                "student_id": student_id, "kind": kind,
+                "error": f"{type(_ce).__name__}: {_ce}"[:200],
+            })
 
     requested_model = body.get("model") or "claude-sonnet-4-6"
     # ⏱ per-call timeout (2026-07-20): 非ストリーミングなので応答は生成完了まで届かない。
@@ -27386,7 +27561,12 @@ def admin_ai_recent_failures(limit: int = 30, x_cron_secret: Optional[str] = Hea
         "'tutor_solve_individual_failure', 'tutor_solve_total_failure', "
         "'stripe_payment_failed', "  # 2026-05-29 月次課金 決済失敗 (past_due 降格) を失敗 feed にも表示
         "'payment_unmatched_invoice', "  # 2026-06-11 生徒未紐付けの入金 (backfill 取りこぼし観測)
-        "'frontend_error') "
+        # 2026-08-21 権限/上限ゲートのフェイルオープン。★手で列挙せず _GATE_EVENT_NAMES から組む。
+        #   手で書くと「名前を足したのに載せ忘れ」が必ず起きる (実際に起きた)。
+        #   ★なお、このエンドポイント自体を呼ぶコードはリポジトリに無い (2026-08-21 時点)。
+        #     実際に人の目に触れるのは monitor/status の gate_failures 経由。
+        + ", ".join("'%s'" % _n for _n in _GATE_EVENT_NAMES) + ", "
+        + "'frontend_error') "
         "ORDER BY created_at DESC LIMIT ?",
         (limit,),
     )
@@ -28171,6 +28351,39 @@ def admin_test_openai(model: Optional[str] = None,
         }
 
 
+def _collect_gate_failures(hours: int = 24) -> dict:
+    """権限/上限ゲートのフェイルオープンを集計する。
+
+    ★**events に書くだけでは誰も見ない**。2026-08-21 時点で `/api/admin/ai/recent-failures` を
+      呼ぶコードはリポジトリに1つも無く、ceo.html の renderActivityPane は
+      `session_id = 'student:N'` で絞るので `session_id='ai_failsafe'` の行とは永久に一致しない。
+      ceo.html が実際に叩いている監視経路は monitor/status だけなので、ここに載せる。"""
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%d %H:%M:%S")
+        _ph = ",".join(["?"] * len(_GATE_EVENT_NAMES))
+        c.execute(
+            f"SELECT name, COUNT(*) AS n, MAX(created_at) AS last_at FROM events "
+            f"WHERE session_id = 'ai_failsafe' AND name IN ({_ph}) AND created_at >= ? "
+            f"GROUP BY name ORDER BY COUNT(*) DESC",
+            tuple(_GATE_EVENT_NAMES) + (cutoff,),
+        )
+        rows = c.fetchall() or []
+        by_name = [{"name": r["name"], "count": int(r["n"]), "last_at": str(r["last_at"])} for r in rows]
+        return {"hours": hours, "total": sum(x["count"] for x in by_name), "by_name": by_name}
+    except Exception as _ge:
+        # ★集計に失敗したことを total=None で表す。0 と混同させない
+        #   (「0件だから健全」と「測れていない」を同じ見た目にしないこと)。
+        log.warning(f"[Gate] gate_failures の集計に失敗: {type(_ge).__name__}: {_ge}")
+        return {"hours": hours, "total": None, "by_name": [], "error": f"{type(_ge).__name__}"[:60]}
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+
+
 @app.get("/api/admin/monitor/status")
 def admin_monitor_status(authorization: Optional[str] = Header(None)):
     """現状の health snapshot を返す (アラート判定もまとめて)"""
@@ -28191,6 +28404,9 @@ def admin_monitor_status(authorization: Optional[str] = Header(None)):
         "synthetic_checkout": _SYNTHETIC_CHECKOUT_LAST,
         "ai_credit_low": _ai_credit_low_active(),
         "ai_circuit_breaker": _AI_CIRCUIT_BREAKER,
+        # 🔓 権限/上限ゲートのフェイルオープン (直近24h)。ceo.html が描画する。
+        #   ★snapshot 内の値を再利用する。ここで再取得すると 1 リクエストで DB 往復が2回になる。
+        "gate_failures": snapshot.get("gate_failures"),
     }
 
 
@@ -35528,9 +35744,44 @@ def _verify_student_active(student_id: int) -> dict:
 def _check_ai_budget(student_id: int) -> None:
     """その生徒が直近24hで消費したAIトークンが Plan 別 budget を超えていないか確認。
     Plan 別 (塾長指示 2026-04-30): premium/family/founder_special は実質無制限の 2M tokens。
-    旧プラン名 (founder1/hybrid/intensive/ai) も後方互換でカバー (DB 既存データ対策)。"""
+    旧プラン名 (founder1/hybrid/intensive/ai) も後方互換でカバー (DB 既存データ対策)。
+
+    ★接続の返却は **この薄い外枠だけ**が持つ。以前は本体の途中に conn.close() が点在していて、
+      **2本目以降の execute (events の SELECT) が落ちると close に到達せず** __del__ 頼みだった。
+      statement timeout・ロック待ち・events 側の障害で現実に起きる経路で、プールは max 16 なので
+      障害中に少しずつ枯渇する。2026-08-21 に近傍3関数へ finally を足したのに、
+      **その主題の関数だけが例外**になっていた (レビュー指摘)。"""
+    # ★db() も try の**中**で呼ぶ。外に置くと、プール枯渇 (DB_POOL_TIMEOUT=10s) / connect timeout /
+    #   DB ダウンという **DB 障害時の最有力経路**だけが 500 になり、記録も1件も残らない。
+    #   docstring が「判定できなかったときは通す」と書いているのに、その最有力経路が例外だった。
+    conn = None
+    try:
+        conn = db()
+        _check_ai_budget_inner(student_id, conn)
+    except HTTPException:
+        raise   # 403 (AIなし枠) / 429 (予算超過) は**正しい判定結果**なので必ず通す
+    except Exception as _ce:
+        # ★判定できなかったときは通す (フェイルオープン)。ここを 500 にすると、events 側の
+        #   一時障害・statement timeout・ロック待ちで **全 AI リクエストが落ちる**。
+        #   1本目 (契約情報) の失敗は内側で個別に扱う。ここに来るのは主に 2本目以降。
+        #   ★通した事実は必ず残す。黙って通すと「上限が効いていない」を誰も知らないまま続く。
+        log.warning(f"[Gate] AI 予算の判定に失敗 (今回は通す) student_id={student_id}: "
+                    f"{type(_ce).__name__}: {_ce}")
+        _record_gate_failure_async("ai_budget_check_failed", {
+            "student_id": student_id,
+            "error": f"{type(_ce).__name__}: {_ce}"[:200],
+        })
+    finally:
+        if conn is not None:
+            try:
+                conn.close()   # _Connection.close() は二重呼び出しに耐える (_returned でガード)
+            except Exception:
+                pass
+
+
+def _check_ai_budget_inner(student_id: int, conn) -> None:
+    """本体。接続は呼び出し元 (_check_ai_budget) が finally で必ず返す。"""
     one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
-    conn = db()
     c = conn.cursor()
     # 生徒の plan + course を取得して budget を決定
     plan = "trial"
@@ -35555,8 +35806,27 @@ def _check_ai_budget(student_id: int) -> None:
             _campaign = row["signup_utm_campaign"] if "signup_utm_campaign" in row.keys() else None
             _status = row["status"] if "status" in row.keys() else None
             _trial_end_raw = row["trial_end"] if "trial_end" in row.keys() else None
-    except Exception:
-        pass
+    except Exception as _be:
+        # ★★まず rollback する。Postgres は最初の execute が失敗した時点で txn が abort するので、
+        #   これが無いと **同じ conn を使う下の execute (events の SELECT) が
+        #   InFailedSqlTransaction で落ちて外へ伝播 → 500**。つまり「フェイルオープン」に
+        #   ならないし、conn.close() にも到達しない。ここのコメントと ceo.html のバナーは
+        #   「素通しで AI が使える」と説明しているので、rollback が無いと**説明と実挙動が逆**になる。
+        #   到達条件は現実的で、init_db の ALTER は失敗しても debug ログにしか出ないため、
+        #   列 (signup_utm_campaign / ai_trial_until 等) のマイグレーション未適用で全 AI が 500 になる。
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        # ★ここが黙って落ちると _ai_disabled が 0 のままになり、直下の 403 が発火しない
+        #   = **塾生アプリのみ枠 (AIなし) の生徒が AI をフル利用できる**。plan も "trial" 既定に
+        #   落ちるので予算判定もずれる。log すら無かったので、起きても誰も気づけなかった。
+        log.warning(f"[Gate] 契約情報の読み取りに失敗 (AIなし枠の遮断が効かない) "
+                    f"student_id={student_id}: {type(_be).__name__}: {_be}")
+        _record_gate_failure_async("ai_disabled_read_failed", {
+            "student_id": student_id,
+            "error": f"{type(_be).__name__}: {_be}"[:200],
+        })
     # 🚫 [塾生アプリ AIなし枠] AI トークン消費の直前ゲート。ai_disabled は conn を閉じてから 403。
     if _ai_disabled:
         conn.close()
@@ -35624,8 +35894,15 @@ def _check_ai_budget(student_id: int) -> None:
                 detail = detail.replace("AI_BUDGET_TRIAL:", "AI_BUDGET_LIGHT:", 1) \
                                .replace("AI_BUDGET_STANDARD:", "AI_BUDGET_LIGHT:", 1) \
                                .replace("AI_BUDGET_PREMIUM:", "AI_BUDGET_LIGHT:", 1)
-        except Exception:
-            pass
+        except Exception as _tier_e:
+            # ★黙って握り潰さない。ここで失敗すると月¥3,000 の生徒に "AI_BUDGET_PREMIUM:" が渡り、
+            #   フロントが ¥39,800 のプレミアム勧誘を出す (誤案内としての実害がある)。
+            #   上限そのものは下の 429 で正しく効くので通すが、失敗した事実は必ず残す。
+            log.warning(f"[Light] 上限メッセージの層判定に失敗 (文言はそのまま): {type(_tier_e).__name__}: {_tier_e}")
+            _record_gate_failure_async("light_budget_label_failed", {
+                "student_id": student_id,
+                "error": f"{type(_tier_e).__name__}: {_tier_e}"[:200],
+            })
         raise HTTPException(status_code=429, detail=detail)
 
 
@@ -35642,15 +35919,23 @@ def _get_monthly_usage(student_id: int, feature: str, year_month: Optional[str] 
     """この生徒の今月の機能別使用回数を返す。"""
     if not year_month:
         year_month = _jst_year_month()
-    conn = db()
-    c = conn.cursor()
-    c.execute(
-        "SELECT used_count FROM usage_monthly WHERE student_id = ? AND feature = ? AND year_month = ?",
-        (student_id, feature, year_month),
-    )
-    row = c.fetchone()
-    conn.close()
-    return int(row["used_count"]) if row else 0
+    # ★finally で必ず返す。execute/fetchone が投げると close に到達せずプール(max 16)に戻らない。
+    #   ここが投げる状況こそ light_quota_read_failed を出す条件そのものなので、
+    #   「上限が効かない」と「接続が漏れる」が同時に起きる。近傍3関数と作法を揃える。
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "SELECT used_count FROM usage_monthly WHERE student_id = ? AND feature = ? AND year_month = ?",
+            (student_id, feature, year_month),
+        )
+        row = c.fetchone()
+        return int(row["used_count"]) if row else 0
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
 
 
 def _get_all_monthly_usage(student_id: int, year_month: Optional[str] = None) -> dict:
@@ -35805,6 +36090,12 @@ def _light_quota_exceeded(student_id, kind) -> tuple:
         used = _get_monthly_usage(sid, feature, period)
     except Exception as _e:
         log.warning(f"[Light] 上限の読み取りに失敗 (今回は通す) student_id={sid}: {type(_e).__name__}: {_e}")
+        # ★ここが「上限の判定に失敗した」本体。呼び出し側の except は例外が来ないので発火しない
+        #   (この関数が内部で握って (False, "") を返す設計のため)。記録はここに置くこと。
+        _record_gate_failure_async("light_quota_read_failed", {
+            "student_id": sid, "kind": kind,
+            "error": f"{type(_e).__name__}: {_e}"[:200],
+        })
         return (False, "")
     if used < limit:
         return (False, "")
@@ -35847,6 +36138,11 @@ def _light_consume(student_id, kind) -> None:
         conn.commit()
     except Exception as _e:
         log.warning(f"[Light] 上限の計上に失敗 student_id={sid} feature={feature}: {type(_e).__name__}: {_e}")
+        # ★使えたのに残回数が減っていない = その回は実質無制限。継続すると上限が機能しない。
+        _record_gate_failure_async("light_consume_failed", {
+            "student_id": sid, "feature": feature,
+            "error": f"{type(_e).__name__}: {_e}"[:200],
+        })
     finally:
         try:
             if conn is not None: conn.close()
@@ -39173,8 +39469,12 @@ LP_VARIANT_POOL = {
     "v3_50limit": {
         "description": "50名限定 + 希少性訴求",
         "config": {
-            "headline": "🎯 創設メンバー50名限定 — 募集終了間近",
-            "cta_text": "今すぐ無料体験を始める (残り枠わずか)",
+            # 🚨 2026-08-21: 「— 募集終了間近」と「(残り枠わずか)」を削除。どちらも
+            #   残数を数える仕組みが無い静的文字列で、2026-07-02「偽装の残り枠表示は撤去」方針に反する。
+            #   ★これは active な A/B バリアントなので、実際の訪問者に配信されていた。
+            #   「創設メンバー50名限定」は実際の募集方針なので残す。
+            "headline": "🎯 創設メンバー50名限定",
+            "cta_text": "今すぐ無料体験を始める",
         },
         "active": True,
     },

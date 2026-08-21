@@ -224,8 +224,42 @@ def _slow_failing_db():
 
 
 import time as _time_mod
+
+# ★フェイルオープンの記録 (_record_gate_failure_async) は **別スレッドで db() を呼ぶ**。
+#   素通しにすると _calls["n"] が非決定的に増え、下の「2回目は DB を叩かない」が実行のたびに揺れる。
+#   db() を呼ばない recorder に差し替えて、回数の数えを決定的にしたうえで、
+#   この設計の中核 (呼び出し元をブロックしない / 書けなかったら再試行する) まで検査する。
+_events = []
+_events_lock = __import__("threading").Lock()
+_recorder_ok = {"v": True}      # 記録役が成功するか (DB障害の再現)
+_recorder_delay = {"v": 0.0}    # 記録役が遅い場合 (非ブロッキング性の検査)
+_real_recorder = main._record_ai_critical_event
+
+
+def _fake_recorder(name, props):
+    if _recorder_delay["v"]:
+        _time_mod.sleep(_recorder_delay["v"])   # sleep は clock patch の影響を受けない
+    with _events_lock:
+        _events.append(name)
+    return _recorder_ok["v"]
+
+
+def _wait_until(pred, timeout=5.0):
+    """条件が満たされるまで待つ (実時間)。満たされたら True。"""
+    waited = 0.0
+    while waited < timeout:
+        if pred():
+            return True
+        _time_mod.sleep(0.02)
+        waited += 0.02
+    return False
+
+
+_had_col = None
 try:
     main.db = _slow_failing_db
+    main._record_ai_critical_event = _fake_recorder
+    main._GATE_EVENT_LAST.clear()
     _time_mod.time = lambda: _fake_clock["t"]
     main._AI_DISABLED_CACHE.pop(9500, None)
     main._HAS_FEATURE_TIER_COL.pop("fail_until", None)
@@ -239,17 +273,378 @@ try:
        f"DB障害時はフェイルオープン (full) で返す ({r1} / {r2})")
     ok(n2 == n1, f"★2回目は DB を叩かない (1回目={n1}回 → 2回目={n2}回)")
 
+    # ★フェイルオープンは stdout だけに書いて終わりにしない。events に残っていないと
+    #   「上限が一切効いていない状態」が誰にも気づかれないまま続く。
+    _wait_until(lambda: len(_events) >= 2)
+    with _events_lock:
+        _got = sorted(set(_events))
+    ok(_got == ["light_tier_column_check_failed", "student_gate_read_failed"],
+       f"★フェイルオープンを events に記録している ({_got})")
+
+    # ★障害が続くあいだ events を連投しない (_GATE_EVENT_MIN_INTERVAL=600秒)。
+    #   ★判定は「一定時間待って件数が増えないこと」ではなく **打刻が残っていること**を見る。
+    #     sleep で待つ形にすると、回帰でスレッド起動が遅れただけで通ってしまう (偽の緑)。
     _fake_clock["t"] += main._GATE_FAIL_TTL + 1   # TTL 経過
     main._HAS_FEATURE_TIER_COL.pop("fail_until", None)
     main._load_student_gate(9500)
     ok(_calls["n"] > n2, f"TTL 経過後は再試行する ({n2} → {_calls['n']})")
+    # ★キーの**有無**だけを見てはいけない。後退はキーを消さないので、成功でも失敗でも同じ集合になり、
+    #   「成功したのに後退させた」を検出できない (実際、_write から成功の短絡を外す変異が緑で通った)。
+    #   見逃すと全 gate event が 600 秒ではなく _GATE_EVENT_RETRY_INTERVAL(30秒) ごとに書かれ、
+    #   events 行・daemon スレッド・DB 接続がおよそ 20 倍になる。
+    #   打刻が**どれだけ過去に置かれているか** (lag) で判定する。
+    _lags = [(_fake_clock["t"] - v) for v in main._GATE_EVENT_LAST.values()]
+    _max_lag = max(_lags) if _lags else None
+    # ★閾値は2段にする。MIN-RETRY(=570) は「後退していない」ことの**理論上**の境界だが、
+    #   後退実装の理論下限もちょうど 570 で、観測マージンは _slow_failing_db の +20 一回ぶんしかない
+    #   (実測: 正常 91 / 変異 590)。偽クロックの進み幅を変えた瞬間に判別できなくなるので、
+    #   期待値に近い 200 も併せて要求する。どちらが緩んでももう一方が残る。
+    _lag_limit = min(200.0, main._GATE_EVENT_MIN_INTERVAL - main._GATE_EVENT_RETRY_INTERVAL)
+    ok(set(main._GATE_EVENT_LAST) == {"light_tier_column_check_failed", "student_gate_read_failed"}
+       and _max_lag is not None
+       and _max_lag < _lag_limit,
+       f"★成功時は打刻を後退させない = 連投しない (now-打刻={_max_lag} < {_lag_limit})")
+
+    # ★★書けなかったときの挙動。**打刻を pop してはいけない**: pop すると次のフェイルオープンで
+    #   即再試行になり「1フェイルオープン = 1スレッド + 1 DB 接続試行」の暴走になる
+    #   (route_gate_middleware_failed は /api/ リクエストごとに発火する)。時計で後退させること。
+    #   検査は2点: (a) 直後は再試行しない (b) 間隔を過ぎたら再試行する。
+    #   ★_GATE_EVENT_RETRY_INTERVAL は検査中だけ大きくする。_slow_failing_db が
+    #     1回あたり偽クロックを +20 進めるので、既定の 30 秒だと (a) の「直後」が
+    #     間隔を越えてしまい、何を測っているのか分からなくなる。
+    _real_retry = main._GATE_EVENT_RETRY_INTERVAL
+    main._GATE_EVENT_RETRY_INTERVAL = 300.0
+    _recorder_ok["v"] = False
+    main._GATE_EVENT_LAST.clear()
+    with _events_lock:
+        _events.clear()
+    _fake_clock["t"] += 1
+    main._HAS_FEATURE_TIER_COL.pop("fail_until", None)
+    main._AI_DISABLED_CACHE.pop(9500, None)
+    main._load_student_gate(9500)
+    _wait_until(lambda: len(_events) >= 2)
+    _time_mod.sleep(0.15)   # 記録役が戻ったあとの「打刻の後退」(ロック+代入) が終わるまで
+    with _events_lock:
+        _n1 = len(_events)
+    # (a) 直後に同じ障害が起きても再試行しない (pop 実装ならここで増えて落ちる)
+    main._HAS_FEATURE_TIER_COL.pop("fail_until", None)
+    main._AI_DISABLED_CACHE.pop(9500, None)
+    main._load_student_gate(9500)
+    _time_mod.sleep(0.15)
+    with _events_lock:
+        _n2 = len(_events)
+    ok(_n2 == _n1, f"★書けなくても直後は再試行しない (1フェイルオープン=1スレッドの暴走を防ぐ) "
+                   f"({_n1} → {_n2})")
+    # (b) 間隔を過ぎたら再試行する (後退させずに放置すると永久に沈黙してしまう)
+    _fake_clock["t"] += main._GATE_EVENT_RETRY_INTERVAL + 1
+    main._HAS_FEATURE_TIER_COL.pop("fail_until", None)
+    main._AI_DISABLED_CACHE.pop(9500, None)
+    main._load_student_gate(9500)
+    _retried = _wait_until(lambda: len(_events) > _n2)
+    ok(_retried, f"★間隔を過ぎたら再試行する ({_n2} → {len(_events)})")
+    main._GATE_EVENT_RETRY_INTERVAL = _real_retry
+
+    # ★★呼び出し元をブロックしない。_load_student_gate は async middleware から呼ばれるので、
+    #   ここを同期呼び出しに戻すと db() の pool 10秒 + connect 10秒 でイベントループが止まる
+    #   ([[event-loop-blocking-async-def-trap]])。1秒かかる recorder で 1000 倍のマージンを取る。
+    _recorder_ok["v"] = True
+    _recorder_delay["v"] = 1.0
+    main._GATE_EVENT_LAST.clear()
+    main._HAS_FEATURE_TIER_COL.pop("fail_until", None)
+    main._AI_DISABLED_CACHE.pop(9500, None)
+    _t_before = _real_time()
+    main._load_student_gate(9500)
+    _elapsed = _real_time() - _t_before
+    ok(_elapsed < 0.30,
+       f"★記録は呼び出し元をブロックしない (recorder 1.0s に対し {_elapsed:.3f}s で返った)")
+    _recorder_delay["v"] = 0.0
 finally:
+    # ★復元は recorder が先。_fake_recorder は db() を触らないので、遅れたスレッドが
+    #   「実 recorder + 実 db()」の組み合わせを踏むのを最短で終わらせる。
+    #   (どちらの順でも取りこぼしは残るが、DATABASE_URL を空にした二重防御があるので
+    #    最悪でも捨てる一時 SQLite に1行入るだけ。)
+    main._GATE_EVENT_RETRY_INTERVAL = _real_retry if "_real_retry" in dir() else main._GATE_EVENT_RETRY_INTERVAL
+    main._record_ai_critical_event = _real_recorder
     main.db = _real_db
+    main._GATE_EVENT_LAST.clear()
     _time_mod.time = _real_time
     main._AI_DISABLED_CACHE.pop(9500, None)
     main._HAS_FEATURE_TIER_COL.pop("fail_until", None)
     if _had_col is not None:
         main._HAS_FEATURE_TIER_COL["v"] = _had_col
+
+
+print("\n[10] ★except が txn を rollback しないと、フェイルオープンではなく 500 になる")
+# ★このゲートを書いた理由 (2026-08-21):
+#   _check_ai_budget の except は「読み取りに失敗したら通す (フェイルオープン)」つもりで書かれ、
+#   コメントも ceo.html のバナーもそう説明していた。しかし **Postgres は最初の execute が
+#   失敗した時点で txn 全体が abort する**ので、rollback しないと同じ conn を使う直後の
+#   execute (events の SELECT) が InFailedSqlTransaction で落ち、外へ伝播して 500 になる。
+#   conn.close() にも到達せず接続が漏れる。= 説明と実挙動が正反対だった。
+#   sqlite では再現しないので、**Postgres の挙動を模した接続**で検査する。
+
+
+class _PoisonCursor:
+    def __init__(self, conn):
+        self.conn = conn
+
+    def execute(self, sql, params=None):
+        if self.conn.poisoned:
+            raise RuntimeError("InFailedSqlTransaction: current transaction is aborted")
+        if self.conn.fail_on and self.conn.fail_on in sql:
+            self.conn.poisoned = True   # Postgres: 失敗した時点で txn 全体が abort する
+            raise RuntimeError(self.conn.fail_msg)
+        # ★数えるのは **成功した** execute だけ。poison チェックより前に append すると
+        #   「試行した回数」になり、rollback を消す変異を当てても 2 本のままで判別できない
+        #   (実際この assert だけ変異下でも緑だった = 主張とラベルが一致していなかった)。
+        self.conn.executes.append(" ".join(sql.split())[:40])
+
+    def fetchone(self):
+        return None
+
+    def fetchall(self):
+        return []
+
+
+class _PoisonConn:
+    def __init__(self, fail_on, fail_msg):
+        self.fail_on = fail_on
+        self.fail_msg = fail_msg
+        self.poisoned = False
+        self.closed = False
+        self.rolled = False
+        self.executes = []
+
+    def cursor(self):
+        return _PoisonCursor(self)
+
+    def rollback(self):
+        self.rolled = True
+        self.poisoned = False
+
+    def commit(self):
+        pass
+
+    def close(self):
+        self.closed = True
+
+
+def _run_budget_with(conn):
+    """差し替えた接続で _check_ai_budget を1回走らせ、漏れた例外を返す (無ければ None)。"""
+    _rd, _rr = main.db, main._record_ai_critical_event
+    try:
+        main.db = lambda: conn
+        main._record_ai_critical_event = lambda _n, _p: True   # スレッドから実DBを触らせない
+        main._GATE_EVENT_LAST.clear()
+        try:
+            main._check_ai_budget(999999)
+            return None
+        except Exception as _pe:
+            return f"{type(_pe).__name__}: {_pe}"
+    finally:
+        main.db = _rd
+        main._record_ai_critical_event = _rr
+        main._GATE_EVENT_LAST.clear()
+
+
+# ケース1: 1本目 (契約情報) が落ちる = 列のマイグレーション未適用など
+_c1 = _PoisonConn("FROM students", "column students.signup_utm_campaign does not exist")
+_e1 = _run_budget_with(_c1)
+ok(_e1 is None, f"★1本目が落ちても外へ例外を漏らさない (フェイルオープン) [{_e1}]")
+ok(_c1.rolled, "★except で rollback している (しないと直後の execute が txn abort で落ちる)")
+ok(_c1.closed, "★フェイルオープン経路でも conn を閉じている (漏らさない)")
+ok(len(_c1.executes) >= 1,
+   f"★rollback 後に後続の SELECT が **成功** している ({len(_c1.executes)} 本)")
+
+# ケース2: 2本目 (events) が落ちる = statement timeout / ロック待ち / events 側の障害
+#   ★以前はここで例外が外へ出て 500 になり、conn.close() にも到達しなかった。
+#     [10] の1本目の assert は「読み取りに失敗しても漏らさない」と全称で名乗っていたのに、
+#     実際に成立するのは1本目だけ = 検査が主張より狭い範囲しか守っていなかった。
+_c2 = _PoisonConn("FROM events", "canceling statement due to statement timeout")
+_e2 = _run_budget_with(_c2)
+ok(_e2 is None, f"★2本目 (events) が落ちても外へ例外を漏らさない (フェイルオープン) [{_e2}]")
+ok(_c2.closed, "★2本目が落ちた経路でも conn を閉じている (以前は __del__ 頼みだった)")
+ok(len(_c2.executes) >= 1, f"★1本目は成功として数えられている ({len(_c2.executes)} 本)")
+
+
+print("\n[11] ★記録の契約を **本物のコードで** 検査する")
+# ★このゲートを書いた理由 (2026-08-21 敵対レビュー):
+#   [9] は _record_ai_critical_event を fake に差し替えて回すので、**本物の戻り値契約**を
+#   一度も検査していなかった。その戻り値 (書けたか) が「書けなかったら再試行する」設計の
+#   全体を支えているのに、except を `return True` に変える変異が緑で通った。
+#   同じ理由で _collect_gate_failures の中身 (session_id と名前の絞り込み) も未検査で、
+#   `return {"total": 0}` に潰す変異も WHERE を書き換える変異も緑だった。
+#   ここは **差し替えずに実 SQLite で** 動かす。
+import json as _json11
+import contextlib as _ctx11
+import logging as _log11
+
+
+@_ctx11.contextmanager
+def _quiet_main_log():
+    """わざと DB を壊す検査の**期待どおりの**ログを黙らせる。
+
+    ★run_all_gates.py は行頭 `ERROR:` を違反とみなし、ゲートを [INCONSISTENT] で落とす
+      (CLAUDE.md: 「CRASH / DEAD / INCONSISTENT は『通った』ではない」)。
+      ここは失敗経路を**意図的に**踏む検査なので、log.error が出るのが正常。
+      ★ゲート全体を INCONSISTENT_OK で免除しないこと。それをすると、将来この
+        ゲートが出す**本物の**不整合まで一緒に見逃す。黙らせるのはこの区間だけ。"""
+    _lg = _log11.getLogger("main")
+    _prev = _lg.level
+    _lg.setLevel(_log11.CRITICAL + 1)
+    try:
+        yield
+    finally:
+        _lg.setLevel(_prev)
+
+_conn11 = main.db()
+_c11 = _conn11.cursor()
+_c11.execute("DELETE FROM events WHERE session_id = 'ai_failsafe'")
+_conn11.commit()
+_conn11.close()
+
+# (a) 成功したら True を返し、events に1行入る
+_ok11 = main._record_ai_critical_event("light_consume_failed", {"probe": 1})
+ok(_ok11 is True, f"★_record_ai_critical_event は成功したら True を返す ({_ok11})")
+
+# (b) 失敗したら False を返す (打刻の後退はこの戻り値だけが根拠)
+_real_db11 = main.db
+try:
+    main.db = lambda: (_ for _ in ()).throw(RuntimeError("simulated outage"))
+    with _quiet_main_log():
+        _ng11 = main._record_ai_critical_event("light_consume_failed", {"probe": 2})
+finally:
+    main.db = _real_db11
+ok(_ng11 is False, f"★書けなかったら False を返す ({_ng11})")
+
+
+class _CloseProbeConn:
+    """execute で投げても close されるか (finally の有無) を見る。"""
+
+    def __init__(self):
+        self.closed = False
+
+    def cursor(self):
+        class _C:
+            def execute(_s, *_a, **_k):
+                raise RuntimeError("boom")
+        return _C()
+
+    def commit(self):
+        pass
+
+    def close(self):
+        self.closed = True
+
+
+_cp = _CloseProbeConn()
+try:
+    main.db = lambda: _cp
+    with _quiet_main_log():
+        main._record_ai_critical_event("light_consume_failed", {"probe": 3})
+finally:
+    main.db = _real_db11
+ok(_cp.closed, "★INSERT が落ちても conn を返す (finally が無いとプールが少しずつ枯れる)")
+
+# (c) _collect_gate_failures が **実際に events を読み**、session_id と名前で絞れている
+_conn11 = main.db()
+_c11 = _conn11.cursor()
+_c11.execute("DELETE FROM events")
+for _n11, _cnt11 in (("route_gate_middleware_failed", 3), ("ai_budget_check_failed", 1)):
+    for _ in range(_cnt11):
+        _c11.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                     (_n11, _json11.dumps({"x": 1}), "ai_failsafe"))
+# ノイズ: 別 session_id / 対象外の名前 (どちらも数えてはいけない)
+_c11.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+             ("route_gate_middleware_failed", "{}", "student:1"))
+_c11.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+             ("page_view", "{}", "ai_failsafe"))
+_conn11.commit()
+_conn11.close()
+
+_gf11 = main._collect_gate_failures()
+ok(_gf11.get("total") == 4,
+   f"★実データを数えている (期待 4 / 実際 {_gf11.get('total')})")
+ok({x["name"] for x in _gf11.get("by_name", [])} == {"route_gate_middleware_failed",
+                                                     "ai_budget_check_failed"},
+   f"★session_id と名前で絞れている ({sorted(x['name'] for x in _gf11.get('by_name', []))})")
+ok(next((x["count"] for x in _gf11.get("by_name", [])
+         if x["name"] == "route_gate_middleware_failed"), None) == 3,
+   "★件数が正しい (別 session_id の行を数えていない)")
+
+# (d) 集計に失敗したら total=None (0 と区別する。「0件だから健全」と誤読させない)
+try:
+    main.db = lambda: (_ for _ in ()).throw(RuntimeError("simulated outage"))
+    with _quiet_main_log():
+        _gf_ng = main._collect_gate_failures()
+finally:
+    main.db = _real_db11
+ok(_gf_ng.get("total") is None,
+   f"★集計に失敗したら total=None (0 と混同しない) ({_gf_ng.get('total')})")
+
+# (e) **全 event 名**が記録される (1つだけ握り潰す変異を殺す)
+_seen11 = []
+_real_rec11 = main._record_ai_critical_event
+try:
+    main._record_ai_critical_event = lambda _n, _p: (_seen11.append(_n), True)[1]
+    main._GATE_EVENT_LAST.clear()
+    for _name11 in main._GATE_EVENT_NAMES:
+        main._record_gate_failure_async(_name11, {"probe": 1})
+    _t11 = 0.0
+    while _t11 < 5.0 and len(_seen11) < len(main._GATE_EVENT_NAMES):
+        __import__("time").sleep(0.02)
+        _t11 += 0.02
+finally:
+    main._record_ai_critical_event = _real_rec11
+    main._GATE_EVENT_LAST.clear()
+ok(set(_seen11) == set(main._GATE_EVENT_NAMES),
+   f"★すべての gate event 名が実際に記録へ回る (欠け: "
+   f"{sorted(set(main._GATE_EVENT_NAMES) - set(_seen11))})")
+
+# (f) ★アラートに昇格するか。ここが無いと CEO ダッシュの総合バッジが
+#     「✅ 全システム正常」のままになり、「監視・運用」セクションは既定で display:none
+#     なので**実質誰も見ない**。events に書くだけでは足りない、の最後の一段。
+_conn11 = main.db()
+_c11 = _conn11.cursor()
+_c11.execute("DELETE FROM events")
+_conn11.commit()
+_conn11.close()
+_snap_ok = main._collect_health_snapshot()
+_al_ok = [a for a in main._evaluate_alerts(_snap_ok) if str(a.get("key", "")).startswith("gate_")]
+ok(not _al_ok, f"★フェイルオープンが無いときはアラートを出さない ({[a['key'] for a in _al_ok]})")
+
+_conn11 = main.db()
+_c11 = _conn11.cursor()
+for _ in range(3):
+    _c11.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                 ("route_gate_middleware_failed", "{}", "ai_failsafe"))
+_conn11.commit()
+_conn11.close()
+_snap_ng = main._collect_health_snapshot()
+_al_ng = [a for a in main._evaluate_alerts(_snap_ng) if a.get("key") == "gate_failure_open"]
+# ★ラベルで「赤帯に出る」と書いてはいけない。ceo.html:3067 の赤帯は critical (🚨) のときだけで、
+#   warning は ⚠️ バッジ止まり。検証していないことをラベルが主張するのは、この差分で
+#   何度も指摘された「検査が主張より狭い」の型そのもの。実際に効くのは
+#   (a) alerts に入る (b) 監視メールが飛ぶ (info は 9074 で抑止されるが warning は飛ぶ)
+#   (c) 「監視・運用」セクションの赤箱と ⚠️ バッジ、の3つ。
+ok(len(_al_ng) == 1,
+   f"★フェイルオープンがあればアラートに昇格する (監視メール + ⚠️バッジ。赤帯は critical 限定) "
+   f"({len(_al_ng)} 件)")
+ok(_al_ng and "3" in _al_ng[0].get("title", ""),
+   f"★件数がタイトルに出る ({_al_ng[0].get('title') if _al_ng else 'なし'})")
+# ★cooldown は **判定窓と揃える**。この判定は「直近24hに1行でもあれば発火」する level trigger
+#   なので、既定 60 分のままだと 1回のフェイルオープンで監視メールが 24 通飛ぶ (実測)。
+#   同ファイルの no_signups_24h が「60分おきに鳴り続けて監視メールの98%を占め、
+#   本物の障害通知が埋もれた」という理由で降格された前例がある。
+_cd = (_al_ng[0].get("cooldown_min") if _al_ng else None)
+_win_min = (_snap_ng.get("gate_failures") or {}).get("hours", 24) * 60
+ok(_cd is not None and _cd >= _win_min,
+   f"★アラートの cooldown が判定窓以上 (cooldown={_cd}分 / 窓={_win_min}分)。"
+   f"短いと1回の障害で監視メールが窓長ぶん鳴り続ける")
+_conn11 = main.db()
+_conn11.cursor().execute("DELETE FROM events")
+_conn11.commit()
+_conn11.close()
 
 print("\n" + "=" * 60)
 print(f"{N[0]} checks / FAIL {len(FAIL)}")
