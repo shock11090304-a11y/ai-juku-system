@@ -108,6 +108,13 @@ jobs:
       # 🎬 授業録画の自動割り当て API (CEO 画面のボタン)。**書き込む側**なので、
       #   dry-run が本当に書かないこと・二度押しで重複しないこと・取得失敗を
       #   「新着なし」にしないことまで見る (判定表そのものは material-gates が見る)。
+      # ★httpx はここで入れる。fastapi.testclient が要求するが **テスト専用**なので
+      #   server/requirements.txt には入れない (入れると Railway の本番イメージが
+      #   テストのためだけに重くなる)。pyflakes と同じ扱い。
+      #   ★入らなかったときに黙って飛ばさないこと。ここを `|| true` にすると
+      #   「検査していないのに緑」になる (CLAUDE.md が名指ししている型)。
       - name: 授業録画 自動割り当て API 回帰テスト
         if: ${{ !cancelled() }}
-        run: python3 scripts/health_check/test_auto_assign_api.py
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_auto_assign_api.py
