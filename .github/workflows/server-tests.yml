@@ -104,3 +104,10 @@ jobs:
       - name: E2E 合成監視 (誤報抑止 / 検知能力) 回帰テスト
         if: ${{ !cancelled() }}
         run: python3 scripts/health_check/test_synthetic_monitor_retry.py
+
+      # 🎬 授業録画の自動割り当て API (CEO 画面のボタン)。**書き込む側**なので、
+      #   dry-run が本当に書かないこと・二度押しで重複しないこと・取得失敗を
+      #   「新着なし」にしないことまで見る (判定表そのものは material-gates が見る)。
+      - name: 授業録画 自動割り当て API 回帰テスト
+        if: ${{ !cancelled() }}
+        run: python3 scripts/health_check/test_auto_assign_api.py
