@@ -332,6 +332,7 @@ python3 scripts/run_all_gates.py               # 全教材 (CI と同じ)
 |---|---|---|---|
 | 英語 (`grammar`) | 英文法 演習 第1集 × 15 | `scripts/book_exam/materials/meishi1/build_meishi1.py` ほか | 旧ビルダー `_grammar_build.py`。4 択 10 問 |
 | 数学 (`math`) | 数学I 二次関数 演習 第1集 | `scripts/book_exam/materials/sugaku_nijikansu1/build_sugaku_nijikansu1.py` | KaTeX の数式 / sympy による正解の再計算 |
+| 数学 (`math`) | 数学I 二次関数 **共通テスト型** 第1集 | `scripts/book_exam/materials/sugaku_kyotsu1/build_sugaku_kyotsu1.py` | 会話文の場面設定 (`passages`) / 8 問の誘導連鎖 |
 | 理科 (`science`) | 物理基礎 電気回路 演習 第1集 | `scripts/book_exam/materials/rika_denki1/build_rika_denki1.py` | 図 (SVG) / 記述 (`short`) と別解 |
 | 社会 (`social`) | 公民 日本の政治のしくみ 演習 第1集 | `scripts/book_exam/materials/shakai_seiji1/build_shakai_seiji1.py` | 資料の表 (`passages`) / 空欄の資料読み取り |
 | 国語 (`japanese`) | 古文 徒然草を読む 演習 第1集 | `scripts/book_exam/materials/kokugo_kobun1/build_kokugo_kobun1.py` | 本文 (`passages`) + 注 + 出典 / 記述 |
