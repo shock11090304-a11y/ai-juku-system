@@ -43,11 +43,10 @@
           <span>🔥 累計 <strong data-sp-total style="color:#fbbf24; font-size:1rem;">${sp.totalUsers}</strong> 人突破</span>
         </div>`;
     } else {
-      // 🚨 2026-08-21 撤去: 「現在閲覧中 N 人」は plans.js の onlineNow
-      //   (自ら「擬似値」と注記された固定値 12) を、脈打つ緑ドット付きでライブ表示していた。
-      //   2026-07-02 の「偽装の残り枠表示は撤去」方針と正面から矛盾する。実数が取れるまで出さない。
-      //   ★説明は **JS コメント**に置くこと。テンプレートリテラルの中に HTML コメントで書くと、
-      //     内部の言葉がそのまま訪問者のページソースに出る (一度やりかけた)。
+      // 2026-08-21: 「現在閲覧中 N 人」の表示は外した。plans.js に固定値を置いていただけで
+      //   実際の同時閲覧数を取得していなかったため。実数を取得できるまで復活させないこと。
+      //   ★このファイルは訪問者に配信される。コメントも view-source で読めるので、
+      //     内部向けの言い回しは書かないこと (テンプレートリテラル内は特に危険)。
       el.innerHTML = `
         <div style="background:linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(59,130,246,0.06) 100%); border:1px solid rgba(34,197,94,0.3); border-radius:14px; padding:0.9rem 1.2rem; margin: 0.8rem 0;">
           <div style="display:flex; flex-wrap:wrap; gap:0.5rem 1.4rem; align-items:center; justify-content:center;">
