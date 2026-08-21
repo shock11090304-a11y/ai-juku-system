@@ -351,6 +351,24 @@ python3 scripts/run_all_gates.py               # 全教材 (CI と同じ)
 LLM には**コードではなくデータ (JSON) だけ**を書かせ、こちらで全部検査してから
 冊子にします。落ちたら「ChatGPT に貼り戻す文」が出るので、それを渡して直させます。
 
+### 手順 (1 冊ぶん・30 分)
+
+| # | やること | どこで |
+|---|---|---|
+| 0 | **最初の 1 回だけ**: `python3 -m pip install --user sympy pypdf` | ターミナル |
+| 1 | 指示文を作る (`--unit` と `--note` を書く) | ターミナル |
+| 2 | 指示文を ChatGPT に**全部貼って**送る | ChatGPT |
+| 3 | 返ってきた JSON を `spec.json` に保存 | ChatGPT → エディタ |
+| 4 | `build_from_spec.py spec.json` を回す | ターミナル |
+| 5 | 落ちたら出てくる**貼り戻し文**を ChatGPT に貼る → 3 に戻る | ChatGPT |
+| 6 | 通ったら **PDF を目で読む**・全問を疑って読み直す | 手元 |
+| 7 | `git add` → `commit` → `push` | ターミナル |
+| 8 | `import_books.py --dry-run` → 問題なければ本番へ | ターミナル |
+| 9 | 神テストの登録画面で**公開に切り替える** | ブラウザ |
+
+★ 0 の `sympy` は数学 (`check` を使う冊子) だけに要る。`pypdf` は全教科で要る
+(刷り上がりを読み返すため)。Chrome と日本語フォントは Mac に既定で在る。
+
 ```bash
 # ① 指示文を作る (正典から生成されるので規則とずれない)
 python3 scripts/book_exam/make_llm_prompt.py math --n 10 --unit "数学I 2次関数"

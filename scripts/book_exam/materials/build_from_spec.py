@@ -51,22 +51,34 @@ QUESTION_REQUIRED = {"number", "points", "unit_tag", "stem", "answer",
 
 # `check` に書いてよい文字。式以外のものを持ち込ませない。
 CHECK_OK = re.compile(r"^[0-9A-Za-z_+\-*/(),.\s^=<>\[\]]+$")
-# 使ってよい名前 (sympy のごく一部)。ここに無い名前は parse で落ちる。
-import sympy as _sp                                        # noqa: E402
-CHECK_NAMES = {
-    "x": _sp.Symbol("x"), "y": _sp.Symbol("y"), "a": _sp.Symbol("a"),
-    "b": _sp.Symbol("b"), "c": _sp.Symbol("c"), "k": _sp.Symbol("k"),
-    "n": _sp.Symbol("n"), "t": _sp.Symbol("t"),
-    "minimum": _sp.minimum, "maximum": _sp.maximum, "solve": _sp.solve,
-    "diff": _sp.diff, "expand": _sp.expand, "factor": _sp.factor,
-    "simplify": _sp.simplify, "sqrt": _sp.sqrt, "Rational": _sp.Rational,
-    "discriminant": _sp.discriminant, "Abs": _sp.Abs, "pi": _sp.pi,
-}
-# ★ 名前空間はここで閉じる。sympy の全名前を開けない (組み込みも渡さない)。
-#   数値リテラルの変換に要る Integer / Float / Symbol / Rational だけ足す。
-CHECK_GLOBALS = {"__builtins__": {}, "Integer": _sp.Integer,
-                 "Float": _sp.Float, "Symbol": _sp.Symbol,
-                 "Rational": _sp.Rational}
+# ★ sympy は `check` を書いた設問があるときだけ要る。
+#   国語・社会の冊子を作るのに sympy の導入を強いない (module 直下で import しない)。
+_SYMPY = {}
+
+
+def sympy_env():
+    """(sympy, 使ってよい名前, 名前空間) を返す。無ければ (None, …)。
+
+    ★ 名前空間はここで閉じる。sympy の全名前も組み込みも渡さない。
+      数値リテラルの変換に要る Integer / Float / Symbol / Rational だけ足す。
+    """
+    if _SYMPY:
+        return _SYMPY["sp"], _SYMPY["names"], _SYMPY["globals"]
+    try:
+        import sympy as sp
+    except ImportError:
+        _SYMPY.update(sp=None, names={}, globals={})
+        return None, {}, {}
+    names = {k: sp.Symbol(k) for k in "xyabcknt"}
+    names.update(
+        minimum=sp.minimum, maximum=sp.maximum, solve=sp.solve, diff=sp.diff,
+        expand=sp.expand, factor=sp.factor, simplify=sp.simplify,
+        sqrt=sp.sqrt, Rational=sp.Rational, discriminant=sp.discriminant,
+        Abs=sp.Abs, pi=sp.pi)
+    glob = {"__builtins__": {}, "Integer": sp.Integer, "Float": sp.Float,
+            "Symbol": sp.Symbol, "Rational": sp.Rational}
+    _SYMPY.update(sp=sp, names=names, globals=glob)
+    return sp, names, glob
 
 
 def load_spec(path):
@@ -131,10 +143,14 @@ def parse_math(text, where, errs):
     if not CHECK_OK.fullmatch(s):
         errs.append(f"{where}: check に式以外の文字が入っています ({s[:40]!r})")
         return None
+    sp, names, glob = sympy_env()
+    if sp is None:
+        errs.append(f"{where}: check を確かめるには sympy が要ります。"
+                    f"python3 -m pip install --user sympy を実行してください")
+        return None
     try:
         from sympy.parsing.sympy_parser import parse_expr
-        return parse_expr(s, local_dict=CHECK_NAMES,
-                          global_dict=CHECK_GLOBALS, evaluate=True)
+        return parse_expr(s, local_dict=names, global_dict=glob, evaluate=True)
     except Exception as e:                                   # noqa: BLE001
         errs.append(f"{where}: check の式を読めません ({e})")
         return None
@@ -159,6 +175,7 @@ def verify_checks(spec, questions):
             continue
         if not (isinstance(ans, int) and 1 <= ans <= len(choices)):
             continue        # 正解番号の異常は verify() が言うので二重に言わない
+        sp, names, glob = sympy_env()
         plain = q.get("choices_plain") or [B.strip_math(str(c)) for c in choices]
         vals, unread = [], []
         for j, p in enumerate(plain):
@@ -166,9 +183,8 @@ def verify_checks(spec, questions):
             if CHECK_OK.fullmatch(str(p).strip()):
                 try:
                     from sympy.parsing.sympy_parser import parse_expr
-                    v = parse_expr(str(p).strip(),
-                                   local_dict=CHECK_NAMES,
-                                   global_dict=CHECK_GLOBALS, evaluate=True)
+                    v = parse_expr(str(p).strip(), local_dict=names,
+                                   global_dict=glob, evaluate=True)
                 except Exception:                            # noqa: BLE001
                     v = None
             if v is None:
@@ -180,13 +196,13 @@ def verify_checks(spec, questions):
                         f"({plain[ans - 1]!r})。choices_plain に "
                         f"「-2*x**2 + 40*x」のような形で書いてください")
             continue
-        if _sp.simplify(want - got) != 0:
+        if sp.simplify(want - got) != 0:
             errs.append(f"{where}: check の計算 ({got}) と正解の選択肢 "
                         f"({want}) が合いません")
         for j in range(len(vals)):
             for k in range(j + 1, len(vals)):
                 if vals[j] is not None and vals[k] is not None \
-                        and _sp.simplify(vals[j] - vals[k]) == 0:
+                        and sp.simplify(vals[j] - vals[k]) == 0:
                     errs.append(f"{where}: 選択肢 {j + 1} と {k + 1} が同値です "
                                 f"({vals[j]})。正解が 2 つになります")
         if unread:
