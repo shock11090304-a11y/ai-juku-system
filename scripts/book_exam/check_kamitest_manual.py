@@ -18,7 +18,9 @@ run_all_gates.py が check* として自動で拾う。何を見たかを必ず�
     ・選択肢の数の範囲・PDF の上限    ↔ 同 MIN_CHOICES / MAX_CHOICES / MAX_PDF_BYTES
     ・bundle の設問キー               ↔ import_books.question_payload_py が作るキー
     ・科目名 → 既定の制限時間         ↔ import_books.TIME_LIMIT_MIN
-    ・英語の解説 4 見出し             ↔ materials/_grammar_build.py の HEADINGS
+    ・教科ごとの解説の見出し           ↔ materials/_book_build.py の SUBJECT_HEADINGS
+    ・英語の 4 見出しの二重定義        ↔ _grammar_build.HEADINGS と一致しているか
+    ・subject の取りこぼし             ↔ 'other' 以外の全 subject に教科別ページがあるか
     ・「解説は素のテキスト」の根拠     ↔ exam-book-answers.mjs / exam-book.css の実物
     ・教科別マニュアルの subject 値   ↔ SUBJECTS に実在するか
     ・マニュアルが挙げるファイルパス   ↔ 実在するか (置き場所を移したら落ちる)
@@ -41,7 +43,8 @@ BOOK_CSS = os.path.join(ROOT, "exam-app", "exam-book.css")
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "materials"))
 import import_books as ib              # noqa: E402  (取り込みの正典)
-import _grammar_build as G             # noqa: E402  (英文法ビルダーの正典)
+import _grammar_build as G             # noqa: E402  (英文法 15 冊のビルダー)
+import _book_build as BB               # noqa: E402  (全教科共通ビルダーの正典)
 
 # 教科別マニュアル。README から張られていることも見る。
 SUBJECT_PAGES = ("eigo.md", "sugaku.md", "kokugo.md", "rika.md", "shakai.md")
@@ -154,16 +157,64 @@ def check_time_limits(readme, bad):
                    f"    マニュアル: {got}\n    実物      : {ib.TIME_LIMIT_MIN}")
 
 
-def check_headings(eigo, bad):
-    """eigo.md の 4 見出し ↔ _grammar_build.HEADINGS (順番も)。"""
-    block = canon(eigo, "headings", "eigo.md", bad)
-    if block is None:
-        return
-    got = tuple(ln.strip() for ln in block.splitlines()
-                if ln.strip().startswith("## "))
-    if got != G.HEADINGS:
-        bad.append(f"eigo.md: 解説の見出しが _grammar_build.HEADINGS と違う\n"
-                   f"    マニュアル: {got}\n    実物      : {G.HEADINGS}")
+HEAD_TOKEN = re.compile(r"^\s*(##\s+\S.*?)\s*$|^\s*(【[^】]+】)")
+
+
+def heading_tokens(block):
+    """見出しだけを行頭から拾う (英語は `## …`、他教科は `【…】`)。"""
+    out = []
+    for ln in block.splitlines():
+        m = HEAD_TOKEN.match(ln)
+        if m:
+            out.append((m.group(1) or m.group(2)).strip())
+    return tuple(out)
+
+
+def check_headings(texts, declared, bad):
+    """各教科ページの見出し ↔ _book_build.SUBJECT_HEADINGS (順番も)。"""
+    for name, text in texts.items():
+        if name == "README.md":
+            continue
+        block = canon(text, "headings", name, bad)
+        if block is None:
+            continue
+        values = declared.get(name) or []
+        want = {v: BB.SUBJECT_HEADINGS[v] for v in values
+                if v in BB.SUBJECT_HEADINGS}
+        if len(set(want.values())) != 1:
+            bad.append(f"{name}: 宣言している subject {values} の解説見出しが "
+                       f"_book_build.SUBJECT_HEADINGS で一致していない "
+                       f"(1 ページにまとめられない)")
+            continue
+        expect = next(iter(want.values()))
+        got = heading_tokens(block)
+        if got != expect:
+            bad.append(f"{name}: 解説の見出しが _book_build.SUBJECT_HEADINGS と違う\n"
+                       f"    マニュアル: {got}\n    実物      : {expect}")
+
+
+def check_builder_parity(bad):
+    """英語の 4 見出しが 2 か所にある。ずれたら片方の冊子だけ落ちる。"""
+    if G.HEADINGS != BB.SUBJECT_HEADINGS["grammar"]:
+        bad.append(f"_grammar_build.HEADINGS と _book_build.SUBJECT_HEADINGS['grammar'] "
+                   f"が違う\n    旧: {G.HEADINGS}\n    新: "
+                   f"{BB.SUBJECT_HEADINGS['grammar']}")
+
+
+def check_subject_coverage(subjects, declared, bad):
+    """'other' 以外の subject に、必ずどれかの教科別ページがあるか。"""
+    covered = {v for vs in declared.values() for v in vs}
+    for value, label in subjects:
+        if value == "other":
+            continue
+        if value not in covered:
+            bad.append(f"subject '{value}' ({label}) を扱う教科別ページが無い "
+                       f"(docs/kamitest-manual/ に足すか、既存ページの "
+                       f"canon:subject-value に加える)")
+    for value in sorted(covered):
+        if value not in BB.SUBJECT_HEADINGS:
+            bad.append(f"subject '{value}' が _book_build.SUBJECT_HEADINGS に無い "
+                       f"(ビルダーが解説の見出しを知らない)")
 
 
 def check_plain_text_claim(bad):
@@ -182,7 +233,7 @@ def check_plain_text_claim(bad):
                    "解説の改行が潰れるならマニュアル §5 を見直すこと")
 
 
-def check_subject_pages(readme, subjects, bad, seen):
+def check_subject_pages(readme, subjects, bad, seen, declared):
     """教科別マニュアルの存在・README からのリンク・宣言している subject 値。"""
     values = {v for v, _ in subjects}
     for name in SUBJECT_PAGES:
@@ -197,10 +248,11 @@ def check_subject_pages(readme, subjects, bad, seen):
         block = canon(text, "subject-value", name, bad)
         if block is None:
             continue
-        declared = re.findall(r"`([a-z]+)`", block)
-        if not declared:
+        vals = re.findall(r"`([a-z]+)`", block)
+        declared[name] = vals
+        if not vals:
             bad.append(f"{name}: canon:subject-value に `値` が 1 つも無い")
-        for v in declared:
+        for v in vals:
             if v not in values:
                 bad.append(f"{name}: subject '{v}' は SUBJECTS に無い "
                            f"(使えるのは {sorted(values)})")
@@ -243,9 +295,11 @@ def main():
     check_question_keys(readme, bad)
     check_time_limits(readme, bad)
     check_plain_text_claim(bad)
-    check_subject_pages(readme, subjects, bad, texts)
-    if "eigo.md" in texts:
-        check_headings(texts["eigo.md"], bad)
+    declared = {}
+    check_subject_pages(readme, subjects, bad, texts, declared)
+    check_headings(texts, declared, bad)
+    check_builder_parity(bad)
+    check_subject_coverage(subjects, declared, bad)
     n_paths = check_paths(texts, bad)
 
     print("=== 神テスト 問題作成マニュアルの検査 ===")
@@ -253,7 +307,9 @@ def main():
         mark = "[OK]" if name in texts else "[--]"
         print(f"  {mark} docs/kamitest-manual/{name}")
     print(f"  照合先: exam-book-admin-model.mjs (SUBJECTS {len(subjects)} 件 / 上限) / "
-          f"import_books.py (設問キー・制限時間) / _grammar_build.py (解説 4 見出し) / "
+          f"import_books.py (設問キー・制限時間) / "
+          f"_book_build.py (解説見出し {len(BB.SUBJECT_HEADINGS)} 教科) + "
+          f"_grammar_build.py (英語の二重定義) / "
           f"exam-book-answers.mjs + exam-book.css (解説の表示)")
     print(f"  マニュアルが挙げるパス {n_paths} 件の実在を確認")
 

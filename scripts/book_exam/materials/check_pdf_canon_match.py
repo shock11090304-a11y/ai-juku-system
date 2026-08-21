@@ -5,6 +5,9 @@
     python3 scripts/book_exam/materials/check_pdf_canon_match.py
 
 引数なし = **materials/*/build_*.py の全冊子** (CLAUDE.md「引数なしの既定は刷るもの全部」)。
+2 つの正典の形に対応する — 旧 `_grammar_build` 系 (STEM / TITLE / 8 要素タプルの QUESTIONS) と
+新 `_book_build` 系 (META / dict の QUESTIONS)。後者の照合は _book_build.verify_pdf() を
+そのまま呼ぶ (build 時と同じ実装。二重管理しない)。**どちらでもない形は落とす**。
 run_all_gates.py が check* として自動で拾う。何を見たかを必ず印字する。
 
 相互チェックの ① 層 (CLAUDE.md 2026-08-16「出力物どうしの照合」) の恒久化:
@@ -24,6 +27,8 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import _book_build as BB  # noqa: E402  (新しい正典の形の照合はここが持つ)
 
 
 def extract_pages(pdf_path):
@@ -63,9 +68,20 @@ def main():
         label = os.path.relpath(path, HERE)
         try:
             m = load_build(path)
-            stem, title, questions = m.STEM, m.TITLE, m.QUESTIONS
         except Exception as e:
             bad.append(f"{label}: 正典を読めない ({e})")
+            continue
+        meta = getattr(m, "META", None)
+        questions = getattr(m, "QUESTIONS", None)
+        if questions is None:
+            bad.append(f"{label}: QUESTIONS が無い")
+            continue
+        if meta is not None:                      # --- 新 (_book_build) の形 ---
+            stem, title = meta.get("stem"), meta.get("title")
+        elif hasattr(m, "STEM"):                  # --- 旧 (_grammar_build) の形 ---
+            stem, title = m.STEM, m.TITLE
+        else:
+            bad.append(f"{label}: META も STEM も無い (知らない正典の形)")
             continue
         pdf = os.path.join(os.path.dirname(path), f"{stem}_問題.pdf")
         if not os.path.exists(pdf):
@@ -78,6 +94,14 @@ def main():
             return 1
         n_books += 1
         n_qs += len(questions)
+        if meta is not None:
+            if squeeze(title) not in squeeze(pages[0]):
+                bad.append(f"{stem}: 1 ページ目に冊子タイトルが無い")
+            for e in BB.verify_pdf(meta, questions, pdf):
+                bad.append(f"{stem}: {e}")
+            if not any(x.startswith(stem) or x.startswith(label) for x in bad):
+                print(f"[OK] {stem} ({len(questions)}問 / {len(pages)}頁 ⇔ PDF 一致)")
+            continue
         want_pages = max(q[1] for q in questions)
         if len(pages) != want_pages:
             bad.append(f"{stem}: ページ数がずれている (PDF {len(pages)} 頁 / 正典 {want_pages} 頁)")

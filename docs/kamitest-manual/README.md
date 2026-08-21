@@ -21,7 +21,10 @@
 - `exam-app/exam-book-admin-model.mjs` — 入力の検証。ここを通らないものは登録できない
 - `scripts/book_exam/import_books.py` — 取り込み。`validate_questions_py` が上の写し
 - `supabase/migrations/20260813010000_english_learning_core.sql` — questions の CHECK
-- `scripts/book_exam/materials/_grammar_build.py` — 冊子ビルダーの型 (英文法 15 冊が使用中)
+- `scripts/book_exam/materials/_book_build.py` — **全教科共通の冊子ビルダー**。
+  検証・取り込み JSON・問題 PDF (KaTeX 込み)・刷り上がり PDF の読み返しを引き受ける
+- `scripts/book_exam/materials/_grammar_build.py` — 英文法 15 冊が使っている旧ビルダー。
+  英文法専用 (subject 固定・空所必須・4 択固定)。**新しい冊子はこちらを使わない**
 - `docs/book-exam.md` — 受験画面そのものの設計
 
 ---
@@ -50,9 +53,11 @@
 
 ```
 ① scripts/book_exam/materials/〈冊子名〉/build_〈冊子名〉.py を書く
-     └ QUESTIONS が唯一の正典。ここにだけ設問文・選択肢・正解・解説を書く
+     └ META と QUESTIONS が唯一の正典。ここにだけ設問文・選択肢・正解・解説を書く
+     └ 組み立ては _book_build.run() を呼ぶだけ (実物の型は sugaku_nijikansu1/)
 ② python3 scripts/book_exam/materials/〈冊子名〉/build_〈冊子名〉.py
-     └ verify() が通ったら 〈STEM〉.json と 〈STEM〉_問題.pdf を同時に書き出す
+     └ verify() が通ったら 〈STEM〉.json と 〈STEM〉_問題.pdf を同時に書き出し、
+       刷り上がり PDF を読み返して正典と逆照合する (①層が build に入っている)
 ③ python3 scripts/run_all_gates.py book_exam       # 機械ゲート
 ④ 刷り上がり PDF を自分の目で読む + 全問を敵対的に読み直す (§7 の③層)
 ⑤ git add → commit → push        # JSON も PDF もコミットする
@@ -216,9 +221,10 @@ python3 scripts/run_all_gates.py               # 全教材 (CI と同じ)
 
 | ゲート | 何を見るか |
 |---|---|
-| `_grammar_build.py::verify()` | build 時。正典 (`QUESTIONS`) を直接見る唯一の層。番号の連番・空所・選択肢 4 つ・重複・正解番号・配点・単元タグの形・解説 4 セクション・**誤答 NG 理由の番号と選択肢の文字列の一致**・正解位置の配り |
-| `scripts/book_exam/materials/check_grammar_books.py` | コミット済み JSON 全数。取り込みと同じ検証 + 隣に `_問題.pdf` が在るか + 解説の形 + 正解位置 |
-| `scripts/book_exam/materials/check_pdf_canon_match.py` | **刷り上がり PDF から読み返して**正典と逆照合 (全設問・全選択肢が正典どおりのページに在るか) |
+| `_book_build.py::verify()` | build 時。正典 (`QUESTIONS`) を直接見る唯一の層。番号の連番・ページの逆行・選択肢の重複・正解番号・配点・単元タグの形・**教科ごとの解説見出し**・**誤答の節の番号と選択肢の一致**・**解説の生 LaTeX**・**記述の答えの漏洩**・正解位置の配り |
+| `_book_build.py::verify_pdf()` | build 時。**刷り上がり PDF を読み返して**全問・全選択肢が正典どおりのページに在るか + **生の LaTeX が残っていないか** (= KaTeX が全部描けたか) |
+| `scripts/book_exam/materials/check_grammar_books.py` | コミット済み JSON 全数 (**全教科**)。取り込みと同じ検証 + 隣に `_問題.pdf` が在るか + 教科ごとの解説の形 + 正解位置 |
+| `scripts/book_exam/materials/check_pdf_canon_match.py` | 英文法 15 冊 (`_grammar_build` 系) の PDF 逆照合 |
 | `scripts/book_exam/check_import_books.py` | 取り込みスクリプトと `exam-book-admin-model.mjs` のずれ |
 | `scripts/book_exam/check_kamitest_manual.py` | **このマニュアルとコードのずれ** |
 | `scripts/check_no_pii.py` | 生徒の氏名・連絡先 (§8) |
