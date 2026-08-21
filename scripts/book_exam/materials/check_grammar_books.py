@@ -45,6 +45,9 @@ def check_explanation_format(name, qs, heads, bad):
         for h in heads:
             p = exp.find(h)
             if p < 0:
+                # ★ 誤答を潰す節は選択式のときだけ必須 (記述には誤答が無い)
+                if h == heads[-1] and q.get("answer_type") != "choice":
+                    continue
                 bad.append(f"{at}: 解説に「{h}」が無い")
             elif p < pos:
                 bad.append(f"{at}: 解説のセクションの順番が崩れている ({h})")
@@ -65,19 +68,19 @@ def check_explanation_format(name, qs, heads, bad):
 
 
 def check_answer_positions(name, qs, bad):
-    seq = [int(q["correct_answer"]) for q in qs
-           if q.get("answer_type") == "choice"
-           and re.fullmatch(r"[1-9][0-9]?", str(q.get("correct_answer") or ""))]
-    counts = {q.get("choice_count") for q in qs if q.get("answer_type") == "choice"}
-    if seq and len(counts) == 1 and isinstance(next(iter(counts)), int):
-        c = counts.pop()
-        lo, hi = len(seq) // c, -(-len(seq) // c)
-        dist = {k: seq.count(k) for k in range(1, c + 1)}
-        if not all(lo <= v <= hi for v in dist.values()):
-            bad.append(f"{name}: 正解位置が偏っている {dist} (各 {lo}〜{hi} 回)")
-    for i in range(len(seq) - 2):
-        if seq[i] == seq[i + 1] == seq[i + 2]:
-            bad.append(f"{name}: 正解番号 {seq[i]} が 3 連続している (第{i + 1}問から)")
+    """★ 判定は _book_build.answer_position_errors が正典 (build 時と同じ実装)。
+
+    記述 (short) を混ぜた冊子で壊れないこと — 数えるのは選択式だけで、
+    3 連続は**設問番号が連続している**ときだけ。
+    """
+    picks = [(q.get("number"), int(q["correct_answer"]), q.get("choice_count"))
+             for q in qs
+             if q.get("answer_type") == "choice"
+             and isinstance(q.get("number"), int)
+             and isinstance(q.get("choice_count"), int)
+             and re.fullmatch(r"[1-9][0-9]?", str(q.get("correct_answer") or ""))]
+    for e in BB.answer_position_errors(picks):
+        bad.append(f"{name}: {e}")
 
 
 def main():

@@ -96,6 +96,93 @@ def plain_segments(s):
     return [seg.strip() for seg in MATH.split(s or "")[::2] if seg.strip()]
 
 
+#: 字面を突き合わせられる数式 = コマンド (\frac 等) も添字の波括弧も無いもの。
+#: KaTeX はこれを字そのままで描くので、PDF から抜いた文字と比べられる。
+MATH_SIMPLE = re.compile(r"[0-9A-Za-z+\-=.,()\[\]/<>|:;' ]*")
+
+
+def checkable_math(s):
+    """$…$ のうち PDF の字面と突き合わせられるものだけ。"""
+    return [m for m in MATH.findall(s or "") if MATH_SIMPLE.fullmatch(m)]
+
+
+def norm_pdf(s):
+    """PDF から抜いた文字と正典を突き合わせるための正規化。
+
+    ★ KaTeX の負号は U+2212 (−) で、正典の ASCII ハイフンとは別の文字。
+      ここで揃えないと「-3」が PDF に無いことになる。
+    """
+    return re.sub(r"\s+", "", (s or "").replace("\u2212", "-").replace("\u00a0", ""))
+
+
+def slice_by_question(text, numbers):
+    """ページのテキストを「第N問」で切り分ける。@returns {番号: その設問の範囲}
+
+    ★ KaTeX が描いた数式は PDF のテキスト抽出では**ページの末尾にまとめて**
+      現れる (実測)。だからここで切れるのは数式以外の字だけ。数式はページ全体で見る。
+    """
+    marks = []
+    for n in numbers:
+        i = text.find(f"第{n}問")
+        if i >= 0:
+            marks.append((i, n))
+    marks.sort()
+    out = {}
+    for j, (i, n) in enumerate(marks):
+        end = marks[j + 1][0] if j + 1 < len(marks) else len(text)
+        out[n] = text[i:end]
+    return out
+
+
+# =============================================================================
+# 正解位置の配り (build 時と、コミット済み JSON の検査の両方から呼ぶ)
+# =============================================================================
+#: 偏りを見るには選択式が選択肢の数の何倍要るか。
+#: 4 択 3 問で「各 0〜1 回」を求めても意味が無い (どう配っても落ちるか、
+#: どう配っても通るかのどちらかになる)。見送ったことは run() が印字する。
+SPREAD_MIN_RATIO = 2
+
+
+def answer_position_errors(picks):
+    """@param picks [(設問番号, 正解番号, 選択肢の数), ...] — **選択式だけ**
+    @returns エラー文の一覧。"""
+    errs = []
+    if not picks:
+        return errs
+    counts = {c for _, _, c in picks}
+    if len(counts) == 1:
+        c = counts.pop()
+        n = len(picks)
+        if c and n >= SPREAD_MIN_RATIO * c:
+            seq = [a for _, a, _ in picks]
+            dist = {k: seq.count(k) for k in range(1, c + 1)}
+            lo, hi = n // c, -(-n // c)
+            if not all(lo <= v <= hi for v in dist.values()):
+                errs.append(f"正解位置が偏っている: {dist} "
+                            f"(選択式 {n} 問なので各 {lo}〜{hi} 回に収める)")
+    # ★ 設問番号が連続している 3 問だけを見る (記述を挟んだら 3 連続ではない)
+    for i in range(len(picks) - 2):
+        (n0, a0, _), (n1, a1, _), (n2, a2, _) = picks[i:i + 3]
+        if a0 == a1 == a2 and n1 == n0 + 1 and n2 == n1 + 1:
+            errs.append(f"正解番号 {a0} が第{n0}問から 3 連続している")
+    return errs
+
+
+def spread_note(questions):
+    """偏りの検査を見送ったなら、その理由を 1 行で返す (黙って減らさない)。"""
+    picks = [q for q in questions if isinstance(q.get("choices"), list)]
+    if not picks:
+        return "正解位置の偏り: 選択式が無いので見ていない"
+    counts = {len(q["choices"]) for q in picks}
+    if len(counts) > 1:
+        return f"正解位置の偏り: 選択肢の数がそろっていない {sorted(counts)} ので見ていない"
+    c = counts.pop()
+    if len(picks) < SPREAD_MIN_RATIO * c:
+        return (f"正解位置の偏り: 選択式 {len(picks)} 問 / {c} 択では見ていない "
+                f"({SPREAD_MIN_RATIO * c} 問以上で見る)")
+    return None
+
+
 # =============================================================================
 # 検証 (正典を直接見る唯一の層)
 # =============================================================================
@@ -154,6 +241,11 @@ def verify(meta, questions, extra=None):
             for alt in q.get("accepted") or []:
                 if not str(alt).strip():
                     errs.append(f"{at}: accepted に空のものが混ざっている")
+            if q.get("choices_plain"):
+                errs.append(f"{at}: choices_plain は選択式のときだけ使える")
+            if q.get("answer") is not None and not isinstance(q["answer"], str):
+                errs.append(f"{at}: 記述の正解は文字列で書く "
+                            f"({q['answer']!r})。数値をそのまま置かない")
         else:                                     # --- 選択式 -----------------
             if not (2 <= len(choices) <= 10):
                 errs.append(f"{at}: 選択肢が 2〜10 でない ({len(choices)})")
@@ -176,6 +268,10 @@ def verify(meta, questions, extra=None):
         for h in heads:
             p = exp.find(h)
             if p < 0:
+                # ★ 誤答を潰す節は**選択肢があるときだけ**必須。記述には誤答が無い
+                #   ので、書きようのないものを求めない (書いてもよい)。
+                if h == heads[-1] and choices is None:
+                    continue
                 errs.append(f"{at}: 解説に「{h}」が無い")
             elif exp.count(h) > 1:
                 errs.append(f"{at}: 解説に「{h}」が 2 回以上ある")
@@ -218,24 +314,21 @@ def verify(meta, questions, extra=None):
         for j, text in enumerate(printed):
             if core in text:
                 errs.append(f"第{q.get('number')}問: 記述の答え「{core}」が"
-                            f"問題編の別の場所に印字されている")
+                            f"問題編に印字されている (設問文・本文・他問の選択肢)")
                 break
 
     # --- 正解位置の配り -----------------------------------------------------
-    seq = [q["answer"] for q in questions
-           if isinstance(q.get("choices"), list)
-           and isinstance(q.get("answer"), int)]
-    counts = {len(q["choices"]) for q in questions if isinstance(q.get("choices"), list)}
-    if seq and len(counts) == 1:
-        c = counts.pop()
-        n = len(seq)
-        lo, hi = n // c, -(-n // c)
-        dist = {k: seq.count(k) for k in range(1, c + 1)}
-        if not all(lo <= v <= hi for v in dist.values()):
-            errs.append(f"正解位置が偏っている: {dist} (各 {lo}〜{hi} 回に収める)")
-    for i in range(len(seq) - 2):
-        if seq[i] == seq[i + 1] == seq[i + 2]:
-            errs.append(f"正解番号 {seq[i]} が第{i + 1}問から 3 連続している")
+    # ★ 記述 (choices が無い設問) を混ぜた冊子で壊れないこと:
+    #   ・数えるのは選択式だけ。分母も選択式の問数
+    #   ・3 連続は「**設問番号が連続している**選択式」のときだけ。記述を挟んだら切れる
+    #     (以前は選択式だけを詰めた配列の添字で見ていたので、第1・3・5問が
+    #      「第1問から 3 連続」と誤検出され、しかも問番号もずれていた)
+    errs.extend(answer_position_errors(
+        [(q.get("number"), q.get("answer"), len(q["choices"]))
+         for q in questions
+         if isinstance(q.get("choices"), list)
+         and isinstance(q.get("answer"), int)
+         and isinstance(q.get("number"), int)]))
 
     if extra:
         errs.extend(extra(meta, questions) or [])
@@ -298,6 +391,7 @@ ol.ch { list-style: none; padding-left: 14px; margin: 0; }
 ol.ch li { margin: 2px 0; }
 ol.ch .n { display: inline-block; width: 1.9em; font-weight: 600; }
 .short { margin-left: 14px; }
+.short .lbl { font-weight: 600; margin-right: 6px; }
 .short .box { display: inline-block; min-width: 46mm; border-bottom: 1px solid #111;
               height: 1.6em; vertical-align: -0.35em; }
 .short .unit { margin-left: 6px; }
@@ -320,6 +414,11 @@ _KATEX_BOOT = """
 """
 
 
+#: 記述の解答欄のラベル。PDF の逆照合がこの語を数えるので、
+#: 設問文や本文に同じ語を書かないこと (書くと検査が甘くなるだけで、落ちはしない)。
+SHORT_LABEL = "解答欄"
+
+
 def _esc(s):
     """設問文の HTML 化。$…$ は KaTeX に渡すのでそのまま残す。"""
     return _html.escape(str(s), quote=False)
@@ -338,7 +437,10 @@ def render_question(q):
         out.append("</ol>")
     else:
         unit = q.get("unit") or ""
-        out.append(f'<div class="short">答 <span class="box"></span>'
+        # ★ ラベルは SHORT_LABEL 固定。刷り上がり PDF の逆照合が
+        #   「記述の解答欄がそのページに刷られたか」をこの語の数で見る。
+        out.append(f'<div class="short"><span class="lbl">{SHORT_LABEL}</span>'
+                   f'<span class="box"></span>'
                    f'<span class="unit">{_esc(unit)}</span></div>')
     out.append("</div>")
     return "".join(out)
@@ -451,16 +553,25 @@ def pdf_pages(path):
 
 
 def verify_pdf(meta, questions, path):
-    """@returns エラー文の一覧。"""
-    errs = []
+    """刷り上がり PDF を読み返して正典と突き合わせる。@returns エラー文の一覧。"""
     pages = pdf_pages(path)
     if pages is None:
         return ["PDF を読み返せない (pypdf も pymupdf も無い)。"
                 "python3 -m pip install pypdf"]
+    return verify_pages(meta, questions, pages)
+
+
+def verify_pages(meta, questions, pages):
+    """照合の本体。**ページのテキストだけ**を受け取る純関数。
+
+    ★ PDF を読む道具も Chrome も要らないので、自己検査 (check_book_build.py) が
+      CI でもここを直接叩ける。verify_pdf はファイルを読んで渡すだけ。
+    """
+    errs = []
     want_pages = max(q["page"] for q in questions)
     if len(pages) != want_pages:
         errs.append(f"PDF が {len(pages)} ページ (正典は {want_pages} ページ)")
-    flat = [re.sub(r"\s+", "", p) for p in pages]
+    flat = [norm_pdf(p) for p in pages]
     whole = "".join(pages)
     # --- 生の LaTeX が残っていないか (KaTeX が落ちた合図) --------------------
     m = RAW_TEX_IN_PDF.search(whole)
@@ -468,26 +579,66 @@ def verify_pdf(meta, questions, path):
         i = max(0, m.start() - 40)
         errs.append(f"PDF に生の LaTeX が残っている (KaTeX が落ちている): "
                     f"…{whole[i:m.start() + 40]!r}…")
-    # --- 全設問が正典どおりのページに在るか --------------------------------
+    # --- ページごとに設問を突き合わせる -------------------------------------
+    by_page = {}
     for q in questions:
-        idx = q["page"] - 1
-        if idx >= len(flat):
+        by_page.setdefault(q["page"], []).append(q)
+    for page, qs in sorted(by_page.items()):
+        if page - 1 >= len(flat):
             continue
-        page_text = flat[idx]
-        if f"第{q['number']}問" not in page_text:
-            errs.append(f"第{q['number']}問: PDF の {q['page']} ページに見つからない")
-            continue
-        for seg in plain_segments(q["stem"]):
-            if re.sub(r"\s+", "", seg) not in page_text:
-                errs.append(f"第{q['number']}問: 設問文が PDF に無い ({seg[:24]!r})")
-                break
-        for i, c in enumerate(q.get("choices") or [], 1):
-            for seg in plain_segments(str(c)):
-                if re.sub(r"\s+", "", seg) not in page_text:
-                    errs.append(f"第{q['number']}問: 選択肢 {i} が PDF に無い "
-                                f"({seg[:24]!r})")
+        text = flat[page - 1]
+        # 記述の解答欄。箱は CSS の罫線で PDF に文字として出ないので、
+        # ラベルの数で刷り漏れを見る。
+        need = sum(1 for q in qs if q.get("choices") is None)
+        if need:
+            got = text.count(SHORT_LABEL)
+            if got < need:
+                errs.append(f"{page} ページ: 記述の解答欄が {need} 個要るのに "
+                            f"「{SHORT_LABEL}」が {got} 個しか刷られていない")
+        segs = slice_by_question(text, [q["number"] for q in qs])
+        for q in qs:
+            at = f"第{q['number']}問"
+            seg = segs.get(q["number"])
+            if seg is None:
+                errs.append(f"{at}: PDF の {page} ページに見つからない")
+                continue
+            # 設問文 — 数式以外はその設問の範囲に、数式はページのどこかに
+            for t in plain_segments(q["stem"]):
+                if norm_pdf(t) not in seg:
+                    errs.append(f"{at}: 設問文が PDF に無い ({t[:24]!r})")
                     break
+            for t in checkable_math(q["stem"]):
+                if norm_pdf(t) not in text:
+                    errs.append(f"{at}: 設問文の数式が PDF に無い ({t[:24]!r})")
+                    break
+            # 選択肢 — 数式を含まないものは「番号. 本文」ごと突き合わせる
+            #   (番号を外すと、同じ語が他の設問にあるだけで通ってしまう)
+            for i, c in enumerate(q.get("choices") or [], 1):
+                c = str(c)
+                if not MATH.search(c):
+                    if norm_pdf(f"{i}.{c}") not in seg:
+                        errs.append(f"{at}: 選択肢 {i} が PDF に無い ({c[:24]!r})")
+                    continue
+                miss = [t for t in plain_segments(c) if norm_pdf(t) not in seg]
+                miss += [t for t in checkable_math(c) if norm_pdf(t) not in text]
+                if miss:
+                    errs.append(f"{at}: 選択肢 {i} が PDF に無い ({miss[0][:24]!r})")
     return errs
+
+
+def pdf_check_note(questions):
+    """PDF 逆照合で字面を突き合わせられなかった選択肢を言う (黙って減らさない)。"""
+    total = skipped = 0
+    for q in questions:
+        for c in q.get("choices") or []:
+            total += 1
+            c = str(c)
+            if MATH.search(c) and not plain_segments(c) and not checkable_math(c):
+                skipped += 1
+    if skipped:
+        return (f"PDF 逆照合: 選択肢 {total} 個のうち {skipped} 個は"
+                f"コマンド入りの数式なので字面を突き合わせていない")
+    return None
 
 
 # =============================================================================
@@ -498,8 +649,13 @@ def run(here, meta, questions, verify_extra=None):
         for e in errs:
             print(f"✗ {e}")
         return 1
-    print(f"[ok] verify — {len(questions)} 問 / {meta['subject']} / "
+    n_short = sum(1 for q in questions if q.get("choices") is None)
+    print(f"[ok] verify — {len(questions)} 問 "
+          f"(選択式 {len(questions) - n_short} / 記述 {n_short}) / {meta['subject']} / "
           f"見出し {'・'.join(SUBJECT_HEADINGS[meta['subject']])}")
+    note = spread_note(questions)
+    if note:
+        print(f"!    {note}")            # ★ 見送った検査は黙って減らさない
 
     stem = meta["stem"]
     out_json = os.path.join(here, f"{stem}.json")
@@ -523,6 +679,9 @@ def run(here, meta, questions, verify_extra=None):
         for e in errs:
             print(f"✗ PDF 読み返し: {e}")
         return 1
+    note = pdf_check_note(questions)
+    if note:
+        print(f"!    {note}")
     print(f"[ok] PDF 読み返し — 全{len(questions)}問・全選択肢が正典どおりの"
           f"ページに在る / 生の LaTeX なし")
     return 0
