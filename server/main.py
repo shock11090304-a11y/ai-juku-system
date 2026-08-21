@@ -47732,6 +47732,183 @@ def admin_youtube_playlist_save(payload: dict, authorization: Optional[str] = He
     return {"ok": True, "created": created, "name": name}
 
 
+# ==========================================================================
+# 🎬 授業録画の自動割り当て (CEO 画面 youtube-playlists.html のボタン)
+# ==========================================================================
+#   ★判定は server/class_recording_assign.py が正典。塾長のターミナルで動く
+#     scripts/class_recordings/assign_from_playlists.py と**同じ関数**を呼ぶ。
+#     ここにロジックを書き写すと、ボタンとターミナルで判定がずれる。
+#   ★なぜサーバ側に要るのか: 再生リストを読むには YouTube へ出られる必要があり、
+#     手元の端末か Railway でしか行えない。ボタンにすると塾長がターミナルを開かずに済む。
+_AUTO_ASSIGN_LOCK = threading.Lock()   # ★同時実行の禁止。class_recordings に UNIQUE 制約が
+#     無いので、2つのタブから同時に走らせると同じ動画が2件入り、取り返しがつかない。
+#     (単一プロセス前提。ターミナル実行とは排他できない — 同時に回さないこと)
+
+
+def _auto_assign_prefetch(pids, http_get, timeout=15, workers=6):
+    """再生リストを**並行**取得して {pid: (本文, エラー文)} を返す。
+
+    http_get は class_recording_assign.http_get を呼び出し側から渡す (この関数は
+    モジュールを import しない = 起動時にこのファイルが要らない)。
+    ★逐次だと 15〜20本で30秒以上かかり、ブラウザが先に諦めて「押しても何も起きない」に見える。
+    ★取得の成否はそのまま build_plan に渡す。ここで失敗を握り潰して「0本」に化けさせない。
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    if not pids:
+        return {}
+    with ThreadPoolExecutor(max_workers=max(1, min(workers, len(pids)))) as ex:
+        results = list(ex.map(
+            lambda p: http_get(f"https://www.youtube.com/playlist?list={p}", timeout=timeout), pids))
+    return dict(zip(pids, results))
+
+
+@app.post("/api/admin/class-recordings/auto-assign")
+def admin_class_recordings_auto_assign(payload: dict, request: Request,
+                                       authorization: Optional[str] = Header(None)):
+    """🎬 塾長: 再生リストを見て、未登録の授業録画を各クラスに割り当てる。
+
+    payload: {"apply": bool (既定 false = 何も登録しない), "allow_partial": bool}
+    ★既定は dry-run。塾長が一覧を見てから「この内容で登録」を押したときだけ書き込む。
+    ★apply でも**計画はサーバ側で取り直す**。画面が持っている古い計画をそのまま
+      信じると、間に別の登録が入ったときに二重登録になる。
+    """
+    _check_rate_limit_ip(request, bucket="class_autoassign", limit=6, window=60)
+    _verify_admin_required(authorization)
+    try:
+        # ★関数内 import。起動時に読むと、このファイルが欠けただけでサーバ全体が
+        #   立ち上がらなくなる (過去の本番凍結と同じ壊れ方)。壊すのはこの API だけにする。
+        try:
+            import class_recording_assign
+        except ImportError:
+            # ★作業ディレクトリが server/ でない起動の仕方でも読めるようにする。
+            #   sys.path を cwd 任せにすると「手元では動くが本番だけ 500」になる。
+            import sys   # ★main.py は sys を module-global で import していない
+            if str(ROOT) not in sys.path:
+                sys.path.insert(0, str(ROOT))
+            import class_recording_assign
+    except Exception as e:
+        raise HTTPException(status_code=500,
+                            detail=f"割り当てモジュールを読み込めません ({type(e).__name__})。開発担当に連絡してください")
+    apply_mode = bool(payload.get("apply"))
+    allow_partial = bool(payload.get("allow_partial"))
+
+    if not _AUTO_ASSIGN_LOCK.acquire(blocking=False):
+        # ★待たせない。待たせると2件目が終わった頃に同じ計画で書き込みかねない。
+        raise HTTPException(status_code=409, detail="いま別の割り当てが実行中です。終わってからもう一度押してください")
+    try:
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT playlist_id, COALESCE(name, '') AS name FROM admin_youtube_playlists "
+                      "ORDER BY sort_order, id")
+            playlists = [(r["playlist_id"], r["name"]) for r in c.fetchall()]
+            # ★公開中の授業だけ。非公開に入れると「登録した」と出るのに誰にも見えない。
+            c.execute("SELECT id, title FROM class_sessions WHERE is_published = 1 ORDER BY id")
+            sessions = [(r["id"], r["title"]) for r in c.fetchall()]
+            c.execute("SELECT session_id, MAX(created_at) AS last FROM class_recordings "
+                      "WHERE session_id IS NOT NULL GROUP BY session_id")
+            last_rec = {r["session_id"]: r["last"] for r in c.fetchall()}
+            c.execute("SELECT session_id, video_url, COALESCE(provider, '') AS provider FROM class_recordings")
+            recordings = [(r["session_id"], r["video_url"], r["provider"]) for r in c.fetchall()]
+
+            named_pids = [p for p, n in playlists if (n or "").strip() and class_recording_assign.slot_of(n)]
+            cache = _auto_assign_prefetch(named_pids, class_recording_assign.http_get)
+
+            def _get(url):
+                m = re.search(r"[?&]list=([A-Za-z0-9_-]+)", url)
+                hit = cache.get(m.group(1)) if m else None
+                # ★取れていなければその場で取りに行く (キャッシュ漏れを「取得できず」にしない)
+                return hit if hit is not None else class_recording_assign.http_get(url)
+
+            rep = class_recording_assign.build_plan(
+                class_recording_assign.today_jst(), playlists, sessions, recordings, last_rec, get=_get)
+
+            out = {
+                "ok": True,
+                "mode": "apply" if apply_mode else "dry-run",
+                "today": class_recording_assign.today_jst().isoformat(),
+                "summary": {
+                    "playlist_total": rep["playlist_total"], "playlist_named": rep["playlist_named"],
+                    "sessions_total": rep["sessions_total"], "recordings_total": rep["recordings_total"],
+                    "fetched": rep["fetched"], "skipped_name": rep["skipped_name"],
+                    "covered": rep["covered"], "uncovered": rep["uncovered"],
+                    "no_playlist": rep["no_playlist"],
+                },
+                "rows": rep["rows"],
+                # ★動画IDは先頭4文字だけ返す (限定公開動画のIDはアクセス権そのもの)。
+                #   登録に使う本物は下のサーバ側だけが持つ。
+                "planned": [{"slot": p["slot"], "label": p["label"], "session_id": p["session_id"],
+                             "session_title": p["session_title"], "video": p["video_id"][:4] + "…"}
+                            for p in rep["planned"]],
+                "problems": rep["problems"], "notes": rep["notes"],
+                "blocking": rep["blocking"], "hazard": rep["hazard"],
+                "applied": 0, "refused": None,
+            }
+            if not apply_mode or not rep["planned"]:
+                if not rep["planned"]:
+                    out["message"] = ("新しい録画はありません。" if not rep["problems"]
+                                      else "登録できる新着はありません (確認が要る項目があります)。")
+                else:
+                    out["message"] = f"{len(rep['planned'])}件を登録できます (まだ登録していません)。"
+                return out
+
+            # --- ここから書き込み。CLI (--apply) と同じ順序で同じ理由で止める ---
+            if rep["hazard"]:
+                out["refused"] = (f"二重登録の恐れがある項目が {rep['hazard']}件あるので登録しません "
+                                  f"(「取れた分だけ」でも免除しません — 重複は取り返せないため)")
+                out["message"] = out["refused"]
+                return out
+            if rep["blocking"] and not allow_partial:
+                out["refused"] = (f"見落としの恐れがある項目が {rep['blocking']}件あるので登録しません。"
+                                  f"直してからもう一度実行してください "
+                                  f"(承知のうえで取れた分だけ入れるなら「取れた分だけ登録」)")
+                out["message"] = out["refused"]
+                return out
+
+            now = _utc_naive_iso()
+            try:
+                for p in rep["planned"]:
+                    c.execute(
+                        "INSERT INTO class_recordings (session_id, title, video_url, provider, is_published, created_at) "
+                        "VALUES (?,?,?,'youtube',1,?)",
+                        (int(p["session_id"]), p["label"],
+                         class_recording_assign.recording_url(p["video_id"]), now))
+                conn.commit()
+            except Exception as e:
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+                # ★例外文をそのまま返さない (Postgres の DETAIL は失敗行の URL = 動画IDを平文で載せる)
+                log.error(f"[AutoAssign] insert failed: {type(e).__name__}")
+                raise HTTPException(status_code=500,
+                                    detail=f"登録に失敗しました ({type(e).__name__})。ほぼ確実に1件も登録されていませんが、"
+                                           f"CEO 画面の授業録画を確認してからもう一度実行してください")
+            # ★入った行を1件ずつ読み直す。件数の引き算では重複を見抜けない。
+            bad = []
+            for p in rep["planned"]:
+                c.execute("SELECT COUNT(*) AS n FROM class_recordings WHERE session_id = ? AND video_url = ?",
+                          (int(p["session_id"]), class_recording_assign.recording_url(p["video_id"])))
+                row = c.fetchone()
+                # ★sqlite3.Row には .get が無い (dict_row の Postgres だけ通って
+                #   SQLite で落ちる = 手元テストだけ壊れる書き方をしない)
+                n = row["n"] if row is not None else 0
+                if n != 1:
+                    bad.append(f"{p['slot']} {p['label']} 動画 {p['video_id'][:4]}… が {n}件")
+            out["applied"] = len(rep["planned"])
+            out["verified"] = not bad
+            out["duplicates"] = bad
+            out["message"] = (f"✅ {len(rep['planned'])}件を登録しました (各1件で入っていることを確認済み)"
+                              if not bad else
+                              f"⚠ {len(rep['planned'])}件を登録しましたが、確認で異常がありました。CEO 画面で直してください")
+            log.info(f"[AutoAssign] applied={out['applied']} problems={len(rep['problems'])} verified={out['verified']}")
+            return out
+        finally:
+            conn.close()
+    finally:
+        _AUTO_ASSIGN_LOCK.release()
+
+
 @app.get("/api/admin/class/attendance")
 def admin_class_attendance_list(session_id: int, authorization: Optional[str] = Header(None)):
     """塾長: ある授業の出欠一覧 (生徒名つき・申告の新しい順)。"""

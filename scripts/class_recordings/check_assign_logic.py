@@ -1,31 +1,45 @@
 #!/usr/bin/env python3
-"""assign_from_playlists.py の判定表を機械で検査する (run_all_gates.py が拾う)。
+"""授業録画の割り当て判定を機械で検査する (run_all_gates.py が拾う)。
 
-ネットワークにも DB にも触らない。合成した ytInitialData を fetch_playlist に食わせ、
-docstring に書いた判定表どおりに「取得失敗(fatal)」「本当に空(0本)」「正常」を
-区別できるかだけを見る。
+検査対象は **server/class_recording_assign.py** (判定の正典)。ネットワークにも DB にも
+触らない。合成した ytInitialData を fetch_playlist に食わせ、docstring に書いた判定表どおりに
+「取得失敗(fatal)」「本当に空(0本)」「正常」を区別できるかだけを見る。
 
 ★このゲートが在る理由: 2026-08-18 のレビューで、
   「1 本の利用できない動画が非表示です」というお知らせが**あるだけ**で
   本数の食い違いを無条件に許してしまい、8本消えていても
   「新しい録画はありません (exit 0)」で終わる穴が見つかった。
-  配布漏れを「配布済み」と誤報告する = このスクリプトの存在理由そのものが壊れる種類の穴で、
+  配布漏れを「配布済み」と誤報告する = この仕組みの存在理由そのものが壊れる種類の穴で、
   かつ画面上は完全に正常に見えるので、人の目視では二度と気づけない。
+
+★ロジックは CLI (scripts/.../assign_from_playlists.py) と CEO 画面のボタン
+  (server/main.py の auto-assign API) が**共有**する。片方だけ差し替えられて検査が
+  素通りにならないよう、CLI が正典と**同一オブジェクト**を re-export していることも見る。
 """
 import importlib.util
 import json
 import os
 import sys
-import types
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TARGET = os.path.join(HERE, "assign_from_playlists.py")
+REPO = os.path.dirname(os.path.dirname(HERE))
+TARGET = os.path.join(REPO, "server", "class_recording_assign.py")
+CLI = os.path.join(HERE, "assign_from_playlists.py")
+
+
+def _load(path, name):
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def load():
-    spec = importlib.util.spec_from_file_location("assign_mod", TARGET)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    # ★実名で sys.modules に載せてから CLI を読む。こうすると CLI の
+    #   `from class_recording_assign import ...` が**この実体**を掴むので、
+    #   下の同一性チェックが「CLI が自前で書き直していないか」を本当に見る。
+    mod = _load(TARGET, "class_recording_assign")
+    sys.modules["class_recording_assign"] = mod
     return mod
 
 
@@ -80,14 +94,12 @@ CASES = [
 def main():
     mod = load()
     failures = []
-    print(f"判定表の自己テスト: {os.path.relpath(TARGET, os.path.dirname(HERE))}")
+    print(f"判定表の自己テスト: {os.path.relpath(TARGET, REPO)}")
     for label, data, expect in CASES:
         fake = f'<script>var ytInitialData = {json.dumps(data, ensure_ascii=False)};</script>'
-        # curl を通さずに判定部分だけを動かす (ネットワーク不要)
-        mod.subprocess = types.SimpleNamespace(
-            run=lambda *a, **k: types.SimpleNamespace(returncode=0, stdout=fake))
+        # 取得口を差し替えて判定部分だけを動かす (ネットワーク不要)
         try:
-            items, fatal, _warn = mod.fetch_playlist("DUMMY")
+            items, fatal, _warn = mod.fetch_playlist("DUMMY", get=lambda _url: (fake, None))
         except Exception as e:
             failures.append(f"{label}: 例外 {type(e).__name__}: {e}")
             print(f"  ❌ {label}: 例外 {type(e).__name__}")
@@ -98,6 +110,18 @@ def main():
         else:
             failures.append(f"{label}: {got} (期待 {expect})")
             print(f"  ❌ {label}: {got} (期待 {expect})")
+
+    # ★取得そのものに失敗したとき (通信断・ブロック) を「0本」にしない。
+    #   ここが緑でないと、ネットが切れているだけで「新しい録画はありません」と言う。
+    print("取得失敗の扱い:")
+    for label, ret in [("本文が取れない", (None, "YouTube に接続できない")),
+                       ("本文が取れずエラー文も無い", (None, None))]:
+        items, fatal, _w = mod.fetch_playlist("DUMMY", get=lambda _url, r=ret: r)
+        if items is None and fatal:
+            print(f"  ✅ {label}: fatal ({fatal[:24]}…)")
+        else:
+            failures.append(f"取得失敗({label}) が fatal にならない: items={items!r} fatal={fatal!r}")
+            print(f"  ❌ {label}: items={items!r} fatal={fatal!r}")
 
     # 日付ラベルの検算 (曜日・未来・古すぎ・複数候補・年つき)
     import datetime
@@ -149,12 +173,37 @@ def main():
             failures.append(f"video_id({url!r}) = {got} (期待 {expect})")
             print(f"  ❌ {url[:52]:<52} → {got} (期待 {expect})")
 
+    # ★登録URLは次回必ず読み戻せること (往復しないと、入れた動画を毎回「新着」と誤認して増殖する)
+    rt = mod.video_id(mod.recording_url(ID))
+    print("登録URLの往復:")
+    if rt == ID:
+        print(f"  ✅ recording_url → video_id → {rt}")
+    else:
+        failures.append(f"recording_url の往復に失敗: {rt} (期待 {ID})")
+        print(f"  ❌ recording_url → video_id → {rt} (期待 {ID})")
+
+    # ★CLI が正典と同一の実装を使っていること。別実装に差し替わると、このゲートが
+    #   緑のまま塾長のターミナルだけ判定が変わる (検査していない状態になる)。
+    print("CLI が正典を共有していること:")
+    try:
+        cli = _load(CLI, "assign_cli")
+        shared = all(getattr(cli, n, None) is getattr(mod, n)
+                     for n in ("fetch_playlist", "date_label", "video_id", "slot_of", "build_plan"))
+        if shared:
+            print(f"  ✅ {os.path.relpath(CLI, REPO)} は server/class_recording_assign.py を re-export している")
+        else:
+            failures.append("CLI が正典と別の実装を使っている (判定がずれる)")
+            print("  ❌ CLI が正典と別の実装を使っている")
+    except Exception as e:
+        failures.append(f"CLI を読み込めない: {type(e).__name__}: {e}")
+        print(f"  ❌ CLI を読み込めない: {type(e).__name__}")
+
     if failures:
         print(f"\n❌ VIOLATION: {len(failures)} 件")
         for f in failures:
             print(f"   - {f}")
         return 1
-    print("\n=== ALL PASS (判定表・日付検算・動画ID抽出) ===")
+    print("\n=== ALL PASS (判定表・取得失敗・日付検算・動画ID抽出・CLI共有) ===")
     return 0
 
 

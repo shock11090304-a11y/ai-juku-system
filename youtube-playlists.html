@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <script src="admin-only.js"></script>
-<script src="cache-purge.js?v=20260723-yt-playlists"></script>
+<script src="cache-purge.js?v=20260821-yt-assign"></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>📺 YouTube 再生リスト | AIコーチング（CEO専用）</title>
@@ -33,6 +33,22 @@
   .yt-open { display: inline-block; white-space: nowrap; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; text-decoration: none; padding: 0.45rem 0.9rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem; }
   .yt-open:hover { transform: translateY(-1px); }
   .yt-act { width: 1%; white-space: nowrap; }
+  .yt-assign { border: 1px solid rgba(139,92,246,0.35); background: rgba(139,92,246,0.07); border-radius: 14px; padding: 1rem 1.1rem; margin-bottom: 1.2rem; }
+  .yt-assign-head { font-weight: 800; color: #c4b5fd; font-size: 1.02rem; margin-bottom: 0.35rem; }
+  .yt-assign-sub { color: #a1a1aa; font-size: 0.82rem; line-height: 1.7; margin: 0 0 0.8rem; }
+  .yt-btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border-color: transparent; }
+  .yt-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .yt-assign-opt { color: #a1a1aa; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem; }
+  .yt-assign-status { font-size: 0.82rem; font-weight: 700; color: #a5b4fc; }
+  .yt-assign-out { margin-top: 0.8rem; font-size: 0.84rem; line-height: 1.7; }
+  .yt-assign-out table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; font-variant-numeric: tabular-nums; }
+  .yt-assign-out td { padding: 0.3rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .yt-box { border-radius: 8px; padding: 0.6rem 0.8rem; margin: 0.6rem 0; border: 1px solid; }
+  .yt-box-warn { border-color: rgba(248,113,113,0.45); background: rgba(248,113,113,0.08); color: #fca5a5; }
+  .yt-box-ok { border-color: rgba(52,211,153,0.45); background: rgba(52,211,153,0.08); color: #6ee7b7; }
+  .yt-box-info { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.03); color: #9ca3af; }
+  .yt-box ul { margin: 0.35rem 0 0; padding-left: 1.1rem; }
+  .yt-bad { color: #fca5a5; font-weight: 700; }
   .yt-note { margin-top: 1.1rem; font-size: 0.82rem; color: #9ca3af; line-height: 1.7; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid #6366f1; border-radius: 8px; padding: 0.8rem 1rem; }
   @media (max-width: 560px) {
     .yt-table th, .yt-table td { padding: 0.55rem 0.5rem; }
@@ -72,6 +88,25 @@
     <button type="button" class="yt-btn" id="ytCopyBtn">📋 名前＋URL をコピー</button>
     <button type="button" class="yt-btn" id="ytClearBtn">↩︎ 入力した名前をリセット</button>
     <span class="yt-save" id="ytSave">✓ 保存しました</span>
+  </div>
+
+  <!-- 🎬 授業録画の自動割り当て (2026-08-21)。判定は server/class_recording_assign.py が正典で、
+       塾長のターミナル (scripts/class_recordings/assign_from_playlists.py) と同じ実装を呼ぶ。 -->
+  <div class="yt-assign">
+    <div class="yt-assign-head">🎬 授業録画をクラスに割り当てる</div>
+    <p class="yt-assign-sub">
+      再生リストを1つずつ見て、<strong>まだそのクラスに登録されていない動画</strong>を探し、名前の「曜日＋限」に対応する授業へ登録します。
+      日付は動画名から読み、<strong>再生リストの曜日と合わない・未来・古すぎる日付は登録せず</strong>に一覧へ出します（それは CEO 画面から手で登録してください）。<br>
+      ★まず「① 確認する」を押してください。<strong>この時点では1件も登録されません。</strong>内容を見てから「② この内容で登録」を押します。
+      登録した録画は<strong>そのクラスの受講生だけ</strong>に表示されます。
+    </p>
+    <div class="yt-toolbar" style="margin-bottom:0;">
+      <button type="button" class="yt-btn yt-btn-primary" id="ytAssignCheck">① 確認する（登録しない）</button>
+      <button type="button" class="yt-btn" id="ytAssignApply" disabled>② この内容で登録</button>
+      <label class="yt-assign-opt"><input type="checkbox" id="ytAssignPartial"> 確認事項があっても、取れた分だけ登録する</label>
+      <span class="yt-assign-status" id="ytAssignStatus"></span>
+    </div>
+    <div class="yt-assign-out" id="ytAssignOut" hidden></div>
   </div>
 
   <div class="yt-table-wrap">
@@ -411,6 +446,116 @@
     // ★サーバから取り直す。以前は画面だけ戻して「✓ 保存しました」と出していたが、
     //   名前がサーバ保存になった今それは嘘 (DB は書き換わったまま画面だけ旧名に戻る)。
     loadPlaylists();
+  });
+
+  // ==========================================================================
+  // 🎬 授業録画の自動割り当て (POST /api/admin/class-recordings/auto-assign)
+  // ==========================================================================
+  //   ★既定は dry-run。「② この内容で登録」を押したときだけ apply を送る。
+  //   ★サーバは apply でも計画を取り直す。ここで持っている計画は**表示専用**で、
+  //     これを送り返して登録させることはしない (古い計画での二重登録を作らないため)。
+  //   ★「見に行けなかった」を「新着なし」と混ぜない。取得できなかった授業がある限り、
+  //     結果が0件でも赤で「配布漏れは検出できていない」と出す。
+  var asgCheck = document.getElementById('ytAssignCheck');
+  var asgApply = document.getElementById('ytAssignApply');
+  var asgPartial = document.getElementById('ytAssignPartial');
+  var asgStatus = document.getElementById('ytAssignStatus');
+  var asgOut = document.getElementById('ytAssignOut');
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+
+  function list(items) {
+    return '<ul>' + items.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
+  }
+
+  function renderAssign(d) {
+    var sm = d.summary || {};
+    var html = '';
+    if (d.message) {
+      var cls = (d.applied > 0 && d.verified) ? 'yt-box-ok' : (d.refused ? 'yt-box-warn' : 'yt-box-info');
+      html += '<div class="yt-box ' + cls + '"><strong>' + esc(d.message) + '</strong></div>';
+    }
+    html += '<div>今日（JST）' + esc(d.today) + ' ／ 再生リスト ' + esc(sm.playlist_total)
+         + ' 件（名前あり ' + esc(sm.playlist_named) + ' 件・実際に見に行った ' + esc(sm.fetched) + ' 件）'
+         + ' ／ 登録済みの録画 ' + esc(sm.recordings_total) + ' 件</div>';
+    // ★いちばん誤解を生む数字なので、足りていないときは必ず赤にする。
+    var covered = sm.covered, total = sm.sessions_total;
+    html += '<div' + (covered < total ? ' class="yt-bad"' : '') + '>YouTube を見に行けた授業: '
+         + esc(covered) + '/' + esc(total) + (covered < total
+           ? '（見に行けなかった授業の配布漏れは<strong>検出できていません</strong>: '
+             + esc((sm.uncovered || []).join('、')) + '）' : '') + '</div>';
+    if ((d.rows || []).length) {
+      html += '<table>' + d.rows.map(function (r) {
+        return '<tr><td>' + esc(r.slot) + '</td><td>' + (r.ok
+          ? esc(r.items) + '本　新着 <strong>' + esc(r.fresh) + '</strong> / 登録済 ' + esc(r.known)
+            + ' / 保留 ' + esc(r.skipped) + '　' + esc(r.last)
+          : '<span class="yt-bad">取得できず — ' + esc(r.detail) + '</span>')
+          + '</td><td>' + esc(r.session) + '</td></tr>';
+      }).join('') + '</table>';
+    }
+    if ((d.planned || []).length) {
+      html += '<div class="yt-box yt-box-info"><strong>'
+           + (d.applied ? '登録した' : 'これから登録する') + ' ' + d.planned.length + '件</strong>'
+           + list(d.planned.map(function (p) {
+               return p.slot + '　' + p.label + '　動画 ' + p.video + '　→ ' + p.session_title;
+             })) + '</div>';
+    }
+    if ((d.problems || []).length) {
+      html += '<div class="yt-box yt-box-warn"><strong>⚠ 確認が要るもの ' + d.problems.length + '件</strong>'
+           + list(d.problems) + '</div>';
+    }
+    if ((d.duplicates || []).length) {
+      html += '<div class="yt-box yt-box-warn"><strong>❌ 登録後の確認で異常（CEO 画面で直してください）</strong>'
+           + list(d.duplicates) + '</div>';
+    }
+    if ((d.notes || []).length) {
+      html += '<div class="yt-box yt-box-info"><strong>（参考）対応は不要</strong>' + list(d.notes) + '</div>';
+    }
+    asgOut.innerHTML = html;
+    asgOut.hidden = false;
+  }
+
+  function runAssign(apply) {
+    var token = null;
+    try { token = localStorage.getItem('ai_juku_admin_token'); } catch (e) {}
+    if (!token) { asgStatus.textContent = '塾長のログインが必要です'; return; }
+    asgCheck.disabled = true; asgApply.disabled = true;
+    asgStatus.textContent = apply ? '登録しています…' : '再生リストを見ています…（1分ほどかかることがあります）';
+    fetch(API_BASE + '/api/admin/class-recordings/auto-assign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ apply: !!apply, allow_partial: !!asgPartial.checked })
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (body) {
+        if (!res.ok) throw new Error(body && body.detail ? body.detail : ('サーバーエラー (' + res.status + ')'));
+        return body;
+      });
+    }).then(function (d) {
+      renderAssign(d);
+      // ★登録できる新着があるときだけ「② 登録」を押せるようにする。
+      //   登録した直後は必ず disabled に戻す (同じ画面を見たまま二度押すと二重登録になる)。
+      asgApply.disabled = apply || !(d.planned || []).length;
+      asgStatus.textContent = apply ? '完了' : '確認しました（まだ登録していません）';
+    }).catch(function (e) {
+      // ★「失敗した」を黙って「新着なし」にしない。押したのに何も起きなかったように見せない。
+      asgOut.hidden = false;
+      asgOut.innerHTML = '<div class="yt-box yt-box-warn"><strong>実行できませんでした</strong>: '
+        + esc(e && e.message ? e.message : e)
+        + '<br>時間切れで応答が返らなかった場合、登録が済んでいることがあります。'
+        + 'もう一度「① 確認する」を押して、いまの状態を見てください。</div>';
+      asgStatus.textContent = '失敗しました';
+      asgApply.disabled = true;
+    }).then(function () { asgCheck.disabled = false; });
+  }
+
+  asgCheck.addEventListener('click', function () { runAssign(false); });
+  asgApply.addEventListener('click', function () {
+    if (!window.confirm('表示されている内容で授業録画を登録します。\n登録すると、そのクラスの生徒アプリにすぐ表示されます。\nよろしいですか？')) return;
+    runAssign(true);
   });
 </script>
 </body>
