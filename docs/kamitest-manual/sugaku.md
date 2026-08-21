@@ -7,6 +7,7 @@
 **先に [共通編](README.md) を読む。**
 実物は `scripts/book_exam/materials/sugaku_nijikansu1/build_sugaku_nijikansu1.py`
 (数学I 二次関数 演習 第1集)。**新しい冊子はこれを写す**。
+他教科の実物は 理科 `rika_denki1` / 社会 `shakai_seiji1` / 国語 `kokugo_kobun1`。
 組み立ては全教科共通の `scripts/book_exam/materials/_book_build.py` が引き受けるので、
 書くのは META と QUESTIONS (と数学だけの `verify_math`) だけ。
 

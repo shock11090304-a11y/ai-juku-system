@@ -46,18 +46,18 @@ def check_explanation_format(name, qs, heads, bad):
             p = exp.find(h)
             if p < 0:
                 # ★ 誤答を潰す節は選択式のときだけ必須 (記述には誤答が無い)
-                if h == heads[-1] and q.get("answer_type") != "choice":
+                if h == BB.ng_heading(heads) and q.get("answer_type") != "choice":
                     continue
                 bad.append(f"{at}: 解説に「{h}」が無い")
             elif p < pos:
                 bad.append(f"{at}: 解説のセクションの順番が崩れている ({h})")
             else:
                 pos = p
-        if q.get("answer_type") != "choice" or heads[-1] not in exp:
+        ng = BB.ng_section(exp, heads)     # ★ 誤答の節は「最後の見出し」ではない
+        if q.get("answer_type") != "choice" or ng is None:
             continue
         ans = str(q.get("correct_answer"))
         cc = q.get("choice_count") or 0
-        ng = exp.split(heads[-1])[-1]
         ng_nums = {m.group(1) for m in re.finditer(r"^\s*([1-9])\.", ng, re.M)}
         if ans in ng_nums:
             bad.append(f"{at}: 正解 {ans} が誤答の節に載っている")

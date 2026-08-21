@@ -5,10 +5,11 @@
 <!-- canon:subject-value -->`japanese`<!-- /canon:subject-value -->
 
 **先に [共通編](README.md) を読む。**
-国語は神テストにまだ 1 冊も入っていない。組み立ては全教科共通の
-`scripts/book_exam/materials/_book_build.py` が引き受ける
-(実物の型は `materials/sugaku_nijikansu1/build_sugaku_nijikansu1.py`)。
-書くのは META と QUESTIONS だけ。本文は META の `passages` に載せる。
+実物は `scripts/book_exam/materials/kokugo_kobun1/build_kokugo_kobun1.py`
+(古文 徒然草を読む 演習 第1集)。**新しい冊子はこれを写す**。
+組み立ては全教科共通の `scripts/book_exam/materials/_book_build.py` が
+引き受けるので、書くのは META と QUESTIONS だけ。本文は META の
+`passages` に `{page, title, html, source}` で載せる (出典は必ず書く)。
 
 ---
 
@@ -126,7 +127,7 @@
 | 制限時間 | 現代文 25 分 / 古文 20 分 / 漢文 15 分 |
 | `subject` | `japanese` |
 | 単元タグ | `GENDAI-…` (現代文) / `KOBUN-…` (古文) / `KANBUN-…` (漢文) |
-| ディレクトリ | `scripts/book_exam/materials/〈ローマ字〉/` (例 `kobun_jodoushi1`) |
+| ディレクトリ | `scripts/book_exam/materials/〈ローマ字〉/` (例 `kokugo_kobun1`) |
 
 ★ **1 冊に現代文と古文を混ぜない。** 生徒は「古文だけやりたい」と探す。
 `subject` が同じ `japanese` である以上、**題名で引けるようにする**のが唯一の分け方。

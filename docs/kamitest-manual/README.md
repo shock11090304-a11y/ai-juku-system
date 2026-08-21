@@ -170,12 +170,26 @@
 | `correct_answer` | `choice` → **`"1"`〜`"choice_count"` の数字文字列 (1 起算)**。`"0"`・`"A"`・`"①"` は不可。`short` → 正解の文字列。**数字だけの文字列は弾かれる** (選択式の取りこぼしを捕まえる砦) |
 | `accepted_answers` | `short` の別解の配列。`choice` では使えない。空要素を混ぜない |
 | `points` | 1 以上の整数 |
-| `unit_tag` | 単元 ID。DB は自由テキストだが、英文法ビルダーの `verify()` は `英大文字/数字-英大文字/数字` (例 `MEISHI-FUKASAN`) を要求する。教科別マニュアルの接頭辞に従う |
+| `unit_tag` | 単元 ID。DB は自由テキストだが、ビルダーの `verify()` は `英大文字/数字-英大文字/数字` (例 `MEISHI-FUKASAN`) を要求する。教科別マニュアルの接頭辞に従う |
 | `explanation` | 解説。**Markdown ではなく素のテキストとして出る** (§5)。見出しは教科別マニュアルの型に従う。★ **記述 (`short`) の設問では「誤答を潰す節」(英語 `## ❌ 誤答 NG 理由` / 他教科【誤答の切り方】) は書かなくてよい** — 選択肢が無いので誤答も無い。書いてもよい |
 
 ★ **`correct_answer` の 1 起算は「全員 0 点」を止める最後の砦**。0 起算で書くと
 DB の CHECK も採点 RPC も何も言わずに通り、**その冊子を解いた生徒が全員間違いになる**。
 `seed-data` 側の 4 択 (`"ans": 0` 起算) からコピーしてくるときが一番危ない。
+
+### 本文・資料・図 (正典にだけ在り、DB には入らない)
+
+| 置き場所 | 形 | 規則 |
+|---|---|---|
+| `META["passages"]` | `{page, title, html, source}` の並び | 本文・資料・年表・統計表。`page` は必須。`source` に出典 (社会は年次も)。`<script>` / `on*` / `<foreignObject>` は使えない |
+| 設問の `figure` | SVG の文字列 | `<svg` から始めること。線と文字は `currentColor`、塗りは中間色。`<script>` / `on*` は使えない |
+| 設問の `figure_ticks` | 数の並び | ★ **図に設問文・本文に無い数値を出さない** (出すと設問の根拠が図の外に出る)。軸の目盛りのように読み取らせる数だけ、ここに宣言して除く |
+
+★ 図の中の文字も**解答漏洩の走査対象**。図に答えを書かない。
+★ 図の文字と本文は、刷り上がり PDF から読み返して照合する。
+
+★ **前書きや資料に「第1問」と書いてよい** (「第1問〜第3問は資料を見て答えよ」)。
+逆照合は `第N問（N点）` という見出しの形で設問を切り分けるので、混同しない。
 
 ---
 
@@ -292,7 +306,22 @@ python3 scripts/run_all_gates.py               # 全教材 (CI と同じ)
 
 ---
 
-## 9. よくある落とし穴 (全教科共通)
+## 9. 今ある冊子 (これを写して次を作る)
+
+| 教科 | 冊子 | 正典 | 使っている仕掛け |
+|---|---|---|---|
+| 英語 (`grammar`) | 英文法 演習 第1集 × 15 | `scripts/book_exam/materials/meishi1/build_meishi1.py` ほか | 旧ビルダー `_grammar_build.py`。4 択 10 問 |
+| 数学 (`math`) | 数学I 二次関数 演習 第1集 | `scripts/book_exam/materials/sugaku_nijikansu1/build_sugaku_nijikansu1.py` | KaTeX の数式 / sympy による正解の再計算 |
+| 理科 (`science`) | 物理基礎 電気回路 演習 第1集 | `scripts/book_exam/materials/rika_denki1/build_rika_denki1.py` | 図 (SVG) / 記述 (`short`) と別解 |
+| 社会 (`social`) | 公民 日本の政治のしくみ 演習 第1集 | `scripts/book_exam/materials/shakai_seiji1/build_shakai_seiji1.py` | 資料の表 (`passages`) / 空欄の資料読み取り |
+| 国語 (`japanese`) | 古文 徒然草を読む 演習 第1集 | `scripts/book_exam/materials/kokugo_kobun1/build_kokugo_kobun1.py` | 本文 (`passages`) + 注 + 出典 / 記述 |
+
+★ `reading` / `eiken` / `mock` (英語の長文・英検・模試) の 1 冊目はまだ無い。
+作るときは [eigo.md](eigo.md) §6〜§8 と、本文・図の載せ方 (§3) を見ること。
+
+---
+
+## 10. よくある落とし穴 (全教科共通)
 
 | 症状 | 原因 |
 |---|---|

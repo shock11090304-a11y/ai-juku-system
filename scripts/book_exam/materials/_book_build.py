@@ -86,6 +86,58 @@ MATH = re.compile(r"\$([^$]+)\$")
 TAG = re.compile(r"[A-Z0-9]+-[A-Z0-9]+")
 
 
+#: 図と本文に入れてはいけないもの。server 側の sanitizer が落とすので刷っても
+#: 画面には出ないし、PDF では動く JS を持ち歩くことになる (CLAUDE.md の図の作法)。
+UNSAFE_MARKUP = re.compile(r"<\s*script|<\s*foreignObject|\son[a-z]+\s*=", re.I)
+#: 図の中の文字 (<text>…</text>)。逆照合と数値照合に使う。
+SVG_TEXT = re.compile(r"<text[^>]*>(.*?)</text>", re.I | re.S)
+#: 数値。図に出てよいのは設問文・本文にも在る数だけ (根拠が図の外に出ないように)。
+NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
+
+
+def ng_heading(heads):
+    """誤答を 1 つずつ潰す節の見出し。
+
+    ★ 「最後の見出し」ではない。社会は【覚え方の目印】、国語は【次に使える型】が
+      最後に来るので、最後で決め打ちすると**誤答の節を一度も見ない**まま緑になる
+      (2026-08-21 に社会の 1 冊目で実際に踏んだ)。見出し名から引く。
+    """
+    for h in heads:
+        if "誤答" in h:
+            return h
+    return None
+
+
+def ng_section(exp, heads):
+    """解説から誤答の節の中身だけを取り出す (次の見出しの手前まで)。"""
+    h = ng_heading(heads)
+    if not h or h not in exp:
+        return None
+    tail = exp.split(h)[-1]
+    for nxt in heads[heads.index(h) + 1:]:
+        tail = tail.split(nxt)[0]
+    return tail
+
+
+def markup_problem(html, what):
+    """@returns 理由 (None なら OK)。"""
+    if UNSAFE_MARKUP.search(html or ""):
+        return (f"{what}: <script> / on* 属性 / <foreignObject> は使えない "
+                f"(sanitizer が落とす。PDF には動く JS が残る)")
+    return None
+
+
+def svg_texts(svg):
+    """図の中の文字。タグを剥いで 1 つずつ返す。"""
+    out = []
+    for m in SVG_TEXT.findall(svg or ""):
+        t = re.sub(r"<[^>]+>", "", m)
+        t = re.sub(r"\s+", " ", t).strip()
+        if t:
+            out.append(t)
+    return out
+
+
 def strip_math(s):
     """$…$ を落として素の文字列にする (PDF 逆照合と誤答照合はこの形で見る)。"""
     return re.sub(r"\s+", " ", MATH.sub(lambda m: m.group(1), s or "")).strip()
@@ -115,17 +167,27 @@ def norm_pdf(s):
     return re.sub(r"\s+", "", (s or "").replace("\u2212", "-").replace("\u00a0", ""))
 
 
-def slice_by_question(text, numbers):
-    """ページのテキストを「第N問」で切り分ける。@returns {番号: その設問の範囲}
+def question_mark(q):
+    """PDF に刷られる設問の見出し。切り分けの目印にする。
+
+    ★ 「第N問」だけで探してはいけない。前書きや資料が「第1問・第2問で問う」と
+      書いていると**そちらを設問の先頭と誤認**し、以降の照合が丸ごとずれる
+      (2026-08-21 に社会の 1 冊目で実際に踏んだ)。配点まで含めた見出しで引く。
+    """
+    return f"第{q['number']}問（{q['points']}点）"
+
+
+def slice_by_question(text, qs):
+    """ページのテキストを設問の見出しで切り分ける。@returns {番号: その設問の範囲}
 
     ★ KaTeX が描いた数式は PDF のテキスト抽出では**ページの末尾にまとめて**
       現れる (実測)。だからここで切れるのは数式以外の字だけ。数式はページ全体で見る。
     """
     marks = []
-    for n in numbers:
-        i = text.find(f"第{n}問")
+    for q in qs:
+        i = text.find(norm_pdf(question_mark(q)))
         if i >= 0:
-            marks.append((i, n))
+            marks.append((i, q["number"]))
     marks.sort()
     out = {}
     for j, (i, n) in enumerate(marks):
@@ -206,7 +268,16 @@ def verify(meta, questions, extra=None):
     for text in (meta.get("intro"), ):
         if text:
             printed.append(strip_math(text))
-    for p in meta.get("passages") or []:
+    # --- 本文・資料 (passages) ----------------------------------------------
+    for i, p in enumerate(meta.get("passages") or []):
+        at = f"本文 {i + 1}"
+        if not isinstance(p.get("page"), int) or p["page"] < 1:
+            errs.append(f"{at}: page が 1 以上の整数でない")
+        if not str(p.get("html") or "").strip():
+            errs.append(f"{at}: html が空")
+        why = markup_problem(p.get("html"), at)
+        if why:
+            errs.append(why)
         printed.append(strip_math(re.sub(r"<[^>]+>", " ", p.get("html") or "")))
 
     for i, q in enumerate(questions):
@@ -229,6 +300,33 @@ def verify(meta, questions, extra=None):
         if not TAG.fullmatch(str(q.get("unit_tag") or "")):
             errs.append(f"{at}: unit_tag の形が崩れている ({q.get('unit_tag')!r})")
 
+        # --- 図 (SVG) --------------------------------------------------------
+        fig = q.get("figure")
+        if fig is not None:
+            if not str(fig).lstrip().startswith("<svg"):
+                errs.append(f"{at}: figure は <svg> から始める")
+            why = markup_problem(fig, f"{at} の図")
+            if why:
+                errs.append(why)
+            texts = svg_texts(fig)
+            printed.extend(strip_math(t) for t in texts)     # 図の中の答えも漏洩
+            # ★ 図に設問文・本文に無い数を出さない。出すと設問の根拠が図の外に出て、
+            #   印刷が潰れた・読み取れなかったときに設問そのものが解けなくなる。
+            #   軸の目盛りのように「読み取るための数」は figure_ticks に宣言して除く。
+            allow = {str(x) for x in (q.get("figure_ticks") or [])}
+            src = strip_math(str(q.get("stem") or "")) + " " + " ".join(
+                strip_math(re.sub(r"<[^>]+>", " ", p.get("html") or ""))
+                for p in (meta.get("passages") or [])
+                if p.get("page") == q.get("page"))
+            for t in texts:
+                for num in NUMBER.findall(t):
+                    if num in allow or num in src:
+                        continue
+                    errs.append(f"{at}: 図の数値「{num}」が設問文にも本文にも無い "
+                                f"(読み取らせる目盛りなら figure_ticks に入れる)")
+        elif q.get("figure_ticks"):
+            errs.append(f"{at}: figure が無いのに figure_ticks がある")
+
         choices = q.get("choices")
         ans = q.get("answer")
         if choices is None:                       # --- 記述 -------------------
@@ -241,6 +339,18 @@ def verify(meta, questions, extra=None):
             for alt in q.get("accepted") or []:
                 if not str(alt).strip():
                     errs.append(f"{at}: accepted に空のものが混ざっている")
+            # ★ 解答欄に単位を刷ってはいけない。紙は「解答欄 ___ A」で数字だけ書き、
+            #   画面には単位つきで打つ、という食い違いになる (画面の入力欄に単位の
+            #   手がかりは出ない)。答え方は設問文で示す。
+            if q.get("unit"):
+                errs.append(f"{at}: unit は使えない。答え方は設問文に "
+                            f"「単位をつけて答えよ (例: 12A)」と書くこと")
+            # ★ 数値 + 単位の答えは、答え方を設問文に書いていないと、
+            #   正しく解いた生徒が書き方だけで不正解になる。
+            mu = re.fullmatch(r"(-?\d+(?:\.\d+)?)\s*(\D+)", a)
+            if mu and "単位" not in stem and mu.group(2).strip() not in stem:
+                errs.append(f"{at}: 正解が「{a}」なのに答え方が設問文に無い。"
+                            f"「単位をつけて答えよ (例: {a})」のように示す")
             if q.get("choices_plain"):
                 errs.append(f"{at}: choices_plain は選択式のときだけ使える")
             if q.get("answer") is not None and not isinstance(q["answer"], str):
@@ -270,7 +380,7 @@ def verify(meta, questions, extra=None):
             if p < 0:
                 # ★ 誤答を潰す節は**選択肢があるときだけ**必須。記述には誤答が無い
                 #   ので、書きようのないものを求めない (書いてもよい)。
-                if h == heads[-1] and choices is None:
+                if h == ng_heading(heads) and choices is None:
                     continue
                 errs.append(f"{at}: 解説に「{h}」が無い")
             elif exp.count(h) > 1:
@@ -280,9 +390,9 @@ def verify(meta, questions, extra=None):
             else:
                 pos = p
         # --- 誤答を潰す節: 番号と選択肢の文字列まで突き合わせる --------------
-        if heads[-1] in exp and isinstance(choices, list) and \
+        ng = ng_section(exp, heads)
+        if ng is not None and isinstance(choices, list) and \
                 isinstance(ans, int) and 1 <= ans <= len(choices):
-            ng = exp.split(heads[-1])[-1]
             lines = {}
             for ln in ng.splitlines():
                 m = re.match(r"\s*([1-9])\.\s*(.*)", ln)
@@ -381,6 +491,14 @@ body { font-family: "Noto Sans CJK JP", "Noto Sans JP", "Hiragino Kaku Gothic Pr
 .passage h2 { font-size: 11pt; margin: 0 0 6px; }
 .passage .body { font-size: 10.5pt; line-height: 2.0; }
 .passage .src { font-size: 8.5pt; color: #555; margin-top: 6px; }
+.passage p { margin: 0 0 6px; }
+.passage ol, .passage ul { margin: 4px 0; padding-left: 1.6em; }
+.passage table { border-collapse: collapse; width: 100%; font-size: 10pt;
+                 margin: 4px 0; }
+.passage th, .passage td { border: 1px solid #666; padding: 3px 7px;
+                           text-align: left; vertical-align: top; }
+.passage th { background: #f2f2f2; font-weight: 600; }
+.passage .note { font-size: 9.5pt; color: #333; margin-top: 6px; line-height: 1.7; }
 .q { margin-bottom: 26px; page-break-inside: avoid; }
 .q .no { font-weight: 700; font-size: 11pt; }
 .q .pt { font-size: 9pt; color: #666; margin-left: 8px; font-weight: 400; }
@@ -436,12 +554,11 @@ def render_question(q):
             out.append(f'<li><span class="n">{i}.</span>{_esc(c)}</li>')
         out.append("</ol>")
     else:
-        unit = q.get("unit") or ""
         # ★ ラベルは SHORT_LABEL 固定。刷り上がり PDF の逆照合が
         #   「記述の解答欄がそのページに刷られたか」をこの語の数で見る。
+        # ★ 単位は刷らない (verify が unit を禁じている)。答え方は設問文にある。
         out.append(f'<div class="short"><span class="lbl">{SHORT_LABEL}</span>'
-                   f'<span class="box"></span>'
-                   f'<span class="unit">{_esc(unit)}</span></div>')
+                   f'<span class="box"></span></div>')
     out.append("</div>")
     return "".join(out)
 
@@ -595,12 +712,35 @@ def verify_pages(meta, questions, pages):
             if got < need:
                 errs.append(f"{page} ページ: 記述の解答欄が {need} 個要るのに "
                             f"「{SHORT_LABEL}」が {got} 個しか刷られていない")
-        segs = slice_by_question(text, [q["number"] for q in qs])
+        # --- 本文・資料がそのページに刷られているか ------------------------
+        for i, ps in enumerate(meta.get("passages") or []):
+            if ps.get("page") != page:
+                continue
+            body = re.sub(r"<[^>]+>", " ", ps.get("html") or "")
+            for chunk in re.split(r"[。\n]", body):
+                for seg in plain_segments(chunk):
+                    if len(norm_pdf(seg)) < 4:
+                        continue
+                    if norm_pdf(seg) not in text:
+                        errs.append(f"{page} ページ: 本文が PDF に無い ({seg[:24]!r})")
+                        break
+                else:
+                    continue
+                break
+            if ps.get("title") and norm_pdf(ps["title"]) not in text:
+                errs.append(f"{page} ページ: 本文の見出しが PDF に無い "
+                            f"({ps['title'][:24]!r})")
+            if ps.get("source") and norm_pdf(ps["source"]) not in text:
+                errs.append(f"{page} ページ: 本文の出典が PDF に無い "
+                            f"({ps['source'][:24]!r})")
+
+        segs = slice_by_question(text, qs)
         for q in qs:
             at = f"第{q['number']}問"
             seg = segs.get(q["number"])
             if seg is None:
-                errs.append(f"{at}: PDF の {page} ページに見つからない")
+                errs.append(f"{at}: PDF の {page} ページに"
+                            f"「{question_mark(q)}」が見つからない")
                 continue
             # 設問文 — 数式以外はその設問の範囲に、数式はページのどこかに
             for t in plain_segments(q["stem"]):
@@ -610,6 +750,11 @@ def verify_pages(meta, questions, pages):
             for t in checkable_math(q["stem"]):
                 if norm_pdf(t) not in text:
                     errs.append(f"{at}: 設問文の数式が PDF に無い ({t[:24]!r})")
+                    break
+            # 図 — 中の文字がそのページに刷られているか (図が落ちると設問が解けない)
+            for t in svg_texts(q.get("figure")):
+                if norm_pdf(t) not in text:
+                    errs.append(f"{at}: 図の文字が PDF に無い ({t[:24]!r})")
                     break
             # 選択肢 — 数式を含まないものは「番号. 本文」ごと突き合わせる
             #   (番号を外すと、同じ語が他の設問にあるだけで通ってしまう)

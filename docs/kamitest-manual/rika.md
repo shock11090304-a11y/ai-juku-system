@@ -5,11 +5,11 @@
 <!-- canon:subject-value -->`science`<!-- /canon:subject-value -->
 
 **先に [共通編](README.md) を読む。**
-理科は神テストにまだ 1 冊も入っていない。組み立ては全教科共通の
-`scripts/book_exam/materials/_book_build.py` が引き受ける
-(実物の型は `materials/sugaku_nijikansu1/build_sugaku_nijikansu1.py`)。
-書くのは META と QUESTIONS だけ。図は設問の `figure` に SVG を、
-実験の説明は META の `passages` に載せる。
+実物は `scripts/book_exam/materials/rika_denki1/build_rika_denki1.py`
+(物理基礎 電気回路 演習 第1集)。**新しい冊子はこれを写す**。
+組み立ては全教科共通の `scripts/book_exam/materials/_book_build.py` が
+引き受けるので、書くのは META と QUESTIONS だけ。
+図は設問の `figure` に SVG を、実験の説明は META の `passages` に載せる。
 
 ---
 
@@ -23,6 +23,11 @@
 | `short` で `"50"` | ✗ **取り込みが弾く** (「記述の正解が数字だけです。選択式にするつもりではありませんか」) |
 | `short` で `"50Ω"` | ○ 単位を付ければ通る |
 | `short` で `"0.30g"` | ○ **有効数字も一致させる**。生徒が `0.3g` と書くと不正解になるので `accepted_answers` に入れる |
+
+★ **解答欄に単位を刷ってはいけない** (build が落とす)。紙に「解答欄 ___ A」と
+刷ると生徒は数字だけ書くのに、画面には単位つきで打つ必要がある、という食い違いに
+なる。答え方は**設問文に書く** —「単位をつけて答えよ (例: 12A)」。
+数値+単位の正解なのに設問文に答え方が無ければ build が落とす。
 | `choice` で 4 択 | ○ **迷ったらこれ**。桁を 1 つずらした誤答・単位だけ違う誤答が作れる |
 
 ### 単位の規則 (紙の問題集で何度も落ちた項目)
@@ -109,7 +114,7 @@
 | 制限時間 | 単元別 25 分 / 総合 50〜60 分 |
 | `subject` | `science` |
 | 単元タグ | `BUTSURI-…` (物理) / `KAGAKU-…` (化学) / `SEIBUTSU-…` (生物) |
-| ディレクトリ | `scripts/book_exam/materials/〈ローマ字〉/` (例 `kagaku_mol1`) |
+| ディレクトリ | `scripts/book_exam/materials/〈ローマ字〉/` (例 `rika_denki1`) |
 
 ★ **1 冊に物理と化学を混ぜない。** `subject` はどちらも `science` なので、
 **題名だけが唯一の区別**になる (「物理 電気回路 演習 第1集」)。

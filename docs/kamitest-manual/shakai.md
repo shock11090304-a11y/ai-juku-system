@@ -5,11 +5,15 @@
 <!-- canon:subject-value -->`social`<!-- /canon:subject-value -->
 
 **先に [共通編](README.md) を読む。**
-社会は神テストにまだ 1 冊も入っていない。組み立ては全教科共通の
-`scripts/book_exam/materials/_book_build.py` が引き受ける
-(実物の型は `materials/sugaku_nijikansu1/build_sugaku_nijikansu1.py`)。
-書くのは META と QUESTIONS だけ。資料は設問の `figure` に SVG を、
-年表や統計表は META の `passages` に載せる (`source` に出典と年次を書く)。
+実物は `scripts/book_exam/materials/shakai_seiji1/build_shakai_seiji1.py`
+(公民 日本の政治のしくみ 演習 第1集)。**新しい冊子はこれを写す**。
+組み立ては全教科共通の `scripts/book_exam/materials/_book_build.py` が
+引き受けるので、書くのは META と QUESTIONS だけ。
+資料は設問の `figure` に SVG を、年表や統計表は META の `passages` に
+載せる (`source` に出典と年次を書く)。
+
+★ 1 冊目が統計を 1 つも使っていないのは意図的 (§1)。憲法と法律で決まっている
+「動かないしくみ」だけで組めば、作った翌年に答えが変わらない。
 
 ---
 
@@ -128,7 +132,7 @@
 | 制限時間 | 単元別 20〜25 分 / 総合 50〜60 分 |
 | `subject` | `social` |
 | 単元タグ | `CHIRI-…` (地理) / `NIHONSHI-…` (日本史) / `SEKAISHI-…` (世界史) / `KOUMIN-…` (公民) |
-| ディレクトリ | `scripts/book_exam/materials/〈ローマ字〉/` (例 `nihonshi_kodai1`) |
+| ディレクトリ | `scripts/book_exam/materials/〈ローマ字〉/` (例 `shakai_seiji1`) |
 
 ★ **1 冊に地理と歴史を混ぜない。** `subject` はどちらも `social` なので、
 **題名だけが唯一の区別**になる (「日本史 古代 演習 第1集」)。
@@ -149,7 +153,9 @@
 **見ない** (共通編 §7 の③層。人が全問読むしかない):
 
 - **選択式の解答漏洩**。漏洩の検査は記述 (`short`) の正解だけを見る。
-  「正解の語が資料の凡例に出ている」は見ていない
+  「正解の語が資料の凡例に出ている」は見ていない。
+  ★ 1 冊目では資料の表を（ A ）（ B ）の**空欄**にして、資料を読むだけで
+  答えが出ないようにした。資料読み取りの設問を作るときはこの形にする
 - **基準年の宣言**。統計を使う冊子の `build_*.py` 冒頭に出典と年次のコメントが
   あるかは、まだ機械で見ていない
 - **事実が古くなっていないか** (§1)。これは機械には原理的に見えない

@@ -131,6 +131,55 @@ def main():
     case("choices_plain を記述に付けたら落とす",
          B.verify(META, [q_short(1, choices_plain=["ア"])]),
          ["choices_plain は選択式のときだけ"])
+    case("解答欄に単位を刷ろうとしたら落とす (紙と画面で食い違う)",
+         B.verify(META, [q_short(1, unit="A")]),
+         ["unit は使えない"])
+    case("数値+単位の答えなのに答え方を書いていなければ落とす",
+         B.verify(META, [q_short(1, answer="4A", accepted=())]),
+         ["答え方が設問文に無い"])
+    case("答え方が設問文にあれば通る",
+         B.verify(META, [q_short(1, answer="4A", accepted=(),
+                                 stem="電流は何 A か。単位をつけて答えよ (例: 12A)。")]),
+         [])
+
+    # --- ⑦ 図 (SVG) と本文 --------------------------------------------------
+    FIG = ('<svg viewBox="0 0 100 40"><text x="5" y="20">20 Ω</text>'
+           '<text x="60" y="20">30 Ω</text></svg>')
+    case("図の数値が設問文にあれば通る",
+         B.verify(META, [dict(q_choice(1, stem="20 Ω と 30 Ω をつないだ。"), figure=FIG),
+                         q_choice(2, ans=2)]), [])
+    case("図に設問文に無い数値があれば落とす",
+         B.verify(META, [dict(q_choice(1, stem="抵抗をつないだ。"), figure=FIG),
+                         q_choice(2, ans=2)]),
+         ["図の数値「20」が設問文にも本文にも無い",
+          "図の数値「30」が設問文にも本文にも無い"])
+    case("読み取らせる目盛りは figure_ticks で除ける",
+         B.verify(META, [dict(q_choice(1, stem="抵抗をつないだ。"), figure=FIG,
+                              figure_ticks=[20, 30]), q_choice(2, ans=2)]), [])
+    case("図に script が入っていたら落とす",
+         B.verify(META, [dict(q_choice(1), figure='<svg onload="x"></svg>'),
+                         q_choice(2, ans=2)]),
+         ["<script> / on* 属性"])
+    case("図が <svg> で始まらなければ落とす",
+         B.verify(META, [dict(q_choice(1), figure='<div>図</div>'), q_choice(2, ans=2)]),
+         ["figure は <svg> から始める", "<script> / on* 属性"][:1])
+    case("図の中の答えも解答漏洩として見る",
+         B.verify(META, [dict(q_choice(1, stem="図を見よ。"),
+                              figure='<svg><text>電気抵抗</text></svg>'), q_short(2)]),
+         ["記述の答え「電気抵抗」が問題編に印字されている"])
+    PASS_META = dict(META, passages=[{"page": 1, "title": "資料", "html":
+                                      "<p>この資料は検査用である。</p>"}])
+    case("本文があっても通る",
+         B.verify(PASS_META, [q_choice(1), q_choice(2, ans=2)]), [])
+    case("本文に script が入っていたら落とす",
+         B.verify(dict(META, passages=[{"page": 1, "html": "<script>x</script>"}]),
+                  [q_choice(1), q_choice(2, ans=2)]),
+         ["<script> / on* 属性"])
+    case("本文の page が無ければ落とす",
+         B.verify(dict(META, passages=[{"html": "<p>本文</p>"}]),
+                  [q_choice(1), q_choice(2, ans=2)]),
+         ["page が 1 以上の整数でない"])
+
     case("記述の答えが他問の設問文に刷られていたら落とす (解答漏洩)",
          B.verify(META, [q_choice(1, stem="電気抵抗について答えよ。"), q_short(2)]),
          ["記述の答え「電気抵抗」が問題編に印字されている"])
@@ -198,6 +247,52 @@ def main():
          ["1 個はコマンド入りの数式なので"])
     case("素の数式だけなら見送りは無い",
          [B.pdf_check_note(mq) or ""], [""])
+
+    # --- ⑧ 誤答の節が「最後の見出し」でない教科 (社会・国語) ----------------
+    #   ★ 2026-08-21: 誤答の節を heads[-1] で決め打ちしていたため、社会
+    #     (最後は【覚え方の目印】) と国語 (最後は【次に使える型】) では
+    #     **誤答の番号を一度も見ないまま緑になっていた**。
+    SOC = B.SUBJECT_HEADINGS["social"]
+    SOC_META = dict(META, subject="social", subject_name="社会")
+
+    def soc_q(no, ans=1, ngs=None, choices=("ア", "イ", "ウ", "エ")):
+        choices = list(choices)
+        if ngs is None:
+            ngs = [f"{i}. {c} — 誤り。" for i, c in enumerate(choices, 1) if i != ans]
+        body = "\n".join(f"{h}説明。" for h in SOC[:3])
+        body += "\n" + SOC[3] + "\n" + "\n".join(ngs) + "\n" + SOC[4] + "目印。"
+        return dict(number=no, page=1, points=2, unit_tag="SHAKAI-TEST",
+                    stem=f"第{no}問の設問文。", choices=choices, answer=ans,
+                    explanation=body)
+
+    case("誤答の節が最後の見出しでない教科でも、正しく組めば通る",
+         B.verify(SOC_META, [soc_q(1), soc_q(2, ans=2)]), [])
+    case("誤答の節が最後でない教科でも、誤答の欠けを捕まえる",
+         B.verify(SOC_META, [soc_q(1, ngs=["2. イ — 誤り。", "3. ウ — 誤り。"]),
+                             soc_q(2, ans=2)]),
+         ["誤答 4 の説明が無い"])
+    case("誤答の節が最後でない教科でも、正解が誤答に載っていたら捕まえる",
+         B.verify(SOC_META, [soc_q(1, ngs=["1. ア — 誤り。", "2. イ — 誤り。",
+                                           "3. ウ — 誤り。", "4. エ — 誤り。"]),
+                             soc_q(2, ans=2)]),
+         ["正解 1 が誤答の節に載っている"])
+    case("ng_heading は見出し名から引く",
+         [B.ng_heading(SOC) or "", B.ng_heading(B.SUBJECT_HEADINGS["grammar"]) or ""],
+         ["【誤答の切り方】", "## ❌ 誤答 NG 理由"])
+
+    # --- ⑨ 前書きが「第1問」に触れていても設問の切り分けがずれない ----------
+    #   ★ 2026-08-21: 「第N問」だけで探していたため、前書きの
+    #     「第1問〜第3問は資料を見て答えよ」を設問の先頭と誤認し、
+    #     以降の照合が丸ごとずれた。配点まで含めた見出しで引く。
+    trap = ("第1問〜第3問は資料を見て答えてください。 "
+            "第1問（2点） 第1問の設問文。 1.ア 2.イ 3.ウ 4.エ "
+            "第2問（2点） 第2問の設問文。 1.ア 2.イ 3.ウ 4.エ")
+    two = [q_choice(1), q_choice(2, ans=2)]
+    case("前書きが「第1問」に触れていても照合がずれない",
+         B.verify_pages(META, two, [trap]), [])
+    case("見出しが無ければ「見つからない」と言う",
+         B.verify_pages(META, two, [trap.replace("第2問（2点）", "")]),
+         ["第2問: PDF の 1 ページに「第2問（2点）」が見つからない"])
 
     print(f"--- 見たもの: _book_build.verify / spread_note / build_json / "
           f"verify_pages — シナリオ {N_CASE} 件 ---")
