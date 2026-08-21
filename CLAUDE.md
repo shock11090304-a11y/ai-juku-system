@@ -41,6 +41,13 @@
   ② 機械検査 — ビルド時 verify (解説の番号と選択肢のずれ・正解位置の偏り等) + コミット済み `check*` ゲート + 取り込み後の DB 読み返し。
   ③ 人手の再点検 — **正解の一意性** (誤答が別解釈で正解にならないか・正解が 2 つないか) は機械では見えないので、全問を敵対的に読み直す。
   book_exam の実装例: `scripts/book_exam/materials/_grammar_build.py::verify` / 同 `check_grammar_books.py` / `import_books.py` の読み返し検証。
+- ★**神テスト (冊子受験アプリ) に載せる問題を作るなら、まず `docs/kamitest-manual/` を読む**。
+  共通編 (`README.md`) に取り込み JSON の契約・採点のされ方・解説の出方・手順が、
+  教科別 (`eigo.md` / `sugaku.md` / `kokugo.md` / `rika.md` / `shakai.md`) にプールごとの作法がある。
+  ★ **設問文も選択肢も図も DB には入らない** (画面に出るのは番号と選択ボタンだけ)。問題文は PDF が唯一の置き場所。
+  ★ **解説は素のテキストで表示される** (Markdown も LaTeX も解釈されない)。
+  ★ 英語の解説 3 番目の見出しは神テストが `## 📍 正解の根拠`・道場/模試が `## 📍 本文の根拠` で**別物**。
+  マニュアルと実物のずれは `scripts/book_exam/check_kamitest_manual.py` が落とす。
 
 ### 検査は `scripts/run_all_gates.py` に寄せる (2026-08-04)
 - **教材の全ゲートを回す入口は 1 本**: `python3 scripts/run_all_gates.py` (絞るなら `... rika_kagaku`)。
