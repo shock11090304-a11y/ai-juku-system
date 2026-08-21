@@ -90,8 +90,12 @@ def verify(questions):
 
 CSS = """
 @page { size: A4; margin: 18mm 16mm; }
-body { font-family: "Noto Sans CJK JP", "Noto Sans JP", "Hiragino Kaku Gothic ProN",
-       "Yu Gothic", sans-serif; color: #111; font-size: 11.5pt; line-height: 1.85; }
+/* ★ IPA を必ず並べる。日本語フォントが 1 つも当たらないと Chrome は
+      中国語フォント (WenQuanYi) に落ち、字形が中国語になったまま刷れてしまう。 */
+body { font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic",
+       "IPAexGothic", "IPAPGothic", "IPAGothic",
+       "Noto Sans CJK JP", "Noto Sans JP", sans-serif;
+       color: #111; font-size: 11.5pt; line-height: 1.85; }
 .head { border-bottom: 2px solid #111; padding-bottom: 6px; margin-bottom: 22px; }
 .head h1 { font-size: 16pt; margin: 0 0 2px; }
 .head .meta { font-size: 9.5pt; color: #555; }

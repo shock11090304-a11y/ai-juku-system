@@ -94,6 +94,16 @@ def main():
             return 1
         n_books += 1
         n_qs += len(questions)
+        # --- 埋め込みフォント (字形が日本語か) — 新旧どちらの正典でも見る -----
+        #   ★ 日本語フォントが 1 つも無い環境で刷ると Chrome が中国語フォントに
+        #     落ちる。PDF は正常に出るので紙を見るまで気づけない。
+        names = BB.pdf_font_names(pdf)
+        if names is None:
+            bad.append(f"{stem}: 埋め込みフォントを読めない")
+        else:
+            for e in BB.font_problems(names):
+                bad.append(f"{stem}: {e}")
+
         if meta is not None:
             if squeeze(title) not in squeeze(pages[0]):
                 bad.append(f"{stem}: 1 ページ目に冊子タイトルが無い")

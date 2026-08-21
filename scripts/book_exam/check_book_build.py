@@ -294,6 +294,23 @@ def main():
          B.verify_pages(META, two, [trap.replace("第2問（2点）", "")]),
          ["第2問: PDF の 1 ページに「第2問（2点）」が見つからない"])
 
+    # --- ⑩ 埋め込みフォント (字形が日本語か) --------------------------------
+    #   ★ 2026-08-21: 日本語フォントが 1 つも入っていない環境で刷ったため、
+    #     committed 19 冊すべてが**中国語フォント**で組まれていた。
+    #     PDF は正常に出るしテキスト抽出も通るので、紙を見るまで気づけない。
+    case("日本語フォントで組まれていれば通る",
+         B.font_problems({"AAAAAA+IPAexMincho", "BAAAAA+IPAexGothic",
+                          "CAAAAA+LiberationSans"}), [])
+    case("Mac のヒラギノでも通る",
+         B.font_problems({"AAAAAA+HiraMinProN-W3", "BAAAAA+HiraKakuProN-W6"}), [])
+    case("中国語フォントに落ちていたら落とす",
+         B.font_problems({"AAAAAA+WenQuanYiZenHei", "CAAAAA+LiberationSans"}),
+         ["日本語でないフォントで組まれている"])
+    case("フォントが 1 つも無ければ落とす", B.font_problems(set()),
+         ["フォントが 1 つも埋め込まれていない"])
+    case("空文字だけでも落とす", B.font_problems({""}),
+         ["フォントが 1 つも埋め込まれていない"])
+
     print(f"--- 見たもの: _book_build.verify / spread_note / build_json / "
           f"verify_pages — シナリオ {N_CASE} 件 ---")
     if FAILED:

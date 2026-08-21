@@ -477,10 +477,25 @@ def build_json(meta, questions):
 # =============================================================================
 # 問題 PDF
 # =============================================================================
+# ★ 本番の冊子は本文が**明朝**、設問番号や見出しがゴシック。それに寄せる。
+#   前に並べるのは Mac (ヒラギノ・游明朝)、後ろが Linux / CI (IPA)。
+#   ★ どちらも無い環境では Chrome が**中国語フォント (WenQuanYi) に落ちる**。
+#     字形が中国語になるが PDF は正常に出るので、刷って見るまで気づけない
+#     (2026-08-21 に committed 19 冊すべてがこの状態だった)。
+#     run() が刷り上がりの埋め込みフォントを見て落とす。
+MINCHO = ('"Hiragino Mincho ProN", "Hiragino Mincho Pro", "Yu Mincho", "YuMincho", '
+          '"IPAexMincho", "IPAPMincho", "IPAMincho", '
+          '"Noto Serif CJK JP", "Noto Serif JP", serif')
+GOTHIC = ('"Hiragino Kaku Gothic ProN", "Yu Gothic", "YuGothic", '
+          '"IPAexGothic", "IPAPGothic", "IPAGothic", '
+          '"Noto Sans CJK JP", "Noto Sans JP", sans-serif')
+
 CSS = """
 @page { size: A4; margin: 18mm 16mm; }
-body { font-family: "Noto Sans CJK JP", "Noto Sans JP", "Hiragino Kaku Gothic ProN",
-       "Yu Gothic", sans-serif; color: #111; font-size: 11.5pt; line-height: 1.85; }
+body { font-family: """ + MINCHO + """; color: #111; font-size: 11.5pt;
+       line-height: 1.9; }
+.head h1, .q .no, .q .pt, .short .lbl, .passage h2, .passage th,
+ol.ch .n { font-family: """ + GOTHIC + """; }
 .head { border-bottom: 2px solid #111; padding-bottom: 6px; margin-bottom: 20px; }
 .head h1 { font-size: 16pt; margin: 0 0 2px; }
 .head .meta { font-size: 9.5pt; color: #555; }
@@ -650,6 +665,65 @@ def write_pdf(meta, questions, out_pdf):
 # =============================================================================
 # 刷り上がり PDF の読み返し (相互チェック ①層)
 # =============================================================================
+#: 日本語フォントが 1 つも当たらなかったとき Chrome が落ちる先。
+#: 混ざっていたら**字形が日本語でない**まま刷れている (漢字が中国語字形になる)。
+#: PDF は正常に生成され、テキスト抽出も通るので、紙を見るまで気づけない。
+FALLBACK_FONTS = ("wenquanyi", "zenhei", "unifont", "droidsansfallback",
+                  "simsun", "simhei", "fangsong", "nanumgothic", "batang",
+                  "notosanscjksc", "notosanscjktc", "notosanscjkkr",
+                  "notoserifcjksc", "notoserifcjktc", "notoserifcjkkr")
+
+
+def font_key(name):
+    """埋め込みフォント名を突き合わせやすい形に (AAAAAA+ の接頭辞を落とす)。"""
+    return re.sub(r"^[A-Z]{6}\+", "", str(name or "")) \
+             .replace(" ", "").replace("-", "").replace("_", "").lower()
+
+
+def font_problems(names):
+    """@param names 埋め込みフォント名の集合。@returns エラー文の一覧。"""
+    errs = []
+    real = [n for n in names if str(n).strip()]
+    if not real:
+        return ["PDF にフォントが 1 つも埋め込まれていない"]
+    for n in sorted(set(real)):
+        key = font_key(n)
+        if any(b in key for b in FALLBACK_FONTS):
+            errs.append(
+                f"PDF が日本語でないフォントで組まれている ({n})。"
+                f"日本語フォントが 1 つも当たらず Chrome が代替に落ちている。"
+                f"Linux/CI なら apt-get install fonts-ipafont-mincho "
+                f"fonts-ipafont-gothic fonts-ipaexfont を入れてから刷り直す")
+    return errs
+
+
+def pdf_font_names(path):
+    """PDF に埋め込まれているフォント名。読めなければ None。"""
+    for mod in ("pymupdf", "fitz"):
+        try:
+            m = __import__(mod)
+        except ImportError:
+            continue
+        try:
+            with m.open(path) as doc:
+                return {f[3] for pg in doc for f in pg.get_fonts(full=True)}
+        except Exception:
+            return None
+    try:
+        from pypdf import PdfReader
+        out = set()
+        for pg in PdfReader(path).pages:
+            fonts = ((pg.get("/Resources") or {}).get("/Font") or {})
+            for k in fonts:
+                try:
+                    out.add(str(fonts[k].get_object().get("/BaseFont", "")))
+                except Exception:
+                    pass
+        return out
+    except Exception:
+        return None
+
+
 def pdf_pages(path):
     """各ページのテキスト。pypdf → pymupdf の順。無ければ None。"""
     try:
@@ -814,6 +888,19 @@ def run(here, meta, questions, verify_extra=None):
         print(f"✗ {why}")
         return 1
     print(f"[ok] {os.path.basename(out_pdf)} ({os.path.getsize(out_pdf) // 1024} KB)")
+
+    # --- 埋め込みフォント (字形が日本語か) --------------------------------
+    names = pdf_font_names(out_pdf)
+    if names is None:
+        print("!    埋め込みフォントを読めない (pypdf も pymupdf も無い)")
+    else:
+        jp = sorted(n for n in names if str(n).strip())
+        print(f"[ok] 埋め込みフォント: {', '.join(jp) or '(無し)'}")
+        errs = font_problems(names)
+        if errs:
+            for e in errs:
+                print(f"✗ {e}")
+            return 1
 
     if os.environ.get("SKIP_PDF_VERIFY") == "1":
         print("! 刷り上がり PDF の読み返しを飛ばした (SKIP_PDF_VERIFY=1)。"

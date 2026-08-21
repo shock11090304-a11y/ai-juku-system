@@ -19,12 +19,8 @@
     python3 scripts/book_exam/import_books.py scripts/book_exam/materials/kateiho2 \
         --pdf-dir scripts/book_exam/materials/kateiho2          # 未公開で入る
 """
-import json
 import os
-import shutil
-import subprocess
 import sys
-import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STEM = "英文法_仮定法_第2集"
@@ -215,113 +211,16 @@ for _q in QUESTIONS:
     _dist[_q[4]] = _dist.get(_q[4], 0) + 1
 assert all(2 <= _dist.get(k, 0) <= 3 for k in (1, 2, 3, 4)), f"正解位置が偏っている: {_dist}"
 
-CSS = """
-@page { size: A4; margin: 18mm 16mm; }
-body { font-family: "Noto Sans CJK JP", "Noto Sans JP", "Hiragino Kaku Gothic ProN",
-       "Yu Gothic", sans-serif; color: #111; font-size: 11.5pt; line-height: 1.85; }
-.head { border-bottom: 2px solid #111; padding-bottom: 6px; margin-bottom: 22px; }
-.head h1 { font-size: 16pt; margin: 0 0 2px; }
-.head .meta { font-size: 9.5pt; color: #555; }
-.q { margin-bottom: 30px; page-break-inside: avoid; }
-.q .no { font-weight: 700; font-size: 11pt; }
-.q .pt { font-size: 9pt; color: #666; margin-left: 8px; font-weight: 400; }
-.q .stem { margin: 4px 0 8px; }
-ol.ch { list-style: none; padding-left: 14px; margin: 0; }
-ol.ch li { margin: 2px 0; }
-ol.ch .n { display: inline-block; width: 1.9em; font-weight: 600; }
-.pagebreak { page-break-after: always; }
-"""
 
-
-def render_question(no, stem, choices, pts):
-    html = [f'<div class="q"><div class="no">第{no}問<span class="pt">（{pts}点）</span></div>',
-            f'<div class="stem">{stem}</div>', '<ol class="ch">']
-    for i, c in enumerate(choices, 1):
-        html.append(f'<li><span class="n">{i}.</span>{c}</li>')
-    html.append("</ol></div>")
-    return "".join(html)
-
-
-def build_html():
-    total = sum(q[5] for q in QUESTIONS)
-    pages = {}
-    for no, page, stem, choices, _ans, pts, _tag, _exp in QUESTIONS:
-        pages.setdefault(page, []).append(render_question(no, stem, choices, pts))
-    body = []
-    for idx, page in enumerate(sorted(pages)):
-        if idx == 0:
-            body.append(f'<div class="head"><h1>{TITLE}</h1>'
-                        f'<div class="meta">{LEVEL} / 全{len(QUESTIONS)}問 {total}点 / '
-                        f'制限時間 {TIME_LIMIT_MIN} 分'
-                        f' — 解答は別画面の答案に入力してください</div></div>')
-        else:
-            body.append(f'<div class="head"><h1>{TITLE}'
-                        f'<span style="font-size:10pt;font-weight:400"> — {page} ページ目'
-                        f'</span></h1></div>')
-        body.extend(pages[page])
-        if idx < len(pages) - 1:
-            body.append('<div class="pagebreak"></div>')
-    return (f'<!doctype html><html lang="ja"><head><meta charset="utf-8">'
-            f'<title>{TITLE}</title><style>{CSS}</style></head>'
-            f'<body>{"".join(body)}</body></html>')
-
-
-def build_json():
-    """import_books.py が読む bundle。source の stem が PDF 名と一致する。"""
-    return {
-        "source": f"{STEM}.yaml",
-        "subject_name": "英語",
-        "book": {"title": TITLE, "subject": "grammar", "level": LEVEL,
-                 "time_limit_min": TIME_LIMIT_MIN},
-        "questions": [
-            {"number": no, "page": page, "answer_type": "choice", "choice_count": 4,
-             "correct_answer": str(ans), "points": pts, "unit_tag": tag,
-             "explanation": exp}
-            for no, page, _stem, _choices, ans, pts, tag, exp in QUESTIONS
-        ],
-    }
-
-
-def find_chrome():
-    for c in ("google-chrome", "chromium", "chromium-browser", "chrome"):
-        p = shutil.which(c)
-        if p:
-            return p
-    for root in ("/opt/pw-browsers",):
-        if os.path.isdir(root):
-            direct = os.path.join(root, "chromium")
-            if os.path.exists(direct):
-                return direct
-            for d in sorted(os.listdir(root), reverse=True):
-                p = os.path.join(root, d, "chrome-linux", "chrome")
-                if os.path.exists(p):
-                    return p
-    mac = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-    return mac if os.path.exists(mac) else None
-
-
-def main():
-    with open(OUT_JSON, "w", encoding="utf-8") as f:
-        json.dump(build_json(), f, ensure_ascii=False, indent=1)
-    print(f"[ok] {os.path.basename(OUT_JSON)} ({len(QUESTIONS)} 問)")
-
-    chrome = find_chrome()
-    if not chrome:
-        print("✗ Chrome / Chromium が見つからない。PDF を作れない。")
-        return 1
-    with tempfile.TemporaryDirectory() as tmp:
-        src = os.path.join(tmp, "book.html")
-        with open(src, "w", encoding="utf-8") as f:
-            f.write(build_html())
-        cmd = [chrome, "--headless", "--disable-gpu", "--no-sandbox",
-               "--no-pdf-header-footer", f"--print-to-pdf={OUT_PDF}", "file://" + src]
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-        if r.returncode or not os.path.exists(OUT_PDF):
-            print("✗ print-to-pdf が失敗:", (r.stderr or r.stdout)[-400:])
-            return 1
-    print(f"[ok] {os.path.basename(OUT_PDF)} ({os.path.getsize(OUT_PDF) // 1024} KB)")
-    return 0
-
+# ★ 組版・検証・出力は隣の _grammar_build.py が引き受ける (英文法 15 冊の共通型)。
+#   この冊子はシリーズの 1 冊目で、共通化の**前**に書かれていたため、
+#   render_question / build_html / build_json / find_chrome / main を自前で持ち、
+#   しかも verify() を通していなかった。共通ビルダーに寄せて、
+#   ・日本語フォントの指定 (中国語フォントに落ちない)
+#   ・verify() の全項目 (解説 4 セクション・誤答 NG 理由の照合・正解位置)
+#   を他の 14 冊と同じにする。
+sys.path.insert(0, os.path.dirname(HERE))
+import _grammar_build as G  # noqa: E402
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(G.run(HERE, STEM, TITLE, LEVEL, TIME_LIMIT_MIN, QUESTIONS))
