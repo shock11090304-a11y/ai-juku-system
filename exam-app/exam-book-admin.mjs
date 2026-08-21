@@ -404,6 +404,18 @@ async function createBook() {
       .eq('id', ins.data.id).select('id');
     if (upd.error || !upd.data.length) throw new Error('PDF の場所を記録できませんでした');
 
+    // 4. 受験画面と同じ経路で本当に読めるか確かめる
+    // ★ Storage の select ポリシーは books.pdf_path = objects.name を条件にしている
+    //   ので、pdf_path を書いた後でないと講師でも署名を取れない。順序を入れ替えない。
+    // ★ ここを見ないと「上げるのは成功したのに実体が無い」を、生徒が受験を
+    //   始めようとして初めて踏む (受験画面は PDF を取れないと attempt を作らない)。
+    const signed = await sb().storage.from('book-pdfs').createSignedUrl(path, 60);
+    if (signed.error || !signed.data || !signed.data.signedUrl) {
+      throw new Error('上げた PDF を読み返せませんでした'
+                    + `（${(signed.error && signed.error.message) || '署名を取れない'}）。`
+                    + '冊子の行は作られています。一覧から開いて PDF を入れ直してください');
+    }
+
     say(`「${ins.data.title}」を作りました。続けて設問を入れてください`, 'ok');
     $('#nb-title').value = ''; $('#nb-level').value = ''; $('#nb-limit').value = '';
     $('#nb-file').value = ''; $('#nb-pdfinfo').textContent = '';

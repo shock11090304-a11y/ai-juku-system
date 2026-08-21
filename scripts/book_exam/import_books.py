@@ -64,6 +64,9 @@ TIME_LIMIT_MIN = {
 }
 
 MAX_PDF_BYTES = 52428800          # bucket の上限 (…_storage.sql と揃える)
+# ★ 50MB を細い回線で上げると 60 秒では終わらない。既定のまま上げると
+#   タイムアウト → 冊子の行だけできて PDF の無い冊子が残る。
+UPLOAD_TIMEOUT = 300
 
 
 # =============================================================================
@@ -138,7 +141,7 @@ class Api:
         self.anon = anon
         self.token = None
 
-    def call(self, method, path, body=None, headers=None, raw=None):
+    def call(self, method, path, body=None, headers=None, raw=None, timeout=60):
         url = self.base + path
         h = {"apikey": self.anon,
              "Authorization": f"Bearer {self.token or self.anon}"}
@@ -150,7 +153,7 @@ class Api:
             h.setdefault("Content-Type", "application/json")
         req = urllib.request.Request(url, data=data, headers=h, method=method)
         try:
-            with urllib.request.urlopen(req, timeout=60) as r:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
                 text = r.read().decode("utf-8", "replace")
         except urllib.error.HTTPError as e:
             text = e.read().decode("utf-8", "replace")[:400]
@@ -178,11 +181,15 @@ class ApiError(Exception):
 # =============================================================================
 # 検証と DB 形への写像 (正典は exam-book-admin-model.mjs。パリティは CI が見張る)
 # =============================================================================
-def validate_questions_py(rows):
+def validate_questions_py(rows, page_count=None):
     """exam-book-admin-model.mjs の validateQuestions と同じ規則。
 
     ★ ここで弾く目的はただ 1 つ:「全員 0 点」の冊子を作らないこと。
       選択式の正解は 1..choice_count の数字文字列でなければならない。
+    @param page_count PDF の実ページ数。渡すと page の範囲も見る
+      (.mjs の validateQuestions(rows, {pageCount}) と同じ)。★ 渡さないと
+      「4 ページの冊子の第7問が 9 ページ」を素通しし、登録画面では弾かれるのに
+      この script では入る、という食い違いになる。
     @returns エラー文の一覧 (空なら合格)
     """
     errors = []
@@ -201,6 +208,9 @@ def validate_questions_py(rows):
         page = q.get("page")
         if page is not None and (not isinstance(page, int) or isinstance(page, bool) or page < 1):
             errors.append(f"{at} page: 1 以上の整数か、空にしてください")
+        elif (page is not None and isinstance(page_count, int)
+              and not isinstance(page_count, bool) and page > page_count):
+            errors.append(f"{at} page: この冊子は {page_count} ページまでです")
         pts = q.get("points")
         if not isinstance(pts, int) or isinstance(pts, bool) or pts < 1:
             errors.append(f"{at} points: 1 以上の整数にしてください")
@@ -253,11 +263,44 @@ def question_payload_py(q, book_id):
 # =============================================================================
 # PDF
 # =============================================================================
-def pdf_page_count(path):
-    """ページ数。lesson-prints/_metadata.json → pypdf の順で見る。
+class PdfError(Exception):
+    """アップロードする PDF そのものの問題 (その冊子だけを落とす)。"""
 
-    ★ 当てずっぽうで数えない。page_count が違うと、後から設問にページを
-      入れるときの検証 (page ≤ page_count) が狂う。
+
+def pdf_file_problem(path):
+    """アップロードして良い PDF か。@returns 理由 (None なら OK)。
+
+    ★ bucket は file_size_limit=50MB / allowed_mime_types=['application/pdf'] で
+      作ってある (…_storage.sql)。ここで先に弾くのは、上げてから 400 で
+      返されると **冊子の行だけ先にできて PDF の無い冊子が残る**ため。
+    ★ 中身も見る。拡張子だけ .pdf のファイルは Content-Type を application/pdf と
+      名乗れば **上がってしまい**、受験画面で pdf.js が開けずに初めて分かる。
+      生徒が受験を始められない形なので、ここで止める。
+    """
+    if not os.path.exists(path):
+        return f"PDF が見つからない ({path})"
+    size = os.path.getsize(path)
+    if size == 0:
+        return "PDF が空ファイル (0 バイト)"
+    if size > MAX_PDF_BYTES:
+        return (f"PDF が大きすぎる ({size // 1024 // 1024}MB / "
+                f"上限 {MAX_PDF_BYTES // 1024 // 1024}MB)")
+    with open(path, "rb") as f:
+        head = f.read(5)
+    if head != b"%PDF-":
+        return (f"PDF ではありません (先頭が {head!r})。bucket は application/pdf "
+                f"しか受け付けず、上がっても受験画面で開けない")
+    return None
+
+
+def pdf_page_count(path):
+    """ページ数。lesson-prints/_metadata.json → pypdf → pymupdf の順で見る。
+
+    ★ 当てずっぽうで数えない。page_count が違うと、設問の page の検証
+      (page ≤ page_count) が狂う。
+    ★ pypdf だけに頼らない。_book_build.py (冊子ビルダー) は pypdf でも pymupdf でも
+      読めるので、片方しか入っていない端末で「作れるのに取り込めない」が起きる。
+    @raises PdfError 読めないとき (main がその冊子だけ失敗にする)
     """
     name = os.path.basename(path)
     if os.path.exists(METADATA):
@@ -267,13 +310,26 @@ def pdf_page_count(path):
                     return int(p["pages"]), "_metadata.json"
         except Exception:
             pass
-    try:
-        from pypdf import PdfReader
-        return len(PdfReader(path).pages), "pypdf"
-    except ImportError:
-        raise SystemExit(
-            f"✗ {name} のページ数が分かりません。_metadata.json に無い PDF は"
-            f" pypdf が要ります:\n    python3 -m pip install --user pypdf")
+    for mod in ("pypdf", "pymupdf", "fitz"):
+        try:
+            m = __import__(mod)
+        except ImportError:
+            continue
+        try:
+            if mod == "pypdf":
+                n = len(m.PdfReader(path).pages)
+            else:
+                with m.open(path) as doc:
+                    n = doc.page_count
+        except Exception as e:                       # noqa: BLE001
+            raise PdfError(f"{name} を {mod} が開けない ({e})。"
+                           f"壊れた PDF を上げると受験画面で開けない")
+        if not (isinstance(n, int) and n >= 1):
+            raise PdfError(f"{name} のページ数が {n!r} になった")
+        return n, mod
+    raise PdfError(
+        f"{name} のページ数が分かりません。_metadata.json に無い PDF は "
+        f"pypdf か pymupdf が要ります:\n    python3 -m pip install --user pypdf")
 
 
 def find_pdf(bundle, pdf_dir):
@@ -353,7 +409,9 @@ def load_bundles(src, only):
 
 def existing_book(api, title):
     """同名の冊子と、その保存済み設問数。"""
-    q = urllib.parse.quote(title)
+    # ★ safe='' — 既定では '/' が素通りする。「数学I/A 演習」のような題名で
+    #   PostgREST のパスが崩れ、同名判定が黙って外れる (= 二重に入る)。
+    q = urllib.parse.quote(title, safe="")
     rows = api.call("GET", f"/rest/v1/books?title=eq.{q}"
                            f"&select=id,title,pdf_path,is_published,questions(count)")
     if not rows:
@@ -381,14 +439,24 @@ def import_one(api, bundle, pdf_dir, publish, dry):
     if errs:
         return "fail", "検証を通らない: " + " / ".join(errs[:3])
 
-    # --- 1. PDF ------------------------------------------------------------
+    # --- 1. PDF (中身まで見る) ---------------------------------------------
+    #   ★ 上げてから bucket に 400 で返されると、冊子の行だけできて
+    #     PDF の無い冊子が残る。ネットワークに出る前に全部ここで弾く。
     pdf, why = find_pdf(bundle, pdf_dir)
     if pdf is None:
         return "fail", why
-    size = os.path.getsize(pdf)
-    if size > MAX_PDF_BYTES:
-        return "fail", f"PDF が大きすぎる ({size // 1024 // 1024}MB / 上限 50MB)"
-    pages, src = pdf_page_count(pdf)
+    why = pdf_file_problem(pdf)
+    if why:
+        return "fail", why
+    try:
+        pages, src = pdf_page_count(pdf)
+    except PdfError as e:
+        return "fail", str(e)
+
+    # --- 1.5 設問のページが PDF に収まっているか (登録画面と同じ規則) -------
+    errs = validate_questions_py(qs, page_count=pages)
+    if errs:
+        return "fail", "検証を通らない: " + " / ".join(errs[:3])
 
     tl_min = book.get("time_limit_min")
     if tl_min is None:
@@ -426,12 +494,30 @@ def import_one(api, bundle, pdf_dir, publish, dry):
     with open(pdf, "rb") as f:
         api.call("POST", f"/storage/v1/object/book-pdfs/{path}",
                  raw=f.read(),
-                 headers={"Content-Type": "application/pdf", "x-upsert": "true"})
+                 headers={"Content-Type": "application/pdf", "x-upsert": "true"},
+                 timeout=UPLOAD_TIMEOUT)
     upd = api.call("PATCH", f"/rest/v1/books?id=eq.{book_id}",
                    {"pdf_path": path, "page_count": pages},
                    headers={"Prefer": "return=representation"})
     if not upd:
         return "fail", "pdf_path を記録できない (返却 0 行)"
+
+    # --- 3.5 受験画面と同じ経路で本当に読めるか -----------------------------
+    #   ★ Storage の select ポリシーは books.pdf_path = objects.name を条件にして
+    #     いるので、**pdf_path を書いた後でないと講師でも署名を取れない**。
+    #     だから順序は 上げる → pdf_path を書く → 署名を取る。
+    #   ★ ここを見ないと「200 は返ったが実体が無い」を、生徒が受験を始めようとして
+    #     初めて踏むことになる (受験画面は PDF を取れないと attempt を作らない)。
+    try:
+        sign = api.call("POST", f"/storage/v1/object/sign/book-pdfs/{path}",
+                        {"expiresIn": 60})
+        why_sign = ""
+    except ApiError as e:
+        sign, why_sign = None, f" — {e}"
+    if not (isinstance(sign, dict) and sign.get("signedURL")):
+        return "fail", (f"上げた PDF の署名 URL を取れない ({path})。実体が置けて"
+                        f"いない可能性があるので、この冊子は公開しないこと"
+                        f"{why_sign}")
 
     # --- 4. 設問 ------------------------------------------------------------
     payload = [question_payload_py(q, book_id) for q in qs]
@@ -505,7 +591,7 @@ def main():
     for b in bundles:
         try:
             state, detail = import_one(api, b, a.pdf_dir, a.publish, a.dry_run)
-        except (ApiError, SystemExit) as e:
+        except (ApiError, PdfError, SystemExit) as e:
             state, detail = "fail", str(e)
         mark = {"ok": "○", "skip": "→", "fail": "✗"}[state]
         print(f"  {mark} {(b['book'].get('title') or b['_file'])}")

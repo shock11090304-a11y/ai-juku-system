@@ -45,9 +45,12 @@ def ng(msg):
 # =============================================================================
 class FakeSupabase:
     def __init__(self, role="teacher", fail_storage=False, corrupt_readback=False,
-                 short_insert=False, lose_readback=False):
+                 short_insert=False, lose_readback=False, drop_object=False):
         self.role = role
         self.fail_storage = fail_storage
+        # ★ 「上げるのは 200 で通ったのに実体が無い」を作る。実物でも
+        #   proxy や bucket の設定で起こりうる。生徒が受験を始めるまで気づけない。
+        self.drop_object = drop_object
         self.corrupt_readback = corrupt_readback
         self.short_insert = short_insert
         self.lose_readback = lose_readback
@@ -120,12 +123,25 @@ def make_handler(state):
                 if state.short_insert:
                     return self._send(201, rows[:-1])     # わざと 1 行少なく返す
                 return self._send(201, rows)
+            if p.path.startswith("/storage/v1/object/sign/book-pdfs/"):
+                # 受験画面が使う createSignedUrl と同じ経路。
+                # ★ 実物の RLS は books.pdf_path = objects.name を条件にするので、
+                #   pdf_path を書く前に署名を取ろうとすると読めない。それも再現する。
+                name = p.path.split("/storage/v1/object/sign/book-pdfs/", 1)[1]
+                key = "book-pdfs/" + name
+                if key not in state.storage:
+                    return self._send(404, {"message": "Object not found"})
+                if not any(b.get("pdf_path") == name for b in state.books):
+                    return self._send(404, {"message":
+                        "Object not found (RLS: books.pdf_path と一致しない)"})
+                return self._send(200, {"signedURL": f"/object/sign/{key}?token=t"})
             if p.path.startswith("/storage/v1/object/book-pdfs/"):
                 if state.fail_storage:
                     return self._send(400, {"message":
                         "new row violates row-level security policy"})
                 key = p.path.split("/storage/v1/object/", 1)[1]
-                state.storage[key] = body
+                if not state.drop_object:
+                    state.storage[key] = body
                 return self._send(200, {"Key": key})
             return self._send(404, {"message": f"unknown POST {p.path}"})
 
@@ -279,7 +295,12 @@ def run_importer(server, src, pdfs, metadata, *extra, password="pw-ok", config=N
 # =============================================================================
 # シナリオ
 # =============================================================================
+N_SCENARIO = 0
+
+
 def scenario(name):
+    global N_SCENARIO
+    N_SCENARIO += 1
     print(f"  [scenario] {name}")
 
 
@@ -498,6 +519,69 @@ export const CUSTOMERS = [
         sv.stop()
         if r.returncode == 0 or "読み返すと" not in r.stdout:
             ng(f"S12: 読み返しの行数の欠けを見逃した (exit {r.returncode})")
+
+        # --- S14: PDF が空ファイル → 冊子の行を作らずに落とす ------------------
+        #   ★ 上げてから bucket に 400 で返されると「PDF の無い冊子」が残る。
+        scenario("S14 空の PDF は冊子を作る前に落とす")
+        st = FakeSupabase()
+        sv = Server(st)
+        s14, p14, m14 = setup_dir(os.path.join(td, "s14"), [bundle_sekaishi()],
+                                  ["2026-06-03_共通テスト世界史_マーク式_問題.pdf"])
+        open(os.path.join(p14, "2026-06-03_共通テスト世界史_マーク式_問題.pdf"),
+             "wb").close()                                   # 0 バイトにする
+        r = run_importer(sv, s14, p14, m14)
+        sv.stop()
+        if r.returncode == 0 or "空ファイル" not in r.stdout:
+            ng(f"S14: 空の PDF を素通しした (exit {r.returncode}) {r.stdout[-200:]}")
+        if st.books or st.storage:
+            ng(f"S14: 落とすべき冊子の行/PDF を作った ({len(st.books)} 冊)")
+
+        # --- S15: 中身が PDF でない → 冊子の行を作らずに落とす ------------------
+        #   ★ bucket は Content-Type の申告だけを見るので**上がってしまう**。
+        #     受験画面で pdf.js が開けず、生徒が受験を始められない形になる。
+        scenario("S15 拡張子だけ .pdf のファイルを落とす")
+        st = FakeSupabase()
+        sv = Server(st)
+        s15, p15, m15 = setup_dir(os.path.join(td, "s15"), [bundle_sekaishi()],
+                                  ["2026-06-03_共通テスト世界史_マーク式_問題.pdf"])
+        with open(os.path.join(p15, "2026-06-03_共通テスト世界史_マーク式_問題.pdf"),
+                  "wb") as f:
+            f.write("PK\x03\x04 これは PDF ではない".encode())
+        r = run_importer(sv, s15, p15, m15)
+        sv.stop()
+        if r.returncode == 0 or "PDF ではありません" not in r.stdout:
+            ng(f"S15: PDF でないファイルを素通しした (exit {r.returncode})")
+        if st.books or st.storage:
+            ng("S15: 落とすべき冊子の行/PDF を作った")
+
+        # --- S16: 設問のページが PDF のページ数を超える -------------------------
+        #   ★ 登録画面 (.mjs) は弾くのに、この script は素通しだった。
+        scenario("S16 PDF のページ数を超える page を落とす")
+        st = FakeSupabase()
+        sv = Server(st)
+        b16 = bundle_sekaishi()
+        b16["questions"][0]["page"] = 99          # _metadata.json は 13 頁
+        s16, p16, m16 = setup_dir(os.path.join(td, "s16"), [b16],
+                                  ["2026-06-03_共通テスト世界史_マーク式_問題.pdf"])
+        r = run_importer(sv, s16, p16, m16)
+        sv.stop()
+        if r.returncode == 0 or "13 ページまでです" not in r.stdout:
+            ng(f"S16: ページ超過を素通しした (exit {r.returncode}) {r.stdout[-200:]}")
+        if st.books or st.storage:
+            ng("S16: 落とすべき冊子の行/PDF を作った")
+
+        # --- S17: 上げるのは 200 だが実体が無い → 公開させない ------------------
+        #   ★ 受験画面と同じ経路 (署名 URL) で読めるところまで確かめる。
+        #     ここを見ないと、生徒が受験を始めようとして初めて分かる。
+        scenario("S17 上げた PDF が読めなければ失敗にする")
+        st = FakeSupabase(drop_object=True)
+        sv = Server(st)
+        r = run_importer(sv, src, pdfs, mp, "--only", "世界史", "--publish")
+        sv.stop()
+        if r.returncode == 0 or "署名 URL を取れない" not in r.stdout:
+            ng(f"S17: 実体の無い PDF を素通しした (exit {r.returncode}) {r.stdout[-200:]}")
+        if any(b.get("is_published") for b in st.books):
+            ng("S17: 読めない PDF の冊子を公開した")
     finally:
         shutil.rmtree(td, ignore_errors=True)
 
@@ -532,6 +616,9 @@ PARITY_CASES = [
     ("配点 0", {"number": 1, "page": None, "points": 0, "answer_type": "choice",
                 "choice_count": 4, "correct_answer": "2", "accepted_answers": [],
                 "unit_tag": None, "explanation": None}),
+    ("ページ超過", {"number": 1, "page": 5, "points": 1, "answer_type": "choice",
+                    "choice_count": 4, "correct_answer": "2", "accepted_answers": [],
+                    "unit_tag": None, "explanation": None}),
     ("ページ 0", {"number": 1, "page": 0, "points": 1, "answer_type": "choice",
                   "choice_count": 4, "correct_answer": "2", "accepted_answers": [],
                   "unit_tag": None, "explanation": None}),
@@ -567,7 +654,10 @@ process.stdin.on('end', () => {{
   const out = [];
   for (const row of JSON.parse(buf)) {{
     const v = validateQuestions([row], {{ pageCount: null }});
-    out.push({{ ok: v.ok, payload: v.ok ? questionPayload(row, 'BOOK') : null }});
+    // ★ ページ数を渡した側も見る (page ≤ page_count は登録画面だけが持っていた規則)
+    const w = validateQuestions([row], {{ pageCount: 3 }});
+    out.push({{ ok: v.ok, okPaged: w.ok,
+                payload: v.ok ? questionPayload(row, 'BOOK') : null }});
   }}
   console.log(JSON.stringify(out));
 }});
@@ -593,6 +683,12 @@ process.stdin.on('end', () => {{
         if py_ok != mjs["ok"]:
             ng(f"パリティ [{label}]: 合否が食い違う (python={py_ok} / 実物={mjs['ok']}"
                f"{' — ' + py_errs[0] if py_errs else ''})")
+            continue
+        paged_errs = imp.validate_questions_py([row], page_count=3)
+        if (not paged_errs) != mjs["okPaged"]:
+            ng(f"パリティ [{label}]: ページ数を渡したときの合否が食い違う "
+               f"(python={not paged_errs} / 実物={mjs['okPaged']}"
+               f"{' — ' + paged_errs[0] if paged_errs else ''})")
             continue
         if py_ok:
             py_payload = imp.question_payload_py(row, "BOOK")
@@ -674,15 +770,80 @@ console.log(JSON.stringify({{ data, picks }}));
           f"選択が実物の JS と一致")
 
 
+def check_pdf_guards():
+    """アップロードする PDF そのものの門番 (pdf_file_problem / pdf_page_count)。
+
+    ★ 偽サーバを立てずに直接叩く。ここが緩むと「上がったのに受験画面で開けない
+      冊子」や「ページ数が分からず page の検証が効かない冊子」が生まれる。
+    """
+    import importlib.util
+    os.environ.setdefault("EXAM_SUPABASE_URL", "http://guard.invalid")
+    os.environ.setdefault("EXAM_SUPABASE_ANON", "guard")
+    spec = importlib.util.spec_from_file_location("imp_guard", IMPORTER)
+    imp = importlib.util.module_from_spec(spec)
+    old_argv, sys.argv = sys.argv, ["imp"]
+    try:
+        spec.loader.exec_module(imp)
+    finally:
+        sys.argv = old_argv
+
+    td = tempfile.mkdtemp(prefix="pdf_guard_")
+    try:
+        good = os.path.join(td, "good.pdf")
+        with open(good, "wb") as f:
+            f.write(TINY_PDF)
+        empty = os.path.join(td, "empty.pdf")
+        open(empty, "wb").close()
+        notpdf = os.path.join(td, "not.pdf")
+        with open(notpdf, "wb") as f:
+            f.write("これは PDF ではない".encode())
+        big = os.path.join(td, "big.pdf")
+        with open(big, "wb") as f:                 # sparse。実ディスクは食わない
+            f.write(b"%PDF-")
+            f.truncate(imp.MAX_PDF_BYTES + 1)
+        broken = os.path.join(td, "broken.pdf")
+        with open(broken, "wb") as f:
+            f.write(b"%PDF-1.4\nthis is not a real pdf body")
+
+        for label, path, want in (
+                ("正しい PDF", good, None),
+                ("空ファイル", empty, "空ファイル"),
+                ("PDF でない", notpdf, "PDF ではありません"),
+                ("大きすぎる", big, "大きすぎる"),
+                ("在らないファイル", os.path.join(td, "no.pdf"), "見つからない")):
+            got = imp.pdf_file_problem(path)
+            if want is None and got is not None:
+                ng(f"PDF 門番 [{label}]: 通るはずが落ちた ({got})")
+            elif want is not None and (got is None or want not in got):
+                ng(f"PDF 門番 [{label}]: 落とすはずが {got!r}")
+
+        n, src = imp.pdf_page_count(good)
+        if n != 1:
+            ng(f"PDF 門番: ページ数が 1 でない ({n} / {src})")
+        try:
+            imp.pdf_page_count(broken)
+            ng("PDF 門番: 壊れた PDF のページ数を返してしまった "
+               "(壊れた冊子が上がると受験画面で開けない)")
+        except imp.PdfError:
+            pass
+        except Exception as e:                       # noqa: BLE001
+            ng(f"PDF 門番: 壊れた PDF で PdfError 以外が飛んだ ({type(e).__name__})。"
+               f"取り込み全体が traceback で止まる")
+        print("  [pdf] アップロード前の門番 5 種 + ページ数の読み取りを確認")
+    finally:
+        shutil.rmtree(td, ignore_errors=True)
+
+
 def main():
     print("=== import_books.py の検査 (偽 Supabase + パリティ) ===")
     check_all()
+    check_pdf_guards()
     check_parity()
     check_config_parity()
     if problems:
         print(f"\n=== ✗ 問題 {len(problems)} 件 ===")
         return 1
-    print("\n=== ALL PASS (シナリオ 13 + パリティ 2 系) ===")
+    print(f"\n=== ALL PASS (シナリオ {N_SCENARIO} + PDF 門番 + パリティ 2 系) ===")
     return 0
 
 
