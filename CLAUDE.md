@@ -79,6 +79,35 @@
 - 既存の `__ep` action 同居 (例: `admin-charge-month-end-preview` / `admin-charge-history` は `admin-charge-readonly.py` に同居) はそのまま稼働中・触らない。新規に Vercel 専用関数が本当に必要なら素直に足してよい (同居の曲芸は不要になった)。
 - 本番が古いままの症状 (新URL 404 / app.js が古い / `gh` の "Vercel" status=failure) を見たら、関数数ではなく Vercel ビルドログと healthcheck の `deploy_freshness` を見る。
 
+## 授業録画の割り当て (YouTube 限定公開 → 各クラス)
+- 塾長が YouTube の**再生リスト**に授業動画を上げる → それを各クラスの `class_recordings` に割り当てる。
+  **自動では走らない** (常駐スケジューラも cron も無い)。走らせ方は 2 つ:
+  ```
+  railway run -s Postgres python3 scripts/class_recordings/assign_from_playlists.py           # 確認だけ (何も登録しない)
+  railway run -s Postgres python3 scripts/class_recordings/assign_from_playlists.py --apply   # 投入
+  ```
+  または **CEO の再生リスト一覧 `youtube-playlists.html` の「🎬 授業録画をクラスに割り当てる」ボタン**
+  (サーバ側で同じ処理・ターミナル不要。① 確認する → ② この内容で登録 の 2 段)。
+- ★**判定の正典は `server/class_recording_assign.py`**。CLI とボタンの API がこれを共有する。
+  ロジックを `main.py` や CLI に書き写さないこと (片方だけ直されて判定がずれる)。
+  置き場所が `server/` なのは Railway のデプロイ範囲がそこだから (`scripts/` は本番に無い)。
+- **どのクラスの録画かは「再生リスト名の曜日+限」で決まる**。動画のタイトルは信用しない
+  (2026-08-06: 火曜3限の動画名が「8.３」だったが正は火曜=8/4)。日付ラベルだけは動画名から取り、
+  再生リストの曜日・未来日・120日より古い日付で検算して、読めなければ推測せず手作業に回す。
+  **名前が読めない再生リストは丸ごと対象外**なので、新学期に作り直したら名前を付け直すこと
+  (名前は同じ画面から編集するとサーバに保存される)。
+- ★**この仕組みの目的は「配布漏れを配布済みと誤報告しない」こと**。「取得できなかった」を
+  「0本 = 新着なし」と言わせない判定が本体で、`scripts/class_recordings/check_assign_logic.py` が
+  機械で固定している。ガードを1つ消すとこのゲートが落ちる (変異10種で確認済み)。
+  書き込む側 (二重登録しない・dry-run が本当に書かない) は
+  `scripts/health_check/test_auto_assign_api.py` が `server-tests.yml` で見る。
+- ★**クラウドの Claude Code (claude.ai/code) からは実行できない**。ネットワークポリシーが
+  YouTube と Railway を遮断しており (403)、認証情報の問題ではないので回避できない。
+  塾長の端末の Claude Code なら `railway run` が通る。クラウドのセッションに頼むときは
+  **CEO 画面のボタンを塾長が押す**か、ターミナルの出力を貼って判断だけさせる。
+- `class_recordings` に UNIQUE 制約が無く**重複は取り返せない**。ボタンとターミナルを同時に走らせないこと
+  (ボタン側は同時実行を 409 で弾くが、ターミナルとは排他できない)。
+
 ## かきじゅん (書き順学習 PWA・`kakijun-app/`)
 - **作業前に `kakijun-app/HANDOFF.md` を必ず読む**。設計の分離 (お手本=フォント / 判定=線データ /
   経路は見せない) を崩すと必ず破綻する。今日それで何度も塾長を往復させた。
