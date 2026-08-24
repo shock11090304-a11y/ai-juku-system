@@ -153,6 +153,59 @@ table.vocab td { border:1px solid #e2e8f0; padding:2px 7px; }
 table.vocab tr { page-break-inside:avoid; }
 table.vocab td.w { font-family:Georgia,serif; width:26%; }
 
+/* evidence — 設問別・根拠箇所 */
+.evintro { font-size:9pt; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;
+  padding:6px 9px; margin-bottom:8px; }
+.evq { border:1px solid #cbd5e1; border-radius:8px; padding:6px 10px 4px; margin:0 0 9px; }
+.evh { display:flex; align-items:baseline; gap:9px; border-bottom:1.5px solid #e2e8f0; padding-bottom:3px;
+  margin-bottom:5px; page-break-after:avoid; }
+.evh .evno { background:#0f172a; color:#fff; border-radius:5px; padding:1px 9px; font-size:9.5pt; font-weight:700;
+  font-family:"Hiragino Kaku Gothic ProN",sans-serif; }
+.evh .evans { font-family:"Hiragino Kaku Gothic ProN",sans-serif; font-weight:700; font-size:9.5pt; color:#1e3a8a; }
+.evrow { display:flex; gap:8px; padding:4px 0; border-bottom:1px dashed #e2e8f0; page-break-inside:avoid; }
+.evrow:last-child { border-bottom:none; }
+.evmeta { flex:0 0 104px; }
+.evmeta .evpara { display:inline-block; background:#1e3a8a; color:#fff; border-radius:4px; padding:0 6px;
+  font-size:8.2pt; font-weight:700; font-family:"Hiragino Kaku Gothic ProN",sans-serif; }
+.evmeta .evwhere { display:block; font-size:8.2pt; color:#64748b; margin-top:2px; line-height:1.4;
+  font-family:"Hiragino Kaku Gothic ProN",sans-serif; }
+.evmeta .mk { display:inline-block; border-radius:50%; width:15px; height:15px; line-height:15px; text-align:center;
+  font-size:8.5pt; font-weight:700; color:#fff; margin-top:2px; }
+.mk.ok { background:#047857; } .mk.ng { background:#dc2626; }
+.evi { flex:1; }
+.evi .een { font-family:Georgia,serif; font-size:9.5pt; line-height:1.55; border-left:3px solid #94a3b8;
+  padding-left:7px; }
+.evi .eja { font-size:8.9pt; color:#475569; margin:2px 0 0; padding-left:10px; }
+.evi .ewhy { font-size:9pt; color:#1f2937; background:#f1f5f9; border-radius:5px; padding:3px 8px; margin-top:3px; }
+
+/* grammar approach — 文法的視点 */
+.gsteps { margin-bottom:10px; }
+.gstep { display:flex; gap:9px; padding:4px 0; border-bottom:1px dashed #d7dde6; page-break-inside:avoid; }
+.gstep .gs { flex:0 0 52px; background:#7c3aed; color:#fff; border-radius:5px; height:19px; line-height:19px;
+  text-align:center; font-size:8.4pt; font-weight:700; font-family:"Hiragino Kaku Gothic ProN",sans-serif; }
+.gstep .gt { flex:1; }
+.gstep .gtt { font-family:"Hiragino Kaku Gothic ProN",sans-serif; font-weight:700; font-size:9.8pt; }
+.gstep .gtb { font-size:9pt; color:#334155; }
+.ins { color:#7c3aed; }
+.gcard { border:1px solid #cbd5e1; border-left:4px solid #7c3aed; border-radius:7px; padding:6px 10px 5px;
+  margin:0 0 9px; page-break-inside:avoid; }
+.gcard .gh { display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; margin-bottom:3px; }
+.gcard .gid { background:#7c3aed; color:#fff; border-radius:4px; padding:0 7px; font-size:8.6pt; font-weight:700;
+  font-family:"Hiragino Kaku Gothic ProN",sans-serif; }
+.gcard .gtitle { font-family:"Hiragino Kaku Gothic ProN",sans-serif; font-weight:700; font-size:10.2pt; color:#0f172a; }
+.gcard .gstar { color:#f59e0b; font-size:8.6pt; }
+.gcard .guse { background:#fde68a; color:#7c2d12; border-radius:4px; padding:0 6px; font-size:8.2pt; font-weight:700;
+  font-family:"Hiragino Kaku Gothic ProN",sans-serif; }
+.gcard .gpoint { font-size:9.2pt; margin-bottom:3px; }
+.gcard .gex { background:#faf7ff; border-radius:5px; padding:4px 8px; margin:3px 0; }
+.gcard .gex .gen { font-family:Georgia,serif; font-size:9.4pt; line-height:1.5; }
+.gcard .gex .gja { font-size:8.7pt; color:#64748b; margin-top:1px; }
+.gcard .glab { font-family:"Hiragino Kaku Gothic ProN",sans-serif; font-weight:700; font-size:8.6pt;
+  color:#5b21b6; margin-right:4px; }
+.gcard .ghow { font-size:9.1pt; margin-top:3px; }
+.gcard .gtrap { font-size:9.1pt; background:#fef2f2; border-radius:5px; padding:3px 8px; margin-top:3px; }
+.gcard .gtrap .glab { color:#b91c1c; }
+
 .foot { text-align:center; color:#64748b; font-size:8.3pt; margin-top:8px; padding-top:4px; border-top:1px solid #e2e8f0;
   font-family:"Hiragino Kaku Gothic ProN",sans-serif; page-break-inside:avoid; }
 """
@@ -273,12 +326,66 @@ def svg_fig3():
 
 FIG_SVG = {"fig1": svg_fig1, "fig2": svg_fig2, "fig3": svg_fig3}
 
+# ---------------- 解説編パーツ: 設問別・根拠箇所 ----------------
+def sec_evidence():
+    h = ('<div class="section pb"><div class="secttl">設問別・根拠箇所'
+         '<span class="en2">Where the Answer Comes From</span></div>')
+    h += ('<div class="evintro">各設問の答えが<b>本文のどこから出るか</b>を、原文の引用（英）・訳・'
+          '判断の順で示した。<b>引用はすべて本文の逐語</b>。○×は選択肢の正誤。'
+          '答え合わせのときは「合っていたか」ではなく<b>「この根拠を自分も見ていたか」</b>を確認すること。</div>')
+    for e in C.EVIDENCE:
+        h += ('<div class="evq"><div class="evh"><span class="evno">' + e["no"] + '</span>'
+              '<span class="evans">解答：' + e["ans"] + '</span></div>')
+        for it in e["items"]:
+            mk = it.get("mark", "")
+            mkh = ''
+            if mk:
+                mkh = f'<span class="mk {"ok" if mk == "○" else "ng"}">{mk}</span>'
+            h += ('<div class="evrow"><div class="evmeta">'
+                  f'<span class="evpara">{it["para"]}</span>'
+                  f'<span class="evwhere">{it["where"]}</span>{mkh}</div>'
+                  f'<div class="evi"><div class="een">{html.escape(it["en"])}</div>'
+                  f'<div class="eja">{it["ja"]}</div>'
+                  f'<div class="ewhy">{it["why"]}</div></div></div>')
+        h += '</div>'
+    return h + '</div>'
+
+
+# ---------------- 解説編パーツ: 文法的視点からのアプローチ ----------------
+def sec_grammar():
+    h = ('<div class="section pb"><div class="secttl">文法的視点からのアプローチ'
+         '<span class="en2">Grammar Approach</span></div>')
+    h += ('<div class="evintro">最難関の長文は「単語を知っているのに読めない」ことが起こる。原因はほぼ'
+          '<b>文の骨格を取り違えている</b>ことにある。まず下の5手順で1文を崩し、'
+          'そのうえで本文で実際に問われた9つの型（G1〜G9）を確認する。'
+          '各型には<b>本文の実例・設問での使いどころ・やりがちな誤読</b>を付けた。</div>')
+    h += '<div class="gsteps">'
+    for sid, title, body in C.GRAMMAR_STEPS:
+        h += (f'<div class="gstep"><div class="gs">{sid}</div><div class="gt">'
+              f'<div class="gtt">{title}</div><div class="gtb">{body}</div></div></div>')
+    h += '</div>'
+    for g in C.GRAMMAR:
+        h += ('<div class="gcard"><div class="gh">'
+              f'<span class="gid">{g["id"]}</span>'
+              f'<span class="gtitle">{g["title"]}</span>'
+              f'<span class="gstar">{g["star"]}</span>'
+              f'<span class="guse">使いどころ：{g["use"]}</span></div>'
+              f'<div class="gpoint">{g["point"]}</div>')
+        for en, ja in g["ex"]:
+            h += (f'<div class="gex"><div class="gen">{html.escape(en)}</div>'
+                  f'<div class="gja">{ja}</div></div>')
+        h += f'<div class="ghow"><span class="glab">▶ 読み方</span>{g["how"]}</div>'
+        h += f'<div class="gtrap"><span class="glab">× 誤読しやすい点</span>{g["trap"]}</div>'
+        h += '</div>'
+    return h + '</div>'
+
+
 # ---------------- 解説編 ----------------
 def build_kaisetsu():
     h = header_band("a")
     h += '<div style="text-align:center;font-family:\'Hiragino Kaku Gothic ProN\',sans-serif;font-weight:700;font-size:12pt;margin:6px 0 4px;">解答・解説編</div>'
     h += ('<div style="text-align:center;font-size:9pt;color:#475569;margin-bottom:8px;">'
-          '解答・配点 ／ この長文で使う The Rules ／ 論理構造マップ ／ 図解 ／ SVOC構文 ／ 全訳 ／ 語彙</div>')
+          '解答・配点 ／ 設問別・根拠箇所 ／ この長文で使う The Rules ／ 論理構造マップ ／ 図解 ／ 文法アプローチ ／ SVOC構文 ／ 全訳 ／ 語彙</div>')
 
     # --- 解答と配点 ---
     h += '<div class="section"><div class="secttl">解答 と 配点<span class="en2">Answer Key</span>　<span style="font-size:9pt;color:#64748b;">（満点 '+str(C.META["full"])+'点）</span></div>'
@@ -291,6 +398,8 @@ def build_kaisetsu():
               f'<div class="model">〔解答例〕{w["model"]}</div>'
               f'<div class="pt">{w["points"]}</div></div>')
     h += '</div>'
+
+    h += sec_evidence()
 
     # --- The Rules 一覧 ---
     h += '<div class="section"><div class="secttl">この長文で使う The Rules<span class="en2">Rules used in this passage</span></div>'
@@ -328,6 +437,8 @@ def build_kaisetsu():
               f'<div class="cap">{f["caption"]}</div><div class="pref">{f["para"]}</div></div>')
     h += '</div>'
 
+    h += sec_grammar()
+
     # --- SVOC (インライン・フロー式) ---
     def _fmt_en(en):
         en = re.sub(r'\[(.*?)\]', r'<span class="nclz">[\1]</span>', en, flags=re.S)
@@ -336,7 +447,7 @@ def build_kaisetsu():
     def _is_nclause(en):
         t = en.strip().rstrip('.,;:')
         return t.startswith('[') and t.endswith(']')
-    h += '<div class="section pb"><div class="secttl">構文（SVOC）解説<span class="en2">Sentence Structure Analysis</span></div>'
+    h += '<div class="section"><div class="secttl">構文（SVOC）解説<span class="en2">Sentence Structure Analysis</span></div>'
     lg_chips = "　".join(f'<span class="lgc" style="background:{c}">{k}</span>'
                           for k, c in LOGIC_COLORS.items())
     tag_chips = "　".join(f'<span class="ctag" style="background:{c}">{t}</span>'

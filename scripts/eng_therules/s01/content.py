@@ -265,9 +265,11 @@ RULES = {
          "空所A（And yet→自立像は幻想という筆者の反転）、空所B（Nonetheless→主張転換）。"),
         ("R2", "It is true that … は譲歩の合図。直後の逆接（yet / but）で反転し主張を強める", "★★★",
          "第2段「It is true that experts are fallible …」→ 第3段 Nonetheless で反転。"),
-        ("R3", "not A but B / rather than は B の側が主張・核心", "★★★",
+        ("R3", "not A but B は <b>B</b> が核心／A rather than B は <b>A</b> が核心"
+               "——どちらも「否定される側」が通念", "★★★",
          "下線部(3) not a verdict on experts but a craft of trust、第4段 not to stop thinking but "
-         "to think with other people、第7段 doubting like a scientist rather than …。"),
+         "to think with other people、第7段 doubting like a scientist rather than …"
+         "（rather than は<b>語順が逆</b>で、前の doubting like a scientist が核心。→ 文法 G3）。"),
         ("R14", "反対意見・コスト批判への「再反論」は主張の強化——譲歩⇄再反論の往復を追う", "★★★",
          "第5段「Does it follow that we may believe whomever we please? Hardly.」→ 信頼の検査道具で再反論。"),
         ("R22", "★NEW It is not that A but that B／not because A but because B——否定がどこまで及ぶか（否定の射程）を確定してから訳す", "★★★",
@@ -636,3 +638,349 @@ SVOC_LOGIC = {
     (6, 1): "対比", (6, 2): "主張", (6, 3): "具体例", (6, 4): "主張",
     (7, 1): "譲歩", (7, 2): "対比", (7, 3): "主張", (7, 4): "主張", (7, 5): "主張",
 }
+
+# ------------------------------------------------------------------
+# 設問別・根拠箇所 (該当箇所の提示)
+#   本文のどこが根拠かを、原文の逐語引用＋訳＋判断で示す。
+#   ★ en は必ず PASSAGE_PLAIN に実在する逐語引用にすること
+#     (CLAUDE.md「解説が引用する英文は本文に実在させる」/ check_therules.py が全数照合する)。
+#   mark: 選択肢の正誤 (○ / ×)。省略可 (記述問題など)。
+# ------------------------------------------------------------------
+EVIDENCE = [
+    {"no": "問1", "ans": "A ＝ ① And yet　／　B ＝ ② Nonetheless", "items": [
+        {"para": "¶1", "where": "空所【A】の直前",
+         "en": "The truly independent thinker, we are told, verifies everything personally "
+               "and bows to no authority.",
+         "ja": "真に独立した思考の持ち主は、あらゆることを自分の手で検証し、いかなる権威にも屈しない——"
+               "と私たちは聞かされる。",
+         "why": "ここまでは<b>通念の紹介</b>（しかも we are told ＝「そう聞かされている」と距離を置いた言い方）。"
+                "空所の前は<b>まだ筆者の主張ではない</b>。"},
+        {"para": "¶1", "where": "空所【A】の直後（同じ文）",
+         "en": "this flattering picture of the self-reliant mind, for all its appeal, rests on an illusion",
+         "ja": "この自立した精神という心地よい像は、その魅力にもかかわらず、一つの幻想の上に成り立っている",
+         "why": "直後で<b>その通念を否定</b>している（illusion＝幻想）。前＝通念、後＝否定 なので"
+                "<b>逆接</b>しか入らない → ① And yet。②As a result（因果）・③For example（例示）・"
+                "④Furthermore（追加）はいずれも「前を受けて同じ向きに進む」語で、反転を作れない。"},
+        {"para": "¶2", "where": "空所【B】の直前（第2段全体の役割）",
+         "en": "It is true that experts are fallible, and that the record of blind deference to them "
+               "is not a happy one.",
+         "ja": "確かに、専門家は誤りうるし、彼らへの盲目的な服従の記録が幸福なものでないことも本当である。",
+         "why": "<b>It is true that …＝譲歩の合図</b>。第2段は丸ごと「相手の言い分を認める」段。"
+                "譲歩の後には必ず<b>逆接で主張が戻ってくる</b>と身構える。"},
+        {"para": "¶3", "where": "空所【B】の直後（同じ文）",
+         "en": "the ideal of checking everything for oneself dissolves the moment it is examined",
+         "ja": "すべてを自分で確かめるという理想は、検討されたその瞬間に溶けて消える",
+         "why": "譲歩（専門家も誤る）を受けて<b>「それでも自力検証の理想は崩れる」と主張へ転換</b>している。"
+                "→ 逆接 ② Nonetheless。①Therefore（因果）だと「専門家は誤る→だから自力検証は崩れる」となり"
+                "意味が通らない。③For instance（例示）・④Likewise（類比）も反転を作れない。"},
+    ]},
+    {"no": "問2", "ans": "下線部(1) の和訳", "items": [
+        {"para": "¶3", "where": "下線部(1) そのもの",
+         "en": "It is not that independent verification is a noble goal we sadly fail to reach, "
+               "but that, for creatures whose knowledge is stitched together from the testimony of others, "
+               "complete intellectual self-reliance was never a possibility in the first place.",
+         "ja": "独力の検証とは、私たちが残念ながら到達できずにいる崇高な目標だ、ということではない。そうではなく、"
+               "その知識が他人の証言からつなぎ合わされてできている生き物にとって、完全な知的自立というものは、"
+               "そもそも初めから可能ですらなかった、ということなのだ。",
+         "why": "<b>It is not that A but that B</b> の骨格をまず取る。not が否定するのは"
+                "<b>that 節A の内容全体</b>（＝「届かない崇高な目標だ」という<b>捉え方</b>そのもの）。"},
+        {"para": "¶3", "where": "直前2文（A の内容を確定させる文脈）",
+         "en": "she reads documents written by strangers, posted on platforms built by other strangers, "
+               "summarizing measurements she will never witness",
+         "ja": "彼女は、見知らぬ他人が書き、別の見知らぬ他人が作った基盤に載せられ、自分では決して目にする"
+               "ことのない測定を要約した文書を読むのである",
+         "why": "「自分で調べる」の実態＝<b>他人への信頼の連鎖</b>。だから下線部は「努力不足で届かない」"
+                "のではなく<b>「最初から不可能」</b>だと言っている、と確認できる。"},
+        {"para": "¶3", "where": "直前1文（creatures の中身）",
+         "en": "Every step of her inquiry borrows the labor, and the honesty, of people she has never met.",
+         "ja": "彼女の調査の一歩一歩が、会ったこともない人々の労働と誠実さとを借りている。",
+         "why": "creatures whose knowledge is stitched together from the testimony of others ＝"
+                "この文の言い換え。<b>creatures は「人間」</b>を指すと確定できる。"},
+    ]},
+    {"no": "問3", "ans": "下線部(2) の説明", "items": [
+        {"para": "¶5", "where": "下線部(2) そのもの",
+         "en": "Trust, practiced well, carries its own instruments of testing.",
+         "ja": "正しく実践されるなら、信頼はそれ自身の検査の道具を備えている。",
+         "why": "設問の核。<b>「道具」の中身は直後に列挙される</b>ので、次の文が答えの本体になる。"},
+        {"para": "¶5", "where": "道具①〜③（whether 節の並列）",
+         "en": "We can ask whether a speaker stands to profit from being believed; whether she has admitted "
+               "and corrected her past errors, or quietly buried them; and whether those best placed to catch "
+               "her mistakes, rivals within her own field, have largely come to agree with her.",
+         "ja": "私たちは問うことができる——語り手は信じてもらうことで利益を得る立場にないか。過去の誤りを認めて"
+               "訂正してきたか、それともひそかに葬ってきたか。そして、その誤りを見つけるのに最も適した人々——"
+               "同じ分野のライバルたち——が、おおむねその人に同意するに至っているか。",
+         "why": "<b>①語り手の利害 ②訂正の履歴 ③同分野のライバルの合意</b>——この3つが「検査の道具」の中身。"
+                "記述はここから<b>2つ以上</b>を必ず入れる。"},
+        {"para": "¶5", "where": "道具の性格（何を要求しないか）",
+         "en": "None of these checks requires us to repeat the science ourselves; they demand something "
+               "humbler and more attainable, attention to how a claim has survived the scrutiny of others.",
+         "ja": "これらの検査のどれ一つとして、科学を自分で繰り返すことを私たちに求めはしない。それらが求めるのは、"
+               "もっと謙虚で、もっと手の届くもの——ある主張が他人の吟味をどのように生き延びてきたのかへの注意である。",
+         "why": "「自分で実験し直す必要はない」＝<b>盲信でもなければ独力検証でもない第三の道</b>。"
+                "ここを落とすと「信頼＝結局は自分で確かめること」という誤読の答案になる。"},
+    ]},
+    {"no": "問4", "ans": "②", "items": [
+        {"para": "¶4", "where": "根拠の中心（②の直接の言い換え）",
+         "en": "Never in this long division of labor has reliance on others been a sign of idleness; "
+               "it is the very mechanism by which a community comes to know more than any of its members.",
+         "ja": "この長い分業の歴史の中で、他人に頼ることが怠惰のしるしであったことは一度もない。それは、共同体が"
+               "その成員の誰よりも多くを知るに至る、まさにその仕組みなのである。",
+         "why": "②「怠慢のしるしではなく／共同体が個々の成員の限界を超えて知るための仕組みそのもの」と"
+                "<b>前半・後半とも一対一で対応</b>する。○"},
+        {"para": "¶4", "where": "④を切る根拠",
+         "en": "Modern knowledge has grown far beyond the capacity of any single head",
+         "ja": "現代の知識は、どの一人の頭の容量をもはるかに超えて成長した",
+         "why": "④「努力しだいで一人で抱えきれる」は<b>正反対</b>。分業は「効率のための選択」ではなく"
+                "<b>不可避の条件</b>として書かれている。×"},
+        {"para": "¶4", "where": "③を切る根拠",
+         "en": "the chemist trusts the physicist, the doctor trusts the medical journal",
+         "ja": "化学者は物理学者を信頼し、医師は医学誌を信頼する",
+         "why": "③「専門家たちは互いをまったく信頼していない」は本文と逆。本文は"
+                "<b>専門家同士の信頼を前提</b>にしている（ライバルの相互チェックは第5段の別の話）。×"},
+        {"para": "¶4", "where": "①を切る根拠（段の結論）",
+         "en": "To trust well, on this view, is not to stop thinking but to think with other people.",
+         "ja": "上手に信頼するとは、この見方に立てば、考えるのをやめることではなく、他人とともに考えることなのだ。",
+         "why": "①「思考力を確実に衰えさせる／個人の検証に置き換えるべき」は、この文の"
+                "<b>not to stop thinking</b> に真っ向から反する。×"},
+    ]},
+    {"no": "問5", "ans": "下線部(3) の説明", "items": [
+        {"para": "¶6", "where": "下線部(3) を含む文（コロンが定義を与える）",
+         "en": "What we need is not a verdict on experts but a craft of trust: the discipline of judging "
+               "whom to believe, about which questions, and on what grounds.",
+         "ja": "私たちに必要なのは、専門家への判定ではなく、信頼の技術——誰を信じるか、どの問題について、"
+               "どんな根拠で、を判断する鍛錬——なのだ。",
+         "why": "<b>コロン(:)の後ろが a craft of trust の定義</b>。記述の骨は"
+                "「<b>誰を・何について・どんな根拠で</b>」の3点セットで作る。"},
+        {"para": "¶6", "where": "「領域ごと」の具体例",
+         "en": "A physicist deserves our confidence about particles, not necessarily about politics",
+         "ja": "物理学者は素粒子については私たちの信頼に値するが、必ずしも政治についてではない",
+         "why": "「専門家一般への一括の判定」が成り立たない理由。<b>信頼は人単位ではなく"
+                "〈人×領域〉単位で与える</b>——これが verdict（一括評決）との対比。"},
+        {"para": "¶6", "where": "結論部（技術であることの意味）",
+         "en": "Framed this way, trust ceases to be a lapse of intelligence and becomes one of its most "
+               "demanding exercises.",
+         "ja": "このように問いを立て直せば、信頼は知性の放棄であることをやめ、その最も骨の折れる行使の一つとなる。",
+         "why": "「技術（craft）」の含意＝<b>信頼は知性の放棄ではなく行使</b>。記述の締めに必ず入れる。"},
+        {"para": "¶6", "where": "「判定」が否定される理由（段の入口）",
+         "en": "The real question, therefore, is poorly framed as a choice between trusting and doubting.",
+         "ja": "したがって本当の問いは、「信頼するか、疑うか」という二者択一として立てるのではまずい。",
+         "why": "a verdict on experts ＝「信じるか疑うかを専門家という集団にまとめて下す判決」。"
+                "<b>その問いの立て方自体が誤り</b>だという指摘が、not A の側の中身。"},
+    ]},
+    {"no": "問6", "ans": "③", "items": [
+        {"para": "¶6", "where": "③の根拠（前半）",
+         "en": "What we need is not a verdict on experts but a craft of trust: the discipline of judging "
+               "whom to believe, about which questions, and on what grounds.",
+         "ja": "私たちに必要なのは、専門家への判定ではなく、信頼の技術——誰を信じるか、どの問題について、"
+               "どんな根拠で、を判断する鍛錬——なのだ。",
+         "why": "③「誰を・何について・どんな根拠で信頼するかという技術」と一致。○"},
+        {"para": "¶6", "where": "③の根拠（後半＝「知性の行使」）",
+         "en": "trust ceases to be a lapse of intelligence and becomes one of its most demanding exercises",
+         "ja": "信頼は知性の放棄であることをやめ、その最も骨の折れる行使の一つとなる",
+         "why": "③の末尾「それは知性の行使である」に対応。<b>選択肢の全要素が本文で裏づく</b>のは③だけ。○"},
+        {"para": "¶1・¶3", "where": "①を切る根拠",
+         "en": "this flattering picture of the self-reliant mind, for all its appeal, rests on an illusion",
+         "ja": "この自立した精神という心地よい像は、その魅力にもかかわらず、一つの幻想の上に成り立っている",
+         "why": "①「疑ってかかることこそ知的に誠実な<b>唯一の</b>態度」は第1段の<b>通念</b>そのもので、"
+                "筆者はそれを illusion と呼んで否定した側。×（「唯一」は言い過ぎの印）"},
+        {"para": "¶7", "where": "②を切る根拠",
+         "en": "None of this asks us to abandon doubt; a healthy intellectual culture needs skeptics as a "
+               "body needs an immune system.",
+         "ja": "以上のどれも、疑うことを捨てよと求めるものではない。健全な知的文化が懐疑派を必要とするのは、"
+               "身体が免疫系を必要とするのと同じである。",
+         "why": "②「疑うこと自体を手放し、判断をすべて専門家に委ねるほかない」は<b>この文の正面からの否定</b>。×"},
+        {"para": "¶5", "where": "④を切る根拠",
+         "en": "We can ask whether a speaker stands to profit from being believed",
+         "ja": "私たちは、語り手が信じてもらうことで利益を得る立場にないかを問うことができる",
+         "why": "④「個人が語り手の利害や訂正の履歴をいちいち確かめる必要はまったくない」は、"
+                "筆者が<b>まさに求めていること</b>の否定。×"},
+    ]},
+    {"no": "問7", "ans": "②・⑤・⑥", "items": [
+        {"para": "¶2", "where": "選択肢①", "mark": "×",
+         "en": "Specialists have defended theories that later collapsed",
+         "ja": "専門家たちは、後に崩れ去る理論を擁護してきた",
+         "why": "同段 Whole fields have had to withdraw claims once announced with confidence "
+                "（分野全体が主張を撤回せねばならなかった）もある。①「一度もない」は"
+                "<b>正反対＋全否定の言い過ぎ</b>。×"},
+        {"para": "¶3", "where": "選択肢②", "mark": "○",
+         "en": "she reads documents written by strangers, posted on platforms built by other strangers, "
+               "summarizing measurements she will never witness",
+         "ja": "彼女は、見知らぬ他人が書き、別の見知らぬ他人が作った基盤に載せられ、自分では決して目にする"
+               "ことのない測定を要約した文書を読むのである",
+         "why": "②「見知らぬ他人が作った文書や測定の要約に頼って調査している」と一対一で対応。○"},
+        {"para": "¶5", "where": "選択肢③", "mark": "×",
+         "en": "We can ask whether a speaker stands to profit from being believed",
+         "ja": "私たちは、語り手が信じてもらうことで利益を得る立場にないかを問うことができる",
+         "why": "③「信頼の判断とは無関係だと筆者は述べている」は逆。<b>無関係どころか第一の判断材料</b>。×"},
+        {"para": "¶7", "where": "選択肢④", "mark": "×",
+         "en": "But doubt spread evenly over everything protects nothing; it merely exhausts us.",
+         "ja": "だが、あらゆるものの上に等しくばらまかれた疑いは、何も守らない——ただ私たちを疲れさせるだけだ。",
+         "why": "④「等しく疑い続けることが最もよく守る」は<b>protects nothing の正反対</b>。"
+                "「疑いは狙いを定めて初めて働く」が筆者の立場。×"},
+        {"para": "¶6", "where": "選択肢⑤", "mark": "○",
+         "en": "A physicist deserves our confidence about particles, not necessarily about politics",
+         "ja": "物理学者は素粒子については私たちの信頼に値するが、必ずしも政治についてではない",
+         "why": "⑤「素粒子については信頼に値するとしても、政治についても同様とは限らない」＝"
+                "<b>not necessarily（部分否定）</b>の正確な訳。○"},
+        {"para": "¶7", "where": "選択肢⑥", "mark": "○",
+         "en": "Only when suspicion is aimed, informed by a speaker's interests, record, and peers, "
+               "does it begin to do useful work.",
+         "ja": "疑いが狙いを定められて——語り手の利害、実績、同業者の評価に裏づけられて——初めて、"
+               "それは有用な仕事をし始める。",
+         "why": "同段 None of this asks us to abandon doubt と合わせて、⑥「疑うことをやめよと説くのではなく、"
+                "疑いを有効に働かせるために狙いの定まった判断を説く」と一致。○"},
+    ]},
+]
+
+# ------------------------------------------------------------------
+# 文法的視点からのアプローチ
+#   GRAMMAR_STEPS = 1文を崩す手順 / GRAMMAR = 本文で実際に問われた文法の型
+#   ★ ex の en も PASSAGE_PLAIN 実在の逐語引用 (check_therules.py が照合)
+# ------------------------------------------------------------------
+GRAMMAR_STEPS = [
+    ("STEP 1", "主節の S と V を先に取る",
+     "コンマやダッシュで挟まれた部分（挿入）、関係詞・分詞のカタマリを<b>いったん括弧に入れて外す</b>。"
+     "残った骨が主節。例：Trust <span class='ins'>(, practiced well,)</span> carries its own instruments "
+     "of testing. → S=Trust / V=carries。"),
+    ("STEP 2", "否定語を探し、<b>射程</b>（どこまで否定するか）を決める",
+     "not / never / no / nothing / hardly / none。<b>否定は「直後の語」ではなく「そのカタマリ全体」に"
+     "かかることがある</b>。not A but B なら not の範囲は A の全体。ここを外すと和訳が反対の意味になる。"),
+    ("STEP 3", "等位・対比の軸（not A but B / rather than / A, not B）を見つける",
+     "英語の主張は<b>「Aではなく B」の形</b>で置かれることが多い。<b>B の側が筆者の主張</b>。"
+     "設問の記述解答は、この B をそのまま骨にすると外さない。"),
+    ("STEP 4", "コロン(:)・セミコロン(;)・ダッシュ(—)を「＝」として読む",
+     "コロンとダッシュの後ろは<b>直前の抽象語の言い換え・具体化</b>。"
+     "抽象的な語（a craft of trust など）の意味は、<b>必ず近くに言い換えが置かれている</b>。"),
+    ("STEP 5", "文頭の倒置・譲歩の合図に反応する",
+     "Never / Only + 副詞句が文頭 → 疑問文の語順（強調）。It is true that … / Of course … → 譲歩なので"
+     "<b>直後の逆接で主張が来る</b>と身構える。"),
+]
+
+GRAMMAR = [
+    {"id": "G1", "title": "否定の射程 — It is not that A but that B", "star": "★★★", "use": "問2（和訳）",
+     "point": "「A ということではなく、B ということだ」。<b>not が否定するのは that 節A の内容全体</b>で、"
+              "A の中の一語（noble）ではない。<b>訳し出す順序</b>：①「〜ということではない」→"
+              "②「そうではなく、〜ということだ」と2文に割ると、日本語が壊れない。",
+     "ex": [("It is not that independent verification is a noble goal we sadly fail to reach, but that, "
+             "for creatures whose knowledge is stitched together from the testimony of others, complete "
+             "intellectual self-reliance was never a possibility in the first place.",
+             "独力の検証とは、私たちが残念ながら到達できずにいる崇高な目標だ、ということではない。そうではなく、"
+             "その知識が他人の証言からつなぎ合わされてできている生き物にとって、完全な知的自立というものは、"
+             "そもそも初めから可能ですらなかった、ということなのだ。")],
+     "how": "but that の <b>that は It is not that の that と対</b>。まず but that を探し、"
+            "A と B を切り分けてから中身を訳す。B の中の for creatures … others は<b>挿入の副詞句</b>なので"
+            "先に外し、骨（complete intellectual self-reliance was never a possibility）を取る。",
+     "trap": "×「独力の検証は崇高な目標ではない」——これは not の射程を noble だけに縮めた誤訳。"
+             "筆者は「崇高さ」を否定していない。否定しているのは<b>「努力が足りず届かないだけだ」という捉え方</b>。"},
+    {"id": "G2", "title": "倒置 — 否定・限定の副詞が文頭に出ると疑問文の語順", "star": "★★★", "use": "問4・問7④",
+     "point": "Never / Only / Little / Not until … が文頭に出ると、<b>助動詞（be / have / do）が主語の前</b>に"
+              "出る。意味は「強調」で、<b>否定文・限定文であることは変わらない</b>。読むときは"
+              "<b>語順を元に戻す</b>のが最短。",
+     "ex": [("Never in this long division of labor has reliance on others been a sign of idleness",
+             "この長い分業の歴史の中で、他人に頼ることが怠惰のしるしであったことは一度もない"),
+            ("Only when suspicion is aimed, informed by a speaker's interests, record, and peers, "
+             "does it begin to do useful work.",
+             "疑いが狙いを定められて、語り手の利害・実績・同業者の評価に裏づけられて初めて、"
+             "それは有用な仕事をし始める。")],
+     "how": "① Never … has reliance been ～ → 戻すと <b>reliance has never been ～</b>（他人への依存は"
+            "怠惰だったことなど一度もない）。② Only when SV does it begin ～ → 戻すと"
+            "<b>it begins to do useful work only when SV</b>（〜のときに<b>限って</b>働き始める）。",
+     "trap": "Only when … の文を「疑いはいつでも役に立つ」と読むと問7④に引っかかる。"
+             "<b>only は「それ以外のときは働かない」という限定</b>で、事実上の否定を含む。"},
+    {"id": "G3", "title": "not A but B / rather than — 主張は必ず B 側", "star": "★★★", "use": "問4・問5・問6",
+     "point": "英語の論説は「Aではなく B」の型で主張を置く。<b>設問が「どういうことか」と問うのは"
+              "ほぼ B の中身</b>。A（否定される側）は<b>世間の通念</b>であることが多い。",
+     "ex": [("To trust well, on this view, is not to stop thinking but to think with other people.",
+             "上手に信頼するとは、この見方に立てば、考えるのをやめることではなく、他人とともに考えることなのだ。"),
+            ("What we need is not a verdict on experts but a craft of trust",
+             "私たちに必要なのは、専門家への判定ではなく、信頼の技術である"),
+            ("doubting like a scientist rather than like someone determined in advance to believe nothing",
+             "初めから何も信じまいと決めてかかる者のようにではなく、科学者のように疑うということ")],
+     "how": "A と B は<b>文法的に同じ形</b>で並ぶ（to do ↔ to do、名詞 ↔ 名詞、like ～ ↔ like ～）。"
+            "<b>形が揃うところ</b>を目印に切れ目を見つけると、長くても迷わない。",
+     "trap": "rather than は<b>前が主張</b>（A rather than B ＝ B ではなく A）。not A but B と"
+             "<b>語順が逆</b>なので、機械的に「後ろが主張」と覚えていると第7段末で逆に取る。"},
+    {"id": "G4", "title": "後置修飾のカタマリ — 関係詞の省略・分詞の連続", "star": "★★★", "use": "問2・問7②",
+     "point": "名詞の後ろに<b>いきなり SV</b>が来たら関係代名詞の省略。名詞の後ろに<b>過去分詞・現在分詞</b>が"
+              "来たらそこから修飾のカタマリ。<b>カタマリの終わりを見つけて括弧でくくる</b>のが読解の要。",
+     "ex": [("she reads documents written by strangers, posted on platforms built by other strangers, "
+             "summarizing measurements she will never witness",
+             "彼女は、見知らぬ他人によって書かれ、別の見知らぬ他人が作った基盤に載せられ、"
+             "自分では決して目にすることのない測定を要約している文書を読む"),
+            ("Every step of her inquiry borrows the labor, and the honesty, of people she has never met.",
+             "彼女の調査の一歩一歩が、会ったこともない人々の労働と誠実さとを借りている。")],
+     "how": "documents ＜written …／posted …／summarizing …＞ と<b>3つの分詞句が並列で1つの名詞</b>を"
+            "説明している。並列だと気づけば「誰が書いたか分からない文書を読んでいるだけ」という趣旨が一発で出る。"
+            "people ＜(whom) she has never met＞ も関係詞の省略。",
+     "trap": "posted / summarizing を<b>文の述語動詞と誤認</b>して「彼女は投稿し、要約する」と読むと、"
+             "主語がすり替わって意味が反転する。述語は<b>reads 一つだけ</b>。"},
+    {"id": "G5", "title": "挿入（コンマ・ダッシュに挟まれた部分）を外して骨を見る", "star": "★★", "use": "問1・問3",
+     "point": "コンマやダッシュで挟まれた語句は<b>主語と動詞の間に割り込む</b>ことが多い。"
+              "<b>外しても文が成立する</b>のが挿入の見分け方。",
+     "ex": [("The truly independent thinker, we are told, verifies everything personally and bows to no authority.",
+             "真に独立した思考の持ち主は——と私たちは聞かされるのだが——あらゆることを自分の手で検証し、"
+             "いかなる権威にも屈しない。"),
+            ("Trust, practiced well, carries its own instruments of testing.",
+             "信頼は、正しく実践されるなら、それ自身の検査の道具を備えている。")],
+     "how": "① we are told を外すと The truly independent thinker verifies … と骨が出る。"
+            "しかもこの挿入は<b>「筆者自身の意見ではない」という距離の合図</b>で、問1【A】の逆接につながる。"
+            "② practiced well ＝ if it is practiced well の分詞構文（条件）。"
+            "<b>「正しく実践されれば」という条件つき</b>である点が問3の答案で効く。",
+     "trap": "practiced を過去形の述語と読むと「信頼はよく実践した」となり主語と動詞が二重になる。"
+             "<b>述語は carries</b>。"},
+    {"id": "G6", "title": "コロン(:)・ダッシュ(—)は「＝」— 抽象語の意味はすぐ隣にある", "star": "★★★", "use": "問3・問5",
+     "point": "抽象的な語句が出たら、<b>直後のコロン・ダッシュ・同格</b>を探す。"
+              "<b>記述問題の解答は、この言い換えをそのまま骨にする</b>のが最も安全。",
+     "ex": [("What we need is not a verdict on experts but a craft of trust: the discipline of judging "
+             "whom to believe, about which questions, and on what grounds.",
+             "私たちに必要なのは、専門家への判定ではなく、信頼の技術——誰を信じるか、どの問題について、"
+             "どんな根拠で、を判断する鍛錬——なのだ。"),
+            ("they demand something humbler and more attainable, attention to how a claim has survived "
+             "the scrutiny of others",
+             "それらが求めるのは、もっと謙虚で、もっと手の届くもの——ある主張が他人の吟味をどのように"
+             "生き延びてきたのかへの注意——である")],
+     "how": "a craft of trust という抽象語の中身は<b>コロンの後ろが全て</b>。"
+            "whom to believe / about which questions / on what grounds ＝"
+            "<b>疑問詞＋to不定詞・疑問詞句の3並列</b>で「誰を・何について・どんな根拠で」。"
+            "問5はこの3点を落とさなければ核が立つ。",
+     "trap": "something humbler and more attainable のような <b>-thing＋形容詞は後置</b>。"
+             "「もっと謙虚な何か」と正しく取れないと、後ろの同格（attention to …）と結びつかない。"},
+    {"id": "G7", "title": "譲歩の合図と部分否定 — 「言い過ぎ」を作らない読み", "star": "★★★", "use": "問1・問6・問7",
+     "point": "It is true that … ＝<b>譲歩</b>（後で必ず反転）。not necessarily / not always ＝<b>部分否定</b>"
+              "「必ずしも〜とは限らない」。<b>全否定と部分否定の区別</b>が内容一致の合否を分ける。",
+     "ex": [("It is true that experts are fallible, and that the record of blind deference to them is not a happy one.",
+             "確かに、専門家は誤りうるし、彼らへの盲目的な服従の記録が幸福なものでないことも本当である。"),
+            ("A physicist deserves our confidence about particles, not necessarily about politics",
+             "物理学者は素粒子については信頼に値するが、必ずしも政治についてではない"),
+            ("None of this asks us to abandon doubt", "以上のどれも、疑うことを捨てよと求めるものではない")],
+     "how": "It is true that … を見たら<b>「ここは筆者の最終主張ではない」と印をつけて先へ進む</b>。"
+            "第2段まるごとが譲歩、第3段冒頭の Nonetheless で反転——この設計が問1【B】。"
+            "not necessarily は<b>「政治については信頼できない」と断定していない</b>点が問7⑤の正誤の分かれ目。",
+     "trap": "選択肢の「一度もない」「唯一の」「まったく必要ない」「すべて委ねる」は"
+             "<b>言い過ぎの典型</b>。本文が部分否定・譲歩で書いている箇所を、選択肢が全否定に強めていないか"
+             "を必ず確かめる（問7①③④はすべてこの型）。"},
+    {"id": "G8", "title": "否定語の位置と準否定語 — 目的語や主語に入り込む否定", "star": "★★", "use": "問4・問7④",
+     "point": "英語は<b>否定語を目的語や主語の中に入れる</b>ことができる（no / nothing / none / hardly）。"
+              "日本語は文末で否定するので、<b>訳すときは文末に回す</b>。",
+     "ex": [("bows to no authority", "いかなる権威にも屈しない"),
+            ("But doubt spread evenly over everything protects nothing", "だが、あらゆるものの上に等しくばらまかれた疑いは、何も守らない"),
+            ("None of these checks requires us to repeat the science ourselves",
+             "これらの検査のどれ一つとして、科学を自分で繰り返すことを私たちに求めはしない")],
+     "how": "protects nothing は<b>肯定文の形をした否定文</b>。"
+            "「疑いが（何かを）守る」と読み違えると問7④で逆を選ぶ。"
+            "Hardly.（第5段）は<b>一語の準否定</b>で「まさか、そんなことはない」＝直前の自問への強い否定。",
+     "trap": "doubt spread evenly over everything の spread は<b>過去分詞</b>（spread–spread–spread）で"
+             "doubt を後置修飾。述語は protects。ここを「疑いが広がる」と動詞に取ると主節の動詞が消える。"},
+    {"id": "G9", "title": "what 節と無生物主語 — 抽象名詞句が主語に立つ", "star": "★★", "use": "問4・問6",
+     "point": "<b>関係代名詞 what ＝「〜すること／もの」</b>で名詞のカタマリを作り、そのまま主語になる。"
+              "無生物主語は<b>「〜は」と訳さず、副詞的に訳す</b>と日本語が自然になることが多い。",
+     "ex": [("What looks like a private achievement, then, is in fact a social arrangement.",
+             "個人の達成のように見えるものは、とすると、実のところ社会的な仕組みである。"),
+            ("What we need is not a verdict on experts but a craft of trust",
+             "私たちに必要なのは、専門家への判定ではなく、信頼の技術である")],
+     "how": "What … の切れ目は<b>2つ目の動詞</b>で決まる。① What looks like a private achievement ｜ is …、"
+            "② What we need ｜ is … 。<b>「What節 is …」は定義・言い換えの型</b>なので、"
+            "筆者の主張がここに置かれやすい（実際 ②が第6段の核心＝問6の根拠）。",
+     "trap": "What looks like A is B を「Aのように見えるものはBのように見える」と重ねて訳さない。"
+             "<b>looks like は what 節の中の動詞</b>、主節の動詞は is。"},
+]
