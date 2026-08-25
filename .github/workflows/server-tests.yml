@@ -118,3 +118,13 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_auto_assign_api.py
+
+      # 🔑 子供メール (student_email) を登録したら、子が**自分のアドレスで**ログインできること。
+      #   LINE 連携や親アドレスの送信 cap が子宛の配信を飲み込んで「画面は成功・子には0通」に
+      #   なる silent failure を止める。逆方向 (未確認アドレス・他生徒の親メールと衝突する
+      #   アドレスには送らない) も同じテストで見る — 片方だけ直すと爆撃の踏み台に戻るため。
+      - name: 子供メール ログイン経路 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_child_email_login.py

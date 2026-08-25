@@ -10867,9 +10867,17 @@ def _invalidate_active_otps(student_id: int, keep_code: str = None) -> None:
 
 def _magic_link_24h_stats() -> dict:
     """直近 24 時間の magic-link 送信統計 (CEO ダッシュ用)。
-    sent_ok / send_failed / trial_expired / unknown_email / status_inactive を分類。
-    child_blocked は独立カウンタ (親は成功でも子メールが衝突ブロックされた件数・2026-06-12)。"""
-    out = {"sent_ok": 0, "send_failed": 0, "trial_expired": 0, "unknown_email": 0, "status_inactive": 0, "total": 0, "child_blocked": 0}
+    sent_ok / sent_via_line / send_failed / trial_expired / unknown_email / status_inactive を分類。
+    child_blocked は独立カウンタ (親は成功でも子メールが衝突ブロックされた件数・2026-06-12)。
+
+    🔑 [child-email-delivery 2026-08-25] 「届いたのに失敗と数える」誤報を止める。
+      LINE 配信 (email_sent=False / reason=sent_via_line) と、親が cap 中で子だけに送れた回
+      (student_email_sent=True) は、従来どちらも else に落ちて send_failed に計上されていた。
+      ダッシュは失敗3件で赤く警告するため、LINE 連携が進むほど「毎日ログイン失敗が出ている」
+      という嘘の警告が出続け、本物の不達を隠す。★これは CLAUDE.md が戒める逆向きの事故
+      (配布できたものを未配布と誤報告する) なので、届いた事実に合わせて分類する。"""
+    out = {"sent_ok": 0, "sent_via_line": 0, "child_only": 0, "send_failed": 0,
+           "trial_expired": 0, "unknown_email": 0, "status_inactive": 0, "total": 0, "child_blocked": 0}
     try:
         conn = db()
         c = conn.cursor()
@@ -10894,6 +10902,11 @@ def _magic_link_24h_stats() -> dict:
                     out["child_blocked"] += 1  # 独立カウンタ (下の分類とは別軸)
                 if props.get("email_sent"):
                     out["sent_ok"] += 1
+                elif props.get("line_sent") or reason == "sent_via_line":
+                    out["sent_via_line"] += 1
+                elif props.get("student_email_sent"):
+                    # 親には送れていないが子には届いた (親が cap 中など)。生徒はログインできる。
+                    out["child_only"] += 1
                 elif reason == "trial_expired":
                     out["trial_expired"] += 1
                 elif reason == "unknown_email":
@@ -11219,13 +11232,77 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
         _student_email = (row["student_email"] if "student_email" in _row_keys else "") or ""
         _student_email = _student_email.strip()
         _has_line = bool(row["line_user_id"]) if "line_user_id" in _row_keys else False
+
+        # 🔑 [child-email-delivery 2026-08-25] 子メール宛の配信を「親側の都合」から切り離す。
+        #   この機能の約束は「マジックリンク再発行は親 (email) + 子 (student_email) の両方に届く」
+        #   (admin_set_student_email の成功文言もそう言う) だが、従来は次の 2 経路で子に一通も
+        #   届かないまま画面には成功文言が出ていた (silent failure):
+        #     (a) LINE 紐付けがあると _try_line_login_push 成功でメール送信ブロックごと skip。
+        #         LINE の宛先は生徒行に 1 本しか持てず (_line_user_taken_by_other が 1:1 を強制)、
+        #         連携は「ログイン中の本人が mypage で発行」する 1 経路なので、子メール未登録の
+        #         家庭で張られている LINE は保護者のものである可能性が高い。子が自分のアドレスで
+        #         ログイン要求しても保護者の LINE にしか飛ばない = 「子供もログインできる」を満たさない。
+        #     (b) 親アドレスが受信者 cap (10通/時) に到達すると、子アドレスのカウンタが 0 でも
+        #         送信ブロックごと中断していた。cap は受信者単位のキーなので巻き添えの理由が無い。
+        #   → 子宛の可否は必ず子自身の条件 (verified / 衝突 / 子アドレス自身の cap) だけで決める。
+        #   ★親宛の抑制 (LINE 成功時・親 cap 時) は従来どおり維持する。あれは重複回避と爆撃対策で、
+        #     どちらも「親の受信箱」の話。子の受信箱には関係が無い。
+        _child_target = ""
+        _child_unverified = False
+        _child_blocked = False
+        if _student_email and _student_email.lower() != _parent_email.lower():
+            # 🛡️ 2026-06-12 security review: 未確認 (student_email_verified=0) の子メールには
+            # 再発行を送らない。自己登録で第三者アドレスを student_email に設定し magic-link
+            # 連打でその相手にメールを送り続ける嫌がらせ (受信者 cap 10通/時 を残存させた
+            # 構造的限界) をゼロ化する。確認は (a) 申込時 welcome の magicv リンククリック
+            # (b) 塾長の admin 設定。既存行は migration 時に grandfather 済み。
+            # 親宛は通常通り送るため正規家庭は「親に届いたコードを使う」で常にログイン可能。
+            _sev = bool(row["student_email_verified"]) if "student_email_verified" in _row_keys else True
+            if not _sev:
+                _child_unverified = True
+                log.info(f"[MagicLink] 未確認 student_email への送信をスキップ student_id={row['id']}")
+            else:
+                # 🛡️ 2026-06-12 security MEDIUM fix: 子メールが「他生徒の親 email」と一致する場合は
+                # 送信スキップ。signup/admin 側で設定時に拒否済みだが、過去データに残る衝突への
+                # 最終防壁 (他人の保護者宛にこのアカウントの OTP が届く = 爆撃 + 誤ログイン誘導)。
+                # 他生徒の「子メール」との衝突 (子子衝突) はここでは敢えて遮断しない —
+                # 過去データの正規ケース (両親それぞれのアカウントで子メール共有) を壊さないため。
+                # 新規の子子衝突は signup/admin 両方の設定時チェックで既に作れない。
+                _conn_g = db(); _c_g = _conn_g.cursor()
+                _c_g.execute("SELECT 1 FROM students WHERE LOWER(email) = ? LIMIT 1", (_student_email.lower(),))
+                _child_blocked = bool(_c_g.fetchone())
+                _conn_g.close()
+                if _child_blocked:
+                    log.warning(f"[MagicLink] 子メール送信 BLOCKED (他生徒の親emailと衝突) student_id={row['id']}")
+                else:
+                    _child_target = _student_email
+        # 子アドレスの cap は子自身のカウンタで判定する (_recipient_send_cap_exceeded は
+        # 消費しない peek 版。実際の消費は _send_magic_link_with_retry 内側の cap が行う)。
+        _child_capped = bool(_child_target) and _recipient_send_cap_exceeded(_child_target)
+        _child_sendable = bool(_child_target) and not _child_capped
+
+        def _send_login_to_child(_url: str, _code: str) -> dict:
+            """子アドレスへ同じ magic link / OTP を送る。呼ぶ前に _child_sendable を確認すること。"""
+            _r = _send_magic_link_with_retry(
+                _child_target, row["name"] or "", _url, otp_code=_code, is_welcome=False,
+            ) or {}
+            if not _r.get("sent"):
+                log.warning(
+                    f"[MagicLink] 子メール送信 FAILED student_id={row['id']} student_email={_child_target}: "
+                    f"{_r.get('error')}"
+                )
+            return _r
+
+        send_result: dict = {}
+        student_send_result: dict = {}
         # 🛡️ 2026-06-12 review HIGH 指摘 (爆撃対策 cap の副作用防止): 親メール宛の受信者 cap が
-        # 上限到達済みなら、旧 OTP を無効化する前にここで中断する。
-        # 従来順序 (無効化 → 送信時に cap 発動) だと、メール遅延中の再送連打が「既に届いている
-        # 旧コードまで殺すのに新コードは誰にも届かない」状態を作り、正規ユーザーが最大 1 時間
-        # ログイン不能になる。手前で止めれば届いている旧コード/リンクでログイン継続できる。
+        # 上限到達済みなら新しいトークン/OTP を発行せずに中断する。従来順序 (無効化 → 送信時に
+        # cap 発動) だと、メール遅延中の再送連打が「既に届いている旧コードまで殺すのに新コードは
+        # 誰にも届かない」状態を作り、正規ユーザーが最大 1 時間ログイン不能になった。
+        # ★ただし中断してよいのは「配信先が本当に 1 つも無い」時だけ (2026-08-25)。
+        #   子アドレスが生きているのに黙って中断すると、子は永久に待つことになる。
         _parent_capped = _recipient_send_cap_exceeded(_parent_email)
-        if _parent_capped and not _has_line:
+        if _parent_capped and not _child_sendable and not _has_line:
             log.warning(f"[MagicLink] Recipient cap exceeded — resend skipped (旧OTP温存) student_id={row['id']}")
             send_event_props.update({
                 "channel": "email",
@@ -11233,41 +11310,15 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
                 "email_sent": False,
                 "reason": "recipient_capped",
                 "error": "recipient_rate_limited",
+                "student_email_sent": None,
+                "student_email_blocked": _child_blocked or None,
+                "student_email_skipped": ("unverified" if _child_unverified
+                                          else "recipient_capped" if _child_capped else None),
             })
-        elif _parent_capped and _has_line:
-            # cap 到達 + LINE 紐付けあり (review 指摘の残存ケース): LINE 配信は cap と無関係
-            # なので新コードを発行して LINE のみ試行する。ただし旧 OTP は無効化しない —
-            # cap 到達はメール再送の連打 = LINE 不達が続いている状況を示唆するため、LINE まで
-            # 失敗した時に「旧コードも殺して新コードも届かない」全滅を防ぐ。
-            # 複数 OTP の共存は安全: verify-code は active な全コードと照合 (newest 限定でない) +
-            # _create_otp が active 3 件超を自動無効化する。
-            token = _create_magic_link_token(row["id"])
-            magic_url = f"{BASE_URL}/auth.html?t={token}"
-            otp_code = _create_otp(row["id"])
-            line_sent = _try_line_login_push(row, magic_url, otp_code)
-            if line_sent:
-                send_event_props.update({
-                    "channel": "line",
-                    "line_sent": True,
-                    "email_sent": False,
-                    "reason": "sent_via_line",
-                    "error": None,
-                })
-            else:
-                log.warning(f"[MagicLink] Recipient cap exceeded + LINE failed — skipped (旧OTP温存) student_id={row['id']}")
-                send_event_props.update({
-                    "channel": "email",
-                    "line_sent": False,
-                    "email_sent": False,
-                    "reason": "recipient_capped",
-                    "error": "recipient_rate_limited",
-                })
         else:
-            # 🛡️ 2026-06-13 [magic-otp-preserve] 旧 OTP 無効化を「送信成功後」に移動。
-            #   従来は発行前に旧コードを全無効化していたため、メール遅延中に焦って再送した塾長/
-            #   生徒が「既に届いている旧コードまで殺し、新コードは Resend 障害等で届かない」全滅
-            #   状態を作っていた (室坂さん『何度送ってもログインできない』の悪化要因)。
-            #   新コードを先に発行し、配信が成功した時だけ keep_code= 新コードで旧コードを掃除する。
+            # 🛡️ 2026-06-13 [magic-otp-preserve] 旧 OTP 無効化を「送信成功後」に移動 → その後
+            #   [otp-keep-old-codes] で明示的な無効化そのものを全経路から撤廃した。整理は
+            #   _create_otp の上限 GC (直近5件) のみ。手元のどのコードでもログインできる。
             # magic link には 1時間のみ有効な短命トークンを使う (4番手 監査 2026-04-30):
             # 30日 session token を URL に直入れすると referer / browser history 経由で漏洩した時の
             # 影響範囲が大きすぎる。/api/auth/verify が新規 session token に交換する。
@@ -11275,80 +11326,42 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
             magic_url = f"{BASE_URL}/auth.html?t={token}"
             otp_code = _create_otp(row["id"])
             # 🔗 2026-06-04 LINE 優先配信 (メール不達の解消): line_user_id 紐付け済みなら
-            #   ログインコード/リンクを LINE で送る。成功すればメール送信をスキップ (不達ゼロ + 重複回避)。
-            #   未紐付け / LINE 失敗時のみ従来のメール (親 + 子) にフォールバック。
+            #   ログインコード/リンクを LINE で送る。成功すれば**親宛の**メール送信をスキップ
+            #   (不達ゼロ + 重複回避)。未紐付け / LINE 失敗時のみ従来のメールにフォールバック。
             line_sent = _try_line_login_push(row, magic_url, otp_code)
-            if line_sent:
-                # [otp-keep-old-codes] 旧コードは無効化しない (直近メールが届く前に古いメールの
-                #   コードを入力しても通るように)。整理は _create_otp の上限 GC のみに委ねる。
-                send_event_props.update({
-                    "channel": "line",
-                    "line_sent": True,
-                    "email_sent": False,
-                    "reason": "sent_via_line",
-                    "error": None,
-                })
-            else:
+            # ★子宛は LINE の成否と無関係に必ず別送する (2026-08-25)。LINE は 1 本しか無く、
+            #   それが子の LINE である保証が無いため、飲み込むと子のログイン手段が消える。
+            if _child_sendable:
+                student_send_result = _send_login_to_child(magic_url, otp_code)
+            # 親宛は「LINE で送れた」か「親が cap 中」なら送らない (どちらも親の受信箱の話)。
+            if not line_sent and not _parent_capped:
                 send_result = _send_magic_link_with_retry(
                     _parent_email, row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
                 ) or {}
-                # 子メールが設定済 + 親メールと異なる → 子にも同じリンク/コードを送信
-                student_send_result = {}
-                _child_blocked = False
-                _child_unverified = False
-                if _student_email and _student_email.lower() != _parent_email.lower():
-                    # 🛡️ 2026-06-12 security review: 未確認 (student_email_verified=0) の子メールには
-                    # 再発行を送らない。自己登録で第三者アドレスを student_email に設定し magic-link
-                    # 連打でその相手にメールを送り続ける嫌がらせ (受信者 cap 10通/時 を残存させた
-                    # 構造的限界) をゼロ化する。確認は (a) 申込時 welcome の magicv リンククリック
-                    # (b) 塾長の admin 設定。既存行は migration 時に grandfather 済み。
-                    # 親宛は通常通り送るため正規家庭は「親に届いたコードを使う」で常にログイン可能。
-                    _sev = bool(row["student_email_verified"]) if "student_email_verified" in _row_keys else True
-                    if not _sev:
-                        _child_unverified = True
-                        log.info(f"[MagicLink] 未確認 student_email への送信をスキップ student_id={row['id']}")
-                    else:
-                        # 🛡️ 2026-06-12 security MEDIUM fix: 子メールが「他生徒の親 email」と一致する場合は
-                        # 送信スキップ。signup/admin 側で設定時に拒否済みだが、過去データに残る衝突への
-                        # 最終防壁 (他人の保護者宛にこのアカウントの OTP が届く = 爆撃 + 誤ログイン誘導)。
-                        # 他生徒の「子メール」との衝突 (子子衝突) はここでは敢えて遮断しない —
-                        # 過去データの正規ケース (両親それぞれのアカウントで子メール共有) を壊さないため。
-                        # 新規の子子衝突は signup/admin 両方の設定時チェックで既に作れない。
-                        _conn_g = db(); _c_g = _conn_g.cursor()
-                        _c_g.execute("SELECT 1 FROM students WHERE LOWER(email) = ? LIMIT 1", (_student_email.lower(),))
-                        _child_blocked = bool(_c_g.fetchone())
-                        _conn_g.close()
-                        if _child_blocked:
-                            log.warning(f"[MagicLink] 子メール送信 BLOCKED (他生徒の親emailと衝突) student_id={row['id']}")
-                        else:
-                            student_send_result = _send_magic_link_with_retry(
-                                _student_email, row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
-                            ) or {}
-                # [otp-keep-old-codes] 旧コードは無効化しない (再送で増えた複数コードのどれでも
-                #   ログインできるように)。整理は _create_otp の上限 GC (直近5件) のみに委ねる。
-                send_event_props.update({
-                    "channel": "email",
-                    "line_sent": False,
-                    "email_sent": bool(send_result.get("sent")),
-                    "error": (send_result.get("error") or "")[:200] if not send_result.get("sent") else None,
-                    "permanent": bool(send_result.get("permanent")),
-                    "retried": bool(send_result.get("retried")),
-                    "synthetic": bool(send_result.get("synthetic")),
-                    "reason": "sent" if send_result.get("sent") else "send_failed",
-                    "student_email_sent": bool(student_send_result.get("sent")) if _student_email else None,
-                    "student_email_blocked": _child_blocked or None,
-                    "student_email_skipped": "unverified" if _child_unverified else None,
-                })
                 if not send_result.get("sent"):
                     log.error(
                         f"[MagicLink] Send FAILED for student_id={row['id']} email={_parent_email}: "
                         f"{send_result.get('error')} (permanent={send_result.get('permanent')}, retried={send_result.get('retried')})"
                     )
-                if _student_email and not _child_blocked and not _child_unverified and not student_send_result.get("sent"):
-                    log.warning(
-                        f"[MagicLink] 子メール送信 FAILED student_id={row['id']} student_email={_student_email}: "
-                        f"{student_send_result.get('error')}"
-                    )
+            elif _parent_capped and not line_sent:
+                log.warning(f"[MagicLink] 親メールは cap 到達のため送信スキップ (子へは送信済み) student_id={row['id']}")
+            send_event_props.update({
+                "channel": "line" if line_sent else "email",
+                "line_sent": bool(line_sent),
+                "email_sent": bool(send_result.get("sent")),
+                "error": (send_result.get("error") or "")[:200] if (send_result and not send_result.get("sent")) else None,
+                "permanent": bool(send_result.get("permanent")),
+                "retried": bool(send_result.get("retried")),
+                "synthetic": bool(send_result.get("synthetic")),
+                "reason": ("sent_via_line" if line_sent
+                           else "sent" if send_result.get("sent")
+                           else "parent_capped_child_sent" if (_parent_capped and student_send_result.get("sent"))
+                           else "send_failed"),
+                "student_email_sent": bool(student_send_result.get("sent")) if _child_target else None,
+                "student_email_blocked": _child_blocked or None,
+                "student_email_skipped": ("unverified" if _child_unverified
+                                          else "recipient_capped" if _child_capped else None),
+            })
     elif is_trial_expired:
         log.info(f"Magic link requested but trial expired: {email_lower}")
         send_event_props.update({"email_sent": False, "reason": "trial_expired", "error": None})
@@ -11377,7 +11390,10 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
     return {
         "ok": True,
         "message": "該当するアカウントがあればメールをお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
-        "child_email_hint": "お子さま用のメールアドレスでログインする場合は、登録時にお送りしたメール内の「ログインを有効化」リンクを一度タップしてからご利用ください。タップ前は保護者さまのメールアドレスにコードが届きます。",
+        # ★[child-email-delivery 2026-08-25] LINE 連携の有無は応答に出せない (出すと「このアドレスは
+        #   LINE 連携済のアカウントだ」と分かる列挙オラクルになる)。全員に同じ汎用ヒントとして
+        #   「LINE 連携中はメールではなく LINE に届く」を添える = 宛先の状態で応答が変化しない。
+        "child_email_hint": "お子さま用のメールアドレスでログインする場合は、登録時にお送りしたメール内の「ログインを有効化」リンクを一度タップしてからご利用ください（塾から直接ご登録した場合はそのままお使いいただけます）。LINE連携をされている方は、コードがメールではなくLINEに届きます。",
     }
 
 
@@ -44597,17 +44613,40 @@ def admin_set_student_email(student_id: int, payload: StudentEmailSetRequest,
     # 簡易 email validation (空はクリア扱いで許可)
     if new_email and ("@" not in new_email or "." not in new_email.split("@")[-1] or len(new_email) > 254):
         raise HTTPException(status_code=400, detail="有効なメールアドレスを入力してください")
+    # 🛡️ [child-email-delivery 2026-08-25] ログイン側と同じ validator で弾く。
+    #   /api/auth/magic-link (MagicLinkRequest) と /api/auth/verify-code (VerifyCodeRequest) は
+    #   pydantic EmailStr で検証するため、上の簡易チェックしか通っていない値 (@ の直前がピリオド・
+    #   ピリオド 2 連続・先頭ピリオド等。旧ドコモ/au の慣行アドレスに実在) を保存すると、
+    #   CEO 画面は「✅ 登録しました (確認済み扱い)」と成功を出すのに、子がそのアドレスで
+    #   ログインしようとした瞬間に 422 になり、口頭で OTP を渡す迂回まで塞がる。
+    #   正規化値 (punycode/NFD → 表示形) で保存するのも同じ理由 — 照合側が正規化後の値で引くため。
+    if new_email:
+        from pydantic import TypeAdapter as _TypeAdapter
+        try:
+            new_email = _TypeAdapter(EmailStr).validate_python(new_email)
+        except Exception:
+            raise HTTPException(
+                status_code=400,
+                detail=("このアドレスはメール規格 (RFC) に沿っていないため、ログインに使えません "
+                        "(「@」の直前がピリオド・ピリオドの2連続・先頭がピリオド 等)。"
+                        "別のアドレス (Gmail / iCloud など) をご登録ください。"),
+            )
     new_email_norm = new_email.lower() or None
 
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT id, email, student_email FROM students WHERE id = ?", (student_id,))
+        c.execute("SELECT id, email, student_email, line_user_id FROM students WHERE id = ?", (student_id,))
         row = c.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
         old_email = (row["student_email"] if "student_email" in row.keys() else None)
         parent_email = (row["email"] or "").strip().lower()
+        # 🔗 [child-email-delivery 2026-08-25] LINE 連携済みかどうかを成功文言に反映する。
+        #   request_magic_link は LINE 紐付けがあるとログインコードを LINE へ push し、**親宛の**
+        #   メールを送らない。子宛は別送するよう直したが、家庭から見た「どこに届くか」が変わる
+        #   ため、ここで断定せずに事実を出す (従来は無条件に「親+子の両方に届きます」と言っていた)。
+        _has_line = bool(row["line_user_id"]) if "line_user_id" in row.keys() else False
         # 親 email と同一の子メールは無意味 (両方送信時に重複) なので警告だけ・保存は許可
         same_as_parent = bool(new_email_norm and new_email_norm == parent_email)
         # 🛡️ 2026-06-12 review 指摘: 他生徒とのアドレス重複を保存前に拒否する。重複したまま
@@ -44653,10 +44692,17 @@ def admin_set_student_email(student_id: int, payload: StudentEmailSetRequest,
             "student_id": student_id,
             "student_email": new_email_norm,
             "same_as_parent_warning": same_as_parent,
+            "has_line": _has_line,
             "message": (
                 "子メールをクリアしました" if not new_email_norm
                 else ("⚠️ 親メールと同じです (両方送信時に重複)" if same_as_parent
-                      else "子メールを登録しました (確認済み扱い)。今後のマジックリンク再発行は親+子の両方に届きます。")
+                      else (
+                          "子メールを登録しました (確認済み扱い)。今後のログインコードは子のアドレスに届きます。"
+                          + ("この生徒は LINE 連携済みのため、保護者側はメールではなく LINE に届きます。"
+                             if _has_line else "保護者のアドレスにも従来どおり届きます。")
+                          + " ※週次レポートの生徒向けコピーは、この設定以降は子のアドレスが主宛先になります"
+                            "(保護者にも残すには生徒本人のマイページで「保護者メール」を設定してください)。"
+                      ))
             ),
         }
     finally:

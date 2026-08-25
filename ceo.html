@@ -6703,7 +6703,11 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             html += `<div style="margin-top:0.6rem;padding:0.5rem;background:${failHot ? 'rgba(239,68,68,0.12)' : 'rgba(99,102,241,0.10)'};border:1px solid ${failHot ? 'rgba(239,68,68,0.35)' : 'rgba(99,102,241,0.25)'};border-radius:6px;">`;
             html += `<div style="font-weight:700;color:${failHot ? '#fca5a5' : '#a5b4fc'};">🔐 ログインコード送信 (直近24h): 合計 ${m.total}件</div>`;
             html += `<div style="padding-left:0.5rem;font-size:0.74rem;line-height:1.7;">`;
-            html += `<span style="color:#34d399;">✅ 成功: ${m.sent_ok || 0}</span> / `;
+            html += `<span style="color:#34d399;">✅ メール成功: ${m.sent_ok || 0}</span> / `;
+            // 🔑 [child-email-delivery 2026-08-25] LINE 配信と「子だけに届いた回」を失敗と分けて出す。
+            //   どちらも生徒はログインできている。混ぜると「失敗3件」の赤警告が毎日出て本物を隠す。
+            html += `<span style="color:#06c755;">📲 LINE: ${m.sent_via_line || 0}</span> / `;
+            html += `<span style="color:#86efac;">👦 子のみ: ${m.child_only || 0}</span> / `;
             html += `<span style="color:${failHot ? '#fca5a5' : '#fbbf24'};">❌ 失敗: ${m.send_failed || 0}</span> / `;
             html += `<span style="color:#a3a3a3;">体験切れ: ${m.trial_expired || 0}</span> / `;
             html += `<span style="color:#a3a3a3;">未登録: ${m.unknown_email || 0}</span>`;
@@ -8868,6 +8872,13 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         row('お名前',       `<strong style="font-size:1.05rem;color:#fff;">${esc(st.name || '(未登録)')}</strong>`),
         row('保護者メール', emailHtml),
         row('子供メール',   studentEmailDisplay + editStudentEmailBtn),
+        // 🔗 [child-email-delivery 2026-08-25] LINE 連携の有無をここに出す。連携済みだと
+        //   ログインコードは「メールではなく LINE」に届く (server/main.py の request_magic_link が
+        //   LINE 優先配信)。この行が無いと、子供メールを設定しても「届かない」と言われたときに
+        //   塾長が原因を画面から切り分けられなかった (has_line は /api/admin/stats が既に返している)。
+        row('LINE連携',     st.has_line
+              ? `<span style="color:#06c755;">📲 連携済</span> <span style="color:#71717a;font-size:0.78rem;">(保護者側のログインコードはメールではなく LINE に届きます)</span>`
+              : `<span style="color:#71717a;">未連携</span> <span style="color:#71717a;font-size:0.78rem;">(ログインコードはメールで届きます)</span>`),
         row('学年',         esc(st.grade || '未登録') + editGradeBtn),
         row('志望校・目標', esc(st.goal || '未登録') + editGoalBtn),
         row('選択プラン',   planLabel),
@@ -8967,10 +8978,15 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
 
           // 🔑 2026-05-31: student_email は別 endpoint (admin) + email validation + 空欄でクリア許可
           if (field === 'student_email') {
-            const newVal = prompt(`子供のメールアドレスを入力 (現在: ${current || '未登録'})\n空欄で登録解除。設定すると今後のマジックリンクが親+子の両方に届きます。`, current);
+            const newVal = prompt(`子供のメールアドレスを入力 (現在: ${current || '未登録'})\n空欄で登録解除。設定すると今後のログインコードが子のアドレスにも届きます。\n※ LINE連携済みの生徒は、保護者側はメールではなくLINEに届きます。`, current);
             if (newVal === null) return;
             const trimmed = String(newVal).trim();
-            if (trimmed === current) return;
+            // 🔑 [child-email-delivery 2026-08-25] 同値でも API を呼ぶ。「⚠️未確認」バッジの
+            //   ツールチップが案内する「同じアドレスを設定し直すと確認済みにできます」は、
+            //   ここで早期 return していたため一度も動いていなかった (prompt の既定値が現在値
+            //   なので、案内どおり OK を押すと必ず同値になる)。サーバ側は同値でも verified=1 を
+            //   立て直すので、そのまま POST すれば案内どおりの結果になる。
+            if (!trimmed && !current) return;
             if (trimmed && (!trimmed.includes('@') || !trimmed.split('@').pop().includes('.') || trimmed.length > 254)) {
               alert('有効なメールアドレスを入力してください'); return;
             }
