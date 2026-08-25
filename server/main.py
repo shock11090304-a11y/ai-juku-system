@@ -31,6 +31,7 @@ import asyncio
 import time
 import urllib.request
 import urllib.error
+import urllib.parse   # ★明示 import。urllib.request 経由で偶然使えるのに頼ると、上流の変更で静かに落ちる
 import base64
 import io
 import zipfile
@@ -47751,8 +47752,28 @@ def admin_youtube_playlist_save(payload: dict, authorization: Optional[str] = He
     pid = (payload.get("id") or "").strip()
     name = (payload.get("name") or "").strip()[:200]
     grp = (payload.get("group") or "").strip()[:200] or None
+    # 🔗 [playlist-add 2026-08-25] 再生リストの **URL をそのまま貼れる**ようにする。
+    #   塾長が手にしているのは YouTube の共有 URL であって ID ではない。ID だけを受けると
+    #   「?list= の後ろだけを抜く」作業を人間にさせることになり、共有 URL に必ず付く
+    #   `&si=…` (追跡パラメータ) まで貼って「形式が不正です」で詰まる。
+    #   ★抜き出しはここ 1 箇所だけにする。ブラウザ側にも書くと、片方だけ直されたときに
+    #     画面と DB で違う ID を掴む (どちらが正か分からない壊れ方になる)。
+    if "/" in pid or "?" in pid or "=" in pid:
+        try:
+            _q = urllib.parse.urlparse(pid)
+            _list = urllib.parse.parse_qs(_q.query or "").get("list") or []
+            if _list:
+                pid = (_list[0] or "").strip()
+            elif "/playlist/" in (_q.path or ""):
+                pid = (_q.path or "").rstrip("/").rsplit("/", 1)[-1].strip()
+        except Exception:
+            pass   # 下の形式チェックが弾く
     if not pid or not re.fullmatch(r"[A-Za-z0-9_-]{2,64}", pid):
-        raise HTTPException(status_code=400, detail="再生リストIDの形式が不正です")
+        raise HTTPException(
+            status_code=400,
+            detail="再生リストIDを読み取れません。YouTube の再生リスト URL "
+                   "(https://www.youtube.com/playlist?list=… ) をそのまま貼るか、"
+                   "list= の後ろの ID を入れてください")
     conn = db()
     try:
         c = conn.cursor()
@@ -47775,7 +47796,12 @@ def admin_youtube_playlist_save(payload: dict, authorization: Optional[str] = He
     finally:
         conn.close()
     log.info(f"[YTPlaylist] admin saved name (created={created})")
-    return {"ok": True, "created": created, "name": name}
+    # ★保存できた「だけ」を成功として返さない。この画面の目的は自動割り当てに繋ぐことなので、
+    #   名前が曜日+限として読めたか・どの授業に繋がるかまで返して画面に出す。
+    #   読めない名前は保存自体は成功だが**自動割り当ての対象外**で、黙って返すと
+    #   「名前を付けたのに配布漏れ」を緑のまま見逃す (CLAUDE.md の再発防止項目)。
+    return {"ok": True, "created": created, "name": name,
+            "playlist_id": pid, **_playlist_name_binding(name)}
 
 
 # ==========================================================================
@@ -47789,6 +47815,70 @@ def admin_youtube_playlist_save(payload: dict, authorization: Optional[str] = He
 _AUTO_ASSIGN_LOCK = threading.Lock()   # ★同時実行の禁止。class_recordings に UNIQUE 制約が
 #     無いので、2つのタブから同時に走らせると同じ動画が2件入り、取り返しがつかない。
 #     (単一プロセス前提。ターミナル実行とは排他できない — 同時に回さないこと)
+
+
+def _load_class_recording_assign():
+    """判定の正典 server/class_recording_assign.py を読む。読めなければ 500 を投げる。
+
+    ★関数内 import。起動時に読むと、このファイルが欠けただけでサーバ全体が立ち上がらなく
+      なる (過去の本番凍結と同じ壊れ方)。壊すのは呼んだ API だけにする。
+    ★呼ぶ側が 2 つ (割り当てボタン / 再生リスト名の保存) になったので手順をここに一本化する。
+      sys.path の細工を書き写すと、片方だけ直されて「手元では動くが本番だけ 500」になる。
+    """
+    try:
+        try:
+            import class_recording_assign
+        except ImportError:
+            # ★作業ディレクトリが server/ でない起動の仕方でも読めるようにする。
+            #   sys.path を cwd 任せにすると「手元では動くが本番だけ 500」になる。
+            import sys   # ★main.py は sys を module-global で import していない
+            if str(ROOT) not in sys.path:
+                sys.path.insert(0, str(ROOT))
+            import class_recording_assign
+    except Exception as e:
+        raise HTTPException(status_code=500,
+                            detail=f"割り当てモジュールを読み込めません ({type(e).__name__})。開発担当に連絡してください")
+    return class_recording_assign
+
+
+def _playlist_name_binding(name: str) -> dict:
+    """再生リスト名 → 「どの授業に繋がるか」。保存 API が画面に返して塾長に見せる。
+
+    ★判定は必ず class_recording_assign.slot_of() に委ねる (正典)。ここで曜日+限の
+      正規表現を書き写すと、割り当て本体と保存画面の判定がずれ、「画面は繋がると言うのに
+      実際は対象外」という、この仕組みが最も避けたい嘘になる。
+    ★読めない名前は失敗ではない (授業用でない再生リストが普通にある)。ただし
+      **自動割り当ての対象外**であることは必ず伝える。黙って対象外にすると、新学期に
+      名前を付け直したつもりの再生リストが丸ごと無視され、配布漏れなのに緑になる。
+    """
+    out = {"slot": None, "target_slot": None, "session_title": None, "session_count": None}
+    name = (name or "").strip()
+    if not name:
+        return out
+    try:
+        cra = _load_class_recording_assign()
+        parsed = cra.slot_of(name)
+    except Exception:
+        return out
+    if not parsed:
+        return out
+    _day_index, raw_slot, slot = parsed
+    out["slot"], out["target_slot"] = raw_slot, slot
+    # 公開中の授業と突き合わせる (割り当て本体 build_plan と同じ条件・同じ突合)
+    try:
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT id, title FROM class_sessions WHERE is_published = 1 ORDER BY id")
+            matches = [r["title"] for r in c.fetchall() if (r["title"] or "").startswith(slot)]
+        finally:
+            conn.close()
+        out["session_count"] = len(matches)
+        if len(matches) == 1:
+            out["session_title"] = matches[0]
+    except Exception:
+        pass
+    return out
 
 
 def _auto_assign_prefetch(pids, http_get, timeout=15, workers=6):
@@ -47820,21 +47910,7 @@ def admin_class_recordings_auto_assign(payload: dict, request: Request,
     """
     _check_rate_limit_ip(request, bucket="class_autoassign", limit=6, window=60)
     _verify_admin_required(authorization)
-    try:
-        # ★関数内 import。起動時に読むと、このファイルが欠けただけでサーバ全体が
-        #   立ち上がらなくなる (過去の本番凍結と同じ壊れ方)。壊すのはこの API だけにする。
-        try:
-            import class_recording_assign
-        except ImportError:
-            # ★作業ディレクトリが server/ でない起動の仕方でも読めるようにする。
-            #   sys.path を cwd 任せにすると「手元では動くが本番だけ 500」になる。
-            import sys   # ★main.py は sys を module-global で import していない
-            if str(ROOT) not in sys.path:
-                sys.path.insert(0, str(ROOT))
-            import class_recording_assign
-    except Exception as e:
-        raise HTTPException(status_code=500,
-                            detail=f"割り当てモジュールを読み込めません ({type(e).__name__})。開発担当に連絡してください")
+    class_recording_assign = _load_class_recording_assign()
     apply_mode = bool(payload.get("apply"))
     allow_partial = bool(payload.get("allow_partial"))
 

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <script src="admin-only.js"></script>
-<script src="cache-purge.js?v=20260821-yt-assign"></script>
+<script src="cache-purge.js?v=20260825-yt-add"></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>📺 YouTube 再生リスト | AIコーチング（CEO専用）</title>
@@ -90,6 +90,26 @@
     <span class="yt-save" id="ytSave">✓ 保存しました</span>
   </div>
 
+  <!-- ➕ 再生リストを追加 (2026-08-25)。新学期などで作った再生リストは DB に行が無いため
+       一覧に出ず、名前を付ける場所が無かった (保存 API は新規登録に対応していたのに
+       押す場所が無い状態だった)。URL を貼れば追加でき、既にある ID なら名前の更新になる。 -->
+  <div class="yt-assign" style="border-color:rgba(34,197,94,0.35);background:rgba(34,197,94,0.06);">
+    <div class="yt-assign-head" style="color:#86efac;">➕ 再生リストを追加する</div>
+    <p class="yt-assign-sub">
+      YouTube の再生リスト URL をそのまま貼ってください（<code>&amp;si=…</code> が付いていても構いません）。
+      <strong>名前の「曜日＋限」だけが授業との対応を決めます</strong>ので、必ず入れてください（例:「8月以降日曜日1時間目」）。<br>
+      すでに一覧にある再生リストの URL を貼った場合は、<strong>新しく増やさずその行の名前を付け直します</strong>。
+    </p>
+    <div class="yt-toolbar" style="margin-bottom:0;flex-wrap:wrap;">
+      <input type="text" id="ytAddUrl" class="yt-name-input" style="flex:2 1 320px;width:auto;"
+             placeholder="https://www.youtube.com/playlist?list=… （URL でも ID でも可）">
+      <input type="text" id="ytAddName" class="yt-name-input" style="flex:1 1 240px;width:auto;"
+             placeholder="例: 8月以降日曜日1時間目（曜日＋限を必ず入れる）">
+      <button type="button" class="yt-btn yt-btn-primary" id="ytAddBtn">➕ 追加する</button>
+    </div>
+    <div class="yt-assign-out" id="ytAddOut" hidden></div>
+  </div>
+
   <!-- 🎬 授業録画の自動割り当て (2026-08-21)。判定は server/class_recording_assign.py が正典で、
        塾長のターミナル (scripts/class_recordings/assign_from_playlists.py) と同じ実装を呼ぶ。 -->
   <div class="yt-assign">
@@ -154,13 +174,17 @@
   var tbody = document.getElementById('ytBody');
   var saveIndicator = document.getElementById('ytSave');
   var saveTimer = null;
-  function flashSaved(msg, isError) {
+  // tone: true / 'error' = 失敗 / 'warn' = 保存はできたが自動割り当てに繋がらない / 省略 = 成功
+  function flashSaved(msg, tone) {
+    var isError = (tone === true || tone === 'error');
+    var isWarn = (tone === 'warn');
     saveIndicator.textContent = msg || '✓ 保存しました';
-    saveIndicator.style.color = isError ? '#fca5a5' : '';
+    saveIndicator.style.color = isError ? '#fca5a5' : (isWarn ? '#fbbf24' : '');
     saveIndicator.classList.add('show');
     if (saveTimer) clearTimeout(saveTimer);
     // ★失敗は長めに出す。1.2秒で消えると「保存された」と誤解される
-    saveTimer = setTimeout(function () { saveIndicator.classList.remove('show'); }, isError ? 6000 : 1200);
+    // ★警告も長めに出す。「✓ 保存しました」と同じ速さで消えると、対象外になったことに気づけない
+    saveTimer = setTimeout(function () { saveIndicator.classList.remove('show'); }, (isError || isWarn) ? 6000 : 1200);
   }
 
   // 名前をサーバ (DB) に保存する (入力確定時に1回)。
@@ -199,11 +223,28 @@
         //   しかも控え(localStorage)まで消えてオレンジ枠も出なくなる。
         if (seq !== reqSeq[id] || myGen !== saveGeneration) return;
         if (r.ok) {
-          mark(true);
           // 控えは「今保存した値と同じとき」だけ消す (別の未保存値を巻き添えにしない)
           try { if (localStorage.getItem(STORE_KEY(id)) === value) localStorage.removeItem(STORE_KEY(id)); } catch (e) {}
           for (var i = 0; i < PLAYLISTS.length; i++) if (PLAYLISTS[i].id === id) PLAYLISTS[i].name = value;
-          flashSaved(); return;
+          // ★「保存できた」で終わらせない。名前が曜日+限として読めなければ、その再生リストは
+          //   **自動割り当ての対象外**になる。緑の「✓ 保存しました」だけ出して黙ると、
+          //   新学期に名前を付け直したつもりが丸ごと無視され、配布漏れなのに画面は正常に見える
+          //   (2026-08-19 に塞いだ穴と同じ結末)。判定はサーバ (正典 slot_of) の返り値を使う。
+          return r.json().catch(function () { return {}; }).then(function (d) {
+            if (seq !== reqSeq[id] || myGen !== saveGeneration) return;
+            if (value && d && !d.slot) {
+              mark(false, 'この名前からは曜日+限を読めません = 自動割り当ての対象外です');
+              if (inputEl) inputEl.style.borderColor = '#f59e0b';
+              flashSaved('⚠ 保存しましたが、この名前は曜日+限として読めません（自動割り当ての対象外）', 'warn');
+              return;
+            }
+            mark(true);
+            if (value && d && d.slot && d.session_count === 0) {
+              flashSaved('⚠ 保存しました（' + d.slot + '）。ただし対応する公開中の授業がありません', 'warn');
+              return;
+            }
+            flashSaved(d && d.session_title ? ('✓ 保存しました → ' + d.session_title) : undefined);
+          });
         }
         mark(false, '保存できませんでした (HTTP ' + r.status + ')');
         flashSaved('⚠ 保存できませんでした (HTTP ' + r.status + ')。この端末にしか残っていません', true);
@@ -551,6 +592,80 @@
       asgApply.disabled = true;
     }).then(function () { asgCheck.disabled = false; });
   }
+
+  // ➕ 再生リストの追加 (2026-08-25)
+  //   ★URL から ID を抜き出すのは**サーバ側の 1 箇所だけ**。ここでも抜くと、片方だけ直された
+  //     ときに画面と DB で違う ID を掴み、どちらが正か分からない壊れ方になる。入力はそのまま送る。
+  //   ★「保存できた」を成功と言わない。この画面の目的は自動割り当てに繋ぐことなので、
+  //     サーバが返す対応先 (slot / session_title) まで見せて、繋がらない名前は警告する。
+  var addUrl = document.getElementById('ytAddUrl');
+  var addName = document.getElementById('ytAddName');
+  var addBtn = document.getElementById('ytAddBtn');
+  var addOut = document.getElementById('ytAddOut');
+
+  function addOutBox(kind, html) {
+    var color = kind === 'ok' ? '#22c55e' : (kind === 'warn' ? '#f59e0b' : '#ef4444');
+    addOut.hidden = false;
+    addOut.innerHTML = '<div class="yt-box" style="border-color:' + color + ';color:' + color + ';">' + html + '</div>';
+  }
+
+  function bindingText(d) {
+    // サーバが class_recording_assign.slot_of() で判定した結果をそのまま言葉にする
+    if (!d.slot) {
+      return { kind: 'warn', html: '⚠️ 保存しましたが、<strong>この名前からは曜日＋限を読み取れません</strong>。'
+        + 'このままだと<strong>自動割り当ての対象外</strong>です（授業用でない再生リストならこれで正常）。'
+        + '授業用なら「日曜日1時間目」のように曜日と限を名前に入れてください。' };
+    }
+    var where = '「' + esc(d.slot) + '」として扱われます';
+    if (d.session_title) {
+      return { kind: 'ok', html: '✅ 保存しました。' + where + ' → 授業 <strong>' + esc(d.session_title) + '</strong> に繋がります。'
+        + '<br>この後「🎬 授業録画をクラスに割り当てる」の<strong>① 確認する</strong>を押すと、実際に何が登録されるか見られます。' };
+    }
+    if (d.session_count === 0) {
+      return { kind: 'warn', html: '⚠️ 保存しましたが、' + where + '、<strong>対応する公開中の授業が見つかりません</strong>。'
+        + 'CEO 画面でその授業を作る／公開すると繋がります。' };
+    }
+    return { kind: 'warn', html: '⚠️ 保存しましたが、' + where + '、'
+      + '<strong>公開中の授業が ' + esc(d.session_count) + ' 件</strong>該当してどれか判別できません。授業名を見直してください。' };
+  }
+
+  addBtn.addEventListener('click', function () {
+    var raw = (addUrl.value || '').trim();
+    var nm = (addName.value || '').trim();
+    if (!raw) { addOutBox('err', '再生リストの URL（または ID）を入れてください。'); return; }
+    if (!nm) { addOutBox('err', '名前を入れてください。名前が無いと<strong>自動割り当ての対象外</strong>になり、配布漏れに気づけません。'); return; }
+    var token = null;
+    try { token = localStorage.getItem('ai_juku_admin_token'); } catch (e) {}
+    if (!token) { addOutBox('err', 'ログインの有効期限が切れています。ログインし直してください。'); return; }
+    addBtn.disabled = true;
+    var orig = addBtn.textContent;
+    addBtn.textContent = '⏳ 追加中…';
+    fetch(API_BASE + '/api/admin/youtube-playlists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ id: raw, name: nm })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, status: r.status, d: d }; });
+    }).then(function (res) {
+      if (!res.ok || !res.d.ok) {
+        addOutBox('err', '❌ 追加できませんでした（HTTP ' + res.status + '）<br>' + esc(res.d.detail || ''));
+        return;
+      }
+      var b = bindingText(res.d);
+      var head = res.d.created
+        ? '一覧に<strong>新しく追加</strong>しました。'
+        : 'この再生リストは<strong>すでに一覧にあった</strong>ので、名前を付け直しました。';
+      addOutBox(b.kind, head + '<br>' + b.html);
+      addUrl.value = '';
+      addName.value = '';
+      loadPlaylists();   // 一覧を取り直して、追加/更新された行を表示に反映する
+    }).catch(function () {
+      addOutBox('err', '❌ 通信できませんでした。追加されていません。');
+    }).then(function () {
+      addBtn.disabled = false;
+      addBtn.textContent = orig;
+    });
+  });
 
   asgCheck.addEventListener('click', function () { runAssign(false); });
   asgApply.addEventListener('click', function () {

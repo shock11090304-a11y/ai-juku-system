@@ -128,3 +128,13 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_child_email_login.py
+
+      # 📺 再生リストの登録/命名 API。**書き込む側**なので、URL をそのまま受けること・
+      #   二度送っても増えないこと・読めない入力で半端な行を作らないことを見る。
+      #   あわせて「名前 → どの授業に繋がるか」を正典 (class_recording_assign.slot_of) と
+      #   突き合わせる。ここが独自判定に化けると「画面は繋がると言うのに実際は対象外」になる。
+      - name: 再生リスト登録/命名 API 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_playlist_save_api.py
