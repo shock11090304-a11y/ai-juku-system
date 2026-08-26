@@ -27,6 +27,8 @@
   「200 - 2(x-10)^2」のように項を並べ替えるので、平方完成の設問だけ
   正解の見た目が他と揃わず**形が答えのヒントになる**。表示は手で揃え、
   値は sympy が独立に確かめる。
+★ **page を書いていない**。刷り上がりから実ページを読み取って
+  JSON に入れる (選択肢の組版が変われば行数も変わるため)。
 ★ 正解の位置は 1:2 / 2:2 / 3:2 / 4:2 (8 問でちょうど 2 回ずつ)。
 ★ 相互チェック: ① 刷り上がり PDF の逆照合 ② verify() + verify_math()
   ③ 正解の一意性の敵対的再読 — 誘導形式は前問の誤りが後ろに伝播するので、
@@ -95,7 +97,7 @@ META = {
     "intro": "1 ページ目の会話を読み、第1問から順に答えてください。"
              "前の問いの結果を次の問いで使います。"
              "解答は別画面の答案に入力してください。",
-    "passages": [{"page": 1, "title": "第1問　花壇をつくる（配点 16）",
+    "passages": [{"title": "第1問　花壇をつくる（配点 16）",
                   "html": KAIWA}],
 }
 
@@ -106,7 +108,7 @@ def m(hoshin, rikishiki, keisan, kotae, ngs):
 
 
 RAW = [
-    dict(number=1, page=1, points=2, unit_tag="KYOTSU1A-SHIKI",
+    dict(number=1, points=2, unit_tag="KYOTSU1A-SHIKI",
          stem="壁に平行な辺の長さを $x$ を用いて表したものとして正しいものを"
               "1 つ選べ。ロープの長さは 40 m である。",
          tex=["$40 - x$", "$40 - 2x$", "$20 - 2x$", "$20 - x$"],
@@ -123,7 +125,7 @@ RAW = [
               "長方形の周の公式と混同した形。",
               "4. 20 - x — 上の 2 つの誤りが重なった形。"])),
 
-    dict(number=2, page=1, points=2, unit_tag="KYOTSU1A-MENSEKI",
+    dict(number=2, points=2, unit_tag="KYOTSU1A-MENSEKI",
          stem="花壇の面積 $S$ を $x$ を用いて表したものとして正しいものを 1 つ選べ。",
          tex=["$S = -x^{2} + 40x$", "$S = 2x^{2} - 40x$",
               "$S = -2x^{2} + 20x$", "$S = -2x^{2} + 40x$"],
@@ -141,7 +143,7 @@ RAW = [
               "下に凸になり、面積に最大値が無くなる。",
               "3. S = -2x^2 + 20x — 第1問で 20 - 2x を選んだときの式。"])),
 
-    dict(number=3, page=2, points=2, unit_tag="KYOTSU1A-TEIGIIKI",
+    dict(number=3, points=2, unit_tag="KYOTSU1A-TEIGIIKI",
          stem="$x$ のとりうる値の範囲として正しいものを 1 つ選べ。"
               "ロープの長さは 40 m である。",
          tex=[op_tex(DOM.start, DOM.end), op_tex(0, 40), op_tex(0, 10),
@@ -160,7 +162,7 @@ RAW = [
               "4. 0 ≦ x ≦ 20 — 端では辺の長さが 0 になり、長方形にならない。"
               "等号は入らない。"])),
 
-    dict(number=4, page=2, points=2, unit_tag="KYOTSU1A-HEIHOU",
+    dict(number=4, points=2, unit_tag="KYOTSU1A-HEIHOU",
          stem="第2問の $S$ を平方完成したものとして正しいものを 1 つ選べ。",
          tex=["$-2(x - 10)^{2} + 100$", "$-2(x - 20)^{2} + 200$",
               "$-2(x - 10)^{2} + 200$", "$2(x - 10)^{2} - 200$"],
@@ -181,7 +183,7 @@ RAW = [
               "4. 2(x - 10)^2 - 200 — 符号が全部逆。展開すると 2x^2 - 40x になり、"
               "第2問の S と一致しない。"])),
 
-    dict(number=5, page=2, points=2, unit_tag="KYOTSU1A-SAIDAI",
+    dict(number=5, points=2, unit_tag="KYOTSU1A-SAIDAI",
          stem="面積 $S$ が最大になるときの $x$ の値を 1 つ選べ。",
          tex=["$5$", "$10$", "$15$", "$20$"],
          plain=["5", "10", "15", "20"],
@@ -198,7 +200,7 @@ RAW = [
               "4. 20 — 定義域の端で、しかも範囲に含まれない。"
               "ここでは平行な辺が 0 になる。"])),
 
-    dict(number=6, page=3, points=2, unit_tag="KYOTSU1A-SAIDAICHI",
+    dict(number=6, points=2, unit_tag="KYOTSU1A-SAIDAICHI",
          stem="面積 $S$ の最大値を 1 つ選べ。単位は $\\mathrm{m}^{2}$ である。",
          tex=["$200$", "$100$", "$150$", "$400$"],
          plain=["200", "100", "150", "400"],
@@ -214,7 +216,7 @@ RAW = [
               "4. 400 — 縦横をどちらも 20 としたときの面積。"
               "ロープが 40 m では足りない。"])),
 
-    dict(number=7, page=3, points=2, unit_tag="KYOTSU1A-FUTOUSHIKI",
+    dict(number=7, points=2, unit_tag="KYOTSU1A-FUTOUSHIKI",
          stem="面積 $S$ が 150 m² 以上になる $x$ の範囲として正しいものを 1 つ選べ。",
          tex=["$0 < x \\leqq 5$", cl_tex(10, 15), op_tex(5, 10),
               cl_tex(IV150.start, IV150.end)],
@@ -234,7 +236,7 @@ RAW = [
               "左右対称なので 5 から始まる。",
               "3. 5 < x < 10 — 等号が落ち、しかも右半分が抜けている。"])),
 
-    dict(number=8, page=3, points=2, unit_tag="KYOTSU1A-TENYOU",
+    dict(number=8, points=2, unit_tag="KYOTSU1A-TENYOU",
          stem="ロープの長さを 40 m から 60 m に変えた。ほかの条件は同じとするとき、"
               "花壇の面積の最大値を 1 つ選べ。単位は $\\mathrm{m}^{2}$ である。",
          tex=["$300$", "$400$", "$450$", "$900$"],

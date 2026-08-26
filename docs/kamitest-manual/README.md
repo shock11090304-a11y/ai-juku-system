@@ -206,6 +206,16 @@ DB の CHECK も採点 RPC も何も言わずに通り、**その冊子を解い
 | 設問の `figure_ticks` | 数の並び | ★ **図に設問文・本文に無い数値を出さない** (出すと設問の根拠が図の外に出る)。軸の目盛りのように読み取らせる数だけ、ここに宣言して除く |
 
 ★ 図の中の文字も**解答漏洩の走査対象**。図に答えを書かない。
+
+★ **PDF に刷る欄で Markdown は効かない。** `**太字**` と書くと、そのまま
+`**太字**` と刷られる (HTML で組んでいるため)。`<b>…</b>` を使うこと。
+対象は設問文・選択肢・本文・前書き。**解説欄だけは `**` を使ってよい**
+(素のテキスト表示なので、紙の解答解説で意味を持つ)。
+
+★ 数式が PDF からどう抽出されるかは形で決まる。逆照合できるのは
+`\frac{a}{b}` (**分母 → 分子**の順で出る) や `\leqq` のように**字に寄せられる**もの。
+`x^{2}` のような累乗は指数が離れた場所に出るので寄せられず、
+build が「照合していない選択肢の数」を印字する。
 ★ 図の文字と本文は、刷り上がり PDF から読み返して照合する。
 
 ★ **前書きや資料に「第1問」と書いてよい** (「第1問〜第3問は資料を見て答えよ」)。
@@ -451,6 +461,7 @@ python3 scripts/book_exam/materials/build_from_spec.py spec.json
 | 英語 (`grammar`) | 英文法 演習 第1集 × 15 | `scripts/book_exam/materials/meishi1/build_meishi1.py` ほか | 旧ビルダー `_grammar_build.py`。4 択 10 問 |
 | 数学 (`math`) | 数学I 二次関数 演習 第1集 | `scripts/book_exam/materials/sugaku_nijikansu1/build_sugaku_nijikansu1.py` | KaTeX の数式 / sympy による正解の再計算 |
 | 数学 (`math`) | 数学I 二次関数 **共通テスト型** 第1集 | `scripts/book_exam/materials/sugaku_kyotsu1/build_sugaku_kyotsu1.py` | 会話文の場面設定 (`passages`) / 8 問の誘導連鎖 |
+| 数学 (`math`) | 数学A 第3問 場合の数と確率 **本番相当** | `scripts/book_exam/materials/sugaku_kakuritsu1/build_sugaku_kakuritsu1.py` | 条件付き確率 / 判断 (順番で有利不利は変わるか) / 転用 (戻す・3 人・本数を変える) |
 | 理科 (`science`) | 物理基礎 電気回路 演習 第1集 | `scripts/book_exam/materials/rika_denki1/build_rika_denki1.py` | 図 (SVG) / 記述 (`short`) と別解 |
 | 社会 (`social`) | 公民 日本の政治のしくみ 演習 第1集 | `scripts/book_exam/materials/shakai_seiji1/build_shakai_seiji1.py` | 資料の表 (`passages`) / 空欄の資料読み取り |
 | 国語 (`japanese`) | 古文 徒然草を読む 演習 第1集 | `scripts/book_exam/materials/kokugo_kobun1/build_kokugo_kobun1.py` | 本文 (`passages`) + 注 + 出典 / 記述 |
@@ -460,6 +471,7 @@ python3 scripts/book_exam/materials/build_from_spec.py spec.json
 | 教科 | 冊子 | 正典 | 本番の要素 |
 |---|---|---|---|
 | 数学 | 数学I 第2問 2次関数 | `scripts/book_exam/materials/sugaku_honban1/build_sugaku_honban1.py` | 実測データの表から立式 / 条件の積み上げ (売上→利益) / 主張の当否の判断 / 条件を変えた転用 |
+| 数学 | 数学A 第3問 場合の数と確率 | `scripts/book_exam/materials/sugaku_kakuritsu1/build_sugaku_kakuritsu1.py` | 会話文 / 条件付き確率 / 「先に引くほうが有利か」の判断 / 3 通りの転用 |
 | 国語 | 現代文 評論 | `scripts/book_exam/materials/kokugo_honban1/build_kokugo_honban1.py` | 本文 + 【資料】の複数テクスト / 段落番号と傍線記号 / 漢字・理由・内容・資料照合・構成・表現・主旨 / 60〜90 字の選択肢 |
 | 理科 | 物理基礎 記録タイマーの実験 | `scripts/book_exam/materials/rika_honban1/build_rika_honban1.py` | 装置図 + 測定データ / データから量を導く / グラフの予測 / **誤差の向きの考察** / 転用 |
 

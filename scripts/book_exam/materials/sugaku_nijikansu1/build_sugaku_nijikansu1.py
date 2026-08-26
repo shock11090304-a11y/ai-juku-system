@@ -16,6 +16,8 @@
       ① vals[answer-1] が solve() と一致するか
       ② 選択肢どうしが同値でないか (別表記の同値が混じると正解が 2 つになる)
   を再計算で確かめる。
+★ **page を書いていない**。刷り上がりから実ページを読み取って
+  JSON に入れる (選択肢の組版が変われば行数も変わるため)。
 ★ 正解の位置は 1:3 / 2:2 / 3:3 / 4:2 (第1問から 3,1,4,2,1,3,2,4,1,3)。設問を足したら配り直す。
 ★ 相互チェック (CLAUDE.md 2026-08-16):
   ① _book_build.run() が刷り上がり PDF を読み返して全問・全選択肢とページを逆照合し、
@@ -53,7 +55,7 @@ META = {
 # --- 各問: solve() は正解を独立に計算する。vals から選択肢の表示を作る -------
 RAW = [
     dict(
-        number=1, page=1, points=2, unit_tag="SUGAKU1A-HEIHOU",
+        number=1, points=2, unit_tag="SUGAKU1A-HEIHOU",
         stem="2 次関数 $y = x^{2} - 4x + 1$ の最小値を求めよ。",
         solve=lambda: sp.minimum(x**2 - 4*x + 1, x),
         vals=[1, 3, -3, 2], answer=3,
@@ -69,7 +71,7 @@ RAW = [
             "別解: 軸 x = -(-4)/2 = 2 を代入しても 4 - 8 + 1 = -3。"),
     ),
     dict(
-        number=2, page=1, points=2, unit_tag="SUGAKU1A-JOUTOTSU",
+        number=2, points=2, unit_tag="SUGAKU1A-JOUTOTSU",
         stem="2 次関数 $y = -2x^{2} + 8x - 5$ の最大値を求めよ。",
         solve=lambda: sp.maximum(-2*x**2 + 8*x - 5, x),
         vals=[3, -5, 2, -3], answer=1,
@@ -85,7 +87,7 @@ RAW = [
             "上に凸か下に凸かは x^2 の係数の符号だけで決まる。最初に見ること。"),
     ),
     dict(
-        number=3, page=1, points=2, unit_tag="SUGAKU1A-HANBETSU",
+        number=3, points=2, unit_tag="SUGAKU1A-HANBETSU",
         stem="2 次関数 $y = x^{2} - 6x + k$ のグラフが $x$ 軸に接するとき、"
              "定数 $k$ の値を求めよ。",
         solve=lambda: max(sp.solve(sp.discriminant(x**2 - 6*x + k, x), k)),
@@ -102,7 +104,7 @@ RAW = [
             "「接する」は交点 1 個。交点 2 個なら D > 0、交点なしなら D < 0。"),
     ),
     dict(
-        number=4, page=2, points=2, unit_tag="SUGAKU1A-HEIKOU",
+        number=4, points=2, unit_tag="SUGAKU1A-HEIKOU",
         stem="2 次関数 $y = x^{2} + 2x + 3$ のグラフを $x$ 軸方向に 3 だけ平行移動した"
              "放物線の頂点の $x$ 座標を求めよ。",
         solve=lambda: sp.solve(sp.diff(x**2 + 2*x + 3, x), x)[0] + 3,
@@ -119,7 +121,7 @@ RAW = [
             "式で言うと y = (x - 3)^2 + 2(x - 3) + 3 と置き換えるのと同じこと。"),
     ),
     dict(
-        number=5, page=2, points=2, unit_tag="SUGAKU1A-TEIGIIKI",
+        number=5, points=2, unit_tag="SUGAKU1A-TEIGIIKI",
         stem="$1 \\leqq x \\leqq 4$ における 2 次関数 $y = -x^{2} + 6x - 5$ の"
              "最大値を求めよ。",
         solve=lambda: sp.maximum(-x**2 + 6*x - 5, x, sp.Interval(1, 4)),
@@ -136,7 +138,7 @@ RAW = [
             "軸が定義域の外なら端が最大になる。まず軸の位置を確かめること。"),
     ),
     dict(
-        number=6, page=2, points=2, unit_tag="SUGAKU1A-SAISHOU",
+        number=6, points=2, unit_tag="SUGAKU1A-SAISHOU",
         stem="$0 \\leqq x \\leqq 3$ における 2 次関数 $y = x^{2} - 2x + 2$ の"
              "最小値を求めよ。",
         solve=lambda: sp.minimum(x**2 - 2*x + 2, x, sp.Interval(0, 3)),
@@ -153,7 +155,7 @@ RAW = [
             "同じ範囲での最大値は 5 (x = 3)。最大と最小を取り違えないこと。"),
     ),
     dict(
-        number=7, page=2, points=2, unit_tag="SUGAKU1A-FUTOUSHIKI",
+        number=7, points=2, unit_tag="SUGAKU1A-FUTOUSHIKI",
         stem="2 次不等式 $x^{2} - 5x - 6 < 0$ を満たす整数 $x$ は全部で何個あるか。",
         solve=lambda: len([i for i in range(-30, 30) if i**2 - 5*i - 6 < 0]),
         vals=[5, 6, 7, 8], answer=2,
@@ -170,7 +172,7 @@ RAW = [
             "下に凸の放物線が負になるのは 2 解の間。不等号の向きを毎回確かめること。"),
     ),
     dict(
-        number=8, page=3, points=2, unit_tag="SUGAKU1A-OUYOU",
+        number=8, points=2, unit_tag="SUGAKU1A-OUYOU",
         stem="周の長さが 20 の長方形のうち、面積が最大になるものの面積を求めよ。",
         solve=lambda: sp.maximum(x * (10 - x), x),
         vals=[20, 100, 10, 25], answer=4,
@@ -188,7 +190,7 @@ RAW = [
             "「周が一定なら正方形で面積最大」は覚えておくと検算に使える。"),
     ),
     dict(
-        number=9, page=3, points=2, unit_tag="SUGAKU1A-KOTEN",
+        number=9, points=2, unit_tag="SUGAKU1A-KOTEN",
         stem="2 次関数 $y = x^{2} - 3x - 4$ のグラフが $x$ 軸から切り取る線分の長さを"
              "求めよ。",
         solve=lambda: (lambda r: max(r) - min(r))(sp.solve(x**2 - 3*x - 4, x)),
@@ -205,7 +207,7 @@ RAW = [
             "一般に長さは √(b^2 - 4ac) / |a|。ここでは √(9 + 16) / 1 = 5 で一致する。"),
     ),
     dict(
-        number=10, page=3, points=2, unit_tag="SUGAKU1A-KETTEI",
+        number=10, points=2, unit_tag="SUGAKU1A-KETTEI",
         stem="2 次関数 $y = ax^{2} + bx + c$ のグラフが 3 点 $(0,\\ 1)$, $(1,\\ 0)$, "
              "$(2,\\ 3)$ を通るとき、$a$ の値を求めよ。",
         solve=lambda: sp.solve([c - 1, a + b + c, 4*a + 2*b + c - 3],

@@ -70,7 +70,7 @@
   },
   {
    "number": 7,
-   "page": 2,
+   "page": 3,
    "answer_type": "choice",
    "choice_count": 4,
    "correct_answer": "2",
@@ -100,7 +100,7 @@
   },
   {
    "number": 10,
-   "page": 3,
+   "page": 4,
    "answer_type": "choice",
    "choice_count": 4,
    "correct_answer": "3",

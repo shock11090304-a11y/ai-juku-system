@@ -136,6 +136,19 @@ def distinguishing_prefix(items, i):
     return me
 
 
+#: PDF に刷る欄で Markdown を書いても効かない (HTML で組むので記号のまま出る)。
+MD_IN_PDF = re.compile(r"\*\*|__[^_]")
+
+
+def markdown_problem(text, what):
+    """@returns 理由 (None なら OK)。"""
+    if text and MD_IN_PDF.search(str(text)):
+        return (f"{what}: Markdown の太字 (**…**) は PDF に効かない。"
+                f"記号のまま刷られるので <b>…</b> を使う "
+                f"(解説欄は素のテキスト表示なので ** を使ってよい)")
+    return None
+
+
 def markup_problem(html, what):
     """@returns 理由 (None なら OK)。"""
     if UNSAFE_MARKUP.search(html or ""):
@@ -165,14 +178,46 @@ def plain_segments(s):
     return [seg.strip() for seg in MATH.split(s or "")[::2] if seg.strip()]
 
 
-#: 字面を突き合わせられる数式 = コマンド (\frac 等) も添字の波括弧も無いもの。
-#: KaTeX はこれを字そのままで描くので、PDF から抜いた文字と比べられる。
-MATH_SIMPLE = re.compile(r"[0-9A-Za-z+\-=.,()\[\]/<>|:;' ]*")
+#: 字面を突き合わせられる数式。KaTeX が字そのままで描くものだけを通す。
+MATH_SIMPLE = re.compile(r"[0-9A-Za-z+\-=.,()\[\]/<>|:;'≦≧≤≥×⋅π− ]*")
+
+#: KaTeX が描いたあと、PDF のテキスト抽出でどう出るか (実測に基づく置き換え)。
+TEX_AS_PRINTED = {
+    "\\leqq": "≦", "\\geqq": "≧", "\\leq": "≤", "\\geq": "≥",
+    "\\times": "×", "\\cdot": "⋅", "\\pi": "π",
+    "\\left": "", "\\right": "", "\\,": "", "\\;": "", "\\!": "",
+    "\\ ": " ", "\\mathrm": "",
+}
+#: ★ \frac{a}{b} は **分母 → 分子** の順で抽出される (2026-08-21 実測)。
+FRAC = re.compile(r"\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}")
+
+
+def tex_as_printed(tex):
+    """$…$ の中身を、PDF から抜ける字面に寄せる。寄せられなければ None。
+
+    ★ 累乗 (x^{2}) は、抽出すると指数が離れた場所に出る (実測) ので寄せられない。
+      その場合は None を返し、pdf_check_note が「照合していない数」に数える。
+    """
+    s = tex
+    for a, b in TEX_AS_PRINTED.items():
+        s = s.replace(a, b)
+    prev = None
+    while prev != s:                       # 入れ子の \frac は内側から解ける
+        prev = s
+        s = FRAC.sub(lambda m: f"{m.group(2)}{m.group(1)}", s)
+    if any(c in s for c in ("\\", "{", "}", "^", "_")):
+        return None
+    return s if MATH_SIMPLE.fullmatch(s) else None
 
 
 def checkable_math(s):
-    """$…$ のうち PDF の字面と突き合わせられるものだけ。"""
-    return [m for m in MATH.findall(s or "") if MATH_SIMPLE.fullmatch(m)]
+    """$…$ のうち PDF の字面と突き合わせられるものを、**刷り上がりの形**で返す。"""
+    out = []
+    for m in MATH.findall(s or ""):
+        printed = tex_as_printed(m)
+        if printed is not None and printed.strip():
+            out.append(printed)
+    return out
 
 
 def norm_pdf(s):
@@ -181,7 +226,10 @@ def norm_pdf(s):
     ★ KaTeX の負号は U+2212 (−) で、正典の ASCII ハイフンとは別の文字。
       ここで揃えないと「-3」が PDF に無いことになる。
     """
-    return re.sub(r"\s+", "", (s or "").replace("\u2212", "-").replace("\u00a0", ""))
+    # ★ KaTeX は分数の前に幅ゼロの空白 (U+200B) を挟む。\s では消えない。
+    for z in ("\u200b", "\u200c", "\u200d", "\ufeff", "\u00a0"):
+        s = (s or "").replace(z, "") if z == "\u200b" else s.replace(z, "")
+    return re.sub(r"\s+", "", s.replace("\u2212", "-"))
 
 
 def question_mark(q):
@@ -285,6 +333,9 @@ def verify(meta, questions, extra=None):
     for text in (meta.get("intro"), ):
         if text:
             printed.append(strip_math(text))
+            why = markdown_problem(text, "META の intro")
+            if why:
+                errs.append(why)
     # --- 本文・資料 (passages) ----------------------------------------------
     for i, p in enumerate(meta.get("passages") or []):
         at = f"本文 {i + 1}"
@@ -298,6 +349,10 @@ def verify(meta, questions, extra=None):
         why = markup_problem(p.get("html"), at)
         if why:
             errs.append(why)
+        for field in ("html", "title", "source"):
+            why = markdown_problem(p.get(field), f"{at} の {field}")
+            if why:
+                errs.append(why)
         for t in svg_texts(p.get("html")):      # 本文の図の中の答えも漏洩
             printed.append(strip_math(t))
         printed.append(strip_math(re.sub(r"<[^>]+>", " ", p.get("html") or "")))
@@ -324,6 +379,14 @@ def verify(meta, questions, extra=None):
         if not stem:
             errs.append(f"{at}: 設問文が空")
         printed.append(strip_math(stem))
+        why = markdown_problem(stem, f"{at} の設問文")
+        if why:
+            errs.append(why)
+        for c in q.get("choices") or []:
+            why = markdown_problem(c, f"{at} の選択肢")
+            if why:
+                errs.append(why)
+                break
         pts = q.get("points")
         if not (isinstance(pts, int) and not isinstance(pts, bool) and pts >= 1):
             errs.append(f"{at}: 配点が 1 以上の整数でない")
@@ -556,6 +619,9 @@ ol.ch .n { font-family: """ + GOTHIC + """; }
 .q .fig svg { max-width: 100%; height: auto; }
 ol.ch { list-style: none; padding-left: 14px; margin: 0; }
 ol.ch li { margin: 2px 0; }
+/* ★ 分数など背の高い数式を含む選択肢は、本文の行送りのままだと行が重なる。
+   その行だけ行間を広げる (:has は Chrome 105+。組版は Chrome で行う)。 */
+ol.ch li:has(.katex) { margin: 7px 0; line-height: 2.6; }
 ol.ch .n { display: inline-block; width: 1.9em; font-weight: 600; }
 .short { margin-left: 14px; }
 .short .lbl { font-weight: 600; margin-right: 6px; }

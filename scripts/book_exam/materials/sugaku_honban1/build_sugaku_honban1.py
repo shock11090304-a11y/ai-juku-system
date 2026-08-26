@@ -21,6 +21,8 @@
 ★ 正解を手入力しない。vals (sympy) を solve() の再計算と照合し、
   選択肢どうしが同値でないことも確かめる (verify_math)。
 ★ 資料の表の数値は sympy の関係式から生成する。**表と正解がずれない**。
+★ **page を書いていない**。刷り上がりから実ページを読み取って
+  JSON に入れる (選択肢の組版が変われば行数も変わるため)。
 ★ 正解の位置は 1:3 / 2:2 / 3:3 / 4:2 (第1問から 3,1,4,2,1,3,2,4,1,3)。
 ★ 相互チェック: ① 刷り上がり PDF の逆照合 ② verify() + verify_math()
   ③ 正解の一意性の敵対的再読 — 第9問は「正しくない」の理由が 3 通りあるので、
@@ -79,7 +81,7 @@ META = {
     "intro": "1 ページ目の資料と会話を読み、第1問から順に答えてください。"
              "前の問いの結果を次の問いで使います。"
              "解答は別画面の答案に入力してください。",
-    "passages": [{"page": 1, "title": "第2問　文化祭の模擬店（配点 20）",
+    "passages": [{"title": "第2問　文化祭の模擬店（配点 20）",
                   "html": SHIRYO}],
 }
 
@@ -90,7 +92,7 @@ def m(hoshin, rikishiki, keisan, kotae, ngs):
 
 
 RAW = [
-    dict(number=1, page=1, points=2, unit_tag="HONBAN1A-KANKEISHIKI",
+    dict(number=1, points=2, unit_tag="HONBAN1A-KANKEISHIKI",
          stem="資料の表から、1 個の値段 $x$ 円と売れる個数 $y$ 個の関係を表す式として"
               "正しいものを 1 つ選べ。",
          tex=["$y = 240 - 3x$", "$y = 160 - x$", "$y = 200 - 2x$",
@@ -111,7 +113,7 @@ RAW = [
               "4. y = 280 - 4x — x = 40 で y = 120 と合うが、x = 60 では 40。"
               "表と合わない。"])),
 
-    dict(number=2, page=2, points=2, unit_tag="HONBAN1A-URIAGE",
+    dict(number=2, points=2, unit_tag="HONBAN1A-URIAGE",
          stem="1 日の売上を $S$ 円とする。$S$ を $x$ を用いて表したものとして"
               "正しいものを 1 つ選べ。",
          tex=["$S = -2x^{2} + 200x$", "$S = -2x^{2} + 100x$",
@@ -130,7 +132,7 @@ RAW = [
               "これは 1 次式で、2 次関数にならない。",
               "4. S = -x^2 + 200x — 2x に掛けた x の係数 2 を落としている。"])),
 
-    dict(number=3, page=2, points=2, unit_tag="HONBAN1A-TEIGIIKI",
+    dict(number=3, points=2, unit_tag="HONBAN1A-TEIGIIKI",
          stem="$x$ のとりうる値の範囲として正しいものを 1 つ選べ。"
               "売れる個数も正でなければならない。",
          tex=["$0 < x < 200$", "$0 \\leqq x \\leqq 100$", "$40 < x < 100$",
@@ -151,7 +153,7 @@ RAW = [
               "3. 40 < x < 100 — 40 は原価。ここでは「利益が出るか」ではなく"
               "「式が意味をもつか」を聞いている。原価はまだ関係しない。"])),
 
-    dict(number=4, page=2, points=2, unit_tag="HONBAN1A-URIAGESAIDAI",
+    dict(number=4, points=2, unit_tag="HONBAN1A-URIAGESAIDAI",
          stem="売上 $S$ が最大になるときの値段 $x$ を 1 つ選べ。",
          tex=["$40$", "$50$", "$70$", "$100$"],
          plain=["40", "50", "70", "100"],
@@ -168,7 +170,7 @@ RAW = [
               "4. 100 — 定義域の端で、しかも範囲に含まれない。"
               "ここでは売れる個数が 0 になる。"])),
 
-    dict(number=5, page=2, points=2, unit_tag="HONBAN1A-URIAGECHI",
+    dict(number=5, points=2, unit_tag="HONBAN1A-URIAGECHI",
          stem="売上 $S$ の最大値を 1 つ選べ。単位は円である。",
          tex=["$5000$", "$4000$", "$2500$", "$10000$"],
          plain=["5000", "4000", "2500", "10000"],
@@ -183,7 +185,7 @@ RAW = [
               "3. 2500 — 50 × 50。売れる個数を値段と同じにしている。",
               "4. 10000 — 平方完成で -2 を掛け戻すのを忘れた形。"])),
 
-    dict(number=6, page=3, points=2, unit_tag="HONBAN1A-RIEKI",
+    dict(number=6, points=2, unit_tag="HONBAN1A-RIEKI",
          stem="1 個つくるのに 40 円かかる。1 日の利益を $P$ 円とするとき、"
               "$P$ を $x$ を用いて表したものとして正しいものを 1 つ選べ。",
          tex=["$P = -2x^{2} + 200x - 40$", "$P = -2x^{2} + 120x - 8000$",
@@ -204,7 +206,7 @@ RAW = [
               "4. P = -2x^2 + 280x — 定数項 -8000 が落ちている。"
               "x = 40 のとき P = 0 になるはずだが、この式では 8000 になる。"])),
 
-    dict(number=7, page=3, points=2, unit_tag="HONBAN1A-RIEKISAIDAI",
+    dict(number=7, points=2, unit_tag="HONBAN1A-RIEKISAIDAI",
          stem="利益 $P$ が最大になるときの値段 $x$ を 1 つ選べ。",
          tex=["$50$", "$70$", "$60$", "$80$"],
          plain=["50", "70", "60", "80"],
@@ -221,7 +223,7 @@ RAW = [
               "3. 60 — 50 と 70 の間の値で、どちらの式の頂点でもない。",
               "4. 80 — 原価 40 の 2 倍。頂点の位置は原価の 2 倍では決まらない。"])),
 
-    dict(number=8, page=3, points=2, unit_tag="HONBAN1A-RIEKICHI",
+    dict(number=8, points=2, unit_tag="HONBAN1A-RIEKICHI",
          stem="利益 $P$ の最大値を 1 つ選べ。単位は円である。",
          tex=["$1200$", "$2400$", "$900$", "$1800$"],
          plain=["1200", "2400", "900", "1800"],
@@ -238,7 +240,7 @@ RAW = [
               "取り違えている。",
               "3. 900 — 30 × 30。もうけと個数を同じ値にしている。"])),
 
-    dict(number=9, page=4, points=2, unit_tag="HONBAN1A-HANDAN",
+    dict(number=9, points=2, unit_tag="HONBAN1A-HANDAN",
          stem="太郎さんの「値段を高くすればするほど、利益は増える」という考えについて、"
               "正しく述べたものを 1 つ選べ。",
          tex=["正しくない。利益は値段が 70 円のときに最大となり、"
@@ -271,7 +273,7 @@ RAW = [
               "原価 40 円のすぐ上ではまだ増えている。"
               "40 円から 70 円までは値上げするほど利益は増える。"])),
 
-    dict(number=10, page=4, points=2, unit_tag="HONBAN1A-TENYOU",
+    dict(number=10, points=2, unit_tag="HONBAN1A-TENYOU",
          stem="来年は材料を変えるため、売れる個数が $y = 240 - 3x$ になると見込まれる。"
               "原価は 1 個 40 円のまま変わらないとき、利益が最大になる値段を 1 つ選べ。",
          tex=["$50$", "$70$", "$60$", "$80$"],

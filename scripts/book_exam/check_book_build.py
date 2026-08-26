@@ -268,8 +268,9 @@ def main():
     case("数式の選択肢が刷り漏れていたら落とす",
          B.verify_pages(META, mq, [math_page.replace("\u22123", "")]),
          ["選択肢 3 が PDF に無い"])
-    case("コマンド入りの数式は突き合わせられないと言う",
-         [B.pdf_check_note([dict(q_choice(1), choices=["$\\frac{1}{2}$", "$b$"])]) or ""],
+    # ★ \frac は寄せられるようになったので、寄せられない例は累乗にする
+    case("寄せられない数式は「照合していない」と言う",
+         [B.pdf_check_note([dict(q_choice(1), choices=["$x^{2}$", "$b$"])]) or ""],
          ["1 個はコマンド入りの数式なので"])
     case("素の数式だけなら見送りは無い",
          [B.pdf_check_note(mq) or ""], [""])
@@ -362,6 +363,52 @@ def main():
          ["S = -2x^2 + 4"])
     case("書き出しが違えば 1 字で足りる",
          [B.distinguishing_prefix(["ア案", "イ案"], 0)], ["ア"])
+
+    # --- ⑬ 分数と Markdown -------------------------------------------------
+    #   ★ KaTeX の \frac{a}{b} は PDF から **分母 → 分子** の順で抽出され、
+    #     手前に幅ゼロの空白 (U+200B) が入る (2026-08-21 実測)。
+    #     これを知らなかったので、分数の選択肢は 1 つも照合できていなかった。
+    case("分数は「分母→分子」に寄せる",
+         [B.tex_as_printed(r"\frac{3}{10}") or ""], ["103"])
+    case("累乗は寄せられないと言う",
+         ["寄せられない" if B.tex_as_printed(r"x^{2}") is None else "寄せた"],
+         ["寄せられない"])
+    case("不等号のコマンドは字に直す",
+         [B.tex_as_printed(r"5 \leqq x \leqq 15") or ""], ["5 ≦ x ≦ 15"])
+    case("幅ゼロの空白を落として突き合わせる",
+         [B.norm_pdf("\u200b\n10\n3")], ["103"])
+    frac_q = [dict(q_choice(1, choices=[r"$\frac{1}{10}$", r"$\frac{3}{7}$",
+                                        r"$\frac{3}{10}$", r"$\frac{7}{10}$"],
+                            ans=3, stem="確率を 1 つ選べ。"),
+                   choices_plain=["1/10", "3/7", "3/10", "7/10"],
+                   explanation="\n".join(f"{h}説明。" for h in H[:-1])
+                               + f"\n{H[-1]}\n1. 1/10 — 誤り。\n2. 3/7 — 誤り。"
+                                 f"\n4. 7/10 — 誤り。"),
+              q_choice(2, ans=2)]
+    frac_page = ("自己検査 冊子 第1問（2点） 確率を 1 つ選べ。 1. 2. 3. 4. "
+                 "第2問（2点） 第2問の設問文。 1.ア 2.イ 3.ウ 4.エ "
+                 "\u200b 10 1 \u200b 7 3 \u200b 10 3 \u200b 10 7")
+    case("分数の選択肢も刷り上がりと突き合わせる",
+         B.verify_pages(META, frac_q, [frac_page]), [])
+    case("分数の選択肢が刷り漏れていたら落とす",
+         B.verify_pages(META, frac_q, [frac_page.replace("\u200b 10 3 ", "")]),
+         ["選択肢 3 が PDF に無い"])
+    case("分数なら「照合していない」は出ない",
+         [B.pdf_check_note(frac_q) or ""], [""])
+
+    case("設問文に Markdown の太字を書いたら落とす",
+         B.verify(META, [dict(q_choice(1), stem="**強調**した設問文。"),
+                         q_choice(2, ans=2)]),
+         ["Markdown の太字"])
+    case("本文に Markdown の太字を書いたら落とす",
+         B.verify(dict(META, passages=[{"title": "資料",
+                                        "html": "<p>**強調**</p>"}]),
+                  [q_choice(1), q_choice(2, ans=2)]),
+         ["Markdown の太字"])
+    case("解説の ** は許す (画面は素のテキスト表示)",
+         B.verify(META, [dict(q_choice(1), explanation=exp_choice(
+             1, ["ア", "イ", "ウ", "エ"]) + "\n**ここは強調してよい**"),
+             q_choice(2, ans=2)]), [])
 
     print(f"--- 見たもの: _book_build.verify / spread_note / build_json / "
           f"verify_pages — シナリオ {N_CASE} 件 ---")
