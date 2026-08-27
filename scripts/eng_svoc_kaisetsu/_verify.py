@@ -245,3 +245,96 @@ def check_fill_notes(mod, errs):
         for marker, word in mod.FILLS.items():
             if word and marker not in listed:
                 errs.append(f"[{name}] 空所 {marker} が一覧表に載っていない")
+
+
+def _adj_groups(node):
+    """形容詞のカタマリ（DSL では < >）を出現順に取り出す。"""
+    out = []
+
+    def walk(nd):
+        for k in nd.kids:
+            if k.kind == "group":
+                if k.text == "<":
+                    out.append(core.plain_text(k))
+                walk(k)
+    walk(node)
+    return out
+
+
+def check_refs(mod, errs):
+    """形容詞のカタマリ [ ] の「かかり先（先行詞）」の検査。
+
+    ★ここが本命。関係詞・分詞のカタマリを括るだけでは、生徒は
+      「で、どの名詞にかかるの?」が分からない。宣言を必須にし、
+      ① 全部のカタマリに宣言があるか（書き漏らし）
+      ② 宣言がちょうど 1 つのカタマリを指しているか（あいまいな指定）
+      ③ かかる先が本当にそのカタマリより<前>に実在するか（後ろの名詞を指していないか）
+      を機械で確かめる。
+    """
+    name = mod.META["key"]
+    refs = getattr(mod, "REFS", {})
+    seen = set()
+    for para in mod.PARAS:
+        for j, s in enumerate(para["sents"], 1):
+            key = (para["no"], j)
+            where = f"[{name}] 第{para['no']}段落 第{j}文"
+            node = core.parse(s["dsl"])
+            groups = _adj_groups(node)
+            decl = refs.get(key, [])
+            if key in refs:
+                seen.add(key)
+            if len(groups) != len(decl):
+                errs.append(f"{where}: 形容詞のカタマリ {len(groups)} 個に対して "
+                            f"かかり先の宣言が {len(decl)} 個")
+                continue
+            sent = core.cmp_norm(core.plain_text(node))
+            used = set()
+            for ant, head, kind in decl:
+                hit = [i for i, g in enumerate(groups)
+                       if core.cmp_norm(g).startswith(core.cmp_norm(head))]
+                if len(hit) != 1:
+                    errs.append(f"{where}: 先頭 {head!r} が指すカタマリが {len(hit)} 個"
+                                f"（ちょうど 1 個であるべき）")
+                    continue
+                if hit[0] in used:
+                    errs.append(f"{where}: 先頭 {head!r} が同じカタマリを二重に指している")
+                used.add(hit[0])
+                if not kind.strip():
+                    errs.append(f"{where}: {head!r} の種類が空")
+                # かかる先が、そのカタマリより前に語として実在するか
+                pos = sent.find(core.cmp_norm(groups[hit[0]]))
+                if pos < 0:
+                    errs.append(f"{where}: カタマリ {head!r} を本文中に見つけられない")
+                    continue
+                pref = sent[:pos]
+                if not re.search(r"(?<![A-Za-z])" + re.escape(core.cmp_norm(ant))
+                                 + r"(?![A-Za-z])", pref):
+                    errs.append(f"{where}: かかり先 {ant!r} が "
+                                f"[ {head} … ] より前に見当たらない")
+    for key in refs:
+        if key not in seen:
+            errs.append(f"[{name}] REFS に余分な項目（そんな文は無い）: {key}")
+
+
+def check_notation(mod, errs):
+    """古い記号名が本文中に残っていないか。
+
+    ★2026-08-27 に括弧の割り当てを変えた（形容詞＝[ ] / 名詞＝〈 〉）。
+      解説の地の文が「&lt; &gt; の修飾」のまま残ると、凡例と本文で記号が食い違う。
+      生徒はどちらを信じてよいか分からなくなるので機械で止める。
+    """
+    name = mod.META["key"]
+    stale = ("&lt;", "&gt;")
+    def scan(text, where):
+        for t in stale:
+            if t in str(text):
+                errs.append(f"[{name}] {where}: 古い記号 {t} が残っている → {str(text)[:60]!r}")
+    for para in mod.PARAS:
+        for j, s in enumerate(para["sents"], 1):
+            for n in s.get("notes", []):
+                scan(n, f"第{para['no']}段落 第{j}文 の注記")
+            scan(s.get("tag", ""), f"第{para['no']}段落 第{j}文 の tag")
+    for q in getattr(mod, "QUESTIONS", []):
+        for key in ("core", "struct", "ng"):
+            for x in q.get(key, []):
+                scan(x, f"設問{q['no']} の {key}")

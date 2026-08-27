@@ -235,7 +235,7 @@ PARAS = [
              "<b>have been が 1 セット</b>で、その C が ineffective。",
              "worried about family relations は a parent を、campaigning for … は a small interest "
              "group を後ろから修飾する分詞。combined with 〜 は the concerns にかかる。"
-             "<b>入れ子の &lt; &gt; を 3 段たどれるか</b>がこの文の山場。",
+             "<b>入れ子の [ ] を 3 段たどれるか</b>がこの文の山場（下の「かかり先」で確認）。",
          ],
          "ja": "現行の法律は、家族関係を心配したある親の懸念に、交通安全の強化を求める小さな利益団体の"
                "圧力が加わって制定されたものだが、いずれにせよほとんど効果を上げてこなかった。"},
@@ -357,7 +357,7 @@ PARAS = [
         {"dsl": "{S:Fear} <about the potential misuse <of a substance>> {V:is} {M:not} {C:a genuine "
                 "reason} <to legislate against it> .",
          "pat": "第2文型（SVC）", "tag": "S が長い名詞句",
-         "notes": ["S は <b>Fear</b> 1 語。about 以下は全部 &lt; &gt; の修飾。"
+         "notes": ["S は <b>Fear</b> 1 語。about 以下は全部 [ ] の修飾。"
                    "「S ＝ Fear、V ＝ is」と裸にできれば一瞬で終わる。"],
          "ja": "ある物質が悪用されるかもしれないという恐れは、それを法で禁じる正当な理由にはならない。"},
         {"dsl": "( {接:If} {S':it} {V':were} ) , {S:we} {助:would} {V:legislate} ( against a large "
@@ -492,3 +492,54 @@ UNDERLINE = [
     ("5", "able to attribute this phenomenon", "attribute"),
     ("9", "What will change with new legislation", "will"),
 ]
+
+# ---------------------------------------------------------------- かかり先（先行詞）
+# 形容詞のカタマリ [ ]（関係詞節・分詞・不定詞・前置詞句）が<b>どの語にかかるか</b>。
+#   (段落, 文) → [ (かかる先, カタマリの先頭, 種類), ... ]
+# ★check.py が「[ ] を 1 つ残らず宣言しているか」「かかる先が本当にその前にあるか」を照合する。
+REFS = {
+    (1, 1): [("a boy or girl", "of eighteen", "前置詞句"),
+             ("a deadly weapon", "such as a pistol", "前置詞句")],
+    (1, 2): [("one thing", "that person could not do", "関係代名詞（目的格・省略）")],
+    (2, 6): [("the use and abuse", "of alcohol", "前置詞句")],
+    (3, 1): [("The existing laws", "which were enacted", "関係代名詞（主格・非制限用法）"),
+             ("the concerns", "of a parent", "前置詞句"),
+             ("a parent", "worried about", "過去分詞の後置修飾"),
+             ("the concerns", "combined with pressure", "過去分詞の後置修飾"),
+             ("pressure", "by a small interest group", "前置詞句"),
+             ("a small interest group", "campaigning for", "現在分詞の後置修飾")],
+    (3, 2): [("two different sets", "of statistics", "前置詞句")],
+    (3, 4): [("the number", "of traffic-related deaths", "前置詞句"),
+             ("traffic-related deaths", "in the US", "前置詞句")],
+    (3, 5): [("a common error", "of logic", "前置詞句"),
+             ("countries", "which had a lower", "関係代名詞（主格）"),
+             ("countries", "which made no changes", "関係代名詞（主格）")],
+    (4, 1): [("Another statistical set", "of evidence", "前置詞句"),
+             ("the failure", "of existing laws", "前置詞句"),
+             ("the failure", "to prevent alcohol", "不定詞の形容詞用法"),
+             ("alcohol consumption", "by under-age drinkers", "前置詞句")],
+    (4, 2): [("the mistake", "of Prohibition", "前置詞句"),
+             ("Prohibition", "in the 1920s", "前置詞句"),
+             ("the 1920s", "when alcohol was officially banned", "関係副詞")],
+    (4, 3): [("over 5,000 people", "under 21", "前置詞句")],
+    (5, 1): [("excessive drinking", "on a single occasion", "前置詞句"),
+             ("the age restrictions", "in the USA", "前置詞句")],
+    (5, 3): [("the problem", "of on-campus drinking", "前置詞句")],
+    (6, 1): [("Fear", "about the potential misuse", "前置詞句"),
+             ("the potential misuse", "of a substance", "前置詞句"),
+             ("a genuine reason", "to legislate against it", "不定詞の形容詞用法")],
+    (6, 2): [("a large number", "of usually harmless", "前置詞句"),
+             ("usually harmless items and substances", "which might in the hands",
+              "関係代名詞（主格）"),
+             ("the hands", "of certain individuals", "前置詞句")],
+    (7, 1): [("most", "of Europe", "前置詞句"),
+             ("the age", "of adulthood", "前置詞句"),
+             ("the age", "at which drinking is allowed", "前置詞＋関係代名詞")],
+    (7, 2): [("the right", "to do all the activities", "不定詞の形容詞用法"),
+             ("all the activities", "listed in the first paragraph", "過去分詞の後置修飾")],
+    (7, 3): [("one sure way", "to lessen the risk", "不定詞の形容詞用法"),
+             ("the risk", "that a person will become", "同格の that（関係詞ではない）")],
+    (8, 1): [("a direct result", "of changing the law", "前置詞句")],
+    (8, 4): [("the issues", "which worry some parents", "関係代名詞（主格）")],
+    (8, 5): [("public perception", "of the young", "前置詞句")],
+}

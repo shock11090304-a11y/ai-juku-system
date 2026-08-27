@@ -40,6 +40,8 @@ def run(mod):
     _verify.check_underline(mod, errs)
     _verify.check_pattern_consistency(mod, errs)
     _verify.check_fill_notes(mod, errs)
+    _verify.check_refs(mod, errs)
+    _verify.check_notation(mod, errs)
     return errs
 
 
@@ -47,7 +49,7 @@ class _Snap:
     """モジュールは deepcopy できないので、検査が見る属性だけを複製した器を作る。"""
     _KEYS = ("META", "RAW", "FILLS", "PARAS", "QUESTIONS",
              "OPTIONS", "ANSWER_MAP", "STANDALONE_ANSWER", "F_WORDS", "UNDERLINE",
-             "FILL_NOTES", "FILL_HINT", "SCENES")
+             "FILL_NOTES", "FILL_HINT", "SCENES", "REFS")
 
     def __init__(self, mod):
         for k in self._KEYS:
@@ -117,7 +119,22 @@ def selftest():
     m.FILL_NOTES = [("(G)", "a) do", "根拠")]              # 本文は wait
     cases.append(("一覧表と本文の答えが食い違う", m))
 
-    # 変異12: 和訳を空にする
+    # 変異12: かかり先の宣言を 1 つ落とす（書き漏らし）
+    m = _Snap(T)
+    m.REFS[(14, 3)] = m.REFS[(14, 3)][:1]
+    cases.append(("かかり先の宣言を落とす", m))
+
+    # 変異13: かかり先を、そのカタマリより後ろにある語にする
+    m = _Snap(T)
+    m.REFS[(12, 4)] = [("Mama", "she'd made", "関係代名詞（目的格・省略）")]
+    cases.append(("かかり先が後ろの語を指している", m))
+
+    # 変異14: 古い記号名を注記に残す
+    m = _Snap(T)
+    m.PARAS[0]["sents"][0]["notes"] = ["&lt; &gt; の修飾"]
+    cases.append(("古い記号名が残っている", m))
+
+    # 変異15: 和訳を空にする
     m = _Snap(T)
     m.PARAS[0]["sents"][0]["ja"] = ""
     cases.append(("和訳を空にする", m))
@@ -170,7 +187,7 @@ def main():
             print(f"  ✗ VIOLATION: 変異『{s}』を入れてもゲートが通ってしまった（検査が無力）")
         total += len(survived)
     else:
-        print("  ✓ 変異 12 種すべてでゲートが落ちた（検査は生きている）")
+        print("  ✓ 変異 15 種すべてでゲートが落ちた（検査は生きている）")
 
     print("=" * 68)
     if total:

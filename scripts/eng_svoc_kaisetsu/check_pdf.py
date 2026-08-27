@@ -23,7 +23,8 @@ sys.path.insert(0, HERE)
 import core, _verify
 
 DEFAULT_PDF = os.path.join(HERE, "_out", "英文構造解析_慶應経済2018-1_東大2018-5.pdf")
-BRACKETS = set("()[]<>")
+# ソースの括弧と、紙に刷るときの読み替え後の括弧（core.DISP_BR）の両方を落とす
+BRACKETS = set("()[]<>") | {b for pair in core.DISP_BR.values() for b in pair}
 LABELS = set(core.ALLOWED_LABELS)
 
 # 日本語フォントに無い字が豆腐で出ていないか（CLAUDE.md 2026-08-02）

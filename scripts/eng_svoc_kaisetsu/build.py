@@ -14,7 +14,7 @@ import os, re, sys, html
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import core, check as gate
+import core, _verify, check as gate
 
 OUT_DIR = os.environ.get("SVOC_OUT", os.path.join(HERE, "_out"))
 STUDENT = os.environ.get("STUDENT_NAME", "")
@@ -45,6 +45,21 @@ table.fills th { background:#eef2ff; white-space:nowrap;
   font-family:"Hiragino Kaku Gothic ProN","IPAPGothic",sans-serif; }
 table.fills td.k { white-space:nowrap; font-weight:700; color:#1e3a8a; }
 table.fills td.a { white-space:nowrap; font-weight:700; font-family:Georgia,serif; }
+
+/* かかり先（先行詞） */
+.refs { margin:4px 0 2px; padding:5px 9px; background:#faf7ff; border:1px solid #e6ddf7;
+  border-left:3px solid #7c3aed; border-radius:6px; }
+.refs .rh { font-size:8.3pt; font-weight:700; color:#6d28d9; margin-bottom:2px;
+  font-family:"Hiragino Kaku Gothic ProN","IPAPGothic",sans-serif; }
+.refs .ri { font-size:9.1pt; line-height:1.6; margin:1px 0; }
+.refs .rb { font-family:Georgia,serif; color:#5b21b6; font-weight:700; }
+.refs .rar { color:#7c3aed; font-weight:700; margin:0 6px; }
+.refs .rt { font-family:Georgia,serif; font-weight:700; color:#111;
+  border-bottom:2px solid #7c3aed; }
+.refs .rw { font-size:7.6pt; color:#6d28d9; margin-left:5px; font-weight:700;
+  font-family:"Hiragino Kaku Gothic ProN","IPAPGothic",sans-serif; }
+.refs .rk { font-size:8.3pt; color:#475569; margin-left:8px;
+  font-family:"Hiragino Kaku Gothic ProN","IPAPGothic",sans-serif; }
 
 /* 設問解説カード */
 .qcard { border:1.4px solid #cbd5e1; border-radius:9px; padding:9px 13px; margin:9px 0 12px;
@@ -94,9 +109,9 @@ RULES = [
     ("rc-adv", "( ) … 副詞のカタマリ",
      "前置詞句・副詞節・分詞構文。多くは外しても文が成立するので、まず外して骨組みを見る。",
      "( under his gaze ) , ( though she didn't feel … )"),
-    ("rc-noun", "[ ] … 名詞のカタマリ",
+    ("rc-noun", "〈 〉 … 名詞のカタマリ",
      "that 節・what 節・whether / if 節・動名詞句・不定詞の名詞用法。S / O / C になれる。外すと文が壊れる。",
-     "She felt [ she'd gone past the age ] ."),
+     "She felt 〈 she'd gone past the age 〉 ."),
     ("rc-quote", "文型を数えるときの約束",
      "①<b>受動態は見た目の形で数える</b>（能動に戻さない）。be judged は S V ＝第 1 文型、"
      "be made worse は S V C ＝第 2 文型。②<b>引用文はそれ自体を 1 文として分解する</b>。"
@@ -104,17 +119,20 @@ RULES = [
      "&quot;…,&quot; she said のように前に出ているときは独立させた。"
      "③ 文型の見出しには<b>主節の文型を全部</b>書き、従属節は「〜節の中は」と断って添えた。",
      "the problem is made worse → S V C（第2文型）"),
-    ("rc-adj", "&lt; &gt; … 形容詞のカタマリ",
-     "関係詞節・分詞の後置修飾・形容詞用法の不定詞や前置詞句。直前の名詞に線で結ぶと構造が見える。",
-     "the call &lt; she'd made &gt;"),
+    ("rc-adj", "[ ] … 形容詞のカタマリ（関係詞節・分詞）",
+     "関係詞節・分詞の後置修飾・形容詞用法の不定詞や前置詞句。<b>必ず名詞にかかる</b>ので、"
+     "各文の下に「<b>かかり先</b>」を全部書き出した。関係詞ならそれが<b>先行詞</b>。"
+     "[ ] を見たら、目で線を引いてその名詞に戻ること。",
+     "the call [ she'd made ] → the call が先行詞"),
 ]
 
 STEPS = [
-    "① 前から読んで <b>( ) [ ] &lt; &gt; の切れ目</b>に印を入れる。目印は「前置詞・接続詞・関係詞・-ing / -ed / to」。",
+    "① 前から読んで <b>( ) [ ] 〈 〉 の切れ目</b>に印を入れる。目印は「前置詞・接続詞・関係詞・-ing / -ed / to」。",
     "② カタマリを全部外し、残った<b>裸の骨組み</b>を見る。まず <b>V（述語動詞）を 1 つ</b>確定させる。",
     "③ V の前の名詞が S、後ろの名詞が O、後ろの形容詞・名詞で「S ＝ それ」なら C。",
-    "④ 骨組みが決まってから<b>文型を確定</b>し、外したカタマリを「どの語にかかるか」を決めながら戻す。",
-    "⑤ 最後に和訳する。<b>訳せたかではなく、S V O C を指させるか</b>で自己採点する。",
+    "④ <b>[ ] は必ず名詞にかかる</b>。どの名詞にかかるかを指で押さえる（関係詞ならそれが先行詞）。",
+    "⑤ 骨組みが決まってから<b>文型を確定</b>し、外したカタマリを戻す。",
+    "⑥ 最後に和訳する。<b>訳せたかではなく、S V O C とかかり先を指させるか</b>で自己採点する。",
 ]
 
 
@@ -229,7 +247,28 @@ def fills_table(mod):
             f'<table class="fills"><tr><th>空所</th><th>入る語</th><th>根拠</th></tr>{rows}</table>')
 
 
-def sent_card(no, s):
+def refs_html(mod, para_no, j, node):
+    """かかり先（先行詞）の行。The Rules 式に「どのカタマリが → どの語にかかるか」を出す。"""
+    decl = getattr(mod, "REFS", {}).get((para_no, j))
+    if not decl:
+        return ""
+    groups = _verify._adj_groups(node)
+    rows = []
+    for ant, head, kind in decl:
+        g = next(x for x in groups
+                 if core.cmp_norm(x).startswith(core.cmp_norm(head)))
+        shown = g if len(g) <= 46 else g[:44].rstrip() + "…"
+        word = "先行詞" if "関係" in kind else "かかる先"
+        rows.append(f'<div class="ri"><span class="rb">[ {esc(shown)} ]</span>'
+                    f'<span class="rar">→</span>'
+                    f'<span class="rt">{esc(ant)}</span>'
+                    f'<span class="rw">{word}</span>'
+                    f'<span class="rk">{esc(kind)}</span></div>')
+    return (f'<div class="refs"><div class="rh">かかり先（[ ] は何にかかるか）</div>'
+            f'{"".join(rows)}</div>')
+
+
+def sent_card(no, s, mod=None, para_no=None, j=None):
     node = core.parse(s["dsl"])
     tag = f'<span class="atag">{s["tag"]}</span>' if s.get("tag") else ""
     notes = ""
@@ -238,9 +277,10 @@ def sent_card(no, s):
                  + "".join(f"<li>{n}</li>" for n in s["notes"]) + "</ul></div>")
     skel = core.render_skeleton(node)
     skel_html = (f'<div class="skel"><span class="lead">骨組み</span>{skel}</div>') if skel.strip() else ""
+    refs = refs_html(mod, para_no, j, node) if mod is not None else ""
     return (f'<div class="acard"><div class="ah"><span class="ano">{esc(no)}</span>'
             f'<span class="apat">{esc(s["pat"])}</span>{tag}</div>'
-            f'{core.render_analysis(node)}{skel_html}{notes}'
+            f'{core.render_analysis(node)}{skel_html}{refs}{notes}'
             f'<div class="jatr"><b>訳</b>{esc(s["ja"])}</div></div>')
 
 
@@ -257,7 +297,7 @@ def analysis_html(mod):
         if para.get("sum"):
             out.append(f'<div class="psum">{esc(para["sum"])}</div>')
         for j, s in enumerate(para["sents"], 1):
-            out.append(sent_card(f'{para["no"]}-{j}', s))
+            out.append(sent_card(f'{para["no"]}-{j}', s, mod, para["no"], j))
     return "".join(out)
 
 

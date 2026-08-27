@@ -179,11 +179,13 @@ PARAS = [
          "notes": ["この if は<b>「もし」ではなく「〜かどうか」</b>（＝whether）。see の O′。",
                    "wait to do（〜しようと待つ）の to see 以下がすべて副詞のカタマリ。"],
          "ja": "おそらく彼は、疑いを確かめられるように、彼女が口をきくかどうかを見ようと待っていたのだ。"},
-        {"dsl": "{S:She} {M:simply} {V:left} {O:her silence} {C:open} <to interpretation> .",
+        {"dsl": "{S:She} {M:simply} {V:left} {O:her silence} {C:open} ( to interpretation ) .",
          "pat": "第5文型（SVOC）", "tag": "★leave O C",
          "notes": ["<b>leave O C</b>＝「O を C のままにしておく」。"
                    "left を「去った」と取ると O と C が宙に浮く。",
                    "open to interpretation＝「解釈に開かれた＝どうとでも取れる」。"
+                   "to interpretation は<b>名詞ではなく形容詞 open にかかる</b>ので、"
+                   "形容詞のカタマリ [ ] ではなく副詞のカタマリ ( ) で括ってある。"
                    "＝あえて否定も肯定もしなかった、ということ。"],
          "ja": "彼女はただ、自分の沈黙をどうとでも取れるままにしておいた。"},
     ]},
@@ -460,7 +462,7 @@ PARAS = [
          "pat": "第3文型（SVO）", "tag": "say to 人（第4文型にはならない）",
          "notes": ["<b>say は第 4 文型を作らない</b>。「人に」は to 人 で表す。"
                    "tell 人 that 〜 との違いに注意。",
-                   "said の O は引用文まるごと（[ ] の中）。引用文自体は S V O の第 3 文型。"],
+                   "said の O は引用文まるごと（〈 〉 の中）。引用文自体は S V O の第 3 文型。"],
          "ja": "数週間後、クラーク氏はジェイニーに言った。「手を貸してもらえるかもしれません」"},
     ]},
     {"no": 16, "sents": [
@@ -795,7 +797,7 @@ QUESTIONS = [
             "Sometimes she thought [ it saved her, gave her a separate place to withdraw into "
             "as far as she might need at any given moment ]",
             "　主節: S＝she / V＝thought / O＝[ ]（that 省略）",
-            "　[ ] の中: S'＝it（＝silence） / V'＝saved / O'＝her ／ V'＝gave / O1'＝her / "
+            "　〈 〉 の中: S'＝it（＝silence） / V'＝saved / O'＝her ／ V'＝gave / O1'＝her / "
             "O2'＝a separate place",
             "　<to withdraw into> ← a separate place を修飾（into の目的語が place）",
             "and there were moments ── M＝there / V＝were / S＝moments（There 構文）",
@@ -1001,4 +1003,37 @@ FILL_HINT = {
     "(C)": "3 か所すべてに同じ 1 語。② had not (C) が過去分詞・① は過去形なので、同形の語に限られる。",
     "(F)": "need to の後ろは原形。与えられた語で原形に置けるのは know だけ（photograph は will と組む）。",
     "(G)": "直前の There's cleaning to be done. を受けて It ＝ 掃除。「それは後回しでいい」。",
+}
+
+# ---------------------------------------------------------------- かかり先（先行詞）
+# 形容詞のカタマリ [ ] が<b>どの語にかかるか</b>。(段落, 文) → [ (かかる先, 先頭, 種類), ... ]
+REFS = {
+    (1, 2): [("the room", "under the stairs", "前置詞句")],
+    (2, 2): [("the way", "her mother had spoken", "the way S V（関係副詞相当・that の省略）")],
+    (4, 2): [("a portion", "of the stairs", "前置詞句")],
+    (4, 4): [("the way", "she might once have wanted", "the way S V（関係副詞相当）")],
+    (4, 5): [("the age", "for romance", "前置詞句")],
+    (4, 6): [("a passing", "she'd lamented", "関係代名詞（目的格・省略）")],
+    (6, 2): [("no explanation", "about how he'd known", "前置詞句")],
+    (11, 1): [("her entry", "into silence", "前置詞句")],
+    (11, 2): [("the end", "of the porch", "前置詞句"),
+              ("the porch", "above the steps", "前置詞句")],
+    (12, 3): [("inside her", "where illness and confusion grew", "関係副詞")],
+    (12, 4): [("the call", "she'd made", "関係代名詞（目的格・省略）")],
+    (12, 5): [("silence", "which is where she lived", "関係代名詞（主格・非制限用法）")],
+    (12, 6): [("a separate place", "to withdraw into", "不定詞の形容詞用法（前置詞で終わる）")],
+    (14, 1): [("the way", "a child will", "the way S V（関係副詞相当）")],
+    (14, 2): [("the woods", "behind their house", "前置詞句")],
+    (14, 3): [("a scream", "that expressed all", "関係代名詞（主格）"),
+              ("all", "she felt", "関係代名詞（目的格・省略）")],
+    (17, 1): [("the ones", "I will photograph", "関係代名詞（目的格・省略）")],
+    (17, 2): [("some history", "about them", "前置詞句")],
+    (18, 2): [("the old house", "at the top", "前置詞句"),
+              ("the top", "of Oakhill", "前置詞句")],
+    (18, 4): [("Some time", "away from here", "前置詞句")],
+    (21, 1): [("the quick vibration", "of her mother's approach", "前置詞句")],
+    (21, 2): [("the way", "she'd always seen them", "the way S V（関係副詞相当）")],
+    (21, 3): [("a harsh whisper", "that might have sounded", "関係代名詞（主格）")],
+    (23, 3): [("some things", "around the house", "前置詞句")],
+    (25, 2): [("cleaning", "to be done", "不定詞の形容詞用法（受動）")],
 }
