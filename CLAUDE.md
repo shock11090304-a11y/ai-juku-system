@@ -11,6 +11,26 @@
 - **DB接続プール**: `db()` は psycopg_pool(max_size=`DB_POOL_MAX`既定16・単一プロセス前提)。不具合時は env `DB_POOL_ENABLED=0` → 再起動で直接connectへ即フォールバック。★将来 `uvicorn --workers N` 化するなら 16×N が Postgres `max_connections`(現100) を超えないよう `DB_POOL_MAX` を絞ること。in-memory rate limiter (`_RATE_LIMIT_STORE`・curriculum 日次capなど) も per-process なので実効上限が N 倍に希釈される点に注意。
   - 取込API等は**デプロイ済みのコードを検証**するので、新 part/ルートを足したら「push→デプロイ反映確認→その後にデータ投入」の順を守る (逆順は無効扱いで弾かれる)。
 
+## 手元の教材の探し方 — まず `materials/INDEX.json` を引く (2026-08-27)
+- 塾長のデスクトップ / Google ドライブにある教材の**目録**が `materials/INDEX.json` にある。
+  ★**「〇〇の教材ある?」と聞かれたら、アップロードを頼む前にここを引くこと**。
+  毎回「アップして」「探して」と指示させないための仕組みで、指示されなくても見に行くのが前提。
+- 目録は**所在だけ**（ファイル名・パス・サイズ・更新日・推定した科目/種別/タグ）。**本文は入っていない**。
+  中身が要るときは:
+  - `source: gdrive` → **Google ドライブ コネクタで直接読める**（`locator` の URL / file id）。アップロード不要。
+  - `source: local`  → クラウドからは読めない。`locator`（`~/Desktop` からの相対パス）を示して
+    **その 1 本だけ**添付してもらう。「デスクトップを探して」と丸投げさせない。
+- ★**目録に本文と個人情報を入れない**。理由は 2 つ:
+  ① このリポジトリは PUBLIC。② 入試問題の本文は著作権法 30 条の 4 の範囲で扱う方針で、
+  本番の `past_exam_upload` も**元問題のテキストを DB に保存していない** (`server/main.py`)。
+  目録がその抜け道になってはいけない。`build_index.py` は**ファイルを一度も開かない**。
+- 更新: ローカルは塾長の端末で `python3 scripts/materials_index/build_index.py ~/Desktop`、
+  Drive 側はクラウドの Claude が `--import-listing` で流し込む。同じ出所は丸ごと入れ替わる (冪等)。
+- 検査は `check_materials_index.py` (中身) と `verify_index_gate.py` (ゲートが本当に落とすかを
+  16 種の変異で確認)。詳細は `scripts/materials_index/README.md`。
+- ★**目録は「無い」ことの証明にはならない**。載っていない = 走査していないだけかもしれない。
+  `sources[].scanned_at` と `count` を見て、古ければ「棚卸しし直しますか」と聞くこと。
+
 ## 教材・問題を作るときのルール (2026-08-02 塾長指摘を反映)
 - **解説フォーマットは `server/main.py` の生成プロンプトが正典**。書き始める前に必ず読むこと。自己流の散文で書かない。
   - 数学(理系): 「方針→立式→計算→答え→補足」の 5 段階 (3行以上)。同プールの `seed-data/rikei_kyotsu_math_manual.json` が実例。

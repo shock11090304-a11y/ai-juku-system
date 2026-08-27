@@ -1,0 +1,614 @@
+{
+  "schema": 1,
+  "note": "所在のみ。本文は入れない（PUBLIC リポジトリ・著作権）。",
+  "sources": [
+    {
+      "id": "gdrive",
+      "label": "Google ドライブ (マイドライブ)",
+      "kind": "listing",
+      "scanned_at": "2026-08-27",
+      "count": 48
+    }
+  ],
+  "items": [
+    {
+      "id": "gdrive:1ijMqeQIlFV-gpLbTkLdecuvjYVehxe7-XiG1bbhYhuk",
+      "source": "gdrive",
+      "title": "# 命令\n高校生向けの模試を作成してください。\n\n# 設定\n・対象学年：高校1年生（1月実施レベル...",
+      "locator": "https://drive.google.com/open?id=1ijMqeQIlFV-gpLbTkLdecuvjYVehxe7-XiG1bbhYhuk",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 6694,
+      "modified": "2025-12-15",
+      "subject": "不明",
+      "kind": "模試",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1VIu7YGUIKFyuLtU-sJ3nFUjdEi4U97S4SaBxmKycWX0",
+      "source": "gdrive",
+      "title": "Googleフォームでテストを作成しやすい形式で、カリキュラムに基づいた問題データを作成しました。...",
+      "locator": "https://drive.google.com/open?id=1VIu7YGUIKFyuLtU-sJ3nFUjdEi4U97S4SaBxmKycWX0",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 10518,
+      "modified": "2026-01-20",
+      "subject": "不明",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1-35ibxdtF-PVuHhtEAx4K9QJrlX1XpGC73zuBBGZFgQ",
+      "source": "gdrive",
+      "title": "Googleフォーム問題作成支援",
+      "locator": "https://drive.google.com/open?id=1-35ibxdtF-PVuHhtEAx4K9QJrlX1XpGC73zuBBGZFgQ",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 12393,
+      "modified": "2026-01-20",
+      "subject": "不明",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1EcIEnF7iazxIPal0bgZFMl2hiuH6fE6n",
+      "source": "gdrive",
+      "title": "Trillion_入塾案内_2026.pdf",
+      "locator": "https://drive.google.com/open?id=1EcIEnF7iazxIPal0bgZFMl2hiuH6fE6n",
+      "mime": "pdf",
+      "bytes": 115679,
+      "modified": "2026-05-22",
+      "subject": "不明",
+      "kind": "資料",
+      "tags": [
+        "2026"
+      ]
+    },
+    {
+      "id": "gdrive:1nBAwy0zQAgr6bXwozgAfDFRWQVTNGizfUQ5rqbUcmdk",
+      "source": "gdrive",
+      "title": "Trillion記述模試（解答解説編）",
+      "locator": "https://drive.google.com/open?id=1nBAwy0zQAgr6bXwozgAfDFRWQVTNGizfUQ5rqbUcmdk",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 17950,
+      "modified": "2025-12-15",
+      "subject": "不明",
+      "kind": "模試",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1fWp3-kvcMKHa5_6oX6FZdOnXhajFGzRTZM8I0lL1Yk0",
+      "source": "gdrive",
+      "title": "それぞれの問題の解説も作成してください",
+      "locator": "https://drive.google.com/open?id=1fWp3-kvcMKHa5_6oX6FZdOnXhajFGzRTZM8I0lL1Yk0",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 5618,
+      "modified": "2025-12-19",
+      "subject": "不明",
+      "kind": "解答解説",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1PqH0Lmf8OdPwt69sC9BHHxpqBijxoJGsJKkhSF5C0l4",
+      "source": "gdrive",
+      "title": "中学2年生復習プリント（宿題）",
+      "locator": "https://drive.google.com/open?id=1PqH0Lmf8OdPwt69sC9BHHxpqBijxoJGsJKkhSF5C0l4",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 10582,
+      "modified": "2025-12-15",
+      "subject": "不明",
+      "kind": "授業プリント",
+      "tags": []
+    },
+    {
+      "id": "gdrive:11NusJvUUVR1m5-hw2DN-wagTA0N-9FTeGw3EDbW3EzQ",
+      "source": "gdrive",
+      "title": "中学１年生宿題プリント",
+      "locator": "https://drive.google.com/open?id=11NusJvUUVR1m5-hw2DN-wagTA0N-9FTeGw3EDbW3EzQ",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 11219,
+      "modified": "2025-12-17",
+      "subject": "不明",
+      "kind": "授業プリント",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1QkQXAhXeHWuUCWTkb0Iq8iFGMZDAaus3",
+      "source": "gdrive",
+      "title": "夏期講習概要.pdf",
+      "locator": "https://drive.google.com/open?id=1QkQXAhXeHWuUCWTkb0Iq8iFGMZDAaus3",
+      "mime": "pdf",
+      "bytes": 678777,
+      "modified": "2026-05-19",
+      "subject": "不明",
+      "kind": "資料",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1nDctp2siILgBM0u_z2jjmgANCCmlSgndPmJq0uMLT7o",
+      "source": "gdrive",
+      "title": "学習計画作成と模試結果待ち",
+      "locator": "https://drive.google.com/open?id=1nDctp2siILgBM0u_z2jjmgANCCmlSgndPmJq0uMLT7o",
+      "mime": "spreadsheet",
+      "bytes": 1386,
+      "modified": "2026-02-09",
+      "subject": "不明",
+      "kind": "模試",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1kQz2Mxco7iKqySIvJrJ0KyQuFMe966MAXQ10vgyGKE4",
+      "source": "gdrive",
+      "title": "形式などは今の状態で完璧です。\n問題もこのままでいいですが1年を通して宿題として使えるようなテキス...",
+      "locator": "https://drive.google.com/open?id=1kQz2Mxco7iKqySIvJrJ0KyQuFMe966MAXQ10vgyGKE4",
+      "mime": "spreadsheet",
+      "bytes": 1421,
+      "modified": "2025-12-24",
+      "subject": "不明",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1vwEn1zPJuA_JqQ7kL499fT4VDkthYrBZZ0cCYIxNgsA",
+      "source": "gdrive",
+      "title": "慶應義塾問題演習解答解説",
+      "locator": "https://drive.google.com/open?id=1vwEn1zPJuA_JqQ7kL499fT4VDkthYrBZZ0cCYIxNgsA",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 34682,
+      "modified": "2025-12-14",
+      "subject": "不明",
+      "kind": "解答解説",
+      "tags": [
+        "慶應"
+      ]
+    },
+    {
+      "id": "gdrive:1CokFNgXzhTad-AwEYJJQECvXAQKjsTaC",
+      "source": "gdrive",
+      "title": "料金比較資料_詳細版_修正版.pdf",
+      "locator": "https://drive.google.com/open?id=1CokFNgXzhTad-AwEYJJQECvXAQKjsTaC",
+      "mime": "pdf",
+      "bytes": 720115,
+      "modified": "2026-05-19",
+      "subject": "不明",
+      "kind": "資料",
+      "tags": []
+    },
+    {
+      "id": "gdrive:15kBpjBoPpZ2mimJE3ezwSd4sqCPyfDZeHYprVbzB4oI",
+      "source": "gdrive",
+      "title": "早稲田大学問題演習",
+      "locator": "https://drive.google.com/open?id=15kBpjBoPpZ2mimJE3ezwSd4sqCPyfDZeHYprVbzB4oI",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 14046,
+      "modified": "2025-12-11",
+      "subject": "不明",
+      "kind": "問題",
+      "tags": [
+        "早稲田"
+      ]
+    },
+    {
+      "id": "gdrive:1MTidP8iVLYeCcWSo2Qe4w-cXXJthA0dL2ZxlKtRtsuk",
+      "source": "gdrive",
+      "title": "青山学院大学問題演習",
+      "locator": "https://drive.google.com/open?id=1MTidP8iVLYeCcWSo2Qe4w-cXXJthA0dL2ZxlKtRtsuk",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 79463,
+      "modified": "2025-11-18",
+      "subject": "不明",
+      "kind": "問題",
+      "tags": [
+        "青山"
+      ]
+    },
+    {
+      "id": "gdrive:1o5hoVVQqVbpDC0-rTu_SLG73fHew5GDictHR5W4TSv0",
+      "source": "gdrive",
+      "title": "高校2年生（形容詞）宿題プリント",
+      "locator": "https://drive.google.com/open?id=1o5hoVVQqVbpDC0-rTu_SLG73fHew5GDictHR5W4TSv0",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 13518,
+      "modified": "2025-12-15",
+      "subject": "不明",
+      "kind": "授業プリント",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1pkFDt5cCE6kVo5t71kfSszdiq6hOYMelhYF1NlS7BqI",
+      "source": "gdrive",
+      "title": "高校生の問題演習は実際の入試問題を使いたいので偏差値60以上の大学の問題をピックアップしてください...",
+      "locator": "https://drive.google.com/open?id=1pkFDt5cCE6kVo5t71kfSszdiq6hOYMelhYF1NlS7BqI",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 11972,
+      "modified": "2025-12-19",
+      "subject": "不明",
+      "kind": "過去問",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1FAOFB0U014PUDAnkyrs38FIS6ZepUg6jHGcTrkPUxE0",
+      "source": "gdrive",
+      "title": "高校1年生記述模試国語",
+      "locator": "https://drive.google.com/open?id=1FAOFB0U014PUDAnkyrs38FIS6ZepUg6jHGcTrkPUxE0",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 13100,
+      "modified": "2025-12-15",
+      "subject": "国語",
+      "kind": "模試",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1akWsqzocB__jjkIOkFjF7xwamm-CGShHrIZVey0lGfw",
+      "source": "gdrive",
+      "title": "Trillion記述模試数学",
+      "locator": "https://drive.google.com/open?id=1akWsqzocB__jjkIOkFjF7xwamm-CGShHrIZVey0lGfw",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 769934,
+      "modified": "2025-12-15",
+      "subject": "数学",
+      "kind": "模試",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1Ck8PlDrPXmzkcCaj7-VlFB4Vbg90QS_AfATS98Sklkw",
+      "source": "gdrive",
+      "title": "1月trillion記述模試（英語）",
+      "locator": "https://drive.google.com/open?id=1Ck8PlDrPXmzkcCaj7-VlFB4Vbg90QS_AfATS98Sklkw",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 5555,
+      "modified": "2025-12-15",
+      "subject": "英語",
+      "kind": "模試",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1CUzUr-crBJz92jZECjK1-i-4OA-E6cQ6JflmeGGmXQ0",
+      "source": "gdrive",
+      "title": "Googleフォーム作成支援：英文法問題",
+      "locator": "https://drive.google.com/open?id=1CUzUr-crBJz92jZECjK1-i-4OA-E6cQ6JflmeGGmXQ0",
+      "mime": "spreadsheet",
+      "bytes": 1397,
+      "modified": "2026-01-14",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1Cc7QETgtTI5rYIiiAnoCkgJ_qv--g3nJaQvOMWx99GM",
+      "source": "gdrive",
+      "title": "【Trillion 英文法・語法演習：Advanced】宿題Part1",
+      "locator": "https://drive.google.com/open?id=1Cc7QETgtTI5rYIiiAnoCkgJ_qv--g3nJaQvOMWx99GM",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 122225,
+      "modified": "2025-12-10",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1DTOj8eaphg9foO5q-Kb4h7C03vpWW1hKhn2OlCkY3HQ",
+      "source": "gdrive",
+      "title": "【Trillion 英文法・語法演習：High-Standard】授業プリント",
+      "locator": "https://drive.google.com/open?id=1DTOj8eaphg9foO5q-Kb4h7C03vpWW1hKhn2OlCkY3HQ",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 114057,
+      "modified": "2026-01-20",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1JX_qdZ2FmCFZ5liZO2aGJ3HVy8PVvFMBFd8aw8CBkX4",
+      "source": "gdrive",
+      "title": "中学3年生受験用文法プリント",
+      "locator": "https://drive.google.com/open?id=1JX_qdZ2FmCFZ5liZO2aGJ3HVy8PVvFMBFd8aw8CBkX4",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 19427,
+      "modified": "2025-12-15",
+      "subject": "英語",
+      "kind": "授業プリント",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1Z6aWyyDh6IGaK0RCd-A3siMEAZLdG_63JjMccUaH7ok",
+      "source": "gdrive",
+      "title": "問題文はその長さで問題ないです。\n解答と解説の内容は問題ないですが、選択肢の意味、本文和訳、文構造...",
+      "locator": "https://drive.google.com/open?id=1Z6aWyyDh6IGaK0RCd-A3siMEAZLdG_63JjMccUaH7ok",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 22285,
+      "modified": "2025-12-14",
+      "subject": "英語",
+      "kind": "解答解説",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1jBEEJtXrUXEqNQ0_upWxyZSqgEon5uAf8SiaJrgxGXs",
+      "source": "gdrive",
+      "title": "問題演習（和訳問題）",
+      "locator": "https://drive.google.com/open?id=1jBEEJtXrUXEqNQ0_upWxyZSqgEon5uAf8SiaJrgxGXs",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 4981,
+      "modified": "2025-11-18",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1DgcicTLqa14JeZ2PdLxxQcmZZBTULtjc",
+      "source": "gdrive",
+      "title": "夏期英文法基礎特講_準動詞編.pdf",
+      "locator": "https://drive.google.com/open?id=1DgcicTLqa14JeZ2PdLxxQcmZZBTULtjc",
+      "mime": "pdf",
+      "bytes": 277777,
+      "modified": "2026-07-23",
+      "subject": "英語",
+      "kind": "授業プリント",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1ao3A6qR2TBCoZNYUxkVmSQlPyP9epSKHPz-SUKBXAtI",
+      "source": "gdrive",
+      "title": "大学入試英語：時制問題演習",
+      "locator": "https://drive.google.com/open?id=1ao3A6qR2TBCoZNYUxkVmSQlPyP9epSKHPz-SUKBXAtI",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 6675,
+      "modified": "2026-02-19",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1tK5WgK_qpQYCm8QKEB8v8_ILzU1zrcBmquZD5gkc28M",
+      "source": "gdrive",
+      "title": "形式や問題文の長さは今作ってくれたもので大丈夫です。\n解説に英文の構造や、覚えておいた方がいい構文の...",
+      "locator": "https://drive.google.com/open?id=1tK5WgK_qpQYCm8QKEB8v8_ILzU1zrcBmquZD5gkc28M",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 14508,
+      "modified": "2025-12-13",
+      "subject": "英語",
+      "kind": "解答解説",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1AcIMWQaUu2-RakmXzwo606eU3r0CVH7-F1TI9GlXhS8",
+      "source": "gdrive",
+      "title": "慶應義塾大学（長文問題）",
+      "locator": "https://drive.google.com/open?id=1AcIMWQaUu2-RakmXzwo606eU3r0CVH7-F1TI9GlXhS8",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 29773,
+      "modified": "2025-12-01",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": [
+        "慶應"
+      ]
+    },
+    {
+      "id": "gdrive:1vO3yfevzVUo-HAGQEqWyrEV5_S_ETTkZJEBokQA6118",
+      "source": "gdrive",
+      "title": "慶應義塾文法問題",
+      "locator": "https://drive.google.com/open?id=1vO3yfevzVUo-HAGQEqWyrEV5_S_ETTkZJEBokQA6118",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 30479,
+      "modified": "2025-12-01",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": [
+        "慶應"
+      ]
+    },
+    {
+      "id": "gdrive:1leqIPMzx6OoIOg4sFSL4Qzrv5lcAUQmvQKO7p4ij0JU",
+      "source": "gdrive",
+      "title": "文法はランダム出題で大丈夫ですが、実際の予備校が宿題として課している文法問題のテキストと同じものを...",
+      "locator": "https://drive.google.com/open?id=1leqIPMzx6OoIOg4sFSL4Qzrv5lcAUQmvQKO7p4ij0JU",
+      "mime": "spreadsheet",
+      "bytes": 1024,
+      "modified": "2025-12-24",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1w5LXBoyNJfQ0myF6W9xfmkfHt95IL0E3",
+      "source": "gdrive",
+      "title": "準1級_オリジナル模試_問題と解説（リスニング解説なし）.pdf",
+      "locator": "https://drive.google.com/open?id=1w5LXBoyNJfQ0myF6W9xfmkfHt95IL0E3",
+      "mime": "pdf",
+      "bytes": 2619314,
+      "modified": "2026-07-23",
+      "subject": "英語",
+      "kind": "模試",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1Fxj5Vf_7kBMN7VQtMN1Q5qKULbC7VAVPGRxDmUyjjbQ",
+      "source": "gdrive",
+      "title": "英文法問題演習原案",
+      "locator": "https://drive.google.com/open?id=1Fxj5Vf_7kBMN7VQtMN1Q5qKULbC7VAVPGRxDmUyjjbQ",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 8067,
+      "modified": "2025-12-18",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1pfZTFpjQuUeffQ6hQs18E65vzeVWJC-kZRvPlbWzr1k",
+      "source": "gdrive",
+      "title": "英文解釈・構造分析マスター演習",
+      "locator": "https://drive.google.com/open?id=1pfZTFpjQuUeffQ6hQs18E65vzeVWJC-kZRvPlbWzr1k",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 9406,
+      "modified": "2025-12-12",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:18zSqgKMVenXoEg1eWWbj-UfGnnC1IH-A",
+      "source": "gdrive",
+      "title": "英検2級_単語テスト_4択_Vol1.pdf",
+      "locator": "https://drive.google.com/open?id=18zSqgKMVenXoEg1eWWbj-UfGnnC1IH-A",
+      "mime": "pdf",
+      "bytes": 72812,
+      "modified": "2026-07-25",
+      "subject": "英語",
+      "kind": "単語テスト",
+      "tags": [
+        "英検2級"
+      ]
+    },
+    {
+      "id": "gdrive:1d1XBbp2Z9orO5_pvXF40zoVzmyPkgmDO",
+      "source": "gdrive",
+      "title": "英検利用大学リスト 2026-2027.pdf",
+      "locator": "https://drive.google.com/open?id=1d1XBbp2Z9orO5_pvXF40zoVzmyPkgmDO",
+      "mime": "pdf",
+      "bytes": 154786,
+      "modified": "2026-07-28",
+      "subject": "英語",
+      "kind": "資料",
+      "tags": [
+        "2026",
+        "2027"
+      ]
+    },
+    {
+      "id": "gdrive:11LI_JdcHuLAj-hiradC45IlyOXuV897_yADlLpP5s5Q",
+      "source": "gdrive",
+      "title": "英検問題演習②",
+      "locator": "https://drive.google.com/open?id=11LI_JdcHuLAj-hiradC45IlyOXuV897_yADlLpP5s5Q",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 8283,
+      "modified": "2025-12-21",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1TfBATS1UGfGaMZyPDRWA8n69PmiR2jL5",
+      "source": "gdrive",
+      "title": "英検準1級_単語テスト_4択_Vol1.pdf",
+      "locator": "https://drive.google.com/open?id=1TfBATS1UGfGaMZyPDRWA8n69PmiR2jL5",
+      "mime": "pdf",
+      "bytes": 80595,
+      "modified": "2026-07-25",
+      "subject": "英語",
+      "kind": "単語テスト",
+      "tags": [
+        "英検準1級"
+      ]
+    },
+    {
+      "id": "gdrive:1gtjBRNaC7rIymUhdJZs-R7Alsi4JBd7v0rA-Xaivzds",
+      "source": "gdrive",
+      "title": "英検準1級対策：要約問題の解答・解説",
+      "locator": "https://drive.google.com/open?id=1gtjBRNaC7rIymUhdJZs-R7Alsi4JBd7v0rA-Xaivzds",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 4846,
+      "modified": "2026-05-21",
+      "subject": "英語",
+      "kind": "解答解説",
+      "tags": [
+        "英検準1級"
+      ]
+    },
+    {
+      "id": "gdrive:1l43yjgAUWqhcwNKMRR5Qtt0YE79LY4wczFyyCxa9VW0",
+      "source": "gdrive",
+      "title": "英検準2級対策プリント：大問1（短文の語句空所補充）",
+      "locator": "https://drive.google.com/open?id=1l43yjgAUWqhcwNKMRR5Qtt0YE79LY4wczFyyCxa9VW0",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 23684,
+      "modified": "2025-12-12",
+      "subject": "英語",
+      "kind": "授業プリント",
+      "tags": [
+        "英検準2級"
+      ]
+    },
+    {
+      "id": "gdrive:1LqNTMWDc8YqpLlddoGvnwlGcm-FOWQX-KYfjGiVF5Ms",
+      "source": "gdrive",
+      "title": "英検２級問題演習",
+      "locator": "https://drive.google.com/open?id=1LqNTMWDc8YqpLlddoGvnwlGcm-FOWQX-KYfjGiVF5Ms",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 25057,
+      "modified": "2025-12-17",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1sxwukapSWKvGo9TIM0eJ9TorgLVf2EAH",
+      "source": "gdrive",
+      "title": "英語_品詞分解トレーニング_問題編.pdf",
+      "locator": "https://drive.google.com/open?id=1sxwukapSWKvGo9TIM0eJ9TorgLVf2EAH",
+      "mime": "pdf",
+      "bytes": 1284998,
+      "modified": "2026-07-25",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:189O_sc2PH8p1lNJc5ZEBRv-xraAFdtJA",
+      "source": "gdrive",
+      "title": "英語_品詞分解トレーニング_解答解説編.pdf",
+      "locator": "https://drive.google.com/open?id=189O_sc2PH8p1lNJc5ZEBRv-xraAFdtJA",
+      "mime": "pdf",
+      "bytes": 1761183,
+      "modified": "2026-07-25",
+      "subject": "英語",
+      "kind": "解答解説",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1Jjai7Ct3HNeOzQJBbXjB8svgfaNqCmSdmTTHpz5o9k4",
+      "source": "gdrive",
+      "title": "英語問題",
+      "locator": "https://drive.google.com/open?id=1Jjai7Ct3HNeOzQJBbXjB8svgfaNqCmSdmTTHpz5o9k4",
+      "mime": "form",
+      "bytes": 1024,
+      "modified": "2025-12-29",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1Y11HSfKMf2dIkLV2DAhfX4MxduTLOwDxYP0FbzW5Xik",
+      "source": "gdrive",
+      "title": "英語学習問題データ作成",
+      "locator": "https://drive.google.com/open?id=1Y11HSfKMf2dIkLV2DAhfX4MxduTLOwDxYP0FbzW5Xik",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 10333,
+      "modified": "2026-01-20",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:1wdcpFxt-6wD1oBbk0IIEEN1J_Cs43dp9BboN4Azspzo",
+      "source": "gdrive",
+      "title": "難関大国公立コース（総合演習・完了形・仮定法・不定詞）",
+      "locator": "https://drive.google.com/open?id=1wdcpFxt-6wD1oBbk0IIEEN1J_Cs43dp9BboN4Azspzo",
+      "mime": "form",
+      "bytes": 8766,
+      "modified": "2026-01-23",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    },
+    {
+      "id": "gdrive:10keMQtK0xFxRMlATWmQUVxtThphaZ4N1hNOOa4UxeSc",
+      "source": "gdrive",
+      "title": "高校3年生入試直前文法問題演習プリント",
+      "locator": "https://drive.google.com/open?id=10keMQtK0xFxRMlATWmQUVxtThphaZ4N1hNOOa4UxeSc",
+      "mime": "application/vnd.google-apps.document",
+      "bytes": 20259,
+      "modified": "2025-12-15",
+      "subject": "英語",
+      "kind": "問題",
+      "tags": []
+    }
+  ]
+}
