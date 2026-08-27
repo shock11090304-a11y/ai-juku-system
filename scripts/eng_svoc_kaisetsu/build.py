@@ -97,6 +97,13 @@ RULES = [
     ("rc-noun", "[ ] … 名詞のカタマリ",
      "that 節・what 節・whether / if 節・動名詞句・不定詞の名詞用法。S / O / C になれる。外すと文が壊れる。",
      "She felt [ she'd gone past the age ] ."),
+    ("rc-quote", "文型を数えるときの約束",
+     "①<b>受動態は見た目の形で数える</b>（能動に戻さない）。be judged は S V ＝第 1 文型、"
+     "be made worse は S V C ＝第 2 文型。②<b>引用文はそれ自体を 1 文として分解する</b>。"
+     "said, &quot;…&quot; のように後ろに続くときだけ [ ] で said の O として示し、"
+     "&quot;…,&quot; she said のように前に出ているときは独立させた。"
+     "③ 文型の見出しには<b>主節の文型を全部</b>書き、従属節は「〜節の中は」と断って添えた。",
+     "the problem is made worse → S V C（第2文型）"),
     ("rc-adj", "&lt; &gt; … 形容詞のカタマリ",
      "関係詞節・分詞の後置修飾・形容詞用法の不定詞や前置詞句。直前の名詞に線で結ぶと構造が見える。",
      "the call &lt; she'd made &gt;"),
@@ -184,14 +191,41 @@ def passage_html(mod):
             f'<span class="uline">下線</span>＝設問の下線部</div>')
 
 
+def fill_rows(mod):
+    """空所の一覧表の行を作る。
+
+    慶應は選択肢データが無いので FILL_NOTES を手書き（check.py が FILLS と照合）。
+    東大は ANSWER_MAP / OPTIONS があるので<b>答えを機械的に組み立てる</b>＝表と本文がずれない。
+    """
+    if getattr(mod, "FILL_NOTES", None):
+        return list(mod.FILL_NOTES)
+    hints = getattr(mod, "FILL_HINT", None)
+    if not hints:
+        return []
+    amap, opts = getattr(mod, "ANSWER_MAP", {}), getattr(mod, "OPTIONS", {})
+    rows = []
+    for marker, hint in hints.items():
+        if marker in amap:
+            qno, letter = amap[marker]
+            ans = f"{letter}) {opts[qno][letter]}"
+        else:
+            ans = mod.FILLS[marker]
+        rows.append((marker, ans, hint))
+    return rows
+
+
 def fills_table(mod):
-    notes = getattr(mod, "FILL_NOTES", None)
+    notes = fill_rows(mod)
     if not notes:
         return ""
     rows = "".join(f'<tr><td class="k">{esc(k)}</td><td class="a">{esc(a)}</td>'
                    f'<td>{n}</td></tr>' for k, a, n in notes)
-    return (f'<div class="instr">構造を取るために空所を埋めてある。'
-            f'（設問そのものの解説は依頼の範囲外なので、ここでは<b>根拠だけ</b>を短く示す。）</div>'
+    lead = ("構造を取るために空所を埋めてある。"
+            "（設問そのものの解説は依頼の範囲外なので、ここでは<b>根拠だけ</b>を短く示す。）"
+            if getattr(mod, "FILL_NOTES", None) else
+            "本文に埋めた語の一覧。<b>詳しい解説は後ろの「設問 解答・解説」</b>にある。"
+            "ここは自分の答え合わせを一目で済ませるための表。")
+    return (f'<div class="instr">{lead}</div>'
             f'<table class="fills"><tr><th>空所</th><th>入る語</th><th>根拠</th></tr>{rows}</table>')
 
 

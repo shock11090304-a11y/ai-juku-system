@@ -151,3 +151,97 @@ def check_underline(mod, errs):
                         f"（どれに下線が付くか決まらない）→ {anchor!r}")
         if core.cmp_norm(target) not in core.cmp_norm(anchor):
             errs.append(f"[{name}] 下線部({label}) の下線部分がアンカーの中に無い → {target!r}")
+
+
+# ---------------------------------------------------------------- 文型 ↔ ラベルの矛盾
+_PAT_RE = re.compile(r"第([1-5])文型")
+
+
+def _labels_by_level(node, out=None):
+    """ラベルを節の深さ（ダッシュの数）ごとに分けて集める。
+
+    0＝主節、1＝S′ V′ の節、2＝S″ V″ の節。
+    ★「O と C が揃っているか」は<同じ節の中>で見ないと意味が無い。
+      主節の O と従属節の C を足して第5文型と認めてしまうと検査が骨抜きになる。
+    """
+    if out is None:
+        out = {0: set(), 1: set(), 2: set()}
+    for k in node.kids:
+        if k.label:
+            lvl = k.label.count("'")
+            base = k.label.replace("'", "")
+            out.setdefault(lvl, set()).add(base)
+        if k.kind == "group":
+            _labels_by_level(k, out)
+    return out
+
+
+def check_pattern_consistency(mod, errs):
+    """宣言した文型と、実際に振ったラベルが噛み合っているか。
+
+    ★「第2文型（SVC）と書いたのに C を振っていない」「第4文型なのに O1/O2 が無い」
+      といった書き間違いは、本文照合でもラベル整合でも素通りする。
+      解説を読む生徒が最初に信じるのがこの見出しなので、機械で突き合わせる。
+
+    ★文型は「その文の見た目の形」で判定する方針（受動態を能動に戻さない）。
+      よって be made / be judged は第1文型、be made worse / be assumed to be は第2文型。
+    """
+    name = mod.META["key"]
+    need = {"2": ({"C"}, {"真S"}), "3": ({"O"}, {"真O"}),
+            "4": ({"O1", "O2"},), "5": ({"O", "C"},)}
+    for para in mod.PARAS:
+        for j, s in enumerate(para["sents"], 1):
+            where = f"[{name}] 第{para['no']}段落 第{j}文"
+            pats = set(_PAT_RE.findall(s["pat"]))
+            if not pats:
+                if not s.get("frag"):
+                    errs.append(f"{where}: 文型の宣言に『第N文型』が無い → {s['pat']!r}")
+                continue
+            lv = _labels_by_level(core.parse(s["dsl"]))
+            for p in sorted(pats):
+                if p == "1":
+                    continue
+                if not any(alt <= g for alt in need[p] for g in lv.values()):
+                    want = " または ".join("+".join(sorted(a)) for a in need[p])
+                    errs.append(f"{where}: 第{p}文型と書いてあるのに、同じ節の中に "
+                                f"{want} が揃っていない → {s['pat']!r}")
+            # 第1文型だけを宣言した文に、主節の O / C があってはならない
+            if pats == {"1"}:
+                bad = sorted(lv.get(0, set()) & {"O", "O1", "O2", "C"})
+                if bad:
+                    errs.append(f"{where}: 第1文型だけの宣言なのに主節に {bad} がある → {s['pat']!r}")
+            # O1 と O2 は必ず対で使う
+            for lvl, g in lv.items():
+                if ("O1" in g) != ("O2" in g):
+                    errs.append(f"{where}: 深さ{lvl} で O1 と O2 が対になっていない")
+
+
+def check_fill_notes(mod, errs):
+    """空所の一覧表と、本文に実際に入れた語が食い違っていないか。
+
+    ★一覧表は生徒が最初に見る場所。ここが本文とずれると、
+      「表の答えを覚えたのに本文と違う」という最悪の事故になる。
+    """
+    name = mod.META["key"]
+    for marker, ans, note in getattr(mod, "FILL_NOTES", []):
+        if marker not in mod.FILLS:
+            errs.append(f"[{name}] 一覧表の {marker} が FILLS に無い")
+            continue
+        word = mod.FILLS[marker]
+        if word and core.cmp_norm(word) not in core.cmp_norm(ans):
+            errs.append(f"[{name}] 一覧表の答えと本文に入れた語が違う {marker}\n"
+                        f"      一覧表: {ans!r}\n      本文  : {word!r}")
+        if not note.strip():
+            errs.append(f"[{name}] 一覧表 {marker} の根拠が空")
+    # 空所なのに一覧表に載っていないものを見つける（載せ忘れ）
+    hints = getattr(mod, "FILL_HINT", {})
+    for marker, hint in hints.items():
+        if marker not in mod.FILLS:
+            errs.append(f"[{name}] 一覧表の {marker} が FILLS に無い")
+        if not hint.strip():
+            errs.append(f"[{name}] 一覧表 {marker} の根拠が空")
+    listed = {m for m, _a, _n in getattr(mod, "FILL_NOTES", [])} | set(hints)
+    if listed:
+        for marker, word in mod.FILLS.items():
+            if word and marker not in listed:
+                errs.append(f"[{name}] 空所 {marker} が一覧表に載っていない")

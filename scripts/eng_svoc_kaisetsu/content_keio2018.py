@@ -92,7 +92,7 @@ FILL_NOTES = [
     ("[ 1 ]", "2. could",
      "後半が would be となっている。「（仮に買おうとしても）買えないであろう唯一のもの」という"
      "仮定法的な流れなので、時制を合わせて could。can だと would と噛み合わない。"),
-    ("[ 2 ]", "2. old（3 番目にくる語）",
+    ("[ 2 ]", "2. old（3 番目にくる語。並べ替えは young people old enough to）",
      "並べ替えると young people old enough to。consider O C（第 5 文型）の O が young people、"
      "C が old enough to perform ...。〈young / people / old / enough / to〉で 3 番目は old。"),
     ("[ 4 ]", "3. ought",
@@ -118,7 +118,7 @@ PARAS = [
                 "{V:purchase and carry} {O:a deadly weapon} <such as a pistol or rifle> , {接:and} "
                 "{V:serve} {O:the nation} ( in the armed forces ) , ( possibly to die on the "
                 "battlefield ) .",
-         "pat": "第3文型（SVO）の連続 ＋ get married は第2文型（SVC）",
+         "pat": "第3文型（SVO）×4 ／ 第1文型（SV）＝vote ／ 第2文型（SVC）＝get married",
          "tag": "助動詞 can に動詞が 5 つぶら下がる",
          "notes": [
              "can の後ろに <b>drive / vote / get / purchase and carry / serve</b> の 5 つが並列。"
@@ -147,9 +147,11 @@ PARAS = [
          "ja": "これは馬鹿げている。"},
         {"dsl": "{S:Changes} {助:should} {V:be made} ( to our laws ) , ( {接:so} {S':they} {V':reflect} "
                 "{M':properly} {O':our social values} ) .",
-         "pat": "受動態（能動なら SVO）＋ so 節",
-         "tag": "make changes to ~ の受動",
-         "notes": ["能動なら We should make changes to our laws。O にあたる changes が S に出た形なので、"
+         "pat": "第1文型（SV）／ so 節は第3文型（SVO）",
+         "tag": "受動態（能動なら make changes to ~ ＝ SVO）",
+         "notes": ["★<b>文型は見た目の形で数える</b>。be made の後ろに O も C も無いので、"
+                   "主節は S V（＋ M）の<b>第 1 文型</b>。能動に戻して第 3 文型と書かないこと。",
+                   "能動なら We should make changes to our laws。O にあたる changes が S に出た形なので、"
                    "made の後ろに O が無いのは正しい。",
                    "so 節の中は reflect（V′）と our social values（O′）の間に properly（M′）が割り込んでいる。"],
          "ja": "我々の社会的価値観を法がきちんと反映するよう、法律は改められるべきだ。"},
@@ -159,7 +161,7 @@ PARAS = [
         {"dsl": "[S: Deciding [O': whether or not to lower the minimum legal drinking age ] ] {助:might} , "
                 "( on the face of it ) , {V:seem} {C:like a simple matter} - {M:why} {V:make} "
                 "{O:unnecessary changes} ?",
-         "pat": "第2文型（SVC）",
+         "pat": "第2文型（SVC）／ ダッシュ以下は第3文型（SVO・主語の省略）",
          "tag": "動名詞句が S ／ 挿入 ／ seem like ~",
          "notes": [
              "S は <b>Deciding … age</b> までの動名詞句。長い S を 1 かたまりで括れるかが勝負。",
@@ -170,12 +172,14 @@ PARAS = [
          "ja": "飲酒可能年齢の最低ラインを引き下げるべきかどうかを判断することは、"
                "一見したところ単純な問題に思えるかもしれない——なぜ不必要な変更をするのか、と。"},
         {"dsl": "{M:However} , {S:the issue} {助:cannot} {V:be judged} ( in isolation ) .",
-         "pat": "受動態（能動なら SVO）", "tag": "",
+         "pat": "第1文型（SV）", "tag": "受動態（能動なら judge the issue ＝ SVO）",
+         "notes": ["be judged の後ろは in isolation という前置詞句だけ＝ M。"
+                   "O も C も無いので<b>第 1 文型</b>。"],
          "ja": "しかし、この問題を切り離して判断することはできない。"},
         {"dsl": "{S:It} {V:is} {M:precisely} ( {接:because} {S':society} {V':considers} "
                 "{O':young people} {C':old enough} ( to perform other more critical roles ( as "
                 "citizens ) ) ) {接:that} {S:the drinking issue} {V:has arisen} .",
-         "pat": "強調構文（It is 〜 that …）／ 内側は第5文型（SVOC）",
+         "pat": "強調構文（It is 〜 that …）＝元の文は第1文型（SV）／ because 節の中は第5文型（SVOC）",
          "tag": "★It is 〜 that の見分け ／ consider O C",
          "notes": [
              "<b>強調構文</b>。It is と that を外すと "
@@ -336,14 +340,15 @@ PARAS = [
                 "many college presidents ) , {V:made} {C:worse} : ( {接:as soon as} {S':students} "
                 "{助:can} {V':touch} {O':the \"forbidden fruit\"} ) , {S:they} {V:overdo} {O:things} , "
                 "( with dangerous or even fatal results ) .",
-         "pat": "第5文型（SVOC）の受動態 ／ コロン以下は第3文型（SVO）",
-         "tag": "★be made worse ＝ SVOC の受動",
-         "notes": ["能動なら <i>the laws make the problem worse</i>（make O C）。"
-                   "O が S に出た受動態なので、<b>made の後ろに C（worse）が残る</b>。"
-                   "ここを「made worse で 1 つの動詞」と処理すると第 5 文型が見えない。",
+         "pat": "第2文型（SVC）／ コロン以下は第3文型（SVO）",
+         "tag": "★be made worse ＝ 受動態でも C は残る",
+         "notes": ["能動なら <i>the laws make the problem worse</i>（make O C ＝ 第 5 文型）。"
+                   "O が S に出た受動態なので O が消え、<b>made の後ろに C（worse）だけが残る</b>。"
+                   "見た目は S V C なので<b>この文自体は第 2 文型</b>と数える。",
+                   "ここを「made worse で 1 つの動詞」と処理すると C を見落として第 1 文型にしてしまう。",
                    "is と made の間に , according to many college presidents , が挿入されている。",
                    "be used to 〜 は「〜に慣れている」。used は C。"],
-         "ja": "実際、非常に多くの 21 歳がアルコールに慣れていないため、多くの大学学長によれば、"
+         "ja": "実際、非常に多くの 21 歳の若者がアルコールに慣れていないため、多くの大学学長によれば、"
                "キャンパス内での飲酒問題はかえって悪化している。学生は「禁断の果実」に手が届いたとたん、"
                "度を越してしまい、危険な、時には命に関わる結果を招くのである。"},
     ]},
@@ -359,7 +364,7 @@ PARAS = [
                 "number <of usually harmless items and substances> <{S':which} {助:might} ( in the "
                 "hands <of certain individuals> ) {V':prove} {C':dangerous}> ) - ( from knives , "
                 "scissors , and frying pans , to mushrooms and chemical fertilizers ) .",
-         "pat": "第1文型（SV）／ 仮定法過去",
+         "pat": "第1文型（SV）／ which 節の中は第2文型（SVC）／ 仮定法過去",
          "tag": "★空所［7］＝ If it were, we would ／ prove C",
          "notes": ["<b>仮定法過去</b>（If ＋ S ＋ 過去形, S ＋ would ＋ 原形）。"
                    "前文が is not a genuine reason なので、If it were＝「仮にそうだとしたら」"
@@ -373,10 +378,12 @@ PARAS = [
                "キノコや化学肥料に至るまで——法で禁じることになるだろう。"},
         {"dsl": "{M:Again} , {S:we} {V:are talking} ( about responsibility ) : {S:most people} "
                 "{V:are assumed} [C: to be responsible enough ] .",
-         "pat": "第1文型（SV）／ コロン以下は第5文型（SVOC）の受動態",
-         "tag": "be assumed to do",
-         "notes": ["能動なら <i>we assume most people to be responsible enough</i>（assume O C）。"
-                   "受動になって C の to be responsible enough が残っている。"],
+         "pat": "第1文型（SV）／ コロン以下は第2文型（SVC）",
+         "tag": "be assumed to do（受動態でも C は残る）",
+         "notes": ["能動なら <i>we assume most people to be responsible enough</i>"
+                   "（assume O C ＝ 第 5 文型）。受動になって O が S に出たので、"
+                   "残った to be responsible enough が C。見た目は S V C ＝<b>第 2 文型</b>。",
+                   "前半 we are talking about responsibility は about 以下が前置詞句（M）なので第 1 文型。"],
          "ja": "繰り返すが、問題にしているのは責任能力である。たいていの人は十分に責任を持てるものと"
                "みなされている。"},
         {"dsl": "{S:We} {助:should} {V:treat} {O:them} {M:this way} ( as regards alcohol ) , {M:too} .",
@@ -398,7 +405,7 @@ PARAS = [
                 "person} {O2':the right} <to do all the activities <listed ( in the first paragraph "
                 "above )>> ) , {M:then} {S:that person} {V:is} {M:also surely} {C:sufficiently "
                 "mature} ( to consume alcohol ) .",
-         "pat": "第2文型（SVC）／ whenever 節の中は第4文型（SVOO）",
+         "pat": "第2文型（SVC）×2 ／ whenever 節の中は第4文型（SVOO）",
          "tag": "★空所［8］＝ grant A B ／ whenever 〜, then …",
          "notes": ["<b>grant A B</b>（第 4 文型）＝「A に B を与える」。"
                    "a person が O1、the right to do … が O2。",
@@ -412,7 +419,7 @@ PARAS = [
                 "[真S: {接:that} [S': growing up ( around alcohol ) ] {V':is} {C':one sure way} <to "
                 "lessen the risk <{同格:that} {S'':a person} {助:will} {V'':become} {C'':a problem "
                 "drinker} ( later in life )>> ] .",
-         "pat": "受動態＋形式主語 ／ 2 つ目の that 節の中は第2文型（SVC）",
+         "pat": "第1文型（SV）＋形式主語 ／ 2 つ目の that 節の中は第2文型（SVC）",
          "tag": "★that 節 3 つの役割を見分ける",
          "notes": ["it は形式主語。<b>真の S は that 節 2 つ</b>（that the young … と that growing up …）。"
                    "and が結ぶのは that 節どうし。",
@@ -445,7 +452,7 @@ PARAS = [
         {"dsl": "{接:But} {S:the issues} <{S':which} {V':worry} {O':some parents and legislators}> "
                 "{M:already} {V:exist} {接:and} {助:will} {M:probably not} {V:go away} ( simply by "
                 "keeping the current laws ) .",
-         "pat": "第1文型（SV）×2", "tag": "worry は他動詞",
+         "pat": "第1文型（SV）×2 ／ which 節の中は第3文型（SVO）", "tag": "worry は他動詞",
          "notes": ["<b>which worry some parents</b>＝「親たちを心配させる」。"
                    "worry は「心配する」ではなく<b>「〜を心配させる」という他動詞</b>。"
                    "which が S′、some parents and legislators が O′。",
@@ -459,8 +466,8 @@ PARAS = [
                    "<b>will が斜体</b>なのは、直前が will probably not go away（＝不確か）"
                    "だったのに対し、「これだけは<u>確実に</u>変わる」と対比・強調するため。",
                    "コロン以下 public perception of the young が「変わるもの」の中身（同格）。"],
-         "ja": "新しい法律によって変わるものは何かといえば、それは確実である——"
-               "すなわち、若者に対する世間の見方だ。"},
+         "ja": "新しい法律によって何が変わるかは、はっきりしている——"
+               "若者に対する世間の見方である。"},
         {"dsl": "( {接:If} {S':our young people} {V':are} {C':old enough} ( to vote , to marry , to "
                 "raise families {接:and} to die ( in battle ) ( for their country ) ) ) , {M:then} "
                 "{S:they} {V:are} {C:old enough} - ( indeed {S':they} {V':deserve} ) - ( to have a "

@@ -40,14 +40,24 @@ def pdf_stream(doc):
 
     分解図は 1 語 1 セルなので、抽出すると語とラベルが交互に行として出てくる。
     ラベル行を落とせば英文だけが残り、原文と直接つき合わせられる。
+
+    ★ページ内のブロックは<b>縦位置で並べ直す</b>。get_text() の既定は
+      PDF の内容ストリーム順で、Chrome は帯や見出しを後ろに吐くことがある。
+      並べ直さないと、ページをまたいだ段落の途中に見出しが割り込んで偽の不一致が出る。
+    ★下端の柱（ページ番号）は本文ではないので落とす。落とさないと、
+      ページをまたいだ段落の切れ目にページ番号が挟まる。
     """
     keep = []
     for page in doc:
-        for line in page.get_text().split("\n"):
-            s = line.replace(" ", "").strip()
-            if not s or s in LABELS or (len(s) == 1 and s in BRACKETS):
-                continue
-            keep.append(s)
+        foot = page.rect.height - 30
+        blocks = [b for b in page.get_text("blocks") if b[1] < foot]
+        blocks.sort(key=lambda b: (round(b[1], 1), round(b[0], 1)))
+        for b in blocks:
+            for line in b[4].split("\n"):
+                s = line.replace(" ", "").strip()
+                if not s or s in LABELS or (len(s) == 1 and s in BRACKETS):
+                    continue
+                keep.append(s)
     return squash("\n".join(keep))
 
 

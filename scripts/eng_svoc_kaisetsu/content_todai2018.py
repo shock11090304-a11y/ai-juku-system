@@ -141,7 +141,7 @@ PARAS = [
         {"dsl": "{S:She} {V:had told} {O1:her mother} {M:many times} [O2: {接:that} {S':she} "
                 "{V':didn't have to do} {O':this} ] , {接:but} {S:her mother} {M:almost always} "
                 "{V:did} , ( even in front of people ) , ( to her embarrassment ) .",
-         "pat": "第4文型（SVOO）", "tag": "★代動詞 did ／ to one's 感情",
+         "pat": "第4文型（SVOO）＋第1文型（SV・代動詞 did）", "tag": "★代動詞 did ／ to one's 感情",
          "notes": ["tell A that 〜 は第 4 文型。O1＝her mother、O2＝that 節。",
                    "<b>her mother almost always did</b> の did は代動詞。"
                    "＝ spoke too slowly and carefully。何の代わりかを必ず口に出すこと。",
@@ -189,7 +189,7 @@ PARAS = [
     ]},
     {"no": 3, "sents": [
         {"dsl": "{助:Will} {S:you} {V:show} {O1:him} {O2:the room} ? {S:her mother} {V:said} .",
-         "pat": "第4文型（SVOO）", "tag": "show A B",
+         "pat": "引用文は第4文型（SVOO）／ 地の文は第1文型（SV）", "tag": "show A B",
          "ja": "「部屋を見せてあげてくれる?」と母は言った。"},
     ]},
     {"no": 4, "sents": [
@@ -238,7 +238,8 @@ PARAS = [
     ]},
     {"no": 5, "sents": [
         {"dsl": "{S:I} {V:like} {O:the room} , {S:he} {V:spelled out} ( in sign language ) .",
-         "pat": "第3文型（SVO）", "tag": "", "ja": "「この部屋が気に入りました」と彼は手話で綴った。"},
+         "pat": "引用文は第3文型（SVO）／ 地の文は第1文型（SV）", "tag": "",
+         "ja": "「この部屋が気に入りました」と彼は手話で綴った。"},
         {"dsl": "{S:I} {助:'ll} {V:take} {O:it} .", "pat": "第3文型（SVO）",
          "tag": "★空所(B29) ／ I'll take it.",
          "notes": ["<b>I'll take it.</b>＝「これにします／借ります」。店や不動産で決める決まり文句。"
@@ -268,12 +269,12 @@ PARAS = [
     ]},
     {"no": 8, "sents": [
         {"dsl": "{S:He} {V:is} {C:a photographer} , {S:she} {V:said} , ( again speaking too slowly ) .",
-         "pat": "第2文型（SVC）", "tag": "分詞構文（付帯状況）",
+         "pat": "引用文は第2文型（SVC）／ 地の文は第1文型（SV）", "tag": "分詞構文（付帯状況）",
          "notes": ["again speaking too slowly は<b>分詞構文</b>。"
                    "意味上の主語は she（＝母）。「またもゆっくり話しながら」。"],
          "ja": "「あの人は写真家よ」と、母はまたゆっくりすぎるほどの話し方で言った。"},
         {"dsl": "{V:Travels} ( around the world ) ( taking pictures ) , {S:he} {V:says} .",
-         "pat": "第1文型（SV）★主語の省略", "tag": "口語での S 省略",
+         "pat": "引用文は第1文型（SV）★主語の省略 ／ 地の文も第1文型（SV）", "tag": "口語での S 省略",
          "notes": ["<b>Travels の前に He が省略</b>されている。会話文でよくある省略。"
                    "動詞に -s が付いているのが三人称単数の主語がある証拠。",
                    "taking pictures は分詞構文（付帯状況）。"],
@@ -407,7 +408,7 @@ PARAS = [
                 "their house> ) , {接:and} ( {接:when} {S':she} {助:wouldn't} {V':follow} {O':her "
                 "mother} {M':home} ) , {S:her mother} {V:grabbed} {O:her} ( by the arm ) {接:and} "
                 "{V:dragged} {O:her} ( through the trees ) .",
-         "pat": "第5文型（SVOC）＋第3文型（SVO）",
+         "pat": "第5文型（SVOC）＋第3文型（SVO）×2",
          "tag": "★find O C ／ 動詞＋A＋by the＋体の部位",
          "notes": ["<b>find O C</b>（第 5 文型）＝「O が C しているのを見つける」。"
                    "playing 以下は her を説明する C。「森で遊んでいる彼女を見つけた」。",
@@ -443,11 +444,12 @@ PARAS = [
                "だが愛は時に沈黙に似ていた。美しいけれど、耐えるのが苦しいのだ。"},
         {"dsl": "{S:Her father} {V:told} {O1:her} , [O2: {S':She} {助:can't} {V':help} "
                 "{O':herself} ] .",
-         "pat": "第4文型（SVOO）／ 引用文は第3文型（SVO）",
+         "pat": "第4文型（SVOO）",
          "tag": "★下線部(E) ／ can't help oneself",
          "notes": ["<b>can't help oneself</b>＝「自分を抑えられない・どうしようもない」。"
                    "この help は「助ける」ではなく<b>「避ける・こらえる」</b>"
                    "（cannot help doing の help と同じ）。",
+                   "told の O2 が引用文まるごと。引用文自体は S V O の第 3 文型。",
                    "<b>her（O1）＝ジェイニー、She（引用文の S）＝母親</b>。"
                    "同じ女性の代名詞が入り混じるので、指示対象を必ず確定させること。"],
          "ja": "父は彼女に言った。「母さんは自分ではどうしようもないんだ」"},
@@ -457,7 +459,8 @@ PARAS = [
                 "{V':be able to help} {O':me} ] .",
          "pat": "第3文型（SVO）", "tag": "say to 人（第4文型にはならない）",
          "notes": ["<b>say は第 4 文型を作らない</b>。「人に」は to 人 で表す。"
-                   "tell 人 that 〜 との違いに注意。"],
+                   "tell 人 that 〜 との違いに注意。",
+                   "said の O は引用文まるごと（[ ] の中）。引用文自体は S V O の第 3 文型。"],
          "ja": "数週間後、クラーク氏はジェイニーに言った。「手を貸してもらえるかもしれません」"},
     ]},
     {"no": 16, "sents": [
@@ -546,8 +549,10 @@ PARAS = [
                 "words} {M:out} ( in a harsh whisper <{S':that} {助:might} {V':have sounded} , "
                 "( for all she knew ) , {C':like a sick child or someone dying}> ) : {S:she} "
                 "{V:said} , [O: {S':I} {助:'ll} {V':go} ] .",
-         "pat": "第3文型（SVO）×2", "tag": "★空所(C)(B31) ／ force O out ／ for all she knew",
-         "notes": ["<b>forced … out</b>＝「（声を）無理やり押し出した</b>」。"
+         "pat": "第3文型（SVO）×3",
+         "tag": "★空所(C)(B31) ／ force O out ／ for all she knew",
+         "notes": ["コロン以下 she said の O が引用文 [ I'll go ]。引用文自体は S V の第 1 文型。",
+                   "<b>forced … out</b>＝「（声を）無理やり押し出した</b>」。"
                    "O が長いので out が後ろに回っている（force out ＋ O の分離）。",
                    "<b>the two breath-filled words</b>＝「息だけでできた 2 語」。"
                    "空所(B31)が<b>2 語</b>でなければならない決定的な根拠。I'll ＋ go で 2 語。",
@@ -616,7 +621,8 @@ PARAS = [
     {"no": 26, "sents": [
         {"dsl": "{S:It} {助:will} {V:wait} , {S:she} {V:said} {接:and} {V:walked out} ( {接:before} "
                 "{S':her mother} {助:could} {V':reply} ) .",
-         "pat": "第1文型（SV）", "tag": "★空所(G) ／ 物を主語にした wait",
+         "pat": "引用文は第1文型（SV）／ 地の文は第1文型（SV）×2",
+         "tag": "★空所(G) ／ 物を主語にした wait",
          "notes": ["<b>It will wait.</b>＝「それは後回しでいい・急がない」。"
                    "wait は「（物事が）待てる」の意味で無生物を主語に取れる。It ＝ the cleaning。",
                    "before her mother could reply＝「母が言い返す前に」＝言い切って出ていった。"],
@@ -982,3 +988,17 @@ UNDERLINE = [
     ("D", "there were moments", "there were moments"),
     ("E", "She can't help herself.", "She can't help herself."),
 ]
+
+# ---------------------------------------------------------------- 空所の答え一覧（本文の直下に出す）
+# ★答えそのものはここに書かない。FILLS / ANSWER_MAP / OPTIONS から機械的に組み立てる。
+#   （慶應側は選択肢データが無いので FILL_NOTES に手書きし、check.py が FILLS と照合する。）
+#   ここには「根拠の一行」だけを持つ ＝ 表と本文がずれようがない。
+FILL_HINT = {
+    "(B29)": "気に入った直後の一言。直後が That was all.（それだけ）＝交渉も説明もない決定文が入る。",
+    "(B30)": "直前が taking pictures、直後の答えが Buildings.＝「何の（写真）?」と聞き返している。",
+    "(B31)": "直前に the two breath-filled words（2 語）と明記。直後に母が You can't. と制止する。",
+    "(B32)": "母の I need you … を否定。直後の You know good and well I do.（I do＝I do need you）と対。",
+    "(C)": "3 か所すべてに同じ 1 語。② had not (C) が過去分詞・① は過去形なので、同形の語に限られる。",
+    "(F)": "need to の後ろは原形。与えられた語で原形に置けるのは know だけ（photograph は will と組む）。",
+    "(G)": "直前の There's cleaning to be done. を受けて It ＝ 掃除。「それは後回しでいい」。",
+}

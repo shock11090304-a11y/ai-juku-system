@@ -38,13 +38,16 @@ def run(mod):
     _verify.check_labels(mod, errs)
     _verify.check_questions(mod, errs)
     _verify.check_underline(mod, errs)
+    _verify.check_pattern_consistency(mod, errs)
+    _verify.check_fill_notes(mod, errs)
     return errs
 
 
 class _Snap:
     """モジュールは deepcopy できないので、検査が見る属性だけを複製した器を作る。"""
     _KEYS = ("META", "RAW", "FILLS", "PARAS", "QUESTIONS",
-             "OPTIONS", "ANSWER_MAP", "STANDALONE_ANSWER", "F_WORDS", "UNDERLINE")
+             "OPTIONS", "ANSWER_MAP", "STANDALONE_ANSWER", "F_WORDS", "UNDERLINE",
+             "FILL_NOTES", "FILL_HINT", "SCENES")
 
     def __init__(self, mod):
         for k in self._KEYS:
@@ -104,7 +107,17 @@ def selftest():
     m.UNDERLINE = [("A", "her mother", "her mother")]
     cases.append(("下線部のアンカーが一意でない", m))
 
-    # 変異10: 和訳を空にする
+    # 変異10: 宣言した文型と実際のラベルを食い違わせる
+    m = _Snap(T)
+    m.PARAS[1]["sents"][4]["pat"] = "第4文型（SVOO）"      # 実際は SVOC
+    cases.append(("文型の宣言とラベルを食い違わせる", m))
+
+    # 変異11: 空所の一覧表と本文の語を食い違わせる
+    m = _Snap(T)
+    m.FILL_NOTES = [("(G)", "a) do", "根拠")]              # 本文は wait
+    cases.append(("一覧表と本文の答えが食い違う", m))
+
+    # 変異12: 和訳を空にする
     m = _Snap(T)
     m.PARAS[0]["sents"][0]["ja"] = ""
     cases.append(("和訳を空にする", m))
@@ -157,7 +170,7 @@ def main():
             print(f"  ✗ VIOLATION: 変異『{s}』を入れてもゲートが通ってしまった（検査が無力）")
         total += len(survived)
     else:
-        print("  ✓ 変異 10 種すべてでゲートが落ちた（検査は生きている）")
+        print("  ✓ 変異 12 種すべてでゲートが落ちた（検査は生きている）")
 
     print("=" * 68)
     if total:
