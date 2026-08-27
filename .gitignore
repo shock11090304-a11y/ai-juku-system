@@ -98,6 +98,7 @@ scripts/**/*_bak*/
 
 # 教材ビルドの出力先 (PDF は生成物・リポジトリに置かない)
 scripts/book_exam/materials/_out/
+scripts/eng_svoc_kaisetsu/_out/
 
 # 英検模試の取り込み用 PDF (生成物・元は data_no*.json と build.py)
 scripts/eiken_junichi/mogi/bundle/*.pdf
