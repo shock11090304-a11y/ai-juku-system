@@ -14,6 +14,7 @@ startCommand は `uvicorn main:app` = 作業ディレクトリが server/)。呼
 ★「取得できなかった」を「0本(新着なし)」と言わない。ここを間違えると
   配布漏れを「配布済み」と誤報告する。判定は fetch_playlist() を参照。
 """
+import collections
 import datetime
 import re
 import socket
@@ -34,8 +35,21 @@ SLOT_OVERRIDE = {"金曜3限": "木曜3限", "日曜1限": "日曜"}  # 日曜�
 DAY = {"月": 0, "火": 1, "水": 2, "木": 3, "金": 4, "土": 5, "日": 6}
 DAY_LABEL = {v: k for k, v in DAY.items()}
 PAGE_LIMIT = 100          # 1ページに載る上限。継続トークンは追わない。
-MAX_AGE_DAYS = 120        # これより古い日付ラベルは打ち間違いを疑って手作業に回す
+# ★動画名に年は書かれないので、日付ラベルは「もう終わった回」として**過去側**に読む
+#   (resolve_year)。MAX_AGE_DAYS はその解釈幅で、これより古い読みは「来年の日付を先に
+#   書いた打ち間違い」と区別が付かないので手作業に回す。
+#   ★120日だった頃 (2026-08-28 まで) は、1年ぶんの回が入った再生リストを初めて取り込むと
+#     半年前までの正しい回が全部「打ち間違いを疑う」で弾かれた (日曜1限で実測11本)。
+#     そもそも打ち間違いの本命 =「前回のタイトルをコピペして日付を直し忘れる」は
+#     7の倍数のズレなので日数の上限では捕まらない。捕まえるのは build_plan の
+#     **同じ授業に同じ日付ラベル**検査。日数の上限にその役を持たせない。
+MAX_AGE_DAYS = 305
+OLD_LABEL_DAYS = 120      # これより古い回は登録するが「過去分の取り込み」として知らせる
+FUTURE_SLACK_DAYS = 2     # 当日アップ・時差ぶんは「未来の日付」と呼ばない
 STALE_DAYS = 28           # このクラスの最新録画がこれより古ければ「止まっている」と知らせる
+
+# 呼び出し側が DB から渡す録画1行。★列を減らすと TypeError で**止まる**(黙って劣化しない)。
+Recording = collections.namedtuple("Recording", "session_id video_url provider title rec_id")
 
 JST = datetime.timezone(datetime.timedelta(hours=9))
 
@@ -227,23 +241,44 @@ def fetch_playlist(pid, get=None):
     return items, None, warn
 
 
+def _yt_host(url):
+    """(解析済みURL, "youtu.be"|"youtube.com") を返す。YouTube 以外なら (None, None)。
+
+    ★ホストの判定はここ1か所だけ。写すと片方だけ直されて
+      `youtube.com.evil.com` のような別ホストを YouTube 扱いする穴になる。
+    """
+    try:
+        u = urllib.parse.urlparse((url or "").strip())
+    except ValueError:
+        return None, None
+    host = (u.hostname or "").lower()
+    if host == "youtu.be" or host.endswith(".youtu.be"):
+        return u, "youtu.be"
+    if host == "youtube.com" or host.endswith(".youtube.com"):
+        return u, "youtube.com"
+    return None, None
+
+
+def is_youtube_url(url):
+    """URL が YouTube を指しているか (動画URLとは限らない: 再生リスト・チャンネルも真)。"""
+    return _yt_host(url)[1] is not None
+
+
 def video_id(url):
     """URLから動画IDを取り出す。★取りこぼすと既存動画を「新着」と誤認して二重登録する。
 
     class.html の ytId() が再生できる形は全部ここでも拾う (youtu.be / watch?v= / embed /
     shorts / live、v= がクエリの先頭に無い形、ホスト大文字)。読めなければ None。
+    ★ここを「読める形」を増やす方向に広げるときは class.html の ytId() も一緒に見ること。
+      生徒の画面で再生できない形 (http(s):// を省いた URL・IDだけ) をここだけで拾うと、
+      壊れた録画行を「登録済み」と数えて**永久に直らない**状態を作る。
     """
     if not url:
         return None
-    try:
-        u = urllib.parse.urlparse(url.strip())
-    except ValueError:
+    u, host = _yt_host(url)
+    if host is None:
         return None
-    host = (u.hostname or "").lower()
-    if not (host == "youtu.be" or host.endswith(".youtu.be")
-            or host == "youtube.com" or host.endswith(".youtube.com")):
-        return None
-    if host.endswith("youtu.be"):
+    if host == "youtu.be":
         cand = u.path.lstrip("/").split("/")[0]
         return cand if re.fullmatch(r"[A-Za-z0-9_-]{11}", cand) else None
     v = urllib.parse.parse_qs(u.query).get("v", [None])[0]
@@ -253,14 +288,91 @@ def video_id(url):
     return m.group(1) if m else None
 
 
+def provider_of(rec):
+    """録画の実配信元。provider 列が空の古い行は URL から見分ける。
+
+    ★空を無条件に "youtube" とみなすと、Google Drive 等のリンク録画が
+      「URLから動画IDを読めない」に数えられ、**直しようのない理由で**割り当てが止まる。
+    """
+    pv = (rec.provider or "").strip().lower()
+    if pv:
+        return pv
+    return "youtube" if is_youtube_url(rec.video_url) else "link"
+
+
+def _url_tail(url):
+    """スキームとホストを取り除いた残り (スキームが無ければ全体)。"""
+    u = (url or "").strip()
+    m = re.match(r"^[a-zA-Z][a-zA-Z0-9+.\-]*://[^/?#]*(.*)$", u, re.S)
+    return m.group(1) if m else u
+
+
+def may_hide_video_id(url):
+    """読めない URL が動画IDを隠し持っている可能性があるか。
+
+    ★False を返すと二重登録の見張りを1件ぶん外すことになる。動画IDは11文字なので、
+      10〜12文字のトークンが1つも無い URL (再生リストURL・チャンネル・空) **だけ**を
+      「動画ではない」と断じる。迷う形は必ず True (止める) 側に倒すこと。
+    """
+    return any(10 <= len(t) <= 12 for t in re.split(r"[^A-Za-z0-9_-]+", _url_tail(url)) if t)
+
+
+def url_problem(url):
+    """なぜ動画IDを読めないのかを一言で。★塾長がその場で直せる言葉にする。"""
+    u = (url or "").strip()
+    if not u:
+        return "URL が空"
+    if not re.match(r"^https?://", u, re.I):
+        return "http(s):// で始まっていない"
+    if not is_youtube_url(u):
+        return "YouTube のURLではないのに provider が youtube になっている"
+    if re.search(r"/playlist\b", _yt_host(u)[0].path or ""):
+        return "再生リストのURL (動画のURLではない)"
+    return "動画IDの形 (11文字) が見つからない"
+
+
+def redact_url(url):
+    """表示用に伏せた URL。★限定公開動画のIDはアクセス権そのものなので生では出さない。"""
+    u = (url or "").strip()[:200]
+    m = re.match(r"^([a-zA-Z][a-zA-Z0-9+.\-]*://[^/?#]*)(.*)$", u, re.S)
+    head, tail = (m.group(1), m.group(2)) if m else ("", u)
+    return head + re.sub(r"[A-Za-z0-9_-]{9,}", lambda x: x.group(0)[:4] + "…", tail)
+
+
+def resolve_year(mo, dy, today):
+    """年の書かれていない (月, 日) を日付にする → (過去側の直近, 未来側の直近)。
+
+    ★授業の日付は必ず「もう終わった回」なので**過去側の直近**を採る。
+      「今日にいちばん近い年」を採っていた頃 (2026-08-28 まで) は、半年より古い日付が
+      翌年に化けた: 日曜1限の '2月8日' が 2027-02-08 (月曜) と読まれ、正しい
+      2026-02-08 (日曜) に「日付と再生リストの曜日が合わない — 手で確認する」と
+      **嘘**を言っていた。半年より古い回は全部これに掛かるので、過去分の取り込みが
+      丸ごと壊れる (しかも画面上は塾長の打ち間違いに見える)。
+    ★未来側も返すのは、読めなかったときに「過去なら○/未来なら○」と両方見せるため。
+      どちらか片方を勝手に選んで断定しない。
+    """
+    cands = []
+    for y in (today.year - 1, today.year, today.year + 1):
+        try:
+            cands.append(datetime.date(y, mo, dy))
+        except ValueError:
+            continue                       # 2/29 など、その年に存在しない日付
+    past = [d for d in cands if (d - today).days <= FUTURE_SLACK_DAYS]
+    ahead = [d for d in cands if (d - today).days > FUTURE_SLACK_DAYS]
+    return (max(past) if past else None), (min(ahead) if ahead else None)
+
+
 def date_label(raw, day_index, today):
     """動画名から日付ラベルを作る → (ラベル, 問題点)。**推測はしない**。
 
     '8/17'・'8.３'・'８・６'・'8月17日' は拾う。'2026/8/17' のような年つきは
     先頭2桁を月と誤読する (実測で '26/8' になった) ので弾く。
-    ★曜日が再生リストと違う / 未来 / 古すぎる ものは返さない。前回のタイトルを
-      コピペして日付を直し忘れる打ち間違いは 7 の倍数のズレになりやすく、
-      曜日検算だけでは捕まらないため上限・下限も見る。
+    ★曜日が再生リストと違う / 未来 / 1年近く離れている ものは返さない。
+      年は書かれないので、読みが1年近く離れると打ち間違いと区別が付かない (MAX_AGE_DAYS)。
+    ★「前回のタイトルをコピペして日付を直し忘れる」打ち間違いは 7 の倍数のズレなので、
+      曜日検算でも日数の上限でも捕まらない。それを捕まえるのは build_plan の
+      **同じ授業に同じ日付ラベル**検査。ここで日数を絞って代用しようとしない
+      (絞ると正しい過去分の取り込みだけが死ぬ)。
     """
     n = unicodedata.normalize("NFKC", raw or "")
     if re.search(r"(?<!\d)(19|20)\d{2}\s*[/.\-年]", n):
@@ -275,24 +387,21 @@ def date_label(raw, day_index, today):
     mo, dy = cand[0]
     if not (1 <= mo <= 12 and 1 <= dy <= 31):
         return None, f"日付として成立しない ({raw!r} → {mo}/{dy})"
-    # 年は書かれないので、今日にいちばん近い年を採る (年またぎ対策)
-    best = None
-    for y in (today.year - 1, today.year, today.year + 1):
-        try:
-            d = datetime.date(y, mo, dy)
-        except ValueError:
-            continue
-        if best is None or abs((d - today).days) < abs((best - today).days):
-            best = d
+    best, ahead = resolve_year(mo, dy, today)
     if best is None:
-        return None, f"存在しない日付 ({raw!r} → {mo}/{dy})"
+        if ahead is None:
+            return None, f"存在しない日付 ({raw!r} → {mo}/{dy})"
+        return None, f"未来の日付 ({raw!r} → {ahead}) — 動画名の打ち間違いを疑う"
+    if (today - best).days > MAX_AGE_DAYS:
+        # ★過去側の読みが1年近く前 = 未来側の読みと区別が付かない。両方見せて人に回す。
+        return None, (f"{MAX_AGE_DAYS}日より離れた日付 ({raw!r} → 過去なら {best}"
+                      + (f" / 未来なら {ahead}" if ahead else "")
+                      + ") — 動画名の打ち間違いを疑う")
+    if best > today:                       # 猶予 (FUTURE_SLACK_DAYS) の中の未来
+        return None, f"未来の日付 ({raw!r} → {best}) — 動画名の打ち間違いを疑う"
     if best.weekday() != day_index:
         return None, (f"日付と再生リストの曜日が合わない ({raw!r} → {best} は"
                       f"{DAY_LABEL[best.weekday()]}曜 / 再生リストは{DAY_LABEL[day_index]}曜) — 手で確認する")
-    if best > today:
-        return None, f"未来の日付 ({raw!r} → {best}) — 動画名の打ち間違いを疑う"
-    if (today - best).days > MAX_AGE_DAYS:
-        return None, f"{MAX_AGE_DAYS}日より古い日付 ({raw!r} → {best}) — 動画名の打ち間違いを疑う"
     return f"{mo}/{dy}", None
 
 
@@ -303,7 +412,8 @@ def build_plan(today, playlists, sessions, recordings, last_rec, get=None, progr
       today      : 判定基準日 (JST。today_jst())
       playlists  : [(playlist_id, name)] … admin_youtube_playlists の**全行**(名前なしも含む)
       sessions   : [(id, title)]        … class_sessions の **is_published=1 のみ**
-      recordings : [(session_id, video_url, provider)] … class_recordings の全行
+      recordings : [(session_id, video_url, provider, title, rec_id)] … class_recordings の全行
+                   (Recording の並び。★列を減らすと TypeError で止まる = 黙って劣化しない)
       last_rec   : {session_id: 最終登録日時} … 配布が止まっているクラスの検知用
       get        : fetch_playlist に渡す取得口 (試験用の差し替え)
       progress   : 1行できるたびに呼ばれる (CLI が進捗を出すため)。API は None。
@@ -314,18 +424,33 @@ def build_plan(today, playlists, sessions, recordings, last_rec, get=None, progr
     """
     say = progress or (lambda _line: None)
     named = [(p, n) for p, n in playlists if (n or "").strip()]
-    urls = [u for _, u, _ in recordings]
+    recs = [Recording(*r) for r in recordings]
+    session_title = dict(sessions)
+    urls = [r.video_url for r in recs]
     # ★(授業, 動画) の組で持つ。動画IDだけで「登録済」と判定すると、**別のクラスに
     #   登録された動画**までこのクラスの登録済みに化け、そのクラスの生徒には1本も
     #   見えていないのに「新着なし」で緑になる (録画は受講クラス限定で配信されるため)。
-    known_pairs = {(sid, video_id(u)) for sid, u, _ in recordings if video_id(u) and sid is not None}
+    known_pairs = {(r.session_id, video_id(r.video_url)) for r in recs
+                   if video_id(r.video_url) and r.session_id is not None}
     # session_id が NULL の録画は「全員向け」として全塾生に配信される (server/main.py の
     # loose_recordings)。見えていないわけではないので、誤登録として騒がない。
-    loose_vids = {video_id(u) for sid, u, _ in recordings if video_id(u) and sid is None}
+    loose_vids = {video_id(r.video_url) for r in recs
+                  if video_id(r.video_url) and r.session_id is None}
     db_vids = {v for v in (video_id(u) for u in urls) if v}
     # ★provider=vimeo/link は正当な録画。YouTube 以外を「読めないURL」に数えると、
     #   1件あるだけで --apply が恒久的に止まり、直しようのない指示が出る。
-    unparsed = sum(1 for _, u, pv in recordings if (pv or "youtube") == "youtube" and not video_id(u))
+    #   provider 列が空の古い行は URL から見分ける (provider_of)。
+    bad_urls = [r for r in recs if provider_of(r) == "youtube" and not video_id(r.video_url)]
+
+    # ★「同じ授業に同じ日付ラベル」を作らないための台帳 = 前回のタイトルをコピペして
+    #   日付を直し忘れる打ち間違い (7の倍数のズレ) の唯一の見張り。曜日検算も日数の上限も
+    #   このズレは捕まえられない。自動割り当てが書く title は "M/D" なので、その形の
+    #   既存タイトルだけを見る (塾長が手で付けた題名は無関係なので巻き込まない)。
+    labels_by_session = {}
+    for r in recs:
+        t = (r.title or "").strip()
+        if r.session_id is not None and re.fullmatch(r"\d{1,2}/\d{1,2}", t):
+            labels_by_session.setdefault(r.session_id, set()).add(t)
 
     rep = {
         "playlist_total": len(playlists), "playlist_named": len(named),
@@ -342,14 +467,35 @@ def build_plan(today, playlists, sessions, recordings, last_rec, get=None, progr
     #   全リストが取得失敗しても「15/15」と出て、出力中で最も安心させる数字が嘘になる。
     covered_sids, attempted_sids = set(), set()
 
-    if unparsed:
-        # 自分で「二重登録の恐れ」と書いておいて素通りさせない (UNIQUE 制約が無く取り返せない損害)
-        problems.append(f"登録済み録画のうち {unparsed}件の URL から動画IDを読めない "
-                        f"= 同じ動画を新着と誤認して二重登録する恐れ。CEO 画面でその録画のURLを "
-                        f"https://youtu.be/〜 の形にする。CEO の授業詳細で削除して登録し直す "
-                        f"(授業に紐づいていない録画は CEO 画面に出ないので開発担当に連絡)")
-        rep["blocking"] += 1
-        rep["hazard"] += 1
+    # ★読めない URL は**どの録画か**を必ず示す。件数だけ出していた頃 (2026-08-28 まで) は
+    #   「1件ある」としか分からず、探しようが無いまま割り当てが恒久的に止まっていた
+    #   (これは hazard = --allow-partial でも免除しないので、全クラスの配布が止まる)。
+    for i, r in enumerate(bad_urls):
+        risky = may_hide_video_id(r.video_url)
+        if risky:
+            # 自分で「二重登録の恐れ」と書いておいて素通りさせない (UNIQUE 制約が無く取り返せない損害)。
+            # ★数えるのは**全件**。表示を5件に絞るのに合わせて数えるのも絞ると、
+            #   6件目以降が危ない URL でも登録が通ってしまう。
+            rep["blocking"] += 1
+            rep["hazard"] += 1
+        if i >= 5:
+            continue
+        if r.session_id is None:
+            where = "授業に紐づいていない録画 (全員向け)"
+            fix = ("授業に紐づいていないので CEO 画面には出ません。"
+                   "この行をそのまま開発担当に伝えて消してもらう")
+        else:
+            where = f"授業「{session_title.get(r.session_id, f'session {r.session_id}')}」"
+            fix = "CEO の授業詳細でこの録画を削除して、https://youtu.be/〜 の形で登録し直す"
+        problems.append(
+            f"録画 #{r.rec_id} {where} タイトル {(r.title or '')[:24]!r} "
+            f"{redact_url(r.video_url)} — URL から動画IDを読めない ({url_problem(r.video_url)})。"
+            + ("同じ動画を新着と誤認して二重登録する恐れがあるので、登録を止めています。"
+               if risky else "動画のURLではないので二重登録の恐れは無く、登録は止めません。")
+            + fix)
+    if len(bad_urls) > 5:
+        problems.append(f"…ほかにも URL から動画IDを読めない録画が {len(bad_urls) - 5}件あります "
+                        f"(上の5件を直してからもう一度「① 確認する」を押すと残りが出ます)")
 
     for pid, name in named:
         s = slot_of(name)
@@ -396,6 +542,7 @@ def build_plan(today, playlists, sessions, recordings, last_rec, get=None, progr
             problems.append(f"{raw_slot}: {fatal}")
             rep["blocking"] += 1
         fresh = skipped = known = 0
+        old_labels = []
         for vid, vtitle in items:
             if (sid, vid) in known_pairs:
                 known += 1
@@ -417,6 +564,15 @@ def build_plan(today, playlists, sessions, recordings, last_rec, get=None, progr
                 problems.append(f"{raw_slot}: {why} — 動画 {vid[:4]}… は CEO 画面から手で登録する")
                 skipped += 1
                 continue
+            if label in labels_by_session.get(sid, ()):
+                # ★前回のタイトルをコピペして日付を直し忘れた形。ズレが7の倍数だと曜日検算を
+                #   すり抜けるので、ここが唯一の見張り。同じ日に2本ある授業も同じ道で人に回す
+                #   (どちらが何限の回か機械には決められない)。
+                problems.append(f"{raw_slot}: 日付 {label} の録画がこのクラスに既にある "
+                                f"({vtitle!r} / 動画 {vid[:4]}…) — 前回のタイトルの日付を直し忘れて "
+                                f"いないか確かめて、正しければ CEO 画面から手で登録する")
+                skipped += 1
+                continue
             if not re.fullmatch(r"[A-Za-z0-9_-]{11}", vid):
                 # 書いた URL は次回必ず video_id() で読み戻せる、が全体の前提。
                 problems.append(f"{raw_slot}: 動画IDの形が想定外 — この行をそのまま開発者に伝えてください")
@@ -428,9 +584,19 @@ def build_plan(today, playlists, sessions, recordings, last_rec, get=None, progr
             #   ★db_vids には足さない。足すと、同じ動画を2クラスに配る合同授業のとき
             #     2クラス目が「別の授業に登録されている」と**嘘**を言い、しかも
             #     「登録先を直す」に従うと1クラス目から剥がすことになる。
+            labels_by_session.setdefault(sid, set()).add(label)   # 同じ日付を二度作らない
             rep["planned"].append({"session_id": sid, "session_title": stitle,
                                    "slot": raw_slot, "label": label, "video_id": vid})
             fresh += 1
+            _d0, _ = resolve_year(int(label.split("/")[0]), int(label.split("/")[1]), today)
+            if _d0 and (today - _d0).days > OLD_LABEL_DAYS:
+                old_labels.append(label)
+        if old_labels:
+            # ★古い回を弾かずに登録する代わりに、必ず知らせる。過去分の取り込みなら正常だが、
+            #   毎週の運用でこれが出たら日付の打ち間違い。判断できるのは塾長だけ。
+            notes.append(f"{raw_slot}: {OLD_LABEL_DAYS}日より古い回を {len(old_labels)}本 登録します "
+                         f"({'・'.join(old_labels[:8])}{' ほか' if len(old_labels) > 8 else ''}) — "
+                         f"過去分の取り込みなら正常 (日付は再生リストの曜日と一致しています)")
         _last = last_rec.get(sid)
         _last_s = "録画なし"
         if not _last and fresh == 0:

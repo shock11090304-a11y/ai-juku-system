@@ -38,14 +38,16 @@ import sys
 #   ボタンからも同じ実装を呼べる)。ここからは相対パスで読み込む。
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "server"))
 from class_recording_assign import (  # noqa: E402
-    DAY, DAY_LABEL, MAX_AGE_DAYS, PAGE_LIMIT, SLOT_OVERRIDE, STALE_DAYS,
-    build_plan, date_label, fetch_playlist, recording_url, slot_of, today_jst, video_id,
+    DAY, DAY_LABEL, FUTURE_SLACK_DAYS, MAX_AGE_DAYS, OLD_LABEL_DAYS, PAGE_LIMIT, SLOT_OVERRIDE,
+    STALE_DAYS, build_plan, date_label, fetch_playlist, recording_url, resolve_year, slot_of,
+    today_jst, video_id,
 )
 
 # ★判定表ゲート (check_assign_logic.py) は「CLI が正典と**同一オブジェクト**を持っているか」を
 #   見る。ここで束ねておかないと「未使用の import」に見えて整理され、検査が空振りになる。
-_RE_EXPORTED = (DAY, DAY_LABEL, MAX_AGE_DAYS, PAGE_LIMIT, SLOT_OVERRIDE, STALE_DAYS,
-                build_plan, date_label, fetch_playlist, recording_url, slot_of, today_jst, video_id)
+_RE_EXPORTED = (DAY, DAY_LABEL, FUTURE_SLACK_DAYS, MAX_AGE_DAYS, OLD_LABEL_DAYS, PAGE_LIMIT,
+                SLOT_OVERRIDE, STALE_DAYS, build_plan, date_label, fetch_playlist, recording_url,
+                resolve_year, slot_of, today_jst, video_id)
 
 # ★psycopg は main() の中で import する。トップレベルに置くと、DBを使わない
 #   判定表ゲート (check_assign_logic.py) が psycopg 未導入の CI で ModuleNotFoundError で
@@ -87,13 +89,15 @@ def main():
         cur.execute("select session_id, max(created_at) from class_recordings "
                     "where session_id is not null group by session_id")
         last_rec = {sid: dt for sid, dt in cur.fetchall()}
-        cur.execute("select session_id, video_url, coalesce(provider, '') from class_recordings")
+        # ★列の並びは class_recording_assign.Recording と一致させる (足りなければ TypeError)。
+        cur.execute("select session_id, video_url, coalesce(provider, ''), coalesce(title, ''), id "
+                    "from class_recordings")
         recordings = cur.fetchall()
 
         print(f"再生リスト {len(playlists)}件 "
               f"(名前未登録の{len(playlists) - len([1 for _, n in playlists if (n or '').strip()])}件は対象外)")
         print(f"公開中の授業 {len(sessions)}件 / 登録済み録画 {len(recordings)}件 "
-              f"(動画IDを読めた {len({v for v in (video_id(u) for _, u, _ in recordings) if v})}件)")
+              f"(動画IDを読めた {len({v for v in (video_id(r[1]) for r in recordings) if v})}件)")
 
         rep = build_plan(today, playlists, sessions, recordings, last_rec, progress=print)
         planned, problems, notes = rep["planned"], rep["problems"], rep["notes"]

@@ -47930,8 +47930,12 @@ def admin_class_recordings_auto_assign(payload: dict, request: Request,
             c.execute("SELECT session_id, MAX(created_at) AS last FROM class_recordings "
                       "WHERE session_id IS NOT NULL GROUP BY session_id")
             last_rec = {r["session_id"]: r["last"] for r in c.fetchall()}
-            c.execute("SELECT session_id, video_url, COALESCE(provider, '') AS provider FROM class_recordings")
-            recordings = [(r["session_id"], r["video_url"], r["provider"]) for r in c.fetchall()]
+            # ★列の並びは class_recording_assign.Recording と一致させる (足りなければ TypeError)。
+            #   title は「同じ授業に同じ日付ラベル」検査に、id は読めない URL を名指しするのに要る。
+            c.execute("SELECT session_id, video_url, COALESCE(provider, '') AS provider, "
+                      "COALESCE(title, '') AS title, id FROM class_recordings")
+            recordings = [(r["session_id"], r["video_url"], r["provider"], r["title"], r["id"])
+                          for r in c.fetchall()]
 
             named_pids = [p for p, n in playlists if (n or "").strip() and class_recording_assign.slot_of(n)]
             cache = _auto_assign_prefetch(named_pids, class_recording_assign.http_get)

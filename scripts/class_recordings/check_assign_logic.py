@@ -123,32 +123,65 @@ def main():
             failures.append(f"取得失敗({label}) が fatal にならない: items={items!r} fatal={fatal!r}")
             print(f"  ❌ {label}: items={items!r} fatal={fatal!r}")
 
-    # 日付ラベルの検算 (曜日・未来・古すぎ・複数候補・年つき)
+    # 年の決め方 (年またぎ・過去側の直近)
+    #   ★「今日にいちばん近い年」だと半年より古い日付が**翌年**に化け、正しい日付に
+    #     「曜日が合わない」と嘘を言う (2026-08-28 に日曜1限で実測)。過去側を採ること。
     import datetime
-    today = datetime.date(2026, 8, 18)          # 火曜
+    D = datetime.date
+    print("年の決め方 (resolve_year):")
+    YEAR_CASES = [
+        # (月, 日, 今日, 期待する過去側, 期待する未来側)
+        (2, 8, D(2026, 8, 28), D(2026, 2, 8), D(2027, 2, 8)),   # ★半年より古い = 翌年に化けていた
+        (8, 23, D(2026, 8, 28), D(2026, 8, 23), D(2027, 8, 23)),
+        (12, 28, D(2026, 1, 5), D(2025, 12, 28), D(2026, 12, 28)),  # 年またぎ
+        (8, 29, D(2026, 8, 28), D(2026, 8, 29), D(2027, 8, 29)),    # 猶予の中の「明日」は過去側
+        (9, 6, D(2026, 8, 28), D(2025, 9, 6), D(2026, 9, 6)),       # 猶予の外の未来は未来側
+        (2, 29, D(2026, 8, 28), None, None),                        # その年に存在しない日付
+    ]
+    for mo, dy, day0, exp_past, exp_ahead in YEAR_CASES:
+        got = mod.resolve_year(mo, dy, day0)
+        if got == (exp_past, exp_ahead):
+            print(f"  ✅ {mo}/{dy} @ {day0} → 過去 {got[0]} / 未来 {got[1]}")
+        else:
+            failures.append(f"resolve_year({mo},{dy},{day0}) = {got} (期待 {(exp_past, exp_ahead)})")
+            print(f"  ❌ {mo}/{dy} @ {day0} → {got} (期待 {(exp_past, exp_ahead)})")
+
+    # 日付ラベルの検算 (曜日・未来・離れすぎ・複数候補・年つき)
+    T = datetime.date(2026, 8, 18)              # 火曜
+    T2 = datetime.date(2026, 8, 28)             # 金曜 (塾長の実データを再現した日)
     DATE_CASES = [
-        ("8/17", 0, "8/17"),                     # 月曜の再生リスト・月曜の日付
-        ("8.３", 0, "8/3"),
-        ("８・６", 3, "8/6"),
-        ("8/17", 1, None),                       # 火曜の再生リストに月曜の日付 → 拒否
-        ("2026/8/17", 0, None),                  # 年つき → 拒否
-        ("1.5倍速 8/17", 0, None),                # 候補が複数 → 拒否
+        (T, "8/17", 0, "8/17"),                  # 月曜の再生リスト・月曜の日付
+        (T, "8.３", 0, "8/3"),
+        (T, "８・６", 3, "8/6"),
+        (T, "8/17", 1, None),                    # 火曜の再生リストに月曜の日付 → 拒否
+        (T, "2026/8/17", 0, None),               # 年つき → 拒否
+        (T, "1.5倍速 8/17", 0, None),             # 候補が複数 → 拒否
         # ★「候補が複数」ルールを**単独で**固定するケース。上の '1.5倍速' は先頭候補 1/5 が
-        #   120日ルールでも落ちるため、複数候補チェックを消しても緑のままだった。
+        #   曜日でも落ちるため、複数候補チェックを消しても緑のままになりうる。
         #   7/6 は月曜かつ 43日前で他の全ガードを通り抜けるので、この規則だけを試せる。
-        ("7.6倍速 8/17", 0, None),
-        ("8/24", 0, None),                       # 未来 → 拒否
-        ("4/13", 0, None),                       # 120日より古い → 拒否
-        ("8/45", 0, None),                       # 日付として不正 → 拒否
+        (T, "7.6倍速 8/17", 0, None),
+        (T, "8/24", 0, None),                    # 6日先 = 猶予の外の未来 → 拒否
+        # ★猶予 (FUTURE_SLACK_DAYS) の中の未来。曜日は合うので、未来チェックだけが拒否できる。
+        (T, "8/20", 3, None),
+        # ★MAX_AGE_DAYS を**単独で**固定するケース。2025-09-29 は月曜なので曜日では落ちず、
+        #   323日前 = 過去側の読みと未来側の読みの区別が付かない。
+        (T, "9/29", 0, None),
+        (T, "8/45", 0, None),                    # 日付として不正 → 拒否
+        # ★ここから 2026-08-28 の実データ (直した当のバグ)。120日で弾いていた正しい過去回と、
+        #   翌年に化けて「曜日が合わない」と誤報していた回を、どちらも受け取れること。
+        (T, "4/13", 0, "4/13"),                  # 127日前の月曜 = 過去分の取り込み → 通す
+        (T2, "2月8日（第2講義①）", 6, "2/8"),      # 201日前の日曜 (旧: 2027-02-08 月曜と誤読)
+        (T2, "4月26日", 6, "4/26"),               # 124日前の日曜 (旧: 120日より古いと誤判定)
+        (T2, "8/25", 2, None),                   # 水曜の再生リストに火曜の日付 = 本物の打ち間違い
     ]
     print("日付ラベルの検算:")
-    for raw, day, expect in DATE_CASES:
-        label, _why = mod.date_label(raw, day, today)
+    for day0, raw, day, expect in DATE_CASES:
+        label, _why = mod.date_label(raw, day, day0)
         if label == expect:
-            print(f"  ✅ {raw!r} ({mod.DAY_LABEL[day]}曜) → {label}")
+            print(f"  ✅ {day0} {raw!r} ({mod.DAY_LABEL[day]}曜) → {label}")
         else:
-            failures.append(f"date_label({raw!r}, {day}) = {label} (期待 {expect})")
-            print(f"  ❌ {raw!r} ({mod.DAY_LABEL[day]}曜) → {label} (期待 {expect})")
+            failures.append(f"date_label({raw!r}, {day}, {day0}) = {label} (期待 {expect})")
+            print(f"  ❌ {day0} {raw!r} ({mod.DAY_LABEL[day]}曜) → {label} (期待 {expect})")
 
     # 動画ID抽出 (取りこぼすと既存動画を新着と誤認して二重登録する)
     ID = "ABCDEFGHIJK"
@@ -182,6 +215,63 @@ def main():
         failures.append(f"recording_url の往復に失敗: {rt} (期待 {ID})")
         print(f"  ❌ recording_url → video_id → {rt} (期待 {ID})")
 
+    # 計画づくり (build_plan) — 読めない URL の名指しと、同じ日付ラベルの重複
+    #   ★どちらも「塾長が直せるか」に直結する。2026-08-28 に、読めない URL が1件あるだけで
+    #     どの録画か分からないまま全クラスの割り当てが止まっていた (hazard は
+    #     --allow-partial でも免除されない)。
+    print("計画づくり (build_plan):")
+    PL_TITLES = ["2月8日（第2講義①）", "4月26日", "8/23", "8/16", "8/16 第20講義", "第2講義問題3"]
+    pl_page = {"contents": {"x": [
+        {"lockupViewModel": {"contentType": "LOCKUP_CONTENT_TYPE_VIDEO",
+                             "contentId": f"SUNVIDEO{i:03d}"[:11],
+                             "metadata": {"lockupMetadataViewModel": {"title": {"content": t}}}}}
+        for i, t in enumerate(PL_TITLES)]},
+        "header": {"t": {"content": f"{len(PL_TITLES)} 本の動画"}}}
+    fake_pl = f'<script>var ytInitialData = {json.dumps(pl_page, ensure_ascii=False)};</script>'
+    recordings = [
+        # (session_id, video_url, provider, title, rec_id) = Recording の並び
+        (1, "https://www.youtube.com/playlist?list=PLaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+         "youtube", "まとめ", 77),                      # 動画IDを隠しようがない → 止めない
+        (None, "https://youtu.be/ABCDEFGHIJ", "youtube", "全員向け", 78),   # 11文字に足りない → 止める
+        (1, "https://drive.google.com/file/d/1a2b3c4d5e6f7g8h9i0j/view", "", "配布", 79),  # link 録画
+        (1, "https://youtu.be/KNOWNVIDEO1", "youtube", "8/16", 80),        # 既に 8/16 が居る
+    ]
+    rep2 = mod.build_plan(T2, [("PL_SUN", "日曜1限")], [(1, "日曜 高校国語")], recordings, {},
+                          get=lambda _url: (fake_pl, None))
+    joined = " / ".join(rep2["problems"])
+    checks = [
+        ("読めない URL を録画番号で名指しする", "#77" in joined and "#78" in joined),
+        ("動画IDを隠せない URL では投入を止めない", rep2["hazard"] == 1 and rep2["blocking"] == 1),
+        ("provider 空のリンク録画を巻き込まない", "#79" not in joined),
+        ("同じ日付ラベルの重複を人に回す", any("日付 8/16 の録画がこのクラスに既にある" in p
+                                              for p in rep2["problems"])),
+        ("日付を読めない動画は人に回す", any("第2講義問題3" in p for p in rep2["problems"])),
+        # ★120日より古い正しい回 (2/8・4/26) を弾かない = 直した当のバグ
+        ("過去分の取り込みを弾かない",
+         sorted(p["label"] for p in rep2["planned"]) == ["2/8", "4/26", "8/23"]),
+        ("古い回を登録するときは必ず知らせる",
+         any("より古い回を 2本 登録します" in n for n in rep2["notes"])),
+    ]
+    # ★読めない URL の**表示**は5件までに絞るが、**数える**のは全件。
+    #   絞って数えると、6件目以降が危ない URL でも登録が通る (2026-08-28 に一度作った穴)。
+    #   ★危ない1件は表示枠 (5件) の**外側**に置く。枠の内側に置くと、
+    #     ループごと打ち切る書き方 (continue を break にする等) を捕まえられない。
+    many = ([(1, f"https://www.youtube.com/playlist?list=PL{'a' * 32}{i}", "youtube", "まとめ", 100 + i)
+             for i in range(7)]
+            + [(1, "https://youtu.be/ABCDEFGHIJ", "youtube", "切れたURL", 107)])
+    rep3 = mod.build_plan(T2, [], [(1, "日曜 高校国語")], many, {}, get=lambda _u: (fake_pl, None))
+    checks.append(("6件目以降の危ない URL も投入を止める", rep3["hazard"] == 1))
+
+    for label, ok in checks:
+        if ok:
+            print(f"  ✅ {label}")
+        else:
+            failures.append(f"build_plan: {label} が成立していない")
+            print(f"  ❌ {label}")
+    if failures:
+        print(f"     (参考) problems={rep2['problems']}")
+        print(f"     (参考) notes={rep2['notes']}")
+
     # ★CLI が正典と同一の実装を使っていること。別実装に差し替わると、このゲートが
     #   緑のまま塾長のターミナルだけ判定が変わる (検査していない状態になる)。
     print("CLI が正典を共有していること:")
@@ -203,7 +293,7 @@ def main():
         for f in failures:
             print(f"   - {f}")
         return 1
-    print("\n=== ALL PASS (判定表・取得失敗・日付検算・動画ID抽出・CLI共有) ===")
+    print("\n=== ALL PASS (判定表・取得失敗・年の決め方・日付検算・動画ID抽出・計画づくり・CLI共有) ===")
     return 0
 
 
