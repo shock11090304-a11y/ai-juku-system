@@ -316,25 +316,47 @@ def check_refs(mod, errs):
             errs.append(f"[{name}] REFS に余分な項目（そんな文は無い）: {key}")
 
 
+_TAG_OK = re.compile(r'</?(?:b|u|i|br)\s*/?>')
+
+
 def check_notation(mod, errs):
     """古い記号名が本文中に残っていないか。
 
-    ★2026-08-27 に括弧の割り当てを変えた（形容詞＝[ ] / 名詞＝〈 〉）。
-      解説の地の文が「&lt; &gt; の修飾」のまま残ると、凡例と本文で記号が食い違う。
+    ★2026-08-27 に括弧の割り当てを変えた（形容詞＝[ ] / 名詞＝〈 〉/ 副詞＝( )）。
+      解説の地の文が古いままだと、凡例と本文で記号が食い違い、
       生徒はどちらを信じてよいか分からなくなるので機械で止める。
+
+    ★2026-08-28 追記: 最初は &lt; &gt; しか見ておらず、設問解説の 🔬文構造分析 に
+      書いた生の < > を 8 か所も取りこぼした（紙に出ていた）。
+      HTML タグ以外の生の < > も落とすようにした。
     """
     name = mod.META["key"]
     stale = ("&lt;", "&gt;")
+
     def scan(text, where):
-        for t in stale:
-            if t in str(text):
-                errs.append(f"[{name}] {where}: 古い記号 {t} が残っている → {str(text)[:60]!r}")
+        t = str(text)
+        for x in stale:
+            if x in t:
+                errs.append(f"[{name}] {where}: 古い記号 {x} が残っている → {t[:60]!r}")
+        bare = _TAG_OK.sub("", t)
+        if "<" in bare or ">" in bare:
+            errs.append(f"[{name}] {where}: HTML タグでない生の < > が残っている"
+                        f"（形容詞のカタマリは [ ] と書く）→ {t[:60]!r}")
+
     for para in mod.PARAS:
         for j, s in enumerate(para["sents"], 1):
             for n in s.get("notes", []):
                 scan(n, f"第{para['no']}段落 第{j}文 の注記")
             scan(s.get("tag", ""), f"第{para['no']}段落 第{j}文 の tag")
+            scan(s.get("pat", ""), f"第{para['no']}段落 第{j}文 の pat")
     for q in getattr(mod, "QUESTIONS", []):
         for key in ("core", "struct", "ng"):
             for x in q.get(key, []):
                 scan(x, f"設問{q['no']} の {key}")
+        for key in ("ans", "ansnote"):
+            scan(q.get(key, ""), f"設問{q['no']} の {key}")
+    for _k, a, n in getattr(mod, "FILL_NOTES", []):
+        scan(a, "空所一覧の答え")
+        scan(n, "空所一覧の根拠")
+    for _k, h in getattr(mod, "FILL_HINT", {}).items():
+        scan(h, "空所一覧の根拠")

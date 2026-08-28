@@ -134,7 +134,12 @@ def selftest():
     m.PARAS[0]["sents"][0]["notes"] = ["&lt; &gt; の修飾"]
     cases.append(("古い記号名が残っている", m))
 
-    # 変異15: 和訳を空にする
+    # 変異15: 設問解説に生の < > を残す（2026-08-28 に実際に 8 か所やらかした）
+    m = _Snap(T)
+    m.QUESTIONS[0]["struct"].append("真S＝<not to have mentioned it>")
+    cases.append(("設問解説に生の < > が残る", m))
+
+    # 変異16: 和訳を空にする
     m = _Snap(T)
     m.PARAS[0]["sents"][0]["ja"] = ""
     cases.append(("和訳を空にする", m))
@@ -187,7 +192,7 @@ def main():
             print(f"  ✗ VIOLATION: 変異『{s}』を入れてもゲートが通ってしまった（検査が無力）")
         total += len(survived)
     else:
-        print("  ✓ 変異 15 種すべてでゲートが落ちた（検査は生きている）")
+        print("  ✓ 変異 16 種すべてでゲートが落ちた（検査は生きている）")
 
     print("=" * 68)
     if total:

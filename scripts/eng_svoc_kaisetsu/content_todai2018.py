@@ -640,8 +640,8 @@ QUESTIONS = [
         "no": "(A)", "kind": "和訳",
         "q": "下線部 (A) を、文末の it の内容がわかるように訳せ。",
         "target": "It would be like her mother not to have mentioned it.",
-        "ans": "そのこと──つまり自分（ジェイニー）の耳が聞こえないということ──をクラーク氏に"
-               "言っていなかったのだとしたら、それはいかにも母親らしいことだった。",
+        "ans": "自分（ジェイニー）の耳が聞こえないということを母がクラーク氏に伝えていなかった"
+               "のだとしたら、それはいかにも母親らしいふるまいだった。",
         "ansnote": "「it ＝ 彼女が耳が聞こえないということ」を訳文の中に必ず出すこと。"
                    "「そのこと」で済ませると設問の指示に答えたことにならない。",
         "core": [
@@ -654,7 +654,7 @@ QUESTIONS = [
         ],
         "struct": [
             "主節: S＝It（形式主語） / 助＝would / V＝be / C＝like her mother",
-            "真S＝[ not to have mentioned it ]（不定詞句）── It が指す中身はこれ",
+            "真S＝〈 not to have mentioned it 〉（不定詞句）── It が指す中身はこれ",
             "・like は前置詞、her mother がその目的語",
             "・not は to have mentioned を否定（不定詞の否定は to の直前）",
             "・mentioned の O＝it ← <b>これが設問の問う it</b>",
@@ -741,8 +741,9 @@ QUESTIONS = [
             "<b>sound</b> のコアは「音が出る／音として届く」。そこから 2 つの使い方が出る。"
             "(1) sound ＋ 形容詞／like ＋ 名詞＝「〜に聞こえる」（第2文型）"
             "(2) 補語なしで「音がする」（完全自動詞）。",
-            "★<b>seem は補語が必須</b>の動詞で、単独では使えない。"
-            "sound だけが (1)(2) の両方を持つ。これが本問の分かれ目。",
+            "★<b>「音がする」という自動詞用法を持つのは sound だけ</b>。seem は必ず補語を要求するので、"
+            "②を seemed にすると直前の wrong を補って読むしかなく、"
+            "「変に思えた、いや変に思えなかった」と<b>自家撞着する</b>。ここが本問の分かれ目。",
             "②が <b>had not ＋ (C)</b> なので、入る語は<b>過去分詞</b>。"
             "①は裸で使われているので<b>過去形</b>。よって<b>過去形と過去分詞が同形</b>の語に限られる。",
         ],
@@ -750,8 +751,8 @@ QUESTIONS = [
             "① But something sounded wrong ── S＝something / V＝sounded / C＝wrong（第2文型）",
             "② or had not sounded ── 助＝had not / V＝sounded（補語なしの第1文型）",
             "　※ ①②は「変に響いた、いや、そもそも音などしなかった」という<b>言い直し</b>",
-            "③ a harsh whisper <that might have sounded, for all she knew, like a sick child or "
-            "someone dying>",
+            "③ a harsh whisper [ that might have sounded, for all she knew, like a sick child or "
+            "someone dying ]",
             "　S'＝that（先行詞 a harsh whisper） / 助＝might have / V'＝sounded / "
             "C'＝like a sick child or someone dying（第2文型）",
         ],
@@ -769,9 +770,12 @@ QUESTIONS = [
             "①も something ended wrong では wrong を C に取れない。",
             "b) gone → ① something gone wrong は述語動詞が無く文にならない"
             "（had gone なら可だが①に助動詞は無い）。",
-            "c) seemed → <b>②が致命的</b>。seem は補語が必須の動詞なので、"
-            "had not seemed のように単独では使えない。"
-            "①③だけを見ると通るように見えるのが最大の罠。",
+            "c) seemed → <b>最大の罠</b>。①③は形の上では通ってしまう。決め手は②で、"
+            "seem は補語を省略できないので had not seemed は直前の wrong を補って読むしかなく、"
+            "「変に思えた、いや変に思えなかった」と自家撞着する。"
+            "sounded なら「音がしなかった」という別の意味になり、直後の "
+            "She hadn't heard herself（自分の声が聞こえなかった）と噛み合う。"
+            "③も for all she knew（自分では聞こえないので分からないが）が<b>聴覚</b>の話だと示している。",
             "e) went → ② had not <u>went</u> が不可（過去分詞は gone）。"
             "「3 か所に同じ 1 語」という条件で落ちる。",
         ],
@@ -794,14 +798,14 @@ QUESTIONS = [
             "「必要なだけ引きこもれる場所があった──そして実際、その必要がある瞬間はあったのだ」。",
         ],
         "struct": [
-            "Sometimes she thought [ it saved her, gave her a separate place to withdraw into "
-            "as far as she might need at any given moment ]",
-            "　主節: S＝she / V＝thought / O＝[ ]（that 省略）",
+            "Sometimes she thought 〈 it saved her, gave her a separate place to withdraw into "
+            "as far as she might need at any given moment 〉",
+            "　主節: S＝she / V＝thought / O＝〈 〉（that 省略）",
             "　〈 〉 の中: S'＝it（＝silence） / V'＝saved / O'＝her ／ V'＝gave / O1'＝her / "
             "O2'＝a separate place",
-            "　<to withdraw into> ← a separate place を修飾（into の目的語が place）",
+            "　[ to withdraw into ] ← a separate place を修飾（into の目的語が place）",
             "and there were moments ── M＝there / V＝were / S＝moments（There 構文）",
-            "補うのは moments を後ろから修飾する < when 節 >",
+            "補うのは moments を後ろから修飾する [ when 節 ]",
         ],
         "evidence": [
             ("gave her a separate place to withdraw into as far as she might need at any given moment",
@@ -819,9 +823,11 @@ QUESTIONS = [
             "b) when she didn't feel uncomfortable → 本文の she didn't feel uncomfortable inside "
             "its invisibility は「沈黙の中に居続けた結果、居心地の悪さを感じない」という話。"
             "「引きこもる必要が生じた瞬間」とは<b>逆向き</b>。",
-            "c) when her mother would not let her go → 最終場面には合うが、"
-            "この時点は回想に入る直前で、まだ起きていない出来事。"
-            "また withdraw into（沈黙へ引きこもる）の言い換えになっていない。",
+            "c) when her mother would not let her go → 補うべきは「<b>沈黙へ引きこもる必要が生じた</b>瞬間」。"
+            "これは母が行かせてくれない<b>状況</b>を述べているだけで、直前の "
+            "withdraw into … as far as she might need の言い換えになっていない。"
+            "特定の一場面に限定してしまう点も、at any given moment（いつであれ）という"
+            "一般化と噛み合わない。",
         ],
     },
     {
@@ -885,8 +891,9 @@ QUESTIONS = [
                    "photograph</b> tomorrow.　tomorrow は空所の<b>外</b>の語で、photograph にかかる。",
         "core": [
             "<b>need to ＋ 動詞の原形</b>。to の直後に置けるのは原形だけ。"
-            "与えられた語のうち、will と組まずに原形で立てるのは <b>know</b> だけ"
-            "（photograph は I will photograph という節を作る）。",
+            "候補は know と photograph の 2 つで、<b>語数だけでは決まらない</b>。"
+            "決めるのは直後の 2 文（help me ／ tell me some history about them）で、"
+            "彼が求めているのは<b>知識</b>だから to の後ろは know。",
             "<b>the ones ＝ the buildings の言い換え（同格）</b>。"
             "設問が「どこか 1 か所にコンマ」と指定しているのは、この同格のコンマのこと。",
             "the ones の直後に<b>目的格の関係代名詞が省略</b>されている"
@@ -894,10 +901,10 @@ QUESTIONS = [
         ],
         "struct": [
             "I'll need to know something about the buildings, the ones I will photograph tomorrow.",
-            "　主節: S＝I / 助＝'ll / V＝need / O＝[ to know something about the buildings ]",
+            "　主節: S＝I / 助＝'ll / V＝need / O＝〈 to know something about the buildings 〉",
             "　不定詞句: V'＝know / O'＝something / M'＝( about the buildings )",
             "　同格: the ones ← the buildings の言い換え",
-            "　< (which) I will photograph tomorrow > ← the ones を修飾（関係代名詞省略）",
+            "　[ (which) I will photograph tomorrow ] ← the ones を修飾（関係代名詞省略）",
         ],
         "evidence": [
             ("Maybe you can tell me some history about them.",
@@ -910,12 +917,17 @@ QUESTIONS = [
              "第 18 段落。翌日撮るのは具体的な建物であること。"),
         ],
         "ng": [
-            "to の直後に photograph を置く → will が余って収まらない。"
-            "「to の後ろは原形」＋「will は節を作る」の 2 点で know が確定する。",
+            "★<b>photograph the buildings, the ones I will know something about</b> "
+            "── <b>最有力の誤答</b>。10 語をちょうど使い切り、コンマも 1 か所に入るので、"
+            "語数と形だけでは弾けない。決め手は<b>直後の 2 文</b>で、"
+            "You might be able to help me.／Maybe you can tell me some history about them. "
+            "が示すとおり、彼が彼女に求めているのは<b>建物についての知識</b>であって撮影ではない。"
+            "この並びだと「明日 know something about することになる建物を撮る」となり、"
+            "彼女に history を尋ねる理由が消える。",
             "know something about the buildings the ones I will photograph（コンマ無し）→ "
             "設問の指定（コンマ 1 か所）に反するうえ、the ones の同格関係が読み取れない。",
-            "the ones I know something about, the buildings I will photograph のような組み方 → "
-            "them（＝the buildings）が指すものが後ろに来てしまい、直後の文とつながらない。",
+            "to の直後に原形以外を置く → need to の後ろは<b>動詞の原形</b>。"
+            "will と組ませずに原形で立てられるのは know だけ。",
         ],
     },
     {
