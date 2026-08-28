@@ -160,7 +160,7 @@ def main():
         #   曜日でも落ちるため、複数候補チェックを消しても緑のままになりうる。
         #   7/6 は月曜かつ 43日前で他の全ガードを通り抜けるので、この規則だけを試せる。
         (T, "7.6倍速 8/17", 0, None),
-        (T, "8/24", 0, None),                    # 6日先 = 猶予の外の未来 → 拒否
+        (T, "8/24", 0, None),                    # 6日先 = 猶予の外。未来として拒否
         # ★猶予 (FUTURE_SLACK_DAYS) の中の未来。曜日は合うので、未来チェックだけが拒否できる。
         (T, "8/20", 3, None),
         # ★MAX_AGE_DAYS を**単独で**固定するケース。2025-09-29 は月曜なので曜日では落ちず、
@@ -215,6 +215,62 @@ def main():
         failures.append(f"recording_url の往復に失敗: {rt} (期待 {ID})")
         print(f"  ❌ recording_url → video_id → {rt} (期待 {ID})")
 
+    # 読めない URL の分類 (may_hide_video_id / provider_of / redact_url)
+    #   ★2026-08-28 のデプロイ前レビューで、ここを「壊れ方の側から数える」実装にしていて
+    #     壊れた動画URLを素通りさせていた。壊れ方は無限にあるので、安全な形の側を数える。
+    print("読めない URL の分類:")
+    ID11 = "dQw4w9WgXcQ"
+    HAZARD_CASES = [
+        # (URL, 動画IDを隠しうるか)
+        (f"https://youtu.be/{ID11[:7]} {ID11[7:]}", True),    # 貼り付けで空白が混入 (7+4文字に割れる)
+        (f"https://youtu.be/{ID11}_2", True),                  # 末尾に文字が続いて13文字
+        (f"https://youtu.be/{ID11[:7]}%20{ID11[7:]}", True),   # %エスケープで割れる
+        (f"youtu.be/{ID11}", True),                            # http(s):// が無い
+        ("https://www.youtube.com/watch?v=broken", True),      # 壊れた watch URL
+        ("https://www.youtube.com/playlist?list=PL" + "a" * 32, False),   # 再生リスト = 隠しようがない
+        ("https://www.youtube.com/playlist?list=PLaa&v=broken", True),    # 一覧でも v= があれば動画URL
+        ("https://www.youtube.com/@juku_channel", False),      # チャンネル
+        ("https://www.youtube.com/channel/UCabcdefghijklmnop", False),
+        ("", False),                                           # 空URL
+    ]
+    for url, expect in HAZARD_CASES:
+        got = mod.may_hide_video_id(url)
+        if got == expect:
+            print(f"  ✅ {url[:46]:<46} → 止める={got}")
+        else:
+            failures.append(f"may_hide_video_id({url!r}) = {got} (期待 {expect})")
+            print(f"  ❌ {url[:46]:<46} → 止める={got} (期待 {expect})")
+
+    Rec = mod.Recording
+    PROVIDER_CASES = [
+        # provider 列が空の古い行。★hostname で見ると http(s):// 無しの YouTube URL を
+        #   link に落とし、二重登録の見張りから丸ごと外してしまう。
+        (f"youtu.be/{ID11}", "youtube"),
+        (f"https://youtu.be/{ID11}", "youtube"),
+        ("https://drive.google.com/file/d/1a2b3c4d5e6f/view", "link"),
+        ("https://vimeo.com/123456789", "vimeo"),
+    ]
+    print("provider 列が空の行の見分け:")
+    for url, expect in PROVIDER_CASES:
+        got = mod.provider_of(Rec(1, url, "", "題名", 1))
+        if got == expect:
+            print(f"  ✅ {url[:46]:<46} → {got}")
+        else:
+            failures.append(f"provider_of({url!r}) = {got} (期待 {expect})")
+            print(f"  ❌ {url[:46]:<46} → {got} (期待 {expect})")
+
+    # ★伏せた URL から動画IDが復元できないこと (記号で割れても破片を出さない)
+    print("URL の伏せ字:")
+    for url in [f"https://youtu.be/{ID11}", f"https://youtu.be/{ID11[:7]}%20{ID11[7:]}",
+                f"https://www.youtube.com/watch?v={ID11}"]:
+        red = mod.redact_url(url)
+        leaked = [p for p in (ID11[:5], ID11[5:], ID11[3:9], ID11) if len(p) >= 5 and p in red]
+        if not leaked:
+            print(f"  ✅ {url[:44]:<44} → {red}")
+        else:
+            failures.append(f"redact_url({url!r}) = {red} が動画IDの破片 {leaked} を出している")
+            print(f"  ❌ {url[:44]:<44} → {red} (破片 {leaked})")
+
     # 計画づくり (build_plan) — 読めない URL の名指しと、同じ日付ラベルの重複
     #   ★どちらも「塾長が直せるか」に直結する。2026-08-28 に、読めない URL が1件あるだけで
     #     どの録画か分からないまま全クラスの割り当てが止まっていた (hazard は
@@ -243,8 +299,8 @@ def main():
         ("読めない URL を録画番号で名指しする", "#77" in joined and "#78" in joined),
         ("動画IDを隠せない URL では投入を止めない", rep2["hazard"] == 1 and rep2["blocking"] == 1),
         ("provider 空のリンク録画を巻き込まない", "#79" not in joined),
-        ("同じ日付ラベルの重複を人に回す", any("日付 8/16 の録画がこのクラスに既にある" in p
-                                              for p in rep2["problems"])),
+        ("既に登録済みの日付と重なる回を人に回す",
+         sum(1 for p in rep2["problems"] if "既に 8/16 の録画が登録されている" in p) == 2),
         ("日付を読めない動画は人に回す", any("第2講義問題3" in p for p in rep2["problems"])),
         # ★120日より古い正しい回 (2/8・4/26) を弾かない = 直した当のバグ
         ("過去分の取り込みを弾かない",
@@ -252,15 +308,44 @@ def main():
         ("古い回を登録するときは必ず知らせる",
          any("より古い回を 2本 登録します" in n for n in rep2["notes"])),
     ]
+    # ★同じ**再生リスト**に同じ日付が2本あるとき (DB には無い) も人に回すこと。
+    #   DB 由来の重複とは塾長のやることが違うので、言い方も分ける。
+    dup_page = {"contents": {"x": [
+        {"lockupViewModel": {"contentType": "LOCKUP_CONTENT_TYPE_VIDEO", "contentId": f"DUPVIDEO{i:03d}"[:11],
+                             "metadata": {"lockupMetadataViewModel": {"title": {"content": t}}}}}
+        for i, t in enumerate(["8/23", "8/23 後半"])]},
+        "header": {"t": {"content": "2 本の動画"}}}
+    rep4 = mod.build_plan(T2, [("PL_SUN", "日曜1限")], [(1, "日曜 高校国語")], [], {},
+                          get=lambda _u: (f'<script>var ytInitialData = '
+                                          f'{json.dumps(dup_page, ensure_ascii=False)};</script>', None))
+    checks.append(("同じ再生リストに同じ日付が2本あれば人に回す",
+                   len(rep4["planned"]) == 1
+                   and any("同じ再生リストに 8/23 の回が2本ある" in p for p in rep4["problems"])))
+    # ★"08/23" のような表記ゆれの既存行も台帳に載ること (前ゼロで照合が外れていた)
+    rep5 = mod.build_plan(T2, [("PL_SUN", "日曜1限")], [(1, "日曜 高校国語")],
+                          [(1, "https://youtu.be/OTHERVIDEO", "youtube", "08/23", 200)], {},
+                          get=lambda _u: (f'<script>var ytInitialData = '
+                                          f'{json.dumps(dup_page, ensure_ascii=False)};</script>', None))
+    checks.append(("既存タイトルの前ゼロ (08/23) も同じ日付として照合する",
+                   any("既に 8/23 の録画が登録されている" in p for p in rep5["problems"])))
+
     # ★読めない URL の**表示**は5件までに絞るが、**数える**のは全件。
     #   絞って数えると、6件目以降が危ない URL でも登録が通る (2026-08-28 に一度作った穴)。
-    #   ★危ない1件は表示枠 (5件) の**外側**に置く。枠の内側に置くと、
-    #     ループごと打ち切る書き方 (continue を break にする等) を捕まえられない。
-    many = ([(1, f"https://www.youtube.com/playlist?list=PL{'a' * 32}{i}", "youtube", "まとめ", 100 + i)
-             for i in range(7)]
-            + [(1, "https://youtu.be/ABCDEFGHIJ", "youtube", "切れたURL", 107)])
+    #   ★危ない行は表示枠 (5件) より**多く**置く。枠に収まる数だと、数える側を
+    #     枠で打ち切る書き方 (bad_urls[:5] / continue を break に) を捕まえられない。
+    #   ★無害な行を**先頭**に置く。危ない行が先に並んだ入力にすると、危険度順の
+    #     並べ替えを消しても偶然そのままの順になり、並べ替えを検査できない。
+    many = ([(1, f"https://www.youtube.com/playlist?list=PL{'a' * 32}{i}", "youtube", "まとめ", 200 + i)
+             for i in range(2)]
+            + [(1, f"https://youtu.be/BROKEN{i}", "youtube", "切れたURL", 100 + i) for i in range(7)])
     rep3 = mod.build_plan(T2, [], [(1, "日曜 高校国語")], many, {}, get=lambda _u: (fake_pl, None))
-    checks.append(("6件目以降の危ない URL も投入を止める", rep3["hazard"] == 1))
+    checks.append(("表示は5件に絞っても、止める行は全件数える", rep3["hazard"] == 7))
+    # ★止めている当の行が**名指しされる**こと。DB の行順のまま5件で切ると、
+    #   「止めません」と書かれた無害な5件だけが並び、塾長は止めている行に辿り着けない。
+    checks.append(("止めている行が表示枠に入る (危ない順に出す)",
+                   sum(1 for p in rep3["problems"] if "登録を止めています" in p) == 5))
+    checks.append(("枠から溢れた分は「うち何件が止める行か」を言う",
+                   any("うち 2件は登録を止める行" in p for p in rep3["problems"])))
 
     for label, ok in checks:
         if ok:

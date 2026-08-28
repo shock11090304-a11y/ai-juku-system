@@ -10822,7 +10822,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           + '<button class="cls-fdel" data-id="' + f.id + '" data-sess="' + sid + '" style="' + BTN + ' background:rgba(239,68,68,0.2); color:#fca5a5;">🗑</button></div>';
       }).join('') : '<div style="color:#a1a1aa; font-size:0.8rem;">ファイルなし</div>';
       var recs = d.recordings.length ? d.recordings.map(function (r) {
-        return '<div style="' + rowBox() + '"><span style="flex:1;">🎬 ' + esc(r.title) + ' <a href="' + esc(safeHref(r.video_url)) + '" target="_blank" rel="noopener" style="color:#c4b5fd;">↗</a> <span style="color:#a1a1aa;">[' + esc(r.provider) + ']</span></span>'
+        // ★録画番号を出す。自動割り当ての「確認が要るもの」が壊れた URL の行を
+        //   「録画 #91 …」と番号で名指しするので、ここに出ていないと探せない。
+        return '<div style="' + rowBox() + '"><span style="flex:1;"><span style="color:#71717a;">#' + esc(r.id) + '</span> 🎬 ' + esc(r.title) + ' <a href="' + esc(safeHref(r.video_url)) + '" target="_blank" rel="noopener" style="color:#c4b5fd;">↗</a> <span style="color:#a1a1aa;">[' + esc(r.provider) + ']</span></span>'
           + '<button class="cls-rdel" data-id="' + r.id + '" data-sess="' + sid + '" style="' + BTN + ' background:rgba(239,68,68,0.2); color:#fca5a5;">🗑</button></div>';
       }).join('') : '<div style="color:#a1a1aa; font-size:0.8rem;">録画なし</div>';
       var att = d.attendance.length ? d.attendance.map(function (a) {

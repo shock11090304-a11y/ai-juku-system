@@ -554,7 +554,10 @@
            + list(d.duplicates) + '</div>';
     }
     if ((d.notes || []).length) {
-      html += '<div class="yt-box yt-box-info"><strong>（参考）対応は不要</strong>' + list(d.notes) + '</div>';
+      // ★「対応は不要」と断言しない。ここには「120日より古い回を登録します」= 唯一の
+      //   人手の見張り (👀 付き) も出る。断言すると、その見張りが読み飛ばされる。
+      html += '<div class="yt-box yt-box-info"><strong>（参考）補足 — 👀 が付いた行は目を通してください</strong>'
+           + list(d.notes) + '</div>';
     }
     asgOut.innerHTML = html;
     asgOut.hidden = false;
