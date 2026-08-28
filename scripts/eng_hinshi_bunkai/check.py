@@ -2,7 +2,7 @@
 """機械ゲート: 分解 DSL と長文本文の整合を全数検査する。1 件でも落ちたらビルドしない。"""
 import re, sys, unicodedata
 from core import parse, plain_text, normalize, iter_nodes, ALLOWED_LABELS
-from content import PASSAGES, RULE_EXAMPLES, META
+from content import PASSAGES, RULE_EXAMPLES, META, RULES, STEPS
 
 ERR = []
 WARN = []
@@ -229,6 +229,28 @@ def main():
                 for i, v in enumerate(obj):
                     scan(v, f"{path}[{i}]")
         scan(P, pid)
+
+    # --- 記号名の残留 --------------------------------------------------------
+    # ★2026-08-27 に括弧の割り当てを変えた（形容詞＝[ ] / 名詞＝〈 〉/ 副詞＝( )）。
+    #   凡例だけ直して解説の地の文が古いままだと、生徒は記号を 2 通り見ることになる。
+    #   読み替えの正典は core.DISP_BR。ここはその「言い忘れ」を機械で止める。
+    from core import DISP_BR as _DB
+    _stale = ("&lt;", "&gt;", "< >", "[ ] … 名詞", "[名詞のカタマリ]")
+    def stale_scan(obj, path):
+        if isinstance(obj, str):
+            for t in _stale:
+                if t in obj:
+                    err(path, f"古い記号名 {t!r} が残っている: …{obj[:44]}…")
+        elif isinstance(obj, dict):
+            for k, v in obj.items():
+                if k != "dsl":          # DSL のソース記号は読み替えの対象外
+                    stale_scan(v, f"{path}.{k}")
+        elif isinstance(obj, (list, tuple)):
+            for i, v in enumerate(obj):
+                stale_scan(v, f"{path}[{i}]")
+    for _name, _obj in (("RULES", RULES), ("STEPS", STEPS),
+                        ("RULE_EXAMPLES", RULE_EXAMPLES), ("PASSAGES", PASSAGES)):
+        stale_scan(_obj, _name)
 
     # --- 正解位置の偏り ------------------------------------------------------
     if total_mcq:

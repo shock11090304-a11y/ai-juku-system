@@ -149,6 +149,27 @@ def _cell(word, label, wcls="", lcls=""):
             f'<span class="lb {lcls}">{label}</span></span>')
 
 
+# ---------------------------------------------------------------- 括弧の表示
+# ★DSL のソース記号（( ) 副詞 / [ ] 名詞 / < > 形容詞）は変えない。
+#   紙・画面に出すときだけ下記に読み替える（2026-08-27 塾長指示・関正生『The Rules』式）。
+#     (  )  副詞のカタマリ
+#     [  ]  形容詞のカタマリ ← ソースの < >（関係詞節・分詞）
+#     〈 〉 名詞のカタマリ   ← ソースの [ ]
+#   ここが塾内で唯一の読み替え地点。scripts/eng_svoc_kaisetsu もこれを使う。
+#   ★片方だけ直すと生徒が 2 つの記号法を見ることになるので、必ずここで変えること。
+DISP_BR = {"(": ("(", ")"), "[": ("〈", "〉"), "<": ("[", "]")}
+
+
+def _disp(ch):
+    """ソースの括弧 1 文字 → 紙に出す括弧 1 文字。"""
+    for src, (op, cl) in DISP_BR.items():
+        if ch == src:
+            return op
+        if ch == BR_PAIR[src]:
+            return cl
+    return ch
+
+
 def render_analysis(node):
     """解答編用: 色分け＋ラベル付きの分解図 HTML。"""
     def walk(nd):
@@ -161,9 +182,9 @@ def render_analysis(node):
                 buf.append(_cell(esc(k.text), "&nbsp;", wcls=cls))
             else:
                 kind = BR_KIND[k.text]
-                buf.append(_cell(esc(k.text), "&nbsp;", wcls=f'br b-{kind}'))
+                buf.append(_cell(esc(_disp(k.text)), "&nbsp;", wcls=f'br b-{kind}'))
                 buf.append(walk(k))
-                buf.append(_cell(esc(BR_PAIR[k.text]),
+                buf.append(_cell(esc(_disp(BR_PAIR[k.text])),
                                  esc(k.label) if k.label else "&nbsp;",
                                  wcls=f'br b-{kind}', lcls=_lbl_cls(k.label)))
         return "".join(buf)

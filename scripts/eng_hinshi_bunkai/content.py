@@ -21,19 +21,19 @@ RULES = [
           "多くは外しても文が成立するので、まず外して骨組みを見る"
           "（deprive A of B のように動詞とセットで外せないものもある）。",
      "ex": "( For most of the twentieth century ) , planners treated ..."},
-    {"cls": "rc-noun", "h": "[ ] … 名詞のカタマリ",
+    {"cls": "rc-noun", "h": "〈 〉 … 名詞のカタマリ",
      "b": "that 節・what 節・whether 節・動名詞句・不定詞の名詞用法など、S / O / C になれるかたまり。"
           "外すと文が壊れる。",
-     "ex": "Researchers argue [ that green space does measurable work ]."},
-    {"cls": "rc-adj", "h": "< > … 形容詞のカタマリ",
+     "ex": "Researchers argue 〈 that green space does measurable work 〉."},
+    {"cls": "rc-adj", "h": "[ ] … 形容詞のカタマリ（関係詞節・分詞）",
      "b": "関係詞節・分詞の後置修飾・形容詞用法の不定詞や前置詞句。"
           "直前の名詞に線を引いて結ぶと構造が見える。"
           "ただしコンマ＋which の非制限用法だけは例外で、先行詞が前の内容全体になることがある。",
-     "ex": "the brain < that appears to be resting > is busy ..."},
+     "ex": "the brain [ that appears to be resting ] is busy ..."},
 ]
 
 STEPS = [
-    "① 前から読んで、( ) [ ] < > の <b>カタマリの切れ目</b>に印を入れる。目印は「前置詞・接続詞・関係詞・-ing / -ed / to」。",
+    "① 前から読んで、( ) [ ] 〈 〉 の <b>カタマリの切れ目</b>に印を入れる。目印は「前置詞・接続詞・関係詞・-ing / -ed / to」。",
     "② カタマリを全部外し、残った<b>裸の骨組み</b>を見る。まず <b>V（述語動詞）</b>を 1 つ確定させる。",
     "③ V の前の名詞が S、V の後ろの名詞が O、V の後ろの形容詞・名詞で「S = それ」なら C。",
     "④ 骨組みが決まってから<b>文型を確定</b>し、外したカタマリを「どの語にかかるか」を決めながら戻す。",
@@ -43,16 +43,16 @@ STEPS = [
 RULE_EXAMPLES = [
     {"dsl": "{S:The book} <on the desk> {V:is} {C:mine} .",
      "pat": "第2文型（SVC）",
-     "note": "&lt; on the desk &gt; を外すと The book is mine. という骨組みが残る。"
+     "note": "[ on the desk ] を外すと The book is mine. という骨組みが残る。"
              "前置詞句が名詞の直後にあるときは、まず「形容詞のカタマリ」を疑う。"},
     {"dsl": "{S:I} {V:know} [O: {接:that} {S':he} {V':lives} ( in Kyoto ) ] .",
      "pat": "第3文型（SVO）",
-     "note": "that 以下がまるごと know の目的語。[ ] を外すと I know だけになり、"
-             "他動詞 know の O が消えてしまう＝ [ ] は外せない。"},
+     "note": "that 以下がまるごと know の目的語。〈 〉 を外すと I know だけになり、"
+             "他動詞 know の O が消えてしまう＝ 〈 〉 は外せない。"},
     {"dsl": "( {接:When} {S':the bell} {V':rang} ) , {S:the students} "
             "<{S':who} {V':were talking}> {V:became} {C:quiet} .",
      "pat": "第2文型（SVC）",
-     "note": "( ) は外せる副詞のカタマリ、&lt; &gt; は the students にかかる形容詞のカタマリ。"
+     "note": "( ) は外せる副詞のカタマリ、[ ] は the students にかかる形容詞のカタマリ。"
              "V が 3 つ（rang / were talking / became）見えるが、"
              "<b>主節の V は became ただ 1 つ</b>。残りは接続詞・関係詞が連れてきた V′。"},
 ]
@@ -99,11 +99,11 @@ P1 = {
             "notes": [
                 "and が結ぶのは <b>2 つの文</b>（Open ground was space … と the obvious solution was …）。"
                 "and を見たら「何と何を結んでいるか」を必ず口に出す。",
-                "&lt; that had not yet been used &gt; は space にかかる形容詞のカタマリ。"
+                "[ that had not yet been used ] は space にかかる形容詞のカタマリ。"
                 "that の直後が動詞なので<b>主格の関係代名詞</b>で、that 自身が S′ を兼ねる。",
                 "not yet は「まだ〜ない」。had been used（過去完了の受動態）に割り込んでいるだけで、"
                 "V′ は had not yet been used ひとかたまり。",
-                "[ to build on it ] は「〜すること」＝名詞のカタマリで was の C。"
+                "〈 to build on it 〉 は「〜すること」＝名詞のカタマリで was の C。"
                 "build on it の it は open ground を指す。",
             ],
             "ja": "空いている土地とは、まだ使われていない場所のことであり、当然の解決策はそこに建物を建てることだった。",
@@ -120,7 +120,7 @@ P1 = {
                 "not は直後の <b>because 節だけ</b>を否定する。"
                 "「有用だと証明できたから生き残ったのでは<u>ない</u>」という意味で、"
                 "「生き残らなかった」ではない。<b>not because …</b> は入試頻出の誤読ポイント。",
-                "[ that they were useful ] は prove の目的語（名詞のカタマリ）。"
+                "〈 that they were useful 〉 は prove の目的語（名詞のカタマリ）。"
                 "because 節の中のさらに内側なので S″ V″ C″ とダッシュを 2 つ付けている。",
             ],
             "ja": "公園が生き残ったのは主に裕福な市民がそれを擁護したからであって、"
@@ -132,11 +132,11 @@ P1 = {
             "pat": "第3文型（SVO）",
             "tag": "関係代名詞 who / 接続詞 that",
             "notes": [
-                "S（Researchers）と V（argue）が &lt; &gt; で <b>引き離されている</b>のがこの文の急所。"
-                "&lt; who study public health &gt; を外せば Researchers now argue … と一瞬で見える。",
+                "S（Researchers）と V（argue）が [ ] で <b>引き離されている</b>のがこの文の急所。"
+                "[ who study public health ] を外せば Researchers now argue … と一瞬で見える。",
                 "study の主語は who＝Researchers なので三単現の s が付かない。"
                 "動詞の形は「どの名詞が主語か」を教えてくれる<b>証拠</b>として使う。",
-                "[ that … ] は argue の目的語。この that は<b>接続詞</b>で、"
+                "〈 that … 〉 は argue の目的語。この that は<b>接続詞</b>で、"
                 "後ろに green space does … という<b>欠けのない完全な文</b>が続く。"
                 "関係代名詞の that なら後ろの文はどこかが欠ける。",
             ],
@@ -148,13 +148,13 @@ P1 = {
             "pat": "第2文型（SVC）",
             "tag": "関係代名詞 what / 名詞節 2 つ",
             "notes": [
-                "骨組みは <b>[名詞のカタマリ] is [名詞のカタマリ]</b>。"
+                "骨組みは <b>〈名詞のカタマリ〉 is 〈名詞のカタマリ〉</b>。"
                 "文頭の What を「何が？」と疑問詞に取ると読み進めなくなる。",
                 "what は<b>先行詞を含む関係代名詞</b>で「〜すること・もの」。"
                 "What surprises many planners＝「多くの計画者を驚かせること」。"
                 "what 節の中では what 自身が S′ になっている。",
                 "is の直後の that 節は<b>補語</b>。"
-                "&lt; of the park &gt; は the size にかかる形容詞のカタマリで、"
+                "[ of the park ] は the size にかかる形容詞のカタマリで、"
                 "( on the size of the park ) 全体が depend にかかる副詞のカタマリ。",
             ],
             "ja": "多くの都市計画者を驚かせるのは、その恩恵が公園の大きさに左右されないという点である。",
@@ -166,12 +166,12 @@ P1 = {
             "tag": "前置詞句の連続 / as ~ as の比較",
             "notes": [
                 "S の<b>核</b>は A row（一列）であって trees ではない。"
-                "&lt; of trees &gt;&lt; along a busy street &gt; はどちらも A row にかかる形容詞のカタマリ。"
+                "[ of trees ][ along a busy street ] はどちらも A row にかかる形容詞のカタマリ。"
                 "ここは助動詞 can があるため<b>動詞の形に単複が現れない</b>（can は主語が単数でも複数でも同形）。"
                 "つまり動詞から核を逆算できないので、修飾のカタマリを外して核を特定するしかない。",
                 "後置修飾は原則として直前の名詞にかかるが、"
-                "&lt; along a busy street &gt; は直前の trees ではなく<b>核の A row</b> に戻る。"
-                "&lt; of A &gt; が挟まるときは、かかり先が核まで飛ぶことがあると覚えておく。",
+                "[ along a busy street ] は直前の trees ではなく<b>核の A row</b> に戻る。"
+                "[ of A ] が挟まるときは、かかり先が核まで飛ぶことがあると覚えておく。",
                 "matter は<b>自動詞で「重要である」</b>。名詞「問題」と読むと骨組みが崩れる。",
                 "( as much as … ) は can matter を修飾する副詞のカタマリ。"
                 "比べているのは「A row of trees が重要な度合い」と"
@@ -188,19 +188,19 @@ P1 = {
             "pat": "第2文型（SVC）＋第2文型（SVC）",
             "tag": "過去分詞の後置修飾 / whose / 関係副詞 where",
             "notes": [
-                "&lt; left open &gt; は<b>過去分詞の後置修飾</b>で「空いたままにされている土地」。"
+                "[ left open ] は<b>過去分詞の後置修飾</b>で「空いたままにされている土地」。"
                 "left を過去形の V と読むと文が二重動詞になって破綻する。",
                 "対する wasted land は<b>前置</b>修飾。"
                 "過去分詞が <b>1 語だけ</b>なら名詞の前、"
                 "後ろに語句を伴う（left <u>open</u> / printed <u>in one city</u>）なら名詞の後ろ、"
                 "というのが原則。この 1 文で前置と後置が並んでいるので見比べること。",
                 "セミコロン（;）は<b>ピリオドに近い切れ目</b>。前後は独立した 2 文と考えてよい。",
-                "&lt; whose returns … &gt; の whose は<b>所有格の関係代名詞</b>で、"
+                "[ whose returns … ] の whose は<b>所有格の関係代名詞</b>で、"
                 "an investment の returns（見返り）という関係。"
                 "whose returns がそのまま関係詞節の S′ になる。",
                 "( in hospitals … ) ( in streets … ) は関係詞節の<b>内側</b>にあり、"
                 "appear（現れる）を修飾している。"
-                "さらにその中の &lt; that stay less crowded &gt;&lt; where people are willing to walk &gt; が "
+                "さらにその中の [ that stay less crowded ][ where people are willing to walk ] が "
                 "hospitals / streets にかかる二重構造。",
             ],
             "ja": "空いたままの土地は無駄にされた土地ではない。それは、"
@@ -318,14 +318,14 @@ P2 = {
             "pat": "第2文型（SVC）",
             "tag": "関係副詞 when / 非制限用法の which",
             "notes": [
-                "&lt; when … &gt; は the moment にかかる<b>関係副詞節</b>。"
+                "[ when … ] は the moment にかかる<b>関係副詞節</b>。"
                 "when の後ろは the sun stood highest … と<b>欠けのない文</b>である点が、"
                 "関係代名詞との決定的な違い。",
                 "コンマ＋which は<b>非制限用法</b>。ここでの先行詞は直前の 1 語ではなく"
                 "「正午とは太陽が最も高くなる瞬間だ」という<b>前の内容全体</b>。"
                 "which meant that …「そしてそれは〜を意味した」と前から訳し下ろす。",
-                "&lt; in two towns … &gt; は clocks にかかる形容詞のカタマリ。"
-                "その<b>内側</b>の &lt; fifty miles apart &gt; は clocks ではなく "
+                "[ in two towns … ] は clocks にかかる形容詞のカタマリ。"
+                "その<b>内側</b>の [ fifty miles apart ] は clocks ではなく "
                 "<b>two towns</b> にかかる（＝「50 マイル離れた 2 つの町」）。"
                 "後置修飾は直前の名詞にかかるという原則どおりで、"
                 "入れ子になった修飾は「どの名詞に戻るか」を必ず確認する。",
@@ -368,7 +368,7 @@ P2 = {
                 "コンマ＋for は<b>等位接続詞</b>で「というのも〜だからだ」。"
                 "前置詞の for（〜のために）と混同しないこと。"
                 "見分け方は<b>後ろに S V が続くかどうか</b>。ここは a schedule … was … と文が続く。",
-                "&lt; printed in one city &gt; は a schedule にかかる過去分詞。"
+                "[ printed in one city ] は a schedule にかかる過去分詞。"
                 "「ある都市で印刷された運行表」。printed を過去形の V と読むと "
                 "was と動詞が 2 つ並んで破綻する。",
                 "another は another city のこと。",
@@ -389,7 +389,7 @@ P2 = {
                 "文頭にあり、主節の主語 people と意味上の主語が一致する。"
                 "Having+過去分詞は主節より<b>前に起きた</b>ことを表すので"
                 "「鉄道時間を受け入れてしまうと（受け入れた後は）」。",
-                "[ consulting the sun ] は stopped の目的語となる<b>動名詞句</b>。"
+                "〈 consulting the sun 〉 は stopped の目的語となる<b>動名詞句</b>。"
                 "stop doing「〜するのをやめる」と stop to do「〜するために立ち止まる」の区別は必出。",
                 "分詞構文には S V O C のラベルを付けない。"
                 "S と V を持つ「節」ではなく、-ing が導く「句」だからである。",
@@ -406,7 +406,7 @@ P2 = {
                 "いったん飛ばして The clock became the authority … と読むのが正しい手順。"
                 "意味の上では主語 The clock と対比される要素だが、"
                 "文の骨組みには入らないので、ここでは副詞のカタマリの記号を借りて示している。",
-                "&lt; to which daily life answered &gt; は the authority にかかる形容詞のカタマリ。"
+                "[ to which daily life answered ] は the authority にかかる形容詞のカタマリ。"
                 "answer to ~「〜に従う・〜に責任を負う」の to が"
                 "関係代名詞 which の前に出た形（前置詞＋関係代名詞）。",
                 "前置詞＋関係代名詞の後ろは<b>欠けのない完全な文</b>（daily life answered）になる。"
@@ -422,14 +422,14 @@ P2 = {
             "pat": "第2文型（SVC）／形式主語構文",
             "tag": "形式主語 It / 関係代名詞の省略 / SVOC",
             "notes": [
-                "It is easy to do の It は<b>形式主語</b>。真の主語は [ to forget … ] で、"
+                "It is easy to do の It は<b>形式主語</b>。真の主語は 〈 to forget … 〉 で、"
                 "「〜を忘れがちだ」と訳す。",
                 "the hours の直後に we が来る＝<b>目的格の関係代名詞 which / that の省略</b>。"
-                "&lt; we now treat as natural &gt;「私たちが今では当然だと考えている」が the hours にかかる。"
+                "[ we now treat as natural ]「私たちが今では当然だと考えている」が the hours にかかる。"
                 "treat A as B の A が先行詞に移動しているので、節の中に O″ が見えない。",
                 "この関係詞節を外すと the hours were designed by companies … という骨組みが見える。"
                 "S′ と V′ が長い修飾で引き離される典型パターン。",
-                "&lt; that wanted their trains to arrive … &gt; は companies にかかる関係詞節。"
+                "[ that wanted their trains to arrive … ] は companies にかかる関係詞節。"
                 "その中は want O to do＝<b>第 5 文型</b>で、O″＝their trains、C″＝to arrive。",
                 "文末の they would は they would arrive の<b>省略</b>。"
                 "「到着すると会社が言った時刻に到着する」という意味。",
@@ -547,10 +547,10 @@ P3 = {
             "tag": "形式主語 It / 名詞節の入れ子",
             "notes": [
                 "It is tempting to do「つい〜したくなる／〜と考えがちだ」。"
-                "It は<b>形式主語</b>で、真の主語は [ to assume … ] 全体。",
+                "It は<b>形式主語</b>で、真の主語は 〈 to assume … 〉 全体。",
                 "名詞のカタマリが<b>二重</b>になっている。"
-                "外側 [ to assume … ]（真主語）の中に、"
-                "内側 [ that people waste food ]（assume の目的語）が入っている。",
+                "外側 〈 to assume … 〉（真主語）の中に、"
+                "内側 〈 that people waste food 〉（assume の目的語）が入っている。",
                 "( because … ) は waste にかかる副詞のカタマリ。"
                 "assume の内容の一部なので、that 節の中に収まっている点に注意。",
             ],
@@ -564,15 +564,15 @@ P3 = {
             "pat": "第3文型（SVO）＋第3文型（SVO）",
             "tag": "動名詞句が主語 / 第5文型 / 関係代名詞 what",
             "notes": [
-                "that 節の中の S′ は [ throwing away food ]（動名詞句）。"
+                "that 節の中の S′ は 〈 throwing away food 〉（動名詞句）。"
                 "動名詞句は<b>単数扱い</b>なので makes に三単現の s が付く。"
                 "food を主語と誤読すると意味が反転する。",
                 "makes them uncomfortable は make O C＝<b>第 5 文型</b>。"
                 "「them＝uncomfortable の状態にする」という O = C の関係を確認する。",
                 "yet はここでは<b>等位接続詞「しかし」</b>。副詞「まだ」ではない。"
                 "後ろに S V が続いていることが手がかり。",
-                "&lt; of what it buys &gt; は a fifth にかかる形容詞のカタマリ。"
-                "その中の [ what it buys ] は前置詞 of の目的語となる名詞節で、"
+                "[ of what it buys ] は a fifth にかかる形容詞のカタマリ。"
+                "その中の 〈 what it buys 〉 は前置詞 of の目的語となる名詞節で、"
                 "what は buys の目的語（O′）を兼ねている。",
             ],
             "ja": "買い物客の大半は、食べ物を捨てるのは気分が悪いと言う。"
@@ -585,7 +585,7 @@ P3 = {
             "pat": "第2文型（SVC）",
             "tag": "not A but B / what 節 2 つ",
             "notes": [
-                "S の核は The gap。&lt; between … &gt; がそれにかかり、"
+                "S の核は The gap。[ between … ] がそれにかかり、"
                 "between A and B の A と B が<b>どちらも what 節</b>になっている。",
                 "what 節は「〜すること」。"
                 "what people believe＝「人が信じていること」、"
@@ -604,7 +604,7 @@ P3 = {
             "pat": "第5文型の受動態（read O as C → be read as C）",
             "tag": "過去分詞の挿入 / read A as B の受動態",
             "notes": [
-                "コンマに挟まれた &lt; invented … &gt; は Date labels にかかる<b>過去分詞句の挿入</b>。"
+                "コンマに挟まれた [ invented … ] は Date labels にかかる<b>過去分詞句の挿入</b>。"
                 "外すと Date labels are read as medical warnings. という骨組みが残る。",
                 "invented を過去形の V と読むと、are read と動詞が 2 つ並んで破綻する。"
                 "<b>コンマ＋-ed …, は後置修飾の合図</b>と覚えておく。",
@@ -622,14 +622,14 @@ P3 = {
             "pat": "第3文型（SVO）",
             "tag": "現在分詞の後置修飾 / neither A nor B / whether 節",
             "notes": [
-                "&lt; standing in front of a shelf &gt; は A shopper にかかる<b>現在分詞の後置修飾</b>。"
+                "[ standing in front of a shelf ] は A shopper にかかる<b>現在分詞の後置修飾</b>。"
                 "「棚の前に立っている買い物客」。ここを V と読むと has と衝突する。",
                 "neither A nor B「A も B も〜ない」。"
                 "A と B はどちらも has の目的語（the time / the information）。",
-                "&lt; required … &gt; は過去分詞の後置修飾。位置としては直前の the information にかかるが、"
+                "[ required … ] は過去分詞の後置修飾。位置としては直前の the information にかかるが、"
                 "意味の上では <b>neither A nor B のかたまり全体</b>（時間も情報も）に及ぶ。"
                 "「判断するのに必要な時間も情報も無い」と訳すのが自然。",
-                "[ whether the yogurt is still safe ] は judge の目的語となる<b>名詞節</b>で"
+                "〈 whether the yogurt is still safe 〉 は judge の目的語となる<b>名詞節</b>で"
                 "「〜かどうか」。"
                 "「〜であろうとなかろうと」という副詞節の whether と混同しないこと。"
                 "他動詞 judge の O が必要なので、ここは名詞節と確定できる。",
@@ -649,10 +649,10 @@ P3 = {
                 "外すと <b>waste … fell by fourteen percent.</b> という第 1 文型が残る。",
                 "when 節の中で and が結んでいるのは <b>replaced と added</b>（2 つの V′）。"
                 "主語 one chain は共通で、2 度目は省略されている。",
-                "&lt; explaining the difference &gt; は a line にかかる現在分詞の後置修飾。",
+                "[ explaining the difference ] は a line にかかる現在分詞の後置修飾。",
                 "the households の直後に it が来る＝<b>目的格の関係代名詞の省略</b>。"
-                "&lt; it served &gt;「そのチェーンが商品を届けていた（家庭）」。"
-                "&lt; in the households … &gt; 全体が waste にかかる形容詞のカタマリで、"
+                "[ it served ]「そのチェーンが商品を届けていた（家庭）」。"
+                "[ in the households … ] 全体が waste にかかる形容詞のカタマリで、"
                 "S の核はあくまで waste。",
                 "( by fourteen percent ) の by は<b>差・程度を表す by</b>「14 パーセント分」。",
             ],
@@ -768,10 +768,10 @@ P4 = {
                 "Sleep＝the absence of activity という <b>S = C の関係</b>が成り立つ。"
                 "補語かどうかは「外せるか」ではなく<b>S とイコールで結べるか</b>で判定する。"
                 "したがってここは修飾語ではなく C で、前半は第 2 文型。",
-                "&lt; that appears to be resting &gt; は the brain にかかる関係詞節。"
+                "[ that appears to be resting ] は the brain にかかる関係詞節。"
                 "appear to do は「〜のように見える」で<b>ひとかたまりの述語</b>として扱う。",
                 "S（the brain）と V（is）が関係詞節で引き離されている。"
-                "&lt; &gt; を外して the brain is busy … と読むのが第一手。",
+                "[ ] を外して the brain is busy … と読むのが第一手。",
                 "be busy doing「〜するのに忙しい」。( sorting the day ) は busy を修飾する。",
             ],
             "ja": "睡眠は活動が無い状態のように見えるが、休んでいるように見える脳は実際には"
@@ -786,9 +786,9 @@ P4 = {
             "tag": "関係副詞 when / 過去分詞＋副詞節の割り込み / 比較",
             "notes": [
                 "S から V までが<b>最長の距離</b>にある文。"
-                "S の核は patterns で、&lt; of firing &gt;&lt; recorded … &gt; が続けてかかり、"
+                "S の核は patterns で、[ of firing ][ recorded … ] が続けてかかり、"
                 "ようやく V の are replayed に届く。",
-                "&lt; recorded while we were awake &gt; の中に副詞節 ( while … ) が"
+                "[ recorded while we were awake ] の中に副詞節 ( while … ) が"
                 "入れ子になっている。"
                 "recorded は過去分詞（記録された）で、were を V と早合点しないこと。",
                 "lie still は「じっと横たわる」。still は<b>形容詞で C′</b>（副詞「まだ」ではない）。"
@@ -805,12 +805,12 @@ P4 = {
             "pat": "第2文型（SVC）",
             "tag": "関係代名詞 what / 疑問詞節 / 動名詞",
             "notes": [
-                "骨組みは <b>[名詞のカタマリ] is [名詞のカタマリ]</b>。",
+                "骨組みは <b>〈名詞のカタマリ〉 is 〈名詞のカタマリ〉</b>。",
                 "what 節の中では what が doing の<b>目的語</b>（O′）を兼ねている。"
                 "「脳がしているように見えること」。"
                 "P1 の What surprises …（what が主語）と役割が違う点を比べること。",
-                "[ deciding … ] は is の補語となる動名詞句。",
-                "[ which of the day's experiences deserve to be kept ] は "
+                "〈 deciding … 〉 は is の補語となる動名詞句。",
+                "〈 which of the day's experiences deserve to be kept 〉 は "
                 "deciding の目的語となる<b>疑問詞節</b>「その日の経験のうちどれが〜か」。"
                 "which が S′ で、deserve に三単現の s が付かないのは "
                 "which が複数の experiences を指しているから。",
@@ -863,19 +863,19 @@ P4 = {
             "pat": "第3文型（SVO）",
             "tag": "動名詞が主語 / 複合関係副詞 however / 前置詞＋関係代名詞",
             "notes": [
-                "S は [ Studying late into the night ]（動名詞句）。"
+                "S は 〈 Studying late into the night 〉（動名詞句）。"
                 "V は removes、O は the very hours。"
                 "コンマに挟まれた ( however … ) を外せば骨組みが見える。",
                 "however + 形容詞 + S + V「どれほど〜であっても」。"
                 "<b>however の直後に形容詞 conscientious が引き寄せられる</b>語順が急所。"
                 "No matter how conscientious it may look と同意。",
-                "&lt; in which … &gt; は the very hours にかかる関係詞節。"
+                "[ in which … ] は the very hours にかかる関係詞節。"
                 "in which の後ろは欠けのない完全な文になる。",
-                "その関係詞節の S′ が [ what has been learned ]（名詞節）＝「学ばれたこと」、"
+                "その関係詞節の S′ が 〈 what has been learned 〉（名詞節）＝「学ばれたこと」、"
                 "V′ が is turned。turn A into B「A を B に変える」の受動態で、"
                 "into 以下は外せない<b>補語相当</b>なので C′ とする"
                 "（P3 の be read as C と同じ扱い）。",
-                "&lt; that lasts &gt; は something にかかる関係詞節。last は動詞で「続く」。",
+                "[ that lasts ] は something にかかる関係詞節。last は動詞で「続く」。",
             ],
             "ja": "夜遅くまで勉強することは、どれほどまじめに見えたとしても、"
                   "学んだことが長続きするものへと変えられる、まさにその時間を奪ってしまう。",
@@ -916,7 +916,7 @@ P4 = {
                 "（学ばれたこと）で、述語動詞は is turned。"},
     ],
     "trans": [
-        {"n": 1, "points": ["&lt; that appears to be resting &gt; を the brain にかかる"
+        {"n": 1, "points": ["[ that appears to be resting ] を the brain にかかる"
                             "関係詞節として訳せているか",
                             "be busy doing「〜するのに忙しい」を訳せているか",
                             "but の前後が「見かけ」と「実際」の対比になっていると訳出できているか"]},

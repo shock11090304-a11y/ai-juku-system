@@ -14,8 +14,8 @@ LEGEND = ('<div class="legend">'
           '<span><b style="color:#64748b">M</b> 修飾語</span>'
           '<span><b style="color:#9333ea">接</b> 接続詞</span>'
           '<span><b style="color:#64748b">( )</b> 副詞のカタマリ</span>'
-          '<span><b style="color:#047857">[ ]</b> 名詞のカタマリ</span>'
-          '<span><b style="color:#7c3aed">&lt; &gt;</b> 形容詞のカタマリ</span>'
+          '<span><b style="color:#047857">〈 〉</b> 名詞のカタマリ</span>'
+          '<span><b style="color:#7c3aed">[ ]</b> 形容詞のカタマリ（関係詞節・分詞）</span>'
           '<span>S′ / S″ … 従属節の中の要素</span>'
           '</div>')
 
@@ -128,7 +128,7 @@ def build_mondai():
         # 問1 品詞分解
         h.append('<div class="partttl">問 1　品詞分解<span class="en2">Parsing</span></div>')
         h.append('<div class="instr">下線部 (1)〜(6) について、'
-                 '( ) [ ] &lt; &gt; でカタマリを囲み、S・V・O・C・M の記号を書き込みなさい。'
+                 '( ) [ ] 〈 〉 でカタマリを囲み、S・V・O・C・M の記号を書き込みなさい。'
                  '従属節の中の要素には S′ V′ … のようにダッシュを付けること。'
                  'そのうえで文型を答えなさい。（和訳は問 3 で扱う）</div>')
         for si, s in enumerate(P["sents"], 1):

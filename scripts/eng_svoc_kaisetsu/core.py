@@ -34,30 +34,10 @@ plain_text = hb.plain_text
 render_skeleton = hb.render_skeleton
 ALLOWED_LABELS = hb.ALLOWED_LABELS
 
-# ---------------------------------------------------------------- 括弧の読み替え
-# ★DSL のソース記号は塾標準のまま（( ) 副詞 / [ ] 名詞 / < > 形容詞）。
-#   紙に出すときだけ下記に読み替える。塾長の指示（2026-08-27）で
-#   「分詞のカタマリ・関係詞節は [ ] で括る」に合わせたため。
-#     (  )  副詞のカタマリ          … そのまま
-#     [  ]  形容詞のカタマリ        … ソースの < >
-#     〈 〉 名詞のカタマリ          … ソースの [ ]
-#   パーサも検査も一切触らないので、記号の見た目だけが変わる。
-_BRACKET_SWAP = (
-    ('<span class="wt br b-adj">&lt;</span>', '<span class="wt br b-adj">[</span>'),
-    ('<span class="wt br b-adj">&gt;</span>', '<span class="wt br b-adj">]</span>'),
-    ('<span class="wt br b-noun">[</span>', '<span class="wt br b-noun">〈</span>'),
-    ('<span class="wt br b-noun">]</span>', '<span class="wt br b-noun">〉</span>'),
-)
-
-DISP_BR = {"(": ("(", ")"), "[": ("〈", "〉"), "<": ("[", "]")}
-
-
-def render_analysis(node):
-    """塾標準のパーサで分解し、表示の括弧だけ読み替える。"""
-    out = hb.render_analysis(node)
-    for a, b in _BRACKET_SWAP:
-        out = out.replace(a, b)
-    return out
+# 括弧の読み替え（副詞 ( ) / 形容詞 [ ] / 名詞 〈 〉）は
+# scripts/eng_hinshi_bunkai/core.py が持つ。★塾内で 1 か所だけ。ここでは持たない。
+render_analysis = hb.render_analysis
+DISP_BR = hb.DISP_BR
 
 esc = lambda s: html.escape(str(s), quote=False)
 
