@@ -16,7 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import core, _verify, check as gate
 
-OUT_DIR = os.environ.get("SVOC_OUT", os.path.join(HERE, "_out"))
+
 STUDENT = os.environ.get("STUDENT_NAME", "")
 esc = core.esc
 
@@ -373,11 +373,12 @@ def main():
             + '<div class="foot">トリリオン AI 塾　英文構造解析プリント　'
               '／ 本文は配布された過去問プリントの印字に一致（機械照合済み）</div>')
 
-    os.makedirs(OUT_DIR, exist_ok=True)
+    out = core.out_dir()
+    os.makedirs(out, exist_ok=True)
     doc = core.hb.doc("英文構造解析 SVOCM ─ 慶應経済2018 I ／ 東大2018 第5問", body)
     doc = doc.replace("</style>", EXTRA_CSS + "</style>")
 
-    html_path = os.path.join(OUT_DIR, "svoc_kaisetsu.html")
+    html_path = os.path.join(out, core.HTML_NAME)
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(doc)
     print(f"\n✓ HTML: {html_path}  ({len(doc):,} bytes)")
@@ -385,7 +386,7 @@ def main():
     if no_pdf:
         print("  （--no-pdf なので PDF は作らない）")
         return 0
-    pdf_path = os.path.join(OUT_DIR, "英文構造解析_慶應経済2018-1_東大2018-5.pdf")
+    pdf_path = os.path.join(out, core.PDF_NAME)
     if core.render_pdf(doc, pdf_path, "トリリオン AI 塾 ／ 英文構造解析 SVOCM"):
         print(f"✓ PDF : {pdf_path}  ({os.path.getsize(pdf_path):,} bytes)")
     return 0

@@ -22,7 +22,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import core, _verify
 
-DEFAULT_PDF = os.path.join(HERE, "_out", "英文構造解析_慶應経済2018-1_東大2018-5.pdf")
+# 刷った場所は core が決める（build と同じ関数を見るのでずれない）
+DEFAULT_PDF = core.pdf_path()
 # ソースの括弧と、紙に刷るときの読み替え後の括弧（core.DISP_BR）の両方を落とす
 BRACKETS = set("()[]<>") | {b for pair in core.DISP_BR.values() for b in pair}
 LABELS = set(core.ALLOWED_LABELS)
@@ -63,7 +64,7 @@ def pdf_stream(doc):
 
 
 def main():
-    path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_PDF
+    path = sys.argv[1] if len(sys.argv) > 1 else core.pdf_path()
     print("=" * 68)
     print("刷り上がり（PDF）からの逆照合")
     print(f"対象: {path}")

@@ -16,7 +16,14 @@ python3 scripts/eng_svoc_kaisetsu/build.py                 # HTML ＋ PDF
 python3 scripts/eng_svoc_kaisetsu/build.py --no-pdf        # HTML だけ（CI 用）
 python3 scripts/eng_svoc_kaisetsu/check_pdf.py             # 刷り上がりからの逆照合
 STUDENT_NAME="姓 名" python3 scripts/eng_svoc_kaisetsu/build.py   # 宛名入りで刷る
+SVOC_OUT=~/Downloads python3 scripts/eng_svoc_kaisetsu/build.py  # 出力先を指定
 ```
+
+### 出力先
+`core.out_dir()` が決める。**`~/Desktop` があればそこへ刷る**（`eng_hinshi_bunkai` と同じ慣習）。
+無い環境（クラウドのコンテナ・CI）は `_out/` に落ちる。`SVOC_OUT` で明示指定もできる。
+★`build.py` と `check_pdf.py` がこの同じ関数を見るので、
+「刷った場所」と「検査が読む場所」がずれない。
 
 ## 設計
 

@@ -41,6 +41,28 @@ DISP_BR = hb.DISP_BR
 
 esc = lambda s: html.escape(str(s), quote=False)
 
+# ---------------------------------------------------------------- 出力先
+# 塾の慣習に合わせて **~/Desktop があればそこへ刷る**（eng_hinshi_bunkai と同じ）。
+# Desktop が無い環境（クラウドのコンテナ・CI）では _out/ に落とす。
+# SVOC_OUT で明示指定もできる。★build と check_pdf がここを共有するので、
+#   「刷った場所」と「検査が読む場所」がずれない。
+PDF_NAME = "英文構造解析_慶應経済2018-1_東大2018-5.pdf"
+HTML_NAME = "svoc_kaisetsu.html"
+
+
+def out_dir():
+    env = os.environ.get("SVOC_OUT")
+    if env:
+        return os.path.expanduser(env)
+    desktop = os.path.expanduser("~/Desktop")
+    if os.path.isdir(desktop):
+        return desktop
+    return os.path.join(HERE, "_out")
+
+
+def pdf_path():
+    return os.path.join(out_dir(), PDF_NAME)
+
 # ---------------------------------------------------------------- 照合用の正規化
 # 引用符は「どちらの語にくっつくか」が機械的に決まらないので照合対象から外す。
 # それ以外（語・コンマ・ピリオド・コロン・ハイフン）は 1 文字も落とさず照合する。
