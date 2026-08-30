@@ -2785,6 +2785,27 @@
           <button id="calAddBtn" type="button" style="padding:0.55rem 1.1rem; background:linear-gradient(135deg,#818cf8,#6366f1); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">登録</button>
         </div>
         <div id="calAddMsg" style="font-size:0.82rem; margin-top:0.4rem;"></div>
+
+        <!-- 📋 一括入力 (2026-08-30 塾長依頼: 1か月ぶんを1回で入れる) -->
+        <!--   ★行の読み方はサーバ (POST /api/admin/class/calendar/bulk) だけが持つ。
+                ここでも解釈すると「確認で見た内容」と「登録される内容」がずれる。 -->
+        <details style="margin-top:0.9rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:0.8rem;">
+          <summary style="cursor:pointer; color:#c7d2fe; font-size:0.88rem; font-weight:700;">📋 まとめて入力する（1か月ぶんを1回で）</summary>
+          <p style="color:#a1a1aa; font-size:0.8rem; margin:0.5rem 0 0.5rem; line-height:1.6;">
+            1行に1件、<strong>日付から</strong>書いてください。年を省くと「今日以降のいちばん近い同じ月日」になります。<br>
+            例: <code>9/18 休塾日(年間調整日)</code> ／ <code>9月3日 アーカイブ配信（LIVE授業なし）</code> ／ <code>2026-09-20 予定: 第2回模試</code><br>
+            「休塾日」で始まらない行は<strong>📌 予定</strong>になります。空行と <code>#</code> で始まる行は無視します。<br>
+            ★カレンダーは<strong>1日につき1件</strong>しか出せません。すでに入っている日を書き換えたいときは、下の一覧で消してから入れ直してください。
+          </p>
+          <textarea id="calBulkText" rows="7" placeholder="9/3 アーカイブ配信（LIVE授業なし）&#10;9/18 休塾日(年間調整日)&#10;9/19 休塾日(年間調整日)" style="width:100%; box-sizing:border-box; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:0.85rem; line-height:1.6;"></textarea>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-top:0.5rem;">
+            <button id="calBulkCheck" type="button" style="padding:0.55rem 1.1rem; background:linear-gradient(135deg,#818cf8,#6366f1); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">① 確認する（登録しない）</button>
+            <button id="calBulkApply" type="button" disabled style="padding:0.55rem 1.1rem; background:rgba(255,255,255,0.08); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">② この内容で登録</button>
+            <span id="calBulkStatus" style="font-size:0.82rem; color:#a1a1aa;"></span>
+          </div>
+          <div id="calBulkOut" style="margin-top:0.6rem;"></div>
+        </details>
+
         <div id="calList" style="margin-top:0.7rem;"></div>
       </div>
 
@@ -10993,6 +11014,66 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + e.message; }
       finally { _calAdd.disabled = false; }
     });
+    // 📋 カレンダー一括入力 — ★既定は dry-run。②を押したときだけ書き込む。
+    //   ★サーバは apply でも入力を読み直して判定する。画面が持っている確認結果を
+    //     送り返して登録させることはしない (古い判定での二重登録を作らないため)。
+    var _calBulkCheck = document.getElementById('calBulkCheck');
+    var _calBulkApply = document.getElementById('calBulkApply');
+    function _calBulkRender(d) {
+      var out = document.getElementById('calBulkOut');
+      var esc2 = function (v) { return esc(v == null ? '' : v); };
+      var h = '';
+      if (d.message) {
+        var col = d.applied ? '#6ee7b7' : (d.refused ? '#fca5a5' : '#c7d2fe');
+        h += '<div style="color:' + col + '; font-weight:700; font-size:0.85rem; margin-bottom:0.4rem;">' + esc2(d.message) + '</div>';
+      }
+      if ((d.rows || []).length) {
+        h += '<table style="width:100%; border-collapse:collapse; font-size:0.82rem;">' + d.rows.map(function (r) {
+          var st = r.error
+            ? '<span style="color:#fca5a5;">✕ ' + esc2(r.error) + '</span>'
+            : (r.status === 'new' ? '<span style="color:#6ee7b7;">' + (d.applied ? '登録した' : 'これから登録') + '</span>'
+              : '<span style="color:#a1a1aa;">登録済み（同じ内容）</span>');
+          var what = r.kind === 'closed' ? '🔴 休塾日' + (r.title ? '（' + esc2(r.title) + '）' : '')
+            : (r.kind === 'event' ? '📌 ' + esc2(r.title) : '<span style="color:#a1a1aa;">—</span>');
+          return '<tr style="border-top:1px solid rgba(255,255,255,0.07);">'
+            + '<td style="padding:0.25rem 0.5rem 0.25rem 0; white-space:nowrap; color:#e4e4e7;">'
+            + (r.date ? esc2(r.date) + '（' + esc2(r.weekday) + '）' : '<span style="color:#71717a;">' + esc2(r.line) + '</span>') + '</td>'
+            + '<td style="padding:0.25rem 0.5rem;">' + what + '</td>'
+            + '<td style="padding:0.25rem 0;">' + st + '</td></tr>';
+        }).join('') + '</table>';
+      }
+      out.innerHTML = h;
+    }
+    async function _calBulkRun(apply) {
+      var st = document.getElementById('calBulkStatus');
+      var text = document.getElementById('calBulkText').value || '';
+      if (!text.trim()) { st.style.color = '#fca5a5'; st.textContent = '入力が空です'; return; }
+      _calBulkCheck.disabled = true; _calBulkApply.disabled = true;
+      st.style.color = '#a1a1aa'; st.textContent = apply ? '登録しています…' : '確認しています…';
+      try {
+        var d = await adminJson('/api/admin/class/calendar/bulk', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text, apply: !!apply })
+        });
+        _calBulkRender(d);
+        // ★登録できる新着があるときだけ②を押せるようにし、登録した直後は必ず戻す
+        //   (同じ画面のまま二度押しさせない)。
+        _calBulkApply.disabled = apply || !d.new || !!d.refused;
+        st.style.color = '#a1a1aa';
+        st.textContent = apply ? '完了' : '確認しました（まだ登録していません）';
+        if (apply) loadCalendarAdmin();
+      } catch (e) {
+        // ★失敗を黙って「変化なし」にしない
+        document.getElementById('calBulkOut').innerHTML =
+          '<div style="color:#fca5a5; font-size:0.85rem;">実行できませんでした: ' + esc(e.message)
+          + '<br>登録が済んでいることがあります。もう一度「① 確認する」を押して、いまの状態を見てください。</div>';
+        st.style.color = '#fca5a5'; st.textContent = '失敗しました';
+        _calBulkApply.disabled = true;
+      } finally { _calBulkCheck.disabled = false; }
+    }
+    if (_calBulkCheck) _calBulkCheck.addEventListener('click', function () { _calBulkRun(false); });
+    if (_calBulkApply) _calBulkApply.addEventListener('click', function () { _calBulkRun(true); });
+
     var _calListEl = document.getElementById('calList');
     if (_calListEl) _calListEl.addEventListener('click', async function (e) {
       var t = e.target.closest('.cal-del'); if (!t) return;

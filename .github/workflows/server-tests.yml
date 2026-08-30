@@ -119,6 +119,13 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_auto_assign_api.py
 
+      # 📅 塾カレンダーの一括入力。**書き込む側**なので、dry-run が本当に書かないこと・
+      #   同じ日を二重に入れないこと・エラーが1件でもあれば1件も書かないことを見る。
+      #   ★曜日を返すことも固定する。塾長が日付の打ち間違いに気づける唯一の手がかり。
+      - name: 塾カレンダー 一括入力 API 回帰テスト
+        if: ${{ !cancelled() }}
+        run: python3 scripts/health_check/test_calendar_bulk_api.py
+
       # 🔑 子供メール (student_email) を登録したら、子が**自分のアドレスで**ログインできること。
       #   LINE 連携や親アドレスの送信 cap が子宛の配信を飲み込んで「画面は成功・子には0通」に
       #   なる silent failure を止める。逆方向 (未確認アドレス・他生徒の親メールと衝突する

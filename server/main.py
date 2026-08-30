@@ -48107,6 +48107,17 @@ def admin_class_calendar_create(payload: ClassCalendarCreateRequest, request: Re
     conn = db()
     try:
         c = conn.cursor()
+        # ★同じ日に2件入れさせない。塾生アプリのカレンダーは**1日につき1件**しか表示しない
+        #   (class.html の calEvents は日付をキーにした連想配列) ので、2件目はどちらが出るか
+        #   決まらないまま画面から消える = 登録したのに反映されない、という直しようのない状態になる。
+        c.execute("SELECT kind, COALESCE(title, '') AS title FROM class_calendar WHERE event_date = ?", (ev_date,))
+        dup = c.fetchone()
+        if dup:
+            cur = ("🔴 休塾日" if dup["kind"] == "closed" else "📌 予定") + (f"（{dup['title']}）" if dup["title"] else "")
+            raise HTTPException(status_code=409,
+                                detail=f"{ev_date} には既に「{cur}」が登録されています。"
+                                       f"下の一覧で消してから入れ直してください "
+                                       f"(カレンダーは1日1件しか表示できません)")
         c.execute(
             "INSERT INTO class_calendar (event_date, kind, title, created_at) VALUES (?,?,?,?) RETURNING id",
             (ev_date, kind, title, _utc_naive_iso())
@@ -48143,6 +48154,186 @@ def admin_class_calendar_delete(event_id: int, authorization: Optional[str] = He
         c.execute("DELETE FROM class_calendar WHERE id = ?", (int(event_id),))
         conn.commit()
         return {"ok": True}
+    finally:
+        conn.close()
+
+
+# ----- 📅 カレンダーの一括入力 (2026-08-30 塾長依頼: 1か月ぶんを1回で入れる) -----
+#   ★行の読み方はここ1か所だけに置く。画面側にも書くと片方だけ直されて
+#     「確認で見た内容」と「登録される内容」がずれる (いちばん質の悪い壊れ方)。
+#   ★既定は dry-run。曜日つきで全行を見せてから登録する。日付の打ち間違いは
+#     曜日を見れば気づけるが、月日だけ並べても気づけない。
+_CAL_LINE_DATE = re.compile(r"^(?:(\d{4})\s*[-/.年]\s*)?(\d{1,2})\s*[-/.月]\s*(\d{1,2})\s*日?\s*")
+# ★正規化は日付まわりの記号だけ。NFKC を丸ごとかけると塾長が書いた「（LIVE授業なし）」の
+#   全角括弧まで半角に変わってしまう (画面に出るのは塾長の文章なので、勝手に整形しない)。
+#   ここに並べるのは**1文字→1文字**の対応だけ (長さが変わると本文の切り出し位置がずれる)。
+_CAL_NORM = str.maketrans("０１２３４５６７８９／－‐–—：．　", "0123456789/----:. ")
+_CAL_CLOSED_HEAD = re.compile(r"^(?:🔴\s*)?(?:休塾日|休塾|休講|休み|休)\s*[:：]?\s*")
+_CAL_EVENT_HEAD = re.compile(r"^(?:📌\s*)?(?:予定|イベント)\s*[:：]\s*")
+_CAL_DOW = "月火水木金土日"
+
+
+def _calendar_resolve_date(year, mo, dy, today):
+    """年が書かれていなければ「今日以降のいちばん近い同じ月日」を採る。読めなければ None。
+
+    ★カレンダーに入れるのは**これからの予定**なので、授業録画の日付ラベル
+      (server/class_recording_assign.resolve_year は過去側を採る) とは逆向きにする。
+      どちらであれ、曜日つきで画面に出して人が確かめるのが本体の安全弁。
+    """
+    for yy in ([year] if year else [today.year, today.year + 1]):
+        try:
+            d = date(yy, mo, dy)
+        except ValueError:
+            return None                      # 2/30・2/29(平年) など存在しない日付
+        if year or d >= today:
+            return d
+    return None
+
+
+def _parse_calendar_lines(text, today):
+    """一括入力のテキスト → 1行1件の構造。★読めない行は推測せずエラーにして返す。
+
+    受け取る形 (行頭が日付):
+      9/18 休塾日(年間調整日)      → closed / 理由「年間調整日」
+      9月3日 アーカイブ配信         → event  / タイトル「アーカイブ配信」
+      2026-09-20 予定: 第2回模試    → event  / タイトル「第2回模試」
+      9/23 休                      → closed / 理由なし
+    空行と # で始まる行は無視する。
+    """
+    rows = []
+    for raw in (text or "").replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        line = raw.translate(_CAL_NORM).strip()
+        if not line or line.startswith("#"):
+            continue
+        row = {"line": raw.strip(), "date": None, "weekday": None,
+               "kind": None, "title": "", "error": None, "status": None}
+        rows.append(row)
+        m = _CAL_LINE_DATE.match(line)
+        if not m:
+            row["error"] = "行の先頭が日付になっていない (例: 9/18 休塾日(年間調整日))"
+            continue
+        rest = line[m.end():].strip(" 　\t")
+        mo, dy = int(m.group(2)), int(m.group(3))
+        if not (1 <= mo <= 12 and 1 <= dy <= 31):
+            row["error"] = f"日付として成立しない ({mo}/{dy})"
+            continue
+        d = _calendar_resolve_date(int(m.group(1)) if m.group(1) else None, mo, dy, today)
+        if d is None:
+            row["error"] = f"存在しない日付 ({mo}/{dy})"
+            continue
+        row["date"] = d.isoformat()
+        row["weekday"] = _CAL_DOW[d.weekday()]
+        mc = _CAL_CLOSED_HEAD.match(rest)
+        if mc:
+            # 「休塾日(年間調整日)」→ kind=closed / 理由=年間調整日。
+            # ★理由に「休塾日」を残さない。画面は "🔴 休塾日（理由）" と組み立てるので二重になる。
+            row["kind"] = "closed"
+            row["title"] = _sanitize_text(rest[mc.end():].strip(" 　\t()（）[]【】"), 100) or ""
+            continue
+        me = _CAL_EVENT_HEAD.match(rest)
+        if me:
+            rest = rest[me.end():].strip()
+        row["kind"] = "event"
+        row["title"] = _sanitize_text(rest, 100) or ""
+        if not row["title"]:
+            row["error"] = "予定にはタイトルが要る (休塾日にするなら「9/18 休塾日」のように書く)"
+    return rows
+
+
+class ClassCalendarBulkRequest(BaseModel):
+    text: str
+    apply: Optional[bool] = False
+
+
+@app.post("/api/admin/class/calendar/bulk")
+def admin_class_calendar_bulk(payload: ClassCalendarBulkRequest, request: Request,
+                              authorization: Optional[str] = Header(None)):
+    """塾長: カレンダーを一括登録。既定は dry-run (apply=true のときだけ書き込む)。
+
+    ★塾生アプリのカレンダーは**1日につき1件しか表示しない** (class.html の calEvents は
+      日付をキーにした連想配列)。同じ日に2件入れるとどちらが出るか決まらないので、
+      同じ日付が既にあるときは**上書きせずに止めて**、消してから入れ直してもらう。
+    ★エラーが1件でもあれば1件も書かない。半分だけ入ると、生徒には「一部だけ更新された月」が
+      見えてしまい、どこまで正しいのか誰にも分からなくなる。
+    """
+    _check_rate_limit_ip(request, bucket="class_admin", limit=60, window=60)
+    _verify_admin_required(authorization)
+    today = datetime.now(JST).date()
+    rows = _parse_calendar_lines(payload.text, today)
+    if not rows:
+        return {"ok": True, "rows": [], "message": "入力が空です。1行に1件、日付から書いてください。",
+                "new": 0, "same": 0, "conflict": 0, "error": 0, "applied": 0, "mode": "dry-run"}
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT event_date, kind, COALESCE(title, '') AS title FROM class_calendar")
+        existing = {str(r["event_date"])[:10]: (r["kind"], r["title"] or "") for r in c.fetchall()}
+
+        seen = {}
+        for row in rows:
+            if row["error"] or not row["date"]:
+                continue
+            if row["date"] in seen:
+                row["error"] = f"同じ日付がこの入力の中に2回ある ({seen[row['date']]} と重複)"
+                continue
+            seen[row["date"]] = row["line"]
+            cur = existing.get(row["date"])
+            if cur is None:
+                row["status"] = "new"
+            elif cur == (row["kind"], row["title"]):
+                row["status"] = "same"
+            else:
+                cur_label = ("🔴 休塾日" if cur[0] == "closed" else "📌 予定") + (f"（{cur[1]}）" if cur[1] else "")
+                row["status"] = "conflict"
+                row["error"] = (f"この日には既に「{cur_label}」が登録されている。"
+                                f"下の一覧で消してから入れ直してください "
+                                f"(カレンダーは1日1件しか出せません)")
+
+        n_new = sum(1 for r in rows if r["status"] == "new")
+        n_same = sum(1 for r in rows if r["status"] == "same")
+        n_conf = sum(1 for r in rows if r["status"] == "conflict")
+        n_err = sum(1 for r in rows if r["error"] and r["status"] != "conflict")
+        out = {"ok": True, "rows": rows, "new": n_new, "same": n_same, "conflict": n_conf,
+               "error": n_err, "applied": 0, "mode": "apply" if payload.apply else "dry-run",
+               "today": today.isoformat()}
+
+        if n_err or n_conf:
+            out["refused"] = (f"直すところが {n_err + n_conf}件あるので登録しません "
+                              f"(半分だけ入れると、どこまで正しいのか分からなくなります)")
+            out["message"] = out["refused"]
+            return out
+        if not payload.apply:
+            out["message"] = (f"{n_new}件を登録できます (まだ登録していません)。"
+                              if n_new else "すべて登録済みです。新しく登録するものはありません。")
+            return out
+        if not n_new:
+            out["message"] = "すべて登録済みです。新しく登録するものはありません。"
+            return out
+
+        now = _utc_naive_iso()
+        for row in rows:
+            if row["status"] != "new":
+                continue
+            c.execute("INSERT INTO class_calendar (event_date, kind, title, created_at) VALUES (?,?,?,?)",
+                      (row["date"], row["kind"], row["title"] or None, now))
+        conn.commit()
+        # ★入った行を読み直して各1件であることを確かめる (件数の引き算では重複を見抜けない)
+        bad = []
+        for row in rows:
+            if row["status"] != "new":
+                continue
+            c.execute("SELECT COUNT(*) AS n FROM class_calendar WHERE event_date = ?", (row["date"],))
+            r0 = c.fetchone()
+            n0 = r0["n"] if r0 is not None else 0
+            if n0 != 1:
+                bad.append(f"{row['date']} が {n0}件")
+        out["applied"] = n_new
+        out["verified"] = not bad
+        out["duplicates"] = bad
+        out["message"] = (f"✅ {n_new}件を登録しました (各1件で入っていることを確認済み)" if not bad else
+                          f"⚠ {n_new}件を登録しましたが、確認で異常がありました。下の一覧で直してください")
+        return out
     finally:
         conn.close()
 
