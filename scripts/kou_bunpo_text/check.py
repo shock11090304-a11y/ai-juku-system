@@ -17,7 +17,10 @@
   5. 正解位置     … 大問ごと・巻全体で位置が偏っていないか
   6. 長さの tell   … 正解の選択肢が「いつも最長」になっていないか
   7. 組版         … PDF に OVERFLOW バッジが無い、目次のページ番号が実物と一致
-  8. ページ構成    … 各講のページ数が偶数、講扉が偶数ノンブル（＝左ページ）
+  8. ページ構成    … 各講のページ数が偶数、講扉が偶数ノンブル（＝左ページ）、
+                     ポイント【1】の直後が ● 見出し
+  9. 見本の型      … 不適当選択型（5択）が各講の大問1 ⑵ にちょうど1問、instr が対応、
+                     復習テストは4択だけ
 """
 import os, re, sys, glob, importlib, collections
 
@@ -253,12 +256,68 @@ def check_kaitou(vol, mod, pdf):
     CHECKED.append("%s: 解答編 %d 問の【答】と選択肢・参照ページを照合" % (vol, n_ans))
 
 
+# 見本（市販の講義式テキスト）の第1講から起こした「1講の型」。
+# ★これは体裁・構成の型であって、本文・例文・設問・解説はすべて自作。
+FUTEKITOU_INSTR = "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。"
+FUTEKITOU_PAGE = 6          # 見開き左＝ノンブル8。まとめの「■入試問題演習」のページ
+FUTEKITOU_POS = 1           # その大問1の ⑵（0起点）
+
+
+def check_futekitou(vol, kozas):
+    """見本と同じ「不適当選択型（5択）」が各講に1問だけ、同じ位置にあるか。
+
+    ★見本は 大問1（7問）の ⑵ だけを5択の不適当選択型にし、instr でそこを名指しする。
+      この型が崩れると「4択だけの単元別ドリル」に戻り、見本と別物になる。
+    ★5択は復習テストに入れない（見本の復習テストは4択だけ。解答が数字とＡ〜Ｅで混ざる）。
+    """
+    for k in kozas:
+        where = "%s 第%d講" % (vol, k["no"])
+        five = [(g, n, it) for g, n, it in build.all_items(k) if len(it["choices"]) == 5]
+        if len(five) != 1:
+            bad("%s: 不適当選択型（5択）が %d 問（見本は各講ちょうど1問）" % (where, len(five)))
+            continue
+        pg = k["pages"][FUTEKITOU_PAGE] if len(k["pages"]) > FUTEKITOU_PAGE else []
+        es = [b for b in pg if b["t"] == "enshu"]
+        if not es:
+            bad("%s: p%d に「■入試問題演習」が無い" % (where, FUTEKITOU_PAGE))
+            continue
+        g0 = es[0]["groups"][0]
+        if g0.get("instr") != FUTEKITOU_INSTR:
+            bad("%s: 大問1の instr が見本と違う → %r" % (where, g0.get("instr")))
+        if len(g0["items"]) <= FUTEKITOU_POS or \
+                len(g0["items"][FUTEKITOU_POS]["choices"]) != 5:
+            bad("%s: 大問1の ⑵ が5択になっていない（instr が名指しする位置とずれる）" % where)
+        elif g0["items"][FUTEKITOU_POS] is not five[0][2]:
+            bad("%s: 5択が大問1の ⑵ 以外の位置にある" % where)
+        it5 = five[0][2]
+        if it5.get("cols") != 5:
+            bad("%s: 不適当選択型に cols:5 が無い（見本と同じ3列組にならない）" % where)
+        if it5.get("tag"):
+            bad("%s: 不適当選択型に復習テストの tag が付いている"
+                "（復習テストは4択だけで組む）" % where)
+        longest = max(it5["choices"], key=len)
+        if it5["choices"][it5["ans"]] == longest and \
+                sum(1 for c in it5["choices"] if len(c) == len(longest)) == 1:
+            bad("%s: 不適当選択型の答えが5つの中で最長（長さで当てられる）" % where)
+    for k in kozas:
+        for it in build.build_review_group(k)["items"]:
+            if len(it["choices"]) != 5:
+                continue
+            bad("%s 第%d講: 復習テストに5択が入っている" % (vol, k["no"]))
+    CHECKED.append("%s: 不適当選択型（5択）を %d 講ぶん照合" % (vol, len(kozas)))
+
+
 def check_structure(vol, kozas):
     for k in kozas:
         if len(k["pages"]) % 2:
             bad("%s 第%d講: ページ数が奇数 (%d)" % (vol, k["no"], len(k["pages"])))
         if len(k["index"]) < 2:
             bad("%s 第%d講: ポイントが %d 個しかない" % (vol, k["no"], len(k["index"])))
+        # 見本はポイント【1】の直後に必ず ● 見出しが来る（いきなり枠から始めない）
+        ts = [b["t"] for b in k["pages"][0]]
+        if "ph" in ts and ts[ts.index("ph") + 1] != "h":
+            bad("%s 第%d講: ポイント【1】の直後が ● 見出しでない (%s)"
+                % (vol, k["no"], ts[ts.index("ph") + 1]))
         last2 = [b["t"] for pg in k["pages"][-2:] for b in pg]
         if last2 != ["review", "note"]:
             bad("%s 第%d講: 末尾が「復習テスト → NOTE」になっていない (%r)"
@@ -273,6 +332,7 @@ def main():
         mod = importlib.import_module("content_" + vol)
         build.balance_answers(mod.KOZAS)   # ビルドと同じ並べ替えを適用してから見る
         check_structure(vol, mod.KOZAS)
+        check_futekitou(vol, mod.KOZAS)
         check_strings(vol, mod.KOZAS)
         check_quotes(vol, mod.KOZAS)
         check_items(vol, mod.KOZAS)
