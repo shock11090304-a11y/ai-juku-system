@@ -207,7 +207,7 @@ K01 = {
             {"t": "box", "rows": [
                 "①他動詞 ＋ when・if 〜",
                 "　☆この形をとる動詞：know ／ wonder ／ be not sure ／ tell ／ see ／ find out",
-                "② S V 人 when・if 〜　※第４文型になっている",
+                "② S V [k]人[/k] when・if 〜　※第４文型になっている",
                 "　☆この形をとる動詞：tell ／ ask",
             ]},
             {"t": "sp", "h": "4mm"},

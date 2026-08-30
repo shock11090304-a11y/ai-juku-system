@@ -45,6 +45,11 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 PAREN = "⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇"
 
+# 5択（不適当選択型）のラベル。見本と同じ半角 A〜E。
+# ★問題編の選択肢表示（render_choices）と解答編の【答】（ans_label）は必ずここから引く。
+#   別々に書くと「問題編=Ａ／解答編=A」のように黙ってずれ、check.py の照合だけが落ちる。
+ALPHA = "ABCDE"
+
 
 def esc(s):
     return html.escape(str(s), quote=False)
@@ -63,6 +68,7 @@ def zenkaku_no(n):
 # 本文データ中で使えるマーク（esc() を通しても壊れない記号だけで作る）
 #   [b]…[/b]  太字   [u]…[/u]  下線   [i]…[/i]  斜体
 #   [e]…[/e]  英字フォント強制（和文中に英単語を置くとき）
+#   [k]…[/k]  細枠で囲む（「人」「物」などのプレースホルダ。見本と同じ白地・1px枠）
 #   ___       空所（　　）
 MARKS = [
     (re.compile(r"\[b\](.*?)\[/b\]", re.S), r"<b>\1</b>"),
@@ -70,6 +76,7 @@ MARKS = [
     (re.compile(r"\[i\](.*?)\[/i\]", re.S), r"<i>\1</i>"),
     (re.compile(r"\[e\](.*?)\[/e\]", re.S), r'<span class="en">\1</span>'),
     (re.compile(r"\[g\](.*?)\[/g\]", re.S), r'<span class="gbox">\1</span>'),
+    (re.compile(r"\[k\](.*?)\[/k\]", re.S), r'<span class="kbox">\1</span>'),
 ]
 RE_BLANK = re.compile(r"_{3,}")
 
@@ -166,10 +173,13 @@ body {
 .ch.c4 { display: flex; flex-wrap: wrap; gap: 0 2.0em; }
 .ch.c2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 1.2em; }
 .ch.c1 .ci { display: block; }
-.ch.c5 { display: flex; flex-wrap: wrap; gap: 0 2.2em; }
+/* 5択（不適当選択型）は見本と同じ 3列固定＝A B C / D E の2行に必ず割れる。
+   flex-wrap だと選択肢の長さ次第で 4+1 や 5 に化けて、講ごとに組みが変わる。 */
+.ch.c5 { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 1.2em; }
 .blank { letter-spacing: 0; }
 .ul { border-bottom: 1px solid #000; }
 .gbox { background: #d9d9d9; padding: 0 .25em; }
+.kbox { border: 1px solid #000; padding: 0 .3em; margin: 0 .1em; }
 
 /* ---- ルールの語句下に①②③を置く ---------------------------------- */
 .stack { display: flex; flex-wrap: wrap; align-items: flex-end; margin: 0 0 4mm; }
@@ -357,8 +367,7 @@ def render_choices(item):
     # ラベル様式は ans_label() と同じ「選択肢数」で決める（cols はレイアウト専用）。
     # cols で決めると、5択に cols:1 を付けた瞬間に問題編=数字/解答編=Ａ〜Ｅ とずれる。
     if len(ch) == 5:
-        labels = ["Ａ", "Ｂ", "Ｃ", "Ｄ", "Ｅ"]
-        inner = "".join('<span class="ci">%s　%s</span>' % (labels[i], tx(c))
+        inner = "".join('<span class="ci">%s　%s</span>' % (ALPHA[i], tx(c))
                         for i, c in enumerate(ch))
     else:
         inner = "".join('<span class="ci">%d. %s</span>' % (i + 1, tx(c))
@@ -543,7 +552,7 @@ def build_kaitou(meta, kozas):
 
 def ans_label(it):
     """正解ラベルの唯一の定義。問題編の選択肢表示と解答編の【答】を必ず一致させる。"""
-    return "ＡＢＣＤＥ"[it["ans"]] if len(it["choices"]) == 5 else str(it["ans"] + 1)
+    return ALPHA[it["ans"]] if len(it["choices"]) == 5 else str(it["ans"] + 1)
 
 
 def render_answer(it, n):
