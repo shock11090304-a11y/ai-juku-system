@@ -420,11 +420,23 @@ def verify(vol):
     #   せめて「裏を取っていない」ことを宣言させ、宣言漏れをここで落とす。
     # ★宣言は 6 文字以上。「京都大学」「問」のような短い語を 1 つ置くだけで
     #   全部の出典行を黙らせられてしまう (何を検証していないのかも伝わらない)。
-    declared = [x for x in vol.get("unverified", []) if x]
+    # ★disclaimers = 「これは実在の問題ではない」と**打ち消している**行。
+    #   _is_claim は取りこぼさない側に倒してあるので、打ち消し文まで拾ってしまう。
+    #   そこで unverified と同じ作法で明示的に宣言させる。宣言を求めること自体は変えず、
+    #   「正直に打ち消すほど検査に落ちる」という逆の誘因だけを消す。
+    declared = ([x for x in vol.get("unverified", []) if x]
+                + [x for x in vol.get("disclaimers", []) if x])
     for d in declared:
         if len(d) < 6:
-            errs.append(f"{key}: unverified の宣言 {d!r} が短すぎる "
-                        f"(6 文字以上で、何を検証していないか分かる形にすること)")
+            errs.append(f"{key}: unverified / disclaimers の宣言 {d!r} が短すぎる "
+                        f"(6 文字以上で、何を宣言しているか分かる形にすること)")
+    # ★disclaimers は「打ち消している」ものに限る。そうしないと、裏の取れない断言を
+    #   disclaimers に書くだけで unverified を経ずに黙らせられてしまう。
+    for d in vol.get("disclaimers", []) or []:
+        if not any(n in d for n in _NEGATIONS):
+            errs.append(f"{key}: disclaimers の {d!r} が打ち消しになっていない "
+                        f"({' / '.join(_NEGATIONS)} のいずれかを含めること。"
+                        f"打ち消しでないなら unverified に書く)")
     for s in vol["slides"]:
         for b in s.get("blocks", []):
             for txt in _texts_of(b):
@@ -438,8 +450,8 @@ def verify(vol):
     all_text = " ".join(plain(t) for s in vol["slides"]
                         for b in s.get("blocks", []) for t in _texts_of(b))
     for d in declared:
-        if d not in all_text:
-            errs.append(f"{key}: unverified に宣言された {d!r} が本文のどこにも無い (消し忘れ)")
+        if d not in all_text and d not in _caption_text(vol):
+            errs.append(f"{key}: 宣言された {d!r} が本文にも投稿文にも無い (消し忘れ)")
     return errs
 
 
@@ -456,6 +468,14 @@ _CLAIM_SCHOOLS = (
     "立教", "中央", "法政", "同志社", "立命館", "関学", "関大",
 )
 _CLAIM_YEAR = re.compile(r"(19|20)\d{2}\s*(年度|年)?")
+
+
+_NEGATIONS = ("ではありません", "ではない", "ではなく", "ではございません")
+
+
+def _caption_text(vol):
+    cap = vol.get("caption") or {}
+    return "\n".join(str(cap.get(k) or "") for k in ("full", "short"))
 
 
 def _is_claim(t):

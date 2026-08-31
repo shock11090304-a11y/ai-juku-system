@@ -201,7 +201,8 @@ def check_caption(vol, bad):
 
     passage = BV._norm_en(vol["passage"]).lower()
     examples = [BV._norm_en(x).lower() for x in vol.get("en_examples", [])]
-    declared = [x for x in vol.get("unverified", []) if x]
+    declared = ([x for x in vol.get("unverified", []) if x]
+                + [x for x in vol.get("disclaimers", []) if x])
 
     for kind in ("full", "short"):
         text = cap.get(kind)

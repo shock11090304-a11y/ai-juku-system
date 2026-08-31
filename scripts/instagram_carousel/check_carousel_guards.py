@@ -117,6 +117,15 @@ def m_declared_but_absent(v):
     v["unverified"] = list(v["unverified"]) + ["本文のどこにも書いていない主張です"]
 
 
+def m_disclaimer_not_negative(v):
+    """裏の取れない断言を disclaimers に書いて unverified を迂回する形。"""
+    v["disclaimers"] = list(v.get("disclaimers") or []) + ["京都大学 2023年 英語 第2問"]
+
+
+def m_disclaimer_too_short(v):
+    v["disclaimers"] = list(v.get("disclaimers") or []) + ["ではない"]
+
+
 def m_unverified_too_short(v):
     """短い generic な語 1 つで全部の出典行を黙らせる形。"""
     v["unverified"] = ["京都大学"]
@@ -236,7 +245,9 @@ MUTATIONS = [
     ("略称での出典の断言", m_claim_abbrev, "未検証の主張が unverified に宣言されていない"),
     ("赤本表記での出典の断言", m_claim_akahon, "未検証の主張が unverified に宣言されていない"),
     ("図版の中に書いた出典の断言", m_claim_in_fig, "未検証の主張が unverified に宣言されていない"),
-    ("宣言したのに本文に無い", m_declared_but_absent, "本文のどこにも無い"),
+    ("宣言したのに本文に無い", m_declared_but_absent, "本文にも投稿文にも無い"),
+    ("打ち消しでない disclaimer", m_disclaimer_not_negative, "打ち消しになっていない"),
+    ("disclaimer が短すぎる", m_disclaimer_too_short, "短すぎる"),
     ("短い語で宣言を済ませる", m_unverified_too_short, "短すぎる"),
     ("図版に <script>", m_script_in_fig, "<script> は禁止"),
     ("図版に on* 属性", m_onload_in_fig, "on* 属性は禁止"),

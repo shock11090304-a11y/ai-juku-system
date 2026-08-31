@@ -82,7 +82,8 @@ Pillow / Google Chrome (`/Applications/` にあれば自動で見つける)。
 | `fonts.py` | 和文フォントの調達 (Google Fonts → `~/.cache/trillion-ig-fonts`) |
 | `theme_vol.py` | **4:5 の意匠の正典**。色・寸法・CSS・インライン記法 |
 | `build_vol.py` | 部品の組み立てと `verify()` (刷る前の検査)、はみ出しの実測 |
-| `vols/vol01.py` | vol.01 の**文言・図版・投稿文だけ**。意匠は書かない |
+| `vols/vol01.py` | vol.01 (京大 as / 様態 vs みなす) の文言・図版・投稿文 |
+| `vols/vol02.py` | vol.02 (It is A that / 強調構文の識別)。例文は自塾教材の原創文 |
 | `check_instagram_carousel.py` | ゲート。`run_all_gates.py` が拾う |
 | `check_carousel_guards.py` | 上のゲートの**変異試験**。18 種の壊し方を仕込んで全部捕まるか見る |
 
@@ -92,6 +93,11 @@ Pillow / Google Chrome (`/Applications/` にあれば自動で見つける)。
 2. `passage` に正典の英文を 1 本入れる。スライドに出す英文はここに実在しないと `verify` が落とす。
 3. 説明用の例文 (本文の引用ではないもの) は `en_examples` に宣言する。
 4. 裏を取っていない主張 (出典表記など) は `unverified` に宣言する。宣言漏れも消し忘れも落ちる。
+   ★「実在の入試問題ではありません」のような**打ち消し**は `disclaimers` に書く。
+   出典らしさの判定 (`_is_claim`) は取りこぼさない側に倒してあるので打ち消し文まで拾う。
+   これが無いと「正直に打ち消すほど検査に落ちる」逆の誘因になる。
+   `disclaimers` は打ち消し表現 (ではありません/ではない/ではなく) を含むことが必須で、
+   裏の取れない断言をここに書いて `unverified` を迂回することはできない。
 5. `caption` に投稿文 (`full` / `short` / `hashtags`) を書く。
    **投稿文もスライドと同じ vol に置く。** 別ファイルに分けると、画像だけ直して
    投稿文が古いまま、という事故が起きる。上限 2,200字 / ハッシュタグ 30個 と、
