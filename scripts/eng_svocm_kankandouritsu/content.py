@@ -129,7 +129,7 @@ SYN_POOL = {
     "1A": ["sv", "svc-adj", "svc-noun", "svo", "svoo-give", "svoo-take", "svoc-adj", "svoc-noun", "svoc-pp", "svoc-bare", "svoc-to"],
     "1B": ["relative-subject", "relative-object", "participle-postmod", "gerund-object", "adverb-intrusion", "long-fronted-pp", "participial-construction", "pp-postmod", "comparative-postmod"],
     "1C": ["formal-subject", "formal-object", "that-clause-object", "whether-clause", "there-construction", "passive", "perception-verb", "causative", "group-verb"],
-    "2": ["so-that-result", "too-to", "that-of", "compound-relative", "do-emphasis", "insertion", "only-inversion", "subjunctive-inversion", "superlative-equivalent", "ellipsis-clause", "infinitive-adjective", "relative-possessive"],
+    "2": ["so-that-result", "too-to", "infinitive-adjective", "relative-possessive", "that-of", "compound-relative", "do-emphasis", "insertion", "superlative-equivalent", "only-inversion", "subjunctive-inversion", "ellipsis-clause"],
     "3-1": ["prep-relative", "relative-adverb", "what-clause", "chain-relative", "nonrestrictive", "appositive-that"],
     "3-2": ["not-so-much-as", "no-more-than", "comparative-ellipsis", "the-more-the-more", "negative-inversion", "cleft"],
     "3-3": ["with-absolute", "inanimate-subject", "nominalization", "subjunctive", "correlative", "concessive-as"],
@@ -584,29 +584,29 @@ PART1 = [
 PART2 = [
     {"id": "G1",
      "syn": "so-that-result",
-     "en": "The pharmacist spoke in such a quiet voice that several patients asked her to repeat the dose twice.",
-     "dsl": "{S:The pharmacist} {V:spoke} ( M: in such a quiet voice ) ( M: {接:that} {S':several patients} {V':asked} {O':her} [ C': {V'':to repeat} {O'':the dose} {M'':twice} ] ) .",
+     "en": "The nurse spoke in such a quiet voice that several patients asked her to repeat the instructions twice.",
+     "dsl": "{S:The nurse} {V:spoke} ( M: in such a quiet voice ) ( M: {接:that} {S':several patients} {V':asked} {O':her} [ C': {V'':to repeat} {O'':the instructions} {M'':twice} ] ) .",
      "pat": "第1文型（SV）",
      "tag": "結果を表す such … that",
      "notes": [
                "such の直後で名詞のカタマリが終わらず that 節が続いたら、結果を表す so / such … that の呼応を疑う。",
-               "spoke は目的語を取らない自動詞なので、後ろの that 節は O ではなく副詞のカタマリ ( M ) として並ぶ。",
-               "主節の骨組みは The pharmacist と spoke の 2 つだけで、残りはすべて ( M ) の修飾語である。",
+               "speak は say や tell と違って that 節を目的語に取れないので、後ろの that 節は O ではなく副詞のカタマリ ( M ) として並ぶ。",
+               "主節の骨組みは The nurse と spoke の 2 つだけで、残りはすべて ( M ) の修飾語である。",
                "that 節の中の asked her to repeat は O と C を取る第5文型。C は動詞を含むので囲んで中も分解する。"],
-     "ja": "その薬剤師はあまりに静かな声で話したので、何人かの患者は薬の量を二度言い直してほしいと彼女に頼んだ。",
-     "q": "that several patients asked her to repeat the dose twice は、この文でどのような働きをしているか。最も適切なものを "
+     "ja": "その看護師はあまりに静かな声で話したので、何人かの患者は説明を二度言い直してほしいと彼女に頼んだ。",
+     "q": "that several patients asked her to repeat the instructions twice は、この文でどのような働きをしているか。最も適切なものを "
           "1 つ選びなさい。",
      "choices": [
                  "in such a quiet voice と呼応し、その結果どうなったかを述べる副詞のカタマリ",
-                 "spoke の目的語となり、薬剤師が話した内容そのものを表す名詞のカタマリ",
+                 "spoke の目的語となり、看護師が話した内容そのものを表す名詞のカタマリ",
                  "a quiet voice を後ろから説明し、どのような声だったかを限定する形容詞のカタマリ",
-                 "The pharmacist を後ろから説明し、どのような薬剤師なのかを限定する形容詞のカタマリ"],
+                 "The nurse を後ろから説明し、どのような看護師なのかを限定する形容詞のカタマリ"],
      "ans": 0,
      "exp": "such a quiet voice の such と、後ろの that 節が呼応している。in such a quiet voice ほど静かな声だった、その結果どうなったかを述べるのが "
-            "that 以下で、分解図でも V の外に並ぶ 2 つ目の ( M ) になる。spoke は目的語を取らない自動詞なので、that 節を O と読むと置き場所がなく、主節が第3文型に化けてしまうので誤り。"
-            "a quiet voice を後ろから説明する形容詞のカタマリと取ると、声そのものの中身を that 節が述べることになり、患者が頼んだという別の出来事の説明にならないので誤り。"
-            "The pharmacist にかかると取ると、that 節との間に spoke in such a quiet voice がまるごと挟まっており、名詞から遠く離れた "
-            "that 節がその名詞を限定することはないので誤り。"},
+            "that 以下で、分解図でも V の外に並ぶ 2 つ目の ( M ) になる。speak は say や tell と違って that 節を目的語に取れないので、that "
+            "節を O と読むと置き場所がなく、主節が第3文型に化けてしまうので誤り。a quiet voice を後ろから説明する形容詞のカタマリと取ると、声そのものの中身を that "
+            "節が述べることになり、患者が頼んだという別の出来事の説明にならないので誤り。The nurse にかかると取ると、that 節との間に spoke in such a "
+            "quiet voice がまるごと挟まっており、名詞から遠く離れた that 節がその名詞を限定することはないので誤り。"},
     {"id": "G2",
      "syn": "too-to",
      "en": "The young sprinter was too anxious about her start to run the first fifty meters at her usual speed.",
@@ -631,193 +631,6 @@ PART2 = [
             "her start を O、to run 以下を C と取ると、彼女のスタートが走るという意味になってしまい、was を第5文型の動詞として使うことになるので誤り。O "
             "も C も無い第1文型と取ると、was だけでは文の意味が完結せず、too anxious about her start の置き場所が消えるので誤り。"},
     {"id": "G3",
-     "syn": "that-of",
-     "en": "Under the new lighting, the colors of the restored ceiling look far brighter than those of the unrestored section.",
-     "dsl": "( M: Under the new lighting ) , {S:the colors} <M: of the restored ceiling> {V:look} {C:far brighter} ( M: {接:than} {S':those} <M': of the unrestored section> ) .",
-     "pat": "第2文型（SVC）",
-     "tag": "比較の代用 those of",
-     "notes": [
-               "比較の相手をそろえるために、前に出た名詞のくり返しを that / those で置き換える。複数なら those を使う。",
-               "those の直後の of the unrestored section まで含めて、比べる相手 1 つ分のカタマリになる。",
-               "文頭の Under the new lighting は比較の相手ではなく、どんな条件での話かを示す ( M ) である。",
-               "look は第2文型を作る動詞で、far brighter が C。far は比較級を強める副詞で C の中に残す。"],
-     "ja": "新しい照明の下では、修復された天井の色は、修復されていない部分の色よりもはるかに明るく見える。",
-     "q": "than those of the unrestored section の those は何を指しているか。最も適切なものを 1 つ選びなさい。",
-     "choices": [
-                 "the restored ceiling を受けており、修復した天井そのものと比べていることを示す",
-                 "the new lighting を受けており、新しい照明の明るさと比べていることを示す",
-                 "the colors を受けており、修復していない部分の色と比べていることを示す",
-                 "the colors of the restored ceiling 全体を受け、同じ天井の色をもう一度指している"],
-     "ans": 2,
-     "exp": "those は前に出た名詞のくり返しを避ける代用の語で、ここでは the colors を受けている。than those of the unrestored section "
-            "は、the colors of the restored ceiling と、修復していない部分の色とを比べる形で、比べる相手をそろえるためにこの those が要る。"
-            "the restored ceiling を受けると取ると、色と天井という違うものを比べることになり、brighter が何について明るいのか決まらないので誤り。the "
-            "new lighting を受けると取ると、Under the new lighting は文全体の条件を示す副詞のカタマリで比較の相手ではないので誤り。the colors "
-            "of the restored ceiling の全体を受けると取ると、同じものどうしを比べることになり、比較そのものが成り立たなくなるので誤り。"},
-    {"id": "G4",
-     "syn": "compound-relative",
-     "en": "Whatever the committee decides at tomorrow's meeting will affect the working hours of every employee in the factory.",
-     "dsl": "[ S: {O':Whatever} {S':the committee} {V':decides} ( M': at tomorrow's meeting ) ] {V:will affect} {O:the working hours} <M: of every employee <M': in the factory> > .",
-     "pat": "第3文型（SVO）",
-     "tag": "複合関係代名詞 whatever",
-     "notes": [
-               "Whatever は先行詞を自分の中に含む複合関係代名詞で、節の全体が名詞のカタマリになる。",
-               "コンマが無く、後ろの will affect に主語が無い。だから譲歩ではなく主語の名詞節だと決まる。",
-               "カタマリの中では Whatever が decides の目的語。中に目的語の欠けがあることが見分けの手がかり。",
-               "of every employee は the working hours の核から外に出し、名詞にかかる形容詞のカタマリとして示す。"],
-     "ja": "委員会が明日の会議で決めることは何であれ、工場のすべての従業員の労働時間に影響する。",
-     "q": "この文の主節の主語 (S) にあたるのはどれか。最も適切なものを 1 つ選びなさい。",
-     "choices": [
-                 "the committee で、決定を下す側がそのまま主節の動作主になっている",
-                 "Whatever の 1 語で、後ろの the committee decides はコンマの無い挿入である",
-                 "the working hours で、will affect の後ろに置かれた名詞が主語である",
-                 "Whatever the committee decides at tomorrow's meeting の全体である"],
-     "ans": 3,
-     "exp": "Whatever は先行詞を自分の中に含む複合関係代名詞で、Whatever the committee decides at tomorrow's meeting の全体が "
-            "1 つの名詞のカタマリになり、will affect の主語として働く。カタマリの中では Whatever が decides の目的語で、決められる中身そのものを指している。"
-            "the committee を主語と取ると、Whatever が宙に浮き、しかも decides と will affect という 2 つの述語を 1 つの主語が支えることになるので誤り。"
-            "Whatever の 1 語だけを主語と取ると、後ろの部分が挿入になるが、挿入はコンマなどで区切るのが普通で、ここにはその印が無いので誤り。the working hours "
-            "を主語と取ると、動詞の後ろの名詞を主語と読むことになり、動詞の前に主語が無い文になってしまうので誤り。"},
-    {"id": "G5",
-     "syn": "do-emphasis",
-     "en": "The old law does allow street traders to stay in the square until midnight on the night of the winter festival.",
-     "dsl": "{S:The old law} {V:does allow} {O:street traders} [ C: {V':to stay} ( M': in the square ) ( M': until midnight ) ( M': on the night <M'': of the winter festival> ) ] .",
-     "pat": "第5文型（SVOC）",
-     "tag": "強調の do",
-     "notes": [
-               "強調の do は、過去でも疑問でも否定でもない場所に現れ、直後に動詞の原形を連れてくる。",
-               "does allow は 1 つのマスにまとめる。助動詞は動詞と同じマスに入れるのがこの教材の約束である。",
-               "allow は O と to 不定詞の C を取る第5文型。C は動詞を含むので囲んで中まで分解する。",
-               "三単現の s が allow ではなく does に付き、直後が原形になっている点も強調の do の目印である。"],
-     "ja": "その古い法律は、冬の祭りの夜、露天商が広場に真夜中までいることを確かに認めている。",
-     "q": "does allow の does はどのような働きをしているか。最も適切なものを 1 つ選びなさい。",
-     "choices": [
-                 "allow を強め、確かに認めているのだという肯定の意味を押し出している",
-                 "疑問文をつくる助動詞で、後ろの語順が疑問文と同じになっている",
-                 "否定の not が省かれた形で、実際には認めていないことを示している",
-                 "allow の代わりに置かれた代動詞で、前に出た動詞を受け直している"],
-     "ans": 0,
-     "exp": "does allow の does は、後ろの動詞の意味を強める強調の do で、確かに認めているのだ、という肯定の押しを加える。過去でも疑問でも否定でもないのに do "
-            "が現れ、しかも直後に原形の allow が続いたら、この用法を疑う。疑問文をつくる助動詞と取ると、The old law does allow は主語が先に来ており疑問文の語順ではないので誤り。"
-            "not が省かれた形と取ると、否定語は省略できず、補ってしまうと後半の内容と矛盾するので誤り。代動詞と取ると、代動詞はくり返しを避けるために動詞を置かない形で使うのに、"
-            "ここでは allow が実際に書かれているので誤り。"},
-    {"id": "G6",
-     "syn": "insertion",
-     "en": "The autumn storms along this coast, most local fishermen say, cause far less damage than the sudden fogs of early spring.",
-     "dsl": "{S:The autumn storms} <M: along this coast> , ( 挿入: {S':most local fishermen} {V':say} ) , {V:cause} {O:far less damage} ( M: {接:than} {S':the sudden fogs} <M': of early spring> ) .",
-     "pat": "第3文型（SVO）",
-     "tag": "コンマにはさまれた挿入",
-     "notes": [
-               "コンマ 2 つにはさまれた S と V の組は、話し手以外の判断を差し込む挿入で、骨組みには数えない。",
-               "挿入を取り去っても文が成り立つかどうかで見分ける。残った側の動詞が主節の V である。",
-               "The autumn storms は複数なので、対応するのは三単現の形ではない cause である。動詞の形も手がかり。",
-               "along this coast は直前の名詞を後ろから説明する形容詞のカタマリで、主語 1 つ分に含めて読む。"],
-     "ja": "この海岸沿いの秋の嵐は、地元の漁師の多くが言うには、早春の突然の霧よりもはるかに小さな被害しかもたらさない。",
-     "q": "この文の主節の動詞 (V) にあたるのはどれか。最も適切なものを 1 つ選びなさい。",
-     "choices": [
-                 "say で、most local fishermen を主語にとり文全体をまとめている",
-                 "cause で、コンマにはさまれた挿入をまたいで主語を受けている",
-                 "cause と say が対等に並び、2 つの動詞が 1 つの主語を共有している",
-                 "cause は不定詞相当で、実際の主節の動詞はコンマの中の say である"],
-     "ans": 1,
-     "exp": "コンマにはさまれた most local fishermen say は、話し手以外の判断を差し込む挿入で、主節の骨組みからは外れている。この部分を取り去ると、The "
-            "autumn storms along this coast が主語、cause が動詞という骨組みが残る。say を主節の動詞と取ると、コンマの外に残る主語が述語を失い、"
-            "cause の置き場所も無くなるので誤り。cause と say が対等に並ぶと取ると、対等な並列には接続詞が要るうえ、コンマ 2 つで囲む形にもならないので誤り。cause "
-            "を不定詞相当と取ると、to も付いておらず、主語に対する述語がどこにも無い文になるので誤り。"},
-    {"id": "G7",
-     "syn": "only-inversion",
-     "en": "Only at the very end of the announcement did the station staff mention the change in the evening timetable.",
-     "dsl": "( M: Only at the very end < M': of the announcement > ) {助:did} {S:the station staff} {V:mention} {O:the change} <M: in the evening timetable> .",
-     "pat": "第3文型（SVO）",
-     "tag": "Only … による倒置",
-     "notes": [
-               "Only で始まる副詞句が文頭に出ると、後ろは疑問文と同じ語順になり、助動詞が主語の前に出る。",
-               "did の後ろの名詞が主語。助動詞と動詞が主語をはさんで割れている形だと見抜く。",
-               "倒置なので did の後ろの動詞は原形の mention になる。時制は did が背負っていると読む。",
-               "文頭の Only at the very end … は副詞 Only ＋前置詞句のカタマリで、名詞のカタマリではないから主語になれない。"],
-     "ja": "アナウンスのいちばん最後になってようやく、駅員は夕方の時刻表の変更について口にした。",
-     "q": "did the station staff mention という語順になっているこの文の主語 (S) はどれか。最も適切なものを 1 つ選びなさい。",
-     "choices": [
-                 "Only at the very end で、文頭の副詞句がそのまま主語になっている",
-                 "the announcement で、of の後ろの名詞が主語の働きをしている",
-                 "the station staff で、文頭の Only … に引かれて did の後ろに回っている",
-                 "the change で、mention の後ろに置かれた名詞が主語になっている"],
-     "ans": 2,
-     "exp": "文頭に Only … の限定句が出ると、後ろは疑問文と同じ語順になる。ここでも助動詞の did が主語の前に飛び出しており、did の後ろに置かれた the station "
-            "staff が主節の主語である。did を取り除いて動詞を過去形に戻せば、普通の語順に戻る。Only at the very end を主語と取ると、これは副詞 Only "
-            "＋前置詞句のカタマリで名詞のカタマリではなく主語になれず、did の後ろの名詞が浮いてしまうので誤り。the announcement を主語と取ると、of の後ろの名詞は直前の名詞を説明しているだけで、"
-            "文の主語にはなれないので誤り。the change を主語と取ると、これは mention の目的語で、何を口にしたのかを表す名詞なので誤り。"},
-    {"id": "G8",
-     "syn": "subjunctive-inversion",
-     "en": "Had the diary been found fifty years earlier, the story of the village would have taken a very different shape.",
-     "dsl": "( M: {助:Had} {S':the diary} {V':been found} ( M': fifty years earlier ) ) , {S:the story} <M: of the village> {V:would have taken} {O:a very different shape} .",
-     "pat": "第3文型（SVO）",
-     "tag": "if の省略による倒置",
-     "notes": [
-               "仮定法の if 節は、if を落として助動詞や be 動詞を主語の前に出す倒置の形にできる。",
-               "文頭が Had で、後ろに主語と過去分詞が続いたら、疑問文ではなく仮定法過去完了の倒置を疑う。",
-               "主節が would have taken という形になっていることが、仮定法過去完了だと確かめる裏づけになる。",
-               "of the village は the story の核から外に出し、名詞にかかる形容詞のカタマリとして示す。"],
-     "ja": "その日記が五十年早く見つかっていたら、その村の物語はまったく違った形になっていただろう。",
-     "q": "文頭の Had the diary been found について、省略されている語の説明として最も適切なものを 1 つ選びなさい。",
-     "choices": [
-                 "When が省かれ、日記が見つかった時期を述べる副詞節になっている",
-                 "疑問文の Did が Had に変わったもので、省略されている語は無い",
-                 "Because が省かれ、後半の内容の理由を述べる副詞節になっている",
-                 "If が省かれ、その埋め合わせに Had が主語の前に出た仮定法の形である"],
-     "ans": 3,
-     "exp": "仮定法の条件節では、if を省いて助動詞や be 動詞を主語の前に出すことができる。ここも文頭の if が消え、had が主語の前に回って Had the diary "
-            "been found という形になっている。主節が would have taken という形であることも手がかりになる。When が省かれたと取ると、時を表す節では倒置は起こらず、"
-            "実際に見つかったという事実の話になってしまうので誤り。疑問の Did が変化した形と取ると、コンマの後ろに主節が続いており疑問文になっていないので誤り。Because "
-            "が省かれたと取ると、理由の節も倒置しないうえ、事実を述べる文と読むと主節の形と合わないので誤り。"},
-    {"id": "G9",
-     "syn": "superlative-equivalent",
-     "en": "No other dish on the menu requires as much care as the fish stew that the chef serves on Fridays.",
-     "dsl": "{S:No other dish} <M: on the menu> {V:requires} {O:as much care} ( M: {接:as} {S':the fish stew} <M': {O'':that} {S'':the chef} {V'':serves} ( M'': on Fridays ) > ) .",
-     "pat": "第3文型（SVO）",
-     "tag": "最上級と同じ内容を表す形",
-     "notes": [
-               "No other に単数の名詞が続き、後ろで as … as と比べる形は、最上級と同じ内容を表す。",
-               "比べているのは requires の程度で、as much care as の後ろが比較の相手になる。",
-               "as の後ろは the fish stew までで、その後の that 節はどのシチューかを絞る形容詞のカタマリである。",
-               "on the menu は直前の No other dish を後ろから説明し、比べる範囲を示している。"],
-     "ja": "献立のほかのどの料理も、料理長が金曜日に出すその魚のシチューほどの手間を必要としない。",
-     "q": "この文は内容としてどのようなことを述べているか。最も適切なものを 1 つ選びなさい。",
-     "choices": [
-                 "献立の中ではこの魚のシチューがいちばん手間のかかる料理だということ",
-                 "この魚のシチューと同じだけ手間のかかる料理がほかにもあるということ",
-                 "この魚のシチューは金曜日以外には手間をかけずに作られるということ",
-                 "料理長は献立のどの料理にも同じだけの手間をかけているということ"],
-     "ans": 0,
-     "exp": "No other dish on the menu requires as much care as the fish stew は、このシチュー以外のどの料理もこれほどの手間はかからない、"
-            "と述べており、最上級と同じ内容になる。だから、いちばん手間がかかるのはこの魚のシチューだということになる。同じだけ手間のかかる料理がほかにもあると取ると、文頭の No "
-            "other がほかの料理をすべて外しているので誤り。金曜日以外は手間をかけないと取ると、on Fridays は the chef serves にかかり、いつ出すかを言っているだけなので誤り。"
-            "どの料理にも同じだけの手間をかけていると取ると、比較そのものが打ち消され、as much care as という形が意味を失うので誤り。"},
-    {"id": "G10",
-     "syn": "ellipsis-clause",
-     "en": "Although rewritten several times before publication, the short novel still keeps the ending that its author first imagined.",
-     "dsl": "( M: {接:Although} {V':rewritten} ( M': several times ) ( M': before publication ) ) , {S:the short novel} {M:still} {V:keeps} {O:the ending} <M: {O':that} {S':its author} {M':first} {V':imagined} > .",
-     "pat": "第3文型（SVO）",
-     "tag": "副詞節中の S + be の省略",
-     "notes": [
-               "接続詞の直後にいきなり過去分詞が来たら、主語と be 動詞が省かれた副詞節を疑う。",
-               "省けるのは主節の主語と同じ場合だけで、ここでは the short novel を受ける主語と be 動詞が省かれている。",
-               "分詞は素の語で置かず、副詞節の中の動詞として示す。省略があっても節の骨組みは変わらない。",
-               "the ending の後ろの that は関係代名詞で、imagined の目的語が欠けているので目的格だと分かる。"],
-     "ja": "出版の前に何度も書き直されたけれども、その短い小説は作者が最初に思い描いた結末を今も保っている。",
-     "q": "Although rewritten several times before publication では、Although の直後に何が省略されているか。最も適切なものを "
-          "1 つ選びなさい。",
-     "choices": [
-                 "people have にあたる主語と助動詞で、書き直した人のほうが主語になっている",
-                 "it was にあたる主語と be 動詞で、主節の主語と同じものを指している",
-                 "there is にあたる形式的な主語と be 動詞で、存在を表す形になっている",
-                 "to be にあたる不定詞で、これから書き直される予定を表す形になっている"],
-     "ans": 1,
-     "exp": "Although の直後にいきなり過去分詞の rewritten が来ているのは、副詞節の主語と be 動詞が省かれているからである。省かれているのは主節の主語と同じもの、"
-            "つまり the short novel を受ける it was で、これを戻すと普通の副詞節になる。people have が省かれていると取ると、能動で補うなら目的語が要るのに "
-            "rewritten の後ろに名詞が無いので誤り。there is が省かれていると取ると、存在を表す形では rewritten が宙に浮き、書き直されたのが何なのか決まらないので誤り。"
-            "to be が省かれていると取ると、接続詞の後ろに不定詞だけを置く形は無く、これから書き直される予定という読みは、書き直したうえで今の形が残っているという文全体の流れとも合わないので誤り。"},
-    {"id": "G11",
      "syn": "infinitive-adjective",
      "en": "In an ordinary school week, learners of a second language rarely have a real chance to use it naturally outside the classroom.",
      "dsl": "( M: In an ordinary school week ) , {S:learners} <M: of a second language> {M:rarely} {V:have} {O:a real chance} <M: {V':to use} {O':it} {M':naturally} ( M': outside the classroom ) > .",
@@ -843,7 +656,7 @@ PART2 = [
             "離れた名詞に後ろからかかることはないので誤り。a second language にかかると取ると、of で始まるカタマリの中の名詞に文末までのカタマリがかかることになり、"
             "it が指すものと重なって意味が回らなくなるので誤り。なお文頭の In an ordinary school week は主節の have にかかる ( M ) で、to "
             "不定詞のカタマリの中には入らない。"},
-    {"id": "G12",
+    {"id": "G4",
      "syn": "relative-possessive",
      "en": "Last Sunday the newspaper finally corrected a report whose opening paragraph had named the wrong street.",
      "dsl": "( M: Last Sunday ) {S:the newspaper} {M:finally} {V:corrected} {O:a report} <M: {S':whose opening paragraph} {V':had named} {O':the wrong street} > .",
@@ -867,6 +680,193 @@ PART2 = [
             "the newspaper を受けると取ると、whose は直前の名詞を受けるのが原則で、間にある名詞をまたいで遠くの名詞を受けることはないので誤り。疑問詞と取ると、corrected "
             "の目的語は a report ですでに埋まっており、間接疑問を入れる場所が無いので誤り。who is の短縮と取ると、後ろに続くのは名詞で補語にはならず、had named "
             "の主語も消えるので誤り。"},
+    {"id": "G5",
+     "syn": "that-of",
+     "en": "Under the new lighting, the colors of the restored ceiling look far brighter than those of the unrestored section.",
+     "dsl": "( M: Under the new lighting ) , {S:the colors} <M: of the restored ceiling> {V:look} {C:far brighter} ( M: {接:than} {S':those} <M': of the unrestored section> ) .",
+     "pat": "第2文型（SVC）",
+     "tag": "比較の代用 those of",
+     "notes": [
+               "比較の相手をそろえるために、前に出た名詞のくり返しを that / those で置き換える。複数なら those を使う。",
+               "those の直後の of the unrestored section まで含めて、比べる相手 1 つ分のカタマリになる。",
+               "文頭の Under the new lighting は比較の相手ではなく、どんな条件での話かを示す ( M ) である。",
+               "look は第2文型を作る動詞で、far brighter が C。far は比較級を強める副詞で C の中に残す。"],
+     "ja": "新しい照明の下では、修復された天井の色は、修復されていない部分の色よりもはるかに明るく見える。",
+     "q": "than those of the unrestored section の those は何を指しているか。最も適切なものを 1 つ選びなさい。",
+     "choices": [
+                 "the restored ceiling を受けており、修復した天井そのものと比べていることを示す",
+                 "the new lighting を受けており、新しい照明の明るさと比べていることを示す",
+                 "the colors を受けており、修復していない部分の色と比べていることを示す",
+                 "the colors of the restored ceiling 全体を受け、同じ天井の色をもう一度指している"],
+     "ans": 2,
+     "exp": "those は前に出た名詞のくり返しを避ける代用の語で、ここでは the colors を受けている。than those of the unrestored section "
+            "は、the colors of the restored ceiling と、修復していない部分の色とを比べる形で、比べる相手をそろえるためにこの those が要る。"
+            "the restored ceiling を受けると取ると、色と天井という違うものを比べることになり、brighter が何について明るいのか決まらないので誤り。the "
+            "new lighting を受けると取ると、Under the new lighting は文全体の条件を示す副詞のカタマリで比較の相手ではないので誤り。the colors "
+            "of the restored ceiling の全体を受けると取ると、同じものどうしを比べることになり、比較そのものが成り立たなくなるので誤り。"},
+    {"id": "G6",
+     "syn": "compound-relative",
+     "en": "Whatever the committee decides at tomorrow's meeting will affect the working hours of every employee in the factory.",
+     "dsl": "[ S: {O':Whatever} {S':the committee} {V':decides} ( M': at tomorrow's meeting ) ] {V:will affect} {O:the working hours} <M: of every employee <M': in the factory> > .",
+     "pat": "第3文型（SVO）",
+     "tag": "複合関係代名詞 whatever",
+     "notes": [
+               "Whatever は先行詞を自分の中に含む複合関係代名詞で、節の全体が名詞のカタマリになる。",
+               "コンマが無く、後ろの will affect に主語が無い。だから譲歩ではなく主語の名詞節だと決まる。",
+               "カタマリの中では Whatever が decides の目的語。中に目的語の欠けがあることが見分けの手がかり。",
+               "of every employee は the working hours の核から外に出し、名詞にかかる形容詞のカタマリとして示す。"],
+     "ja": "委員会が明日の会議で決めることは何であれ、工場のすべての従業員の労働時間に影響する。",
+     "q": "この文の主節の主語 (S) にあたるのはどれか。最も適切なものを 1 つ選びなさい。",
+     "choices": [
+                 "the committee で、決定を下す側の名詞がそのまま主節の動作主として働いている",
+                 "Whatever の 1 語で、後ろの the committee decides はコンマの無い挿入である",
+                 "the working hours で、will affect の後ろに置かれた名詞が主語である",
+                 "Whatever the committee decides at tomorrow's meeting の全体で、これが名詞のカタマリとして主語になっている"],
+     "ans": 3,
+     "exp": "Whatever は先行詞を自分の中に含む複合関係代名詞で、Whatever the committee decides at tomorrow's meeting の全体が "
+            "1 つの名詞のカタマリになり、will affect の主語として働く。カタマリの中では Whatever が decides の目的語で、決められる中身そのものを指している。"
+            "the committee を主語と取ると、Whatever が宙に浮き、しかも decides と will affect という 2 つの述語を 1 つの主語が支えることになるので誤り。"
+            "Whatever の 1 語だけを主語と取ると、後ろの部分が挿入になるが、挿入はコンマなどで区切るのが普通で、ここにはその印が無いので誤り。the working hours "
+            "を主語と取ると、動詞の後ろの名詞を主語と読むことになり、動詞の前に主語が無い文になってしまうので誤り。"},
+    {"id": "G7",
+     "syn": "do-emphasis",
+     "en": "The old law does allow street traders to stay in the square until midnight on the night of the winter festival.",
+     "dsl": "{S:The old law} {V:does allow} {O:street traders} [ C: {V':to stay} ( M': in the square ) ( M': until midnight ) ( M': on the night <M'': of the winter festival> ) ] .",
+     "pat": "第5文型（SVOC）",
+     "tag": "強調の do",
+     "notes": [
+               "強調の do は、過去でも疑問でも否定でもない場所に現れ、直後に動詞の原形を連れてくる。",
+               "does allow は 1 つのマスにまとめる。助動詞は動詞と同じマスに入れるのがこの教材の約束である。",
+               "allow は O と to 不定詞の C を取る第5文型。C は動詞を含むので囲んで中まで分解する。",
+               "三単現の s が allow ではなく does に付き、直後が原形になっている点も強調の do の目印である。"],
+     "ja": "その古い法律は、冬の祭りの夜、露天商が広場に真夜中までいることを確かに認めている。",
+     "q": "does allow の does はどのような働きをしているか。最も適切なものを 1 つ選びなさい。",
+     "choices": [
+                 "allow を強め、確かに認めているのだという肯定の意味を押し出している",
+                 "疑問文をつくる助動詞で、後ろの語順が疑問文と同じになっている",
+                 "否定の not が省かれた形で、実際には認めていないことを示している",
+                 "allow の代わりに置かれた代動詞で、前に出た動詞を受け直している"],
+     "ans": 0,
+     "exp": "does allow の does は、後ろの動詞の意味を強める強調の do で、確かに認めているのだ、という肯定の押しを加える。過去でも疑問でも否定でもないのに do "
+            "が現れ、しかも直後に原形の allow が続いたら、この用法を疑う。疑問文をつくる助動詞と取ると、The old law does allow は主語が先に来ており疑問文の語順ではないので誤り。"
+            "not が省かれた形と取ると、否定語は省略できず、補ってしまうと後半の内容と矛盾するので誤り。代動詞と取ると、代動詞はくり返しを避けるために動詞を置かない形で使うのに、"
+            "ここでは allow が実際に書かれているので誤り。"},
+    {"id": "G8",
+     "syn": "insertion",
+     "en": "The autumn storms along this coast, most local fishermen say, cause far less damage than the sudden fogs of early spring.",
+     "dsl": "{S:The autumn storms} <M: along this coast> , ( 挿入: {S':most local fishermen} {V':say} ) , {V:cause} {O:far less damage} ( M: {接:than} {S':the sudden fogs} <M': of early spring> ) .",
+     "pat": "第3文型（SVO）",
+     "tag": "コンマにはさまれた挿入",
+     "notes": [
+               "コンマ 2 つにはさまれた S と V の組は、話し手以外の判断を差し込む挿入で、骨組みには数えない。",
+               "挿入を取り去っても文が成り立つかどうかで見分ける。残った側の動詞が主節の V である。",
+               "The autumn storms は複数なので、対応するのは三単現の形ではない cause である。動詞の形も手がかり。",
+               "along this coast は直前の名詞を後ろから説明する形容詞のカタマリで、主語 1 つ分に含めて読む。"],
+     "ja": "この海岸沿いの秋の嵐は、地元の漁師の多くが言うには、早春の突然の霧よりもはるかに小さな被害しかもたらさない。",
+     "q": "この文の主節の動詞 (V) にあたるのはどれか。最も適切なものを 1 つ選びなさい。",
+     "choices": [
+                 "say で、most local fishermen を主語にとり文全体をまとめている",
+                 "cause で、コンマにはさまれた挿入をまたいで主語を受けている",
+                 "cause と say が対等に並び、2 つの動詞が 1 つの主語を共有している",
+                 "cause は不定詞相当で、実際の主節の動詞はコンマの中の say である"],
+     "ans": 1,
+     "exp": "コンマにはさまれた most local fishermen say は、話し手以外の判断を差し込む挿入で、主節の骨組みからは外れている。この部分を取り去ると、The "
+            "autumn storms along this coast が主語、cause が動詞という骨組みが残る。say を主節の動詞と取ると、コンマの外に残る主語が述語を失い、"
+            "cause の置き場所も無くなるので誤り。cause と say が対等に並ぶと取ると、対等な並列には接続詞が要るうえ、コンマ 2 つで囲む形にもならないので誤り。cause "
+            "を不定詞相当と取ると、to も付いておらず、主語に対する述語がどこにも無い文になるので誤り。"},
+    {"id": "G9",
+     "syn": "superlative-equivalent",
+     "en": "No other dish on the menu requires as much care as the fish stew that the chef serves on Fridays.",
+     "dsl": "{S:No other dish} <M: on the menu> {V:requires} {O:as much care} ( M: {接:as} {S':the fish stew} <M': {O'':that} {S'':the chef} {V'':serves} ( M'': on Fridays ) > ) .",
+     "pat": "第3文型（SVO）",
+     "tag": "最上級と同じ内容を表す形",
+     "notes": [
+               "No other に単数の名詞が続き、後ろで as … as と比べる形は、最上級と同じ内容を表す。",
+               "比べているのは requires の程度で、as much care as の後ろが比較の相手になる。",
+               "as の後ろは the fish stew までで、その後の that 節はどのシチューかを絞る形容詞のカタマリである。",
+               "on the menu は直前の No other dish を後ろから説明し、比べる範囲を示している。"],
+     "ja": "献立のほかのどの料理も、料理長が金曜日に出すその魚のシチューほどの手間を必要としない。",
+     "q": "この文は内容としてどのようなことを述べているか。最も適切なものを 1 つ選びなさい。",
+     "choices": [
+                 "献立の中ではこの魚のシチューがいちばん手間のかかる料理だということ",
+                 "この魚のシチューと同じだけ手間のかかる料理がほかにもあるということ",
+                 "この魚のシチューは金曜日以外には手間をかけずに作られるということ",
+                 "料理長は献立のどの料理にも同じだけの手間をかけているということ"],
+     "ans": 0,
+     "exp": "No other dish on the menu requires as much care as the fish stew は、このシチュー以外のどの料理もこれほどの手間はかからない、"
+            "と述べており、最上級と同じ内容になる。だから、いちばん手間がかかるのはこの魚のシチューだということになる。同じだけ手間のかかる料理がほかにもあると取ると、文頭の No "
+            "other がほかの料理をすべて外しているので誤り。金曜日以外は手間をかけないと取ると、on Fridays は the chef serves にかかり、いつ出すかを言っているだけなので誤り。"
+            "どの料理にも同じだけの手間をかけていると取ると、比較そのものが打ち消され、as much care as という形が意味を失うので誤り。"},
+    {"id": "G10",
+     "syn": "only-inversion",
+     "en": "Only at the very end of the announcement did the station staff mention the change in the evening timetable.",
+     "dsl": "( M: Only at the very end < M': of the announcement > ) {助:did} {S:the station staff} {V:mention} {O:the change} <M: in the evening timetable> .",
+     "pat": "第3文型（SVO）",
+     "tag": "Only … による倒置",
+     "notes": [
+               "Only で始まる副詞句が文頭に出ると、後ろは疑問文と同じ語順になり、助動詞が主語の前に出る。",
+               "did の後ろの名詞が主語。助動詞と動詞が主語をはさんで割れている形だと見抜く。",
+               "倒置なので did の後ろの動詞は原形の mention になる。時制は did が背負っていると読む。",
+               "文頭の Only at the very end … は副詞 Only ＋前置詞句のカタマリで、名詞のカタマリではないから主語になれない。"],
+     "ja": "アナウンスのいちばん最後になってようやく、駅員は夕方の時刻表の変更について口にした。",
+     "q": "did the station staff mention という語順になっているこの文の主語 (S) はどれか。最も適切なものを 1 つ選びなさい。",
+     "choices": [
+                 "Only at the very end で、文頭の副詞句がそのまま主語になっている",
+                 "the announcement で、of の後ろの名詞が主語の働きをしている",
+                 "the station staff で、文頭の Only … に引かれて did の後ろに回っている",
+                 "the change で、mention の後ろに置かれた名詞が主語になっている"],
+     "ans": 2,
+     "exp": "文頭に Only … の限定句が出ると、後ろは疑問文と同じ語順になる。ここでも助動詞の did が主語の前に飛び出しており、did の後ろに置かれた the station "
+            "staff が主節の主語である。did を取り除いて動詞を過去形に戻せば、普通の語順に戻る。Only at the very end を主語と取ると、これは副詞 Only "
+            "＋前置詞句のカタマリで名詞のカタマリではなく主語になれず、did の後ろの名詞が浮いてしまうので誤り。the announcement を主語と取ると、of の後ろの名詞は直前の名詞を説明しているだけで、"
+            "文の主語にはなれないので誤り。the change を主語と取ると、これは mention の目的語で、何を口にしたのかを表す名詞なので誤り。"},
+    {"id": "G11",
+     "syn": "subjunctive-inversion",
+     "en": "Had the diary been found fifty years earlier, the story of the village would have taken a very different shape.",
+     "dsl": "( M: {助:Had} {S':the diary} {V':been found} ( M': fifty years earlier ) ) , {S:the story} <M: of the village> {V:would have taken} {O:a very different shape} .",
+     "pat": "第3文型（SVO）",
+     "tag": "if の省略による倒置",
+     "notes": [
+               "仮定法の if 節は、if を落として助動詞や be 動詞を主語の前に出す倒置の形にできる。",
+               "文頭が Had で、後ろに主語と過去分詞が続いたら、疑問文ではなく仮定法過去完了の倒置を疑う。",
+               "主節が would have taken という形になっていることが、仮定法過去完了だと確かめる裏づけになる。",
+               "of the village は the story の核から外に出し、名詞にかかる形容詞のカタマリとして示す。"],
+     "ja": "その日記が五十年早く見つかっていたら、その村の物語はまったく違った形になっていただろう。",
+     "q": "文頭の Had the diary been found について、省略されている語の説明として最も適切なものを 1 つ選びなさい。",
+     "choices": [
+                 "When が省かれ、日記が見つかった時期を述べる副詞節になっている",
+                 "疑問文の Did が Had に変わったもので、省略されている語は無い",
+                 "Because が省かれ、後半の内容の理由を述べる副詞節になっている",
+                 "If が省かれ、その埋め合わせに Had が主語の前に出た仮定法の形である"],
+     "ans": 3,
+     "exp": "仮定法の条件節では、if を省いて助動詞や be 動詞を主語の前に出すことができる。ここも文頭の if が消え、had が主語の前に回って Had the diary "
+            "been found という形になっている。主節が would have taken という形であることも手がかりになる。When が省かれたと取ると、時を表す節では倒置は起こらず、"
+            "実際に見つかったという事実の話になってしまうので誤り。疑問の Did が変化した形と取ると、コンマの後ろに主節が続いており疑問文になっていないので誤り。Because "
+            "が省かれたと取ると、理由の節も倒置しないうえ、事実を述べる文と読むと主節の形と合わないので誤り。"},
+    {"id": "G12",
+     "syn": "ellipsis-clause",
+     "en": "Although rewritten several times before publication, the short novel still keeps the ending that its author first imagined.",
+     "dsl": "( M: {接:Although} {V':rewritten} ( M': several times ) ( M': before publication ) ) , {S:the short novel} {M:still} {V:keeps} {O:the ending} <M: {O':that} {S':its author} {M':first} {V':imagined} > .",
+     "pat": "第3文型（SVO）",
+     "tag": "副詞節中の S + be の省略",
+     "notes": [
+               "接続詞の直後にいきなり過去分詞が来たら、主語と be 動詞が省かれた副詞節を疑う。",
+               "省けるのは主節の主語と同じ場合だけで、ここでは the short novel を受ける主語と be 動詞が省かれている。",
+               "分詞は素の語で置かず、副詞節の中の動詞として示す。省略があっても節の骨組みは変わらない。",
+               "the ending の後ろの that は関係代名詞で、imagined の目的語が欠けているので目的格だと分かる。"],
+     "ja": "出版の前に何度も書き直されたけれども、その短い小説は作者が最初に思い描いた結末を今も保っている。",
+     "q": "Although rewritten several times before publication では、Although の直後に何が省略されているか。最も適切なものを "
+          "1 つ選びなさい。",
+     "choices": [
+                 "people have にあたる主語と助動詞で、書き直した人のほうが主語になっている",
+                 "it was にあたる主語と be 動詞で、主節の主語と同じものを指している",
+                 "there is にあたる形式的な主語と be 動詞で、存在を表す形になっている",
+                 "to be にあたる不定詞で、これから書き直される予定を表す形になっている"],
+     "ans": 1,
+     "exp": "Although の直後にいきなり過去分詞の rewritten が来ているのは、副詞節の主語と be 動詞が省かれているからである。省かれているのは主節の主語と同じもの、"
+            "つまり the short novel を受ける it was で、これを戻すと普通の副詞節になる。people have が省かれていると取ると、能動で補うなら目的語が要るのに "
+            "rewritten の後ろに名詞が無いので誤り。there is が省かれていると取ると、存在を表す形では rewritten が宙に浮き、書き直されたのが何なのか決まらないので誤り。"
+            "to be が省かれていると取ると、接続詞の後ろに不定詞だけを置く形は無く、これから書き直される予定という読みは、書き直したうえで今の形が残っているという文全体の流れとも合わないので誤り。"},
 ]
 
 # ---------------------------------------------------------------- 第3部 英文解釈
@@ -945,28 +945,28 @@ PART3 = [
                     "they support を the small charities にかけ、「彼らが支援している小さな慈善団体」と二重の修飾を訳し分けられている"]},
         {"id": "D4",
          "syn": "chain-relative",
-         "en": "The step which professional bakers insist is the most important in making good bread is simply to wait until the dough has fully risen.",
-         "dsl": "{S:The step} <M: {S':which} ( 挿入: {S'':professional bakers} {V'':insist} ) {V':is} {C':the most important} ( M': in making good bread ) > {V:is} {M:simply} [C: {V':to wait} ( M': {接:until} {S'':the dough} {助:has} {M'':fully} {V'':risen} ) ] .",
+         "en": "The step which professional bakers insist is the most important in making good bread is simply to wait until the mixture has fully risen.",
+         "dsl": "{S:The step} <M: {S':which} ( 挿入: {S'':professional bakers} {V'':insist} ) {V':is} {C':the most important} ( M': in making good bread ) > {V:is} {M:simply} [C: {V':to wait} ( M': {接:until} {S'':the mixture} {助:has} {M'':fully} {V'':risen} ) ] .",
          "pat": "第2文型（SVC）",
          "tag": "連鎖関係代名詞",
          "notes": [
                    "連鎖関係代名詞。which の直後に professional bakers insist が割り込むので、which を insist の目的語だと取ってしまうのが急所である。",
                    "( 挿入: professional bakers insist ) を括って外すと &lt;M: which is the most important "
                    "…&gt; が残り、{S':which} が {V':is} の主語だと分かる。insist の後ろは接続詞 that が省略された節である。",
-                   "記号は 3 つを使い分ける。主節相当の節がそのまま割り込むもの（professional bakers insist 型）が 挿入、名詞の言い換えが 同格、"
-                   "関係詞節は非制限用法でも形容詞のカタマリなので &lt;M&gt; である。",
+                   "which を insist の目的語だと取ると、後ろの {V':is} の主語が消えて節そのものが立たなくなる。逆に which を is の主語と取れば、"
+                   "insist の目的語は that の省略された節（the step is the most important …）ですでに埋まっている。目的語を二重に必要としないほうが正しい読みである。",
                    "is が 2 つある。&lt; &gt; を外して残る後ろの {V:is} が主節の V で、The step is to wait … が骨組み。ここで第2文型だと確定する。",
                    "文末は {助:has} {M'':fully} {V'':risen} と 3 マスに割る。助動詞と動詞の間に副詞が割り込んだら 助 を独立させ、副詞は "
                    "M にする（規約11）。",
                    "{M:simply} は述語にかかる副詞。[C: to wait until … ] が C で、The step ＝ to wait … という S ＝ "
                    "C の関係が立つ。( M': until … ) は wait にかかる副詞節である。"],
-         "ja": "プロのパン職人がおいしいパンを焼くうえで最も大切だと言い張る工程は、ただ生地が十分にふくらむまで待つということにすぎない。",
+         "ja": "プロのパン職人がおいしいパンを焼くうえで最も大切だと言い張る工程は、ただ混ぜ合わせた材料が十分にふくらむまで待つということにすぎない。",
          "points": [
                     "which … is the most important in making good bread を The step にかけて訳せている",
                     "professional bakers insist を挿入として処理し、which を insist の目的語にしていない",
                     "主節の動詞が後ろの is だと分かり、「工程は〜まで待つことである」と第2文型で訳せている",
                     "simply を「ただ〜だけ／〜にすぎない」と述語にかけて訳せている",
-                    "until the dough has fully risen を wait にかかる副詞節として訳せている"]},
+                    "until the mixture has fully risen を wait にかかる副詞節として訳せている"]},
         {"id": "D5",
          "syn": "nonrestrictive",
          "en": "Over the past decade, many firms have replaced their fixed desks with shared workspaces, which has reduced costs but may also have weakened the sense of belonging among the staff.",
@@ -1021,18 +1021,20 @@ PART3 = [
         {"id": "E1",
          "syn": "not-so-much-as",
          "en": "The value of a university education lies not so much in the facts it provides as in the habits of mind it develops.",
-         "dsl": "{S:The value} <M:of a university education> {V:lies} ( M: not so much in the facts <M': {S'':it} {V'':provides} > ) ( M: {接:as} in the habits <M':of mind <M'': {S'':it} {V'':develops} > > ) .",
+         "dsl": "{S:The value} <M:of a university education> {V:lies} ( M: not so much in the facts <M': {S'':it} {V'':provides} > ) ( M: {接:as} in the habits of mind <M': {S'':it} {V'':develops} > ) .",
          "pat": "第1文型（SV）",
          "tag": "not so much A as B",
          "notes": [
                    "急所は as の正体。「〜として」でも「〜のとき」でもなく、not so much A <b>as</b> B「A というよりむしろ B」の相棒である。lies "
                    "の直後に not so much を見た時点で、対応する as を文の後ろへ先に探しに行く。",
                    "A と B は必ず<b>同じ形</b>で並ぶ。( M: not so much in the facts … ) と ( M: as in the habits "
-                   "… ) はどちらも in で始まる副詞のカタマリで、as は B 側のカタマリの頭に置く。形のそろい方が比較の相手を決める証拠になる。",
+                   "of mind … ) はどちらも in で始まる副詞のカタマリで、as は B 側のカタマリの頭に置く。形のそろい方が比較の相手を決める証拠になる。",
                    "この as は<b>接続詞</b>であって関係代名詞ではない。比較の as 節・than 節では前の節と重なる語句が落ちるのが普通で、ここも as の後ろに節が立たず前置詞句だけが残っている。"
                    "欠けを見て関係詞と読み替えないこと。",
                    "&lt; it provides &gt; と &lt; it develops &gt; は関係代名詞が省略された形容詞のカタマリ。名詞の直後に主語と動詞が続いたら省略を疑う。"
-                   "2 つとも外せば lies not so much in A as in B の骨格が残り、主節は S と V だけの第1文型と決まる。",
+                   "かかる先は直前の名詞のかたまり全体で、it provides は the facts に、it develops は <b>mind ではなく the habits "
+                   "of mind</b> にかかる（習慣を育てるのであって、心を育てるのではない）。2 つとも外せば lies not so much in A as in "
+                   "B の骨格が残り、主節は S と V だけの第1文型と決まる。",
                    "lies と ( not so much in the facts … ) を別のマスにしたのは規約どおり。<b>他動詞の群動詞（動詞＋前置詞）を 1 マスにしてよいのは受動態にできるときだけ</b>で、"
                    "lie in はそれに当たらないから前置詞句は M として外に出す。動詞＋副詞辞（come out / put off）なら 1 マスでよい。記号を分けても "
                    "lie in「〜にある」と、動詞と切り離さずに意味を取る。"],
@@ -1135,7 +1137,8 @@ PART3 = [
          "ja": "長い裁判の間、その証人は警察に話した供述を一度も変えなかった。",
          "points": [
                     "At no point … を「一度も…しなかった」と訳し、否定を主節全体に及ぼせている",
-                    "倒置を戻し、主語が the witness、述語が did change（＝変えた）だと分かる訳になっている",
+                    "倒置を戻して did the witness change → the witness did not change … と読めており、did は倒置で前に出た助動詞・動詞は原形の "
+                    "change・否定は At no point が担う、と分かる訳になっている",
                     "he had given to the police を the account にかかる関係代名詞の省略として訳している",
                     "in the long trial を「長い裁判の間」と At no point に結びつけて訳せている"]},
         {"id": "E6",
@@ -1154,7 +1157,7 @@ PART3 = [
                    "[ ] で囲む。( ) は副詞のカタマリの記号なので強調構文の枠には使わない。",
                    "強調されているのは the quality の 2 語ではなく、of the questions も we ask も抱えた<b>名詞のかたまり全体</b>。"
                    "&lt; we ask &gt; は the quality ではなく the questions にかかるので &lt; &gt; の中へ入れ子にする。"
-                   "that の直後がいきなり determines なのが、強調された部分がもと主語だった証拠。"],
+                   "that のうしろに主語が無く、副詞をはさんですぐ述語動詞 determines が来ているのが、強調された部分がもと主語だった証拠。"],
          "ja": "最終的に、私たちが得る答えの価値を決めるのは、私たちが投げかける問いの質そのものなのである。",
          "points": [
                     "It is … that … を強調構文と見抜き、「〜こそが」「〜なのである」と訳している（「それは〜だ」と形式的に訳していない）",
