@@ -6,14 +6,21 @@
 ヘッドレスChromeでPNG(2x=2160px)に描画する。
 """
 import os
-import subprocess
+import sys
 import html
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import chrome  # noqa: E402  撮り方の正典 (build_vol.py と共有)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out")
 os.makedirs(OUT, exist_ok=True)
 
-CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+# ★Chrome の在り処と撮り方は chrome.py に寄せた。ここに書き戻さないこと
+#   (4:5 の vol シリーズと解像度や下端の扱いが食い違う)。
+#   ★out/ の PNG は Mac のヒラギノで刷ったものが git に入っている。
+#     別環境で刷り直すと字形が変わって 30MB の差分になるので、
+#     刷り直すときは OUT を別の場所に向けること。
 
 CSS = """
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -276,11 +283,7 @@ def main():
         pp = os.path.join(OUT, name + ".png")
         with open(hp, "w", encoding="utf-8") as f:
             f.write(render(s))
-        cmd = [CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-               "--force-device-scale-factor=2", "--window-size=1080,1080",
-               "--default-background-color=00000000",
-               f"--screenshot={pp}", "file://" + hp]
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        chrome.shot(hp, pp, 1080, 1080, 2)
         pngs.append(pp)
         print("rendered", os.path.basename(pp))
     print(f"\nDONE: {len(pngs)} PNGs in {OUT}")

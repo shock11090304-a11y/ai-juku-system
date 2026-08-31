@@ -165,3 +165,24 @@
   ソースを直しただけでは本番は変わらない。`node tools/publish-to-repo.mjs` を必ず回す。
 - 出荷前に Playwright で**実画面のスクリーンショットを撮って自分の目で確認する**。
   検査が緑でも見た目が壊れていることがある。
+
+## Instagram のカルーセル画像 (`scripts/instagram_carousel/`)
+- **作業前に `scripts/instagram_carousel/README.md` を必ず読む**。踏んだ罠を全部書いてある。
+- 2 系統ある。混ぜないこと: **1:1** = `build.py` (`@trillion_eng`・オンライン英語塾) /
+  **4:5 vol シリーズ** = `build_vol.py` (`@trillion_ai`)。読ませる投稿は 4:5 (フィードで縦に一番大きい)。
+- 文言と図版は `vols/<key>.py` に**データとして**置く。意匠の正典は `theme_vol.py`。
+  vol.02 を足すときに `build_vol.py` は触らない。
+- ★**刷った PNG / HTML はリポジトリに残らない** (`.gitignore` の `scripts/**/*.png` `*.html`)。
+  代わりに全スライドを並べた `out_vol/<key>/<key>_sheet.jpg` だけコミットしている。
+  「刷ったのに git status に出ない」で悩まないこと。
+- ★**Linux では和文が中国語フォント (WenQuanYi) に落ちる**。豆腐にならないので見ても気づけない
+  (字形が日本語と 19〜36% 違う)。`fonts.py` が Google Fonts から Noto を取ってきて `@font-face` で埋める。
+- ★**headless Chrome の `--window-size` はブラウザUI分を含む** (Linux で実測 87px・Mac は 0)。
+  そのままだと版面の下端が丸ごと出ない。`chrome.py` が起動時に実測して吸収する。定数に書き戻さないこと。
+- ★**はみ出しは版面の外に出ず、フッターに重なる**。版面の下を覗く検査は常に緑になる。
+  `build_vol.overflow_px()` が「本文が必要とする高さ」を測って刷る前に落とす。
+- 検査: `python3 scripts/run_all_gates.py instagram_carousel`
+  (本体のゲート + **そのゲート自体の変異試験 18 種**)。
+- ★vol.01 の「実際の入試問題」「京都大学 2023年 英語 第2問」「大手予備校の模範解答が割れた」は
+  **このリポジトリでは裏を取っていない**。`vols/vol01.py` の `unverified` に宣言してある
+  (宣言を外すとゲートが落ちる)。出す前に塾長が確認すること。
