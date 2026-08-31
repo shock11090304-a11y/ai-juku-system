@@ -45,15 +45,28 @@ Pillow が要る (版面の較正と刷り上がりの検査に使う)。
 **塾長の Mac の Claude Code か、Mac のターミナル**で回すこと。
 (`class_recordings` の `railway run` と同じ事情。CLAUDE.md にも書いてある)
 
-```bash
+★**手順に `#` のコメントを混ぜないこと**。zsh は対話モードで既定では
+コメントを解釈しないので、`cd ~/repo  # 説明` が「引数が多すぎる」で失敗し、
+以降のコマンドが**全部リポジトリの外で走る**。2026-08-31 に実際にこれで
+「not a git repository」を 3 回出させた。貼り付ける手順は素のコマンドだけにする。
+
+リポジトリの場所を探す (どこに置いたか分からないとき):
+```
+find ~ -maxdepth 5 -type d -name ai-juku-system 2>/dev/null
+```
+
+刷ってデスクトップに置く (そのまま貼れる):
+```
+cd ~/ai-juku-system
 git fetch origin claude/instagram-image-memory-search-37kkan
 git checkout claude/instagram-image-memory-search-37kkan
-python3 -m pip install Pillow                      # 初回だけ
+python3 -m pip install Pillow
 python3 scripts/instagram_carousel/build_vol.py vol01 --desktop
 open ~/Desktop/trillion-ig/vol01
 ```
 
-要るもの: Python 3 / Pillow / Google Chrome (`/Applications/` にあれば自動で見つける)。
+要るもの: Python 3 (3.9 で動く。macOS の Command Line Tools 付属で可) /
+Pillow / Google Chrome (`/Applications/` にあれば自動で見つける)。
 初回だけ Noto フォント (約 30MB) を取りに行く (2 回目以降はキャッシュ)。
 
 ★Mac と Linux で**同じフォント (Noto) を使う**ので版面は一致するが、Chrome の
