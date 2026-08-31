@@ -91,6 +91,7 @@ body {{
 .serif {{ font-family:{SERIF}; }}
 .u {{ border-bottom:7px solid {AMBER}; padding-bottom:1px; }}
 .u.thin {{ border-bottom-width:4px; }}
+.warn {{ width:.92em; height:.92em; vertical-align:-.10em; margin:0 .06em 0 .18em; }}
 .circ {{ position:relative; display:inline-block; padding:0 .30em; color:{AMBER}; font-weight:700; }}
 .circ::before {{ content:""; position:absolute; left:0; right:0; top:-.22em; bottom:-.20em;
   border:4px solid {PINK}; border-radius:50%; transform:rotate(-4deg); }}
@@ -183,6 +184,18 @@ INLINE = {
     "s": "serif", "u": "u", "g": "grad", "o": "circ",
 }
 
+# ★対で閉じない記法。注意マークは**絵文字を使わず線で描く**。
+#   ⚠️ は和文フォントに無い環境で豆腐になる (CLAUDE.md「✓/✗ は文字で置かず線で描く」)。
+STANDALONE = {
+    "!": (f'<svg class="warn" viewBox="0 0 24 22" fill="none" '
+          f'xmlns="http://www.w3.org/2000/svg">'
+          f'<path d="M12 2.6 L22.4 20.2 H1.6 Z" stroke="{AMBER}" stroke-width="2.2" '
+          f'stroke-linejoin="round"/>'
+          f'<path d="M12 8.6 V13.6" stroke="{AMBER}" stroke-width="2.4" '
+          f'stroke-linecap="round"/>'
+          f'<circle cx="12" cy="16.9" r="1.35" fill="{AMBER}"/></svg>'),
+}
+
 
 class MarkupError(ValueError):
     pass
@@ -209,6 +222,8 @@ def check_markup(text):
         #   逆に [zz] のような ASCII の綴り間違いは未知タグとして落とす。
         if not tok or " " in tok or not tok.isascii():
             continue
+        if tok in STANDALONE:
+            continue
         if tok.startswith("/"):
             name = tok[1:]
             if name not in INLINE:
@@ -232,6 +247,8 @@ def inline(text):
     if errs:
         raise MarkupError(f"{text!r}: " + " / ".join(errs))
     out = _html.escape(text, quote=False)
+    for tok, svg in STANDALONE.items():
+        out = out.replace(f"[{tok}]", svg)
     for name, cls in INLINE.items():
         out = out.replace(f"[{name}]", f'<span class="{cls}">').replace(f"[/{name}]", "</span>")
     return out.replace("\n", "<br>")
@@ -240,6 +257,8 @@ def inline(text):
 def plain(text):
     """記法を剥がして素のテキストにする (照合・検査用)。"""
     out = text
+    for tok in STANDALONE:
+        out = out.replace(f"[{tok}]", "")
     for name in INLINE:
         out = out.replace(f"[{name}]", "").replace(f"[/{name}]", "")
     return out

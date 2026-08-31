@@ -64,8 +64,13 @@ jobs:
       #             httpx は TestClient (middleware を実リクエストで検査する方) が使う。
       #             python-multipart は main.py の Form() を使う endpoint (admin_marketing_assets_upload)
       #             が **import 時に** 要求する。無いと RuntimeError で 2 本とも CRASH。
+      # pillow    = instagram_carousel の 2 本が使う。check_carousel_guards.py は
+      #             壊した「刷り上がり」をメモリ上で作って判定を叩くので、
+      #             ★無いと ImportError で CRASH しランナーが赤になる (実測)。
+      #             check_instagram_carousel.py 側は PNG が無ければ触らないので
+      #             CI では落ちないが、入れておくと刷り上がりの判定まで回る。
       - name: 依存 (Python)
-        run: python3 -m pip install --quiet sympy fonttools pymupdf numpy pyyaml fastapi 'pydantic[email]' httpx python-multipart
+        run: python3 -m pip install --quiet sympy fonttools pymupdf numpy pyyaml fastapi 'pydantic[email]' httpx python-multipart pillow
 
       # ★フォントは入れない。字形の照合は `kaki_koushuu_eng/_print_font_cmap.txt`
       #   （**刷るフォント**の cmap をコミットしたもの）を正典にしている。

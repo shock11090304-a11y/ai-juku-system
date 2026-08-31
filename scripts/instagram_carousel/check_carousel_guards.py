@@ -294,8 +294,8 @@ def _fake_sheet(items):
 
 
 def content_cases():
-    """(名前, items, sheet, 鳴るべき文言) を返す。"""
-    from PIL import Image, ImageDraw
+    """(名前, items, sheet, 鳴るべき文言) を返す。Pillow が無ければ ImportError。"""
+    from PIL import Image, ImageDraw  # noqa: F401
     base = _fake_pages()
     sheet = _fake_sheet(base)
 
@@ -358,9 +358,16 @@ def main():
                     f"変異「{name}」({v['key']}): 鳴るべき見張り {expect!r} が鳴らなかった "
                     f"(出たのは {got[:2] or 'なし'})")
 
-    # 刷り上がりの中身
+    # 刷り上がりの中身。★Pillow が無いと画像を作れないので回せない。
+    #   落ちるのではなく「回していない」と声に出す (黙って減らすと全部通ったように見える)。
     n_content = 0
-    for name, items, sheet, expect in content_cases():
+    try:
+        cases = list(content_cases())
+    except ImportError:
+        cases = []
+        print("  ★Pillow が無いので、刷り上がりの判定 (本文帯・取り違え・一覧との照合) は"
+              "1 件も回していない。python3 -m pip install Pillow")
+    for name, items, sheet, expect in cases:
         n_content += 1
         got = G.judge_content("fake", items, sheet)
         if expect is None:
