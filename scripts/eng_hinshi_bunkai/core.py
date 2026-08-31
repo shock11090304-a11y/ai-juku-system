@@ -43,10 +43,13 @@ CHROME = _first_path("CHROME_PATH", [
     "/opt/pw-browsers/chromium-*/chrome-linux/chrome",
     "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",
 ])
+# ★刻印用は **TrueType** を選ぶ。CFF の .ttc（Noto CJK）は subset_fonts() が
+#   「Reserved charstring byte」で失敗し、フォントが丸ごと埋め込まれて PDF が 15MB になる。
 FONT_PATH = _first_path("PDF_STAMP_FONT", [
     "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+    "/usr/share/fonts/truetype/fonts-japanese-gothic.ttf",
+    "/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf",
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-    "/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc",
 ])
 
 esc = lambda s: html.escape(str(s), quote=False)
