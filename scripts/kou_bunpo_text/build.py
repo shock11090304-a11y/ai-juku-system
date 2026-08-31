@@ -37,11 +37,38 @@
    "choices":[…], "ans":<0起点>, "ja":"和訳", "exp":"解説", "cols":1|2|4|5}
   ___（アンダースコア3つ）が空所（　）になる。
 """
-import os, sys, re, html, shutil, subprocess
+import os, sys, re, html, glob, shutil, subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DESKTOP = os.path.expanduser("~/Desktop")
-CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
+
+def _first_path(cands):
+    for c in cands:
+        if not c:
+            continue
+        for p in (glob.glob(c) if ("*" in c) else [c]):
+            if os.path.exists(p):
+                return p
+    return None
+
+
+# ★刷るものは塾長の Mac（Chrome ＋ Hiragino）で焼くこと。ここでの探索は
+#   「Mac のものがあればそれを最優先し、無い環境でも一応焼ける」ための代替でしかない。
+#   フォントが違えば字幅が変わり、行送り・ページ高・はみ出し(OVERFLOW)の判定まで変わる。
+#   CI やクラウドで焼いた PDF を「紙面を検査した」と言ってはいけない。
+CHROME = _first_path([
+    os.environ.get("KOU_BUNPO_CHROME"),
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "/opt/pw-browsers/chromium-*/chrome-linux/chrome",      # Playwright 同梱（クラウド環境）
+    "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",
+]) or shutil.which("google-chrome") or shutil.which("chromium") or shutil.which("chrome")
+
+# 出力先。Desktop が無い環境（Linux・CI）ではリポジトリ内へ落とす。
+DESKTOP = (os.environ.get("KOU_BUNPO_OUT")
+           or (os.path.expanduser("~/Desktop")
+               if os.path.isdir(os.path.expanduser("~/Desktop"))
+               else os.path.join(HERE, "_out")))
 
 PAREN = "⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇"
 
@@ -98,11 +125,15 @@ CSS = r"""
 html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 body {
   margin: 0; color: #000;
-  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  /* ★Hiragino が本番。以降は Hiragino の無い環境（Linux・CI）用の代替で、
+     字幅が違うので組版は本番と一致しない。刷るものは必ず Mac で焼くこと。 */
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans CJK JP",
+               "IPAGothic", sans-serif;
   font-size: 10.5pt; line-height: 1.7;
   font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1, "palt" 0;
 }
-.en, .q .stem, .q .lines, .ch { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; }
+.en, .q .stem, .q .lines, .ch { font-family: "Helvetica Neue", Arial, "Liberation Sans",
+                                "Hiragino Kaku Gothic ProN", "Noto Sans CJK JP", sans-serif; }
 
 .page {
   position: relative; width: 182mm; height: 257mm;
@@ -570,19 +601,38 @@ def to_pdf(html_text, outdir, stem):
     pp = os.path.join(outdir, stem + ".pdf")
     with open(hp, "w", encoding="utf-8") as f:
         f.write(html_text)
-    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
-                    "--virtual-time-budget=20000",
-                    "--print-to-pdf=" + pp, "file://" + hp],
-                   check=True, capture_output=True)
+    if not CHROME:
+        raise RuntimeError(
+            "PDF を焼くブラウザが見つからない。Chrome を入れるか "
+            "KOU_BUNPO_CHROME=/path/to/chrome を指定すること。")
+    cmd = [CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
+           "--virtual-time-budget=20000", "--print-to-pdf=" + pp, "file://" + hp]
+    if os.name == "posix" and sys.platform != "darwin" and os.geteuid() == 0:
+        cmd.insert(1, "--no-sandbox")      # Linux の root では sandbox が起動できない
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    if r.returncode or not os.path.exists(pp):
+        # ★裸の CalledProcessError だと原因が出ない。ブラウザの言い分をそのまま見せる。
+        raise RuntimeError("PDF 生成に失敗 (%s)\n%s" % (CHROME, (r.stderr or "")[-800:]))
     return pp
 
 
-FONT_PATH = "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
+# ノンブルを fitz で刻むためのフォント。「— 1 —」の全角ダッシュが出る和文フォントを選ぶ。
+FONT_PATH = _first_path([
+    os.environ.get("KOU_BUNPO_FONT"),
+    "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJKjp-Regular.otf",
+    "/usr/share/fonts/truetype/fonts-japanese-gothic.ttf",
+])
 
 
 def stamp_page_numbers(pdf_path, skip=1):
     """ノンブルは fitz で刻む（CSS カウンタと .page 分割の噛み合わせ事故を避ける）。
     skip 枚（表紙）を飛ばし、その次を 1 とする。"""
+    if not FONT_PATH:
+        raise RuntimeError(
+            "ノンブルを刻むフォントが見つからない。和文フォントを入れるか "
+            "KOU_BUNPO_FONT=/path/to/font.ttf を指定すること。")
     import fitz
     doc = fitz.open(pdf_path)
     for i, page in enumerate(doc):
@@ -659,6 +709,7 @@ def build_volume(mod, keep=False):
     stamp_page_numbers(k, skip=1)
 
     dest = []
+    os.makedirs(DESKTOP, exist_ok=True)      # Desktop の無い環境では _out を作る
     for src, name in ((m, meta["file_mondai"]), (k, meta["file_kaitou"])):
         d = os.path.join(DESKTOP, name)
         shutil.copyfile(src, d)
