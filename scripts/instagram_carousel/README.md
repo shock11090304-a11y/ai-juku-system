@@ -21,7 +21,19 @@ python3 scripts/instagram_carousel/build_vol.py --html-only # Chrome 無しで H
 python3 scripts/instagram_carousel/fonts.py --fetch         # 和文フォントを取り直す
 python3 scripts/run_all_gates.py instagram_carousel         # 検査 (2 本)
 ```
-オプション: `--no-fit` (はみ出しの実測を省く・**納品には使わない**) /
+### 刷ったものをデスクトップに置く
+```bash
+python3 scripts/instagram_carousel/build_vol.py vol01 --desktop
+# → ~/Desktop/trillion-ig/vol01/ に PNG 6枚 + 投稿文 + 一覧が揃う
+python3 scripts/instagram_carousel/build_vol.py vol01 --out ~/Downloads/ig
+```
+★**刷る場所そのものは `out_vol/` から動かさない**。配布先へ直接刷るようにすると、
+検査 (刷り上がりと一覧 JPG の突き合わせ) が見に行く場所を見失う。
+`--desktop` / `--out` は**出来上がったものを配る**だけのステップ。
+`--desktop` はデスクトップのある端末 (塾長の Mac) 用で、クラウドや CI では落ちる。
+1:1 の `build.py` にこの口は無い (出力がコミット済みで、刷り直す運用にしていないため)。
+
+その他のオプション: `--no-fit` (はみ出しの実測を省く・**納品には使わない**) /
 `--no-font-fetch` (フォントを取りに行かない・オフライン用)。
 Pillow が要る (版面の較正と刷り上がりの検査に使う)。
 

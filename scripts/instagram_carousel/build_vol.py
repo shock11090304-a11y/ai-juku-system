@@ -5,6 +5,8 @@
   python3 scripts/instagram_carousel/build_vol.py             # 全 vol を刷る
   python3 scripts/instagram_carousel/build_vol.py vol01       # 1 つだけ
   python3 scripts/instagram_carousel/build_vol.py --html-only # HTML だけ (Chrome 不要)
+  ... --desktop        刷ったものを ~/Desktop/trillion-ig/<key>/ にも置く
+  ... --out DIR        刷ったものを DIR/<key>/ にも置く
   ... --no-fit         はみ出しの実測を省く (速いが納品には使わない)
   ... --no-font-fetch  和文フォントを取りに行かない (オフライン用)
 
@@ -513,6 +515,37 @@ def write_caption(vol, out_dir):
     return out
 
 
+DESKTOP_SUBDIR = "trillion-ig"
+
+
+def deliver(vol, src_dir, dest_root):
+    """刷り上がりを配布先へコピーする。
+
+    ★刷る場所そのものは out_vol/ から動かさない。配布先へ「刷る」ようにすると
+      検査 (刷り上がりと一覧 JPG の突き合わせ) が見に行く場所を見失う。
+      あくまで**出来上がったものを配る**ステップにしてある。
+    """
+    import shutil
+    dest = os.path.join(os.path.expanduser(dest_root), vol["key"])
+    os.makedirs(dest, exist_ok=True)
+    copied = []
+    for name in sorted(os.listdir(src_dir)):
+        if name.lower().endswith((".png", ".jpg", ".txt")):
+            shutil.copy2(os.path.join(src_dir, name), os.path.join(dest, name))
+            copied.append(name)
+    return dest, copied
+
+
+def desktop_root():
+    """~/Desktop を返す。無ければ何が起きているか分かる形で落とす。"""
+    d = os.path.join(os.path.expanduser("~"), "Desktop")
+    if not os.path.isdir(d):
+        raise SystemExit(
+            f"✗ {d} が無い。--desktop はデスクトップのある端末 (塾長の Mac) 用。\n"
+            f"  クラウドや CI では使えないので --out DIR で場所を指定すること")
+    return os.path.join(d, DESKTOP_SUBDIR)
+
+
 def contact_sheet(vol, pngs, out_dir):
     """全スライドを 1 枚に並べた JPG を作る。
 
@@ -569,6 +602,16 @@ def load_vols(keys=None):
 def main(argv):
     html_only = "--html-only" in argv
     fit = "--no-fit" not in argv
+
+    dest_root = None
+    if "--desktop" in argv:
+        dest_root = desktop_root()
+    if "--out" in argv:
+        i = argv.index("--out")
+        if i + 1 >= len(argv):
+            raise SystemExit("✗ --out の後ろに置き場所を書くこと")
+        dest_root = argv[i + 1]
+        argv = argv[:i] + argv[i + 2:]
     keys = [a for a in argv if not a.startswith("-")]
 
     global _FONT_CSS
@@ -632,6 +675,9 @@ def main(argv):
             if sheet:
                 print(f"  一覧: {os.path.basename(sheet)}")
         print(f"✓ {vol['key']}: {len(made)} 枚 → {d}")
+        if dest_root:
+            dest, copied = deliver(vol, d, dest_root)
+            print(f"  配布: {len(copied)} 個 → {dest}")
 
 
 if __name__ == "__main__":
