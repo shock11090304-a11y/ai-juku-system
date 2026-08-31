@@ -118,6 +118,7 @@ def check_item(it, mode, where, need_points=False):
 def main():
     ids, ens = {}, {}
     tag_use, syn_use, subj_use = {}, {}, {}
+    syn_by_pool = {}
     all_items = []   # (表示名, item, 割り当て表のキー)
 
     # ---------------- 巻頭（記号ルールの見本も同じゲートを通す） ----------------
@@ -252,6 +253,7 @@ def main():
                 err(w, f'syn {it["syn"]!r} は割り当て表 {pool} のプールに無い'
                        f'（このグループで使えるのは {SYN_POOL[pool]}）')
             syn_use.setdefault(it["syn"], []).append(w)
+            syn_by_pool.setdefault(pool, set()).add(it["syn"])
         for lb, txt, _u in top_segments(parse(it["dsl"])):
             if lb in ("S", "真S"):
                 subj_use.setdefault(txt.lower().rstrip(" .,"), []).append(w)
@@ -268,11 +270,14 @@ def main():
             err("全体", f"同じ構文 {syn!r}（{SYN_VOCAB.get(syn, '?')}）を "
                         f"{len(uses)} 回出している（上限 {cap} 回）: {uses}")
     # 割り当て表の消化率。★「入れたつもりで入っていない構文」を機械で見つける。
+    # ★プールごとに見る。全体で使われているかだけを見ると、別のグループで使われている構文を
+    #   自分のプールに書き足しても素通りする（変異試験で実測した）。
     for pool_key, pool in sorted(SYN_POOL.items()):
-        missing = [x for x in pool if x not in syn_use]
+        used = syn_by_pool.get(pool_key, set())
+        missing = [x for x in pool if x not in used]
         if missing:
-            err("全体", f"割り当て表 {pool_key} の構文が出題されていない: "
-                        f"{[f'{m}（{SYN_VOCAB[m]}）' for m in missing]}")
+            err("全体", f"割り当て表 {pool_key} の構文がこのグループで出題されていない: "
+                        f"{[f'{m}（{SYN_VOCAB.get(m, m)}）' for m in missing]}")
     # ★同じ名詞句を主語にした問題が並ぶと、別の構文でも「同じ問題」に見える。
     for subj, uses in sorted(subj_use.items()):
         if len(uses) > 1 and len(subj) >= 8:
@@ -281,6 +286,18 @@ def main():
     scan_glyphs(STEPS, "STEPS", "巻頭")
     scan_glyphs(RULE_EXAMPLES, "RULE_EXAMPLES", "巻頭")
     scan_glyphs(NOTATION, "NOTATION", "巻頭")
+
+    # ★巻頭の記号ルール・表記規約・見本に出す例文が、本編の問題の英文と重なっていないか。
+    #   重なると「その問題の記号の付け方」を問題編の冒頭で先に見せることになる。
+    #   （実測: 表記規約の例 "a growing number ＜M: of manufacturers＞" が第1部Ｂの答えそのものだった）
+    head_ex = [r[2] for r in NOTATION] + [r["ex"] for r in RULES]
+    head_ex += [plain_text(parse(e["dsl"])) for e in RULE_EXAMPLES]
+    for ex in head_ex:
+        for run in re.findall(r"[A-Za-z][A-Za-z'’ ]{11,}", re.sub(r"<[^>]+>", " ", ex)):
+            run = run.strip()
+            for w, it, _p in all_items:
+                if run.lower() in it["en"].lower():
+                    err("巻頭", f"例文の {run!r} が {w} の英文と重なっている（答えの先出し）")
 
     # ---------------- 刷られる紙に答えが出ていないか ----------------
     META["_n1"], META["_n2"], META["_n3"] = n1, len(PART2), n3

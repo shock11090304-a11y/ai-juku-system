@@ -50,6 +50,24 @@ BRACKET_LABELS = {
 BRACKET_JA = {"(": "( ) 副詞のカタマリ", "[": "[ ] 名詞のカタマリ", "<": "&lt; &gt; 形容詞のカタマリ"}
 MAX_DASH = 2
 PARTICIPLE = re.compile(r"^[A-Za-z]+(?:ed|ing)$")
+# 規約15: to の次がこれらなら前置詞の to（不定詞ではない）
+DETERMINER = {"the", "a", "an", "this", "that", "these", "those", "his", "her", "their",
+              "its", "our", "my", "your", "some", "any", "all", "most", "many", "much",
+              "several", "each", "every", "one", "two", "three", "both", "other", "another",
+              "such", "no", "him", "them", "us", "me", "you", "it", "which", "whom", "what"}
+# 規約17: 英綴り -> 米綴り
+BRITISH = {
+    "colour": "color", "colours": "colors", "coloured": "colored",
+    "metre": "meter", "metres": "meters", "centre": "center", "centres": "centers",
+    "harbour": "harbor", "harbours": "harbors", "neighbour": "neighbor",
+    "neighbours": "neighbors", "behaviour": "behavior", "favourite": "favorite",
+    "labour": "labor", "labelled": "labeled", "travelled": "traveled",
+    "cancelled": "canceled", "practise": "practice", "practised": "practiced",
+    "organisation": "organization", "organisations": "organizations",
+    "realise": "realize", "realised": "realized", "recognise": "recognize",
+    "theatre": "theater", "theatres": "theaters", "programme": "programme",
+    "defence": "defense", "offence": "offense", "grey": "gray", "analyse": "analyze",
+}
 # 規約11: V のマスの先頭に立てる助動詞・完了・受動の be
 AUX_HEAD = {"be", "am", "is", "are", "was", "were", "been", "being", "has", "have", "had",
             "can", "could", "will", "would", "shall", "should", "may", "might", "must",
@@ -186,10 +204,17 @@ def notation_errors(root):
                 if head.kind == "plain":
                     w = head.text.split()[0]
                     # 規約4 / 規約14: 分詞は素の語で置かない（後置修飾も分詞構文も）
+                    words = head.text.split()
                     if PARTICIPLE.match(w):
                         num = "規約4" if k.text == "<" else "規約14"
                         out.append(f"{num}: 分詞 {w!r} が素の語のまま。"
                                    f"{{V{chr(39) * _want_dash(d + 1)}:{w}}} と示す: {what}")
+                    elif (w.lower() == "to" and len(words) > 1
+                          and words[1].lower() not in DETERMINER
+                          and not words[1][:1].isupper()):
+                        out.append(f"規約15: to 不定詞が素の語のまま。"
+                                   f"{{V{chr(39) * _want_dash(d + 1)}:to {words[1]}}} と示して"
+                                   f"中まで分解する: {what}")
             if k.text == "<" and k.kids:
                 # 規約5: < > の中の that は関係詞
                 for c in k.kids:
@@ -197,6 +222,13 @@ def notation_errors(root):
                         out.append("規約5: 形容詞のカタマリの中の that を {接:that} と書いている。"
                                    "関係詞なら {S':that} / {O':that}、同格なら [同格: …] にする: "
                                    f"{what}")
+            # 規約16: 同じ深さに < > を 2 つ並べない（かかり先が図から読めなくなる）
+            nxt = kids[i + 1] if i + 1 < len(kids) else None
+            if (k.text == "<" and nxt is not None and nxt.kind == "group"
+                    and nxt.text == "<"):
+                out.append("規約16: 同じ深さに &lt; &gt; が 2 つ並んでいる。"
+                           "2 つ目が 1 つ目の中の名詞にかかるなら入れ子にする: "
+                           f"{what} / {plain_text(nxt)[:28]}")
             walk(k, d + 1)
 
     walk(root, 0)
@@ -234,6 +266,9 @@ def validate_item(it):
             errs.append(f"en に記号 {bad!r} が混ざっている（DSL をそのまま貼っていないか）")
             break
     errs += depth_errors(root)
+    for w in re.findall(r"[A-Za-z]+", en):
+        if w.lower() in BRITISH and BRITISH[w.lower()] != w.lower():
+            errs.append(f"規約17: 英綴り {w!r} が混ざっている（{BRITISH[w.lower()]} に統一する）")
 
     segs = top_segments(root)
     info["segs"] = segs
