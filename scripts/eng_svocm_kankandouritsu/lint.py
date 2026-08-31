@@ -98,9 +98,17 @@ ENT_OK = re.compile(r"&(?:lt|gt|amp|nbsp|quot|#\d+);")
 PAT_NAME = re.compile(r"第[1-5]文型")
 
 
+# ★実体参照で書かれた強調タグ。&lt;b&gt; と書くと、紙には <b> という**文字**が出る。
+#   markup_errors は &lt; を「正しいエスケープ」として通すので、これは別に見ないと素通りする。
+ESCAPED_TAG = re.compile(r"&lt;/?(?:b|u|i|br|span)&gt;")
+
+
 def markup_errors(s):
-    """生タグ・未エスケープの & ・タグの開閉不一致を列挙する。"""
+    """生タグ・未エスケープの & ・タグの開閉不一致・エスケープしすぎた強調タグを列挙する。"""
     out = []
+    for m in ESCAPED_TAG.finditer(s):
+        out.append(f"強調タグをエスケープしている（紙にタグが文字で出る）: {m.group(0)}"
+                   "　強調は生の <b>…</b> で書く")
     for m in re.finditer(r"<", s):
         if not TAG_OK.match(s, m.start()):
             out.append(f"未エスケープの '<'（&lt; と書く）: …{s[m.start():m.start() + 30]}…")

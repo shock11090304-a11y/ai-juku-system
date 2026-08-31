@@ -62,6 +62,19 @@ def err(where, msg):
     ERR.append(f"[NG] {where}: {msg}")
 
 
+def stem(w):
+    return re.sub(r"[^a-z]", "", w.lower())[:4]
+
+
+def phrase_in(toks, sentence):
+    """語形変化を許して、語句がその英文に連続して現れるか。"""
+    want = [stem(t) for t in toks if stem(t)]
+    got = [stem(t) for t in re.findall(r"[A-Za-z'’-]+", sentence)]
+    if not want or len(want) > len(got):
+        return False
+    return any(got[i:i + len(want)] == want for i in range(len(got) - len(want) + 1))
+
+
 def scan_glyphs(obj, path, where):
     if isinstance(obj, str):
         for ch in obj:
@@ -294,10 +307,14 @@ def main():
     head_ex += [plain_text(parse(e["dsl"])) for e in RULE_EXAMPLES]
     for ex in head_ex:
         for run in re.findall(r"[A-Za-z][A-Za-z'’ ]{11,}", re.sub(r"<[^>]+>", " ", ex)):
-            run = run.strip()
+            toks = run.split()
+            if len(toks) < 2:
+                continue
             for w, it, _p in all_items:
-                if run.lower() in it["en"].lower():
-                    err("巻頭", f"例文の {run!r} が {w} の英文と重なっている（答えの先出し）")
+                # ★語形変化まで見る。文字列そのままで照合すると、巻頭の take advantage of が
+                #   本文の taken advantage of と一致せず素通りする（実測）。
+                if phrase_in(toks, it["en"]):
+                    err("巻頭", f"例文の {run.strip()!r} が {w} の英文と重なっている（答えの先出し）")
 
     # ---------------- 刷られる紙に答えが出ていないか ----------------
     META["_n1"], META["_n2"], META["_n3"] = n1, len(PART2), n3

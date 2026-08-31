@@ -13,7 +13,7 @@ import build
 import check as K
 import content as C
 
-PARTS = ("PART1", "PART2", "PART3")
+PARTS = ("PART1", "PART2", "PART3", "NOTATION")
 DICTS = ("SYN_POOL",)
 
 
@@ -162,6 +162,23 @@ def _():
     b["en"] = None
     from layout import parse, plain_text
     b["en"] = plain_text(parse(b["dsl"]))
+
+
+@case("強調タグをエスケープしている（紙に <b> が文字で出る）")
+def _():
+    first1()["notes"][0] = "&lt;b&gt;急所&lt;/b&gt;は S と V の間である。" + first1()["notes"][0]
+
+
+@case("巻頭の例文が、語形変化した形で本編に出ている（答えの先出し）")
+def _():
+    # ★文字列そのままの照合だと take advantage of と taken advantage of が一致せず素通りする。
+    it = first1()
+    C.NOTATION.append(("見本の例外", "この行は検査用である。",
+                       "takes advantage of＝V"))
+    it["dsl"] = "{S:The club} {V:took advantage of} {O:the empty hall} ."
+    it["en"] = "The club took advantage of the empty hall."
+    it["pat"] = "第3文型（SVO）"
+    return lambda: C.NOTATION.pop()
 
 
 @case("絵文字の混入（PDF で豆腐になる）")
