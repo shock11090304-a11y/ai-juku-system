@@ -33,7 +33,7 @@ Pillow が要る (版面の較正と刷り上がりの検査に使う)。
 | `fonts.py` | 和文フォントの調達 (Google Fonts → `~/.cache/trillion-ig-fonts`) |
 | `theme_vol.py` | **4:5 の意匠の正典**。色・寸法・CSS・インライン記法 |
 | `build_vol.py` | 部品の組み立てと `verify()` (刷る前の検査)、はみ出しの実測 |
-| `vols/vol01.py` | vol.01 の**文言と図版だけ**。意匠は書かない |
+| `vols/vol01.py` | vol.01 の**文言・図版・投稿文だけ**。意匠は書かない |
 | `check_instagram_carousel.py` | ゲート。`run_all_gates.py` が拾う |
 | `check_carousel_guards.py` | 上のゲートの**変異試験**。18 種の壊し方を仕込んで全部捕まるか見る |
 
@@ -43,7 +43,13 @@ Pillow が要る (版面の較正と刷り上がりの検査に使う)。
 2. `passage` に正典の英文を 1 本入れる。スライドに出す英文はここに実在しないと `verify` が落とす。
 3. 説明用の例文 (本文の引用ではないもの) は `en_examples` に宣言する。
 4. 裏を取っていない主張 (出典表記など) は `unverified` に宣言する。宣言漏れも消し忘れも落ちる。
-5. `python3 build_vol.py vol02` → `cd . && python3 check_instagram_carousel.py`。
+5. `caption` に投稿文 (`full` / `short` / `hashtags`) を書く。
+   **投稿文もスライドと同じ vol に置く。** 別ファイルに分けると、画像だけ直して
+   投稿文が古いまま、という事故が起きる。上限 2,200字 / ハッシュタグ 30個 と、
+   出典の断言・引用英文の実在は画像と同じ規律でゲートが見る。
+6. `python3 build_vol.py vol02` → `python3 scripts/run_all_gates.py instagram_carousel`。
+   投稿文は `out_vol/<key>/<key>_caption.txt` に貼り付け用として書き出される
+   (正典は .py 側。テキストは `.gitignore` 済みの生成物)。
 
 ### インライン記法
 `[a]琥珀[/a] [p]ピンク[/p] [w]白太[/w] [u]琥珀下線[/u] [m]薄灰[/m] [s]セリフ[/s] [o]丸囲み[/o]`
@@ -120,7 +126,7 @@ Linux の headless Chromium 141 では、指定した高さより **87 CSS px �
 
 | 層 | 何をするか | どこ |
 |---|---|---|
-| ① 出力物どうしの照合 | 組んだ HTML から**位置**(点灯ドットの位置・ページ番号の表示)を読み戻してデータと突き合わせる。刷り上がり PNG を**コミットしてある一覧 JPG と画素で照合**する。引用した英文が正典 `passage` に「その並びで」実在するか全数照合 | `check_instagram_carousel.py` |
+| ① 出力物どうしの照合 | 投稿文もスライドと同じ検査にかける (英文の実在・出典の宣言・記法の消し忘れ・Instagram の上限)。組んだ HTML から**位置**(点灯ドットの位置・ページ番号の表示)を読み戻してデータと突き合わせる。刷り上がり PNG を**コミットしてある一覧 JPG と画素で照合**する。引用した英文が正典 `passage` に「その並びで」実在するか全数照合 | `check_instagram_carousel.py` |
 | ② 機械検査 | 刷る前の `verify()` (記法・番号・図版の禁則・未検証の主張の宣言) + はみ出しの縦横実測 + ゲート + **ゲート自体の変異試験 40 件** | `build_vol.py` / `check_*.py` |
 | ③ 人手の再点検 | 訳の一意性・日本語の自然さ・図の読みやすさ。**機械では見えない**。vol データの `editorial_notes` に書いておくとゲートが毎回印字する | 人 |
 

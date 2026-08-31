@@ -46,6 +46,7 @@ def _run(vol):
         with contextlib.redirect_stdout(io.StringIO()), \
                 contextlib.redirect_stderr(io.StringIO()):
             G.check_vol(vol, bad)
+            G.check_caption(vol, bad)
     except Exception:  # noqa: BLE001  例外は「捕まえた」に数えない
         pass
     return bad
@@ -131,6 +132,39 @@ def m_onload_in_fig(v):
 
 def m_unknown_component(v):
     _last(v)["blocks"].append(BV.B("nonexistent_component", "x"))
+
+
+# ── 投稿文を壊す変異 ──────────────────────────────────────────────────
+def m_caption_missing(v):
+    v.pop("caption", None)
+
+
+def m_caption_too_long(v):
+    v["caption"]["full"] = v["caption"]["full"] + "あ" * 2200
+
+
+def m_caption_too_many_tags(v):
+    v["caption"]["hashtags"] = [f"#t{i}" for i in range(31)]
+
+
+def m_caption_dup_tags(v):
+    v["caption"]["hashtags"] = list(v["caption"]["hashtags"]) + [v["caption"]["hashtags"][0]]
+
+
+def m_caption_bad_tag(v):
+    v["caption"]["hashtags"] = list(v["caption"]["hashtags"]) + ["大学受験 と 英語"]
+
+
+def m_caption_markup_left(v):
+    v["caption"]["short"] = "[a]消し忘れた記法[/a]\n" + v["caption"]["short"]
+
+
+def m_caption_fake_english(v):
+    v["caption"]["short"] += "\nRemember: never trust a bare as."
+
+
+def m_caption_undeclared_claim(v):
+    v["caption"]["short"] += "\n出典: 東京大学 2024年 英語 第1問"
 
 
 # ── 描画側を壊す変異 ──────────────────────────────────────────────────
@@ -219,6 +253,14 @@ MUTATIONS = [
     ("クラス名の衝突 (.opts)", _collide("opts"), "中身の並びが壊れる"),
     ("クラス名の衝突 (.answer)", _collide("answer"), "中身の並びが壊れる"),
     ("クラス名の衝突 (指定の混ざり)", _collide("gloss"), "意図しない指定の混ざり"),
+    ("投稿文が無い", m_caption_missing, "caption が無い"),
+    ("投稿文が上限を超える", m_caption_too_long, "上限 2200 字を超えている"),
+    ("ハッシュタグが 31 個", m_caption_too_many_tags, "上限は 30"),
+    ("ハッシュタグの重複", m_caption_dup_tags, "重複している"),
+    ("ハッシュタグの形が不正", m_caption_bad_tag, "形が不正"),
+    ("投稿文に記法の消し忘れ", m_caption_markup_left, "記法 [a] が残っている"),
+    ("投稿文に本文に無い英文", m_caption_fake_english, "本文にも例文にも無い英文"),
+    ("投稿文に宣言なしの出典", m_caption_undeclared_claim, "未検証の主張が unverified に"),
 ]
 
 

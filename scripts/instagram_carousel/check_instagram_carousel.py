@@ -73,7 +73,12 @@ _EN_SEP = re.compile(r"[\-–—/・\u3000\n\t]+")
 _EN_RUN = re.compile(r"[A-Za-z][A-Za-z0-9'’]*(?:[ ,:;.]+[A-Za-z][A-Za-z0-9'’]*)+")
 
 
-def _en_runs(text):
+def _en_runs(text, vol=None):
+    """英文の並びを拾う。自分のハンドルとドメインは「引用した英文」ではないので外す。"""
+    if vol:
+        for own in (vol.get("site"), vol.get("handle"), vol.get("brand")):
+            if own:
+                text = text.replace(own, " ")
     return _EN_RUN.findall(_EN_SEP.sub(" ", text))
 
 # 和文フォントとして数える族 (スタックの先頭がこれでなければ中国語字形に落ちる)
@@ -114,7 +119,7 @@ def check_vol(vol, bad):
             if b["kind"] == "fig":
                 texts += re.findall(r"<text[^>]*>([^<]*)</text>", b["value"] or "")
         for t in texts:
-            for run in _en_runs(t):
+            for run in _en_runs(t, vol):
                 if not _en_ok(run, passage, examples):
                     ng(f"p{n}: 本文にも例文にも無い英文 → {run!r} "
                        f"(passage か en_examples に入れること)")
@@ -165,6 +170,62 @@ def check_vol(vol, bad):
                     elif a in CSS_STANDALONE and b in CSS_STANDALONE:
                         ng(f"p{n}: .{a} と .{b} が同居しているが CSS に "
                            f".{a}.{b} が無い (意図しない指定の混ざり)")
+
+
+IG_CAPTION_MAX = 2200   # Instagram の本文上限 (ハッシュタグ込み)
+IG_HASHTAG_MAX = 30
+
+
+def check_caption(vol, bad):
+    """投稿文を見る。Instagram の制約と、本文と同じ「実在・宣言」の規律をかける。
+
+    ★画像だけ検査して投稿文を野放しにすると、いちばん人目に触れる文章が
+      無検査になる。出典の断言も英文の引用も、スライドと同じ規律で見る。
+    """
+    key = vol["key"]
+    cap = vol.get("caption")
+    if not cap:
+        bad.append(f"{key}: caption が無い (投稿文もデータとして持つこと)")
+        return
+    tags = cap.get("hashtags") or []
+    tag_line = " ".join(tags)
+
+    if len(tags) > IG_HASHTAG_MAX:
+        bad.append(f"{key}: ハッシュタグが {len(tags)} 個 — Instagram の上限は {IG_HASHTAG_MAX}")
+    if len(set(tags)) != len(tags):
+        dup = sorted({t for t in tags if tags.count(t) > 1})
+        bad.append(f"{key}: ハッシュタグが重複している → {dup}")
+    for t in tags:
+        if not t.startswith("#") or len(t) < 2 or any(c.isspace() for c in t):
+            bad.append(f"{key}: ハッシュタグの形が不正 → {t!r}")
+
+    passage = BV._norm_en(vol["passage"]).lower()
+    examples = [BV._norm_en(x).lower() for x in vol.get("en_examples", [])]
+    declared = [x for x in vol.get("unverified", []) if x]
+
+    for kind in ("full", "short"):
+        text = cap.get(kind)
+        if not text:
+            bad.append(f"{key}: caption[{kind}] が空")
+            continue
+        total = len(text) + 1 + len(tag_line)
+        if total > IG_CAPTION_MAX:
+            bad.append(f"{key}: caption[{kind}] がタグ込みで {total} 字 — "
+                       f"上限 {IG_CAPTION_MAX} 字を超えている")
+        # 記法タグの消し忘れ (投稿文は素のテキスト)
+        for name in T.INLINE:
+            if f"[{name}]" in text or f"[/{name}]" in text:
+                bad.append(f"{key}: caption[{kind}] に記法 [{name}] が残っている "
+                           f"(投稿文は素のテキスト)")
+        # 英文は正典か例文に実在すること
+        for run in _en_runs(text, vol):
+            if not _en_ok(run, passage, examples):
+                bad.append(f"{key}: caption[{kind}] に本文にも例文にも無い英文 → {run!r}")
+        # 出典の断言は行ごとに宣言を要求する
+        for line in text.splitlines():
+            if BV._is_claim(line) and not any(d in line for d in declared):
+                bad.append(f"{key}: caption[{kind}] の未検証の主張が unverified に "
+                           f"宣言されていない → {line.strip()[:44]!r}")
 
 
 def check_fonts(bad):
@@ -314,6 +375,7 @@ def main():
     check_fonts(bad)
     for v in vols:
         check_vol(v, bad)
+        check_caption(v, bad)
         check_pngs(v, bad, seen)
 
     for line in seen:

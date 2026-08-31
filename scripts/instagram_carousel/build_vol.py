@@ -491,6 +491,28 @@ def _texts_of(b):
     return []
 
 
+def write_caption(vol, out_dir):
+    """投稿文を貼り付け用のテキストに書き出す (正典は vols/<key>.py の caption)。"""
+    cap = vol.get("caption")
+    if not cap:
+        return None
+    tags = " ".join(cap.get("hashtags") or [])
+    parts = []
+    for label, kind in (("詳細版", "full"), ("短縮版", "short")):
+        body = cap.get(kind)
+        if not body:
+            continue
+        n = len(body) + 1 + len(tags)
+        parts.append(f"===== {vol['label']} {label} ({n}字 / 上限2200) =====\n\n"
+                     f"{body}\n\n{tags}\n")
+    if not parts:
+        return None
+    out = os.path.join(out_dir, f"{vol['key']}_caption.txt")
+    with open(out, "w", encoding="utf-8") as f:
+        f.write("\n\n".join(parts))
+    return out
+
+
 def contact_sheet(vol, pngs, out_dir):
     """全スライドを 1 枚に並べた JPG を作る。
 
@@ -561,6 +583,9 @@ def main(argv):
     if not fit and not html_only:
         print("  ★--no-fit: 版面のはみ出しを測っていない。納品前に外して刷り直すこと")
 
+    import tempfile
+    fitdir = tempfile.mkdtemp(prefix="ig-fit-")
+
     for vol in vols_:
         errs = verify(vol)
         if errs:
@@ -586,7 +611,9 @@ def main(argv):
             if fit:
                 # ★刷る前に版面に収まるか測る。溢れると overflow:hidden で
                 #   黙って切られるか、フッターに重なる。刷ってからでは気づけない。
-                msg = overflow_message(name, overflow_px(html, os.path.join(d, "_fit"), name))
+                # ★測定用の中間物はリポジトリの外に置く。scripts/ の中に置くと
+                #   run_all_gates.py の「回したらファイルが変わった」検出に触れる。
+                msg = overflow_message(name, overflow_px(html, fitdir, name))
                 if msg:
                     raise SystemExit(msg)
             pp = os.path.join(d, name + ".png")
@@ -597,6 +624,9 @@ def main(argv):
                                  f"{T.W * T.SCALE}x{T.H * T.SCALE} でなければならない")
             made.append(pp)
             print(f"  {name}.png  {w}x{h}")
+        cap = write_caption(vol, d)
+        if cap:
+            print(f"  投稿文: {os.path.basename(cap)}")
         if not html_only:
             sheet = contact_sheet(vol, made, d)
             if sheet:
