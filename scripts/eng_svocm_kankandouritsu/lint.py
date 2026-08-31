@@ -22,7 +22,8 @@ import re
 import sys
 
 from layout import (
-    DRILL_LABELS, PATTERN_CORE, infer_pattern, normalize, parse, plain_text, top_segments,
+    DRILL_LABELS, PATTERN_CORE, SYN_VOCAB, infer_pattern, normalize, parse, plain_text,
+    top_segments,
 )
 
 # ------------------------------------------------------------------ 表記規約
@@ -49,6 +50,27 @@ BRACKET_LABELS = {
 BRACKET_JA = {"(": "( ) 副詞のカタマリ", "[": "[ ] 名詞のカタマリ", "<": "&lt; &gt; 形容詞のカタマリ"}
 MAX_DASH = 2
 PARTICIPLE = re.compile(r"^[A-Za-z]+(?:ed|ing)$")
+# 規約11: V のマスの先頭に立てる助動詞・完了・受動の be
+AUX_HEAD = {"be", "am", "is", "are", "was", "were", "been", "being", "has", "have", "had",
+            "can", "could", "will", "would", "shall", "should", "may", "might", "must",
+            "do", "does", "did"}
+# ★not / never は V と同じマスに入れてよい（否定は動詞の一部として扱う）。
+NEG_OK = {"not", "never", "n't"}
+ADV_IN_V = {"also", "always", "still", "often", "already", "long", "just", "soon",
+            "recently", "hardly", "seldom", "rarely", "ever", "then", "even", "only"}
+# 規約13: 原形不定詞を C に取る動詞（この V があるのに C が 2 語以上の平マスなら分解漏れ）
+BARE_INF_V = {"make", "makes", "made", "let", "lets", "have", "has", "had", "help", "helps",
+              "helped", "see", "sees", "saw", "hear", "hears", "heard", "watch", "watches",
+              "watched", "feel", "feels", "felt", "notice", "notices", "noticed"}
+# ★C が形容詞句のときに「原形不定詞の分解漏れ」と誤検出しないための除外。
+#   make O C は C に形容詞も原形も取るので、V だけでは決められない（実測で
+#   {C:extremely difficult} {C:impossible to explain} {C:more important than ever} を落とした）。
+ADJ_HEAD = {"more", "less", "most", "least", "very", "too", "so", "quite", "rather", "much",
+            "far", "even", "as", "no", "a", "an", "the", "one", "two", "his", "her", "their",
+            "its", "our", "my", "your", "part", "unable", "able", "aware", "free", "full",
+            "open", "safe", "clear", "worth", "sure", "ready", "silent", "alive", "alone"}
+ADJ_SUFFIX = ("ly", "ble", "ous", "ive", "al", "ful", "less", "ent", "ant", "ic", "ary",
+              "ed", "ing", "y", "er", "est")
 
 CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩"
 
@@ -111,20 +133,64 @@ def notation_errors(root):
                 if k.label.replace("'", "") in ("S", "O", "O1", "O2") and " of " in f" {k.text} ":
                     out.append(f"規約6: 名詞のマスが of 句を抱えている: {{{k.label}:{k.text}}}"
                                "（核だけをマスにし、of 句は外に出す）")
+                toks = k.text.split()
+                low = [t.lower().strip(",.;:") for t in toks]
+                if k.label.replace("'", "") == "V":
+                    # 規約11: V のマスに副詞を巻き込まない（not / never は可）
+                    if len(low) >= 3 and low[0] in AUX_HEAD:
+                        for t in low[1:-1]:
+                            if t in NEG_OK:
+                                continue
+                            if t.endswith("ly") or t in ADV_IN_V:
+                                out.append(f"規約11: V のマスに副詞 {t!r} が入っている: "
+                                           f"{{{k.label}:{k.text}}}"
+                                           "（助動詞を {助:} で分け、副詞は M にする）")
+                                break
+                    # 規約12: 準助動詞を V のマスに入れない。
+                    # ★先頭の to は不定詞そのもの（{V':to rethink}）なので正しい形。
+                    #   2 語目以降に to が来る形（tend to report / have to be）だけを落とす。
+                    if "to" in low[1:]:
+                        out.append(f"規約12: V のマスに準助動詞の to が入っている: "
+                                   f"{{{k.label}:{k.text}}}"
+                                   "（tend / have を V にし、to 不定詞は別のマスにする）")
+                # 規約13: C が節相当なら [ C: ] で囲む
+                if k.label.replace("'", "") == "C" and len(low) >= 2:
+                    # ★have / has / had は使役動詞にも完了の助動詞にもなる。
+                    #   1 語だけのときに限って使役と見る（{V:has become} を使役と数えると
+                    #   {C:its small garden} を「分解漏れ」と誤って落とす。実測で踏んだ）。
+                    sib_v = []
+                    for c in nd.kids:
+                        if c.kind != "chunk" or c.label.replace("'", "") != "V":
+                            continue
+                        w = c.text.lower().split()
+                        if len(w) > 1 and w[0] in ("have", "has", "had"):
+                            continue
+                        sib_v += w
+                    if low[0] == "to":
+                        out.append(f"規約13: to 不定詞の C を平マスにしている: {{{k.label}:{k.text}}}"
+                                   "（[ C: {V':to …} … ] と囲んで分解する）")
+                    elif (any(w in BARE_INF_V for w in sib_v)
+                          and low[0] not in ADJ_HEAD
+                          and not low[0].endswith(ADJ_SUFFIX)):
+                        out.append(f"規約13: 原形不定詞の C を平マスにしている疑い: "
+                                   f"{{{k.label}:{k.text}}}"
+                                   "（[ C: {V':…} … ] と囲んで分解する）")
                 continue
             # 規約3: 括弧の種類とラベルの働き
             allowed = BRACKET_LABELS[k.text]
             if k.label.replace("'", "") not in allowed:
                 out.append(f"規約3: {BRACKET_JA[k.text]} に {k.label!r} は付けられない"
                            f"（使えるのは {sorted(x for x in allowed if x)}）: {what}")
-            if k.text == "<" and k.kids:
+            if k.text in "<(" and k.kids:
                 head = k.kids[0]
                 if head.kind == "plain":
                     w = head.text.split()[0]
-                    # 規約4: 分詞の後置修飾は分詞に V' を付ける
+                    # 規約4 / 規約14: 分詞は素の語で置かない（後置修飾も分詞構文も）
                     if PARTICIPLE.match(w):
-                        out.append(f"規約4: 分詞 {w!r} が素の語のまま。"
+                        num = "規約4" if k.text == "<" else "規約14"
+                        out.append(f"{num}: 分詞 {w!r} が素の語のまま。"
                                    f"{{V{chr(39) * _want_dash(d + 1)}:{w}}} と示す: {what}")
+            if k.text == "<" and k.kids:
                 # 規約5: < > の中の that は関係詞
                 for c in k.kids:
                     if c.kind == "chunk" and c.label == "接" and c.text.lower() == "that":
@@ -210,6 +276,12 @@ def validate_item(it):
         errs.append(f"pat は {named[0]} だが、主節ラベル {top_lbl} は {got}"
                     f"（{PATTERN_CORE[got]}）")
 
+    syn = it.get("syn")
+    if syn is not None and syn not in SYN_VOCAB:
+        near = [k for k in SYN_VOCAB if syn and (syn[:5] in k or k[:5] in syn)]
+        errs.append(f"syn（構文カテゴリ）{syn!r} は語彙に無い。"
+                    f"近いもの: {near[:6] or sorted(SYN_VOCAB)[:8]} "
+                    "（一覧は layout.py の SYN_VOCAB）")
     for i, n in enumerate(it.get("notes") or []):
         for m in markup_errors(n):
             errs.append(f"notes[{i}]: {m}")

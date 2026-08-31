@@ -93,35 +93,59 @@ NOTATION = [
      "It＝S　is＝V　the teacher＝C　[ 強調: that … ]"),
     ("受動態の文型", "be + 過去分詞は 1 つの V として数える。後ろに何も無ければ<b>第1文型</b>とする。",
      "is discovered＝V　→ 第1文型"),
+    ("準助動詞", "tend to / have to / be going to / seem to は<b>助動詞ではない</b>ので V のマスに入れない。"
+     "動詞を V にし、to 不定詞は別のマスにする。",
+     "tend＝V　[ O′: to report … ]"),
+    ("補語が節のとき", "C が動詞を含むとき（to 不定詞・原形不定詞）は [ C: … ] で囲んで中も分解する。"
+     "形容詞 1 つの C は平のマスのままでよい。",
+     "[ C: to stay＝V′　fresh＝C′ ]"),
+    ("there 構文", "There は主語ではなく <b>M</b>。本当の S は動詞の後ろの名詞。",
+     "There＝M　are＝V　many reasons＝S"),
+    ("前置詞句をどちらに付けるか", "直前の<b>名詞だけ</b>を説明していれば &lt; M &gt;（形容詞）。"
+     "<b>動詞が要求</b>していて動詞を消すと意味が立たないなら ( M )（副詞）。",
+     "an impact &lt; M: on companies &gt;　／　received … ( M: from the office )"),
     ("群動詞", "<b>受動態にできるもの</b>だけ 1 つの動詞としてマスに入れる。"
      "それ以外の「動詞 + 前置詞句」は前置詞句を M として外に出す（意味は切り離さない）。",
      "take advantage of＝V　／　depend＝V ( M: on … )"),
 ]
 
+# ---------------------------------------------------------------- 構文の割り当て表
+# ★この教材が何を教えるかの設計図。グループごとに**重ならない**プールを持たせ、
+#   check.py が「プール外の構文を出していないか」と「プールの構文が全部出ているか」を落とす。
+#   重複を tag（自由文）で数えると、書き換えるだけでゲートをすり抜けられる。slug で数える。
+#   ★宣言した構文が 1 つでも欠けたら FAIL。「入れたつもりで入っていない」を機械で見つけるのが目的。
+SYN_POOL = {
+    "1A": ["svc-adj", "svo", "svoo-give", "svoc-adj"],
+    "1B": ["relative-subject"],
+    "2": ["relative-object", "infinitive-adjective", "pp-postmod", "svoc-adj"],
+    "3-1": ["prep-relative"],
+}
+
+
 PART1 = [
-    {"g": "Ａ　5文型の骨格を見抜く", "sub": "第1〜第5文型", "items": [
-        {"id": "A1", "en": "The news made everyone in the room extremely happy.",
+    {"g": "Ａ　5文型の骨格を見抜く", "sub": "第1〜第5文型", "pool": "1A", "items": [
+        {"id": "A1", "syn": "svoc-adj", "en": "The news made everyone in the room extremely happy.",
          "dsl": "{S:The news} {V:made} {O:everyone} <M:in the room> {C:extremely happy} .",
          "pat": "第5文型（SVOC）", "tag": "make O C",
          "notes": ["everyone と extremely happy の間に主語述語の関係があるので第5文型である。",
                    "&lt; in the room &gt; は everyone にかかる形容詞のカタマリで骨組みではない。",
                    "made を「作った」と訳すと崩れる。第5文型の make は「O を C の状態にする」。"],
          "ja": "その知らせは部屋にいた全員をこの上なく喜ばせた。"},
-        {"id": "A2", "en": "The librarian handed the students a list of useful references.",
+        {"id": "A2", "syn": "svoo-give", "en": "The librarian handed the students a list of useful references.",
          "dsl": "{S:The librarian} {V:handed} {O1:the students} {O2:a list} <M:of useful references> .",
          "pat": "第4文型（SVOO）", "tag": "hand O1 O2",
          "notes": ["hand は「人に物を手渡す」型の動詞で、O1 に人、O2 に物が来る第4文型である。",
                    "&lt; of useful references &gt; は a list にかかる形容詞のカタマリなので M。",
                    "the students と a list の間に主語述語の関係は無い。だから第5文型ではない。"],
          "ja": "司書は学生たちに有用な参考文献の一覧を手渡した。"},
-        {"id": "A3", "en": "The proposal remains controversial among local residents.",
+        {"id": "A3", "syn": "svc-adj", "en": "The proposal remains controversial among local residents.",
          "dsl": "{S:The proposal} {V:remains} {C:controversial} ( M: among local residents ) .",
          "pat": "第2文型（SVC）", "tag": "remain + 形容詞",
          "notes": ["remain は「〜のままである」で、後ろに来る形容詞は O ではなく C である。",
                    "The proposal = controversial という「主語 = 補語」の関係が第2文型の目印。",
                    "( among local residents ) は外しても文が成立する副詞のカタマリなので M。"],
          "ja": "その提案は地元の住民の間で依然として賛否の分かれるものである。"},
-        {"id": "A4", "en": "The committee members carefully examined every document.",
+        {"id": "A4", "syn": "svo", "en": "The committee members carefully examined every document.",
          "dsl": "{S:The committee members} {M:carefully} {V:examined} {O:every document} .",
          "pat": "第3文型（SVO）", "tag": "副詞の割り込み",
          "notes": ["carefully は S と V の間に割り込んだ副詞で、骨組みではないので M。",
@@ -129,8 +153,8 @@ PART1 = [
                    "副詞が S と V の間に入ると V を見失いやすい。まず副詞を外して骨組みを見る。"],
          "ja": "委員会のメンバーはすべての書類を注意深く調べた。"},
     ]},
-    {"g": "Ｂ　修飾語 M を切り離す", "sub": "S と V が離れる形", "items": [
-        {"id": "B1", "en": "Students who study abroad for a year often return with a wider view.",
+    {"g": "Ｂ　修飾語 M を切り離す", "sub": "S と V が離れる形", "pool": "1B", "items": [
+        {"id": "B1", "syn": "relative-subject", "en": "Students who study abroad for a year often return with a wider view.",
          "dsl": "{S:Students} <M: {S':who} {V':study} ( abroad ) ( for a year ) > {M:often} "
                 "{V:return} ( M: with a wider view ) .",
          "pat": "第1文型（SV）", "tag": "主語に関係詞節",
@@ -142,7 +166,7 @@ PART1 = [
 ]
 
 PART2 = [
-    {"id": "G1", "en": "The report that the committee published last week surprised many readers.",
+    {"id": "G1", "syn": "relative-object", "en": "The report that the committee published last week surprised many readers.",
      "dsl": "{S:The report} <M: {O':that} {S':the committee} {V':published} ( last week ) > "
             "{V:surprised} {O:many readers} .",
      "pat": "第3文型（SVO）", "tag": "関係代名詞 that の目的格",
@@ -161,7 +185,7 @@ PART2 = [
             "同格の that なら後ろは欠けの無い完全な文になるので誤り。"
             "指示代名詞なら that の直後に動詞が来るはずで、ここでは the committee という名詞が続くので誤り。"
             "関係副詞なら後ろが完全な文になるので、目的語が欠けている本文には当てはまらない。"},
-    {"id": "G2", "en": "The government announced a plan to reduce the number of cars in the city center.",
+    {"id": "G2", "syn": "infinitive-adjective", "en": "The government announced a plan to reduce the number of cars in the city center.",
      "dsl": "{S:The government} {V:announced} {O:a plan} <M:to reduce the number of cars> "
             "( M: in the city center ) .",
      "pat": "第3文型（SVO）", "tag": "不定詞の形容詞用法",
@@ -181,7 +205,7 @@ PART2 = [
             "The government にかかるとすると「減らす政府」となり意味をなさないので誤り。"
             "the number にかかるとすると to reduce の直前の名詞は cars であって the number ではなく、"
             "語順の上で成り立たないので誤り。"},
-    {"id": "G3", "en": "The number of students who apply to universities in urban areas has increased steadily.",
+    {"id": "G3", "syn": "pp-postmod", "en": "The number of students who apply to universities in urban areas has increased steadily.",
      "dsl": "{S:The number} <M:of students> <M: {S':who} {V':apply} ( to universities ) "
             "( in urban areas ) > {V:has increased} {M:steadily} .",
      "pat": "第1文型（SV）", "tag": "主語の核を見抜く",
@@ -197,7 +221,7 @@ PART2 = [
             "students は of に続く語で、直後の who apply の主語ではあるが主節の主語ではないので誤り。"
             "universities と urban areas はどちらも前置詞のあとに来る語で、"
             "前置詞の目的語は主語になれないので誤り。"},
-    {"id": "G4", "en": "Continuous exposure to loud noise can leave workers unable to concentrate on simple tasks.",
+    {"id": "G4", "syn": "svoc-adj", "en": "Continuous exposure to loud noise can leave workers unable to concentrate on simple tasks.",
      "dsl": "{S:Continuous exposure} <M:to loud noise> {V:can leave} {O:workers} "
             "{C:unable to concentrate on simple tasks} .",
      "pat": "第5文型（SVOC）", "tag": "leave O C",
@@ -216,8 +240,8 @@ PART2 = [
 ]
 
 PART3 = [
-    {"g": "①　関係詞・挿入・同格", "sub": "かかり先を決める", "items": [
-        {"id": "D1",
+    {"g": "①　関係詞・挿入・同格", "sub": "かかり先を決める", "pool": "3-1", "items": [
+        {"id": "D1", "syn": "prep-relative",
          "en": "The speed with which the new policy was introduced left local officials little time to prepare.",
          "dsl": "{S:The speed} <M: ( with which ) {S':the new policy} {V':was introduced} > "
                 "{V:left} {O1:local officials} {O2:little time} <M:to prepare> .",

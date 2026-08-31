@@ -14,10 +14,13 @@ import check as K
 import content as C
 
 PARTS = ("PART1", "PART2", "PART3")
+DICTS = ("SYN_POOL",)
 
 
 def snapshot():
-    return {k: copy.deepcopy(getattr(C, k)) for k in PARTS}
+    base = {k: copy.deepcopy(getattr(C, k)) for k in PARTS}
+    base.update({k: copy.deepcopy(getattr(C, k)) for k in DICTS})
+    return base
 
 
 def restore(base):
@@ -25,6 +28,10 @@ def restore(base):
     #   check / build が import 時に束縛した参照が古いままになり、注入が効かない。
     for k in PARTS:
         getattr(C, k)[:] = copy.deepcopy(base[k])
+    for k in DICTS:
+        d = getattr(C, k)
+        d.clear()
+        d.update(copy.deepcopy(base[k]))
 
 
 def run_check():
@@ -128,6 +135,33 @@ def _():
 @case("notes が足りない")
 def _():
     first1()["notes"] = first1()["notes"][:1]
+
+
+@case("構文カテゴリが割り当て表のプールに無い")
+def _():
+    first1()["syn"] = "cleft"
+
+
+@case("割り当て表に宣言した構文が出題されていない")
+def _():
+    # ★「入れたつもりで入っていない」を捕まえる検査。宣言だけ残して中身を差し替える。
+    C.SYN_POOL["1A"].append("negative-inversion")
+    return lambda: C.SYN_POOL["1A"].remove("negative-inversion")
+
+
+@case("第3部の解説が丸数字で位置を指している（丸数字は第1部にしか刷られない）")
+def _():
+    first3()["notes"][0] = "②の位置にある動詞が主節の V である。" + first3()["notes"][0]
+
+
+@case("同じ名詞句を主語にした問題が2問ある")
+def _():
+    a, b = C.PART1[0]["items"][0], C.PART1[0]["items"][1]
+    head = a["dsl"].split("}")[0] + "}"
+    b["dsl"] = head + b["dsl"][b["dsl"].index("}") + 1:]
+    b["en"] = None
+    from layout import parse, plain_text
+    b["en"] = plain_text(parse(b["dsl"]))
 
 
 @case("絵文字の混入（PDF で豆腐になる）")

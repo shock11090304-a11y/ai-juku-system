@@ -11,7 +11,7 @@ import os
 import sys
 
 from layout import (
-    CIRCLE, DESKTOP, EXTRA_CSS, esc, parse, render_analysis, render_blank,
+    CIRCLE, DESKTOP, EXTRA_CSS, SYN_VOCAB, esc, parse, render_analysis, render_blank,
     render_pdf, render_skeleton, top_segments,
 )
 import layout
@@ -258,8 +258,43 @@ def build_kaisetsu():
                      + "".join(f'<li>{esc(p)}</li>' for p in it["points"]) + '</ul></div>')
             h.append('</div>')
 
+    h.append(syn_index_html())
     h.append(foot("解答・解説編"))
     return "\n".join(h)
+
+
+def syn_index_html():
+    """巻末: 収録構文一覧（どの構文をどの問題で扱ったか）。
+
+    ★塾長がここだけ見れば「何が入っていて何が入っていないか」が分かるようにする。
+      構文カテゴリ（syn）は check.py が語彙と重複を機械で見ているので、この表は
+      原稿と必ず一致する（手で作った索引のようにずれない）。
+    """
+    rows = []
+    n1 = n3 = 0
+    for grp in PART1:
+        for it in grp["items"]:
+            n1 += 1
+            rows.append((it["syn"], f'第1部 {n1}'))
+    for qi, q in enumerate(PART2, 1):
+        rows.append((q["syn"], f'第2部 {qi}'))
+    for grp in PART3:
+        for it in grp["items"]:
+            n3 += 1
+            rows.append((it["syn"], f'第3部 {n3}'))
+    byname = {}
+    for syn, where in rows:
+        byname.setdefault(syn, []).append(where)
+    body = "".join(
+        f'<tr><td class="nk">{esc(SYN_VOCAB.get(s, s))}</td>'
+        f'<td class="nb">{esc("　".join(w))}</td>'
+        f'<td class="ne">{esc(s)}</td></tr>'
+        for s, w in sorted(byname.items(), key=lambda x: SYN_VOCAB.get(x[0], x[0])))
+    return ('<div class="partdiv"><div class="pt1">収録構文一覧</div>'
+            f'<div class="pt2">全 {len(rows)} 問 ／ {len(byname)} 構文</div></div>'
+            '<div class="instr">この教材で扱った構文の一覧。'
+            '解き直すときは、間違えた問題と同じ構文の問題をここから探すこと。</div>'
+            f'<table class="notation">{body}</table>')
 
 
 def main():

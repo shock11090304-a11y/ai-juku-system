@@ -98,6 +98,92 @@ def infer_pattern(labels):
     return None
 
 
+# ------------------------------------------------------------------ 構文カテゴリ
+# ★重複の検出を tag（自由文）で行うと、書き換えるだけでゲートをすり抜けられる。
+#   「同じ構文を何問出したか」は決まった語彙で数える。解答編の巻末に一覧としても刷る。
+SYN_VOCAB = {
+    # 文型そのもの
+    "sv": "第1文型",
+    "svc-adj": "第2文型（補語が形容詞）",
+    "svc-noun": "第2文型（補語が名詞）",
+    "svo": "第3文型",
+    "svoo-give": "第4文型（授与型）",
+    "svoo-take": "第4文型（与えるのではなく省く・奪う型）",
+    "svoc-adj": "第5文型（補語が形容詞）",
+    "svoc-noun": "第5文型（補語が名詞）",
+    "svoc-bare": "第5文型（補語が原形不定詞）",
+    "svoc-to": "第5文型（補語が to 不定詞）",
+    "svoc-pp": "第5文型（補語が過去分詞）",
+    # 修飾
+    "pp-postmod": "名詞に付く前置詞句",
+    "participle-postmod": "分詞の後置修飾",
+    "long-fronted-pp": "文頭の長い前置詞句",
+    "adverb-intrusion": "S と V の間に割り込む副詞",
+    # 関係詞
+    "relative-subject": "主格の関係代名詞",
+    "relative-object": "目的格の関係代名詞",
+    "relative-possessive": "所有格の関係代名詞 whose",
+    "relative-adverb": "関係副詞",
+    "prep-relative": "前置詞 + 関係代名詞",
+    "what-clause": "関係代名詞 what",
+    "chain-relative": "連鎖関係代名詞",
+    "nonrestrictive": "非制限用法",
+    "compound-relative": "複合関係詞",
+    # 名詞のカタマリ
+    "that-clause-object": "接続詞 that 節が目的語",
+    "appositive-that": "同格の that 節",
+    "whether-clause": "whether 節",
+    "gerund-object": "動名詞句が目的語",
+    "infinitive-noun": "不定詞の名詞用法",
+    "infinitive-adjective": "不定詞の形容詞用法",
+    "formal-subject": "形式主語",
+    "formal-object": "形式目的語",
+    "there-construction": "there 構文",
+    # 比較
+    "comparative-postmod": "比較の句が名詞を後ろから修飾",
+    "not-so-much-as": "not so much A as B",
+    "no-more-than": "no more / no less ... than",
+    "the-more-the-more": "the 比較級, the 比較級",
+    "comparative-ellipsis": "比較の節内の省略",
+    "that-of": "比較の代用 that of / those of",
+    "superlative-equivalent": "最上級相当",
+    # 倒置・強調
+    "negative-inversion": "否定の副詞句が文頭に出る倒置",
+    "only-inversion": "Only ... の倒置",
+    "cleft": "強調構文 It is ... that",
+    "do-emphasis": "強調の do",
+    "so-that-result": "so / such ... that の結果構文",
+    "too-to": "too ... to / enough to",
+    # 分詞構文・準動詞
+    "participial-construction": "分詞構文",
+    "with-absolute": "付帯状況の with",
+    "independent-participle": "独立分詞構文",
+    # そのほか
+    "inanimate-subject": "無生物主語",
+    "nominalization": "名詞構文",
+    "concessive-as": "譲歩の as",
+    "correlative": "相関接続詞による共通関係",
+    "subjunctive": "仮定法",
+    "subjunctive-inversion": "if の省略による倒置",
+    "insertion": "挿入",
+    "passive": "受動態",
+    "group-verb": "群動詞",
+    "causative": "使役動詞",
+    "perception-verb": "知覚動詞",
+    "ellipsis-clause": "従属節内の省略",
+}
+
+# 文型そのものを指すカテゴリ。第1部Ａは「5文型を繰り返し引く」のが目的なので、
+# ここだけは同じカテゴリが複数回出てよい（★逆に言うと、他の部で文型カテゴリは使わせない）。
+PATTERN_SYN = {"sv", "svc-adj", "svc-noun", "svo", "svoo-give", "svoo-take",
+               "svoc-adj", "svoc-noun", "svoc-bare", "svoc-to", "svoc-pp"}
+
+# ★構文の割り当て表（SYN_POOL）は content.py にある。
+#   「この教材が何を教えるか」は**編集の決めごと**であってコードではないので、原稿と同じ
+#   ファイルに置く。ここ（共通コード）に置くと、原稿がまだ骨格しか無い段階でも 60 問ぶんの
+#   設計を宣言したことになり、「宣言と中身が食い違ったままコミットされる」状態ができる。
+
+
 # ------------------------------------------------------------------ 追加 CSS
 EXTRA_CSS = """
 /* ---- 第1部 判別ドリル ---- */

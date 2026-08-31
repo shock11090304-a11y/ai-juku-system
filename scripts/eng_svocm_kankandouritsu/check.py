@@ -11,9 +11,13 @@ import re
 import sys
 import unicodedata
 
-from layout import CIRCLE, normalize, parse, plain_text
+from layout import (
+    CIRCLE, PATTERN_SYN, SYN_VOCAB, normalize, parse, plain_text, top_segments,
+)
 from lint import markup_errors, validate_item
-from content import META, NOTATION, PART1, PART2, PART3, RULES, RULE_EXAMPLES, STEPS
+from content import (
+    META, NOTATION, PART1, PART2, PART3, RULES, RULE_EXAMPLES, STEPS, SYN_POOL,
+)
 
 ERR = []
 WARN = []
@@ -48,6 +52,7 @@ def is_abstract(run):
     return all(t.lower() in ABSTRACT_TOK for t in toks)
 ANS_CLAIM = re.compile(r"正解は?\s*[①②③④]")
 SAFE_SO = "★▲●◆■□◇→←↑↓〜①②③④⑤⑥⑦⑧⑨⑩"
+MARU = re.compile(r"[①②③④⑤⑥⑦⑧⑨⑩]")
 
 # 第1部で必ず 1 問以上出す文型（易→難の並びの土台）
 NEED_PATTERNS = ["第1文型", "第2文型", "第3文型", "第4文型", "第5文型"]
@@ -96,13 +101,24 @@ def check_item(it, mode, where, need_points=False):
                 err(where, f"points[{i}] が短すぎる: {p!r}")
     if not it.get("tag"):
         err(where, "tag（構文名）が空")
+    if not it.get("syn"):
+        err(where, "syn（構文カテゴリ）が空。layout.py の SYN_VOCAB から選ぶ")
+    # ★丸数字を刷るのは第1部の判別問題だけ（drill_sentence / slot_table）。
+    #   第2部・第3部の解答カードは分解図を出すだけで番号を振らないので、
+    #   解説が「②did と④notice が」と書いても生徒には何のことか分からない。
+    if mode != "drill":
+        for field in ("notes", "points"):
+            for i, t in enumerate(it.get(field) or []):
+                if MARU.search(t):
+                    err(where, f"{field}[{i}] が丸数字で位置を指している"
+                               "（丸数字が刷られるのは第1部だけ。語そのもので指すこと）")
     return info
 
 
 def main():
     ids, ens = {}, {}
-    tag_use = {}
-    all_items = []
+    tag_use, syn_use, subj_use = {}, {}, {}
+    all_items = []   # (表示名, item, 割り当て表のキー)
 
     # ---------------- 巻頭（記号ルールの見本も同じゲートを通す） ----------------
     for i, ex in enumerate(RULE_EXAMPLES, 1):
@@ -134,13 +150,15 @@ def main():
     n1 = 0
     pat_seen = set()
     for gi, grp in enumerate(PART1, 1):
+        if grp.get("pool") not in SYN_POOL:
+            err(f"第1部 グループ{gi}", f'pool キーが不正: {grp.get("pool")!r}')
         if not grp.get("items"):
             err(f"第1部 グループ{gi}", "問題が 0 問")
         for it in grp["items"]:
             n1 += 1
             w = f'第1部 {n1} ({it["id"]})'
             info = check_item(it, "drill", w)
-            all_items.append((w, it))
+            all_items.append((w, it, grp["pool"]))
             for p in NEED_PATTERNS:
                 if p in it["pat"]:
                     pat_seen.add(p)
@@ -162,7 +180,7 @@ def main():
     for qi, q in enumerate(PART2, 1):
         w = f'第2部 {qi} ({q["id"]})'
         check_item(q, "kaishaku", w)
-        all_items.append((w, q))
+        all_items.append((w, q, "2"))
         if len(q["choices"]) != 4:
             err(w, f"選択肢が {len(q['choices'])} 個")
         if len(set(q["choices"])) != len(q["choices"]):
@@ -204,19 +222,21 @@ def main():
     # ---------------- 第3部 ----------------
     n3 = 0
     for gi, grp in enumerate(PART3, 1):
+        if grp.get("pool") not in SYN_POOL:
+            err(f"第3部 グループ{gi}", f'pool キーが不正: {grp.get("pool")!r}')
         if not grp.get("items"):
             err(f"第3部 グループ{gi}", "問題が 0 文")
         for it in grp["items"]:
             n3 += 1
             w = f'第3部 {n3} ({it["id"]})'
             check_item(it, "kaishaku", w, need_points=True)
-            all_items.append((w, it))
+            all_items.append((w, it, grp["pool"]))
             wc = len(re.findall(r"[A-Za-z][A-Za-z'’-]*", it["en"]))
             if not (14 <= wc <= 36):
                 err(w, f"語数 {wc} が想定レンジ 14-36 の外（関関同立の 1 文の長さ）")
 
     # ---------------- 全体（重複・グリフ） ----------------
-    for w, it in all_items:
+    for w, it, pool in all_items:
         if it["id"] in ids:
             err(w, f'id {it["id"]!r} が {ids[it["id"]]} と重複')
         ids[it["id"]] = w
@@ -225,10 +245,38 @@ def main():
             err(w, f'英文が {ens[key]} と重複: {it["en"]!r}')
         ens[key] = w
         tag_use.setdefault(it["tag"], []).append(w)
+        if it.get("syn"):
+            if it["syn"] not in SYN_VOCAB:
+                err(w, f'syn {it["syn"]!r} が語彙に無い（layout.py の SYN_VOCAB）')
+            elif it["syn"] not in SYN_POOL[pool]:
+                err(w, f'syn {it["syn"]!r} は割り当て表 {pool} のプールに無い'
+                       f'（このグループで使えるのは {SYN_POOL[pool]}）')
+            syn_use.setdefault(it["syn"], []).append(w)
+        for lb, txt, _u in top_segments(parse(it["dsl"])):
+            if lb in ("S", "真S"):
+                subj_use.setdefault(txt.lower().rstrip(" .,"), []).append(w)
+                break
         scan_glyphs(it, "item", w)
     for tag, uses in sorted(tag_use.items()):
         if len(uses) > 2:
             err("全体", f"同じ構文タグ {tag!r} を {len(uses)} 回使っている: {uses}")
+    # ★重複は tag（自由文）ではなく**決まった語彙**（syn）で数える。
+    #   tag は書き換えるだけでゲートをすり抜けられるが、syn は語彙が閉じている。
+    for syn, uses in sorted(syn_use.items()):
+        cap = 3 if syn in PATTERN_SYN else 1
+        if len(uses) > cap:
+            err("全体", f"同じ構文 {syn!r}（{SYN_VOCAB.get(syn, '?')}）を "
+                        f"{len(uses)} 回出している（上限 {cap} 回）: {uses}")
+    # 割り当て表の消化率。★「入れたつもりで入っていない構文」を機械で見つける。
+    for pool_key, pool in sorted(SYN_POOL.items()):
+        missing = [x for x in pool if x not in syn_use]
+        if missing:
+            err("全体", f"割り当て表 {pool_key} の構文が出題されていない: "
+                        f"{[f'{m}（{SYN_VOCAB[m]}）' for m in missing]}")
+    # ★同じ名詞句を主語にした問題が並ぶと、別の構文でも「同じ問題」に見える。
+    for subj, uses in sorted(subj_use.items()):
+        if len(uses) > 1 and len(subj) >= 8:
+            err("全体", f"同じ主語 {subj!r} の問題が {len(uses)} 問ある: {uses}")
     scan_glyphs(RULES, "RULES", "巻頭")
     scan_glyphs(STEPS, "STEPS", "巻頭")
     scan_glyphs(RULE_EXAMPLES, "RULE_EXAMPLES", "巻頭")
@@ -248,7 +296,7 @@ def main():
                           ('class="skel"', "骨組み"), ('<td class="a">', "解答欄の答え")]:
             if cls in page:
                 err("問題編", f"{what}（{cls}）が問題編に出ている＝答えの先出し")
-        for w, it in all_items:
+        for w, it, _pool in all_items:
             leaks = [("和訳", it.get("ja"))]
             leaks += [(f"notes[{i}]", n) for i, n in enumerate(it.get("notes", []))]
             leaks += [(f"points[{i}]", p) for i, p in enumerate(it.get("points") or [])]
