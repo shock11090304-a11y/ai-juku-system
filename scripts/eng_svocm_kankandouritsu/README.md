@@ -15,6 +15,10 @@
     python3 selftest_gate.py   # ゲート自体が落とせるかの変異試験（27 ケース）
     python3 lint.py items.json # 原稿を書きながら回す DSL チェッカ
     python3 build.py           # ~/Desktop に 2 冊を PDF 出力（塾長の Mac でのみ動く）
+    python3 make_preview.py out.html  # 画面で読める1枚（PDF を刷らずに中身を確かめる）
+
+`make_preview.py` は同じ `content.py` から画面用の 1 枚を機械生成する（紙と画面で中身はずれない）。
+解答の表示・非表示を切り替えられるので、問題編と解答編の両方の見え方をその場で確かめられる。
 
 `build.py` は先に `check.py` を通し、落ちたら刷らない。
 PDF 化は Chrome + Arial Unicode を使うので **CI とクラウドの Claude Code では動かない**
