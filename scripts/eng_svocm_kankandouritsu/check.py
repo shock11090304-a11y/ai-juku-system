@@ -13,7 +13,7 @@ import unicodedata
 
 from layout import CIRCLE, normalize, parse, plain_text
 from lint import markup_errors, validate_item
-from content import META, PART1, PART2, PART3, RULES, RULE_EXAMPLES, STEPS
+from content import META, NOTATION, PART1, PART2, PART3, RULES, RULE_EXAMPLES, STEPS
 
 ERR = []
 WARN = []
@@ -117,6 +117,18 @@ def main():
         err("巻頭", f"記号ルールが {len(RULES)} 件（4 件以上）")
     if len(STEPS) < 4:
         err("巻頭", f"読む手順が {len(STEPS)} 件（4 件以上）")
+    # ★表記規約（生徒が答案に書く形の唯一の正典）が痩せていないか。
+    #   lint.py の規約と 1 対 1 で対応させているので、片方だけ消えると採点基準が消える。
+    if len(NOTATION) < 8:
+        err("巻頭", f"記号の書き方が {len(NOTATION)} 行（8 行以上・lint.py の規約と対応させる）")
+    for i, row in enumerate(NOTATION):
+        if len(row) != 3:
+            err("巻頭", f"NOTATION[{i}] は (見出し, 説明, 例) の 3 つで書く")
+            continue
+        for m in markup_errors(row[1]) + markup_errors(row[2]):
+            err("巻頭", f"NOTATION[{i}]: {m}")
+        if len(re.sub(r"<[^>]+>", "", row[1])) < 20:
+            err("巻頭", f"NOTATION[{i}] の説明が短すぎる: {row[1]!r}")
 
     # ---------------- 第1部 ----------------
     n1 = 0
@@ -220,6 +232,7 @@ def main():
     scan_glyphs(RULES, "RULES", "巻頭")
     scan_glyphs(STEPS, "STEPS", "巻頭")
     scan_glyphs(RULE_EXAMPLES, "RULE_EXAMPLES", "巻頭")
+    scan_glyphs(NOTATION, "NOTATION", "巻頭")
 
     # ---------------- 刷られる紙に答えが出ていないか ----------------
     META["_n1"], META["_n2"], META["_n3"] = n1, len(PART2), n3

@@ -25,6 +25,31 @@ from layout import (
     DRILL_LABELS, PATTERN_CORE, infer_pattern, normalize, parse, plain_text, top_segments,
 )
 
+# ------------------------------------------------------------------ 表記規約
+# ★この教材は「記号を指させるか」で採点する。だから**同じ構文が2通りに書けてはいけない**。
+#   規約を散文で書いても次の原稿で必ず揺れるので、機械で守らせる（凡例と 1 対 1 で対応）。
+#
+#   規約1 助動詞・完了の have・受動の be は V と同じマスに入れる。
+#         副詞や S が割り込んだときだけ {助:} を独立させる。
+#   規約2 ダッシュの数 ＝ 囲みの深さ（S V O C M O1 O2）。深さ3以上は 2 本で頭打ち。
+#         接・同格・挿入・強調・真S・真O・助 にはダッシュを付けない。
+#   規約3 括弧の種類とラベルの働きを一致させる。
+#         ( ) 副詞 → M / 挿入      [ ] 名詞 → S O C O1 O2 真S 真O 同格 強調      < > 形容詞 → M
+#   規約4 < > の中で分詞が後置修飾するときは、分詞に {V':} を付ける（素の語で置かない）。
+#   規約5 < > の中の that は関係詞（{S':that} / {O':that}）。同格の that 節は [同格: {接:that} … ]。
+#   規約6 名詞のマス（S O O1 O2）に of 句を抱え込まない。核だけをマスにし、of 句は外へ出す。
+#         形容詞・動詞が要求する前置詞（be capable of / take advantage of）はマスに残してよい
+#         ので、この検査は名詞のマスだけを見る。
+NO_DASH = {"接", "助", "真S", "真O", "同格", "挿入", "強調"}
+BRACKET_LABELS = {
+    "(": {"M", "挿入", ""},
+    "[": {"S", "O", "C", "O1", "O2", "真S", "真O", "同格", "強調"},
+    "<": {"M", ""},
+}
+BRACKET_JA = {"(": "( ) 副詞のカタマリ", "[": "[ ] 名詞のカタマリ", "<": "&lt; &gt; 形容詞のカタマリ"}
+MAX_DASH = 2
+PARTICIPLE = re.compile(r"^[A-Za-z]+(?:ed|ing)$")
+
 CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩"
 
 # 解説文で許可する HTML タグ。これ以外の生 '<' は Chrome が語ごと飲み込む。
@@ -49,23 +74,72 @@ def markup_errors(s):
     return out
 
 
-def depth_errors(root):
-    """ラベルのダッシュ本数 <= 括弧のネスト深さ。S'' が主節に出るなどを弾く。"""
+def _want_dash(d):
+    return min(d, MAX_DASH)
+
+
+def notation_errors(root):
+    """表記規約（1〜6）を機械で守らせる。"""
     out = []
 
+    def check_label(lbl, d, what):
+        base = lbl.replace("'", "")
+        if not lbl or base in NO_DASH:
+            if "'" in lbl:
+                out.append(f"規約2: {lbl} にダッシュは付けない（{what}）")
+            return
+        want = _want_dash(d)
+        got = lbl.count("'")
+        if got != want:
+            out.append(f"規約2: ラベル {lbl} のダッシュが {got} 本（深さ {d} なので {want} 本）: {what}")
+
     def walk(nd, d):
-        for k in nd.kids:
+        kids = nd.kids
+        for i, k in enumerate(kids):
+            if k.kind == "plain":
+                continue
+            what = k.text if k.kind == "chunk" else plain_text(k)[:34]
+            check_label(k.label, d, what)
             if k.kind == "chunk":
-                if k.label.count("'") > d:
-                    out.append(f"ラベル {k.label} の深さ超過"
-                               f"（ネスト深さ {d} / ダッシュ {k.label.count(chr(39))}）: {k.text!r}")
-            elif k.kind == "group":
-                if k.label.count("'") > d:
-                    out.append(f"カタマリのラベル {k.label} の深さ超過（ネスト深さ {d}）")
-                walk(k, d + 1)
+                # 規約1: {助:…} の直後が V なら 1 マスにまとめる
+                if k.label.replace("'", "") == "助":
+                    nxt = kids[i + 1] if i + 1 < len(kids) else None
+                    if nxt and nxt.kind == "chunk" and nxt.label.replace("'", "") == "V":
+                        out.append(f"規約1: 助動詞と動詞が隣り合っている。1 マスにまとめる: "
+                                   f"{{{k.label}:{k.text}}} {{{nxt.label}:{nxt.text}}}")
+                # 規約6: 名詞のマスに of 句を抱え込まない
+                if k.label.replace("'", "") in ("S", "O", "O1", "O2") and " of " in f" {k.text} ":
+                    out.append(f"規約6: 名詞のマスが of 句を抱えている: {{{k.label}:{k.text}}}"
+                               "（核だけをマスにし、of 句は外に出す）")
+                continue
+            # 規約3: 括弧の種類とラベルの働き
+            allowed = BRACKET_LABELS[k.text]
+            if k.label.replace("'", "") not in allowed:
+                out.append(f"規約3: {BRACKET_JA[k.text]} に {k.label!r} は付けられない"
+                           f"（使えるのは {sorted(x for x in allowed if x)}）: {what}")
+            if k.text == "<" and k.kids:
+                head = k.kids[0]
+                if head.kind == "plain":
+                    w = head.text.split()[0]
+                    # 規約4: 分詞の後置修飾は分詞に V' を付ける
+                    if PARTICIPLE.match(w):
+                        out.append(f"規約4: 分詞 {w!r} が素の語のまま。"
+                                   f"{{V{chr(39) * _want_dash(d + 1)}:{w}}} と示す: {what}")
+                # 規約5: < > の中の that は関係詞
+                for c in k.kids:
+                    if c.kind == "chunk" and c.label == "接" and c.text.lower() == "that":
+                        out.append("規約5: 形容詞のカタマリの中の that を {接:that} と書いている。"
+                                   "関係詞なら {S':that} / {O':that}、同格なら [同格: …] にする: "
+                                   f"{what}")
+            walk(k, d + 1)
 
     walk(root, 0)
     return out
+
+
+def depth_errors(root):
+    """後方互換のための別名（表記規約の検査本体は notation_errors）。"""
+    return notation_errors(root)
 
 
 def validate_item(it):

@@ -129,4 +129,15 @@ table.slotbox th.lead, table.slotbox td.lead { background:#f8fafc; min-width:52p
   font-family:"Hiragino Kaku Gothic ProN",sans-serif; }
 .jline2 { border-bottom:1px solid #cbd5e1; height:20px; margin:0; }
 .pts { font-size:9pt; color:#334155; }
+
+/* ---- 記号の書き方（表記規約） ---- */
+table.notation { width:100%; border-collapse:collapse; font-size:9pt; margin:4px 0 8px;
+  page-break-inside:avoid; }
+table.notation td { border:1px solid #dbe3ef; padding:4px 9px; vertical-align:top;
+  line-height:1.6; }
+table.notation td.nk { width:118px; font-weight:700; color:#1e3a8a; background:#f8fafc;
+  font-family:"Hiragino Kaku Gothic ProN",sans-serif; font-size:8.8pt; white-space:nowrap; }
+table.notation td.nb { color:#334155; }
+table.notation td.ne { width:210px; font-family:Georgia,serif; color:#0f172a; font-size:9pt;
+  background:#fbfcfe; }
 """

@@ -15,7 +15,7 @@ from layout import (
     render_pdf, render_skeleton, top_segments,
 )
 import layout
-from content import META, PART1, PART2, PART3, RULES, RULE_EXAMPLES, STEPS
+from content import META, NOTATION, PART1, PART2, PART3, RULES, RULE_EXAMPLES, STEPS
 
 # 共有 CSS にこの教材ぶんを継ぎ足す（BASE_CSS 側は書き換えない）
 layout.BASE_CSS = layout.BASE_CSS + EXTRA_CSS
@@ -34,6 +34,21 @@ LEGEND = ('<div class="legend">'
           '<span><b style="color:#7c3aed">&lt; &gt;</b> 形容詞のカタマリ</span>'
           '<span>S′ / S″ … 従属節の中の要素</span>'
           '</div>')
+
+
+def notation_html():
+    """記号の書き方（表記規約）。問題編・解答編の両方に同じものを刷る。
+
+    ★生徒が答案に書く形を決めるのはここ。ここが揺れると「記号を指させるか」で採点できない。
+    """
+    rows = "".join(
+        f'<tr><td class="nk">{esc(h)}</td><td class="nb">{b}</td>'
+        f'<td class="ne">{x}</td></tr>' for h, b, x in NOTATION)
+    return ('<div class="partttl">記号の書き方（この教材の約束）'
+            '<span class="en2">How to write your answer</span></div>'
+            '<div class="instr">同じ構文を 2 通りに書けると採点ができない。'
+            '迷ったらこの表に戻ること。</div>'
+            f'<table class="notation">{rows}</table>')
 
 
 def band(sub):
@@ -108,6 +123,7 @@ def build_mondai():
         h.append(f'<div class="step"><span class="stepno">STEP {i}</span><span>{s}</span></div>')
     h.append('</div>')
 
+    h.append(notation_html())
     h.append('<div class="partttl">記号の使い方（見本）<span class="en2">Worked examples</span></div>')
     h.append(LEGEND)
     for i, ex in enumerate(RULE_EXAMPLES, 1):
@@ -201,6 +217,7 @@ def build_kaisetsu():
              '<br><span style="font-size:8.8pt;color:#64748b">'
              '※本文は本教材オリジナルの英文（実際の入試問題ではない）。</span></div>')
     h.append(LEGEND)
+    h.append(notation_html())
 
     # --- 第1部 ---
     h.append(partdiv('第 1 部　SVOCM 判別　解答・解説', '①②③… の記号と文型'))
