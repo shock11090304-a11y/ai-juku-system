@@ -102,6 +102,10 @@ NOTATION = [
      "[ C: to stay＝V′　fresh＝C′ ]　／　hard to read＝C"),
     ("there 構文", "There は主語ではなく <b>M</b>。本当の S は動詞の後ろの名詞。",
      "There＝M　are＝V　many reasons＝S"),
+    ("カタマリの中の of 句", "( ) や &lt; &gt; の中に「名詞 + of 句」が素のまま入っていたら、"
+     "of 以下を &lt; M &gt; で割って外に出す。<b>ただしその of 句のうしろにさらに修飾が続くときは割らない</b>"
+     "（割ると次の行の禁じ手になる）。",
+     "( M: in the middle &lt; M′: of the night &gt; )"),
     ("カタマリを2つ並べない", "同じ深さに &lt; &gt; を 2 つ並べない。2 つ目が 1 つ目の中の名詞にかかるなら"
      "<b>入れ子</b>にする。並べるとどちらにかかるか図から読めない。",
      "&lt; M: of the roof &lt; M′: above the stage &gt; &gt;"),
@@ -152,7 +156,7 @@ PART1 = [
         {"id": "A2",
          "syn": "svc-adj",
          "en": "The water in the village well stays cold even during the hottest weeks of summer.",
-         "dsl": "{S:The water} < M: in the village well > {V:stays} {C:cold} ( M: even during the hottest weeks of summer ) .",
+         "dsl": "{S:The water} < M: in the village well > {V:stays} {C:cold} ( M: even during the hottest weeks < M': of summer > ) .",
          "pat": "第2文型（SVC）",
          "tag": "stay ＋ 形容詞の C",
          "notes": [
@@ -723,7 +727,7 @@ PART2 = [
     {"id": "G7",
      "syn": "only-inversion",
      "en": "Only at the very end of the announcement did the station staff mention the change in the evening timetable.",
-     "dsl": "( M: Only at the very end of the announcement ) {助:did} {S:the station staff} {V:mention} {O:the change} <M: in the evening timetable> .",
+     "dsl": "( M: Only at the very end < M': of the announcement > ) {助:did} {S:the station staff} {V:mention} {O:the change} <M: in the evening timetable> .",
      "pat": "第3文型（SVO）",
      "tag": "Only … による倒置",
      "notes": [
@@ -920,7 +924,7 @@ PART3 = [
         {"id": "D3",
          "syn": "what-clause",
          "en": "What discourages many new volunteers is the paperwork that the small charities they support must complete before the end of each year.",
-         "dsl": "[S: {S':What} {V':discourages} {O':many new volunteers} ] {V:is} {C:the paperwork} <M: {O':that} {S':the small charities} <M': {S'':they} {V'':support} > {V':must complete} ( M': before the end of each year ) > .",
+         "dsl": "[S: {S':What} {V':discourages} {O':many new volunteers} ] {V:is} {C:the paperwork} <M: {O':that} {S':the small charities} <M': {S'':they} {V'':support} > {V':must complete} ( M': before the end < M'': of each year > ) > .",
          "pat": "第2文型（SVC）",
          "tag": "関係代名詞 what（先行詞を含む）",
          "notes": [
@@ -1289,7 +1293,7 @@ PART3 = [
         {"id": "F6",
          "syn": "concessive-as",
          "en": "Tired as the volunteers were after eight hours of sorting donations, none of them left before the last box was labeled.",
-         "dsl": "( M: {C':Tired} {接:as} {S':the volunteers} {V':were} ( M': after eight hours of sorting donations ) ) , {S:none} < M: of them > {V:left} ( M: {接:before} {S':the last box} {V':was labeled} ) .",
+         "dsl": "( M: {C':Tired} {接:as} {S':the volunteers} {V':were} ( M': after eight hours < M'': of sorting donations > ) ) , {S:none} < M: of them > {V:left} ( M: {接:before} {S':the last box} {V':was labeled} ) .",
          "pat": "第1文型（SV）",
          "tag": "譲歩の as（形容詞 + as + S + V）",
          "notes": [

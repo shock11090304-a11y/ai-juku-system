@@ -230,6 +230,17 @@ def notation_errors(root):
                         out.append("規約5: 形容詞のカタマリの中の that を {接:that} と書いている。"
                                    "関係詞なら {S':that} / {O':that}、同格なら [同格: …] にする: "
                                    f"{what}")
+            # 規約18: カタマリの中の「名詞 + of 句」は割って外に出す（うしろに修飾が続かないとき）
+            for ci, c in enumerate(k.kids):
+                if c.kind != "plain" or " of " not in f" {c.text} ":
+                    continue
+                if c.text.lower().startswith("of "):
+                    continue      # このカタマリ自体が of 句＝すでに割れている
+                if [x for x in k.kids[ci + 1:] if x.kind == "group"]:
+                    continue      # うしろに修飾が続く。割ると規約16 と衝突する
+                out.append("規約18: カタマリの中の of 句が割られていない: "
+                           f"{k.text}{k.label}: {c.text}"
+                           "（of 以下を &lt; M: &gt; で外に出す）")
             # 規約16: 同じ深さに < > を 2 つ並べない（かかり先が図から読めなくなる）
             nxt = kids[i + 1] if i + 1 < len(kids) else None
             if (k.text == "<" and nxt is not None and nxt.kind == "group"
