@@ -130,6 +130,7 @@ NET_OK = {
 # ★自己テストは「わざと壊した例を検出できるか」を見るので、[NG] 行が並ぶのが合格の姿。
 INCONSISTENT_OK = {
     "eng_hinshi_bunkai/selftest_gate.py": "自己テスト。わざと壊した例の検出結果を印字する",
+    "eng_svocm_kankandouritsu/selftest_gate.py": "自己テスト。わざと壊した例の検出結果を印字する",
 }
 
 # 色付きで出すゲートが実在する（check_course_price_sync.py の FAIL = "\033[31m❌\033[0m"）。

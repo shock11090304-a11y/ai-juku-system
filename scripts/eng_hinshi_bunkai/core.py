@@ -14,7 +14,10 @@
   よって問題編と解答編の英文がズレることは構造上あり得ない（check.py が長文本文とも照合）。
 """
 import os, re, html, subprocess
-import fitz
+# ★fitz(pymupdf) は render_pdf の中で import する。ここで読むと、PDF を1枚も開かない
+#   内容ゲート(check.py)まで pymupdf 未導入の環境で ModuleNotFoundError で落ちる
+#   （＝run_all_gates.py の CRASH＝FAIL）。判定に要るのは「PDFファイルが要るか」であって
+#   「fitz が要るか」ではない（run_all_gates.needs_pdf のコメントと同じ考え方）。
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DESKTOP = os.path.expanduser("~/Desktop")
@@ -377,6 +380,7 @@ def render_pdf(body, out_path, foot_label):
     subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
                     "--virtual-time-budget=15000", f"--print-to-pdf={out_path}", "file://" + tmp],
                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    import fitz
     d = fitz.open(out_path)
     font = fitz.Font(fontfile=FONT_PATH)
     for i, page in enumerate(d):
