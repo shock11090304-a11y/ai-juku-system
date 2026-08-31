@@ -499,15 +499,16 @@ K02 = {
         # ---------------------------------------------------------- p7
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "It ___ raining since early this morning, and the streets are completely flooded.",
                      "choices": ["is", "was", "has been", "had been"], "ans": 2,
                      "ja": "今朝早くからずっと雨が降り続いていて，通りはすっかり水浸しだ。",
                      "exp": "since early this morning が「今まで」を示すので基準は現在。rain は動作動詞なので継続は完了進行形 has been raining にする。"},
-                    {"stem": "We ___ each other for over twenty years, but we have never had a serious quarrel.",
-                     "choices": ["know", "are knowing", "have known", "have been knowing"], "ans": 2,
-                     "ja": "私たちは20年以上の付き合いだが，深刻なけんかをしたことは一度もない。",
-                     "exp": "know は状態動詞なので進行形にできず，したがって完了進行形にもできない。継続は完了形 have known のまま表す。"},
+                    {"stem": "The oil painting of a fishing boat ___ the city museum for over sixty years.",
+                     "choices": ["has belonged to", "has been hanging in", "has been in the care of", "has been belonging to", "has been kept in"], "ans": 3,
+                     "cols": 5,
+                     "ja": "漁船を描いたその油絵は，60年以上ずっと市立美術館にある。",
+                     "exp": "belong は状態動詞なので進行形にできず，完了進行形にもできない＝Ｄが不適当。Ａは belong の完了形，Ｂは動作動詞 hang の完了進行形，Ｃは be＋前置詞句，Ｅは been＋過去分詞の受動態。"},
                     {"tag": "r6",
                      "stem": "I ___ this dictionary for three years now, and it is still in good condition.",
                      "choices": ["am using", "use", "have been using", "had been using"], "ans": 2,
@@ -748,17 +749,18 @@ K03 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"tag": "r5",
                      "stem": "If I had taken your advice then, I ___ in such a difficult situation now.",
                      "choices": ["would not be", "would not have been", "will not be", "had not been"],
                      "ans": 0,
                      "ja": "あのとき君の忠告を聞いていれば，今こんな苦しい状況にはなっていないのに。",
                      "exp": "then（過去）と now（現在）が両方ある混合仮定法。原因は過去なので if 節は had p.p.，結果は現在なので主節は would 原形。"},
-                    {"stem": "If she had not missed the last train, she ___ here with us now.",
-                     "choices": ["would have been", "would be", "will be", "were"], "ans": 1,
-                     "ja": "終電に乗り遅れていなければ，彼女は今ここに一緒にいるのに。",
-                     "exp": "now があるので結果は現在。主節は would 原形。if 節だけが過去完了になる混合型。"},
+                    {"stem": "The small shops in this town ___ next spring if a shopping mall were built nearby.",
+                     "choices": ["would have to shut down", "might go bankrupt", "could not stay in business", "would have shut down", "would be forced to close"], "ans": 3,
+                     "cols": 5,
+                     "ja": "近くにショッピングモールができたら，この町の小さな商店は来年の春に廃業するだろう。",
+                     "exp": "if 節が過去形なので主節は原形で受ける。have p.p. だと内容が過去になり next spring と食い違う＝Ｄが不適当。Ａの have は原形，Ｂ might・Ｃ could も原形，Ｅは受動。"},
                     {"stem": "If you ___ change your mind, please let me know as soon as possible.",
                      "choices": ["will", "should", "would", "could"], "ans": 1,
                      "ja": "万が一気が変わったら，できるだけ早く知らせてください。",
@@ -993,16 +995,17 @@ K04 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"tag": "r5",
                      "stem": "I left home early; ___ I would have been late for the interview.",
                      "choices": ["therefore", "otherwise", "however", "nevertheless"], "ans": 1,
                      "ja": "早く家を出た。そうでなければ面接に遅刻していただろう。",
                      "exp": "otherwise「そうでなければ」が if 節の代わりに条件を表す。後半が would have been と仮定法になっている点が決め手。"},
-                    {"stem": "To hear him speak English, you ___ him for an American.",
-                     "choices": ["take", "took", "would take", "have taken"], "ans": 2,
-                     "ja": "彼が英語を話すのを聞けば，アメリカ人だと思うだろう。",
-                     "exp": "文頭の to 不定詞が「もし〜すれば」という条件を表す用法。主節は仮定法なので would take。"},
+                    {"stem": "I would show you around the old town myself, ___ so busy with the year-end accounts.",
+                     "choices": ["were I not", "if I were not", "if I weren't", "weren't I", "except that I am"], "ans": 3,
+                     "cols": 5,
+                     "ja": "年度末の決算でこれほど忙しくなければ，私が旧市街を案内するのだが。",
+                     "exp": "if を省いた倒置形では否定を縮約しない＝Ｄが不適当。正しい倒置はＡ were I not で，Ｂ・Ｃのように if を残すなら縮約は自由。Ｅは except that ＋直説法で理由を添える形。"},
                     {"stem": "The doctor insisted that the patient ___ in bed for at least a week.",
                      "choices": ["stays", "stayed", "stay", "is staying"], "ans": 2,
                      "ja": "医師はその患者が少なくとも１週間は安静にするようにと強く言った。",
@@ -1486,18 +1489,18 @@ K06 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "You cannot be ___ careful when you choose the university you will attend.",
                      "choices": ["so", "too", "very", "much"], "ans": 1,
                      "ja": "進学する大学を選ぶときは，いくら慎重になってもなりすぎることはない。",
                      "exp": "cannot 〜 too …「いくら〜してもしすぎることはない」。直訳は「too になることはできない」で，強い推奨を表す。"},
-                    {"tag": "r5",
-                     "stem": "I could not help ___ when I heard how the story ended.",
-                     "choices": ["cry", "to cry", "crying", "cried"], "ans": 2,
-                     "ja": "その話の結末を聞いたとき，私は泣かずにはいられなかった。",
-                     "exp": "cannot help -ing「〜せずにはいられない」。この help は「避ける」の意味で，後ろは動名詞。原形を続けたいなら cannot but cry とする。"},
+                    {"stem": "Every time I return to my hometown, I ___ how much the main street has changed.",
+                     "choices": ["cannot help noticing", "cannot but notice", "cannot fail to notice", "cannot help to notice", "cannot avoid noticing"], "ans": 3,
+                     "cols": 5,
+                     "ja": "故郷に帰るたびに，目抜き通りがどれほど変わったかに気づかずにはいられない。",
+                     "exp": "help は「避ける」の意味で動名詞をとり，to 不定詞は続かないのでＤが不適当。Ａは help ＋ 動名詞，Ｂは but ＋ 原形の定型，Ｃ fail to 原形・Ｅ avoid -ing は別語彙が本来とる形。"},
                     {"stem": "He may ___ be proud of his daughter, who won the national contest.",
-                     "choices": ["good", "well", "as", "too"], "ans": 1,
+                     "choices": ["good", "well", "as", "too"], "ans": 1, "tag": "r5",
                      "ja": "彼が娘を誇りに思うのももっともだ。全国大会で優勝したのだから。",
                      "exp": "may well 原形「〜するのももっともだ」。理由が後ろに示されているのが手がかり。"},
                     {"stem": "You have only ___ press this button to start the machine.",
@@ -1729,15 +1732,16 @@ K07 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "The wooden box was far too heavy for a child ___ alone.",
                      "choices": ["to carry", "to carry it", "carrying", "to be carrying"], "ans": 0,
                      "ja": "その木箱は，子どもが一人で運ぶにはあまりに重すぎた。",
                      "exp": "too 〜 to … では，主語 the box が carry の目的語を兼ねるので it を重ねて置かない。この it の有無が最頻出の狙い目。"},
-                    {"stem": "The station attendant was kind enough ___ me the way to the platform.",
-                     "choices": ["showing", "to show", "show", "showed"], "ans": 1,
-                     "ja": "駅員さんは親切にもホームへの道を教えてくれた。",
-                     "exp": "〜 enough to 原形「…するほど十分〜だ」。enough は kind の後ろに置く点にも注意。"},
+                    {"stem": "The two governments ___ a new trade agreement in Geneva early next month.",
+                     "choices": ["are to sign", "are signing", "are expected to sign", "are to signing", "will sign"], "ans": 3,
+                     "cols": 5,
+                     "ja": "両政府は来月初め，ジュネーブで新しい通商協定に署名する予定だ。",
+                     "exp": "be to 構文の to は不定詞の to だから後ろは原形＝前置詞の to と取り違えて動名詞を置いたＤが不適当。Ａは予定を表す be to，Ｂは決まった予定の現在進行形，Ｃは見込み，Ｅは単純未来。"},
                     {"stem": "He studied far into the night ___ as to pass the entrance examination.",
                      "choices": ["so", "such", "as", "in order"], "ans": 0,
                      "ja": "入試に合格するために，彼は夜遅くまで勉強した。",
@@ -2226,15 +2230,16 @@ K09 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "This small museum is well worth ___ if you have an hour to spare.",
                      "choices": ["to visit", "visiting", "visited", "to visiting"], "ans": 1,
                      "ja": "１時間でも時間があるなら，この小さな博物館は訪ねてみる価値が十分にある。",
                      "exp": "be worth -ing「〜する価値がある」。worth は前置詞的に働くので後ろは動名詞。目的語 it を重ねて置かない点にも注意。"},
-                    {"stem": "It is no use ___ about something that cannot be changed now.",
-                     "choices": ["complain", "to complain", "complaining", "complained"], "ans": 2,
-                     "ja": "今さら変えられないことについて不平を言ってもむだだ。",
-                     "exp": "It is no use -ing「〜してもむだだ」。この構文で to 不定詞は使えない。"},
+                    {"stem": "Ken's parents still cannot understand ___ the company after only two years.",
+                     "choices": ["his leaving", "him leaving", "their son leaving", "he leaving", "their son's leaving"], "ans": 3,
+                     "cols": 5,
+                     "ja": "ケンの両親は，息子がわずか２年で会社を辞めたことが今でも理解できない。",
+                     "exp": "動名詞の意味上の主語に主格は置けない＝Ｄが不適当。Ａ his は所有格，Ｂ him は目的格，Ｃ their son は名詞そのまま，Ｅ their son's はその所有格で，どれも「息子が辞めたこと」を表す。"},
                     {"stem": "There is no ___ what the weather will be like in the mountains.",
                      "choices": ["tell", "telling", "to tell", "told"], "ans": 1,
                      "ja": "山の天気がどうなるかは，まったく分からない。",
@@ -2713,15 +2718,16 @@ K11 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "___ from his accent, he must have grown up somewhere in the Kansai area.",
                      "choices": ["Judge", "Judging", "Judged", "Being judged"], "ans": 1,
                      "ja": "なまりから判断すると，彼は関西のどこかで育ったに違いない。",
                      "exp": "judging from 〜「〜から判断すると」は慣用の分詞構文。主節の主語と切り離して使える。"},
-                    {"stem": "Strictly ___, this sentence is grammatically incorrect, though everyone uses it.",
-                     "choices": ["speak", "speaking", "spoken", "to speak"], "ans": 1,
-                     "ja": "厳密に言えばこの文は文法的に誤りだが，誰もが使っている。",
-                     "exp": "strictly speaking「厳密に言えば」。generally ／ frankly speaking と同じ仲間。"},
+                    {"stem": "___ for repairs, the drama students rehearsed in an empty classroom instead.",
+                     "choices": ["The hall being closed", "With the hall closed", "As the hall was closed", "Being closed", "Finding the hall closed"], "ans": 3,
+                     "cols": 5,
+                     "ja": "講堂が修理中だったので，演劇部の生徒は代わりに空き教室で練習した。",
+                     "exp": "主語を書かない分詞構文の主語は主節の主語になり「生徒が修理で閉鎖される」ことになる＝Ｄが不適当。Ａは主語を残した独立分詞構文，Ｂは付帯状況の with，Ｃは接続詞に戻した形，Ｅは主語が主節と一致する。"},
                     {"tag": "r5",
                      "stem": "___ his age, my grandfather is remarkably active and travels every month.",
                      "choices": ["Consider", "Considering", "Considered", "To consider"], "ans": 1,

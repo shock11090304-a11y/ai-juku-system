@@ -435,18 +435,18 @@ K02 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "The small hotel ___ we stayed last summer has been completely renovated.",
                      "choices": ["which", "that", "where", "what"], "ans": 2,
                      "ja": "去年の夏に泊まった小さなホテルは，すっかり改装された。",
                      "exp": "we stayed は完全な文なので関係副詞 where。stay は自動詞で目的語をとらない点が手がかり。"},
-                    {"tag": "r5",
-                     "stem": "The museum ___ we visited on the last day was by far the most impressive.",
-                     "choices": ["where", "which", "when", "what"], "ans": 1,
-                     "ja": "最終日に訪れた博物館が，群を抜いて印象的だった。",
-                     "exp": "visited の目的語が欠けているので関係代名詞 which。先行詞が場所でも，後ろが不完全なら関係副詞は使えない。"},
+                    {"stem": "The village school ___ for nearly forty years was finally closed down last year.",
+                     "choices": ["where my father taught", "that my father taught at", "at which my father taught", "where my father taught at", "my father taught at"], "ans": 3,
+                     "cols": 5,
+                     "ja": "父が40年近く教えていたその村の学校は，昨年ついに閉校になった。",
+                     "exp": "関係副詞 where は at which に等しく前置詞を含むので，文末に at を重ねたＤが不適当。Ａは完全な文が続く where，Ｂ・Ｅは前置詞を後に残した関係代名詞（Ｅは目的格の省略），Ｃはそれを前に出した形。"},
                     {"stem": "___ hard you may try, you cannot please everybody at the same time.",
-                     "choices": ["Whatever", "Whenever", "However", "Wherever"], "ans": 2,
+                     "choices": ["Whatever", "Whenever", "However", "Wherever"], "ans": 2, "tag": "r5",
                      "ja": "どんなに努力しても，すべての人を同時に満足させることはできない。",
                      "exp": "however ＋ 形容詞・副詞 ＋ Ｓ Ｖ「どんなに〜でも」。直後に hard という副詞が来ているのが決め手。"},
                     {"stem": "You may take ___ you like from the shelf, but please put back the rest.",
@@ -683,18 +683,18 @@ K03 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "The climate of Okinawa is much milder than ___ of Hokkaido.",
                      "choices": ["it", "that", "those", "one"], "ans": 1,
                      "ja": "沖縄の気候は北海道の気候よりずっと穏やかだ。",
                      "exp": "the climate という単数名詞の繰り返しを避ける代名詞は that。比べる相手を「気候」どうしにそろえるための語。"},
-                    {"tag": "r5",
-                     "stem": "The wages of factory workers are still lower than ___ of office workers.",
-                     "choices": ["that", "those", "it", "them"], "ans": 1,
-                     "ja": "工場労働者の賃金は，事務職の賃金より依然として低い。",
-                     "exp": "the wages は複数なので those で受ける。単複を取り違えさせるのが定番の出題。"},
+                    {"stem": "My brother speaks English as fluently as our mother ___, but he has never lived abroad.",
+                     "choices": ["does", "can", "used to", "is", "did"], "ans": 3,
+                     "cols": 5,
+                     "ja": "兄は母と同じくらい流暢に英語を話すが，一度も海外で暮らしたことがない。",
+                     "exp": "一般動詞 speaks を受ける代動詞の働きが be 動詞には無い＝Ｄが不適当。後ろの as の先は，do 系で受けるＡ does・Ｅ did か，助動詞をそのまま残すＢ can・Ｃ used to になる。"},
                     {"stem": "He is ___ clever than wise; he always looks for a shortcut.",
-                     "choices": ["cleverer", "more", "much", "rather"], "ans": 1,
+                     "choices": ["cleverer", "more", "much", "rather"], "ans": 1, "tag": "r5",
                      "ja": "彼は賢明というより抜け目がない。いつも近道を探している。",
                      "exp": "同一人物の中の２つの性質を比べているので，短い語でも more を使う。cleverer than wise とは言わない。"},
                     {"stem": "This new machine is far superior ___ the one we were using last year.",
@@ -928,15 +928,16 @@ K04 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "He has only five hundred yen left.　＝　He has ___ more than five hundred yen left.",
                      "choices": ["no", "not", "any", "some"], "ans": 0,
                      "ja": "彼には500円しか残っていない。",
                      "exp": "no more than 〜 ＝ only「たった〜しか」。not more than なら at most「多くても」で意味が変わる。"},
-                    {"stem": "The small hall can hold at most two hundred people.　＝　It can hold ___ more than two hundred people.",
-                     "choices": ["no", "not", "any", "all"], "ans": 1,
-                     "ja": "その小さなホールは多くても200人しか収容できない。",
-                     "exp": "not more than 〜 ＝ at most「多くても」。単なる上限を示すだけで，話し手の驚きは含まない。"},
+                    {"stem": "The petition needed a thousand signatures, but ___ were collected by the deadline.",
+                     "choices": ["barely sixty", "as few as sixty", "no more than sixty", "no less than sixty", "fewer than sixty"], "ans": 3,
+                     "cols": 5,
+                     "ja": "その請願には千人の署名が必要だったが，締切までにわずかしか集まらなかった。",
+                     "exp": "no less than は「〜も」と多さを言う語で，千に遠く及ばない数と矛盾する＝Ｄが不適当。not less than なら「少なくとも」で別の意味。Ａ副詞・Ｂ原級・Ｃ「たった〜しか」・Ｅ比較級はみな少なさを表す。"},
                     {"tag": "r5",
                      "stem": "A whale is ___ a fish than a horse is; both are mammals.",
                      "choices": ["no more", "no less", "not more", "much more"], "ans": 0,
@@ -1421,18 +1422,18 @@ K06 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "I have two brothers. One is a teacher, and ___ is a civil engineer.",
                      "choices": ["another", "other", "the other", "others"], "ans": 2,
                      "ja": "私には兄弟が２人いる。一人は教師で，もう一人は土木技師だ。",
                      "exp": "２人のうち「残りの一人」は自動的に決まるので the other。another は残りが特定できないときに使う。"},
-                    {"tag": "r5",
-                     "stem": "I don't like this design very much. Could you show me ___ one?",
-                     "choices": ["other", "another", "the other", "others"], "ans": 1,
-                     "ja": "このデザインはあまり好きではありません。別のを見せてもらえますか。",
-                     "exp": "たくさんある中の「もう一つ別の」なので another。単数名詞の前に other 単独は置けない（複数なら other designs のように可）。"},
+                    {"stem": "Last summer I sold ___ to a secondhand shop by the station for almost nothing.",
+                     "choices": ["my old camera", "my father's old camera", "an old camera of mine", "a my old camera", "that old camera of mine"], "ans": 3,
+                     "cols": 5,
+                     "ja": "去年の夏，私は古いカメラを駅前の中古品店にただ同然で売った。",
+                     "exp": "冠詞と所有格は並べられないので，a と my を重ねたＤが不適当（an old camera of mine なら可）。Ａ・Ｂは所有格だけを置いた形，Ｃ・Ｅは冠詞・指示詞と併せるための二重所有格。"},
                     {"stem": "Some people prefer classical music, while ___ enjoy jazz or rock.",
-                     "choices": ["another", "the other", "others", "other"], "ans": 2,
+                     "choices": ["another", "the other", "others", "other"], "ans": 2, "tag": "r5",
                      "ja": "クラシック音楽を好む人もいれば，ジャズやロックを楽しむ人もいる。",
                      "exp": "Some 〜, others …「〜な人もいれば，…な人もいる」。残り全部ではないので the others にはしない。"},
                     {"stem": "Would you like ___ more coffee before you leave?",
@@ -1667,15 +1668,16 @@ K07 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "I have not seen him ___. I wonder whether he is all right.",
                      "choices": ["late", "lately", "later", "latest"], "ans": 1,
                      "ja": "最近彼を見かけない。大丈夫だろうか。",
                      "exp": "lately「最近」。現在完了とともに使われることが多い。late なら「遅く」で文意が通らない。"},
-                    {"stem": "He worked so ___ that he finished the entire report in a single night.",
-                     "choices": ["hard", "hardly", "harder", "hardness"], "ans": 0,
-                     "ja": "彼は懸命に働き，一晩で報告書を全部仕上げた。",
-                     "exp": "hard は「一生懸命に」。hardly は「ほとんど〜ない」という準否定なので，後半の内容と矛盾する。"},
+                    {"stem": "The security guard ___ the fire doors before locking up the building for the night.",
+                     "choices": ["always checks", "must always check", "is always careful to check", "checks always", "never forgets to check"], "ans": 3,
+                     "cols": 5,
+                     "ja": "警備員は，夜に建物を施錠する前に必ず防火扉を点検する。",
+                     "exp": "頻度の副詞は動詞と目的語の間に割り込めないので，Ｄが不適当（always checks なら可）。置き場所は一般動詞の前（Ａ・Ｅ），助動詞の後（Ｂ），be 動詞の後（Ｃ）の三つ。"},
                     {"tag": "r5",
                      "stem": "There was ___ anyone in the hall when the lecture was about to begin.",
                      "choices": ["hard", "hardly", "near", "nearly"], "ans": 1,
@@ -1908,18 +1910,18 @@ K08 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "The outdoor concert was canceled ___ the unusually heavy snow.",
                      "choices": ["because", "because of", "though", "since"], "ans": 1,
                      "ja": "記録的な大雪のため，野外コンサートは中止になった。",
                      "exp": "後ろが the heavy snow という名詞なので群前置詞 because of。because は接続詞なので S V が必要。"},
-                    {"tag": "r5",
-                     "stem": "___ the terrible weather, the summer festival was held exactly as planned.",
-                     "choices": ["Because of", "In spite of", "Thanks to", "Owing to"], "ans": 1,
-                     "ja": "ひどい天候にもかかわらず，夏祭りは予定どおりに開催された。",
-                     "exp": "「悪天候なのに開催された」という逆接なので in spite of。thanks to は好ましい原因に使う。"},
+                    {"stem": "The mayor kept the old library open ___ fierce criticism from the city council.",
+                     "choices": ["in spite of", "notwithstanding", "despite", "despite of", "in the face of"], "ans": 3,
+                     "cols": 5,
+                     "ja": "市長は，市議会の激しい批判にもかかわらず古い図書館を開いたままにした。",
+                     "exp": "despite は of を伴わない１語の前置詞なので＝Ｄが不適当。Ａ in spite of・Ｅ in the face of は of までで１つの前置詞，Ｂ・Ｃは１語のまま名詞をとる。"},
                     {"stem": "He paid for the whole meal ___ credit card because he had no cash.",
-                     "choices": ["by", "with", "in", "on"], "ans": 0,
+                     "choices": ["by", "with", "in", "on"], "ans": 0, "tag": "r5",
                      "ja": "現金の持ち合わせがなかったので，彼は食事代をすべてカードで払った。",
                      "exp": "手段の by ＋ 無冠詞の名詞。with を使うなら with a credit card と冠詞が必要になる。"},
                     {"stem": "Please write your answers ___ pencil so that you can erase them easily.",
@@ -2159,15 +2161,16 @@ K09 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "___ he will accept our offer is still uncertain at this stage.",
                      "choices": ["If", "Whether", "That if", "Though"], "ans": 1,
                      "ja": "彼が我々の申し出を受けるかどうかは，現段階ではまだ不確かだ。",
                      "exp": "「〜かどうか」を表す名詞節が[u]主語[/u]になっているので whether。if は目的語の位置でしか使えない。"},
-                    {"stem": "I am not at all interested in ___ he wins the election or not.",
-                     "choices": ["if", "whether", "that", "which"], "ans": 1,
-                     "ja": "彼が選挙に勝つかどうかに，私はまったく関心がない。",
-                     "exp": "前置詞 in の後ろなので whether。if は前置詞の目的語にはなれない。"},
+                    {"stem": "The travel site allows users to compare prices instantly and ___ their seats online.",
+                     "choices": ["book", "to book", "reserve", "booking", "pick out"], "ans": 3,
+                     "cols": 5,
+                     "ja": "その旅行サイトでは，料金を素早く比べ，オンラインで座席を取ることができる。",
+                     "exp": "and は同じ形どうしをつなぐので，to compare とそろわない動名詞のＤが不適当。Ａ book は２つ目の to を省いた形，Ｂ to book は省かない形，Ｃ reserve・Ｅ pick out も原形。"},
                     {"tag": "r5",
                      "stem": "The news ___ the factory would close came as a great shock to the town.",
                      "choices": ["which", "what", "that", "of which"], "ans": 2,
@@ -2647,18 +2650,18 @@ K11 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "What ___ that made him change his mind at the very last moment?",
                      "choices": ["is it", "it is", "does it", "it does"], "ans": 0,
                      "ja": "土壇場で彼に考えを変えさせたのは，一体何だったのだろう。",
                      "exp": "疑問詞を強調する形は「疑問詞 ＋ is it that 〜」。語順が入れ替わらない点に注意。"},
-                    {"tag": "r5",
-                     "stem": "It was because of the heavy fog ___ all the morning flights were canceled.",
-                     "choices": ["which", "that", "when", "what"], "ans": 1,
-                     "ja": "午前中の便がすべて欠航になったのは，濃霧のせいだった。",
-                     "exp": "because of the heavy fog という副詞句を強調する強調構文。It was と that を外すと完全な文が残る。"},
+                    {"stem": "The village hall is kept locked ___, and only the caretaker has a key.",
+                     "choices": ["when empty", "when not in use", "when it is unoccupied", "when stands empty", "when left unattended"], "ans": 3,
+                     "cols": 5,
+                     "ja": "村の公民館は使われていないときは施錠され，鍵は管理人しか持っていない。",
+                     "exp": "副詞節で省略できるのは主語と be 動詞なので，be 動詞でない stands の前の主語を落としたＤが不適当。Ａは形容詞，Ｂは前置詞句，Ｅは過去分詞で，どれも it is を補える形。Ｃは省略しない完全な節。"},
                     {"stem": "Please correct the errors, if ___, in the second paragraph of the report.",
-                     "choices": ["some", "any", "ever", "not"], "ans": 1,
+                     "choices": ["some", "any", "ever", "not"], "ans": 1, "tag": "r5",
                      "ja": "報告書の第２段落に，もし誤りがあれば訂正してください。",
                      "exp": "if any「もしあれば」＝ if there are any errors の省略形。if ever なら「たとえあるにしても」。"},
                     {"stem": "The engineer, ___ we had relied on for years, suddenly resigned last month.",
@@ -2895,18 +2898,18 @@ K12 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "The sudden storm ___ us from reaching the summit before sunset.",
                      "choices": ["prevented", "protected", "stopped to", "avoided"], "ans": 0,
                      "ja": "突然の嵐のせいで，私たちは日没前に山頂へたどり着けなかった。",
                      "exp": "prevent O from -ing「Ｏが〜するのを妨げる」。無生物主語の代表的な構文で，主語を理由のように訳す。"},
-                    {"tag": "r5",
-                     "stem": "Another ten minutes' walk ___ us to a small shrine hidden in the woods.",
-                     "choices": ["arrived", "brought", "went", "reached to"], "ans": 1,
-                     "ja": "さらに10分歩くと，森に隠れた小さな神社に出た。",
-                     "exp": "bring ＋ 人 ＋ to 〜「（〜のおかげで）人が…に着く」。時間や道路を主語にする無生物主語構文。"},
+                    {"stem": "The team leader ___ before the construction work at the new site began.",
+                     "choices": ["explained the plan to us", "described the plan to us", "told us the plan", "explained us the plan", "showed us the plan"], "ans": 3,
+                     "cols": 5,
+                     "ja": "新しい用地での建設工事が始まる前に，チームリーダーは私たちに計画を伝えた。",
+                     "exp": "explain は「人に物を」の二重目的語をとれないので，Ｄが不適当。Ａのように explain 物 to 人 とする。Ｂ describe も同じ制限をもち，Ｃ tell・Ｅ show はＳＶＯＯ をとれる動詞。"},
                     {"stem": "I found ___ impossible to finish the whole assignment in one evening.",
-                     "choices": ["that", "it", "this", "which"], "ans": 1,
+                     "choices": ["that", "it", "this", "which"], "ans": 1, "tag": "r5",
                      "ja": "課題全部を一晩で終えるのは無理だと分かった。",
                      "exp": "形式目的語の it。長い to 不定詞を後ろへ回し，その位置に it を置く。"},
                     {"stem": "The soup on the table ___ delicious, so I asked for another bowl.",
