@@ -12,7 +12,8 @@ import sys
 import unicodedata
 
 from layout import (
-    CIRCLE, PATTERN_SYN, SYN_VOCAB, normalize, parse, plain_text, top_segments,
+    CIRCLE, PATTERN_SYN, SYN_VOCAB, document, normalize, parse, plain_text,
+    stylesheet, top_segments,
 )
 from lint import markup_errors, validate_item
 from content import (
@@ -321,9 +322,34 @@ def main():
     try:
         import build
         page = build.build_mondai()
+        ans_page = build.build_kaisetsu()
     except Exception as e:                      # noqa: BLE001
         err("問題編", f"組版に失敗した: {type(e).__name__}: {e}")
-        page = ""
+        page = ans_page = ""
+
+    # ★紙で崩れるのに文字列では気づけない 2 つを、組み上がった HTML 全体で見る。
+    #   どちらも実測で紙に出た（check.py が緑のまま出荷しかけた）。
+    for label, body in (("問題編", page), ("解答解説編", ans_page)):
+        if not body:
+            continue
+        html_all = document(body, label)
+        # (1) 二重エスケープ: &amp;lt; と焼かれると、紙に &lt; という文字がそのまま出る
+        for bad in ("&amp;lt;", "&amp;gt;", "&amp;amp;", "&amp;nbsp;"):
+            if bad in html_all:
+                err(label, f"二重エスケープ {bad} がある"
+                           "（実体参照を含む文字列を esc() に通していないか）")
+        # (2) 本文で使っている class が、刷るスタイルシートに定義されているか。
+        #     ★CSS が刷る側に届いていないと、罫線も枠も無い素のテキストで出る。
+        css = stylesheet()
+        used = set()
+        for m in re.finditer(r'class="([^"]+)"', body):
+            used |= set(m.group(1).split())
+        undefined = sorted(c for c in used
+                           if not re.search(r"\." + re.escape(c) + r"(?![\w-])", css))
+        if undefined:
+            err(label, f"スタイルの当たっていない class がある: {undefined}"
+                       "（EXTRA_CSS が刷る側に届いていない／class 名の打ち間違い）")
+
     if page:
         # 解答編にしか出さない部品が問題編に混ざっていないか（構造で見る）
         for cls, what in [('class="atag"', "構文名タグ"), ('class="jatr"', "和訳"),

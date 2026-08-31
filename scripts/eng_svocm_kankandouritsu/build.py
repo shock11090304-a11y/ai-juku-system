@@ -17,8 +17,9 @@ from layout import (
 import layout
 from content import META, NOTATION, PART1, PART2, PART3, RULES, RULE_EXAMPLES, STEPS
 
-# 共有 CSS にこの教材ぶんを継ぎ足す（BASE_CSS 側は書き換えない）
-layout.BASE_CSS = layout.BASE_CSS + EXTRA_CSS
+# 共有 CSS にこの教材ぶんを継ぎ足す。★代入ではなく install_css() を使うこと
+# （代入だと刷る側に届かない。layout.install_css の説明を読むこと）
+layout.install_css(EXTRA_CSS)
 CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩"
 
 LEGEND = ('<div class="legend">'
@@ -112,9 +113,11 @@ def build_mondai():
     h.append('<div class="partttl">記号のルール<span class="en2">Notation</span></div>')
     h.append('<div class="rulegrid">')
     for r in RULES:
-        h.append(f'<div class="rulecard {r["cls"]}"><div class="rh">{esc(r["h"])}</div>'
+        # ★h / ex / b はどれも「書かれたとおりの HTML」（&lt; などの実体参照を含む）。
+        #   esc() を通すと &amp;lt; に化けて、紙に &lt; という文字がそのまま出る（実測）。
+        h.append(f'<div class="rulecard {r["cls"]}"><div class="rh">{r["h"]}</div>'
                  f'<div class="rb">{r["b"]}</div>'
-                 f'<div class="rex">{esc(r["ex"])}</div></div>')
+                 f'<div class="rex">{r["ex"]}</div></div>')
     h.append('</div>')
 
     h.append('<div class="partttl">読む手順<span class="en2">Procedure</span></div>')
@@ -294,7 +297,7 @@ def syn_index_html():
             f'<div class="pt2">全 {len(rows)} 問 ／ {len(byname)} 構文</div></div>'
             '<div class="instr">この教材で扱った構文の一覧。'
             '解き直すときは、間違えた問題と同じ構文の問題をここから探すこと。</div>'
-            f'<table class="notation">{body}</table>')
+            f'<table class="notation synindex">{body}</table>')
 
 
 def main():

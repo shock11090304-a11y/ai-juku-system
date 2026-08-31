@@ -98,6 +98,30 @@ def infer_pattern(labels):
     return None
 
 
+def install_css(extra):
+    """この教材ぶんの CSS を、**実際に刷る側**のスタイルシートに継ぎ足す。
+
+    ★`layout.BASE_CSS = layout.BASE_CSS + EXTRA_CSS` と書いてはいけない。
+      それは layout モジュールの名前を束ね直すだけで、組版する doc() が読むのは
+      共有コア側の BASE_CSS なので、**追加 CSS が 1 文字も紙に届かない**。
+      実際にこれで第1部の解答欄が罫線の無い素のテキストで刷られていた
+      （check.py は本文の文字列しか見ないので緑のままだった）。
+    """
+    if extra not in _shared.BASE_CSS:
+        _shared.BASE_CSS = _shared.BASE_CSS + extra
+    return _shared.BASE_CSS
+
+
+def stylesheet():
+    """いま刷りに使われるスタイルシート（検査用）。"""
+    return _shared.BASE_CSS
+
+
+def document(body, title):
+    """刷るときと同じ組み立ての HTML 全体（検査用）。"""
+    return _shared.doc(title, body)
+
+
 # ------------------------------------------------------------------ 構文カテゴリ
 # ★重複の検出を tag（自由文）で行うと、書き換えるだけでゲートをすり抜けられる。
 #   「同じ構文を何問出したか」は決まった語彙で数える。解答編の巻末に一覧としても刷る。
@@ -221,6 +245,11 @@ table.notation { width:100%; border-collapse:collapse; font-size:9pt; margin:4px
   page-break-inside:avoid; }
 table.notation td { border:1px solid #dbe3ef; padding:4px 9px; vertical-align:top;
   line-height:1.6; }
+/* ★索引は 57 行あって 1 ページに収まらない。table.notation の page-break-inside:avoid が
+   効いたままだと、表が丸ごと次ページへ送られて**見出しだけのページ**ができる（実測）。
+   行単位で切れるようにする。 */
+table.synindex { page-break-inside:auto; }
+table.synindex tr { page-break-inside:avoid; }
 table.notation td.nk { width:118px; font-weight:700; color:#1e3a8a; background:#f8fafc;
   font-family:"Hiragino Kaku Gothic ProN",sans-serif; font-size:8.8pt; white-space:nowrap; }
 table.notation td.nb { color:#334155; }

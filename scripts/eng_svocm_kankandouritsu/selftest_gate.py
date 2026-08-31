@@ -13,7 +13,7 @@ import build
 import check as K
 import content as C
 
-PARTS = ("PART1", "PART2", "PART3", "NOTATION")
+PARTS = ("PART1", "PART2", "PART3", "NOTATION", "RULES")
 DICTS = ("SYN_POOL",)
 
 
@@ -197,6 +197,25 @@ def _():
     orig = build.render_blank
     build.render_blank = lambda *a, **k: ""
     return lambda: setattr(build, "render_blank", orig)
+
+
+@case("追加CSSが刷る側に届いていない（罫線も枠も無い素のテキストで刷られる）")
+def _():
+    # ★実際に踏んだ事故。build.py が layout.BASE_CSS に**代入**していたため、
+    #   組版する doc() が読む共有コア側の CSS には 1 文字も届いていなかった。
+    #   本文の文字列は正しいので check.py は緑のまま、紙だけが崩れる。
+    import layout
+    orig = layout._shared.BASE_CSS
+    layout._shared.BASE_CSS = orig.replace(layout.EXTRA_CSS, "")
+    return lambda: setattr(layout._shared, "BASE_CSS", orig)
+
+
+@case("二重エスケープ（紙に &lt; という文字がそのまま出る）")
+def _():
+    # ★実際に踏んだ事故。実体参照を含む文字列を esc() に通すと &amp;lt; になり、
+    #   紙には &lt; が文字として印字される。
+    C.RULES[0]["ex"] = "the students &amp;lt; who were talking &amp;gt; became quiet"
+    return None
 
 
 @case("答えの入った解答欄が問題編に刷られる（組版の取り違え）")

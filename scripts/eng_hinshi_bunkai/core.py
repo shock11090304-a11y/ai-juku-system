@@ -13,7 +13,7 @@
 ★単一ソース原則: 問題編に出す「英文そのもの」は、この DSL から機械的に復元する。
   よって問題編と解答編の英文がズレることは構造上あり得ない（check.py が長文本文とも照合）。
 """
-import os, re, html, subprocess
+import os, re, glob, html, shutil, subprocess, tempfile
 # ★fitz(pymupdf) は render_pdf の中で import する。ここで読むと、PDF を1枚も開かない
 #   内容ゲート(check.py)まで pymupdf 未導入の環境で ModuleNotFoundError で落ちる
 #   （＝run_all_gates.py の CRASH＝FAIL）。判定に要るのは「PDFファイルが要るか」であって
@@ -21,8 +21,33 @@ import os, re, html, subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DESKTOP = os.path.expanduser("~/Desktop")
-CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-FONT_PATH = "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
+# ★刷るのは塾長の Mac（Chrome + Arial Unicode）。それが正典。
+#   クラウド/CI で「中身を確かめるための PDF」を出せるように、見つからなければ
+#   その環境にあるものへ落とす。env で明示指定もできる。
+#   ただし**字形の照合は刷るフォント（Arial Unicode）の cmap を正典にする**こと。
+#   その場にあるフォントで照合すると、Noto にあって Arial Unicode に無い字が
+#   素通りして紙で豆腐になる（CLAUDE.md の「フォントは入れない」はこの意味）。
+def _first_path(env, candidates):
+    v = os.environ.get(env)
+    if v and os.path.exists(v):
+        return v
+    for pat in candidates:
+        for hit in sorted(glob.glob(pat)):
+            if os.path.exists(hit):
+                return hit
+    return candidates[0]
+
+
+CHROME = _first_path("CHROME_PATH", [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/opt/pw-browsers/chromium-*/chrome-linux/chrome",
+    "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",
+])
+FONT_PATH = _first_path("PDF_STAMP_FONT", [
+    "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc",
+])
 
 esc = lambda s: html.escape(str(s), quote=False)
 CIRCLE = ["①", "②", "③", "④", "⑤", "⑥"]
@@ -375,12 +400,20 @@ def doc(title, body):
 
 
 def render_pdf(body, out_path, foot_label):
-    tmp = os.path.join(HERE, "_" + os.path.basename(out_path).replace(".pdf", ".html"))
+    # ★中間 HTML は使い捨てのディレクトリに置く。以前は HERE（＝この共有コアのある
+    #   eng_hinshi_bunkai/）に書いていたので、**別の教材を刷ると隣の教材のフォルダが汚れた**。
+    tmpdir = tempfile.mkdtemp(prefix="pdfsrc-")
+    tmp = os.path.join(tmpdir, os.path.basename(out_path).replace(".pdf", ".html"))
     with open(tmp, "w", encoding="utf-8") as f:
         f.write(doc(foot_label, body))
-    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
-                    "--virtual-time-budget=15000", f"--print-to-pdf={out_path}", "file://" + tmp],
-                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    cmd = [CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
+           "--virtual-time-budget=15000", f"--print-to-pdf={out_path}", "file://" + tmp]
+    # root で動く Linux コンテナ（CI・クラウド）では sandbox を切らないと起動しない。
+    # Mac では root で動かさないので、この分岐は塾長の環境の挙動を変えない。
+    if os.name == "posix" and hasattr(os, "geteuid") and os.geteuid() == 0:
+        cmd.insert(1, "--no-sandbox")
+    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    shutil.rmtree(tmpdir, ignore_errors=True)
     import fitz
     d = fitz.open(out_path)
     font = fitz.Font(fontfile=FONT_PATH)
