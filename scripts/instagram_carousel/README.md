@@ -37,6 +37,30 @@ python3 scripts/instagram_carousel/build_vol.py vol01 --out ~/Downloads/ig
 `--no-font-fetch` (フォントを取りに行かない・オフライン用)。
 Pillow が要る (版面の較正と刷り上がりの検査に使う)。
 
+## 塾長の Mac で回すとき (デスクトップに置きたい場合)
+
+★**クラウドの Claude Code (claude.ai/code) は、どのセッションでも塾長の端末の
+デスクトップには書けない**。別のマシンで動いているので届かない。
+セッションを取り直しても同じ。デスクトップに置きたいときは
+**塾長の Mac の Claude Code か、Mac のターミナル**で回すこと。
+(`class_recordings` の `railway run` と同じ事情。CLAUDE.md にも書いてある)
+
+```bash
+git fetch origin claude/instagram-image-memory-search-37kkan
+git checkout claude/instagram-image-memory-search-37kkan
+python3 -m pip install Pillow                      # 初回だけ
+python3 scripts/instagram_carousel/build_vol.py vol01 --desktop
+open ~/Desktop/trillion-ig/vol01
+```
+
+要るもの: Python 3 / Pillow / Google Chrome (`/Applications/` にあれば自動で見つける)。
+初回だけ Noto フォント (約 30MB) を取りに行く (2 回目以降はキャッシュ)。
+
+★Mac と Linux で**同じフォント (Noto) を使う**ので版面は一致するが、Chrome の
+バージョン差でアンチエイリアスが微妙に変わり、PNG がバイト単位で一致しないことはある。
+その場合 `<key>_sheet.jpg` も一緒に刷り直されるので、`git status` に出たらコミットしてよい
+(「別の端末で刷り直した」という意味)。
+
 ## ファイルの役割
 
 | ファイル | 役割 |
