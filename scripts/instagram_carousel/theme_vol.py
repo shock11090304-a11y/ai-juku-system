@@ -205,8 +205,10 @@ def check_markup(text):
             break
         tok = text[s + 1:e]
         i = e + 1
-        if not tok or " " in tok:
-            continue  # 記法ではないただの角括弧 (例: [注1] のような日本語表記)
+        # ★ASCII だけを記法とみなす。日本語の角括弧 ([注1] / [3点]) は本文なので通す。
+        #   逆に [zz] のような ASCII の綴り間違いは未知タグとして落とす。
+        if not tok or " " in tok or not tok.isascii():
+            continue
         if tok.startswith("/"):
             name = tok[1:]
             if name not in INLINE:

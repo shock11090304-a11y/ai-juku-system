@@ -69,18 +69,31 @@ def find_chrome():
 #   Linux の headless Chromium (1194) では 87 CSS px 少なく描画され、
 #   足りない分は地の色で埋められる = 版面の下端が丸ごと出ない。
 #   macOS の Chrome では 0 だった。環境で違うので定数で持たず、実測して吸収する。
+#
+# ★★測れなかったときに 0 を返してはいけない。0 は「Mac では正しい値」なので、
+#   「測れなかった」と「本当に 0」が区別できなくなる。実際に一度そう書いて、
+#   Pillow が無い環境や較正が失敗した環境で**フッターの無い PNG を無言で納品する**
+#   経路を作った (実寸は正しいので寸法検査も通ってしまう)。測れなければ必ず落とす。
 _UI_OFFSET = {}
 
 
+class CalibrationError(RuntimeError):
+    pass
+
+
 def _measure_ui_offset(chrome_bin, scale):
-    """--window-size のうち描画されない高さ (CSS px) を実測して返す。"""
+    """--window-size のうち描画されない高さ (CSS px) を実測して返す。
+
+    測れなければ CalibrationError。**0 を返して誤魔化さない。**
+    """
     if scale in _UI_OFFSET:
         return _UI_OFFSET[scale]
     try:
         from PIL import Image
-    except ImportError:
-        _UI_OFFSET[scale] = 0
-        return 0
+    except ImportError as e:
+        raise CalibrationError(
+            "Pillow が要る (版面の下端が欠けていないかを較正するため)。"
+            "python3 -m pip install Pillow") from e
     import tempfile
     ask_h = 1000
     d = tempfile.mkdtemp(prefix="chromecal-")
@@ -90,18 +103,29 @@ def _measure_ui_offset(chrome_bin, scale):
                 '*{margin:0;padding:0}html{background:#ff0000}'
                 '</style></head><body>'
                 '<div style="height:4000px;background:#00ff00"></div></body></html>')
-    subprocess.run(_argv(chrome_bin, hp, pp, 400, ask_h, scale),
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
-    off = 0
-    if os.path.exists(pp):
-        im = Image.open(pp).convert("RGB")
-        px, (w, h) = im.load(), im.size
-        drawn = 0
-        for y in range(h):
-            if px[w // 2, y] != (0, 255, 0):
-                break
-            drawn = y + 1
-        off = max(0, ask_h - drawn // scale)
+    r = subprocess.run(_argv(chrome_bin, hp, pp, 400, ask_h, scale),
+                       stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=60)
+    if not os.path.exists(pp):
+        err = (r.stderr or b"").decode("utf-8", "replace")[-400:]
+        raise CalibrationError(
+            f"較正のスクリーンショットが撮れなかった (exit={r.returncode})\n"
+            f"  chrome={chrome_bin}\n{err}")
+    im = Image.open(pp).convert("RGB")
+    px, (w, h) = im.load(), im.size
+    drawn = 0
+    for y in range(h):
+        if px[w // 2, y] != (0, 255, 0):
+            break
+        drawn = y + 1
+    if drawn == 0:
+        raise CalibrationError(
+            "較正の画像が全面 緑ではない = 何も描画できていない。"
+            f"chrome={chrome_bin}")
+    off = max(0, ask_h - drawn // scale)
+    if off >= ask_h // 2:
+        raise CalibrationError(
+            f"較正の結果が異常 (描画されたのは {drawn // scale}/{ask_h} CSSpx)。"
+            f"chrome={chrome_bin}")
     _UI_OFFSET[scale] = off
     return off
 
@@ -120,13 +144,14 @@ def _argv(chrome_bin, html_path, png_path, width, height, scale):
 def shot(html_path, png_path, width, height, scale=2, timeout=120):
     """html_path を width x height の版面で撮って png_path に width*scale x height*scale で書く。
 
-    ★終了コードだけでなく、PNG の存在と実寸まで見る。Chrome は 0 終了でも
-      PNG を書かないことがあり、書けても下端が描画されていないことがある。
+    ★終了コードだけでなく、PNG の存在・実寸・**下端が本当に描画されたか**まで見る。
+      Chrome は 0 終了でも PNG を書かないことがあり、書けても下端が
+      未描画のまま地の色で埋まっていることがある (実寸は正しいので気づけない)。
     """
     chrome = find_chrome()
     if os.path.exists(png_path):
         os.remove(png_path)
-    off = _measure_ui_offset(chrome, scale)
+    off = _measure_ui_offset(chrome, scale)   # 測れなければここで落ちる
     r = subprocess.run(_argv(chrome, html_path, png_path, width, height + off, scale),
                        stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=timeout)
     if not os.path.exists(png_path):
@@ -134,9 +159,11 @@ def shot(html_path, png_path, width, height, scale=2, timeout=120):
         raise RuntimeError(f"PNG が生成されなかった (exit={r.returncode})\n"
                            f"  chrome={chrome}\n  html={html_path}\n{err}")
     want = (width * scale, height * scale)
-    if off and png_size(png_path) != want:
-        from PIL import Image
-        Image.open(png_path).convert("RGB").crop((0, 0, *want)).save(png_path)
+    from PIL import Image
+    im = Image.open(png_path).convert("RGB")
+    if im.size != want:
+        im = im.crop((0, 0, *want))
+        im.save(png_path)
     got = png_size(png_path)
     if got != want:
         raise RuntimeError(f"PNG の実寸が {got} — {want} でなければならない "

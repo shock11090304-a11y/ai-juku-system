@@ -23,6 +23,7 @@ run_all_gates.py が引数なしで拾う。**引数なしの既定は「出す 
   - 版面からのはみ出し … Chrome が要る。build_vol.py が刷る前に必ず測っている。
   - 正解の一意性・日本語の自然さ … 人手 (CLAUDE.md の相互チェック層③)
 """
+import hashlib
 import os
 import re
 import sys
@@ -34,18 +35,46 @@ import build_vol as BV      # noqa: E402
 import theme_vol as T       # noqa: E402
 import fonts as F           # noqa: E402
 
-# レイアウト用のクラス名 → そのクラスに付けてよい修飾子。
-# ★部品の修飾子がレイアウト用と同名になると、部品が .mid (flex 縦積み) の指定を
-#   もらって中身が全部改行される。実際に .dashnote.mid でやった。
-#   「レイアウト用クラスに、許した修飾子以外が同居していないか」で捕まえる。
-STRUCT_OK = {
-    "stage": set(), "mid": {"center", "top"}, "foot": set(),
-    "brand": set(), "title": set(), "rule": set(), "push": set(),
-    "who": set(), "pg": set(),
-}
+# ── クラス衝突の見張り ────────────────────────────────────────────
+# ★名前の一覧を手で持たない。手で持つと「知っている 9 個」しか守れず、
+#   .dashnote.opts のように同じ壊れ方をする組み合わせが素通りする。
+#   CSS から「意図して用意された組み合わせ (.a.b)」と
+#   「単独で指定を持つクラス」を読み取り、
+#   *意図されていない同居* を落とす。
+
+
+def _css_index(css):
+    """CSS から (意図された組み合わせ, 単独指定のあるクラス, レイアウト指定のクラス)。"""
+    combos, standalone, layout = set(), set(), set()
+    for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
+        for one in sel.split(","):
+            one = one.strip()
+            if not one:
+                continue
+            last = one.split()[-1]                       # 子孫セレクタの末尾
+            names = re.findall(r"\.([A-Za-z0-9_-]+)", last)
+            if len(names) >= 2:
+                for i in range(len(names)):
+                    for j in range(i + 1, len(names)):
+                        combos.add(frozenset((names[i], names[j])))
+            elif len(names) == 1:
+                standalone.add(names[0])
+                if re.search(r"\bdisplay\s*:", body):
+                    layout.add(names[0])
+    return combos, standalone, layout
+
+
+CSS_COMBOS, CSS_STANDALONE, CSS_LAYOUT = _css_index(T.CSS)
 
 # 2 語以上つながった英文。1 語だけの語注 (consciousness 意識) は拾わない。
-_EN_RUN = re.compile(r"[A-Za-z][A-Za-z0-9'’\-]*(?:[ ,:;.]+[A-Za-z][A-Za-z0-9'’\-]*)+")
+# ★語の区切りは空白だけではない。ハイフン・改行・全角空白・スラッシュ・中黒で
+#   繋いだ英文が素通りしていたので、走査の前に区切りを空白へ寄せる。
+_EN_SEP = re.compile(r"[\-–—/・\u3000\n\t]+")
+_EN_RUN = re.compile(r"[A-Za-z][A-Za-z0-9'’]*(?:[ ,:;.]+[A-Za-z][A-Za-z0-9'’]*)+")
+
+
+def _en_runs(text):
+    return _EN_RUN.findall(_EN_SEP.sub(" ", text))
 
 # 和文フォントとして数える族 (スタックの先頭がこれでなければ中国語字形に落ちる)
 _JA_FAMILIES = ("Noto Sans JP", "Noto Serif JP", "Hiragino", "Yu Gothic",
@@ -85,7 +114,7 @@ def check_vol(vol, bad):
             if b["kind"] == "fig":
                 texts += re.findall(r"<text[^>]*>([^<]*)</text>", b["value"] or "")
         for t in texts:
-            for run in _EN_RUN.findall(t):
+            for run in _en_runs(t):
                 if not _en_ok(run, passage, examples):
                     ng(f"p{n}: 本文にも例文にも無い英文 → {run!r} "
                        f"(passage か en_examples に入れること)")
@@ -93,15 +122,23 @@ def check_vol(vol, bad):
         # ── 3. 組んだ HTML とデータの突き合わせ
         html = BV.render_slide(vol, s)
         total = len(vol["slides"])
-        on = html.count('class="dot on"')
-        dots = html.count('class="dot"') + on
-        if dots != total:
-            ng(f"p{n}: ドットが {dots} 個 — {total} 個でなければならない")
-        if on != 1:
-            ng(f"p{n}: 点灯しているドットが {on} 個 — 1 個であること")
-        if f'>{n}/{total}<' not in html:
-            ng(f"p{n}: ページ番号 {n}/{total} が出力に無い")
-        for field in ("brand", "series", "handle"):
+        # ★「render_slide が書いた文字列を同じ値で探す」照合は同語反復で、
+        #   データを壊しても絶対に発火しない。出力から**位置**を読み戻して、
+        #   データの n と突き合わせる (描画側の off-by-one を捕まえる)。
+        seq = re.findall(r'class="dot( on)?"', html)
+        if len(seq) != total:
+            ng(f"p{n}: ドットが {len(seq)} 個 — {total} 個でなければならない")
+        lit = [i for i, x in enumerate(seq) if x]
+        if len(lit) != 1:
+            ng(f"p{n}: 点灯しているドットが {len(lit)} 個 — 1 個であること")
+        elif lit[0] != n - 1:
+            ng(f"p{n}: 点灯位置が左から {lit[0] + 1} 番目 — {n} 番目であること")
+        m = re.search(r'class="pgnum">([^<]*)<', html)
+        if not m:
+            ng(f"p{n}: ページ番号が出力に無い")
+        elif m.group(1) != f"{n}/{total}":
+            ng(f"p{n}: ページ番号の表示が {m.group(1)!r} — {n}/{total} であること")
+        for field in ("brand", "series", "handle", "site", "label"):
             if vol[field].replace("&", "&amp;") not in html:
                 ng(f"p{n}: {field} ({vol[field]!r}) が出力に無い")
 
@@ -115,12 +152,19 @@ def check_vol(vol, bad):
 
         # ── 4. クラス名の衝突
         for cls in re.findall(r'class="([^"]+)"', html):
-            names = set(cls.split())
-            for st in names & set(STRUCT_OK):
-                stray = names - {st} - STRUCT_OK[st]
-                if stray:
-                    ng(f"p{n}: レイアウト用クラス .{st} に許していない修飾子 "
-                       f"{sorted(stray)} が同居している (部品が縦積みにされる)")
+            names = sorted(set(cls.split()))
+            for i in range(len(names)):
+                for j in range(i + 1, len(names)):
+                    a, b = names[i], names[j]
+                    if frozenset((a, b)) in CSS_COMBOS:
+                        continue          # CSS に .a.b がある = 意図した組み合わせ
+                    if a in CSS_LAYOUT or b in CSS_LAYOUT:
+                        ng(f"p{n}: .{a} と .{b} が同居しているが CSS に "
+                           f".{a}.{b} が無い。片方が display 指定を持つので "
+                           f"中身の並びが壊れる")
+                    elif a in CSS_STANDALONE and b in CSS_STANDALONE:
+                        ng(f"p{n}: .{a} と .{b} が同居しているが CSS に "
+                           f".{a}.{b} が無い (意図しない指定の混ざり)")
 
 
 def check_fonts(bad):
@@ -155,8 +199,55 @@ def judge_geometry(name, size, top_css, gap_css):
     return out
 
 
+SHEET_MAD_MAX = 8.0   # 一覧 JPG と刷った PNG の平均絶対差の上限 (実測: 一致 2〜3 / 取り違え 21〜23)
+
+
+def judge_content(key, items, sheet):
+    """刷り上がりの中身を判定する純関数。
+
+    items: [(名前, PIL.Image(RGB))] を版面の順に。sheet: 一覧 JPG の Image か None。
+    ★ファイル読み込みと判定を分けてあるのは、変異試験 (check_carousel_guards.py) が
+      壊した画像を**メモリ上で**作って直接叩けるようにするため。
+    """
+    from PIL import Image, ImageChops, ImageStat
+    out, seen_bytes = [], {}
+    for nm, im in items:
+        g = im.convert("L")
+        px, (w, h) = g.load(), g.size
+        if not any(max(px[x, y] for x in range(0, w, 9)) > 70
+                   for y in range(int(h * 0.22), int(h * 0.78), 7)):
+            out.append(f"{nm}: 本文の帯に何も無い (ヘッダとフッタだけ刷れている)")
+        seen_bytes.setdefault(im.convert("RGB").tobytes(), []).append(nm)
+    for names in seen_bytes.values():
+        if len(names) > 1:
+            out.append(f"{key}: 中身が同一の刷り上がりがある → {names} "
+                       f"(刷り直し漏れか取り違え)")
+    if sheet is None:
+        out.append(f"{key}: 一覧 JPG が無い (build_vol.py が作る。"
+                   f"これだけがリポジトリに残る成果物)")
+        return out
+    tw = 430
+    th = int(tw * T.H / T.W)
+    for i, (nm, im) in enumerate(items):
+        x, y = (i % 3) * (tw + 10) + 10, (i // 3) * (th + 10) + 10
+        if x + tw > sheet.size[0] or y + th > sheet.size[1]:
+            out.append(f"{key}: 一覧の大きさ {sheet.size} が {len(items)} 枚と合わない")
+            break
+        a = im.convert("RGB").resize((tw, th), Image.LANCZOS)
+        m = ImageStat.Stat(ImageChops.difference(
+            a, sheet.convert("RGB").crop((x, y, x + tw, y + th)))).mean[0]
+        if m > SHEET_MAD_MAX:
+            out.append(f"{nm}: コミットしてある一覧 JPG の {i + 1} 枚目と一致しない "
+                       f"(平均差 {m:.1f})。刷り直したら一覧も作り直すこと")
+    return out
+
+
 def check_pngs(vol, bad, seen):
-    """刷ってあれば見る。無ければ「見ていない」と記録する。"""
+    """刷ってあれば見る。無ければ「見ていない」と記録する。
+
+    ★寸法と天地の余白だけでは足りない。本文帯が空でも、6 枚すべてが同じ画像でも
+      通ってしまう。中身・互いの相違・コミットしてある一覧 JPG との一致まで見る。
+    """
     d = os.path.join(BV.OUT, vol["key"])
     pngs = [os.path.join(d, f"{vol['key']}_{s['n']:02d}.png") for s in vol["slides"]]
     have = [p for p in pngs if os.path.exists(p)]
@@ -169,16 +260,19 @@ def check_pngs(vol, bad, seen):
     try:
         from PIL import Image
     except ImportError:
-        seen.append(f"{vol['key']}: Pillow が無いので PNG の中身は見ていない")
+        bad.append(f"{vol['key']}: Pillow が無いので刷り上がりを検査できない。"
+                   f"入れるか、PNG を消してから回すこと")
         return
     import chrome
+    items = []
     for p in have:
         nm = os.path.basename(p)
         size = chrome.png_size(p)
         top = gap = None
         if size == (PNG_W, PNG_H):
-            im = Image.open(p).convert("L")
-            px, (w, h) = im.load(), im.size
+            im = Image.open(p).convert("RGB")
+            g = im.convert("L")
+            px, (w, h) = g.load(), g.size
             lo = hi = None
             for y in range(h):
                 if max(px[x, y] for x in range(0, w, 9)) > 70:
@@ -187,15 +281,31 @@ def check_pngs(vol, bad, seen):
                     hi = y
             top = None if lo is None else lo // T.SCALE
             gap = None if hi is None else (h - 1 - hi) // T.SCALE
+            items.append((nm, im))
         bad.extend(judge_geometry(nm, size, top, gap if gap is not None else 0))
+    sheet_p = os.path.join(d, f"{vol['key']}_sheet.jpg")
+    sheet = Image.open(sheet_p) if os.path.exists(sheet_p) else None
+    if len(items) == len(pngs):
+        bad.extend(judge_content(vol["key"], items, sheet))
+        seen.append(f"{vol['key']}: 一覧 JPG と刷り上がり {len(items)} 枚を突き合わせた")
     seen.append(f"{vol['key']}: PNG {len(have)} 枚を検査した")
 
 
 def main():
     vols = BV.load_vols()
     bad, seen = [], []
-    print(f"検査対象: {[v['key'] for v in vols]} "
-          f"(各 {len(vols[0]['slides']) if vols else 0} 枚)")
+    print("検査対象: " + ", ".join(f"{v['key']}({len(v['slides'])}枚)" for v in vols))
+
+    # ★vols/ に置いたのに読み込まれていない冊が無いか。load_vols は
+    #   VOL が無いモジュールを黙って捨て、key が衝突すると後勝ちで消える。
+    #   刷る側も同じ関数を使うので、突き合わせないと誰も気づけない。
+    import glob
+    files = [f for f in glob.glob(os.path.join(HERE, "vols", "*.py"))
+             if not os.path.basename(f).startswith("_")]
+    if len(files) != len(vols):
+        bad.append(f"vols/ に {len(files)} 本あるのに読み込めたのは {len(vols)} 冊 "
+                   f"({sorted(os.path.basename(f) for f in files)} / "
+                   f"{[v['key'] for v in vols]}) — VOL の書き忘れか key の重複")
     print(f"  {F.describe()}")
     if not vols:
         print("[NG] vols/ に vol が 1 つも無い")
@@ -212,6 +322,9 @@ def main():
           "(Chrome が要るのでここでは見ていない)")
     print("  - 正解の一意性・日本語の自然さは人手で見ること "
           "(CLAUDE.md の相互チェック層③)")
+    for v in vols:
+        for note in v.get("editorial_notes", []):
+            print(f"    · [{v['key']}] {note}")
 
     if bad:
         print(f"\n[NG] 見つかった問題 {len(bad)} 件:")

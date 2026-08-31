@@ -59,15 +59,29 @@ def _get(url, timeout=60):
 
 
 def have():
-    """キャッシュ済みの顔を [(family, weight, path, format), ...] で返す。取得はしない。"""
+    """キャッシュ済みの顔を [(family, weight, path, format), ...] で返す。取得はしない。
+
+    ★先頭 4 バイトだけでなく末尾も見る。途中で切れた TTF は先頭が正しいので、
+      マジックとサイズだけでは壊れていることが分からない。
+    """
     out = []
     for fam, w, _q, name in FACES:
         p = os.path.join(CACHE, name + ".font")
-        if os.path.exists(p) and os.path.getsize(p) > 100_000:
+        if os.path.exists(p) and os.path.getsize(p) > 100_000 and _looks_whole(p):
             fmt = _fmt_of(p)
             if fmt:
                 out.append((fam, w, p, fmt))
     return out
+
+
+def _looks_whole(path):
+    """末尾がゼロ埋めで終わっていないか (途中で切れたファイルの見分け)。"""
+    try:
+        with open(path, "rb") as f:
+            f.seek(-4096, os.SEEK_END)
+            return any(f.read(4096))
+    except OSError:
+        return False
 
 
 def fetch(verbose=True):
@@ -87,8 +101,15 @@ def fetch(verbose=True):
             data = _get(url, timeout=180)
             if len(data) < 100_000:
                 raise ValueError(f"小さすぎる ({len(data)} bytes)")
-            with open(p, "wb") as f:
+            if data[:4] not in _MAGIC:
+                raise ValueError(f"フォントの形式ではない (先頭 {data[:4]!r})")
+            # ★一時ファイルに書いてから差し替える。最終パスへ直接書くと、
+            #   途中で落ちたときに「100KB は超えているが壊れている」ファイルが
+            #   キャッシュに残り、have() を通ってしまう (そして二度と取り直さない)。
+            tmp = p + ".part"
+            with open(tmp, "wb") as f:
                 f.write(data)
+            os.replace(tmp, p)
             if verbose:
                 print(f"  フォント取得: {fam} {w} ({len(data)//1024} KB)")
         except Exception as e:  # noqa: BLE001 — 取れなくても刷れるので落とさない

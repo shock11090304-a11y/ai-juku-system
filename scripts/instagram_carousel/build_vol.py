@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 """4:5 「vol シリーズ」Instagram カルーセルを組んで PNG に焼く。
 
-  python3 scripts/instagram_carousel/build_vol.py            # 全 vol を刷る
-  python3 scripts/instagram_carousel/build_vol.py vol01      # 1 つだけ
+  python3 scripts/instagram_carousel/build_vol.py             # 全 vol を刷る
+  python3 scripts/instagram_carousel/build_vol.py vol01       # 1 つだけ
   python3 scripts/instagram_carousel/build_vol.py --html-only # HTML だけ (Chrome 不要)
+  ... --no-fit         はみ出しの実測を省く (速いが納品には使わない)
+  ... --no-font-fetch  和文フォントを取りに行かない (オフライン用)
 
 中身 (文言・図) は vols/<key>.py にデータとして置く。ここには意匠の組み立てしか無い。
 vol.02 を作るときは vols/vol02.py を足すだけでよい (このファイルは触らない)。
@@ -268,25 +270,37 @@ def font_css():
 
 
 # ── はみ出し検出 ──────────────────────────────────────────────────────
-# ★版面 (1080x1350) に本文が収まらないと、.mid が flex で縮んで
-#   「切り落とされる」のではなく「フッターに重なる」。画面の外に出ないので
-#   単純に版面の下を覗いても検出できない (最初これで空振りした)。
-#   なので測り方はこう:
-#     ① html の地をマゼンタに固定 (意匠のどこにも使っていない色)
-#     ② .stage の height を auto にして下へ伸ばす (bottom:auto)
-#     ③ .mid を flex:0 0 auto にして「本文が本来必要とする高さ」にする
-#     ④ .push (下寄せ用の伸び代) は潰す
-#   こうすると stage の実高 = 必要な高さ。1350 を超えた分がはみ出し量になる。
+# ★版面 (1080x1350) に本文が収まらない壊れ方は 2 通りある。両方測る。
+#
+#   縦: .mid が flex で縮んで「切り落とされる」のではなく**フッターに重なる**。
+#       画面の外に出ないので、版面の下を覗くだけでは検出できない (最初これで空振りした)。
+#       → .stage の height を auto にし、.mid を flex:0 0 auto にして
+#         「本文が本来必要とする高さ」を出し、1350 を超えた分を測る。
+#   横: 英文は white-space:nowrap で組むので、幅が足りないと横へ溢れる。
+#       ★撮影窓を版面と同じ幅にすると、溢れた分はスクリーンショットに**写らない**。
+#         (最初これで「横は必ず 0」という嘘の検査を書いた)
+#       → 版面の左右に PAD の余白を作った窓で撮り、その余白に色が乗るかを見る。
+#         中央寄せの行は左右どちらにも溢れるので、両側を見る。
+_PROBE_PAD = 300          # 版面の左右に取る観測用の余白 (CSS px)
+_PROBE_EXTRA_H = 900      # 版面の下に取る観測用の余白 (CSS px)
+# ★padding-left は body だけに当てる。html にも当てると版面ごと右にずれ、
+#   「右の観測帯」に版面そのものが入って**全スライドが横に溢れている**と誤報する。
 _PROBE_CSS = (
-    "html,body{background:#ff00ff !important;overflow:visible !important}"
+    "html,body{background:#ff00ff !important;overflow:visible !important;"
+    "width:auto !important;height:auto !important}"
+    "body{padding-left:%dpx !important}"
     ".stage{overflow:visible !important;height:auto !important;min-height:%dpx !important}"
     ".mid{flex:0 0 auto !important;min-height:0 !important;justify-content:flex-start !important}"
     ".push{flex:0 0 auto !important;height:12px !important}"
-) % 1350
+) % (_PROBE_PAD, 1350)
 
 
-def overflow_px(html_text, work_dir, name, probe_h=2700):
-    """版面から下へ何 px はみ出しているかを返す。0 なら収まっている。"""
+def overflow_px(html_text, work_dir, name):
+    """版面からのはみ出しを {"v": 下へ, "l": 左へ, "r": 右へ} で返す (CSS px)。
+
+    ★観測できる幅は左右それぞれ _PROBE_PAD まで。それを超える溢れは
+      「_PROBE_PAD」で頭打ちになるが、0 でないことは分かるので用は足りる。
+    """
     from PIL import Image, ImageChops
     import chrome
     os.makedirs(work_dir, exist_ok=True)
@@ -294,15 +308,45 @@ def overflow_px(html_text, work_dir, name, probe_h=2700):
     with open(hp, "w", encoding="utf-8") as f:
         f.write(html_text.replace("</style>", _PROBE_CSS + "</style>", 1))
     pp = os.path.join(work_dir, name + ".probe.png")
-    chrome.shot(hp, pp, T.W, probe_h, T.SCALE)
+    win_w = T.W + _PROBE_PAD * 2
+    win_h = T.H + _PROBE_EXTRA_H
+    chrome.shot(hp, pp, win_w, win_h, T.SCALE)
 
     im = Image.open(pp).convert("RGB")
-    y0 = T.H * T.SCALE
-    region = im.crop((0, y0, im.size[0], im.size[1]))
-    diff = ImageChops.difference(region, Image.new("RGB", region.size, (255, 0, 255)))
-    mask = diff.convert("L").point(lambda v: 255 if v > 14 else 0)
-    bb = mask.getbbox()
-    return 0 if bb is None else -(-bb[3] // T.SCALE)  # 切り上げ
+    sc = T.SCALE
+
+    def ink(box):
+        reg = im.crop(box)
+        if reg.size[0] <= 0 or reg.size[1] <= 0:
+            return None
+        diff = ImageChops.difference(reg, Image.new("RGB", reg.size, (255, 0, 255)))
+        return diff.convert("L").point(lambda v: 255 if v > 14 else 0).getbbox()
+
+    x0, x1 = _PROBE_PAD * sc, (_PROBE_PAD + T.W) * sc   # 版面の左右端
+    y1 = T.H * sc                                       # 版面の下端
+
+    bb = ink((x0, y1, x1, im.size[1]))
+    v = 0 if bb is None else -(-bb[3] // sc)
+    bb = ink((0, 0, x0, im.size[1]))
+    left = 0 if bb is None else -(-(x0 - bb[0]) // sc)
+    bb = ink((x1, 0, im.size[0], im.size[1]))
+    right = 0 if bb is None else -(-bb[2] // sc)
+    return {"v": v, "l": left, "r": right}
+
+
+def overflow_message(name, over):
+    """はみ出しがあれば人間向けの 1 行を返す。無ければ None。"""
+    parts = []
+    if over["v"]:
+        parts.append(f"下へ {over['v']}px")
+    if over["l"]:
+        parts.append(f"左へ {over['l']}px")
+    if over["r"]:
+        parts.append(f"右へ {over['r']}px")
+    if not parts:
+        return None
+    return (f"✗ {name}: 版面から{'・'.join(parts)}はみ出している。"
+            f"文字数を減らすか、間 (gap) と字の大きさを詰めること")
 
 
 # ── ビルド時 verify ───────────────────────────────────────────────────
@@ -346,13 +390,17 @@ def verify(vol):
                 for e in check_markup(txt):
                     errs.append(f"{key} p{n} [{kind}]: {e}")
 
-            # ★引用した英文が正典の passage に実在するか
+            # ★引用した英文が正典の passage に実在するか。
+            #   行ごとに見ると、本文の離れた場所から切り出した行を並べて
+            #   「本文に無い主張」を作れてしまう (行の順序も隣接も見ないため)。
+            #   引用ブロックは 1 続きの抜き書きなので、**繋げて**照合する。
             if kind in EN_COMPONENTS:
-                for line in _en_lines(b["value"]):
-                    got_en = _norm_en(plain(line)).strip('"')
-                    if got_en and got_en not in passage:
-                        errs.append(
-                            f"{key} p{n} [{kind}]: 本文に無い英文を引用している → {got_en!r}")
+                joined = _norm_en(" ".join(plain(l) for l in _en_lines(b["value"])))
+                joined = joined.strip('"').strip()
+                if joined and joined not in passage:
+                    errs.append(
+                        f"{key} p{n} [{kind}]: 本文にその並びで存在しない英文を"
+                        f"引用している → {joined!r}")
 
             # 図版に script / on* が混ざっていないか (server 側 sanitizer と同じ禁則)
             if kind == "fig":
@@ -368,7 +416,13 @@ def verify(vol):
     #   このリポジトリは「作り話を本物として見せない」を明文の規則にしている。
     #   出典表記や「予備校の模範解答が割れた」は機械では裏が取れないので、
     #   せめて「裏を取っていない」ことを宣言させ、宣言漏れをここで落とす。
+    # ★宣言は 6 文字以上。「京都大学」「問」のような短い語を 1 つ置くだけで
+    #   全部の出典行を黙らせられてしまう (何を検証していないのかも伝わらない)。
     declared = [x for x in vol.get("unverified", []) if x]
+    for d in declared:
+        if len(d) < 6:
+            errs.append(f"{key}: unverified の宣言 {d!r} が短すぎる "
+                        f"(6 文字以上で、何を検証していないか分かる形にすること)")
     for s in vol["slides"]:
         for b in s.get("blocks", []):
             for txt in _texts_of(b):
@@ -387,18 +441,43 @@ def verify(vol):
     return errs
 
 
+# ★「出典っぽさ」は語の並びで判じるしかないので、取りこぼす方に倒さない。
+#   以前は「出典・模範解答・入試」と「4桁年+大学」だけを見ていて、
+#   「京大 2023年 第2問」「赤本」「共通テスト 2025 追試」が素通りした。
+_CLAIM_WORDS = (
+    "出典", "模範解答", "解答例", "入試", "過去問", "赤本", "青本", "本試", "追試",
+    "共通テスト", "センター試験", "二次試験", "実際に出題", "出題された",
+)
+_CLAIM_SCHOOLS = (
+    "大学", "大学院", "東大", "京大", "阪大", "北大", "東北大", "名大", "九大",
+    "一橋", "東工大", "早大", "慶大", "早稲田", "慶應", "上智", "明治", "青学",
+    "立教", "中央", "法政", "同志社", "立命館", "関学", "関大",
+)
+_CLAIM_YEAR = re.compile(r"(19|20)\d{2}\s*(年度|年)?")
+
+
 def _is_claim(t):
-    """裏を取っていないと危ない「外部の事実の断言」か。"""
-    if "出典" in t or "模範解答" in t or "入試" in t:
+    """裏を取っていないと危ない「外部の事実の断言」か。
+
+    ★取りこぼすくらいなら余計に拾う。余計に拾った分は unverified に 1 行
+      書けば済むが、取りこぼすと未検証の断言がそのまま刷られる。
+    """
+    if any(w in t for w in _CLAIM_WORDS):
         return True
-    return bool(re.search(r"\d{4}\s*年", t)) and "大学" in t
+    if any(w in t for w in _CLAIM_SCHOOLS) and _CLAIM_YEAR.search(t):
+        return True
+    return any(w in t for w in _CLAIM_SCHOOLS) and ("問" in t or "第" in t)
 
 
 def _texts_of(b):
-    """部品が表示する文字列を全部拾う (検査用)。"""
+    """部品が表示する文字列を全部拾う (検査用)。
+
+    ★図版 (fig) の中の文字も拾う。以前は fig を丸ごと除外していたので、
+      SVG の <text> に書いた出典表記が「未検証の主張」の検査をすり抜けた。
+    """
     v = b.get("value")
     if b.get("kind") == "fig":
-        return []
+        return _svg_texts(v or "")
     if isinstance(v, str):
         return [v]
     if isinstance(v, (list, tuple)):
@@ -439,6 +518,14 @@ def contact_sheet(vol, pngs, out_dir):
 
 
 # ── vol の読み込み ────────────────────────────────────────────────────
+def _svg_texts(svg):
+    """SVG の <text> が表示する文字列を返す (子要素 <tspan> 等の中身も拾う)。"""
+    out = []
+    for inner in re.findall(r"<text\b[^>]*>(.*?)</text>", svg, re.S):
+        out.append(re.sub(r"<[^>]*>", "", inner).strip())
+    return [t for t in out if t]
+
+
 def load_vols(keys=None):
     import vols
     found = {}
@@ -471,6 +558,8 @@ def main(argv):
     vols_ = load_vols(keys or None)
     print(f"刷る対象: {[v['key'] for v in vols_]}"
           f"{' (HTML のみ)' if html_only else ''}")
+    if not fit and not html_only:
+        print("  ★--no-fit: 版面のはみ出しを測っていない。納品前に外して刷り直すこと")
 
     for vol in vols_:
         errs = verify(vol)
@@ -497,11 +586,9 @@ def main(argv):
             if fit:
                 # ★刷る前に版面に収まるか測る。溢れると overflow:hidden で
                 #   黙って切られるか、フッターに重なる。刷ってからでは気づけない。
-                over = overflow_px(html, os.path.join(d, "_fit"), name)
-                if over:
-                    raise SystemExit(
-                        f"✗ {name}: 版面から {over}px はみ出している。"
-                        f"文字数を減らすか間 (gap) を詰めること")
+                msg = overflow_message(name, overflow_px(html, os.path.join(d, "_fit"), name))
+                if msg:
+                    raise SystemExit(msg)
             pp = os.path.join(d, name + ".png")
             chrome.shot(hp, pp, T.W, T.H, T.SCALE)
             w, h = chrome.png_size(pp)

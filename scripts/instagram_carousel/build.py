@@ -11,6 +11,7 @@ import html
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import chrome  # noqa: E402  撮り方の正典 (build_vol.py と共有)
+import fonts   # noqa: E402  和文フォントの調達 (Linux で中国語字形に落ちるのを防ぐ)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out")
@@ -26,7 +27,10 @@ CSS = """
 * { margin:0; padding:0; box-sizing:border-box; }
 html,body { width:1080px; height:1080px; overflow:hidden; }
 body {
-  font-family: "Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+  /* ★Noto を先頭に。Linux には和文が IPAGothic/WenQuanYi(中国語) しか無く、
+     ヒラギノ先頭だと中国語字形に落ちる (豆腐にならないので気づけない)。
+     fonts.py が @font-face で Noto を埋める。詳細は README。 */
+  font-family: "Noto Sans JP","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","IPAGothic",sans-serif;
   -webkit-font-smoothing: antialiased;
   position:relative; color:#eef1ff;
   background:
@@ -189,7 +193,8 @@ def render(slide):
     parts.append(f'<div class="foot"><span class="count">{idx:02d} / {total:02d}　·　カルーセル{car}</span>{swipe}</div>')
 
     body = '<div class="stage">' + "".join(parts) + "</div>"
-    return "<!doctype html><html lang=ja><head><meta charset=utf-8><style>" + CSS + "</style></head><body>" + body + "</body></html>"
+    return ("<!doctype html><html lang=ja><head><meta charset=utf-8><style>"
+            + fonts.face_css() + CSS + "</style></head><body>" + body + "</body></html>")
 
 
 SLIDES = [
@@ -274,6 +279,8 @@ SLIDES = [
 
 
 def main():
+    fonts.fetch()
+    print(fonts.describe())
     htmldir = os.path.join(OUT, "html")
     os.makedirs(htmldir, exist_ok=True)
     pngs = []
