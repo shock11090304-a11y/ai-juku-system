@@ -20,7 +20,8 @@
   8. ページ構成    … 各講のページ数が偶数、講扉が偶数ノンブル（＝左ページ）、
                      ポイント【1】の直後が ● 見出し
   9. 見本の型      … 不適当選択型（5択）が各講の大問1 ⑵ にちょうど1問、instr が対応、
-                     復習テストは4択だけ
+                     復習テストは4択だけ、「不適当」の位置が偏っていない、
+                     解説が不適当の記号を名指ししている
 """
 import os, re, sys, glob, importlib, collections
 
@@ -304,7 +305,40 @@ def check_futekitou(vol, kozas):
             if len(it["choices"]) != 5:
                 continue
             bad("%s 第%d講: 復習テストに5択が入っている" % (vol, k["no"]))
-    CHECKED.append("%s: 不適当選択型（5択）を %d 講ぶん照合" % (vol, len(kozas)))
+
+    # ★「不適当」の位置の偏り。上の正解位置検査は4択しか数えない（four = ansdist[0..3]）ので、
+    #   5択だけ誰も見ていない状態だった。実測で 24問中23問が Ｄ に固まっていて、
+    #   「5択は Ｄ」で23問当てられた。生徒に文法ではなく癖を覚えさせるので落とす。
+    pos = collections.Counter()
+    for k in kozas:
+        for _, _, it in build.all_items(k):
+            if len(it["choices"]) != 5:
+                continue
+            pos[it["ans"]] += 1
+            # 解説は記号で選択肢を名指しする。位置を配り直したときに
+            # 記号の入れ替え（build.move_futekitou）が漏れると、
+            # 「Ｄが不適当」と書いてあるのに正解はＥ、という嘘の解説になる。
+            # ★「exp に記号が含まれるか」では弱い。解説は成立する枝も記号で挙げるので、
+            #   入れ替えが漏れていても別の用途で同じ記号がたまたま出て素通りする
+            #   （変異試験で 20件壊しても 2件しか捕まらなかった）。
+            #   24問すべてが「＜記号＞が不適当」の形で書かれているので、そこを直接見る。
+            lab = build.ZEN_ALPHA[it["ans"]]
+            mo = re.search(r"([Ａ-Ｅ])が不適当", it["exp"])
+            if not mo:
+                bad("%s 第%d講: 解説に「＜記号＞が不適当」が無い → %s"
+                    % (vol, k["no"], it["exp"][:40]))
+            elif mo.group(1) != lab:
+                bad("%s 第%d講: 解説は %s が不適当と書いているが、実際の答えは %s → %s"
+                    % (vol, k["no"], mo.group(1), lab, it["exp"][:40]))
+    n5 = sum(pos.values())
+    if n5 >= 5:
+        top = max(pos.values())
+        if top / n5 > 0.40:
+            bad("%s: 不適当選択型の位置が %s に %d/%d（%.0f%%）偏っている"
+                % (vol, build.ZEN_ALPHA[pos.most_common(1)[0][0]], top, n5, top / n5 * 100))
+    CHECKED.append("%s: 不適当選択型（5択）を %d 講ぶん照合 / 位置 %s"
+                   % (vol, len(kozas),
+                      "".join("%s%d" % (build.ZEN_ALPHA[i], pos.get(i, 0)) for i in range(5))))
 
 
 def check_structure(vol, kozas):

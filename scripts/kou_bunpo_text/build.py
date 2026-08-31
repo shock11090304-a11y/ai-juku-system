@@ -449,6 +449,26 @@ def all_items(koza):
                         yield g, i + 1, it
 
 
+ZEN_ALPHA = "ＡＢＣＤＥ"      # 解説の中で選択肢を指すときの記号（和文なので全角）
+
+
+def move_futekitou(it, target):
+    """5択の「不適当」を target の位置へ移す。解説が名指しする記号も入れ替える。
+
+    ★入れ替えは2つの位置の交換なので、exp の中でもその2文字だけを交換すればよい。
+      exp が選択肢を全角ＡＢＣＤＥ で指すのは全24問で確認済み（半角は0件）。
+      壊れていないことは check.py が「exp が不適当の記号を名指ししているか」で見る。
+    """
+    a = it["ans"]
+    if a == target:
+        return
+    ch = it["choices"]
+    ch[a], ch[target] = ch[target], ch[a]
+    it["ans"] = target
+    la, lt = ZEN_ALPHA[a], ZEN_ALPHA[target]
+    it["exp"] = it["exp"].replace(la, "\x00").replace(lt, la).replace("\x00", lt)
+
+
 def balance_answers(kozas):
     """正解番号を大問ごとに 0〜3 の順列で配る。
 
@@ -456,9 +476,29 @@ def balance_answers(kozas):
       全体だけ均そうとしても大問内が偏るので、[u]大問ごと[/u]に順列を配り切る
       （scripts/kyotsu_mogi2026/answer_positions.py と同じ方針）。
     ★同じ item オブジェクトを復習テストが参照するので、並べ替えは1回だけ。
-    ★5択（不適当選択型）と "fix": True の設問は解説が記号を名指しするので触らない。
+    ★5択（不適当選択型）は選択肢の入れ替えと同時に解説の記号も入れ替える
+      （move_futekitou）。"fix": True の設問は触らない。
     """
     import random
+
+    # ★5択（不適当選択型）の位置も配る。ここを飛ばすと全講が同じ位置に固まる。
+    #   実測で 24問中23問が Ｄ だった（作った側が見本の位置をそのまま写したため）。
+    #   4択と違って check.py の偏り検査は4択しか数えないので、誰も気づかないまま刷られる。
+    #   「5択は Ｄ」で23問当てられる状態は、生徒に文法ではなく癖を覚えさせる。
+    pool = []
+    rnd5 = random.Random("kbt-five")
+    for k in kozas:
+        if k.get("_five_balanced"):
+            continue
+        k["_five_balanced"] = True
+        for _, _, it in all_items(k):
+            if len(it["choices"]) != 5 or it.get("fix"):
+                continue
+            if not pool:
+                pool = [0, 1, 2, 3, 4]
+                rnd5.shuffle(pool)
+            move_futekitou(it, pool.pop())
+
     for k in kozas:
         if k.get("_balanced"):
             continue
