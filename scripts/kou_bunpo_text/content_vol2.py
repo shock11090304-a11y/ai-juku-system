@@ -189,15 +189,16 @@ K01 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "This is by far the best novel ___ I have ever read in my life.",
                      "choices": ["what", "that", "who", "whose"], "ans": 1,
                      "ja": "これは私が今まで読んだ中で群を抜いて最高の小説だ。",
                      "exp": "先行詞に最上級 the best が付いているので that を使うのが原則。read の目的語が欠けている目的格。"},
-                    {"stem": "Look at the little boy and his dog ___ are running across the field.",
-                     "choices": ["who", "which", "that", "whose"], "ans": 2,
-                     "ja": "野原を駆けていく小さな男の子と犬をごらん。",
-                     "exp": "先行詞が「人＋動物」のときは who も which も使えないので that を使う。"},
+                    {"stem": "A confidential report ___ on my desk this morning had no author's name on it.",
+                     "choices": ["left", "which was left", "that appeared", "I found", "was left"], "ans": 4,
+                     "cols": 5,
+                     "ja": "今朝私の机の上にあった社外秘の報告書には，執筆者名が書かれていなかった。",
+                     "exp": "主格の関係代名詞は省略できないので，関係詞なしで動詞だけが続くＥが不適当。Ａは主格＋be動詞をまとめて省略した過去分詞，Ｂはその省略しない形，Ｃは主格の that，Ｄは目的格の省略。"},
                     {"stem": "He quietly gave the young musician everything ___ he had saved.",
                      "choices": ["what", "that", "who", "whose"], "ans": 1,
                      "ja": "彼は貯めていたものすべてを，その若い音楽家に黙って与えた。",
@@ -1169,15 +1170,16 @@ K05 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "There were ___ students in the classroom, so it was surprisingly quiet.",
                      "choices": ["a few", "few", "a little", "little"], "ans": 1,
                      "ja": "教室にはほとんど生徒がいなかったので，驚くほど静かだった。",
                      "exp": "students は数えられる名詞で，しかも「静かだった」という結果から「ほとんどいない」と分かるので few。"},
-                    {"stem": "We still have ___ time before the train leaves, so let's have some coffee.",
-                     "choices": ["few", "a few", "little", "a little"], "ans": 3,
-                     "ja": "電車が出るまでまだ少し時間があるから，コーヒーでも飲もう。",
-                     "exp": "time は不可算で，「少しはある」という肯定的な内容なので a little。"},
+                    {"stem": "The young scientist published ___ on climate change in a British journal.",
+                     "choices": ["a paper", "an article", "research", "paper", "several papers"], "ans": 3,
+                     "cols": 5,
+                     "ja": "その若い科学者は気候変動についての研究成果を英国の学術誌に発表した。",
+                     "exp": "paper は「紙」なら不可算，「論文」なら可算名詞なので，冠詞も複数語尾もないＤが不適当。ＡＢＥは冠詞や複数形で可算扱いになり，Ｃ research は不可算なので無冠詞のままでよい。"},
                     {"tag": "r5",
                      "stem": "___ number of applicants for the scholarship has increased sharply this year.",
                      "choices": ["A", "The", "Some", "Any"], "ans": 1,
@@ -2399,18 +2401,18 @@ K10 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "She never looks at that photograph ___ thinking of her school days.",
                      "choices": ["with", "without", "for", "beyond"], "ans": 1,
                      "ja": "彼女はその写真を見ると必ず学生時代を思い出す。",
                      "exp": "never 〜 without -ing「〜すると必ず…する」。二重否定で強い肯定を表す。"},
-                    {"tag": "r5",
-                     "stem": "It was not ___ I read his letter that I understood how he really felt.",
-                     "choices": ["before", "until", "since", "when"], "ans": 1,
-                     "ja": "彼の手紙を読んで初めて，彼の本当の気持ちが分かった。",
-                     "exp": "It is not until 〜 that …「〜して初めて…する」。not 〜 until … を強調構文にした形。"},
+                    {"stem": "The letters on the old wooden sign were too faint ___ from the road.",
+                     "choices": ["to read", "for us to read", "for anyone to make out", "for us to read them", "to decipher"], "ans": 3,
+                     "cols": 5,
+                     "ja": "古い木の看板の文字はかすれていて，道路からは読み取れなかった。",
+                     "exp": "too 〜 to … は「…できない」を表す否定表現で，to 不定詞の意味上の目的語は主語と同じだから代名詞を重ねられない＝Ｄが不適当。意味上の主語 for 〜 は添えても省いてもよく，Ｃ・Ｅは語彙の差にすぎない。"},
                     {"stem": "You cannot be ___ careful when you cross this busy intersection.",
-                     "choices": ["so", "too", "very", "much"], "ans": 1,
+                     "choices": ["so", "too", "very", "much"], "ans": 1, "tag": "r5",
                      "ja": "この交通量の多い交差点を渡るときは，いくら注意してもしすぎることはない。",
                      "exp": "cannot 〜 too …「いくら〜してもしすぎることはない」。否定の形で強い推奨を表す。"},
                     {"stem": "The man standing at the door was ___ other than the mayor himself.",

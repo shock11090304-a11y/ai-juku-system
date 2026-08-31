@@ -1240,16 +1240,17 @@ K05 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"tag": "r4",
                      "stem": "You ___ better see a doctor before the symptoms get any worse.",
                      "choices": ["would", "had", "should", "have"], "ans": 1,
                      "ja": "症状がひどくなる前に医者に診てもらったほうがいい。",
                      "exp": "had better 原形「〜したほうがよい」。would better・should better という形は存在しない。"},
-                    {"stem": "You had better ___ tell anyone about this until the plan is official.",
-                     "choices": ["not", "don't", "not to", "to not"], "ans": 0,
-                     "ja": "計画が正式になるまでは，このことは誰にも言わないほうがいい。",
-                     "exp": "had better の否定は had better not 原形。not は better の直後に置く。"},
+                    {"stem": "Every participant ___ register at the front desk by Friday afternoon.",
+                     "choices": ["must", "needs to", "will have to", "need", "ought to"], "ans": 3,
+                     "cols": 5,
+                     "ja": "参加者は全員，金曜の午後までに受付で登録しなければならない。",
+                     "exp": "肯定の平叙文で need を助動詞として使うことはできないのでＤが不適当。Ａ must・Ｅ ought to は義務，Ｂ needs to は一般動詞，Ｃ will have to は助動詞を２つ並べない形。"},
                     {"stem": "___ you mind opening the window a little?",
                      "choices": ["Would", "Could", "Will", "Shall"], "ans": 0,
                      "ja": "窓を少し開けていただけませんか。",
@@ -1980,19 +1981,18 @@ K08 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "He seems ___ the whole story long before anyone else noticed it.",
                      "choices": ["to know", "to have known", "knowing", "to be known"], "ans": 1,
                      "ja": "彼はほかの誰かが気づくずっと前から，事の全容を知っていたようだ。",
                      "exp": "「知っていた」のは seems（今）より前なので完了不定詞 to have known。It seems that he had known 〜 と同じ内容。"},
-                    {"tag": "r5",
-                     "stem": "The castle is said ___ by a famous architect in the sixteenth century.",
-                     "choices": ["to design", "to be designed", "to have been designed",
-                                 "to have designed"], "ans": 2,
-                     "ja": "その城は16世紀に高名な建築家によって設計されたと言われている。",
-                     "exp": "「設計された」のは is said（今）より前なので完了不定詞，しかも城は設計「される」側なので受動。両方を満たす to have been designed が正解。"},
+                    {"stem": "Until the safety check was finished, none of the workers ___ to enter the site.",
+                     "choices": ["were able", "were allowed", "dared", "were let", "were free"], "ans": 3,
+                     "cols": 5,
+                     "ja": "安全点検が終わるまで，作業員は誰も現場に立ち入らなかった。",
+                     "exp": "let は受動態にできないので，Ｄが不適当。許可の受動はＢ be allowed to 原形 で代用する。Ａ be able to・Ｃ dare to・Ｅ be free to はどれも to 不定詞をとって成立する。"},
                     {"stem": "This dictionary is very easy ___, even for beginners.",
-                     "choices": ["to use", "to use it", "using", "to be used"], "ans": 0,
+                     "choices": ["to use", "to use it", "using", "to be used"], "ans": 0, "tag": "r5",
                      "ja": "この辞書は初心者にもとても使いやすい。",
                      "exp": "tough 構文。use の目的語がすでに主語 this dictionary として前に出ているので，it を重ねて置かない。"},
                     {"stem": "A: Would you like to join us for dinner?　B: I'd love ___.",
@@ -2470,18 +2470,18 @@ K10 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "The lecture was so ___ that half the audience fell asleep before it ended.",
                      "choices": ["bore", "boring", "bored", "to bore"], "ans": 1,
                      "ja": "その講義はあまりに退屈で，聴衆の半分は終わる前に眠ってしまった。",
                      "exp": "lecture は「退屈させる」側なので現在分詞。bored にすると講義自身が退屈させられていることになる。"},
-                    {"tag": "r5",
-                     "stem": "We were all ___ at the news of his sudden resignation from the board.",
-                     "choices": ["surprise", "surprising", "surprised", "to surprise"], "ans": 2,
-                     "ja": "彼が突然役員を辞任したという知らせに，私たちは皆驚いた。",
-                     "exp": "we は「驚かされる」側なので過去分詞。be surprised at 〜 の形もセットで覚えること。"},
+                    {"stem": "The old brick factory stood ___ for almost ten years before the city pulled it down.",
+                     "choices": ["empty", "rotting", "forgotten", "neglecting", "boarded up"], "ans": 3,
+                     "cols": 5,
+                     "ja": "その古いれんが造りの工場は，市が取り壊すまで１０年近くそのまま建っていた。",
+                     "exp": "工場は「放置される」側なので他動詞の -ing は不可＝Ｄが不適当（neglected なら可）。Ａ empty は形容詞，Ｂ rotting は自動詞の能動，Ｃ・Ｅ は受動の過去分詞。"},
                     {"stem": "The results of the questionnaire were rather ___ and hard to interpret.",
-                     "choices": ["confuse", "confusing", "confused", "to confuse"], "ans": 1,
+                     "choices": ["confuse", "confusing", "confused", "to confuse"], "ans": 1, "tag": "r5",
                      "ja": "アンケートの結果はかなり分かりにくく，解釈が難しかった。",
                      "exp": "results は人を「混乱させる」側なので現在分詞。and hard to interpret と並ぶことからも，結果そのものの性質を述べていると分かる。"},
                     {"stem": "The children looked ___ when the magician made the coin disappear.",
@@ -2954,15 +2954,16 @@ K12 = {
         ],
         [
             {"t": "enshu", "groups": [
-                {"no": 1, "instr": "空欄に入る最も適切なものを選びなさい。", "items": [
+                {"no": 1, "instr": "⑴，⑶〜⑺は空欄に入る最も適切なものを選びなさい。⑵は不適当なものを選びなさい。", "items": [
                     {"stem": "The little boy was laughed ___ by his classmates because of his worn-out shoes.",
                      "choices": ["by", "at", "to", "with"], "ans": 1,
                      "ja": "その少年は，履き古した靴のせいで同級生に笑われた。",
                      "exp": "laugh at 〜 は群動詞なので，受動態にしても at を落とさない。文末の by 〜 とは別物。"},
-                    {"stem": "The board meeting has been put ___ until the middle of next month.",
-                     "choices": ["away", "off", "on", "out"], "ans": 1,
-                     "ja": "役員会は来月半ばまで延期された。",
-                     "exp": "put off 〜「〜を延期する」の受動態。until 〜 という期日の表現とかみ合う。"},
+                    {"stem": "Train fares in this area ___ by nearly five percent at the beginning of April.",
+                     "choices": ["rose", "were raised", "went up", "were risen", "must have risen"], "ans": 3,
+                     "cols": 5,
+                     "ja": "この地域の鉄道運賃は，４月の初めに５％近く上がった。",
+                     "exp": "rise は自動詞なので受動態にできない＝Ｄが不適当。Ａ rose・Ｃ went up は自動詞のまま，Ｂ were raised は他動詞 raise の受動，Ｅ must have risen も能動で問題ない。"},
                     {"tag": "r5",
                      "stem": "The summit of the mountain was still covered ___ deep snow in late May.",
                      "choices": ["by", "with", "of", "for"], "ans": 1,
