@@ -87,6 +87,66 @@ ALLOW = {
     "migrate": "migration（C1）の動詞形",
     "unforeseeable": "un + foresee + able の派生",
     "epidemic": "医療の話題語。入試頻出",
+    # ↓ 第1部・第2部も実物の帯まで上げたときに**意図して入れた**語（2026-09-01）。
+    #   判別ドリルなので、語彙で落とさないよう「場面から意味が絞れるもの」「派生が透明なもの」に限る。
+    "ravine": "地形の具体語。橋・谷の場面で絞れる",
+    "reservoir": "水利の具体語。井戸・貯水の場面で絞れる",
+    "volcanic": "volcano の形容詞形",
+    "cellar": "建物の具体語。地下の場面で絞れる",
+    "foundry": "工場の具体語。鋳物工場の場面で絞れる",
+    "pier": "港の具体語。桟橋。海辺の場面で絞れる",
+    "hamlet": "集落の具体語。村より小さいもの",
+    "bazaar": "市場の具体語",
+    "alley": "路地の具体語",
+    "labyrinth": "「迷路」。入り組んだ路地の比喩で入試頻出",
+    "fortress": "城塞の具体語",
+    "fresco": "美術の具体語。壁画",
+    "monologue": "演劇の具体語。mono + logue の派生",
+    "conservatory": "音楽・演劇の専門学校",
+    "novella": "文学の具体語。novel の派生",
+    "chronicle": "記録・年代記。歴史の話題語",
+    "ledger": "帳簿。経理・記録の話題語",
+    "statute": "法令。law の言い換えで法の話題語",
+    "tribunal": "審査会・法廷。法の話題語",
+    "gale": "強風。気象の話題語",
+    "hoarding": "工事の仮囲い。board の複合",
+    "demolition": "demolish の名詞形",
+    "immersion": "immerse の名詞形。語学の話題語",
+    "sanctuary": "保護区。動物・自然の話題語",
+    "maneuver": "一連の動き。運転・操作の話題語",
+    "forgery": "forge の名詞形。贋作",
+    "proprietor": "店主。所有者を表す語",
+    "itinerant": "行商の。移動しながら商う",
+    "eve": "前夜。祭りの話題語",
+    "sowing": "sow の動名詞。農の話題語",
+    "cultivator": "cultivate + or の派生",
+    "parish": "教区。地域の単位",
+    "onset": "始まり。on + set の複合",
+    "evasion": "evade の名詞形。言い逃れ",
+    "alteration": "alter の名詞形",
+    "abrupt": "「急な」。sudden の言い換えで入試頻出",
+    "abruptly": "abrupt の副詞形",
+    "tactless": "tact + less の派生",
+    "wreck": "「台無しにする」。ruin の言い換え",
+    "derelict": "「打ち捨てられた」。廃墟の話題語",
+    "unforeseen": "un + foresee + en の派生",
+    "cramped": "「手狭な」。cramp の派生",
+    "treacherous": "「危険な」。道・天候の話題語",
+    "lucrative": "「もうかる」。契約・商売の話題語",
+    "subdued": "subdue の過去分詞。「抑えた」",
+    "apprehensive": "「不安な」。anxious の言い換えで入試頻出",
+    "spontaneously": "spontaneous の副詞形",
+    "customary": "custom の形容詞形",
+    "belatedly": "belated の副詞形。late の派生",
+    "appreciably": "appreciable の副詞形",
+    "retracted": "retract の過去分詞。「撤回する」",
+    "refurbished": "refurbish の過去分詞。「改修した」",
+    "reiterate": "re + iterate。「繰り返し述べる」",
+    "envisaged": "envisage の過去分詞。「思い描く」",
+    "recite": "「暗唱する・読み上げる」",
+    "dispatch": "「送り出す」。send の言い換え",
+    "skillful": "skill + ful の派生",
+    "secluded": "seclude の過去分詞。「人里離れた」",
 }
 
 # ★実測した「実物」の帯（scripts/*_eigo_mirror/content.json ＝ 実際の入試英文）。
@@ -372,8 +432,10 @@ def main():
         print(f"  {name:32s} A1+A2 {e:5.1f}%  B1+B2 {m:5.1f}%  C1+一覧外 {h:5.1f}%")
     print(f"  {'この教材（全体）':32s} A1+A2 {easy:5.1f}%  B1+B2 {mid:5.1f}%  C1+一覧外 {hard:5.1f}%")
     ref_easy = min(e for e, _m, _h in REFERENCE.values())
-    print(f"\n★実物より {easy - ref_easy:+.1f} ポイントやさしい"
-          "（第1部・第2部は判別ドリルなので、やさしいのが正しい）")
+    gap = easy - ref_easy
+    word = "やさしい" if gap > 0 else "重い"
+    print(f"\n★やさしい語の割合は実物より {abs(gap):.1f} ポイント{word}"
+          "（部ごとの位置は --compare で見ること）")
     # 明らかに帯を外れたときだけ落とす。実物との差は上の表で判断する（内容の判断は人がする）。
     if easy > 85:
         errs.append(f"やさしい語（A1+A2）が {easy:.1f}%。共通テストの下に落ちている")

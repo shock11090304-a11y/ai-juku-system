@@ -140,145 +140,147 @@ PART1 = [
     {"g": "Ａ　5文型の骨格を見抜く", "sub": "第1〜第5文型／M を混ぜて骨組みだけを取り出す", "pool": "1A", "items": [
         {"id": "A1",
          "syn": "sv",
-         "en": "The wooden bridge over the narrow river shakes slightly whenever a heavy truck passes.",
-         "dsl": "{S:The wooden bridge} < M: over the narrow river > {V:shakes} {M:slightly} ( M: {接:whenever} {S':a heavy truck} {V':passes} ) .",
+         "en": "The timber bridge over the narrow ravine shakes slightly whenever a loaded truck passes.",
+         "dsl": "{S:The timber bridge} < M: over the narrow ravine > {V:shakes} {M:slightly} ( M: {接:whenever} {S':a loaded truck} {V':passes} ) .",
          "pat": "第1文型（SV）",
          "tag": "第1文型 SV（O も C も無い）",
          "notes": [
-                   "急所は S と V の間。The wooden bridge のうしろに &lt;M: over the narrow river &gt; が割り込むので、"
-                   "river を主語だと思うと V の相手を見失う。前置詞のうしろの名詞は主節の S になれない。",
+                   "急所は S と V の間。The timber bridge のうしろに &lt;M: over the narrow ravine &gt; が割り込むので、"
+                   "ravine を主語だと思うと V の相手を見失う。前置詞のうしろの名詞は主節の S になれない。",
                    "shakes は「〜を揺らす」とも読める動詞だが、うしろに名詞は無く {M:slightly} が続くだけである。O も C も無いのだから第1文型で確定する。",
                    "( M: whenever … ) は主節の外の副詞のカタマリ。中の {V':passes} を主節の V と数えると V が 2 つある文になってしまう。"
                    "主節の V は shakes ただ 1 つ。",
-                   "&lt;M:&gt; と ( M: ) と {M:slightly} を外すと The wooden bridge shakes という S と V の "
+                   "&lt;M:&gt; と ( M: ) と {M:slightly} を外すと The timber bridge shakes という S と V の "
                    "2 つだけが残る。骨格を見抜くとは、ここまで削ぎ落とすことである。"],
-         "ja": "その木の橋は、大型トラックが通るたびに少し揺れる。"},
+         "ja": "その木造の橋は、荷を積んだトラックが通るたびに少し揺れる。"},
         {"id": "A2",
          "syn": "svc-adj",
-         "en": "The water in the village well stays cold even during the hottest weeks of summer.",
-         "dsl": "{S:The water} < M: in the village well > {V:stays} {C:cold} ( M: even during the hottest weeks < M': of summer > ) .",
+         "en": "The water in the village reservoir stays cold even during the harshest weeks of summer.",
+         "dsl": "{S:The water} < M: in the village reservoir > {V:stays} {C:cold} ( M: even during the harshest weeks < M': of summer > ) .",
          "pat": "第2文型（SVC）",
          "tag": "stay ＋ 形容詞の C",
          "notes": [
                    "急所は stays。「とどまる」という第1文型で切ってしまうと、そのあとの cold が行き場を失う。stay は be の仲間で、うしろの形容詞は S "
                    "の状態を述べる C になる。",
-                   "S の核は The water だけ。&lt;M: in the village well &gt; を S のマスに抱え込むと、S がどこまでかを答えられなくなる。"
+                   "S の核は The water だけ。&lt;M: in the village reservoir &gt; を S のマスに抱え込むと、S がどこまでかを答えられなくなる。"
                    "前置詞句は必ず外へ出す。",
                    "cold は名詞ではないので O にはなれない。O か C かは品詞だけで切れることがあり、形容詞が来たならそれは必ず C である。",
                    "( M: even during … ) は時を表す副詞のカタマリ。外しても The water stays cold は崩れないので、骨格の 3 点には数えない。"],
-         "ja": "その村の井戸の水は、夏のいちばん暑い時期でさえ冷たいままだ。"},
+         "ja": "その村の貯水池の水は、夏のいちばん厳しい時期でさえ冷たいままだ。"},
         {"id": "A3",
          "syn": "svc-noun",
-         "en": "The empty lot behind the station has become a small community garden in recent years.",
-         "dsl": "{S:The empty lot} < M: behind the station > {V:has become} {C:a small community garden} ( M: in recent years ) .",
+         "en": "The derelict lot behind the station has become a thriving community garden in recent years.",
+         "dsl": "{S:The derelict lot} < M: behind the station > {V:has become} {C:a thriving community garden} ( M: in recent years ) .",
          "pat": "第2文型（SVC）",
          "tag": "become ＋ 名詞の C",
          "notes": [
                    "急所は has become のうしろ。名詞が来ると O に見えるが、become は目的語を取らない動詞なので、この名詞は C しかありえない。",
-                   "C が名詞のときは S ＝ C が立つかで確かめる。「空き地」＝「小さな共同菜園」で等号が成り立つので、O ではなく C と決まる。",
+                   "C が名詞のときは S ＝ C が立つかで確かめる。「荒れた空き地」＝「にぎわう共同菜園」で等号が成り立つので、O ではなく C と決まる。",
                    "has become は完了の have ＋ 過去分詞で 1 つの述語。has を別のマスにせず {V:has become} と 1 マスに握るのが約束である。",
-                   "&lt;M: behind the station &gt; は The empty lot を後ろから説明する形容詞のカタマリ、( M: in recent "
+                   "&lt;M: behind the station &gt; は The derelict lot を後ろから説明する形容詞のカタマリ、( M: in recent "
                    "years ) は動詞にかかる副詞。働きが違うので括弧の形も変える。"],
-         "ja": "駅の裏の空き地は、ここ数年で小さな共同菜園になっている。"},
+         "ja": "駅の裏の荒れた空き地は、ここ数年でにぎわう共同菜園になっている。"},
         {"id": "A4",
          "syn": "svo",
-         "en": "Heavy spring rain often delays the start of the rice planting season by several weeks.",
-         "dsl": "{S:Heavy spring rain} {M:often} {V:delays} {O:the start} < M: of the rice planting season > ( M: by several weeks ) .",
+         "en": "Persistent spring rain often delays the onset of the rice planting season by several weeks.",
+         "dsl": "{S:Persistent spring rain} {M:often} {V:delays} {O:the onset} < M: of the rice planting season > ( M: by several weeks ) .",
          "pat": "第3文型（SVO）",
          "tag": "delays は名詞ではなく V",
          "notes": [
                    "急所は delays。「遅れ」という名詞にも見えるが、直前に {M:often} があり、副詞は名詞を修飾しない。だから delays はこの文の V である。",
-                   "O の核は the start だけ。&lt;M: of the rice planting season &gt; を O のマスに抱え込むと、O がどこで終わるかを言えなくなる。"
+                   "O の核は the onset だけ。&lt;M: of the rice planting season &gt; を O のマスに抱え込むと、O がどこで終わるかを言えなくなる。"
                    "of 句は外へ出す。",
                    "delays のうしろの名詞は S の言い換えではない。「雨 ＝ 始まり」という等号は立たないので、C ではなく O、つまり第3文型と決まる。",
                    "( M: by several weeks ) は「どれだけ遅らせるか」を言う副詞で、名詞にかかる &lt;M:&gt; とは別物。外しても O の中身は変わらない。"],
-         "ja": "春の大雨は、田植えの時期の始まりを数週間も遅らせることが多い。"},
+         "ja": "春の長雨は、田植えの時期の始まりを数週間も遅らせることが多い。"},
         {"id": "A5",
          "syn": "svo",
-         "en": "A single careless comment can ruin the atmosphere of a whole meeting within seconds.",
-         "dsl": "{S:A single careless comment} {V:can ruin} {O:the atmosphere} < M: of a whole meeting > ( M: within seconds ) .",
+         "en": "A single tactless remark can wreck the atmosphere of an entire negotiation within seconds.",
+         "dsl": "{S:A single tactless remark} {V:can wreck} {O:the atmosphere} < M: of an entire negotiation > ( M: within seconds ) .",
          "pat": "第3文型（SVO）",
          "tag": "can ＋ 動詞は 1 つのマス",
          "notes": [
-                   "急所は can ruin。助動詞と動詞は切り離さず 1 つの V のマスに入れる。can だけを別に数えると、V が 2 つあるように見えてしまう。",
-                   "the atmosphere は ruin の相手なので O。「発言 ＝ 雰囲気」という等号は立たないから C ではなく、ここで第3文型が確定する。",
-                   "&lt;M: of a whole meeting &gt; は the atmosphere にかかる。of 句をマスの中に入れたままだと O の核が "
-                   "1 つに絞れない。",
+                   "急所は can wreck。助動詞と動詞は切り離さず 1 つの V のマスに入れる。can だけを別に数えると、V が 2 つあるように見えてしまう。",
+                   "the atmosphere は wreck の相手なので O。「発言 ＝ 雰囲気」という等号は立たないから C ではなく、ここで第3文型が確定する。",
+                   "&lt;M: of an entire negotiation &gt; は the atmosphere にかかる。of 句をマスの中に入れたままだと "
+                   "O の核が 1 つに絞れない。",
                    "&lt;M:&gt; と ( M: ) の使い分けは「直前の名詞にかかるか、動詞にかかるか」で決める。within seconds は台無しにする速さを言うので "
                    "( M: ) になる。"],
-         "ja": "たった一言の不用意な発言が、会議全体の雰囲気を数秒で台無しにしてしまうことがある。"},
+         "ja": "たった一言の心ない発言が、交渉全体の雰囲気を数秒で台無しにしてしまうことがある。"},
         {"id": "A6",
          "syn": "svoo-give",
-         "en": "The head teacher promised the parents a full report without any hesitation.",
-         "dsl": "{S:The head teacher} {V:promised} {O1:the parents} {O2:a full report} ( M: without any hesitation ) .",
+         "en": "The principal promised the guardians a detailed account without any evasion.",
+         "dsl": "{S:The principal} {V:promised} {O1:the guardians} {O2:a detailed account} ( M: without any evasion ) .",
          "pat": "第4文型（SVOO）",
          "tag": "promise O1 O2（授与型）",
          "notes": [
-                   "急所は promised のうしろに名詞が 2 つ並ぶこと。the parents と a full report の間に主語述語の関係は立たないので、第5文型ではなく "
-                   "O1 O2 の第4文型である。",
-                   "人が先・物があとという並びが授与型の目印。前後を入れ替えるなら promised a full report to the parents となり、to が必要になる。",
+                   "急所は promised のうしろに名詞が 2 つ並ぶこと。the guardians と a detailed account の間に主語述語の関係は立たないので、"
+                   "第5文型ではなく O1 O2 の第4文型である。",
+                   "人が先・物があとという並びが授与型の目印。前後を入れ替えるなら promised a detailed account to the guardians "
+                   "となり、to が必要になる。",
                    "promise は that 節も取る動詞で、promised that … なら O が 1 つだけの第3文型になる。動詞だけで決めず、うしろの形を見てから文型を決めること。",
-                   "( M: without any hesitation ) は promised のしかたを言う副詞。外しても S V O1 O2 の 4 つは残るので骨格には数えない。"],
-         "ja": "校長は、少しもためらわずに、保護者たちに詳しい報告をすると約束した。"},
+                   "( M: without any evasion ) は promised のしかたを言う副詞。外しても S V O1 O2 の 4 つは残るので骨格には数えない。"],
+         "ja": "校長は、少しも言葉を濁さずに、保護者たちに詳しい説明をすると約束した。"},
         {"id": "A7",
          "syn": "svoo-take",
-         "en": "The long delay at the airport cost the team an entire day of training.",
-         "dsl": "{S:The long delay} < M: at the airport > {V:cost} {O1:the team} {O2:an entire day} < M: of training > .",
+         "en": "The prolonged delay at the terminal cost the squad an entire day of rehearsal.",
+         "dsl": "{S:The prolonged delay} < M: at the terminal > {V:cost} {O1:the squad} {O2:an entire day} < M: of rehearsal > .",
          "pat": "第4文型（SVOO）",
          "tag": "cost O1 O2（奪う型の第4文型）",
          "notes": [
-                   "急所は cost。原形と過去形が同じ形なので動詞に見えにくいが、{S:The long delay} を受ける述語はこれしかない。まず V を 1 つに決めること。",
+                   "急所は cost。原形と過去形が同じ形なので動詞に見えにくいが、{S:The prolonged delay} を受ける述語はこれしかない。まず V を "
+                   "1 つに決めること。",
                    "cost のうしろも名詞が 2 つで第4文型だが、O2 は与えられたものではなく失われたものである。第4文型を「授与」だけで覚えていると読めない。",
-                   "the team と an entire day の間に主語述語の関係は立たない。立たないので第5文型ではなく O1 O2 と決まる。A6 と同じ手順で切り分ける。",
-                   "&lt;M: at the airport &gt; は The long delay に、&lt;M: of training &gt; は an entire "
-                   "day にかかる。どちらも直前の名詞にかかるので ( M: ) にはしない。"],
-         "ja": "空港での長い遅れのせいで、そのチームは丸一日の練習を失った。"},
+                   "the squad と an entire day の間に主語述語の関係は立たない。立たないので第5文型ではなく O1 O2 と決まる。A6 と同じ手順で切り分ける。",
+                   "&lt;M: at the terminal &gt; は The prolonged delay に、&lt;M: of rehearsal &gt; "
+                   "は an entire day にかかる。どちらも直前の名詞にかかるので ( M: ) にはしない。"],
+         "ja": "空港での長引いた遅れのせいで、その一団は丸一日の練習を失った。"},
         {"id": "A8",
          "syn": "svoc-adj",
-         "en": "The sudden power cut left the whole shopping street completely dark last Friday evening.",
-         "dsl": "{S:The sudden power cut} {V:left} {O:the whole shopping street} {C:completely dark} ( M: last Friday evening ) .",
+         "en": "The abrupt outage left the entire commercial district completely dark last Friday evening.",
+         "dsl": "{S:The abrupt outage} {V:left} {O:the entire commercial district} {C:completely dark} ( M: last Friday evening ) .",
          "pat": "第5文型（SVOC）",
          "tag": "leave O C（C が形容詞）",
          "notes": [
-                   "急所は left。「去った」と取ると the whole shopping street が行き先に見えるが、そうすると completely dark "
-                   "が宙に浮いてしまう。",
-                   "leave O C は「O を C の状態のまま残す」。C が形容詞なので第5文型で、O と C の間には street is dark という関係が隠れている。",
+                   "急所は left。「去った」と取ると the entire commercial district が行き先に見えるが、そうすると completely "
+                   "dark が宙に浮いてしまう。",
+                   "leave O C は「O を C の状態のまま残す」。C が形容詞なので第5文型で、O と C の間には district is dark という関係が隠れている。",
                    "dark は名詞ではないので O2 にはなれない。うしろの 2 つ目が名詞なら第4文型、形容詞なら第5文型と、品詞のところで分かれる。",
                    "( M: last Friday evening ) はいつの出来事かを言う副詞。外すと S V O C の 4 点だけが一直線に並び、骨格が見える。"],
-         "ja": "先週の金曜の夜、突然の停電が商店街全体を真っ暗にした。"},
+         "ja": "先週の金曜の夜、突然の停電が商業地区全体を真っ暗にした。"},
         {"id": "A9",
          "syn": "svoc-noun",
-         "en": "The club members elected a retired teacher their new chairperson at the spring meeting.",
-         "dsl": "{S:The club members} {V:elected} {O:a retired teacher} {C:their new chairperson} ( M: at the spring meeting ) .",
+         "en": "The society members elected a retired diplomat their new chairperson at the annual assembly.",
+         "dsl": "{S:The society members} {V:elected} {O:a retired diplomat} {C:their new chairperson} ( M: at the annual assembly ) .",
          "pat": "第5文型（SVOC）",
          "tag": "elect O C（C が名詞）",
          "notes": [
-                   "急所は elected のうしろの名詞 2 つ。a retired teacher と their new chairperson は同じ人を指すので、O1 "
-                   "O2 ではなく O と C である。",
+                   "急所は elected のうしろの名詞 2 つ。a retired diplomat と their new chairperson は同じ人を指すので、"
+                   "O1 O2 ではなく O と C である。",
                    "第4文型なら 2 つの名詞は別物になる（A6 の the parents と a full report）。ここは「＝」で結べるかどうかが分かれ目になる。",
                    "elect O C は「O を C に選ぶ」。as が無くても C で、elect O as C とも書けることが名詞の C だと見抜く目印になる。",
-                   "( M: at the spring meeting ) は選出が行われた場面を言う副詞。骨格の S V O C の 4 つを数えるときは先に外して考える。"],
-         "ja": "クラブの会員たちは、春の集まりで、退職した教師を新しい会長に選んだ。"},
+                   "( M: at the annual assembly ) は選出が行われた場面を言う副詞。骨格の S V O C の 4 つを数えるときは先に外して考える。"],
+         "ja": "協会の会員たちは、年次総会で、退職した外交官を新しい会長に選んだ。"},
         {"id": "A10",
          "syn": "svoc-pp",
-         "en": "A thick layer of dry sand can keep buried seeds almost perfectly preserved for many years.",
-         "dsl": "{S:A thick layer} < M: of dry sand > {V:can keep} {O:buried seeds} {C:almost perfectly preserved} ( M: for many years ) .",
+         "en": "A thick layer of volcanic ash can keep buried seeds almost perfectly preserved for centuries.",
+         "dsl": "{S:A thick layer} < M: of volcanic ash > {V:can keep} {O:buried seeds} {C:almost perfectly preserved} ( M: for centuries ) .",
          "pat": "第5文型（SVOC）",
          "tag": "keep O C（C が過去分詞）",
          "notes": [
                    "急所は keep の型。keep O C は「O を C の状態のままにしておく」。「保つ」と訳して O だけで切ると almost perfectly "
                    "preserved が宙に浮く。",
                    "keep は O だけでも使える動詞で、keep the receipt / keep a spare key なら「取っておく」の意味になる。ここは C "
-                   "が無いと「砂が種をしまっておく」となって意味が立たないので第5文型と決まる。",
+                   "が無いと「火山灰が種をしまっておく」となって意味が立たないので第5文型と決まる。",
                    "C が過去分詞のときは O との間に受動の関係が立つかを見る。seeds are preserved が成り立つので almost perfectly preserved "
                    "は C である。",
-                   "O の中の buried は seeds にかかる飾りで骨格には数えない。&lt;M: of dry sand &gt; と ( M: for many "
-                   "years ) を外せば S V O C の 4 つだけが残る。"],
-         "ja": "厚く積もった乾いた砂は、埋もれた種を何年ものあいだほぼ完全な状態のまま保つことがある。"},
+                   "O の中の buried は seeds にかかる飾りで骨格には数えない。&lt;M: of volcanic ash &gt; と ( M: for centuries "
+                   ") を外せば S V O C の 4 つだけが残る。"],
+         "ja": "厚く積もった火山灰は、埋もれた種を何世紀ものあいだほぼ完全な状態のまま保つことがある。"},
         {"id": "A11",
          "syn": "svoc-bare",
-         "en": "A sudden change in the weather can make even experienced climbers doubt their own judgment.",
-         "dsl": "{S:A sudden change} < M: in the weather > {V:can make} {O:even experienced climbers} [ C: {V':doubt} {O':their own judgment} ] .",
+         "en": "An unforeseen shift in the weather can make even seasoned climbers doubt their own judgment.",
+         "dsl": "{S:An unforeseen shift} < M: in the weather > {V:can make} {O:even seasoned climbers} [ C: {V':doubt} {O':their own judgment} ] .",
          "pat": "第5文型（SVOC）",
          "tag": "make O C（C が原形不定詞）",
          "notes": [
@@ -286,122 +288,125 @@ PART1 = [
                    "make のうしろに名詞が 2 つ並ぶ形なら第4文型もありうるが、2 つ目が原形のときは第5文型に限られる。品詞を見た時点で第4文型は消える。",
                    "C が動詞を含むので平のマス 1 つでは置かず、[ C: {V':doubt} {O':their own judgment} ] と囲んで中まで分解する。"
                    "囲みの中なのでダッシュが 1 本付く。",
-                   "&lt;M: in the weather &gt; は A sudden change にかかる形容詞のカタマリ。S のマスに巻き込むと S の核が言えなくなる。"],
-         "ja": "天候の急変は、経験を積んだ登山者にさえ自分の判断を疑わせることがある。"},
+                   "&lt;M: in the weather &gt; は An unforeseen shift にかかる形容詞のカタマリ。S のマスに巻き込むと S の核が言えなくなる。"],
+         "ja": "天候の思いがけない変化は、経験を積んだ登山者にさえ自分の判断を疑わせることがある。"},
         {"id": "A12",
          "syn": "svoc-to",
-         "en": "Most drama schools now expect applicants with no stage experience to prepare two short speeches.",
-         "dsl": "{S:Most drama schools} {M:now} {V:expect} {O:applicants} < M: with no stage experience > [ C: {V':to prepare} {O':two short speeches} ] .",
+         "en": "Most drama academies now expect applicants with no stage experience to prepare two contrasting monologues.",
+         "dsl": "{S:Most drama academies} {M:now} {V:expect} {O:applicants} < M: with no stage experience > [ C: {V':to prepare} {O':two contrasting monologues} ] .",
          "pat": "第5文型（SVOC）",
          "tag": "expect O to do（C が to 不定詞）",
          "notes": [
                    "急所は to prepare。「用意するために」と副詞に取ると、expect applicants で終わる第3文型に見えてしまう。",
-                   "applicants prepare two short speeches という主語述語の関係が立つので、この不定詞は O に対する C である。",
-                   "C が動詞を含むので [ C: {V':to prepare} {O':two short speeches} ] と囲む。A11 の原形の C と書き方をそろえるのが約束である。",
+                   "applicants prepare two contrasting monologues という主語述語の関係が立つので、この不定詞は O に対する C である。",
+                   "C が動詞を含むので [ C: {V':to prepare} {O':two contrasting monologues} ] と囲む。A11 の原形の "
+                   "C と書き方をそろえるのが約束である。",
                    "O と C の間に &lt;M: with no stage experience &gt; が挟まっても expect O to do の型は変わらない。"
                    "{M:now} と合わせて外せば骨格が並ぶ。"],
-         "ja": "たいていの演劇学校は今や、舞台経験の無い志願者にも短いせりふを二つ用意してくることを求める。"},
+         "ja": "たいていの演劇学校は今や、舞台経験の無い志願者にも対照的な独白を二つ用意してくることを求める。"},
     ]},
     {"g": "Ｂ　修飾語 M を切り離す", "sub": "S と V が修飾で引き離されている形", "pool": "1B", "items": [
         {"id": "B1",
          "syn": "relative-subject",
-         "en": "Volunteers who have worked at an animal shelter for years can calm a frightened dog in minutes.",
-         "dsl": "{S:Volunteers} < M: {S':who} {V':have worked} ( M': at an animal shelter ) ( M': for years ) > {V:can calm} {O:a frightened dog} ( M: in minutes ) .",
+         "en": "Volunteers who have worked at an animal sanctuary for years can calm a distressed dog in minutes.",
+         "dsl": "{S:Volunteers} < M: {S':who} {V':have worked} ( M': at an animal sanctuary ) ( M': for years ) > {V:can calm} {O:a distressed dog} ( M: in minutes ) .",
          "pat": "第3文型（SVO）／主語に関係詞節",
          "tag": "主格の関係代名詞（who）が S と V を割る",
          "notes": [
                    "急所は who。関係詞がそのまま節の中の S' の働きをするので、&lt;M: who … for years &gt; の内側にもう一つ主語を置く場所は無い。"
                    "have worked を主節の V と数えると、後ろの can calm が主語を失って余る。",
-                   "飾りの &lt;M: … &gt; を丸ごと外すと Volunteers can calm a frightened dog が残る。calm は他動詞で直後の "
-                   "a frightened dog が O、( M: in minutes ) は外しても文が立つ副詞なので骨組みは第3文型。",
+                   "飾りの &lt;M: … &gt; を丸ごと外すと Volunteers can calm a distressed dog が残る。calm は他動詞で直後の "
+                   "a distressed dog が O、( M: in minutes ) は外しても文が立つ副詞なので骨組みは第3文型。",
                    "関係詞節は先行詞の直後で始まり、節の中で完結する。for years まで来ると節が閉じるので、そこから先に出てくる can calm が主節の V だと決まる。"
                    "動詞の個数ではなく、囲みの内側か外側かで切る。",
-                   "規約1 のとおり助動詞は動詞と同じマスなので {V:can calm} は 1 マス。( M': at an animal shelter ) と ( M': "
-                   "for years ) はどちらも関係詞節の内側の副詞で、ダッシュ 1 本がその深さを示している。"],
-         "ja": "動物保護施設で何年も働いてきたボランティアは、おびえた犬を数分で落ち着かせることができる。"},
+                   "規約1 のとおり助動詞は動詞と同じマスなので {V:can calm} は 1 マス。( M': at an animal sanctuary ) と ( "
+                   "M': for years ) はどちらも関係詞節の内側の副詞で、ダッシュ 1 本がその深さを示している。"],
+         "ja": "動物保護区で何年も働いてきたボランティアは、おびえきった犬を数分で落ち着かせることができる。"},
         {"id": "B2",
          "syn": "relative-object",
-         "en": "The furniture that the previous owner abandoned in the basement now fills the small entrance hall.",
-         "dsl": "{S:The furniture} < M: {O':that} {S':the previous owner} {V':abandoned} ( M': in the basement ) > {M:now} {V:fills} {O:the small entrance hall} .",
+         "en": "The furniture that the previous tenant abandoned in the cellar now fills the cramped entrance hall.",
+         "dsl": "{S:The furniture} < M: {O':that} {S':the previous tenant} {V':abandoned} ( M': in the cellar ) > {M:now} {V:fills} {O:the cramped entrance hall} .",
          "pat": "第3文型（SVO）／主語に関係詞節",
          "tag": "目的格の関係代名詞（that）が S と V を割る",
          "notes": [
-                   "that の後ろは the previous owner abandoned と続き、abandoned の目的語が空いている。その空所に The furniture "
+                   "that の後ろは the previous tenant abandoned と続き、abandoned の目的語が空いている。その空所に The furniture "
                    "が入るので、この that は目的格の関係代名詞 {O':that} である。接続詞の that だと読むと空所を説明できない。",
                    "誤読の急所は abandoned。過去形が二つ並んでいるように見えるが、abandoned は &lt;M: … &gt; の中の V' で、主節の V "
                    "は fills のほう。単数扱いの The furniture に fills が対応している点も手がかりになる。",
-                   "( M': in the basement ) は関係詞節の内側の副詞。ここで文が終わったと思い込むと S の The furniture が動詞を持たないまま残る。"
-                   "飾りを外すと The furniture now fills the small entrance hall となり第3文型と分かる。",
+                   "( M': in the cellar ) は関係詞節の内側の副詞。ここで文が終わったと思い込むと S の The furniture が動詞を持たないまま残る。"
+                   "飾りを外すと The furniture now fills the cramped entrance hall となり第3文型と分かる。",
                    "{M:now} は S と V の間に入った副詞で骨組みには数えない。目的格の関係代名詞は省略もできるので、名詞のあとにいきなり別の名詞と動詞が続いたら、"
                    "まず空所を探す癖をつける。"],
-         "ja": "前の持ち主が地下室に置き去りにした家具が、今では小さな玄関ホールを埋めている。"},
+         "ja": "前の借り手が地下貯蔵室に置き去りにした家具が、今では小さな玄関ホールを埋めている。"},
         {"id": "B3",
          "syn": "participle-postmod",
-         "en": "Cooking methods developed in rural households centuries ago still offer modern chefs a useful lesson.",
-         "dsl": "{S:Cooking methods} < M: {V':developed} ( M': in rural households ) ( M': centuries ago ) > {M:still} {V:offer} {O1:modern chefs} {O2:a useful lesson} .",
+         "en": "Cooking methods devised in rural households centuries ago still offer modern chefs a valuable lesson.",
+         "dsl": "{S:Cooking methods} < M: {V':devised} ( M': in rural households ) ( M': centuries ago ) > {M:still} {V:offer} {O1:modern chefs} {O2:a valuable lesson} .",
          "pat": "第4文型（SVOO）／主語に過去分詞の後置修飾",
          "tag": "過去分詞の後置修飾が S と V を割る",
          "notes": [
-                   "Cooking methods developed までを読むと「調理法が発展した」という S と V にそのまま見える。これがいちばん多い誤読で、後ろの "
-                   "still offer が主語を失うことで初めて破綻に気づく。",
+                   "Cooking methods devised までを読むと「調理法が発展した」という S と V にそのまま見える。これがいちばん多い誤読で、後ろの still "
+                   "offer が主語を失うことで初めて破綻に気づく。",
                    "-ed が飾りか主節の V かは、直前に be があるかどうかでは決まらない。決め手は「別に定形動詞が残るか」で、ここは現在形の offer が残るので "
                    "developed のほうが過去分詞 {V':developed} と確定する。",
                    "&lt;M: developed … centuries ago &gt; を丸ごと外し、さらに {M:still} も外すと Cooking methods "
-                   "offer modern chefs a useful lesson が残る。人（O1: modern chefs）と物（O2: a useful lesson）が続くので第4文型と判定できる。",
+                   "offer modern chefs a valuable lesson が残る。人（O1: modern chefs）と物（O2: a valuable "
+                   "lesson）が続くので第4文型と判定できる。",
                    "規約4 のとおり &lt; &gt; の中の分詞は素の語で置かず {V':developed} と示す。同じ過去分詞でも B7 の Faced は文全体にかかるので "
                    "( M ) になる。かかる先が名詞か文かで括弧の種類が変わる。"],
-         "ja": "何世紀も前に農村の家庭で生まれた調理法は、今なお現代の料理人に有益な教訓を与えてくれる。"},
+         "ja": "何世紀も前に農村の家庭で生まれた調理法は、今なお現代の料理人に貴重な教訓を与えてくれる。"},
         {"id": "B4",
          "syn": "gerund-object",
-         "en": "Students at the summer language camp practice introducing themselves in English every single morning.",
-         "dsl": "{S:Students} < M: at the summer language camp > {V:practice} [ O: {V':introducing} {O':themselves} ( M': in English ) ] ( M: every single morning ) .",
+         "en": "Students at the summer immersion camp practice introducing themselves in English every single morning.",
+         "dsl": "{S:Students} < M: at the summer immersion camp > {V:practice} [ O: {V':introducing} {O':themselves} ( M': in English ) ] ( M: every single morning ) .",
          "pat": "第3文型（SVO）／目的語が動名詞句",
          "tag": "動名詞句が O（practice doing）",
          "notes": [
-                   "急所は practice。名詞にも動詞にもなる語なので the summer language camp practice を一つの名詞のかたまりと読みたくなるが、"
+                   "急所は practice。名詞にも動詞にもなる語なので the summer immersion camp practice を一つの名詞のかたまりと読みたくなるが、"
                    "そう読むと文全体に定形動詞が一つも残らない。残らないと分かった時点で practice が主節の V と決まる。",
                    "introducing は直前に be が無いので進行形ではない。practice の目的語になった動名詞で、[ O: {V':introducing} "
                    "{O':themselves} ( M': in English ) ] という名詞のカタマリ一つぶんがそのまま O のマスに収まる。",
-                   "&lt;M: at the summer language camp &gt; は S の Students を後ろから説明する形容詞のカタマリ。外すと "
+                   "&lt;M: at the summer immersion camp &gt; は S の Students を後ろから説明する形容詞のカタマリ。外すと "
                    "Students practice … と S と V が隣り合うので、骨組みが第3文型だと確かめられる。",
                    "-ing が名詞のカタマリなら [ ]、名詞にかかる飾りなら &lt; &gt;、文にかかる飾りなら ( ) と括弧を変える。( M: every single "
                    "morning ) は practice にかかる副詞なので骨組みには数えない。"],
          "ja": "その夏の語学キャンプの生徒たちは、毎朝欠かさず英語で自己紹介をする練習をしている。"},
         {"id": "B5",
          "syn": "adverb-intrusion",
-         "en": "The publisher, after nearly two years of silence, suddenly sent the young translator a new contract.",
-         "dsl": "{S:The publisher} , ( M: after nearly two years < M': of silence > ) , {M:suddenly} {V:sent} {O1:the young translator} {O2:a new contract} .",
+         "en": "The publisher, after nearly two years of silence, abruptly sent the young translator a lucrative contract.",
+         "dsl": "{S:The publisher} , ( M: after nearly two years < M': of silence > ) , {M:abruptly} {V:sent} {O1:the young translator} {O2:a lucrative contract} .",
          "pat": "第4文型（SVOO）／S と V の間に副詞句が割り込む",
          "tag": "S と V の間に割り込む副詞句",
          "notes": [
                    "急所は二つのコンマに挟まれた ( M: after nearly two years of silence )。S の The publisher と V "
                    "の sent の間に割り込んだ副詞のカタマリで骨組みではない。直前の silence を主語と読むと、動詞 sent に主語が二つできてしまう。",
-                   "割り込みを外すと The publisher suddenly sent the young translator a new contract が残る。"
-                   "人（O1: the young translator）と物（O2: a new contract）が並ぶので第4文型で、{M:suddenly} も外して数えない副詞である。",
+                   "割り込みを外すと The publisher abruptly sent the young translator a lucrative contract "
+                   "が残る。人（O1: the young translator）と物（O2: a lucrative contract）が並ぶので第4文型で、{M:suddenly} "
+                   "も外して数えない副詞である。",
                    "&lt;M': of silence &gt; は two years にかかる形容詞のカタマリで、( M ) の内側の飾り。ダッシュ 1 本が「一枚内側」を表しているので、"
                    "外の骨格には数えないと記号だけで分かる。",
                    "文頭に出る副詞句（B6 の Behind …）も S と V の間に入る副詞句も、働きは同じ M。位置ではなく「外しても文が立つか」で M かどうかを決めると、"
                    "コンマの数に惑わされない。"],
-         "ja": "その出版社は、二年近く何の連絡もないまま過ぎたあと、突然その若い翻訳者に新しい契約書を送ってきた。"},
+         "ja": "その出版社は、二年近く何の連絡もないまま過ぎたあと、出し抜けにその若い翻訳者に好条件の契約書を送ってきた。"},
         {"id": "B6",
          "syn": "long-fronted-pp",
-         "en": "Behind the tall fences of the construction site, several old fruit trees have survived the winter.",
-         "dsl": "( M: Behind the tall fences < M': of the construction site > ) , {S:several old fruit trees} {V:have survived} {O:the winter} .",
+         "en": "Behind the tall barriers of the demolition site, several ancient fruit trees have survived the winter.",
+         "dsl": "( M: Behind the tall barriers < M': of the demolition site > ) , {S:several ancient fruit trees} {V:have survived} {O:the winter} .",
          "pat": "第3文型（SVO）／文頭に長い前置詞句",
          "tag": "文頭の長い前置詞句（Behind …）",
          "notes": [
-                   "前置詞 Behind の目的語である the tall fences も、その後ろの the construction site も S にはなれない。前置詞句の中の名詞を主語と読むのが最大の誤読で、"
+                   "前置詞 Behind の目的語である the tall barriers も、その後ろの the demolition site も S にはなれない。前置詞句の中の名詞を主語と読むのが最大の誤読で、"
                    "そう読むと後ろの have survived が行き場を失う。",
-                   "( M: Behind … the construction site ) を丸ごと外して初めて主節が見える。S は several old fruit "
+                   "( M: Behind … the demolition site ) を丸ごと外して初めて主節が見える。S は several ancient fruit "
                    "trees、V は have survived、O は the winter で第3文型。長い M の後ろに来る短い S はいちばん見落としやすい。",
-                   "&lt;M': of the construction site &gt; は the tall fences にかかる形容詞のカタマリで、( M ) の内側の飾り。"
+                   "&lt;M': of the demolition site &gt; は the tall barriers にかかる形容詞のカタマリで、( M ) の内側の飾り。"
                    "囲みが二重になったら、内側の名詞は外の骨格の候補から外す。",
                    "文頭の長い前置詞句はコンマで「ここまでが飾り」と合図することが多い。コンマの後ろから S を探し、そこで見つけた名詞と対応する動詞を V に決める、という順番を固定しておく。"],
-         "ja": "工事現場の高い塀の裏側で、何本かの古い果樹が冬を越して生き残っている。"},
+         "ja": "解体現場の高い仮囲いの裏側で、何本かの古い果樹が冬を越して生き残っている。"},
         {"id": "B7",
          "syn": "participial-construction",
-         "en": "Faced with a shortage of skilled workers, a growing number of manufacturers have begun training their own technicians.",
-         "dsl": "( M: {V':Faced} ( M': with a shortage < M'': of skilled workers > ) ) , {S:a growing number} < M: of manufacturers > {V:have begun} [ O: {V':training} {O':their own technicians} ] .",
+         "en": "Faced with a chronic shortage of skilled labor, a growing number of manufacturers have begun training their own technicians.",
+         "dsl": "( M: {V':Faced} ( M': with a chronic shortage < M'': of skilled labor > ) ) , {S:a growing number} < M: of manufacturers > {V:have begun} [ O: {V':training} {O':their own technicians} ] .",
          "pat": "第3文型（SVO）／文頭に分詞構文",
          "tag": "分詞構文（過去分詞 Faced with …）",
          "notes": [
@@ -417,42 +422,42 @@ PART1 = [
          "ja": "熟練した働き手の不足に直面して、ますます多くの製造業者が自社の技術者を育て始めている。"},
         {"id": "B8",
          "syn": "pp-postmod",
-         "en": "The coastal road between the harbor and the fishing village becomes extremely dangerous after heavy rain.",
-         "dsl": "{S:The coastal road} < M: between the harbor {接:and} the fishing village > {V:becomes} {C:extremely dangerous} ( M: after heavy rain ) .",
+         "en": "The coastal road between the harbor and the fishing hamlet becomes treacherous after prolonged rain.",
+         "dsl": "{S:The coastal road} < M: between the harbor {接:and} the fishing hamlet > {V:becomes} {C:treacherous} ( M: after prolonged rain ) .",
          "pat": "第2文型（SVC）／主語に前置詞句が付く",
          "tag": "名詞に付く前置詞句（between A and B）",
          "notes": [
-                   "S は The coastal road の三語だけ。between 以下が長いので、直前の the fishing village を主語と見て becomes "
+                   "S は The coastal road の三語だけ。between 以下が長いので、直前の the fishing hamlet を主語と見て becomes "
                    "を対応させる誤読が起きる。前置詞の後ろの名詞は S になれないと決めておけば防げる。",
-                   "&lt;M: between the harbor and the fishing village &gt; は road を後ろから説明する形容詞のカタマリ。"
-                   "外すと The coastal road becomes extremely dangerous が残り、becomes の後ろは O ではなく C なので第2文型。",
-                   "{接:and} が結ぶのは the harbor と the fishing village という二つの名詞で、文と文ではない。and の前後に同じ形が並んでいるかを見ると、"
+                   "&lt;M: between the harbor and the fishing hamlet &gt; は road を後ろから説明する形容詞のカタマリ。"
+                   "外すと The coastal road becomes treacherous が残り、becomes の後ろは O ではなく C なので第2文型。",
+                   "{接:and} が結ぶのは the harbor と the fishing hamlet という二つの名詞で、文と文ではない。and の前後に同じ形が並んでいるかを見ると、"
                    "どこまでが一つの前置詞句なのかが決まる。",
-                   "同じ前置詞句でも、名詞だけを説明するなら &lt; &gt;、文にかかるなら ( ) と書き分ける。( M: after heavy rain ) は becomes "
-                   "にかかる副詞なので ( ) に入れる。"],
-         "ja": "港と漁村を結ぶその海沿いの道は、大雨のあとには非常に危険になる。"},
+                   "同じ前置詞句でも、名詞だけを説明するなら &lt; &gt;、文にかかるなら ( ) と書き分ける。( M: after prolonged rain ) "
+                   "は becomes にかかる副詞なので ( ) に入れる。"],
+         "ja": "港と漁村の集落を結ぶその海沿いの道は、長雨のあとにはきわめて危険になる。"},
         {"id": "B9",
          "syn": "comparative-postmod",
-         "en": "A crowd far larger than the organizers had expected gathered quietly outside the main entrance.",
-         "dsl": "{S:A crowd} < M: far larger ( M': {接:than} {S'':the organizers} {V'':had expected} ) > {V:gathered} {M:quietly} ( M: outside the main entrance ) .",
+         "en": "A crowd far larger than the organizers had anticipated assembled quietly outside the main entrance.",
+         "dsl": "{S:A crowd} < M: far larger ( M': {接:than} {S'':the organizers} {V'':had anticipated} ) > {V:assembled} {M:quietly} ( M: outside the main entrance ) .",
          "pat": "第1文型（SV）／主語に比較の句が付く",
          "tag": "比較の句が名詞を後ろから修飾する",
          "notes": [
-                   "急所は than の節がどこで閉じるか。&lt;M: far larger ( M': than the organizers had expected "
-                   ") &gt; までが A crowd の説明で、had expected を主節の V と読むと、後ろの gathered が主語を失って余ってしまう。",
+                   "急所は than の節がどこで閉じるか。&lt;M: far larger ( M': than the organizers had anticipated "
+                   ") &gt; までが A crowd の説明で、had anticipated を主節の V と読むと、後ろの gathered が主語を失って余ってしまう。",
                    "far larger は crowd を後ろから修飾する形容詞なので、than 以下まで込みで &lt; &gt; の一かたまりになる。飾りを外すと A "
-                   "crowd gathered quietly outside the main entrance が残り、目的語が無いので第1文型。",
-                   "than の後ろは the organizers had expected と主語と動詞がそろっているように見えるが、expected の目的語が空いている。"
+                   "crowd assembled quietly outside the main entrance が残り、目的語が無いので第1文型。",
+                   "than の後ろは the organizers had anticipated と主語と動詞がそろっているように見えるが、expected の目的語が空いている。"
                    "この空所こそ比較の節の目印で、空所がある節は主節の骨格には数えない。",
                    "{M:quietly} と ( M: outside the main entrance ) はどちらも gathered にかかる副詞。gathered "
                    "の後ろに名詞が一つも無いことを確かめてから第1文型と決めると、C や O と迷わない。"],
-         "ja": "主催者が予想していたよりはるかに大きな人だかりが、正面入口の外に静かに集まった。"},
+         "ja": "主催者が見込んでいたよりはるかに大きな人だかりが、正面入口の外に静かに集まった。"},
     ]},
     {"g": "Ｃ　誤読しやすい形", "sub": "形式主語・there 構文・受動態・知覚動詞・群動詞・whether", "pool": "1C", "items": [
         {"id": "C1",
          "syn": "formal-subject",
-         "en": "It is no surprise that many first-time visitors lose their way in the crowded streets around the central market.",
-         "dsl": "{S:It} {V:is} {C:no surprise} [ 真S: {接:that} {S':many first-time visitors} {V':lose} {O':their way} ( M': in the crowded streets < M'': around the central market > ) ] .",
+         "en": "It is no surprise that many first-time visitors lose their bearings in the labyrinth of alleys around the central bazaar.",
+         "dsl": "{S:It} {V:is} {C:no surprise} [ 真S: {接:that} {S':many first-time visitors} {V':lose} {O':their bearings} ( M': in the labyrinth of alleys < M'': around the central bazaar > ) ] .",
          "pat": "第2文型（SVC）＋形式主語 It … 真S（that 節）",
          "tag": "形式主語 It … 真S（that 節）",
          "notes": [
@@ -460,13 +465,13 @@ PART1 = [
                    "[ 真S: … ] を丸ごと外すと It is no surprise だけが残る。is の後ろが名詞のカタマリなので、主節は S V C の第2文型と確定する。",
                    "対抗する読みは surprise にかかる同格の that 節。だが同格なら It が何かを指していなければならないのに、指す先が文中にも前にも無い。だから形式主語と決まる。",
                    "真S の中の骨組みは {S':many first-time visitors} と {V':lose} と {O':their way}。( M': in "
-                   "the crowded streets &lt; M'': around the central market &gt; ) は lose にかかる副詞のカタマリで、"
-                   "骨組みには数えない。around the central market は streets を後ろから説明するので、外に並べず内側に入れ子にする。"],
-         "ja": "中央市場のまわりの混み合った通りで、初めて訪れた人の多くが道に迷うのは、驚くようなことではない。"},
+                   "the labyrinth of alleys &lt; M'': around the central bazaar &gt; ) は lose にかかる副詞のカタマリで、"
+                   "骨組みには数えない。around the central bazaar は streets を後ろから説明するので、外に並べず内側に入れ子にする。"],
+         "ja": "中央の市場のまわりの入り組んだ路地で、初めて訪れた人の多くが方角を見失うのは、驚くようなことではない。"},
         {"id": "C2",
          "syn": "formal-object",
-         "en": "Centuries of rebuilding make it extremely difficult to date the older parts of a medieval castle.",
-         "dsl": "{S:Centuries} < M: of rebuilding > {V:make} {O:it} {C:extremely difficult} [ 真O: {V':to date} {O':the older parts} < M': of a medieval castle > ] .",
+         "en": "Centuries of rebuilding make it extremely difficult to date the earliest portions of a medieval fortress.",
+         "dsl": "{S:Centuries} < M: of rebuilding > {V:make} {O:it} {C:extremely difficult} [ 真O: {V':to date} {O':the earliest portions} < M': of a medieval fortress > ] .",
          "pat": "第5文型（SVOC）＋形式目的語 it … 真O",
          "tag": "形式目的語 it … 真O",
          "notes": [
@@ -477,52 +482,53 @@ PART1 = [
                    "主語の核は複数形の Centuries で、だから make に -s が付かない。&lt; M: of rebuilding &gt; を名詞のマスに抱え込むと、"
                    "rebuilding を主語の核と取り違える。ただし a number of / a growing number of ＋複数名詞 だけは例外で、この形のときは動詞を "
                    "of の後ろの複数名詞に合わせる。"],
-         "ja": "何世紀にもわたる建て直しのせいで、中世の城の古い部分の年代を特定することは、きわめて難しくなっている。"},
+         "ja": "何世紀にもわたる建て直しのせいで、中世の城塞の最も古い部分の年代を特定することは、きわめて難しくなっている。"},
         {"id": "C3",
          "syn": "that-clause-object",
-         "en": "Some gardeners still believe that the phase of the moon decides the best day for planting beans.",
-         "dsl": "{S:Some gardeners} {M:still} {V:believe} [ O: {接:that} {S':the phase} < M': of the moon > {V':decides} {O':the best day} < M': for planting beans > ] .",
+         "en": "Some growers still maintain that the phase of the moon determines the best day for sowing beans.",
+         "dsl": "{S:Some growers} {M:still} {V:maintain} [ O: {接:that} {S':the phase} < M': of the moon > {V':determines} {O':the best day} < M': for sowing beans > ] .",
          "pat": "第3文型（SVO）＋接続詞 that 節が O",
          "tag": "that 節が丸ごと O",
          "notes": [
                    "急所は that の後ろが欠けの無い完全な文であること。関係代名詞なら節の中で S か O が1つ欠ける。ここは接続詞で、節がまるごと believe の O になる。",
-                   "[ O: … ] を外すと Some gardeners still believe が残る。主節の V は believe ひとつで、節の中の decides "
+                   "[ O: … ] を外すと Some growers still maintain が残る。主節の V は believe ひとつで、節の中の determines "
                    "は V′ にすぎない。",
                    "節の中の S′ は the phase であって the moon ではない。&lt; M': of the moon &gt; を名詞のマスから外へ出すと、"
-                   "decides に対応する主語がはっきり見える。",
+                   "determines に対応する主語がはっきり見える。",
                    "{M:still} は S と V の間に割り込んだ副詞で骨組みではない。副詞を M として外に置き、その次に来る believe を V の位置から動かさない。"],
          "ja": "月の満ち欠けが豆をまくのに一番よい日を決めると、いまだに信じている庭師もいる。"},
         {"id": "C4",
          "syn": "whether-clause",
-         "en": "Experienced buyers cannot tell from a photograph alone whether a chair is a genuine antique or a clever copy.",
-         "dsl": "{S:Experienced buyers} {V:cannot tell} ( M: from a photograph alone ) [ O: {接:whether} {S':a chair} {V':is} {C':a genuine antique} {接:or} {C':a clever copy} ] .",
+         "en": "Experienced dealers cannot tell from a photograph alone whether a chair is a genuine antique or a skillful forgery.",
+         "dsl": "{S:Experienced dealers} {V:cannot tell} ( M: from a photograph alone ) [ O: {接:whether} {S':a chair} {V':is} {C':a genuine antique} {接:or} {C':a skillful forgery} ] .",
          "pat": "第3文型（SVO）＋ whether の名詞節が O",
          "tag": "whether の名詞節が O",
          "notes": [
                    "whether を「たとえ〜であろうと」の譲歩（副詞のカタマリ）と読むと、他動詞 tell の目的語がどこにも残らない。この欠落が起きるので、ここは「〜かどうか」の名詞節で記号は O。",
                    "V の直後に ( M: from a photograph alone ) が割り込む。O を探すときは前置詞句を飛ばし、その次に現れる名詞のカタマリまで進むこと。",
-                   "{接:or} は [ O: ] の中で {C':a genuine antique} と {C':a clever copy} を結んでいるだけ。ここで文が切れて新しい "
-                   "S が始まると考えない。",
+                   "{接:or} は [ O: ] の中で {C':a genuine antique} と {C':a skillful forgery} を結んでいるだけ。"
+                   "ここで文が切れて新しい S が始まると考えない。",
                    "「A か B か」と2つ並んでいても、whether から文末までで名詞のカタマリ1つぶん。[ O: ] は文末で閉じるので、主節の要素はこれ以上増えない。"],
-         "ja": "経験を積んだ買い手でも、写真だけでは、その椅子が本物の骨董品なのか、よくできた模造品なのかを見分けられない。"},
+         "ja": "経験を積んだ業者でも、写真だけでは、その椅子が本物の骨董品なのか、よくできた模造品なのかを見分けられない。"},
         {"id": "C5",
          "syn": "there-construction",
-         "en": "There hung above the entrance of the old factory a large clock with only one hand.",
-         "dsl": "{M:There} {V:hung} ( M: above the entrance < M': of the old factory > ) {S:a large clock} < M: with only one hand > .",
+         "en": "There hung above the entrance of the abandoned mill a vast clock with only one hand.",
+         "dsl": "{M:There} {V:hung} ( M: above the entrance < M': of the abandoned mill > ) {S:a vast clock} < M: with only one hand > .",
          "pat": "第1文型（SV）＋ there 構文（There は M、S は V の後ろ）",
          "tag": "there 構文（There は M）",
          "notes": [
                    "文頭の There は主語ではなく M。巻頭の表記規約にも「there 構文の There は M。実際の S は動詞の後ろの名詞」と書いてある。答案では "
                    "There に M と書く。",
-                   "この文の S は V より後ろの a large clock で、S と V の順序が入れ替わっている。「文頭の名詞が S」という思い込みだけで解くと必ず外す形である。",
-                   "V(hung) と S の間に ( M: above the entrance &lt; M': of the old factory &gt; ) が割り込む。"
-                   "of the old factory は entrance にかかるので内側に入れ子にする。ここで factory を主語と取ると、後ろの clock が宙に浮いてしまう。",
+                   "この文の S は V より後ろの a vast clock で、S と V の順序が入れ替わっている。「文頭の名詞が S」という思い込みだけで解くと必ず外す形である。",
+                   "V(hung) と S の間に ( M: above the entrance &lt; M': of the abandoned mill &gt; ) "
+                   "が割り込む。of the abandoned mill は entrance にかかるので内側に入れ子にする。ここで factory を主語と取ると、後ろの "
+                   "clock が宙に浮いてしまう。",
                    "&lt; M: with only one hand &gt; は clock を後ろから説明する形容詞のカタマリ。hung にかかる副詞と取ると、S がどこで終わるのかが読めなくなる。"],
-         "ja": "その古い工場の入口の上には、針が1本しかない大きな時計が掛かっていた。"},
+         "ja": "その打ち捨てられた製粉所の入口の上には、針が1本しかない巨大な時計が掛かっていた。"},
         {"id": "C6",
          "syn": "passive",
-         "en": "In this small village, the church bells are rung by hand on the morning of every festival.",
-         "dsl": "( M: In this small village ) , {S:the church bells} {V:are rung} ( M: by hand ) ( M: on the morning < M': of every festival > ) .",
+         "en": "In this secluded parish, the church bells are rung by hand on the morning of every festival.",
+         "dsl": "( M: In this secluded parish ) , {S:the church bells} {V:are rung} ( M: by hand ) ( M: on the morning < M': of every festival > ) .",
          "pat": "第1文型（SV）＋受動態（be + 過去分詞で 1 つの V）",
          "tag": "受動態 be + 過去分詞",
          "notes": [
@@ -530,13 +536,13 @@ PART1 = [
                    "受動態を第2文型に誤判定する。",
                    "V の後ろに名詞のカタマリが1つも残っていない。だからこの文は O を持たず、骨組みは S と V だけの第1文型と決まる。",
                    "( M: by hand ) は動作主ではなく「手で」という方法を表す。受動態の by が必ず動作主だと決めてかかると、ここで S を探し直すことになる。",
-                   "文頭の ( M: In this small village ) は骨組みの外。コンマの後ろに現れる the church bells が主節の S であって、"
-                   "village を S と取らない。"],
-         "ja": "この小さな村では、祭りの日の朝には教会の鐘が手で鳴らされる。"},
+                   "文頭の ( M: In this secluded parish ) は骨組みの外。コンマの後ろに現れる the church bells が主節の S "
+                   "であって、village を S と取らない。"],
+         "ja": "この人里離れた教区では、祭りの日の朝には教会の鐘が手で鳴らされる。"},
         {"id": "C7",
          "syn": "perception-verb",
-         "en": "From the shore, the fishermen could see a thin line of smoke rise slowly into a windless sky.",
-         "dsl": "( M: From the shore ) , {S:the fishermen} {V:could see} {O:a thin line} < M: of smoke > [ C: {V':rise} {M':slowly} ( M': into a windless sky ) ] .",
+         "en": "From the pier, the fishermen could see a thin column of smoke rise slowly into a windless sky.",
+         "dsl": "( M: From the pier ) , {S:the fishermen} {V:could see} {O:a thin column} < M: of smoke > [ C: {V':rise} {M':slowly} ( M': into a windless sky ) ] .",
          "pat": "第5文型（SVOC）＋知覚動詞 see + O + 原形不定詞",
          "tag": "知覚動詞 see + O + 原形",
          "notes": [
@@ -547,26 +553,26 @@ PART1 = [
                    "が C の先頭だと分かる。",
                    "{M':slowly} と ( M': into a windless sky ) は could see ではなく rise にかかる。C は原形不定詞のカタマリ1つで、"
                    "その修飾語も [ C: ] の内側に入れる。"],
-         "ja": "岸から、漁師たちは細い煙の筋が風のない空へゆっくりと立ちのぼるのを見ることができた。"},
+         "ja": "桟橋から、漁師たちは細い一筋の煙の筋が風のない空へゆっくりと立ちのぼるのを見ることができた。"},
         {"id": "C8",
          "syn": "causative",
-         "en": "An instructor at a good driving school has the learner describe each step of the parking procedure aloud.",
-         "dsl": "{S:An instructor} < M: at a good driving school > {V:has} {O:the learner} [ C: {V':describe} {O':each step} < M': of the parking procedure > {M':aloud} ] .",
+         "en": "An instructor at a reputable driving school has the learner recite each step of the parking maneuver aloud.",
+         "dsl": "{S:An instructor} < M: at a reputable driving school > {V:has} {O:the learner} [ C: {V':recite} {O':each step} < M': of the parking maneuver > {M':aloud} ] .",
          "pat": "第5文型（SVOC）＋使役動詞 have + O + 原形不定詞",
          "tag": "使役動詞 have + O + 原形",
          "notes": [
                    "急所は has。完了の助動詞と読むなら後ろに過去分詞が要るが、describe は原形なので成り立たない。原形不定詞を C に取る使役の has である。",
                    "「指導員が学習者を持っている」と読むと describe 以下が宙に浮く。{O:the learner} と [ C: describe … ] の間に主述関係が立つので、"
                    "ここは第5文型。",
-                   "C は動詞を含むカタマリなので平のマスに置かず [ C: ] で囲んで中まで分解する。&lt; M': of the parking procedure "
-                   "&gt; と {M':aloud} はどちらもその内側の要素である。",
-                   "&lt; M: at a good driving school &gt; は instructor を後ろから説明する形容詞のカタマリ。S の核は An "
-                   "instructor で、直前にあるからといって school を S と取らない。"],
-         "ja": "よい自動車教習所の指導員は、学習者に駐車の手順を一つ一つ声に出して説明させる。"},
+                   "C は動詞を含むカタマリなので平のマスに置かず [ C: ] で囲んで中まで分解する。&lt; M': of the parking maneuver &gt; "
+                   "と {M':aloud} はどちらもその内側の要素である。",
+                   "&lt; M: at a reputable driving school &gt; は instructor を後ろから説明する形容詞のカタマリ。S の核は "
+                   "An instructor で、直前にあるからといって school を S と取らない。"],
+         "ja": "よい自動車教習所の指導員は、学習者に駐車の一連の動きを一つ一つ声に出して口に出して言わせる。"},
         {"id": "C9",
          "syn": "group-verb",
-         "en": "Several small dairy farms have taken advantage of the new railway in order to send fresh milk into the city.",
-         "dsl": "{S:Several small dairy farms} {V:have taken advantage of} {O:the new railway} ( M: in order {V':to send} {O':fresh milk} ( M': into the city ) ) .",
+         "en": "Several small dairy farms have taken advantage of the new railway in order to dispatch fresh produce into the city.",
+         "dsl": "{S:Several small dairy farms} {V:have taken advantage of} {O:the new railway} ( M: in order {V':to dispatch} {O':fresh produce} ( M': into the city ) ) .",
          "pat": "第3文型（SVO）＋群動詞 take advantage of を 1 つの V に切る",
          "tag": "群動詞 take advantage of",
          "notes": [
@@ -584,82 +590,83 @@ PART1 = [
 PART2 = [
     {"id": "G1",
      "syn": "so-that-result",
-     "en": "The nurse spoke in such a quiet voice that several patients asked her to repeat the instructions twice.",
-     "dsl": "{S:The nurse} {V:spoke} ( M: in such a quiet voice ) ( M: {接:that} {S':several patients} {V':asked} {O':her} [ C': {V'':to repeat} {O'':the instructions} {M'':twice} ] ) .",
+     "en": "The consultant spoke in such a subdued voice that several patients asked her to reiterate the discharge instructions twice.",
+     "dsl": "{S:The consultant} {V:spoke} ( M: in such a subdued voice ) ( M: {接:that} {S':several patients} {V':asked} {O':her} [ C': {V'':to reiterate} {O'':the discharge instructions} {M'':twice} ] ) .",
      "pat": "第1文型（SV）",
      "tag": "結果を表す such … that",
      "notes": [
                "such の直後で名詞のカタマリが終わらず that 節が続いたら、結果を表す so / such … that の呼応を疑う。",
                "speak は say や tell と違って that 節を目的語に取れないので、後ろの that 節は O ではなく副詞のカタマリ ( M ) として並ぶ。",
-               "主節の骨組みは The nurse と spoke の 2 つだけで、残りはすべて ( M ) の修飾語である。",
+               "主節の骨組みは The consultant と spoke の 2 つだけで、残りはすべて ( M ) の修飾語である。",
                "that 節の中の asked her to repeat は O と C を取る第5文型。C は動詞を含むので囲んで中も分解する。"],
-     "ja": "その看護師はあまりに静かな声で話したので、何人かの患者は説明を二度言い直してほしいと彼女に頼んだ。",
-     "q": "that several patients asked her to repeat the instructions twice は、この文でどのような働きをしているか。最も適切なものを "
-          "1 つ選びなさい。",
+     "ja": "その専門医はあまりに抑えた声で話したので、何人かの患者は退院時の説明をもう一度述べ直してほしいと彼女に頼んだ。",
+     "q": "that several patients asked her to reiterate the discharge instructions twice は、この文でどのような働きをしているか。"
+          "最も適切なものを 1 つ選びなさい。",
      "choices": [
-                 "in such a quiet voice と呼応し、その結果どうなったかを述べる副詞のカタマリ",
+                 "in such a subdued voice と呼応し、その結果どうなったかを述べる副詞のカタマリ",
                  "spoke の目的語となり、看護師が話した内容そのものを表す名詞のカタマリ",
                  "a quiet voice を後ろから説明し、どのような声だったかを限定する形容詞のカタマリ",
-                 "The nurse を後ろから説明し、どのような看護師なのかを限定する形容詞のカタマリ"],
+                 "The consultant を後ろから説明し、どのような看護師なのかを限定する形容詞のカタマリ"],
      "ans": 0,
-     "exp": "such a quiet voice の such と、後ろの that 節が呼応している。in such a quiet voice ほど静かな声だった、その結果どうなったかを述べるのが "
+     "exp": "such a subdued voice の such と、後ろの that 節が呼応している。in such a subdued voice ほど静かな声だった、その結果どうなったかを述べるのが "
             "that 以下で、分解図でも V の外に並ぶ 2 つ目の ( M ) になる。speak は say や tell と違って that 節を目的語に取れないので、that "
             "節を O と読むと置き場所がなく、主節が第3文型に化けてしまうので誤り。a quiet voice を後ろから説明する形容詞のカタマリと取ると、声そのものの中身を that "
-            "節が述べることになり、患者が頼んだという別の出来事の説明にならないので誤り。The nurse にかかると取ると、that 節との間に spoke in such a "
-            "quiet voice がまるごと挟まっており、名詞から遠く離れた that 節がその名詞を限定することはないので誤り。"},
+            "節が述べることになり、患者が頼んだという別の出来事の説明にならないので誤り。The consultant にかかると取ると、that 節との間に spoke in such "
+            "a subdued voice がまるごと挟まっており、名詞から遠く離れた that 節がその名詞を限定することはないので誤り。"},
     {"id": "G2",
      "syn": "too-to",
-     "en": "The young sprinter was too anxious about her start to run the first fifty meters at her usual speed.",
-     "dsl": "{S:The young sprinter} {V:was} {C:too anxious about her start} ( M: {V':to run} {O':the first fifty meters} ( M': at her usual speed ) ) .",
+     "en": "The young sprinter was too apprehensive about her start to run the opening fifty meters at her customary pace.",
+     "dsl": "{S:The young sprinter} {V:was} {C:too apprehensive about her start} ( M: {V':to run} {O':the opening fifty meters} ( M': at her customary pace ) ) .",
      "pat": "第2文型（SVC）",
      "tag": "too … to の否定的な意味",
      "notes": [
                "too … to … は否定語を使わずに「…すぎて〜できない」を表す。to の前で切って程度を読む。",
-               "was の後ろの too anxious about her start は主語の状態を述べる C で、この文は第2文型である。",
+               "was の後ろの too apprehensive about her start は主語の状態を述べる C で、この文は第2文型である。",
                "to run 以下は名詞にかかる形容詞ではなく、too と呼応して程度と結果を示す副詞のカタマリになる。",
                "anxious about のように形容詞が呼び出す前置詞は、C のマスの中に残したまま 1 かたまりで見る。"],
-     "ja": "その若いスプリンターはスタートのことを気にしすぎていて、最初の五十メートルをいつもの速さで走ることができなかった。",
+     "ja": "その若いスプリンターはスタートを不安に思いすぎていて、最初の五十メートルをいつもの調子で走ることができなかった。",
      "q": "この文の主節の文型として最も適切なものを 1 つ選びなさい。",
      "choices": [
-                 "was が V で、too anxious about her start を O にとる第3文型である",
-                 "was が V で、too anxious about her start が C にあたる第2文型である",
+                 "was が V で、too apprehensive about her start を O にとる第3文型である",
+                 "was が V で、too apprehensive about her start が C にあたる第2文型である",
                  "was が V で、her start が O、to run 以下が C にあたる第5文型である",
                  "was が V で、その後ろに O も C も無く修飾語だけが続く第1文型である"],
      "ans": 1,
-     "exp": "was の後ろの too anxious about her start は、主語がどういう状態かを述べる補語なので、この文は第2文型である。too … to … は否定語を使わずに「…すぎて〜できない」を表す形で、"
-            "to run 以下は too と呼応して程度と結果を示す副詞のカタマリになる。O と取ると、be 動詞が目的語を取ることになり、しかも主語と同じものを指す関係が説明できないので誤り。"
-            "her start を O、to run 以下を C と取ると、彼女のスタートが走るという意味になってしまい、was を第5文型の動詞として使うことになるので誤り。O "
-            "も C も無い第1文型と取ると、was だけでは文の意味が完結せず、too anxious about her start の置き場所が消えるので誤り。"},
+     "exp": "was の後ろの too apprehensive about her start は、主語がどういう状態かを述べる補語なので、この文は第2文型である。too … to "
+            "… は否定語を使わずに「…すぎて〜できない」を表す形で、to run 以下は too と呼応して程度と結果を示す副詞のカタマリになる。O と取ると、be 動詞が目的語を取ることになり、"
+            "しかも主語と同じものを指す関係が説明できないので誤り。her start を O、to run 以下を C と取ると、彼女のスタートが走るという意味になってしまい、was "
+            "を第5文型の動詞として使うことになるので誤り。O も C も無い第1文型と取ると、was だけでは文の意味が完結せず、too apprehensive about her "
+            "start の置き場所が消えるので誤り。"},
     {"id": "G3",
      "syn": "infinitive-adjective",
-     "en": "In an ordinary school week, learners of a second language rarely have a real chance to use it naturally outside the classroom.",
-     "dsl": "( M: In an ordinary school week ) , {S:learners} <M: of a second language> {M:rarely} {V:have} {O:a real chance} <M: {V':to use} {O':it} {M':naturally} ( M': outside the classroom ) > .",
+     "en": "In a typical school term, learners of a second language rarely have a genuine opportunity to use it spontaneously outside the classroom.",
+     "dsl": "( M: In a typical school term ) , {S:learners} <M: of a second language> {M:rarely} {V:have} {O:a genuine opportunity} <M: {V':to use} {O':it} {M':spontaneously} ( M': outside the classroom ) > .",
      "pat": "第3文型（SVO）",
      "tag": "不定詞の形容詞用法",
      "notes": [
                "名詞の直後の to 不定詞は、その名詞を後ろから説明する形容詞のはたらきをすることが多い。",
-               "目的の副詞と読むと a real chance が何の機会か決まらない。名詞に不足が残る側を選ぶ。",
-               "to 不定詞のカタマリに入るのは副詞 naturally と前置詞句 outside the classroom で、どちらも use にかかる。文頭の In an "
-               "ordinary school week はこのカタマリの外にあり、主節の have にかかる。",
+               "目的の副詞と読むと a genuine opportunity が何の機会か決まらない。名詞に不足が残る側を選ぶ。",
+               "to 不定詞のカタマリに入るのは副詞 naturally と前置詞句 outside the classroom で、どちらも use にかかる。文頭の In a "
+               "typical school term はこのカタマリの外にあり、主節の have にかかる。",
                "of a second language は learners の核から外に出し、名詞にかかる形容詞のカタマリとして示す。"],
-     "ja": "ふつうの学校の一週間のうちに、第二言語の学習者が、教室の外でそれを自然に使う本当の機会を持つことはめったにない。",
-     "q": "to use it naturally outside the classroom は、どの語にかかっているか。最も適切なものを 1 つ選びなさい。",
+     "ja": "ふつうの学期のうちのうちに、第二言語の学習者が、教室の外でそれを自然に口をついて使う本物の機会を持つことはめったにない。",
+     "q": "to use it spontaneously outside the classroom は、どの語にかかっているか。最も適切なものを 1 つ選びなさい。",
      "choices": [
                  "have にかかり、何のために機会を持つのかという目的を表している",
                  "learners にかかり、どのような学習者なのかを後ろから説明している",
-                 "a real chance にかかり、どのような機会なのかを後ろから説明している",
+                 "a genuine opportunity にかかり、どのような機会なのかを後ろから説明している",
                  "a second language にかかり、その言語がどう使われるかを説明している"],
      "ans": 2,
-     "exp": "名詞の直後に置かれた to 不定詞は、その名詞を後ろから説明する形容詞のはたらきをする。ここでも to use it naturally outside the classroom "
-            "は直前の a real chance にかかり、どういう機会が乏しいのかを述べている。have にかかる目的の副詞と取ると、機会を持つ目的が言語を使うことになり、a real "
-            "chance が何の機会なのか決まらないまま残るので誤り。learners にかかると取ると、間に rarely have a real chance がまるごと挟まっており、"
-            "離れた名詞に後ろからかかることはないので誤り。a second language にかかると取ると、of で始まるカタマリの中の名詞に文末までのカタマリがかかることになり、"
-            "it が指すものと重なって意味が回らなくなるので誤り。なお文頭の In an ordinary school week は主節の have にかかる ( M ) で、to "
+     "exp": "名詞の直後に置かれた to 不定詞は、その名詞を後ろから説明する形容詞のはたらきをする。ここでも to use it spontaneously outside the "
+            "classroom は直前の a genuine opportunity にかかり、どういう機会が乏しいのかを述べている。have にかかる目的の副詞と取ると、機会を持つ目的が言語を使うことになり、"
+            "a genuine opportunity が何の機会なのか決まらないまま残るので誤り。learners にかかると取ると、間に rarely have a genuine "
+            "opportunity がまるごと挟まっており、離れた名詞に後ろからかかることはないので誤り。a second language にかかると取ると、of で始まるカタマリの中の名詞に文末までのカタマリがかかることになり、"
+            "it が指すものと重なって意味が回らなくなるので誤り。なお文頭の In a typical school term は主節の have にかかる ( M ) で、to "
             "不定詞のカタマリの中には入らない。"},
     {"id": "G4",
      "syn": "relative-possessive",
-     "en": "Last Sunday the newspaper finally corrected a report whose opening paragraph had named the wrong street.",
-     "dsl": "( M: Last Sunday ) {S:the newspaper} {M:finally} {V:corrected} {O:a report} <M: {S':whose opening paragraph} {V':had named} {O':the wrong street} > .",
+     "en": "Last Sunday the newspaper belatedly retracted a report whose opening paragraph had named the wrong thoroughfare.",
+     "dsl": "( M: Last Sunday ) {S:the newspaper} {M:belatedly} {V:retracted} {O:a report} <M: {S':whose opening paragraph} {V':had named} {O':the wrong thoroughfare} > .",
      "pat": "第3文型（SVO）",
      "tag": "所有格の関係代名詞 whose",
      "notes": [
@@ -667,7 +674,7 @@ PART2 = [
                "whose の後ろには冠詞の無い名詞が直接続き、その名詞が関係詞節の主語や目的語になる。",
                "関係詞節の中で主語も目的語も欠けていないのが所有格の目印。欠けがあれば主格か目的格である。",
                "文頭の Last Sunday はいつの話かを示す ( M ) で、主語ではない。主語は the newspaper である。"],
-     "ja": "先週の日曜日、その新聞はようやく、書き出しの段落が間違った通りの名前を挙げていた記事を訂正した。",
+     "ja": "先週の日曜日、その新聞は遅ればせながら、書き出しの段落が間違った通りの名前を挙げていた記事を撤回した。",
      "q": "whose opening paragraph の whose について、最も適切な説明を 1 つ選びなさい。",
      "choices": [
                  "the newspaper を受け、その新聞社の書き出しの段落、という関係を示す",
@@ -682,87 +689,87 @@ PART2 = [
             "の主語も消えるので誤り。"},
     {"id": "G5",
      "syn": "that-of",
-     "en": "Under the new lighting, the colors of the restored ceiling look far brighter than those of the unrestored section.",
-     "dsl": "( M: Under the new lighting ) , {S:the colors} <M: of the restored ceiling> {V:look} {C:far brighter} ( M: {接:than} {S':those} <M': of the unrestored section> ) .",
+     "en": "Under the refurbished lighting, the colors of the restored fresco look appreciably brighter than those of the unrestored section.",
+     "dsl": "( M: Under the refurbished lighting ) , {S:the colors} <M: of the restored fresco> {V:look} {C:appreciably brighter} ( M: {接:than} {S':those} <M': of the unrestored section> ) .",
      "pat": "第2文型（SVC）",
      "tag": "比較の代用 those of",
      "notes": [
                "比較の相手をそろえるために、前に出た名詞のくり返しを that / those で置き換える。複数なら those を使う。",
                "those の直後の of the unrestored section まで含めて、比べる相手 1 つ分のカタマリになる。",
-               "文頭の Under the new lighting は比較の相手ではなく、どんな条件での話かを示す ( M ) である。",
+               "文頭の Under the refurbished lighting は比較の相手ではなく、どんな条件での話かを示す ( M ) である。",
                "look は第2文型を作る動詞で、far brighter が C。far は比較級を強める副詞で C の中に残す。"],
-     "ja": "新しい照明の下では、修復された天井の色は、修復されていない部分の色よりもはるかに明るく見える。",
+     "ja": "改修された照明の下では、修復された壁画の色は、修復されていない部分の色よりも目に見えて明るく見える。",
      "q": "than those of the unrestored section の those は何を指しているか。最も適切なものを 1 つ選びなさい。",
      "choices": [
-                 "the restored ceiling を受けており、修復した天井そのものと比べていることを示す",
+                 "the restored fresco を受けており、修復した天井そのものと比べていることを示す",
                  "the new lighting を受けており、新しい照明の明るさと比べていることを示す",
                  "the colors を受けており、修復していない部分の色と比べていることを示す",
-                 "the colors of the restored ceiling 全体を受け、同じ天井の色をもう一度指している"],
+                 "the colors of the restored fresco 全体を受け、同じ天井の色をもう一度指している"],
      "ans": 2,
      "exp": "those は前に出た名詞のくり返しを避ける代用の語で、ここでは the colors を受けている。than those of the unrestored section "
-            "は、the colors of the restored ceiling と、修復していない部分の色とを比べる形で、比べる相手をそろえるためにこの those が要る。"
-            "the restored ceiling を受けると取ると、色と天井という違うものを比べることになり、brighter が何について明るいのか決まらないので誤り。the "
-            "new lighting を受けると取ると、Under the new lighting は文全体の条件を示す副詞のカタマリで比較の相手ではないので誤り。the colors "
-            "of the restored ceiling の全体を受けると取ると、同じものどうしを比べることになり、比較そのものが成り立たなくなるので誤り。"},
+            "は、the colors of the restored fresco と、修復していない部分の色とを比べる形で、比べる相手をそろえるためにこの those が要る。the "
+            "restored fresco を受けると取ると、色と天井という違うものを比べることになり、brighter が何について明るいのか決まらないので誤り。the new "
+            "lighting を受けると取ると、Under the refurbished lighting は文全体の条件を示す副詞のカタマリで比較の相手ではないので誤り。the "
+            "colors of the restored fresco の全体を受けると取ると、同じものどうしを比べることになり、比較そのものが成り立たなくなるので誤り。"},
     {"id": "G6",
      "syn": "compound-relative",
-     "en": "Whatever the committee decides at tomorrow's meeting will affect the working hours of every employee in the factory.",
-     "dsl": "[ S: {O':Whatever} {S':the committee} {V':decides} ( M': at tomorrow's meeting ) ] {V:will affect} {O:the working hours} <M: of every employee <M': in the factory> > .",
+     "en": "Whatever the tribunal decides at tomorrow's hearing will affect the shift patterns of every employee in the plant.",
+     "dsl": "[ S: {O':Whatever} {S':the tribunal} {V':decides} ( M': at tomorrow's hearing ) ] {V:will affect} {O:the shift patterns} <M: of every employee <M': in the plant> > .",
      "pat": "第3文型（SVO）",
      "tag": "複合関係代名詞 whatever",
      "notes": [
                "Whatever は先行詞を自分の中に含む複合関係代名詞で、節の全体が名詞のカタマリになる。",
                "コンマが無く、後ろの will affect に主語が無い。だから譲歩ではなく主語の名詞節だと決まる。",
                "カタマリの中では Whatever が decides の目的語。中に目的語の欠けがあることが見分けの手がかり。",
-               "of every employee は the working hours の核から外に出し、名詞にかかる形容詞のカタマリとして示す。"],
-     "ja": "委員会が明日の会議で決めることは何であれ、工場のすべての従業員の労働時間に影響する。",
+               "of every employee は the shift patterns の核から外に出し、名詞にかかる形容詞のカタマリとして示す。"],
+     "ja": "審査会が明日の審理で決めることは何であれ、工場のすべての従業員の勤務の割り振りに影響する。",
      "q": "この文の主節の主語 (S) にあたるのはどれか。最も適切なものを 1 つ選びなさい。",
      "choices": [
                  "the committee で、決定を下す側の名詞がそのまま主節の動作主として働いている",
-                 "Whatever の 1 語で、後ろの the committee decides はコンマの無い挿入である",
-                 "the working hours で、will affect の後ろに置かれた名詞が主語である",
-                 "Whatever the committee decides at tomorrow's meeting の全体で、これが名詞のカタマリとして主語になっている"],
+                 "Whatever の 1 語で、後ろの the tribunal decides はコンマの無い挿入である",
+                 "the shift patterns で、will affect の後ろに置かれた名詞が主語である",
+                 "Whatever the tribunal decides at tomorrow's hearing の全体で、これが名詞のカタマリとして主語になっている"],
      "ans": 3,
-     "exp": "Whatever は先行詞を自分の中に含む複合関係代名詞で、Whatever the committee decides at tomorrow's meeting の全体が "
+     "exp": "Whatever は先行詞を自分の中に含む複合関係代名詞で、Whatever the tribunal decides at tomorrow's hearing の全体が "
             "1 つの名詞のカタマリになり、will affect の主語として働く。カタマリの中では Whatever が decides の目的語で、決められる中身そのものを指している。"
             "the committee を主語と取ると、Whatever が宙に浮き、しかも decides と will affect という 2 つの述語を 1 つの主語が支えることになるので誤り。"
-            "Whatever の 1 語だけを主語と取ると、後ろの部分が挿入になるが、挿入はコンマなどで区切るのが普通で、ここにはその印が無いので誤り。the working hours "
+            "Whatever の 1 語だけを主語と取ると、後ろの部分が挿入になるが、挿入はコンマなどで区切るのが普通で、ここにはその印が無いので誤り。the shift patterns "
             "を主語と取ると、動詞の後ろの名詞を主語と読むことになり、動詞の前に主語が無い文になってしまうので誤り。"},
     {"id": "G7",
      "syn": "do-emphasis",
-     "en": "The old law does allow street traders to stay in the square until midnight on the night of the winter festival.",
-     "dsl": "{S:The old law} {V:does allow} {O:street traders} [ C: {V':to stay} ( M': in the square ) ( M': until midnight ) ( M': on the night <M'': of the winter festival> ) ] .",
+     "en": "The ancient statute does permit itinerant traders to remain in the square until midnight on the eve of the winter festival.",
+     "dsl": "{S:The ancient statute} {V:does permit} {O:itinerant traders} [ C: {V':to remain} ( M': in the square ) ( M': until midnight ) ( M': on the eve <M'': of the winter festival> ) ] .",
      "pat": "第5文型（SVOC）",
      "tag": "強調の do",
      "notes": [
                "強調の do は、過去でも疑問でも否定でもない場所に現れ、直後に動詞の原形を連れてくる。",
-               "does allow は 1 つのマスにまとめる。助動詞は動詞と同じマスに入れるのがこの教材の約束である。",
+               "does permit は 1 つのマスにまとめる。助動詞は動詞と同じマスに入れるのがこの教材の約束である。",
                "allow は O と to 不定詞の C を取る第5文型。C は動詞を含むので囲んで中まで分解する。",
                "三単現の s が allow ではなく does に付き、直後が原形になっている点も強調の do の目印である。"],
-     "ja": "その古い法律は、冬の祭りの夜、露天商が広場に真夜中までいることを確かに認めている。",
-     "q": "does allow の does はどのような働きをしているか。最も適切なものを 1 つ選びなさい。",
+     "ja": "その古い条例は、冬の祭りの夜、行商人が広場に真夜中までいることを確かに認めている。",
+     "q": "does permit の does はどのような働きをしているか。最も適切なものを 1 つ選びなさい。",
      "choices": [
                  "allow を強め、確かに認めているのだという肯定の意味を押し出している",
                  "疑問文をつくる助動詞で、後ろの語順が疑問文と同じになっている",
                  "否定の not が省かれた形で、実際には認めていないことを示している",
                  "allow の代わりに置かれた代動詞で、前に出た動詞を受け直している"],
      "ans": 0,
-     "exp": "does allow の does は、後ろの動詞の意味を強める強調の do で、確かに認めているのだ、という肯定の押しを加える。過去でも疑問でも否定でもないのに do "
-            "が現れ、しかも直後に原形の allow が続いたら、この用法を疑う。疑問文をつくる助動詞と取ると、The old law does allow は主語が先に来ており疑問文の語順ではないので誤り。"
+     "exp": "does permit の does は、後ろの動詞の意味を強める強調の do で、確かに認めているのだ、という肯定の押しを加える。過去でも疑問でも否定でもないのに do "
+            "が現れ、しかも直後に原形の allow が続いたら、この用法を疑う。疑問文をつくる助動詞と取ると、The ancient statute does permit は主語が先に来ており疑問文の語順ではないので誤り。"
             "not が省かれた形と取ると、否定語は省略できず、補ってしまうと後半の内容と矛盾するので誤り。代動詞と取ると、代動詞はくり返しを避けるために動詞を置かない形で使うのに、"
             "ここでは allow が実際に書かれているので誤り。"},
     {"id": "G8",
      "syn": "insertion",
-     "en": "The autumn storms along this coast, most local fishermen say, cause far less damage than the sudden fogs of early spring.",
-     "dsl": "{S:The autumn storms} <M: along this coast> , ( 挿入: {S':most local fishermen} {V':say} ) , {V:cause} {O:far less damage} ( M: {接:than} {S':the sudden fogs} <M': of early spring> ) .",
+     "en": "The autumn gales along this coast, most local fishermen say, inflict far less damage than the sudden fogs of early spring.",
+     "dsl": "{S:The autumn gales} <M: along this coast> , ( 挿入: {S':most local fishermen} {V':say} ) , {V:inflict} {O:far less damage} ( M: {接:than} {S':the sudden fogs} <M': of early spring> ) .",
      "pat": "第3文型（SVO）",
      "tag": "コンマにはさまれた挿入",
      "notes": [
                "コンマ 2 つにはさまれた S と V の組は、話し手以外の判断を差し込む挿入で、骨組みには数えない。",
                "挿入を取り去っても文が成り立つかどうかで見分ける。残った側の動詞が主節の V である。",
-               "The autumn storms は複数なので、対応するのは三単現の形ではない cause である。動詞の形も手がかり。",
+               "The autumn gales は複数なので、対応するのは三単現の形ではない cause である。動詞の形も手がかり。",
                "along this coast は直前の名詞を後ろから説明する形容詞のカタマリで、主語 1 つ分に含めて読む。"],
-     "ja": "この海岸沿いの秋の嵐は、地元の漁師の多くが言うには、早春の突然の霧よりもはるかに小さな被害しかもたらさない。",
+     "ja": "この海岸沿いの秋の暴風は、地元の漁師の多くが言うには、早春の突然の霧よりもはるかに小さな被害しかもたらさない。",
      "q": "この文の主節の動詞 (V) にあたるのはどれか。最も適切なものを 1 つ選びなさい。",
      "choices": [
                  "say で、most local fishermen を主語にとり文全体をまとめている",
@@ -771,21 +778,21 @@ PART2 = [
                  "cause は不定詞相当で、実際の主節の動詞はコンマの中の say である"],
      "ans": 1,
      "exp": "コンマにはさまれた most local fishermen say は、話し手以外の判断を差し込む挿入で、主節の骨組みからは外れている。この部分を取り去ると、The "
-            "autumn storms along this coast が主語、cause が動詞という骨組みが残る。say を主節の動詞と取ると、コンマの外に残る主語が述語を失い、"
+            "autumn gales along this coast が主語、cause が動詞という骨組みが残る。say を主節の動詞と取ると、コンマの外に残る主語が述語を失い、"
             "cause の置き場所も無くなるので誤り。cause と say が対等に並ぶと取ると、対等な並列には接続詞が要るうえ、コンマ 2 つで囲む形にもならないので誤り。cause "
             "を不定詞相当と取ると、to も付いておらず、主語に対する述語がどこにも無い文になるので誤り。"},
     {"id": "G9",
      "syn": "superlative-equivalent",
-     "en": "No other dish on the menu requires as much care as the fish stew that the chef serves on Fridays.",
-     "dsl": "{S:No other dish} <M: on the menu> {V:requires} {O:as much care} ( M: {接:as} {S':the fish stew} <M': {O'':that} {S'':the chef} {V'':serves} ( M'': on Fridays ) > ) .",
+     "en": "No other dish on the menu demands as much precision as the fish stew that the proprietor serves on Fridays.",
+     "dsl": "{S:No other dish} <M: on the menu> {V:demands} {O:as much precision} ( M: {接:as} {S':the fish stew} <M': {O'':that} {S'':the proprietor} {V'':serves} ( M'': on Fridays ) > ) .",
      "pat": "第3文型（SVO）",
      "tag": "最上級と同じ内容を表す形",
      "notes": [
                "No other に単数の名詞が続き、後ろで as … as と比べる形は、最上級と同じ内容を表す。",
-               "比べているのは requires の程度で、as much care as の後ろが比較の相手になる。",
+               "比べているのは requires の程度で、as much precision as の後ろが比較の相手になる。",
                "as の後ろは the fish stew までで、その後の that 節はどのシチューかを絞る形容詞のカタマリである。",
                "on the menu は直前の No other dish を後ろから説明し、比べる範囲を示している。"],
-     "ja": "献立のほかのどの料理も、料理長が金曜日に出すその魚のシチューほどの手間を必要としない。",
+     "ja": "献立のほかのどの料理も、店主が金曜日に出すその魚のシチューほどの手間を必要としない。",
      "q": "この文は内容としてどのようなことを述べているか。最も適切なものを 1 つ選びなさい。",
      "choices": [
                  "献立の中ではこの魚のシチューがいちばん手間のかかる料理だということ",
@@ -793,14 +800,14 @@ PART2 = [
                  "この魚のシチューは金曜日以外には手間をかけずに作られるということ",
                  "料理長は献立のどの料理にも同じだけの手間をかけているということ"],
      "ans": 0,
-     "exp": "No other dish on the menu requires as much care as the fish stew は、このシチュー以外のどの料理もこれほどの手間はかからない、"
+     "exp": "No other dish on the menu demands as much precision as the fish stew は、このシチュー以外のどの料理もこれほどの手間はかからない、"
             "と述べており、最上級と同じ内容になる。だから、いちばん手間がかかるのはこの魚のシチューだということになる。同じだけ手間のかかる料理がほかにもあると取ると、文頭の No "
-            "other がほかの料理をすべて外しているので誤り。金曜日以外は手間をかけないと取ると、on Fridays は the chef serves にかかり、いつ出すかを言っているだけなので誤り。"
-            "どの料理にも同じだけの手間をかけていると取ると、比較そのものが打ち消され、as much care as という形が意味を失うので誤り。"},
+            "other がほかの料理をすべて外しているので誤り。金曜日以外は手間をかけないと取ると、on Fridays は the proprietor serves にかかり、"
+            "いつ出すかを言っているだけなので誤り。どの料理にも同じだけの手間をかけていると取ると、比較そのものが打ち消され、as much precision as という形が意味を失うので誤り。"},
     {"id": "G10",
      "syn": "only-inversion",
-     "en": "Only at the very end of the announcement did the station staff mention the change in the evening timetable.",
-     "dsl": "( M: Only at the very end < M': of the announcement > ) {助:did} {S:the station staff} {V:mention} {O:the change} <M: in the evening timetable> .",
+     "en": "Only at the very end of the announcement did the station personnel mention the alteration to the evening timetable.",
+     "dsl": "( M: Only at the very end < M': of the announcement > ) {助:did} {S:the station personnel} {V:mention} {O:the alteration} <M: to the evening timetable> .",
      "pat": "第3文型（SVO）",
      "tag": "Only … による倒置",
      "notes": [
@@ -808,22 +815,22 @@ PART2 = [
                "did の後ろの名詞が主語。助動詞と動詞が主語をはさんで割れている形だと見抜く。",
                "倒置なので did の後ろの動詞は原形の mention になる。時制は did が背負っていると読む。",
                "文頭の Only at the very end … は副詞 Only ＋前置詞句のカタマリで、名詞のカタマリではないから主語になれない。"],
-     "ja": "アナウンスのいちばん最後になってようやく、駅員は夕方の時刻表の変更について口にした。",
-     "q": "did the station staff mention という語順になっているこの文の主語 (S) はどれか。最も適切なものを 1 つ選びなさい。",
+     "ja": "アナウンスのいちばん最後になってようやく、駅の係員は夕方の時刻表の変更について口にした。",
+     "q": "did the station personnel mention という語順になっているこの文の主語 (S) はどれか。最も適切なものを 1 つ選びなさい。",
      "choices": [
                  "Only at the very end で、文頭の副詞句がそのまま主語になっている",
                  "the announcement で、of の後ろの名詞が主語の働きをしている",
-                 "the station staff で、文頭の Only … に引かれて did の後ろに回っている",
+                 "the station personnel で、文頭の Only … に引かれて did の後ろに回っている",
                  "the change で、mention の後ろに置かれた名詞が主語になっている"],
      "ans": 2,
      "exp": "文頭に Only … の限定句が出ると、後ろは疑問文と同じ語順になる。ここでも助動詞の did が主語の前に飛び出しており、did の後ろに置かれた the station "
-            "staff が主節の主語である。did を取り除いて動詞を過去形に戻せば、普通の語順に戻る。Only at the very end を主語と取ると、これは副詞 Only "
-            "＋前置詞句のカタマリで名詞のカタマリではなく主語になれず、did の後ろの名詞が浮いてしまうので誤り。the announcement を主語と取ると、of の後ろの名詞は直前の名詞を説明しているだけで、"
-            "文の主語にはなれないので誤り。the change を主語と取ると、これは mention の目的語で、何を口にしたのかを表す名詞なので誤り。"},
+            "personnel が主節の主語である。did を取り除いて動詞を過去形に戻せば、普通の語順に戻る。Only at the very end を主語と取ると、これは副詞 "
+            "Only ＋前置詞句のカタマリで名詞のカタマリではなく主語になれず、did の後ろの名詞が浮いてしまうので誤り。the announcement を主語と取ると、of "
+            "の後ろの名詞は直前の名詞を説明しているだけで、文の主語にはなれないので誤り。the change を主語と取ると、これは mention の目的語で、何を口にしたのかを表す名詞なので誤り。"},
     {"id": "G11",
      "syn": "subjunctive-inversion",
-     "en": "Had the diary been found fifty years earlier, the story of the village would have taken a very different shape.",
-     "dsl": "( M: {助:Had} {S':the diary} {V':been found} ( M': fifty years earlier ) ) , {S:the story} <M: of the village> {V:would have taken} {O:a very different shape} .",
+     "en": "Had the ledger been discovered fifty years earlier, the chronicle of the estate would have taken a markedly different shape.",
+     "dsl": "( M: {助:Had} {S':the ledger} {V':been discovered} ( M': fifty years earlier ) ) , {S:the chronicle} <M: of the estate> {V:would have taken} {O:a markedly different shape} .",
      "pat": "第3文型（SVO）",
      "tag": "if の省略による倒置",
      "notes": [
@@ -831,22 +838,22 @@ PART2 = [
                "文頭が Had で、後ろに主語と過去分詞が続いたら、疑問文ではなく仮定法過去完了の倒置を疑う。",
                "主節が would have taken という形になっていることが、仮定法過去完了だと確かめる裏づけになる。",
                "of the village は the story の核から外に出し、名詞にかかる形容詞のカタマリとして示す。"],
-     "ja": "その日記が五十年早く見つかっていたら、その村の物語はまったく違った形になっていただろう。",
-     "q": "文頭の Had the diary been found について、省略されている語の説明として最も適切なものを 1 つ選びなさい。",
+     "ja": "その帳簿が五十年早く見つかっていたら、そのその地所の記録は目に見えて違った形になっていただろう。",
+     "q": "文頭の Had the ledger been discovered について、省略されている語の説明として最も適切なものを 1 つ選びなさい。",
      "choices": [
                  "When が省かれ、日記が見つかった時期を述べる副詞節になっている",
                  "疑問文の Did が Had に変わったもので、省略されている語は無い",
                  "Because が省かれ、後半の内容の理由を述べる副詞節になっている",
                  "If が省かれ、その埋め合わせに Had が主語の前に出た仮定法の形である"],
      "ans": 3,
-     "exp": "仮定法の条件節では、if を省いて助動詞や be 動詞を主語の前に出すことができる。ここも文頭の if が消え、had が主語の前に回って Had the diary "
-            "been found という形になっている。主節が would have taken という形であることも手がかりになる。When が省かれたと取ると、時を表す節では倒置は起こらず、"
+     "exp": "仮定法の条件節では、if を省いて助動詞や be 動詞を主語の前に出すことができる。ここも文頭の if が消え、had が主語の前に回って Had the ledger "
+            "been discovered という形になっている。主節が would have taken という形であることも手がかりになる。When が省かれたと取ると、時を表す節では倒置は起こらず、"
             "実際に見つかったという事実の話になってしまうので誤り。疑問の Did が変化した形と取ると、コンマの後ろに主節が続いており疑問文になっていないので誤り。Because "
             "が省かれたと取ると、理由の節も倒置しないうえ、事実を述べる文と読むと主節の形と合わないので誤り。"},
     {"id": "G12",
      "syn": "ellipsis-clause",
-     "en": "Although rewritten several times before publication, the short novel still keeps the ending that its author first imagined.",
-     "dsl": "( M: {接:Although} {V':rewritten} ( M': several times ) ( M': before publication ) ) , {S:the short novel} {M:still} {V:keeps} {O:the ending} <M: {O':that} {S':its author} {M':first} {V':imagined} > .",
+     "en": "Although rewritten repeatedly before publication, the novella still retains the ending that its author first envisaged.",
+     "dsl": "( M: {接:Although} {V':rewritten} ( M': repeatedly ) ( M': before publication ) ) , {S:the novella} {M:still} {V:retains} {O:the ending} <M: {O':that} {S':its author} {M':first} {V':envisaged} > .",
      "pat": "第3文型（SVO）",
      "tag": "副詞節中の S + be の省略",
      "notes": [
@@ -854,9 +861,8 @@ PART2 = [
                "省けるのは主節の主語と同じ場合だけで、ここでは the short novel を受ける主語と be 動詞が省かれている。",
                "分詞は素の語で置かず、副詞節の中の動詞として示す。省略があっても節の骨組みは変わらない。",
                "the ending の後ろの that は関係代名詞で、imagined の目的語が欠けているので目的格だと分かる。"],
-     "ja": "出版の前に何度も書き直されたけれども、その短い小説は作者が最初に思い描いた結末を今も保っている。",
-     "q": "Although rewritten several times before publication では、Although の直後に何が省略されているか。最も適切なものを "
-          "1 つ選びなさい。",
+     "ja": "出版の前に繰り返し書き直されたけれども、その中編小説は作者が最初に思い描いた結末を今も保っている。",
+     "q": "Although rewritten repeatedly before publication では、Although の直後に何が省略されているか。最も適切なものを 1 つ選びなさい。",
      "choices": [
                  "people have にあたる主語と助動詞で、書き直した人のほうが主語になっている",
                  "it was にあたる主語と be 動詞で、主節の主語と同じものを指している",
