@@ -1649,6 +1649,9 @@ function initMessageDashboard() {
   if (sendBtn) sendBtn.addEventListener('click', sendMessage);
   if (refreshBtn) refreshBtn.addEventListener('click', loadMessageHistory);
   if (broadcastFilter) broadcastFilter.addEventListener('change', updateBroadcastCount);
+  // 🏫 クラス／コース指定 (broadcast_filter=class / 2026-09-01 塾長指示)
+  const classSel = document.getElementById('msgClassSelect');
+  if (classSel) classSel.addEventListener('change', updateBroadcastCount);
   // 👥 個別選択 UI のイベント (broadcast_filter=selected / 2026-06-09)
   const selSearch = document.getElementById('msgSelectedSearch');
   if (selSearch) selSearch.addEventListener('input', () => renderMsgSelectedList());
@@ -1727,6 +1730,10 @@ async function updateBroadcastCount() {
   if (!filter || !countEl) return;
   const selWrap = document.getElementById('msgSelectedWrap');
   const f = filter.value;
+  // 🏫 クラス選択 UI の出し入れは**最初に**やること。下の selected 分岐は早期 return するので、
+  //   ここより後ろに置くと class → 個別選択 に切り替えたときクラス選択が画面に残る。
+  const clsWrap0 = document.getElementById('msgClassWrap');
+  if (clsWrap0) clsWrap0.style.display = (f === 'class') ? '' : 'none';
   // 👥 個別選択モード: チェックした人数を対象人数とする (2026-06-09 塾長指示)
   if (f === 'selected') {
     if (selWrap) selWrap.style.display = '';
@@ -1738,6 +1745,17 @@ async function updateBroadcastCount() {
     return;
   }
   if (selWrap) selWrap.style.display = 'none';
+  // 🏫 クラス／コース指定 (表示切り替えは上で済ませてある)
+  const clsSel = document.getElementById('msgClassSelect');
+  if (f === 'class') {
+    await ensureMsgClassOptions();
+    if (!clsSel || !clsSel.value) {
+      countEl.textContent = 'クラス／コースを選んでください';
+      countEl.style.color = '#a1a1aa';
+      _msgLastBroadcastCount = -1;   // 未選択のまま送らせない
+      return;
+    }
+  }
   countEl.textContent = '対象人数を計算中...';
   try {
     const res = await window.AdminAuth.fetch('/api/admin/students/by-course');
@@ -1750,6 +1768,22 @@ async function updateBroadcastCount() {
     else if (f === 'kokuritsu_nankan') cnt = all.filter(s => s.course === 'kokuritsu_nankan').length;
     else if (f === 'paid_only') cnt = all.filter(s => s.status === 'paid').length;
     else if (f === 'trial_only') cnt = all.filter(s => s.status === 'trial').length;
+    else if (f === 'class') {
+      // サーバ側 (broadcast_filter='class') と同じ判定: コースは**全コマを持つ生徒**だけ
+      const want = _msgClassWanted(clsSel ? clsSel.value : '');
+      cnt = want.length
+        ? all.filter(s => want.every(w => (s.class_labels || []).indexOf(w) >= 0)).length : 0;
+      // ★受講クラス未設定の生徒は、どのクラスを選んでも対象に入らない = 無言の取りこぼしになる。
+      //   人数だけ見て送ると「その子には届いていない」ことに気づけないので必ず出す。
+      const unset = all.filter(s => !(s.class_labels || []).length).length;
+      if (unset) {
+        countEl.textContent = `📊 対象: ${cnt} 名  ⚠ 受講クラス未設定の ${unset} 名は対象外`
+          + `（「🏫 クラス別 受講生 一括登録」で設定してください）`;
+        countEl.style.color = cnt > 0 ? '#fbbf24' : '#fca5a5';
+        _msgLastBroadcastCount = cnt;
+        return;
+      }
+    }
     countEl.textContent = `📊 対象: ${cnt} 名`;
     countEl.style.color = cnt > 0 ? '#86efac' : '#fca5a5';
     _msgLastBroadcastCount = cnt;
@@ -1757,6 +1791,41 @@ async function updateBroadcastCount() {
     countEl.textContent = '対象人数取得失敗';
     _msgLastBroadcastCount = -1;
   }
+}
+
+// 🏫 一斉送信 クラス／コース指定ヘルパー (2026-09-01 塾長指示)
+//   選択肢は /api/admin/class/timetable-classes (server の _TIMETABLE_CLASSES / _COURSE_CLASSES) から取る。
+//   ★ここで時間割を手写ししないこと。写しが増えるほど今回のような曜日ズレが起きる。
+let _msgClassCatalog = null;   // { classes: [{label,dow,time}], courses: [{name,labels}] }
+async function ensureMsgClassOptions() {
+  const sel = document.getElementById('msgClassSelect');
+  if (!sel) return;
+  if (_msgClassCatalog) return;
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/class/timetable-classes');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    _msgClassCatalog = await res.json();
+  } catch (e) {
+    sel.innerHTML = `<option value="">読み込み失敗: ${escapeHtml(e.message || '')}</option>`;
+    _msgClassCatalog = null;
+    return;
+  }
+  const courses = _msgClassCatalog.courses || [];
+  const classes = _msgClassCatalog.classes || [];
+  sel.innerHTML = '<option value="">-- クラス／コースを選択 --</option>'
+    + (courses.length ? '<optgroup label="コース">' + courses.map(c =>
+        `<option value="${escapeHtml(c.name)}">🎓 ${escapeHtml(c.name)} (${(c.labels || []).length}コマ全部)</option>`
+      ).join('') + '</optgroup>' : '')
+    + '<optgroup label="クラス">' + classes.map(c =>
+        `<option value="${escapeHtml(c.label)}">${escapeHtml(c.label)}</option>`
+      ).join('') + '</optgroup>';
+}
+// 選んだ値 → 「この生徒が全部持っていること」を求めるラベル群
+function _msgClassWanted(value) {
+  if (!value || !_msgClassCatalog) return [];
+  const co = (_msgClassCatalog.courses || []).find(c => c.name === value);
+  if (co) return co.labels || [];
+  return (_msgClassCatalog.classes || []).some(c => c.label === value) ? [value] : [];
 }
 
 // 👥 一斉送信 個別選択ヘルパー (2026-06-09 塾長指示)
@@ -1863,6 +1932,12 @@ async function sendMessage() {
   } else {
     const bf = document.getElementById('msgBroadcastFilter').value;
     payload.broadcast_filter = bf;
+    // 🏫 クラス／コース指定 (2026-09-01 塾長指示)
+    if (bf === 'class') {
+      const cl = (document.getElementById('msgClassSelect') || {}).value || '';
+      if (!cl) { if (msg) { msg.textContent = 'クラス／コースを選択してください'; msg.style.color = '#fca5a5'; } return; }
+      payload.class_label = cl;
+    }
     // 👥 個別選択モード: チェックした生徒IDを宛先にする (2026-06-09 塾長指示)
     if (bf === 'selected') {
       const ids = Array.from(_msgSelectedIds);
@@ -1877,7 +1952,10 @@ async function sendMessage() {
     if (body.length > 5000) { if (msg) { msg.textContent = `本文は5000文字以内 (現在 ${body.length} 文字)`; msg.style.color = '#fca5a5'; } return; }
     if (subject.length > 200) { if (msg) { msg.textContent = `件名は200文字以内 (現在 ${subject.length} 文字)`; msg.style.color = '#fca5a5'; } return; }
     const bodyPreview = body.length > 50 ? body.slice(0, 50) + '…' : body;
-    if (!confirm(`一斉送信します。\n対象: ${_msgLastBroadcastCount} 名\n件名: ${subject || '(なし)'}\n本文: ${bodyPreview}\nメール配信: ${sendEmail ? 'あり' : 'なし'}\n\nよろしいですか？`)) return;
+    const _who = { all: '全生徒 (paid+trial)', kokuritsu_nankan: '通塾生（承認済みの在籍生）全員',
+                   paid_only: '有料生徒のみ', trial_only: '体験中生徒のみ', selected: '個別に選んだ生徒',
+                   class: 'クラス／コース: ' + (payload.class_label || '') }[bf] || bf;
+    if (!confirm(`一斉送信します。\n宛先: ${_who}\n対象: ${_msgLastBroadcastCount} 名\n件名: ${subject || '(なし)'}\n本文: ${bodyPreview}\nメール配信: ${sendEmail ? 'あり' : 'なし'}\n\nよろしいですか？`)) return;
   }
   // 個別送信時の文字数検証 (broadcast 上で実施した分は通過済)
   if (target === 'student') {
@@ -1986,7 +2064,10 @@ async function loadMessageHistory() {
     if (broadcasts.length) {
       html += '<div style="font-size:0.8rem; color:#a1a1aa; margin:0.5rem 0;">📢 一斉送信</div>';
       html += broadcasts.map(b => {
-        const fLabel = { all: '全生徒', kokuritsu_nankan: '国公立難関', paid_only: '有料のみ', trial_only: '体験のみ', selected: '👥個別選択' }[b.broadcast_filter] || b.broadcast_filter;
+        // ★class は宛先クラス名まで出す。出さないと「🏫クラス/コース」だけが並び、
+        //   どの回がどのクラス宛だったのか履歴から永久に分からない (誤送信の追跡ができない)。
+        const fLabel = ({ all: '全生徒', kokuritsu_nankan: '通塾生全員', paid_only: '有料のみ', trial_only: '体験のみ', selected: '👥個別選択',
+                          class: '🏫 ' + (b.broadcast_class_label || 'クラス/コース(記録なし)') }[b.broadcast_filter] || b.broadcast_filter);
         return `
           <div style="background:rgba(255,255,255,0.04); border-left:3px solid #ec4899; border-radius:6px; padding:0.7rem; margin-bottom:0.5rem;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
@@ -2344,7 +2425,16 @@ async function loadCourseApps() {
         const _attachNote = j.attached_existing
           ? `<br><span style="color:#fbbf24;">⚠️ 既存アカウント #${escapeHtml(String(j.student_id))} に合流 (新規作成なし${j.attached_plan ? ` / プラン: ${escapeHtml(String(j.attached_plan))}` : ''}) — ${escapeHtml(_aiNote)}</span>`
           : '';
-        resultEl.innerHTML = `<span style="color:#86efac;">✅ 承認完了 (生徒ID: ${j.student_id} ${j.welcome_email_sent ? '/ welcome メール送信済' : '/ メール送信失敗'} / ${_finalAI ? 'AIあり' : '🏫 塾生アプリのみ(AIなし)'})</span>${_attachNote}`;
+        // 🎒 受講クラスの結果。★空のままだと「クラス限定で配った録画がこの生徒だけ0件」
+        //    「クラス指定の一斉送信に入らない」になるが、生徒側は普通にログインできて時間割も出るので
+        //    画面のどこにも異常が出ない。承認のたびにここで知らせる (承認自体は止めない)。
+        const _clsNote = j.class_labels_empty
+          ? `<br><span style="color:#fbbf24;">⚠️ 受講クラスが未設定です。このままだとクラス限定の録画・配布ファイル・クラス指定の一斉送信が届きません。「🏫 クラス別 受講生 一括登録」で設定してください。</span>`
+          : `<br><span style="color:#86efac;">🎒 受講クラス: ${escapeHtml((j.class_labels || []).join(' / '))}</span>`;
+        const _dropNote = (j.dropped_subjects && j.dropped_subjects.length)
+          ? `<br><span style="color:#fbbf24;">⚠️ 時間割に無い受講クラスを無視しました: ${escapeHtml(j.dropped_subjects.join(' / '))}</span>`
+          : '';
+        resultEl.innerHTML = `<span style="color:#86efac;">✅ 承認完了 (生徒ID: ${j.student_id} ${j.welcome_email_sent ? '/ welcome メール送信済' : '/ メール送信失敗'} / ${_finalAI ? 'AIあり' : '🏫 塾生アプリのみ(AIなし)'})</span>${_attachNote}${_clsNote}${_dropNote}`;
         if (j.attached_existing) {
           try {
             alert(`⚠️ この申込は新規作成ではなく、既存アカウント #${j.student_id}${j.attached_plan ? `（プラン: ${j.attached_plan}）` : ''} に合流しました。\n${_aiNote}`);

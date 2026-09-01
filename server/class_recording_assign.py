@@ -27,10 +27,19 @@ UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126 Safari/537.36")
 
 # 再生リスト名 → class_sessions.title の先頭ラベル。
-# ★時間割とのズレはここに明示する: 「金曜3時間目」の再生リストは時間割に無く、
-#   逆に木曜3限は再生リストが無い (2026-08-07 にこの対応で割り当て済み)。
-#   ズレていても**日付の検算は再生リスト側の曜日**で行う (動画の実収録日は金曜のため)。
-SLOT_OVERRIDE = {"金曜3限": "木曜3限", "日曜1限": "日曜"}  # 日曜は1コマだけで title が「日曜 高校国語」
+# ★時間割とのズレはここに明示する。日付の検算は**再生リスト側の曜日**で行う。
+#   [2026-09-01] 「金曜3限 → 木曜3限」の付け替えを撤去した。ズレの正体は再生リスト側ではなく
+#   時間割側の誤記で、実授業も録画も金曜3限だった (塾長指摘)。時間割 label を
+#   「金曜3限 国公立コース 長文読解」に直したので、再生リスト名とそのまま一致する。
+SLOT_OVERRIDE = {"日曜1限": "日曜"}  # 日曜は1コマだけで title が「日曜 高校国語」
+
+# ★本番DBの移送 (scripts/class_timetable/rename_thu3_to_fri3.py --apply) が済むまでの
+#   **一方向**フォールバック。class_sessions.title は DB の値なので、移送前は旧ラベルのまま。
+#   何もしないと「金曜3限: 公開中の授業が0件マッチ」+「木曜3限… に再生リストが無い」で
+#   blocking が2件立ち、**15クラス全部の投入が1件も走らずに止まる**。
+#   新ラベルで0件のときだけ旧ラベルで引き直し、blocking にせず notes で移送を促す。
+#   ★移送が済んだらこの表を空にすること (空でなければ check_assign_logic.py が毎回知らせる)。
+LEGACY_SLOT = {"金曜3限": "木曜3限"}
 
 DAY = {"月": 0, "火": 1, "水": 2, "木": 3, "金": 4, "土": 5, "日": 6}
 DAY_LABEL = {v: k for k, v in DAY.items()}
@@ -560,16 +569,33 @@ def build_plan(today, playlists, sessions, recordings, last_rec, get=None, progr
             continue
         day_index, raw_slot, slot = s
         matches = [(i, t) for i, t in sessions if t.startswith(slot)]
+        legacy = None
+        if not matches and slot in LEGACY_SLOT:
+            # DB がまだ旧ラベル = 移送前。ここで止めると他14クラスの配布まで巻き添えになる。
+            legacy = LEGACY_SLOT[slot]
+            matches = [(i, t) for i, t in sessions if t.startswith(legacy)]
+            if matches:
+                notes.append(f"{raw_slot}: 授業名が旧ラベル ({legacy}…) のまま — "
+                             f"scripts/class_timetable/rename_thu3_to_fri3.py --apply を実行すること")
+            else:
+                legacy = None
         if len(matches) != 1:
+            # ★0件のとき「CEO で授業を作る」と案内してはいけない。旧ラベルの授業が残っていると、
+            #   その通りに作った瞬間に同名の授業が2件になり、以後ずっと「判別できない」で止まる。
+            _orphan = [t for _, t in sessions if t.startswith(LEGACY_SLOT.get(slot, "\0"))]
             problems.append(
                 f"{raw_slot}: 公開中の授業が{len(matches)}件マッチ"
-                + (" — 授業が無いか非公開。CEO で授業を作る/公開する" if not matches
+                + (f" — 旧ラベルの授業 ({', '.join(_orphan)}) が残っている。**CEO で授業を作らないこと**。"
+                   f"先に scripts/class_timetable/rename_thu3_to_fri3.py --apply を実行する"
+                   if (not matches and _orphan)
+                   else " — 授業が無いか非公開。CEO で授業を作る/公開する" if not matches
                    else f" — {[t for _, t in matches]} のどれか判別できない"))
             rep["blocking"] += 1
             continue
         sid, stitle = matches[0]
         attempted_sids.add(sid)
-        _note = "  ※再生リスト名と授業名が違うのは設定どおり" if raw_slot != slot else ""
+        _note = ("  ※授業名が旧ラベルのまま (移送が要る)" if legacy
+                 else "  ※再生リスト名と授業名が違うのは設定どおり" if raw_slot != slot else "")
         items, fatal, warn = fetch_playlist(pid, get=get)
         if warn:
             # YouTube の INFO (「1本の利用できない動画が非表示」等) は正常状態。

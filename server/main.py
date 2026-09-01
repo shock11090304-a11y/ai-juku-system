@@ -1708,6 +1708,10 @@ def init_db():
         sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         read_at TIMESTAMP,
         broadcast_group_id TEXT,
+        -- broadcast_filter='class' のときの宛先クラス/コース名 (2026-09-01)。
+        -- ★これが無いと「どのクラスに送ったか」が履歴からも監査ログからも復元できず、
+        --   60秒の連打ガードも別クラス宛の同一文面を同じものと誤判定する。
+        broadcast_class_label TEXT,
         attachment_filename TEXT,
         attachment_mime TEXT,
         attachment_size INTEGER,
@@ -1932,6 +1936,7 @@ def init_db():
     # 後続の ALTER がスキップされてしまうため、各 ALTER の前後で commit/rollback する。
     # SQLite: ADD COLUMN IF NOT EXISTS は古いバージョンで非対応なので try/except で対応。
     _migrations = [
+        ("messages_broadcast_class_label", "ALTER TABLE messages ADD COLUMN broadcast_class_label TEXT"),
         ("enrollment_fee_waived", "ALTER TABLE students ADD COLUMN enrollment_fee_waived INTEGER DEFAULT 0"),
         # 生徒ごとの「徴収する」明示指定 (2026-07-06)。既定=免除運用で特定生徒だけ入塾金を徴収するため。
         ("enrollment_fee_force_charge", "ALTER TABLE students ADD COLUMN enrollment_fee_force_charge INTEGER DEFAULT 0"),
@@ -10841,7 +10846,7 @@ def _invalidate_active_otps(student_id: int, keep_code: str = None) -> None:
     """指定生徒の有効な OTP を全て無効化する helper。
     ⚠️ 2026-06-14 [otp-keep-old-codes] 以降、コード発行/再送の全経路からは呼ばない。
        発行時に旧コードを殺すと「複数回送って受信箱に複数コードが届いた生徒が古い方を入力 →
-       used 化済で『期限切れ』誤表示」を生むため (室坂さん事例)。OTP 群の整理は _create_otp の
+       used 化済で『期限切れ』誤表示」を生むため (過去の事例)。OTP 群の整理は _create_otp の
        上限 GC (直近5件) のみに一本化した。本 helper は将来のアカウント侵害対応等、明示的に
        「全コードを今すぐ失効させたい」セキュリティイベント専用に温存する (発行経路に再配線禁止)。
     keep_code を渡すとそのコードだけは無効化しない。失敗してもログのみ (致命ではない)。"""
@@ -12798,7 +12803,7 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
             resp = chat.send_message(last_user_parts, **_gemini_request_options(body))
             text = resp.text or ""
 
-            # 🚨 2026-05-21 塾長指示「Curriculum silent fail 修正」(小川くん事例):
+            # 🚨 2026-05-21 塾長指示「Curriculum silent fail 修正」(過去の事例):
             #   Gemini の finish_reason == MAX_TOKENS で truncate されているのに「正常終了」として返していた致命傷。
             #   Anthropic 互換 stop_reason に「max_tokens」を反映 + 例外 raise で次 fallback (Sonnet 4.6) を発火。
             _finish_reason_raw = None
@@ -13923,7 +13928,7 @@ EXAM_QUESTION_ROTATION = [
     # 英検 (受験者多い順: 準1級, 2級, 3級, 準2級, 1級, 4級, 5級)
     ("eiken", "r_q1", "gp1"),
     ("eiken", "r_q3", "gp1"),
-    ("eiken", "r_q4", "gp1"),       # 2026-05-21 塾長指示: 準1級 Eメール返信 (新形式 2024〜・小川くん事例 fix)
+    ("eiken", "r_q4", "gp1"),       # 2026-05-21 塾長指示: 準1級 Eメール返信 (新形式 2024〜・過去の事例 fix)
     ("eiken", "w_essay", "gp1"),
     ("eiken", "w_summary", "gp1"),  # 2026-05-23 塾長指摘: 準1級も新形式 2024〜で要約問題あり (UI mismatch fix・frontend は既存)
     # 🗣 二次(面接) 準1級 ・2026-07-23 塾長指示「二次のプールを増やす(準1級のみ)」で新規追加。
@@ -16392,7 +16397,7 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
             try: conn.rollback()
             except Exception: pass
 
-    # 🔗 stale 紐付け自己修復パス (2026-06-11 塾長指示・森澤さん事例): 既に paid で plan も一致する
+    # 🔗 stale 紐付け自己修復パス (2026-06-11 塾長指示・過去の事例): 既に paid で plan も一致する
     # 生徒は上の昇格パスで一切 UPDATE されず、解約済み/juku-payment サブスクへの古い紐付けが残り続ける。
     # 紐付けが死んでいると invoice.payment_failed / subscription.deleted がその生徒に届かず
     # past_due 降格・督促・解約検知が発火しない → stored sub が「その生徒の active ai-juku サブ集合」に
@@ -16510,7 +16515,7 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
     #   (B) trial (カード登録済み 21日体験=trial_extended) の解約/自動課金/失効: cancel-trial は
     #       trial を即時 Subscription.delete し webhook 待ち、cron_expire_trials は card trial を
     #       意図的に除外 (Stripe が正) するため、subscription.deleted/updated を取りこぼすと
-    #       trial_end を過ぎても「体験中」のまま固定され、解約が処理済みにならない (岡田さん事例)。
+    #       trial_end を過ぎても「体験中」のまま固定され、解約が処理済みにならない (過去の事例)。
     # いずれも対象は「予約/体験期限を過ぎても active 系のまま」の少数 (通常 0〜数件) なので list 不要・
     # 該当生徒のみ retrieve で十分。Stripe を真実として canceled / paid / past_due へ収束させる。
     stale_cancel = []
@@ -34614,7 +34619,7 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
     preview = []
     for row in candidates:
         # 国公立難関大学コース ('kokuritsu_nankan') は塾の通塾生 = SaaS 体験課金 funnel の対象外。
-        # 体験終了リマインド (継続登録の案内) を送らない (塾長指示 2026-06-04・早川真央さん事例)。
+        # 体験終了リマインド (継続登録の案内) を送らない (塾長指示 2026-06-04・過去の事例)。
         try:
             _course = row["course"]
         except (KeyError, IndexError):
@@ -44925,17 +44930,20 @@ def admin_list_students_by_course(authorization: Optional[str] = Header(None), c
         c = conn.cursor()
         if course:
             c.execute(
-                f"SELECT id, name, grade, status, course FROM students WHERE course = ? AND status IN ('paid','trial') AND {_synth_exclude_sql()} ORDER BY name",
+                f"SELECT id, name, grade, status, course, class_labels FROM students WHERE course = ? AND status IN ('paid','trial') AND {_synth_exclude_sql()} ORDER BY name",
                 (course,)
             )
         else:
             c.execute(
-                f"SELECT id, name, grade, status, course FROM students WHERE status IN ('paid','trial') AND {_synth_exclude_sql()} ORDER BY name"
+                f"SELECT id, name, grade, status, course, class_labels FROM students WHERE status IN ('paid','trial') AND {_synth_exclude_sql()} ORDER BY name"
             )
         rows = c.fetchall()
+        # class_labels も返す: 一斉送信の broadcast_filter='class' で CEO が対象人数を出すのに使う
+        # (他のフィルタと同じくクライアント側で数える設計に揃える)。
         students = [{
             "id": r["id"], "name": r["name"], "grade": r["grade"],
             "status": r["status"], "course": r["course"],
+            "class_labels": _parse_labels(r["class_labels"] if "class_labels" in r.keys() else None),
         } for r in rows]
         return {"ok": True, "students": students}
     finally:
@@ -45883,7 +45891,12 @@ def admin_study_plans_calendar(request: Request, authorization: Optional[str] = 
 # 塾長指示 2026-05-05: Studyplus for School のメッセージ機能を内製代替。
 # 個別 / 一斉 (フィルタ: コース/学年/ステータス) を email + アプリ内で配信。
 # ==========================================================================
-_MSG_BROADCAST_FILTERS = {"all", "kokuritsu_nankan", "paid_only", "trial_only", "selected"}
+# 一斉送信の宛先フィルタ。
+# ★"kokuritsu_nankan" は名前に反して「コース受講生」ではない。students.course は承認時に
+#   通塾生**全員**へ付く在籍フラグ (中学生にも付く) なので、実体は「通塾生 全員」。
+#   値は messages.broadcast_filter に履歴として残っているので改名しない (CEO 側の表示文言を直した)。
+#   本当に「そのクラス/コースを受講している生徒」へ送るには "class" (+ class_label) を使う。
+_MSG_BROADCAST_FILTERS = {"all", "kokuritsu_nankan", "paid_only", "trial_only", "selected", "class"}
 
 
 def _send_message_email(to_email: str, subject: str, body_text: str, student_name: Optional[str] = None) -> dict:
@@ -46218,8 +46231,9 @@ def _notify_admin_new_trial(name, email, source: str, goal=None, amount_jpy=None
 class MessageSendRequest(BaseModel):
     target: str  # 'student' (個別) or 'broadcast' (一斉)
     student_id: Optional[int] = None  # target='student' 時に必須
-    broadcast_filter: Optional[str] = None  # 'all'/'kokuritsu_nankan'/'paid_only'/'trial_only'/'selected'
+    broadcast_filter: Optional[str] = None  # 'all'/'kokuritsu_nankan'/'paid_only'/'trial_only'/'selected'/'class'
     student_ids: Optional[List[int]] = None  # broadcast_filter='selected' 時にハンドピックした生徒ID群 (2026-06-09 塾長指示)
+    class_label: Optional[str] = None  # broadcast_filter='class' 時: 時間割クラス label または _COURSE_CLASSES のコース名
     subject: Optional[str] = None
     body: str
     send_email: bool = True
@@ -46373,6 +46387,52 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
                 c.execute(f"SELECT id, name, email FROM students WHERE status = 'paid' AND {_synth_exclude_sql()}")
             elif bf == "trial_only":
                 c.execute(f"SELECT id, name, email FROM students WHERE status = 'trial' AND {_synth_exclude_sql()}")
+            elif bf == "class":
+                # 🏫 [2026-09-01 塾長指示] 「そのクラス/コースを受講している生徒」だけに送る。
+                #   既存の "kokuritsu_nankan" は students.course を見るが、あれは承認時に通塾生**全員**へ
+                #   付く在籍フラグなので、コース生への連絡には使えない (中学生まで宛先に入る)。
+                #   ここは受講クラス (students.class_labels) を見る。コース名を渡したときは
+                #   _COURSE_CLASSES で展開し、**その全コマを持っている生徒**だけを対象にする
+                #   (1コマだけの単品受講者をコース生として数えない)。
+                _cl = _sanitize_text(payload.class_label, 100)
+                _want = _COURSE_CLASSES.get(_cl) if _cl else None
+                if _want is None:
+                    if not _cl or _cl not in _TIMETABLE_LABELS:
+                        raise HTTPException(status_code=400,
+                                            detail="class_label が時間割クラス / コース名と一致しません")
+                    _want = [_cl]
+                # ★空リストを通さないこと。_COURSE_CLASSES は起動時の自己修復で
+                #   「時間割に無い label」を落とすので、全部落ちるとキーだけ残って値が [] になる。
+                #   その [] を下の all(...) に渡すと**常に True** = paid/trial 全員が宛先になり、
+                #   「コース生だけ」が「通塾生全員」に化ける (このフィルタを作った理由そのものが壊れる)。
+                if not _want:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"コース「{_cl}」に有効な時間割クラスがありません "
+                               f"(scripts/class_timetable/check_timetable_sync.py で label を揃えてください)")
+                # class_labels は JSON 配列の TEXT。LIKE で当てると部分一致で誤爆するので Python 側で判定する
+                # (通塾生は 100 名規模なので全件読んでも軽い)。
+                # ★宛先は paid/trial に限る (他フィルタと同じ規約) が、クラス名簿は status を問わないので
+                #   「名簿には居るのに宛先から落ちた人数」を数えて返す。黙って減らすと配布漏れに気づけない。
+                c.execute(f"SELECT id, name, email, status, class_labels FROM students WHERE {_synth_exclude_sql()}")
+                _skipped_inactive = 0
+                for r in c.fetchall():
+                    _have = set(_parse_labels(r["class_labels"]))
+                    if not all(w in _have for w in _want):
+                        continue
+                    if (r["status"] or "") in ("paid", "trial"):
+                        targets.append({"id": r["id"], "name": r["name"], "email": r["email"]})
+                    else:
+                        _skipped_inactive += 1   # 名簿には居るが在籍中でない (退会・体験終了など)
+                if _skipped_inactive:
+                    log.info(f"[Messages] class={_cl}: 在籍中でない (paid/trial 以外) {_skipped_inactive}名 を宛先から除外")
+                if not targets:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=(f"「{_cl}」を受講クラスに持つ在籍中の生徒がいません。"
+                                + (f"（{_skipped_inactive}名は受講クラスに入っていますが status が paid/trial ではありません）"
+                                   if _skipped_inactive else
+                                   "CEO の「🏫 クラス別 受講生 一括登録」で設定してください")))
             elif bf == "selected":
                 # 👥 ハンドピックした生徒群 (2026-06-09 塾長指示)。重複除去・上限内・paid/trial のみ宛先化。
                 raw_ids = (payload.student_ids or [])[:1000]  # 巨大入力での DoS 回避に早期 cap
@@ -46395,8 +46455,9 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
                     f"SELECT id, name, email FROM students WHERE id IN ({ph}) AND status IN ('paid','trial')",
                     tuple(sel_ids),
                 )
-            for r in c.fetchall():
-                targets.append({"id": r["id"], "name": r["name"], "email": r["email"]})
+            if bf != "class":   # class は上で targets を埋め終えている (二重追加を防ぐ)
+                for r in c.fetchall():
+                    targets.append({"id": r["id"], "name": r["name"], "email": r["email"]})
 
         if not targets:
             raise HTTPException(status_code=404, detail="対象生徒がいません")
@@ -46405,20 +46466,26 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
             raise HTTPException(status_code=413, detail=f"一斉送信の上限は500名です (対象: {len(targets)}名)")
 
         # 60秒以内の同一内容 broadcast を弾く (連打誤送信防止 / Security C-1)
+        # ★宛先クラスも鍵に含める。含めないと「同じ文面を金曜3限 → 水曜3限へ続けて送る」という
+        #   正当な操作が 2 通目から 409 で無言に落ちる (連打ではなく別の宛先)。
+        _bc_class_label = (_sanitize_text(payload.class_label, 100)
+                           if (target == "broadcast" and (payload.broadcast_filter or "") == "class") else None)
         if target == "broadcast":
             if USE_POSTGRES:
                 c.execute(
                     "SELECT 1 FROM messages WHERE broadcast_group_id IS NOT NULL "
-                    "AND broadcast_filter = ? AND subject = ? AND body = ? "
+                    "AND broadcast_filter = ? AND COALESCE(broadcast_class_label,'') = ? "
+                    "AND subject = ? AND body = ? "
                     "AND created_at > NOW() - INTERVAL '60 seconds' LIMIT 1",
-                    (payload.broadcast_filter or "all", subject, body)
+                    (payload.broadcast_filter or "all", _bc_class_label or "", subject, body)
                 )
             else:
                 c.execute(
                     "SELECT 1 FROM messages WHERE broadcast_group_id IS NOT NULL "
-                    "AND broadcast_filter = ? AND subject = ? AND body = ? "
+                    "AND broadcast_filter = ? AND COALESCE(broadcast_class_label,'') = ? "
+                    "AND subject = ? AND body = ? "
                     "AND created_at > datetime('now','-60 seconds') LIMIT 1",
-                    (payload.broadcast_filter or "all", subject, body)
+                    (payload.broadcast_filter or "all", _bc_class_label or "", subject, body)
                 )
             if c.fetchone():
                 raise HTTPException(status_code=409, detail="同一内容の一斉送信が60秒以内に実行されています")
@@ -46438,9 +46505,10 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
                 recipients_with_email += 1
                 sent_via_initial = "queued"  # 後で email_in_app or in_app に UPDATE
             c.execute(
-                "INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, broadcast_filter, subject, body, sent_via, email_status, broadcast_group_id, attachment_filename, attachment_mime, attachment_size, attachment_data_b64) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id",
+                "INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, broadcast_filter, broadcast_class_label, subject, body, sent_via, email_status, broadcast_group_id, attachment_filename, attachment_mime, attachment_size, attachment_data_b64) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id",
                 ("admin", None, "student", t["id"], (payload.broadcast_filter if target == "broadcast" else None),
+                 _bc_class_label,
                  subject, body, sent_via_initial, None, broadcast_group_id,
                  attachment["filename"] if attachment else None,
                  attachment["mime"] if attachment else None,
@@ -46451,7 +46519,9 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
             new_id = row["id"] if row else None
             msg_records.append((new_id, t["email"], t["name"]))
         conn.commit()
-        log.info(f"[Messages] admin send target={target} recipients={len(targets)} queued_email={recipients_with_email} group={broadcast_group_id} ip={_client_ip(request)}")
+        log.info(f"[Messages] admin send target={target} filter={payload.broadcast_filter if target == 'broadcast' else '-'} "
+                 f"class={_bc_class_label or '-'} recipients={len(targets)} queued_email={recipients_with_email} "
+                 f"group={broadcast_group_id} ip={_client_ip(request)}")
 
         # Phase B: email 送信を BackgroundTasks で非同期化 (HTTP リクエストは即返却)
         if payload.send_email:
@@ -46548,7 +46618,7 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
         # admin が送った履歴 (recipient で students JOIN)
         c.execute(
             """SELECT m.id, m.recipient_id, m.subject, m.body, m.sent_via, m.email_status, m.read_at, m.created_at,
-                      m.broadcast_filter, m.broadcast_group_id, m.sender_type,
+                      m.broadcast_filter, m.broadcast_class_label, m.broadcast_group_id, m.sender_type,
                       m.attachment_filename, m.attachment_mime, m.attachment_size,
                       s.name AS student_name, s.grade
                FROM messages m
@@ -46589,6 +46659,7 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
                 "read_at": str(r["read_at"]) if r["read_at"] else None,
                 "created_at": str(r["created_at"]) if r["created_at"] else None,
                 "broadcast_filter": r["broadcast_filter"],
+                "broadcast_class_label": (r["broadcast_class_label"] if "broadcast_class_label" in r.keys() else None),
                 "broadcast_group_id": r["broadcast_group_id"],
                 "attachment": ({"filename": _att_fn, "mime": r["attachment_mime"], "size": r["attachment_size"]} if _att_fn else None),
             }
@@ -46598,6 +46669,7 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
                     groups[gid] = {
                         "broadcast_group_id": gid,
                         "broadcast_filter": obj["broadcast_filter"],
+                        "broadcast_class_label": obj["broadcast_class_label"],
                         "subject": obj["subject"],
                         "body": obj["body"],
                         "created_at": obj["created_at"],
@@ -47006,6 +47078,8 @@ _ATTENDANCE_LABEL = {"present": "出席", "absent": "欠席", "late": "遅刻"}
 
 # 🗓 時間割クラス (入塾申込書 2026年度)。class.html の TIMETABLE と label を一致させること。
 #   label = クラス別ファイル配布・出欠の紐づけキー。dow: 0=日 1=月 … 6=土。
+#   ★ここが正典。同じ表を写している静的ページ (class.html / ceo.html / juku-register.html /
+#     academy.html / enrollment.html) とのズレは scripts/class_timetable/check_timetable_sync.py が落とす。
 _TIMETABLE_CLASSES = [
     {"label": "月曜1限 中学応用", "dow": 1, "time": "19:15–20:15"},
     {"label": "月曜2限 英文法 Lv.1", "dow": 1, "time": "20:25–21:25"},
@@ -47018,12 +47092,43 @@ _TIMETABLE_CLASSES = [
     {"label": "水曜3限 国公立コース 英文法", "dow": 3, "time": "21:35–22:35"},
     {"label": "木曜1限 英検準1級対策", "dow": 4, "time": "19:15–20:15"},
     {"label": "木曜2限 早慶クラス", "dow": 4, "time": "20:25–21:25"},
-    {"label": "木曜3限 国公立コース 長文読解", "dow": 4, "time": "21:35–22:35"},
     {"label": "金曜1限 高2 英文法", "dow": 5, "time": "19:15–20:15"},
     {"label": "金曜2限 英検2級対策", "dow": 5, "time": "20:25–21:25"},
+    # 🔧 [2026-09-01 塾長指摘] 「木曜3限 国公立コース 長文読解」は表記が誤りで、実授業は金曜3限。
+    #   録画の再生リストも「金曜3時間目」で運用しており、assign_from_playlists.py の SLOT_OVERRIDE で
+    #   金→木に付け替えてしのいでいた。label を正に直し、その override も撤去した。
+    #   既存データ (students.class_labels / class_attend / class_sessions.title) の移送は
+    #   scripts/class_timetable/rename_thu3_to_fri3.py。
+    {"label": "金曜3限 国公立コース 長文読解", "dow": 5, "time": "21:35–22:35"},
     {"label": "日曜 高校国語", "dow": 0, "time": "21:15–22:15"},
 ]
 _TIMETABLE_LABELS = set(c["label"] for c in _TIMETABLE_CLASSES)
+
+# 🎓 コース = 時間割クラスの束。塾生アプリ登録フォーム (juku-register.html) の「コース」欄は
+#   この定義どおりにクラス label へ展開して送られる (subjects は label しか受け付けないため)。
+#   ★[2026-09-01 塾長指示] 登録フォームに国公立難関大コースの欄が無かったので、
+#     「水曜3限・金曜3限・日曜の高校国語」の3コマをこのコースとして定義する。
+#   juku-register.html の COURSES と一致していることは check_timetable_sync.py が照合する。
+#   ★students.course = 'kokuritsu_nankan' (=_STUDY_LOG_TARGET_COURSE) とは**別物**。あちらは
+#     承認した通塾生**全員**に付く在籍フラグ (中学生にも付く) で、コースの受講内容とは無関係。
+#     ここは「どの3コマを受講しているか」だけを表す。混同すると一斉送信の宛先を間違える。
+_COURSE_CLASSES = {
+    "国公立難関大コース": [
+        "水曜3限 国公立コース 英文法",
+        "金曜3限 国公立コース 長文読解",
+        "日曜 高校国語",
+    ],
+}
+# ★ここで assert しない。module 直下の assert は import 時に評価されるので、時間割 label の改名を
+#   片方だけ直して push すると uvicorn が起動できず **API 全体が停止**する (決済・ログインごと)。
+#   不整合は scripts/class_timetable/check_timetable_sync.py が commit 前に落とすのが本筋。
+#   ここでは時間割に無い label を落として log に残すだけにして、本番を殺さない。
+for _cname in list(_COURSE_CLASSES):
+    _bad = [l for l in _COURSE_CLASSES[_cname] if l not in _TIMETABLE_LABELS]
+    if _bad:
+        log.error(f"[Timetable] _COURSE_CLASSES[{_cname}] に時間割外の label {_bad} — "
+                  f"check_timetable_sync.py を回して直すこと (該当 label は無視する)")
+        _COURSE_CLASSES[_cname] = [l for l in _COURSE_CLASSES[_cname] if l in _TIMETABLE_LABELS]
 
 
 def _require_tsujuku_student(student: Optional[dict]) -> None:
@@ -47062,9 +47167,9 @@ def _is_juku_app_student(student_id) -> bool:
       AI利用者を mypage から締め出す事故になる(2026-06-27 高野さん他11名で発覚)。
       → 判定は course/plan ではなく『登録経路 referrer=塾生アプリ』にする = 自己登録の通塾生のみ。
       既存のAI生(referrer≠塾生アプリ)は全員 AI管理(mypage)のまま据え置き。
-    ★[2026-07-15 太田さん事故] 塾生アプリ申込が「既存のAI生」に合流した場合 (承認の既存生徒検索が
+    ★[2026-07-15 影乗っ取り事故] 塾生アプリ申込が「既存のAI生」に合流した場合 (承認の既存生徒検索が
       email/student_email でヒット、例: 山田さん #12681) は、申込行があるだけで true になり
-      AI利用者を mypage から締め出す(高野さん事故クラスの再発)。→ 申込の存在に加えて
+      AI利用者を mypage から締め出す(2026-07-15 事故クラスの再発)。→ 申込の存在に加えて
       (a) その申込がアカウントを作った (students.created_at >= 申込 created_at = 自己登録の新規通塾生)
       or (b) 塾長が AIなし枠を明示指定 (ai_disabled=1)
       のときだけ true。既存AI生への後付け合流 (作成日 < 申込日 & AIあり) は false = mypage 据え置き。
@@ -48340,9 +48445,14 @@ def admin_class_calendar_bulk(payload: ClassCalendarBulkRequest, request: Reques
 
 @app.get("/api/admin/class/timetable-classes")
 def admin_class_timetable_classes(authorization: Optional[str] = Header(None)):
-    """塾長: 時間割クラス一覧 (クラス別ファイル配布・出欠記録の選択肢)。"""
+    """塾長: 時間割クラス一覧 (クラス別ファイル配布・出欠記録の選択肢) + コース定義。"""
     _verify_admin_required(authorization)
-    return {"ok": True, "classes": [{"label": c["label"], "dow": c["dow"], "time": c["time"]} for c in _TIMETABLE_CLASSES]}
+    return {"ok": True,
+            "classes": [{"label": c["label"], "dow": c["dow"], "time": c["time"]} for c in _TIMETABLE_CLASSES],
+            # 🎓 コース (= クラスの束)。塾生アプリ登録フォームの「コース」欄と同じ定義。
+            # ★label が 1 つも残っていないコースは配らない (起動時の自己修復で全部落ちた状態)。
+            #   出すと CEO で選べてしまい、送信時に 400 になるだけの選択肢になる。
+            "courses": [{"name": n, "labels": list(ls)} for n, ls in _COURSE_CLASSES.items() if ls]}
 
 
 @app.get("/api/admin/class/labeled-files")
@@ -48975,7 +49085,7 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
     #   実クライアントではなく Vercel egress の共有IP(少数の AWS IP プール)になりがち。
     #   旧実装 (1IP 5回/24h・全フォーム共通バケット) では、混雑日に複数の正規申込者が
     #   同一 egress IP を共有して枠を使い切り、本物の入塾申込が 429 で弾かれる事故が
-    #   起き得た(高橋勇尚さん事例 2026-07-01)。対策:
+    #   起き得た(2026-07-01 の事例)。対策:
     #   (1) フォーム種別ごとにバケット分離(塾生アプリ登録が入塾申込の枠を食わない)
     #   (2) 共有IP前提で IP 上限を大幅緩和。abuse 抑止の本丸は honeypot + 同一email 409 +
     #       下の email 単位上限(共有IPを迂回しても効く実 identity ベースの防御)。
@@ -49002,7 +49112,10 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
     #   クライアント側は NOTE_MAX=2400 で切って「…(以下略)」を付けるので、ここは内側の余白込み。
     #   note は TEXT カラム・rate limit(IP 40/日, email 10/日)があるので保存量の懸念は無い。
     note = _sanitize_text(payload.note, 2500)
-    subjects = _sanitize_text(payload.subjects, 200)  # 現在受講科目 (塾生アプリ登録)
+    # 現在受講科目 (塾生アプリ登録)。★上限に余裕を持たせること: 全15クラス選択で 191文字、
+    #   そこへコース名「国公立難関大コース・」が付くと 201文字で 200 では**末尾が無言で切れる**。
+    #   切れた label は承認時 (_TIMETABLE_LABELS 照合) に黙って捨てられ、受講クラスが欠ける。
+    subjects = _sanitize_text(payload.subjects, 400)
     ip = _client_ip(request)
 
     conn = db()
@@ -49287,8 +49400,19 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         # 🏫 トリリオン塾生アプリの自己登録(referrer='塾生アプリ')は、難関コースとは別文面のウェルカムを送る
         _is_juku_app_reg = ((row["referrer"] if "referrer" in row.keys() else None) or "") == "塾生アプリ"
         # 🎒 受講クラス: 登録フォームの subjects は時間割クラス label の「・」連結。妥当な label のみ JSON 化。
+        # 🎓 [2026-09-01] コース名 (_COURSE_CLASSES のキー) が混じっていたらそのコースのクラスへ展開する。
+        #   登録フォーム (juku-register.html) は「コース」欄を選んだとき、3コマの label に加えて
+        #   **コース名そのもの**も subjects の先頭に入れて送る。これがないと CEO の申込カードにも
+        #   塾長への通知メールにも label が3つ並ぶだけで「コース申込だった」ことが残らない。
+        #   ★展開しないとコース名は _TIMETABLE_LABELS に無いので**黙って捨てられる**ので、必ずここで解く。
         _app_subjects = (row["subjects"] if "subjects" in row.keys() else None) or ""
-        _app_classes = [s.strip() for s in _app_subjects.split("・") if s.strip() in _TIMETABLE_LABELS]
+        _app_classes = []
+        for _s in (x.strip() for x in _app_subjects.split("・")):
+            if not _s:
+                continue
+            for _l in (_COURSE_CLASSES.get(_s) or ([_s] if _s in _TIMETABLE_LABELS else [])):
+                if _l not in _app_classes:
+                    _app_classes.append(_l)
         _app_classes_json = json.dumps(_app_classes, ensure_ascii=False) if _app_classes else None
 
         # 既存生徒検索 → なければ trial として新規作成
@@ -49303,7 +49427,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         #    新規作成した場合は影乗っ取りが再現し得るため、下の _shadow_prior で CEO へ警告する)。
         try:
             c.execute(
-                "SELECT id, status, course, ai_disabled, plan FROM students "
+                "SELECT id, status, course, ai_disabled, plan, class_labels FROM students "
                 "WHERE LOWER(email) = ? OR (LOWER(COALESCE(student_email, '')) = ? AND COALESCE(student_email_verified, 0) = 1) "
                 "ORDER BY CASE WHEN LOWER(email) = ? THEN 0 ELSE 1 END, id LIMIT 1",
                 (email_lower, email_lower, email_lower))
@@ -49311,7 +49435,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         except Exception:
             # student_email_verified 列が無い旧 DB (ALTER 失敗・部分デプロイ) でも承認自体は殺さない
             conn.rollback()
-            c.execute("SELECT id, status, course, ai_disabled, plan FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
+            c.execute("SELECT id, status, course, ai_disabled, plan, class_labels FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
             st = c.fetchone()
         # 既存アカウントへの合流か (CEO 承認結果に表示して「新規が作られていない」ことを可視化)
         _attached_existing = st is not None
@@ -49340,11 +49464,26 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             _ai_disabled = 1 if _is_juku_app_reg else 0
         if st:
             student_id = st["id"]
-            # 既存生徒に course 付与。受講クラスが申込にあれば反映 (空なら既存維持)。
-            if _app_classes_json:
-                c.execute("UPDATE students SET course = ?, class_labels = ?, ai_disabled = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, _app_classes_json, _ai_disabled, student_id))
+            # 既存生徒に course 付与。受講クラスは「既存 ∪ 申込」(空なら既存維持)。
+            # 🛡️ [2026-09-01] ★置換にしないこと。申込フォームの subjects は「今回申し込むコマ」であって
+            #   「現在の受講クラス全部」ではない (入塾申込フォームは受講希望コース欄、コースLPは固定)。
+            #   置換すると、塾長が CEO「🏫 クラス別 受講生 一括登録」で積み上げた他クラスが
+            #   申込1件の承認で無言に消え、そのクラスの録画 (feed の title not in my_classes) と
+            #   クラス指定の一斉送信の宛先から静かに落ちる。減らすのは CEO の名簿操作の役目。
+            if _app_classes:
+                _cur_labels = _parse_labels(st["class_labels"] if "class_labels" in st.keys() else None)
+                _merged = list(_cur_labels)
+                for _l in _app_classes:
+                    if _l not in _merged:
+                        _merged.append(_l)
+                if _merged != _cur_labels:
+                    log.info(f"[CourseApp] attach: class_labels {_cur_labels} + {_app_classes} -> {_merged} student_id={student_id}")
+                c.execute("UPDATE students SET course = ?, class_labels = ?, ai_disabled = ? WHERE id = ?",
+                          (_STUDY_LOG_TARGET_COURSE, json.dumps(_merged, ensure_ascii=False), _ai_disabled, student_id))
+                _final_classes = _merged
             else:
                 c.execute("UPDATE students SET course = ?, ai_disabled = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, _ai_disabled, student_id))
+                _final_classes = _parse_labels(st["class_labels"] if "class_labels" in st.keys() else None)
             # ★AIなし枠で承認したなら期限付き体験も打ち切る (残すと遮断が無言で効かない・admin_set_student_ai_disabled と同じ規約)。
             #   ただし既存値を保持しただけ (_ai_disabled_preserved) のときは塾長は AI 可否を触っていないので、
             #   進行中の体験を無言で打ち切らない。
@@ -49373,7 +49512,8 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             )
             new = c.fetchone()
             student_id = new["id"] if new else None
-            log.info(f"[CourseApp] approve created new student id={student_id} email={email_lower}")
+            _final_classes = list(_app_classes)
+            log.info(f"[CourseApp] approve created new student id={student_id} email={email_lower} classes={_final_classes}")
             # 🚨 同名重複ガード (2026-07-09): email 一致は上の SELECT で既存生徒に合流するので、
             #   ここに来た=別メール。同名(正規化)の既存 体験/課金生徒がいれば「別メール二重登録」の疑い。
             #   承認はブロックせず、prior を控えて post-commit でフラグのみ立てる (CEO 重複バナー導線に合流)。
@@ -49384,7 +49524,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
                 _repeat_prior = None
             # 🛡️ [影dup根絶 2026-07-15] 申込メールが既存生徒の「未確認 student_email」と一致 =
             #   verified なら上の SELECT で自動合流していたケース。未確認は乗っ取り対策で合流しないが、
-            #   このままログインが新アカウントに吸われる影乗っ取り (太田さん事故) が再現し得るため、
+            #   このままログインが新アカウントに吸われる影乗っ取り (過去の事故) が再現し得るため、
             #   承認はブロックせず CEO の重複バナー導線へ警告を出す (post-commit で _flag_repeat_suspect)。
             try:
                 c.execute(
@@ -49433,7 +49573,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             _flag_repeat_suspect(int(student_id), (
                 f"影アカウント疑い: 申込メールが既存生徒 {_shadow_prior['name']} (#{_shadow_prior['id']}) の"
                 f"生徒用メール(未確認)と一致。今後このメールでのログインは新アカウントに吸われ、"
-                f"既存アカウントに入れなくなる可能性 (太田さん 2026-07-15 事故と同型)。統合を検討してください"))
+                f"既存アカウントに入れなくなる可能性 (2026-07-15 の影乗っ取り事故と同型)。統合を検討してください"))
             _record_repeat_event("course_approve_shadow_suspect", {
                 "student_id": int(student_id), "prior_id": _shadow_prior.get("id"), "email": email_lower,
             })
@@ -49522,7 +49662,17 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             # 🛡️ [影dup根絶 2026-07-15] 既存アカウントへの合流を CEO 承認結果に可視化 (新規作成なし)。
             #   ai_disabled_preserved=true は「CEO の AIあり/なし選択と既存値が食い違ったため既存値を保持した」印。
             "attached_existing": _attached_existing, "attached_plan": _attached_plan,
-            "ai_disabled_preserved": _ai_disabled_preserved, "ai_disabled_final": _ai_disabled}
+            "ai_disabled_preserved": _ai_disabled_preserved, "ai_disabled_final": _ai_disabled,
+            # 🎒 [2026-09-01] 承認の結果いま何クラスになったかを返す。★空 (class_labels=[]) は
+            #   「クラス限定で配る録画がこの生徒だけ 0 件」「クラス指定の一斉送信に入らない」状態だが、
+            #   生徒はログインでき時間割も出るので**画面上は何も壊れて見えない**。CEO で必ず知らせる。
+            #   subjects を送らない経路 (旧フォーム由来の pending 申込・学習管理コースなど
+            #   時間割のコマが決まらない商品) では普通に空になるので、承認を止めずに警告だけ出す。
+            "class_labels": list(_final_classes),
+            "class_labels_empty": not _final_classes,
+            "dropped_subjects": [x.strip() for x in _app_subjects.split("・")
+                                 if x.strip() and x.strip() not in _TIMETABLE_LABELS
+                                 and x.strip() not in _COURSE_CLASSES]}
 
 
 class CourseApplicationRejectRequest(BaseModel):
@@ -51290,11 +51440,11 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
   - **絶対禁止**: 同じ問題集を 3 フェーズ全部に並べること (生徒が「進歩感がない・飽きる」と感じる)"""
 
     # 🔧 2026-05-14 塾長指摘「AI 出力 JSON 解析失敗」対応 (3 段防御):
-    # 1) max_tokens 4000 → 8000 → 16000 (2026-05-21・小川くん事例で再 truncate 確認・倍増)
+    # 1) max_tokens 4000 → 8000 → 16000 (2026-05-21・過去の事例で再 truncate 確認・倍増)
     # 2) response_format={"type":"json_object"} で Gemini JSON 強制モード
     # 3) temperature 0.3 (default 0.7 → JSON 構造崩壊リスク 8 割減)
     # 4) Gemini 失敗時に Sonnet 4.6 で再試行 (塾長の「即解消」体験のため)
-    # 🚨 2026-05-21 小川くん事例 fix B: max_tokens 8000 → 16000 (phases 4-6 × materials/sapuri/milestones 各 2-4 件
+    # 🚨 2026-05-21 過去の事例 fix B: max_tokens 8000 → 16000 (phases 4-6 × materials/sapuri/milestones 各 2-4 件
     #    で実質 borderline → Gemini Flash の上限 65536 内で安全マージン確保)
     body = {
         "model": "gemini-2.5-flash",
@@ -51350,7 +51500,7 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
                     status_code=503,
                     detail=f"AI 出力に JSON が含まれません (先頭: {cleaned[:80]})。再生成をお試しください。"
                 )
-            # 🚨 2026-05-21 小川くん事例 fix C: end_idx <= start_idx (= 末尾 `}` 無し or 先頭 `{` 後に無し) でも
+            # 🚨 2026-05-21 過去の事例 fix C: end_idx <= start_idx (= 末尾 `}` 無し or 先頭 `{` 後に無し) でも
             #    Stage 4 救済 (`}` 補完) を試行。従来は即 503 で「JSON が含まれません」誤エラーを表示していた。
             if end_idx <= start_idx:
                 json_part = cleaned[start_idx:]
@@ -51395,7 +51545,7 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
                     # 末尾が `,` `[` `{` 等の場合は安全な位置まで巻き戻し
                     while fixed and fixed[-1] in ',:{[':
                         fixed = fixed[:-1].rstrip()
-                    # 🚨 2026-05-21 小川くん事例 fix: orphan key 除去
+                    # 🚨 2026-05-21 過去の事例 fix: orphan key 除去
                     #   末尾が `, "key"` or `, "key":` or `, "key": <未完 value>` で truncate されたら
                     #   直前の `,` まで巻き戻して、その `,` も除去 → 1 つ前の完成済要素までを採用
                     for _trim_attempt in range(3):  # 最大 3 段巻き戻し (深い nest の orphan 対応)

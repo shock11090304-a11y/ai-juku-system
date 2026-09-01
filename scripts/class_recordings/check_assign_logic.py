@@ -357,6 +357,44 @@ def main():
         print(f"     (参考) problems={rep2['problems']}")
         print(f"     (参考) notes={rep2['notes']}")
 
+    # 再生リスト名 → 割り当て先 slot (2026-09-01 の「木曜3限 → 金曜3限」是正で書き換えた箇所)
+    print("再生リスト名 → 割り当て先 slot:")
+    for name, e_day, e_raw, e_slot in [
+        ("8月以降金曜日３時間目", 4, "金曜3限", "金曜3限"),   # 付け替えを撤去したので素通し
+        ("日曜1限 高校国語", 6, "日曜1限", "日曜"),           # 日曜だけは title が「日曜 高校国語」
+        ("月曜2限", 0, "月曜2限", "月曜2限"),
+    ]:
+        got = mod.slot_of(name)
+        if got == (e_day, e_raw, e_slot):
+            print(f"  ✅ {name!r} → {got}")
+        else:
+            failures.append(f"slot_of({name!r}) = {got} (期待 {(e_day, e_raw, e_slot)})")
+            print(f"  ❌ {name!r} → {got} (期待 {(e_day, e_raw, e_slot)})")
+    if mod.SLOT_OVERRIDE.get("金曜3限"):
+        failures.append("SLOT_OVERRIDE に「金曜3限 → …」の付け替えが復活している "
+                        "(時間割の label 自体が金曜3限に直っているので不要・二重にずれる)")
+
+    # ★移送前 (class_sessions.title が旧ラベル) でも、他クラスの配布を巻き添えにしないこと。
+    #   ここを blocking にすると 15クラス全部の投入が1件も走らずに止まる。
+    print("本番DBが未移送 (旧ラベル) のときの振る舞い:")
+    _one = {"contents": {"x": [{"lockupViewModel": {
+        "contentType": "LOCKUP_CONTENT_TYPE_VIDEO", "contentId": "LEGACYVID01",
+        "metadata": {"lockupMetadataViewModel": {"title": {"content": "8/21"}}}}}]},   # T2(8/28 金) の前週の金曜
+        "header": {"t": {"content": "1 本の動画"}}}
+    _pg = f'<script>var ytInitialData = {json.dumps(_one, ensure_ascii=False)};</script>'
+    rep_old = mod.build_plan(T2, [("PL_FRI", "金曜3限")], [(5, "木曜3限 国公立コース 長文読解")], [], {},
+                             get=lambda _u: (_pg, None))
+    for label, cond in [
+        ("旧ラベルの授業に当てて blocking にしない", rep_old["blocking"] == 0),
+        ("移送が要ることを notes で知らせる",
+         any("rename_thu3_to_fri3.py" in n for n in rep_old["notes"])),
+        ("割り当て自体は進む", len(rep_old["planned"]) == 1),
+    ]:
+        if cond:
+            print(f"  ✅ {label}")
+        else:
+            failures.append(f"未移送フォールバック: {label} が成立していない")
+            print(f"  ❌ {label}  (参考) blocking={rep_old['blocking']} notes={rep_old['notes']}")
     # ★CLI が正典と同一の実装を使っていること。別実装に差し替わると、このゲートが
     #   緑のまま塾長のターミナルだけ判定が変わる (検査していない状態になる)。
     print("CLI が正典を共有していること:")
@@ -378,7 +416,13 @@ def main():
         for f in failures:
             print(f"   - {f}")
         return 1
-    print("\n=== ALL PASS (判定表・取得失敗・年の決め方・日付検算・動画ID抽出・計画づくり・CLI共有) ===")
+    if mod.LEGACY_SLOT:
+        # ★落とさない。移送が済むまでは**在るのが正しい**。ただし消し忘れると恒久的な
+        #   二重解釈になるので毎回知らせる。
+        print(f"\n  ℹ LEGACY_SLOT が残っている: {mod.LEGACY_SLOT}"
+              "\n    本番DBの移送 (scripts/class_timetable/rename_thu3_to_fri3.py --apply) が"
+              "済んだら空にすること。")
+    print("\n=== ALL PASS (判定表・取得失敗・年の決め方・日付検算・動画ID抽出・計画づくり・slot対応表・CLI共有) ===")
     return 0
 
 

@@ -904,7 +904,7 @@
         </div>
         <div id="emailDiagnoseResult" style="display:none;margin-top:0.6rem;padding:0.6rem;background:rgba(0,0,0,0.4);border-radius:6px;font-size:0.75rem;line-height:1.5;color:#e4e4e7;"></div>
 
-        <!-- 🔑 OTP 緊急発行: メール届かない生徒に admin が OTP 直接発行 (2026-05-11 室坂さん対応で追加) -->
+        <!-- 🔑 OTP 緊急発行: メール届かない生徒に admin が OTP 直接発行 (2026-05-11 メール不着の生徒対応で追加) -->
         <div style="margin-top:0.8rem;padding:0.7rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;">
           <div style="font-weight:800;color:#fca5a5;font-size:0.82rem;margin-bottom:0.4rem;">🔑 OTP 緊急発行 — どのメアドにしても届かない生徒向け</div>
           <div style="font-size:0.72rem;color:#fca5a5;margin-bottom:0.5rem;line-height:1.55;">メール経路を一切経由せず、塾長が LINE/電話/対面で OTP を伝達できます。<strong style="color:#86efac;">有効期限なし・1 回使うと無効</strong> (いつでも使えます)。</div>
@@ -1470,7 +1470,7 @@
       </div>
       <div style="background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.7rem;font-size:0.78rem;color:#86efac;line-height:1.6;">
         💡 <strong>招待コード方式の利点</strong>: 短い文字列 (例: <code style="background:rgba(0,0,0,0.4);padding:0.1rem 0.3rem;border-radius:4px;">AJK-A1B2C3D4</code>) で typo しにくく、Instagram 等の in-app browser でも安全。<br>
-        URL 方式は token に email 焼き込み → 塾長 typo 時に決済不能事故あり (森澤さん事件 2026-05-07)。<strong>新規発行はコード方式推奨</strong>。
+        URL 方式は token に email 焼き込み → 塾長 typo 時に決済不能事故あり (2026-05-07 の決済不能事故)。<strong>新規発行はコード方式推奨</strong>。
       </div>
 
       <div id="invResult" style="display:none;background:rgba(0,0,0,0.35);border:1px solid rgba(217,70,239,0.3);border-radius:10px;padding:1rem;">
@@ -2630,11 +2630,26 @@
           <label for="msgBroadcastFilter" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">送信対象 *</label>
           <select id="msgBroadcastFilter" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
             <option value="all">全生徒 (paid + trial)</option>
-            <option value="kokuritsu_nankan">国公立難関大学コース 受講生のみ</option>
+            <option value="class">🏫 クラス／コースで選ぶ</option>
+            <!-- ★この値 (kokuritsu_nankan) が見ているのは students.course。承認時に通塾生**全員**へ付く
+                 在籍フラグなので中学生も入る = 「コース受講生」ではない。文言を実体に合わせた。
+                 コース生だけに送りたいときは上の「クラス／コースで選ぶ」を使う。 -->
+            <option value="kokuritsu_nankan">通塾生（承認済みの在籍生）全員</option>
             <option value="paid_only">有料生徒のみ</option>
             <option value="trial_only">体験中生徒のみ</option>
             <option value="selected">👥 生徒を個別に選ぶ</option>
           </select>
+
+          <!-- 🏫 クラス／コース指定 (broadcast_filter=class 時のみ表示 / 2026-09-01 塾長指示) -->
+          <div id="msgClassWrap" style="display:none; margin-top:0.5rem;">
+            <select id="msgClassSelect" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+              <option value="">読み込み中...</option>
+            </select>
+            <div style="font-size:0.72rem; color:#a1a1aa; margin-top:0.25rem; line-height:1.5;">
+              受講クラス（「🏫 クラス別 受講生 一括登録」で設定した内容）で絞ります。<br>
+              コースを選んだ場合は<strong>その全コマを受講している生徒</strong>だけが対象です。
+            </div>
+          </div>
           <div id="msgBroadcastCount" style="font-size:0.78rem; color:#a1a1aa; margin-top:0.3rem;"></div>
 
           <!-- 👥 個別選択 (broadcast_filter=selected 時のみ表示・複数ハンドピック / 2026-06-09 塾長指示) -->
@@ -6796,7 +6811,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         emailDiagBtn.disabled = false; emailDiagBtn.textContent = '🩺 メール診断';
       });
 
-      // 🔑 OTP 緊急発行 (2026-05-11 室坂さん対応: メール届かない生徒向け admin 直接 OTP 発行)
+      // 🔑 OTP 緊急発行 (2026-05-11 メール不着の生徒対応: メール届かない生徒向け admin 直接 OTP 発行)
       const otpIssueBtn = document.getElementById('otpIssueBtn');
       const otpIssueQuery = document.getElementById('otpIssueQuery');
       const otpIssueResult = document.getElementById('otpIssueResult');
@@ -10814,9 +10829,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       { label: '水曜3限 国公立コース 英文法', subject: '', start: '21:35', end: '22:35' },
       { label: '木曜1限 英検準1級対策', subject: '中高合同', start: '19:15', end: '20:15' },
       { label: '木曜2限 早慶クラス', subject: '大学別演習', start: '20:25', end: '21:25' },
-      { label: '木曜3限 国公立コース 長文読解', subject: '', start: '21:35', end: '22:35' },
       { label: '金曜1限 高2 英文法', subject: '', start: '19:15', end: '20:15' },
       { label: '金曜2限 英検2級対策', subject: '中高合同', start: '20:25', end: '21:25' },
+      // 🔧 [2026-09-01 塾長指摘] 旧「木曜3限 国公立コース 長文読解」。実授業は金曜3限が正。
+      { label: '金曜3限 国公立コース 長文読解', subject: '', start: '21:35', end: '22:35' },
       { label: '日曜 高校国語', subject: '現代文・古文', start: '21:15', end: '22:15' }
     ];
     (function initTtPick() {

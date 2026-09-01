@@ -104,6 +104,15 @@ WRITE_OK = {
     "book_exam/check_signup.py":
         "localhost に偽 Stripe/偽 Supabase を立てて往復するだけ（外部には出ない・リポジトリには書かない）",
     "chem_camp/katex_gate.py": "KaTeX 描画用の一時HTMLを書くだけ",
+    "class_timetable/check_broadcast_class_filter.py":
+        "tempfile の使い捨て sqlite に server/main.py を載せ、TestClient で自プロセス内に HTTP を撃つだけ"
+        "（DATABASE_URL を空にして本番 Postgres を掴まない・リポジトリには書かない）",
+    "class_timetable/check_rename_migration.py":
+        "tempfile の使い捨てディレクトリに sqlite の偽DBと psycopg スタブを置いて移送スクリプトを走らせるだけ"
+        "（本番DBには一切つながない・リポジトリには書かない）",
+    "class_timetable/check_timetable_sync_selftest.py":
+        "tempfile の使い捨てディレクトリに正典と写しを複製し、そこだけを壊してゲートを回すだけ"
+        "（リポジトリは1文字も書き換えない）",
     "eng_hinshi_bunkai/qa.py": "出力ディレクトリを作るだけ",
     "kyotsu2026_mirror/build/qa_machine.py": "QA レポートを書くだけ",
     "math_workbook/ia_jaku_gate.py": "KaTeX 描画用の一時HTML/PDFを書いて消すだけ",

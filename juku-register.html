@@ -33,6 +33,8 @@
     .cls-day-h { flex-shrink:0; min-width:2.2em; font-size:0.82rem; font-weight:800; color:#a5b4fc; }
     .subj-chip input { width:auto; margin:0; accent-color:#818cf8; }
     .subj-chip.on { background:rgba(129,140,248,0.20); border-color:#818cf8; color:#c7d2fe; }
+    .subj-chip.course { font-weight:700; }
+    .subj-chip.course.on { background:rgba(52,211,153,0.20); border-color:#34d399; color:#a7f3d0; }
     .btn { display:block; width:100%; margin-top:1.3rem; padding:0.8rem; border:none; border-radius:10px; font-weight:800; font-size:1rem; cursor:pointer; background:linear-gradient(135deg,#818cf8,#6366f1); color:#fff; font-family:inherit; }
     .btn:disabled { opacity:0.55; cursor:default; }
     .msg { margin-top:1rem; padding:0.9rem 1rem; border-radius:10px; font-size:0.9rem; line-height:1.7; display:none; }
@@ -73,6 +75,10 @@
           <option>既卒・浪人</option><option>その他</option>
         </select>
 
+        <label>コース（コースで通っている方はこちら）</label>
+        <div class="hint">コースを選ぶと、下の「受講クラス」の該当コマに自動でチェックが入ります。コース以外のクラスも一緒に選べます。</div>
+        <div class="cls-grid" id="courseGrid"></div>
+
         <label>受講クラス（あてはまるものを選択）</label>
         <div class="hint">出欠は、ここで選んだクラスだけがアプリに表示されます。複数選択できます。</div>
         <div class="cls-grid" id="subjGrid"></div>
@@ -106,9 +112,21 @@
       ['月', [['月曜1限 中学応用', '1限 中学応用'], ['月曜2限 英文法 Lv.1', '2限 英文法Lv.1'], ['月曜3限 長文読解 Lv.1', '3限 長文読解Lv.1']]],
       ['火', [['火曜1限 中学基礎', '1限 中学基礎'], ['火曜2限 英文法 Lv.2', '2限 英文法Lv.2'], ['火曜3限 長文読解 Lv.2', '3限 長文読解Lv.2']]],
       ['水', [['水曜1限 中学2年 英語', '1限 中学2年英語'], ['水曜2限 GMARCH', '2限 GMARCH'], ['水曜3限 国公立コース 英文法', '3限 国公立 英文法']]],
-      ['木', [['木曜1限 英検準1級対策', '1限 英検準1級'], ['木曜2限 早慶クラス', '2限 早慶クラス'], ['木曜3限 国公立コース 長文読解', '3限 国公立 長文読解']]],
-      ['金', [['金曜1限 高2 英文法', '1限 高2英文法'], ['金曜2限 英検2級対策', '2限 英検2級']]],
+      ['木', [['木曜1限 英検準1級対策', '1限 英検準1級'], ['木曜2限 早慶クラス', '2限 早慶クラス']]],
+      // 🔧 [2026-09-01 塾長指摘] 「国公立コース 長文読解」は木曜3限ではなく金曜3限が正。
+      ['金', [['金曜1限 高2 英文法', '1限 高2英文法'], ['金曜2限 英検2級対策', '2限 英検2級'], ['金曜3限 国公立コース 長文読解', '3限 国公立 長文読解']]],
       ['日', [['日曜 高校国語', '高校国語']]]
+    ];
+    // 🎓 コース = 時間割クラスの束 (server/main.py の _COURSE_CLASSES と一致させること)。
+    //   ★[2026-09-01 塾長指示] 登録フォームに国公立難関大コースの欄が無かったので追加。
+    //     サーバは subjects を時間割クラスの label でしか受け取らない (main.py の _TIMETABLE_LABELS で
+    //     絞り込む) ため、コース名そのものは送らず「そのコースの3コマにチェックを入れる」形で送る。
+    var COURSES = [
+      { name: '国公立難関大コース', note: '水3・金3・日', labels: [
+        '水曜3限 国公立コース 英文法',
+        '金曜3限 国公立コース 長文読解',
+        '日曜 高校国語'
+      ] }
     ];
     (function () {
       var grid = document.getElementById('subjGrid');
@@ -125,9 +143,47 @@
       });
     })();
 
-    // 受講クラス チップの選択ハイライト
+    // コース チェックを描画 (受講クラスの描画後に置くこと: 下の同期がクラス側の checkbox を引くため)
+    (function () {
+      var grid = document.getElementById('courseGrid');
+      if (!grid || !COURSES.length) return;
+      var row = document.createElement('div'); row.className = 'cls-day';
+      var hh = document.createElement('span'); hh.className = 'cls-day-h'; hh.textContent = 'コース'; row.appendChild(hh);
+      COURSES.forEach(function (co, i) {
+        var lab = document.createElement('label'); lab.className = 'subj-chip course';
+        var cb = document.createElement('input'); cb.type = 'checkbox'; cb.setAttribute('data-course', String(i));
+        lab.appendChild(cb); lab.appendChild(document.createTextNode(co.name + '（' + co.note + '）'));
+        row.appendChild(lab);
+      });
+      grid.appendChild(row);
+    })();
+
+    // チップの選択ハイライト + コース⇄クラスの相互同期
+    function chipHl(cb) { var l = cb.closest('.subj-chip'); if (l) l.classList.toggle('on', cb.checked); }
+    function classCb(label) {
+      var found = null;
+      Array.prototype.forEach.call(document.querySelectorAll('#subjGrid input'), function (c) {
+        if (c.value === label) found = c;
+      });
+      return found;
+    }
+    function syncCourseChips() {
+      // コースは「そのコースの全コマにチェックが入っている」ときだけ ON。1コマ外せば OFF に戻る。
+      Array.prototype.forEach.call(document.querySelectorAll('#courseGrid input'), function (cc) {
+        var co = COURSES[Number(cc.getAttribute('data-course'))];
+        cc.checked = !!co && co.labels.every(function (l) { var c = classCb(l); return !!c && c.checked; });
+        chipHl(cc);
+      });
+    }
     Array.prototype.forEach.call(document.querySelectorAll('#subjGrid input'), function (c) {
-      c.addEventListener('change', function () { c.closest('.subj-chip').classList.toggle('on', c.checked); });
+      c.addEventListener('change', function () { chipHl(c); syncCourseChips(); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#courseGrid input'), function (cc) {
+      cc.addEventListener('change', function () {
+        var co = COURSES[Number(cc.getAttribute('data-course'))];
+        if (co) co.labels.forEach(function (l) { var c = classCb(l); if (c) { c.checked = cc.checked; chipHl(c); } });
+        chipHl(cc);
+      });
     });
 
     function showMsg(text, isErr) {
@@ -148,9 +204,17 @@
       var note = (document.getElementById('note').value || '').trim();
       var grade = document.getElementById('grade').value || '';
       var targetUni = (document.getElementById('targetUni').value || '').trim();
-      var subjects = Array.prototype.map.call(
-        document.querySelectorAll('#subjGrid input:checked'), function (c) { return c.value; }
-      ).join('・');
+      // 受講クラス label + 🎓 ON になっているコース名。コース名はサーバ側 (_COURSE_CLASSES) で
+      // 3コマへ展開される。★コース名も送るのは、塾長の申込カード/通知メールに「コース申込だった」
+      //   ことを残すため (label だけだと単品3コマ選択と区別が付かない)。
+      var picked = Array.prototype.map.call(
+        document.querySelectorAll('#subjGrid input:checked'), function (c) { return c.value; });
+      var pickedCourses = Array.prototype.map.call(
+        document.querySelectorAll('#courseGrid input:checked'), function (cc) {
+          var co = COURSES[Number(cc.getAttribute('data-course'))];
+          return co ? co.name : '';
+        }).filter(function (n) { return !!n; });
+      var subjects = pickedCourses.concat(picked).join('・');
       if (!name) { showMsg('お名前を入力してください。', true); return; }
       if (!email || email.indexOf('@') < 0) { showMsg('有効なメールアドレスを入力してください。', true); return; }
       btn.disabled = true;
