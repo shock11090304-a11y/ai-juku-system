@@ -70,6 +70,23 @@ ALLOW = {
     "windless": "wind + less の派生",
     "beginner": "begin + er の派生",
     "trader": "trade + er の派生",
+    # ↓ 第3部を実物の帯まで上げたときに**意図して入れた**入試レベルの語。
+    #   話題から意味が絞れるもの・派生が透明なものだけを入れる。
+    "archaeologist": "考古学の話題語。archaeology の派生で、発掘の文脈から意味が絞れる",
+    "archivist": "archive（C1）+ ist の派生",
+    "excavation": "excavate の名詞形。考古学の話題語",
+    "sediment": "地学・考古学の話題語。堆積の文脈から意味が絞れる",
+    "erosion": "erode の名詞形。環境の話題語で入試頻出",
+    "irrigation": "irrigate の名詞形。農業の話題語",
+    "vaccination": "vaccinate の名詞形。医療の話題語で入試頻出",
+    "tariff": "経済の話題語。subsidy（C1）と対で出る",
+    "contradict": "contra + dict。入試頻出の他動詞",
+    "fabricate": "「作り上げる・でっち上げる」。裁判の文脈で意味が絞れる",
+    "exhausted": "exhaust の過去分詞。B2 相当で入試頻出",
+    "prolonged": "prolong の過去分詞。B2 相当",
+    "migrate": "migration（C1）の動詞形",
+    "unforeseeable": "un + foresee + able の派生",
+    "epidemic": "医療の話題語。入試頻出",
 }
 
 # ★実測した「実物」の帯（scripts/*_eigo_mirror/content.json ＝ 実際の入試英文）。
@@ -126,7 +143,10 @@ def load_levels():
     return lev
 
 
-PREFIX = ("re", "un", "dis", "non", "over", "under", "mis", "pre", "post", "inter")
+# ★分けても意味が保たれる接頭辞だけを並べる。dis は入れない
+#   （dismay を dis + may と分けて A1 と判定した。discuss / dismiss / distort も同じ形）。
+#   基語は 5 文字以上を要求する（短い基語だと偶然の一致が増える）。
+PREFIX = ("re", "un", "non", "over", "under", "mis", "pre", "post", "inter")
 
 
 def lemma_level(w, lev, depth=0):
@@ -144,12 +164,18 @@ def lemma_level(w, lev, depth=0):
         return lev[AME_TO_BRE[w]], AME_TO_BRE[w]
     if w in IRREGULAR and IRREGULAR[w] in lev:
         return lev[IRREGULAR[w]], IRREGULAR[w]
+    # ★最初に当たったものを返してはいけない。restored は ("ed","") で restor になり、
+    #   さらに ("or","") で rest（A2）まで遡って「休憩」の語になる（実測）。
+    #   候補を全部集めて、**元の語にいちばん近い（見出し語が長い）もの**を採る。
+    cands = []
     for a, b in SUFFIX:
         if w.endswith(a) and len(w) - len(a) >= 3:
-            c = w[:-len(a)] + b
-            L, head = lemma_level(c, lev, depth + 1)
+            L, head = lemma_level(w[:-len(a)] + b, lev, depth + 1)
             if L:
-                return L, head
+                cands.append((len(head), L, head))
+    if cands:
+        _n, L, head = max(cands)
+        return L, head
     # 子音字重ねの -ed / -ing / -er / -est（stopped / running / hotter / hottest）
     for a in ("ed", "ing", "er", "est"):
         if w.endswith(a) and len(w) > len(a) + 2 and w[-len(a) - 1] == w[-len(a) - 2]:
@@ -158,7 +184,7 @@ def lemma_level(w, lev, depth=0):
                 return L, head
     # 接頭辞（rewritten / unrestored / nonstop）。意味が透明なので基語のレベルを採る。
     for p in PREFIX:
-        if w.startswith(p) and len(w) - len(p) >= 4:
+        if w.startswith(p) and len(w) - len(p) >= 5:
             L, head = lemma_level(w[len(p):], lev, depth + 1)
             if L:
                 return L, f"{p}+{head}"
@@ -268,10 +294,55 @@ def compare():
     print("=" * 78)
 
 
+def measure_file(path):
+    """原稿を書きながら測る。JSON 配列（各件に "en"）を渡す。
+
+        python3 check_level.py --file draft.json
+
+    ★DSL を lint.py で確かめながら書くのと同じで、語彙レベルも書きながら確かめる。
+      書き上げてから測って「1 段やさしい」と分かると、全部作り直しになる（実際になった）。
+    """
+    import json as _json
+    lev = load_levels()
+    items = _json.load(open(path, encoding="utf-8"))
+    if isinstance(items, dict):
+        items = items.get("items", [items])
+    sents = [it["en"] for it in items if it.get("en")]
+    types, dist, off = profile(sents, lev)
+    n = len(types) or 1
+    easy = (dist["A1"] + dist["A2"]) / n * 100
+    mid = (dist["B1"] + dist["B2"]) / n * 100
+    hard = (dist["C1"] + len(off)) / n * 100
+    print("-" * 72)
+    for name, (e, m, h) in REFERENCE.items():
+        print(f"  {name:32s} A1+A2 {e:5.1f}%  B1+B2 {m:5.1f}%  C1+一覧外 {h:5.1f}%")
+    print(f"  {'この原稿':32s} A1+A2 {easy:5.1f}%  B1+B2 {mid:5.1f}%  C1+一覧外 {hard:5.1f}%"
+          f"  （{len(sents)} 文 / 異なり {n} 語）")
+    print("-" * 72)
+    heavy = sorted({w for w in types if lemma_level(w, lev)[0] in (None, "C1")})
+    print(f"重い語（C1 と一覧外）{len(heavy)} 語: {', '.join(heavy)}")
+    lens = [len(re.findall(r"[A-Za-z][A-Za-z'-]*", s)) for s in sents]
+    if lens:
+        print(f"1文の語数: 最短 {min(lens)} / 中央 {sorted(lens)[len(lens) // 2]} / 最長 {max(lens)}")
+    ng = []
+    if easy > 68:
+        ng.append(f"A1+A2 が {easy:.1f}%。実物（59.8 / 61.6%）に近づける（68% 以下）")
+    if hard < 10:
+        ng.append(f"C1+一覧外 が {hard:.1f}%。実物（13.9 / 16.9%）に近づける（10% 以上）")
+    if hard > 22:
+        ng.append(f"C1+一覧外 が {hard:.1f}%。早慶・旧帝に寄りすぎ（22% 以下）")
+    for x in ng:
+        print(f"[NG] {x}")
+    print(f"NG {len(ng)} 件")
+    return 1 if ng else 0
+
+
 def main():
     if "--compare" in sys.argv:
         compare()
         return
+    if "--file" in sys.argv:
+        sys.exit(measure_file(sys.argv[sys.argv.index("--file") + 1]))
     lev = load_levels()
     pairs = sentences_of_this_material()
     types, dist, off = profile([s for _w, s in pairs], lev)
@@ -319,8 +390,11 @@ def main():
         heavy = [t for t in re.findall(r"[A-Za-z][A-Za-z'-]*", s)
                  if (lemma_level(t, lev)[0] in (None, "C1"))
                  and not allowed(t)]
-        if len(heavy) >= 3:
-            warns.append(f"[warn] {w}: 重い語が {len(heavy)} 語 {heavy}（構文でなく語彙で落とす文になっていないか）")
+        # ★実物の入試英文は 1 文に重い語を 3 語前後含む。3 で警告すると正常な文を毎回鳴らす。
+        #   語彙で落とす文（4 語以上）だけを見る。
+        if len(heavy) >= 4:
+            warns.append(f"[warn] {w}: 重い語が {len(heavy)} 語 {heavy}"
+                         "（構文でなく語彙で落とす文になっていないか）")
 
     for x in warns:
         print(x)

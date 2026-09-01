@@ -173,6 +173,12 @@ def main():
         for i, p in enumerate(it.get("points") or []):
             if dense(p) not in a["dense"]:
                 err("解答解説編", f'{it["id"]} の採点ポイント[{i}]が紙に出ていない: {p[:30]}…')
+        # ★解説の本体は notes。ここを照合していなかったので、丸ごと落ちても気づけなかった。
+        for i, n in enumerate(it.get("notes") or []):
+            body = dense(re.sub(r"<[^>]+>", "", n)
+                         .replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&"))
+            if body[:30] not in a["dense"]:
+                err("解答解説編", f'{it["id"]} の notes[{i}] が紙に出ていない: {n[:30]}…')
     # 第1部の解答記号が解答編に出ているか（①②③ の答えの行）
     for it in items1:
         labels = [lb for lb, _t, _u in top_segments(parse(it["dsl"]))]

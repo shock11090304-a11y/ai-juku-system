@@ -173,6 +173,7 @@ SYN_VOCAB = {
     "superlative-equivalent": "最上級相当",
     # 倒置・強調
     "negative-inversion": "否定の副詞句が文頭に出る倒置",
+    "no-sooner-than": "No sooner ... than（〜するやいなや）",
     "only-inversion": "Only ... の倒置",
     "cleft": "強調構文 It is ... that",
     "do-emphasis": "強調の do",
@@ -187,6 +188,8 @@ SYN_VOCAB = {
     "nominalization": "名詞構文",
     "concessive-as": "譲歩の as",
     "correlative": "相関接続詞による共通関係",
+    "neither-nor": "neither A nor B（否定の並列）",
+    "as-if": "as if + 仮定法",
     "subjunctive": "仮定法",
     "subjunctive-inversion": "if の省略による倒置",
     "insertion": "挿入",

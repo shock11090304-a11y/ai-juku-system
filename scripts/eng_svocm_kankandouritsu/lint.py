@@ -50,6 +50,14 @@ BRACKET_LABELS = {
 BRACKET_JA = {"(": "( ) 副詞のカタマリ", "[": "[ ] 名詞のカタマリ", "<": "&lt; &gt; 形容詞のカタマリ"}
 MAX_DASH = 2
 PARTICIPLE = re.compile(r"^[A-Za-z]+(?:ed|ing)$")
+# ★-ing で終わるが分詞ではない語。ここを書かないと ( M: during the inquiry ) を
+#   「分詞に V′ を付けよ」と落とす（正しい原稿を落とした。実測）。
+NOT_PARTICIPLE = {"during", "notwithstanding", "concerning", "regarding", "according",
+                  "including", "excluding", "pending", "nothing", "something",
+                  "anything", "everything", "morning", "evening", "spring", "string",
+                  "king", "thing", "wing", "ring", "sing", "bring", "ceiling",
+                  "building", "meeting", "feeling", "reading", "writing", "training",
+                  "warning", "finding", "meaning", "beginning", "understanding"}
 # 規約15: to の次がこれらなら前置詞の to（不定詞ではない）
 DETERMINER = {"the", "a", "an", "this", "that", "these", "those", "his", "her", "their",
               "its", "our", "my", "your", "some", "any", "all", "most", "many", "much",
@@ -213,7 +221,7 @@ def notation_errors(root):
                     w = head.text.split()[0]
                     # 規約4 / 規約14: 分詞は素の語で置かない（後置修飾も分詞構文も）
                     words = head.text.split()
-                    if PARTICIPLE.match(w):
+                    if PARTICIPLE.match(w) and w.lower() not in NOT_PARTICIPLE:
                         num = "規約4" if k.text == "<" else "規約14"
                         out.append(f"{num}: 分詞 {w!r} が素の語のまま。"
                                    f"{{V{chr(39) * _want_dash(d + 1)}:{w}}} と示す: {what}")
