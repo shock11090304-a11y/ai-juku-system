@@ -53,7 +53,11 @@ function getStudents() {
 // (架空8名 or 旧インポート名簿) に化けていた (= 実際と違う名簿が出る症状の主因)。
 // 本番ロード前 (未認証デモ) は従来どおり getStudents() のデモ案内を出す。
 function rosterSource() {
-  if (Array.isArray(window.__apiRoster) && window.__apiRoster.length > 0) return window.__apiRoster;
+  // 🛡️ 2026-09-03: 「空でないとき」ではなく「配列であるとき」で判定する。
+  //   本番ロード後に生徒が 0 人になった瞬間 (最後の1人を削除した等) にデモ名簿へ落ちると、
+  //   架空8名 (id 1〜8) が LIVE の名簿として描画され、その行の 🗑️ が実在生徒を指してしまう。
+  //   本番ロード前は undefined なので、従来どおりデモ案内が出る。
+  if (Array.isArray(window.__apiRoster)) return window.__apiRoster;
   return getStudents();
 }
 
@@ -1053,7 +1057,7 @@ async function openCourseManageModal() {
       </div>
       <div style="margin-top:1rem; padding:0.7rem; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.2); border-radius:8px; font-size:0.78rem; color:#fca5a5;">
         🗑️ <strong>顧客データ削除</strong>: 選択した生徒の<u>全データ</u> (学習記録・模試・カリキュラム・メッセージ・通知・支払履歴) を完全削除します。<br>
-        Stripe 有効サブスクがある場合は確認後に同時解約。<u>取消不能</u>のため、生徒名を入力する 2 段階確認が必要です。
+        Stripe 有効サブスクがある場合は確認後に同時解約。<u>取消不能</u>のため、消える中身を表示したうえで 2 段階の確認をします。
       </div>
     `;
     // 削除ボタン bind
@@ -1093,15 +1097,206 @@ async function openCourseManageModal() {
   }
 }
 
+// 🗑️ 確認ダイアログ (Promise<boolean>)。confirm/prompt の代わりに使う。
+// 破壊的操作用なので、次の 5 つは意図的な仕様:
+//  ① 見出し (誰に対する操作か) と操作ボタンはスクロール領域の外に固定する。
+//     本文が長い生徒でも「誰を消すのか」が画面から消えない (中の本文だけがスクロールする)。
+//  ② 初期フォーカスはキャンセル。かつ focus({preventScroll:true}) — 既定の focus は
+//     フォーカス先を可視域まで送るため、見出しが画面外へ押し出される。
+//  ③ 確定は明示クリックのみ。Enter / Space は既定動作を止める。
+//  ④ armMs を渡すと確定ボタンはその間だけ無効。2枚目の確定ボタンが1枚目と同じ位置に
+//     来ても、ダブルクリックの2発目が貫通しない。
+//  ⑤ Esc・背景クリックはキャンセル。キー入力は背後へ伝播させない
+//     (伝播すると背後のモーダルまで閉じたり、画面ショートカットが発火する)。
+function ceoConfirmDialog({ title, subtitleHtml = '', bodyHtml, confirmLabel,
+                            cancelLabel = 'キャンセル', tone = 'danger', armMs = 0 }) {
+  return new Promise(resolve => {
+    const accent = tone === 'danger' ? '#f87171' : '#a78bfa';
+    const ov = document.createElement('div');
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);' +
+      'z-index:10050;overscroll-behavior:contain;display:flex;align-items:center;' +
+      'justify-content:center;padding:20px;';
+    ov.innerHTML = `
+      <div style="background:#17172b;border:1px solid rgba(255,255,255,0.12);border-radius:16px;
+                  max-width:560px;width:100%;max-height:86vh;display:flex;flex-direction:column;
+                  box-shadow:0 24px 60px rgba(0,0,0,0.6);overflow:hidden;">
+        <div style="flex:0 0 auto;max-height:40vh;overflow-y:auto;overscroll-behavior:contain;
+                    padding:1.1rem 1.3rem 0.9rem;border-bottom:1px solid rgba(255,255,255,0.08);">
+          <div style="font-weight:800;font-size:1.02rem;color:${accent};">${title}</div>
+          ${subtitleHtml ? `<div style="margin-top:0.5rem;">${subtitleHtml}</div>` : ''}
+        </div>
+        <div data-role="body" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+                    padding:1.1rem 1.3rem;color:#e4e4e7;font-size:0.92rem;line-height:1.7;">${bodyHtml}</div>
+        <div style="flex:none;padding:0.9rem 1.3rem 1.2rem;display:flex;gap:0.6rem;
+                    flex-wrap:wrap;align-items:center;justify-content:flex-end;
+                    border-top:1px solid rgba(255,255,255,0.08);background:#17172b;">
+          <span data-role="armhint" style="display:none;margin-right:auto;color:#a1a1aa;font-size:0.8rem;">
+            ⏳ 誤操作防止のため ${Math.ceil(armMs / 1000)} 秒お待ちください</span>
+          <button type="button" data-act="cancel"
+            style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.18);
+                   padding:0.6rem 1.1rem;border-radius:9px;cursor:pointer;font-weight:700;">${cancelLabel}</button>
+          <button type="button" data-act="ok"
+            style="background:${tone === 'danger' ? '#dc2626' : '#6366f1'};color:#fff;border:none;
+                   padding:0.6rem 1.3rem;border-radius:9px;cursor:pointer;font-weight:800;">${confirmLabel}</button>
+        </div>
+      </div>`;
+    const okBtn = ov.querySelector('[data-act="ok"]');
+    const cancelBtn = ov.querySelector('[data-act="cancel"]');
+    const prevFocus = document.activeElement;
+    const openedAt = Date.now();
+    const armHint = ov.querySelector('[data-role="armhint"]');
+    let armTimer = null;
+    if (armMs > 0) {
+      okBtn.disabled = true;
+      okBtn.style.opacity = '0.45';
+      okBtn.style.cursor = 'not-allowed';
+      armHint.style.display = '';   // 押せない理由を画面に出す (tooltip は出ないことが多い)
+      armTimer = setTimeout(() => {
+        okBtn.disabled = false;
+        okBtn.style.opacity = '';
+        okBtn.style.cursor = 'pointer';
+        armHint.style.display = 'none';
+      }, armMs);
+    }
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = 'hidden';   // 暗幕の上でのホイールで背後が動かないように
+    const done = (v) => {
+      if (armTimer) clearTimeout(armTimer);
+      document.removeEventListener('keydown', onKey, true);
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      ov.remove();
+      try { if (prevFocus && prevFocus.focus) prevFocus.focus({ preventScroll: true }); } catch (_e) {}
+      resolve(v);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+        done(false); return;
+      }
+      // 確定ボタン上での Enter / Space による誤発火を防ぐ (破壊的操作はクリックのみ)
+      if ((e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar')
+          && document.activeElement === okBtn) e.preventDefault();
+      // フォーカスをダイアログ内に閉じ込める。逃がすと暗幕の下の入力欄やボタンに
+      // フォーカスが乗り、見えないまま操作できてしまう。
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        (document.activeElement === cancelBtn ? okBtn : cancelBtn).focus({ preventScroll: true });
+      }
+      // ダイアログを開いている間は画面のキーボードショートカットへ流さない
+      e.stopPropagation();
+    };
+    // 背景クリックでのキャンセル。次の3つを満たすときだけ閉じる:
+    //  ・押し始めも離した先も暗幕 (カード内からドラッグしてメールを選択した手が
+    //    暗幕で離れただけ、をキャンセルと解釈しない)
+    //  ・確定ボタンが既に押せる状態 (「まだ押せません」と表示している最中に
+    //    無言でフローが消えるのを防ぐ。arming は setTimeout・猶予は実時間で
+    //    時計が違うため、経過ミリ秒で揃えても画面が重いとズレる)
+    //  ・開いてから 600ms 経過 (1枚目の確定ボタンをダブルクリックしたときの
+    //    2発目が、2枚目の暗幕に落ちてフローごと消えるのを防ぐ)
+    let downOnOverlay = false;
+    let upOnOverlay = false;
+    ov.addEventListener('mousedown', (e) => { downOnOverlay = (e.target === ov); });
+    ov.addEventListener('mouseup', (e) => { upOnOverlay = (e.target === ov); });
+    ov.addEventListener('click', (e) => {
+      // click の target は押下点と離した点の共通祖先になるので、暗幕で押して
+      // ボタン上で離した場合も e.target === ov になる。押下・離しの両方を見る。
+      if (e.target === ov && downOnOverlay && upOnOverlay && !okBtn.disabled
+          && Date.now() - openedAt > 600) done(false);
+    });
+    cancelBtn.addEventListener('click', () => done(false));
+    okBtn.addEventListener('click', () => { if (!okBtn.disabled) done(true); });
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(ov);
+    cancelBtn.focus({ preventScroll: true });
+  });
+}
+
+// ⏳ 処理中オーバーレイ。戻り値を呼ぶと閉じる。
+// (削除の実行は Stripe 解約を同期で待つことがあり、無反応の数秒が生まれるため)
+// ★キー入力も塞ぐ。塞がないと「削除中」の Esc が背後のモーダルを閉じ (削除は止まらない)、
+//   r キーの全データ更新が Stripe 解約の待ち時間中に走って再描画と競合する。
+function ceoBusyOverlay(text) {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10055;' +
+    'overscroll-behavior:contain;display:flex;align-items:center;justify-content:center;';
+  ov.innerHTML = `<div style="background:#17172b;border:1px solid rgba(255,255,255,0.12);
+      border-radius:12px;padding:1.1rem 1.6rem;color:#e4e4e7;font-weight:700;
+      box-shadow:0 20px 50px rgba(0,0,0,0.6);">${text}</div>`;
+  // ★preventDefault はしない。画面のショートカットへ流さないのが目的なので伝播だけ止める。
+  //   preventDefault まですると F5 / Ctrl+R も塞がり、応答待ちの数十秒キーボードが死ぬ。
+  const swallow = (e) => { e.stopPropagation(); e.stopImmediatePropagation(); };
+  const prevOverflow = document.documentElement.style.overflow;
+  document.documentElement.style.overflow = 'hidden';
+  document.addEventListener('keydown', swallow, true);
+  document.body.appendChild(ov);
+  let closed = false;
+  return () => {
+    if (closed) return;   // 二重呼び出しで overflow の復元値を上書きしない
+    closed = true;
+    document.removeEventListener('keydown', swallow, true);
+    document.documentElement.style.overflow = prevOverflow;
+    ov.remove();
+  };
+}
+
+// 応答が返らないと処理中オーバーレイが閉じず、再読込以外に復帰手段が無くなるため上限を設ける
+const _CEO_DELETE_TIMEOUT_MS = 30000;
+function _ceoTimeoutSignal(ms) {
+  try {
+    if (AbortSignal && typeof AbortSignal.timeout === 'function') return AbortSignal.timeout(ms);
+  } catch (_e) {}
+  try {
+    const ac = new AbortController();
+    setTimeout(() => ac.abort(), ms);
+    return ac.signal;
+  } catch (_e) { return undefined; }
+}
+
+// 同時実行ガード: 自作モーダルは confirm/prompt と違い JS を止めないため、
+// 🗑️ を連打すると削除フローが多重に走り、別々の生徒のダイアログが重なる。
+let _studentDeleteInFlight = false;
+
 // 🗑️ 顧客データ完全削除 (2段階確認 + Stripe ガード)
+// 2026-09-03 塾長指示: メールアドレスの手入力をやめ「🗑️ → 削除に進む → 完全に削除する」の
+//   2クリックにした。誤削除の防ぎ方を「打たせる」から「消す対象を実データで見せる」に置き換えている:
+//     ① dry_run で本人の氏名/メール/プラン/関連件数をサーバから取り直して画面に出す
+//     ② 確定は別画面・別文言の赤ボタンにして、反射的な連打で通らないようにする
+//   ★誤削除を実際に止めているのは、送信前の mismatch 判定 (_confirmAndDeleteStudentInner の
+//     dry_run 直後)。「画面の行 (と別 API 由来のロスター) が持つ値」と「dry_run がサーバから
+//     取り直した値」を突き合わせ、食い違うか照合材料が無ければ中止する (fail-closed)。
+//     ここを「サーバが confirm_email を見るから冗長」と思って消さないこと — 確定時に送るキーは
+//     その照合を通った行の値なので、サーバ側の一致判定は「2枚のダイアログを挟む間に DB が
+//     変わっていないか」の再確認になる。★サーバ側の確認も外さないこと — こちらは
+//     古い/改変されたクライアントに対する最後の砦で、画面側のガードとは守る相手が違う。
+//   ★確認キーの優先順: ① 行の email → ② ロスター (別 API) の email → ③ dry_run の email
+//     → ④ dry_run の氏名。出所がサーバの応答と別なのは ①② だけで、そこが照合の実体。
+//     ③④ は行にも名簿にも email が無い経路 (コース管理モーダル + ロスター未ロード) の最後の
+//     手段で、自己照合になるため氏名一致だけが頼り。ただし ③ を消すとその経路の削除が
+//     サーバ 400 で動かなくなる (旧実装がまさにその状態だった) ので残すこと。
 async function confirmAndDeleteStudent(studentId, studentName, studentEmail) {
   if (!window.AdminAuth || !window.AdminAuth.getToken()) { alert('管理者認証が必要です'); return; }
-  // Step 1: dry_run で関連データ件数 + Stripe 有無を取得
+  if (_studentDeleteInFlight) {   // 🗑️ 連打で複数フローが並走するのを防ぐ
+    if (typeof ceoToast === 'function') ceoToast('削除の確認を表示中です', 'info', 2000);
+    return;
+  }
+  _studentDeleteInFlight = true;
+  try {
+    await _confirmAndDeleteStudentInner(studentId, studentName, studentEmail);
+  } finally {
+    _studentDeleteInFlight = false;
+  }
+}
+
+async function _confirmAndDeleteStudentInner(studentId, studentName, studentEmail) {
+  // Step 1: dry_run で関連データ件数 + Stripe 有無 + 本人の email を取得
   let snapshot;
+  const closeBusy = ceoBusyOverlay('⏳ 削除内容を確認しています…');
   try {
     const r = await window.AdminAuth.fetch(`/api/admin/students/${encodeURIComponent(studentId)}/delete`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dry_run: true }),
+      body: JSON.stringify({ dry_run: true }), signal: _ceoTimeoutSignal(_CEO_DELETE_TIMEOUT_MS),
     });
     if (!r.ok) {
       const j = await r.json().catch(() => ({}));
@@ -1110,50 +1305,128 @@ async function confirmAndDeleteStudent(studentId, studentName, studentEmail) {
     }
     const data = await r.json();
     snapshot = data.snapshot;
-  } catch (e) { alert('⚠️ ' + (e.message || e)); return; }
+  } catch (e) {
+    alert((e && e.name === 'TimeoutError' || /abort/i.test(String(e && e.name)))
+      ? '⚠️ サーバから応答がありません。通信を確認してやり直してください。'
+      : '⚠️ ' + (e.message || e));
+    return;
+  } finally { closeBusy(); }
+  if (!snapshot || String(snapshot.id) !== String(studentId)) {
+    alert('⚠️ 取得した生徒が一致しません。ページを再読込してください。');
+    return;
+  }
+  const realName = String(snapshot.name || '').trim();
+  const realEmail = String(snapshot.email || '').trim();
+
+  // ★★ 一覧の行とサーバの生徒が同一人物かを突き合わせる ★★
+  //   旧実装ではメール手入力がこの役割 (画面の行 ≠ ID の中身なら 400 で止まる) を
+  //   兼ねていた。入力をやめた以上、ここで機械的に確認しないと、古い描画やデモ名簿の
+  //   行を押したときに「画面と違う実在生徒」を消せてしまう。
+  //   行が email を持っていれば email で、無ければ氏名で照合する
+  //   (コース管理モーダルの一覧は API が email を返さないため氏名しか無い)。
+  let rowEmail = String(studentEmail || '').trim().toLowerCase();
+  const rowName = String(studentName || '').trim();
+  // コース管理モーダルの一覧 API (/api/admin/students/by-course) は email を返さないので、
+  // その経路だけ照合が氏名一致だけになり、同姓同名が2人いると機械的に区別できない。
+  // ロスターが別の API (/api/admin/stats) から取った同じ生徒の email があれば、それを使う。
+  // 出所が dry_run と別なので、これで本物のクロスチェックになる。
+  if (!rowEmail && window.__studentsById) {
+    const fromRoster = window.__studentsById[String(studentId)];
+    if (fromRoster && fromRoster.email) rowEmail = String(fromRoster.email).trim().toLowerCase();
+  }
+  // ★照合できないときは通さない (fail-closed)。行に氏名もメールも無いと素通りしてしまい、
+  //   確認機構が実質ゼロになる (旧実装は confirm_name='' をサーバが 400 で弾いていた)。
+  if (!rowEmail && !rowName) {
+    alert('⚠️ 一覧の行に照合できる情報 (氏名・メール) がありません。\n'
+      + '安全のため削除を中止しました。ページを再読込してからやり直してください。');
+    return;
+  }
+  const mismatch = rowEmail ? (rowEmail !== realEmail.toLowerCase()) : (rowName !== realName);
+  if (mismatch) {
+    const noKey = !realName && !realEmail;
+    alert('⚠️ 一覧の行とサーバ上の生徒が一致しません。\n\n'
+      + `一覧: ${rowName}${rowEmail ? ' <' + rowEmail + '>' : ''}\n`
+      + `サーバ: ${realName || '(氏名未登録)'}${realEmail ? ' <' + realEmail + '>' : ''}\n\n`
+      + (noKey
+        ? 'この生徒は氏名もメールも未登録のため、確認キーが作れずこの画面からは削除できません。'
+        : '一覧が古い可能性があります。ページを再読込してからやり直してください。'));
+    return;
+  }
+
   const rc = snapshot.related_counts || {};
   const total = Object.values(rc).reduce((a, b) => a + (typeof b === 'number' && b > 0 ? b : 0), 0);
   const hasSub = !!snapshot.stripe_subscription_id;
-  const lines = [];
-  lines.push(`🗑️ 顧客データ完全削除\n`);
-  lines.push(`生徒: ${studentName} (ID:${studentId})`);
-  lines.push(`メール: ${studentEmail || '(未設定)'}`);
-  lines.push(`プラン: ${snapshot.plan || '-'} / 状態: ${snapshot.status || '-'} / コース: ${snapshot.course || '-'}`);
-  if (hasSub) {
-    lines.push(`\n⚠️ Stripe 有効サブスク: ${snapshot.stripe_subscription_id}`);
-    lines.push('  → 削除と同時に Stripe 解約も実行します (cancel_stripe=true)');
-  }
-  lines.push('\n削除される関連データ:');
-  Object.keys(rc).forEach(k => {
-    const v = rc[k];
-    if (typeof v === 'number' && v > 0) lines.push(`  - ${k}: ${v}件`);
+  // -1 は「件数の取得に失敗」(サーバがテーブル不在等で入れる)。黙って隠すと
+  // 「見せることで守る」という今の設計が崩れるので、不明として明示する。
+  const unknownCounts = Object.keys(rc).some(k => typeof rc[k] === 'number' && rc[k] < 0);
+  const rows = Object.keys(rc)
+    .filter(k => typeof rc[k] === 'number' && rc[k] !== 0)
+    .map(k => rc[k] > 0
+      ? `<li>${escapeHtml(k)}: <b>${rc[k]}</b> 件</li>`
+      : `<li style="color:#fbbf24;">${escapeHtml(k)}: <b>件数不明</b> (取得に失敗)</li>`).join('');
+  // 「誰を消すのか」「何件消えるのか」はスクロールしても消えないよう見出し側に固定する
+  const who = `
+    <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:0.65rem 0.9rem;">
+      <div style="font-size:1.05rem;font-weight:800;color:#fff;">${escapeHtml(realName || '(氏名未登録)')}
+        <span style="font-size:0.8rem;color:#a1a1aa;font-weight:600;">(ID:${escapeHtml(String(studentId))})</span></div>
+      <div style="color:#a1a1aa;font-size:0.84rem;margin-top:0.2rem;overflow-wrap:anywhere;word-break:break-all;">
+        ${escapeHtml(realEmail || '(メール未設定)')}</div>
+      <div style="color:#e4e4e7;font-size:0.84rem;margin-top:0.35rem;">
+        関連データ <b style="color:#f87171;">${total}</b> 件 + 生徒本体を削除</div>
+    </div>`;
+
+  // Step 2: 何が消えるかを見せる
+  const ok1 = await ceoConfirmDialog({
+    title: '🗑️ 生徒データの完全削除',
+    subtitleHtml: who,
+    confirmLabel: '削除に進む →',
+    bodyHtml: `
+      <div style="color:#a1a1aa;font-size:0.86rem;margin-bottom:0.9rem;">
+        プラン: ${escapeHtml(snapshot.plan || '-')} / 状態: ${escapeHtml(snapshot.status || '-')}
+        / コース: ${escapeHtml(snapshot.course || '-')}</div>
+      ${hasSub ? `<div style="background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.4);
+            border-radius:10px;padding:0.7rem 0.9rem;margin-bottom:0.9rem;color:#fca5a5;">
+            ⚠️ <b>Stripe の有効なサブスクがあります</b><br>
+            <span style="font-size:0.85rem;">削除と同時に解約します (以後の課金は停止します)</span></div>` : ''}
+      <div style="color:#a1a1aa;font-size:0.86rem;margin-bottom:0.35rem;">一緒に削除される関連データ:</div>
+      ${rows ? `<ul style="margin:0 0 0.6rem 1.1rem;padding:0;color:#d4d4d8;font-size:0.86rem;">${rows}</ul>`
+             : '<div style="color:#71717a;font-size:0.86rem;margin-bottom:0.6rem;">(関連データなし)</div>'}
+      <div style="color:#e4e4e7;">合計 <b style="color:#f87171;">${total}</b> 件の関連レコードと生徒本体を削除します。</div>`,
   });
-  if (total === 0) lines.push('  (関連データなし)');
-  lines.push(`\n合計 ${total} 件の関連レコード + 生徒本体を削除します。`);
-  lines.push('この操作は取消不能です。続行しますか?');
-  if (!confirm(lines.join('\n'))) return;
-  // Step 2: 同名衝突防止のため email を入力させて確認 (email 未設定なら name fallback)
-  const useEmail = !!(studentEmail && studentEmail.trim());
-  const expectedKey = useEmail ? studentEmail.trim() : (studentName || '').trim();
-  const promptLabel = useEmail
-    ? `削除を実行するには、メールアドレスを正確に入力してください:\n\n「${expectedKey}」\n\n(同名生徒との誤削除防止のため email 確認)`
-    : `削除を実行するには、生徒名を正確に入力してください:\n\n「${expectedKey}」\n\n(この生徒は email 未設定のため名前で確認)`;
-  const typed = prompt(promptLabel);
-  if (typed === null) return;
-  const compareTyped = useEmail ? typed.trim().toLowerCase() : typed.trim();
-  const compareExpected = useEmail ? expectedKey.toLowerCase() : expectedKey;
-  if (compareTyped !== compareExpected) {
-    alert(`入力された${useEmail ? 'メールアドレス' : '名前'}が一致しません。削除をキャンセルしました。`);
-    return;
-  }
-  // Step 3: 実行
+  if (!ok1) return;
+
+  // Step 3: 最終確認 (別文言・赤ボタン・0.8秒は押せない = ダブルクリック貫通の防止)
+  const ok2 = await ceoConfirmDialog({
+    title: '⚠️ 最終確認 — 取り消せません',
+    subtitleHtml: who,
+    confirmLabel: '完全に削除する',
+    cancelLabel: '削除しない',
+    armMs: 800,
+    // ★この画面だけを見ても意味が通る文にする (1枚目を読み飛ばす前提で書く)
+    bodyHtml: `
+      <div style="color:#fca5a5;">
+        この生徒の登録と、関連データ <b>${total}</b> 件${unknownCounts ? '(＋件数不明の分)' : ''}をすべて削除します。<br>
+        削除したデータは<b>元に戻せません</b>。
+        ${hasSub ? '<br>Stripe のサブスクも解約され、以後の課金は止まります。' : ''}
+      </div>`,
+  });
+  if (!ok2) return;
+
+  // Step 4: 実行 (確認キーは「画面の行が持っていた値」を優先。優先順の理由は関数先頭の★)
+  const closeBusy2 = ceoBusyOverlay('🗑️ 削除しています…');
   try {
+    // ★照合の実体は、上の mismatch 判定 (送信前に「画面の行の値」と「dry_run の値」を
+    //   突き合わせて中止する) 側にある。ここで送るキーは、その照合を通った行の値。
+    //   サーバ側の一致判定は「2枚のダイアログを挟む間に DB が変わっていないか」の再確認。
+    //   行にも名簿にも email が無い経路 (コース管理モーダル + ロスター未ロード) だけは
+    //   dry_run の値に頼る (自己照合になるので、そこは氏名一致だけが頼り)。
     const body = { cancel_stripe: hasSub, dry_run: false };
-    if (useEmail) body.confirm_email = studentEmail;
-    else body.confirm_name = studentName;
+    if (rowEmail) body.confirm_email = rowEmail;
+    else if (realEmail) body.confirm_email = realEmail;
+    else body.confirm_name = realName;
     const r = await window.AdminAuth.fetch(`/api/admin/students/${encodeURIComponent(studentId)}/delete`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify(body), signal: _ceoTimeoutSignal(_CEO_DELETE_TIMEOUT_MS),
     });
     if (!r.ok) {
       const j = await r.json().catch(() => ({}));
@@ -1162,13 +1435,67 @@ async function confirmAndDeleteStudent(studentId, studentName, studentEmail) {
     }
     const data = await r.json();
     const dc = data.deleted || {};
-    const summary = Object.keys(dc).map(k => `${k}: ${dc[k]}`).join('\n');
-    alert(`✅ 削除完了\n\n生徒「${studentName}」を完全削除しました。\n\n${summary}`);
-    // 一覧を再描画
-    if (typeof openCourseManageModal === 'function') await openCourseManageModal();
+    const n = Object.values(dc).reduce((a, b) => a + (typeof b === 'number' && b > 0 ? b : 0), 0);
+    closeBusy2();   // ★ここで閉じる。後続の再取得がハングしても画面が固まらないように
+    // ★氏名は必ずエスケープする。ceoToast は innerHTML で描画するため、
+    //   生値を渡すと申込フォームから入れられた HTML が塾長の画面で実行される。
+    if (typeof ceoToast === 'function') {
+      ceoToast(`🗑️ ${escapeHtml(realName)} を削除しました (関連 ${n} 件)`, 'success', 4000);
+    } else {
+      alert(`✅ 削除完了: ${realName}`);
+    }
+    _refreshAfterStudentDelete(studentId);
+  } catch (e) {
+    closeBusy2();
+    const timedOut = (e && (e.name === 'TimeoutError' || e.name === 'AbortError'));
+    if (timedOut) {
+      // ★サーバ側の削除処理は同期エンドポイントなので、クライアントが打ち切っても
+      //   サーバでは完走している可能性がある。「失敗した」と断定しない。
+      alert('⚠️ サーバから応答がありませんでした。\n\n'
+        + '削除が完了しているかどうかはこの画面からは判断できません。\n'
+        + '一覧を更新して、この生徒が残っているか確認してください。');
+      _refreshAfterStudentDelete(studentId, { keepRow: true });
+    } else {
+      alert('⚠️ ' + (e.message || e));
+    }
+  } finally {
+    closeBusy2();   // 二重呼び出しは無害 (要素は既に外れている)
+  }
+}
+
+// 削除後の一覧更新。失敗しても削除自体の成否表示を汚さないよう、ここで完結させる。
+function _refreshAfterStudentDelete(studentId, opts) {
+  const keepRow = !!(opts && opts.keepRow);
+  // ★サーバから取り直す処理を先に出す。いちばん価値のある「真の状態を取り直す」を、
+  //   いちばん壊れやすい DOM 再描画の後ろに置くと、そちらが投げたときに実行されない。
+  try {
+    // ceo.html 側で window に出している (IIFE 内なので直接は呼べない)
+    if (typeof window.loadLiveMetrics === 'function') {
+      Promise.resolve(window.loadLiveMetrics()).catch(() => {});
+    }
+    const cm = document.getElementById('slCourseManageModal');
+    if (typeof openCourseManageModal === 'function' && cm && cm.style.display !== 'none') {
+      Promise.resolve(openCourseManageModal()).catch(() => {});
+    }
+  } catch (e) {
+    console.warn('[deleteStudent] 再取得の起動に失敗:', e);
+  }
+  try {
+    // 実データは window.__apiRoster (roster-single-source) にあるので、消した行を落として即反映する。
+    // 描画には rosterSource() ではなく __apiRoster をそのまま渡す。rosterSource() は本番ロード前
+    // (undefined) にデモ名簿を返す関数で、削除直後の再描画には使わない
+    // (「0人になったらデモに落ちる」問題そのものは rosterSource() 側で直してある。冒頭の解説を参照)。
+    if (!keepRow && Array.isArray(window.__apiRoster)) {
+      window.__apiRoster = window.__apiRoster.filter(s => String(s && s.id) !== String(studentId));
+      if (typeof renderRoster === 'function') renderRoster(window.__apiRoster);
+    }
+  } catch (e) {
+    console.warn('[deleteStudent] 一覧の再描画に失敗:', e);
+  }
+  try {
     if (typeof loadStudyLogDashboard === 'function') loadStudyLogDashboard();
   } catch (e) {
-    alert('⚠️ ' + (e.message || e));
+    console.warn('[deleteStudent] 学習ダッシュボードの更新に失敗:', e);
   }
 }
 

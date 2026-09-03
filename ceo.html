@@ -3120,7 +3120,10 @@
 
   <script src="plans.js?v=20260529-waive-enrollment"></script>
   <script src="student-mode.js?v=20260604-junior-preview"></script>
-  <script src="ceo.js?v=20260805-courseapp-note-prewrap"></script>
+  <!-- ★ceo.js を変えたら必ず ?v= を更新する。vercel.json の no-cache は *.html と
+       auth-guard.js / cache-purge.js だけで、ceo.js はこのクエリだけが頼り。
+       据え置くと「新しい ceo.html + キャッシュされた古い ceo.js」で動く端末が出る。 -->
+  <script src="ceo.js?v=20260903-delete-2step-confirm"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -3539,6 +3542,10 @@
 
     // 旧名関数を残してロード順序の安全性確保
     const loadLiveRoster = loadLiveMetrics;
+    // 🛡️ 2026-09-03: このブロックは IIFE の中なので、ceo.js からは window 経由でしか呼べない。
+    //   生徒削除後のロスター再取得 (ceo.js confirmAndDeleteStudent) がここを叩く。
+    //   export し忘れると「呼んだつもりで何も起きない」silent fail になる (2026-05-10 に同型の事故)。
+    window.loadLiveMetrics = loadLiveMetrics;
 
     // 創設メンバー 残枠 (実数値 vs 公開カモフラージュ値) を並べて表示
     async function loadFoundersDualCount() {
@@ -10554,7 +10561,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
   </script>
 
   <!-- 🔄 floating reload + toast 通知 (CEO ダッシュ全画面 共通便利機能) -->
-  <div id="ceoToast" style="position:fixed;top:1rem;right:1rem;z-index:200;display:none;
+  <!-- z-index は確認ダイアログ (ceo.js ceoConfirmDialog = 10050) より上。
+       下だと削除完了の通知がモーダルの暗幕に沈んで塾長に何も届かない -->
+  <div id="ceoToast" style="position:fixed;top:1rem;right:1rem;z-index:10060;display:none;pointer-events:none;
        padding:0.75rem 1.1rem;border-radius:10px;background:rgba(15,23,42,0.96);
        border:1px solid rgba(99,102,241,0.5);color:#e2e8f0;font-size:0.85rem;
        font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.5);max-width:340px;
