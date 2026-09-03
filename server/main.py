@@ -965,9 +965,12 @@ class _Connection:
 #   従来の「直接 connect」へ完全フォールバックする (プール不具合で本番を壊さない安全弁。env で即無効化可)。
 # ★死接続は check=check_connection で getconn 時に検出→差替。max_lifetime/max_idle で定期リサイクル。
 _DB_POOL_ENABLED = os.getenv("DB_POOL_ENABLED", "1") == "1"
-_DB_POOL_MIN = int(os.getenv("DB_POOL_MIN", "2"))
-_DB_POOL_MAX = int(os.getenv("DB_POOL_MAX", "16"))
-_DB_POOL_TIMEOUT = float(os.getenv("DB_POOL_TIMEOUT", "10"))
+# ★_env_int を通す (2026-09-03)。裸の int(os.getenv(...)) だと「20台」「16.0」のように
+#   単位や小数を付けて入力された瞬間に import が ValueError で落ち、env を消すまで起動不能になる。
+#   障害対応中に触られる変数なので、不正値は既定値へ落として起動を守る (_env_int の設計意図どおり)。
+_DB_POOL_MIN = _env_int("DB_POOL_MIN", 2, lo=0, hi=64)
+_DB_POOL_MAX = _env_int("DB_POOL_MAX", 16, lo=1, hi=64)
+_DB_POOL_TIMEOUT = float(_env_int("DB_POOL_TIMEOUT", 10, lo=1, hi=120))
 # TCP接続確立の上限秒 (2026-07-26)。psycopg/libpq は既定で**無制限**に待つため、
 # Postgres 側やネットワークが不調だと db() を呼んだスレッドが永久に固まる。
 # (2026-07-26 の 502 事故当時は db() をイベントループ上で呼ぶ経路があり、
@@ -976,6 +979,114 @@ _DB_POOL_TIMEOUT = float(os.getenv("DB_POOL_TIMEOUT", "10"))
 # ★下限2: libpq は connect_timeout=0 を「無限待ち」と解釈する (安全弁が黙って無効化される)。
 #   1 未満は 2 に丸められる仕様でもあるため、下限を 2 にして 0 を踏ませない。
 _DB_CONNECT_TIMEOUT = _env_int("DB_CONNECT_TIMEOUT", 10, lo=2, hi=60)
+# 🔒 [idle-tx-timeout 2026-09-03 障害対策] 「トランザクションを開いたまま放置された接続」を
+#   Postgres 側に自動で切らせる上限秒。★これが無かったために API が 75 分間全停止した:
+#     デプロイでコンテナが強制停止されても TCP 接続だけが生き残り (Railway の Postgres は
+#     tcp_keepalives_idle=7200 = 2時間、全 timeout 系が既定 0 = 無効)、students の AccessShareLock を
+#     握ったままの idle in transaction が残留 → 起動時 DDL の ACCESS EXCLUSIVE 要求がロック行列で
+#     待ち続ける → PostgreSQL は「待機中の要求と conflict する新規要求も待たせる」(lock->waitMask 判定)
+#     ため、**新規に**ロックを取る students への SELECT が軒並み待たされる →
+#     新コンテナも起動時DDLで待たされ healthcheck に到達できず、デプロイが失敗し続けた。
+#     ★行列の根元が「死んだコンテナの接続」なので再デプロイしても直らない
+#       (厳密には tcp_keepalives_idle=7200 + 9x75秒 ≒ 2時間11分でいずれ自然回収されるが、
+#        デプロイのタイムアウト窓には到底間に合わない)。pg_terminate_backend の手動介入で復旧した。
+#   ★値の根拠 (600秒): 「トランザクションを開いたまま外部APIを待つ」経路を実際に洗い出した結果、
+#     最長は過去問PDFアップロード (`past_exam_upload`) の Gemini 解析で **タイムアウトがちょうど 300 秒**。
+#     ★現在は解析の**前に** `conn.commit()` を入れてある (past_exam_upload) ので、この経路は
+#       もう `idle in transaction` にならない。その commit を外すと 300 秒と真正面から衝突し、
+#       「解析は成功したのに保存で落ちる」再現性の低い失敗に戻る。600 はその保険。
+#     週次プリント生成 (`_run_weekly_worksheet_generation`) も接続を掴んだまま生徒ごとの
+#     メール送信と LINE 送信を回し、最後まで commit しない。ただしこちらは AI 呼び出しを含まず
+#     送信系のタイムアウトも 10 秒程度なので、600 秒には遠く及ばない (文と文の**連続**アイドル
+#     時間で測られ、statement ごとにリセットされるため累積もしない)。
+#     (なお過去問ソルバー側は db() の後に execute が無くトランザクションが開かないため対象外。
+#      生徒削除の Stripe 解約は上限 80 秒。)
+#   ★**新しく「db() を掴んだまま AI を呼ぶ」コードを書かないこと**。_call_anthropic_safe の
+#     per-call timeout は最大 600 秒 + 再試行付きなので、この安全弁に確実に殺される。
+#     AI を呼ぶ前に conn.commit() するか、db() を取る前に呼ぶこと。
+#   ★600 秒でも、残骸が居座る最悪時間は「永久 → 10 分」になる (keepalive 頼みだと 2 時間11分)。
+#     しかも下の ALTER 事前チェックにより、残骸が起動を妨げる経路自体が塞がっている。
+#   ★0 = 無効 (Postgres 既定と同じ)。この安全弁自体が誤爆したとき env で即座に切れる。
+#   ★⚠️ env で戻せるのは**この接続オプションだけ**。同じ 2026-09-03 の改修で入れた
+#     「ALTER の事前チェック」「起動時DDLを握って起動を続ける」は env スイッチを持たず、
+#     DB_IDLE_TX_TIMEOUT=0 / DB_INIT_LOCK_TIMEOUT=0 にしても**従来挙動には戻らない**。
+#     障害対応中に「元に戻したはず」と誤解しないこと (戻すにはコードを revert する)。
+_DB_IDLE_TX_TIMEOUT = _env_int("DB_IDLE_TX_TIMEOUT", 600, lo=0, hi=86400)
+# 🔒 [init-lock-timeout 2026-09-03] 起動時 DDL (init_db) がロック行列で**無限に待つ**のを防ぐ上限秒。
+#   ここがタイムアウトすれば DDL をスキップして起動を続行できる = サーバが二度と起動できない事態を防ぐ。
+#   ★この設定は init_db **専用接続の接続時オプション**として渡す (`SET` ではない)。
+#     専用接続は init_db 末尾で物理的に close するので `RESET` は要らないし、書いてもいけない。
+#     ★SET/RESET 方式を採らなかった理由: 途中で例外が飛んで RESET に到達しないと、lock_timeout 付きの
+#       接続がプールに返り、通常のリクエストまで数秒のロック待ちでエラー化する
+#       (_Connection.close はプール返却時に rollback するだけで session 設定を戻さないため)。
+#   ★0 = 専用接続を張らない = ロック待ちが無制限の従来経路に戻る。
+_DB_INIT_LOCK_TIMEOUT = _env_int("DB_INIT_LOCK_TIMEOUT", 10, lo=0, hi=300)
+# 起動時 DDL 全体にかける壁時計の上限秒 (0 = 無制限)。
+# ★lock_timeout はロック1本ごとの上限にすぎず、合計時間には上限が無い。
+#   init_db は import 時に走る = ここで待っている間 uvicorn は port を bind できず、
+#   healthcheck にも応答できない。合計にも蓋をしないとデプロイ失敗ループに戻りうる。
+#   ★計時は executescript の前から始まるが、**中断できるのは ALTER ループの境界だけ**
+#     (executescript は1本の巨大クエリなので途中で止められない)。したがって
+#     「起動時DDLが必ず20秒で終わる」わけではない。最悪は
+#     connect 10s + executescript + ALTER 予算超過分 + 走行中の1本 10s + payments index 10s。
+#     railway.json の healthcheckTimeout を 120 にしてあるのはこのため (2つ必ずセットで見ること)。
+_DB_INIT_DDL_BUDGET = _env_int("DB_INIT_DDL_BUDGET", 20, lo=0, hi=600)
+# 起動時 DDL がロック待ちでスキップされた記録 (列名のリスト)。/api/health で可視化する。
+# ★空でないまま運用が続くと「あるはずの列が無い」状態なので、気づけるようにするのが目的。
+_INIT_DB_DDL_SKIPPED = []
+# 起動時DDLで「一過性のロック競合」とみなす sqlstate。これらだけは握って起動を続ける。
+#   55P03 lock_not_available  : lock_timeout に到達した
+#   40P01 deadlock_detected   : ローリングデプロイで新旧コンテナがロックを逆順に取り合った
+# ★これ以外 (DDLの書き間違い・権限・ディスク満杯など) は握らずに落とす。
+#   握ると「壊れたスキーマのまま health だけ緑で昇格し、正常だった旧コンテナが殺される」ため。
+_DDL_TRANSIENT_LOCK_SQLSTATES = ("55P03", "40P01")
+
+
+def _pg_connect_kwargs() -> dict:
+    """本番 Postgres へ接続する際の共通 kwargs。
+    ★プール経由と「プール枯渇時の直接 connect」の**両方**でこれを使うこと。
+      片方に入れ忘れると、その経路だけ安全弁の無い接続になり、また残骸を生む。
+    ★libpq の options で接続時にサーバパラメータを設定する。
+      DATABASE_URL 側に options 指定が無いことは確認済み (2026-09-03)。
+      ★将来 URL 側に `?options=` が付くと、psycopg の仕様で**この kwargs が黙って勝つ**ので注意。
+    """
+    kw = {"connect_timeout": _DB_CONNECT_TIMEOUT}   # 無限待ち防止 (2026-07-26)
+    if _DB_IDLE_TX_TIMEOUT > 0:
+        # ミリ秒指定。対象になるのは pg_stat_activity.state が 'idle in transaction' の接続。
+        # ★wait_event が Client/ClientRead かどうかは判定条件ではない (トランザクション外の
+        #   単なる idle でも同じ wait_event になる)。この状態で実際に切れることは
+        #   本番 Postgres 18.6 で実測確認済み (2026-09-03)。
+        kw["options"] = f"-c idle_in_transaction_session_timeout={_DB_IDLE_TX_TIMEOUT * 1000}"
+    return kw
+
+
+def _startup_db():
+    """🔒 [startup-lock-timeout 2026-09-03] import 時にDBを触る処理**専用**の接続を返す。
+
+    ★なぜ専用が必要か: init_db / seed 系は import 時 (= uvicorn が port を bind する前) に走る。
+      ここでロック待ちに入ると、上位の try/except では**ハングは救えない** (例外が出ないので)。
+      port が開かないまま固まり healthcheck に到達できず、デプロイが失敗し続ける
+      = 2026-09-03 の75分全停止と同じ経路。だから起動時の処理には必ず待ち時間の上限が要る。
+    ★lock_timeout は接続時オプションで固定する (`SET` ではない)。プールから借りないので、
+      設定が通常のリクエストに漏れることが原理的に無い (close で物理的に閉じるだけ)。
+    ★張れなければ通常の db() にフォールバックする (安全弁の準備失敗が起動を止めては本末転倒)。
+      その場合 warning が出るので、起動ログで気づける。
+    """
+    if USE_POSTGRES and _DB_INIT_LOCK_TIMEOUT > 0:
+        try:
+            kw = _pg_connect_kwargs()
+            kw["options"] = (
+                kw.get("options", "") + f" -c lock_timeout={_DB_INIT_LOCK_TIMEOUT * 1000}"
+            ).strip()
+            return _Connection(psycopg.connect(DATABASE_URL, **kw), is_pg=True, pool=None)
+        except Exception as e:
+            log.warning(
+                f"[startup] 起動処理用の専用接続の確立に失敗→通常の接続で続行 "
+                f"(ロックを無限に待つ可能性): {type(e).__name__}: {str(e)[:200]}"
+            )
+    return db()
+
+
 _PG_POOL = None            # ConnectionPool or None
 # プール枯渇 → 直接接続フォールバックの発生回数 (2026-07-26)。
 # ★これが増えることが「Postgres の接続予算を食い潰しつつある」唯一の先行指標。
@@ -1004,7 +1115,7 @@ def _get_pg_pool():
                 from psycopg_pool import ConnectionPool
                 _PG_POOL = ConnectionPool(
                     DATABASE_URL,
-                    kwargs={"connect_timeout": _DB_CONNECT_TIMEOUT},  # 無限待ち防止 (2026-07-26)
+                    kwargs=_pg_connect_kwargs(),  # 無限待ち防止 (2026-07-26) + idle-tx 残骸の自動回収 (2026-09-03)
                     min_size=_DB_POOL_MIN, max_size=_DB_POOL_MAX, timeout=_DB_POOL_TIMEOUT,
                     max_lifetime=1800, max_idle=300,
                     check=ConnectionPool.check_connection,  # getconn 時に死接続を検出→差替
@@ -1030,7 +1141,7 @@ def db():
                 _DB_DIRECT_CONNECT["last_ts"] = datetime.now(timezone.utc).isoformat()
                 log.warning(f"[db-pool] getconn 失敗→直接connect ({_DB_DIRECT_CONNECT['count']}回目): {type(e).__name__}: {e}")
         # プール枯渇時の直接接続。connect_timeout 必須 (無しだと libpq が無限待ち = スレッド永久喪失)
-        return _Connection(psycopg.connect(DATABASE_URL, connect_timeout=_DB_CONNECT_TIMEOUT), is_pg=True, pool=None)
+        return _Connection(psycopg.connect(DATABASE_URL, **_pg_connect_kwargs()), is_pg=True, pool=None)
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     return _Connection(conn, is_pg=False, pool=None)
@@ -1043,9 +1154,22 @@ def row_to_dict(row):
 def init_db():
     # Postgres と SQLite で自動採番カラムの記法が異なる
     pk = "BIGSERIAL PRIMARY KEY" if USE_POSTGRES else "INTEGER PRIMARY KEY AUTOINCREMENT"
-    conn = db()
+    # 🔒 [init-lock-timeout 2026-09-03] 起動時DDL専用の接続を張る (プールから借りない)。
+    #   これが無いと「students に残骸ロックが1つある」だけでサーバが永久に起動できなくなる (2026-09-03 の全停止)。
+    #   ★lock_timeout を**接続時オプションで固定**するので `SET` / `RESET` が要らない。
+    #     SET/RESET 方式だと「途中で例外が飛んで RESET に到達せず、lock_timeout 付きの接続が
+    #     プールに返る」経路が生まれ、通常のリクエストまで数秒のロック待ちでエラー化する
+    #     (_Connection.close はプール返却時に rollback するだけで session 設定を戻さないため)。
+    #     専用接続なら close で物理的に閉じるだけなので、その事故が原理的に起きない。
+    #   ★副作用: 接続プールの初回生成が「最初のリクエスト時」にずれる (従来はここで作られていた)。
+    #     プールは遅延生成の設計なので問題ないが、起動ログに [db-pool] が出るタイミングが変わる。
+    #   ★専用接続を張れなかったら通常の db() で続行する (安全弁の準備失敗が起動を止めては本末転倒)。
+    conn = _startup_db()
     c = conn.cursor()
-    c.executescript(f"""
+    # 🔒 DDL 全体の壁時計の締切。★executescript を含めるため**ここで**計時を始める
+    #   (ALTER ループの直前で始めると、その前段の所要時間が予算から漏れる)。
+    _ddl_deadline = time.monotonic() + _DB_INIT_DDL_BUDGET if _DB_INIT_DDL_BUDGET > 0 else None
+    _schema_sql = f"""
     CREATE TABLE IF NOT EXISTS students (
         id {pk},
         name TEXT NOT NULL,
@@ -1930,7 +2054,80 @@ def init_db():
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_class_attend_uniq ON class_attend(student_id, class_label, att_date);
     CREATE INDEX IF NOT EXISTS idx_class_attend_lookup ON class_attend(att_date, class_label);
-    """)
+    """
+    # 🔒 [init-lock-timeout 2026-09-03] 従来はここが**素の呼び出し**で、例外が出れば import 時に落ち、
+    #   ロック待ちなら永久にハングした (= uvicorn が port を bind する前に固まり、healthcheck が
+    #   無応答のままデプロイが失敗し続ける)。起動を守るため握って続行する。
+    #   ★この executescript は CREATE TABLE 57 本 + CREATE INDEX 90 本を **1本の multi-statement
+    #     クエリ = 1トランザクション**として送る (_Cursor.executescript 参照)。よって途中1本が
+    #     lock_timeout で倒れると **147本すべてがロールバックされる**。この挙動を前提に読むこと。
+    #   ★それでもスキップして起動を続ける方が安全な理由:
+    #     - 新規DB (テーブルが1つも無い) には誰もロックを持てないので、初回起動でここが倒れることは無い。
+    #       = 「スキーマが空のまま起動してしまう」経路は存在しない。
+    #     - 既存DBでは全文が IF NOT EXISTS なので、ロールバックで失うのは
+    #       「このデプロイで新しく増えたテーブル/インデックス」だけ。ロックが解ければ次回起動で作られる。
+    #     - 失った場合は下の _INIT_DB_DDL_SKIPPED に記録し、warning ログと /api/health に出す。
+    #   ★psycopg3 は失敗すると txn が abort 状態のままになる。後続の ALTER ループを巻き込まないよう
+    #     ここで必ず rollback する。
+    try:
+        c.executescript(_schema_sql)
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        # ★握ってよいのは「ロックが取れなかった (55P03)」だけ。それ以外は必ず落とす。
+        #   従来ここは try が無く、失敗すれば import ごと落ちて**デプロイ失敗として塾長に見えていた**。
+        #   ロック以外の失敗 (DDL の書き間違い・型の非互換・権限・ディスク満杯) まで握ると、
+        #   「壊れたスキーマのまま health だけ緑で昇格し、正常だった旧コンテナが殺される」
+        #   = 可視性だけを失う改悪になる。ロック以外で落ちればデプロイが失敗し、旧コンテナが生き残る。
+        # ★40P01 (デッドロック) も 55P03 と同じ一過性のロック競合として扱う。
+        #   ローリングデプロイ中は「新コンテナが49テーブルに順次 ShareLock を積む」一方で
+        #   「旧コンテナが任意順に RowExclusiveLock を取る」ため、デッドロックは原理的に起こりうる。
+        #   一過性なのに起動失敗にすると、直せる状態でもデプロイが落ちてしまう。
+        if getattr(e, "sqlstate", None) not in _DDL_TRANSIENT_LOCK_SQLSTATES:
+            log.error(
+                f"[init_db] 🚨 テーブル定義の更新が失敗しました (ロック待ちではない = コードかDBの"
+                f"本当の異常)。壊れたまま起動させないため、起動を中止します。"
+                f"【塾長の対処】直前のデプロイを Railway で Rollback し、エンジニアに連絡してください。"
+                f" {type(e).__name__}: {str(e)[:300]}"
+            )
+            raise
+        # ★ここから下は 55P03 (ロック待ち) のみ。
+        #   ただし**無条件に握ってはいけない**。空DB (初回起動・新環境・DB作り直し) でここが失敗すると、
+        #   テーブルが1つも無いまま起動して全APIが 500 になり、しかも health は 200 を返すので
+        #   「動いているのに全部壊れている」最悪の状態になる。
+        #   そこで「既にスキーマがあるDBか」を判定し、無ければ握らず落とす (fail fast)。
+        #   ★判定は information_schema (カタログ) を読む。`SELECT 1 FROM students` で確かめては**いけない**:
+        #     それは students の AccessShareLock を要求するので、まさに今回の障害
+        #     (students がロックされている) の状況で lock_timeout に倒れ、
+        #     「既存DBなのに新規DBと誤判定して起動を止める」= 直したい事故を再発させる。
+        _schema_exists = False
+        try:
+            if USE_POSTGRES:
+                c.execute(
+                    "SELECT 1 FROM information_schema.tables "
+                    "WHERE table_schema = current_schema() AND table_name = 'students'"
+                )
+            else:
+                c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='students'")
+            _schema_exists = c.fetchone() is not None
+            conn.commit()
+        except Exception:
+            try: conn.rollback()
+            except Exception: pass
+        if not _schema_exists:
+            log.error(
+                "[init_db] スキーマ作成に失敗し、students テーブルも存在しない = 未初期化のDB。"
+                "空のスキーマのまま起動すると全APIが失敗するため、起動を中止する。"
+            )
+            raise
+        _INIT_DB_DDL_SKIPPED.append("schema(テーブル定義・ロック待ち)")
+        log.warning(
+            f"[init_db] テーブル定義の更新をまとめてスキップして起動続行 (別の処理がテーブルを"
+            f"掴んだまま)。既存DBなので既存テーブルは揃っているが、"
+            f"**このデプロイで新しく増えたテーブル/インデックスは存在しない**。"
+            f"【塾長の対処】Railway で ai-juku-api を Restart。"
+            f" {type(e).__name__}: {str(e)[:300]}"
+        )
     # 既存DBに不足列を追加 (idempotent migration)
     # Postgres: 「column already exists」エラーで トランザクションが abort されると
     # 後続の ALTER がスキップされてしまうため、各 ALTER の前後で commit/rollback する。
@@ -2090,8 +2287,82 @@ def init_db():
         ("anthropic_usage_cache_creation", "ALTER TABLE anthropic_usage_log ADD COLUMN cache_creation_tokens INTEGER NOT NULL DEFAULT 0"),
         ("anthropic_usage_cache_read", "ALTER TABLE anthropic_usage_log ADD COLUMN cache_read_tokens INTEGER NOT NULL DEFAULT 0"),
     ]
-    conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
-    for col_name, sql in _migrations:
+    # executescript の結果を確実にコミット (abort状態をクリア)。
+    # ★ここも try で包む: 従来は裸で、失敗すると import ごと落ちて起動不能だった。
+    #   上の executescript を握って起動を守っても、直後の commit が裸のままでは穴が残る。
+    try:
+        conn.commit()
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        log.warning(f"[init_db] スキーマDDLの commit に失敗 (起動は継続): {type(e).__name__}: {str(e)[:200]}")
+    # 🔒 [init-lock-timeout 2026-09-03] ALTER を投げる前に「その列が既にあるか」を1クエリで確認する。
+    #   ★これが 2026-09-03 の全停止(75分)の**構造的な原因**だった:
+    #     ALTER TABLE ADD COLUMN は「列が既に存在する」と判明する**前に** ACCESS EXCLUSIVE ロックを
+    #     要求する (本番 Postgres 18.6 で実測確認済み)。定常状態の本番では下の 57 本すべてが
+    #     no-op (DuplicateColumn で失敗するだけ) なのに、起動のたびに students へ 25 本もの
+    #     排他ロック要求を投げていた。students を読んでいるトランザクションが 1 本あるだけで
+    #     そこで詰まり、以後 students への全アクセスがロック行列で待たされる。
+    #     = idle 接続の残骸に限らず、長めの SELECT や VACUUM FULL でも同じ全停止が起きる地雷だった。
+    #   ★列の存在確認は AccessShareLock しか要らないので詰まらない (これも実測確認済み)。
+    #     事前チェックで弾けば、定常状態では **ALTER 由来の排他ロック要求が 0 本**になる。
+    #   ★ただし「起動時DDLのロック要求が完全に 0 になる」わけではない: 上の executescript には
+    #     `CREATE INDEX IF NOT EXISTS` が 90 本 (通常80 + UNIQUE10) あり、これも「既に在る」と判定する前に対象表の
+    #     ShareLock を取る (ALTER と同じ構造)。ShareLock は通常の INSERT/UPDATE (RowExclusiveLock)
+    #     と衝突するので、書き込み中だと待たされる。ただし **AccessShareLock (通常の SELECT) とは
+    #     衝突しない**ため、2026-09-03 と同じ「読み取りまで含む全停止」にはならず、
+    #     最悪でも「書き込みだけ待たされる」部分的な遅延に留まる。
+    #     ここを 0 にするには CREATE INDEX も同様に事前チェックする必要がある (今回は未実施)。
+    #   ★意味は変えない: 既存列に対する ALTER は元々 except に落ちて log.debug されるだけなので、
+    #     スキップしても挙動は同じ (student_email_verified の grandfather UPDATE も
+    #     元々「ALTER 成功時のみ」= 既存列では実行されないため影響なし)。
+    #   ★取得に失敗したら空集合のまま = 全部従来どおり実行する (安全側に倒す)。
+    _existing_cols = set()
+    if USE_POSTGRES:
+        try:
+            c.execute(
+                "SELECT table_name, column_name FROM information_schema.columns "
+                "WHERE table_schema = current_schema()"
+            )
+            for _row in c.fetchall():
+                _existing_cols.add((str(_row["table_name"]).lower(), str(_row["column_name"]).lower()))
+            conn.commit()
+        except Exception as e:
+            try: conn.rollback()
+            except Exception: pass
+            _existing_cols = set()
+            log.warning(f"[init_db] 既存列の一覧取得に失敗→全ALTERを従来どおり実行: {type(e).__name__}: {str(e)[:200]}")
+    _alter_col_re = re.compile(r"^\s*ALTER TABLE\s+(\w+)\s+ADD COLUMN\s+(\w+)\b", re.I)
+    # 🔒 [init-lock-timeout 2026-09-03] DDL 全体の**壁時計の締切**。
+    #   ★lock_timeout はロック1本ごとの上限でしかない。事前チェックが効かなかった場合
+    #     (information_schema の取得に失敗した等)、57 本 × lock_timeout ぶん累積し、
+    #     その間ずっと uvicorn は port を bind できない (init_db は import 時に走るため)。
+    #     累積で healthcheck の窓を食い潰すと、結局デプロイ失敗ループに戻ってしまう。
+    #     そこで合計時間にも上限を設け、超えたら残りを諦めて起動を優先する。
+    _precheck_skipped = 0    # 事前チェックで弾いた本数 (= 排他ロックを要求しなかった本数)
+    for _idx, (col_name, sql) in enumerate(_migrations):
+        # 既に存在する列なら ALTER を投げない (= 排他ロックを要求しない)。
+        # 正規表現に合わない形の SQL は判定せず従来どおり実行する (安全側)。
+        if _existing_cols:
+            _m = _alter_col_re.match(sql)
+            # ★複数列を1文で追加する ALTER (ADD COLUMN a …, ADD COLUMN b …) は事前チェックしない。
+            #   正規表現は先頭の列にしかマッチしないため、先頭が既存だと**文ごとスキップ**され、
+            #   2列目以降が永久に作られない。しかも _INIT_DB_DDL_SKIPPED にも載らず
+            #   /api/health にも出ない = 無言でスキーマが欠ける最悪の壊れ方になる。
+            #   該当する場合は従来どおり実行する (排他ロックは要求するが、壊れるよりはるかに良い)。
+            _single_col = _m is not None and sql.upper().count("ADD COLUMN") == 1
+            if _single_col and (_m.group(1).lower(), _m.group(2).lower()) in _existing_cols:
+                _precheck_skipped += 1
+                continue
+        if _ddl_deadline is not None and time.monotonic() > _ddl_deadline:
+            _remaining = [n for n, _ in _migrations[_idx:]]
+            _INIT_DB_DDL_SKIPPED.extend(_remaining)
+            log.warning(
+                f"[init_db] DDL の合計時間が上限 {_DB_INIT_DDL_BUDGET} 秒を超えたため、"
+                f"残り {len(_remaining)} 件を諦めて起動を優先します "
+                f"(起動できないより、一部未反映で起動する方が被害が小さいため)。"
+            )
+            break
         try:
             c.execute(sql)
             conn.commit()
@@ -2112,7 +2383,27 @@ def init_db():
             # 既に存在する or 他のエラー → ロールバックしてトランザクション abort をクリア
             try: conn.rollback()
             except Exception: pass
-            log.debug(f"[init_db] Skip ALTER for {col_name}: {type(e).__name__}: {str(e)[:100]}")
+            # 🔒 [init-lock-timeout 2026-09-03] 「列が既にある(42701)」と「ロックが取れなかった(55P03)」を
+            #   区別する。前者は毎回起きる正常系なので debug のままでよいが、後者は**本当に列が無いまま
+            #   起動した**可能性があり、実行時に UndefinedColumn を量産しうる。debug に埋もれさせず
+            #   warning + /api/health で見えるようにする (塾長が気づける唯一の手段)。
+            if getattr(e, "sqlstate", None) in _DDL_TRANSIENT_LOCK_SQLSTATES:
+                _INIT_DB_DDL_SKIPPED.append(col_name)
+                log.warning(
+                    f"[init_db] ロック待ちで ALTER をスキップ: {col_name} "
+                    f"(列が未作成の可能性あり・ロックが解けたら再起動で再試行される)"
+                )
+            else:
+                log.debug(f"[init_db] Skip ALTER for {col_name}: {type(e).__name__}: {str(e)[:100]}")
+    # 🔒 [init-lock-timeout 2026-09-03] 事前チェックの効果を1行で残す。
+    #   ★これが 0 のまま = 事前チェックが効いておらず、起動のたびに排他ロックを投げている
+    #     (= 2026-09-03 の地雷が再武装された状態)。無言だと気づけないので必ず出す。
+    if USE_POSTGRES:
+        log.info(
+            f"[init_db] ALTER 事前チェック: {_precheck_skipped}/{len(_migrations)} 本を"
+            f"「列が既にある」と判定してスキップ (= 排他ロックを要求しなかった本数)。"
+            + ("" if _precheck_skipped else " ⚠️ 0 本 = 事前チェックが効いていない可能性")
+        )
     # 💰 2026-06-11 payments dedup: invoice.paid と invoice.payment_succeeded は別 event_id で届くため
     # processed_events では防げない二重 INSERT を invoice 単位の UNIQUE 制約で最終防衛する。
     # NULL は複数許容 (SQLite/Postgres 共通)・本番 payments は 0 行のため UNIQUE 化は安全。
@@ -2124,6 +2415,19 @@ def init_db():
         try: conn.rollback()
         except Exception: pass
         log.warning(f"[init_db] payments UNIQUE index 作成失敗 (二重INSERT防御が弱まる・重複行を確認): {type(e).__name__}: {str(e)[:200]}")
+    # 🔒 [init-lock-timeout 2026-09-03] RESET は不要 (lock_timeout は専用接続の接続時オプション。
+    #   この接続は下の close() で物理的に閉じるので、設定が他へ漏れることが原理的に無い)。
+    if _INIT_DB_DDL_SKIPPED:
+        _more = f" ほか{len(_INIT_DB_DDL_SKIPPED) - 20}件" if len(_INIT_DB_DDL_SKIPPED) > 20 else ""
+        # ★塾長向けと技術者向けをラベルで分ける。混ぜると塾長が自分のやる部分を切り出せない。
+        log.warning(
+            f"[init_db] ⚠️ 起動時のデータベース更新 {len(_INIT_DB_DDL_SKIPPED)} 件が未反映のまま起動しました: "
+            f"{','.join(_INIT_DB_DDL_SKIPPED[:20])}{_more}"
+            f" — アプリは動きますが、一部の画面でエラーが出ることがあります。"
+            f"【塾長の対処】Railway で ai-juku-api を Restart。2回やっても消えないならエンジニアに連絡。"
+            f"【確認方法】/api/health の init_ddl_skipped が 0 になれば解消。"
+            f"【原因調査(技術者向け)】pg_stat_activity で state='idle in transaction' の接続を探す。"
+        )
     conn.close()
 init_db()
 
@@ -2221,7 +2525,7 @@ REFERENCE_BOOKS_SEED = [
 
 def _seed_reference_books():
     """主要教材の初期データを reference_books に投入 (重複は skip・冪等)。"""
-    conn = db()
+    conn = _startup_db()
     c = conn.cursor()
     inserted = 0
     skipped = 0
@@ -2245,6 +2549,16 @@ def _seed_reference_books():
         except Exception as e:
             try: conn.rollback()
             except Exception: pass
+            # 🔒 [startup-lock-timeout 2026-09-03] ロック待ちで倒れたら残りも同じ結果になるので打ち切る。
+            #   1件ごとに lock_timeout ぶん待つと (件数×10秒) で起動が healthcheck に間に合わない。
+            #   投入できなかったぶんは次回起動で入る (この seed は冪等)。
+            if getattr(e, "sqlstate", None) in _DDL_TRANSIENT_LOCK_SQLSTATES:
+                skipped += 1
+                log.warning(
+                    f"[seed_reference_books] テーブルがロックされているため初期データ投入を打ち切りました "
+                    f"(残りは次回の起動で入ります): {type(e).__name__}"
+                )
+                break
             log.warning(f"[seed_reference_books] {book['name']}: {type(e).__name__}: {str(e)[:100]}")
             skipped += 1
     conn.close()
@@ -2375,7 +2689,7 @@ def _cleanup_old_sapuri_lectures():
     冪等性: 削除対象が存在しない場合は count=0 で正常終了。
     UNIQUE constraint 違反でレコードが残る場合は warning ログ。
     """
-    conn = db()
+    conn = _startup_db()
     c = conn.cursor()
     deleted_total = 0
     try:
@@ -2413,6 +2727,16 @@ def _cleanup_old_sapuri_lectures():
             except Exception as e:
                 try: conn.rollback()
                 except Exception: pass
+                # 🔒 [startup-lock-timeout 2026-09-03] ロック待ちで倒れたら残りも同じ結果になるので打ち切る。
+                #   ★ここは import 時に走るので、16パターン × lock_timeout(10秒) = 最悪160秒を
+                #     この関数だけで消費し、healthcheck(120秒) を食い潰してデプロイが失敗する。
+                #     打ち切れば1回の待ちで済み、消し残しは次回起動で処理される (この cleanup は冪等)。
+                if getattr(e, "sqlstate", None) in _DDL_TRANSIENT_LOCK_SQLSTATES:
+                    log.warning(
+                        f"[cleanup_old_sapuri_lectures] テーブルがロックされているため旧レコードの整理を"
+                        f"打ち切りました (残りは次回の起動で処理されます): {type(e).__name__}"
+                    )
+                    break
                 log.warning(f"[cleanup_old_sapuri_lectures] {label}: {type(e).__name__}: {str(e)[:100]}")
     finally:
         try: conn.close()
@@ -2435,7 +2759,7 @@ def _seed_sapuri_lectures():
         _cleanup_old_sapuri_lectures()
     except Exception as _ce:
         log.warning(f"[seed_sapuri_lectures] cleanup phase failed (continue with seed): {_ce}")
-    conn = db()
+    conn = _startup_db()
     c = conn.cursor()
     inserted = 0
     skipped = 0
@@ -2458,6 +2782,16 @@ def _seed_sapuri_lectures():
         except Exception as e:
             try: conn.rollback()
             except Exception: pass
+            # 🔒 [startup-lock-timeout 2026-09-03] ロック待ちで倒れたら残りも同じ結果になるので打ち切る。
+            #   1件ごとに lock_timeout ぶん待つと (件数×10秒) で起動が healthcheck に間に合わない。
+            #   投入できなかったぶんは次回起動で入る (この seed は冪等)。
+            if getattr(e, "sqlstate", None) in _DDL_TRANSIENT_LOCK_SQLSTATES:
+                skipped += 1
+                log.warning(
+                    f"[seed_sapuri_lectures] テーブルがロックされているため初期データ投入を打ち切りました "
+                    f"(残りは次回の起動で入ります): {type(e).__name__}"
+                )
+                break
             log.warning(f"[seed_sapuri_lectures] {lec['name']}: {type(e).__name__}: {str(e)[:100]}")
             skipped += 1
     conn.close()
@@ -3431,6 +3765,30 @@ def health():
         #   全接続が直接connect = 上のカウンタは 0 のまま動かない (0 を「健全」と読むと誤り)。
         #   CLAUDE.md が緊急時に DB_POOL_ENABLED=0 を勧めているので必ず踏まれる経路。
         "db_pool_active": bool(USE_POSTGRES and _DB_POOL_ENABLED and not _PG_POOL_DISABLED),
+        # 🔒 [init-lock-timeout 2026-09-03] 起動時DDLがスキップされた件数と対象。
+        #   ★通常は 0 / []。0 以外 = 「あるはずの列/テーブルが無いまま動いている」可能性があり、
+        #     実行時に UndefinedColumn を出しうる。再起動すれば解消することがほとんど。
+        #   ★verdict には意図的に反映しない: verdict は「サーバの混み具合 (一過性・数分待てば戻る)」を
+        #     表す語彙で、hint も「数分待てば戻ります」と書いてある。再起動するまで変わらない
+        #     スキーマ欠損を同じ語彙に混ぜると、その hint が嘘になるため。
+        #     ★なお Railway の healthcheck は HTTP ステータスしか見ない (railway.json に body の
+        #       表明は無い) ので、verdict を変えてもデプロイ判定には影響しない。
+        #       デプロイを守るために黙らせているのではない。
+        "init_ddl_skipped": len(_INIT_DB_DDL_SKIPPED),
+        "init_ddl_skipped_names": (
+            _INIT_DB_DDL_SKIPPED[:20]
+            + ([f"…他{len(_INIT_DB_DDL_SKIPPED) - 20}件"] if len(_INIT_DB_DDL_SKIPPED) > 20 else [])
+        ),
+        # ★塾長が実際に読むのはこの行。英語のキー名と数字だけでは何をすべきか判断できないため、
+        #   既存の hint と同じく「日本語 + 次の行動」で書く。
+        "init_ddl_hint": (
+            "起動時のデータベース更新は全部通っています。"
+            if not _INIT_DB_DDL_SKIPPED else
+            f"起動時のデータベース更新が {len(_INIT_DB_DDL_SKIPPED)} 件できていません。"
+            "アプリは動きますが、一部の画面でエラーが出ることがあります。"
+            "Railway で ai-juku-api を Restart してください。"
+            "2回やってもこの表示が消えないときはエンジニアに連絡してください。"
+        ),
         "time": datetime.now(timezone.utc).isoformat(),
         "git_sha": git_sha[:12] if git_sha else "unknown",  # 12 chars で簡素表示
         "stripe_configured": bool(STRIPE_SECRET_KEY),
@@ -51061,6 +51419,16 @@ def past_exam_upload(
         # 同じ PDF を再アップロードしても Gemini を再呼び出し (¥3 増だが著作権 risk 0)。
         c.execute("SELECT id FROM past_exam_uploads WHERE pdf_hash = ?", (pdf_hash,))
         existing = c.fetchone()
+        # 🔒 [idle-tx-timeout 2026-09-03] 直後の Gemini 解析は**タイムアウトが 300 秒**の長い待ち。
+        #   psycopg3 は非 autocommit なので、上の SELECT でトランザクションが開いたままここに来ると、
+        #   その間ずっと `idle in transaction` になり DB_IDLE_TX_TIMEOUT に切られうる
+        #   (= 解析は成功したのに保存で落ちる、という再現性の低い失敗になる)。
+        #   値は取得済みなので、ここで閉じてから長い外部呼び出しに入る。
+        #   ★同じ helper を使う past_exam_solver 側は db() の後に execute が無く txn が開かないため対処不要。
+        try:
+            conn.commit()
+        except Exception:
+            pass
         # 必ず新規解析 (in-memory only・DB に保存しない)
         try:
             analysis = _call_gemini_pdf_analysis(pdf_bytes, target_university, year, subject)

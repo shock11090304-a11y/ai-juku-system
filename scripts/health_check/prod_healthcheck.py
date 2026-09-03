@@ -136,6 +136,25 @@ def check_api_health():
                     elif fb:
                         add("api_health", PASS,
                             f"DB接続の空き待ちが起動から {fb} 回 (少数なら様子見でOK)")
+                # 🔒 起動時DDLの未反映 (2026-09-03「本番API 75分全停止」の再発防止で追加)。
+                #   ★これを見ないと「あるはずの列が無いまま緑で動いている」状態を見逃す。
+                #     health は DB に触らないので verdict は ok のままになる。
+                #   ★フィールドが無い旧 deploy では None → falsy なので誤警告しない
+                #     (db_pool_active を `is False` で判定しているのと同じ配慮)。
+                ddl_skipped = h.get("init_ddl_skipped")
+                if ddl_skipped:
+                    names = "、".join(str(x) for x in (h.get("init_ddl_skipped_names") or [])[:5])
+                    # ★対処の文面は health の init_ddl_hint をそのまま使う (ここに書き写すと
+                    #   片方だけ更新されて食い違う)。旧 deploy 等で hint が無いときだけ最小限を補う。
+                    hint = h.get("init_ddl_hint") or (
+                        "Railway で ai-juku-api を Restart してください。"
+                        "2回やってもこの表示が消えないならエンジニアに連絡してください")
+                    add("api_health", WARN,
+                        f"{hint}{f' (未反映: {names})' if names else ''}")
+                elif ddl_skipped == 0:
+                    # ★「見た上で0件」と「フィールドが無い旧 deploy (None)」を区別して出す。
+                    #   無言だと Rollback 直後などに『チェックできていない』ことに気づけない。
+                    add("api_health", PASS, "起動時のデータベース更新: 全部通っています (未反映 0 件)")
             except Exception as e:
                 add("api_health", WARN, f"health レスポンスの解析に失敗: {type(e).__name__}: {e}")
     except Exception as e:

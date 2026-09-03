@@ -132,7 +132,7 @@ BASE_URL=https://my-juku.jp
 Variables 保存 → 自動再デプロイ → URL発行（例: `ai-juku-api-production.up.railway.app`）
 
 ### ✅ Step 3 完了条件
-- [ ] `https://ai-juku-api-xxx.up.railway.app/api/health` が `{"ok":true}` を返す
+- [ ] `https://ai-juku-api-xxx.up.railway.app/api/health` が `{"status":"ok","verdict":"ok",...}` を返す
 
 ---
 

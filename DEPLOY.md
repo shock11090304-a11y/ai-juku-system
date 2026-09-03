@@ -182,7 +182,15 @@ BASE_URL=https://trillion-ai-juku.com
 ```bash
 # 基本疎通確認
 curl https://trillion-ai-juku.com/lp.html  # 200 OK 期待
-curl https://api.trillion-ai-juku.com/api/health  # {"ok": true}
+# ★API のホストは api.trillion-ai-juku.com ではない (存在しない。障害中に叩くと誤診する)
+curl https://ai-juku-api-production.up.railway.app/api/health
+#   → {"status":"ok","verdict":"ok","hint":"正常です。",
+#      "init_ddl_skipped":0,"init_ddl_hint":"起動時のデータベース更新は全部通っています。",
+#      "git_sha":"..."}
+#   ★verdict / hint / init_ddl_hint の日本語をそのまま読む。異常時の対処が書いてある。
+#   ★init_ddl_skipped は 0 が正常。0 以外なら CLAUDE.md「本番APIが止まったとき」を見る。
+#   ★git_sha は RAILWAY_GIT_COMMIT_SHA 由来。未設定の環境では deployment_id の先頭8文字に
+#     フォールバックするので、コミットSHAと一致しなくても異常とは限らない。
 
 # チェックアウトフロー
 1. LP → 「¥1,980で3日間試す」ボタン
