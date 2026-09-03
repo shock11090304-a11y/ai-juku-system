@@ -43960,14 +43960,28 @@ def admin_grammar_drill_list(
             (limit,),
         )
         drills = c.fetchall()
+        # 👥 [drill-who 2026-09-03 塾長指示「誰が完了しているのか一目でわかるように」]
+        #   従来は配信ごとに1クエリ (最大50回) で人数だけを数えていた。
+        #   名前も出すため students を LEFT JOIN するが、**1クエリにまとめる**ので往復は 50→1 に減る。
+        #   ★LEFT JOIN で s.id が NULL = 既に削除された生徒。生徒削除APIは
+        #     grammar_drill_assignments をカスケードしないため、実測で全201件中43件がこれだった。
+        #     名前が出せないので「削除済み N名」とまとめて表示する (人数の内訳が合わなくなるのを防ぐ)。
+        _by_drill = {}
+        if drills:
+            _ids = [d["id"] for d in drills]
+            _ph = ",".join(["?"] * len(_ids))
+            c.execute(
+                f"SELECT a.drill_id, a.student_id, a.status, a.score_correct, a.score_total, s.id AS s_exists, s.name "
+                f"FROM grammar_drill_assignments a LEFT JOIN students s ON s.id = a.student_id "
+                f"WHERE a.drill_id IN ({_ph})",
+                tuple(_ids),
+            )
+            for _r in c.fetchall():
+                _by_drill.setdefault(_r["drill_id"], []).append(_r)
         items = []
         for d in drills:
             did = d["id"]
-            c.execute(
-                "SELECT status, score_correct, score_total FROM grammar_drill_assignments WHERE drill_id = ?",
-                (did,),
-            )
-            a_rows = c.fetchall()
+            a_rows = _by_drill.get(did, [])
             assigned = len(a_rows)
             completed = sum(1 for a in a_rows if a["status"] == "completed")
             # 平均正解率 (完了分のみ)
@@ -43981,6 +43995,30 @@ def admin_grammar_drill_list(
                 qcount = len(json.loads(d["question_ids"] or "[]"))
             except Exception:
                 qcount = 0
+            # 👥 誰が完了/未完了かの内訳。名前順に並べて画面表示をぶれさせない。
+            #   ★氏名はここで初めて外に出る値なので、リポジトリには決して書かない (公開リポジトリ)。
+            #   ★削除済みは「完了していたか」で分けて数える。分けないと
+            #     「完了 1名」と出ているのに名前が1つも並ばない配信 (実測6件) が生まれ、
+            #     数字と表示が食い違って見える。
+            _done, _pending, _gone_done, _gone_pending = [], [], 0, 0
+            for a in a_rows:
+                if a["s_exists"] is None:      # 削除済みの生徒 (孤児レコード)
+                    if a["status"] == "completed":
+                        _gone_done += 1
+                    else:
+                        _gone_pending += 1
+                    continue
+                _nm = (a["name"] or "").strip() or f"ID{a['student_id']}"
+                if a["status"] == "completed":
+                    _done.append({
+                        "name": _nm,
+                        "score_correct": a["score_correct"],
+                        "score_total": a["score_total"],
+                    })
+                else:
+                    _pending.append({"name": _nm})
+            _done.sort(key=lambda x: x["name"])
+            _pending.sort(key=lambda x: x["name"])
             items.append({
                 "id": did,
                 "title": d["title"],
@@ -43991,6 +44029,14 @@ def admin_grammar_drill_list(
                 "completed": completed,
                 "avg_correct_rate": avg_rate,
                 "created_at": str(d["created_at"]) if d["created_at"] else None,
+                # 👥 [drill-who 2026-09-03] 一覧で「誰が」まで見えるように追加。
+                #   assigned/completed の**数は従来どおり**変えない (塾長が見ている数字を動かさない)。
+                #   done + pending + deleted_done + deleted_pending = assigned、
+                #   かつ len(done) + deleted_done = completed になる。
+                "done": _done,
+                "pending": _pending,
+                "deleted_done": _gone_done,
+                "deleted_pending": _gone_pending,
             })
         return {"ok": True, "items": items}
     finally:

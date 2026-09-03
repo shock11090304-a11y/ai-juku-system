@@ -4569,7 +4569,41 @@
       const rc = _gdRateColor(d.avg_correct_rate);
       const dm = String(d.created_at || '').match(/\d{4}-(\d{2})-(\d{2})/);
       const dts = dm ? `${dm[1]}/${dm[2]}` : '';
-      return `<div style="display:flex;align-items:center;gap:0.5rem;background:rgba(0,0,0,0.25);border:1px solid #334155;border-radius:8px;padding:0.45rem 0.6rem;"><div onclick="gdAnalytics(${d.id})" style="cursor:pointer;flex:1;min-width:0;"><div style="font-size:0.8rem;color:#e5e7eb;font-weight:700;">${escapeHtml(d.title)}${dts ? ` <span style="color:#71717a;font-weight:400;font-size:0.85em;">${dts}</span>` : ''}</div><div style="font-size:0.73rem;color:#94a3b8;">配信 ${d.assigned}名 / 完了 ${d.completed}名 ・ 正解率 <span style="color:${rc};font-weight:700;">${rate}</span></div></div><button onclick="gdDelete(${d.id})" title="ドリルを削除" style="background:none;border:1px solid #475569;color:#fca5a5;border-radius:5px;padding:0.25rem 0.5rem;font-size:0.72rem;cursor:pointer;flex-shrink:0;">🗑</button></div>`;
+      // 👥 [drill-who 2026-09-03 塾長指示「誰が完了しているのか一目でわかるように」]
+      //   従来は配信をクリックして詳細を開くまで誰が完了したか見えなかった。一覧に直接出す。
+      //   ★完了者は名前+点数 / 未完了は名前のみ。1配信あたり最大34名の実績があるため畳む。
+      //   ★削除済みの生徒 (生徒削除APIが grammar_drill_assignments をカスケードしないため
+      //     孤児レコードが残る) は名前が出せないので、まとめて1つのチップに寄せる。
+      const _chip = (txt, col, bg) => `<span style="font-size:0.7rem;padding:0.1rem 0.42rem;border-radius:9px;background:${bg};color:${col};border:1px solid ${col}55;white-space:nowrap;">${escapeHtml(txt)}</span>`;
+      const _done = Array.isArray(d.done) ? d.done : [];
+      const _pend = Array.isArray(d.pending) ? d.pending : [];
+      // 削除済みは「完了側」「未完了側」に分けて出す。分けないと「完了1名」なのに
+      // 名前が並ばない配信で、数字と表示が食い違って見える (実測6件あった)。
+      const _goneDone = d.deleted_done || 0, _gonePend = d.deleted_pending || 0;
+      const DONE_MAX = 8, PEND_MAX = 6;
+      const _goneChip = n => `<span title="生徒データが削除済みのため氏名を表示できません" style="display:inline-block;">`
+        + _chip(`削除済み生徒 ${n}名`, '#94a3b8', 'rgba(148,163,184,0.10)') + `</span>`;
+      let who = '';
+      // ★未完了を**先に**出す (塾長指示 2026-06-06「宿題を誰がやってるか分からない」)。
+      //   詳細画面 gdAnalytics も同じ順序。塾長が見たいのは「誰がまだやっていないか」なので、
+      //   ここを完了→未完了の順にすると探すものが下に来てしまう。
+      if (_pend.length || _gonePend) {
+        who += `<div style="display:flex;flex-wrap:wrap;gap:0.25rem;align-items:center;margin-top:0.28rem;"><span style="font-size:0.68rem;color:#fca5a5;font-weight:700;flex-shrink:0;">⬜ 未完了</span>`
+          + _pend.slice(0, PEND_MAX).map(s => _chip(s.name, '#fca5a5', 'rgba(248,113,113,0.10)')).join('')
+          + (_pend.length > PEND_MAX ? `<span style="font-size:0.68rem;color:#71717a;">…他${_pend.length - PEND_MAX}名</span>` : '')
+          + (_gonePend ? _goneChip(_gonePend) : '')
+          + `</div>`;
+      }
+      if (_done.length || _goneDone) {
+        who += `<div style="display:flex;flex-wrap:wrap;gap:0.25rem;align-items:center;margin-top:0.22rem;"><span style="font-size:0.68rem;color:#86efac;font-weight:700;flex-shrink:0;">✅ 完了</span>`
+          + _done.slice(0, DONE_MAX).map(s => _chip(
+              s.score_total ? `${s.name} ${s.score_correct == null ? '?' : s.score_correct}/${s.score_total}` : s.name,
+              '#86efac', 'rgba(52,211,153,0.13)')).join('')
+          + (_done.length > DONE_MAX ? `<span style="font-size:0.68rem;color:#71717a;">…他${_done.length - DONE_MAX}名</span>` : '')
+          + (_goneDone ? _goneChip(_goneDone) : '')
+          + `</div>`;
+      }
+      return `<div style="background:rgba(0,0,0,0.25);border:1px solid #334155;border-radius:8px;padding:0.45rem 0.6rem;"><div style="display:flex;align-items:center;gap:0.5rem;"><div onclick="gdAnalytics(${d.id})" style="cursor:pointer;flex:1;min-width:0;"><div style="font-size:0.8rem;color:#e5e7eb;font-weight:700;">${escapeHtml(d.title)}${dts ? ` <span style="color:#71717a;font-weight:400;font-size:0.85em;">${dts}</span>` : ''}</div><div style="font-size:0.73rem;color:#94a3b8;">配信 ${d.assigned}名 / 完了 ${d.completed}名 ・ 正解率 <span style="color:${rc};font-weight:700;">${rate}</span></div></div><button onclick="gdDelete(${d.id})" title="ドリルを削除" style="background:none;border:1px solid #475569;color:#fca5a5;border-radius:5px;padding:0.25rem 0.5rem;font-size:0.72rem;cursor:pointer;flex-shrink:0;">🗑</button></div>${who}</div>`;
     }
     function gdRenderList() {
       const box = document.getElementById('gdList'); if (!box) return;
