@@ -228,7 +228,7 @@ function isSuspiciousStudentName(name) {
 
 function renderRoster(students) {
   const tbody = document.getElementById('rosterBody');
-  const search = (document.getElementById('rosterSearch').value || '').toLowerCase();
+  const search = (document.getElementById('rosterSearch').value || '').trim().toLowerCase();
   const sort = document.getElementById('rosterSort').value;
   // 🧒 中学生/高校生 トグル (2026-06-04): 学年でモード絞り込み + モード別カウント
   const gradeModeEl = document.getElementById('rosterGradeMode');
@@ -237,10 +237,16 @@ function renderRoster(students) {
     ? window.ajStudentMode(g)
     : (/小学|小[1-6]年?|中学受験|中受/.test(String(g || '')) ? 'shougaku' : /中学|中[1-3]年?/.test(String(g || '')) ? 'chugaku' : 'kosei');
 
+  // 🔍 2026-09-03: メール / 生徒ID でも引けるようにした。ログイン救済 (OTP・LINE連携・
+  //   リンク再送) を生徒詳細モーダルへ移した結果、「メールアドレスしか手掛かりが無い」ときに
+  //   生徒行へ辿り着けなくなったため (旧 OTP 欄はメールで検索できた)。
   let list = students.filter(s =>
     (!search ||
       (s.name || '').toLowerCase().includes(search) ||
-      (s.grade || '').toLowerCase().includes(search)) &&
+      (s.grade || '').toLowerCase().includes(search) ||
+      (s.email || '').toLowerCase().includes(search) ||
+      (s.student_email || '').toLowerCase().includes(search) ||
+      String(s.id || '') === search) &&
     (gradeMode === 'all' || _modeOf(s.grade) === gradeMode)
   );
 
@@ -261,7 +267,11 @@ function renderRoster(students) {
   list.sort(sorters[sort] || sorters['fee-desc']);
 
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-muted);">生徒データがありません。 index.html の「📥 juku-managerからインポート」で既存生徒を取り込んでください。</td></tr>';
+    // ★「検索で 0 件」と「そもそもデータが無い」を区別する。区別しないと、実在する生徒を
+    //   探しているのに「インポートしてください」という誤った指示を読まされる。
+    tbody.innerHTML = students.length > 0
+      ? `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-muted);">「${escapeHtml(search || '')}」に一致する生徒はいません (氏名 / 学年 / メール / 生徒ID で検索できます)</td></tr>`
+      : '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-muted);">生徒データがありません。 index.html の「📥 juku-managerからインポート」で既存生徒を取り込んでください。</td></tr>';
     return;
   }
 

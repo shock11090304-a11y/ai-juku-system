@@ -24032,7 +24032,7 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
                        "メールアドレスを登録するまで利用できません (メール登録後にこの画面でもう一度発行してください)。")
         if warning:
             log.warning(f"[AdminOTPDirect] usable login email not found for student_id={sid}; direct_login_url skipped")
-        # verify-code / auth.html?t= は契約状態でも弾く (_active 判定と同等)。ログインできない
+        # 🚪 [login-allow-inactive] 2026-06-19 以降、verify-code / auth.html?t= は契約状態では弾かない
         # 生徒に「確実 / 今すぐログインできます」と案内しないための注意書き (kokuritsu_nankan は永久無料)
         _st_active = row["status"] in ("paid", "past_due") or _course == "kokuritsu_nankan"
         if not _st_active and row["status"] == "trial" and row["trial_end"]:
@@ -24044,9 +24044,15 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
                 _st_active = _te_dt > datetime.now(timezone.utc)
             except Exception:
                 pass  # 解析不能な trial_end は verify-code も拒否する → 注意書きを出すのが正
+        # 🚪 [login-allow-inactive] 2026-06-19 (方針A) 以降、体験切れ/退会でも **ログイン自体は通る**。
+        #   ログイン後に auth-guard が継続登録 (upgrade.html?reason=resubscribe) へ流す。
+        #   ★かつてここは「コード/リンクともログインが拒否されます」と書いていたが、それは
+        #     2026-06-12 時点の仕様で、7 日後の方針A で嘘になっていた。この文言を信じて
+        #     CEO 画面がコードと URL を隠すと、「切れた生徒を入れ直して継続登録に載せる」という
+        #     いちばん効く救済を塞いでしまう (2026-09-03 に実際に踏んだ)。
         _status_caveat = ("" if _st_active else
-                          f" ⚠️ 現在の契約状態 ({row['status'] or '不明'}) ではコード/リンクともログインが拒否されます"
-                          " (体験期限切れ・退会など)。先に契約状態を確認してください。")
+                          f" ℹ️ 現在の契約状態 ({row['status'] or '不明'}) です。ログイン自体はできますが、"
+                          "ログイン後は継続登録 (再開) の画面になります。")
         # 🔗 LINE 紐付け済みなら自動配信 (塾長の手動コピペ不要に):
         #   - URL を発行できた場合は従来どおり OTP + ワンクリック URL を push
         #   - URL を発行できない場合はコード入力ログインも不可能なので、メール不要でログイン
@@ -24072,8 +24078,11 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
                 warning += (" 📲 ただしこの生徒は LINE 連携済みのため、メール不要のログインリンク (magic link) を"
                             " LINE に自動送信しました。生徒は今すぐそのリンクからログインできます。")
             elif line_sent:
+                # ★「契約状態を直すまでログインできない」は嘘だった ([login-allow-inactive] 2026-06-19)。
+                #   このリンクは実際に通り、ログイン後に継続登録へ誘導される。
                 warning += (" 📲 この生徒は LINE 連携済みのため、メール不要のログインリンク (magic link) を"
-                            " LINE に自動送信しましたが、契約状態の問題を解消するまではこのリンクでもログインできません。")
+                            " LINE に自動送信しました。ログイン自体はできますが、"
+                            "ログイン後は継続登録 (再開) の画面になります。")
         if warning and _status_caveat:
             warning += _status_caveat
         _expiry_note = ("⏱ コード自体に時間切れはありません (1 回使うと無効)。" if _is_infinite
@@ -24081,9 +24090,10 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
         if direct_login_url:
             instructions = (
                 "【伝達方法 2 通り】(A) ワンクリック URL を LINE で送る → 生徒は URL クリックで即ログイン (確実なのはこちら)。"
-                f"(B) 6 桁コードを電話で伝える場合は順序が重要 → 先に生徒に login.html でメアド {_login_email} を入力させ"
-                "『ログインコードを送信』を押させてコード入力画面を開かせる → その後にこの画面の『🔑 発行』をもう一度押し、"
-                "新しく表示されたコードを伝える (いま画面に出ているコードは、生徒がボタンを押した時点で無効化されるため)。"
+                f"(B) 6 桁コードを電話で伝える → 生徒に login.html でメアド {_login_email} を入力させ"
+                "『ログインコードを送信』を押させ、コード入力画面を開かせる → いま画面に出ているコードをそのまま伝える。"
+                "(直前に発行したコードは有効なままです。生徒のメールに届いたコードでも、"
+                "この画面のコードでも、どちらでもログインできます。発行し直す必要はありません)。"
                 + _expiry_note + _status_caveat
             )
         else:
@@ -24209,7 +24219,7 @@ def admin_send_kokuritsu_url_bundle(
             rows_html = '<tr><td colspan="5" style="padding:14px;text-align:center;color:#6b7280;">在籍生 0 名 (course=\'kokuritsu_nankan\' AND status IN paid/trial)</td></tr>'
 
         now_jst_str = (datetime.now(timezone.utc) + timedelta(hours=9)).strftime("%Y-%m-%d %H:%M JST")
-        skipped_note = f"<p style='color:#dc2626;font-size:0.82rem;'>※ メアド未登録 {skipped_no_email} 名は対象外 (口頭伝達運用)。CEO ダッシュ「🔑 OTP 緊急発行」で個別対応してください。</p>" if skipped_no_email else ""
+        skipped_note = f"<p style='color:#dc2626;font-size:0.82rem;'>※ メアド未登録 {skipped_no_email} 名は対象外 (口頭伝達運用)。CEO ダッシュで生徒名をクリック →「🔑 ログインの救済」で個別対応してください。</p>" if skipped_no_email else ""
 
         body_html = f"""<div style="font-family:'Hiragino Sans','Yu Gothic',sans-serif;max-width:780px;margin:0 auto;color:#111827;line-height:1.6;">
   <h1 style="background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;color:transparent;font-size:1.5rem;margin-bottom:0.3rem;">🎓 国公立難関大コース 専用URLバンドル</h1>
@@ -28533,7 +28543,7 @@ def admin_email_diagnose(authorization: Optional[str] = Header(None), x_cron_sec
                 _err_txt = (props.get("error") or "")[:200]
                 if "recipient_rate_limited" in _err_txt:
                     # 救済導線は ceo.html の実在 UI 名で案内する (review 指摘: 存在しない「生徒詳細の手動送信」と書くと塾長が迷う)
-                    _err_txt = "recipient_rate_limited (受信者単位の上限10通/時 — 1時間で自動解除。救済: ダッシュの『magic link 指定アドレス送信』=上限対象外 / 『OTP 緊急発行』)"
+                    _err_txt = "recipient_rate_limited (受信者単位の上限10通/時 — 1時間で自動解除。救済: 生徒詳細の『🔑 ログインの救済』→『ログインリンクを送り直す』=上限対象外 / 『OTP を発行』)"
                 if props.get("student_email_blocked"):
                     _parent_note = "・親には送信成功" if props.get("email_sent") else ""
                     _err_txt = ((_err_txt + " / ") if _err_txt else "") + f"子メール送信ブロック (他生徒の親メールと衝突{_parent_note} — 生徒詳細の子メール設定を確認)"

@@ -506,7 +506,6 @@
             <button type="button" class="tb-btn hub-btn" data-hub-target="studyPlanSection" data-hub-label="📅 学習計画ダッシュボード"><span class="tb-icon">📅</span><span class="tb-label">学習計画</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="messagesSection" data-hub-label="📨 メッセージ配信"><span class="tb-icon">💬</span><span class="tb-label">メッセージ</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="classMgmtSection" data-hub-label="🏫 通塾クラス (ファイル/録画/出欠)"><span class="tb-icon">🏫</span><span class="tb-label">通塾クラス</span></button>
-            <button type="button" class="tb-btn hub-btn" data-hub-target="magicLinkSendSection" data-hub-label="🔗 magic link 指定アドレス送信"><span class="tb-icon">🔗</span><span class="tb-label">ログインリンク</span></button>
           </div>
         </div>
         <div class="tb-group">
@@ -904,26 +903,6 @@
         </div>
         <div id="emailDiagnoseResult" style="display:none;margin-top:0.6rem;padding:0.6rem;background:rgba(0,0,0,0.4);border-radius:6px;font-size:0.75rem;line-height:1.5;color:#e4e4e7;"></div>
 
-        <!-- 🔑 OTP 緊急発行: メール届かない生徒に admin が OTP 直接発行 (2026-05-11 メール不着の生徒対応で追加) -->
-        <div style="margin-top:0.8rem;padding:0.7rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;">
-          <div style="font-weight:800;color:#fca5a5;font-size:0.82rem;margin-bottom:0.4rem;">🔑 OTP 緊急発行 — どのメアドにしても届かない生徒向け</div>
-          <div style="font-size:0.72rem;color:#fca5a5;margin-bottom:0.5rem;line-height:1.55;">メール経路を一切経由せず、塾長が LINE/電話/対面で OTP を伝達できます。<strong style="color:#86efac;">有効期限なし・1 回使うと無効</strong> (いつでも使えます)。</div>
-          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
-            <input type="text" id="otpIssueQuery" placeholder="生徒名 (例: 室坂) / ID / メアド" style="flex:1;min-width:170px;padding:0.4rem 0.55rem;background:rgba(0,0,0,0.4);border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#e4e4e7;font-size:0.78rem;font-family:inherit;">
-            <button id="otpIssueBtn" type="button" style="background:rgba(239,68,68,0.25);color:#fca5a5;border:1px solid rgba(239,68,68,0.5);padding:0.4rem 0.85rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;">🔑 発行</button>
-          </div>
-          <div id="otpIssueResult" style="display:none;margin-top:0.6rem;padding:0.6rem;background:rgba(0,0,0,0.45);border-radius:6px;font-size:0.78rem;line-height:1.55;color:#e4e4e7;"></div>
-        </div>
-        <!-- 📲 LINE連携コード発行: 塾長が生徒の LINE 連携を代理発行 (2026-06-05・メール不達の恒久対策) -->
-        <div style="margin-top:0.8rem;padding:0.7rem;background:rgba(6,199,85,0.08);border:1px solid rgba(6,199,85,0.3);border-radius:8px;">
-          <div style="font-weight:800;color:#34d399;font-size:0.82rem;margin-bottom:0.4rem;">📲 LINE連携コード発行 — ログインコードを LINE で届けたい生徒向け</div>
-          <div style="font-size:0.72rem;color:#86efac;margin-bottom:0.5rem;line-height:1.55;">連携コードを発行し生徒に伝達。生徒が <strong>①公式LINEを友だち追加 → ②コードをトークに送信</strong> で紐付け完了。以降そのコは<strong style="color:#86efac;">ログインコードが LINE に届く</strong>(メール不達の解消)。<strong>期限なし・1 回で完了</strong>。</div>
-          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
-            <input type="text" id="lineLinkQuery" placeholder="生徒名 / ID / メアド" style="flex:1;min-width:170px;padding:0.4rem 0.55rem;background:rgba(0,0,0,0.4);border:1px solid rgba(6,199,85,0.3);border-radius:6px;color:#e4e4e7;font-size:0.78rem;font-family:inherit;">
-            <button id="lineLinkIssueBtn" type="button" style="background:rgba(6,199,85,0.22);color:#34d399;border:1px solid rgba(6,199,85,0.5);padding:0.4rem 0.85rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;">📲 発行</button>
-          </div>
-          <div id="lineLinkIssueResult" style="display:none;margin-top:0.6rem;padding:0.6rem;background:rgba(0,0,0,0.45);border-radius:6px;font-size:0.78rem;line-height:1.55;color:#e4e4e7;"></div>
-        </div>
       </div>
 
       <!-- 📧 自分宛メモ送信 (= Threads 投稿テキスト等を Gmail に送る・iPhone でコピペしやすく / 2026-05-07 追加) -->
@@ -1816,28 +1795,6 @@
       }
     </style>
 
-    <!-- ========================================== -->
-    <!-- 🔗 magic link 指定アドレス送信 (親の携帯で登録 → 子供のアドレスに送り直す等) -->
-    <!-- ========================================== -->
-    <section id="magicLinkSendSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.25); border-radius: 14px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;flex-wrap:wrap;gap:0.5rem;">
-        <h2 style="font-size:1.15rem;color:#a5b4fc;margin:0;">🔗 magic link 指定アドレス送信</h2>
-        <span style="font-size:0.7rem;color:#71717a;">親の携帯で登録 → 子供のアドレスに送り直す</span>
-      </div>
-      <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.9rem;line-height:1.6;">
-        生徒 ID + 送信先メールアドレスを指定して magic link を再送できます。<br>
-        例: 親が登録した後、生徒本人の Gmail に直接ログインリンクを届けたい場合に使用。
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.6rem;margin-bottom:0.7rem;">
-        <input id="mlStudentId" type="number" min="1" placeholder="生徒 ID *" style="background:rgba(0,0,0,0.4);border:1px solid rgba(99,102,241,0.35);color:#fff;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.88rem;">
-        <input id="mlToEmail" type="email" placeholder="送信先メールアドレス *" style="background:rgba(0,0,0,0.4);border:1px solid rgba(99,102,241,0.35);color:#fff;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.88rem;">
-        <button id="mlSendBtn" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.88rem;font-weight:800;cursor:pointer;">📨 magic link 送信</button>
-      </div>
-
-      <div id="mlResult" style="display:none;background:rgba(0,0,0,0.35);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:0.9rem;font-size:0.85rem;"></div>
-    </section>
-
     <!-- 🎓 問題プール状況 (随時自動追加スケジューラの可視化) -->
     <section id="examPoolSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(14,165,233,0.06); border: 1px solid rgba(14,165,233,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
@@ -2305,7 +2262,7 @@
           </select>
           <button type="button" id="previewModeBtn" title="選択中の学年モードで完全模試を別タブ表示 (実生徒不要・塾長プレビュー)">👁 完全模試</button>
           <button type="button" id="previewMypageBtn" title="選択中の学年モードでマイページを別タブ表示 (実生徒不要・実データは表示されません)">👁 マイページ</button>
-          <input type="text" id="rosterSearch" placeholder="名前/学年で検索..." />
+          <input type="text" id="rosterSearch" placeholder="名前 / 学年 / メール / ID で検索..." />
           <select id="rosterSort">
             <option value="fee-desc">月謝順(高→低)</option>
             <option value="fee-asc">月謝順(低→高)</option>
@@ -3313,6 +3270,9 @@
           has_line: !!st.has_line,
           is_carrier_email: !!st.is_carrier_email,
           email: st.email || '',
+          // 🔍 2026-09-03: ロスター検索で「子のアドレスしか手掛かりが無い」ケースを引けるように。
+          //   旧 OTP 欄はサーバ側が email/student_email の両方で照合していた。
+          student_email: st.student_email || '',
           course: st.course || null,
           is_tsujuku_app: !!st.is_tsujuku_app,  // 塾生アプリ登録経由=ロスター分離表示用
         }));
@@ -5346,46 +5306,6 @@
         });
       }
 
-      // 🔗 magic link 指定アドレス送信 (親の携帯で登録 → 子供の email に送り直す等)
-      const mlSendBtn = document.getElementById('mlSendBtn');
-      if (mlSendBtn) mlSendBtn.addEventListener('click', async () => {
-        const sid = parseInt(document.getElementById('mlStudentId').value || '0', 10);
-        const toEmail = (document.getElementById('mlToEmail').value || '').trim();
-        const resultBox = document.getElementById('mlResult');
-        if (!sid || sid <= 0) { alert('生徒 ID を入力してください'); return; }
-        if (!toEmail || !toEmail.includes('@')) { alert('有効な送信先メールアドレスを入力してください'); return; }
-        if (!confirm(`生徒 ID ${sid} の magic link を ${toEmail} に送信します。よろしいですか?`)) return;
-        mlSendBtn.disabled = true; const orig = mlSendBtn.textContent; mlSendBtn.textContent = '⏳ 送信中...';
-        try {
-          const r = await AdminAuth.fetch('/api/admin/students/send-magic-link-to', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ student_id: sid, to_email: toEmail }),
-          });
-          const j = await r.json();
-          resultBox.style.display = 'block';
-          if (r.ok && j.sent) {
-            resultBox.style.borderColor = 'rgba(34,197,94,0.5)';
-            resultBox.style.background = 'rgba(34,197,94,0.1)';
-            resultBox.innerHTML = `<div style="color:#86efac;font-weight:700;">✅ 送信成功</div>
-              <div style="margin-top:0.4rem;color:#cbd5e1;">生徒 ID: <strong>${j.student_id}</strong> / 登録メール: ${j.registered_email}</div>
-              <div style="color:#cbd5e1;">送信先: <strong>${j.to}</strong></div>
-              <div style="margin-top:0.4rem;color:#71717a;font-size:0.78rem;">受信側でメールを開いて magic link をクリック or OTP 入力でログイン可能</div>`;
-          } else {
-            resultBox.style.borderColor = 'rgba(248,113,113,0.5)';
-            resultBox.style.background = 'rgba(248,113,113,0.1)';
-            resultBox.innerHTML = `<div style="color:#fca5a5;font-weight:700;">❌ 送信失敗</div>
-              <div style="margin-top:0.4rem;color:#cbd5e1;">${j.error || j.detail || JSON.stringify(j).slice(0, 200)}</div>`;
-          }
-        } catch (e) {
-          resultBox.style.display = 'block';
-          resultBox.style.borderColor = 'rgba(248,113,113,0.5)';
-          resultBox.style.background = 'rgba(248,113,113,0.1)';
-          resultBox.innerHTML = `<div style="color:#fca5a5;">❌ ${e.message}</div>`;
-        }
-        mlSendBtn.disabled = false; mlSendBtn.textContent = orig;
-      });
-
       // 📨 通塾生 招待 URL 発行
       (function setupInviteGenUI(){
         const btn = document.getElementById('invGenBtn');
@@ -6818,160 +6738,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         emailDiagBtn.disabled = false; emailDiagBtn.textContent = '🩺 メール診断';
       });
 
-      // 🔑 OTP 緊急発行 (2026-05-11 メール不着の生徒対応: メール届かない生徒向け admin 直接 OTP 発行)
-      const otpIssueBtn = document.getElementById('otpIssueBtn');
-      const otpIssueQuery = document.getElementById('otpIssueQuery');
-      const otpIssueResult = document.getElementById('otpIssueResult');
       // HTML エスケープ (メール診断・OTP 発行・LINE 連携コード発行の結果表示で共用 — 上の診断ハンドラからは function 巻き上げで参照)
       function lineEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-      function renderOtpResult(html, isError) {
-        otpIssueResult.style.display = 'block';
-        // isError: true=エラー(赤) / 'warn'=警告(琥珀・URL 発行不可など) / false=成功(緑)
-        otpIssueResult.style.borderLeft = isError === 'warn' ? '3px solid #fbbf24' : (isError ? '3px solid #f87171' : '3px solid #34d399');
-        otpIssueResult.innerHTML = html;
-      }
-      async function issueOtpDirect(payload) {
-        try {
-          const r = await AdminAuth.fetch('/api/admin/students/issue-otp-direct', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
-          const d = await r.json();
-          if (!r.ok) {
-            renderOtpResult(`❌ ${lineEsc(d.detail || '発行失敗')}`, true);
-            return;
-          }
-          if (d.needs_disambiguation) {
-            let html = `<div style="color:#fbbf24;font-weight:700;margin-bottom:0.4rem;">⚠️ ${lineEsc(d.message)}</div>`;
-            html += '<div style="display:flex;flex-direction:column;gap:0.3rem;">';
-            d.candidates.forEach(s => {
-              html += `<button type="button" data-sid="${s.id}" class="otp-candidate-btn" style="text-align:left;padding:0.45rem 0.6rem;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);border-radius:5px;color:#a5b4fc;font-family:inherit;font-size:0.76rem;cursor:pointer;">#${s.id} ${lineEsc(s.name)} &lt;${lineEsc(s.email || '(メール未登録)')}&gt; (${lineEsc(s.status)})</button>`;
-            });
-            html += '</div>';
-            renderOtpResult(html, 'warn');
-            document.querySelectorAll('.otp-candidate-btn').forEach(btn => {
-              btn.addEventListener('click', () => issueOtpDirect({ student_id: parseInt(btn.dataset.sid, 10) }));
-            });
-            return;
-          }
-          const s = d.student;
-          const otp = d.otp;
-          const url = d.direct_login_url;
-          // 🩹 2026-06-12: email 未登録/照合不能 (legacy 行) は url=null + warning が返る。
-          //   警告はコードより上に表示 (✅とコードだけ見て、使えないコードを生徒に伝達する事故防止)。
-          //   メアド空も「(未登録)」と明示して admin が気付けるようにする。
-          const warnBlock = url ? '' : `
-            <div style="margin:0.5rem 0;padding:0.6rem;background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.45);border-radius:6px;color:#fca5a5;font-size:0.74rem;font-weight:700;line-height:1.7;">⚠️ ${lineEsc(d.warning || 'メール未登録のためワンクリック URL を発行できません')}</div>`;
-          const urlBlock = url ? `
-            <div style="margin:0.6rem 0;">
-              <div style="font-size:0.72rem;color:#a3a3a3;margin-bottom:0.25rem;">📲 ワンクリックログイン URL (LINE で送る):</div>
-              <div style="display:flex;gap:0.3rem;align-items:center;">
-                <input type="text" id="otpUrlDisplay" readonly value="${lineEsc(url)}" style="flex:1;padding:0.4rem 0.55rem;background:rgba(0,0,0,0.5);border:1px solid rgba(99,102,241,0.3);border-radius:5px;color:#a5b4fc;font-size:0.7rem;font-family:'SF Mono',monospace;">
-                <button type="button" id="otpUrlCopyBtn" style="background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);padding:0.4rem 0.7rem;border-radius:5px;font-size:0.72rem;font-weight:700;cursor:pointer;white-space:nowrap;">📋 URL コピー</button>
-              </div>
-            </div>` : '';
-          const html = `
-            <div style="color:#34d399;font-weight:800;margin-bottom:0.5rem;">✅ #${s.id} ${lineEsc(s.name)} さま (${lineEsc(s.status)})</div>
-            <div style="font-size:0.7rem;color:${s.email ? '#a3a3a3' : '#fbbf24'};margin-bottom:0.4rem;">登録メアド: ${lineEsc(s.email || '(未登録)')}</div>
-            ${d.login_email && d.login_email !== s.email ? `<div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.4rem;">ログイン照合メアド (子メール): ${lineEsc(d.login_email)}</div>` : ''}
-            ${d.line_sent ? `<div style="font-size:0.72rem;color:#6ee7b7;margin-bottom:0.4rem;">📲 LINE に自動送信済み</div>` : ''}
-            ${warnBlock}
-            <div style="background:rgba(0,0,0,0.5);padding:0.8rem;border-radius:8px;text-align:center;margin:0.6rem 0;${url ? '' : 'opacity:0.6;'}">
-              <div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.3rem;">6 桁ログインコード (${d.no_expiry ? '有効期限なし・1 回使うと無効' : (d.ttl_seconds ? Math.round(d.ttl_seconds/60)+' 分有効' : '10 分有効')}${url ? '' : '・現在は使用不可 (上記参照)'})</div>
-              <div id="otpCodeDisplay" style="font-size:2rem;font-weight:900;letter-spacing:0.5rem;color:#6ee7b7;font-family:'SF Mono',monospace;">${lineEsc(otp)}</div>
-              <button type="button" id="otpCopyBtn" style="margin-top:0.4rem;background:rgba(110,231,183,0.2);color:#6ee7b7;border:1px solid rgba(110,231,183,0.4);padding:0.3rem 0.7rem;border-radius:5px;font-size:0.72rem;font-weight:700;cursor:pointer;">📋 コピー</button>
-            </div>
-            ${urlBlock}
-            ${url ? `<div style="margin-top:0.6rem;padding:0.5rem;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:6px;color:#fde68a;font-size:0.72rem;line-height:1.6;">
-              ${lineEsc(d.instructions)}
-            </div>` : ''}
-          `;
-          // status_active === false (契約状態でログイン拒否) は URL があっても amber 枠で注意喚起
-          renderOtpResult(html, (url && d.status_active !== false) ? false : 'warn');
-          // copy buttons
-          const copyBtn = document.getElementById('otpCopyBtn');
-          if (copyBtn) copyBtn.addEventListener('click', async () => {
-            try { await navigator.clipboard.writeText(otp); copyBtn.textContent = '✅ コピー済'; setTimeout(()=>copyBtn.textContent='📋 コピー',1500); } catch(_e){}
-          });
-          const urlCopyBtn = document.getElementById('otpUrlCopyBtn');
-          if (urlCopyBtn) urlCopyBtn.addEventListener('click', async () => {
-            try { await navigator.clipboard.writeText(url); urlCopyBtn.textContent = '✅ コピー済'; setTimeout(()=>urlCopyBtn.textContent='📋 URL コピー',1500); } catch(_e){}
-          });
-        } catch (e) {
-          renderOtpResult(`❌ エラー: ${lineEsc(e.message)}`, true);
-        }
-      }
-      if (otpIssueBtn) otpIssueBtn.addEventListener('click', () => {
-        const q = (otpIssueQuery.value || '').trim();
-        if (!q) { renderOtpResult('⚠️ 生徒名 / ID / メアド を入力してください', true); return; }
-        // 数値なら student_id、@含めばemail、それ以外は name_query
-        let payload;
-        if (/^\d+$/.test(q)) payload = { student_id: parseInt(q, 10) };
-        else if (q.includes('@')) payload = { email: q };
-        else payload = { name_query: q };
-        renderOtpResult('⏳ 発行中...', false);
-        issueOtpDirect(payload);
-      });
-      if (otpIssueQuery) otpIssueQuery.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); otpIssueBtn.click(); }
-      });
-
-      // 📲 LINE連携コード発行 (2026-06-05: 塾長が生徒の LINE 連携を代理発行・メール不達の恒久対策)
-      const lineLinkIssueBtn = document.getElementById('lineLinkIssueBtn');
-      const lineLinkQuery = document.getElementById('lineLinkQuery');
-      const lineLinkIssueResult = document.getElementById('lineLinkIssueResult');
-      function renderLineLinkResult(html, isError) {
-        if (!lineLinkIssueResult) return;
-        lineLinkIssueResult.style.display = 'block';
-        lineLinkIssueResult.style.borderLeft = isError ? '3px solid #f87171' : '3px solid #34d399';
-        lineLinkIssueResult.innerHTML = html;
-      }
-      async function issueLineLink(payload) {
-        try {
-          const r = await AdminAuth.fetch('/api/admin/students/issue-line-link', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
-          });
-          const d = await r.json();
-          if (!r.ok) { renderLineLinkResult(`❌ ${lineEsc(d.detail || '発行失敗')}`, true); return; }
-          if (d.needs_disambiguation) {
-            let html = `<div style="color:#fbbf24;font-weight:700;margin-bottom:0.4rem;">⚠️ ${lineEsc(d.message)}</div><div style="display:flex;flex-direction:column;gap:0.3rem;">`;
-            d.candidates.forEach(s => {
-              html += `<button type="button" data-sid="${s.id}" class="linelink-candidate-btn" style="text-align:left;padding:0.45rem 0.6rem;background:rgba(6,199,85,0.13);border:1px solid rgba(6,199,85,0.4);border-radius:5px;color:#86efac;font-family:inherit;font-size:0.76rem;cursor:pointer;">#${s.id} ${lineEsc(s.name)} &lt;${lineEsc(s.email)}&gt;</button>`;
-            });
-            html += '</div>';
-            renderLineLinkResult(html, false);
-            document.querySelectorAll('.linelink-candidate-btn').forEach(btn => {
-              btn.addEventListener('click', () => issueLineLink({ student_id: parseInt(btn.dataset.sid, 10) }));
-            });
-            return;
-          }
-          const s = d.student; const code = d.code;
-          let html = `<div style="color:#34d399;font-weight:800;margin-bottom:0.4rem;">✅ #${s.id} ${lineEsc(s.name)} さま</div>`;
-          html += `<div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.4rem;">登録メアド: ${lineEsc(s.email)}${d.already_linked ? ' ｜ <span style="color:#fbbf24;">※既にLINE連携済 (再連携用)</span>' : ''}</div>`;
-          html += `<div style="background:rgba(0,0,0,0.5);padding:0.8rem;border-radius:8px;text-align:center;margin:0.6rem 0;"><div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.3rem;">連携コード (期限なし・1 回で完了)</div><div style="font-size:1.35rem;font-weight:900;letter-spacing:0.06rem;color:#6ee7b7;font-family:'SF Mono',monospace;word-break:break-all;">${lineEsc(code)}</div><button type="button" id="lineLinkCopyBtn" style="margin-top:0.4rem;background:rgba(110,231,183,0.2);color:#6ee7b7;border:1px solid rgba(110,231,183,0.4);padding:0.3rem 0.7rem;border-radius:5px;font-size:0.72rem;font-weight:700;cursor:pointer;">📋 コピー</button></div>`;
-          html += `<div style="margin-top:0.5rem;padding:0.5rem;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:6px;color:#fde68a;font-size:0.72rem;line-height:1.6;">${lineEsc(d.instructions || '')}</div>`;
-          renderLineLinkResult(html, false);
-          const cBtn = document.getElementById('lineLinkCopyBtn');
-          if (cBtn) cBtn.addEventListener('click', async () => {
-            try { await navigator.clipboard.writeText(code); cBtn.textContent = '✅ コピー済'; setTimeout(() => cBtn.textContent = '📋 コピー', 1500); } catch (_e) {}
-          });
-        } catch (e) { renderLineLinkResult(`❌ エラー: ${lineEsc(e.message)}`, true); }
-      }
-      if (lineLinkIssueBtn) lineLinkIssueBtn.addEventListener('click', () => {
-        const q = (lineLinkQuery.value || '').trim();
-        if (!q) { renderLineLinkResult('⚠️ 生徒名 / ID / メアド を入力してください', true); return; }
-        let payload;
-        if (/^\d+$/.test(q)) payload = { student_id: parseInt(q, 10) };
-        else if (q.includes('@')) payload = { email: q };
-        else payload = { name_query: q };
-        renderLineLinkResult('⏳ 発行中...', false);
-        issueLineLink(payload);
-      });
-      if (lineLinkQuery) lineLinkQuery.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); lineLinkIssueBtn.click(); }
-      });
-
       // ⚡ 「JS エラー一括解決」ボタン (2026-04-28 self-healing)
       const sweepBtn = document.getElementById('sweepJsErrorsBtn');
       if (sweepBtn) sweepBtn.addEventListener('click', async () => {
@@ -9009,7 +8777,295 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           </div>` : ''}
         </div>`
           : ''),
+        // 🔑 [2026-09-03 塾長指示] ログインの救済 (OTP / LINE連携コード / ログインリンク再送)。
+        //   以前はダッシュボード上部に3つの独立した欄があり、毎回そこに氏名・生徒ID・メールを
+        //   打ち込む必要があった。この生徒を開いている時点で ID もメールも分かっているので、
+        //   ここから 1 クリックで発行できるようにして、元の3欄は削除した。
+        //   ★結果はこのブロックの中に出す。モーダル外や body 直下に出すと、別の生徒を開いた
+        //     ときに前の生徒の OTP が残って見える (infoPane は再描画のたび作り直されるので、
+        //     中に置けば自動で消える)。
+        `<div style="margin-top:12px;padding:14px;background:rgba(244,114,182,0.07);border:1px solid rgba(244,114,182,0.28);border-radius:10px;">
+          <div style="color:#f9a8d4;font-weight:600;font-size:0.88rem;margin-bottom:4px;">🔑 ログインの救済</div>
+          <div style="color:#71717a;font-size:0.75rem;line-height:1.5;margin-bottom:10px;">
+            「ログインできない」「コードが届かない」と言われたときに、上から順に試してください。
+          </div>
+
+          <div style="color:#c7d2fe;font-size:0.8rem;font-weight:600;margin-bottom:3px;">① ✉️ ログインリンクを送り直す</div>
+          <div style="color:#71717a;font-size:0.72rem;line-height:1.5;margin-bottom:6px;">
+            いつものログインメールをもう一度送ります。宛先を変えられるので「親の携帯で登録したが子のアドレスに届けたい」ときにも使えます。
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+            <select class="sd-ml-target" style="flex:1 1 210px;padding:8px 10px;background:rgba(0,0,0,0.4);border:1px solid rgba(99,102,241,0.35);border-radius:7px;color:#e4e4e7;font-size:0.82rem;font-family:inherit;">
+              ${st.email ? `<option value="${esc(st.email)}">保護者メール: ${esc(st.email)}</option>` : ''}
+              ${st.student_email ? `<option value="${esc(st.student_email)}" data-unverified="${st.student_email_verified === false ? '1' : ''}">子供メール${st.student_email_verified === false ? ' ⚠️未確認' : ''}: ${esc(st.student_email)}</option>` : ''}
+              <option value="__other__">その他のアドレスを入力…</option>
+            </select>
+            <button type="button" class="sd-send-magiclink-btn" data-student-id="${esc(st.id)}"
+              style="flex:0 0 auto;padding:8px 14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:7px;font-weight:700;font-size:0.82rem;cursor:pointer;">📨 送信</button>
+          </div>
+          <input type="email" class="sd-ml-other" placeholder="送信先メールアドレス" style="display:none;margin-top:6px;width:100%;padding:8px 10px;background:rgba(0,0,0,0.4);border:1px solid rgba(99,102,241,0.35);border-radius:7px;color:#e4e4e7;font-size:0.82rem;font-family:inherit;">
+
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);">
+            <div style="color:#34d399;font-size:0.8rem;font-weight:600;margin-bottom:3px;">② 📲 LINE連携コードを発行</div>
+            <div style="color:#71717a;font-size:0.72rem;line-height:1.5;margin-bottom:6px;">
+              メールがどうしても届かない子向け。連携すると<strong style="color:#86efac;">以後ログインコードが LINE に届く</strong>ようになります (メール不達の根本解消)。
+            </div>
+            <button type="button" class="sd-issue-linelink-btn" data-student-id="${esc(st.id)}"
+              style="width:100%;padding:10px 14px;background:rgba(6,199,85,0.16);color:#34d399;border:1px solid rgba(6,199,85,0.45);border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer;">
+              📲 連携コードを発行</button>
+          </div>
+
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);">
+            <div style="color:#fca5a5;font-size:0.8rem;font-weight:600;margin-bottom:3px;">③ 🔑 OTP を発行 (その場でしのぐ)</div>
+            <div style="color:#71717a;font-size:0.72rem;line-height:1.5;margin-bottom:6px;">
+              ${st.email || st.student_email
+                ? 'メールを経由せず、電話や対面で渡せるコードとワンクリックURLを出します。発行済みのコードは無効にならないので、<strong>いま出ているコードをそのまま伝えて大丈夫</strong>です。'
+                : '<strong style="color:#fbbf24;">※この生徒はメール未登録のため OTP は使えません</strong> (コード入力画面でメアド照合が必要)。先に②か、メールアドレスの登録を。'}
+            </div>
+            <button type="button" class="sd-issue-otp-btn" data-student-id="${esc(st.id)}"
+              ${(!st.email && !st.student_email) ? 'disabled title="メール未登録の生徒には使えません"' : ''}
+              style="width:100%;padding:10px 14px;background:rgba(239,68,68,0.16);color:#fca5a5;border:1px solid rgba(239,68,68,0.45);border-radius:8px;font-weight:700;font-size:0.85rem;cursor:${(!st.email && !st.student_email) ? 'not-allowed' : 'pointer'};opacity:${(!st.email && !st.student_email) ? '0.45' : '1'};">
+              🔑 OTP を発行</button>
+          </div>
+
+          ${(!st.email && !st.student_email)
+            ? `<div style="margin-top:8px;padding:7px 9px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:6px;color:#fde68a;font-size:0.74rem;line-height:1.5;">この生徒はメールが未登録です。①は送信先を直接入力すれば使えます。②の LINE 連携が本命で、③の OTP は<strong>使えません</strong> (メアド照合が必要なため)。</div>` : ''}
+
+          <div class="sd-login-help-result" style="display:none;margin-top:10px;padding:10px;background:rgba(0,0,0,0.45);border-radius:8px;font-size:0.8rem;line-height:1.6;color:#e4e4e7;"></div>
+        </div>`,
       ].join('');
+
+      // 🔑 [2026-09-03] ログインの救済 (OTP / LINE連携コード / ログインリンク) の配線。
+      //   3 API とも student_id だけで呼べるので、氏名やメールの入力・候補選択は要らない
+      //   (needs_disambiguation は name_query のときにしか返らない)。
+      //   ★infoPane は開くたび innerHTML ごと作り直されるので、ここで直接 bind して問題ない
+      //     (古いノードごとリスナが捨てられる。他の sd-*-btn と同じ作法)。
+      (function wireLoginHelp() {
+        const resultBox = infoPane.querySelector('.sd-login-help-result');
+        if (!resultBox) return;
+        const allBtns = () => infoPane.querySelectorAll('.sd-issue-otp-btn, .sd-issue-linelink-btn, .sd-send-magiclink-btn');
+        // ★結果は画面外に出やすい (このブロックは縦長ペインのいちばん下)。出したら必ず見える位置へ送る。
+        //   送らないと「押したのに何も起きない」ように見え、塾長が連打する。
+        const show = (html, tone) => {   // tone: 'ok' | 'warn' | 'err'
+          resultBox.style.display = 'block';
+          resultBox.style.borderLeft = '3px solid ' + (tone === 'err' ? '#f87171' : tone === 'warn' ? '#fbbf24' : '#34d399');
+          resultBox.innerHTML = html;
+          try { resultBox.scrollIntoView({ block: 'nearest' }); } catch (_e) {}
+        };
+        // 誰に対する発行かを必ず結果の先頭に出す (このブロックまでスクロールすると氏名が画面外に出るため、
+        // 行を押し間違えていても気付けない。サーバが返した本人と id が違えば止める)。
+        //   戻り値 .mismatch が真なら、コードや URL は「使えないもの」として扱う
+        //   (警告文だけ出してコードとコピーボタンを普通に見せると、結局それを渡してしまう)。
+        const whoLine = (d, sid) => {
+          const sv = d && d.student;
+          if (!sv) return { html: '', mismatch: false };
+          if (sv.id != null && String(sv.id) !== String(sid)) {
+            return { mismatch: true, html: `<div style="margin-bottom:6px;padding:6px 8px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.5);border-radius:6px;color:#fca5a5;font-weight:700;">⚠️ 画面の生徒 (#${esc(sid)}) とサーバが返した生徒 (#${esc(sv.id)}) が一致しません。このコードは使わず、ページを再読込してからやり直してください。</div>` };
+          }
+          return { mismatch: false, html: `<div style="margin-bottom:6px;color:#a5b4fc;font-weight:700;">#${esc(sv.id)} ${esc(sv.name || '')} さん${sv.email ? ` <span style="color:#71717a;font-weight:400;">&lt;${esc(sv.email)}&gt;</span>` : ''}</div>` };
+        };
+        // 描画時点で無効なボタン (メール未登録の生徒の OTP など) を覚えておく。
+        // これをしないと、他の操作を1回実行した finally で「使えません」と書いた真下のボタンが復活する。
+        infoPane.querySelectorAll('.sd-issue-otp-btn, .sd-issue-linelink-btn, .sd-send-magiclink-btn')
+          .forEach(b => { if (b.disabled) b.dataset.permaDisabled = '1'; });
+        const busy = (btn, on, label) => {
+          // 結果ボックスは3つの操作で共用しているので、実行中は全部止める (後着が先着の結果を消さない)
+          allBtns().forEach(b2 => {
+            const perma = b2.dataset.permaDisabled === '1';
+            b2.disabled = on || perma;
+            b2.style.opacity = on ? '0.5' : (perma ? '0.45' : '');
+            b2.style.cursor = on ? 'wait' : (perma ? 'not-allowed' : 'pointer');
+          });
+          if (on) { btn.dataset.origLabel = btn.textContent; btn.textContent = label; }
+          else if (btn.dataset.origLabel) { btn.textContent = btn.dataset.origLabel; }
+        };
+        // ★コピー失敗で show() を呼ばない。呼ぶと発行済みのコード/URL ごと画面から消える
+        //   (非セキュアオリジンやウィンドウ非フォーカスで clipboard は普通に失敗する)。
+        const wireCopy = (sel, text) => {
+          const b = resultBox.querySelector(sel);
+          if (!b) return;
+          b.addEventListener('click', async () => {
+            const o = b.dataset.label || b.textContent;
+            b.dataset.label = o;
+            try {
+              await navigator.clipboard.writeText(text);
+              b.textContent = '✅ コピー済';
+            } catch (_e) {
+              b.textContent = '⚠️ コピー不可 (手で選択してください)';
+            }
+            setTimeout(() => { b.textContent = o; }, 2000);
+          });
+        };
+        // FastAPI の 422 は detail が配列で返る。そのまま連結すると [object Object] になる
+        const detailText = (d, fallback) => {
+          const v = d && d.detail;
+          if (typeof v === 'string' && v) return v;
+          if (v) { try { return JSON.stringify(v); } catch (_e) {} }
+          return fallback;
+        };
+        const safeUrl = (u) => {   // javascript: 等を href に通さない
+          const v = String(u || '').trim();
+          return /^https?:\/\//i.test(v) ? v : '';
+        };
+
+        // ① ログインリンクを送る
+        const mlSel = infoPane.querySelector('.sd-ml-target');
+        const mlOther = infoPane.querySelector('.sd-ml-other');
+        const mlBtn = infoPane.querySelector('.sd-send-magiclink-btn');
+        if (mlSel && mlOther) {
+          mlSel.addEventListener('change', () => {
+            const other = mlSel.value === '__other__';
+            mlOther.style.display = other ? 'block' : 'none';
+            if (other) mlOther.focus();
+          });
+          if (mlSel.value === '__other__') mlOther.style.display = 'block';
+          mlOther.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); if (mlBtn) mlBtn.click(); }
+          });
+        }
+        if (mlBtn) mlBtn.addEventListener('click', async () => {
+          const sid = Number(mlBtn.dataset.studentId) || 0;
+          const to = ((mlSel && mlSel.value === '__other__' ? (mlOther && mlOther.value) : (mlSel && mlSel.value)) || '').trim();
+          if (sid <= 0) { show('❌ 生徒 ID を特定できません', 'err'); return; }
+          if (!to) { show('❌ 送信先メールアドレスを入力してください', 'err'); return; }
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+            show(`❌ メールアドレスの形式が正しくありません: ${esc(to)}`, 'err'); return;
+          }
+          // ★ログインリンクは「そのアカウントに入れてしまう」もの。宛先を必ず目で確認させる
+          //   (旧UIにあった確認を移設時に落とすと、打ち間違えたアドレスへ1クリックで飛ぶ)。
+          const optEl = mlSel && mlSel.selectedOptions && mlSel.selectedOptions[0];
+          const unverified = !!(optEl && optEl.dataset && optEl.dataset.unverified) || (mlSel && mlSel.value === '__other__');
+          if (!confirm(`#${sid} ${st.name || ''} さんのログインリンクを\n\n  ${to}\n\n宛てに送信します。\n`
+              + (unverified
+                  ? '\n⚠️ このアドレスは本人到達が未確認です (自己登録・手入力)。\n通常の自動配信では、まさにこの理由で送信されません。\n本人のものか確かめてから送ってください。\n'
+                  : '')
+              + '\nこのアドレスの持ち主は、この生徒のアカウントにログインできます。よろしいですか?')) return;
+          busy(mlBtn, true, '⏳ 送信中…');
+          try {
+            const r = await AdminAuth.fetch('/api/admin/students/send-magic-link-to', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ student_id: sid, to_email: to }),
+            });
+            const d = await r.json().catch(() => ({}));
+            if (!r.ok) { show(`❌ ログインリンク送信: ${esc(detailText(d, '失敗 (' + r.status + ')'))}`, 'err'); return; }
+            // ★この API は送れなくても HTTP 200 を返す。sent を見ないと「成功」と誤報告する。
+            if (d.sent) {
+              const w = whoLine({ student: { id: d.student_id != null ? d.student_id : sid, name: st.name } }, sid);
+              if (w.mismatch) { show(`${w.html}<div style="color:#fca5a5;">送信先: ${esc(d.to || to)}</div>`, 'err'); return; }
+              show(`${w.html}✅ ${esc(d.to || to)} にログインリンクを送信しました<br>
+                <span style="color:#a3a3a3;font-size:0.75rem;">届かないときは迷惑メールを確認 → それでも駄目なら ② LINE連携 / ③ OTP を使ってください。</span>`, 'ok');
+            } else {
+              show(`⚠️ ログインリンクを送信できませんでした<br><span style="color:#fca5a5;">${esc(d.error || d.reason || '理由不明')}</span>`, 'warn');
+            }
+          } catch (e) {
+            show(`❌ ログインリンク送信: ${esc(e.message || e)}`, 'err');
+          } finally { busy(mlBtn, false); }
+        });
+
+        // ② LINE 連携コード
+        const lineBtn = infoPane.querySelector('.sd-issue-linelink-btn');
+        if (lineBtn) lineBtn.addEventListener('click', async () => {
+          const sid = Number(lineBtn.dataset.studentId) || 0;
+          if (sid <= 0) { show('❌ 生徒 ID を特定できません', 'err'); return; }
+          // 押すたびに未使用の連携トークンが DB に増える (サーバ側は古いものを無効化しない)。
+          // 2 回目以降は確認を挟んで、連打で積み上がるのを防ぐ。
+          if (lineBtn.dataset.issued === '1'
+              && !confirm('連携コードをもう一度発行しますか?\n\n発行済みのコードも有効なままなので、通常は前のコードを使ってください。')) return;
+          busy(lineBtn, true, '⏳ 発行中…');
+          try {
+            const r = await AdminAuth.fetch('/api/admin/students/issue-line-link', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ student_id: sid }),
+            });
+            const d = await r.json().catch(() => ({}));
+            if (!r.ok) { show(`❌ LINE連携コード: ${esc(detailText(d, '発行失敗 (' + r.status + ')'))}`, 'err'); return; }
+            lineBtn.dataset.issued = '1';
+            const who = whoLine(d, sid);
+            let html = who.html;
+            if (d.already_linked) html += `<div style="margin-bottom:6px;color:#fbbf24;font-size:0.76rem;">※ 既に LINE 連携済みです (連携し直す場合のみ使ってください)</div>`;
+            html += `<div style="text-align:center;padding:10px;background:rgba(0,0,0,0.45);border-radius:8px;${who.mismatch ? 'opacity:0.5;' : ''}">
+              <div style="font-size:0.72rem;color:#a3a3a3;margin-bottom:4px;">連携コード${who.mismatch ? ' ・使用不可 (上の警告を参照)' : ' (期限なし・1回で完了)'}</div>
+              <div style="font-size:1.05rem;font-weight:800;color:#6ee7b7;font-family:'SF Mono',monospace;word-break:break-all;">${who.mismatch ? '— — — — — —' : esc(d.code || '')}</div>
+              ${who.mismatch ? '' : `<button type="button" class="sd-line-copy" style="margin-top:6px;background:rgba(110,231,183,0.18);color:#6ee7b7;border:1px solid rgba(110,231,183,0.4);padding:4px 12px;border-radius:5px;font-size:0.75rem;font-weight:700;cursor:pointer;">📋 コードをコピー</button>`}
+            </div>`;
+            if (!who.mismatch) html += `<div style="margin-top:8px;padding:8px;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:6px;color:#fde68a;font-size:0.75rem;line-height:1.6;">${esc(d.instructions || '生徒に伝え、①公式LINEを友だち追加 → ②コードをトークに送信 で連携完了です。')}</div>`;
+            const fu = who.mismatch ? '' : safeUrl(d.add_friend_url);
+            if (fu) html += `<div style="margin-top:6px;font-size:0.75rem;"><a href="${esc(fu)}" target="_blank" rel="noopener noreferrer" style="color:#34d399;">友だち追加 URL を開く</a></div>`;
+            show(html, who.mismatch ? 'err' : 'ok');
+            if (!who.mismatch) wireCopy('.sd-line-copy', d.code || '');
+          } catch (e) {
+            show(`❌ LINE連携コード: ${esc(e.message || e)}`, 'err');
+          } finally { busy(lineBtn, false); }
+        });
+
+        // ③ OTP
+        const otpBtn = infoPane.querySelector('.sd-issue-otp-btn');
+        if (otpBtn) otpBtn.addEventListener('click', async () => {
+          const sid = Number(otpBtn.dataset.studentId) || 0;
+          if (sid <= 0) { show('❌ 生徒 ID を特定できません', 'err'); return; }
+          busy(otpBtn, true, '⏳ 発行中…');
+          try {
+            const r = await AdminAuth.fetch('/api/admin/students/issue-otp-direct', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ student_id: sid }),
+            });
+            const d = await r.json().catch(() => ({}));
+            if (!r.ok) { show(`❌ OTP発行: ${esc(detailText(d, '失敗 (' + r.status + ')'))}`, 'err'); return; }
+            // ★使えないコードを渡す事故を防ぐ: 警告はコードより上に出し、コード枠自体も
+            //   「使用不可」の見た目にする (警告だけだと、コードとコピーボタンが目に入って渡してしまう)。
+            const who = whoLine(d, sid);
+            // 「渡してはいけないコード」= サーバが warning を付けた (URL も出せない) / 生徒が不一致。
+            // ★契約切れ (status_active=false) は含めない。[login-allow-inactive] 2026-06-19 以降、
+            //   体験切れ・退会でもログイン自体は通り、ログイン後に継続登録の画面へ誘導される。
+            //   ここでコードや URL を隠すと「切れた生徒を入れ直して継続登録に載せる」救済を塞ぐ。
+            const unusable = !!d.warning || who.mismatch;
+            let html = who.html;
+            if (d.warning && !who.mismatch) {
+              html += `<div style="margin-bottom:8px;padding:8px;background:rgba(248,113,113,0.13);border:1px solid rgba(248,113,113,0.45);border-radius:6px;color:#fca5a5;font-weight:700;line-height:1.6;">⚠️ ${esc(d.warning)}</div>`;
+            } else if (d.status_active === false && !who.mismatch) {
+              // 状態名はサーバが返した値を使う (画面のキャッシュだと「月額契約中なのに…」という矛盾文になる)
+              const srvStatus = (d.student && d.student.status) || st.status;
+              const statusJa = STATUS_LABEL[srvStatus] || srvStatus || '不明';
+              html += `<div style="margin-bottom:8px;padding:8px;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.4);border-radius:6px;color:#fde68a;line-height:1.6;">ℹ️ この生徒は現在「${esc(statusJa)}」です。ログイン自体はできますが、ログイン後は継続登録 (再開) の画面になります。</div>`;
+            }
+            html += `<div style="text-align:center;padding:10px;background:rgba(0,0,0,0.45);border-radius:8px;${unusable ? 'opacity:0.55;' : ''}">
+              <div style="font-size:0.72rem;color:#a3a3a3;margin-bottom:4px;">ログインコード${unusable ? ' ・現在は使用不可 (上の警告を参照)'
+                : (d.no_expiry ? ' (期限なし・1回使うと無効)' : (d.ttl_seconds ? ` (${Math.round(d.ttl_seconds / 60)}分間有効)` : ''))}</div>
+              <div style="font-size:1.5rem;font-weight:900;letter-spacing:0.18rem;color:${unusable ? '#fca5a5' : '#6ee7b7'};font-family:'SF Mono',monospace;">${who.mismatch ? '— — — — — —' : esc(d.otp || '')}</div>
+              ${unusable ? '' : `<button type="button" class="sd-otp-copy" style="margin-top:6px;background:rgba(110,231,183,0.18);color:#6ee7b7;border:1px solid rgba(110,231,183,0.4);padding:4px 12px;border-radius:5px;font-size:0.75rem;font-weight:700;cursor:pointer;">📋 コードをコピー</button>`}
+            </div>`;
+            if (d.login_email && !unusable) {
+              html += `<div style="margin-top:6px;font-size:0.75rem;color:#a3a3a3;">生徒に入力させるメールアドレス: <strong style="color:#e4e4e7;">${esc(d.login_email)}</strong></div>`;
+            }
+            // ★使えない状態のときは URL も出さない。警告が「コードもリンクも拒否される」と
+            //   言っているのに URL だけ明るく出ていると、そちらをコピーして送ってしまう。
+            const durl = unusable ? '' : safeUrl(d.direct_login_url);
+            if (durl) {
+              html += `<div style="margin-top:8px;">
+                <div style="font-size:0.72rem;color:#a3a3a3;margin-bottom:3px;">📲 ワンクリックでログインできる URL (LINE 等で送る):</div>
+                <input type="text" readonly value="${esc(durl)}" style="width:100%;padding:6px 8px;background:rgba(0,0,0,0.5);border:1px solid rgba(99,102,241,0.3);border-radius:5px;color:#a5b4fc;font-size:0.7rem;font-family:'SF Mono',monospace;">
+                <button type="button" class="sd-otp-url-copy" style="margin-top:5px;background:rgba(165,180,252,0.18);color:#a5b4fc;border:1px solid rgba(165,180,252,0.4);padding:4px 12px;border-radius:5px;font-size:0.75rem;font-weight:700;cursor:pointer;">📋 URL をコピー</button>
+              </div>`;
+            }
+            // ★手順は必ず出す。電話で伝えるときに「生徒に先にコード入力画面を開かせる」順番が
+            //   要るため (コードそのものは発行し直さなくてよい = server 側 instructions の通り)。
+            if (d.instructions && d.instructions !== d.warning && !who.mismatch) {
+              // 契約状態の注記は上の ℹ️ で日本語ラベル付きで出しているので、手順文の尻尾からは外す
+              // (そのままだと同じ内容が生の status 名で二重に出る)
+              const instr = String(d.instructions).split(' ℹ️ 現在の契約状態')[0].trim();
+              if (instr) html += `<div style="margin-top:8px;padding:8px;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:6px;color:#fde68a;font-size:0.74rem;line-height:1.65;white-space:pre-wrap;">${esc(instr)}</div>`;
+            }
+            if (d.line_sent && !who.mismatch) html += `<div style="margin-top:8px;color:#86efac;font-size:0.76rem;">📲 LINE にも自動送信しました</div>`;
+            show(html, who.mismatch ? 'err' : (unusable ? 'warn' : 'ok'));
+            if (!who.mismatch) {
+              wireCopy('.sd-otp-copy', d.otp || '');
+              wireCopy('.sd-otp-url-copy', durl);
+            }
+          } catch (e) {
+            show(`❌ OTP発行: ${esc(e.message || e)}`, 'err');
+          } finally { busy(otpBtn, false); }
+        });
+      })();
 
       // 🎯 2026-05-26 audit fix: 学年/志望校 編集 button の listener 配線
       infoPane.querySelectorAll('.sd-edit-profile-btn').forEach(btn => {
