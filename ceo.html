@@ -10649,7 +10649,11 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           if (!ok) return;
           let orphansOnly = true;
           if (dDry.matched > 0) {
-            const ok2 = confirm(`⚠️ 続けて、次の ${dDry.matched} 件の【生徒本体】も完全削除しますか?\n(cascade: 学習ログ/模試結果/メッセージ等も同時削除・取消不能)\n\n${lines}\n\n★「監視 守」以外の名前 (デモ用アカウント等) が混ざっていたら「キャンセル」を押してください。生徒は残したまま、上の掃除だけ実行します。`);
+            // ★切り捨ての注記は一覧の**前**にも出す (レビュー指摘: 100行の一覧の末尾まで読まずに OK しうる)
+            const hiddenHead = _hidden > 0
+              ? `⚠️ ${dDry.matched} 件中、先頭 ${_items.length} 件だけ表示しています。表示されない ${_hidden} 件も削除対象です。全員を確認できないなら「キャンセル」を押してください。\n\n`
+              : '';
+            const ok2 = confirm(`⚠️ 続けて、次の ${dDry.matched} 件の【生徒本体】も完全削除しますか?\n(cascade: 学習ログ/模試結果/メッセージ等も同時削除・取消不能)\n\n${hiddenHead}${lines}\n\n★「監視 守」以外の名前 (デモ用アカウント等) が混ざっていたら「キャンセル」を押してください。生徒は残したまま、上の掃除だけ実行します。`);
             orphansOnly = !ok2;
           }
           purgeBtn.textContent = orphansOnly ? '⏳ 整理中...' : '⏳ 削除中...';
