@@ -44304,7 +44304,10 @@ def admin_grammar_drill_analytics(
         assigned = len(a_rows)
         completed = 0
         score_sum = 0.0
-        per_q = {qid: {"answered": 0, "correct": 0} for qid in qids}
+        # 👁 [drill-choice-viz 2026-09-04 塾長指示「どの選択肢を選んで間違えたかを可視化」]
+        #   chosen: {選択肢index: 人数}。answers_json は {question_id: 選んだindex(0始まり)} で
+        #   完了済み549件すべてに残っている (2026-09-04 本番実測・正解数との突合一致)。
+        per_q = {qid: {"answered": 0, "correct": 0, "chosen": {}} for qid in qids}
         roster = []
         for a in a_rows:
             _done = (a["status"] == "completed")
@@ -44327,6 +44330,7 @@ def admin_grammar_drill_analytics(
             except Exception:
                 ans = {}
             wrong_nos = []  # この生徒が間違えた設問番号 (1始まり・出題順)。塾長が「どこを間違えたか」を見るため。
+            wrong_detail = []  # [{no, chosen, answer}] 何を選んで間違えたか (👁 drill-choice-viz)
             for idx, qid in enumerate(qids, 1):
                 key = str(qid)
                 if key not in ans and qid not in ans:
@@ -44334,15 +44338,23 @@ def admin_grammar_drill_analytics(
                 chosen = ans.get(key, ans.get(qid))
                 per_q[qid]["answered"] += 1
                 q = qmap.get(qid)
+                try:
+                    _ci = int(chosen)
+                except (TypeError, ValueError):
+                    _ci = None
+                if _ci is not None:
+                    per_q[qid]["chosen"][_ci] = per_q[qid]["chosen"].get(_ci, 0) + 1
                 if q is not None:
                     try:
                         if int(chosen) == int(q["answer"]):
                             per_q[qid]["correct"] += 1
                         else:
                             wrong_nos.append(idx)
+                            wrong_detail.append({"no": idx, "chosen": _ci, "answer": int(q["answer"])})
                     except (TypeError, ValueError):
                         pass
             entry["wrong_qnos"] = wrong_nos
+            entry["wrong_detail"] = wrong_detail
         # ロスター: 未完了を先頭(名前順) → 完了(完了日時の新しい順)。誰がやってないか一目で分かる。
         _r_done = [r for r in roster if r["completed"]]
         _r_todo = [r for r in roster if not r["completed"]]
@@ -44359,6 +44371,9 @@ def admin_grammar_drill_analytics(
                 choices = json.loads(q["choices"]) if q else []
             except Exception:
                 choices = []
+            # 👁 選択肢ごとの人数を choices と同じ並びの配列にする (範囲外の index は捨てる)
+            _cc = stat.get("chosen", {}) or {}
+            choice_counts = [int(_cc.get(i, 0)) for i in range(len(choices))]
             questions.append({
                 "no": idx,
                 "question_id": qid,
@@ -44369,6 +44384,7 @@ def admin_grammar_drill_analytics(
                 "answered": stat["answered"],
                 "correct": stat["correct"],
                 "correct_rate": rate,
+                "choice_counts": choice_counts,   # 👁 各選択肢を選んだ人数 (choices と同じ順)
             })
         avg_score = round(100 * score_sum / completed, 1) if completed else None
         return {

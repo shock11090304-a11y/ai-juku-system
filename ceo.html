@@ -4665,6 +4665,12 @@
           html += `<div style="margin:0 0 0.7rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;"><button onclick="gdRemediation(${data.drill.id})" style="background:linear-gradient(135deg,#ec4899,#db2777);color:#fff;border:none;padding:0.5rem 1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">🎯 弱点対策ドリルを作成</button><span style="font-size:0.72rem;color:#94a3b8;">正解率の低かった生徒に、同単元の<b>新しい問題</b>を配信（前回の問題は除外）</span></div>`;
         }
         // 👥 誰が完了/未完了か (塾長指示 2026-06-06「宿題を誰がやってるか分からない」)。未完了を先頭・赤で強調。
+        // 👁 [drill-choice-viz 2026-09-04 塾長指示「どの選択肢を選んで間違えたかを可視化」]
+        //   問題番号 → 問題。生徒別の誤答に「3. has started → 正解 2. had already started」を付けるため。
+        const _qByNo = {};
+        (data.questions || []).forEach(q => { _qByNo[q.no] = q; });
+        const _choiceText = (q, idx) => (q && Array.isArray(q.choices) && idx != null && q.choices[idx] != null)
+          ? `${Number(idx) + 1}. ${String(q.choices[idx])}` : (idx == null ? '(未回答)' : `${Number(idx) + 1}.`);
         const _roster = data.students || [];
         if (_roster.length) {
           const _gdDate = t => { const m = String(t || '').match(/(\d{4})-(\d{2})-(\d{2})/); return m ? (m[2] + '/' + m[3]) : ''; };
@@ -4678,13 +4684,22 @@
             html += '</div>';
           }
           if (_done.length) {
-            html += `<div style="font-size:0.76rem;color:#86efac;font-weight:700;margin-bottom:0.3rem;">✅ 完了 ${_done.length}名 <span style="color:#71717a;font-weight:400;font-size:0.92em;">(誰が・点数・どの問題を間違えたか。問題の内容は下の「📊問題別正解率」)</span></div><div style="display:flex;flex-direction:column;gap:0.35rem;">`;
+            html += `<div style="font-size:0.76rem;color:#86efac;font-weight:700;margin-bottom:0.3rem;">✅ 完了 ${_done.length}名 <span style="color:#71717a;font-weight:400;font-size:0.92em;">(誰が・点数・どの問題を間違えたか。カッコ内は「選んだ番号→正解番号」、マウスを合わせると選択肢の文言を表示。問題の内容は下の「📊問題別」)</span></div><div style="display:flex;flex-direction:column;gap:0.35rem;">`;
             html += _done.map(r => {
               const sc = r.score_total ? `${r.score_correct == null ? '?' : r.score_correct}/${r.score_total}` : '';
               const dt = _gdDate(r.completed_at);
               const wrong = Array.isArray(r.wrong_qnos) ? r.wrong_qnos : [];
+              // 👁 wrong_detail があれば「問2 (3→正解2)」と何を選んだかまで出す (旧APIなら従来どおり番号のみ)
+              const _detail = Array.isArray(r.wrong_detail) ? r.wrong_detail : null;
+              const _wrongItems = _detail && _detail.length
+                ? _detail.map(w => {
+                    const q = _qByNo[w.no];
+                    const tip = `${_choiceText(q, w.chosen)} を選択 → 正解 ${_choiceText(q, w.answer)}`;
+                    return `<span title="${escapeHtml(tip)}" style="cursor:help;border-bottom:1px dotted #fca5a5;">問${Number(w.no)} <span style="color:#fca5a5;font-weight:700;">(${w.chosen == null ? '—' : Number(w.chosen) + 1}→<span style="color:#86efac;">正解${Number(w.answer) + 1}</span>)</span></span>`;
+                  }).join('・')
+                : wrong.map(n => '問' + Number(n)).join('・');
               const wrongHtml = wrong.length
-                ? `<span style="color:#fca5a5;">✗ 間違い: ${wrong.map(n => '問' + Number(n)).join('・')} <span style="color:#71717a;">(${wrong.length}問)</span></span>`
+                ? `<span style="color:#fca5a5;">✗ 間違い: ${_wrongItems} <span style="color:#71717a;">(${wrong.length}問)</span></span>`
                 : `<span style="color:#6ee7b7;">🎉 全問正解</span>`;
               return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.35rem 0.7rem;padding:0.35rem 0.6rem;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:8px;font-size:0.76rem;">`
                 + `<span style="color:#86efac;font-weight:700;">✅ ${escapeHtml(r.student_name || ('ID' + r.student_id))}</span>`
@@ -4697,12 +4712,31 @@
           }
           html += '</div>';
         }
-        if ((data.questions || []).length) html += `<div style="font-size:0.78rem;font-weight:700;color:#93c5fd;margin-bottom:0.2rem;">📊 問題別 正解率</div>`;
+        if ((data.questions || []).length) html += `<div style="font-size:0.78rem;font-weight:700;color:#93c5fd;margin-bottom:0.2rem;">📊 問題別 正解率・選択肢分布 <span style="color:#71717a;font-weight:400;font-size:0.9em;">(緑=正解、赤=選ばれた誤答)</span></div>`;
         html += (data.questions || []).map(q => {
           const rate = q.correct_rate == null ? '—' : `${q.correct_rate}%`;
           const rc = q.correct_rate == null ? '#71717a' : (q.correct_rate >= 70 ? '#34d399' : (q.correct_rate >= 50 ? '#fbbf24' : '#fca5a5'));
           const corr = (q.choices && q.answer != null && q.choices[q.answer] != null) ? `正解 ${q.answer + 1}. ${escapeHtml(String(q.choices[q.answer]))}` : '';
-          return `<div style="border-top:1px solid #334155;padding:0.45rem 0;"><div style="font-size:0.82rem;color:#e5e7eb;"><strong>問${q.no}</strong> ・ 正解率 <span style="color:${rc};font-weight:800;">${rate}</span> <span style="color:#71717a;">(${q.correct}/${q.answered}人)</span></div><div style="font-size:0.8rem;color:#cbd5e1;margin:0.15rem 0;">${escapeHtml(q.stem)}</div><div style="font-size:0.75rem;color:#86efac;">${corr}</div></div>`;
+          // 👁 選択肢ごとに「何人が選んだか」を出す。正解は緑、選ばれた誤答は赤で強調 (=引っかかった選択肢)。
+          //   旧API (choice_counts 無し) では従来どおり正解行だけ。
+          const _cc = Array.isArray(q.choice_counts) ? q.choice_counts : null;
+          let dist = '';
+          if (_cc && Array.isArray(q.choices) && q.choices.length) {
+            const maxN = Math.max(1, ...q.choices.map((_, i) => Number(_cc[i] || 0)));
+            dist = `<div style="display:flex;flex-direction:column;gap:0.12rem;margin-top:0.25rem;">` + q.choices.map((c, i) => {
+              const n = Number(_cc[i] || 0);
+              const isAns = (q.answer != null && i === Number(q.answer));
+              const col = isAns ? '#86efac' : (n > 0 ? '#fca5a5' : '#64748b');
+              const bar = Math.round(100 * n / maxN);
+              return `<div style="display:flex;align-items:center;gap:0.4rem;font-size:0.74rem;color:${col};">`
+                + `<span style="flex:0 0 auto;min-width:1.3em;text-align:right;">${i + 1}.</span>`
+                + `<span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(String(c))}${isAns ? ' <span style="font-size:0.9em;">← 正解</span>' : ''}</span>`
+                + `<span style="flex:0 0 72px;height:6px;background:rgba(148,163,184,0.15);border-radius:3px;overflow:hidden;"><span style="display:block;height:100%;width:${bar}%;background:${col};"></span></span>`
+                + `<span style="flex:0 0 3.2em;text-align:right;font-weight:${n > 0 ? 700 : 400};">${n}人</span>`
+                + `</div>`;
+            }).join('') + `</div>`;
+          }
+          return `<div style="border-top:1px solid #334155;padding:0.45rem 0;"><div style="font-size:0.82rem;color:#e5e7eb;"><strong>問${q.no}</strong> ・ 正解率 <span style="color:${rc};font-weight:800;">${rate}</span> <span style="color:#71717a;">(${q.correct}/${q.answered}人)</span></div><div style="font-size:0.8rem;color:#cbd5e1;margin:0.15rem 0;">${escapeHtml(q.stem)}</div>${dist || `<div style="font-size:0.75rem;color:#86efac;">${corr}</div>`}</div>`;
         }).join('');
         html += '</div>';
         box.innerHTML = html;
