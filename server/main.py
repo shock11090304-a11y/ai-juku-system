@@ -10439,6 +10439,16 @@ async def _run_synthetic_checkout_test(*, alert: bool = True) -> dict:
             conn = db()
             try:
                 c = conn.cursor()
+                # 🧹 [orphan-cleanup 2026-09-04] students 行だけ消して otp_codes を残していたため、
+                #   5分ごとの合成監視のたびに孤児 OTP が1行増え続けていた (実測 27,797 行・286行/日)。
+                #   sentinel は登録時に OTP/magic link を発行するので、ここで必ず一緒に消す。
+                try:
+                    c.execute("DELETE FROM otp_codes WHERE student_id = ?", (sentinel_student_id,))
+                except Exception as _oe:
+                    # Postgres は失敗した文で txn が abort するので、戻さないと直後の students 削除まで道連れになる
+                    try: conn.rollback()
+                    except Exception: pass
+                    log.warning(f"[Synth] sentinel otp_codes cleanup failed (students 削除は続行): {_oe}")
                 c.execute("DELETE FROM students WHERE id = ? AND email = ?", (sentinel_student_id, sentinel_email))
                 conn.commit()
             finally:
@@ -11441,7 +11451,18 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
     # last_login_at も同時追加: auth_me の 4h スロットルが「dict に無いキー参照で常に None」になり
     # 毎リクエスト UPDATE が走っていた既存バグの修正 (review 指摘)
     # stripe_subscription_id は 2026-06-12 追加 [mypage-keiyaku-copy]: card_registered フラグ算出用
-    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, stripe_subscription_id, trial_end, enrollment_fee_waived, course, past_due_since, created_at, last_login_at, ai_disabled FROM students WHERE id = ?", (claims["student_id"],))
+    # 🛡️ [auth-column-fallback 2026-09-04 塾長指示] course / past_due_since / last_login_at / ai_disabled は
+    #   CREATE TABLE には無く起動時の ALTER で後付けされる列。起動時DDLがロック待ちでスキップされた直後の
+    #   環境では列が無く、ここが UndefinedColumn で 500 になる = **全生徒がログイン不能**になる経路だった。
+    #   auth_verify_magic_link と同じく、失敗したら CREATE TABLE にある列だけで引き直す。
+    #   後段は row.keys() で存在確認してから読むので、列が欠けても動く (ai_disabled はこの関数では未使用)。
+    try:
+        c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, stripe_subscription_id, trial_end, enrollment_fee_waived, course, past_due_since, created_at, last_login_at, ai_disabled FROM students WHERE id = ?", (claims["student_id"],))
+    except Exception as _col_err:
+        try: conn.rollback()
+        except Exception: pass
+        log.warning(f"[auth] students の後付け列が無いため縮退クエリで再試行 (起動時DDLの未反映を疑う → /api/health の init_ddl_skipped): {type(_col_err).__name__}")
+        c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, stripe_subscription_id, trial_end, enrollment_fee_waived, created_at FROM students WHERE id = ?", (claims["student_id"],))
     row = c.fetchone()
     conn.close()
     if not row:
@@ -24999,6 +25020,20 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             ("vocab_progress", "student_id"),
             ("payments", "student_id"),
             ("ai_tutor_messages", "student_id"),
+            # 🧹 [orphan-cleanup 2026-09-04] 実削除 (delete_tables) と同じ範囲をプレビューにも出す
+            ("question_attempts", "student_id"),
+            ("student_weakness", "student_id"),
+            ("grammar_drill_assignments", "student_id"),
+            ("admission_likelihood", "student_id"),
+            ("worksheet_archives", "student_id"),
+            ("class_attend", "student_id"),
+            ("class_attendance", "student_id"),
+            ("lesson_print_downloads", "student_id"),
+            ("student_materials", "student_id"),
+            ("ai_tutor_solve_log", "student_id"),
+            ("line_link_tokens", "student_id"),
+            ("student_json_state", "student_id"),
+            ("anthropic_usage_log", "student_id"),   # 削除ではなく参照解除だが、影響行数としてプレビューに出す
         ]
         for tbl, col in related_tables:
             try:
@@ -25070,6 +25105,25 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             ("vocab_progress", "DELETE FROM vocab_progress WHERE student_id=?"),
             ("ai_tutor_messages", "DELETE FROM ai_tutor_messages WHERE student_id=?"),
             ("payments", "DELETE FROM payments WHERE student_id=?"),
+            # 🧹 [orphan-cleanup 2026-09-04] ここまでの14テーブルしか消しておらず、以下が孤児化していた
+            #   (実測: 26名ぶん 2,591 行が残留)。students を参照する外部キーは payments/referrals だけなので
+            #   DELETE の順序制約は無い。★anthropic_usage_log は消さない (下の UPDATE 参照)。
+            ("question_attempts", "DELETE FROM question_attempts WHERE student_id=?"),
+            ("student_weakness", "DELETE FROM student_weakness WHERE student_id=?"),
+            ("grammar_drill_assignments", "DELETE FROM grammar_drill_assignments WHERE student_id=?"),
+            ("admission_likelihood", "DELETE FROM admission_likelihood WHERE student_id=?"),
+            ("worksheet_archives", "DELETE FROM worksheet_archives WHERE student_id=?"),
+            ("class_attend", "DELETE FROM class_attend WHERE student_id=?"),
+            ("class_attendance", "DELETE FROM class_attendance WHERE student_id=?"),
+            ("lesson_print_downloads", "DELETE FROM lesson_print_downloads WHERE student_id=?"),
+            ("student_materials", "DELETE FROM student_materials WHERE student_id=?"),
+            ("ai_tutor_solve_log", "DELETE FROM ai_tutor_solve_log WHERE student_id=?"),
+            ("line_link_tokens", "DELETE FROM line_link_tokens WHERE student_id=?"),
+            # ★AI利用コストの記録は「塾の会計データ」であって生徒のデータではない。消すと CEO ダッシュの
+            #   費用合計 (SUM(cost_usd)) が過去にさかのぼって下がって見える。参照だけ外して行は残す。
+            #   ★残しても個人情報上の問題は無い: このテーブルはトークン数/コスト/モデル名/種別だけで、
+            #     プロンプト本文や会話内容は一切持たない (スキーマ確認済み)。
+            ("anthropic_usage_log", "UPDATE anthropic_usage_log SET student_id=NULL WHERE student_id=?"),
         ]
         deleted_counts = {}
         for tbl, sql in delete_tables:
@@ -29000,6 +29054,59 @@ def admin_email_test_send(payload: dict, authorization: Optional[str] = Header(N
         return {"sent": False, "error": f"{type(e).__name__}: {str(e)[:200]}", "to": to_email}
 
 
+# 🧹 [orphan-cleanup 2026-09-04 塾長指示] 「存在しない生徒を指す行」の掃除。
+#   生徒削除APIが長らく14テーブルしかカスケードせず、また合成監視が students 行だけ消していたため、
+#   実測 30,388 行の孤児が溜まっていた (うち 27,797 行は合成監視の otp_codes)。
+#   ★この関数は「students に id が無い行」だけを対象にするので、在籍生徒のデータには触れない。
+#   ★anthropic_usage_log は削除せず student_id を NULL にする (塾の会計記録のため)。
+_ORPHAN_SWEEP_TABLES = (
+    "otp_codes", "vocab_progress", "question_attempts", "grammar_drill_assignments", "student_weakness",
+    "student_materials", "worksheet_archives", "lesson_print_downloads", "admission_likelihood",
+    "class_attend", "class_attendance", "ai_tutor_solve_log", "line_link_tokens",
+    "study_logs", "study_plans", "exam_results", "curricula", "notifications", "usage_monthly",
+    "mock_exam_sessions", "ai_tutor_messages", "homework_assignments", "student_json_state",
+)
+
+
+def _sweep_student_orphans(conn, c, dry_run: bool) -> dict:
+    """students に存在しない student_id を指す行を数え、dry_run でなければ消す。戻り値は {table: 件数}。
+
+    ★テーブルごとに commit し、失敗したら rollback してから次へ進む (init_db の ALTER ループと同じ作法)。
+      1トランザクションで回すと、途中1テーブルの例外で Postgres の txn が abort 状態になり、
+      以降のテーブルが連鎖的に空振りしたうえ最後の commit が実質 rollback になる。それなのに
+      「成功した件数」を返して UI が ✅ を出す = 掃除できていないのに完了と誤報告する穴があった (レビュー指摘)。
+    ★戻り値には**実際に確定した**件数だけを入れる。
+    """
+    out = {}
+    def _one(label, count_sql, write_sql):
+        try:
+            c.execute(count_sql)
+            n = int(c.fetchone()[0] or 0)
+            if n and not dry_run:
+                c.execute(write_sql)
+                conn.commit()
+            if n:
+                out[label] = n
+        except Exception as e:
+            try: conn.rollback()
+            except Exception: pass
+            # 塾長が Railway ログで見ても不安にならない文言にする (取消不能な操作の直後に出るため)
+            log.warning(
+                f"[PurgeStale] {label} の整理はスキップしました (このテーブルの分だけ次回に持ち越し・"
+                f"処理は続行し実害なし): {type(e).__name__}: {str(e)[:120]}"
+            )
+    for t in _ORPHAN_SWEEP_TABLES:
+        _one(t,
+             f"SELECT COUNT(*) FROM {t} WHERE student_id IS NOT NULL AND student_id NOT IN (SELECT id FROM students)",
+             f"DELETE FROM {t} WHERE student_id IS NOT NULL AND student_id NOT IN (SELECT id FROM students)")
+    # AI利用コストの記録は削除せず参照だけ外す (トークン数/コスト/モデル名/種別だけの集計値で、
+    # プロンプト本文などの個人情報は持たないため、生徒削除後も保持して問題ない。塾の会計記録)
+    _one("anthropic_usage_log(参照解除)",
+         "SELECT COUNT(*) FROM anthropic_usage_log WHERE student_id IS NOT NULL AND student_id NOT IN (SELECT id FROM students)",
+         "UPDATE anthropic_usage_log SET student_id=NULL WHERE student_id IS NOT NULL AND student_id NOT IN (SELECT id FROM students)")
+    return out
+
+
 @app.post("/api/admin/students/purge-stale-data")
 def admin_students_purge_stale(payload: dict = None, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """合成監視 orphan + テストデータを安全に一括削除。
@@ -29021,6 +29128,12 @@ def admin_students_purge_stale(payload: dict = None, authorization: Optional[str
 
     payload = payload or {}
     dry_run = bool(payload.get("dry_run", False))
+    # 🧹 [orphan-cleanup 2026-09-04] orphans_only=true なら「存在しない生徒を指す行」の掃除だけ行い、
+    #   合成監視/テスト名にマッチした**生徒そのもの**は削除しない (件数と一覧は返す)。
+    #   ★理由: マッチ条件 (@synthetic-monitor.* / テスト系キーワード) には、人手で作ったデモ用アカウント
+    #     (例: @synthetic-monitor.local のデモ生徒) が紛れ込みうる (レビューで実測6名)。生徒を消すかは
+    #     塾長が UI の一覧を見て判断する。孤児行の掃除はそれとは独立に安全なので分けて実行できるようにした。
+    orphans_only = bool(payload.get("orphans_only", False))
 
     BLOCKED_KEYWORDS = ['テスト', 'ﾃｽﾄ', 'test', 'ダミー', 'dummy', 'サンプル', 'sample',
                        'デモ', 'demo', '品質検証', '確認用', '動作確認', '検証用',
@@ -29050,7 +29163,7 @@ def admin_students_purge_stale(payload: dict = None, authorization: Optional[str
                                    "via": f"test_kw:{kw}", "created_at": str(r["created_at"])})
 
         deleted = 0
-        if not dry_run and matched:
+        if not dry_run and matched and not orphans_only:
             ids = [m["id"] for m in matched]
             placeholders = ",".join(["?"] * len(ids))
             tup = tuple(ids)
@@ -29067,6 +29180,21 @@ def admin_students_purge_stale(payload: dict = None, authorization: Optional[str
                 ("vocab_progress", f"DELETE FROM vocab_progress WHERE student_id IN ({placeholders})"),
                 ("payments", f"DELETE FROM payments WHERE student_id IN ({placeholders})"),
                 ("ai_tutor_messages", f"DELETE FROM ai_tutor_messages WHERE student_id IN ({placeholders})"),
+                # 🧹 [orphan-cleanup 2026-09-04] 個別削除API (admin_student_delete) と同じ範囲に揃える
+                ("homework_assignments", f"DELETE FROM homework_assignments WHERE student_id IN ({placeholders})"),
+                ("student_json_state", f"DELETE FROM student_json_state WHERE student_id IN ({placeholders})"),
+                ("question_attempts", f"DELETE FROM question_attempts WHERE student_id IN ({placeholders})"),
+                ("student_weakness", f"DELETE FROM student_weakness WHERE student_id IN ({placeholders})"),
+                ("grammar_drill_assignments", f"DELETE FROM grammar_drill_assignments WHERE student_id IN ({placeholders})"),
+                ("admission_likelihood", f"DELETE FROM admission_likelihood WHERE student_id IN ({placeholders})"),
+                ("worksheet_archives", f"DELETE FROM worksheet_archives WHERE student_id IN ({placeholders})"),
+                ("class_attend", f"DELETE FROM class_attend WHERE student_id IN ({placeholders})"),
+                ("class_attendance", f"DELETE FROM class_attendance WHERE student_id IN ({placeholders})"),
+                ("lesson_print_downloads", f"DELETE FROM lesson_print_downloads WHERE student_id IN ({placeholders})"),
+                ("student_materials", f"DELETE FROM student_materials WHERE student_id IN ({placeholders})"),
+                ("ai_tutor_solve_log", f"DELETE FROM ai_tutor_solve_log WHERE student_id IN ({placeholders})"),
+                ("line_link_tokens", f"DELETE FROM line_link_tokens WHERE student_id IN ({placeholders})"),
+                ("anthropic_usage_log", f"UPDATE anthropic_usage_log SET student_id=NULL WHERE student_id IN ({placeholders})"),
             ]
             for tbl, sql in cascade_tables:
                 try: c.execute(sql, tup)
@@ -29096,16 +29224,22 @@ def admin_students_purge_stale(payload: dict = None, authorization: Optional[str
                 )
             except Exception: pass
             conn.commit()
+        # 🧹 孤児行の掃除は「対象生徒が0件」でも必ず走る (対象生徒の有無とは独立した溜まりものなので)
+        orphan_rows = _sweep_student_orphans(conn, c, dry_run)
     finally:
         conn.close()
 
-    log.info(f"[PurgeStale] dry_run={dry_run} matched={len(matched)} deleted={deleted}")
+    orphan_total = sum(orphan_rows.values()) if orphan_rows else 0
+    log.info(f"[PurgeStale] dry_run={dry_run} orphans_only={orphans_only} matched={len(matched)} deleted={deleted} orphan_rows={orphan_total}")
     return {
         "ok": True,
         "matched": len(matched),
         "deleted": deleted,
         "dry_run": dry_run,
         "items": matched[:100],
+        "orphan_rows": orphan_rows,        # {table: 件数} 存在しない生徒を指していた行 (dry_run なら見つけた数)
+        "orphan_total": orphan_total,
+        "orphans_only": orphans_only,      # true なら生徒本体は削除していない (一覧は参考表示)
     }
 
 

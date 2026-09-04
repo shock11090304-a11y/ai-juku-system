@@ -20,6 +20,12 @@
   - ★**`db()` の接続を掴んだまま AI/外部APIを待つコードを書かないこと**。①に切られる。AIを呼ぶ前に `conn.commit()` するか、`db()` を取る前に呼ぶ (`past_exam_upload` がこの理由で commit を挟んでいる)。
   - ★残る既知の弱点: `CREATE INDEX IF NOT EXISTS` (90本) も同じ構造で ShareLock を先に取る。ShareLock は通常の SELECT (AccessShareLock) とは衝突しないので 2026-09-03 型の「読み取りまで含む全停止」にはならない。ただし**書き込み中だと待たされ、`lock_timeout` で倒れると executescript は1トランザクションなので147文すべてがロールバックされる** = そのデプロイで増えたテーブル/インデックスが丸ごと未反映になり `init_ddl_skipped` に載る。「書き込みが遅れるだけ」では済まない。
   - ★既定値の正典は `server/main.py` の `_env_int("DB_...")` 行。この文書や `.env.example` と食い違ったらコードが正しい。
+- **生徒に紐づくテーブルと削除の整合 (2026-09-04)**: `students` を外部キーで参照するのは `payments` / `referrals` だけで、他は削除時に自力で消さないと孤児化する。長らく削除APIが14テーブルしか消しておらず、合成監視も `students` 行だけ消していたため、孤児が30,388行溜まっていた (うち27,797行は5分ごとの監視が残す `otp_codes`)。
+  - ★**生徒に紐づく新しいテーブルを足したら、`_ORPHAN_SWEEP_TABLES` と削除API (`admin_student_delete`) / `purge-stale-data` の cascade リストの3箇所すべてに足すこと**。1箇所でも漏れると同じ孤児化が再発する。
+  - CEOダッシュの🧹ボタン (`purge-stale-data`) は、対象の生徒が0件でも「存在しない生徒を指す行」を掃除する。在籍生徒のデータには触れない (条件は `student_id NOT IN (SELECT id FROM students)`)。payload `{"orphans_only": true}` なら生徒本体は消さず孤児行だけ掃除する。
+  - ★🧹ボタンの「対象の生徒」(合成監視 `@synthetic-monitor.*` / テスト系キーワード) には、**人手で作ったデモ用アカウントが紛れ込みうる** (2026-09-04 時点で `@synthetic-monitor.local` ドメインのデモ用アカウント6名・`course='kokuritsu_nankan'` 付き)。実行前の一覧で「監視 守」以外の名前が無いか必ず目視すること。★この文書に人名を書かない (公開リポジトリ)。
+  - ★`course_applications` / `referrals` は sweep 対象外。申込・紹介の**履歴**なので行は残し、生徒削除時に `student_id` / `referrer_id` / `referred_id` を NULL にするだけ (削除ではない)。「生徒IDの列 (`student_id` / `referrer_id` / `referred_id`) を持つ表は全部 sweep に入れる」と誤解しないこと。★ダッシュの🧹ボタンは2段階確認: 1回目で孤児行の掃除 (常に安全)、2回目で「生徒本体も消すか」を明示的に選ぶ。2回目をキャンセルすると `orphans_only: true` で送られ生徒は残る。
+  - ★`anthropic_usage_log` だけは消さず `student_id=NULL` にする。これは生徒のデータではなく**塾のAI利用コストの会計記録**で、CEOダッシュの残量予測が `SUM(cost_usd)` を参照している。消すと過去の費用が下がって見える。
 
 ## 本番APIが止まったとき (塾長向けランブック)
 1. **まず `https://ai-juku-api-production.up.railway.app/api/health` を開く。**

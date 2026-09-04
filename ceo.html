@@ -2282,7 +2282,7 @@
             <button id="neverLoginBackfill" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;" title="events から各生徒の最終アクティビティ時刻を推定して last_login_at を埋める">📅 過去履歴から推定</button>
             <button id="neverLoginPreview" style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.2);padding:0.55rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.82rem;">対象を確認</button>
             <button id="neverLoginSend" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;" title="本当に未ログインの生徒に magic link メールを送信">📧 全員に招待送信</button>
-            <button id="purgeStaleBtn" style="background:linear-gradient(135deg,#71717a,#52525b);color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;" title="合成監視 orphan + テストキーワードを含む生徒を一括削除 (cascade)">🧹 監視・テストデータ purge</button>
+            <button id="purgeStaleBtn" style="background:linear-gradient(135deg,#71717a,#52525b);color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;" title="合成監視の残骸・テスト名の生徒を一括削除 (cascade) + 削除済み生徒の残っていたデータを整理">🧹 監視・テストデータ purge</button>
           </div>
         </div>
       </div>
@@ -10603,17 +10603,70 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           });
           const dDry = await resDry.json();
           if (!resDry.ok || !dDry.ok) { alert('⚠️ プレビュー失敗: ' + (dDry.detail || resDry.status)); return; }
-          if (dDry.matched === 0) { alert('✅ クリーンアップ対象 0 件 — 既に綺麗です'); return; }
-          const lines = (dDry.items || []).map((it, i) => `${i+1}. ${it.name || '(名前なし)'} (${it.email || '?'}) [${it.via}]`).join('\n');
-          const ok = confirm(`🧹 ${dDry.matched} 件を完全削除します (cascade: study_logs/exam_results/messages 等も同時削除)\n\n${lines}\n\n取消不能です。実行しますか?`);
+          // 🧹 [orphan-cleanup 2026-09-04] 「存在しない生徒を指す行」の掃除も同じボタンで行う。
+          //   対象の生徒が 0 件でも孤児行があれば実行に進む (以前はここで即終了していた)。
+          const orphanTotal = dDry.orphan_total || 0;
+          // 旧API (デプロイ直後の数十秒) では orphan_total 自体が無い。0件と区別して知らせる
+          const orphanUnsupported = !('orphan_total' in dDry);
+          // テーブル名をそのまま並べると塾長には読めない (レビュー指摘)。日本語ラベルで出す。
+          const _tblLabel = {
+            otp_codes: 'ログイン確認コード', vocab_progress: '単語学習の進捗', question_attempts: '問題の解答履歴',
+            grammar_drill_assignments: 'ドリルの配信記録', student_weakness: '弱点分析', student_materials: '生徒が登録した使用中の教材',
+            worksheet_archives: '週次プリントの控え', lesson_print_downloads: 'プリントのダウンロード履歴',
+            admission_likelihood: '合格可能性の判定', class_attend: '出欠(クラス・日付単位)', class_attendance: '出欠(授業単位)',
+            ai_tutor_solve_log: 'AIチューターの解答ログ', line_link_tokens: 'LINE連携コード',
+            study_logs: '学習ログ', study_plans: '学習計画', exam_results: '模試結果', curricula: 'カリキュラム',
+            notifications: '通知', usage_monthly: '月間利用量', mock_exam_sessions: '模試の受験記録',
+            ai_tutor_messages: 'AIチューターの会話', homework_assignments: '宿題', student_json_state: 'アプリの保存状態',
+            'anthropic_usage_log(参照解除)': 'AI利用コストの記録 (消さずに紐付けだけ外す)',
+          };
+          const orphanLines = Object.entries(dDry.orphan_rows || {}).map(([t, n]) => `・${_tblLabel[t] || t}: ${Number(n).toLocaleString()} 行`).join('\n');
+          if (dDry.matched === 0 && orphanTotal === 0) {
+            alert(orphanUnsupported
+              ? '✅ 削除対象の生徒は 0 件です\n(削除済み生徒の残りデータの整理は、APIの更新が反映されるまで数十秒お待ちください)'
+              : '✅ クリーンアップ対象 0 件 — 既に綺麗です');
+            return;
+          }
+          const _items = dDry.items || [];
+          const _hidden = Math.max(0, (dDry.matched || 0) - _items.length);
+          // ★サーバは一覧を最大100件に切る。対象が100件を超えると 101件目以降が見えないまま
+          //   「全員『監視 守』だ」と誤認して OK しうる (唯一の安全弁が形骸化する) ので、必ず明示する。
+          const lines = _items.map((it, i) => `${i+1}. ${it.name || '(名前なし)'} (${it.email || '?'}) [${it.via}]`).join('\n')
+            + (_hidden > 0 ? `\n\n⚠️ ほか ${_hidden} 件は一覧に表示されていません (表示されていない生徒も削除されます)。全員を確認できない場合は「キャンセル」を押してください。` : '');
+          // 🧹 [orphan-cleanup 2026-09-04] 2段階で確認する (レビュー指摘: 従来は確認1回で生徒本体まで消えた)。
+          //   ① 孤児行の掃除 = 在籍生徒に触れないので常に安全 → 1回目の確認で実行
+          //   ② 合成監視/テスト名にマッチした「生徒本体」の削除 = 人手で作ったデモ用アカウントが紛れうる
+          //      → 2回目の確認で**明示的に選んだときだけ**。選ばなければ orphans_only で生徒は残す。
+          const orphanMsg = orphanTotal > 0
+            ? `🧹 削除済みの生徒を指したまま残っている行 ${orphanTotal.toLocaleString()} 行を掃除します (在籍生徒のデータには触れません。AI費用の記録は消さず参照だけ外します)\n${orphanLines}\n\n`
+            : '';
+          const studentsNote = dDry.matched > 0
+            ? `※ 合成監視・テスト名に一致する生徒が ${dDry.matched} 件ありますが、この確認では削除しません (次の確認で選べます)\n\n`
+            : '';
+          const ok = orphanTotal > 0
+            ? confirm(`${orphanMsg}${studentsNote}取消不能です。実行しますか?`)
+            : confirm(`削除済み生徒の残りデータはありません (掃除は不要)。\n次の確認で、合成監視・テスト名に一致する生徒 ${dDry.matched} 件を削除するか選べます。続けますか?`);
           if (!ok) return;
-          purgeBtn.textContent = '⏳ 削除中...';
+          let orphansOnly = true;
+          if (dDry.matched > 0) {
+            const ok2 = confirm(`⚠️ 続けて、次の ${dDry.matched} 件の【生徒本体】も完全削除しますか?\n(cascade: 学習ログ/模試結果/メッセージ等も同時削除・取消不能)\n\n${lines}\n\n★「監視 守」以外の名前 (デモ用アカウント等) が混ざっていたら「キャンセル」を押してください。生徒は残したまま、上の掃除だけ実行します。`);
+            orphansOnly = !ok2;
+          }
+          purgeBtn.textContent = orphansOnly ? '⏳ 整理中...' : '⏳ 削除中...';
           const res = await AdminAuth.fetch('/api/admin/students/purge-stale-data', {
             method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ dry_run: false }),
+            body: JSON.stringify({ dry_run: false, orphans_only: orphansOnly }),
           });
           const d = await res.json();
-          if (res.ok && d.ok) { alert(`✅ 削除完了: ${d.deleted} 件\nロスター/KPI を再描画します`); location.reload(); }
+          if (res.ok && d.ok) {
+            // 旧API (フィールド無し) と「0件」を区別する (デプロイ直後の数十秒は API が古い場合がある)
+            const orphanDone = ('orphan_total' in d) ? `${Number(d.orphan_total || 0).toLocaleString()} 行` : '(この項目はまだ未対応のAPI)';
+            const studentsLine = !dDry.matched
+              ? '・生徒本体の削除: 対象なし'
+              : (d.orphans_only ? '・生徒本体の削除: 行っていません (キャンセルにより見送り)' : `・生徒本体の削除: ${d.deleted} 件`);
+            alert(`✅ 完了しました\n${studentsLine}\n・削除済み生徒の残っていたデータの整理: ${orphanDone}\nロスター/KPI を再描画します`);
+            location.reload();
+          }
           else { alert('⚠️ 削除失敗: ' + (d.detail || res.status)); }
         } catch (err) { alert('⚠️ エラー: ' + err.message); }
         finally { purgeBtn.disabled = false; purgeBtn.textContent = orig; }
