@@ -1,3 +1,14 @@
+// 📎 [file-open-link] 添付の open_url に前置する API の origin (添付ダウンロードハンドラと同じ判定)
+function apiBaseForFiles() {
+  return (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+    ? 'http://localhost:8000' : window.location.origin;
+}
+var _msgsLoadedAt = 0, _msgsDlTtl = 1800;   // 📎 メッセージ添付 open_url のトークン期限判定用
+// 📎 PDF・画像はブラウザ内でそのまま表示できる。Word/Excel 等はサーバが保存扱いで返すのでラベルを分ける
+function fileOpenLabel(mime) {
+  var m = String(mime || '').toLowerCase();
+  return (m === 'application/pdf' || m.indexOf('image/') === 0) ? '📄 開く' : '⬇ 取得';
+}
 // 🚨 2026-08-07: AI 系 fetch の失敗を、生徒に見せてよい文言へ変換する共通ヘルパ。
 //   サーバは日次上限を 429 + detail "AI_BUDGET_<TIER>:<本文>" で返す。接頭辞は内部識別子なので
 //   必ず剥がすこと (app.js 側は showQuotaExhaustedDialog が同じことをしている)。
@@ -96,7 +107,7 @@ function getCurrentStudent() {
   // 🔑 2026-06-14 [trust-identity] ai_juku_session_student (= サーバ署名トークンを
   //   /api/auth/me で検証した本人・氏名込み) を常に権威ソースにする。これがあれば戻り値は
   //   必ず本人 (氏名等は session で上書き) になり、表示ポインタずれによる別生徒の氏名表示
-  //   (室坂海來さん事故) を構造的に排除する。ハードリロードや非同期 /api/auth/me 解決を
+  //   (過去の別生徒名表示事故) を構造的に排除する。ハードリロードや非同期 /api/auth/me 解決を
   //   待たずに開いた瞬間から本人表示。書き戻しは初回のみ (定常は read-only)。
   try {
     const sess = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
@@ -2631,6 +2642,7 @@ async function loadMyMessages() {
   list.innerHTML = '<div style="text-align:center; color:#71717a; padding:1rem;">📨 読み込み中...</div>';
   try {
     const data = await slApiFetch('/api/messages/me?limit=50');
+  _msgsLoadedAt = Date.now(); _msgsDlTtl = (data && data.dl_ttl_seconds) || 1800;   // 📎 open_url のトークン期限判定用
     const msgs = data.messages || [];
     updateUnreadBadge(data.unread_count || 0);
     if (!msgs.length) {
@@ -2649,7 +2661,11 @@ async function loadMyMessages() {
       const attBlock = att
         ? `<div class="msg-attachment" style="margin-top:0.5rem; padding:0.5rem 0.7rem; background:rgba(0,0,0,0.3); border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
             <span style="font-size:0.8rem; color:#cbd5e1;">📎 ${escapeHtml(att.filename)} <span style="color:#71717a; font-size:0.85em;">(${Math.round((att.size||0)/1024)} KB)</span></span>
-            <button type="button" data-msg-id="${m.id}" class="msg-att-dl" style="background:rgba(99,102,241,0.25); color:#c7d2fe; border:0; padding:0.3rem 0.7rem; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:700;">⬇️ ダウンロード</button>
+            ${att.open_url
+              /* 📎 [file-open-link 2026-09-04] fetch→blob→<a download> は iPhone/LINE 内ブラウザで開けないことがある。
+                 短命トークン付きの普通のリンクを新しいタブで開く (端末の PDF ビューアで確実に開く)。 */
+              ? `<a href="${escapeHtml(apiBaseForFiles() + att.open_url)}" target="_blank" rel="noopener" class="msg-att-open" data-msg-id="${m.id}" style="background:rgba(99,102,241,0.25); color:#c7d2fe; border:0; padding:0.3rem 0.7rem; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:700; text-decoration:none;">${fileOpenLabel(att.mime)}</a>`
+              : `<button type="button" data-msg-id="${m.id}" class="msg-att-dl" style="background:rgba(99,102,241,0.25); color:#c7d2fe; border:0; padding:0.3rem 0.7rem; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:700;">⬇️ ダウンロード</button>`}
           </div>`
         : '';
       return `
@@ -2662,8 +2678,40 @@ async function loadMyMessages() {
           ${attBlock}
         </div>`;
     }).join('');
+    // 📎 [file-open-link] 「開く」リンク: 行の展開/既読化に伝播させない。トークン期限 (30分) が近ければ
+    //   一覧を取り直して新しいリンクで開く (期限切れの URL に飛ぶと生のエラー文が出るため)。
+    list.querySelectorAll('a.msg-att-open').forEach(a => {
+      a.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const stale = !_msgsLoadedAt || (Date.now() - _msgsLoadedAt) > (_msgsDlTtl - 120) * 1000;
+        if (!stale) return;   // 期限内: リンクの通常動作 (新しいタブ) に任せる
+        e.preventDefault();
+        const id = a.getAttribute('data-msg-id');
+        // Safari は「通信を待った後の window.open」を止めるので、先にタブを開いてから URL を入れる
+        let tab = null;
+        try { tab = window.open('', '_blank'); } catch (_eo) { tab = null; }
+        if (tab) { try { tab.document.write('<p style="font-family:sans-serif; padding:1.5rem;">📄 ファイルを準備中…</p>'); } catch (_ew) {} }
+        try {
+          const data = await slApiFetch('/api/messages/me?limit=50');
+          _msgsLoadedAt = Date.now(); _msgsDlTtl = (data && data.dl_ttl_seconds) || 1800;
+          // 取り直したトークンで一覧の全リンクを張り直す (押した1本だけ直すと他の添付が古いURLのまま残る)
+          const byId = {};
+          ((data && data.messages) || []).forEach(x => { if (x.attachment && x.attachment.open_url) byId[String(x.id)] = x.attachment.open_url; });
+          list.querySelectorAll('a.msg-att-open').forEach(x => {
+            const u = byId[String(x.getAttribute('data-msg-id'))];
+            if (u) x.href = apiBaseForFiles() + u;
+          });
+          const url = byId[String(id)];
+          if (!url) throw new Error('not found');
+          if (tab) { tab.location = a.href; } else { location.assign(a.href); }
+        } catch (_e) {
+          if (tab) { try { tab.close(); } catch (_ec) {} }
+          alert('ファイルを開けませんでした。ページを再読み込みしてもう一度お試しください');
+        }
+      });
+    });
     // 添付 DL ボタン bind (クリックの bubble を止めて行展開と分離)
-    list.querySelectorAll('.msg-att-dl').forEach(btn => {
+    list.querySelectorAll('button.msg-att-dl').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const id = btn.getAttribute('data-msg-id');
@@ -4277,16 +4325,25 @@ async function initHomeworkSection() {
     const pid = pbtn.getAttribute('data-hw-print');
     if (!pid) return;
     pbtn.disabled = true; const _orig = pbtn.textContent; pbtn.textContent = '⏳ 準備中…';
+    // 📎 [file-open-link 2026-09-04] iPhone の Safari は「通信を待った後の window.open」をポップアップとして
+    //   止める (クリック直後の同期呼び出しだけ許可)。先に空のタブを開いておき、URL が取れたらそこに遷移させる。
+    //   タブを開けなかった (ブロックされた) ときは同じタブで開く。
+    let _tab = null;
+    try { _tab = window.open('', '_blank'); } catch (_eo) { _tab = null; }
+    // 白紙のタブが数秒見えると「固まった?」と感じるので、準備中の表示を入れておく
+    if (_tab) { try { _tab.document.write('<p style="font-family:sans-serif; padding:1.5rem;">📄 PDFを準備中…</p>'); } catch (_ew) {} }
     try {
       // slApiFetch は成功時に parse 済み JSON を返す (Response ではない)
       const data = await slApiFetch(`/api/student/lesson-prints/${encodeURIComponent(pid)}/download`, { method: 'POST', body: JSON.stringify({}) });
       let fpath = String((data && data.file_path) || '').replace(/\+/g, '-');
       // 既存プリントビューアと同じ path 検証 (lesson-prints 配下の .pdf のみ・.. 不可)
       if (!/^\/lesson-prints\/[^?#\s]+\.pdf$/i.test(fpath) || fpath.includes('..')) {
+        if (_tab) { try { _tab.close(); } catch (_ec) {} }
         alert('⚠️ PDFの取得に失敗しました'); return;
       }
-      window.open(fpath, '_blank', 'noopener,noreferrer');
+      if (_tab) { _tab.location = fpath; } else { location.assign(fpath); }
     } catch (e3) {
+      if (_tab) { try { _tab.close(); } catch (_ec) {} }
       alert('❌ PDFを開けませんでした: ' + (e3.message || e3));
     } finally {
       setTimeout(() => { pbtn.textContent = _orig; pbtn.disabled = false; }, 800);

@@ -11932,6 +11932,13 @@ def verify_magic_link(t: str):
     claims = _verify_session_token(t, expected_type=None)
     if not claims:
         raise HTTPException(status_code=401, detail="Invalid or expired link")
+    # 🔐 expected_type=None は「種別チェック省略」なので、ここで明示的に許可リストを掛ける。
+    #   'dl' (ファイルを開くための短命トークン、open_url の t=) や将来の用途限定トークンを
+    #   ここに投げても 30日有効の正規 session に交換できないようにする (3視点レビュー 2026-09-04)。
+    #   impersonation は admin ダッシュボードが Bearer で直接使うので通常ここには来ないが、
+    #   従来の挙動 (受理) を変えないため許可リストに残す。
+    if claims.get("token_type") not in ("magic", "magicv", "session", "impersonation"):
+        raise HTTPException(status_code=401, detail="Invalid or expired link")
 
     conn = db()
     c = conn.cursor()
@@ -46885,21 +46892,58 @@ def _validate_message_attachment(filename: Optional[str], mime: Optional[str], d
     return {"filename": fn, "mime": mt, "size": actual_size, "data_b64": data_b64}
 
 
-def _safe_attachment_response(filename: str, stored_mime: str, data: bytes):
+# 📎 [file-open-link 2026-09-04 塾長報告「送ったPDFが生徒側で開けないことがある」]
+#   生徒アプリのファイル取得は「fetch(Authorization ヘッダ) → blob → <a download> を JS でクリック」方式
+#   だった。これは iPhone/iPad の Safari や LINE 内ブラウザでは無反応・白紙・開けないファイルになる
+#   ことがある (ブラウザ仕様。端末依存なので「起きたりする」症状になる)。本番の13ファイルはすべて
+#   正しい PDF で配信も成功していた = 原因はサーバではなく生徒側の開き方。
+#   確実な方法は「普通のリンクを新しいタブで開く」(端末の PDF ビューアが表示する) だが、
+#   リンクには Authorization ヘッダを付けられない。そこで URL に載せられる**短命トークン**を発行する。
+#   ★セッショントークン (30日有効) を URL に載せてはいけない: 履歴・共有・ログから漏れると
+#     アカウントごと乗っ取られる。dl トークンは 30 分で失効し、ダウンロード専用 (他の API では拒否)。
+#     各エンドポイントは従来どおり生徒IDで認可を再検査する。
+_DL_TOKEN_TTL_SECONDS = 1800
+
+
+def _student_from_download_token(t: Optional[str], allow_canceled: bool = False) -> Optional[dict]:
+    """URL クエリの短命トークン (token_type='dl') から生徒を解決する。無効/期限切れなら None。
+    既存の在籍ステータスゲート (_get_current_student) をそのまま通すため、60秒だけ有効な通常
+    セッショントークンに引き換えて渡す (ゲートの実装を二重に持たない)。"""
+    if not t:
+        return None
+    claims = _verify_session_token(t, expected_type="dl")
+    if not claims:
+        return None
+    short = _sign_session_token(int(claims["student_id"]), ttl_seconds=60, token_type="session")
+    return _get_current_student("Bearer " + short, allow_canceled=allow_canceled)
+
+
+def _make_download_token(student_id: int) -> str:
+    """一覧APIが各ファイルの open_url に埋める dl トークン (30分)。"""
+    return _sign_session_token(int(student_id), ttl_seconds=_DL_TOKEN_TTL_SECONDS, token_type="dl")
+
+
+def _safe_attachment_response(filename: str, stored_mime: str, data: bytes, inline: bool = False):
     """添付ダウンロード response builder。XSS 防御:
     - 許可リストにある mime のみ Content-Type 反映 (text/html 等の rendering 系を弾く)
     - それ以外は application/octet-stream に強制
-    - Content-Disposition: attachment で常にダウンロード扱い
+    - Content-Disposition: 既定は attachment (ダウンロード扱い)。inline=True かつ PDF/画像のときだけ
+      inline にして端末のビューアで開かせる (📎 file-open-link。HTML 等は許可リスト外なので inline にならない)
     - X-Content-Type-Options: nosniff で MIME sniffing 攻撃を防御"""
     from fastapi.responses import Response as _Resp
     from urllib.parse import quote as _qu
     safe_mime = stored_mime if stored_mime in _MSG_ATTACHMENT_ALLOWED_MIMES else "application/octet-stream"
+    disp = "inline" if (inline and (safe_mime == "application/pdf" or safe_mime.startswith("image/"))) else "attachment"
     return _Resp(
         content=data,
         media_type=safe_mime,
         headers={
-            "Content-Disposition": f"attachment; filename*=UTF-8''{_qu(filename or 'attachment')}",
+            "Content-Disposition": f"{disp}; filename*=UTF-8''{_qu(filename or 'attachment')}",
             "X-Content-Type-Options": "nosniff",
+            # 📎 [file-open-link] URL に短命トークンが載るので、開いた先から参照元 (URL) を外に出さない・
+            #   共有キャッシュに残さない (セキュリティレビュー 2026-09-04 の多層防御)
+            "Referrer-Policy": "no-referrer",
+            "Cache-Control": "private, no-store",
         }
     )
 
@@ -47426,6 +47470,7 @@ def get_my_messages(authorization: Optional[str] = Header(None), limit: int = 50
         rows = c.fetchall()
         msgs = []
         unread = 0
+        _dl_msgs = _make_download_token(student["id"])   # 📎 [file-open-link] 添付リンク用 (1レスポンス1トークン)
         for r in rows:
             # 自分が送信したメッセージは既読扱い (受信側ではないため read_at は気にしない)
             is_outgoing = (r["sender_type"] == "student")
@@ -47446,9 +47491,12 @@ def get_my_messages(authorization: Optional[str] = Header(None), limit: int = 50
                     "filename": r["attachment_filename"],
                     "mime": r["attachment_mime"],
                     "size": r["attachment_size"],
+                    # 📎 [file-open-link] 通常のリンクとして開ける URL (相対。生徒側が API の origin を前置する)
+                    "open_url": f"/api/messages/me/{r['id']}/attachment?inline=1&t={_dl_msgs}",
                 } if has_attachment else None,
             })
-        return {"ok": True, "messages": msgs, "unread_count": unread}
+        return {"ok": True, "messages": msgs, "unread_count": unread,
+                "dl_ttl_seconds": _DL_TOKEN_TTL_SECONDS}   # 📎 open_url のトークン有効秒 (画面側の期限判定用)
     finally:
         conn.close()
 
@@ -47537,10 +47585,11 @@ def student_send_message(payload: StudentMessageSendRequest, request: Request, a
 
 
 @app.get("/api/messages/me/{msg_id}/attachment")
-def get_my_message_attachment(msg_id: int, authorization: Optional[str] = Header(None)):
+def get_my_message_attachment(msg_id: int, authorization: Optional[str] = Header(None), t: Optional[str] = None, inline: int = 0):
     """生徒: 自分宛 OR 自分送信メッセージの添付ファイルをダウンロード。
-    認可: そのメッセージの sender か recipient のみ。"""
-    student = _get_current_student(authorization)
+    認可: そのメッセージの sender か recipient のみ。
+    📎 ?t=<dlトークン> でも認証できる (リンク遷移用)。?inline=1 で端末のビューアに開かせる。"""
+    student = _get_current_student(authorization) or _student_from_download_token(t)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
     conn = db()
@@ -47570,6 +47619,7 @@ def get_my_message_attachment(msg_id: int, authorization: Optional[str] = Header
             row["attachment_filename"] or "attachment",
             row["attachment_mime"] or "application/octet-stream",
             data,
+            inline=bool(inline),
         )
     finally:
         conn.close()
@@ -47884,6 +47934,8 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
                 "location": r["location"], "notes": r["notes"],
                 "files": [], "recordings": [], "my_attendance": None,
             }
+        # 📎 [file-open-link] リンク遷移で開くための短命トークン付き URL を各ファイルに付ける
+        _dl = _make_download_token(student["id"])
         # 公開中のファイル (data_b64 は重いので取得しない)
         loose_files = []
         labeled_files = []   # 時間割クラスに紐づくファイル (class_label でグループ表示)
@@ -47893,7 +47945,9 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
         )
         for r in c.fetchall():
             item = {"id": r["id"], "title": r["title"], "filename": r["filename"],
-                    "mime": r["mime"], "file_size": r["file_size"]}
+                    "mime": r["mime"], "file_size": r["file_size"],
+                    # 📎 通常のリンクとして開ける URL (相対。生徒側が BACKEND_URL を前置する)
+                    "open_url": f"/api/student/class/files/{r['id']}/download?inline=1&t={_dl}"}
             sid_ = r["session_id"]
             if sid_ is not None:
                 if sid_ in sessions:
@@ -47951,6 +48005,7 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             "labeled_files": labeled_files,
             "loose_files": loose_files,
             "loose_recordings": loose_recordings,
+            "dl_ttl_seconds": _DL_TOKEN_TTL_SECONDS,   # 📎 open_url のトークン有効秒 (生徒側の再取得判定用)
             # 塾生アプリ自己登録(referrer=塾生アプリ)の通塾生のみ true = ログイン後の着地先が
             # class.html。★マイページ導線の出し分けにはもう使わない (下の ai_home_available を見る)。
             "is_tsujuku_app": _is_juku_app_student(student["id"]),
@@ -47964,10 +48019,11 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
 
 
 @app.get("/api/student/class/files/{file_id}/download")
-def student_class_file_download(file_id: int, authorization: Optional[str] = Header(None)):
+def student_class_file_download(file_id: int, authorization: Optional[str] = Header(None), t: Optional[str] = None, inline: int = 0):
     """通塾生: 授業ファイルをダウンロード。認証 + 通塾生ゲート後に DB から復号して配信。
-    ファイルは通塾生で共有 (個別所有ではない) ため、コホートゲートのみで十分。"""
-    student = _get_current_student(authorization)
+    ファイルは通塾生で共有 (個別所有ではない) ため、コホートゲートのみで十分。
+    📎 ?t=<dlトークン> でも認証できる (リンク遷移用)。?inline=1 で端末のビューアに開かせる。"""
+    student = _get_current_student(authorization) or _student_from_download_token(t)
     _require_tsujuku_student(student)
     conn = db()
     try:
@@ -47998,7 +48054,8 @@ def student_class_file_download(file_id: int, authorization: Optional[str] = Hea
         except Exception:
             pass
         return _safe_attachment_response(
-            row["filename"] or "lesson_file", row["mime"] or "application/octet-stream", data
+            row["filename"] or "lesson_file", row["mime"] or "application/octet-stream", data,
+            inline=bool(inline),
         )
     finally:
         conn.close()

@@ -261,6 +261,12 @@
 
     // ---------- state ----------
     var feedData = null, hwLoaded = false, msgLoaded = false;
+    var feedLoadedAt = 0, msgLoadedAt = 0, msgDlTtl = 1800;   // 📎 open_url のトークン期限判定用 (秒はサーバ値)
+    // 📎 PDF・画像はブラウザ内でそのまま表示できる。Word/Excel 等はサーバが保存扱いで返すのでラベルを分ける
+    function fileOpenLabel(mime) {
+      var m = String(mime || '').toLowerCase();
+      return (m === 'application/pdf' || m.indexOf('image/') === 0) ? '📄 開く' : '⬇ 取得';
+    }
     var TABS = ['schedule', 'homework', 'videos', 'messages'];
 
     function showTab(name) {
@@ -595,11 +601,17 @@
       h += '</div>';
       return h;
     }
+    // 📎 [file-open-link 2026-09-04 塾長報告「送ったPDFが開けないことがある」]
+    //   従来の「fetch → blob → <a download> を JS でクリック」は iPhone/iPad の Safari や LINE 内ブラウザで
+    //   無反応・白紙・開けないファイルになることがある。open_url (短命トークン付き) が来ていれば
+    //   **普通のリンクを新しいタブで開く** = 端末の PDF ビューアで確実に開く。無ければ従来ボタン (旧API互換)。
     function fileRow(f) {
       var sub = f.file_size ? ('<span class="res-sub"> ・ ' + esc(fmtKB(f.file_size)) + '</span>') : '';
+      var action = f.open_url
+        ? '<a class="btn btn-primary file-open" href="' + esc(BACKEND_URL + f.open_url) + '" target="_blank" rel="noopener" data-id="' + f.id + '">' + fileOpenLabel(f.mime) + '</a>'
+        : '<button class="btn btn-primary file-dl" data-id="' + f.id + '" data-fn="' + esc(f.filename || f.title) + '">⬇ 取得</button>';
       return '<div class="res-row"><span class="res-icon">📄</span>'
-        + '<span class="res-name">' + esc(f.title) + sub + '</span>'
-        + '<button class="btn btn-primary file-dl" data-id="' + f.id + '" data-fn="' + esc(f.filename || f.title) + '">⬇ 取得</button></div>';
+        + '<span class="res-name">' + esc(f.title) + sub + '</span>' + action + '</div>';
     }
     // 📎 クラス別 配布ファイル (時間割クラスごと・全通塾生に表示)
     function labeledFilesHtml() {
@@ -660,9 +672,38 @@
       scheduleBody.innerHTML = parts.join('');
       wireSchedule();
     }
+    // 📎 open_url のトークンは 30 分で失効する。ページを開きっぱなしにして後で押した場合に備え、
+    //   期限が近ければリンク遷移を止めて feed を取り直し、新しい URL を同じタブで開く
+    //   (await の後の window.open は Safari のポップアップ制限で止まるため location.assign を使う)。
+    function dlStale() {
+      var ttl = (feedData && feedData.dl_ttl_seconds) || 1800;
+      return !feedLoadedAt || (Date.now() - feedLoadedAt) > (ttl - 120) * 1000;
+    }
+    async function openFileFresh(a) {
+      var id = a.getAttribute('data-id');
+      try {
+        feedData = await api('/api/student/class/feed'); feedLoadedAt = Date.now();
+        var all = [].concat(feedData.loose_files || [], feedData.labeled_files || []);
+        (feedData.sessions || []).forEach(function (s) { all = all.concat(s.files || []); });
+        // 取り直したトークンで画面上の全リンクを張り直す (押した1本だけだと他のファイルが古いURLのまま残る)
+        var byId = {};
+        all.forEach(function (x) { if (x.open_url) byId[String(x.id)] = x.open_url; });
+        scheduleBody.querySelectorAll('a.file-open').forEach(function (x) {
+          var u = byId[String(x.getAttribute('data-id'))];
+          if (u) x.href = BACKEND_URL + u;
+        });
+        if (byId[String(id)]) { location.assign(BACKEND_URL + byId[String(id)]); return; }
+      } catch (e) {}
+      toast('ファイルを開けませんでした。アプリを閉じて開き直してください', true);
+    }
     function wireSchedule() {
-      scheduleBody.querySelectorAll('.file-dl').forEach(function (btn) {
+      scheduleBody.querySelectorAll('button.file-dl').forEach(function (btn) {
         btn.addEventListener('click', function () { downloadFile(btn); });
+      });
+      scheduleBody.querySelectorAll('a.file-open').forEach(function (a) {
+        a.addEventListener('click', function (ev) {
+          if (dlStale()) { ev.preventDefault(); openFileFresh(a); }
+        });
       });
       scheduleBody.querySelectorAll('.att-set').forEach(function (btn) {
         btn.addEventListener('click', function () { reportAttendance(btn); });
@@ -1214,7 +1255,7 @@
       if (!msgLoaded) body.innerHTML = '<div class="loading">読み込み中…</div>';
       try {
         var d = await api('/api/messages/me?limit=50');
-        msgLoaded = true;
+        msgLoaded = true; msgLoadedAt = Date.now(); msgDlTtl = (d && d.dl_ttl_seconds) || 1800;
         renderMessages(d);
         updateBadge('msgBadge', d.unread_count || 0);
       } catch (e) {
@@ -1232,7 +1273,13 @@
       var list = msgs.length ? msgs.map(function (m) {
         var out = m.direction === 'out';
         var who = out ? '自分 → 塾長' : '塾長';
-        var att = m.attachment ? ('<div style="margin-top:0.5rem;"><button class="btn btn-ghost msg-att" data-id="' + m.id + '" data-fn="' + esc(m.attachment.filename || 'file') + '">📎 ' + esc(m.attachment.filename || '添付') + '</button></div>') : '';
+        // 📎 [file-open-link] open_url があれば普通のリンク (新しいタブ)。iPhone/LINE 内ブラウザでも開ける
+        var att = m.attachment
+          ? ('<div style="margin-top:0.5rem;">' + (m.attachment.open_url
+              ? '<a class="btn btn-ghost msg-att-open" href="' + esc(BACKEND_URL + m.attachment.open_url) + '" target="_blank" rel="noopener" data-id="' + m.id + '">📎 ' + esc(m.attachment.filename || '添付') + '</a>'
+              : '<button class="btn btn-ghost msg-att" data-id="' + m.id + '" data-fn="' + esc(m.attachment.filename || 'file') + '">📎 ' + esc(m.attachment.filename || '添付') + '</button>')
+            + '</div>')
+          : '';
         return '<div class="msg ' + (out ? 'out' : 'in') + (m.is_unread ? ' unread' : '') + '" data-id="' + m.id + '" data-unread="' + (m.is_unread ? 1 : 0) + '">'
           + '<div class="msg-head"><span class="msg-from ' + (out ? 'out' : '') + '">' + esc(who) + '</span><span>' + esc(fmtDate(m.created_at)) + '</span></div>'
           + (m.subject ? ('<div class="msg-subj">' + esc(m.subject) + '</div>') : '')
@@ -1241,8 +1288,29 @@
       body.innerHTML = compose + '<div class="block-label" style="margin-top:0.3rem;">📨 やりとり</div>' + list;
 
       document.getElementById('msgSendBtn').addEventListener('click', sendMessage);
-      body.querySelectorAll('.msg-att').forEach(function (b) {
+      body.querySelectorAll('button.msg-att').forEach(function (b) {
         b.addEventListener('click', function () { downloadMsgAttachment(b); });
+      });
+      // 📎 添付リンクの期限切れ対策: 30 分近く経っていたら一覧を取り直してから同じタブで開く
+      body.querySelectorAll('a.msg-att-open').forEach(function (a) {
+        a.addEventListener('click', function (ev) {
+          if (!msgLoadedAt || (Date.now() - msgLoadedAt) > (msgDlTtl - 120) * 1000) {
+            ev.preventDefault();
+            var id = a.getAttribute('data-id');
+            api('/api/messages/me?limit=50').then(function (d) {
+              msgLoadedAt = Date.now(); msgDlTtl = (d && d.dl_ttl_seconds) || 1800;
+              // 取り直したトークンで画面上の全リンクを張り直す
+              var byId = {};
+              (d.messages || []).forEach(function (x) { if (x.attachment && x.attachment.open_url) byId[String(x.id)] = x.attachment.open_url; });
+              body.querySelectorAll('a.msg-att-open').forEach(function (x) {
+                var u = byId[String(x.getAttribute('data-id'))];
+                if (u) x.href = BACKEND_URL + u;
+              });
+              if (byId[String(id)]) location.assign(BACKEND_URL + byId[String(id)]);
+              else toast('添付を開けませんでした。アプリを閉じて開き直してください', true);
+            }).catch(function () { toast('添付を開けませんでした。アプリを閉じて開き直してください', true); });
+          }
+        });
       });
       // 受信した未読を既読化（best-effort）
       body.querySelectorAll('.msg[data-unread="1"]').forEach(function (el) {
@@ -1292,7 +1360,7 @@
     async function boot() {
       var gate = document.getElementById('gate');
       try {
-        feedData = await api('/api/student/class/feed');
+        feedData = await api('/api/student/class/feed'); feedLoadedAt = Date.now();
       } catch (e) {
         if (e.status === 403) {
           gate.innerHTML = '<div class="notice"><h2>📚 通塾生専用アプリです</h2>'
