@@ -4684,7 +4684,13 @@
             html += '</div>';
           }
           if (_done.length) {
-            html += `<div style="font-size:0.76rem;color:#86efac;font-weight:700;margin-bottom:0.3rem;">✅ 完了 ${_done.length}名 <span style="color:#71717a;font-weight:400;font-size:0.92em;">(誰が・点数・どの問題を間違えたか。カッコ内は「選んだ番号→正解番号」、マウスを合わせると選択肢の文言を表示。問題の内容は下の「📊問題別」)</span></div><div style="display:flex;flex-direction:column;gap:0.35rem;">`;
+            // 👁 「選択肢の文言を表示」ボタンは、表示する文言 (.gd-wt) が1つでもあるときだけ出す。
+            //   全員満点や旧データ (wrong_detail 無し) でボタンだけ出ると「押しても何も起きない」= 壊れて見える。
+            const _hasDetail = _done.some(r => Array.isArray(r.wrong_detail) && r.wrong_detail.length > 0);
+            const _textBtn = _hasDetail
+              ? ` <button type="button" onclick="(function(b){const box=b.closest('#gdAnalytics')||document; const els=box.querySelectorAll('.gd-wt'); const show=els.length&&els[0].style.display==='none'; els.forEach(e=>{e.style.display=show?'inline':'none';}); b.textContent=show?'📝 選択肢の文言を隠す':'📝 選択肢の文言を表示';})(this)" style="background:none;border:1px solid #475569;color:#93c5fd;border-radius:5px;padding:0.1rem 0.45rem;font-size:0.7rem;cursor:pointer;">📝 選択肢の文言を表示</button>`
+              : '';
+            html += `<div style="font-size:0.76rem;color:#86efac;font-weight:700;margin-bottom:0.3rem;">✅ 完了 ${_done.length}名 <span style="color:#71717a;font-weight:400;font-size:0.92em;">(誰が・点数・どの問題を間違えたか${_hasDetail ? '。カッコ内は「選んだ番号→正解番号」' : ''}。問題の内容は下の「📊 問題別」)</span>${_textBtn}</div><div style="display:flex;flex-direction:column;gap:0.35rem;">`;
             html += _done.map(r => {
               const sc = r.score_total ? `${r.score_correct == null ? '?' : r.score_correct}/${r.score_total}` : '';
               const dt = _gdDate(r.completed_at);
@@ -4695,7 +4701,9 @@
                 ? _detail.map(w => {
                     const q = _qByNo[w.no];
                     const tip = `${_choiceText(q, w.chosen)} を選択 → 正解 ${_choiceText(q, w.answer)}`;
-                    return `<span title="${escapeHtml(tip)}" style="cursor:help;border-bottom:1px dotted #fca5a5;">問${Number(w.no)} <span style="color:#fca5a5;font-weight:700;">(${w.chosen == null ? '—' : Number(w.chosen) + 1}→<span style="color:#86efac;">正解${Number(w.answer) + 1}</span>)</span></span>`;
+                    // title はマウス用。タッチ端末ではホバーが効かないので、同じ文言を .gd-wt に隠し持ち、
+                    // 見出しの「選択肢の文言を表示」ボタンでインライン表示に切り替える。
+                    return `<span title="${escapeHtml(tip)}" style="cursor:help;border-bottom:1px dotted #fca5a5;">問${Number(w.no)} <span style="color:#fca5a5;font-weight:700;">(${w.chosen == null ? '—' : Number(w.chosen) + 1}→<span style="color:#86efac;">正解${Number(w.answer) + 1}</span>)</span><span class="gd-wt" style="display:none;color:#cbd5e1;font-weight:400;"> ＝ ${escapeHtml(tip)}</span></span>`;
                   }).join('・')
                 : wrong.map(n => '問' + Number(n)).join('・');
               const wrongHtml = wrong.length
@@ -4722,8 +4730,11 @@
           const _cc = Array.isArray(q.choice_counts) ? q.choice_counts : null;
           let dist = '';
           if (_cc && Array.isArray(q.choices) && q.choices.length) {
+            const answered = Number(q.answered || 0);
+            // ② 回答者が少ないとバーが「1人=100%」に見えて重みを誤読させるので、3人未満は人数だけ出す
+            const showBar = answered >= 3;
             const maxN = Math.max(1, ...q.choices.map((_, i) => Number(_cc[i] || 0)));
-            dist = `<div style="display:flex;flex-direction:column;gap:0.12rem;margin-top:0.25rem;">` + q.choices.map((c, i) => {
+            const rows = q.choices.map((c, i) => {
               const n = Number(_cc[i] || 0);
               const isAns = (q.answer != null && i === Number(q.answer));
               const col = isAns ? '#86efac' : (n > 0 ? '#fca5a5' : '#64748b');
@@ -4731,12 +4742,17 @@
               return `<div style="display:flex;align-items:center;gap:0.4rem;font-size:0.74rem;color:${col};">`
                 + `<span style="flex:0 0 auto;min-width:1.3em;text-align:right;">${i + 1}.</span>`
                 + `<span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(String(c))}${isAns ? ' <span style="font-size:0.9em;">← 正解</span>' : ''}</span>`
-                + `<span style="flex:0 0 72px;height:6px;background:rgba(148,163,184,0.15);border-radius:3px;overflow:hidden;"><span style="display:block;height:100%;width:${bar}%;background:${col};"></span></span>`
+                + (showBar ? `<span style="flex:0 0 72px;height:6px;background:rgba(148,163,184,0.15);border-radius:3px;overflow:hidden;"><span style="display:block;height:100%;width:${bar}%;background:${col};"></span></span>` : '')
                 + `<span style="flex:0 0 3.2em;text-align:right;font-weight:${n > 0 ? 700 : 400};">${n}人</span>`
                 + `</div>`;
-            }).join('') + `</div>`;
+            }).join('');
+            // ① 正解率が高い (緑) 問題は折りたたみ、黄・赤の問題だけ最初から開く (縦長対策)。
+            //    <details> はタップで開閉でき、JS も不要。
+            const isOpen = (q.correct_rate == null) || (q.correct_rate < 70);
+            const note = showBar ? '' : ` <span style="color:#71717a;">(回答者 ${answered}人・参考値)</span>`;
+            dist = `<details${isOpen ? ' open' : ''} style="margin-top:0.2rem;"><summary style="cursor:pointer;font-size:0.72rem;color:#93c5fd;">選択肢の分布${note}</summary><div style="display:flex;flex-direction:column;gap:0.12rem;margin-top:0.2rem;">${rows}</div></details>`;
           }
-          return `<div style="border-top:1px solid #334155;padding:0.45rem 0;"><div style="font-size:0.82rem;color:#e5e7eb;"><strong>問${q.no}</strong> ・ 正解率 <span style="color:${rc};font-weight:800;">${rate}</span> <span style="color:#71717a;">(${q.correct}/${q.answered}人)</span></div><div style="font-size:0.8rem;color:#cbd5e1;margin:0.15rem 0;">${escapeHtml(q.stem)}</div>${dist || `<div style="font-size:0.75rem;color:#86efac;">${corr}</div>`}</div>`;
+          return `<div style="border-top:1px solid #334155;padding:0.45rem 0;"><div style="font-size:0.82rem;color:#e5e7eb;"><strong>問${q.no}</strong> ・ 正解率 <span style="color:${rc};font-weight:800;">${rate}</span> <span style="color:#71717a;">(${q.correct}/${q.answered}人)</span></div><div style="font-size:0.8rem;color:#cbd5e1;margin:0.15rem 0;">${escapeHtml(q.stem)}</div><div style="font-size:0.75rem;color:#86efac;">${corr}</div>${dist}</div>`;
         }).join('');
         html += '</div>';
         box.innerHTML = html;
