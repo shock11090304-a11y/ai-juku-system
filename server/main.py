@@ -4073,10 +4073,14 @@ def stats(x_stats_token: str = Header(None)):
 # 32文字未満の場合は警告ログを出力 (HMAC 署名が予測可能になりトークン偽造のリスク)。
 if USE_POSTGRES:
     if MAGIC_LINK_SECRET == "dev-secret-DO-NOT-USE-IN-PROD":
-        log.error(
-            "[SECURITY] MAGIC_LINK_SECRET が dev fallback のまま本番運用中! "
+        # 🔐 2026-09-07: 警告して動き続けるのをやめ、起動を拒否する。公開リポジトリに載っている固定文字列で
+        #   生徒セッションも管理者トークンも偽造できる状態を「正常起動」に見せないため。Railway では
+        #   新コンテナが起動できないだけで、稼働中のコンテナはそのまま生き残る (デプロイ失敗として見える)。
+        log.critical(
+            "[SECURITY] MAGIC_LINK_SECRET が dev fallback のまま本番起動しようとしています。起動を中止します。"
             "Railway env で 32文字以上のランダム値を MAGIC_LINK_SECRET (または APP_SECRET) に設定してください。"
         )
+        raise SystemExit("MAGIC_LINK_SECRET is the dev fallback; refusing to start in production")
     elif len(MAGIC_LINK_SECRET) < 32:
         log.warning(
             f"[SECURITY] MAGIC_LINK_SECRET が短い (len={len(MAGIC_LINK_SECRET)} chars). "
@@ -4352,6 +4356,11 @@ def _rate_limit_store_hit(key, timestamps: list, window: int, limit: int, now: f
     _rate_limit_prune(now)
     return True
 
+# 🔐 2026-09-07: X-Forwarded-For の「末尾から何個目」を実 IP とみなすか (= 信頼するプロキシの段数)。
+#   Railway の入口プロキシは接続元 IP を末尾に追加するので既定 1。Vercel 経由の経路は無い (API は Railway 直)。
+_TRUSTED_PROXY_HOPS = _env_int("TRUSTED_PROXY_HOPS", 1, lo=1, hi=5)
+
+
 def _client_ip(request) -> str:
     """X-Forwarded-For を考慮して本物のクライアントIPを取得（Railway等のプロキシ対応）。
     ★値は攻撃者が自由に詰められるヘッダなので 64 文字で切る (IPv6 最長 45 文字なので実害なし)。
@@ -4361,8 +4370,13 @@ def _client_ip(request) -> str:
         return "unknown"
     xff = request.headers.get("x-forwarded-for", "")
     if xff:
-        # 先頭が元のクライアントIP（カンマ区切り）
-        return xff.split(",")[0].strip()[:64]
+        # 🔐 2026-09-07: 先頭ではなく「信頼するプロキシが最後に付けた値」を採る。XFF は攻撃者が先頭に
+        #   任意の文字列を付けられるヘッダで、先頭採用だと IP レート制限 (塾長ログインの総当たり・
+        #   magic link・申込) を毎回別 IP を名乗って迂回できた (システム点検で確定)。
+        parts = [p.strip() for p in xff.split(",") if p.strip()]
+        if parts:
+            idx = len(parts) - _TRUSTED_PROXY_HOPS
+            return parts[idx if idx >= 0 else 0][:64]
     xri = request.headers.get("x-real-ip", "")
     if xri:
         return xri.strip()[:64]
@@ -12097,14 +12111,23 @@ def verify_magic_link(t: str):
 # ==========================================================================
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 ADMIN_SESSION_TTL = int(os.getenv("ADMIN_SESSION_TTL_SECONDS", str(30 * 86400)))  # 30日
+# 🔐 2026-09-07: 管理者トークンの一括失効スイッチ。Railway で ADMIN_TOKEN_VERSION を変える (例 "2") と
+#   それまでのトークンは全部無効になり、塾長は再ログインするだけで済む。従来はトークンに識別子が無く
+#   失効手段がゼロだった (漏れたら MAGIC_LINK_SECRET ごと替える = 生徒全員のログインも巻き添え)。
+ADMIN_TOKEN_VERSION = os.getenv("ADMIN_TOKEN_VERSION", "").strip()
+
+
+def _admin_token_payload(exp_str: str) -> str:
+    """署名対象。version 未設定なら従来どおり "admin.{exp}" (既存トークンをそのまま受理)。"""
+    return f"admin.{exp_str}.v{ADMIN_TOKEN_VERSION}" if ADMIN_TOKEN_VERSION else f"admin.{exp_str}"
 
 
 def _sign_admin_token(ttl: int = ADMIN_SESSION_TTL) -> dict:
     import time
     exp = int(time.time()) + ttl
-    payload = f"admin.{exp}"
+    payload = _admin_token_payload(str(exp))
     sig = hmac.new(MAGIC_LINK_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
-    raw = f"{payload}.{sig}"
+    raw = f"admin.{exp}.{sig}"   # トークン形式は従来の 3 パート (ceo.html が exp を [1] で読む)
     token = base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
     return {"token": token, "expires_at": exp}
 
@@ -12120,7 +12143,7 @@ def _verify_admin_token(token: str) -> bool:
         if len(parts) != 3 or parts[0] != "admin":
             return False
         exp_str, sig = parts[1], parts[2]
-        expected = hmac.new(MAGIC_LINK_SECRET.encode(), f"admin.{exp_str}".encode(), hashlib.sha256).hexdigest()
+        expected = hmac.new(MAGIC_LINK_SECRET.encode(), _admin_token_payload(exp_str).encode(), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(sig, expected):
             return False
         if int(exp_str) < int(time.time()):
@@ -12150,6 +12173,9 @@ def admin_login(payload: AdminLoginRequest, request: Request):
     keychain 自動入力で連続失敗するケースを救済するため limit 緩め (20/5min)。
     成功時には失敗カウンタをリセットする。"""
     _check_rate_limit_ip(request, bucket="admin_login", limit=20, window=300)
+    # 🔐 2026-09-07: IP 非依存の上限。XFF 偽装や回線切替で IP を変えながらの総当たりを止める
+    #   (40回/時。keychain の連続失敗は成功時にリセットされるので日常運用には当たらない)。
+    _check_rate_limit_value("admin", bucket="admin_login_global", limit=40, window=3600)
     if not ADMIN_PASSWORD:
         raise HTTPException(status_code=503, detail="管理者パスワードが未設定です。Railway環境変数 ADMIN_PASSWORD を設定してください。")
     if not hmac.compare_digest((payload.password or ""), ADMIN_PASSWORD):
@@ -12158,6 +12184,8 @@ def admin_login(payload: AdminLoginRequest, request: Request):
     ip = _client_ip(request)
     _RATE_LIMIT_STORE.pop((ip, "admin_login"), None)
     _RATE_LIMIT_META.pop((ip, "admin_login"), None)   # store と対で消す (掃除も回収するが即時に揃える)
+    _RATE_LIMIT_STORE.pop(("val:admin", "admin_login_global"), None)   # 🔐 成功したら全体カウンタも戻す
+    _RATE_LIMIT_META.pop(("val:admin", "admin_login_global"), None)
     tok = _sign_admin_token()
     log.info(f"Admin login success from {ip}")
     return {"ok": True, **tok}
@@ -19044,10 +19072,8 @@ def track_utm_visit(payload: dict, request: Request):
     try:
         if request.client:
             client_ip = request.client.host or "unknown"
-        # X-Forwarded-For 対応 (Railway/Vercel 経由)
-        xff = request.headers.get("x-forwarded-for", "")
-        if xff:
-            client_ip = xff.split(",")[0].strip() or client_ip
+        # X-Forwarded-For 対応 (Railway/Vercel 経由)。🔐 2026-09-07 _client_ip に統一 (先頭採用の偽装可能な独自パーサを廃止)
+        client_ip = _client_ip(request) or client_ip
     except Exception:
         pass
     if not _check_lp_utm_rate(client_ip):
@@ -22827,11 +22853,14 @@ def textbook_request_generation(payload: dict, authorization: Optional[str] = He
     if not authed:
         raise HTTPException(status_code=401, detail="Login required")
 
-    subject = (payload.get("subject") or "").strip()
-    topic = (payload.get("topic") or "").strip()
-    level = (payload.get("level") or "").strip()
-    type_ = (payload.get("type") or "").strip()
-    length = (payload.get("length") or "").strip()
+    # 🔐 2026-09-07: 生徒が入れた文字列は長さを切り制御文字を落とす。従来は無検証のまま events に入り、
+    #   CEO 画面が 2 分ごとに無エスケープで innerHTML に流していた (= 体験登録だけで管理者トークンを
+    #   盗める Stored XSS・システム点検で確定)。表示側 ceo.html も escapeHtml を通す。
+    subject = _sanitize_text(payload.get("subject"), 40) or ""
+    topic = _sanitize_text(payload.get("topic"), 100) or ""
+    level = _sanitize_text(payload.get("level"), 40) or ""
+    type_ = _sanitize_text(payload.get("type"), 40) or ""
+    length = _sanitize_text(payload.get("length"), 20) or ""
     if not subject or not topic:
         raise HTTPException(status_code=400, detail="subject and topic required")
 
@@ -27932,10 +27961,12 @@ def list_news_articles(feed: str = "cnn", limit: int = 5):
 
 
 @app.post("/api/news/generate-question")
-def generate_news_question(payload: dict):
+def generate_news_question(payload: dict, request: Request):
     """指定記事 (またはランダム選択) から英語読解問題を AI 生成して返す。
     payload: {"feed": "cnn", "index": 0}  # index 省略時はランダム
     レート制限: IP ベース 10 req/min。"""
+    # 🔐 2026-09-07: docstring の約束が未実装で、無認証・無制限に Anthropic を呼べた (システム点検で確定)
+    _check_rate_limit_ip(request, bucket="news_generate", limit=10, window=60)
     feed_key = (payload or {}).get("feed", "cnn")
     if feed_key not in NEWS_FEEDS:
         raise HTTPException(status_code=400, detail=f"Unknown feed: {feed_key}")
@@ -36254,14 +36285,25 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
     }
 
 
+def _require_admin_or_stats_token(authorization: Optional[str], x_stats_token: Optional[str]) -> None:
+    """🔐 2026-09-07: 週次レポートの preview / send-one 用。管理者 Bearer か STATS_TOKEN の一致が必須。
+    従来は `if STATS_TOKEN and ...` で、環境変数が無いと Origin ヘッダ (偽装可能) だけで生徒への
+    メール+LINE 送信と学習統計の取得ができた (fail-open)。未設定でも閉じる。"""
+    if authorization and authorization.startswith("Bearer "):
+        if _verify_admin_token(authorization[len("Bearer "):].strip()):
+            return
+    if STATS_TOKEN and x_stats_token and hmac.compare_digest(x_stats_token, STATS_TOKEN):
+        return
+    raise HTTPException(status_code=401, detail="Unauthorized")
+
+
 @app.post("/api/weekly-reports/preview")
-def weekly_reports_preview(payload: dict, request: Request, x_stats_token: str = Header(None)):
+def weekly_reports_preview(payload: dict, request: Request, x_stats_token: str = Header(None),
+                           authorization: Optional[str] = Header(None)):
     """塾長ダッシュボードから、特定生徒の今週レポートをプレビュー"""
     if not _origin_allowed(request):
         raise HTTPException(status_code=403, detail="Origin not allowed")
-    # 塾長認証（STATS_TOKEN）
-    if STATS_TOKEN and (not x_stats_token or not hmac.compare_digest(x_stats_token, STATS_TOKEN)):
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_admin_or_stats_token(authorization, x_stats_token)
     student_id = payload.get("student_id")
     if not student_id:
         raise HTTPException(status_code=400, detail="student_id required")
@@ -36270,12 +36312,12 @@ def weekly_reports_preview(payload: dict, request: Request, x_stats_token: str =
 
 
 @app.post("/api/weekly-reports/send-one")
-def weekly_reports_send_one(payload: dict, request: Request, x_stats_token: str = Header(None)):
+def weekly_reports_send_one(payload: dict, request: Request, x_stats_token: str = Header(None),
+                            authorization: Optional[str] = Header(None)):
     """塾長ダッシュボードから、特定生徒にレポートを即送信 (メール + LINE)"""
     if not _origin_allowed(request):
         raise HTTPException(status_code=403, detail="Origin not allowed")
-    if STATS_TOKEN and (not x_stats_token or not hmac.compare_digest(x_stats_token, STATS_TOKEN)):
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_admin_or_stats_token(authorization, x_stats_token)
     student_id = payload.get("student_id")
     if not student_id:
         raise HTTPException(status_code=400, detail="student_id required")
@@ -37548,7 +37590,7 @@ def js_error_report(report: JSErrorReport, request: Request):
     if not _origin_allowed(request):
         # 念のため受け付ける (Origin が不明でも自社ドメイン外 referer なら拒否済)
         raise HTTPException(status_code=403, detail="Origin not allowed")
-    ip = (request.headers.get("x-forwarded-for") or request.client.host or "?").split(",")[0].strip()
+    ip = _client_ip(request)  # 🔐 2026-09-07 XFF 先頭採用の独自パーサを廃止 (偽装で per-IP 上限を無効化できた)
     nowts = time.time()
     cnt, win = _JS_ERROR_RATE_LIMIT.get(ip, (0, nowts))
     if nowts - win > 60:

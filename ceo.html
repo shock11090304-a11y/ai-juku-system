@@ -5041,8 +5041,8 @@
           html += `<div style="padding:0.4rem 0.6rem;background:rgba(0,0,0,0.25);border-radius:4px;margin-bottom:0.25rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
             <div style="flex:1;min-width:0;">
               <span style="color:#fbbf24;font-weight:700;">${badge} ${item.count}件</span>
-              <span style="color:#e4e4e7;margin-left:0.5rem;">${item.subject} / <strong>${item.topic}</strong> / ${item.level}</span>
-              <span style="color:#71717a;font-size:0.72rem;margin-left:0.5rem;">${item.type}</span>
+              <span style="color:#e4e4e7;margin-left:0.5rem;">${escapeHtml(item.subject)} / <strong>${escapeHtml(item.topic)}</strong> / ${escapeHtml(item.level)}</span>
+              <span style="color:#71717a;font-size:0.72rem;margin-left:0.5rem;">${escapeHtml(item.type)}</span>
             </div>
             <div style="color:#71717a;font-size:0.7rem;">最新: ${(item.last_at || '').slice(0, 16).replace('T', ' ')}</div>
           </div>`;
