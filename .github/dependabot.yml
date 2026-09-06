@@ -1,0 +1,23 @@
+# 🧹 2026-09-07 依存の自動更新 (システム点検: python-multipart に既知脆弱性 16 件が放置されていた)。
+#   週 1 回、server/requirements.txt と GitHub Actions の更新 PR を作る。PR には server-tests が走るので、
+#   緑なら「Merge」を押すだけ。まとめて 5 本まで。
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 3
+    labels: ["dependencies"]

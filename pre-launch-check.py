@@ -58,7 +58,7 @@ required_files = [
     "business.html", "legal.html", "checkout.html",
     "server/main.py", "server/requirements.txt", "server/.env.example",
     "manifest.json", "sw.js", "analytics.js",
-    "robots.txt", "sitemap.xml", "render.yaml",
+    "robots.txt", "sitemap.xml", "server/railway.json",   # 🧹 2026-09-07 render.yaml (旧 Render 時代) は削除
 ]
 for f in required_files:
     check(f"{f} が存在", (ROOT / f).exists())
@@ -198,10 +198,9 @@ print(f"     {FAIL} 失敗: {results['fail']}")
 if results["fail"] == 0 and results["warn"] == 0:
     print(f"\n  🎉 {PASS} \033[1m全チェック合格！本番デプロイ可能です\033[0m")
     print(f"\n  次のステップ:")
-    print(f"     1. GitHub にpush")
-    print(f"     2. Render.com で New Blueprint → render.yaml選択")
-    print(f"     3. 環境変数を Render Dashboard で設定")
-    print(f"     4. Deploy!")
+    print(f"     1. GitHub の main に push (Vercel = 静的 / Railway = API が自動デプロイ。Railway は CI 成功後)")
+    print(f"     2. 環境変数は Railway (ai-juku-api) と Vercel の Dashboard で設定")
+    print(f"     3. 反映確認: python3 scripts/health_check/prod_healthcheck.py --static-only")
     sys.exit(0)
 elif results["fail"] == 0:
     print(f"\n  🟡 警告はあるが、デプロイ可能。warnの内容を確認してください。")

@@ -4420,6 +4420,41 @@ def _check_rate_limit_ip(request, bucket: str, limit: int = 10, window: int = 60
     _rate_limit_store_hit(key, timestamps, window, limit, now)
 
 
+# 🔐 2026-09-07 塾長ログインの失敗回数を DB (events) でも数える。in-memory の上限はデプロイ (push のたび) や
+#   再起動でゼロに戻り、攻撃と同時刻のデプロイで実質キャップが消えていた (システム点検で確定)。
+_ADMIN_LOGIN_GLOBAL_LIMIT_PER_HOUR = 40
+
+
+def _admin_login_failures_last_hour() -> int:
+    try:
+        conn = db()
+        try:
+            c = conn.cursor()
+            since = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+            c.execute("SELECT COUNT(*) AS n FROM events WHERE name = 'admin_login_failed' AND created_at >= ?", (since,))
+            r = c.fetchone()
+            return int((r["n"] if r else 0) or 0)
+        finally:
+            conn.close()
+    except Exception as e:
+        log.warning(f"[admin_login] failure count query failed (in-memory 上限は生きている): {e}")
+        return 0
+
+
+def _record_admin_login_failure(request) -> None:
+    try:
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                      ("admin_login_failed", json.dumps({"ip": _client_ip(request)}), "auth"))
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        log.warning(f"[admin_login] failure record failed: {e}")
+
+
 def _check_rate_limit_value(value: str, bucket: str, limit: int = 10, window: int = 60) -> None:
     """任意の文字列キー(email 等)単位の簡易レートリミッタ。超過時は HTTPException 429。
     Vercel 等の proxy 経由だと _client_ip が共有 egress IP になり IP 単位が機能しない
@@ -4448,7 +4483,7 @@ def _check_recipient_send_cap(to_email: str, limit: int = 10, window: int = 3600
     magic-link を連打) で迂回できるため、最終的な受信者単位で 1 時間 limit 通に制限し
     メール爆撃の踏み台化を防ぐ。正規フローの再送はせいぜい数通/時なので影響なし。
     超過時は False (呼び出し側で送信スキップ)。in-memory per-process のベストエフォート
-    (render.yaml は uvicorn 単一プロセス起動なので実効・workers 追加時は要共有ストア化)。"""
+    (server/railway.json は uvicorn 単一プロセス起動なので実効・workers 追加時は要共有ストア化)。"""
     import time as _t
     key = (f"rcpt:{(to_email or '').lower().strip()[:200]}", "magic_link_send")
     now = _t.time()
@@ -12357,9 +12392,13 @@ def admin_login(payload: AdminLoginRequest, request: Request):
     # 🔐 2026-09-07: IP 非依存の上限。XFF 偽装や回線切替で IP を変えながらの総当たりを止める
     #   (40回/時。keychain の連続失敗は成功時にリセットされるので日常運用には当たらない)。
     _check_rate_limit_value("admin", bucket="admin_login_global", limit=40, window=3600)
+    # 🔐 2026-09-07 デプロイや再起動で消えない全体上限 (events 基準・1 時間 40 回)
+    if _admin_login_failures_last_hour() >= _ADMIN_LOGIN_GLOBAL_LIMIT_PER_HOUR:
+        raise HTTPException(status_code=429, detail="ログイン試行が多すぎます。1 時間ほど待ってから再度お試しください")
     if not ADMIN_PASSWORD:
         raise HTTPException(status_code=503, detail="管理者パスワードが未設定です。Railway環境変数 ADMIN_PASSWORD を設定してください。")
     if not hmac.compare_digest((payload.password or ""), ADMIN_PASSWORD):
+        _record_admin_login_failure(request)
         log.warning(f"Admin login failed from {_client_ip(request)}")
         raise HTTPException(status_code=401, detail="パスワードが正しくありません")
     ip = _client_ip(request)
@@ -29947,7 +29986,7 @@ def _weekly_report_verdict(rows: list) -> str:
 #   LP 計測が無限に積み上がっていた (システム点検で確定)。ここに名前を挙げた計測/監視イベントだけを消す。
 #   監査用 (*_run / auto_rollback / r2_backup_* / admin_* / 決済系 / textbook_request_missing 等) は一切消さない。
 _EVENTS_RETENTION = {
-    90: ("synthetic_checkout_test", "post_deploy_smoke_test", "js_error", "signup_email_status"),
+    90: ("synthetic_checkout_test", "post_deploy_smoke_test", "js_error", "signup_email_status", "admin_login_failed"),
     180: ("page_view", "cta_click", "form_submit", "outbound_click", "scroll_depth",
           "lp_view", "lp_scroll_depth", "lp_form_submit", "lp_form_start", "lp_cta_click",
           "pwa_install_prompt", "pwa_installed", "mock_pdf_mode_autoselect", "mock_pdf_list_view",
