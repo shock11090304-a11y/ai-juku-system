@@ -8778,7 +8778,8 @@ def admin_weakness_heatmap(request: Request, days: int = 30, top_n: int = 20,
                 "avg_confidence_score": (round(float(avg), 3) if avg is not None else None),
             })
         # 全生徒数の取得 (percentile 計算用)
-        c.execute("SELECT COUNT(*) FROM students WHERE status IN ('active', 'trial')")
+        # 📊 2026-09-07: 分母が存在しない status 'active' を数えていた (= 体験生だけが分母で割合が過大)。在籍 + 合成除外に。
+        c.execute(f"SELECT COUNT(*) FROM students WHERE {_enrolled_sql()} AND {_synth_exclude_sql()}")
         total_students_row = c.fetchone()
         try:
             total_students = int(total_students_row[0] or 1)
@@ -8949,7 +8950,7 @@ def _collect_health_snapshot() -> dict:
         "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != '' AND plan != 'student_addon'"
     )
     snapshot["paid_24h"] = safe_count(
-        "SELECT COUNT(*) FROM students WHERE status='paid' AND paid_since >= ?", (h24,)
+        "SELECT COUNT(*) FROM students WHERE status IN ('paid','past_due','canceled') AND paid_since >= ?", (h24,)   # 一度でも月額に
     )
 
     # trial → paid 転換率 (2026-09-07: admin_stats と同じ単一定義 _saas_conversion に統一。
@@ -10637,6 +10638,14 @@ async def _run_synthetic_checkout_test(*, alert: bool = True) -> dict:
                     try: conn.rollback()
                     except Exception: pass
                     log.warning(f"[Synth] sentinel otp_codes cleanup failed (students 削除は続行): {_oe}")
+                # 👤 2026-09-07: 申込時の signup_email_status 等 (session_id='student:<id>') も消す。残すと
+                #   ユニークセッション等の集計に 5 分ごとの監視が混ざり続ける (システム点検で確定)。
+                try:
+                    c.execute("DELETE FROM events WHERE session_id = ?", (f"student:{sentinel_student_id}",))
+                except Exception as _ee:
+                    try: conn.rollback()
+                    except Exception: pass
+                    log.warning(f"[Synth] sentinel events cleanup failed (students 削除は続行): {_ee}")
                 c.execute("DELETE FROM students WHERE id = ? AND email = ?", (sentinel_student_id, sentinel_email))
                 conn.commit()
             finally:
@@ -11629,6 +11638,24 @@ def _send_login_link_multi(student_id: int, email: str, name: str, magic_url: st
         log.error(f"[Notify-Multi] BOTH CHANNELS FAILED student={student_id} email={email} "
                   f"carrier={out['is_carrier']} email_err={out['email_error']} line={out['line_reason']}")
     return out
+
+
+def _trial_days_left(trial_end, now=None) -> int:
+    """⏳ 2026-09-07 体験の残日数の単一定義 = ceil(残り秒 / 1日)、下限 0。
+    従来は mypage / 満了前キューが ceil、リマインドメールが floor で、残り 36 時間の生徒に画面は「残り 2 日」、
+    メールは「あと 1 日」と別の数字を出していた (システム点検で確定)。"""
+    import math as _math
+    now = now or datetime.now(timezone.utc)
+    try:
+        if isinstance(trial_end, str):
+            trial_end = datetime.fromisoformat(trial_end.replace("Z", "+00:00"))
+        if trial_end.tzinfo is None:
+            trial_end = trial_end.replace(tzinfo=timezone.utc)
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=timezone.utc)
+        return max(0, _math.ceil((trial_end - now).total_seconds() / 86400))
+    except Exception:
+        return 0
 
 
 def _is_past_due_within_grace(past_due_since) -> bool:
@@ -12801,7 +12828,8 @@ def admin_revenue_timeline(authorization: Optional[str] = Header(None), days: in
     start_utc = datetime.combine(start_date, dt_time(0, 0), tzinfo=JST).astimezone(timezone.utc)
     try:
         c.execute(
-            "SELECT COUNT(*) FROM students WHERE status='paid' AND paid_since IS NOT NULL AND paid_since < ?",
+            # 📈 2026-09-07: 現在 status='paid' の人だけ数えると、解約した瞬間に過去の棒が減る。一度でも月額になった人で数える
+            "SELECT COUNT(*) FROM students WHERE status IN ('paid','past_due','canceled') AND paid_since IS NOT NULL AND paid_since < ?",
             (start_utc,)
         )
         cumulative_paid = c.fetchone()[0] or 0
@@ -12826,7 +12854,7 @@ def admin_revenue_timeline(authorization: Optional[str] = Header(None), days: in
         # 当日の新規 paid 数
         try:
             c.execute(
-                "SELECT COUNT(*) FROM students WHERE status='paid' AND paid_since >= ? AND paid_since < ?",
+                "SELECT COUNT(*) FROM students WHERE status IN ('paid','past_due','canceled') AND paid_since >= ? AND paid_since < ?",
                 (d_start_utc, d_end_utc)
             )
             new_paid = c.fetchone()[0] or 0
@@ -12857,6 +12885,11 @@ def admin_revenue_timeline(authorization: Optional[str] = Header(None), days: in
         })
     conn.close()
     return {"days": days, "timeline": timeline}
+
+
+# 👤 サイト訪問として数える計測イベント (LP/サイトの JS が /api/track で送る名前)
+_VISIT_EVENT_NAMES = ("page_view", "cta_click", "form_submit", "outbound_click", "scroll_depth",
+                      "lp_view", "lp_scroll_depth", "lp_form_submit", "lp_form_start", "lp_cta_click")
 
 
 @app.get("/api/admin/analytics")
@@ -12890,9 +12923,12 @@ def admin_analytics(authorization: Optional[str] = Header(None)):
     out_7d = count_event("outbound_click", d7)
 
     # ユニークセッション数 (同じ session_id = 1人)
-    c.execute("SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE created_at >= ?", (h24,))
+    # 👤 2026-09-07: name を絞らずに数えていたため、5 分ごとの合成監視が残す signup_email_status
+    #   (session_id='student:<id>') 等で 1 日約 288 セッション水増しされていた。サイト訪問の計測イベントだけ数える。
+    _visit_ph = ",".join("?" * len(_VISIT_EVENT_NAMES))
+    c.execute(f"SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE created_at >= ? AND name IN ({_visit_ph})", (h24, *_VISIT_EVENT_NAMES))
     sessions_24h = c.fetchone()["n"]
-    c.execute("SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE created_at >= ?", (d7,))
+    c.execute(f"SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE created_at >= ? AND name IN ({_visit_ph})", (d7, *_VISIT_EVENT_NAMES))
     sessions_7d = c.fetchone()["n"]
 
     # ページ別 PV (24h)
@@ -19329,7 +19365,7 @@ def admin_autopilot_dashboard(authorization: Optional[str] = Header(None)):
         # 有料転換 (status='paid' で過去 7 日 paid_since)
         try:
             c.execute(
-                "SELECT COUNT(*) FROM students WHERE status='paid' AND paid_since > ?",
+                "SELECT COUNT(*) FROM students WHERE status IN ('paid','past_due','canceled') AND paid_since > ?",   # 一度でも月額に
                 (cutoff_7d,)
             )
             row = c.fetchone()
@@ -23367,7 +23403,7 @@ def admin_trial_expiring_queue(
                     if _te.tzinfo is None:
                         _te = _te.replace(tzinfo=timezone.utc)
                     import math as _m
-                    days_left = max(0, _m.ceil((_te - now).total_seconds() / 86400))
+                    days_left = _trial_days_left(_te, now)   # ⏳ 単一定義 (ceil)
                     te_str = str(te)[:16]
                 except Exception:
                     te_str = str(te)[:16]
@@ -34525,7 +34561,7 @@ def _weekly_subject_label(subj_raw) -> str:
     return s
 
 
-def _compute_weekly_stats(student_id: int, days: int = 7) -> dict:
+def _compute_weekly_stats(student_id: int, days: int = 7, week_aligned: bool = True) -> dict:
     """過去N日間の活動統計を集計。
     ⚠️ 2026-07-02 fix: 実際の演習活動は events(activity_*)ではなく question_attempts に記録される
     (本番の events には activity_mypage_view しか emit されず、activity_problem_solved 等はゼロ)。
@@ -34533,7 +34569,16 @@ def _compute_weekly_stats(student_id: int, days: int = 7) -> dict:
     保護者・生徒に一度も届かなかった。events(将来 emit 再開時の後方互換)＋ question_attempts の両方から集計する。"""
     conn = db()
     c = conn.cursor()
-    since_dt = datetime.now(timezone.utc) - timedelta(days=days)
+    # 🗓 2026-09-07: 既定で「今週 (JST 月曜 0:00〜)」に揃える。従来は実行時刻から 168 時間の rolling で、
+    #   同じメールの週間グラフ (月曜起点) と境界が違い、日曜夜の演習が見出しとグラフで別の週に入っていた。
+    #   days != 7 (プレビューの任意日数) や week_aligned=False は従来どおり rolling。
+    if week_aligned and days == 7:
+        _jst = timezone(timedelta(hours=9))
+        _today = datetime.now(_jst).date()
+        _monday = _today - timedelta(days=_today.weekday())
+        since_dt = datetime(_monday.year, _monday.month, _monday.day, tzinfo=_jst).astimezone(timezone.utc)
+    else:
+        since_dt = datetime.now(timezone.utc) - timedelta(days=days)
     # 活動ログ集計
     c.execute(
         """SELECT name, props FROM events
@@ -35564,7 +35609,7 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
                 te = datetime.fromisoformat(te.replace("Z", "+00:00"))
             if te.tzinfo is None:
                 te = te.replace(tzinfo=timezone.utc)
-            days_left = max(1, int((te - now).total_seconds() / 86400))
+            days_left = max(1, _trial_days_left(te, now))   # ⏳ 2026-09-07 floor → 単一定義 (ceil)。画面と同じ数字に
         except Exception:
             days_left = 2
         if dry_run:
@@ -35879,7 +35924,7 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
                 if isinstance(te, str):
                     te = datetime.fromisoformat(te.replace("Z", "+00:00"))
                 if te.tzinfo is None: te = te.replace(tzinfo=timezone.utc)
-                days_left = max(1, int((te - now).total_seconds() / 86400))
+                days_left = max(1, _trial_days_left(te, now))   # ⏳ 2026-09-07 floor → 単一定義 (ceil)。画面と同じ数字に
             except Exception:
                 days_left = 2
             try:
@@ -45515,7 +45560,9 @@ def student_comparison_overview(request: Request, authorization: Optional[str] =
                 mock_list.append(stat)
         result["mock_exams"] = mock_list
         # ③ 正解率 (直近30日 question_attempts・5問以上・在籍生徒のみ)
-        cutoff30 = (_today_jst() - timedelta(days=29)).isoformat()
+        # 🕘 2026-09-07: qa.created_at は UTC。JST の日付文字列で比較すると窓が 9 時間遅れて始まる → JST 0:00 を UTC で
+        _c30 = _today_jst() - timedelta(days=29)
+        cutoff30 = datetime(_c30.year, _c30.month, _c30.day, tzinfo=timezone(timedelta(hours=9))).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         c.execute("SELECT qa.student_id AS stu_id, AVG(CAST(qa.is_correct AS REAL)) AS acc, COUNT(*) AS cnt "
                   "FROM question_attempts qa JOIN students s ON s.id = qa.student_id AND (s.status IN ('paid','trial') OR s.course = 'kokuritsu_nankan') "
                   "WHERE qa.is_correct IS NOT NULL AND qa.created_at >= ? GROUP BY qa.student_id HAVING COUNT(*) >= 5", (cutoff30,))

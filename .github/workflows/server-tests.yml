@@ -211,6 +211,14 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_auto_rollback_revert.py
 
+      # 📊 ダッシュボードの数字 (2026-09-07): 弱点ヒートマップの分母 / ユニークセッションの水増し / 売上推移の新規本契約 /
+      #   残日数の単一定義 / 週次集計の境界。
+      - name: ダッシュボードの数字 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_dashboard_numbers.py
+
       # 📺 再生リストの登録/命名 API。**書き込む側**なので、URL をそのまま受けること・
       #   二度送っても増えないこと・読めない入力で半端な行を作らないことを見る。
       #   あわせて「名前 → どの授業に繋がるか」を正典 (class_recording_assign.slot_of) と
