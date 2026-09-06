@@ -1513,29 +1513,30 @@ async function loadStudyLogDashboard() {
   if (!window.AdminAuth || !window.AdminAuth.getToken()) return;
   const daysSel = document.getElementById('slDays');
   const days = parseInt((daysSel && daysSel.value) || '7', 10);
-  try {
-    const [timelineRes, heatmapRes, summaryRes] = await Promise.all([
-      window.AdminAuth.fetch(`/api/admin/study-logs/timeline?days=${days}&limit=200`),
-      window.AdminAuth.fetch(`/api/admin/study-logs/heatmap?days=${days}`),
-      window.AdminAuth.fetch(`/api/admin/study-logs/students?days=${days}`),
-    ]);
-    if (!timelineRes.ok || !heatmapRes.ok || !summaryRes.ok) {
-      console.warn('study log dashboard: one or more requests failed');
-      return;
-    }
-    const [timeline, heatmap, summary] = await Promise.all([
-      timelineRes.json(), heatmapRes.json(), summaryRes.json()
-    ]);
-    renderStudyLogHeatmap(heatmap);
-    renderStudyLogRanking(summary);
-    renderStudyLogTimeline(timeline);
-  } catch (e) {
-    console.error('loadStudyLogDashboard failed:', e);
-  }
+  // 🧯 2026-09-07 3 つの読み込みを独立させる。従来は Promise.all で 1 つでも失敗すると無言で return し、
+  //   期間を切り替えても前の期間の数字が新しいラベルの下に残っていた (システム点検で確定)。
+  const panels = [
+    ['slHeatmap', `/api/admin/study-logs/heatmap?days=${days}`, d => renderStudyLogHeatmap(d)],
+    ['slRanking', `/api/admin/study-logs/students?days=${days}`, d => renderStudyLogRanking(d)],
+    ['slTimeline', `/api/admin/study-logs/timeline?days=${days}&limit=200`, d => renderStudyLogTimeline(d, { days })],
+  ];
+  const results = await Promise.allSettled(panels.map(async ([id, url, render]) => {
+    const res = await window.AdminAuth.fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return render(await res.json());
+  }));
+  results.forEach((r, i) => {
+    if (r.status !== 'rejected') return;
+    const box = document.getElementById(panels[i][0]);
+    const msg = (r.reason && r.reason.message) ? r.reason.message : String(r.reason);
+    if (box) box.innerHTML = `<div style="padding:0.8rem; color:#fca5a5; font-size:0.85rem;">⚠ 読み込みに失敗しました (${escapeHtml(msg)}) <button type="button" onclick="loadStudyLogDashboard()" style="margin-left:0.5rem; background:rgba(99,102,241,0.2); border:0; color:#c7d2fe; padding:0.25rem 0.6rem; border-radius:6px; cursor:pointer;">再試行</button></div>`;
+    console.warn('study log dashboard panel failed:', panels[i][0], r.reason);
+  });
 }
 
 function _slHeatColor(min) {
-  if (min === 0) return 'rgba(30,41,59,0.5)';
+  // 🎨 2026-09-07 「0 分 (未記録)」は一番目立たない色だったが、見つけたいのはこれ (サボり可視化)。薄い赤に
+  if (min === 0) return 'rgba(220,38,38,0.16)';
   if (min < 30) return 'rgba(59,130,246,0.35)';
   if (min < 60) return 'rgba(99,102,241,0.45)';
   if (min < 120) return 'rgba(168,85,247,0.55)';
@@ -1544,26 +1545,47 @@ function _slHeatColor(min) {
 }
 
 function _slCellLabel(min) {
+  // 🎨 2026-09-07 単位を時間 (小数 1 桁) に統一 (従来はセルが h と m 混在・計は分・凡例は分と h)
   if (min === 0) return '';
-  if (min < 60) return `${min}m`;
   return `${(min / 60).toFixed(1)}h`;
+}
+
+// 🎛 ヒートマップの絞り込み (学年 / 記録ありのみ)。データは再取得せず、直近の応答から描き直す
+window._slHmFilter = window._slHmFilter || { grade: '', activeOnly: false };
+function applyStudyLogHeatmapFilter() {
+  const g = document.getElementById('slHmGrade');
+  const a = document.getElementById('slHmActiveOnly');
+  window._slHmFilter = { grade: g ? g.value : '', activeOnly: !!(a && a.checked) };
+  if (window._slLastHeatmap) renderStudyLogHeatmap(window._slLastHeatmap);
 }
 
 function renderStudyLogHeatmap(data) {
   const el = document.getElementById('slHeatmap');
   if (!el) return;
+  window._slLastHeatmap = data;
   const dates = data.dates || [];
-  const students = data.students || [];
+  const allStudents = data.students || [];
+  const f = window._slHmFilter || { grade: '', activeOnly: false };
+  const grades = [...new Set(allStudents.map(s => s.grade || '').filter(Boolean))].sort();
+  const students = allStudents.filter(s => (!f.grade || (s.grade || '') === f.grade) && (!f.activeOnly || (s.total || 0) > 0));
+  const toolbar = `<div style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; margin-bottom:0.5rem; font-size:0.75rem; color:#a1a1aa;">
+      <label>学年 <select id="slHmGrade" onchange="applyStudyLogHeatmapFilter()" style="background:rgba(0,0,0,0.4); color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:4px; padding:2px 4px;"><option value="">すべて</option>${grades.map(g => `<option value="${escapeHtml(g)}"${f.grade === g ? ' selected' : ''}>${escapeHtml(g)}</option>`).join('')}</select></label>
+      <label><input type="checkbox" id="slHmActiveOnly" onchange="applyStudyLogHeatmapFilter()"${f.activeOnly ? ' checked' : ''}> 記録ありのみ</label>
+      <span style="color:#71717a;">● = その日に演習 (自動採点) あり ／ ⚠ = 1 日 12 時間超 (要確認)</span>
+    </div>`;
   if (!students.length) {
-    el.innerHTML = '<div style="color:#71717a; padding:1rem; text-align:center;">表示対象の生徒がいません（塾生アプリ登録生を除く、国公立難関コース受講生＋学習記録を入力した生徒）。「コース管理」からコース生をアサインできます。</div>';
+    el.innerHTML = toolbar + `<div style="color:#71717a; padding:1rem; text-align:center;">${allStudents.length ? '絞り込み条件に合う生徒がいません' : '表示対象の生徒がいません（塾生アプリ登録生を除く、国公立難関コース受講生＋学習記録を入力した生徒）。「コース管理」からコース生をアサインできます。'}</div>`;
     return;
   }
   const dateHeader = dates.map(d => `<th style="padding:2px 3px; font-size:0.65rem; color:#71717a; text-align:center; min-width:32px;">${d.slice(5)}</th>`).join('');
   const rows = students.map(s => {
     const cells = dates.map(d => {
       const m = (s.data && s.data[d]) || 0;
-      const title = `${s.name} - ${d}: ${m}分`;
-      return `<td title="${escapeHtml(title)}" style="background:${_slHeatColor(m)}; padding:0; min-width:32px; height:24px; border:1px solid rgba(0,0,0,0.3); font-size:0.6rem; text-align:center; color:#fff;">${_slCellLabel(m)}</td>`;
+      const q = (s.qa && s.qa[d]) || 0;      // 📐 その日の演習 (自動採点) 件数
+      const over = m > 720;                    // ⚠ 12 時間超
+      const title = `${s.name} - ${d}: ${m}分 (${(m / 60).toFixed(1)}h)${q ? ` / 演習 ${q}問` : ' / 演習なし'}${over ? ' / 12時間超・要確認' : ''}`;
+      const mark = (q ? '<span style="color:#86efac; font-size:0.55rem; margin-left:1px;">●</span>' : '') + (over ? '<span style="color:#fde68a; font-size:0.6rem;">⚠</span>' : '');
+      return `<td title="${escapeHtml(title)}" style="background:${_slHeatColor(m)}; padding:0; min-width:32px; height:24px; border:1px solid rgba(0,0,0,0.3); font-size:0.6rem; text-align:center; color:#fff;">${_slCellLabel(m)}${mark}</td>`;
     }).join('');
     const grade = s.grade ? `<span style="color:#71717a; font-size:0.7rem;">(${escapeHtml(s.grade)})</span>` : '';
     // 🧭 2026-09-06 行に導線を付ける (3視点レビュー指摘「ヒートマップが行き止まり」):
@@ -1581,24 +1603,24 @@ function renderStudyLogHeatmap(data) {
       <tr data-sid="${sid}">
         <td style="padding:2px 6px; color:#e4e4e7; font-size:0.78rem; white-space:nowrap; position:sticky; left:0; background:rgba(15,23,42,0.95);">${nameCell} ${grade}</td>
         ${cells}
-        <td style="padding:2px 6px; color:#c7d2fe; font-size:0.78rem; font-weight:700; text-align:right;">${s.total}分</td>
+        <td title="${s.total}分${s.qa_total ? ` / 演習 ${s.qa_total}問` : ''}" style="padding:2px 6px; color:#c7d2fe; font-size:0.78rem; font-weight:700; text-align:right; white-space:nowrap;">${(s.total / 60).toFixed(1)}h${s.qa_total ? `<span style="color:#86efac; font-size:0.65rem; font-weight:400; margin-left:3px;">●${s.qa_total}</span>` : ''}</td>
         ${actCell}
       </tr>`;
   }).join('');
-  el.innerHTML = `
+  el.innerHTML = toolbar + `
     <table style="border-collapse:collapse; width:100%; min-width:600px;">
-      <thead><tr><th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:left; position:sticky; left:0; background:rgba(15,23,42,0.95);">生徒</th>${dateHeader}<th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:right;">計</th><th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:center;">操作</th></tr></thead>
+      <thead><tr><th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:left; position:sticky; left:0; background:rgba(15,23,42,0.95);">生徒</th>${dateHeader}<th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:right;">計 (h)</th><th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:center;">操作</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div style="margin-top:0.5rem; font-size:0.7rem; color:#71717a; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
       凡例:
-      <span style="background:${_slHeatColor(0)}; padding:2px 8px; border-radius:3px;">0</span>
-      <span style="background:${_slHeatColor(15)}; padding:2px 8px; border-radius:3px;">~30分</span>
+      <span style="background:${_slHeatColor(0)}; padding:2px 8px; border-radius:3px;">0 (未記録)</span>
+      <span style="background:${_slHeatColor(15)}; padding:2px 8px; border-radius:3px;">~0.5h</span>
       <span style="background:${_slHeatColor(45)}; padding:2px 8px; border-radius:3px;">~1h</span>
       <span style="background:${_slHeatColor(90)}; padding:2px 8px; border-radius:3px;">~2h</span>
       <span style="background:${_slHeatColor(180)}; padding:2px 8px; border-radius:3px;">~4h</span>
       <span style="background:${_slHeatColor(300)}; padding:2px 8px; border-radius:3px;">4h+</span>
-      <span style="margin-left:auto; color:#a1a1aa;">全 ${students.length} 名表示中</span>
+      <span style="margin-left:auto; color:#a1a1aa;">${students.length === allStudents.length ? `全 ${students.length} 名表示中` : `${students.length} / ${allStudents.length} 名を表示 (絞り込み中)`}</span>
     </div>`;
   // 行の導線 bind (名前 → 生徒詳細 / 📜 → 絞込タイムライン / 💬 → 個別メッセージ)
   el.querySelectorAll('.sl-hm-name').forEach(a => a.addEventListener('click', (e) => {
@@ -1692,19 +1714,8 @@ function renderStudyLogRanking(data) {
   }).join('');
 }
 
-function renderStudyLogTimeline(data, opts) {
-  const el = document.getElementById('slTimeline');
-  if (!el) return;
-  const logs = data.logs || [];
-  // 📜 生徒で絞り込んでいるときは見出しと「全員に戻す」を出す
-  const filterBar = (opts && opts.filterName)
-    ? `<div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.6rem; padding:0.45rem 0.7rem; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.35); border-radius:8px; font-size:0.8rem; color:#c7d2fe;">📜 <b>${escapeHtml(opts.filterName)}</b> の記録のみ表示 (${logs.length}件)<button type="button" onclick="loadStudyLogDashboard()" style="margin-left:auto; background:rgba(255,255,255,0.08); border:0; color:#e4e4e7; padding:0.25rem 0.6rem; border-radius:6px; cursor:pointer;">全員に戻す</button></div>`
-    : '';
-  if (!logs.length) {
-    el.innerHTML = filterBar + '<div style="color:#71717a; padding:1rem; text-align:center;">期間内に学習記録がありません</div>';
-    return;
-  }
-  el.innerHTML = filterBar + logs.map(l => {
+function _slTimelineRowsHtml(logs) {
+  return logs.map(l => {
     const r = l.reactions || { likes: 0, comments: [] };
     const likedClass = r.likes > 0 ? 'background:rgba(236,72,153,0.25); color:#f9a8d4;' : 'background:rgba(255,255,255,0.05); color:#a1a1aa;';
     const likeIcon = r.likes > 0 ? '❤️' : '🤍';
@@ -1731,8 +1742,12 @@ function renderStudyLogTimeline(data, opts) {
         <div data-comments-for="${l.id}">${comments}</div>
       </div>`;
   }).join('');
-  // bind like (optimistic update)
-  el.querySelectorAll('.sl-like-btn').forEach(b => {
+}
+
+function _slBindTimelineRows(root) {
+  // bind like (optimistic update)。追記ページでも二重に付かないよう data-bound で印す
+  root.querySelectorAll('.sl-like-btn:not([data-bound])').forEach(b => {
+    b.setAttribute('data-bound', '1');
     b.addEventListener('click', async (e) => {
       const btn = e.currentTarget;
       const id = btn.getAttribute('data-log-id');
@@ -1769,7 +1784,8 @@ function renderStudyLogTimeline(data, opts) {
     });
   });
   // bind comment (prompt は最低限保持。長期は modal 化推奨)
-  el.querySelectorAll('.sl-comment-btn').forEach(b => {
+  root.querySelectorAll('.sl-comment-btn:not([data-bound])').forEach(b => {
+    b.setAttribute('data-bound', '1');
     b.addEventListener('click', async (e) => {
       const id = e.currentTarget.getAttribute('data-log-id');
       const comment = prompt('コメントを入力 (最大500文字)');
@@ -1795,6 +1811,64 @@ function renderStudyLogTimeline(data, opts) {
       } catch (err) { alert('エラー: ' + (err.message || err)); }
     });
   });
+}
+
+function renderStudyLogTimeline(data, opts) {
+  const el = document.getElementById('slTimeline');
+  if (!el) return;
+  const logs = data.logs || [];
+  const total = (data.total != null) ? data.total : logs.length;
+  const daysSel = document.getElementById('slDays');
+  // 📜 2026-09-07 ページング状態 (従来は 200 件で無言に打ち切り、古い記録にいいねも付けられなかった)
+  window._slTimelineState = {
+    days: (opts && opts.days) || parseInt((daysSel && daysSel.value) || '7', 10),
+    sid: (opts && opts.filterSid) || null, name: (opts && opts.filterName) || null,
+    shown: logs.length, total,
+  };
+  // 📜 生徒で絞り込んでいるときは見出しと「全員に戻す」を出す
+  const filterBar = (opts && opts.filterName)
+    ? `<div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.6rem; padding:0.45rem 0.7rem; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.35); border-radius:8px; font-size:0.8rem; color:#c7d2fe;">📜 <b>${escapeHtml(opts.filterName)}</b> の記録のみ表示 (${total}件)<button type="button" onclick="loadStudyLogDashboard()" style="margin-left:auto; background:rgba(255,255,255,0.08); border:0; color:#e4e4e7; padding:0.25rem 0.6rem; border-radius:6px; cursor:pointer;">全員に戻す</button></div>`
+    : '';
+  if (!logs.length) {
+    el.innerHTML = filterBar + '<div style="color:#71717a; padding:1rem; text-align:center;">期間内に学習記録がありません</div>';
+    return;
+  }
+  const countLine = `<div style="font-size:0.72rem; color:#71717a; margin-bottom:0.4rem;">表示 <span id="slTlShown">${logs.length}</span> / 全 <span id="slTlTotal">${total}</span> 件 (新しい順)</div>`;
+  const moreBtn = `<button type="button" id="slTlMoreBtn" style="background:rgba(99,102,241,0.2); border:0; color:#c7d2fe; padding:0.4rem 1rem; border-radius:6px; cursor:pointer; font-size:0.8rem;">さらに読み込む</button>`;
+  el.innerHTML = filterBar + countLine + `<div id="slTimelineList">${_slTimelineRowsHtml(logs)}</div>` +
+    `<div id="slTimelineMore" style="text-align:center; margin-top:0.5rem;">${total > logs.length ? moreBtn : ''}</div>`;
+  _slBindTimelineRows(el);
+  const more = document.getElementById('slTlMoreBtn');
+  if (more) more.addEventListener('click', loadMoreStudyLogTimeline);
+}
+
+// 📜 次のページを末尾に追記 (offset = 表示済み件数)
+async function loadMoreStudyLogTimeline() {
+  const st = window._slTimelineState;
+  const btn = document.getElementById('slTlMoreBtn');
+  if (!st || !window.AdminAuth) return;
+  if (btn) { btn.disabled = true; btn.textContent = '読み込み中…'; }
+  try {
+    const q = `/api/admin/study-logs/timeline?days=${st.days}&limit=200&offset=${st.shown}` + (st.sid ? `&student_id=${encodeURIComponent(st.sid)}` : '');
+    const res = await window.AdminAuth.fetch(q);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const logs = data.logs || [];
+    const list = document.getElementById('slTimelineList');
+    if (list && logs.length) {
+      const frag = document.createElement('div');
+      frag.innerHTML = _slTimelineRowsHtml(logs);
+      while (frag.firstChild) list.appendChild(frag.firstChild);
+      _slBindTimelineRows(list);
+    }
+    st.shown += logs.length;
+    if (data.total != null) st.total = data.total;
+    const shownEl = document.getElementById('slTlShown'); if (shownEl) shownEl.textContent = st.shown;
+    const totalEl = document.getElementById('slTlTotal'); if (totalEl) totalEl.textContent = st.total;
+    if (btn) { if (st.shown >= st.total || !logs.length) btn.remove(); else { btn.disabled = false; btn.textContent = 'さらに読み込む'; } }
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = '再試行 (' + (e.message || e) + ')'; }
+  }
 }
 
 

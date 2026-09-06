@@ -240,6 +240,14 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_zero_streak_alert.py
 
+      # 📚 学習記録ダッシュボードの運用改善 (2026-09-07): タイムラインのページング / 1 日合計の上限 / 演習の重ね表示 /
+      #   テスト系の名前の除外 / パネル別の読み込みと配色 (ソース検査)。
+      - name: 学習記録ダッシュボード 運用改善 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_study_log_dashboard_ops.py
+
       # 📺 再生リストの登録/命名 API。**書き込む側**なので、URL をそのまま受けること・
       #   二度送っても増えないこと・読めない入力で半端な行を作らないことを見る。
       #   あわせて「名前 → どの授業に繋がるか」を正典 (class_recording_assign.slot_of) と

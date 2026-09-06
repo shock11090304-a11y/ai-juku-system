@@ -3082,7 +3082,7 @@
   <!-- ★ceo.js を変えたら必ず ?v= を更新する。vercel.json の no-cache は *.html と
        auth-guard.js / cache-purge.js だけで、ceo.js はこのクエリだけが頼り。
        据え置くと「新しい ceo.html + キャッシュされた古い ceo.js」で動く端末が出る。 -->
-  <script src="ceo.js?v=20260907-zero-streak"></script>
+  <script src="ceo.js?v=20260907-dashboard-ops"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -10849,6 +10849,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         ['revenue',         typeof loadRevenueTimeline === 'function' ? loadRevenueTimeline : null],
         ['pool',            typeof loadPoolStatus === 'function' ? loadPoolStatus : null],
         ['realtime',        typeof loadRealtimeVisitors === 'function' ? loadRealtimeVisitors : null],
+        ['studyLog',        typeof loadStudyLogDashboard === 'function' ? loadStudyLogDashboard : null],   // 📚 2026-09-07 学習記録も更新
       ].filter(t => t[1]);
       const t0 = performance.now();
       const results = await Promise.allSettled(tasks.map(t => Promise.resolve(t[1]())));

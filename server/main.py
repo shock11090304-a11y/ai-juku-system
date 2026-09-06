@@ -42420,6 +42420,9 @@ _STUDY_SUBJECTS = {
     "情報", "小論文", "面接対策", "その他",
 }
 _STUDY_LOG_TARGET_COURSE = "kokuritsu_nankan"  # 国公立難関大学コース 識別子
+# ⏱ 2026-09-07 自己申告の 1 日合計の上限 (分・既定 16 時間)。従来は 1 件 1440 分の上限しか無く、同日に 2 件入れれば
+#   48 時間でも通り、ランキングと合格スコアの学習時間ボーナスにそのまま効いていた (システム点検で確定)。
+_STUDY_LOG_DAILY_CAP_MIN = _env_int("STUDY_LOG_DAILY_CAP_MIN", 960, lo=60, hi=1440)
 
 
 def _study_log_dashboard_students(c, cutoff_date):
@@ -42453,8 +42456,18 @@ def _study_log_dashboard_students(c, cutoff_date):
     return [
         {"id": r["id"], "name": r["name"], "grade": r["grade"], "status": r["status"]}
         for r in c.fetchall()
-        if r["id"] not in juku_ids
+        if r["id"] not in juku_ids and not _is_blocked_test_name(r["name"])   # 🧪 2026-09-07 テスト系の名前を除外
     ]
+
+
+def _is_blocked_test_name(name) -> bool:
+    """🧪 2026-09-07 人手で作ったテスト/デモ用アカウント (名前が テスト/test/ダミー/確認用 …) を学習記録の母集団から外す。
+    合成監視の除外 (@synthetic-monitor / @example.com) に当たらない検証用アカウントが 0 分の行として並び、
+    「サボり N 名」を水増ししていた (システム点検で確定)。判定語は休眠 cron と同じ _DORMANT_REENGAGE_NAME_BLOCK。"""
+    n = str(name or "").strip().lower()
+    if not n:
+        return False
+    return any(k.lower() in n for k in _DORMANT_REENGAGE_NAME_BLOCK)
 
 
 # JST (UTC+9) helper - JST 基準で「今日」を計算しないと夜間学習の記録が翌日扱いになる
@@ -42577,6 +42590,13 @@ def create_study_log(payload: StudyLogCreateRequest, request: Request, authoriza
     conn = db()
     try:
         c = conn.cursor()
+        # ⏱ 2026-09-07 1 日の合計が上限 (既定 16 時間) を超える申告は弾く
+        c.execute("SELECT COALESCE(SUM(minutes), 0) AS m FROM study_logs WHERE student_id = ? AND studied_date = ?",
+                  (student["id"], studied_date))
+        _row_m = c.fetchone()
+        _day_total = int((_row_m["m"] if _row_m else 0) or 0)
+        if _day_total + minutes > _STUDY_LOG_DAILY_CAP_MIN:
+            raise HTTPException(status_code=400, detail=f"この日の合計が {_STUDY_LOG_DAILY_CAP_MIN // 60} 時間を超えます (登録済み {_day_total} 分)。時間や日付を確認してください")
         # 直近10秒以内の重複投稿を弾く (連打防止・seed_questions 致命事故と同パターン回避)
         if USE_POSTGRES:
             c.execute(
@@ -42706,12 +42726,21 @@ def update_my_study_log(log_id: int, payload: StudyLogUpdateRequest, request: Re
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT student_id FROM study_logs WHERE id = ?", (log_id,))
+        c.execute("SELECT student_id, studied_date, minutes FROM study_logs WHERE id = ?", (log_id,))
         row = c.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="記録が見つかりません")
         if int(row["student_id"]) != int(student["id"]):
             raise HTTPException(status_code=403, detail="権限がありません")
+        # ⏱ 2026-09-07 修正後の日付・分数で 1 日合計の上限を検査 (この記録自身は除く)
+        _new_date = studied_date if payload.studied_date is not None else str(row["studied_date"])[:10]
+        _new_min = minutes if payload.minutes is not None else int(row["minutes"] or 0)
+        c.execute("SELECT COALESCE(SUM(minutes), 0) AS m FROM study_logs WHERE student_id = ? AND studied_date = ? AND id <> ?",
+                  (student["id"], _new_date, log_id))
+        _row_m = c.fetchone()
+        _others = int((_row_m["m"] if _row_m else 0) or 0)
+        if _others + _new_min > _STUDY_LOG_DAILY_CAP_MIN:
+            raise HTTPException(status_code=400, detail=f"この日の合計が {_STUDY_LOG_DAILY_CAP_MIN // 60} 時間を超えます (他の記録 {_others} 分)。時間や日付を確認してください")
         c.execute(f"UPDATE study_logs SET {', '.join(sets)} WHERE id = ? AND student_id = ?",
                   (*params, log_id, student["id"]))
         conn.commit()
@@ -42818,7 +42847,7 @@ def get_my_study_logs(authorization: Optional[str] = Header(None), days: int = 3
 
 
 @app.get("/api/admin/study-logs/timeline")
-def admin_study_logs_timeline(authorization: Optional[str] = Header(None), days: int = 7, limit: int = 200, student_id: Optional[int] = None):
+def admin_study_logs_timeline(authorization: Optional[str] = Header(None), days: int = 7, limit: int = 200, student_id: Optional[int] = None, offset: int = 0):
     """塾長: 国公立難関大学コース生徒の学習記録タイムライン。"""
     _verify_admin_required(authorization)
 
@@ -42829,6 +42858,10 @@ def admin_study_logs_timeline(authorization: Optional[str] = Header(None), days:
         raise HTTPException(status_code=400, detail="クエリパラメータが不正です")
     days = max(1, min(days, 90))
     limit = max(1, min(limit, 1000))
+    try:
+        offset = max(0, min(int(offset or 0), 100000))   # 📜 2026-09-07 ページング (従来は 200 件で無言に打ち切り)
+    except (TypeError, ValueError):
+        offset = 0
     today = _today_jst()
     cutoff_date = (today - timedelta(days=days - 1)).isoformat()
 
@@ -42851,8 +42884,8 @@ def admin_study_logs_timeline(authorization: Optional[str] = Header(None), days:
                 JOIN students s ON sl.student_id = s.id
                 WHERE sl.studied_date >= ? AND sl.student_id IN ({id_ph})
                 ORDER BY sl.created_at DESC
-                LIMIT ?""",
-            (cutoff_date, *target_ids, limit)
+                LIMIT ? OFFSET ?""",
+            (cutoff_date, *target_ids, limit, offset)
         )
         rows = c.fetchall()
 
@@ -42896,7 +42929,12 @@ def admin_study_logs_timeline(authorization: Optional[str] = Header(None), days:
         for log_obj in logs:
             log_obj["reactions"] = reactions_map.get(log_obj["id"], {"likes": 0, "comments": []})
 
-        return {"ok": True, "logs": logs, "count": len(logs), "period_days": days}
+        # 📜 全件数 (「表示 M / 全 N 件」と「もっと見る」の判定用)
+        c.execute(f"SELECT COUNT(*) AS n FROM study_logs sl WHERE sl.studied_date >= ? AND sl.student_id IN ({id_ph})",
+                  (cutoff_date, *target_ids))
+        _tot = c.fetchone()
+        total = int((_tot["n"] if _tot else 0) or 0)
+        return {"ok": True, "logs": logs, "count": len(logs), "total": total, "offset": offset, "limit": limit, "period_days": days}
     finally:
         conn.close()
 
@@ -42930,6 +42968,8 @@ def admin_study_logs_heatmap(authorization: Optional[str] = Header(None), days: 
                 "grade": s["grade"],
                 "data": {},
                 "total": 0,
+                "qa": {},        # 📐 2026-09-07 日別の演習 (question_attempts) 件数 = 自己申告との突合用
+                "qa_total": 0,
             }
 
         # 期間内の集計 (対象生徒のみ・course 条件は外し churn/premium の入力も拾う=students_map 会員で絞る)
@@ -42951,6 +42991,27 @@ def admin_study_logs_heatmap(authorization: Optional[str] = Header(None), days: 
                 m = int(r["total_minutes"] or 0)
                 students_map[sid]["data"][str(r["studied_date"])] = m
                 students_map[sid]["total"] += m
+
+        # 📐 2026-09-07 演習ログ (客観) を JST 日付で重ねる。「記録あり演習ゼロ」「演習あり記録ゼロ」が一目で分かる
+        if students_map:
+            try:
+                _jst = timezone(timedelta(hours=9))
+                _cut_utc = datetime(int(cutoff_date[:4]), int(cutoff_date[5:7]), int(cutoff_date[8:10]), tzinfo=_jst).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                c.execute(
+                    f"SELECT student_id, created_at FROM question_attempts WHERE created_at >= ? AND student_id IN ({id_ph})",
+                    (_cut_utc, *students_map.keys())
+                )
+                for r in c.fetchall():
+                    sid = r["student_id"]
+                    d = _wr_jst_date(r["created_at"])
+                    if sid in students_map and d is not None:
+                        k = d.isoformat()
+                        students_map[sid]["qa"][k] = students_map[sid]["qa"].get(k, 0) + 1
+                        students_map[sid]["qa_total"] += 1
+            except Exception as e:
+                try: conn.rollback()
+                except Exception: pass
+                log.warning(f"[study-logs/heatmap] qa overlay skipped: {e}")
 
         full_dates = [(today - timedelta(days=i)).isoformat() for i in range(days - 1, -1, -1)]
         students_list = list(students_map.values())
