@@ -1336,6 +1336,25 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_weakness_student_count ON student_weakness(student_id, question_count DESC);
     CREATE INDEX IF NOT EXISTS idx_weakness_aggregated ON student_weakness(aggregated_at DESC);
+    -- 🕰 2026-09-06 弱点の退役履歴。30日再測定の無い弱点は student_weakness から消える (2026-05-22 P1 fix・
+    --   週次プリントに古い弱点が出続けるのを防ぐ) が、消えたことが塾長に見えず「克服」と区別できなかった。
+    --   _run_weakness_aggregation が削除の直前にここへ写し、CEO「やるべきこと」が【未再測定】として出す。
+    --   配信ロジック (週次プリント/3日ドリル/生徒TOP3) は従来どおり student_weakness だけを見る。
+    CREATE TABLE IF NOT EXISTS student_weakness_history (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        subject TEXT NOT NULL,
+        topic TEXT,
+        question_count INTEGER,
+        avg_confidence_score REAL,
+        qa_accuracy REAL,
+        qa_attempts INTEGER,
+        reason_counts TEXT,
+        last_seen_at TIMESTAMP,
+        aggregated_at TIMESTAMP,
+        retired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_weakness_history_student ON student_weakness_history(student_id, retired_at DESC);
     -- 📝 2026-05-22 塾長指示: 弱点プリント週次配信のため解答履歴を統合的に DB 保存
     -- source で起源を区別し、_run_weakness_aggregation で UNION 集計するための共通テーブル
     CREATE TABLE IF NOT EXISTS question_attempts (
@@ -6194,6 +6213,20 @@ async def _weakness_aggregation_scheduler():
             except Exception as e:
                 log.error(f"[Weakness] failed: {type(e).__name__}: {e}", exc_info=True)
                 _record_scheduler_run("weakness_aggregation_run", {"error": f"{type(e).__name__}: {e}"})
+            # 🎯 2026-09-06 合格可能性スコアの日次再計算 (弱点集計の直後・同じ 4:00 枠)。
+            #   従来は生徒が mypage を開くか塾長が「🔄 合格スコア再計算」を押した時しか更新されず、
+            #   CEO「やるべきこと」の 合格%/学習h/月/残日数 が古いまま並んでいた (3視点レビュー指摘)。
+            #   弱点集計を反映した直後に回すので weakness_count も同じ日の値になる。
+            if _check_scheduler_ran_today_jst("admission_recompute_run"):
+                log.info("[Admission] Skipped (already ran today by another replica)")
+            else:
+                try:
+                    adm = await asyncio.to_thread(_recompute_admission_all)
+                    log.info(f"[Admission] nightly recompute: {adm}")
+                    _record_scheduler_run("admission_recompute_run", adm)
+                except Exception as e:
+                    log.error(f"[Admission] nightly recompute failed: {type(e).__name__}: {e}", exc_info=True)
+                    _record_scheduler_run("admission_recompute_run", {"error": f"{type(e).__name__}: {e}"})
         except asyncio.CancelledError:
             log.info("[Weakness] Scheduler cancelled")
             raise
@@ -6408,24 +6441,47 @@ def _run_weakness_aggregation(only_student_id: Optional[int] = None) -> dict:
                     (sid, subj, topic, v["count"], avg_score, reason_counts_json, avg_elapsed, qa_acc, qa_graded, v["last"]),
                 )
                 inserted += 1
+        # 集計本体をここで確定させる。後段の退役処理が失敗しても集計結果は失わない
+        # (Postgres は 1 文でも失敗すると同一トランザクション全体が abort し commit が丸ごと巻き戻る)。
+        conn.commit()
         # ✅ 2026-05-22 P1 fix: 30 日経過の stale row を削除 (古い弱点が worksheet に出続けるのを防ぐ)
+        # 🕰 2026-09-06: 消す前に student_weakness_history へ写す。従来は黙って消えていて、塾長には
+        #   「克服した」のか「30日解き直していないだけ」なのか区別がつかなかった (3視点レビュー指摘)。
+        #   配信ロジック (週次プリント/3日ドリル/生徒TOP3) は従来どおり student_weakness だけを見る。
         stale_deleted = 0
+        stale_archived = 0
         try:
             stale_cutoff = (datetime.utcnow() - _td(days=30)).isoformat()
+            _hist_cols = ("student_id, subject, topic, question_count, avg_confidence_score, "
+                          "qa_accuracy, qa_attempts, reason_counts, last_seen_at, aggregated_at")
             if _only_sid:
+                c.execute(f"INSERT INTO student_weakness_history ({_hist_cols}) SELECT {_hist_cols} FROM student_weakness "
+                          f"WHERE student_id = ? AND aggregated_at < ?", (_only_sid, stale_cutoff))
+                stale_archived = c.rowcount or 0
                 c.execute("DELETE FROM student_weakness WHERE student_id = ? AND aggregated_at < ?", (_only_sid, stale_cutoff))
             else:
+                c.execute(f"INSERT INTO student_weakness_history ({_hist_cols}) SELECT {_hist_cols} FROM student_weakness "
+                          f"WHERE aggregated_at < ?", (stale_cutoff,))
+                stale_archived = c.rowcount or 0
                 c.execute("DELETE FROM student_weakness WHERE aggregated_at < ?", (stale_cutoff,))
             stale_deleted = c.rowcount or 0
+            conn.commit()
         except Exception as e:
-            log.warning(f"[Weakness] stale row cleanup failed (non-fatal): {e}")
-        conn.commit()
+            # 履歴表が無い等で失敗しても集計は確定済み。退役は翌日の集計でやり直される
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            stale_deleted = 0
+            stale_archived = 0
+            log.warning(f"[Weakness] stale row archive/cleanup failed (non-fatal): {e}")
         return {
             "students_processed": students_processed,
             "weaknesses_inserted": inserted,
             "weaknesses_updated": updated,
             "rows_examined": rows_examined,
             "stale_rows_deleted": stale_deleted,
+            "stale_rows_archived": stale_archived,
         }
     finally:
         conn.close()
@@ -7683,7 +7739,10 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
         # 🛡️ 3 視点 review 致命傷 fix 2026-05-26:
         # (1) カラム名は studied_date (DATE) ─ logged_at は存在しない
         # (2) Postgres と SQLite で日付関数が違う → USE_POSTGRES で分岐
-        date_30d = "studied_date >= (NOW() - INTERVAL '30 days')::date" if USE_POSTGRES else "studied_date >= date('now', '-30 days')"
+        # 🕰 2026-09-06: 「直近30日」の起点を JST に揃える (studied_date は生徒が JST で入力した日付。
+        #   UTC 基準だと日本の 0:00〜9:00 に 1 日ずれ、ヒートマップの合計と食い違っていた)
+        date_30d = ("studied_date >= ((NOW() AT TIME ZONE 'Asia/Tokyo') - INTERVAL '30 days')::date" if USE_POSTGRES
+                    else "studied_date >= date('now', '+9 hours', '-30 days')")
         c.execute(
             f"SELECT COALESCE(SUM(minutes), 0) AS total_min FROM study_logs "
             f"WHERE student_id = ? AND {date_30d}",
@@ -8048,6 +8107,18 @@ def admin_admission_recompute_all(authorization: Optional[str] = Header(None), l
     スコアロジック変更後に、日次cron/ページ閲覧を待たず一括反映するために使う。
     対象 = status IN ('trial','paid') かつ合成sentinel除外 (CEO「学習状況」と同条件)。"""
     _verify_admin_required(authorization)
+    try:
+        limit = max(1, min(int(limit or 2000), 5000))
+    except (TypeError, ValueError):
+        limit = 2000
+    return _recompute_admission_all(limit)
+
+
+def _recompute_admission_all(limit: int = 2000) -> dict:
+    """🎯 現役生徒 (status IN ('trial','paid')・合成除外) の合格可能性スコアを全員分再計算してキャッシュ更新。
+    呼び元: 手動ボタン (/api/admin/admission/recompute-all) と、2026-09-06 からは毎日 JST 4:00 の
+    弱点集計 scheduler (_weakness_aggregation_scheduler)。生徒ごとに接続を取り直すので長い
+    トランザクションを持たない (起動時DDLのロック行列を作らない)。"""
     try:
         limit = max(1, min(int(limit or 2000), 5000))
     except (TypeError, ValueError):
@@ -23898,6 +23969,17 @@ def admin_learning_digest(authorization: Optional[str] = Header(None),
         except Exception:
             return default
 
+    def _days_since(ts):
+        """TIMESTAMP (UTC・文字列/datetime どちらでも) から「何日前か」を整数で返す。読めなければ None。"""
+        if not ts:
+            return None
+        try:
+            _s = str(ts).replace("T", " ")[:19]
+            _dt = datetime.strptime(_s, "%Y-%m-%d %H:%M:%S") if len(_s) >= 19 else datetime.strptime(_s[:10], "%Y-%m-%d")
+            return max(0, int((now.replace(tzinfo=None) - _dt).total_seconds() // 86400))
+        except Exception:
+            return None
+
     # student_id 指定時は対象を1名に絞る WHERE 句を作る helper
     def _sclause(prefix_and=False):
         if student_id:
@@ -23939,6 +24021,7 @@ def admin_learning_digest(authorization: Optional[str] = Header(None),
                 "admission": None,
                 "deviation_history": [],
                 "weak_topics": [],
+                "expired_topics": [],
                 "reason_totals": {},
                 "subject_balance": [],
                 "activity": {"total": 0, "d7": 0, "d30": 0, "d90": 0, "last_at": None, "accuracy": None},
@@ -23965,8 +24048,23 @@ def admin_learning_digest(authorization: Optional[str] = Header(None),
                     "analysis": (r["analysis_text"] or "")[:600],
                     "generated_at": str(r["generated_at"]) if r["generated_at"] else None,
                 }
-                if r["days_remaining"] is not None:
-                    s["days_to_exam"] = r["days_remaining"]
+                # 🕰 2026-09-06: 残日数は保存値 (generated_at 時点で凍結・減らない) ではなく本番想定日から
+                #   毎回計算する。算出日も age_days で返し、CEO 側で「算出 N日前」を出す (従来は外側の
+                #   generated_at=リクエスト時刻しか無く、値の古さが見えなかった・3視点レビュー指摘)。
+                _age_days = _days_since(r["generated_at"])
+                s["admission"]["age_days"] = _age_days
+                _bd = s["admission"]["breakdown"] or {}
+                _live_days = None
+                if _bd.get("exam_date"):
+                    try:
+                        _ed = datetime.strptime(str(_bd["exam_date"])[:10], "%Y-%m-%d").date()
+                        _live_days = max(0, (_ed - _today_jst()).days)
+                    except Exception:
+                        _live_days = None
+                if _live_days is None and r["days_remaining"] is not None:
+                    _live_days = max(0, int(r["days_remaining"]) - (_age_days or 0))
+                if _live_days is not None:
+                    s["days_to_exam"] = _live_days
         except Exception as e:
             log.warning(f"[digest] admission_likelihood skip: {e}")
 
@@ -23976,7 +24074,7 @@ def admin_learning_digest(authorization: Optional[str] = Header(None),
         #    『慢性弱点を持つ科目』に各1枠を確保しつつ重症度順に選ぶ。reason_totals は従来どおり全行から集計する。
         try:
             cl, cp = _sclause()
-            c.execute(f"SELECT student_id, subject, topic, qa_accuracy, qa_attempts, avg_elapsed_ms, reason_counts "
+            c.execute(f"SELECT student_id, subject, topic, qa_accuracy, qa_attempts, avg_elapsed_ms, reason_counts, last_seen_at "
                       f"FROM student_weakness {('WHERE qa_attempts > 0' if not student_id else 'WHERE student_id = ? AND qa_attempts > 0')} "
                       f"ORDER BY student_id, qa_accuracy ASC", (tuple(cp) if not student_id else (student_id,)))
             _weak_cand = {}  # student_id -> [weakness dict ...] (全候補・後で科目バランス選抜)
@@ -23989,6 +24087,7 @@ def admin_learning_digest(authorization: Optional[str] = Header(None),
                     "accuracy": round(r["qa_accuracy"], 3) if r["qa_accuracy"] is not None else None,
                     "attempts": r["qa_attempts"],
                     "avg_elapsed_ms": r["avg_elapsed_ms"],
+                    "last_seen_days": _days_since(r["last_seen_at"]),  # 🕰 鮮度 (最終演習 N日前)
                 })
                 for reason, cnt in (_jload(r["reason_counts"], {}) or {}).items():
                     try:
@@ -24001,6 +24100,49 @@ def admin_learning_digest(authorization: Optional[str] = Header(None),
                     s["weak_topics"] = _select_balanced_weak_topics(cands, cap=8)
         except Exception as e:
             log.warning(f"[digest] student_weakness skip: {e}")
+
+        # 3b) 🕰 2026-09-06 退役した弱点 (30日以上再測定が無く student_weakness から消えた分・直近90日)。
+        #    「克服した」のか「解き直していないだけ」なのかを塾長が判断できるよう、現役の弱点に無い
+        #    (subject, topic) だけを最新順に最大5件返す。単発ノイズ (3回未満) と正答75%以上は除く。
+        try:
+            _cur_keys = {}
+            for sid, cands in _weak_cand.items():
+                _cur_keys[sid] = {(w.get("subject"), w.get("topic")) for w in cands}
+            q = ("SELECT student_id, subject, topic, qa_accuracy, qa_attempts, last_seen_at, retired_at "
+                 "FROM student_weakness_history WHERE retired_at >= ?")
+            p = [cut90]
+            if student_id:
+                q += " AND student_id = ?"; p.append(student_id)
+            q += " ORDER BY student_id, retired_at DESC"
+            c.execute(q, tuple(p))
+            _seen_exp = {}
+            for r in c.fetchall():
+                s = students.get(r["student_id"])
+                if not s or not r["topic"]:
+                    continue
+                if (r["qa_attempts"] or 0) < 3 or r["qa_accuracy"] is None or r["qa_accuracy"] >= 0.75:
+                    continue
+                key = (r["subject"], r["topic"])
+                if key in _cur_keys.get(r["student_id"], set()):
+                    continue
+                seen = _seen_exp.setdefault(r["student_id"], set())
+                if key in seen or len(s["expired_topics"]) >= 5:
+                    continue
+                seen.add(key)
+                s["expired_topics"].append({
+                    "subject": r["subject"], "topic": r["topic"],
+                    "accuracy": round(r["qa_accuracy"], 3),
+                    "attempts": r["qa_attempts"],
+                    "last_seen_days": _days_since(r["last_seen_at"]),
+                    "retired_days": _days_since(r["retired_at"]),
+                })
+        except Exception as e:
+            # PG (非autocommit) は失敗した文で txn が abort し後続の SELECT も全滅するので、ここで戻す
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            log.warning(f"[digest] student_weakness_history skip: {e}")
 
         # 4) 偏差値推移 (外部模試 exam_results + 内蔵模試 mock_exam_sessions)
         try:
@@ -25030,6 +25172,7 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             # 🧹 [orphan-cleanup 2026-09-04] 実削除 (delete_tables) と同じ範囲をプレビューにも出す
             ("question_attempts", "student_id"),
             ("student_weakness", "student_id"),
+            ("student_weakness_history", "student_id"),  # 🕰 2026-09-06 退役弱点の履歴
             ("grammar_drill_assignments", "student_id"),
             ("admission_likelihood", "student_id"),
             ("worksheet_archives", "student_id"),
@@ -25117,6 +25260,7 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             #   DELETE の順序制約は無い。★anthropic_usage_log は消さない (下の UPDATE 参照)。
             ("question_attempts", "DELETE FROM question_attempts WHERE student_id=?"),
             ("student_weakness", "DELETE FROM student_weakness WHERE student_id=?"),
+            ("student_weakness_history", "DELETE FROM student_weakness_history WHERE student_id=?"),  # 🕰 2026-09-06
             ("grammar_drill_assignments", "DELETE FROM grammar_drill_assignments WHERE student_id=?"),
             ("admission_likelihood", "DELETE FROM admission_likelihood WHERE student_id=?"),
             ("worksheet_archives", "DELETE FROM worksheet_archives WHERE student_id=?"),
@@ -29067,7 +29211,7 @@ def admin_email_test_send(payload: dict, authorization: Optional[str] = Header(N
 #   ★この関数は「students に id が無い行」だけを対象にするので、在籍生徒のデータには触れない。
 #   ★anthropic_usage_log は削除せず student_id を NULL にする (塾の会計記録のため)。
 _ORPHAN_SWEEP_TABLES = (
-    "otp_codes", "vocab_progress", "question_attempts", "grammar_drill_assignments", "student_weakness",
+    "otp_codes", "vocab_progress", "question_attempts", "grammar_drill_assignments", "student_weakness", "student_weakness_history",
     "student_materials", "worksheet_archives", "lesson_print_downloads", "admission_likelihood",
     "class_attend", "class_attendance", "ai_tutor_solve_log", "line_link_tokens",
     "study_logs", "study_plans", "exam_results", "curricula", "notifications", "usage_monthly",
@@ -29192,6 +29336,7 @@ def admin_students_purge_stale(payload: dict = None, authorization: Optional[str
                 ("student_json_state", f"DELETE FROM student_json_state WHERE student_id IN ({placeholders})"),
                 ("question_attempts", f"DELETE FROM question_attempts WHERE student_id IN ({placeholders})"),
                 ("student_weakness", f"DELETE FROM student_weakness WHERE student_id IN ({placeholders})"),
+                ("student_weakness_history", f"DELETE FROM student_weakness_history WHERE student_id IN ({placeholders})"),  # 🕰 2026-09-06
                 ("grammar_drill_assignments", f"DELETE FROM grammar_drill_assignments WHERE student_id IN ({placeholders})"),
                 ("admission_likelihood", f"DELETE FROM admission_likelihood WHERE student_id IN ({placeholders})"),
                 ("worksheet_archives", f"DELETE FROM worksheet_archives WHERE student_id IN ({placeholders})"),
@@ -42039,6 +42184,16 @@ class StudyLogCreateRequest(BaseModel):
     note: Optional[str] = None
 
 
+class StudyLogUpdateRequest(BaseModel):
+    """✏️ PATCH /api/study-logs/{id}: 渡された項目だけ更新 (None = 変更しない)。"""
+    studied_date: Optional[str] = None
+    subject: Optional[str] = None
+    material: Optional[str] = None
+    minutes: Optional[int] = None
+    pages: Optional[int] = None
+    note: Optional[str] = None
+
+
 @app.post("/api/study-logs")
 def create_study_log(payload: StudyLogCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
     """生徒が学習記録を投稿。国公立難関大学コース限定。"""
@@ -42156,6 +42311,77 @@ def delete_my_study_log(log_id: int, request: Request, authorization: Optional[s
             raise
         log.info(f"[StudyLog] delete id={log_id} student={student['id']}")
         return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.patch("/api/study-logs/{log_id}")
+def update_my_study_log(log_id: int, payload: StudyLogUpdateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """✏️ 2026-09-06 生徒が自分の学習記録を修正 (科目・時間・教材・日付・ページ・メモ)。
+    従来は削除→再投稿しかなく、塾長コメントが付いた記録は削除もできないため打ち間違いが直せなかった
+    (3視点レビュー指摘)。修正してもリアクション (いいね/コメント) は残る。
+    検証は投稿 (create_study_log) と同じ規則。渡された項目だけ更新する。"""
+    _check_rate_limit_caller(request, authorization, bucket="study_log_update", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+
+    sets, params = [], []
+    if payload.subject is not None:
+        subject = (payload.subject or "").strip()
+        if subject not in _STUDY_SUBJECTS:
+            raise HTTPException(status_code=400, detail="科目が不正です")
+        sets.append("subject = ?"); params.append(subject)
+    if payload.minutes is not None:
+        try:
+            minutes = int(payload.minutes)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="勉強時間が不正です")
+        if minutes <= 0 or minutes > 1440:
+            raise HTTPException(status_code=400, detail="勉強時間は 1〜1440 分で指定してください")
+        sets.append("minutes = ?"); params.append(minutes)
+    if payload.studied_date is not None:
+        today = _today_jst()
+        studied_date = (payload.studied_date or "").strip()
+        try:
+            d = datetime.strptime(studied_date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="日付フォーマットが不正です (YYYY-MM-DD)")
+        if d > today:
+            raise HTTPException(status_code=400, detail="未来の日付は登録できません")
+        if (today - d).days > 365:
+            raise HTTPException(status_code=400, detail="1年以上前の日付は登録できません")
+        sets.append("studied_date = ?"); params.append(studied_date)
+    if payload.material is not None:
+        sets.append("material = ?"); params.append(_sanitize_text(payload.material, 200))
+    if payload.note is not None:
+        sets.append("note = ?"); params.append(_sanitize_text(payload.note, 1000))
+    if payload.pages is not None:
+        try:
+            p = int(payload.pages)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="ページ数が不正です")
+        if not (0 <= p <= 10000):
+            raise HTTPException(status_code=400, detail="ページ数は 0〜10000 で指定してください")
+        sets.append("pages = ?"); params.append(p)
+    if not sets:
+        raise HTTPException(status_code=400, detail="変更する項目がありません")
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT student_id FROM study_logs WHERE id = ?", (log_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="記録が見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+        c.execute(f"UPDATE study_logs SET {', '.join(sets)} WHERE id = ? AND student_id = ?",
+                  (*params, log_id, student["id"]))
+        conn.commit()
+        log.info(f"[StudyLog] update id={log_id} student={student['id']} fields={len(sets)}")
+        return {"ok": True, "id": log_id}
     finally:
         conn.close()
 
@@ -42430,8 +42656,9 @@ def admin_react_to_study_log(log_id: int, payload: StudyLogReactRequest, request
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT id FROM study_logs WHERE id = ?", (log_id,))
-        if not c.fetchone():
+        c.execute("SELECT id, student_id, studied_date, subject, minutes FROM study_logs WHERE id = ?", (log_id,))
+        lg = c.fetchone()
+        if not lg:
             raise HTTPException(status_code=404, detail="記録が見つかりません")
 
         try:
@@ -42446,8 +42673,38 @@ def admin_react_to_study_log(log_id: int, payload: StudyLogReactRequest, request
             if kind == "like":
                 return {"ok": True, "already": True}
             raise
-        log.info(f"[StudyLog] admin_react log_id={log_id} kind={kind}")
-        return {"ok": True}
+        # 💌 2026-09-06: 生徒に届ける。従来は study_log_reactions に入るだけで通知が無く、生徒側は
+        #   ページ最下部の履歴でしか気づけなかった (マイページ上部の「塾長がいいねやコメントを送ります」
+        #   という約束と実態がずれていた・3視点レビュー指摘)。既存の in-app メッセージに 1 通入れる
+        #   (未読バッジは mypage が 60 秒ごとに数える)。失敗してもリアクション自体は確定済み。
+        notified = False
+        try:
+            _d = str(lg["studied_date"] or "")[:10]
+            _when = f"{_d[5:7].lstrip('0')}/{_d[8:10].lstrip('0')} " if len(_d) == 10 else ""
+            _label = f"{_when}{lg['subject']} {int(lg['minutes'] or 0)}分"
+            if kind == "like":
+                m_subject = f"❤️ 塾長があなたの学習記録にいいねしました ({_label})"
+                m_body = (f"{_label} の学習記録に、塾長からいいねが届きました。\nこの調子で続けよう！\n\n"
+                          f"マイページの「📚 学習記録」で確認できます。")
+            else:
+                m_subject = f"💬 塾長からコメントが届きました ({_label})"
+                m_body = (f"{_label} の学習記録に、塾長からコメントが届きました。\n\n「{comment}」\n\n"
+                          f"マイページの「📚 学習記録」で確認できます。")
+            c.execute(
+                "INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, broadcast_filter, subject, body, sent_via, email_status) "
+                "VALUES (?,?,?,?,?,?,?,?,?)",
+                ("admin", None, "student", lg["student_id"], None, m_subject, m_body, "in_app", None)
+            )
+            conn.commit()
+            notified = True
+        except Exception as me:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            log.warning(f"[StudyLog] reaction notify failed (non-fatal) log_id={log_id}: {me}")
+        log.info(f"[StudyLog] admin_react log_id={log_id} kind={kind} notified={notified}")
+        return {"ok": True, "notified": notified}
     finally:
         conn.close()
 

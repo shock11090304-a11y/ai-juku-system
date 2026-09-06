@@ -1412,28 +1412,43 @@ async function submitStudyLog() {
   if (!subject) { if (msg) { msg.textContent = '科目を選択してください'; msg.style.color = '#fca5a5'; } return; }
   if (!minutes || minutes < 1 || minutes > 1440) { if (msg) { msg.textContent = '勉強時間は 1〜1440 分で入力してください'; msg.style.color = '#fca5a5'; } return; }
 
+  const editingId = _slEditingId;
   btn.disabled = true;
   btn.textContent = '保存中...';
   try {
-    await slApiFetch('/api/study-logs', {
-      method: 'POST',
-      body: JSON.stringify({
-        studied_date: date || undefined,
-        subject, material: material || undefined,
-        minutes, pages, note: note || undefined,
-      }),
-    });
-    if (msg) { msg.textContent = '✅ 記録しました！'; msg.style.color = '#86efac'; }
-    document.getElementById('slMaterial').value = '';
-    document.getElementById('slMinutes').value = '';
-    document.getElementById('slPages').value = '';
-    document.getElementById('slNote').value = '';
+    if (editingId) {
+      // ✏️ 修正モード: 渡した項目だけ更新 (教材/メモは空にした場合も空として送る)
+      await slApiFetch('/api/study-logs/' + encodeURIComponent(editingId), {
+        method: 'PATCH',
+        body: JSON.stringify({
+          studied_date: date || undefined,
+          subject, material,
+          minutes, pages: (pages == null ? undefined : pages), note,
+        }),
+      });
+      if (msg) { msg.textContent = '✅ 記録を更新しました'; msg.style.color = '#86efac'; }
+      cancelStudyLogEdit();
+    } else {
+      await slApiFetch('/api/study-logs', {
+        method: 'POST',
+        body: JSON.stringify({
+          studied_date: date || undefined,
+          subject, material: material || undefined,
+          minutes, pages, note: note || undefined,
+        }),
+      });
+      if (msg) { msg.textContent = '✅ 記録しました！'; msg.style.color = '#86efac'; }
+      document.getElementById('slMaterial').value = '';
+      document.getElementById('slMinutes').value = '';
+      document.getElementById('slPages').value = '';
+      document.getElementById('slNote').value = '';
+    }
     await loadMyStudyLogs();
   } catch (e) {
     if (msg) { msg.textContent = '❌ ' + (e.message || '保存に失敗しました'); msg.style.color = '#fca5a5'; }
   } finally {
     btn.disabled = false;
-    btn.textContent = '📝 記録を保存';
+    btn.textContent = _slEditingId ? '✏️ 更新を保存' : '📝 記録を保存';
   }
 }
 
@@ -1473,6 +1488,13 @@ async function loadMyStudyLogs() {
     }
     renderSlDailyChart(daily);
     renderSlLogList(logs);
+    // 🎯 2026-09-06 科目の既定値: 空欄 (「科目を選ぶ」) のままなら直近の記録と同じ科目を入れておく。
+    //   従来は先頭の「英語」が黙って選ばれ、複数科目の生徒が誤った科目で保存していた (3視点レビュー指摘)。
+    const subjSel = document.getElementById('slSubject');
+    if (subjSel && !subjSel.value && logs.length && logs[0].subject) {
+      const opt = Array.from(subjSel.options).find(o => o.value === logs[0].subject);
+      if (opt) subjSel.value = logs[0].subject;
+    }
   } catch (e) {
     console.error('loadMyStudyLogs failed:', e);
     if (list) {
@@ -1544,7 +1566,7 @@ function renderSlLogList(logs) {
           </div>
           <div style="font-size:0.75rem; color:#71717a;">
             ${escapeHtml(l.date)} · ${l.minutes}分${l.pages ? ' · ' + l.pages + 'p' : ''}
-            ${hasAdminComment ? '' : `<button data-log-id="${l.id}" class="sl-delete-btn" aria-label="この記録を削除" title="削除" style="background:none; border:0; color:#71717a; cursor:pointer; margin-left:0.5rem; font-size:0.9rem;">🗑</button>`}
+            <button data-log-id="${l.id}" class="sl-edit-btn" aria-label="この記録を編集" title="編集 (時間・科目・教材・メモを直す)" style="background:none; border:0; color:#a5b4fc; cursor:pointer; margin-left:0.5rem; font-size:0.9rem;">✏️</button>${hasAdminComment ? '' : `<button data-log-id="${l.id}" class="sl-delete-btn" aria-label="この記録を削除" title="削除" style="background:none; border:0; color:#71717a; cursor:pointer; margin-left:0.25rem; font-size:0.9rem;">🗑</button>`}
           </div>
         </div>
         ${l.note ? `<div style="font-size:0.85rem; color:#d4d4d8; margin-top:0.3rem;">${escapeHtml(l.note)}</div>` : ''}
@@ -1563,6 +1585,50 @@ function renderSlLogList(logs) {
       }
     });
   });
+  // ✏️ 編集: フォームに値を戻して「更新を保存」モードへ
+  list.querySelectorAll('.sl-edit-btn').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const id = parseInt(e.currentTarget.getAttribute('data-log-id'), 10);
+      const lg = logs.find(x => x.id === id);
+      if (lg) startStudyLogEdit(lg);
+    });
+  });
+}
+
+// ✏️ 2026-09-06 記録の修正 (PATCH /api/study-logs/{id})。従来は削除→再投稿しかなく、
+//   塾長コメントが付いた記録は削除もできないため打ち間違いが直せなかった (3視点レビュー指摘)。
+let _slEditingId = null;
+function startStudyLogEdit(lg) {
+  _slEditingId = lg.id;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v == null ? '' : v); };
+  set('slDate', String(lg.date || '').slice(0, 10) || _slJstDate(0));
+  set('slSubject', lg.subject || '');
+  set('slMaterial', lg.material || '');
+  set('slMinutes', lg.minutes || '');
+  set('slPages', lg.pages == null ? '' : lg.pages);
+  set('slNote', lg.note || '');
+  const label = document.getElementById('slEditLabel');
+  if (label) label.textContent = `${String(lg.date || '').slice(5, 10).replace('-', '/')} ${lg.subject || ''} ${lg.minutes || 0}分`;
+  const bar = document.getElementById('slEditBar');
+  if (bar) bar.style.display = '';
+  const btn = document.getElementById('slSubmitBtn');
+  if (btn) btn.textContent = '✏️ 更新を保存';
+  const cancel = document.getElementById('slEditCancel');
+  if (cancel && !cancel._slBound) { cancel.addEventListener('click', cancelStudyLogEdit); cancel._slBound = true; }
+  const msg = document.getElementById('slMessage');
+  if (msg) msg.textContent = '';
+  const anchor = document.getElementById('slDate');
+  if (anchor) { try { anchor.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {} }
+}
+function cancelStudyLogEdit() {
+  _slEditingId = null;
+  const bar = document.getElementById('slEditBar');
+  if (bar) bar.style.display = 'none';
+  const btn = document.getElementById('slSubmitBtn');
+  if (btn) btn.textContent = '📝 記録を保存';
+  ['slMaterial', 'slMinutes', 'slPages', 'slNote'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const d = document.getElementById('slDate');
+  if (d) d.value = _slJstDate(0);
 }
 
 

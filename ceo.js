@@ -1566,16 +1566,28 @@ function renderStudyLogHeatmap(data) {
       return `<td title="${escapeHtml(title)}" style="background:${_slHeatColor(m)}; padding:0; min-width:32px; height:24px; border:1px solid rgba(0,0,0,0.3); font-size:0.6rem; text-align:center; color:#fff;">${_slCellLabel(m)}</td>`;
     }).join('');
     const grade = s.grade ? `<span style="color:#71717a; font-size:0.7rem;">(${escapeHtml(s.grade)})</span>` : '';
+    // 🧭 2026-09-06 行に導線を付ける (3視点レビュー指摘「ヒートマップが行き止まり」):
+    //   名前 = 生徒詳細モーダル / 📜 = この生徒の記録だけタイムラインに / 💬 = 個別メッセージ (声かけ)。
+    //   API は以前から student_id を返していたが、行は title ツールチップしか持っていなかった。
+    const sid = s.student_id != null ? String(s.student_id) : '';
+    const nameAttr = escapeHtml(s.name || '');
+    const nameCell = sid
+      ? `<a href="#" class="sl-hm-name" data-sid="${sid}" data-name="${nameAttr}" title="クリックで生徒詳細" style="color:#e4e4e7; text-decoration:none; border-bottom:1px dotted rgba(199,210,254,0.55);">${nameAttr}</a>`
+      : nameAttr;
+    const actCell = sid
+      ? `<td style="padding:2px 4px; white-space:nowrap; text-align:center;"><button type="button" class="sl-hm-logs" data-sid="${sid}" data-name="${nameAttr}" title="この生徒の記録だけをタイムラインに表示" aria-label="${nameAttr} の記録を表示" style="background:rgba(99,102,241,0.18); border:0; color:#c7d2fe; padding:2px 7px; border-radius:6px; cursor:pointer; font-size:0.72rem;">📜</button><button type="button" class="sl-hm-msg" data-sid="${sid}" data-name="${nameAttr}" title="この生徒にメッセージ (声かけ)" aria-label="${nameAttr} にメッセージ" style="background:rgba(236,72,153,0.18); border:0; color:#f9a8d4; padding:2px 7px; border-radius:6px; cursor:pointer; font-size:0.72rem; margin-left:3px;">💬</button></td>`
+      : '<td></td>';
     return `
-      <tr>
-        <td style="padding:2px 6px; color:#e4e4e7; font-size:0.78rem; white-space:nowrap; position:sticky; left:0; background:rgba(15,23,42,0.95);">${escapeHtml(s.name)} ${grade}</td>
+      <tr data-sid="${sid}">
+        <td style="padding:2px 6px; color:#e4e4e7; font-size:0.78rem; white-space:nowrap; position:sticky; left:0; background:rgba(15,23,42,0.95);">${nameCell} ${grade}</td>
         ${cells}
         <td style="padding:2px 6px; color:#c7d2fe; font-size:0.78rem; font-weight:700; text-align:right;">${s.total}分</td>
+        ${actCell}
       </tr>`;
   }).join('');
   el.innerHTML = `
     <table style="border-collapse:collapse; width:100%; min-width:600px;">
-      <thead><tr><th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:left; position:sticky; left:0; background:rgba(15,23,42,0.95);">生徒</th>${dateHeader}<th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:right;">計</th></tr></thead>
+      <thead><tr><th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:left; position:sticky; left:0; background:rgba(15,23,42,0.95);">生徒</th>${dateHeader}<th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:right;">計</th><th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:center;">操作</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div style="margin-top:0.5rem; font-size:0.7rem; color:#71717a; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
@@ -1588,6 +1600,57 @@ function renderStudyLogHeatmap(data) {
       <span style="background:${_slHeatColor(300)}; padding:2px 8px; border-radius:3px;">4h+</span>
       <span style="margin-left:auto; color:#a1a1aa;">全 ${students.length} 名表示中</span>
     </div>`;
+  // 行の導線 bind (名前 → 生徒詳細 / 📜 → 絞込タイムライン / 💬 → 個別メッセージ)
+  el.querySelectorAll('.sl-hm-name').forEach(a => a.addEventListener('click', (e) => {
+    e.preventDefault();
+    const sid = parseInt(a.getAttribute('data-sid'), 10);
+    if (window.showStudentDetail) window.showStudentDetail(sid);
+    else alert('生徒詳細を開けませんでした。画面を再読込してください。');
+  }));
+  el.querySelectorAll('.sl-hm-logs').forEach(b => b.addEventListener('click', () => loadStudyLogTimelineFor(b.getAttribute('data-sid'), b.getAttribute('data-name'))));
+  el.querySelectorAll('.sl-hm-msg').forEach(b => b.addEventListener('click', () => openStudentMessageComposer(b.getAttribute('data-sid'), b.getAttribute('data-name'))));
+}
+
+// 📜 ヒートマップ行から: この生徒の記録だけをタイムラインに出す
+//   (サーバ側の student_id 絞込は以前からあったがクライアントは一度も使っていなかった)
+async function loadStudyLogTimelineFor(sid, name) {
+  const el = document.getElementById('slTimeline');
+  if (!el || !window.AdminAuth || !sid) return;
+  const daysSel = document.getElementById('slDays');
+  const days = parseInt((daysSel && daysSel.value) || '7', 10);
+  el.innerHTML = '<div style="padding:1rem; color:#a1a1aa;">読み込み中…</div>';
+  try {
+    const res = await window.AdminAuth.fetch(`/api/admin/study-logs/timeline?days=${days}&limit=500&student_id=${encodeURIComponent(sid)}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    renderStudyLogTimeline(data, { filterName: name || ('生徒ID ' + sid), filterSid: sid });
+    try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+  } catch (e) {
+    el.innerHTML = `<div style="padding:1rem; color:#fca5a5;">⚠ 読み込み失敗: ${escapeHtml(e.message || String(e))} <button type="button" onclick="loadStudyLogDashboard()" style="margin-left:0.5rem; background:rgba(99,102,241,0.2); border:0; color:#c7d2fe; padding:0.25rem 0.6rem; border-radius:6px; cursor:pointer;">全員に戻す</button></div>`;
+  }
+}
+
+// 💬 ヒートマップ行から: 個別メッセージ作成へ (「返信」ボタンと同じ経路。セクションを開いて宛先を選ぶ)
+function openStudentMessageComposer(sid, name) {
+  const sel = document.getElementById('msgStudentSelect');
+  if (!sel) { alert('メッセージ画面が見つかりません。画面を再読込してください。'); return; }
+  const sec = sel.closest('section');
+  if (sec && sec.id && window.ceoHubShow) { try { window.ceoHubShow(sec.id); } catch (_) {} }
+  if (typeof switchMsgTab === 'function') switchMsgTab('student');
+  sel.value = String(sid);
+  if (sel.value !== String(sid)) {
+    // 選択肢に無い (最近追加 / 一覧未ロード) → 強制 option 追加
+    const opt = document.createElement('option');
+    opt.value = String(sid);
+    opt.textContent = name || `生徒ID ${sid}`;
+    opt.selected = true;
+    sel.insertBefore(opt, sel.firstChild ? sel.firstChild.nextSibling : null);
+  }
+  const subj = document.getElementById('msgSubject');
+  if (subj && !subj.value) subj.value = `📚 学習記録について (${name || ''})`;
+  const body = document.getElementById('msgBody') || (document.getElementById('msgIndividualWrap') && document.getElementById('msgIndividualWrap').querySelector('textarea'));
+  try { (body || sel).scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
+  if (body) body.focus(); else sel.focus();
 }
 
 function renderStudyLogRanking(data) {
@@ -1618,15 +1681,19 @@ function renderStudyLogRanking(data) {
   }).join('');
 }
 
-function renderStudyLogTimeline(data) {
+function renderStudyLogTimeline(data, opts) {
   const el = document.getElementById('slTimeline');
   if (!el) return;
   const logs = data.logs || [];
+  // 📜 生徒で絞り込んでいるときは見出しと「全員に戻す」を出す
+  const filterBar = (opts && opts.filterName)
+    ? `<div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.6rem; padding:0.45rem 0.7rem; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.35); border-radius:8px; font-size:0.8rem; color:#c7d2fe;">📜 <b>${escapeHtml(opts.filterName)}</b> の記録のみ表示 (${logs.length}件)<button type="button" onclick="loadStudyLogDashboard()" style="margin-left:auto; background:rgba(255,255,255,0.08); border:0; color:#e4e4e7; padding:0.25rem 0.6rem; border-radius:6px; cursor:pointer;">全員に戻す</button></div>`
+    : '';
   if (!logs.length) {
-    el.innerHTML = '<div style="color:#71717a; padding:1rem; text-align:center;">期間内に学習記録がありません</div>';
+    el.innerHTML = filterBar + '<div style="color:#71717a; padding:1rem; text-align:center;">期間内に学習記録がありません</div>';
     return;
   }
-  el.innerHTML = logs.map(l => {
+  el.innerHTML = filterBar + logs.map(l => {
     const r = l.reactions || { likes: 0, comments: [] };
     const likedClass = r.likes > 0 ? 'background:rgba(236,72,153,0.25); color:#f9a8d4;' : 'background:rgba(255,255,255,0.05); color:#a1a1aa;';
     const likeIcon = r.likes > 0 ? '❤️' : '🤍';

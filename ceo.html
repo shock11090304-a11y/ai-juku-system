@@ -3080,7 +3080,7 @@
   <!-- ★ceo.js を変えたら必ず ?v= を更新する。vercel.json の no-cache は *.html と
        auth-guard.js / cache-purge.js だけで、ceo.js はこのクエリだけが頼り。
        据え置くと「新しい ceo.html + キャッシュされた古い ceo.js」で動く端末が出る。 -->
-  <script src="ceo.js?v=20260903-login-rescue-in-detail"></script>
+  <script src="ceo.js?v=20260906-heatmap-actions"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -9427,9 +9427,14 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         return recs;
       }
       const gw = (s.weak_topics || []).filter(w => w.topic && (w.attempts || 0) >= 5 && w.accuracy != null && w.accuracy < 0.75).sort((x, y) => x.accuracy - y.accuracy);
-      if (gw.length) recs.push(['弱点演習', gw.slice(0, 4).map(w => `${sj(w.subject)}「${w.topic}」(正答${Math.round(w.accuracy * 100)}%/${w.attempts}問)`).join('、') + ' を反復 → 該当単元の自動採点ドリルを配信。']);
+      // 🕰 2026-09-06 鮮度: 2週間以上解き直していない弱点には「最終演習 N日前」を添える (30日で一覧から外れる前に気づける)
+      const fresh = w => (w.last_seen_days != null && w.last_seen_days > 14) ? `・最終演習${w.last_seen_days}日前` : '';
+      if (gw.length) recs.push(['弱点演習', gw.slice(0, 4).map(w => `${sj(w.subject)}「${w.topic}」(正答${Math.round(w.accuracy * 100)}%/${w.attempts}問${fresh(w)})`).join('、') + ' を反復 → 該当単元の自動採点ドリルを配信。']);
       const nm = (s.weak_topics || []).filter(w => w.topic && (w.attempts || 0) <= 2 && (w.accuracy || 0) === 0);
       if (nm.length) { const tops = [...new Set(nm.map(w => w.topic.split('(')[0]))]; recs.push(['取りこぼし', tops.slice(0, 5).join('・') + ' を新出でミス → 解説で固める。']); }
+      // 🕰 2026-09-06 退役弱点: 30日以上解き直しが無く弱点一覧から消えた単元 (克服か放置かは再測定しないと分からない)
+      const ex = (s.expired_topics || []).filter(w => w.topic);
+      if (ex.length) recs.push(['未再測定', ex.slice(0, 4).map(w => `${sj(w.subject)}「${w.topic}」(正答${Math.round((w.accuracy || 0) * 100)}%/${w.attempts || 0}問・最終演習${w.last_seen_days != null ? w.last_seen_days + '日前' : '不明'})`).join('、') + ' は30日以上解き直しが無く弱点一覧から外れた → 再測定ドリルを配信し、克服か放置かを確かめる。']);
       const sb = (s.subject_balance || []).slice().sort((x, y) => (y.attempts || 0) - (x.attempts || 0));
       const activeSubj = sb.filter(x => (x.attempts || 0) >= 10).map(x => x.subject);
       if (activeSubj.length <= 1 && is3) recs.push(['科目偏り', `演習が${activeSubj.length ? sj(activeSubj[0]) : '一部'}に集中。受験科目全体に広げる。`]);
@@ -9444,6 +9449,16 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       else if (total >= 20) recs.push(['模試なし', '客観指標が無い。模試を受けて実力を可視化。']);
       if (is3 && (a.d7 || 0) === 0 && total > 0) recs.push(['停止注意', '高3だが直近7日ゼロ → 声かけ。']);
       return recs;
+    }
+    // 🕰 2026-09-06 合格スコアの算出日 (age_days は learning-digest が返す)。毎朝 4:00 に自動再計算されるので
+    //   2日以上前なら黄色 = 自動更新が止まっている合図。従来は算出日が無く、凍結値と気づけなかった。
+    function _admAgeNote(s) {
+      const adm = s.admission || {};
+      if (adm.score == null) return ' <span style="font-size:0.72rem;color:#64748b;font-weight:400;">(合格スコア未算出)</span>';
+      const ad = adm.age_days;
+      if (ad == null) return '';
+      const col = ad > 1 ? '#fbbf24' : '#64748b';
+      return ` <span style="font-size:0.72rem;color:${col};font-weight:400;" title="合格スコアの算出日。毎朝4:00に自動再計算 (「🔄 合格スコア再計算」で即時更新も可)">算出${ad === 0 ? '今日' : ad + '日前'}</span>`;
     }
     function _actionBand(s) {
       const an = (s.admission || {}).analysis || '';
@@ -9468,6 +9483,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       const order = [
         ...wts.filter(w => (w.attempts || 0) >= 5 && w.accuracy != null && w.accuracy < 0.75).sort((a, b) => a.accuracy - b.accuracy),
         ...wts.filter(w => (w.attempts || 0) <= 2 && (w.accuracy || 0) === 0),
+        ...(s.expired_topics || []).filter(w => w.topic),  // 🕰 2026-09-06 退役弱点も再測定ドリルの候補に (最後尾)
       ];
       const seen = new Set(), units = [], uncovered = new Set();
       for (const w of order) {
@@ -9522,7 +9538,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       if (!s) { pane.innerHTML = '<div style="color:#71717a;padding:1rem;">学習データがありません。</div>'; return; }
       const a = s.activity || {}, adm = s.admission || {}, bd = adm.breakdown || {};
       const accStr = a.accuracy != null ? Math.round(a.accuracy * 100) + '%' : '—';
-      let html = `<div style="font-size:0.82rem;color:#94a3b8;margin-bottom:8px;line-height:1.7;">残${s.days_to_exam}日 ／ 演習 通算${a.total || 0}問(7日${a.d7 || 0}/30日${a.d30 || 0}) 正答${accStr}<br>学習${bd.study_hours_30d != null ? bd.study_hours_30d : '?'}h/月 ／ 模試偏差 ${bd.eval_deviation != null ? bd.eval_deviation : '—'} ／ 合格 ${adm.score != null ? adm.score : '—'}%</div>`;
+      let html = `<div style="font-size:0.82rem;color:#94a3b8;margin-bottom:8px;line-height:1.7;">残${s.days_to_exam}日 ／ 演習 通算${a.total || 0}問(7日${a.d7 || 0}/30日${a.d30 || 0}) 正答${accStr}<br>学習${bd.study_hours_30d != null ? bd.study_hours_30d : '?'}h/月 ／ 模試偏差 ${bd.eval_deviation != null ? bd.eval_deviation : '—'} ／ 合格 ${adm.score != null ? adm.score : '—'}%${_admAgeNote(s)}</div>`;
       html += _recsHtml(_actionRecs(s));
       pane.innerHTML = html;
     }
@@ -9577,7 +9593,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           return `<div style="border:1px solid rgba(255,255,255,0.1);border-left:4px solid ${band[1]};border-radius:8px;padding:10px 12px;margin-bottom:10px;background:${bg};">
             <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;">
               <span><a href="#" onclick="event.preventDefault();window.showStudentDetail&&window.showStudentDetail(${s.id})" title="クリックで生徒詳細" style="color:#c4b5fd;font-weight:700;text-decoration:none;">${esc(nm)}</a> <span style="color:#94a3b8;font-size:0.8rem;">#${s.id}・${esc(s.grade || '?')}・${esc((s.goal || '志望未設定').slice(0, 22))}</span></span>
-              <span style="font-size:0.78rem;white-space:nowrap;color:#94a3b8;">残${s.days_to_exam == null ? '—' : s.days_to_exam}日 ／ <b style="color:${band[1]};">${band[0]} ${(s.admission || {}).score != null ? (s.admission).score + '%' : ''}</b></span>
+              <span style="font-size:0.78rem;white-space:nowrap;color:#94a3b8;">残${s.days_to_exam == null ? '—' : s.days_to_exam}日 ／ <b style="color:${band[1]};">${band[0]} ${(s.admission || {}).score != null ? (s.admission).score + '%' : ''}</b>${_admAgeNote(s)}</span>
             </div>
             <div style="font-size:0.76rem;color:#9ca3af;margin:4px 0 6px;">演習 <b style="color:#cbd5e1;">${a.total || 0}</b>問(7日${a.d7 || 0}) ／ 正答 ${accStr} ／ 最終活動 ${esc(lastDate)}${stale ? ' <span style="color:#fca5a5;">🔴</span>' : ''}</div>
             ${_recsHtml(_actionRecs(s))}${drillBtn}</div>`;

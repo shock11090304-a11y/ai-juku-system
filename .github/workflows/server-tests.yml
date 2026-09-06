@@ -136,6 +136,15 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_child_email_login.py
 
+      # 📚 学習記録ダッシュボード改修 (2026-09-06): 記録の修正 (PATCH) / いいね・コメントの生徒への in-app 通知 /
+      #   弱点の退役履歴 (30日で消える前に写す) / 合格スコアの日次再計算と残日数のライブ計算 / タイムラインの生徒絞込。
+      #   **書き込む側**なので、他人の記録を直せないこと・通知が失敗してもリアクションが残ることまで見る。
+      - name: 学習記録ダッシュボード 改修 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_study_log_improvements.py
+
       # 📺 再生リストの登録/命名 API。**書き込む側**なので、URL をそのまま受けること・
       #   二度送っても増えないこと・読めない入力で半端な行を作らないことを見る。
       #   あわせて「名前 → どの授業に繋がるか」を正典 (class_recording_assign.slot_of) と
