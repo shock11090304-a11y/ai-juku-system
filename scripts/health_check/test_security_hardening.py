@@ -151,7 +151,7 @@ def main():
     mod._RATE_LIMIT_STORE.clear()
     r = client.post("/api/admin/login", json={"password": ADMIN_PW}, headers={"x-forwarded-for": "9.9.9.9, 203.0.113.250"})
     check("再起動相当 (メモリのカウンタ消去) 後も、直近 1 時間の失敗 40 回で 429", r.status_code == 429, f"{r.status_code} {r.text[:120]}")
-    conn = mod.db(); c = conn.cursor(); c.execute("DELETE FROM events WHERE name = 'admin_login_failed'"); conn.commit(); conn.close()
+    conn = mod.db(); c = conn.cursor(); c.execute("DELETE FROM events WHERE name = 'auth_admin_login_failed'"); conn.commit(); conn.close()
     mod._RATE_LIMIT_STORE.clear()
     r = client.post("/api/admin/login", json={"password": ADMIN_PW})
     check("正しいパスワードで 200 + token", r.status_code == 200 and r.json().get("token"), r.text)

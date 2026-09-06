@@ -4431,7 +4431,7 @@ def _admin_login_failures_last_hour() -> int:
         try:
             c = conn.cursor()
             since = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
-            c.execute("SELECT COUNT(*) AS n FROM events WHERE name = 'admin_login_failed' AND created_at >= ?", (since,))
+            c.execute("SELECT COUNT(*) AS n FROM events WHERE name = 'auth_admin_login_failed' AND created_at >= ?", (since,))
             r = c.fetchone()
             return int((r["n"] if r else 0) or 0)
         finally:
@@ -4447,7 +4447,7 @@ def _record_admin_login_failure(request) -> None:
         try:
             c = conn.cursor()
             c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
-                      ("admin_login_failed", json.dumps({"ip": _client_ip(request)}), "auth"))
+                      ("auth_admin_login_failed", json.dumps({"ip": _client_ip(request)}), "auth"))
             conn.commit()
         finally:
             conn.close()
@@ -29986,7 +29986,7 @@ def _weekly_report_verdict(rows: list) -> str:
 #   LP 計測が無限に積み上がっていた (システム点検で確定)。ここに名前を挙げた計測/監視イベントだけを消す。
 #   監査用 (*_run / auto_rollback / r2_backup_* / admin_* / 決済系 / textbook_request_missing 等) は一切消さない。
 _EVENTS_RETENTION = {
-    90: ("synthetic_checkout_test", "post_deploy_smoke_test", "js_error", "signup_email_status", "admin_login_failed"),
+    90: ("synthetic_checkout_test", "post_deploy_smoke_test", "js_error", "signup_email_status", "auth_admin_login_failed"),
     180: ("page_view", "cta_click", "form_submit", "outbound_click", "scroll_depth",
           "lp_view", "lp_scroll_depth", "lp_form_submit", "lp_form_start", "lp_cta_click",
           "pwa_install_prompt", "pwa_installed", "mock_pdf_mode_autoselect", "mock_pdf_list_view",
