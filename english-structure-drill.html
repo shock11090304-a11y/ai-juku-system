@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>英文構造 判別トレーニング — SVOCM・分詞・関係詞の問題集</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --amber:#d97706; --purple:#7c3aed;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --ng-bg:#fdeceb; --ng-ink:#c4362a; --amber-bg:#fef3e2;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --blue:#5b91f5; --green:#34c780; --amber:#f0b357; --purple:#a78bfa; --red:#f0726a;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --ng-bg:#3a1714; --ng-ink:#f0958c; --amber-bg:#33270f; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:16px; font-weight:600; margin:0 0 8px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  .steps{list-style:none; margin:0; padding:0; counter-reset:st;}
+  .steps li{position:relative; padding:6px 0 6px 30px; font-size:14px; border-bottom:1px dashed var(--bd);}
+  .steps li:last-child{border-bottom:0;}
+  .steps li::before{counter-increment:st; content:counter(st); position:absolute; left:0; top:7px;
+    width:21px; height:21px; border-radius:50%; background:var(--blue); color:#fff; font-size:12px;
+    text-align:center; line-height:21px; font-weight:700;}
+  /* tabs */
+  .tabs{display:flex; gap:0; border:1px solid var(--bd); border-radius:10px; overflow:hidden; margin:0 0 14px; flex-wrap:wrap;}
+  .tabs button{flex:1 1 auto; border:0; border-radius:0; padding:9px 6px; font-size:13px; background:var(--card); color:var(--sub); cursor:pointer; min-width:64px;}
+  .tabs button:hover{background:var(--info-bg);}
+  .tabs button.on{background:var(--blue); color:#fff; font-weight:600; text-decoration:underline;}
+  .tabs button.on:hover{background:var(--blue);}
+  /* progress row */
+  .prog{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; font-size:13px; color:var(--sub);}
+  .prog .score{font-weight:600; color:var(--ink);}
+  .bar{height:6px; background:var(--bd); border-radius:99px; overflow:hidden; margin:2px 0 14px;}
+  .bar > i{display:block; height:100%; background:var(--blue); width:0; transition:width .3s;}
+  /* sentence */
+  .qtag{display:inline-block; font-size:12px; padding:3px 9px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); margin-bottom:10px;}
+  .sentence{font-size:19px; line-height:2.1; word-break:break-word; margin:4px 0 6px; letter-spacing:.2px;}
+  .sentence .tk{padding:1px 2px; border-radius:4px;}
+  .sentence .target{border-bottom:3px solid var(--amber); font-weight:600;}
+  .sentence sup.rl{font-size:10px; font-weight:700; margin-left:1px; vertical-align:super;}
+  /* role colors (revealed) */
+  .role-S{color:var(--green);} .role-V{color:var(--blue);} .role-O{color:var(--amber);}
+  .role-C{color:var(--purple);} .role-M{color:var(--sub);}
+  .qtext{font-size:15px; font-weight:600; margin:12px 0 10px;}
+  /* choices */
+  .choices{display:flex; flex-direction:column; gap:8px;}
+  .choices button{font:inherit; font-size:14.5px; text-align:left; padding:11px 13px; border:1px solid var(--bd);
+    background:var(--card); color:var(--ink); border-radius:10px; cursor:pointer; line-height:1.5;}
+  .choices button:hover:not(:disabled){background:var(--info-bg); border-color:var(--info-ink);}
+  .choices button:disabled{cursor:default;}
+  .choices button.correct{background:var(--ok-bg); border-color:var(--ok-ink); color:var(--ok-ink); font-weight:600;}
+  .choices button.wrong{background:var(--ng-bg); border-color:var(--ng-ink); color:var(--ng-ink);}
+  .choices button .mk{font-weight:700; margin-right:6px;}
+  /* feedback */
+  .fb{margin-top:14px; border-radius:11px; padding:12px 14px; font-size:14px; border:1px solid var(--bd); display:none;}
+  .fb.show{display:block;}
+  .fb .verdict{font-weight:700; font-size:15px; margin-bottom:6px;}
+  .fb.ok .verdict{color:var(--ok-ink);} .fb.ng .verdict{color:var(--ng-ink);}
+  .fb .pat{display:inline-block; font-size:12.5px; background:var(--amber-bg); color:var(--amber); border-radius:7px; padding:3px 9px; margin:2px 0 8px;}
+  .fb .ja{color:var(--sub); font-size:13.5px; margin:6px 0 8px;}
+  .fb .ex{font-size:14px;}
+  .fb .ex b{color:var(--ink);}
+  .nav{display:flex; gap:8px; margin-top:14px;}
+  .nav button{font:inherit; font-size:14px; padding:9px 14px; border:1px solid var(--bd); background:var(--card);
+    color:var(--ink); border-radius:9px; cursor:pointer;}
+  .nav button.primary{background:var(--blue); color:#fff; border-color:var(--blue); font-weight:600;}
+  .nav button:hover{background:var(--info-bg);} .nav button.primary:hover{background:var(--blue);}
+  .nav button:disabled{opacity:.4; cursor:default;}
+  .nav .spacer{flex:1;}
+  /* legend */
+  .legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:12.5px; color:var(--sub); margin-top:6px;}
+  .legend span b{font-weight:700;}
+  .done{text-align:center; padding:10px 0;}
+  .done .big{font-size:30px; font-weight:700; margin:6px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>英文構造 判別トレーニング <span style="font-size:13px; color:var(--info-ink); background:var(--info-bg); padding:2px 9px; border-radius:8px; vertical-align:middle;">大学入試レベル</span></h1>
+    <p class="lead">長い英文が「読めない」のは、<b>どこがS・V・O・C・Mか</b>を見抜けていないことが原因のことが多いです。倒置・強調構文・連鎖関係詞・独立分詞構文・同格など<b>大学入試で問われる複雑な構文</b>を1問ずつ判別し、解いた後は<b>文全体の色分け</b>で骨組みを確認できます。</p>
+  </header>
+
+  <div class="takeaway">この問題集のゴール＝<b>英文をカタマリ（要素）に分けて読む</b>こと。まず<b>述語動詞 V</b> を見つけ、その前の<b>主語 S</b>、後ろの<b>O / C</b> を確認。残り（前置詞句・分詞句・関係詞節など）は<b>修飾語 M</b> としてカッコでくくると、骨組みが見えます。</div>
+
+  <section class="card">
+    <h2>📐 文構造の読み方 3ステップ</h2>
+    <ol class="steps">
+      <li><b>動詞 V を探す</b>：文の中心になる述語動詞を見つける（時制のある動詞）。</li>
+      <li><b>主語 S を探す</b>：V の前のカタマリ（名詞句・名詞節）が主語。長い修飾はカッコでくくる。</li>
+      <li><b>V の後ろを判定</b>：O（目的語）か C（補語：S=C や O=C が成り立つ）か。残りは M（修飾語）。</li>
+    </ol>
+    <div class="legend">
+      <span class="role-S"><b>S</b> 主語</span>
+      <span class="role-V"><b>V</b> 動詞</span>
+      <span class="role-O"><b>O</b> 目的語</span>
+      <span class="role-C"><b>C</b> 補語</span>
+      <span class="role-M"><b>M</b> 修飾語</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="tabs" id="tabs" role="tablist" aria-label="カテゴリー">
+      <button data-cat="all" class="on" role="tab" aria-pressed="true">すべて</button>
+      <button data-cat="svocm" role="tab" aria-pressed="false">5文型 SVOCM</button>
+      <button data-cat="participle" role="tab" aria-pressed="false">分詞</button>
+      <button data-cat="relative" role="tab" aria-pressed="false">関係詞</button>
+      <button data-cat="mixed" role="tab" aria-pressed="false">総合</button>
+    </div>
+
+    <div class="prog">
+      <span id="counter">問 1 / 1</span>
+      <span class="score" id="score">正解 0</span>
+    </div>
+    <div class="bar"><i id="barFill"></i></div>
+
+    <div id="quizArea">
+      <span class="qtag" id="catTag"></span>
+      <div class="sentence" id="sentence"></div>
+      <div class="qtext" id="qtext"></div>
+      <div class="choices" id="choices"></div>
+
+      <div class="fb" id="fb" role="status" aria-live="polite" aria-atomic="true">
+        <div class="verdict" id="verdict"></div>
+        <span class="pat" id="pat" style="display:none"></span>
+        <div class="ja" id="ja"></div>
+        <div class="ex" id="ex"></div>
+      </div>
+
+      <div class="nav">
+        <button id="prevBtn">← 前の問題</button>
+        <div class="spacer"></div>
+        <button id="nextBtn" class="primary" disabled>次の問題 →</button>
+      </div>
+    </div>
+
+    <div id="doneArea" class="done" style="display:none">
+      <div>このカテゴリーは全問終了！</div>
+      <div class="big"><span id="doneScore"></span></div>
+      <div class="nav" style="justify-content:center">
+        <button id="restartBtn" class="primary">もう一度挑戦する</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p style="margin:0 0 8px"><a href="kyozai.html">← 教材ライブラリ</a></p>
+    © AI塾 / trillion-ai-juku.com ・ 英文・文法ラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  // ---- choice sets (reused) ----
+  var C_SVOCM = ["S（主語）","V（動詞・述語）","O（目的語）","C（補語）","M（修飾語）"];
+  var C_PAT   = ["第1文型 SV","第2文型 SVC","第3文型 SVO","第4文型 SVOO","第5文型 SVOC"];
+
+  // ---- problem bank ----
+  // tokens: 文を構成するカタマリ {t:語句, r:役割S/V/O/C/M}。ti=下線(出題対象)のindex。
+  // q:設問 / ch:選択肢 / a:正解index / pat:文型(任意) / ja:和訳 / ex:解説
+  var BANK = [
+    /* ===== 5文型 SVOCM（大学入試レベル：長い主語・抽象目的語・倒置・名詞節） ===== */
+    { cat:"svocm",
+      tokens:[{t:"The discovery of the new vaccine",r:"S"},{t:"made",r:"V"},{t:"the eradication of the disease",r:"O"},{t:"possible.",r:"C"}], ti:3,
+      q:"下線部 possible の働きは？", ch:C_SVOCM, a:3, pat:"第5文型 SVOC",
+      ja:"新ワクチンの発見が、その病気の撲滅を可能にした。",
+      ex:"make O C「OをCにする」。長い目的語 the eradication of the disease に対し、<b>possible が補語C</b>（O＝possible：撲滅が可能、の関係）。第5文型。" },
+
+    { cat:"svocm",
+      tokens:[{t:"What the scientist had predicted years before",r:"S"},{t:"eventually",r:"M"},{t:"proved",r:"V"},{t:"true.",r:"C"}], ti:0,
+      q:"下線部 What the scientist had predicted years before の働きは？", ch:C_SVOCM, a:0, pat:"第2文型 SVC",
+      ja:"その科学者が何年も前に予言していたことは、最終的に正しいと分かった。",
+      ex:"関係詞 what が導く<b>名詞節が主語S</b>。prove C「Cだと分かる」第2文型。eventually は副詞で<b>修飾語M</b>。まず述語動詞 proved を見つけ、その前のカタマリ全体が主語。" },
+
+    { cat:"svocm",
+      tokens:[{t:"His long absence from the meetings",r:"S"},{t:"left",r:"V"},{t:"the committee",r:"O"},{t:"without a clear leader.",r:"C"}], ti:3,
+      q:"下線部 without a clear leader の働きは？", ch:C_SVOCM, a:3, pat:"第5文型 SVOC",
+      ja:"彼が会議に長く欠席したことで、委員会は明確なリーダーを欠いた状態になった。",
+      ex:"leave O C「OをCのままにする」。前置詞句 without a clear leader が<b>補語C</b>として the committee の状態を表す。前置詞句が補語になる第5文型に注意。" },
+
+    { cat:"svocm",
+      tokens:[{t:"The committee",r:"S"},{t:"considers",r:"V"},{t:"the proposal",r:"O"},{t:"to be financially unrealistic.",r:"C"}], ti:3,
+      q:"下線部 to be financially unrealistic の働きは？", ch:C_SVOCM, a:3, pat:"第5文型 SVOC",
+      ja:"委員会はその提案を財政的に非現実的だと考えている。",
+      ex:"consider O (to be) C「OをCとみなす」第5文型。<b>to be 以下が補語C</b>。the proposal＝unrealistic の関係。" },
+
+    { cat:"svocm",
+      tokens:[{t:"The new system",r:"S"},{t:"makes",r:"V"},{t:"it",r:"O"},{t:"easier",r:"C"},{t:"for students to access learning materials.",r:"O"}], ti:3,
+      q:"下線部 easier の働きは？", ch:C_SVOCM, a:3, pat:"第5文型 SVOC",
+      ja:"新システムは、学生が学習教材にアクセスするのをより容易にする。",
+      ex:"make it C (for A) to do の形。<b>it は形式目的語</b>、真の目的語は to access learning materials。<b>easier が補語C</b>。第5文型。" },
+
+    { cat:"svocm",
+      tokens:[{t:"Few people",r:"S"},{t:"realized",r:"V"},{t:"how serious the consequences of the decision would be.",r:"O"}], ti:2,
+      q:"下線部 how serious … would be の働きは？", ch:C_SVOCM, a:2, pat:"第3文型 SVO",
+      ja:"その決定の結果がどれほど深刻になるかを理解していた人はほとんどいなかった。",
+      ex:"realize の目的語が間接疑問の<b>名詞節（目的語O）</b>。第3文型SVO。節内では how serious が would be の補語の働き。" },
+
+    { cat:"svocm",
+      tokens:[{t:"The harder he tried to explain himself,",r:"M"},{t:"the more confused",r:"C"},{t:"everyone",r:"S"},{t:"became.",r:"V"}], ti:2,
+      q:"下線部 everyone の働きは？", ch:C_SVOCM, a:0, pat:"第2文型 SVC",
+      ja:"彼が自分を説明しようとすればするほど、皆はますます混乱した。",
+      ex:"「The＋比較級 …, the＋比較級 ～」の相関構文。後半が主節で、骨格は <b>everyone(S) became(V)</b>、補語Cは the more confused（この構文では比較級の補語が the とともに文頭側に置かれる）。前半の The harder 節は「〜すればするほど」を表す副詞節的な修飾語M。" },
+
+    { cat:"svocm",
+      tokens:[{t:"Never",r:"M"},{t:"had",r:"V"},{t:"the audience",r:"S"},{t:"witnessed",r:"V"},{t:"such a breathtaking performance.",r:"O"}], ti:2,
+      q:"下線部 the audience の働きは？", ch:C_SVOCM, a:0, pat:"第3文型 SVO",
+      ja:"観客はそれほど息をのむような演技を一度も見たことがなかった。",
+      ex:"否定の副詞 Never が文頭に出ると<b>倒置</b>が起こり「助動詞＋S＋本動詞」の語順に。had (the audience) witnessed … で<b>主語は the audience</b>。骨格はSVO。" },
+
+    { cat:"svocm",
+      tokens:[{t:"What makes the novel so compelling",r:"S"},{t:"is",r:"V"},{t:"its unflinching portrayal of human weakness.",r:"C"}], ti:0,
+      q:"下線部 What makes the novel so compelling の働きは？", ch:C_SVOCM, a:0, pat:"第2文型 SVC",
+      ja:"その小説をこれほど魅力的にしているのは、人間の弱さを直視した描写である。",
+      ex:"What makes … compelling（＝the thing which makes …）が<b>主語の名詞節S</b>。節の中身は make O C。文全体は SVC。" },
+
+    { cat:"svocm",
+      tokens:[{t:"Recent studies",r:"S"},{t:"have shown",r:"V"},{t:"that regular exercise significantly reduces the risk of heart disease.",r:"O"}], ti:2,
+      q:"下線部 that … の働きは？", ch:C_SVOCM, a:2, pat:"第3文型 SVO",
+      ja:"最近の研究は、定期的な運動が心臓病のリスクを大幅に減らすことを示している。",
+      ex:"show の目的語が that 節（名詞節）＝<b>目的語O</b>。第3文型SVO。節内は regular exercise(S) reduces(V) the risk(O)。" },
+
+    { cat:"svocm",
+      tokens:[{t:"They",r:"S"},{t:"named",r:"V"},{t:"the comet",r:"O"},{t:"after the astronomer who first observed it.",r:"M"}], ti:3,
+      q:"下線部 after the astronomer who first observed it の働きは？", ch:C_SVOCM, a:4, pat:"第3文型 SVO",
+      ja:"彼らはその彗星を、最初に発見した天文学者にちなんで名づけた。",
+      ex:"name O after A「AにちなんでOを名づける」。after 以下は「何にちなんで」を表す<b>副詞句M</b>（補語Cではない）。骨格はSVO。name O C（第5文型）との違いに注意。" },
+
+    { cat:"svocm",
+      tokens:[{t:"The professor's explanation of the theorem",r:"S"},{t:"left",r:"V"},{t:"many students",r:"O"},{t:"more puzzled than before.",r:"C"}], ti:3,
+      q:"下線部 more puzzled than before の働きは？", ch:C_SVOCM, a:3, pat:"第5文型 SVOC",
+      ja:"その定理についての教授の説明は、多くの学生を以前よりも当惑させた。",
+      ex:"leave O C「OをCのままにする」。比較級 more puzzled than before が<b>補語C</b>。many students＝puzzled の関係。第5文型。" },
+
+    /* ===== 分詞（大学入試レベル：完了・受動・独立・付帯・慣用） ===== */
+    { cat:"participle",
+      tokens:[{t:"Having finished all the preparations,",r:"M"},{t:"the team",r:"S"},{t:"felt",r:"V"},{t:"confident about the launch.",r:"C"}], ti:0,
+      q:"下線部 Having finished all the preparations の種類は？",
+      ch:["受動の分詞構文","完了形の分詞構文（主節より前の動作：〜し終えて）","名詞を修飾する現在分詞","動名詞句（主語）"], a:1, pat:"第2文型 SVC",
+      ja:"すべての準備を終えて、チームは打ち上げに自信を持った。",
+      ex:"Having＋過去分詞は<b>完了形の分詞構文</b>。主節(felt)より前に完了した動作を表す。＝After the team had finished …。意味上の主語は主節の the team。" },
+
+    { cat:"participle",
+      tokens:[{t:"All things considered,",r:"M"},{t:"the project",r:"S"},{t:"was",r:"V"},{t:"a remarkable success.",r:"C"}], ti:0,
+      q:"下線部 All things considered の種類は？",
+      ch:["通常の分詞構文","関係詞節","独立分詞構文（意味上の主語 All things を伴う：〜を考慮すると）","受動態の主節"], a:2, pat:"第2文型 SVC",
+      ja:"すべてを考慮すると、その計画は目覚ましい成功だった。",
+      ex:"分詞の意味上の主語(All things)が主節の主語と異なるため明示する<b>独立分詞構文</b>。All things (being) considered＝「すべてを考慮すれば」の慣用。" },
+
+    { cat:"participle",
+      tokens:[{t:"She",r:"S"},{t:"sat",r:"V"},{t:"by the window,",r:"M"},{t:"with her eyes fixed on the distant mountains.",r:"M"}], ti:3,
+      q:"下線部 with her eyes fixed … の構造は？",
+      ch:["受動の分詞構文","付帯状況の with（with＋O＋過去分詞：〜した状態で）","関係詞節","目的語O"], a:1, pat:"第1文型 SV",
+      ja:"彼女は窓辺に座り、遠くの山々をじっと見つめていた。",
+      ex:"<b>with＋O＋分詞</b>の付帯状況。her eyes＝fixed（目が向けられた：受動）なので過去分詞。「〜した状態で」と主節に状況を添える副詞句M。" },
+
+    { cat:"participle",
+      tokens:[{t:"Written in haste,",r:"M"},{t:"the report",r:"S"},{t:"contained",r:"V"},{t:"several factual errors.",r:"O"}], ti:0,
+      q:"下線部 Written in haste の種類は？",
+      ch:["the report を修飾する過去分詞","完了分詞構文","動名詞","受動の分詞構文（Being 省略：急いで書かれたので）"], a:3, pat:"第3文型 SVO",
+      ja:"急いで書かれたため、その報告書にはいくつかの事実誤認が含まれていた。",
+      ex:"先頭の過去分詞は<b>受動の分詞構文</b>（Being written の Being 省略）。the report は「書かれる」側＝受動。＝Because it was written in haste。" },
+
+    { cat:"participle",
+      tokens:[{t:"There being no further questions,",r:"M"},{t:"the chairperson",r:"S"},{t:"brought",r:"V"},{t:"the meeting",r:"O"},{t:"to a close.",r:"M"}], ti:0,
+      q:"下線部 There being no further questions の種類は？",
+      ch:["受動の分詞構文","関係詞節","独立分詞構文（There being 〜：これ以上質問がないので）","主語の名詞節"], a:2, pat:"第3文型 SVO",
+      ja:"これ以上質問がなかったので、議長は会議を終わらせた。",
+      ex:"there is 構文を分詞構文にした<b>There being 〜</b>の独立分詞構文。意味上の主語 there を残す。＝As there were no further questions。" },
+
+    { cat:"participle",
+      tokens:[{t:"The negotiations,",r:"S"},{t:"having dragged on for months,",r:"M"},{t:"finally",r:"M"},{t:"collapsed.",r:"V"}], ti:1,
+      q:"下線部 having dragged on for months の種類は？",
+      ch:["完了形の分詞構文（挿入：何か月も長引いた末に）","受動の分詞構文","名詞を修飾する現在分詞","関係代名詞節"], a:0, pat:"第1文型 SV",
+      ja:"交渉は何か月も長引いた末に、ついに決裂した。",
+      ex:"主語と動詞の間に挿入された<b>完了形の分詞構文</b>。having dragged on＝drag on の完了・能動。主節の動詞は collapsed。" },
+
+    { cat:"participle",
+      tokens:[{t:"Generally speaking,",r:"M"},{t:"students who study abroad",r:"S"},{t:"become",r:"V"},{t:"more independent.",r:"C"}], ti:0,
+      q:"下線部 Generally speaking の種類は？",
+      ch:["主語を修飾する現在分詞","慣用表現の分詞構文（一般的に言えば）","受動の分詞構文","動名詞"], a:1, pat:"第2文型 SVC",
+      ja:"一般的に言えば、留学する学生はより自立するようになる。",
+      ex:"Generally speaking は意味上の主語を特定しない<b>慣用的な分詞構文</b>（無人称独立分詞構文）。同類：frankly speaking, judging from 〜。" },
+
+    { cat:"participle",
+      tokens:[{t:"I",r:"S"},{t:"could feel",r:"V"},{t:"my heart",r:"O"},{t:"pounding",r:"C"},{t:"as I waited for the results.",r:"M"}], ti:3,
+      q:"下線部 pounding の働きは？",
+      ch:["過去分詞（受動）","動名詞","現在分詞の補語C（feel O -ing：心臓が高鳴っているのを感じる）","分詞構文"], a:2, pat:"第5文型 SVOC",
+      ja:"結果を待つ間、私は心臓が高鳴るのを感じることができた。",
+      ex:"知覚動詞 feel O C の C に<b>現在分詞</b>。my heart＝pounding（高鳴っている：能動・進行）。第5文型。as 節は時を表す副詞節M。" },
+
+    { cat:"participle",
+      tokens:[{t:"The data",r:"S"},{t:"collected over the past decade",r:"M"},{t:"suggest",r:"V"},{t:"a clear warming trend.",r:"O"}], ti:1,
+      q:"下線部 collected over the past decade の種類は？",
+      ch:["現在分詞句（能動）","分詞構文","述語動詞","過去分詞句（the data を後ろから修飾：受動）"], a:3, pat:"第3文型 SVO",
+      ja:"過去10年にわたって集められたデータは、明確な温暖化傾向を示している。",
+      ex:"data is collected（集められる：受動）なので<b>過去分詞</b> collected が the data を後置修飾する修飾語M。文の述語動詞は suggest。長い主語に注意。" },
+
+    { cat:"participle",
+      tokens:[{t:"Exhausted from the long journey,",r:"M"},{t:"he",r:"S"},{t:"fell",r:"V"},{t:"asleep",r:"C"},{t:"the moment he sat down.",r:"M"}], ti:0,
+      q:"下線部 Exhausted from the long journey の種類は？",
+      ch:["分詞構文（過去分詞：〜で疲れ果てて、理由）","he を修飾する過去分詞","完了分詞構文","動名詞"], a:0, pat:"第2文型 SVC",
+      ja:"長旅で疲れ果てて、彼は座るとすぐに眠りに落ちた。",
+      ex:"文頭の過去分詞 Exhausted は<b>分詞構文</b>（Being 省略）で理由を表す。＝Because he was exhausted …。fall asleep は SVC、the moment 〜は「〜するとすぐ」の副詞節M。" },
+
+    /* ===== 関係詞（大学入試レベル：連鎖・非制限・前置詞＋関係詞・複合・擬似） ===== */
+    { cat:"relative",
+      tokens:[{t:"The man",r:"S"},{t:"who I thought was honest",r:"M"},{t:"turned out",r:"V"},{t:"to be a fraud.",r:"C"}], ti:1,
+      q:"下線部の who の種類は？",
+      ch:["目的格の関係代名詞","主格の関係代名詞（I thought は挿入：連鎖関係詞節）","所有格の関係代名詞","関係副詞"], a:1, pat:"第2文型 SVC",
+      ja:"正直だと私が思っていた男は、詐欺師だと判明した。",
+      ex:"who (I thought) was honest。<b>I thought は挿入</b>で、who は was の<b>主格</b>。これを「連鎖関係詞節」と呼ぶ。turn out to be＝「〜だと分かる」。" },
+
+    { cat:"relative",
+      tokens:[{t:"He",r:"S"},{t:"passed",r:"V"},{t:"the entrance exam,",r:"O"},{t:"which delighted his parents.",r:"M"}], ti:3,
+      q:"下線部 which … の用法は？",
+      ch:["制限用法の which","関係副詞","非制限の関係代名詞 which（前の文の内容全体を受ける）","接続詞 that"], a:2, pat:"第3文型 SVO",
+      ja:"彼は入学試験に合格し、そのことが両親を喜ばせた。",
+      ex:"コンマ＋which が<b>前の文の内容全体（彼が試験に合格したこと）</b>を先行詞にする非制限用法。＝and that delighted his parents。先行詞が直前の名詞ではなく「文の内容」になる入試頻出パターン。that は非制限用法に使えない点も要注意。" },
+
+    { cat:"relative",
+      tokens:[{t:"We",r:"S"},{t:"visited",r:"V"},{t:"the village",r:"O"},{t:"in which my grandfather had spent his childhood.",r:"M"}], ti:3,
+      q:"下線部 in which の説明として正しいのは？",
+      ch:["前置詞＋関係代名詞（in which＝where）","関係副詞 which","所有格","主格関係代名詞"], a:0, pat:"第3文型 SVO",
+      ja:"私たちは、祖父が子供時代を過ごした村を訪れた。",
+      ex:"spend his childhood <b>in</b> the village の in が which の前に出た<b>前置詞＋関係代名詞</b>（＝where）。後ろは欠けのない完全文。" },
+
+    { cat:"relative",
+      tokens:[{t:"Choose",r:"V"},{t:"whichever route seems safest to you.",r:"O"}], ti:1,
+      q:"下線部 whichever route の説明は？",
+      ch:["関係副詞","疑問形容詞","所有格","複合関係形容詞（whichever＋名詞：どちらの〜でも）"], a:3, pat:"第3文型 SVO",
+      ja:"あなたにとって最も安全だと思える方の道を選びなさい。",
+      ex:"whichever＋名詞は<b>複合関係形容詞</b>「どちらの〜でも」。whichever route が名詞節を作り Choose の目的語O。命令文なので主語は省略。" },
+
+    { cat:"relative",
+      tokens:[{t:"This",r:"S"},{t:"is",r:"V"},{t:"the very book",r:"C"},{t:"for which I have been searching for years.",r:"M"}], ti:3,
+      q:"下線部 for which の説明は？",
+      ch:["関係副詞","前置詞＋関係代名詞（search for ＋目的語）","関係形容詞","主格関係代名詞"], a:1, pat:"第2文型 SVC",
+      ja:"これこそ、私が何年も探し求めてきたまさにその本だ。",
+      ex:"search <b>for</b> the book の for が which の前へ出た形。先行詞は the very book。後ろは search の目的語が for which で満たされ完全文。" },
+
+    { cat:"relative",
+      tokens:[{t:"She",r:"S"},{t:"is",r:"V"},{t:"not the selfish person",r:"C"},{t:"she was ten years ago.",r:"M"}], ti:3,
+      q:"下線部 she was ten years ago の前に省略された語は？",
+      ch:["目的格関係代名詞の省略","関係副詞 when の省略","補語になる関係代名詞 that が省略された節（the person を修飾）","接続詞 that"], a:2, pat:"第2文型 SVC",
+      ja:"彼女は10年前のような自分勝手な人間ではない。",
+      ex:"the person <b>(that)</b> she was …。was の<b>補語</b>が欠けた関係代名詞節。補語の関係代名詞は that を用い省略可。「10年前にそうであった(人物)」。" },
+
+    { cat:"relative",
+      tokens:[{t:"There",r:"M"},{t:"are",r:"V"},{t:"cases",r:"S"},{t:"where common sense does not apply.",r:"M"}], ti:3,
+      q:"下線部 where の種類は？",
+      ch:["関係副詞（先行詞 case：抽象的な「場合」）","関係代名詞 主格","関係代名詞 目的格","接続詞 where"], a:0, pat:"第1文型 SV",
+      ja:"常識が通用しない場合がある。",
+      ex:"case / situation / point など抽象名詞も<b>関係副詞 where</b>の先行詞になれる。後ろ common sense does not apply は完全文。「〜する場合」。" },
+
+    { cat:"relative",
+      tokens:[{t:"As is often the case with him,",r:"M"},{t:"he",r:"S"},{t:"arrived",r:"V"},{t:"late for the interview.",r:"M"}], ti:0,
+      q:"下線部の As の説明は？",
+      ch:["接続詞 as（〜のとき）","関係副詞","前置詞 as","擬似関係代名詞 as（主節の内容を先行詞にする：〜だが）"], a:3, pat:"第1文型 SV",
+      ja:"彼にはよくあることだが、彼は面接に遅れて来た。",
+      ex:"<b>As is often the case with 〜</b>「〜にはよくあることだが」。as は主節の内容を先行詞とする<b>擬似関係代名詞</b>（節内で is の主語の働き）。" },
+
+    { cat:"relative",
+      tokens:[{t:"Whoever wins the election",r:"S"},{t:"will face",r:"V"},{t:"enormous challenges.",r:"O"}], ti:0,
+      q:"下線部 Whoever wins the election の働きは？",
+      ch:["副詞節（誰が〜しようとも）","複合関係代名詞の名詞節（〜する人は誰でも：主語S）","関係副詞節","目的語O"], a:1, pat:"第3文型 SVO",
+      ja:"選挙に勝った人は誰でも、莫大な課題に直面することになる。",
+      ex:"Whoever＝anyone who。<b>名詞節</b>を作り文の主語S。「〜する人は誰でも」。譲歩(No matter who)の副詞節と区別：ここは主語なので名詞節。" },
+
+    { cat:"relative",
+      tokens:[{t:"The ease with which she solved the problem",r:"S"},{t:"amazed",r:"V"},{t:"everyone.",r:"O"}], ti:0,
+      q:"下線部中の with which の説明は？",
+      ch:["関係副詞","関係形容詞","前置詞＋関係代名詞（with ease の with that → with which）","主格関係代名詞"], a:2, pat:"第3文型 SVO",
+      ja:"彼女がその問題を解いた容易さは、皆を驚かせた。",
+      ex:"solve the problem <b>with ease</b> の with that ease が with which に。The ease with which she solved＝「彼女がいかに容易に解いたか」。長い主語の核は The ease、述語動詞は amazed。" },
+
+    /* ===== 総合（大学入試レベル：強調構文・倒置・同格・名詞節） ===== */
+    { cat:"mixed",
+      tokens:[{t:"It",r:"S"},{t:"was",r:"V"},{t:"not until he lost his health",r:"C"},{t:"that he realized the value of a balanced life.",r:"M"}], ti:2,
+      q:"この文の構造として正しいのは？",
+      ch:["強調構文 It is … that（not until を強調：〜して初めて）","形式主語構文","関係代名詞節","分詞構文"], a:0, pat:null,
+      ja:"健康を失って初めて、彼はバランスの取れた生活の価値に気づいた。",
+      ex:"<b>It is not until A that B</b>「Aして初めてB」。強調構文で not until he lost his health を強調。＝He did not realize … until he lost his health。" },
+
+    { cat:"mixed",
+      tokens:[{t:"What strikes me as odd",r:"S"},{t:"is",r:"V"},{t:"that no one has questioned the assumption.",r:"C"}], ti:2,
+      q:"下線部 that no one … の働きは？",
+      ch:["関係代名詞節","補語になる that 節（名詞節：〜ということ）","副詞節","目的語O"], a:1, pat:"第2文型 SVC",
+      ja:"私に奇妙に思えるのは、誰もその前提に疑問を抱いてこなかったということだ。",
+      ex:"主語 What strikes me as odd（私に奇妙に思えること）＝関係詞 what の名詞節。is の後ろの that 節は<b>補語C</b>の名詞節。strike O as C「OをCと感じさせる」。SVC。" },
+
+    { cat:"mixed",
+      tokens:[{t:"So convincing",r:"C"},{t:"was",r:"V"},{t:"his argument",r:"S"},{t:"that no one dared to object.",r:"M"}], ti:2,
+      q:"下線部 his argument の働きは？",
+      ch:["補語C","目的語O","主語S（So＋補語の前置による倒置）","修飾語M"], a:2, pat:"第2文型 SVC",
+      ja:"彼の議論はとても説得力があったので、誰もあえて反対しなかった。",
+      ex:"<b>so＋形容詞</b>を文頭に出した倒置「So C＋V＋S」。元は His argument was so convincing that …。<b>主語は his argument</b>、補語は So convincing。so〜that 構文。" },
+
+    { cat:"mixed",
+      tokens:[{t:"The fact that the witness changed his story",r:"S"},{t:"made",r:"V"},{t:"the case",r:"O"},{t:"harder to solve.",r:"C"}], ti:0,
+      q:"下線部中の that the witness changed his story の種類は？",
+      ch:["関係代名詞 目的格","関係副詞","補語C","同格の that 節（the fact の内容を説明：〜という事実）"], a:3, pat:"第5文型 SVOC",
+      ja:"目撃者が話を変えたという事実が、その事件をより解決しにくくした。",
+      ex:"the fact <b>that</b> … は<b>同格</b>の that 節「〜という事実」（後ろが完全文なので関係代名詞ではない）。文全体は make O C の SVOC。harder to solve が補語。" },
+
+    { cat:"mixed",
+      tokens:[{t:"Only after submitting the report",r:"M"},{t:"did",r:"V"},{t:"she",r:"S"},{t:"realize",r:"V"},{t:"her mistake.",r:"O"}], ti:2,
+      q:"下線部 she の働きは？",
+      ch:["主語S（Only＋副詞句の前置による倒置）","目的語O","補語C","修飾語M"], a:0, pat:"第3文型 SVO",
+      ja:"報告書を提出して初めて、彼女は自分の誤りに気づいた。",
+      ex:"<b>Only＋副詞句</b>が文頭に出ると倒置で「did＋S＋動詞原形」。<b>主語は she</b>。after submitting は動名詞の前置詞句で修飾語M。" },
+
+    { cat:"mixed",
+      tokens:[{t:"Such",r:"C"},{t:"was",r:"V"},{t:"the complexity of the problem",r:"S"},{t:"that even experts disagreed.",r:"M"}], ti:2,
+      q:"下線部 the complexity of the problem の働きは？",
+      ch:["補語C","主語S（Such＋V＋S の倒置）","目的語O","同格節"], a:1, pat:"第2文型 SVC",
+      ja:"その問題は非常に複雑だったので、専門家でさえ意見が分かれた。",
+      ex:"<b>Such was S that …</b>「とても〜なのでSは…」。補語 Such を前に出した倒置。<b>主語は the complexity of the problem</b>。such〜that 構文。" },
+
+    { cat:"mixed",
+      tokens:[{t:"Those who are willing to take risks",r:"S"},{t:"are",r:"V"},{t:"often",r:"M"},{t:"the ones who succeed.",r:"C"}], ti:3,
+      q:"下線部 the ones who succeed の働きは？",
+      ch:["目的語O","主語S","補語C（S＝C：成功するのはそういう人々）","修飾語M"], a:2, pat:"第2文型 SVC",
+      ja:"あえてリスクを取ろうとする人々が、しばしば成功する人々である。",
+      ex:"those who 〜「〜する人々」。the ones who succeed が<b>補語C</b>（Those＝the ones）。SVC。2つの who がそれぞれ Those と the ones を修飾。" },
+
+    { cat:"mixed",
+      tokens:[{t:"Hardly",r:"M"},{t:"had",r:"V"},{t:"the game",r:"S"},{t:"begun",r:"V"},{t:"when it started to rain heavily.",r:"M"}], ti:2,
+      q:"下線部 the game の働きは？",
+      ch:["目的語O","補語C","修飾語M","主語S（Hardly の前置による倒置：〜するやいなや）"], a:3, pat:"第1文型 SV",
+      ja:"試合が始まるやいなや、激しく雨が降り始めた。",
+      ex:"<b>Hardly had S done when …</b>「Sが〜するやいなや…」。否定副詞 Hardly の倒置で「had＋S＋過去分詞」。<b>主語は the game</b>。as soon as に同じ。" }
+  ];
+
+  // ---- engine ----
+  var ROLE_LABEL = {S:"S",V:"V",O:"O",C:"C",M:"M"};
+  var state = { cat:"all", list:[], idx:0, answered:{}, correct:0, attempted:0 };
+
+  function $(id){ return document.getElementById(id); }
+
+  function buildList(){
+    state.list = BANK.map(function(p,i){return i;}).filter(function(i){
+      return state.cat==="all" || BANK[i].cat===state.cat;
+    });
+  }
+
+  function renderSentence(p, reveal){
+    var html = "";
+    for(var i=0;i<p.tokens.length;i++){
+      var tk = p.tokens[i];
+      var sep = (i===0 || /^[,.?!]/.test(tk.t)) ? "" : " ";
+      var cls = "tk";
+      if(reveal) cls += " role-" + tk.r;
+      if(i===p.ti) cls += " target";
+      var sup = reveal ? '<sup class="rl role-'+tk.r+'" aria-hidden="true">'+ROLE_LABEL[tk.r]+'</sup>' : '';
+      html += sep + '<span class="'+cls+'">' + esc(tk.t) + '</span>' + sup;
+    }
+    $("sentence").innerHTML = html;
+  }
+
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  var CAT_JA = {svocm:"5文型 SVOCM",participle:"分詞",relative:"関係詞",mixed:"総合"};
+
+  function render(){
+    var total = state.list.length;
+    if(total===0){ return; }
+    var gi = state.list[state.idx];
+    var p = BANK[gi];
+    var ans = state.answered[gi];      // chosen index or undefined
+
+    $("quizArea").style.display = "block";
+    $("doneArea").style.display = "none";
+
+    $("catTag").textContent = CAT_JA[p.cat] || "";
+    $("counter").textContent = "問 " + (state.idx+1) + " / " + total;
+    $("score").textContent = "正解 " + state.correct + (state.attempted? " / "+state.attempted : "");
+    $("barFill").style.width = (total? Math.round((state.idx)/total*100) : 0) + "%";
+
+    var reveal = (ans !== undefined);
+    renderSentence(p, reveal);
+    $("qtext").textContent = p.q;
+
+    // choices
+    var box = $("choices");
+    box.innerHTML = "";
+    p.ch.forEach(function(c, ci){
+      var b = document.createElement("button");
+      b.innerHTML = '<span class="mk">'+String.fromCharCode(65+ci)+'.</span>'+esc(c);
+      if(reveal){
+        b.disabled = true;
+        if(ci===p.a) b.classList.add("correct");
+        else if(ci===ans) b.classList.add("wrong");
+      } else {
+        b.addEventListener("click", function(){ choose(gi, ci); });
+      }
+      box.appendChild(b);
+    });
+
+    // feedback
+    var fb = $("fb");
+    if(reveal){
+      fb.className = "fb show " + (ans===p.a ? "ok":"ng");
+      $("verdict").textContent = (ans===p.a ? "○ 正解！" : "× 不正解");
+      if(p.pat){ $("pat").style.display="inline-block"; $("pat").textContent = "文型：" + p.pat; }
+      else { $("pat").style.display="none"; }
+      $("ja").textContent = "和訳：" + p.ja;
+      $("ex").innerHTML = p.ex;
+    } else {
+      fb.className = "fb";
+    }
+
+    $("prevBtn").disabled = (state.idx===0);
+    $("nextBtn").disabled = !reveal;
+    $("nextBtn").textContent = (state.idx===total-1) ? "結果を見る →" : "次の問題 →";
+  }
+
+  function choose(gi, ci){
+    if(state.answered[gi]!==undefined) return;
+    state.answered[gi] = ci;
+    state.attempted++;
+    if(ci===BANK[gi].a) state.correct++;
+    render();
+  }
+
+  function showDone(){
+    $("quizArea").style.display = "none";
+    $("doneArea").style.display = "block";
+    $("barFill").style.width = "100%";
+    var total = state.list.length;
+    $("doneScore").textContent = state.correct + " / " + total + " 問正解";
+    $("score").textContent = "正解 " + state.correct + " / " + state.attempted;
+  }
+
+  function next(){
+    if(state.idx < state.list.length-1){ state.idx++; render(); }
+    else { showDone(); }
+  }
+  function prev(){ if(state.idx>0){ state.idx--; render(); } }
+
+  function resetQuiz(keepCat){
+    if(!keepCat) state.cat = "all";
+    buildList();
+    state.idx = 0; state.answered = {}; state.correct = 0; state.attempted = 0;
+    render();
+  }
+
+  // tabs
+  var tabBtns = $("tabs").querySelectorAll("button");
+  tabBtns.forEach(function(b){
+    b.addEventListener("click", function(){
+      tabBtns.forEach(function(x){ var on=(x===b); x.classList.toggle("on", on); x.setAttribute("aria-pressed", on?"true":"false"); });
+      state.cat = b.getAttribute("data-cat");
+      resetQuiz(true);
+    });
+  });
+  $("nextBtn").addEventListener("click", next);
+  $("prevBtn").addEventListener("click", prev);
+  $("restartBtn").addEventListener("click", function(){ resetQuiz(true); });
+
+  resetQuiz(true);
+})();
+</script>
+</body>
+</html>
