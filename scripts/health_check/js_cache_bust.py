@@ -5,8 +5,12 @@ vercel.json の no-cache は *.html と auth-guard.js / cache-purge.js だけで
 `?v=` を据え置くと「新しい HTML + キャッシュされた古い JS」で動く端末が出る (CLAUDE.md / memory の規則)。
 直近の履歴では mypage.js の約半分・ceo.js の 6 割がバンプ漏れだった (システム点検で実測)。
 
+★ファイル名を check* にしていないのは、scripts/run_all_gates.py (教材ゲートの一括実行) が `check*` を再帰で
+  拾って引数なし・浅い checkout (fetch-depth 1) で走らせ、HEAD~1 が無くて CRASH するため (2026-09-07 に実際に
+  material-gates を赤にした)。これは教材ゲートではなく CI (server-tests.yml) が明示的に呼ぶ検査。
+
 使い方:
-  python3 scripts/health_check/check_js_cache_bust.py [BASE] [HEAD]      # 省略時 HEAD~1..HEAD
+  python3 scripts/health_check/js_cache_bust.py [BASE] [HEAD]      # 省略時 HEAD~1..HEAD
   CI (server-tests.yml) は BASE=${{ github.event.before }} で呼ぶ。BASE が無ければ HEAD~1 に落とす。
 判定:
   変更された *.js (root と payment/ 等・vendor/kakijun/exam-app/api/scripts は対象外) について、
@@ -42,6 +46,10 @@ def main():
     head = (sys.argv[2] if len(sys.argv) > 2 else "HEAD").strip() or "HEAD"
     if not base or set(base) == {"0"} or not exists(base):
         base = f"{head}~1"
+    if not exists(base):
+        # 浅い checkout で比較対象が無い。黙って緑にせず、何を検査できなかったかを言って終わる (exit 2 = 未検査)
+        print(f"⚠️ 比較対象の commit ({base}) が無い (fetch-depth が浅い)。?v= 検査は未実施。CI では fetch-depth を増やすこと")
+        return 2
     changed = [f for f in git("diff", "--name-only", base, head).split("\n") if f]
     js_changed = [f for f in changed if f.endswith(".js") and os.path.basename(f) not in EXEMPT_JS and not f.startswith(SKIP_PREFIX)]
     print(f"🧷 JS キャッシュバスト検査: {base[:12]}..{head[:12]}  変更された JS: {js_changed or 'なし'}")

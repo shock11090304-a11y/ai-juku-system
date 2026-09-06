@@ -68,7 +68,7 @@ jobs:
       - name: JS キャッシュバスト (?v=) 検査
         env:
           BASE_SHA: ${{ github.event.before }}
-        run: python3 scripts/health_check/check_js_cache_bust.py "$BASE_SHA" "${{ github.sha }}"
+        run: python3 scripts/health_check/js_cache_bust.py "$BASE_SHA" "${{ github.sha }}"
 
       - uses: actions/setup-python@v5
         with:
