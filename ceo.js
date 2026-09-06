@@ -1664,8 +1664,19 @@ function renderStudyLogRanking(data) {
     return;
   }
   const max = activeStudents[0].total_minutes;
-  const inactiveBadge = inactiveCount > 0
-    ? `<div style="margin-bottom:0.5rem; padding:0.4rem 0.6rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:6px; color:#fca5a5; font-size:0.78rem;">⚠️ 期間内に未記録の受講生: ${inactiveCount} 名</div>` : '';
+  // 📉 2026-09-07 「未記録 N 名」の件数だけだった警告を、氏名付きの「連続未記録」リストに (毎朝 10:00 のメールと同じ判定)
+  const thr = data.zero_streak_threshold || 3;
+  const streaks = allStudents.filter(s => s.zero_streak_days != null && s.zero_streak_days >= thr).sort((a, b) => b.zero_streak_days - a.zero_streak_days);
+  const never = allStudents.filter(s => s.never_logged);
+  const nameLink = s => `<a href="#" onclick="event.preventDefault();window.showStudentDetail&&window.showStudentDetail(${s.student_id})" style="color:#fca5a5; text-decoration:none; border-bottom:1px dotted rgba(252,165,165,0.6);">${escapeHtml(s.name)}</a>`;
+  const inactiveBadge = (streaks.length || never.length)
+    ? `<div style="margin-bottom:0.5rem; padding:0.45rem 0.65rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:6px; color:#fca5a5; font-size:0.78rem; line-height:1.6;">`
+      + (streaks.length ? `📉 <b>${thr} 日以上 記録が止まっている: ${streaks.length} 名</b><br>` + streaks.slice(0, 12).map(s => `${nameLink(s)} <span style="color:#fecaca;">${s.zero_streak_days}日</span>${s.last_studied ? ` <span style="color:#9ca3af; font-size:0.72rem;">(最終 ${escapeHtml(String(s.last_studied).slice(5))})</span>` : ''}`).join('　') + (streaks.length > 12 ? ` 他${streaks.length - 12}名` : '') : '')
+      + (streaks.length && never.length ? '<br>' : '')
+      + (never.length ? `⚪ 一度も記録なし: ${never.length} 名 <span style="color:#9ca3af;">${never.slice(0, 8).map(s => escapeHtml(s.name)).join('、')}${never.length > 8 ? ' …' : ''}</span>` : '')
+      + (inactiveCount > 0 ? `<div style="color:#9ca3af; font-size:0.72rem; margin-top:0.2rem;">期間内に未記録: ${inactiveCount} 名</div>` : '')
+      + `</div>`
+    : '';
   el.innerHTML = inactiveBadge + activeStudents.map((s, i) => {
     const pct = Math.round((s.total_minutes / max) * 100);
     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;

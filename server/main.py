@@ -5484,6 +5484,8 @@ async def _trial_management_scheduler():
                 # STRIPE 未設定なら内部で 503→例外で skip。normal (進行中 trial_extended 全件) は
                 # scheduler 記録の肥大化防止で落とす (backfill の details と同じ規約)。
                 ("trialing-leftovers", lambda: {k: v for k, v in admin_stripe_diagnose_trialing_leftovers(notify=1, authorization=None, x_cron_secret=secret).items() if k != "normal"}),
+                # 📉 2026-09-07 学習記録の連続未記録 (3 日以上) を塾長へメール (該当ゼロなら送らない)
+                ("study-log-zero-streak", lambda: _run_zero_streak_alert()),
             ]
             results = {}
             for task_name, fn in tasks:
@@ -43042,6 +43044,82 @@ def admin_react_to_study_log(log_id: int, payload: StudyLogReactRequest, request
         conn.close()
 
 
+# 📉 2026-09-07 連続未記録の検知 (システム点検の残件 1)。既存の日次アラート (check_inactivity) は
+#   course != 'kokuritsu_nankan' で難関コース生を除外し、しかも in-process scheduler に登録されていなかったため、
+#   学習記録が何週間止まっても塾長にも生徒にも通知が無かった。学習記録ダッシュボードと同じ母集団
+#   (_study_log_dashboard_students) で「最終記録日から何日」を数え、閾値以上を毎朝 10:00 の体験管理バッチでメールする。
+_ZERO_STREAK_ALERT_DAYS = _env_int("STUDY_LOG_ZERO_STREAK_DAYS", 3, lo=1, hi=60)
+
+
+def _study_log_zero_streaks(c, lookback_days: int = 60) -> list:
+    """表示対象コホートの各生徒について、今日 (JST) から数えた連続未記録日数を返す (最終記録日との差)。
+    返り値: [{"id","name","grade","streak","last_studied","never"}] を streak 降順。never = 記録が一度も無い。"""
+    today = _today_jst()
+    cutoff = (today - timedelta(days=lookback_days - 1)).isoformat()
+    cohort = _study_log_dashboard_students(c, cutoff)
+    if not cohort:
+        return []
+    ids = [s["id"] for s in cohort]
+    ph = ",".join("?" * len(ids))
+    c.execute(f"SELECT student_id, MAX(studied_date) AS last_d FROM study_logs WHERE student_id IN ({ph}) GROUP BY student_id", tuple(ids))
+    last = {r["student_id"]: str(r["last_d"])[:10] for r in c.fetchall() if r["last_d"]}
+    out = []
+    for st in cohort:
+        ld = last.get(st["id"])
+        streak, never = None, False
+        if ld:
+            try:
+                streak = max(0, (today - date.fromisoformat(ld)).days)
+            except Exception:
+                streak = None
+        else:
+            never = True
+        out.append({"id": st["id"], "name": st["name"], "grade": st["grade"], "streak": streak, "last_studied": ld, "never": never})
+    out.sort(key=lambda x: (-(x["streak"] if x["streak"] is not None else -1), str(x["name"] or "")))
+    return out
+
+
+def _run_zero_streak_alert(dry_run: bool = False) -> dict:
+    """📉 連続 N 日 (既定 3・env STUDY_LOG_ZERO_STREAK_DAYS) 記録が無い生徒を塾長へメール。該当ゼロなら送らない。"""
+    conn = db()
+    try:
+        rows = _study_log_zero_streaks(conn.cursor())
+    finally:
+        conn.close()
+    hit = [r for r in rows if r["streak"] is not None and r["streak"] >= _ZERO_STREAK_ALERT_DAYS]
+    never = [r for r in rows if r["never"]]
+    result = {"cohort": len(rows), "threshold_days": _ZERO_STREAK_ALERT_DAYS, "hit": len(hit), "never": len(never),
+              "sent": False, "top": [{"id": r["id"], "streak": r["streak"]} for r in hit[:10]]}
+    if not hit or dry_run:
+        return result
+    today = _today_jst()
+    rows_html = "".join(
+        f"<tr><td>{html_escape_safe(str(r['name'] or ''))}</td><td>{html_escape_safe(str(r['grade'] or ''))}</td>"
+        f"<td style='text-align:right'>{r['streak']} 日</td><td>{html_escape_safe(str(r['last_studied'] or ''))}</td></tr>"
+        for r in hit[:30])
+    body = (
+        f"<p>学習記録が <b>{_ZERO_STREAK_ALERT_DAYS} 日以上</b> 止まっている生徒が <b>{len(hit)} 名</b> います ({today.isoformat()} 時点・学習記録ダッシュボードと同じ対象)。</p>"
+        f"<table border='1' cellpadding='4' style='border-collapse:collapse'><tr><th>生徒</th><th>学年</th><th>連続未記録</th><th>最終記録</th></tr>{rows_html}</table>"
+        + (f"<p>他 {len(hit) - 30} 名</p>" if len(hit) > 30 else "")
+        + (f"<p>一度も記録していない対象生徒: {len(never)} 名 (CEO の学習記録ランキング下に一覧)</p>" if never else "")
+        + "<p>CEO ダッシュボード → 学習記録 → ヒートマップ行の 💬 から声かけできます。</p>"
+    )
+    try:
+        res = _send_monitor_email(f"📉 学習記録が止まっている生徒 {len(hit)} 名 ({today.isoformat()})", body)
+        result["sent"] = bool(res and res.get("sent"))
+    except Exception as e:
+        log.warning(f"[ZeroStreak] email failed: {e}")
+    return result
+
+
+@app.post("/api/admin/study-logs/zero-streak-alert/run")
+def admin_zero_streak_alert_run(payload: dict = None, authorization: Optional[str] = Header(None)):
+    """塾長: 連続未記録アラートを即時実行 (payload.dry_run=true なら集計のみ)。"""
+    _verify_admin_required(authorization)
+    payload = payload or {}
+    return {"ok": True, **_run_zero_streak_alert(dry_run=bool(payload.get("dry_run", False)))}
+
+
 @app.get("/api/admin/study-logs/students")
 def admin_study_logs_students_summary(authorization: Optional[str] = Header(None), days: int = 7):
     """塾長: 国公立難関大学コース生徒別の集計。"""
@@ -43076,9 +43154,12 @@ def admin_study_logs_students_summary(authorization: Optional[str] = Header(None
             )
             for r in c.fetchall():
                 agg[r["student_id"]] = r
+        # 📉 2026-09-07 連続未記録日数 (期間に関係なく最終記録日から数える) と「一度も記録なし」
+        streak_by_id = {r["id"]: r for r in _study_log_zero_streaks(c)}
         students = []
         for sid, meta in meta_by_id.items():
             a = agg.get(sid)
+            zs = streak_by_id.get(sid) or {}
             students.append({
                 "student_id": sid,
                 "name": meta["name"],
@@ -43087,9 +43168,11 @@ def admin_study_logs_students_summary(authorization: Optional[str] = Header(None
                 "total_minutes": int(a["total_minutes"]) if a else 0,
                 "days_active": int(a["days_active"]) if a else 0,
                 "last_studied": str(a["last_studied"]) if (a and a["last_studied"]) else None,
+                "zero_streak_days": zs.get("streak"),
+                "never_logged": bool(zs.get("never")),
             })
         students.sort(key=lambda x: -x["total_minutes"])
-        return {"ok": True, "students": students, "period_days": days}
+        return {"ok": True, "students": students, "period_days": days, "zero_streak_threshold": _ZERO_STREAK_ALERT_DAYS}
     finally:
         conn.close()
 
