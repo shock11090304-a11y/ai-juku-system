@@ -105,6 +105,8 @@ const todayMonth = () => {
 // === Data Load ===
 const DATA_KEY = 'juku-payment-data-v1';
 const PW_KEY = 'juku-payment-pw-v1';
+// 🔐 2026-09-07 パスワードの平文保存を localStorage → sessionStorage (タブを閉じたら消える) に。以前の保存値は掃除
+try { localStorage.removeItem(PW_KEY); } catch (_) {}
 
 // AES-GCM 復号 (Web Crypto API)
 async function decryptPayload(password, enc) {
@@ -156,7 +158,7 @@ async function tryEncryptedFetch() {
   if (!res.ok) throw new Error('encrypted-data.json not found');
   const enc = await res.json();
   // 保存済パスワードでまず試行
-  const cachedPw = localStorage.getItem(PW_KEY);
+  const cachedPw = sessionStorage.getItem(PW_KEY);
   if (cachedPw) {
     try {
       const payload = await decryptPayload(cachedPw, enc);
@@ -170,7 +172,7 @@ async function tryEncryptedFetch() {
     if (!pw) throw new Error('cancelled');
     try {
       const payload = await decryptPayload(pw, enc);
-      localStorage.setItem(PW_KEY, pw);
+      sessionStorage.setItem(PW_KEY, pw);
       return payload;
     } catch (e) {
       errMsg = 'パスワードが違います。再入力してください。';
@@ -635,7 +637,7 @@ async function sendStripeInviteForStudent(s) {
     return 'ℹ 案内メールは送信しませんでした (取り込みのみ完了)';
   }
   // Resend API 直送 (サーバ側・モバイル可)。admin パスワードがあれば優先。
-  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || ((typeof CHAT_PW_KEY !== 'undefined') ? localStorage.getItem(CHAT_PW_KEY) : '') || '';
+  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || ((typeof CHAT_PW_KEY !== 'undefined') ? sessionStorage.getItem(CHAT_PW_KEY) : '') || '';
   if (pw) {
     try {
       const res = await commIndividualSendResend(s, m.subject, m.body);
@@ -5427,7 +5429,7 @@ function commBroadcastSendSequential() {
 
 async function commBroadcastSendResend() {
   // CHAT_ADMIN_PASSWORD を再利用 (chat と同じ管理者認証)
-  const pw = (CHAT_STATE && CHAT_STATE.pw) || localStorage.getItem(CHAT_PW_KEY) || '';
+  const pw = (CHAT_STATE && CHAT_STATE.pw) || sessionStorage.getItem(CHAT_PW_KEY) || '';
   if (!pw) {
     if (!confirm('Resend 直送には管理パスワードが必要です。\n\n💬 チャットタブを開いて管理パスワードを入力 → 戻ってきて再度送信してください。\n\nチャットタブに移動しますか?')) return;
     switchTab('chat');
@@ -5514,7 +5516,7 @@ async function commBroadcastSendResend() {
 }
 
 async function commIndividualSendResend(s, subject, body) {
-  const pw = (CHAT_STATE && CHAT_STATE.pw) || localStorage.getItem(CHAT_PW_KEY) || '';
+  const pw = (CHAT_STATE && CHAT_STATE.pw) || sessionStorage.getItem(CHAT_PW_KEY) || '';
   if (!pw) { return null; }  // フォールバック (mailto に流す用)
   const r = await fetch('/payment/api/mail-send', {
     method: 'POST',
@@ -5787,6 +5789,7 @@ function commHistoryClear() {
 
 const CHAT_API = '/payment/api/chat';
 const CHAT_PW_KEY = 'juku-payment-chat-pw-v1';
+try { localStorage.removeItem(CHAT_PW_KEY); } catch (_) {}  // 🔐 2026-09-07 平文保存の掃除 (以後は sessionStorage)
 
 const CHAT_STATE = {
   threads: [],
@@ -5832,7 +5835,7 @@ async function chatApi(method, params = {}, body = null) {
 
 function renderChat() {
   // パスワード保存値を反映
-  CHAT_STATE.pw = localStorage.getItem(CHAT_PW_KEY) || '';
+  CHAT_STATE.pw = sessionStorage.getItem(CHAT_PW_KEY) || '';
   const pwEl = document.getElementById('chatAdminPw');
   if (pwEl && !pwEl.value) pwEl.value = CHAT_STATE.pw;
   // パスワードあれば即読込
@@ -6437,7 +6440,7 @@ function setupModals() {
   if (pwEl) {
     pwEl.addEventListener('change', (e) => {
       CHAT_STATE.pw = e.target.value.trim();
-      localStorage.setItem(CHAT_PW_KEY, CHAT_STATE.pw);
+      sessionStorage.setItem(CHAT_PW_KEY, CHAT_STATE.pw);
       // 管理パスワード変更時は Stripe 登録キャッシュを無効化 → 全生徒タブのカード列が
       // 新 pw で再取得される (旧 pw 時の「全員未登録」表示が残るのを防ぐ)。
       STRIPE_CUST_CACHE.customers = [];

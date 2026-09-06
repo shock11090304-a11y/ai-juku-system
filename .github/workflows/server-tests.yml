@@ -170,6 +170,12 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_enrollment_cohorts.py
 
+      # 🔐 Vercel 側 決済/メール API の総当たり対策 (2026-09-07): 9 本の _verify_admin が失敗回数で止まること、
+      #   chat の ?admin_pw= が廃止されていること。
+      - name: Vercel 管理 API 総当たり対策 回帰テスト
+        if: ${{ !cancelled() }}
+        run: python3 scripts/health_check/test_vercel_admin_guard.py
+
       # 📺 再生リストの登録/命名 API。**書き込む側**なので、URL をそのまま受けること・
       #   二度送っても増えないこと・読めない入力で半端な行を作らないことを見る。
       #   あわせて「名前 → どの授業に繋がるか」を正典 (class_recording_assign.slot_of) と

@@ -11238,7 +11238,14 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp
         )
 
     # OTPコード表示ブロック (視認性重視、コピーしやすいフォーマット)
-    _otp_validity_label = "1 回使うと無効・有効期限なし" if not (_OTP_TTL_SECONDS and _OTP_TTL_SECONDS > 0) else f"{_OTP_TTL_SECONDS // 60}分間有効"
+    # 🔐 2026-09-07: 無期限 (2026-05-31 塾長指示) から env OTP_TTL_SECONDS=86400 (24時間) に。総当たりの窓を閉じる
+    #   一方で、保護者が数時間後に開いても使えるよう 15 分ではなく 1 日にした。時間単位で読みやすく表示する。
+    if not (_OTP_TTL_SECONDS and _OTP_TTL_SECONDS > 0):
+        _otp_validity_label = "1 回使うと無効・有効期限なし"
+    elif _OTP_TTL_SECONDS >= 3600 and _OTP_TTL_SECONDS % 3600 == 0:
+        _otp_validity_label = f"{_OTP_TTL_SECONDS // 3600}時間有効"
+    else:
+        _otp_validity_label = f"{_OTP_TTL_SECONDS // 60}分間有効"
     otp_block = f"""
   <div style="text-align:center; margin: 2rem 0;">
     <p style="font-size:0.8rem; color:#666; margin-bottom:0.5rem;">ログインコード（{_otp_validity_label}）</p>"""

@@ -78,12 +78,73 @@ def _json(handler, status, payload):
     handler.wfile.write(body)
 
 
-def _verify_admin(handler):
+# 🔐 2026-09-07 総当たり対策 (システム点検で確定): パスワード比較だけで試行回数の上限が無く、月末の一括引き落とし・
+#   スポット課金・任意宛先メール・顧客一覧が総当たりで開く状態だった。失敗回数を Upstash KV (webhook の冪等化で
+#   常用) に IP ごと・全体で記録し、上限に達したら比較せずに拒否する。KV が無い環境では従来どおり比較のみ。
+#   ★9 本の関数に同じ塊を置いている (Vercel の Python 関数は 1 ファイル 1 関数で共有モジュールを持たない)。
+#     直すときは全部一緒に直すこと。scripts/health_check/test_vercel_admin_guard.py が 9 本とも検査する。
+_ADMIN_FAIL_IP_LIMIT = 10        # 同一 IP: 10 回/時
+_ADMIN_FAIL_GLOBAL_LIMIT = 60    # 全体: 60 回/時 (IP を変えながらの総当たりを止める)
+_ADMIN_FAIL_WINDOW_SEC = 3600
+
+
+def _admin_kv(*args):
+    url = os.environ.get("KV_REST_API_URL", "").strip()
+    token = os.environ.get("KV_REST_API_TOKEN", "").strip()
+    if not url or not token:
+        return None
+    try:
+        req = urllib.request.Request(url, data=json.dumps(list(args)).encode(),
+                                     headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        return None
+
+
+def _admin_client_ip(handler) -> str:
+    # Vercel が付ける x-real-ip を優先 (x-forwarded-for の先頭は利用者側で細工できる)
+    ip = (handler.headers.get("x-real-ip") or "").strip()
+    if not ip:
+        xff = (handler.headers.get("x-forwarded-for") or "").strip()
+        ip = xff.split(",")[-1].strip() if xff else ""
+    return (ip or "unknown")[:64]
+
+
+def _admin_fail_count(key) -> int:
+    r = _admin_kv("GET", key)
+    try:
+        return int((r or {}).get("result") or 0)
+    except (TypeError, ValueError, AttributeError):
+        return 0
+
+
+def _admin_fail_record(key):
+    r = _admin_kv("INCR", key)
+    try:
+        if int((r or {}).get("result") or 0) == 1:
+            _admin_kv("EXPIRE", key, str(_ADMIN_FAIL_WINDOW_SEC))
+    except (TypeError, ValueError, AttributeError):
+        pass
+
+
+def _verify_admin(handler) -> bool:
+    """X-Admin-Password ヘッダで認証。失敗が上限 (IP 10回/時・全体 60回/時) に達していると正しくても通さない。"""
     expected = os.environ.get("CHAT_ADMIN_PASSWORD", "").strip()
     if not expected:
         return False
     got = handler.headers.get("X-Admin-Password", "").strip()
-    return hmac.compare_digest(got, expected) if got else False
+    if not got:
+        return False
+    ip_key = f"adminfail:ip:{_admin_client_ip(handler)}"
+    if (_admin_fail_count(ip_key) >= _ADMIN_FAIL_IP_LIMIT
+            or _admin_fail_count("adminfail:global") >= _ADMIN_FAIL_GLOBAL_LIMIT):
+        return False
+    if hmac.compare_digest(got, expected):
+        return True
+    _admin_fail_record(ip_key)
+    _admin_fail_record("adminfail:global")
+    return False
 
 
 def _redis(*args):
