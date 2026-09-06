@@ -1018,6 +1018,9 @@ _DB_CONNECT_TIMEOUT = _env_int("DB_CONNECT_TIMEOUT", 10, lo=2, hi=60)
 #     DB_IDLE_TX_TIMEOUT=0 / DB_INIT_LOCK_TIMEOUT=0 にしても**従来挙動には戻らない**。
 #     障害対応中に「元に戻したはず」と誤解しないこと (戻すにはコードを revert する)。
 _DB_IDLE_TX_TIMEOUT = _env_int("DB_IDLE_TX_TIMEOUT", 600, lo=0, hi=86400)
+# ⏱ 2026-09-07: 1 文の実行時間の上限 (秒・0 で無効)。従来は無く、重い集計を連打すると処理枠 (40) を分単位で
+#   占有して health まで詰まった (システム点検で確定)。PG 18 は simple-query の複数文でも文ごとに適用される。
+_DB_STATEMENT_TIMEOUT = _env_int("DB_STATEMENT_TIMEOUT", 120, lo=0, hi=3600)
 # 🔒 [init-lock-timeout 2026-09-03] 起動時 DDL (init_db) がロック行列で**無限に待つ**のを防ぐ上限秒。
 #   ここがタイムアウトすれば DDL をスキップして起動を続行できる = サーバが二度と起動できない事態を防ぐ。
 #   ★この設定は init_db **専用接続の接続時オプション**として渡す (`SET` ではない)。
@@ -1057,12 +1060,18 @@ def _pg_connect_kwargs() -> dict:
       ★将来 URL 側に `?options=` が付くと、psycopg の仕様で**この kwargs が黙って勝つ**ので注意。
     """
     kw = {"connect_timeout": _DB_CONNECT_TIMEOUT}   # 無限待ち防止 (2026-07-26)
+    opts = []
     if _DB_IDLE_TX_TIMEOUT > 0:
         # ミリ秒指定。対象になるのは pg_stat_activity.state が 'idle in transaction' の接続。
         # ★wait_event が Client/ClientRead かどうかは判定条件ではない (トランザクション外の
         #   単なる idle でも同じ wait_event になる)。この状態で実際に切れることは
         #   本番 Postgres 18.6 で実測確認済み (2026-09-03)。
-        kw["options"] = f"-c idle_in_transaction_session_timeout={_DB_IDLE_TX_TIMEOUT * 1000}"
+        opts.append(f"-c idle_in_transaction_session_timeout={_DB_IDLE_TX_TIMEOUT * 1000}")
+    if _DB_STATEMENT_TIMEOUT > 0:
+        # ⏱ 2026-09-07 実行中のクエリにも上限。超えた 1 件だけが失敗し、他のリクエストは巻き込まれない
+        opts.append(f"-c statement_timeout={_DB_STATEMENT_TIMEOUT * 1000}")
+    if opts:
+        kw["options"] = " ".join(opts)
     return kw
 
 
@@ -1082,7 +1091,9 @@ def _startup_db():
         try:
             kw = _pg_connect_kwargs()
             kw["options"] = (
-                kw.get("options", "") + f" -c lock_timeout={_DB_INIT_LOCK_TIMEOUT * 1000}"
+                # ⏱ 起動時 DDL は lock_timeout + 壁時計の締切で守るので statement_timeout は外す (途中で倒れると
+                #   executescript の 147 文が丸ごとロールバックされる)。後勝ちなので末尾に付ける
+                kw.get("options", "") + f" -c lock_timeout={_DB_INIT_LOCK_TIMEOUT * 1000} -c statement_timeout=0"
             ).strip()
             return _Connection(psycopg.connect(DATABASE_URL, **kw), is_pg=True, pool=None)
         except Exception as e:
@@ -5885,6 +5896,9 @@ def _run_weekly_worksheet_generation() -> dict:
                     except (KeyError, IndexError, TypeError):
                         wid = row[0] if row else None
                 worksheets_created += 1
+                # 🗓 2026-09-07: 送信 (メール/LINE・生徒ごとに数秒) の前に確定する。従来は全員分を 1 トランザクションで
+                #   数分持ち、途中の例外で全員分がロールバック、デプロイが重なると DDL がロック待ちで倒れていた
+                conn.commit()
 
                 # メール通知 (Resend 経由)・LINE 通知 (line_user_id があれば)
                 delivered_via = []
@@ -18330,7 +18344,7 @@ async def admin_generate_invite_code(
     code = None
     for _ in range(5):
         candidate = _generate_invite_code()
-        if _save_invite_code(
+        if await asyncio.to_thread(_save_invite_code,
             candidate,
             email,
             kind,
@@ -20109,7 +20123,7 @@ async def admin_exam_questions_burst_seed(payload: dict = None, authorization: O
     def _eff_target(e, p, g):
         return max(target, _target_pool_for(e, p, g))
 
-    counts = _exam_pool_counts()
+    counts = await asyncio.to_thread(_exam_pool_counts)   # ⏱ 2026-09-07
     # 不足枠を抽出 (count < 実効目標)
     # 🛡 EXAM_QUESTION_AUTO_GENERATE_SKIP に含まれる枠は AI 課金回避のため burst-seed 経由生成しない
     needs = []
@@ -20269,7 +20283,7 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
     Railway 本番 INSERT 後に同 questions を Supabase にも自動 mirror INSERT する。失敗時は警告のみ・
     本番 import を止めない。memory: feedback_supabase_staging.md
     """
-    counts = _exam_pool_counts() if skip_full else {}
+    counts = _exam_pool_counts() if skip_full else {}   # ネストした同期関数内 (呼び元が to_thread 側) なので await にしない
     valid_rotation = {(e, p, g) for (e, p, g) in EXAM_QUESTION_ROTATION}
 
     inserted = 0
@@ -41023,7 +41037,7 @@ async def mock_exam_grade_essay_multiview(payload: dict, authorization: Optional
         # trial 期限切れ / canceled / past_due(grace 超過) の生徒が 5 AI 並列採点 ($0.30/req) を
         # タダ使いするのを防ぐ。/api/ai/call と同じく HTTPException(403/404) は伝搬・DB 異常のみ 500 化。
         try:
-            _verify_student_active(student_id)
+            await asyncio.to_thread(_verify_student_active, student_id)   # ⏱ 2026-09-07 同期 DB をループ上で呼ばない
         except HTTPException:
             raise
         except Exception as e:
@@ -41127,7 +41141,7 @@ async def mock_exam_grade_essay_multiview(payload: dict, authorization: Optional
     # event 記録 (analytics 用)
     # 2026-05-11 追加: is_admin flag で admin demo を analytics 集計から除外可能に
     try:
-        _record_ai_critical_event("multiview_grade_done", {
+        await asyncio.to_thread(_record_ai_critical_event, "multiview_grade_done", {
             "successful_views": len(successful),
             "total_views": len(views),
             "avg_total_30": round(avg_total, 1),
@@ -41981,7 +41995,7 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
         # trial 期限切れ / canceled / past_due(grace 超過) の生徒が 3 AI 並列解答 ($0.10-0.30/req) を
         # タダ使いするのを防ぐ。/api/ai/call と同じく HTTPException(403/404) は伝搬・DB 異常のみ 500 化。
         try:
-            _verify_student_active(student_id)
+            await asyncio.to_thread(_verify_student_active, student_id)   # ⏱ 2026-09-07 同期 DB をループ上で呼ばない
         except HTTPException:
             raise
         except Exception as e:
@@ -42137,7 +42151,7 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
             detail_str += "\n各 AI のエラー: " + " ; ".join(error_summary)
         # 親 endpoint レベルでも critical event 記録 (失敗の総括)
         try:
-            _record_ai_critical_event("tutor_solve_total_failure", {
+            await asyncio.to_thread(_record_ai_critical_event, "tutor_solve_total_failure", {
                 "successful": len(successful_r1),
                 "min_required": min_required,
                 "errors": [{"ai_id": r.get("ai_id"), "error": r.get("error")} for r in round1 if r.get("error")],
@@ -42238,7 +42252,7 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
 
     # event 記録
     try:
-        _record_ai_critical_event("tutor_solve_done", {
+        await asyncio.to_thread(_record_ai_critical_event, "tutor_solve_done", {
             "mode": mode,
             "auto_promoted": auto_promoted,
             "subject_guess": subject_guess,

@@ -228,6 +228,11 @@ jobs:
           python3 scripts/health_check/check_student_cascade_lists.py
           python3 scripts/health_check/test_deletion_privacy.py
 
+      # ⏱ async ルートが同期 DB ヘルパーをイベントループ上で直接呼ばないこと (AST 検査) と、statement_timeout の配線。
+      - name: イベントループ保護 (AST) / statement_timeout 回帰テスト
+        if: ${{ !cancelled() }}
+        run: python3 scripts/health_check/test_async_routes_sync_db.py
+
       # 📺 再生リストの登録/命名 API。**書き込む側**なので、URL をそのまま受けること・
       #   二度送っても増えないこと・読めない入力で半端な行を作らないことを見る。
       #   あわせて「名前 → どの授業に繋がるか」を正典 (class_recording_assign.slot_of) と
