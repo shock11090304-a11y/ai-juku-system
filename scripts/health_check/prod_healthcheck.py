@@ -571,6 +571,7 @@ def check_scheduler_live(cur):
         "trial_mgmt_run": 2,             # 体験フォロー/リマインダの日次バッチ(実イベント名)
         "r2_backup_success": 2,          # 🗄️ 2026-09-07 DB バックアップ (毎日 JST 3:00 → R2)
         "admission_recompute_run": 2,    # 合格スコア再計算 (毎日 4:00・2026-09-06 追加)
+        "events_retention_run": 2,       # 🧹 計測/監視イベントの掃除 (毎日 4:00・2026-09-07 追加)
     }
     for name, max_days in watched.items():
         try:

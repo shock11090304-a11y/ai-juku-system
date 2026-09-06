@@ -896,6 +896,12 @@ class _Cursor:
             return [_Row(r) if isinstance(r, dict) and not isinstance(r, _Row) else r for r in rows]
         return rows
 
+    def fetchmany(self, size=1000):
+        """🗄️ 2026-09-07: 大きなテーブルを RAM に載せずに流すため (R2 バックアップの dump 用)。"""
+        rows = self._cur.fetchmany(size)
+        if self._is_pg:
+            return [_Row(r) if isinstance(r, dict) and not isinstance(r, _Row) else r for r in rows]
+        return rows
     @property
     def rowcount(self):
         """直前の DML 操作の影響行数。sqlite3/psycopg 共に rowcount 属性を持つ。
@@ -6243,6 +6249,17 @@ async def _weakness_aggregation_scheduler():
                 except Exception as e:
                     log.error(f"[Admission] nightly recompute failed: {type(e).__name__}: {e}", exc_info=True)
                     _record_scheduler_run("admission_recompute_run", {"error": f"{type(e).__name__}: {e}"})
+            # 🧹 2026-09-07 計測/監視イベントの保持期限 (events の無限成長を止める・同じ 4:00 枠の最後)
+            if _check_scheduler_ran_today_jst("events_retention_run"):
+                log.info("[EventsRetention] Skipped (already ran today by another replica)")
+            else:
+                try:
+                    ret = await asyncio.to_thread(_run_events_retention)
+                    log.info(f"[EventsRetention] {ret}")
+                    _record_scheduler_run("events_retention_run", ret)
+                except Exception as e:
+                    log.error(f"[EventsRetention] failed: {type(e).__name__}: {e}", exc_info=True)
+                    _record_scheduler_run("events_retention_run", {"error": f"{type(e).__name__}: {e}"})
         except asyncio.CancelledError:
             log.info("[Weakness] Scheduler cancelled")
             raise
@@ -9211,6 +9228,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "daily_sns_post": "SNS 投稿 (毎日)",
             "r2_backup_success": "DB バックアップ (毎日3時・R2)",
             "admission_recompute_run": "合格スコア再計算 (毎日4時)",
+            "events_retention_run": "計測イベントの掃除 (毎日4時)",
         }
         _lines = "、".join(
             f"{_label.get(s['name'], s['name'])} は最終実行 {s['last_run_jst']}"
@@ -9235,6 +9253,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "daily_sns_post": "SNS 投稿 (毎日)",
             "r2_backup_success": "DB バックアップ (毎日3時・R2)",
             "admission_recompute_run": "合格スコア再計算 (毎日4時)",
+            "events_retention_run": "計測イベントの掃除 (毎日4時)",
         }
         _lines_f = "、".join(
             f"{_label_f.get(s['name'], s['name'])} (最終実行 {s['last_run_jst']}): {s['error']}"
@@ -29732,6 +29751,7 @@ _SCHEDULER_MAX_AGE_DAYS = {
     #   2 日以上無ければ停止。従来は監視対象外で、鍵の失効等で毎晩失敗し続けても誰も気づけなかった。
     "r2_backup_success": 2,
     "admission_recompute_run": 2,    # 合格スコアの日次再計算 (2026-09-06 追加・4:00 の弱点集計の直後)
+    "events_retention_run": 2,       # 🧹 計測/監視イベントの掃除 (2026-09-07 追加・同じ 4:00 枠)
 }
 
 
@@ -29808,6 +29828,36 @@ def _weekly_report_verdict(rows: list) -> str:
         else:
             weekly_verdict = f"正常: 送信 {sent} 件 / スキップ {skipped} 件"
     return weekly_verdict
+
+
+# 🧹 2026-09-07 events の保持期限。DELETE FROM events が 1 箇所も無く、監視 (5分ごと=288行/日)・JS エラー・
+#   LP 計測が無限に積み上がっていた (システム点検で確定)。ここに名前を挙げた計測/監視イベントだけを消す。
+#   監査用 (*_run / auto_rollback / r2_backup_* / admin_* / 決済系 / textbook_request_missing 等) は一切消さない。
+_EVENTS_RETENTION = {
+    90: ("synthetic_checkout_test", "post_deploy_smoke_test", "js_error", "signup_email_status"),
+    180: ("page_view", "cta_click", "form_submit", "outbound_click", "scroll_depth",
+          "lp_view", "lp_scroll_depth", "lp_form_submit", "lp_form_start", "lp_cta_click",
+          "pwa_install_prompt", "pwa_installed", "mock_pdf_mode_autoselect", "mock_pdf_list_view",
+          "sl_quick_cta_detail_open", "vocab_session_start", "vocab_quiz_answer", "mock_exam_share"),
+}
+
+
+def _run_events_retention() -> dict:
+    """保持期限を過ぎた計測/監視イベントを消す (毎日 JST 4:00 の弱点集計の後)。返り値は期限ごとの削除数。"""
+    from datetime import timedelta as _td
+    out = {}
+    conn = db()
+    try:
+        c = conn.cursor()
+        for days, names in _EVENTS_RETENTION.items():
+            cutoff = (datetime.utcnow() - _td(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+            ph = ",".join("?" * len(names))
+            c.execute(f"DELETE FROM events WHERE name IN ({ph}) AND created_at < ?", (*names, cutoff))
+            out[f"deleted_{days}d"] = c.rowcount or 0
+        conn.commit()
+    finally:
+        conn.close()
+    return out
 
 
 def _stalled_schedulers(rows: list) -> list:
@@ -37679,6 +37729,8 @@ def verify_parent_token(token: str):
 def track_event(event: EventTrack, request: Request):
     if not _origin_allowed(request):
         raise HTTPException(status_code=403, detail="Origin not allowed")
+    # 🧹 2026-09-07: Origin 一致だけで無制限に書けた (偽装 curl で 4KB 行を流し込める)。IP ごと 120 回/分
+    _check_rate_limit_ip(request, bucket="track", limit=120, window=60)
     # event.name / event.props の長さ制限でDBスパム防止
     name = (event.name or "")[:128]
     props_str = json.dumps(event.props or {}, ensure_ascii=False)
@@ -53316,64 +53368,100 @@ def _record_r2_event(name: str, meta: dict):
         log.warning(f'[r2_backup] events 記録失敗 (non-fatal): {_e}')
 
 
-def _dump_db_to_jsonl_gz() -> bytes:
-    """全 public schema table を JSONL (gzip) で dump。
-    各行は {"_table": "students", "_data": {col: val, ...}} 形式。restore 時は
-    table 別に再分割可能。timestamp/uuid/date 等は default=str で文字列化
-    (psycopg restore 時に自動 cast)。bytea 列は現 schema 0 件で問題なし
-    (将来追加時は base64 化必須・3 視点 review で再確認)。"""
-    import gzip, json, io as _io, re as _re
-    # table 名 sanity check (情報スキーマ由来でも防衛的に regex 確認)
+def _dump_db_to_jsonl_gz_file() -> tuple:
+    """全 public schema table を JSONL (gzip) で一時ファイルへ dump し (path, total_rows, tables_dumped) を返す。
+    🗄️ 2026-09-07: 従来は全テーブルを fetchall で RAM に載せ、gzip も BytesIO に溜めてから PUT していた
+      (events が育つと深夜 3:00 に OOM → 再起動、の芽。システム点検で確定)。Postgres では名前付き
+      (server-side) カーソルで 2,000 行ずつ流し、出力は一時ファイルに書く。呼び出し側は upload 後に必ず os.remove。
+    各行は {"_table": "students", "_data": {col: val, ...}} 形式 (restore_from_jsonl.py と同じ)。
+    timestamp/uuid/date 等は default=str で文字列化。bytea 列は現 schema 0 件。"""
+    import gzip, json, re as _re, tempfile as _tf
     _safe_ident = _re.compile(r'^[a-z_][a-z0-9_]*$')
-    out = _io.BytesIO()
-    with gzip.GzipFile(fileobj=out, mode='wb', compresslevel=6) as gz:
-        gz.write(b'-- ai-juku R2 backup (jsonl.gz)\n')
-        gz.write(f'-- generated_at: {datetime.now(timezone.utc).isoformat()}\n'.encode())
-        conn = db()
-        try:
-            # 🚨 _Connection に execute() 無し → .cursor().execute() 経由 (main.py:476)
-            cur = conn.cursor()
-            cur.execute(
-                "SELECT table_name FROM information_schema.tables "
-                "WHERE table_schema='public' AND table_type='BASE TABLE' "
-                "ORDER BY table_name"
-            )
-            # _Row wrapper (main.py:401) で row[0] / row["table_name"] 両対応
-            tables = []
-            for r in cur.fetchall():
-                try: tables.append(r["table_name"])
-                except (KeyError, TypeError): tables.append(r[0])
-            total_rows = 0
-            skipped_unsafe = []
-            for t in tables:
-                # 防衛的: info_schema 由来でも regex で確認 (PostgreSQL は " 含む table 名を許容)
-                if not _safe_ident.match(t):
-                    skipped_unsafe.append(t)
-                    log.warning(f'[r2_backup] skip unsafe table name: {t!r}')
-                    continue
-                gz.write(f'\n-- TABLE: {t}\n'.encode())
-                # _safe_ident regex を通った table 名のみ実行 (実質的に SQL injection 不可能)
-                # psycopg は dict_row factory (main.py:483) / sqlite3 は Row 行で dict() 可能
+    fd, path = _tf.mkstemp(prefix="ai-juku-r2-", suffix=".jsonl.gz")
+    os.close(fd)
+    total_rows = 0
+    tables_dumped = 0
+    try:
+        with gzip.open(path, 'wb', compresslevel=6) as gz:
+            gz.write(b'-- ai-juku R2 backup (jsonl.gz)\n')
+            gz.write(f'-- generated_at: {datetime.now(timezone.utc).isoformat()}\n'.encode())
+            conn = db()
+            try:
                 cur = conn.cursor()
-                cur.execute(f'SELECT * FROM "{t}"')
-                n = 0
-                for row in cur.fetchall():
-                    try:
-                        rec = dict(row)  # _Row / sqlite3.Row 両対応
-                    except Exception:
-                        rec = {'_raw': str(row)}
-                    line = json.dumps({'_table': t, '_data': rec}, default=str, ensure_ascii=False)
-                    gz.write((line + '\n').encode('utf-8'))
-                    n += 1
-                gz.write(f'-- {t}: {n} rows\n'.encode())
-                total_rows += n
-            gz.write(f'\n-- TOTAL: {len(tables) - len(skipped_unsafe)} tables, {total_rows} rows\n'.encode())
-            if skipped_unsafe:
-                gz.write(f'-- SKIPPED unsafe: {skipped_unsafe}\n'.encode())
-        finally:
-            try: conn.close()
-            except Exception: pass
-    return out.getvalue()
+                if getattr(conn, "_is_pg", False):
+                    cur.execute(
+                        "SELECT table_name FROM information_schema.tables "
+                        "WHERE table_schema='public' AND table_type='BASE TABLE' "
+                        "ORDER BY table_name"
+                    )
+                else:
+                    # SQLite (開発/テスト): information_schema が無いので sqlite_master から
+                    cur.execute("SELECT name AS table_name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+                tables = []
+                for r in cur.fetchall():
+                    try: tables.append(r["table_name"])
+                    except (KeyError, TypeError): tables.append(r[0])
+                skipped_unsafe = []
+                for t in tables:
+                    # 防衛的: info_schema 由来でも regex で確認 (PostgreSQL は " 含む table 名を許容)
+                    if not _safe_ident.match(t):
+                        skipped_unsafe.append(t)
+                        log.warning(f'[r2_backup] skip unsafe table name: {t!r}')
+                        continue
+                    gz.write(f'\n-- TABLE: {t}\n'.encode())
+                    n = 0
+                    for rec in _iter_table_rows(conn, t):
+                        line = json.dumps({'_table': t, '_data': rec}, default=str, ensure_ascii=False)
+                        gz.write((line + '\n').encode('utf-8'))
+                        n += 1
+                    gz.write(f'-- {t}: {n} rows\n'.encode())
+                    total_rows += n
+                    tables_dumped += 1
+                gz.write(f'\n-- TOTAL: {tables_dumped} tables, {total_rows} rows\n'.encode())
+                if skipped_unsafe:
+                    gz.write(f'-- SKIPPED unsafe: {skipped_unsafe}\n'.encode())
+            finally:
+                try: conn.close()
+                except Exception: pass
+    except Exception:
+        try: os.remove(path)
+        except Exception: pass
+        raise
+    return path, total_rows, tables_dumped
+
+
+def _iter_table_rows(conn, table: str):
+    """テーブルの全行を dict で順に返す。Postgres は名前付きカーソル (itersize=2000) で RAM を抑え、
+    SQLite は fetchmany で同じ形にする。table 名は呼び出し側で _safe_ident 検証済み。"""
+    if getattr(conn, "_is_pg", False):
+        with conn._conn.cursor(name="r2dump", row_factory=dict_row) as scur:
+            scur.itersize = 2000
+            scur.execute(f'SELECT * FROM "{table}"')
+            for row in scur:
+                yield dict(row)
+        return
+    cur = conn.cursor()
+    cur.execute(f'SELECT * FROM "{table}"')
+    while True:
+        rows = cur.fetchmany(2000)
+        if not rows:
+            break
+        for row in rows:
+            try:
+                yield dict(row)  # _Row / sqlite3.Row 両対応
+            except Exception:
+                yield {'_raw': str(row)}
+
+
+def _dump_db_to_jsonl_gz() -> bytes:
+    """互換ラッパ (bytes が要る呼び出し向け)。大きな DB では _dump_db_to_jsonl_gz_file を使うこと。"""
+    path, _n, _t = _dump_db_to_jsonl_gz_file()
+    try:
+        with open(path, 'rb') as f:
+            return f.read()
+    finally:
+        try: os.remove(path)
+        except Exception: pass
 
 
 def _r2_client():
@@ -53403,6 +53491,17 @@ def _r2_upload_backup(data: bytes, key: str) -> dict:
         Metadata={'source': 'ai-juku-system', 'generated_at': datetime.now(timezone.utc).isoformat()},
     )
     return {'bucket': bucket, 'key': key, 'size': len(data)}
+
+
+def _r2_upload_backup_file(path: str, key: str) -> dict:
+    """🗄️ 2026-09-07 R2 へファイルをストリーミング PUT (boto3 upload_file はマルチパートで RAM に全体を載せない)。"""
+    bucket = os.getenv('R2_BUCKET', 'ai-juku-db-backup').strip() or 'ai-juku-db-backup'
+    cli = _r2_client()
+    cli.upload_file(path, bucket, key, ExtraArgs={
+        'ContentType': 'application/gzip',
+        'Metadata': {'source': 'ai-juku-system', 'generated_at': datetime.now(timezone.utc).isoformat()},
+    })
+    return {'bucket': bucket, 'key': key, 'size': os.path.getsize(path)}
 
 
 def _r2_prune_old_backups(retention_days: int) -> int:
@@ -53449,9 +53548,14 @@ def _run_r2_backup() -> dict:
             except Exception: pass
     except Exception as e:
         log.warning(f'[r2_backup] tables_count fetch failed (non-fatal): {e}')
-    data = _dump_db_to_jsonl_gz()
+    # 🗄️ 2026-09-07 一時ファイル経由 (RAM に全体を載せない)。upload 後に必ず消す
+    path, _rows, _tables = _dump_db_to_jsonl_gz_file()
     key = f'ai-juku/{now.strftime("%Y/%m")}/db-{now.strftime("%Y%m%d-%H%M%S")}.jsonl.gz'
-    result = _r2_upload_backup(data, key)
+    try:
+        result = _r2_upload_backup_file(path, key)
+    finally:
+        try: os.remove(path)
+        except Exception: pass
     duration_sec = round(_t.monotonic() - t0, 2)
     retention = int(os.getenv('R2_BACKUP_RETENTION_DAYS', '30'))
     pruned = 0

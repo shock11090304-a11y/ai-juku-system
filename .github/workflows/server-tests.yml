@@ -176,6 +176,13 @@ jobs:
         if: ${{ !cancelled() }}
         run: python3 scripts/health_check/test_vercel_admin_guard.py
 
+      # 🧹🗄️ events の保持期限 / /api/track のレート制限 / R2 バックアップの省メモリ dump (2026-09-07)
+      - name: イベント掃除・計測制限・バックアップ dump 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_events_retention.py
+
       # 📺 再生リストの登録/命名 API。**書き込む側**なので、URL をそのまま受けること・
       #   二度送っても増えないこと・読めない入力で半端な行を作らないことを見る。
       #   あわせて「名前 → どの授業に繋がるか」を正典 (class_recording_assign.slot_of) と
