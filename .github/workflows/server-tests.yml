@@ -56,6 +56,19 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 🧷 ?v= 検査 (下) が push 前の commit と比較するために履歴を少し持つ (全履歴は PDF 込みで重い)
+          fetch-depth: 50
+
+      # 🧷 JS を変えたのに参照側 HTML の ?v= を上げていない commit を止める (2026-09-07)。
+      #   vercel.json の no-cache は *.html だけで、据え置くと古い JS がキャッシュされた端末で新しい
+      #   API/HTML と食い違う。直近の履歴では mypage.js の約半分・ceo.js の 6 割が漏れていた。
+      #   依存不要 (git + python3 のみ) なので最初に回す。Railway の「Wait for CI」を有効にすると
+      #   この検査に落ちた commit は本番に出なくなる。
+      - name: JS キャッシュバスト (?v=) 検査
+        env:
+          BASE_SHA: ${{ github.event.before }}
+        run: python3 scripts/health_check/check_js_cache_bust.py "$BASE_SHA" "${{ github.sha }}"
 
       - uses: actions/setup-python@v5
         with:
@@ -182,6 +195,14 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_events_retention.py
+
+      # 💳 Stripe webhook (1,200 行超・決済の入口) は従来テストが無く、push すると未検査のまま本番に出ていた。
+      #   署名検証・event.id の先勝ち・invoice キーの dedup・生徒不一致の扱いを固定する。
+      - name: Stripe webhook 署名/二重処理 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_stripe_webhook_idempotency.py
 
       # 📺 再生リストの登録/命名 API。**書き込む側**なので、URL をそのまま受けること・
       #   二度送っても増えないこと・読めない入力で半端な行を作らないことを見る。
