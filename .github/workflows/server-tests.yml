@@ -219,6 +219,15 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_dashboard_numbers.py
 
+      # 🔏 生徒削除の後始末 (2026-09-07): 監査記録/ログに氏名・メールを残さない、メールで紐づく表の匿名化、
+      #   塾長コメントの孤児化防止、削除 cascade の 4 リストが揃っていること (機械検査)。
+      - name: 生徒削除の個人情報後始末 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/check_student_cascade_lists.py
+          python3 scripts/health_check/test_deletion_privacy.py
+
       # 📺 再生リストの登録/命名 API。**書き込む側**なので、URL をそのまま受けること・
       #   二度送っても増えないこと・読めない入力で半端な行を作らないことを見る。
       #   あわせて「名前 → どの授業に繋がるか」を正典 (class_recording_assign.slot_of) と

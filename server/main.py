@@ -25435,7 +25435,9 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             related_counts["course_applications"] = -1
 
         snapshot = {
-            "id": student["id"], "name": student["name"], "email": student["email"],
+            # 🔏 2026-09-07: 氏名/メールは監査記録 (events・管理画面の失敗フィードから読める) に残さない。誰を消したかは id と
+            #   メールの短縮ハッシュで追える。削除依頼に対して「消した」と言える状態にする (システム点検で確定)。
+            "id": student["id"], "email_hash": _student_email_hash(student["email"] or ""),
             "status": student["status"], "plan": student["plan"], "course": student["course"],
             "created_at": str(student["created_at"]) if student["created_at"] else None,
             "stripe_customer_id": student["stripe_customer_id"],
@@ -25457,6 +25459,8 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
 
         # cascade delete - FK 依存順に
         delete_tables = [
+            # 🔏 2026-09-07 塾長コメント (study_log_reactions) は log_id 経由なので study_logs より先に消す
+            ("study_log_reactions", "DELETE FROM study_log_reactions WHERE log_id IN (SELECT id FROM study_logs WHERE student_id=?)"),
             ("study_logs", "DELETE FROM study_logs WHERE student_id=?"),
             ("study_plans", "DELETE FROM study_plans WHERE student_id=?"),
             ("homework_assignments", "DELETE FROM homework_assignments WHERE student_id=?"),
@@ -25517,12 +25521,24 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
         # POST /api/course-applications 側の student_id IS NOT NULL 条件追加と併せて二重防御。
         try:
             c.execute(
-                "UPDATE course_applications SET student_id=NULL, email = 'deleted-' || id || '@deleted.invalid' WHERE student_id=?",
+                "UPDATE course_applications SET student_id=NULL, email = 'deleted-' || id || '@deleted.invalid', "
+                "name='削除済み', phone=NULL, note=NULL WHERE student_id=?",   # 🔏 2026-09-07 氏名/電話/メモも匿名化
                 (student_id,)
             )
             deleted_counts["course_applications_anonymized"] = related_counts.get("course_applications", 0)
         except Exception as e:
             log.warning(f"[StudentDelete] course_applications anonymize failed: {e}")
+        # 🔏 2026-09-07 メールで紐づく表も匿名化: support_tickets (氏名/メール/本文) と invite_codes (メール)。
+        #   従来は削除後もそのまま残り、「削除しました」と実態が食い違っていた (システム点検で確定)。
+        try:
+            _em = (student["email"] or "").strip().lower()
+            if _em:
+                c.execute("UPDATE support_tickets SET name='削除済み', email='deleted-' || id || '@deleted.invalid', message='(削除済み)' WHERE LOWER(email) = ?", (_em,))
+                deleted_counts["support_tickets_anonymized"] = max(0, c.rowcount or 0)
+                c.execute("UPDATE invite_codes SET email='deleted-' || id || '@deleted.invalid' WHERE LOWER(email) = ? OR used_by_student_id = ?", (_em, student_id))
+                deleted_counts["invite_codes_anonymized"] = max(0, c.rowcount or 0)
+        except Exception as e:
+            log.warning(f"[StudentDelete] tickets/invites anonymize failed: {e}")
         # referrals: 監査保存のため referrer_id/referred_id を NULL にして履歴は残す
         try:
             c.execute("UPDATE referrals SET referrer_id=NULL WHERE referrer_id=?", (student_id,))
@@ -25533,10 +25549,13 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
         # students 本体削除
         c.execute("DELETE FROM students WHERE id=?", (student_id,))
         conn.commit()
-        log.info(f"[StudentDelete] student={student_id} name={student['name']} email={student['email']} deleted={deleted_counts}")
+        log.info(f"[StudentDelete] student={student_id} email_hash={_student_email_hash(student['email'] or '')[:12]} deleted={deleted_counts}")
         return {
             "ok": True, "dry_run": False,
             "deleted": deleted_counts,
+            # 🔏 2026-09-07: Stripe 側の顧客 (カード情報を含む) はこの API では消さない。画面で明示する
+            "stripe_note": ("Stripe 上の顧客レコードは残っています (カード情報は Stripe 側)。完全に消す場合は Stripe Dashboard で顧客を削除してください。"
+                            if student["stripe_customer_id"] else None),
             "snapshot": snapshot,
             "message": f"生徒「{student['name']}」を削除しました",
         }
@@ -29539,6 +29558,7 @@ def admin_students_purge_stale(payload: dict = None, authorization: Optional[str
             tup = tuple(ids)
             # 全関連テーブル cascade (admin_student_delete と同等)
             cascade_tables = [
+                ("study_log_reactions", f"DELETE FROM study_log_reactions WHERE log_id IN (SELECT id FROM study_logs WHERE student_id IN ({placeholders}))"),  # 🔏 2026-09-07
                 ("study_logs", f"DELETE FROM study_logs WHERE student_id IN ({placeholders})"),
                 ("study_plans", f"DELETE FROM study_plans WHERE student_id IN ({placeholders})"),
                 ("exam_results", f"DELETE FROM exam_results WHERE student_id IN ({placeholders})"),
@@ -29578,8 +29598,17 @@ def admin_students_purge_stale(payload: dict = None, authorization: Optional[str
                 )
             except Exception as e: log.warning(f"[PurgeStale] messages: {e}")
             # course_applications/referrals は NULL 化 (履歴保持)
-            try: c.execute(f"UPDATE course_applications SET student_id=NULL WHERE student_id IN ({placeholders})", tup)
-            except Exception: pass
+            # 🔏 2026-09-07 個別削除 API と同じく氏名/メール/電話/メモも匿名化 (従来は student_id を外すだけだった)
+            try: c.execute(f"UPDATE course_applications SET student_id=NULL, email = 'deleted-' || id || '@deleted.invalid', name='削除済み', phone=NULL, note=NULL WHERE student_id IN ({placeholders})", tup)
+            except Exception as e: log.warning(f"[PurgeStale] course_applications anonymize: {e}")
+            # 🔏 メールで紐づく表 (support_tickets / invite_codes) も匿名化
+            try:
+                _emails = tuple(sorted({(m.get("email") or "").strip().lower() for m in matched if m.get("email")}))
+                if _emails:
+                    _eph = ",".join("?" * len(_emails))
+                    c.execute(f"UPDATE support_tickets SET name='削除済み', email='deleted-' || id || '@deleted.invalid', message='(削除済み)' WHERE LOWER(email) IN ({_eph})", _emails)
+                    c.execute(f"UPDATE invite_codes SET email='deleted-' || id || '@deleted.invalid' WHERE LOWER(email) IN ({_eph}) OR used_by_student_id IN ({placeholders})", _emails + tup)
+            except Exception as e: log.warning(f"[PurgeStale] tickets/invites anonymize: {e}")
             try: c.execute(f"UPDATE referrals SET referrer_id=NULL WHERE referrer_id IN ({placeholders})", tup)
             except Exception: pass
             try: c.execute(f"UPDATE referrals SET referred_id=NULL WHERE referred_id IN ({placeholders})", tup)
@@ -29591,7 +29620,11 @@ def admin_students_purge_stale(payload: dict = None, authorization: Optional[str
             try:
                 c.execute(
                     "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
-                    ("admin_purge_stale", json.dumps({"matched_count": len(matched), "items": matched[:50]}, ensure_ascii=False), "admin")
+                    ("admin_purge_stale", json.dumps({"matched_count": len(matched),
+                                                      # 🔏 2026-09-07 氏名/メールは残さない (短縮ハッシュのみ)
+                                                      "items": [{**{k: v for k, v in m.items() if k not in ("name", "email")},
+                                                                 "email_hash": _student_email_hash(m.get("email") or "")[:12]}
+                                                                for m in matched[:50]]}, ensure_ascii=False), "admin")
                 )
             except Exception: pass
             conn.commit()
