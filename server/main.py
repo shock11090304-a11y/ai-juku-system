@@ -3794,6 +3794,8 @@ def health():
         #       表明は無い) ので、verdict を変えてもデプロイ判定には影響しない。
         #       デプロイを守るために黙らせているのではない。
         "init_ddl_skipped": len(_INIT_DB_DDL_SKIPPED),
+        # 🗄️ 2026-09-07: バックアップ未設定を点検 (prod_healthcheck) で見えるように。DB には触らない。
+        "r2_backup_configured": bool(os.getenv("R2_ACCOUNT_ID")),
         "init_ddl_skipped_names": (
             _INIT_DB_DDL_SKIPPED[:20]
             + ([f"…他{len(_INIT_DB_DDL_SKIPPED) - 20}件"] if len(_INIT_DB_DDL_SKIPPED) > 20 else [])
@@ -9122,14 +9124,22 @@ def _collect_health_snapshot() -> dict:
     #   本命の in-process スケジューラが止まったときは実害が出るので、ここで検知する。
     #   判定は _scheduler_status_rows / _stalled_schedulers が単一ソース。
     try:
+        _rows = _scheduler_status_rows()
         snapshot["stalled_schedulers"] = [
             {"name": e["name"], "last_run_jst": e["last_run_jst"],
              "age_hours": e["age_hours"], "max_age_days": e["max_age_days"]}
-            for e in _stalled_schedulers(_scheduler_status_rows())
+            for e in _stalled_schedulers(_rows)
+        ]
+        # 🩺 2026-09-07: 止まってはいないが最後の実行が失敗で終わったもの
+        snapshot["failed_schedulers"] = [
+            {"name": e["name"], "last_run_jst": e["last_run_jst"],
+             "error": str((e.get("props") or {}).get("error"))[:200]}
+            for e in _failed_schedulers(_rows)
         ]
     except Exception as e:
         log.warning(f"[Monitor] scheduler staleness query failed: {e}")
         snapshot["stalled_schedulers"] = []
+        snapshot["failed_schedulers"] = []
 
     conn.close()
     return snapshot
@@ -9192,6 +9202,8 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "weakness_aggregation_run": "弱点集計 (毎日)",
             "trial_mgmt_run": "体験フォロー (毎日)",
             "daily_sns_post": "SNS 投稿 (毎日)",
+            "r2_backup_success": "DB バックアップ (毎日3時・R2)",
+            "admission_recompute_run": "合格スコア再計算 (毎日4時)",
         }
         _lines = "、".join(
             f"{_label.get(s['name'], s['name'])} は最終実行 {s['last_run_jst']}"
@@ -9202,6 +9214,29 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "title": f"🚨 定期実行が {len(stalled)} 件止まっています",
             "detail": (f"{_lines}。API プロセス内のスケジューラが停止した疑いがあります。"
                        f"再起動で復帰します。詳細は GET /api/admin/scheduler/status。")
+        })
+    # 1-C. 🩺 定期実行の失敗 (2026-09-07)
+    #   止まってはいないが最後の実行が例外で終わったもの。従来は「今日走った」事実だけで生存扱いになり、
+    #   週次レポートが途中で落ちて残り全員未送信でも、Stripe 整合が数日失敗し続けても無音だった。
+    failed = snapshot.get("failed_schedulers") or []
+    if failed:
+        _label_f = {
+            "weekly_reports_run": "週次レポート (日曜19時)",
+            "weekly_worksheet_run": "週次弱点プリント (日曜5時)",
+            "weakness_aggregation_run": "弱点集計 (毎日)",
+            "trial_mgmt_run": "体験フォロー (毎日)",
+            "daily_sns_post": "SNS 投稿 (毎日)",
+            "r2_backup_success": "DB バックアップ (毎日3時・R2)",
+            "admission_recompute_run": "合格スコア再計算 (毎日4時)",
+        }
+        _lines_f = "、".join(
+            f"{_label_f.get(s['name'], s['name'])} (最終実行 {s['last_run_jst']}): {s['error']}"
+            for s in failed)
+        alerts.append({
+            "key": "scheduler_failed", "severity": "critical",
+            "title": f"🚨 定期実行 {len(failed)} 件が最後の実行で失敗しています",
+            "detail": (f"{_lines_f}。翌日の再実行までこの状態が続きます (途中まで処理された分はやり直されません)。"
+                       f"詳細は GET /api/admin/scheduler/status。"),
         })
 
     # 2. Email/AI 設定
@@ -29623,6 +29658,10 @@ _SCHEDULER_MAX_AGE_DAYS = {
     "weekly_worksheet_run": 8,       # 週次プリント生成
     "trial_mgmt_run": 2,             # 体験フォローの日次バッチ
     "daily_sns_post": 2,             # 日次 SNS 投稿
+    # 🗄️ 2026-09-07: DB バックアップ (毎日 JST 3:00 → Cloudflare R2)。成功時に r2_backup_success を書くので
+    #   2 日以上無ければ停止。従来は監視対象外で、鍵の失効等で毎晩失敗し続けても誰も気づけなかった。
+    "r2_backup_success": 2,
+    "admission_recompute_run": 2,    # 合格スコアの日次再計算 (2026-09-06 追加・4:00 の弱点集計の直後)
 }
 
 
@@ -29673,6 +29712,9 @@ def _scheduler_status_rows() -> list:
                 entry["props"] = json.loads(props) if isinstance(props, str) else (props or {})
             except Exception:
                 entry["props"] = {"raw": str(props)[:300]}
+            # 🩺 2026-09-07: 最後の実行が例外で終わった (props.error) ものを failed として印す。
+            #   従来は「今日走った」事実だけで生存扱いになり、失敗し続けても stale にならなかった。
+            entry["failed"] = isinstance(entry["props"], dict) and bool(entry["props"].get("error"))
             out.append(entry)
     finally:
         conn.close()
@@ -29707,6 +29749,13 @@ def _stalled_schedulers(rows: list) -> list:
       stale なものだけを対象にする。
     """
     return [e for e in rows if e.get("stale") and e.get("last_run_jst")]
+
+
+def _failed_schedulers(rows: list) -> list:
+    """最後の実行が失敗 (props.error) で終わったスケジューラ。翌日の再実行までは失敗のまま。
+    2026-09-07: 週次レポートが途中で落ちて残り全員未送信でも、Stripe 整合が数日失敗し続けても
+    無音だった (システム点検で確定) のを、5 分監視の critical に乗せる。"""
+    return [e for e in rows if e.get("failed") and e.get("last_run_jst")]
 
 
 @app.get("/api/admin/scheduler/status")
@@ -53384,6 +53433,20 @@ async def _r2_backup_scheduler():
                     try:
                         _record_r2_event('r2_backup_failed', {'error': str(e)[:500]})
                     except Exception: pass
+                    # 🗄️ 2026-09-07: 失敗を塾長に届ける。従来はログと events だけで、鍵の失効や権限変更で
+                    #   毎晩失敗し続けても誰も気づけなかった (システム点検で確定)。
+                    try:
+                        _err = str(e)[:500].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                        await asyncio.to_thread(
+                            _send_monitor_email,
+                            "🚨 DB バックアップ (Cloudflare R2) が失敗しました",
+                            f"<p>毎日 JST {target_h}:00 の Postgres → Cloudflare R2 バックアップが失敗しました。</p>"
+                            f"<p>エラー: {_err}</p>"
+                            f"<p>Railway の ai-juku-api にある R2_* 環境変数 (鍵の失効・バケット権限) を確認してください。"
+                            f"翌日 {target_h}:00 に自動で再試行します。</p>",
+                        )
+                    except Exception as me:
+                        log.error(f'[r2_backup_scheduler] failure email not sent: {me}')
                     # failure でも last_run_date 更新で 1 日 1 回 retry に留める
                     last_run_date = today_str
                 await asyncio.sleep(3600)  # 1h sleep to avoid double fire

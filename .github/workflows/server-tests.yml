@@ -154,6 +154,14 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_security_hardening.py
 
+      # 🩺 定期実行の失敗/停止と DB バックアップの可視化 (2026-09-07): 最後の実行が失敗した
+      #   スケジューラが critical に乗ること・バックアップの停止検知と未設定の点検。
+      - name: 定期実行の失敗検知 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_scheduler_alerting.py
+
       # 📺 再生リストの登録/命名 API。**書き込む側**なので、URL をそのまま受けること・
       #   二度送っても増えないこと・読めない入力で半端な行を作らないことを見る。
       #   あわせて「名前 → どの授業に繋がるか」を正典 (class_recording_assign.slot_of) と

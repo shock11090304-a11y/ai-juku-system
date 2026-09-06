@@ -155,6 +155,14 @@ def check_api_health():
                     # ★「見た上で0件」と「フィールドが無い旧 deploy (None)」を区別して出す。
                     #   無言だと Rollback 直後などに『チェックできていない』ことに気づけない。
                     add("api_health", PASS, "起動時のデータベース更新: 全部通っています (未反映 0 件)")
+                # 🗄️ 2026-09-07 DB バックアップ (R2) の設定有無。未設定だと毎晩の dump が黙ってスキップされる。
+                #   停止/失敗そのものは scheduler_live (DB モード) と 5 分監視の critical メールが見る。
+                r2c = h.get("r2_backup_configured")
+                if r2c is False:
+                    add("api_health", FAIL,
+                        "DB バックアップ (Cloudflare R2) が未設定です。Railway の ai-juku-api に R2_ACCOUNT_ID 等を設定してください")
+                elif r2c is True:
+                    add("api_health", PASS, "DB バックアップ (R2): 設定あり")
             except Exception as e:
                 add("api_health", WARN, f"health レスポンスの解析に失敗: {type(e).__name__}: {e}")
     except Exception as e:
@@ -561,6 +569,8 @@ def check_scheduler_live(cur):
         "weekly_reports_run": 8,         # 週次(日曜) → 8日以内
         "weekly_worksheet_run": 8,       # 週次プリント生成
         "trial_mgmt_run": 2,             # 体験フォロー/リマインダの日次バッチ(実イベント名)
+        "r2_backup_success": 2,          # 🗄️ 2026-09-07 DB バックアップ (毎日 JST 3:00 → R2)
+        "admission_recompute_run": 2,    # 合格スコア再計算 (毎日 4:00・2026-09-06 追加)
     }
     for name, max_days in watched.items():
         try:
