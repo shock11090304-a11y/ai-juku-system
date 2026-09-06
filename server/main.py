@@ -10821,14 +10821,17 @@ def _github_api(method: str, path: str, body: dict = None, timeout: int = 15) ->
 
 
 async def _attempt_auto_rollback(reason: str, failures: list = None, force: bool = False) -> dict:
-    """直前 commit を GitHub branch HEAD から revert (= 1 つ前の SHA に branch を更新)。
-    Vercel が main branch を監視している場合、自動的に旧コードで再 deploy される。
+    """直前 commit の内容を取り消す revert commit を GitHub 上で積む (履歴は書き換えない)。
+    Vercel / Railway が main branch を監視しているので、自動的に旧内容で再 deploy される。
 
     挙動:
       1. 環境変数 / cooldown / 24h 上限の事前チェック
       2. GET refs/heads/{branch} で現在 SHA 取得
       3. GET commits/{sha} で parent SHA 取得 (1 つ前のコミット)
-      4. PATCH refs/heads/{branch} で branch HEAD を parent SHA へ巻き戻し (force)
+      4. 🔁 2026-09-07: parent の tree を持ち現 HEAD を親にする commit を POST git/commits で作り、
+         PATCH refs/heads/{branch} を **force 無し** (fast-forward) で進める = git revert 相当。
+         従来は branch HEAD を parent SHA へ force 更新していて、塾長の手元の main と食い違い次の push が
+         拒否され、複数 commit の push は末尾 1 つしか戻らなかった (システム点検で確定)。
       5. 成功時 monitor email + dashboard event 送信、history 記録
     """
     failures = failures or []
@@ -10878,22 +10881,46 @@ async def _attempt_auto_rollback(reason: str, failures: list = None, force: bool
     if not parent_sha:
         return {"ok": False, "error": "parent commit sha not found"}
 
-    # ---- 3. branch HEAD を parent SHA に force update ----
+    # ---- 3. revert commit を積む (履歴を書き換えない・2026-09-07) ----
+    #   parent の tree を持ち現 HEAD を親にする commit = 直前 commit の内容だけを取り消す。
+    #   手元の main はそのまま pull できる。ループ防止 (rb_stats.last_to_sha) は revert commit の SHA を戻り先として見る。
+    r_parent = await loop.run_in_executor(None, _github_api, "GET", f"/repos/{GITHUB_REPO}/git/commits/{parent_sha}")
+    if not r_parent.get("ok"):
+        return {"ok": False, "error": f"failed to fetch parent commit: {r_parent.get('error')}"}
+    parent_tree = ((r_parent.get("json") or {}).get("tree") or {}).get("sha")
+    if not parent_tree:
+        return {"ok": False, "error": "parent tree sha not found"}
+    revert_msg = (
+        f"⏪ auto-rollback: revert {current_sha[:8]} (内容を {parent_sha[:8]} に戻す)\n\n"
+        f"理由: {reason[:200]}\n"
+        f"合成テストが 2 回連続で失敗したため、直前 commit の内容を取り消す commit を自動で積んだ。\n"
+        f"履歴は書き換えていない (手元の main はそのまま pull できる)。原因を直して新しい commit として push すること。"
+    )
+    r_new = await loop.run_in_executor(
+        None, _github_api, "POST", f"/repos/{GITHUB_REPO}/git/commits",
+        {"message": revert_msg, "tree": parent_tree, "parents": [current_sha]},
+    )
+    if not r_new.get("ok"):
+        return {"ok": False, "error": f"failed to create revert commit: {r_new.get('error')}"}
+    revert_sha = (r_new.get("json") or {}).get("sha")
+    if not revert_sha:
+        return {"ok": False, "error": "revert commit sha not returned"}
     r_update = await loop.run_in_executor(
         None, _github_api,
         "PATCH",
         f"/repos/{GITHUB_REPO}/git/refs/heads/{AUTO_ROLLBACK_BRANCH}",
-        {"sha": parent_sha, "force": True},
+        {"sha": revert_sha, "force": False},   # fast-forward のみ。誰かが同時に push していたら失敗して止まる (安全側)
     )
     if not r_update.get("ok"):
-        return {"ok": False, "error": f"failed to update branch HEAD: {r_update.get('error')}"}
+        return {"ok": False, "error": f"failed to update branch HEAD (non-fast-forward?): {r_update.get('error')}"}
 
     # ---- 4. 履歴記録 + メール通知 ----
     rb_record = {
         "ts": nowts,
         "iso": datetime.now(timezone(timedelta(hours=9))).isoformat(),
         "from_sha": current_sha,
-        "to_sha": parent_sha,
+        "to_sha": revert_sha,               # 新しい HEAD (revert commit)
+        "reverted_tree_of": parent_sha,    # 内容はこの commit と同じ
         "reason": reason,
         "failures": failures[:5],
     }
@@ -10907,17 +10934,17 @@ async def _attempt_auto_rollback(reason: str, failures: list = None, force: bool
         body_html = (
             f"<h2>🚨 自動 ROLLBACK 実行 — 顧客接触は復旧します (Vercel 再 deploy 待ち)</h2>"
             f"<p><strong>理由:</strong> {html_escape_safe(reason)}</p>"
-            f"<p><strong>2連続失敗のため、直前 commit を巻き戻しました。</strong></p>"
+            f"<p><strong>2連続失敗のため、直前 commit の内容を取り消す commit を積みました (履歴は書き換えていません)。</strong></p>"
             f"<h3>巻き戻された commit (壊れていた疑い)</h3>"
             f"<ul><li>SHA: <code>{current_sha[:8]}</code></li>"
             f"<li>Author: {html_escape_safe(commit_author)}</li>"
             f"<li>Message: {html_escape_safe(commit_msg)}</li></ul>"
-            f"<h3>現在の HEAD (戻された安全な commit)</h3>"
-            f"<ul><li>SHA: <code>{parent_sha[:8]}</code></li></ul>"
+            f"<h3>現在の HEAD (自動で積んだ revert commit)</h3>"
+            f"<ul><li>SHA: <code>{revert_sha[:8]}</code> (内容は <code>{parent_sha[:8]}</code> と同じ)</li></ul>"
             f"<h3>失敗詳細</h3>"
             "<ul>" + "".join(f"<li>{html_escape_safe(str(f))}</li>" for f in failures[:10]) + "</ul>"
             f"<p>Vercel の自動再 deploy で 2-3 分以内に旧コードが再公開されます。次の合成テストで OK が出れば自動修復成功です。</p>"
-            f"<p><strong>本格修正:</strong> 巻き戻された commit のバグを直し、新しい commit として再 push してください。</p>"
+            f"<p><strong>本格修正:</strong> 取り消された commit のバグを直し、新しい commit として push してください (手元の main は普通に pull できます)。</p>"
         )
         await asyncio.to_thread(_send_monitor_email, "🚨 申込フロー auto-rollback 実行", body_html)
     except Exception as e:
@@ -10929,7 +10956,8 @@ async def _attempt_auto_rollback(reason: str, failures: list = None, force: bool
     return {
         "ok": True,
         "rolled_back_from": current_sha,
-        "reverted_to_sha": parent_sha,
+        "reverted_to_sha": parent_sha,        # 内容の戻り先
+        "revert_commit_sha": revert_sha,      # 新しい HEAD
         "reason": reason,
         "rb_record": rb_record,
     }
