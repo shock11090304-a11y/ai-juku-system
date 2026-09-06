@@ -724,11 +724,13 @@
           <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">🎖 体験中</div>
           <div id="sumTrial" style="font-size:1.8rem;font-weight:900;color:#a78bfa;">0</div>
           <div style="font-size:0.7rem;color:#71717a;">名 (7日間 完全無料体験)</div>
+          <div id="sumTrialHonka" style="font-size:0.66rem;color:#64748b;margin-top:0.2rem;"></div>
         </div>
         <div style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
           <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">✅ 月額契約中</div>
           <div id="sumPaid" style="font-size:1.8rem;font-weight:900;color:#34d399;">0</div>
           <div style="font-size:0.7rem;color:#71717a;">名 (継続課金)</div>
+          <div id="sumPastDue" style="font-size:0.66rem;color:#fbbf24;margin-top:0.2rem;"></div>
         </div>
         <div style="background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
           <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">⏱ 体験終了</div>
@@ -3163,9 +3165,16 @@
         const s = data.summary || {};
         document.getElementById('sumTrial').textContent = fmtNum(s.trial);
         document.getElementById('sumPaid').textContent = fmtNum(s.paid);
+        // 💳 2026-09-07 支払い遅延 (猶予期間中も在籍) と、体験ではない trial (本科/塾生アプリ) を分けて見せる
+        const _pd = document.getElementById('sumPastDue');
+        if (_pd) _pd.textContent = (s.past_due || 0) > 0 ? `+ 支払い遅延 ${fmtNum(s.past_due)}名 (猶予中・在籍扱い)` : '';
+        const _th = document.getElementById('sumTrialHonka');
+        if (_th) _th.textContent = (s.trial_honka || 0) > 0 ? `本科/塾生アプリの ${fmtNum(s.trial_honka)}名は体験に含めず` : '';
         document.getElementById('sumExpired').textContent = fmtNum(s.expired);
         document.getElementById('sumCanceled').textContent = fmtNum(s.canceled);
         document.getElementById('sumNewToday').textContent = fmtNum(s.new_today);
+        // 📅 新規は SaaS 申込のみ。本科/塾生アプリの承認を含む全体はツールチップで
+        try { document.getElementById('sumNewToday').title = `本科/塾生アプリの承認を含む全体: 今日 ${s.new_today_all ?? '-'} / 7日 ${s.new_7d_all ?? '-'} / 30日 ${s.new_30d_all ?? '-'}`; } catch (_) {}
         document.getElementById('sumNew7d').textContent = fmtNum(s.new_7d);
         document.getElementById('sumNew30d').textContent = fmtNum(s.new_30d);
         document.getElementById('sumConversion').textContent = (s.conversion_rate_pct ?? 0);

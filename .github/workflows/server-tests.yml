@@ -162,6 +162,14 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_scheduler_alerting.py
 
+      # 💳🎖 在籍/体験の母集団 (2026-09-07): 猶予期間中の past_due が配信・一覧から消えないこと、
+      #   「体験中」「新規」「転換率」が本科/塾生アプリの承認で膨らまないこと、満了前キューの除外条件。
+      - name: 在籍・体験の母集団 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_enrollment_cohorts.py
+
       # 📺 再生リストの登録/命名 API。**書き込む側**なので、URL をそのまま受けること・
       #   二度送っても増えないこと・読めない入力で半端な行を作らないことを見る。
       #   あわせて「名前 → どの授業に繋がるか」を正典 (class_recording_assign.slot_of) と

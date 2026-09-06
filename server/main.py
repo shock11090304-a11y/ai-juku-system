@@ -5596,7 +5596,7 @@ def _run_weekly_worksheet_generation() -> dict:
         login_cutoff = (datetime.now(timezone.utc) - timedelta(days=60)).isoformat()
         c.execute(
             "SELECT id, name, email, line_user_id, grade FROM students "
-            "WHERE status IN ('paid', 'trial') "
+            f"WHERE {_enrolled_sql()} "
             "AND (last_login_at IS NULL OR last_login_at >= ?) "
             "LIMIT 500",
             (login_cutoff,)
@@ -8143,7 +8143,7 @@ def _recompute_admission_all(limit: int = 2000) -> dict:
     try:
         c = conn.cursor()
         c.execute(
-            f"SELECT id FROM students WHERE status IN ('trial', 'paid') AND {_synth_exclude_sql('students')} "
+            f"SELECT id FROM students WHERE {_enrolled_sql('students')} AND {_synth_exclude_sql('students')} "
             f"ORDER BY id LIMIT ?",
             (limit,),
         )
@@ -8935,10 +8935,17 @@ def _collect_health_snapshot() -> dict:
         "SELECT COUNT(*) FROM students WHERE status='paid' AND paid_since >= ?", (h24,)
     )
 
-    # trial → paid 転換率
-    if snapshot["signups_total"] > 0:
-        snapshot["conversion_rate_pct"] = round(100 * snapshot["paid_total"] / snapshot["signups_total"], 1)
-    else:
+    # trial → paid 転換率 (2026-09-07: admin_stats と同じ単一定義 _saas_conversion に統一。
+    #   従来は paid_total / 全生徒 で、本科生・塾生アプリ・体験中まで母数に入っていた)
+    try:
+        _conv = _saas_conversion(c)
+        snapshot["conversion_rate_pct"] = _conv["rate_pct"]
+        snapshot["conversion_signups"] = _conv["signups"]
+        snapshot["conversion_converted"] = _conv["converted"]
+    except Exception as e:
+        log.warning(f"[Monitor] conversion query failed: {e}")
+        try: conn.rollback()
+        except Exception: pass
         snapshot["conversion_rate_pct"] = 0.0
 
     # Webhook 処理: 直近 24時間に処理した event 数 (processed_events.processed_at)
@@ -10264,6 +10271,48 @@ def _is_synthetic_student(email, goal=None, name=None) -> bool:
     if name and str(name).strip() in _SYNTH_STUDENT_NAMES:
         return True
     return False
+
+
+# 💳 2026-09-07 「在籍中 (アプリを使える生徒)」の SQL 断片。past_due (決済失敗) は 30 日の猶予期間中だけ
+#   在籍扱い (_is_past_due_within_grace と同じ規則。past_due_since が NULL なら安全側で在籍)。
+#   従来は各所が status IN ('trial','paid') を独自に書いており、猶予期間中の家庭が週次レポート・一斉送信・
+#   学習状況・digest から黙って消えていた (システム点検で確定)。
+def _enrolled_sql(alias: str = "") -> str:
+    p = f"{alias}." if alias else ""
+    if USE_POSTGRES:
+        grace = f"({p}past_due_since IS NULL OR {p}past_due_since >= NOW() - INTERVAL '{int(PAST_DUE_GRACE_DAYS)} days')"
+    else:
+        grace = f"({p}past_due_since IS NULL OR {p}past_due_since >= datetime('now', '-{int(PAST_DUE_GRACE_DAYS)} days'))"
+    return f"({p}status IN ('trial', 'paid') OR ({p}status = 'past_due' AND {grace}))"
+
+
+# 🎖 2026-09-07 「SaaS の生徒」= 本科 (course='kokuritsu_nankan'・trial_end +10年) と塾生アプリ承認 (ai_disabled=1)
+#   を除いた生徒。status='trial' でもこの 2 種は 7 日間体験ではない。従来は status='trial' 一本で数えていて
+#   「体験中」「今日の新規」「転換率」が本科生・塾生アプリの承認で膨らんでいた (システム点検で確定)。
+def _saas_student_sql(alias: str = "") -> str:
+    p = f"{alias}." if alias else ""
+    return f"(({p}course IS NULL OR {p}course <> 'kokuritsu_nankan') AND COALESCE({p}ai_disabled, 0) = 0)"
+
+
+def _saas_trial_sql(alias: str = "") -> str:
+    p = f"{alias}." if alias else ""
+    return f"({p}status = 'trial' AND {_saas_student_sql(alias)})"
+
+
+def _saas_conversion(c) -> dict:
+    """体験→月額の転換率 (単一定義・2026-09-07)。
+    母数: SaaS 生徒 (本科/塾生アプリ除外・合成除外) で体験に入った全員 = trial/paid/past_due/canceled/expired。
+    転換: 一度でも月額になった = paid/past_due/canceled。
+    従来は admin_stats・監視 snapshot の式が別々で、画面ごとに違う転換率が出ていた。"""
+    base = f"{_saas_student_sql()} AND {_synth_exclude_sql()}"
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status IN ('trial','paid','past_due','canceled','expired') AND {base}")
+    row = c.fetchone()
+    signups = int((row["n"] if row else 0) or 0)
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status IN ('paid','past_due','canceled') AND {base}")
+    row = c.fetchone()
+    converted = int((row["n"] if row else 0) or 0)
+    return {"signups": signups, "converted": converted,
+            "rate_pct": round(converted / signups * 100, 1) if signups else 0.0}
 
 
 def _synth_exclude_sql(alias: str = "") -> str:
@@ -12583,8 +12632,14 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
     synth_sql = "" if include_synthetic else f" AND {_synth_exclude_sql()}"
     c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status='paid'{synth_sql}")
     paid_count = c.fetchone()["n"]
-    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status='trial'{synth_sql}")
+    # 🎖 2026-09-07 体験中 = SaaS の 7 日体験だけ。本科 (kokuritsu_nankan) と塾生アプリ承認 (ai_disabled=1) は別枠で返す
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE {_saas_trial_sql()}{synth_sql}")
     trial_count = c.fetchone()["n"]
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status='trial' AND NOT {_saas_student_sql()}{synth_sql}")
+    trial_honka_count = c.fetchone()["n"]
+    # 💳 支払い遅延 (猶予期間中も在籍扱い)。従来は 4 タイルのどこにも無く、合計と合わなかった
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status='past_due'{synth_sql}")
+    past_due_count = c.fetchone()["n"]
     c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status='canceled'{synth_sql}")
     canceled_count = c.fetchone()["n"]
     c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status='expired'{synth_sql}")
@@ -12595,12 +12650,16 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
     today_start = (now_jst.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(hours=9))
     week_start = today_start - timedelta(days=7)
     month_start = today_start - timedelta(days=30)
-    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE created_at >= ?{synth_sql}", (today_start,))
-    new_today = c.fetchone()["n"]
-    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE created_at >= ?{synth_sql}", (week_start,))
-    new_7d = c.fetchone()["n"]
-    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE created_at >= ?{synth_sql}", (month_start,))
-    new_30d = c.fetchone()["n"]
+    # 📅 2026-09-07 新規申込 = SaaS 生徒のみ。本科・塾生アプリの承認は *_all に含めて別に返す
+    #   (従来は承認 10 件で「今日の新規 10 名」になり、SaaS の申込と区別が付かなかった)
+    _new = {}
+    for _k, _since in (("today", today_start), ("7d", week_start), ("30d", month_start)):
+        c.execute(f"SELECT COUNT(*) AS n FROM students WHERE created_at >= ?{synth_sql}", (_since,))
+        _new[_k + "_all"] = c.fetchone()["n"]
+        c.execute(f"SELECT COUNT(*) AS n FROM students WHERE created_at >= ? AND {_saas_student_sql()}{synth_sql}", (_since,))
+        _new[_k] = c.fetchone()["n"]
+    new_today, new_7d, new_30d = _new["today"], _new["7d"], _new["30d"]
+    _conv = _saas_conversion(c)
 
     # 入塾金免除キャンペーン適用済数
     try:
@@ -12633,12 +12692,9 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
     _mrr_amounts = _stripe_active_sub_amounts()
     mrr = sum(_student_mrr_yen(s.get("plan") or "", _subid_by_id.get(s["id"]), _mrr_amounts) for s in paid_students)
 
-    # 体験 → 月額 転換率 (累積ベース・粗計算)
-    # 分母: trial に入った全ユーザー (現trial + 現paid + 現canceled + 現expired)
-    # 分子: 現paid (= 月額移行成立) + 現canceled (= 一時的に成立した経験あり)
-    total_trial_entered = paid_count + trial_count + canceled_count + expired_count
-    converted = paid_count + canceled_count
-    conversion_rate = round(converted / total_trial_entered * 100, 1) if total_trial_entered > 0 else 0
+    # 体験 → 月額 転換率: 2026-09-07 から _saas_conversion の単一定義 (監視 snapshot と同じ式)。
+    #   母数 = SaaS 生徒で体験に入った全員、転換 = 一度でも月額になった (paid/past_due/canceled)。
+    conversion_rate = _conv["rate_pct"]
 
     return {
         "students": students,
@@ -12648,10 +12704,17 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
             "trial": trial_count,
             "canceled": canceled_count,
             "expired": expired_count,
+            "past_due": past_due_count,          # 💳 猶予期間中も在籍
+            "trial_honka": trial_honka_count,    # 🎖 本科/塾生アプリの trial (体験ではない)
             "new_today": new_today,
             "new_7d": new_7d,
             "new_30d": new_30d,
+            "new_today_all": _new["today_all"],
+            "new_7d_all": _new["7d_all"],
+            "new_30d_all": _new["30d_all"],
             "conversion_rate_pct": conversion_rate,
+            "conversion_converted": _conv["converted"],
+            "conversion_signups": _conv["signups"],
             "waiver_used": waiver_used,
             "waiver_remaining": max(0, ENROLLMENT_WAIVER_LIMIT - waiver_used),
             "mrr_yen": mrr,
@@ -19201,7 +19264,7 @@ def admin_autopilot_dashboard(authorization: Optional[str] = Header(None)):
         # 体験申込 (status='trial' で過去 7 日 created)
         try:
             c.execute(
-                "SELECT COUNT(*) FROM students WHERE status='trial' AND created_at > ?",
+                f"SELECT COUNT(*) FROM students WHERE {_saas_trial_sql()} AND created_at > ? AND {_synth_exclude_sql()}",
                 (cutoff_7d,)
             )
             row = c.fetchone()
@@ -23223,7 +23286,7 @@ def admin_trial_expiring_queue(
                    LEFT JOIN (SELECT student_id, COUNT(*) AS n FROM study_logs GROUP BY student_id) sl ON sl.student_id = s.id
                    WHERE s.status = 'trial' AND s.trial_end IS NOT NULL
                      AND s.trial_end > ? AND s.trial_end <= ?
-                     AND s.stripe_customer_id IS NULL
+                     AND (s.stripe_subscription_id IS NULL OR s.stripe_subscription_id = '')
                      AND (s.course IS NULL OR s.course != 'kokuritsu_nankan')
                      AND (s.plan IS NULL OR s.plan != 'student_addon')
                      AND s.created_at >= ?
@@ -23334,7 +23397,7 @@ def admin_students_ai_usage(
                      SELECT student_id, COUNT(*) AS tutor_count, MAX(created_at) AS last_tutor
                        FROM ai_tutor_solve_log GROUP BY student_id
                    ) tl ON tl.student_id = s.id
-                   WHERE s.status IN ('trial', 'paid')
+                   WHERE {_enrolled_sql('s')}
                      AND {_synth_exclude_sql('s')}
                    ORDER BY qa.attempts DESC NULLS LAST, s.id""",
             )
@@ -23764,9 +23827,9 @@ def admin_students_send_login_link(payload: dict, authorization: Optional[str] =
             students_to_send = [dict(r) for r in c.fetchall()]
         elif target == "never_logged_in":
             try:
-                c.execute("""SELECT id, name, email, line_user_id, status, last_login_at FROM students
+                c.execute(f"""SELECT id, name, email, line_user_id, status, last_login_at FROM students
                              WHERE last_login_at IS NULL
-                               AND status IN ('trial', 'paid')
+                               AND {_enrolled_sql()}
                                AND ((email IS NOT NULL AND email != '')
                                     OR (line_user_id IS NOT NULL AND line_user_id != ''))""")
             except Exception:
@@ -24064,7 +24127,7 @@ def admin_learning_digest(authorization: Optional[str] = Header(None),
         elif include_all:
             sw, sp = "", []
         else:
-            sw, sp = f"WHERE status IN ('trial', 'paid') AND {_synth_exclude_sql('students')}", []
+            sw, sp = f"WHERE {_enrolled_sql('students')} AND {_synth_exclude_sql('students')}", []
         try:
             c.execute(f"SELECT id, name, grade, goal, course, plan, status, created_at, last_login_at "
                       f"FROM students {sw} ORDER BY id LIMIT ?", (*sp, limit))
@@ -36180,7 +36243,7 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
     c.execute(
         "SELECT id, name, email, student_email, student_email_verified, line_user_id, course, "
         "parent_email, parent_email_enabled FROM students "
-        "WHERE status IN ('trial', 'paid') AND (course = 'kokuritsu_nankan' OR status = 'paid') "
+        f"WHERE {_enrolled_sql()} AND (course = 'kokuritsu_nankan' OR status IN ('paid', 'past_due')) "
         f"AND {_synth_exclude_sql()}"
     )
     students = list(c.fetchall())
@@ -37371,9 +37434,9 @@ def check_inactivity(payload: AlertCheckRequest, x_cron_secret: str = Header(Non
     #    対象外 (塾長指示)。streak_reminder / trial_ending (10年trial生に不適切) の LINE push を送らない。
     #    継続メール全7経路 (trial-reminders/followups/nurture/unused-warning/rescue) と同じ除外。
     c.execute(
-        """SELECT id, name, line_user_id, status, updated_at
+        f"""SELECT id, name, line_user_id, status, updated_at
            FROM students
-           WHERE status IN ('trial', 'paid')
+           WHERE {_enrolled_sql()}
              AND updated_at <= ?
              AND (course IS NULL OR course != 'kokuritsu_nankan')""",
         (threshold_dt,)
@@ -42198,7 +42261,7 @@ def _study_log_dashboard_students(c, cutoff_date):
     c.execute(
         f"""SELECT id, name, grade, status FROM students
            WHERE (
-                 (course = ? AND status IN ('paid', 'trial'))
+                 (course = ? AND {_enrolled_sql()})
                  OR id IN (SELECT DISTINCT student_id FROM study_logs WHERE studied_date >= ?)
            )
            AND {_synth_exclude_sql()}
@@ -45849,12 +45912,12 @@ def admin_list_students_by_course(authorization: Optional[str] = Header(None), c
         c = conn.cursor()
         if course:
             c.execute(
-                f"SELECT id, name, grade, status, course, class_labels FROM students WHERE course = ? AND status IN ('paid','trial') AND {_synth_exclude_sql()} ORDER BY name",
+                f"SELECT id, name, grade, status, course, class_labels FROM students WHERE course = ? AND {_enrolled_sql()} AND {_synth_exclude_sql()} ORDER BY name",
                 (course,)
             )
         else:
             c.execute(
-                f"SELECT id, name, grade, status, course, class_labels FROM students WHERE status IN ('paid','trial') AND {_synth_exclude_sql()} ORDER BY name"
+                f"SELECT id, name, grade, status, course, class_labels FROM students WHERE {_enrolled_sql()} AND {_synth_exclude_sql()} ORDER BY name"
             )
         rows = c.fetchall()
         # class_labels も返す: 一斉送信の broadcast_filter='class' で CEO が対象人数を出すのに使う
@@ -47324,7 +47387,7 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
         if target == "student":
             if not payload.student_id:
                 raise HTTPException(status_code=400, detail="student_id が必要です")
-            c.execute("SELECT id, name, email FROM students WHERE id = ? AND status IN ('paid','trial')", (int(payload.student_id),))
+            c.execute(f"SELECT id, name, email FROM students WHERE id = ? AND {_enrolled_sql()}", (int(payload.student_id),))
             row = c.fetchone()
             if not row:
                 raise HTTPException(status_code=404, detail="生徒が見つからないか、status が無効です")
@@ -47336,9 +47399,9 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
             import uuid as _uuid
             broadcast_group_id = f"bc_{_uuid.uuid4().hex[:12]}"
             if bf == "all":
-                c.execute(f"SELECT id, name, email FROM students WHERE status IN ('paid','trial') AND {_synth_exclude_sql()}")
+                c.execute(f"SELECT id, name, email FROM students WHERE {_enrolled_sql()} AND {_synth_exclude_sql()}")
             elif bf == "kokuritsu_nankan":
-                c.execute(f"SELECT id, name, email FROM students WHERE status IN ('paid','trial') AND course = ? AND {_synth_exclude_sql()}", (_STUDY_LOG_TARGET_COURSE,))
+                c.execute(f"SELECT id, name, email FROM students WHERE {_enrolled_sql()} AND course = ? AND {_synth_exclude_sql()}", (_STUDY_LOG_TARGET_COURSE,))
             elif bf == "paid_only":
                 c.execute(f"SELECT id, name, email FROM students WHERE status = 'paid' AND {_synth_exclude_sql()}")
             elif bf == "trial_only":
@@ -47408,7 +47471,7 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
                     raise HTTPException(status_code=413, detail=f"一度に選択できるのは500名までです (選択: {len(sel_ids)}名)")
                 ph = ",".join(["?"] * len(sel_ids))
                 c.execute(
-                    f"SELECT id, name, email FROM students WHERE id IN ({ph}) AND status IN ('paid','trial')",
+                    f"SELECT id, name, email FROM students WHERE id IN ({ph}) AND {_enrolled_sql()}",
                     tuple(sel_ids),
                 )
             if bf != "class":   # class は上で targets を埋め終えている (二重追加を防ぐ)
