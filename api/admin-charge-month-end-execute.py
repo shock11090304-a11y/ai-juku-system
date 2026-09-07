@@ -228,6 +228,34 @@ def _create_payment_intent(secret_key, customer_id, payment_method_id, amount, m
         return json.loads(resp.read().decode("utf-8"))
 
 
+
+def _existing_keys(keys):
+    """MGET で「値のあるキー」の添字集合を返す (400 件ずつ)。KV 応答なしの塊は「無し」扱い (read-only の補助判定用)。"""
+    hits = set()
+    for i in range(0, len(keys), 400):
+        part = keys[i:i + 400]
+        res = _redis("MGET", *part)
+        vals = res.get("result") if (res and isinstance(res, dict)) else None
+        if not isinstance(vals, list) or len(vals) != len(part):
+            continue
+        for k, v in enumerate(vals):
+            if v:
+                hits.add(i + k)
+    return hits
+
+
+def _history_hits(rids, month):
+    """📖 2026-09-08: 成功履歴 (charge:history・1 年保持) がある rid の集合。done ロックは 60 日で消えるが滞納分の窓は
+    3 ヶ月なので、done 失効後に名簿が未払いのままだと再請求され得た (preview の第二ゲートと同じ規約を execute にも)。"""
+    keys = [f"charge:history:{r}:{month}" for r in rids]
+    return {rids[i] for i in _existing_keys(keys)}
+
+
+def _done_hits(rids, month):
+    """ドライラン用: 請求済みロック (charge:done) がある rid の集合。本番は SET NX が判定するので使わない。"""
+    keys = [f"charge:done:{r}:{month}" for r in rids]
+    return {rids[i] for i in _existing_keys(keys)}
+
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
@@ -333,6 +361,10 @@ class handler(BaseHTTPRequestHandler):
                         if _fa:
                             failed_salts[_rid] = _fa
 
+            # 📖 成功履歴がある月は請求しない (本番)。ドライランは done ロックの有無も見て本番の結果に近づける。
+            history_hits = _history_hits(ids_capped, current_month) if (not dry_run and ids_capped) else set()
+            done_hits = _done_hits(ids_capped, current_month) if (dry_run and ids_capped) else set()
+
             results = []
             summary = {
                 "total": 0,
@@ -382,9 +414,25 @@ class handler(BaseHTTPRequestHandler):
 
                 # 当月重複請求防止 (SET NX で原子的に判定)
                 done_key = f"charge:done:{rid}:{current_month}"
+                if not dry_run and rid in history_hits:
+                    summary["skipped"] += 1
+                    results.append({"registrationId": rid, "status": "skipped",
+                                    "reason": "history exists (成功記録あり・二重請求防止)"})
+                    continue
+                if dry_run and rid in done_hits:
+                    summary["skipped"] += 1
+                    results.append({"registrationId": rid, "status": "skipped",
+                                    "reason": "already charged this month"})
+                    continue
                 if not dry_run:
                     nx = _redis("SET", done_key, "pending", "NX", "EX", "5184000")  # 60 days TTL
-                    if not nx or not isinstance(nx, dict) or nx.get("result") != "OK":
+                    if not nx or not isinstance(nx, dict):
+                        # KV 応答なし: 「請求済み」と区別する (同じ文言だと塾長が回収済みと誤読する・2026-09-08)
+                        summary["skipped"] += 1
+                        results.append({"registrationId": rid, "status": "skipped",
+                                        "reason": "kv error (保存先の応答なし・安全のため未請求)"})
+                        continue
+                    if nx.get("result") != "OK":
                         summary["skipped"] += 1
                         results.append({"registrationId": rid, "status": "skipped",
                                         "reason": "already charged this month"})

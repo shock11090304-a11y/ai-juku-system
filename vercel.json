@@ -166,5 +166,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/admin-charge-month-end-execute.py": {
+      "maxDuration": 60
+    }
+  }
 }

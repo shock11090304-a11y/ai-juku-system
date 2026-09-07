@@ -236,10 +236,22 @@ def _handle_preview(handler):
         already_key = f"charge:done:{rid}:{month_str}"
         already_check = _redis("GET", already_key)
         already_charged = False
+        done_status = None   # 2026-09-08: ロックの中身 (success / requires_action / uncertain / pending=途中停止) を UI に返す
         if already_check and isinstance(already_check, dict):
-            if already_check.get("result"):
+            _dv = already_check.get("result")
+            if _dv:
                 already_charged = True
                 already_charged_count += 1
+                _dj = None
+                try:
+                    _dj = json.loads(_dv) if isinstance(_dv, str) else None
+                except Exception:
+                    _dj = None
+                if isinstance(_dj, dict):
+                    _st = str(_dj.get("status") or "")
+                    done_status = "success" if _st in ("succeeded", "processing", "") else _st
+                else:
+                    done_status = "pending" if str(_dv).strip() == "pending" else "success"
 
         # ready 判定: setup mode + customer_id + payment_method_id + monthly_fee > 0
         issue = None
@@ -303,6 +315,7 @@ def _handle_preview(handler):
             "checkoutMode": checkout_mode,
             "ready": ready,
             "alreadyChargedThisMonth": already_charged,
+            "doneStatus": done_status,
             "issue": issue,
             "registeredAt": registered_at,
         })
@@ -317,6 +330,7 @@ def _handle_preview(handler):
         for c, rec in zip(unc, hist_recs):
             if rec:
                 c["alreadyChargedThisMonth"] = True
+                c["doneStatus"] = "success"
                 already_charged_count += 1
                 ready_count -= 1
                 total_amount -= c["monthlyFee"]

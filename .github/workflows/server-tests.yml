@@ -240,6 +240,7 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_zero_streak_alert.py
           python3 scripts/health_check/test_course_app_merge.py
+          python3 scripts/health_check/test_monthend_ux.py
 
       # 📚 学習記録ダッシュボードの運用改善 (2026-09-07): タイムラインのページング / 1 日合計の上限 / 演習の重ね表示 /
       #   テスト系の名前の除外 / パネル別の読み込みと配色 (ソース検査)。
