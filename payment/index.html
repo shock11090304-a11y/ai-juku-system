@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>塾月謝 入金管理</title>
-<link rel="stylesheet" href="style.css?v=20260603-fee-autoadjust">
+<link rel="stylesheet" href="style.css?v=20260908-import-row">
 <!-- pdf.js (CDN・client-side PDF text 抽出用 / 2026-05-07 楽天銀行PDF取込追加) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
 </head>
@@ -355,6 +355,7 @@
           <button class="match-tab" data-match-tab="ignored">— 除外 (ノイズ)</button>
         </div>
         <div>
+          <button class="btn btn-ghost btn-sm" id="importAppsFromImportBtn" title="入塾申込フォームの申込を名簿に取り込む (取り込むと要確認の行を自動で再照合します)">📥 申込取り込み</button>
           <button class="btn btn-ghost btn-sm" id="resetImportBtn">↺ やり直し</button>
           <button class="btn btn-primary" id="applyImportBtn" disabled>💾 確定して入金反映</button>
         </div>
@@ -364,9 +365,10 @@
     </div>
 
     <div class="hint">
-      <strong>📌 前払い制ルール:</strong> 入金日の<strong>翌月分</strong>として paid 反映されます (例: 4/15 入金 → 5月分、4/30 入金 → 5月分、5/1 入金 → 6月分)。<br>
+      <strong>📌 前払い制ルール:</strong> 入金日の<strong>翌月分</strong>として paid 反映されます (例: 4/15 入金 → 5月分、4/30 入金 → 5月分、5/1 入金 → 6月分)。初月 (入塾金込み) や当月の支払いは、行の「当月分に記帳」を選ぶと入金月に反映されます。<br>
+      <strong>新規生:</strong> 名簿に無い振込人は、行の「➕ 生徒を作る」で振込人名入りの生徒を作るとそのまま紐付きます (申込フォームがある子は「📥 申込取り込み」)。<br>
       <strong>使い方:</strong> 楽天銀行ビジネス → 入出金明細CSVをDL → ここにD&D → 自動マッチを確認 → 「確定して入金反映」で <strong>翌月分</strong> の payments に書込まれます。<br>
-      <strong>除外パターン:</strong> <code>ラクテンショウケン</code> / <code>カ−ド出金</code> / <code>口座振替</code> / <code>ATM</code> / <code>テレボ</code> など自動でノイズ判定。<br>
+      <strong>除外パターン:</strong> <code>ラクテンショウケン</code> / <code>ストライプジャパン</code> (Stripe からの売上入金・カード決済は別経路で反映済み) / <code>カ−ド出金</code> / <code>口座振替</code> / <code>ATM</code> / <code>テレボ</code> など自動でノイズ判定。<br>
       <strong>振込人名学習:</strong> 一度紐付けると <code>payerNames</code> に保存され、次回CSVでは自動マッチします（親名義↔子供生徒）。
     </div>
   </section>
@@ -739,6 +741,7 @@
           <input type="number" id="addStudentFee" required placeholder="例: 16500" min="0" step="100" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;">
         </label>
       </div>
+      <div id="addStudentImportHint" style="display:none;font-size:0.8rem;line-height:1.5;color:#fde68a;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.35);border-radius:8px;padding:8px 10px;"></div>
       <label style="display:flex;flex-direction:column;gap:4px;">
         <span style="font-size:0.82rem;font-weight:600;">入塾日 (月)</span>
         <input type="month" id="addStudentEnrollDate" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;">
@@ -1171,6 +1174,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="app.js?v=20260908b-pdf-cmap"></script>
+<script src="app.js?v=20260908c-import-newstudent"></script>
 </body>
 </html>

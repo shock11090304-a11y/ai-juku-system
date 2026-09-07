@@ -311,9 +311,32 @@ function openAddStudentModal() {
   document.getElementById('addStudentCourses').value = '';
   document.getElementById('addStudentNotes').value = '';
   document.getElementById('addStudentEnrollDate').value = STATE.currentMonth || todayMonth();
+  // 取込行から開いた場合の紐付け予約をリセット (通常の「➕ 生徒追加」では紐付けない)
+  if (typeof IMPORT !== 'undefined') IMPORT.linkAfterAdd = null;
+  const hint = document.getElementById('addStudentImportHint');
+  if (hint) { hint.style.display = 'none'; hint.textContent = ''; }
   openAddStudentModalSafe();
   // フォーカス
   setTimeout(() => document.getElementById('addStudentName').focus(), 50);
+}
+
+// 📥 取込画面の「➕ 生徒を作る」: 振込人名と入金月を入れた状態で生徒追加を開き、保存後にその入金を紐付ける (2026-09-08)
+function startNewStudentFromCandidate(c) {
+  if (!c) return;
+  openAddStudentModal();
+  IMPORT.linkAfterAdd = c.idx;
+  const payerEl = document.getElementById('addStudentPayerName');
+  if (payerEl) payerEl.value = c.payer || '';
+  const enrollEl = document.getElementById('addStudentEnrollDate');
+  if (enrollEl && c.calMonth) enrollEl.value = c.calMonth;
+  const hint = document.getElementById('addStudentImportHint');
+  if (hint) {
+    const guess = c.amount - ENROLL_FEE_YEN - FACILITY_FEE_YEN;
+    hint.innerHTML = `💡 保存すると、この振込 <strong>${yen(c.amount)}</strong> (${escapeHtml(c.iso || '')}) をこの生徒に「当月分 (${escapeHtml(c.calMonth || '')})」として紐付けます。`
+      + (guess >= 1000 ? `<br>初月の振込なら 入塾金 ${yen(ENROLL_FEE_YEN)} ＋ 設備費 ${yen(FACILITY_FEE_YEN)} 込みなので、月謝には受講料だけ (目安 <strong>${yen(guess)}</strong>) を入れてください。` : '');
+    hint.style.display = '';
+  }
+  setTimeout(() => { try { document.getElementById('addStudentName').focus(); } catch (_) {} }, 60);
 }
 
 // 2026-05-07 追加: 生徒追加モーダル — 保存
@@ -387,6 +410,20 @@ async function saveNewStudent() {
   STATE.data.students.push(cloneStudentForData(newStudent));
   STATE.data.nextStudentId = id + 1;
 
+  // 📥 取込画面の「➕ 生徒を作る」から来た場合: その入金をこの生徒に紐付け (初月 = 当月分に記帳)。
+  //   それ以外の要確認行も、この生徒の振込人名で再照合する (2026-09-08)
+  if (typeof IMPORT !== 'undefined') {
+    if (IMPORT.linkAfterAdd != null) {
+      const c = IMPORT.candidates.find(x => x.idx === IMPORT.linkAfterAdd);
+      IMPORT.linkAfterAdd = null;
+      if (c) {
+        c.selectedStudentId = id; c.decided = true; c.ignored = false; c.monthMode = 'current';
+        c.matches = [{ studentId: id, name, score: 100, confidence: 'new' }];
+      }
+    }
+    try { rematchPendingCandidates(); } catch (_) {}
+  }
+
   closeAddStudentModalSafe();
   populateAllFilters();
   refresh();
@@ -458,11 +495,22 @@ function parseEnrollmentApp(app) {
   let fee = 0;
   const mFee = note.match(/^■金額[:：].*?受講料\s*([\d,]+)\s*円/m);
   if (mFee) fee = parseInt(mFee[1].replace(/,/g, ''), 10) || 0;
-  // 振込人名(カナ): 保護者行の (カナ) を拾う (best-effort)
+  // 振込人名(カナ): 保護者行「氏名(フリガナ)」の括弧内。保護者が氏名とフリガナを逆に入れた
+  //   「フリガナ(氏名)」でもカナ側を採用する (2026-09-08: 逆入力だと空になり初回入金が永遠に要確認だった)
   let payerName = '';
-  const mPayer = note.match(/■保護者[:：][^（(]*[（(]([ぁ-んァ-ヶー\s]+)[）)]/);
-  if (mPayer) payerName = mPayer[1].trim();
-  return { courses, fee, payerName };
+  const mPayer = note.match(/^■保護者[:：]\s*([^（(\n]*?)\s*[（(]([^）)\n]*)[）)]/m);
+  if (mPayer) {
+    const kanaRe = /^[ぁ-んァ-ヶーｦ-ﾟ\s　]+$/;
+    const outside = mPayer[1].trim();
+    const inside = mPayer[2].trim();
+    payerName = kanaRe.test(inside) ? inside : (kanaRe.test(outside) ? outside : '');
+  }
+  // 毎月合計 (受講料+設備費) と 初月合計 (受講料+設備費+入塾金): 取込画面の「初月？」ヒントに使う
+  const mMonthly = note.match(/^■金額[:：].*?毎月\s*([\d,]+)\s*円/m);
+  const mFirst = note.match(/^■金額[:：].*?初月\s*([\d,]+)\s*円/m);
+  const monthlyTotal = mMonthly ? (parseInt(mMonthly[1].replace(/,/g, ''), 10) || 0) : 0;
+  const firstMonthFee = mFirst ? (parseInt(mFirst[1].replace(/,/g, ''), 10) || 0) : 0;
+  return { courses, fee, payerName, monthlyTotal, firstMonthFee };
 }
 
 async function fetchPendingEnrollmentApps() {
@@ -569,6 +617,8 @@ async function _importApplicationCore(app) {
     enrollDate: STATE.currentMonth || todayMonth(),
     status: '通塾',
     fee: p.fee || 0,
+    monthlyTotal: p.monthlyTotal || 0,   // 受講料+設備費 (申込書の「毎月」)
+    firstMonthFee: p.firstMonthFee || 0, // 受講料+設備費+入塾金 (申込書の「初月」)
     notes: (app.note || '') + `\n[入塾申込フォーム取込 app#${app.id}]`,
     addedVia: 'enrollment-application-import',
     addedAt: new Date().toISOString(),
@@ -591,6 +641,9 @@ async function _importApplicationCore(app) {
   STATE.data.nextStudentId = id + 1;
   populateAllFilters();
   refresh();
+
+  // 📥 取込画面に要確認の入金が残っていれば、この生徒 (保護者フリガナ) で自動再照合 (2026-09-08)
+  try { if (typeof rematchPendingCandidates === 'function') rematchPendingCandidates(); } catch (_) {}
 
   let cloudOk = true;
   if (typeof CloudSync !== 'undefined' && CloudSync.bootstrapped && CloudSync.getToken()) {
@@ -4229,6 +4282,8 @@ function downloadMonthEndCsv() {
 // === Phase 2: CSV Import ===
 const NOISE_PATTERNS = [
   /ラクテンショウケン/,
+  /ストライプジ[ャヤ]パン/,   // 🏦 2026-09-08: Stripe からの売上入金 (カード決済は別経路で名簿反映済み・紐付けると二重計上)
+  /ｽﾄﾗｲﾌﾟｼﾞ[ｬﾔ]ﾊﾟﾝ/,
   /カ[−ー\-]ド出金/,
   /口座振替/,
   /ATM/i,
@@ -4275,7 +4330,38 @@ const KANJI_VARIANTS = {
 };
 const KANJI_VARIANT_RE = new RegExp(Object.keys(KANJI_VARIANTS).join('|'), 'gu');
 
-const IMPORT = { rows: [], candidates: [], filterTab: 'pending' };
+const IMPORT = { rows: [], candidates: [], filterTab: 'pending', linkAfterAdd: null };
+// 入塾申込書の固定額 (enrollment.html と同じ): 初月 = 受講料 + 設備費 + 入塾金、毎月 = 受講料 + 設備費
+const ENROLL_FEE_YEN = 10000;
+const FACILITY_FEE_YEN = 1350;
+
+// 💡 振込額が「初月合計 (受講料+設備費+入塾金)」の形をしているか。名簿の月謝・毎月合計に一致する額は除く
+function looksLikeFirstMonth(amount) {
+  const a = Number(amount) || 0;
+  const fee = a - ENROLL_FEE_YEN - FACILITY_FEE_YEN;
+  if (fee < 3000 || fee % 100 !== 0) return false;
+  const known = activeStudents().some(s => Number(s.fee) === a || Number(s.fee) + FACILITY_FEE_YEN === a || Number(s.monthlyTotal) === a);
+  return !known;
+}
+// 取込行の記帳月: 既定は前払いルール (翌月分)、行で「当月分」を選ぶと入金月そのもの
+function candidateMonth(c) {
+  return (c.monthMode === 'current' && c.calMonth) ? c.calMonth : c.month;
+}
+// 生徒を追加/取り込みした後、未確定の要確認行をその振込人名で再照合する (学習済/高一致なら自動確定)
+function rematchPendingCandidates() {
+  if (!IMPORT.candidates.length) return 0;
+  let n = 0;
+  for (const c of IMPORT.candidates) {
+    if (c.decided || c.ignored) continue;
+    const matches = matchPayer(c.payer, c.amount);
+    c.matches = matches;
+    const best = matches[0];
+    if (best && (best.confidence === 'learned' || best.confidence === 'high')) { c.selectedStudentId = best.studentId; c.decided = true; n++; }
+  }
+  const results = document.getElementById('importResults');
+  if (results && !results.classList.contains('hidden')) { updateImportSummary(); renderMatchList(); }
+  return n;
+}
 
 function normalizeName(raw) {
   if (!raw) return '';
@@ -4287,7 +4373,7 @@ function normalizeName(raw) {
   s = s.replace(/づ/g, 'ず').replace(/ぢ/g, 'じ');
   s = s.replace(KANJI_VARIANT_RE, c => KANJI_VARIANTS[c] || c);  // 異体字/旧字体を常用字体に寄せる
   s = s.replace(/[\s　]+/g, '');
-  s = s.replace(/(英語(塾代|代|月謝)?|月謝|塾代)$/, '');
+  s = s.replace(/(英語(塾代|代|月謝)?|月謝|塾代|塾|じゅく)$/, '');   // 「ヤマダ ハナコ 塾」のような末尾も吸収 (2026-09-08)
   s = s.toLowerCase();
   return s;
 }
@@ -4322,7 +4408,10 @@ function extractSurname(raw) {
 }
 
 function isNoise(content) {
-  return NOISE_PATTERNS.some(p => p.test(content));
+  const raw = String(content || '');
+  // 半角カナの明細 (CSV) でも全角パターンが効くように、半角→全角に寄せた文字列も見る (2026-09-08)
+  const wide = raw.replace(/[ｦ-ﾝ]/g, c => HW_KANA_MAP[c] || c);
+  return NOISE_PATTERNS.some(p => p.test(raw) || p.test(wide));
 }
 
 function lcs(a, b) {
@@ -4455,6 +4544,9 @@ function processImport(rows) {
       idx: i,
       date: r.date,
       month: nextMonth(csvDateToMonth(r.date)),  // 前払い制: 入金月の翌月分
+      calMonth: csvDateToMonth(r.date),          // 入金月そのもの (行で「当月分」を選んだときの記帳月)
+      monthMode: 'next',
+      firstMonthHint: !ignored && looksLikeFirstMonth(r.amount),
       iso: csvDateToISO(r.date),
       amount: r.amount,
       payer: r.content,
@@ -4493,7 +4585,7 @@ function renderMatchList() {
     const options = [
       `<option value="">${c.ignored ? '— 除外（ノイズ）—' : '生徒を選択…'}</option>`,
       ...c.matches.map(m => {
-        const conf = m.confidence === 'learned' ? '学習済' : m.confidence === 'high' ? '高' : m.confidence === 'mid' ? '中' : '低';
+        const conf = m.confidence === 'learned' ? '学習済' : m.confidence === 'new' ? '新規' : m.confidence === 'high' ? '高' : m.confidence === 'mid' ? '中' : '低';
         return `<option value="${m.studentId}" ${c.selectedStudentId === m.studentId ? 'selected' : ''}>#${m.studentId} ${escapeHtml(m.name)} (${conf}: ${m.score})</option>`;
       }),
       // 自由選択用に全生徒を末尾に
@@ -4510,14 +4602,20 @@ function renderMatchList() {
         <div>
           ${c.ignored
             ? '<span style="color:var(--text-muted);font-size:0.82rem">— ノイズとして除外 —</span>'
-            : `<select class="match-student-select" data-action="select">${options}</select>`
+            : `<select class="match-student-select" data-action="select">${options}</select>
+               <select class="match-month-select" data-action="month" title="この入金をどの月の分として記帳するか">
+                 <option value="next" ${c.monthMode !== 'current' ? 'selected' : ''}>翌月分 (${escapeHtml(c.month)}) に記帳 — 前払いルール</option>
+                 <option value="current" ${c.monthMode === 'current' ? 'selected' : ''}>当月分 (${escapeHtml(c.calMonth || '')}) に記帳 — 初月・当月の支払い</option>
+               </select>
+               ${c.firstMonthHint ? `<div class="match-hint">💡 初月の金額かも (受講料 ${yen(c.amount - ENROLL_FEE_YEN - FACILITY_FEE_YEN)} ＋ 入塾金・設備費 ${yen(ENROLL_FEE_YEN + FACILITY_FEE_YEN)})。初月なら「当月分」を選んでください</div>` : ''}`
           }
         </div>
         <div class="match-actions">
           ${c.ignored
             ? `<button class="match-btn" data-action="unignore" title="除外を解除">↺ 復活</button>`
             : `<button class="match-btn" data-action="confirm">${c.decided ? '✓ 確定済' : '✓ 確定'}</button>
-               <button class="match-btn match-btn-skip" data-action="ignore">— 除外</button>`
+               <button class="match-btn match-btn-skip" data-action="ignore">— 除外</button>
+               ${c.decided ? '' : `<button class="match-btn match-btn-new" data-action="newstudent" title="この振込人名で新しい生徒を作り、この入金を紐付ける">➕ 生徒を作る</button>`}`
           }
         </div>
       </div>
@@ -4530,6 +4628,7 @@ function renderMatchList() {
     const row = e.target.closest('.match-row');
     const idx = parseInt(row.dataset.idx, 10);
     const c = IMPORT.candidates.find(x => x.idx === idx);
+    if (sel.dataset.action === 'month') { c.monthMode = sel.value === 'current' ? 'current' : 'next'; return; }
     c.selectedStudentId = sel.value ? parseInt(sel.value, 10) : null;
     c.decided = !!c.selectedStudentId;
     updateImportSummary();
@@ -4545,6 +4644,9 @@ function renderMatchList() {
     if (a === 'confirm') {
       if (!c.selectedStudentId) { alert('生徒を選択してください'); return; }
       c.decided = true;
+    } else if (a === 'newstudent') {
+      startNewStudentFromCandidate(c);
+      return;
     } else if (a === 'ignore') {
       c.ignored = true; c.decided = false; c.selectedStudentId = null;
     } else if (a === 'unignore') {
@@ -4569,19 +4671,35 @@ function updateImportSummary() {
 function applyImport() {
   const decided = IMPORT.candidates.filter(c => c.decided && c.selectedStudentId);
   if (!decided.length) { alert('確定済の入金がありません'); return; }
+  const pending = IMPORT.candidates.filter(c => !c.decided && !c.ignored);
+  const currentCnt = decided.filter(c => c.monthMode === 'current').length;
   const msg = `${decided.length}件 を入金反映します。\n\n` +
-    `内訳: \n  ・自動マッチ ${decided.filter(c => c.matches[0]?.confidence === 'high' || c.matches[0]?.confidence === 'learned').length}件\n  ・手動マッチ ${decided.filter(c => !(c.matches[0]?.confidence === 'high' || c.matches[0]?.confidence === 'learned')).length}件\n\n振込人名は次回CSVのために学習保存されます。続行しますか？`;
+    `内訳: \n  ・自動マッチ ${decided.filter(c => c.matches[0]?.confidence === 'high' || c.matches[0]?.confidence === 'learned').length}件\n  ・手動マッチ ${decided.filter(c => !(c.matches[0]?.confidence === 'high' || c.matches[0]?.confidence === 'learned')).length}件` +
+    (currentCnt ? `\n  ・うち「当月分」に記帳 ${currentCnt}件 (初月など)` : '') +
+    (pending.length ? `\n\n⚠ 要確認 ${pending.length}件 は今回は反映されません (反映後もこの画面に残ります)` : '') +
+    `\n\n振込人名は次回CSVのために学習保存されます。続行しますか？`;
   if (!confirm(msg)) return;
 
   let updated = 0;
   decided.forEach(c => {
-    setPayment(c.month, c.selectedStudentId, true, c.iso, `楽天銀行CSV: ${c.payer}`, c.amount);
+    const month = candidateMonth(c);
+    setPayment(month, c.selectedStudentId, true, c.iso, `楽天銀行CSV: ${c.payer}${c.monthMode === 'current' ? ' (当月分)' : ''}`, c.amount);
     setPayerName(c.selectedStudentId, c.payer);
     updated++;
   });
-  alert(`✅ ${updated}件 を入金反映しました\n振込人名 ${updated}件 を学習保存しました`);
+  alert(`✅ ${updated}件 を入金反映しました\n振込人名 ${updated}件 を学習保存しました` + (pending.length ? `\n\n⚠ 要確認 ${pending.length}件 が残っています (生徒を作るか除外してください)` : ''));
+  // 反映した行は消し、要確認の残りはそのまま残す (以前は警告なしに捨てていた)
+  IMPORT.candidates = IMPORT.candidates.filter(c => !c.decided && !c.ignored);
+  if (IMPORT.candidates.length) {
+    IMPORT.filterTab = 'pending';
+    document.querySelectorAll('.match-tab').forEach(x => x.classList.toggle('match-tab-active', x.dataset.matchTab === 'pending'));
+    updateImportSummary();
+    renderMatchList();
+    refresh();
+    return;
+  }
   document.getElementById('importResults').classList.add('hidden');
-  IMPORT.candidates = []; IMPORT.rows = [];
+  IMPORT.rows = [];
   switchTab('unpaid');
   refresh();
 }
@@ -4610,6 +4728,7 @@ function setupImportUI() {
     });
   });
   document.getElementById('applyImportBtn').addEventListener('click', applyImport);
+  document.getElementById('importAppsFromImportBtn')?.addEventListener('click', () => { try { openImportAppsModal(); } catch (e) { alert('申込取り込みを開けませんでした: ' + e.message); } });
   document.getElementById('resetImportBtn').addEventListener('click', () => {
     IMPORT.candidates = []; IMPORT.rows = [];
     document.getElementById('importResults').classList.add('hidden');
