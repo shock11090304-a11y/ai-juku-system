@@ -197,6 +197,17 @@
       return (d.msg || d.message) || '';
     }
 
+    // 🤝 入塾申込フォーム (STEP1) の完了画面から来た場合は氏名・メールを引き継ぐ。
+    //   同じ表記で登録されると CEO の申込待ちで 1 枚にまとまり、承認 1 回で両方処理される。
+    try {
+      var _prev = JSON.parse(sessionStorage.getItem('trillion_enroll_submitted_v1') || 'null');
+      if (_prev) {
+        var _pn = document.getElementById('name'), _pe = document.getElementById('email');
+        if (_pn && !_pn.value && _prev.name) _pn.value = _prev.name;
+        if (_pe && !_pe.value && _prev.email) _pe.value = _prev.email;
+      }
+    } catch (e0) {}
+
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
       var name = (document.getElementById('name').value || '').trim();
@@ -238,7 +249,9 @@
           form.style.display = 'none';
           showMsg('✅ 登録を受け付けました！<br>塾長の確認後、<strong>' + email.replace(/[<>&]/g, '') + '</strong> 宛にログイン用リンクをお送りします。メールが届くまでお待ちください。', false);
         } else if (res.status === 409) {
-          showMsg('このメールアドレスはすでに登録済み（または申請済み）です。ログイン用リンクが届いていないか、メールをご確認ください。届いていなければ塾長までご連絡ください。', true);
+          // サーバの理由 (「既に受け付けています」「既に承認済み」) をそのまま出す。固定文言だけだと状況が伝わらず離脱していた
+          var _d409 = fmtDetail(data && data.detail);
+          showMsg((_d409 ? _d409.replace(/[<>&]/g, '') + '<br>' : '') + 'すでに登録済み（または申請済み）の場合は、ログイン用リンクが届いていないかメールをご確認ください。届いていなければ塾長までご連絡ください。', true);
           btn.disabled = false; btn.textContent = orig;
         } else {
           showMsg('送信に失敗しました：' + (fmtDetail(data && data.detail) || ('HTTP ' + res.status)), true);

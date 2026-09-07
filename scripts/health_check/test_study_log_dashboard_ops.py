@@ -12,6 +12,7 @@ import hashlib
 import hmac
 import importlib.util
 import os
+import re
 import sys
 import tempfile
 import time
@@ -125,7 +126,9 @@ def main():
     check("ヒートマップに学年/記録ありフィルタと演習マーク", "applyStudyLogHeatmapFilter" in js and "slHmActiveOnly" in js and "演習 ${q}問" in js)
     check("0 分は薄い赤・単位は時間", "rgba(220,38,38,0.16)" in js and "0 (未記録)" in js and "計 (h)" in js)
     check("「全データ更新」に学習記録の再読込", "['studyLog',        typeof loadStudyLogDashboard === 'function' ? loadStudyLogDashboard : null]" in html)
-    check("ceo.js の ?v= が更新されている", "ceo.js?v=20260907-dashboard-ops" in html)
+    # ?v= はその後の改修でも進むので「この機能より前の値に戻っていない」ことだけを見る
+    _v = re.search(r'ceo\.js\?v=([0-9]{8})', html)
+    check("ceo.js の ?v= が更新されている (2026-09-07 以降)", bool(_v) and _v.group(1) >= "20260907", _v.group(0) if _v else "no ?v=")
 
     print()
     if FAILURES:

@@ -50611,6 +50611,19 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
             else:
                 raise HTTPException(status_code=409, detail=f"「{name}」さんのお申し込みは既に受け付けています (1-2営業日以内に塾長から連絡があります)")
 
+        # 🤝 同じ生徒の別フォームからの申込 (STEP1 入塾申込 / STEP2 塾生アプリ登録) が既に待ち行列にあるか。
+        #   通知メールに添えるだけで、行はこれまでどおり作る (CEO では 1 枚に束ねて表示・承認は 1 回で両方処理)。
+        _sibling_pending = None
+        try:
+            _nk = _normalize_person_name(name)
+            c.execute("SELECT id, name, referrer FROM course_applications WHERE LOWER(email) = ? AND status = 'pending' ORDER BY id DESC LIMIT 5", (email_lower,))
+            for _r in (c.fetchall() or []):
+                if _nk and _normalize_person_name(_r["name"]) == _nk:
+                    _sibling_pending = {"id": _r["id"], "referrer": _r["referrer"] or ""}
+                    break
+        except Exception:
+            conn.rollback()
+            _sibling_pending = None
         c.execute(
             "INSERT INTO course_applications (name, email, grade, target_university, phone, referrer, note, subjects, ip) "
             "VALUES (?,?,?,?,?,?,?,?,?) RETURNING id",
@@ -50654,7 +50667,9 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
                 + ("" if _is_juku else f"電話: {phone or '未記入'}\n")
                 + (f"出所: 塾生アプリ登録フォーム\n" if _is_juku else f"紹介者: {referrer or 'なし'}\n")
                 + f"メモ: {note or 'なし'}\n\n"
-                f"CEO ダッシュ → 📋 申込待ち から承認できます。"
+                + (f"⚠️ 同じ生徒の申込 #{_sibling_pending['id']} ({_sibling_pending['referrer'] or '出所不明'}) が既に待ち行列にあります。"
+                   f"CEO の申込待ちでは 1 枚にまとめて表示され、承認は 1 回で両方処理されます。\n\n" if _sibling_pending else "")
+                + f"CEO ダッシュ → 📋 申込待ち から承認できます。"
             )
             _subj = f"📥 塾生アプリ 新規登録: {name}" if _is_juku else (f"📥 入塾申込フォーム 新規申込: {name}" if _is_enroll else f"📥 難関コース 新規申込: {name}")
             _send_message_email(admin_to, _subj, body_text, student_name="塾長")
@@ -50812,6 +50827,8 @@ def admin_list_course_applications(authorization: Optional[str] = Header(None), 
             "approved_at": str(r["approved_at"]) if r["approved_at"] else None,
             "rejected_reason": r["rejected_reason"],
             "created_at": str(r["created_at"]) if r["created_at"] else None,
+            # 🤝 同じ生徒 (メール + 正規化した氏名) を CEO で 1 枚に束ねるキー (承認 API の兄弟判定と同じ定義)
+            "group_key": f"{(r['email'] or '').lower().strip()}|{_normalize_person_name(r['name'])}",
         } for r in rows]
         # pending count (admin badge 用)
         c.execute("SELECT COUNT(*) AS n FROM course_applications WHERE status = 'pending'")
@@ -50843,17 +50860,33 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             raise HTTPException(status_code=409, detail=f"既に {row['status']} 状態です")
         email_lower = (row["email"] or "").lower().strip()
         name = row["name"]
-        _app_grade = (row["grade"] if "grade" in row.keys() else None) or None
-        _app_goal = (row["target_university"] if "target_university" in row.keys() else None) or None
+        # 🤝 [2026-09-07 同一生徒の申込まとめ] 入塾申込フォーム (STEP1) → 塾生アプリ登録 (STEP2) は同じ生徒から
+        #   2 行届く設計 (POST の重複判定は referrer 違いを意図的に通す)。従来は 1 行ずつ承認するしかなく、
+        #   2 回目は同一メールで既存生徒に合流するものの AI 可否は 1 回目で固定・案内メールと LINE コードが
+        #   2 通ずつ・片方却下で受講クラスや保護者情報が欠けていた。同じメール + 同じ氏名 (正規化) の pending 行を
+        #   1 回の承認でまとめて処理する。★氏名一致は必須: 同じ保護者メールで兄弟を申し込むケースを別人のまま残す。
+        _g = lambda r, k: ((r[k] if k in r.keys() else None) or None)
+        _siblings = []
+        _nk = _normalize_person_name(name)
+        if _nk:
+            c.execute("SELECT id, name, referrer, grade, target_university, subjects FROM course_applications "
+                      "WHERE LOWER(email) = ? AND status = 'pending' AND id <> ? ORDER BY id", (email_lower, app_id))
+            _siblings = [r for r in (c.fetchall() or []) if _normalize_person_name(r["name"]) == _nk]
+        _all_rows = [row] + _siblings
+        # 学年・志望校は入塾申込フォームの行を優先 (正式な申込書。塾生アプリ登録の欄は本人の任意入力)
+        _form_first = sorted(_all_rows, key=lambda r: 0 if (_g(r, "referrer") or "") == "入塾申込フォーム" else 1)
+        _app_grade = next((_g(r, "grade") for r in _form_first if _g(r, "grade")), None)
+        _app_goal = next((_g(r, "target_university") for r in _form_first if _g(r, "target_university")), None)
         # 🏫 トリリオン塾生アプリの自己登録(referrer='塾生アプリ')は、難関コースとは別文面のウェルカムを送る
-        _is_juku_app_reg = ((row["referrer"] if "referrer" in row.keys() else None) or "") == "塾生アプリ"
+        #   (まとめ承認では 1 行でも塾生アプリ登録が含まれれば塾生アプリ文面 + class.html 着地)
+        _is_juku_app_reg = any((_g(r, "referrer") or "") == "塾生アプリ" for r in _all_rows)
         # 🎒 受講クラス: 登録フォームの subjects は時間割クラス label の「・」連結。妥当な label のみ JSON 化。
         # 🎓 [2026-09-01] コース名 (_COURSE_CLASSES のキー) が混じっていたらそのコースのクラスへ展開する。
         #   登録フォーム (juku-register.html) は「コース」欄を選んだとき、3コマの label に加えて
         #   **コース名そのもの**も subjects の先頭に入れて送る。これがないと CEO の申込カードにも
         #   塾長への通知メールにも label が3つ並ぶだけで「コース申込だった」ことが残らない。
         #   ★展開しないとコース名は _TIMETABLE_LABELS に無いので**黙って捨てられる**ので、必ずここで解く。
-        _app_subjects = (row["subjects"] if "subjects" in row.keys() else None) or ""
+        _app_subjects = "・".join(x for x in ((_g(r, "subjects") or "") for r in _all_rows) if x)   # まとめ承認: 全行の受講クラスの和
         _app_classes = []
         for _s in (x.strip() for x in _app_subjects.split("・")):
             if not _s:
@@ -50990,6 +51023,12 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             "UPDATE course_applications SET status = 'approved', student_id = ?, approved_at = CURRENT_TIMESTAMP, approved_by = ?, note = COALESCE(?, note) WHERE id = ?",
             (student_id, "admin", admin_note, app_id)
         )
+        _sib_ids = [int(r["id"]) for r in _siblings]
+        if _sib_ids:
+            c.execute(f"UPDATE course_applications SET status = 'approved', student_id = ?, approved_at = CURRENT_TIMESTAMP, approved_by = ? "
+                      f"WHERE id IN ({','.join('?' * len(_sib_ids))}) AND status = 'pending'",
+                      (student_id, f"merged:{app_id}", *_sib_ids))
+            log.info(f"[CourseApp] approve merged sibling applications {_sib_ids} into #{app_id} student_id={student_id}")
         conn.commit()
     finally:
         conn.close()
@@ -51075,6 +51114,9 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
                     "\n\n※これまでお使いのアカウントにそのまま統合されています。"
                     "マイページ (AI学習) も今まで通り使えます。"
                 )
+            elif not _ai_disabled:
+                # 🤝 まとめ承認 (入塾申込 + 塾生アプリ登録) で AIあり になった新規生徒にも AI 学習の入口を知らせる
+                body_text += "\n\n※マイページ (AI学習: 学習記録・AI弱点プリント・AIチューター) も使えます。ログイン後のメニューから開けます。"
         else:
             welcome_subject = "✅ 国公立難関大学コース ご加入承認"
             body_text = (
@@ -51111,6 +51153,8 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             #   ai_disabled_preserved=true は「CEO の AIあり/なし選択と既存値が食い違ったため既存値を保持した」印。
             "attached_existing": _attached_existing, "attached_plan": _attached_plan,
             "ai_disabled_preserved": _ai_disabled_preserved, "ai_disabled_final": _ai_disabled,
+            # 🤝 同じメール・氏名の pending 申込を同時に処理した件数 (CEO で「N 件も同時に処理」と出す)
+            "merged_count": len(_siblings), "merged_application_ids": [int(r["id"]) for r in _siblings],
             # 🎒 [2026-09-01] 承認の結果いま何クラスになったかを返す。★空 (class_labels=[]) は
             #   「クラス限定で配る録画がこの生徒だけ 0 件」「クラス指定の一斉送信に入らない」状態だが、
             #   生徒はログインでき時間割も出るので**画面上は何も壊れて見えない**。CEO で必ず知らせる。
