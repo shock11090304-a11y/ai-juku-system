@@ -8090,13 +8090,23 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
         else:
             analysis = f"危機水準 🔴 {target_univ} 志望なら今すぐ毎日 2h 学習を継続。塾長相談を推奨。"
 
-        # previous score (前回計算値) を取得
-        c.execute("SELECT score FROM admission_likelihood WHERE student_id = ?", (student_id,))
+        # previous score = 「最後にスコアが動いた時の直前値」。
+        #   2026-09-07 再点検: 毎日 4:00 の一括再計算で毎回「前回値 = 現在のキャッシュ」に上書きすると、
+        #   mypage の ▲▼ が常に「昨日 4:00 との差 ≒ 0」になって消える。スコアが変わらない再計算では据え置く。
+        c.execute("SELECT score, previous_score FROM admission_likelihood WHERE student_id = ?", (student_id,))
         prev_row = c.fetchone()
         try:
-            previous_score = prev_row["score"] if prev_row else 0
+            _cached = int(prev_row["score"]) if prev_row and prev_row["score"] is not None else None
+            _cached_prev = int(prev_row["previous_score"] or 0) if prev_row else 0
         except (TypeError, KeyError, IndexError):
-            previous_score = prev_row[0] if prev_row else 0
+            _cached = int(prev_row[0]) if prev_row and prev_row[0] is not None else None
+            _cached_prev = int(prev_row[1] or 0) if prev_row else 0
+        if _cached is None:
+            previous_score = 0
+        elif _cached == int(score):
+            previous_score = _cached_prev
+        else:
+            previous_score = _cached
 
         return {
             "student_id": student_id,
@@ -9312,6 +9322,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
             for s in failed)
         alerts.append({
             "key": "scheduler_failed", "severity": "critical",
+            "cooldown_min": 360,  # 翌日の再実行まで状態が変わらないので 6 時間に 1 通 (既定 60 分だと 1 日 20 通)
             "title": f"🚨 定期実行 {len(failed)} 件が最後の実行で失敗しています",
             "detail": (f"{_lines_f}。翌日の再実行までこの状態が続きます (途中まで処理された分はやり直されません)。"
                        f"詳細は GET /api/admin/scheduler/status。"),
@@ -11692,10 +11703,11 @@ def _send_login_link_multi(student_id: int, email: str, name: str, magic_url: st
 
 
 def _trial_days_left(trial_end, now=None) -> int:
-    """⏳ 2026-09-07 体験の残日数の単一定義 = ceil(残り秒 / 1日)、下限 0。
-    従来は mypage / 満了前キューが ceil、リマインドメールが floor で、残り 36 時間の生徒に画面は「残り 2 日」、
-    メールは「あと 1 日」と別の数字を出していた (システム点検で確定)。"""
-    import math as _math
+    """⏳ 体験の残日数の単一定義 = JST の暦日差 (終了日 − 今日)。有効中は下限 1、終了済みは 0。
+    「明日終わる = あと1日」「今日が最終日 = あと1日」「明後日の朝に終わる = あと2日」。
+    経緯: 従来は mypage / 満了前キューが ceil、リマインドメールが floor で数字が食い違っていた。
+    2026-09-07 に ceil へ統一したが、リマインド (終了 24〜48 時間前に送る) が全員「あと2日」になり、
+    明日 15:00 に終わる生徒にも「あと2日」と出ると再点検で判明 → 暦日差に改めた。"""
     now = now or datetime.now(timezone.utc)
     try:
         if isinstance(trial_end, str):
@@ -11704,10 +11716,12 @@ def _trial_days_left(trial_end, now=None) -> int:
             trial_end = trial_end.replace(tzinfo=timezone.utc)
         if now.tzinfo is None:
             now = now.replace(tzinfo=timezone.utc)
-        return max(0, _math.ceil((trial_end - now).total_seconds() / 86400))
+        if trial_end <= now:
+            return 0
+        _jst = timezone(timedelta(hours=9))
+        return max(1, (trial_end.astimezone(_jst).date() - now.astimezone(_jst).date()).days)
     except Exception:
         return 0
-
 
 def _is_past_due_within_grace(past_due_since) -> bool:
     """💳 past_due (決済失敗) がアクセス猶予期間内かを判定 (塾長指示 2026-05-29「猶予期間あり」)。
@@ -23458,7 +23472,7 @@ def admin_trial_expiring_queue(
                     if _te.tzinfo is None:
                         _te = _te.replace(tzinfo=timezone.utc)
                     import math as _m
-                    days_left = _trial_days_left(_te, now)   # ⏳ 単一定義 (ceil)
+                    days_left = _trial_days_left(_te, now)   # ⏳ 単一定義 (JST 暦日差)
                     te_str = str(te)[:16]
                 except Exception:
                     te_str = str(te)[:16]
@@ -30027,7 +30041,24 @@ def _failed_schedulers(rows: list) -> list:
     """最後の実行が失敗 (props.error) で終わったスケジューラ。翌日の再実行までは失敗のまま。
     2026-09-07: 週次レポートが途中で落ちて残り全員未送信でも、Stripe 整合が数日失敗し続けても
     無音だった (システム点検で確定) のを、5 分監視の critical に乗せる。"""
-    return [e for e in rows if e.get("failed") and e.get("last_run_jst")]
+    out = []
+    for e in rows:
+        if not e.get("last_run_jst"):
+            continue
+        if e.get("failed"):
+            out.append(e)
+            continue
+        # 10:00 の体験フォロー (trial_mgmt_run) はタスク名 → 結果 の dict を記録し、個別タスクの例外は
+        # {"error": "..."} として入る (top-level error にはならない)。2026-09-07 再点検で「Stripe 整合が
+        # 失敗し続けても拾えない」と判明したので、入れ子の文字列 error も失敗扱いにする。
+        props = e.get("props") if isinstance(e.get("props"), dict) else {}
+        sub = [k for k, v in props.items() if isinstance(v, dict) and isinstance(v.get("error"), str) and v.get("error")]
+        if sub:
+            e2 = dict(e)
+            e2["failed"] = True
+            e2["error"] = "失敗タスク: " + ", ".join(f"{k} ({props[k]['error'][:80]})" for k in sub)
+            out.append(e2)
+    return out
 
 
 @app.get("/api/admin/scheduler/status")
@@ -30318,7 +30349,7 @@ def auth_me(authorization: Optional[str] = Header(None)):
     student["entitled"] = True  # 🚪 [login-allow-inactive] active 本人。auth-guard は entitled で分岐。
     # 🎯 [体験中フォロー] mypage の残日数カウントダウン+緊急継続CTA 用。status=trial かつ
     #   「新規コホート(created_at >= TRIAL_FOLLOWUP_NEW_FROM)」のみ show_trial_followup=true で出す
-    #   (既存の体験中の生徒には付けない=塾長指示の完全新規のみ)。trial_days_left は ceil(残秒/日)。
+    #   (既存の体験中の生徒には付けない=塾長指示の完全新規のみ)。trial_days_left は _trial_days_left (JST 暦日差)。
     student["trial_days_left"] = None
     student["trial_end_iso"] = None
     student["show_trial_followup"] = False
@@ -30338,9 +30369,7 @@ def auth_me(authorization: Optional[str] = Header(None)):
                     _te = datetime.fromisoformat(_te.replace("Z", "+00:00"))
                 if _te.tzinfo is None:
                     _te = _te.replace(tzinfo=timezone.utc)
-                import math as _math
-                _left = (_te - datetime.now(timezone.utc)).total_seconds()
-                student["trial_days_left"] = max(0, _math.ceil(_left / 86400))
+                student["trial_days_left"] = _trial_days_left(_te)   # ⏳ 単一定義 (JST 暦日差)。メール・満了前キューと同じ数字
                 student["trial_end_iso"] = _te.isoformat()
                 student["show_trial_followup"] = bool(_trow["is_new_cohort"])
     except Exception as _tfe:
@@ -34649,6 +34678,22 @@ def _weekly_subject_label(subj_raw) -> str:
     return s
 
 
+def _weekly_report_window(now_jst=None):
+    """🗓 週次レポートの集計窓 (JST 月曜起点)。返り値 (since_utc, until_utc|None)。
+    日曜 (定期実行日) は「今週月曜 0:00 〜 現在」。月〜土 (日曜が失敗した後の手動再実行・個別送信・プレビュー) は
+    「先週月曜 0:00 〜 今週月曜 0:00」= 直近の完了した週。
+    2026-09-07 再点検: 月曜以降の再実行だと窓が「今週月曜 0:00 〜 現在」の数時間しかなく、全員が
+    「活動ゼロ週」で skip され一通も出ないことが判明したのを修正。"""
+    _jst = timezone(timedelta(hours=9))
+    now_jst = now_jst or datetime.now(_jst)
+    _today = now_jst.date()
+    _monday = _today - timedelta(days=_today.weekday())
+    _monday_dt = datetime(_monday.year, _monday.month, _monday.day, tzinfo=_jst)
+    if _today.weekday() == 6:
+        return _monday_dt.astimezone(timezone.utc), None
+    return (_monday_dt - timedelta(days=7)).astimezone(timezone.utc), _monday_dt.astimezone(timezone.utc)
+
+
 def _compute_weekly_stats(student_id: int, days: int = 7, week_aligned: bool = True) -> dict:
     """過去N日間の活動統計を集計。
     ⚠️ 2026-07-02 fix: 実際の演習活動は events(activity_*)ではなく question_attempts に記録される
@@ -34660,18 +34705,18 @@ def _compute_weekly_stats(student_id: int, days: int = 7, week_aligned: bool = T
     # 🗓 2026-09-07: 既定で「今週 (JST 月曜 0:00〜)」に揃える。従来は実行時刻から 168 時間の rolling で、
     #   同じメールの週間グラフ (月曜起点) と境界が違い、日曜夜の演習が見出しとグラフで別の週に入っていた。
     #   days != 7 (プレビューの任意日数) や week_aligned=False は従来どおり rolling。
+    until_dt = None
     if week_aligned and days == 7:
-        _jst = timezone(timedelta(hours=9))
-        _today = datetime.now(_jst).date()
-        _monday = _today - timedelta(days=_today.weekday())
-        since_dt = datetime(_monday.year, _monday.month, _monday.day, tzinfo=_jst).astimezone(timezone.utc)
+        since_dt, until_dt = _weekly_report_window()   # 日曜=今週、月〜土=直近の完了した週
     else:
         since_dt = datetime.now(timezone.utc) - timedelta(days=days)
+    _until_sql = " AND created_at < ?" if until_dt is not None else ""
+    _until_params = (until_dt,) if until_dt is not None else ()
     # 活動ログ集計
     c.execute(
-        """SELECT name, props FROM events
-           WHERE session_id = ? AND created_at >= ?""",
-        (str(student_id), since_dt)
+        f"""SELECT name, props FROM events
+           WHERE session_id = ? AND created_at >= ?{_until_sql}""",
+        (str(student_id), since_dt, *_until_params)
     )
     rows = c.fetchall()
     conn.close()
@@ -34714,9 +34759,9 @@ def _compute_weekly_stats(student_id: int, days: int = 7, week_aligned: bool = T
     c2 = conn2.cursor()
     try:
         c2.execute(
-            """SELECT subject, is_correct, elapsed_ms, source FROM question_attempts
-               WHERE student_id = ? AND created_at >= ?""",
-            (int(student_id), since_dt),
+            f"""SELECT subject, is_correct, elapsed_ms, source FROM question_attempts
+               WHERE student_id = ? AND created_at >= ?{_until_sql}""",
+            (int(student_id), since_dt, *_until_params),
         )
         qa_rows = c2.fetchall()
     finally:
@@ -35697,7 +35742,7 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
                 te = datetime.fromisoformat(te.replace("Z", "+00:00"))
             if te.tzinfo is None:
                 te = te.replace(tzinfo=timezone.utc)
-            days_left = max(1, _trial_days_left(te, now))   # ⏳ 2026-09-07 floor → 単一定義 (ceil)。画面と同じ数字に
+            days_left = max(1, _trial_days_left(te, now))   # ⏳ 単一定義 (JST 暦日差)。画面と同じ数字に
         except Exception:
             days_left = 2
         if dry_run:
@@ -36012,7 +36057,7 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
                 if isinstance(te, str):
                     te = datetime.fromisoformat(te.replace("Z", "+00:00"))
                 if te.tzinfo is None: te = te.replace(tzinfo=timezone.utc)
-                days_left = max(1, _trial_days_left(te, now))   # ⏳ 2026-09-07 floor → 単一定義 (ceil)。画面と同じ数字に
+                days_left = max(1, _trial_days_left(te, now))   # ⏳ 単一定義 (JST 暦日差)。画面と同じ数字に
             except Exception:
                 days_left = 2
             try:
@@ -42778,7 +42823,11 @@ def update_my_study_log(log_id: int, payload: StudyLogUpdateRequest, request: Re
                   (student["id"], _new_date, log_id))
         _row_m = c.fetchone()
         _others = int((_row_m["m"] if _row_m else 0) or 0)
-        if _others + _new_min > _STUDY_LOG_DAILY_CAP_MIN:
+        _old_min = int(row["minutes"] or 0)
+        _date_changed = payload.studied_date is not None and _new_date != str(row["studied_date"])[:10]
+        # 分数を増やす・日付を動かす編集だけ検査する。メモ/科目だけの修正や分数を減らす修正は、
+        # 上限導入前に 16 時間超が入っていた日でも通す (2026-09-07 再点検: 全部 400 になっていた)
+        if (_date_changed or _new_min > _old_min) and _others + _new_min > _STUDY_LOG_DAILY_CAP_MIN:
             raise HTTPException(status_code=400, detail=f"この日の合計が {_STUDY_LOG_DAILY_CAP_MIN // 60} 時間を超えます (他の記録 {_others} 分)。時間や日付を確認してください")
         c.execute(f"UPDATE study_logs SET {', '.join(sets)} WHERE id = ? AND student_id = ?",
                   (*params, log_id, student["id"]))
@@ -43174,7 +43223,7 @@ def _study_log_zero_streaks(c, lookback_days: int = 60) -> list:
                 streak = None
         else:
             never = True
-        out.append({"id": st["id"], "name": st["name"], "grade": st["grade"], "streak": streak, "last_studied": ld, "never": never})
+        out.append({"id": st["id"], "name": st["name"], "grade": st["grade"], "status": st.get("status"), "streak": streak, "last_studied": ld, "never": never})
     out.sort(key=lambda x: (-(x["streak"] if x["streak"] is not None else -1), str(x["name"] or "")))
     return out
 
@@ -43186,6 +43235,9 @@ def _run_zero_streak_alert(dry_run: bool = False) -> dict:
         rows = _study_log_zero_streaks(conn.cursor())
     finally:
         conn.close()
+    # 🚪 退会 (canceled) / 期限切れ (expired) の生徒は最後の記録から 60 日間ダッシュボードの母集団に残るが、
+    #   メールで「止まっている」と知らせる相手ではない (2026-09-07 再点検)。在籍中だけに絞る。
+    rows = [r for r in rows if (r.get("status") or "") in ("paid", "trial", "past_due")]
     hit = [r for r in rows if r["streak"] is not None and r["streak"] >= _ZERO_STREAK_ALERT_DAYS]
     never = [r for r in rows if r["never"]]
     result = {"cohort": len(rows), "threshold_days": _ZERO_STREAK_ALERT_DAYS, "hit": len(hit), "never": len(never),
@@ -43198,7 +43250,7 @@ def _run_zero_streak_alert(dry_run: bool = False) -> dict:
         f"<td style='text-align:right'>{r['streak']} 日</td><td>{html_escape_safe(str(r['last_studied'] or ''))}</td></tr>"
         for r in hit[:30])
     body = (
-        f"<p>学習記録が <b>{_ZERO_STREAK_ALERT_DAYS} 日以上</b> 止まっている生徒が <b>{len(hit)} 名</b> います ({today.isoformat()} 時点・学習記録ダッシュボードと同じ対象)。</p>"
+        f"<p>学習記録が <b>{_ZERO_STREAK_ALERT_DAYS} 日以上</b> 止まっている生徒が <b>{len(hit)} 名</b> います ({today.isoformat()} 時点・在籍中の生徒のみ。退会・期限切れは除外)。</p>"
         f"<table border='1' cellpadding='4' style='border-collapse:collapse'><tr><th>生徒</th><th>学年</th><th>連続未記録</th><th>最終記録</th></tr>{rows_html}</table>"
         + (f"<p>他 {len(hit) - 30} 名</p>" if len(hit) > 30 else "")
         + (f"<p>一度も記録していない対象生徒: {len(never)} 名 (CEO の学習記録ランキング下に一覧)</p>" if never else "")

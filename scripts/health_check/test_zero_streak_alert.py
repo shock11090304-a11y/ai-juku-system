@@ -51,11 +51,11 @@ def admin_token(mod):
     return base64.urlsafe_b64encode(f"admin.{exp}.{sig}".encode()).decode().rstrip("=")
 
 
-def mk(mod, name, email, last_log_days_ago=None, course="kokuritsu_nankan"):
+def mk(mod, name, email, last_log_days_ago=None, course="kokuritsu_nankan", status="paid"):
     conn = mod.db(); c = conn.cursor()
     far = (datetime.datetime.utcnow() + datetime.timedelta(days=365)).isoformat()
     c.execute("INSERT INTO students (name, email, status, plan, trial_end, course, grade) VALUES (?,?,?,?,?,?,?)",
-              (name, email, "paid", "premium", far, course, "高校3年"))
+              (name, email, status, "premium", far, course, "高校3年"))
     conn.commit(); c.execute("SELECT id FROM students WHERE email = ?", (email,)); sid = c.fetchone()["id"]
     if last_log_days_ago is not None:
         d = (mod._today_jst() - datetime.timedelta(days=last_log_days_ago)).isoformat()
@@ -75,6 +75,7 @@ def main():
     B = mk(mod, "Student B", "b@example.org", last_log_days_ago=5)     # 5 日止まっている
     C = mk(mod, "Student C", "c@example.org", last_log_days_ago=None)  # 一度も無い
     E = mk(mod, "Student E", "e@example.org", last_log_days_ago=2)     # 2 日 (閾値未満)
+    F = mk(mod, "Student F", "f@example.org", last_log_days_ago=10, course="premium", status="expired")  # 期限切れ (記録は 10 日前)
     sent = []
     mod._send_monitor_email = lambda subject, body_html, to_email=None: (sent.append((subject, body_html)) or {"sent": True})
 
@@ -84,15 +85,18 @@ def main():
     check("B は 5 日", rows[B]["streak"] == 5, rows[B])
     check("E は 2 日", rows[E]["streak"] == 2, rows[E])
     check("C は never", rows[C]["never"] is True and rows[C]["streak"] is None, rows[C])
+    check("F (期限切れ・10 日前に記録) はダッシュボードの母集団には残る", rows[F]["streak"] == 10 and rows[F]["status"] == "expired", rows.get(F))
 
     print("2) アラート")
     r = mod._run_zero_streak_alert(dry_run=True)
     check("dry_run: 該当 1 名 (B)・送信しない", r["hit"] == 1 and r["never"] == 1 and r["sent"] is False and not sent, r)
+    check("期限切れの F はメール対象に入らない (在籍中のみ・2026-09-07 再点検)", r["cohort"] == 4 and all(t["id"] != F for t in r["top"]), r)
     r = mod._run_zero_streak_alert()
     check("本番: メール 1 通", r["sent"] is True and len(sent) == 1, r)
     subj, body = sent[0] if sent else ("", "")
     check("件名に人数", "1 名" in subj, subj)
     check("本文に B の名前と 5 日、E は入らない", "Student B" in body and "5 日" in body and "Student E" not in body, body[:300])
+    check("本文に期限切れの F は載らない", "Student F" not in body, body[:400])
     check("本文に「一度も記録なし 1 名」", "一度も記録していない対象生徒: 1 名" in body, body[:300])
     # 該当ゼロなら送らない
     conn = mod.db(); c = conn.cursor(); c.execute("INSERT INTO study_logs (student_id, studied_date, subject, minutes) VALUES (?,?,?,?)", (B, mod._today_jst().isoformat(), "英語", 10)); conn.commit(); conn.close()

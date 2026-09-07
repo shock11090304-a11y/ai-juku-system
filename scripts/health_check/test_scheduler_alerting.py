@@ -92,8 +92,17 @@ def main():
         check("alert scheduler_failed (critical) が出る", "scheduler_failed" in keys and keys["scheduler_failed"]["severity"] == "critical", list(keys))
         check("alert の本文にジョブ名とエラー", "scheduler_failed" in keys and "週次レポート" in keys["scheduler_failed"]["detail"] and "boom" in keys["scheduler_failed"]["detail"], keys.get("scheduler_failed"))
         check("alert scheduler_stalled も従来どおり出る", "scheduler_stalled" in keys, list(keys))
+        check("scheduler_failed の再送間隔は 6 時間 (cooldown_min=360)", keys.get("scheduler_failed", {}).get("cooldown_min") == 360, keys.get("scheduler_failed", {}).get("cooldown_min"))
     except Exception as e:
         check("監視 snapshot / alert の評価が例外なく走る", False, f"{type(e).__name__}: {e}")
+
+    print("4b) 10:00 バッチ内の個別タスク失敗 (入れ子の error) も拾う")
+    insert_event(mod, "trial_mgmt_run", {"expire-trials": {"ok": True}, "stripe-reconcile": {"error": "StripeError: boom2"}}, days_ago=0)
+    rows2 = {r["name"]: r for r in mod._scheduler_status_rows()}
+    failed2 = {e["name"]: e for e in mod._failed_schedulers(list(rows2.values()))}
+    check("trial_mgmt_run が失敗扱いになる", "trial_mgmt_run" in failed2, list(failed2))
+    check("error にタスク名と内容", "stripe-reconcile" in failed2.get("trial_mgmt_run", {}).get("error", "") and "boom2" in failed2.get("trial_mgmt_run", {}).get("error", ""), failed2.get("trial_mgmt_run", {}).get("error"))
+    check("成功タスクだけの結果 (数値の error 件数を含まない) は失敗扱いにならない", "weakness_aggregation_run" not in failed2, list(failed2))
 
     print("5) バックアップ失敗のメール配線 (ソース検査)")
     blk = src[src.index("async def _r2_backup_scheduler"):][:4000]
