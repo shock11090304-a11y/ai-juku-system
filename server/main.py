@@ -30654,6 +30654,68 @@ def _normalize_person_name(name) -> str:
     return s.strip().casefold()
 
 
+def _normalize_email(email) -> str:
+    """メールアドレスの照合用正規化: NFKC (全角英数→半角) → 前後の空白除去 → 小文字。
+    2026-09-07: スマホの日本語入力のまま先頭だけ全角 (ｍaiko…) で登録された塾生アプリ申込が、入塾申込フォームの
+    同じアドレスと別物扱いになり、そのまま承認すると届かないアドレスへ案内が出るところだった。"""
+    import unicodedata
+    try:
+        s = unicodedata.normalize("NFKC", str(email or ""))
+    except Exception:
+        s = str(email or "")
+    return s.strip().lower()
+
+
+def _grade_key(grade):
+    """学年の互換判定キー: 「高1」「高1年」「高校1年」→ ('高', 1)、「中2」→ ('中', 2)。判定できなければ None。"""
+    import re as _re
+    import unicodedata
+    s = unicodedata.normalize("NFKC", str(grade or ""))
+    m = _re.search(r"(高|中|小)(?:等学校|校|学校|学)?\s*(\d)", s)
+    return (m.group(1), int(m.group(2))) if m else None
+
+
+def _course_app_ts(v):
+    """course_applications.created_at (PG datetime / SQLite 文字列) → naive datetime (比較用)。不明なら None。"""
+    try:
+        if v is None:
+            return None
+        if isinstance(v, datetime):
+            return v.replace(tzinfo=None)
+        return datetime.fromisoformat(str(v).replace("Z", "+00:00")).replace(tzinfo=None)
+    except Exception:
+        return None
+
+
+_COURSE_APP_STEP_REFERRERS = {"入塾申込フォーム", "塾生アプリ"}
+_COURSE_APP_PAIR_WINDOW_DAYS = 30
+
+
+def _course_app_siblings_ok(a, b) -> bool:
+    """course_applications の 2 行が「同じ生徒の申込」か (承認のまとめ処理と CEO の束ね表示で共通の単一定義)。
+    条件: 氏名 (正規化) が同じ、かつ
+      (1) メール (正規化) が同じ、または
+      (2) 入塾申込フォーム (STEP1・欄は「保護者のメールアドレス」) と 塾生アプリ登録 (STEP2・生徒本人が登録) の組で、
+          学年が矛盾せず (片方欠損は可)、作成が 30 日以内。
+    ★同じ保護者メールで氏名が違う兄弟は (1) でも別人。同名の別人が同時期に STEP1/STEP2 の組で来る確率は塾の規模では
+      無視できるが、CEO 側に「別人として分ける」(merge_siblings=false) を用意している。"""
+    a = dict(a); b = dict(b)
+    na, nb = _normalize_person_name(a.get("name")), _normalize_person_name(b.get("name"))
+    if not na or na != nb:
+        return False
+    if _normalize_email(a.get("email")) == _normalize_email(b.get("email")):
+        return True
+    if {(a.get("referrer") or "").strip(), (b.get("referrer") or "").strip()} != _COURSE_APP_STEP_REFERRERS:
+        return False
+    ga, gb = _grade_key(a.get("grade")), _grade_key(b.get("grade"))
+    if ga and gb and ga != gb:
+        return False
+    ta, tb = _course_app_ts(a.get("created_at")), _course_app_ts(b.get("created_at"))
+    if ta and tb and abs((ta - tb).total_seconds()) > _COURSE_APP_PAIR_WINDOW_DAYS * 86400:
+        return False
+    return True
+
+
 def _find_prior_trial_identity(c, email_norm: str, name: str, student_email_norm: str = ""):
     """別メールで過去に体験/課金した「同一人物の可能性がある行」を1件返す (無ければ None)。
     照合キー (メール以外の不変な手がかり):
@@ -50540,14 +50602,14 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
     _ref_raw = (payload.referrer or "").strip()
     _ip_bucket = "course_apply_juku" if _ref_raw == "塾生アプリ" else "course_apply_enroll"
     _check_rate_limit_ip(request, bucket=_ip_bucket, limit=40, window=86400)
-    _email_for_limit = (payload.email or "").lower().strip()
+    _email_for_limit = _normalize_email(payload.email)
     if _email_for_limit:
         # 10/24h。同一email 409 が重複を先に弾くので、正規の再送(数回)は絶対に届く緩さ。
         _check_rate_limit_value(_email_for_limit, bucket="course_apply_email", limit=10, window=86400)
     name = _sanitize_text(payload.name, 100)
     if not name:
         raise HTTPException(status_code=400, detail="お名前は必須です")
-    email_lower = (payload.email or "").lower().strip()
+    email_lower = _normalize_email(payload.email)   # 全角英数は半角に (スマホ入力の「ｍaiko…」対策)
     if not email_lower or "@" not in email_lower:
         raise HTTPException(status_code=400, detail="有効なメールアドレスを入力してください")
     grade = _sanitize_text(payload.grade, 30)
@@ -50615,10 +50677,10 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
         #   通知メールに添えるだけで、行はこれまでどおり作る (CEO では 1 枚に束ねて表示・承認は 1 回で両方処理)。
         _sibling_pending = None
         try:
-            _nk = _normalize_person_name(name)
-            c.execute("SELECT id, name, referrer FROM course_applications WHERE LOWER(email) = ? AND status = 'pending' ORDER BY id DESC LIMIT 5", (email_lower,))
+            _new_like = {"name": name, "email": email_lower, "referrer": referrer, "grade": grade, "created_at": None}
+            c.execute("SELECT id, name, email, referrer, grade, created_at FROM course_applications WHERE status = 'pending' ORDER BY id DESC LIMIT 200")
             for _r in (c.fetchall() or []):
-                if _nk and _normalize_person_name(_r["name"]) == _nk:
+                if _course_app_siblings_ok(_new_like, _r):
                     _sibling_pending = {"id": _r["id"], "referrer": _r["referrer"] or ""}
                     break
         except Exception:
@@ -50827,9 +50889,22 @@ def admin_list_course_applications(authorization: Optional[str] = Header(None), 
             "approved_at": str(r["approved_at"]) if r["approved_at"] else None,
             "rejected_reason": r["rejected_reason"],
             "created_at": str(r["created_at"]) if r["created_at"] else None,
-            # 🤝 同じ生徒 (メール + 正規化した氏名) を CEO で 1 枚に束ねるキー (承認 API の兄弟判定と同じ定義)
-            "group_key": f"{(r['email'] or '').lower().strip()}|{_normalize_person_name(r['name'])}",
+            "group_key": f"{_normalize_email(r['email'])}|{_normalize_person_name(r['name'])}",
         } for r in rows]
+        # 🤝 同じ生徒の申込を CEO で 1 枚に束ねる group_id (承認のまとめ判定 _course_app_siblings_ok と同じ定義)。
+        #   メール一致だけでなく、入塾申込フォーム (保護者メール) + 塾生アプリ登録 (生徒本人メール) の組も同じ生徒。
+        _reps = []
+        for it in items:
+            gid = None
+            if it["status"] == "pending":
+                for g, rep in _reps:
+                    if _course_app_siblings_ok(rep, it):
+                        gid = g
+                        break
+                if gid is None:
+                    gid = it["id"]
+                    _reps.append((gid, it))
+            it["group_id"] = gid if gid is not None else it["id"]
         # pending count (admin badge 用)
         c.execute("SELECT COUNT(*) AS n FROM course_applications WHERE status = 'pending'")
         pending_row = c.fetchone()
@@ -50840,6 +50915,9 @@ def admin_list_course_applications(authorization: Optional[str] = Header(None), 
 
 class CourseApplicationApproveRequest(BaseModel):
     note: Optional[str] = None  # 内部メモ
+    # 🤝 同じ生徒 (同じ氏名 + 同じメール / STEP1→STEP2 の組) の pending 申込をまとめて処理するか。
+    #   CEO の「別人として分ける」で false を送る (同名の別人を誤ってまとめないための逃げ道)。
+    merge_siblings: Optional[bool] = True
     # 🚫 [塾生アプリ AIなし枠 2026-07-04] 承認時に塾長が「塾生アプリのみ(AIなし)」を指定。
     #   None = 既定 (塾生アプリ登録は AIなし / 難関コース登録は AIあり)。True=AIなし / False=AIあり。
     ai_disabled: Optional[bool] = None
@@ -50852,13 +50930,13 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT id, name, email, status, referrer, grade, target_university, subjects FROM course_applications WHERE id = ?", (app_id,))
+        c.execute("SELECT id, name, email, status, referrer, grade, target_university, subjects, created_at FROM course_applications WHERE id = ?", (app_id,))
         row = c.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="申込が見つかりません")
         if row["status"] != "pending":
             raise HTTPException(status_code=409, detail=f"既に {row['status']} 状態です")
-        email_lower = (row["email"] or "").lower().strip()
+        email_lower = _normalize_email(row["email"])   # 全角混じりでも正しいアドレスでアカウントを作る
         name = row["name"]
         # 🤝 [2026-09-07 同一生徒の申込まとめ] 入塾申込フォーム (STEP1) → 塾生アプリ登録 (STEP2) は同じ生徒から
         #   2 行届く設計 (POST の重複判定は referrer 違いを意図的に通す)。従来は 1 行ずつ承認するしかなく、
@@ -50867,11 +50945,12 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         #   1 回の承認でまとめて処理する。★氏名一致は必須: 同じ保護者メールで兄弟を申し込むケースを別人のまま残す。
         _g = lambda r, k: ((r[k] if k in r.keys() else None) or None)
         _siblings = []
-        _nk = _normalize_person_name(name)
-        if _nk:
-            c.execute("SELECT id, name, referrer, grade, target_university, subjects FROM course_applications "
-                      "WHERE LOWER(email) = ? AND status = 'pending' AND id <> ? ORDER BY id", (email_lower, app_id))
-            _siblings = [r for r in (c.fetchall() or []) if _normalize_person_name(r["name"]) == _nk]
+        if payload.merge_siblings is not False and _normalize_person_name(name):
+            # メール一致だけでなく STEP1/STEP2 の組 (保護者メール vs 生徒本人メール) も同じ生徒として扱う (_course_app_siblings_ok)
+            c.execute("SELECT id, name, email, referrer, grade, target_university, subjects, created_at FROM course_applications "
+                      "WHERE status = 'pending' AND id <> ? ORDER BY id DESC LIMIT 200", (app_id,))
+            _siblings = [dict(r) for r in (c.fetchall() or []) if _course_app_siblings_ok(row, r)]
+            _siblings.sort(key=lambda r: int(r["id"]))
         _all_rows = [row] + _siblings
         # 学年・志望校は入塾申込フォームの行を優先 (正式な申込書。塾生アプリ登録の欄は本人の任意入力)
         _form_first = sorted(_all_rows, key=lambda r: 0 if (_g(r, "referrer") or "") == "入塾申込フォーム" else 1)
@@ -51024,11 +51103,24 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             (student_id, "admin", admin_note, app_id)
         )
         _sib_ids = [int(r["id"]) for r in _siblings]
+        _merged_emails = []
+        _parent_email_set = None
         if _sib_ids:
             c.execute(f"UPDATE course_applications SET status = 'approved', student_id = ?, approved_at = CURRENT_TIMESTAMP, approved_by = ? "
                       f"WHERE id IN ({','.join('?' * len(_sib_ids))}) AND status = 'pending'",
                       (student_id, f"merged:{app_id}", *_sib_ids))
-            log.info(f"[CourseApp] approve merged sibling applications {_sib_ids} into #{app_id} student_id={student_id}")
+            # 📧 メールが違う組 (入塾申込フォーム=保護者のメール / 塾生アプリ=生徒本人): ログイン用は承認した行のメール。
+            #   入塾申込フォーム側のメールは「保護者のメールアドレス」欄なので、未設定なら保護者メールとして保存
+            #   (週次レポートの宛先。保護者メール未設定で届かない生徒が出ていた)。
+            for r in _siblings:
+                _se = _normalize_email(r.get("email"))
+                if _se and _se != email_lower and _se not in _merged_emails:
+                    _merged_emails.append(_se)
+                    if (r.get("referrer") or "") == "入塾申込フォーム" and not _parent_email_set:
+                        c.execute("UPDATE students SET parent_email = ? WHERE id = ? AND (parent_email IS NULL OR parent_email = '')", (_se, student_id))
+                        if (c.rowcount or 0) > 0:
+                            _parent_email_set = _se
+            log.info(f"[CourseApp] approve merged sibling applications {_sib_ids} into #{app_id} student_id={student_id} merged_emails={len(_merged_emails)} parent_email_set={bool(_parent_email_set)}")
         conn.commit()
     finally:
         conn.close()
@@ -51155,6 +51247,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             "ai_disabled_preserved": _ai_disabled_preserved, "ai_disabled_final": _ai_disabled,
             # 🤝 同じメール・氏名の pending 申込を同時に処理した件数 (CEO で「N 件も同時に処理」と出す)
             "merged_count": len(_siblings), "merged_application_ids": [int(r["id"]) for r in _siblings],
+            "merged_emails": _merged_emails, "parent_email_set": _parent_email_set,
             # 🎒 [2026-09-01] 承認の結果いま何クラスになったかを返す。★空 (class_labels=[]) は
             #   「クラス限定で配る録画がこの生徒だけ 0 件」「クラス指定の一斉送信に入らない」状態だが、
             #   生徒はログインでき時間割も出るので**画面上は何も壊れて見えない**。CEO で必ず知らせる。

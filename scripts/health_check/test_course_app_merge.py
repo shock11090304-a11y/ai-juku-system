@@ -171,12 +171,91 @@ def main():
     check("承認 200・merged_count = 0・従来キー健在", r.status_code == 200 and j.get("merged_count") == 0
           and all(k in j for k in ("student_id", "attached_existing", "ai_disabled_final", "class_labels", "class_labels_empty", "line_link_code")), (r.status_code, j))
 
+    # ------------------------------------------------------------ 5b. 全角の英字が混じったメール
+    print("5b) 全角の英字が混じったメール (ｍerge-…) でも同じ生徒として束ね、正しいアドレスでアカウントを作る")
+    sent.clear(); line.clear()
+    e5 = "merge-fw@example.org"
+    st1, j1 = apply(client, name="全角 四郎", email=e5, referrer="入塾申込フォーム", grade="高校1年", subjects=extra_label)
+    st2, j2 = apply(client, name="全角 四郎", email="ｍerge-fw@example.org", referrer="塾生アプリ", grade="高1", subjects=extra_label)
+    check("2 行作成 (全角入りのメールも受理)", st1 == 200 and st2 == 200, (st1, st2, j2))
+    fw_id = j2.get("application_id")
+    rows = app_rows(mod, e5)
+    check("POST 時にメールを半角に正規化して保存", len(rows) == 2, rows)
+    # 本番に既にある「全角のまま保存された行」を再現 (正規化導入前の申込)
+    conn = mod.db(); c = conn.cursor(); c.execute("UPDATE course_applications SET email = ? WHERE id = ?", ("ｍerge-fw@example.org", fw_id)); conn.commit(); conn.close()
+    lst = client.get("/api/admin/course-applications?status=pending&limit=100", headers=adm).json()
+    gids = {a["id"]: a.get("group_id") for a in lst.get("applications", [])}
+    check("全角メールの行も同じ group_id", gids.get(j1["application_id"]) == gids.get(fw_id), gids)
+    r = client.post(f"/api/admin/course-applications/{fw_id}/approve", json={"ai_disabled": True}, headers=adm)
+    j = r.json() if r.status_code == 200 else {}
+    check("全角メールの行を承認 → まとめて処理", r.status_code == 200 and j.get("merged_count") == 1, (r.status_code, j))
+    sts = student_rows(mod, e5)
+    check("生徒のメールは半角に直っている (案内が届く)", len(sts) == 1 and sent and sent[0][0] == e5, (sts, [x[0] for x in sent]))
+
+    # ------------------------------------------------------------ 5c. STEP1 (保護者メール) + STEP2 (生徒本人メール)
+    print("5c) 入塾申込フォーム (保護者のメール) + 塾生アプリ登録 (生徒本人のメール) は同じ生徒として束ねる")
+    sent.clear(); line.clear()
+    p6, s6 = "parent-six@example.org", "student-six@example.org"
+    st1, j1 = apply(client, name="別メール 五郎", email=p6, referrer="入塾申込フォーム", grade="高校2年", phone="0470000006", target_university="東北大学", subjects=course)
+    st2, j2 = apply(client, name="別メール五郎", email=s6, referrer="塾生アプリ", grade="高2", subjects=extra_label)
+    check("2 行作成", st1 == 200 and st2 == 200, (st1, st2))
+    lst = client.get("/api/admin/course-applications?status=pending&limit=100", headers=adm).json()
+    gids = {a["id"]: a.get("group_id") for a in lst.get("applications", [])}
+    check("メールが違っても group_id が同じ (STEP1/STEP2 の組・学年互換)", gids.get(j1["application_id"]) == gids.get(j2["application_id"]), gids)
+    r = client.post(f"/api/admin/course-applications/{j2['application_id']}/approve", json={"ai_disabled": False}, headers=adm)
+    j = r.json() if r.status_code == 200 else {}
+    check("塾生アプリ行 (生徒本人メール) を承認 → まとめて処理", r.status_code == 200 and j.get("merged_count") == 1, (r.status_code, j))
+    sts_s, sts_p = student_rows(mod, s6), student_rows(mod, p6)
+    check("生徒は本人メールで 1 人だけ (保護者メールでは作られない)", len(sts_s) == 1 and len(sts_p) == 0, (sts_s, sts_p))
+    conn = mod.db(); c = conn.cursor(); c.execute("SELECT parent_email, goal, class_labels FROM students WHERE LOWER(email) = ?", (s6,)); prow = dict(c.fetchone() or {}); conn.close()
+    check("保護者メールとして入塾申込フォームのメールを保存", prow.get("parent_email") == p6 and j.get("parent_email_set") == p6 and j.get("merged_emails") == [p6], (prow, j))
+    check("志望校はフォーム行・受講クラスは和集合", prow.get("goal") == "東北大学" and set(json.loads(prow.get("class_labels") or "[]")) == set(course_labels + [extra_label]), prow)
+    check("案内メールは 1 通・宛先は生徒本人", len(sent) == 1 and sent[0][0] == s6, [x[0] for x in sent])
+    check("両行 approved", all(x["status"] == "approved" for x in app_rows(mod, p6) + app_rows(mod, s6)), app_rows(mod, p6) + app_rows(mod, s6))
+
+    # ------------------------------------------------------------ 5d〜5f. 束ねない条件
+    print("5d) 別メールで同名でも STEP1/STEP2 の組でなければ束ねない")
+    st1, j1 = apply(client, name="同名 六郎", email="same-a@example.org", referrer="塾生アプリ", subjects=extra_label)
+    st2, j2 = apply(client, name="同名 六郎", email="same-b@example.org", referrer="塾生アプリ", subjects=extra_label)
+    lst = client.get("/api/admin/course-applications?status=pending&limit=100", headers=adm).json()
+    gids = {a["id"]: a.get("group_id") for a in lst.get("applications", [])}
+    check("塾生アプリ × 塾生アプリ (別メール) は別 group_id", st1 == 200 and st2 == 200 and gids.get(j1["application_id"]) != gids.get(j2["application_id"]), gids)
+    r = client.post(f"/api/admin/course-applications/{j1['application_id']}/approve", json={"ai_disabled": True}, headers=adm)
+    check("承認しても merged_count = 0・もう一方は pending", r.status_code == 200 and r.json().get("merged_count") == 0 and any(x["status"] == "pending" for x in app_rows(mod, "same-b@example.org")), r.text[:150])
+    print("5e) 学年が矛盾する同名 (高1 と 高2) は束ねない")
+    st1, j1 = apply(client, name="学年 七郎", email="grade-p@example.org", referrer="入塾申込フォーム", grade="高校1年", subjects=extra_label)
+    st2, j2 = apply(client, name="学年 七郎", email="grade-s@example.org", referrer="塾生アプリ", grade="高2", subjects=extra_label)
+    lst = client.get("/api/admin/course-applications?status=pending&limit=100", headers=adm).json()
+    gids = {a["id"]: a.get("group_id") for a in lst.get("applications", [])}
+    check("別 group_id", st1 == 200 and st2 == 200 and gids.get(j1["application_id"]) != gids.get(j2["application_id"]), gids)
+    print("5f) 30 日以上離れた同名 (別メール) は束ねない")
+    st1, j1 = apply(client, name="期間 八郎", email="old-p@example.org", referrer="入塾申込フォーム", grade="高校3年", subjects=extra_label)
+    st2, j2 = apply(client, name="期間 八郎", email="new-s@example.org", referrer="塾生アプリ", grade="高3", subjects=extra_label)
+    import datetime as _dt
+    old_ts = (_dt.datetime.utcnow() - _dt.timedelta(days=40)).strftime("%Y-%m-%d %H:%M:%S")
+    conn = mod.db(); c = conn.cursor(); c.execute("UPDATE course_applications SET created_at = ? WHERE id = ?", (old_ts, j1["application_id"])); conn.commit(); conn.close()
+    lst = client.get("/api/admin/course-applications?status=pending&limit=100", headers=adm).json()
+    gids = {a["id"]: a.get("group_id") for a in lst.get("applications", [])}
+    check("別 group_id", st1 == 200 and st2 == 200 and gids.get(j1["application_id"]) != gids.get(j2["application_id"]), gids)
+    print("5g) 「別人として分ける」(merge_siblings=false) ならまとめない")
+    e9 = "split-nine@example.org"
+    st1, j1 = apply(client, name="分割 九郎", email=e9, referrer="入塾申込フォーム", subjects=extra_label)
+    st2, j2 = apply(client, name="分割 九郎", email=e9, referrer="塾生アプリ", subjects=extra_label)
+    r = client.post(f"/api/admin/course-applications/{j2['application_id']}/approve", json={"ai_disabled": True, "merge_siblings": False}, headers=adm)
+    j = r.json() if r.status_code == 200 else {}
+    check("merged_count = 0・フォーム行は pending のまま", r.status_code == 200 and j.get("merged_count") == 0 and any(x["id"] == j1["application_id"] and x["status"] == "pending" for x in app_rows(mod, e9)), (r.status_code, j, app_rows(mod, e9)))
+    r = client.post(f"/api/admin/course-applications/{j1['application_id']}/approve", json={"ai_disabled": True}, headers=adm)
+    j = r.json() if r.status_code == 200 else {}
+    check("残った行の承認は既存アカウントに合流 (従来どおり)", r.status_code == 200 and j.get("attached_existing") is True and len(student_rows(mod, e9)) == 1, (r.status_code, j))
+
     # ------------------------------------------------------------ 6. 画面側のソース検査
     print("6) 画面側 (ソース検査)")
     ceo_js = open(os.path.join(REPO, "ceo.js"), encoding="utf-8").read()
     ceo_html = open(os.path.join(REPO, "ceo.html"), encoding="utf-8").read()
     reg = open(os.path.join(REPO, "juku-register.html"), encoding="utf-8").read()
-    check("ceo.js: group_key で束ねて merged_count を表示", "group_key" in ceo_js and "merged_count" in ceo_js and "data-ids" in ceo_js)
+    check("ceo.js: group_id で束ねて merged_count を表示", "group_id" in ceo_js and "merged_count" in ceo_js and "data-ids" in ceo_js)
+    check("ceo.js: 「別人として分ける」→ merge_siblings=false", "ca-split" in ceo_js and "merge_siblings" in ceo_js and "renderCourseApps" in ceo_js)
+    check("ceo.js: 別メールの組はログイン用と保護者メールを表示", "parent_email_set" in ceo_js and "保護者メール" in ceo_js)
     check("ceo.js: AI 既定は受講内容 (国公立難関大コース / AI管理) で決める", "_aiHint" in ceo_js and "国公立難関大コース" in ceo_js and "AI管理" in ceo_js)
     check("ceo.html: ceo.js の ?v= が更新済み", "ceo.js?v=20260907-dashboard-ops" not in ceo_html and "ceo.js?v=" in ceo_html)
     check("juku-register.html: STEP1 の氏名・メールを引き継ぐ", "trillion_enroll_submitted_v1" in reg)

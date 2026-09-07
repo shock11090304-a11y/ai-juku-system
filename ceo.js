@@ -2852,157 +2852,187 @@ async function loadCourseApps() {
       list.innerHTML = '<div style="text-align:center; color:#71717a; padding:1.5rem;">📭 未対応の申込はありません</div>';
       return;
     }
-    // 🤝 [2026-09-07] 同じ生徒 (メール + 氏名) の申込は 1 枚に束ねる。入塾申込フォーム (STEP1) と
-    //   塾生アプリ登録 (STEP2) は同じ生徒から 2 行届く設計で、従来は 2 枚のカードが並び、承認の順番で
-    //   AI の有無が逆になり、案内メールも 2 通出ていた。サーバの承認 API は同じ束 (group_key) を
-    //   1 回で処理する (merged_count) ので、ここでは束ねて見せて承認ボタンを 1 つにする。
-    const groups = [];
-    const byKey = new Map();
-    apps.forEach(a => {
-      const k = a.group_key || ((a.email || '').toLowerCase().trim() + '|' + (a.name || '').replace(/[\s　・,\.、。]+/g, '').toLowerCase());
-      let g = byKey.get(k);
-      if (!g) { g = { key: k, rows: [] }; byKey.set(k, g); groups.push(g); }
-      g.rows.push(a);
-    });
-    const _first = (rows, f) => { for (const r of rows) { const v = f(r); if (v) return v; } return ''; };
-    const _uniq = arr => arr.filter((x, i) => x && arr.indexOf(x) === i);
-    const _badge = (ref) => ref === '塾生アプリ'
-      ? '<span style="background:rgba(129,140,248,0.22); color:#c7d2fe; border:1px solid rgba(129,140,248,0.45); border-radius:999px; padding:0.05rem 0.5rem; font-size:0.68rem; font-weight:700; margin-left:0.35rem;">🏫 塾生アプリ</span>'
-      : '<span style="background:rgba(167,139,250,0.18); color:#ddd6fe; border:1px solid rgba(167,139,250,0.4); border-radius:999px; padding:0.05rem 0.5rem; font-size:0.68rem; font-weight:700; margin-left:0.35rem;">🎓 難関コース</span>';
-    // AI の既定ヒントは送信元ではなく受講内容で決める: 国公立難関大コース / AI管理アドオン → AIあり、
-    //   通塾クラスのみ → AIなし、受講内容の情報が無い LP 申込 → 従来どおり AIあり。
-    //   (従来は「入塾申込フォーム=AIあり / 塾生アプリ=AIなし」だったので、同じ生徒でも押す行で既定が逆だった)
-    const _aiHint = (rows, subjectsUnion) => {
-      const notes = rows.map(r => r.note || '').join('\n');
-      const hasCourse = subjectsUnion.indexOf('国公立難関大コース') >= 0 || /AI管理/.test(notes);
-      const anyJuku = rows.some(r => r.referrer === '塾生アプリ');
-      const anyContent = rows.some(r => (r.subjects || '').trim());
-      if (hasCourse) return { useAI: true, text: '※受講内容に国公立難関大コース (AI学習) が含まれます。通常は［OK］(AIあり) を選んでください。' };
-      if (anyJuku || anyContent) return { useAI: false, text: '※通塾クラスのみの申込です。通常は［キャンセル］(AIなし) を選んでください。' };
-      return { useAI: true, text: '※この申込は難関コースです。通常は［OK］(AIあり) を選んでください。' };
-    };
-    list.innerHTML = groups.map(g => {
-      const rows = g.rows;
-      const a = rows[0];
-      const multi = rows.length > 1;
-      const badges = _uniq(rows.map(r => r.referrer === '塾生アプリ' ? '塾生アプリ' : 'other')).map(_badge).join('');
-      const subjectsUnion = _uniq(rows.reduce((acc, r) => acc.concat((r.subjects || '').split('・').map(x => x.trim())), []));
-      const targets = _uniq(rows.map(r => (r.target_university || '').trim()));
-      const phone = _first(rows, r => r.phone);
-      const grade = _first(rows, r => r.grade);
-      const referrers = _uniq(rows.filter(r => r.referrer && r.referrer !== '塾生アプリ').map(r => r.referrer));
-      const ids = rows.map(r => r.id).join(',');
-      const hint = _aiHint(rows, subjectsUnion);
-      const noteHtml = rows.filter(r => r.note).map(r => `<div style="background:rgba(0,0,0,0.25); padding:0.45rem 0.6rem; border-radius:6px; font-size:0.82rem; color:#d4d4d8; margin-bottom:0.5rem; white-space:pre-wrap; word-break:break-word;">💬 ${multi ? `<span style="color:#a5b4fc;">[${escapeHtml(r.referrer === '塾生アプリ' ? '塾生アプリ' : (r.referrer || '申込'))}]</span> ` : ''}${escapeHtml(r.note)}</div>`).join('');
-      const times = multi ? rows.map(r => _msgFmtJst(r.created_at)).join(' / ') : _msgFmtJst(a.created_at);
-      return `
-      <div data-id="${a.id}" data-ids="${ids}" style="background:rgba(255,255,255,0.04); border:1px solid rgba(167,139,250,0.3); border-left:4px solid ${multi ? '#34d399' : '#a78bfa'}; border-radius:10px; padding:0.85rem; margin-bottom:0.5rem;">
-        ${multi ? `<div style="background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.35); color:#a7f3d0; border-radius:8px; padding:0.35rem 0.6rem; font-size:0.78rem; margin-bottom:0.5rem;">🤝 同じメール・氏名の申込 ${rows.length} 件をまとめて表示しています。承認は 1 回で ${rows.length} 件とも処理され、案内メールは 1 通だけ送られます。</div>` : ''}
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.3rem;">
-          <div style="font-weight:800; color:#e4e4e7;">📥 ${escapeHtml(a.name)}${grade ? ` <span style="color:#71717a; font-size:0.78rem;">(${escapeHtml(grade)})</span>` : ''}${badges}</div>
-          <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(times)}</div>
-        </div>
-        <div style="display:grid; grid-template-columns:auto 1fr; gap:0.3rem 0.7rem; font-size:0.82rem; margin-bottom:0.5rem;">
-          <span style="color:#a1a1aa;">📧 メール:</span> <span style="color:#e4e4e7;">${escapeHtml(a.email)}</span>
-          ${targets.length ? `<span style="color:#a1a1aa;">🎯 志望校:</span> <span style="color:#fbbf24;">${escapeHtml(targets.join(' / '))}</span>` : ''}
-          ${subjectsUnion.length ? `<span style="color:#a1a1aa;">📚 受講クラス:</span> <span style="color:#a5b4fc;">${escapeHtml(subjectsUnion.join('・'))}</span>` : ''}
-          ${phone ? `<span style="color:#a1a1aa;">📞 電話:</span> <span style="color:#e4e4e7;">${escapeHtml(phone)}</span>` : ''}
-          ${referrers.length ? `<span style="color:#a1a1aa;">👥 紹介者:</span> <span style="color:#e4e4e7;">${escapeHtml(referrers.join(' / '))}</span>` : ''}
-        </div>
-        ${noteHtml}
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-          <button data-id="${a.id}" data-ids="${ids}" data-name="${escapeHtml(a.name)}" data-use-ai="${hint.useAI ? '1' : '0'}" data-hint="${escapeHtml(hint.text)}" class="ca-approve-btn" style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border:0; padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:700;">✅ 承認 (アカウント作成 + magic link 送信${multi ? ` / ${rows.length} 件まとめて` : ''})</button>
-          <button data-id="${a.id}" data-ids="${ids}" data-name="${escapeHtml(a.name)}" class="ca-reject-btn" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:0; padding:0.5rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.85rem;">✕ 却下${multi ? ` (${rows.length} 件)` : ''}</button>
-        </div>
-        <div class="ca-result" style="margin-top:0.4rem; font-size:0.78rem; min-height:1em;"></div>
-      </div>`;
-    }).join('');
-    list.querySelectorAll('.ca-approve-btn').forEach(b => b.addEventListener('click', async (e) => {
-      const id = b.getAttribute('data-id');
-      const name = b.getAttribute('data-name');
-      const nRows = (b.getAttribute('data-ids') || '').split(',').filter(Boolean).length || 1;
-      const resultEl = b.parentElement.parentElement.querySelector('.ca-result');
-      if (!confirm(`「${name}」さんを承認しますか?\n生徒アカウントを作成し、magic link メールを送信します。` + (nRows > 1 ? `\n(同じ生徒の申込 ${nRows} 件をまとめて処理します)` : ''))) return;
-      // 🚫 [塾生アプリ AIなし枠] 承認時に AI 利用可否を塾長が指定。既定ヒントは受講内容から (上の _aiHint)。
-      const _useAI = confirm(
-        `「${name}」さんに AI 機能を使わせますか?\n\n` +
-        `［OK］AIあり … 国公立難関コース等。ドリル/AIチューター/教材生成などフル機能。\n` +
-        `［キャンセル］塾生アプリのみ(AIなし) … 宿題/予定表/出欠/動画だけ。模試・宿題中心の通塾生。\n\n` +
-        (b.getAttribute('data-hint') || '')
-      );
-      b.disabled = true;
-      const orig = b.textContent;
-      b.textContent = '承認処理中...';
-      try {
-        const r = await window.AdminAuth.fetch(`/api/admin/course-applications/${encodeURIComponent(id)}/approve`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ai_disabled: !_useAI }),
-        });
-        if (!r.ok) {
-          let detail = ''; try { const j = await r.json(); detail = j.detail || ''; } catch {}
-          throw new Error(detail || `HTTP ${r.status}`);
-        }
-        const j = await r.json();
-        // 🛡️ [影dup根絶 2026-07-15] 既存アカウントに合流した場合は新規作成でないことを明示。
-        //    合流時サーバは AIあり/なし選択を適用せず既存値を保持する (ai_disabled_preserved) ため、
-        //    表示は必ずサーバの最終値 (ai_disabled_final) を使う。行内表示はリスト再読込(1.5秒)で
-        //    消える+LINEモーダルに覆われるため、合流時は alert でも通知 (このフローは confirm 前提)。
-        const _finalAI = (j.ai_disabled_final != null) ? !j.ai_disabled_final : _useAI;
-        const _aiNote = j.ai_disabled_preserved
-          ? `AIあり/なしの選択は適用せず、このアカウントの既存設定 (${_finalAI ? 'AIあり' : 'AIなし'}) を維持しました。変更する場合は生徒詳細の AI トグルから。`
-          : `AI設定: ${_finalAI ? 'AIあり' : '🏫 塾生アプリのみ(AIなし)'}`;
-        const _attachNote = j.attached_existing
-          ? `<br><span style="color:#fbbf24;">⚠️ 既存アカウント #${escapeHtml(String(j.student_id))} に合流 (新規作成なし${j.attached_plan ? ` / プラン: ${escapeHtml(String(j.attached_plan))}` : ''}) — ${escapeHtml(_aiNote)}</span>`
-          : '';
-        // 🤝 同じ生徒の申込をまとめて処理した件数
-        const _mergeNote = j.merged_count
-          ? `<br><span style="color:#a7f3d0;">🤝 同じ生徒の申込 ${escapeHtml(String(j.merged_count))} 件も同時に処理しました (案内メールは 1 通)</span>`
-          : '';
-        // 🎒 受講クラスの結果。★空のままだと「クラス限定で配った録画がこの生徒だけ0件」
-        //    「クラス指定の一斉送信に入らない」になるが、生徒側は普通にログインできて時間割も出るので
-        //    画面のどこにも異常が出ない。承認のたびにここで知らせる (承認自体は止めない)。
-        const _clsNote = j.class_labels_empty
-          ? `<br><span style="color:#fbbf24;">⚠️ 受講クラスが未設定です。このままだとクラス限定の録画・配布ファイル・クラス指定の一斉送信が届きません。「🏫 クラス別 受講生 一括登録」で設定してください。</span>`
-          : `<br><span style="color:#86efac;">🎒 受講クラス: ${escapeHtml((j.class_labels || []).join(' / '))}</span>`;
-        const _dropNote = (j.dropped_subjects && j.dropped_subjects.length)
-          ? `<br><span style="color:#fbbf24;">⚠️ 時間割に無い受講クラスを無視しました: ${escapeHtml(j.dropped_subjects.join(' / '))}</span>`
-          : '';
-        resultEl.innerHTML = `<span style="color:#86efac;">✅ 承認完了 (生徒ID: ${j.student_id} ${j.welcome_email_sent ? '/ welcome メール送信済' : '/ メール送信失敗'} / ${_finalAI ? 'AIあり' : '🏫 塾生アプリのみ(AIなし)'})</span>${_mergeNote}${_attachNote}${_clsNote}${_dropNote}`;
-        if (j.attached_existing) {
-          try {
-            alert(`⚠️ この申込は新規作成ではなく、既存アカウント #${j.student_id}${j.attached_plan ? `（プラン: ${j.attached_plan}）` : ''} に合流しました。\n${_aiNote}`);
-          } catch (_) {}
-        }
-        // 📲 「LINEで受け取る」案内を自動表示 (メール不達対策・塾長が LINE/QR で生徒に渡す)。
-        //    リスト再読込(下の setTimeout)で消えない固定 modal で出す。
-        if (j.line_link_code) showLineOnboardModal(name, j.line_link_code, j.line_add_friend_url);
-        setTimeout(() => loadCourseApps(), 1500);
-      } catch (err) {
-        resultEl.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(err.message || '承認失敗')}</span>`;
-        b.disabled = false; b.textContent = orig;
-      }
-    }));
-    list.querySelectorAll('.ca-reject-btn').forEach(b => b.addEventListener('click', async () => {
-      const ids = (b.getAttribute('data-ids') || b.getAttribute('data-id') || '').split(',').filter(Boolean);
-      const name = b.getAttribute('data-name');
-      const reason = prompt(`「${name}」さん${ids.length > 1 ? `の申込 ${ids.length} 件` : ''}を却下しますか?\n理由を入力してください (任意・内部メモ):`);
-      if (reason === null) return;
-      b.disabled = true;
-      try {
-        for (const id of ids) {
-          const r = await window.AdminAuth.fetch(`/api/admin/course-applications/${encodeURIComponent(id)}/reject`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: reason || undefined }),
-          });
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-        }
-        await loadCourseApps();
-      } catch (err) {
-        alert('却下失敗: ' + (err.message || ''));
-        b.disabled = false;
-      }
-    }));
+    window._caLastApps = apps;
+    renderCourseApps(apps);
   } catch (e) {
     list.innerHTML = `<div style="color:#fca5a5; padding:1rem;">エラー: ${escapeHtml(e.message || '')}</div>`;
   }
+}
+
+function renderCourseApps(apps) {
+  const list = document.getElementById('caList');
+  if (!list) return;
+  // 🤝 [2026-09-07] 同じ生徒の申込は 1 枚に束ねる。入塾申込フォーム (STEP1・保護者のメール) と塾生アプリ登録
+  //   (STEP2・生徒本人のメール) は同じ生徒から 2 行届く設計で、従来は 2 枚のカードが並び、承認の順番で AI の有無が
+  //   逆になり、案内メールも 2 通出ていた。束ねる判定はサーバの group_id (承認 API のまとめ判定と同じ定義:
+  //   氏名一致 + メール一致 or STEP1/STEP2 の組)。同名の別人だった場合は「別人として分ける」で個別に承認できる。
+  window._caSplitGroups = window._caSplitGroups || new Set();
+  const _normEmail = s => { try { return String(s || '').normalize('NFKC').trim().toLowerCase(); } catch (_) { return String(s || '').trim().toLowerCase(); } };
+  const groups = [];
+  const byKey = new Map();
+  apps.forEach(a => {
+    const base = (a.group_id != null) ? String(a.group_id) : (a.group_key || (_normEmail(a.email) + '|' + (a.name || '').replace(/[\s　・,\.、。]+/g, '').toLowerCase()));
+    const split = window._caSplitGroups.has(base);
+    const k = split ? (base + '#' + a.id) : base;
+    let g = byKey.get(k);
+    if (!g) { g = { key: k, base, split, rows: [] }; byKey.set(k, g); groups.push(g); }
+    g.rows.push(a);
+  });
+  const _first = (rows, f) => { for (const r of rows) { const v = f(r); if (v) return v; } return ''; };
+  const _uniq = arr => arr.filter((x, i) => x && arr.indexOf(x) === i);
+  const _badge = (ref) => ref === '塾生アプリ'
+    ? '<span style="background:rgba(129,140,248,0.22); color:#c7d2fe; border:1px solid rgba(129,140,248,0.45); border-radius:999px; padding:0.05rem 0.5rem; font-size:0.68rem; font-weight:700; margin-left:0.35rem;">🏫 塾生アプリ</span>'
+    : '<span style="background:rgba(167,139,250,0.18); color:#ddd6fe; border:1px solid rgba(167,139,250,0.4); border-radius:999px; padding:0.05rem 0.5rem; font-size:0.68rem; font-weight:700; margin-left:0.35rem;">🎓 難関コース</span>';
+  // AI の既定ヒントは送信元ではなく受講内容で決める: 国公立難関大コース / AI管理アドオン → AIあり、
+  //   通塾クラスのみ → AIなし、受講内容の情報が無い LP 申込 → 従来どおり AIあり。
+  const _aiHint = (rows, subjectsUnion) => {
+    const notes = rows.map(r => r.note || '').join('\n');
+    const hasCourse = subjectsUnion.indexOf('国公立難関大コース') >= 0 || /AI管理/.test(notes);
+    const anyJuku = rows.some(r => r.referrer === '塾生アプリ');
+    const anyContent = rows.some(r => (r.subjects || '').trim());
+    if (hasCourse) return { useAI: true, text: '※受講内容に国公立難関大コース (AI学習) が含まれます。通常は［OK］(AIあり) を選んでください。' };
+    if (anyJuku || anyContent) return { useAI: false, text: '※通塾クラスのみの申込です。通常は［キャンセル］(AIなし) を選んでください。' };
+    return { useAI: true, text: '※この申込は難関コースです。通常は［OK］(AIあり) を選んでください。' };
+  };
+  list.innerHTML = groups.map(g => {
+    const rows = g.rows;
+    // ログイン用メールは塾生アプリ登録 (生徒本人) の行を優先。入塾申込フォームのメール欄は「保護者のメールアドレス」
+    const primary = rows.find(r => r.referrer === '塾生アプリ') || rows[0];
+    const multi = rows.length > 1;
+    const badges = _uniq(rows.map(r => r.referrer === '塾生アプリ' ? '塾生アプリ' : 'other')).map(_badge).join('');
+    const subjectsUnion = _uniq(rows.reduce((acc, r) => acc.concat((r.subjects || '').split('・').map(x => x.trim())), []));
+    const targets = _uniq(rows.map(r => (r.target_university || '').trim()));
+    const emails = _uniq(rows.map(r => _normEmail(r.email)));
+    const loginEmail = _normEmail(primary.email);
+    const formRow = rows.find(r => r.referrer === '入塾申込フォーム');
+    const parentEmail = (formRow && _normEmail(formRow.email) !== loginEmail) ? _normEmail(formRow.email) : '';
+    const phone = _first(rows, r => r.phone);
+    const grade = _first(rows, r => r.grade);
+    const referrers = _uniq(rows.filter(r => r.referrer && r.referrer !== '塾生アプリ').map(r => r.referrer));
+    const ids = rows.map(r => r.id).join(',');
+    const hint = _aiHint(rows, subjectsUnion);
+    const noteHtml = rows.filter(r => r.note).map(r => `<div style="background:rgba(0,0,0,0.25); padding:0.45rem 0.6rem; border-radius:6px; font-size:0.82rem; color:#d4d4d8; margin-bottom:0.5rem; white-space:pre-wrap; word-break:break-word;">💬 ${multi ? `<span style="color:#a5b4fc;">[${escapeHtml(r.referrer === '塾生アプリ' ? '塾生アプリ' : (r.referrer || '申込'))}]</span> ` : ''}${escapeHtml(r.note)}</div>`).join('');
+    const times = multi ? rows.map(r => _msgFmtJst(r.created_at)).join(' / ') : _msgFmtJst(primary.created_at);
+    let banner = '';
+    if (multi) {
+      banner = `<div style="background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.35); color:#a7f3d0; border-radius:8px; padding:0.35rem 0.6rem; font-size:0.78rem; margin-bottom:0.5rem;">🤝 同じ生徒の申込 ${rows.length} 件をまとめて表示しています。承認は 1 回で ${rows.length} 件とも処理され、案内メールは 1 通だけ送られます。`
+        + (emails.length > 1 ? `<br>📧 メールが ${emails.length} つあります → ログイン用 (案内メールの宛先): <b>${escapeHtml(loginEmail)}</b>${parentEmail ? ` / 保護者メールとして保存: <b>${escapeHtml(parentEmail)}</b>` : ''}` : '')
+        + ` <a href="#" class="ca-split" data-gid="${escapeHtml(g.base)}" style="color:#fbbf24; margin-left:0.4rem; white-space:nowrap;">👤 別人として分ける</a></div>`;
+    } else if (g.split) {
+      banner = `<div style="background:rgba(251,191,36,0.10); border:1px solid rgba(251,191,36,0.35); color:#fde68a; border-radius:8px; padding:0.35rem 0.6rem; font-size:0.78rem; margin-bottom:0.5rem;">👤 別人として扱います (同じ氏名の申込とはまとめません) <a href="#" class="ca-unsplit" data-gid="${escapeHtml(g.base)}" style="color:#a7f3d0; margin-left:0.4rem;">🤝 まとめる</a></div>`;
+    }
+    return `
+    <div data-id="${primary.id}" data-ids="${ids}" style="background:rgba(255,255,255,0.04); border:1px solid rgba(167,139,250,0.3); border-left:4px solid ${multi ? '#34d399' : '#a78bfa'}; border-radius:10px; padding:0.85rem; margin-bottom:0.5rem;">
+      ${banner}
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.3rem;">
+        <div style="font-weight:800; color:#e4e4e7;">📥 ${escapeHtml(primary.name)}${grade ? ` <span style="color:#71717a; font-size:0.78rem;">(${escapeHtml(grade)})</span>` : ''}${badges}</div>
+        <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(times)}</div>
+      </div>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:0.3rem 0.7rem; font-size:0.82rem; margin-bottom:0.5rem;">
+        <span style="color:#a1a1aa;">📧 メール:</span> <span style="color:#e4e4e7;">${escapeHtml(emails.join(' / '))}</span>
+        ${targets.length ? `<span style="color:#a1a1aa;">🎯 志望校:</span> <span style="color:#fbbf24;">${escapeHtml(targets.join(' / '))}</span>` : ''}
+        ${subjectsUnion.length ? `<span style="color:#a1a1aa;">📚 受講クラス:</span> <span style="color:#a5b4fc;">${escapeHtml(subjectsUnion.join('・'))}</span>` : ''}
+        ${phone ? `<span style="color:#a1a1aa;">📞 電話:</span> <span style="color:#e4e4e7;">${escapeHtml(phone)}</span>` : ''}
+        ${referrers.length ? `<span style="color:#a1a1aa;">👥 紹介者:</span> <span style="color:#e4e4e7;">${escapeHtml(referrers.join(' / '))}</span>` : ''}
+      </div>
+      ${noteHtml}
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <button data-id="${primary.id}" data-ids="${ids}" data-name="${escapeHtml(primary.name)}" data-merge="${g.split ? '0' : '1'}" data-use-ai="${hint.useAI ? '1' : '0'}" data-hint="${escapeHtml(hint.text)}" class="ca-approve-btn" style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border:0; padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:700;">✅ 承認 (アカウント作成 + magic link 送信${multi ? ` / ${rows.length} 件まとめて` : ''})</button>
+        <button data-id="${primary.id}" data-ids="${ids}" data-name="${escapeHtml(primary.name)}" class="ca-reject-btn" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:0; padding:0.5rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.85rem;">✕ 却下${multi ? ` (${rows.length} 件)` : ''}</button>
+      </div>
+      <div class="ca-result" style="margin-top:0.4rem; font-size:0.78rem; min-height:1em;"></div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.ca-split, .ca-unsplit').forEach(el => el.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    const gid = el.getAttribute('data-gid');
+    if (el.classList.contains('ca-split')) window._caSplitGroups.add(gid); else window._caSplitGroups.delete(gid);
+    renderCourseApps(window._caLastApps || apps);
+  }));
+  list.querySelectorAll('.ca-approve-btn').forEach(b => b.addEventListener('click', async (e) => {
+    const id = b.getAttribute('data-id');
+    const name = b.getAttribute('data-name');
+    const merge = b.getAttribute('data-merge') !== '0';
+    const nRows = (b.getAttribute('data-ids') || '').split(',').filter(Boolean).length || 1;
+    const resultEl = b.parentElement.parentElement.querySelector('.ca-result');
+    if (!confirm(`「${name}」さんを承認しますか?\n生徒アカウントを作成し、magic link メールを送信します。` + (nRows > 1 ? `\n(同じ生徒の申込 ${nRows} 件をまとめて処理します)` : (merge ? '' : '\n(別人として扱い、同じ氏名の申込とはまとめません)')))) return;
+    // 🚫 [塾生アプリ AIなし枠] 承認時に AI 利用可否を塾長が指定。既定ヒントは受講内容から (上の _aiHint)。
+    const _useAI = confirm(
+      `「${name}」さんに AI 機能を使わせますか?\n\n` +
+      `［OK］AIあり … 国公立難関コース等。ドリル/AIチューター/教材生成などフル機能。\n` +
+      `［キャンセル］塾生アプリのみ(AIなし) … 宿題/予定表/出欠/動画だけ。模試・宿題中心の通塾生。\n\n` +
+      (b.getAttribute('data-hint') || '')
+    );
+    b.disabled = true;
+    const orig = b.textContent;
+    b.textContent = '承認処理中...';
+    try {
+      const r = await window.AdminAuth.fetch(`/api/admin/course-applications/${encodeURIComponent(id)}/approve`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ai_disabled: !_useAI, merge_siblings: merge }),
+      });
+      if (!r.ok) {
+        let detail = ''; try { const j = await r.json(); detail = j.detail || ''; } catch {}
+        throw new Error(detail || `HTTP ${r.status}`);
+      }
+      const j = await r.json();
+      // 🛡️ [影dup根絶 2026-07-15] 既存アカウントに合流した場合は新規作成でないことを明示。
+      //    合流時サーバは AIあり/なし選択を適用せず既存値を保持する (ai_disabled_preserved) ため、
+      //    表示は必ずサーバの最終値 (ai_disabled_final) を使う。行内表示はリスト再読込(1.5秒)で
+      //    消える+LINEモーダルに覆われるため、合流時は alert でも通知 (このフローは confirm 前提)。
+      const _finalAI = (j.ai_disabled_final != null) ? !j.ai_disabled_final : _useAI;
+      const _aiNote = j.ai_disabled_preserved
+        ? `AIあり/なしの選択は適用せず、このアカウントの既存設定 (${_finalAI ? 'AIあり' : 'AIなし'}) を維持しました。変更する場合は生徒詳細の AI トグルから。`
+        : `AI設定: ${_finalAI ? 'AIあり' : '🏫 塾生アプリのみ(AIなし)'}`;
+      const _attachNote = j.attached_existing
+        ? `<br><span style="color:#fbbf24;">⚠️ 既存アカウント #${escapeHtml(String(j.student_id))} に合流 (新規作成なし${j.attached_plan ? ` / プラン: ${escapeHtml(String(j.attached_plan))}` : ''}) — ${escapeHtml(_aiNote)}</span>`
+        : '';
+      // 🤝 同じ生徒の申込をまとめて処理した件数・別メールの扱い
+      const _mergeNote = j.merged_count
+        ? `<br><span style="color:#a7f3d0;">🤝 同じ生徒の申込 ${escapeHtml(String(j.merged_count))} 件も同時に処理しました (案内メールは 1 通)${j.parent_email_set ? ` / 保護者メールとして ${escapeHtml(String(j.parent_email_set))} を保存` : ''}</span>`
+        : '';
+      // 🎒 受講クラスの結果。★空のままだと「クラス限定で配った録画がこの生徒だけ0件」
+      //    「クラス指定の一斉送信に入らない」になるが、生徒側は普通にログインできて時間割も出るので
+      //    画面のどこにも異常が出ない。承認のたびにここで知らせる (承認自体は止めない)。
+      const _clsNote = j.class_labels_empty
+        ? `<br><span style="color:#fbbf24;">⚠️ 受講クラスが未設定です。このままだとクラス限定の録画・配布ファイル・クラス指定の一斉送信が届きません。「🏫 クラス別 受講生 一括登録」で設定してください。</span>`
+        : `<br><span style="color:#86efac;">🎒 受講クラス: ${escapeHtml((j.class_labels || []).join(' / '))}</span>`;
+      const _dropNote = (j.dropped_subjects && j.dropped_subjects.length)
+        ? `<br><span style="color:#fbbf24;">⚠️ 時間割に無い受講クラスを無視しました: ${escapeHtml(j.dropped_subjects.join(' / '))}</span>`
+        : '';
+      resultEl.innerHTML = `<span style="color:#86efac;">✅ 承認完了 (生徒ID: ${j.student_id} ${j.welcome_email_sent ? '/ welcome メール送信済' : '/ メール送信失敗'} / ${_finalAI ? 'AIあり' : '🏫 塾生アプリのみ(AIなし)'})</span>${_mergeNote}${_attachNote}${_clsNote}${_dropNote}`;
+      if (j.attached_existing) {
+        try {
+          alert(`⚠️ この申込は新規作成ではなく、既存アカウント #${j.student_id}${j.attached_plan ? `（プラン: ${j.attached_plan}）` : ''} に合流しました。\n${_aiNote}`);
+        } catch (_) {}
+      }
+      // 📲 「LINEで受け取る」案内を自動表示 (メール不達対策・塾長が LINE/QR で生徒に渡す)。
+      //    リスト再読込(下の setTimeout)で消えない固定 modal で出す。
+      if (j.line_link_code) showLineOnboardModal(name, j.line_link_code, j.line_add_friend_url);
+      setTimeout(() => loadCourseApps(), 1500);
+    } catch (err) {
+      resultEl.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(err.message || '承認失敗')}</span>`;
+      b.disabled = false; b.textContent = orig;
+    }
+  }));
+  list.querySelectorAll('.ca-reject-btn').forEach(b => b.addEventListener('click', async () => {
+    const ids = (b.getAttribute('data-ids') || b.getAttribute('data-id') || '').split(',').filter(Boolean);
+    const name = b.getAttribute('data-name');
+    const reason = prompt(`「${name}」さん${ids.length > 1 ? `の申込 ${ids.length} 件` : ''}を却下しますか?\n理由を入力してください (任意・内部メモ):`);
+    if (reason === null) return;
+    b.disabled = true;
+    try {
+      for (const id of ids) {
+        const r = await window.AdminAuth.fetch(`/api/admin/course-applications/${encodeURIComponent(id)}/reject`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: reason || undefined }),
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+      }
+      await loadCourseApps();
+    } catch (err) {
+      alert('却下失敗: ' + (err.message || ''));
+      b.disabled = false;
+    }
+  }));
 }
 
 // 📲 承認時の「LINEで受け取る」案内モーダル (2026-06-26)。メール不達対策: 塾長が LINE/QR で
