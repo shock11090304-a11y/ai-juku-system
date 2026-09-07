@@ -4634,7 +4634,7 @@ async function handleFile(file) {
         let reason = '';
         if (result && result.numPages === 0) reason = '・PDF にページがありません (ファイル破損)';
         else if (result && result.text && result.text.length < 50) reason = '・テキストがほぼ抽出されていません';
-        else reason = '・テキスト抽出が空 (= スキャン画像 PDF か pdf.js 互換問題の可能性)';
+        else reason = '・テキスト抽出が空 (= 日本語の文字コード表 (CMap) を CDN から読めなかった / スキャン画像 PDF / pdf.js 互換問題 のいずれか)';
         alert(`PDF からテキストを取得できませんでした。\n\n${reason}\n\n📋 診断情報 (このスクショを送ってください):\n• pdf.js: ${v}\n• worker: ...${ws}\n• ${diag}\n\n対策候補:\n1. ブラウザを強制リロード (Cmd+Shift+R)\n2. 別ブラウザ (Chrome 推奨) で試す\n3. スクショを送って頂ければ詳細解析します`);
         return;
       }
@@ -4671,7 +4671,17 @@ async function extractPdfText(file) {
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
   const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  // 🈶 2026-09-08 fix: 楽天銀行の明細 PDF は日本語フォント (HeiseiMin-W3) を埋め込まず、文字コード表 (CMap:
+  //   UniJIS-UCS2-HW-H) を参照する形式。pdf.js は cMapUrl を渡さないと CMap を読めず、getTextContent が全ページ
+  //   0 件を返す (塾長の実ファイルで確認: cMap なし 0/0/0/0/0 件 → あり 142/130/139/131/22 件)。
+  //   cdnjs は cmaps/ ディレクトリを配信していない (403) ので jsdelivr の npm パッケージから読む。
+  const PDFJS_ASSETS = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
+  const pdf = await pdfjsLib.getDocument({
+    data: buf,
+    cMapUrl: PDFJS_ASSETS + 'cmaps/',
+    cMapPacked: true,
+    standardFontDataUrl: PDFJS_ASSETS + 'standard_fonts/',
+  }).promise;
   if (!pdf || !pdf.numPages) return { text: '', numPages: 0, diag: 'no pages' };
   const allLines = [];
   let totalItems = 0;
@@ -4718,7 +4728,7 @@ async function extractPdfText(file) {
     }
   }
   const text = allLines.join('\n');
-  const diag = `pages=${pdf.numPages}, totalItems=${totalItems}, perPage=[${itemsPerPage.join(',')}], lines=${allLines.length}, textLen=${text.length}, head100=${JSON.stringify(text.slice(0, 100))}`;
+  const diag = `pages=${pdf.numPages}, totalItems=${totalItems}, perPage=[${itemsPerPage.join(',')}], lines=${allLines.length}, textLen=${text.length}, cmap=jsdelivr, head100=${JSON.stringify(text.slice(0, 100))}`;
   console.log('[extractPdfText] diag:', diag);
   return { text, numPages: pdf.numPages, diag };
 }
