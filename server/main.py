@@ -29565,6 +29565,199 @@ def _sweep_student_orphans(conn, c, dry_run: bool) -> dict:
     return out
 
 
+# ===========================================================================
+# 🤝 生徒アカウントの統合 (同一人物の 2 アカウント → 1 つ・2026-09-08 塾長指示)
+#   入塾申込フォーム承認 (保護者メール) と 塾生アプリ登録 (生徒メール) で別々に作られた等の重複を、
+#   学習データを失わずに 1 つにまとめる。DB 直結のスクリプトではなく管理 API にして、dry_run で
+#   何が動くかを見てから実行できるようにする (2026-09-03 の 12 組統合は使い捨てスクリプトだった)。
+#   ★student_id を持つ表を足したら _MERGE_STUDENT_TABLES にも足すこと (削除の 4 リストと同じ規律。
+#     check_student_cascade_lists.py が _ORPHAN_SWEEP_TABLES ⊆ この表を検査する)。
+# ===========================================================================
+_MERGE_STUDENT_TABLES = (
+    # (table, unique_key_cols)  unique_key_cols: keep 側に同じキーの行があれば drop 側の行は捨てる (keep 優先)。
+    #   None = 制約なし (全部付け替え)、() = student_id 単独 UNIQUE。student_json_state だけ updated_at の新しい方を残す。
+    ("study_logs", None), ("study_plans", None), ("exam_results", None), ("curricula", None), ("notifications", None),
+    ("otp_codes", None), ("usage_monthly", ("feature", "year_month")), ("mock_exam_sessions", None), ("vocab_progress", None),
+    ("payments", None), ("ai_tutor_messages", None), ("homework_assignments", None), ("question_attempts", None),
+    ("student_weakness", ("subject", "topic")), ("student_weakness_history", None),
+    ("grammar_drill_assignments", ("drill_id",)), ("admission_likelihood", ()),
+    ("worksheet_archives", ("week_start_date",)), ("class_attend", ("class_label", "att_date")), ("class_attendance", ("session_id",)),
+    ("lesson_print_downloads", None), ("student_materials", None), ("ai_tutor_solve_log", None), ("line_link_tokens", None),
+    ("student_json_state", ("kind",)), ("anthropic_usage_log", None), ("course_applications", None),
+)
+# keep 側が空なら drop 側の値で埋める列 (メール系は下で個別に扱う)
+_MERGE_FILL_FIELDS = ("grade", "goal", "plan", "course", "stripe_customer_id", "stripe_subscription_id", "line_user_id",
+                      "parent_email", "exam_target_date", "paid_since", "trial_start", "signup_utm_source", "signup_lp_variant",
+                      "signup_referrer", "feature_tier")
+_MERGE_STATUS_RANK = {"paid": 5, "trial": 4, "past_due": 3, "expired": 2, "canceled": 1}
+
+
+def _merge_n(row) -> int:
+    """COUNT(*) AS n の行 → int (SQLite の Row と PG の dict 行の両方)。"""
+    try:
+        return int((row["n"] if row is not None else 0) or 0)
+    except Exception:
+        return 0
+
+
+class StudentMergeRequest(BaseModel):
+    from_id: int           # 消す側 (この生徒のデータを student_id 側へ移す)
+    dry_run: bool = True   # 既定は下見 (何も書かない)。false で実行
+
+
+@app.post("/api/admin/students/{student_id}/merge")
+def admin_student_merge(student_id: int, payload: StudentMergeRequest, authorization: Optional[str] = Header(None)):
+    """塾長: 生徒 from_id を student_id (残す側) に統合する。
+    - student_id を持つ全表の行を残す側へ付け替え (同じキーで衝突する行は残す側を優先して drop 側を捨てる)
+    - messages / referrals / invite_codes / events (session_id=生徒ID) も付け替え
+    - 残す側の空欄 (学年・志望校・保護者メール・LINE 等) は drop 側で埋め、受講クラスは和集合、
+      status は在籍度の高い方、trial_end/last_login は遅い方、created_at は早い方、AI は片方でも使えるなら使える
+    - drop 側のログイン用メールは student_email (確認済) として残し、そのメールでもログインできるようにする
+    - 最後に drop 側の students 行を削除し、events に admin_student_merge を記録
+    1 トランザクション (途中で失敗したら何も変わらない)。dry_run=true なら件数と予定の変更だけ返す。"""
+    _verify_admin_required(authorization)
+    keep_id, drop_id = int(student_id), int(payload.from_id)
+    if keep_id == drop_id:
+        raise HTTPException(status_code=400, detail="同じ生徒です")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM students WHERE id = ?", (keep_id,))
+        keep = c.fetchone()
+        c.execute("SELECT * FROM students WHERE id = ?", (drop_id,))
+        drop = c.fetchone()
+        if not keep or not drop:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません (既に統合済みの可能性)")
+        keep = dict(keep); drop = dict(drop)
+        dry = bool(payload.dry_run)
+        moved, conflicts = {}, {}
+
+        # 1) student_id を持つ表
+        for tbl, ukey in _MERGE_STUDENT_TABLES:
+            c.execute(f"SELECT COUNT(*) AS n FROM {tbl} WHERE student_id = ?", (drop_id,))
+            n = _merge_n(c.fetchone())
+            if not n:
+                continue
+            dup = 0
+            if ukey is not None:
+                if tbl == "student_json_state":
+                    c.execute("SELECT kind, updated_at FROM student_json_state WHERE student_id = ?", (keep_id,))
+                    keep_kinds = {r["kind"]: str(r["updated_at"] or "") for r in c.fetchall()}
+                    c.execute("SELECT kind, updated_at FROM student_json_state WHERE student_id = ?", (drop_id,))
+                    for r in c.fetchall():
+                        if r["kind"] not in keep_kinds:
+                            continue
+                        dup += 1
+                        loser = keep_id if str(r["updated_at"] or "") > keep_kinds[r["kind"]] else drop_id
+                        if not dry:
+                            c.execute("DELETE FROM student_json_state WHERE student_id = ? AND kind = ?", (loser, r["kind"]))
+                else:
+                    if ukey:
+                        match = " AND ".join(f"k.{col} = {tbl}.{col}" for col in ukey)
+                        exists = f"EXISTS (SELECT 1 FROM {tbl} k WHERE k.student_id = ? AND {match})"
+                    else:
+                        exists = f"EXISTS (SELECT 1 FROM {tbl} k WHERE k.student_id = ?)"
+                    c.execute(f"SELECT COUNT(*) AS n FROM {tbl} WHERE student_id = ? AND {exists}", (drop_id, keep_id))
+                    dup = _merge_n(c.fetchone())
+                    if dup and not dry:
+                        c.execute(f"DELETE FROM {tbl} WHERE student_id = ? AND {exists}", (drop_id, keep_id))
+            if dup:
+                conflicts[tbl] = dup
+            if n - dup > 0:
+                moved[tbl] = n - dup
+                if not dry:
+                    c.execute(f"UPDATE {tbl} SET student_id = ? WHERE student_id = ?", (keep_id, drop_id))
+
+        # 2) 別の列名で生徒を指す表
+        extra = [
+            ("messages(sender)", "UPDATE messages SET sender_id = ? WHERE sender_type = 'student' AND sender_id = ?",
+             "SELECT COUNT(*) AS n FROM messages WHERE sender_type = 'student' AND sender_id = ?"),
+            ("messages(recipient)", "UPDATE messages SET recipient_id = ? WHERE recipient_type = 'student' AND recipient_id = ?",
+             "SELECT COUNT(*) AS n FROM messages WHERE recipient_type = 'student' AND recipient_id = ?"),
+            ("referrals(referrer)", "UPDATE referrals SET referrer_id = ? WHERE referrer_id = ?", "SELECT COUNT(*) AS n FROM referrals WHERE referrer_id = ?"),
+            ("referrals(referred)", "UPDATE referrals SET referred_id = ? WHERE referred_id = ?", "SELECT COUNT(*) AS n FROM referrals WHERE referred_id = ?"),
+            ("invite_codes(used_by)", "UPDATE invite_codes SET used_by_student_id = ? WHERE used_by_student_id = ?", "SELECT COUNT(*) AS n FROM invite_codes WHERE used_by_student_id = ?"),
+        ]
+        for label, upd, cnt in extra:
+            c.execute(cnt, (drop_id,))
+            n = _merge_n(c.fetchone())
+            if n:
+                moved[label] = n
+                if not dry:
+                    c.execute(upd, (keep_id, drop_id))
+        # events は session_id (文字列の生徒ID) で生徒に紐づく (週次レポートの集計が読む)
+        c.execute("SELECT COUNT(*) AS n FROM events WHERE session_id = ?", (str(drop_id),))
+        n = _merge_n(c.fetchone())
+        if n:
+            moved["events"] = n
+            if not dry:
+                c.execute("UPDATE events SET session_id = ? WHERE session_id = ?", (str(keep_id), str(drop_id)))
+
+        # 3) students 本体の項目を統合
+        changes = {}
+        for f in _MERGE_FILL_FIELDS:
+            if f in keep and not keep.get(f) and drop.get(f):
+                changes[f] = drop[f]
+        ks, ds = _MERGE_STATUS_RANK.get(keep.get("status") or "", 0), _MERGE_STATUS_RANK.get(drop.get("status") or "", 0)
+        if ds > ks:
+            changes["status"] = drop["status"]
+        for f in ("trial_end", "last_login_at", "cancel_at"):
+            if f in keep and drop.get(f) and (not keep.get(f) or str(drop[f]) > str(keep[f])):
+                changes[f] = drop[f]
+        if "created_at" in keep and drop.get("created_at") and keep.get("created_at") and str(drop["created_at"]) < str(keep["created_at"]):
+            changes["created_at"] = drop["created_at"]
+        if "ai_disabled" in keep and int(keep.get("ai_disabled") or 0) == 1 and int(drop.get("ai_disabled") or 0) == 0:
+            changes["ai_disabled"] = 0   # 片方で AI が使えていたなら統合後も使える
+        if "ai_trial_until" in keep and drop.get("ai_trial_until") and (not keep.get("ai_trial_until") or str(drop["ai_trial_until"]) > str(keep["ai_trial_until"])):
+            changes["ai_trial_until"] = drop["ai_trial_until"]
+        if "class_labels" in keep:
+            _k = _parse_labels(keep.get("class_labels"))
+            _d = _parse_labels(drop.get("class_labels"))
+            _u = list(_k) + [x for x in _d if x not in _k]
+            if _u != list(_k):
+                changes["class_labels"] = json.dumps(_u, ensure_ascii=False)
+        # メール: drop 側のログイン用メールを student_email (確認済) として残す。そのメールでもログインできる。
+        drop_email = _normalize_email(drop.get("email"))
+        keep_email = _normalize_email(keep.get("email"))
+        second = None
+        if "student_email" in keep and drop_email and drop_email != keep_email:
+            second = drop_email
+        elif "student_email" in keep and drop.get("student_email") and _normalize_email(drop["student_email"]) != keep_email:
+            second = _normalize_email(drop["student_email"])
+        if second and not keep.get("student_email"):
+            changes["student_email"] = second
+            changes["student_email_verified"] = 1
+        elif second and keep.get("student_email") and _normalize_email(keep["student_email"]) != second and not keep.get("parent_email") and "parent_email" not in changes:
+            changes["parent_email"] = second
+        if changes and not dry:
+            sets = ", ".join(f"{k} = ?" for k in changes)
+            c.execute(f"UPDATE students SET {sets}, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (*changes.values(), keep_id))
+
+        # 4) drop 側の生徒行を消し、監査記録
+        if not dry:
+            c.execute("DELETE FROM students WHERE id = ?", (drop_id,))
+            try:
+                c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                          ("admin_student_merge", json.dumps({"keep_id": keep_id, "from_id": drop_id, "moved": moved, "conflicts": conflicts,
+                                                              "fields": sorted(changes.keys()), "from_email_hash": _student_email_hash(drop_email)[:12]},
+                                                             ensure_ascii=False), "admin"))
+            except Exception:
+                pass
+            conn.commit()
+        else:
+            conn.rollback()
+    finally:
+        conn.close()
+    try:
+        _AI_DISABLED_CACHE.pop(keep_id, None); _AI_DISABLED_CACHE.pop(drop_id, None)
+    except Exception:
+        pass
+    _mask = lambda e: (e[:2] + "…@" + e.split("@")[-1]) if e and "@" in e else e
+    shown = {k: (_mask(v) if k in ("student_email", "parent_email") else v) for k, v in changes.items()}
+    return {"ok": True, "dry_run": dry, "keep_id": keep_id, "from_id": drop_id, "moved": moved, "conflicts": conflicts,
+            "field_changes": shown, "keep_email": _mask(keep_email), "from_email": _mask(drop_email)}
+
+
 @app.post("/api/admin/students/purge-stale-data")
 def admin_students_purge_stale(payload: dict = None, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """合成監視 orphan + テストデータを安全に一括削除。

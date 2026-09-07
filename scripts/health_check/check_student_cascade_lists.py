@@ -35,19 +35,22 @@ delete_ = set(re.findall(r'\("(\w+)", "(?:DELETE FROM|UPDATE) ', delete_fn))
 purge_fn = block("def admin_students_purge_stale(", "\n@app.", 0)
 purge = set(re.findall(r'\("(\w+)", f"(?:DELETE FROM|UPDATE) ', purge_fn))
 sweep = set(re.findall(r'"(\w+)"', block("_ORPHAN_SWEEP_TABLES = (", ")\n")))
+# 🤝 2026-09-08: 統合 API の表リスト (student_id を持つ表は全部付け替える。KEEP/NO_SWEEP の表も含む)
+merge = set(re.findall(r'\("(\w+)", (?:None|\()', block("_MERGE_STUDENT_TABLES = (", ")\n")))   # 列名のタプルは拾わない
 KEEP = {"course_applications"}                       # NULL 化 (履歴保持)
 NO_SWEEP = {"payments", "anthropic_usage_log"}       # FK / 会計記録 (NULL 化のみ)
 problems = {}
 for name, got, extra_ok in (("プレビュー (related_tables)", preview, set()), ("個別削除 (delete_tables)", delete_, set()),
-                            ("purge (cascade_tables)", purge, set()), ("_ORPHAN_SWEEP_TABLES", sweep, NO_SWEEP)):
+                            ("purge (cascade_tables)", purge, set()), ("_ORPHAN_SWEEP_TABLES", sweep, NO_SWEEP),
+                            ("統合 (_MERGE_STUDENT_TABLES)", merge, set())):
     missing = with_sid - KEEP - extra_ok - got
     if missing:
         problems[name] = sorted(missing)
-print(f"student_id を持つテーブル: {len(with_sid)} / プレビュー {len(preview)} / 個別削除 {len(delete_)} / purge {len(purge)} / sweep {len(sweep)}")
+print(f"student_id を持つテーブル: {len(with_sid)} / プレビュー {len(preview)} / 個別削除 {len(delete_)} / purge {len(purge)} / sweep {len(sweep)} / 統合 {len(merge)}")
 if problems:
     print("❌ cascade リストに漏れ:")
     for k, v in problems.items():
         print(f"  - {k}: {v}")
     print("  → CLAUDE.md の規則どおり 4 箇所すべてに足してください")
     sys.exit(1)
-print("✅ 4 リストとも揃っています")
+print("✅ 5 リストとも揃っています")
