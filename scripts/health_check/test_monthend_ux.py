@@ -13,6 +13,7 @@
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -49,7 +50,9 @@ def main():
     check("運用ルールは折りたたみ (details)", '<details id="monthEndRules"' in html)
     check("表に「名簿」列 (紐付け / 月謝の食い違い / 入金済)", "名簿との突合" in html and 'colspan="6"' in html)
     check("実行ボタンは初期 disabled (ドライラン後に有効化)", 'id="monthEndExecuteBtn" disabled' in html)
-    check("app.js の ?v= が更新済み", "app.js?v=20260908-monthend-ux" in html)
+    # ?v= はその後の改修でも進むので「この改修 (2026-09-08) より前の値に戻っていない」ことだけを見る
+    _v = re.search(r"app\.js\?v=(\d{8})", html)
+    check("app.js の ?v= が更新済み (20260908 以降)", bool(_v) and _v.group(1) >= "20260908", _v.group(0) if _v else "no ?v=")
 
     print("3) app.js の処理")
     for fn in ("monthEndFingerprint", "monthEndDryRunValid", "monthEndCurrentPlan", "renderMonthEndStepper", "renderMonthEndStatusBanner",

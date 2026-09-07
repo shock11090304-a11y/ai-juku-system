@@ -31,7 +31,8 @@ def main():
     check("CMap は jsdelivr の pdfjs-dist から (cdnjs は cmaps/ を配信しない)", f"https://cdn.jsdelivr.net/npm/pdfjs-dist@{ver}/" in seg and "cmaps/" in seg, ver)
     check("worker も同じ版", f"pdf.js/{ver}/pdf.worker.min.js" in seg, ver)
     check("診断文言に CMap の可能性を明記", "CMap" in js[js.index("async function handleFile"):js.index("async function extractPdfText")])
-    check("app.js の ?v= が更新済み (20260908b 以降)", bool(re.search(r"app\.js\?v=2026090[89]|app\.js\?v=20260[9]1|app\.js\?v=2026[1-9]", html)) and "app.js?v=20260908-monthend-ux" not in html)
+    _v = re.search(r"app\.js\?v=(\d{8})([a-z]?)", html)
+    check("app.js の ?v= が更新済み (20260908b 以降)", bool(_v) and (_v.group(1) > "20260908" or (_v.group(1) == "20260908" and _v.group(2) >= "b")), _v.group(0) if _v else "no ?v=")
     print()
     if FAILURES:
         print(f"❌ FAIL {len(FAILURES)} 件: " + " / ".join(FAILURES))
