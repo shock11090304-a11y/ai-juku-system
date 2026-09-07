@@ -13,6 +13,7 @@ CI では stripe が入るので 9 本すべてを import する。ローカル�
 """
 import importlib.util
 import os
+import re
 import sys
 import types
 
@@ -113,6 +114,8 @@ def main():
     js = open(os.path.join(REPO, "payment", "app.js"), encoding="utf-8").read()
     check("payment/app.js はパスワードを localStorage に保存しない", "localStorage.setItem(PW_KEY" not in js and "localStorage.setItem(CHAT_PW_KEY" not in js)
     check("payment/app.js は sessionStorage を使う", "sessionStorage.getItem(PW_KEY)" in js and "sessionStorage.getItem(CHAT_PW_KEY)" in js)
+    # 🔐 2026-09-07 再発防止: キー文字列の直書きで localStorage を読む箇所が残ると、起動時の掃除で常に null になる
+    check("payment/app.js に juku-payment 系キーの localStorage 読み出しが残っていない", not re.search(r"localStorage\.getItem\((CHAT_PW_KEY|PW_KEY|['\"]juku-payment)", js))
     print()
     if FAILURES:
         print(f"❌ FAIL {len(FAILURES)} 件: " + " / ".join(FAILURES))
