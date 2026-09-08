@@ -54,6 +54,9 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color:
 .muted.small { font-size: 12px; margin-top: 12px; }
 .warn { color: var(--warn); font-size: 13px; background: #2a2109; border: 1px solid #4a3a10;
   border-radius: 8px; padding: 8px 10px; }
+/* 流し込みの結果は #banner (文書の先頭) だと画面外になるので、ボタンのすぐ下にも出す。
+   仕様どおりの読み飛ばし (all-order の記述) は緑、打ち間違いは琥珀で出し分ける。 */
+#q-key-note[data-tone="ok"] { color: #a8f0c0; background: #12301c; border-color: #1d5233; }
 
 .form { display: flex; flex-direction: column; gap: 12px; max-width: 720px; }
 .row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }

@@ -277,46 +277,111 @@ export function parseImport(text) {
  *   "1.3 2.1 3.4"  「問番号.正解」の対 (番号が飛んでいても入る)
  *   "①③②"        丸数字
  *
+ * ★ 2026-09-09 に「詰めた並びの何番目か」から **設問番号そのもの** で突き合わせる形に
+ *   変えた。以前は選択式だけを詰めた配列の位置で対応させていたため、記述が混ざった
+ *   冊子で「11.2」と打つと **問 16 の正解として保存される** (警告も出ない) 事故があった。
+ *   位置ではなく番号を正典にし、入れられなかったものは skipped で必ず返す。
+ *
  * @param {string} text
- * @param {number} count 設問数
- * @returns {{ok:boolean, values:Array<string|null>, reason:string|null, paired:boolean}}
- *   values は設問の並び順。対の形なら番号で埋め、無い所は null。
+ * @param {Array<{number:*, answer_type:string}>} rows 画面の全行 (記述も含む・並び順のまま)
+ * @returns {{ok:boolean, assign:Array<{index:number,number:*,value:string}>,
+ *            mode:string|null, reason:string|null,
+ *            skipped:Array<{number:*, kind:string, why:string}>}}
+ *   assign  … rows の **添字** で指す。番号が空でも欠番でも取り違えない。
+ *   mode    … 'paired' (番号.正解) / 'choice-order' (選択式の数だけ) / 'all-order' (全問の数だけ)
+ *   skipped … 入れられなかったもの。**無言で捨てない** (捨てると紙と食い違ったまま公開される)
+ *             kind は 'short' (記述) / 'loose' (対になっていない数字) /
+ *             'nonum' (その番号の設問が無い) / 'dup-row' / 'dup-input'。
+ *             number が null のものは特定の設問を指さない (画面で「問◯」を付けない)。
  */
-export function parseAnswerKey(text, count) {
+export function parseAnswerKey(text, rows) {
   const CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩';
+  const list0 = Array.isArray(rows) ? rows : [];
+  const NG = (reason) => ({ ok: false, assign: [], mode: null, reason, skipped: [] });
+
   const raw = String(text || '')
     .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))   // 全角→半角
     // 丸数字は区切りが無いことが多い (①③②④)。数字に直すときに空白も入れる。
     .replace(/[①-⑩]/g, (c) => String(CIRCLED.indexOf(c) + 1) + ' ')
     .trim();
-  if (!raw) return { ok: false, values: [], reason: '空です', paired: false };
+  if (!raw) return NG('空です');
+  if (!list0.length) return NG('設問がありません');
 
-  // 「問番号.正解」の対か? (1.3 2.1 … / 1-3 / 1:3)
+  const isChoice = (r) => (r && r.answer_type) !== 'short';
+  const numOf = (r) => {
+    const n = Number(String((r && r.number) ?? '').trim());
+    return Number.isFinite(n) ? n : null;
+  };
+  const choiceIdx = list0.map((r, i) => (isChoice(r) ? i : -1)).filter((i) => i >= 0);
+  if (!choiceIdx.length) return NG('選択式の設問がありません');
+
+  // --- 対の形か? (1.3 2.1 … / 1-3 / 1:3) ------------------------------------
+  // ★ ここが事故の起点だった。打たれた数字は **設問番号** であって、並びの位置ではない。
   const pairs = [...raw.matchAll(/(\d+)\s*[.\-:：]\s*(\d+)/g)];
   if (pairs.length >= 2) {
-    const values = new Array(count).fill(null);
-    let out = 0;
+    const assign = [], skipped = [], seen = new Set();
     for (const m of pairs) {
-      const i = Number(m[1]) - 1;
-      if (i >= 0 && i < count) { values[i] = m[2]; out++; }
+      const num = Number(m[1]);
+      const hits = list0.map((r, i) => (numOf(r) === num ? i : -1)).filter((i) => i >= 0);
+      if (!hits.length) { skipped.push({ number: num, kind: 'nonum', why: 'この冊子にその番号の設問がありません' }); continue; }
+      if (hits.length > 1) { skipped.push({ number: num, kind: 'dup-row', why: '同じ番号の設問が複数あります' }); continue; }
+      if (seen.has(num)) { skipped.push({ number: num, kind: 'dup-input', why: '同じ番号が 2 回打たれています' }); continue; }
+      const i = hits[0];
+      if (!isChoice(list0[i])) { skipped.push({ number: num, kind: 'short', why: '記述なので流し込めません' }); continue; }
+      seen.add(num);
+      assign.push({ index: i, number: num, value: m[2] });
     }
-    if (!out) return { ok: false, values: [], reason: '設問番号が範囲外です', paired: true };
-    return { ok: true, values, reason: null, paired: true };
+
+    // ★ 対に食われなかった数字を **必ず報告する** (2026-09-09)。
+    //   「1.3 2.1 3 4 4.2」のように区切りを打ち忘れると、その数字はどこにも入らない。
+    //   黙って捨てると、その設問だけ **古い正解のまま残り、画面には何も出ない**。
+    //   長い正解一覧を手打ちするときに現実に起きる打ち間違いなので、必ず目に見せる。
+    let rest = '', at = 0;
+    for (const m of pairs) { rest += raw.slice(at, m.index); at = m.index + m[0].length; }
+    rest += raw.slice(at);
+    const loose = rest.match(/\d+/g) || [];
+    if (loose.length) {
+      skipped.push({ number: null, kind: 'loose',
+                     why: `対になっていない数字が ${loose.length} 個ありました`
+                        + ` (${loose.join(' / ')}) — 区切りの打ち忘れかもしれません` });
+    }
+
+    if (!assign.length) {
+      return { ok: false, assign: [], mode: 'paired',
+               reason: '打たれた番号が 1 つもこの冊子の選択式に当たりませんでした', skipped };
+    }
+    return { ok: true, assign, mode: 'paired', reason: null, skipped };
   }
 
+  // --- 数字の並び -----------------------------------------------------------
   let list = raw.split(/[\s,、，\/|]+/).filter((x) => x !== '');
-  // 区切り無しで「3142」と打たれることがある。桁数が設問数と一致し、
+  // 区切り無しで「3142」と打たれることがある。桁数が **選択式の数か全問の数** と一致し、
   // すべて 1〜9 なら 1 文字ずつと解釈する (10 択は稀なので曖昧さは実害にならない)。
-  if (list.length === 1 && /^[1-9]+$/.test(list[0]) && list[0].length === count) {
+  if (list.length === 1 && /^[1-9]+$/.test(list[0])
+      && (list[0].length === choiceIdx.length || list[0].length === list0.length)) {
     list = list[0].split('');
   }
   if (!list.every((x) => /^\d{1,2}$/.test(x))) {
-    return { ok: false, values: [], reason: '数字だけを並べてください (1 3 4 2 …)',
-             paired: false };
+    return NG('数字だけを並べてください (1 3 4 2 …)');
   }
-  if (list.length !== count) {
-    return { ok: false, values: [],
-             reason: `${list.length} 個ありますが、設問は ${count} 問です`, paired: false };
+
+  // 選択式の数ちょうど → 選択式の行に順に入れる (記述は最初から数えない)
+  if (list.length === choiceIdx.length) {
+    return { ok: true, mode: 'choice-order', reason: null, skipped: [],
+             assign: choiceIdx.map((i, k) => ({ index: i, number: list0[i].number, value: list[k] })) };
   }
-  return { ok: true, values: list, reason: null, paired: false };
+  // 全問の数ちょうど → 記述の位置も数えて打たれている。記述の分は skipped に回す。
+  if (list.length === list0.length) {
+    const assign = [], skipped = [];
+    list0.forEach((r, i) => {
+      if (isChoice(r)) assign.push({ index: i, number: r.number, value: list[i] });
+      else skipped.push({ number: r.number, kind: 'short', why: '記述なので流し込めません' });
+    });
+    return { ok: true, assign, mode: 'all-order', reason: null, skipped };
+  }
+
+  const both = choiceIdx.length === list0.length
+    ? `設問は ${list0.length} 問です`
+    : `この冊子は 選択式 ${choiceIdx.length} 問 / 全 ${list0.length} 問です`;
+  return NG(`${list.length} 個ありますが、${both}。番号を付けて「1.3 2.1 …」と打つこともできます`);
 }

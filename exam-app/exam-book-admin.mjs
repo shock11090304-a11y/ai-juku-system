@@ -78,6 +78,13 @@ function fatal(title, detail) {
   setStage('fatal');
   $('#fatal-title').textContent = title;
   $('#fatal-detail').textContent = detail || '';
+  // ★ ボタンは **ここで毎回つなぐ** (2026-09-09)。以前は wire() の中だけで配線していたが、
+  //   wire() は講師の確認を**通った後**にしか呼ばれない。つまりこの画面が出ている場面では
+  //   まだ配線されておらず、「再読み込み」を押しても何も起きなかった (出口が無い)。
+  //   前の fatal が差し替えた文言と動作も、ここで既定に戻す。
+  const btn = $('#fatal-reload');
+  btn.textContent = '再読み込み';
+  btn.onclick = () => location.reload();
 }
 
 function showLogin() {
@@ -202,8 +209,8 @@ function wire() {
   $('#q-close').addEventListener('click', () => {
     app.current = null; app.rows = [];
     $('#editor').hidden = true;
+    showKeyNote(null);
   });
-  $('#fatal-reload').addEventListener('click', () => location.reload());
 }
 
 // =============================================================================
@@ -427,6 +434,10 @@ async function createBook() {
 async function importJson(file) {
   const note = $('#q-import-note');
   note.hidden = true;
+  // ★ 行を総入れ替えするので、前の内容を指した流し込みの注記を残さない
+  //   (存在しない番号を指した警告が、読み込んだ冊子の話に見える)。
+  showKeyNote(null);
+  $('#q-key').value = '';
   $('#q-import').value = '';
   if (!file || !app.current) return;
 
@@ -476,21 +487,26 @@ async function importJson(file) {
  */
 function applyAnswerKey() {
   if (!app.current || !app.rows.length) return;
-  const targets = app.rows
-    .map((r, i) => ({ r, i }))
-    .filter((x) => x.r.answer_type === 'choice');
-  if (!targets.length) { say('選択式の設問がありません', 'warn'); return; }
 
-  const r = parseAnswerKey($('#q-key').value, targets.length);
-  if (!r.ok) { say(`流し込めません: ${r.reason}`, 'bad'); return; }
+  // ★ 全行を渡す。**設問番号で突き合わせる**のが正典 (2026-09-09)。
+  //   以前は選択式だけを詰めた並びの位置で対応させていたため、記述が混ざった冊子で
+  //   「11.2」が問 16 の正解として保存され、しかも何も警告が出なかった。
+  const r = parseAnswerKey($('#q-key').value, app.rows);
+  if (!r.ok) {
+    say(`流し込めません: ${r.reason}`, 'bad');
+    // ★ 条件を付けない。前回の注記が残っていると、いま打った内容の話だと読み違える
+    //   (showKeyNote は空なら自分で隠す)。
+    showKeyNote(r.skipped, null, r.mode);
+    return;
+  }
 
   let n = 0;
-  targets.forEach((x, k) => {
-    const v = r.values[k];
-    if (v == null) return;
-    x.r.correct_answer = String(v);
+  for (const a of r.assign) {
+    const row = app.rows[a.index];
+    if (!row) continue;
+    row.correct_answer = String(a.value);
     n++;
-  });
+  }
   renderRows();
   markDirty();
 
@@ -498,10 +514,67 @@ function applyAnswerKey() {
   const v = validateQuestions(app.rows.map(normalizeQuestion),
                               { pageCount: app.current.page_count });
   if (!v.ok) showErrors(v.errors);
-  say(v.ok ? `${n} 問に正解を入れました。中身を確認してから保存してください`
-           : `${n} 問に入れましたが ${v.errors.length} 件おかしいところがあります`,
+
+  // ★ 紙と 1 件だけ照らし合わせられるように、入れた先頭 3 件を「問◯ = ◯」で出す。
+  //   位置ではなく番号で入っていることが、ここで目視できる。
+  //   ★ v.ok と切り離す (2026-09-09)。記述混在の冊子を初めて埋めるときは記述の正解が
+  //     空なので validateQuestions は必ず落ちる。そこで消えると、この修正でいちばん
+  //     見せたい「番号で入った」という確認が、**まさに記述混在の冊子だけ出ない**。
+  const head = r.assign.slice(0, 3)
+    .map((a) => `問${a.number} = ${a.value}`).join(' / ');
+  const how = r.mode === 'paired' ? '番号で'
+            : r.mode === 'all-order' ? '全問の並びで' : '選択式の並びで';
+  const lead = `${how} ${n} 問に正解を入れました`
+             + ` (${head}${r.assign.length > 3 ? ' …' : ''})。`;
+  say(lead + (v.ok ? '紙と見比べてから保存してください'
+                   : `ただし ${v.errors.length} 件おかしいところがあります`),
       v.ok ? 'ok' : 'warn');
+
+  // ★ 入れられなかったものは必ず出す。黙って捨てると紙と食い違ったまま公開される。
+  // ★ #banner は文書の先頭にあり、この欄からは冊子一覧のぶんだけ上にある (= 画面外)。
+  //   紙と突き合わせるための lead は、ボタンのすぐ下にも出す。
+  showKeyNote(r.skipped, lead, r.mode);
   $('#q-key').value = '';
+}
+
+/**
+ * 流し込みの結果をボタンのすぐ下に出す。何も無ければ隠す。
+ * ★ 同じ理由はまとめる。all-order で記述が 20 行あると同じ文が 20 本並び、
+ *   本当に見るべき取り違えの警告が埋もれる。
+ * ★ 仕様どおりの読み飛ばし (all-order の記述) と、打ち間違い (paired の取り違え) を
+ *   色で分ける。
+ */
+function showKeyNote(skipped, lead, mode) {
+  const box = $('#q-key-note');
+  if (!box) return;
+  const list = skipped || [];
+  if (!list.length && !lead) {
+    box.hidden = true; box.textContent = ''; box.removeAttribute('data-tone'); return;
+  }
+
+  const parts = [];
+  if (lead) parts.push(lead);
+  if (list.length) {
+    const byWhy = new Map();
+    for (const s of list) {
+      if (!byWhy.has(s.why)) byWhy.set(s.why, []);
+      byWhy.get(s.why).push(s.number);
+    }
+    const chunks = [];
+    for (const [why, nums] of byWhy) {
+      const named = nums.filter((x) => x != null);
+      chunks.push(named.length ? `問${named.join('・')} (${why})` : why);
+    }
+    parts.push('入れられませんでした — ' + chunks.join(' / '));
+    // ★ 「じゃあどうするのか」まで書く。記述の行でも「正解」「別解」欄は使える。
+    if (list.some((s) => s.kind === 'short')) {
+      parts.push('記述の正解は、その行の「正解」欄に直接打ってください (別解はカンマ区切り)。');
+    }
+  }
+  box.textContent = parts.join(' ');
+  // all-order の記述スキップは仕様どおり。塾長のミスと同じ赤みで出さない。
+  box.dataset.tone = (!list.length || mode === 'all-order') ? 'ok' : 'warn';
+  box.hidden = false;
 }
 
 // =============================================================================
@@ -510,6 +583,10 @@ function applyAnswerKey() {
 async function openBook(book) {
   app.current = book;
   $('#editor').hidden = false;
+  // ★ 前の冊子の「入れられませんでした」を持ち越さない。別の冊子の警告が残っていると、
+  //   いま開いている冊子に問題があると読み違える。
+  showKeyNote(null);
+  $('#q-key').value = '';
   $('#ed-title').textContent = book.title;
   $('#ed-meta').textContent = `${book.page_count || '?'} ページ`
     + `${book.is_published ? ' ・ 公開中' : ' ・ 非公開'}`;
@@ -686,6 +763,9 @@ async function saveQuestions() {
     norm.forEach((q, i) => { app.rows[i].id = q.id; });
     dirty = false;
     btn.classList.remove('todo');
+    // ★ 保存できたのに「入れられませんでした」が残っていると、保存が部分的に失敗した
+    //   ように読める。流し込みの注記はここで畳む。
+    showKeyNote(null);
     say(`保存しました (追加 ${created} / 更新 ${updated})`, 'ok');
     await loadBooks();
   } catch (e) {

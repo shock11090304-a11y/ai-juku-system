@@ -230,11 +230,40 @@ ok('保存を押すと DB に入る',
 //   そのまま打てるようにする。★ 記述の行には入れない (数字で埋めると採点が全部外れる)。
 {
   // b2 は 1 問目=選択式(4択) / 2 問目=記述 で取り込んである
+  // ★ 選択式 1 問 / 全 2 問。どちらの数にも当たらない個数は弾かれる。
+  await page.fill('#q-key', '2 9 1');
+  await page.click('#q-key-apply');
+  await page.waitForTimeout(400);
+  ok('選択式の数にも全問の数にも当たらない並びは流し込めない',
+     /3 個ありますが、この冊子は 選択式 1 問 \/ 全 2 問です|おかしいところ/
+       .test(await page.textContent('#banner')),
+     await page.textContent('#banner'));
+  ok('弾いたときは行を書き換えない',
+     (await page.inputValue('.qrow[data-i="0"] [data-k="correct_answer"]'))==='3',
+     await page.inputValue('.qrow[data-i="0"] [data-k="correct_answer"]'));
+
+  // ★ 記述も含めた全問の数 (2 個) で打たれたら、選択式にだけ入れて記述は入れない。
+  //   入れなかったことは **画面に理由付きで出す** (黙って捨てると紙と食い違う)。
   await page.fill('#q-key', '2 9');
   await page.click('#q-key-apply');
   await page.waitForTimeout(400);
-  ok('選択式の数を超える数は流し込めない',
-     /2 個ありますが、設問は 1 問です|おかしいところ/.test(await page.textContent('#banner')),
+  ok('全問の数で打つと選択式の行にだけ入る',
+     (await page.inputValue('.qrow[data-i="0"] [data-k="correct_answer"]'))==='2',
+     await page.inputValue('.qrow[data-i="0"] [data-k="correct_answer"]'));
+  ok('★記述の行は書き換えない (全問の並び)',
+     (await page.inputValue('.qrow[data-i="1"] [data-k="correct_answer"]'))==='けり',
+     await page.inputValue('.qrow[data-i="1"] [data-k="correct_answer"]'));
+  ok('入れなかった行を理由付きで画面に出す',
+     /記述/.test(await page.textContent('#q-key-note')),
+     await page.textContent('#q-key-note'));
+
+  // ★ 設問番号で突き合わせる (並びの位置ではない)。b2 の問 2 は記述なので入らない。
+  await page.fill('#q-key', '2.3 9.1');
+  await page.click('#q-key-apply');
+  await page.waitForTimeout(400);
+  ok('★番号で突き合わせる — 記述の番号と存在しない番号は入らない',
+     (await page.inputValue('.qrow[data-i="0"] [data-k="correct_answer"]'))==='2'
+     && (await page.inputValue('.qrow[data-i="1"] [data-k="correct_answer"]'))==='けり',
      await page.textContent('#banner'));
 
   await page.fill('#q-key', '4');

@@ -768,7 +768,7 @@ iPad + Apple Pencil の実機で、§13-8 のうち **4 項目が通った**こ�
   `roundtrip_questions.mjs` が実物の `exam-book-admin-model.mjs` を import して
   意地の悪い入力 34 件から実際にデータを作り、通したものが使い捨て Postgres の
   `question_answer_is_valid()` も通ることを確かめる (「画面が通すもの ⊆ DB が受け取るもの」)。
-- `admin_smoke.mjs` (17 項目) — 実 Chromium で通す。
+- `admin_smoke.mjs` (41 項目) — 実 Chromium で通す。
   生徒アカウントで開けないこと / 0 起算・全角の正解を保存させないこと /
   設問 0 問の冊子を公開させないこと / 削除ボタンが無いこと。
 - 静的検査に **9b** を追加: `questions` への書き込みは `validateQuestions()` を通ること
