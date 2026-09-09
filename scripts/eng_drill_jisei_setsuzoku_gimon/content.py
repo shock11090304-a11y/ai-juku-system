@@ -182,6 +182,9 @@ Q = [
  "is blamed では「責められる」という受け身になり、other people を目的語に取れない。"
  "is to blame は「責任がある」という慣用表現で、後ろに人を目的語として続ける形ではない。"),
 
+# ★この問の "the following morning" を "by the following morning" に「整えない」こと。
+#   by が付くと would have sent が未来完了の時制の一致として成立し、正解が2つになる (盲解きで確認済み)。
+#   期限のない点の副詞であることが、had sent (promise=「〜したと断言する」の読み) も同時に塞いでいる。
 ("tense", "advanced", "She promised that she (   ) the document the following morning, but it never arrived.",
  ["will send", "would send", "would have sent", "had sent"], "would send",
  "主節が promised と過去で、送るのは the following morning(その翌朝)とさらに後のことなので、"
@@ -297,6 +300,9 @@ Q = [
  "Until は「〜するまで」、Unless は「〜しない限り」という否定の条件、Whether は「〜であろうと」で、"
  "約束を交わした後に義務が生じるという流れを作れない。"),
 
+# ★この問の誤答に because / since / as / so を置かないこと。どれも自然な文になり正解が2つになる。
+#   結果の so that も文法的には読めてしまう (「窓が開いていて、その結果寒かった」の型) ので外した。
+#   in case が安全なのは、原因でも結果でもない接続詞だから。
 ("conj", "standard", "It must have rained during the night, (   ) the roads are still wet this morning.",
  ["for", "because of", "in case", "though"], "for",
  "前で述べた判断の根拠をあとから付け足す等位接続詞は for。"

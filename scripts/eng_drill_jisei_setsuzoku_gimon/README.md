@@ -101,6 +101,10 @@ python3 scripts/eng_drill_jisei_setsuzoku_gimon/selftest_gate.py
 くだけた話し言葉では実在する。入試の物差しでは `had seen` が正解で、この誤答こそ狙って外させたい形なので
 そのまま残している。
 
+直した2問には、**同じ穴を開け直さないための注意書きを `content.py` の該当箇所に置いてある**
+(「the following morning を by the following morning に整えない」「この問の誤答に because/since/as/so を
+置かない」)。直す人が見るのは README ではなく問題の隣なので、そこに書く。
+
 ★教訓は**「誤答は文法的に誤りであるだけでなく、どの読み方でも成立しないこと」**。
 `will` と `be going to`、`so` と `for` のように、文脈次第で両方成り立つ組を同居させない。
 機械ゲートはこれを見つけられない (どちらも4択として整っているため)。差し替えた8問は、
