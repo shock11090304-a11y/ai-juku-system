@@ -14,7 +14,7 @@
   - 誤答は「別解釈で正解になりえない」ものだけ置く。迷う形は選択肢から外す
     (例: will / be going to のように両方成り立つ組は同居させない)。
   - explanation は位置トークン (①②/N番目/答え:N) を書かない = 値参照。
-    build.py が正解位置をラウンドロビンで振り直すので、位置を書くと解説が陳腐化する。
+    build.py が正解位置を (単元,レベル) ごとに均等・非周期へ振り直すので、位置を書くと解説が嘘になる。
   - explanation には正解の語句をそのまま含め、誤答が誤りである理由も述べる。
 """
 
@@ -39,11 +39,11 @@ Q = [
  "is doing は今この瞬間に進行中の動作、has done は「やり終えた」という完了を表す。"
  "did なら「昔は毎晩やっていた」と過去の習慣になり、今も担当だと述べる後半と食い違う。"),
 
-("tense", "basic", "Be quiet. The baby (   ) in the next room.",
+("tense", "basic", "Be quiet. The baby (   ) in the next room right now.",
  ["sleeps", "is sleeping", "slept", "has slept"], "is sleeping",
- "Be quiet.(静かに)と言っている、まさに今の状態なので現在進行形の is sleeping。"
- "sleeps は「いつも眠る」という習慣、slept は過去の出来事、has slept は「眠り終えた」という完了で、"
- "今まさに眠っている最中であることを表せない。"),
+ "right now(今まさに)がその瞬間を指しているので現在進行形の is sleeping。"
+ "sleeps は「いつもそこで眠っている」という習慣を述べる形で、right now とは結びつかない。"
+ "slept は過去の出来事、has slept は「眠り終えた」という完了で、今眠っている最中であることを表せない。"),
 
 ("tense", "basic", "I (   ) a shower when the doorbell rang, so I couldn't answer it right away.",
  ["take", "took", "was taking", "have taken"], "was taking",
@@ -85,7 +85,8 @@ Q = [
  ["reaches", "will reach", "reached", "has reached"], "will reach",
  "この when 節は knows の目的語になる名詞節なので、未来のことは will を使って will reach とする。"
  "approaching(接近中の)と tomorrow がこれから起きることだと示している。"
- "「時や条件の副詞節では未来を現在形で表す」規則は副詞節だけの約束で、名詞節には及ばない。"
+ "reaches のように現在形にするのは時や条件の副詞節での言い方で、名詞節のここでは使えない"
+ "(「副詞節では未来を現在形で表す」という規則は副詞節だけの約束)。"
  "reached や has reached は過去や完了の形で、これから起こる到達を表せない。"),
 
 ("tense", "standard", "They (   ) for more than an hour, and the bus still hasn't come.",
@@ -124,14 +125,15 @@ Q = [
  ["has been", "is having", "had been", "will have been"], "has been",
  "「〜してから…年になる」は It has been + 期間 + since + 過去形 の形で表すので has been。"
  "since 節の passed away が起点を示し、そこから現在までの経過を現在完了で受ける。"
- "had been は過去のある時点までの経過、will have been は未来の時点までの経過を表し、"
- "is having は have を進行形にした形で状態を表せない。"),
+ "had been は過去のある時点までの経過、will have been は未来の時点までの経過を表す。"
+ "is having は It is having ~ という言い方自体が無く、経過を表す It has been ~ の形にならない。"),
 
-("tense", "standard", "A: (   ) you ever visited Hokkaido? B: Yes, I went there last winter.",
+("tense", "standard", "(   ) you ever visited Hokkaido? — Yes, I went there last winter.",
  ["Did", "Have", "Are", "Were"], "Have",
- "ever を伴って「今までに行ったことがあるか」と経験をたずねる文なので現在完了の Have。"
- "Did は last winter のように過去の一時点を特定してたずねるときの形で、B の答えがその形になっている。"
- "Are や Were は be 動詞で、過去分詞 visited と組んでも「訪れたことがあるか」という経験の意味にならない。"),
+ "空所のあとが過去分詞 visited なので、組めるのは現在完了を作る Have。"
+ "ever を伴って「今までに行ったことがあるか」と経験を尋ねる形になる。"
+ "Did のあとは動詞の原形が必要なので visited とは並べられない。"
+ "Are や Were は be 動詞で、visited と組むと受け身になり「訪れたことがあるか」の意味にならない。"),
 
 ("tense", "standard", "This box (   ) all the letters my grandfather wrote during the war.",
  ["is containing", "contains", "has been containing", "contain"], "contains",
@@ -141,7 +143,7 @@ Q = [
 
 ("tense", "standard", "(   ) you be using your car this weekend? If not, could I borrow it?",
  ["Will", "Do", "Are", "Have"], "Will",
- "「今週末に車を使っている予定ですか」と相手の予定をたずねる未来進行形 will be using なので Will。"
+ "「今週末に車を使っている予定ですか」と相手の予定を尋ねる未来進行形 will be using なので Will。"
  "Do は現在形の疑問文を作る語、Are は be 動詞、Have は完了形を作る語で、いずれも be using とは結びつかない。"),
 
 ("tense", "standard", "My sister isn't here. She (   ) to the post office.",
@@ -217,11 +219,13 @@ Q = [
  "has moved / had moved は完了形で、起点そのものを示す since 節には置かない。"
  "現在形 moves では過去に起きた出来事を表せない。"),
 
-("tense", "advanced", "The thief had run away before the police (   ) at the scene.",
- ["arrive", "arrived", "had arrived", "has arrived"], "arrived",
- "before が前後関係をはっきり示しているので、あとに起きた出来事は単純過去の arrived でよい。"
- "had arrived にすると警察の到着のほうが逃走より前だったことになり、文意が逆転する。"
- "arrive は現在形、has arrived は現在完了で、過去の出来事を語る文には合わない。"),
+("tense", "advanced", "He says that he (   ) his wallet on the train yesterday.",
+ ["leaves", "left", "has left", "had left"], "left",
+ "主節が says と現在なので従属節の時制を下げる必要はなく、yesterday という過去の一時点があるので過去形の left。"
+ "時制を一致させて下げるのは主節が過去のときだけ、という約束を裏返しに確かめる形。"
+ "leaves は現在形で yesterday と合わない。"
+ "has left は現在完了で、yesterday のように「いつ」を特定する語句とは共存できない。"
+ "had left は基準となる過去の時点があって初めて使える形で、主節が現在のこの文では使えない。"),
 
 # ================================================================== 接続詞 (30)
 # -------------------------------------------------------- 接続詞 basic (8)
@@ -292,7 +296,9 @@ Q = [
  ["if", "that", "whether", "what"], "whether",
  "直後に to 不定詞を伴って「〜すべきかどうか」を表せるのは whether。"
  "if も「〜かどうか」の意味を持つが、直後に to 不定詞を続ける用法がない。"
- "that は事実を導く接続詞、what は節の中で名詞のはたらきをする語で、or 以下の二者択一と呼応しない。"),
+ "that は事実を導く接続詞なので、or 以下の二者択一と呼応しない。"
+ "what は節の中で名詞のはたらきをする語が欠けているときに使う語だが、"
+ "ここは hold the event と目的語が揃っているので入る余地がない。"),
 
 ("conj", "standard", "(   ) you have made a promise, you must keep it no matter what happens.",
  ["Once", "Until", "Unless", "Whether"], "Once",
@@ -314,7 +320,8 @@ Q = [
 ("conj", "standard", "Either you or your brother (   ) to attend the parents' meeting.",
  ["have", "has", "are", "were"], "has",
  "either A or B が主語のときは、動詞を近いほうの主語 your brother に合わせるので3人称単数の has。"
- "have / are / were はいずれも複数の主語に対応する形で、直前の単数の主語と一致しない。"),
+ "文頭の you につられて have を選びやすいが、合わせる相手は or の直後の主語のほう。"
+ "have と are は your brother と一致せず、were は過去形なので、これからの出席について述べるこの文には合わない。"),
 
 ("conj", "standard", "(   ) I know, the library is closed on national holidays.",
  ["As far as", "As long as", "As soon as", "As well as"], "As far as",
@@ -334,10 +341,12 @@ Q = [
  "either は or と、both は and と、neither は nor と組む相関表現なので、but とは呼応しない。"),
 
 ("conj", "standard", "(   ) time went by, the two countries gradually improved their relations.",
- ["As", "While", "When", "Since"], "As",
+ ["As", "Until", "When", "Since"], "As",
  "「〜するにつれて」と、二つの変化が並行して進むことを表すのは接続詞 As。"
- "While は「〜する間」、When は「〜する時」で、時間の経過とともに少しずつ変化するという意味を持たない。"
- "Since は「〜以来」で、主節が improved と過去形であることと噛み合わない。"),
+ "Until は「〜するまで」なので、時が経つまでの間に関係が改善したという意味になり通らない。"
+ "When は「〜する時」と一点を指す語で、gradually(少しずつ)という続いていく変化とは噛み合わない。"
+ "Since は「〜以来」と読むなら主節が現在完了になるはずで improved と合わず、"
+ "「〜だから」と理由に読んでも「時が経ったから関係が改善した」では理由の説明にならない。"),
 
 ("conj", "standard", "(   ) it rains tomorrow, we will hold the festival as planned.",
  ["Even if", "Even though", "As if", "Now that"], "Even if",
@@ -356,7 +365,8 @@ Q = [
  ["provided", "supposed", "concerned", "regarded"], "provided",
  "〈provided (that) …〉で「〜という条件であれば」という条件を示す。"
  "supposing なら同じ用法があるが、supposed の形では条件節を導けない。"
- "concerned は as far as … is concerned、regarded は as regards のように別の形で使う語で、条件を示す接続詞にはならない。"),
+ "concerned は as far as … is concerned、regarded は be regarded as ~(〜とみなされる)のように使う語で、"
+ "どちらも条件を示す接続詞にはならない。"),
 
 ("conj", "advanced", "Human language differs from animal communication (   ) it can describe events that have not yet happened.",
  ["in that", "for that", "with that", "by that"], "in that",
@@ -428,7 +438,7 @@ Q = [
  ["What", "How", "Which", "Why"], "What",
  "文末に like があるので、その目的語になる What が必要になる。"
  "How を使うなら How is the weather in Sapporo? と like を付けない形にする。"
- "Which は選ぶ範囲が示されている場合の語、Why は理由を尋ねる語で、like の目的語になれない。"),
+ "Which は選ぶ範囲が示されていないこの文では使えない。Why は理由を尋ねる語で、like の目的語にならない。"),
 
 ("wh", "basic", "I have no idea why (   ) so angry with me.",
  ["is she", "she is", "does she", "she does"], "she is",
@@ -450,7 +460,7 @@ Q = [
 
 ("wh", "basic", "Don't you like natto? — (   ), I love it.",
  ["Yes", "No", "Sure not", "Of course not"], "Yes",
- "英語では、たずね方が否定であっても答える内容が肯定なら Yes を使う。"
+ "英語では、尋ね方が否定であっても答える内容が肯定なら Yes を使う。"
  "No は「好きではない」という否定の答えになり、続く I love it と矛盾する。"
  "Sure not や Of course not も否定の応答なので、同じく内容と食い違う。"),
 
@@ -472,11 +482,12 @@ Q = [
  "他動詞 made の主語になれるのは「何が」を表す What。"
  "Why / How / When は副詞にあたる疑問詞なので、主語の位置には立てない。"),
 
-("wh", "standard", "She asked me where I (   ) the previous weekend.",
- ["have been", "had been", "was being", "am"], "had been",
- "主節が asked と過去なので時制を一致させ、さらに「その前の週末」とより前のことを述べるので過去完了の had been。"
- "have been や am は現在を基準にした形で、主節の過去と一致しない。"
- "was being は一時的なふるまいを表す形で、居場所を述べる文にはならない。"),
+("wh", "standard", "She asked me where (   ) during the summer vacation.",
+ ["I had stayed", "had I stayed", "did I stay", "I have stayed"], "I had stayed",
+ "間接疑問は〈疑問詞+主語+動詞〉という平叙文の語順になるので I had stayed。"
+ "さらに主節が asked と過去なので、それより前のことは時制を一致させて過去完了にする。"
+ "had I stayed と did I stay はどちらも疑問文の倒置した語順で、従属節の中では使えない。"
+ "I have stayed は語順は正しいが現在完了なので、主節の過去と時制が合わない。"),
 
 ("wh", "standard", "(   ) are you saving all this money for?",
  ["What", "Why", "How", "Which"], "What",
@@ -488,24 +499,24 @@ Q = [
  ["when", "when will", "what time will", "that"], "when",
  "Do you know … は Yes / No で答えられる問いなので、中の間接疑問は〈疑問詞+主語+動詞〉の語順にする。"
  "when will や what time will は倒置した疑問文の語順で、従属節には置けない。"
- "that では時をたずねる意味にならない。"
+ "that では時を尋ねる意味にならない。"
  "なお Do you think … の場合は疑問詞が文頭に出て When do you think it will begin? となる点も押さえておきたい。"),
 
 ("wh", "standard", "Do you have any idea (   ) the missing documents?",
  ["who took", "who did take", "did who take", "whom took"], "who took",
  "any idea のあとは間接疑問で、疑問詞 who がそのまま主語になるので〈who + 動詞〉の語順の who took。"
- "who did take は強調の形で、事実をたずねる間接疑問としては不自然。"
+ "who did take は強調の形で、事実を尋ねる間接疑問としては不自然。"
  "did who take は倒置した疑問文の語順、whom は目的格なので主語にならない。"),
 
 ("wh", "standard", "(   ) do you say to having lunch at that new Italian restaurant?",
  ["What", "How", "Why", "When"], "What",
  "〈What do you say to ~ing?〉で「〜するのはどうですか」と提案する決まった形。"
  "How を使うなら How about having … と to を伴わない形にする。"
- "Why なら Why don't we …?、When は時をたずねる語で、提案の形を作れない。"),
+ "Why なら Why don't we …?、When は時を尋ねる語で、提案の形を作れない。"),
 
 ("wh", "standard", "(   ) will the new bridge be completed? — In about two years.",
  ["How soon", "How long", "How much", "How far"], "How soon",
- "「あとどれくらいで〜するか」と完成までの時間をたずねるのは How soon で、答えの In about two years とも呼応する。"
+ "「あとどれくらいで〜するか」と完成までの時間を尋ねるのは How soon で、答えの In about two years とも呼応する。"
  "How long は続く期間の長さ、How much は量や値段、How far は距離を尋ねる語で、完成の時期を問えない。"),
 
 ("wh", "standard", "The police are still investigating (   ) car was parked in front of the bank.",
@@ -547,7 +558,7 @@ Q = [
 
 ("wh", "advanced", "(   ) has become of the exchange student who stayed with your family last year?",
  ["What", "Who", "How", "Where"], "What",
- "〈What has become of ~?〉で「〜はどうなったのか」と消息をたずねる決まった形。"
+ "〈What has become of ~?〉で「〜はどうなったのか」と消息を尋ねる決まった形。"
  "Who では「誰が〜になったのか」となり、of と結びつかない。"
  "How や Where は become of の主語になれない。"),
 
@@ -559,18 +570,19 @@ Q = [
 
 ("wh", "advanced", "(   ) what extent do you think artificial intelligence will replace human workers?",
  ["To", "In", "At", "By"], "To",
- "〈To what extent …?〉で「どの程度まで〜か」と程度をたずねる決まった形。"
+ "〈To what extent …?〉で「どの程度まで〜か」と程度を尋ねる決まった形。"
  "In / At / By は extent と組んでこの意味を表す形にならない。"),
 
 ("wh", "advanced", "(   ) if the typhoon hits the island before the ferry leaves?",
  ["What", "How", "Why", "Which"], "What",
- "〈What if S V?〉で「もし〜だったらどうなるのか」と仮定してたずねる形。"
+ "〈What if S V?〉で「もし〜だったらどうなるのか」と仮定して尋ねる形。"
  "How if / Why if / Which if という言い方は英語にはない。"),
 
 ("wh", "advanced", "You would be surprised at (   ) this simple method is.",
  ["how effective", "how is effective", "what effective", "how effective is"], "how effective",
  "前置詞 at の目的語になる間接疑問なので〈how + 形容詞 + 主語 + 動詞〉の語順で how effective this simple method is となる。"
- "how is effective や how effective is は倒置した疑問文の語順で、従属節には使えない。"
+ "how effective is は倒置した疑問文の語順なので従属節には使えない。"
+ "how is effective は疑問文としても成り立たない語順。"
  "what には形容詞を直接伴って程度を表す用法がない。"),
 
 ("wh", "advanced", "(   ) of the two candidates do you think is more likely to win?",

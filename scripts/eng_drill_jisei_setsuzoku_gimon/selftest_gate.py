@@ -144,6 +144,11 @@ def m_expl_no_period(rows, ans):
     return rows, ans
 
 
+def m_dollar_sign(rows, ans):
+    rows[24]["explanation"] = rows[24]["explanation"].replace("。", "。費用は $100 ほど。", 1)
+    return rows, ans
+
+
 def m_short_expl(rows, ans):
     rows[48]["explanation"] = ans[48] + " が正しい。"
     return rows, ans
@@ -171,6 +176,7 @@ MUTATIONS = [
     ("正解位置が周期的 (1,2,3,4の反復)", m_cyclic_answers,        "等差で"),
     ("解説が短すぎる",                  m_short_expl,             "短すぎる"),
     ("stem に連続スペース",             m_double_space,           "連続スペース"),
+    ("$ の混入 (アプリで数式に食われる)", m_dollar_sign,           "数式として食われる"),
     ("カーリー引用符の混入",            m_curly_quote,            "カーリー引用符"),
     ("解説が句点で終わらない",          m_expl_no_period,         "句点で終わっていない"),
     ("問数が正典とずれる",              m_missing_question,       "問数が正典と違う"),

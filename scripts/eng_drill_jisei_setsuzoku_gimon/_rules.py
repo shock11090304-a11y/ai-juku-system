@@ -105,6 +105,14 @@ def validate(rows, answers, root):
                 ng.append(f"NG: {where} {fld} にカーリー引用符 (直定引用符に揃える): {val[:60]}")
             if re.search(r"[Ａ-Ｚａ-ｚ０-９　]", val):
                 ng.append(f"NG: {where} {fld} に全角の英数字/空白: {val[:60]}")
+        # ★mypage.js の _gdApplyKatex は**単独の $ も数式の区切りとして扱う**
+        #   (「英文法ドリルは通貨 $ を含まない前提」とコメントに明記されている)。
+        #   $ を1つ書くと、そこから先が数式として食われて画面から文字が消える。
+        for fld, val in (("stem", stem), ("選択肢", " | ".join(str(c) for c in choices)), ("解説", expl)):
+            if "$" in val:
+                ng.append(f"NG: {where} {fld} に $ がある (アプリ側で数式として食われる): {val[:50]}")
+            if re.search(r"\\\(|\\\[", val):
+                ng.append(f"NG: {where} {fld} に LaTeX の区切りがある (PDF は KaTeX を通していない): {val[:50]}")
         if expl.strip() and not expl.rstrip().endswith("。"):
             ng.append(f"NG: {where} 解説が句点で終わっていない: …{expl[-24:]}")
 

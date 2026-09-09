@@ -23,7 +23,7 @@
   {
    "unit": "時制",
    "level": "basic",
-   "stem": "Be quiet. The baby (   ) in the next room.",
+   "stem": "Be quiet. The baby (   ) in the next room right now.",
    "choices": [
     "sleeps",
     "slept",
@@ -31,7 +31,7 @@
     "is sleeping"
    ],
    "answer": 3,
-   "explanation": "Be quiet.(静かに)と言っている、まさに今の状態なので現在進行形の is sleeping。sleeps は「いつも眠る」という習慣、slept は過去の出来事、has slept は「眠り終えた」という完了で、今まさに眠っている最中であることを表せない。",
+   "explanation": "right now(今まさに)がその瞬間を指しているので現在進行形の is sleeping。sleeps は「いつもそこで眠っている」という習慣を述べる形で、right now とは結びつかない。slept は過去の出来事、has slept は「眠り終えた」という完了で、今眠っている最中であることを表せない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -136,7 +136,7 @@
     "has reached"
    ],
    "answer": 0,
-   "explanation": "この when 節は knows の目的語になる名詞節なので、未来のことは will を使って will reach とする。approaching(接近中の)と tomorrow がこれから起きることだと示している。「時や条件の副詞節では未来を現在形で表す」規則は副詞節だけの約束で、名詞節には及ばない。reached や has reached は過去や完了の形で、これから起こる到達を表せない。",
+   "explanation": "この when 節は knows の目的語になる名詞節なので、未来のことは will を使って will reach とする。approaching(接近中の)と tomorrow がこれから起きることだと示している。reaches のように現在形にするのは時や条件の副詞節での言い方で、名詞節のここでは使えない(「副詞節では未来を現在形で表す」という規則は副詞節だけの約束)。reached や has reached は過去や完了の形で、これから起こる到達を表せない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -226,14 +226,14 @@
     "will have been"
    ],
    "answer": 0,
-   "explanation": "「〜してから…年になる」は It has been + 期間 + since + 過去形 の形で表すので has been。since 節の passed away が起点を示し、そこから現在までの経過を現在完了で受ける。had been は過去のある時点までの経過、will have been は未来の時点までの経過を表し、is having は have を進行形にした形で状態を表せない。",
+   "explanation": "「〜してから…年になる」は It has been + 期間 + since + 過去形 の形で表すので has been。since 節の passed away が起点を示し、そこから現在までの経過を現在完了で受ける。had been は過去のある時点までの経過、will have been は未来の時点までの経過を表す。is having は It is having ~ という言い方自体が無く、経過を表す It has been ~ の形にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
   {
    "unit": "時制",
    "level": "standard",
-   "stem": "A: (   ) you ever visited Hokkaido? B: Yes, I went there last winter.",
+   "stem": "(   ) you ever visited Hokkaido? — Yes, I went there last winter.",
    "choices": [
     "Did",
     "Are",
@@ -241,7 +241,7 @@
     "Have"
    ],
    "answer": 3,
-   "explanation": "ever を伴って「今までに行ったことがあるか」と経験をたずねる文なので現在完了の Have。Did は last winter のように過去の一時点を特定してたずねるときの形で、B の答えがその形になっている。Are や Were は be 動詞で、過去分詞 visited と組んでも「訪れたことがあるか」という経験の意味にならない。",
+   "explanation": "空所のあとが過去分詞 visited なので、組めるのは現在完了を作る Have。ever を伴って「今までに行ったことがあるか」と経験を尋ねる形になる。Did のあとは動詞の原形が必要なので visited とは並べられない。Are や Were は be 動詞で、visited と組むと受け身になり「訪れたことがあるか」の意味にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -271,7 +271,7 @@
     "Have"
    ],
    "answer": 2,
-   "explanation": "「今週末に車を使っている予定ですか」と相手の予定をたずねる未来進行形 will be using なので Will。Do は現在形の疑問文を作る語、Are は be 動詞、Have は完了形を作る語で、いずれも be using とは結びつかない。",
+   "explanation": "「今週末に車を使っている予定ですか」と相手の予定を尋ねる未来進行形 will be using なので Will。Do は現在形の疑問文を作る語、Are は be 動詞、Have は完了形を作る語で、いずれも be using とは結びつかない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -443,15 +443,15 @@
   {
    "unit": "時制",
    "level": "advanced",
-   "stem": "The thief had run away before the police (   ) at the scene.",
+   "stem": "He says that he (   ) his wallet on the train yesterday.",
    "choices": [
-    "arrived",
-    "arrive",
-    "had arrived",
-    "has arrived"
+    "left",
+    "leaves",
+    "has left",
+    "had left"
    ],
    "answer": 0,
-   "explanation": "before が前後関係をはっきり示しているので、あとに起きた出来事は単純過去の arrived でよい。had arrived にすると警察の到着のほうが逃走より前だったことになり、文意が逆転する。arrive は現在形、has arrived は現在完了で、過去の出来事を語る文には合わない。",
+   "explanation": "主節が says と現在なので従属節の時制を下げる必要はなく、yesterday という過去の一時点があるので過去形の left。時制を一致させて下げるのは主節が過去のときだけ、という約束を裏返しに確かめる形。leaves は現在形で yesterday と合わない。has left は現在完了で、yesterday のように「いつ」を特定する語句とは共存できない。had left は基準となる過去の時点があって初めて使える形で、主節が現在のこの文では使えない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -631,7 +631,7 @@
     "what"
    ],
    "answer": 1,
-   "explanation": "直後に to 不定詞を伴って「〜すべきかどうか」を表せるのは whether。if も「〜かどうか」の意味を持つが、直後に to 不定詞を続ける用法がない。that は事実を導く接続詞、what は節の中で名詞のはたらきをする語で、or 以下の二者択一と呼応しない。",
+   "explanation": "直後に to 不定詞を伴って「〜すべきかどうか」を表せるのは whether。if も「〜かどうか」の意味を持つが、直後に to 不定詞を続ける用法がない。that は事実を導く接続詞なので、or 以下の二者択一と呼応しない。what は節の中で名詞のはたらきをする語が欠けているときに使う語だが、ここは hold the event と目的語が揃っているので入る余地がない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -676,7 +676,7 @@
     "were"
    ],
    "answer": 0,
-   "explanation": "either A or B が主語のときは、動詞を近いほうの主語 your brother に合わせるので3人称単数の has。have / are / were はいずれも複数の主語に対応する形で、直前の単数の主語と一致しない。",
+   "explanation": "either A or B が主語のときは、動詞を近いほうの主語 your brother に合わせるので3人称単数の has。文頭の you につられて have を選びやすいが、合わせる相手は or の直後の主語のほう。have と are は your brother と一致せず、were は過去形なので、これからの出席について述べるこの文には合わない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -730,13 +730,13 @@
    "level": "standard",
    "stem": "(   ) time went by, the two countries gradually improved their relations.",
    "choices": [
-    "While",
+    "Until",
     "When",
     "As",
     "Since"
    ],
    "answer": 2,
-   "explanation": "「〜するにつれて」と、二つの変化が並行して進むことを表すのは接続詞 As。While は「〜する間」、When は「〜する時」で、時間の経過とともに少しずつ変化するという意味を持たない。Since は「〜以来」で、主節が improved と過去形であることと噛み合わない。",
+   "explanation": "「〜するにつれて」と、二つの変化が並行して進むことを表すのは接続詞 As。Until は「〜するまで」なので、時が経つまでの間に関係が改善したという意味になり通らない。When は「〜する時」と一点を指す語で、gradually(少しずつ)という続いていく変化とは噛み合わない。Since は「〜以来」と読むなら主節が現在完了になるはずで improved と合わず、「〜だから」と理由に読んでも「時が経ったから関係が改善した」では理由の説明にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -781,7 +781,7 @@
     "provided"
    ],
    "answer": 3,
-   "explanation": "〈provided (that) …〉で「〜という条件であれば」という条件を示す。supposing なら同じ用法があるが、supposed の形では条件節を導けない。concerned は as far as … is concerned、regarded は as regards のように別の形で使う語で、条件を示す接続詞にはならない。",
+   "explanation": "〈provided (that) …〉で「〜という条件であれば」という条件を示す。supposing なら同じ用法があるが、supposed の形では条件節を導けない。concerned は as far as … is concerned、regarded は be regarded as ~(〜とみなされる)のように使う語で、どちらも条件を示す接続詞にはならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -961,7 +961,7 @@
     "What"
    ],
    "answer": 3,
-   "explanation": "文末に like があるので、その目的語になる What が必要になる。How を使うなら How is the weather in Sapporo? と like を付けない形にする。Which は選ぶ範囲が示されている場合の語、Why は理由を尋ねる語で、like の目的語になれない。",
+   "explanation": "文末に like があるので、その目的語になる What が必要になる。How を使うなら How is the weather in Sapporo? と like を付けない形にする。Which は選ぶ範囲が示されていないこの文では使えない。Why は理由を尋ねる語で、like の目的語にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -1021,7 +1021,7 @@
     "Of course not"
    ],
    "answer": 0,
-   "explanation": "英語では、たずね方が否定であっても答える内容が肯定なら Yes を使う。No は「好きではない」という否定の答えになり、続く I love it と矛盾する。Sure not や Of course not も否定の応答なので、同じく内容と食い違う。",
+   "explanation": "英語では、尋ね方が否定であっても答える内容が肯定なら Yes を使う。No は「好きではない」という否定の答えになり、続く I love it と矛盾する。Sure not や Of course not も否定の応答なので、同じく内容と食い違う。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -1073,15 +1073,15 @@
   {
    "unit": "疑問詞・間接疑問",
    "level": "standard",
-   "stem": "She asked me where I (   ) the previous weekend.",
+   "stem": "She asked me where (   ) during the summer vacation.",
    "choices": [
-    "have been",
-    "was being",
-    "had been",
-    "am"
+    "had I stayed",
+    "did I stay",
+    "I had stayed",
+    "I have stayed"
    ],
    "answer": 2,
-   "explanation": "主節が asked と過去なので時制を一致させ、さらに「その前の週末」とより前のことを述べるので過去完了の had been。have been や am は現在を基準にした形で、主節の過去と一致しない。was being は一時的なふるまいを表す形で、居場所を述べる文にはならない。",
+   "explanation": "間接疑問は〈疑問詞+主語+動詞〉という平叙文の語順になるので I had stayed。さらに主節が asked と過去なので、それより前のことは時制を一致させて過去完了にする。had I stayed と did I stay はどちらも疑問文の倒置した語順で、従属節の中では使えない。I have stayed は語順は正しいが現在完了なので、主節の過去と時制が合わない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -1111,7 +1111,7 @@
     "when"
    ],
    "answer": 3,
-   "explanation": "Do you know … は Yes / No で答えられる問いなので、中の間接疑問は〈疑問詞+主語+動詞〉の語順にする。when will や what time will は倒置した疑問文の語順で、従属節には置けない。that では時をたずねる意味にならない。なお Do you think … の場合は疑問詞が文頭に出て When do you think it will begin? となる点も押さえておきたい。",
+   "explanation": "Do you know … は Yes / No で答えられる問いなので、中の間接疑問は〈疑問詞+主語+動詞〉の語順にする。when will や what time will は倒置した疑問文の語順で、従属節には置けない。that では時を尋ねる意味にならない。なお Do you think … の場合は疑問詞が文頭に出て When do you think it will begin? となる点も押さえておきたい。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -1126,7 +1126,7 @@
     "whom took"
    ],
    "answer": 1,
-   "explanation": "any idea のあとは間接疑問で、疑問詞 who がそのまま主語になるので〈who + 動詞〉の語順の who took。who did take は強調の形で、事実をたずねる間接疑問としては不自然。did who take は倒置した疑問文の語順、whom は目的格なので主語にならない。",
+   "explanation": "any idea のあとは間接疑問で、疑問詞 who がそのまま主語になるので〈who + 動詞〉の語順の who took。who did take は強調の形で、事実を尋ねる間接疑問としては不自然。did who take は倒置した疑問文の語順、whom は目的格なので主語にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -1141,7 +1141,7 @@
     "What"
    ],
    "answer": 3,
-   "explanation": "〈What do you say to ~ing?〉で「〜するのはどうですか」と提案する決まった形。How を使うなら How about having … と to を伴わない形にする。Why なら Why don't we …?、When は時をたずねる語で、提案の形を作れない。",
+   "explanation": "〈What do you say to ~ing?〉で「〜するのはどうですか」と提案する決まった形。How を使うなら How about having … と to を伴わない形にする。Why なら Why don't we …?、When は時を尋ねる語で、提案の形を作れない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -1156,7 +1156,7 @@
     "How far"
    ],
    "answer": 1,
-   "explanation": "「あとどれくらいで〜するか」と完成までの時間をたずねるのは How soon で、答えの In about two years とも呼応する。How long は続く期間の長さ、How much は量や値段、How far は距離を尋ねる語で、完成の時期を問えない。",
+   "explanation": "「あとどれくらいで〜するか」と完成までの時間を尋ねるのは How soon で、答えの In about two years とも呼応する。How long は続く期間の長さ、How much は量や値段、How far は距離を尋ねる語で、完成の時期を問えない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -1261,7 +1261,7 @@
     "Where"
    ],
    "answer": 0,
-   "explanation": "〈What has become of ~?〉で「〜はどうなったのか」と消息をたずねる決まった形。Who では「誰が〜になったのか」となり、of と結びつかない。How や Where は become of の主語になれない。",
+   "explanation": "〈What has become of ~?〉で「〜はどうなったのか」と消息を尋ねる決まった形。Who では「誰が〜になったのか」となり、of と結びつかない。How や Where は become of の主語になれない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -1291,7 +1291,7 @@
     "By"
    ],
    "answer": 0,
-   "explanation": "〈To what extent …?〉で「どの程度まで〜か」と程度をたずねる決まった形。In / At / By は extent と組んでこの意味を表す形にならない。",
+   "explanation": "〈To what extent …?〉で「どの程度まで〜か」と程度を尋ねる決まった形。In / At / By は extent と組んでこの意味を表す形にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -1306,7 +1306,7 @@
     "Which"
    ],
    "answer": 2,
-   "explanation": "〈What if S V?〉で「もし〜だったらどうなるのか」と仮定してたずねる形。How if / Why if / Which if という言い方は英語にはない。",
+   "explanation": "〈What if S V?〉で「もし〜だったらどうなるのか」と仮定して尋ねる形。How if / Why if / Which if という言い方は英語にはない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
@@ -1321,7 +1321,7 @@
     "how effective"
    ],
    "answer": 3,
-   "explanation": "前置詞 at の目的語になる間接疑問なので〈how + 形容詞 + 主語 + 動詞〉の語順で how effective this simple method is となる。how is effective や how effective is は倒置した疑問文の語順で、従属節には使えない。what には形容詞を直接伴って程度を表す用法がない。",
+   "explanation": "前置詞 at の目的語になる間接疑問なので〈how + 形容詞 + 主語 + 動詞〉の語順で how effective this simple method is となる。how effective is は倒置した疑問文の語順なので従属節には使えない。how is effective は疑問文としても成り立たない語順。what には形容詞を直接伴って程度を表す用法がない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },

@@ -15,7 +15,7 @@
   "n": 1,
   "unit": "時制",
   "level": "basic",
-  "stem": "Be quiet. The baby (   ) in the next room.",
+  "stem": "Be quiet. The baby (   ) in the next room right now.",
   "choices": [
    "sleeps",
    "slept",
@@ -183,7 +183,7 @@
   "n": 15,
   "unit": "時制",
   "level": "standard",
-  "stem": "A: (   ) you ever visited Hokkaido? B: Yes, I went there last winter.",
+  "stem": "(   ) you ever visited Hokkaido? — Yes, I went there last winter.",
   "choices": [
    "Did",
    "Are",
@@ -351,12 +351,12 @@
   "n": 29,
   "unit": "時制",
   "level": "advanced",
-  "stem": "The thief had run away before the police (   ) at the scene.",
+  "stem": "He says that he (   ) his wallet on the train yesterday.",
   "choices": [
-   "arrived",
-   "arrive",
-   "had arrived",
-   "has arrived"
+   "left",
+   "leaves",
+   "has left",
+   "had left"
   ]
  },
  {
@@ -581,7 +581,7 @@
   "level": "standard",
   "stem": "(   ) time went by, the two countries gradually improved their relations.",
   "choices": [
-   "While",
+   "Until",
    "When",
    "As",
    "Since"
@@ -855,12 +855,12 @@
   "n": 71,
   "unit": "疑問詞・間接疑問",
   "level": "standard",
-  "stem": "She asked me where I (   ) the previous weekend.",
+  "stem": "She asked me where (   ) during the summer vacation.",
   "choices": [
-   "have been",
-   "was being",
-   "had been",
-   "am"
+   "had I stayed",
+   "did I stay",
+   "I had stayed",
+   "I have stayed"
   ]
  },
  {
