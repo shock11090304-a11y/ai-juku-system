@@ -214,11 +214,41 @@
   flex-shrink: 0;
 }
 .action-title { font-weight: 700; font-size: 0.9rem; }
-.action-desc { font-size: 0.78rem; color: var(--text-dim); margin-top: 0.15rem; }
+/* 説明文は 2 行まで (2026-09-09: 入試道場の説明が 8 行になりスマホで 1 枚が画面を埋めていた) */
+.action-desc {
+  font-size: 0.78rem; color: var(--text-dim); margin-top: 0.15rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+/* ▶ 演習をはじめる (details): 1 枚のカードを押すと演習の入口 5 つが中に開く */
+details.action-practice {
+  display: block; padding: 0;
+  background: linear-gradient(135deg, rgba(251,191,36,0.22), rgba(236,72,153,0.12));
+  border: 2px solid rgba(251,191,36,0.55);
+}
+details.action-practice > summary {
+  list-style: none; cursor: pointer;
+  display: flex; gap: 0.9rem; align-items: center; padding: 1rem 1.25rem;
+}
+details.action-practice > summary::-webkit-details-marker { display: none; }
+details.action-practice .practice-chev { display: inline-block; font-size: 0.8em; opacity: 0.8; transition: transform .2s; margin-left: 0.2rem; }
+details.action-practice[open] .practice-chev { transform: rotate(180deg); }
+details.action-practice .practice-options {
+  display: grid; gap: 0.4rem; padding: 0 0.9rem 0.9rem;
+}
+details.action-practice .practice-options a {
+  display: flex; flex-direction: column; gap: 0.1rem;
+  padding: 0.6rem 0.8rem; border-radius: 10px;
+  background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.14);
+  color: var(--text); text-decoration: none; font-weight: 700; font-size: 0.88rem; min-height: 44px;
+}
+details.action-practice .practice-options a:hover { border-color: rgba(251,191,36,0.6); }
+details.action-practice .practice-options a small { font-weight: 500; font-size: 0.78rem; color: var(--text-dim); }
+/* 開いた details の高さに隣のカードが引き伸ばされないようにする (review 指摘)。他のカードは従来どおり stretch で下端を揃える */
+details.action-practice { align-self: start; }
 
 .today-stats .stats-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);  /* 学習分・AI質問・演習数 (2026-09-09 演習数を追加) */
   gap: 0.75rem;
 }
 .stat-item {
@@ -573,6 +603,11 @@
   /* Dashboard grid 1列化 */
   .dashboard-grid { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  /* 今日の学習 (3 タイル) はスマホ幅では詰めて 3 列のまま (review 指摘: 360px で「AI質問数」が折り返す) */
+  .today-stats .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+  .today-stats .stat-item { padding: 0.7rem 0.35rem; }
+  .today-stats .stat-val { font-size: 1.5rem; }
+  .today-stats .stat-lbl { font-size: 0.7rem; white-space: nowrap; }
 
   /* Action buttons 1列化 */
   .action-buttons { grid-template-columns: 1fr; }

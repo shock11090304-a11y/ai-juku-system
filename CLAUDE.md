@@ -151,6 +151,32 @@
 - 子メールを確認済みにすると、**週次レポートの生徒向けコピーの主宛先が親→子に移る**。保護者にも
   残すなら生徒本人のマイページで「保護者メール」(`students.parent_email` = 別列) を設定してもらう。
 
+## 生徒画面 (mypage) の「続ける仕組み」と家庭への連絡 (2026-09-09 レビュー反映)
+- **連続学習日数・「✅ できた！」はサーバ実績が正典** (`GET /api/student/activity-summary` / `POST /api/student/coach-done`)。
+  演習 (`question_attempts`)・学習記録 (`study_logs`)・できた！(`events name='coach_done'`, `session_id=str(student_id)`) の
+  いずれかがあった JST 日を「活動日」とする。localStorage の値は「サーバに届かなかった時の控え」で、次回サーバ値で上書きされる。
+- **おかえり**: 7 日以上活動が無い生徒には、コーチカードが宿題・弱点より先に「今日は 1 問だけ」を出す (`days_since_activity`)。
+- **週次レポートの「活動ゼロ週は送らない」規則に例外**: 直近 28 日に演習があった生徒には短い「今週は 0 問」メールを
+  生徒コピー + 保護者コピーへ送る (最大 2 週連続・`notifications` template `weekly_report_zero_week` / `_parent`)。
+  休眠層と一度も解いていない生徒は従来どおりスキップ。`ZERO_WEEK_REPORT_ENABLED=0` で従来の完全スキップに戻る。
+  ★通常レポートを全員分送った**後**の第 2 パスで、残り枠と `ZERO_WEEK_REPORT_CAP` (既定 24 通) の範囲でしか送らない
+  (通常レポートの席を奪わない)。同じ週に水曜の一声が届いた生徒本人には重ねず、保護者宛だけ送る。
+  連続上限は「活動窓 (28 日) + 1 日」の中で送った週数で数える = 1 回の停止につき最大 2 週分
+  (13 日窓だと 14 日前の送付が落ちて上限に届かず毎週送っていた・review で発見)。
+  ★2026-09-09 の実例: 生徒が 3 週間ログインで詰まり、レポートが黙って止まり、保護者が先に異変に気づいた。
+- **週半ばの一声** (`POST /api/cron/midweek-nudge`・毎週水曜 18:00 JST・`_midweek_nudge_scheduler`): 今週 (JST 月曜〜) 演習 0 問
+  かつ 直近 28 日には演習していた生徒へ 1 通 (LINE 連携済みは LINE、無ければ生徒コピー宛メール)。6 日 dedup・CAP 60。
+  `MIDWEEK_NUDGE_ENABLED=0` で停止 (スケジューラ自体を登録しない)。`?dry_run=true` は送らずに対象を返す。
+  ★`MIDWEEK_NUDGE_ENABLED` / `ZERO_WEEK_REPORT_ENABLED` は import 時に読む定数。**Railway で env を変えたら ai-juku-api を
+  再起動**しないと効かない。無効化中は `midweek_nudge_run` を health の停止監視から外す (誤検知防止)。
+- **平日に `POST /api/cron/weekly-reports?dry_run=true` を叩くと「先週の完了週」で評価される** (`_weekly_report_window`)。
+  日曜だけ「今週」。平日の dry run で対象外と出ても日曜に送られないとは限らない。
+- **mypage の初期化は補助スクリプトを最大 10 秒しか待たない** (`_ajWidgetWait`)。`slApiFetch` は既定 30 秒でタイムアウト
+  (`options.timeoutMs` で個別に延長・AI 生成系は 90 秒)。合格可能性スコアはサーバ失敗 (5xx/429/通信) で消えず再試行を案内し、
+  4xx (志望校未設定など) だけ非表示。
+- **LINE 連携 CTA** (`#lineLinkSection`) は `/api/auth/me` の `line_linked === false` の生徒にだけ出る (LINE の userId は返さない)。
+- 回帰テスト: `scripts/health_check/test_student_ux_2026_09.py` (CI `server-tests.yml`)。
+
 ## 授業録画の割り当て (YouTube 限定公開 → 各クラス)
 - 塾長が YouTube の**再生リスト**に授業動画を上げる → それを各クラスの `class_recordings` に割り当てる。
   **自動では走らない** (常駐スケジューラも cron も無い)。走らせ方は 2 つ:

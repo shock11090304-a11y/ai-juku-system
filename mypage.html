@@ -11,7 +11,7 @@
 
   <script src="frontend-error-monitor.js?v=20260529-past-due-grace"></script>
   <link rel="stylesheet" href="style.css?v=20260529-past-due-grace">
-  <link rel="stylesheet" href="mypage.css?v=20260529-past-due-grace">
+  <link rel="stylesheet" href="mypage.css?v=20260909-student-ux">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <!-- 🧮 KaTeX: 今日の復習(SRS)カードの理系 LaTeX \(..\)/\[..\]/$$ を描画 (2026-06-04・index.html と同構成) -->
@@ -112,6 +112,9 @@
         <button type="button" id="cnmDoneBtn" aria-label="今日の一手を達成として記録" style="padding:0.6rem 1rem; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.22); border-radius:10px; color:#d1fae5; font-weight:700; font-size:0.85rem; cursor:pointer; min-height:44px;">✅ できた！</button>
       </div>
       <div id="cnmDoneMsg" role="status" aria-live="polite" style="display:none; margin-top:0.6rem; font-size:0.9rem; color:#86efac; font-weight:700;"></div>
+      <!-- 📌 要対応 (2026-09-09): 宿題・塾長からのメッセージ・復習カードは画面のずっと下にあって気づけなかった。
+           未提出 / 未読 / 期限到来があるときだけ、ここにチップで出す (mypage.js の AJ_TODO が描画)。 -->
+      <div id="cnmTodo" style="display:none; margin-top:0.85rem; padding-top:0.7rem; border-top:1px dashed rgba(255,255,255,0.18); gap:0.45rem; flex-wrap:wrap; align-items:center;" role="navigation" aria-label="今日の要対応"></div>
     </section>
     <!-- 📝 学習記録 クイック CTA (国公立難関大学コース or プレミアム以上のみ JS で表示制御)
          2026-05-11 塾長指示: ページ最上部 (header 直下) に固定配置。
@@ -181,35 +184,33 @@
         <!-- 🎯 2026-07-22 塾長指示: クイックアクションは「主力だけを大きく」表示 (13ボタンで主力が埋もれ使いにくい問題)。
              主力=使用実績上位5つ(問題演習3種+単語帳+AIチューター)を常時表示、他は下の「その他の機能」に折りたたむ。
              利用データ: 問題演習8,210回/月・単語帳2,507回/月・チャット1,034回/月 が突出、英作文添削/学習計画/参考書は僅少。 -->
+        <!-- 🎯 2026-09-09 生徒画面レビュー反映: 「演習を始める」入口が 5 枚 (今すぐ挑戦 / 弱点克服 / 入試道場 / 再演習 / 問題生成)
+             に分かれていて 1 画面目の選択肢が実質 6 択だった。演習は 1 枚に束ね、押すと中の選択肢が開く (details = JS 不要)。
+             NEW バッジは 9 個付いて新旧の区別が消えていたので外した (最新でも 2026-07-22 追加)。専門語 (SRS / Leitner /
+             3 mode) は高校生の言葉に言い換え。 -->
         <div class="action-buttons">
-          <a href="quick-start.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(251,191,36,0.22),rgba(236,72,153,0.12));border:2px solid rgba(251,191,36,0.55);">
-            <div class="action-icon">⚡</div>
-            <div>
-              <div class="action-title">今すぐ問題挑戦 <span class="action-badge-new">NEW</span></div>
-              <div class="action-desc">5 科目から選んで AI 即時生成 + 定期テスト単元演習</div>
+          <details class="action-btn action-btn-highlight action-practice" id="practiceChooser">
+            <summary>
+              <div class="action-icon">▶</div>
+              <div style="flex:1; min-width:0;">
+                <div class="action-title">演習をはじめる <span class="practice-chev" aria-hidden="true">▾</span></div>
+                <div class="action-desc">弱点・入試問題・今日の1問から選ぶ</div>
+              </div>
+            </summary>
+            <div class="practice-options" role="group" aria-label="演習の種類">
+              <!-- ✍️ 弱点克服 (塾長指示 2026-07-22)。tab=weakness は dojo-drill 側でモード解決 (高校生=単元別/中学生=高校受験プール) -->
+              <a href="dojo-drill.html?tab=weakness"><span>✍️ 弱点克服ドリル</span><small>苦手な単元をくり返し練習。正答率 80% で「習得」</small></a>
+              <a href="nyushi-dojo.html"><span>🏛️ 入試問題 道場</span><small>大学入試の問題 18,000 問以上。単元別・大学別・本番形式の模試</small></a>
+              <a href="quick-start.html"><span>⚡ 今すぐ 1 問</span><small>5 科目から選ぶと AI がすぐ出題。定期テストの単元も</small></a>
+              <a href="index.html?openHistory=1"><span>🔁 前に解いた問題をもう一度</span><small>解いた問題から選んで復習</small></a>
+              <a href="index.html#tab-problems" id="generateProblemsQuick"><span>🧪 苦手を入力して問題を作る</span><small>あなた専用のオリジナル問題を AI が作成</small></a>
             </div>
-          </a>
-          <!-- ✍️ 弱点克服 直行 (塾長指示 2026-07-22: 入試道場の弱点克服をクイックアクションへ)。
-               tab=weakness は dojo-drill 側でモード解決 (高校生=単元別/中学生=高校受験プール) -->
-          <a href="dojo-drill.html?tab=weakness" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(239,68,68,0.20),rgba(245,158,11,0.12));border:2px solid rgba(239,68,68,0.5);">
-            <div class="action-icon">✍️</div>
-            <div>
-              <div class="action-title">弱点克服ドリル <span class="action-badge-new">NEW</span></div>
-              <div class="action-desc"><strong>苦手単元を選んで集中演習</strong>: 単元別プールから即スタート — 正答率 80% で習得卒業まで追跡</div>
-            </div>
-          </a>
-          <a href="nyushi-dojo.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(245,158,11,0.22),rgba(220,38,38,0.10));border:2px solid rgba(245,158,11,0.55);">
-            <div class="action-icon">🏛️</div>
-            <div>
-              <div class="action-title">入試問題 道場 <span class="action-badge-new">NEW</span> <span style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">18,000 問+</span></div>
-              <div class="action-desc"><strong>大学入試の演習はここに集約</strong>: 📚 単元別演習 / 🟣 大学別 深掘り / 🎯 本番想定模試 — 3 mode で 18,000 問+の演習プールに 1 画面からアクセス</div>
-            </div>
-          </a>
+          </details>
           <a href="vocab.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(16,185,129,0.10));border:2px solid rgba(99,102,241,0.45);">
             <div class="action-icon">📖</div>
             <div>
-              <div class="action-title">AI 単語帳 (SRS) <span class="action-badge-new">NEW</span></div>
-              <div class="action-desc">忘却曲線対応 Leitner Box・科学的暗記</div>
+              <div class="action-title">AI 単語帳</div>
+              <div class="action-desc">忘れかけた頃にもう一度出てくる単語帳</div>
             </div>
           </a>
           <a href="index.html" class="action-btn primary">
@@ -224,8 +225,8 @@
           <a href="class.html" id="classMenuCard" class="action-btn action-btn-highlight" style="display:none;background:linear-gradient(135deg,rgba(129,140,248,0.20),rgba(167,139,250,0.10));border:2px solid rgba(129,140,248,0.55);">
             <div class="action-icon">📚</div>
             <div>
-              <div class="action-title">トリリオン塾生アプリ <span class="action-badge-new">NEW</span> <span style="background:rgba(129,140,248,0.22);color:#c7d2fe;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">通塾生</span></div>
-              <div class="action-desc"><strong>予定・宿題・動画・メッセージ</strong>: 授業の予定/配布ファイル/録画と、宿題・出欠連絡・塾長への連絡がここに集約</div>
+              <div class="action-title">トリリオン塾生アプリ <span style="background:rgba(129,140,248,0.22);color:#c7d2fe;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">通塾生</span></div>
+              <div class="action-desc">授業の予定・配布ファイル・録画・宿題・塾長への連絡</div>
             </div>
           </a>
         </div>
@@ -237,22 +238,9 @@
           details.action-more[open] > summary .aj-more-chev{transform:rotate(180deg);}
         </style>
         <details class="action-more" style="margin-top:0.6rem;">
-          <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; gap:0.4rem; padding:0.7rem 1rem; border:1px dashed rgba(148,163,184,0.4); border-radius:12px; color:#cbd5e1; font-weight:700; font-size:0.85rem; background:rgba(148,163,184,0.06);"><span>🔧 その他の機能（7）｜英作文添削・学習計画・参考書 など</span><span class="aj-more-chev" style="margin-left:auto;">▾</span></summary>
+          <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; gap:0.4rem; padding:0.7rem 1rem; border:1px dashed rgba(148,163,184,0.4); border-radius:12px; color:#cbd5e1; font-weight:700; font-size:0.85rem; background:rgba(148,163,184,0.06);"><span>🔧 その他の機能（5）｜英作文添削・学習計画・参考書 など</span><span class="aj-more-chev" style="margin-left:auto;">▾</span></summary>
           <div class="action-buttons" style="margin-top:0.6rem;">
-            <a href="index.html?openHistory=1" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(34,197,94,0.10));border:2px solid rgba(99,102,241,0.45);">
-              <div class="action-icon">📚</div>
-              <div>
-                <div class="action-title">解いた問題を再演習 <span class="action-badge-new">NEW</span></div>
-                <div class="action-desc">過去に解いた問題から「もう一度」を選んで復習</div>
-              </div>
-            </a>
-            <a href="index.html#tab-problems" class="action-btn" id="generateProblemsQuick">
-              <div class="action-icon">🧪</div>
-              <div>
-                <div class="action-title">問題を生成する</div>
-                <div class="action-desc">弱点を入力→オリジナル問題</div>
-              </div>
-            </a>
+            <!-- 「解いた問題を再演習」「問題を生成する」は上の「演習をはじめる」の中へ移動 (2026-09-09) -->
             <a href="index.html#tab-essay" class="action-btn">
               <div class="action-icon">✍️</div>
               <div>
@@ -270,7 +258,7 @@
             <a href="textbook-generator.html" class="action-btn action-btn-highlight">
               <div class="action-icon">📚</div>
               <div>
-                <div class="action-title">自分の参考書を作る <span class="action-badge-new">NEW</span></div>
+                <div class="action-title">自分の参考書を作る</div>
                 <div class="action-desc">弱点特化の教材をAIが執筆</div>
               </div>
             </a>
@@ -278,7 +266,7 @@
             <a href="#lessonPrintsSection" class="action-btn action-btn-highlight" id="quickActionLessonPrints" style="background:linear-gradient(135deg,rgba(59,130,246,0.22),rgba(168,85,247,0.12));border:2px solid rgba(59,130,246,0.55);">
               <div class="action-icon">📚</div>
               <div>
-                <div class="action-title">配布プリント <span class="action-badge-new">NEW</span> <span id="lpQuickCount" style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">…</span></div>
+                <div class="action-title">配布プリント <span id="lpQuickCount" style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">…</span></div>
                 <div class="action-desc"><strong>解説付き PDF を配布</strong>: 授業用 / 自習用 / 演習問題集 + 詳細解説 ─ 弱点に合わせて AI が推薦</div>
               </div>
             </a>
@@ -286,8 +274,8 @@
             <a href="kyozai.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(16,185,129,0.20),rgba(59,130,246,0.10));border:2px solid rgba(16,185,129,0.55);">
               <div class="action-icon">🗂️</div>
               <div>
-                <div class="action-title">教材ライブラリ <span class="action-badge-new">NEW</span> <span style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">無料あり</span></div>
-                <div class="action-desc"><strong>動く解説・ドリル・単語帳・PDF を1画面で</strong>: 科目で探せる教材カタログ ─ 相加相乗の「動く解説」など登録なしで試せる教材も</div>
+                <div class="action-title">教材ライブラリ <span style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">無料あり</span></div>
+                <div class="action-desc">動く解説・ドリル・単語帳・PDF を科目から探せる教材カタログ</div>
               </div>
             </a>
           </div>
@@ -334,7 +322,9 @@
          /api/line/link-code で本人のワンタイムコードを発行 → 公式LINEに送信で紐付け完了。
          非ログイン(プレビュー)時は token shadow で 401 → 案内表示のみ。
          🚧 2026-06-05 一時非表示 (display:none): LINE Console で webhook 未登録のため、生徒が連携しても
-            紐付かない(無効コードを発行させてしまう)。webhook 登録が済んだら下の style から display:none を外す。 -->
+            紐付かない(無効コードを発行させてしまう)。
+         ✅ 2026-09-09: LINE 配信は本番で稼働中 (直近 60 日でログインコード 270 通・週次 118 通が LINE で届いている) ので、
+            下の initWidgets が「未連携 (line_linked === false)」の生徒にだけ display を解除する。連携済みには出さない。 -->
     <section class="line-link-cta aj-adv2" id="lineLinkSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(6,199,85,0.16), rgba(16,185,129,0.10)); border: 1px solid rgba(6,199,85,0.4); border-radius: 14px; box-shadow: 0 8px 24px rgba(6,199,85,0.12);">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.9rem; flex-wrap:wrap;">
         <div style="flex:1 1 240px; min-width:220px;">
@@ -593,12 +583,18 @@
           <div class="stat-item">
             <div class="stat-icon">⏱</div>
             <div class="stat-val" id="todayMinutes">0</div>
-            <div class="stat-lbl">分 学習</div>
+            <div class="stat-lbl">学習 (分)</div>
           </div>
           <div class="stat-item">
             <div class="stat-icon">❓</div>
             <div class="stat-val" id="todayQ">0</div>
-            <div class="stat-lbl">AI質問数</div>
+            <div class="stat-lbl">AI質問 (回)</div>
+          </div>
+          <!-- 📝 今日の演習数 (2026-09-09): question_attempts にあるのに画面に出ていなかった。/api/student/activity-summary から -->
+          <div class="stat-item">
+            <div class="stat-icon">📝</div>
+            <div class="stat-val" id="todayProblems">0</div>
+            <div class="stat-lbl">演習 (問)</div>
           </div>
           <!-- 完了タスク・獲得XP は塾長指示 2026-05-15 でクエスト機能廃止に伴い削除 -->
         </div>
@@ -1281,7 +1277,7 @@
     </section>
 
     <!-- 📨 メッセージ受信箱 + 送信 (Phase 3 - 全生徒対象 / 国公立難関コースは送信機能あり) -->
-    <section class="messages-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
+    <section class="messages-section" id="messagesSection" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
       <div class="section-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
         <h2>📨 塾長とのメッセージ <span id="msgUnreadBadge" style="display:none; background:#ec4899; color:#fff; font-size:0.65em; padding:0.15em 0.5em; border-radius:999px; margin-left:0.5rem; vertical-align:middle;">0</span></h2>
         <button id="msgComposeBtn" type="button" style="display:none; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; padding:0.55rem 1.1rem; border-radius:10px; font-weight:800; cursor:pointer; font-size:0.88rem; box-shadow:0 4px 14px rgba(236,72,153,0.3);">✏️ 塾長にメッセージ送信</button>
@@ -1312,7 +1308,7 @@
 
     <!-- Learning Brain: 今日の復習 (エビングハウス自動復習) -->
     <section class="lb-review-section" style="margin-top: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;">
-      <div class="section-title"><h2>🔁 今日の復習 <span style="font-size:0.65em;background:linear-gradient(135deg,#818cf8,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">エビングハウス忘却曲線対応</span></h2></div>
+      <div class="section-title"><h2>🔁 今日の復習 <span style="font-size:0.65em;background:linear-gradient(135deg,#818cf8,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">忘れかけた頃にもう一度</span></h2></div>
       <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">
         間違えた問題を 1日 → 3日 → 7日 → 21日 → 60日 の科学的タイミングで自動再出題します。
       </p>
@@ -1458,18 +1454,45 @@
     <p>© 2026 AIコーチング | Mypage v1.0</p>
   </footer>
 
-  <script src="learning-brain.js?v=20260604-katex-cards"></script>
+  <script src="learning-brain.js?v=20260909-cachebust"></script>
   <script src="exam-prep.js?v=20260721-xstudent-batch2"></script>
   <script src="referral-program.js?v=20260721-xstudent-batch2"></script>
   <script src="student-mode.js?v=20260604-junior-preview"></script>
-  <script src="mypage.js?v=20260906-studylog-edit"></script>
+  <script src="mypage.js?v=20260909-student-ux"></script>
   <script>
     // ウィジェット初期描画
     (function() {
+      // 🛡️ 2026-09-09: 補助スクリプト (learning-brain / exam-prep / referral-program) が 1 本でも読めないと、
+      //   従来はここで 200ms ごとに永遠に待ち続け、コーチの一手・合格可能性スコア・宿題など初期描画が
+      //   丸ごと出なかった (catch の外なので監視にも上がらない)。10 秒で待つのをやめ、揃った物だけ描く。
+      var _ajWidgetWait = 0;
       function initWidgets() {
-        if (typeof LB === 'undefined' || typeof ExamPrep === 'undefined' || typeof ReferralProgram === 'undefined') { setTimeout(initWidgets, 200); return; }
+        if (typeof LB === 'undefined' || typeof ExamPrep === 'undefined' || typeof ReferralProgram === 'undefined') {
+          if (_ajWidgetWait < 50) { _ajWidgetWait++; setTimeout(initWidgets, 200); return; }
+          try {
+            var _missing = ['LB', 'ExamPrep', 'ReferralProgram'].filter(function (n) { return typeof window[n] === 'undefined'; }).join(',');
+            // window.onerror 経由で frontend-error-monitor に載せる (同期 throw だと初期化が止まるので次 tick で投げる)
+            setTimeout(function () { throw new Error('[mypage] widget scripts missing after 10s: ' + _missing); }, 0);
+          } catch (_) { /* noop */ }
+        }
         const student = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
         const studentId = student ? student.id : 'guest';
+        // 📲 LINE 連携 CTA (2026-09-09 復活): 2026-06-05 に webhook 未登録で一時非表示にしたまま、出す JS が無かった。
+        //   いまは LINE 配信 (ログインコード/宿題/週次) が本番で動いているので、未連携の生徒にだけ出す
+        //   (/api/auth/me が line_linked を返す。旧キャッシュで undefined の間は出さない = 安全側)。
+        //   auth-guard の /api/auth/me は非同期で localStorage を更新するので、初期化時点では line_linked が無いことがある
+        //   (デプロイ直後の初回訪問など)。3 秒・8 秒後にもう一度だけ読み直す (イベントは無いのでポーリングで代用)。
+        function _ajMaybeShowLineCta() {
+          try {
+            const _s = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+            if (_s && _s.line_linked === false) {
+              const _ll = document.getElementById('lineLinkSection'); if (_ll) _ll.style.display = '';
+            }
+          } catch (_e) { /* noop */ }
+        }
+        _ajMaybeShowLineCta();
+        setTimeout(_ajMaybeShowLineCta, 3000);
+        setTimeout(_ajMaybeShowLineCta, 8000);
         // 🧒 中学生モード (2026-06-04): 学年でモード判定 → body class + バッジ + 専用ヒーロー。kosei(高校生) は現行どおり。
         let _ajMode = 'kosei', _isPreview = false;
         try {
@@ -1510,11 +1533,14 @@
           try { initCoachNextMove(student, _ajMode, _isPreview); } catch (_e) { /* 失敗しても他 widget に波及させない */ }
         }
         if (!_isPreview) {
-          renderInheritNoticeBanner(studentId);  // 📦 引き継ぎ通知 (widget 群の最上部に挿入)
-          LB.renderTodayReview('lbTodayReview', studentId);
-          LB.renderStudyTimeWidget('lbStudyTimeWidget', studentId);
-          ExamPrep.renderUpcomingWidget('examPrepWidget');
-          ReferralProgram.renderReferralWidget('referralWidget', student);
+          try { renderInheritNoticeBanner(studentId); } catch (_e) { /* 引き継ぎ通知は任意 */ }  // 📦 引き継ぎ通知 (widget 群の最上部に挿入)
+          // 各 widget は独立して失敗させる (1 つの throw で後続が丸ごと消えないように)
+          if (typeof LB !== 'undefined') {
+            try { LB.renderTodayReview('lbTodayReview', studentId); } catch (_e) { console.warn('[mypage] LB.renderTodayReview failed', _e); }
+            try { LB.renderStudyTimeWidget('lbStudyTimeWidget', studentId); } catch (_e) { console.warn('[mypage] LB.renderStudyTimeWidget failed', _e); }
+          }
+          if (typeof ExamPrep !== 'undefined') { try { ExamPrep.renderUpcomingWidget('examPrepWidget'); } catch (_e) { console.warn('[mypage] ExamPrep widget failed', _e); } }
+          if (typeof ReferralProgram !== 'undefined') { try { ReferralProgram.renderReferralWidget('referralWidget', student); } catch (_e) { console.warn('[mypage] Referral widget failed', _e); } }
           renderUsageQuotaWidget('usageQuotaWidget');
           renderCurriculumWeekWidget('curriculumWeekWidget');
           syncCurriculumWeekWidgetFromServer('curriculumWeekWidget'); // ☁️ 端末に無ければアカウントから復元
@@ -2032,7 +2058,7 @@
         el.innerHTML = `
           <div style="background:linear-gradient(135deg,rgba(99,102,241,0.10),rgba(16,185,129,0.06));border:1px solid rgba(99,102,241,0.30);border-radius:12px;padding:0.95rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.55rem;">
-              <div style="font-weight:800;color:#a78bfa;">📖 AI 単語帳 (SRS) <span style="font-size:0.65em;color:#94a3b8;font-weight:600;">Leitner Box・忘却曲線対応</span></div>
+              <div style="font-weight:800;color:#a78bfa;">📖 AI 単語帳 <span style="font-size:0.65em;color:#94a3b8;font-weight:600;">忘れかけた頃にもう一度出てくる</span></div>
               <a href="vocab.html" style="background:rgba(99,102,241,0.22);color:#c7d2fe;border:1px solid rgba(99,102,241,0.5);padding:0.35rem 0.85rem;border-radius:6px;font-size:0.78rem;font-weight:700;text-decoration:none;">→ 学習する</a>
             </div>
             <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.55rem;">
@@ -2402,12 +2428,29 @@
       const escapeHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
         ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
 
+      // ⚠️ 2026-09-09: 従来は API が非 200 や通信失敗だと section ごと黙って消えていた (生徒には「スコアが無くなった」
+      //   としか見えず、監視にも上がらない)。志望校未設定など「無い」が正解の 4xx だけ非表示にし、
+      //   サーバ側の失敗 (5xx/429/タイムアウト/ネットワーク) は section を出したまま再試行を案内する。
+      function showFetchError(msg) {
+        section.style.display = '';
+        const a = document.getElementById('admAnalysis');
+        if (a) { a.textContent = '⚠️ 合格可能性を取得できませんでした（' + msg + '）。「🔄 再計算」でもう一度お試しください。'; }
+      }
       async function fetchAndRender() {
         try {
           const token = localStorage.getItem('ai_juku_session_token') || '';
           const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-          const res = await fetch(`${API_BASE}/api/student/admission-likelihood?student_id=${encodeURIComponent(student.id)}`, { headers });
-          if (!res.ok) { section.style.display = 'none'; return; }
+          const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+          const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 30000) : null;
+          let res;
+          try {
+            res = await fetch(`${API_BASE}/api/student/admission-likelihood?student_id=${encodeURIComponent(student.id)}`, ctrl ? { headers, signal: ctrl.signal } : { headers });
+          } finally { if (timer) clearTimeout(timer); }
+          if (!res.ok) {
+            if (res.status >= 500 || res.status === 429) { showFetchError('サーバが混み合っています HTTP ' + res.status); }
+            else { section.style.display = 'none'; }
+            return;
+          }
           const data = await res.json();
           if (!data || data.score == null) { section.style.display = 'none'; return; }
           section.style.display = '';
@@ -2471,7 +2514,7 @@
           }
         } catch (e) {
           console.warn('Admission likelihood fetch failed:', e);
-          section.style.display = 'none';
+          showFetchError((e && e.name === 'AbortError') ? 'タイムアウト' : '通信エラー');
         }
       }
       fetchAndRender();

@@ -683,7 +683,24 @@ async function slApiFetch(path, options = {}) {
   const token = _slToken();
   const headers = Object.assign({'Content-Type': 'application/json'}, options.headers || {});
   if (token) headers['Authorization'] = 'Bearer ' + token;
-  const res = await fetch(SL_API_BASE + path, Object.assign({}, options, { headers }));
+  // ⏱ 2026-09-09: 応答が返らないと各セクションが「⏳ 読み込み中…」のまま固まっていた (AbortController 0 件)。
+  //   既定 30 秒で打ち切り、呼び出し側の catch に「タイムアウト」として落とす。AI 生成など長い呼び出しは
+  //   options.timeoutMs で個別に延ばす (0 で無効)。
+  const timeoutMs = (options.timeoutMs != null) ? Number(options.timeoutMs) : 30000;
+  const ctrl = (timeoutMs > 0 && typeof AbortController !== 'undefined' && !options.signal) ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, timeoutMs) : null;
+  let res;
+  try {
+    res = await fetch(SL_API_BASE + path, Object.assign({}, options, { headers }, ctrl ? { signal: ctrl.signal } : {}));
+  } catch (e) {
+    if (ctrl && ctrl.signal.aborted) {
+      const te = new Error('サーバの応答がありません（タイムアウト）。時間をおいて再読み込みしてください');
+      te.status = 0; te.timeout = true; throw te;
+    }
+    throw e;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
   if (!res.ok) {
     let detailRaw = '';
     try { const j = await res.json(); detailRaw = j.detail; } catch {}
@@ -699,6 +716,39 @@ async function slApiFetch(path, options = {}) {
   }
   return res.json();
 }
+
+// 📌 要対応チップ (2026-09-09 生徒画面レビュー反映): 宿題 / 塾長からのメッセージ / 復習カードは画面のずっと下に
+//   あって気づけなかった。未提出・未読・期限到来があるときだけ、コーチカード直下 (#cnmTodo) にチップを並べる。
+//   各ローダーが AJ_TODO.set(key, item|null) を呼ぶだけ。item = { label, target(=セクション id) | href, order, urgent }。
+window.AJ_TODO = (function () {
+  const items = {};
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]); }); }
+  function render() {
+    const box = document.getElementById('cnmTodo');
+    if (!box) return;
+    const list = Object.keys(items).map(function (k) { return items[k]; }).filter(Boolean)
+      .sort(function (a, b) { return (a.order || 9) - (b.order || 9); });
+    if (list.length === 0) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    box.innerHTML = '<span style="font-size:0.72rem; font-weight:800; color:#fde68a; margin-right:0.2rem;">📌 要対応</span>' + list.map(function (it) {
+      const href = it.href ? esc(it.href) : ('#' + esc(it.target || ''));
+      const bg = it.urgent ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.12)';
+      const bd = it.urgent ? 'rgba(239,68,68,0.6)' : 'rgba(255,255,255,0.25)';
+      return '<a href="' + href + '" data-target="' + esc(it.target || '') + '" style="display:inline-flex; align-items:center; min-height:34px; padding:0.3rem 0.7rem; border-radius:999px; background:' + bg + '; border:1px solid ' + bd + '; color:#fff; font-size:0.78rem; font-weight:700; text-decoration:none;">' + esc(it.label) + '</a>';
+    }).join('');
+    box.style.display = 'flex';
+    Array.prototype.forEach.call(box.querySelectorAll('a[data-target]'), function (a) {
+      a.addEventListener('click', function (e) {
+        const id = a.getAttribute('data-target');
+        const t = id ? document.getElementById(id) : null;
+        if (t) { e.preventDefault(); t.style.display = t.style.display === 'none' ? '' : t.style.display; t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      });
+    });
+  }
+  return {
+    set: function (key, item) { items[key] = item || null; try { render(); } catch (_) { /* noop */ } },
+    render: render,
+  };
+})();
 
 function initStudyLog() {
   // 🚨 2026-05-13 塾長指示「絶対に消えない」: section の display は **絶対に none にしない**。
@@ -2692,6 +2742,12 @@ async function refreshUnreadBadge() {
 }
 
 function updateUnreadBadge(count) {
+  // 📌 コーチカード直下の「要対応」にも出す (メッセージ欄は最下部で気づけないため・2026-09-09)
+  try {
+    if (window.AJ_TODO) {
+      AJ_TODO.set('messages', count > 0 ? { label: '📨 塾長からメッセージ ' + (count > 99 ? '99+' : count) + ' 件', target: 'messagesSection', order: 2 } : null);
+    }
+  } catch (_) { /* noop */ }
   const badge = document.getElementById('msgUnreadBadge');
   if (!badge) return;
   if (count > 0) {
@@ -4327,6 +4383,14 @@ async function initHomeworkSection() {
     section.style.display = 'block';
     // badge: 未完了(宿題 + ドリル)
     const openTotal = openHw.length + openDrills.length;
+    // 📌 コーチカード直下の「要対応」チップ (宿題欄は十数スクロール下で気づけないため・2026-09-09)
+    try {
+      if (window.AJ_TODO) {
+        AJ_TODO.set('homework', openTotal > 0
+          ? { label: (overdueN > 0 ? '⚠️ ' : '📝 ') + '宿題 ' + openTotal + ' 件' + (overdueN > 0 ? '（うち期限切れ ' + overdueN + ' 件）' : ''), target: 'homeworkSection', order: 1, urgent: overdueN > 0 }
+          : null);
+      }
+    } catch (_) { /* noop */ }
     if (openTotal > 0) {
       badge.style.display = 'inline-block';
       if (overdueN > 0) {
@@ -5087,7 +5151,29 @@ async function initCoachNextMove(student, ajMode, isPreview) {
     }
   } catch (_) { /* URLSearchParams 非対応は無視 */ }
 
-  // ✅ 達成ボタン: streak/XP を実際に進めて保存 (この経路が唯一の streak 加算 = 数字は本物)
+  // 🔥 2026-09-09: 連続日数はサーバの実績 (/api/student/activity-summary = 演習・学習記録・できた！) を正とする。
+  //   従来は端末の localStorage だけで数えていて、実際に解いたかを見ず、端末を変えると消えた。
+  //   localStorage 側の加算は「サーバに届かなかった時の控え」として残す (次にサーバ値が取れた時に上書きされる)。
+  let _serverTruth = false;  // サーバの連続日数を一度でも受け取ったら true (端末側で streak を勝手に進めない)
+  function applyServerSummary(s) {
+    if (!s || typeof s !== 'object' || s.streak_days == null) return;
+    try {
+      _serverTruth = true;
+      const data = getMypageData();
+      data.streak = Number(s.streak_days || 0);
+      if (Array.isArray(s.recent_days) && s.recent_days.length) data.streakHistory = s.recent_days.slice(-14);
+      saveMypageData(data);
+      render(); // ヘッダーの連続日数・アチーブメント・段階開放を実績値で更新
+      if (streakChip) {
+        if (data.streak > 0) { streakChip.textContent = '🔥 ' + data.streak + ' 日連続'; streakChip.style.display = ''; }
+        else { streakChip.style.display = 'none'; }
+      }
+      const tp = document.getElementById('todayProblems');
+      if (tp && s.today_problems != null) tp.textContent = String(s.today_problems);
+    } catch (_) { /* noop */ }
+  }
+
+  // ✅ 達成ボタン: 端末に控えを残しつつ、サーバ (events coach_done・1 日 1 回) に記録する
   doneBtn.onclick = function () {
     let _tierUnlocked = false;
     try {
@@ -5095,36 +5181,81 @@ async function initCoachNextMove(student, ajMode, isPreview) {
       localStorage.setItem(_cnmDoneKey(), todayKeyJST());
       const data = getMypageData();
       const last = localStorage.getItem(_cnmLastDoneKey());
-      if (last === todayKeyJST()) { showDoneState(); return; }
-      if (last === _yesterdayKeyJST()) data.streak = (data.streak || 0) + 1;
-      else data.streak = 1;
-      // streakHistory: 前回達成から空いた日数分 0 を詰めてから今日の 1 を積む (直近14日のみ保持)
-      let hist = Array.isArray(data.streakHistory) ? data.streakHistory.slice() : [];
-      if (last) {
-        const gapDays = Math.max(0, Math.round((new Date(todayKeyJST()) - new Date(last)) / 86400000) - 1);
-        for (let i = 0; i < Math.min(gapDays, 14); i++) hist.push(0);
+      if (last !== todayKeyJST()) {
+        // サーバ実績を受け取っている時は端末側で streak を進めない (review 指摘: サーバの 5 日を 1 で上書きしていた)。
+        //   POST の応答 (applyServerSummary) が実績値で更新する。届いていない時だけ従来の端末計算で代用。
+        if (!_serverTruth) {
+          if (last === _yesterdayKeyJST()) data.streak = (data.streak || 0) + 1;
+          else data.streak = 1;
+          // streakHistory: 前回達成から空いた日数分 0 を詰めてから今日の 1 を積む (直近14日のみ保持)
+          let hist = Array.isArray(data.streakHistory) ? data.streakHistory.slice() : [];
+          if (last) {
+            const gapDays = Math.max(0, Math.round((new Date(todayKeyJST()) - new Date(last)) / 86400000) - 1);
+            for (let i = 0; i < Math.min(gapDays, 14); i++) hist.push(0);
+          }
+          hist.push(1);
+          data.streakHistory = hist.slice(-14);
+        }
+        data.xp = (data.xp || 0) + 50;
+        localStorage.setItem(_cnmLastDoneKey(), todayKeyJST());
+        saveMypageData(data);
+        render(); // ヘッダーの streak/Lv./XP バーとアチーブメント・シンプルモード開放を実値で更新
+        _tierUnlocked = _uiUnlockTier(data) > _tierBefore;
       }
-      hist.push(1);
-      data.streakHistory = hist.slice(-14);
-      data.xp = (data.xp || 0) + 50;
-      localStorage.setItem(_cnmLastDoneKey(), todayKeyJST());
-      saveMypageData(data);
-      render(); // ヘッダーの streak/Lv./XP バーとアチーブメント・シンプルモード開放を実値で更新
-      _tierUnlocked = _uiUnlockTier(data) > _tierBefore;
     } catch (_) { /* noop */ }
     showDoneState();
     // 🎉 開放 section は画面下方に出るため、達成メッセージで知らせる (review N4)
     if (_tierUnlocked && doneMsg) {
       doneMsg.textContent = '🎉 おめでとう！新しい機能が開放されたよ。下にスクロールして見てみよう';
     }
+    // サーバに記録。成功したら実績値でヘッダーを揃える。失敗しても画面は達成状態のまま (次回開いた時にサーバ値で揃う)
+    if (student && student.id != null) {
+      slApiFetch('/api/student/coach-done', { method: 'POST', body: JSON.stringify({ title: (titleEl.textContent || '').slice(0, 120) }) })
+        .then(function (r) { applyServerSummary(r); })
+        .catch(function (e) { console.warn('[coach] coach-done record failed:', e && e.message); });
+    }
   };
 
-  // 今日すでに達成済みなら達成状態で表示
+  const sid = student ? student.id : 'guest';
+
+  // 🔥 サーバ実績 (連続日数・最終活動日) と宿題ドリルを並列で取る (従来は直列 2 本で、一手の表示が 2 往復待ちだった)
+  const _pDrills = slApiFetch('/api/student/grammar-drills').catch(function (e) { console.warn('[coach] grammar-drills failed:', e && e.message); return null; });
+  const _pSummary = (student && student.id != null)
+    ? slApiFetch('/api/student/activity-summary').catch(function (e) { console.warn('[coach] activity-summary failed:', e && e.message); return null; })
+    : Promise.resolve(null);
+  const _summary = await _pSummary;
+  applyServerSummary(_summary);
+
+  // 🔁 復習カードの期限到来は、一手に選ばれなくても (達成済みの日でも) 「要対応」チップに出す
+  let _dueReviews = [];
+  try { if (window.LB && typeof LB.getDueReviews === 'function') _dueReviews = LB.getDueReviews(sid, 100) || []; } catch (_) { _dueReviews = []; }
   try {
-    if (localStorage.getItem(_cnmDoneKey()) === todayKeyJST()) { showDoneState(); return; }
+    if (window.AJ_TODO) AJ_TODO.set('reviews', _dueReviews.length > 0 ? { label: '🔁 復習カード ' + (_dueReviews.length > 99 ? '99+' : _dueReviews.length) + ' 枚', target: 'lbTodayReview', order: 3 } : null);
   } catch (_) { /* noop */ }
 
-  const sid = student ? student.id : 'guest';
+  // 今日すでに達成済み (端末の控え or サーバの coach_done) なら達成状態で表示
+  try {
+    if (localStorage.getItem(_cnmDoneKey()) === todayKeyJST() || (_summary && _summary.coach_done_today)) { showDoneState(); return; }
+  } catch (_) { /* noop */ }
+
+  const _drillsData = await _pDrills;
+
+  // 👋 おかえり (2026-09-09): 演習・学習記録・できた！のいずれも 7 日以上空いた生徒には、宿題や弱点より先に
+  //   「今日は 1 問だけ」を出す。従来は空白期間を画面が知らず通常の一手を出し続けていた
+  //   (3 週間ログインで詰まった生徒の週次レポートが止まり、保護者が先に異変に気づいた件と同根)。
+  if (_summary && _summary.ever_active && !_summary.active_today
+      && (_summary.days_since_activity == null || _summary.days_since_activity >= 7)) {
+    const _gap = _summary.days_since_activity;
+    const _openDrill = ((_drillsData && _drillsData.items) || []).filter(function (it) { return it && it.status !== 'completed'; })[0];
+    setMove({
+      title: '👋 おかえり！今日は 1 問だけ解こう',
+      reason: (_gap != null ? _gap + ' 日ぶりだね。' : 'しばらくぶりだね。') + '久しぶりの日は軽く 1 問で十分。解けば AI がまた今日から、あなた向けの一手を出し直すよ。',
+      onClick: startTodayQuestion,
+      secondaryHref: _openDrill ? '#homeworkSection' : null,
+      secondaryLabel: _openDrill ? '📝 宿題も見る' : null,
+    });
+    return;
+  }
 
   // 🔰 2026-07-02 「今日の1問」開始 (超低摩擦オンボーディング・③.5 と ⑤ の一手で共用)。
   //   1問だけの grammar_drill を発行し、既存の解答エリア(grammarDrillSection)をその場で開く。
@@ -5135,7 +5266,7 @@ async function initCoachNextMove(student, ajMode, isPreview) {
     const _orig = btn ? btn.textContent : '';
     try {
       if (btn) { btn.dataset.busy = '1'; btn.style.pointerEvents = 'none'; btn.style.opacity = '0.6'; btn.textContent = '⏳ 問題を準備中...'; }
-      const r = await slApiFetch('/api/student/today-question/start', { method: 'POST', body: '{}' });
+      const r = await slApiFetch('/api/student/today-question/start', { method: 'POST', body: '{}', timeoutMs: 90000 });
       const sec2 = document.getElementById('grammarDrillSection');
       if (sec2) { sec2.style.display = 'block'; sec2.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
       if (r && r.drill_id && typeof window._gdOpenDrill === 'function') {
@@ -5153,7 +5284,7 @@ async function initCoachNextMove(student, ajMode, isPreview) {
   // ① 塾長からの宿題ドリル (未完了があれば最優先)。やりかけのミニ診断もここで拾う
   let _drillItems = [];
   try {
-    const d = await slApiFetch('/api/student/grammar-drills');
+    const d = _drillsData;  // 上で並列取得済み (失敗時は null → 次のルールへ)
     _drillItems = (d && d.items) || [];
     const open = _drillItems.filter(function (it) { return it && it.status !== 'completed'; });
     if (open.length > 0) {
@@ -5180,10 +5311,10 @@ async function initCoachNextMove(student, ajMode, isPreview) {
     }
   } catch (_) { /* 未配信/未対応プランは次のルールへ */ }
 
-  // ② 復習カード (忘却曲線で今日が復習期限のもの)
+  // ② 復習カード (忘れかけた頃 = 今日が復習期限のもの)
   try {
-    if (window.LB && typeof LB.getDueReviews === 'function') {
-      const due = LB.getDueReviews(sid, 100) || [];
+    {
+      const due = _dueReviews;  // 上で取得済み
       if (due.length > 0) {
         setMove({
           title: '復習カードを ' + Math.min(due.length, 10) + ' 枚やろう',

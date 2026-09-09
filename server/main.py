@@ -3488,6 +3488,13 @@ async def _start_background_tasks():
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Weekly reports scheduler launched (target Sun JST 19:00)")
 
+    # 📣 週半ばの一声 scheduler (毎週水曜 JST 18:00・2026-09-09): 今週 0 問の生徒へ LINE/メール 1 通。
+    #   MIDWEEK_NUDGE_ENABLED=0 なら登録しない (= 実行履歴が無いだけなので health の停止判定にも出ない)。
+    if CRON_SECRET and MIDWEEK_NUDGE_ENABLED:
+        task = asyncio.create_task(_midweek_nudge_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info("[Startup] Midweek nudge scheduler launched (target Wed JST 18:00)")
+
     # 🎯 弱点分類 scheduler (毎日 JST 4:00): ai_tutor_solve_log → student_weakness 集計
     # 塾長指示 2026-05-13「個別問題推薦」の基盤。過去 30 日の写真質問から弱点を抽出し、
     # 該当 pool 問題 (exam_questions) を生徒ダッシュで TOP3 推薦。
@@ -5582,6 +5589,45 @@ async def _weekly_reports_scheduler():
             raise
         except Exception as e:
             log.error(f"[WeeklyReports] Scheduler loop error: {e}", exc_info=True)
+            await asyncio.sleep(3600)
+
+
+async def _midweek_nudge_scheduler():
+    """📣 週半ばの一声 (2026-09-09): 毎週水曜 JST 18:00 に cron_midweek_nudge を内部実行。
+    構造は _weekly_reports_scheduler と同じ (multi-replica 重複防止・別スレッド実行・events に結果記録)。
+    MIDWEEK_NUDGE_ENABLED=0 なら起動時に登録されない (startup 側で分岐)。"""
+    JST = timezone(timedelta(hours=9))
+    TARGET_HOUR_JST = 18
+    TARGET_WEEKDAY = 2  # Wednesday (Mon=0..Sun=6)
+    log.info(f"[MidweekNudge] Scheduler started, target Wed JST {TARGET_HOUR_JST}:00")
+    secret = CRON_SECRET
+
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            days_ahead = (TARGET_WEEKDAY - now_jst.weekday()) % 7
+            target = now_jst.replace(hour=TARGET_HOUR_JST, minute=0, second=0, microsecond=0)
+            if days_ahead == 0 and target <= now_jst:
+                days_ahead = 7
+            target += timedelta(days=days_ahead)
+            sleep_secs = (target - now_jst).total_seconds()
+            log.info(f"[MidweekNudge] Next run at {target.isoformat()} (in {int(sleep_secs)}s)")
+            await asyncio.sleep(sleep_secs)
+            if _check_scheduler_ran_today_jst("midweek_nudge_run"):
+                log.info("[MidweekNudge] Skipped (already ran today by another replica)")
+                continue
+            try:
+                result = await asyncio.to_thread(cron_midweek_nudge, x_cron_secret=secret, dry_run=False)
+                log.info(f"[MidweekNudge] result: {result}")
+                _record_scheduler_run("midweek_nudge_run", result if isinstance(result, dict) else {})
+            except Exception as e:
+                log.error(f"[MidweekNudge] failed: {type(e).__name__}: {e}", exc_info=True)
+                _record_scheduler_run("midweek_nudge_run", {"error": f"{type(e).__name__}: {e}"})
+        except asyncio.CancelledError:
+            log.info("[MidweekNudge] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[MidweekNudge] Scheduler loop error: {e}", exc_info=True)
             await asyncio.sleep(3600)
 
 
@@ -9284,6 +9330,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
     if stalled:
         _label = {
             "weekly_reports_run": "週次レポート (日曜19時)",
+            "midweek_nudge_run": "週半ばの一声 (水曜18時)",
             "weekly_worksheet_run": "週次弱点プリント (日曜5時)",
             "weakness_aggregation_run": "弱点集計 (毎日)",
             "trial_mgmt_run": "体験フォロー (毎日)",
@@ -9309,6 +9356,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
     if failed:
         _label_f = {
             "weekly_reports_run": "週次レポート (日曜19時)",
+            "midweek_nudge_run": "週半ばの一声 (水曜18時)",
             "weekly_worksheet_run": "週次弱点プリント (日曜5時)",
             "weakness_aggregation_run": "弱点集計 (毎日)",
             "trial_mgmt_run": "体験フォロー (毎日)",
@@ -11772,7 +11820,7 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
     #   auth_verify_magic_link と同じく、失敗したら CREATE TABLE にある列だけで引き直す。
     #   後段は row.keys() で存在確認してから読むので、列が欠けても動く (ai_disabled はこの関数では未使用)。
     try:
-        c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, stripe_subscription_id, trial_end, enrollment_fee_waived, course, past_due_since, created_at, last_login_at, ai_disabled FROM students WHERE id = ?", (claims["student_id"],))
+        c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, stripe_subscription_id, trial_end, enrollment_fee_waived, course, past_due_since, created_at, last_login_at, ai_disabled, line_user_id FROM students WHERE id = ?", (claims["student_id"],))
     except Exception as _col_err:
         try: conn.rollback()
         except Exception: pass
@@ -11864,6 +11912,8 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         "course": course_val,  # 国公立難関大学コース ('kokuritsu_nankan') 識別 (塾長指示 2026-05-04)
         "created_at": created_at_val,  # mypage シンプルモードの新規アカウント判定 (2026-06-11)
         "last_login_at": last_login_val,  # auth_me 4h スロットル用 (2026-06-11・欠落で毎回 UPDATE が走っていた)
+        # 📲 2026-09-09: auth_me が line_linked (真偽値) に変換して返す。縮退クエリ時は列が無いので None
+        "line_user_id": (row["line_user_id"] if "line_user_id" in row.keys() else None),
     }
 
 
@@ -30103,6 +30153,9 @@ def admin_monitor_daily_summary_now(authorization: Optional[str] = Header(None),
 _SCHEDULER_MAX_AGE_DAYS = {
     "weakness_aggregation_run": 2,   # 日次
     "weekly_reports_run": 8,         # 週次 (日曜)
+    # 📣 週半ばの一声 (水曜18時・2026-09-09 追加)。無効化 (MIDWEEK_NUDGE_ENABLED=0) 中は監視対象から外す
+    #   (一度でも走った後に止めると「停止」の誤検知が出続けるため・review 指摘)。定数は下で定義されるので env を直接読む。
+    **({"midweek_nudge_run": 8} if os.getenv("MIDWEEK_NUDGE_ENABLED", "1") == "1" else {}),
     "weekly_worksheet_run": 8,       # 週次プリント生成
     "trial_mgmt_run": 2,             # 体験フォローの日次バッチ
     "daily_sns_post": 2,             # 日次 SNS 投稿
@@ -30176,8 +30229,10 @@ def _weekly_report_verdict(rows: list) -> str:
     weekly_verdict = "不明"
     if weekly:
         p = weekly.get("props") or {}
-        sent = int(p.get("sent_email", 0) or 0) + int(p.get("sent_line", 0) or 0)
-        skipped = int(p.get("skipped", 0) or 0)
+        # 📭 ゼロ週の軽量メール (zero_week) は sent_email に含まれるが「集計が生きている証拠」にはならない
+        #   (活動ゼロと判定された生徒に送るもの) ので、断絶検知では除いて数える (2026-09-09 review)。
+        sent = int(p.get("sent_email", 0) or 0) + int(p.get("sent_line", 0) or 0) - int(p.get("zero_week", 0) or 0)
+        skipped = int(p.get("skipped", 0) or 0) + int(p.get("zero_week_queued", 0) or 0)
         if p.get("error"):
             weekly_verdict = f"直近の実行がエラー: {str(p['error'])[:200]}"
         elif weekly["stale"]:
@@ -30540,6 +30595,8 @@ def auth_me(authorization: Optional[str] = Header(None)):
     except Exception as _cae:
         log.warning(f"[auth_me] cancel_at fetch skipped: {_cae}")
     student["entitled"] = True  # 🚪 [login-allow-inactive] active 本人。auth-guard は entitled で分岐。
+    # 📲 2026-09-09: mypage の LINE 連携 CTA を「未連携の生徒にだけ」出すための真偽値。LINE の userId 自体は返さない。
+    student["line_linked"] = bool(student.pop("line_user_id", None))
     # 🎯 [体験中フォロー] mypage の残日数カウントダウン+緊急継続CTA 用。status=trial かつ
     #   「新規コホート(created_at >= TRIAL_FOLLOWUP_NEW_FROM)」のみ show_trial_followup=true で出す
     #   (既存の体験中の生徒には付けない=塾長指示の完全新規のみ)。trial_days_left は _trial_days_left (JST 暦日差)。
@@ -33647,6 +33704,14 @@ LINE_TEMPLATES = {
                 f"詳しくはマイページをご確認ください👇\n"
                 f"{p.get('url', BASE_URL)}"
     },
+    # 📣 2026-09-09 週半ばの一声: 今週 (月〜) 演習 0 問で、直近 4 週間は演習していた生徒へ水曜夜に 1 通
+    "midweek_nudge": lambda p: {
+        "type": "text",
+        "text": f"{p.get('name', '生徒')}さん、こんばんは🌙\n\n"
+                f"今週はまだ演習が 0 問です。\n"
+                f"今日は 1 問だけで OK。解けば AI が明日からの一手を出し直します👇\n"
+                f"{p.get('url', BASE_URL)}"
+    },
     "streak_reminder": lambda p: {
         "type": "text",
         "text": f"{p.get('name', '生徒')}さん、こんばんは🌙\n"
@@ -36737,6 +36802,288 @@ def cancel_trial(authorization: Optional[str] = Header(None)):
     return {"ok": True, "message": "トライアルを解約しました。再契約をご希望の際はトライアル申込ページからお願いします。"}
 
 
+# ==========================================================================
+# 📭 演習ゼロ週の軽量レポート (2026-09-09 生徒画面レビュー反映)
+#   週次レポートは「活動ゼロ週は送らない」規則で、直前まで活動していた生徒が止まった時に家庭へ何も届かず、
+#   3 週間の空白を保護者が先に気づいた (2026-09-09 実例: ログインで詰まっていた)。
+#   直近 ZERO_WEEK_REPORT_ACTIVE_WINDOW_DAYS 日に演習があった生徒に限り、短い「今週は 0 問」メールを
+#   生徒 (子メール確認済みなら子) と保護者へ送る。最大 ZERO_WEEK_REPORT_MAX_CONSECUTIVE 週連続まで。
+#   その後は従来どおり沈黙 (休眠層をしつこく追わない)。ZERO_WEEK_REPORT_ENABLED=0 で従来の完全スキップに戻る。
+# ==========================================================================
+ZERO_WEEK_REPORT_ENABLED = os.getenv("ZERO_WEEK_REPORT_ENABLED", "1") == "1"
+ZERO_WEEK_REPORT_ACTIVE_WINDOW_DAYS = int(os.getenv("ZERO_WEEK_REPORT_ACTIVE_WINDOW_DAYS", "28"))
+ZERO_WEEK_REPORT_MAX_CONSECUTIVE = int(os.getenv("ZERO_WEEK_REPORT_MAX_CONSECUTIVE", "2"))
+# 1 回の日曜バッチで送るゼロ週メールの上限 (通数・生徒+保護者で 1 家庭 2 通)。通常レポートを全員分送った後の
+# 残り枠 (WEEKLY_REPORT_EMAIL_CAP) の範囲内でしか送らない = 通常レポートの席を奪わない (review 指摘)。
+ZERO_WEEK_REPORT_CAP = int(os.getenv("ZERO_WEEK_REPORT_CAP", "24"))
+
+
+def _zero_week_report_decision(student_id: int) -> Optional[dict]:
+    """演習ゼロ週に軽量レポートを送るか。送るなら {days_since, last_active_date}、送らないなら None。"""
+    JST = timezone(timedelta(hours=9))
+    today = datetime.now(JST).date()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT MAX(created_at) AS last_at FROM question_attempts WHERE student_id = ?", (int(student_id),))
+        r = c.fetchone()
+        last_at = r["last_at"] if r else None
+        last_day = _jst_date_of(last_at)
+        if not last_day:
+            return None  # 一度も演習していない生徒には送らない (activation は別ナッジの担当)
+        days_since = (today - last_day).days
+        if days_since > ZERO_WEEK_REPORT_ACTIVE_WINDOW_DAYS:
+            return None  # 休眠層
+        # 上限: 「最後の演習から ACTIVE_WINDOW 日以内」の期間全体で MAX 週まで (= 家庭が受け取るゼロ週メールは
+        #   1 回の停止につき最大 MAX 週分)。窓を活動窓と同じ長さにすることで「2 週送→1 週休→また送」も起きない。
+        #   ★2026-09-09 review: 7*MAX-1 (=13 日) だと 14 日前の送付が窓外に落ちて count が常に 1 になり、上限 2 に
+        #   到達せず 28 日窓が切れるまで毎週送っていた。
+        window_start = datetime.now(timezone.utc) - timedelta(days=ZERO_WEEK_REPORT_ACTIVE_WINDOW_DAYS + 1)
+        c.execute(
+            "SELECT COUNT(*) AS n FROM notifications WHERE student_id = ? AND template IN "
+            "('weekly_report_zero_week', 'weekly_report_zero_week_parent') AND success = 1 AND sent_at > ?",
+            (int(student_id), window_start),
+        )
+        n = (c.fetchone() or {"n": 0})["n"] or 0
+        # 生徒+保護者で週 2 通 = 「送った週の数」は通数を 2 で割った切り上げ… ではなく、週ごとの送付有無で数える
+        c.execute(
+            "SELECT COUNT(DISTINCT substr(CAST(sent_at AS TEXT), 1, 10)) AS w FROM notifications WHERE student_id = ? "
+            "AND template IN ('weekly_report_zero_week', 'weekly_report_zero_week_parent') AND success = 1 AND sent_at > ?",
+            (int(student_id), window_start),
+        )
+        weeks_sent = (c.fetchone() or {"w": 0})["w"] or 0
+        if int(weeks_sent) >= ZERO_WEEK_REPORT_MAX_CONSECUTIVE or int(n) >= 2 * ZERO_WEEK_REPORT_MAX_CONSECUTIVE:
+            return None  # 連続上限
+        # 保護者宛の「ログインできていない可能性」は、直近 7 日にログインが無いときだけ添える (review 指摘: 不安を煽らない)
+        c.execute("SELECT last_login_at FROM students WHERE id = ?", (int(student_id),))
+        srow = c.fetchone()
+        last_login_day = _jst_date_of(srow["last_login_at"]) if srow else None
+        recent_login = bool(last_login_day and (today - last_login_day).days <= 7)
+        return {"days_since": days_since, "last_active_date": last_day.isoformat(), "recent_login": recent_login}
+    finally:
+        conn.close()
+
+
+def _send_zero_week_report_email(to_email: str, student_name: str, zw: dict, is_parent: bool) -> dict:
+    """「今週は演習 0 問」の短いメール (Resend)。保護者宛はログイン不達の可能性を添える。"""
+    if not RESEND_API_KEY:
+        log.warning(f"[ZeroWeek] Email skipped (no RESEND_API_KEY) for {to_email}")
+        return {"sent": False, "dev_mode": True}
+    import html as _html
+    import urllib.request
+    import urllib.error
+    import time as _t
+    safe_name = _html.escape(student_name or "")
+    days_since = int(zw.get("days_since") or 0)
+    _ld = _jst_date_of(zw.get("last_active_date"))
+    last_date = f"{_ld.month}月{_ld.day}日" if _ld else "不明"
+    start_url = f"{BASE_URL}/mypage.html?today=1"
+    if is_parent:
+        _disp = safe_name or "お子さま"  # 氏名が空でも「さんの…」にならないように
+        subject = f"【TRILLION AI コーチング】{_disp}さんの今週の学習レポート（演習 0 問）" if safe_name else "【TRILLION AI コーチング】今週の学習レポート（演習 0 問）"
+        lead = (f"今週は {_disp}{'さん' if safe_name else ''}の演習の記録がありませんでした（最後の演習: {last_date}・{days_since} 日前）。")
+        if zw.get("recent_login"):
+            note = ("直近 1 週間のログインは確認できています。今週は演習まで進まなかったようです。"
+                    "お子さまがマイページを開けば「今日は 1 問だけ」から再開できます。お声がけいただけると助かります。")
+        else:
+            note = ("直近 1 週間はこのアカウントへのログインがありません。ログインコードのメールが届いていない可能性があります。"
+                    "お困りの場合はこのメールに返信してください。ログインの設定を確認します。")
+        cta = "マイページを開く"
+        cta_url = f"{BASE_URL}/mypage.html"
+    else:
+        subject = "【AIコーチング】今週は演習 0 問でした。今日は 1 問だけどうですか？"
+        lead = (f"今週はまだ演習が 0 問です（最後の演習: {last_date}・{days_since} 日前）。")
+        note = "久しぶりの日は 1 問で十分です。解けば AI が明日からの「一手」をあなた向けに出し直します。"
+        cta = "▶ 今日の 1 問を解く（30 秒）"
+        cta_url = start_url
+    # 挨拶: 氏名が空でも読点始まりにならないように組む
+    if is_parent:
+        greeting = (f"{safe_name}さんの保護者さま、" if safe_name else "保護者さま、") + "いつもありがとうございます。"
+    else:
+        greeting = (f"{safe_name}さん、" if safe_name else "") + "こんばんは。"
+    html = f"""<!DOCTYPE html>
+<html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
+<h1 style="font-size: 1.3rem; color: #6366f1;">🎓 TRILLION AI コーチング</h1>
+<p>{greeting}</p>
+<p>{_html.escape(lead)}</p>
+<p style="background:#fafafa; padding:1rem; border-radius:6px; font-size:0.92rem; color:#555;">{_html.escape(note)}</p>
+<p style="text-align:center; margin: 1.6rem 0;">
+  <a href="{cta_url}" style="display:inline-block; padding: 0.9rem 1.8rem; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; text-decoration:none; border-radius:8px; font-weight:700;">{_html.escape(cta)}</a>
+</p>
+<p style="font-size:0.8rem; color:#999;">このメールは演習の記録が無い週に、最大 {ZERO_WEEK_REPORT_MAX_CONSECUTIVE} 週連続までお送りします。
+お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a></p>
+</body></html>"""
+    payload_data = json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": html}).encode("utf-8")
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(
+                "https://api.resend.com/emails", data=payload_data,
+                headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                result = json.loads(resp.read().decode())
+                log.info(f"[ZeroWeek] Email sent to {to_email} (resend_id={result.get('id')})")
+                return {"sent": True, "resend_id": result.get("id")}
+        except urllib.error.HTTPError as he:
+            if he.code == 429 and attempt < 2:
+                _t.sleep(3 * (2 ** attempt)); continue
+            log.error(f"[ZeroWeek] Email failed for {to_email}: HTTP {he.code}")
+            return {"sent": False, "error": f"HTTP {he.code}"}
+        except Exception as e:
+            log.error(f"[ZeroWeek] Email failed for {to_email}: {type(e).__name__}: {e}")
+            return {"sent": False, "error": str(e)}
+    return {"sent": False, "error": "max_retries_exceeded"}
+
+
+# ==========================================================================
+# 📣 週半ばの一声 (2026-09-09 生徒画面レビュー反映)
+#   生徒本人への定期連絡は日曜の週次レポートだけで、平日に「今週まだ 0 問」を伝える仕組みが無かった。
+#   毎週水曜 18:00 JST に、今週 (JST 月曜 0:00〜) 演習 0 問 かつ 直近 MIDWEEK_NUDGE_ACTIVE_WINDOW_DAYS 日には
+#   演習していた生徒へ 1 通 (LINE 連携済みは LINE、無ければ生徒コピー宛のメール)。休眠層には送らない。
+#   dedup: notifications template='midweek_nudge' success=1 が 6 日以内にあれば送らない (週 1 回まで)。
+#   MIDWEEK_NUDGE_ENABLED=0 で停止 (dry_run=True は ENABLED に関わらず preview のみ・無送信)。
+# ==========================================================================
+MIDWEEK_NUDGE_ENABLED = os.getenv("MIDWEEK_NUDGE_ENABLED", "1") == "1"
+MIDWEEK_NUDGE_CAP = int(os.getenv("MIDWEEK_NUDGE_CAP", "60"))
+MIDWEEK_NUDGE_ACTIVE_WINDOW_DAYS = int(os.getenv("MIDWEEK_NUDGE_ACTIVE_WINDOW_DAYS", "28"))
+
+
+def _send_midweek_nudge_email(to_email: str, student_name: str) -> dict:
+    """「今週はまだ 0 問。今日は 1 問だけ」メール (Resend)。"""
+    if not RESEND_API_KEY:
+        log.warning(f"[MidweekNudge] Email skipped (no RESEND_API_KEY) for {to_email}")
+        return {"sent": False, "dev_mode": True}
+    import html as _html
+    import urllib.request
+    safe_name = _html.escape(student_name or "")
+    subject = "【AIコーチング】今週はまだ 0 問。今日は 1 問だけどうですか？"
+    start_url = f"{BASE_URL}/mypage.html?today=1"
+    html = f"""<!DOCTYPE html>
+<html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
+<h1 style="font-size: 1.3rem; color: #6366f1;">🎓 AIコーチング</h1>
+<p>{safe_name}さん、こんばんは。</p>
+<p>今週はまだ演習が 0 問です。今日は 1 問だけで OK。解けば AI が明日からの「一手」をあなた向けに出し直します。</p>
+<p style="text-align:center; margin: 1.6rem 0;">
+  <a href="{start_url}" style="display:inline-block; padding: 0.9rem 1.8rem; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; text-decoration:none; border-radius:8px; font-weight:700;">▶ 今日の 1 問を解く（30 秒）</a>
+</p>
+<p style="font-size:0.8rem; color:#999;">このお知らせは、演習が 0 問の週の水曜に 1 回だけお送りします。
+お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a></p>
+</body></html>"""
+    try:
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": html}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"[MidweekNudge] Email failed for {to_email}: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)}
+
+
+@app.post("/api/cron/midweek-nudge")
+def cron_midweek_nudge(x_cron_secret: str = Header(None), dry_run: bool = False):
+    """📣 週半ばの一声 (水曜 18:00 JST)。今週 0 問 かつ 直近 4 週間は演習していた生徒へ LINE/メールを 1 通。"""
+    if not CRON_SECRET:
+        raise HTTPException(status_code=503, detail="Cron not configured")
+    if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if not dry_run and not MIDWEEK_NUDGE_ENABLED:
+        return {"ok": True, "enabled": False, "matched": 0, "sent_line": 0, "sent_email": 0, "failed": 0, "dry_run": False}
+
+    JST = timezone(timedelta(hours=9))
+    today = datetime.now(JST).date()
+    monday = today - timedelta(days=today.weekday())
+    week_start_utc = datetime.combine(monday, dt_time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+    active_since_utc = datetime.now(timezone.utc) - timedelta(days=MIDWEEK_NUDGE_ACTIVE_WINDOW_DAYS)
+    dedup_since_utc = datetime.now(timezone.utc) - timedelta(days=6)
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 母集団は週次レポートと同じ (在籍 かつ 本科 or 課金中)。塾生アプリ専用 (ai_disabled) は演習が無いので外す。
+        c.execute(
+            f"""SELECT s.id, s.name, s.email, s.student_email, s.student_email_verified, s.line_user_id
+                FROM students s
+                WHERE {_enrolled_sql('s')} AND (s.course = 'kokuritsu_nankan' OR s.status IN ('paid', 'past_due'))
+                  AND COALESCE(s.ai_disabled, 0) = 0
+                  AND {_synth_exclude_sql('s')}
+                  AND NOT EXISTS (SELECT 1 FROM question_attempts qa WHERE qa.student_id = s.id AND qa.created_at >= ?)
+                  AND EXISTS (SELECT 1 FROM question_attempts qa2 WHERE qa2.student_id = s.id AND qa2.created_at >= ?)
+                  AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.student_id = s.id
+                                    AND n.template = 'midweek_nudge' AND n.success = 1 AND n.sent_at > ?)
+                ORDER BY s.id LIMIT ?""",
+            (week_start_utc, active_since_utc, dedup_since_utc, MIDWEEK_NUDGE_CAP),
+        )
+        rows = list(c.fetchall())
+    finally:
+        conn.close()
+
+    sent_line = 0
+    sent_email = 0
+    failed = 0
+    no_channel = 0
+    preview = []
+    for row in rows:
+        student_to, _parent_to = _weekly_report_recipients(row)
+        has_line = bool(row["line_user_id"])
+        if dry_run:
+            preview.append({"student_id": row["id"], "channel": "line" if has_line else ("email" if student_to else None),
+                            "email_to": None if has_line else (student_to or None)})
+            continue
+        channel = None
+        ok = False
+        err = ""
+        try:
+            if has_line:
+                channel = "line"
+                res = _do_line_push(row["id"], "midweek_nudge", {"url": f"{BASE_URL}/mypage.html?today=1"})
+                ok = bool(isinstance(res, dict) and res.get("ok"))
+                err = "" if ok else str((res or {}).get("message") or (res or {}).get("error") or "line_push_failed")[:200]
+            elif student_to:
+                channel = "email"
+                _email_rate_limit()
+                res = _send_midweek_nudge_email(student_to, row["name"] or "")
+                ok = bool(res.get("sent"))
+                err = "" if ok else str(res.get("error") or "")[:200]
+            else:
+                no_channel += 1
+                continue
+        except Exception as e:
+            ok = False
+            err = f"{type(e).__name__}: {str(e)[:150]}"
+        # 記録: LINE は成功も失敗も _do_line_push が notifications (channel='line', template='midweek_nudge') に書くので
+        #   ここでは書かない (二重記録防止)。メール送信はここで書く (失敗行は success=0 なので dedup には効かず次週また対象)。
+        if channel != "line":
+            _n_conn = db()
+            try:
+                _n_c = _n_conn.cursor()
+                _n_c.execute(
+                    """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                       VALUES (?, ?, 'midweek_nudge', ?, ?, ?)""",
+                    (row["id"], channel or "none", json.dumps({"week_start": monday.isoformat()}), 1 if ok else 0, err or None),
+                )
+                _n_conn.commit()
+            finally:
+                _n_conn.close()
+        if ok:
+            if channel == "line":
+                sent_line += 1
+            else:
+                sent_email += 1
+        else:
+            failed += 1
+    return {
+        "ok": True, "enabled": MIDWEEK_NUDGE_ENABLED, "matched": len(rows), "capped": len(rows) >= MIDWEEK_NUDGE_CAP,
+        "sent_line": sent_line, "sent_email": sent_email, "failed": failed, "no_channel": no_channel,
+        "dry_run": dry_run, "preview": preview if dry_run else None,
+    }
+
+
 @app.post("/api/cron/weekly-reports")
 def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False):
     """毎週日曜19時 (JST) にスケジューラから実行。
@@ -36773,8 +37120,10 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
     skipped = 0
     failed = 0
     capped = 0
+    zero_week = 0
     previews = []
     email_index = 0
+    _zero_week_queue = []  # 📭 (row, zw, student_to, parent_to) — 通常レポートの後に残り枠で送る
     # Resend 日次上限ガード: 他メール (ログイン/監視等) の枠を残す
     WEEKLY_REPORT_EMAIL_CAP = int(os.getenv("WEEKLY_REPORT_EMAIL_CAP", "80"))
     for row in students:
@@ -36782,7 +37131,24 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
             stats = _compute_weekly_stats(row["id"], days=7)
             # 活動が全くない週はスキップ（スパム防止）
             if stats["hours"] == 0 and stats["questions"] == 0 and stats["problems_done"] == 0:
-                skipped += 1
+                # 📭 2026-09-09: 直近まで演習していた生徒が止まった週だけ、短い「今週は 0 問」メールを生徒・保護者へ
+                #   (最大 2 週連続)。休眠層・一度も解いていない生徒は従来どおりスキップ。詳細は _zero_week_report_decision。
+                zw = _zero_week_report_decision(row["id"]) if ZERO_WEEK_REPORT_ENABLED else None
+                if not zw:
+                    skipped += 1
+                    continue
+                _zw_student_to, _zw_parent_to = _weekly_report_recipients(row)
+                if dry_run:
+                    previews.append({
+                        "student_id": row["id"], "name": row["name"], "stats": stats, "zero_week": True,
+                        "days_since_activity": zw["days_since"],
+                        "would_send_email": bool(_zw_student_to or _zw_parent_to),
+                        "student_copy_to": _zw_student_to or None, "parent_copy_to": _zw_parent_to,
+                        "would_send_line": False,
+                    })
+                    continue
+                # 通常レポートを全員分送り終えてから、残り枠で送る (下の第 2 パス)。ここでは積むだけ。
+                _zero_week_queue.append((row, zw, _zw_student_to, _zw_parent_to))
                 continue
             # 宛先決定は _weekly_report_recipients (pure) が単一ソース。dry_run preview と
             # ctx 生成ゲートも同じ結果を使う (review 指摘: raw email 参照のままだと preview が
@@ -36907,9 +37273,68 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
             # (audit 指摘の counter 不可視経路)。failed に計上して合計を検算可能に保つ
             failed += 1
             log.error(f"Weekly report failed for {row['id']}: {e}")
+
+    # 📭 第 2 パス: 演習ゼロ週の軽量メール。通常レポートの席を奪わないよう、全員分の後に残り枠
+    #   (WEEKLY_REPORT_EMAIL_CAP との差) と ZERO_WEEK_REPORT_CAP の小さい方までしか送らない。
+    #   生徒本人宛は、同じ週に水曜の一声 (midweek_nudge) が届いていれば送らない (週 2 通の重複感を避ける)。
+    #   保護者宛は水曜の一声の対象外なので送る。
+    for _zrow, _zw, _zw_student_to, _zw_parent_to in _zero_week_queue:
+        if sent_email >= WEEKLY_REPORT_EMAIL_CAP or zero_week >= ZERO_WEEK_REPORT_CAP:
+            capped += 1  # 枠切れ: 以降の家庭は dedup クエリも撃たずに数えるだけ (人数単位)
+            continue
+        try:
+            _zd_conn = db()
+            try:
+                _zd_c = _zd_conn.cursor()
+                _zd_c.execute(
+                    "SELECT template FROM notifications WHERE student_id=? AND success=1 AND sent_at > ? "
+                    "AND template IN ('weekly_report_zero_week', 'weekly_report_zero_week_parent', 'midweek_nudge')",
+                    (_zrow["id"], (datetime.now(timezone.utc) - timedelta(days=6)).isoformat()),
+                )
+                _recent_tmpls = {r["template"] for r in _zd_c.fetchall()}
+            finally:
+                _zd_conn.close()
+            for _zw_to, _zw_tmpl, _zw_is_parent in ((_zw_student_to, "weekly_report_zero_week", False),
+                                                    (_zw_parent_to, "weekly_report_zero_week_parent", True)):
+                if not _zw_to:
+                    continue
+                if _zw_tmpl in _recent_tmpls:
+                    continue  # 週 1 回 dedup
+                if not _zw_is_parent and "midweek_nudge" in _recent_tmpls:
+                    continue  # 水曜に一声が届いている生徒本人には重ねない
+                if sent_email >= WEEKLY_REPORT_EMAIL_CAP or zero_week >= ZERO_WEEK_REPORT_CAP:
+                    capped += 1
+                    continue
+                if email_index > 0:
+                    _t.sleep(1.5)
+                email_index += 1
+                _zw_res = _send_zero_week_report_email(_zw_to, _zrow["name"] or "", _zw, is_parent=_zw_is_parent)
+                _zw_ok = bool(_zw_res.get("sent"))
+                _zn_conn = db()
+                try:
+                    _zn_c = _zn_conn.cursor()
+                    _zn_c.execute(
+                        """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                           VALUES (?, 'email', ?, ?, ?, ?)""",
+                        (_zrow["id"], _zw_tmpl, json.dumps({"to": _zw_to, "zero_week": True, **_zw}, ensure_ascii=False)[:500],
+                         1 if _zw_ok else 0, (_zw_res.get("error", "") or "")[:200] if not _zw_ok else None),
+                    )
+                    _zn_conn.commit()
+                finally:
+                    _zn_conn.close()
+                if _zw_ok:
+                    sent_email += 1
+                    zero_week += 1
+                else:
+                    failed += 1
+        except Exception as e:
+            failed += 1
+            log.error(f"[ZeroWeek] failed for {_zrow['id']}: {type(e).__name__}: {e}")
     return {
         "sent_email": sent_email, "sent_line": sent_line,
         "skipped": skipped, "failed": failed, "capped": capped,
+        "zero_week": zero_week,  # 📭 うち「今週は 0 問」の軽量メール (生徒+保護者の通数・sent_email に含む)
+        "zero_week_queued": len(_zero_week_queue),
         "total_students": len(students),
         "previews": previews if dry_run else None,
     }
@@ -45515,6 +45940,156 @@ def admin_grammar_drill_delete(drill_id: int, authorization: Optional[str] = Hea
         return {"ok": True, "deleted": 1, "drill_id": drill_id, "title": title}
     finally:
         conn.close()
+
+
+# ==========================================================================
+# 🔥 生徒の活動サマリ (2026-09-09 生徒画面レビュー反映)
+#   ヘッダーの「連続学習日数」とコーチカードの「✅ できた！」は端末の localStorage だけで数えていて、
+#   実際に解いたかを見ておらず、端末を変えると消えた。ここではサーバの実績から算出する:
+#   演習 (question_attempts)・学習記録 (study_logs)・「できた！」(events name='coach_done') のいずれかが
+#   あった JST 日を「活動日」とし、今日または昨日から途切れず続く日数を streak とする。
+#   コーチカードの「おかえり」判定 (days_since_activity) も同じ値を使う = 3 週間の空白を画面が知っている状態にする。
+# ==========================================================================
+def _jst_date_of(ts):
+    """DB の created_at (naive UTC / aware / ISO 文字列 / date) を JST の日付へ。解釈できなければ None。"""
+    if ts is None:
+        return None
+    if isinstance(ts, datetime):
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        return ts.astimezone(timezone(timedelta(hours=9))).date()
+    if isinstance(ts, date):
+        return ts
+    s = str(ts).strip()
+    try:
+        return _jst_date_of(datetime.fromisoformat(s.replace("Z", "+00:00")))
+    except Exception:
+        pass
+    try:
+        return date.fromisoformat(s[:10])
+    except Exception:
+        return None
+
+
+def _student_activity_summary(student_id: int, days: int = 90) -> dict:
+    """演習・学習記録・「できた！」から連続日数と最終活動日を算出 (PG/SQLite 両対応・日付変換は Python 側)。"""
+    JST = timezone(timedelta(hours=9))
+    today = datetime.now(JST).date()
+    since_utc = datetime.now(timezone.utc) - timedelta(days=days)
+    monday = today - timedelta(days=today.weekday())
+    active_days = set()
+    today_problems = 0
+    today_correct = 0
+    week_problems = 0
+    ever_active = False
+    coach_done_today = False
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT created_at, is_correct FROM question_attempts WHERE student_id = ? AND created_at >= ?",
+                  (int(student_id), since_utc))
+        for r in c.fetchall():
+            d = _jst_date_of(r["created_at"])
+            if not d:
+                continue
+            active_days.add(d)
+            if d == today:
+                today_problems += 1
+                try:
+                    if r["is_correct"] is not None and int(r["is_correct"]) == 1:
+                        today_correct += 1
+                except (TypeError, ValueError):
+                    pass
+            if d >= monday:
+                week_problems += 1
+        c.execute("SELECT studied_date FROM study_logs WHERE student_id = ? AND studied_date >= ?",
+                  (int(student_id), (today - timedelta(days=days)).isoformat()))
+        for r in c.fetchall():
+            d = _jst_date_of(r["studied_date"])
+            if d:
+                active_days.add(d)
+        c.execute("SELECT created_at FROM events WHERE name = 'coach_done' AND session_id = ? AND created_at >= ?",
+                  (str(student_id), since_utc))
+        for r in c.fetchall():
+            d = _jst_date_of(r["created_at"])
+            if d:
+                active_days.add(d)
+                if d == today:
+                    coach_done_today = True
+        if active_days:
+            ever_active = True
+        else:
+            c.execute("SELECT 1 FROM question_attempts WHERE student_id = ? LIMIT 1", (int(student_id),))
+            ever_active = c.fetchone() is not None
+            if not ever_active:
+                c.execute("SELECT 1 FROM study_logs WHERE student_id = ? LIMIT 1", (int(student_id),))
+                ever_active = c.fetchone() is not None
+    finally:
+        conn.close()
+    streak = 0
+    cursor = today if today in active_days else (today - timedelta(days=1))
+    while cursor in active_days:
+        streak += 1
+        cursor -= timedelta(days=1)
+    last_day = max(active_days) if active_days else None
+    days_since = (today - last_day).days if last_day else None
+    recent_days = [1 if (today - timedelta(days=i)) in active_days else 0 for i in range(13, -1, -1)]  # 古→新 14 日
+    return {
+        "today_jst": today.isoformat(),
+        "streak_days": streak,
+        "active_today": today in active_days,
+        "coach_done_today": coach_done_today,
+        "last_active_date": last_day.isoformat() if last_day else None,
+        "days_since_activity": days_since,      # None = 直近 days 日に活動なし (ever_active で「一度も無い」と区別)
+        "ever_active": ever_active,
+        "today_problems": today_problems,
+        "today_correct": today_correct,
+        "week_problems": week_problems,          # 今週 (JST 月曜 0:00〜) の演習数 = 週次レポートと同じ窓
+        "recent_days": recent_days,
+        "active_days_window": len(active_days),
+        "window_days": days,
+    }
+
+
+@app.get("/api/student/activity-summary")
+def student_activity_summary(request: Request, authorization: Optional[str] = Header(None)):
+    """🔥 生徒: 自分の連続学習日数・最終活動日・今日/今週の演習数 (サーバ実績)。"""
+    _check_rate_limit_caller(request, authorization, bucket="activity_summary", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return {"ok": True, **_student_activity_summary(int(student["id"]))}
+
+
+@app.post("/api/student/coach-done")
+def student_coach_done(payload: dict, request: Request, authorization: Optional[str] = Header(None)):
+    """✅ 生徒: コーチカードの「できた！」をサーバに記録 (1 日 1 回・冪等)。events name='coach_done',
+    session_id=str(student_id) (activity_* イベントと同じ紐付け)。戻り値は記録後の活動サマリ。"""
+    _check_rate_limit_caller(request, authorization, bucket="coach_done", limit=10, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    sid = int(student["id"])
+    JST = timezone(timedelta(hours=9))
+    today = datetime.now(JST).date()
+    today_start_utc = datetime.combine(today, dt_time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+    title = str((payload or {}).get("title") or "")[:120]
+    recorded = False
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT 1 FROM events WHERE name = 'coach_done' AND session_id = ? AND created_at >= ? LIMIT 1",
+                  (str(sid), today_start_utc))
+        if c.fetchone() is None:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("coach_done", json.dumps({"student_id": sid, "date_jst": today.isoformat(), "title": title}, ensure_ascii=False), str(sid)),
+            )
+            conn.commit()
+            recorded = True
+    finally:
+        conn.close()
+    return {"ok": True, "recorded": recorded, **_student_activity_summary(sid)}
 
 
 @app.get("/api/student/grammar-drills")

@@ -244,6 +244,13 @@ jobs:
           python3 scripts/health_check/test_monthend_ux.py
           python3 scripts/health_check/test_payment_pdf_import.py
 
+      # 🎯 生徒画面レビュー反映 (2026-09-09): 活動サマリ API / できた！の記録 / ゼロ週の軽量レポート / 水曜の一声 / mypage ソース検査
+      - name: 生徒画面の改善 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_student_ux_2026_09.py
+
       # 📚 学習記録ダッシュボードの運用改善 (2026-09-07): タイムラインのページング / 1 日合計の上限 / 演習の重ね表示 /
       #   テスト系の名前の除外 / パネル別の読み込みと配色 (ソース検査)。
       - name: 学習記録ダッシュボード 運用改善 回帰テスト
