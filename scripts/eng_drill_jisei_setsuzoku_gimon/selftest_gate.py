@@ -118,6 +118,16 @@ def m_answer_bias(rows, ans):
     return rows, ans
 
 
+def m_cyclic_answers(rows, ans):
+    for i, r in enumerate(rows):                  # 1,2,3,4,1,2,3,4… の周期に戻す
+        a = r["choices"][r["answer"]]
+        rest = [c for c in r["choices"] if c != a]
+        rest.insert(i % 4, a)
+        r["choices"] = rest
+        r["answer"] = i % 4
+    return rows, ans
+
+
 def m_short_expl(rows, ans):
     rows[48]["explanation"] = ans[48] + " が正しい。"
     return rows, ans
@@ -142,6 +152,7 @@ MUTATIONS = [
     ("同一ファイル内で stem 重複",      m_dup_stem_inside,        "同文"),
     ("source が30字超",                 m_long_source,            "30字を超える"),
     ("正解位置の偏り・連続",            m_answer_bias,            "偏っている"),
+    ("正解位置が周期的 (1,2,3,4の反復)", m_cyclic_answers,        "等差で"),
     ("解説が短すぎる",                  m_short_expl,             "短すぎる"),
     ("問数が正典とずれる",              m_missing_question,       "問数が正典と違う"),
 ]

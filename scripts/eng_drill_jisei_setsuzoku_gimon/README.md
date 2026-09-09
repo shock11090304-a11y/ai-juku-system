@@ -39,6 +39,8 @@ DELETE FROM grammar_questions WHERE source = 'drill-tense-conj-wh-20260909';
 | `_rules.py` | 「不良問題の定義」。build と check が**共有する唯一の判定** |
 | `check.py` | 機械ゲート (`run_all_gates.py` / CI が回す) |
 | `selftest_gate.py` | ゲート自体の変異試験。わざと壊して、必ず指摘されることを確かめる |
+| `build_pdf.py` | 同じ正典から紙 (LINE 配布用 PDF) を 2 冊刷る |
+| `check_pdf.py` | 刷り上がりを読み返して正典と全問照合する。**CI では回らない** (PDF はリポジトリに無い) |
 
 直したいときは `content.py` を直して:
 
@@ -50,6 +52,22 @@ python3 scripts/eng_drill_jisei_setsuzoku_gimon/selftest_gate.py
 
 ★**seed JSON を手で直さない**。直すと build.py の検査を素通りできてしまうので、
 `check.py` が「再生成して差分ゼロ」を機械で確認して落とす。
+
+## 紙で配る (LINE 送付・印刷)
+
+```
+python3 scripts/eng_drill_jisei_setsuzoku_gimon/build_pdf.py     # 刷る
+python3 scripts/eng_drill_jisei_setsuzoku_gimon/check_pdf.py     # 刷り上がりを照合する ★配る前に必ず
+```
+
+- `英文法練習_時制接続詞疑問_問題.pdf` … 90問 + 巻末に解答欄 (A4 10ページ)
+- `英文法練習_時制接続詞疑問_解答解説.pdf` … 正解一覧 + 全問の完成文と解説 (A4 13ページ)
+- 宛名を入れるなら `STUDENT_NAME="姓 名" python3 … build_pdf.py`。
+  ★**宛名をコードに書かないこと**。このリポジトリは公開で、履歴に永久に残る。
+- PDF は `.gitignore` 対象 (`scripts/**/*.pdf`) なのでリポジトリには入らない。配る人が手元で刷る。
+- アプリのドリルと**同じ `build.build()` の出力**から刷るので、「画面の第3問と紙の第3問が違う」は起きない。
+- 日本語フォントは CSS で名指しする (`IPAPGothic` 等)。総称の `sans-serif` だけだと、環境によっては
+  fontconfig が中国語フォントを選び、字形が中国語字体になる (この環境で実測)。
 
 ## 設計の約束 (壊すと同じ事故が戻る)
 
@@ -104,6 +122,20 @@ python3 scripts/eng_drill_jisei_setsuzoku_gimon/selftest_gate.py
 直した2問には、**同じ穴を開け直さないための注意書きを `content.py` の該当箇所に置いてある**
 (「the following morning を by the following morning に整えない」「この問の誤答に because/since/as/so を
 置かない」)。直す人が見るのは README ではなく問題の隣なので、そこに書く。
+
+### 刷って初めて見えた不良 — 正解番号の周期
+
+正解位置を「(単元,レベル) ごとにラウンドロビン (0→1→2→3)」で配っていた。単元ごとには完全に
+均等で、機械ゲートも全部緑だった。ところが**紙に刷って解答一覧を並べたら
+`1,2,3,4,1,2,3,4,…` と周期が丸見え**で、解かずに当てられる状態だった。
+アプリ側は 25 問を抽選して出すので表に出ない、紙にした瞬間だけ現れる穴。
+
+→ 均等さは保ったまま固定シードの乱数で並べ替える方式に変更し (`build._positions`)、
+「同じ番号が3連続」「等差が4つ以上続く」を `_rules` の検査項目に追加した。
+`selftest_gate.py` に周期パターンの変異を足してある。
+
+★これが「刷り上がりからも逆照合する」層 (`check_pdf.py`) を置いている理由。同じデータから
+刷っているのだから合っているはず、では見えないものがある。
 
 ★教訓は**「誤答は文法的に誤りであるだけでなく、どの読み方でも成立しないこと」**。
 `will` と `be going to`、`so` と `for` のように、文脈次第で両方成り立つ組を同居させない。

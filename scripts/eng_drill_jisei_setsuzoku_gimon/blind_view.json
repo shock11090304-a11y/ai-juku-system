@@ -18,9 +18,9 @@
   "stem": "Be quiet. The baby (   ) in the next room.",
   "choices": [
    "sleeps",
-   "is sleeping",
    "slept",
-   "has slept"
+   "has slept",
+   "is sleeping"
   ]
  },
  {
@@ -30,8 +30,8 @@
   "stem": "I (   ) a shower when the doorbell rang, so I couldn't answer it right away.",
   "choices": [
    "take",
-   "took",
    "was taking",
+   "took",
    "have taken"
   ]
  },
@@ -41,10 +41,10 @@
   "level": "basic",
   "stem": "We (   ) each other since we were children.",
   "choices": [
+   "have known",
    "know",
    "knew",
-   "are knowing",
-   "have known"
+   "are knowing"
   ]
  },
  {
@@ -53,9 +53,9 @@
   "level": "basic",
   "stem": "She didn't (   ) her homework last night because she felt sick.",
   "choices": [
-   "do",
    "did",
    "does",
+   "do",
    "done"
   ]
  },
@@ -66,8 +66,8 @@
   "stem": "Look at those dark clouds. It (   ) rain soon.",
   "choices": [
    "is going",
-   "is going to",
    "will going to",
+   "is going to",
    "goes"
   ]
  },
@@ -79,8 +79,8 @@
   "choices": [
    "see",
    "saw",
-   "seen",
-   "seeing"
+   "seeing",
+   "seen"
   ]
  },
  {
@@ -90,9 +90,9 @@
   "stem": "I haven't finished my report (   ).",
   "choices": [
    "already",
+   "yet",
    "still",
-   "ever",
-   "yet"
+   "ever"
   ]
  },
  {
@@ -127,8 +127,8 @@
   "choices": [
    "would see",
    "have seen",
-   "had seen",
-   "was seeing"
+   "was seeing",
+   "had seen"
   ]
  },
  {
@@ -139,8 +139,8 @@
   "choices": [
    "paints",
    "has been painting",
-   "will have painted",
-   "had been painting"
+   "had been painting",
+   "will have painted"
   ]
  },
  {
@@ -149,8 +149,8 @@
   "level": "standard",
   "stem": "By the end of this year, my grandfather (   ) this shop for fifty years.",
   "choices": [
-   "will have been running",
    "will run",
+   "will have been running",
    "will be running",
    "has been running"
   ]
@@ -162,8 +162,8 @@
   "stem": "Our teacher told us that the Meiji Restoration (   ) place in 1868.",
   "choices": [
    "takes",
-   "took",
    "would take",
+   "took",
    "has taken"
   ]
  },
@@ -173,9 +173,9 @@
   "level": "standard",
   "stem": "It (   ) five years since my grandmother passed away.",
   "choices": [
+   "has been",
    "is having",
    "had been",
-   "has been",
    "will have been"
   ]
  },
@@ -197,8 +197,8 @@
   "level": "standard",
   "stem": "This box (   ) all the letters my grandfather wrote during the war.",
   "choices": [
-   "contains",
    "is containing",
+   "contains",
    "has been containing",
    "contain"
   ]
@@ -210,8 +210,8 @@
   "stem": "(   ) you be using your car this weekend? If not, could I borrow it?",
   "choices": [
    "Do",
-   "Will",
    "Are",
+   "Will",
    "Have"
   ]
  },
@@ -221,9 +221,9 @@
   "level": "standard",
   "stem": "My sister isn't here. She (   ) to the post office.",
   "choices": [
+   "has gone",
    "has been",
    "had gone",
-   "has gone",
    "have gone"
   ]
  },
@@ -245,10 +245,10 @@
   "level": "advanced",
   "stem": "Please stay in the waiting room until your name (   ).",
   "choices": [
-   "is called",
    "will be called",
    "calls",
-   "will call"
+   "will call",
+   "is called"
   ]
  },
  {
@@ -258,8 +258,8 @@
   "stem": "We (   ) to finish the project by Friday, but the delay in shipping made it impossible.",
   "choices": [
    "have hoped",
-   "had hoped",
    "hope",
+   "had hoped",
    "are hoping"
   ]
  },
@@ -282,9 +282,9 @@
   "stem": "He is always (   ) other people for his own mistakes; nobody wants to work with him.",
   "choices": [
    "blame",
+   "blaming",
    "blamed",
-   "to blame",
-   "blaming"
+   "to blame"
   ]
  },
  {
@@ -293,8 +293,8 @@
   "level": "advanced",
   "stem": "She promised that she (   ) the document the following morning, but it never arrived.",
   "choices": [
-   "would send",
    "will send",
+   "would send",
    "would have sent",
    "had sent"
   ]
@@ -305,8 +305,8 @@
   "level": "advanced",
   "stem": "This is the third time you (   ) the same mistake in this report.",
   "choices": [
-   "make",
    "have made",
+   "make",
    "made",
    "had made"
   ]
@@ -319,8 +319,8 @@
   "choices": [
    "has broken",
    "had broken",
-   "broke",
-   "has been breaking"
+   "has been breaking",
+   "broke"
   ]
  },
  {
@@ -329,10 +329,10 @@
   "level": "advanced",
   "stem": "Over the past decade, the climate of this region (   ) noticeably drier.",
   "choices": [
+   "has become",
    "becomes",
    "became",
-   "had become",
-   "has become"
+   "had become"
   ]
  },
  {
@@ -341,8 +341,8 @@
   "level": "advanced",
   "stem": "Ever since he (   ) to Tokyo, we have hardly heard from him.",
   "choices": [
-   "moved",
    "moves",
+   "moved",
    "has moved",
    "had moved"
   ]
@@ -353,8 +353,8 @@
   "level": "advanced",
   "stem": "The thief had run away before the police (   ) at the scene.",
   "choices": [
-   "arrive",
    "arrived",
+   "arrive",
    "had arrived",
    "has arrived"
   ]
@@ -365,9 +365,9 @@
   "level": "basic",
   "stem": "I'll wait here (   ) you come back.",
   "choices": [
-   "until",
    "while",
    "during",
+   "until",
    "by"
   ]
  },
@@ -378,9 +378,9 @@
   "stem": "He couldn't attend the meeting (   ) he was sick in bed.",
   "choices": [
    "because of",
-   "because",
    "so that",
-   "in spite of"
+   "in spite of",
+   "because"
   ]
  },
  {
@@ -401,10 +401,10 @@
   "level": "basic",
   "stem": "My grandmother speaks (   ) English and Chinese fluently.",
   "choices": [
+   "both",
    "either",
    "neither",
-   "not only",
-   "both"
+   "not only"
   ]
  },
  {
@@ -413,8 +413,8 @@
   "level": "basic",
   "stem": "He (   ) smokes nor drinks; he is very careful about his health.",
   "choices": [
-   "neither",
    "either",
+   "neither",
    "both",
    "not only"
   ]
@@ -426,9 +426,9 @@
   "stem": "I'm glad (   ) you passed the entrance examination.",
   "choices": [
    "what",
-   "that",
    "which",
-   "whether"
+   "whether",
+   "that"
   ]
  },
  {
@@ -437,9 +437,9 @@
   "level": "basic",
   "stem": "I studied very hard, (   ) I couldn't answer the last question.",
   "choices": [
+   "but",
    "so",
    "for",
-   "but",
    "or"
   ]
  },
@@ -450,9 +450,9 @@
   "stem": "(   ) I was a child, my family lived in a small fishing village.",
   "choices": [
    "Until",
+   "When",
    "During",
-   "Because",
-   "When"
+   "Because"
   ]
  },
  {
@@ -461,9 +461,9 @@
   "level": "standard",
   "stem": "My brother is very outgoing, (   ) I prefer to spend time alone.",
   "choices": [
-   "whereas",
    "because",
    "unless",
+   "whereas",
    "as if"
   ]
  },
@@ -485,9 +485,9 @@
   "level": "standard",
   "stem": "(   ) he had practiced for months, he failed to win the championship.",
   "choices": [
+   "Although",
    "Despite",
    "In spite of",
-   "Although",
    "Because of"
   ]
  },
@@ -498,9 +498,9 @@
   "stem": "We haven't decided (   ) to hold the event online or in person.",
   "choices": [
    "if",
+   "whether",
    "that",
-   "what",
-   "whether"
+   "what"
   ]
  },
  {
@@ -509,10 +509,10 @@
   "level": "standard",
   "stem": "(   ) you have made a promise, you must keep it no matter what happens.",
   "choices": [
-   "Once",
    "Until",
    "Unless",
-   "Whether"
+   "Whether",
+   "Once"
   ]
  },
  {
@@ -533,9 +533,9 @@
   "level": "standard",
   "stem": "Either you or your brother (   ) to attend the parents' meeting.",
   "choices": [
+   "has",
    "have",
    "are",
-   "has",
    "were"
   ]
  },
@@ -557,9 +557,9 @@
   "level": "standard",
   "stem": "Take this medicine, (   ) you will feel much better in a few hours.",
   "choices": [
-   "and",
    "or",
    "but",
+   "and",
    "for"
   ]
  },
@@ -570,9 +570,9 @@
   "stem": "The problem was (   ) his ability but his attitude toward the team.",
   "choices": [
    "either",
-   "not",
    "both",
-   "neither"
+   "neither",
+   "not"
   ]
  },
  {
@@ -593,10 +593,10 @@
   "level": "standard",
   "stem": "(   ) it rains tomorrow, we will hold the festival as planned.",
   "choices": [
+   "Even if",
    "Even though",
    "As if",
-   "Now that",
-   "Even if"
+   "Now that"
   ]
  },
  {
@@ -618,9 +618,9 @@
   "stem": "You may use the laboratory (   ) that you clean up afterward.",
   "choices": [
    "supposed",
-   "provided",
    "concerned",
-   "regarded"
+   "regarded",
+   "provided"
   ]
  },
  {
@@ -642,9 +642,9 @@
   "stem": "(   ) that she has been studying English for only a year, her pronunciation is remarkable.",
   "choices": [
    "Regarding",
+   "Considering",
    "Concerning",
-   "Including",
-   "Considering"
+   "Including"
   ]
  },
  {
@@ -653,8 +653,8 @@
   "level": "advanced",
   "stem": "I didn't say anything, (   ) I agreed with him, but that I didn't want to start an argument.",
   "choices": [
-   "not that",
    "so that",
+   "not that",
    "now that",
    "in that"
   ]
@@ -665,8 +665,8 @@
   "level": "advanced",
   "stem": "(   ) I admit that there are some difficulties, I don't think the plan is impossible.",
   "choices": [
-   "During",
    "While",
+   "During",
    "Despite",
    "Unless"
   ]
@@ -679,8 +679,8 @@
   "choices": [
    "Allowed",
    "Permitted",
-   "Granted",
-   "Accepted"
+   "Accepted",
+   "Granted"
   ]
  },
  {
@@ -691,8 +691,8 @@
   "choices": [
    "was",
    "has been",
-   "is",
-   "were"
+   "were",
+   "is"
   ]
  },
  {
@@ -750,8 +750,8 @@
   "stem": "(   ) umbrella is this? — It's mine.",
   "choices": [
    "Who's",
-   "Who",
    "Whose",
+   "Who",
    "Whom"
   ]
  },
@@ -773,9 +773,9 @@
   "level": "basic",
   "stem": "I have no idea why (   ) so angry with me.",
   "choices": [
-   "she is",
    "is she",
    "does she",
+   "she is",
    "she does"
   ]
  },
@@ -786,8 +786,8 @@
   "stem": "Open the window, (   )?",
   "choices": [
    "do you",
-   "will you",
    "are you",
+   "will you",
    "shall we"
   ]
  },
@@ -799,8 +799,8 @@
   "choices": [
    "How much",
    "How long",
-   "How many",
-   "How far"
+   "How far",
+   "How many"
   ]
  },
  {
@@ -809,10 +809,10 @@
   "level": "basic",
   "stem": "Don't you like natto? — (   ), I love it.",
   "choices": [
+   "Yes",
    "No",
    "Sure not",
-   "Of course not",
-   "Yes"
+   "Of course not"
   ]
  },
  {
@@ -821,9 +821,9 @@
   "level": "standard",
   "stem": "(   ) you didn't tell me about the schedule change?",
   "choices": [
-   "How come",
    "How",
    "Why",
+   "How come",
    "What for"
   ]
  },
@@ -833,8 +833,8 @@
   "level": "standard",
   "stem": "(   ) should I address the letter of complaint?",
   "choices": [
-   "To who",
    "To whom",
+   "To who",
    "Whom to",
    "Who to"
   ]
@@ -859,8 +859,8 @@
   "choices": [
    "have been",
    "was being",
-   "am",
-   "had been"
+   "had been",
+   "am"
   ]
  },
  {
@@ -869,10 +869,10 @@
   "level": "standard",
   "stem": "(   ) are you saving all this money for?",
   "choices": [
-   "What",
    "Why",
    "How",
-   "Which"
+   "Which",
+   "What"
   ]
  },
  {
@@ -882,9 +882,9 @@
   "stem": "Do you know (   ) the concert will begin?",
   "choices": [
    "when will",
-   "when",
    "what time will",
-   "that"
+   "that",
+   "when"
   ]
  },
  {
@@ -894,8 +894,8 @@
   "stem": "Do you have any idea (   ) the missing documents?",
   "choices": [
    "who did take",
-   "did who take",
    "who took",
+   "did who take",
    "whom took"
   ]
  },
@@ -917,8 +917,8 @@
   "level": "standard",
   "stem": "(   ) will the new bridge be completed? — In about two years.",
   "choices": [
-   "How soon",
    "How long",
+   "How soon",
    "How much",
    "How far"
   ]
@@ -929,8 +929,8 @@
   "level": "standard",
   "stem": "The police are still investigating (   ) car was parked in front of the bank.",
   "choices": [
-   "who's",
    "whose",
+   "who's",
    "who",
    "whom"
   ]
@@ -942,8 +942,8 @@
   "stem": "(   ) ask your homeroom teacher for advice before you decide?",
   "choices": [
    "Why don't",
-   "How about",
    "Why not",
+   "How about",
    "What about"
   ]
  },
@@ -953,10 +953,10 @@
   "level": "standard",
   "stem": "Could you tell me (   ) a post office near here?",
   "choices": [
+   "if there is",
    "is there",
    "there is if",
-   "whether is there",
-   "if there is"
+   "whether is there"
   ]
  },
  {
@@ -990,8 +990,8 @@
   "stem": "(   ) the project will be funded or not remains to be seen.",
   "choices": [
    "If",
-   "That",
    "Whether",
+   "That",
    "What"
   ]
  },
@@ -1001,10 +1001,10 @@
   "level": "advanced",
   "stem": "(   ) has become of the exchange student who stayed with your family last year?",
   "choices": [
+   "What",
    "Who",
    "How",
-   "Where",
-   "What"
+   "Where"
   ]
  },
  {
@@ -1013,10 +1013,10 @@
   "level": "advanced",
   "stem": "She was at a loss (   ) to turn to for help.",
   "choices": [
-   "whom",
    "whose",
    "what",
-   "how"
+   "how",
+   "whom"
   ]
  },
  {
@@ -1025,8 +1025,8 @@
   "level": "advanced",
   "stem": "(   ) what extent do you think artificial intelligence will replace human workers?",
   "choices": [
-   "In",
    "To",
+   "In",
    "At",
    "By"
   ]
@@ -1061,8 +1061,8 @@
   "level": "advanced",
   "stem": "(   ) of the two candidates do you think is more likely to win?",
   "choices": [
-   "Which",
    "What",
+   "Which",
    "Whose",
    "Whom"
   ]
@@ -1074,8 +1074,8 @@
   "stem": "I don't think she will accept our proposal, (   )?",
   "choices": [
    "won't she",
-   "will she",
    "do I",
+   "will she",
    "don't I"
   ]
  }

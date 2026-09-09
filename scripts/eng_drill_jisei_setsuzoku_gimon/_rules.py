@@ -141,6 +141,26 @@ def validate(rows, answers, root):
         if len(arr) < MIN_PER_KEY:
             ng.append(f"NG: {k[0]}/{k[1]} が {len(arr)} 問しかない (最低 {MIN_PER_KEY} 問)")
 
+    # --- 通し番号で見たときに「読める並び」になっていないか
+    #   ★紙に刷ると全問の正解が一覧で並ぶ。均等でも 1,2,3,4,1,2,3,4… だと周期が丸見えで、
+    #     解かずに当てられる (刷り上がりを見て気づいた実際の不良)。アプリ側は抽選なので出ない穴。
+    seq = [r["answer"] for r in rows if isinstance(r.get("answer"), int)]
+    for i, (a, b, c) in enumerate(zip(seq, seq[1:], seq[2:]), 1):
+        if a == b == c:
+            ng.append(f"NG: 第{i}問から同じ正解位置が3連続している (通し番号で見たとき)")
+            break
+    deltas = [(b - a) % 4 for a, b in zip(seq, seq[1:])]
+    run, start = 1, 0
+    for i, (x, y) in enumerate(zip(deltas, deltas[1:]), 1):
+        if x == y:
+            run += 1
+            if run >= 4:
+                ng.append(f"NG: 第{start + 1}問から正解位置が等差で {run + 1} 問続いている "
+                          f"(1,2,3,4,1… のような周期は解かずに当てられる)")
+                break
+        else:
+            run, start = 1, i
+
     # --- 同一ファイル内の重複 (取込時の dedup で黙って消える)
     seen = {}
     for i, r in enumerate(rows, 1):

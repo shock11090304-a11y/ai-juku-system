@@ -1,7 +1,7 @@
 {
  "_meta": {
   "source": "drill-tense-conj-wh-20260909",
-  "note": "英文法ドリル補充 v2: 時制/接続詞/疑問詞・間接疑問 の3単元 x 基礎30/標準36/やや難30。正典は scripts/eng_drill_jisei_setsuzoku_gimon/content.py。正解位置は (単元,レベル) ごとのラウンドロビン。解説は値参照 (位置トークンを書かない)。投入先は /api/admin/grammar/import (grammar_questions)。",
+  "note": "英文法ドリル補充 v2: 時制/接続詞/疑問詞・間接疑問 の3単元 x 基礎30/標準36/やや難30。正典は scripts/eng_drill_jisei_setsuzoku_gimon/content.py。正解位置は (単元,レベル) ごとに均等かつ非周期。解説は値参照 (位置トークンを書かない)。投入先は /api/admin/grammar/import (grammar_questions)。",
   "count": 90
  },
  "questions": [
@@ -26,11 +26,11 @@
    "stem": "Be quiet. The baby (   ) in the next room.",
    "choices": [
     "sleeps",
-    "is sleeping",
     "slept",
-    "has slept"
+    "has slept",
+    "is sleeping"
    ],
-   "answer": 1,
+   "answer": 3,
    "explanation": "Be quiet.(静かに)と言っている、まさに今の状態なので現在進行形の is sleeping。sleeps は「いつも眠る」という習慣、slept は過去の出来事、has slept は「眠り終えた」という完了で、今まさに眠っている最中であることを表せない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -41,11 +41,11 @@
    "stem": "I (   ) a shower when the doorbell rang, so I couldn't answer it right away.",
    "choices": [
     "take",
-    "took",
     "was taking",
+    "took",
     "have taken"
    ],
-   "answer": 2,
+   "answer": 1,
    "explanation": "ベルが鳴った過去の一点で進行中だった動作なので過去進行形の was taking。だからこそ「すぐに出られなかった」という後半につながる。took だと「ベルが鳴ってからシャワーを浴びた」という順序の意味になり、出られなかった理由にならない。take は現在形、have taken は現在完了で、過去の一点の場面とは結びつかない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -55,12 +55,12 @@
    "level": "basic",
    "stem": "We (   ) each other since we were children.",
    "choices": [
+    "have known",
     "know",
     "knew",
-    "are knowing",
-    "have known"
+    "are knowing"
    ],
-   "answer": 3,
+   "answer": 0,
    "explanation": "since we were children(子どもの頃から)が起点を示し、その状態が今も続いているので現在完了の have known。know は状態を表す動詞なので are knowing のように進行形にはしない。現在形 know や過去形 knew では「昔から今まで続いている」という継続が表せない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -70,12 +70,12 @@
    "level": "basic",
    "stem": "She didn't (   ) her homework last night because she felt sick.",
    "choices": [
-    "do",
     "did",
     "does",
+    "do",
     "done"
    ],
-   "answer": 0,
+   "answer": 2,
    "explanation": "否定文を作る didn't のあとは動詞の原形なので do。did や does は時制を示す形、done は過去分詞で、いずれも didn't のあとには置けない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -86,11 +86,11 @@
    "stem": "Look at those dark clouds. It (   ) rain soon.",
    "choices": [
     "is going",
-    "is going to",
     "will going to",
+    "is going to",
     "goes"
    ],
-   "answer": 1,
+   "answer": 2,
    "explanation": "目の前の状況(黒い雲)を根拠に予測する言い方は be going to + 動詞の原形なので is going to rain となる。is going だけでは rain とつながらず、will going to は will と be going to を混ぜた誤った形。goes は現在形で、これから起こることの予測にはならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -102,10 +102,10 @@
    "choices": [
     "see",
     "saw",
-    "seen",
-    "seeing"
+    "seeing",
+    "seen"
    ],
-   "answer": 2,
+   "answer": 3,
    "explanation": "have never のあとは過去分詞を置いて「今までに一度も〜したことがない」という経験を表すので seen。原形 see や過去形 saw は have のあとに置けず、seeing では完了形を作れない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -116,11 +116,11 @@
    "stem": "I haven't finished my report (   ).",
    "choices": [
     "already",
+    "yet",
     "still",
-    "ever",
-    "yet"
+    "ever"
    ],
-   "answer": 3,
+   "answer": 1,
    "explanation": "現在完了の否定文の文末に置いて「まだ〜していない」を表すのは yet。already は肯定文で「もう〜した」、ever は疑問文などで「今までに」を表す。still も「まだ」だが I still haven't finished のように not の前に置く語で、文末には来ない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -162,10 +162,10 @@
    "choices": [
     "would see",
     "have seen",
-    "had seen",
-    "was seeing"
+    "was seeing",
+    "had seen"
    ],
-   "answer": 2,
+   "answer": 3,
    "explanation": "It was the first time … は「その時までに初めて」の意味なので、続く節は過去完了の had seen になる。It is the first time なら現在完了だが、主節が was と過去なので過去完了に下げる。was seeing は一時的に進行中だった動作を表す形で「その時点までの経験」にならず、would see では「これから見る」ことになる。have seen は現在までの経験で、主節の過去と食い違う。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -177,10 +177,10 @@
    "choices": [
     "paints",
     "has been painting",
-    "will have painted",
-    "had been painting"
+    "had been painting",
+    "will have painted"
    ],
-   "answer": 3,
+   "answer": 2,
    "explanation": "we arrived という過去の一点まで続いていた動作なので過去完了進行形の had been painting。paints は現在の習慣、has been painting は現在までの継続で、すでに終わった過去の場面と食い違う。will have painted は未来のある時点までの完了で、過去の話には使えない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -190,12 +190,12 @@
    "level": "standard",
    "stem": "By the end of this year, my grandfather (   ) this shop for fifty years.",
    "choices": [
-    "will have been running",
     "will run",
+    "will have been running",
     "will be running",
     "has been running"
    ],
-   "answer": 0,
+   "answer": 1,
    "explanation": "未来のある時点(by the end of this year)までの継続を表すので未来完了進行形の will have been running。will run は単なる未来、will be running はその時点で進行中であることを言うだけで、50年という積み重ねを表せない。has been running は現在までの継続なので、未来の時点を示す by the end of this year と合わない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -206,11 +206,11 @@
    "stem": "Our teacher told us that the Meiji Restoration (   ) place in 1868.",
    "choices": [
     "takes",
-    "took",
     "would take",
+    "took",
     "has taken"
    ],
-   "answer": 1,
+   "answer": 2,
    "explanation": "歴史上の事実は、主節が過去でも時制を一致させず過去形のままにするので took。takes は現在形で、1868年に起きた出来事を述べる形にならない。would take は「そのあとで起こる予定だった」という意味になり、すでに確定した過去の事実には使えない。has taken は現在完了で、1868 という明確な過去の一点を示す語句とは共存できない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -220,12 +220,12 @@
    "level": "standard",
    "stem": "It (   ) five years since my grandmother passed away.",
    "choices": [
+    "has been",
     "is having",
     "had been",
-    "has been",
     "will have been"
    ],
-   "answer": 2,
+   "answer": 0,
    "explanation": "「〜してから…年になる」は It has been + 期間 + since + 過去形 の形で表すので has been。since 節の passed away が起点を示し、そこから現在までの経過を現在完了で受ける。had been は過去のある時点までの経過、will have been は未来の時点までの経過を表し、is having は have を進行形にした形で状態を表せない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -250,12 +250,12 @@
    "level": "standard",
    "stem": "This box (   ) all the letters my grandfather wrote during the war.",
    "choices": [
-    "contains",
     "is containing",
+    "contains",
     "has been containing",
     "contain"
    ],
-   "answer": 0,
+   "answer": 1,
    "explanation": "contain(〜が入っている)は状態を表す動詞なので進行形にせず現在形で使い、主語 This box が3人称単数なので contains。is containing や has been containing は状態動詞を進行形にした誤った形。contain は原形で、3人称単数の主語には形が合わない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -266,11 +266,11 @@
    "stem": "(   ) you be using your car this weekend? If not, could I borrow it?",
    "choices": [
     "Do",
-    "Will",
     "Are",
+    "Will",
     "Have"
    ],
-   "answer": 1,
+   "answer": 2,
    "explanation": "「今週末に車を使っている予定ですか」と相手の予定をたずねる未来進行形 will be using なので Will。Do は現在形の疑問文を作る語、Are は be 動詞、Have は完了形を作る語で、いずれも be using とは結びつかない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -280,12 +280,12 @@
    "level": "standard",
    "stem": "My sister isn't here. She (   ) to the post office.",
    "choices": [
+    "has gone",
     "has been",
     "had gone",
-    "has gone",
     "have gone"
    ],
-   "answer": 2,
+   "answer": 0,
    "explanation": "「行ってしまって今ここにいない」という現在の結果を表すのは has gone to。has been to は「行ったことがある/行って戻ってきた」の意味になり、isn't here と矛盾する。had gone は基準となる過去の時点がないため使えず、have gone は3人称単数の主語 She と形が合わない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -310,12 +310,12 @@
    "level": "advanced",
    "stem": "Please stay in the waiting room until your name (   ).",
    "choices": [
-    "is called",
     "will be called",
     "calls",
-    "will call"
+    "will call",
+    "is called"
    ],
-   "answer": 0,
+   "answer": 3,
    "explanation": "until が導く時の副詞節では、未来のことでも現在形で表すので is called。will be called はこの副詞節の中では用いない。calls / will call は能動態で、「名前が呼ばれる」という受け身の意味にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -326,11 +326,11 @@
    "stem": "We (   ) to finish the project by Friday, but the delay in shipping made it impossible.",
    "choices": [
     "have hoped",
-    "had hoped",
     "hope",
+    "had hoped",
     "are hoping"
    ],
-   "answer": 1,
+   "answer": 2,
    "explanation": "「〜するつもりだったが実現しなかった」という叶わなかった願望は過去完了で表すので had hoped。have hoped / hope / are hoping はいずれも現在の願望を述べる形で、but 以下の「不可能になった」という結末と噛み合わない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -356,11 +356,11 @@
    "stem": "He is always (   ) other people for his own mistakes; nobody wants to work with him.",
    "choices": [
     "blame",
+    "blaming",
     "blamed",
-    "to blame",
-    "blaming"
+    "to blame"
    ],
-   "answer": 3,
+   "answer": 1,
    "explanation": "always とともに使う進行形は「いつも〜してばかりいる」と非難の気持ちを込める言い方なので blaming。原形 blame は is のあとに置けない。is blamed では「責められる」という受け身になり、other people を目的語に取れない。is to blame は「責任がある」という慣用表現で、後ろに人を目的語として続ける形ではない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -370,12 +370,12 @@
    "level": "advanced",
    "stem": "She promised that she (   ) the document the following morning, but it never arrived.",
    "choices": [
-    "would send",
     "will send",
+    "would send",
     "would have sent",
     "had sent"
    ],
-   "answer": 0,
+   "answer": 1,
    "explanation": "主節が promised と過去で、送るのは the following morning(その翌朝)とさらに後のことなので、時制の一致でその時点から見た未来を表す would send になる。will send では主節の過去と一致しない。would have sent は「(そうしていれば)送っていただろうに」と実際には起こらなかったことを表す形で、約束の内容にならない。had sent は約束より前に送り終えたことを表す形なので、翌朝という後の時点とは両立しない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -385,12 +385,12 @@
    "level": "advanced",
    "stem": "This is the third time you (   ) the same mistake in this report.",
    "choices": [
-    "make",
     "have made",
+    "make",
     "made",
     "had made"
    ],
-   "answer": 1,
+   "answer": 0,
    "explanation": "This is the … time は現在を基準にした言い方なので、続く節は現在完了の have made になる。主節が It was the … time と過去なら過去完了に下げるが、ここは is なので had made は合わない。make や made ではこれまでに積み重なった回数を表せない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -402,10 +402,10 @@
    "choices": [
     "has broken",
     "had broken",
-    "broke",
-    "has been breaking"
+    "has been breaking",
+    "broke"
    ],
-   "answer": 2,
+   "answer": 3,
    "explanation": "two years ago と過去の一時点が示されているので過去形の broke。現在完了 has broken は「いつ」を特定する語句とは一緒に使えない。had broken は基準となる過去の時点がなく、has been breaking は骨折という一瞬の出来事を継続の形にしていて不自然。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -415,12 +415,12 @@
    "level": "advanced",
    "stem": "Over the past decade, the climate of this region (   ) noticeably drier.",
    "choices": [
+    "has become",
     "becomes",
     "became",
-    "had become",
-    "has become"
+    "had become"
    ],
-   "answer": 3,
+   "answer": 0,
    "explanation": "Over the past decade(この10年にわたって)は過去から現在までの期間を示すので現在完了の has become。became では現在との結びつきが切れ、becomes は習慣や一般的な事実を述べる形になる。had become は過去のある時点までの変化で、現在に至る変化を表せない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -430,12 +430,12 @@
    "level": "advanced",
    "stem": "Ever since he (   ) to Tokyo, we have hardly heard from him.",
    "choices": [
-    "moved",
     "moves",
+    "moved",
     "has moved",
     "had moved"
    ],
-   "answer": 0,
+   "answer": 1,
    "explanation": "since が起点となる過去の一時点を示すときは、since 節を過去形にして主節を現在完了にするので moved。has moved / had moved は完了形で、起点そのものを示す since 節には置かない。現在形 moves では過去に起きた出来事を表せない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -445,12 +445,12 @@
    "level": "advanced",
    "stem": "The thief had run away before the police (   ) at the scene.",
    "choices": [
-    "arrive",
     "arrived",
+    "arrive",
     "had arrived",
     "has arrived"
    ],
-   "answer": 1,
+   "answer": 0,
    "explanation": "before が前後関係をはっきり示しているので、あとに起きた出来事は単純過去の arrived でよい。had arrived にすると警察の到着のほうが逃走より前だったことになり、文意が逆転する。arrive は現在形、has arrived は現在完了で、過去の出来事を語る文には合わない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -460,12 +460,12 @@
    "level": "basic",
    "stem": "I'll wait here (   ) you come back.",
    "choices": [
-    "until",
     "while",
     "during",
+    "until",
     "by"
    ],
-   "answer": 0,
+   "answer": 2,
    "explanation": "「戻ってくるまでずっと待つ」と動作が続く終点を示すので接続詞 until。while は「〜する間」で終点を示さない。during と by は前置詞なので、あとに you come back という〈主語+動詞〉を続けられない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -476,11 +476,11 @@
    "stem": "He couldn't attend the meeting (   ) he was sick in bed.",
    "choices": [
     "because of",
-    "because",
     "so that",
-    "in spite of"
+    "in spite of",
+    "because"
    ],
-   "answer": 1,
+   "answer": 3,
    "explanation": "あとに he was sick という〈主語+動詞〉の節が続くので、理由を表す接続詞 because。because of と in spite of は前置詞のはたらきをするので、あとには名詞や動名詞しか置けない。so that は目的や結果を表す形で、理由を述べる位置には合わない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -505,12 +505,12 @@
    "level": "basic",
    "stem": "My grandmother speaks (   ) English and Chinese fluently.",
    "choices": [
+    "both",
     "either",
     "neither",
-    "not only",
-    "both"
+    "not only"
    ],
-   "answer": 3,
+   "answer": 0,
    "explanation": "後ろの and と呼応して「AとBの両方」を表すのは both A and B の形。either は or と、neither は nor と組む相関表現。not only は but also と組む形なので、and とは呼応しない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -520,12 +520,12 @@
    "level": "basic",
    "stem": "He (   ) smokes nor drinks; he is very careful about his health.",
    "choices": [
-    "neither",
     "either",
+    "neither",
     "both",
     "not only"
    ],
-   "answer": 0,
+   "answer": 1,
    "explanation": "後ろの nor と呼応して「AもBもしない」を表すのは neither A nor B の形。either は or と、both は and と、not only は but also と組む形で、いずれも nor とは呼応しない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -536,11 +536,11 @@
    "stem": "I'm glad (   ) you passed the entrance examination.",
    "choices": [
     "what",
-    "that",
     "which",
-    "whether"
+    "whether",
+    "that"
    ],
-   "answer": 1,
+   "answer": 3,
    "explanation": "「〜ということ」と、感情の原因になる完全な文をまとめて導くのは接続詞 that。what や which は関係詞・疑問詞で、あとに主語や目的語の欠けた不完全な文が続く。whether は「〜かどうか」で、合格したという確定した事実を喜ぶ文脈には合わない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -550,12 +550,12 @@
    "level": "basic",
    "stem": "I studied very hard, (   ) I couldn't answer the last question.",
    "choices": [
+    "but",
     "so",
     "for",
-    "but",
     "or"
    ],
-   "answer": 2,
+   "answer": 0,
    "explanation": "「一生懸命勉強したのに解けなかった」と前後が反対の内容なので、逆接の等位接続詞 but。so は結果、for は理由の付け足し、or は選択を表す語で、対立する内容をつなげない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -566,11 +566,11 @@
    "stem": "(   ) I was a child, my family lived in a small fishing village.",
    "choices": [
     "Until",
+    "When",
     "During",
-    "Because",
-    "When"
+    "Because"
    ],
-   "answer": 3,
+   "answer": 1,
    "explanation": "「子どもの頃に」と時を表す副詞節を導くのは接続詞 When。Until は「〜するまで」で、子ども時代を終点とする意味になり文意が通らない。During は前置詞なので節を導けず、Because では「子どもだったから村に住んだ」となって理由の関係が成り立たない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -580,12 +580,12 @@
    "level": "standard",
    "stem": "My brother is very outgoing, (   ) I prefer to spend time alone.",
    "choices": [
-    "whereas",
     "because",
     "unless",
+    "whereas",
     "as if"
    ],
-   "answer": 0,
+   "answer": 2,
    "explanation": "二つの文を並べて「〜であるのに対して」と対比するのは whereas。because は理由、unless は「〜しない限り」という否定の条件、as if は「まるで〜のように」で、いずれも二つの内容を対照させるはたらきを持たない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -610,12 +610,12 @@
    "level": "standard",
    "stem": "(   ) he had practiced for months, he failed to win the championship.",
    "choices": [
+    "Although",
     "Despite",
     "In spite of",
-    "Although",
     "Because of"
    ],
-   "answer": 2,
+   "answer": 0,
    "explanation": "あとに he had practiced という〈主語+動詞〉の節が続くので、譲歩を表す接続詞 Although。Despite / In spite of / Because of はいずれも前置詞のはたらきをするので、あとには名詞や動名詞しか置けない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -626,11 +626,11 @@
    "stem": "We haven't decided (   ) to hold the event online or in person.",
    "choices": [
     "if",
+    "whether",
     "that",
-    "what",
-    "whether"
+    "what"
    ],
-   "answer": 3,
+   "answer": 1,
    "explanation": "直後に to 不定詞を伴って「〜すべきかどうか」を表せるのは whether。if も「〜かどうか」の意味を持つが、直後に to 不定詞を続ける用法がない。that は事実を導く接続詞、what は節の中で名詞のはたらきをする語で、or 以下の二者択一と呼応しない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -640,12 +640,12 @@
    "level": "standard",
    "stem": "(   ) you have made a promise, you must keep it no matter what happens.",
    "choices": [
-    "Once",
     "Until",
     "Unless",
-    "Whether"
+    "Whether",
+    "Once"
    ],
-   "answer": 0,
+   "answer": 3,
    "explanation": "「いったん〜したら」と、ある事が成立した後を条件として示すのは接続詞 Once。Until は「〜するまで」、Unless は「〜しない限り」という否定の条件、Whether は「〜であろうと」で、約束を交わした後に義務が生じるという流れを作れない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -670,12 +670,12 @@
    "level": "standard",
    "stem": "Either you or your brother (   ) to attend the parents' meeting.",
    "choices": [
+    "has",
     "have",
     "are",
-    "has",
     "were"
    ],
-   "answer": 2,
+   "answer": 0,
    "explanation": "either A or B が主語のときは、動詞を近いほうの主語 your brother に合わせるので3人称単数の has。have / are / were はいずれも複数の主語に対応する形で、直前の単数の主語と一致しない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -700,12 +700,12 @@
    "level": "standard",
    "stem": "Take this medicine, (   ) you will feel much better in a few hours.",
    "choices": [
-    "and",
     "or",
     "but",
+    "and",
     "for"
    ],
-   "answer": 0,
+   "answer": 2,
    "explanation": "〈命令文, and …〉で「〜しなさい、そうすれば…」という結果を表すので and。or なら「そうしないと」という逆の意味になり、薬を飲んだ結果よくなるという流れに合わない。but は逆接、for は理由の付け足しで、命令文の結果を導く形にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -716,11 +716,11 @@
    "stem": "The problem was (   ) his ability but his attitude toward the team.",
    "choices": [
     "either",
-    "not",
     "both",
-    "neither"
+    "neither",
+    "not"
    ],
-   "answer": 1,
+   "answer": 3,
    "explanation": "後ろの but と呼応して「AではなくB」を表すのは not A but B の形。either は or と、both は and と、neither は nor と組む相関表現なので、but とは呼応しない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -745,12 +745,12 @@
    "level": "standard",
    "stem": "(   ) it rains tomorrow, we will hold the festival as planned.",
    "choices": [
+    "Even if",
     "Even though",
     "As if",
-    "Now that",
-    "Even if"
+    "Now that"
    ],
-   "answer": 3,
+   "answer": 0,
    "explanation": "まだ起きていないことを仮定して「たとえ〜だとしても」と譲歩するのは Even if。Even though は「実際に〜だけれども」と事実を前提にする形なので、明日の天気のようにまだ決まっていないことには使えない。As if は「まるで〜のように」、Now that は「今や〜だから」で、譲歩の条件を作れない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -776,11 +776,11 @@
    "stem": "You may use the laboratory (   ) that you clean up afterward.",
    "choices": [
     "supposed",
-    "provided",
     "concerned",
-    "regarded"
+    "regarded",
+    "provided"
    ],
-   "answer": 1,
+   "answer": 3,
    "explanation": "〈provided (that) …〉で「〜という条件であれば」という条件を示す。supposing なら同じ用法があるが、supposed の形では条件節を導けない。concerned は as far as … is concerned、regarded は as regards のように別の形で使う語で、条件を示す接続詞にはならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -806,11 +806,11 @@
    "stem": "(   ) that she has been studying English for only a year, her pronunciation is remarkable.",
    "choices": [
     "Regarding",
+    "Considering",
     "Concerning",
-    "Including",
-    "Considering"
+    "Including"
    ],
-   "answer": 3,
+   "answer": 1,
    "explanation": "〈Considering (that) S V〉で「〜であることを考えれば」と判断の前提を示す。Regarding や Concerning は「〜に関して」、Including は「〜を含めて」という意味の前置詞のはたらきをする語で、that 節を導いて判断の前提を述べる用法がない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -820,12 +820,12 @@
    "level": "advanced",
    "stem": "I didn't say anything, (   ) I agreed with him, but that I didn't want to start an argument.",
    "choices": [
-    "not that",
     "so that",
+    "not that",
     "now that",
     "in that"
    ],
-   "answer": 0,
+   "answer": 1,
    "explanation": "〈not that A, but that B〉で「Aだからではなく、Bだからだ」と理由を対比する形。so that は目的や結果、now that は「今や〜だから」、in that は「〜という点で」を表し、後ろの but that と呼応して理由を打ち消す形にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -835,12 +835,12 @@
    "level": "advanced",
    "stem": "(   ) I admit that there are some difficulties, I don't think the plan is impossible.",
    "choices": [
-    "During",
     "While",
+    "During",
     "Despite",
     "Unless"
    ],
-   "answer": 1,
+   "answer": 0,
    "explanation": "文頭の While は「〜ではあるが」と譲歩を表す接続詞として使える。During と Despite は前置詞なので、あとに I admit という節を続けられない。Unless は「〜しない限り」で、困難を認めたうえで反論するという流れを作れない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -852,10 +852,10 @@
    "choices": [
     "Allowed",
     "Permitted",
-    "Granted",
-    "Accepted"
+    "Accepted",
+    "Granted"
    ],
-   "answer": 2,
+   "answer": 3,
    "explanation": "〈Granted (that) S V〉で「〜であることは認めるとしても」と譲歩を示す決まった形。Allowed / Permitted / Accepted は「許された」「受け入れられた」という過去分詞で、that 節を導いて譲歩を表す用法がない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -867,10 +867,10 @@
    "choices": [
     "was",
     "has been",
-    "is",
-    "were"
+    "were",
+    "is"
    ],
-   "answer": 3,
+   "answer": 2,
    "explanation": "both A and B が主語のときは複数として扱うので、過去の be 動詞は were。was や is は単数の主語に対応する形、has been は現在完了で単数の主語を受ける形なので、いずれも複数扱いのこの主語とは一致しない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -941,11 +941,11 @@
    "stem": "(   ) umbrella is this? — It's mine.",
    "choices": [
     "Who's",
-    "Who",
     "Whose",
+    "Who",
     "Whom"
    ],
-   "answer": 2,
+   "answer": 1,
    "explanation": "直後の名詞 umbrella を修飾して「誰の傘か」と持ち主を尋ねるので Whose。Who's は who is の短縮形なので名詞を修飾できない。Who と Whom は代名詞で、名詞を直接修飾する形にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -970,12 +970,12 @@
    "level": "basic",
    "stem": "I have no idea why (   ) so angry with me.",
    "choices": [
-    "she is",
     "is she",
     "does she",
+    "she is",
     "she does"
    ],
-   "answer": 0,
+   "answer": 2,
    "explanation": "文の一部に組み込まれた間接疑問は〈疑問詞+主語+動詞〉という平叙文の語順になるので she is。is she は疑問文の倒置した語順で、従属節の中では使わない。does she も疑問文の語順であるうえ、be 動詞の文に does を加えるのは誤り。she does では angry と結びつかない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -986,11 +986,11 @@
    "stem": "Open the window, (   )?",
    "choices": [
     "do you",
-    "will you",
     "are you",
+    "will you",
     "shall we"
    ],
-   "answer": 1,
+   "answer": 2,
    "explanation": "命令文に付ける付加疑問は will you。do you や are you は平叙文に付ける形で、命令文には使えない。shall we は Let's で始まる文に付ける形。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1002,10 +1002,10 @@
    "choices": [
     "How much",
     "How long",
-    "How many",
-    "How far"
+    "How far",
+    "How many"
    ],
-   "answer": 2,
+   "answer": 3,
    "explanation": "直後に数えられる名詞の複数形 times が続くので How many。How much は数えられない量、How long は長さや期間、How far は距離を尋ねる語で、回数を数える文には合わない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1015,12 +1015,12 @@
    "level": "basic",
    "stem": "Don't you like natto? — (   ), I love it.",
    "choices": [
+    "Yes",
     "No",
     "Sure not",
-    "Of course not",
-    "Yes"
+    "Of course not"
    ],
-   "answer": 3,
+   "answer": 0,
    "explanation": "英語では、たずね方が否定であっても答える内容が肯定なら Yes を使う。No は「好きではない」という否定の答えになり、続く I love it と矛盾する。Sure not や Of course not も否定の応答なので、同じく内容と食い違う。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1030,12 +1030,12 @@
    "level": "standard",
    "stem": "(   ) you didn't tell me about the schedule change?",
    "choices": [
-    "How come",
     "How",
     "Why",
+    "How come",
     "What for"
    ],
-   "answer": 0,
+   "answer": 2,
    "explanation": "How come のあとは〈主語+動詞〉という平叙文の語順が続くので、この文には How come が入る。How や Why を使うなら didn't you tell me … と疑問文の語順にしなければならない。What for は What did you … for? のように文末に置いて使う形で、文頭には立てない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1045,12 +1045,12 @@
    "level": "standard",
    "stem": "(   ) should I address the letter of complaint?",
    "choices": [
-    "To who",
     "To whom",
+    "To who",
     "Whom to",
     "Who to"
    ],
-   "answer": 1,
+   "answer": 0,
    "explanation": "前置詞の直後に置く疑問詞は目的格になるので To whom。To who は前置詞のあとに主格を置いた誤った形。Whom to / Who to はこの位置で「誰宛てに」という意味を作れない語順。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1077,10 +1077,10 @@
    "choices": [
     "have been",
     "was being",
-    "am",
-    "had been"
+    "had been",
+    "am"
    ],
-   "answer": 3,
+   "answer": 2,
    "explanation": "主節が asked と過去なので時制を一致させ、さらに「その前の週末」とより前のことを述べるので過去完了の had been。have been や am は現在を基準にした形で、主節の過去と一致しない。was being は一時的なふるまいを表す形で、居場所を述べる文にはならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1090,12 +1090,12 @@
    "level": "standard",
    "stem": "(   ) are you saving all this money for?",
    "choices": [
-    "What",
     "Why",
     "How",
-    "Which"
+    "Which",
+    "What"
    ],
-   "answer": 0,
+   "answer": 3,
    "explanation": "文末の前置詞 for の目的語になるのは What で、〈What … for?〉は「何のために」と目的を尋ねる形。Why は理由を尋ねる語で、文末の for と意味が重なってしまう。How や Which は for の目的語として目的を問うはたらきを持たない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1106,11 +1106,11 @@
    "stem": "Do you know (   ) the concert will begin?",
    "choices": [
     "when will",
-    "when",
     "what time will",
-    "that"
+    "that",
+    "when"
    ],
-   "answer": 1,
+   "answer": 3,
    "explanation": "Do you know … は Yes / No で答えられる問いなので、中の間接疑問は〈疑問詞+主語+動詞〉の語順にする。when will や what time will は倒置した疑問文の語順で、従属節には置けない。that では時をたずねる意味にならない。なお Do you think … の場合は疑問詞が文頭に出て When do you think it will begin? となる点も押さえておきたい。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1121,11 +1121,11 @@
    "stem": "Do you have any idea (   ) the missing documents?",
    "choices": [
     "who did take",
-    "did who take",
     "who took",
+    "did who take",
     "whom took"
    ],
-   "answer": 2,
+   "answer": 1,
    "explanation": "any idea のあとは間接疑問で、疑問詞 who がそのまま主語になるので〈who + 動詞〉の語順の who took。who did take は強調の形で、事実をたずねる間接疑問としては不自然。did who take は倒置した疑問文の語順、whom は目的格なので主語にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1150,12 +1150,12 @@
    "level": "standard",
    "stem": "(   ) will the new bridge be completed? — In about two years.",
    "choices": [
-    "How soon",
     "How long",
+    "How soon",
     "How much",
     "How far"
    ],
-   "answer": 0,
+   "answer": 1,
    "explanation": "「あとどれくらいで〜するか」と完成までの時間をたずねるのは How soon で、答えの In about two years とも呼応する。How long は続く期間の長さ、How much は量や値段、How far は距離を尋ねる語で、完成の時期を問えない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1165,12 +1165,12 @@
    "level": "standard",
    "stem": "The police are still investigating (   ) car was parked in front of the bank.",
    "choices": [
-    "who's",
     "whose",
+    "who's",
     "who",
     "whom"
    ],
-   "answer": 1,
+   "answer": 0,
    "explanation": "直後の名詞 car を修飾して「誰の車が」と持ち主を問う間接疑問なので whose。who's は who is の短縮形で名詞を修飾できない。who や whom は名詞を直接修飾する形にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1181,11 +1181,11 @@
    "stem": "(   ) ask your homeroom teacher for advice before you decide?",
    "choices": [
     "Why don't",
-    "How about",
     "Why not",
+    "How about",
     "What about"
    ],
-   "answer": 2,
+   "answer": 1,
    "explanation": "〈Why not + 動詞の原形〉で「〜してはどうですか」と提案する形なので Why not。Why don't のあとには you を補って Why don't you ask … としなければならない。How about や What about のあとは動名詞 asking が続くので、原形の ask とは結びつかない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1195,12 +1195,12 @@
    "level": "standard",
    "stem": "Could you tell me (   ) a post office near here?",
    "choices": [
+    "if there is",
     "is there",
     "there is if",
-    "whether is there",
-    "if there is"
+    "whether is there"
    ],
-   "answer": 3,
+   "answer": 0,
    "explanation": "tell me に続く間接疑問は〈接続詞+主語+動詞〉という平叙文の語順になるので if there is。is there は疑問文の倒置した語順、whether is there も同じく倒置していて使えない。there is if は語順が入れ替わっており、文として成立しない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1241,11 +1241,11 @@
    "stem": "(   ) the project will be funded or not remains to be seen.",
    "choices": [
     "If",
-    "That",
     "Whether",
+    "That",
     "What"
    ],
-   "answer": 2,
+   "answer": 1,
    "explanation": "「〜かどうか」という名詞節が文の主語になるときは Whether を使う。If にも「〜かどうか」の意味はあるが、主語になる名詞節を作ることはできない。That は事実を導く接続詞で or not と呼応せず、What は節の中で名詞のはたらきをする語が欠けているときに使う。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1255,12 +1255,12 @@
    "level": "advanced",
    "stem": "(   ) has become of the exchange student who stayed with your family last year?",
    "choices": [
+    "What",
     "Who",
     "How",
-    "Where",
-    "What"
+    "Where"
    ],
-   "answer": 3,
+   "answer": 0,
    "explanation": "〈What has become of ~?〉で「〜はどうなったのか」と消息をたずねる決まった形。Who では「誰が〜になったのか」となり、of と結びつかない。How や Where は become of の主語になれない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1270,12 +1270,12 @@
    "level": "advanced",
    "stem": "She was at a loss (   ) to turn to for help.",
    "choices": [
-    "whom",
     "whose",
     "what",
-    "how"
+    "how",
+    "whom"
    ],
-   "answer": 0,
+   "answer": 3,
    "explanation": "文末の前置詞 to の目的語になる〈疑問詞+不定詞〉なので、目的格の whom。whose は所有格なので後ろに名詞が必要になる。what では「誰を頼るか」という人を指す意味にならず、how では前置詞 to の目的語が欠けたままになる。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1285,12 +1285,12 @@
    "level": "advanced",
    "stem": "(   ) what extent do you think artificial intelligence will replace human workers?",
    "choices": [
-    "In",
     "To",
+    "In",
     "At",
     "By"
    ],
-   "answer": 1,
+   "answer": 0,
    "explanation": "〈To what extent …?〉で「どの程度まで〜か」と程度をたずねる決まった形。In / At / By は extent と組んでこの意味を表す形にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1330,12 +1330,12 @@
    "level": "advanced",
    "stem": "(   ) of the two candidates do you think is more likely to win?",
    "choices": [
-    "Which",
     "What",
+    "Which",
     "Whose",
     "Whom"
    ],
-   "answer": 0,
+   "answer": 1,
    "explanation": "of the two candidates と選ぶ範囲が二人に限られているので Which。What は範囲が限定されない問いに使う。Whose は「誰の〜」と所有を問う語、Whom は目的格なので is の主語にならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
@@ -1346,11 +1346,11 @@
    "stem": "I don't think she will accept our proposal, (   )?",
    "choices": [
     "won't she",
-    "will she",
     "do I",
+    "will she",
     "don't I"
    ],
-   "answer": 1,
+   "answer": 2,
    "explanation": "I don't think … の付加疑問は、否定が実質的に that 節の内容にかかると考え、従属節 she will accept を受けて肯定形の will she を付ける。won't she では否定が重なってしまう。do I / don't I は主節の I think を受ける形で、この構文では使わない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
