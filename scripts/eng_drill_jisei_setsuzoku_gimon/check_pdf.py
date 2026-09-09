@@ -34,6 +34,13 @@ def norm(s):
     return s.strip()
 
 
+def squash(s):
+    """空白を全部落とす。日本語は行末で改行しても空白が入らないが、**PDF の抽出側が
+    改行位置に空白を挿入する**ので、そのままでは全文一致が取れない (実測で90問中76問が不一致)。
+    両側から落として比べれば、途中で切れていないかを全文で確かめられる。"""
+    return re.sub(r"[\s　­​]+", "", s)
+
+
 def text_of(path):
     with fitz.open(path) as d:
         return norm(" ".join(p.get_text() for p in d)), d.page_count
@@ -49,6 +56,7 @@ def main():
     answers = build.answers()
     tq, pages_q = text_of(PDF_Q)
     ta, pages_a = text_of(PDF_A)
+    sa = squash(ta)
 
     # 空所は印刷では下線に置き換わるので、前後の断片で照合する
     for i, (r, ans_text) in enumerate(zip(rows, answers), 1):
@@ -59,11 +67,11 @@ def main():
         for c in r["choices"]:
             if norm(c) not in tq:
                 NG.append(f"NG: 第{i}問 の選択肢が問題編に出ていない: {c}")
-        # 解説編: 完成文と解説と正解番号
-        if norm(r["stem"].replace("(   )", ans_text)) not in ta:
+        # 解説編: 完成文と解説は**全文**で照合する (途中で切れていないか)
+        if squash(r["stem"].replace("(   )", ans_text)) not in sa:
             NG.append(f"NG: 第{i}問 の完成文が解答解説編に出ていない")
-        if norm(r["explanation"])[:40] not in ta:
-            NG.append(f"NG: 第{i}問 の解説が解答解説編に出ていない")
+        if squash(r["explanation"]) not in sa:
+            NG.append(f"NG: 第{i}問 の解説が解答解説編に全文で出ていない (途中で切れている?)")
         marker = norm(f'{i}. 正解 {MARU[r["answer"]]} {ans_text}')
         if marker not in ta:
             NG.append(f"NG: 第{i}問 の正解表示が紙とデータで食い違う (期待: {marker})")
@@ -102,7 +110,7 @@ def main():
     print(f"問題編     {os.path.basename(PDF_Q)}  {pages_q} ページ")
     print(f"解答解説編 {os.path.basename(PDF_A)}  {pages_a} ページ")
     print(f"照合  設問文 {len(rows)} 問 / 選択肢 {sum(len(r['choices']) for r in rows)} 個 / "
-          f"完成文・解説・正解番号 各 {len(rows)} 件 / 正解一覧 {len(listed)} 問")
+          f"完成文・解説(全文)・正解番号 各 {len(rows)} 件 / 正解一覧 {len(listed)} 問")
     if NG:
         print(f"\n違反 {len(NG)} 件")
         for m in NG[:40]:

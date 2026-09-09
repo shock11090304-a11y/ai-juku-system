@@ -127,7 +127,7 @@ Q = [
  "had been は過去のある時点までの経過、will have been は未来の時点までの経過を表し、"
  "is having は have を進行形にした形で状態を表せない。"),
 
-("tense", "standard", "A: (   ) you ever visited Hokkaido?  B: Yes, I went there last winter.",
+("tense", "standard", "A: (   ) you ever visited Hokkaido? B: Yes, I went there last winter.",
  ["Did", "Have", "Are", "Were"], "Have",
  "ever を伴って「今までに行ったことがあるか」と経験をたずねる文なので現在完了の Have。"
  "Did は last winter のように過去の一時点を特定してたずねるときの形で、B の答えがその形になっている。"

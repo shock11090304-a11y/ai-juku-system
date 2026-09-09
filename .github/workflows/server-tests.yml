@@ -26,6 +26,8 @@ on:
       - 'server/**'
       - 'scripts/health_check/test_*.py'
       - '.github/workflows/server-tests.yml'
+      # 取込 API に通す seed。中身が変わったら「90問すべて入るか」を測り直す。
+      - 'seed-data/grammar_drill_pool_v2_*.json'
       # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
       - 'lp.html'
       - 'checkout.html'
@@ -174,6 +176,18 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_scheduler_alerting.py
+
+      # 📝 英文法ドリルの補充 seed (時制/接続詞/疑問詞・間接疑問 90問) が、本物の取込 API を
+      #   通って 1 問も落ちずに入るか。教材側のゲート (_rules.py) は server の受理条件を
+      #   **書き写した**ものなので、写し間違いや server 側の変更でずれる。ここでは実際に
+      #   POST して inserted/skipped を読み、DB から読み返して一字一句照合し、
+      #   3 単元それぞれで実際にドリルを組めるところまで見る。
+      #   ★「取り込んだつもりで在庫が増えていない」は画面上は成功に見える (dedup と同じ見た目)。
+      - name: 英文法ドリル seed の取込 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_grammar_pool_v2_import.py
 
       # 💳🎖 在籍/体験の母集団 (2026-09-07): 猶予期間中の past_due が配信・一覧から消えないこと、
       #   「体験中」「新規」「転換率」が本科/塾生アプリの承認で膨らまないこと、満了前キューの除外条件。

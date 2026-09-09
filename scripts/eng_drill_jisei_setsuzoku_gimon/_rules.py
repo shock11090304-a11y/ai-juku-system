@@ -96,6 +96,18 @@ def validate(rows, answers, root):
             if not str(c).strip() or str(c) != str(c).strip() or BLANK in str(c):
                 ng.append(f"NG: {where} 選択肢の形が不正 (空/前後の空白/空所記号): {c!r}")
 
+        # --- 表記 (紙にもアプリにもそのまま出る。混ざると素人くさい紙になる)
+        #   ★実際に「Hokkaido?  B:」と連続スペースが1件紛れていた (機械スキャンで発見)。
+        for fld, val in (("stem", stem), ("選択肢", " | ".join(str(c) for c in choices))):
+            if "  " in val.replace(BLANK, "@"):
+                ng.append(f"NG: {where} {fld} に連続スペース: {val[:60]}")
+            if re.search(r"[’‘“”]", val):
+                ng.append(f"NG: {where} {fld} にカーリー引用符 (直定引用符に揃える): {val[:60]}")
+            if re.search(r"[Ａ-Ｚａ-ｚ０-９　]", val):
+                ng.append(f"NG: {where} {fld} に全角の英数字/空白: {val[:60]}")
+        if expl.strip() and not expl.rstrip().endswith("。"):
+            ng.append(f"NG: {where} 解説が句点で終わっていない: …{expl[-24:]}")
+
         # --- 出題として自己完結しているか
         if stem.count(BLANK) != 1:
             ng.append(f"NG: {where} 空所 '{BLANK}' がちょうど1個でない: {stem}")
