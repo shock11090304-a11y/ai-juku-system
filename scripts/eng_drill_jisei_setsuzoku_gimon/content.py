@@ -128,6 +128,9 @@ Q = [
  "had been は過去のある時点までの経過、will have been は未来の時点までの経過を表す。"
  "is having は It is having ~ という言い方自体が無く、経過を表す It has been ~ の形にならない。"),
 
+# ★この問の visited を visit に「直さない」こと。原形にすると Did you ever visit ~? が
+#   アメリカ英語として完全に自然になり、正解が2つになる (盲解きで指摘)。
+#   Did を外せるのは、空所のあとが過去分詞で固定されているから。
 ("tense", "standard", "(   ) you ever visited Hokkaido? — Yes, I went there last winter.",
  ["Did", "Have", "Are", "Were"], "Have",
  "空所のあとが過去分詞 visited なので、組めるのは現在完了を作る Have。"
@@ -483,11 +486,11 @@ Q = [
  "Why / How / When は副詞にあたる疑問詞なので、主語の位置には立てない。"),
 
 ("wh", "standard", "She asked me where (   ) during the summer vacation.",
- ["I had stayed", "had I stayed", "did I stay", "I have stayed"], "I had stayed",
+ ["I had stayed", "had I stayed", "did I stay", "stayed I"], "I had stayed",
  "間接疑問は〈疑問詞+主語+動詞〉という平叙文の語順になるので I had stayed。"
- "さらに主節が asked と過去なので、それより前のことは時制を一致させて過去完了にする。"
+ "さらに主節が asked と過去なので、それより前のことは時制を一致させて過去完了にしている。"
  "had I stayed と did I stay はどちらも疑問文の倒置した語順で、従属節の中では使えない。"
- "I have stayed は語順は正しいが現在完了なので、主節の過去と時制が合わない。"),
+ "stayed I は主語と動詞を入れ替えただけの並びで、平叙文にも疑問文にもならない。"),
 
 ("wh", "standard", "(   ) are you saving all this money for?",
  ["What", "Why", "How", "Which"], "What",

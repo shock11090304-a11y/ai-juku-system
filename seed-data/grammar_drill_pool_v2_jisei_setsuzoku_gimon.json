@@ -1078,10 +1078,10 @@
     "had I stayed",
     "did I stay",
     "I had stayed",
-    "I have stayed"
+    "stayed I"
    ],
    "answer": 2,
-   "explanation": "間接疑問は〈疑問詞+主語+動詞〉という平叙文の語順になるので I had stayed。さらに主節が asked と過去なので、それより前のことは時制を一致させて過去完了にする。had I stayed と did I stay はどちらも疑問文の倒置した語順で、従属節の中では使えない。I have stayed は語順は正しいが現在完了なので、主節の過去と時制が合わない。",
+   "explanation": "間接疑問は〈疑問詞+主語+動詞〉という平叙文の語順になるので I had stayed。さらに主節が asked と過去なので、それより前のことは時制を一致させて過去完了にしている。had I stayed と did I stay はどちらも疑問文の倒置した語順で、従属節の中では使えない。stayed I は主語と動詞を入れ替えただけの並びで、平叙文にも疑問文にもならない。",
    "source": "drill-tense-conj-wh-20260909",
    "subject": "english"
   },
