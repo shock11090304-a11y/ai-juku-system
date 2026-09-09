@@ -27466,6 +27466,13 @@ def _weekly_report_recipients(row) -> tuple:
     p_em = (_g("parent_email") or "").strip()
     p_on = _g("parent_email_enabled")
     parent_to = p_em if (p_em and p_on and p_em.lower() != (student_to or "").lower()) else None
+    # 📊 2026-09-09: parent_email が空でも、生徒コピーが確認済みの子メールへ移った家庭では申込メール (email = 親) に
+    #   保護者コピーを送る。parent_email の配管は「生徒用メールを別指定した申込」だけで、単一メール申込・Stripe 経由・
+    #   塾生アプリ承認は NULL のまま。従来はその家庭で子メールを確認済みにした瞬間に親宛が 0 通になり、mypage の
+    #   保護者メール欄 (2026-09-09 に非表示) 以外に直す手段が無かった。parent_email_enabled=0 (明示 OFF) なら送らない。
+    _p_off = str(p_on).strip().lower() in ("0", "false")
+    if parent_to is None and not p_em and email and (student_to or "").lower() != email.lower() and not _p_off:
+        parent_to = email
     return student_to, parent_to
 
 

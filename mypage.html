@@ -1316,9 +1316,12 @@
       <div id="lbStudyTimeWidget" style="margin-top:1rem;"></div>
       <div id="vocabSrsWidget" style="margin-top:1rem;"></div>
       <div id="curriculumWeekWidget" style="margin-top:1rem;"></div>
-      <div id="usageQuotaWidget" style="margin-top:1rem;"></div>
-      <div id="examPrepWidget" style="margin-top:1rem;"></div>
-      <div id="referralWidget" style="margin-top:1rem;"></div>
+      <!-- 🙈 2026-09-09 塾長判断: 生徒には不要な表示として非表示 (今月の利用状況 / 次の定期テスト未登録 / 紹介プログラム)。
+           描画関数の呼び出しも initWidgets で止めている。戻すときは display:none を外し initWidgets の呼び出しを復活させる。
+           examPrepWidget は引き継ぎ通知 (renderInheritNoticeBanner) の挿入位置 (anchor) としては残す。 -->
+      <div id="usageQuotaWidget" data-aj-hidden="2026-09-09" style="margin-top:1rem; display:none;"></div>
+      <div id="examPrepWidget" data-aj-hidden="2026-09-09" style="margin-top:1rem; display:none;"></div>
+      <div id="referralWidget" data-aj-hidden="2026-09-09" style="margin-top:1rem; display:none;"></div>
 
       <!-- 機能ナビ -->
       <div style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.5rem;">
@@ -1347,7 +1350,8 @@
     </section>
 
     <!-- Motivation Quote -->
-    <section class="motivation-section">
+    <!-- 🙈 2026-09-09 塾長判断: 「AIコーチの言葉」(名言カード) は生徒画面に出さない。戻すときは display:none を外す -->
+    <section class="motivation-section" data-aj-hidden="2026-09-09" style="display:none;">
       <div class="motivation-card">
         <div class="motivation-icon">💪</div>
         <div>
@@ -1361,7 +1365,8 @@
 
     <!-- 契約・解約管理 -->
     <!-- 🎁 紹介ループ (友達紹介で双方に特典) -->
-    <section class="referral-section aj-adv2" style="margin-top:2rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(236,72,153,0.10)); border: 1px solid rgba(167,139,250,0.35); border-radius: 14px;">
+    <!-- 🙈 2026-09-09 塾長判断: 「友達紹介で双方に特典」は生徒画面に出さない (上の紹介ウィジェットと重複していた)。戻すときは display:none を外す -->
+    <section class="referral-section aj-adv2" data-aj-hidden="2026-09-09" style="display:none; margin-top:2rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(236,72,153,0.10)); border: 1px solid rgba(167,139,250,0.35); border-radius: 14px;">
       <div class="section-title"><h2>🎁 友達紹介で双方に特典</h2></div>
       <p id="referralAudienceCopy" style="font-size:0.88rem;color:#cbd5e1;margin:0 0 1rem 0;line-height:1.6;">
         塾の友達 / クラスメイトに教えるだけで <strong style="color:#a78bfa;">あなたは ¥3,000 OFF</strong>、相手は <strong style="color:#ec4899;">入塾金 ¥10,000 免除</strong>。
@@ -1413,7 +1418,10 @@
     </section>
 
     <!-- 📊 保護者メール設定 (塾長指示 2026-05-26: 週次レポート保護者並行配信) -->
-    <section id="parentEmailSection" class="aj-adv2" style="margin-top:1.5rem; padding:1.2rem 1.4rem; background:linear-gradient(135deg, rgba(99,102,241,0.10), rgba(168,85,247,0.08)); border:1px solid rgba(99,102,241,0.30); border-radius:14px;">
+    <!-- 🙈 2026-09-09 塾長判断: 保護者メール欄は生徒画面に出さない (申込時に保護者メールは parent_email へ自動で入る)。
+         下の inline script も section が display:none なら初期化と「保護者メールを登録すると…」バナーを出さない。
+         ★これで生徒が自分で parent_email を設定する手段は無くなる。必要になったら display:none を外す (CLAUDE.md 参照)。 -->
+    <section id="parentEmailSection" class="aj-adv2" data-aj-hidden="2026-09-09" style="display:none; margin-top:1.5rem; padding:1.2rem 1.4rem; background:linear-gradient(135deg, rgba(99,102,241,0.10), rgba(168,85,247,0.08)); border:1px solid rgba(99,102,241,0.30); border-radius:14px;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.6rem; flex-wrap:wrap;">
         <h3 style="margin:0; font-size:1.0rem; color:#a5b4fc; font-weight:800;">📊 保護者向け週次レポート</h3>
         <span style="font-size:0.7rem; color:#94a3b8;">毎週日曜 19:00 配信</span>
@@ -1539,9 +1547,11 @@
             try { LB.renderTodayReview('lbTodayReview', studentId); } catch (_e) { console.warn('[mypage] LB.renderTodayReview failed', _e); }
             try { LB.renderStudyTimeWidget('lbStudyTimeWidget', studentId); } catch (_e) { console.warn('[mypage] LB.renderStudyTimeWidget failed', _e); }
           }
-          if (typeof ExamPrep !== 'undefined') { try { ExamPrep.renderUpcomingWidget('examPrepWidget'); } catch (_e) { console.warn('[mypage] ExamPrep widget failed', _e); } }
-          if (typeof ReferralProgram !== 'undefined') { try { ReferralProgram.renderReferralWidget('referralWidget', student); } catch (_e) { console.warn('[mypage] Referral widget failed', _e); } }
-          renderUsageQuotaWidget('usageQuotaWidget');
+          // 🙈 2026-09-09 塾長判断: 「次の定期テスト未登録」「紹介プログラム」「今月の利用状況」は生徒画面に出さない
+          //   (容器は data-aj-hidden で display:none)。戻すときは下 3 行のコメントを外す。
+          // if (typeof ExamPrep !== 'undefined') { try { ExamPrep.renderUpcomingWidget('examPrepWidget'); } catch (_e) { console.warn('[mypage] ExamPrep widget failed', _e); } }
+          // if (typeof ReferralProgram !== 'undefined') { try { ReferralProgram.renderReferralWidget('referralWidget', student); } catch (_e) { console.warn('[mypage] Referral widget failed', _e); } }
+          // renderUsageQuotaWidget('usageQuotaWidget');
           renderCurriculumWeekWidget('curriculumWeekWidget');
           syncCurriculumWeekWidgetFromServer('curriculumWeekWidget'); // ☁️ 端末に無ければアカウントから復元
           renderVocabSrsWidget('vocabSrsWidget', studentId);
@@ -2093,23 +2103,49 @@
         const keys = window.aiJukuGetInheritNotice(studentId);
         if (!keys.length) return;
         if (document.getElementById('inheritNoticeBanner')) return;
+        // 🙈 2026-09-09 塾長判断: この通知は毎回は出さない。「実際に画面に入った (生徒が見た)」回数を数え、2 回見せたら
+        //   了承扱いにする。★挿入しただけでは数えない (バナーはページ中ほどにあり、スクロールせず離脱した生徒の
+        //   「自分のものではない (取り消し)」の機会を奪わないため・review 指摘)。
+        const seenKey = 'aj_inherit_notice_seen:' + String(studentId);
+        let _seenCount = 0;
+        try { _seenCount = parseInt(localStorage.getItem(seenKey) || '0', 10) || 0; } catch (_e) { _seenCount = 0; }
+        if (_seenCount >= 2) {
+          try { if (typeof window.aiJukuDismissInheritNotice === 'function') window.aiJukuDismissInheritNotice(studentId); } catch (_e) { /* noop */ }
+          try { localStorage.removeItem(seenKey); } catch (_e) { /* noop */ }  // 後日の別の引き継ぎはまた 2 回見せる
+          return;
+        }
         const anchor = document.getElementById('examPrepWidget') || document.getElementById('curriculumWeekWidget');
         if (!anchor) return;
         const div = document.createElement('div');
         div.id = 'inheritNoticeBanner';
         div.style.cssText = 'background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.35);border-radius:10px;padding:0.85rem;margin-bottom:0.8rem;';
         div.innerHTML = `
-          <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.6;">📦 この端末で作成されていた学習データ (学習プラン・履歴など) を、あなたのアカウントに引き継ぎました。</div>
+          <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.6;">📦 この端末で作成されていた学習データ (学習プラン・履歴など) を、あなたのアカウントに引き継ぎました。<span style="color:#94a3b8;">（この案内は${_seenCount >= 1 ? '今回が最後です' : 'あと 2 回で消えます'}。自分のデータではない場合は、消える前に下の「自分のものではない」を押してください）</span></div>
           <div style="display:flex;gap:0.5rem;margin-top:0.55rem;flex-wrap:wrap;">
             <button id="inheritOkBtn" style="background:rgba(59,130,246,0.2);color:#93c5fd;border:1px solid rgba(59,130,246,0.45);padding:0.35rem 0.9rem;border-radius:6px;font-size:0.8rem;font-weight:700;cursor:pointer;">OK</button>
             <button id="inheritUndoBtn" style="background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.15);padding:0.35rem 0.9rem;border-radius:6px;font-size:0.8rem;cursor:pointer;">自分のものではない (引き継ぎを取り消す)</button>
           </div>`;
         anchor.insertAdjacentElement('beforebegin', div);
+        // 半分以上が画面に入ったら「1 回見た」と数える (IntersectionObserver が無い環境では数えない = 従来どおり毎回出す)
+        try {
+          if ('IntersectionObserver' in window) {
+            const _io = new IntersectionObserver((entries) => {
+              // observe 直後の初回通知は閾値未満でも isIntersecting=true になり得るので ratio も見る (review 指摘)
+              if (entries.some((e) => e.isIntersecting && e.intersectionRatio >= 0.5)) {
+                try { localStorage.setItem(seenKey, String(_seenCount + 1)); } catch (_e) { /* noop */ }
+                _io.disconnect();
+              }
+            }, { threshold: 0.5 });
+            _io.observe(div);
+          }
+        } catch (_e) { /* noop */ }
         document.getElementById('inheritOkBtn').addEventListener('click', () => {
           window.aiJukuDismissInheritNotice(studentId);
+          try { localStorage.removeItem(seenKey); } catch (_e) { /* noop */ }  // 次に別の引き継ぎが立ったら、また見せる
           div.remove();
         });
         document.getElementById('inheritUndoBtn').addEventListener('click', () => {
+          try { localStorage.removeItem(seenKey); } catch (_e) { /* noop */ }
           if (!confirm('この端末で作成済みだった学習プラン・履歴の引き継ぎを取り消します。データは隔離保管に移り、この画面から消えます。よろしいですか？')) return;
           const ok = window.aiJukuUndoInherit(studentId);
           alert(ok ? '引き継ぎを取り消しました。' : '一部のデータを退避できませんでした。時間をおいてもう一度お試しください。');
@@ -2296,6 +2332,8 @@
       const saveBtn = document.getElementById('parentEmailSaveBtn');
       const status = document.getElementById('parentEmailStatus');
       if (!input || !saveBtn || !checkbox || !status) return;
+      // 🙈 2026-09-09 塾長判断: section が非表示なら初期化しない (API 取得も「登録すると…」バナーも出さない)
+      { const _pes = document.getElementById('parentEmailSection'); if (_pes && _pes.style.display === 'none') return; }
       const token = localStorage.getItem('ai_juku_session_token') || '';
       if (!token) return;
       // 📊 2026-07-21 [parent-email-collection] 監査結果: parent_email 登録は3家庭・全て生徒本人と

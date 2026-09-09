@@ -136,6 +136,19 @@ def main():
     c.execute("SELECT COUNT(*) AS n FROM events WHERE name='coach_done' AND session_id=?", (str(S2),)); n = c.fetchone()["n"]; conn.close()
     check("events に coach_done が 1 行だけ", n == 1, n)
 
+    print("2.5) 週次レポートの宛先 (parent_email 空の家庭は申込メールへ保護者コピー)")
+    rec = mod._weekly_report_recipients
+    check("子メール確認済み + parent_email 空 → 生徒=子 / 保護者=申込メール",
+          rec({"email": "p@example.org", "student_email": "c@example.org", "student_email_verified": 1, "parent_email": None, "parent_email_enabled": 1}) == ("c@example.org", "p@example.org"))
+    check("parent_email_enabled=0 (明示 OFF) なら保護者コピー無し",
+          rec({"email": "p@example.org", "student_email": "c@example.org", "student_email_verified": 1, "parent_email": None, "parent_email_enabled": 0}) == ("c@example.org", None))
+    check("子メール無し → 生徒コピーが親宛なので保護者コピーは重ねない",
+          rec({"email": "p@example.org", "student_email": None, "student_email_verified": 0, "parent_email": None, "parent_email_enabled": 1}) == ("p@example.org", None))
+    check("parent_email 配管済み (= email) でも二重にならない",
+          rec({"email": "p@example.org", "student_email": "c@example.org", "student_email_verified": 1, "parent_email": "p@example.org", "parent_email_enabled": 1}) == ("c@example.org", "p@example.org"))
+    check("未確認の子メールには送らない (従来どおり)",
+          rec({"email": "p@example.org", "student_email": "c@example.org", "student_email_verified": 0, "parent_email": None, "parent_email_enabled": 1}) == ("p@example.org", None))
+
     print("3) /api/auth/me の line_linked")
     r = client.get("/api/auth/me", headers=h1); st = r.json().get("student", {})
     check("LINE 連携済みは line_linked=True", r.status_code == 200 and st.get("line_linked") is True, st)
@@ -265,6 +278,12 @@ def main():
     check("learning-brain.js の ?v= が最終変更 (2026-07-14) より新しい", "learning-brain.js?v=20260909" in html)
     import re as _re
     visible = _re.sub(r"<!--.*?-->", "", html, flags=_re.S)  # HTML コメントは生徒に見えないので除外
+    # 🙈 2026-09-09 塾長判断で非表示にした 6 か所 (利用状況 / テスト日程 / 紹介×2 / AIコーチの言葉 / 保護者メール欄)
+    hidden_tags = _re.findall(r'<(?:section|div)[^>]*data-aj-hidden="2026-09-09"[^>]*>', visible)
+    check("塾長判断の非表示 6 か所が display:none", len(hidden_tags) == 6 and all("display:none" in t.replace(" ", "") for t in hidden_tags), hidden_tags)
+    check("非表示にしたウィジェットは描画関数を呼ばない", "// renderUsageQuotaWidget('usageQuotaWidget');" in html and "// if (typeof ExamPrep" in html and "// if (typeof ReferralProgram" in html)
+    check("引き継ぎ通知は「実際に見た回数」で数える (IntersectionObserver・挿入だけでは数えない)",
+          "aj_inherit_notice_seen:" in html and "IntersectionObserver" in html and "_seenCount >= 2" in html)
     check("専門語 (SRS / Leitner / 3 mode) を生徒向けの言葉に", "(SRS)" not in visible and "Leitner Box" not in visible and "3 mode" not in visible)
 
     print()
