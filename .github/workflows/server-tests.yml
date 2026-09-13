@@ -55,7 +55,7 @@ jobs:
     # 回帰があると health が 17秒 × 5 回ブロックして伸びる。無限に待たない。
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # 🧷 ?v= 検査 (下) が push 前の commit と比較するために履歴を少し持つ (全履歴は PDF 込みで重い)
           fetch-depth: 50
