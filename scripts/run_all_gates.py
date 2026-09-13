@@ -114,6 +114,9 @@ WRITE_OK = {
         "tempfile の使い捨てディレクトリに正典と写しを複製し、そこだけを壊してゲートを回すだけ"
         "（リポジトリは1文字も書き換えない）",
     "eng_hinshi_bunkai/qa.py": "出力ディレクトリを作るだけ",
+    "kobun_kyotsu_enshu/check_gates.py":
+        "tempfile の使い捨てディレクトリにパッケージを丸ごと写し、その写しの中だけを壊して"
+        "check.py / check_source.py / audit.py が落ちることを確かめる（リポジトリは1文字も書き換えない）",
     "kyotsu2026_mirror/build/qa_machine.py": "QA レポートを書くだけ",
     "math_workbook/ia_jaku_gate.py": "KaTeX 描画用の一時HTML/PDFを書いて消すだけ",
     "math_workbook/unit_check_ia_jaku.py": "KaTeX 描画用の一時HTML/PDFを書いて消すだけ",
