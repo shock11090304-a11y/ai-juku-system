@@ -227,6 +227,138 @@ def main():
             ng(f"正解が単独で{word}になる設問が {sum(arr)}/{len(arr)}（{r:.0%}）"
                f"＝本文を読まず長さだけで当たってしまう")
 
+    # 16) 誤答だけに出る言い回し（文末・言い回しの手がかり）
+    #   ★本文を読まなくても「この言い方が出たら誤答」と覚えれば選択肢が減る、という抜け道。
+    #     実測で、文末が「〜である。」の肢が23本あって正解は0本、
+    #     「てしまっ」「ものであ」「であって」「のほう」「しており」「と考え」も正解に1本も無かった。
+    #     長さ・位置の偏りは見ていたが、この軸はどのゲートも見ていなかった。
+    ok_txt, ng_txt = [], []
+    for S in sets:
+        for q in S["questions"]:
+            for it in q["items"]:
+                for i, c in enumerate(it["choices"]):
+                    (ok_txt if i == it["answer"] else ng_txt).append(flat(c))
+    grams = collections.Counter()
+    for c in ok_txt + ng_txt:
+        grams.update({c[i:i + 4] for i in range(len(c) - 3)})
+    # ★閾値は「素の的中率 168/210＝80%」から導いてはいけない。比べるべきは期待値ではなく分散。
+    #   正解42本・誤答168本では MIN=10 を満たす4字の言い回しが19種しかなく、
+    #   0.93 だと**偶然だけで平均0.83本鳴り、2回に1回は赤くなる**（正解の位置を無作為に置き直す
+    #   順列検定300回で実測）。誤報を消す作業でゲートを外されるのが最悪なので 15/0.95 に置く
+    #   （偶然0.06本・4%）。誤答全部に同じ言い回しを足す変異はこの設定でも10本鳴る。
+    MIN = 15
+    # ★「率がぴったり釣り合っているか」で見てはいけない。正解42本・誤答168本しかないので、
+    #   ばらつきだけでどの言い回しも少しは偏る（実際に「している」「であった」まで挙がった）。
+    #   見るのは「その言い回しで切ったとき、どれだけ当たるか」。
+    #   何も知らずに切って当たる率が 168/210＝80% なので、93% を超えたら手がかりになっている。
+    HIT = 0.95
+    def lean(a, b):
+        return b >= MIN and b / (a + b) >= HIT
+    for g, _n in grams.items():
+        if _n < MIN: continue                  # MIN 未満は検定にかけない（8957種→19種に落ちる）
+        a = sum(1 for c in ok_txt if g in c)
+        b = sum(1 for c in ng_txt if g in c)
+        if lean(a, b):
+            ng(f"「{g}」が誤答{b}本・正解{a}本＝誤答に偏っていて、本文を読まずに切れる")
+        # ★正解側に寄る言い回しも同じだけ危ない（「この言い方なら正解」で当てられる）。
+        if lean(b, a):
+            ng(f"「{g}」が正解{a}本・誤答{b}本＝正解に偏っていて、本文を読まずに当てられる")
+    # 文末の形（最後の4字）も同じ見方で見る
+    tails = collections.Counter(c[-4:] for c in ok_txt + ng_txt)
+    for t, _n in tails.items():
+        a = sum(1 for c in ok_txt if c.endswith(t))
+        b = sum(1 for c in ng_txt if c.endswith(t))
+        if lean(a, b):
+            ng(f"文末「…{t}」が誤答{b}本・正解{a}本＝文末だけで誤答を切れる")
+        if lean(b, a):
+            ng(f"文末「…{t}」が正解{a}本・誤答{b}本＝文末だけで正解を当てられる")
+
+    # ★回ごとに閉じた手がかりは、6回を合算すると薄まって見えなくなる。
+    #   実測で第5回は「てしまっ」が**その回の誤答28本中7本・正解0本**（的中率1.00）だったが、
+    #   合算では a=2/b=11 でどのしきい値にも届かず、永久に鳴らないところだった。
+    #   生徒は1回ずつ解くので、回の中で閉じている偏りこそ効く。
+    # ★回の中は正解7本・誤答28本しかなく、a=0 でも超幾何の p は b=6 で 0.23・b=7 で 0.18。
+    #   **回の中だけで統計的に有意な tell は出せない**。6 に下げると順列検定400回で
+    #   29%が誤報（合算の層は4%）なので 8 に戻す。拾えない範囲は下の一覧で人に回す。
+    MIN1 = 8
+    for S in sets:
+        ok1, ng1 = [], []
+        for q in S["questions"]:
+            for it in q["items"]:
+                for i, c in enumerate(it["choices"]):
+                    (ok1 if i == it["answer"] else ng1).append(flat(c))
+        g1 = collections.Counter()
+        for c in ok1 + ng1: g1.update({c[i:i + 4] for i in range(len(c) - 3)})
+        for g, n1 in g1.items():
+            if n1 < MIN1: continue
+            a = sum(1 for c in ok1 if g in c)
+            b = sum(1 for c in ng1 if g in c)
+            if b >= MIN1 and b / (a + b) >= HIT:
+                ng(f"第{S['id']}回: 「{g}」がこの回の誤答{b}本・正解{a}本＝この回だけ解く生徒に手がかりになる")
+
+    # ★解説の「⑤ は…」が、本当にその⑤について書かれているか。
+    #   1文1肢に割るとき、**執筆順の添字と述語の対応を取り違える**事故が実際に3か所起きた
+    #   （刷る順から逆算して書いてしまう）。刷り上がりを読まないと気づけない種類の誤りなので、
+    #   解説がどれかの肢から言葉を borrow しているときだけ、その出どころを突き合わせる。
+    for S in sets:
+        for q in S["questions"]:
+            for it in q["items"]:
+                lab = it.get("label", "")
+                for ln in q["exp"].split("\n"):
+                    if lab and not ln.startswith(lab): continue
+                    m = re.search(r"よって\s*[①-⑤\s]+。(.*)$", ln)
+                    if not m: continue
+                    for sent in re.split(r"(?<=。)", m.group(1)):
+                        head = re.match(r"^\s*[①-⑤\s]*", sent).group(0)
+                        ns = [CIRC.index(c) for c in head if c in CIRC]
+                        if len(ns) != 1 or ns[0] == it["answer"]: continue
+                        body = flat(sent[len(head):])
+                        L = {i: lcs(body, flat(c)) for i, c in enumerate(it["choices"])
+                             if i != it["answer"]}
+                        best = max(L.values())
+                        if best >= 6 and L[ns[0]] <= best - 3:
+                            src = max(L, key=lambda i: L[i])
+                            ng(f"第{S['id']}回 問{q['no']}{lab}: 解説の「{CIRC[ns[0]]} は…」が"
+                               f"{CIRC[src]}の文言を引いている（重なり {L[ns[0]]}字 対 {best}字）"
+                               f"＝肢と解説の対応が入れかわっている疑い → {sent[:32]}")
+
+    # ★閾値に届かない偏りは、落とさずに一覧で見せる（人が見て判断する層）。
+    lean1 = []
+    for S in sets:
+        ok1, ng1 = [], []
+        for q in S["questions"]:
+            for it in q["items"]:
+                for i, c in enumerate(it["choices"]):
+                    (ok1 if i == it["answer"] else ng1).append(flat(c))
+        g1 = collections.Counter()
+        for c in ok1 + ng1: g1.update({c[i:i + 4] for i in range(len(c) - 3)})
+        for g, n1 in g1.items():
+            a = sum(1 for c in ok1 if g in c)
+            b = sum(1 for c in ng1 if g in c)
+            if b >= 5 and b / (a + b) >= 0.85:
+                lean1.append((-(b / (a + b)), -b, f"第{S['id']}回「{g}」誤{b}/正{a}（的中{b/(a+b):.2f}）"))
+    if lean1:
+        # ★N件で打ち切るときは、溢れた分が何件かを必ず言う（黙って切ると「これで全部」に見える）。
+        # ★N件で打ち切るときは「止めている行から」並べる。回番号の順に切ると、
+        #   いちばん的中率の高い1件が黙って落ちる（実際に的中1.00の1件が隠れていた）。
+        top = [x[2] for x in sorted(lean1)]
+        more = f"／ほか{len(top) - 8}件" if len(top) > 8 else ""
+        print(f"   回の中で誤答に寄っている言い回し（参考・{len(top)}件・的中の高い順）: "
+              + "／".join(top[:8]) + more)
+
+    # ★閾値の要らない見方も併せて置く。1つの設問の**誤答4本すべて**に出て正解に無い言い回しは、
+    #   その設問を本文抜きで当てられるということ（第5回 問4 が実際にその形だった）。
+    for S in sets:
+        for q in S["questions"]:
+            for it in q["items"]:
+                ok = flat(it["choices"][it["answer"]])
+                bad_ = [flat(c) for i, c in enumerate(it["choices"]) if i != it["answer"]]
+                shared = set.intersection(*[{c[i:i + 4] for i in range(len(c) - 3)} for c in bad_])
+                for g in sorted(shared - {ok[i:i + 4] for i in range(len(ok) - 3)}):
+                    if g.strip():
+                        ng(f"第{S['id']}回 問{q['no']}{it['label']}: 「{g}」が誤答4本すべてに出て正解に無い"
+                           f"＝この設問は本文を読まずに当てられる")
+
     # 13) 正解の位置が「読まなくても当たる」並びになっていないか
     if len(seq) >= 10:
         step = [(b - a) % 5 for a, b in zip(seq, seq[1:])]

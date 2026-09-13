@@ -49,6 +49,174 @@ def all_sets():
             for f in os.listdir(SETS) if re.fullmatch(r"set\d+\.json", f)]
     return sorted(rows, key=lambda r: r[0]["id"])
 
+def M_mark_bracket(d):
+    """傍線の引き始めを、かぎかっこの外へ1字ずらす。
+       ★線はかぎかっこの内側に引く（第1版と本番の冊子の引き方）。外へ出ると設問側の引用符と
+         見分けがつかなくなる。実際にこの形が6回中5回に入っていたが、開閉の個数を数える検査は
+         どれも通っていた＝個数だけでは位置のずれは絶対に出てこない。"""
+    d["passage"] = re.sub(r"([「『])\{\{([abcwxy])\}\}", r"{{\2}}\1", d["passage"], count=1)
+
+def M_mark_shift(d):
+    """傍線の範囲を1字だけ内側へずらす（設問の引用と食い違わせる）。
+       開き1個・閉じ1個は保たれるので、個数を数える検査では出てこない。"""
+    d["passage"] = re.sub(r"\{\{([abc])\}\}(.)", r"\2{{\1}}", d["passage"], count=1)
+
+def M_kill_order(d):
+    """解説の潰す順を入れかえる（生徒は自分の番号を探して読むので順が飛ぶと読み返しになる）"""
+    q = d["questions"][2]
+    parts = re.split(r"(?<=。)", q["exp"])
+    head = [i for i, t in enumerate(parts) if re.match(r"^\s*[①-⑤]", t)]
+    if len(head) >= 2:
+        i, j = head[0], head[1]
+        parts[i], parts[j] = parts[j], parts[i]
+    q["exp"] = "".join(parts)
+
+def M_note_ruby(d):
+    """注の見出し語から、本文が付けている読み仮名を落とす。
+       ★末尾に読み仮名がある注だけを壊すと、「語の途中に付く形」（国の政(まつりごと)したため行ふ）の
+         穴を踏まない。途中に付いているものを優先して壊す。"""
+    mid = [n for n in d["notes"] if re.search(r"\([ぁ-んァ-ヶー]+\).", n["word"])]
+    for n in (mid or d["notes"]):
+        if re.search(r"\([ぁ-んァ-ヶー]+\)", n["word"]):
+            n["word"] = re.sub(r"\([ぁ-んァ-ヶー]+\)", "", n["word"]); return
+
+def M_base(d):
+    """底本の記録を消す"""
+    d.pop("base", None)
+
+def M_mark_order(d):
+    """本文の傍線の記号の順を入れかえる（(ア)(イ)(ウ) が出てくる順）"""
+    p = d["passage"]
+    a = re.search(r"\{\{a\}\}(.*?)\{\{/a\}\}", p, re.S)
+    b = re.search(r"\{\{b\}\}(.*?)\{\{/b\}\}", p, re.S)
+    if not (a and b): return
+    p = p[:a.start()] + "{{b}}" + a.group(1) + "{{/b}}" + p[a.end():b.start()] + "{{a}}" + b.group(1) + "{{/a}}" + p[b.end():]
+    d["passage"] = p
+
+def M_stale(d):
+    """刷るデータだけを書きかえて、原稿と食い違わせる（make_sets.py の回し忘れ）"""
+    d["lead"] = d["lead"].replace("次の文章", "この文章", 1)
+
+def M_tell(d):
+    """誤答だけに出る言い回しを増やす（本文を読まずに誤答を切れる状態にする）"""
+    for q in d["questions"]:
+        for it in q["items"]:
+            for i in range(len(it["choices"])):
+                if i != it["answer"]:
+                    it["choices"][i] = it["choices"][i].rstrip("。") + "というものである。"
+
+def M_tell_one(d):
+    """1つの回の中だけで、誤答にだけ出る言い回しを作る（6回合算では薄まって見えない）"""
+    for q in d["questions"]:
+        for it in q["items"]:
+            for i in range(len(it["choices"])):
+                if i != it["answer"]:
+                    it["choices"][i] = it["choices"][i].rstrip("。") + "てしまったのだ。"
+
+def M_swap_kill(d):
+    """解説の「② は…」「⑤ は…」の述語だけを入れ替える（丸数字はそのまま）。
+       ★1文1肢に割るとき、執筆順の添字と述語の対応を取り違える事故が実際に3か所起きた。
+         刷り上がりを読まないと気づけない種類の誤りなので、機械で見張る。"""
+    for q in d["questions"]:
+        for it in q["items"]:
+            lab = it.get("label", "")
+            lines = q["exp"].split("\n")
+            for li, ln in enumerate(lines):
+                if lab and not ln.startswith(lab): continue
+                m = re.search(r"よって\s*[①-⑤\s]+。(.*)$", ln)
+                if not m: continue
+                parts = [t for t in re.split(r"(?<=。)", m.group(1)) if t.strip()]
+                singles = [i for i, t in enumerate(parts)
+                           if len(re.findall(r"[①-⑤]", re.match(r"^\s*[①-⑤\s]*", t).group(0))) == 1]
+                if len(singles) < 2: continue
+                i, j = singles[0], singles[1]
+                hi = re.match(r"^\s*[①-⑤\s]*", parts[i]).group(0)
+                hj = re.match(r"^\s*[①-⑤\s]*", parts[j]).group(0)
+                parts[i], parts[j] = hi + parts[j][len(hj):], hj + parts[i][len(hi):]
+                lines[li] = ln[:m.start(1)] + "".join(parts)
+                q["exp"] = "\n".join(lines)
+                return
+
+def M_anaphora(d):
+    """潰し文に「これも」を入れて、前の文を受ける形にする"""
+    for q in d["questions"]:
+        parts = re.split(r"(?<=。)", q["exp"])
+        for i, t in enumerate(parts):
+            m = re.match(r"^(\s*[①-⑤]\s*は)(.+)$", t)
+            if m and "いずれも" not in t:
+                parts[i] = m.group(1) + "これも" + m.group(2)
+                q["exp"] = "".join(parts); return
+
+def M_anaphora2(d):
+    """潰し文の**末尾**で前の文を受ける（文頭に置く変異だけだと、ガードの見える位置しか試せない）"""
+    for q in d["questions"]:
+        parts = re.split(r"(?<=。)", q["exp"])
+        for i, t in enumerate(parts):
+            if re.match(r"^\s*[①-⑤]\s*は", t) and "いずれも" not in t and "よって" not in t:
+                parts[i] = t.rstrip("。") + "、そのような記述も本文にない。"
+                q["exp"] = "".join(parts); return
+
+# ---------------------------------------------------------------- check.py の判定表そのものを壊す変異
+#   ★体裁の検査（check_style）は刷ったPDFを渡したときしか動かない＝CI では一度も実行されない。
+#     壊れても誰も気づかないまま「体裁は見ている」と言い続けることになるので、
+#     check.py の中に判定表の自己テスト（selftest_style）を置き、ここではその自己テストが
+#     本当に鳴るか＝検査の中身を1つ消したら赤くなるかを確かめる。
+SRC_MUTS = [
+    ("体裁: 記号が全角かどうかを見なくなる",
+     '    for lab in ("ア", "イ", "ウ", "Ａ", "Ｂ"):\n'
+     '        if f"（{lab}）" in txt:\n'
+     '            v.append(f"傍線の記号が全角の（{lab}）になっている（半角かっこ＋縦中横で1マスに収める）")',
+     "    pass", "「記号が全角」を崩しても拾わない"),
+    ("体裁: 記号の高さを見なくなる",
+     '        if h > 14:\n'
+     '            v.append(f"傍線の記号 {t} が縦に{h:.1f}pt（1マス＝約11ptに収めること）")',
+     "        pass", "「記号が縦に3マス」を崩しても拾わない"),
+    ("体裁: 配点の漢数字を見なくなる",
+     '    for word, why in (("配点四五点", "配点は漢数字"), ("得点／四五", "得点欄の満点は漢数字")):\n'
+     '        if txt.count(word) != n_sets:\n'
+     '            v.append(f"「{word}」が{txt.count(word)}回（{n_sets}回あるべき／{why}）")',
+     "    pass", "「配点が算用数字」を崩しても拾わない"),
+    ("体裁: 見出しの漢数字を見なくなる",
+     '    for sid in ids:\n'
+     '        if f"第四問（古文）演習問題第{sid}回" not in txt:\n'
+     '            v.append(f"第{sid}回の見出しが「第四問（古文）　演習問題　第{sid}回」でない")',
+     "    pass", "「見出しが算用数字」を崩しても拾わない"),
+    ("体裁: 記号の数を見なくなる",
+     '    if len(found) != 5 or any(c != n_sets for c in found.values()):\n'
+     '        v.append(f"傍線の記号の数が合わない {dict(found)}（5種×{n_sets}回）")',
+     "    pass", "「記号が1つ足りない」を崩しても拾わない"),
+]
+
+EXTRA = [
+    ("版面: 注番号の列またぎを見なくなる",
+     "    return bool(xs) and max(xs) - min(xs) > 6", "    return False",
+     "列をまたいだ注番号を見逃す"),
+    ("版面: 紙に墨が乗っているかを見なくなる",
+     "    return bool(area) and dark / area >= floor", "    return True",
+     "真っ白な所を「墨あり」と言う"),
+    ("版面: 罫の長さに対して字が足りないのを見なくなる",
+     "    need = max(1, int(length / 10.4) - 1)", "    need = 1",
+     "を right と言う（lonely のはず）"),
+    ("潰す順: 読む順の昇順を見なくなる",
+     '    flat = [n for b in blocks for n in b]\n'
+     '    if flat != sorted(flat): return f"読む順に並べると昇順でない {[x + 1 for x in flat]}"',
+     "    pass", "飛び番号のかたまりを拾えていない"),
+    ("設問: かぎかっこの入れ子を見なくなる",
+     "        if ch == \"「\":\n"
+     "            depth += 1\n"
+     "            if depth >= 2: out.append(s[max(0, i - 10):i + 14])",
+     "        if False:\n            pass",
+     "かぎかっこの入れ子を見逃す"),
+    ("版面: ほぼ白紙のページを見なくなる",
+     "    return 0 < len(body) < 4",
+     "    return False", "2行しか無いページを見逃す"),
+    ("版面: フッターを落とさなくなる",
+     '    return [l for l in txt.split("\\n")\n'
+     '            if l.strip() and "TRILLION" not in l and not re.fullmatch(r"\\s*\\d+\\s*/\\s*\\d+\\s*", l)]',
+     '    return [l for l in txt.split("\\n") if l.strip()]',
+     "フッターとノンブルを落とせていない"),
+]
+
 # ---------------------------------------------------------------- audit.py の変異
 def M_quote(d):
     q = d["questions"][3]
@@ -213,6 +381,18 @@ MUTS = [
     ("切り出しの申告が無い",             S_cut_undeclared,"check_source.py", "申告と合わない", "all"),
     ("保存してある原典が書き換わる",     S_source_edited, "check_source.py", "本文が校訂本文と違う", "all"),
     ("回が1つ丸ごと消える",              S_set_missing,   "check.py",       "回が足りない", "all"),
+    ("傍線がかぎかっこにかかる",         M_mark_bracket,  "check.py",       "線がかぎかっこにかかっている"),
+    ("傍線の範囲が設問の引用とずれる",   M_mark_shift,    "check.py",       "設問の引用と違う"),
+    ("解説が誤答を潰す順が崩れる",       M_kill_order,    "check.py",       "誤答を潰す順で"),
+    ("注の見出しから読み仮名が落ちる",   M_note_ruby,     "check.py",       "が本文の形と違う"),
+    ("底本の記録が消える",               M_base,          "check.py",       "底本（base）が記録されていない"),
+    ("傍線の記号の順が入れかわる",       M_mark_order,    "check.py",       "出てくる順が入れかわっている"),
+    ("刷るデータだけ原稿とずれる",       M_stale,         "check.py",       "make_sets.py を回し忘れ"),
+    ("誤答だけに出る言い回しが増える",   M_tell,          "audit.py",       "誤答に偏っていて", "allsets"),
+    ("1つの回の中だけで手がかりが出る", M_tell_one,      "audit.py",       "この回だけ解く生徒に手がかり"),
+    ("解説と肢の対応が入れかわる",       M_swap_kill,     "audit.py",       "入れかわっている疑い", "allsets"),
+    ("潰し文が前の文を受ける",           M_anaphora,      "check.py",       "前の文を受けている"),
+    ("潰し文が文末で前の文を受ける",     M_anaphora2,     "check.py",       "前の文を受けている"),
 ]
 
 # positions.py を壊す変異（audit.py の位置の層に、解説を壊さずに届かせる）
@@ -249,12 +429,24 @@ def main():
     snap = snapshot()
     sets_backup = {f: open(os.path.join(SETS, f), "rb").read() for f in os.listdir(SETS)}
     holes = []
-    for row in MUTS + [(n, None, "audit.py", e, "pos", f) for n, f, e in POS_MUTS]:
+    for row in (MUTS + [(n, None, "audit.py", e, "pos", f) for n, f, e in POS_MUTS]
+                + [(n, None, "check.py", e, "src", (old, new)) for n, old, new, e in SRC_MUTS + EXTRA]):
         name, fn, script, expect = row[0], row[1], row[2], row[3]
         kind = row[4] if len(row) > 4 else None
         base = None
         try:
-            if kind == "pos":
+            if kind == "src":
+                # 検査の中身を1つ消して、判定表の自己テストがそれを言い当てるかを見る
+                base = fresh_copy()
+                pth = os.path.join(base, "check.py")
+                t = open(pth, encoding="utf-8").read()
+                old, new = row[5]
+                if old not in t:
+                    print(f"★試験の不具合 {name}: 消すはずの検査が check.py に見当たらない")
+                    holes.append(f"{name}（消す対象が見当たらない＝試験側の不具合）"); continue
+                open(pth, "w", encoding="utf-8").write(t.replace(old, new, 1))
+                sid = "判定表"
+            elif kind == "pos":
                 base = fresh_copy()
                 p = os.path.join(base, "src", "positions.py")
                 t = open(p, encoding="utf-8").read()
@@ -284,7 +476,7 @@ def main():
                 sid, target = pick_target(kind)
                 d = json.loads(sets_backup[os.path.basename(target)].decode("utf-8")); fn(d)
                 json.dump(d, open(target, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-            code, hits, err = run(script, base if kind == "pos" else None)
+            code, hits, err = run(script, base if kind in ("pos", "src") else None)
             got = [h for h in hits if expect in h]
             if code == 0:
                 holes.append(f"{name}（赤にならない）"); mark = "★穴"
@@ -300,7 +492,7 @@ def main():
     print()
     if holes:
         print(f"検査の穴 {len(holes)} 件:"); [print("   " + h) for h in holes]; return 1
-    print(f"変異試験: {len(MUTS) + len(POS_MUTS)} 種すべて、狙った検査が拾った")
+    print(f"変異試験: {len(MUTS) + len(POS_MUTS) + len(SRC_MUTS) + len(EXTRA)} 種すべて、狙った検査が拾った")
     return 0
 
 if __name__ == "__main__":

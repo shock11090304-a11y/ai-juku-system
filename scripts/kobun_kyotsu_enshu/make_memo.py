@@ -34,11 +34,14 @@ def main(dest=None):
          "　② 同じページに併載された翻刻（底本の仮名書き）と語句を照合した。",
          "　③ 刷る側のデータと①の本文とを、毎回 check_source.py が機械で突き合わせる。",
          "　　 改めた箇所は sources/emendations.json に理由つきで登録しないと通らない。",
-         "　④ 読み仮名は校訂本文が付けているものだけを残し、こちらでは足していない。", ""]
+         "　④ 読み仮名は校訂本文が付けているものだけを残し、こちらでは足していない。",
+         "　★「梅沢本」は第1回（古本説話集）と第4・5回（無名抄）で別の本である。",
+         "　　どちらも梅沢彦太郎の旧蔵だが、古本説話集は孤本、無名抄は東京国立博物館所蔵の写本。", ""]
     for S in sets:
         key = f'set{S["id"]}'
         b.append("■ 第{}回（{}レベル）　{}".format(S["id"], L[S["level_no"]], S["work"]))
         b.append("　（{}・{}）".format(S["genre"], S["era"]))
+        if S.get("base"): b.append("　底本: " + S["base"] + "（やたナビTEXT の作品ページに明記されているもの）")
         b.append("　取得元: " + S.get("source_url", ""))
         if S.get("source_note"): b.append("　関連: " + S["source_note"])
         b.append("")
