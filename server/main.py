@@ -357,6 +357,16 @@ FOUNDER_TRIAL_DAYS = 7  # 14→7 日に短縮 (塾長指示 2026-06-30: AI管理
 #   現行 id は 2026-07-04 に Stripe API (livemode) で実物確認 (taiken.html:225 の buy.stripe.com/aFa9AV72Zc777plePE4F200)。
 #   ★Stripe Dashboard でこのリンクを作り直すと id が変わる → env TAIKEN_TRIAL_PLINK_ID で上書き可 (コード改修不要)。
 TAIKEN_TRIAL_PLINK_ID = os.getenv("TAIKEN_TRIAL_PLINK_ID", "plink_1TlejRR3lrRgwu4Sod3zgFyg")
+# 📘 教材サブスク (payment/material-subscriptions.json) の Payment Link id。カンマ区切り。
+#   教材サブスクは授業の月謝でも AI コーチングでもない**第3の系統**で、students テーブルに一切触らない。
+#   ★metadata.system="juku-payment-material" を付けているので下の startswith("juku-payment") で
+#     既に skip されるが、Payment Link の metadata が checkout.session.completed に載るかは
+#     Stripe 側の仕様に依存する。体験授業リンクと同じく **plink id でも弾く**二重の保険を置く。
+#     ここが外れると、教材サブスクの決済が「AIコーチングの購入」として students を書き換える。
+#   id は scripts/material_sub/setup_stripe.py --apply が印字する。Dashboard で作り直すと変わる。
+MATERIAL_SUB_PLINK_IDS = {
+    x.strip() for x in os.getenv("MATERIAL_SUB_PLINK_IDS", "").split(",") if x.strip()
+}
 # 🎯 [体験中フォロー強化 2026-06-30 塾長指示] 残日数カウントダウン/緊急継続CTA/満了前キュー/フォロー強化は
 #   「この日時(UTC)以降に登録した新規生徒のみ」に適用する。既存の体験中の生徒には後出しで一切付けない(完全に新規のみ)。
 #   判定は created_at >= この基準。env で前倒し/後ろ倒し可。
@@ -31277,6 +31287,13 @@ def stripe_webhook(
             else:
                 log.info(f"[Stripe webhook] taiken session diverted, non-paid (payment_status={session.get('payment_status')}) — no notify, no student write")
             return JSONResponse({"received": True, "handled": "taiken_trial_payment"}, status_code=200)
+        # 📘 教材サブスク: students に触れずに divert する (月謝でも AI コーチングでもない)。
+        #   metadata.system による skip は上の startswith("juku-payment") が担うが、
+        #   Payment Link の metadata が session に載らない場合に備えて plink id でも弾く。
+        if MATERIAL_SUB_PLINK_IDS and session.get("payment_link") in MATERIAL_SUB_PLINK_IDS:
+            log.info(f"[Stripe webhook] material-sub session diverted (plink={session.get('payment_link')}) "
+                     "— no student write")
+            return JSONResponse({"received": True, "handled": "material_subscription"}, status_code=200)
         purchase_type = meta.get("purchase_type", "monthly")  # 既定は月額（旧互換）
         plan = meta.get("plan")
         student_id = meta.get("student_id")

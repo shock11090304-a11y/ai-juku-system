@@ -1,0 +1,44 @@
+{
+  "_comment": "教材サブスク（授業とは別商品）の単価カタログ。material-subscription.html（表示）と scripts/material_sub/setup_stripe.py（Stripe に作る実価格）の両方が参照する。価格改定時はこのファイルだけを直し、`python3 scripts/material_sub/check_material_sub.py` で一致を検証すること。★月謝（payment/courses.json）とは別系統。混ぜないこと。",
+  "version": "2026-09-15",
+  "currency": "JPY",
+  "_system_tag": "juku-payment-material",
+  "_system_tag_note": "★このタグは juku-payment で始めること。server/main.py の webhook は startswith('juku-payment') を skip 条件にしており、外れると教材サブスクの決済が AI コーチングの購入として students テーブルを書き換える。api/stripe-webhook.py 側は == 'juku-payment-monthly' のみ処理するので、これも自動で skip される。",
+  "items": [
+    {
+      "id": "kaishaku",
+      "name": "英文解釈コース",
+      "price": 3000,
+      "tagline": "関関同立の英文を『なんとなく』から『記号で指せる』へ",
+      "summary": "英文解釈 × SVOCM 判別のプリントを毎月お届けします。問題編と解答・解説編の2冊組で、分解図・骨組み・採点ポイントまで付いています。",
+      "features": [
+        "毎月 1 セット（問題編＋解答解説編）をPDFでお届け",
+        "SVOCM 判別・構造判断の4択・英文解釈（分解＋和訳）の三部構成",
+        "解答編に分解図・骨組み・和訳・採点ポイントを収録",
+        "語彙は実際の入試英文と同じ水準に合わせて作成"
+      ],
+      "level": "高校2〜3年／関関同立志望",
+      "stripe_url": ""
+    },
+    {
+      "id": "grammar",
+      "name": "英文法コース",
+      "price": 3000,
+      "tagline": "文法項目を『知っている』から『使い分けられる』へ",
+      "summary": "英文法の単元別プリントを毎月お届けします。問題編と解答・解説編の2冊組で、誤答の理由まで解説します。",
+      "features": [
+        "毎月 1 セット（問題編＋解答解説編）をPDFでお届け",
+        "単元別の演習と、まぎらわしい項目の識別問題",
+        "解答編に正解の理由と誤答が誤りである理由を収録",
+        "語彙は実際の入試英文と同じ水準に合わせて作成"
+      ],
+      "level": "高校1〜3年",
+      "stripe_url": ""
+    }
+  ],
+  "billing": {
+    "interval": "month",
+    "note": "お申し込み日に初回決済、以後は毎月同じ日に自動更新されます。最低利用期間はありません。"
+  },
+  "_stripe_url_note": "stripe_url は scripts/material_sub/setup_stripe.py --apply が印字する https://buy.stripe.com/... を貼る。空のままでも画面は壊れず「準備中」を出す。check_material_sub.py が形式を検査する。"
+}

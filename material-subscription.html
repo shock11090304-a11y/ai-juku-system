@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教材サブスク お申し込み | トリリオン オンライン英語塾</title>
+  <meta name="description" content="英文解釈・英文法のプリント教材を毎月お届けする定期便。問題編と解答・解説編の2冊組、分解図と採点ポイント付き。月額3,000円、いつでも解約できます。">
+  <link rel="stylesheet" href="lp.css">
+  <style>
+    .ms-main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 2.5rem 1.2rem 4rem; }
+    .ms-hero { text-align: center; margin-bottom: 2.4rem; }
+    .ms-eyebrow {
+      display: inline-block; font-weight: 900; font-size: .8rem; letter-spacing: .08em;
+      color: #a5b4fc; background: rgba(99,102,241,.12); border: 1px solid rgba(129,140,248,.4);
+      padding: .35rem .9rem; border-radius: 999px; margin-bottom: 1rem;
+    }
+    .ms-hero h1 { font-size: clamp(1.7rem,5.5vw,2.5rem); font-weight: 900; line-height: 1.28; margin-bottom: .9rem; }
+    .ms-hero h1 .grad {
+      background: linear-gradient(135deg,#818cf8,#22d3ee);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .ms-hero p { color: var(--text-dim); font-size: 1.02rem; max-width: 620px; margin: 0 auto; line-height: 1.85; }
+
+    .ms-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 1.2rem; margin-bottom: 2.4rem; }
+    .ms-card {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(129,140,248,.28);
+      border-radius: 18px; padding: 1.5rem 1.4rem; display: flex; flex-direction: column;
+    }
+    .ms-card h2 { font-size: 1.3rem; font-weight: 900; margin: 0 0 .35rem; }
+    .ms-card .ms-tag { font-size: .84rem; color: #a5b4fc; margin-bottom: .9rem; line-height: 1.6; }
+    .ms-price { display: flex; align-items: baseline; gap: .4rem; margin-bottom: .9rem; }
+    .ms-price .ms-yen { font-size: 2rem; font-weight: 900; color: #fcd34d; font-variant-numeric: tabular-nums; }
+    .ms-price .ms-per { font-size: .9rem; color: var(--text-dim); }
+    .ms-card .ms-sum { font-size: .93rem; color: var(--text); line-height: 1.85; margin-bottom: 1rem; }
+    .ms-feat { list-style: none; padding: 0; margin: 0 0 1.2rem; }
+    .ms-feat li { font-size: .9rem; color: var(--text-dim); line-height: 1.7; padding-left: 1.4rem; position: relative; margin-bottom: .45rem; }
+    .ms-feat li::before { content: "✓"; position: absolute; left: 0; color: #34d399; font-weight: 900; }
+    .ms-level { font-size: .82rem; color: var(--text-dim); border-top: 1px solid rgba(255,255,255,.1); padding-top: .8rem; margin-bottom: 1rem; }
+    .ms-btn {
+      display: block; text-align: center; text-decoration: none; margin-top: auto;
+      background: linear-gradient(135deg,#6366f1,#22d3ee); color: #fff; font-weight: 900;
+      padding: .95rem 1.2rem; border-radius: 12px; font-size: 1.02rem;
+    }
+    .ms-btn.ms-soon { background: rgba(255,255,255,.08); color: var(--text-dim); cursor: default; }
+
+    .ms-section { margin-bottom: 2.2rem; }
+    .ms-section h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: .9rem; }
+    .ms-terms { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    .ms-terms th, .ms-terms td { border: 1px solid rgba(255,255,255,.13); padding: .7rem .9rem; text-align: left; vertical-align: top; line-height: 1.8; }
+    .ms-terms th { background: rgba(99,102,241,.12); color: #c7d2fe; white-space: nowrap; width: 8.5em; font-weight: 700; }
+    .ms-note { font-size: .86rem; color: var(--text-dim); line-height: 1.85; }
+    /* ★lp.css の既定リンク色は濃紺で、この暗い背景に沈んで読めない（実画面で確認）。
+       申込画面のリンクは特商法表記と問い合わせ先なので、必ず読める色を明示する。 */
+    .ms-main a { color: #7dd3fc; text-decoration: underline; text-underline-offset: 2px; }
+    .ms-main a:hover { color: #bae6fd; }
+    .ms-main a:focus-visible { outline: 2px solid #fcd34d; outline-offset: 2px; }
+    .ms-trust { display: flex; flex-wrap: wrap; gap: .6rem 1.2rem; justify-content: center; font-size: .82rem; color: var(--text-dim); margin-top: 1.2rem; }
+    /* ★スマホでは表を積み上げる。th を列のまま残すと「支 払 い 方 法」と1文字ずつ
+       縦に潰れる（実画面で確認）。td の中身が幅を食い切るため width:auto では直らない。 */
+    @media (max-width: 560px) {
+      .ms-terms, .ms-terms tbody, .ms-terms tr, .ms-terms th, .ms-terms td { display: block; width: auto; }
+      .ms-terms tr { border: 1px solid rgba(255,255,255,.13); border-radius: 10px; margin-bottom: .7rem; overflow: hidden; }
+      .ms-terms th, .ms-terms td { border: 0; white-space: normal; }
+      .ms-terms th { padding: .5rem .9rem; font-size: .84rem; }
+      .ms-terms td { padding: .7rem .9rem .9rem; }
+    }
+  </style>
+</head>
+<body>
+  <main class="ms-main">
+    <section class="ms-hero">
+      <span class="ms-eyebrow">教材サブスク</span>
+      <h1>入試の英文を<span class="grad">記号で指せる</span>ところまで</h1>
+      <p>関関同立をはじめとする私大入試の英文を題材に、プリント教材を毎月お届けします。問題編と解答・解説編の2冊組。解答編には分解図・骨組み・採点ポイントまで入っています。通塾は不要、教材だけのご利用です。</p>
+    </section>
+
+    <div class="ms-grid" id="msGrid"></div>
+
+    <section class="ms-section">
+      <h2>お申し込み内容の確認</h2>
+      <table class="ms-terms">
+        <tbody>
+          <tr><th>商品</th><td id="msTermItems">—</td></tr>
+          <tr><th>料金</th><td id="msTermPrice">—</td></tr>
+          <tr><th>お届け</th><td>毎月1セット（問題編＋解答・解説編）をPDFでお届けします。ダウンロードして印刷してお使いください。</td></tr>
+          <tr><th>支払い方法</th><td>クレジットカード（Stripe）。カード情報は当塾では保持しません。</td></tr>
+          <tr><th>契約期間</th><td id="msTermCycle">—</td></tr>
+          <tr><th>解約</th><td>いつでも解約できます。<a href="mailto:info@trillion-ai-juku.com">info@trillion-ai-juku.com</a> までご連絡いただければ、次回以降の請求を停止します。その月ぶんの教材まではご利用いただけます。日割りの返金はありません。</td></tr>
+          <tr><th>返金</th><td>デジタル教材の性質上、お届け後の返金はお受けできません。内容が表示できないなどの不具合は個別に対応します。</td></tr>
+          <tr><th>事業者情報</th><td><a href="legal.html">特定商取引法に基づく表記</a>をご確認ください。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="ms-section">
+      <h2>ご確認ください</h2>
+      <p class="ms-note">
+        ・この教材サブスクは<strong>授業料（月謝）とは別の商品</strong>です。通塾中の方の月謝には影響しません。<br>
+        ・お申し込みボタンを押すと Stripe の決済ページに進みます。決済が完了した時点でお申し込み成立となります。<br>
+        ・お申し込み日に初回決済、以後は毎月同じ日に自動更新されます。<br>
+        ・領収書は Stripe から自動でメール送信されます。<br>
+        ・ご不明な点は<a href="mailto:info@trillion-ai-juku.com">info@trillion-ai-juku.com</a>からご連絡ください。
+      </p>
+      <div class="ms-trust">
+        <span>🔒 SSL暗号化</span><span>💳 Stripe決済</span><span>🏢 カード情報は当塾に保存されません</span><span>🗓 いつでも解約可</span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  (async function () {
+    const grid = document.getElementById('msGrid');
+    let data;
+    try {
+      const res = await fetch('payment/material-subscriptions.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      data = await res.json();
+    } catch (e) {
+      grid.innerHTML = '<p class="ms-note">ただいま内容を読み込めませんでした。時間をおいてお試しください。</p>';
+      return;
+    }
+    const yen = n => '¥' + Number(n).toLocaleString('ja-JP');
+    // ★Stripe の URL は buy.stripe.com のものだけ受け付ける。カタログを書き換えられても
+    //   別のサイトへ誘導されないようにするため（決済ページなので厳しくする）。
+    const okUrl = u => typeof u === 'string' && /^https:\/\/buy\.stripe\.com\/[A-Za-z0-9]+$/.test(u);
+
+    grid.innerHTML = data.items.map(it => {
+      const ready = okUrl(it.stripe_url);
+      const btn = ready
+        ? `<a class="ms-btn" href="${it.stripe_url}" rel="noopener">${it.name}を申し込む（${yen(it.price)}／月）→</a>`
+        : `<span class="ms-btn ms-soon">準備中です</span>`;
+      return `<div class="ms-card">
+        <h2>${it.name}</h2>
+        <div class="ms-tag">${it.tagline}</div>
+        <div class="ms-price"><span class="ms-yen">${yen(it.price)}</span><span class="ms-per">／月（税込）</span></div>
+        <div class="ms-sum">${it.summary}</div>
+        <ul class="ms-feat">${it.features.map(f => `<li>${f}</li>`).join('')}</ul>
+        <div class="ms-level">対象：${it.level}</div>
+        ${btn}
+      </div>`;
+    }).join('');
+
+    document.getElementById('msTermItems').textContent =
+      data.items.map(i => i.name).join('／') + '（各コース個別にお申し込みいただけます）';
+    const prices = [...new Set(data.items.map(i => i.price))];
+    document.getElementById('msTermPrice').textContent =
+      (prices.length === 1 ? `各コース ${yen(prices[0])}／月（税込）` :
+        data.items.map(i => `${i.name} ${yen(i.price)}／月`).join('、')) + '。2コース両方のお申し込みも可能です。';
+    document.getElementById('msTermCycle').textContent = data.billing.note;
+  })();
+  </script>
+</body>
+</html>
