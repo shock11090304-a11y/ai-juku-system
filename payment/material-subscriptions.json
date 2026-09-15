@@ -1,44 +1,57 @@
 {
-  "_comment": "教材サブスク（授業とは別商品）の単価カタログ。material-subscription.html（表示）と scripts/material_sub/setup_stripe.py（Stripe に作る実価格）の両方が参照する。価格改定時はこのファイルだけを直し、`python3 scripts/material_sub/check_material_sub.py` で一致を検証すること。★月謝（payment/courses.json）とは別系統。混ぜないこと。",
+  "_comment": "映像サブスク（授業の月謝とは別商品）の正典。material-subscription.html（表示）と scripts/material_sub/setup_stripe.py（Stripe に作る実価格）の両方が参照する。価格・文面を変えるときはこのファイルだけを直し、`python3 scripts/material_sub/check_material_sub.py` で一致を検証すること。★月謝（payment/courses.json）とは別系統。混ぜないこと。",
+  "_source": "内容は塾長の Threads 投稿（trillion_eng・2026-09-11頃）のコピーをそのまま正典とする。価格 ¥1,000／映像／1本5〜10分／月8本・年96本／題材の英文はすべて書き下ろし。",
   "version": "2026-09-15",
   "currency": "JPY",
   "_system_tag": "juku-payment-material",
-  "_system_tag_note": "★このタグは juku-payment で始めること。server/main.py の webhook は startswith('juku-payment') を skip 条件にしており、外れると教材サブスクの決済が AI コーチングの購入として students テーブルを書き換える。api/stripe-webhook.py 側は == 'juku-payment-monthly' のみ処理するので、これも自動で skip される。",
+  "_system_tag_note": "★このタグは juku-payment で始めること。server/main.py の webhook は startswith('juku-payment') を skip 条件にしており、外れると映像サブスクの決済が AI コーチングの購入として students テーブルを書き換える。api/stripe-webhook.py 側は == 'juku-payment-monthly' のみ処理するので、これも自動で skip される。",
+  "hero": {
+    "lead": "予備校講師の英文解釈を、月額1,000円の映像で受けられるとしたら、どうしますか。",
+    "body": [
+      "単語と文法を終えたのに長文が読めない。原因は、たいてい語彙量ではありません。",
+      "一文の中で、どれが中心の動詞かを決める手順のほうです。",
+      "その手順を、96回に分けて渡します。"
+    ]
+  },
   "items": [
     {
       "id": "kaishaku",
       "name": "英文解釈コース",
-      "price": 3000,
-      "tagline": "関関同立の英文を『なんとなく』から『記号で指せる』へ",
-      "summary": "英文解釈 × SVOCM 判別のプリントを毎月お届けします。問題編と解答・解説編の2冊組で、分解図・骨組み・採点ポイントまで付いています。",
+      "price": 1000,
+      "tagline": "一文の中で、どれが中心の動詞かを決める手順を96回に分けて渡します",
+      "summary": "予備校講師による英文解釈の映像講義です。1本5〜10分、月8本・年96本。題材の英文はすべて書き下ろしで、市販の問題集の使い回しはありません。",
       "features": [
-        "毎月 1 セット（問題編＋解答解説編）をPDFでお届け",
-        "SVOCM 判別・構造判断の4択・英文解釈（分解＋和訳）の三部構成",
-        "解答編に分解図・骨組み・和訳・採点ポイントを収録",
-        "語彙は実際の入試英文と同じ水準に合わせて作成"
+        "1本 5〜10分。通学中やすきま時間で1本が終わります",
+        "月8本・年96本。毎週2本ずつお届けします",
+        "題材の英文はすべて書き下ろし",
+        "S・V・O・C・M を記号で指し切るところまでを毎回やります"
       ],
-      "level": "高校2〜3年／関関同立志望",
+      "level": "単語と文法を一通り終えた高校生・受験生",
       "stripe_url": ""
     },
     {
       "id": "grammar",
       "name": "英文法コース",
-      "price": 3000,
+      "price": 1000,
       "tagline": "文法項目を『知っている』から『使い分けられる』へ",
-      "summary": "英文法の単元別プリントを毎月お届けします。問題編と解答・解説編の2冊組で、誤答の理由まで解説します。",
+      "summary": "予備校講師による英文法の映像講義です。1本5〜10分、月8本・年96本。例文はすべて書き下ろしで、まぎらわしい項目の識別に絞って扱います。",
       "features": [
-        "毎月 1 セット（問題編＋解答解説編）をPDFでお届け",
-        "単元別の演習と、まぎらわしい項目の識別問題",
-        "解答編に正解の理由と誤答が誤りである理由を収録",
-        "語彙は実際の入試英文と同じ水準に合わせて作成"
+        "1本 5〜10分。通学中やすきま時間で1本が終わります",
+        "月8本・年96本。毎週2本ずつお届けします",
+        "例文はすべて書き下ろし",
+        "「どちらを使うか」で迷う項目を、判断の手順から説明します"
       ],
-      "level": "高校1〜3年",
+      "level": "高校1〜3年・受験生",
       "stripe_url": ""
     }
   ],
   "billing": {
     "interval": "month",
     "note": "お申し込み日に初回決済、以後は毎月同じ日に自動更新されます。最低利用期間はありません。"
+  },
+  "delivery": {
+    "method": "限定公開の動画リンクを、ご登録のメールアドレスにお送りします。視聴期限はありません（ご契約中はいつでも見返せます）。",
+    "cadence": "毎週2本ずつ（月8本）"
   },
   "_stripe_url_note": "stripe_url は scripts/material_sub/setup_stripe.py --apply が印字する https://buy.stripe.com/... を貼る。空のままでも画面は壊れず「準備中」を出す。check_material_sub.py が形式を検査する。"
 }

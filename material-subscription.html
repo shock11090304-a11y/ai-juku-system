@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>教材サブスク お申し込み | トリリオン オンライン英語塾</title>
-  <meta name="description" content="英文解釈・英文法のプリント教材を毎月お届けする定期便。問題編と解答・解説編の2冊組、分解図と採点ポイント付き。月額3,000円、いつでも解約できます。">
+  <title>英文解釈 映像講座 お申し込み | トリリオン オンライン英語塾</title>
+  <meta name="description" content="予備校講師の英文解釈を月額1,000円の映像で。1本5〜10分、月8本・年96本。題材の英文はすべて書き下ろし。いつでも解約できます。">
   <link rel="stylesheet" href="lp.css">
   <style>
     .ms-main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 2.5rem 1.2rem 4rem; }
@@ -69,9 +69,9 @@
 <body>
   <main class="ms-main">
     <section class="ms-hero">
-      <span class="ms-eyebrow">教材サブスク</span>
-      <h1>入試の英文を<span class="grad">記号で指せる</span>ところまで</h1>
-      <p>関関同立をはじめとする私大入試の英文を題材に、プリント教材を毎月お届けします。問題編と解答・解説編の2冊組。解答編には分解図・骨組み・採点ポイントまで入っています。通塾は不要、教材だけのご利用です。</p>
+      <span class="ms-eyebrow">映像講座</span>
+      <h1 id="msLead">　</h1>
+      <div id="msBody"></div>
     </section>
 
     <div class="ms-grid" id="msGrid"></div>
@@ -82,11 +82,12 @@
         <tbody>
           <tr><th>商品</th><td id="msTermItems">—</td></tr>
           <tr><th>料金</th><td id="msTermPrice">—</td></tr>
-          <tr><th>お届け</th><td>毎月1セット（問題編＋解答・解説編）をPDFでお届けします。ダウンロードして印刷してお使いください。</td></tr>
+          <tr><th>お届け</th><td id="msTermDelivery">—</td></tr>
           <tr><th>支払い方法</th><td>クレジットカード（Stripe）。カード情報は当塾では保持しません。</td></tr>
           <tr><th>契約期間</th><td id="msTermCycle">—</td></tr>
-          <tr><th>解約</th><td>いつでも解約できます。<a href="mailto:info@trillion-ai-juku.com">info@trillion-ai-juku.com</a> までご連絡いただければ、次回以降の請求を停止します。その月ぶんの教材まではご利用いただけます。日割りの返金はありません。</td></tr>
-          <tr><th>返金</th><td>デジタル教材の性質上、お届け後の返金はお受けできません。内容が表示できないなどの不具合は個別に対応します。</td></tr>
+          <tr><th>解約</th><td>いつでも解約できます。<a href="mailto:info@trillion-ai-juku.com">info@trillion-ai-juku.com</a> までご連絡いただければ、次回以降の請求を停止します。その月ぶんの配信分まではご視聴いただけます。日割りの返金はありません。</td></tr>
+          <tr><th>視聴環境</th><td>スマートフォン・タブレット・パソコンでご視聴いただけます。インターネット接続が必要です。動画のダウンロード・再配布はご遠慮ください。</td></tr>
+          <tr><th>返金</th><td>デジタルコンテンツの性質上、配信後の返金はお受けできません。動画が再生できないなどの不具合は個別に対応します。</td></tr>
           <tr><th>事業者情報</th><td><a href="legal.html">特定商取引法に基づく表記</a>をご確認ください。</td></tr>
         </tbody>
       </table>
@@ -95,7 +96,7 @@
     <section class="ms-section">
       <h2>ご確認ください</h2>
       <p class="ms-note">
-        ・この教材サブスクは<strong>授業料（月謝）とは別の商品</strong>です。通塾中の方の月謝には影響しません。<br>
+        ・この映像講座は<strong>授業料（月謝）とは別の商品</strong>です。通塾中の方の月謝には影響しません。<br>
         ・お申し込みボタンを押すと Stripe の決済ページに進みます。決済が完了した時点でお申し込み成立となります。<br>
         ・お申し込み日に初回決済、以後は毎月同じ日に自動更新されます。<br>
         ・領収書は Stripe から自動でメール送信されます。<br>
@@ -140,6 +141,14 @@
       </div>`;
     }).join('');
 
+    const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    if (data.hero) {
+      document.getElementById('msLead').textContent = data.hero.lead;
+      document.getElementById('msBody').innerHTML =
+        (data.hero.body || []).map(t => `<p>${esc(t)}</p>`).join('');
+    }
+    document.getElementById('msTermDelivery').textContent =
+      (data.delivery ? data.delivery.method + ' 配信ペース：' + data.delivery.cadence : '—');
     document.getElementById('msTermItems').textContent =
       data.items.map(i => i.name).join('／') + '（各コース個別にお申し込みいただけます）';
     const prices = [...new Set(data.items.map(i => i.price))];

@@ -92,6 +92,13 @@ def main():
         err("billing.interval が month でない（定期課金の単位）")
     if not (cat.get("billing", {}).get("note") or "").strip():
         err("billing.note（更新と解約の説明）が空。申込画面に出す文言なので必須")
+    hero = cat.get("hero") or {}
+    if not (hero.get("lead") or "").strip() or not (hero.get("body") or []):
+        err("hero.lead / hero.body が空。申込画面の見出しと本文はここから描く")
+    dl = cat.get("delivery") or {}
+    for k in ("method", "cadence"):
+        if not (dl.get(k) or "").strip():
+            err(f"delivery.{k} が空。「何がどう届くか」は申込画面に必ず出す（特商法）")
 
     # ---------- ③ 画面が正典を読んでいるか ----------
     if not page:
@@ -107,6 +114,13 @@ def main():
                     break
         if "buy\\.stripe\\.com" not in page:
             err("申込ページに Stripe URL の形の検査が無い（別サイトへ誘導されうる）")
+        # ★売っているのは映像。前の版は PDF 教材の文面で、価格も形式も違っていた。
+        #   商品の形が変わったのに文面が残ると、書いてあるものと届くものが食い違う。
+        if "PDF" in re.sub(r"<script[\s\S]*?</script>", "", page):
+            err("申込ページに「PDF」が残っている（この商品は映像。前の版の文面が残っていないか）")
+        for must in ("hero", "delivery"):
+            if f"data.{must}" not in page:
+                err(f"申込ページが data.{must} を読んでいない（見出しや配信方法のべた書きは正典とずれる）")
         if "legal.html" not in page:
             err("申込ページから特定商取引法に基づく表記（legal.html）への導線が無い")
         for must in ("解約", "返金", "自動更新"):
