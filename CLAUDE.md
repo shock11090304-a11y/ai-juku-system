@@ -66,6 +66,10 @@
   受講案内メール (決済直後) は Vercel `api/stripe-webhook.py` が送る (別系統)。
 - 本体 webhook は `juku-payment*` を skip する前に `_course_webhook_touch` で `course_members` だけ同期する。students には触らない。
 - テスト: `scripts/health_check/test_course_portal.py` (Stripe は `_course_fetch_from_stripe`、メールは `_course_send_email` を差し替え)。
+- 環境変数: `COURSE_DELIVERY_START` (配信開始日・Railway と Vercel を同じ日付に)、`COURSE_LINE_URL` (公式 LINE)。既定値は両ファイルに直書き。
+- 🎓 体験授業 (taiken.html・¥1,500 支払いリンク `TAIKEN_TRIAL_PLINK_ID`・metadata 空) は students を作らない単発決済。本体 webhook の divert 分岐で
+  塾長通知 (`_notify_admin_new_trial`・決済画面のカスタム欄を goal に) と申込者への案内メール (`_send_taiken_welcome_email`・`TAIKEN_WELCOME_ENABLED=0` で停止) を送る。
+  テスト: `scripts/health_check/test_taiken_welcome_mail.py`。
 
 ## 教材・問題を作るときのルール (2026-08-02 塾長指摘を反映)
 - **解説フォーマットは `server/main.py` の生成プロンプトが正典**。書き始める前に必ず読むこと。自己流の散文で書かない。

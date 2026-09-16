@@ -202,6 +202,13 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_course_portal.py
 
+      # 🎓 体験授業 (taiken.html・¥1,500) の決済完了 → 申込者への案内メール (2026-09-17)。署名付き webhook は stripe 11.x で実行。
+      - name: 体験授業 案内メール 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_taiken_welcome_mail.py
+
       # 🧹🗄️ events の保持期限 / /api/track のレート制限 / R2 バックアップの省メモリ dump (2026-09-07)
       - name: イベント掃除・計測制限・バックアップ dump 回帰テスト
         if: ${{ !cancelled() }}

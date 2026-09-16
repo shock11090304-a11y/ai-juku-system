@@ -32669,9 +32669,14 @@ def stripe_webhook(
                     _tk_email = _tk_cd.get("email") or session.get("customer_email")
                     _tk_name = _tk_cd.get("name")
                     _tk_amt = session.get("amount_total")  # JPY は最小単位=円 (÷100 不要)
-                    _notify_admin_new_trial(_tk_name, _tk_email, "taiken_paid", amount_jpy=_tk_amt)  # 非throw・synthetic/30通per時 内蔵
+                    _tk_fields = _taiken_custom_fields(session)   # 体験クラスの選択など (決済画面のカスタム欄)
+                    _notify_admin_new_trial(_tk_name, _tk_email, "taiken_paid", goal=("／".join(_tk_fields) or None), amount_jpy=_tk_amt)  # 非throw・synthetic/30通per時 内蔵
                 except Exception as _tke:
                     log.warning(f"[Stripe webhook] taiken notify failed: {type(_tke).__name__}: {_tke}")
+                # 🎓 2026-09-17: 申込者にも案内メール (これからの流れ・公式 LINE で日程調整)。非throw
+                _tk_mail = _send_taiken_welcome_email(session)
+                if not _tk_mail.get("sent") and not _tk_mail.get("test_mode") and not _tk_mail.get("disabled"):
+                    log.error(f"[Stripe webhook] taiken welcome mail NOT sent: {_tk_mail}")
             else:
                 log.info(f"[Stripe webhook] taiken session diverted, non-paid (payment_status={session.get('payment_status')}) — no notify, no student write")
             return JSONResponse({"received": True, "handled": "taiken_trial_payment"}, status_code=200)
@@ -50594,6 +50599,100 @@ def _course_send_login_link(member: dict, intro: str = "") -> dict:
         f"このメールに心当たりがない場合は、そのまま無視してください。\n\n"
         f"ご不明な点は 公式 LINE（{COURSE_LINE_URL}）またはメール（{COURSE_CONTACT_EMAIL}）までご連絡ください。\nトリリオン英語塾（Trillion English Academy）")
     return _course_send_email(member["email"], "【トリリオン英語塾】視聴ページのログインリンク", body)
+
+
+# ===== 🎓 体験授業 (taiken.html・¥1,500 支払いリンク) の案内メール (2026-09-17) =====
+# 決済完了 (本体 webhook の TAIKEN_TRIAL_PLINK_ID 分岐) で申込者へ自動送信。従来は塾長宛の通知だけだった。
+# ★文面は塾長が書き換えてよい。差し込み: {name} {fields} {amount} {receipt_no} {line_url} {contact}
+TAIKEN_WELCOME_SUBJECT = "【トリリオン英語塾】体験授業のお申し込みありがとうございます（日程のご相談）"
+TAIKEN_WELCOME_BODY = """{name} 様
+
+トリリオン英語塾です。
+体験授業（{amount}円・税込）のお申し込みとお支払いを確認いたしました。ありがとうございます。
+{fields}
+■ これからの流れ
+1. 公式 LINE を友だち追加してください。
+　{line_url}
+2. LINE で「体験授業」とお名前を送ってください。ご希望の日時をうかがって日程を決めます（このメールへの返信でも構いません）。
+3. 日程が決まったら、公式 LINE またはメールで、オンライン授業の参加 URL をお送りします。
+
+■ 授業について
+・オンライン（ビデオ通話）で行います。スマホ・タブレット・パソコンのいずれかと、インターネット環境をご用意ください。
+・お選びいただいたクラス（学年・志望校に合わせた内容）で 1 コマ（約 60 分）行い、弱点の診断と学習プランのご提案をします。
+・クラスに迷う場合は LINE でご相談ください。最適なクラスをご案内します。
+
+■ お支払いについて
+・体験授業は 1 回限りで、自動更新や追加の請求はありません。
+・領収書は Stripe から別のメールで届きます（このメールは領収書ではありません）。
+・ご入塾された場合、この {amount}円は初月の月謝から差し引きます。
+
+■ 受付番号
+{receipt_no}
+（お問い合わせの際にお知らせいただくと確認が早くなります）
+
+ご不明な点は、公式 LINE（{line_url}）またはメール（{contact}）までご連絡ください。
+このメールに心当たりがない場合も、お手数ですが {contact} までご連絡ください。
+
+トリリオン英語塾（Trillion English Academy）
+{contact}
+"""
+
+
+def _taiken_custom_fields(session) -> list:
+    """Checkout Session の custom_fields を「ラベル: 値」の list にする (体験クラスの選択など)。dropdown は選択肢のラベルに直す。"""
+    out = []
+    for cf in (session.get("custom_fields") or []):
+        try:
+            label = ((cf.get("label") or {}).get("custom") or cf.get("key") or "").strip()
+            typ = cf.get("type") or ""
+            val = ""
+            if typ == "dropdown":
+                dd = cf.get("dropdown") or {}
+                v = dd.get("value") or ""
+                val = v
+                for opt in (dd.get("options") or []):
+                    if opt.get("value") == v:
+                        val = opt.get("label") or v
+                        break
+            elif typ == "numeric":
+                val = ((cf.get("numeric") or {}).get("value") or "")
+            else:
+                val = ((cf.get("text") or {}).get("value") or "")
+            val = str(val).strip()
+            if label and val:
+                out.append(f"{label}: {val}")
+        except Exception:
+            continue
+    return out
+
+
+def _send_taiken_welcome_email(session) -> dict:
+    """体験授業の決済完了メールを申込者へ送る。例外は握る (webhook は常に 200)。TAIKEN_WELCOME_ENABLED=0 で止める。"""
+    try:
+        if os.getenv("TAIKEN_WELCOME_ENABLED", "1").strip().lower() in ("0", "false", "off"):
+            return {"sent": False, "disabled": True}
+        if session.get("livemode") is False:
+            return {"sent": False, "test_mode": True}
+        cd = session.get("customer_details") or {}
+        email = (cd.get("email") or session.get("customer_email") or "").strip()
+        if not email:
+            log.warning("[taiken] no email on session — welcome mail not sent")
+            return {"sent": False, "error": "no email"}
+        name = (cd.get("name") or "").strip() or "お申込者"
+        try:
+            amount = f"{int(session.get('amount_total') or 1500):,}"
+        except Exception:
+            amount = "1,500"
+        fields = _taiken_custom_fields(session)
+        fields_txt = ("\n" + "\n".join(f"・{f}" for f in fields) + "\n") if fields else ""
+        vars_ = {"name": name, "fields": fields_txt, "amount": amount, "receipt_no": session.get("id") or "",
+                 "line_url": COURSE_LINE_URL, "contact": COURSE_CONTACT_EMAIL}
+        res = _course_send_email(email, TAIKEN_WELCOME_SUBJECT.format(**vars_), TAIKEN_WELCOME_BODY.format(**vars_))
+        log.info(f"[taiken] welcome mail sent={res.get('sent')} session={session.get('id')}")
+        return res
+    except Exception as e:
+        log.error(f"[taiken] welcome mail failed: {type(e).__name__}: {str(e)[:200]}")
+        return {"sent": False, "error": str(e)[:200]}
 
 
 class CourseLoginRequest(BaseModel):
