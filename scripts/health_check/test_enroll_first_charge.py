@@ -281,10 +281,10 @@ def main():
     body = m.get("text", "")
     check("B1i. 保護者宛・件名", m.get("to") == ["parent@example.invalid"] and m.get("subject") == "【トリリオン英語塾】ご入塾のお申し込みとお支払いの確認", (m.get("to"), m.get("subject")))
     check("B1j. 宛名は保護者名", body.startswith("テスト 花子 様"), body[:40])
-    for s_ in ("入塾金（初回のみ）：10,000円", "設備費：1,350円", "受講料（初月分・日割りなし）：7,500円", "合計：18,850円", "月額 8,850円", "高校2年英文法", "前月 25 日まで"):
+    for s_ in ("入塾金（初回のみ）：10,000円", "設備費：1,350円", "受講料（初月分・日割りなし）：7,500円", "合計：18,850円", "月額 8,850円", "高校2年英文法", "前月 15 日まで", "26 日前後"):
         check(f"B1k. 本文に「{s_}」", s_ in body, body)
     ml, nl = wh._enroll_month_label(month), wh._enroll_month_label(wh._enroll_next_month(month))
-    check("B1l. 本文に 当月分/翌月分 のラベル (今月分/翌月分どちらの月末運用でも嘘にならない文)", f"（{ml}分）" in body and f"{nl}分以降は" in body and "末の引き落としはありません" not in body and "翌月分の" not in body, body)
+    check("B1l. 本文に 当月分/翌月分 のラベル (今月分/翌月分どちらの月末運用でも嘘にならない文)", f"（{ml}分）" in body and f"{nl}分以降は" in body and f"{nl}分は {ml} 26 日前後" in body and "末の引き落としはありません" not in body and "LINE でお知らせします）" not in body, body)
     check("B1m. 本文に LINE URL・受付番号・申込ID・窓口", "https://lin.ee/ZHlrRjh" in body and "cs_enroll_1" in body and "AB12CD34" in body and "info@trillion-ai-juku.com" in body, body)
     check("B1m2. 本文に Zoom の ID とパスコード (環境変数から)・塾生アプリ登録 URL・授業ルール",
           "ミーティング ID：12345" in body and "パスコード：abc" in body and "https://trillion-ai-juku.com/juku-register.html" in body

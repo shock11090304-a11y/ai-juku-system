@@ -491,7 +491,7 @@ def _create_first_charge_session(secret_key, payload, fee, breakdown, registrati
         ("payment_intent_data[description]", _cap(f"入塾 初回分 (入塾金+設備費+初月受講料) — 生徒: {student}", 200)),
         ("custom_text[submit][message]", _cap(
             f"本日は初回分（入塾金＋設備費＋初月受講料・日割りなし）合計 {first_total:,} 円を決済し、このカードを登録します。"
-            f"翌月分以降の月額 {fee:,} 円（設備費＋受講料）は毎月末に同じカードから自動で引き落とします。", 500)),
+            f"翌月分以降の月額 {fee:,} 円（設備費＋受講料）は、毎月 26 日前後に翌月分を同じカードから自動で引き落とします。", 500)),
         ("success_url", f"{return_base}/enroll-thanks.html?session_id={{CHECKOUT_SESSION_ID}}"),
         ("cancel_url", f"{return_base}/enroll-thanks.html?canceled=1"),
     ]
