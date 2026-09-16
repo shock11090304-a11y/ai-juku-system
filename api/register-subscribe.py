@@ -27,6 +27,15 @@ Env:
 Response (200):
   { "checkoutUrl": "https://checkout.stripe.com/...", "amount": 33500, "registrationId": "reg_..." }
   ※ amount は「月額予定」として保存するだけで即課金されない (setup mode)
+
+🆕 2026-09-17 初回決済モード (入塾申込書 入塾書類/index.html から):
+  Body に "firstCharge": true (+ "appId": 申込書の申込ID) を付けると mode=payment の Checkout を作る。
+  入塾金 (ENTRY_FEE) + 設備費 + 選んだコースの初月受講料 (満額・日割りなし) をその場でカード決済し、
+  同時にカードを保存 (setup_future_usage=off_session)。webhook (stripe-webhook.py) が決済完了で
+  reg:completed (checkout_mode=setup 相当) と当月の charge:done / charge:history を書くので、
+  月末バッチはその月を skip し、翌月から月額 (amount) を引き落とす。
+  Response には firstTotal (初回決済額) と entryFee が加わる。
+  塾長決定 (2026-09-17): 初月受講料は満額 / 入塾金の免除なし / 設備費は初回に含める。
 Response (400): バリデーションエラー
 Response (503): STRIPE_SECRET_KEY 未設定
 Response (502): Stripe API エラー
@@ -56,12 +65,27 @@ def _log(msg):
         pass
 
 
+def _cors_origin(handler):
+    """リクエストの Origin が許可リストにあればその値、無ければ "" (ヘッダを付けない = 同一オリジンのみ)。
+    申込書は Netlify の別ドメインからこの API を fetch するので、許可しないとブラウザが応答を捨てて決済に進めない"""
+    origin = (handler.headers.get("Origin") or "").strip()
+    if not origin:
+        return ""
+    allowed = os.environ.get("REGISTER_CORS_ORIGINS", "").strip() or CORS_ORIGINS_DEFAULT
+    allow = {o.strip().rstrip("/") for o in allowed.split(",") if o.strip()}
+    return origin if origin.rstrip("/") in allow else ""
+
+
 def _json(handler, status, payload):
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json; charset=utf-8")
     handler.send_header("Cache-Control", "no-store")
     handler.send_header("Content-Length", str(len(body)))
+    origin = _cors_origin(handler)
+    if origin:
+        handler.send_header("Access-Control-Allow-Origin", origin)
+        handler.send_header("Vary", "Origin")
     handler.end_headers()
     handler.wfile.write(body)
 
@@ -79,7 +103,7 @@ COURSES = {
     "soukei":        {"name": "早慶クラス",     "price": 12500},
     "eiken-jun1":    {"name": "英検準１級",     "price": 8500},
     "chu2":          {"name": "中学2年",       "price": 7500},
-    "chu1":          {"name": "中学基礎中学1年", "price": 7500},
+    "chu1":          {"name": "中学基礎（中1・中2）", "price": 7500},
     "chu3-monday":   {"name": "月曜中３英文法",   "price": 7500},
     "grammar-1":     {"name": "英文法レベル１",   "price": 7500},
     "grammar-2":     {"name": "英文法レベル２",   "price": 7500},
@@ -89,7 +113,14 @@ COURSES = {
     "long-1":        {"name": "英語長文レベル１", "price": 7500},
     "long-2":        {"name": "英語長文レベル２", "price": 7500},
     "kou2-grammar":  {"name": "高校2年英文法",   "price": 7500},
+    "kokugo":        {"name": "高校国語",       "price": 7500},
 }
+# 入塾金 (初回のみ)。courses.json には入れない (入れると月額として毎月請求される)。入塾申込書の表示額 10,000 円と一致させること
+ENTRY_FEE = 10000
+ENTRY_FEE_NAME = "入塾金"
+# 申込書 (Netlify) からのブラウザ呼び出しを許可するオリジン (env REGISTER_CORS_ORIGINS でカンマ区切り上書き)
+CORS_ORIGINS_DEFAULT = "https://graceful-eclair-56bdac.netlify.app"
+APP_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 OPTIONS = {
     "facility-1500": {"name": "設備費 (¥1,500)", "price": 1500},
     "facility-1350": {"name": "設備費 (¥1,350)", "price": 1350},
@@ -191,8 +222,17 @@ def _validate(payload):
     facility_opts = [o for o in options if o.startswith("facility-")]
     if len(facility_opts) > 1:
         errs.append("設備費は1つだけ選択可能です")
+    first_charge = payload.get("firstCharge") is True
+    app_id = (str(payload.get("appId") or "")).strip()
+    if app_id and not APP_ID_RE.match(app_id):
+        errs.append("申込IDが不正です")
+    if first_charge and len(facility_opts) != 1:
+        # 申込書は必ず設備費を送る (塾長決定: 設備費は初回に含める)。外して安い月額で登録されるのを防ぐ
+        errs.append("入塾の初回決済には設備費が必要です")
 
     return errs, {
+        "firstCharge": first_charge,
+        "appId": app_id,
         "studentName": student_name,
         "grade": grade,
         "parentName": parent_name,
@@ -256,7 +296,7 @@ def _stripe_get(secret_key, path, params=None):
 def _find_reusable_customer(secret_key, payload):
     """🆕 2026-07-06: 同一 email + 同一生徒 で「カード未登録 (=まだ登録完了していない)」の
     juku Customer が既にあれば再利用する。カード入力前に離脱→再登録を繰り返すと毎回新 Customer が
-    生まれ、Stripe が no-card 顧客で汚れる (上村 4回・伊勢 2回等の重複) 問題への対処。
+    生まれ、Stripe が no-card 顧客で汚れる (同じ保護者で 4 回・2 回等の重複が実際にあった) 問題への対処。
 
     ★兄弟 (同 email・別生徒) を1顧客に統合しないよう metadata.student_name 一致を必須にする。
     ★カード有りの顧客は「既に完了済」なので再利用しない (呼び出し前の reg:completed 重複ガードで
@@ -403,6 +443,86 @@ def _create_checkout_session(secret_key, payload, fee, breakdown, registration_i
     return session
 
 
+def _create_first_charge_session(secret_key, payload, fee, breakdown, registration_id, base_url, return_base):
+    """🆕 2026-09-17 入塾申込書からの初回決済: mode=payment で
+    入塾金 (ENTRY_FEE) + 設備費 + 各コースの初月受講料 (満額) をその場で決済し、同じカードを保存する
+    (payment_intent_data[setup_future_usage]=off_session → 月末バッチが同じ PaymentMethod で翌月以降を引き落とす)。
+
+    metadata は setup モードと同じ (registration_id / monthly_fee=月額のみ) + first_charge=1 / entry_fee / first_total / app_id。
+    PaymentIntent の metadata には month を付けない: stripe-webhook.py の payment_intent.succeeded は rid+month が揃うと
+    月次 reconcile を試みるが、初回決済の台帳 (charge:done / charge:history) は checkout.session.completed 側が書く。
+    return_base: 決済後に戻す申込書サイト (Netlify) のベース URL。"""
+    student = payload["studentName"]
+    desc_detail = " / ".join(breakdown)[:240]
+    first_total = ENTRY_FEE + fee
+
+    def _cap(s, n=240):
+        return (str(s) or "")[:n]
+    metadata = {
+        "registration_id": _cap(registration_id, 60),
+        "student_name": _cap(student, 80),
+        "grade": _cap(payload["grade"], 20),
+        "parent_name": _cap(payload["parentName"], 80),
+        "email": _cap(payload["email"], 200),
+        "phone": _cap(payload.get("phone", ""), 30),
+        "courses": _cap(",".join(payload["courses"])),
+        "options": _cap(",".join(payload["options"])),
+        "fee_breakdown": _cap(desc_detail),
+        "monthly_fee": str(fee),          # 月額 (翌月以降の引き落とし額)。入塾金は含めない
+        "first_charge": "1",
+        "entry_fee": str(ENTRY_FEE),
+        "first_total": str(first_total),
+        "app_id": _cap(payload.get("appId", ""), 40),
+        "source": "enrollment-form-v1-payment",
+        "system": "juku-payment-monthly",
+    }
+    customer = _create_or_find_customer(secret_key, payload, registration_id, metadata)
+    customer_id = customer.get("id", "")
+    if not customer_id:
+        raise RuntimeError("Customer 作成に失敗しました (customer.id 取得不能)")
+
+    form = [
+        ("mode", "payment"),
+        ("payment_method_types[]", "card"),
+        ("customer", customer_id),
+        ("locale", "ja"),
+        ("submit_type", "pay"),
+        ("payment_intent_data[setup_future_usage]", "off_session"),
+        ("payment_intent_data[description]", _cap(f"入塾 初回分 (入塾金+設備費+初月受講料) — 生徒: {student}", 200)),
+        ("custom_text[submit][message]", _cap(
+            f"本日は初回分（入塾金＋設備費＋初月受講料・日割りなし）合計 {first_total:,} 円を決済し、このカードを登録します。"
+            f"翌月分以降の月額 {fee:,} 円（設備費＋受講料）は毎月末に同じカードから自動で引き落とします。", 500)),
+        ("success_url", f"{return_base}/enroll-thanks.html?session_id={{CHECKOUT_SESSION_ID}}"),
+        ("cancel_url", f"{return_base}/enroll-thanks.html?canceled=1"),
+    ]
+    # 明細: 入塾金 → 各コース (初月) → 設備費。金額はすべてサーバ側カタログ (クライアントの金額は使わない)
+    items = [(ENTRY_FEE_NAME + "（初回のみ）", ENTRY_FEE)]
+    for c in payload["courses"]:
+        info = COURSES.get(c)
+        if info:
+            items.append((f"{info['name']} 受講料（初月分）", info["price"]))
+    for o in payload["options"]:
+        info = OPTIONS.get(o)
+        if info:
+            items.append(("設備費（初月分）" if o.startswith("facility-") else f"{info['name']}（初月分）", info["price"]))
+    for i, (name, price) in enumerate(items):
+        form.append((f"line_items[{i}][price_data][currency]", "jpy"))
+        form.append((f"line_items[{i}][price_data][unit_amount]", str(price)))
+        form.append((f"line_items[{i}][price_data][product_data][name]", _cap(name, 120)))
+        form.append((f"line_items[{i}][quantity]", "1"))
+    for k, v in metadata.items():
+        if v is None:
+            continue
+        form.append((f"metadata[{k}]", str(v)))
+        if k != "fee_breakdown":   # PaymentIntent 側は month を付けない (上記 docstring)。fee_breakdown は長いので省く
+            form.append((f"payment_intent_data[metadata][{k}]", str(v)))
+
+    session = _stripe_post(secret_key, "checkout/sessions", form, idempotency_key=f"juku-first-charge-{registration_id}")
+    session["_juku_customer_id"] = customer_id
+    session["_juku_first_total"] = first_total
+    return session
+
+
 # ─────────────── ハンドラ ───────────────
 
 class handler(BaseHTTPRequestHandler):
@@ -461,7 +581,12 @@ class handler(BaseHTTPRequestHandler):
                                         try:
                                             r = json.loads(s)
                                             existing_email = (r.get("email") or "").strip().lower()
-                                            if existing_email == email_norm:
+                                            # 入塾申込 (firstCharge) は「同じメール + 同じ生徒名」だけ重複扱い。兄弟 (同じ保護者メール・別の生徒) は
+                                            # 別 Customer で通す (_find_reusable_customer も生徒名一致が条件)。従来の setup 登録はメールのみで従来どおり
+                                            _same_student = True
+                                            if clean.get("firstCharge"):
+                                                _same_student = (r.get("studentName") or r.get("student_name") or "").strip() == (clean.get("studentName") or "").strip()
+                                            if existing_email == email_norm and _same_student:
                                                 _log(f"register: duplicate email blocked - {email_norm} existing rid={rid_existing}")
                                                 _json(self, 409, {
                                                     "error": "ALREADY_REGISTERED",
@@ -490,8 +615,15 @@ class handler(BaseHTTPRequestHandler):
                 proto = self.headers.get("X-Forwarded-Proto") or "https"
                 base_url = f"{proto}://{host}"
 
+            first_charge = bool(clean.get("firstCharge"))
+            # 申込書 (Netlify) に戻す URL: 許可済み Origin があればそこへ、無ければ env ENROLL_RETURN_BASE、それも無ければ既定の申込書サイト
+            return_base = _cors_origin(self) or os.environ.get("ENROLL_RETURN_BASE", "").strip().rstrip("/") \
+                or CORS_ORIGINS_DEFAULT.split(",")[0].strip()
             try:
-                session = _create_checkout_session(secret_key, clean, fee, breakdown, registration_id, base_url)
+                if first_charge:
+                    session = _create_first_charge_session(secret_key, clean, fee, breakdown, registration_id, base_url, return_base)
+                else:
+                    session = _create_checkout_session(secret_key, clean, fee, breakdown, registration_id, base_url)
             except urllib.error.HTTPError as e:
                 detail = ""
                 stripe_error_code = ""
@@ -548,27 +680,40 @@ class handler(BaseHTTPRequestHandler):
                 "breakdown": breakdown,
                 "fee_breakdown": " / ".join(breakdown)[:240],
                 "stripe_customer_id": preset_customer_id,  # 🆕 先行作成済 customer_id
-                "checkout_mode": "setup",  # 🆕 mode 識別
+                "checkout_mode": "payment" if first_charge else "setup",  # pending のみ。完了時 webhook が setup 相当に揃える
                 "system": "juku-payment-monthly",
                 **clean,
             }
+            if first_charge:
+                record["first_charge"] = True
+                record["entry_fee"] = ENTRY_FEE
+                record["first_total"] = int(session.get("_juku_first_total") or (ENTRY_FEE + fee))
+                record["app_id"] = clean.get("appId", "")
             _redis_safe("SET", f"reg:pending:{registration_id}", json.dumps(record, ensure_ascii=False), "EX", "604800")  # 7 days TTL
             _redis_safe("ZADD", "reg:index", str(now_ts), registration_id)
 
-            _json(self, 200, {
+            resp = {
                 "checkoutUrl": checkout_url,
                 "amount": fee,
                 "registrationId": registration_id,
                 "breakdown": breakdown,
-            })
+            }
+            if first_charge:
+                resp["firstTotal"] = record["first_total"]
+                resp["entryFee"] = ENTRY_FEE
+            _json(self, 200, resp)
         except Exception as e:
             _log(f"register-subscribe internal error: {e!r}")
             _json(self, 500, {"error": "INTERNAL_ERROR", "message": "システムエラーが発生しました。塾長にご連絡ください。"})
 
     def do_OPTIONS(self):
-        # CORS preflight (同一オリジンなので不要だが念のため)
+        # CORS preflight: 申込書 (Netlify・別オリジン) からの fetch 用。許可リスト外の Origin にはヘッダを付けない
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        origin = _cors_origin(self)
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
+            self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Max-Age", "600")
         self.end_headers()

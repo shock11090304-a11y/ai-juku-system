@@ -1874,8 +1874,9 @@ function courseNameFromId(id) {
 const COURSE_VARIANT_SUFFIXES = ['生', 'コース'];
 // 塾長承認済みの明示エイリアス (2026-06-03): 完全一致のみ・曖昧マッチは増やさない。
 const COURSE_ALIASES = {
-  '中学1年': '中学基礎中学1年',
-  '中学1年生': '中学基礎中学1年',
+  '中学1年': '中学基礎（中1・中2）',
+  '中学1年生': '中学基礎（中1・中2）',
+  '中学基礎中学1年': '中学基礎（中1・中2）',   // 2026-09-17 改名前の正式名 (既存の名簿行の表記)
 };
 function nfkcKey(s) { try { return s.normalize('NFKC'); } catch (e) { return s; } }
 // nfkcToName: NFKC キー → 正式名。catalog を後入れして alias より優先 (正式名を絶対に壊さない)。
@@ -2761,6 +2762,9 @@ function monthEndLedgerStats(month) {
   const rank = { success: 3, requires_action: 2, uncertain: 1, failed: 0 };
   for (const e of led.entries) {
     if (e.month !== month || e.kind === 'spot' || !e.registrationId) continue;
+    // 入塾時の初回決済 (webhook が書く source=enroll-first-charge) はバッチの実行ではない。
+    // 「最終実行」「まだ実行していません」の判定に混ぜると、入塾 1 件で実行済み扱いになり newSince の基準もずれる (金額集計は別関数)
+    if (e.source === 'enroll-first-charge') continue;
     const cur = best[e.registrationId];
     if (!cur || (rank[e.status] || 0) > (rank[cur.status] || 0)) best[e.registrationId] = e;
   }

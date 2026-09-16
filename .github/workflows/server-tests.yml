@@ -26,6 +26,9 @@ on:
       - 'server/**'
       - 'scripts/health_check/test_*.py'
       - 'api/stripe-webhook.py'
+      - 'api/register-subscribe.py'
+      - 'payment/courses.json'
+      - 'scripts/check_course_price_sync.py'
       - '.github/workflows/server-tests.yml'
       # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
       - 'lp.html'
@@ -208,6 +211,13 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_taiken_welcome_mail.py
+
+      # 🏫 入塾申込書からの初回カード決済 (入塾金+設備費+初月受講料) → 名簿登録・当月台帳・確認メール (2026-09-17)。KV / Stripe / Resend は偽物。
+      - name: 入塾 初回カード決済 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 scripts/health_check/test_enroll_first_charge.py
+          python3 scripts/check_course_price_sync.py
 
       # 🧹🗄️ events の保持期限 / /api/track のレート制限 / R2 バックアップの省メモリ dump (2026-09-07)
       - name: イベント掃除・計測制限・バックアップ dump 回帰テスト

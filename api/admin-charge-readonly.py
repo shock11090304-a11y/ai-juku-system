@@ -580,6 +580,7 @@ def _handle_ledger(handler, params):
             "studentName": r.get("student_name") or r.get("studentName") or "",
             "amount": amount,
             "chargedAt": at,
+            "source": r.get("source", ""),   # 2026-09-17: "enroll-first-charge" = 入塾時の初回決済 (月末バッチの実行ではない)
             "paymentIntentId": r.get("payment_intent_id", ""),
         })
 

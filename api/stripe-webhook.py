@@ -418,10 +418,440 @@ def _handle_course_async_paid(event):
     """checkout.session.async_payment_succeeded: カード以外 (コンビニ・銀行振込) の入金確定。講座のセッションだけ扱う。
     ★Stripe ダッシュボードの webhook でこのイベントを購読していないと届かない (現状は支払いリンクをカード限定にしているので予備)"""
     obj = event.get("data", {}).get("object", {})
-    if ((obj.get("metadata") or {}).get("system") or "") == COURSE_SYSTEM_TAG:
+    md = obj.get("metadata") or {}
+    if (md.get("system") or "") == COURSE_SYSTEM_TAG:
         _handle_course_checkout(obj)
+    elif md.get("first_charge") == "1" and md.get("registration_id"):
+        # 入塾の初回決済 (現状カード限定なので届かないはずだが、支払方法を増やしたときの保険)
+        _handle_checkout_completed(event)
     else:
-        _log("webhook: async_payment_succeeded ignored (not a course session)")
+        _log("webhook: async_payment_succeeded ignored (not a course / enroll session)")
+
+
+# ===== 🆕 2026-09-17 入塾申込書からの初回決済 (register-subscribe.py firstCharge=true / mode=payment) =====
+# 申込書 (入塾書類/index.html) → Checkout (入塾金+設備費+初月受講料をその場で決済・カード保存) → ここ。
+# やること: ① reg:completed を setup 相当 (checkout_mode=setup + payment_method) で書く = 月謝アプリの名簿に載る
+#           ② 決済した月の charge:done / charge:history を書く = 月末バッチがその月を skip (二重請求防止)
+#           ③ 保護者へ確認メール・塾長へ通知 (Resend)。文面は塾長が書き換えてよい。
+# 使える差し込み: {student_name} {parent_name} {grade} {courses} {entry_fee} {facility} {course_fee} {first_total} {monthly_fee}
+#   {month_label} {next_month_label} {receipt_no} {app_id} {contact} {line_url} {email} {paid_at_jst} {registration_id} {welcome_status}
+#   {zoom_block} (Zoom の ID とパスコード。env ENROLL_ZOOM_ID / ENROLL_ZOOM_PASS から。★リポジトリは公開なので値はコードに書かない。
+#                未設定なら「LINE でお知らせします」になる) {app_register_url} (塾生アプリの登録 URL。env ENROLL_APP_REGISTER_URL)
+ENROLL_APP_REGISTER_URL_DEFAULT = "https://trillion-ai-juku.com/juku-register.html"
+ENROLL_ZOOM_BLOCK = """　ミーティング ID：{zoom_id}
+　パスコード：{zoom_pass}"""
+ENROLL_ZOOM_BLOCK_UNSET = "　ミーティング ID とパスコードは公式 LINE でお知らせします。"
+ENROLL_WELCOME_SUBJECT = "【トリリオン英語塾】ご入塾のお申し込みとお支払いの確認"
+ENROLL_WELCOME_BODY = """{parent_name} 様
+
+このたびはトリリオン英語塾へのご入塾をお申し込みいただき、誠にありがとうございます。
+{student_name} さんの初回分のお支払いを確認いたしました。
+
+■ 今回お支払いいただいた内容（{month_label}分）
+　入塾金（初回のみ）：{entry_fee}円
+　設備費：{facility}円
+　受講料（初月分・日割りなし）：{course_fee}円
+　　{courses}
+　合計：{first_total}円（税込）
+　※ Stripe からの領収メールも別途届きます。
+
+■ 翌月以降のお支払い
+　今回のお支払いに {month_label}分の受講料と設備費は含まれています。
+　{next_month_label}分以降は、月額 {monthly_fee}円（設備費＋受講料・税込）を毎月末に今回ご登録のカードから自動で引き落とします。
+　（{next_month_label}分の引き落とし日は、初回授業のご案内と併せて LINE でお知らせします）
+
+■ 今後の流れ
+　1. 公式 LINE を友だち追加してください（授業の連絡はすべて LINE で行います）
+　　　{line_url}
+　2. 塾生アプリにご登録ください（出欠・宿題・塾からの連絡に使います。1 分ほどで終わります）
+　　　{app_register_url}
+　3. 塾長より、初回授業の日時を LINE でご連絡します。
+
+■ 授業について（Zoom）
+{zoom_block}
+　・授業の 5 分前には入室してください。
+　・画面（カメラ）はオン、音声はオフ（ミュート）でご参加ください。
+
+■ カードの変更・コースの変更・退塾
+　公式 LINE またはメール（{contact}）へご連絡ください。
+　退塾・コース変更は、停止したい月の前月 25 日までにご連絡いただくと翌月分から反映します（日割りの返金はありません）。
+
+受付番号：{receipt_no}
+申込ID：{app_id}
+
+このメールは自動送信です。ご不明な点は {contact} または公式 LINE までお気軽にお問い合わせください。
+
+トリリオン英語塾
+"""
+ENROLL_NOTIFY_SUBJECT = "【入塾・初回決済】{student_name}（{grade}）{first_total}円 — 名簿登録済み"
+ENROLL_NOTIFY_SUBJECT_FAILED = "★要対応【入塾・初回決済】{student_name} — {fail_reason}"
+ENROLL_DUPLICATE_SUBJECT = "★要対応【入塾・初回決済 二重】{student_name} — 同じ顧客の 2 件目の決済 ({first_total}円)。返金の確認を"
+ENROLL_DUPLICATE_BODY = """同じ Stripe 顧客 ({customer}) に既に名簿登録 ({duplicate_of}) があるのに、入塾申込書から 2 件目の初回決済が完了しました。
+申込書を送り直して 2 回支払った可能性が高いです。名簿には追加していません (月額の二重引き落としは起きません)。
+
+生徒: {student_name}（{grade}）／保護者: {parent_name}／メール: {email}
+今回の決済額: {first_total}円／受付番号: {receipt_no}／申込ID: {app_id}／決済日時 (JST): {paid_at_jst}
+
+やること: Stripe ダッシュボードで受付番号の決済を確認し、二重なら返金する。既存の登録 ({duplicate_of}) のコース・月額が最新の申込内容と合っているか名簿で確認する。
+"""
+ENROLL_NOTIFY_BODY = """入塾申込書からの初回カード決済が完了し、月謝アプリの名簿に自動登録しました。
+
+生徒: {student_name}（{grade}）
+保護者: {parent_name}
+メール: {email}
+コース: {courses}
+初回決済額: {first_total}円（入塾金 {entry_fee} + 設備費 {facility} + 受講料 {course_fee}）
+翌月以降の月額: {monthly_fee}円
+決済日時 (JST): {paid_at_jst}
+台帳: {month_label}分を「引き落とし済み」として記録 → 月末バッチは {month_label}分を請求しません（{next_month_label}分から請求）
+登録ID: {registration_id}
+受付番号 (Stripe Checkout): {receipt_no}
+申込ID (Netlify 通知メールの「申込ID」と一致): {app_id}
+保護者への確認メール: {welcome_status}
+{warnings}
+確認すること: Netlify の申込通知メールの「金額_初月合計」「コース」がこの決済額・コースと一致しているか（金額はサーバ側のカタログで計算・申込書の入力とは独立）。
+次にやること: 公式 LINE で初回授業の日時と Zoom の ID・パスコードを連絡する。
+"""
+ENROLL_RECORD_TTL = 365 * 86400
+
+
+class _RetryLater(Exception):
+    """KV に名簿を書けなかった (KV 障害)。Stripe に 500 を返して再送してもらう (最長 3 日)。
+    通常の handler 例外は 200 で握るが、入塾の初回決済だけは「決済されたのに名簿に無い」が最悪なので再送に賭ける"""
+
+
+def _enroll_month_label(ym):
+    try:
+        return f"{int(ym[:4])}年{int(ym[5:7])}月"
+    except Exception:
+        return ym
+
+
+def _enroll_next_month(ym):
+    try:
+        y, m = int(ym[:4]), int(ym[5:7])
+        return f"{y + 1}-01" if m == 12 else f"{y}-{m + 1:02d}"
+    except Exception:
+        return ym
+
+
+def _enroll_write_ledger(rid, month, pi_id, first_total, existing, now_ts):
+    """決済した月の charge:done (SET NX・60 日) と charge:history (1 年・台帳の恒久記録) を書く。
+    done が既にある (Stripe の再送・月末バッチが先に走った) ときは何も書かない。戻り値: 書いたかどうか"""
+    done_key = f"charge:done:{rid}:{month}"
+    done_val = json.dumps({"payment_intent_id": pi_id, "status": "succeeded", "amount": first_total,
+                           "charged_at": now_ts, "source": "enroll-first-charge"}, ensure_ascii=False)
+    nx = _redis_safe("SET", done_key, done_val, "NX", "EX", "5184000")
+    if nx is None:
+        _log(f"webhook enroll CRITICAL: KV error writing charge:done rid={rid} month={month} — ledger NOT written")
+        return "error"
+    if not (isinstance(nx, dict) and nx.get("result") == "OK"):
+        # 自分が前回書いたもの (Stripe の再送・メール前に落ちた再実行) なら異常ではない
+        try:
+            prev = json.loads(((_redis_safe("GET", done_key) or {}).get("result")) or "{}")
+            if prev.get("source") == "enroll-first-charge" and prev.get("payment_intent_id") == pi_id:
+                return "written"
+        except Exception:
+            pass
+        _log(f"webhook enroll: charge:done already exists rid={rid} month={month} — ledger untouched")
+        return "exists"
+    hist = {
+        "payment_intent_id": pi_id,
+        "registration_id": rid,
+        "month": month,
+        "amount": first_total,
+        "student_name": existing.get("studentName") or existing.get("student_name") or "",
+        "email": existing.get("email", ""),
+        "phone": existing.get("phone", ""),
+        "charged_at": now_ts,
+        "status": "succeeded",
+        "source": "enroll-first-charge",
+        "note": "入塾時の初回決済（入塾金＋設備費＋初月受講料）。入塾金を含むため月額より大きい",
+        "entry_fee": int(existing.get("entry_fee") or 0),
+        "monthly_fee": int(existing.get("monthly_fee") or 0),
+    }
+    hj = json.dumps(hist, ensure_ascii=False)
+    _redis_safe("ZADD", "charge:history:index", str(now_ts), f"{rid}:{month}")
+    _redis_safe("SET", f"charge:history:{rid}:{month}", hj, "EX", "31536000")
+    _redis_safe("RPUSH", f"charge:history:audit:{rid}:{month}", hj)
+    _redis_safe("EXPIRE", f"charge:history:audit:{rid}:{month}", "31536000")
+    return "written"
+
+
+def _enroll_next_month_batch_ran(next_month):
+    """翌月分の月末バッチ (前倒し請求) が既に実行済みか = charge:history:index に「:翌月」のエントリがあるか。
+    実行済みなら、この生徒の翌月分は誰も請求しない (当月は初回決済で済み・翌月分のバッチはもう終わっている) ので塾長に個別請求を促す"""
+    try:
+        # score は書込時刻。直近 45 日に絞る (index は月ごとに全生徒分が増える無限 ZSET)
+        since = str(int(time.time()) - 45 * 86400)
+        zr = _redis_safe("ZRANGE", "charge:history:index", since, "+inf", "BYSCORE")
+        members = (zr or {}).get("result") or []
+        return any(isinstance(m, str) and m.endswith(f":{next_month}") for m in members)
+    except Exception:
+        return False
+
+
+def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
+    """保護者への確認メールと塾長通知。二重送信ガード: enroll:welcome:<rid> を SET NX (再送イベントでも 1 通)。
+    テストモードの決済 (livemode=false) はメールを送らない (course と同じ)"""
+    rid = record.get("registration_id", "")
+    session_id = obj.get("id", "")
+    if obj.get("livemode") is False:
+        _log(f"webhook enroll: test-mode session {session_id} — no mail")
+        return
+    # KV が落ちていて NX の結果が取れないときは送る側に倒す (Resend の Idempotency-Key が 2 通目を弾く)
+    nx = _redis_safe("SET", f"enroll:welcome:{rid}", json.dumps({"status": "sending", "at": int(time.time())}), "NX", "EX", str(ENROLL_RECORD_TTL))
+    if nx is not None and not (isinstance(nx, dict) and nx.get("result") == "OK"):
+        _log(f"webhook enroll: mail already handled rid={rid} — skip")
+        return
+    courses = record.get("courses") or []
+    names = []
+    course_fee = 0
+    facility = 0
+    parts = record.get("breakdown") or [x.strip() for x in str(record.get("fee_breakdown") or "").split(" / ") if x.strip()]
+    for part in parts:
+        # breakdown は register-subscribe が作る "名前 ¥7,500" の配列 (pending が消えていたら metadata の fee_breakdown 文字列)。設備費とコースを分ける
+        if "設備費" in part:
+            try:
+                facility += int(part.rsplit("¥", 1)[1].replace(",", ""))
+            except Exception:
+                pass
+        else:
+            names.append(part)
+            try:
+                course_fee += int(part.rsplit("¥", 1)[1].replace(",", ""))
+            except Exception:
+                pass
+    if not names:
+        names = [c for c in courses]
+    monthly_fee = int(record.get("monthly_fee") or 0)
+    entry_fee = int(record.get("entry_fee") or 0)
+    first_total = int(record.get("first_charge_amount") or 0)
+    if not facility and monthly_fee and course_fee:
+        facility = max(monthly_fee - course_fee, 0)
+    if not course_fee and monthly_fee:
+        course_fee = max(monthly_fee - facility, 0)
+    contact = os.environ.get("COURSE_REPLY_TO", "").strip() or COURSE_CONTACT_DEFAULT
+    if not COURSE_EMAIL_RE.match(contact):
+        contact = COURSE_CONTACT_DEFAULT
+    paid_jst = _course_jst(record.get("paid_at") or record.get("completed_at") or None)
+    vars_ = {
+        "student_name": record.get("studentName") or record.get("student_name") or "",
+        "parent_name": record.get("parentName") or record.get("parent_name") or "保護者",
+        "grade": record.get("grade", ""),
+        "courses": "／".join(names) if names else "-",
+        "entry_fee": f"{entry_fee:,}",
+        "facility": f"{facility:,}",
+        "course_fee": f"{course_fee:,}",
+        "first_total": f"{first_total:,}",
+        "monthly_fee": f"{monthly_fee:,}",
+        "month_label": _enroll_month_label(month),
+        "next_month_label": _enroll_month_label(_enroll_next_month(month)),
+        "receipt_no": session_id,
+        "app_id": record.get("app_id") or "★申込IDなし → 氏名・メールで照合",
+        "contact": contact,
+        "line_url": os.environ.get("COURSE_LINE_URL", "").strip() or COURSE_LINE_URL_DEFAULT,
+        "email": record.get("email", ""),
+        "paid_at_jst": paid_jst.strftime("%Y-%m-%d %H:%M"),
+        "registration_id": rid,
+        "welcome_status": "",
+        "warnings": "",
+        "fail_reason": "",
+        "app_register_url": os.environ.get("ENROLL_APP_REGISTER_URL", "").strip() or ENROLL_APP_REGISTER_URL_DEFAULT,
+        "zoom_block": (ENROLL_ZOOM_BLOCK.format(zoom_id=os.environ.get("ENROLL_ZOOM_ID", "").strip(),
+                                               zoom_pass=os.environ.get("ENROLL_ZOOM_PASS", "").strip())
+                       if (os.environ.get("ENROLL_ZOOM_ID", "").strip() and os.environ.get("ENROLL_ZOOM_PASS", "").strip())
+                       else ENROLL_ZOOM_BLOCK_UNSET),
+    }
+    api_key = os.environ.get("RESEND_API_KEY", "").strip()
+    from_raw = os.environ.get("FROM_EMAIL", "noreply@trillion-ai-juku.com").strip() or "noreply@trillion-ai-juku.com"
+    from_email = from_raw if "<" in from_raw else f"トリリオン英語塾 <{from_raw}>"
+    to_email = (record.get("email") or "").strip()
+    status, err, resend_id = "", "", ""
+    enabled = os.environ.get("ENROLL_WELCOME_ENABLED", "1").strip().lower() not in ("0", "false", "off")
+    if not enabled:
+        status = "disabled"
+    elif not to_email or not COURSE_EMAIL_RE.match(to_email):
+        status = "no_email"
+        _log(f"webhook enroll CRITICAL: rid={rid} has no valid email — confirmation NOT sent")
+    elif not api_key:
+        status = "no_api_key"
+        _log(f"webhook enroll CRITICAL: RESEND_API_KEY missing — confirmation NOT sent (rid={rid})")
+    else:
+        try:
+            res = _resend_send_text(api_key, from_email, to_email, contact,
+                                    ENROLL_WELCOME_SUBJECT.format(**vars_), ENROLL_WELCOME_BODY.format(**vars_),
+                                    idempotency_key=f"enroll-welcome/{rid}")
+            status = "sent"
+            resend_id = (res or {}).get("id", "")
+            _log(f"webhook enroll: confirmation sent rid={rid} resend_id={resend_id}")
+        except Exception as e:
+            status, err = "failed", repr(e)[:300]
+            _log(f"webhook enroll CRITICAL: confirmation FAILED rid={rid}: {e!r}")
+    _redis_safe("SET", f"enroll:welcome:{rid}", json.dumps({"status": status, "error": err, "resend_id": resend_id, "email": to_email,
+                                                            "session_id": session_id, "month": month, "at": int(time.time())}, ensure_ascii=False),
+                "EX", str(ENROLL_RECORD_TTL))
+    _enroll_notify_owner(record, vars_, status, ledger_state, list(warnings or []))
+
+
+def _enroll_notify_owner(record, vars_, mail_status, ledger_state, warnings):
+    """塾長通知。★が 1 つでもあれば件名を「★要対応」にする (確認メール失敗・台帳未記録・カード未取得・翌月分の個別請求)"""
+    api_key = os.environ.get("RESEND_API_KEY", "").strip()
+    notify_to = os.environ.get("ENROLL_NOTIFY_EMAIL", "").strip() or os.environ.get("COURSE_NOTIFY_EMAIL", "").strip()
+    if not (notify_to and api_key and COURSE_EMAIL_RE.match(notify_to)):
+        return
+    from_raw = os.environ.get("FROM_EMAIL", "noreply@trillion-ai-juku.com").strip() or "noreply@trillion-ai-juku.com"
+    from_email = from_raw if "<" in from_raw else f"トリリオン英語塾 <{from_raw}>"
+    rid = record.get("registration_id", "")
+    try:
+        ok = mail_status == "sent"
+        vars_["welcome_status"] = "送信済み" if ok else f"★送信失敗 ({mail_status}) — 手動で送ってください"
+        if ledger_state == "error":
+            warnings.append("★台帳 (charge:done / charge:history) を KV に書けませんでした → 月末タブでこの生徒の当月が「引き落とし済み」になっているか確認。なっていなければ「✅ 支払い済みにする」で手動記録 (二重請求防止)")
+        elif ledger_state == "exists":
+            warnings.append("★台帳に当月の記録が既にあったため上書きしていません (再送または手動記録済み)。月末タブで確認")
+        if not record.get("stripe_payment_method_id"):
+            warnings.append("★カード (payment_method) を Stripe から取得できませんでした → 名簿で「再登録要」と出ます。Stripe で顧客にカードが付いていれば reconcile で復元")
+        reasons = []
+        if not ok:
+            reasons.append("確認メール未送信")
+        if any(w.startswith("★") for w in warnings):
+            reasons.append("要確認あり")
+        vars_["fail_reason"] = "・".join(reasons) or "要確認"
+        vars_["warnings"] = ("\n".join(warnings) + "\n") if warnings else ""
+        subj = (ENROLL_NOTIFY_SUBJECT if not reasons else ENROLL_NOTIFY_SUBJECT_FAILED).format(**vars_)
+        _resend_send_text(api_key, from_email, notify_to, "", subj, ENROLL_NOTIFY_BODY.format(**vars_),
+                          idempotency_key=f"enroll-notify/{rid}/{mail_status}")
+    except Exception as e:
+        _log(f"webhook enroll: owner notify failed: {e!r}")
+
+
+def _handle_enroll_first_charge(obj, reg_id, metadata, existing):
+    """mode=payment (first_charge=1) の完了。PaymentIntent から保存カードを取り、setup 相当の reg:completed を書く"""
+    session_id = obj.get("id", "")
+    pi_id = obj.get("payment_intent", "") or ""
+    if obj.get("payment_status") not in ("paid", "no_payment_required"):
+        _log(f"webhook enroll CRITICAL: session {session_id} payment_status={obj.get('payment_status')} — not registered")
+        return
+    secret_key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+    if not secret_key:
+        _log(f"webhook CRITICAL: STRIPE_SECRET_KEY missing (rid={reg_id}) - payment_method will be empty")
+    pi = _stripe_get(secret_key, f"payment_intents/{pi_id}") if (secret_key and pi_id) else None
+    payment_method = ""
+    pi_customer = ""
+    amount_received = 0
+    if pi and isinstance(pi, dict):
+        pm = pi.get("payment_method")
+        payment_method = pm.get("id", "") if isinstance(pm, dict) else (pm or "")
+        pi_customer = pi.get("customer") or ""
+        amount_received = int(pi.get("amount_received") or 0)
+    customer = obj.get("customer", "") or pi_customer
+    if not payment_method and secret_key and customer:
+        # PaymentIntent が取れなかったときの予備: 顧客に保存されたカードを直接引く (setup_future_usage で attach 済み)
+        pms = _stripe_get(secret_key, f"customers/{customer}/payment_methods?type=card&limit=1")
+        for pm_obj in ((pms or {}).get("data") or []):
+            payment_method = pm_obj.get("id") or ""
+            if payment_method:
+                _log(f"webhook enroll: payment_method recovered from customer {customer}")
+                break
+    email = obj.get("customer_email") or (obj.get("customer_details") or {}).get("email", "")
+    try:
+        monthly_fee = int(metadata.get("monthly_fee", "0"))
+    except Exception:
+        monthly_fee = 0
+    try:
+        entry_fee = int(metadata.get("entry_fee") or existing.get("entry_fee") or 0)
+    except Exception:
+        entry_fee = 0
+    first_total = int(obj.get("amount_total") or 0) or amount_received
+    if not first_total:
+        try:
+            first_total = int(metadata.get("first_total") or existing.get("first_total") or 0)
+        except Exception:
+            first_total = 0
+    now_ts = int(time.time())
+    # 台帳の月は「決済した月」= セッション作成 (支払いは作成から 24 時間以内) の JST 月。処理時刻を使うと、KV 障害で
+    # Stripe の再送 (最長 3 日) が月をまたいだとき翌月に印が付き、決済した月が未請求のまま翌月が skip される
+    paid_ts = int(obj.get("created") or 0) or now_ts
+    month = _course_jst(paid_ts).strftime("%Y-%m")
+    record = {
+        **existing,
+        "registration_id": reg_id,
+        "session_id": session_id,
+        "stripe_customer_id": customer,
+        "stripe_subscription_id": "",
+        "stripe_payment_method_id": payment_method,
+        "stripe_setup_intent_id": "",
+        "checkout_mode": "setup",            # 月末バッチ / 名簿 / スポット請求は setup だけを対象にする → 同じ扱いにする
+        "status": "completed",
+        "completed_at": now_ts,
+        "paid_at": paid_ts,
+        "amount": first_total,
+        "monthly_fee": monthly_fee or int(existing.get("monthly_fee") or 0),
+        "email": email or existing.get("email", ""),
+        "system": "juku-payment-monthly",
+        "first_charge": True,
+        "first_charge_session_id": session_id,
+        "first_charge_payment_intent_id": pi_id,
+        "first_charge_amount": first_total,
+        "first_charge_month": month,
+        "entry_fee": entry_fee,
+        "app_id": metadata.get("app_id") or existing.get("app_id") or "",
+        "source": "enrollment-form-v1-payment",
+    }
+    # 同じ Stripe 顧客で既に名簿登録があれば (申込書を送り直して 2 回支払った)、名簿には足さず塾長に返金確認を促す。
+    # 既存の登録が退塾処理で消えていれば通常どおり登録する
+    if customer:
+        by = _redis_safe("GET", f"reg:by_customer:{customer}")
+        other = ((by or {}).get("result") or "") if isinstance(by, dict) else ""
+        if other and other != reg_id:
+            still = _redis_safe("GET", f"reg:completed:{other}")
+            if isinstance(still, dict) and still.get("result"):
+                record["status"] = "duplicate"
+                record["duplicate_of"] = other
+                _redis_safe("SET", f"reg:duplicate:{reg_id}", json.dumps(record, ensure_ascii=False), "EX", str(ENROLL_RECORD_TTL))
+                _redis_safe("DEL", f"reg:pending:{reg_id}")
+                _log(f"webhook enroll CRITICAL: duplicate first charge rid={reg_id} customer={customer} existing={other} amount={first_total} — NOT added to roster")
+                if obj.get("livemode") is not False:
+                    _enroll_notify_duplicate(record, other)
+                return
+    res = _redis_safe("SET", f"reg:completed:{reg_id}", json.dumps(record, ensure_ascii=False))
+    if not (isinstance(res, dict) and res.get("result") == "OK"):
+        _log(f"webhook enroll CRITICAL: KV error writing reg:completed rid={reg_id} — asking Stripe to retry")
+        raise _RetryLater(f"reg:completed write failed rid={reg_id}")
+    _redis_safe("DEL", f"reg:pending:{reg_id}")
+    _redis_safe("ZADD", "reg:completed:index", str(now_ts), reg_id)
+    if customer:
+        _redis_safe("SET", f"reg:by_customer:{customer}", reg_id)
+    ledger_state = _enroll_write_ledger(reg_id, month, pi_id, first_total, record, now_ts)
+    warnings = []
+    nxt = _enroll_next_month(month)
+    if _enroll_next_month_batch_ran(nxt):
+        warnings.append(f"★{_enroll_month_label(nxt)}分の月末バッチ (前倒し請求) は実行済みです → この生徒の {_enroll_month_label(nxt)}分 (月額 {record['monthly_fee']:,}円) は月末タブで {nxt} を選んで個別に請求してください (自動では請求されません)")
+    _log(f"webhook enroll: completed reg={reg_id} customer={customer} pm={payment_method} first_total={first_total} monthly_fee={record['monthly_fee']} month={month} ledger={ledger_state}")
+    try:
+        _enroll_send_mails(obj, record, month, ledger_state, warnings)
+    except Exception as e:
+        _log(f"webhook enroll: mail step crashed rid={reg_id}: {e!r}")
+
+
+def _enroll_notify_duplicate(record, duplicate_of):
+    api_key = os.environ.get("RESEND_API_KEY", "").strip()
+    notify_to = os.environ.get("ENROLL_NOTIFY_EMAIL", "").strip() or os.environ.get("COURSE_NOTIFY_EMAIL", "").strip()
+    if not (notify_to and api_key and COURSE_EMAIL_RE.match(notify_to)):
+        return
+    from_raw = os.environ.get("FROM_EMAIL", "noreply@trillion-ai-juku.com").strip() or "noreply@trillion-ai-juku.com"
+    from_email = from_raw if "<" in from_raw else f"トリリオン英語塾 <{from_raw}>"
+    v = {"student_name": record.get("studentName") or record.get("student_name") or "", "grade": record.get("grade", ""),
+         "parent_name": record.get("parentName") or record.get("parent_name") or "", "email": record.get("email", ""),
+         "first_total": f"{int(record.get('first_charge_amount') or 0):,}", "receipt_no": record.get("session_id", ""),
+         "app_id": record.get("app_id") or "-", "paid_at_jst": _course_jst(record.get("completed_at") or None).strftime("%Y-%m-%d %H:%M"),
+         "customer": record.get("stripe_customer_id", ""), "duplicate_of": duplicate_of}
+    try:
+        _resend_send_text(api_key, from_email, notify_to, "", ENROLL_DUPLICATE_SUBJECT.format(**v), ENROLL_DUPLICATE_BODY.format(**v),
+                          idempotency_key=f"enroll-duplicate/{record.get('registration_id', '')}")
+    except Exception as e:
+        _log(f"webhook enroll: duplicate notify failed: {e!r}")
 
 
 def _handle_checkout_completed(event):
@@ -499,6 +929,11 @@ def _handle_checkout_completed(event):
             "fee_breakdown": metadata.get("fee_breakdown", ""),
             "restored_from_metadata": True,
         }
+    # 🆕 2026-09-17 入塾申込書からの初回決済 (mode=payment) は専用処理へ (setup 相当の名簿 + 当月の台帳 + メール)
+    if mode == "payment" and (metadata.get("first_charge") == "1" or existing.get("first_charge") is True):
+        _handle_enroll_first_charge(obj, reg_id, metadata, existing)
+        return
+
     # 🆕 mode によって record の意味が異なる:
     #   mode=setup       : amount=0 / payment_method 必須 / monthly_fee で月額保存
     #   mode=subscription: amount=初回課金額 / subscription_id 必須 (legacy)
@@ -1174,6 +1609,12 @@ class handler(BaseHTTPRequestHandler):
             if handler_fn:
                 try:
                     handler_fn(event)
+                except _RetryLater as e:
+                    # 入塾の初回決済で名簿を KV に書けなかった → 500 を返して Stripe に再送してもらう (seen キーも書けていないので再送は弾かれない)
+                    _log(f"webhook handler retry-later ({event_type}): {e!r}")
+                    _redis_safe("DEL", f"webhook:seen:{event_id}")
+                    _json(self, 500, {"error": "RETRY_LATER", "type": event_type})
+                    return
                 except Exception as e:
                     _log(f"webhook handler error ({event_type}): {e!r}")
                     # Stripe には 200 を返す (本体は KV best-effort なので失敗してもリトライ要らない)

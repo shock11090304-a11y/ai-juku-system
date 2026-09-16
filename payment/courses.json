@@ -12,7 +12,7 @@
     { "id": "soukei",       "name": "早慶クラス",         "price": 12500, "tier": "mid" },
     { "id": "eiken-jun1",   "name": "英検準１級",         "price": 8500,  "tier": "standard" },
     { "id": "chu2",         "name": "中学2年",           "price": 7500,  "tier": "standard" },
-    { "id": "chu1",         "name": "中学基礎中学1年",      "price": 7500,  "tier": "standard" },
+    { "id": "chu1",         "name": "中学基礎（中1・中2）",   "price": 7500,  "tier": "standard" },
     { "id": "chu3-monday",  "name": "月曜中３英文法",       "price": 7500,  "tier": "standard" },
     { "id": "grammar-1",    "name": "英文法レベル１",       "price": 7500,  "tier": "standard" },
     { "id": "grammar-2",    "name": "英文法レベル２",       "price": 7500,  "tier": "standard" },
@@ -21,7 +21,8 @@
     { "id": "eiken-2",      "name": "英検２級",          "price": 7500,  "tier": "standard" },
     { "id": "long-1",       "name": "英語長文レベル１",     "price": 7500,  "tier": "standard" },
     { "id": "long-2",       "name": "英語長文レベル２",     "price": 7500,  "tier": "standard" },
-    { "id": "kou2-grammar", "name": "高校2年英文法",       "price": 7500,  "tier": "standard" }
+    { "id": "kou2-grammar", "name": "高校2年英文法",       "price": 7500,  "tier": "standard" },
+    { "id": "kokugo",       "name": "高校国語",          "price": 7500,  "tier": "standard" }
   ],
   "options": [
     { "id": "facility-1500", "name": "設備費 (¥1,500)", "price": 1500 },

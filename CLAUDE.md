@@ -71,6 +71,21 @@
   塾長通知 (`_notify_admin_new_trial`・決済画面のカスタム欄を goal に) と申込者への案内メール (`_send_taiken_welcome_email`・`TAIKEN_WELCOME_ENABLED=0` で停止) を送る。
   テスト: `scripts/health_check/test_taiken_welcome_mail.py`。
 
+## 🏫 入塾申込書からの初回カード決済 (2026-09-17・塾長決定: 初月受講料は満額 / 入塾金免除なし / 設備費は初回に含める)
+- 入塾申込書 (Netlify `入塾書類/index.html`・別オリジン) → `POST /payment/api/register-subscribe` に `firstCharge:true` → **mode=payment** の Checkout
+  (入塾金 `ENTRY_FEE` 10,000 + 設備費 + 各コース初月受講料・`setup_future_usage=off_session` でカード保存)。金額はサーバ側カタログのみ
+  (`COURSES`/`OPTIONS` と `payment/courses.json` を `scripts/check_course_price_sync.py` で同期)。**入塾金は courses.json に入れない** (毎月請求になる)。
+- 完了イベントは `api/stripe-webhook.py` `_handle_enroll_first_charge`: reg:completed を **`checkout_mode="setup"` 相当** (PaymentIntent の
+  payment_method・`monthly_fee` は月額のみ) で書き、**決済した JST 月の `charge:done` (SET NX) + `charge:history`** を `source=enroll-first-charge` で書く
+  → 月末バッチはその月を skip。翌月分から月額を請求する。PaymentIntent の metadata に `month` は付けない (PI.succeeded の月次 reconcile を起こさない)。
+- 保護者へ確認メール (`ENROLL_WELCOME_*`・`enroll:welcome:<rid>` で 1 通・`ENROLL_WELCOME_ENABLED=0` で停止) と塾長通知 (`ENROLL_NOTIFY_EMAIL`、無ければ `COURSE_NOTIFY_EMAIL`)。
+  メールの Zoom の ID / パスコードは **env `ENROLL_ZOOM_ID` / `ENROLL_ZOOM_PASS`** から差し込む (公開リポジトリなので値を書かない。未設定なら「LINE でお知らせ」)。
+  塾生アプリ登録 URL は `ENROLL_APP_REGISTER_URL` (既定 juku-register.html)。授業ルール (5 分前入室・画面オン・音声オフ) は本文に固定。
+- 同じ Stripe 顧客の 2 件目の決済は `reg:duplicate:<rid>` に逃がして名簿に足さない (`reg:by_customer:<cus>`)。台帳の月は session.created の JST 月。
+  KV に名簿を書けなければ `_RetryLater` → 500 で Stripe に再送させる (他の handler は従来どおり 200)。
+- CORS: 申込書のオリジンだけ `Access-Control-Allow-Origin` を返す (`REGISTER_CORS_ORIGINS`、既定 Netlify の graceful-eclair-56bdac)。戻り先は `enroll-thanks.html` (同サイト)。
+- テスト: `scripts/health_check/test_enroll_first_charge.py`。運用手順: `Desktop/🏫 運営・集客/塾運営/入塾申込_初回カード決済/README.md`。
+
 ## 教材・問題を作るときのルール (2026-08-02 塾長指摘を反映)
 - **解説フォーマットは `server/main.py` の生成プロンプトが正典**。書き始める前に必ず読むこと。自己流の散文で書かない。
   - 数学(理系): 「方針→立式→計算→答え→補足」の 5 段階 (3行以上)。同プールの `seed-data/rikei_kyotsu_math_manual.json` が実例。
