@@ -295,6 +295,7 @@ def main():
     check("B1q. reg:by_customer に rid", kv.store.get("reg:by_customer:cus_1") == rid, kv.store.get("reg:by_customer:cus_1"))
     wrec = json.loads(kv.store.get(f"enroll:welcome:{rid}") or "{}")
     check("B1p. enroll:welcome に status=sent", wrec.get("status") == "sent" and wrec.get("resend_id") == "re_1", wrec)
+    check("B1r. Resend への送信に User-Agent (Cloudflare 1010 対策)", all(any(k.lower() == "user-agent" and v.startswith("ai-juku/") for k, v in h.items()) for h in net.headers), net.headers)
 
     # ---- B1z Zoom 未設定なら「LINE でお知らせ」 ----
     os.environ["ENROLL_ZOOM_ID"] = ""

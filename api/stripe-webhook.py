@@ -147,6 +147,7 @@ def _stripe_get(secret_key, path):
 #   {student_name} {courses} {amount} {payment_line} {first_monday} {first_note} {receipt_no} {contact} {portal} {line_url}
 #   ({ } を文中に書くと format が失敗して status=failed になる。波括弧は差し込み以外に使わない)
 # ★講座変更 (一部解約・追加) を Stripe ダッシュボードで行うときは「日割りしない」を選ぶこと。本文で「日割りなし」と約束している。
+RESEND_USER_AGENT = "ai-juku/1.0 (+https://trillion-ai-juku.com)"
 COURSE_SYSTEM_TAG = "juku-payment-course"
 COURSE_NAMES = {"kaishaku": "英文解釈講座", "bunpo": "英文法講座", "kyotsu": "共通テスト対策講座"}
 COURSE_CONTACT_DEFAULT = "info@trillion-ai-juku.com"   # 公開済み (legal.html) の窓口。COURSE_REPLY_TO で上書き可
@@ -221,7 +222,8 @@ def _resend_send_text(api_key, from_email, to_email, reply_to, subject, text, id
     payload = {"from": from_email, "to": [to_email], "subject": subject, "text": text}
     if reply_to:
         payload["reply_to"] = reply_to
-    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    # User-Agent 必須: Resend 前段の Cloudflare が Python-urllib の既定 UA を 403 (error code 1010) で弾く (2026-09-17 発覚)
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json", "User-Agent": RESEND_USER_AGENT}
     if idempotency_key:
         headers["Idempotency-Key"] = idempotency_key[:256]
     req = urllib.request.Request("https://api.resend.com/emails",

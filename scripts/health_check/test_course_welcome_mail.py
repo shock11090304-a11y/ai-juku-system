@@ -131,6 +131,7 @@ def main():
     check("1g. 初回配信は処理時刻 (=決済直後) の次の月曜", ("初回の配信は %s の予定" % _exp) in body, body[:400])
     check("1g2. Resend に Idempotency-Key", any(v == "course-welcome/cs_test_abc123" for v in rs.headers[0].values()) if rs.headers else False, rs.headers)
     check("1h. reply_to は窓口メール", m.get("reply_to") == "info@trillion-ai-juku.com", m.get("reply_to"))
+    check("1h2. Resend への送信に User-Agent (Cloudflare 1010 対策・2026-09-17)", any(k.lower() == "user-agent" and v.startswith("ai-juku/") for k, v in (rs.headers[0] if rs.headers else {}).items()), rs.headers[:1])
     rec = json.loads(kv.store.get("course:welcome:cs_test_abc123") or "{}")
     check("1i. KV に status=sent と講座コード・セッション作成時刻", rec.get("status") == "sent" and rec.get("courses") == ["bunpo", "kaishaku"] and rec.get("session_created") == 1789000000, rec)
     check("1j. index に session が載る", "cs_test_abc123" in kv.zsets.get("course:welcome:index", []))

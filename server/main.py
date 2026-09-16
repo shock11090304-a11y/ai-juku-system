@@ -32,6 +32,12 @@ import time
 import urllib.request
 import urllib.error
 import urllib.parse   # ★明示 import。urllib.request 経由で偶然使えるのに頼ると、上流の変更で静かに落ちる
+# 🚨 2026-09-17: Resend (api.resend.com) の前段 Cloudflare が Python 標準の User-Agent (Python-urllib/3.x) を
+# 「error code: 1010」で 403 に弾くようになり、メール送信が全滅した (入塾の確認メールで発覚)。urllib の Resend 呼び出しは
+# 27 か所あるので、opener を差し替えて UA を一括で付ける (Request 側に UA が無いときだけ使われる)。
+_UA_OPENER = urllib.request.build_opener()
+_UA_OPENER.addheaders = [("User-Agent", "ai-juku/1.0 (+https://trillion-ai-juku.com)")]
+urllib.request.install_opener(_UA_OPENER)
 import base64
 import io
 import zipfile

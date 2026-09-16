@@ -158,6 +158,8 @@ def _resend_send(api_key: str, from_email: str, to_email: str, reply_to: str,
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
+            # Resend 前段の Cloudflare が Python-urllib の既定 UA を 403 (error code 1010) で弾く (2026-09-17 発覚)
+            "User-Agent": "ai-juku/1.0 (+https://trillion-ai-juku.com)",
         },
     )
     with urllib.request.urlopen(req, timeout=15) as resp:
