@@ -42,7 +42,8 @@ def check(label, cond, detail=""):
 
 def load():
     os.environ.update({"KV_REST_API_URL": "", "KV_REST_API_TOKEN": "", "STRIPE_SECRET_KEY": "sk_test_dummy",
-                       "RESEND_API_KEY": "re_test", "FROM_EMAIL": "noreply@example.invalid"})
+                       "RESEND_API_KEY": "re_test", "FROM_EMAIL": "noreply@example.invalid",
+                       "COURSE_DELIVERY_START": "2026-09-01"})   # 8a/8b は「翌週の月曜」の計算だけを見る (配信開始日の切り上げは 8c で見る)
     os.environ.pop("COURSE_NOTIFY_EMAIL", None)
     spec = importlib.util.spec_from_file_location("stripe_webhook_vercel", WEBHOOK)
     mod = importlib.util.module_from_spec(spec)
@@ -199,6 +200,12 @@ def main():
     check("8a. 月曜 08:00 JST → 翌週の月曜 (UTC で計算すると当日になってしまう時刻)", mod._course_first_monday_jst(mon.timestamp()) == "9月21日（月）", mod._course_first_monday_jst(mon.timestamp()))
     sun = dt.datetime(2026, 9, 20, 8, 0, tzinfo=jst)   # 日曜 08:00 JST = 土曜 23:00 UTC
     check("8b. 日曜 08:00 JST → 翌日の月曜", mod._course_first_monday_jst(sun.timestamp()) == "9月21日（月）", mod._course_first_monday_jst(sun.timestamp()))
+    os.environ["COURSE_DELIVERY_START"] = "2026-10-05"
+    check("8c. 配信開始日 (10/5) より前の決済は初回配信が 10月5日（月）・補足は「10月からの配信開始のため」",
+          mod._course_first_monday_jst(mon.timestamp()) == "10月5日（月）" and "10月からの配信開始のため" in mod._course_first_note(mon.timestamp()), (mod._course_first_monday_jst(mon.timestamp()), mod._course_first_note(mon.timestamp())))
+    oct = dt.datetime(2026, 10, 7, 10, 0, tzinfo=jst)   # 水曜
+    check("8d. 配信開始後の決済は翌週の月曜 (10/12)・補足は「翌週の月曜から」", mod._course_first_monday_jst(oct.timestamp()) == "10月12日（月）" and "翌週の月曜" in mod._course_first_note(oct.timestamp()), (mod._course_first_monday_jst(oct.timestamp()), mod._course_first_note(oct.timestamp())))
+    os.environ["COURSE_DELIVERY_START"] = "2026-09-01"
 
     # ---- 9. KV 停止中でも送る ----
     rs = FakeResend()

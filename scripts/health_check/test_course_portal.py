@@ -175,7 +175,7 @@ def main():
                                "metadata": {"system": "juku-payment-course", "combo": "kyotsu"}, "payment_status": "paid"}, "checkout")
     nm = mod._course_member_by_email("new@example.invalid")
     check("7a2. 決済完了で視聴ページのログインリンクを自動送信 (講座名・翌週の月曜・token 付きリンク)",
-          len(MAILS) == 1 and MAILS[0]["to"] == "new@example.invalid" and "共通テスト対策講座" in MAILS[0]["body"] and "course-videos.html?t=" in MAILS[0]["body"] and "翌週の月曜" in MAILS[0]["body"], MAILS)
+          len(MAILS) == 1 and MAILS[0]["to"] == "new@example.invalid" and "共通テスト対策講座" in MAILS[0]["body"] and "course-videos.html?t=" in MAILS[0]["body"] and "初回の動画は" in MAILS[0]["body"] and "追加する予定" in MAILS[0]["body"], MAILS)
     _lnk = [l for l in MAILS[0]["body"].splitlines() if "course-videos.html?t=" in l][0] if MAILS else ""
     _tok = _lnk.split("?t=", 1)[1] if _lnk else ""
     _vr = client.post("/api/course/login/verify", json={"token": _tok})

@@ -144,13 +144,15 @@ def _stripe_get(secret_key, path):
 # "bunpo+kaishaku" のように講座コードを "+" で連結) → 決済完了でここに届く。本体 (server/main.py) の webhook は
 # juku-payment 前方一致で skip するので、講座の決済を扱うのはこの関数だけ。
 # ★件名・本文は塾長が書き換えてよい。使える差し込み:
-#   {student_name} {courses} {amount} {payment_line} {first_monday} {receipt_no} {contact} {portal}
+#   {student_name} {courses} {amount} {payment_line} {first_monday} {first_note} {receipt_no} {contact} {portal} {line_url}
 #   ({ } を文中に書くと format が失敗して status=failed になる。波括弧は差し込み以外に使わない)
 # ★講座変更 (一部解約・追加) を Stripe ダッシュボードで行うときは「日割りしない」を選ぶこと。本文で「日割りなし」と約束している。
 COURSE_SYSTEM_TAG = "juku-payment-course"
 COURSE_NAMES = {"kaishaku": "英文解釈講座", "bunpo": "英文法講座", "kyotsu": "共通テスト対策講座"}
 COURSE_CONTACT_DEFAULT = "info@trillion-ai-juku.com"   # 公開済み (legal.html) の窓口。COURSE_REPLY_TO で上書き可
 COURSE_PORTAL_URL_DEFAULT = "https://trillion-ai-juku.com/course-videos.html"   # 受講者専用の視聴ページ (本体リポジトリ course-videos.html)
+COURSE_LINE_URL_DEFAULT = "https://lin.ee/ZHlrRjh"   # 公式 LINE の友だち追加 URL (env COURSE_LINE_URL で上書き可)
+COURSE_DELIVERY_START_DEFAULT = "2026-10-05"   # 配信開始日 (月曜)。これより前の決済は初回配信がこの日になる (塾長 2026-09-16「10月から配信開始」)。env COURSE_DELIVERY_START で上書き可
 COURSE_RECORD_TTL = 365 * 86400   # 受付番号として保護者に案内するので 1 年残す (pi:* / charge:history と同じ)
 COURSE_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 COURSE_WELCOME_SUBJECT = "【トリリオン英語塾】受講のご案内（{courses}）"
@@ -161,30 +163,31 @@ COURSE_WELCOME_BODY = """{student_name} さん・保護者様
 これをもって受講確定となります。ありがとうございます。
 
 ■ 動画の配信について
-・各講座とも 月8回、毎週月曜に動画を追加します。
+・各講座とも 毎週月曜に 2 本ずつ動画を追加します（月 8 本）。
 ・動画は専用の視聴ページでご覧いただけます。
 　{portal}
 　（このメールとは別に「視聴ページのログインリンク」のメールも届きます。そのリンクをタップすればそのまま開けます。届かないときは、視聴ページでお支払い時のメールアドレスを入力するとリンクを再送できます。一度ログインすると、同じブラウザでは 30 日間そのまま開けます。ホーム画面に追加しておくと便利です）
-・初回の配信は {first_monday} の予定です（お支払いの翌週の月曜から始まります）。
+・初回の配信は {first_monday} の予定です{first_note}。
 ・新しい動画を追加したときは、このアドレスあてにお知らせメールが届きます。迷惑メールに入らないよう、このメールの差出人と {contact} を受信許可に設定してください。
 ・視聴ページは生徒さんご本人が開いていただいて構いません（視聴ページでメールアドレスを入力すると届く「ログインリンク」のメールを、生徒さんに転送してください）。
 
-■ ご質問
-・分からない箇所は、公式 LINE またはメール（{contact}）でご質問ください。
+■ ご質問・ご連絡
+・分からない箇所のご質問やご連絡は、公式 LINE でお願いします。
+　友だち追加: {line_url}
 　生徒さんご本人からのご質問も歓迎です。
 
 ■ お支払いについて
 ・{payment_line}
 　（29〜31日にお手続きの場合、その日が無い月は月末日）
 ・領収書は、決済のたびに Stripe から別のメールで届きます（このメールは領収書ではありません）。
-・解約や講座の変更は、次回の決済日の前日までに公式 LINE またはメール（{contact}）へご連絡ください。
+・解約や講座の変更は、次回の決済日の前日までに公式 LINE（またはメール {contact}）へご連絡ください。
 　次回分から反映します（日割りの返金はありません）。
 
 ■ 受付番号
 {receipt_no}
 （お問い合わせの際にお知らせいただくと確認が早くなります）
 
-ご不明な点は、このメールへの返信（返信先は {contact}）または公式 LINE でご連絡ください。
+ご不明な点は、公式 LINE またはこのメールへの返信（返信先は {contact}）でご連絡ください。
 このメールに心当たりがない場合も、お手数ですが {contact} までご連絡ください。
 
 トリリオン英語塾（Trillion English Academy）
@@ -232,13 +235,38 @@ def _course_jst(ts=None):
     return _dt.datetime.fromtimestamp(ts if ts is not None else time.time(), _dt.timezone(_dt.timedelta(hours=9)))
 
 
-def _course_first_monday_jst(now_ts=None):
-    """次の月曜 (JST) を「M月D日（月）」で返す。当日が月曜でも「次の」月曜 (その週の配信は済んでいる扱い)"""
+def _course_first_monday_date(now_ts=None):
+    """初回配信日 (JST の date)。「次の月曜 (当日が月曜でも翌週)」と「配信開始日」の遅い方。"""
     import datetime as _dt
     now = _course_jst(now_ts)
     days = (7 - now.weekday()) % 7 or 7
-    d = now + _dt.timedelta(days=days)
-    return f"{d.month}月{d.day}日（月）"
+    d = (now + _dt.timedelta(days=days)).date()
+    start_s = (os.environ.get("COURSE_DELIVERY_START", "").strip() or COURSE_DELIVERY_START_DEFAULT)
+    try:
+        start = _dt.date.fromisoformat(start_s)
+        if d < start:
+            d = start
+    except Exception:
+        pass
+    return d
+
+
+def _course_first_monday_jst(now_ts=None):
+    """初回配信日を「M月D日（月）」で返す (配信開始日より前の決済は配信開始日)。"""
+    d = _course_first_monday_date(now_ts)
+    return f"{d.month}月{d.day}日（{'月火水木金土日'[d.weekday()]}）"
+
+
+def _course_first_note(now_ts=None):
+    """初回配信日の補足: 配信開始日で切り上げたなら「10月からの配信開始のため」、そうでなければ「翌週の月曜から」"""
+    import datetime as _dt
+    now = _course_jst(now_ts)
+    days = (7 - now.weekday()) % 7 or 7
+    nxt = (now + _dt.timedelta(days=days)).date()
+    d = _course_first_monday_date(now_ts)
+    if d > nxt:
+        return f"（{d.month}月からの配信開始のため。以降は毎週月曜に追加します）"
+    return "（お支払いの翌週の月曜から始まります）"
 
 
 def _course_keys_from_session(obj, secret_key):
@@ -330,9 +358,11 @@ def _handle_course_checkout(obj):
         "amount": amount_txt,
         "payment_line": payment_line,
         "first_monday": _course_first_monday_jst(paid_ts),
+        "first_note": _course_first_note(paid_ts),
         "receipt_no": session_id,
         "contact": contact,
         "portal": os.environ.get("COURSE_PORTAL_URL", "").strip() or COURSE_PORTAL_URL_DEFAULT,
+        "line_url": os.environ.get("COURSE_LINE_URL", "").strip() or COURSE_LINE_URL_DEFAULT,
         "email": email,
         "client_ref": client_ref or "-",
         "app_id": app_id or "★突合キーなし → 氏名・メールで照合",

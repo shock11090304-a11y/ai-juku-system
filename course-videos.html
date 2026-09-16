@@ -73,7 +73,7 @@
         <div style="margin-top:0.8rem;"><button type="submit" class="btn" id="loginBtn">ログインリンクを送る</button></div>
         <div class="msg" id="loginMsg"></div>
       </form>
-      <p class="muted" style="margin-top:1rem;">数分たっても届かない場合は、①迷惑メールフォルダ、②お支払い（決済画面）で使ったメールアドレスと同じか、をご確認ください。届いているメールがあればそのリンクをお使いいただけます。それでも届かないときは、お申込者名・生徒名・受講講座名を添えて <a href="mailto:info@trillion-ai-juku.com">info@trillion-ai-juku.com</a> または公式 LINE へご連絡ください。</p>
+      <p class="muted" style="margin-top:1rem;">数分たっても届かない場合は、①迷惑メールフォルダ、②お支払い（決済画面）で使ったメールアドレスと同じか、をご確認ください。届いているメールがあればそのリンクをお使いいただけます。それでも届かないときは、お申込者名・生徒名・受講講座名を添えて <a href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener">公式 LINE</a> または <a href="mailto:info@trillion-ai-juku.com">info@trillion-ai-juku.com</a> へご連絡ください。</p>
     </section>
 
     <!-- 交換中 -->
@@ -89,11 +89,11 @@
       </div>
       <div class="card">
         <div class="courses-bar" id="coursesBar"></div>
-        <p class="muted" id="portalNote">各講座とも月8回、毎週月曜に動画を追加します。追加したときは、お支払い時のメールアドレスへお知らせします。新しい動画が上に並びます。はじめての方は一番下の第1回からご覧ください。</p>
+        <p class="muted" id="portalNote">各講座とも毎週月曜に 2 本ずつ動画を追加します（月 8 本）。追加したときは、お支払い時のメールアドレスへお知らせします。新しい動画が上に並びます。はじめての方は一番下の第1回からご覧ください。</p>
         <p class="muted" style="margin-top:0.4rem;">このページはブックマークかホーム画面への追加をおすすめします（同じブラウザなら 30 日間、次回からメールなしで開けます）。</p>
       </div>
       <div id="videoList"></div>
-      <p class="foot">ご質問は公式 LINE またはメール（<a href="mailto:info@trillion-ai-juku.com" id="contactLink">info@trillion-ai-juku.com</a>）へ。<br>解約・講座の変更も同じ窓口で、次回決済日の前日までにご連絡ください。<br><button type="button" class="btn-link" id="logoutBtn">ログアウト</button></p>
+      <p class="foot">ご質問は <a href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener" id="lineLink">公式 LINE</a> またはメール（<a href="mailto:info@trillion-ai-juku.com" id="contactLink">info@trillion-ai-juku.com</a>）へ。<br>解約・講座の変更も同じ窓口で、次回決済日の前日までにご連絡ください。<br><button type="button" class="btn-link" id="logoutBtn">ログアウト</button></p>
     </section>
   </main>
 
@@ -164,6 +164,7 @@
         $('whoami').textContent = (me.name ? me.name + ' 様　' : '') + me.email;
         $('coursesBar').innerHTML = (me.courses || []).map(function (c) { return '<span class="chip">' + esc(c.name) + '</span>'; }).join('');
         if (me.contact) { $('contactLink').textContent = me.contact; $('contactLink').href = 'mailto:' + me.contact; }
+        if (me.line_url && /^https:\/\/(lin\.ee|line\.me)\//.test(me.line_url)) { $('lineLink').href = me.line_url; }
         var byCourse = {};
         (me.courses || []).forEach(function (c) { byCourse[c.key] = { name: c.name, videos: [] }; });
         (me.videos || []).forEach(function (v) { if (byCourse[v.course_key]) byCourse[v.course_key].videos.push(v); });
@@ -172,7 +173,7 @@
           var b = byCourse[k];
           html += '<div class="course-block"><h3>' + esc(b.name) + '</h3>';
           if (!b.videos.length) {
-            html += '<div class="empty">まだ動画はありません。初回の動画は、お支払いの翌週の月曜に追加する予定です。追加したときはメールでお知らせします。</div>';
+            html += '<div class="empty">まだ動画はありません。初回の動画は ' + esc(me.first_delivery ? fmtDateJp(me.first_delivery) : 'お支払いの翌週の月曜') + ' に追加する予定です。追加したときはメールでお知らせします。</div>';
           } else {
             b.videos.forEach(function (v) {
               html += '<div class="video" data-id="' + esc(v.id) + '">'
@@ -210,7 +211,7 @@
           clearToken();
           show('loginView');
           var m0 = $('loginMsg'); m0.className = 'msg err';
-          m0.textContent = err.status === 401 ? 'ログインの有効期限が切れたか、有効な受講契約が見つかりません。もう一度ログインリンクを取得してください。解約済みの場合は再度お申し込みください。お心当たりがない場合は info@trillion-ai-juku.com までご連絡ください。' : netMsg(err, '読み込めませんでした。');
+          m0.textContent = err.status === 401 ? 'ログインの有効期限が切れたか、有効な受講契約が見つかりません。もう一度ログインリンクを取得してください。解約済みの場合は再度お申し込みください。お心当たりがない場合は公式 LINE または info@trillion-ai-juku.com までご連絡ください。' : netMsg(err, '読み込めませんでした。');
         }
       }
 

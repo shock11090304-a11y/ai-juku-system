@@ -50180,6 +50180,26 @@ COURSE_MAGIC_TTL_SEC = 7 * 86400
 COURSE_SESSION_TTL_SEC = 30 * 86400
 COURSE_FROM_EMAIL = os.getenv("COURSE_FROM_EMAIL", "トリリオン英語塾 <noreply@trillion-ai-juku.com>")
 COURSE_CONTACT_EMAIL = os.getenv("COURSE_REPLY_TO", "info@trillion-ai-juku.com")
+COURSE_LINE_URL = os.getenv("COURSE_LINE_URL", "https://lin.ee/ZHlrRjh")   # 公式 LINE 友だち追加 (塾長 2026-09-16)
+COURSE_DELIVERY_START = os.getenv("COURSE_DELIVERY_START", "2026-10-05")   # 配信開始日 (月曜)。Vercel 側 (api/stripe-webhook.py) と同じ値にする
+
+
+def _course_first_delivery_date(from_dt=None):
+    """初回配信日 (JST date): 「次の月曜 (当日が月曜でも翌週)」と COURSE_DELIVERY_START の遅い方。"""
+    now = from_dt or datetime.now(JST)
+    days = (7 - now.weekday()) % 7 or 7
+    d = (now + timedelta(days=days)).date()
+    try:
+        start = date.fromisoformat(COURSE_DELIVERY_START)
+        if d < start:
+            d = start
+    except Exception:
+        pass
+    return d
+
+
+def _course_fmt_date_jp(d) -> str:
+    return f"{d.month}月{d.day}日（{'月火水木金土日'[d.weekday()]}）"
 COURSE_PORTAL_PATH = "/course-videos.html"
 _COURSE_YT_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 _COURSE_YT_URL_RE = re.compile(r"(?:youtu\.be/|[?&]v=|/embed/|/shorts/|/live/)([A-Za-z0-9_-]{11})")
@@ -50487,7 +50507,7 @@ def _course_notify_send(video: dict, targets: list) -> dict:
                 f"\n■ 視聴はこちら\n{portal}\n（お支払い時（決済画面）のメールアドレスを入力すると、ログイン用のリンクが届きます。"
                 f"一度ログインすると、同じブラウザでは 30 日間そのまま開けます）\n"
                 f"生徒さんが開く場合も、前回ログインしたブラウザならそのまま開けます。\n\n"
-                f"ご不明な点は {COURSE_CONTACT_EMAIL} または公式 LINE までご連絡ください。\n\n"
+                f"ご不明な点は 公式 LINE（{COURSE_LINE_URL}）またはメール（{COURSE_CONTACT_EMAIL}）までご連絡ください。\n\n"
                 f"トリリオン英語塾（Trillion English Academy）")
         try:
             res = _course_send_email(m["email"], f"【{course_name}】新しい動画: {video['title']}", body)
@@ -50572,7 +50592,7 @@ def _course_send_login_link(member: dict, intro: str = "") -> dict:
         f"下のリンクを開くと、月額講座の視聴ページにログインできます（7 日間有効・同じリンクを何度でも使えます）。\n\n{link}\n\n"
         f"開いた端末では、同じブラウザでは 30 日間そのまま開けます。生徒さんの端末でも開く場合は、このメールを転送してください。\n\n"
         f"このメールに心当たりがない場合は、そのまま無視してください。\n\n"
-        f"ご不明な点は {COURSE_CONTACT_EMAIL} までご連絡ください。\nトリリオン英語塾（Trillion English Academy）")
+        f"ご不明な点は 公式 LINE（{COURSE_LINE_URL}）またはメール（{COURSE_CONTACT_EMAIL}）までご連絡ください。\nトリリオン英語塾（Trillion English Academy）")
     return _course_send_email(member["email"], "【トリリオン英語塾】視聴ページのログインリンク", body)
 
 
@@ -50671,7 +50691,8 @@ def course_me(authorization: Optional[str] = Header(None)):
                        "youtube_id": v["youtube_id"], "note": v["note"], "publish_date": str(v["publish_date"])[:10]})
     return {"email": member["email"], "name": member["name"],
             "courses": [{"key": k, "name": COURSE_KEYS[k]} for k in member["courses"]], "videos": videos,
-            "contact": COURSE_CONTACT_EMAIL}
+            "contact": COURSE_CONTACT_EMAIL, "line_url": COURSE_LINE_URL,
+            "first_delivery": _course_first_delivery_date().isoformat()}
 
 
 @app.post("/api/admin/course/videos")
@@ -50892,7 +50913,8 @@ def _course_webhook_touch(session_or_sub: dict, source: str) -> None:
                 #   Stripe の再送は processed_events (event.id) で弾かれるので二重送信にならない。
                 if member and member["status"] == "active" and os.getenv("COURSE_WELCOME_ENABLED", "1").strip().lower() not in ("0", "false", "off"):
                     names = "・".join(COURSE_KEYS[k] for k in member["courses"])
-                    res = _course_send_login_link(member, intro=f"「{names}」のお申し込みとお支払いを確認しました。ありがとうございます。\n動画は下のリンクから視聴ページを開いてご覧ください（初回の動画はお支払いの翌週の月曜に追加します）。")
+                    first = _course_fmt_date_jp(_course_first_delivery_date())
+                    res = _course_send_login_link(member, intro=f"「{names}」のお申し込みとお支払いを確認しました。ありがとうございます。\n動画は下のリンクから視聴ページを開いてご覧ください（初回の動画は {first} に追加する予定です）。")
                     log.info(f"[course] checkout login-link mail sent={res.get('sent')} courses={member['courses']}")
                 return
         elif source.startswith("subscription"):
