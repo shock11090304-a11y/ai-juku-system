@@ -177,6 +177,13 @@ class handler(BaseHTTPRequestHandler):
                                 "courses": r.get("courses", []),
                                 "options": r.get("options", []),
                                 "feeBreakdown": r.get("fee_breakdown", ""),
+                                # 2026-09-17 入塾申込書からの初回決済 (app.js が名簿へ自動追加する判定に使う)。
+                                # amount は初回決済額 (入塾金込み) なので月謝には monthly_fee を使うこと
+                                "source": r.get("source", ""),
+                                "firstCharge": bool(r.get("first_charge")),
+                                "firstChargeMonth": r.get("first_charge_month", ""),
+                                "firstChargeAmount": int(r.get("first_charge_amount") or 0),
+                                "paidAt": int(r.get("paid_at") or 0),
                             })
                         except Exception as e:
                             _log(f"parse error for {rid}: {e}")
