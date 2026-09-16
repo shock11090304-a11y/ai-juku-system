@@ -10950,6 +10950,43 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     }
     function attLabel(st) { return ({ present: '🟢出席', absent: '🔴欠席', late: '🟡遅刻' })[st] || st; }
 
+    // 🗓 アップ日時 (JST)。サーバ (_utc_iso_or_none) は offset 付き UTC ISO を返す。
+    //   ★このファイル内の fmtDate (ceo.html:8707 付近) も ceo.js の formatRelativeTime も、
+    //     offset の無い文字列をブラウザの**ローカル時刻**として読むため JST では 9 時間早く出る。
+    //     ここは「offset が無ければ UTC とみなす → Intl(Asia/Tokyo)」の 1 経路に統一してその轍を避ける。
+    //   ★クラス別一覧 (loadClassFiles) と授業詳細 (detailHtml) の両方がこの 1 本を使う。
+    //     片方だけ別実装にすると、同じファイルが 2 画面で違う時刻に見える。
+    function jstParts(iso) {
+      if (!iso) return null;
+      var raw = String(iso).trim();
+      if (!raw) return null;
+      var d = new Date(/(Z|[+-]\d\d:?\d\d)$/.test(raw) ? raw : raw.replace(' ', 'T') + 'Z');
+      if (isNaN(d.getTime())) return null;
+      try {
+        var o = {};
+        new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+          .formatToParts(d).forEach(function (part) { o[part.type] = part.value; });
+        if (!o.year || !o.month || !o.day) return null;
+        return {
+          text: o.year + '-' + o.month + '-' + o.day + ' ' + (o.hour || '00') + ':' + (o.minute || '00'),
+          dayUtc: Date.UTC(Number(o.year), Number(o.month) - 1, Number(o.day))
+        };
+      } catch (e) { return null; }
+    }
+    // 一覧の行に差し込む「🗓 2026-09-14 14:55 (今日)」。日時が読めない行も黙って消さず「日時不明」と出す。
+    function uploadedHtml(iso) {
+      var p = jstParts(iso);
+      if (!p) return '<span style="color:#71717a; font-size:0.74rem; white-space:nowrap;" title="アップロード日時を取得できませんでした (サーバ側が未反映の可能性)">🗓 日時不明</span>';
+      var today = jstParts(new Date().toISOString());
+      var ago = '';
+      if (today) {
+        var n = Math.round((today.dayUtc - p.dayUtc) / 86400000);
+        ago = n === 0 ? '今日' : (n === 1 ? '昨日' : ((n > 1 && n <= 7) ? (n + '日前') : ''));
+      }
+      return '<span style="color:#94a3b8; font-size:0.74rem; white-space:nowrap;" title="アップロード日時 (JST)">🗓 ' + esc(p.text)
+        + (ago ? ' <span style="color:#fcd34d; font-weight:700;">' + ago + '</span>' : '') + '</span>';
+    }
+
     async function adminJson(path, init) {
       var res = await AdminAuth.fetch(path, init || {});
       var j = null;
@@ -11087,7 +11124,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     function detailHtml(d) {
       var sid = d.session.id;
       var files = d.files.length ? d.files.map(function (f) {
-        return '<div style="' + rowBox() + '"><span style="flex:1;">📄 ' + esc(f.title) + ' <span style="color:#a1a1aa;">(' + esc(f.filename || '') + ' ' + fmtKB(f.file_size) + ')</span></span>'
+        return '<div style="' + rowBox() + ' flex-wrap:wrap;"><span style="flex:1; min-width:0;">📄 ' + esc(f.title) + ' <span style="color:#a1a1aa;">(' + esc(f.filename || '') + ' ' + fmtKB(f.file_size) + ')</span></span>'
+          + uploadedHtml(f.created_at)
           + '<button class="cls-fdel" data-id="' + f.id + '" data-sess="' + sid + '" style="' + BTN + ' background:rgba(239,68,68,0.2); color:#fca5a5;">🗑</button></div>';
       }).join('') : '<div style="color:#a1a1aa; font-size:0.8rem;">ファイルなし</div>';
       var recs = d.recordings.length ? d.recordings.map(function (r) {
@@ -11350,9 +11388,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         var fs = d.files || [];
         if (!fs.length) { list.innerHTML = '<div style="color:#a1a1aa; font-size:0.82rem;">クラス別の配布ファイルはまだありません。</div>'; return; }
         list.innerHTML = fs.map(function (f) {
-          return '<div style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0.55rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:7px; margin-bottom:0.3rem; font-size:0.84rem;">'
+          return '<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; padding:0.4rem 0.55rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:7px; margin-bottom:0.3rem; font-size:0.84rem;">'
             + '<span style="background:rgba(129,140,248,0.2); color:#c7d2fe; border:1px solid rgba(129,140,248,0.4); border-radius:6px; padding:0.05rem 0.45rem; font-size:0.72rem; font-weight:800; white-space:nowrap;">' + esc(f.class_label) + '</span>'
             + '<span style="flex:1; min-width:0;">📄 ' + esc(f.title) + ' <span style="color:#a1a1aa;">(' + esc(f.filename || '') + ' ' + fmtKB(f.file_size) + ')</span></span>'
+            + uploadedHtml(f.created_at)
             + '<button class="cf-del" data-id="' + f.id + '" style="' + BTN + ' background:rgba(239,68,68,0.2); color:#fca5a5;">🗑</button></div>';
         }).join('');
       } catch (e) {

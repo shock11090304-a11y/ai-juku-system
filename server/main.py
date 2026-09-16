@@ -33791,6 +33791,20 @@ def _parse_db_dt(raw) -> Optional[datetime]:
         return None
 
 
+def _utc_iso_or_none(raw) -> Optional[str]:
+    """DB の TIMESTAMP を「offset 付き UTC ISO」(…T05:55:00+00:00) にして返す。解釈できなければ None。
+
+    🗓 [class-file-uploaded-at 2026-09-16] 画面に日時を出すための直列化。
+    既存の多数派 `str(row["created_at"])` は **offset を持たない生値** を返すため、受け取った
+    ブラウザの `new Date()` がそれを「ローカル時刻」として読む = JST 環境で 9 時間早く表示される
+    (ceo.html の fmtDate / ceo.js の formatRelativeTime が実際にこのズレを抱えている)。
+    offset を付けて返せばフロントの実装がどれであってもズレようがないので、
+    「いつアップしたか」のように日時そのものが用件の値はこちらを使う。
+    _parse_db_dt を通すので Postgres の datetime / SQLite の str / マイクロ秒の有無の差も 1 形に潰れる。"""
+    dt = _parse_db_dt(raw)
+    return dt.isoformat() if dt else None
+
+
 def _utc_naive_iso(dt: datetime = None) -> str:
     """aware datetime (省略時は現在時刻) を「UTC 壁時計の naive isoformat」にする。
 
@@ -49909,11 +49923,12 @@ def admin_class_session_detail(session_id: int, authorization: Optional[str] = H
                    "start_time": s["start_time"], "end_time": s["end_time"],
                    "location": s["location"], "notes": s["notes"], "is_published": bool(s["is_published"])}
         c.execute(
-            "SELECT id, title, filename, mime, file_size, is_published FROM class_files "
+            "SELECT id, title, filename, mime, file_size, is_published, created_at FROM class_files "
             "WHERE session_id = ? ORDER BY created_at DESC, id DESC", (int(session_id),)
         )
         files = [{"id": r["id"], "title": r["title"], "filename": r["filename"], "mime": r["mime"],
-                  "file_size": r["file_size"], "is_published": bool(r["is_published"])} for r in c.fetchall()]
+                  "file_size": r["file_size"], "is_published": bool(r["is_published"]),
+                  "created_at": _utc_iso_or_none(r["created_at"])} for r in c.fetchall()]
         c.execute(
             "SELECT id, title, video_url, provider, duration_sec, is_published FROM class_recordings "
             "WHERE session_id = ? ORDER BY created_at DESC, id DESC", (int(session_id),)
@@ -50748,11 +50763,14 @@ def admin_class_labeled_files(authorization: Optional[str] = Header(None)):
     try:
         c = conn.cursor()
         c.execute(
-            "SELECT id, title, filename, file_size, class_label FROM class_files "
+            "SELECT id, title, filename, file_size, class_label, created_at FROM class_files "
             "WHERE class_label IS NOT NULL AND class_label != '' ORDER BY class_label, created_at DESC"
         )
+        # 🗓 created_at は「いつこのクラスに配ったか」= 塾長が一覧で最初に見る値。offset 付きで返す
+        #    (理由は _utc_iso_or_none の docstring。生値だと画面が 9 時間早く出る)。
         files = [{"id": r["id"], "title": r["title"], "filename": r["filename"],
-                  "file_size": r["file_size"], "class_label": r["class_label"]} for r in c.fetchall()]
+                  "file_size": r["file_size"], "class_label": r["class_label"],
+                  "created_at": _utc_iso_or_none(r["created_at"])} for r in c.fetchall()]
         return {"ok": True, "files": files}
     finally:
         conn.close()
