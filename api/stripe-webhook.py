@@ -10,6 +10,7 @@ Stripe Dashboard 設定:
             invoice.payment_failed
             invoice.payment_succeeded
             customer.subscription.deleted
+            checkout.session.async_payment_succeeded (🆕 2026-09-16 月額講座・カード以外の入金確定。購読は任意)
             payment_intent.succeeded   (🆕 v2 月末バッチ請求用)
             payment_intent.payment_failed   (🆕 v2 バッチ請求失敗時)
             payment_intent.canceled    (🆕 2026-07-02 塾長が Dashboard で要確認 PI を
@@ -29,6 +30,12 @@ Env:
   2. invoice.payment_failed → KV failures index に追加 (塾長ダッシュで一覧表示用)
   3. customer.subscription.deleted → KV cancellations index に追加
   4. その他のイベントは ack のみして無視 (安全)
+  5. 🆕 2026-09-16 月額講座 (英文解釈/英文法/共通テスト対策・Stripe 支払いリンク・metadata.system=juku-payment-course)
+     の checkout.session.completed → 受講案内メールを Resend で自動送信 (KV course:welcome:* に送信記録)
+     Env (追加): RESEND_API_KEY / FROM_EMAIL (mail-send.py と共通) / COURSE_REPLY_TO (任意・既定 info@…)
+                 COURSE_NOTIFY_EMAIL (塾長への申込通知。案内メール失敗に気づける唯一の経路なので実質必須)
+                 COURSE_WELCOME_ENABLED=0 で講座の案内メールだけ止められる (月謝の一斉メールには影響しない)
+     講座の invoice / subscription イベント (毎月の更新・失敗・解約) は月謝の台帳に混ぜず skip する
 
 依存: 標準ライブラリのみ
 """
@@ -36,6 +43,7 @@ Env:
 from http.server import BaseHTTPRequestHandler
 import json
 import os
+import re
 import sys
 import time
 import hmac
@@ -131,6 +139,258 @@ def _stripe_get(secret_key, path):
         return None
 
 
+# ===== 🆕 2026-09-16 月額講座 (Stripe 支払いリンク・定期) の受講案内メール =====
+# 申込書 (入塾書類/course.html) → Stripe 支払いリンク (metadata.system=juku-payment-course, metadata.combo=
+# "bunpo+kaishaku" のように講座コードを "+" で連結) → 決済完了でここに届く。本体 (server/main.py) の webhook は
+# juku-payment 前方一致で skip するので、講座の決済を扱うのはこの関数だけ。
+# ★件名・本文は塾長が書き換えてよい。使える差し込み:
+#   {student_name} {courses} {amount} {payment_line} {first_monday} {receipt_no} {contact}
+#   ({ } を文中に書くと format が失敗して status=failed になる。波括弧は差し込み以外に使わない)
+# ★講座変更 (一部解約・追加) を Stripe ダッシュボードで行うときは「日割りしない」を選ぶこと。本文で「日割りなし」と約束している。
+COURSE_SYSTEM_TAG = "juku-payment-course"
+COURSE_NAMES = {"kaishaku": "英文解釈講座", "bunpo": "英文法講座", "kyotsu": "共通テスト対策講座"}
+COURSE_CONTACT_DEFAULT = "info@trillion-ai-juku.com"   # 公開済み (legal.html) の窓口。COURSE_REPLY_TO で上書き可
+COURSE_RECORD_TTL = 365 * 86400   # 受付番号として保護者に案内するので 1 年残す (pi:* / charge:history と同じ)
+COURSE_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+COURSE_WELCOME_SUBJECT = "【トリリオン英語塾】受講のご案内（{courses}）"
+COURSE_WELCOME_BODY = """{student_name} さん・保護者様
+
+トリリオン英語塾です。
+「{courses}」のお申し込みとお支払いを確認いたしました。
+これをもって受講確定となります。ありがとうございます。
+
+■ 動画の配信について
+・各講座とも 月8回、毎週月曜に動画を配信します。
+・動画は視聴リンクをメールでお送りします。
+　このメールが届いたアドレス（お支払い時にご登録のアドレス）あてにお送りします。
+・初回の配信は {first_monday} の予定です（お支払いの翌週の月曜から始まります）。
+・毎週月曜の視聴リンクは {contact} からお送りします。迷惑メールに入らないよう、{contact} を受信許可に設定してください。
+・視聴リンクは生徒さんご本人に転送していただいて構いません。
+
+■ ご質問
+・分からない箇所は、公式 LINE またはメール（{contact}）でご質問ください。
+　生徒さんご本人からのご質問も歓迎です。
+
+■ お支払いについて
+・{payment_line}
+　（29〜31日にお手続きの場合、その日が無い月は月末日）
+・領収書は、決済のたびに Stripe から別のメールで届きます（このメールは領収書ではありません）。
+・解約や講座の変更は、次回の決済日の前日までに公式 LINE またはメール（{contact}）へご連絡ください。
+　次回分から反映します（日割りの返金はありません）。
+
+■ 受付番号
+{receipt_no}
+（お問い合わせの際にお知らせいただくと確認が早くなります）
+
+ご不明な点は、このメールへの返信（返信先は {contact}）または公式 LINE でご連絡ください。
+このメールに心当たりがない場合も、お手数ですが {contact} までご連絡ください。
+
+トリリオン英語塾（Trillion English Academy）
+{contact}
+"""
+COURSE_PAYMENT_LINE_NORMAL = "月額合計 {amount}円（税込）を、毎月同じ日にご登録のカードから自動で決済します。"
+COURSE_PAYMENT_LINE_DISCOUNT = "今回のお支払いは {amount}円（税込）です。以降は毎月同じ日に、お選びいただいた講座の月額合計（1講座 1,500円・税込）をご登録のカードから自動で決済します。"
+COURSE_NOTIFY_SUBJECT = "[月額講座] 新規申込: {courses} / {student_name}"
+COURSE_NOTIFY_SUBJECT_FAILED = "[月額講座] ★案内メール未送信: {courses} / {student_name}"
+COURSE_NOTIFY_BODY = """月額講座の決済が完了しました。
+
+講座: {courses}
+生徒氏名（決済画面の入力）: {student_name_raw}
+お申込者: {purchaser_name}
+メール: {email}
+月額合計: {amount}円
+決済日時 (JST): {paid_at_jst} → 以後 毎月 {billing_day}日 に決済（29〜31日はその日が無い月は月末。解約期限はその前日）
+初回配信（保護者に案内済み）: {first_monday}
+受付番号 (Checkout Session): {receipt_no}
+申込ID（Netlify 通知メールの「申込ID」と一致）: {app_id}
+Stripe 顧客: {customer}
+Stripe サブスクリプション: {subscription}
+案内メール: {welcome_status}
+"""
+
+
+def _resend_send_text(api_key, from_email, to_email, reply_to, subject, text, idempotency_key=""):
+    """Resend API で 1 通送る (mail-send.py の _resend_send と同じ形。Vercel の関数は共有モジュールを持てないので複製)。
+    idempotency_key を渡すと Resend 側で重複送信を弾く (KV が落ちていて再送が通っても 2 通にならない)。
+    timeout は 8 秒: Vercel 関数の既定上限 (10 秒) より短くして、Resend が固まっても KV に失敗を残せるようにする"""
+    payload = {"from": from_email, "to": [to_email], "subject": subject, "text": text}
+    if reply_to:
+        payload["reply_to"] = reply_to
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    if idempotency_key:
+        headers["Idempotency-Key"] = idempotency_key[:256]
+    req = urllib.request.Request("https://api.resend.com/emails",
+                                 data=json.dumps(payload, ensure_ascii=False).encode("utf-8"), headers=headers)
+    with urllib.request.urlopen(req, timeout=8) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _course_jst(ts=None):
+    import datetime as _dt
+    return _dt.datetime.fromtimestamp(ts if ts is not None else time.time(), _dt.timezone(_dt.timedelta(hours=9)))
+
+
+def _course_first_monday_jst(now_ts=None):
+    """次の月曜 (JST) を「M月D日（月）」で返す。当日が月曜でも「次の」月曜 (その週の配信は済んでいる扱い)"""
+    import datetime as _dt
+    now = _course_jst(now_ts)
+    days = (7 - now.weekday()) % 7 or 7
+    d = now + _dt.timedelta(days=days)
+    return f"{d.month}月{d.day}日（月）"
+
+
+def _course_keys_from_session(obj, secret_key):
+    """講座コードの一覧 (アルファベット順)。metadata.combo が正。無ければ明細の price.lookup_key (course_<key>_monthly) から復元"""
+    combo = ((obj.get("metadata") or {}).get("combo") or "").strip().replace(" ", "+")
+    keys = [k for k in combo.split("+") if k in COURSE_NAMES]
+    if keys:
+        return sorted(set(keys))
+    session_id = obj.get("id", "")
+    items = _stripe_get(secret_key, f"checkout/sessions/{session_id}/line_items?limit=20") if (secret_key and session_id) else None
+    for li in ((items or {}).get("data") or []):
+        lk = ((li.get("price") or {}).get("lookup_key") or "")
+        if lk.startswith("course_") and lk.endswith("_monthly"):
+            k = lk[len("course_"):-len("_monthly")]
+            if k in COURSE_NAMES:
+                keys.append(k)
+    return sorted(set(keys))
+
+
+def _course_save(session_id, record):
+    _redis_safe("SET", f"course:welcome:{session_id}", json.dumps(record, ensure_ascii=False), "EX", str(COURSE_RECORD_TTL))
+
+
+def _handle_course_checkout(obj):
+    """月額講座の決済完了 → 受講案内メール。例外は握って KV に記録する (Stripe には呼び出し側が 200 を返す)。
+    二重送信ガード: course:welcome:<session_id> を SET NX (Stripe の再送・同一セッションの別イベントでも 1 通)。
+    ただし前回が "sending" のまま 10 分以上経っている (Resend が固まって関数が時間切れになった) ときはやり直す。
+    KV に記録できないときは送信を優先する (Resend の Idempotency-Key が 2 通目を弾く)。"""
+    session_id = obj.get("id", "")
+    if obj.get("livemode") is False:
+        _log(f"webhook course: test-mode session {session_id} — no mail")
+        return
+    details = obj.get("customer_details") or {}
+    email = (obj.get("customer_email") or details.get("email") or "").strip()
+    purchaser_name = (details.get("name") or "").strip()
+    student_name_raw = ""
+    for cf in (obj.get("custom_fields") or []):
+        if cf.get("key") == "student_name":
+            student_name_raw = ((cf.get("text") or {}).get("value") or "").strip()
+    amount = obj.get("amount_total") or 0  # JPY は最小単位=円
+    client_ref = obj.get("client_reference_id") or ""
+    customer = obj.get("customer") or ""
+    now = int(time.time())
+    paid_ts = now   # 決済日・初回配信日は「この webhook を処理した時刻」= 決済直後。session.created は開いた時刻なので使わない
+
+    if obj.get("payment_status") not in ("paid", "no_payment_required"):   # 100% クーポン等は no_payment_required
+        # カード以外 (コンビニ等) は unpaid で届き、後から checkout.session.async_payment_succeeded が来る (HANDLERS に登録済み)
+        _log(f"webhook course: session {session_id} not paid yet (payment_status={obj.get('payment_status')}) — no mail")
+        return
+
+    # 同一セッションの二重送信ガード
+    guard_key = f"course:welcome:{session_id}"
+    guard = _redis_safe("SET", guard_key, json.dumps({"status": "sending", "email": email, "at": now}), "NX", "EX", str(COURSE_RECORD_TTL))
+    if guard and isinstance(guard, dict) and guard.get("result") != "OK":
+        prev = {}
+        try:
+            got = _redis_safe("GET", guard_key)
+            prev = json.loads((got or {}).get("result") or "{}")
+        except Exception:
+            prev = {}
+        if prev.get("status") == "sending" and int(prev.get("at") or 0) < now - 600:
+            _log(f"webhook course: session {session_id} stuck in 'sending' since {prev.get('at')} — retrying")
+        else:
+            _log(f"webhook course: welcome mail already handled for session {session_id} (status={prev.get('status')}) — skip")
+            return
+    # 先に index へ載せる = 途中で時間切れになっても「sending のまま」が一覧で見える
+    _redis_safe("ZADD", "course:welcome:index", str(now), session_id)
+
+    secret_key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+    keys = _course_keys_from_session(obj, secret_key)
+    courses = "・".join(COURSE_NAMES[k] for k in keys) if keys else "月額講座"
+    contact = os.environ.get("COURSE_REPLY_TO", "").strip()
+    if not COURSE_EMAIL_RE.match(contact):
+        contact = COURSE_CONTACT_DEFAULT
+    discount = 0
+    try:
+        discount = int(((obj.get("total_details") or {}).get("amount_discount")) or 0)
+    except Exception:
+        discount = 0
+    amount_txt = f"{int(amount):,}"
+    payment_line = (COURSE_PAYMENT_LINE_DISCOUNT if (int(amount) == 0 or discount > 0) else COURSE_PAYMENT_LINE_NORMAL).format(amount=amount_txt)
+    paid_jst = _course_jst(paid_ts)
+    app_id = client_ref.rsplit("-sub-", 1)[1] if "-sub-" in client_ref else ""
+    vars_ = {
+        "student_name": student_name_raw or purchaser_name or "お申込者",
+        "student_name_raw": student_name_raw or "(未入力)",
+        "purchaser_name": purchaser_name or "-",
+        "courses": courses,
+        "amount": amount_txt,
+        "payment_line": payment_line,
+        "first_monday": _course_first_monday_jst(paid_ts),
+        "receipt_no": session_id,
+        "contact": contact,
+        "email": email,
+        "client_ref": client_ref or "-",
+        "app_id": app_id or "★突合キーなし → 氏名・メールで照合",
+        "customer": customer or "-",
+        "subscription": obj.get("subscription") or "-",
+        "paid_at_jst": paid_jst.strftime("%Y-%m-%d %H:%M"),
+        "billing_day": str(paid_jst.day),
+    }
+    api_key = os.environ.get("RESEND_API_KEY", "").strip()
+    from_raw = os.environ.get("FROM_EMAIL", "noreply@trillion-ai-juku.com").strip() or "noreply@trillion-ai-juku.com"
+    from_email = from_raw if "<" in from_raw else f"トリリオン英語塾 <{from_raw}>"   # 受信箱に塾名を出す (mail-send.py と同じ形)
+    record = {"status": "", "email": email, "student_name": student_name_raw, "courses": keys, "amount": amount,
+              "client_reference_id": client_ref, "customer": customer, "subscription": obj.get("subscription") or "",
+              "session_created": obj.get("created") or 0, "paid_at": paid_ts, "at": now, "resend_id": "", "error": ""}
+    enabled = os.environ.get("COURSE_WELCOME_ENABLED", "1").strip().lower() not in ("0", "false", "off")
+    if not enabled:
+        record["status"] = "disabled"
+        _log(f"webhook course: welcome mail DISABLED by env COURSE_WELCOME_ENABLED (session={session_id})")
+    elif not email:
+        record["status"] = "no_email"
+        _log(f"webhook course CRITICAL: session {session_id} has no email — welcome mail NOT sent")
+    elif not api_key:
+        record["status"] = "no_api_key"
+        _log(f"webhook course CRITICAL: RESEND_API_KEY missing — welcome mail NOT sent (session={session_id})")
+    else:
+        try:
+            res = _resend_send_text(api_key, from_email, email, contact,
+                                    COURSE_WELCOME_SUBJECT.format(**vars_), COURSE_WELCOME_BODY.format(**vars_),
+                                    idempotency_key=f"course-welcome/{session_id}")
+            record["status"] = "sent"
+            record["resend_id"] = (res or {}).get("id", "")
+            _log(f"webhook course: welcome mail sent session={session_id} courses={keys} resend_id={record['resend_id']}")
+        except Exception as e:
+            record["status"] = "failed"
+            record["error"] = repr(e)[:300]
+            _log(f"webhook course CRITICAL: welcome mail FAILED session={session_id}: {e!r}")
+    _course_save(session_id, record)
+
+    # 塾長への通知 (任意・env があるときだけ)。案内メールの成否も載せる = 失敗時は手で送り直せる
+    notify_to = os.environ.get("COURSE_NOTIFY_EMAIL", "").strip()
+    if notify_to and api_key and COURSE_EMAIL_RE.match(notify_to):
+        try:
+            ok = record["status"] == "sent"
+            vars_["welcome_status"] = "送信済み" if ok else f"★送信失敗 ({record['status']}) — 手動で送ってください"
+            subj = (COURSE_NOTIFY_SUBJECT if ok else COURSE_NOTIFY_SUBJECT_FAILED).format(**vars_)
+            _resend_send_text(api_key, from_email, notify_to, "", subj, COURSE_NOTIFY_BODY.format(**vars_),
+                              idempotency_key=f"course-notify/{session_id}/{record['status']}")
+        except Exception as e:
+            _log(f"webhook course: owner notify failed: {e!r}")
+
+
+def _handle_course_async_paid(event):
+    """checkout.session.async_payment_succeeded: カード以外 (コンビニ・銀行振込) の入金確定。講座のセッションだけ扱う。
+    ★Stripe ダッシュボードの webhook でこのイベントを購読していないと届かない (現状は支払いリンクをカード限定にしているので予備)"""
+    obj = event.get("data", {}).get("object", {})
+    if ((obj.get("metadata") or {}).get("system") or "") == COURSE_SYSTEM_TAG:
+        _handle_course_checkout(obj)
+    else:
+        _log("webhook: async_payment_succeeded ignored (not a course session)")
+
+
 def _handle_checkout_completed(event):
     """🆕 v2 (2026-05-13): mode=setup 対応。
     旧 mode=subscription も後方互換のため一応動くようにしておく。
@@ -149,6 +409,10 @@ def _handle_checkout_completed(event):
     # 🚨 AIコーチングとの完全分離: system metadata で識別
     # juku-payment 系 (system=juku-payment-monthly or reg_id 有り) 以外は skip
     system_tag = metadata.get("system", "")
+    # 🆕 2026-09-16 月額講座 (支払いリンク) は registration_id を持たない別系統 → 受講案内メールだけ送って終わり
+    if system_tag == COURSE_SYSTEM_TAG:
+        _handle_course_checkout(obj)
+        return
     if not reg_id and system_tag != "juku-payment-monthly":
         _log(f"webhook: not juku-payment event (mode={mode} system={system_tag}) — skip")
         return
@@ -236,6 +500,9 @@ def _handle_payment_failed(event):
     if sys_tag and not sys_tag.startswith("juku-payment"):
         _log(f"webhook: invoice.payment_failed skipped (system={sys_tag} - not juku-payment)")
         return
+    if sys_tag == COURSE_SYSTEM_TAG:   # 🆕 月額講座は月謝の台帳 (pay:failed) に混ぜない。失敗は Stripe の通知メールで塾長が知る
+        _log("webhook: invoice.payment_failed skipped (course subscription)")
+        return
     invoice_id = obj.get("id", "")
     customer = obj.get("customer", "")
     subscription = obj.get("subscription", "")
@@ -267,6 +534,9 @@ def _handle_subscription_deleted(event):
     if sys_tag and not sys_tag.startswith("juku-payment"):
         _log(f"webhook: subscription_deleted skipped (system={sys_tag} - not juku-payment)")
         return
+    if sys_tag == COURSE_SYSTEM_TAG:   # 🆕 月額講座の解約は月謝の台帳 (sub:canceled) に混ぜない
+        _log("webhook: subscription_deleted skipped (course subscription)")
+        return
     sub_id = obj.get("id", "")
     customer = obj.get("customer", "")
     canceled_at = obj.get("canceled_at") or int(time.time())
@@ -293,6 +563,9 @@ def _handle_payment_succeeded(event):
     sys_tag = (metadata.get("system") or sub_meta.get("system") or "").strip()
     if sys_tag and not sys_tag.startswith("juku-payment"):
         _log(f"webhook: invoice.payment_succeeded skipped (system={sys_tag} - not juku-payment)")
+        return
+    if sys_tag == COURSE_SYSTEM_TAG:   # 🆕 月額講座の毎月の更新は月謝の台帳 (pay:succeeded) に混ぜない
+        _log("webhook: invoice.payment_succeeded skipped (course subscription)")
         return
     invoice_id = obj.get("id", "")
     customer = obj.get("customer", "")
@@ -816,6 +1089,7 @@ def _handle_payment_intent_canceled(event):
 
 HANDLERS = {
     "checkout.session.completed": _handle_checkout_completed,
+    "checkout.session.async_payment_succeeded": _handle_course_async_paid,  # 🆕 月額講座のみ (カード以外の入金確定)
     "invoice.payment_failed": _handle_payment_failed,
     "invoice.payment_succeeded": _handle_payment_succeeded,
     "customer.subscription.deleted": _handle_subscription_deleted,

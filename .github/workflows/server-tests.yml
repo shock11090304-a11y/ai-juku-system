@@ -25,6 +25,7 @@ on:
     paths: &watched
       - 'server/**'
       - 'scripts/health_check/test_*.py'
+      - 'api/stripe-webhook.py'
       - '.github/workflows/server-tests.yml'
       # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
       - 'lp.html'
@@ -188,6 +189,11 @@ jobs:
       - name: Vercel 管理 API 総当たり対策 回帰テスト
         if: ${{ !cancelled() }}
         run: python3 scripts/health_check/test_vercel_admin_guard.py
+
+      # 📧 月額講座 (Stripe 支払いリンク) の決済完了 → 受講案内メール自動送信 (2026-09-16)。KV / Resend は偽物。
+      - name: 月額講座 受講案内メール 回帰テスト
+        if: ${{ !cancelled() }}
+        run: python3 scripts/health_check/test_course_welcome_mail.py
 
       # 🧹🗄️ events の保持期限 / /api/track のレート制限 / R2 バックアップの省メモリ dump (2026-09-07)
       - name: イベント掃除・計測制限・バックアップ dump 回帰テスト
