@@ -3082,7 +3082,7 @@
   <!-- ★ceo.js を変えたら必ず ?v= を更新する。vercel.json の no-cache は *.html と
        auth-guard.js / cache-purge.js だけで、ceo.js はこのクエリだけが頼り。
        据え置くと「新しい ceo.html + キャッシュされた古い ceo.js」で動く端末が出る。 -->
-  <script src="ceo.js?v=20260907c-course-app-merge2"></script>
+  <script src="ceo.js?v=20260916a-ceo-tz-jst"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -5224,7 +5224,14 @@
         const summaryEl = document.getElementById('homeworkStatusSummary');
         if (!box) return;
         const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-        const fmtDate = t => { const m = String(t || '').match(/(\d{4})-(\d{2})-(\d{2})/); return m ? (m[2] + '/' + m[3]) : ''; };
+        // 🕐 [ceo-tz-jst 2026-09-16] 旧実装は生値から MM/DD を正規表現で抜いていた = UTC の暦日。
+        //   JST 00:00〜09:00 に終えた宿題が「前日」と出ていた (同じカードの期限判定はサーバが JST 基準)。
+        //   名前も fmtDate から変えた: 申込者詳細モーダル側 IIFE の fmtDate とは別ブロックの別物で、紛らわしかったため。
+        const fmtMonthDay = t => {
+          const d = (typeof _jstDate === 'function') ? _jstDate(t) : null;
+          if (!d) return '';
+          return new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: '2-digit', day: '2-digit' }).format(d);
+        };
         try {
           const r = await AdminAuth.fetch('/api/admin/homework/overview?limit=4000');
           if (!r.ok) { box.innerHTML = '<div style="color:#f87171;">取得失敗 (' + r.status + ')</div>'; return; }
@@ -5265,7 +5272,7 @@
             studs.forEach(s => {
               const nm = esc(s.student_name || ('ID' + s.student_id));
               if (s.completed) {
-                const dt = fmtDate(s.completed_at);
+                const dt = fmtMonthDay(s.completed_at);
                 html += '<span title="完了' + (dt ? ' ' + dt : '') + (s.has_note ? ' / メモ有り' : '') + '" style="font-size:0.74rem;padding:0.15rem 0.5rem;border-radius:10px;background:rgba(34,197,94,0.15);color:#86efac;border:1px solid rgba(34,197,94,0.35);">✅ ' + nm + (dt ? ' <span style="opacity:0.75;">' + dt + '</span>' : '') + (s.has_note ? ' 📝' : '') + '</span>';
               } else {
                 html += '<span style="font-size:0.74rem;padding:0.15rem 0.5rem;border-radius:10px;background:rgba(248,113,113,0.12);color:#fca5a5;border:1px solid rgba(248,113,113,0.35);">⬜ ' + nm + '</span>';
@@ -8608,7 +8615,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         if (!btn) return;
         btn.addEventListener('click', async () => {
           if (!window.AdminAuth || !AdminAuth.getToken()) { alert('管理者ログインが必要です'); return; }
-          const q = prompt('特定の生徒で確認しますか？\n名前またはメールを入力 (空欄 = trial/expired の直近一覧)', '江花');
+          const q = prompt('特定の生徒で確認しますか？\n名前またはメールを入力 (空欄 = trial/expired の直近一覧)', '');
           if (q === null) return; // キャンセル
           const url = '/api/admin/db-diag' + (q && q.trim() ? ('?q=' + encodeURIComponent(q.trim())) : '');
           const out = document.getElementById('dbDiagResult');
@@ -8704,15 +8711,19 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     function esc(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     }
+    // 🕐 [ceo-tz-jst 2026-09-16] この IIFE 内の 申込日時 / 最終ログイン / 体験終了日 / 本契約開始日 /
+    //   活動ログ / 宿題履歴の完了時刻 が、すべてこの 1 本を通る。
+    //   ★このブロック外からは見えない (申込者詳細モーダルの IIFE の中)。他ブロックは ceo.js の _fmtJst を直接呼ぶこと。
+    //   旧実装は offset の無い DB 生値を
+    //   `new Date(...)` + `getFullYear()/getHours()` という**ローカル時刻**の getter で読んでいたため、
+    //   JST 環境では一律 9 時間早い値を表示していた (例: 実際 09:42 のログインが 00:42 と出る)。
+    //   整形は ceo.js の _fmtJst (offset があれば尊重・無ければ UTC とみなして Asia/Tokyo へ) に集約。
+    //   ceo.js が読めなかった場合だけ、黙って誤った時刻を出さずに生値をそのまま見せる。
     function fmtDate(s) {
       if (!s) return '<span style="color:#71717a;">未設定</span>';
       try {
-        // ISO / "YYYY-MM-DD HH:MM:SS" 両方を許容
-        const d = new Date(s.replace(' ', 'T'));
-        if (isNaN(d.getTime())) return esc(s);
-        const yyyy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
-        const hh = String(d.getHours()).padStart(2,'0'), mi = String(d.getMinutes()).padStart(2,'0');
-        return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+        const t = (typeof _fmtJst === 'function') ? _fmtJst(s) : null;
+        return t ? t : esc(s);
       } catch (e) { return esc(s); }
     }
     function safeMailtoHref(email) {
@@ -9794,7 +9805,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             const badge = _hwBadge(it);
             const subj = it.subject ? `<span style="font-size:0.7rem;padding:2px 6px;background:rgba(167,139,250,0.15);color:#a5b4fc;border-radius:6px;margin-right:6px;">${esc(it.subject)}</span>` : '';
             const due = it.due_date ? `<span style="color:#a1a1aa;font-size:0.75rem;margin-left:6px;">期限: ${esc(it.due_date)}</span>` : '';
-            const completedAt = it.completed_at ? `<div style="color:#6ee7b7;font-size:0.72rem;margin-top:4px;">✅ 完了 ${esc(String(it.completed_at).slice(0,16).replace('T',' '))}</div>` : '';
+            const completedAt = it.completed_at ? `<div style="color:#6ee7b7;font-size:0.72rem;margin-top:4px;">✅ 完了 ${fmtDate(it.completed_at)}</div>` : '';
             const studentNote = it.student_note ? `<div style="color:#cbd5e1;font-size:0.78rem;margin-top:4px;padding:6px 8px;background:rgba(0,0,0,0.25);border-radius:5px;white-space:pre-wrap;">💬 ${esc(it.student_note)}</div>` : '';
             const desc = it.description ? `<div style="color:#a1a1aa;font-size:0.78rem;margin-top:4px;white-space:pre-wrap;">${esc(it.description)}</div>` : '';
             const attach = (it.attachment_print && it.attachment_print.title)
@@ -10181,7 +10192,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           props.fallback_used && `<span style="color:#fbbf24;">降格使用</span>`,
         ].filter(Boolean).join(' / ');
         return `<tr>
-          <td style="padding:6px 8px;color:#94a3b8;font-size:0.78rem;white-space:nowrap;">${esc(t)}</td>
+          <td style="padding:6px 8px;color:#94a3b8;font-size:0.78rem;white-space:nowrap;">${t}</td>
           <td style="padding:6px 8px;color:#e4e4e7;font-size:0.85rem;">${esc(label)}</td>
           <td style="padding:6px 8px;color:#71717a;font-size:0.75rem;">${hint}</td>
         </tr>`;
@@ -10951,9 +10962,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     function attLabel(st) { return ({ present: '🟢出席', absent: '🔴欠席', late: '🟡遅刻' })[st] || st; }
 
     // 🗓 アップ日時 (JST)。サーバ (_utc_iso_or_none) は offset 付き UTC ISO を返す。
-    //   ★このファイル内の fmtDate (ceo.html:8707 付近) も ceo.js の formatRelativeTime も、
-    //     offset の無い文字列をブラウザの**ローカル時刻**として読むため JST では 9 時間早く出る。
-    //     ここは「offset が無ければ UTC とみなす → Intl(Asia/Tokyo)」の 1 経路に統一してその轍を避ける。
+    //   ★2026-09-16 [ceo-tz-jst] 追記: かつてここに「fmtDate も formatRelativeTime も 9 時間早い」と
+    //     書いていたが、両者は ceo.js の _jstDate/_fmtJst に寄せて解消済み。この jstParts も同方針
+    //     (offset が無ければ UTC とみなす → Intl(Asia/Tokyo)) だが、返す形が違うため別関数のまま。
     //   ★クラス別一覧 (loadClassFiles) と授業詳細 (detailHtml) の両方がこの 1 本を使う。
     //     片方だけ別実装にすると、同じファイルが 2 画面で違う時刻に見える。
     function jstParts(iso) {
@@ -11826,7 +11837,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             '<td style="font-weight:800;color:' + dlc + ';">' + dl + '</td>' +
             '<td style="font-weight:700;">' + (s.drills || 0) + '</td>' +
             '<td>' + (s.study_logs || 0) + '</td>' +
-            '<td style="color:#94a3b8;font-size:0.8rem;">' + esc(s.last_login_at || '—') + '</td>' +
+            '<td style="color:#94a3b8;font-size:0.8rem;">' + esc(s.last_login_at ? ((typeof _fmtJst === 'function' && _fmtJst(s.last_login_at)) || s.last_login_at) : '—') + '</td>' +
             '<td style="font-size:0.8rem;">' + line + carrier + '<br><span style="color:#a5b4fc;">' + esc(s.email || '') + '</span></td>' +
           '</tr>';
         }).join('');

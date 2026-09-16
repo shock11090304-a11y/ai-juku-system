@@ -20,6 +20,54 @@ const PLAN_FEES = {
 // Opus 4.7時代 (CEO判断): 約¥3,000-7,500/生徒（顧客満足度最優先）
 const COST_PER_STUDENT_PREMIUM_JPY = 5000;  // 月平均想定
 
+// 🕐 [ceo-tz-jst 2026-09-16] DB の時刻を画面に出すときの唯一の入口。
+//   server/main.py は TIMESTAMP を「offset の無い UTC 壁時計」で持つ。根拠は実際に落ちる/落ちないで
+//   確かめられるものだけを挙げる: ① OTP の期限判定は SQL 側 `expires_at > CURRENT_TIMESTAMP`
+//   (main.py:12215) で、保存は UTC 壁時計 naive (main.py:11336)。本番セッション TZ が Asia/Tokyo なら
+//   全 OTP が常時 9 時間期限切れになり誰もログインできないが、実際には毎日ログインされている。
+//   ② class.html:1008 に「本番 Postgres は Etc/UTC」と、朝 5:30 の配信が「前日」と出た実症状つきで
+//   記録がある。(_utc_naive_iso の docstring にある Postgres のキャスト挙動の説明は未実測の仮説なので
+//   ここでは根拠にしない。)  この生値を new Date() にそのまま渡すと **ブラウザのローカル時刻**
+//   として解釈されるため、JST 環境では一律 9 時間早い値になる (申込日時・最終ログイン・活動ログが該当し、
+//   「5 分前にログインした生徒が 9 時間前」と出ていた)。
+//   ★同じ /api/admin/stats でも latest_activity_at だけは offset 付き (+00:00) で返ってくる (main.py:12816)。
+//     つまり 1 行の中に「offset 付き」と「offset 無し」が混在する。だから 'Z' を無条件に足してはならず、
+//     **offset があれば尊重し、無いときだけ UTC とみなす** 必要がある (SQLite のローカル開発では
+//     trial_end が '+00:00' 付きで入るケースもある / main.py:32666)。
+//   ★同方式の実装が ceo.js:_msgFmtJst と ceo.html:jstParts にもある。増やすときはこの 1 本に寄せること。
+function _jstDate(s) {
+  if (!s) return null;
+  // 区切りの 'T' 化は offset 判定より**先**に行う。SQLite (ローカル開発) には
+  // '2026-09-30 12:00:00+00:00' のようにスペース区切り かつ offset 付き の値が入りうるが、
+  // この形は ISO ではなく各エンジンの独自パーサ任せになるため、先に 'T' に揃えて標準形にする。
+  var raw = String(s).trim().replace(' ', 'T');
+  if (!raw) return null;
+  var iso;
+  if (/(Z|[+-]\d\d:?\d\d)$/.test(raw)) {
+    iso = raw;                                   // 既に offset 付き → そのまま (二重シフト防止)
+  } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    iso = raw + 'T00:00:00Z';                    // 日付のみ。'2026-09-30Z' の扱いは実装依存なので明示的に補う
+  } else {
+    iso = raw + 'Z';                             // naive → UTC とみなす
+  }
+  var d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// 🕐 DB の時刻を JST 'YYYY-MM-DD HH:MM' に整形。解釈できなければ null (呼び出し側が生値を出す)。
+//   時刻系は hourCycle:'h23' で明示する (ja-JP + hour12:false は h11/h23/h24 のどれに落ちるかが
+//   ICU のバージョン依存。現行 Chromium では 00:00 だが、依存させる理由がない)。
+function _fmtJst(s) {
+  var d = _jstDate(s);
+  if (!d) return null;
+  try {
+    return new Intl.DateTimeFormat('ja-JP', {
+      timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).format(d).replace(/\//g, '-');
+  } catch (e) { return null; }
+}
+
 // Plan classification heuristic based on fee
 function classifyPlan(fee) {
   if (fee >= 60000) return 'intensive';
@@ -298,10 +346,13 @@ function renderRoster(students) {
     const latestAct = s.latest_activity_at ? formatRelativeTime(s.latest_activity_at) : '<span style="color:#71717a;">活動なし</span>';
     let activeColor = '';
     if (s.latest_activity_at && s.last_login_at) {
-      const lActD = new Date(String(s.latest_activity_at).replace(' ', 'T'));
-      const lLogD = new Date(String(s.last_login_at).replace(' ', 'T'));
+      // 🕐 [ceo-tz-jst 2026-09-16] latest_activity_at は offset 付き・last_login_at は naive という
+      //   混在があり、旧実装では last_login_at だけ 9 時間早く読まれて差が +9h 水増しされていた。
+      //   結果、実差 15〜24h の生徒が「セッション継続中」と誤って緑表示されていた。
+      const lActD = _jstDate(s.latest_activity_at);
+      const lLogD = _jstDate(s.last_login_at);
       // 活動が「ログイン」より 24h 以上新しければセッション継続中の継続利用 → 緑強調
-      if (!isNaN(lActD.getTime()) && !isNaN(lLogD.getTime()) && (lActD - lLogD) > 86400000) {
+      if (lActD && lLogD && (lActD - lLogD) > 86400000) {
         activeColor = ' style="font-weight:700;color:#34d399;" title="ログイン後もセッション継続して学習中"';
       }
     }
@@ -368,8 +419,12 @@ function renderRoster(students) {
 function formatRelativeTime(timestamp) {
   if (!timestamp) return '<span style="color:#71717a;">-</span>';
   try {
-    const t = new Date(String(timestamp).replace(' ', 'T'));
-    if (isNaN(t.getTime())) return escapeHtml(String(timestamp));
+    // 🕐 [ceo-tz-jst 2026-09-16] 旧実装は naive 生値をローカル時刻として読んでいた。
+    //   影響を受けるのは naive で届く last_login_at の呼び出し (renderRoster の lastLogin) だけで、
+    //   そこが 9 時間ぶん古く出ていた (5 分前のログインが「9時間前」)。
+    //   latest_activity_at の呼び出し (同 latestAct) は offset 付きなので旧実装でも正しかった。
+    const t = _jstDate(timestamp);
+    if (!t) return escapeHtml(String(timestamp));
     const diff = Math.floor((Date.now() - t.getTime()) / 1000);
     if (diff < 60) return '<span style="color:#34d399;">たった今</span>';
     if (diff < 3600) return `<span style="color:#34d399;">${Math.floor(diff / 60)}分前</span>`;
@@ -557,14 +612,18 @@ function renderExpiredUsers(expired) {
 
   // 経過日数で降順ソート (古い=緊急度高を上に)
   expired.sort((a, b) => {
-    const da = a.trial_end ? new Date(String(a.trial_end).replace(' ', 'T')).getTime() : 0;
-    const db2 = b.trial_end ? new Date(String(b.trial_end).replace(' ', 'T')).getTime() : 0;
+    // 🕐 [ceo-tz-jst 2026-09-16] naive の trial_end をローカル読みしていた (_jstDate に集約)
+    const da = (a.trial_end && _jstDate(a.trial_end)) ? _jstDate(a.trial_end).getTime() : 0;
+    const db2 = (b.trial_end && _jstDate(b.trial_end)) ? _jstDate(b.trial_end).getTime() : 0;
     return da - db2;
   });
 
   list.innerHTML = expired.map(s => {
-    const daysSince = s.trial_end
-      ? Math.floor((Date.now() - new Date(String(s.trial_end).replace(' ', 'T')).getTime()) / 86400000)
+    // 🕐 [ceo-tz-jst 2026-09-16] 9 時間ぶん古く読んでいたため、経過日数が 1 日多く出ることがあった
+    //   (ズレが日境界をまたぐ 9/24 = 約 4 割のケース)。緊急度の色分け閾値 (3日/7日) が 1 日早く進む。
+    const _teD = s.trial_end ? _jstDate(s.trial_end) : null;
+    const daysSince = _teD
+      ? Math.floor((Date.now() - _teD.getTime()) / 86400000)
       : '?';
     const urgency = daysSince <= 3 ? '#22c55e' : daysSince <= 7 ? '#f59e0b' : '#ef4444';
     const urgencyLabel = daysSince <= 3 ? '🟢 回収見込み高' : daysSince <= 7 ? '🟡 早めにアプローチ' : '🔴 離脱リスク高';
