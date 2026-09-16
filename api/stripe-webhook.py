@@ -144,12 +144,13 @@ def _stripe_get(secret_key, path):
 # "bunpo+kaishaku" のように講座コードを "+" で連結) → 決済完了でここに届く。本体 (server/main.py) の webhook は
 # juku-payment 前方一致で skip するので、講座の決済を扱うのはこの関数だけ。
 # ★件名・本文は塾長が書き換えてよい。使える差し込み:
-#   {student_name} {courses} {amount} {payment_line} {first_monday} {receipt_no} {contact}
+#   {student_name} {courses} {amount} {payment_line} {first_monday} {receipt_no} {contact} {portal}
 #   ({ } を文中に書くと format が失敗して status=failed になる。波括弧は差し込み以外に使わない)
 # ★講座変更 (一部解約・追加) を Stripe ダッシュボードで行うときは「日割りしない」を選ぶこと。本文で「日割りなし」と約束している。
 COURSE_SYSTEM_TAG = "juku-payment-course"
 COURSE_NAMES = {"kaishaku": "英文解釈講座", "bunpo": "英文法講座", "kyotsu": "共通テスト対策講座"}
 COURSE_CONTACT_DEFAULT = "info@trillion-ai-juku.com"   # 公開済み (legal.html) の窓口。COURSE_REPLY_TO で上書き可
+COURSE_PORTAL_URL_DEFAULT = "https://trillion-ai-juku.com/course-videos.html"   # 受講者専用の視聴ページ (本体リポジトリ course-videos.html)
 COURSE_RECORD_TTL = 365 * 86400   # 受付番号として保護者に案内するので 1 年残す (pi:* / charge:history と同じ)
 COURSE_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 COURSE_WELCOME_SUBJECT = "【トリリオン英語塾】受講のご案内（{courses}）"
@@ -160,12 +161,13 @@ COURSE_WELCOME_BODY = """{student_name} さん・保護者様
 これをもって受講確定となります。ありがとうございます。
 
 ■ 動画の配信について
-・各講座とも 月8回、毎週月曜に動画を配信します。
-・動画は視聴リンクをメールでお送りします。
-　このメールが届いたアドレス（お支払い時にご登録のアドレス）あてにお送りします。
+・各講座とも 月8回、毎週月曜に動画を追加します。
+・動画は専用の視聴ページでご覧いただけます。
+　{portal}
+　（お支払い時（決済画面）のメールアドレスを入力すると、ログイン用のリンクが届きます。一度ログインすると、同じブラウザでは 30 日間そのまま開けます。ホーム画面に追加しておくと便利です）
 ・初回の配信は {first_monday} の予定です（お支払いの翌週の月曜から始まります）。
-・毎週月曜の視聴リンクは {contact} からお送りします。迷惑メールに入らないよう、{contact} を受信許可に設定してください。
-・視聴リンクは生徒さんご本人に転送していただいて構いません。
+・新しい動画を追加したときは、このアドレスあてにお知らせメールが届きます。迷惑メールに入らないよう、このメールの差出人と {contact} を受信許可に設定してください。
+・視聴ページは生徒さんご本人が開いていただいて構いません（視聴ページでメールアドレスを入力すると届く「ログインリンク」のメールを、生徒さんに転送してください）。
 
 ■ ご質問
 ・分からない箇所は、公式 LINE またはメール（{contact}）でご質問ください。
@@ -330,6 +332,7 @@ def _handle_course_checkout(obj):
         "first_monday": _course_first_monday_jst(paid_ts),
         "receipt_no": session_id,
         "contact": contact,
+        "portal": os.environ.get("COURSE_PORTAL_URL", "").strip() or COURSE_PORTAL_URL_DEFAULT,
         "email": email,
         "client_ref": client_ref or "-",
         "app_id": app_id or "★突合キーなし → 氏名・メールで照合",

@@ -56,6 +56,17 @@
 
 3. **DB接続プールを疑うとき**は env `DB_POOL_ENABLED=0` → 再起動で直接connectへ即フォールバック。★**直ったら必ず `1` に戻す (または変数を削除) → 再起動**。戻し忘れると点検で「DB接続プールが無効です」の警告が毎回出続ける。
 
+## 🎥 月額講座 (英文解釈/英文法/共通テスト対策・各 ¥1,500/月) の視聴ページ (2026-09-16)
+- 受講者は Stripe 支払いリンク (metadata.system=`juku-payment-course`) の顧客で、**`students` には入れない**。身元は `course_members` (メール単位)、
+  正典は Stripe の有効サブスク。ログインはメール → リンク (token_type `coursemagic`) → セッション (`course`)。`_verify_session_token` の型が違うので
+  塾生 API / ai_disabled ゲートとは混線しない。
+- 動画は `course_videos` に **YouTube の ID だけ** 保存し、`/api/course/me` (認証必須) からしか出さない (リポジトリと配信ページは PUBLIC)。
+  視聴ページ `course-videos.html` は youtube-nocookie の埋め込みを再生ボタンで遅延生成する (埋め込みからの ID 抽出は防げない = 塾長了承の案 A)。
+- 塾長は CEO ダッシュ「🎥 月額講座」で登録。**登録と同時にその講座の有効受講者へ Resend でお知らせ** (`_course_notify_video`・視聴ページ URL のみ)。
+  受講案内メール (決済直後) は Vercel `api/stripe-webhook.py` が送る (別系統)。
+- 本体 webhook は `juku-payment*` を skip する前に `_course_webhook_touch` で `course_members` だけ同期する。students には触らない。
+- テスト: `scripts/health_check/test_course_portal.py` (Stripe は `_course_fetch_from_stripe`、メールは `_course_send_email` を差し替え)。
+
 ## 教材・問題を作るときのルール (2026-08-02 塾長指摘を反映)
 - **解説フォーマットは `server/main.py` の生成プロンプトが正典**。書き始める前に必ず読むこと。自己流の散文で書かない。
   - 数学(理系): 「方針→立式→計算→答え→補足」の 5 段階 (3行以上)。同プールの `seed-data/rikei_kyotsu_math_manual.json` が実例。

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0B2545">
+  <title>月額講座 視聴ページ | Trillion English Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@500;600&display=swap" rel="stylesheet">
+  <!-- 🎥 月額講座 (英文解釈/英文法/共通テスト対策) の受講者専用ページ (2026-09-16)。
+       塾生アプリとは別のログイン (メール → リンク) で、塾生の情報には一切触れない。
+       動画 ID は /api/course/me からログイン後にだけ受け取り、この HTML には書かない (リポジトリと配信ページは公開)。 -->
+  <style>
+    :root { --navy:#0B2545; --navy-2:#1E3A5F; --gold:#C9A961; --bg:#F8F9FB; --card:#fff; --border:#E5E7EB; --text:#1A1A1A; --muted:#6B7280; --danger:#B91C1C; --success:#047857; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Noto Sans JP',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.7; font-size:15px; -webkit-font-smoothing:antialiased; padding-bottom:3rem; }
+    .site-header { background:linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 100%); color:#fff; padding:1.5rem 1.25rem 1.25rem; text-align:center; }
+    .site-header .brand { font-family:'Noto Serif JP',serif; font-weight:600; font-size:1.35rem; letter-spacing:0.06em; }
+    .site-header .brand-jp { font-size:0.8rem; opacity:0.8; letter-spacing:0.15em; margin-top:0.2rem; }
+    .site-header .title { font-family:'Noto Serif JP',serif; font-size:1rem; margin-top:0.8rem; padding-top:0.6rem; border-top:1px solid rgba(255,255,255,0.2); letter-spacing:0.15em; }
+    main { max-width:820px; margin:0 auto; padding:1.25rem 1rem; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:1.25rem; margin-bottom:1rem; box-shadow:0 1px 2px rgba(11,37,69,0.05); }
+    h2 { font-family:'Noto Serif JP',serif; font-size:1.05rem; color:var(--navy); margin-bottom:0.6rem; letter-spacing:0.05em; }
+    p.muted { color:var(--muted); font-size:0.88rem; }
+    label { display:block; font-size:0.8rem; font-weight:600; color:var(--navy); margin-bottom:0.3rem; }
+    input[type="email"] { width:100%; padding:0.7rem 0.75rem; border:1px solid #B8C1D1; border-radius:6px; font-size:16px; font-family:inherit; }
+    input:focus { outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(11,37,69,0.1); }
+    .btn { display:inline-block; padding:0.75rem 1.25rem; border:0; border-radius:6px; background:var(--navy); color:#fff; font-family:inherit; font-size:0.95rem; font-weight:600; cursor:pointer; letter-spacing:0.04em; }
+    .btn:hover { background:var(--navy-2); }
+    .btn:disabled { background:var(--muted); cursor:not-allowed; }
+    .btn-link { background:none; border:none; color:var(--navy); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:0.85rem; padding:0.3rem; }
+    .msg { margin-top:0.75rem; font-size:0.9rem; }
+    .msg.ok { color:var(--success); }
+    .msg.err { color:var(--danger); }
+    .courses-bar { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.25rem; }
+    .chip { display:inline-block; padding:0.2rem 0.7rem; border-radius:999px; background:var(--navy); color:#fff; font-size:0.75rem; letter-spacing:0.04em; }
+    .course-block { margin-bottom:1.25rem; }
+    .course-block h3 { font-family:'Noto Serif JP',serif; font-size:1rem; color:var(--navy); padding-bottom:0.4rem; border-bottom:1px solid var(--border); margin-bottom:0.6rem; }
+    .video { border:1px solid var(--border); border-radius:8px; padding:0.9rem 1rem; margin-bottom:0.6rem; background:#fff; }
+    .video .head { display:flex; justify-content:space-between; gap:0.75rem; align-items:flex-start; flex-wrap:wrap; }
+    .video .ttl { font-weight:600; font-size:0.98rem; }
+    .video .date { font-size:0.75rem; color:var(--muted); white-space:nowrap; }
+    .video .note { font-size:0.85rem; color:var(--muted); margin-top:0.25rem; white-space:pre-wrap; }
+    .video .play { margin-top:0.6rem; }
+    .video-wrap { position:relative; width:100%; padding-top:56.25%; margin-top:0.6rem; border-radius:8px; overflow:hidden; background:#000; }
+    .video-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+    .empty { color:var(--muted); font-size:0.9rem; padding:0.5rem 0; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem; font-size:0.85rem; color:var(--muted); }
+    .foot { margin-top:1.5rem; text-align:center; font-size:0.78rem; color:var(--muted); line-height:1.8; }
+    .foot a { color:var(--navy); }
+    [hidden] { display:none !important; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">Trillion English Academy</div>
+    <div class="brand-jp">トリリオン英語塾</div>
+    <div class="title">月額講座 視聴ページ</div>
+  </header>
+
+  <main>
+    <!-- ログイン -->
+    <section id="loginView" class="card" hidden>
+      <h2>ログイン</h2>
+      <p class="muted">月額講座（英文解釈／英文法／共通テスト対策）をお申し込みの方専用のページです。</p>
+      <p class="muted" style="margin-top:0.4rem;">お支払い時（決済画面）のメールアドレスを入力してください。ログイン用のリンクをメールでお送りします（パスワードは不要です）。</p>
+      <form id="loginForm" style="margin-top:0.9rem;">
+        <label for="email">メールアドレス</label>
+        <input type="email" id="email" autocomplete="email" inputmode="email" required placeholder="example@mail.com">
+        <div style="margin-top:0.8rem;"><button type="submit" class="btn" id="loginBtn">ログインリンクを送る</button></div>
+        <div class="msg" id="loginMsg"></div>
+      </form>
+      <p class="muted" style="margin-top:1rem;">数分たっても届かない場合は、①迷惑メールフォルダ、②お支払い（決済画面）で使ったメールアドレスと同じか、をご確認ください。届いているメールがあればそのリンクをお使いいただけます。それでも届かないときは、お申込者名・生徒名・受講講座名を添えて <a href="mailto:info@trillion-ai-juku.com">info@trillion-ai-juku.com</a> または公式 LINE へご連絡ください。</p>
+    </section>
+
+    <!-- 交換中 -->
+    <section id="verifyView" class="card" hidden>
+      <h2>ログインしています…</h2>
+      <p class="muted" id="verifyMsg">少々お待ちください。</p>
+    </section>
+
+    <!-- 視聴 -->
+    <section id="portalView" hidden>
+      <div class="topbar">
+        <div id="whoami"></div>
+      </div>
+      <div class="card">
+        <div class="courses-bar" id="coursesBar"></div>
+        <p class="muted" id="portalNote">各講座とも月8回、毎週月曜に動画を追加します。追加したときは、お支払い時のメールアドレスへお知らせします。新しい動画が上に並びます。はじめての方は一番下の第1回からご覧ください。</p>
+        <p class="muted" style="margin-top:0.4rem;">このページはブックマークかホーム画面への追加をおすすめします（同じブラウザなら 30 日間、次回からメールなしで開けます）。</p>
+      </div>
+      <div id="videoList"></div>
+      <p class="foot">ご質問は公式 LINE またはメール（<a href="mailto:info@trillion-ai-juku.com" id="contactLink">info@trillion-ai-juku.com</a>）へ。<br>解約・講座の変更も同じ窓口で、次回決済日の前日までにご連絡ください。<br><button type="button" class="btn-link" id="logoutBtn">ログアウト</button></p>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var API_BASE = (window.location.port === '8090') ? 'http://localhost:8000' : window.location.origin;
+      var TOKEN_KEY = 'ai_juku_course_token';
+      var EXP_KEY = 'ai_juku_course_expires';
+      var $ = function (id) { return document.getElementById(id); };
+      function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
+      function show(id) { ['loginView', 'verifyView', 'portalView'].forEach(function (v) { $(v).hidden = (v !== id); }); }
+      function getToken() {
+        try {
+          var exp = parseInt(localStorage.getItem(EXP_KEY) || '0', 10);
+          if (exp && exp < Date.now() / 1000) { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(EXP_KEY); return null; }
+          return localStorage.getItem(TOKEN_KEY);
+        } catch (e) { return null; }
+      }
+      function saveToken(tok, expiresIn) {
+        try { localStorage.setItem(TOKEN_KEY, tok); localStorage.setItem(EXP_KEY, String(Math.floor(Date.now() / 1000) + (expiresIn || 30 * 86400))); } catch (e) {}
+      }
+      function clearToken() { try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(EXP_KEY); } catch (e) {} }
+      async function api(path, opts) {
+        opts = opts || {};
+        var headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+        var tok = getToken();
+        if (tok && !opts.noAuth) headers['Authorization'] = 'Bearer ' + tok;
+        var res = await fetch(API_BASE + path, { method: opts.method || 'GET', headers: headers, body: opts.body ? JSON.stringify(opts.body) : undefined });
+        var data = null;
+        try { data = await res.json(); } catch (e) {}
+        if (!res.ok) { var err = new Error((data && data.detail) || ('HTTP ' + res.status)); err.status = res.status; throw err; }
+        return data;
+      }
+      // YouTube ID は英数字・-・_ の 11 文字だけを埋め込みに使う (API の値をそのまま HTML に入れない)
+      function ytOk(id) { return /^[A-Za-z0-9_-]{11}$/.test(id || ''); }
+
+      // ----- ログイン -----
+      $('loginForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var email = ($('email').value || '').trim();
+        var msg = $('loginMsg'); msg.className = 'msg'; msg.textContent = '';
+        if (!email) return;
+        $('loginBtn').disabled = true; $('loginBtn').textContent = '送信中…';
+        try {
+          var r = await api('/api/course/login/request', { method: 'POST', body: { email: email }, noAuth: true });
+          msg.className = 'msg ok'; msg.textContent = (r && r.message) || 'メールをお送りしました。';
+        } catch (err) {
+          msg.className = 'msg err'; msg.textContent = err.status === 429 ? '送信回数の上限に達しました。10 分ほど待ってからもう一度お試しください。届いているメールがあればそのリンクをお使いください。' : netMsg(err, '送信できませんでした。もう一度お試しください。');
+        } finally {
+          $('loginBtn').disabled = false; $('loginBtn').textContent = 'ログインリンクを送る';
+        }
+      });
+      $('logoutBtn').addEventListener('click', function () {
+        if (!confirm('ログアウトすると、次回はメールのログインリンクが必要になります。よろしいですか？')) return;
+        clearToken(); show('loginView');
+      });
+      function netMsg(err, fallback) { return err && err.status ? (err.message || fallback) : '通信できませんでした。電波の良い場所でもう一度お試しください。'; }
+      function fmtDateJp(s) {
+        if (!s) return '';
+        var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s));
+        if (!m) return String(s);
+        var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+        return (+m[2]) + '月' + (+m[3]) + '日（' + '日月火水木金土'[d.getUTCDay()] + '）';
+      }
+
+      // ----- 視聴 -----
+      function render(me) {
+        $('whoami').textContent = (me.name ? me.name + ' 様　' : '') + me.email;
+        $('coursesBar').innerHTML = (me.courses || []).map(function (c) { return '<span class="chip">' + esc(c.name) + '</span>'; }).join('');
+        if (me.contact) { $('contactLink').textContent = me.contact; $('contactLink').href = 'mailto:' + me.contact; }
+        var byCourse = {};
+        (me.courses || []).forEach(function (c) { byCourse[c.key] = { name: c.name, videos: [] }; });
+        (me.videos || []).forEach(function (v) { if (byCourse[v.course_key]) byCourse[v.course_key].videos.push(v); });
+        var html = '';
+        Object.keys(byCourse).forEach(function (k) {
+          var b = byCourse[k];
+          html += '<div class="course-block"><h3>' + esc(b.name) + '</h3>';
+          if (!b.videos.length) {
+            html += '<div class="empty">まだ動画はありません。初回の動画は、お支払いの翌週の月曜に追加する予定です。追加したときはメールでお知らせします。</div>';
+          } else {
+            b.videos.forEach(function (v) {
+              html += '<div class="video" data-id="' + esc(v.id) + '">'
+                + '<div class="head"><div class="ttl">' + esc(v.title) + '</div><div class="date">' + esc(fmtDateJp(v.publish_date)) + '</div></div>'
+                + (v.note ? '<div class="note">' + esc(v.note) + '</div>' : '')
+                + '<div class="play"><button type="button" class="btn play-btn" data-yt="' + (ytOk(v.youtube_id) ? esc(v.youtube_id) : '') + '">▶ 再生する</button></div>'
+                + '<div class="player"></div></div>';
+            });
+          }
+          html += '</div>';
+        });
+        $('videoList').innerHTML = html || '<div class="empty">有効な講座がありません。</div>';
+      }
+      $('videoList').addEventListener('click', function (e) {
+        var btn = e.target.closest('.play-btn');
+        if (!btn) return;
+        var id = btn.getAttribute('data-yt');
+        if (!ytOk(id)) return;
+        var box = btn.closest('.video').querySelector('.player');
+        // 再生ボタンを押すまで iframe を作らない (ページを開いただけで全動画を読み込まない)
+        box.innerHTML = '<div class="video-wrap"><iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?rel=0&playsinline=1" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'
+          + '<p class="muted" style="margin-top:0.4rem; font-size:0.8rem;">再生できない（黒いまま・エラーが出る）場合は、Safari か Chrome でこのページを開き直してください。LINE や Instagram の中で開くと再生できないことがあります。</p>';
+        btn.parentNode.hidden = true;
+        // 他の動画は閉じる
+        document.querySelectorAll('#videoList .video').forEach(function (v) {
+          if (v !== btn.closest('.video')) { v.querySelector('.player').innerHTML = ''; v.querySelector('.play').hidden = false; }
+        });
+      });
+      async function loadPortal() {
+        try {
+          var me = await api('/api/course/me');
+          render(me);
+          show('portalView');
+        } catch (err) {
+          clearToken();
+          show('loginView');
+          var m0 = $('loginMsg'); m0.className = 'msg err';
+          m0.textContent = err.status === 401 ? 'ログインの有効期限が切れたか、有効な受講契約が見つかりません。もう一度ログインリンクを取得してください。解約済みの場合は再度お申し込みください。お心当たりがない場合は info@trillion-ai-juku.com までご連絡ください。' : netMsg(err, '読み込めませんでした。');
+        }
+      }
+
+      // ----- 起動: ?t= があれば交換、なければ保存済みトークンで開く -----
+      (async function boot() {
+        var params = new URLSearchParams(window.location.search);
+        var t = params.get('t');
+        if (t) {
+          show('verifyView');
+          try {
+            var r = await api('/api/course/login/verify', { method: 'POST', body: { token: t }, noAuth: true });
+            saveToken(r.token, r.expires_in);
+            try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+            await loadPortal();
+          } catch (err) {
+            show('loginView');
+            var m = $('loginMsg'); m.className = 'msg err';
+            m.textContent = err.status === 401 ? 'リンクが無効か、有効期限が切れています。もう一度ログインリンクを取得してください。' : netMsg(err, 'ログインできませんでした。');
+          }
+          return;
+        }
+        if (getToken()) { await loadPortal(); } else { show('loginView'); }
+      })();
+    })();
+  </script>
+</body>
+</html>

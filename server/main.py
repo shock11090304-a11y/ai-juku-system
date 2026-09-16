@@ -2055,6 +2055,42 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_yt_playlist_uniq ON admin_youtube_playlists(playlist_id);
+    -- 🎥 月額講座 (英文解釈/英文法/共通テスト対策・Stripe 支払いリンク) の視聴ページ (2026-09-16)。
+    --   受講者は students ではない (メール単位の別身元)。student_id 列を持たないので _ORPHAN_SWEEP_TABLES 対象外。
+    --   youtube_id は限定公開 ID なので認証付き API (/api/course/me) 経由でしか出さない。
+    CREATE TABLE IF NOT EXISTS course_members (
+        id {pk},
+        email TEXT NOT NULL,
+        name TEXT DEFAULT '',
+        stripe_customer_id TEXT DEFAULT '',
+        courses TEXT DEFAULT '[]',
+        status TEXT DEFAULT 'active',
+        verified_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_course_members_email ON course_members(email);
+    CREATE TABLE IF NOT EXISTS course_videos (
+        id {pk},
+        course_key TEXT NOT NULL,
+        title TEXT NOT NULL,
+        youtube_id TEXT NOT NULL,
+        note TEXT DEFAULT '',
+        publish_date TEXT,
+        is_published INTEGER DEFAULT 1,
+        notified_at TIMESTAMP,
+        notified_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_course_videos_course ON course_videos(course_key, publish_date);
+    -- 動画ごとの「誰にお知らせ済みか」。再通知で同じ人に 2 通送らないための台帳。
+    CREATE TABLE IF NOT EXISTS course_video_notices (
+        id {pk},
+        video_id INTEGER NOT NULL,
+        email TEXT NOT NULL,
+        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_course_video_notices_uniq ON course_video_notices(video_id, email);
     -- 出欠: 生徒の自己申告。(student_id, session_id) ユニークで再申告は UPDATE 上書き。
     CREATE TABLE IF NOT EXISTS class_attendance (
         id {pk},
@@ -32606,6 +32642,9 @@ def stripe_webhook(
         # juku-payment 系イベント (system=juku-payment-monthly) は ai-juku DB に一切触らずに skip
         # commit 308d8c4 の VALID_PLAN_KEYS check に加え、metadata.system で明示的に分岐する
         _meta_system = (meta.get("system") or "").strip()
+        if _meta_system == COURSE_SYSTEM_TAG and session.get("payment_status") in ("paid", "no_payment_required"):
+            # 🎥 月額講座: students には触れず course_members だけ同期 (案内メールは Vercel 側が送る)
+            _course_webhook_touch(session, "checkout")
         if _meta_system.startswith("juku-payment"):
             log.info(f"[Stripe webhook] Skipping juku-payment event (system={_meta_system}) - handled by Vercel /payment/api/stripe-webhook")
             return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
@@ -33383,6 +33422,8 @@ def stripe_webhook(
         # juku-payment は setup mode で subscription を持たない設計だが、
         # 将来 Stripe Dashboard 等で手動 subscription が作られた場合に ai-juku DB 誤更新を防ぐ
         _sub_meta = sub.get("metadata", {}) or {}
+        if (_sub_meta.get("system") or "") == COURSE_SYSTEM_TAG:
+            _course_webhook_touch(sub, "subscription.deleted")   # 🎥 月額講座の解約 → 視聴ページを閉じる
         if (_sub_meta.get("system") or "").startswith("juku-payment"):
             log.info(f"[Stripe webhook] Skipping juku-payment subscription event (system={_sub_meta.get('system')})")
             return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
@@ -33441,6 +33482,8 @@ def stripe_webhook(
         # purchase_type='trial_extended' 経路で作成された Subscription が 21 日経過して自動課金成功した case を含む
         sub = event["data"]["object"]
         _sub_meta = sub.get("metadata", {}) or {}
+        if (_sub_meta.get("system") or "") == COURSE_SYSTEM_TAG:
+            _course_webhook_touch(sub, "subscription.updated")   # 🎥 月額講座の講座変更/支払い状態 → course_members 同期
         if (_sub_meta.get("system") or "").startswith("juku-payment"):
             return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
         sub_id = sub.get("id")
@@ -50112,6 +50155,746 @@ def admin_class_recording_delete(recording_id: int, authorization: Optional[str]
         return {"ok": True}
     finally:
         conn.close()
+
+
+# ============================ 🎥 月額講座 動画視聴ページ (2026-09-16) ============================
+# 英文解釈 / 英文法 / 共通テスト対策 (各 ¥1,500/月・Stripe 支払いリンク・metadata.system=juku-payment-course) の
+# 受講者向け「講座専用の視聴ページ」(course-videos.html)。塾生アプリ (students) とは完全に別の身元表
+# course_members (メール単位) を持ち、塾生の成績・出欠などの API には一切触れられない。
+#   - 身元: course_members。正典は Stripe の有効サブスク (active/trialing/past_due)。ログイン時と
+#     webhook (checkout / subscription.updated / deleted) で同期し、10 分キャッシュ。
+#   - ログイン: メール → ログインリンク (token_type='coursemagic'・7 日) → 交換で token_type='course' (30 日)。
+#     既存の _sign_session_token / _verify_session_token を型違いで流用。'session' を要求する塾生 API と
+#     ai_disabled ゲートは type 不一致で None を返すので混線しない (逆も同じ)。
+#   - 動画: course_videos に YouTube の動画 ID だけを保存 (URL は保存しない・静的 HTML にも書かない =
+#     リポジトリと配信ページが PUBLIC なので、限定公開の ID は認証付き API 経由でしか出さない)。
+#     視聴ページは youtube-nocookie.com/embed/<id> を遅延生成する。埋め込みからの ID 抽出までは防げない
+#     (塾長了承・案 A)。解約すると次回の同期で status='canceled' になりページを開けなくなる。
+#   - 通知: 塾長が動画を登録した時点で、その講座の有効受講者へ Resend でお知らせメール (視聴ページの URL だけ・
+#     動画 URL は載せない)。
+COURSE_SYSTEM_TAG = "juku-payment-course"
+COURSE_KEYS = {"kaishaku": "英文解釈講座", "bunpo": "英文法講座", "kyotsu": "共通テスト対策講座"}
+COURSE_ACTIVE_SUB_STATUSES = ("active", "trialing", "past_due")
+COURSE_MEMBER_CACHE_SEC = 600
+COURSE_MAGIC_TTL_SEC = 7 * 86400
+COURSE_SESSION_TTL_SEC = 30 * 86400
+COURSE_FROM_EMAIL = os.getenv("COURSE_FROM_EMAIL", "トリリオン英語塾 <noreply@trillion-ai-juku.com>")
+COURSE_CONTACT_EMAIL = os.getenv("COURSE_REPLY_TO", "info@trillion-ai-juku.com")
+COURSE_PORTAL_PATH = "/course-videos.html"
+_COURSE_YT_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
+_COURSE_YT_URL_RE = re.compile(r"(?:youtu\.be/|[?&]v=|/embed/|/shorts/|/live/)([A-Za-z0-9_-]{11})")
+
+
+def _course_portal_url() -> str:
+    return f"{BASE_URL.rstrip('/')}{COURSE_PORTAL_PATH}"
+
+
+def _course_norm_email(email: str) -> str:
+    return (email or "").strip().lower()[:254]
+
+
+def _course_youtube_id(url_or_id: str) -> Optional[str]:
+    """YouTube の URL または 11 文字の動画 ID から ID を取り出す。取り出せなければ None。"""
+    s = (url_or_id or "").strip()
+    if not s:
+        return None
+    if _COURSE_YT_ID_RE.fullmatch(s):
+        return s
+    m = _COURSE_YT_URL_RE.search(s)
+    if m:
+        return m.group(1)
+    return None
+
+
+def _course_keys_from_subscription(sub) -> list:
+    """Stripe Subscription (dict ライク) から講座コードを取り出す。price.lookup_key=course_<key>_monthly が正、
+    無ければ metadata.combo ("bunpo+kaishaku")。講座のサブスクでなければ []。"""
+    keys = set()
+    try:
+        meta = sub.get("metadata") or {}
+    except Exception:
+        meta = {}
+    try:
+        items = (sub.get("items") or {}).get("data") or []
+    except Exception:
+        items = []
+    for it in items:
+        try:
+            lk = ((it.get("price") or {}).get("lookup_key") or "")
+        except Exception:
+            lk = ""
+        if lk.startswith("course_") and lk.endswith("_monthly"):
+            k = lk[len("course_"):-len("_monthly")]
+            if k in COURSE_KEYS:
+                keys.add(k)
+    if not keys and (meta.get("system") or "") == COURSE_SYSTEM_TAG:
+        for k in (meta.get("combo") or "").replace(" ", "+").split("+"):
+            if k in COURSE_KEYS:
+                keys.add(k)
+    return sorted(keys)
+
+
+def _course_fetch_from_stripe(email: str, customer_id: str = "") -> Optional[dict]:
+    """Stripe に問い合わせて {courses:[...], customer_id, name, found} を返す。Stripe 未設定/失敗は None (= 判断保留)。
+    found=False は「そのメールの顧客が Stripe に 1 件も無い」(= 未知のメール)。テストでは monkeypatch する。
+    ★Customer.search はメールを単語単位で部分一致させるので、返ってきた顧客のメールが完全一致するものだけを使う。
+      Customer.list(email=) は大文字小文字を区別するので、DB に customer_id があればそれを優先して取りに行く。"""
+    email = _course_norm_email(email)
+    if not STRIPE_SECRET_KEY or not email:
+        return None
+    try:
+        s = get_stripe()
+        customers = []
+        if customer_id:
+            try:
+                cu = s.Customer.retrieve(customer_id)
+                if cu and not (cu.get("deleted") if isinstance(cu, dict) else getattr(cu, "deleted", False)):
+                    customers = [cu]
+            except Exception:
+                customers = []
+        if not customers:
+            try:
+                _q = email.replace("\\", "\\\\").replace("'", "\\'")
+                res = s.Customer.search(query=f"email:'{_q}'", limit=10)
+                customers = list(res.get("data") if isinstance(res, dict) else getattr(res, "data", []) or [])
+            except Exception:
+                customers = []
+        if not customers:
+            res = s.Customer.list(email=email, limit=10)
+            customers = list(res.get("data") if isinstance(res, dict) else getattr(res, "data", []) or [])
+        # 完全一致だけ残す (customer_id 指定で取った顧客はそのまま信じる)
+        exact = []
+        for cu in customers:
+            cu_email = _course_norm_email((cu.get("email") if isinstance(cu, dict) else getattr(cu, "email", "")) or "")
+            cid = cu.get("id") if isinstance(cu, dict) else getattr(cu, "id", None)
+            if cu_email == email or (customer_id and cid == customer_id):
+                exact.append(cu)
+        customers = exact
+        keys, cust_id, name = set(), "", ""
+        for cu in customers:
+            cid = cu.get("id") if isinstance(cu, dict) else getattr(cu, "id", None)
+            if not cid:
+                continue
+            subs = s.Subscription.list(customer=cid, status="all", limit=20)
+            data = subs.get("data") if isinstance(subs, dict) else getattr(subs, "data", []) or []
+            for sub in data:
+                if (sub.get("status") or "") not in COURSE_ACTIVE_SUB_STATUSES:
+                    continue
+                ks = _course_keys_from_subscription(sub)
+                if ks:
+                    keys.update(ks)
+                    cust_id = cust_id or cid
+                    name = name or ((cu.get("name") if isinstance(cu, dict) else getattr(cu, "name", "")) or "")
+        return {"courses": sorted(keys), "customer_id": cust_id, "name": name, "found": bool(customers)}
+    except Exception as e:
+        log.warning(f"[course] Stripe lookup failed for member: {type(e).__name__}: {str(e)[:200]}")
+        return None
+
+
+def _course_row_to_member(row) -> dict:
+    try:
+        courses = json.loads(row["courses"] or "[]")
+    except Exception:
+        courses = []
+    return {"id": row["id"], "email": row["email"], "name": row["name"] or "", "customer_id": row["stripe_customer_id"] or "",
+            "courses": [k for k in courses if k in COURSE_KEYS], "status": row["status"] or "canceled",
+            "verified_at": row["verified_at"]}
+
+
+def _course_upsert_member(email: str, courses: list, customer_id: str = "", name: str = "") -> dict:
+    """course_members を作成/更新して member dict を返す。courses が空なら status='canceled'。"""
+    email = _course_norm_email(email)
+    courses = sorted({k for k in (courses or []) if k in COURSE_KEYS})
+    status = "active" if courses else "canceled"
+    now = _utc_naive_iso()
+    conn = db()
+    try:
+        c = conn.cursor()
+        # webhook とログインが同時に来ても一意制約で落ちないよう ON CONFLICT (SQLite / Postgres 共通)。
+        # 空の customer_id / name で既存の値を消さない。
+        c.execute(
+            "INSERT INTO course_members (email, name, stripe_customer_id, courses, status, verified_at, created_at, updated_at) "
+            "VALUES (?,?,?,?,?,?,?,?) "
+            "ON CONFLICT (email) DO UPDATE SET courses = excluded.courses, status = excluded.status, verified_at = excluded.verified_at, updated_at = excluded.updated_at, "
+            "stripe_customer_id = CASE WHEN excluded.stripe_customer_id = '' THEN course_members.stripe_customer_id ELSE excluded.stripe_customer_id END, "
+            "name = CASE WHEN excluded.name = '' THEN course_members.name ELSE excluded.name END",
+            (email, (name or "")[:100], customer_id or "", json.dumps(courses), status, now, now, now))
+        conn.commit()
+        c.execute("SELECT * FROM course_members WHERE email = ?", (email,))
+        return _course_row_to_member(c.fetchone())
+    finally:
+        conn.close()
+
+
+def _course_member_by_email(email: str) -> Optional[dict]:
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM course_members WHERE email = ?", (_course_norm_email(email),))
+        row = c.fetchone()
+        return _course_row_to_member(row) if row else None
+    finally:
+        conn.close()
+
+
+def _course_member_by_id(member_id: int) -> Optional[dict]:
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM course_members WHERE id = ?", (int(member_id),))
+        row = c.fetchone()
+        return _course_row_to_member(row) if row else None
+    finally:
+        conn.close()
+
+
+def _course_member_is_fresh(member: Optional[dict]) -> bool:
+    if not member or not member.get("verified_at"):
+        return False
+    try:
+        v = member["verified_at"]
+        if isinstance(v, str):
+            v = datetime.fromisoformat(v.replace("Z", ""))
+        if v.tzinfo is not None:
+            v = v.astimezone(timezone.utc).replace(tzinfo=None)
+        return (datetime.now(timezone.utc).replace(tzinfo=None) - v).total_seconds() < COURSE_MEMBER_CACHE_SEC
+    except Exception:
+        return False
+
+
+_COURSE_NEG_CACHE: dict = {}   # 未知のメール → 最終確認時刻。DB に解約行を作らず、Stripe への再問い合わせも 10 分抑える
+_COURSE_NEG_CACHE_MAX = 5000
+
+
+def _course_member_refresh(email: str, force: bool = False) -> Optional[dict]:
+    """メールの受講状態を返す。DB が新しければそのまま、古ければ Stripe で確かめて更新する。
+    - Stripe に聞けないとき (未設定・障害) は DB の値を信じる (解約直後に数分だけ見られる可能性は許容)
+    - Stripe にそのメールの顧客が 1 件も無い (found=False) とき: DB に行が無ければ何も作らない (公開フォームに
+      入力された未知のメールで表が汚れない)。行が既にあって customer_id 付きなら「一時的に見つからない」扱いで据え置く"""
+    import time as _t
+    email = _course_norm_email(email)
+    if not email:
+        return None
+    member = _course_member_by_email(email)
+    if member and not force and _course_member_is_fresh(member):
+        return member
+    if not member and not force:
+        ts = _COURSE_NEG_CACHE.get(email)
+        if ts and _t.time() - ts < COURSE_MEMBER_CACHE_SEC:
+            return None
+    fetched = _course_fetch_from_stripe(email, (member or {}).get("customer_id") or "")
+    if fetched is None:
+        return member
+    if not fetched.get("found", True):
+        if not member:
+            if len(_COURSE_NEG_CACHE) >= _COURSE_NEG_CACHE_MAX:
+                _COURSE_NEG_CACHE.clear()
+            _COURSE_NEG_CACHE[email] = _t.time()
+            return None
+        if member.get("customer_id"):
+            return member
+    return _course_upsert_member(email, fetched.get("courses") or [], fetched.get("customer_id") or "", fetched.get("name") or "")
+
+
+def _course_send_email(to_email: str, subject: str, body_text: str) -> dict:
+    """講座受講者向けの Resend 送信 (塾生向け _send_message_email とは差出人・体裁を分ける)。例外は握る。"""
+    if not RESEND_API_KEY:
+        log.info(f"[course] (dev) mail not sent: {subject}")
+        return {"sent": False, "dev_mode": True}
+    if "@synthetic-monitor." in (to_email or "").lower():
+        return {"sent": True, "resend_id": "synthetic-skip"}
+    def _esc(s):
+        return (str(s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;"))
+    raw_subject = (subject or "").replace("\r", "").replace("\n", " ")[:200]
+    body_norm = (body_text or "").replace("\r\n", "\n").replace("\r", "\n")
+    html = ("<!DOCTYPE html><html><body style=\"font-family:sans-serif;line-height:1.8;color:#1a1a1a;padding:1.2rem;max-width:620px;margin:0 auto;\">"
+            "<div style=\"white-space:pre-wrap;\">" + _esc(body_norm) + "</div></body></html>")
+    try:
+        import urllib.request as _ur
+        req = _ur.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": COURSE_FROM_EMAIL, "to": [to_email], "reply_to": COURSE_CONTACT_EMAIL,
+                             "subject": raw_subject, "html": html, "text": body_norm}, ensure_ascii=False).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json; charset=utf-8", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with _ur.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"[course] email send failed: {type(e).__name__}: {str(e)[:200]}")
+        return {"sent": False, "error": str(e)[:200]}
+
+
+def _get_course_member(authorization: Optional[str]) -> Optional[dict]:
+    """Authorization: Bearer <course session token> → 有効な受講者 dict。無効/解約済みなら None。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    claims = _verify_session_token(authorization[len("Bearer "):].strip(), expected_type="course")
+    if not claims:
+        return None
+    member = _course_member_by_id(claims["student_id"])
+    if not member:
+        return None
+    if member["status"] != "active" or not _course_member_is_fresh(member):
+        member = _course_member_refresh(member["email"]) or member
+    if member["status"] != "active" or not member["courses"]:
+        return None
+    return member
+
+
+def _course_today_jst() -> str:
+    return datetime.now(JST).strftime("%Y-%m-%d")
+
+
+def _course_video_row(row) -> dict:
+    return {"id": row["id"], "course_key": row["course_key"], "course_name": COURSE_KEYS.get(row["course_key"], row["course_key"]),
+            "title": row["title"], "youtube_id": row["youtube_id"], "note": row["note"] or "",
+            "publish_date": row["publish_date"] or "", "is_published": bool(row["is_published"]),
+            "notified_at": row["notified_at"], "notified_count": row["notified_count"] or 0, "created_at": row["created_at"]}
+
+
+COURSE_NOTIFY_INLINE_MAX = 15   # これを超える宛先はバックグラウンドで送る (管理画面のリクエストが Vercel のプロキシ時間内に返るように)
+
+
+def _course_notify_targets(video_id: int, course_key: str, resend_all: bool = False) -> list:
+    """お知らせの宛先 = その講座の有効受講者。resend_all=False なら、この動画をまだ受け取っていない人だけ。"""
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM course_members WHERE status = 'active'")
+        members = [_course_row_to_member(r) for r in c.fetchall()]
+        done = set()
+        if not resend_all:
+            c.execute("SELECT email FROM course_video_notices WHERE video_id = ?", (int(video_id),))
+            done = {r["email"] for r in c.fetchall()}
+    finally:
+        conn.close()
+    return [m for m in members if course_key in m["courses"] and m["email"] not in done]
+
+
+def _course_notify_send(video: dict, targets: list) -> dict:
+    """宛先リストへ順に送り、送れた人を course_video_notices に記録する。例外は握る。"""
+    key = video["course_key"]
+    course_name = COURSE_KEYS.get(key, key)
+    portal = _course_portal_url()
+    sent, failed = 0, 0
+    for m in targets:
+        greeting = f"{m['name']} 様" if m.get("name") else "受講者の皆さま"
+        body = (f"{greeting}\n\n"
+                f"トリリオン英語塾です。\n「{course_name}」に新しい動画を追加しました。\n\n"
+                f"■ 今回の動画\n{video['title']}\n" + (f"{video['note']}\n" if video.get("note") else "") +
+                f"\n■ 視聴はこちら\n{portal}\n（お支払い時（決済画面）のメールアドレスを入力すると、ログイン用のリンクが届きます。"
+                f"一度ログインすると、同じブラウザでは 30 日間そのまま開けます）\n"
+                f"生徒さんが開く場合も、前回ログインしたブラウザならそのまま開けます。\n\n"
+                f"ご不明な点は {COURSE_CONTACT_EMAIL} または公式 LINE までご連絡ください。\n\n"
+                f"トリリオン英語塾（Trillion English Academy）")
+        try:
+            res = _course_send_email(m["email"], f"【{course_name}】新しい動画: {video['title']}", body)
+        except Exception as e:
+            res = {"sent": False, "error": str(e)[:100]}
+        if res.get("sent"):
+            sent += 1
+            try:
+                conn = db()
+                try:
+                    c = conn.cursor()
+                    c.execute("INSERT INTO course_video_notices (video_id, email, sent_at) VALUES (?,?,?) ON CONFLICT (video_id, email) DO UPDATE SET sent_at = excluded.sent_at",
+                              (int(video["id"]), m["email"], _utc_naive_iso()))
+                    conn.commit()
+                finally:
+                    conn.close()
+            except Exception as e:
+                log.warning(f"[course] notice record failed: {e}")
+        else:
+            failed += 1
+        try:
+            _email_rate_limit()
+        except Exception:
+            pass
+    try:
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("UPDATE course_videos SET notified_at = ?, notified_count = COALESCE(notified_count, 0) + ? WHERE id = ?",
+                      (_utc_naive_iso(), sent, int(video["id"])))
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        log.warning(f"[course] notified_count update failed: {e}")
+    log.info(f"[course] notify video={video.get('id')} sent={sent} failed={failed}")
+    return {"sent": sent, "failed": failed, "recipients": len(targets)}
+
+
+_COURSE_NOTIFY_INFLIGHT: set = set()   # 送信中の video_id (同時押しで同じ人に 2 通送らない)
+_COURSE_NOTIFY_LOCK = None
+
+
+def _course_notify_video(video: dict, resend_all: bool = False) -> dict:
+    """動画 1 本のお知らせ。宛先が少なければその場で送り {sent, failed, recipients}、多ければバックグラウンドで送り
+    {queued, recipients, background: True} を返す (結果は course_videos.notified_count と Railway のログで確認)。
+    同じ動画の送信が進行中なら {in_progress: True} を返して何もしない。"""
+    import threading
+    global _COURSE_NOTIFY_LOCK
+    if _COURSE_NOTIFY_LOCK is None:
+        _COURSE_NOTIFY_LOCK = threading.Lock()
+    vid = int(video["id"])
+    with _COURSE_NOTIFY_LOCK:
+        if vid in _COURSE_NOTIFY_INFLIGHT:
+            return {"in_progress": True, "sent": 0, "failed": 0, "recipients": 0}
+        _COURSE_NOTIFY_INFLIGHT.add(vid)
+    def _run(v, t):
+        try:
+            return _course_notify_send(v, t)
+        finally:
+            with _COURSE_NOTIFY_LOCK:
+                _COURSE_NOTIFY_INFLIGHT.discard(vid)
+    try:
+        targets = _course_notify_targets(vid, video["course_key"], resend_all=resend_all)
+    except Exception:
+        with _COURSE_NOTIFY_LOCK:
+            _COURSE_NOTIFY_INFLIGHT.discard(vid)
+        raise
+    if len(targets) <= COURSE_NOTIFY_INLINE_MAX:
+        return _run(video, targets)
+    threading.Thread(target=_run, args=(dict(video), targets), daemon=True, name=f"course-notify-{vid}").start()
+    return {"queued": len(targets), "recipients": len(targets), "background": True}
+
+
+class CourseLoginRequest(BaseModel):
+    email: str
+
+
+class CourseVerifyRequest(BaseModel):
+    token: str
+
+
+class CourseVideoCreateRequest(BaseModel):
+    course_key: str
+    title: str
+    youtube_url: str
+    note: Optional[str] = None
+    publish_date: Optional[str] = None
+    notify: Optional[bool] = True
+
+
+class CourseVideoUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    note: Optional[str] = None
+    publish_date: Optional[str] = None
+    is_published: Optional[bool] = None
+
+
+@app.post("/api/course/login/request")
+def course_login_request(payload: CourseLoginRequest, request: Request):
+    """視聴ページのログインリンクをメールで送る。存在しないメールでも同じ応答 (列挙対策)。"""
+    _check_rate_limit_ip(request, bucket="course_login", limit=5, window=60)
+    email = _course_norm_email(payload.email)
+    generic = {"ok": True, "message": "ご登録のあるメールアドレスであれば、ログイン用のリンクをお送りしました。数分たっても届かない場合は迷惑メールフォルダをご確認ください。"}
+    if not email or "@" not in email:
+        return generic
+    _check_rate_limit_value(email, bucket="course_login", limit=5, window=600)
+    # 公開フォームから Stripe へ問い合わせる総量に蓋 (IP を変えた未知メールの連打で Stripe を叩き続けない)。
+    # 超えたら「送った」と同じ応答を返して何もしない。DB に新しい行がある人は Stripe を使わないので影響なし。
+    existing = _course_member_by_email(email)
+    _neg = _COURSE_NEG_CACHE.get(email)
+    if not existing and _neg and (__import__("time").time() - _neg) < COURSE_MEMBER_CACHE_SEC:
+        return generic   # 10 分以内に「未知」と分かっているメール: Stripe 枠を使わず同じ応答
+    if not (existing and _course_member_is_fresh(existing)):
+        try:
+            _check_rate_limit_value("*", bucket="course_login_stripe", limit=30, window=60)
+        except HTTPException:
+            log.warning("[course] login lookup budget exceeded (no Stripe call)")
+            return generic
+    member = _course_member_refresh(email)
+    if not member or member["status"] != "active" or not member["courses"]:
+        log.info("[course] login requested for non-member (no mail)")
+        return generic
+    if not _check_recipient_send_cap(email, limit=6, window=3600):
+        return generic
+    token = _sign_session_token(member["id"], ttl_seconds=COURSE_MAGIC_TTL_SEC, token_type="coursemagic")
+    link = f"{_course_portal_url()}?t={token}"
+    body = (f"トリリオン英語塾です。\n\n下のリンクを開くと、月額講座の視聴ページにログインできます（7 日間有効・同じリンクを何度でも使えます）。\n\n{link}\n\n"
+            f"開いた端末では、同じブラウザでは 30 日間そのまま開けます。生徒さんの端末でも開く場合は、このメールを転送してください。\n\n"
+            f"このメールに心当たりがない場合は、そのまま無視してください。\n\n"
+            f"ご不明な点は {COURSE_CONTACT_EMAIL} までご連絡ください。\nトリリオン英語塾（Trillion English Academy）")
+    _course_send_email(email, "【トリリオン英語塾】視聴ページのログインリンク", body)
+    return generic
+
+
+@app.post("/api/course/login/verify")
+def course_login_verify(payload: CourseVerifyRequest, request: Request):
+    """ログインリンクの token を 30 日のセッションに交換する。"""
+    _check_rate_limit_ip(request, bucket="course_verify", limit=20, window=60)
+    claims = _verify_session_token((payload.token or "").strip(), expected_type="coursemagic")
+    if not claims:
+        raise HTTPException(status_code=401, detail="リンクが無効か、有効期限が切れています。視聴ページからもう一度ログインリンクを取得してください。")
+    member = _course_member_by_id(claims["student_id"])
+    if member:
+        member = _course_member_refresh(member["email"]) or member
+    if not member or member["status"] != "active" or not member["courses"]:
+        raise HTTPException(status_code=403, detail="有効な受講契約が見つかりません。解約済みの場合は再度お申し込みください。")
+    session = _sign_session_token(member["id"], ttl_seconds=COURSE_SESSION_TTL_SEC, token_type="course")
+    return {"ok": True, "token": session, "expires_in": COURSE_SESSION_TTL_SEC,
+            "email": member["email"], "courses": [{"key": k, "name": COURSE_KEYS[k]} for k in member["courses"]]}
+
+
+@app.get("/api/course/me")
+def course_me(authorization: Optional[str] = Header(None)):
+    """受講者本人の講座と、公開済みの動画一覧 (自分の講座の分だけ)。"""
+    member = _get_course_member(authorization)
+    if not member:
+        raise HTTPException(status_code=401, detail="ログインが必要です")
+    today = _course_today_jst()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM course_videos WHERE is_published = 1 ORDER BY publish_date DESC, id DESC")
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    videos = []
+    for r in rows:
+        if r["course_key"] not in member["courses"]:
+            continue
+        if r["publish_date"] and str(r["publish_date"])[:10] > today:
+            continue
+        v = _course_video_row(r)
+        videos.append({"id": v["id"], "course_key": v["course_key"], "course_name": v["course_name"], "title": v["title"],
+                       "youtube_id": v["youtube_id"], "note": v["note"], "publish_date": str(v["publish_date"])[:10]})
+    return {"email": member["email"], "name": member["name"],
+            "courses": [{"key": k, "name": COURSE_KEYS[k]} for k in member["courses"]], "videos": videos,
+            "contact": COURSE_CONTACT_EMAIL}
+
+
+@app.post("/api/admin/course/videos")
+def admin_course_video_create(payload: CourseVideoCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: 講座の動画を登録。notify=true なら登録と同時にその講座の受講者へお知らせメール。"""
+    _check_rate_limit_ip(request, bucket="course_admin", limit=60, window=60)
+    _verify_admin_required(authorization)
+    key = (payload.course_key or "").strip()
+    if key not in COURSE_KEYS:
+        raise HTTPException(status_code=400, detail="講座の指定が不正です")
+    title = _sanitize_text(payload.title, 200)
+    if not title:
+        raise HTTPException(status_code=400, detail="タイトルは必須です")
+    yid = _course_youtube_id(payload.youtube_url)
+    if not yid:
+        raise HTTPException(status_code=400, detail="YouTube の URL（または 11 文字の動画 ID）を入力してください")
+    note = _sanitize_text(payload.note, 1000) or ""
+    pub = (payload.publish_date or "").strip()[:10] or _course_today_jst()
+    try:
+        datetime.strptime(pub, "%Y-%m-%d")
+    except Exception:
+        raise HTTPException(status_code=400, detail="公開日は YYYY-MM-DD で指定してください")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id FROM course_videos WHERE course_key = ? AND youtube_id = ?", (key, yid))
+        if c.fetchone():
+            raise HTTPException(status_code=409, detail="この動画はすでに同じ講座に登録されています")
+        c.execute("INSERT INTO course_videos (course_key, title, youtube_id, note, publish_date, is_published, created_at) VALUES (?,?,?,?,?,1,?) RETURNING id",
+                  (key, title, yid, note, pub, _utc_naive_iso()))
+        row = c.fetchone()
+        conn.commit()
+        vid = row["id"]
+    finally:
+        conn.close()
+    result = {"ok": True, "id": vid, "youtube_id": yid, "publish_date": pub, "notified": None}
+    if (payload.notify is None or payload.notify) and pub <= _course_today_jst():
+        result["notified"] = _course_notify_video({"id": vid, "course_key": key, "title": title, "note": note})
+    return result
+
+
+@app.get("/api/admin/course/videos")
+def admin_course_video_list(authorization: Optional[str] = Header(None)):
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM course_videos ORDER BY publish_date DESC, id DESC")
+        videos = [_course_video_row(r) for r in c.fetchall()]
+        c.execute("SELECT courses FROM course_members WHERE status = 'active'")
+        counts = {k: 0 for k in COURSE_KEYS}
+        for r in c.fetchall():
+            try:
+                for k in json.loads(r["courses"] or "[]"):
+                    if k in counts:
+                        counts[k] += 1
+            except Exception:
+                pass
+    finally:
+        conn.close()
+    return {"videos": videos, "courses": [{"key": k, "name": v, "active_members": counts[k]} for k, v in COURSE_KEYS.items()]}
+
+
+@app.patch("/api/admin/course/videos/{video_id}")
+def admin_course_video_update(video_id: int, payload: CourseVideoUpdateRequest, authorization: Optional[str] = Header(None)):
+    _verify_admin_required(authorization)
+    sets, params = [], []
+    if payload.title is not None:
+        t = _sanitize_text(payload.title, 200)
+        if not t:
+            raise HTTPException(status_code=400, detail="タイトルは必須です")
+        sets.append("title = ?"); params.append(t)
+    if payload.note is not None:
+        sets.append("note = ?"); params.append(_sanitize_text(payload.note, 1000) or "")
+    if payload.publish_date is not None:
+        pub = payload.publish_date.strip()[:10]
+        try:
+            datetime.strptime(pub, "%Y-%m-%d")
+        except Exception:
+            raise HTTPException(status_code=400, detail="公開日は YYYY-MM-DD で指定してください")
+        sets.append("publish_date = ?"); params.append(pub)
+    if payload.is_published is not None:
+        sets.append("is_published = ?"); params.append(1 if payload.is_published else 0)
+    if not sets:
+        return {"ok": True}
+    params.append(int(video_id))
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("UPDATE course_videos SET " + ", ".join(sets) + " WHERE id = ?", tuple(params))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.delete("/api/admin/course/videos/{video_id}")
+def admin_course_video_delete(video_id: int, authorization: Optional[str] = Header(None)):
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("DELETE FROM course_videos WHERE id = ?", (int(video_id),))
+        c.execute("DELETE FROM course_video_notices WHERE video_id = ?", (int(video_id),))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+class CourseNotifyRequest(BaseModel):
+    resend_all: Optional[bool] = False
+
+
+@app.post("/api/admin/course/videos/{video_id}/notify")
+def admin_course_video_notify(video_id: int, request: Request, payload: Optional[CourseNotifyRequest] = None, authorization: Optional[str] = Header(None)):
+    """塾長: この動画のお知らせメールを送る。既定はまだ受け取っていない受講者だけ (二重送信防止)。resend_all=true で全員にもう一度。"""
+    _check_rate_limit_ip(request, bucket="course_admin", limit=60, window=60)
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM course_videos WHERE id = ?", (int(video_id),))
+        row = c.fetchone()
+    finally:
+        conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="動画が見つかりません")
+    v = _course_video_row(row)
+    return {"ok": True, "notified": _course_notify_video(v, resend_all=bool(payload and payload.resend_all))}
+
+
+@app.get("/api/admin/course/members")
+def admin_course_members(authorization: Optional[str] = Header(None)):
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM course_members ORDER BY status ASC, updated_at DESC")
+        members = [_course_row_to_member(r) for r in c.fetchall()]
+    finally:
+        conn.close()
+    for m in members:
+        m["course_names"] = [COURSE_KEYS[k] for k in m["courses"]]
+    return {"members": members}
+
+
+def _course_sync_all_from_stripe() -> dict:
+    """Stripe の有効サブスクを全走査して course_members を作り直す (塾長の「Stripe から再取得」)。"""
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY が未設定です")
+    s = get_stripe()
+    seen = {}
+    try:
+        for st in COURSE_ACTIVE_SUB_STATUSES:
+            for sub in s.Subscription.list(status=st, limit=100, expand=["data.customer"]).auto_paging_iter():
+                ks = _course_keys_from_subscription(sub)
+                if not ks:
+                    continue
+                cu = sub.get("customer")
+                if isinstance(cu, str):
+                    cu = s.Customer.retrieve(cu)
+                email = _course_norm_email((cu.get("email") if isinstance(cu, dict) else getattr(cu, "email", "")) or "")
+                if not email:
+                    continue
+                ent = seen.setdefault(email, {"courses": set(), "customer_id": "", "name": ""})
+                ent["courses"].update(ks)
+                ent["customer_id"] = ent["customer_id"] or ((cu.get("id") if isinstance(cu, dict) else getattr(cu, "id", "")) or "")
+                ent["name"] = ent["name"] or ((cu.get("name") if isinstance(cu, dict) else getattr(cu, "name", "")) or "")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Stripe の取得に失敗しました: {type(e).__name__}: {str(e)[:200]}")
+    for email, ent in seen.items():
+        _course_upsert_member(email, sorted(ent["courses"]), ent["customer_id"], ent["name"])
+    canceled = 0
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT email FROM course_members WHERE status = 'active'")
+        for r in c.fetchall():
+            if r["email"] not in seen:
+                c.execute("UPDATE course_members SET status = 'canceled', courses = '[]', verified_at = ?, updated_at = ? WHERE email = ?",
+                          (_utc_naive_iso(), _utc_naive_iso(), r["email"]))
+                canceled += 1
+        conn.commit()
+    finally:
+        conn.close()
+    return {"active": len(seen), "canceled": canceled}
+
+
+@app.post("/api/admin/course/members/sync")
+def admin_course_members_sync(request: Request, authorization: Optional[str] = Header(None)):
+    _check_rate_limit_ip(request, bucket="course_admin", limit=10, window=60)
+    _verify_admin_required(authorization)
+    return {"ok": True, **_course_sync_all_from_stripe()}
+
+
+def _course_webhook_touch(session_or_sub: dict, source: str) -> None:
+    """本体 webhook から呼ぶ: 講座の決済完了/サブスク変更で course_members を Stripe と同期する。例外は握る。"""
+    try:
+        obj = session_or_sub or {}
+        email = _course_norm_email((obj.get("customer_email") or (obj.get("customer_details") or {}).get("email") or ""))
+        if not email and obj.get("customer") and STRIPE_SECRET_KEY:
+            cu = get_stripe().Customer.retrieve(obj.get("customer"))
+            email = _course_norm_email((cu.get("email") if isinstance(cu, dict) else getattr(cu, "email", "")) or "")
+        if not email:
+            return
+        if source == "checkout":
+            combo = ((obj.get("metadata") or {}).get("combo") or "").replace(" ", "+")
+            keys = [k for k in combo.split("+") if k in COURSE_KEYS]
+            name = ((obj.get("customer_details") or {}).get("name") or "")
+            if keys:
+                existing = _course_member_by_email(email)
+                merged = sorted(set(keys) | set(existing["courses"] if existing else []))
+                _course_upsert_member(email, merged, obj.get("customer") or "", name)
+                return
+        elif source.startswith("subscription"):
+            # イベント自体を正として、まずローカルで講座を外す (Stripe への再問い合わせが失敗しても解約が効く)。
+            # deleted、または updated で status が終了系なら、そのサブスクの講座を外す。
+            st = obj.get("status") or ""
+            if source == "subscription.deleted" or st in ("canceled", "unpaid", "incomplete_expired"):
+                gone = set(_course_keys_from_subscription(obj))
+                existing = _course_member_by_email(email)
+                if existing and gone:
+                    _course_upsert_member(email, sorted(set(existing["courses"]) - gone), obj.get("customer") or "", "")
+        _course_member_refresh(email, force=True)
+    except Exception as e:
+        log.warning(f"[course] webhook touch failed ({source}): {type(e).__name__}: {str(e)[:200]}")
 
 
 @app.get("/api/admin/youtube-playlists")

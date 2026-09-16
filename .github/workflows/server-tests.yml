@@ -195,6 +195,13 @@ jobs:
         if: ${{ !cancelled() }}
         run: python3 scripts/health_check/test_course_welcome_mail.py
 
+      # 🎥 月額講座の視聴ページ (course-videos.html / /api/course/* / /api/admin/course/*) (2026-09-16)。Stripe とメールは偽物。
+      - name: 月額講座 視聴ページ 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_course_portal.py
+
       # 🧹🗄️ events の保持期限 / /api/track のレート制限 / R2 バックアップの省メモリ dump (2026-09-07)
       - name: イベント掃除・計測制限・バックアップ dump 回帰テスト
         if: ${{ !cancelled() }}
