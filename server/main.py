@@ -50562,6 +50562,20 @@ def _course_notify_video(video: dict, resend_all: bool = False) -> dict:
     return {"queued": len(targets), "recipients": len(targets), "background": True}
 
 
+def _course_send_login_link(member: dict, intro: str = "") -> dict:
+    """視聴ページのログインリンク (coursemagic 7 日) をメールで送る。intro は本文冒頭の一言 (決済直後の案内など)。"""
+    if not _check_recipient_send_cap(member["email"], limit=6, window=3600):
+        return {"sent": False, "error": "recipient cap"}
+    token = _sign_session_token(member["id"], ttl_seconds=COURSE_MAGIC_TTL_SEC, token_type="coursemagic")
+    link = f"{_course_portal_url()}?t={token}"
+    body = "トリリオン英語塾です。\n\n" + ((intro + "\n\n") if intro else "") + (
+        f"下のリンクを開くと、月額講座の視聴ページにログインできます（7 日間有効・同じリンクを何度でも使えます）。\n\n{link}\n\n"
+        f"開いた端末では、同じブラウザでは 30 日間そのまま開けます。生徒さんの端末でも開く場合は、このメールを転送してください。\n\n"
+        f"このメールに心当たりがない場合は、そのまま無視してください。\n\n"
+        f"ご不明な点は {COURSE_CONTACT_EMAIL} までご連絡ください。\nトリリオン英語塾（Trillion English Academy）")
+    return _course_send_email(member["email"], "【トリリオン英語塾】視聴ページのログインリンク", body)
+
+
 class CourseLoginRequest(BaseModel):
     email: str
 
@@ -50611,15 +50625,7 @@ def course_login_request(payload: CourseLoginRequest, request: Request):
     if not member or member["status"] != "active" or not member["courses"]:
         log.info("[course] login requested for non-member (no mail)")
         return generic
-    if not _check_recipient_send_cap(email, limit=6, window=3600):
-        return generic
-    token = _sign_session_token(member["id"], ttl_seconds=COURSE_MAGIC_TTL_SEC, token_type="coursemagic")
-    link = f"{_course_portal_url()}?t={token}"
-    body = (f"トリリオン英語塾です。\n\n下のリンクを開くと、月額講座の視聴ページにログインできます（7 日間有効・同じリンクを何度でも使えます）。\n\n{link}\n\n"
-            f"開いた端末では、同じブラウザでは 30 日間そのまま開けます。生徒さんの端末でも開く場合は、このメールを転送してください。\n\n"
-            f"このメールに心当たりがない場合は、そのまま無視してください。\n\n"
-            f"ご不明な点は {COURSE_CONTACT_EMAIL} までご連絡ください。\nトリリオン英語塾（Trillion English Academy）")
-    _course_send_email(email, "【トリリオン英語塾】視聴ページのログインリンク", body)
+    _course_send_login_link(member)
     return generic
 
 
@@ -50881,7 +50887,13 @@ def _course_webhook_touch(session_or_sub: dict, source: str) -> None:
             if keys:
                 existing = _course_member_by_email(email)
                 merged = sorted(set(keys) | set(existing["courses"] if existing else []))
-                _course_upsert_member(email, merged, obj.get("customer") or "", name)
+                member = _course_upsert_member(email, merged, obj.get("customer") or "", name)
+                # 🎥 決済完了と同時に、視聴ページへ直接入れるログインリンクを送る (受講案内メールは Vercel 側が別に送る)。
+                #   Stripe の再送は processed_events (event.id) で弾かれるので二重送信にならない。
+                if member and member["status"] == "active" and os.getenv("COURSE_WELCOME_ENABLED", "1").strip().lower() not in ("0", "false", "off"):
+                    names = "・".join(COURSE_KEYS[k] for k in member["courses"])
+                    res = _course_send_login_link(member, intro=f"「{names}」のお申し込みとお支払いを確認しました。ありがとうございます。\n動画は下のリンクから視聴ページを開いてご覧ください（初回の動画はお支払いの翌週の月曜に追加します）。")
+                    log.info(f"[course] checkout login-link mail sent={res.get('sent')} courses={member['courses']}")
                 return
         elif source.startswith("subscription"):
             # イベント自体を正として、まずローカルで講座を外す (Stripe への再問い合わせが失敗しても解約が効く)。

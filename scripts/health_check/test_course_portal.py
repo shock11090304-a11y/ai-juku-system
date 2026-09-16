@@ -8,7 +8,7 @@ Stripe は _course_fetch_from_stripe を偽物に、メールは _course_send_em
   4. 塾長: 動画登録 (URL の各形式から ID 抽出)・登録と同時にその講座の受講者だけへ通知・重複登録は 409・不正 URL は 400
   5. 塾長: 一覧 (講座ごとの有効受講者数)・編集・再通知・削除・受講者一覧
   6. 解約: Stripe が講座なしを返す → 次のアクセスで 401、ログインリンクも送らない
-  7. webhook 同期: checkout (course tag) で course_members が作られ students は増えない / subscription.deleted で解約に
+  7. webhook 同期: checkout (course tag) で course_members が作られ students は増えない・視聴ページのログインリンクを自動送信 / subscription.deleted で解約に
   8. 管理 API は admin Bearer 無しで 401
 """
 import base64
@@ -170,9 +170,16 @@ def main():
     check("5e. 受講者一覧に講座名", mem.status_code == 200 and len(active) == 1 and active[0]["course_names"] == ["英文法講座", "英文解釈講座"], mem.text[:300])
 
     # ---- 7. webhook 同期 (関数を直接) ----
+    MAILS.clear()
     mod._course_webhook_touch({"customer_details": {"email": "New@Example.invalid", "name": "新規 太郎"}, "customer": "cus_n1",
                                "metadata": {"system": "juku-payment-course", "combo": "kyotsu"}, "payment_status": "paid"}, "checkout")
     nm = mod._course_member_by_email("new@example.invalid")
+    check("7a2. 決済完了で視聴ページのログインリンクを自動送信 (講座名・翌週の月曜・token 付きリンク)",
+          len(MAILS) == 1 and MAILS[0]["to"] == "new@example.invalid" and "共通テスト対策講座" in MAILS[0]["body"] and "course-videos.html?t=" in MAILS[0]["body"] and "翌週の月曜" in MAILS[0]["body"], MAILS)
+    _lnk = [l for l in MAILS[0]["body"].splitlines() if "course-videos.html?t=" in l][0] if MAILS else ""
+    _tok = _lnk.split("?t=", 1)[1] if _lnk else ""
+    _vr = client.post("/api/course/login/verify", json={"token": _tok})
+    check("7a3. そのリンクの token で視聴ページにログインできる", _vr.status_code == 200 and _vr.json().get("courses") == [{"key": "kyotsu", "name": "共通テスト対策講座"}], _vr.text[:200])
     conn = mod.db(); c = conn.cursor(); c.execute("SELECT COUNT(*) AS n FROM students"); n_students = c.fetchone()["n"]; conn.close()
     check("7a. checkout で course_members に作成・students は増えない", nm and nm["courses"] == ["kyotsu"] and nm["status"] == "active" and n_students == 0, (nm, n_students))
     # 本物の Subscription には customer_email が無い → Customer.retrieve でメールを引く。Stripe が落ちていてもイベント自体で解約が効くこと
@@ -210,6 +217,7 @@ def main():
         wr = client.post("/api/stripe/webhook", data=payload, headers={"Stripe-Signature": f"t={ts},v1={sig}", "Content-Type": "application/json"})
         wm = mod._course_member_by_email("wh@example.invalid")
         check("7c. 署名付き checkout webhook → course_members に作成し、応答は juku-payment skip", wr.status_code == 200 and wr.json().get("skipped_reason") == "juku-payment system tag" and wm and wm["courses"] == ["bunpo"], (wr.status_code, wr.text[:200], wm))
+        check("7c2. 署名付き checkout webhook でログインリンクのメールが 1 通", any(m["to"] == "wh@example.invalid" and "course-videos.html?t=" in m["body"] for m in MAILS), [m["to"] for m in MAILS])
       except Exception as e:
         check("7c. 署名付き checkout webhook", False, repr(e))
 
