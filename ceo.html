@@ -649,8 +649,8 @@
       <!-- ✏️ 問題プール補充 (2026-06-19): grammar_questions に手作り4択(3名検証済)を無課金で一括投入 -->
       <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.30);border-radius:10px;padding:0.8rem;margin-bottom:0.8rem;">
         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-          <button id="grammarPoolImportBtn" type="button" data-seed="/seed-data/grammar_drill_pool_v1.json" data-size="703" title="※このボタンは英語(英文法)ドリルのみ補充します。他科目(数学・理科 等)のドリル在庫はシステム側で取込済みで、UIからの個別補充ボタンはありません。&#10;英文法ドリルの問題プール(grammar_questions)を補充: 20単元×基礎/標準/やや難の手作り4択703問(3名独立ソルバー全員一致検証済・正解位置均等化・説明は値参照)。全単元が緑(在庫25問+)になる。再押下しても重複は自動スキップ。ワンクリック取込・無課金。" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">✏️ 英文法ドリルを補充 (英語専用・20単元 703問・無課金)</button>
-          <span id="grammarPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">押すと全20単元のドリル在庫が緑(25問+)になります。重複は自動スキップ。</span>
+          <button id="grammarPoolImportBtn" type="button" data-seed="/seed-data/grammar_drill_pool_v1.json,/seed-data/grammar_drill_pool_v2.json" data-size="1688" title="※このボタンは英語(英文法)ドリルのみ補充します。他科目(数学・理科 等)のドリル在庫はシステム側で取込済みで、UIからの個別補充ボタンはありません。&#10;英文法ドリルの問題プール(grammar_questions)を補充: 20単元×基礎/標準/やや難の手作り4択1,688問 (第1弾703問 + 第2弾985問。いずれも3名独立ソルバーの盲検で全員一致した問題だけを採用・解説は別担当が校閲・正解位置均等化・説明は値参照)。このボタンの取込後、在庫は1単元あたり79〜87問 (単元バッジは選ばれたレベルの在庫を出すので、既定の「標準〜やや難」では68〜75と表示される)。同じ単元を繰り返し配信しても問題が被りにくい。ただし基礎レベルは1単元11〜12問のままで、ここは増えない。再押下しても重複は自動スキップ。ワンクリック取込・無課金。" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">✏️ 英文法ドリルを補充 (英語専用・20単元 1,688問・無課金)</button>
+          <span id="grammarPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">押すと全20単元のドリル在庫が緑(25問+)になります。第1弾703問＋第2弾985問を続けて取り込み、すでに入っている分は自動でスキップします。</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-top:0.6rem;padding-top:0.6rem;border-top:1px dashed rgba(255,255,255,0.12);">
           <button id="grammarWeaknessImportBtn" type="button" data-seed="/seed-data/grammar_drill_weakness_v1.json" title="弱点分析で抽出した検証済み4択32問を自動採点ドリルの問題プールに取り込みます。英語=関係詞・助動詞 / 古文=助動詞の意味・重要古語。取込後は単元『関係詞/助動詞/古文』を選んで該当生徒に配信できます。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">📥 弱点特訓32問を取込 (英語 関係詞・助動詞 ＋ 古文)</button>
@@ -4872,33 +4872,51 @@
     document.addEventListener('DOMContentLoaded', gdInit);
 
     // ✏️ 英文法ドリル 問題プール補充 (2026-06-19): seed JSON を grammar_questions に一括投入 (無課金・dedup)
+    //   2026-09-17 [pool-v2 塾長指示「問題のプール数をもっと増やして。アプリ内で作ると API を食うのでセッションで作って反映」]:
+    //   v2 シード (20単元 985問。各単元50問を作り、独立ソルバー3名の盲検で全員一致しなかった分を落として 47〜50問) を同じボタンで続けて取り込む。
+    //   data-seed はカンマ区切りで複数可・順に POST する。API は 1 回 2000 問まで・既存 (stem+単元) は自動スキップなので
+    //   v1 取込済みの環境で押し直しても v2 の差分だけが入る。途中で失敗しても、それまでの取込は保存済み (import は 1 回ごとに commit)。
     async function grammarPoolImport() {
       const btn = document.getElementById('grammarPoolImportBtn');
       const msg = document.getElementById('grammarPoolImportMsg');
       if (!btn || !window.AdminAuth) return;
-      const seedUrl = btn.getAttribute('data-seed');
-      if (!confirm('英文法ドリルの問題プールに 703問(検証済) を取り込みます。よろしいですか？（重複は自動スキップ・無課金）')) return;
+      const seedUrls = (btn.getAttribute('data-seed') || '').split(',').map(s => s.trim()).filter(Boolean);
+      const sizeRaw = btn.getAttribute('data-size') || '';
+      const size = /^\d+$/.test(sizeRaw) ? Number(sizeRaw).toLocaleString('ja-JP') : sizeRaw;  // 1688 → 1,688 (確認ダイアログの読みやすさ)
+      if (!seedUrls.length) return;
+      if (!confirm(`英文法ドリルの問題プール(検証済 ${size}問)を照合し、まだ入っていない問題だけを取り込みます。よろしいですか？（取込済みの分は自動スキップ・無課金）`)) return;
       btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ 取込中...';
       if (msg) { msg.style.color = '#94a3b8'; msg.textContent = 'シード読込中...'; }
+      const tot = { inserted: 0, skipped: 0, errors: 0, received: 0 };
       try {
-        const sr = await fetch(seedUrl, { cache: 'no-store' });
-        if (!sr.ok) throw new Error('シード取得失敗 HTTP ' + sr.status);
-        const seed = await sr.json();
-        const questions = (seed && seed.questions) || [];
-        if (!questions.length) throw new Error('シードに問題がありません');
-        if (msg) msg.textContent = `投入中... (${questions.length}問)`;
-        const res = await AdminAuth.fetch('/api/admin/grammar/import', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questions, dedup: true }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) { if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (data.detail || ('取込失敗 HTTP ' + res.status)); } return; }
-        if (msg) { msg.style.color = '#86efac'; msg.textContent = `✅ 取込 ${data.inserted}問 / 重複スキップ ${data.skipped} / エラー ${data.errors}（受領 ${data.received}）。単元の在庫色を更新します。`; }
-        try { await gdLoadUnits(); gdRenderUnits(); } catch (_e) {}  // 在庫色(緑/黄/灰)を即更新
+        for (let i = 0; i < seedUrls.length; i++) {
+          const seedUrl = seedUrls[i];
+          const sr = await fetch(seedUrl, { cache: 'no-store' });
+          if (!sr.ok) throw new Error('シード取得失敗 HTTP ' + sr.status + ' (' + seedUrl + ')');
+          const seed = await sr.json();
+          const questions = (seed && seed.questions) || [];
+          if (!questions.length) throw new Error('シードに問題がありません (' + seedUrl + ')');
+          if (msg) msg.textContent = `投入中... (${i + 1}/${seedUrls.length} 本目: ${questions.length}問)`;
+          const res = await AdminAuth.fetch('/api/admin/grammar/import', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questions, dedup: true }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            const d = data.detail;
+            throw new Error((typeof d === 'string' && d) ? d : (d ? JSON.stringify(d) : ('取込失敗 HTTP ' + res.status)));
+          }
+          for (const k of Object.keys(tot)) tot[k] += Number(data[k] || 0);
+        }
+        if (msg) { msg.style.color = tot.errors ? '#fbbf24' : '#86efac'; msg.textContent = `${tot.errors ? '⚠️' : '✅'} 新しく取り込んだ問題 ${tot.inserted}問 / すでに入っていた分 ${tot.skipped}問はスキップ / エラー ${tot.errors}（シード ${seedUrls.length} 本・計 ${tot.received}問を照合）。単元の在庫を更新します。`; }
       } catch (e) {
-        if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || String(e)); }
+        if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || String(e)) + (tot.inserted ? `（ここまでに取り込んだ ${tot.inserted}問は保存済み。押し直せば残りだけが入ります）` : ''); }
       } finally {
         btn.disabled = false; btn.textContent = orig;
+        // 在庫色(緑/黄/灰)の更新は成功/失敗のどちらでも必ず行う。
+        // 2 本目で失敗しても 1 本目は DB に入っている (import は 1 回ごとに commit) ため、
+        // try の中だけで更新するとバッジが旧在庫のまま残り「保存済み」の表示と矛盾する。
+        try { await gdLoadUnits(); gdRenderUnits(); } catch (_e) {}
       }
     }
     window.grammarPoolImport = grammarPoolImport;

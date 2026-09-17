@@ -40,6 +40,9 @@ logs/
 # Temp
 tmp/
 temp/
+# 「temp」という名前の *ファイル* (SQLite 等) も除外する。`temp/` はディレクトリにしか効かず、
+# git add -A で公開リポジトリに載ってしまう (2026-09-17 のレビュー指摘)。
+/temp
 
 # Generated video frames (regeneratable from script)
 marketing-assets/video-frames/
