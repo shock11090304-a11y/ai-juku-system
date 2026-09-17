@@ -64,9 +64,12 @@
   視聴ページ `course-videos.html` は youtube-nocookie の埋め込みを再生ボタンで遅延生成する (埋め込みからの ID 抽出は防げない = 塾長了承の案 A)。
 - 塾長は CEO ダッシュ「🎥 月額講座」で登録。**登録と同時にその講座の有効受講者へ Resend でお知らせ** (`_course_notify_video`・視聴ページ URL のみ)。
   受講案内メール (決済直後) は Vercel `api/stripe-webhook.py` が送る (別系統)。
-- 本体 webhook は `juku-payment*` を skip する前に `_course_webhook_touch` で `course_members` だけ同期する。students には触らない。
+- 本体 webhook は `juku-payment*` を skip する前に `_course_webhook_touch` で `course_members` を同期し、決済完了時は視聴ページのログインリンクも送る (受講案内メールは Vercel)。students には触らない。
+  `COURSE_WELCOME_ENABLED=0` は Vercel (受講案内) と Railway (ログインリンク) で別々に効くので、止めるなら両方に入れる。
+  Stripe の支払いリンクは決済ごとに新しい Customer を作る → `_course_fetch_from_stripe` は customer_id とメール検索の顧客を合算する (2026-09-17)。
 - テスト: `scripts/health_check/test_course_portal.py` (Stripe は `_course_fetch_from_stripe`、メールは `_course_send_email` を差し替え)。
-- 環境変数: `COURSE_DELIVERY_START` (配信開始日・Railway と Vercel を同じ日付に)、`COURSE_LINE_URL` (公式 LINE)。既定値は両ファイルに直書き。
+- 環境変数: `COURSE_DELIVERY_START` (配信開始日・Railway と Vercel を同じ日付に)、`COURSE_LINE_URL` (公式 LINE)、`COURSE_REPLY_TO` (窓口。Railway/Vercel 両方)、
+  `COURSE_PORTAL_URL` (Vercel・視聴ページ URL)、`COURSE_NOTIFY_EMAIL` (Vercel・塾長通知。★未設定だと講座・入塾の要対応通知が一切届かない)。既定値は両ファイルに直書き。
 - 🎓 体験授業 (taiken.html・¥1,500 支払いリンク `TAIKEN_TRIAL_PLINK_ID`・metadata 空) は students を作らない単発決済。本体 webhook の divert 分岐で
   塾長通知 (`_notify_admin_new_trial`・決済画面のカスタム欄を goal に) と申込者への案内メール (`_send_taiken_welcome_email`・`TAIKEN_WELCOME_ENABLED=0` で停止) を送る。
   テスト: `scripts/health_check/test_taiken_welcome_mail.py`。
@@ -83,7 +86,7 @@
   塾生アプリ登録 URL は `ENROLL_APP_REGISTER_URL` (既定 juku-register.html)。授業ルール (5 分前入室・画面オン・音声オフ) は本文に固定。
 - 同じ Stripe 顧客の 2 件目の決済は `reg:duplicate:<rid>` に逃がして名簿に足さない (`reg:by_customer:<cus>`)。台帳の月は session.created の JST 月。
   KV に名簿を書けなければ `_RetryLater` → 500 で Stripe に再送させる (他の handler は従来どおり 200)。
-- CORS: 申込書のオリジンだけ `Access-Control-Allow-Origin` を返す (`REGISTER_CORS_ORIGINS`、既定 Netlify の graceful-eclair-56bdac)。戻り先は `enroll-thanks.html` (同サイト)。
+- CORS: 申込書のオリジンだけ `Access-Control-Allow-Origin` を返す (`REGISTER_CORS_ORIGINS`、既定 Netlify の graceful-eclair-56bdac)。戻り先は `enroll-thanks.html` (同サイト。`ENROLL_RETURN_BASE` で上書き可)。
 - テスト: `scripts/health_check/test_enroll_first_charge.py`。運用手順: `Desktop/🏫 運営・集客/塾運営/入塾申込_初回カード決済/README.md`。
 
 ## 教材・問題を作るときのルール (2026-08-02 塾長指摘を反映)

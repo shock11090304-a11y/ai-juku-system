@@ -127,8 +127,8 @@ def main():
     check("1e. 本文に月額合計 3,000円 (通常文)", "月額合計 3,000円（税込）を、毎月同じ日に" in body)
     check("1e2. 本文に受講確定", "受講確定" in body)
     check("1f. 本文に受付番号", "cs_test_abc123" in body)
-    _exp = mod._course_first_monday_jst()
-    check("1g. 初回配信は処理時刻 (=決済直後) の次の月曜", ("初回の配信は %s の予定" % _exp) in body, body[:400])
+    _exp = mod._course_first_monday_jst(1789000000)   # 決済時刻 = session.created (サブスクの請求起点が取れないとき)。処理時刻ではない (再送遅延に強い)
+    check("1g. 初回配信は決済時刻 (session.created) の次の月曜", ("初回の配信は %s の予定" % _exp) in body, body[:400])
     check("1g2. Resend に Idempotency-Key", any(v == "course-welcome/cs_test_abc123" for v in rs.headers[0].values()) if rs.headers else False, rs.headers)
     check("1h. reply_to は窓口メール", m.get("reply_to") == "info@trillion-ai-juku.com", m.get("reply_to"))
     check("1h2. Resend への送信に User-Agent (Cloudflare 1010 対策・2026-09-17)", any(k.lower() == "user-agent" and v.startswith("ai-juku/") for k, v in (rs.headers[0] if rs.headers else {}).items()), rs.headers[:1])
@@ -184,7 +184,7 @@ def main():
     check("7a. 通知先設定時は 2 通 (受講生 + 塾長)", len(rs.sent) == 2 and rs.sent[1]["to"] == ["owner@example.invalid"], [x.get("to") for x in rs.sent])
     n = rs.sent[1]["text"] if len(rs.sent) == 2 else ""
     check("7b. 塾長通知に生徒名・講座・受付番号・申込ID・決済日・サブスク・送信済み",
-          all(x in n for x in ["テスト 太郎", "英文法講座", "cs_notify", "申込ID", "ABC123", "毎月 %d日" % mod._course_jst().day, "sub_test1", mod._course_first_monday_jst(), "送信済み"]), n)
+          all(x in n for x in ["テスト 太郎", "英文法講座", "cs_notify", "申込ID", "ABC123", "毎月 %d日" % mod._course_jst(1789000000).day, "sub_test1", mod._course_first_monday_jst(1789000000), "送信済み"]), n)
     kv, rs = FakeKV(), FakeResend(fail_first=True)
     mod._redis_safe, urllib.request.urlopen = kv, rs
     mod._handle_checkout_completed(event(session(sid="cs_fail")))

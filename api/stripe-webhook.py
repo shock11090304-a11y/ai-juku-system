@@ -312,7 +312,19 @@ def _handle_course_checkout(obj):
     client_ref = obj.get("client_reference_id") or ""
     customer = obj.get("customer") or ""
     now = int(time.time())
-    paid_ts = now   # 決済日・初回配信日は「この webhook を処理した時刻」= 決済直後。session.created は開いた時刻なので使わない
+    # 決済日 (次回決済日の案内・初回配信日の起点): Stripe の再送が数時間〜数日遅れても狂わないよう、サブスクの請求起点
+    # (billing_cycle_anchor = 実際の決済時刻) を最優先、取れなければ session.created、最後に処理時刻
+    paid_ts = now
+    try:
+        _sk = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+        _sub = _stripe_get(_sk, f"subscriptions/{obj.get('subscription')}") if (_sk and obj.get("subscription")) else None
+        _anchor = int((_sub or {}).get("billing_cycle_anchor") or 0)
+        if _anchor:
+            paid_ts = _anchor
+        elif int(obj.get("created") or 0):
+            paid_ts = int(obj.get("created"))
+    except Exception:
+        paid_ts = now
 
     if obj.get("payment_status") not in ("paid", "no_payment_required"):   # 100% クーポン等は no_payment_required
         # カード以外 (コンビニ等) は unpaid で届き、後から checkout.session.async_payment_succeeded が来る (HANDLERS に登録済み)
@@ -588,8 +600,20 @@ def _enroll_next_month_batch_ran(next_month):
         # score は書込時刻。直近 45 日に絞る (index は月ごとに全生徒分が増える無限 ZSET)
         since = str(int(time.time()) - 45 * 86400)
         zr = _redis_safe("ZRANGE", "charge:history:index", since, "+inf", "BYSCORE")
-        members = (zr or {}).get("result") or []
-        return any(isinstance(m, str) and m.endswith(f":{next_month}") for m in members)
+        members = [m for m in ((zr or {}).get("result") or []) if isinstance(m, str) and m.endswith(f":{next_month}")]
+        if not members:
+            return False
+        # 翌月のエントリが「月末バッチ」由来かを確認する (個別請求 1 件・手動記帳では「実行済み」にしない)
+        keys = [f"charge:history:{m}" for m in members[:300]]
+        mg = _redis_safe("MGET", *keys)
+        for raw in ((mg or {}).get("result") or []):
+            try:
+                rec = json.loads(raw) if isinstance(raw, str) else None
+            except Exception:
+                rec = None
+            if isinstance(rec, dict) and str(rec.get("source") or "").startswith("month-end-batch"):
+                return True
+        return False
     except Exception:
         return False
 

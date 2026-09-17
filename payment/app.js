@@ -1209,11 +1209,20 @@ function _mergeLocalOverridesIntoRemote(localOv, remoteOv, remoteUpdatedAt) {
   let merged = false;
   // remote が「この端末の最後の同期」より後に更新されていれば、既存の値は remote を正とする (欠けている記録だけ足す)
   let remoteNewer = true;
+  let lastPush = 0;
   try {
-    const lastPush = Number(localStorage.getItem(SYNC_LAST_KEY) || 0);
+    lastPush = Number(localStorage.getItem(SYNC_LAST_KEY) || 0);
     const remoteMs = remoteUpdatedAt ? Date.parse(remoteUpdatedAt) : NaN;
     if (lastPush && !isNaN(remoteMs)) remoteNewer = remoteMs > lastPush + 5000;
+    // 一度も同期したことがない端末の記録は remote が見たことがない (= remote で消されたものではない) ので、全部足してよい
+    if (!lastPush) remoteNewer = false;
   } catch (_) { remoteNewer = true; }
+  // remote が新しい = 別端末がその後に編集した。そのとき足してよいのは「この端末が最後に同期したあとに付けた記録」だけ。
+  // それより古い記録は同期時点で remote にもあったはずなので、今 remote に無いなら別端末で消したもの = 復活させない。
+  let lastPushDay = '';
+  try { lastPushDay = lastPush ? new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(lastPush)) : ''; } catch (_) { lastPushDay = ''; }
+  const madeAfterSync = (iso) => { const t = iso ? Date.parse(iso) : NaN; return !isNaN(t) && t > lastPush; };
+  const paidAfterSync = (v) => !!(v && v.date && lastPushDay && String(v.date).slice(0, 10) >= lastPushDay);
   // payments: month → studentId → {paid,...}
   const lp = localOv.payments || {};
   for (const month of Object.keys(lp)) {
@@ -1224,7 +1233,9 @@ function _mergeLocalOverridesIntoRemote(localOv, remoteOv, remoteUpdatedAt) {
       if (!remoteOv.payments) remoteOv.payments = {};
       if (!remoteOv.payments[month]) remoteOv.payments[month] = {};
       const rv = remoteOv.payments[month][sid];
-      if (rv === undefined || (!remoteNewer && lv.paid && !(rv && rv.paid))) { remoteOv.payments[month][sid] = lv; merged = true; }
+      if (rv === undefined) {
+        if (!remoteNewer || paidAfterSync(lv)) { remoteOv.payments[month][sid] = lv; merged = true; }
+      } else if (!remoteNewer && lv.paid && !(rv && rv.paid)) { remoteOv.payments[month][sid] = lv; merged = true; }
     }
   }
   for (const k of ['mailSent', 'status', 'emails', 'payerNames', 'regLinks', 'studentEdits']) {
@@ -1237,13 +1248,23 @@ function _mergeLocalOverridesIntoRemote(localOv, remoteOv, remoteUpdatedAt) {
         if (k === 'regLinks') {
           const rid = lo[id] && lo[id].regId;
           if (rid && Object.values(remoteOv[k]).some(l => l && l.regId === rid)) { console.warn('[CloudSync] regLink 重複のため local の紐付けを捨てました sid=' + id); continue; }
+          if (remoteNewer && !madeAfterSync(lo[id] && lo[id].linkedAt)) continue;   // 同期前からあった紐付けが remote に無い = 別端末で解除済み
+        } else if (k === 'mailSent') {
+          if (remoteNewer) {   // month → sid → ISO 日時。同期後に送ったものだけ
+            const li = lo[id]; const keep = {};
+            if (li && typeof li === 'object') for (const sid of Object.keys(li)) if (madeAfterSync(li[sid])) keep[sid] = li[sid];
+            if (Object.keys(keep).length) { remoteOv[k][id] = keep; merged = true; }
+            continue;
+          }
+        } else if (remoteNewer) {
+          continue;   // status / emails / payerNames / studentEdits は時刻を持たないので、remote が新しいときは足さない (削除の復活防止)
         }
         remoteOv[k][id] = lo[id]; merged = true;
       } else if (k === 'mailSent') {
         // month → sid の 2 段: local にしかない月/生徒を足す (status は sid → 文字列なので対象外)
         const li = lo[id], ri = remoteOv[k][id];
         if (li && typeof li === 'object' && !Array.isArray(li) && ri && typeof ri === 'object') {
-          for (const sid of Object.keys(li)) if (!(sid in ri)) { ri[sid] = li[sid]; merged = true; }
+          for (const sid of Object.keys(li)) if (!(sid in ri) && (!remoteNewer || madeAfterSync(li[sid]))) { ri[sid] = li[sid]; merged = true; }
         }
       }
     }
@@ -1253,7 +1274,7 @@ function _mergeLocalOverridesIntoRemote(localOv, remoteOv, remoteUpdatedAt) {
   if (ln.length) {
     if (!Array.isArray(remoteOv.newStudents)) remoteOv.newStudents = [];
     const rids = new Set(remoteOv.newStudents.map(s => s && s.id));
-    for (const st of ln) if (st && !rids.has(st.id)) { remoteOv.newStudents.push(st); merged = true; }
+    for (const st of ln) if (st && !rids.has(st.id) && (!remoteNewer || madeAfterSync(st.addedAt))) { remoteOv.newStudents.push(st); merged = true; }
   }
   if (merged) console.warn('[CloudSync] local にしかない記録をクラウドの内容に足しました (再ログイン時の消失防止)');
   return merged;
@@ -2101,8 +2122,7 @@ async function autoAddEnrollRegs(unlinked) {
   for (const r of targets) {
     ENROLL_AUTO_ADD_TRIED.add(r.registrationId);
     const linkedNow = Object.values(STATE.overrides.regLinks || {}).some(l => l && l.regId === r.registrationId)
-      || (STATE.overrides.newStudents || []).some(s => s && s.regId === r.registrationId)
-      || !!findStudentForReg(r);
+      || (STATE.overrides.newStudents || []).some(s => s && s.regId === r.registrationId);
     if (linkedNow) continue;   // 別端末が先に追加していた
     try { if (await addStudentFromReg(r, true)) added += 1; } catch (e) { console.warn('enroll-auto-add failed', r.registrationId, e); }
   }
@@ -2131,6 +2151,15 @@ async function linkRegToStudent(reg, studentId, by = 'manual-existing') {
   }
   // 3) 確定 — payerName/メールとも既存の手入力値は上書きしない (誤上書き防止)
   setRegLink(studentId, reg.registrationId, reg.customerId, by);
+  // 入塾申込書からの初回決済 (入塾金+設備費+初月受講料) を既存の名簿生徒に紐付けたときも、決済した月を「支払済み」にする
+  if (reg.firstChargeMonth && /^\d{4}-\d{2}$/.test(reg.firstChargeMonth)) {
+    const cur = getPayment(reg.firstChargeMonth, studentId);
+    if (!(cur && cur.paid)) {
+      let paidDate = '';
+      try { paidDate = reg.paidAt ? new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(reg.paidAt * 1000)) : ''; } catch (_) { paidDate = ''; }
+      setPayment(reg.firstChargeMonth, studentId, true, paidDate, '入塾時の初回決済 (入塾金・設備費込み・カード)', Number(reg.firstChargeAmount) || null);
+    }
+  }
   if (reg.parentName && !getPayerName(studentId)) setPayerName(studentId, reg.parentName);
   if (reg.email && !getEmail(studentId)) setEmail(studentId, reg.email);
   saveOverrides();
@@ -2272,6 +2301,7 @@ function renderUnlinkedRegsPanel() {
   const linkedRegIds = new Set(Object.values(STATE.overrides.regLinks || {}).map(l => l && l.regId).filter(Boolean));
   const unlinked = regs.filter(r => {
     if (linkedRegIds.has(r.registrationId)) return false;  // 既に紐付け済み
+    if (r.source === 'enrollment-form-v1-payment') return true;   // 入塾申込は自動追加へ (同名がいるときだけ見送ってこのパネルに残す。部分一致で隠さない)
     if (findStudentForReg(r)) return false;                // 名簿にいる → カード列で候補表示
     return true;                                           // 名簿に無い → 取り込み対象
   });
@@ -3161,7 +3191,11 @@ function monthEndArrearsFor(c, regToStudent, priorMonths) {
   if (sid === undefined || sid === null) return null;   // 紐付け未確定 → 滞納対象外
   const idx = (MONTHEND_STATE.ledgerIndex || {})[c.registrationId] || {};
   let excluded = 0;
+  // 入塾 (カード登録) より前の月は在籍していないので滞納にしない (入塾申込書からの自動登録は registeredAt を必ず持つ)
+  let regMonth = '';
+  try { regMonth = c.registeredAt ? new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(Number(c.registeredAt) * 1000)).slice(0, 7) : ''; } catch (_) { regMonth = ''; }
   const months = priorMonths.filter(pm => {
+    if (regMonth && pm < regMonth) return false;
     const pay = getPayment(pm, sid);
     if (pay && pay.paid) return false;                    // 名簿で入金済 (振込など)
     // 📖 台帳に 成功/3DS待ち/要確認 の記録がある月は除外 (名簿の印が付いていなくても二重請求しない・2026-09-08)
@@ -5046,6 +5080,11 @@ function parsePDFText(text) {
 // === Stripe Charges API 取込 (CSV と同じ rows 形式に変換 → processImport で再利用) ===
 
 function chargesToRows(charges) {
+  // 入塾申込書からの初回決済 (metadata.first_charge=1・入塾金込み) は webhook が当月の台帳と名簿に反映済み。
+  // ここで取り込むと「翌月分の前払い」として誤登録され、入塾金まで月次売上に混ざるので除外する (2026-09-17)
+  const skipped = charges.filter(c => ((c.metadata || {}).first_charge === '1'));
+  if (skipped.length) console.info(`stripe import: 入塾の初回決済 ${skipped.length} 件は除外 (webhook で反映済み)`);
+  charges = charges.filter(c => !((c.metadata || {}).first_charge === '1'));
   return charges.map(c => {
     const d = new Date((c.created || 0) * 1000);
     const yyyy = d.getFullYear();

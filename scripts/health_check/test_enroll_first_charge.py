@@ -76,6 +76,8 @@ class FakeKV:
             return {"result": 1}
         if cmd == "ZRANGE":
             return {"result": list(self.zsets.get(args[1], []))}
+        if cmd == "MGET":
+            return {"result": [self.store.get(k) for k in args[1:]]}
         if cmd == "INCR":
             self.store[args[1]] = str(int(self.store.get(args[1]) or 0) + 1)
             return {"result": int(self.store[args[1]])}
@@ -377,12 +379,22 @@ def main():
     kv, net = FakeKV(), FakeNet()
     wh._redis_safe, urllib.request.urlopen = kv, net
     nm = wh._enroll_next_month(month)
-    kv.zsets["charge:history:index"] = [f"reg_other:{nm}"]
+    kv.zsets["charge:history:index"] = [f"reg_other:{nm}", f"reg_spot:{nm}"]
+    kv.store[f"charge:history:reg_other:{nm}"] = json.dumps({"source": "month-end-batch-v1", "status": "succeeded"})
+    kv.store[f"charge:history:reg_spot:{nm}"] = json.dumps({"source": "spot", "status": "succeeded"})
     kv.store[f"reg:pending:{rid9}"] = json.dumps(pending(rid9), ensure_ascii=False)
     wh._handle_checkout_completed(event(session(rid9, sid="cs_enroll_9")))
     o9 = net.sent[1] if len(net.sent) > 1 else {}
     check("B9. 翌月分バッチ実行済みなら塾長通知が ★要対応 で「翌月分は個別に請求」", o9.get("subject", "").startswith("★要対応") and f"{wh._enroll_month_label(nm)}分の月末バッチ" in o9.get("text", "") and "個別に請求" in o9.get("text", ""), o9)
     check("B9b. 保護者メールは通常どおり", net.sent and net.sent[0].get("to") == ["parent@example.invalid"], net.sent[:1])
+    # 翌月のエントリが個別請求だけ (バッチ由来なし) なら★を付けない
+    kv, net = FakeKV(), FakeNet()
+    wh._redis_safe, urllib.request.urlopen = kv, net
+    kv.zsets["charge:history:index"] = [f"reg_spot:{nm}"]
+    kv.store[f"charge:history:reg_spot:{nm}"] = json.dumps({"source": "manual-mark-paid", "status": "succeeded"})
+    kv.store["reg:pending:reg_t9b"] = json.dumps(pending("reg_t9b"), ensure_ascii=False)
+    wh._handle_checkout_completed(event(session("reg_t9b", sid="cs_enroll_9b")))
+    check("B9c. 翌月分に個別請求しか無ければ★を付けない (バッチ実行済みと誤認しない)", len(net.sent) > 1 and not net.sent[1].get("subject", "").startswith("★"), [m.get("subject") for m in net.sent])
 
     # ---- B10 同じ顧客の 2 件目 (申込書を送り直して 2 回支払った) ----
     rid10a, rid10b = "reg_t10a", "reg_t10b"

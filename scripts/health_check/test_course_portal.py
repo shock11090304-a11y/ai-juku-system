@@ -235,10 +235,13 @@ def main():
     kept = mod._course_member_refresh("parent@example.invalid", force=True)
     check("6b. Stripe で一時的に見つからなくても customer_id 付きの有効行は据え置く", kept and kept["status"] == "active" and kept["courses"] == ["bunpo"], kept)
     mod._course_fetch_from_stripe = fake_fetch
-    # 429: 同じ IP から 6 回目
-    for _ in range(6):
-        last = client.post("/api/course/login/request", json={"email": f"rl{_}@example.invalid"})
-    check("6c. 同一 IP 6 回目のログイン要求は 429", last.status_code == 429, last.status_code)
+    # IP の上限は 60 回/分 (視聴ページは Vercel の rewrite 経由で IP が保護者全員に共有されるため 5 回では足りない)。
+    # 6 回目はまだ通り、61 回目で 429 (メール別の上限・Stripe 問い合わせの予算で先に止まる場合も 429)
+    codes = []
+    for _ in range(61):
+        codes.append(client.post("/api/course/login/request", json={"email": f"rl{_}@example.invalid"}).status_code)
+    check("6c. 同一 IP 6 回目のログイン要求はまだ 429 にならない (共有 IP 対策)", codes[5] != 429, codes[:8])
+    check("6c2. 同一 IP 61 回目は 429", codes[-1] == 429, codes[-5:])
 
     # ---- YouTube ID 抽出 ----
     f = mod._course_youtube_id

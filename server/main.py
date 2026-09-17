@@ -50275,6 +50275,9 @@ def _course_fetch_from_stripe(email: str, customer_id: str = "") -> Optional[dic
         return None
     try:
         s = get_stripe()
+        # ★支払いリンクは決済のたびに新しい Customer を作るので、同じ保護者が講座を追加購入すると同じメールの顧客が 2 人以上になる。
+        #   DB の customer_id だけを見ると片方の講座しか拾えない (後から買った講座が消える / 一方の解約で全部止まる) ため、
+        #   id で取った顧客 + メール検索の顧客を必ず合算する (id で重複除去)。
         customers = []
         if customer_id:
             try:
@@ -50283,16 +50286,21 @@ def _course_fetch_from_stripe(email: str, customer_id: str = "") -> Optional[dic
                     customers = [cu]
             except Exception:
                 customers = []
-        if not customers:
-            try:
-                _q = email.replace("\\", "\\\\").replace("'", "\\'")
-                res = s.Customer.search(query=f"email:'{_q}'", limit=10)
-                customers = list(res.get("data") if isinstance(res, dict) else getattr(res, "data", []) or [])
-            except Exception:
-                customers = []
-        if not customers:
-            res = s.Customer.list(email=email, limit=10)
-            customers = list(res.get("data") if isinstance(res, dict) else getattr(res, "data", []) or [])
+        searched = []
+        try:
+            _q = email.replace("\\", "\\\\").replace("'", "\\'")
+            res = s.Customer.search(query=f"email:'{_q}'", limit=20)
+            searched = list(res.get("data") if isinstance(res, dict) else getattr(res, "data", []) or [])
+        except Exception:
+            searched = []
+        if not searched and not customers:
+            res = s.Customer.list(email=email, limit=20)
+            searched = list(res.get("data") if isinstance(res, dict) else getattr(res, "data", []) or [])
+        seen_ids = {(cu.get("id") if isinstance(cu, dict) else getattr(cu, "id", None)) for cu in customers}
+        for cu in searched:
+            cid = cu.get("id") if isinstance(cu, dict) else getattr(cu, "id", None)
+            if cid and cid not in seen_ids:
+                seen_ids.add(cid); customers.append(cu)
         # 完全一致だけ残す (customer_id 指定で取った顧客はそのまま信じる)
         exact = []
         for cu in customers:
@@ -50728,7 +50736,9 @@ class CourseVideoUpdateRequest(BaseModel):
 @app.post("/api/course/login/request")
 def course_login_request(payload: CourseLoginRequest, request: Request):
     """視聴ページのログインリンクをメールで送る。存在しないメールでも同じ応答 (列挙対策)。"""
-    _check_rate_limit_ip(request, bucket="course_login", limit=5, window=60)
+    # ★視聴ページは Vercel の rewrite 経由で届くので、この IP は保護者全員で共有される (Vercel の egress)。IP の上限は緩めにし、
+    #   本当の防波堤はメール単位の上限 (5 回/10 分)・宛先の上限・Stripe 問い合わせの予算にする
+    _check_rate_limit_ip(request, bucket="course_login", limit=60, window=60)
     email = _course_norm_email(payload.email)
     generic = {"ok": True, "message": "ご登録のあるメールアドレスであれば、ログイン用のリンクをお送りしました。数分たっても届かない場合は迷惑メールフォルダをご確認ください。"}
     if not email or "@" not in email:
@@ -50757,7 +50767,7 @@ def course_login_request(payload: CourseLoginRequest, request: Request):
 @app.post("/api/course/login/verify")
 def course_login_verify(payload: CourseVerifyRequest, request: Request):
     """ログインリンクの token を 30 日のセッションに交換する。"""
-    _check_rate_limit_ip(request, bucket="course_verify", limit=20, window=60)
+    _check_rate_limit_ip(request, bucket="course_verify", limit=120, window=60)   # Vercel rewrite 経由で IP が共有されるため緩め (トークンは HMAC 署名付き)
     claims = _verify_session_token((payload.token or "").strip(), expected_type="coursemagic")
     if not claims:
         raise HTTPException(status_code=401, detail="リンクが無効か、有効期限が切れています。視聴ページからもう一度ログインリンクを取得してください。")
@@ -50927,6 +50937,12 @@ def admin_course_video_notify(video_id: int, request: Request, payload: Optional
     if not row:
         raise HTTPException(status_code=404, detail="動画が見つかりません")
     v = _course_video_row(row)
+    # 受講者がまだ見られない動画 (非公開・公開日が未来) のお知らせは送らない (メールのリンク先に動画が無い)
+    if not v["is_published"]:
+        raise HTTPException(status_code=400, detail="非公開の動画です。先に公開してからお知らせを送ってください")
+    today_jst = datetime.now(JST).strftime("%Y-%m-%d")
+    if v["publish_date"] and v["publish_date"] > today_jst:
+        raise HTTPException(status_code=400, detail=f"公開日 ({v['publish_date']}) がまだ来ていません。公開日になってから送ってください")
     return {"ok": True, "notified": _course_notify_video(v, resend_all=bool(payload and payload.resend_all))}
 
 
@@ -51000,7 +51016,19 @@ def _course_webhook_touch(session_or_sub: dict, source: str) -> None:
     """本体 webhook から呼ぶ: 講座の決済完了/サブスク変更で course_members を Stripe と同期する。例外は握る。"""
     try:
         obj = session_or_sub or {}
+        if obj.get("livemode") is False:
+            return   # テストモードの決済で本物の受講者を作らない (Vercel 側の案内メールも livemode=false は送らない)
         email = _course_norm_email((obj.get("customer_email") or (obj.get("customer_details") or {}).get("email") or ""))
+        if not email and obj.get("customer"):
+            # まず手元の course_members から (Stripe が落ちていても解約が効くように)、無ければ Stripe に聞く
+            conn = db()
+            try:
+                c = conn.cursor()
+                c.execute("SELECT email FROM course_members WHERE stripe_customer_id = ?", (obj.get("customer"),))
+                r = c.fetchone()
+                email = _course_norm_email(r["email"]) if r else ""
+            finally:
+                conn.close()
         if not email and obj.get("customer") and STRIPE_SECRET_KEY:
             cu = get_stripe().Customer.retrieve(obj.get("customer"))
             email = _course_norm_email((cu.get("email") if isinstance(cu, dict) else getattr(cu, "email", "")) or "")
