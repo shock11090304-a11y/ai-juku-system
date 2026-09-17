@@ -50169,7 +50169,7 @@ def admin_class_recording_delete(recording_id: int, authorization: Optional[str]
 
 
 # ============================ 🎥 月額講座 動画視聴ページ (2026-09-16) ============================
-# 英文解釈 / 英文法 / 共通テスト対策 (各 ¥1,500/月・Stripe 支払いリンク・metadata.system=juku-payment-course) の
+# 英文解釈 (¥1,000/月) / 英文法・共通テスト対策 (各 ¥1,500/月)・Stripe 支払いリンク・metadata.system=juku-payment-course の
 # 受講者向け「講座専用の視聴ページ」(course-videos.html)。塾生アプリ (students) とは完全に別の身元表
 # course_members (メール単位) を持ち、塾生の成績・出欠などの API には一切触れられない。
 #   - 身元: course_members。正典は Stripe の有効サブスク (active/trialing/past_due)。ログイン時と

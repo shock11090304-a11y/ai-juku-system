@@ -195,7 +195,7 @@ COURSE_WELCOME_BODY = """{student_name} さん・保護者様
 {contact}
 """
 COURSE_PAYMENT_LINE_NORMAL = "月額合計 {amount}円（税込）を、毎月同じ日にご登録のカードから自動で決済します。"
-COURSE_PAYMENT_LINE_DISCOUNT = "今回のお支払いは {amount}円（税込）です。以降は毎月同じ日に、お選びいただいた講座の月額合計（1講座 1,500円・税込）をご登録のカードから自動で決済します。"
+COURSE_PAYMENT_LINE_DISCOUNT = "今回のお支払いは {amount}円（税込）です。以降は毎月同じ日に、お選びいただいた講座の月額合計（英文解釈 1,000円、英文法・共通テスト対策 各 1,500円・税込）をご登録のカードから自動で決済します。"
 COURSE_NOTIFY_SUBJECT = "[月額講座] 新規申込: {courses} / {student_name}"
 COURSE_NOTIFY_SUBJECT_FAILED = "[月額講座] ★案内メール未送信: {courses} / {student_name}"
 COURSE_NOTIFY_BODY = """月額講座の決済が完了しました。

@@ -136,6 +136,13 @@ def main():
     check("1i. KV に status=sent と講座コード・セッション作成時刻", rec.get("status") == "sent" and rec.get("courses") == ["bunpo", "kaishaku"] and rec.get("session_created") == 1789000000, rec)
     check("1j. index に session が載る", "cs_test_abc123" in kv.zsets.get("course:welcome:index", []))
 
+    # ---- 1z. 英文解釈のみ (¥1,000) の金額表示 (2026-09-17 価格改定) ----
+    kvz, rsz = FakeKV(), FakeResend()
+    mod._redis_safe, urllib.request.urlopen = kvz, rsz
+    mod._handle_checkout_completed(event({**session(sid="cs_kaishaku", combo="kaishaku"), "amount_total": 1000}))
+    check("1z. 英文解釈のみは「月額合計 1,000円」", rsz.sent and "月額合計 1,000円（税込）を、毎月同じ日に" in rsz.sent[0]["text"] and "英文解釈講座" in rsz.sent[0]["subject"], rsz.sent and rsz.sent[0]["text"][:300])
+    mod._redis_safe, urllib.request.urlopen = kv, rs
+
     # ---- 2. 再送 (別 event.id・同じ session) ----
     mod._handle_checkout_completed(event(session(), eid="evt_2"))
     check("2. 同じセッションの再送では 2 通目を送らない", len(rs.sent) == 1, len(rs.sent))
