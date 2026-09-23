@@ -253,6 +253,12 @@ def _handle_preview(handler):
                 else:
                     done_status = "pending" if str(_dv).strip() == "pending" else "success"
 
+        # 初回決済で払った月 (2026-09-23): 台帳が無くても「引き落とし済み」扱い (execute も同じ理由で skip する)
+        if not already_charged and str(r.get("first_charge_month") or "").strip() == month_str:
+            already_charged = True
+            already_charged_count += 1
+            done_status = "success"
+
         # ready 判定: setup mode + customer_id + payment_method_id + monthly_fee > 0
         issue = None
         ready = False

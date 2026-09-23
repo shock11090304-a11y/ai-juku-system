@@ -50,6 +50,7 @@ Env:
 
 from http.server import BaseHTTPRequestHandler
 import json
+import re
 import os
 import sys
 import time
@@ -211,6 +212,35 @@ def _lookup_registered_customer(customer_id):
     return None
 
 
+_MONTH_RE = re.compile(r"^\d{4}-\d{2}$")
+# 台帳 (charge:done) で「カード側で決着していない/した」扱いにする status。app.js の滞納判定 (success / requires_action / uncertain を除外) と同じ基準。
+# 3DS 待ち・要確認の月は先に月末タブの「🔧 確定」で決着させる (請求書を重ねると二重になり得る)
+_DONE_BLOCKING = ("succeeded", "processing", "requires_action", "uncertain")
+
+
+def _month_paid_by_card(rid, month, registered):
+    """その月がカード側で決着済み/決着待ちか (2026-09-23): 入塾時の初回決済の月、台帳 (charge:history) に成功の記録がある月、
+    charge:done が 成功/処理中/3DS待ち/要確認 の月。失敗の履歴だけの月や done="pending" (途中停止) は「未払い」扱い = 請求書を出せる (振込を頼む場面)"""
+    if not month or not _MONTH_RE.match(str(month)):
+        return False
+    if str((registered or {}).get("first_charge_month") or "").strip() == month:
+        return True
+    if not rid:
+        return False
+    for key in (f"charge:history:{rid}:{month}", f"charge:done:{rid}:{month}"):
+        got = _redis_safe("GET", key)
+        v = (got or {}).get("result") if isinstance(got, dict) else None
+        if not v:
+            continue
+        try:
+            j = json.loads(v) if isinstance(v, str) else None
+        except Exception:
+            j = None
+        if isinstance(j, dict) and str(j.get("status") or "") in _DONE_BLOCKING:
+            return True
+    return False
+
+
 def _create_one_invoice(secret_key, item):
     """1 顧客分の Invoice 発行。例外発生時は呼び出し側でハンドル"""
     customer_id = item.get("customerId", "").strip()
@@ -221,6 +251,9 @@ def _create_one_invoice(secret_key, item):
 
     if not customer_id.startswith("cus_"):
         return {"status": "error", "error": "invalid_customer_id", "studentName": student_name, "month": month}
+    if not _MONTH_RE.match(month):   # 2026-09-23: 月は YYYY-MM のみ (空や日付だと台帳の照合と Idempotency-Key が壊れる)
+        return {"status": "error", "error": "invalid_month", "studentName": student_name, "month": month,
+                "message": f"請求対象月の形式が不正です ({month or '空'})"}
     if amount <= 0 or amount > 10_000_000:
         return {"status": "error", "error": "invalid_amount", "studentName": student_name, "month": month}
 
@@ -235,6 +268,12 @@ def _create_one_invoice(secret_key, item):
         _log(f"month before start_month: month={month} start={start_month} cust={customer_id}")
         return {"status": "error", "error": "before_start_month", "studentName": student_name, "month": month,
                 "message": f"受講開始月 {start_month} より前の月は請求できません"}
+    # カードで引き落とし済みの月には請求書を出さない (2026-09-23。名簿の入金印が外れていても二重にしない)
+    _rid = str(registered.get("registration_id") or "")
+    if _month_paid_by_card(_rid, month, registered):
+        _log(f"already charged by card: month={month} rid={_rid} cust={customer_id}")
+        return {"status": "error", "error": "already_charged_by_card", "studentName": student_name, "month": month,
+                "message": f"{month} 分はカード側で決着済み/決着待ち (入塾時の初回決済、または台帳に 成功/3DS待ち/要確認 の記録あり) のため請求書は出せません。3DS待ち/要確認なら先に月末タブの「🔧 確定」で決着させてください"}
     registered_amount = int(registered.get("amount") or 0)
     # 月謝の ±50% 以内まで許容 (オプション増減対応)。攻撃者が任意金額請求できないようガード。
     if registered_amount > 0:

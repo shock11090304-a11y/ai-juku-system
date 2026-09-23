@@ -3034,6 +3034,7 @@ function describeChargeError(r) {
     if (rawL.includes('already charged')) return { text: 'この月は請求済み (または処理中) のため飛ばしました。', action: '' };
     if (rawL.includes('no data') || rawL.includes('parse')) return { text: '登録データが読めないため飛ばしました。', action: '' };
     if (rawL.includes('受講開始月')) return { text: '受講開始月より前の月のため請求しませんでした (在籍前・請求対象外)。', action: '' };
+    if (rawL.includes('初回決済で支払済み')) return { text: 'この月は入塾時の初回カード決済で支払済みのため請求しませんでした。', action: '' };
     return { text: `対象外のため飛ばしました (${raw})`, action: '' };
   }
   if (code === 'authentication_required' || decl === 'authentication_required') return { text: 'カード会社の本人認証 (3DS) が必要で、無人での引き落としが拒否されました。保護者にカードの再登録を依頼してください。', action: 'reregister' };
@@ -3213,6 +3214,7 @@ function monthEndArrearsFor(c, regToStudent, priorMonths) {
   const floor = (startMonth && startMonth > regMonth) ? startMonth : regMonth;
   const months = priorMonths.filter(pm => {
     if (floor && pm < floor) return false;
+    if (startMonth && pm === startMonth) { excluded++; return false; }   // 受講開始月 = 初回決済で支払済み (台帳が無くても滞納にしない・サーバも skip)
     const pay = getPayment(pm, sid);
     if (pay && pay.paid) return false;                    // 名簿で入金済 (振込など)
     // 📖 台帳に 成功/3DS待ち/要確認 の記録がある月は除外 (名簿の印が付いていなくても二重請求しない・2026-09-08)
@@ -3284,7 +3286,7 @@ function renderMonthEndTable(data) {
       const a = monthEndArrearsFor(c, meRegToStudent, mePriorMonths);
       if (a) {
         const lbl = a.months.map(m => `${parseInt(m.slice(5), 10)}月`).join('・');
-        arrearsSub = `<div style="font-size:0.74rem;color:#fbbf24;margin-top:3px;white-space:nowrap;">＋滞納 ${lbl} ¥${(a.fee * a.months.length).toLocaleString()}${a.excluded ? ` <span style="color:var(--text-dim)">(台帳で請求済の ${a.excluded} ヶ月は除外)</span>` : ''}</div>`;
+        arrearsSub = `<div style="font-size:0.74rem;color:#fbbf24;margin-top:3px;white-space:nowrap;">＋滞納 ${lbl} ¥${(a.fee * a.months.length).toLocaleString()}${a.excluded ? ` <span style="color:var(--text-dim)">(カードで引き落とし済の ${a.excluded} ヶ月は除外)</span>` : ''}</div>`;
       }
     }
     // 名簿との突合 (紐付け / 月額の食い違い / 名簿では入金済)

@@ -91,6 +91,10 @@
   ★翌月開始の登録月には台帳の記録が無いので、**受講開始月より前の月は請求しない**を 3 か所で守る: 月末バッチ `_before_start_month`
   (今月分実行・滞納まとめ請求とも execute を通る)・`payment/app.js` の滞納判定の下限 `startMonth` (readonly が返す)・`past-due-invoice.py` (💳請求書)。
   webhook は台帳 (charge:done) を名簿より先に書く (26 日のバッチと同時でも二重にならない・テスト B1c2)。ガードのテストは test_monthend_ux。
+  ★さらに「初回決済で払った月 (`first_charge_month`) は台帳の有無によらず請求しない」: execute `_paid_by_first_charge`・readonly (引き落とし済み扱い)・
+  app.js (滞納候補から除外)。💳請求書 (`past-due-invoice.py` `_month_paid_by_card`) は初回決済の月と台帳に成功記録のある月を拒否
+  (失敗履歴だけの月は出せる = 振込を頼む場面。charge:done が 3DS待ち/要確認 の月も出さない → 先に 🔧確定)。名簿の入金印が外れていても二重にならない。
+  ★初回決済を返金したときは、その月は execute/請求書とも自動では請求できない (first_charge_month の印は消えない) → Stripe か reconcile の retry で手動対応。
 - 特商法の通塾コース版は `legal.html#tokusho-juku` (入塾申込書と決済完了ページからリンク。金額・期日は申込書/HP/メールと同じ値に)。確認メールの AI学習アプリの使い始め方は `{ai_app_note}` (テスト B1x2/B1x4/B1k2)。
 - **HP の `enrollment.html` (旧・決済なしの申込書) は 2026-09-23 に廃止**: `vercel.json` で Netlify の申込書へリダイレクトし、`academy.html` の「入塾申込」も同 URL。
   ファイルは `check_timetable_sync.py` の照合元として残す (削除するとゲートが落ちる)。旧申込書からの「入塾申込フォーム」の行は来なくなるが、

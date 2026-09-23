@@ -62,7 +62,7 @@ def main():
     check("本番実行はドライラン一致が必須", "if (!monthEndDryRunValid(plan))" in js)
     check("本番実行の途中エラーで break し、成功でもエラーでも再プレビュー", "if (!dryRun) break;" in js and "if (!dryRun) setTimeout(() => fetchMonthEndPreview(), 500);   // 成功でもエラーでも必ず最新状態を取り直す" in js)
     check("個別請求・再請求・確定でも名簿に入金反映", js.count("markMonthEndChargedPaid(") >= 5)
-    check("滞納判定は台帳で請求済みの月を除外", "ledgerIndex" in js and "台帳で請求済の" in js)
+    check("滞納判定は台帳で請求済み (カードで引き落とし済) の月を除外", "ledgerIndex" in js and "カードで引き落とし済の" in js)
     check("滞納を含む本番実行の前にクラウドの名簿を同期", "await monthEndSyncRosterFromCloud()" in js)
     check("パスワードは sessionStorage から復元し月末タブでも保存", "sessionStorage.getItem(CHAT_PW_KEY)" in js and "sessionStorage.setItem(CHAT_PW_KEY, v)" in js)
     check("請求対象月モードを記憶", "MONTHEND_BILLMODE_KEY" in js and "localStorage.setItem(MONTHEND_BILLMODE_KEY" in js)
@@ -111,6 +111,11 @@ def main():
           and ex._before_start_month({}, "2026-09") == "" and ex._before_start_month(None, "2026-09") == "")
     pdi = read("api/past-due-invoice.py")
     check("💳請求書 API も受講開始月より前の月を拒否", "before_start_month" in pdi and "受講開始月" in pdi)
+    check("初回決済で払った月は台帳の有無によらず skip (翌月開始の二重請求の穴・2026-09-23)", "_paid_by_first_charge(r, current_month)" in src and "初回決済で支払済み" in src)
+    check("_paid_by_first_charge: first_charge_month == 対象月 だけ True",
+          ex._paid_by_first_charge({"first_charge_month": "2026-10"}, "2026-10") is True and ex._paid_by_first_charge({"first_charge_month": "2026-10"}, "2026-11") is False
+          and ex._paid_by_first_charge({}, "2026-10") is False and ex._paid_by_first_charge(None, "2026-10") is False)
+    check("app.js: 初回決済の月は滞納候補から外す・skip 文言", "pm === startMonth" in js and "初回決済で支払済み" in js)
     check("app.js: 滞納判定の下限は受講開始月・名簿の自動追加は初回決済の月を入塾月に", "c.startMonth" in js and "const floor" in js and "reg.firstChargeMonth : (STATE.currentMonth" in js)
 
     print("5) readonly.py (プレビュー)")
@@ -121,6 +126,26 @@ def main():
     check("プレビューは受講開始月より前を beforeStart にして合計から除く (ready は下ろさない)", '"beforeStart": before_start' in ro and 'if c.get("beforeStart") and c["ready"]' in ro)
     check("app.js: 入塾月より前は未入金/未払い/督促/請求書に出さない・月末タブは beforeStart を請求対象外表示・skip 文言・請求書エラーの日本語",
           js.count("isEnrolledFor(s, month)") >= 5 and "!c.beforeStart" in js and "受講開始月より前の月のため請求しませんでした" in js and "r.message || r.error" in js and "月分なし" in js)
+
+    print("5b) past-due-invoice.py: カードで引き落とし済みの月には請求書を出さない (2026-09-23)")
+    spec2 = importlib.util.spec_from_file_location("pdi_mod", os.path.join(REPO, "api", "past-due-invoice.py"))
+    pdi_m = importlib.util.module_from_spec(spec2)
+    spec2.loader.exec_module(pdi_m)
+    _store = {"charge:history:reg_p:2026-09": json.dumps({"status": "succeeded"}), "charge:history:reg_f:2026-09": json.dumps({"status": "failed", "failed_at": 1}),
+              "charge:done:reg_d:2026-09": "pending", "charge:done:reg_s:2026-09": json.dumps({"status": "succeeded"}),
+              "charge:done:reg_3ds:2026-09": json.dumps({"status": "requires_action"}), "charge:done:reg_u:2026-09": json.dumps({"status": "uncertain"}),
+              "charge:done:reg_bad:2026-09": json.dumps([1, 2])}
+    pdi_m._redis_safe = lambda cmd, *a: ({"result": _store.get(a[0])} if cmd == "GET" else None)
+    check("成功履歴あり → 出さない", pdi_m._month_paid_by_card("reg_p", "2026-09", {}) is True)
+    check("done に成功 → 出さない", pdi_m._month_paid_by_card("reg_s", "2026-09", {}) is True)
+    check("失敗履歴だけ → 出せる (振込を頼む場面)", pdi_m._month_paid_by_card("reg_f", "2026-09", {}) is False)
+    check("done=pending (処理中) → 成功ではないので出せる扱い", pdi_m._month_paid_by_card("reg_d", "2026-09", {}) is False)
+    check("初回決済の月 → 台帳が無くても出さない", pdi_m._month_paid_by_card("reg_x", "2026-10", {"first_charge_month": "2026-10"}) is True)
+    check("3DS 待ち / 要確認 の月 → 出さない (先に 🔧 確定)", pdi_m._month_paid_by_card("reg_3ds", "2026-09", {}) is True and pdi_m._month_paid_by_card("reg_u", "2026-09", {}) is True)
+    check("台帳の JSON が dict でなくても落ちない・月の形式が不正なら False", pdi_m._month_paid_by_card("reg_bad", "2026-09", {}) is False and pdi_m._month_paid_by_card("reg_p", "", {}) is False and pdi_m._month_paid_by_card("reg_p", "2026-9", {"first_charge_month": ""}) is False)
+    check("請求書 API は月の形式を検証する (invalid_month)", "invalid_month" in pdi and "_MONTH_RE.match(month)" in pdi)
+    check("請求書 API の本体が _month_paid_by_card を呼ぶ (already_charged_by_card)", "_month_paid_by_card(_rid, month, registered)" in pdi and "already_charged_by_card" in pdi)
+    check("プレビューも初回決済の月を「引き落とし済み」扱い", 'str(r.get("first_charge_month") or "").strip() == month_str' in ro)
 
     print("6) vercel.json")
     v = json.load(open(os.path.join(REPO, "vercel.json"), encoding="utf-8"))

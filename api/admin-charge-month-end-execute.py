@@ -177,6 +177,12 @@ def _before_start_month(r, current_month):
     return start if (start and current_month and str(current_month) < start) else ""
 
 
+def _paid_by_first_charge(r, current_month):
+    """入塾時の初回カード決済で払った月 (first_charge_month) か。台帳 (charge:done/history) が KV 障害で書けなかった稀な場合でも、
+    名簿の記録だけでその月を守る (2026-09-23)。翌月開始の生徒は 26 日の「翌月分」バッチの対象月がまさにこの月なので二重請求の穴になっていた"""
+    return bool(current_month) and str((r or {}).get("first_charge_month") or "").strip() == str(current_month)
+
+
 def _allowed_charge_months(current_ym, back=3, fwd=1):
     """current_ym ("YYYY-MM") と直前 back ヶ月・直後 fwd ヶ月の集合を返す
     (請求対象月をサーバ側でホワイトリスト化)。
@@ -424,6 +430,11 @@ class handler(BaseHTTPRequestHandler):
                     summary["skipped"] += 1
                     results.append({"registrationId": rid, "status": "skipped",
                                     "reason": f"受講開始月 {before} より前 (在籍前・請求対象外)"})
+                    continue
+                if _paid_by_first_charge(r, current_month):
+                    summary["skipped"] += 1
+                    results.append({"registrationId": rid, "status": "skipped",
+                                    "reason": "初回決済で支払済み (入塾時のカード決済がこの月の分・台帳の有無によらず請求しない)"})
                     continue
 
                 # 当月重複請求防止 (SET NX で原子的に判定)
