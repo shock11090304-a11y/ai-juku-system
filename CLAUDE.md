@@ -140,6 +140,29 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - 単元バッジの数字は**選択中レベルの在庫**で、合計とは一致しない。既定の「標準〜やや難」では 68〜75 (弱点込みで 68〜80) と出る。
   レベル選択に「基礎のみ」は無いので、25 問のドリルはどのレベル指定でも作れる (標準単独 34〜42・やや難単独 34〜40)。
 
+### 中学英語 (高校受験) のドリルは **別科目 `chugaku`** (2026-09-23)
+塾長「この問題プールに中学生レベルも追加できますか」→ **レベルを増やさず科目を増やした**。理由と落とし穴:
+- ★**未知の `level` は import で黙って `standard` に丸められ、dedup は level を見ない**ので、入れ間違えると
+  手で DELETE するまで英文法プールが汚染される。未知の `subject` は skip されるだけなので、取込順を間違えても汚染しない。
+- 初回診断・今日の1問・弱点ルーティンは `subject = 'english'` を直書きしているので、科目を分けるだけで
+  「高3の最初の1問が中2の過去形」を防御コード無しに避けられる。
+- CEO のレベル4択は「範囲の軸」なので、そこに学年の軸を混ぜると「基礎も含める」と区別できなくなる。
+- 単元名は `scripts/chugaku_dojo/units.json` の eng の `filter` と**完全一致**させる (入試道場の弱点 topic と突き合わせるため)。
+  並び順は `server/main.py` の `_GRAMMAR_SUBJECT_UNIT_ORDER` が持つ (english 以外は既定で在庫数の降順になり、学習順にならない)。
+- ★**`question_attempts.subject = 'chugaku'` は中学生の英数国理社が collapse した 1 バケット** (`:6705` の注記)。
+  ドリル科目の「中学英語」とは別物なので、週次レポートの科目ラベルは `_WEEKLY_SUBJECT_LABEL_OVERRIDE` で
+  「高校入試演習」に差し替えてある。ここを `_GRAMMAR_SUBJECT_LABEL_JA` に任せると、数学しか解いていない生徒の
+  保護者レポートが「中学英語が苦手」になる。弱点ルーティンが chugaku をドリル化しないのも同じ理由 (科目が特定できない)。
+- **在庫は 1 単元あたり standard+advanced = 50 問**にしてある。既定 (標準〜やや難・25問) で配ったあと、
+  🎯弱点対策 (`exclude_drill_id` = 前回の25問を除外) でもう一度 25 問配れる下限がこれ。**25 ちょうどだと 2 回目が必ず 400**。
+- シードは `seed-data/chugaku_drill_pool_v1.json` 1 本 (741問)。ボタンは `#chugakuPoolImportBtn`。
+- ★**デプロイ順は選べない**。`git push` 1 回で Railway と Vercel の両方が走るが、Railway は「Wait for CI」が有効で
+  `.github/workflows/server-tests.yml` を待つのに対し、**Vercel は CI を待たないので必ず先に出る**。
+  つまり「ceo.html とシードが先・サーバが後」が既定で、その窓では旧サーバが `subject=chugaku` を
+  **無言で english にフォールバック**する (`/api/admin/grammar/units` の `if subj not in _GRAMMAR_CANON_SUBJECTS`)。
+  → 対策として `gdLoadUnits` が `data.subject !== 選んだ科目` を検出したら単元を空にして
+  「サーバの再デプロイ待ちです」と出す。**押しても DB は汚れない** (配信も取込も 422 で止まる)。
+
 ### 検査は `scripts/run_all_gates.py` に寄せる (2026-08-04)
 - **教材の全ゲートを回す入口は 1 本**: `python3 scripts/run_all_gates.py` (絞るなら `... rika_kagaku`)。
   `scripts/` 以下を**再帰**で探して `check*` / `verify*` / `validate*` / `audit*` / `qa*` / `*_gate` を実行し、

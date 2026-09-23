@@ -649,8 +649,12 @@
       <!-- ✏️ 問題プール補充 (2026-06-19): grammar_questions に手作り4択(3名検証済)を無課金で一括投入 -->
       <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.30);border-radius:10px;padding:0.8rem;margin-bottom:0.8rem;">
         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-          <button id="grammarPoolImportBtn" type="button" data-seed="/seed-data/grammar_drill_pool_v1.json,/seed-data/grammar_drill_pool_v2.json" data-size="1688" title="※このボタンは英語(英文法)ドリルのみ補充します。他科目(数学・理科 等)のドリル在庫はシステム側で取込済みで、UIからの個別補充ボタンはありません。&#10;英文法ドリルの問題プール(grammar_questions)を補充: 20単元×基礎/標準/やや難の手作り4択1,688問 (第1弾703問 + 第2弾985問。いずれも3名独立ソルバーの盲検で全員一致した問題だけを採用・解説は別担当が校閲・正解位置均等化・説明は値参照)。このボタンの取込後、在庫は1単元あたり79〜87問 (単元バッジは選ばれたレベルの在庫を出すので、既定の「標準〜やや難」では68〜75と表示される)。同じ単元を繰り返し配信しても問題が被りにくい。ただし基礎レベルは1単元11〜12問のままで、ここは増えない。再押下しても重複は自動スキップ。ワンクリック取込・無課金。" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">✏️ 英文法ドリルを補充 (英語専用・20単元 1,688問・無課金)</button>
+          <button id="grammarPoolImportBtn" type="button" data-seed="/seed-data/grammar_drill_pool_v1.json,/seed-data/grammar_drill_pool_v2.json" data-size="1688" title="※このボタンは高校英語(英文法)ドリルのみ補充します。中学英語は右の🧒ボタン、他科目(数学・理科 等)はシステム側で取込済みで補充ボタンはありません。&#10;英文法ドリルの問題プール(grammar_questions)を補充: 20単元×基礎/標準/やや難の手作り4択1,688問 (第1弾703問 + 第2弾985問。いずれも3名独立ソルバーの盲検で全員一致した問題だけを採用・解説は別担当が校閲・正解位置均等化・説明は値参照)。このボタンの取込後、在庫は1単元あたり79〜87問 (単元バッジは選ばれたレベルの在庫を出すので、既定の「標準〜やや難」では68〜75と表示される)。同じ単元を繰り返し配信しても問題が被りにくい。ただし基礎レベルは1単元11〜12問のままで、ここは増えない。再押下しても重複は自動スキップ。ワンクリック取込・無課金。" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">✏️ 英文法ドリルを補充 (英語専用・20単元 1,688問・無課金)</button>
           <span id="grammarPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">押すと全20単元のドリル在庫が緑(25問+)になります。第1弾703問＋第2弾985問を続けて取り込み、すでに入っている分は自動でスキップします。</span>
+        </div>
+        <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+          <button id="chugakuPoolImportBtn" type="button" data-seed="/seed-data/chugaku_drill_pool_v1.json" data-size="741" title="🧒 中学英語(高校受験)のドリル在庫を補充: 12単元×基礎/標準/やや難の手作り4択741問(盲検3名の全員一致のみ採用・正解位置は単元ごとに散らし済み・説明は値参照)。取込後は①科目で「中学英語」を選ぶと単元が中学12単元(学習順)に入れ替わります。高校の英文法プール(english)とは別バンクなので、診断・今日の1問・弱点ドリルに中学問題が混ざることはありません。&#10;在庫は既定の「標準〜やや難」で全12単元とも50問ちょうど。25問のドリルを配ったあと、🎯弱点対策(前回の問題を除外)でもう25問まで配れます(弱点対策は④問題数が自動で10問になるので、25問にしたいときは手で戻してください)。3回目は在庫切れで配信できません。基礎は1単元8問(時制38・助動詞23)なので「基礎も含める」でも足ります。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#ea580c,#c2410c);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🧒 中学英語ドリルを補充 (12単元 741問・無課金)</button>
+          <span id="chugakuPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">中学生(高校受験)用。押したあと①科目で「🧒 中学英語」を選ぶと使えます。既定の「標準〜やや難」で12単元とも50問入ります。</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-top:0.6rem;padding-top:0.6rem;border-top:1px dashed rgba(255,255,255,0.12);">
           <button id="grammarWeaknessImportBtn" type="button" data-seed="/seed-data/grammar_drill_weakness_v1.json" title="弱点分析で抽出した検証済み4択32問を自動採点ドリルの問題プールに取り込みます。英語=関係詞・助動詞 / 古文=助動詞の意味・重要古語。取込後は単元『関係詞/助動詞/古文』を選んで該当生徒に配信できます。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">📥 弱点特訓32問を取込 (英語 関係詞・助動詞 ＋ 古文)</button>
@@ -668,6 +672,7 @@
             <option value="earth">地学</option>
             <option value="japanese">国語</option>
             <option value="social">社会</option>
+            <option value="chugaku">🧒 中学英語 (高校受験)</option>
           </select>
           <span style="color:#71717a;font-size:0.72rem;margin-left:0.3rem;">選ぶと下の単元の在庫が切り替わります</span>
         </div>
@@ -4408,10 +4413,24 @@
       try { await Promise.all([gdLoadUnits(), gdLoadStudents()]); gdRefresh(); }
       catch (e) { console.warn('[gd] init', e); }
     }
+    // 🧒 2026-09-23: 以前は失敗しても無言で return していたため、_gdSubject だけ先に進み
+    //   「科目は中学英語なのに単元チップと在庫は英文法のまま」という状態が起きた
+    //   (同名単元 時制/助動詞/比較/分詞/受動態 があるので、嘘の在庫数のまま配信まで行けてしまう)。
+    //   失敗したら単元を空にして必ず画面に出す。サーバが別科目を返したとき(=サーバがまだ
+    //   中学英語を知らない古い版)も同じ扱いにする。
     async function gdLoadUnits() {
-      const res = await AdminAuth.fetch('/api/admin/grammar/units?subject=' + encodeURIComponent(_gdSubject || 'english'));
-      if (!res.ok) return;
+      const want = _gdSubject || 'english';
+      const msgEl = document.getElementById('gdCreateMsg');
+      const fail = (why) => {
+        _gdUnits = []; _gdSelUnit = null; gdRenderUnits();
+        if (msgEl) msgEl.innerHTML = `<span style="color:#fca5a5;">⚠️ 単元の在庫を読めませんでした（${escapeHtml(why)}）。画面を再読み込みしてください。</span>`;
+      };
+      let res;
+      try { res = await AdminAuth.fetch('/api/admin/grammar/units?subject=' + encodeURIComponent(want)); }
+      catch (e) { fail('通信エラー'); return; }
+      if (!res.ok) { fail('HTTP ' + res.status); return; }
       const data = await res.json();
+      if (data.subject && data.subject !== want) { fail(`サーバがまだ「${escapeHtml(want)}」を知りません。サーバの再デプロイ待ちです`); return; }
       _gdUnits = data.units || [];
       gdRenderUnits();
     }
@@ -4421,6 +4440,7 @@
       _gdSelUnit = null;
       _gdClearRemediation();
       const m = document.getElementById('gdCreateMsg'); if (m) m.innerHTML = '';
+      _gdUnits = []; gdRenderUnits();   // 前の科目の単元を残さない (読み直し失敗時に嘘の在庫を見せない)
       await gdLoadUnits();
     }
     function gdCurrentLevels() {
@@ -4458,9 +4478,36 @@
       const list = _gdStudents.filter(s => !f || (s.name || '').toLowerCase().includes(f) || String(s.id).includes(f));
       // 🏫 = 塾生アプリ(class.html)の生徒。届く先が違う(アプリの宿題タブ / マイページ)ので配信前に見分けられるようにする。
       //    is_tsujuku_app は /api/admin/stats が返す (referrer='塾生アプリ' の登録経由)。未定義なら無印=AI管理扱い。
-      box.innerHTML = list.map(s =>
-        `<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.76rem;color:#e5e7eb;padding:0.15rem;"><input type="checkbox" class="gd-st" value="${s.id}">${s.is_tsujuku_app ? '<span title="塾生アプリの生徒" style="flex-shrink:0;">🏫</span>' : ''} ${escapeHtml(s.name || '(無名)')} <span style="color:#71717a;">#${s.id}</span></label>`
-      ).join('') || '<div style="color:#71717a;font-size:0.78rem;">該当生徒なし</div>';
+      // 🧒 2026-09-23: 学年バッジ。科目に「中学英語」が増えて、中学生に高校英文法を / 高校生に中学英語を
+      //    配ってしまう取り違えが起きうるので、名前の横に学年を出して選ぶ前に見分けられるようにする
+      //    (判定はサーバ _student_mode_from_grade と同一規約の ajStudentMode を流用)。
+      box.innerHTML = list.map(s => {
+        // 高校生(kosei)には出さない: 名簿の大半を占めるので、全員に出すと 160px のセルで氏名が折り返す。
+        //   出すのは「配信先を間違えると困る」中学生・小学生と、判定できない学年未設定だけ。
+        const m = _gdMode(s.grade);
+        const g = String(s.grade || '').trim();
+        let chip = '';
+        if (m === 'chugaku' || m === 'shougaku') {
+          const col = m === 'chugaku' ? ['rgba(52,211,153,0.16)', '#6ee7b7'] : ['rgba(251,191,36,0.16)', '#fcd34d'];
+          chip = `<span title="学年 ${escapeHtml(g)}" style="flex-shrink:0;font-size:0.66rem;font-weight:800;padding:0 0.32rem;border-radius:8px;background:${col[0]};color:${col[1]};">${escapeHtml(_gdGradeShort(g))}</span>`;
+        } else if (!m) {
+          // 学年が未設定 or student-mode.js が読めていない = 配信先の取り違えを判定できていない。
+          //   何も出さないと「高校生だから出ていない」と区別がつかないので、判定していないことを見せる。
+          chip = `<span title="学年が未設定なので、科目と学年の食い違いを確認できません" style="flex-shrink:0;font-size:0.66rem;font-weight:800;padding:0 0.32rem;border-radius:8px;background:rgba(148,163,184,0.14);color:#94a3b8;">学年?</span>`;
+        }
+        return `<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.76rem;color:#e5e7eb;padding:0.15rem;"><input type="checkbox" class="gd-st" value="${s.id}">${s.is_tsujuku_app ? '<span title="塾生アプリの生徒" style="flex-shrink:0;">🏫</span>' : ''}${chip} ${escapeHtml(s.name || '(無名)')} <span style="color:#71717a;">#${s.id}</span></label>`;
+      }).join('') || '<div style="color:#71717a;font-size:0.78rem;">該当生徒なし</div>';
+    }
+    // 学年 → 学習モード。student-mode.js の ajStudentMode(= サーバ _student_mode_from_grade と同一規約)を使う。
+    //   読み込み順の事故で未定義だったときも配信を止めないよう、'' を返して判定をスキップさせる。
+    //   ★ajStudentMode は未設定の学年も 'kosei' に倒すので、ここでは空欄を '' (判定不能) に分けて返す。
+    //     そうしないと学年未入力の生徒に中学英語を配るたびに警告が出る。
+    function _gdMode(grade) {
+      if (!String(grade == null ? '' : grade).trim()) return '';
+      try { return (typeof ajStudentMode === 'function') ? ajStudentMode(grade) : ''; } catch (e) { return ''; }
+    }
+    function _gdGradeShort(g) {
+      return String(g || '').replace('小学', '小').replace('中学', '中').replace('高校', '高').replace('年', '');
     }
     function gdFilterStudents(v) { gdRenderStudents(v); }
     function gdSelectAll(on) { document.querySelectorAll('.gd-st').forEach(c => { c.checked = on; }); }
@@ -4578,6 +4625,30 @@
       const count = parseInt(document.getElementById('gdCount').value, 10) || 25;
       const ids = Array.from(document.querySelectorAll('.gd-st:checked')).map(c => parseInt(c.value, 10));
       if (!ids.length) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">配信する生徒を1人以上選んでください</span>'; return; }
+      // 🧒 2026-09-23 取り違えガード: 「中学英語」は高校受験用、それ以外の科目は大学受験用のプール。
+      //   学年と科目が食い違う配信は事故なので確認を挟む。止めるのは次の2方向:
+      //     中学英語 → 中学生以外 (提出が question_attempts.subject='chugaku' で記録され、
+      //       高校生の週次プリント・弱点 TOP3 に公立高校入試の問題が混ざり始める)
+      //     大学受験の科目 → 中学生・小学生 (学年に合わない問題が届く)
+      //   学年未設定の生徒は判定できないので通す (止めると登録直後に配信できなくなる)。
+      //   代わりに生徒リストに灰色の「学年?」チップを出して、判定していないことを見せている。
+      const _subjJa = { english: '英語(英文法)', math: '数学', physics: '物理', chemistry: '化学',
+                        biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語(高校受験)' };
+      const _sj = _gdSubject || 'english';
+      const _isChu = _sj === 'chugaku';
+      const _mism = _gdStudents.filter(s => ids.includes(s.id))
+        .filter(s => { const m = _gdMode(s.grade); return m && (_isChu ? m !== 'chugaku' : (m === 'chugaku' || m === 'shougaku')); });
+      if (_mism.length) {
+        const _names = _mism.slice(0, 5).map(s => `${s.name || '#' + s.id}(${_gdGradeShort(s.grade) || '学年?'})`).join('、');
+        const _more = _mism.length > 5 ? ` ほか${_mism.length - 5}名` : '';
+        const _why = _isChu
+          ? '中学英語は高校受験用の問題です。中学生以外に配ると、その生徒の週次プリントや弱点演習にも高校入試の問題が出るようになります。'
+          : 'この科目は大学受験用の問題です。中学生・小学生には学年に合いません。';
+        if (!confirm(`科目「${_subjJa[_sj] || _sj}」を、学年の合わない生徒 ${_mism.length}名 に配信しようとしています。\n\n${_names}${_more}\n\n${_why}\n\nこのまま配信しますか？`)) {
+          if (msg) msg.innerHTML = '<span style="color:#fbbf24;">配信を中止しました</span>';
+          return;
+        }
+      }
       if (msg) msg.innerHTML = '⏳ 配信中...';
       const body = { subject: _gdSubject || 'english', unit: _gdSelUnit, levels, count, student_ids: ids };
       // 🎯 弱点対策モード: 前回(分析中)のドリルの問題を除外し、識別用タイトルを付けて新問を配信
@@ -4657,10 +4728,13 @@
       const box = document.getElementById('gdList'); if (!box) return;
       const items = _gdItems;
       if (!items.length) { box.innerHTML = '<div style="color:#71717a;font-size:0.8rem;padding:0.4rem;">まだドリルがありません</div>'; return; }
-      // 単元ごとに集約 (unit 未設定の旧データは title の括弧書きを除いた部分で代用)
+      // 科目 + 単元ごとに集約 (unit 未設定の旧データは title の括弧書きを除いた部分で代用)
+      //   🧒 2026-09-23: 科目を鍵に入れないと、中学英語の「時制」と英文法の「時制」が 1 枚のカードに合算され、
+      //   下の平均正解率まで混ざる。科目が違えば別の問題なので必ず分ける。
       const groups = new Map();
       items.forEach(d => {
-        const key = (d.unit && String(d.unit).trim()) || String(d.title || '').replace(/（[^）]*）/g, '').trim() || 'その他';
+        const unitKey = (d.unit && String(d.unit).trim()) || String(d.title || '').replace(/（[^）]*）/g, '').trim() || 'その他';
+        const key = (d.subject && String(d.subject).trim() ? String(d.subject).trim() : 'english') + '｜' + unitKey;
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(d);
       });
@@ -4671,16 +4745,24 @@
       const showAll = _gdShowAllGroups || entries.length <= GROUP_LIMIT;
       const visible = showAll ? entries : entries.slice(0, GROUP_LIMIT);
       let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.45rem;">';
-      html += visible.map(([unit, ds], i) => {
+      // 集約キーは "<科目>｜<単元>"。画面には単元名を出し、英文法以外のときだけ科目チップを添える
+      const SUBJ_JA = { english: '英文法', chugaku: '中学英語', math: '数学', physics: '物理', chemistry: '化学',
+                        biology: '生物', earth: '地学', japanese: '国語', social: '社会' };
+      html += visible.map(([gkey, ds], i) => {
+        const sp = String(gkey).split('｜');
+        const gsubj = sp.length > 1 ? sp[0] : 'english';
+        const unit = sp.length > 1 ? sp.slice(1).join('｜') : gkey;
+        const subjChip = gsubj === 'english' ? '' :
+          `<span style="font-size:0.7rem;color:#fbbf24;font-weight:700;background:rgba(251,191,36,0.14);border-radius:9px;padding:0.05rem 0.45rem;margin-right:0.3rem;">${escapeHtml(SUBJ_JA[gsubj] || gsubj)}</span>`;
         const assigned = ds.reduce((s, d) => s + (d.assigned || 0), 0);
         const completed = ds.reduce((s, d) => s + (d.completed || 0), 0);
         const wsum = ds.reduce((s, d) => s + (d.avg_correct_rate != null && d.completed ? d.avg_correct_rate * d.completed : 0), 0);
         const wcnt = ds.reduce((s, d) => s + (d.avg_correct_rate != null && d.completed ? d.completed : 0), 0);
         const avg = wcnt ? Math.round(wsum / wcnt * 10) / 10 : null;
         const rc = _gdRateColor(avg);
-        const open = _gdExpandedUnits.has(unit);
+        const open = _gdExpandedUnits.has(gkey);
         let card = `<div style="background:rgba(0,0,0,0.2);border:1px solid ${open ? '#60a5fa' : '#334155'};border-radius:8px;padding:0.5rem 0.7rem;${open ? 'grid-column:1 / -1;' : ''}">`;
-        card += `<div onclick="gdToggleUnit(${i})" style="cursor:pointer;"><div style="font-size:0.84rem;color:#e5e7eb;font-weight:700;">${open ? '▼' : '▶'} ${escapeHtml(unit)} <span style="font-size:0.72rem;color:#93c5fd;font-weight:700;background:rgba(96,165,250,0.15);border-radius:9px;padding:0.05rem 0.45rem;">×${ds.length}回</span></div><div style="font-size:0.73rem;color:#94a3b8;">のべ配信 ${assigned}名 / 完了 ${completed}名 ・ 平均正解率 <span style="color:${rc};font-weight:700;">${avg == null ? '—' : avg + '%'}</span></div></div>`;
+        card += `<div onclick="gdToggleUnit(${i})" style="cursor:pointer;"><div style="font-size:0.84rem;color:#e5e7eb;font-weight:700;">${open ? '▼' : '▶'} ${subjChip}${escapeHtml(unit)} <span style="font-size:0.72rem;color:#93c5fd;font-weight:700;background:rgba(96,165,250,0.15);border-radius:9px;padding:0.05rem 0.45rem;">×${ds.length}回</span></div><div style="font-size:0.73rem;color:#94a3b8;">のべ配信 ${assigned}名 / 完了 ${completed}名 ・ 平均正解率 <span style="color:${rc};font-weight:700;">${avg == null ? '—' : avg + '%'}</span></div></div>`;
         if (open) card += `<div style="display:grid;gap:0.35rem;margin-top:0.5rem;">${ds.map(_gdDrillRow).join('')}</div>`;
         card += '</div>';
         return card;
@@ -4819,13 +4901,26 @@
     // 🎯 弱点対策ドリル: 分析中ドリルで正解率の低かった生徒に、同単元の「新しい問題」を再配信する準備。
     //    配信フォームを対策モードにプリセットし、塾長が問題数を確認して「📤 ドリルを配信」を押すだけにする
     //    (外部送信=LINE/メール通知が走るため、ワンクリック完結ではなく塾長の最終確認を挟む)。
-    function gdRemediation(drillId) {
+    async function gdRemediation(drillId) {
       const msg = document.getElementById('gdCreateMsg');
       const data = _gdLastAnalytics;
       if (!data || !data.drill || String(data.drill.id) !== String(drillId)) {
         if (msg) msg.innerHTML = '<span style="color:#fca5a5;">分析を開き直してから対策ドリルを作成してください</span>'; return;
       }
       const unit = data.drill.unit;
+      // 🧒 2026-09-23: 分析元のドリルと同じ科目に切り替えてから作る。
+      //   english と chugaku は 時制/助動詞/比較/分詞/受動態 が同名なので、
+      //   画面の科目が英語のまま中学の分析から作ると、中学生に高校の問題が飛ぶ。
+      const dsubj = (data.drill.subject && String(data.drill.subject).trim()) || 'english';
+      if (dsubj !== _gdSubject) {
+        const ss = document.getElementById('gdSubject');
+        if (ss) ss.value = dsubj;
+        try { await gdSubjectChange(); }   // 単元一覧を分析元の科目で読み直す
+        catch (e) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">科目の切り替えに失敗しました。画面を再読み込みしてください。</span>'; return; }
+        // gdLoadUnits が失敗すると単元が空になる。その状態で下の known 判定に進むと
+        //   「自動作成に対応していません」という無関係な理由を出してしまう。
+        if (!_gdUnits.length) return;   // 失敗の理由は gdLoadUnits が gdCreateMsg に出している
+      }
       const known = _gdUnits.some(u => u.unit === unit);
       if (!unit || !known) {
         if (msg) msg.innerHTML = `<span style="color:#fca5a5;">このドリル（単元「${escapeHtml(String(unit || '?'))}」）は弱点対策ドリルの自動作成に対応していません</span>`; return;
@@ -4920,6 +5015,51 @@
       }
     }
     window.grammarPoolImport = grammarPoolImport;
+    // 🧒 2026-09-23 [chugaku-drill]: 中学英語プールの補充。grammarPoolImport と同じ流れだが、
+    //   シードの各問が subject='chugaku' を持つので、取込 API はそのまま中学バンクへ入れる。
+    //   高校の英文法プール(english)とは別バンクなので、既存の在庫には一切触れない。
+    async function chugakuPoolImport() {
+      const btn = document.getElementById('chugakuPoolImportBtn');
+      const msg = document.getElementById('chugakuPoolImportMsg');
+      if (!btn || !window.AdminAuth) return;
+      const seedUrl = btn.getAttribute('data-seed');
+      const sizeRaw = btn.getAttribute('data-size') || '';
+      const size = /^\d+$/.test(sizeRaw) ? Number(sizeRaw).toLocaleString('ja-JP') : sizeRaw;
+      if (!confirm(`🧒 中学英語(高校受験)のドリル問題 ${size}問(検証済) を照合し、まだ入っていない問題だけを取り込みます。よろしいですか？（取込済みの分は自動スキップ・無課金）`)) return;
+      btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ 取込中...';
+      if (msg) { msg.style.color = '#94a3b8'; msg.textContent = 'シード読込中...'; }
+      try {
+        const sr = await fetch(seedUrl, { cache: 'no-store' });
+        if (!sr.ok) throw new Error('シード取得失敗 HTTP ' + sr.status);
+        const seed = await sr.json();
+        const questions = (seed && seed.questions) || [];
+        if (!questions.length) throw new Error('シードに問題がありません');
+        if (msg) msg.textContent = `投入中... (${questions.length}問)`;
+        const res = await AdminAuth.fetch('/api/admin/grammar/import', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questions, subject: 'chugaku', dedup: true }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const d = data.detail;
+          throw new Error((typeof d === 'string' && d) ? d : (d ? JSON.stringify(d) : ('取込失敗 HTTP ' + res.status)));
+        }
+        if (msg) {
+          msg.style.color = data.errors ? '#fbbf24' : '#86efac';
+          msg.textContent = `${data.errors ? '⚠️' : '✅'} 新しく取り込んだ問題 ${data.inserted}問 / すでに入っていた分 ${data.skipped}問はスキップ / エラー ${data.errors}。①科目で「🧒 中学英語」を選ぶと使えます。`;
+        }
+        // 中学を選んでいるときだけ在庫を描き直す (英文法を見ている最中に単元が入れ替わると驚くため)
+        try {
+          const cur = (document.getElementById('gdSubject') || {}).value;
+          if (cur === 'chugaku') { await gdLoadUnits(); gdRenderUnits(); }
+        } catch (_e) {}
+      } catch (e) {
+        if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || String(e)); }
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+      }
+    }
+    window.chugakuPoolImport = chugakuPoolImport;
     // 📥 弱点特訓32問の取込 (英語 関係詞・助動詞 + 古文)。grammarPoolImport と同じ流れ。
     async function grammarWeaknessImport() {
       const btn = document.getElementById('grammarWeaknessImportBtn');
@@ -4956,6 +5096,8 @@
       if (b) b.addEventListener('click', grammarPoolImport);
       const bw = document.getElementById('grammarWeaknessImportBtn');
       if (bw) bw.addEventListener('click', grammarWeaknessImport);
+      const bc = document.getElementById('chugakuPoolImportBtn');
+      if (bc) bc.addEventListener('click', chugakuPoolImport);
     });
 
     // ========== 📤 宿題 一括割当 (2026-06-19 塾長指示: 英文法ドリルのように複数生徒へ一括で宿題) ==========
@@ -9490,7 +9632,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
 
     // 🎯 やるべきこと: 1名分の student オブジェクトから打ち手 [[tag,text],...] を算出 (モーダル/一覧で共用)
     function _actionRecs(s) {
-      const SUBJ = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学' };
+      // 🧒 chugaku は student_weakness 上では入試道場の英数国理社が collapse した1バケットなので
+      //   「中学英語」と書かない (数学の弱点が英語に見える)。サーバの _WEEKLY_SUBJECT_LABEL_OVERRIDE と同じ語。
+      const SUBJ = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学', chugaku: '高校入試演習' };
       const sj = x => SUBJ[x] || x;
       const a = s.activity || {}, adm = s.admission || {}, bd = adm.breakdown || {}, reasons = s.reason_totals || {};
       const total = a.total || 0, acc = a.accuracy, grade = s.grade || '';
@@ -9551,7 +9695,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     // 弱点 weak_topics から、自動採点ドリル化できる単元を「全部」抽出。
     // このドリル(grammar_questions)は英語(英文法)＋古文が在庫の中心。理科/数学等は対応外として注記。
     var _ENG_DRILL_UNITS = ['時制', '助動詞', '受動態', '不定詞', '動名詞', '分詞構文', '分詞', '関係詞', '仮定法', '比較', '接続詞', '前置詞', '疑問詞・間接疑問', '否定・倒置', '強調・省略', '冠詞', '名詞・代名詞', '形容詞・副詞', '話法', '語法・イディオム'];
-    var _SJ_LABEL = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学' };
+    var _SJ_LABEL = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学', chugaku: '高校入試演習' };
     // 🧩 2026-07-01 数学/理科/社会は単元が粗いので「科目まるごと」配信 (unit空=科目レベル)。英語(20単元)/国語(古文)は従来通り単元指定。
     var _SUBJECT_LEVEL_DRILL = { math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', social: '社会' };
     function _pickDrillUnits(s) {

@@ -35061,15 +35061,28 @@ def _send_weekly_report_email(to_email: str, ctx: dict) -> dict:
     return {"sent": False, "error": "max_retries_exceeded"}
 
 
+# 🧒 2026-09-23: question_attempts.subject にだけ現れる「科目ではないバケット」の表示名。
+#   入試道場 (exam=chugaku) は _infer_subject_from_pool が未マップで、中学生の英数国理社が
+#   すべて subject="chugaku" の 1 バケットに collapse する (:6705 の注記)。
+#   一方 grammar_questions 側の "chugaku" は単元ドリルの「中学英語」科目で、こちらは英語だけ。
+#   _GRAMMAR_SUBJECT_LABEL_JA をそのまま使うと、数学しか解いていない中学生の
+#   科目別正答率・weakest_subject が保護者向けレポートで「中学英語」と表示される。
+_WEEKLY_SUBJECT_LABEL_OVERRIDE = {"chugaku": "高校入試演習"}
+
+
 def _weekly_subject_label(subj_raw) -> str:
     """週次レポート表示用に subject を日本語ラベル化。canonical コード(english 等)は
-    _GRAMMAR_SUBJECT_LABEL_JA で日本語に、日本語別名はそのまま、未知は原値/『その他』。"""
+    _GRAMMAR_SUBJECT_LABEL_JA で日本語に、日本語別名はそのまま、未知は原値/『その他』。
+    ただし _WEEKLY_SUBJECT_LABEL_OVERRIDE のコードはドリル科目名と意味が違うので先に差し替える。"""
     s = str(subj_raw or "").strip()
     if not s:
         return "その他"
+    ov = _WEEKLY_SUBJECT_LABEL_OVERRIDE.get(s.lower())
+    if ov:  # canonical 化の前に見る: override に canonical でないコードを足しても効くようにする
+        return ov
     canon = _canon_grammar_subject(s)  # '' if 未知の非別名
     if canon:
-        return _GRAMMAR_SUBJECT_LABEL_JA.get(canon, s)
+        return _WEEKLY_SUBJECT_LABEL_OVERRIDE.get(canon) or _GRAMMAR_SUBJECT_LABEL_JA.get(canon, s)
     return s
 
 
@@ -44905,10 +44918,28 @@ GRAMMAR_UNITS = [
     "話法", "語法・イディオム",
 ]
 GRAMMAR_LEVELS = {"basic": "基礎", "standard": "標準", "advanced": "やや難"}
+# 🧒 2026-09-23: english 以外で「単元の並び順」が決まっている科目。単元一覧は既定で在庫数の降順に
+#   並ぶが、中学英語は学習順(中1→中3)で並んでいないと塾長が単元を探せない。ここに無い科目は従来どおり在庫順。
+#   ★ scripts/chugaku_dojo/units.json の eng の filter と同じ並び・同じ文字列にすること
+#     (入試道場の単元カタログと表記がずれると、弱点 topic との突き合わせが効かなくなる)。
+#     カタログ13件のうち「長文読解」(reading:true) だけは 4択ドリルに載らないので入れていない。
+#     読解を取り込んだら、ここに足さないと学習順ではなく末尾の在庫順に回る。
+_GRAMMAR_SUBJECT_UNIT_ORDER = {
+    "chugaku": ["be動詞・一般動詞", "時制", "助動詞", "名詞・代名詞・冠詞", "比較", "不定詞・動名詞",
+                "分詞", "受動態", "現在完了", "関係代名詞", "接続詞・前置詞", "会話表現"],
+}
 
 # 🧩 2026-06-21 [multi-subject-drill] question_attempts.subject は弱点集計 _WEAKNESS_SUBJECT_TO_POOL の
 #   canonical キー(小文字英)でないと弱点ループが推薦0で空振りする(3並列レビュー指摘)。import/create で正規化・検証。
-_GRAMMAR_CANON_SUBJECTS = {"english", "math", "physics", "chemistry", "biology", "earth", "japanese", "social"}
+# 🧒 2026-09-23 [chugaku-drill 塾長指示「単元ドリルに中学生レベルも」]: 中学英語を **別科目** として足す。
+#   レベル(basic/standard/advanced)を増やす案は採らなかった。理由:
+#   (1) 未知の level は下の import で黙って standard に丸められ、dedup が level を見ないので手 DELETE でしか戻せない。
+#       未知の subject は skip されるだけなので、投入順序を間違えても汚染しない。
+#   (2) 初回診断・今日の1問・弱点ルーティンはいずれも subject = 'english' を直書きしているので、
+#       科目を分けるだけで「高3の最初の1問が中2の過去形」を防御コードなしに避けられる。
+#   (3) CEO のレベル4択は「範囲の軸」で、そこに学年の軸を混ぜると「基礎も含める」と区別できなくなる。
+_GRAMMAR_CANON_SUBJECTS = {"english", "math", "physics", "chemistry", "biology", "earth", "japanese", "social",
+                           "chugaku"}
 _GRAMMAR_SUBJECT_ALIASES = {
     "英語": "english", "eng": "english", "english grammar": "english", "英文法": "english",
     "数学": "math", "mathematics": "math", "数iii": "math", "数学iii": "math",
@@ -44920,6 +44951,8 @@ _GRAMMAR_SUBJECT_ALIASES = {
     "国語": "japanese", "現代文": "japanese", "古文": "japanese", "漢文": "japanese",
     "社会": "social", "日本史": "social", "世界史": "social", "地理": "social",
     "公民": "social", "倫理": "social", "政治経済": "social", "政経": "social",
+    # 🧒 中学英語 (高校受験)。高校の英文法プール(english)とは別バンクで、単元名は scripts/chugaku_dojo/units.json と合わせる
+    "中学": "chugaku", "中学英語": "chugaku", "中学英文法": "chugaku", "chugaku eng": "chugaku",
 }
 def _canon_grammar_subject(s):
     """ドリル科目を弱点集計の canonical キーへ正規化。未指定は後方互換で 'english'、未知の非別名は '' を返す
@@ -44935,6 +44968,7 @@ def _canon_grammar_subject(s):
 _GRAMMAR_SUBJECT_LABEL_JA = {
     "english": "英文法", "math": "数学", "physics": "物理", "chemistry": "化学",
     "biology": "生物", "earth": "地学", "japanese": "国語", "social": "社会",
+    "chugaku": "中学英語",
 }
 def _grammar_subject_label_ja(subject):
     return _GRAMMAR_SUBJECT_LABEL_JA.get(_canon_grammar_subject(subject), "英文法")
@@ -44980,6 +45014,15 @@ def admin_grammar_units(subject: str = "english", authorization: Optional[str] =
                 units.append(agg.get(u, {"unit": u, "basic": 0, "standard": 0, "advanced": 0, "total": 0}))
             for u, slot in agg.items():
                 if u not in GRAMMAR_UNITS:
+                    units.append(slot)
+        elif subj in _GRAMMAR_SUBJECT_UNIT_ORDER:
+            # 🧒 並び順が決まっている科目(中学英語)は学習順で、在庫 0 の単元も 0 として出す。
+            #   0 を出すのは「取り込み忘れ」と「そもそも単元が無い」を塾長が区別できるようにするため。
+            _order = _GRAMMAR_SUBJECT_UNIT_ORDER[subj]
+            for u in _order:
+                units.append(agg.get(u, {"unit": u, "basic": 0, "standard": 0, "advanced": 0, "total": 0}))
+            for u, slot in agg.items():
+                if u not in _order:
                     units.append(slot)
         else:
             # 他科目は在庫のある単元のみ(total 降順) — 単元集合は科目ごとに取込内容で決まる
@@ -45324,7 +45367,9 @@ def admin_grammar_drill_create(
 #   毎日 JST 5:30 (4:00 弱点集計→5:00 週次プリントの後) に、各生徒(受験生=kosei)の最優先弱点を
 #   自動採点ドリル(10問)化して配信。生徒ごと3日周期・未完了は積まない。env WEAKNESS_DRILL_ROUTINE_ENABLED
 #   で ON (既定OFF=段階投入)。ON時は週次プリント(_run_weekly_worksheet_generation)が受験生を stand-down し
-#   二重送信を防ぐ (中学/小学は grammar_questions 在庫外=ルーティン対象外のため週次プリントを継続)。
+#   二重送信を防ぐ (中学/小学はルーティン対象外のため週次プリントを継続。2026-09-23: 単元ドリルに
+#   subject="chugaku" の中学英語プールを足したが、student_weakness 側の "chugaku" は英数国理社が
+#   collapse した 1 バケット(:6705)で科目を特定できないので、ルーティンの自動配信対象には入れない)。
 _WEAKNESS_ROUTINE_CADENCE_DAYS = 3
 _WEAKNESS_ROUTINE_DRILL_COUNT = 10
 _WEAKNESS_ROUTINE_CREATED_BY = "weakness_routine_3d"
@@ -45385,7 +45430,10 @@ def _weakness_routine_pick_drills(c, sid, limit=5):
             cand = {"subject": "japanese", "unit": "", "label": "国語"}
         elif subj in _SUBJECT_LEVEL_DRILL:
             cand = {"subject": subj, "unit": "", "label": _SUBJECT_LEVEL_DRILL[subj]}
-        # canonical 化できない(chugaku 等)→ grammar ドリル不可・次の弱点へ
+        # chugaku(中学/入試道場)は student_weakness 上で英数国理社が collapse した 1 バケット(:6705)。
+        #   単元ドリルには subject="chugaku" の中学英語プールがあるが、この弱点が英語由来かを判定できない
+        #   (数学の弱点に英文法ドリルを配ってしまう) ので自動配信はしない → 次の弱点へ。
+        #   その他 canonical 化できない subject も同様にドリル化不可。
         if cand:
             k = (cand["subject"], cand["unit"])
             if k not in seen:
@@ -45675,7 +45723,7 @@ def admin_grammar_drill_list(
         c.execute(
             # 生徒の自己発行ミニ診断 (created_by='diagnostic') は除外 (2026-06-11):
             # 生徒数分の「🔰 実力チェック」行が CEO の配信ドリル一覧 TOP50 を押し出すのを防ぐ
-            "SELECT id, title, unit, level, question_ids, created_at FROM grammar_drills "
+            "SELECT id, title, subject, unit, level, question_ids, created_at FROM grammar_drills "
             "WHERE COALESCE(created_by, 'admin') != 'diagnostic' "
             "ORDER BY created_at DESC, id DESC LIMIT ?",
             (limit,),
@@ -45743,6 +45791,9 @@ def admin_grammar_drill_list(
             items.append({
                 "id": did,
                 "title": d["title"],
+                # 🧒 2026-09-23: 科目を返す。CEO 側は (科目, 単元) で配信履歴を集約するので、
+                #   これが無いと中学英語の「時制」と英文法の「時制」が 1 枚のカードに合算される。
+                "subject": _canon_grammar_subject(d["subject"] if hasattr(d, "keys") else None) or "english",
                 "unit": d["unit"],
                 "level": d["level"],
                 "question_count": qcount,
@@ -45862,7 +45913,7 @@ def admin_grammar_drill_analytics(
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT id, title, unit, level, question_ids, created_at FROM grammar_drills WHERE id = ?", (drill_id,))
+        c.execute("SELECT id, title, subject, unit, level, question_ids, created_at FROM grammar_drills WHERE id = ?", (drill_id,))
         d = c.fetchone()
         if not d:
             raise HTTPException(status_code=404, detail="ドリルが見つかりません")
@@ -45978,6 +46029,10 @@ def admin_grammar_drill_analytics(
             "ok": True,
             "drill": {
                 "id": drill_id, "title": d["title"], "unit": d["unit"], "level": d["level"],
+                # 🧒 2026-09-23: 弱点対策ドリルを作るとき、CEO 側が「分析したドリルと同じ科目」に
+                #   切り替えるために使う。english と chugaku は 時制/助動詞/比較/分詞/受動態 が同名なので、
+                #   これが無いと中学生に高校の問題を配ってしまう。
+                "subject": _canon_grammar_subject(d["subject"] if hasattr(d, "keys") else None) or "english",
                 "created_at": str(d["created_at"]) if d["created_at"] else None,
             },
             "summary": {"assigned": assigned, "completed": completed, "avg_correct_rate": avg_score},
