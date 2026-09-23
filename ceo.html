@@ -653,8 +653,8 @@
           <span id="grammarPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">押すと全20単元のドリル在庫が緑(25問+)になります。第1弾703問＋第2弾985問を続けて取り込み、すでに入っている分は自動でスキップします。</span>
         </div>
         <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-          <button id="chugakuPoolImportBtn" type="button" data-seed="/seed-data/chugaku_drill_pool_v1.json" data-size="741" title="🧒 中学英語(高校受験)のドリル在庫を補充: 12単元×基礎/標準/やや難の手作り4択741問(盲検3名の全員一致のみ採用・正解位置は単元ごとに散らし済み・説明は値参照)。取込後は①科目で「中学英語」を選ぶと単元が中学12単元(学習順)に入れ替わります。高校の英文法プール(english)とは別バンクなので、診断・今日の1問・弱点ドリルに中学問題が混ざることはありません。&#10;在庫は既定の「標準〜やや難」で全12単元とも50問ちょうど。25問のドリルを配ったあと、🎯弱点対策(前回の問題を除外)でもう25問まで配れます(弱点対策は④問題数が自動で10問になるので、25問にしたいときは手で戻してください)。3回目は在庫切れで配信できません。基礎は1単元8問(時制38・助動詞23)なので「基礎も含める」でも足ります。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#ea580c,#c2410c);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🧒 中学英語ドリルを補充 (12単元 741問・無課金)</button>
-          <span id="chugakuPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">中学生(高校受験)用。押したあと①科目で「🧒 中学英語」を選ぶと使えます。既定の「標準〜やや難」で12単元とも50問入ります。</span>
+          <button id="chugakuPoolImportBtn" type="button" data-seed="/seed-data/chugaku_drill_pool_v1.json" data-size="1213" title="🧒 中学英語(高校受験)のドリル在庫を補充: 12単元×基礎/標準/やや難の手作り4択1,213問(盲検3名の全員一致のみ採用・正解位置は単元ごとに散らし済み・説明は値参照)。取込後は①科目で「中学英語」を選ぶと単元が中学12単元(学習順)に入れ替わります。高校の英文法プール(english)とは別バンクなので、診断・今日の1問・弱点ドリルに中学問題が混ざることはありません。&#10;在庫は1単元100問(時制だけ基礎が厚く113問)。既定の「標準〜やや難」が75問なので、同じ単元で25問のドリルを3回まで配れます。&#10;★この「別の問題で3回」は🎯弱点対策から入ったときだけです。📤ドリルを配信をそのまま3回押しても除外は効かず、毎回75問からのランダム25問になります(1回目と8問ほど重なります)。&#10;★弱点対策が除外できるのは「直前に分析した1本」だけなので、2回目は1回目と完全に別問題、3回目は2回目とは別ですが1回目と半分ほど重なります(復習になるので害はありません)。弱点対策は宛先が「正解率の低かった生徒だけ」・④問題数が自動で10問になるので、クラス全員に25問配りたいときは手で戻してください。&#10;基礎も1単元25問(時制は38問)あるので「基礎も含める」でも足ります。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#ea580c,#c2410c);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🧒 中学英語ドリルを補充 (12単元 1,213問・無課金)</button>
+          <span id="chugakuPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">中学生(高校受験)用。押したあと①科目で「🧒 中学英語」を選ぶと使えます。全12単元に 基礎25/標準45/やや難30 問(時制だけ基礎38問)が入ります。</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-top:0.6rem;padding-top:0.6rem;border-top:1px dashed rgba(255,255,255,0.12);">
           <button id="grammarWeaknessImportBtn" type="button" data-seed="/seed-data/grammar_drill_weakness_v1.json" title="弱点分析で抽出した検証済み4択32問を自動採点ドリルの問題プールに取り込みます。英語=関係詞・助動詞 / 古文=助動詞の意味・重要古語。取込後は単元『関係詞/助動詞/古文』を選んで該当生徒に配信できます。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">📥 弱点特訓32問を取込 (英語 関係詞・助動詞 ＋ 古文)</button>
@@ -693,8 +693,17 @@
         </div>
         <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.35rem;">⑤ 配信する生徒を選ぶ
           <input id="gdStudentFilter" oninput="gdFilterStudents(this.value)" placeholder="名前/IDで絞り込み" style="margin-left:0.4rem;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:5px;padding:0.25rem 0.5rem;font-size:0.78rem;width:12rem;">
-          <button onclick="gdSelectAll(true)" style="margin-left:0.3rem;background:none;color:#60a5fa;border:1px solid #475569;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">全選択</button>
+          <select id="gdGradeFilter" onchange="gdFilterStudents((document.getElementById('gdStudentFilter')||{}).value||'')" title="学年でしぼり込みます。科目に合う学年だけを出してから全選択すると、取り違えに気づきやすくなります。&#10;※学年が未設定・「その他」の生徒は判定できないので「高校生・既卒」側に出します（灰色のチップが付きます）。配り漏れを防ぐためで、その生徒が高校生だという意味ではありません。" style="margin-left:0.3rem;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:5px;padding:0.25rem 0.4rem;font-size:0.78rem;">
+            <option value="">学年: 全員</option>
+            <option value="chugaku">🧒 中学生だけ</option>
+            <option value="kosei">🎓 高校生・既卒＋学年不明</option>
+            <option value="shougaku">🎒 小学生だけ</option>
+            <option value="none">学年が未設定・その他だけ</option>
+          </select>
+          <button onclick="gdSelectAll(true)" title="いま表示されている生徒だけを選びます（学年や名前でしぼっているときは、その範囲だけ）" style="margin-left:0.3rem;background:none;color:#60a5fa;border:1px solid #475569;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">全選択</button>
           <button onclick="gdSelectAll(false)" style="background:none;color:#94a3b8;border:1px solid #475569;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">解除</button>
+          <span id="gdStudentCount" style="color:#71717a;font-size:0.72rem;margin-left:0.2rem;"></span>
+          <span id="gdSelCount" style="color:#71717a;font-size:0.72rem;margin-left:0.1rem;"></span>
         </div>
         <div id="gdGroupsRow" style="display:flex;align-items:center;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.45rem;font-size:0.76rem;">
           <span style="color:#a78bfa;font-weight:700;">👥 グループ</span>
@@ -4475,7 +4484,25 @@
     function gdRenderStudents(filter) {
       const box = document.getElementById('gdStudents'); if (!box) return;
       const f = (filter || '').toLowerCase();
-      const list = _gdStudents.filter(s => !f || (s.name || '').toLowerCase().includes(f) || String(s.id).includes(f));
+      // 🧒 2026-09-24: 中学生が25名いるので、学年でしぼれないと「全選択 → 英文法を配信」で
+      //   毎回25名分の確認ダイアログが出て、塾長が中身を読まずに OK を押す癖がつく。
+      //   先にしぼってから全選択できるようにし、確認ダイアログは最後の砦として残す。
+      //   全選択は描画済みの .gd-st だけを対象にするので、しぼった範囲がそのまま選択範囲になる。
+      const gf = (document.getElementById('gdGradeFilter') || {}).value || '';
+      // ★学年未設定を「高校生」から落とさないこと。student-mode.js の ajStudentMode も
+      //   サーバの _student_mode_from_grade も「未設定 = kosei」に倒す規約で、ここだけ第4の
+      //   バケットに分けると、学年任意で登録した高校生が「高校生だけ」に出てこず配信漏れになる
+      //   (juku-register.html の学年は任意・Stripe 経由の自動登録は grade を入れない)。
+      const list = _gdStudents
+        .filter(s => {
+          if (!gf) return true;
+          const m = _gdMode(s.grade);
+          if (gf === 'none') return !m;
+          if (gf === 'kosei') return !m || m === 'kosei';   // 未設定はここに含める
+          return m === gf;
+        })
+        .filter(s => !f || (s.name || '').toLowerCase().includes(f) || String(s.id).includes(f));
+      const nUnset = list.filter(s => !_gdMode(s.grade)).length;
       // 🏫 = 塾生アプリ(class.html)の生徒。届く先が違う(アプリの宿題タブ / マイページ)ので配信前に見分けられるようにする。
       //    is_tsujuku_app は /api/admin/stats が返す (referrer='塾生アプリ' の登録経由)。未定義なら無印=AI管理扱い。
       // 🧒 2026-09-23: 学年バッジ。科目に「中学英語」が増えて、中学生に高校英文法を / 高校生に中学英語を
@@ -4491,26 +4518,47 @@
           const col = m === 'chugaku' ? ['rgba(52,211,153,0.16)', '#6ee7b7'] : ['rgba(251,191,36,0.16)', '#fcd34d'];
           chip = `<span title="学年 ${escapeHtml(g)}" style="flex-shrink:0;font-size:0.66rem;font-weight:800;padding:0 0.32rem;border-radius:8px;background:${col[0]};color:${col[1]};">${escapeHtml(_gdGradeShort(g))}</span>`;
         } else if (!m) {
-          // 学年が未設定 or student-mode.js が読めていない = 配信先の取り違えを判定できていない。
+          // 学年が未設定・「その他」・student-mode.js が読めていない = 配信先の取り違えを判定できていない。
           //   何も出さないと「高校生だから出ていない」と区別がつかないので、判定していないことを見せる。
-          chip = `<span title="学年が未設定なので、科目と学年の食い違いを確認できません" style="flex-shrink:0;font-size:0.66rem;font-weight:800;padding:0 0.32rem;border-radius:8px;background:rgba(148,163,184,0.14);color:#94a3b8;">学年?</span>`;
+          const lbl = g ? escapeHtml(_gdGradeShort(g)) : '学年?';
+          chip = `<span title="学年「${escapeHtml(g || '(未設定)')}」は中学・高校・小学のどれか判定できません。科目との食い違いを確認できないので、配信先は目で確かめてください" style="flex-shrink:0;font-size:0.66rem;font-weight:800;padding:0 0.32rem;border-radius:8px;background:rgba(148,163,184,0.14);color:#94a3b8;">${lbl}</span>`;
         }
-        return `<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.76rem;color:#e5e7eb;padding:0.15rem;"><input type="checkbox" class="gd-st" value="${s.id}">${s.is_tsujuku_app ? '<span title="塾生アプリの生徒" style="flex-shrink:0;">🏫</span>' : ''}${chip} ${escapeHtml(s.name || '(無名)')} <span style="color:#71717a;">#${s.id}</span></label>`;
+        return `<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.76rem;color:#e5e7eb;padding:0.15rem;"><input type="checkbox" class="gd-st" value="${s.id}" onchange="gdUpdateSelCount()">${s.is_tsujuku_app ? '<span title="塾生アプリの生徒" style="flex-shrink:0;">🏫</span>' : ''}${chip} ${escapeHtml(s.name || '(無名)')} <span style="color:#71717a;">#${s.id}</span></label>`;
       }).join('') || '<div style="color:#71717a;font-size:0.78rem;">該当生徒なし</div>';
+      const cntEl = document.getElementById('gdStudentCount');
+      if (cntEl) {
+        const shown = (gf || f) ? `表示 ${list.length}/${_gdStudents.length}名` : `表示 ${_gdStudents.length}名`;
+        cntEl.textContent = shown + (nUnset ? `（うち学年が判定できない生徒 ${nUnset}名）` : '');
+      }
+      gdUpdateSelCount();   // しぼり込みで選択が外れるので、選択数を出し直す
+    }
+    // 選択中の人数。★描画のたびに DOM を作り直すのでチェックは外れる。
+    //   「表示中」の数字しか出ていないと、それを選択数と読み違えたまま配信ボタンを押してしまう。
+    function gdUpdateSelCount() {
+      const el = document.getElementById('gdSelCount'); if (!el) return;
+      const n = document.querySelectorAll('.gd-st:checked').length;
+      el.textContent = n ? `選択中 ${n}名` : '選択 0名';
+      el.style.color = n ? '#86efac' : '#71717a';
+      el.style.fontWeight = n ? '800' : '400';
     }
     // 学年 → 学習モード。student-mode.js の ajStudentMode(= サーバ _student_mode_from_grade と同一規約)を使う。
     //   読み込み順の事故で未定義だったときも配信を止めないよう、'' を返して判定をスキップさせる。
-    //   ★ajStudentMode は未設定の学年も 'kosei' に倒すので、ここでは空欄を '' (判定不能) に分けて返す。
+    //   ★ajStudentMode は未設定の学年も 'kosei' に倒すので、ここでは '' (判定不能) に分けて返す。
     //     そうしないと学年未入力の生徒に中学英語を配るたびに警告が出る。
+    //   ★空欄だけでなく「その他」も判定不能にする。登録フォーム3本(juku-register / payment/register /
+    //     exam-app/signup)に「その他」があり、ajStudentMode はこれを kosei に倒す。中学生が「その他」で
+    //     登録していると「🧒 中学生だけ」に出てこず、チップも付かないので痕跡なく配り漏れる。
     function _gdMode(grade) {
-      if (!String(grade == null ? '' : grade).trim()) return '';
-      try { return (typeof ajStudentMode === 'function') ? ajStudentMode(grade) : ''; } catch (e) { return ''; }
+      const g = String(grade == null ? '' : grade).trim();
+      if (!g) return '';
+      if (!/小学|小[1-6]年?|中学|中[1-3]年?|中受|高校|高[1-3]年?|既卒|浪人|大学/.test(g)) return '';  // 「その他」等
+      try { return (typeof ajStudentMode === 'function') ? ajStudentMode(g) : ''; } catch (e) { return ''; }
     }
     function _gdGradeShort(g) {
       return String(g || '').replace('小学', '小').replace('中学', '中').replace('高校', '高').replace('年', '');
     }
     function gdFilterStudents(v) { gdRenderStudents(v); }
-    function gdSelectAll(on) { document.querySelectorAll('.gd-st').forEach(c => { c.checked = on; }); }
+    function gdSelectAll(on) { document.querySelectorAll('.gd-st').forEach(c => { c.checked = on; }); gdUpdateSelCount(); }
     // 👥 配信グループ (サーバ保存・全端末で共有)。ドリル配信(gd)と宿題ビルダー(hwb)が同じグループを共有する。
     //   ★このscriptはIIFEなので、inline onclick から呼ぶ関数(DGapply/DGdelete/gdSaveGroup/hwbSaveGroup)は
     //     末尾の window 公開が必須(忘れると ReferenceError で無反応。2026-07-14の事故参照)。
@@ -4542,7 +4590,7 @@
     };
     // パネルごとの DOM 対応表。gd=ドリル配信 / hwb=宿題ビルダー。共通ロジックを両方に使い回す。
     const DG_PANELS = {
-      gd:  { st: 'gd-st',  chips: 'gdGroupChips',  input: 'gdGroupNameInput',  msg: 'gdGroupMsg',  filter: 'gdStudentFilter',  render: (f) => gdRenderStudents(f),  after: null },
+      gd:  { st: 'gd-st',  chips: 'gdGroupChips',  input: 'gdGroupNameInput',  msg: 'gdGroupMsg',  filter: 'gdStudentFilter',  render: (f) => gdRenderStudents(f),  after: () => { if (typeof gdUpdateSelCount === 'function') gdUpdateSelCount(); } },
       hwb: { st: 'hwb-st', chips: 'hwbGroupChips', input: 'hwbGroupNameInput', msg: 'hwbGroupMsg', filter: 'hwbStudentFilter', render: (f) => hwbRenderStudents(f), after: () => { if (typeof hwbUpdateCount === 'function') hwbUpdateCount(); } },
     };
     function DGsetMsg(panel, html) { const p = DG_PANELS[panel]; if (!p) return; const el = document.getElementById(p.msg); if (el) el.innerHTML = html; }
@@ -4590,6 +4638,9 @@
         // フィルタを解除して全生徒を再描画 → 既存選択を維持しつつグループ員を追加(＝複数グループの合成が可能)
         const already = new Set(Array.from(document.querySelectorAll('.' + p.st + ':checked')).map(c => parseInt(c.value, 10)));
         const filt = document.getElementById(p.filter); if (filt) filt.value = '';
+        // 🧒 2026-09-24: 学年フィルタも外す。外さないとグループ員が描画されず
+        //   「12名は不在」(＝退会したように読める) と出て、実際は配り漏れになる。
+        if (panel === 'gd') { const gfEl = document.getElementById('gdGradeFilter'); if (gfEl) gfEl.value = ''; }
         p.render('');
         g.student_ids.forEach(x => already.add(Number(x)));
         document.querySelectorAll('.' + p.st).forEach(c => { if (already.has(parseInt(c.value, 10))) c.checked = true; });
@@ -4617,8 +4668,12 @@
     // inline onclick 用ラッパ (保存ボタンは各パネルの名前で呼ぶ)
     function gdSaveGroup() { return DGsave('gd'); }
     function hwbSaveGroup() { return DGsave('hwb'); }
+    let _gdCreating = false;
     async function gdCreate() {
       const msg = document.getElementById('gdCreateMsg');
+      // 🧒 2026-09-24: 二度押しガード。25名一括が常態になったので、二度押すとドリルが2本でき
+      //   LINE/メールが50通飛ぶ。成功時に選択が解除されるまで1〜2秒あり、その間に押せてしまう。
+      if (_gdCreating) { if (msg) msg.innerHTML = '<span style="color:#fbbf24;">配信中です。少し待ってください</span>'; return; }
       if (!_gdSelUnit) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">先に単元を選んでください</span>'; return; }
       const lv = document.getElementById('gdLevel').value;
       const levels = lv === 'all' ? ['basic', 'standard', 'advanced'] : (lv === 'std' ? ['standard'] : (lv === 'adv' ? ['advanced'] : ['standard', 'advanced']));
@@ -4649,10 +4704,11 @@
           return;
         }
       }
-      if (msg) msg.innerHTML = '⏳ 配信中...';
+      if (msg) msg.innerHTML = `⏳ ${ids.length}名に配信中...`;
       const body = { subject: _gdSubject || 'english', unit: _gdSelUnit, levels, count, student_ids: ids };
       // 🎯 弱点対策モード: 前回(分析中)のドリルの問題を除外し、識別用タイトルを付けて新問を配信
       if (_gdExcludeDrillId) { body.exclude_drill_id = _gdExcludeDrillId; body.title = `🎯弱点対策 ${_gdSelUnit}（新問${count}問）`; }
+      _gdCreating = true;
       try {
         const res = await AdminAuth.fetch('/api/admin/grammar-drill/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const data = await res.json();
@@ -4662,6 +4718,7 @@
         if (msg) msg.innerHTML = `<span style="color:#86efac;">${escapeHtml(data.message || '配信完了')}</span>`;
         gdSelectAll(false); gdRefresh();
       } catch (e) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(String(e))}</span>`; }
+      finally { _gdCreating = false; }
     }
     // 📝 配信済みドリル一覧の集約表示 (2026-07-12 塾長指示「かなりスクロールしないといけない」):
     //   従来は最大50配信を縦1列のフルワイド行で全件描画 → 単元ごとに1カードへ集約し
@@ -4941,10 +4998,16 @@
       document.querySelectorAll('#gdUnits button').forEach(b => { b.style.outline = (b.dataset.unit === unit) ? '2px solid #f472b6' : 'none'; });
       // 生徒選択: フィルタ解除 → 全解除 → 苦戦生徒だけチェック
       const filterEl = document.getElementById('gdStudentFilter'); if (filterEl) filterEl.value = '';
+      // 学年フィルタも外す: 苦戦した生徒をチェックするので、しぼったままだと対象が描画されず選べない
+      const gfEl = document.getElementById('gdGradeFilter'); if (gfEl) gfEl.value = '';
       gdRenderStudents(''); gdSelectAll(false);
       const idset = new Set(strugglers.map(r => String(r.student_id)));
       let checkedN = 0;
       document.querySelectorAll('.gd-st').forEach(c => { if (idset.has(String(c.value))) { c.checked = true; checkedN++; } });
+      // ★JS で checked を代入しても change は発火しないので、ここで数え直す。
+      //   これが無いと「8名に配信します」と出ているのにカウンタが「選択 0名」のままになり、
+      //   選ばれていないと誤解した塾長が［全選択］を押して在籍全員に飛ばす事故になる。
+      gdUpdateSelCount();
       if (!checkedN) {
         _gdClearRemediation();
         if (msg) msg.innerHTML = '<span style="color:#fca5a5;">対象生徒が見つかりませんでした（退会済みの可能性）</span>'; return;
@@ -4961,7 +5024,7 @@
         else alert('削除失敗: ' + (data.detail || ''));
       } catch (e) { alert('削除失敗: ' + e); }
     }
-    window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits; window.gdDelete = gdDelete; window.gdRemediation = gdRemediation; window._gdClearRemediation = _gdClearRemediation; window.gdSubjectChange = gdSubjectChange; window.gdToggleUnit = gdToggleUnit; window.gdShowAllGroups = gdShowAllGroups;
+    window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits; window.gdDelete = gdDelete; window.gdRemediation = gdRemediation; window._gdClearRemediation = _gdClearRemediation; window.gdSubjectChange = gdSubjectChange; window.gdToggleUnit = gdToggleUnit; window.gdShowAllGroups = gdShowAllGroups; window.gdUpdateSelCount = gdUpdateSelCount;  /* ★inline onchange から呼ぶので window 公開が必須 (このscriptはIIFE。忘れると ReferenceError で無反応) */
     // 👥 配信グループ (inline onclick から呼ぶため window 公開必須 — このscriptはIIFEなので公開を忘れると ReferenceError で無反応になる)
     window.gdSaveGroup = gdSaveGroup; window.hwbSaveGroup = hwbSaveGroup; window.DGapply = DGapply; window.DGdelete = DGdelete;
     document.addEventListener('DOMContentLoaded', gdInit);
@@ -5034,29 +5097,47 @@
         const seed = await sr.json();
         const questions = (seed && seed.questions) || [];
         if (!questions.length) throw new Error('シードに問題がありません');
-        if (msg) msg.textContent = `投入中... (${questions.length}問)`;
-        const res = await AdminAuth.fetch('/api/admin/grammar/import', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questions, subject: 'chugaku', dedup: true }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const d = data.detail;
-          throw new Error((typeof d === 'string' && d) ? d : (d ? JSON.stringify(d) : ('取込失敗 HTTP ' + res.status)));
+        // 🧒 2026-09-24: プールが1,200問を超えたので分割して POST する。
+        //   取込 API は1リクエスト2000問までで、1回で送ると本文が数百KBになる。
+        //   dedup が効いているので、途中で失敗しても押し直せば残りだけが入る。
+        const CHUNK = 400;
+        let inserted = 0, skipped = 0, errors = 0;
+        for (let i = 0; i < questions.length; i += CHUNK) {
+          const part = questions.slice(i, i + CHUNK);
+          // 送る前に「送り終えた数」を出すと押した瞬間に 400問済みに見えるので、いま送っている範囲を出す
+          if (msg) msg.textContent = `照合中... (${i + 1}〜${Math.min(i + CHUNK, questions.length)}問目 / 全${questions.length}問)`;
+          const res = await AdminAuth.fetch('/api/admin/grammar/import', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questions: part, subject: 'chugaku', dedup: true }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            const d = data.detail;
+            throw new Error(((typeof d === 'string' && d) ? d : (d ? JSON.stringify(d) : ('取込失敗 HTTP ' + res.status)))
+              + (i === 0 ? '（1本目の送信で失敗しました。まだ何も取り込まれていません）'
+                          : `（${i}問目までは照合済み・うち新規 ${inserted}問を取り込み済み。押し直すと残りだけ入ります）`));
+          }
+          inserted += (data.inserted || 0); skipped += (data.skipped || 0); errors += (data.errors || 0);
         }
         if (msg) {
-          msg.style.color = data.errors ? '#fbbf24' : '#86efac';
-          msg.textContent = `${data.errors ? '⚠️' : '✅'} 新しく取り込んだ問題 ${data.inserted}問 / すでに入っていた分 ${data.skipped}問はスキップ / エラー ${data.errors}。①科目で「🧒 中学英語」を選ぶと使えます。`;
+          msg.style.color = errors ? '#fbbf24' : '#86efac';
+          // ★サーバの skipped には「すでに入っている分」だけでなく「形式が不正で弾いた分」も入る。
+          //   取込が壊れていても「すでに入っていた」と読めてしまうので、数が合わないときは注意書きを出す。
+          msg.textContent = `${errors ? '⚠️' : '✅'} 新しく取り込んだ問題 ${inserted}問 / 取り込まなかった問題 ${skipped}問（すでに入っている分と、形式が合わず弾かれた分の合計）/ エラー ${errors}。①科目で「🧒 中学英語」を選ぶと使えます。`;
         }
-        // 中学を選んでいるときだけ在庫を描き直す (英文法を見ている最中に単元が入れ替わると驚くため)
-        try {
-          const cur = (document.getElementById('gdSubject') || {}).value;
-          if (cur === 'chugaku') { await gdLoadUnits(); gdRenderUnits(); }
-        } catch (_e) {}
       } catch (e) {
         if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || String(e)); }
       } finally {
         btn.disabled = false; btn.textContent = orig;
+        // ★在庫の再読込は finally に置く。400問ずつに分けたので「3回目で失敗」が起こりうるが、
+        //   そこまでの分は DB に入っている。try の中だけで更新すると、バッジが取込前の数字のまま残り
+        //   「800問まで取り込み済み」というメッセージと矛盾して、入ったのかどうか画面から分からなくなる
+        //   (英文法ボタンで同じ事故を踏んで移した経緯がある)。
+        //   中学を選んでいるときだけ描き直す (英文法を見ている最中に単元が入れ替わると驚くため)。
+        try {
+          const cur = (document.getElementById('gdSubject') || {}).value;
+          if (cur === 'chugaku') { await gdLoadUnits(); }
+        } catch (_e) {}
       }
     }
     window.chugakuPoolImport = chugakuPoolImport;
