@@ -109,8 +109,20 @@ def compare(kind, json_list, server_dict, errors):
         elif jn != sn:
             errors.append(f"[{kind}] '{cid}' name 不一致: courses.json={jn!r} / register-subscribe.py={sn!r}")
             entry_ok = False
+        # label (申込書と同じ保護者向け表示名・2026-09-23) は任意だが、片方にだけあったり食い違ったりすると
+        # Stripe 明細 (register-subscribe) と従来カード登録ページ (courses.json) で名前が変わるので一致を要求する
+        jl, sl = j.get("label"), s.get("label")
+        if (jl is not None or sl is not None) and jl != sl:
+            errors.append(f"[{kind}] '{cid}' label 不一致: courses.json={jl!r} / register-subscribe.py={sl!r}")
+            entry_ok = False
+        # webhook (api/stripe-webhook.py) は内訳文字列を「設備費」「AI学習アプリ」の部分一致で分類し、"¥" と " / " で分割する。
+        # label にこれらが入ると受講料が設備費扱いになったり金額が読めなくなるので、ここで止める
+        for side, lv in (("courses.json", jl), ("register-subscribe.py", sl)):
+            if lv and any(tok in lv for tok in ("設備費", "AI学習アプリ", "¥", " / ")):
+                errors.append(f"[{kind}] '{cid}' label {lv!r} ({side}) に 設備費 / AI学習アプリ / ¥ / ' / ' を含めない (webhook の内訳分類・分割が壊れる)")
+                entry_ok = False
         if entry_ok:
-            print(f"  {PASS} [{kind}] {cid}: {jn} ¥{jp:,}")
+            print(f"  {PASS} [{kind}] {cid}: {jn} ¥{jp:,}" + (f"  (表示名: {jl})" if jl else ""))
 
 
 def main():

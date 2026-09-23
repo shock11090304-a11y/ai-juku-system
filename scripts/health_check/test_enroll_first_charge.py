@@ -129,8 +129,8 @@ def payload(**kw):
 
 def pending(rid, fee=8850):
     return {"registration_id": rid, "session_id": "cs_enroll_1", "status": "pending", "created_at": 1789000000,
-            "fee": fee, "monthly_fee": fee, "breakdown": ["高校2年英文法 ¥7,500", "設備費 (¥1,350) ¥1,350"],
-            "fee_breakdown": "高校2年英文法 ¥7,500 / 設備費 (¥1,350) ¥1,350", "stripe_customer_id": "cus_1",
+            "fee": fee, "monthly_fee": fee, "breakdown": ["高2 英文法 ¥7,500", "設備費 (¥1,350) ¥1,350"],
+            "fee_breakdown": "高2 英文法 ¥7,500 / 設備費 (¥1,350) ¥1,350", "stripe_customer_id": "cus_1",
             "checkout_mode": "payment", "system": "juku-payment-monthly", "first_charge": True, "entry_fee": 10000,
             "first_total": 10000 + fee, "app_id": "AB12CD34", "studentName": TARO, "grade": "高校2年",
             "parentName": HANAKO, "email": "parent@example.invalid", "phone": "090-0000-0000",
@@ -140,7 +140,7 @@ def pending(rid, fee=8850):
 def session(rid, sid="cs_enroll_1", paid=True, livemode=True, mode="payment", first="1"):
     md = {"registration_id": rid, "system": "juku-payment-monthly", "student_name": TARO, "grade": "高校2年",
           "parent_name": HANAKO, "email": "parent@example.invalid", "phone": "090-0000-0000", "courses": "kou2-grammar",
-          "options": "facility-1350", "fee_breakdown": "高校2年英文法 ¥7,500 / 設備費 (¥1,350) ¥1,350", "monthly_fee": "8850",
+          "options": "facility-1350", "fee_breakdown": "高2 英文法 ¥7,500 / 設備費 (¥1,350) ¥1,350", "monthly_fee": "8850",
           "entry_fee": "10000", "first_total": "18850", "app_id": "AB12CD34", "source": "enrollment-form-v1-payment"}
     if first:
         md["first_charge"] = first
@@ -192,6 +192,7 @@ def main():
     check("A1g. 従来の setup 登録は設備費なしでも可 (挙動不変)", not errs, errs)
     fee, breakdown = reg._calculate_fee(clean["courses"], clean["options"])
     check("A1e. 月額 = 7,500 + 1,350", fee == 8850, fee)
+    check("A1k. 内訳は申込書と同じ表示名 (label): 「高2 英文法 ¥7,500」", any(b.startswith("高2 英文法 ¥7,500") for b in breakdown), breakdown)
     # ---- AI学習アプリ (ai-app-5000・2026-09-23) ----
     errs, clean_ai = reg._validate(payload(options=["facility-1350", "ai-app-5000"]))
     fee_ai, breakdown_ai = reg._calculate_fee(clean_ai["courses"], clean_ai["options"])
@@ -229,7 +230,7 @@ def main():
     amounts = [int(v) for k, v in (cs[0][1] if cs else []) if k.endswith("[price_data][unit_amount]")]
     names = [v for k, v in (cs[0][1] if cs else []) if k.endswith("[product_data][name]")]
     check("A2d. 明細 3 行 = 入塾金 10,000 + 受講料 7,500 + 設備費 1,350 = 18,850", amounts == [10000, 7500, 1350] and sum(amounts) == 18850, amounts)
-    check("A2e. 明細名: 入塾金（初回のみ）/ 高校2年英文法 受講料（初月分）/ 設備費（初月分）", names == ["入塾金（初回のみ）", "高校2年英文法 受講料（初月分）", "設備費（初月分）"], names)
+    check("A2e. 明細名は申込書と同じ表示名: 入塾金（初回のみ）/ 高2 英文法 受講料（初月分）/ 設備費（初月分）", names == ["入塾金（初回のみ）", "高2 英文法 受講料（初月分）", "設備費（初月分）"], names)
     check("A2f. metadata.monthly_fee は月額 8,850 (入塾金を含めない)・first_total=18,850・first_charge=1・app_id",
           form.get("metadata[monthly_fee]") == "8850" and form.get("metadata[first_total]") == "18850"
           and form.get("metadata[first_charge]") == "1" and form.get("metadata[app_id]") == "AB12CD34", form)
@@ -333,8 +334,9 @@ def main():
     body = m.get("text", "")
     check("B1i. 保護者宛・件名", m.get("to") == ["parent@example.invalid"] and m.get("subject") == "【トリリオン英語塾】ご入塾のお申し込みとお支払いの確認", (m.get("to"), m.get("subject")))
     check("B1j. 宛名は保護者名", body.startswith("テスト 花子 様"), body[:40])
-    for s_ in ("入塾金（初回のみ）：10,000円", "設備費：1,350円", "受講料（初月分・日割りなし）：7,500円", "合計：18,850円", "月額 8,850円", "高校2年英文法", "前月 15 日まで", "26 日前後"):
+    for s_ in ("入塾金（初回のみ）：10,000円", "設備費：1,350円", "受講料（初月分・日割りなし）：7,500円", "合計：18,850円", "月額 8,850円", "高2 英文法", "前月 15 日まで", "26 日前後"):
         check(f"B1k. 本文に「{s_}」", s_ in body, body)
+    check("B1k2. AI 無しの申込のメールに AI学習アプリの案内は出ない", "AI学習アプリ" not in body, body)
     ml, nl = wh._enroll_month_label(month), wh._enroll_month_label(wh._enroll_next_month(month))
     check("B1l. 本文に 当月分/翌月分 のラベル (今月分/翌月分どちらの月末運用でも嘘にならない文)", f"（{ml}分）" in body and f"{nl}分以降は" in body and f"{nl}分は {ml} 26 日前後" in body and "末の引き落としはありません" not in body and "LINE でお知らせします）" not in body, body)
     check("B1m. 本文に LINE URL・受付番号・申込ID・窓口", "https://lin.ee/ZHlrRjh" in body and "cs_enroll_1" in body and "AB12CD34" in body and "info@trillion-ai-juku.com" in body, body)
@@ -353,7 +355,7 @@ def main():
     check("B1s1. 本体 API /api/course-applications に 1 回 POST (氏名・保護者メール・referrer=入塾申込フォーム・学年・電話)",
           len(net.courseapps) == 1 and ca.get("name") == TARO and ca.get("email") == "parent@example.invalid" and ca.get("referrer") == "入塾申込フォーム"
           and ca.get("grade") == "高校2年" and ca.get("phone") == "090-0000-0000", net.courseapps)
-    check("B1s2. note に 申込ID・受付番号・初回決済額・月額・内訳", all(s_ in ca.get("note", "") for s_ in ("AB12CD34", "cs_enroll_1", "18,850円", "8,850円", "高校2年英文法 ¥7,500", "2 行まとめて承認")), ca.get("note"))
+    check("B1s2. note に 申込ID・受付番号・初回決済額・月額・内訳", all(s_ in ca.get("note", "") for s_ in ("AB12CD34", "cs_enroll_1", "18,850円", "8,850円", "高2 英文法 ¥7,500", "2 行まとめて承認")), ca.get("note"))
     check("B1s3. 二重作成防止の印 enroll:courseapp:<rid>", f"enroll:courseapp:{rid}" in kv.store, [k for k in kv.store if k.startswith("enroll:courseapp")])
     check("B1s4. 塾長通知に「作成済み」と『2 行まとめて承認』の指示・★なし", "CEO 申込待ちの「入塾申込フォーム」行: 作成済み" in o.get("text", "") and "2 行まとめて承認" in o.get("text", "") and "★" not in o.get("text", ""), o.get("text"))
 
@@ -362,7 +364,7 @@ def main():
     kvx, netx = FakeKV(), FakeNet(amount=23850)
     wh._redis_safe, urllib.request.urlopen = kvx, netx
     px = pending(ridx, fee=13850)
-    px["breakdown"] = ["高校2年英文法 ¥7,500", "設備費 (¥1,350) ¥1,350", "AI学習アプリ ¥5,000"]
+    px["breakdown"] = ["高2 英文法 ¥7,500", "設備費 (¥1,350) ¥1,350", "AI学習アプリ ¥5,000"]
     px["fee_breakdown"] = " / ".join(px["breakdown"]); px["options"] = ["facility-1350", "ai-app-5000"]; px["first_total"] = 23850
     kvx.store[f"reg:pending:{ridx}"] = json.dumps(px, ensure_ascii=False)
     sx = session(ridx, sid="cs_enroll_x")
@@ -375,7 +377,8 @@ def main():
     check("B1x1. 名簿の monthly_fee=13,850 (AI学習アプリ込み)・amount=23,850", recx.get("monthly_fee") == 13850 and recx.get("amount") == 23850, recx)
     check("B1x2. 保護者メール: 受講料 7,500 とは別に AI学習アプリ 5,000 の行・合計 23,850・月額 13,850（設備費＋受講料＋AI学習アプリ）・今月分に AI も含む",
           "受講料（初月分・日割りなし）：7,500円" in bx and "AI学習アプリ（月額オプション・初月分）：5,000円" in bx and "合計：23,850円" in bx
-          and "月額 13,850円（設備費＋受講料＋AI学習アプリ・税込）" in bx and "受講料・AI学習アプリと設備費は含まれています" in bx, bx)
+          and "月額 13,850円（設備費＋受講料＋AI学習アプリ・税込）" in bx and "受講料・AI学習アプリと設備費は含まれています" in bx
+          and "AI学習アプリ（月額オプション）は、塾生アプリのご登録を塾長が承認したあと" in bx, bx)
     check("B1x3. 塾長通知: オプション行・初回決済額の内訳に AI学習アプリ・承認は［OK］(AIあり) の指示。申込待ちの行の note にも同じ指示 (ceo.js _aiHint が読む)",
           "オプション: AI学習アプリ 5,000円/月" in ox and "受講料 7,500 + AI学習アプリ 5,000" in ox and "［OK］(AIあり)" in ox
           and "AI学習アプリ（月額オプション +5,000 円）申込済み → 承認は［OK］(AIあり) で" in (netx.courseapps[0].get("note", "") if netx.courseapps else ""), (ox, netx.courseapps))
@@ -396,7 +399,8 @@ def main():
     ok_ = netk.sent[1].get("text", "") if len(netk.sent) > 1 else ""
     check("B1x4. 国公立: 受講料 25,000・AI学習アプリは 0 円で「含まれています」・月額 26,350 (＋AI学習アプリ と書かない)・塾長通知に同梱",
           "受講料（初月分・日割りなし）：25,000円" in bk and "AI学習アプリ：0円（国公立難関大学コースに含まれています）" in bk and "合計：36,350円" in bk
-          and "月額 26,350円（設備費＋受講料・税込）" in bk and "オプション: AI学習アプリ（国公立難関大学コースに同梱・0円）" in ok_, (bk, ok_))
+          and "月額 26,350円（設備費＋受講料・税込）" in bk and "オプション: AI学習アプリ（国公立難関大学コースに同梱・0円）" in ok_
+          and "国公立難関大学コースに含まれる AI学習アプリも" in bk, (bk, ok_))
     wh._redis_safe, urllib.request.urlopen = kv, net
 
     # ---- B1y 申込待ちへの行作成が失敗しても名簿・台帳・メールは止めず、塾長通知が ★要対応 になる ----

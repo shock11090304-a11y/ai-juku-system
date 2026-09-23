@@ -82,6 +82,9 @@
   (academy.html の料金表) なので `_validate` が一緒に来た `ai-app-5000` を落とす (申込書側も `payment/register.html` も国公立を選ぶと欄が外れる)。
   同梱のときは内訳に「AI学習アプリ（国公立難関大学コースに同梱） ¥0」を残し、webhook のメールは AI学習アプリを受講料とは別の行 (`option_lines` / `options_label`) に出す。
   テスト A1h/A1i/A1j (aiAppIncluded)・A2x・A4g (do_POST→webhook の往復)・B1x。
+- **コース名の 2 本立て (2026-09-23)**: `COURSES[id]["name"]` / `courses.json` の `name` は月謝アプリの名簿の正規名 (`payment/app.js` が名前で正規化・単価照合) なので**変えない**。
+  保護者に見せる Stripe 明細・内訳 (`_calculate_fee` の breakdown)・確認メール・`payment/register.html` の表示は `label` (= 入塾申込書と同じ表示名)。`check_course_price_sync.py` が label も照合。
+- 特商法の通塾コース版は `legal.html#tokusho-juku` (入塾申込書と決済完了ページからリンク。金額・期日は申込書/HP/メールと同じ値に)。確認メールの AI学習アプリの使い始め方は `{ai_app_note}` (テスト B1x2/B1x4/B1k2)。
 - **HP の `enrollment.html` (旧・決済なしの申込書) は 2026-09-23 に廃止**: `vercel.json` で Netlify の申込書へリダイレクトし、`academy.html` の「入塾申込」も同 URL。
   ファイルは `check_timetable_sync.py` の照合元として残す (削除するとゲートが落ちる)。旧申込書からの「入塾申込フォーム」の行は来なくなるが、
   代わりに決済完了の webhook が同じ referrer の行を作る (下記★) ので、申込待ちには従来どおり 2 行 (入塾申込フォーム + 塾生アプリ登録) が並ぶ。

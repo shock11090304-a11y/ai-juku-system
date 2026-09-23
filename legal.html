@@ -35,6 +35,7 @@
     <aside class="legal-toc">
       <div class="toc-title">目次</div>
       <a href="#tokusho" class="toc-link active">特定商取引法に基づく表記</a>
+      <a href="#tokusho-juku" class="toc-link">特定商取引法に基づく表記（通塾コース）</a>
       <a href="#terms" class="toc-link">利用規約</a>
       <a href="#privacy" class="toc-link">プライバシーポリシー</a>
     </aside>
@@ -44,6 +45,7 @@
       <section id="tokusho" class="legal-section">
         <div class="eyebrow">LEGAL</div>
         <h1>特定商取引法に基づく表記</h1>
+        <p class="legal-intro">AIコーチング（月額プラン・月額講座・無料体験）に関する表記です。オンライン塾「トリリオン英語塾」の通塾コースについては<a href="#tokusho-juku">通塾コースの表記</a>をご覧ください。</p>
         <table class="legal-table">
           <tr><th>販売業者</th><td>AIコーチング 運営事務局</td></tr>
           <tr><th>運営統括責任者</th><td>足立 翔平</td></tr>
@@ -134,6 +136,43 @@
             モダンなWebブラウザ（Chrome, Safari, Firefox, Edge の最新版）<br>
             インターネット接続環境
           </td></tr>
+        </table>
+      </section>
+
+      <!-- 特商法（通塾コース・トリリオン英語塾） 2026-09-23: 入塾申込書 (Netlify) と決済完了ページからここにリンクする。
+           金額・期日は academy.html / 入塾申込書 / api/register-subscribe.py / api/stripe-webhook.py の確認メールと同じ値にすること -->
+      <section id="tokusho-juku" class="legal-section">
+        <div class="eyebrow">LEGAL</div>
+        <h1>特定商取引法に基づく表記（通塾コース・トリリオン英語塾）</h1>
+        <p class="legal-intro">オンライン塾「トリリオン英語塾（Trillion English Academy）」の通塾コース（ライブ授業・学習管理コース・国公立難関大学コース・AI学習アプリ オプション）に関する表記です。AIコーチングの月額プランおよび月額講座については上の表記をご覧ください。</p>
+        <table class="legal-table">
+          <tr><th>販売業者</th><td>トリリオン英語塾（Trillion English Academy）</td></tr>
+          <tr><th>運営統括責任者</th><td>足立 翔平</td></tr>
+          <tr><th>所在地</th><td>（請求があった場合、遅滞なく開示します）</td></tr>
+          <tr><th>電話番号</th><td>（請求があった場合、遅滞なく開示します）</td></tr>
+          <tr><th>連絡先</th><td>公式 LINE（<a href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener">https://lin.ee/ZHlrRjh</a>）／メール info@trillion-ai-juku.com</td></tr>
+          <tr><th>販売価格（税込）</th><td>
+            ・入塾金：10,000円（初回のみ）<br>
+            ・設備費：月額 1,350円（全コース共通）<br>
+            ・受講料（月額）：通常コース（中学応用・中学基礎・中学2年英語・高2英文法・英文法 Lv.1/Lv.2・長文読解 Lv.1/Lv.2・高校国語）および英検2級対策 各 7,500円／英検準1級対策 8,500円／GMARCHコース・早慶クラス 各 12,500円／学習管理コース 22,500円／国公立難関大学コース 25,000円（各コースの内容と曜日は<a href="academy.html#pricing">塾ホームページの料金表</a>をご覧ください）<br>
+            ・AI学習アプリ（任意のオプション）：月額 5,000円（国公立難関大学コースには無料で含まれます）
+          </td></tr>
+          <tr><th>追加手数料等の付帯費用</th><td>通信費はお客様のご負担。教材（PDF）は受講料に含まれます。入塾前の授業アーカイブの視聴をご希望の場合は別途 20,000円（税込）</td></tr>
+          <tr><th>支払方法</th><td>クレジットカード決済（Stripe）。カード以外をご希望の場合はご相談ください</td></tr>
+          <tr><th>支払時期</th><td>
+            ・初回：入塾申込書の送信後、そのままオンラインで<strong>入塾金＋設備費＋初月分の受講料</strong>（AI学習アプリをお申し込みの場合はその初月分も。月の途中のご入塾でも日割りはありません）をお支払いいただき、そのカードを翌月分以降の決済用に登録します<br>
+            ・2か月目以降：<strong>毎月 26 日前後に翌月分</strong>（受講料＋設備費＋オプション）を登録カードから自動決済します（前払い）
+          </td></tr>
+          <tr><th>サービス提供時期</th><td>初回のお支払い完了後、確認メールをお送りし、塾長より初回授業の日時をご連絡します。授業は Zoom によるオンライン授業です</td></tr>
+          <tr><th>解約（退塾）・コースやオプションの変更</th><td>
+            変更・停止したい月の<strong>前月 15 日まで</strong>に公式 LINE またはメールにてご連絡ください（翌月分から反映します）。<br>
+            期日を過ぎてのお申し出は、翌月分の受講料・設備費が発生いたします。カードの変更は同じ窓口でいつでも承ります
+          </td></tr>
+          <tr><th>返品・返金について</th><td>
+            月の途中での退塾による日割りの返金、および入塾金の返金はいたしかねます。<br>
+            解約・変更のご連絡の後、行き違いで決済された分は返金します
+          </td></tr>
+          <tr><th>動作環境</th><td>Zoom（授業）、モダンな Web ブラウザ（塾生アプリ・AI学習アプリ）、インターネット接続環境</td></tr>
         </table>
       </section>
 

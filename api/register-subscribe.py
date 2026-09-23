@@ -93,27 +93,30 @@ def _json(handler, status, payload):
 # ─────────────── コースカタログ (server-side single source of truth) ───────────────
 # payment/courses.json と同期 (こちらが実課金額の計算元)。価格改定時は両方を同じ値に更新し、
 # `python3 scripts/check_course_price_sync.py` で一致を検証すること。
+# name = 月謝アプリの名簿の正規名 (payment/app.js が名前で正規化・単価照合するので変えない)。
+# label = 入塾申込書 (Netlify) と同じ保護者向け表示名 (2026-09-23)。Stripe の明細・内訳 (breakdown)・確認メールはこちらを使う。
+# label が無いコース (申込書に載らないもの) は name を表示する。両ファイルの同期は scripts/check_course_price_sync.py が label も照合する。
 COURSES = {
     "kobetsu":       {"name": "個別指導",      "price": 25000},
     "ronin":         {"name": "浪人生",        "price": 30000},
-    "kokuritsu":     {"name": "国公立難関大学", "price": 25000},
-    "kanri":         {"name": "学習管理",      "price": 22500},
+    "kokuritsu":     {"name": "国公立難関大学", "price": 25000, "label": "国公立難関大学コース"},
+    "kanri":         {"name": "学習管理",      "price": 22500, "label": "学習管理コース"},
     "kanri-monitor": {"name": "学習管理モニター", "price": 16500},
-    "gmarch":        {"name": "GMARCH",     "price": 12500},
-    "soukei":        {"name": "早慶クラス",     "price": 12500},
-    "eiken-jun1":    {"name": "英検準１級",     "price": 8500},
-    "chu2":          {"name": "中学2年",       "price": 7500},
-    "chu1":          {"name": "中学基礎（中1・中2）", "price": 7500},
-    "chu3-monday":   {"name": "月曜中３英文法",   "price": 7500},
-    "grammar-1":     {"name": "英文法レベル１",   "price": 7500},
-    "grammar-2":     {"name": "英文法レベル２",   "price": 7500},
+    "gmarch":        {"name": "GMARCH",     "price": 12500, "label": "GMARCHコース（大学別演習）"},
+    "soukei":        {"name": "早慶クラス",     "price": 12500, "label": "早慶クラス（大学別演習）"},
+    "eiken-jun1":    {"name": "英検準１級",     "price": 8500, "label": "英検準1級対策"},
+    "chu2":          {"name": "中学2年",       "price": 7500, "label": "中学2年 英語"},
+    "chu1":          {"name": "中学基礎（中1・中2）", "price": 7500, "label": "中学基礎（定期テスト・中1/2）"},
+    "chu3-monday":   {"name": "月曜中３英文法",   "price": 7500, "label": "中学応用（受験・中3）"},
+    "grammar-1":     {"name": "英文法レベル１",   "price": 7500, "label": "英文法 Lv.1（標準・高1/2）"},
+    "grammar-2":     {"name": "英文法レベル２",   "price": 7500, "label": "英文法 Lv.2（難関・高3）"},
     "kaishaku":      {"name": "英文解釈",       "price": 7500},
     "eiken-jun2":    {"name": "英検準２級",     "price": 7500},
-    "eiken-2":       {"name": "英検２級",      "price": 7500},
-    "long-1":        {"name": "英語長文レベル１", "price": 7500},
-    "long-2":        {"name": "英語長文レベル２", "price": 7500},
-    "kou2-grammar":  {"name": "高校2年英文法",   "price": 7500},
-    "kokugo":        {"name": "高校国語",       "price": 7500},
+    "eiken-2":       {"name": "英検２級",      "price": 7500, "label": "英検2級対策"},
+    "long-1":        {"name": "英語長文レベル１", "price": 7500, "label": "長文読解 Lv.1（標準・高1/2）"},
+    "long-2":        {"name": "英語長文レベル２", "price": 7500, "label": "長文読解 Lv.2（難関・高3）"},
+    "kou2-grammar":  {"name": "高校2年英文法",   "price": 7500, "label": "高2 英文法"},
+    "kokugo":        {"name": "高校国語",       "price": 7500, "label": "高校国語（現代文・古文）"},
 }
 # 入塾金 (初回のみ)。courses.json には入れない (入れると月額として毎月請求される)。入塾申込書の表示額 10,000 円と一致させること
 ENTRY_FEE = 10000
@@ -262,7 +265,7 @@ def _calculate_fee(courses, options):
         info = COURSES.get(c)
         if info:
             total += info["price"]
-            breakdown.append(f"{info['name']} ¥{info['price']:,}")
+            breakdown.append(f"{info.get('label') or info['name']} ¥{info['price']:,}")   # 保護者に見せる内訳は申込書と同じ表示名
     for o in options:
         info = OPTIONS.get(o)
         if info:
@@ -515,7 +518,7 @@ def _create_first_charge_session(secret_key, payload, fee, breakdown, registrati
     for c in payload["courses"]:
         info = COURSES.get(c)
         if info:
-            items.append((f"{info['name']} 受講料（初月分）", info["price"]))
+            items.append((f"{info.get('label') or info['name']} 受講料（初月分）", info["price"]))   # 明細も申込書と同じ表示名
     for o in payload["options"]:
         info = OPTIONS.get(o)
         if info:

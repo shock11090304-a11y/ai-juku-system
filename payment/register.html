@@ -437,7 +437,7 @@ function renderCourses() {
     if (!tcourses.length) continue;
     html += `<div class="course-tier"><div class="tier-label">${t.label}</div><div class="course-grid">`;
     for (const c of tcourses) {
-      html += `<div class="course-card" data-id="${c.id}"><div class="cn">${escapeHtml(c.name)}</div><div class="cp">¥${c.price.toLocaleString()}/月</div></div>`;
+      html += `<div class="course-card" data-id="${c.id}"><div class="cn">${escapeHtml(c.label || c.name)}</div><div class="cp">¥${c.price.toLocaleString()}/月</div></div>`;
     }
     html += `</div></div>`;
   }
@@ -498,7 +498,7 @@ function updateTotal() {
   const breakdown = [];
   for (const id of STATE.selected) {
     const c = STATE.courses.find(x => x.id === id);
-    if (c) { total += c.price; breakdown.push(`${c.name} ¥${c.price.toLocaleString()}`); }
+    if (c) { total += c.price; breakdown.push(`${c.label || c.name} ¥${c.price.toLocaleString()}`); }
   }
   for (const id of STATE.selectedOpts) {
     const o = STATE.options.find(x => x.id === id);
@@ -544,7 +544,7 @@ function showConfirmModal() {
   let courseRows = '';
   for (const id of p.courses) {
     const c = STATE.courses.find(x => x.id === id);
-    if (c) { total += c.price; courseRows += `<div class="scrow"><div class="scn">${escapeHtml(c.name)}</div><div class="scp">¥${c.price.toLocaleString()}</div></div>`; }
+    if (c) { total += c.price; courseRows += `<div class="scrow"><div class="scn">${escapeHtml(c.label || c.name)}</div><div class="scp">¥${c.price.toLocaleString()}</div></div>`; }
   }
   for (const id of p.options) {
     const o = STATE.options.find(x => x.id === id);
@@ -557,7 +557,7 @@ function showConfirmModal() {
     const neutral = neutralCourseIds();
     const mismatched = p.courses.filter(id => !allowed.includes(id) && !neutral.has(id));
     if (mismatched.length) {
-      const names = mismatched.map(id => STATE.courses.find(c => c.id === id)?.name).filter(Boolean);
+      const names = mismatched.map(id => { const c = STATE.courses.find(x => x.id === id); return c && (c.label || c.name); }).filter(Boolean);
       mismatchNote = `<div class="summary-note" style="background:rgba(239,68,68,0.10);border-color:rgba(239,68,68,0.4);color:#fca5a5;">⚠️ 学年「${escapeHtml(p.grade)}」と一致しないコースが含まれています: ${escapeHtml(names.join(', '))}<br>このまま登録すると ¥${total.toLocaleString()} で月額決済が開始されます。問題ない場合のみ進んでください。</div>`;
     }
   }

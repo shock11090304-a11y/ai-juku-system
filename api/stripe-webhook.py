@@ -451,7 +451,7 @@ def _handle_course_async_paid(event):
 #   {month_label} {next_month_label} {receipt_no} {app_id} {contact} {line_url} {email} {paid_at_jst} {registration_id} {welcome_status}
 #   {zoom_block} (Zoom の ID とパスコード。env ENROLL_ZOOM_ID / ENROLL_ZOOM_PASS から。★リポジトリは公開なので値はコードに書かない。
 #                未設定なら「LINE でお知らせします」になる) {app_register_url} (塾生アプリの登録 URL。env ENROLL_APP_REGISTER_URL)
-#   2026-09-23 追加: {option_lines} {options_label} {monthly_comp} {included_comp} {notify_ai} (AI学習アプリ・月額オプション)
+#   2026-09-23 追加: {option_lines} {options_label} {monthly_comp} {included_comp} {notify_ai} {ai_app_note} (AI学習アプリ・月額オプション)
 #                    {course_app} (CEO 申込待ちへの「入塾申込フォーム」行の作成結果)
 ENROLL_APP_REGISTER_URL_DEFAULT = "https://trillion-ai-juku.com/juku-register.html"
 ENROLL_ZOOM_BLOCK = """　ミーティング ID：{zoom_id}
@@ -480,7 +480,7 @@ ENROLL_WELCOME_BODY = """{parent_name} 様
 　1. 塾生アプリにご登録ください（1 分ほどで終わります）
 　　　{app_register_url}
 　　　塾休日・授業のアーカイブ・配布プリントのご案内など、授業に関する連絡はすべて塾生アプリで行います。
-　2. 公式 LINE を友だち追加してください（急ぎのご連絡用です）
+{ai_app_note}　2. 公式 LINE を友だち追加してください（急ぎのご連絡用です）
 　　　{line_url}
 　3. 塾長より、初回授業の日時をご連絡します。
 
@@ -491,7 +491,7 @@ ENROLL_WELCOME_BODY = """{parent_name} 様
 
 ■ カードの変更・コースやオプションの変更・退塾
 　公式 LINE またはメール（{contact}）へご連絡ください。
-　退塾・コースやオプションの変更は、停止したい月の前月 15 日までにご連絡ください（翌月分から反映・日割りの返金はありません）。
+　退塾・コースやオプションの変更は、停止したい月の前月 15 日までにご連絡ください（翌月分から反映・日割りの返金はありません。ご連絡の後に行き違いで決済された分は返金します）。
 
 受付番号：{receipt_no}
 申込ID：{app_id}
@@ -750,6 +750,13 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
         option_lines, options_label = "", "なし"
     monthly_comp = "＋AI学習アプリ" if ai_app else ""
     included_comp = "・AI学習アプリ" if ai_app else ""
+    # AI学習アプリの使い始め方 (2026-09-23): 塾生アプリの登録を塾長が承認 (ai_disabled=0) すると同じログインで使える。詳しい案内は塾長から
+    if ai_app:
+        ai_app_note = "　　　AI学習アプリ（月額オプション）は、塾生アプリのご登録を塾長が承認したあと、同じログインでご利用いただけます。使い方は承認時に塾長よりご案内します。\n"
+    elif ai_app_included:
+        ai_app_note = "　　　国公立難関大学コースに含まれる AI学習アプリも、塾生アプリのご登録を塾長が承認したあと、同じログインでご利用いただけます。\n"
+    else:
+        ai_app_note = ""
     notify_ai = f" + AI学習アプリ {ai_app:,}" if ai_app else ""
     contact = os.environ.get("COURSE_REPLY_TO", "").strip() or COURSE_CONTACT_DEFAULT
     if not COURSE_EMAIL_RE.match(contact):
@@ -775,6 +782,7 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
                        "blocked": "★作成できず（同じ保護者メールで承認済みの生徒がいる＝兄弟の 2 人目。下の★行を参照）",
                        "failed": "★失敗（下の★行を参照）"}.get(record.get("course_app_status") or "", "-"),
         "included_comp": included_comp,
+        "ai_app_note": ai_app_note,
         "month_label": _enroll_month_label(month),
         "next_month_label": _enroll_month_label(_enroll_next_month(month)),
         "receipt_no": session_id,
