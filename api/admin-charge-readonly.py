@@ -301,6 +301,10 @@ def _handle_preview(handler):
         except Exception:
             registered_at = 0
 
+        # 受講開始月より前の月は在籍前 (翌月開始の登録月・2026-09-23): 請求対象外の印。ready は下ろさない (「要対応」ではない)。execute も同じ理由で skip する
+        _start = str(r.get("start_month") or r.get("first_charge_month") or "").strip()
+        before_start = bool(ready and _start and month_str < _start)
+
         customers.append({
             "registrationId": rid,
             "customerId": customer_id,
@@ -318,6 +322,8 @@ def _handle_preview(handler):
             "doneStatus": done_status,
             "issue": issue,
             "registeredAt": registered_at,
+            "startMonth": _start,            # 受講開始月 (滞納判定の下限・2026-09-23)
+            "beforeStart": before_start,     # 請求対象月が受講開始月より前 (画面は請求対象外として表示・合計に入れない)
         })
 
     # 🚨 第二ゲート (2026-07-02 review): charge:done は TTL 60日・charge:history は 1年。
@@ -334,6 +340,12 @@ def _handle_preview(handler):
                 already_charged_count += 1
                 ready_count -= 1
                 total_amount -= c["monthlyFee"]
+
+    # 受講開始月より前 (翌月開始の登録月) は「請求できる人」と合計に入れない (execute が skip するので画面と一致させる)
+    for c in customers:
+        if c.get("beforeStart") and c["ready"] and not c["alreadyChargedThisMonth"]:
+            ready_count -= 1
+            total_amount -= c["monthlyFee"]
 
     _json(handler, 200, {
         "month": month_str,                # 請求対象月 (今月 or 翌月) = billing_month

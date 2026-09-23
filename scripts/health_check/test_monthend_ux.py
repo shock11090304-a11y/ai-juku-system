@@ -104,11 +104,23 @@ def main():
     check("本番ループ: 成功履歴あり → skipped 'history exists'", "if not dry_run and rid in history_hits:" in src and "history exists" in src)
     check("ドライラン: done ロックあり → skipped (本番の結果に近づける)", "if dry_run and rid in done_hits:" in src)
     check("SET NX の応答なしは 'kv error' として請求済みと区別", "kv error" in src and "if nx.get(\"result\") != \"OK\":" in src)
+    check("受講開始月より前の月は請求しない (翌月開始の登録月ガード・2026-09-23)", "_before_start_month(r, current_month)" in src and "受講開始月" in src)
+    check("_before_start_month: 開始月より前なら開始月・同月/以降/未設定は空・first_charge_month でも判定",
+          ex._before_start_month({"start_month": "2026-10"}, "2026-09") == "2026-10" and ex._before_start_month({"start_month": "2026-10"}, "2026-10") == ""
+          and ex._before_start_month({"start_month": "2026-10"}, "2026-11") == "" and ex._before_start_month({"first_charge_month": "2026-10"}, "2026-09") == "2026-10"
+          and ex._before_start_month({}, "2026-09") == "" and ex._before_start_month(None, "2026-09") == "")
+    pdi = read("api/past-due-invoice.py")
+    check("💳請求書 API も受講開始月より前の月を拒否", "before_start_month" in pdi and "受講開始月" in pdi)
+    check("app.js: 滞納判定の下限は受講開始月・名簿の自動追加は初回決済の月を入塾月に", "c.startMonth" in js and "const floor" in js and "reg.firstChargeMonth : (STATE.currentMonth" in js)
 
     print("5) readonly.py (プレビュー)")
     ro = read("api/admin-charge-readonly.py")
     check("doneStatus を返す (pending = 途中停止の検出)", '"doneStatus": done_status' in ro and 'done_status = "pending" if str(_dv).strip() == "pending" else "success"' in ro)
     check("history 第二ゲートでも doneStatus=success", 'c["doneStatus"] = "success"' in ro)
+    check("プレビューが startMonth を返す (滞納判定の下限)", '"startMonth":' in ro)
+    check("プレビューは受講開始月より前を beforeStart にして合計から除く (ready は下ろさない)", '"beforeStart": before_start' in ro and 'if c.get("beforeStart") and c["ready"]' in ro)
+    check("app.js: 入塾月より前は未入金/未払い/督促/請求書に出さない・月末タブは beforeStart を請求対象外表示・skip 文言・請求書エラーの日本語",
+          js.count("isEnrolledFor(s, month)") >= 5 and "!c.beforeStart" in js and "受講開始月より前の月のため請求しませんでした" in js and "r.message || r.error" in js and "月分なし" in js)
 
     print("6) vercel.json")
     v = json.load(open(os.path.join(REPO, "vercel.json"), encoding="utf-8"))

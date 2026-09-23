@@ -169,6 +169,14 @@ def _current_month_jst():
     return datetime.now(JST).strftime("%Y-%m")
 
 
+def _before_start_month(r, current_month):
+    """受講開始月 (翌月開始で初回決済を翌月分にした生徒・2026-09-23) より前の月なら開始月を返す (= 請求しない)。それ以外は ""。
+    翌月開始の登録月には台帳の記録が無いので、ここで止めないと「今月分」実行や滞納のまとめ請求で払う必要のない月を引いてしまう。
+    今月開始の生徒は first_charge_month = 登録月なので、登録より前の月だけが対象になる (= 画面側の regMonth の下限と同じ)"""
+    start = str((r or {}).get("start_month") or (r or {}).get("first_charge_month") or "").strip()
+    return start if (start and current_month and str(current_month) < start) else ""
+
+
 def _allowed_charge_months(current_ym, back=3, fwd=1):
     """current_ym ("YYYY-MM") と直前 back ヶ月・直後 fwd ヶ月の集合を返す
     (請求対象月をサーバ側でホワイトリスト化)。
@@ -410,6 +418,12 @@ class handler(BaseHTTPRequestHandler):
                     summary["skipped"] += 1
                     results.append({"registrationId": rid, "status": "skipped",
                                     "reason": "customer/pm/fee 欠落"})
+                    continue
+                before = _before_start_month(r, current_month)
+                if before:
+                    summary["skipped"] += 1
+                    results.append({"registrationId": rid, "status": "skipped",
+                                    "reason": f"受講開始月 {before} より前 (在籍前・請求対象外)"})
                     continue
 
                 # 当月重複請求防止 (SET NX で原子的に判定)

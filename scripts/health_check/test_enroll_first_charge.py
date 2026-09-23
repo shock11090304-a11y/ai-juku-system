@@ -204,6 +204,10 @@ def main():
           not errs and "ai-app-5000" not in clean_kk["options"] and "facility-1350" in clean_kk["options"] and fee_kk == 26350,
           (errs, clean_kk["options"], fee_kk))
     _, clean_kk2 = reg._validate(payload(courses=["kokuritsu"]))
+    errs_sm, clean_sm = reg._validate(payload(startMonth="next"))
+    check("A1m. 受講開始月: next を受理・既定は current・不正値は拒否",
+          not errs_sm and clean_sm["startMonth"] == "next" and clean.get("startMonth") == "current"
+          and any("受講開始月" in e for e in reg._validate(payload(startMonth="later"))[0]), (errs_sm, clean_sm.get("startMonth")))
     check("A1j. aiAppIncluded: 国公立なら AI を送っていなくても True (¥0 の同梱行の元)・国公立でなければ False",
           clean_kk.get("aiAppIncluded") is True and clean_kk2.get("aiAppIncluded") is True and clean.get("aiAppIncluded") is False and clean_ai.get("aiAppIncluded") is False,
           (clean_kk.get("aiAppIncluded"), clean_kk2.get("aiAppIncluded"), clean.get("aiAppIncluded"), clean_ai.get("aiAppIncluded")))
@@ -230,7 +234,11 @@ def main():
     amounts = [int(v) for k, v in (cs[0][1] if cs else []) if k.endswith("[price_data][unit_amount]")]
     names = [v for k, v in (cs[0][1] if cs else []) if k.endswith("[product_data][name]")]
     check("A2d. 明細 3 行 = 入塾金 10,000 + 受講料 7,500 + 設備費 1,350 = 18,850", amounts == [10000, 7500, 1350] and sum(amounts) == 18850, amounts)
-    check("A2e. 明細名は申込書と同じ表示名: 入塾金（初回のみ）/ 高2 英文法 受講料（初月分）/ 設備費（初月分）", names == ["入塾金（初回のみ）", "高2 英文法 受講料（初月分）", "設備費（初月分）"], names)
+    ml0, ml1 = reg._month_label(reg._jst_month(0)), reg._month_label(reg._jst_month(1))
+    check("A2e. 明細名は申込書と同じ表示名＋開始月: 入塾金（初回のみ）/ 高2 英文法 受講料（◯月分）/ 設備費（◯月分）", names == ["入塾金（初回のみ）", f"高2 英文法 受講料（{ml0}分）", f"設備費（{ml0}分）"], names)
+    check("A2e2. 今月開始 (既定): metadata.start_month=今月・start_choice=current・確認文に「今月分の初回分」",
+          form.get("metadata[start_month]") == reg._jst_month(0) and form.get("metadata[start_choice]") == "current"
+          and f"入塾金＋{ml0}分の設備費・受講料" in form.get("custom_text[submit][message]", ""), (form.get("metadata[start_month]"), form.get("custom_text[submit][message]")))
     check("A2f. metadata.monthly_fee は月額 8,850 (入塾金を含めない)・first_total=18,850・first_charge=1・app_id",
           form.get("metadata[monthly_fee]") == "8850" and form.get("metadata[first_total]") == "18850"
           and form.get("metadata[first_charge]") == "1" and form.get("metadata[app_id]") == "AB12CD34", form)
@@ -253,7 +261,18 @@ def main():
     amounts_ai = [int(v) for k, v in (cs_ai[0][1] if cs_ai else []) if k.endswith("[price_data][unit_amount]")]
     names_ai = [v for k, v in (cs_ai[0][1] if cs_ai else []) if k.endswith("[product_data][name]")]
     check("A2x1. 明細 4 行 = 入塾金 10,000 + 受講料 7,500 + 設備費 1,350 + AI学習アプリ 5,000 = 23,850", amounts_ai == [10000, 7500, 1350, 5000] and sum(amounts_ai) == 23850, amounts_ai)
-    check("A2x2. 明細名に「AI学習アプリ（初月分）」", "AI学習アプリ（初月分）" in names_ai, names_ai)
+    check("A2x2. 明細名に「AI学習アプリ（◯月分）」", f"AI学習アプリ（{ml0}分）" in names_ai, names_ai)
+    # ---- A2y 翌月開始 (2026-09-23): metadata.start_month が翌月、明細と確認文も翌月の「◯月分」 ----
+    posts.clear()
+    reg._create_first_charge_session("sk_test_dummy", clean_sm, fee, breakdown, "reg_test_sm", "https://trillion-ai-juku.com",
+                                     "https://graceful-eclair-56bdac.netlify.app")
+    cs_sm = [p for p in posts if p[0] == "checkout/sessions"]
+    form_sm = dict(cs_sm[0][1]) if cs_sm else {}
+    names_sm = [v for k, v in (cs_sm[0][1] if cs_sm else []) if k.endswith("[product_data][name]")]
+    check("A2y. 翌月開始: metadata.start_month=翌月・start_choice=next・明細「受講料（翌月分）」・確認文「本日は翌月分の初回分」",
+          form_sm.get("metadata[start_month]") == reg._jst_month(1) and form_sm.get("metadata[start_choice]") == "next"
+          and f"高2 英文法 受講料（{ml1}分）" in names_sm and f"入塾金＋{ml1}分の設備費・受講料" in form_sm.get("custom_text[submit][message]", ""),
+          (form_sm.get("metadata[start_month]"), names_sm, form_sm.get("custom_text[submit][message]")))
     check("A2x3. metadata.monthly_fee=13,850・options に ai-app-5000・fee_breakdown に AI学習アプリ",
           form_ai.get("metadata[monthly_fee]") == "13850" and "ai-app-5000" in form_ai.get("metadata[options]", "")
           and "AI学習アプリ ¥5,000" in form_ai.get("metadata[fee_breakdown]", ""), form_ai)
@@ -285,8 +304,10 @@ def main():
     r1 = FakeReq(json.dumps(payload(studentName=JIRO), ensure_ascii=False).encode()); r1.do_POST()
     j1 = json.loads(r1.wfile.getvalue().decode() or "{}")
     check("A4a. 兄弟 (同じメール・別の生徒名) の入塾申込は 200 で決済 URL が返る", r1.status == 200 and j1.get("checkoutUrl", "").startswith("https://checkout.stripe.com/") and j1.get("firstTotal") == 18850 and j1.get("amount") == 8850, (r1.status, j1))
+    check("A4h. 応答に startMonth (今月・YYYY-MM)", j1.get("startMonth") == reg._jst_month(0), j1)
     check("A4b. 応答に許可オリジンの CORS ヘッダ", r1.hdrs.get("Access-Control-Allow-Origin") == "https://graceful-eclair-56bdac.netlify.app" and r1.hdrs.get("Vary") == "Origin", r1.hdrs)
     pend = [k for k in regkv.store if k.startswith("reg:pending:")]
+    check("A4i. pending に start_month / start_choice", len(pend) == 1 and json.loads(regkv.store[pend[0]]).get("start_month") == reg._jst_month(0) and json.loads(regkv.store[pend[0]]).get("start_choice") == "current", [regkv.store[k] for k in pend])
     check("A4c. pending に first_charge / entry_fee / app_id / checkout_mode=payment", len(pend) == 1 and json.loads(regkv.store[pend[0]]).get("first_charge") is True and json.loads(regkv.store[pend[0]]).get("entry_fee") == 10000 and json.loads(regkv.store[pend[0]]).get("app_id") == "AB12CD34" and json.loads(regkv.store[pend[0]]).get("checkout_mode") == "payment", [regkv.store[k] for k in pend])
     r2 = FakeReq(json.dumps(payload(), ensure_ascii=False).encode()); r2.do_POST()
     j2 = json.loads(r2.wfile.getvalue().decode() or "{}")
@@ -323,6 +344,9 @@ def main():
     check("B1a. reg:completed が setup 相当 (checkout_mode=setup・payment_method・customer)", rec.get("checkout_mode") == "setup" and rec.get("stripe_payment_method_id") == "pm_card_1" and rec.get("stripe_customer_id") == "cus_1", rec)
     check("B1b. monthly_fee=8,850 (月額のみ)・amount=18,850・first_charge 情報", rec.get("monthly_fee") == 8850 and rec.get("amount") == 18850 and rec.get("first_charge") is True and rec.get("first_charge_month") == month and rec.get("entry_fee") == 10000 and rec.get("app_id") == "AB12CD34", rec)
     check("B1c. pending 削除・index 登録", f"reg:pending:{rid}" not in kv.store and rid in kv.zsets.get("reg:completed:index", []))
+    _keys = list(kv.store)
+    check("B1c2. 台帳 (charge:done) を名簿 (reg:completed) より先に書く (26 日のバッチと同時でも二重にならない・2026-09-23)",
+          f"charge:done:{rid}:{month}" in _keys and f"reg:completed:{rid}" in _keys and _keys.index(f"charge:done:{rid}:{month}") < _keys.index(f"reg:completed:{rid}"), _keys)
     done = json.loads(kv.store.get(f"charge:done:{rid}:{month}") or "{}")
     check("B1d. 当月の charge:done (succeeded・18,850・source=enroll-first-charge)", done.get("status") == "succeeded" and done.get("amount") == 18850 and done.get("source") == "enroll-first-charge" and done.get("payment_intent_id") == "pi_first_1", done)
     hist = json.loads(kv.store.get(f"charge:history:{rid}:{month}") or "{}")
@@ -334,7 +358,7 @@ def main():
     body = m.get("text", "")
     check("B1i. 保護者宛・件名", m.get("to") == ["parent@example.invalid"] and m.get("subject") == "【トリリオン英語塾】ご入塾のお申し込みとお支払いの確認", (m.get("to"), m.get("subject")))
     check("B1j. 宛名は保護者名", body.startswith("テスト 花子 様"), body[:40])
-    for s_ in ("入塾金（初回のみ）：10,000円", "設備費：1,350円", "受講料（初月分・日割りなし）：7,500円", "合計：18,850円", "月額 8,850円", "高2 英文法", "前月 15 日まで", "26 日前後"):
+    for s_ in ("入塾金（初回のみ）：10,000円", "設備費：1,350円", "受講料（2026年9月分・日割りなし）：7,500円", "合計：18,850円", "月額 8,850円", "高2 英文法", "前月 15 日まで", "26 日前後"):
         check(f"B1k. 本文に「{s_}」", s_ in body, body)
     check("B1k2. AI 無しの申込のメールに AI学習アプリの案内は出ない", "AI学習アプリ" not in body, body)
     ml, nl = wh._enroll_month_label(month), wh._enroll_month_label(wh._enroll_next_month(month))
@@ -376,7 +400,7 @@ def main():
     ox = netx.sent[1].get("text", "") if len(netx.sent) > 1 else ""
     check("B1x1. 名簿の monthly_fee=13,850 (AI学習アプリ込み)・amount=23,850", recx.get("monthly_fee") == 13850 and recx.get("amount") == 23850, recx)
     check("B1x2. 保護者メール: 受講料 7,500 とは別に AI学習アプリ 5,000 の行・合計 23,850・月額 13,850（設備費＋受講料＋AI学習アプリ）・今月分に AI も含む",
-          "受講料（初月分・日割りなし）：7,500円" in bx and "AI学習アプリ（月額オプション・初月分）：5,000円" in bx and "合計：23,850円" in bx
+          "受講料（2026年9月分・日割りなし）：7,500円" in bx and "AI学習アプリ（月額オプション・2026年9月分）：5,000円" in bx and "合計：23,850円" in bx
           and "月額 13,850円（設備費＋受講料＋AI学習アプリ・税込）" in bx and "受講料・AI学習アプリと設備費は含まれています" in bx
           and "AI学習アプリ（月額オプション）は、塾生アプリのご登録を塾長が承認したあと" in bx, bx)
     check("B1x3. 塾長通知: オプション行・初回決済額の内訳に AI学習アプリ・承認は［OK］(AIあり) の指示。申込待ちの行の note にも同じ指示 (ceo.js _aiHint が読む)",
@@ -398,7 +422,7 @@ def main():
     bk = netk.sent[0].get("text", "") if netk.sent else ""
     ok_ = netk.sent[1].get("text", "") if len(netk.sent) > 1 else ""
     check("B1x4. 国公立: 受講料 25,000・AI学習アプリは 0 円で「含まれています」・月額 26,350 (＋AI学習アプリ と書かない)・塾長通知に同梱",
-          "受講料（初月分・日割りなし）：25,000円" in bk and "AI学習アプリ：0円（国公立難関大学コースに含まれています）" in bk and "合計：36,350円" in bk
+          "受講料（2026年9月分・日割りなし）：25,000円" in bk and "AI学習アプリ：0円（国公立難関大学コースに含まれています）" in bk and "合計：36,350円" in bk
           and "月額 26,350円（設備費＋受講料・税込）" in bk and "オプション: AI学習アプリ（国公立難関大学コースに同梱・0円）" in ok_
           and "国公立難関大学コースに含まれる AI学習アプリも" in bk, (bk, ok_))
     wh._redis_safe, urllib.request.urlopen = kv, net
@@ -439,6 +463,37 @@ def main():
     wh._handle_checkout_completed(event(session(ridd, sid="cs_enroll_d")))
     check("B1y4. ENROLL_COURSEAPP_ENABLED=0 なら POST しない・通知に「無効化中」", not netd.courseapps and "無効化中" in (netd.sent[1].get("text", "") if len(netd.sent) > 1 else ""), netd.courseapps)
     os.environ["ENROLL_COURSEAPP_ENABLED"] = "1"
+    wh._redis_safe, urllib.request.urlopen = kv, net
+
+    # ---- B1w 受講開始月 = 翌月 (2026-09-23): 台帳の月が翌月になり、26 日前後の「翌月分」バッチはこの生徒を飛ばす ----
+    ridw = "reg_tw"
+    kvw, netw = FakeKV(), FakeNet()
+    wh._redis_safe, urllib.request.urlopen = kvw, netw
+    pw = pending(ridw); pw["start_month"] = "2026-10"; pw["start_choice"] = "next"
+    kvw.store[f"reg:pending:{ridw}"] = json.dumps(pw, ensure_ascii=False)
+    sw = session(ridw, sid="cs_enroll_w"); sw["metadata"].update({"start_month": "2026-10", "start_choice": "next"})
+    wh._handle_checkout_completed(event(sw))
+    recw = json.loads(kvw.store.get(f"reg:completed:{ridw}") or "{}")
+    bw = netw.sent[0].get("text", "") if netw.sent else ""
+    ow = netw.sent[1].get("text", "") if len(netw.sent) > 1 else ""
+    check("B1w1. 台帳の月は翌月 2026-10 (charge:done / first_charge_month / start_month)・決済月 2026-09 には書かない",
+          f"charge:done:{ridw}:2026-10" in kvw.store and f"charge:done:{ridw}:2026-09" not in kvw.store
+          and recw.get("first_charge_month") == "2026-10" and recw.get("start_month") == "2026-10" and recw.get("start_choice") == "next", (list(kvw.store), recw.get("first_charge_month")))
+    check("B1w2. 保護者メール: （2026年10月分）・2026年11月分以降は・2026年11月分は 2026年10月 26 日前後",
+          "（2026年10月分）" in bw and "2026年11月分以降は" in bw and "2026年11月分は 2026年10月 26 日前後" in bw
+          and "受講開始月：2026年10月（2026年9月分のお支払いはありません）" in bw and "受講料（2026年10月分・日割りなし）：7,500円" in bw, bw)
+    check("B1w2b. 今月開始 (B1) のメールにはその注記が出ない", "お支払いはありません" not in body, body)
+    check("B1w3. 塾長通知: 受講開始月 2026年10月（翌月から）・台帳は 10月分を引き落とし済み",
+          "受講開始月: 2026年10月（申込書の選択: 翌月から）" in ow and "台帳: 2026年10月分を「引き落とし済み」" in ow, ow)
+    check("B1w4. 申込待ちの note にも 受講開始月", "受講開始月: 2026年10月（申込書の選択: 翌月から）" in (netw.courseapps[0].get("note", "") if netw.courseapps else ""), netw.courseapps)
+    ridv = "reg_tv"
+    kvv, netv = FakeKV(), FakeNet()
+    wh._redis_safe, urllib.request.urlopen = kvv, netv
+    kvv.store[f"reg:pending:{ridv}"] = json.dumps(pending(ridv), ensure_ascii=False)
+    sv = session(ridv, sid="cs_enroll_v"); sv["metadata"].update({"start_month": "2026-12", "start_choice": "next"})
+    wh._handle_checkout_completed(event(sv))
+    check("B1w5. 決済月・翌月以外の start_month (改ざん/古い) は無視して決済月 2026-09", f"charge:done:{ridv}:2026-09" in kvv.store and f"charge:done:{ridv}:2026-12" not in kvv.store, list(kvv.store))
+    check("B1w6. 今月開始 (B1) の塾長通知は「今月から」・台帳は 2026年9月分", "受講開始月: 2026年9月（申込書の選択: 今月から）" in o.get("text", ""), o.get("text"))
     wh._redis_safe, urllib.request.urlopen = kv, net
 
     # ---- B1z Zoom 未設定なら「LINE でお知らせ」 ----
@@ -484,7 +539,7 @@ def main():
     rec5 = json.loads(kv.store.get(f"reg:completed:{rid5}") or "{}")
     check("B5a. metadata から復元して登録 (氏名・entry_fee・app_id・monthly_fee)", rec5.get("student_name") == "テスト 太郎" and rec5.get("entry_fee") == 10000 and rec5.get("app_id") == "AB12CD34" and rec5.get("monthly_fee") == 8850 and rec5.get("restored_from_metadata") is True, rec5)
     b5 = net.sent[0].get("text", "") if net.sent else ""
-    check("B5b. fee_breakdown 文字列から内訳を復元してメール", "受講料（初月分・日割りなし）：7,500円" in b5 and "設備費：1,350円" in b5 and "テスト 太郎 さん" in b5, b5)
+    check("B5b. fee_breakdown 文字列から内訳を復元してメール", "受講料（2026年9月分・日割りなし）：7,500円" in b5 and "設備費：1,350円" in b5 and "テスト 太郎 さん" in b5, b5)
     h5 = json.loads(kv.store.get(f"charge:history:{rid5}:{month}") or "{}")
     check("B5c. 台帳にも氏名", h5.get("student_name") == "テスト 太郎", h5)
 

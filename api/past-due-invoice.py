@@ -229,6 +229,12 @@ def _create_one_invoice(secret_key, item):
     if not registered:
         _log(f"customer not in our registry: {customer_id}")
         return {"status": "error", "error": "customer_not_registered", "studentName": student_name, "month": month}
+    # 受講開始月より前の月の請求書は出さない (2026-09-23 翌月開始: 登録月は在籍していない)
+    start_month = str(registered.get("start_month") or registered.get("first_charge_month") or "").strip()
+    if start_month and month and month < start_month:
+        _log(f"month before start_month: month={month} start={start_month} cust={customer_id}")
+        return {"status": "error", "error": "before_start_month", "studentName": student_name, "month": month,
+                "message": f"受講開始月 {start_month} より前の月は請求できません"}
     registered_amount = int(registered.get("amount") or 0)
     # 月謝の ±50% 以内まで許容 (オプション増減対応)。攻撃者が任意金額請求できないようガード。
     if registered_amount > 0:

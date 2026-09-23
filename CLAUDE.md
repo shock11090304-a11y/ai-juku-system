@@ -84,6 +84,13 @@
   テスト A1h/A1i/A1j (aiAppIncluded)・A2x・A4g (do_POST→webhook の往復)・B1x。
 - **コース名の 2 本立て (2026-09-23)**: `COURSES[id]["name"]` / `courses.json` の `name` は月謝アプリの名簿の正規名 (`payment/app.js` が名前で正規化・単価照合) なので**変えない**。
   保護者に見せる Stripe 明細・内訳 (`_calculate_fee` の breakdown)・確認メール・`payment/register.html` の表示は `label` (= 入塾申込書と同じ表示名)。`check_course_price_sync.py` が label も照合。
+- **受講開始月 (2026-09-23 塾長決定「翌月のみ」)**: 申込書の必須ラジオ「今月から / 翌月から」→ `startMonth: current|next` → `register-subscribe.py` が JST の
+  `start_month` (YYYY-MM) を metadata / pending / 応答に入れ、Stripe の明細・確認文を「◯月分」にする。webhook は `metadata.start_month` (無ければ pending の `start_month`) が決済月 (Checkout 作成の JST 月) かその翌月なら
+  それを台帳の月にする (charge:done を翌月に書く → 26 日前後の「翌月分」バッチはその生徒を飛ばし、その次の月から引き落とし。メールも「翌月分」)。
+  それ以外の値は無視して決済月。再来月以降は受け付けない。テスト A1m / A2e2 / A2y / A4h / A4i / B1w1〜B1w6。
+  ★翌月開始の登録月には台帳の記録が無いので、**受講開始月より前の月は請求しない**を 3 か所で守る: 月末バッチ `_before_start_month`
+  (今月分実行・滞納まとめ請求とも execute を通る)・`payment/app.js` の滞納判定の下限 `startMonth` (readonly が返す)・`past-due-invoice.py` (💳請求書)。
+  webhook は台帳 (charge:done) を名簿より先に書く (26 日のバッチと同時でも二重にならない・テスト B1c2)。ガードのテストは test_monthend_ux。
 - 特商法の通塾コース版は `legal.html#tokusho-juku` (入塾申込書と決済完了ページからリンク。金額・期日は申込書/HP/メールと同じ値に)。確認メールの AI学習アプリの使い始め方は `{ai_app_note}` (テスト B1x2/B1x4/B1k2)。
 - **HP の `enrollment.html` (旧・決済なしの申込書) は 2026-09-23 に廃止**: `vercel.json` で Netlify の申込書へリダイレクトし、`academy.html` の「入塾申込」も同 URL。
   ファイルは `check_timetable_sync.py` の照合元として残す (削除するとゲートが落ちる)。旧申込書からの「入塾申込フォーム」の行は来なくなるが、

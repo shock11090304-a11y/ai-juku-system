@@ -1757,12 +1757,18 @@ function statusSelectClass(status) {
   return '';
 }
 
+// 入塾月 (受講開始月) より前の月は在籍していない (翌月開始で初回決済を翌月分にした生徒・2026-09-23)。enrollDate が YYYY-MM のときだけ見る
+function isEnrolledFor(s, ym) {
+  const e = String((s && s.enrollDate) || '');
+  return !/^\d{4}-\d{2}$/.test(e) || String(ym) >= e;
+}
+
 // === Stats ===
 function renderStats() {
   const month = STATE.currentMonth;
   const active = activeStudents();
   let paidCount = 0, paidAmount = 0, unpaidCount = 0, unpaidAmount = 0;
-  active.forEach(s => {
+  active.filter(s => isEnrolledFor(s, month)).forEach(s => {   // 入塾月前は未入金に数えない
     const pay = getPayment(month, s.id);
     if (pay && pay.paid) {
       paidCount++; paidAmount += s.fee || 0;
@@ -2064,13 +2070,18 @@ async function addStudentFromReg(reg, auto = false) {
   let id = Math.max(STATE.data.nextStudentId || 1, newStudentsMax + 1);
   while (usedIds.has(id)) id += 1;
   const notesParts = [auto ? '入塾申込書から自動追加 (初回決済済み)' : 'カード登録から追加'];
+  // 翌月開始 (初回決済を翌月分にした生徒): 登録月に月謝が無いことをメモに残す (2026-09-23)
+  try {
+    const regYm = reg.completedAt ? new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(Number(reg.completedAt) * 1000)).slice(0, 7) : '';
+    if (reg.firstChargeMonth && /^\d{4}-\d{2}$/.test(reg.firstChargeMonth) && regYm && reg.firstChargeMonth > regYm) notesParts.push(`受講開始 ${+reg.firstChargeMonth.slice(0, 4)}年${+reg.firstChargeMonth.slice(5)}月 (${+regYm.slice(5)}月分なし)`);
+  } catch (e) {}
   if (optionNames.length) notesParts.push('オプション: ' + optionNames.join('・'));
   const newStudent = {
     id, name,
     grade: reg.grade || '',
     email: reg.email || '',
     courses: courseNames,
-    enrollDate: STATE.currentMonth || '',
+    enrollDate: (reg.firstChargeMonth && /^\d{4}-\d{2}$/.test(reg.firstChargeMonth)) ? reg.firstChargeMonth : (STATE.currentMonth || ''),   // 入塾月 = 初回決済を充てた月 (翌月開始なら翌月)
     status: '通塾',
     fee,
     notes: notesParts.join(' / '),
@@ -2354,6 +2365,7 @@ async function renderUnpaid() {
   const grade = document.getElementById('unpaidGradeFilter')?.value || '';
   const course = document.getElementById('unpaidCourseFilter')?.value || '';
   let unpaid = activeStudents().filter(s => {
+    if (!isEnrolledFor(s, month)) return false;   // 入塾月より前 (在籍前) は未払いにしない・督促しない
     const pay = getPayment(month, s.id);
     return !pay || !pay.paid;
   });
@@ -2494,7 +2506,7 @@ async function sendPastDueInvoiceFor(studentId) {
     } else if (r.status === 'duplicate') {
       alert(`⚠ 既に発行済み\n\nこの生徒の ${month} 分は既に請求書が発行されています。\nInvoice ID: ${r.invoiceId}\n\n90日経過後または別月であれば再発行できます。`);
     } else {
-      alert(`発行失敗: ${r.error || 'unknown'}`);
+      alert(`発行失敗: ${r.message || r.error || 'unknown'}`);
     }
   } finally {
     if (btn) { btn.dataset.busy = ''; btn.disabled = false; btn.textContent = '💳 請求書'; }
@@ -2508,6 +2520,7 @@ async function sendBulkPastDueInvoices() {
   const grade = document.getElementById('unpaidGradeFilter')?.value || '';
   const course = document.getElementById('unpaidCourseFilter')?.value || '';
   let unpaid = activeStudents().filter(s => {
+    if (!isEnrolledFor(s, month)) return false;   // 入塾月より前 (在籍前) は未払いにしない・督促しない
     const pay = getPayment(month, s.id);
     return !pay || !pay.paid;
   });
@@ -2551,7 +2564,7 @@ async function sendBulkPastDueInvoices() {
     let detail = '';
     if (ng > 0) {
       const failures = (data.results || []).filter(r => r.status === 'error');
-      if (failures.length) detail += '\n\n失敗詳細:\n' + failures.slice(0, 15).map(r => `  ⚠ ${r.studentName}: ${r.error}`).join('\n');
+      if (failures.length) detail += '\n\n失敗詳細:\n' + failures.slice(0, 15).map(r => `  ⚠ ${r.studentName}: ${r.message || r.error}`).join('\n');
     }
     if (dup > 0) {
       detail += `\n\n重複スキップ: ${dup} 名 (既に同月分発行済)`;
@@ -2940,7 +2953,7 @@ function renderMonthEndStatusBanner() {
   const st = monthEndLedgerStats(month);
   const runs = monthEndLoadRuns()[month] || {};
   const customers = preview.customers || [];
-  const uncharged = customers.filter(c => c.ready && !c.alreadyChargedThisMonth);
+  const uncharged = customers.filter(c => c.ready && !c.alreadyChargedThisMonth && !c.beforeStart);
   const lastExecMs = Math.max(st.lastAt, Number(runs.execAt) || 0);
   const newSince = lastExecMs ? uncharged.filter(c => (Number(c.registeredAt) || 0) * 1000 > lastExecMs).length : 0;
   const pendingStuck = customers.filter(c => c.doneStatus === 'pending').length;
@@ -3020,6 +3033,7 @@ function describeChargeError(r) {
     if (rawL.includes('history exists')) return { text: 'この月は台帳に成功記録があるため飛ばしました (二重請求防止)。', action: '' };
     if (rawL.includes('already charged')) return { text: 'この月は請求済み (または処理中) のため飛ばしました。', action: '' };
     if (rawL.includes('no data') || rawL.includes('parse')) return { text: '登録データが読めないため飛ばしました。', action: '' };
+    if (rawL.includes('受講開始月')) return { text: '受講開始月より前の月のため請求しませんでした (在籍前・請求対象外)。', action: '' };
     return { text: `対象外のため飛ばしました (${raw})`, action: '' };
   }
   if (code === 'authentication_required' || decl === 'authentication_required') return { text: 'カード会社の本人認証 (3DS) が必要で、無人での引き落としが拒否されました。保護者にカードの再登録を依頼してください。', action: 'reregister' };
@@ -3194,8 +3208,11 @@ function monthEndArrearsFor(c, regToStudent, priorMonths) {
   // 入塾 (カード登録) より前の月は在籍していないので滞納にしない (入塾申込書からの自動登録は registeredAt を必ず持つ)
   let regMonth = '';
   try { regMonth = c.registeredAt ? new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(Number(c.registeredAt) * 1000)).slice(0, 7) : ''; } catch (_) { regMonth = ''; }
+  // 受講開始月 (翌月開始で初回決済を翌月分にした生徒・2026-09-23) より前の月も在籍していない → 登録月を滞納にしない (サーバ側も同じ判定で止める)
+  const startMonth = (c.startMonth && /^\d{4}-\d{2}$/.test(String(c.startMonth))) ? String(c.startMonth) : '';
+  const floor = (startMonth && startMonth > regMonth) ? startMonth : regMonth;
   const months = priorMonths.filter(pm => {
-    if (regMonth && pm < regMonth) return false;
+    if (floor && pm < floor) return false;
     const pay = getPayment(pm, sid);
     if (pay && pay.paid) return false;                    // 名簿で入金済 (振込など)
     // 📖 台帳に 成功/3DS待ち/要確認 の記録がある月は除外 (名簿の印が付いていなくても二重請求しない・2026-09-08)
@@ -3240,7 +3257,7 @@ function renderMonthEndTable(data) {
     return;
   }
   const rows = list.map(c => {
-    const chargeable = !!c.ready && !c.alreadyChargedThisMonth;
+    const chargeable = !!c.ready && !c.alreadyChargedThisMonth && !c.beforeStart;   // beforeStart: 受講開始月より前 (在籍前・サーバも skip)
     const rid = escapeHtmlME(c.registrationId);
     const fixBtn = `<div style="margin-top:3px;"><button class="btn btn-ghost btn-sm" onclick="openReconcileModal('${rid}', '${escapeHtmlME(data.month)}', '${escapeHtmlME(c.studentName)}', ${Number(c.monthlyFee) || 0})" style="color:#fbbf24;border-color:rgba(245,158,11,0.45);">🔧 確定</button></div>`;
     let statusBadge = '';
@@ -3252,6 +3269,8 @@ function renderMonthEndTable(data) {
       statusBadge = '<span style="color:#fbbf24;">🔐 本人認証 (3DS) 待ち</span><div style="font-size:0.72rem;color:var(--text-dim);">保護者のカード再登録が必要</div>';
     } else if (c.alreadyChargedThisMonth) {
       statusBadge = `<span style="color:var(--text-dim);">✅ ${escapeHtmlME(data.month)} 分 引き落とし済</span>`;
+    } else if (c.beforeStart) {
+      statusBadge = `<span style="color:var(--text-dim);">⏸ 受講開始 ${escapeHtmlME(c.startMonth || '')} (この月は請求対象外)</span>`;
     } else if (c.ready) {
       statusBadge = '<span style="color:var(--success);">🟢 請求できます</span>';
       const regDate = fmtDateME(c.registeredAt);
@@ -3318,7 +3337,7 @@ function selectedMonthEndIds() {
   const prev = MONTHEND_STATE.lastPreview;
   if (!prev || !Array.isArray(prev.customers)) return [];
   return prev.customers
-    .filter(c => c.ready && !c.alreadyChargedThisMonth && !MONTHEND_STATE.excluded.has(c.registrationId))
+    .filter(c => c.ready && !c.alreadyChargedThisMonth && !c.beforeStart && !MONTHEND_STATE.excluded.has(c.registrationId))
     .map(c => c.registrationId)
     .filter(Boolean);
 }
@@ -3331,7 +3350,7 @@ function updateMonthEndSelectionSummary() {
   const exBtn = document.getElementById('monthEndExecuteBtn');
   if (!prev || !Array.isArray(prev.customers)) { if (exBtn) exBtn.disabled = true; return; }
   const plan = monthEndCurrentPlan();
-  const chargeable = prev.customers.filter(c => c.ready && !c.alreadyChargedThisMonth);
+  const chargeable = prev.customers.filter(c => c.ready && !c.alreadyChargedThisMonth && !c.beforeStart);
   const sel = plan ? plan.selCustomers : [];
   const curSum = plan ? plan.selTotal : 0;
   const arrearsSum = plan ? plan.arrearsTotal : 0;
@@ -3375,7 +3394,7 @@ function updateMonthEndSelectionSummary() {
 function renderUnchargedNote(data) {
   const el = document.getElementById('monthEndUnchargedNote');
   if (!el) return;
-  const uncharged = ((data && data.customers) || []).filter(c => c.ready && !c.alreadyChargedThisMonth);
+  const uncharged = ((data && data.customers) || []).filter(c => c.ready && !c.alreadyChargedThisMonth && !c.beforeStart);
   if (!(data && data.previously_charged_this_month > 0) || uncharged.length === 0) {
     el.style.display = 'none';
     el.innerHTML = '';
@@ -3403,7 +3422,7 @@ async function chargeOneMonthEnd(rid, expectedMonth) {
   if (!preview) { setMonthEndStatus('⚠️ 先に「🔄 プレビュー更新」を押してください', 'warn'); return; }
   const c = (preview.customers || []).find(x => x.registrationId === rid);
   if (!c) { setMonthEndStatus('対象が見つかりません。「🔄 プレビュー更新」を押してください', 'warn'); return; }
-  if (!c.ready || c.alreadyChargedThisMonth) { setMonthEndStatus('この人は請求対象外です (未 ready または当月請求済)', 'warn'); return; }
+  if (!c.ready || c.alreadyChargedThisMonth || c.beforeStart) { setMonthEndStatus('この人は請求対象外です (未 ready・当月請求済・受講開始月より前 のいずれか)', 'warn'); return; }
   const nowMonth = monthEndCalMonth();
   const calMonth = preview.current_month || preview.month;   // カレンダー月 (confirmMonth ガード用)
   const billMonth = preview.month;                           // 請求対象月 (今月 or 翌月)
@@ -4142,7 +4161,7 @@ function renderChargeLedger(data) {
 
   const cellHtml = (rid, m, rosterC) => {
     const e = (cellMap[rid] || {})[m];
-    const chargeableHere = !!(rosterC && m === billMonth && rosterC.ready && !rosterC.alreadyChargedThisMonth && showCellButtons);
+    const chargeableHere = !!(rosterC && m === billMonth && rosterC.ready && !rosterC.alreadyChargedThisMonth && !rosterC.beforeStart && showCellButtons);
     let inner = '';
     if (e) {
       const d = fmtDateME(e.chargedAt);
@@ -5345,6 +5364,7 @@ function copyToClipboard(text) {
 function bulkUnpaidWithEmail() {
   const month = STATE.currentMonth;
   return activeStudents().filter(s => {
+    if (!isEnrolledFor(s, month)) return false;   // 入塾月より前 (在籍前) は催促の対象にしない
     const pay = getPayment(month, s.id);
     if (pay && pay.paid) return false;
     return !!getEmail(s.id);
@@ -5631,12 +5651,14 @@ function renderInvoiceTab() {
   let students = activeStudents();
   if (target === 'unpaid') {
     students = students.filter(s => {
+      if (!isEnrolledFor(s, month)) return false;   // 入塾月より前 (在籍前) は請求書の対象外
       const pay = getPayment(month, s.id);
       return !pay || !pay.paid;
     });
   }
   if (grade) students = students.filter(s => s.grade === grade);
   if (course) students = students.filter(s => (s.courses || []).includes(course));
+  students = students.filter(s => isEnrolledFor(s, month));   // 入塾月より前 (在籍前) は請求書の対象外 (空なら「該当なし」を出す)
   const tbody = document.getElementById('invoiceTbody');
   if (!students.length) {
     tbody.innerHTML = `<tr><td colspan="8" class="empty">該当する生徒がいません</td></tr>`;
@@ -6024,6 +6046,7 @@ function commFilteredTargets() {
     if (grade && s.grade !== grade) return false;
     if (course && !(s.courses || []).includes(course)) return false;
     if (unpaid === 'unpaid') {
+      if (!isEnrolledFor(s, month)) return false;   // 入塾月より前は「未入金」に出さない
       const p = getPayment(month, s.id);
       if (p && p.paid) return false;
     } else if (unpaid === 'paid') {
@@ -6949,7 +6972,7 @@ function renderDashboard() {
   // 当月入金状況
   const active = activeStudents();
   let paidCount = 0, paidAmount = 0, unpaidCount = 0, unpaidAmount = 0;
-  active.forEach(s => {
+  active.filter(s => isEnrolledFor(s, month)).forEach(s => {   // 入塾月前は未入金に数えない
     const pay = getPayment(month, s.id);
     if (pay && pay.paid) { paidCount++; paidAmount += s.fee || 0; }
     else { unpaidCount++; unpaidAmount += s.fee || 0; }
@@ -7392,7 +7415,7 @@ function setupModals() {
   document.getElementById('monthEndSelectAll')?.addEventListener('change', (e) => {
     const prev = MONTHEND_STATE.lastPreview;
     if (!prev) return;
-    const chargeable = (prev.customers || []).filter(c => c.ready && !c.alreadyChargedThisMonth);
+    const chargeable = (prev.customers || []).filter(c => c.ready && !c.alreadyChargedThisMonth && !c.beforeStart);
     MONTHEND_STATE.excluded = e.target.checked ? new Set() : new Set(chargeable.map(c => c.registrationId));
     MONTHEND_STATE.dryRun = null;
     renderMonthEndTable(prev);

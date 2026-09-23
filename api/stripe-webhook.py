@@ -452,7 +452,7 @@ def _handle_course_async_paid(event):
 #   {zoom_block} (Zoom の ID とパスコード。env ENROLL_ZOOM_ID / ENROLL_ZOOM_PASS から。★リポジトリは公開なので値はコードに書かない。
 #                未設定なら「LINE でお知らせします」になる) {app_register_url} (塾生アプリの登録 URL。env ENROLL_APP_REGISTER_URL)
 #   2026-09-23 追加: {option_lines} {options_label} {monthly_comp} {included_comp} {notify_ai} {ai_app_note} (AI学習アプリ・月額オプション)
-#                    {course_app} (CEO 申込待ちへの「入塾申込フォーム」行の作成結果)
+#                    {course_app} (CEO 申込待ちへの「入塾申込フォーム」行の作成結果) {start_choice_label} (受講開始月の選択・塾長通知) {start_note} (翌月開始の保護者向け注記)
 ENROLL_APP_REGISTER_URL_DEFAULT = "https://trillion-ai-juku.com/juku-register.html"
 ENROLL_ZOOM_BLOCK = """　ミーティング ID：{zoom_id}
 　パスコード：{zoom_pass}"""
@@ -466,10 +466,10 @@ ENROLL_WELCOME_BODY = """{parent_name} 様
 ■ 今回お支払いいただいた内容（{month_label}分）
 　入塾金（初回のみ）：{entry_fee}円
 　設備費：{facility}円
-　受講料（初月分・日割りなし）：{course_fee}円
+　受講料（{month_label}分・日割りなし）：{course_fee}円
 　　{courses}
 {option_lines}　合計：{first_total}円（税込）
-　※ Stripe からの領収メールも別途届きます。
+{start_note}　※ Stripe からの領収メールも別途届きます。
 
 ■ 翌月以降のお支払い
 　今回のお支払いに {month_label}分の受講料{included_comp}と設備費は含まれています。
@@ -521,6 +521,7 @@ ENROLL_NOTIFY_BODY = """入塾申込書からの初回カード決済が完了�
 初回決済額: {first_total}円（入塾金 {entry_fee} + 設備費 {facility} + 受講料 {course_fee}{notify_ai}）
 翌月以降の月額: {monthly_fee}円
 決済日時 (JST): {paid_at_jst}
+受講開始月: {month_label}（申込書の選択: {start_choice_label}）
 台帳: {month_label}分を「引き落とし済み」として記録 → 月末バッチは {month_label}分を請求しません（{next_month_label}分から請求）
 登録ID: {registration_id}
 受付番号 (Stripe Checkout): {receipt_no}
@@ -570,6 +571,7 @@ def _enroll_post_course_application(record, month):
             f"申込ID: {record.get('app_id') or '-'} / 受付番号: {record.get('session_id', '')}\n"
             f"保護者: {record.get('parentName') or record.get('parent_name') or ''} / 電話: {record.get('phone') or ''}\n"
             f"初回決済: {int(record.get('first_charge_amount') or 0):,}円（{_enroll_month_label(month)}分）/ 翌月以降の月額: {int(record.get('monthly_fee') or 0):,}円\n"
+            f"受講開始月: {_enroll_month_label(month)}（申込書の選択: {'翌月から' if record.get('start_choice') == 'next' else '今月から'}）\n"
             f"内訳: {' / '.join(parts) if parts else '-'}\n"
             + ("★AI学習アプリ（月額オプション +5,000 円）申込済み → 承認は［OK］(AIあり) で\n" if ai_paid else "")
             + "※ 塾生アプリ登録の行が届いたら 2 行まとめて承認 → この行のメールが保護者メール（週次レポート宛先）として保存されます")
@@ -741,7 +743,7 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
     if not course_fee and monthly_fee:
         course_fee = max(monthly_fee - facility - ai_app, 0)
     if ai_app:
-        option_lines = f"　AI学習アプリ（月額オプション・初月分）：{ai_app:,}円\n"
+        option_lines = f"　AI学習アプリ（月額オプション・{_enroll_month_label(month)}分）：{ai_app:,}円\n"
         options_label = f"AI学習アプリ {ai_app:,}円/月"
     elif ai_app_included:
         option_lines = "　AI学習アプリ：0円（国公立難関大学コースに含まれています）\n"
@@ -750,6 +752,10 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
         option_lines, options_label = "", "なし"
     monthly_comp = "＋AI学習アプリ" if ai_app else ""
     included_comp = "・AI学習アプリ" if ai_app else ""
+    # 翌月開始 (2026-09-23): 決済した月の分は払わない、と保護者に明示する
+    paid_month = _course_jst(record.get("paid_at") or None).strftime("%Y-%m")
+    start_note = (f"　受講開始月：{_enroll_month_label(month)}（{_enroll_month_label(paid_month)}分のお支払いはありません）\n"
+                  if (record.get("start_choice") == "next" and paid_month != month) else "")
     # AI学習アプリの使い始め方 (2026-09-23): 塾生アプリの登録を塾長が承認 (ai_disabled=0) すると同じログインで使える。詳しい案内は塾長から
     if ai_app:
         ai_app_note = "　　　AI学習アプリ（月額オプション）は、塾生アプリのご登録を塾長が承認したあと、同じログインでご利用いただけます。使い方は承認時に塾長よりご案内します。\n"
@@ -783,6 +789,8 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
                        "failed": "★失敗（下の★行を参照）"}.get(record.get("course_app_status") or "", "-"),
         "included_comp": included_comp,
         "ai_app_note": ai_app_note,
+        "start_choice_label": "翌月から" if (record.get("start_choice") or "") == "next" else "今月から",
+        "start_note": start_note,
         "month_label": _enroll_month_label(month),
         "next_month_label": _enroll_month_label(_enroll_next_month(month)),
         "receipt_no": session_id,
@@ -845,7 +853,7 @@ def _enroll_notify_owner(record, vars_, mail_status, ledger_state, warnings):
         ok = mail_status == "sent"
         vars_["welcome_status"] = "送信済み" if ok else f"★送信失敗 ({mail_status}) — 手動で送ってください"
         if ledger_state == "error":
-            warnings.append("★台帳 (charge:done / charge:history) を KV に書けませんでした → 月末タブでこの生徒の当月が「引き落とし済み」になっているか確認。なっていなければ「✅ 支払い済みにする」で手動記録 (二重請求防止)")
+            warnings.append("★台帳 (charge:done / charge:history) を KV に書けませんでした → 月末タブでこの生徒の当月が「引き落とし済み」になっているか確認。なっていなければ Claude に「この生徒の当月分を mark_paid で台帳に記録して」と依頼 (admin-charge-reconcile・二重請求防止)")
         elif ledger_state == "exists":
             warnings.append("★台帳に当月の記録が既にあったため上書きしていません (再送または手動記録済み)。月末タブで確認")
         if not record.get("stripe_payment_method_id"):
@@ -912,6 +920,13 @@ def _handle_enroll_first_charge(obj, reg_id, metadata, existing):
     # Stripe の再送 (最長 3 日) が月をまたいだとき翌月に印が付き、決済した月が未請求のまま翌月が skip される
     paid_ts = int(obj.get("created") or 0) or now_ts
     month = _course_jst(paid_ts).strftime("%Y-%m")
+    # 受講開始月 (2026-09-23): 申込書で「翌月から」を選ぶと register-subscribe が metadata.start_month に翌月 (YYYY-MM) を入れる。
+    # その月を台帳の月にする = charge:done を翌月に書く → 26 日前後の「翌月分」バッチはこの生徒を飛ばし、その次の月から引き落とす。
+    # 決済月・その翌月以外の値 (改ざん・古いセッション) は無視して決済月にする
+    start_month = str(metadata.get("start_month") or existing.get("start_month") or "").strip()
+    if start_month in (month, _enroll_next_month(month)):
+        month = start_month
+    start_choice = str(metadata.get("start_choice") or existing.get("start_choice") or "current")
     record = {
         **existing,
         "registration_id": reg_id,
@@ -933,6 +948,8 @@ def _handle_enroll_first_charge(obj, reg_id, metadata, existing):
         "first_charge_payment_intent_id": pi_id,
         "first_charge_amount": first_total,
         "first_charge_month": month,
+        "start_month": month,             # 受講開始月 = 初回決済を充てた月
+        "start_choice": start_choice,     # current | next (申込書の選択)
         "entry_fee": entry_fee,
         "app_id": metadata.get("app_id") or existing.get("app_id") or "",
         "source": "enrollment-form-v1-payment",
@@ -953,6 +970,10 @@ def _handle_enroll_first_charge(obj, reg_id, metadata, existing):
                 if obj.get("livemode") is not False:
                     _enroll_notify_duplicate(record, other)
                 return
+    # 台帳 (charge:done) を名簿 (reg:completed / index) より先に書く (2026-09-23): 名簿に載った直後に 26 日前後のバッチが走ると、
+    # バッチの SET NX が先に勝って初回決済と二重になる隙があった。先に done を書けばバッチはこの生徒を必ず飛ばす。
+    # 名簿の書き込みが失敗して Stripe が再送しても、同じ pi の done は「written」扱いで整合する
+    ledger_state = _enroll_write_ledger(reg_id, month, pi_id, first_total, record, now_ts)
     res = _redis_safe("SET", f"reg:completed:{reg_id}", json.dumps(record, ensure_ascii=False))
     if not (isinstance(res, dict) and res.get("result") == "OK"):
         _log(f"webhook enroll CRITICAL: KV error writing reg:completed rid={reg_id} — asking Stripe to retry")
@@ -961,7 +982,6 @@ def _handle_enroll_first_charge(obj, reg_id, metadata, existing):
     _redis_safe("ZADD", "reg:completed:index", str(now_ts), reg_id)
     if customer:
         _redis_safe("SET", f"reg:by_customer:{customer}", reg_id)
-    ledger_state = _enroll_write_ledger(reg_id, month, pi_id, first_total, record, now_ts)
     warnings = []
     nxt = _enroll_next_month(month)
     if _enroll_next_month_batch_ran(nxt):

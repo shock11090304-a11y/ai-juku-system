@@ -118,6 +118,29 @@ COURSES = {
     "kou2-grammar":  {"name": "高校2年英文法",   "price": 7500, "label": "高2 英文法"},
     "kokugo":        {"name": "高校国語",       "price": 7500, "label": "高校国語（現代文・古文）"},
 }
+# 受講開始月 (2026-09-23 塾長決定「翌月のみ」): 申込書の「今月から / 翌月から」(startMonth: current | next)。翌月なら初回決済を
+# 翌月分として台帳に記録する (webhook が charge:done を翌月に書く → 26 日前後の「翌月分」バッチはその生徒を飛ばし、その次の月から引き落とす)。
+# 値は JST の "YYYY-MM"。再来月以降は受け付けない
+START_MONTH_CHOICES = ("current", "next")
+
+
+def _jst_month(offset=0):
+    """JST の今月 (+offset か月) を YYYY-MM で"""
+    import datetime as _dt
+    d = _dt.datetime.now(_dt.timezone(_dt.timedelta(hours=9)))
+    y, m = d.year, d.month + offset
+    while m > 12:
+        y, m = y + 1, m - 12
+    return f"{y}-{m:02d}"
+
+
+def _month_label(ym):
+    try:
+        return f"{int(ym[5:7])}月"
+    except Exception:
+        return ym
+
+
 # 入塾金 (初回のみ)。courses.json には入れない (入れると月額として毎月請求される)。入塾申込書の表示額 10,000 円と一致させること
 ENTRY_FEE = 10000
 ENTRY_FEE_NAME = "入塾金"
@@ -237,6 +260,10 @@ def _validate(payload):
     if len(facility_opts) > 1:
         errs.append("設備費は1つだけ選択可能です")
     first_charge = payload.get("firstCharge") is True
+    start_choice = payload.get("startMonth") or "current"
+    if not isinstance(start_choice, str) or start_choice not in START_MONTH_CHOICES:
+        errs.append("受講開始月が不正です (今月 / 翌月)")
+        start_choice = "current"
     app_id = (str(payload.get("appId") or "")).strip()
     if app_id and not APP_ID_RE.match(app_id):
         errs.append("申込IDが不正です")
@@ -255,6 +282,7 @@ def _validate(payload):
         "courses": list(dict.fromkeys(courses)),
         "options": list(dict.fromkeys(options)),
         "aiAppIncluded": ai_app_included,
+        "startMonth": start_choice,   # current | next (初回決済のみ意味を持つ)
     }
 
 
@@ -470,6 +498,11 @@ def _create_first_charge_session(secret_key, payload, fee, breakdown, registrati
     student = payload["studentName"]
     desc_detail = " / ".join(breakdown)[:240]
     first_total = ENTRY_FEE + fee
+    # 受講開始月: 今月 or 翌月 (JST)。初回決済はこの月の分として扱う
+    start_choice = payload.get("startMonth") if payload.get("startMonth") in START_MONTH_CHOICES else "current"
+    start_month = _jst_month(1 if start_choice == "next" else 0)
+    start_label = _month_label(start_month)
+    after_label = _month_label(_jst_month(2 if start_choice == "next" else 1))
 
     def _cap(s, n=240):
         return (str(s) or "")[:n]
@@ -488,6 +521,8 @@ def _create_first_charge_session(secret_key, payload, fee, breakdown, registrati
         "entry_fee": str(ENTRY_FEE),
         "first_total": str(first_total),
         "app_id": _cap(payload.get("appId", ""), 40),
+        "start_month": start_month,          # 台帳の月 (webhook が charge:done をこの月に書く)。翌月開始なら翌月
+        "start_choice": start_choice,        # current | next (塾長通知の表示用)
         "source": "enrollment-form-v1-payment",
         "system": "juku-payment-monthly",
     }
@@ -506,10 +541,10 @@ def _create_first_charge_session(secret_key, payload, fee, breakdown, registrati
         ("locale", "ja"),
         ("submit_type", "pay"),
         ("payment_intent_data[setup_future_usage]", "off_session"),
-        ("payment_intent_data[description]", _cap(f"入塾 初回分 (入塾金+設備費+初月受講料{ai_desc}) — 生徒: {student}", 200)),
+        ("payment_intent_data[description]", _cap(f"入塾 初回分 ({start_label}分: 入塾金+設備費+受講料{ai_desc}) — 生徒: {student}", 200)),
         ("custom_text[submit][message]", _cap(
-            f"本日は初回分（入塾金＋設備費＋初月受講料{ai_comp}・日割りなし）合計 {first_total:,} 円を決済し、このカードを登録します。"
-            f"翌月分以降の月額 {fee:,} 円（設備費＋受講料{ai_comp}）は、毎月 26 日前後に翌月分を同じカードから自動で引き落とします。", 500)),
+            f"本日は初回分（入塾金＋{start_label}分の設備費・受講料{ai_comp}・日割りなし）合計 {first_total:,} 円を決済し、このカードを登録します。"
+            f"{after_label}分以降の月額 {fee:,} 円（設備費＋受講料{ai_comp}）は、毎月 26 日前後に翌月分を同じカードから自動で引き落とします。", 500)),
         ("success_url", f"{return_base}/enroll-thanks.html?session_id={{CHECKOUT_SESSION_ID}}"),
         ("cancel_url", f"{return_base}/enroll-thanks.html?canceled=1"),
     ]
@@ -518,11 +553,11 @@ def _create_first_charge_session(secret_key, payload, fee, breakdown, registrati
     for c in payload["courses"]:
         info = COURSES.get(c)
         if info:
-            items.append((f"{info.get('label') or info['name']} 受講料（初月分）", info["price"]))   # 明細も申込書と同じ表示名
+            items.append((f"{info.get('label') or info['name']} 受講料（{start_label}分）", info["price"]))   # 明細も申込書と同じ表示名・開始月の分
     for o in payload["options"]:
         info = OPTIONS.get(o)
         if info:
-            items.append(("設備費（初月分）" if o.startswith("facility-") else f"{info['name']}（初月分）", info["price"]))
+            items.append((f"設備費（{start_label}分）" if o.startswith("facility-") else f"{info['name']}（{start_label}分）", info["price"]))
     for i, (name, price) in enumerate(items):
         form.append((f"line_items[{i}][price_data][currency]", "jpy"))
         form.append((f"line_items[{i}][price_data][unit_amount]", str(price)))
@@ -538,6 +573,8 @@ def _create_first_charge_session(secret_key, payload, fee, breakdown, registrati
     session = _stripe_post(secret_key, "checkout/sessions", form, idempotency_key=f"juku-first-charge-{registration_id}")
     session["_juku_customer_id"] = customer_id
     session["_juku_first_total"] = first_total
+    session["_juku_start_month"] = start_month
+    session["_juku_start_choice"] = start_choice
     return session
 
 
@@ -710,6 +747,8 @@ class handler(BaseHTTPRequestHandler):
                 record["entry_fee"] = ENTRY_FEE
                 record["first_total"] = int(session.get("_juku_first_total") or (ENTRY_FEE + fee))
                 record["app_id"] = clean.get("appId", "")
+                record["start_month"] = session.get("_juku_start_month") or _jst_month(0)      # 台帳の月 (翌月開始なら翌月)
+                record["start_choice"] = session.get("_juku_start_choice") or "current"
             _redis_safe("SET", f"reg:pending:{registration_id}", json.dumps(record, ensure_ascii=False), "EX", "604800")  # 7 days TTL
             _redis_safe("ZADD", "reg:index", str(now_ts), registration_id)
 
@@ -722,6 +761,7 @@ class handler(BaseHTTPRequestHandler):
             if first_charge:
                 resp["firstTotal"] = record["first_total"]
                 resp["entryFee"] = ENTRY_FEE
+                resp["startMonth"] = record["start_month"]   # "YYYY-MM"。申込書が完了画面に「◯月分」と出す
             _json(self, 200, resp)
         except Exception as e:
             _log(f"register-subscribe internal error: {e!r}")
