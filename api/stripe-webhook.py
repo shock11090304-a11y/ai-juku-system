@@ -544,7 +544,7 @@ ENROLL_COURSEAPP_REFERRER = "入塾申込フォーム"   # 承認処理はこの
 
 
 def _enroll_post_course_application(record, month):
-    """決済完了 → 本体 API に「入塾申込フォーム」の申込行を 1 本作る。戻り値: (status, 補足)。status は created / exists / disabled / failed"""
+    """決済完了 → 本体 API に「入塾申込フォーム」の申込行を 1 本作る。戻り値: (status, 補足)。status は created / exists / blocked / disabled / failed"""
     if os.environ.get("ENROLL_COURSEAPP_ENABLED", "1").strip().lower() in ("0", "false", "off"):
         return "disabled", ""
     rid = record.get("registration_id", "")
@@ -564,7 +564,7 @@ def _enroll_post_course_application(record, month):
             return int(part.rsplit("¥", 1)[1].replace(",", ""))
         except Exception:
             return 0
-    # 有料の AI学習アプリ (国公立同梱の ¥0 行は除く)。ceo.js の _aiHint がこの文言を見て承認ダイアログを［OK］(AIあり) 既定にする (有料なのに AIなしで承認する事故防止)
+    # 有料の AI学習アプリ (国公立同梱の ¥0 行は除く)。ceo.js の _aiHint がこの文言を見て承認ダイアログのヒント文で［OK］(AIあり) を勧める (confirm() なので既定値は変わらない。有料なのに AIなしで承認する事故防止)
     ai_paid = any("AI学習アプリ" in p and _yen(p) > 0 for p in parts)
     note = (f"入塾申込書（カード決済）から自動作成 {_course_jst(record.get('paid_at') or None).strftime('%Y-%m-%d %H:%M')}\n"
             f"申込ID: {record.get('app_id') or '-'} / 受付番号: {record.get('session_id', '')}\n"

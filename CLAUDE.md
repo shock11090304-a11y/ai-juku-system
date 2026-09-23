@@ -78,6 +78,23 @@
 - 入塾申込書 (Netlify `入塾書類/index.html`・別オリジン) → `POST /payment/api/register-subscribe` に `firstCharge:true` → **mode=payment** の Checkout
   (入塾金 `ENTRY_FEE` 10,000 + 設備費 + 各コース初月受講料・`setup_future_usage=off_session` でカード保存)。金額はサーバ側カタログのみ
   (`COURSES`/`OPTIONS` と `payment/courses.json` を `scripts/check_course_price_sync.py` で同期)。**入塾金は courses.json に入れない** (毎月請求になる)。
+- **AI学習アプリ (月額 +5,000 円・2026-09-23)** はオプション `ai-app-5000` (`OPTIONS` / `courses.json`)。**国公立難関大学コース (`kokuritsu`) には無料で同梱**
+  (academy.html の料金表) なので `_validate` が一緒に来た `ai-app-5000` を落とす (申込書側も `payment/register.html` も国公立を選ぶと欄が外れる)。
+  同梱のときは内訳に「AI学習アプリ（国公立難関大学コースに同梱） ¥0」を残し、webhook のメールは AI学習アプリを受講料とは別の行 (`option_lines` / `options_label`) に出す。
+  テスト A1h/A1i/A1j (aiAppIncluded)・A2x・A4g (do_POST→webhook の往復)・B1x。
+- **HP の `enrollment.html` (旧・決済なしの申込書) は 2026-09-23 に廃止**: `vercel.json` で Netlify の申込書へリダイレクトし、`academy.html` の「入塾申込」も同 URL。
+  ファイルは `check_timetable_sync.py` の照合元として残す (削除するとゲートが落ちる)。旧申込書からの「入塾申込フォーム」の行は来なくなるが、
+  代わりに決済完了の webhook が同じ referrer の行を作る (下記★) ので、申込待ちには従来どおり 2 行 (入塾申込フォーム + 塾生アプリ登録) が並ぶ。
+  決済完了 → 月謝アプリ名簿 + 確認メール (塾生アプリ登録 URL 入り)。
+  ★旧申込書が承認時に埋めていた `students.parent_email` (保護者週次レポートの宛先。mypage の保護者メール欄は 2026-09-09 にこの自動入力を前提に非表示) を保つため、
+  決済完了の webhook `_enroll_post_course_application` が本体 API `/api/course-applications` に referrer=`入塾申込フォーム` の行を作る (KV `enroll:courseapp:<rid>` NX で再送は 1 本・
+  失敗は塾長通知 ★要対応・`ENROLL_COURSEAPP_ENABLED=0` で停止・送り先は `ENROLL_COURSEAPP_URL`)。塾生アプリ登録の行と 2 行まとめて承認で従来どおり parent_email が入る。テスト B1s/B1y/B2e。
+  parent_email が入る条件 (server/main.py の承認処理・従来どおり): 入塾申込フォーム行のメールがログイン用 (塾生アプリ行) のメールと**違う**・学年が矛盾しない・2 行が 30 日以内・
+  既存の parent_email が空のときだけ (上書きしない)。
+  同じ保護者メールで承認済みの生徒がいる (兄弟の 2 人目) と本体 API が 409「承認済み」で行を作らない → webhook は `blocked` として ★要対応 (Claude に保護者メールの設定を依頼)。テスト B1y5。
+  AI学習アプリ (有料) を申し込んだ生徒は行の note に「AI学習アプリ（月額オプション +5,000 円）申込済み」と書き、`ceo.js` `_aiHint` がそれを見て承認ダイアログのヒント文で［OK］(AIあり) を勧める
+  (ダイアログは `confirm()` なので既定値そのものは変わらない。有料なのに AIなしで承認する事故防止)。
+  ★申込書 (Netlify) は時間割ゲートの対象外: 時間割を変えたら `入塾書類/index.html` の表も手で直して Netlify に再デプロイ。
 - 完了イベントは `api/stripe-webhook.py` `_handle_enroll_first_charge`: reg:completed を **`checkout_mode="setup"` 相当** (PaymentIntent の
   payment_method・`monthly_fee` は月額のみ) で書き、**決済した JST 月の `charge:done` (SET NX) + `charge:history`** を `source=enroll-first-charge` で書く
   → 月末バッチはその月を skip。翌月分から月額を請求する。PaymentIntent の metadata に `month` は付けない (PI.succeeded の月次 reconcile を起こさない)。

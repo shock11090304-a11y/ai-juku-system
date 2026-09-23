@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/enrollment.html",
+      "destination": "https://graceful-eclair-56bdac.netlify.app/",
+      "permanent": false
+    },
+    {
       "source": "/kakijun",
       "destination": "/kakijun/",
       "permanent": false
