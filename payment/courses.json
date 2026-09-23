@@ -1,6 +1,6 @@
 {
   "_comment": "AI学習コーチ塾 コース単価カタログ。register.html (表示) と api/register-subscribe.py の COURSES/OPTIONS (実課金額) の両方で参照される。価格改定時は両ファイルを必ず同じ値に更新し、`python3 scripts/check_course_price_sync.py` で一致を検証すること (ズレると表示価格と請求額が食い違う)。",
-  "version": "2026-05-03",
+  "version": "2026-09-23",
   "currency": "JPY",
   "courses": [
     { "id": "kobetsu",      "name": "個別指導",          "price": 25000, "tier": "kobetsu" },
@@ -26,6 +26,7 @@
   ],
   "options": [
     { "id": "facility-1500", "name": "設備費 (¥1,500)", "price": 1500 },
-    { "id": "facility-1350", "name": "設備費 (¥1,350)", "price": 1350 }
+    { "id": "facility-1350", "name": "設備費 (¥1,350)", "price": 1350 },
+    { "id": "ai-app-5000",   "name": "AI学習アプリ",     "price": 5000 }
   ]
 }

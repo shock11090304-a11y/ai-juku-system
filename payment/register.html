@@ -149,6 +149,8 @@
     .grade-warning.show { display: block; }
 
     .options-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    /* AI学習アプリ (ai-app-5000) が国公立難関大学コースに同梱されて選べないとき */
+    .opt-card.included { opacity: 0.45; pointer-events: none; text-decoration: line-through; }
     .opt-card {
       padding: 10px 14px;
       background: rgba(255,255,255,0.03);
@@ -455,11 +457,12 @@ function renderOptions() {
   const row = document.getElementById('optionsRow');
   if (!STATE.options.length) return;
   row.innerHTML = `<div class="tier-label" style="width:100%;margin-bottom:4px;">🔧 オプション (該当者のみ)</div>` +
-    STATE.options.map(o => `<div class="opt-card" data-id="${o.id}"><span class="on">${escapeHtml(o.name)}</span></div>`).join('');
+    STATE.options.map(o => `<div class="opt-card" data-id="${o.id}"><span class="on">${escapeHtml(o.name)}</span>${/¥/.test(o.name) ? '' : `<span class="op"> ¥${Number(o.price || 0).toLocaleString()}/月</span>`}</div>`).join('');
   row.addEventListener('click', e => {
     const card = e.target.closest('.opt-card');
     if (!card) return;
     const id = card.dataset.id;
+    if (card.classList.contains('included')) return;   // 国公立同梱の AI学習アプリは選べない (syncIncludedOptions)
     if (STATE.selectedOpts.has(id)) { STATE.selectedOpts.delete(id); card.classList.remove('sel'); }
     else {
       // Allow only one facility fee at a time (mutual exclusion among facility-* options)
@@ -477,7 +480,20 @@ function renderOptions() {
   });
 }
 
+// AI学習アプリ (ai-app-5000) は国公立難関大学コース (kokuritsu) に無料で同梱 → 国公立を選んだら外して選べなくする。
+// サーバ (api/register-subscribe.py _validate) も同じ規則で 5,000 円を落とすので、ここは「表示額 = 請求額」を保つための鏡
+const AI_APP_OPTION = 'ai-app-5000', AI_APP_INCLUDED_COURSES = ['kokuritsu'];
+function syncIncludedOptions() {
+  const card = document.querySelector(`#optionsRow .opt-card[data-id="${AI_APP_OPTION}"]`);
+  if (!card) return;
+  const included = AI_APP_INCLUDED_COURSES.some(id => STATE.selected.has(id));
+  if (included && STATE.selectedOpts.has(AI_APP_OPTION)) { STATE.selectedOpts.delete(AI_APP_OPTION); card.classList.remove('sel'); }
+  card.classList.toggle('included', included);
+  card.title = included ? '国公立難関大学コースに無料で含まれています' : '';
+}
+
 function updateTotal() {
+  syncIncludedOptions();
   let total = 0;
   const breakdown = [];
   for (const id of STATE.selected) {

@@ -92,9 +92,9 @@ class DownKV(FakeKV):
 
 class FakeNet:
     """urllib.request.urlopen の差し替え: Stripe GET payment_intents と Resend POST だけ受ける"""
-    def __init__(self, pm="pm_card_1", pi_customer="cus_1"):
-        self.sent, self.headers, self.stripe_gets = [], [], []
-        self.pm, self.pi_customer = pm, pi_customer
+    def __init__(self, pm="pm_card_1", pi_customer="cus_1", amount=18850, courseapp_fail=None, courseapp_body=b'{"detail":"boom"}'):
+        self.sent, self.headers, self.stripe_gets, self.courseapps = [], [], [], []
+        self.pm, self.pi_customer, self.amount, self.courseapp_fail, self.courseapp_body = pm, pi_customer, amount, courseapp_fail, courseapp_body
 
     def __call__(self, req, timeout=None):
         url = req.full_url
@@ -104,7 +104,7 @@ class FakeNet:
                 raise urllib.error.HTTPError(url, 500, "boom", {}, io.BytesIO(b"{}"))
             pi_id = url.rsplit("/", 1)[1]
             return io.BytesIO(json.dumps({"id": pi_id, "object": "payment_intent", "payment_method": self.pm,
-                                          "customer": self.pi_customer, "amount_received": 18850, "status": "succeeded"}).encode())
+                                          "customer": self.pi_customer, "amount_received": self.amount, "status": "succeeded"}).encode())
         if "api.stripe.com/v1/customers/" in url and "/payment_methods" in url:
             self.stripe_gets.append(url)
             return io.BytesIO(json.dumps({"data": [{"id": "pm_from_customer", "type": "card"}]}).encode())
@@ -112,6 +112,11 @@ class FakeNet:
             self.headers.append(dict(req.header_items()))
             self.sent.append(json.loads(req.data.decode("utf-8")))
             return io.BytesIO(json.dumps({"id": f"re_{len(self.sent)}"}).encode())
+        if "/api/course-applications" in url:   # 本体 API (CEO 申込待ち) への「入塾申込フォーム」行の作成 (2026-09-23)
+            if self.courseapp_fail:
+                raise urllib.error.HTTPError(url, self.courseapp_fail, "boom", {}, io.BytesIO(self.courseapp_body))
+            self.courseapps.append(json.loads(req.data.decode("utf-8")))
+            return io.BytesIO(json.dumps({"ok": True, "application_id": len(self.courseapps)}).encode())
         raise AssertionError("unexpected network call: " + url)
 
 
@@ -165,7 +170,9 @@ def main():
                        "RESEND_API_KEY": "re_dummy", "FROM_EMAIL": "noreply@example.invalid",
                        "COURSE_NOTIFY_EMAIL": "owner@example.invalid", "REGISTER_CORS_ORIGINS": "",
                        "ENROLL_WELCOME_ENABLED": "1", "COURSE_REPLY_TO": "",
-                       "ENROLL_ZOOM_ID": "12345", "ENROLL_ZOOM_PASS": "abc", "ENROLL_APP_REGISTER_URL": ""})
+                       "ENROLL_ZOOM_ID": "12345", "ENROLL_ZOOM_PASS": "abc", "ENROLL_APP_REGISTER_URL": "",
+                       # 申込待ちへの行作成: 有効にしつつ送り先は到達不能なローカルにする (FakeNet が URL 部分一致で受ける。万一 patch が外れても本番に POST しない)
+                       "ENROLL_COURSEAPP_ENABLED": "1", "ENROLL_COURSEAPP_URL": "http://127.0.0.1:9/api/course-applications"})
     print("🏫 入塾申込書 初回カード決済 回帰テスト\n")
     reg = load(REGISTER, "register_subscribe_vercel")
     wh = load(WEBHOOK, "stripe_webhook_vercel_enroll")
@@ -185,6 +192,20 @@ def main():
     check("A1g. 従来の setup 登録は設備費なしでも可 (挙動不変)", not errs, errs)
     fee, breakdown = reg._calculate_fee(clean["courses"], clean["options"])
     check("A1e. 月額 = 7,500 + 1,350", fee == 8850, fee)
+    # ---- AI学習アプリ (ai-app-5000・2026-09-23) ----
+    errs, clean_ai = reg._validate(payload(options=["facility-1350", "ai-app-5000"]))
+    fee_ai, breakdown_ai = reg._calculate_fee(clean_ai["courses"], clean_ai["options"])
+    check("A1h. AI学習アプリを足すと月額 = 7,500 + 1,350 + 5,000 で内訳に載る",
+          not errs and fee_ai == 13850 and any("AI学習アプリ" in b for b in breakdown_ai), (errs, fee_ai, breakdown_ai))
+    errs, clean_kk = reg._validate(payload(courses=["kokuritsu"], options=["facility-1350", "ai-app-5000"]))
+    fee_kk, _ = reg._calculate_fee(clean_kk["courses"], clean_kk["options"])
+    check("A1i. 国公立難関大学コースは AI学習アプリ同梱 → 一緒に送られても 5,000 円を落とす (月額 25,000 + 1,350)",
+          not errs and "ai-app-5000" not in clean_kk["options"] and "facility-1350" in clean_kk["options"] and fee_kk == 26350,
+          (errs, clean_kk["options"], fee_kk))
+    _, clean_kk2 = reg._validate(payload(courses=["kokuritsu"]))
+    check("A1j. aiAppIncluded: 国公立なら AI を送っていなくても True (¥0 の同梱行の元)・国公立でなければ False",
+          clean_kk.get("aiAppIncluded") is True and clean_kk2.get("aiAppIncluded") is True and clean.get("aiAppIncluded") is False and clean_ai.get("aiAppIncluded") is False,
+          (clean_kk.get("aiAppIncluded"), clean_kk2.get("aiAppIncluded"), clean.get("aiAppIncluded"), clean_ai.get("aiAppIncluded")))
 
     # ---- A2 checkout params ----
     posts = []
@@ -222,6 +243,21 @@ def main():
     check("A2i. Idempotency-Key に registration_id", cs and cs[0][2] == "juku-first-charge-reg_test1", cs[0][2] if cs else None)
     check("A2j. 決済画面の確認文に初回額と月額", "18,850 円" in form.get("custom_text[submit][message]", "") and "8,850 円" in form.get("custom_text[submit][message]", ""), form.get("custom_text[submit][message]"))
     check("A2k. 返り値に customer と first_total", sess.get("_juku_customer_id") == "cus_new" and sess.get("_juku_first_total") == 18850, sess)
+    # ---- A2x AI学習アプリ付きの初回決済 (2026-09-23) ----
+    posts.clear()
+    reg._create_first_charge_session("sk_test_dummy", clean_ai, fee_ai, breakdown_ai, "reg_test_ai", "https://trillion-ai-juku.com",
+                                     "https://graceful-eclair-56bdac.netlify.app")
+    cs_ai = [p for p in posts if p[0] == "checkout/sessions"]
+    form_ai = dict(cs_ai[0][1]) if cs_ai else {}
+    amounts_ai = [int(v) for k, v in (cs_ai[0][1] if cs_ai else []) if k.endswith("[price_data][unit_amount]")]
+    names_ai = [v for k, v in (cs_ai[0][1] if cs_ai else []) if k.endswith("[product_data][name]")]
+    check("A2x1. 明細 4 行 = 入塾金 10,000 + 受講料 7,500 + 設備費 1,350 + AI学習アプリ 5,000 = 23,850", amounts_ai == [10000, 7500, 1350, 5000] and sum(amounts_ai) == 23850, amounts_ai)
+    check("A2x2. 明細名に「AI学習アプリ（初月分）」", "AI学習アプリ（初月分）" in names_ai, names_ai)
+    check("A2x3. metadata.monthly_fee=13,850・options に ai-app-5000・fee_breakdown に AI学習アプリ",
+          form_ai.get("metadata[monthly_fee]") == "13850" and "ai-app-5000" in form_ai.get("metadata[options]", "")
+          and "AI学習アプリ ¥5,000" in form_ai.get("metadata[fee_breakdown]", ""), form_ai)
+    check("A2x4. 決済画面の確認文に「＋AI学習アプリ」と初回額 23,850", "＋AI学習アプリ" in form_ai.get("custom_text[submit][message]", "")
+          and "23,850 円" in form_ai.get("custom_text[submit][message]", ""), form_ai.get("custom_text[submit][message]"))
 
     # ---- A3 CORS ----
     check("A3a. 既定の許可オリジン (Netlify) は echo", reg._cors_origin(FakeHandler("https://graceful-eclair-56bdac.netlify.app")) == "https://graceful-eclair-56bdac.netlify.app")
@@ -259,6 +295,20 @@ def main():
     reg._redis_safe = FakeKV()   # 同じメールは 1 時間に 3 回までのレート制限に当たるので KV を新しくする
     r4 = FakeReq(json.dumps(payload(studentName=SABURO), ensure_ascii=False).encode(), origin="https://evil.example"); r4.do_POST()
     check("A4f. 許可外オリジンには CORS ヘッダを付けない (応答自体は返る)", r4.status == 200 and "Access-Control-Allow-Origin" not in r4.hdrs, (r4.status, r4.hdrs))
+    # ---- A4g 国公立 + AI学習アプリ を do_POST に通す: 5,000 円は落ち、pending の内訳末尾に ¥0 の同梱行 (B1x4 はこの実物を使う = 往復テスト) ----
+    kv5 = FakeKV(); reg._redis_safe = kv5
+    r5 = FakeReq(json.dumps(payload(studentName=SABURO, courses=["kokuritsu"], options=["facility-1350", "ai-app-5000"]), ensure_ascii=False).encode()); r5.do_POST()
+    j5 = json.loads(r5.wfile.getvalue().decode() or "{}")
+    pend5 = [k for k in kv5.store if k.startswith("reg:pending:")]
+    p5 = json.loads(kv5.store[pend5[0]]) if pend5 else {}
+    cs5 = [p for p in posts if p[0] == "checkout/sessions"]
+    form5 = dict(cs5[-1][1]) if cs5 else {}
+    kokuritsu_breakdown = p5.get("breakdown") or []
+    check("A4g. 国公立 + AI学習アプリ: 月額 26,350 (5,000 円は落ちる)・pending の options は設備費だけ・内訳末尾に ¥0 の同梱行・metadata.fee_breakdown にも載る",
+          r5.status == 200 and j5.get("amount") == 26350 and p5.get("options") == ["facility-1350"]
+          and kokuritsu_breakdown[-1:] == ["AI学習アプリ（国公立難関大学コースに同梱） ¥0"]
+          and "AI学習アプリ（国公立難関大学コースに同梱） ¥0" in form5.get("metadata[fee_breakdown]", ""),
+          (r5.status, j5, kokuritsu_breakdown, form5.get("metadata[fee_breakdown]")))
 
     # ---- B1 webhook 正常系 ----
     rid = "reg_t1"
@@ -298,6 +348,94 @@ def main():
     wrec = json.loads(kv.store.get(f"enroll:welcome:{rid}") or "{}")
     check("B1p. enroll:welcome に status=sent", wrec.get("status") == "sent" and wrec.get("resend_id") == "re_1", wrec)
     check("B1r. Resend への送信に User-Agent (Cloudflare 1010 対策)", all(any(k.lower() == "user-agent" and v.startswith("ai-juku/") for k, v in h.items()) for h in net.headers), net.headers)
+    # ---- B1s CEO 申込待ちへ「入塾申込フォーム」の行 (2026-09-23: 旧申込書が担っていた保護者メール自動入力の導線) ----
+    ca = net.courseapps[0] if net.courseapps else {}
+    check("B1s1. 本体 API /api/course-applications に 1 回 POST (氏名・保護者メール・referrer=入塾申込フォーム・学年・電話)",
+          len(net.courseapps) == 1 and ca.get("name") == TARO and ca.get("email") == "parent@example.invalid" and ca.get("referrer") == "入塾申込フォーム"
+          and ca.get("grade") == "高校2年" and ca.get("phone") == "090-0000-0000", net.courseapps)
+    check("B1s2. note に 申込ID・受付番号・初回決済額・月額・内訳", all(s_ in ca.get("note", "") for s_ in ("AB12CD34", "cs_enroll_1", "18,850円", "8,850円", "高校2年英文法 ¥7,500", "2 行まとめて承認")), ca.get("note"))
+    check("B1s3. 二重作成防止の印 enroll:courseapp:<rid>", f"enroll:courseapp:{rid}" in kv.store, [k for k in kv.store if k.startswith("enroll:courseapp")])
+    check("B1s4. 塾長通知に「作成済み」と『2 行まとめて承認』の指示・★なし", "CEO 申込待ちの「入塾申込フォーム」行: 作成済み" in o.get("text", "") and "2 行まとめて承認" in o.get("text", "") and "★" not in o.get("text", ""), o.get("text"))
+
+    # ---- B1x AI学習アプリ付き (2026-09-23): 受講料とは別の行でメールに載る・月額に含まれる ----
+    ridx = "reg_tx"
+    kvx, netx = FakeKV(), FakeNet(amount=23850)
+    wh._redis_safe, urllib.request.urlopen = kvx, netx
+    px = pending(ridx, fee=13850)
+    px["breakdown"] = ["高校2年英文法 ¥7,500", "設備費 (¥1,350) ¥1,350", "AI学習アプリ ¥5,000"]
+    px["fee_breakdown"] = " / ".join(px["breakdown"]); px["options"] = ["facility-1350", "ai-app-5000"]; px["first_total"] = 23850
+    kvx.store[f"reg:pending:{ridx}"] = json.dumps(px, ensure_ascii=False)
+    sx = session(ridx, sid="cs_enroll_x")
+    sx["metadata"].update({"options": "facility-1350,ai-app-5000", "fee_breakdown": px["fee_breakdown"], "monthly_fee": "13850", "first_total": "23850"})
+    sx["amount_total"] = 23850
+    wh._handle_checkout_completed(event(sx))
+    recx = json.loads(kvx.store.get(f"reg:completed:{ridx}") or "{}")
+    bx = netx.sent[0].get("text", "") if netx.sent else ""
+    ox = netx.sent[1].get("text", "") if len(netx.sent) > 1 else ""
+    check("B1x1. 名簿の monthly_fee=13,850 (AI学習アプリ込み)・amount=23,850", recx.get("monthly_fee") == 13850 and recx.get("amount") == 23850, recx)
+    check("B1x2. 保護者メール: 受講料 7,500 とは別に AI学習アプリ 5,000 の行・合計 23,850・月額 13,850（設備費＋受講料＋AI学習アプリ）・今月分に AI も含む",
+          "受講料（初月分・日割りなし）：7,500円" in bx and "AI学習アプリ（月額オプション・初月分）：5,000円" in bx and "合計：23,850円" in bx
+          and "月額 13,850円（設備費＋受講料＋AI学習アプリ・税込）" in bx and "受講料・AI学習アプリと設備費は含まれています" in bx, bx)
+    check("B1x3. 塾長通知: オプション行・初回決済額の内訳に AI学習アプリ・承認は［OK］(AIあり) の指示。申込待ちの行の note にも同じ指示 (ceo.js _aiHint が読む)",
+          "オプション: AI学習アプリ 5,000円/月" in ox and "受講料 7,500 + AI学習アプリ 5,000" in ox and "［OK］(AIあり)" in ox
+          and "AI学習アプリ（月額オプション +5,000 円）申込済み → 承認は［OK］(AIあり) で" in (netx.courseapps[0].get("note", "") if netx.courseapps else ""), (ox, netx.courseapps))
+    check("B1x3b. AI 無しの申込 (B1) の note にはその指示が無い", "AIあり" not in (net.courseapps[0].get("note", "") if net.courseapps else "x"), net.courseapps)
+    # 国公立難関大学コース: AI学習アプリは同梱 (0 円の内訳行) → メールに「含まれています」と出て、受講料は 25,000 のまま
+    ridk = "reg_tk"
+    kvk, netk = FakeKV(), FakeNet(amount=36350)
+    wh._redis_safe, urllib.request.urlopen = kvk, netk
+    pk = pending(ridk, fee=26350)
+    pk["breakdown"] = kokuritsu_breakdown   # A4g で do_POST が実際に書いた内訳 (文字列を手書きしない = register-subscribe と webhook の往復テスト)
+    pk["fee_breakdown"] = " / ".join(pk["breakdown"]); pk["courses"] = ["kokuritsu"]; pk["first_total"] = 36350
+    kvk.store[f"reg:pending:{ridk}"] = json.dumps(pk, ensure_ascii=False)
+    sk = session(ridk, sid="cs_enroll_k")
+    sk["metadata"].update({"courses": "kokuritsu", "fee_breakdown": pk["fee_breakdown"], "monthly_fee": "26350", "first_total": "36350"})
+    sk["amount_total"] = 36350
+    wh._handle_checkout_completed(event(sk))
+    bk = netk.sent[0].get("text", "") if netk.sent else ""
+    ok_ = netk.sent[1].get("text", "") if len(netk.sent) > 1 else ""
+    check("B1x4. 国公立: 受講料 25,000・AI学習アプリは 0 円で「含まれています」・月額 26,350 (＋AI学習アプリ と書かない)・塾長通知に同梱",
+          "受講料（初月分・日割りなし）：25,000円" in bk and "AI学習アプリ：0円（国公立難関大学コースに含まれています）" in bk and "合計：36,350円" in bk
+          and "月額 26,350円（設備費＋受講料・税込）" in bk and "オプション: AI学習アプリ（国公立難関大学コースに同梱・0円）" in ok_, (bk, ok_))
+    wh._redis_safe, urllib.request.urlopen = kv, net
+
+    # ---- B1y 申込待ちへの行作成が失敗しても名簿・台帳・メールは止めず、塾長通知が ★要対応 になる ----
+    ridy = "reg_ty"
+    kvy, nety = FakeKV(), FakeNet(courseapp_fail=500)
+    wh._redis_safe, urllib.request.urlopen = kvy, nety
+    kvy.store[f"reg:pending:{ridy}"] = json.dumps(pending(ridy), ensure_ascii=False)
+    wh._handle_checkout_completed(event(session(ridy, sid="cs_enroll_y")))
+    oy = nety.sent[1] if len(nety.sent) > 1 else {}
+    check("B1y1. 失敗しても名簿と台帳は書かれ、メール 2 通は出る", f"reg:completed:{ridy}" in kvy.store and f"charge:done:{ridy}:{month}" in kvy.store and len(nety.sent) == 2, list(kvy.store))
+    check("B1y2. 塾長通知は ★要対応・本文に失敗と復旧の指示・印は消えている", "★要対応" in oy.get("subject", "") and "『入塾申込フォーム』行の自動作成に失敗" in oy.get("text", "")
+          and "parent@example.invalid" in oy.get("text", "") and f"enroll:courseapp:{ridy}" not in kvy.store, (oy.get("subject"), oy.get("text")))
+    # 409 (同じ氏名+メール+referrer の pending が既にある) は作成済み扱い・★なし
+    ridz2 = "reg_tz2"
+    kvz2, netz2 = FakeKV(), FakeNet(courseapp_fail=409, courseapp_body='{"detail":"「テスト 太郎」さんのお申し込みは既に受け付けています (1-2営業日以内に塾長から連絡があります)"}'.encode("utf-8"))
+    wh._redis_safe, urllib.request.urlopen = kvz2, netz2
+    kvz2.store[f"reg:pending:{ridz2}"] = json.dumps(pending(ridz2), ensure_ascii=False)
+    wh._handle_checkout_completed(event(session(ridz2, sid="cs_enroll_z2")))
+    oz2 = netz2.sent[1] if len(netz2.sent) > 1 else {}
+    check("B1y3. 409『既に受け付けています』(同じ pending あり) は「作成済み（既にあり）」・★なし", "作成済み（既にあり）" in oz2.get("text", "") and "★" not in oz2.get("text", ""), oz2.get("text"))
+    # 409『既に承認済み』= 同じ保護者メールで承認済みの生徒がいる (兄弟の 2 人目) → 行は作られない → 作成済み扱いにせず ★要対応
+    ridb = "reg_tb"
+    kvb, netb = FakeKV(), FakeNet(courseapp_fail=409, courseapp_body='{"detail":"このメールアドレスは既に承認済みです"}'.encode("utf-8"))
+    wh._redis_safe, urllib.request.urlopen = kvb, netb
+    kvb.store[f"reg:pending:{ridb}"] = json.dumps(pending(ridb), ensure_ascii=False)
+    wh._handle_checkout_completed(event(session(ridb, sid="cs_enroll_b")))
+    ob = netb.sent[1] if len(netb.sent) > 1 else {}
+    check("B1y5. 409『既に承認済み』(兄弟の 2 人目) は作成済み扱いにしない: ★要対応・本文に兄弟と保護者メール設定の依頼・印は消える",
+          "★要対応" in ob.get("subject", "") and "兄弟の 2 人目" in ob.get("text", "") and "parent@example.invalid" in ob.get("text", "")
+          and "作成済み" not in ob.get("text", "") and f"enroll:courseapp:{ridb}" not in kvb.store, (ob.get("subject"), ob.get("text")))
+    os.environ["ENROLL_COURSEAPP_ENABLED"] = "0"
+    ridd = "reg_td"
+    kvd, netd = FakeKV(), FakeNet()
+    wh._redis_safe, urllib.request.urlopen = kvd, netd
+    kvd.store[f"reg:pending:{ridd}"] = json.dumps(pending(ridd), ensure_ascii=False)
+    wh._handle_checkout_completed(event(session(ridd, sid="cs_enroll_d")))
+    check("B1y4. ENROLL_COURSEAPP_ENABLED=0 なら POST しない・通知に「無効化中」", not netd.courseapps and "無効化中" in (netd.sent[1].get("text", "") if len(netd.sent) > 1 else ""), netd.courseapps)
+    os.environ["ENROLL_COURSEAPP_ENABLED"] = "1"
+    wh._redis_safe, urllib.request.urlopen = kv, net
 
     # ---- B1z Zoom 未設定なら「LINE でお知らせ」 ----
     os.environ["ENROLL_ZOOM_ID"] = ""
@@ -313,6 +451,7 @@ def main():
     # ---- B2 再送 ----
     wh._handle_checkout_completed(event(session(rid), eid="evt_2"))
     check("B2a. 再送でもメールは増えない", len(net.sent) == 2, len(net.sent))
+    check("B2e. 再送でも申込待ちの行は増えない (enroll:courseapp NX)", len(net.courseapps) == 1, len(net.courseapps))
     check("B2b. 再送でも台帳の audit は増えない・done は元のまま", len(kv.lists.get(f"charge:history:audit:{rid}:{month}", [])) == 1 and json.loads(kv.store[f"charge:done:{rid}:{month}"]).get("source") == "enroll-first-charge")
     check("B2d. 自分が書いた台帳への再実行は written 扱い (★誤警告を出さない)", wh._enroll_write_ledger(rid, month, "pi_first_1", 18850, json.loads(kv.store[f"reg:completed:{rid}"]), 1) == "written" and wh._enroll_write_ledger(rid, month, "pi_other", 18850, {}, 1) == "exists")
     check("B2c. 再送後も名簿は setup 相当のまま", json.loads(kv.store[f"reg:completed:{rid}"]).get("checkout_mode") == "setup")

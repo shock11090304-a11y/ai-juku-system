@@ -124,7 +124,11 @@ APP_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 OPTIONS = {
     "facility-1500": {"name": "設備費 (¥1,500)", "price": 1500},
     "facility-1350": {"name": "設備費 (¥1,350)", "price": 1350},
+    # AI学習アプリ (月額・academy.html の料金表 +5,000 円と一致させる)。国公立難関大学コース (kokuritsu) には無料で同梱 → _validate が落とす
+    "ai-app-5000":   {"name": "AI学習アプリ", "price": 5000},
 }
+AI_APP_OPTION = "ai-app-5000"
+AI_APP_INCLUDED_COURSES = {"kokuritsu"}
 
 
 # ─────────────── Upstash Redis (オプション、未設定なら skip) ───────────────
@@ -219,6 +223,13 @@ def _validate(payload):
     invalid_options = [o for o in options if o not in OPTIONS]
     if invalid_options:
         errs.append(f"不明なオプションID: {invalid_options}")
+    # AI学習アプリは国公立難関大学コースに無料で同梱 (academy.html の料金表)。申込書も国公立を選ぶと欄が外れるが、
+    # 細工して一緒に送られても 5,000 円を二重には取らない (請求額はサーバ側で決めるので、ここで必ず落とす)
+    # 国公立難関大学コースは AI学習アプリを無料で同梱 → 申込書が ai-app-5000 を送っていなくても「含まれている」印を付け (do_POST が内訳に ¥0 行を足し、
+    # メールに「含まれています」と出る)、一緒に送られていたら請求から落とす
+    ai_app_included = bool(isinstance(courses, list) and AI_APP_INCLUDED_COURSES.intersection(courses))
+    if ai_app_included and AI_APP_OPTION in options:
+        options = [o for o in options if o != AI_APP_OPTION]
     facility_opts = [o for o in options if o.startswith("facility-")]
     if len(facility_opts) > 1:
         errs.append("設備費は1つだけ選択可能です")
@@ -240,6 +251,7 @@ def _validate(payload):
         "phone": phone,
         "courses": list(dict.fromkeys(courses)),
         "options": list(dict.fromkeys(options)),
+        "aiAppIncluded": ai_app_included,
     }
 
 
@@ -481,6 +493,9 @@ def _create_first_charge_session(secret_key, payload, fee, breakdown, registrati
     if not customer_id:
         raise RuntimeError("Customer 作成に失敗しました (customer.id 取得不能)")
 
+    # AI学習アプリ (月額オプション) を選んだときは決済画面の内訳文言にも出す (金額 first_total / fee には既に含まれている)
+    ai_comp = "＋AI学習アプリ" if AI_APP_OPTION in payload["options"] else ""
+    ai_desc = "+AI学習アプリ" if ai_comp else ""
     form = [
         ("mode", "payment"),
         ("payment_method_types[]", "card"),
@@ -488,10 +503,10 @@ def _create_first_charge_session(secret_key, payload, fee, breakdown, registrati
         ("locale", "ja"),
         ("submit_type", "pay"),
         ("payment_intent_data[setup_future_usage]", "off_session"),
-        ("payment_intent_data[description]", _cap(f"入塾 初回分 (入塾金+設備費+初月受講料) — 生徒: {student}", 200)),
+        ("payment_intent_data[description]", _cap(f"入塾 初回分 (入塾金+設備費+初月受講料{ai_desc}) — 生徒: {student}", 200)),
         ("custom_text[submit][message]", _cap(
-            f"本日は初回分（入塾金＋設備費＋初月受講料・日割りなし）合計 {first_total:,} 円を決済し、このカードを登録します。"
-            f"翌月分以降の月額 {fee:,} 円（設備費＋受講料）は、毎月 26 日前後に翌月分を同じカードから自動で引き落とします。", 500)),
+            f"本日は初回分（入塾金＋設備費＋初月受講料{ai_comp}・日割りなし）合計 {first_total:,} 円を決済し、このカードを登録します。"
+            f"翌月分以降の月額 {fee:,} 円（設備費＋受講料{ai_comp}）は、毎月 26 日前後に翌月分を同じカードから自動で引き落とします。", 500)),
         ("success_url", f"{return_base}/enroll-thanks.html?session_id={{CHECKOUT_SESSION_ID}}"),
         ("cancel_url", f"{return_base}/enroll-thanks.html?canceled=1"),
     ]
@@ -558,6 +573,9 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             fee, breakdown = _calculate_fee(clean["courses"], clean["options"])
+            if clean.get("aiAppIncluded"):
+                # 国公立難関大学コース同梱の AI学習アプリ: 請求 0 円のまま、名簿の内訳と確認メールに「含まれている」と残す (Stripe の明細には出さない)
+                breakdown.append(f"{OPTIONS[AI_APP_OPTION]['name']}（国公立難関大学コースに同梱） ¥0")
             if fee <= 0:
                 _json(self, 400, {"error": "INVALID_FEE", "message": "月額が 0 円になっています"})
                 return

@@ -2942,13 +2942,17 @@ function renderCourseApps(apps) {
   const _badge = (ref) => ref === '塾生アプリ'
     ? '<span style="background:rgba(129,140,248,0.22); color:#c7d2fe; border:1px solid rgba(129,140,248,0.45); border-radius:999px; padding:0.05rem 0.5rem; font-size:0.68rem; font-weight:700; margin-left:0.35rem;">🏫 塾生アプリ</span>'
     : '<span style="background:rgba(167,139,250,0.18); color:#ddd6fe; border:1px solid rgba(167,139,250,0.4); border-radius:999px; padding:0.05rem 0.5rem; font-size:0.68rem; font-weight:700; margin-left:0.35rem;">🎓 難関コース</span>';
-  // AI の既定ヒントは送信元ではなく受講内容で決める: 国公立難関大コース / AI管理アドオン → AIあり、
+  // AI の既定ヒントは送信元ではなく受講内容で決める: 国公立難関大コース / AI管理アドオン / AI学習アプリ (月額オプション) → AIあり、
   //   通塾クラスのみ → AIなし、受講内容の情報が無い LP 申込 → 従来どおり AIあり。
   const _aiHint = (rows, subjectsUnion) => {
     const notes = rows.map(r => r.note || '').join('\n');
     const hasCourse = subjectsUnion.indexOf('国公立難関大コース') >= 0 || /AI管理/.test(notes);
+    // 2026-09-23: カード決済版の入塾申込書で AI学習アプリ (月額オプション +5,000 円) を申し込んだ生徒。決済完了の webhook が
+    //   申込待ちの行の note に「AI学習アプリ（月額オプション +5,000 円）申込済み」と書く (api/stripe-webhook.py)。有料なので AIなしで承認してはいけない
+    const hasAiApp = /AI学習アプリ（月額オプション/.test(notes);
     const anyJuku = rows.some(r => r.referrer === '塾生アプリ');
     const anyContent = rows.some(r => (r.subjects || '').trim());
+    if (hasAiApp) return { useAI: true, text: '※AI学習アプリ（月額オプション +5,000 円）を申込済みの生徒です。［OK］(AIあり) を選んでください。' };
     if (hasCourse) return { useAI: true, text: '※受講内容に国公立難関大コース (AI学習) が含まれます。通常は［OK］(AIあり) を選んでください。' };
     if (anyJuku || anyContent) return { useAI: false, text: '※通塾クラスのみの申込です。通常は［キャンセル］(AIなし) を選んでください。' };
     return { useAI: true, text: '※この申込は難関コースです。通常は［OK］(AIあり) を選んでください。' };

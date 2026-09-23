@@ -58,9 +58,10 @@ API = "https://ai-juku-api-production.up.railway.app"
 SITE = "https://trillion-ai-juku.com"
 CANON = {"english", "math", "physics", "chemistry", "biology", "earth", "japanese", "social"}
 # 本番と HEAD の md5 が一致すべき主要静的ファイル(Vercelビルド凍結の検知)
+# ★enrollment.html は 2026-09-23 から vercel.json で Netlify の申込書へリダイレクト (本番の中身 ≠ HEAD が正常) なので入れない
 FRESHNESS_FILES = [
     "app.js", "ceo.html", "mypage.html", "dojo-drill.html",
-    "enrollment.html", "class.html", "checkout.js",
+    "academy.html", "class.html", "checkout.js",
 ]
 # Stripe webhook endpoint (api/stripe-webhook.py) が Dashboard 側で購読しているべきイベント。
 # 購読が欠けているとハンドラは一切呼ばれず機能が無音で不成立になる
@@ -167,7 +168,7 @@ def check_api_health():
                 add("api_health", WARN, f"health レスポンスの解析に失敗: {type(e).__name__}: {e}")
     except Exception as e:
         add("api_health", FAIL, f"GET /api/health 失敗: {type(e).__name__}: {e}")
-    for path in ("mypage.html", "ceo.html", "dojo-drill.html", "enrollment.html"):
+    for path in ("mypage.html", "ceo.html", "dojo-drill.html", "academy.html"):
         try:
             code, _ = _http_get(f"{SITE}/{path}")
             add("api_health", PASS if code == 200 else FAIL, f"GET /{path} = {code}")

@@ -451,6 +451,8 @@ def _handle_course_async_paid(event):
 #   {month_label} {next_month_label} {receipt_no} {app_id} {contact} {line_url} {email} {paid_at_jst} {registration_id} {welcome_status}
 #   {zoom_block} (Zoom の ID とパスコード。env ENROLL_ZOOM_ID / ENROLL_ZOOM_PASS から。★リポジトリは公開なので値はコードに書かない。
 #                未設定なら「LINE でお知らせします」になる) {app_register_url} (塾生アプリの登録 URL。env ENROLL_APP_REGISTER_URL)
+#   2026-09-23 追加: {option_lines} {options_label} {monthly_comp} {included_comp} {notify_ai} (AI学習アプリ・月額オプション)
+#                    {course_app} (CEO 申込待ちへの「入塾申込フォーム」行の作成結果)
 ENROLL_APP_REGISTER_URL_DEFAULT = "https://trillion-ai-juku.com/juku-register.html"
 ENROLL_ZOOM_BLOCK = """　ミーティング ID：{zoom_id}
 　パスコード：{zoom_pass}"""
@@ -466,12 +468,12 @@ ENROLL_WELCOME_BODY = """{parent_name} 様
 　設備費：{facility}円
 　受講料（初月分・日割りなし）：{course_fee}円
 　　{courses}
-　合計：{first_total}円（税込）
+{option_lines}　合計：{first_total}円（税込）
 　※ Stripe からの領収メールも別途届きます。
 
 ■ 翌月以降のお支払い
-　今回のお支払いに {month_label}分の受講料と設備費は含まれています。
-　{next_month_label}分以降は、月額 {monthly_fee}円（設備費＋受講料・税込）を毎月 26 日前後に今回ご登録のカードから自動で引き落とします（翌月分の前払い）。
+　今回のお支払いに {month_label}分の受講料{included_comp}と設備費は含まれています。
+　{next_month_label}分以降は、月額 {monthly_fee}円（設備費＋受講料{monthly_comp}・税込）を毎月 26 日前後に今回ご登録のカードから自動で引き落とします（翌月分の前払い）。
 　※ {next_month_label}分は {month_label} 26 日前後のお引き落としです（この日を過ぎてのご入塾の場合は、塾長より別途ご案内します）。
 
 ■ 今後の流れ
@@ -487,9 +489,9 @@ ENROLL_WELCOME_BODY = """{parent_name} 様
 　・授業の 5 分前には入室してください。
 　・画面（カメラ）はオン、音声はオフ（ミュート）でご参加ください。
 
-■ カードの変更・コースの変更・退塾
+■ カードの変更・コースやオプションの変更・退塾
 　公式 LINE またはメール（{contact}）へご連絡ください。
-　退塾・コース変更は、停止したい月の前月 15 日までにご連絡ください（翌月分から反映・日割りの返金はありません）。
+　退塾・コースやオプションの変更は、停止したい月の前月 15 日までにご連絡ください（翌月分から反映・日割りの返金はありません）。
 
 受付番号：{receipt_no}
 申込ID：{app_id}
@@ -515,7 +517,8 @@ ENROLL_NOTIFY_BODY = """入塾申込書からの初回カード決済が完了�
 保護者: {parent_name}
 メール: {email}
 コース: {courses}
-初回決済額: {first_total}円（入塾金 {entry_fee} + 設備費 {facility} + 受講料 {course_fee}）
+オプション: {options_label}
+初回決済額: {first_total}円（入塾金 {entry_fee} + 設備費 {facility} + 受講料 {course_fee}{notify_ai}）
 翌月以降の月額: {monthly_fee}円
 決済日時 (JST): {paid_at_jst}
 台帳: {month_label}分を「引き落とし済み」として記録 → 月末バッチは {month_label}分を請求しません（{next_month_label}分から請求）
@@ -523,11 +526,83 @@ ENROLL_NOTIFY_BODY = """入塾申込書からの初回カード決済が完了�
 受付番号 (Stripe Checkout): {receipt_no}
 申込ID (Netlify 通知メールの「申込ID」と一致): {app_id}
 保護者への確認メール: {welcome_status}
+CEO 申込待ちの「入塾申込フォーム」行: {course_app}
 {warnings}
-確認すること: Netlify の申込通知メールの「金額_初月合計」「コース」がこの決済額・コースと一致しているか（金額はサーバ側のカタログで計算・申込書の入力とは独立）。
-次にやること: 初回授業の日時を連絡する（Zoom の ID・パスコードと授業ルールは確認メールに記載済み）。
+確認すること: Netlify の申込通知メールの「金額_初月合計」「コース」「オプション_AI学習アプリ」がこの決済額・コース・オプションと一致しているか（金額はサーバ側のカタログで計算・申込書の入力とは独立）。
+次にやること: 塾生アプリ登録の行が届いたら「入塾申込フォーム」の行と 2 行まとめて承認（保護者メールが週次レポートの宛先として入る。AI学習アプリを申し込んだ生徒は承認ダイアログで［OK］(AIあり)）→ 初回授業の日時を連絡する（Zoom の ID・パスコードと授業ルールは確認メールに記載済み）。
 """
 ENROLL_RECORD_TTL = 365 * 86400
+
+# ===== 🆕 2026-09-23 CEO「申込待ち」への自動登録 (旧申込書が担っていた導線の維持) =====
+# 旧・HP の入塾申込書 (enrollment.html・2026-09-23 廃止) は本体 API /api/course-applications に「入塾申込フォーム」の行を作り、
+# 塾生アプリ登録の行と 2 行まとめて承認したときに students.parent_email (保護者週次レポートの宛先) が入っていた
+# (server/main.py の承認処理。mypage の保護者メール欄は 2026-09-09 にこの自動入力を前提に非表示)。
+# カード決済版の申込書は Netlify Forms にしか届かないので、決済完了のここから同じ行を作ってその導線を保つ。
+# best-effort: 失敗しても名簿・台帳・メールは止めず、塾長通知を ★要対応 にする。
+ENROLL_COURSEAPP_URL_DEFAULT = "https://ai-juku-api-production.up.railway.app/api/course-applications"   # vercel.json の /api/:path* と同じ先
+ENROLL_COURSEAPP_REFERRER = "入塾申込フォーム"   # 承認処理はこの referrer の行のメールを parent_email に入れる (変えると入らなくなる)
+
+
+def _enroll_post_course_application(record, month):
+    """決済完了 → 本体 API に「入塾申込フォーム」の申込行を 1 本作る。戻り値: (status, 補足)。status は created / exists / disabled / failed"""
+    if os.environ.get("ENROLL_COURSEAPP_ENABLED", "1").strip().lower() in ("0", "false", "off"):
+        return "disabled", ""
+    rid = record.get("registration_id", "")
+    student = (record.get("studentName") or record.get("student_name") or "").strip()
+    parent_email = (record.get("email") or "").strip()
+    if not student or not parent_email:
+        return "failed", "生徒名または保護者メールが空"
+    # Stripe の再送で 2 行作らない (NX)。KV が落ちていれば送る側に倒す (本体 API にも同じ氏名+メール+referrer の pending は 409 の守りがある)
+    nx = _redis_safe("SET", f"enroll:courseapp:{rid}", json.dumps({"at": int(time.time())}), "NX", "EX", str(ENROLL_RECORD_TTL))
+    if nx is not None and not (isinstance(nx, dict) and nx.get("result") == "OK"):
+        return "exists", ""
+    url = os.environ.get("ENROLL_COURSEAPP_URL", "").strip() or ENROLL_COURSEAPP_URL_DEFAULT
+    parts = record.get("breakdown") or [x.strip() for x in str(record.get("fee_breakdown") or "").split(" / ") if x.strip()]
+
+    def _yen(part):
+        try:
+            return int(part.rsplit("¥", 1)[1].replace(",", ""))
+        except Exception:
+            return 0
+    # 有料の AI学習アプリ (国公立同梱の ¥0 行は除く)。ceo.js の _aiHint がこの文言を見て承認ダイアログを［OK］(AIあり) 既定にする (有料なのに AIなしで承認する事故防止)
+    ai_paid = any("AI学習アプリ" in p and _yen(p) > 0 for p in parts)
+    note = (f"入塾申込書（カード決済）から自動作成 {_course_jst(record.get('paid_at') or None).strftime('%Y-%m-%d %H:%M')}\n"
+            f"申込ID: {record.get('app_id') or '-'} / 受付番号: {record.get('session_id', '')}\n"
+            f"保護者: {record.get('parentName') or record.get('parent_name') or ''} / 電話: {record.get('phone') or ''}\n"
+            f"初回決済: {int(record.get('first_charge_amount') or 0):,}円（{_enroll_month_label(month)}分）/ 翌月以降の月額: {int(record.get('monthly_fee') or 0):,}円\n"
+            f"内訳: {' / '.join(parts) if parts else '-'}\n"
+            + ("★AI学習アプリ（月額オプション +5,000 円）申込済み → 承認は［OK］(AIあり) で\n" if ai_paid else "")
+            + "※ 塾生アプリ登録の行が届いたら 2 行まとめて承認 → この行のメールが保護者メール（週次レポート宛先）として保存されます")
+    payload = {"name": student, "email": parent_email, "grade": (record.get("grade") or "")[:30], "phone": (record.get("phone") or "")[:30],
+               "referrer": ENROLL_COURSEAPP_REFERRER, "note": note[:2400]}
+    try:
+        req = urllib.request.Request(url, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"), method="POST",
+                                     headers={"Content-Type": "application/json", "User-Agent": "ai-juku/stripe-webhook (enroll-courseapp)"})
+        with urllib.request.urlopen(req, timeout=8) as resp:   # Stripe の配信待ちに収める (本体 API が詰まっていても webhook 全体を長引かせない)
+            body = resp.read().decode("utf-8", "replace")
+            _log(f"webhook enroll: course-application created rid={rid} http={getattr(resp, 'status', '')} body={body[:120]}")
+            return "created", ""
+    except Exception as e:
+        code = getattr(e, "code", None)
+        detail = ""
+        try:
+            detail = e.read().decode("utf-8", "replace")[:300] if hasattr(e, "read") else ""
+            detail = str(json.loads(detail).get("detail") or detail)   # FastAPI の {"detail": "..."} を本文だけにする
+        except Exception:
+            pass
+        if code == 409:
+            # 本体 API (server/main.py public_course_application) の 409 は 2 種類:
+            #   「…既に受け付けています」= 同じ氏名+メール+referrer の pending がある → 作成済み扱い
+            #   「このメールアドレスは既に承認済みです」= 同じ保護者メールで承認済みの生徒がいる (兄弟の 2 人目) → 行は作られない = 保護者メールは入らない
+            if "承認済み" in detail:
+                _redis_safe("DEL", f"enroll:courseapp:{rid}")
+                _log(f"webhook enroll: course-application blocked (parent email already approved = sibling) rid={rid}")
+                return "blocked", detail[:200]
+            _log(f"webhook enroll: course-application already pending rid={rid}")
+            return "exists", ""
+        _redis_safe("DEL", f"enroll:courseapp:{rid}")   # 再送があれば試し直せるように印を消す
+        _log(f"webhook enroll CRITICAL: course-application POST failed rid={rid} http={code} {detail or e!r}")
+        return "failed", f"HTTP {code} {detail[:200]}".strip() if code else repr(e)[:200]
 
 
 class _RetryLater(Exception):
@@ -635,29 +710,47 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
     names = []
     course_fee = 0
     facility = 0
+    ai_app = 0                # AI学習アプリ (月額オプション ai-app-5000・2026-09-23)。受講料とは分けてメールに載せる
+    ai_app_included = False   # 国公立難関大学コースに同梱 (register-subscribe が "AI学習アプリ（国公立難関大学コースに同梱） ¥0" を内訳に足す)
     parts = record.get("breakdown") or [x.strip() for x in str(record.get("fee_breakdown") or "").split(" / ") if x.strip()]
+
+    def _yen(part):
+        try:
+            return int(part.rsplit("¥", 1)[1].replace(",", ""))
+        except Exception:
+            return 0
     for part in parts:
-        # breakdown は register-subscribe が作る "名前 ¥7,500" の配列 (pending が消えていたら metadata の fee_breakdown 文字列)。設備費とコースを分ける
+        # breakdown は register-subscribe が作る "名前 ¥7,500" の配列 (pending が消えていたら metadata の fee_breakdown 文字列)。設備費・AI学習アプリ・コースを分ける
         if "設備費" in part:
-            try:
-                facility += int(part.rsplit("¥", 1)[1].replace(",", ""))
-            except Exception:
-                pass
+            facility += _yen(part)
+        elif "AI学習アプリ" in part:
+            amt = _yen(part)
+            ai_app += amt
+            if amt == 0:
+                ai_app_included = True
         else:
             names.append(part)
-            try:
-                course_fee += int(part.rsplit("¥", 1)[1].replace(",", ""))
-            except Exception:
-                pass
+            course_fee += _yen(part)
     if not names:
         names = [c for c in courses]
     monthly_fee = int(record.get("monthly_fee") or 0)
     entry_fee = int(record.get("entry_fee") or 0)
     first_total = int(record.get("first_charge_amount") or 0)
     if not facility and monthly_fee and course_fee:
-        facility = max(monthly_fee - course_fee, 0)
+        facility = max(monthly_fee - course_fee - ai_app, 0)
     if not course_fee and monthly_fee:
-        course_fee = max(monthly_fee - facility, 0)
+        course_fee = max(monthly_fee - facility - ai_app, 0)
+    if ai_app:
+        option_lines = f"　AI学習アプリ（月額オプション・初月分）：{ai_app:,}円\n"
+        options_label = f"AI学習アプリ {ai_app:,}円/月"
+    elif ai_app_included:
+        option_lines = "　AI学習アプリ：0円（国公立難関大学コースに含まれています）\n"
+        options_label = "AI学習アプリ（国公立難関大学コースに同梱・0円）"
+    else:
+        option_lines, options_label = "", "なし"
+    monthly_comp = "＋AI学習アプリ" if ai_app else ""
+    included_comp = "・AI学習アプリ" if ai_app else ""
+    notify_ai = f" + AI学習アプリ {ai_app:,}" if ai_app else ""
     contact = os.environ.get("COURSE_REPLY_TO", "").strip() or COURSE_CONTACT_DEFAULT
     if not COURSE_EMAIL_RE.match(contact):
         contact = COURSE_CONTACT_DEFAULT
@@ -672,6 +765,16 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
         "course_fee": f"{course_fee:,}",
         "first_total": f"{first_total:,}",
         "monthly_fee": f"{monthly_fee:,}",
+        "option_lines": option_lines,
+        "options_label": options_label,
+        "monthly_comp": monthly_comp,
+        "notify_ai": notify_ai,
+        "course_app": {"created": "作成済み → 塾生アプリ登録の行が届いたら 2 行まとめて承認（保護者メールが入る）",
+                       "exists": "作成済み（既にあり）→ 塾生アプリ登録の行が届いたら 2 行まとめて承認",
+                       "disabled": "無効化中 (ENROLL_COURSEAPP_ENABLED=0) → 保護者メールは入らない",
+                       "blocked": "★作成できず（同じ保護者メールで承認済みの生徒がいる＝兄弟の 2 人目。下の★行を参照）",
+                       "failed": "★失敗（下の★行を参照）"}.get(record.get("course_app_status") or "", "-"),
+        "included_comp": included_comp,
         "month_label": _enroll_month_label(month),
         "next_month_label": _enroll_month_label(_enroll_next_month(month)),
         "receipt_no": session_id,
@@ -855,7 +958,21 @@ def _handle_enroll_first_charge(obj, reg_id, metadata, existing):
     nxt = _enroll_next_month(month)
     if _enroll_next_month_batch_ran(nxt):
         warnings.append(f"★{_enroll_month_label(nxt)}分の月末バッチ (前倒し請求) は実行済みです → この生徒の {_enroll_month_label(nxt)}分 (月額 {record['monthly_fee']:,}円) は月末タブで {nxt} を選んで個別に請求してください (自動では請求されません)")
-    _log(f"webhook enroll: completed reg={reg_id} customer={customer} pm={payment_method} first_total={first_total} monthly_fee={record['monthly_fee']} month={month} ledger={ledger_state}")
+    # CEO「申込待ち」に「入塾申込フォーム」の行を作る (旧申込書と同じ導線。塾生アプリ登録の行とまとめて承認すると保護者メールが入る)
+    try:
+        ca_status, ca_detail = _enroll_post_course_application(record, month)
+    except Exception as e:
+        ca_status, ca_detail = "failed", repr(e)[:200]
+    record["course_app_status"] = ca_status
+    if ca_status == "failed":
+        warnings.append(f"★CEO「申込待ち」への『入塾申込フォーム』行の自動作成に失敗 ({ca_detail}) → このままだと塾生アプリ登録を承認しても"
+                        f"保護者メール (週次レポートの宛先) が入りません。Claude に「申込待ちに入塾申込フォームの行を作って」と依頼"
+                        f"（生徒 {record.get('studentName') or record.get('student_name') or ''}・保護者メール {record.get('email', '')}）")
+    elif ca_status == "blocked":
+        warnings.append(f"★兄弟の 2 人目: 同じ保護者メールで承認済みの生徒がいるため、本体 API は『入塾申込フォーム』行を作りません (行が無いと承認しても"
+                        f"保護者メールが入らない)。塾生アプリ登録を承認したあと、Claude に「生徒 {record.get('studentName') or record.get('student_name') or ''} の"
+                        f"保護者メールを {record.get('email', '')} に設定して」と依頼（週次レポートの宛先）")
+    _log(f"webhook enroll: completed reg={reg_id} customer={customer} pm={payment_method} first_total={first_total} monthly_fee={record['monthly_fee']} month={month} ledger={ledger_state} courseapp={ca_status}")
     try:
         _enroll_send_mails(obj, record, month, ledger_state, warnings)
     except Exception as e:
