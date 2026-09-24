@@ -274,7 +274,7 @@ def main():
     check("演習の入口が 1 枚 (practiceChooser) に統合・NEW バッジ撤去", 'id="practiceChooser"' in html and "action-badge-new" not in html)
     check("LINE 連携 CTA は line_linked===false で表示", "line_linked === false" in html)
     check("合格可能性スコアは失敗時に消えず再試行を案内", "showFetchError(" in html)
-    check("mypage.js / mypage.css の ?v= を 2026-09-09 に更新", "mypage.js?v=20260923" in html and "mypage.css?v=20260909" in html)
+    check("mypage.js / mypage.css の ?v= を 2026-09-09 に更新", "mypage.js?v=20260924" in html and "mypage.css?v=20260909" in html)
     check("learning-brain.js の ?v= が最終変更 (2026-07-14) より新しい", "learning-brain.js?v=20260909" in html)
     import re as _re
     visible = _re.sub(r"<!--.*?-->", "", html, flags=_re.S)  # HTML コメントは生徒に見えないので除外

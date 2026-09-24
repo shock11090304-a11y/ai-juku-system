@@ -656,6 +656,10 @@
           <button id="chugakuPoolImportBtn" type="button" data-seed="/seed-data/chugaku_drill_pool_v1.json" data-size="1213" title="🧒 中学英語(高校受験)のドリル在庫を補充: 12単元×基礎/標準/やや難の手作り4択1,213問(盲検3名の全員一致のみ採用・正解位置は単元ごとに散らし済み・説明は値参照)。取込後は①科目で「中学英語」を選ぶと単元が中学12単元(学習順)に入れ替わります。高校の英文法プール(english)とは別バンクなので、診断・今日の1問・弱点ドリルに中学問題が混ざることはありません。&#10;在庫は1単元100問(時制だけ基礎が厚く113問)。既定の「標準〜やや難」が75問なので、同じ単元で25問のドリルを3回まで配れます。&#10;★この「別の問題で3回」は🎯弱点対策から入ったときだけです。📤ドリルを配信をそのまま3回押しても除外は効かず、毎回75問からのランダム25問になります(1回目と8問ほど重なります)。&#10;★弱点対策が除外できるのは「直前に分析した1本」だけなので、2回目は1回目と完全に別問題、3回目は2回目とは別ですが1回目と半分ほど重なります(復習になるので害はありません)。弱点対策は宛先が「正解率の低かった生徒だけ」・④問題数が自動で10問になるので、クラス全員に25問配りたいときは手で戻してください。&#10;基礎も1単元25問(時制は38問)あるので「基礎も含める」でも足ります。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#ea580c,#c2410c);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🧒 中学英語ドリルを補充 (12単元 1,213問・無課金)</button>
           <span id="chugakuPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">中学生(高校受験)用。押したあと①科目で「🧒 中学英語」を選ぶと使えます。全12単元に 基礎25/標準45/やや難30 問(時制だけ基礎38問)が入ります。</span>
         </div>
+        <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+          <button id="eikenPoolImportBtn" type="button" data-seed="/seed-data/eiken_vocab_pool_v1.json" data-size="400" title="🏅 英検の語彙ドリル (大問1 形式・空所4択) を補充: 2級 130問 (対策問題集 Vol.1/2 + 完全模試 全3回) と 準1級 270問 (本番形式演習 第1弾/第2弾 + 完全模試 全3回)。全部この塾の書き下ろし (過去問なし)。取込後は①科目で「🏅 英検 語彙」を選ぶと単元が「2級 単語 / 2級 句動詞・熟語 / 準1級 単語 / 準1級 句動詞・熟語」に入れ替わります。英文法・中学英語のプールとは別バンクなので、診断・今日の1問・弱点ドリルに英検の問題が混ざることはありません。level は全問「標準」なので既定の「標準〜やや難」で全在庫が対象です。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🏅 英検 語彙ドリルを補充 (2級 130問・準1級 270問・無課金)</button>
+          <span id="eikenPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">英検対策コース用。押したあと①科目で「🏅 英検 語彙」を選ぶと使えます。学年の縛りはありません (高1でも高3でも配れます)。</span>
+        </div>
         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-top:0.6rem;padding-top:0.6rem;border-top:1px dashed rgba(255,255,255,0.12);">
           <button id="grammarWeaknessImportBtn" type="button" data-seed="/seed-data/grammar_drill_weakness_v1.json" title="弱点分析で抽出した検証済み4択32問を自動採点ドリルの問題プールに取り込みます。英語=関係詞・助動詞 / 古文=助動詞の意味・重要古語。取込後は単元『関係詞/助動詞/古文』を選んで該当生徒に配信できます。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">📥 弱点特訓32問を取込 (英語 関係詞・助動詞 ＋ 古文)</button>
           <span id="grammarWeaknessImportMsg" style="font-size:0.8rem;color:#94a3b8;">観測された弱点を狙った検証済み問題。古文は subject=japanese で「古文」単元として取り込まれます。</span>
@@ -673,6 +677,7 @@
             <option value="japanese">国語</option>
             <option value="social">社会</option>
             <option value="chugaku">🧒 中学英語 (高校受験)</option>
+            <option value="eiken">🏅 英検 語彙 (2級・準1級)</option>
           </select>
           <span style="color:#71717a;font-size:0.72rem;margin-left:0.3rem;">選ぶと下の単元の在庫が切り替わります</span>
         </div>
@@ -4691,10 +4696,11 @@
       //   学年未設定の生徒は判定できないので通す (止めると登録直後に配信できなくなる)。
       //   代わりに生徒リストに灰色の「学年?」チップを出して、判定していないことを見せている。
       const _subjJa = { english: '英語(英文法)', math: '数学', physics: '物理', chemistry: '化学',
-                        biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語(高校受験)' };
+                        biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語(高校受験)', eiken: '英検 語彙' };
       const _sj = _gdSubject || 'english';
       const _isChu = _sj === 'chugaku';
-      const _mism = _gdStudents.filter(s => ids.includes(s.id))
+      // 🏅 英検 語彙は学年で縛らない (2級を中3が受ける・準1級を高1が受けることは普通にある)
+      const _mism = _sj === 'eiken' ? [] : _gdStudents.filter(s => ids.includes(s.id))
         .filter(s => { const m = _gdMode(s.grade); return m && (_isChu ? m !== 'chugaku' : (m === 'chugaku' || m === 'shougaku')); });
       if (_mism.length) {
         const _names = _mism.slice(0, 5).map(s => `${s.name || '#' + s.id}(${_gdGradeShort(s.grade) || '学年?'})`).join('、');
@@ -4806,7 +4812,7 @@
       const visible = showAll ? entries : entries.slice(0, GROUP_LIMIT);
       let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.45rem;">';
       // 集約キーは "<科目>｜<単元>"。画面には単元名を出し、英文法以外のときだけ科目チップを添える
-      const SUBJ_JA = { english: '英文法', chugaku: '中学英語', math: '数学', physics: '物理', chemistry: '化学',
+      const SUBJ_JA = { english: '英文法', chugaku: '中学英語', eiken: '英検', math: '数学', physics: '物理', chemistry: '化学',
                         biology: '生物', earth: '地学', japanese: '国語', social: '社会' };
       html += visible.map(([gkey, ds], i) => {
         const sp = String(gkey).split('｜');
@@ -5144,6 +5150,57 @@
       }
     }
     window.chugakuPoolImport = chugakuPoolImport;
+    // 🏅 2026-09-24 [eiken-vocab]: 英検 語彙プールの補充。chugakuPoolImport と同じ流れ (400 問ずつ・dedup・無課金)。
+    //   シードの各問が subject='eiken' を持ち、英文法 (english)・中学英語 (chugaku) のバンクには一切触れない。
+    async function eikenPoolImport() {
+      const btn = document.getElementById('eikenPoolImportBtn');
+      const msg = document.getElementById('eikenPoolImportMsg');
+      if (!btn || !window.AdminAuth) return;
+      const seedUrl = btn.getAttribute('data-seed');
+      const sizeRaw = btn.getAttribute('data-size') || '';
+      const size = /^\d+$/.test(sizeRaw) ? Number(sizeRaw).toLocaleString('ja-JP') : sizeRaw;
+      if (!confirm(`🏅 英検 語彙のドリル問題 ${size}問 (2級・準1級・書き下ろし) を照合し、まだ入っていない問題だけを取り込みます。よろしいですか？（取込済みの分は自動スキップ・無課金）`)) return;
+      btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ 取込中...';
+      if (msg) { msg.style.color = '#94a3b8'; msg.textContent = 'シード読込中...'; }
+      try {
+        const sr = await fetch(seedUrl, { cache: 'no-store' });
+        if (!sr.ok) throw new Error('シード取得失敗 HTTP ' + sr.status);
+        const seed = await sr.json();
+        const questions = (seed && seed.questions) || [];
+        if (!questions.length) throw new Error('シードに問題がありません');
+        const CHUNK = 400;
+        let inserted = 0, skipped = 0, errors = 0;
+        for (let i = 0; i < questions.length; i += CHUNK) {
+          const part = questions.slice(i, i + CHUNK);
+          if (msg) msg.textContent = `照合中... (${i + 1}〜${Math.min(i + CHUNK, questions.length)}問目 / 全${questions.length}問)`;
+          const res = await AdminAuth.fetch('/api/admin/grammar/import', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questions: part, subject: 'eiken', dedup: true }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            const d = data.detail;
+            throw new Error(((typeof d === 'string' && d) ? d : (d ? JSON.stringify(d) : ('取込失敗 HTTP ' + res.status)))
+              + (i === 0 ? '（1本目の送信で失敗しました。まだ何も取り込まれていません）'
+                          : `（${i}問目までは照合済み・うち新規 ${inserted}問を取り込み済み。押し直すと残りだけ入ります）`));
+          }
+          inserted += (data.inserted || 0); skipped += (data.skipped || 0); errors += (data.errors || 0);
+        }
+        if (msg) {
+          msg.style.color = errors ? '#fbbf24' : '#86efac';
+          msg.textContent = `${errors ? '⚠️' : '✅'} 新しく取り込んだ問題 ${inserted}問 / 取り込まなかった問題 ${skipped}問（すでに入っている分と、形式が合わず弾かれた分の合計）/ エラー ${errors}。①科目で「🏅 英検 語彙」を選ぶと使えます。`;
+        }
+      } catch (e) {
+        if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || String(e)); }
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+        try {
+          const cur = (document.getElementById('gdSubject') || {}).value;
+          if (cur === 'eiken') { await gdLoadUnits(); }
+        } catch (_e) {}
+      }
+    }
+    window.eikenPoolImport = eikenPoolImport;
     // 📥 弱点特訓32問の取込 (英語 関係詞・助動詞 + 古文)。grammarPoolImport と同じ流れ。
     async function grammarWeaknessImport() {
       const btn = document.getElementById('grammarWeaknessImportBtn');
@@ -5182,6 +5239,8 @@
       if (bw) bw.addEventListener('click', grammarWeaknessImport);
       const bc = document.getElementById('chugakuPoolImportBtn');
       if (bc) bc.addEventListener('click', chugakuPoolImport);
+      const be = document.getElementById('eikenPoolImportBtn');
+      if (be) be.addEventListener('click', eikenPoolImport);
     });
 
     // ========== 📤 宿題 一括割当 (2026-06-19 塾長指示: 英文法ドリルのように複数生徒へ一括で宿題) ==========
@@ -9806,7 +9865,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     function _actionRecs(s) {
       // 🧒 chugaku は student_weakness 上では入試道場の英数国理社が collapse した1バケットなので
       //   「中学英語」と書かない (数学の弱点が英語に見える)。サーバの _WEEKLY_SUBJECT_LABEL_OVERRIDE と同じ語。
-      const SUBJ = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学', chugaku: '高校入試演習' };
+      const SUBJ = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学', chugaku: '高校入試演習', eiken: '英検 語彙' };
       const sj = x => SUBJ[x] || x;
       const a = s.activity || {}, adm = s.admission || {}, bd = adm.breakdown || {}, reasons = s.reason_totals || {};
       const total = a.total || 0, acc = a.accuracy, grade = s.grade || '';
@@ -9867,7 +9926,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     // 弱点 weak_topics から、自動採点ドリル化できる単元を「全部」抽出。
     // このドリル(grammar_questions)は英語(英文法)＋古文が在庫の中心。理科/数学等は対応外として注記。
     var _ENG_DRILL_UNITS = ['時制', '助動詞', '受動態', '不定詞', '動名詞', '分詞構文', '分詞', '関係詞', '仮定法', '比較', '接続詞', '前置詞', '疑問詞・間接疑問', '否定・倒置', '強調・省略', '冠詞', '名詞・代名詞', '形容詞・副詞', '話法', '語法・イディオム'];
-    var _SJ_LABEL = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学', chugaku: '高校入試演習' };
+    var _SJ_LABEL = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学', chugaku: '高校入試演習', eiken: '英検 語彙' };
     // 🧩 2026-07-01 数学/理科/社会は単元が粗いので「科目まるごと」配信 (unit空=科目レベル)。英語(20単元)/国語(古文)は従来通り単元指定。
     var _SUBJECT_LEVEL_DRILL = { math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', social: '社会' };
     function _pickDrillUnits(s) {

@@ -4286,7 +4286,7 @@ function _renderHomeworkItem(item) {
 // 📝 英文法ドリルを「宿題カード」として描画 (2026-06-16 塾長指示「ドリルも宿題に入れる」)。
 // クリック → window._gdOpenDrill(drill_id) が解答エリア(#grammarDrillSection)に問題を展開する。
 // 🧩 2026-06-21 [multi-subject-drill] 科目別ラベル。english は従来どおり「英文法」、他科目は科目名で表示。
-const _SUBJ_DRILL_LABEL = { english: '英文法', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語' };
+const _SUBJ_DRILL_LABEL = { english: '英文法', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語', eiken: '英検 語彙' };
 function _renderDrillAsHwItem(item) {
   const isOpen = item.status !== 'completed';
   const _subjLabel = _SUBJ_DRILL_LABEL[item.subject] || '英文法';

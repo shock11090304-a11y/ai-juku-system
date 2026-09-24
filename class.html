@@ -1003,11 +1003,11 @@
     // 塾長が CEO「📝 科目別 単元ドリル」で配信した固定N問。ここで 解答 → サーバ採点 → 解説 まで完結する
     // (AI 管理の生徒が mypage で解くのと同じ機構・同じ問題プール・同じ解答キー)。
     // 解答は送るまでサーバが正解を返さない (未提出は answer/explanation を伏せて配信) ので答えは覗けない。
-    var GD_SUBJ_JA = { english: '英語', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語' };
+    var GD_SUBJ_JA = { english: '英語', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語', eiken: '英検' };
     // 「科目まるごと配信」(unit 未指定) のとき、サーバは unit を科目の日本語ラベルで補完する。
     // その語がこちらの表示ラベルと違う科目 (english → サーバは「英文法」) があるので、
     // 単元チップの重複判定はサーバ側の語も含めて見る。
-    var GD_SUBJ_ALIAS = { english: ['英語', '英文法'] };
+    var GD_SUBJ_ALIAS = { english: ['英語', '英文法'], eiken: ['英検', '英検 語彙'] };
     var _has = Object.prototype.hasOwnProperty;   // subject に 'constructor' 等が来ても prototype を拾わない
     function gdSubjJa(subject) { return _has.call(GD_SUBJ_JA, subject) ? GD_SUBJ_JA[subject] : ''; }
     function gdIsSubjectUnit(unit, subject, label) {
