@@ -629,14 +629,45 @@
       }
       return r || null;
     }
+    // 📝 [2026-09-24] 宿題モード (?hw=) の案内カード。メニュー (自由演習) は出さない = 塾長方針「出した宿題のみ」。
+    function renderHomeworkNotice(kind) {
+      const v = document.getElementById('presetView');
+      const msg = kind === 'login'
+        ? 'ログインが切れています。塾生アプリからログインし直してから、宿題の「📝 ドリルで解く」を開いてください。'
+        : kind === 'quit'
+          ? '宿題のドリルを中断しました。塾生アプリの宿題カードの「📝 ドリルで解く」(提出済みなら「🔁 もう一度解く」) から、いつでも解き直せます。'
+          : kind === 'notready'
+            ? 'この宿題のドリルを読み込めませんでした。時間をおいてもう一度開くか、塾長に伝えてください。'
+            : 'この宿題の単元に対応するドリルが見つかりませんでした。宿題の内容は塾生アプリの宿題カードで確認してください。';
+      v.style.display = '';
+      v.innerHTML = `<div class="result-card"><div class="muted" style="margin-bottom:0.8rem;">${escapeHtml(msg)}</div>
+        <div class="actions"><a class="btn btn-primary" href="class.html#homework">📝 塾生アプリの宿題に戻る</a></div></div>`;
+    }
+    function applyHomeworkModeHero() {
+      // 宿題モードではマイページ (弱点 TOP3) や道場トップ (自由演習) への導線を出さない: AIなしの生徒には
+      //   マイページが無く、自由演習は塾長方針で開かない。AIあり生は mypage 側から道場に行ける。
+      const ps = document.querySelectorAll('.hero p');
+      if (ps[0]) ps[0].textContent = '塾長が出した宿題のドリルです。採点のあと「✅ 結果を記録する」を押すと結果が記録されます。';
+      if (ps[1]) ps[1].textContent = '記録のあと、塾生アプリの宿題に戻って「✓ 提出（完了）にする」を押してください。';
+      const h1 = document.querySelector('.hero h1'); if (h1) h1.textContent = '📝 宿題ドリル';
+      const nt = document.querySelector('.nav-title'); if (nt) nt.textContent = '📝 宿題ドリル';
+      const nl = document.querySelector('.nav-links');
+      if (nl) nl.innerHTML = '<a href="class.html#homework">📝 塾生アプリの宿題へ</a>';
+      try { document.title = '宿題ドリル | トリリオン塾生アプリ'; } catch (_) {}
+    }
     function maybeAutoStartFromWeakness() {
       try {
         const sp = new URLSearchParams(window.location.search);
         const wTopic = sp.get('w_topic') || sp.get('topic') || '';
         const wSubject = sp.get('w_subject') || '';
-        if (!wTopic && !wSubject) return false;
+        const hwId = homeworkIdFromUrl();
+        if (hwId) {
+          applyHomeworkModeHero();
+          if (!token()) { renderHomeworkNotice('login'); return false; }   // 25分解いてから「保存できない」にしない
+        }
+        if (!wTopic && !wSubject) { if (hwId) renderHomeworkNotice('nopreset'); return false; }
         const p = findPresetForWeakness(wTopic, wSubject);
-        if (!p) return false;
+        if (!p) { if (hwId) renderHomeworkNotice('nopreset'); return false; }
         // 戻ったときに該当タブが開いているよう、レベル/科目を合わせてからドリル開始
         // 🧒 2026-07-03 CHU_UNIT_PRESETS は 'chugaku' レベル・科目キーは p.subj(英語/数学/…)を使う。
         const inChu = CHU_UNIT_PRESETS.indexOf(p) >= 0;
@@ -647,9 +678,34 @@
         startDrill(p);  // startDrill が先頭で drillOrigin=null するので、その直後に元の弱点を stamp する
         drillOrigin = { subject: (wSubject || '').trim(), topic: (wTopic || '').trim() };
         return true;
-      } catch (_) { return false; }
+      } catch (_) {
+        try { if (homeworkIdFromUrl()) renderHomeworkNotice('nopreset'); } catch (__) {}   // 📝 宿題モードでメニューを残さない
+        return false;
+      }
     }
     const token = () => localStorage.getItem('ai_juku_session_token') || '';
+    // 📝 [2026-09-24 塾長指示] 塾生アプリの宿題「📝 ドリルで解く」から来たときは ?hw=<宿題ID> が付く。
+    //   その場合の結果保存は宿題に紐づくルート (/api/student/homework/{id}/drill-attempt) を使う。
+    //   塾生アプリのみ枠 (AIなし) はこのルートだけ通る (自由演習は塾長方針で開かない)。
+    const homeworkIdFromUrl = () => {
+      try {
+        const v = parseInt(new URLSearchParams(window.location.search).get('hw') || '', 10);
+        return (Number.isFinite(v) && v > 0) ? v : 0;
+      } catch (_) { return 0; }
+    };
+    // 保存に失敗したときの説明文。従来は何でも「未ログイン or 通信エラー」と出していて、
+    // AIなし枠の 403 (=自由演習は記録しない) まで通信のせいに見えていた。
+    function saveFailText(tk, err, hwId) {
+      if (!tk || (err && err.status === 401)) return '結果を保存できませんでした（ログインが切れています）。' + (hwId ? '塾生アプリ' : 'マイページ') + 'からログインし直してください。';
+      if (err && err.status === 403) {
+        if (hwId) return '結果を保存できませんでした: ' + (err.detail || 'この宿題には記録できません');
+        return '塾生アプリでは、塾長が出した宿題の「📝 ドリルで解く」から開いたドリルだけ結果を記録できます（このページを直接開いた分は記録されません）。';
+      }
+      if (err && (err.status === 405 || (err.status === 404 && !/宿題/.test(err.detail || '')))) return 'アプリを更新中の可能性があります。数分後に' + (hwId ? '、塾生アプリの宿題からもう一度開いてください。' : 'もう一度お試しください。');
+      if (err && err.status === 404 && hwId) return '結果を保存できませんでした: ' + (err.detail || 'この宿題が見つかりません');
+      if (err && err.status === 429) return '結果を保存できませんでした: ' + (err.detail || '記録の上限に達しました');
+      return '結果を保存できませんでした（通信エラー）。電波の良いところでもう一度お試しください。';
+    }
 
     // ───────── state ─────────
     let cur = null;       // {preset, daimon(question_data), startedAt}
@@ -849,6 +905,7 @@
           qs = daimon && Array.isArray(daimon.questions) ? daimon.questions.filter(q => q && q.stem) : [];
         }
         if (!daimon || !qs.length) {
+          if (homeworkIdFromUrl()) { dv.style.display = 'none'; renderHomeworkNotice('notready'); return; }   // 📝 宿題モードはメニューに戻さない
           dv.innerHTML = `<div class="loading">この問題はまだ準備中です。<br><button class="btn btn-ghost" id="back">← 別のドリルを選ぶ</button></div>`;
           document.getElementById('back').addEventListener('click', backToPresets);
           return;
@@ -856,6 +913,7 @@
         cur = { preset, daimon, qs, startedAt: Date.now() };
         renderDrill();
       } catch (e) {
+        if (homeworkIdFromUrl()) { dv.style.display = 'none'; renderHomeworkNotice('notready'); return; }
         dv.innerHTML = `<div class="loading">読込エラー: ${escapeHtml(e.message)}<br><button class="btn btn-ghost" id="back">← 戻る</button></div>`;
         document.getElementById('back').addEventListener('click', backToPresets);
       }
@@ -908,7 +966,7 @@
         el.classList.add('sel');
       }));
       document.getElementById('gradeBtn').addEventListener('click', () => grade(false));
-      document.getElementById('quitBtn').addEventListener('click', () => { stopTimer(); backToPresets(); });
+      document.getElementById('quitBtn').addEventListener('click', () => { if (!confirmQuitHomework()) return; stopTimer(); backToPresets(); });
       startTimer(preset.min * 60);
     }
 
@@ -978,17 +1036,17 @@
         // 🤔 自信なし(勘) checkbox (正解時に表示・2026-07-19 生徒要望):
         //   勘で当たった問題を「正解でも弱点として記録」できるようにする (metadata.guessed)
         const guessEl = block.querySelector(`.guess[data-qi="${qi}"]`);
-        guessEl.innerHTML = `<label><input type="checkbox" data-qi="${qi}"> 🤔 勘で正解した（自信なし）— チェックすると弱点として記録します</label>`;
+        guessEl.innerHTML = `<label><input type="checkbox" data-qi="${qi}"> 🤔 勘で正解した（自信なし）— チェックすると${homeworkIdFromUrl() ? '「自信なし」として記録します' : '弱点として記録します'}</label>`;
         if (isCorrect === true) guessEl.classList.add('show');
 
         cur.results[qi] = { qi, sub_id: q.id || `q${qi + 1}`, unit: deriveUnit(q, preset), isMC, isCorrect, autoGraded, correctIdx };
       });
       // 採点後のフッタ: 確定ボタン
       const act = dv.querySelector('.actions');
-      act.innerHTML = `<button class="btn btn-primary" id="finalizeBtn">✅ 結果を記録して弱点に反映</button><button class="btn btn-ghost" id="quitBtn2">← やめて戻る</button>
+      act.innerHTML = `<button class="btn btn-primary" id="finalizeBtn">${homeworkIdFromUrl() ? '✅ 結果を記録する' : '✅ 結果を記録して弱点に反映'}</button><button class="btn btn-ghost" id="quitBtn2">← やめて戻る</button>
         <div class="muted" id="finalizeHint" style="width:100%; margin-top:0.3rem;"></div>`;
       document.getElementById('finalizeBtn').addEventListener('click', finalize);
-      document.getElementById('quitBtn2').addEventListener('click', backToPresets);
+      document.getElementById('quitBtn2').addEventListener('click', () => { if (!confirmQuitHomework()) return; backToPresets(); });
       if (timeUp) { const tb = document.querySelector('.timer'); if (tb) { tb.textContent = '時間切れ'; tb.classList.add('danger'); } }
       window.scrollTo({ top: 0, behavior: 'smooth' });
       updateFinalizeHint();
@@ -1019,7 +1077,9 @@
       const hint = document.getElementById('finalizeHint');
       if (!hint) return;
       if (ungraded > 0) hint.textContent = `※ ${ungraded}問が未採点です（⭕/❌ をタップ）。そのまま記録もできます。`;
-      else if (pending > 0) hint.textContent = `💡 不正解 ${pending}問の「つまずき理由」を選ぶと、弱点分析がより深くなります（任意）。`;
+      else if (pending > 0) hint.textContent = homeworkIdFromUrl()
+        ? `💡 不正解 ${pending}問の「つまずき理由」も一緒に記録できます（任意）。`
+        : `💡 不正解 ${pending}問の「つまずき理由」を選ぶと、弱点分析がより深くなります（任意）。`;
       else hint.textContent = '記録の準備ができました。';
     }
 
@@ -1044,8 +1104,11 @@
       results.forEach(r => { guessedByQi[r.qi] = (r.isCorrect === true && getGuessed(r.qi)) || false; });
       const subAttempts = results.map(r => ({ sub_id: r.sub_id, unit: r.unit, is_correct: r.isCorrect === null ? null : (r.isCorrect ? 1 : 0), reason: getReason(r.qi) || null, guessed: guessedByQi[r.qi], auto_graded: r.autoGraded }));
       let recorded = 0;
+      const hwId = homeworkIdFromUrl();   // 📝 宿題から開いたドリルなら宿題に紐づけて保存
+      const saveUrl = hwId ? `${BACKEND_URL}/api/student/homework/${hwId}/drill-attempt` : `${BACKEND_URL}/api/question-attempts`;
+      let saveErr = null;                 // 最初に失敗した応答 {status, detail} (理由の表示用)
       if (tk && graded.length) {
-        const reqs = graded.map(r => fetch(`${BACKEND_URL}/api/question-attempts`, {
+        const reqs = graded.map(r => fetch(saveUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tk}` },
           body: JSON.stringify({
@@ -1065,7 +1128,14 @@
               year_simulated: daimon.year_simulated || null
             }
           })
-        }).then(res => { if (res && res.ok) recorded++; }).catch(() => {}));
+        }).then(async res => {
+          if (res && res.ok) { recorded++; return; }
+          if (res && !saveErr) {
+            let d = '';
+            try { d = ((await res.json()) || {}).detail || ''; } catch (_) {}
+            saveErr = { status: res.status, detail: String(d || '') };
+          }
+        }).catch(() => {}));
         await Promise.all(reqs);
         // 🎯 [習得ループ完成 2026-06-17] 弱点リンク経由なら、採点結果を「元の弱点(subject,topic)」にも記録。
         //   写真質問由来の弱点は採点信号(is_correct)を持たず qa_attempts=0 のままで卒業不能 → ここで
@@ -1098,17 +1168,17 @@
           } catch (_) { /* noop */ }
         }
       }
-      renderResult({ correct, total: graded.length, elapsedMs: totalElapsedMs, recorded, subAttempts });
+      renderResult({ correct, total: graded.length, elapsedMs: totalElapsedMs, recorded, subAttempts, hwId, saveErr, tk });
       } catch (e) {
         // 万一 renderResult 等で例外が出ても、ボタンが「⏳記録中...」disabled で固まらないよう復帰させる
-        if (_fb) { _fb.disabled = false; _fb.textContent = '✅ 結果を記録して弱点に反映'; }
+        if (_fb) { _fb.disabled = false; _fb.textContent = homeworkIdFromUrl() ? '✅ 結果を記録する' : '✅ 結果を記録して弱点に反映'; }
         throw e;
       } finally {
         finalize._running = false;
       }
     }
 
-    function renderResult({ correct, total, elapsedMs, recorded, subAttempts }) {
+    function renderResult({ correct, total, elapsedMs, recorded, subAttempts, hwId, saveErr, tk }) {
       document.getElementById('drillView').style.display = 'none';
       const rv = document.getElementById('resultView');
       rv.style.display = '';
@@ -1123,15 +1193,19 @@
       // 🤔 勘正解 (自信なし申告つきの正解) の集計 (2026-07-19 生徒要望): 正解でも弱点として記録した旨を明示
       const guessedN = subAttempts.filter(s => s.is_correct === 1 && s.guessed).length;
       const guessedHtml = guessedN
-        ? `<div class="weak-box" style="background:rgba(245,158,11,0.10); border-color:rgba(245,158,11,0.35);"><strong style="color:#fbbf24;">🤔 勘で正解:</strong> ${guessedN}問 — 正解でも弱点として記録しました。解説で根拠を確認しましょう。</div>` : '';
+        ? `<div class="weak-box" style="background:rgba(245,158,11,0.10); border-color:rgba(245,158,11,0.35);"><strong style="color:#fbbf24;">🤔 勘で正解:</strong> ${guessedN}問 — ${hwId ? '正解でも「自信なし」として記録しました' : '正解でも弱点として記録しました'}。解説で根拠を確認しましょう。</div>` : '';
       // 🎯 間違えた小問の単元集計 (小問→単元の炙り出し)
       const missedUnits = {};
       subAttempts.forEach(s => { if (s.is_correct === 0 && s.unit) missedUnits[s.unit] = (missedUnits[s.unit] || 0) + 1; });
       const unitHtml = Object.keys(missedUnits).length
-        ? `<div class="weak-box" style="background:rgba(239,68,68,0.10); border-color:rgba(239,68,68,0.35);"><strong style="color:#fca5a5;">🎯 弱点が出た単元:</strong> ${Object.entries(missedUnits).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${escapeHtml(k)} ×${v}`).join(' / ')}<div class="muted" style="margin-top:0.3rem;">この単元が弱点として記録され、マイページの分析に反映されます。</div></div>` : '';
+        ? `<div class="weak-box" style="background:rgba(239,68,68,0.10); border-color:rgba(239,68,68,0.35);"><strong style="color:#fca5a5;">${hwId ? '❌ 間違えた単元:' : '🎯 弱点が出た単元:'}</strong> ${Object.entries(missedUnits).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${escapeHtml(k)} ×${v}`).join(' / ')}${hwId ? '' : '<div class="muted" style="margin-top:0.3rem;">この単元が弱点として記録され、マイページの分析に反映されます。</div>'}</div>` : '';
       const recNote = recorded > 0
-        ? `<div class="muted" style="margin-top:0.6rem;">✅ ${recorded}問分を記録しました。マイページの「🎯 弱点 TOP3」に<strong style="color:#86efac;">すぐ反映</strong>されます。正答率80%以上を5問で「習得（卒業）」になり、弱点から外れます。</div>`
-        : `<div class="muted" style="margin-top:0.6rem; color:#fca5a5;">⚠️ 結果を保存できませんでした（未ログイン or 通信エラー）。マイページからログインすると弱点分析に反映されます。</div>`;
+        ? (hwId
+          ? `<div class="muted" style="margin-top:0.6rem;">✅ 結果を記録しました（${recorded}問）。まだ提出にはなっていません。塾生アプリの宿題に戻って「✓ 提出（完了）にする」を押してください（提出済みの宿題を解き直した場合はそのままで大丈夫です）。</div>`
+          : `<div class="muted" style="margin-top:0.6rem;">✅ ${recorded}問分を記録しました。マイページの「🎯 弱点 TOP3」に<strong style="color:#86efac;">すぐ反映</strong>されます。正答率80%以上を5問で「習得（卒業）」になり、弱点から外れます。</div>`)
+        : (total === 0
+          ? `<div class="muted" style="margin-top:0.6rem;">採点された問題がなかったため、記録はありません。</div>`
+          : `<div class="muted" style="margin-top:0.6rem; color:#fca5a5;">⚠️ ${escapeHtml(saveFailText(tk, saveErr, hwId))}</div>`);
       rv.innerHTML = `<div class="result-card">
         <div class="result-score">${rate >= 80 ? '🎉' : rate >= 50 ? '👍' : '💪'} ${correct} / ${total} 問正解（${rate}%）</div>
         <div class="muted" style="margin-top:0.3rem;">所要時間: ${mm}分${String(ss).padStart(2, '0')}秒 ${cur.preset ? '／ 目安 ' + cur.preset.min + '分' : ''}</div>
@@ -1140,21 +1214,39 @@
         ${guessedHtml}
         ${recNote}
         <div class="actions" style="margin-top:1rem;">
-          <button class="btn btn-primary" id="againBtn">⏱ もう1セット</button>
+          ${hwId ? `<a class="btn btn-primary" href="class.html#homework">📝 塾生アプリの宿題に戻る</a>
+          <button class="btn btn-ghost" id="againBtn">🔁 同じドリルをもう一度</button>` : `<button class="btn btn-primary" id="againBtn">⏱ もう1セット</button>
           <a class="btn btn-ghost" href="mypage.html">弱点をマイページで見る →</a>
-          <a class="btn btn-ghost" href="nyushi-dojo.html">道場トップ</a>
+          <a class="btn btn-ghost" href="nyushi-dojo.html">道場トップ</a>`}
         </div>
       </div>`;
-      document.getElementById('againBtn').addEventListener('click', backToPresets);
+      // 📝 宿題モード: メニュー (自由演習) には戻さず同じドリルをもう一度 (塾長方針「出した宿題のみ」)。
+      const samePreset = (hwId && cur && cur.preset) ? cur.preset : null;
+      document.getElementById('againBtn').addEventListener('click', () => {
+        if (!samePreset) return backToPresets();
+        stopTimer();
+        document.getElementById('resultView').style.display = 'none';
+        const o = drillOrigin;
+        startDrill(samePreset);   // 先頭で drillOrigin=null するので直後に戻す (maybeAutoStartFromWeakness と同じ)
+        drillOrigin = o;
+      });
     }
 
+    // 📝 宿題モードで途中でやめると答えたぶんが消える (記録前) ので一言確認。自由演習は従来どおり確認なし。
+    function confirmQuitHomework() {
+      if (!homeworkIdFromUrl()) return true;
+      return confirm('まだ記録していません。ここでやめると、答えたぶんが消えます。やめますか？');
+    }
     function backToPresets() {
       stopTimer();
+      const hwQuit = !!homeworkIdFromUrl();
       cur = null;
       drillOrigin = null;
       document.getElementById('drillView').style.display = 'none';
       document.getElementById('resultView').style.display = 'none';
-      document.getElementById('presetView').style.display = '';
+      // 📝 宿題モードはメニュー (自由演習) を出さない (塾長方針「出した宿題のみ」)。宿題カードから解き直せる。
+      if (hwQuit) renderHomeworkNotice('quit');
+      else document.getElementById('presetView').style.display = '';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 

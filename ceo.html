@@ -2827,15 +2827,15 @@
       <!-- 📝 クラスに宿題を出す -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.1rem; margin-bottom:1rem;">
         <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.3rem;">📝 クラスに宿題を出す</div>
-        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">クラスを選んでボタン1つで、そのクラスの受講生 全員に同じ宿題を出せます。生徒はアプリの「宿題」タブで確認 → アプリ内ドリルで解いて提出(自動採点)。<b>対象は上の「🏫 クラス別 受講生 一括登録」で登録した生徒のみ</b>です。</p>
+        <p style="color:#a1a1aa; font-size:0.8rem; margin:0 0 0.7rem; line-height:1.5;">クラスを選んでボタン1つで、そのクラスの受講生 全員に同じ宿題を出せます。生徒はアプリの「宿題」タブで確認 → ドリル単元を選んだ宿題は「📝 ドリルで解く」で解き（結果はサーバに記録されますが、CEO 画面で見る機能はまだありません）、生徒自身が「✓ 提出（完了）にする」を押します（提出は自己申告）。<b>単元を選ばない宿題（テキスト等）にはドリルのボタンは出ません。</b> <b>対象は上の「🏫 クラス別 受講生 一括登録」で登録した生徒のみ</b>です。</p>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:0.5rem;">
           <select id="hwClass" style="padding:0.55rem; min-width:190px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;"><option value="">クラスを選択…</option></select>
           <span id="hwCount" style="font-size:0.82rem; color:#a5b4fc;"></span>
         </div>
         <div style="display:grid; grid-template-columns:1fr; gap:0.5rem;">
           <input id="hwTitle" type="text" placeholder="宿題タイトル * (例: 関係詞ドリル)" maxlength="200" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
-          <select id="hwTopic" title="ドリル単元を選ぶと「ドリルで解く」がその単元を自動で開きます" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
-            <option value="">ドリル単元 (任意・選ぶと「ドリルで解く」がその単元を開く)</option>
+          <select id="hwTopic" title="ドリル単元を選ぶと生徒に「📝 ドリルで解く」が出て、その単元を自動で開きます。未選択なら提出ボタンだけです" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+            <option value="">ドリル単元（任意）— 選ぶと生徒に「📝 ドリルで解く」が出ます／未選択なら提出ボタンのみ</option>
           </select>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
             <input id="hwSubject" type="text" placeholder="科目 (任意・ドリル誘導用 例: 英語)" maxlength="80" style="padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">

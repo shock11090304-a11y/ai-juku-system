@@ -411,7 +411,10 @@
             //   判定は server (verify-code が返す is_tsujuku_app) を直読み=course/plan誤判定を避けAI生を締め出さない。
             const _isTsujukuApp = ((data && data.student) || {}).is_tsujuku_app === true;
             const raw = params.get('redirect') || (_isTsujukuApp ? 'class.html' : 'quick-start.html');
-            const safe = /^[a-z0-9_\-./?#=&]+$/i.test(raw) && !raw.startsWith('//') && !raw.startsWith('http');
+            // 📝 2026-09-24: % を許可 (auth-guard が付ける redirect は ?w_topic=%E8… のように percent-encoded。
+            //   許さないと宿題ドリルの再ログインが quick-start.html に落ちていた)。ブラウザは相対 URL の % を
+            //   解決前に復号しないので、%2F%2F や %68ttp で // / http の拒否をすり抜けることはできない。
+            const safe = /^[a-z0-9_\-./?#=&%]+$/i.test(raw) && !raw.startsWith('//') && !raw.startsWith('http');
             window.location.href = safe ? raw : 'quick-start.html';
           }, 800);
         } else {

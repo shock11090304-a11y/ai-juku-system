@@ -917,15 +917,21 @@
         var qp = [];
         if (it.subject) qp.push('w_subject=' + encodeURIComponent(it.subject));
         if (it.topic) qp.push('w_topic=' + encodeURIComponent(it.topic));
+        // 📝 [2026-09-24] 宿題 ID も渡す。dojo-drill はこれがあると宿題に紐づくルートに結果を保存する
+        //   (塾生アプリのみ枠=AIなし は /api/question-attempts が 403 で、宿題のドリルが「保存できませんでした」で終わっていた)。
+        qp.push('hw=' + encodeURIComponent(String(it.id)));
         var drillUrl = 'dojo-drill.html' + (qp.length ? ('?' + qp.join('&')) : '');
         var actions = '<div class="row-actions">';
+        // 📝 [2026-09-24] ドリルのボタンは単元 (topic) のある宿題だけ。単元が無いと dojo-drill 側で開くドリルが決まらず、
+        //   以前は自由演習メニューが出ていた (塾長方針「出した宿題のみ」に反する)。テキスト宿題は提出ボタンだけ。
+        var hasDrill = !!it.topic;
         if (!done) {
           // ★ このカードは「別ページで練習 → 自分で完了を押す」型。単元ドリル(その場で自動採点)と
           //   ボタンの色・形が似ているので、戻ってくることを一言添える。
-          actions += '<a class="btn btn-primary" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>'
+          actions += (hasDrill ? '<a class="btn btn-primary" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>' : '')
             + '<button class="btn btn-green hw-done" data-id="' + it.id + '">✓ 提出（完了）にする</button>'
-            + '<div class="muted" style="flex-basis:100%;margin-top:0.35rem;">解き終わったら「✓ 提出（完了）にする」を押してね</div>';
-        } else {
+            + '<div class="muted" style="flex-basis:100%;margin-top:0.35rem;">' + (hasDrill ? '解き終わったら' : '終わったら') + '「✓ 提出（完了）にする」を押してね</div>';
+        } else if (hasDrill) {
           actions += '<a class="btn btn-ghost" href="' + esc(drillUrl) + '">🔁 もう一度解く</a>';
         }
         actions += '</div>';
@@ -1391,7 +1397,9 @@
       }
       renderSchedule();
       renderVideos();
-      showTab('schedule');
+      // 📝 dojo-drill の「塾生アプリの宿題に戻る」は #homework で戻ってくる → 宿題タブを開いた状態で着地
+      showTab(location.hash === '#homework' ? 'homework' : 'schedule');
+      if (location.hash === '#homework') { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }
       // 塾長登録の休塾日/予定 + 自分の出欠を読み込んで再描画（祝日カレンダーは即表示済み）
       Promise.all([loadCalendar(), loadMyAttend()]).then(function () { renderSchedule(); });
       // バッジ（宿題未提出・メッセージ未読）を先読み。宿題タブは クラス宿題 + 単元ドリル の未提出合計。

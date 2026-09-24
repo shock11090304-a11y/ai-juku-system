@@ -193,7 +193,8 @@
     function gotoAfterLogin(student) {
       const _isTsujukuApp = (student || {}).is_tsujuku_app === true;
       const raw = params.get('redirect') || (_isTsujukuApp ? 'class.html' : 'quick-start.html');
-      const safe = /^[a-z0-9_\-./?#=&]+$/i.test(raw) && !raw.startsWith('//') && !raw.startsWith('http');
+      // 2026-09-24: login.html と同じ判定 (% を許可・// と http は拒否)。2 つを別々にしない。
+      const safe = /^[a-z0-9_\-./?#=&%]+$/i.test(raw) && !raw.startsWith('//') && !raw.startsWith('http');
       window.location.href = safe ? raw : 'quick-start.html';
     }
 
