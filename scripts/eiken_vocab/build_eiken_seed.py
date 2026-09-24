@@ -3,7 +3,7 @@
 
 入力 (★リポジトリ外の教材。無い環境ではその部分を飛ばさず落ちる = 黙って欠けたシードを書かない):
   準1級 本番形式演習 第1弾/第2弾 大問1: ~/Desktop/📚 教材/英語/_生成元_英語教材_202609/data/eikenp1_mock{,2}/part1/S1..S6.json
-  準1級 完全模試 全3回 大問1        : ~/Desktop/英検準1級_完全模試_リスニング除外_全3回_20260923/_制作ソース/pre1_set{1,2,3}_data.py の P1
+  準1級 完全模試 全3回 大問1        : ~/Desktop/📚 教材/英語/04_英検/模擬試験/準1級/英検準1級_完全模試_リスニング除外_全3回_20260923/_制作ソース/pre1_set{1,2,3}_data.py の P1
   2級 対策問題集 Vol.1 大問1        : scripts/eiken_2kyu/data/part1_vocab.json (リポジトリ内・構造化)
   2級 対策問題集 Vol.2 大問1        : ~/Desktop/📚 教材/英語/04_英検/2級/英検2級_対策問題集_Vol2.pdf (生成元なし → PyMuPDF でテキスト抽出)
   2級 完全模試 全3回 大問1          : ~/Desktop/📚 教材/英語/04_英検/模擬試験/2級/英検2級_完全模試_リスニング除外_全3回_20260922/
@@ -33,7 +33,7 @@ import unicodedata
 HOME = os.path.expanduser("~")
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 GEN = os.environ.get("EIKEN_P1_MOCK_DIR", f"{HOME}/Desktop/📚 教材/英語/_生成元_英語教材_202609/data")
-P1MOCK = os.environ.get("EIKEN_P1_ZENMOSHI_DIR", f"{HOME}/Desktop/英検準1級_完全模試_リスニング除外_全3回_20260923/_制作ソース")
+P1MOCK = os.environ.get("EIKEN_P1_ZENMOSHI_DIR", f"{HOME}/Desktop/📚 教材/英語/04_英検/模擬試験/準1級/英検準1級_完全模試_リスニング除外_全3回_20260923/_制作ソース")
 WB1_JSON = os.path.join(REPO, "scripts", "eiken_2kyu", "data", "part1_vocab.json")
 WB2_PDF = os.environ.get("EIKEN2_WB2_PDF", f"{HOME}/Desktop/📚 教材/英語/04_英検/2級/英検2級_対策問題集_Vol2.pdf")
 MOCK2_DIR = os.environ.get("EIKEN2_MOCK_DIR", f"{HOME}/Desktop/📚 教材/英語/04_英検/模擬試験/2級/英検2級_完全模試_リスニング除外_全3回_20260922")

@@ -41,7 +41,7 @@ from datetime import date
 HOME = os.path.expanduser("~")
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 P1_MOCK_DIR = os.environ.get("EIKEN_P1_MOCK_DIR", f"{HOME}/Desktop/📚 教材/英語/_生成元_英語教材_202609/data")
-P1_ZENMOSHI_DIR = os.environ.get("EIKEN_P1_ZENMOSHI_DIR", f"{HOME}/Desktop/英検準1級_完全模試_リスニング除外_全3回_20260923/_制作ソース")
+P1_ZENMOSHI_DIR = os.environ.get("EIKEN_P1_ZENMOSHI_DIR", f"{HOME}/Desktop/📚 教材/英語/04_英検/模擬試験/準1級/英検準1級_完全模試_リスニング除外_全3回_20260923/_制作ソース")
 P1_SOGO_DIR = os.environ.get("EIKEN_P1_SOGO_DIR", f"{HOME}/Desktop/📚 教材/英語/04_英検/準1級/英検準1級_総合対策問題集_20260924/_制作ソース")
 E2_WB1_DIR = os.environ.get("EIKEN2_WB1_DIR", os.path.join(REPO, "scripts", "eiken_2kyu", "data"))
 E2_WB2_PDF = os.environ.get("EIKEN2_WB2_PDF", f"{HOME}/Desktop/📚 教材/英語/04_英検/2級/英検2級_対策問題集_Vol2.pdf")
@@ -336,7 +336,9 @@ def load_p1_sogo():
         e = p2[set_no]
         tag = f"eikenp1-sogo-{set_no}"
         body, mapping = renumber_markers(e["passage"].strip())
-        ja, _ = renumber_markers(e.get("translation", "").strip(), pattern=r"【\s*(\d{1,2})\s*】")
+        # 出所の全訳は編集中に段落内へ改行 1 つが混じることがある (2026-09-24 に 2 本) → 段落の切れ目 (空行) だけ残して詰める
+        ja_src = re.sub(r"(?<!\n)\n(?!\n)", "", e.get("translation", "").strip())
+        ja, _ = renumber_markers(ja_src, pattern=r"【\s*(\d{1,2})\s*】")
         qs = []
         for k, qq in enumerate(e["questions"], 1):
             ans0 = int(qq["answer"]) - 1
