@@ -257,6 +257,14 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_eiken_drill_pool.py
 
+      # 📖 長文型ドリル (2026-09-24 塾長指示): 本文 + 複数設問の取込 (本文ごとの dedup)・本文単位のドリル作成 (順序保持・
+      #   前回の本文を除外)・生徒の取得/提出が本文 map を返す・分析が passage_id を持つ・単発問題の経路は不変。
+      - name: 長文型ドリル 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_grammar_passage_drill.py
+
       # ⏪ 自動ロールバックが「履歴の強制書き換え」ではなく revert commit を fast-forward で積むこと (2026-09-07)。
       - name: 自動ロールバック (revert commit 方式) 回帰テスト
         if: ${{ !cancelled() }}

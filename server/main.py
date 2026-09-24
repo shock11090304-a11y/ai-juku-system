@@ -1635,6 +1635,23 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_grammar_q_unit ON grammar_questions(unit, level, active);
+    -- 📖 [長文型ドリル 2026-09-24 塾長指示「長文読解・長文空所補充も単元ドリルに」] 1 本文に複数設問 (英検 大問2/3)。
+    --   設問は grammar_questions のまま (passage_id / passage_seq で本文に紐づく・後付け列)。本文は生徒画面で 1 回だけ出し、
+    --   ドリルは「本文 N 本」単位で作る (_grammar_pick_drill_passages)。本文の無い単元は従来どおり 1 問ずつ。
+    CREATE TABLE IF NOT EXISTS grammar_passages (
+        id {pk},
+        subject TEXT NOT NULL,
+        unit TEXT NOT NULL,
+        level TEXT NOT NULL DEFAULT 'standard',
+        title TEXT,
+        body TEXT NOT NULL,
+        body_ja TEXT,
+        source TEXT DEFAULT 'pool',
+        body_hash TEXT,
+        active INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_grammar_passages_unit ON grammar_passages(subject, unit, level, active);
     -- ドリル (CEO が単元指定で作成。作成時に出題問題を固定 = 全生徒同一 25 問 → 問題別正解率が比較可能)
     CREATE TABLE IF NOT EXISTS grammar_drills (
         id {pk},
@@ -2236,6 +2253,9 @@ def init_db():
         #   grammar_questions/grammar_drills に subject 列を追加。既存行は 'english' に degrade=後方互換。
         ("grammar_q_subject", "ALTER TABLE grammar_questions ADD COLUMN subject TEXT DEFAULT 'english'"),
         ("grammar_drill_subject", "ALTER TABLE grammar_drills ADD COLUMN subject TEXT DEFAULT 'english'"),
+        # 📖 [長文型ドリル 2026-09-24] 設問が属する本文 (grammar_passages.id) と本文内の順番。NULL = 従来の単発問題。
+        ("grammar_q_passage_id", "ALTER TABLE grammar_questions ADD COLUMN passage_id INTEGER"),
+        ("grammar_q_passage_seq", "ALTER TABLE grammar_questions ADD COLUMN passage_seq INTEGER"),
         # 📊 集客 attribution (塾長指示 2026-05-19): paid 化した生徒の流入元を分析するため utm 列追加
         # signup_utm_source: threads/x/instagram/chatgpt_store/google/youtube 等のチャネル識別
         # signup_utm_content: 投稿型識別 (authority/testimonial 等の SNS 学習用)
@@ -45042,7 +45062,9 @@ _GRAMMAR_SUBJECT_UNIT_ORDER = {
     "chugaku": ["be動詞・一般動詞", "時制", "助動詞", "名詞・代名詞・冠詞", "比較", "不定詞・動名詞",
                 "分詞", "受動態", "現在完了", "関係代名詞", "接続詞・前置詞", "会話表現"],
     # 🏅 英検 語彙: 級 → 単語/句動詞 の順 (シード seed-data/eiken_vocab_pool_v1.json の unit 名と完全一致させる)
-    "eiken": ["2級 単語", "2級 句動詞・熟語", "準1級 単語", "準1級 句動詞・熟語"],
+    "eiken": ["2級 単語", "2級 句動詞・熟語", "準1級 単語", "準1級 句動詞・熟語",
+              # 📖 長文型 (本文 + 設問)。在庫は本文の本数で数える
+              "2級 長文空所補充", "2級 長文 内容一致", "準1級 長文空所補充", "準1級 長文 内容一致"],
 }
 
 # 🧩 2026-06-21 [multi-subject-drill] question_attempts.subject は弱点集計 _WEAKNESS_SUBJECT_TO_POOL の
@@ -45092,7 +45114,7 @@ _GRAMMAR_SUBJECT_LABEL_JA = {
     "english": "英文法", "math": "数学", "physics": "物理", "chemistry": "化学",
     "biology": "生物", "earth": "地学", "japanese": "国語", "social": "社会",
     "chugaku": "中学英語",
-    "eiken": "英検 語彙",
+    "eiken": "英検",
 }
 def _grammar_subject_label_ja(subject):
     return _GRAMMAR_SUBJECT_LABEL_JA.get(_canon_grammar_subject(subject), "英文法")
@@ -45151,9 +45173,114 @@ def admin_grammar_units(subject: str = "english", authorization: Optional[str] =
         else:
             # 他科目は在庫のある単元のみ(total 降順) — 単元集合は科目ごとに取込内容で決まる
             units = sorted(agg.values(), key=lambda s: -s["total"])
+        # 📖 長文型: 単元ごとの本文の本数 (0 = 従来どおり 1 問ずつ)。CEO は passages>0 の単元で「本文の本数」を選ばせる
+        p_counts = {}
+        if _grammar_has_passages():
+            try:
+                c.execute("SELECT unit, COUNT(*) AS n FROM grammar_passages WHERE active = 1 AND subject = ? GROUP BY unit", (subj,))
+                p_counts = {r["unit"]: int(r["n"]) for r in c.fetchall()}
+            except Exception:
+                p_counts = {}
+        for slot in units:
+            slot["passages"] = int(p_counts.get(slot["unit"], 0))
         return {"ok": True, "subject": subj, "units": units, "levels": GRAMMAR_LEVELS}
     finally:
         conn.close()
+
+
+# ───────── 📖 長文型ドリル (本文 + 複数設問) のヘルパー ─────────
+_GRAMMAR_PASSAGE_MAX_PER_DRILL = 5
+
+
+def _grammar_has_passages() -> bool:
+    """後付け列 passage_id **と** 表 grammar_passages の両方が実在するか。無ければ長文型は「無し」に倒す。
+    ★列だけ見ると危ない: 起動時の CREATE TABLE (executescript) がロック待ちで丸ごと飛び、ALTER ループだけ通ると
+    「列はあるが表が無い」状態になる。その状態で grammar_passages を引くと Postgres はトランザクションが失敗状態になり、
+    同じ接続の後続 SQL (単発ドリルの抽出) まで 500 になる = 本文の無い単元の配信も全部止まる。"""
+    return _table_has_column("grammar_questions", "passage_id") and _table_has_column("grammar_passages", "id")
+
+
+def _grammar_passage_hash(body: str) -> str:
+    import hashlib as _h
+    return _h.sha256(re.sub(r"\s+", " ", str(body or "")).strip().lower().encode("utf-8")).hexdigest()[:32]
+
+
+def _grammar_unit_passage_count(c, subject, unit) -> int:
+    """その単元の本文 (active) の本数。0 なら従来どおり 1 問ずつのドリル。"""
+    if not _grammar_has_passages():
+        return 0
+    try:
+        c.execute("SELECT COUNT(*) AS n FROM grammar_passages WHERE subject = ? AND unit = ? AND active = 1", (subject, unit))
+        r = c.fetchone()
+        return int(r["n"] if r else 0)
+    except Exception:
+        return 0
+
+
+def _grammar_pick_drill_passages(c, subject, unit, levels, passage_count, exclude_ids=None):
+    """本文をランダムに passage_count 本選び、その設問 id を本文順 (passage_seq) で返す → (qids, passage_ids)。
+    exclude_ids は前回ドリルの question_ids。その設問が属する **本文ごと** 除外する (同じ本文の残りの設問だけ出さない)。
+    設問が全部 inactive の本文は選ばない (枠だけ消費して 0 問になるのを防ぐ)。"""
+    ph = ",".join(["?"] * len(levels))
+    ex_pids = []
+    if exclude_ids:
+        ex_ph = ",".join(["?"] * len(exclude_ids))
+        c.execute(f"SELECT DISTINCT passage_id FROM grammar_questions WHERE id IN ({ex_ph}) AND passage_id IS NOT NULL", tuple(exclude_ids))
+        ex_pids = [int(r["passage_id"]) for r in c.fetchall()]
+    if ex_pids:
+        exp = ",".join(["?"] * len(ex_pids))
+        c.execute(
+            f"SELECT id FROM grammar_passages p WHERE subject = ? AND unit = ? AND level IN ({ph}) AND active = 1 "
+            f"AND EXISTS (SELECT 1 FROM grammar_questions q WHERE q.passage_id = p.id AND q.active = 1) "
+            f"AND id NOT IN ({exp}) ORDER BY RANDOM() LIMIT ?",
+            (subject, unit, *levels, *ex_pids, passage_count),
+        )
+    else:
+        c.execute(
+            f"SELECT id FROM grammar_passages p WHERE subject = ? AND unit = ? AND level IN ({ph}) AND active = 1 "
+            f"AND EXISTS (SELECT 1 FROM grammar_questions q WHERE q.passage_id = p.id AND q.active = 1) "
+            f"ORDER BY RANDOM() LIMIT ?",
+            (subject, unit, *levels, passage_count),
+        )
+    pids = [int(r["id"]) for r in c.fetchall()]
+    if not pids:
+        return [], []
+    pph = ",".join(["?"] * len(pids))
+    c.execute(f"SELECT id, passage_id FROM grammar_questions WHERE passage_id IN ({pph}) AND active = 1 "
+              f"ORDER BY passage_id, passage_seq, id", tuple(pids))
+    by_p = {}
+    for r in c.fetchall():
+        by_p.setdefault(int(r["passage_id"]), []).append(int(r["id"]))
+    qids = []
+    for pid in pids:
+        qids.extend(by_p.get(pid, []))
+    return qids, pids
+
+
+def _grammar_load_passages(c, qrows, reveal=False):
+    """設問行の列から本文 map {str(id): {id, title, body[, body_ja]}} を返す (列が無い/本文なしなら {})。
+    reveal=True (完了後) のときだけ全訳 body_ja を付ける (解く前に訳を見せない)。"""
+    if not _grammar_has_passages():
+        return {}
+    pids = set()
+    for r in qrows:
+        try:
+            if "passage_id" in r.keys() and r["passage_id"] is not None:
+                pids.add(int(r["passage_id"]))
+        except Exception:
+            continue
+    if not pids:
+        return {}
+    pids = sorted(pids)
+    ph = ",".join(["?"] * len(pids))
+    c.execute(f"SELECT id, title, body, body_ja FROM grammar_passages WHERE id IN ({ph})", tuple(pids))
+    out = {}
+    for r in c.fetchall():
+        item = {"id": int(r["id"]), "title": r["title"], "body": r["body"]}
+        if reveal:
+            item["body_ja"] = r["body_ja"]
+        out[str(int(r["id"]))] = item
+    return out
 
 
 @app.post("/api/admin/grammar/import")
@@ -45234,8 +45361,98 @@ def admin_grammar_import(
                 inserted += 1
             except Exception:
                 errors += 1
+        # 📖 [長文型 2026-09-24] passages: [{unit, level?, title?, body, body_ja?, source?, questions:[{stem, choices, answer, explanation?}]}]
+        #   本文は body の正規化ハッシュで重複判定 (同じ本文は本文ごと skip)。設問は stem の重複判定をしない
+        #   (大問2 の設問は「( 1 ) に入る語」のように本文をまたいで同文になるため)。english は GRAMMAR_UNITS 固定で長文の単元が無いので受けない。
+        passages = payload.get("passages") or []
+        if passages and not isinstance(passages, list):
+            raise HTTPException(status_code=422, detail="passages が配列ではありません")
+        if len(passages) > 200:
+            raise HTTPException(status_code=422, detail="一度に投入できる本文は 200 本までです")
+        p_inserted = p_skipped = 0
+        if passages:
+            if not _grammar_has_passages():
+                raise HTTPException(status_code=503, detail="長文用の列/表 (passage_id / grammar_passages) がまだありません (デプロイ反映待ちの可能性)")
+            for p in passages:
+                try:
+                    if not isinstance(p, dict):
+                        p_skipped += 1
+                        continue
+                    unit = (p.get("unit") or "").strip()
+                    body = (p.get("body") or "").strip()
+                    pqs = p.get("questions") or []
+                    subj = _canon_grammar_subject(p.get("subject") or subject_default)
+                    if (not unit or not body or not isinstance(pqs, list) or not pqs
+                            or subj not in _GRAMMAR_CANON_SUBJECTS or subj == "english"):
+                        p_skipped += 1
+                        continue
+                    level = (p.get("level") or "standard").strip()
+                    if level not in GRAMMAR_LEVELS:
+                        level = "standard"
+                    # 文字列であるべき欄が list/dict だと c.execute で落ちる (psycopg "cannot adapt") → 先に弾く
+                    for _k in ("title", "body_ja", "source"):
+                        if p.get(_k) is not None and not isinstance(p.get(_k), str):
+                            raise ValueError(_k)
+                    # 設問の形式を先に全部検証する (途中で落ちて本文だけ入る事故を防ぐ)
+                    norm_qs = []
+                    for q in pqs:
+                        if not isinstance(q, dict):
+                            raise ValueError("question")
+                        stem = (q.get("stem") or "").strip()
+                        choices = q.get("choices")
+                        answer = q.get("answer")
+                        if not stem or not isinstance(choices, list) or len(choices) < 2 or answer is None:
+                            raise ValueError("question")
+                        if not all(isinstance(ch, str) for ch in choices):
+                            raise ValueError("choices")
+                        answer = int(answer)
+                        if answer < 0 or answer >= len(choices):
+                            raise ValueError("answer")
+                        _expl = q.get("explanation")
+                        if _expl is not None and not isinstance(_expl, str):
+                            raise ValueError("explanation")
+                        norm_qs.append((stem, choices, answer, _expl or None,
+                                        str(q.get("source") or p.get("source") or "pool").strip()[:30]))
+                    bh = _grammar_passage_hash(body)
+                    if dedup:
+                        c.execute("SELECT id FROM grammar_passages WHERE subject = ? AND unit = ? AND body_hash = ? LIMIT 1", (subj, unit, bh))
+                        if c.fetchone():
+                            p_skipped += 1
+                            continue
+                    c.execute(
+                        "INSERT INTO grammar_passages (subject, unit, level, title, body, body_ja, source, body_hash) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+                        (subj, unit, level, (p.get("title") or None), body, (p.get("body_ja") or None),
+                         (p.get("source") or "pool").strip()[:60], bh),
+                    )
+                    pr = c.fetchone()
+                    pid = int(pr["id"] if hasattr(pr, "keys") else pr[0])
+                    for seq, (stem, choices, answer, expl, src) in enumerate(norm_qs, 1):
+                        c.execute(
+                            "INSERT INTO grammar_questions (subject, unit, level, stem, choices, answer, explanation, source, passage_id, passage_seq) "
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            (subj, unit, level, stem, json.dumps(choices, ensure_ascii=False), answer, expl, src, pid, seq),
+                        )
+                        inserted += 1
+                    p_inserted += 1
+                except (ValueError, TypeError, AttributeError):
+                    # 形式不正 (数値でない answer・文字列でない unit/body/stem など) は本文ごと skip。SQL の前で落ちるので取り消し不要
+                    p_skipped += 1
+                except Exception as _pe:
+                    # ★本文 INSERT の後で落ちると Postgres はトランザクションが失敗状態になり、以降の本文は全部 errors、
+                    #   最後の commit は黙って ROLLBACK になる (200 なのに何も入らない)。ここで rollback して止め、正直に返す。
+                    errors += 1
+                    log.warning(f"[GrammarImport] 本文の取込に失敗 (ここで中断・この要求の取込は全部取り消し): {type(_pe).__name__}: {_pe}")
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+                    return {"ok": False, "inserted": 0, "skipped": skipped, "errors": errors, "received": len(questions),
+                            "passages_inserted": 0, "passages_skipped": p_skipped, "passages_received": len(passages),
+                            "detail": "本文の取込中にエラーが起きたため、この要求の取込は全部取り消しました (同じ内容を再送できます)"}
         conn.commit()
-        return {"ok": True, "inserted": inserted, "skipped": skipped, "errors": errors, "received": len(questions)}
+        return {"ok": True, "inserted": inserted, "skipped": skipped, "errors": errors, "received": len(questions),
+                "passages_inserted": p_inserted, "passages_skipped": p_skipped, "passages_received": len(passages)}
     finally:
         conn.close()
 
@@ -45247,17 +45464,19 @@ def _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, co
     ph = ",".join(["?"] * len(levels))
     unit_clause = "" if subject_level else "unit = ? AND "
     unit_params = () if subject_level else (unit,)
+    # 📖 長文型の設問 (passage_id あり) は本文と一緒にしか出さない: 科目全体の抽出や弱点ルーティンで 1 問ずつバラけないように
+    pass_clause = "AND passage_id IS NULL " if _grammar_has_passages() else ""
     if exclude_ids:
         ex_ph = ",".join(["?"] * len(exclude_ids))
         c.execute(
             f"SELECT id FROM grammar_questions WHERE {unit_clause}subject = ? AND level IN ({ph}) AND active = 1 "
-            f"AND id NOT IN ({ex_ph}) ORDER BY RANDOM() LIMIT ?",
+            f"{pass_clause}AND id NOT IN ({ex_ph}) ORDER BY RANDOM() LIMIT ?",
             (*unit_params, subject, *levels, *exclude_ids, count),
         )
     else:
         c.execute(
             f"SELECT id FROM grammar_questions WHERE {unit_clause}subject = ? AND level IN ({ph}) AND active = 1 "
-            f"ORDER BY RANDOM() LIMIT ?",
+            f"{pass_clause}ORDER BY RANDOM() LIMIT ?",
             (*unit_params, subject, *levels, count),
         )
     return [r["id"] for r in c.fetchall()]
@@ -45392,19 +45611,39 @@ def admin_grammar_drill_create(
                     exclude_ids = [int(x) for x in json.loads(_exraw)]
                 except Exception:
                     exclude_ids = []
-        # 1) 在庫から count 問をランダム固定 (exclude_ids があれば除外 = 前回と被らない新問のみ)
-        #    弱点ルーティン配信(_run_weakness_drill_routine)と同一抽出を共有 (_grammar_pick_drill_question_ids)。
-        qids = _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, exclude_ids)
-        if len(qids) < count:
-            _scope = f"科目「{unit}」" if subject_level else f"単元「{unit}」"
-            raise HTTPException(
-                status_code=400,
-                detail=f"{_scope}の在庫が不足しています (要求 {count}問 / "
-                       f"{'前回の問題を除いた' if exclude_ids else ''}在庫 {len(qids)}問)。"
-                       f"レベルを広げるか、問題数を減らすか、問題を補充してください。",
-            )
-        level_label = "・".join(GRAMMAR_LEVELS.get(l, l) for l in levels)
-        title = title_override or f"{unit}ドリル（{level_label}・{count}問）"
+        # 📖 [長文型 2026-09-24] 単元に本文があれば「本文 N 本」単位で出題 (count は無視・passage_count 本・既定 2 本 = 本番の大問 1 回分)。
+        #   ★判定は単元の在庫で行う (client の指定に依存しない): 弱点対策の再配信など古い経路から来ても本文がバラけない。
+        passage_ids = []
+        _n_pass = 0 if subject_level else _grammar_unit_passage_count(c, subject, unit)
+        if _n_pass > 0:
+            try:
+                passage_count = int(payload.get("passage_count") or 2)
+            except (TypeError, ValueError):
+                passage_count = 2
+            passage_count = max(1, min(passage_count, _GRAMMAR_PASSAGE_MAX_PER_DRILL))
+            qids, passage_ids = _grammar_pick_drill_passages(c, subject, unit, levels, passage_count, exclude_ids)
+            if len(passage_ids) < passage_count or not qids:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"単元「{unit}」の本文の在庫が不足しています (要求 {passage_count}本 / "
+                           f"{'前回の本文を除いた' if exclude_ids else ''}在庫 {len(passage_ids)}本)。本数を減らすか、本文を補充してください。",
+                )
+            count = len(qids)   # 以降の score_total / 通知の問数は設問数
+            title = title_override or f"{unit}ドリル（本文{passage_count}本・{count}問）"
+        else:
+            # 1) 在庫から count 問をランダム固定 (exclude_ids があれば除外 = 前回と被らない新問のみ)
+            #    弱点ルーティン配信(_run_weakness_drill_routine)と同一抽出を共有 (_grammar_pick_drill_question_ids)。
+            qids = _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, exclude_ids)
+            if len(qids) < count:
+                _scope = f"科目「{unit}」" if subject_level else f"単元「{unit}」"
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"{_scope}の在庫が不足しています (要求 {count}問 / "
+                           f"{'前回の問題を除いた' if exclude_ids else ''}在庫 {len(qids)}問)。"
+                           f"レベルを広げるか、問題数を減らすか、問題を補充してください。",
+                )
+            level_label = "・".join(GRAMMAR_LEVELS.get(l, l) for l in levels)
+            title = title_override or f"{unit}ドリル（{level_label}・{count}問）"
 
         # 2) ドリル作成 (question_ids 固定)
         c.execute(
@@ -45454,6 +45693,7 @@ def admin_grammar_drill_create(
                 ("grammar_drill_created", json.dumps({
                     "drill_id": drill_id, "unit": unit, "levels": levels,
                     "count": count, "student_ids": [a["student_id"] for a in assigned],
+                    "passage_ids": passage_ids,
                 }, ensure_ascii=False), "admin"),
             )
             conn.commit()
@@ -45475,6 +45715,8 @@ def admin_grammar_drill_create(
             "title": title,
             "unit": unit,
             "question_count": count,
+            "passage_count": len(passage_ids),   # 📖 長文型なら本文の本数 (0 = 従来の 1 問ずつ)
+            "passage_ids": passage_ids,
             "assigned": assigned,
             "notified": len(notify_list),
             "skipped": [s for s in student_ids if s not in found],
@@ -46049,9 +46291,12 @@ def admin_grammar_drill_analytics(
         qmap = {}
         if qids:
             ph = ",".join(["?"] * len(qids))
-            c.execute(f"SELECT id, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph})", tuple(qids))
+            _pcol = ", passage_id" if _grammar_has_passages() else ""
+            c.execute(f"SELECT id, stem, choices, answer, explanation{_pcol} FROM grammar_questions WHERE id IN ({ph})", tuple(qids))
             for r in c.fetchall():
                 qmap[r["id"]] = r
+        # 📖 長文型: 問題別の一覧で本文を 1 回だけ出すための map
+        _passages_map = _grammar_load_passages(c, list(qmap.values()), reveal=True)
         # 全 assignment の解答を集計 + 誰が完了/未完了かの per-student ロスター (塾長指示 2026-06-06)
         # LEFT JOIN で assigned 件数は不変、生徒名を付与 (削除済み生徒は name=NULL → frontend で ID 表示)。
         c.execute(
@@ -46147,6 +46392,7 @@ def admin_grammar_drill_analytics(
                 "correct": stat["correct"],
                 "correct_rate": rate,
                 "choice_counts": choice_counts,   # 👁 各選択肢を選んだ人数 (choices と同じ順)
+                "passage_id": (int(q["passage_id"]) if (q and "passage_id" in q.keys() and q["passage_id"] is not None) else None),
             })
         avg_score = round(100 * score_sum / completed, 1) if completed else None
         return {
@@ -46162,6 +46408,7 @@ def admin_grammar_drill_analytics(
             "summary": {"assigned": assigned, "completed": completed, "avg_correct_rate": avg_score},
             "students": roster,
             "questions": questions,
+            "passages": _passages_map,   # 📖 長文型のみ (従来は {})
         }
     except HTTPException:
         raise
@@ -46624,9 +46871,12 @@ def student_grammar_drill_get(drill_id: int, request: Request, authorization: Op
         if qids:
             ph = ",".join(["?"] * len(qids))
             # 🧩 2026-06-21 active=1 限定: 無効化(active=0)した不良問題は配信済ドリルでも非表示にする(問題文欠落の恒久対策)
-            c.execute(f"SELECT id, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph}) AND active = 1", tuple(qids))
+            _pcol = ", passage_id" if _grammar_has_passages() else ""
+            c.execute(f"SELECT id, stem, choices, answer, explanation{_pcol} FROM grammar_questions WHERE id IN ({ph}) AND active = 1", tuple(qids))
             for r in c.fetchall():
                 qmap[r["id"]] = r
+        # 📖 長文型: 設問が属する本文を 1 回だけ返す (完了後は全訳 body_ja も)。本文の無いドリルは {}
+        passages = _grammar_load_passages(c, list(qmap.values()), reveal=reveal)
         questions = []
         for idx, qid in enumerate(qids, 1):
             q = qmap.get(qid)
@@ -46637,6 +46887,11 @@ def student_grammar_drill_get(drill_id: int, request: Request, authorization: Op
             except Exception:
                 choices = []
             item = {"no": idx, "question_id": qid, "stem": q["stem"], "choices": choices}
+            try:
+                if "passage_id" in q.keys() and q["passage_id"] is not None:
+                    item["passage_id"] = int(q["passage_id"])
+            except Exception:
+                pass
             if reveal:
                 item["answer"] = int(q["answer"]) if q["answer"] is not None else None
                 item["explanation"] = q["explanation"]
@@ -46649,6 +46904,7 @@ def student_grammar_drill_get(drill_id: int, request: Request, authorization: Op
             "score_correct": a["score_correct"],
             "score_total": a["score_total"],
             "questions": questions,
+            "passages": passages,   # 📖 {passage_id: {title, body[, body_ja]}} (長文型のみ・従来は {})
         }
     except HTTPException:
         raise
@@ -46709,9 +46965,12 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
             ph = ",".join(["?"] * len(qids))
             # unit は 2026-06-11 追加: 横断ミニ診断 (drill.unit='診断') では設問ごとに単元が異なるため、
             # 弱点集計 (question_attempts.topic) を設問自身の単元で記録する
-            c.execute(f"SELECT id, unit, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph}) AND active = 1", tuple(qids))
+            _pcol = ", passage_id" if _grammar_has_passages() else ""
+            c.execute(f"SELECT id, unit, stem, choices, answer, explanation{_pcol} FROM grammar_questions WHERE id IN ({ph}) AND active = 1", tuple(qids))
             for r in c.fetchall():
                 qmap[r["id"]] = r
+        # 📖 長文型: 採点結果の画面でも本文を 1 回だけ出す (提出後なので全訳つき)
+        passages_map = _grammar_load_passages(c, list(qmap.values()), reveal=True)
 
         results = []
         correct_count = 0
@@ -46754,6 +47013,7 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
                 "is_correct": is_correct,
                 "guessed": guessed,  # 🤔 フロントの「弱点として記録」表示・復習カード化に使用
                 "explanation": q["explanation"],
+                "passage_id": (int(q["passage_id"]) if ("passage_id" in q.keys() and q["passage_id"] is not None) else None),
             })
             attempts.append((qid, 1 if is_correct else 0, q_unit, guessed))
 
@@ -46821,6 +47081,7 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
             "score_total": total,
             "percentage": pct,
             "results": results,
+            "passages": passages_map,   # 📖 長文型のみ (従来は {})
         }
     except HTTPException:
         raise

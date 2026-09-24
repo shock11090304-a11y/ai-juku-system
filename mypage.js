@@ -4286,7 +4286,7 @@ function _renderHomeworkItem(item) {
 // 📝 英文法ドリルを「宿題カード」として描画 (2026-06-16 塾長指示「ドリルも宿題に入れる」)。
 // クリック → window._gdOpenDrill(drill_id) が解答エリア(#grammarDrillSection)に問題を展開する。
 // 🧩 2026-06-21 [multi-subject-drill] 科目別ラベル。english は従来どおり「英文法」、他科目は科目名で表示。
-const _SUBJ_DRILL_LABEL = { english: '英文法', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語', eiken: '英検 語彙' };
+const _SUBJ_DRILL_LABEL = { english: '英文法', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語', eiken: '英検' };
 function _renderDrillAsHwItem(item) {
   const isOpen = item.status !== 'completed';
   const _subjLabel = _SUBJ_DRILL_LABEL[item.subject] || '英文法';
@@ -4580,6 +4580,7 @@ function _gdApplyKatex(rootEl) {
         throwOnError: false,
         errorColor: '#f87171',
         strict: 'ignore',
+        ignoredClasses: ['gd-nomath'],   // 📖 長文の本文は数式扱いしない ($20 などを壊さない)
       });
     } catch (e) { console.warn('[GD katex] render failed', e); }
     return true;
@@ -4605,6 +4606,30 @@ function _gdRenderChoices(drillId, q) {
       <span style="color:#e2e8f0; font-size:0.9rem; line-height:1.5;"><span style="color:#5eead4; font-weight:bold; margin-right:4px;">${mark}</span>${_gdRich(c)}</span>
     </label>`;
   }).join('');
+}
+
+// 📖 [長文型 2026-09-24] 本文カード (1 本文に複数設問)。空所番号「( 1 )」は目立たせ、完了後は全訳を折りたたみで出す。
+function _gdPassageBlock(p, review) {
+  if (!p) return '';
+  const body = _gdEscape(p.body || '').replace(/\(\s*(\d{1,2})\s*\)/g, '<span style="font-weight:800; color:#fde68a;">( $1 )</span>');
+  const ja = (review && p.body_ja)
+    ? `<details style="margin-top:8px;"><summary style="cursor:pointer; color:#a5b4fc; font-size:0.8rem;">📖 全訳を見る</summary><div style="margin-top:6px; color:#cbd5e1; font-size:0.86rem; line-height:1.7; white-space:pre-wrap;">${_gdEscape(p.body_ja)}</div></details>`
+    : '';
+  // ★pre-wrap の中にテンプレートの改行/インデントを入れない (入れると空行と字下げがそのまま画面に出る)
+  const title = p.title ? `<div style="font-weight:800; color:#c7d2fe; margin-bottom:6px; font-size:0.9rem;">📖 ${_gdEscape(p.title)}</div>` : '';
+  return '<div class="gd-nomath" style="padding:14px 16px; background:rgba(129,140,248,0.07); border:1px solid rgba(129,140,248,0.32); border-radius:12px; margin:4px 0 12px; font-size:0.93rem; line-height:1.8; color:#e2e8f0; white-space:pre-wrap; word-break:break-word;">'
+    + title + body + ja + '</div>';
+}
+// 設問の配列を「本文カード → その本文の設問…」の順に並べる (本文の無い設問は従来どおり)
+function _gdBlocksWithPassages(items, passages, review, itemHtml) {
+  const seen = {};
+  let out = '';
+  (items || []).forEach(q => {
+    const pid = (q.passage_id != null) ? String(q.passage_id) : '';
+    if (pid && !seen[pid]) { seen[pid] = true; out += _gdPassageBlock(passages && passages[pid], review); }
+    out += itemHtml(q);
+  });
+  return out;
 }
 
 // 解答前 / 復習表示の 1 問ブロック
@@ -4849,7 +4874,7 @@ async function initGrammarDrillSection() {
         ? `${data.score_correct}/${data.score_total}` : '';
       const pct = (data.score_correct != null && data.score_total)
         ? Math.round((data.score_correct / data.score_total) * 100) : null;
-      const blocks = questions.map(q => _gdRenderQuestionBlock(drillId, q, { review: true })).join('');
+      const blocks = _gdBlocksWithPassages(questions, data.passages || {}, true, q => _gdRenderQuestionBlock(drillId, q, { review: true }));
       list.innerHTML = `
         <div style="margin-bottom:12px;">
           <button type="button" data-gd-back="1" style="padding:7px 16px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; cursor:pointer; font-size:0.82rem;">← 一覧に戻る</button>
@@ -4868,7 +4893,7 @@ async function initGrammarDrillSection() {
     }
 
     // 未完了 → 解答フォーム
-    const blocks = questions.map(q => _gdRenderQuestionBlock(drillId, q, { review: false })).join('');
+    const blocks = _gdBlocksWithPassages(questions, data.passages || {}, false, q => _gdRenderQuestionBlock(drillId, q, { review: false }));
     list.innerHTML = `
       <div style="margin-bottom:12px;">
         <button type="button" data-gd-back="1" style="padding:7px 16px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; cursor:pointer; font-size:0.82rem;">← 一覧に戻る</button>
@@ -4910,7 +4935,20 @@ async function initGrammarDrillSection() {
           choices.map(function (cTxt, i) { return '(' + (letters[i] || (i + 1)) + ') ' + cTxt; }).join('\n');
         const ci = (r.correct_answer == null) ? null : Number(r.correct_answer);
         const answer = (ci != null && letters[ci] ? '(' + letters[ci] + ') ' : '') + (ci != null ? (choices[ci] || '') : '');
-        const key = ('英語__' + problem).slice(0, 200);
+        // 📖 長文型の設問は本文をまたいで同文 (「( 1 ) に入るもの」) になるので、question_id でカードを分ける。
+        //    カード本文には本文を先に付ける (本文が無いと「( 1 ) に入るもの」だけのカードになって解けない)。
+        //    本文中の「(1)」「(A)」は復習カードの選択肢パーサ (learning-brain の _parseChoices) が拾わないように「( 1 )」に開く。
+        const _isPassageQ = (r.passage_id != null && r.question_id != null);
+        const key = _isPassageQ
+          ? ('英語__gd' + String(r.question_id) + '__' + problem).slice(0, 200)
+          : ('英語__' + problem).slice(0, 200);
+        let problemFull = problem.slice(0, 1200);
+        if (_isPassageQ) {
+          const _pp = (res.passages || {})[String(r.passage_id)];
+          const _pbody = _pp && _pp.body ? String(_pp.body).replace(/\(\s*([A-Dア-エ1-4])\s*\)/g, '( $1 )') : '';
+          const _pprob = problem.replace(/\(\s*([A-Dア-エ1-4])\s*\)(?=\s*に)/g, '( $1 )');  // 設問文の「(1) に入る」も同様に開く (選択肢の (A) は残す)
+          if (_pbody) problemFull = ('【本文】\n' + _pbody.slice(0, 5000) + '\n\n' + _pprob).slice(0, 6500);
+        }
         // 🤔 「自信なし(勘)」申告つきの正解は誤答と同様に復習カード化する (2026-07-19 生徒要望):
         //   勘で当たった問題は覚えていないので、翌日の「今日の復習」に出して定着させる。
         if (!r.is_correct || r.guessed) {
@@ -4918,7 +4956,7 @@ async function initGrammarDrillSection() {
             key: key,
             subject: '英語',
             topic: (r.unit || '英文法').toString(),
-            problem: problem.slice(0, 1200),
+            problem: problemFull,
             answer: answer,
             explanation: String(r.explanation || ''),
           }, false);
@@ -4988,7 +5026,7 @@ async function initGrammarDrillSection() {
       : (total ? Math.round((correct / total) * 100) : 0);
     // 🤔 自信なし申告つきで正解した問題数 (弱点として記録された旨をサマリーに出す・2026-07-19)
     const guessedCorrectN = results.filter(r => r && r.is_correct && r.guessed).length;
-    const blocks = results.map(_gdRenderResultItem).join('');
+    const blocks = _gdBlocksWithPassages(results, (res && res.passages) || {}, true, _gdRenderResultItem);
     list.innerHTML = `
       <div style="margin-bottom:12px;">
         <button type="button" data-gd-back="1" style="padding:7px 16px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; cursor:pointer; font-size:0.82rem;">← 一覧に戻る</button>

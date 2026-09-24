@@ -103,6 +103,12 @@
     .gd-q.unanswered { border-color:rgba(251,191,36,0.65); box-shadow:0 0 0 1px rgba(251,191,36,0.35); }
     .gd-no { font-size:0.74rem; font-weight:800; color:#a5b4fc; }
     .gd-stem { font-size:0.95rem; font-weight:700; line-height:1.65; margin:0.3rem 0 0.6rem; white-space:pre-wrap; word-break:break-word; }
+    /* 📖 長文型ドリルの本文 (1 本文に複数設問)。本文は 1 回だけ出す。太字にしない (壁のような文字にならないように) */
+    .gd-passage { background:rgba(129,140,248,0.07); border:1px solid rgba(129,140,248,0.32); border-radius:12px; padding:0.9rem 1rem; margin:0.4rem 0 0.8rem; font-size:0.93rem; line-height:1.8; white-space:pre-wrap; word-break:break-word; }
+    .gd-passage .gd-ptitle { font-weight:800; color:#c7d2fe; margin-bottom:0.45rem; font-size:0.9rem; }
+    .gd-passage .gd-blank { font-weight:800; color:#fde68a; }
+    .gd-passage details { margin-top:0.6rem; } .gd-passage summary { cursor:pointer; color:#a5b4fc; font-size:0.82rem; }
+    .gd-passage .gd-ja { margin-top:0.4rem; color:#cbd5e1; font-size:0.86rem; line-height:1.7; }
     /* タップ領域は 44pt 以上を確保 (スマホで押しにくいと誤タップが増える) */
     .gd-choice { display:flex; gap:0.55rem; align-items:flex-start; padding:0.7rem 0.65rem; margin:0.32rem 0; background:rgba(0,0,0,0.22); border:1px solid rgba(255,255,255,0.10); border-radius:9px; font-size:0.9rem; line-height:1.5; cursor:pointer; word-break:break-word; }
     div.gd-choice { cursor:default; }   /* 復習表示 (label でなく div) は押せないので手の形にしない */
@@ -1082,6 +1088,23 @@
     }
 
     // 1問ぶん。review=true は採点後/提出ずみの復習表示 (正解・自分の解答・解説を出す)。
+    // 📖 [長文型 2026-09-24] 本文カード。空所番号「( 1 )」は目立たせる。完了後 (review) は全訳を折りたたみで出す。
+    function gdPassageHtml(p, review) {
+      if (!p) return '';
+      var body = esc(p.body || '').replace(/\(\s*(\d{1,2})\s*\)/g, '<span class="gd-blank">( $1 )</span>');
+      var ja = (review && p.body_ja) ? '<details><summary>📖 全訳を見る</summary><div class="gd-ja">' + esc(p.body_ja) + '</div></details>' : '';
+      return '<div class="gd-passage gd-nomath">' + (p.title ? '<div class="gd-ptitle">📖 ' + esc(p.title) + '</div>' : '') + body + ja + '</div>';
+    }
+    // 設問の配列を「本文カード → その本文の設問…」の順に並べた HTML にする (本文の無い設問は従来どおり)
+    function gdBlocksHtml(items, passages, review, itemHtml) {
+      var seen = {}, out = '';
+      (items || []).forEach(function (q) {
+        var pid = q.passage_id != null ? String(q.passage_id) : '';
+        if (pid && !seen[pid]) { seen[pid] = true; out += gdPassageHtml(passages && passages[pid], review); }
+        out += itemHtml(q);
+      });
+      return out;
+    }
     function gdQuestionHtml(q, review) {
       var choices = q.choices || [];
       var inner, noMark = '';
@@ -1138,7 +1161,7 @@
         body.innerHTML = head + '<div class="empty">このドリルには表示できる問題がありません。塾長にご連絡ください。</div>';
         gdWireBack(body); gdWireAskAi(body); return;
       }
-      var blocks = qs.map(function (q) { return gdQuestionHtml(q, review); }).join('');
+      var blocks = gdBlocksHtml(qs, data.passages || {}, review, function (q) { return gdQuestionHtml(q, review); });
       // ★ 解答中は末尾に「戻る」を置かない = 提出ボタンのすぐ下にあると押し間違えて解答が消えるため
       body.innerHTML = head
         + (review ? (blocks + gdBackHtml())
@@ -1240,12 +1263,12 @@
       var total = (res && res.score_total != null) ? res.score_total : results.length;
       var pct = (res && res.percentage != null) ? res.percentage : (total ? Math.round(100 * correct / total) : 0);
       var word = pct >= 80 ? '🎉 よくできました!' : (pct >= 60 ? '👍 もう一歩!' : '📖 まちがえた問題の解説を読みましょう');
-      var blocks = results.map(function (r) {
+      var blocks = gdBlocksHtml(results, (res && res.passages) || {}, true, function (r) {
         return gdQuestionHtml({
           no: r.no, question_id: r.question_id, stem: r.stem, choices: r.choices,
           answer: r.correct_answer, your_answer: r.your_answer, explanation: r.explanation
         }, true);
-      }).join('');
+      });
       body.innerHTML = gdBackHtml()
         + '<div class="gd-score">採点結果<span class="n">' + esc(String(correct)) + ' / ' + esc(String(total)) + '</span>'
         + '<div class="card-meta" style="margin-top:0.25rem;">' + esc(String(pct)) + '% ・ ' + word + '</div>' + gdAiHintHtml() + '</div>'
@@ -1292,7 +1315,8 @@
               { left: '$', right: '$', display: false }
             ],
             // trust:false = \href/\url を無効化 (問題文由来のリンク注入を塞ぐ・既定値だが明示して固定)
-            throwOnError: false, errorColor: '#f87171', strict: 'ignore', trust: false
+            throwOnError: false, errorColor: '#f87171', strict: 'ignore', trust: false,
+            ignoredClasses: ['gd-nomath']   // 📖 長文の本文は数式扱いしない ($20 などを壊さない)
           });
         } catch (e) { /* 描画できなくても素のテキストで読める */ }
       });

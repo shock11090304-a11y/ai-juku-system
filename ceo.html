@@ -657,8 +657,8 @@
           <span id="chugakuPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">中学生(高校受験)用。押したあと①科目で「🧒 中学英語」を選ぶと使えます。全12単元に 基礎25/標準45/やや難30 問(時制だけ基礎38問)が入ります。</span>
         </div>
         <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-          <button id="eikenPoolImportBtn" type="button" data-seed="/seed-data/eiken_vocab_pool_v1.json" data-size="400" title="🏅 英検の語彙ドリル (大問1 形式・空所4択) を補充: 2級 130問 (対策問題集 Vol.1/2 + 完全模試 全3回) と 準1級 270問 (本番形式演習 第1弾/第2弾 + 完全模試 全3回)。全部この塾の書き下ろし (過去問なし)。取込後は①科目で「🏅 英検 語彙」を選ぶと単元が「2級 単語 / 2級 句動詞・熟語 / 準1級 単語 / 準1級 句動詞・熟語」に入れ替わります。英文法・中学英語のプールとは別バンクなので、診断・今日の1問・弱点ドリルに英検の問題が混ざることはありません。level は全問「標準」なので既定の「標準〜やや難」で全在庫が対象です。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🏅 英検 語彙ドリルを補充 (2級 130問・準1級 270問・無課金)</button>
-          <span id="eikenPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">英検対策コース用。押したあと①科目で「🏅 英検 語彙」を選ぶと使えます。学年の縛りはありません (高1でも高3でも配れます)。</span>
+          <button id="eikenPoolImportBtn" type="button" data-seed="/seed-data/eiken_vocab_pool_v1.json" data-size="400" title="🏅 英検の語彙ドリル (大問1 形式・空所4択) を補充: 2級 130問 (対策問題集 Vol.1/2 + 完全模試 全3回) と 準1級 270問 (本番形式演習 第1弾/第2弾 + 完全模試 全3回)。全部この塾の書き下ろし (過去問なし)。取込後は①科目で「🏅 英検」を選ぶと単元が「2級 単語 / 2級 句動詞・熟語 / 準1級 単語 / 準1級 句動詞・熟語」に入れ替わります。英文法・中学英語のプールとは別バンクなので、診断・今日の1問・弱点ドリルに英検の問題が混ざることはありません。level は全問「標準」なので既定の「標準〜やや難」で全在庫が対象です。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🏅 英検 語彙ドリルを補充 (2級 130問・準1級 270問・無課金)</button>
+          <span id="eikenPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">英検対策コース用。押したあと①科目で「🏅 英検」を選ぶと使えます。学年の縛りはありません (高1でも高3でも配れます)。</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-top:0.6rem;padding-top:0.6rem;border-top:1px dashed rgba(255,255,255,0.12);">
           <button id="grammarWeaknessImportBtn" type="button" data-seed="/seed-data/grammar_drill_weakness_v1.json" title="弱点分析で抽出した検証済み4択32問を自動採点ドリルの問題プールに取り込みます。英語=関係詞・助動詞 / 古文=助動詞の意味・重要古語。取込後は単元『関係詞/助動詞/古文』を選んで該当生徒に配信できます。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">📥 弱点特訓32問を取込 (英語 関係詞・助動詞 ＋ 古文)</button>
@@ -677,7 +677,7 @@
             <option value="japanese">国語</option>
             <option value="social">社会</option>
             <option value="chugaku">🧒 中学英語 (高校受験)</option>
-            <option value="eiken">🏅 英検 語彙 (2級・準1級)</option>
+            <option value="eiken">🏅 英検 (語彙・長文 / 2級・準1級)</option>
           </select>
           <span style="color:#71717a;font-size:0.72rem;margin-left:0.3rem;">選ぶと下の単元の在庫が切り替わります</span>
         </div>
@@ -692,8 +692,19 @@
               <option value="all">基礎も含める</option>
             </select>
           </label>
-          <label style="font-size:0.8rem;color:#94a3b8;">④ 問題数
+          <label id="gdCountWrap" style="font-size:0.8rem;color:#94a3b8;">④ 問題数
             <input id="gdCount" type="number" value="25" min="5" max="50" style="width:4rem;margin-left:0.3rem;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:5px;padding:0.3rem;font-size:0.8rem;">
+          </label>
+          <!-- 📖 長文型の単元 (本文あり) を選ぶと、問題数の代わりにこちらを出す。1 本 = 本文 + 3〜4 問 -->
+          <label id="gdPassageCountWrap" style="font-size:0.8rem;color:#94a3b8;display:none;">④ 本文の本数
+            <select id="gdPassageCount" style="margin-left:0.3rem;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:5px;padding:0.3rem;font-size:0.8rem;">
+              <option value="1">1 本</option>
+              <option value="2" selected>2 本 (本番の大問 1 回分) ★既定</option>
+              <option value="3">3 本</option>
+              <option value="4">4 本</option>
+              <option value="5">5 本</option>
+            </select>
+            <span style="color:#71717a;font-size:0.72rem;margin-left:0.3rem;">本文ごとに設問 3〜4 問。生徒には本文が 1 回だけ出ます</span>
           </label>
         </div>
         <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.35rem;">⑤ 配信する生徒を選ぶ
@@ -4468,17 +4479,40 @@
       const box = document.getElementById('gdUnits'); if (!box) return;
       const levels = gdCurrentLevels();
       box.innerHTML = _gdUnits.map(u => {
+        // 📖 長文型の単元 (本文あり) は本文の本数で在庫を出す (2 本 = 本番の大問 1 回分)。level は全問 standard
+        const np = Number(u.passages || 0);
+        if (np > 0) {
+          const pcolor = np >= 4 ? '#34d399' : (np >= 2 ? '#fbbf24' : '#fca5a5');
+          return `<button type="button" onclick="gdSelUnit('${escapeHtml(u.unit)}')" data-unit="${escapeHtml(u.unit)}" title="長文型: 本文 ${np} 本 (設問 ${Number(u.total || 0)} 問)。配信は「本文の本数」単位です" style="background:rgba(129,140,248,0.12);border:1px solid #6366f1;border-radius:6px;padding:0.3rem 0.6rem;font-size:0.78rem;color:#e5e7eb;cursor:pointer;">📖 ${escapeHtml(u.unit)} <span style="color:${pcolor};font-weight:700;">本文${np}本</span></button>`;
+        }
         const sa = levels.reduce((acc, lv) => acc + (u[lv] || 0), 0);  // 選択中レベルの在庫で色判定 (バッジと配信可否を一致)
         const color = sa >= 25 ? '#34d399' : (sa >= 5 ? '#fbbf24' : '#71717a');
         const dis = sa >= 5 ? '' : 'opacity:0.45;';
         return `<button type="button" onclick="gdSelUnit('${escapeHtml(u.unit)}')" data-unit="${escapeHtml(u.unit)}" style="background:rgba(96,165,250,0.10);border:1px solid #475569;border-radius:6px;padding:0.3rem 0.6rem;font-size:0.78rem;color:#e5e7eb;cursor:pointer;${dis}">${escapeHtml(u.unit)} <span style="color:${color};font-weight:700;">${sa}</span></button>`;
       }).join('') || '<span style="color:#71717a;">単元なし</span>';
+      // ④ (問題数 / 本文の本数) を今の単元に合わせる: 科目切替・読込失敗・弱点対策のプリセットなど、
+      //    gdSelUnit を通らずに _gdSelUnit が変わる経路が全部ここを通る
+      _gdSyncCountInputs();
+    }
+    // 📖 選択中の単元が長文型 (本文あり) か
+    function _gdUnitIsPassage(unit) {
+      const u = _gdUnits.find(x => x.unit === unit);
+      return !!(u && Number(u.passages || 0) > 0);
+    }
+    function _gdSyncCountInputs() {
+      const isP = _gdSelUnit ? _gdUnitIsPassage(_gdSelUnit) : false;
+      const cw = document.getElementById('gdCountWrap'), pw = document.getElementById('gdPassageCountWrap');
+      if (cw) cw.style.display = isP ? 'none' : '';
+      if (pw) pw.style.display = isP ? '' : 'none';
     }
     function gdSelUnit(unit) {
       _gdClearRemediation();  // 手動で単元を選び直したら弱点対策モードは解除 (通常配信に戻す)
       _gdSelUnit = unit;
       document.querySelectorAll('#gdUnits button').forEach(b => { b.style.outline = (b.dataset.unit === unit) ? '2px solid #60a5fa' : 'none'; });
-      const m = document.getElementById('gdCreateMsg'); if (m) m.innerHTML = `<span style="color:#93c5fd;">単元「${escapeHtml(unit)}」を選択中</span>`;
+      _gdSyncCountInputs();
+      const m = document.getElementById('gdCreateMsg'); if (m) m.innerHTML = _gdUnitIsPassage(unit)
+        ? `<span style="color:#93c5fd;">📖 長文型の単元「${escapeHtml(unit)}」を選択中 — 配信は「本文の本数」単位です (1 本 = 本文 + 3〜4 問)</span>`
+        : `<span style="color:#93c5fd;">単元「${escapeHtml(unit)}」を選択中</span>`;
     }
     async function gdLoadStudents() {
       const res = await AdminAuth.fetch('/api/admin/stats');
@@ -4696,10 +4730,10 @@
       //   学年未設定の生徒は判定できないので通す (止めると登録直後に配信できなくなる)。
       //   代わりに生徒リストに灰色の「学年?」チップを出して、判定していないことを見せている。
       const _subjJa = { english: '英語(英文法)', math: '数学', physics: '物理', chemistry: '化学',
-                        biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語(高校受験)', eiken: '英検 語彙' };
+                        biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語(高校受験)', eiken: '英検' };
       const _sj = _gdSubject || 'english';
       const _isChu = _sj === 'chugaku';
-      // 🏅 英検 語彙は学年で縛らない (2級を中3が受ける・準1級を高1が受けることは普通にある)
+      // 🏅 英検は学年で縛らない (2級を中3が受ける・準1級を高1が受けることは普通にある)
       const _mism = _sj === 'eiken' ? [] : _gdStudents.filter(s => ids.includes(s.id))
         .filter(s => { const m = _gdMode(s.grade); return m && (_isChu ? m !== 'chugaku' : (m === 'chugaku' || m === 'shougaku')); });
       if (_mism.length) {
@@ -4715,8 +4749,12 @@
       }
       if (msg) msg.innerHTML = `⏳ ${ids.length}名に配信中...`;
       const body = { subject: _gdSubject || 'english', unit: _gdSelUnit, levels, count, student_ids: ids };
+      // 📖 長文型: 本文の本数で配信 (サーバは単元の在庫で判定するので、指定が無くても本文単位になる)
+      const _isPassage = _gdUnitIsPassage(_gdSelUnit);
+      const _pc = parseInt((document.getElementById('gdPassageCount') || {}).value, 10) || 2;
+      if (_isPassage) body.passage_count = _pc;
       // 🎯 弱点対策モード: 前回(分析中)のドリルの問題を除外し、識別用タイトルを付けて新問を配信
-      if (_gdExcludeDrillId) { body.exclude_drill_id = _gdExcludeDrillId; body.title = `🎯弱点対策 ${_gdSelUnit}（新問${count}問）`; }
+      if (_gdExcludeDrillId) { body.exclude_drill_id = _gdExcludeDrillId; body.title = _isPassage ? `🎯弱点対策 ${_gdSelUnit}（別の本文${_pc}本）` : `🎯弱点対策 ${_gdSelUnit}（新問${count}問）`; }
       _gdCreating = true;
       try {
         const res = await AdminAuth.fetch('/api/admin/grammar-drill/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -4917,7 +4955,16 @@
           html += '</div>';
         }
         if ((data.questions || []).length) html += `<div style="font-size:0.78rem;font-weight:700;color:#93c5fd;margin-bottom:0.2rem;">📊 問題別 正解率・選択肢分布 <span style="color:#71717a;font-weight:400;font-size:0.9em;">(緑=正解、赤=選ばれた誤答)</span></div>`;
+        // 📖 長文型: 本文は設問の前に 1 回だけ (折りたたみ)。同じ本文の設問が続く間は出さない
+        const _pmap = (data.passages || {}); const _pseen = {};
         html += (data.questions || []).map(q => {
+          let _ph = '';
+          if (q.passage_id != null && !_pseen[String(q.passage_id)]) {
+            _pseen[String(q.passage_id)] = true;
+            const _p = _pmap[String(q.passage_id)] || {};
+            _ph = `<details style="margin:0.5rem 0 0.2rem;padding:0.4rem 0.6rem;background:rgba(129,140,248,0.08);border:1px solid rgba(129,140,248,0.3);border-radius:8px;"><summary style="cursor:pointer;font-size:0.8rem;color:#c7d2fe;font-weight:700;">📖 本文: ${escapeHtml(_p.title || ('#' + q.passage_id))}</summary><div style="margin-top:0.4rem;font-size:0.8rem;color:#e5e7eb;line-height:1.7;white-space:pre-wrap;">${escapeHtml(_p.body || '')}</div></details>`;
+          }
+          return _ph + (function () {
           const rate = q.correct_rate == null ? '—' : `${q.correct_rate}%`;
           const rc = q.correct_rate == null ? '#71717a' : (q.correct_rate >= 70 ? '#34d399' : (q.correct_rate >= 50 ? '#fbbf24' : '#fca5a5'));
           const corr = (q.choices && q.answer != null && q.choices[q.answer] != null) ? `正解 ${q.answer + 1}. ${escapeHtml(String(q.choices[q.answer]))}` : '';
@@ -4949,6 +4996,7 @@
             dist = `<details${isOpen ? ' open' : ''} style="margin-top:0.2rem;"><summary style="cursor:pointer;font-size:0.72rem;color:#93c5fd;">選択肢の分布${note}</summary><div style="display:flex;flex-direction:column;gap:0.12rem;margin-top:0.2rem;">${rows}</div></details>`;
           }
           return `<div style="border-top:1px solid #334155;padding:0.45rem 0;"><div style="font-size:0.82rem;color:#e5e7eb;"><strong>問${q.no}</strong> ・ 正解率 <span style="color:${rc};font-weight:800;">${rate}</span> <span style="color:#71717a;">(${q.correct}/${q.answered}人)</span></div><div style="font-size:0.8rem;color:#cbd5e1;margin:0.15rem 0;">${escapeHtml(q.stem)}</div><div style="font-size:0.75rem;color:#86efac;">${corr}</div>${dist}</div>`;
+          })();
         }).join('');
         html += '</div>';
         box.innerHTML = html;
@@ -5021,7 +5069,7 @@
         _gdClearRemediation();
         if (msg) msg.innerHTML = '<span style="color:#fca5a5;">対象生徒が見つかりませんでした（退会済みの可能性）</span>'; return;
       }
-      if (msg) msg.innerHTML = `<span style="color:#f9a8d4;">🎯 弱点対策モード: 「${escapeHtml(unit)}」の<b>新しい問題</b>を、正解率の低かった <b>${checkedN}名</b> に配信します（前回の問題は除外）。問題数を確認し、下の「📤 ドリルを配信」を押してください。</span>`;
+      if (msg) msg.innerHTML = `<span style="color:#f9a8d4;">🎯 弱点対策モード: 「${escapeHtml(unit)}」の<b>新しい問題</b>を、正解率の低かった <b>${checkedN}名</b> に配信します（前回の${_gdUnitIsPassage(unit) ? '本文' : '問題'}は除外）。${_gdUnitIsPassage(unit) ? '本文の本数' : '問題数'}を確認し、下の「📤 ドリルを配信」を押してください。</span>`;
       const anchor = document.getElementById('gdUnits'); if (anchor && anchor.scrollIntoView) anchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     async function gdDelete(drillId) {
@@ -5188,7 +5236,7 @@
         }
         if (msg) {
           msg.style.color = errors ? '#fbbf24' : '#86efac';
-          msg.textContent = `${errors ? '⚠️' : '✅'} 新しく取り込んだ問題 ${inserted}問 / 取り込まなかった問題 ${skipped}問（すでに入っている分と、形式が合わず弾かれた分の合計）/ エラー ${errors}。①科目で「🏅 英検 語彙」を選ぶと使えます。`;
+          msg.textContent = `${errors ? '⚠️' : '✅'} 新しく取り込んだ問題 ${inserted}問 / 取り込まなかった問題 ${skipped}問（すでに入っている分と、形式が合わず弾かれた分の合計）/ エラー ${errors}。①科目で「🏅 英検」を選ぶと使えます。`;
         }
       } catch (e) {
         if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || String(e)); }
@@ -9865,7 +9913,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     function _actionRecs(s) {
       // 🧒 chugaku は student_weakness 上では入試道場の英数国理社が collapse した1バケットなので
       //   「中学英語」と書かない (数学の弱点が英語に見える)。サーバの _WEEKLY_SUBJECT_LABEL_OVERRIDE と同じ語。
-      const SUBJ = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学', chugaku: '高校入試演習', eiken: '英検 語彙' };
+      const SUBJ = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学', chugaku: '高校入試演習', eiken: '英検' };
       const sj = x => SUBJ[x] || x;
       const a = s.activity || {}, adm = s.admission || {}, bd = adm.breakdown || {}, reasons = s.reason_totals || {};
       const total = a.total || 0, acc = a.accuracy, grade = s.grade || '';
@@ -9926,7 +9974,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     // 弱点 weak_topics から、自動採点ドリル化できる単元を「全部」抽出。
     // このドリル(grammar_questions)は英語(英文法)＋古文が在庫の中心。理科/数学等は対応外として注記。
     var _ENG_DRILL_UNITS = ['時制', '助動詞', '受動態', '不定詞', '動名詞', '分詞構文', '分詞', '関係詞', '仮定法', '比較', '接続詞', '前置詞', '疑問詞・間接疑問', '否定・倒置', '強調・省略', '冠詞', '名詞・代名詞', '形容詞・副詞', '話法', '語法・イディオム'];
-    var _SJ_LABEL = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学', chugaku: '高校入試演習', eiken: '英検 語彙' };
+    var _SJ_LABEL = { english: '英語', math: '数学', japanese: '国語/古文', physics: '物理', chemistry: '化学', social: '社会', biology: '生物', earth: '地学', chugaku: '高校入試演習', eiken: '英検' };
     // 🧩 2026-07-01 数学/理科/社会は単元が粗いので「科目まるごと」配信 (unit空=科目レベル)。英語(20単元)/国語(古文)は従来通り単元指定。
     var _SUBJECT_LEVEL_DRILL = { math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', social: '社会' };
     function _pickDrillUnits(s) {

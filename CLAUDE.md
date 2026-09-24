@@ -217,7 +217,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 
 ### 英検の語彙ドリルは **別科目 `eiken`** (2026-09-24 塾長指示「英検対策コースの子にも英検の語彙問題を。2級もやって」)
 - 級は level ではなく **unit 名** で分ける: 「2級 単語」「2級 句動詞・熟語」「準1級 単語」「準1級 句動詞・熟語」。level は全問 `standard`
-  (CEO 既定の「標準〜やや難」で全在庫が対象)。並び順は `_GRAMMAR_SUBJECT_UNIT_ORDER['eiken']`、ラベルは「英検 語彙」。
+  (CEO 既定の「標準〜やや難」で全在庫が対象)。並び順は `_GRAMMAR_SUBJECT_UNIT_ORDER['eiken']`、ラベルは「英検」(長文の単元も同じ科目なので「語彙」は付けない)。
 - シードは `seed-data/eiken_vocab_pool_v1.json` (400 問 = 2級 130 + 準1級 270)。ボタンは `#eikenPoolImportBtn` (400 問ずつ POST・dedup・無課金)。
   変換スクリプトは `scripts/eiken_vocab/build_eiken_seed.py` (出所と読み方は docstring)。出所は全部この塾の書き下ろし:
   準1級 = 本番形式演習 第1弾/第2弾 (Desktop/📚 教材/英語/_生成元_英語教材_202609/data/eikenp1_mock*) + 完全模試 全3回
@@ -234,6 +234,27 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   2026-09-24 の初回: 401 問を 3 名が解いて全問一致。指摘 3 件 (活用ミス・時制ずれ・第 2 の正解の余地) を直して 400 問にした
   (上書き表は builder の OVERRIDES/DROP。生の解答ファイルは `scripts/**/blind/` の .gitignore 方針どおり入れない)。選択肢や本文を触ったら盲検をやり直す。
   Vol.1 (39 問) には全訳が無い (元データに無い)。回帰テスト: `scripts/health_check/test_eiken_drill_pool.py`。
+
+### 📖 長文型ドリル = 本文 1 つに設問が複数 (2026-09-24 塾長「長文読解・長文空所補充も単元ドリルに」→「A で」)
+- 表 `grammar_passages` (subject/unit/level/title/body/body_ja/source/body_hash/active) + `grammar_questions.passage_id / passage_seq` (後付け列)。
+  `_grammar_has_passages()` は **列と表の両方** を `_table_has_column` で見る (CREATE TABLE だけロック待ちで飛び ALTER だけ通ると「列はあるが表が無い」
+  になり、Postgres では失敗したトランザクションが同じ接続の単発ドリル抽出まで 500 にする)。**本文のある単元は「本文 N 本」単位で出題**
+  (`_grammar_pick_drill_passages`・設問は passage_seq 順・score_total は設問数・`passage_count` 既定 2 = 本番の大問 1 回分・上限 5・設問が全部
+  inactive の本文は選ばない)。判定はサーバが単元の在庫で行う (client が count を送っても無視) ので、弱点対策の再配信など古い経路から来ても本文が
+  バラけない。`exclude_drill_id` は前回の **本文ごと** 除外。1 問ずつの抽出 (`_grammar_pick_drill_question_ids` = 科目全体・弱点ルーティン) は
+  `passage_id IS NULL` で長文の設問を拾わない。本文の無い単元は出題ロジック不変 (応答に `passages: {}` / `passage_count: 0` / `passage_ids: []` / `passage_id: null` が増えるだけ)。
+- 取込は `POST /api/admin/grammar/import` の `passages: [{unit, level?, title?, body, body_ja?, source?, questions:[{stem, choices, answer, explanation?}]}]`
+  (1 リクエスト 200 本まで)。本文は body の正規化ハッシュで重複判定 (本文ごと skip)。**設問は stem で重複判定しない**
+  (大問2 の設問は「( 1 ) に入る語」型で本文をまたいで同文)。設問の形式が壊れた本文は本文ごと入らない (ValueError → skip)。それ以外の例外
+  (DB 側) は **rollback して中断し ok:false** を返す (Postgres は失敗したトランザクションの commit が黙って ROLLBACK になるため、続けると
+  「200 なのに 0 件」になる)。english の本文は受けない (GRAMMAR_UNITS 固定)。取込は level 省略で standard。
+- 生徒の GET / 提出 / CEO の分析は `passages: {id: {id, title, body[, body_ja]}}` と設問の `passage_id` を返す。**全訳 body_ja は完了後だけ**。
+  class.html / mypage.js は「本文カード (1 回) → その本文の設問…」の順に並べ (`gdBlocksHtml` / `_gdBlocksWithPassages`)、
+  空所番号「( 1 )」を黄色にし、本文は KaTeX の対象外 (`ignoredClasses: ['gd-nomath']` = 英文の $20 を数式にしない)。
+  復習カード (mypage.js) は長文の設問だけキーを question_id で分け (同文の stem が本文をまたいで衝突するため)、カード本文に【本文】を先に付ける。
+- CEO: 本文のある単元はバッジが「📖 本文N本」、④ が「本文の本数」の select に切り替わる (`_gdUnitIsPassage`)。分析は本文を折りたたみで 1 回だけ出す。
+- 英検の単元順は語彙 4 → 長文 4 (「2級 長文空所補充」「2級 長文 内容一致」「準1級 長文空所補充」「準1級 長文 内容一致」)。
+- 回帰テスト: `scripts/health_check/test_grammar_passage_drill.py` (取込の dedup・本文単位の作成・順序・除外・GET/提出/分析・単発の不変)。
 
 ### 検査は `scripts/run_all_gates.py` に寄せる (2026-08-04)
 - **教材の全ゲートを回す入口は 1 本**: `python3 scripts/run_all_gates.py` (絞るなら `... rika_kagaku`)。

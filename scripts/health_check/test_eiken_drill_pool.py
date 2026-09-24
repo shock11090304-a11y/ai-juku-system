@@ -114,13 +114,15 @@ def main():
     print("[1] シードの形式")
     check("問題数が 300 以上", len(qs) >= 300, f"n={len(qs)}")
     check("科目 eiken が canonical", "eiken" in mod._GRAMMAR_CANON_SUBJECTS and mod._canon_grammar_subject("英検") == "eiken")
-    check("単元の並び順が定義されている (4 単元)", ORDER == ["2級 単語", "2級 句動詞・熟語", "準1級 単語", "準1級 句動詞・熟語"], str(ORDER))
+    check("単元の並び順: 語彙 4 単元 → 長文 4 単元", ORDER == ["2級 単語", "2級 句動詞・熟語", "準1級 単語", "準1級 句動詞・熟語",
+                                                     "2級 長文空所補充", "2級 長文 内容一致", "準1級 長文空所補充", "準1級 長文 内容一致"], str(ORDER))
+    VOCAB_UNITS = ORDER[:4]
     bad = []
     seen = set()
     for q in qs:
         src = q.get("source", "?")
         if q.get("subject") != "eiken": bad.append(f"{src}: subject")
-        if q.get("unit") not in ORDER: bad.append(f"{src}: unit {q.get('unit')!r}")
+        if q.get("unit") not in VOCAB_UNITS: bad.append(f"{src}: unit {q.get('unit')!r}")
         if q.get("level") != "standard": bad.append(f"{src}: level {q.get('level')!r}")
         stem = q.get("stem") or ""
         if stem.count("(   )") != 1: bad.append(f"{src}: 空所 {stem.count('(   )')}")
@@ -167,9 +169,10 @@ def main():
     print("\n[3] 単元一覧")
     r = client.get("/api/admin/grammar/units", params={"subject": "eiken"}, headers=adm)
     units = r.json().get("units", []) if r.status_code == 200 else []
-    check("単元が学習順 (2級 単語 → … → 準1級 句動詞)", [u["unit"] for u in units][:4] == ORDER, str([u["unit"] for u in units]))
+    check("単元が学習順 (語彙 4 → 長文 4・在庫 0 の長文単元も 0 で出る)", [u["unit"] for u in units][:len(ORDER)] == ORDER, str([u["unit"] for u in units]))
+    check("長文単元は passages=0 (未取込)・語彙単元も passages キーを持つ", all(("passages" in u) for u in units) and all(u.get("passages") == 0 for u in units), str([(u["unit"], u.get("passages")) for u in units]))
     check("各単元の standard 在庫 = シードの数", all(next((u for u in units if u["unit"] == k), {}).get("standard") == sum(v) for k, v in by_unit.items()), str({u["unit"]: u.get("standard") for u in units}))
-    check("科目ラベルは「英検 語彙」", mod._grammar_subject_label_ja("eiken") == "英検 語彙")
+    check("科目ラベルは「英検」(語彙も長文も同じ科目なので「語彙」は付けない)", mod._grammar_subject_label_ja("eiken") == "英検")
 
     print("\n[4] AIなしの生徒に配信 → 取得 → 提出")
     sid = make_student(mod, "英検テスト A", "eiken-a@example.org", ai_disabled=1)
