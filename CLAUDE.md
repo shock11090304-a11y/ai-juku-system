@@ -335,6 +335,10 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - 宿題モードのドリルの結果は `question_attempts.metadata.homework_id` にだけ残る。**CEO 画面に宿題ごとの結果を出す機能はまだ無い**
   (塾長に見えるのは「✅ 完了 <日付>」と生徒メモだけ)。
 - 回帰テスト: `scripts/health_check/test_homework_drill_attempts.py` (CI `server-tests.yml`)。
+- 単元ドリルを解き終えた画面 (class.html `gdRenderResult` = 提出直後 / `gdOpen` の完了表示) には AIなし (`feed.ai_home_available === false`) の
+  生徒にだけ AI学習アプリの案内 1 つ + 「💬 塾長に聞く」を出す (2026-09-24 塾長方針・`gdAiHintHtml` / `gdWireAskAi`)。ボタンは 💬 メッセージタブへ
+  移るだけで mypage / 道場 / AI への入口にはしない。AIあり・旧バックエンド (undefined)・feed 未取得では出ない。
+  金額 (+5,000 円) は `payment/courses.json` / `api/register-subscribe.py` に手で追従する (`check_course_price_sync.py` は class.html を見ない)。
 
 ## 📅 受講開始月と 🎬 入塾前アーカイブ (2026-09-24 塾長決定)
 - **翌月開始の生徒も申込直後に承認してよい** (承認は課金に触れない・Stripe/台帳は月謝アプリ側)。承認すると予定表・配信された単元ドリル・メッセージは即使える。

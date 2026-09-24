@@ -1130,13 +1130,13 @@
             + esc(String(data.score_correct == null ? 0 : data.score_correct)) + ' / ' + esc(String(data.score_total || 0)) + '</span>'
             + '<div class="card-meta" style="margin-top:0.25rem;">'
             + ((data.score_total && data.score_correct === data.score_total) ? '🎉 全問正解！解説でもう一度確認しておこう' : 'まちがえた問題（❌）の解説を読み直しましょう')
-            + '</div></div>'
+            + '</div>' + gdAiHintHtml() + '</div>'
           // 問題が0件のときは提出ボタン自体が出ないので、この案内文も出さない (矛盾防止)
           : (qs.length ? '<div class="card-meta" style="margin-top:0.35rem;">全 ' + qs.length + ' 問。すべて答えてから「提出して採点する」を押してください。</div>' : ''))
         + '</div>';
       if (!qs.length) {
         body.innerHTML = head + '<div class="empty">このドリルには表示できる問題がありません。塾長にご連絡ください。</div>';
-        gdWireBack(body); return;
+        gdWireBack(body); gdWireAskAi(body); return;
       }
       var blocks = qs.map(function (q) { return gdQuestionHtml(q, review); }).join('');
       // ★ 解答中は末尾に「戻る」を置かない = 提出ボタンのすぐ下にあると押し間違えて解答が消えるため
@@ -1144,7 +1144,7 @@
         + (review ? (blocks + gdBackHtml())
           : '<div id="gdForm">' + blocks + '</div><div class="gd-msg" id="gdMsg"></div>'
             + '<div class="gd-submit-wrap"><button class="btn btn-green" id="gdSubmitBtn" data-total="' + qs.length + '">📤 提出して採点する</button></div>');
-      gdWireBack(body);
+      gdWireBack(body); gdWireAskAi(body);   // 💡 完了表示 (review) の AI学習アプリ案内の配線 (解答中は要素が無いので no-op)
       if (!review) {
         var form = document.getElementById('gdForm');
         if (form) {
@@ -1220,6 +1220,20 @@
       gdRenderResult(body, res);
     }
 
+    // 💡 [2026-09-24 塾長方針] AIなし (塾生アプリのみ) の生徒にだけ、単元ドリルを解き終えた画面 (提出直後・解説の見直し) に
+    //   AI学習アプリの案内を 1 つ。自由演習の入口は作らない方針なので、導線は「💬 塾長に聞く」(メッセージタブ) だけ。
+    //   判定は feed.ai_home_available の 1 値 (AIあり・旧バックエンド (undefined)・feed 未取得では出ない)。
+    function gdAiHintHtml() {
+      if (!(feedData && feedData.ai_home_available === false)) return '';
+      return '<div class="card-meta" style="margin-top:0.6rem;line-height:1.6;">💡 AI学習アプリ（月額 +5,000 円）なら、全科目の自動採点ドリル・弱点分析・24 時間 AI チューターも使えます。</div>'
+        + '<div style="margin-top:0.4rem;"><button type="button" class="btn btn-ghost gd-ask-ai" style="padding:0.3rem 0.8rem;font-size:0.82rem;">💬 塾長に聞く</button></div>';
+    }
+    function gdWireAskAi(body) {
+      // showTab は IIFE 内なので inline onclick では呼べない (動画タブ「塾長に知らせる」と同じ配線)
+      Array.prototype.forEach.call(body.querySelectorAll('.gd-ask-ai'), function (b) {
+        b.addEventListener('click', function () { showTab('messages'); });
+      });
+    }
     function gdRenderResult(body, res) {
       var results = (res && res.results) || [];
       var correct = (res && res.score_correct != null) ? res.score_correct : 0;
@@ -1234,9 +1248,9 @@
       }).join('');
       body.innerHTML = gdBackHtml()
         + '<div class="gd-score">採点結果<span class="n">' + esc(String(correct)) + ' / ' + esc(String(total)) + '</span>'
-        + '<div class="card-meta" style="margin-top:0.25rem;">' + esc(String(pct)) + '% ・ ' + word + '</div></div>'
+        + '<div class="card-meta" style="margin-top:0.25rem;">' + esc(String(pct)) + '% ・ ' + word + '</div>' + gdAiHintHtml() + '</div>'
         + blocks + gdBackHtml();
-      gdWireBack(body);
+      gdWireBack(body); gdWireAskAi(body);
       gdApplyMath(body, JSON.stringify(results));
       gdScrollTop();
       toast('提出しました！' + correct + ' / ' + total + ' 正解' + (pct >= 80 ? ' 🎉' : ''));
