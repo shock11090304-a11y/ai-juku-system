@@ -2909,7 +2909,8 @@ _AI_DISABLED_ALLOWED_EXACT = frozenset({
 })
 _AI_DISABLED_ALLOWED_PREFIXES = (
     "/api/student/class/",          # 出欠/予定表/配布ファイル/クラスフィード
-    "/api/student/homework/",       # 宿題の完了 (/{id}/complete)
+    "/api/student/homework/",       # 宿題の完了 (/{id}/complete)・宿題ドリルの結果保存 (/{id}/drill-attempt・2026-09-24:
+                                    #   dojo-drill.html が ?hw= 付きで叩く。INSERT のみ・AI 呼び出し無し・他人の宿題は 404)
     # 📝 [2026-07-31 塾長指示] 塾生アプリの宿題タブで「科目別 単元ドリル」(固定N問・サーバ採点) を
     #   解けるようにするため開放。対象は3ルートのみ (一覧 /grammar-drills・取得 /grammar-drill/{id}・
     #   提出 /grammar-drill/{id}/submit)。★採点は grammar_questions の解答キーとの DB 照合だけで
@@ -27298,6 +27299,52 @@ def record_question_attempt(payload: dict, request: Request, authorization: Opti
     student_id = student["id"] if student else None
     if not student_id:
         raise HTTPException(status_code=401, detail="Unauthorized")
+    # 📝 metadata.homework_id は宿題ドリル保存ルート (record_homework_drill_attempt) だけが付ける印。
+    #   こちらで client が自称してきても捨てる (後で「宿題ごとの結果」を数えるとき偽装を混ぜない)。
+    if isinstance(payload, dict) and isinstance(payload.get("metadata"), dict) and "homework_id" in payload["metadata"]:
+        payload = dict(payload)
+        payload["metadata"] = {k: v for k, v in payload["metadata"].items() if k != "homework_id"}
+    return _record_question_attempt_core(payload, request, authorization, int(student_id))
+
+
+@app.post("/api/student/homework/{homework_id}/drill-attempt")
+def record_homework_drill_attempt(homework_id: int, payload: dict, request: Request, authorization: Optional[str] = Header(None)):
+    """📝 [2026-09-24 塾長指示] 塾長が出した宿題の「📝 ドリルで解く」で解いた結果の保存。payload は /api/question-attempts と同じ。
+
+    背景: 塾生アプリのみ枠 (ai_disabled=1) は /api/question-attempts が middleware の許可集合に無く 403 →
+      宿題から開いた道場ドリルが最後に「⚠️ 結果を保存できませんでした (未ログイン or 通信エラー)」で終わり、
+      理由の表示も誤っていた (問題の取得はログイン不要なので解くところまでは動く)。
+    塾長方針 (2026-09-24): 「自由演習は開かない。あくまでも僕が出した宿題のみ」。
+      → 許可集合 (_AI_DISABLED_ALLOWED_EXACT / _PREFIXES) は **1 バイトも変えない**。宿題 ID を路に持つ
+        このルートだけを足す (prefix "/api/student/homework/" は元から許可 = 宿題の完了と同じ扱い)。
+        本人の宿題でなければ 404 (IDOR ガード)。AI 呼び出しは無い (INSERT のみ) = AIなし枠の趣旨 (AI コストを使わせない) を破らない。
+      → 直接 URL で開いた道場ドリル (hw なし) は従来どおり /api/question-attempts に行き、AIなし枠では 403 のまま。
+    metadata.homework_id に宿題 ID を残す (列は増やさない・どの宿題の結果かを後から追える)。
+    """
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id FROM homework_assignments WHERE id = ? AND student_id = ?",
+                  (int(homework_id), int(student["id"])))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="この宿題はあなたに出されていません")
+    finally:
+        conn.close()
+    meta = payload.get("metadata") if isinstance(payload, dict) else None
+    meta = dict(meta) if isinstance(meta, dict) else {}
+    meta["homework_id"] = int(homework_id)
+    body = dict(payload) if isinstance(payload, dict) else {}
+    body["metadata"] = meta
+    return _record_question_attempt_core(body, request, authorization, int(student["id"]))
+
+
+def _record_question_attempt_core(payload: dict, request: Request, authorization: Optional[str], student_id: int) -> dict:
+    """/api/question-attempts と宿題ドリル保存 (record_homework_drill_attempt) の共通本体
+    (レート制限 → 検証 → INSERT)。従来の /api/question-attempts の挙動そのまま (認証だけ呼び出し側)。"""
     # ✅ 2026-05-22 P0 fix: rate-limit (悪意大量 INSERT 防止)
     # IP 単位 (60 秒に 120 リクエスト) + 生徒単位 (1 日 500 INSERT) の 2 段防御
     # ⚠️ HTTPException (429) は再 raise・関数未定義時のみ skip

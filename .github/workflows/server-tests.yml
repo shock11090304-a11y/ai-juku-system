@@ -233,6 +233,14 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_stripe_webhook_idempotency.py
 
+      # 📝 宿題ドリルの結果保存 (2026-09-24 塾長指示「自由演習は開かない・出した宿題のみ」): 塾生アプリのみ枠 (AIなし) は
+      #   /api/question-attempts が 403 のまま、自分の宿題 ID の drill-attempt だけ 200。他人の宿題は 404。許可集合は不変。
+      - name: 宿題ドリル 結果保存 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_homework_drill_attempts.py
+
       # ⏪ 自動ロールバックが「履歴の強制書き換え」ではなく revert commit を fast-forward で積むこと (2026-09-07)。
       - name: 自動ロールバック (revert commit 方式) 回帰テスト
         if: ${{ !cancelled() }}

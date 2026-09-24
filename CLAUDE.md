@@ -315,6 +315,27 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - **LINE 連携 CTA** (`#lineLinkSection`) は `/api/auth/me` の `line_linked === false` の生徒にだけ出る (LINE の userId は返さない)。
 - 回帰テスト: `scripts/health_check/test_student_ux_2026_09.py` (CI `server-tests.yml`)。
 
+## 塾生アプリのみ枠 (AIなし) と宿題ドリル (2026-09-24 塾長決定)
+- **塾長方針: 英語の自由演習は開かない。AIなしの生徒が解けるのは「塾長が出した宿題」と「配信した単元ドリル」だけ。**
+  `_AI_DISABLED_ALLOWED_EXACT / _PREFIXES` (middleware の許可集合) は変えない。`check_light_tier_middleware.py` が固定している。
+- 宿題の「📝 ドリルで解く」(class.html → `dojo-drill.html?w_subject=&w_topic=&hw=<宿題ID>`) の結果保存は
+  `POST /api/student/homework/{id}/drill-attempt` (prefix `/api/student/homework/` は元から許可)。本人の宿題でなければ 404、
+  payload と INSERT は `/api/question-attempts` と同じ (`_record_question_attempt_core`)。`metadata.homework_id` で宿題を追える。
+  ★2026-09-24 まで AIなしの生徒は宿題ドリルの最後に必ず「保存できませんでした (未ログイン or 通信エラー)」が出ていた
+  (403 を通信のせいに見せていた)。`hw` 無しで直接開いた道場ドリルは AIなし枠では今も記録しない (方針どおり)。
+- AIあり (AI学習アプリ申込・国公立難関大学コース) は承認した日から AI 全部が使える。翌月開始でも開始月まで待たせない (塾長決定 2026-09-24)。
+  コード上の開始月ゲートは無い (課金の「翌月開始」= 台帳側の話とは別)。
+- 既知の割り切り: 宿題モードの URL (`?hw=&w_topic=`) を手で書き換えれば別単元も宿題として記録できる。塾長方針は「入口を作らない」
+  であって攻撃対策ではないので、サーバは本人の宿題かどうかだけを見る (単元一致・status・期限は見ない = 提出済みの解き直しも記録)。
+  宿題モードでも弱点クレジット (`drillOrigin`) と `weakness/refresh-self` は従来の経路に投げる (AIなしは 403 を黙って捨てる・AIあり は弱点に反映)。
+- 宿題モード (`?hw=`) の dojo-drill はメニュー (自由演習) を一切出さない: 自動起動できない・やめて戻る (確認あり)・読込失敗は
+  すべて案内カード + 「塾生アプリの宿題に戻る」。class.html の「📝 ドリルで解く」は **単元 (topic) のある宿題だけ**に出す
+  (無い宿題は提出ボタンだけ)。★残る抜け道: 公開の道場トップ (nyushi-dojo.html) からブックマークで直接開けば問題は解ける
+  (取得はログイン不要) が、AIなし枠は保存が 403 で「宿題から開いた分だけ記録」と出る。塾長了承の割り切り (入口を作らない、が方針)。
+- 宿題モードのドリルの結果は `question_attempts.metadata.homework_id` にだけ残る。**CEO 画面に宿題ごとの結果を出す機能はまだ無い**
+  (塾長に見えるのは「✅ 完了 <日付>」と生徒メモだけ)。
+- 回帰テスト: `scripts/health_check/test_homework_drill_attempts.py` (CI `server-tests.yml`)。
+
 ## 授業録画の割り当て (YouTube 限定公開 → 各クラス)
 - 塾長が YouTube の**再生リスト**に授業動画を上げる → それを各クラスの `class_recordings` に割り当てる。
   **自動では走らない** (常駐スケジューラも cron も無い)。走らせ方は 2 つ:
