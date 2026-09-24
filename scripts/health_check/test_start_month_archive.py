@@ -332,6 +332,18 @@ def main():
     st = {x["id"]: x for x in (r.json().get("students", []) if r.status_code == 200 else [])}
     check("admin_stats: B に start_month / before_start / archive_full_paid", r.status_code == 200 and st.get(sid_b, {}).get("start_month") == next_m and st.get(sid_b, {}).get("before_start") is True and st.get(sid_b, {}).get("archive_full_paid") == 0, str(st.get(sid_b, {}).get("start_month")))
     check("admin_stats: A は start_month None / before_start False", st.get(sid_a, {}).get("start_month") is None and st.get(sid_a, {}).get("before_start") is False)
+    # 🎒 [2026-09-24] 生徒詳細の「在籍クラス」行: admin_stats が class_labels (配列) を返す。設定 API は時間割にある label だけ残す
+    _lab = mod._TIMETABLE_CLASSES[1]["label"]   # make_student の初期値 (先頭の label) と違う label にして「書き込まれた」ことを固定
+    mod._RATE_LIMIT_STORE.clear()
+    r = client.post("/api/admin/class/student-classes", json={"student_id": sid_a, "class_labels": [_lab, "存在しないクラス"]}, headers=adm)
+    check("在籍クラス設定: 時間割にある label だけ残る", r.status_code == 200 and r.json().get("class_labels") == [_lab], r.text[:120])
+    sid_c = make_student(mod, "クラス未設定テスト", "class-none@example.org")   # make_student は class_labels を入れるので API で空にする
+    mod._RATE_LIMIT_STORE.clear()
+    r = client.post("/api/admin/class/student-classes", json={"student_id": sid_c, "class_labels": []}, headers=adm)
+    check("在籍クラス設定: [] で全部外せる", r.status_code == 200 and r.json().get("class_labels") == [], r.text[:120])
+    r = client.get("/api/admin/stats", headers=adm)
+    st = {x["id"]: x for x in (r.json().get("students", []) if r.status_code == 200 else [])}
+    check("admin_stats: class_labels を返す (A は設定した 1 クラス・未設定の C は [])", st.get(sid_a, {}).get("class_labels") == [_lab] and st.get(sid_c, {}).get("class_labels") == [], str((st.get(sid_a, {}).get("class_labels"), st.get(sid_c, {}).get("class_labels"))))
     r = client.get(f"/api/admin/class/sessions/{s1}/detail", headers=adm)
     recs = {x["title"]: x for x in (r.json().get("recordings", []) if r.status_code == 200 else [])}
     check("授業の詳細: 録画に lesson_date / lesson_date_effective", r.status_code == 200 and recs.get(f"{m_prev}/17", {}).get("lesson_date_effective") == f"{prev_m}-17" and recs.get("来月ぶん 1/1", {}).get("lesson_date") == f"{next_m}-01" and recs.get("日付のない題名", {}).get("lesson_date_effective") is None, str({k: (v.get("lesson_date"), v.get("lesson_date_effective")) for k, v in recs.items()}))

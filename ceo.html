@@ -9245,6 +9245,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       // (mailto: 固定 prefix なので javascript: 注入は構造上不可だが、二重防御)
       return 'mailto:' + encodeURIComponent(String(email || ''));
     }
+    let _sdClassesCache = null;   // 🎒 時間割クラス一覧 (在籍クラスの編集用・1 回だけ取得)
     function row(label, value, valColor) {
       return `<div style="display:grid;grid-template-columns:140px 1fr;gap:14px;padding:10px 0;border-bottom:1px dashed rgba(255,255,255,0.08);">
         <div style="color:#a78bfa;font-weight:600;font-size:0.85rem;">${esc(label)}</div>
@@ -9296,6 +9297,24 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       const studentEmailDisplay = st.student_email
         ? `<span style="color:#86efac;">${esc(st.student_email)}</span>${studentEmailUnverifiedBadge}`
         : `<span style="color:#71717a;">未登録 (親メールのみ)</span>`;
+      // 🎒 [2026-09-24 塾長「ここに在籍クラスを出すことは可能？」] 通塾クラス (students.class_labels) を申込内容に出し、その場で編集できる。
+      //    🏫 通塾クラス管理の「生徒別」と同じ API (/api/admin/class/student-classes)。この値で決まるのは 出欠の絞り込み・録画の表示・
+      //    クラス宿題の一括配信・一斉送信 (クラス指定) の宛先 (配布ファイルは全通塾生に出る)。
+      //    旧サーバ (class_labels を返さない) では「反映待ち」と出し、編集ボタンは出さない (空配列と区別する)。
+      //    編集ボタンは通塾生 (受講開始月ブロックと同じ判定) にだけ出す: 通塾生以外に label を付けても feed には効かず、一斉送信の宛先にだけ入って
+      //    🏫 の名簿からは外せないため。
+      const _clsKnown = Array.isArray(st.class_labels);
+      const _cls = _clsKnown ? st.class_labels : [];
+      const _isTsujuku = (st.course === 'kokuritsu_nankan' || st.plan === 'student_addon');
+      const classesHtml = !_clsKnown
+        ? `<span style="color:#71717a;">— (サーバの反映待ち・数分後に再読込してください)</span>`
+        : (_cls.length
+            ? _cls.map(l => `<span style="display:inline-block;margin:2px 6px 2px 0;padding:2px 10px;background:rgba(129,140,248,0.16);border:1px solid rgba(129,140,248,0.45);border-radius:999px;font-size:0.8rem;color:#c7d2fe;">${esc(l)}</span>`).join('')
+            : (_isTsujuku
+                ? `<span style="color:#71717a;">未設定</span> <span style="color:#71717a;font-size:0.78rem;">(出欠・録画・クラス宿題・一斉送信の対象はここで決まります)</span>`
+                : `<span style="color:#71717a;">— (通塾生ではないので設定しません)</span>`));
+      const editClassesBtn = (_clsKnown && _isTsujuku) ? `<button class="sd-edit-classes-btn" data-student-id="${esc(st.id)}" style="${editBtnStyle}">✏️ 編集</button>` : '';
+      const classesEditor = `<div class="sd-classes-editor" data-student-id="${esc(st.id)}" style="display:none;margin-top:8px;"></div>`;
       infoPane.innerHTML = [
         row('申込日時',     fmtDate(st.created_at)),
         row('お名前',       `<strong style="font-size:1.05rem;color:#fff;">${esc(st.name || '(未登録)')}</strong>`),
@@ -9309,6 +9328,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
               ? `<span style="color:#06c755;">📲 連携済</span> <span style="color:#71717a;font-size:0.78rem;">(保護者側のログインコードはメールではなく LINE に届きます)</span>`
               : `<span style="color:#71717a;">未連携</span> <span style="color:#71717a;font-size:0.78rem;">(ログインコードはメールで届きます)</span>`),
         row('学年',         esc(st.grade || '未登録') + editGradeBtn),
+        row('在籍クラス',   classesHtml + editClassesBtn + classesEditor),
         row('志望校・目標', esc(st.goal || '未登録') + editGoalBtn),
         row('選択プラン',   planLabel),
         row('現在の状態',   `<strong>${esc(statusLabel)}</strong>`),
@@ -9704,6 +9724,59 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         });
       })();
 
+      // 🎒 在籍クラスの編集: 時間割クラスをチェック → 保存 (通塾クラス管理の「生徒別」と同じ API)
+      infoPane.querySelectorAll('.sd-edit-classes-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const sid = Number(btn.dataset.studentId) || 0;
+          const box = infoPane.querySelector(`.sd-classes-editor[data-student-id="${sid}"]`);
+          if (!box || sid <= 0) return;
+          if (box.style.display !== 'none') { box.style.display = 'none'; return; }
+          box.style.display = '';
+          box.innerHTML = '<span style="color:#94a3b8;font-size:0.8rem;">⏳ 時間割を読込中...</span>';
+          try {
+            if (!_sdClassesCache) {
+              const res = await AdminAuth.fetch('/api/admin/class/timetable-classes');
+              const d = await res.json().catch(() => ({}));
+              if (!res.ok) throw new Error((typeof d.detail === 'string' && d.detail) || ('HTTP ' + res.status));
+              _sdClassesCache = d.classes || [];
+            }
+            if (!_sdClassesCache.length) { box.innerHTML = '<span style="color:#fbbf24;font-size:0.8rem;">時間割クラスが取得できませんでした (サーバの時間割が空です)</span>'; return; }
+            const mine = new Set(Array.isArray(st.class_labels) ? st.class_labels : []);
+            box.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">'
+              + _sdClassesCache.map(c => {
+                  const on = mine.has(c.label);
+                  return `<label style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.65rem;background:${on ? 'rgba(129,140,248,0.2)' : 'rgba(255,255,255,0.05)'};border:1px solid ${on ? '#818cf8' : 'rgba(255,255,255,0.16)'};border-radius:999px;font-size:0.8rem;cursor:pointer;color:#e4e4e7;"><input type="checkbox" value="${esc(c.label)}"${on ? ' checked' : ''} style="accent-color:#818cf8;">${esc(c.label)} <span style="color:#71717a;font-size:0.72rem;">${esc(c.time || '')}</span></label>`;
+                }).join('')
+              + '</div>'
+              + `<div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">`
+              + `<button type="button" class="sd-classes-save" style="${editBtnStyle}background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;border:none;">保存</button>`
+              + `<button type="button" class="sd-classes-cancel" style="${editBtnStyle}">キャンセル</button>`
+              + `<span class="sd-classes-msg" style="font-size:0.78rem;color:#94a3b8;"></span></div>`;
+            box.querySelector('.sd-classes-cancel').addEventListener('click', () => { box.style.display = 'none'; });
+            box.querySelector('.sd-classes-save').addEventListener('click', async () => {
+              const labels = Array.from(box.querySelectorAll('input[type=checkbox]:checked')).map(i => i.value);
+              const msg = box.querySelector('.sd-classes-msg'); const sv = box.querySelector('.sd-classes-save');
+              sv.disabled = true; msg.style.color = '#94a3b8'; msg.textContent = '保存中…';
+              try {
+                const res = await AdminAuth.fetch('/api/admin/class/student-classes', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ student_id: sid, class_labels: labels }),
+                });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok || !d.ok) throw new Error((typeof d.detail === 'string' && d.detail) || ('HTTP ' + res.status));
+                st.class_labels = Array.isArray(d.class_labels) ? d.class_labels : labels;
+                // 60 秒ごとの名簿更新で __studentsById が作り直されていると st は古いオブジェクト → live 側にも書く
+                const _live = (window.__studentsById || {})[String(sid)];
+                if (_live && _live !== st) _live.class_labels = st.class_labels;
+                // 🏫 通塾クラス管理 (生徒別・クラス別・宿題の人数) のキャッシュも更新 (全表示モードでは同じ画面に見えている)
+                if (typeof window.__scReloadStudents === 'function') { try { window.__scReloadStudents(); } catch (_e) {} }
+                if (typeof ceoToast === 'function') ceoToast(`✓ 在籍クラスを保存しました (${st.class_labels.length} クラス)`, 'success');
+                showStudentDetail(sid);   // 行を描き直す (モーダルは開いたまま・申込内容タブ)
+              } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + (e.message || String(e)); sv.disabled = false; }
+            });
+          } catch (e) { box.innerHTML = `<span style="color:#fca5a5;">❌ ${esc(e.message || String(e))}</span>`; }
+        });
+      });
       // 🎯 2026-05-26 audit fix: 学年/志望校 編集 button の listener 配線
       infoPane.querySelectorAll('.sd-edit-profile-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -12124,8 +12197,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         }
         if (typeof hwUpdateCount === 'function') hwUpdateCount();  // 名簿ロード後に宿題カウントを更新(初回ロード時のfalse-0を解消)
         if (typeof renderClassRoster === 'function') renderClassRoster();  // クラス別一括登録も名簿ロード後に再描画
+        if (sel.value) renderStudentClasses();   // 生徒別パネルを開いたままなら最新の所属で描き直す (生徒詳細モーダルからの編集を反映)
       } catch (e) { /* 未ログイン等は無視 */ }
     }
+    window.__scReloadStudents = loadStudentClassEditor;   // 🎒 生徒詳細モーダルの「在籍クラス」保存後に呼ばれる
     function renderStudentClasses() {
       var box = document.getElementById('scClasses');
       var sid = document.getElementById('scStudent').value;

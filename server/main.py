@@ -12818,7 +12818,8 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
         #   変わったコホート生が mypage と CEO で違う名前に見える (2026-07-25 review)。
         # 📅🎬 start_month / archive_full_paid は列がある環境だけ足す (無い環境でこの SELECT ごと落として fallback に流さない)
         _sm_cols = ((", start_month" if _table_has_column("students", "start_month") else "")
-                    + (", archive_full_paid" if _table_has_column("students", "archive_full_paid") else ""))
+                    + (", archive_full_paid" if _table_has_column("students", "archive_full_paid") else "")
+                    + (", class_labels" if _table_has_column("students", "class_labels") else ""))   # 🎒 生徒詳細の「在籍クラス」行
         c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived, enrollment_fee_force_charge, ai_disabled, ai_trial_until, signup_utm_campaign" + _sm_cols + " FROM students ORDER BY id DESC")
         rows = c.fetchall()
         has_last_login = True
@@ -12943,6 +12944,8 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
             "start_month": (_valid_month_or_none(row["start_month"]) if "start_month" in row.keys() else None),
             "before_start": (_before_start_month(row["start_month"]) if "start_month" in row.keys() else False),
             "archive_full_paid": (1 if (("archive_full_paid" in row.keys()) and row["archive_full_paid"]) else 0),
+            # 🎒 [2026-09-24 塾長「生徒詳細に在籍クラスを出せる？」] 通塾クラス (時間割 label の配列)。列が無い環境は []
+            "class_labels": (_parse_labels(row["class_labels"]) if "class_labels" in row.keys() else []),
         })
     # 集計 (合成監視 sentinel は status/新規申込カウントからも除外)
     synth_sql = "" if include_synthetic else f" AND {_synth_exclude_sql()}"

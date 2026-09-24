@@ -235,6 +235,15 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   (上書き表は builder の OVERRIDES/DROP。生の解答ファイルは `scripts/**/blind/` の .gitignore 方針どおり入れない)。選択肢や本文を触ったら盲検をやり直す。
   Vol.1 (39 問) には全訳が無い (元データに無い)。回帰テスト: `scripts/health_check/test_eiken_drill_pool.py`。
 
+### 🎒 生徒詳細モーダルの「在籍クラス」行 (2026-09-24 塾長「ここに在籍クラスを出すことは可能？」)
+- `admin_stats` が `class_labels` (時間割 label の配列・列が無い環境は []) を返し、申込内容タブの「学年」の下に出す。「✏️ 編集」は
+  `/api/admin/class/timetable-classes` のチェック → `POST /api/admin/class/student-classes` (🏫 通塾クラス管理の「生徒別」と同じ API・
+  時間割に無い label は落ちる)。旧サーバ (キー自体が無い) は「反映待ち」と出して編集ボタンを出さない (空配列 = 未設定 と区別)。
+  この値で決まるのは 出欠の絞り込み・録画の表示 (未設定 = 0 本)・クラス宿題の一括配信・一斉送信 (クラス指定) の宛先。**配布ファイルは
+  全通塾生に出る** (class_labels で絞らない)。編集ボタンは通塾生 (course=kokuritsu_nankan / plan=student_addon・受講開始月ブロックと同じ判定)
+  にだけ出す: 通塾生以外に付けても feed には効かず一斉送信の宛先にだけ入り、🏫 の名簿からは外せないため (API 自体は生徒を選ばない)。
+  保存後は `window.__scReloadStudents` で 🏫 側のキャッシュも更新。回帰テストは `test_start_month_archive.py`。
+
 ### 📖 長文型ドリル = 本文 1 つに設問が複数 (2026-09-24 塾長「長文読解・長文空所補充も単元ドリルに」→「A で」)
 - 表 `grammar_passages` (subject/unit/level/title/body/body_ja/source/body_hash/active) + `grammar_questions.passage_id / passage_seq` (後付け列)。
   `_grammar_has_passages()` は **列と表の両方** を `_table_has_column` で見る (CREATE TABLE だけロック待ちで飛び ALTER だけ通ると「列はあるが表が無い」
