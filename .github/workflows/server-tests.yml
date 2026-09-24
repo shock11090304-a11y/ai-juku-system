@@ -250,6 +250,13 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_start_month_archive.py
 
+      # 🏅 英検 語彙ドリル (2026-09-24 塾長指示): 科目 eiken の取込・単元順・AIなし生徒への配信〜提出・シードの形式 (空所 1 つ・4 択・番号参照なし・正解位置の散り)。
+      - name: 英検 語彙ドリル 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_eiken_drill_pool.py
+
       # ⏪ 自動ロールバックが「履歴の強制書き換え」ではなく revert commit を fast-forward で積むこと (2026-09-07)。
       - name: 自動ロールバック (revert commit 方式) 回帰テスト
         if: ${{ !cancelled() }}

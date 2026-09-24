@@ -215,6 +215,26 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   → 対策として `gdLoadUnits` が `data.subject !== 選んだ科目` を検出したら単元を空にして
   「サーバの再デプロイ待ちです」と出す。**押しても DB は汚れない** (配信も取込も 422 で止まる)。
 
+### 英検の語彙ドリルは **別科目 `eiken`** (2026-09-24 塾長指示「英検対策コースの子にも英検の語彙問題を。2級もやって」)
+- 級は level ではなく **unit 名** で分ける: 「2級 単語」「2級 句動詞・熟語」「準1級 単語」「準1級 句動詞・熟語」。level は全問 `standard`
+  (CEO 既定の「標準〜やや難」で全在庫が対象)。並び順は `_GRAMMAR_SUBJECT_UNIT_ORDER['eiken']`、ラベルは「英検 語彙」。
+- シードは `seed-data/eiken_vocab_pool_v1.json` (400 問 = 2級 130 + 準1級 270)。ボタンは `#eikenPoolImportBtn` (400 問ずつ POST・dedup・無課金)。
+  変換スクリプトは `scripts/eiken_vocab/build_eiken_seed.py` (出所と読み方は docstring)。出所は全部この塾の書き下ろし:
+  準1級 = 本番形式演習 第1弾/第2弾 (Desktop/📚 教材/英語/_生成元_英語教材_202609/data/eikenp1_mock*) + 完全模試 全3回
+  (Desktop/英検準1級_完全模試_…_20260923/_制作ソース/pre1_set*_data.py の P1)、2級 = 対策問題集 Vol.1 (`scripts/eiken_2kyu/data/part1_vocab.json`)
+  + Vol.2 と完全模試 全3回 (**生成元が無いので PDF テキストから抽出**。空所は行末の空白/空白行、文頭の空所は消えるので補う。
+  模試の選択肢は問題冊子の活用形 = 解説冊子の意味行は原形)。★リポジトリ外の教材は Desktop 側にある (無ければ builder は落ちる = 欠けたシードを書かない)。
+  出力の形式は `scripts/check_eiken_vocab_seed.py` が固定する (空所 1 つ・4 択・番号参照なし・正解位置 40% 以下・stem 一意)。
+- 学年で縛らない (2級を中3が受ける・準1級を高1が受ける)。CEO の取り違えガードは `eiken` を素通しにしている。
+- 提出は `question_attempts.subject='eiken'` / `topic=単元名` で記録される。診断・今日の1問・弱点ルーティンは english 直書きなので英検問題は流れない。
+  **週次の弱点プリントと mypage の弱点 TOP3 は `subject <> 'eiken'` で英検を外す** (`_WEAKNESS_SUBJECT_TO_POOL` に eiken が無く、
+  枠だけ食って空の節を作るため)。生徒画面の科目ラベル (class.html `GD_SUBJ_JA` / mypage.js `_SUBJ_DRILL_LABEL` / mypage.html `subjectLabel`) には
+  eiken を入れてある (入れないと生の `eiken` や「英文法」と出る)。
+- ★取り込む前に **正解を伏せた独立ソルバー 3 名** で全問を解かせ、全員一致しない問題は直すか外す (英文法 v2 と同じ工程)。
+  2026-09-24 の初回: 401 問を 3 名が解いて全問一致。指摘 3 件 (活用ミス・時制ずれ・第 2 の正解の余地) を直して 400 問にした
+  (上書き表は builder の OVERRIDES/DROP。生の解答ファイルは `scripts/**/blind/` の .gitignore 方針どおり入れない)。選択肢や本文を触ったら盲検をやり直す。
+  Vol.1 (39 問) には全訳が無い (元データに無い)。回帰テスト: `scripts/health_check/test_eiken_drill_pool.py`。
+
 ### 検査は `scripts/run_all_gates.py` に寄せる (2026-08-04)
 - **教材の全ゲートを回す入口は 1 本**: `python3 scripts/run_all_gates.py` (絞るなら `... rika_kagaku`)。
   `scripts/` 以下を**再帰**で探して `check*` / `verify*` / `validate*` / `audit*` / `qa*` / `*_gate` を実行し、

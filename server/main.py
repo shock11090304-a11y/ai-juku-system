@@ -5865,7 +5865,9 @@ def _run_weekly_worksheet_generation() -> dict:
                 # 🧒 2026-07-03 中学生は subject="chugaku" バケットのみを対象にし、大学プール(daigaku/rikei)由来の
                 #   弱点をプリントに出さない (中学生に大学問題が漏れない=厳守)。kosei/shougaku は従来どおり無制限。
                 smode = _student_mode_from_grade(sgrade)
-                _subj_scope = "AND subject = 'chugaku' " if smode == "chugaku" else ""
+                # 🏅 英検 語彙 (subject='eiken') は弱点プリントの出題プールが無い (_WEAKNESS_SUBJECT_TO_POOL に無い) ので、
+                #   TOP3 の枠を食って空の節を作らないよう最初から外す (中学は別プール・それ以外は eiken を除いた全科目)
+                _subj_scope = "AND subject = 'chugaku' " if smode == "chugaku" else "AND subject <> 'eiken' "
 
                 # 🎯 2026-07-22: 3日ドリルルーティン(WEAKNESS_DRILL_ROUTINE_ENABLED)が有効なとき、routine が
                 #   実際に配信している受験生は週次プリントから stand-down し二重送信を防ぐ。★ただし stand-down は
@@ -6984,7 +6986,8 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
     recommend_each = max(1, min(int(recommend_each or 3), 5))
     # 🧒 2026-07-03 中学生モードは pool=chugaku を渡す → subject="chugaku" バケットのみ返す。
     #   大学プール由来(english/math/social…)の弱点・推薦を中学生に一切出さない(厳守・サーバ側で遮断)。
-    _pool_clause = "AND subject = 'chugaku' " if (pool or "").strip().lower() == "chugaku" else ""
+    # 🏅 英検 語彙 (eiken) は推薦プールが無く、mypage の科目ラベルにも無いので TOP3 から外す (週次プリントと同じ扱い)
+    _pool_clause = "AND subject = 'chugaku' " if (pool or "").strip().lower() == "chugaku" else "AND subject <> 'eiken' "
 
     conn = db()
     try:
@@ -45038,6 +45041,8 @@ GRAMMAR_LEVELS = {"basic": "基礎", "standard": "標準", "advanced": "やや�
 _GRAMMAR_SUBJECT_UNIT_ORDER = {
     "chugaku": ["be動詞・一般動詞", "時制", "助動詞", "名詞・代名詞・冠詞", "比較", "不定詞・動名詞",
                 "分詞", "受動態", "現在完了", "関係代名詞", "接続詞・前置詞", "会話表現"],
+    # 🏅 英検 語彙: 級 → 単語/句動詞 の順 (シード seed-data/eiken_vocab_pool_v1.json の unit 名と完全一致させる)
+    "eiken": ["2級 単語", "2級 句動詞・熟語", "準1級 単語", "準1級 句動詞・熟語"],
 }
 
 # 🧩 2026-06-21 [multi-subject-drill] question_attempts.subject は弱点集計 _WEAKNESS_SUBJECT_TO_POOL の
@@ -45049,8 +45054,13 @@ _GRAMMAR_SUBJECT_UNIT_ORDER = {
 #   (2) 初回診断・今日の1問・弱点ルーティンはいずれも subject = 'english' を直書きしているので、
 #       科目を分けるだけで「高3の最初の1問が中2の過去形」を防御コードなしに避けられる。
 #   (3) CEO のレベル4択は「範囲の軸」で、そこに学年の軸を混ぜると「基礎も含める」と区別できなくなる。
+# 🏅 2026-09-24 [eiken-vocab 塾長指示「英検対策コースの子にも問題プールから英検の語彙問題を出題したい」]:
+#   英検の語彙 (大問1 形式・空所 4 択) を **別科目 `eiken`** として足す。級は level ではなく unit 名で分ける
+#   (「2級 単語」「2級 句動詞・熟語」「準1級 単語」「準1級 句動詞・熟語」・level は全問 standard)。chugaku と同じ理由で
+#   english のプールには混ぜない (診断・今日の1問・弱点ルーティンは english 直書きなので英検問題は流れない)。
+#   在庫はトリリオンAI塾の書き下ろし教材から: 準1級 本番形式演習 第1弾/第2弾 + 完全模試 全3回、2級 対策問題集 Vol.1/2 + 完全模試 全3回。
 _GRAMMAR_CANON_SUBJECTS = {"english", "math", "physics", "chemistry", "biology", "earth", "japanese", "social",
-                           "chugaku"}
+                           "chugaku", "eiken"}
 _GRAMMAR_SUBJECT_ALIASES = {
     "英語": "english", "eng": "english", "english grammar": "english", "英文法": "english",
     "数学": "math", "mathematics": "math", "数iii": "math", "数学iii": "math",
@@ -45064,6 +45074,8 @@ _GRAMMAR_SUBJECT_ALIASES = {
     "公民": "social", "倫理": "social", "政治経済": "social", "政経": "social",
     # 🧒 中学英語 (高校受験)。高校の英文法プール(english)とは別バンクで、単元名は scripts/chugaku_dojo/units.json と合わせる
     "中学": "chugaku", "中学英語": "chugaku", "中学英文法": "chugaku", "chugaku eng": "chugaku",
+    # 🏅 英検 語彙 (2級・準1級)。english (英文法) とは別バンク
+    "英検": "eiken", "英検語彙": "eiken", "英検 語彙": "eiken", "eiken vocab": "eiken", "eiken2": "eiken", "eikenp1": "eiken",
 }
 def _canon_grammar_subject(s):
     """ドリル科目を弱点集計の canonical キーへ正規化。未指定は後方互換で 'english'、未知の非別名は '' を返す
@@ -45080,6 +45092,7 @@ _GRAMMAR_SUBJECT_LABEL_JA = {
     "english": "英文法", "math": "数学", "physics": "物理", "chemistry": "化学",
     "biology": "生物", "earth": "地学", "japanese": "国語", "social": "社会",
     "chugaku": "中学英語",
+    "eiken": "英検 語彙",
 }
 def _grammar_subject_label_ja(subject):
     return _GRAMMAR_SUBJECT_LABEL_JA.get(_canon_grammar_subject(subject), "英文法")
