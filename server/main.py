@@ -2347,6 +2347,15 @@ def init_db():
         # 📝 [宿題ドリル単元 2026-06-26] 宿題を特定の dojo-drill 単元に紐づけ (生徒アプリの「ドリルで解く」が
         #   ?w_subject=&w_topic= でその単元を自動起動。例 topic="英文法 関係詞")。
         ("homework_assignments_topic", "ALTER TABLE homework_assignments ADD COLUMN topic TEXT"),
+        # 📅 [受講開始月 2026-09-24 塾長指示] 翌月開始の生徒を先に承認しても、開始前は クラス宿題の一括配信・出欠・
+        #   入塾月より前の録画 を出さないための月 ('YYYY-MM'・JST)。承認時に申込待ちの備考「受講開始月: 2026年10月」から
+        #   自動で入る (新規生徒のみ)。NULL = 制限なし (既存生徒は全員 NULL のまま = 今までどおり)。
+        ("students_start_month", "ALTER TABLE students ADD COLUMN start_month TEXT"),
+        # 🎬 [入塾前アーカイブ視聴 2026-09-24] 1 = 特商法の「入塾前の授業アーカイブの視聴 20,000 円」を払った → 全期間の録画を出す。
+        #   徴収は月謝アプリの講習費用 (カード) か振込。自動連動はしない (CEO の生徒詳細で手動 ON)。
+        ("students_archive_full_paid", "ALTER TABLE students ADD COLUMN archive_full_paid INTEGER DEFAULT 0"),
+        # 🎬 [録画の授業日 2026-09-24] 入塾月で録画を絞るための日付。NULL なら題名の「M/D」を登録日から復元 (_recording_lesson_date)。
+        ("class_recordings_lesson_date", "ALTER TABLE class_recordings ADD COLUMN lesson_date DATE"),
         # 🔁 [体験の重複再取得ガード 2026-07-06 塾長指示]
         #   「メールを変えて再登録した既体験者は、体験なしで即時課金にしたい」。
         #   メールは変えられても不変な手がかり = カード指紋 / 氏名 で「同一人物・別メール」を捕捉する。
@@ -3204,6 +3213,40 @@ def _students_has_feature_tier() -> bool:
 def _normalize_tier(v) -> str:
     """feature_tier の生値 → 'full' | 'light'。未知/NULL/空は全部 full (既存生徒を巻き込まない)。"""
     return _TIER_LIGHT if (str(v or "").strip().lower() == _TIER_LIGHT) else _TIER_FULL
+
+
+_HAS_COL_CACHE: dict = {}
+
+
+def _table_has_column(table: str, col: str) -> bool:
+    """後付け列 (students.start_month / archive_full_paid, class_recordings.lesson_date) が実在するか。
+    _students_has_feature_tier と同型: init_db の ALTER はロック待ちで飛ばされうる (db-boot-hardening) ので、
+    列名を書いた SQL を組む前に見る。成功は焼き付け・失敗は _GATE_FAIL_TTL 秒だけ False (障害中の往復を増やさない)。
+    ★table / col はコード内の定数だけ渡す (外部入力を渡さない)。"""
+    import time as _t0
+    key = f"{table}.{col}"
+    ent = _HAS_COL_CACHE.get(key)
+    if ent is True:
+        return True
+    if isinstance(ent, float) and _t0.time() < ent:
+        return False
+    _c = None
+    try:
+        _c = db(); _cc = _c.cursor()
+        _cc.execute(f"SELECT {col} FROM {table} LIMIT 1")
+        _cc.fetchall()
+    except Exception as _e:
+        _HAS_COL_CACHE[key] = _t0.time() + _GATE_FAIL_TTL
+        log.warning(f"[Schema] {key} の存在確認に失敗 (しばらく無い扱い): {type(_e).__name__}: {_e}")
+        return False
+    finally:
+        if _c is not None:
+            try:
+                _c.close()
+            except Exception:
+                pass
+    _HAS_COL_CACHE[key] = True
+    return True
 
 
 def _load_student_gate(student_id):
@@ -12750,7 +12793,10 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
         # 🌻 signup_utm_campaign は表示用プラン名 (_summer_cohort_plan_label) の判定に使う。
         #   これが無いと CEO ロスターは trial_end 一致だけで判定することになり、後から trial_end が
         #   変わったコホート生が mypage と CEO で違う名前に見える (2026-07-25 review)。
-        c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived, enrollment_fee_force_charge, ai_disabled, ai_trial_until, signup_utm_campaign FROM students ORDER BY id DESC")
+        # 📅🎬 start_month / archive_full_paid は列がある環境だけ足す (無い環境でこの SELECT ごと落として fallback に流さない)
+        _sm_cols = ((", start_month" if _table_has_column("students", "start_month") else "")
+                    + (", archive_full_paid" if _table_has_column("students", "archive_full_paid") else ""))
+        c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived, enrollment_fee_force_charge, ai_disabled, ai_trial_until, signup_utm_campaign" + _sm_cols + " FROM students ORDER BY id DESC")
         rows = c.fetchall()
         has_last_login = True
     except Exception:
@@ -12870,6 +12916,10 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
             "enrollment_fee_waived": (bool(row["enrollment_fee_waived"]) if "enrollment_fee_waived" in row.keys() else False),
             "enrollment_fee_force_charge": (bool(row["enrollment_fee_force_charge"]) if "enrollment_fee_force_charge" in row.keys() else False),
             "enrollment_fee_default": ENROLLMENT_FEE_DEFAULT,  # UI が「既定」表示に使う (waive/charge)
+            # 📅🎬 [2026-09-24] 受講開始月 / 入塾前アーカイブ全期間 (生徒詳細モーダルの設定欄用・列なし fallback は None/0)
+            "start_month": (_valid_month_or_none(row["start_month"]) if "start_month" in row.keys() else None),
+            "before_start": (_before_start_month(row["start_month"]) if "start_month" in row.keys() else False),
+            "archive_full_paid": (1 if (("archive_full_paid" in row.keys()) and row["archive_full_paid"]) else 0),
         })
     # 集計 (合成監視 sentinel は status/新規申込カウントからも除外)
     synth_sql = "" if include_synthetic else f" AND {_synth_exclude_sql()}"
@@ -29734,7 +29784,11 @@ _MERGE_STUDENT_TABLES = (
 # keep 側が空なら drop 側の値で埋める列 (メール系は下で個別に扱う)
 _MERGE_FILL_FIELDS = ("grade", "goal", "plan", "course", "stripe_customer_id", "stripe_subscription_id", "line_user_id",
                       "parent_email", "exam_target_date", "paid_since", "trial_start", "signup_utm_source", "signup_lp_variant",
-                      "signup_referrer", "feature_tier")
+                      "signup_referrer", "feature_tier",
+                      # 🎬 [2026-09-24] 全期間視聴の印 (2 万円) は keep 側が 0/NULL なら drop 側から埋める (落とすと 2 万円分が消える)。
+                      #   ★start_month は埋めない: keep が在籍生 (NULL=制限なし) のとき drop 側の月を入れると、その生徒の
+                      #     出欠が 400・クラス宿題の対象外・入塾前の録画が消える (承認の合流で入れないのと同じ理由)。必要なら CEO で手で入れる。
+                      "archive_full_paid")
 _MERGE_STATUS_RANK = {"paid": 5, "trial": 4, "past_due": 3, "expired": 2, "canceled": 1}
 
 
@@ -37141,18 +37195,22 @@ def cron_midweek_nudge(x_cron_secret: str = Header(None), dry_run: bool = False)
     try:
         c = conn.cursor()
         # 母集団は週次レポートと同じ (在籍 かつ 本科 or 課金中)。塾生アプリ専用 (ai_disabled) は演習が無いので外す。
+        # 📅 受講開始月より前の生徒にも送らない (開始前に催促に見えるメールを出さない)。列が無ければ条件なし。
+        _sm_clause = "AND (s.start_month IS NULL OR s.start_month = '' OR s.start_month <= ?)" if _table_has_column("students", "start_month") else ""
+        _sm_params = (_jst_month_str(),) if _sm_clause else ()
         c.execute(
             f"""SELECT s.id, s.name, s.email, s.student_email, s.student_email_verified, s.line_user_id
                 FROM students s
                 WHERE {_enrolled_sql('s')} AND (s.course = 'kokuritsu_nankan' OR s.status IN ('paid', 'past_due'))
                   AND COALESCE(s.ai_disabled, 0) = 0
+                  {_sm_clause}
                   AND {_synth_exclude_sql('s')}
                   AND NOT EXISTS (SELECT 1 FROM question_attempts qa WHERE qa.student_id = s.id AND qa.created_at >= ?)
                   AND EXISTS (SELECT 1 FROM question_attempts qa2 WHERE qa2.student_id = s.id AND qa2.created_at >= ?)
                   AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.student_id = s.id
                                     AND n.template = 'midweek_nudge' AND n.success = 1 AND n.sent_at > ?)
                 ORDER BY s.id LIMIT ?""",
-            (week_start_utc, active_since_utc, dedup_since_utc, MIDWEEK_NUDGE_CAP),
+            (*_sm_params, week_start_utc, active_since_utc, dedup_since_utc, MIDWEEK_NUDGE_CAP),
         )
         rows = list(c.fetchall())
     finally:
@@ -37242,7 +37300,9 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
     #   除外条件は _synth_exclude_sql が単一ソース (email ドメイン+goal marker+名前の三重判定)
     c.execute(
         "SELECT id, name, email, student_email, student_email_verified, line_user_id, course, "
-        "parent_email, parent_email_enabled FROM students "
+        "parent_email, parent_email_enabled"
+        + (", start_month" if _table_has_column("students", "start_month") else "") +   # 📅 開始前のゼロ週メール抑止用
+        " FROM students "
         f"WHERE {_enrolled_sql()} AND (course = 'kokuritsu_nankan' OR status IN ('paid', 'past_due')) "
         f"AND {_synth_exclude_sql()}"
     )
@@ -37268,6 +37328,10 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
             if stats["hours"] == 0 and stats["questions"] == 0 and stats["problems_done"] == 0:
                 # 📭 2026-09-09: 直近まで演習していた生徒が止まった週だけ、短い「今週は 0 問」メールを生徒・保護者へ
                 #   (最大 2 週連続)。休眠層・一度も解いていない生徒は従来どおりスキップ。詳細は _zero_week_report_decision。
+                # 📅 受講開始月より前の生徒には「今週は 0 問」を送らない (開始前に催促に見える)。活動のあった週の通常レポートは送る。
+                if _before_start_month(row["start_month"] if "start_month" in row.keys() else None):
+                    skipped += 1
+                    continue
                 zw = _zero_week_report_decision(row["id"]) if ZERO_WEEK_REPORT_ENABLED else None
                 if not zw:
                     skipped += 1
@@ -47151,6 +47215,79 @@ def admin_set_student_ai_disabled(student_id: int, payload: dict, authorization:
     return {"ok": True, "student_id": student_id, "ai_disabled": _val}
 
 
+@app.post("/api/admin/students/{student_id}/start-month")
+def admin_set_student_start_month(student_id: int, payload: dict, authorization: Optional[str] = Header(None)):
+    """📅 [2026-09-24] 受講開始月を塾長が設定/解除。payload: {start_month: 'YYYY-MM' | null}。
+    開始月より前は クラス宿題の一括配信・出欠・入塾月より前の録画 を出さない。null = 制限なし (既存生徒の既定)。"""
+    _verify_admin_required(authorization)
+    raw = payload.get("start_month")
+    val = None
+    if raw not in (None, ""):
+        val = _valid_month_or_none(raw)
+        if not val:
+            raise HTTPException(status_code=400, detail="start_month は YYYY-MM (例 2026-10) で指定してください")
+    if not _table_has_column("students", "start_month"):
+        raise HTTPException(status_code=503, detail="start_month 列がまだありません (デプロイ反映待ちの可能性)")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id FROM students WHERE id = ?", (student_id,))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        c.execute("UPDATE students SET start_month = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (val, student_id))
+        conn.commit()
+    finally:
+        conn.close()
+    log.info(f"[StartMonth] admin set student {student_id} start_month={val}")
+    return {"ok": True, "student_id": student_id, "start_month": val, "before_start": _before_start_month(val),
+            "label": _month_label_ja(val) if val else None}
+
+
+@app.post("/api/admin/students/{student_id}/archive-access")
+def admin_set_student_archive_access(student_id: int, payload: dict, authorization: Optional[str] = Header(None)):
+    """🎬 [2026-09-24] 入塾前アーカイブの全期間視聴 (特商法の 20,000 円) を塾長が ON/OFF。payload: {archive_full_paid: bool}。
+    徴収 (月謝アプリの講習費用 / 振込) とは連動しない = 受け取ってから ON にする。"""
+    _verify_admin_required(authorization)
+    _val = 1 if payload.get("archive_full_paid") else 0
+    if not _table_has_column("students", "archive_full_paid"):
+        raise HTTPException(status_code=503, detail="archive_full_paid 列がまだありません (デプロイ反映待ちの可能性)")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id FROM students WHERE id = ?", (student_id,))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        c.execute("UPDATE students SET archive_full_paid = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (_val, student_id))
+        conn.commit()
+    finally:
+        conn.close()
+    log.info(f"[ArchiveAccess] admin set student {student_id} archive_full_paid={_val}")
+    return {"ok": True, "student_id": student_id, "archive_full_paid": _val}
+
+
+@app.post("/api/admin/class/recordings/{recording_id}/lesson-date")
+def admin_set_recording_lesson_date(recording_id: int, payload: dict, authorization: Optional[str] = Header(None)):
+    """🎬 [2026-09-24] 録画の授業日を塾長が直す。payload: {lesson_date: 'YYYY-MM-DD' | ''}。空 = 題名の M/D から自動判定に戻す。"""
+    _verify_admin_required(authorization)
+    _raw_ld = payload.get("lesson_date") if isinstance(payload, dict) else None
+    val = _class_valid_date_or_none(str(_raw_ld) if _raw_ld not in (None, "") else "")
+    if not _table_has_column("class_recordings", "lesson_date"):
+        raise HTTPException(status_code=503, detail="lesson_date 列がまだありません (デプロイ反映待ちの可能性)")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, title, created_at FROM class_recordings WHERE id = ?", (int(recording_id),))
+        r = c.fetchone()
+        if not r:
+            raise HTTPException(status_code=404, detail="録画が見つかりません")
+        c.execute("UPDATE class_recordings SET lesson_date = ? WHERE id = ?", (val, int(recording_id)))
+        conn.commit()
+        return {"ok": True, "id": int(recording_id), "lesson_date": val,
+                "lesson_date_effective": _recording_lesson_date(r["title"], r["created_at"], val)}
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/students/{student_id}/feature-tier")
 def admin_set_student_feature_tier(student_id: int, payload: dict, authorization: Optional[str] = Header(None)):
     """🪶 [トリリオン・ライト 2026-08-20] 生徒の機能層を切替。payload: {feature_tier: "light"|"full"}。
@@ -49636,6 +49773,127 @@ def _is_juku_app_student(student_id) -> bool:
         conn.close()
 
 
+# ==========================================================================
+# 📅 受講開始月 (students.start_month) と 🎬 入塾前アーカイブ (2026-09-24 塾長指示)
+#   翌月開始の生徒も申込直後に承認する (予定表・配信ドリル・メッセージは即使える)。ただし開始月より前は
+#   ・クラス宿題の一括配信の対象にしない (期限の月で判定) ・出欠を出さない/受けない ・入塾月 (開始月の 1 日) より前の録画を出さない。
+#   2 万円 (特商法「入塾前の授業アーカイブの視聴」) を払った生徒は archive_full_paid=1 で全期間。
+#   ★start_month が NULL の生徒 (既存全員) はどの判定も「制限なし」= 従来の経路と同じ (8/7 の録画消失事故を繰り返さない)。
+# ==========================================================================
+_START_MONTH_NOTE_RE = re.compile(r"受講開始月[:：]\s*(\d{4})\s*年\s*(\d{1,2})\s*月")
+# ★区切りは '/' と '月' だけ。date_label は '.・-' も読むが、手入力の題名には「中1・2 英語」「Lesson 10-12」「1.5倍速」があり、
+#   これを日付にすると開始月つきの生徒からその録画が消える (NULL の生徒は無関係)。読めない題名は CEO の 📅 で入れる。
+_REC_TITLE_MD_RE = re.compile(r"(?<!\d)(\d{1,2})\s*[/月]\s*(\d{1,2})(?!\d)")
+
+
+def _jst_month_str(d=None) -> str:
+    d = d or _today_jst()
+    return f"{d.year:04d}-{d.month:02d}"
+
+
+def _valid_month_or_none(s) -> Optional[str]:
+    """'YYYY-MM' (2020-01〜2099-12) なら正規化して返す。それ以外 (None/空/壊れた値) は None = 制限なし。"""
+    m = re.match(r"^\s*(\d{4})-(\d{1,2})\s*$", str(s or ""))
+    if not m:
+        return None
+    y, mo = int(m.group(1)), int(m.group(2))
+    if not (2020 <= y <= 2099 and 1 <= mo <= 12):
+        return None
+    return f"{y:04d}-{mo:02d}"
+
+
+def _month_label_ja(month) -> str:
+    sm = _valid_month_or_none(month)
+    return f"{int(sm[:4])}年{int(sm[5:7])}月" if sm else ""
+
+
+def _parse_start_month_from_note(note) -> Optional[str]:
+    """申込待ちの備考 (stripe-webhook が書く「受講開始月: 2026年10月（申込書の選択: 翌月から）」) → 'YYYY-MM'。無ければ None。"""
+    m = _START_MONTH_NOTE_RE.search(str(note or ""))
+    if not m:
+        return None
+    return _valid_month_or_none(f"{m.group(1)}-{m.group(2)}")
+
+
+def _month_of_date(d) -> Optional[str]:
+    s = str(d or "")[:10]
+    try:
+        dt = datetime.strptime(s, "%Y-%m-%d")
+    except Exception:
+        return None
+    return f"{dt.year:04d}-{dt.month:02d}"
+
+
+def _before_start_month(start_month, month: Optional[str] = None) -> bool:
+    """その月 (既定 = 今月 JST) が受講開始月より前か。start_month が空/壊れていれば常に False (= 制限なし)。"""
+    sm = _valid_month_or_none(start_month)
+    if not sm:
+        return False
+    return (month or _jst_month_str()) < sm
+
+
+def _archive_cutoff(start_month, archive_full_paid) -> Optional[str]:
+    """録画を出す下限日 'YYYY-MM-01'。start_month が空 or 全期間視聴 (2 万円) なら None = 従来どおり全部。"""
+    if archive_full_paid:
+        return None
+    sm = _valid_month_or_none(start_month)
+    return f"{sm}-01" if sm else None
+
+
+def _recording_lesson_date(title, created_at, lesson_date=None) -> Optional[str]:
+    """録画の授業日 'YYYY-MM-DD'。列 (lesson_date) があればそれ。無ければ題名の「M/D」を **登録日 (created_at) から見て
+    直近の過去** に解決する (自動割り当ての題名は 'M/D' 固定・手入力も「… 7/7」の形が多い)。読めなければ None。
+    ★年つき ('2026/8/17') は先頭 2 桁を月と誤読するので読まない・候補が複数ある題名も読まない
+      (class_recording_assign.date_label と同じ判断)。区切りは '/' と '月' だけ (「中1・2」「10-12」を日付にしない)。
+      登録日の翌日までは同日扱い (created_at は UTC)。"""
+    if lesson_date:
+        s = str(lesson_date)[:10]
+        try:
+            datetime.strptime(s, "%Y-%m-%d")
+            return s
+        except Exception:
+            pass
+    n = unicodedata.normalize("NFKC", str(title or ""))
+    if re.search(r"(?<!\d)(19|20)\d{2}\s*[/.\-年]", n):
+        return None
+    cand = list(dict.fromkeys((int(a), int(b)) for a, b in _REC_TITLE_MD_RE.findall(n)))
+    if len(cand) != 1:
+        return None
+    mo, dy = cand[0]
+    if not (1 <= mo <= 12 and 1 <= dy <= 31):
+        return None
+    try:
+        base = datetime.strptime(str(created_at or "")[:10], "%Y-%m-%d").date()
+    except Exception:
+        return None
+    best = None
+    for y in (base.year - 1, base.year, base.year + 1):
+        try:
+            d = date(y, mo, dy)
+        except ValueError:
+            continue
+        if (d - base).days <= 1 and (best is None or d > best):
+            best = d
+    return best.isoformat() if best else None
+
+
+def _student_start_month(student_id) -> Optional[str]:
+    """students.start_month を 1 行読む (列が無ければ None = 制限なし)。出欠の受付判定用。"""
+    if not _table_has_column("students", "start_month"):
+        return None
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT start_month FROM students WHERE id = ?", (int(student_id),))
+        r = c.fetchone()
+        return _valid_month_or_none(r["start_month"]) if r else None
+    except Exception as _e:
+        log.warning(f"[StartMonth] 読み取り失敗 (制限なし扱い): {_e}")
+        return None
+    finally:
+        conn.close()
+
+
 def _ai_home_available(student_id) -> bool:
     """🤖 [2026-08-07] 「この生徒に AI管理(mypage) への導線を出してよいか」の単一ソース。
     ★これは _is_juku_app_student (=登録経路) とは別の問い。塾生アプリ(class.html)の
@@ -49722,6 +49980,7 @@ class ClassRecordingCreateRequest(BaseModel):
     session_id: Optional[int] = None
     duration_sec: Optional[int] = None
     is_published: Optional[bool] = True
+    lesson_date: Optional[str] = None   # 🎬 授業日 YYYY-MM-DD (任意・空なら題名の M/D から判定)
 
 
 class AttendanceReportRequest(BaseModel):
@@ -49742,8 +50001,16 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
         c = conn.cursor()
         # 🎒 受講クラス (出欠の絞り込みに使用)。未設定([]/None) は出欠 UI だけ全クラス扱い。
         #   ★録画は 2026-08-07 から未設定でも全表示しない (下の録画ブロック参照)。
-        c.execute("SELECT class_labels FROM students WHERE id = ?", (student["id"],))
+        # 📅 受講開始月 / 🎬 全期間視聴 (列が無い環境では従来どおり class_labels だけ)
+        _has_sm = _table_has_column("students", "start_month")
+        _has_af = _table_has_column("students", "archive_full_paid")
+        _sel_cols = "class_labels" + (", start_month" if _has_sm else "") + (", archive_full_paid" if _has_af else "")
+        c.execute(f"SELECT {_sel_cols} FROM students WHERE id = ?", (student["id"],))
         _clrow = c.fetchone()
+        _start_month = _valid_month_or_none(_clrow["start_month"]) if (_clrow and _has_sm) else None
+        _archive_full = bool(_clrow["archive_full_paid"]) if (_clrow and _has_af) else False
+        _cutoff = _archive_cutoff(_start_month, _archive_full)   # None = 従来どおり全部出す
+        _hidden_recordings = 0
         try:
             my_classes = json.loads(_clrow["class_labels"]) if (_clrow and _clrow["class_labels"]) else []
         except Exception:
@@ -49806,9 +50073,11 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
         #   ★授業に紐づかない録画 (session_id NULL) は全員向けの扱いで従来どおり全員に出す。
         #     クラス限定にしたい録画は必ず授業 (class_sessions) に紐づけて登録する。
         loose_recordings = []
+        _has_ld = _table_has_column("class_recordings", "lesson_date")
         c.execute(
-            "SELECT id, session_id, title, video_url, provider, duration_sec "
-            "FROM class_recordings WHERE is_published = 1 ORDER BY created_at DESC, id DESC"
+            "SELECT id, session_id, title, video_url, provider, duration_sec, created_at"
+            + (", lesson_date" if _has_ld else "") +
+            " FROM class_recordings WHERE is_published = 1 ORDER BY created_at DESC, id DESC"
         )
         for r in c.fetchall():
             item = {"id": r["id"], "title": r["title"], "video_url": r["video_url"],
@@ -49818,6 +50087,14 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             elif r["session_id"] in sessions:
                 if sessions[r["session_id"]]["title"] not in my_classes:
                     continue                         # 受講していないクラス / 未設定は出さない
+                # 🎬 [2026-09-24] 入塾月 (受講開始月の 1 日) より前の授業の録画は出さない (2 万円の全期間視聴は _cutoff=None)。
+                #   授業日は lesson_date 列 → 題名の M/D → 登録日 の順で決める。start_month が空の生徒はこの分岐に入らない。
+                if _cutoff:
+                    _ld = (_recording_lesson_date(r["title"], r["created_at"], (r["lesson_date"] if _has_ld else None))
+                           or str(r["created_at"] or "")[:10])
+                    if _ld < _cutoff:
+                        _hidden_recordings += 1
+                        continue
                 sessions[r["session_id"]]["recordings"].append(item)
             # else: 親授業が非公開 → 出さない
         # 自分の出欠
@@ -49847,6 +50124,13 @@ def student_class_feed(authorization: Optional[str] = Header(None)):
             #   mypage.html の class.html 送り返しは必ずこの 1 値を見る (述語を2箇所に書くと片方だけ
             #   直したときにボタンを押しても戻される「壊れたボタン」になる)。判定は _ai_home_available。
             "ai_home_available": _ai_home_available(student["id"]),
+            # 📅 [2026-09-24] 受講開始月。before_start=true の間、class.html は出欠を出さず「◯月から受講開始」を出す。
+            "start_month": _start_month,
+            "before_start": _before_start_month(_start_month),
+            # 🎬 入塾月より前の録画を隠している下限日 (None = 隠していない) と隠した本数 (画面で「非表示 N 本」と言うため)
+            "archive_from": _cutoff,
+            "archive_full": _archive_full,
+            "hidden_recordings": _hidden_recordings,
         }
     finally:
         conn.close()
@@ -49915,6 +50199,11 @@ def student_class_attendance(payload: AttendanceReportRequest, request: Request,
         srow = c.fetchone()
         if not srow or not srow["is_published"]:
             raise HTTPException(status_code=404, detail="授業が見つかりません")
+        # 📅 受講開始月より前の授業には出欠を付けない (授業日が入っている授業のみ判定)
+        if srow["session_date"]:
+            _sm = _student_start_month(student["id"])
+            if _before_start_month(_sm, _month_of_date(srow["session_date"])):
+                raise HTTPException(status_code=400, detail=f"受講開始 ({_month_label_ja(_sm)}) より前の授業には出欠を記録できません")
         # UPSERT (SELECT → UPDATE/INSERT・両 DB 互換)。prev status も取って変化判定に使う。
         c.execute(
             "SELECT id, status FROM class_attendance WHERE student_id = ? AND session_id = ?",
@@ -50085,12 +50374,18 @@ def admin_class_session_detail(session_id: int, authorization: Optional[str] = H
         files = [{"id": r["id"], "title": r["title"], "filename": r["filename"], "mime": r["mime"],
                   "file_size": r["file_size"], "is_published": bool(r["is_published"]),
                   "created_at": _utc_iso_or_none(r["created_at"])} for r in c.fetchall()]
+        _has_ld = _table_has_column("class_recordings", "lesson_date")
         c.execute(
-            "SELECT id, title, video_url, provider, duration_sec, is_published FROM class_recordings "
-            "WHERE session_id = ? ORDER BY created_at DESC, id DESC", (int(session_id),)
+            "SELECT id, title, video_url, provider, duration_sec, is_published, created_at"
+            + (", lesson_date" if _has_ld else "") +
+            " FROM class_recordings WHERE session_id = ? ORDER BY created_at DESC, id DESC", (int(session_id),)
         )
         recordings = [{"id": r["id"], "title": r["title"], "video_url": r["video_url"], "provider": r["provider"],
-                       "duration_sec": r["duration_sec"], "is_published": bool(r["is_published"])} for r in c.fetchall()]
+                       "duration_sec": r["duration_sec"], "is_published": bool(r["is_published"]),
+                       # 🎬 授業日 (入塾月で録画を絞る基準): 手で入れた値 / 題名の M/D から判定した値
+                       "lesson_date": (str(r["lesson_date"])[:10] if (_has_ld and r["lesson_date"]) else None),
+                       "lesson_date_effective": _recording_lesson_date(r["title"], r["created_at"], (r["lesson_date"] if _has_ld else None)),
+                       } for r in c.fetchall()]
         c.execute(
             "SELECT a.student_id, a.status, a.reason, a.reported_at, s.name "
             "FROM class_attendance a LEFT JOIN students s ON s.id = a.student_id "
@@ -50243,15 +50538,26 @@ def admin_class_recording_create(payload: ClassRecordingCreateRequest, request: 
             c.execute("SELECT id FROM class_sessions WHERE id = ?", (int(payload.session_id),))
             if not c.fetchone():
                 raise HTTPException(status_code=404, detail="指定された授業が見つかりません")
-        c.execute(
-            "INSERT INTO class_recordings (session_id, title, video_url, provider, duration_sec, is_published, created_at) "
-            "VALUES (?,?,?,?,?,?,?) RETURNING id",
-            (int(payload.session_id) if payload.session_id is not None else None,
-             title, url, provider, duration, is_pub, _utc_naive_iso())
-        )
+        _ld = _class_valid_date_or_none(payload.lesson_date)
+        if _ld and _table_has_column("class_recordings", "lesson_date"):
+            c.execute(
+                "INSERT INTO class_recordings (session_id, title, video_url, provider, duration_sec, is_published, created_at, lesson_date) "
+                "VALUES (?,?,?,?,?,?,?,?) RETURNING id",
+                (int(payload.session_id) if payload.session_id is not None else None,
+                 title, url, provider, duration, is_pub, _utc_naive_iso(), _ld)
+            )
+        else:
+            c.execute(
+                "INSERT INTO class_recordings (session_id, title, video_url, provider, duration_sec, is_published, created_at) "
+                "VALUES (?,?,?,?,?,?,?) RETURNING id",
+                (int(payload.session_id) if payload.session_id is not None else None,
+                 title, url, provider, duration, is_pub, _utc_naive_iso())
+            )
         row = c.fetchone()
         conn.commit()
-        return {"ok": True, "id": row["id"] if row else None, "provider": provider}
+        _ld_saved = _ld if (_ld and _table_has_column("class_recordings", "lesson_date")) else None
+        return {"ok": True, "id": row["id"] if row else None, "provider": provider, "lesson_date": _ld_saved,
+                **({"warning": "lesson_date 列がまだ無いため授業日は保存していません (デプロイ反映待ち)"} if (_ld and not _ld_saved) else {})}
     finally:
         conn.close()
 
@@ -51449,13 +51755,30 @@ def admin_class_recordings_auto_assign(payload: dict, request: Request,
                 return out
 
             now = _utc_naive_iso()
+            _has_ld = _table_has_column("class_recordings", "lesson_date")
+            _today_for_ld = class_recording_assign.today_jst()
             try:
                 for p in rep["planned"]:
-                    c.execute(
-                        "INSERT INTO class_recordings (session_id, title, video_url, provider, is_published, created_at) "
-                        "VALUES (?,?,?,'youtube',1,?)",
-                        (int(p["session_id"]), p["label"],
-                         class_recording_assign.recording_url(p["video_id"]), now))
+                    # 🎬 授業日: label は date_label が検証済みの 'M/D' → 判定日から見て直近の過去 (resolve_year と同じ)
+                    _ld = None
+                    try:
+                        _mo, _dy = [int(x) for x in str(p["label"]).split("/")]
+                        _best, _ = class_recording_assign.resolve_year(_mo, _dy, _today_for_ld)
+                        _ld = _best.isoformat() if _best else None
+                    except Exception:
+                        _ld = None
+                    if _has_ld:
+                        c.execute(
+                            "INSERT INTO class_recordings (session_id, title, video_url, provider, is_published, created_at, lesson_date) "
+                            "VALUES (?,?,?,'youtube',1,?,?)",
+                            (int(p["session_id"]), p["label"],
+                             class_recording_assign.recording_url(p["video_id"]), now, _ld))
+                    else:
+                        c.execute(
+                            "INSERT INTO class_recordings (session_id, title, video_url, provider, is_published, created_at) "
+                            "VALUES (?,?,?,'youtube',1,?)",
+                            (int(p["session_id"]), p["label"],
+                             class_recording_assign.recording_url(p["video_id"]), now))
                 conn.commit()
             except Exception as e:
                 try:
@@ -51867,7 +52190,9 @@ def _validate_attend(class_label, att_date, status):
 def _tsujuku_roster(c):
     """通塾生(course=kokuritsu_nankan or plan=student_addon)の名簿を取得 (cursor 渡し)。
     email も返す: 同名の重複アカウント(別メールで二重登録)を CEO 名簿で区別するため。"""
-    c.execute("SELECT id, name, grade, email, class_labels FROM students WHERE course = ? OR plan = ? ORDER BY name",
+    # 📅 start_month も載せる (列がある環境のみ): クラス宿題の一括配信・出欠名簿が受講開始前の生徒を外すため。
+    _extra = ", start_month" if _table_has_column("students", "start_month") else ""
+    c.execute(f"SELECT id, name, grade, email, class_labels{_extra} FROM students WHERE course = ? OR plan = ? ORDER BY name",
               (_STUDY_LOG_TARGET_COURSE, "student_addon"))
     return c.fetchall()
 
@@ -51888,6 +52213,10 @@ def student_class_attend(payload: ClassAttendRequest, request: Request, authoriz
     student = _get_current_student(authorization)
     _require_tsujuku_student(student)
     cl, d, st = _validate_attend(payload.class_label, payload.att_date, payload.status)
+    # 📅 受講開始月より前の日付には出欠を付けない (class.html も出さないが、古い画面や直接 POST の保険)
+    _sm = _student_start_month(student["id"])
+    if _before_start_month(_sm, _month_of_date(d)):
+        raise HTTPException(status_code=400, detail=f"受講開始 ({_month_label_ja(_sm)}) より前の日付には出欠を記録できません")
     now_iso = _utc_naive_iso()
     conn = db()
     try:
@@ -52033,6 +52362,9 @@ def admin_class_attend_roster(att_date: str, class_label: str, authorization: Op
             # 受講クラスが設定済みなら、そのクラスの生徒のみ。未設定(空)は全クラスに表示(移行フォールバック)。
             if cls and cl not in cls:
                 continue
+            # 📅 受講開始月より前の日付の名簿には載せない (翌月開始を先に承認した生徒が「未申告」で並ばない)
+            if "start_month" in r.keys() and _before_start_month(r["start_month"], _month_of_date(d)):
+                continue
             rec = by_sid.get(r["id"])
             roster.append({"student_id": r["id"], "name": r["name"], "grade": r["grade"], "email": r["email"],
                            "status": rec["status"] if rec else None, "source": rec["source"] if rec else None,
@@ -52092,10 +52424,19 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
     try:
         c = conn.cursor()
         # 受講クラスに当該クラスを含む生徒のみを対象 (strict・移行フォールバックは使わない)
-        targets = [(r["id"], r["name"]) for r in _tsujuku_roster(c) if cl in _parse_labels(r["class_labels"])]
+        _roster = [r for r in _tsujuku_roster(c) if cl in _parse_labels(r["class_labels"])]
+        # 📅 [2026-09-24] 受講開始月より前の生徒には出さない (翌月開始を先に承認した生徒に今月の宿題が「未提出」で積まれない)。
+        #   基準は期限の月 (期限なしなら今月)。生徒を指名する配信 (単元ドリル・個別宿題) は塾長が選んだ生徒なので対象外。
+        _hw_month = _month_of_date(due_date) or _jst_month_str()
+        skipped_before_start = [r["name"] for r in _roster
+                                if "start_month" in r.keys() and _before_start_month(r["start_month"], _hw_month)]
+        targets = [(r["id"], r["name"]) for r in _roster
+                   if not ("start_month" in r.keys() and _before_start_month(r["start_month"], _hw_month))]
         if not targets:
-            return {"ok": True, "assigned_count": 0, "class_label": cl,
-                    "info": "このクラスに登録された生徒がいません。「🏫 クラス別 受講生 一括登録」でクラスを設定してください。"}
+            return {"ok": True, "assigned_count": 0, "class_label": cl, "skipped_before_start": skipped_before_start,
+                    "info": ("このクラスの生徒は全員が受講開始前です (" + "・".join(skipped_before_start) + ")。開始月以降の期限にすると出せます。"
+                             if skipped_before_start else
+                             "このクラスに登録された生徒がいません。「🏫 クラス別 受講生 一括登録」でクラスを設定してください。")}
         # 🚨 同名重複ガード (2026-07-09): 同一クラスに正規化氏名が重複 = 別メールでの二重登録による
         #   二重配布の疑い。silent dedup はしない (真に別人の同姓同名の宿題を無言で欠落させ得るため=
         #   この codebase が repeat_trial で一貫して避けている失敗モード)。配布は実行しつつ、塾長に
@@ -52122,6 +52463,7 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
                 ("class_homework_assigned", json.dumps({
                     "class_label": cl, "title": title, "subject": subject, "topic": topic, "due_date": due_date,
                     "assigned_count": len(targets), "student_ids": [t[0] for t in targets],
+                    "skipped_before_start": len(skipped_before_start),
                 }, ensure_ascii=False), "admin"),
             )
             conn.commit()
@@ -52129,6 +52471,7 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
             pass
         return {"ok": True, "assigned_count": len(targets), "class_label": cl,
                 "students": [t[1] for t in targets],
+                "skipped_before_start": skipped_before_start,
                 "warnings": dup_warnings}
     finally:
         conn.close()
@@ -52775,7 +53118,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT id, name, email, status, referrer, grade, target_university, subjects, created_at FROM course_applications WHERE id = ?", (app_id,))
+        c.execute("SELECT id, name, email, status, referrer, grade, target_university, subjects, created_at, note FROM course_applications WHERE id = ?", (app_id,))
         row = c.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="申込が見つかりません")
@@ -52792,7 +53135,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         _siblings = []
         if payload.merge_siblings is not False and _normalize_person_name(name):
             # メール一致だけでなく STEP1/STEP2 の組 (保護者メール vs 生徒本人メール) も同じ生徒として扱う (_course_app_siblings_ok)
-            c.execute("SELECT id, name, email, referrer, grade, target_university, subjects, created_at FROM course_applications "
+            c.execute("SELECT id, name, email, referrer, grade, target_university, subjects, created_at, note FROM course_applications "
                       "WHERE status = 'pending' AND id <> ? ORDER BY id DESC LIMIT 200", (app_id,))
             _siblings = [dict(r) for r in (c.fetchall() or []) if _course_app_siblings_ok(row, r)]
             _siblings.sort(key=lambda r: int(r["id"]))
@@ -52801,6 +53144,11 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         _form_first = sorted(_all_rows, key=lambda r: 0 if (_g(r, "referrer") or "") == "入塾申込フォーム" else 1)
         _app_grade = next((_g(r, "grade") for r in _form_first if _g(r, "grade")), None)
         _app_goal = next((_g(r, "target_university") for r in _form_first if _g(r, "target_university")), None)
+        # 📅 [2026-09-24] 受講開始月: 入塾申込フォームの行の備考 (webhook が「受講開始月: 2026年10月（…）」と書く) から。
+        #   ★新規生徒にだけ入れる。既存アカウントへの合流では入れない (在籍中の生徒に入れると入塾前の録画が消える) →
+        #     必要なら CEO の生徒詳細で手で入れる。response の start_month_from_note で塾長に見せる。
+        _app_start_month = next((m for m in (_parse_start_month_from_note(_g(r, "note")) for r in _form_first) if m), None)
+        _final_start_month = None
         # 🏫 トリリオン塾生アプリの自己登録(referrer='塾生アプリ')は、難関コースとは別文面のウェルカムを送る
         #   (まとめ承認では 1 行でも塾生アプリ登録が含まれれば塾生アプリ文面 + class.html 着地)
         _is_juku_app_reg = any((_g(r, "referrer") or "") == "塾生アプリ" for r in _all_rows)
@@ -52918,6 +53266,9 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             new = c.fetchone()
             student_id = new["id"] if new else None
             _final_classes = list(_app_classes)
+            if student_id and _app_start_month and _table_has_column("students", "start_month"):
+                c.execute("UPDATE students SET start_month = ? WHERE id = ?", (_app_start_month, student_id))
+                _final_start_month = _app_start_month
             log.info(f"[CourseApp] approve created new student id={student_id} email={email_lower} classes={_final_classes}")
             # 🚨 同名重複ガード (2026-07-09): email 一致は上の SELECT で既存生徒に合流するので、
             #   ここに来た=別メール。同名(正規化)の既存 体験/課金生徒がいれば「別メール二重登録」の疑い。
@@ -53098,6 +53449,10 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             #   生徒はログインでき時間割も出るので**画面上は何も壊れて見えない**。CEO で必ず知らせる。
             #   subjects を送らない経路 (旧フォーム由来の pending 申込・学習管理コースなど
             #   時間割のコマが決まらない商品) では普通に空になるので、承認を止めずに警告だけ出す。
+            # 📅 受講開始月 (新規生徒に入れた値 / 備考から読めた値 / 合流のため入れなかったか)
+            "start_month": _final_start_month,
+            "start_month_from_note": _app_start_month,
+            "start_month_skipped_existing": bool(_app_start_month and _attached_existing),
             "class_labels": list(_final_classes),
             "class_labels_empty": not _final_classes,
             "dropped_subjects": [x.strip() for x in _app_subjects.split("・")

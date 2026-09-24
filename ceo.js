@@ -3059,13 +3059,21 @@ function renderCourseApps(apps) {
       const _clsNote = j.class_labels_empty
         ? `<br><span style="color:#fbbf24;">⚠️ 受講クラスが未設定です。このままだとクラス限定の録画・配布ファイル・クラス指定の一斉送信が届きません。「🏫 クラス別 受講生 一括登録」で設定してください。</span>`
         : `<br><span style="color:#86efac;">🎒 受講クラス: ${escapeHtml((j.class_labels || []).join(' / '))}</span>`;
+      // 📅 [2026-09-24] 受講開始月 (申込書の「翌月から」→ 備考 → 新規生徒の start_month)。合流時は入れないので塾長に知らせる。
+      const _smLabel = (m) => { const mm = /^(\d{4})-(\d{2})$/.exec(String(m || '')); return mm ? `${Number(mm[1])}年${Number(mm[2])}月` : String(m || ''); };
+      const _smNote = j.start_month
+        ? `<br><span style="color:#bae6fd;">📅 受講開始月: ${escapeHtml(_smLabel(j.start_month))}（開始前はクラス宿題の一括配信・出欠・入塾月より前の録画を出しません。生徒詳細で変更できます）</span>`
+        : (j.start_month_skipped_existing
+          ? `<br><span style="color:#fbbf24;">📅 申込書の受講開始月 ${escapeHtml(_smLabel(j.start_month_from_note))} は既存アカウントへの合流のため自動では入れていません。必要なら生徒詳細の「受講開始月」で設定してください。</span>`
+          : '');
       const _dropNote = (j.dropped_subjects && j.dropped_subjects.length)
         ? `<br><span style="color:#fbbf24;">⚠️ 時間割に無い受講クラスを無視しました: ${escapeHtml(j.dropped_subjects.join(' / '))}</span>`
         : '';
-      resultEl.innerHTML = `<span style="color:#86efac;">✅ 承認完了 (生徒ID: ${j.student_id} ${j.welcome_email_sent ? '/ welcome メール送信済' : '/ メール送信失敗'} / ${_finalAI ? 'AIあり' : '🏫 塾生アプリのみ(AIなし)'})</span>${_mergeNote}${_attachNote}${_clsNote}${_dropNote}`;
+      resultEl.innerHTML = `<span style="color:#86efac;">✅ 承認完了 (生徒ID: ${j.student_id} ${j.welcome_email_sent ? '/ welcome メール送信済' : '/ メール送信失敗'} / ${_finalAI ? 'AIあり' : '🏫 塾生アプリのみ(AIなし)'})</span>${_mergeNote}${_attachNote}${_clsNote}${_dropNote}${_smNote}`;
       if (j.attached_existing) {
         try {
-          alert(`⚠️ この申込は新規作成ではなく、既存アカウント #${j.student_id}${j.attached_plan ? `（プラン: ${j.attached_plan}）` : ''} に合流しました。\n${_aiNote}`);
+          alert(`⚠️ この申込は新規作成ではなく、既存アカウント #${j.student_id}${j.attached_plan ? `（プラン: ${j.attached_plan}）` : ''} に合流しました。\n${_aiNote}`
+            + (j.start_month_skipped_existing ? `\n📅 申込書の受講開始月 ${_smLabel(j.start_month_from_note)} は入れていません（必要なら生徒詳細の「受講開始月」で設定）` : ''));
         } catch (_) {}
       }
       // 📲 「LINEで受け取る」案内を自動表示 (メール不達対策・塾長が LINE/QR で生徒に渡す)。

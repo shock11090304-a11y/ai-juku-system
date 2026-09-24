@@ -531,6 +531,7 @@
         var key = _ymdOf(dt);
         var ev = calEvents[key];
         if (ev && ev.kind === 'closed') continue;   // 休塾日はスキップ
+        if (beforeStart() && key.slice(0, 7) < feedData.start_month) continue;   // 📅 受講開始月より前の日付は出さない
         var cls = _classesForDow(dt.getDay());
         if (cls.length) groups.push({ date: key, dt: dt, classes: cls });
       }
@@ -597,7 +598,9 @@
         h += '<div class="block"><div class="block-label">🎬 録画</div>'
           + '<div class="muted">「動画」タブでまとめて視聴できます（このコマ: ' + s.recordings.length + '本）</div></div>';
       }
-      h += attendanceHtml(s);
+      // 📅 受講開始月より前の授業には出欠ボタンを出さない (サーバも 400 で断る)。日付未定・開始月以降の授業は従来どおり。
+      var _pre = beforeStart() && s.session_date && String(s.session_date).slice(0, 7) < feedData.start_month;
+      h += _pre ? '<div class="att-status muted">🙋 出欠の連絡は受講開始（' + esc(monthLabel(feedData.start_month)) + '）の授業から</div>' : attendanceHtml(s);
       h += '</div>';
       return h;
     }
@@ -645,14 +648,30 @@
         + '<div class="att-reason"><textarea data-reason="' + s.id + '" placeholder="（任意）欠席・遅刻の理由や連絡">' + reasonVal + '</textarea></div>'
         + statusLine + '</div>';
     }
+    // 📅 [2026-09-24] 'YYYY-MM' → '2026年10月'
+    function monthLabel(m) {
+      var mm = /^(\d{4})-(\d{2})$/.exec(String(m || ''));
+      return mm ? (Number(mm[1]) + '年' + Number(mm[2]) + '月') : '';
+    }
+    function beforeStart() { return !!(feedData && feedData.before_start === true && feedData.start_month); }
     function renderSchedule() {
       var sessions = (feedData && feedData.sessions) || [];
       var lf = (feedData && feedData.loose_files) || [];
       var parts = [];
-      // 🙋 今日の出欠（今日のクラスがある時のみ）
-      parts.push(todayAttendHtml());
-      // 🗓 これからの出欠（事前連絡・受講クラス設定済みの生徒のみ）
-      parts.push(upcomingAttendHtml());
+      if (beforeStart()) {
+        // 📅 受講開始前 (翌月開始を先に承認した生徒): 出欠は出さない。予定表・配信されたドリル・メッセージは使える。
+        parts.push('<div class="notice" style="margin-bottom:0.9rem;"><h2>📅 受講開始は ' + esc(monthLabel(feedData.start_month)) + ' です</h2>'
+          + 'それまでも、予定表・塾長から配信されたドリル・メッセージは使えます。<br>'
+          + '出欠の連絡は ' + esc(monthLabel(feedData.start_month)) + ' の授業から、この画面でできます。'
+          + '授業の録画は ' + esc(monthLabel(feedData.start_month)) + ' 以降の授業分が「🎬 動画」タブに並びます。</div>');
+        // 🗓 開始月の授業 (例: 9月末に 10/1〜 の分) は前もって欠席/遅刻を連絡できる (upcomingAttendHtml が開始前の日付を飛ばす)
+        parts.push(upcomingAttendHtml());
+      } else {
+        // 🙋 今日の出欠（今日のクラスがある時のみ）
+        parts.push(todayAttendHtml());
+        // 🗓 これからの出欠（事前連絡・受講クラス設定済みの生徒のみ）
+        parts.push(upcomingAttendHtml());
+      }
       // 📅 カレンダー（休塾日・特別予定・祝日）
       parts.push(calendarHtml());
       // 🗓 週間時間割（常時表示）
@@ -780,11 +799,21 @@
         ? '<div class="card-meta" style="margin-bottom:0.6rem;">👤 ' + esc(myCls.join('・'))
             + (hasCommon ? ' と 全体向け ' : ' ') + 'の録画を表示しています</div>'
         : '<div class="card-meta" style="margin-bottom:0.6rem;">👤 録画は受講クラスごとに配信しています</div>';
+      // 🎬 [2026-09-24] 入塾月 (受講開始月) より前の録画は出していない。黙って減らすと「動画が消えた」になるので必ず書く。
+      //   入塾前のアーカイブ視聴 (2 万円・特商法に記載) は塾長に相談 → 全期間視聴になると archive_from が消える。
+      if (feedData && feedData.archive_from) {
+        var _af = String(feedData.archive_from).slice(0, 7);
+        filterNote += '<div class="card-meta" style="margin-bottom:0.6rem;">🔒 ' + esc(monthLabel(_af)) + 'より前の授業の録画は表示していません'
+          + (feedData.hidden_recordings ? '（非表示 ' + esc(String(feedData.hidden_recordings)) + ' 本）' : '')
+          + '。入塾前の録画も見たい場合は塾長にご相談ください（入塾前のアーカイブ視聴は別途 20,000 円）。</div>';
+      }
       if (!recs.length) {
         body.innerHTML = filterNote
           + '<div class="empty">🎬 '
           + (myCls.length
-              ? esc(myCls.join('・')) + ' の録画はまだありません。<br>授業の録画が登録されるとここに並びます。'
+              ? (feedData && feedData.archive_from
+                  ? esc(myCls.join('・')) + ' の ' + esc(monthLabel(String(feedData.archive_from).slice(0, 7))) + '以降の録画はまだありません。<br>' + esc(monthLabel(String(feedData.archive_from).slice(0, 7))) + 'の授業の録画が登録されるとここに並びます。'
+                  : esc(myCls.join('・')) + ' の録画はまだありません。<br>授業の録画が登録されるとここに並びます。')
               : '授業の録画は、受けているクラスごとにお届けしています。<br>いまは<b>あなたのクラスがアプリに設定されていない</b>ため、表示できる録画がありません。<br><span style="color:#a1a1aa;">（録画がなくなったわけではありません。設定されると、そのクラスの録画がここに並びます。）</span>'
               + '<div style="margin-top:0.8rem;"><button class="btn btn-primary" id="vidAskBtn">💬 塾長に知らせる</button></div>')
           + '</div>';

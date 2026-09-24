@@ -241,6 +241,15 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_homework_drill_attempts.py
 
+      # 📅🎬 受講開始月 / 入塾前アーカイブ (2026-09-24 塾長指示): start_month が NULL の生徒 (既存全員) は録画が 1 本も減らないこと・
+      #   開始月つきは入塾月以降だけ・全期間視聴 (2 万円) は全部・クラス宿題の一括配信と出欠名簿が開始前の生徒を外すこと・
+      #   承認で備考の受講開始月が新規生徒にだけ入ること・cron の SQL が落ちないこと。**録画を隠す側** (8/7 の事故の型) なので機械で固定する。
+      - name: 受講開始月・入塾前アーカイブ 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_start_month_archive.py
+
       # ⏪ 自動ロールバックが「履歴の強制書き換え」ではなく revert commit を fast-forward で積むこと (2026-09-07)。
       - name: 自動ロールバック (revert commit 方式) 回帰テスト
         if: ${{ !cancelled() }}
