@@ -660,6 +660,10 @@
           <button id="eikenPoolImportBtn" type="button" data-seed="/seed-data/eiken_vocab_pool_v1.json" data-size="400" title="🏅 英検の語彙ドリル (大問1 形式・空所4択) を補充: 2級 130問 (対策問題集 Vol.1/2 + 完全模試 全3回) と 準1級 270問 (本番形式演習 第1弾/第2弾 + 完全模試 全3回)。全部この塾の書き下ろし (過去問なし)。取込後は①科目で「🏅 英検」を選ぶと単元が「2級 単語 / 2級 句動詞・熟語 / 準1級 単語 / 準1級 句動詞・熟語」に入れ替わります。英文法・中学英語のプールとは別バンクなので、診断・今日の1問・弱点ドリルに英検の問題が混ざることはありません。level は全問「標準」なので既定の「標準〜やや難」で全在庫が対象です。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🏅 英検 語彙ドリルを補充 (2級 130問・準1級 270問・無課金)</button>
           <span id="eikenPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">英検対策コース用。押したあと①科目で「🏅 英検」を選ぶと使えます。学年の縛りはありません (高1でも高3でも配れます)。</span>
         </div>
+        <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+          <button id="eikenReadingImportBtn" type="button" data-seed="/seed-data/eiken_reading_pool_v1.json" data-size="本文100本・設問327問" title="📖 英検の長文ドリル (大問2 長文空所補充・大問3 内容一致) を補充: 2級 本文28本 (対策問題集 Vol.1/2 + 完全模試 全3回 + オリジナル模試) と 準1級 本文72本 (本番形式演習 第1弾/第2弾 + 完全模試 全3回 + 総合対策問題集 SET1-6)。全部この塾の書き下ろし (過去問なし)。取込後は①科目で「🏅 英検」を選ぶと単元「2級 長文空所補充 / 2級 長文 内容一致 / 準1級 長文空所補充 / 準1級 長文 内容一致」に本文の本数が出ます。配信は「本文の本数」単位 (既定 2 本 = 本番の大問 1 回分)。全訳は解き終わった後だけ見えます。重複は本文ごと自動スキップ・無課金。" style="background:linear-gradient(135deg,#6366f1,#4338ca);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">📖 英検 長文ドリルを補充 (2級 28本・準1級 72本・無課金)</button>
+          <span id="eikenReadingImportMsg" style="font-size:0.8rem;color:#94a3b8;">長文空所補充・内容一致。本文 1 つに設問 2〜5 問、配信は「本文の本数」単位です。</span>
+        </div>
         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-top:0.6rem;padding-top:0.6rem;border-top:1px dashed rgba(255,255,255,0.12);">
           <button id="grammarWeaknessImportBtn" type="button" data-seed="/seed-data/grammar_drill_weakness_v1.json" title="弱点分析で抽出した検証済み4択32問を自動採点ドリルの問題プールに取り込みます。英語=関係詞・助動詞 / 古文=助動詞の意味・重要古語。取込後は単元『関係詞/助動詞/古文』を選んで該当生徒に配信できます。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">📥 弱点特訓32問を取込 (英語 関係詞・助動詞 ＋ 古文)</button>
           <span id="grammarWeaknessImportMsg" style="font-size:0.8rem;color:#94a3b8;">観測された弱点を狙った検証済み問題。古文は subject=japanese で「古文」単元として取り込まれます。</span>
@@ -5249,6 +5253,56 @@
       }
     }
     window.eikenPoolImport = eikenPoolImport;
+    // 📖 英検 長文ドリル (本文 + 設問) の取込。eikenPoolImport と同じ流れだが passages[] を 20 本ずつ送る
+    //    (本文ごと dedup・設問が壊れた本文は本文ごと skip・DB エラーは server が rollback して ok:false)。
+    async function eikenReadingImport() {
+      const btn = document.getElementById('eikenReadingImportBtn');
+      const msg = document.getElementById('eikenReadingImportMsg');
+      if (!btn || !window.AdminAuth) return;
+      const seedUrl = btn.getAttribute('data-seed');
+      const size = btn.getAttribute('data-size') || '';
+      if (!confirm(`📖 英検の長文ドリル ${size} (2級・準1級・書き下ろし) を照合し、まだ入っていない本文だけを取り込みます。よろしいですか？（取込済みの本文は自動スキップ・無課金）`)) return;
+      btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ 取込中...';
+      if (msg) { msg.style.color = '#94a3b8'; msg.textContent = 'シード読込中...'; }
+      try {
+        const sr = await fetch(seedUrl, { cache: 'no-store' });
+        if (!sr.ok) throw new Error('シード取得失敗 HTTP ' + sr.status);
+        const seed = await sr.json();
+        const passages = (seed && seed.passages) || [];
+        if (!passages.length) throw new Error('シードに本文がありません');
+        const CHUNK = 20;
+        let pIns = 0, pSkip = 0, qIns = 0, errors = 0;
+        for (let i = 0; i < passages.length; i += CHUNK) {
+          const part = passages.slice(i, i + CHUNK);
+          if (msg) msg.textContent = `照合中... (${i + 1}〜${Math.min(i + CHUNK, passages.length)}本目 / 全${passages.length}本)`;
+          const res = await AdminAuth.fetch('/api/admin/grammar/import', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ passages: part, subject: 'eiken', dedup: true }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || data.ok === false) {
+            const d = data.detail;
+            throw new Error(((typeof d === 'string' && d) ? d : (d ? JSON.stringify(d) : ('取込失敗 HTTP ' + res.status)))
+              + (i === 0 ? '（1本目の送信で失敗しました。まだ何も取り込まれていません）'
+                          : `（${i}本目までは照合済み・うち新規 ${pIns}本を取り込み済み。押し直すと残りだけ入ります）`));
+          }
+          pIns += (data.passages_inserted || 0); pSkip += (data.passages_skipped || 0); qIns += (data.inserted || 0); errors += (data.errors || 0);
+        }
+        if (msg) {
+          msg.style.color = errors ? '#fbbf24' : '#86efac';
+          msg.textContent = `${errors ? '⚠️' : '✅'} 新しく取り込んだ本文 ${pIns}本 (設問 ${qIns}問) / 取り込まなかった本文 ${pSkip}本（すでに入っている分と、形式が合わず弾かれた分の合計）/ エラー ${errors}。①科目で「🏅 英検」を選ぶと長文の単元に本文の本数が出ます。`;
+        }
+      } catch (e) {
+        if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || String(e)); }
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+        try {
+          const cur = (document.getElementById('gdSubject') || {}).value;
+          if (cur === 'eiken') { await gdLoadUnits(); }
+        } catch (_e) {}
+      }
+    }
+    window.eikenReadingImport = eikenReadingImport;
     // 📥 弱点特訓32問の取込 (英語 関係詞・助動詞 + 古文)。grammarPoolImport と同じ流れ。
     async function grammarWeaknessImport() {
       const btn = document.getElementById('grammarWeaknessImportBtn');
@@ -5289,6 +5343,8 @@
       if (bc) bc.addEventListener('click', chugakuPoolImport);
       const be = document.getElementById('eikenPoolImportBtn');
       if (be) be.addEventListener('click', eikenPoolImport);
+      const ber = document.getElementById('eikenReadingImportBtn');
+      if (ber) ber.addEventListener('click', eikenReadingImport);
     });
 
     // ========== 📤 宿題 一括割当 (2026-06-19 塾長指示: 英文法ドリルのように複数生徒へ一括で宿題) ==========

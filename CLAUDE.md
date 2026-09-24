@@ -255,6 +255,16 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - CEO: 本文のある単元はバッジが「📖 本文N本」、④ が「本文の本数」の select に切り替わる (`_gdUnitIsPassage`)。分析は本文を折りたたみで 1 回だけ出す。
 - 英検の単元順は語彙 4 → 長文 4 (「2級 長文空所補充」「2級 長文 内容一致」「準1級 長文空所補充」「準1級 長文 内容一致」)。
 - 回帰テスト: `scripts/health_check/test_grammar_passage_drill.py` (取込の dedup・本文単位の作成・順序・除外・GET/提出/分析・単発の不変)。
+- **シード** `seed-data/eiken_reading_pool_v1.json` (本文 100 本 / 設問 327 問 = 2級 空所補充 14 本・内容一致 14 本、準1級 空所補充 36 本・
+  内容一致 36 本)。ボタンは `#eikenReadingImportBtn` (`eikenReadingImport()`・20 本ずつ POST・本文ごと dedup)。変換は
+  `scripts/eiken_vocab/build_eiken_reading_seed.py` (出所と読み方は docstring: 準1級 = 本番形式演習 JSON・完全模試 py・総合対策 py、
+  2級 = Vol.1 JSON・Vol.2 PDF・完全模試 PDF・2026-06 の md 模試。PDF は PyMuPDF で行ごとに起こし、段落は行間と行の右端で切る)。
+  ★出所ごとに正解の添字が 0 始まり/1 始まり・空所番号が本番の通し番号 (19)(41)((1)) とばらばら → 空所は「( 1 )( 2 )…」に付け直し、正解の添字は 0 始まりにそろえる。
+  教材のメール文の架空アドレスは @ を全角 ＠ にして PII ゲートを通す (実在アドレスは出所に無い)。2級 Vol.1 の 6 本は出所に全訳が無いので builder の VOL1_JA に持つ。
+  本番形式演習の全訳 6 本は空所の訳が抜けていたので MOCK_JA_FILL で補う。盲検 (2026-09-24): 328 問中 327 問が 3 名一致 = 正解表どおり、
+  残る 1 問 (完全模試 第1回 P2B 空所 1) は 3 名とも「別解あり」→ DROP_Q で設問だけ落とした (空所を正解語で埋めて付け直す)。
+  形式ゲートは `scripts/check_eiken_reading_seed.py`。盲検 3 名 × 4 分割 (`--blind DIR` → `reconcile_reading_blind.py`) の結果は
+  OVERRIDES / DROP に書いて再ビルドする (生出力はコミットしない)。
 
 ### 検査は `scripts/run_all_gates.py` に寄せる (2026-08-04)
 - **教材の全ゲートを回す入口は 1 本**: `python3 scripts/run_all_gates.py` (絞るなら `... rika_kagaku`)。
