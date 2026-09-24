@@ -253,8 +253,11 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   空所番号「( 1 )」を黄色にし、本文は KaTeX の対象外 (`ignoredClasses: ['gd-nomath']` = 英文の $20 を数式にしない)。
   復習カード (mypage.js) は長文の設問だけキーを question_id で分け (同文の stem が本文をまたいで衝突するため)、カード本文に【本文】を先に付ける。
 - CEO: 本文のある単元はバッジが「📖 本文N本」、④ が「本文の本数」の select に切り替わる (`_gdUnitIsPassage`)。分析は本文を折りたたみで 1 回だけ出す。
+- **👀 問題を見る** (`gdPreview` → `GET /api/admin/grammar/preview?subject&unit&levels&count&passage_count`): 選択中の単元の問題を答え・解説・全訳つきで
+  ランダムに出す (長文型は本文 1 本、それ以外は 5 問)。配信もドリル作成もしない。塾長は生徒名簿に居ないので自分に配って確かめられない
+  (2026-09-24「どんな問題か確認したい」)。抽出は配信と同じ関数を使う。
 - 英検の単元順は語彙 4 → 長文 4 (「2級 長文空所補充」「2級 長文 内容一致」「準1級 長文空所補充」「準1級 長文 内容一致」)。
-- 回帰テスト: `scripts/health_check/test_grammar_passage_drill.py` (取込の dedup・本文単位の作成・順序・除外・GET/提出/分析・単発の不変)。
+- 回帰テスト: `scripts/health_check/test_grammar_passage_drill.py` (取込の dedup・本文単位の作成・順序・除外・GET/提出/分析・単発の不変・👀 プレビュー = 作らない/401/422)。
 - **シード** `seed-data/eiken_reading_pool_v1.json` (本文 100 本 / 設問 327 問 = 2級 空所補充 14 本・内容一致 14 本、準1級 空所補充 36 本・
   内容一致 36 本)。ボタンは `#eikenReadingImportBtn` (`eikenReadingImport()`・20 本ずつ POST・本文ごと dedup)。変換は
   `scripts/eiken_vocab/build_eiken_reading_seed.py` (出所と読み方は docstring: 準1級 = 本番形式演習 JSON・完全模試 py・総合対策 py、

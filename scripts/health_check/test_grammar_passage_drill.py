@@ -294,6 +294,42 @@ def main():
     g3 = r.json() if r.status_code == 200 else {}
     check("単発ドリルの取得: passages は {}・設問に passage_id 無し", r.status_code == 200 and g3.get("passages") == {} and all("passage_id" not in q for q in g3.get("questions", [])), r.text[:160])
 
+    print("\n[7] 👀 問題を見る (admin preview・配信しない)")
+    mod._RATE_LIMIT_STORE.clear()
+    conn = mod.db(); c = conn.cursor()
+    def _counts(c):
+        out = []
+        for t in ("grammar_drills", "grammar_drill_assignments", "question_attempts"):
+            c.execute(f"SELECT COUNT(*) AS n FROM {t}"); out.append(c.fetchone()["n"])
+        return out
+    before = _counts(c); conn.close()
+    r = client.get("/api/admin/grammar/preview", params={"subject": "eiken", "unit": UNIT_C, "passage_count": 1}, headers=adm)
+    pv = r.json() if r.status_code == 200 else {}
+    check("長文型の単元: 200・本文 1 本・設問 3 問 (本文順)・答えと解説と全訳つき",
+          r.status_code == 200 and pv.get("passage_count") == 1 and len(pv.get("questions") or []) == 3
+          and all(q.get("passage_id") and q.get("answer") is not None and q.get("explanation") for q in pv["questions"])
+          and len(pv.get("passages") or {}) == 1 and all("body_ja" in v for v in pv["passages"].values()), r.text[:200])
+    check("設問は本文の順 (stem が ( 1 )( 2 )( 3 ) の順・passages のキーと一致)",
+          [q["no"] for q in pv.get("questions", [])] == [1, 2, 3]
+          and [q["stem"][:5] for q in pv.get("questions", [])] == ["( 1 )", "( 2 )", "( 3 )"]
+          and all(str(q["passage_id"]) in pv.get("passages", {}) for q in pv.get("questions", [])), str([q.get("stem") for q in pv.get("questions", [])])[:160])
+    r = client.get("/api/admin/grammar/preview", params={"subject": "eiken", "unit": "2級 単語", "count": 5}, headers=adm)
+    pv2 = r.json() if r.status_code == 200 else {}
+    check("本文の無い単元: 200・5 問・passages {}・passage_id 無し", r.status_code == 200 and len(pv2.get("questions") or []) == 5 and pv2.get("passages") == {} and pv2.get("passage_count") == 0 and all("passage_id" not in q for q in pv2["questions"]), r.text[:160])
+    r = client.get("/api/admin/grammar/preview", params={"subject": "eiken", "unit": "存在しない単元"}, headers=adm)
+    check("在庫の無い単元: 200・0 問 (エラーにしない)", r.status_code == 200 and r.json().get("questions") == [], r.text[:120])
+    r = client.get("/api/admin/grammar/preview", params={"subject": "eiken", "unit": UNIT_C})
+    check("未認証 → 401", r.status_code == 401)
+    r = client.get("/api/admin/grammar/preview", params={"subject": "eiken", "unit": UNIT_C}, headers=tok)
+    check("生徒のトークン → 401 (答えつきの問題は生徒に見せない)", r.status_code == 401, r.text[:120])
+    r = client.get("/api/admin/grammar/preview", params={"subject": "eiken"}, headers=adm)
+    check("unit 無し → 422", r.status_code == 422)
+    r = client.get("/api/admin/grammar/preview", params={"subject": "klingon", "unit": UNIT_C}, headers=adm)
+    check("科目不明 → 422 (english に黙って倒さない)", r.status_code == 422, r.text[:120])
+    conn = mod.db(); c = conn.cursor()
+    after = _counts(c); conn.close()
+    check("プレビューは何も書かない (grammar_drills / assignments / question_attempts の行数が不変)", after == before, f"{before}→{after}")
+
     print()
     if FAILURES:
         print(f"❌ FAIL: {len(FAILURES)} 件")

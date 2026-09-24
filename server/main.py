@@ -45283,6 +45283,79 @@ def _grammar_load_passages(c, qrows, reveal=False):
     return out
 
 
+@app.get("/api/admin/grammar/preview")
+def admin_grammar_preview(
+    subject: str = "english",
+    unit: str = "",
+    count: int = 5,
+    passage_count: int = 1,
+    levels: str = "",
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧑‍🏫 admin: 単元の問題を答え・解説つきでランダムに見る (配信前の確認用・DB には何も書かない)。
+    塾長は生徒名簿に居ないので自分にドリルを配って確かめられない (2026-09-24「どんな問題か確認したい」) → CEO の「👀 問題を見る」がこれを呼ぶ。
+    長文型の単元 (本文あり) は本文 passage_count 本 (既定 1・上限 3) とその設問を本文順で、それ以外は count 問 (既定 5・上限 20)。
+    抽出は配信と同じ関数 (_grammar_pick_drill_passages / _grammar_pick_drill_question_ids) なので、見えるものと配られるものの形は同じ。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    subj = _canon_grammar_subject(subject)
+    if subj not in _GRAMMAR_CANON_SUBJECTS:
+        raise HTTPException(status_code=422, detail=f"科目が不明です: {subject!r}")
+    unit = (unit or "").strip()
+    if not unit:
+        raise HTTPException(status_code=422, detail="単元 (unit) を指定してください")
+    lv = [x.strip() for x in (levels or "").split(",") if x.strip() in GRAMMAR_LEVELS]
+    if not lv:
+        lv = list(GRAMMAR_LEVELS.keys())
+    try:
+        count = int(count)
+    except (TypeError, ValueError):
+        count = 5
+    try:
+        passage_count = int(passage_count)
+    except (TypeError, ValueError):
+        passage_count = 1
+    count = max(1, min(count, 20))
+    passage_count = max(1, min(passage_count, 3))
+    conn = db()
+    try:
+        c = conn.cursor()
+        n_pass = _grammar_unit_passage_count(c, subj, unit)
+        if n_pass > 0:
+            qids, pids = _grammar_pick_drill_passages(c, subj, unit, lv, passage_count, None)
+        else:
+            qids = _grammar_pick_drill_question_ids(c, subj, unit, False, lv, count, None)
+            pids = []
+        if not qids:
+            return {"ok": True, "subject": subj, "unit": unit, "passage_count": 0, "passages": {}, "questions": [],
+                    "stock_passages": int(n_pass), "levels": lv}
+        ph = ",".join(["?"] * len(qids))
+        _pcol = ", passage_id" if _grammar_has_passages() else ""
+        c.execute(f"SELECT id, stem, choices, answer, explanation, level{_pcol} FROM grammar_questions WHERE id IN ({ph})", tuple(qids))
+        rows = c.fetchall()
+        by_id = {int(r["id"]): r for r in rows}
+        questions = []
+        for qid in qids:   # 抽出した順 (本文順) を保つ。番号は返す設問だけで振る
+            r = by_id.get(int(qid))
+            if r is None:
+                continue
+            try:
+                choices = json.loads(r["choices"]) if isinstance(r["choices"], str) else list(r["choices"] or [])
+            except Exception:
+                choices = []
+            item = {"no": len(questions) + 1, "id": int(r["id"]), "stem": r["stem"], "choices": choices, "answer": r["answer"],
+                    "explanation": r["explanation"] or "", "level": r["level"]}
+            if "passage_id" in r.keys() and r["passage_id"] is not None:
+                item["passage_id"] = int(r["passage_id"])
+            questions.append(item)
+        passages = _grammar_load_passages(c, rows, reveal=True)   # 塾長には全訳も見せる
+        return {"ok": True, "subject": subj, "unit": unit, "passage_count": len(pids), "passages": passages,
+                "questions": questions, "stock_passages": int(n_pass), "levels": lv}
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/grammar/import")
 def admin_grammar_import(
     payload: dict,
