@@ -5,10 +5,10 @@
     "type_ja": "型A：変化 → 利点 → 問題（とその結果）",
     "paras": [
       "Electric scooters that can be rented through smartphone apps have appeared in many cities around the world. Users simply unlock a scooter with their phone, ride it to their destination, and leave it there for the next user. In Japan, a revised traffic law that took effect in 2023 made it possible for people aged 16 or over to ride certain small electric scooters without a driver's license, and rental services have since expanded in major cities.",
-      "Supporters say that these scooters are a convenient and environmentally friendly way to travel short distances. They are especially useful for trips that are too far to walk but too short to justify taking a taxi, such as getting from a train station to an office. Because they run on electricity, they produce no exhaust gas, and some city officials hope that they will encourage residents to use their cars less often.",
-      "However, the rapid spread of electric scooters has raised safety concerns. The number of accidents involving riders has increased, and some riders have been seen breaking traffic rules, for example by running red lights or riding after drinking alcohol. Pedestrians, especially elderly people, often feel threatened when scooters pass close by at high speed. As a result, some cities overseas have banned rental scooters altogether, while others have introduced stricter rules, including lower speed limits and heavier fines."
+      "Supporters say that these scooters are a convenient and environmentally friendly way to travel short distances. They are especially useful for trips that are too far to walk but too short to justify taking a taxi, such as getting from a train station to an office. Because they run on electricity, they produce no exhaust fumes, and some city officials hope that they will encourage residents to use their cars less often.",
+      "However, the rapid spread of electric scooters has raised safety concerns. The number of accidents involving riders has increased, and some riders have been caught breaking traffic rules, for example by running red lights or riding after drinking alcohol. Pedestrians, especially elderly people, often feel threatened when scooters pass close by at high speed. As a result, some cities overseas have banned rental scooters altogether, while others have introduced stricter rules, including lower speed limits and heavier fines."
     ],
-    "model": "Rental electric scooters that are unlocked with smartphone apps have spread in cities worldwide, and Japan has recently relaxed its rules on riding them. They provide a convenient, emission-free way to cover short distances and could reduce car use. However, an increase in accidents, riders who ignore traffic rules, and pedestrians' fears have led some cities to ban them and others to tighten regulations.",
+    "model": "Rental electric scooters that are unlocked with smartphone apps have spread in cities worldwide, and Japan has recently relaxed its rules on riding them. Supporters say they offer a convenient, emission-free way to cover short distances and could reduce car use. However, an increase in accidents, rule-breaking by riders, and pedestrians' fears have led some cities to ban them and others to tighten regulations.",
     "para_roles": [
       {
         "role": "変化",
@@ -56,7 +56,7 @@
       },
       {
         "src": "breaking traffic rules, for example by running red lights or riding after drinking alcohol",
-        "dst": "riders who ignore traffic rules",
+        "dst": "rule-breaking by riders",
         "how": "具体 → 抽象"
       },
       {
@@ -142,7 +142,7 @@
         },
         {
           "point": "Working conditions",
-          "topic_en": "Second, Japan must first improve the working conditions of the foreign workers who are already here.",
+          "topic_en": "Second, before accepting more workers, Japan needs to improve the working conditions of those who are already here.",
           "support_ja": "低い賃金や長時間労働が問題になってきた。受け入れを増やす前に、公正な待遇を保証するしくみを整えるべきだ。"
         }
       ]

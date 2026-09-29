@@ -8,7 +8,7 @@
       "Supporters of cashless payments point out several benefits. Customers can pay quickly without searching for coins, and they can easily check their spending records on their phones. Businesses also gain, because they spend less time counting cash at the end of the day or taking it to the bank. In addition, some experts believe that electronic records make it harder for people to hide their income in order to avoid paying taxes.",
       "Nevertheless, not everyone is ready to give up cash. Many elderly people find payment apps confusing, and some small shops are reluctant to accept cashless payments because they have to pay fees to the payment companies. There are also concerns about security, as personal information could be stolen by criminals. Furthermore, power outages during natural disasters can make electronic payments impossible, which is one reason why many people still keep some cash at home."
     ],
-    "model": "Although Japanese people have traditionally preferred cash, cashless payment methods have recently become popular, partly thanks to government incentives. They let customers pay faster and track their spending, spare businesses the trouble of handling cash, and may help prevent tax evasion. However, older people often find them difficult, small stores dislike the fees, personal data may be stolen, and they cannot be used during blackouts caused by disasters.",
+    "model": "Although Japanese people have traditionally preferred cash, cashless payment methods have recently become popular, partly thanks to government incentives. They let customers pay faster and track their spending, save businesses time handling cash, and may help prevent tax evasion. However, older people often find them difficult, small stores dislike the fees, personal data may be stolen, and blackouts caused by disasters can make such payments impossible.",
     "para_roles": [
       {
         "role": "背景",
@@ -46,7 +46,7 @@
       },
       {
         "src": "counting cash at the end of the day or taking it to the bank",
-        "dst": "the trouble of handling cash",
+        "dst": "save businesses time handling cash",
         "how": "具体 → 抽象"
       },
       {
@@ -105,8 +105,8 @@
     ],
     "paras": [
       "I disagree with the idea that students should be allowed to use AI tools when doing their homework. I have two reasons for this opinion.",
-      "First, relying on AI would prevent students from truly learning. Homework is meant to make students think through problems by themselves. If an AI tool writes their essays or solves their math problems, they may submit perfect answers without understanding the content, and their skills will not improve.",
-      "Second, allowing AI would make homework unfair. Students who have access to advanced AI services could easily earn top marks, while those who choose to work honestly might receive lower grades despite their efforts. Moreover, teachers would find it almost impossible to tell how much of the work each student actually did.",
+      "First, relying on AI would prevent students from truly learning. Homework is meant to make students think through problems by themselves. If an AI tool writes their essays or solves their math problems, they may submit excellent work without understanding the content, and their skills will not improve.",
+      "Second, allowing AI would make homework unfair. Students who have access to advanced AI services could easily earn top marks, while those who do not might receive lower grades despite their efforts. Moreover, teachers would find it almost impossible to tell how much of the work each student actually did.",
       "For these reasons, I believe that students should not be permitted to use AI tools for their homework."
     ],
     "expressions": [

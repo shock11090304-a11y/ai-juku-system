@@ -8,7 +8,7 @@
       "Supporters say that cultivated meat could solve many of the problems caused by conventional livestock farming. Raising cattle requires vast areas of land as well as huge quantities of water and feed, and the livestock industry is responsible for a significant share of the world's greenhouse gas emissions. Growing meat from cells could greatly reduce this environmental impact. Moreover, because animals do not have to be slaughtered for their meat, people who are concerned about animal welfare may be able to eat meat without feeling guilty.",
       "However, many obstacles remain. At present, cultivated meat costs far more to produce than conventional meat, and manufacturing it in large quantities has proved difficult. The process also consumes a great deal of energy, so its environmental benefits may be smaller than expected unless renewable power is used. In addition, surveys show that many consumers feel uncomfortable about eating meat made in a factory, and some governments have even banned its sale in order to protect traditional farmers."
     ],
-    "model": "Lab-grown meat, which is made by growing animal cells in tanks, has already been approved for sale in some countries. Advocates believe it could lessen the environmental burden of livestock farming and address concerns about animal welfare. However, it is costly and hard to mass-produce, its high energy use may limit its environmental benefits, and it faces resistance from consumers and even sales bans.",
+    "model": "Lab-grown meat, which is made by growing animal cells in tanks, has already been approved for sale in some countries. Advocates believe it could lessen the environmental burden of livestock farming and address concerns about animal welfare. However, it is costly and hard to mass-produce, its high energy use may limit its environmental benefits, and it faces consumer resistance and even sales bans.",
     "para_roles": [
       {
         "role": "背景",
@@ -71,7 +71,7 @@
       },
       {
         "src": "many consumers feel uncomfortable about eating meat made in a factory",
-        "dst": "resistance from consumers",
+        "dst": "consumer resistance",
         "how": "文 → 名詞句"
       },
       {
@@ -98,7 +98,7 @@
         "why_ja": "禁止の理由の細部"
       }
     ],
-    "note_ja": "cultivated meat のような本文の中心語はそのまま使ってもよいが、lab-grown meat と言い換えられると「できるだけ自分の言葉で」という指示に沿いやすい。第3段落は課題が3つ（費用・エネルギー・受け入れ）。最後の販売禁止は、消費者の抵抗とまとめて faces resistance … and even sales bans と1つの動詞で処理している。"
+    "note_ja": "cultivated meat のような本文の中心語はそのまま使ってもよいが、lab-grown meat と言い換えられると「できるだけ自分の言葉で」という指示に沿いやすい。第3段落は課題が3つ（費用・エネルギー・受け入れ）。最後の販売禁止は、消費者の抵抗とまとめて faces consumer resistance and even sales bans と1つの動詞で処理している。"
   },
   "essay": {
     "topic": "Agree or disagree: Governments should spend more money on space exploration",
@@ -116,7 +116,7 @@
     "paras": [
       "I disagree with the idea that governments should spend more money on space exploration. I have two reasons for this opinion.",
       "First, governments have limited budgets and more urgent priorities. In Japan, for example, the population is aging rapidly, and the costs of healthcare and pensions keep rising. Spending huge sums on rockets and space stations would leave less money for services that directly affect people's daily lives.",
-      "Second, problems on Earth, especially environmental ones, require immediate attention. Climate change is already causing heat waves, floods, and droughts around the world. In addition, rocket launches themselves release pollutants into the atmosphere. Rather than exploring distant planets, governments should invest in renewable energy and disaster prevention to protect the planet we live on now.",
+      "Second, problems on Earth, especially environmental ones, require immediate attention. Climate change is already making heat waves, floods, and droughts more frequent and severe around the world. In addition, rocket launches themselves release pollutants into the atmosphere. Rather than exploring distant planets, governments should invest in renewable energy and disaster prevention to protect the planet we live on now.",
       "For these reasons, I believe that governments should not increase their spending on space exploration."
     ],
     "expressions": [
