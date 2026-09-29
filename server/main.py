@@ -45087,6 +45087,8 @@ _GRAMMAR_SUBJECT_UNIT_ORDER = {
     # 🧒 2026-09-29 中学社会 (高校受験)。単元は scripts/chugaku_dojo/units.json の shakai の filter と同じ並び・同じ文字列 (空白も含む)
     "chugaku_shakai": ["世界地理", "日本地理", "歴史 古代", "歴史 中世", "歴史 近世", "歴史 近代", "歴史 現代",
                        "公民 政治", "公民 経済", "公民 国際", "資料読み取り"],
+    # 🧒 2026-09-29 中学国語 (高校受験)。units.json の kokugo のうち本文を使わない6単元 (読解の2単元は本文つきなので入れていない)
+    "chugaku_kokugo": ["漢字", "語句", "文法", "敬語", "古文", "詩歌"],
     # 🏅 英検 語彙: 級 → 単語/句動詞 の順 (シード seed-data/eiken_vocab_pool_v1.json の unit 名と完全一致させる)
     "eiken": ["2級 単語", "2級 句動詞・熟語", "準1級 単語", "準1級 句動詞・熟語",
               # 📖 長文型 (本文 + 設問)。在庫は本文の本数で数える
@@ -45114,7 +45116,7 @@ _GRAMMAR_SUBJECT_UNIT_ORDER = {
 #     その前提で組まれている。'chugaku_math' で記録すると中学生の弱点プリントの対象 (subject='chugaku') から外れ、
 #     同じ「正負の数」の弱点が入試道場とドリルで別々に数えられてしまう。
 _GRAMMAR_CANON_SUBJECTS = {"english", "math", "physics", "chemistry", "biology", "earth", "japanese", "social",
-                           "chugaku", "eiken", "chugaku_math", "chugaku_rika", "chugaku_shakai"}
+                           "chugaku", "eiken", "chugaku_math", "chugaku_rika", "chugaku_shakai", "chugaku_kokugo"}
 _GRAMMAR_SUBJECT_ALIASES = {
     "英語": "english", "eng": "english", "english grammar": "english", "英文法": "english",
     "数学": "math", "mathematics": "math", "数iii": "math", "数学iii": "math",
@@ -45131,6 +45133,7 @@ _GRAMMAR_SUBJECT_ALIASES = {
     "中学数学": "chugaku_math", "chugaku math": "chugaku_math",
     "中学理科": "chugaku_rika", "chugaku rika": "chugaku_rika",
     "中学社会": "chugaku_shakai", "chugaku shakai": "chugaku_shakai",
+    "中学国語": "chugaku_kokugo", "chugaku kokugo": "chugaku_kokugo",
     # 🏅 英検 語彙 (2級・準1級)。english (英文法) とは別バンク
     "英検": "eiken", "英検語彙": "eiken", "英検 語彙": "eiken", "eiken vocab": "eiken", "eiken2": "eiken", "eikenp1": "eiken",
 }
@@ -45153,6 +45156,7 @@ _GRAMMAR_SUBJECT_LABEL_JA = {
     "chugaku_math": "中学数学",
     "chugaku_rika": "中学理科",
     "chugaku_shakai": "中学社会",
+    "chugaku_kokugo": "中学国語",
 }
 def _drill_attempt_subject(drill_subject) -> str:
     """単元ドリルの解答を question_attempts に記録するときの subject。

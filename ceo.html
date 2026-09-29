@@ -649,7 +649,7 @@
       <!-- ✏️ 問題プール補充 (2026-06-19): grammar_questions に手作り4択(3名検証済)を無課金で一括投入 -->
       <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.30);border-radius:10px;padding:0.8rem;margin-bottom:0.8rem;">
         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-          <button id="grammarPoolImportBtn" type="button" data-seed="/seed-data/grammar_drill_pool_v1.json,/seed-data/grammar_drill_pool_v2.json" data-size="1688" title="※このボタンは高校英語(英文法)ドリルのみ補充します。中学英語・中学数学・中学理科・中学社会は下の🧒ボタン、高校の他科目(数学・理科 等)はシステム側で取込済みで補充ボタンはありません。&#10;英文法ドリルの問題プール(grammar_questions)を補充: 20単元×基礎/標準/やや難の手作り4択1,688問 (第1弾703問 + 第2弾985問。いずれも3名独立ソルバーの盲検で全員一致した問題だけを採用・解説は別担当が校閲・正解位置均等化・説明は値参照)。このボタンの取込後、在庫は1単元あたり79〜87問 (単元バッジは選ばれたレベルの在庫を出すので、既定の「標準〜やや難」では68〜75と表示される)。同じ単元を繰り返し配信しても問題が被りにくい。ただし基礎レベルは1単元11〜12問のままで、ここは増えない。再押下しても重複は自動スキップ。ワンクリック取込・無課金。" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">✏️ 英文法ドリルを補充 (英語専用・20単元 1,688問・無課金)</button>
+          <button id="grammarPoolImportBtn" type="button" data-seed="/seed-data/grammar_drill_pool_v1.json,/seed-data/grammar_drill_pool_v2.json" data-size="1688" title="※このボタンは高校英語(英文法)ドリルのみ補充します。中学英語・中学数学・中学理科・中学社会・中学国語は下の🧒ボタン、高校の他科目(数学・理科 等)はシステム側で取込済みで補充ボタンはありません。&#10;英文法ドリルの問題プール(grammar_questions)を補充: 20単元×基礎/標準/やや難の手作り4択1,688問 (第1弾703問 + 第2弾985問。いずれも3名独立ソルバーの盲検で全員一致した問題だけを採用・解説は別担当が校閲・正解位置均等化・説明は値参照)。このボタンの取込後、在庫は1単元あたり79〜87問 (単元バッジは選ばれたレベルの在庫を出すので、既定の「標準〜やや難」では68〜75と表示される)。同じ単元を繰り返し配信しても問題が被りにくい。ただし基礎レベルは1単元11〜12問のままで、ここは増えない。再押下しても重複は自動スキップ。ワンクリック取込・無課金。" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">✏️ 英文法ドリルを補充 (英語専用・20単元 1,688問・無課金)</button>
           <span id="grammarPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">押すと全20単元のドリル在庫が緑(25問+)になります。第1弾703問＋第2弾985問を続けて取り込み、すでに入っている分は自動でスキップします。</span>
         </div>
         <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
@@ -667,6 +667,10 @@
         <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
           <button id="chugakuShakaiPoolImportBtn" type="button" data-seed="/seed-data/chugaku_shakai_pool_v1.json" data-size="714" data-subject="chugaku_shakai" data-label="中学社会" title="🧒 中学社会(高校受験)のドリル在庫を補充: 入試道場と同じ11単元 (世界地理・日本地理・歴史5区分・公民3区分・資料読み取り) の4択。独立した3名が正解を伏せて解き、全員一致した問題だけを採用し、同じ論点を同じ文の枠で聞く問題は外してあります。地図・グラフ・写真が無いと解けない問題は入れていません (資料の内容は文章で書いてあります)。年によって変わる統計や順位は正解にしていません。&#10;既定の「標準〜やや難」が1単元50問以上なので、同じ単元で25問のドリルを2回まで別の問題で配れます(2回目は🎯弱点対策から入ったときだけ前回の25問を除外します)。&#10;生徒の解答は入試道場と同じ「中学」の弱点としてまとめて記録されるので、週次プリントや弱点のおすすめにもつながります。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#b45309,#92400e);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🧒 中学社会ドリルを補充 (11単元 714問・無課金)</button>
           <span id="chugakuShakaiPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">中学生(高校受験)用。押したあと①科目で「🧒 中学社会」を選ぶと使えます。全11単元に 1単元 59〜69 問が入ります。</span>
+        </div>
+        <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+          <button id="chugakuKokugoPoolImportBtn" type="button" data-seed="/seed-data/chugaku_kokugo_pool_v1.json" data-size="404" data-subject="chugaku_kokugo" data-label="中学国語" title="🧒 中学国語(高校受験)のドリル在庫を補充: 入試道場と同じ単元のうち本文を使わない6単元 (漢字・語句・文法・敬語・古文・詩歌) の4択。独立した3名が正解を伏せて解き、全員一致した問題だけを採用し、同じ論点を同じ文の枠で聞く問題は外してあります。問う語句は〔 〕で示しています (画面に下線は出せないため)。読解 (説明的文章・文学的文章) は本文つきなのでここには入っていません。&#10;既定の「標準〜やや難」が1単元50問以上なので、同じ単元で25問のドリルを2回まで別の問題で配れます(2回目は🎯弱点対策から入ったときだけ前回の25問を除外します)。&#10;生徒の解答は入試道場と同じ「中学」の弱点としてまとめて記録されるので、週次プリントや弱点のおすすめにもつながります。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#be123c,#9f1239);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🧒 中学国語ドリルを補充 (6単元 404問・無課金)</button>
+          <span id="chugakuKokugoPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">中学生(高校受験)用。押したあと①科目で「🧒 中学国語」を選ぶと使えます。6単元に 1単元 66〜69 問が入ります (読解は含みません)。</span>
         </div>
         <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
           <button id="eikenPoolImportBtn" type="button" data-seed="/seed-data/eiken_vocab_pool_v1.json" data-size="400" title="🏅 英検の語彙ドリル (大問1 形式・空所4択) を補充: 2級 130問 (対策問題集 Vol.1/2 + 完全模試 全3回) と 準1級 270問 (本番形式演習 第1弾/第2弾 + 完全模試 全3回)。全部この塾の書き下ろし (過去問なし)。取込後は①科目で「🏅 英検」を選ぶと単元が「2級 単語 / 2級 句動詞・熟語 / 準1級 単語 / 準1級 句動詞・熟語」に入れ替わります。英文法・中学英語のプールとは別バンクなので、診断・今日の1問・弱点ドリルに英検の問題が混ざることはありません。level は全問「標準」なので既定の「標準〜やや難」で全在庫が対象です。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🏅 英検 語彙ドリルを補充 (2級 130問・準1級 270問・無課金)</button>
@@ -696,6 +700,7 @@
             <option value="chugaku_math">🧒 中学数学 (高校受験)</option>
             <option value="chugaku_rika">🧒 中学理科 (高校受験)</option>
             <option value="chugaku_shakai">🧒 中学社会 (高校受験)</option>
+            <option value="chugaku_kokugo">🧒 中学国語 (高校受験)</option>
             <option value="eiken">🏅 英検 (語彙・長文 / 2級・準1級)</option>
           </select>
           <span style="color:#71717a;font-size:0.72rem;margin-left:0.3rem;">選ぶと下の単元の在庫が切り替わります</span>
@@ -4818,7 +4823,7 @@
       //   代わりに生徒リストに灰色の「学年?」チップを出して、判定していないことを見せている。
       const _subjJa = { english: '英語(英文法)', math: '数学', physics: '物理', chemistry: '化学',
                         biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語(高校受験)', eiken: '英検',
-                        chugaku_math: '中学数学(高校受験)', chugaku_rika: '中学理科(高校受験)', chugaku_shakai: '中学社会(高校受験)' };
+                        chugaku_math: '中学数学(高校受験)', chugaku_rika: '中学理科(高校受験)', chugaku_shakai: '中学社会(高校受験)', chugaku_kokugo: '中学国語(高校受験)' };
       const _sj = _gdSubject || 'english';
       const _isChu = _sj.startsWith('chugaku');   // 中学英語・中学数学 … (chugaku / chugaku_math …)
       // 🏅 英検は学年で縛らない (2級を中3が受ける・準1級を高1が受けることは普通にある)
@@ -4938,7 +4943,7 @@
       const visible = showAll ? entries : entries.slice(0, GROUP_LIMIT);
       let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.45rem;">';
       // 集約キーは "<科目>｜<単元>"。画面には単元名を出し、英文法以外のときだけ科目チップを添える
-      const SUBJ_JA = { english: '英文法', chugaku: '中学英語', chugaku_math: '中学数学', chugaku_rika: '中学理科', chugaku_shakai: '中学社会', eiken: '英検', math: '数学', physics: '物理', chemistry: '化学',
+      const SUBJ_JA = { english: '英文法', chugaku: '中学英語', chugaku_math: '中学数学', chugaku_rika: '中学理科', chugaku_shakai: '中学社会', chugaku_kokugo: '中学国語', eiken: '英検', math: '数学', physics: '物理', chemistry: '化学',
                         biology: '生物', earth: '地学', japanese: '国語', social: '社会' };
       html += visible.map(([gkey, ds], i) => {
         const sp = String(gkey).split('｜');
@@ -5293,10 +5298,12 @@
     async function chugakuMathPoolImport() { return _chugakuSubjectImport('chugakuMathPoolImportBtn', 'chugakuMathPoolImportMsg'); }
     async function chugakuRikaPoolImport() { return _chugakuSubjectImport('chugakuRikaPoolImportBtn', 'chugakuRikaPoolImportMsg'); }
     async function chugakuShakaiPoolImport() { return _chugakuSubjectImport('chugakuShakaiPoolImportBtn', 'chugakuShakaiPoolImportMsg'); }
+    async function chugakuKokugoPoolImport() { return _chugakuSubjectImport('chugakuKokugoPoolImportBtn', 'chugakuKokugoPoolImportMsg'); }
     window.chugakuPoolImport = chugakuPoolImport;
     window.chugakuMathPoolImport = chugakuMathPoolImport;
     window.chugakuRikaPoolImport = chugakuRikaPoolImport;
     window.chugakuShakaiPoolImport = chugakuShakaiPoolImport;
+    window.chugakuKokugoPoolImport = chugakuKokugoPoolImport;
     // 🏅 2026-09-24 [eiken-vocab]: 英検 語彙プールの補充。chugakuPoolImport と同じ流れ (400 問ずつ・dedup・無課金)。
     //   シードの各問が subject='eiken' を持ち、英文法 (english)・中学英語 (chugaku) のバンクには一切触れない。
     async function eikenPoolImport() {
@@ -5442,6 +5449,8 @@
       if (bcr) bcr.addEventListener('click', chugakuRikaPoolImport);
       const bcs = document.getElementById('chugakuShakaiPoolImportBtn');
       if (bcs) bcs.addEventListener('click', chugakuShakaiPoolImport);
+      const bck = document.getElementById('chugakuKokugoPoolImportBtn');
+      if (bck) bck.addEventListener('click', chugakuKokugoPoolImport);
       const be = document.getElementById('eikenPoolImportBtn');
       if (be) be.addEventListener('click', eikenPoolImport);
       const ber = document.getElementById('eikenReadingImportBtn');

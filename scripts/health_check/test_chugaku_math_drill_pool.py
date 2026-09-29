@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""🧒 中学の教科別ドリル (中学数学 chugaku_math・中学理科 chugaku_rika・中学社会 chugaku_shakai) の回帰テスト。
+"""🧒 中学の教科別ドリル (中学数学 chugaku_math・中学理科 chugaku_rika・中学社会 chugaku_shakai・中学国語 chugaku_kokugo) の回帰テスト。
    ファイル名は最初の教科 (数学) のまま。教科を足すときは SUBJECTS に1行足す。
 
 背景 (2026-09-28 塾長指示「さらに中学生用の問題を追加して」→ 数学・国語・理科・社会を1教科ずつ):
@@ -63,6 +63,12 @@ SUBJECTS = [
      "figure": re.compile(r"図のように|下の図|上の図|右の図|左の図|次の図|右図|左図|上図|下図|図[0-9０-９]|表[0-9０-９]|表のように|下の表|右の表|次の表|"
                           r"グラフのように|グラフから|下のグラフ|右のグラフ|地図中|略地図|右の地図|下の地図|次の地図|資料[0-9０-９Ⅰ-Ⅴ]|右の資料|下の資料|次の資料|"
                           r"写真の|写真から|次の年表|右の年表|下の年表|次の雨温図|右の雨温図|(?<![一-龥])[上下左右次]の(?:地図|資料|写真|年表|グラフ|雨温図)|年表中の|\n"),
+     "old_terms": None},
+    {"subject": "chugaku_kokugo", "label": "中学国語", "seed": "chugaku_kokugo_pool_v1.json", "part": "kokugo", "min_n": 330,
+     "email": "chukokugo", "record_topic": "敬語",
+     "hs": None,
+     "figure": re.compile(r"図のように|下の図|上の図|右の図|左の図|次の図|図[0-9０-９]|表[0-9０-９]|下の表|右の表|次の表|"
+                          r"資料[0-9０-９Ⅰ-Ⅴ]|写真の|傍線|下線|線部|波線部|<u>|</u>|\n"),
      "old_terms": None},
 ]
 
@@ -288,15 +294,17 @@ def main():
     print("\n━━━━ 記録科目のヘルパ・弱点キー (既存の挙動を変えない) ━━━━")
     f = mod._drill_attempt_subject
     check("中学英語 chugaku → chugaku", f("chugaku") == "chugaku")
-    check("中学の教科 (chugaku_math・chugaku_rika・chugaku_shakai) → chugaku",
-          f("chugaku_math") == "chugaku" and f("chugaku_rika") == "chugaku" and f("chugaku_shakai") == "chugaku")
+    check("中学の教科 (chugaku_math・chugaku_rika・chugaku_shakai・chugaku_kokugo) → chugaku",
+          f("chugaku_math") == "chugaku" and f("chugaku_rika") == "chugaku" and f("chugaku_shakai") == "chugaku" and f("chugaku_kokugo") == "chugaku")
     check("高校 english → english・math → math・eiken → eiken", (f("english"), f("math"), f("eiken")) == ("english", "math", "eiken"))
     check("未指定 → english (従来の既定)", f(None) == "english" and f("") == "english")
-    check("表記ゆれも中学にまとめる (「中学数学」「中学理科」「中学社会」・大文字)",
-          f("中学数学") == "chugaku" and f("中学理科") == "chugaku" and f("中学社会") == "chugaku" and f(" CHUGAKU_MATH ") == "chugaku")
+    check("表記ゆれも中学にまとめる (「中学数学」「中学理科」「中学社会」「中学国語」・大文字)",
+          f("中学数学") == "chugaku" and f("中学理科") == "chugaku" and f("中学社会") == "chugaku" and f("中学国語") == "chugaku"
+          and f(" CHUGAKU_MATH ") == "chugaku")
     k = mod._weakness_subject_key
     check("弱点キー: 中学の教科は 'chugaku' の1バケット",
-          (k("chugaku_math"), k("中学数学"), k("chugaku_rika"), k("中学理科"), k("chugaku_shakai"), k("中学社会"), k("chugaku")) == ("chugaku",) * 7)
+          (k("chugaku_math"), k("中学数学"), k("chugaku_rika"), k("中学理科"), k("chugaku_shakai"), k("中学社会"),
+           k("chugaku_kokugo"), k("中学国語"), k("chugaku")) == ("chugaku",) * 9)
     check("弱点キー: 高校の english / math / eiken・日本語の「数学」は変わらない",
           (k("english"), k("math"), k("eiken"), k("数学")) == ("english", "math", "eiken", "math"))
 
