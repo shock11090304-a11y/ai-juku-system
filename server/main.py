@@ -45068,7 +45068,11 @@ GRAMMAR_LEVELS = {"basic": "基礎", "standard": "標準", "advanced": "やや�
 #   ★ scripts/chugaku_dojo/units.json の eng の filter と同じ並び・同じ文字列にすること
 #     (入試道場の単元カタログと表記がずれると、弱点 topic との突き合わせが効かなくなる)。
 #     カタログ13件のうち「長文読解」(reading:true) だけは 4択ドリルに載らないので入れていない。
-#     読解を取り込んだら、ここに足さないと学習順ではなく末尾の在庫順に回る。
+#     読解を取り込むときは、先にここへ足すこと (足さないと下の ★ で取込が弾く)。
+#   ★ 2026-09-29: ここに載っている科目は、取込 (/api/admin/grammar/import) の **単元名の許可リスト** も兼ねる。
+#     載っていない単元名の問題・本文は入れずに errors に数え、応答の unknown_units / warning で知らせる。
+#     以前は綴り違い (「一時関数」等) も黙って入り、単元一覧の末尾に別単元として並び、弱点 topic も
+#     入試道場の単元フィルタと一致しない行になっていた (取込は INSERT 専用なので、入ったら手で直すしかない)。
 _GRAMMAR_SUBJECT_UNIT_ORDER = {
     "chugaku": ["be動詞・一般動詞", "時制", "助動詞", "名詞・代名詞・冠詞", "比較", "不定詞・動名詞",
                 "分詞", "受動態", "現在完了", "関係代名詞", "接続詞・前置詞", "会話表現"],
@@ -45393,6 +45397,46 @@ def admin_grammar_preview(
         conn.close()
 
 
+def _grammar_unknown_units_report(unknown_units: dict) -> dict:
+    """🧷 取込で弾いた「_GRAMMAR_SUBJECT_UNIT_ORDER に無い単元名」を応答用にまとめる。
+    unknown_units: {(subject, unit, "問" | "本"): 件数}。無ければ {} (応答の形は従来のまま)。"""
+    if not unknown_units:
+        return {}
+
+    def _show(u, n):
+        # 見えない文字 (全角空白・NBSP・ゼロ幅・BOM・改行・壊れたサロゲート) は \uXXXX と見える形にしてから切る。
+        #   どこが違うのかが読め、応答の JSON 化 (UTF-8 で落ちて 500 になる) やログの行も壊さない
+        s = "".join(ch if ch.isprintable() else f"\\u{ord(ch):04x}" for ch in u)
+        return s if len(s) <= n else s[:n] + "…"
+
+    def _fold(u):
+        # 見た目の比較用: 全角/半角・見えない文字・結合文字の差を消し、取り違えやすい字 (ー/一・ニ/二・·/・) をそろえる
+        s = unicodedata.normalize("NFKC", u)
+        s = "".join(ch for ch in s if ch.isprintable() and unicodedata.category(ch) != "Mn")
+        return s.translate(str.maketrans("ーニ·", "一二・"))
+
+    items = sorted(unknown_units.items(), key=lambda kv: (-kv[1], kv[0]))
+    shown = items[:20]  # 壊れたシードで単元名が大量に来ても応答を膨らませない
+    entries, parts = [], []
+    for (s, u, k), n in shown:
+        # 画面では登録済みの単元と同じに見える綴り違い (全角の「１」・見えない文字・ー/一 等) は、どの単元のつもりかを添える
+        like = next((v for v in _GRAMMAR_SUBJECT_UNIT_ORDER.get(s, []) if _fold(v) == _fold(u)), None)
+        entry = {"subject": s, "unit": _show(u, 100), "kind": "passage" if k == "本" else "question", "count": n}
+        if like:
+            entry["looks_like"] = like
+        entries.append(entry)
+        parts.append(f"{_grammar_subject_label_ja(s)}「{_show(u, 40)}」{'本文' if k == '本' else ''}{n}{k}"
+                     + (f" (登録済みの「{like}」と見た目が同じで文字が違う)" if like else ""))
+    more = f" ほか {len(items) - len(shown)} 種類" if len(items) > len(shown) else ""
+    return {
+        "unknown_units": entries,
+        "warning": ("単元名が登録されている単元と一致しないため、取り込まなかった問題・本文があります (エラーに計上): "
+                    + "、".join(parts) + more
+                    + "。単元名は server/main.py の _GRAMMAR_SUBJECT_UNIT_ORDER と完全一致させてください (綴り・空白・全角/半角)。"
+                    + "新しい単元を足した直後なら、サーバの反映を待って押し直せば残りだけ入ります。"),
+    }
+
+
 @app.post("/api/admin/grammar/import")
 def admin_grammar_import(
     payload: dict,
@@ -45401,7 +45445,9 @@ def admin_grammar_import(
 ):
     """🧑‍🏫 admin/CRON: grammar_questions に分類済み英文法問題を一括投入。
     payload: { questions: [ {unit, level, stem, choices:[..], answer:int(0始まり), explanation?, source?, source_exam_question_id?} ], dedup?: true }
-    dedup=true (既定) なら同一 (source_exam_question_id + stem) / (stem + unit) は skip。再投入で重複しない。"""
+    dedup=true (既定) なら同一 (source_exam_question_id + stem) / (stem + unit + subject) は skip。再投入で重複しない。
+    単元の並びが決まっている科目 (_GRAMMAR_SUBJECT_UNIT_ORDER = 中学英語・中学数学・英検) は、そこに無い unit を入れずに
+    errors に数え、応答の unknown_units / warning で返す。english (GRAMMAR_UNITS で skip) と他科目 (任意 unit) は従来どおり。"""
     if not _grammar_admin_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
     questions = payload.get("questions") or []
@@ -45418,6 +45464,7 @@ def admin_grammar_import(
     inserted = 0
     skipped = 0
     errors = 0
+    unknown_units = {}  # 🧷 (subject, unit, "問" | "本") -> 件数。_GRAMMAR_SUBJECT_UNIT_ORDER に無い単元名で弾いた分
     conn = db()
     try:
         c = conn.cursor()
@@ -45435,7 +45482,13 @@ def admin_grammar_import(
                     skipped += 1  # 非canonical科目は弱点集計に乗らないため弾く (レビュー指摘#2)
                     continue
                 if subj == "english" and unit not in GRAMMAR_UNITS:
-                    skipped += 1  # 英語は想定外単元名を弾く (集計・表示の一貫性)。他科目は任意 unit を許可。
+                    skipped += 1  # 英語は想定外単元名を弾く (集計・表示の一貫性)。他科目は下の並び順つき科目を除き任意 unit を許可。
+                    continue
+                if subj in _GRAMMAR_SUBJECT_UNIT_ORDER and unit not in _GRAMMAR_SUBJECT_UNIT_ORDER[subj]:
+                    # 🧷 並び順の決まっている科目 (中学英語・中学数学・英検) の知らない単元名 = 綴り違い。入れずにエラーとして知らせる
+                    #   (skip に数えると CEO の補充ボタンが「すでに入っている分」と同じ ✅ で終わり、弾いたことが見えない)
+                    errors += 1
+                    unknown_units[(subj, unit, "問")] = unknown_units.get((subj, unit, "問"), 0) + 1
                     continue
                 try:
                     answer = int(answer)
@@ -45495,6 +45548,10 @@ def admin_grammar_import(
                     if (not unit or not body or not isinstance(pqs, list) or not pqs
                             or subj not in _GRAMMAR_CANON_SUBJECTS or subj == "english"):
                         p_skipped += 1
+                        continue
+                    if subj in _GRAMMAR_SUBJECT_UNIT_ORDER and unit not in _GRAMMAR_SUBJECT_UNIT_ORDER[subj]:
+                        errors += 1  # 🧷 設問と同じ: 知らない単元名の本文は設問ごと入れず、エラーとして知らせる
+                        unknown_units[(subj, unit, "本")] = unknown_units.get((subj, unit, "本"), 0) + 1
                         continue
                     level = (p.get("level") or "standard").strip()
                     if level not in GRAMMAR_LEVELS:
@@ -45559,10 +45616,15 @@ def admin_grammar_import(
                         pass
                     return {"ok": False, "inserted": 0, "skipped": skipped, "errors": errors, "received": len(questions),
                             "passages_inserted": 0, "passages_skipped": p_skipped, "passages_received": len(passages),
-                            "detail": "本文の取込中にエラーが起きたため、この要求の取込は全部取り消しました (同じ内容を再送できます)"}
+                            "detail": "本文の取込中にエラーが起きたため、この要求の取込は全部取り消しました (同じ内容を再送できます)",
+                            **_grammar_unknown_units_report(unknown_units)}
         conn.commit()
+        unknown_report = _grammar_unknown_units_report(unknown_units)
+        if unknown_report:
+            log.warning(f"[GrammarImport] {unknown_report['warning']}")
         return {"ok": True, "inserted": inserted, "skipped": skipped, "errors": errors, "received": len(questions),
-                "passages_inserted": p_inserted, "passages_skipped": p_skipped, "passages_received": len(passages)}
+                "passages_inserted": p_inserted, "passages_skipped": p_skipped, "passages_received": len(passages),
+                **unknown_report}
     finally:
         conn.close()
 

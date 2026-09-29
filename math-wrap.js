@@ -5,9 +5,12 @@
 // は KaTeX auto-render が拾えず「\geq」やフォント未収録記号のまま表示される。
 // これを描画直前に \(...\) で包んで renderMathInElement (自前フォント) に載せる。
 //
-// canonical ロジック = app.js の _wrapBareMath。ただし √ の後ろの小数 (√0.25) を丸取りするのはこちらだけ
-// (2026-09-29。app.js は整数のみのまま = AI チャットでは √0.25 が √0 と .25 に割れる。直すなら app.js の ?v= も上げる)。app.js は単一 $ を delimiter に持つので
-// $...$ で包むが、learning-brain.js / mock-exam.js 等は通貨 $ 誤組版回避で単一 $ を
+// canonical ロジック = app.js の _wrapBareMath。√ の後ろの小数 (√0.25) の丸取りも 2026-09-29 に両方でそろえた
+// (こちらを先に直し、AI チャットの app.js が √0 と .25 に割れたまま残っていた)。トークンの正規表現は 2 か所に
+// 同じものがあるので、直すときは両方を同時に直し、読み込む HTML の ?v= も両方上げること。
+// ★ english-exam.js と ai-tutor-photo.html の pretifyMath は別系統の規則で、√ は整数だけのまま
+//   (english-exam では pretifyMath がこちらより先に走るので、そこでは √0.25 が今も √0 と .25 に割れる)。
+// app.js は単一 $ を delimiter に持つので $...$ で包むが、learning-brain.js / mock-exam.js 等は通貨 $ 誤組版回避で単一 $ を
 // delimiter に持たない。そこでこの共有版は **どの画面の delimiter 設定でも描画される
 // \(...\) で包む**。全 KaTeX 描画面 (SRS カード / 模試 / 英語試験 / 文法ドリル 等) で
 // renderMathInElement の直前に window.wrapBareMath(rootEl) を呼ぶだけで横展開できる。

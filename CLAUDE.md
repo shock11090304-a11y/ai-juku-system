@@ -157,7 +157,13 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - **シードの追加手順**: `seed-data/grammar_drill_pool_vN.json` を追加 → `ceo.html` の `#grammarPoolImportBtn` の
   `data-seed` にカンマ区切りで足し、`data-size` を合計問数に更新するだけ。ハンドラが順に POST する。
 - **取込 API の落とし穴**: `POST /api/admin/grammar/import` は 1 リクエスト **2000 問まで**。
-  `unit` は `server/main.py` の `GRAMMAR_UNITS` と**完全一致**でないと **無言で skip** される (英語のみ。他科目は任意 unit 可)。
+  `unit` は english なら `server/main.py` の `GRAMMAR_UNITS` と**完全一致**でないと **無言で skip** される。
+  `_GRAMMAR_SUBJECT_UNIT_ORDER` に載っている科目 (中学英語・中学数学・英検) は、そこに無い単元名の問題・本文を
+  **errors に数えて入れない** (2026-09-29)。CEO の補充ボタンは ⚠️「エラー N」と件数しか出さない。単元名は API 応答の
+  `unknown_units` / `warning` (登録済みの単元と見た目が同じ綴り違い = 全角・見えない文字・ー/一 は `looks_like` にその単元) と、
+  取込が最後まで通ったときは Railway のログ `[GrammarImport]` に出る。
+  新しい単元はシードより先にそこへ足すこと (Vercel が先に出るので、サーバ反映前に押すと弾かれる。反映後に押し直せば残りだけ入る)。
+  それ以外の科目は任意 unit 可。回帰テストは `scripts/health_check/test_grammar_import_units.py`。
   重複判定は `source_exam_question_id` があれば (その id + stem)、無ければ (stem + unit + subject) の完全一致。
   **押し直しても二重登録されない**代わりに、既存問題の解説を直したいときは再 import では**上書きされない** (INSERT 専用)。
   直すなら DB を直接更新するか、行を無効化 (`active=0`) してから入れ直すこと。

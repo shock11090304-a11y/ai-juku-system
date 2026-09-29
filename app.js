@@ -2984,7 +2984,7 @@ const _BARE_MATH_TOKEN_RE = new RegExp(
   + '|\\\\binom\\s*' + _BRACE + '\\s*' + _BRACE          // \binom{..}{..}
   + '|\\\\sqrt\\s*(?:\\[[^\\]]*\\])?\\s*' + _BRACE        // \sqrt[..]{..}
   + '|' + _BARE_LATEX_NOARG_RE.source                    // 引数なし関係/ギリシャ/演算子コマンド
-  + '|√\\d+'                                              // 素 Unicode √n
+  + '|√\\d+(?:\\.\\d+)?'                                  // 素 Unicode √n (√0.25 の小数まで丸取り。math-wrap.js と同じ規則)
   + '|[≦≧≤≥≠≒≈±∞]',                                       // 素 Unicode 記号 (⇒⇐⇔ は文章の矢印と衝突するため除外)
   'g');
 const _BARE_UNI_MAP = { '≦':'\\leqq','≧':'\\geqq','≤':'\\leq','≥':'\\geq','≠':'\\neq','≒':'\\fallingdotseq','≈':'\\approx','±':'\\pm','∞':'\\infty' };

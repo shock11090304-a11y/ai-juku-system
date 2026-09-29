@@ -33,6 +33,12 @@ on:
       - 'seed-data/chugaku_math_pool_v1.json'
       - 'seed-data/chugaku_rika_pool_v1.json'
       - 'scripts/chugaku_dojo/units.json'
+      # 🧷 取込の単元名検査 (test_grammar_import_units.py) はコミット済みのシードを全部取り込んで確かめる
+      #   (シードの単元名だけ直した push でも走らせる。英検 語彙の回帰テストも eiken_vocab を読む)
+      - 'seed-data/chugaku_drill_pool_v1.json'
+      - 'seed-data/eiken_vocab_pool_v1.json'
+      - 'seed-data/eiken_reading_pool_v1.json'
+      - 'seed-data/grammar_drill_weakness_v1.json'
       # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
       - 'lp.html'
       - 'checkout.html'
@@ -268,6 +274,15 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_chugaku_math_drill_pool.py
+
+      # 🧷 取込の単元名検査 (2026-09-29 fada278 レビュー): 並び順の決まっている科目 (中学英語・中学数学・英検 =
+      #   _GRAMMAR_SUBJECT_UNIT_ORDER) は知らない単元名 (綴り違い) を入れず errors + unknown_units / warning で返すこと・
+      #   コミット済みのシード 4 本が CEO のボタンと同じ送り方で全部入ること・english / 高校の他科目の挙動が変わらないこと。
+      - name: 単元ドリル 取込の単元名検査 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_grammar_import_units.py
 
       # 📖 長文型ドリル (2026-09-24 塾長指示): 本文 + 複数設問の取込 (本文ごとの dedup)・本文単位のドリル作成 (順序保持・
       #   前回の本文を除外)・生徒の取得/提出が本文 map を返す・分析が passage_id を持つ・単発問題の経路は不変。
