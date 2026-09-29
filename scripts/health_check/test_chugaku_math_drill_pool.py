@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""🧒 中学の教科別ドリル (中学数学 chugaku_math・中学理科 chugaku_rika) の回帰テスト。
+"""🧒 中学の教科別ドリル (中学数学 chugaku_math・中学理科 chugaku_rika・中学社会 chugaku_shakai) の回帰テスト。
    ファイル名は最初の教科 (数学) のまま。教科を足すときは SUBJECTS に1行足す。
 
 背景 (2026-09-28 塾長指示「さらに中学生用の問題を追加して」→ 数学・国語・理科・社会を1教科ずつ):
@@ -10,7 +10,7 @@
 教科ごとに固定する性質:
   1. シードの形式: subject・unit は server の _GRAMMAR_SUBJECT_UNIT_ORDER[subject] と完全一致 (入試道場のカタログ順)・
      4 択相異・answer が範囲内・解説 60〜200 字で ①/「選択肢」が無い・stem 一意・半角 "-" が無い・
-     図 (理科は表・グラフも) を前提にした問題が無い・高校範囲の語が無い (理科は旧用語「優性・劣性」も)
+     図 (理科は表・グラフも、社会は地図・資料・写真・年表も) を前提にした問題が無い・高校範囲の語が無い (理科は旧用語「優性・劣性」も)
   2. 取込 API が全問受理し (再取込は 0 件)、ほかの科目のバンクは増えない
   3. 単元一覧がカタログ順で在庫つき・科目ラベル
   4. 中学生に配信 → 取得 → 提出 が通り、question_attempts は subject='chugaku' / topic=単元名 で記録される。
@@ -56,6 +56,14 @@ SUBJECTS = [
      "figure": re.compile(r"図のように|下の図|上の図|右の図|左の図|次の図|右図|左図|上図|下図|図[0-9０-９]|表[0-9０-９]|表のように|下の表|右の表|次の表|"
                           r"グラフのように|グラフから|下のグラフ|右のグラフ|\n"),
      "old_terms": re.compile(r"優性|劣性")},
+    {"subject": "chugaku_shakai", "label": "中学社会", "seed": "chugaku_shakai_pool_v1.json", "part": "shakai", "min_n": 550,
+     "email": "chushakai", "record_topic": "公民 経済",
+     "drill_unit": "歴史 古代",   # ★社会だけ単元名に半角空白がある。空白入りの単元で配信〜記録〜弱点の合算まで通す
+     "hs": None,   # 高校範囲の人物・条約は正規表現にできないので、生成時の品質点検と独立レビューに任せる
+     "figure": re.compile(r"図のように|下の図|上の図|右の図|左の図|次の図|右図|左図|上図|下図|図[0-9０-９]|表[0-9０-９]|表のように|下の表|右の表|次の表|"
+                          r"グラフのように|グラフから|下のグラフ|右のグラフ|地図中|略地図|右の地図|下の地図|次の地図|資料[0-9０-９Ⅰ-Ⅴ]|右の資料|下の資料|次の資料|"
+                          r"写真の|写真から|次の年表|右の年表|下の年表|次の雨温図|右の雨温図|(?<![一-龥])[上下左右次]の(?:地図|資料|写真|年表|グラフ|雨温図)|年表中の|\n"),
+     "old_terms": None},
 ]
 
 FAILURES = []
@@ -163,7 +171,7 @@ def run_subject(mod, client, adm, cfg, cat):
         if POSREF.search(ex): bad.append(f"{tag}: 解説に位置参照")
         for part in [stem] + ch:
             if "-" in part: bad.append(f"{tag}: 半角の - がある (マイナスは「−」): {part[:30]}")
-            if cfg["hs"].search(part): bad.append(f"{tag}: 高校範囲の語: {part[:30]}")
+            if cfg["hs"] and cfg["hs"].search(part): bad.append(f"{tag}: 高校範囲の語: {part[:30]}")
             if cfg["old_terms"] and cfg["old_terms"].search(part): bad.append(f"{tag}: 旧用語: {part[:30]}")
         if cfg["figure"].search(stem): bad.append(f"{tag}: 図・表を前提にしている / 本文に改行")
         if stem.strip() in seen: bad.append(f"{tag}: stem 重複")
@@ -184,14 +192,15 @@ def run_subject(mod, client, adm, cfg, cat):
 
     print("[2] 取込 API")
     before = count_by_subject(mod)
-    inserted = skipped = 0
+    inserted = skipped = errors = 0
     for i in range(0, len(qs), 400):
         mod._RATE_LIMIT_STORE.clear()
         r = client.post("/api/admin/grammar/import", json={"questions": qs[i:i + 400], "subject": subject, "dedup": True}, headers=adm)
         check(f"POST import ({i + 1}〜) → 200", r.status_code == 200, r.text[:160])
         d = r.json() if r.status_code == 200 else {}
-        inserted += int(d.get("inserted") or 0); skipped += int(d.get("skipped") or 0)
-    check("全問が入る (inserted == 問題数・skipped 0)", inserted == len(qs) and skipped == 0, f"inserted={inserted} skipped={skipped}")
+        inserted += int(d.get("inserted") or 0); skipped += int(d.get("skipped") or 0); errors += int(d.get("errors") or 0)
+    check("全問が入る (inserted == 問題数・skipped 0・errors 0)", inserted == len(qs) and skipped == 0 and errors == 0,
+          f"inserted={inserted} skipped={skipped} errors={errors}")
     after = count_by_subject(mod)
     others = set(before) | set(after)
     others.discard(subject)
@@ -214,7 +223,7 @@ def run_subject(mod, client, adm, cfg, cat):
     print("[4] 中学生に配信 → 取得 → 提出 → 解答の記録")
     sid = make_student(mod, f"{label}テスト A", f"{cfg['email']}-a@example.org")
     tok = {"Authorization": "Bearer " + student_token(mod, sid)}
-    unit = ORDER[0]
+    unit = cfg.get("drill_unit") or ORDER[0]
     mod._RATE_LIMIT_STORE.clear()
     r = client.post("/api/admin/grammar-drill/create", json={"subject": subject, "unit": unit, "count": 25, "student_ids": [sid], "levels": ["standard", "advanced"]}, headers=adm)
     check(f"配信 ({unit}・25 問) → 200", r.status_code == 200, r.text[:200])
@@ -279,14 +288,15 @@ def main():
     print("\n━━━━ 記録科目のヘルパ・弱点キー (既存の挙動を変えない) ━━━━")
     f = mod._drill_attempt_subject
     check("中学英語 chugaku → chugaku", f("chugaku") == "chugaku")
-    check("中学の教科 (chugaku_math・chugaku_rika) → chugaku", f("chugaku_math") == "chugaku" and f("chugaku_rika") == "chugaku")
+    check("中学の教科 (chugaku_math・chugaku_rika・chugaku_shakai) → chugaku",
+          f("chugaku_math") == "chugaku" and f("chugaku_rika") == "chugaku" and f("chugaku_shakai") == "chugaku")
     check("高校 english → english・math → math・eiken → eiken", (f("english"), f("math"), f("eiken")) == ("english", "math", "eiken"))
     check("未指定 → english (従来の既定)", f(None) == "english" and f("") == "english")
-    check("表記ゆれも中学にまとめる (「中学数学」「中学理科」・大文字)",
-          f("中学数学") == "chugaku" and f("中学理科") == "chugaku" and f(" CHUGAKU_MATH ") == "chugaku")
+    check("表記ゆれも中学にまとめる (「中学数学」「中学理科」「中学社会」・大文字)",
+          f("中学数学") == "chugaku" and f("中学理科") == "chugaku" and f("中学社会") == "chugaku" and f(" CHUGAKU_MATH ") == "chugaku")
     k = mod._weakness_subject_key
     check("弱点キー: 中学の教科は 'chugaku' の1バケット",
-          (k("chugaku_math"), k("中学数学"), k("chugaku_rika"), k("中学理科"), k("chugaku")) == ("chugaku",) * 5)
+          (k("chugaku_math"), k("中学数学"), k("chugaku_rika"), k("中学理科"), k("chugaku_shakai"), k("中学社会"), k("chugaku")) == ("chugaku",) * 7)
     check("弱点キー: 高校の english / math / eiken・日本語の「数学」は変わらない",
           (k("english"), k("math"), k("eiken"), k("数学")) == ("english", "math", "eiken", "math"))
 

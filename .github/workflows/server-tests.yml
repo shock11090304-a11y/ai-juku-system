@@ -29,9 +29,10 @@ on:
       - 'payment/courses.json'
       - 'scripts/check_course_price_sync.py'
       - '.github/workflows/server-tests.yml'
-      # 🧒 中学の教科別ドリル (数学・理科) の回帰テストはシードと入試道場の単元カタログを読む (シードだけ直した push でも走らせる)
+      # 🧒 中学の教科別ドリル (数学・理科・社会) の回帰テストはシードと入試道場の単元カタログを読む (シードだけ直した push でも走らせる)
       - 'seed-data/chugaku_math_pool_v1.json'
       - 'seed-data/chugaku_rika_pool_v1.json'
+      - 'seed-data/chugaku_shakai_pool_v1.json'
       - 'scripts/chugaku_dojo/units.json'
       # 🧷 取込の単元名検査 (test_grammar_import_units.py) はコミット済みのシードを全部取り込んで確かめる
       #   (シードの単元名だけ直した push でも走らせる。英検 語彙の回帰テストも eiken_vocab を読む)
@@ -267,9 +268,9 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_eiken_drill_pool.py
 
-      # 🧒 中学の教科別ドリル (2026-09-28 数学・09-29 理科 塾長指示): 科目 chugaku_math / chugaku_rika の取込・単元順 (入試道場のカタログと一致)・
+      # 🧒 中学の教科別ドリル (2026-09-28 数学・09-29 理科 塾長指示): 科目 chugaku_math / chugaku_rika / chugaku_shakai の取込・単元順 (入試道場のカタログと一致)・
       #   中学生への配信〜提出で解答が入試道場と同じ subject='chugaku' + topic=単元名 で記録されること・シードの形式。
-      - name: 中学の教科別ドリル (数学・理科) 回帰テスト
+      - name: 中学の教科別ドリル (数学・理科・社会) 回帰テスト
         if: ${{ !cancelled() }}
         run: |
           python3 -m pip install --quiet httpx

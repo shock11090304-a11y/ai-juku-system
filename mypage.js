@@ -4286,7 +4286,7 @@ function _renderHomeworkItem(item) {
 // 📝 英文法ドリルを「宿題カード」として描画 (2026-06-16 塾長指示「ドリルも宿題に入れる」)。
 // クリック → window._gdOpenDrill(drill_id) が解答エリア(#grammarDrillSection)に問題を展開する。
 // 🧩 2026-06-21 [multi-subject-drill] 科目別ラベル。english は従来どおり「英文法」、他科目は科目名で表示。
-const _SUBJ_DRILL_LABEL = { english: '英文法', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語', eiken: '英検', chugaku_math: '中学数学', chugaku_rika: '中学理科' };
+const _SUBJ_DRILL_LABEL = { english: '英文法', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語', eiken: '英検', chugaku_math: '中学数学', chugaku_rika: '中学理科', chugaku_shakai: '中学社会' };
 // ドリルの level は "standard,advanced" のような内部コードなので、生徒には日本語で見せる (2026-09-29)
 function _gdLevelJa(lv) {
   const ja = { basic: '基礎', standard: '標準', advanced: 'やや難' };
@@ -4935,7 +4935,7 @@ async function initGrammarDrillSection() {
     const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
     // 復習カードの科目 (LB の科目別プロフィールに入る)。英語系 (英文法・中学英語・英検) は従来どおり「英語」。
     //   res.subject は 2026-09-29 からサーバが返す (旧サーバでは未定義 → 「英語」= 従来の挙動)
-    const _lbSubj = ({ math: '数学', chugaku_math: '数学', chugaku_rika: '理科', physics: '物理', chemistry: '化学', biology: '生物',
+    const _lbSubj = ({ math: '数学', chugaku_math: '数学', chugaku_rika: '理科', chugaku_shakai: '社会', physics: '物理', chemistry: '化学', biology: '生物',
       earth: '地学', japanese: '国語', social: '社会' })[String((res && res.subject) || '')] || '英語';
     results.forEach(function (r) {
       try {

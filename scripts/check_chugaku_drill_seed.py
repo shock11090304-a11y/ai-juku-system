@@ -3,6 +3,7 @@
   - seed-data/chugaku_drill_pool_v1.json  … 中学英語 (subject='chugaku')
   - seed-data/chugaku_math_pool_v1.json   … 中学数学 (subject='chugaku_math')
   - seed-data/chugaku_rika_pool_v1.json   … 中学理科 (subject='chugaku_rika')
+  - seed-data/chugaku_shakai_pool_v1.json … 中学社会 (subject='chugaku_shakai')
 
 固定する不変条件 (壊れると単元ドリルで生徒が誤採点される / 取込で黙って skip される / 範囲外が出る):
   共通: 4 択相異・answer 0〜3・解説に ①〜④ や「選択肢」を書かない・stem 一意・正解位置は単元ごとに 40% 以下・
@@ -13,6 +14,7 @@
         高校範囲の語 (sin/cos/tan・判別式・ベクトル・微分積分 など) を入れない
   理科: 半角 "-" を入れない・図/表/グラフを前提にした問題を入れない (本文は1段落・改行なし)・
         高校範囲の語 (物質量・電気陰性度・運動量・比熱・同位体 など) と旧用語 (優性・劣性) を入れない
+  社会: 半角 "-" を入れない・地図/資料/グラフ/写真/年表を前提にした問題を入れない (資料の内容は1段落の文章で書く・改行なし)
 """
 import collections
 import json
@@ -28,6 +30,7 @@ SEEDS = [
     ("chugaku_drill_pool_v1.json", "chugaku", UNITS["eng"], "英語"),
     ("chugaku_math_pool_v1.json", "chugaku_math", UNITS["math"], "数学"),
     ("chugaku_rika_pool_v1.json", "chugaku_rika", UNITS["rika"], "理科"),
+    ("chugaku_shakai_pool_v1.json", "chugaku_shakai", UNITS["shakai"], "社会"),
 ]
 HS_MATH = re.compile(r"sin|cos|tan|判別式|解と係数|log|数列|ベクトル|微分|積分|余弦定理|正弦定理")
 FIGURE = re.compile(r"図のように|下の図|右の図|左の図|次の図")
@@ -37,6 +40,9 @@ FIGURE_RIKA = re.compile(r"図のように|下の図|上の図|右の図|左の�
 HS_RIKA = re.compile(r"モル|物質量|アボガドロ|電気陰性度|酸化数|電離度|共有結合|イオン結合|金属結合|価電子|イオン化エネルギー|"
                      r"化学平衡|運動方程式|運動量|力積|万有引力|比熱|熱容量|半減期|同位体|フレミング")
 OLD_TERM_RIKA = re.compile(r"優性|劣性")
+# 社会: 地図・資料・写真・年表も画面に出せない。資料の数値や内容は問題文の文章で与える
+FIGURE_SHAKAI = re.compile(FIGURE_RIKA.pattern + r"|地図中|略地図|右の地図|下の地図|次の地図|資料[0-9０-９Ⅰ-Ⅴ]|右の資料|下の資料|次の資料|"
+                           r"写真の|写真から|次の年表|右の年表|下の年表|次の雨温図|右の雨温図|(?<![一-龥])[上下左右次]の(?:地図|資料|写真|年表|グラフ|雨温図)|年表中の")
 
 
 def check_seed(fname, subject, units, kind):
@@ -74,6 +80,12 @@ def check_seed(fname, subject, units, kind):
                 bad.append(f"{t}: whom を使っている")
             if q.get("unit") == "関係代名詞" and isinstance(a, int) and 0 <= a <= 3 and re.fullmatch(r"\s*whose\s*", ch[a], re.I):
                 bad.append(f"{t}: 関係代名詞 whose を正解にしている (中学範囲外)")
+        elif kind == "社会":
+            for part in [stem] + ch:
+                if "-" in part:
+                    bad.append(f"{t}: 半角の - がある: {part[:30]}")
+            if FIGURE_SHAKAI.search(stem) or "\n" in stem:
+                bad.append(f"{t}: 地図・資料を前提にしている / 本文に改行")
         elif kind == "理科":
             for part in [stem] + ch:
                 if "-" in part:
