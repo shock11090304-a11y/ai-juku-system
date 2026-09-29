@@ -82,7 +82,7 @@ jobs:
 
       - name: 送信内容を成果物として保存
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: migration-payload
           path: migration_payload.json
