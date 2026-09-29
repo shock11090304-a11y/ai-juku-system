@@ -649,12 +649,16 @@
       <!-- ✏️ 問題プール補充 (2026-06-19): grammar_questions に手作り4択(3名検証済)を無課金で一括投入 -->
       <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.30);border-radius:10px;padding:0.8rem;margin-bottom:0.8rem;">
         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-          <button id="grammarPoolImportBtn" type="button" data-seed="/seed-data/grammar_drill_pool_v1.json,/seed-data/grammar_drill_pool_v2.json" data-size="1688" title="※このボタンは高校英語(英文法)ドリルのみ補充します。中学英語は右の🧒ボタン、他科目(数学・理科 等)はシステム側で取込済みで補充ボタンはありません。&#10;英文法ドリルの問題プール(grammar_questions)を補充: 20単元×基礎/標準/やや難の手作り4択1,688問 (第1弾703問 + 第2弾985問。いずれも3名独立ソルバーの盲検で全員一致した問題だけを採用・解説は別担当が校閲・正解位置均等化・説明は値参照)。このボタンの取込後、在庫は1単元あたり79〜87問 (単元バッジは選ばれたレベルの在庫を出すので、既定の「標準〜やや難」では68〜75と表示される)。同じ単元を繰り返し配信しても問題が被りにくい。ただし基礎レベルは1単元11〜12問のままで、ここは増えない。再押下しても重複は自動スキップ。ワンクリック取込・無課金。" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">✏️ 英文法ドリルを補充 (英語専用・20単元 1,688問・無課金)</button>
+          <button id="grammarPoolImportBtn" type="button" data-seed="/seed-data/grammar_drill_pool_v1.json,/seed-data/grammar_drill_pool_v2.json" data-size="1688" title="※このボタンは高校英語(英文法)ドリルのみ補充します。中学英語・中学数学は下の🧒ボタン、高校の他科目(数学・理科 等)はシステム側で取込済みで補充ボタンはありません。&#10;英文法ドリルの問題プール(grammar_questions)を補充: 20単元×基礎/標準/やや難の手作り4択1,688問 (第1弾703問 + 第2弾985問。いずれも3名独立ソルバーの盲検で全員一致した問題だけを採用・解説は別担当が校閲・正解位置均等化・説明は値参照)。このボタンの取込後、在庫は1単元あたり79〜87問 (単元バッジは選ばれたレベルの在庫を出すので、既定の「標準〜やや難」では68〜75と表示される)。同じ単元を繰り返し配信しても問題が被りにくい。ただし基礎レベルは1単元11〜12問のままで、ここは増えない。再押下しても重複は自動スキップ。ワンクリック取込・無課金。" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">✏️ 英文法ドリルを補充 (英語専用・20単元 1,688問・無課金)</button>
           <span id="grammarPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">押すと全20単元のドリル在庫が緑(25問+)になります。第1弾703問＋第2弾985問を続けて取り込み、すでに入っている分は自動でスキップします。</span>
         </div>
         <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-          <button id="chugakuPoolImportBtn" type="button" data-seed="/seed-data/chugaku_drill_pool_v1.json" data-size="1213" title="🧒 中学英語(高校受験)のドリル在庫を補充: 12単元×基礎/標準/やや難の手作り4択1,213問(盲検3名の全員一致のみ採用・正解位置は単元ごとに散らし済み・説明は値参照)。取込後は①科目で「中学英語」を選ぶと単元が中学12単元(学習順)に入れ替わります。高校の英文法プール(english)とは別バンクなので、診断・今日の1問・弱点ドリルに中学問題が混ざることはありません。&#10;在庫は1単元100問(時制だけ基礎が厚く113問)。既定の「標準〜やや難」が75問なので、同じ単元で25問のドリルを3回まで配れます。&#10;★この「別の問題で3回」は🎯弱点対策から入ったときだけです。📤ドリルを配信をそのまま3回押しても除外は効かず、毎回75問からのランダム25問になります(1回目と8問ほど重なります)。&#10;★弱点対策が除外できるのは「直前に分析した1本」だけなので、2回目は1回目と完全に別問題、3回目は2回目とは別ですが1回目と半分ほど重なります(復習になるので害はありません)。弱点対策は宛先が「正解率の低かった生徒だけ」・④問題数が自動で10問になるので、クラス全員に25問配りたいときは手で戻してください。&#10;基礎も1単元25問(時制は38問)あるので「基礎も含める」でも足ります。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#ea580c,#c2410c);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🧒 中学英語ドリルを補充 (12単元 1,213問・無課金)</button>
-          <span id="chugakuPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">中学生(高校受験)用。押したあと①科目で「🧒 中学英語」を選ぶと使えます。全12単元に 基礎25/標準45/やや難30 問(時制だけ基礎38問)が入ります。</span>
+          <button id="chugakuPoolImportBtn" type="button" data-seed="/seed-data/chugaku_drill_pool_v1.json" data-size="1730" data-subject="chugaku" data-label="中学英語" title="🧒 中学英語(高校受験)のドリル在庫を補充: 12単元×基礎/標準/やや難の手作り4択1,730問(盲検3名の全員一致のみ採用・正解位置は単元ごとに散らし済み・説明は値参照)。取込後は①科目で「中学英語」を選ぶと単元が中学12単元(学習順)に入れ替わります。高校の英文法プール(english)とは別バンクなので、診断・今日の1問・弱点ドリルに中学問題が混ざることはありません。&#10;在庫は1単元138〜149問。既定の「標準〜やや難」が1単元103〜113問なので、同じ単元で25問のドリルを4回まで配れます。&#10;★前回の25問を除外できるのは🎯弱点対策から入ったときだけです。📤ドリルを配信をそのまま押すと除外は効かず、毎回およそ110問からのランダム25問になります(前回と5〜6問重なります)。&#10;★弱点対策が除外できるのは「直前に分析した1本」だけなので、2回目は1回目と完全に別問題、3回目以降は直前の回とは別ですがそれより前の回と一部重なります(復習になるので害はありません)。弱点対策は宛先が「正解率の低かった生徒だけ」・④問題数が自動で10問になるので、クラス全員に25問配りたいときは手で戻してください。&#10;基礎も1単元34〜35問(時制は38問)あるので「基礎も含める」でも足ります。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#ea580c,#c2410c);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🧒 中学英語ドリルを補充 (12単元 1,730問・無課金)</button>
+          <span id="chugakuPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">中学生(高校受験)用。押したあと①科目で「🧒 中学英語」を選ぶと使えます。全12単元に 1単元138〜149問(基礎34〜38・標準62〜69・やや難38〜44)が入ります。前回までに取り込んだ問題は自動で飛ばし、増えた分だけが入ります。</span>
+        </div>
+        <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+          <button id="chugakuMathPoolImportBtn" type="button" data-seed="/seed-data/chugaku_math_pool_v1.json" data-size="900" data-subject="chugaku_math" data-label="中学数学" title="🧒 中学数学(高校受験)のドリル在庫を補充: 入試道場と同じ15単元 (正負の数〜データの活用) の4択。1単元60問 (基礎10・標準30・やや難20)。独立した3名が正解を伏せて解き、全員一致した問題だけを採用。図が無いと解けない問題は入れていません。&#10;既定の「標準〜やや難」が1単元50問なので、同じ単元で25問のドリルを2回まで別の問題で配れます(2回目は🎯弱点対策から入ったときだけ前回の25問を除外します)。&#10;生徒の解答は入試道場と同じ「中学」の弱点としてまとめて記録されるので、週次プリントや弱点のおすすめにもつながります。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🧒 中学数学ドリルを補充 (15単元 900問・無課金)</button>
+          <span id="chugakuMathPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">中学生(高校受験)用。押したあと①科目で「🧒 中学数学」を選ぶと使えます。全15単元に 基礎10/標準30/やや難20 問が入ります。</span>
         </div>
         <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
           <button id="eikenPoolImportBtn" type="button" data-seed="/seed-data/eiken_vocab_pool_v1.json" data-size="400" title="🏅 英検の語彙ドリル (大問1 形式・空所4択) を補充: 2級 130問 (対策問題集 Vol.1/2 + 完全模試 全3回) と 準1級 270問 (本番形式演習 第1弾/第2弾 + 完全模試 全3回)。全部この塾の書き下ろし (過去問なし)。取込後は①科目で「🏅 英検」を選ぶと単元が「2級 単語 / 2級 句動詞・熟語 / 準1級 単語 / 準1級 句動詞・熟語」に入れ替わります。英文法・中学英語のプールとは別バンクなので、診断・今日の1問・弱点ドリルに英検の問題が混ざることはありません。level は全問「標準」なので既定の「標準〜やや難」で全在庫が対象です。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">🏅 英検 語彙ドリルを補充 (2級 130問・準1級 270問・無課金)</button>
@@ -681,6 +685,7 @@
             <option value="japanese">国語</option>
             <option value="social">社会</option>
             <option value="chugaku">🧒 中学英語 (高校受験)</option>
+            <option value="chugaku_math">🧒 中学数学 (高校受験)</option>
             <option value="eiken">🏅 英検 (語彙・長文 / 2級・準1級)</option>
           </select>
           <span style="color:#71717a;font-size:0.72rem;margin-left:0.3rem;">選ぶと下の単元の在庫が切り替わります</span>
@@ -4802,9 +4807,10 @@
       //   学年未設定の生徒は判定できないので通す (止めると登録直後に配信できなくなる)。
       //   代わりに生徒リストに灰色の「学年?」チップを出して、判定していないことを見せている。
       const _subjJa = { english: '英語(英文法)', math: '数学', physics: '物理', chemistry: '化学',
-                        biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語(高校受験)', eiken: '英検' };
+                        biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語(高校受験)', eiken: '英検',
+                        chugaku_math: '中学数学(高校受験)' };
       const _sj = _gdSubject || 'english';
-      const _isChu = _sj === 'chugaku';
+      const _isChu = _sj.startsWith('chugaku');   // 中学英語・中学数学 … (chugaku / chugaku_math …)
       // 🏅 英検は学年で縛らない (2級を中3が受ける・準1級を高1が受けることは普通にある)
       const _mism = _sj === 'eiken' ? [] : _gdStudents.filter(s => ids.includes(s.id))
         .filter(s => { const m = _gdMode(s.grade); return m && (_isChu ? m !== 'chugaku' : (m === 'chugaku' || m === 'shougaku')); });
@@ -4812,7 +4818,7 @@
         const _names = _mism.slice(0, 5).map(s => `${s.name || '#' + s.id}(${_gdGradeShort(s.grade) || '学年?'})`).join('、');
         const _more = _mism.length > 5 ? ` ほか${_mism.length - 5}名` : '';
         const _why = _isChu
-          ? '中学英語は高校受験用の問題です。中学生以外に配ると、その生徒の週次プリントや弱点演習にも高校入試の問題が出るようになります。'
+          ? `${_subjJa[_sj] || '中学'}の問題です。中学生以外に配ると、その生徒の週次プリントや弱点演習にも高校入試の問題が出るようになります。`
           : 'この科目は大学受験用の問題です。中学生・小学生には学年に合いません。';
         if (!confirm(`科目「${_subjJa[_sj] || _sj}」を、学年の合わない生徒 ${_mism.length}名 に配信しようとしています。\n\n${_names}${_more}\n\n${_why}\n\nこのまま配信しますか？`)) {
           if (msg) msg.innerHTML = '<span style="color:#fbbf24;">配信を中止しました</span>';
@@ -4922,7 +4928,7 @@
       const visible = showAll ? entries : entries.slice(0, GROUP_LIMIT);
       let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.45rem;">';
       // 集約キーは "<科目>｜<単元>"。画面には単元名を出し、英文法以外のときだけ科目チップを添える
-      const SUBJ_JA = { english: '英文法', chugaku: '中学英語', eiken: '英検', math: '数学', physics: '物理', chemistry: '化学',
+      const SUBJ_JA = { english: '英文法', chugaku: '中学英語', chugaku_math: '中学数学', eiken: '英検', math: '数学', physics: '物理', chemistry: '化学',
                         biology: '生物', earth: '地学', japanese: '国語', social: '社会' };
       html += visible.map(([gkey, ds], i) => {
         const sp = String(gkey).split('｜');
@@ -5210,14 +5216,18 @@
     // 🧒 2026-09-23 [chugaku-drill]: 中学英語プールの補充。grammarPoolImport と同じ流れだが、
     //   シードの各問が subject='chugaku' を持つので、取込 API はそのまま中学バンクへ入れる。
     //   高校の英文法プール(english)とは別バンクなので、既存の在庫には一切触れない。
-    async function chugakuPoolImport() {
-      const btn = document.getElementById('chugakuPoolImportBtn');
-      const msg = document.getElementById('chugakuPoolImportMsg');
+    // 🧒 2026-09-28: 中学数学も同じ流れで取り込むので、科目はボタンの data-subject / data-label から取る。
+    //   シード側も各問に subject を持たせてある (取込 API は問ごとの subject を優先する)。
+    async function _chugakuSubjectImport(btnId, msgId) {
+      const btn = document.getElementById(btnId);
+      const msg = document.getElementById(msgId);
       if (!btn || !window.AdminAuth) return;
+      const subject = btn.getAttribute('data-subject') || 'chugaku';
+      const label = btn.getAttribute('data-label') || '中学英語';
       const seedUrl = btn.getAttribute('data-seed');
       const sizeRaw = btn.getAttribute('data-size') || '';
       const size = /^\d+$/.test(sizeRaw) ? Number(sizeRaw).toLocaleString('ja-JP') : sizeRaw;
-      if (!confirm(`🧒 中学英語(高校受験)のドリル問題 ${size}問(検証済) を照合し、まだ入っていない問題だけを取り込みます。よろしいですか？（取込済みの分は自動スキップ・無課金）`)) return;
+      if (!confirm(`🧒 ${label}(高校受験)のドリル問題 ${size}問(検証済) を照合し、まだ入っていない問題だけを取り込みます。よろしいですか？（取込済みの分は自動スキップ・無課金）`)) return;
       btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ 取込中...';
       if (msg) { msg.style.color = '#94a3b8'; msg.textContent = 'シード読込中...'; }
       try {
@@ -5237,7 +5247,7 @@
           if (msg) msg.textContent = `照合中... (${i + 1}〜${Math.min(i + CHUNK, questions.length)}問目 / 全${questions.length}問)`;
           const res = await AdminAuth.fetch('/api/admin/grammar/import', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ questions: part, subject: 'chugaku', dedup: true }),
+            body: JSON.stringify({ questions: part, subject, dedup: true }),
           });
           const data = await res.json().catch(() => ({}));
           if (!res.ok) {
@@ -5252,7 +5262,7 @@
           msg.style.color = errors ? '#fbbf24' : '#86efac';
           // ★サーバの skipped には「すでに入っている分」だけでなく「形式が不正で弾いた分」も入る。
           //   取込が壊れていても「すでに入っていた」と読めてしまうので、数が合わないときは注意書きを出す。
-          msg.textContent = `${errors ? '⚠️' : '✅'} 新しく取り込んだ問題 ${inserted}問 / 取り込まなかった問題 ${skipped}問（すでに入っている分と、形式が合わず弾かれた分の合計）/ エラー ${errors}。①科目で「🧒 中学英語」を選ぶと使えます。`;
+          msg.textContent = `${errors ? '⚠️' : '✅'} 新しく取り込んだ問題 ${inserted}問 / 取り込まなかった問題 ${skipped}問（すでに入っている分と、形式が合わず弾かれた分の合計）/ エラー ${errors}。①科目で「🧒 ${label}」を選ぶと使えます。`;
         }
       } catch (e) {
         if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || String(e)); }
@@ -5265,11 +5275,14 @@
         //   中学を選んでいるときだけ描き直す (英文法を見ている最中に単元が入れ替わると驚くため)。
         try {
           const cur = (document.getElementById('gdSubject') || {}).value;
-          if (cur === 'chugaku') { await gdLoadUnits(); }
+          if (cur === subject) { await gdLoadUnits(); }
         } catch (_e) {}
       }
     }
+    async function chugakuPoolImport() { return _chugakuSubjectImport('chugakuPoolImportBtn', 'chugakuPoolImportMsg'); }
+    async function chugakuMathPoolImport() { return _chugakuSubjectImport('chugakuMathPoolImportBtn', 'chugakuMathPoolImportMsg'); }
     window.chugakuPoolImport = chugakuPoolImport;
+    window.chugakuMathPoolImport = chugakuMathPoolImport;
     // 🏅 2026-09-24 [eiken-vocab]: 英検 語彙プールの補充。chugakuPoolImport と同じ流れ (400 問ずつ・dedup・無課金)。
     //   シードの各問が subject='eiken' を持ち、英文法 (english)・中学英語 (chugaku) のバンクには一切触れない。
     async function eikenPoolImport() {
@@ -5409,6 +5422,8 @@
       if (bw) bw.addEventListener('click', grammarWeaknessImport);
       const bc = document.getElementById('chugakuPoolImportBtn');
       if (bc) bc.addEventListener('click', chugakuPoolImport);
+      const bcm = document.getElementById('chugakuMathPoolImportBtn');
+      if (bcm) bcm.addEventListener('click', chugakuMathPoolImport);
       const be = document.getElementById('eikenPoolImportBtn');
       if (be) be.addEventListener('click', eikenPoolImport);
       const ber = document.getElementById('eikenReadingImportBtn');

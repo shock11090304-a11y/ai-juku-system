@@ -29,6 +29,9 @@ on:
       - 'payment/courses.json'
       - 'scripts/check_course_price_sync.py'
       - '.github/workflows/server-tests.yml'
+      # 🧒 中学数学ドリルの回帰テストはシードと入試道場の単元カタログを読む (シードだけ直した push でも走らせる)
+      - 'seed-data/chugaku_math_pool_v1.json'
+      - 'scripts/chugaku_dojo/units.json'
       # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
       - 'lp.html'
       - 'checkout.html'
@@ -256,6 +259,14 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_eiken_drill_pool.py
+
+      # 🧒 中学数学ドリル (2026-09-28 塾長指示): 科目 chugaku_math の取込・単元順 (入試道場のカタログと一致)・
+      #   中学生への配信〜提出で解答が入試道場と同じ subject='chugaku' + topic=単元名 で記録されること・シードの形式。
+      - name: 中学数学ドリル 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_chugaku_math_drill_pool.py
 
       # 📖 長文型ドリル (2026-09-24 塾長指示): 本文 + 複数設問の取込 (本文ごとの dedup)・本文単位のドリル作成 (順序保持・
       #   前回の本文を除外)・生徒の取得/提出が本文 map を返す・分析が passage_id を持つ・単発問題の経路は不変。

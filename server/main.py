@@ -6480,6 +6480,12 @@ def _weakness_subject_key(subj) -> str:
     canonical 化できない finer subject(english_reading 等)は情報欠落を避けるため小文字化した原値を維持。
     consumer は canonical しか拾わないので finer subject の据え置きは従来と同挙動(=無害)。"""
     _c = _canon_grammar_subject(subj)  # 未知/非別名は '' を返す(runtime で解決される後方定義関数)
+    # 🧒 2026-09-29: 中学の各教科 (chugaku_math …) は、入試道場と同じ「中学」の1バケット 'chugaku' に寄せる。
+    #   中学生の弱点プリント・弱点 TOP3 は subject='chugaku' で拾うため。単元ドリルは提出時に 'chugaku' で記録するが
+    #   (_drill_attempt_subject)、/api/question-attempts に教科名 (「中学数学」等) で届いた行や、デプロイの切り替わり中に
+    #   旧サーバが書いた行もここで同じ弱点にまとめる。
+    if _c.startswith("chugaku"):
+        return "chugaku"
     return _c if _c else str(subj or "").strip().lower()
 
 
@@ -27465,7 +27471,9 @@ def _record_question_attempt_core(payload: dict, request: Request, authorization
     #   できない finer subject(english_reading 等)や 'unknown' は原値を維持する(情報欠落防止)。
     _subj_canon = _canon_grammar_subject(subject)
     if _subj_canon:
-        subject = _subj_canon
+        # 🧒 2026-09-29: 中学の各教科 (chugaku_math …) は入試道場と同じ「中学」の1バケット 'chugaku' で記録する
+        #   (単元ドリルの提出と同じ規則。週次レポートの科目や CEO の科目バランスに「中学数学」が別枠で出ないように)
+        subject = _drill_attempt_subject(_subj_canon)
     topic = payload.get("topic")
     is_correct = payload.get("is_correct")
     if is_correct is not None:
@@ -45064,6 +45072,11 @@ GRAMMAR_LEVELS = {"basic": "基礎", "standard": "標準", "advanced": "やや�
 _GRAMMAR_SUBJECT_UNIT_ORDER = {
     "chugaku": ["be動詞・一般動詞", "時制", "助動詞", "名詞・代名詞・冠詞", "比較", "不定詞・動名詞",
                 "分詞", "受動態", "現在完了", "関係代名詞", "接続詞・前置詞", "会話表現"],
+    # 🧒 2026-09-28 中学数学 (高校受験)。単元は scripts/chugaku_dojo/units.json の math の filter と同じ並び・同じ文字列
+    #   (入試道場の弱点 topic と突き合わせるため)。国語・理科・社会も中身ができたら同じ型で足す。
+    "chugaku_math": ["正負の数", "式の計算", "一次方程式", "連立方程式", "平方根", "二次方程式",
+                     "比例・反比例", "一次関数", "二乗に比例", "合同と証明", "相似", "円周角",
+                     "三平方の定理", "確率", "データの活用"],
     # 🏅 英検 語彙: 級 → 単語/句動詞 の順 (シード seed-data/eiken_vocab_pool_v1.json の unit 名と完全一致させる)
     "eiken": ["2級 単語", "2級 句動詞・熟語", "準1級 単語", "準1級 句動詞・熟語",
               # 📖 長文型 (本文 + 設問)。在庫は本文の本数で数える
@@ -45084,8 +45097,14 @@ _GRAMMAR_SUBJECT_UNIT_ORDER = {
 #   (「2級 単語」「2級 句動詞・熟語」「準1級 単語」「準1級 句動詞・熟語」・level は全問 standard)。chugaku と同じ理由で
 #   english のプールには混ぜない (診断・今日の1問・弱点ルーティンは english 直書きなので英検問題は流れない)。
 #   在庫はトリリオンAI塾の書き下ろし教材から: 準1級 本番形式演習 第1弾/第2弾 + 完全模試 全3回、2級 対策問題集 Vol.1/2 + 完全模試 全3回。
+# 🧒 2026-09-28 [中学数学 塾長指示「中学生用の問題を追加」]: 中学の他教科は **教科ごとの別科目** (chugaku_math …) にする。
+#   高校の数学プール (math) に混ぜない理由は chugaku と同じ (診断・今日の1問・弱点ルーティンが科目で出題先を決めるため)。
+#   ★ただし生徒の解答 (question_attempts) は教科を問わず subject='chugaku' に記録する (student_grammar_drill_submit)。
+#     入試道場も中学の5教科を 'chugaku' の1バケット＋topic=単元名 で記録しており、弱点・週次プリント・弱点 TOP3 は
+#     その前提で組まれている。'chugaku_math' で記録すると中学生の弱点プリントの対象 (subject='chugaku') から外れ、
+#     同じ「正負の数」の弱点が入試道場とドリルで別々に数えられてしまう。
 _GRAMMAR_CANON_SUBJECTS = {"english", "math", "physics", "chemistry", "biology", "earth", "japanese", "social",
-                           "chugaku", "eiken"}
+                           "chugaku", "eiken", "chugaku_math"}
 _GRAMMAR_SUBJECT_ALIASES = {
     "英語": "english", "eng": "english", "english grammar": "english", "英文法": "english",
     "数学": "math", "mathematics": "math", "数iii": "math", "数学iii": "math",
@@ -45099,6 +45118,7 @@ _GRAMMAR_SUBJECT_ALIASES = {
     "公民": "social", "倫理": "social", "政治経済": "social", "政経": "social",
     # 🧒 中学英語 (高校受験)。高校の英文法プール(english)とは別バンクで、単元名は scripts/chugaku_dojo/units.json と合わせる
     "中学": "chugaku", "中学英語": "chugaku", "中学英文法": "chugaku", "chugaku eng": "chugaku",
+    "中学数学": "chugaku_math", "chugaku math": "chugaku_math",
     # 🏅 英検 語彙 (2級・準1級)。english (英文法) とは別バンク
     "英検": "eiken", "英検語彙": "eiken", "英検 語彙": "eiken", "eiken vocab": "eiken", "eiken2": "eiken", "eikenp1": "eiken",
 }
@@ -45118,7 +45138,16 @@ _GRAMMAR_SUBJECT_LABEL_JA = {
     "biology": "生物", "earth": "地学", "japanese": "国語", "social": "社会",
     "chugaku": "中学英語",
     "eiken": "英検",
+    "chugaku_math": "中学数学",
 }
+def _drill_attempt_subject(drill_subject) -> str:
+    """単元ドリルの解答を question_attempts に記録するときの subject。
+    中学の各教科 (chugaku_math など) は入試道場と同じ「中学」の1バケット 'chugaku' にまとめる
+    (弱点・週次プリント・弱点 TOP3 は中学生を subject='chugaku' + topic=単元名 で扱う前提)。それ以外はそのまま。"""
+    s = _canon_grammar_subject(drill_subject) or str(drill_subject or "english").strip().lower()
+    return "chugaku" if s.startswith("chugaku") else s
+
+
 def _grammar_subject_label_ja(subject):
     return _GRAMMAR_SUBJECT_LABEL_JA.get(_canon_grammar_subject(subject), "英文法")
 
@@ -47119,7 +47148,8 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
                 c.execute(
                     "INSERT INTO question_attempts (student_id, source, exam_question_id, subject, topic, "
                     "is_correct, score_got, score_max, metadata, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                    (student["id"], "grammar_drill", eq_id, drill_subject, q_unit, is_corr, is_corr, 1, meta, now_iso),
+                    (student["id"], "grammar_drill", eq_id, _drill_attempt_subject(drill_subject), q_unit,
+                     is_corr, is_corr, 1, meta, now_iso),
                 )
             conn.commit()
         except Exception as e:
@@ -47158,6 +47188,7 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
             "percentage": pct,
             "results": results,
             "passages": passages_map,   # 📖 長文型のみ (従来は {})
+            "subject": _canon_grammar_subject(drill_subject) or "english",   # 🧒 2026-09-29 mypage が誤答の復習カードを科目別に振り分ける (従来は全部「英語」)
         }
     except HTTPException:
         raise

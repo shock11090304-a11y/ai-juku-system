@@ -5,7 +5,8 @@
 // は KaTeX auto-render が拾えず「\geq」やフォント未収録記号のまま表示される。
 // これを描画直前に \(...\) で包んで renderMathInElement (自前フォント) に載せる。
 //
-// canonical ロジック = app.js の _wrapBareMath。app.js は単一 $ を delimiter に持つので
+// canonical ロジック = app.js の _wrapBareMath。ただし √ の後ろの小数 (√0.25) を丸取りするのはこちらだけ
+// (2026-09-29。app.js は整数のみのまま = AI チャットでは √0.25 が √0 と .25 に割れる。直すなら app.js の ?v= も上げる)。app.js は単一 $ を delimiter に持つので
 // $...$ で包むが、learning-brain.js / mock-exam.js 等は通貨 $ 誤組版回避で単一 $ を
 // delimiter に持たない。そこでこの共有版は **どの画面の delimiter 設定でも描画される
 // \(...\) で包む**。全 KaTeX 描画面 (SRS カード / 模試 / 英語試験 / 文法ドリル 等) で
@@ -24,7 +25,8 @@
     '|\\\\binom\\s*' + BRACE + '\\s*' + BRACE +
     '|\\\\sqrt\\s*(?:\\[[^\\]]*\\])?\\s*' + BRACE +
     '|' + NOARG.source +
-    '|√\\d+' +
+    // √ の後ろは小数まで丸取りする (2026-09-29 中学数学ドリル「√0.25」が √0 + ".25" に割れて表示された)
+    '|√\\d+(?:\\.\\d+)?' +
     '|[≦≧≤≥≠≒≈±∞]',
     'g');
   var UMAP = {

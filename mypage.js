@@ -4286,7 +4286,12 @@ function _renderHomeworkItem(item) {
 // 📝 英文法ドリルを「宿題カード」として描画 (2026-06-16 塾長指示「ドリルも宿題に入れる」)。
 // クリック → window._gdOpenDrill(drill_id) が解答エリア(#grammarDrillSection)に問題を展開する。
 // 🧩 2026-06-21 [multi-subject-drill] 科目別ラベル。english は従来どおり「英文法」、他科目は科目名で表示。
-const _SUBJ_DRILL_LABEL = { english: '英文法', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語', eiken: '英検' };
+const _SUBJ_DRILL_LABEL = { english: '英文法', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語', eiken: '英検', chugaku_math: '中学数学' };
+// ドリルの level は "standard,advanced" のような内部コードなので、生徒には日本語で見せる (2026-09-29)
+function _gdLevelJa(lv) {
+  const ja = { basic: '基礎', standard: '標準', advanced: 'やや難' };
+  return String(lv || '').split(',').map(s => s.trim()).filter(Boolean).map(s => ja[s] || s).join('・');
+}
 function _renderDrillAsHwItem(item) {
   const isOpen = item.status !== 'completed';
   const _subjLabel = _SUBJ_DRILL_LABEL[item.subject] || '英文法';
@@ -4295,7 +4300,7 @@ function _renderDrillAsHwItem(item) {
     ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(99,102,241,0.2); color:#a5b4fc; border-radius:8px;">${_hwEscape(item.unit)}</span>`
     : '';
   const levelBadge = item.level
-    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(255,255,255,0.06); color:#a1a1aa; border-radius:8px;">${_hwEscape(item.level)}</span>`
+    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(255,255,255,0.06); color:#a1a1aa; border-radius:8px;">${_hwEscape(_gdLevelJa(item.level))}</span>`
     : '';
   const scoreBlock = (!isOpen && item.score_total != null)
     ? `<div style="margin-top:8px; padding:8px 11px; background:rgba(52,211,153,0.08); border-left:3px solid #34d399; border-radius:6px; font-size:0.78rem; color:#6ee7b7;">✅ 完了 スコア ${_hwEscape(String(item.score_correct == null ? '?' : item.score_correct))}/${_hwEscape(String(item.score_total))}</div>`
@@ -4866,7 +4871,7 @@ async function initGrammarDrillSection() {
     const questions = (data && data.questions) || [];
     const isCompleted = data.status === 'completed';
     const titleHtml = _gdRich(drill.title || '');
-    const meta = [drill.unit, drill.level].filter(Boolean).map(x => _gdEscape(x)).join(' ・ ');
+    const meta = [drill.unit, _gdLevelJa(drill.level)].filter(Boolean).map(x => _gdEscape(x)).join(' ・ ');
 
     if (isCompleted) {
       // 完了済み → 復習表示 (your_answer / answer / explanation)
@@ -4928,6 +4933,10 @@ async function initGrammarDrillSection() {
       if (s && s.id != null) sid = s.id;
     } catch (_) { /* noop */ }
     const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+    // 復習カードの科目 (LB の科目別プロフィールに入る)。英語系 (英文法・中学英語・英検) は従来どおり「英語」。
+    //   res.subject は 2026-09-29 からサーバが返す (旧サーバでは未定義 → 「英語」= 従来の挙動)
+    const _lbSubj = ({ math: '数学', chugaku_math: '数学', physics: '物理', chemistry: '化学', biology: '生物',
+      earth: '地学', japanese: '国語', social: '社会' })[String((res && res.subject) || '')] || '英語';
     results.forEach(function (r) {
       try {
         const choices = Array.isArray(r.choices) ? r.choices : [];
@@ -4954,7 +4963,7 @@ async function initGrammarDrillSection() {
         if (!r.is_correct || r.guessed) {
           LB.recordAttempt(sid, {
             key: key,
-            subject: '英語',
+            subject: _lbSubj,
             topic: (r.unit || '英文法').toString(),
             problem: problemFull,
             answer: answer,
