@@ -9013,13 +9013,13 @@
    "level": "advanced",
    "stem": "That old language ( ) in this village any more, because all the young people use English now.",
    "choices": [
-    "doesn't speak",
+    "wasn't spoken",
     "isn't spoken",
     "isn't speaking",
-    "wasn't spoken"
+    "wasn't speaking"
    ],
    "answer": 1,
-   "explanation": "言語は話される側なので受け身にし、後半の use と now が現在を示すことから「isn't spoken」を選ぶ。だれが話すかは言う必要がないため by ~ は省く。wasn't spoken では時が合わず、doesn't speak や isn't speaking では意味が逆になる。",
+   "explanation": "言語は話される側なので受け身にし、後半の use と now が今のことを示すので「isn't spoken」を選ぶ。だれが話すかは言う必要がないため by ~ は省く。wasn't spoken では過去の話になり、後半の現在の内容と時が合わない。",
    "source": "chugaku-drill-v2",
    "subject": "chugaku"
   },
@@ -9823,13 +9823,13 @@
    "level": "standard",
    "stem": "The woman ( ) from Australia took a lot of pictures of our school.",
    "choices": [
+    "which come",
     "who come",
     "which came",
-    "whose came",
     "who came"
    ],
    "answer": 3,
-   "explanation": "The woman took a lot of pictures. と She came from Australia. を1文にした形。先行詞「the woman」は人で単数、過去の話なので「who came」となる。who come では主語の数が合わず、which came は人には使えない。",
+   "explanation": "The woman took a lot of pictures. と She came from Australia. を1文にした形。先行詞「the woman」は人で単数、過去の話なので「who came」となる。who come では主語の数も時も合わず、which は人には使えない。",
    "source": "chugaku-drill-v2",
    "subject": "chugaku"
   },
@@ -9853,10 +9853,10 @@
    "level": "standard",
    "stem": "The girl ( ) singing on the stage now is Aya's sister.",
    "choices": [
+    "which are",
     "who are",
-    "which is",
     "who is",
-    "whose is"
+    "which is"
    ],
    "answer": 2,
    "explanation": "先行詞「the girl」は人で単数、空所のあとが singing という形なので、主格の関係代名詞とbe動詞を合わせた「who is」にする。who are では主語の数が合わず、which は人を受けられない。",
@@ -9943,10 +9943,10 @@
    "level": "advanced",
    "stem": "I want to read the book ( ) us about the history of this city.",
    "choices": [
-    "who tells",
+    "who tell",
     "that tells",
     "that tell",
-    "whose tells"
+    "who tells"
    ],
    "answer": 1,
    "explanation": "先行詞「the book」は物で単数なので、物を受けられる関係代名詞と三人称単数の動詞を合わせた「that tells」が入る。that tell では動詞の形が主語の数に合わず、who は人を受ける語なので book には使えない。",
@@ -10004,12 +10004,12 @@
    "stem": "The songs ( ) sung at the concert last night were all written by students.",
    "choices": [
     "which were",
+    "who was",
     "which was",
-    "who were",
-    "what were"
+    "who were"
    ],
    "answer": 0,
-   "explanation": "先行詞の The songs は物で複数なので、関係代名詞は which、そのあとの be 動詞は were になり「which were」が入る。which was では数が合わず、who は人に使い、what は先行詞のあとには置けない。",
+   "explanation": "先行詞の The songs は物で複数なので、関係代名詞は which、そのあとの be 動詞は were になり「which were」が入る。which was では複数の songs と数が合わず、who は人に使う語なので歌には使えない。",
    "source": "chugaku-drill-v2",
    "subject": "chugaku"
   },
@@ -10049,12 +10049,12 @@
    "stem": "I have a book ( ) in easy English for young children.",
    "choices": [
     "which was written",
-    "which wrote",
-    "who was written",
-    "which writing"
+    "who was writing",
+    "which was writing",
+    "who was written"
    ],
    "answer": 0,
-   "explanation": "I have a book. と It was written in easy English. を1文にした形。本は書かれる側なので受け身にして「which was written」とする。which wrote では本が書くことになり、who は人を受ける語なので book には使えない。",
+   "explanation": "先行詞の book は物で、本は書かれる側なので受け身にして「which was written」とする。which was writing では本が何かを書いていたことになり、who は人を受ける語なので book には使えない。",
    "source": "chugaku-drill-v2",
    "subject": "chugaku"
   },
@@ -10078,10 +10078,10 @@
    "level": "advanced",
    "stem": "The people ( ) invited to Ken's birthday party are all his old friends.",
    "choices": [
-    "who was",
+    "which was",
     "which were",
     "who were",
-    "whose were"
+    "who was"
    ],
    "answer": 2,
    "explanation": "先行詞「the people」は人で複数、あとに過去分詞 invited が続くので、主格の関係代名詞とbe動詞を合わせた「who were」を置く。who was では主語の数が合わず、which は人を受けられない。",
@@ -11984,9 +11984,9 @@
    "stem": "This old temple in Nara ( ) about four hundred years ago by a famous family.",
    "choices": [
     "was built",
-    "is built",
+    "is building",
     "was building",
-    "will build"
+    "is built"
    ],
    "answer": 0,
    "explanation": "「was built」。寺は建てる側ではなく建てられる側なので受け身の形にし、「about four hundred years ago」が過去を表すので「was built」となる。「was building」では寺が何かを建てていたという意味になってしまう。",
@@ -13663,13 +13663,13 @@
    "level": "advanced",
    "stem": "The summer fireworks festival will be held by the river next Saturday, so the streets near the station ( ) than usual that evening.",
    "choices": [
-    "are noisier",
-    "will be noisy",
+    "were noisy",
+    "were noisier",
     "will be noisier",
-    "will be the noisiest"
+    "will be noisy"
    ],
    "answer": 2,
-   "explanation": "next Saturday と that evening が先のことを示すので未来の形にし、than があるので noisy を比較級にした「will be noisier」を選ぶ。are noisier では出来事の起こる時が合わず、than の前に原級の noisy を置くこともできない。",
+   "explanation": "next Saturday と that evening が先のことを示すので未来の形にし、than があるので noisy を比較級にした「will be noisier」を選ぶ。were noisier では出来事の起こる時が合わず、than の前に原級の noisy を置くこともできない。",
    "source": "chugaku-drill-v3",
    "subject": "chugaku"
   },
@@ -15569,9 +15569,9 @@
    "stem": "These flowers in the school garden ( ) by the first-year students every morning.",
    "choices": [
     "are taken care of",
-    "are taken care",
-    "take care of",
-    "are taking care of"
+    "are taking care",
+    "are taking care of",
+    "are taken care"
    ],
    "answer": 0,
    "explanation": "take care of のようにまとまりで一つの動詞として働く語句は、受け身にしても最後の前置詞が残るので「are taken care of」となる。of を落とすと語句のまとまりが切れてしまう。花は世話をされる側なので、花が世話をする形にはできない。",
@@ -15644,12 +15644,12 @@
    "stem": "If these boxes ( ) to the back room, the shop can open at ten o'clock.",
    "choices": [
     "are carried",
-    "will be carried",
+    "is carrying",
     "is carried",
     "are carrying"
    ],
    "answer": 0,
-   "explanation": "if が導く条件を表す文の中では、未来のことでも現在形で表すので「are carried」が入る。these boxes は複数なので be 動詞は are になる。箱は運ばれる側だから、箱が運ぶ意味になる形は選べない。",
+   "explanation": "if が導く条件を表す文の中では、未来のことでも現在形で表すので「are carried」が入る。these boxes は複数なので be 動詞は are になり、is carried では数が合わない。箱は運ばれる側だから、箱が運ぶ意味になる形は選べない。",
    "source": "chugaku-drill-v3",
    "subject": "chugaku"
   },
@@ -16258,7 +16258,7 @@
    "level": "advanced",
    "stem": "Look at the rainbow over the sea, Saki! — Wow! I ( ) one like that before.",
    "choices": [
-    "never see",
+    "have ever saw",
     "have ever seen",
     "have never saw",
     "have never seen"
@@ -16798,13 +16798,13 @@
    "level": "advanced",
    "stem": "Mt. Fuji is a mountain ( ) from many parts of this city on a clear day.",
    "choices": [
-    "which can see",
+    "who can see",
     "which can be seen",
     "who can be seen",
-    "which can seen"
+    "which can see"
    ],
    "answer": 1,
-   "explanation": "山は「見られる」側なので受け身にし、助動詞のあとは原形を使って「which can be seen」とする。「which can see」では山が見る側になってしまい、「which can seen」はbe動詞が抜けていて受け身の形になっていない。",
+   "explanation": "山は「見られる」側なので受け身にし、助動詞のあとは原形を使って「which can be seen」とする。「which can see」では山が見る側になってしまう。また who は人を受ける語なので、mountain のような物には使えない。",
    "source": "chugaku-drill-v3",
    "subject": "chugaku"
   },
@@ -16858,13 +16858,13 @@
    "level": "advanced",
    "stem": "Yuki has a lot of homework ( ) before she goes to the concert.",
    "choices": [
-    "that must she finish",
+    "who she must finishes",
     "who she must finish",
     "that she must finishes",
     "that she must finish"
    ],
    "answer": 3,
-   "explanation": "関係代名詞のあとは疑問文の語順にせず、主語・助動詞・動詞の原形の順にして「that she must finish」とする。助動詞のうしろに三人称単数の「finishes」は置けず、「who」は物の先行詞を受けられない。",
+   "explanation": "homework は物なので関係代名詞は that を使い、節の中は主語・助動詞・動詞の原形の順にして「that she must finish」とする。助動詞 must のうしろに三人称単数の「finishes」は置けず、「who」は物の先行詞を受けられない。",
    "source": "chugaku-drill-v3",
    "subject": "chugaku"
   },
@@ -16903,13 +16903,13 @@
    "level": "advanced",
    "stem": "Taku often eats the cookies ( ) at a small shop on the shopping street.",
    "choices": [
-    "that his parents makes",
+    "who his parents makes",
     "that his parents make",
-    "who his parents make",
-    "that his parents making"
+    "that his parents makes",
+    "who his parents make"
    ],
    "answer": 1,
-   "explanation": "先行詞の「the cookies」は物だから関係代名詞に who は使えず、節の中の主語は複数の his parents なので動詞に s をつけない「that his parents make」が入る。making だけでは節の動詞にならない。",
+   "explanation": "先行詞の「the cookies」は物だから関係代名詞に who は使えず、節の中の主語は複数の his parents なので動詞に s をつけない「that his parents make」が入る。makes は主語が三人称単数のときの形なので、ここでは数が合わない。",
    "source": "chugaku-drill-v3",
    "subject": "chugaku"
   },
@@ -16918,13 +16918,13 @@
    "level": "advanced",
    "stem": "The man ( ) in this town for forty years knows all the old stories about it.",
    "choices": [
-    "who have lived",
+    "which have lived",
     "which has lived",
-    "who has live",
+    "who have lived",
     "who has lived"
    ],
    "answer": 3,
-   "explanation": "「for forty years」と期間が続いているので現在完了にし、先行詞の「The man」は単数だから「who has lived」になる。複数に使う「who have lived」は数が合わず、「who has live」は過去分詞の形になっていない。",
+   "explanation": "「for forty years」と期間が続いているので現在完了にし、先行詞の「The man」は人で単数だから「who has lived」になる。複数に使う「who have lived」は数が合わず、which は人を受けられないので man には使えない。",
    "source": "chugaku-drill-v3",
    "subject": "chugaku"
   },
@@ -16933,13 +16933,13 @@
    "level": "advanced",
    "stem": "Why did your team lose the game last Sunday? — The two members ( ) are usually our best players.",
    "choices": [
-    "who doesn't come",
+    "which doesn't come",
     "who didn't come",
     "which didn't come",
-    "who didn't came"
+    "who doesn't come"
    ],
    "answer": 1,
-   "explanation": "相手の発言の「last Sunday」がこの出来事を過去に決めるので、関係詞節は「who didn't come」になる。先行詞は複数の人だから doesn't では数も時も合わない。didn't のうしろの動詞は原形にする。",
+   "explanation": "相手の発言の「last Sunday」がこの出来事を過去に決めるので、関係詞節は「who didn't come」になる。先行詞は複数の人だから doesn't では数も時も合わない。また which は人を受けられないので members には使えない。",
    "source": "chugaku-drill-v3",
    "subject": "chugaku"
   },
@@ -18989,12 +18989,12 @@
    "stem": "Shota ( ) breakfast this morning because he got up too late.",
    "choices": [
     "didn't eat",
+    "doesn't ate",
     "didn't ate",
-    "doesn't eat",
-    "don't eat"
+    "doesn't eat"
    ],
    "answer": 0,
-   "explanation": "because の後の got up が過去形で、今朝一度だけ起きたことを表しています。過去の否定文は did not のあとに動詞の原形を置くので、「didn't eat」が正解です。didn't のあとに過去形の ate は置けません。doesn't eat と don't eat は現在の形で、今朝の出来事には使えません。",
+   "explanation": "this morning と got up が過去の出来事を表しています。過去の否定文は did not のあとに動詞の原形を置くので、「didn't eat」が正解です。didn't のあとに過去形の ate は置けません。doesn't eat は現在の形で、今朝の出来事には使えません。",
    "source": "chugaku-drill-v4",
    "subject": "chugaku"
   },
@@ -19139,12 +19139,12 @@
    "stem": "Some children ( ) in the pool at the sports center now.",
    "choices": [
     "is swimming",
+    "was swimming",
     "were swimming",
-    "are swiming",
     "are swimming"
    ],
    "answer": 3,
-   "explanation": "「now」があるので現在進行形、主語 Some children は複数なので be動詞は are です。swim は最後の m を重ねて swimming とつづるので「are swimming」が正解です。is は単数の主語用、were は過去の文用なので now と合いません。",
+   "explanation": "「now」があるので現在進行形にし、主語の Some children は複数なので be動詞は are を使って「are swimming」とする。is と was は単数の主語に使う形で、was と were は過去の文で使うので now と合わない。",
    "source": "chugaku-drill-v4",
    "subject": "chugaku"
   },
@@ -21824,12 +21824,12 @@
    "stem": "Jun ( ) the piano when he was ten, but he started taking lessons again this year.",
    "choices": [
     "gave up practicing",
+    "gives up to practice",
     "gave up to practice",
-    "gives up practicing",
-    "has given up practicing"
+    "gives up practicing"
    ],
    "answer": 0,
-   "explanation": "when he was ten と過去の一時点が示されているので過去形にする。give up は動名詞を目的語にとるので「gave up practicing」。現在完了は過去を表す when の節と一緒に使えず、gave up to practice は形が誤り。",
+   "explanation": "when he was ten と過去の一時点が示されているので過去形にする。give up は動名詞を目的語にとり、to不定詞はとらないので「gave up practicing」。gives up practicing は現在の形なので、十歳のときという過去の時と合わない。",
    "source": "chugaku-drill-v4",
    "subject": "chugaku"
   },
@@ -24163,13 +24163,13 @@
    "level": "standard",
    "stem": "The bridge ( ) the two towns was built about a hundred years ago.",
    "choices": [
-    "which is connected",
+    "who connect",
     "which connect",
     "who connects",
     "which connects"
    ],
    "answer": 3,
-   "explanation": "橋は2つの町を「つなぐ」側なので能動態にします。先行詞 The bridge は単数なので「which connects」です。which is connected は受け身なので、後ろの the two towns とつながりません。who は人に使う語なので橋には使えません。which connect は数が合いません。",
+   "explanation": "橋は2つの町を「つなぐ」側で、先行詞 The bridge は物で単数なので「which connects」です。which connect では単数の先行詞と動詞の形が合いません。who は人に使う語なので、橋のような物には使えません。",
    "source": "chugaku-drill-v4",
    "subject": "chugaku"
   },
@@ -24300,7 +24300,7 @@
    "choices": [
     "The man taught us tennis",
     "The man who us taught tennis",
-    "Who taught us tennis the man",
+    "The man us taught tennis",
     "The man who taught us tennis"
    ],
    "answer": 3,
@@ -24313,13 +24313,13 @@
    "level": "standard",
    "stem": "The watch which Kenta's father ( ) last Christmas still works well.",
    "choices": [
+    "gives him it",
     "gave him it",
-    "gave it to him",
     "gave him",
-    "gave it him"
+    "gives him"
    ],
    "answer": 2,
-   "explanation": "which がすでに the watch を受けて、gave の目的語の役目をしています。そのため節の中には it を置かず「gave him」とします。gave it to him や gave him it のように it を入れると、同じ物を2回言うことになり、文として誤りです。",
+   "explanation": "which がすでに the watch を受けて、gave の目的語の役目をしています。そのため節の中には it を置かず、last Christmas に合わせて過去形の「gave him」とします。gave him it のように it を入れると、同じ物を2回言うことになり誤りです。",
    "source": "chugaku-drill-v4",
    "subject": "chugaku"
   },
@@ -24373,13 +24373,13 @@
    "level": "advanced",
    "stem": "Who is that woman, Anna? — She's the nurse ( ) care of my grandfather when he was in the hospital last year.",
    "choices": [
+    "which takes",
     "who takes",
     "which took",
-    "who will take",
     "who took"
    ],
    "answer": 3,
-   "explanation": "who の先行詞は看護師で人なので which は使えない。後半に「when he was in the hospital last year」とあり、世話をしたのは去年のことなので過去形の「who took」にする。takes や will take では去年という時と合わない。",
+   "explanation": "who の先行詞は看護師で人なので which は使えない。後半に「when he was in the hospital last year」とあり、世話をしたのは去年のことなので過去形の「who took」にする。who takes では去年という時と合わない。",
    "source": "chugaku-drill-v4",
    "subject": "chugaku"
   },
