@@ -27,7 +27,7 @@
   1. _CHU_DRILL_UNITS の各科目 == server の _GRAMMAR_SUBJECT_UNIT_ORDER の同じ科目 (集合・重複なし・教科をまたぐ同名なし・
      かっこ/コロン/前後の空白なし)。server に単元順がある中学の科目 (chugaku*) は、すべて _CHU_DRILL_UNITS にもある
   2. _CHU_DRILL_LABEL の科目 == _CHU_DRILL_UNITS の科目で、ラベルは道場の topic の前置き (「中学」＋道場の教科名)
-  3. 道場の中学英語・数学・理科のカード (DOJO_SUBJ): topic は「中学<教科> <filter>」、filter は server の単元か、道場だけの単元 (DOJO_ONLY)。
+  3. 道場の中学英語・数学・理科・社会・国語のカード (DOJO_SUBJ): topic は「中学<教科> <filter>」、filter は server の単元か、道場だけの単元 (DOJO_ONLY)。
      server の単元はすべて道場にカードがある。中学のカードに同じ topic が 2 枚ない
   4. HW_DRILL_TOPICS の中学の行 (s='chugaku' か t が「中学」で始まる) は s='chugaku' で、t が道場のカードの topic に実在する。
      HW_SUBJS (英語・数学) の道場のカードは、すべて HW_DRILL_TOPICS にある (クラス宿題で選べる)
@@ -58,12 +58,14 @@ SERVER = os.path.join(ROOT, "server", "main.py")
 CEO = os.path.join(ROOT, "ceo.html")
 DOJO = os.path.join(ROOT, "dojo-drill.html")
 
-# 単元ドリルの中学の科目 → 入試道場のカードの教科名 (subj)。次の教科 (chugaku_kokugo …) を足したらここにも足す
-DOJO_SUBJ = {"chugaku": "英語", "chugaku_math": "数学", "chugaku_rika": "理科"}
+# 単元ドリルの中学の科目 → 入試道場のカードの教科名 (subj)。次の教科を足したらここにも足す
+DOJO_SUBJ = {"chugaku": "英語", "chugaku_math": "数学", "chugaku_rika": "理科", "chugaku_shakai": "社会", "chugaku_kokugo": "国語"}
 # 道場にしか無い単元 (単元ドリルのプールには無い。「やるべきこと」では「対象外」の注記に出る)
-DOJO_ONLY = {"英語": {"過去形", "未来形", "不定詞の用法", "長文読解"}, "数学": set(), "理科": set()}
+#   国語の読解2単元は本文つき (長文型) のドリルが要るので、中学国語のプールに入れていない (2026-09-30)
+DOJO_ONLY = {"英語": {"過去形", "未来形", "不定詞の用法", "長文読解"}, "数学": set(), "理科": set(), "社会": set(),
+             "国語": {"説明的文章", "文学的文章"}}
 # クラス宿題 (HW_DRILL_TOPICS) で単元を選べるようにしてある教科 = 道場のカードを 1 枚ずつ宿題の単元にも出す
-#   (理科は 2026-09-29 時点で宿題の単元に出していない。出すならここに足し、HW_DRILL_TOPICS に s: 'chugaku' で並べる)
+#   (理科・社会・国語は 2026-09-30 時点で宿題の単元に出していない。出すならここに足し、HW_DRILL_TOPICS に s: 'chugaku' で並べる)
 HW_SUBJS = ("英語", "数学")
 SERVER_NAMES = ("_GRAMMAR_SUBJECT_UNIT_ORDER", "_GRAMMAR_CANON_SUBJECTS")
 # server の dict / list / set を書き換えるメソッド (読むだけのメソッド .get / .index / .issuperset … は通す)

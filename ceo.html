@@ -10232,8 +10232,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     // 🧒 2026-09-29 高校入試演習 (subject='chugaku') の弱点を、単元名で中学のドリル科目に振り分ける。
     //   chugaku は入試道場の英数国理社と中学ドリルが collapse した1バケットで、topic が単元名
     //   (= dojo-drill.html の CHU_UNIT_PRESETS の filter)。単元名から教科が決まる:
-    //   中学英語の単元 → chugaku / 中学数学 → chugaku_math / 中学理科 → chugaku_rika / それ以外 (国語・社会・道場にしか
-    //   無い英語の単元 過去形/未来形/不定詞の用法/長文読解) はドリルのプールが無いので従来どおり「対象外」。
+    //   中学英語の単元 → chugaku / 中学数学 → chugaku_math / 中学理科 → chugaku_rika / 中学社会 → chugaku_shakai /
+    //   中学国語 → chugaku_kokugo。それ以外 (国語の読解 説明的文章/文学的文章・道場にしか無い英語の単元
+    //   過去形/未来形/不定詞の用法/長文読解) はドリルのプールが無いので従来どおり「対象外」。
     //   ★単元名は server/main.py の _GRAMMAR_SUBJECT_UNIT_ORDER と同じにする (scripts/check_ceo_chugaku_drill_links.py が照合)。
     var _CHU_DRILL_UNITS = {
       chugaku: ['be動詞・一般動詞', '時制', '助動詞', '名詞・代名詞・冠詞', '比較', '不定詞・動名詞',
@@ -10243,9 +10244,12 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
                      '三平方の定理', '確率', 'データの活用'],
       chugaku_rika: ['光と音', '力と圧力', '電流と回路', '電流と磁界', '運動とエネルギー', '物質と状態変化',
                      '化学変化と原子', 'イオンと酸', '植物', '動物と人体', '生殖と遺伝', '大地の変化', '天気', '天体'],
+      chugaku_shakai: ['世界地理', '日本地理', '歴史 古代', '歴史 中世', '歴史 近世', '歴史 近代', '歴史 現代',
+                       '公民 政治', '公民 経済', '公民 国際', '資料読み取り'],
+      chugaku_kokugo: ['漢字', '語句', '文法', '敬語', '古文', '詩歌'],
     };
     // ラベルは 📨 ボタンの表示と、道場の topic の前置き (「中学数学 正負の数」の「中学数学」) を兼ねる
-    var _CHU_DRILL_LABEL = { chugaku: '中学英語', chugaku_math: '中学数学', chugaku_rika: '中学理科' };
+    var _CHU_DRILL_LABEL = { chugaku: '中学英語', chugaku_math: '中学数学', chugaku_rika: '中学理科', chugaku_shakai: '中学社会', chugaku_kokugo: '中学国語' };
     // 弱点 topic → { subject, unit, prefixed } (対応するドリルが無ければ null)。
     //   宿題の「📝 ドリルで解く」から解くと、元の弱点として道場の単元名「中学数学 正負の数」でも記録される
     //   (dojo-drill.html の drillOrigin)。その前置きは教科を指すので、その教科の単元だけと照合し prefixed を立てる
@@ -10406,7 +10410,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             return `<button type="button" data-assign-drill data-sid="${s.id}" data-subject="${u.subject}" data-unit="${esc(u.unit)}" data-label="${esc(disp)}" data-name="${esc(nm)}" data-grade="${esc(s.grade || '')}" title="${esc(tip)}" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:5px 11px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">📨「${esc(disp)}」</button>`;
           }).join('');
           // 既にボタンが出ている科目は「対象外」注記から除外(英語の非文法トピックだけが残る)
-          //   🧒 高校入試演習 (chugaku) は英数国理社の1バケットなので、中学ドリルがある生徒でも国語・社会などの
+          //   🧒 高校入試演習 (chugaku) は英数国理社の1バケットなので、中学ドリルがある生徒でも国語の読解・道場だけの英語の単元などの
           //   弱点は残る → 注記を消さず、どの単元が対象外かを別の注記で書く (「高校入試演習の弱点は対象外」のままだと
           //   横の 📨「中学数学 …」と食い違って見える)。中学ドリルが無い生徒 (高校生など) の注記は従来と同じ文面。
           const coveredSubj = new Set(dp.units.map(u => u.subject));
