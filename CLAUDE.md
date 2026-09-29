@@ -295,15 +295,22 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   ただし **mypage の単元ドリルは `math-wrap.js` が `√数字`(小数も) と `≦ ≧ ≤ ≥ ≠ ≒ ≈ ± ∞`・裸の `\frac` `\sqrt` `\geq` 等を
   KaTeX に載せる** (class.html は素の文字)。
   `√0.25` が `√0` と `.25` に割れていたのを 2026-09-29 に直した (小数まで丸取り)。√ の中が式なら `√(12/27)` とかっこで書く。
-- 形式ゲートは `scripts/check_chugaku_drill_seed.py` (中学英語と中学数学を1本で見る)、回帰テストは
+- 形式ゲートは `scripts/check_chugaku_drill_seed.py` (中学英語・中学数学・中学理科を1本で見る)、回帰テストは
   `scripts/health_check/test_chugaku_math_drill_pool.py` (CI の server-tests に登録済み)。
 - 次の教科を足すときは、`_GRAMMAR_CANON_SUBJECTS`・別名・ラベル・`_GRAMMAR_SUBJECT_UNIT_ORDER` に1行ずつ、
   CEO の科目選択と補充ボタン・CEO のラベル表 2 つ (学年ミスマッチの確認に出る `_subjJa`・配信済みドリルのチップの `SUBJ_JA`)、
   生徒画面のラベル表 (`class.html` の `GD_SUBJ_JA`・`mypage.js` の `_SUBJ_DRILL_LABEL` と復習カードの `_lbSubj`・mypage.html の `?v=`) を足す。★補充ボタンは `data-subject`/`data-label`/`data-seed`/`data-size`
   を持たせたうえで、**ラッパー関数 (`chugakuMathPoolImport` と同じ形) と DOMContentLoaded の `addEventListener`・`window.` への公開も要る**
   (取込の中身 `_chugakuSubjectImport` だけが共通。これを忘れると押しても何も起きない)。
+  形式ゲート `scripts/check_chugaku_drill_seed.py` の `SEEDS` と、回帰テスト `test_chugaku_math_drill_pool.py` の `SUBJECTS`
+  (ファイル名は数学のままだが、中学英語以外の教科別ドリルをすべて回す) にも1行ずつ足し、CI (server-tests.yml) の paths にシードを足す。
 - 弱点のキー `_weakness_subject_key` は `chugaku*` を `chugaku` に寄せる (提出時の記録科目とは別に、集計側でも1バケットを保証)。
   回帰テストは入試道場と同じ形の記録と合算されて1行になることまで見ている。
+- **中学理科 `chugaku_rika` (2026-09-29)**: 入試道場の rika と同じ14単元。★画面に図・表・グラフは出せないので、実験は
+  **条件と結果を1段落の文章で書く** (「図のように」「表1」「グラフから」や本文の改行はゲートで弾く)。用語は2021年度からの教科書に合わせ
+  **顕性・潜性** (優性・劣性は旧用語として弾く)。高校範囲の語 (物質量・電気陰性度・運動量・比熱・同位体・フレミング など) も弾く。
+  英語 v4 で盲検と単元内の点検を素通りした「名前だけ入れ替えた同じ枠」を防ぐため、生成の最後に**重複点検**の工程を入れ、
+  1単元70問 (標準+やや難 60) 作って外しても標準+やや難が 50 を切らないようにした。
 
 ### 検査は `scripts/run_all_gates.py` に寄せる (2026-08-04)
 - **教材の全ゲートを回す入口は 1 本**: `python3 scripts/run_all_gates.py` (絞るなら `... rika_kagaku`)。
