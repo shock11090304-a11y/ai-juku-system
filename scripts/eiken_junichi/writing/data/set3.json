@@ -1,0 +1,155 @@
+{
+  "no": 3,
+  "summary": {
+    "theme_ja": "垂直農場（屋内での野菜づくり）",
+    "type_ja": "型A：背景 → 利点 → 欠点",
+    "paras": [
+      "As cities around the world continue to grow, some companies are experimenting with a new way of producing food close to where people live. In vertical farms, vegetables such as lettuce and herbs are grown indoors on shelves stacked from the floor to the ceiling. Instead of sunlight and soil, the plants receive light from LED lamps and nutrients dissolved in water, while computers carefully control the temperature and humidity inside the buildings.",
+      "Supporters believe that this method has great potential. Because the plants are grown indoors, harvests are not affected by bad weather, and crops can be produced all year round. Vertical farms also need far less land and water than traditional farms, and they rarely require pesticides, since insects cannot easily get inside. Moreover, they can be built in or near cities, so fresh vegetables can reach consumers quickly without being transported long distances.",
+      "However, vertical farming also faces serious challenges. Running the lights and air-conditioning systems requires huge amounts of electricity, which makes the vegetables expensive and can increase greenhouse gas emissions if the power comes from fossil fuels. In addition, only a limited range of crops can be grown profitably in this way. Staple foods such as rice and wheat would be far too costly to grow indoors, so vertical farms are unlikely to replace traditional agriculture any time soon."
+    ],
+    "model": "Some companies are now growing vegetables indoors on stacked shelves, using artificial light and nutrient-rich water rather than sunlight and soil. This method allows stable production throughout the year, uses little land, water, or pesticide, and brings fresh produce close to urban consumers. However, its heavy electricity use raises costs and may increase emissions, and because it suits only a few crops, it cannot yet replace conventional farming.",
+    "para_roles": [
+      {
+        "role": "背景",
+        "point_ja": "都市の拡大を受けて、屋内の棚で LED と養液を使って野菜を育てる垂直農場が登場した"
+      },
+      {
+        "role": "利点",
+        "point_ja": "天候に左右されず一年中収穫できる・土地や水、農薬が少なくてすむ・都市の近くで新鮮な野菜を届けられる"
+      },
+      {
+        "role": "欠点",
+        "point_ja": "電力を大量に使うので高価になり排出も増えうる・育てられる作物が限られ、従来の農業に代わるのは当面むずかしい"
+      }
+    ],
+    "memo_ja": [
+      "① 屋内の棚で LED・養液を使って野菜を育てる「垂直農場」",
+      "② 天候に左右されず通年 ／ 土地・水・農薬が少ない ／ 都市の近くで新鮮",
+      "③ 電気を大量に使う → 高い・排出↑の恐れ ／ 作物が限られる → 従来の農業の代わりは当面ムリ"
+    ],
+    "paraphrases": [
+      {
+        "src": "grown indoors on shelves stacked from the floor to the ceiling",
+        "dst": "indoors on stacked shelves",
+        "how": "短くまとめる"
+      },
+      {
+        "src": "light from LED lamps",
+        "dst": "artificial light",
+        "how": "具体 → 抽象"
+      },
+      {
+        "src": "nutrients dissolved in water",
+        "dst": "nutrient-rich water",
+        "how": "構文をかえる"
+      },
+      {
+        "src": "harvests are not affected by bad weather, and crops can be produced all year round",
+        "dst": "stable production throughout the year",
+        "how": "文 → 名詞句"
+      },
+      {
+        "src": "without being transported long distances",
+        "dst": "brings fresh produce close to urban consumers",
+        "how": "反対側から言う"
+      },
+      {
+        "src": "requires huge amounts of electricity",
+        "dst": "its heavy electricity use",
+        "how": "文 → 名詞句"
+      },
+      {
+        "src": "only a limited range of crops can be grown profitably",
+        "dst": "it suits only a few crops",
+        "how": "語をかえる"
+      },
+      {
+        "src": "unlikely to replace traditional agriculture any time soon",
+        "dst": "cannot yet replace conventional farming",
+        "how": "語をかえる"
+      }
+    ],
+    "omitted": [
+      {
+        "src": "vegetables such as lettuce and herbs",
+        "why_ja": "such as の後ろは具体例 → vegetables だけ残す"
+      },
+      {
+        "src": "computers carefully control the temperature and humidity",
+        "why_ja": "しくみの細部"
+      },
+      {
+        "src": "since insects cannot easily get inside",
+        "why_ja": "理由の細部"
+      },
+      {
+        "src": "Staple foods such as rice and wheat",
+        "why_ja": "具体例 → few crops にまとめる"
+      }
+    ],
+    "note_ja": "第3段落は欠点が2つ（電気代・作物の種類）と、その結論（従来の農業の代わりにはならない）。結論まで入れて初めて段落の要点になる。if the power comes from fossil fuels のような条件は、may（〜かもしれない）の1語で表すと短くできる。"
+  },
+  "essay": {
+    "topic": "Should the retirement age in Japan be raised?",
+    "points": [
+      "Labor shortage",
+      "Health",
+      "Pensions",
+      "Young workers"
+    ],
+    "stance": "agree",
+    "used_points": [
+      "Pensions",
+      "Health"
+    ],
+    "paras": [
+      "I believe that the retirement age in Japan should be raised. I have two reasons for this opinion.",
+      "First, raising the retirement age would reduce the pressure on the pension system. As the population ages, fewer workers have to support a growing number of retired people. If people worked for several more years, they would continue to pay contributions and start receiving their pensions later, which would make the whole system more sustainable.",
+      "Second, working longer can benefit people's health. Many people today remain active well into their sixties, and for them, continuing to work is a good way to stay physically and mentally fit and to keep a sense of purpose. Studies also suggest that older people who stay socially active are less likely to develop dementia.",
+      "For these reasons, I believe that raising the retirement age would be good for both individuals and society."
+    ],
+    "expressions": [
+      {
+        "en": "reduce the pressure on",
+        "ja": "〜への負担を減らす"
+      },
+      {
+        "en": "a growing number of",
+        "ja": "ますます多くの〜"
+      },
+      {
+        "en": "If people worked for several more years, they would",
+        "ja": "If S＋過去形, S would …：仮定法過去で「もし〜したら」の効果を述べる"
+      },
+      {
+        "en": "well into their sixties",
+        "ja": "60代になってもずっと"
+      },
+      {
+        "en": "keep a sense of purpose",
+        "ja": "生きがい（目的意識）を保つ"
+      },
+      {
+        "en": "are less likely to",
+        "ja": "〜しにくい（be likely to の比較級）"
+      }
+    ],
+    "note_ja": "Health は反対側（高齢で働き続けるのは体に負担）にも、賛成側（働くことが健康を保つ）にも使える。第2段落の If people worked …, they would … は「提案が実現したらどうなるか」を示す仮定法の定番。結論の both individuals and society は、理由1（社会＝年金）と理由2（個人＝健康）を1語ずつで言い直したもの。",
+    "opposite": {
+      "stance_en": "I do not think that the retirement age in Japan should be raised.",
+      "reasons": [
+        {
+          "point": "Health",
+          "topic_en": "First, not everyone is healthy enough to keep working in their late sixties.",
+          "support_ja": "建設や介護のように体力が必要な仕事では、年齢とともにけがや病気のリスクが高まる。働ける期間には個人差が大きく、一律に定年を上げるのは酷だ。"
+        },
+        {
+          "point": "Young workers",
+          "topic_en": "Second, a higher retirement age could reduce opportunities for young workers.",
+          "support_ja": "上の世代が長くポストにとどまると、若手の採用や昇進の機会が減り、組織の新陳代謝も遅れる。"
+        }
+      ]
+    }
+  }
+}

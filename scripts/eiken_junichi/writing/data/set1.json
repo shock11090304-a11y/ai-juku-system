@@ -1,0 +1,151 @@
+{
+  "no": 1,
+  "summary": {
+    "theme_ja": "キャッシュレス決済",
+    "type_ja": "型A：背景 → 利点 → 欠点",
+    "paras": [
+      "Japan has long been known as a country where people prefer to pay in cash. Even after credit cards became widely available, many shoppers continued to carry large amounts of cash and felt uneasy about spending money they could not see. In recent years, however, this habit has begun to change. Smartphone payment apps and contactless cards have spread rapidly, and the government has encouraged their use by offering points and other rewards to consumers.",
+      "Supporters of cashless payments point out several benefits. Customers can pay quickly without searching for coins, and they can easily check their spending records on their phones. Businesses also gain, because they spend less time counting cash at the end of the day or taking it to the bank. In addition, some experts believe that electronic records make it harder for people to hide their income in order to avoid paying taxes.",
+      "Nevertheless, not everyone is ready to give up cash. Many elderly people find payment apps confusing, and some small shops are reluctant to accept cashless payments because they have to pay fees to the payment companies. There are also concerns about security, as personal information could be stolen by criminals. Furthermore, power outages during natural disasters can make electronic payments impossible, which is one reason why many people still keep some cash at home."
+    ],
+    "model": "Although Japanese people have traditionally preferred cash, cashless payment methods have recently become popular, partly thanks to government incentives. They let customers pay faster and track their spending, spare businesses the trouble of handling cash, and may help prevent tax evasion. However, older people often find them difficult, small stores dislike the fees, personal data may be stolen, and they cannot be used during blackouts caused by disasters.",
+    "para_roles": [
+      {
+        "role": "背景",
+        "point_ja": "現金志向の強かった日本でも、アプリやカードでの支払いが急速に広まり、政府もポイント還元などで後押ししている"
+      },
+      {
+        "role": "利点",
+        "point_ja": "客は速く払えて支出も確認しやすい。店は現金を扱う手間が省ける。脱税の防止にも役立つ可能性がある"
+      },
+      {
+        "role": "欠点",
+        "point_ja": "高齢者には使いにくい・小さな店は手数料を嫌う・個人情報が盗まれる恐れ・災害の停電時に使えない"
+      }
+    ],
+    "memo_ja": [
+      "① 現金派の日本でもキャッシュレスが急拡大（政府がポイントで後押し）",
+      "② 客：速い・支出を確認しやすい ／ 店：現金を扱う手間↓ ／ 脱税防止にも",
+      "③ 高齢者に難しい・手数料・情報が盗まれる・災害時の停電"
+    ],
+    "paraphrases": [
+      {
+        "src": "prefer to pay in cash",
+        "dst": "have traditionally preferred cash",
+        "how": "構文をかえる"
+      },
+      {
+        "src": "offering points and other rewards to consumers",
+        "dst": "government incentives",
+        "how": "具体 → 抽象"
+      },
+      {
+        "src": "check their spending records on their phones",
+        "dst": "track their spending",
+        "how": "語をかえる"
+      },
+      {
+        "src": "counting cash at the end of the day or taking it to the bank",
+        "dst": "the trouble of handling cash",
+        "how": "具体 → 抽象"
+      },
+      {
+        "src": "hide their income in order to avoid paying taxes",
+        "dst": "tax evasion",
+        "how": "文 → 名詞句"
+      },
+      {
+        "src": "find payment apps confusing",
+        "dst": "find them difficult",
+        "how": "語をかえる"
+      },
+      {
+        "src": "personal information could be stolen by criminals",
+        "dst": "personal data may be stolen",
+        "how": "語をかえる"
+      },
+      {
+        "src": "power outages during natural disasters",
+        "dst": "blackouts caused by disasters",
+        "how": "語をかえる"
+      }
+    ],
+    "omitted": [
+      {
+        "src": "felt uneasy about spending money they could not see",
+        "why_ja": "現金志向の理由の説明。細部なので削る"
+      },
+      {
+        "src": "Smartphone payment apps and contactless cards",
+        "why_ja": "具体例 → cashless payment methods とまとめ語にする"
+      },
+      {
+        "src": "without searching for coins",
+        "why_ja": "具体的な場面 → pay faster に含める"
+      },
+      {
+        "src": "which is one reason why many people still keep some cash at home",
+        "why_ja": "補足の説明。要点ではない"
+      }
+    ],
+    "note_ja": "第3段落は Nevertheless のあとに欠点が4つ並ぶ（高齢者・手数料・安全面・災害）。1つずつ文にすると語数が足りなくなるので、主語＋動詞の短い節を4つ並べて1文にまとめている。語数がきついときは「使いにくい人がいる」「安全面や停電時の不安がある」のように、さらに大きくまとめてもよい。"
+  },
+  "essay": {
+    "topic": "Agree or disagree: Students should be allowed to use AI tools when doing their homework",
+    "points": [
+      "Learning",
+      "Fairness",
+      "Future careers",
+      "Creativity"
+    ],
+    "stance": "disagree",
+    "used_points": [
+      "Learning",
+      "Fairness"
+    ],
+    "paras": [
+      "I disagree with the idea that students should be allowed to use AI tools when doing their homework. I have two reasons for this opinion.",
+      "First, relying on AI would prevent students from truly learning. Homework is meant to make students think through problems by themselves. If an AI tool writes their essays or solves their math problems, they may submit perfect answers without understanding the content, and their skills will not improve.",
+      "Second, allowing AI would make homework unfair. Students who have access to advanced AI services could easily earn top marks, while those who choose to work honestly might receive lower grades despite their efforts. Moreover, teachers would find it almost impossible to tell how much of the work each student actually did.",
+      "For these reasons, I believe that students should not be permitted to use AI tools for their homework."
+    ],
+    "expressions": [
+      {
+        "en": "I disagree with the idea that",
+        "ja": "〜という考えに反対だ（TOPIC の文をそのまま続けられる）"
+      },
+      {
+        "en": "prevent students from truly learning",
+        "ja": "prevent A from doing：A が〜するのを妨げる"
+      },
+      {
+        "en": "is meant to",
+        "ja": "be meant to do：〜するためのものだ"
+      },
+      {
+        "en": "have access to",
+        "ja": "〜を利用できる"
+      },
+      {
+        "en": "find it almost impossible to",
+        "ja": "find it … to do：〜するのは…だと分かる（形式目的語の it）"
+      }
+    ],
+    "note_ja": "Learning は「AI が家庭教師になる」なら賛成、「自分で考えなくなる」なら反対の理由になる。POINTS はどちらの立場にも使えるものが多いので、POINTS を見て「説明と具体例がすぐ浮かぶ側」を選ぶと速い。Agree or disagree 型の TOPIC は、I agree that / I disagree with the idea that のあとに TOPIC の文を続けて書き出すと、立場がはっきりする。",
+    "opposite": {
+      "stance_en": "I agree that students should be allowed to use AI tools when doing their homework.",
+      "reasons": [
+        {
+          "point": "Future careers",
+          "topic_en": "First, learning to use AI tools well is good preparation for students' future careers.",
+          "support_ja": "多くの職場ですでに AI が使われている。学生のうちに、AI の答えをうのみにせず確かめながら使う力をつけておくべきだ。"
+        },
+        {
+          "point": "Learning",
+          "topic_en": "Second, AI tools can help students learn more effectively.",
+          "support_ja": "わからない問題があっても、AI がその場で一人ひとりに合わせて説明してくれる。塾や家庭教師に頼れない生徒にとっては、学習の差を縮める助けにもなる。"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "no": 6,
+  "summary": {
+    "theme_ja": "電動キックボードのシェア",
+    "type_ja": "型A：変化 → 利点 → 問題（とその結果）",
+    "paras": [
+      "Electric scooters that can be rented through smartphone apps have appeared in many cities around the world. Users simply unlock a scooter with their phone, ride it to their destination, and leave it there for the next user. In Japan, a revised traffic law that took effect in 2023 made it possible for people aged 16 or over to ride certain small electric scooters without a driver's license, and rental services have since expanded in major cities.",
+      "Supporters say that these scooters are a convenient and environmentally friendly way to travel short distances. They are especially useful for trips that are too far to walk but too short to justify taking a taxi, such as getting from a train station to an office. Because they run on electricity, they produce no exhaust gas, and some city officials hope that they will encourage residents to use their cars less often.",
+      "However, the rapid spread of electric scooters has raised safety concerns. The number of accidents involving riders has increased, and some riders have been seen breaking traffic rules, for example by running red lights or riding after drinking alcohol. Pedestrians, especially elderly people, often feel threatened when scooters pass close by at high speed. As a result, some cities overseas have banned rental scooters altogether, while others have introduced stricter rules, including lower speed limits and heavier fines."
+    ],
+    "model": "Rental electric scooters that are unlocked with smartphone apps have spread in cities worldwide, and Japan has recently relaxed its rules on riding them. They provide a convenient, emission-free way to cover short distances and could reduce car use. However, an increase in accidents, riders who ignore traffic rules, and pedestrians' fears have led some cities to ban them and others to tighten regulations.",
+    "para_roles": [
+      {
+        "role": "変化",
+        "point_ja": "スマホで借りる電動キックボードが世界の都市に広がり、日本でも法改正で乗りやすくなった"
+      },
+      {
+        "role": "利点",
+        "point_ja": "短い距離の移動に便利で排気ガスを出さず、車の利用を減らす効果も期待される"
+      },
+      {
+        "role": "問題",
+        "point_ja": "事故や交通ルール違反が増え、歩行者も不安を感じている。その結果、禁止したり規制を強めたりする都市も出てきた"
+      }
+    ],
+    "memo_ja": [
+      "① アプリで借りる電動キックボードが世界で拡大 ／ 日本も法改正で免許不要に",
+      "② 短距離に便利・排気ガスなし・車の利用↓に期待",
+      "③ 事故↑・ルール違反・歩行者の不安 → 禁止や規制強化の都市も"
+    ],
+    "paraphrases": [
+      {
+        "src": "have appeared in many cities around the world",
+        "dst": "have spread in cities worldwide",
+        "how": "語をかえる"
+      },
+      {
+        "src": "made it possible for people aged 16 or over to ride certain small electric scooters without a driver's license",
+        "dst": "Japan has recently relaxed its rules on riding them",
+        "how": "具体 → 抽象"
+      },
+      {
+        "src": "a convenient and environmentally friendly way to travel short distances",
+        "dst": "a convenient, emission-free way to cover short distances",
+        "how": "語をかえる"
+      },
+      {
+        "src": "encourage residents to use their cars less often",
+        "dst": "could reduce car use",
+        "how": "構文をかえる"
+      },
+      {
+        "src": "The number of accidents involving riders has increased",
+        "dst": "an increase in accidents",
+        "how": "文 → 名詞句"
+      },
+      {
+        "src": "breaking traffic rules, for example by running red lights or riding after drinking alcohol",
+        "dst": "riders who ignore traffic rules",
+        "how": "具体 → 抽象"
+      },
+      {
+        "src": "often feel threatened",
+        "dst": "pedestrians' fears",
+        "how": "動詞 → 名詞"
+      },
+      {
+        "src": "introduced stricter rules",
+        "dst": "tighten regulations",
+        "how": "語をかえる"
+      }
+    ],
+    "omitted": [
+      {
+        "src": "unlock a scooter with their phone, ride it to their destination, and leave it there for the next user",
+        "why_ja": "使い方の細部"
+      },
+      {
+        "src": "such as getting from a train station to an office",
+        "why_ja": "such as の後ろは具体例"
+      },
+      {
+        "src": "especially elderly people",
+        "why_ja": "具体例 → 歩行者全体にまとめる"
+      },
+      {
+        "src": "including lower speed limits and heavier fines",
+        "why_ja": "規制の具体例 → tighten regulations にまとめる"
+      }
+    ],
+    "note_ja": "数字（2023年・16歳）は要約に入れない。「日本でも法改正で乗りやすくなった」という事実だけを抽象化して残す。第3段落は「問題3つ → As a result（対応）」の因果。原因（事故・違反・不安）をまとめて主語にし、結果を have led A to do で受けると、因果が1文で書ける。"
+  },
+  "essay": {
+    "topic": "Should Japan accept more foreign workers?",
+    "points": [
+      "Economy",
+      "Cultural diversity",
+      "Language barriers",
+      "Working conditions"
+    ],
+    "stance": "agree",
+    "used_points": [
+      "Economy",
+      "Cultural diversity"
+    ],
+    "paras": [
+      "I believe that Japan should accept more foreign workers. I have two reasons for this opinion.",
+      "First, foreign workers are necessary to keep the Japanese economy running. Because of the low birth rate and aging population, many industries, such as nursing care, construction, and agriculture, cannot find enough employees. Without workers from overseas, some companies may be forced to reduce their services or even close down, which would damage local economies.",
+      "Second, accepting more people from abroad would increase cultural diversity. Working alongside colleagues from different backgrounds exposes Japanese people to new ideas and ways of thinking. This can lead to innovation and help Japanese companies develop products and services that appeal to customers around the world.",
+      "For these reasons, I am convinced that Japan should welcome more workers from other countries."
+    ],
+    "expressions": [
+      {
+        "en": "keep the Japanese economy running",
+        "ja": "keep A running：A を回し続ける・維持する"
+      },
+      {
+        "en": "be forced to",
+        "ja": "〜せざるを得なくなる"
+      },
+      {
+        "en": "Working alongside colleagues from different backgrounds",
+        "ja": "さまざまな背景をもつ同僚と一緒に働くこと（動名詞の主語）"
+      },
+      {
+        "en": "exposes Japanese people to new ideas",
+        "ja": "expose A to B：A を B に触れさせる"
+      },
+      {
+        "en": "appeal to customers around the world",
+        "ja": "appeal to ~：〜にとって魅力がある"
+      }
+    ],
+    "note_ja": "社会問題のテーマでは、日本の現状（少子高齢化・人手不足）を理由の説明に入れると具体性が一気に上がる。ただし数字は不確かなら書かない（many industries で十分）。Cultural diversity のような抽象的な POINT は、「どんな良いことが起きるか」（新しい発想 → 技術革新 → 海外で売れる製品）まで順に展開する。",
+    "opposite": {
+      "stance_en": "I do not think that Japan should accept more foreign workers at present.",
+      "reasons": [
+        {
+          "point": "Language barriers",
+          "topic_en": "First, language barriers can cause serious problems both at work and in daily life.",
+          "support_ja": "職場で安全上の指示が正しく伝わらないと、事故につながりかねない。病院や役所の手続き、子どもの学校などでも支援が必要になるが、受け入れの体制はまだ十分ではない。"
+        },
+        {
+          "point": "Working conditions",
+          "topic_en": "Second, Japan must first improve the working conditions of the foreign workers who are already here.",
+          "support_ja": "低い賃金や長時間労働が問題になってきた。受け入れを増やす前に、公正な待遇を保証するしくみを整えるべきだ。"
+        }
+      ]
+    }
+  }
+}

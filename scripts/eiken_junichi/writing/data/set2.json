@@ -1,0 +1,151 @@
+{
+  "no": 2,
+  "summary": {
+    "theme_ja": "学校でのスマートフォン禁止",
+    "type_ja": "型C：変化 → 賛成派 → 反対派",
+    "paras": [
+      "In many countries, schools are introducing stricter rules on smartphone use. Some require students to hand in their phones when they arrive in the morning, while others ask them to keep their devices switched off in lockers until the end of the day. A growing number of governments have also been discussing whether to ban phones in schools nationwide, and several have already done so.",
+      "Those in favor of such bans argue that phones are a major distraction. Notifications from social media and games make it difficult for young people to concentrate during lessons, and some teachers report that students' grades have improved since the new rules were introduced. Supporters also point out that without phones, students talk to each other more during breaks, and that online bullying among students tends to decrease.",
+      "Critics, however, question whether bans are the best approach. Many parents want to be able to contact their children in an emergency, such as a natural disaster. Some educators also argue that smartphones can be valuable learning tools, allowing students to look up information or record the results of experiments. In their view, rather than simply taking phones away, schools should teach young people how to use technology responsibly, since this is a skill they will need throughout their lives."
+    ],
+    "model": "Schools in many countries are restricting smartphone use, and several governments have gone further by introducing nationwide bans. Supporters claim that such rules help students concentrate and achieve better grades, encourage face-to-face conversation, and reduce cyberbullying. However, opponents argue that parents need to reach their children in emergencies, that phones can support learning, and that schools should instead teach students to use technology sensibly.",
+    "para_roles": [
+      {
+        "role": "変化",
+        "point_ja": "多くの国の学校でスマホの使用制限が広がり、学校での全面禁止に踏み切った政府もある"
+      },
+      {
+        "role": "賛成派",
+        "point_ja": "集中できて成績が上がる・休み時間の会話が増える・ネットいじめが減る"
+      },
+      {
+        "role": "反対派",
+        "point_ja": "緊急時に連絡が取れない・学習の道具になる・取り上げるより正しい使い方を教えるべきだ"
+      }
+    ],
+    "memo_ja": [
+      "① 学校でのスマホ制限が拡大（全面禁止の国も）",
+      "② 賛成：集中・成績↑ ／ 会話↑ ／ ネットいじめ↓",
+      "③ 反対：緊急時の連絡 ／ 学習に役立つ ／ 使い方を教えるべき"
+    ],
+    "paraphrases": [
+      {
+        "src": "stricter rules on smartphone use",
+        "dst": "restricting smartphone use",
+        "how": "品詞をかえる"
+      },
+      {
+        "src": "ban phones in schools nationwide",
+        "dst": "introducing nationwide bans",
+        "how": "品詞をかえる（動詞 → 名詞）"
+      },
+      {
+        "src": "make it difficult for young people to concentrate",
+        "dst": "help students concentrate",
+        "how": "反対側から言う"
+      },
+      {
+        "src": "students talk to each other more during breaks",
+        "dst": "encourage face-to-face conversation",
+        "how": "文 → 名詞句"
+      },
+      {
+        "src": "online bullying",
+        "dst": "cyberbullying",
+        "how": "語をかえる"
+      },
+      {
+        "src": "contact their children in an emergency",
+        "dst": "reach their children in emergencies",
+        "how": "語をかえる"
+      },
+      {
+        "src": "valuable learning tools",
+        "dst": "support learning",
+        "how": "名詞句 → 動詞"
+      },
+      {
+        "src": "how to use technology responsibly",
+        "dst": "to use technology sensibly",
+        "how": "語をかえる"
+      }
+    ],
+    "omitted": [
+      {
+        "src": "hand in their phones when they arrive in the morning",
+        "why_ja": "制限の具体例 → restricting smartphone use にまとめる"
+      },
+      {
+        "src": "Notifications from social media and games",
+        "why_ja": "気が散る原因の具体例"
+      },
+      {
+        "src": "such as a natural disaster",
+        "why_ja": "such as の後ろは具体例"
+      },
+      {
+        "src": "look up information or record the results of experiments",
+        "why_ja": "学習での使い方の具体例 → support learning にまとめる"
+      }
+    ],
+    "note_ja": "第1段落の「全国で禁止する政府も出てきた」は、gone further（さらに踏み込んだ）で「制限から禁止へ」の変化を表している。第2段落は賛成派、第3段落は反対派の意見。要約では Supporters claim that … / However, opponents argue that … のように「誰の意見か」を必ず示す（書かないと自分の意見に見える）。反対派の3つの主張は that 節を3つ並べると1文にまとまる。"
+  },
+  "essay": {
+    "topic": "Do zoos still have an important role to play in today's society?",
+    "points": [
+      "Animal welfare",
+      "Education",
+      "Endangered species",
+      "Technology"
+    ],
+    "stance": "agree",
+    "used_points": [
+      "Endangered species",
+      "Education"
+    ],
+    "paras": [
+      "I believe that zoos still have an important role to play in today's society. There are two main reasons for my opinion.",
+      "First, zoos help protect endangered species. Many modern zoos run breeding programs for animals that are close to extinction in the wild because of hunting or the loss of their habitats. Some of these animals have even been successfully returned to nature. Without such efforts, several species might already have disappeared.",
+      "Second, zoos offer valuable educational opportunities. Seeing real animals up close makes a much stronger impression on children than watching videos. Many zoos also hold talks and exhibitions that teach visitors about environmental problems. Such experiences can motivate people, particularly young ones, to take action to protect nature.",
+      "For these reasons, I am convinced that zoos continue to be necessary in modern society."
+    ],
+    "expressions": [
+      {
+        "en": "have an important role to play in",
+        "ja": "〜で果たすべき重要な役割がある（TOPIC の言い回しをそのまま使える）"
+      },
+      {
+        "en": "close to extinction",
+        "ja": "絶滅寸前の"
+      },
+      {
+        "en": "the loss of their habitats",
+        "ja": "生息地の喪失（環境問題の頻出表現）"
+      },
+      {
+        "en": "Without such efforts, several species might already have disappeared",
+        "ja": "Without ~, S might have done：〜がなければ…していたかもしれない（仮定法過去完了）"
+      },
+      {
+        "en": "motivate people",
+        "ja": "motivate A to do：A を〜する気にさせる"
+      }
+    ],
+    "note_ja": "理由の段落は「主張 → 説明 → 具体例 → だめ押し」の順。第2段落の最後の文（Without such efforts, …）のように「もしそれがなかったら」と逆側から大切さを示すと説得力が増す。Endangered species と Education は、どちらも賛成側で具体例を出しやすい POINT。",
+    "opposite": {
+      "stance_en": "I do not think that zoos still have an important role to play in today's society.",
+      "reasons": [
+        {
+          "point": "Animal welfare",
+          "topic_en": "First, keeping wild animals in captivity harms their welfare.",
+          "support_ja": "どんなに広い飼育施設でも自然の生息地は再現できない。ゾウやホッキョクグマのように本来は広い範囲を移動する動物は、同じ場所を行き来し続けるなど、ストレスの兆候を見せることがある。"
+        },
+        {
+          "point": "Technology",
+          "topic_en": "Second, modern technology offers better ways to learn about animals.",
+          "support_ja": "高画質のドキュメンタリーや VR、野生の生息地に置いたライブカメラを使えば、動物を閉じ込めずに自然な姿を学べる。"
+        }
+      ]
+    }
+  }
+}

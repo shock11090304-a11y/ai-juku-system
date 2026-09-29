@@ -1,0 +1,152 @@
+{
+  "summary": {
+    "theme_ja": "セルフレジ",
+    "type_ja": "型A：背景 → 利点 → 欠点",
+    "paras": [
+      "Over the past two decades, self-checkout machines have become a familiar sight in supermarkets and other stores. Instead of waiting in line for a cashier, customers scan their own items, pay by card or cash, and pack their bags themselves. In many countries, including Japan, retailers have been installing these machines rapidly, partly because they are finding it increasingly difficult to hire enough staff.",
+      "For stores, the advantages are clear. A single employee can supervise several machines at once, which allows businesses to cut labor costs and assign workers to other tasks, such as restocking shelves or helping customers find products. Many shoppers also welcome the change. When stores are crowded, self-checkout lines often move faster, and some people simply prefer to pay without having to talk to anyone.",
+      "However, the technology has also created new problems. Some stores report that more goods are leaving without being paid for, whether because of deliberate theft or honest mistakes. Older customers and people who are unfamiliar with digital devices often struggle to use the machines and end up needing help from staff anyway. As a result, some retailers have recently reduced the number of self-checkout machines or limited them to customers buying only a few items."
+    ],
+    "model": "Self-checkout machines have spread quickly in stores, partly because retailers are struggling to recruit workers. They enable businesses to reduce staffing costs and use employees more efficiently, and many customers appreciate shorter waits and less face-to-face interaction. However, they have increased losses from theft and scanning errors, and some older or less tech-savvy shoppers find them hard to use, so several retailers are now cutting back on them.",
+    "para_roles": [
+      {
+        "role": "背景",
+        "point_ja": "人手不足もあって、セルフレジが急速に広まっている"
+      },
+      {
+        "role": "利点",
+        "point_ja": "店は人件費を減らし、人員を有効に使える。客は待ち時間が短く、会話もいらない"
+      },
+      {
+        "role": "欠点",
+        "point_ja": "未払いの商品が増え、高齢者などには使いにくい。その結果、台数を減らす店も出ている"
+      }
+    ],
+    "memo_ja": [
+      "① 人手不足もあって急速に普及",
+      "② 店：人件費↓・人員を有効活用 ／ 客：待ち時間↓・会話不要",
+      "③ 未払い↑・高齢者などに使いにくい → 減らす店も"
+    ],
+    "paraphrases": [
+      {
+        "src": "finding it increasingly difficult to hire enough staff",
+        "dst": "struggling to recruit workers",
+        "how": "語をかえる"
+      },
+      {
+        "src": "cut labor costs",
+        "dst": "reduce staffing costs",
+        "how": "語をかえる"
+      },
+      {
+        "src": "assign workers to other tasks",
+        "dst": "use employees more efficiently",
+        "how": "具体 → 抽象"
+      },
+      {
+        "src": "self-checkout lines often move faster",
+        "dst": "shorter waits",
+        "how": "文 → 名詞句"
+      },
+      {
+        "src": "pay without having to talk to anyone",
+        "dst": "less face-to-face interaction",
+        "how": "文 → 名詞句"
+      },
+      {
+        "src": "whether because of deliberate theft or honest mistakes",
+        "dst": "losses from theft and scanning errors",
+        "how": "構文をかえる"
+      },
+      {
+        "src": "people who are unfamiliar with digital devices",
+        "dst": "less tech-savvy shoppers",
+        "how": "関係詞節 → 形容詞"
+      },
+      {
+        "src": "reduced the number of self-checkout machines",
+        "dst": "cutting back on them",
+        "how": "語をかえる"
+      }
+    ],
+    "omitted": [
+      {
+        "src": "pay by card or cash, and pack their bags themselves",
+        "why_ja": "使い方の細かい説明。要点ではない"
+      },
+      {
+        "src": "such as restocking shelves or helping customers find products",
+        "why_ja": "such as の後ろは具体例 →「人員を有効に使う」にまとめる"
+      },
+      {
+        "src": "limited them to customers buying only a few items",
+        "why_ja": "対応の具体例 → cutting back on them にまとめる"
+      }
+    ],
+    "note_ja": "第1段落の「人手不足」は、普及の理由として要点に入る。第3段落は「欠点 → その結果」の2段なので、As a result の中身（台数を減らす店が出ている）まで書いて終わる。"
+  },
+  "essay": {
+    "topic": "Should schools spend more time teaching students how to manage money?",
+    "points": [
+      "Adult life",
+      "Study time",
+      "Economy",
+      "Parents"
+    ],
+    "stance": "agree",
+    "used_points": [
+      "Adult life",
+      "Economy"
+    ],
+    "paras": [
+      "I believe that schools should spend more time teaching students how to manage money. I have two reasons for this opinion.",
+      "First, money management is an essential skill for adult life. After graduating, young people have to pay rent, use credit cards, and make decisions about loans and savings. Without proper knowledge, they may fall into debt or become victims of financial fraud. Learning the basics at school would help them avoid such costly mistakes.",
+      "Second, financial education can benefit the economy as a whole. People who understand how saving and investing work are more likely to plan for the future and use their money wisely. If more citizens made sound financial decisions, fewer households would face serious money problems, and consumer spending would become more stable.",
+      "For these reasons, I think that schools should give money management a more important place in the curriculum."
+    ],
+    "memo_ja": [
+      "立場：賛成（Adult life と Economy なら、説明と具体例がすぐ浮かぶ）",
+      "理由1 Adult life：家賃・クレジットカード・ローン → 知識がないと借金や詐欺の被害に",
+      "理由2 Economy：貯蓄・投資のしくみを理解 → 計画的に使う → 家計も消費も安定",
+      "結論：立場を別の言い方でくり返す（give money management a more important place）"
+    ],
+    "expressions": [
+      {
+        "en": "an essential skill for",
+        "ja": "〜に不可欠な技能"
+      },
+      {
+        "en": "fall into debt",
+        "ja": "借金を抱える"
+      },
+      {
+        "en": "become victims of",
+        "ja": "〜の被害者になる"
+      },
+      {
+        "en": "as a whole",
+        "ja": "全体として"
+      },
+      {
+        "en": "are more likely to",
+        "ja": "〜する可能性が高い"
+      }
+    ],
+    "note_ja": "各理由は「主張（First, …）→ 説明 → 具体例・結果」の3段。結論では新しい理由を出さず、序論の立場を別の表現でくり返している。",
+    "opposite": {
+      "stance_en": "I do not think that schools should spend more time teaching students how to manage money.",
+      "reasons": [
+        {
+          "point": "Study time",
+          "topic_en": "First, students already have too little time for their main subjects.",
+          "support_ja": "お金の授業を増やせば、その分だけ主要教科の時間が削られ、学力の低下につながりかねない。"
+        },
+        {
+          "point": "Parents",
+          "topic_en": "Second, managing money is something that parents can teach at home.",
+          "support_ja": "お小遣いのやりくりや家計の相談など、家庭での実体験の方が身につきやすい。"
+        }
+      ]
+    }
+  }
+}

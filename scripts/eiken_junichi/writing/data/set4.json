@@ -1,0 +1,156 @@
+{
+  "no": 4,
+  "summary": {
+    "theme_ja": "空き家問題",
+    "type_ja": "型B：問題 → 影響 → 対策（とその限界）",
+    "paras": [
+      "Japan is facing a growing problem with empty houses, known as akiya. As the population declines and young people move to large cities, many homes in rural areas, and even in some suburbs, are left unoccupied after their elderly owners die or move into care facilities. Government surveys show that the total number of empty homes, including those for sale or rent, has risen for decades, recently reaching a record high of about nine million.",
+      "Abandoned houses cause a variety of problems. Buildings that are not maintained can collapse in earthquakes or heavy snow, putting neighbors in danger. They may also attract wild animals or become targets for crime, and overgrown gardens can spoil the appearance of a neighborhood and lower the value of nearby properties. Even so, owners often leave the houses as they are, because demolishing them is expensive and, in some cases, the land becomes subject to higher taxes once the building is removed.",
+      "To tackle the issue, many local governments have created \"akiya banks,\" websites that list empty homes for sale or rent, often at very low prices. Some also offer subsidies to people who renovate old houses or move to their towns. In addition, a law now allows authorities to take stronger action against owners who neglect dangerous buildings. Nevertheless, many of these houses are located in areas with few jobs or services, so finding people willing to live in them remains difficult."
+    ],
+    "model": "The number of vacant homes in Japan has hit a record high due to population decline and migration to cities. Neglected houses can collapse, attract animals or crime, and lower nearby property values, but owners often keep them because demolition is costly and may raise taxes. Local governments are advertising them online, offering subsidies, and cracking down on negligent owners, yet many remain unwanted because of their inconvenient locations.",
+    "para_roles": [
+      {
+        "role": "問題",
+        "point_ja": "人口減少と都市への人口流出で空き家が増え続け、過去最多になった"
+      },
+      {
+        "role": "影響",
+        "point_ja": "倒壊・動物や犯罪・周辺の資産価値の低下などの問題がある。それでも解体費や税金の問題から、所有者は放置しがち"
+      },
+      {
+        "role": "対策と限界",
+        "point_ja": "自治体は空き家バンク・補助金・所有者への対応強化で取り組むが、仕事やサービスの少ない地域が多く、住み手が見つからない"
+      }
+    ],
+    "memo_ja": [
+      "① 人口減・都市への流出 → 空き家が過去最多",
+      "② 倒壊・動物／犯罪・資産価値↓ ／ でも解体費・税金 → 放置",
+      "③ 自治体：ネットで紹介・補助金・所有者への対応強化 → でも不便な場所で住み手なし"
+    ],
+    "paraphrases": [
+      {
+        "src": "empty houses",
+        "dst": "vacant homes",
+        "how": "語をかえる"
+      },
+      {
+        "src": "As the population declines and young people move to large cities",
+        "dst": "due to population decline and migration to cities",
+        "how": "文 → 名詞句"
+      },
+      {
+        "src": "Buildings that are not maintained",
+        "dst": "Neglected houses",
+        "how": "関係詞節 → 形容詞"
+      },
+      {
+        "src": "lower the value of nearby properties",
+        "dst": "lower nearby property values",
+        "how": "構文をかえる"
+      },
+      {
+        "src": "demolishing them is expensive",
+        "dst": "demolition is costly",
+        "how": "品詞をかえる"
+      },
+      {
+        "src": "the land becomes subject to higher taxes",
+        "dst": "may raise taxes",
+        "how": "構文をかえる"
+      },
+      {
+        "src": "websites that list empty homes for sale or rent",
+        "dst": "advertising them online",
+        "how": "具体 → 抽象"
+      },
+      {
+        "src": "take stronger action against owners who neglect dangerous buildings",
+        "dst": "cracking down on negligent owners",
+        "how": "語をかえる"
+      },
+      {
+        "src": "in areas with few jobs or services",
+        "dst": "because of their inconvenient locations",
+        "how": "具体 → 抽象"
+      }
+    ],
+    "omitted": [
+      {
+        "src": "about nine million",
+        "why_ja": "具体的な数字 → a record high だけ残す"
+      },
+      {
+        "src": "after their elderly owners die or move into care facilities",
+        "why_ja": "空き家になるきっかけの細部"
+      },
+      {
+        "src": "in earthquakes or heavy snow",
+        "why_ja": "倒壊の原因の具体例"
+      },
+      {
+        "src": "often at very low prices",
+        "why_ja": "空き家バンクの細部"
+      }
+    ],
+    "note_ja": "問題 → 対策型の文章。第2段落の最後（それでも所有者は放置する＋その理由）と、第3段落の最後（それでも住み手が見つからない）は、どちらも Even so / Nevertheless のあとに来る「逆転」で、要約から落としやすいが大事な要点。akiya banks のような本文独自の用語は、そのまま書くより「何をしているか」（advertising them online）で説明する方が伝わる。"
+  },
+  "essay": {
+    "topic": "Should the government ban single-use plastic products?",
+    "points": [
+      "Environment",
+      "Convenience",
+      "Cost",
+      "Hygiene"
+    ],
+    "stance": "disagree",
+    "used_points": [
+      "Hygiene",
+      "Cost"
+    ],
+    "paras": [
+      "I do not think that the government should ban single-use plastic products. I have two reasons for this opinion.",
+      "First, single-use plastics play an important role in maintaining hygiene. In hospitals, disposable syringes and gloves prevent infections from spreading between patients. Similarly, plastic packaging keeps food clean and fresh for longer, which also helps reduce food waste. A total ban on such items could therefore put people's health at risk.",
+      "Second, a complete ban would increase costs for businesses and consumers. Alternatives made from paper or plant-based materials are usually more expensive to produce. Small shops and restaurants, which already have tight budgets, might have to raise their prices, and this would place a heavier burden on households.",
+      "For these reasons, I believe that banning single-use plastic products would do more harm than good."
+    ],
+    "expressions": [
+      {
+        "en": "play an important role in",
+        "ja": "〜で重要な役割を果たす"
+      },
+      {
+        "en": "prevent infections from spreading",
+        "ja": "prevent A from doing：A が〜するのを防ぐ"
+      },
+      {
+        "en": "put people's health at risk",
+        "ja": "put A at risk：A を危険にさらす"
+      },
+      {
+        "en": "place a heavier burden on",
+        "ja": "〜により重い負担をかける"
+      },
+      {
+        "en": "do more harm than good",
+        "ja": "益より害の方が大きい（反対の立場の結論に便利）"
+      }
+    ],
+    "note_ja": "環境テーマは賛成で書きたくなるが、Environment 以外の POINTS（Hygiene・Cost）がそろっていれば反対の方が書きやすいこともある。本論の第1文は「主張」、第2文以降は具体例（病院・食品の包装）で主張を支える。結論の do more harm than good は、反対の立場を1文で言い直せる便利な表現。",
+    "opposite": {
+      "stance_en": "I think that the government should ban single-use plastic products.",
+      "reasons": [
+        {
+          "point": "Environment",
+          "topic_en": "First, single-use plastics cause serious damage to the environment.",
+          "support_ja": "使い捨てプラスチックの多くはリサイクルされずに海へ流れ込み、海の生き物を傷つける。細かく砕けたマイクロプラスチックは、食物連鎖を通じて人間の体にも入る。"
+        },
+        {
+          "point": "Cost",
+          "topic_en": "Second, plastic waste creates huge costs for society.",
+          "support_ja": "海岸や川の清掃・ごみ処理・漁業の被害に多くの費用がかかっている。長い目で見れば、くり返し使える製品に切り替える方が社会全体の負担は小さい。"
+        }
+      ]
+    }
+  }
+}
