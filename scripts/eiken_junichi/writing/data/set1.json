@@ -105,8 +105,8 @@
     ],
     "paras": [
       "I disagree with the idea that students should be allowed to use AI tools when doing their homework. I have two reasons for this opinion.",
-      "First, relying on AI would prevent students from truly learning. Homework is meant to make students think through problems by themselves. If an AI tool writes their essays or solves their math problems, they may submit excellent work without understanding the content, and their skills will not improve.",
-      "Second, allowing AI would make homework unfair. Students who have access to advanced AI services could easily earn top marks, while those who do not might receive lower grades despite their efforts. Moreover, teachers would find it almost impossible to tell how much of the work each student actually did.",
+      "First, relying on AI would prevent students from truly learning. Homework is meant to train students to think through problems independently. If an AI tool writes their essays or solves their math problems, they may submit excellent work without understanding the content, and their skills might even deteriorate.",
+      "Second, allowing AI would undermine fairness in grading. Students who have access to advanced AI services could easily earn top marks, while those who do not might receive lower grades despite their efforts. Moreover, teachers would find it almost impossible to assess how much of the work each student actually did.",
       "For these reasons, I believe that students should not be permitted to use AI tools for their homework."
     ],
     "expressions": [
@@ -129,6 +129,14 @@
       {
         "en": "find it almost impossible to",
         "ja": "find it … to do：〜するのは…だと分かる（形式目的語の it）"
+      },
+      {
+        "en": "deteriorate",
+        "ja": "悪化する・衰える（準1級の重要語）"
+      },
+      {
+        "en": "undermine fairness in grading",
+        "ja": "undermine：〜を（徐々に）損なう。評価の公平性を損なう"
       }
     ],
     "note_ja": "Learning は「AI が家庭教師になる」なら賛成、「自分で考えなくなる」なら反対の理由になる。POINTS はどちらの立場にも使えるものが多いので、POINTS を見て「説明と具体例がすぐ浮かぶ側」を選ぶと速い。Agree or disagree 型の TOPIC は、I agree that / I disagree with the idea that のあとに TOPIC の文を続けて書き出すと、立場がはっきりする。",

@@ -110,14 +110,14 @@
     ],
     "paras": [
       "I do not think that the government should ban single-use plastic products. I have two reasons for this opinion.",
-      "First, single-use plastics play an important role in maintaining hygiene. In hospitals, disposable syringes and gloves prevent infections from spreading between patients. Similarly, plastic packaging keeps food clean and fresh for longer. A total ban on such items could therefore put people's health at risk.",
-      "Second, a complete ban would increase costs for businesses and consumers. Alternatives made from paper or plant-based materials are usually more expensive to produce. Small shops and restaurants, which already have tight budgets, might have to raise their prices, and this would place a heavier burden on households.",
+      "First, single-use plastics play an indispensable role in maintaining hygiene. In hospitals, disposable syringes and gloves prevent infections from spreading between patients. Similarly, plastic packaging keeps food clean and fresh for longer. A total ban on such items could therefore put people's health at risk.",
+      "Second, a complete ban would drive up costs for businesses and consumers. Alternatives made from paper or plant-based materials are usually more expensive to produce. Small shops and restaurants, which already operate on tight budgets, might have to raise their prices, and this would place a heavier burden on households.",
       "For these reasons, I believe that banning single-use plastic products would do more harm than good."
     ],
     "expressions": [
       {
-        "en": "play an important role in",
-        "ja": "〜で重要な役割を果たす"
+        "en": "play an indispensable role in",
+        "ja": "〜で欠かせない役割を果たす（indispensable＝不可欠な）"
       },
       {
         "en": "prevent infections from spreading",
@@ -134,6 +134,10 @@
       {
         "en": "do more harm than good",
         "ja": "益より害の方が大きい（反対の立場の結論に便利）"
+      },
+      {
+        "en": "drive up costs",
+        "ja": "費用を押し上げる"
       }
     ],
     "note_ja": "環境テーマは賛成で書きたくなるが、Environment 以外の POINTS（Hygiene・Cost）がそろっていれば反対の方が書きやすいこともある。本論の第1文は「主張」、第2文以降は具体例（病院・食品の包装）で主張を支える。結論の do more harm than good は、反対の立場を1文で言い直せる便利な表現。",

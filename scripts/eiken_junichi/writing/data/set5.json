@@ -115,7 +115,7 @@
     ],
     "paras": [
       "I disagree with the idea that governments should spend more money on space exploration. I have two reasons for this opinion.",
-      "First, governments have limited budgets and more urgent priorities. In Japan, for example, the population is aging rapidly, and the costs of healthcare and pensions keep rising. Spending huge sums on rockets and space stations would leave less money for services that directly affect people's daily lives.",
+      "First, governments have limited budgets and more urgent priorities. In Japan, for example, the population is aging rapidly, and the costs of healthcare and pensions keep rising. Allocating huge sums to rockets and space stations would leave less money for services that directly affect people's daily lives.",
       "Second, problems on Earth, especially environmental ones, require immediate attention. Climate change is already making heat waves and heavy rain more frequent and intense in many regions. Rocket launches also pollute the atmosphere. Rather than exploring distant planets, governments should invest in renewable energy and disaster prevention to protect the planet we live on now.",
       "For these reasons, I believe that governments should not increase their spending on space exploration."
     ],
@@ -139,6 +139,10 @@
       {
         "en": "the planet we live on now",
         "ja": "私たちが今住んでいる惑星（関係代名詞の省略。前置詞 on が後ろに残る）"
+      },
+      {
+        "en": "Allocating huge sums to",
+        "ja": "allocate A to B：A（予算など）を B に割り当てる"
       }
     ],
     "note_ja": "Budget（予算）は反対側の定番 POINT。「お金が足りない」で終わらせず、In Japan, for example, … のように何にお金が必要なのか（医療・年金）を具体的に示すと説得力が増す。本論2の distant planets と the planet we live on now の対比は、結論に向けて印象を強める。",

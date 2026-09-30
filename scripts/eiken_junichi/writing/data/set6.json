@@ -105,8 +105,8 @@
     ],
     "paras": [
       "I believe that Japan should accept more foreign workers. I have two reasons for this opinion.",
-      "First, foreign workers are necessary to keep the Japanese economy running. Because of the low birth rate and aging population, many industries, such as nursing care, construction, and agriculture, cannot find enough employees. Without workers from overseas, some companies may be forced to reduce their services or even close down, which would damage local economies.",
-      "Second, accepting more people from abroad would increase cultural diversity. Working alongside colleagues from different backgrounds exposes Japanese people to new ideas and ways of thinking. This can lead to innovation and help Japanese companies develop products and services that appeal to customers around the world.",
+      "First, foreign workers are necessary to keep the Japanese economy running. Because of the low birth rate and aging population, many industries, such as nursing care, construction, and agriculture, face severe labor shortages. Without workers from overseas, some companies may be forced to reduce their services or even close down, which would damage local economies.",
+      "Second, accepting more people from abroad would promote cultural diversity. Working alongside colleagues from different backgrounds exposes Japanese people to new ideas and ways of thinking. This can foster innovation and help Japanese companies develop products and services that appeal to customers around the world.",
       "For these reasons, I am convinced that Japan should welcome more workers from other countries."
     ],
     "expressions": [
@@ -129,6 +129,14 @@
       {
         "en": "appeal to customers around the world",
         "ja": "appeal to ~：〜にとって魅力がある"
+      },
+      {
+        "en": "face severe labor shortages",
+        "ja": "深刻な人手不足に直面する"
+      },
+      {
+        "en": "foster innovation",
+        "ja": "技術革新を促す（foster＝育む・促進する）"
       }
     ],
     "note_ja": "社会問題のテーマでは、日本の現状（少子高齢化・人手不足）を理由の説明に入れると具体性が一気に上がる。ただし数字は不確かなら書かない（many industries で十分）。Cultural diversity のような抽象的な POINT は、「どんな良いことが起きるか」（新しい発想 → 技術革新 → 海外で売れる製品）まで順に展開する。",

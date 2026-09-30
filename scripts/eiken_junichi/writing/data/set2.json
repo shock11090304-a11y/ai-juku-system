@@ -105,8 +105,8 @@
     ],
     "paras": [
       "I believe that zoos still have an important role to play in today's society. There are two main reasons for my opinion.",
-      "First, zoos help protect endangered species. Many modern zoos run breeding programs for animals that are close to extinction in the wild because of hunting or the loss of their habitats. Some of these animals have even been successfully released into the wild. Without such efforts, several species might already have disappeared.",
-      "Second, zoos offer valuable educational opportunities. Seeing real animals up close makes a much stronger impression on children than watching videos. Many zoos also hold talks and exhibitions that teach visitors about environmental problems. Such experiences can motivate visitors, especially young people, to take action to protect nature.",
+      "First, zoos contribute to the conservation of endangered species. Many modern zoos run breeding programs for animals that are close to extinction in the wild because of hunting or the loss of their habitats. Some of these animals have even been successfully released into the wild. Without such efforts, several species might already have disappeared.",
+      "Second, zoos offer valuable educational opportunities. Seeing real animals up close makes a much stronger impression on children than watching videos. Many zoos also hold talks and exhibitions that raise public awareness of environmental issues. Such experiences can motivate visitors, especially young people, to take action to protect nature.",
       "For these reasons, I am convinced that zoos continue to be necessary in modern society."
     ],
     "expressions": [
@@ -129,6 +129,14 @@
       {
         "en": "motivate visitors",
         "ja": "motivate A to do：A を〜する気にさせる"
+      },
+      {
+        "en": "contribute to the conservation of",
+        "ja": "〜の保護に貢献する（contribute to＋名詞）"
+      },
+      {
+        "en": "raise public awareness of",
+        "ja": "raise awareness of ~：〜への（社会の）意識を高める"
       }
     ],
     "note_ja": "理由の段落は「主張 → 説明 → 具体例 → だめ押し」の順。本論1の最後の文（Without such efforts, …）のように「もしそれがなかったら」と逆側から大切さを示すと説得力が増す。Endangered species と Education は、どちらも賛成側で具体例を出しやすい POINT。",

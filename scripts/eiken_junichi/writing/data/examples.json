@@ -100,8 +100,8 @@
     ],
     "paras": [
       "I believe that schools should spend more time teaching students how to manage money. I have two reasons for this opinion.",
-      "First, money management is an essential skill for adult life. After graduating, young people have to pay rent, use credit cards, and make decisions about loans and savings. Without proper knowledge, they may fall into debt or become victims of financial fraud. Learning the basics at school would help them protect themselves from such risks.",
-      "Second, financial education can benefit the economy as a whole. People who understand how saving and investing work are more likely to plan for the future and use their money wisely. If more citizens made sound financial decisions, fewer households would face serious money problems, and consumer spending would become more stable.",
+      "First, money management is an essential skill for adult life. After graduating, young people have to pay rent, use credit cards, and make decisions about loans and savings. Without proper knowledge, they may fall into debt or become victims of financial fraud. Learning the basics at school would make them less vulnerable to such risks.",
+      "Second, financial education can benefit the economy as a whole. People who understand how saving and investing work are more likely to plan for the future and use their money wisely. If more citizens made sound financial decisions, fewer households would suffer financial hardship, and consumer spending would become more stable.",
       "For these reasons, I think that schools should give money management a more important place in the curriculum."
     ],
     "memo_ja": [
@@ -130,6 +130,14 @@
       {
         "en": "are more likely to",
         "ja": "〜する可能性が高い"
+      },
+      {
+        "en": "less vulnerable to",
+        "ja": "be vulnerable to ~：〜の被害を受けやすい（less で「受けにくい」）"
+      },
+      {
+        "en": "suffer financial hardship",
+        "ja": "経済的に苦しむ（hardship＝苦難）"
       }
     ],
     "note_ja": "各理由は「主張（First, …）→ 説明 → 具体例・結果」の3段。結論では新しい理由を出さず、序論の立場を別の表現でくり返している。",
