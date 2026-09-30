@@ -6,7 +6,7 @@
 
     ① コツと進め方   … 全体像・要約/意見論述のコツ (例題つき)・よくあるミス・表現集・進め方・10週間プラン・チェックリスト
     ② 問題 6セット   … Set ごとに 大問4 要約 1 題 + 大問5 意見論述 1 題 (書き込み式)
-    ③ 解答例と解説   … 解答例・段落の要点・言い換え表・削った情報・構成・使える表現・反対の立場の骨子
+    ③ 解答例と解説   … 解答例・段落の要点・言い換え表・削った情報・構成・使える表現・逆の立場の骨子
 
 ★ data/*.json が**唯一の正典**。3 冊とも同じデータから作るので、問題と解答例の食い違いは構造的に起きない。
 ★ 相互チェック (CLAUDE.md 2026-08-16):
@@ -74,12 +74,24 @@ def highlight(text, phrases):
 
 
 # ------------------------------------------------------------------ 部品
-SUMMARY_INSTR = ("● 以下の英文を読んで、その内容を英語で要約しなさい。"
-                 "<br>● 語数の目安は <b>60語〜70語</b>。できるだけ<b>自分の言葉で</b>書くこと"
-                 "（本文の表現をそのまま長く写さない）。")
-ESSAY_INSTR = ("● 以下の TOPIC について、あなたの意見とその理由を2つ書きなさい。"
-               "<br>● 理由には POINTS の中から <b>2つ</b> を選んで使うこと。"
-               "構成は <b>序論・本論・結論</b>。語数の目安は <b>120語〜150語</b>。")
+# 指示文は本番と同じく英語 (2025年度から要約の語数は「目安」ではなく指定: Summarize it between 60 and 70 words.)
+SUMMARY_INSTR = ('<span class="en">● Read the article below and summarize it in your own words as far as possible in English.'
+                 '<br>● Summarize it between 60 and 70 words.</span>'
+                 '<br><span class="small">（英文を読み、できるだけ<b>自分の言葉で</b>英語で要約する。語数は <b>60〜70語</b>'
+                 '（2025年度からは「目安」ではなく<b>指定</b>）。）</span>')
+ESSAY_INSTR = ('<span class="en">● Write an essay on the given TOPIC.<br>● Use TWO of the POINTS below to support your answer.'
+               '<br>● Structure: introduction, main body, and conclusion<br>● Suggested length: 120–150 words</span>'
+               '<br><span class="small">（TOPIC について意見を書く。理由には POINTS から <b>2つ</b> を使う。'
+               '構成は序論・本論・結論。語数の目安は <b>120〜150語</b>。）</span>')
+
+
+def time_label(no, kind):
+    """② の帯に出す時間。① の「6 問題演習の進め方」「7 10週間プラン」と同じ段階にする。"""
+    if no == 1:
+        return "時間無制限・辞書OK"
+    if no <= 3:
+        return "目安 20分" if kind == "summary" else "目安 25分"
+    return "本番ペース 15分" if kind == "summary" else "本番ペース 20分"
 
 
 def lines(n):
@@ -87,10 +99,10 @@ def lines(n):
             "".join(f'<div class="ln" data-n="{i}"></div>' for i in range(1, n + 1)) + "</div>")
 
 
-def summary_problem(band, s):
+def summary_problem(band, s, no):
     paras = "".join(f"<p>{esc(p)}</p>" for p in s["paras"])
     return (f'<div class="qband"><span class="set">{band}</span><span class="kind">大問4　要約</span>'
-            f'<span class="lim">60〜70語 ／ 目安 15〜20分</span></div>'
+            f'<span class="lim">60〜70語 ／ {time_label(no, "summary")}</span></div>'
             f'<div class="instr">{SUMMARY_INSTR}</div>'
             f'<div class="psg en">{paras}</div>'
             f'<div class="memo" style="min-height:21mm">メモ（第1段落 ／ 第2段落 ／ 第3段落 の要点を日本語で1行ずつ）</div>'
@@ -103,9 +115,9 @@ def topic_box(e):
             f'<div class="lab">POINTS</div><ul class="en">{pts}</ul></div>')
 
 
-def essay_problem(band, e):
+def essay_problem(band, e, no):
     return (f'<div class="qband"><span class="set">{band}</span><span class="kind">大問5　意見論述</span>'
-            f'<span class="lim">120〜150語 ／ 目安 20〜25分</span></div>'
+            f'<span class="lim">120〜150語 ／ {time_label(no, "essay")}</span></div>'
             f'<div class="instr">{ESSAY_INSTR}</div>{topic_box(e)}'
             f'<div class="memo">メモ（立場 ／ 使う POINTS 2つ ／ それぞれの説明と具体例）</div>'
             f'{lines(ESSAY_LINES)}<div class="wcbox">語数 <span></span> 語　／　かかった時間 <span></span> 分</div>')
@@ -161,7 +173,7 @@ def opposite_box(e):
     rs = "".join(f'<li><b>POINT: <span class="en">{esc(r["point"])}</span></b><br>'
                  f'<span class="en">{esc(r["topic_en"])}</span><br><span class="small">{esc(r["support_ja"])}</span></li>'
                  for r in o["reasons"])
-    return (f'<div class="opp"><div class="oh">反対の立場（{side}）で書くなら — 骨子</div>'
+    return (f'<div class="opp"><div class="oh">逆の立場（{side}）で書くなら — 骨子</div>'
             f'<div class="en">{esc(o["stance_en"])}</div><ol>{rs}</ol>'
             f'<div class="small muted">★ 第8〜9週に、この骨子を使って自分で120〜150語に仕上げる。</div></div>')
 
@@ -179,7 +191,7 @@ def book_guide(ex, sets):
 <div class="box"><div class="bh">このプリントは3冊セット</div>
 <table class="t"><tr><th style="width:26%">① コツと進め方</th><td>いちばん最初に読む。例題2つを自分でも書いてみる</td></tr>
 <tr><th>② 問題 6セット</th><td>1週間に1セット（要約1題＋意見論述1題）。書き込み式なので印刷して使う</td></tr>
-<tr><th>③ 解答例と解説</th><td>書き終えてから開く。言い換え表・構成・反対の立場の骨子つき</td></tr></table></div>
+<tr><th>③ 解答例と解説</th><td>書き終えてから開く。言い換え表・構成・逆の立場の骨子つき</td></tr></table></div>
 <div class="box tip"><div class="bh">目次</div>
 <table class="t" style="margin:0"><tr><td>1　ライティングの全体像</td><td>5　使える表現集</td></tr>
 <tr><td>2　要約のコツ（例題つき）</td><td>6　問題演習の進め方</td></tr>
@@ -187,8 +199,8 @@ def book_guide(ex, sets):
 <tr><td>4　よくあるミス</td><td>8　セルフチェックリスト</td></tr></table></div>
 <div class="box key"><div class="bh">今日からやること</div><ol>
 <li>このプリントの 1〜5 を読む（全部覚えなくてよい。「型」と「言い換えの3つの技」だけは押さえる）</li>
-<li>例題の要約・意見論述を、解答例を隠して自分でも書いてみる（時間無制限・解答例を見てからでもOK）</li>
-<li>来週から ② の Set 1 へ。書いたら LINE で送ってください</li></ol></div>
+<li>例題の要約・意見論述を自分でも書いてみる（時間無制限。難しければ解答例を読んでから、何も見ずに書く形でOK）</li>
+<li>来週から ② の Set 1 へ。書き直した答案を LINE で送ってください</li></ol></div>
 <p class="foot-note">{NOTE}</p>""")
     h.append('<div class="pb"></div>' + guide.overview())
     h.append('<div class="pb"></div>' + guide.summary_tips())
@@ -211,7 +223,7 @@ def book_guide(ex, sets):
     h.append(f"""<div class="pb"></div><div class="compact">
 <h2 class="sec"><span class="no">3</span>意見論述の例題</h2>
 <div class="instr">{ESSAY_INSTR}</div>{topic_box(e)}
-<div class="step"><div class="s">STEP 1</div><div><b>POINTS を見て立場を決め、メモを作る</b>（5分）<ul>{memo}</ul></div></div>
+<div class="step"><div class="s">STEP 1</div><div><b>POINTS を見て立場を決め、メモを作る</b>（4分）<ul>{memo}</ul></div></div>
 <div class="step"><div class="s">STEP 2</div><div><b>型に流し込んで書く</b>（黄色は使える表現）{essay_map(e)}</div></div>
 <div class="step"><div class="s">STEP 3</div><div><b>見直す</b>　{esc(e["note_ja"])}</div></div>
 {opposite_box(e)}</div>""")
@@ -244,8 +256,8 @@ def book_mondai(ex, sets):
 （字の大きさで変わるので、必ず語数を数えること）。解答欄の右端の小さな数字は行数です。</div>
 <p class="foot-note">{NOTE}</p>"""]
     for d in sets:
-        h.append('<div class="pb"></div>' + summary_problem(f'Set {d["no"]}', d["summary"]))
-        h.append('<div class="pb"></div>' + essay_problem(f'Set {d["no"]}', d["essay"]))
+        h.append('<div class="pb"></div>' + summary_problem(f'Set {d["no"]}', d["summary"], d["no"]))
+        h.append('<div class="pb"></div>' + essay_problem(f'Set {d["no"]}', d["essay"], d["no"]))
     return "\n".join(h)
 
 
@@ -259,8 +271,8 @@ def book_kaitou(ex, sets):
 内容・構成がそろっていれば、表現が違っていても点はとれます。</div></div>
 <div class="brand">{BRAND}</div>
 <div class="box tip"><div class="bh">解説の読み方</div><ul>
-<li><b>要約</b>：① 段落ごとの要点 → 自分の答案に3つとも入っているか ／ ② 言い換え表 → 同じ箇所を自分ならどう言い換えるか ／ ③ 削った情報 → 自分が書いてしまっていないか</li>
-<li><b>意見論述</b>：① 段落ごとの語数と役割を自分の答案と比べる ／ ② 黄色の「使える表現」を表現ストックノートへ ／ ③「反対の立場で書くなら」は第8〜9週の演習で使う</li>
+<li><b>要約</b>：（1）段落ごとの要点 → 自分の答案に3つとも入っているか ／（2）言い換え表 → 同じ箇所を自分ならどう言い換えるか ／（3）削った情報 → 自分が書いてしまっていないか</li>
+<li><b>意見論述</b>：（1）段落ごとの語数と役割を自分の答案と比べる ／（2）黄色の「使える表現」を表現ストックノートへ ／（3）「逆の立場で書くなら」は第8〜9週の演習で使う</li>
 <li>解答例は、黄色の部分（要約＝言い換え／意見論述＝使える表現）を中心に<b>音読</b>すると、自分の表現として使えるようになります</li></ul></div>
 <p class="foot-note">{NOTE}</p>"""]
     for d in sets:

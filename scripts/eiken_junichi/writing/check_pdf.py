@@ -75,6 +75,12 @@ def main():
         if pe < len(k):
             need(f"③ {tag} 意見 p{pe + 1}", k[pe], e["paras"] + [e["topic"], e["note_ja"], e["opposite"]["stance_en"]] +
                  [x["en"] for x in e["expressions"]] + [r["topic_en"] for r in e["opposite"]["reasons"]])
+    # あふれ検出: 柱とノンブルだけの (本文がほぼ空の) ページがあれば、前のページからのはみ出し
+    for name, book in (("①", g), ("②", m), ("③", k)):
+        for i, t in enumerate(book, 1):
+            body = re.sub(r"\d+/\d+|英検準1級ライティング対策[①②③1-3][^|｜]*[|｜]トリリオンAI塾", "", t)
+            if len(body) < 40:
+                errors.append(f"{name} p{i}: 本文がほぼ空のページ (前のページからのあふれ)")
     whole = " ".join(g)
     need("① 要約の例題", whole, ex["summary"]["paras"] + [ex["summary"]["model"]])
     eg = [t for t in g if norm(ex["essay"]["topic"]) in t and norm(ex["essay"]["paras"][0]) in t]

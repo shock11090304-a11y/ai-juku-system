@@ -141,3 +141,7 @@ table.t tr { break-inside: avoid; }
 .compact .opp .en { font-size: 9.4pt; }
 table.pp td.src { width: 40%; }
 table.pp td:nth-child(3) { width: 38%; }
+.compact .instr { font-size: 8.3pt; padding: 4px 9px; line-height: 1.45; margin-bottom: 6px; }
+.compact .topicbox { padding: 6px 12px; margin: 3px 0 6px; }
+.compact .topicbox .topic { font-size: 11pt; margin: 1px 0 4px; }
+.compact .step { margin-bottom: 4px; }

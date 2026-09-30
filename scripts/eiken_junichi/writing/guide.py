@@ -12,10 +12,10 @@ def overview():
 <table class="t">
 <tr><th style="width:17%"></th><th>大問4　要約（Summary）</th><th>大問5　意見論述（Opinion essay）</th></tr>
 <tr><th>何をする</th><td>200語程度の英文（3段落）を読み、内容を英語で要約する</td><td>TOPIC（問い）に対して、自分の意見と理由を英語で書く</td></tr>
-<tr><th>語数</th><td><b>60〜70語</b></td><td><b>120〜150語</b></td></tr>
+<tr><th>語数</th><td><b>60〜70語</b>（2025年度から「目安」ではなく<b>指定</b>）</td><td><b>120〜150語</b>（目安）</td></tr>
 <tr><th>条件</th><td>できるだけ<b>自分の言葉で</b>（本文の丸写しはしない）</td><td>POINTS（4つ）から<b>2つ</b>を選んで理由に使う／序論・本論・結論の構成</td></tr>
 <tr><th>採点</th><td colspan="2">どちらも<b>内容・構成・語彙・文法</b>の4観点（各4点・16点満点）</td></tr>
-<tr><th>時間の目安</th><td>15〜20分</td><td>20〜25分</td></tr>
+<tr><th>時間の目安</th><td>本番は<b>15分</b>（練習の初めは20分でOK）</td><td>本番は<b>20分</b>（練習の初めは25分でOK）</td></tr>
 </table>
 
 <div class="box key"><div class="bh">ライティングは「たった2題で750点」</div>
@@ -25,15 +25,15 @@ def overview():
 
 <div class="box warn"><div class="bh">0点にしないために</div>
 <ul>
-<li>要約に<b>自分の意見</b>や<b>本文にない内容</b>を書く → 「要約になっていない」と判断されると0点のことがある</li>
-<li>意見論述で<b>TOPIC からずれる</b>（問いに答えていない）→ 0点のことがある</li>
-<li>語数は「目安」だが、大きく外れると内容・構成で不利になる。<b>必ず範囲内に収める</b></li>
+<li>要約が<b>本文の要約になっていない</b>（自分の意見を書いた・本文と関係のないことを書いた）→ 0点と採点されることがある</li>
+<li>意見論述が<b>TOPIC からずれている</b>（問いに答えていない）→ 0点と採点されることがある</li>
+<li>要約の語数は、2025年度から「<span class="en">Summarize it between 60 and 70 words.</span>」という<b>指定</b>になった（以前は目安）。<b>60〜70語から外さない</b>。意見論述の120〜150語は目安だが、これも範囲内に収めるのが基本</li>
 </ul></div>
 
 <h3 class="sub">筆記90分の使い方（例）</h3>
 <table class="t center">
 <tr><th>大問1 語彙</th><th>大問4 要約</th><th>大問5 意見論述</th><th>大問2・3 長文</th><th>見直し</th></tr>
-<tr><td>10分</td><td>15〜20分</td><td>20〜25分</td><td>35分前後</td><td>数分</td></tr>
+<tr><td>10分</td><td>15分</td><td>20分</td><td>35分</td><td>10分</td></tr>
 </table>
 <p>ライティングを最後に回して<b>時間切れで書けない</b>のが、いちばんもったいない失点です。語彙のあとにライティングを片づける順番がおすすめ。
 自分に合う順番は、第8週からの過去問演習で決めましょう。</p>
@@ -52,11 +52,11 @@ def summary_tips():
 <tr><td>型B</td><td>問題</td><td>影響・原因</td><td>対策（とその限界）</td></tr>
 <tr><td>型C</td><td>変化・新しい動き</td><td>賛成派の意見</td><td>反対派の意見</td></tr>
 </table>
-語数の配分の目安は <b>第1段落 15〜20語／第2段落 20〜25語／第3段落 20〜25語</b>。</div></div>
+語数の配分の目安は <b>第1段落 15〜20語／第2・第3段落 各20〜30語</b>（合計60〜70語）。</div></div>
 
 <div class="rule"><div class="n">2</div><div><div class="h">具体例・数字・固有名詞は削って「まとめ語」にする</div>
-<span class="en">such as</span> / <span class="en">for example</span> の後ろ、数字、人名・地名は基本的に書きません。いくつかの具体例は<b>1語のまとめ語</b>に置きかえます。<br>
-<span class="en">lettuce and herbs</span> → <span class="en"><b>vegetables</b></span>　／　<span class="en">cars, buses, and trains</span> → <span class="en"><b>vehicles</b></span>　／　<span class="en">Tokyo, Osaka, and Nagoya</span> → <span class="en"><b>large cities</b></span></div></div>
+<span class="en">such as</span> / <span class="en">for example</span> の後ろ、数字、人名・地名は基本的に書きません（テーマそのものの国名などは除く）。いくつかの具体例は<b>短いまとめ語</b>に置きかえます。<br>
+<span class="en">lettuce and herbs</span> → <span class="en"><b>vegetables</b></span>　／　<span class="en">cars, buses, and trucks</span> → <span class="en"><b>vehicles</b></span>　／　<span class="en">Tokyo, Osaka, and Nagoya</span> → <span class="en"><b>large cities</b></span></div></div>
 
 <div class="rule"><div class="n">3</div><div><div class="h">言い換え（パラフレーズ）の3つの技</div>
 <table class="t">
@@ -68,7 +68,7 @@ def summary_tips():
 <b>専門用語やキーワード</b>（<span class="en">artificial intelligence, climate change</span> など）はそのまま使ってかまいません。言い換えにこだわって<b>意味が変わる方が大きな減点</b>です。</div></div>
 
 <div class="rule"><div class="n">4</div><div><div class="h">つなぎ言葉で「論理の流れ」を見せる</div>
-段落どうしの関係を1語で示します。
+段落どうしの関係を、つなぎ言葉で示します。
 利点 → 欠点：<span class="en"><b>However,</b></span>　原因 → 結果：<span class="en"><b>As a result, / so / lead to</b></span>　問題 → 対策：<span class="en"><b>To address this, / In response,</b></span>　意見の対立：<span class="en"><b>Supporters say … . However, critics argue …</b></span></div></div>
 
 <div class="rule"><div class="n">5</div><div><div class="h">書いてはいけないもの</div>
@@ -76,10 +76,10 @@ def summary_tips():
 賛成派・反対派の意見は、<span class="en">Supporters claim that …</span> のように<b>誰の意見か</b>を書く（書かないと自分の意見に見える）。</div></div>
 
 <div class="rule"><div class="n">6</div><div><div class="h">最後に必ず語数を数える</div>
-5語ごとに小さく「／」を入れて数えると速い。60語未満・70語超なら直します。本書の語数は「スペースで区切られたまとまり＝1語」で数えています（<span class="en">self-checkout</span> は1語）。</div></div>
+5語ごとに小さく「／」を入れて数えると速い。要約の語数は<b>指定</b>なので、60語未満・70語超なら必ず直します。本書の語数は「スペースで区切られたまとまり＝1語」で数えています（<span class="en">self-checkout</span> は1語）。</div></div>
 
-<div class="rule"><div class="n">7</div><div><div class="h">15〜20分の使い方</div>
-<b>読む</b>：段落ごとに要点に線を引く（5分）→ <b>メモ</b>：日本語で3行（3分）→ <b>書く</b>（8分）→ <b>見直し</b>：語数・主語と動詞・冠詞（2分）</div></div>
+<div class="rule"><div class="n">7</div><div><div class="h">本番は15分で（練習の初めは20分でOK）</div>
+<b>読む</b>：段落ごとに要点に線を引く（4分）→ <b>メモ</b>：日本語で3行（2分）→ <b>書く</b>（7分）→ <b>見直し</b>：語数・主語と動詞・冠詞（2分）</div></div>
 """
 
 
@@ -113,8 +113,8 @@ def essay_tips():
 <div class="rule"><div class="n">6</div><div><div class="h">最初と最後で立場をぶらさない</div>
 結論では序論の立場を<b>別の表現でくり返す</b>だけ。新しい理由は出さない。<span class="en">I partly agree</span> のような中間の立場は避ける。</div></div>
 
-<div class="rule"><div class="n">7</div><div><div class="h">20〜25分の使い方</div>
-<b>立場を決めてメモ</b>（5分）→ <b>書く</b>（15分）→ <b>見直し</b>：語数・立場の一貫性・文法（3〜5分）</div></div>
+<div class="rule"><div class="n">7</div><div><div class="h">本番は20分で（練習の初めは25分でOK）</div>
+<b>立場を決めてメモ</b>（4分）→ <b>書く</b>（13分）→ <b>見直し</b>：語数・立場の一貫性・文法（3分）</div></div>
 """
 
 
@@ -136,7 +136,7 @@ def mistakes():
     trs = "".join(
         f'<tr><td class="en ng">✗ {a}</td><td class="en ok">○ {b}</td><td>{c}</td></tr>' for a, b, c in rows)
     return f"""
-<h2 class="sec"><span class="no">4</span>よくあるミス（文法の減点を防ぐ）</h2>
+<h2 class="sec"><span class="no">4</span>よくあるミス（減点を防ぐ）</h2>
 <table class="t"><tr><th style="width:35%">よくある誤り</th><th style="width:37%">正しい形</th><th>ポイント</th></tr>{trs}</table>
 """
 
@@ -161,14 +161,15 @@ def expressions():
         ("結論", "For these reasons, I believe that … ／ Therefore, …"),
     ]
     v_rows = [
-        ("増やす・高める", "increase", "boost ／ enhance ／ raise"),
+        ("増やす", "increase", "boost ／ raise"),
+        ("（質を）高める", "improve", "enhance ／ strengthen"),
         ("減らす", "reduce", "cut ／ lower ／ lessen ／ curb"),
-        ("和らげる", "make … easier", "ease ／ alleviate ／ relieve"),
+        ("和らげる", "make … less serious", "ease ／ alleviate ／ relieve"),
         ("引き起こす", "cause", "lead to ／ result in ／ give rise to"),
-        ("取り組む", "solve", "address ／ tackle ／ deal with ／ cope with"),
-        ("促す", "make people do", "encourage ／ promote ／ motivate"),
+        ("取り組む", "work on", "address ／ tackle ／ deal with"),
+        ("促す", "get people to do", "encourage A to do ／ motivate A to do ／ promote＋名詞（promote recycling）"),
         ("問題・欠点", "problem", "issue ／ concern ／ drawback ／ obstacle"),
-        ("負担", "heavy work", "burden ／ pressure ／ strain"),
+        ("負担", "a heavy load", "burden ／ pressure ／ strain"),
         ("利点", "good point", "benefit ／ advantage"),
         ("重要な", "important", "essential ／ vital ／ crucial"),
         ("お金のかかる", "expensive", "costly"),
@@ -185,7 +186,7 @@ def expressions():
 </div>
 <h3 class="sub">言い換え用の語彙（準1級らしい語）</h3>
 <table class="t"><tr><th style="width:18%">意味</th><th style="width:22%">基本の言い方</th><th>言い換え</th></tr>{v}</table>
-<p class="small muted">★ 使う前に、解答例の中でどう使われているかを確認してから自分の答案に入れること。意味があいまいなまま使うと、語彙の減点につながります。</p>
+<p class="small muted">★ 使う前に、解答例や辞書の例文で使い方（後ろに来る形：encourage A to do など）を確認してから自分の答案に入れること。意味があいまいなまま使うと、語彙の減点につながります。</p>
 """
 
 
@@ -193,10 +194,10 @@ def howto():
     steps = [
         ("STEP 1", "<b>時間を計って書く</b>　Set 1 は時間無制限・辞書OK。Set 2・3 は要約20分・意見論述25分、Set 4 からは本番ペース（要約15分・意見論述20分）。"),
         ("STEP 2", "<b>語数を数える</b>　5語ごとに「／」。範囲外ならその場で直す。"),
-        ("STEP 3", "<b>セルフチェック</b>　8 のチェックリストで1項目ずつ確認する。"),
+        ("STEP 3", "<b>セルフチェック</b>　「8 セルフチェックリスト」で1項目ずつ確認する。"),
         ("STEP 4", "<b>解答例と比べる</b>（③を開く）　要約は「3つの要点が入っているか」と言い換え表、意見論述は構成と具体例の深さを比べる。自分では書けなかった表現に線を引き、<b>表現ストックノート</b>に写す。"),
         ("STEP 5", "<b>何も見ずに書き直す</b>　解答例を写すのではなく、<b>自分の答案を直す</b>。書き直したものが「自分の完成版」。"),
-        ("STEP 6", "<b>LINE で送る</b>　書き直した答案を写真で送ってください。添削して返します。直しを清書して表現ストックに追加したら1題クリア。"),
+        ("STEP 6", "<b>LINE で送る</b>　書き直した答案を写真で送ってください。添削して返します。直しを清書して表現ストックノートに追加したら1題クリア。"),
     ]
     st = "".join(f'<div class="step"><div class="s">{a}</div><div>{b}</div></div>' for a, b in steps)
     week = [
@@ -204,8 +205,8 @@ def howto():
         ("2日目", "要約を書き直す（STEP 5）→ LINE で送る"),
         ("3日目", "意見論述を解く（STEP 1〜4）"),
         ("4日目", "意見論述を書き直す（STEP 5）→ LINE で送る"),
-        ("5日目", "添削を見て清書・表現ストックに追加"),
-        ("6〜7日目", "予備日。余裕があれば、意見論述を<b>反対の立場</b>で「立場＋理由2つ」だけメモする"),
+        ("5日目", "添削を見て清書・表現ストックノートに追加"),
+        ("6〜7日目", "予備日。余裕があれば、意見論述を<b>逆の立場</b>で「立場＋理由2つ」だけメモする"),
     ]
     wk = "".join(f'<tr><td>{a}</td><td>{b}</td></tr>' for a, b in week)
     return f"""
@@ -229,26 +230,27 @@ def plan():
         ("第5週", "Set 4", "本番ペース（要約15分・意見論述20分）"),
         ("第6週", "Set 5", "本番ペース"),
         ("第7週", "Set 6", "本番ペース"),
-        ("第8週", "英検の公式サイトの過去問1回分を、筆記90分で通して解く／Set 1〜3 の意見論述を反対の立場で書く", "本番どおり"),
-        ("第9週", "過去問をもう1回分／Set 4〜6 の意見論述を反対の立場で書く", "本番どおり"),
-        ("第10週", "試験直前。表現ストックと書き直した答案を見直す。本番の時間で1セット通す。新しい問題は増やさない", "—"),
+        ("第8週", "英検の公式サイトの過去問1回分を、筆記90分で通して解く／Set 1〜3 の意見論述を逆の立場で書く", "本番どおり"),
+        ("第9週", "過去問をもう1回分／Set 4〜6 の意見論述を逆の立場で書く", "本番どおり"),
+        ("第10週", "試験直前。表現ストックノートと書き直した答案を見直す。本番の時間で1セット通す。新しい問題は増やさない", "—"),
     ]
     tr = "".join(f'<tr><td>{a}</td><td>{b}</td><td>{c}</td></tr>' for a, b, c in rows)
     return f"""
 <h2 class="sec"><span class="no">7</span>試験までの10週間プラン</h2>
 <table class="t plan"><tr><th style="width:12%">週</th><th>やること</th><th style="width:26%">時間</th></tr>{tr}</table>
-<p class="small">★ 12月の試験なら、今週を第1週にするとちょうど10週間前後。試験日に合わせて週を詰めたり伸ばしたりしてかまいません。
-★ 反対の立場で書くときは、③ の「反対の立場で書くなら」の骨子を参考にする（同じ TOPIC で2本書けるので、演習量が倍になります）。</p>
+<p class="small">★ 第1週は「試験日の10週間前の週」。12月に受けるなら10月の初めから始めるとちょうど10週間です。試験日に合わせて週を詰めたり伸ばしたりしてかまいません。<br>
+★ 12月に受けられるのは英検S-CBT（コンピューターで受ける方式）です。S-CBT のライティングは申込時に「タイピング」か「手書き」を選べるので、タイピングにする場合は第5週ごろからパソコンで書く練習も入れましょう。<br>
+★ 逆の立場で書くときは、③ の「逆の立場で書くなら」の骨子を参考にする（同じ TOPIC で2本書けるので、演習量が倍になります）。</p>
 """
 
 
 def checklist():
     s = ["60〜70語に入っている", "3つの段落の要点が全部入っている", "本文の長いフレーズ（5語以上）をそのまま写していない",
-         "具体例・数字・固有名詞を入れていない", "自分の意見（I think など）や本文にない情報を入れていない",
+         "具体例・数字・固有名詞を入れていない（テーマそのものの国名などは除く）", "自分の意見（I think など）や本文にない情報を入れていない",
          "However / As a result などで要点どうしの関係を示した", "主語と動詞の一致・時制・冠詞・複数形を確認した"]
     e = ["120〜150語に入っている", "1文目で立場をはっきり書いた", "POINTS から2つ選び、1段落に1つずつ書いた",
          "各理由に「説明」と「具体例・結果」がある", "最初と最後で立場がぶれていない（結論で新しい理由を出していない）",
-         "同じ単語・表現を何度も繰り返していない", "短縮形（don't など）や口語（kids など）を使っていない",
+         "同じ単語・表現を何度もくり返していない", "短縮形（don't など）や口語（kids など）を使っていない",
          "三単現の s・冠詞・数えられる／数えられない名詞・時制を確認した"]
     li = lambda xs: "".join(f"<li>{x}</li>" for x in xs)
     return f"""

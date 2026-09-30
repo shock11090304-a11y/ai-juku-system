@@ -7,7 +7,7 @@
       "For stores, the advantages are clear. A single employee can supervise several machines at once, which allows businesses to cut labor costs and assign workers to other tasks, such as restocking shelves or helping customers find products. Many shoppers also welcome the change. When stores are crowded, self-checkout lines often move faster, and some people simply prefer to pay without having to talk to anyone.",
       "However, the technology has also created new problems. Some stores report that more items are leaving the store without being paid for, whether because of deliberate theft or honest mistakes. Older customers and people who are unfamiliar with digital devices often struggle to use the machines and end up needing help from staff anyway. As a result, some retailers have recently reduced the number of self-checkout machines or limited them to customers buying only a few items."
     ],
-    "model": "Self-checkout machines have spread quickly in stores, partly because retailers are struggling to recruit workers. They enable businesses to reduce staffing costs and use employees more efficiently, and many customers appreciate shorter waits and less face-to-face interaction. However, they have increased losses from theft and scanning errors, and some older or less tech-savvy shoppers find them hard to use, so several retailers are now cutting back on them.",
+    "model": "Self-checkout machines have spread quickly in stores, partly because retailers are struggling to recruit workers. They enable businesses to reduce staffing costs and use employees more efficiently, and customers enjoy shorter waits, while some prefer less face-to-face interaction. However, they have increased losses from theft and scanning errors, and some older or less tech-savvy shoppers find them hard to use, so several retailers are now cutting back on them.",
     "para_roles": [
       {
         "role": "背景",
@@ -15,7 +15,7 @@
       },
       {
         "role": "利点",
-        "point_ja": "店は人件費を減らし、人員を有効に使える。客は待ち時間が短く、会話もいらない"
+        "point_ja": "店は人件費を減らし、人員を有効に使える。客は待ち時間が短くなり、店員と話さずに払えるのを好む人もいる"
       },
       {
         "role": "欠点",
@@ -24,7 +24,7 @@
     ],
     "memo_ja": [
       "① 人手不足もあって急速に普及",
-      "② 店：人件費↓・人員を有効活用 ／ 客：待ち時間↓・会話不要",
+      "② 店：人件費↓・人員を有効活用 ／ 客：待ち時間↓・会話なしを好む人も",
       "③ 未払い↑・高齢者などに使いにくい → 減らす店も"
     ],
     "paraphrases": [
@@ -54,9 +54,9 @@
         "how": "文 → 名詞句"
       },
       {
-        "src": "whether because of deliberate theft or honest mistakes",
-        "dst": "losses from theft and scanning errors",
-        "how": "構文をかえる"
+        "src": "more items are leaving the store without being paid for, whether because of deliberate theft or honest mistakes",
+        "dst": "increased losses from theft and scanning errors",
+        "how": "文 → 名詞句"
       },
       {
         "src": "people who are unfamiliar with digital devices",

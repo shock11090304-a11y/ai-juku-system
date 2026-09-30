@@ -174,8 +174,12 @@ def check_essay(label, e, house_topics):
     if e["topic"].strip().lower() in house_topics:
         err(f"{label} 意見: 既存の塾教材と同じ TOPIC「{e['topic']}」")
     per = [len(words(p)) for p in paras]
-    if per and not (12 <= per[0] <= 30 and 12 <= per[-1] <= 25):
-        warns.append(f"{label} 意見: 序論/結論の語数が目安外 {per}")
+    # ① の型 (序論 20語前後 / 本論 45〜55語 / 結論 15〜20語) と解答例を食い違わせない
+    if len(per) == 4:
+        for name, n_, (lo, hi) in (("序論", per[0], (15, 25)), ("本論1", per[1], (45, 55)),
+                                   ("本論2", per[2], (45, 55)), ("結論", per[3], (15, 20))):
+            if not lo <= n_ <= hi:
+                err(f"{label} 意見: {name} {n_} 語 (① の型の目安 {lo}〜{hi} 語)")
     return n, per
 
 

@@ -4,7 +4,7 @@
     "theme_ja": "垂直農場（屋内での野菜づくり）",
     "type_ja": "型A：背景 → 利点 → 欠点",
     "paras": [
-      "As cities continue to grow, some companies are experimenting with a new way of producing food close to where people live. In vertical farms, vegetables such as lettuce and herbs are grown indoors on shelves stacked from the floor to the ceiling. Instead of sunlight and soil, the plants receive light from LED lamps and nutrients dissolved in water, while computers carefully control the temperature and humidity.",
+      "As cities continue to grow, some companies are experimenting with a new way of producing food close to where people live. In vertical farms, vegetables such as lettuce and herbs are grown indoors on shelves stacked from floor to ceiling. Instead of sunlight and soil, the plants receive light from LED lamps and nutrients dissolved in water, while computers carefully control the temperature and humidity.",
       "Supporters believe that this method has great potential. Because the plants are grown indoors, harvests are not affected by bad weather, and crops can be produced all year round. Vertical farms also need far less land and water than traditional farms, and they rarely require pesticides, since insects cannot easily get inside. Moreover, they can be built in cities, so fresh vegetables can reach consumers without being transported long distances.",
       "However, vertical farming also faces serious challenges. Running the lights and air-conditioning systems requires huge amounts of electricity, which makes the vegetables expensive and can increase greenhouse gas emissions if the power comes from fossil fuels. In addition, only a limited range of crops can be grown profitably. Staple foods such as rice and wheat would be far too costly to grow indoors, so vertical farms are unlikely to replace traditional agriculture any time soon."
     ],
@@ -30,7 +30,7 @@
     ],
     "paraphrases": [
       {
-        "src": "grown indoors on shelves stacked from the floor to the ceiling",
+        "src": "grown indoors on shelves stacked from floor to ceiling",
         "dst": "indoors on stacked shelves",
         "how": "短くまとめる"
       },
@@ -88,7 +88,7 @@
         "why_ja": "具体例 → few crops にまとめる"
       }
     ],
-    "note_ja": "第3段落は欠点が2つ（電気代・作物の種類）と、その結論（従来の農業の代わりにはならない）。結論まで入れて初めて段落の要点になる。if the power comes from fossil fuels のような条件は、may（〜かもしれない）の1語で表すと短くできる。"
+    "note_ja": "第3段落は欠点が2つ（電力消費＝費用と排出・作物の種類）と、その結論（当面は従来の農業に代われない）。結論まで入れて初めて段落の要点になる。if the power comes from fossil fuels のような条件は、may（〜かもしれない）の1語で表すと短くできる。"
   },
   "essay": {
     "topic": "Should the retirement age in Japan be raised?",
@@ -132,10 +132,10 @@
       },
       {
         "en": "are less likely to",
-        "ja": "〜しにくい（be likely to の比較級）"
+        "ja": "〜しにくい（less likely：劣等比較）"
       }
     ],
-    "note_ja": "Health は反対側（高齢で働き続けるのは体に負担）にも、賛成側（働くことが健康を保つ）にも使える。第2段落の If people worked …, they would … は「提案が実現したらどうなるか」を示す仮定法の定番。結論の both individuals and society は、理由1（社会＝年金）と理由2（個人＝健康）を1語ずつで言い直したもの。",
+    "note_ja": "Health は反対側（高齢で働き続けるのは体に負担）にも、賛成側（働くことが健康を保つ）にも使える。本論1の If people worked …, they would … は「提案が実現したらどうなるか」を示す仮定法の定番。結論の both individuals and society は、理由1（社会＝年金）と理由2（個人＝健康）を1語ずつで言い直したもの。",
     "opposite": {
       "stance_en": "I do not think that the retirement age in Japan should be raised.",
       "reasons": [

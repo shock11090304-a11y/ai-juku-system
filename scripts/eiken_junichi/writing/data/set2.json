@@ -12,7 +12,7 @@
     "para_roles": [
       {
         "role": "変化",
-        "point_ja": "多くの国の学校でスマホの使用制限が広がり、学校での全面禁止に踏み切った政府もある"
+        "point_ja": "多くの国の学校でスマホの使用制限が広がり、全国の学校でスマホを禁止した政府もある"
       },
       {
         "role": "賛成派",
@@ -131,7 +131,7 @@
         "ja": "motivate A to do：A を〜する気にさせる"
       }
     ],
-    "note_ja": "理由の段落は「主張 → 説明 → 具体例 → だめ押し」の順。第2段落の最後の文（Without such efforts, …）のように「もしそれがなかったら」と逆側から大切さを示すと説得力が増す。Endangered species と Education は、どちらも賛成側で具体例を出しやすい POINT。",
+    "note_ja": "理由の段落は「主張 → 説明 → 具体例 → だめ押し」の順。本論1の最後の文（Without such efforts, …）のように「もしそれがなかったら」と逆側から大切さを示すと説得力が増す。Endangered species と Education は、どちらも賛成側で具体例を出しやすい POINT。",
     "opposite": {
       "stance_en": "I do not think that zoos still have an important role to play in today's society.",
       "reasons": [
