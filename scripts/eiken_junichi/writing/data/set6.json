@@ -8,7 +8,7 @@
       "Proponents say that these scooters are a convenient and environmentally friendly way to travel short distances. They are especially useful for trips that are too long to walk but too short for a taxi, such as getting from a train station to an office. Because they run on electricity, they produce no exhaust fumes, and some city officials hope that they will encourage residents to use their cars less often.",
       "However, the surge in electric scooter use has raised safety concerns. The number of accidents involving riders has increased, and some riders have been caught breaking traffic rules, for example by running red lights or riding after drinking alcohol. Pedestrians, especially elderly people, often feel threatened when scooters speed past them. As a result, some cities overseas have prohibited rental scooters altogether, while others have introduced stricter rules, including lower speed limits and heavier fines."
     ],
-    "model": "Rental electric scooters that are unlocked with smartphone apps have proliferated in cities worldwide, and Japan has recently relaxed its rules on riding them. Supporters say they offer a convenient, emission-free way to cover short distances and could curb car use. However, an increase in accidents, rule-breaking by riders, and pedestrians' fears have led some cities to ban them and others to tighten regulations.",
+    "model": "Rental electric scooters that are unlocked with smartphone apps have proliferated in cities worldwide, and Japan has recently relaxed its rules on riding them. Supporters say they offer a convenient, emission-free way to cover short distances and could reduce car use. However, an increase in accidents, rule-breaking by riders, and pedestrians' fears have led some cities to ban them and others to tighten regulations.",
     "para_roles": [
       {
         "role": "変化",
@@ -46,7 +46,7 @@
       },
       {
         "src": "encourage residents to use their cars less often",
-        "dst": "could curb car use",
+        "dst": "could reduce car use",
         "how": "構文をかえる"
       },
       {
@@ -91,14 +91,14 @@
     "note_ja": "数字（2023年・16歳）は要約に入れない。「日本でも法改正で乗りやすくなった」という事実だけを抽象化して残す。第3段落は「問題3つ → As a result（対応）」の因果。原因（事故・違反・不安）をまとめて主語にし、結果を have led A to do で受けると、因果が1文で書ける。",
     "gloss": [
       {
+        "w": "Electric scooters",
+        "head": "electric scooter",
+        "ja": "電動キックボード（立って乗るタイプ。座って乗る「スクーター」とは別）"
+      },
+      {
         "w": "fumes",
         "head": "exhaust fumes",
         "ja": "排気ガス"
-      },
-      {
-        "w": "Pedestrians",
-        "head": "pedestrian",
-        "ja": "歩行者"
       }
     ],
     "model_gloss": [
@@ -106,11 +106,6 @@
         "w": "emission-free",
         "head": "emission-free",
         "ja": "排出ガスを出さない"
-      },
-      {
-        "w": "pedestrians",
-        "head": "pedestrian",
-        "ja": "歩行者"
       }
     ]
   },

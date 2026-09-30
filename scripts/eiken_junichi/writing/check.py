@@ -23,7 +23,7 @@
   - gloss_scan.py が拾った「準1級を超えるまれな語」(data/gloss_targets.json) を、語注か gloss_skip (理由つき) で必ず受ける
   - 語注に載せた語が英文に実在する / 英文を直したのに gloss_scan.py を回し直していなければ落とす
 ■ 共通
-  - 解説 (日本語) の中に 4 語以上の英語を書いたら、同じセットの英文に実在する
+  - 解説 (日本語) の中に 3 語以上の英語を書いたら、同じセットの英文に実在する (型の表記 be ~ to ~ は除く)
     (CLAUDE.md「解説が引用する英文は本文に実在させる」)
   - 既存の塾教材 (../data/part4_writing.json・../mogi/data_no*.json) と意見論述の TOPIC が重ならない
 """
@@ -92,12 +92,14 @@ def longest_copy(a, b):
 PLACEHOLDERS = {"A", "B", "do", "doing", "done"}
 
 
-def english_runs(ja_text, min_words=4):
+def english_runs(ja_text, min_words=3):
     """日本語の解説に埋め込まれた英語の連なり (min_words 語以上)。文法の型は除く。"""
-    runs = re.findall(r"[A-Za-z][A-Za-z'\-]*(?:[ ,]+[A-Za-z][A-Za-z'\-]*)+", ja_text)
     out = []
-    for r in runs:
-        r = r.strip(" ,")
+    for mo in re.finditer(r"[A-Za-z][A-Za-z'\-]*(?:[ ,]+[A-Za-z][A-Za-z'\-]*)+", ja_text):
+        # 「be vulnerable to ~」のように ~ / 〜 が続くのは辞書形の型の表記。引用ではないので照合しない
+        if ja_text[mo.end():mo.end() + 2].lstrip().startswith(("~", "〜")):
+            continue
+        r = mo.group(0).strip(" ,")
         toks = r.replace(",", " ").split()
         if len(toks) >= min_words and not PLACEHOLDERS & set(toks):
             out.append(r)

@@ -8,11 +8,11 @@
       "Advocates believe that this method has enormous potential. Because the plants are grown indoors, harvests are not affected by bad weather, and crops can be produced all year round. Vertical farms also need far less land and water than traditional farms, and they rarely require pesticides, since insects cannot easily get inside. Moreover, they can be built in cities, so fresh vegetables can reach consumers without being transported long distances.",
       "However, vertical farming also faces formidable challenges. Running the lights and air-conditioning systems requires huge amounts of electricity, which makes the vegetables expensive and can increase greenhouse gas emissions if the power comes from fossil fuels. In addition, only a limited range of crops can be grown profitably. Staple foods such as rice and wheat would be far too costly to grow indoors, so vertical farms are unlikely to replace traditional agriculture any time soon."
     ],
-    "model": "Some companies are now growing vegetables indoors on stacked shelves, using artificial light and nutrient-rich water rather than sunlight and soil. This method allows stable production throughout the year, uses less land, water, and pesticide, and brings fresh produce close to urban consumers. However, its heavy electricity use raises costs and may increase emissions, and because only a few crops are viable, it cannot yet replace conventional farming.",
+    "model": "Some companies are now growing vegetables indoors on stacked shelves, using artificial light and nutrient-rich water rather than sunlight and soil. This method allows stable production throughout the year, uses less land, water, and pesticide, and brings fresh produce close to urban consumers. However, its heavy electricity use raises costs and may increase emissions, and because only a few crops are commercially viable, it cannot yet replace conventional farming.",
     "para_roles": [
       {
         "role": "背景",
-        "point_ja": "都市の拡大を受けて、屋内の棚で LED と養液を使って野菜を育てる垂直農場が登場した"
+        "point_ja": "都市人口の増加を受けて、屋内の棚で LED と養液を使って野菜を育てる垂直農場が登場した"
       },
       {
         "role": "利点",
@@ -61,7 +61,7 @@
       },
       {
         "src": "only a limited range of crops can be grown profitably",
-        "dst": "only a few crops are viable",
+        "dst": "only a few crops are commercially viable",
         "how": "語をかえる"
       },
       {
@@ -93,12 +93,7 @@
       {
         "w": "nutrients",
         "head": "nutrient",
-        "ja": "栄養素"
-      },
-      {
-        "w": "humidity",
-        "head": "humidity",
-        "ja": "湿度"
+        "ja": "養分・栄養分"
       },
       {
         "w": "pesticides",
