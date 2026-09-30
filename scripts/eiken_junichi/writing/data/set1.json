@@ -4,11 +4,11 @@
     "theme_ja": "キャッシュレス決済",
     "type_ja": "型A：背景 → 利点 → 欠点",
     "paras": [
-      "Japan has long been known as a country where people prefer to pay in cash. Even after credit cards became common, many shoppers continued to carry cash and felt uneasy about spending money they could not see. In recent years, however, this habit has begun to change. Smartphone payment apps and contactless cards have spread rapidly, and the government has encouraged their use by offering points and other rewards to consumers.",
-      "Supporters of cashless payments point out several benefits. Customers can pay quickly without searching for coins, and they can easily check their spending records on their phones. Businesses also gain, because they spend less time counting cash at the end of the day or taking it to the bank. In addition, some experts believe that electronic records make it harder for people to hide their income in order to avoid paying taxes.",
+      "Japan has long been known as a country where people prefer to pay in cash. Even after credit cards became widespread, many shoppers continued to carry cash and felt uneasy about spending money they could not see. In recent years, however, this habit has begun to change. Smartphone payment apps and contactless cards have proliferated, and the government has encouraged their use by offering points and other rewards to consumers.",
+      "Proponents of cashless payments point out several benefits. Customers can pay quickly without searching for coins, and they can easily check their spending records on their phones. Businesses also gain, because they spend less time counting cash at the end of the day or taking it to the bank. In addition, some experts believe that electronic records make it harder for people to hide their income in order to avoid paying taxes.",
       "Nevertheless, not everyone is ready to give up cash. Many elderly people find payment apps confusing, and some small shops are reluctant to accept cashless payments because they must pay fees to payment companies. There are also concerns about security, as personal information could be stolen by criminals. Furthermore, power outages during natural disasters can make electronic payments impossible, which is one reason why many people still keep some cash at home."
     ],
-    "model": "Although Japanese people have traditionally preferred cash, cashless payment methods have recently become popular, partly thanks to government incentives. They let customers pay faster and track their spending, save businesses time handling cash, and may help prevent tax evasion. However, older people often find them difficult, small stores dislike the fees, personal data may be stolen, and blackouts caused by disasters can make such payments impossible.",
+    "model": "Although Japanese people have traditionally preferred cash, cashless payment methods have recently become popular, partly thanks to government incentives. They let customers pay faster and track their spending, save businesses time handling cash, and may curb tax evasion. However, older people often find them difficult, small stores dislike the fees, personal data may be stolen, and blackouts caused by disasters can make such payments impossible.",
     "para_roles": [
       {
         "role": "背景",
@@ -51,7 +51,7 @@
       },
       {
         "src": "hide their income in order to avoid paying taxes",
-        "dst": "tax evasion",
+        "dst": "curb tax evasion",
         "how": "文 → 名詞句"
       },
       {
@@ -88,7 +88,31 @@
         "why_ja": "補足の説明。要点ではない"
       }
     ],
-    "note_ja": "第3段落は Nevertheless のあとに欠点が4つ並ぶ（高齢者・手数料・安全面・災害）。1つずつ文にすると70語に収まらないので、主語＋動詞の短い節を4つ並べて1文にまとめている。語数がきついときは「使いにくい人がいる」「安全面や停電時の不安がある」のように、さらに大きくまとめてもよい。"
+    "note_ja": "第3段落は Nevertheless のあとに欠点が4つ並ぶ（高齢者・手数料・安全面・災害）。1つずつ文にすると70語に収まらないので、主語＋動詞の短い節を4つ並べて1文にまとめている。語数がきついときは「使いにくい人がいる」「安全面や停電時の不安がある」のように、さらに大きくまとめてもよい。",
+    "gloss": [
+      {
+        "w": "contactless",
+        "head": "contactless",
+        "ja": "非接触型の（かざして払う）"
+      },
+      {
+        "w": "outages",
+        "head": "power outage",
+        "ja": "停電"
+      }
+    ],
+    "model_gloss": [
+      {
+        "w": "evasion",
+        "head": "tax evasion",
+        "ja": "脱税"
+      },
+      {
+        "w": "blackouts",
+        "head": "blackout",
+        "ja": "停電"
+      }
+    ]
   },
   "essay": {
     "topic": "Agree or disagree: Students should be allowed to use AI tools when doing their homework",
@@ -154,6 +178,13 @@
           "support_ja": "わからない問題があっても、AI がその場で一人ひとりに合わせて説明してくれる。塾や家庭教師に頼れない生徒にとっては、学習の差を縮める助けにもなる。"
         }
       ]
+    },
+    "model_gloss": []
+  },
+  "gloss_skip": [
+    {
+      "w": "cashless",
+      "why": "カタカナ語「キャッシュレス」として定着している"
     }
-  }
+  ]
 }

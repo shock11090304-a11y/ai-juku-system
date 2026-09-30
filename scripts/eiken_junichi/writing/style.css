@@ -145,3 +145,11 @@ table.pp td:nth-child(3) { width: 38%; }
 .compact .topicbox { padding: 6px 12px; margin: 3px 0 6px; }
 .compact .topicbox .topic { font-size: 11pt; margin: 1px 0 4px; }
 .compact .step { margin-bottom: 4px; }
+
+/* ---- 語注 ---- */
+sup.gl { font-size: 70%; color: #b45309; font-weight: 700; margin-left: 1px; }
+.gloss { font-size: 8.4pt; color: #334155; border: 1px dashed #cbd5e1; border-radius: 5px;
+  padding: 3px 9px; margin: -3px 0 7px; line-height: 1.6; }
+.gloss b { margin-right: 8px; color: #b45309; }
+.gloss > span { margin-right: 14px; white-space: nowrap; display: inline-block; }
+.gloss .en { font-size: 9pt; }

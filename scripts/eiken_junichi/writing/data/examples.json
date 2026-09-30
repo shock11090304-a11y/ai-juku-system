@@ -3,9 +3,9 @@
     "theme_ja": "セルフレジ",
     "type_ja": "型A：背景 → 利点 → 欠点",
     "paras": [
-      "Over the past two decades, self-checkout machines have become a familiar sight in supermarkets and other stores. Instead of waiting in line for a cashier, customers scan their own items, pay by card or cash, and pack their bags themselves. In many countries, including Japan, retailers have been installing these machines rapidly, partly because they are finding it increasingly difficult to hire enough staff.",
+      "Over the past two decades, self-checkout machines have become ubiquitous in supermarkets and other stores. Instead of waiting in line for a cashier, customers scan their own items, pay by card or cash, and pack their bags themselves. In many countries, including Japan, retailers have been rapidly rolling out these machines, partly because they are finding it increasingly difficult to hire enough staff.",
       "For stores, the advantages are clear. A single employee can supervise several machines at once, which allows businesses to cut labor costs and assign workers to other tasks, such as restocking shelves or helping customers find products. Many shoppers also welcome the change. When stores are crowded, self-checkout lines often move faster, and some people simply prefer to pay without having to talk to anyone.",
-      "However, the technology has also created new problems. Some stores report that more items are leaving the store without being paid for, whether because of deliberate theft or honest mistakes. Older customers and people who are unfamiliar with digital devices often struggle to use the machines and end up needing help from staff anyway. As a result, some retailers have recently reduced the number of self-checkout machines or limited them to customers buying only a few items."
+      "However, the technology has also given rise to new problems. Some stores report that more items are leaving the store without being paid for, whether because of deliberate theft or honest mistakes. Older customers and people who are unfamiliar with digital devices often struggle to use the machines and end up needing help from staff anyway. As a result, some retailers have recently reduced the number of self-checkout machines or limited them to customers buying only a few items."
     ],
     "model": "Self-checkout machines have spread quickly in stores, partly because retailers are struggling to recruit workers. They enable businesses to reduce staffing costs and use employees more efficiently, and customers enjoy shorter waits, while some prefer less face-to-face interaction. However, they have increased losses from theft and scanning errors, and some older or less tech-savvy shoppers find them hard to use, so several retailers are now cutting back on them.",
     "para_roles": [
@@ -83,7 +83,26 @@
         "why_ja": "対応の具体例 → cutting back on them にまとめる"
       }
     ],
-    "note_ja": "第1段落の「人手不足」は、普及の理由として要点に入る。第3段落は「欠点 → その結果」の2段なので、As a result の中身（台数を減らす店が出ている）まで書いて終わる。"
+    "note_ja": "第1段落の「人手不足」は、普及の理由として要点に入る。第3段落は「欠点 → その結果」の2段なので、As a result の中身（台数を減らす店が出ている）まで書いて終わる。",
+    "gloss": [
+      {
+        "w": "self-checkout",
+        "head": "self-checkout",
+        "ja": "セルフレジ"
+      },
+      {
+        "w": "restocking",
+        "head": "restock",
+        "ja": "（商品を）補充する"
+      }
+    ],
+    "model_gloss": [
+      {
+        "w": "tech-savvy",
+        "head": "tech-savvy",
+        "ja": "IT機器に詳しい"
+      }
+    ]
   },
   "essay": {
     "topic": "Should schools spend more time teaching students how to manage money?",
@@ -155,6 +174,8 @@
           "support_ja": "お小遣いのやりくりや家計の相談など、家庭での実体験の方が身につきやすい。"
         }
       ]
-    }
-  }
+    },
+    "model_gloss": []
+  },
+  "gloss_skip": []
 }

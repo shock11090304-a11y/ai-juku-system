@@ -4,11 +4,11 @@
     "theme_ja": "垂直農場（屋内での野菜づくり）",
     "type_ja": "型A：背景 → 利点 → 欠点",
     "paras": [
-      "As cities continue to grow, some companies are experimenting with a new way of producing food close to where people live. In vertical farms, vegetables such as lettuce and herbs are grown indoors on shelves stacked from floor to ceiling. Instead of sunlight and soil, the plants receive light from LED lamps and nutrients dissolved in water, while computers carefully control the temperature and humidity.",
-      "Supporters believe that this method has great potential. Because the plants are grown indoors, harvests are not affected by bad weather, and crops can be produced all year round. Vertical farms also need far less land and water than traditional farms, and they rarely require pesticides, since insects cannot easily get inside. Moreover, they can be built in cities, so fresh vegetables can reach consumers without being transported long distances.",
-      "However, vertical farming also faces serious challenges. Running the lights and air-conditioning systems requires huge amounts of electricity, which makes the vegetables expensive and can increase greenhouse gas emissions if the power comes from fossil fuels. In addition, only a limited range of crops can be grown profitably. Staple foods such as rice and wheat would be far too costly to grow indoors, so vertical farms are unlikely to replace traditional agriculture any time soon."
+      "As urban populations continue to swell, some companies are experimenting with a new way of producing food in close proximity to consumers. In vertical farms, vegetables such as lettuce and herbs are grown indoors on shelves stacked from floor to ceiling. Instead of sunlight and soil, the plants receive light from LED lamps and nutrients dissolved in water, while computers carefully control the temperature and humidity.",
+      "Advocates believe that this method has enormous potential. Because the plants are grown indoors, harvests are not affected by bad weather, and crops can be produced all year round. Vertical farms also need far less land and water than traditional farms, and they rarely require pesticides, since insects cannot easily get inside. Moreover, they can be built in cities, so fresh vegetables can reach consumers without being transported long distances.",
+      "However, vertical farming also faces formidable challenges. Running the lights and air-conditioning systems requires huge amounts of electricity, which makes the vegetables expensive and can increase greenhouse gas emissions if the power comes from fossil fuels. In addition, only a limited range of crops can be grown profitably. Staple foods such as rice and wheat would be far too costly to grow indoors, so vertical farms are unlikely to replace traditional agriculture any time soon."
     ],
-    "model": "Some companies are now growing vegetables indoors on stacked shelves, using artificial light and nutrient-rich water rather than sunlight and soil. This method allows stable production throughout the year, uses less land, water, and pesticide, and brings fresh produce close to urban consumers. However, its heavy electricity use raises costs and may increase emissions, and because it suits only a few crops, it cannot yet replace conventional farming.",
+    "model": "Some companies are now growing vegetables indoors on stacked shelves, using artificial light and nutrient-rich water rather than sunlight and soil. This method allows stable production throughout the year, uses less land, water, and pesticide, and brings fresh produce close to urban consumers. However, its heavy electricity use raises costs and may increase emissions, and because only a few crops are viable, it cannot yet replace conventional farming.",
     "para_roles": [
       {
         "role": "背景",
@@ -61,7 +61,7 @@
       },
       {
         "src": "only a limited range of crops can be grown profitably",
-        "dst": "it suits only a few crops",
+        "dst": "only a few crops are viable",
         "how": "語をかえる"
       },
       {
@@ -88,7 +88,46 @@
         "why_ja": "具体例 → few crops にまとめる"
       }
     ],
-    "note_ja": "第3段落は欠点が2つ（電力消費＝費用と排出・作物の種類）と、その結論（当面は従来の農業に代われない）。結論まで入れて初めて段落の要点になる。if the power comes from fossil fuels のような条件は、may（〜かもしれない）の1語で表すと短くできる。"
+    "note_ja": "第3段落は欠点が2つ（電力消費＝費用と排出・作物の種類）と、その結論（当面は従来の農業に代われない）。結論まで入れて初めて段落の要点になる。if the power comes from fossil fuels のような条件は、may（〜かもしれない）の1語で表すと短くできる。",
+    "gloss": [
+      {
+        "w": "nutrients",
+        "head": "nutrient",
+        "ja": "栄養素"
+      },
+      {
+        "w": "humidity",
+        "head": "humidity",
+        "ja": "湿度"
+      },
+      {
+        "w": "pesticides",
+        "head": "pesticide",
+        "ja": "農薬"
+      },
+      {
+        "w": "profitably",
+        "head": "profitably",
+        "ja": "利益が出るように"
+      },
+      {
+        "w": "Staple",
+        "head": "staple food",
+        "ja": "主食"
+      }
+    ],
+    "model_gloss": [
+      {
+        "w": "nutrient-rich",
+        "head": "nutrient-rich",
+        "ja": "栄養分を多く含む"
+      },
+      {
+        "w": "pesticide",
+        "head": "pesticide",
+        "ja": "農薬"
+      }
+    ]
   },
   "essay": {
     "topic": "Should the retirement age in Japan be raised?",
@@ -105,14 +144,14 @@
     ],
     "paras": [
       "I believe that the retirement age in Japan should be raised. I have two reasons for this opinion.",
-      "First, raising the retirement age would ease the burden on the pension system. As the population ages, fewer workers have to support a growing number of retired people. If people worked for several more years, they would continue to pay contributions and could delay claiming their pensions, which would make the whole system more sustainable.",
+      "First, raising the retirement age would alleviate the burden on the pension system. As the population ages, fewer workers have to support a growing number of retired people. If people worked for several more years, they would continue to pay contributions and could delay claiming their pensions, which would make the whole system more sustainable.",
       "Second, working longer can benefit people's health. Many people today remain active well into their sixties, and for them, continuing to work is a good way to stay physically and mentally fit and to keep a sense of purpose. Studies also suggest that older people who stay socially active are less likely to develop dementia.",
       "For these reasons, I believe that raising the retirement age would be good for both individuals and society."
     ],
     "expressions": [
       {
-        "en": "ease the burden on",
-        "ja": "〜の負担を軽くする"
+        "en": "alleviate the burden on",
+        "ja": "〜の負担を軽減する（alleviate＝和らげる・軽減する）"
       },
       {
         "en": "a growing number of",
@@ -150,6 +189,19 @@
           "support_ja": "上の世代が長くポストにとどまると、若手の採用や昇進の機会が減り、組織の新陳代謝も遅れる。"
         }
       ]
-    }
-  }
+    },
+    "model_gloss": [
+      {
+        "w": "contributions",
+        "head": "contribution",
+        "ja": "（年金の）保険料"
+      },
+      {
+        "w": "dementia",
+        "head": "dementia",
+        "ja": "認知症"
+      }
+    ]
+  },
+  "gloss_skip": []
 }

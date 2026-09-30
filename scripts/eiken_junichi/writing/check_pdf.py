@@ -32,7 +32,8 @@ def norm(t):
     """空白をすべて落として比べる。日本語は行末で折り返すと抽出時に空白が入るため
     (「足り␣なくなる」)、空白の有無で照合すると必ず外れる。語の欠けは空白を落としても検出できる。"""
     t = unicodedata.normalize("NFKC", t)
-    return re.sub(r"\s+", "", t)
+    # 本文の語注の印 (*) は刷り上がりにだけ入る。照合では落とす (元データの英文に * は無い)
+    return re.sub(r"\s+", "", t).replace("*", "")
 
 
 def pages(key):
@@ -64,25 +65,36 @@ def main():
         s, e = d["summary"], d["essay"]
         ps, pe = 1 + 2 * i, 2 + 2 * i
         tag = f"Set {d['no']}"
+        gl = lambda L: [x for g in L for x in (g["head"], g["ja"])]
         if ps < len(m):
-            need(f"② {tag} 要約 p{ps + 1}", m[ps], s["paras"] + [tag, "語数"])
+            need(f"② {tag} 要約 p{ps + 1}", m[ps], s["paras"] + [tag, "語数"] + gl(s.get("gloss", [])))
         if pe < len(m):
             need(f"② {tag} 意見 p{pe + 1}", m[pe], [e["topic"], tag, "語数"] + e["points"])
         if ps < len(k):
             need(f"③ {tag} 要約 p{ps + 1}", k[ps], [s["model"], tag] +
                  [p["src"] for p in s["paraphrases"]] + [p["dst"] for p in s["paraphrases"]] +
-                 [o["src"] for o in s["omitted"]] + [s["note_ja"]])
+                 [o["src"] for o in s["omitted"]] + [s["note_ja"]] + gl(s.get("model_gloss", [])))
         if pe < len(k):
             need(f"③ {tag} 意見 p{pe + 1}", k[pe], e["paras"] + [e["topic"], e["note_ja"], e["opposite"]["stance_en"]] +
-                 [x["en"] for x in e["expressions"]] + [r["topic_en"] for r in e["opposite"]["reasons"]])
+                 [x["en"] for x in e["expressions"]] + [r["topic_en"] for r in e["opposite"]["reasons"]] +
+                 gl(e.get("model_gloss", [])))
     # あふれ検出: 柱とノンブルだけの (本文がほぼ空の) ページがあれば、前のページからのはみ出し
     for name, book in (("①", g), ("②", m), ("③", k)):
         for i, t in enumerate(book, 1):
             body = re.sub(r"\d+/\d+|英検準1級ライティング対策[①②③1-3][^|｜]*[|｜]トリリオンAI塾", "", t)
             if len(body) < 40:
                 errors.append(f"{name} p{i}: 本文がほぼ空のページ (前のページからのあふれ)")
+    for i, d in enumerate(sets):
+        ps = 1 + 2 * i
+        if ps < len(m):
+            raw = fitz.open(os.path.join(build.OUT, build.BOOKS["mondai"]))[ps].get_text()
+            psg_stars = raw.count("*") - len(d["summary"].get("gloss", []))   # 語注欄の見出しにも * が1つずつある
+            if psg_stars != len(d["summary"].get("gloss", [])):
+                errors.append(f"② Set {d['no']}: 本文の * が {psg_stars} 個 (語注は {len(d['summary'].get('gloss', []))} 語)")
     whole = " ".join(g)
-    need("① 要約の例題", whole, ex["summary"]["paras"] + [ex["summary"]["model"]])
+    exs = ex["summary"]
+    need("① 要約の例題", whole, exs["paras"] + [exs["model"]] +
+         [x for g in exs.get("gloss", []) + exs.get("model_gloss", []) for x in (g["head"], g["ja"])])
     eg = [t for t in g if norm(ex["essay"]["topic"]) in t and norm(ex["essay"]["paras"][0]) in t]
     if not eg:
         errors.append("① 意見論述の例題: TOPIC と解答例が同じページに無い")

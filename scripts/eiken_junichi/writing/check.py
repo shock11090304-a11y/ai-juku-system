@@ -18,6 +18,10 @@
   - POINTS は 4 つ・使うのはそのうち 2 つ / 反対の立場の骨子も POINTS から 2 つ
   - 立場が序論と結論で一貫している / 反対の立場の書き出しは逆の立場
   - 「使える表現」は解答例に実在する / 短縮形が無い
+■ 語彙レベルと語注 (2026-09-30 塾長指示「語彙レベルも準1級に」「あまり出てこないものは注を」)
+  - 本文・要約の解答例・意見論述の解答例のそれぞれに、準1級の語 (pre1_words.py) が MIN_PRE1 以上入っている
+  - gloss_scan.py が拾った「準1級を超えるまれな語」(data/gloss_targets.json) を、語注か gloss_skip (理由つき) で必ず受ける
+  - 語注に載せた語が英文に実在する / 英文を直したのに gloss_scan.py を回し直していなければ落とす
 ■ 共通
   - 解説 (日本語) の中に 4 語以上の英語を書いたら、同じセットの英文に実在する
     (CLAUDE.md「解説が引用する英文は本文に実在させる」)
@@ -31,6 +35,11 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
+sys.path.insert(0, HERE)
+from pre1_words import load_pre1, pre1_in  # noqa: E402
+
+# 準1級の語 (pre1_words.py) が最低これだけ入っていること (「語彙レベルを準1級に合わせる」2026-09-30 塾長指示)
+MIN_PRE1 = {"passage": 3, "model": 1, "essay": 1}
 
 PASSAGE_RANGE = (195, 215)   # 本番は「3段落・200語程度」
 SUMMARY_RANGE = (60, 70)
@@ -183,6 +192,46 @@ def check_essay(label, e, house_topics):
     return n, per
 
 
+def texts_of(d):
+    return {"passage": " ".join(d["summary"]["paras"]), "model": d["summary"]["model"],
+            "essay": " ".join(d["essay"]["paras"])}
+
+
+def check_gloss(label, key, d, targets, pre1):
+    """語注: ①載せた語が英文に実在する ②gloss_scan.py が拾った「準1級を超えるまれな語」を
+    語注か gloss_skip (理由つき) で必ず受けている ③英文が変わったら gloss_scan.py を回し直させる。"""
+    import hashlib
+    texts = texts_of(d)
+    lists = {"passage": d["summary"].get("gloss", []), "model": d["summary"].get("model_gloss", []),
+             "essay": d["essay"].get("model_gloss", [])}
+    skip = {x["w"].lower() for x in d.get("gloss_skip", []) if x.get("why")}
+    counts = {}
+    for kind, text in texts.items():
+        for g in lists[kind]:
+            if not re.search(r"(?<![A-Za-z])" + re.escape(g["w"]) + r"(?![A-Za-z])", text):
+                err(f"{label} 語注({kind}): 英文に無い語「{g['w']}」")
+            if not g.get("ja") or not g.get("head"):
+                err(f"{label} 語注({kind}): 意味か見出しが空「{g['w']}」")
+        t = targets.get(f"{key}.{kind}")
+        if t is None:
+            err(f"{label} {kind}: gloss_targets.json に無い (gloss_scan.py を回す)")
+        else:
+            if hashlib.sha1(text.encode("utf-8")).hexdigest() != t["sha1"]:
+                err(f"{label} {kind}: 英文が変わった → gloss_scan.py を回して語注を見直す")
+            covered = {g["w"].lower() for g in lists[kind]}
+            if kind == "essay":
+                covered |= {x["en"].lower() for x in d["essay"]["expressions"]}
+            for w in t["rare"]:
+                if w in skip or any(w in c or c in w for c in covered):
+                    continue
+                err(f"{label} {kind}: 準1級を超えるまれな語「{w}」に語注が無い (gloss か gloss_skip に載せる)")
+        found = pre1_in(text, pre1)
+        counts[kind] = len(found)
+        if len(found) < MIN_PRE1[kind]:
+            err(f"{label} {kind}: 準1級の語が {len(found)} 語 (最低 {MIN_PRE1[kind]}) {found}")
+    return counts
+
+
 def check_quotes(label, blob_en, ja_fields):
     for field, ja in ja_fields:
         for run in english_runs(ja):
@@ -237,9 +286,17 @@ def main():
     if sorted(nos) != list(range(1, N_SETS + 1)):
         err(f"セット番号が 1〜{N_SETS} になっていない {nos}")
     rows = [("例題", ex)] + [(f"Set {s['no']}", s) for s in sorted(sets, key=lambda d: d["no"])]
+    pre1 = load_pre1()
+    tpath = os.path.join(DATA, "gloss_targets.json")
+    targets = json.load(open(tpath, encoding="utf-8"))["texts"] if os.path.exists(tpath) else {}
+    if not targets:
+        err("data/gloss_targets.json が無い (gloss_scan.py を回す)")
+    print(f"[check] 準1級の語 {len(pre1)} 語・句 (単語テスト + 語彙プール) / 語注の対象 {len(targets)} 本の英文")
     topics, themes = set(), set()
     for label, d in rows:
         s, e = d["summary"], d["essay"]
+        key = "EX" if label == "例題" else f"S{d['no']}"
+        pc = check_gloss(label, key, d, targets, pre1)
         n, m, k = check_summary(label, s)
         en, per = check_essay(label, e, house)
         check_quotes(label, en_blob(s, e), ja_fields_of(s, e))
@@ -250,7 +307,7 @@ def main():
             err(f"{label}: 要約のテーマが重複")
         themes.add(s["theme_ja"])
         print(f"  {label:6s} 要約: 本文 {n:3d} 語 → 解答例 {m:2d} 語 (最長一致 {k} 語)"
-              f" ｜ 意見: {en:3d} 語 {per}")
+              f" ｜ 意見: {en:3d} 語 {per} ｜ 準1級の語 本文{pc['passage']}・要約{pc['model']}・意見{pc['essay']}")
     for w in warns:
         print("  注意:", w)
     if errors:

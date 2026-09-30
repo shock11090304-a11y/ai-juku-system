@@ -1,0 +1,121 @@
+{
+  "threshold": 3.4,
+  "texts": {
+    "EX.passage": {
+      "sha1": "1978f065ff5c682cb10051503c006b62efe8c305",
+      "rare": [
+        "restocking"
+      ]
+    },
+    "EX.model": {
+      "sha1": "54b0dc95dd902adaae52892570b0b2aaa0253cfb",
+      "rare": []
+    },
+    "EX.essay": {
+      "sha1": "047d5d1d00ccfe58f81479b78dde2d5559f2737e",
+      "rare": []
+    },
+    "S1.passage": {
+      "sha1": "516cc9d41cfacac40da93623682267699f402d74",
+      "rare": [
+        "cashless",
+        "contactless",
+        "outages"
+      ]
+    },
+    "S1.model": {
+      "sha1": "b33ad59882ee2d04657edef2197f9362fc9d0c56",
+      "rare": [
+        "cashless"
+      ]
+    },
+    "S1.essay": {
+      "sha1": "023d9bc12158a96df3120ab0abfda5e8e4e9eff8",
+      "rare": []
+    },
+    "S2.passage": {
+      "sha1": "09879905980c819970397a1490780337a5138661",
+      "rare": [
+        "responsibly"
+      ]
+    },
+    "S2.model": {
+      "sha1": "afb06edf9c5cc55011a94a68344fff1e85736844",
+      "rare": [
+        "cyberbullying",
+        "sensibly"
+      ]
+    },
+    "S2.essay": {
+      "sha1": "5c0237dabac859987e21f7792ab8a7b5f4d72b3f",
+      "rare": []
+    },
+    "S3.passage": {
+      "sha1": "094ac6364f7371b65fa1b514b5118be5a0de3e9d",
+      "rare": [
+        "profitably"
+      ]
+    },
+    "S3.model": {
+      "sha1": "6df175fb0f9914ddfe3bbc818c57b37c9bbf97bb",
+      "rare": [
+        "pesticide"
+      ]
+    },
+    "S3.essay": {
+      "sha1": "170a2c89a4b2501e32e266191d6765d32cf2c645",
+      "rare": []
+    },
+    "S4.passage": {
+      "sha1": "9bf9b9a9503f0782b881df783fb6a0e370dd5ec1",
+      "rare": [
+        "akiya",
+        "demolishing",
+        "renovate",
+        "unoccupied"
+      ]
+    },
+    "S4.model": {
+      "sha1": "cda2872abb8122539aaf82dddc757265577368a4",
+      "rare": [
+        "negligent"
+      ]
+    },
+    "S4.essay": {
+      "sha1": "c39d59bb7f1cb95fd07d7dcfd387f08cedcf14ea",
+      "rare": [
+        "syringes"
+      ]
+    },
+    "S5.passage": {
+      "sha1": "39b71f65be0371c122f3f4a0a6c0cc9aa10c7fe9",
+      "rare": []
+    },
+    "S5.model": {
+      "sha1": "c6f526ea868ef39c861c757bb5ed660d3237608b",
+      "rare": [
+        "lessen"
+      ]
+    },
+    "S5.essay": {
+      "sha1": "51931b8a8b010aa68f7211b1614542b60602baf4",
+      "rare": [
+        "pollute"
+      ]
+    },
+    "S6.passage": {
+      "sha1": "5105cc2aade8864087c5d4043703caffde72ccf1",
+      "rare": [
+        "fumes"
+      ]
+    },
+    "S6.model": {
+      "sha1": "a33146108b13d4e62f0eb18c7886a72270058d0c",
+      "rare": []
+    },
+    "S6.essay": {
+      "sha1": "5e29e152e34071fc8c934ce8964174a021c1f46e",
+      "rare": []
+    }
+  }
+}

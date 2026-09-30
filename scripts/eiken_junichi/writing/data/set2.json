@@ -4,11 +4,11 @@
     "theme_ja": "学校でのスマートフォン禁止",
     "type_ja": "型C：変化 → 賛成派 → 反対派",
     "paras": [
-      "In many countries, schools are introducing stricter rules on smartphone use. Some require students to hand in their phones when they arrive in the morning, while others ask them to keep their devices switched off in lockers until the end of the day. A growing number of governments have also been discussing whether to ban phones in schools nationwide, and several have already done so.",
-      "Those in favor of such bans argue that phones are a major distraction. Notifications from social media and games make it difficult for young people to concentrate during lessons, and some teachers report that students' grades have improved since the new rules were introduced. Supporters also point out that without phones, students talk to each other more during breaks, and that online bullying among students tends to decrease.",
-      "Critics, however, question whether bans are the best approach. Many parents want to be able to contact their children in an emergency, such as a natural disaster. Some educators also argue that smartphones can be valuable learning tools, allowing students to look up information or record the results of experiments. In their view, rather than simply taking phones away, schools should teach young people how to use technology responsibly, since this is a skill they will need throughout their lives."
+      "In many countries, schools are imposing stricter rules on smartphone use. Some require students to hand in their phones when they arrive in the morning, while others ask them to keep their devices switched off in lockers until the end of the day. A growing number of governments have also been discussing whether to ban phones in schools nationwide, and several have already done so.",
+      "Those in favor of such bans argue that phones are a major distraction. Notifications from social media and games make it difficult for young people to concentrate during lessons, and some teachers report that students' grades have improved since the new rules were introduced. Supporters also point out that without phones, students talk to each other more during breaks, and that online bullying among students tends to diminish.",
+      "Critics, however, question whether bans are the best approach. Many parents want to be able to contact their children in an emergency, such as a natural disaster. Some educators also argue that smartphones can be valuable learning tools, allowing students to look up information or record the results of experiments. In their view, rather than simply taking phones away, schools should teach young people how to use technology responsibly, since this skill will be indispensable throughout their lives."
     ],
-    "model": "Schools in many countries are restricting smartphone use, and several governments have gone further by introducing nationwide bans. Supporters claim that such rules help students concentrate and achieve better grades, encourage face-to-face conversation, and reduce cyberbullying. However, opponents argue that parents need to reach their children in emergencies, that phones can support learning, and that schools should instead teach students to use technology sensibly.",
+    "model": "Schools in many countries are curbing smartphone use, and several governments have gone further by introducing nationwide bans. Supporters claim that such rules help students concentrate and achieve better grades, encourage face-to-face conversation, and reduce cyberbullying. However, opponents argue that parents need to reach their children in emergencies, that phones can support learning, and that schools should instead teach students to use technology sensibly.",
     "para_roles": [
       {
         "role": "変化",
@@ -31,7 +31,7 @@
     "paraphrases": [
       {
         "src": "stricter rules on smartphone use",
-        "dst": "restricting smartphone use",
+        "dst": "curbing smartphone use",
         "how": "品詞をかえる"
       },
       {
@@ -88,7 +88,20 @@
         "why_ja": "学習での使い方の具体例 → support learning にまとめる"
       }
     ],
-    "note_ja": "第1段落の「全国で禁止する政府も出てきた」は、gone further（さらに踏み込んだ）で「制限から禁止へ」の変化を表している。第2段落は賛成派、第3段落は反対派の意見。要約では Supporters claim that … / However, opponents argue that … のように「誰の意見か」を必ず示す（書かないと自分の意見に見える）。反対派の3つの主張は that 節を3つ並べると1文にまとまる。"
+    "note_ja": "第1段落の「全国で禁止する政府も出てきた」は、gone further（さらに踏み込んだ）で「制限から禁止へ」の変化を表している。第2段落は賛成派、第3段落は反対派の意見。要約では Supporters claim that … / However, opponents argue that … のように「誰の意見か」を必ず示す（書かないと自分の意見に見える）。反対派の3つの主張は that 節を3つ並べると1文にまとまる。",
+    "gloss": [],
+    "model_gloss": [
+      {
+        "w": "cyberbullying",
+        "head": "cyberbullying",
+        "ja": "ネット上のいじめ"
+      },
+      {
+        "w": "sensibly",
+        "head": "sensibly",
+        "ja": "分別をもって・賢く"
+      }
+    ]
   },
   "essay": {
     "topic": "Do zoos still have an important role to play in today's society?",
@@ -105,7 +118,7 @@
     ],
     "paras": [
       "I believe that zoos still have an important role to play in today's society. There are two main reasons for my opinion.",
-      "First, zoos contribute to the conservation of endangered species. Many modern zoos run breeding programs for animals that are close to extinction in the wild because of hunting or the loss of their habitats. Some of these animals have even been successfully released into the wild. Without such efforts, several species might already have disappeared.",
+      "First, zoos contribute to the conservation of endangered species. Many zoos run breeding programs for animals that are on the verge of extinction in the wild because of hunting or habitat loss. Some of these animals have even been successfully released into the wild. Without such efforts, several species might already have disappeared.",
       "Second, zoos offer valuable educational opportunities. Seeing real animals up close makes a much stronger impression on children than watching videos. Many zoos also hold talks and exhibitions that raise public awareness of environmental issues. Such experiences can motivate visitors, especially young people, to take action to protect nature.",
       "For these reasons, I am convinced that zoos continue to be necessary in modern society."
     ],
@@ -115,11 +128,11 @@
         "ja": "〜で果たすべき重要な役割がある（TOPIC の言い回しをそのまま使える）"
       },
       {
-        "en": "close to extinction",
-        "ja": "絶滅寸前の"
+        "en": "on the verge of extinction",
+        "ja": "絶滅寸前の（on the verge of ~：今にも〜しそうな）"
       },
       {
-        "en": "the loss of their habitats",
+        "en": "habitat loss",
         "ja": "生息地の喪失（環境問題の頻出表現）"
       },
       {
@@ -154,6 +167,13 @@
           "support_ja": "高画質のドキュメンタリーや VR、野生の生息地に置いたライブカメラを使えば、動物を閉じ込めずに自然な姿を学べる。"
         }
       ]
+    },
+    "model_gloss": []
+  },
+  "gloss_skip": [
+    {
+      "w": "responsibly",
+      "why": "responsible（責任のある）の副詞形で意味が取れる"
     }
-  }
+  ]
 }

@@ -5,7 +5,7 @@
     "type_ja": "型B：問題 → 影響 → 対策（とその限界）",
     "paras": [
       "Japan has a growing problem with empty houses, known as akiya. As the population declines and young people move to large cities, many homes in rural areas are left unoccupied after their elderly owners die or move into care facilities. Government surveys show that the total number of empty homes, including those for sale or rent, has reached a record high of about nine million.",
-      "Abandoned houses cause many problems. Buildings that are not maintained can collapse in earthquakes or heavy snow, putting neighbors in danger. They may also attract wild animals or criminals, and they can lower the value of nearby properties. Even so, owners often leave the houses as they are, because demolishing them is expensive and, in some cases, the land becomes subject to higher taxes once the building is removed.",
+      "Abandoned houses give rise to numerous problems. Buildings that are not maintained can collapse in earthquakes or heavy snow, putting neighbors in danger. They may also attract wild animals or criminals and lower the value of nearby properties. Even so, owners often leave the houses as they are, because demolishing them is expensive and, in some cases, the land becomes subject to higher taxes once the building is removed.",
       "To tackle the issue, many local governments have created \"akiya banks,\" websites that list empty homes for sale or rent, often at very low prices. Some also offer subsidies to people who renovate old houses or move to their towns. In addition, a law now allows authorities to take stronger action against owners who neglect dangerous buildings. Nevertheless, many of these houses are in areas with few jobs or services, so finding people willing to live in them remains difficult."
     ],
     "model": "The number of vacant homes in Japan has hit a record high due to population decline and migration to cities. Neglected houses can collapse, attract animals or crime, and lower nearby property values, but owners often keep them because demolition is costly and may raise taxes. Local governments are advertising them online, offering subsidies, and cracking down on negligent owners, yet many remain unwanted because of their inconvenient locations.",
@@ -93,7 +93,46 @@
         "why_ja": "空き家バンクの細部"
       }
     ],
-    "note_ja": "問題 → 対策型の文章。第2段落の最後（それでも所有者は放置する＋その理由）と、第3段落の最後（それでも住み手が見つからない）は、どちらも Even so / Nevertheless のあとに来る「逆転」で、要約から落としやすいが大事な要点。akiya banks のような本文独自の用語は、そのまま書くより「何をしているか」（advertising them online）で説明する方が伝わる。"
+    "note_ja": "問題 → 対策型の文章。第2段落の最後（それでも所有者は放置する＋その理由）と、第3段落の最後（それでも住み手が見つからない）は、どちらも Even so / Nevertheless のあとに来る「逆転」で、要約から落としやすいが大事な要点。akiya banks のような本文独自の用語は、そのまま書くより「何をしているか」（advertising them online）で説明する方が伝わる。",
+    "gloss": [
+      {
+        "w": "akiya",
+        "head": "akiya",
+        "ja": "空き家（日本語）"
+      },
+      {
+        "w": "unoccupied",
+        "head": "unoccupied",
+        "ja": "人が住んでいない"
+      },
+      {
+        "w": "demolishing",
+        "head": "demolish",
+        "ja": "取り壊す"
+      },
+      {
+        "w": "subsidies",
+        "head": "subsidy",
+        "ja": "補助金"
+      },
+      {
+        "w": "renovate",
+        "head": "renovate",
+        "ja": "改修する"
+      }
+    ],
+    "model_gloss": [
+      {
+        "w": "demolition",
+        "head": "demolition",
+        "ja": "取り壊し"
+      },
+      {
+        "w": "negligent",
+        "head": "negligent",
+        "ja": "（管理を）怠る"
+      }
+    ]
   },
   "essay": {
     "topic": "Should the government ban single-use plastic products?",
@@ -155,6 +194,24 @@
           "support_ja": "海岸や川の清掃・ごみ処理・漁業の被害に多くの費用がかかっている。長い目で見れば、くり返し使える製品に切り替える方が社会全体の負担は小さい。"
         }
       ]
-    }
-  }
+    },
+    "model_gloss": [
+      {
+        "w": "hygiene",
+        "head": "hygiene",
+        "ja": "衛生"
+      },
+      {
+        "w": "disposable",
+        "head": "disposable",
+        "ja": "使い捨ての"
+      },
+      {
+        "w": "syringes",
+        "head": "syringe",
+        "ja": "注射器"
+      }
+    ]
+  },
+  "gloss_skip": []
 }

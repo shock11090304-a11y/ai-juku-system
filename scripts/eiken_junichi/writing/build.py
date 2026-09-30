@@ -13,12 +13,15 @@
   ① check_pdf.py が刷り上がり PDF から本文・解答例を抜き出して data と全数照合
   ② check.py が語数・丸写し・言い換えの実在・POINTS・立場の一貫性を機械検査
   ③ 英文の校閲と、本文だけを渡した盲検 (段落の要点の抽出) を別担当が行い、指摘を data に反映
+★ 語注: 本文の語注 (summary.gloss) は ② で本文の語に * を付けて本文の下に、解答例の語注 (model_gloss) は ③ で
+  解答例の下に出す。対象は gloss_scan.py が拾う「準1級を超えるまれな語」(check.py が付け漏れを落とす)。
 ★ 公開リポジトリ: 生徒の氏名は書かない (宛名なしの汎用版)。
 """
 import glob
 import html
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -94,17 +97,47 @@ def time_label(no, kind):
     return "本番ペース 15分" if kind == "summary" else "本番ペース 20分"
 
 
+def marked_paras(paras, gloss):
+    """本文の段落を HTML にし、語注のある語の直後 (最初の出現だけ) に * を付ける。"""
+    spots = {}
+    for g in gloss:
+        pat = re.compile(r"(?<![A-Za-z])" + re.escape(g["w"]) + r"(?![A-Za-z])")
+        for i, p in enumerate(paras):
+            mo = pat.search(p)
+            if mo:
+                spots.setdefault(i, []).append(mo.end())
+                break
+    out = []
+    for i, p in enumerate(paras):
+        cuts = sorted(spots.get(i, []))
+        h, pos = [], 0
+        for c in cuts:
+            h.append(esc(p[pos:c]) + '<sup class="gl">*</sup>')
+            pos = c
+        h.append(esc(p[pos:]))
+        out.append("".join(h))
+    return out
+
+
+def gloss_box(gloss, star=True):
+    if not gloss:
+        return ""
+    items = "".join(f'<span><span class="en">{"*" if star else ""}{esc(g["head"])}</span>：{esc(g["ja"])}</span>'
+                    for g in gloss)
+    return f'<div class="gloss"><b>語注</b>{items}</div>'
+
+
 def lines(n):
     return ('<div class="lines">' +
             "".join(f'<div class="ln" data-n="{i}"></div>' for i in range(1, n + 1)) + "</div>")
 
 
 def summary_problem(band, s, no):
-    paras = "".join(f"<p>{esc(p)}</p>" for p in s["paras"])
+    paras = "".join(f"<p>{p}</p>" for p in marked_paras(s["paras"], s.get("gloss", [])))
     return (f'<div class="qband"><span class="set">{band}</span><span class="kind">大問4　要約</span>'
             f'<span class="lim">60〜70語 ／ {time_label(no, "summary")}</span></div>'
             f'<div class="instr">{SUMMARY_INSTR}</div>'
-            f'<div class="psg en">{paras}</div>'
+            f'<div class="psg en">{paras}</div>{gloss_box(s.get("gloss", []))}'
             f'<div class="memo" style="min-height:21mm">メモ（第1段落 ／ 第2段落 ／ 第3段落 の要点を日本語で1行ずつ）</div>'
             f'{lines(SUMMARY_LINES)}<div class="wcbox">語数 <span></span> 語　／　かかった時間 <span></span> 分</div>')
 
@@ -204,19 +237,19 @@ def book_guide(ex, sets):
 <p class="foot-note">{NOTE}</p>""")
     h.append('<div class="pb"></div>' + guide.overview())
     h.append('<div class="pb"></div>' + guide.summary_tips())
-    paras = "".join(f'<p><span class="tag" style="font-family:\'Noto Sans JP\',sans-serif">第{i}段落</span> {esc(p)}</p>'
-                    for i, p in enumerate(s["paras"], 1))
+    paras = "".join(f'<p><span class="tag" style="font-family:\'Noto Sans JP\',sans-serif">第{i}段落</span> {p}</p>'
+                    for i, p in enumerate(marked_paras(s["paras"], s.get("gloss", [])), 1))
     memo = "".join(f"<li>{esc(m)}</li>" for m in s["memo_ja"])
     h.append(f"""<div class="pb"></div>
 <h2 class="sec"><span class="no">2</span>要約の例題<small>{esc(s["type_ja"])}</small></h2>
 <div class="instr">{SUMMARY_INSTR}</div>
-<div class="psg en">{paras}</div>
+<div class="psg en">{paras}</div>{gloss_box(s.get("gloss", []))}
 <div class="step"><div class="s">STEP 1</div><div><b>段落の役割をつかむ</b>{roles_table(s)}</div></div>
 <div class="step"><div class="s">STEP 2</div><div><b>要点を日本語でメモ（3行）</b><ul>{memo}</ul></div></div>""")
     h.append(f"""<div class="step"><div class="s">STEP 3</div><div><b>言い換える</b>（本文の表現を自分の言葉に）{paraphrase_table(s)}
 <b>削った情報</b>{omitted_list(s)}</div></div>
 <div class="step"><div class="s">STEP 4</div><div><b>書いて、語数を数える</b>
-{model_box("解答例", s["model"], [p["dst"] for p in s["paraphrases"]])}
+{model_box("解答例", s["model"], [p["dst"] for p in s["paraphrases"]])}{gloss_box(s.get("model_gloss", []), star=False)}
 <p class="small">★ 黄色の部分が言い換え。{esc(s["note_ja"])}</p></div></div>""")
     h.append('<div class="pb"></div>' + guide.essay_tips())
     memo = "".join(f"<li>{esc(m)}</li>" for m in e["memo_ja"])
@@ -224,7 +257,7 @@ def book_guide(ex, sets):
 <h2 class="sec"><span class="no">3</span>意見論述の例題</h2>
 <div class="instr">{ESSAY_INSTR}</div>{topic_box(e)}
 <div class="step"><div class="s">STEP 1</div><div><b>POINTS を見て立場を決め、メモを作る</b>（4分）<ul>{memo}</ul></div></div>
-<div class="step"><div class="s">STEP 2</div><div><b>型に流し込んで書く</b>（黄色は使える表現）{essay_map(e)}</div></div>
+<div class="step"><div class="s">STEP 2</div><div><b>型に流し込んで書く</b>（黄色は使える表現）{essay_map(e)}{gloss_box(e.get("model_gloss", []), star=False)}</div></div>
 <div class="step"><div class="s">STEP 3</div><div><b>見直す</b>　{esc(e["note_ja"])}</div></div>
 {opposite_box(e)}</div>""")
     h.append('<div class="pb"></div>' + guide.mistakes())
@@ -244,7 +277,7 @@ def book_mondai(ex, sets):
 <div class="title">英検準1級<br>ライティング対策プリント</div>
 <div class="vol">② 問題 6セット</div>
 <div class="lead">1セット＝大問4 要約 1題 ＋ 大問5 意見論述 1題（本番の筆記と同じ組み合わせ）。<br>印刷して、解答欄に直接書き込んで使います。</div></div>
-<div class="brand">{BRAND}</div>
+<div class="brand">{BRAND}</div><div class="compact">
 <h3 class="sub">進み具合の記録</h3>
 <table class="t"><tr><th style="width:9%">Set</th><th style="width:22%">要約のテーマ</th><th>意見論述の TOPIC</th><th style="width:11%">実施日</th><th style="width:11%">LINE 送信</th></tr>{tr}</table>
 <div class="box tip"><div class="bh">使い方（くわしくは ① の「6 問題演習の進め方」）</div><ol>
@@ -252,8 +285,9 @@ def book_mondai(ex, sets):
 <li>語数を数えて、① の「8 セルフチェックリスト」で確認する</li>
 <li>③ の解答例と比べ、自分の答案を<b>何も見ずに書き直す</b></li>
 <li>書き直した答案を写真に撮って LINE で送る → 添削して返します</li></ol></div>
-<div class="box"><div class="bh">解答欄について</div>手書きだと1行に10語前後が目安です。要約は6〜7行、意見論述は12〜15行ほどで語数の範囲に入ります
-（字の大きさで変わるので、必ず語数を数えること）。解答欄の右端の小さな数字は行数です。</div>
+<div class="box"><div class="bh">語注（*）と解答欄について</div><ul>
+<li>本文の <b>*</b> の付いた語は、本文のすぐ下に意味があります。付けているのは<b>準1級の範囲を超える語</b>だけ（本番の英検と同じ考え方）。それ以外の分からない語は辞書で調べて単語帳へ</li>
+<li>手書きだと1行に10語前後が目安。要約は6〜7行、意見論述は12〜15行ほどで語数の範囲に入ります（字の大きさで変わるので必ず数えること）。解答欄の右端の小さな数字は行数です</li></ul></div></div>
 <p class="foot-note">{NOTE}</p>"""]
     for d in sets:
         h.append('<div class="pb"></div>' + summary_problem(f'Set {d["no"]}', d["summary"], d["no"]))
@@ -273,13 +307,14 @@ def book_kaitou(ex, sets):
 <div class="box tip"><div class="bh">解説の読み方</div><ul>
 <li><b>要約</b>：（1）段落ごとの要点 → 自分の答案に3つとも入っているか ／（2）言い換え表 → 同じ箇所を自分ならどう言い換えるか ／（3）削った情報 → 自分が書いてしまっていないか</li>
 <li><b>意見論述</b>：（1）段落ごとの語数と役割を自分の答案と比べる ／（2）黄色の「使える表現」を表現ストックノートへ ／（3）「逆の立場で書くなら」は第8〜9週の演習で使う</li>
-<li>解答例は、黄色の部分（要約＝言い換え／意見論述＝使える表現）を中心に<b>音読</b>すると、自分の表現として使えるようになります</li></ul></div>
+<li>解答例は、黄色の部分（要約＝言い換え／意見論述＝使える表現）を中心に<b>音読</b>すると、自分の表現として使えるようになります</li>
+<li>解答例の下の「語注」は、<b>準1級の範囲を超える語</b>の意味です</li></ul></div>
 <p class="foot-note">{NOTE}</p>"""]
     for d in sets:
         s, e = d["summary"], d["essay"]
         h.append(f"""<div class="pb"></div>
 <div class="qband"><span class="set">Set {d["no"]}</span><span class="kind">大問4　要約　解答例と解説</span><span class="lim">{esc(s["theme_ja"])}</span></div>
-{model_box("解答例", s["model"], [p["dst"] for p in s["paraphrases"]])}
+{model_box("解答例", s["model"], [p["dst"] for p in s["paraphrases"]])}{gloss_box(s.get("model_gloss", []), star=False)}
 <h4 class="mini">段落の役割と要点（{esc(s["type_ja"])}）</h4>{roles_table(s)}
 <h4 class="mini">言い換え（解答例の黄色の部分）</h4>{paraphrase_table(s)}
 <h4 class="mini">削った情報</h4>{omitted_list(s)}
@@ -287,7 +322,7 @@ def book_kaitou(ex, sets):
         h.append(f"""<div class="pb"></div>
 <div class="qband"><span class="set">Set {d["no"]}</span><span class="kind">大問5　意見論述　解答例と解説</span></div>
 <div class="small"><b>TOPIC</b>　<span class="en">{esc(e["topic"])}</span>　／　<b>POINTS</b>　<span class="en">{esc(" / ".join(e["points"]))}</span></div>
-{essay_map(e)}
+{essay_map(e)}{gloss_box(e.get("model_gloss", []), star=False)}
 <h4 class="mini">使える表現（解答例の黄色の部分）</h4>{expressions_table(e)}
 <div class="box warn"><div class="bh">ワンポイント</div>{esc(e["note_ja"])}</div>
 {opposite_box(e)}""")
