@@ -283,6 +283,7 @@ def _validate(payload):
         "options": list(dict.fromkeys(options)),
         "aiAppIncluded": ai_app_included,
         "startMonth": start_choice,   # current | next (初回決済のみ意味を持つ)
+        "tookTrial": payload.get("tookTrial") is True,   # 申込書の任意欄「体験授業を受けた」(2026-10-01)。入塾後に ¥1,500 を返金する目印
     }
 
 
@@ -523,6 +524,7 @@ def _create_first_charge_session(secret_key, payload, fee, breakdown, registrati
         "app_id": _cap(payload.get("appId", ""), 40),
         "start_month": start_month,          # 台帳の月 (webhook が charge:done をこの月に書く)。翌月開始なら翌月
         "start_choice": start_choice,        # current | next (塾長通知の表示用)
+        "took_trial": "1" if payload.get("tookTrial") else "0",   # 体験授業を受けた (申込書の申告) → webhook が塾長通知に ★返金 を出す
         "source": "enrollment-form-v1-payment",
         "system": "juku-payment-monthly",
     }

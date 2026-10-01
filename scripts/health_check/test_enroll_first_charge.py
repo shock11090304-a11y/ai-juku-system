@@ -273,6 +273,18 @@ def main():
           form_sm.get("metadata[start_month]") == reg._jst_month(1) and form_sm.get("metadata[start_choice]") == "next"
           and f"高2 英文法 受講料（{ml1}分）" in names_sm and f"入塾金＋{ml1}分の設備費・受講料" in form_sm.get("custom_text[submit][message]", ""),
           (form_sm.get("metadata[start_month]"), names_sm, form_sm.get("custom_text[submit][message]")))
+    # ---- A2t 体験授業を受けた (2026-10-01): 申込書の任意欄 → metadata.took_trial。true 以外 (文字列・未指定) は "0" ----
+    errs_t, clean_t = reg._validate(payload(tookTrial=True))
+    check("A2t1. _validate: tookTrial=true は True、未指定・文字列 \"true\" は False (エラーにはしない)",
+          not errs_t and clean_t["tookTrial"] is True and clean["tookTrial"] is False
+          and reg._validate(payload(tookTrial="true"))[1]["tookTrial"] is False and not reg._validate(payload(tookTrial="true"))[0], clean_t.get("tookTrial"))
+    posts.clear()
+    reg._create_first_charge_session("sk_test_dummy", clean_t, fee, breakdown, "reg_test_tt", "https://trillion-ai-juku.com",
+                                     "https://graceful-eclair-56bdac.netlify.app")
+    form_t = dict([p for p in posts if p[0] == "checkout/sessions"][0][1])
+    check("A2t2. metadata.took_trial: 申告ありは \"1\"・既定 (A2e2 のセッション) は \"0\"・金額は変わらない",
+          form_t.get("metadata[took_trial]") == "1" and form.get("metadata[took_trial]") == "0"
+          and form_t.get("metadata[first_total]") == form.get("metadata[first_total]"), (form_t.get("metadata[took_trial]"), form.get("metadata[took_trial]")))
     check("A2x3. metadata.monthly_fee=13,850・options に ai-app-5000・fee_breakdown に AI学習アプリ",
           form_ai.get("metadata[monthly_fee]") == "13850" and "ai-app-5000" in form_ai.get("metadata[options]", "")
           and "AI学習アプリ ¥5,000" in form_ai.get("metadata[fee_breakdown]", ""), form_ai)
@@ -527,6 +539,26 @@ def main():
     ke, re_, _ = edge_case("reg_te7", 1790780405, "2026-10", "current")
     check("B1edge8. 0 時直後でも start_month が決済月 (10 月) なら従来どおり 2026-10", "charge:done:reg_te7:2026-10" in ke.store and "charge:done:reg_te7:2026-09" not in ke.store, list(ke.store))
     check("B1edge9. _enroll_prev_month: 1 月→前年 12 月・不正値はそのまま", wh._enroll_prev_month("2027-01") == "2026-12" and wh._enroll_prev_month("2026-10") == "2026-09" and wh._enroll_prev_month("x") == "x")
+    wh._redis_safe, urllib.request.urlopen = kv, net
+
+    # ---- B1t 体験授業を受けた (2026-10-01): 塾長通知に ★返金・件名が ★要対応。申告なしは「申告なし」の行だけ ----
+    kt, rt, nt = edge_case("reg_tt1", 1789000000, "2026-09", "current")
+    ot_none = nt.sent[1].get("text", "") if len(nt.sent) > 1 else ""
+    kt2, nt2 = FakeKV(), FakeNet()
+    wh._redis_safe, urllib.request.urlopen = kt2, nt2
+    pt = pending("reg_tt2"); kt2.store["reg:pending:reg_tt2"] = json.dumps(pt, ensure_ascii=False)
+    st = session("reg_tt2", sid="cs_enroll_tt2"); st["metadata"].update({"took_trial": "1"})
+    wh._handle_checkout_completed(event(st, eid="evt_tt2"))
+    rt2 = json.loads(kt2.store.get("reg:completed:reg_tt2") or "{}")
+    ot = nt2.sent[1] if len(nt2.sent) > 1 else {}
+    check("B1t1. 申告あり: 塾長通知に「体験授業（申込書の申告）: 受けた（★1,500円を返金する）」と ★返金の行・件名は ★要対応",
+          "体験授業（申込書の申告）: 受けた（★1,500円を返金する）" in ot.get("text", "") and "★体験授業を受けたと申込書で申告あり" in ot.get("text", "")
+          and "★要対応" in ot.get("subject", "") and "体験授業1,500円の返金" in ot.get("subject", "") and "要確認あり" not in ot.get("subject", "")
+          and rt2.get("took_trial") is True, (ot.get("subject"), ot.get("text", "")[:400]))
+    check("B1t2. 申告なし: 「申告なし（念のため下の手順で確かめる）」・★返金の行なし",
+          "体験授業（申込書の申告）: 申告なし" in ot_none and "★体験授業を受けたと" not in ot_none and rt.get("took_trial") is False, ot_none[:400])
+    check("B1t3. 申告ありでも保護者メールは通常どおり (★は出さない)・台帳は 1 件",
+          nt2.sent and "★" not in nt2.sent[0].get("text", "") and "charge:done:reg_tt2:2026-09" in kt2.store, list(kt2.store))
     wh._redis_safe, urllib.request.urlopen = kv, net
 
     # ---- B1z Zoom 未設定なら「LINE でお知らせ」 ----

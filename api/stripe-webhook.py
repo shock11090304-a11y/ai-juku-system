@@ -523,6 +523,7 @@ ENROLL_NOTIFY_BODY = """入塾申込書からの初回カード決済が完了�
 翌月以降の月額: {monthly_fee}円
 決済日時 (JST): {paid_at_jst}
 受講開始月: {month_label}（申込書の選択: {start_choice_label}）
+体験授業（申込書の申告）: {trial_label}
 台帳: {month_label}分を「引き落とし済み」として記録 → 月末バッチは {month_label}分を請求しません（{next_month_label}分から請求）
 登録ID: {registration_id}
 受付番号 (Stripe Checkout): {receipt_no}
@@ -800,6 +801,7 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
         "included_comp": included_comp,
         "ai_app_note": ai_app_note,
         "start_choice_label": "翌月から" if (record.get("start_choice") or "") == "next" else "今月から",
+        "trial_label": "受けた（★1,500円を返金する）" if record.get("took_trial") else "申告なし（念のため下の手順で確かめる）",
         "start_note": start_note,
         "month_label": _enroll_month_label(month),
         "next_month_label": _enroll_month_label(_enroll_next_month(month)),
@@ -851,7 +853,7 @@ def _enroll_send_mails(obj, record, month, ledger_state, warnings=None):
 
 
 def _enroll_notify_owner(record, vars_, mail_status, ledger_state, warnings):
-    """塾長通知。★が 1 つでもあれば件名を「★要対応」にする (確認メール失敗・台帳未記録・カード未取得・翌月分の個別請求)"""
+    """塾長通知。★が 1 つでもあれば件名を「★要対応」にする (確認メール失敗・台帳未記録・カード未取得・翌月分の個別請求・申込待ち行の失敗・体験授業の返金)"""
     api_key = os.environ.get("RESEND_API_KEY", "").strip()
     notify_to = os.environ.get("ENROLL_NOTIFY_EMAIL", "").strip() or os.environ.get("COURSE_NOTIFY_EMAIL", "").strip()
     if not (notify_to and api_key and COURSE_EMAIL_RE.match(notify_to)):
@@ -871,7 +873,9 @@ def _enroll_notify_owner(record, vars_, mail_status, ledger_state, warnings):
         reasons = []
         if not ok:
             reasons.append("確認メール未送信")
-        if any(w.startswith("★") for w in warnings):
+        if any(w.startswith("★体験授業") for w in warnings):
+            reasons.append("体験授業1,500円の返金")   # 件名だけで「返金するだけ」と分かるように (ほかの★とは分ける)
+        if any(w.startswith("★") and not w.startswith("★体験授業") for w in warnings):
             reasons.append("要確認あり")
         vars_["fail_reason"] = "・".join(reasons) or "要確認"
         vars_["warnings"] = ("\n".join(warnings) + "\n") if warnings else ""
@@ -935,6 +939,8 @@ def _handle_enroll_first_charge(obj, reg_id, metadata, existing):
     # 決済月・その翌月以外の値 (改ざん・古いセッション) は無視して決済月にする
     start_month = str(metadata.get("start_month") or existing.get("start_month") or "").strip()
     start_choice = str(metadata.get("start_choice") or existing.get("start_choice") or "current")
+    # 申込書の任意欄「体験授業を受けた」(2026-10-01)。入塾後に体験授業の ¥1,500 を返金する (塾長が Stripe で手動)
+    took_trial = str(metadata.get("took_trial") or "") == "1" or existing.get("tookTrial") is True
     paid_jst = _course_jst(paid_ts)
     if start_month in (month, _enroll_next_month(month)):
         month = start_month
@@ -967,6 +973,7 @@ def _handle_enroll_first_charge(obj, reg_id, metadata, existing):
         "first_charge_month": month,
         "start_month": month,             # 受講開始月 = 初回決済を充てた月
         "start_choice": start_choice,     # current | next (申込書の選択)
+        "took_trial": took_trial,         # 体験授業を受けた (申込書の申告)
         "entry_fee": entry_fee,
         "app_id": metadata.get("app_id") or existing.get("app_id") or "",
         "source": "enrollment-form-v1-payment",
@@ -1000,6 +1007,8 @@ def _handle_enroll_first_charge(obj, reg_id, metadata, existing):
     if customer:
         _redis_safe("SET", f"reg:by_customer:{customer}", reg_id)
     warnings = []
+    if took_trial:
+        warnings.append("★体験授業を受けたと申込書で申告あり → 体験授業の決済 (1,500円) を全額返金してください (手順は下の「体験授業を受けた方には…」)")
     nxt = _enroll_next_month(month)
     if _enroll_next_month_batch_ran(nxt):
         warnings.append(f"★{_enroll_month_label(nxt)}分の月末バッチ (前倒し請求) は実行済みです → この生徒の {_enroll_month_label(nxt)}分 (月額 {record['monthly_fee']:,}円) は月末タブで {nxt} を選んで個別に請求してください (自動では請求されません)")
