@@ -627,6 +627,14 @@ def _enroll_next_month(ym):
         return ym
 
 
+def _enroll_prev_month(ym):
+    try:
+        y, m = int(ym[:4]), int(ym[5:7])
+        return f"{y - 1}-12" if m == 1 else f"{y}-{m - 1:02d}"
+    except Exception:
+        return ym
+
+
 def _enroll_write_ledger(rid, month, pi_id, first_total, existing, now_ts):
     """決済した月の charge:done (SET NX・60 日) と charge:history (1 年・台帳の恒久記録) を書く。
     done が既にある (Stripe の再送・月末バッチが先に走った) ときは何も書かない。戻り値: 書いたかどうか"""
@@ -924,9 +932,16 @@ def _handle_enroll_first_charge(obj, reg_id, metadata, existing):
     # その月を台帳の月にする = charge:done を翌月に書く → 26 日前後の「翌月分」バッチはこの生徒を飛ばし、その次の月から引き落とす。
     # 決済月・その翌月以外の値 (改ざん・古いセッション) は無視して決済月にする
     start_month = str(metadata.get("start_month") or existing.get("start_month") or "").strip()
+    start_choice = str(metadata.get("start_choice") or existing.get("start_choice") or "current")
+    paid_jst = _course_jst(paid_ts)
     if start_month in (month, _enroll_next_month(month)):
         month = start_month
-    start_choice = str(metadata.get("start_choice") or existing.get("start_choice") or "current")
+    elif (start_choice == "current" and start_month == _enroll_prev_month(month)
+          and paid_jst.day == 1 and paid_jst.hour == 0 and paid_jst.minute < 10):
+        # 月末 0 時の直前に「今月から」で受け付け、Stripe のセッション作成が 0 時を過ぎた (2026-10-01)。register-subscribe は
+        # start_month を顧客の検索・作成より前に決めるので、明細・完了画面・確認文は前月分になっている → 台帳も前月にそろえる
+        # (新しい月にすると、保護者が払った「◯月分」と台帳が 1 か月ずれ、前月分が誰にも記録されない)
+        month = start_month
     record = {
         **existing,
         "registration_id": reg_id,

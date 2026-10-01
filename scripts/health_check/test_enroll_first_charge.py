@@ -494,6 +494,39 @@ def main():
     wh._handle_checkout_completed(event(sv))
     check("B1w5. 決済月・翌月以外の start_month (改ざん/古い) は無視して決済月 2026-09", f"charge:done:{ridv}:2026-09" in kvv.store and f"charge:done:{ridv}:2026-12" not in kvv.store, list(kvv.store))
     check("B1w6. 今月開始 (B1) の塾長通知は「今月から」・台帳は 2026年9月分", "受講開始月: 2026年9月（申込書の選択: 今月から）" in o.get("text", ""), o.get("text"))
+
+    # ---- B1edge 月末 0 時の境目 (2026-10-01): 9/30 23:59:59 に「今月から」で受け付け (start_month=9月)、セッション作成が 10/1 0:00 を過ぎた ----
+    #   明細・完了画面は 9 月分なので、台帳も 9 月にそろえる。0 時から 10 分を過ぎたもの・「翌月から」・前月以外は従来どおり決済月
+    def edge_case(rid, created, start_month, start_choice):
+        k, n = FakeKV(), FakeNet()
+        wh._redis_safe, urllib.request.urlopen = k, n
+        p = pending(rid); p["start_month"] = start_month; p["start_choice"] = start_choice
+        k.store[f"reg:pending:{rid}"] = json.dumps(p, ensure_ascii=False)
+        s = session(rid, sid=f"cs_enroll_{rid}"); s["created"] = created
+        s["metadata"].update({"start_month": start_month, "start_choice": start_choice})
+        wh._handle_checkout_completed(event(s, eid=f"evt_{rid}"))
+        return k, json.loads(k.store.get(f"reg:completed:{rid}") or "{}"), n
+    ke, re_, ne = edge_case("reg_te1", 1790780405, "2026-09", "current")   # 10/01 00:00:05 JST
+    oe = ne.sent[1].get("text", "") if len(ne.sent) > 1 else ""
+    check("B1edge1. 0 時直後 (00:00:05) の今月開始 9 月分は、台帳・first_charge_month・start_month とも 2026-09",
+          "charge:done:reg_te1:2026-09" in ke.store and "charge:done:reg_te1:2026-10" not in ke.store
+          and re_.get("first_charge_month") == "2026-09" and re_.get("start_month") == "2026-09", (list(ke.store), re_.get("first_charge_month")))
+    check("B1edge2. 塾長通知も 2026年9月（今月から）", "受講開始月: 2026年9月（申込書の選択: 今月から）" in oe, oe)
+    ke, re_, _ = edge_case("reg_te2", 1790780999, "2026-09", "current")   # 00:09:59
+    check("B1edge3. 00:09:59 までは前月にそろえる", "charge:done:reg_te2:2026-09" in ke.store and "charge:done:reg_te2:2026-10" not in ke.store, list(ke.store))
+    ke, re_, _ = edge_case("reg_te3", 1790781000, "2026-09", "current")   # 00:10:00
+    check("B1edge4. 0 時から 10 分を過ぎたら従来どおり決済月 2026-10 (古いセッションの前月は使わない)",
+          "charge:done:reg_te3:2026-10" in ke.store and "charge:done:reg_te3:2026-09" not in ke.store, list(ke.store))
+    ke, re_, _ = edge_case("reg_te4", 1790780405, "2026-09", "next")
+    check("B1edge5. 「翌月から」で前月の start_month は無視して決済月 2026-10",
+          "charge:done:reg_te4:2026-10" in ke.store and "charge:done:reg_te4:2026-09" not in ke.store, list(ke.store))
+    ke, re_, _ = edge_case("reg_te5", 1790780405, "2026-08", "current")
+    check("B1edge6. 2 か月前の start_month は無視して決済月 2026-10", "charge:done:reg_te5:2026-10" in ke.store and "charge:done:reg_te5:2026-08" not in ke.store, list(ke.store))
+    ke, re_, _ = edge_case("reg_te6", 1798729203, "2026-12", "current")   # 2027-01-01 00:00:03 JST (年またぎ)
+    check("B1edge7. 年またぎ: 2027-01-01 00:00:03 の今月開始 2026-12 は台帳 2026-12", "charge:done:reg_te6:2026-12" in ke.store and "charge:done:reg_te6:2027-01" not in ke.store, list(ke.store))
+    ke, re_, _ = edge_case("reg_te7", 1790780405, "2026-10", "current")
+    check("B1edge8. 0 時直後でも start_month が決済月 (10 月) なら従来どおり 2026-10", "charge:done:reg_te7:2026-10" in ke.store and "charge:done:reg_te7:2026-09" not in ke.store, list(ke.store))
+    check("B1edge9. _enroll_prev_month: 1 月→前年 12 月・不正値はそのまま", wh._enroll_prev_month("2027-01") == "2026-12" and wh._enroll_prev_month("2026-10") == "2026-09" and wh._enroll_prev_month("x") == "x")
     wh._redis_safe, urllib.request.urlopen = kv, net
 
     # ---- B1z Zoom 未設定なら「LINE でお知らせ」 ----
