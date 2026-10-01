@@ -223,7 +223,7 @@ SLIDES = [
                 ("📈", "週次レポート ＆ AIチューター")]),
     dict(car="A", idx=8, total=8, kind="cta",
          headline="まずは[g]¥1,500[/g]の\n本気体験から。",
-         sub="冷やかしお断りの “有料体験（1回）”。\n入塾すれば初月謝から全額差引で、実質無料。",
+         sub="冷やかしお断りの “有料体験（1回）”。\n入塾すれば ¥1,500 は全額返金で、実質無料。",
          cta="プロフィールのリンクから →",
          ctasub="@trillion_eng　·　trillion-ai-juku.com"),
 
@@ -260,7 +260,7 @@ SLIDES = [
          note="英検合格はのべ1,000名以上。"),
     dict(car="B", idx=8, total=8, kind="cta",
          headline="この毎日を、\n[g]¥1,500[/g]で試す。",
-         sub="有料体験（1回）だから、本気の人だけ。\n入塾すれば初月謝から全額差引で実質無料。",
+         sub="有料体験（1回）だから、本気の人だけ。\n入塾すれば ¥1,500 は全額返金で実質無料。",
          cta="プロフィールのリンクから →",
          ctasub="@trillion_eng　·　trillion-ai-juku.com"),
 ]

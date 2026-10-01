@@ -75,7 +75,7 @@ def main():
     check("1a. paid セッションで申込者へ 1 通", r.get("sent") and len(MAILS) == 1 and MAILS[0]["to"] == "parent@example.invalid", (r, MAILS))
     b = MAILS[0]["body"] if MAILS else ""
     check("1b. 件名", MAILS and MAILS[0]["subject"] == "【トリリオン英語塾】体験授業のお申し込みありがとうございます（日程のご相談）", MAILS and MAILS[0]["subject"])
-    check("1c. 本文に 宛名・金額・LINE URL・受付番号・入塾時の差し引き", all(x in b for x in ["テスト 花子 様", "1,500円", "https://lin.ee/ZHlrRjh", "cs_live_t1", "初月の月謝から差し引き"]), b[:500])
+    check("1c. 本文に 宛名・金額・LINE URL・受付番号・入塾時の返金", all(x in b for x in ["テスト 花子 様", "1,500円", "https://lin.ee/ZHlrRjh", "cs_live_t1", "入塾後（初回のお支払いの後）に、このお支払いに使ったカードへ全額返金"]), b[:500])
     check("2a. custom_fields が「ラベル: 値」で載る (dropdown は選択肢のラベル)", "・体験したいクラス: 英文法 Lv.1（標準・高1/2）" in b and "・生徒氏名: テスト 太郎" in b, b[:400])
     MAILS.clear()
     mod._send_taiken_welcome_email(session(sid="cs_live_t2", fields=False))
