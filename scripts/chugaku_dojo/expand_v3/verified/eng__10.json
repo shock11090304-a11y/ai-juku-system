@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nTurn left at the corner, ( ) you will see the library.",
+  "passage": "",
+  "choices": [
+   "or",
+   "but",
+   "if",
+   "and"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞・前置詞。正解は「and」。「〜しなさい、そうすれば…」は〈命令文, and …〉で表す。or は「さもないと」の意味になり、「左に曲がりなさい、さもないと図書館が見える」では意味が通らない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nHaru didn't have breakfast this morning, ( ) he is very hungry now.",
+  "passage": "",
+  "choices": [
+   "but",
+   "so",
+   "or",
+   "because"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞・前置詞。正解は「so」。「朝食を食べなかった → だから今おなかがすいている」と結果を続けるので so。because は「〜なので」と理由を後ろに置く語で、「今おなかがすいているので朝食を食べなかった」では前後が逆になる。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI hope ( ) you will have a good time in Japan.",
+  "passage": "",
+  "choices": [
+   "that",
+   "what",
+   "because",
+   "if"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「that」。hope のあとに「〜ということ」という内容を続けるときは that でつなぐ (この that は省略もできる)。if や because では hope の内容を表せない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nDon't use your phone ( ) you are walking.",
+  "passage": "",
+  "choices": [
+   "while",
+   "during",
+   "by",
+   "with"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「while」。「〜している間に」のあとに〈主語+動詞〉(you are walking) が続くときは while を使う。during も「〜の間」だが、あとには the game のような名詞が来るので誤り。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nRyo has liked soccer ( ) he was a little boy.",
+  "passage": "",
+  "choices": [
+   "for",
+   "since",
+   "when",
+   "until"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞・前置詞。正解は「since」。has liked は「(今まで) ずっと好きだ」と続いていることを表すので、「小さいころから」と始まりの時点を示す since を使い、Ryo has liked soccer since he was a little boy. とする。when は「〜したとき」と過去の1点を表すので has liked とは合わず、until は「〜まで」で意味が通らない。「〜の間」と期間の長さを表す for は for ten years のように時間の長さを表す語句を続けて使うので、he was a little boy という始まりの時点とは合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nYou can take ( ) the bus or the train to get there.",
+  "passage": "",
+  "choices": [
+   "neither",
+   "both",
+   "either",
+   "also"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞・前置詞。正解は「either」。「A か B のどちらか」は either A or B。both は both A and B の形で使い、or とは組み合わせない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMika is good at not only English ( ) also math.",
+  "passage": "",
+  "choices": [
+   "and",
+   "or",
+   "so",
+   "but"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞・前置詞。正解は「but」。「A だけでなく B も」は not only A but also B という決まった形。and や or を入れてもこの形にならない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る語として最も適切なものを選びなさい。\nIf it ( ) tomorrow, we will stay home and watch a movie.",
+  "passage": "",
+  "choices": [
+   "rains",
+   "will rain",
+   "rain",
+   "rained"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「rains」。if の節 (〜ならば) では、明日のことでも will を使わず現在形で表す。主語が it なので rains にする。will rain と書くのは典型的な誤り。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nI was tired, so I went to bed early.\n= I went to bed early ( ) I was tired.",
+  "passage": "",
+  "choices": [
+   "but",
+   "so",
+   "because",
+   "although"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞・前置詞。正解は「because」。上の文は「疲れていた、だから早く寝た」。下の文は「早く寝た、なぜなら疲れていたから」と理由を後ろに置くので because。so を入れると「早く寝たので疲れた」と前後が逆になる。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nHurry up, or you will miss the bus.\n= ( ) you don't hurry up, you will miss the bus.",
+  "passage": "",
+  "choices": [
+   "Because",
+   "If",
+   "So",
+   "Though"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞・前置詞。正解は「If」。〈命令文, or …〉「〜しなさい、さもないと…」は「もし〜しなければ…」と If … not で書きかえられる。Because では「急がないので」と理由を断定することになり、意味が変わる。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nIt was cold, but we went swimming in the sea.\n= ( ) it was cold, we went swimming in the sea.",
+  "passage": "",
+  "choices": [
+   "Because",
+   "If",
+   "Until",
+   "Though"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞・前置詞。正解は「Though」。「寒かったが泳ぎに行った」の but は、「〜だけれども」の Though (Although) を文の先頭に置いて書きかえられる。Because にすると「寒かったので泳いだ」となり意味が変わる。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の日本文の意味を表す英文として最も適切なものを選びなさい。\nあなたは紅茶かコーヒーのどちらか一方を選ぶことができます。",
+  "passage": "",
+  "choices": [
+   "You can choose either tea and coffee.",
+   "You can choose both tea or coffee.",
+   "You can choose either tea or coffee.",
+   "You can choose both tea and coffee."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞・前置詞。正解は「You can choose either tea or coffee.」「A か B のどちらか一方」は either A or B。both tea and coffee は「両方」の意味になり、「どちらか一方」ではない。either と and、both と or の組み合わせは誤り。",
+  "form": "和文英訳",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の日本文の意味を表す英文として最も適切なものを選びなさい。\n私が駅に着いたとき、雨が降っていました。",
+  "passage": "",
+  "choices": [
+   "When I arrived at the station, it was raining.",
+   "While I arrived at the station, it was raining.",
+   "Until I arrived at the station, it was raining.",
+   "If I arrived at the station, it was raining."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「When I arrived at the station, it was raining.」「〜したとき」は when。while は「〜している間」の意味で arrived のような一瞬の動作には合わず、until は「〜まで」で意味が変わる。",
+  "form": "和文英訳",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の中から、英文として正しいものを選びなさい。(アヤとミカの 2 人について述べた文)",
+  "passage": "",
+  "choices": [
+   "Both Aya and Mika are in the tennis club.",
+   "Both Aya or Mika are in the tennis club.",
+   "Both Aya or Mika is in the tennis club.",
+   "Both Aya and Mika is in the tennis club."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「Both Aya and Mika are in the tennis club.」「A も B も」は both A and B で、2 人なので are を使う。both … or は誤った組み合わせで、is は 1 人のときの形。",
+  "form": "正誤",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の日本文の意味になるように( )内の語を並べかえたとき、全文で 4 番目に来る語を選びなさい。\n雨が降っていたので、私たちは家にいました。\nWe ( home / because / raining / was / it / stayed ).",
+  "passage": "",
+  "choices": [
+   "stayed",
+   "because",
+   "raining",
+   "home"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞・前置詞。正解は「because」。並べると We stayed home because it was raining. になり、全文で 4 番目は because。「〜ので」の because は 2 つの文をつなぐ語なので、stayed home のあとに置く。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の日本文の意味になるように( )内の語を並べかえたとき、全文で 6 番目に来る語を選びなさい。\n家に着いたらすぐにあなたに電話します。\nI will call you ( as / get / I / home / soon / as ).",
+  "passage": "",
+  "choices": [
+   "as",
+   "get",
+   "soon",
+   "home"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞・前置詞。正解は「soon」。並べると I will call you as soon as I get home. になり、全文で 6 番目は soon。「〜するとすぐに」は as soon as のまとまりで覚える。",
+  "form": "並べかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy grandmother takes a walk ( ) the morning.",
+  "passage": "",
+  "choices": [
+   "at",
+   "on",
+   "in",
+   "by"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞・前置詞。正解は「in」。「朝に」「午後に」「夕方に」は in the morning / in the afternoon / in the evening。on は曜日や日付、at は時刻に使う。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy father often works late ( ) night.",
+  "passage": "",
+  "choices": [
+   "in",
+   "on",
+   "for",
+   "at"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞・前置詞。正解は「at」。「夜に」は at night (the はつけない)。in the morning からの連想で in night とするのは誤り。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nLet's play tennis ( ) Sunday afternoon.",
+  "passage": "",
+  "choices": [
+   "in",
+   "on",
+   "at",
+   "to"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞・前置詞。正解は「on」。「午後に」だけなら in the afternoon だが、Sunday afternoon のように曜日がつくと on を使う。in Sunday afternoon は誤り。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の 2 つの( )に入る語の組み合わせとして最も適切なものを選びなさい。\nLet's meet ( ) the bus stop ( ) ten tomorrow morning.",
+  "passage": "",
+  "choices": [
+   "at / at",
+   "in / at",
+   "at / in",
+   "in / in"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞・前置詞。正解は「at / at」。bus stop のような地点には at、ten (時刻) にも at を使う。in は広い場所 (in Tokyo) や月・年 (in May) に使う。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nPlease write your name ( ) English.",
+  "passage": "",
+  "choices": [
+   "on",
+   "by",
+   "with",
+   "in"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞・前置詞。正解は「in」。「英語で」のように言語を表すときは in English。by は by bus のような手段、with は with a pen のような道具に使う。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の日本文の意味を表す英文として最も適切なものを選びなさい。\n私の家は公園の隣にあります。",
+  "passage": "",
+  "choices": [
+   "My house is in front of the park.",
+   "My house is next to the park.",
+   "My house is far from the park.",
+   "My house is behind the park."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞・前置詞。正解は「My house is next to the park.」「〜の隣に」は next to。in front of は「〜の前に」、behind は「〜の後ろに」で、隣とは別の位置を表す。",
+  "form": "和文英訳",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の中から、英文として正しいものを選びなさい。(東京駅に着いたことを述べた文)",
+  "passage": "",
+  "choices": [
+   "We arrived at Tokyo Station in Sunday morning.",
+   "We arrived to Tokyo Station on Sunday morning.",
+   "We arrived to Tokyo Station in Sunday morning.",
+   "We arrived at Tokyo Station on Sunday morning."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞・前置詞。正解は「We arrived at Tokyo Station on Sunday morning.」arrive は arrive at (駅などの地点) の形で使い、arrive to とは言わない。「日曜日の朝に」は曜日がつくので on Sunday morning。",
+  "form": "正誤",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "接続詞・前置詞",
+  "unit": "接続詞・前置詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWhat did you have ( ) breakfast this morning?",
+  "passage": "",
+  "choices": [
+   "from",
+   "on",
+   "for",
+   "to"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞・前置詞。正解は「for」。「朝食に〜を食べる」は have 〜 for breakfast。for lunch / for dinner も同じ。from や to では意味が通らない。",
+  "form": "空所補充",
+  "level": "標準"
+ }
+]

@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nDaiki's dog is ( ) than mine.",
+  "passage": "",
+  "choices": [
+   "more small",
+   "small",
+   "smallest",
+   "smaller"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較。正解は「smaller」。あとに than があるので比較級を使う。small は短い語なので -er をつけて smaller にする。more small とは言わず、smallest は「最も小さい」という最上級なので than とは合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nOf all the members, Sora is the ( ) player on our team.",
+  "passage": "",
+  "choices": [
+   "good",
+   "better",
+   "best",
+   "well"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「best」。the と of all the members があり「全員の中でいちばんよい選手」という意味なので最上級を使う。good の最上級は不規則に変化して best になる (good - better - best)。better は2つを比べる比較級なので、全員の中から選ぶこの文には合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の文の( )内の語を適切な形にしたものを選びなさい。\nThis camera is ( expensive ) than mine.",
+  "passage": "",
+  "choices": [
+   "expensiver",
+   "more expensive",
+   "most expensive",
+   "the most expensive"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「more expensive」。than があるので比較級。expensive のような長い語は -er をつけず、前に more を置いて比較級にする。expensiver という形はなく、most expensive は最上級。",
+  "form": "語形変化",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nHaru can swim as fast ( ) his brother.",
+  "passage": "",
+  "choices": [
+   "than",
+   "so",
+   "as",
+   "like"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「as」。「〜と同じくらい速く」は as fast as 〜 と、as で挟む形で表す。前の as とセットなので、than や so は入らない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nRyo is taller ( ) his father now.",
+  "passage": "",
+  "choices": [
+   "to",
+   "then",
+   "as",
+   "than"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較。正解は「than」。taller という比較級のあとで「〜より」と比べる相手を示すのは than。つづりの似た then は「それから」という意味の別の語で、比較には使わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMika is the youngest ( ) the four children.",
+  "passage": "",
+  "choices": [
+   "in",
+   "from",
+   "at",
+   "of"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較。正解は「of」。最上級のあとで「〜の中で」を表すとき、the four のような複数を表す語句には of を使う。in は in Japan や in my class のように場所・範囲を表す語句のときに使う。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nSora is the fastest runner in her class.\n= Sora runs faster than ( ) in her class.",
+  "passage": "",
+  "choices": [
+   "any other students",
+   "any other student",
+   "other any student",
+   "other any students"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「any other student」。「クラスのほかのどの生徒よりも速く」は比較級 than any other +単数形の名詞で表し、最上級の文と同じ意味になる。any other のあとは複数形にしないこと、語順は any other student で固定であることに注意。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の日本文の意味になるように( )内の語を並べかえたとき、( )内で5番目に来る語を選びなさい。\n彼女は日本で最も有名な歌手の1人です。\nShe ( famous / is / most / of / one / singers / the ) in Japan.",
+  "passage": "",
+  "choices": [
+   "of",
+   "most",
+   "the",
+   "famous"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「most」。正しい文は She is one of the most famous singers in Japan. で、「最も〜な…の1人」は one of the +最上級+複数形の名詞の順に並べる。famous は長い語なので最上級は the most famous になり、singers は複数形のままにする。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の日本文の意味になるように( )内の語を並べかえたとき、( )内で3番目に来る語を選びなさい。\n私はほかのどの季節よりも秋が好きです。\nI ( any / better / fall / like / other / season / than ).",
+  "passage": "",
+  "choices": [
+   "like",
+   "better",
+   "season",
+   "than"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「better」。正しい文は I like fall better than any other season. で、「…よりも〜のほうが好き」は like 〜 better than … の順。「ほかのどの季節よりも」は than any other season と単数形で続ける。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nThis question is not as easy as that one.\n= This question is ( ) than that one.",
+  "passage": "",
+  "choices": [
+   "more difficult",
+   "as difficult",
+   "the most difficult",
+   "easier"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較。正解は「more difficult」。not as easy as that one は「あの問題ほど簡単ではない」、つまり「あの問題より難しい」なので、difficult の比較級 more difficult を使う。easier では意味が逆になり、as difficult は than と一緒には使えない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nDaiki is taller than Ryo.\n= Ryo is ( ) than Daiki.",
+  "passage": "",
+  "choices": [
+   "taller",
+   "as tall",
+   "shorter",
+   "the shortest"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「shorter」。「ダイキはリョウより背が高い」は「リョウはダイキより背が低い」と言いかえられるので、tall と反対の意味の short を比較級にして shorter than とする。taller では意味が逆になり、as tall や the shortest は than と一緒には使えない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nMika likes tennis better than soccer.\n= Mika doesn't like soccer as ( ) as tennis.",
+  "passage": "",
+  "choices": [
+   "many",
+   "more",
+   "most",
+   "much"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較。正解は「much」。like 〜 better than … は「…よりも〜のほうが好き」。これを「…ほど〜が好きではない」と言いかえるときは not … as much as 〜 を使う。「好きの程度」は数えられないので many は使えず、as 〜 as の間に比較級の more は入らない。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の文の( )内の語を適切な形にしたものを選びなさい。\nMy mother gets up ( early ) than anyone else in my family.",
+  "passage": "",
+  "choices": [
+   "earlier",
+   "earliest",
+   "more early",
+   "earlyer"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較。正解は「earlier」。than があるので比較級。early のように y で終わる語は y を i に変えて -er をつけ、earlier とつづる。earlyer は y をそのまま残した誤り。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の文の( )内の語を適切な形にしたものを選びなさい。\nIt is ( hot ) today than yesterday.",
+  "passage": "",
+  "choices": [
+   "hoter",
+   "hotter",
+   "hottest",
+   "more hot"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「hotter」。than があるので比較級。hot のように「短い母音+子音字1つ」で終わる語は、最後の t を重ねて -er をつけ hotter とつづる。big - bigger も同じ。",
+  "form": "語形変化",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の文の( )内の語を適切な形にしたものを選びなさい。\nHaru has the ( many ) books of us all.",
+  "passage": "",
+  "choices": [
+   "many",
+   "more",
+   "most",
+   "much"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「most」。the と of us all があり「私たち全員の中でいちばん多くの本」という最上級の文。many の最上級は不規則に変化して most になる (many - more - most)。more は比較級なので the のあとには合わない。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の文の( )内の語を適切な形にしたものを選びなさい。\nAya's idea sounds ( good ) than mine.",
+  "passage": "",
+  "choices": [
+   "better",
+   "gooder",
+   "best",
+   "more good"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較。正解は「better」。than があるので比較級。good の比較級は -er をつけず、不規則に変化して better になる (good - better - best)。gooder や more good という形はない。",
+  "form": "語形変化",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Who runs faster, you or your brother?\nB: ( ) He won the race at school last month.",
+  "passage": "",
+  "choices": [
+   "My brother does.",
+   "My brother is.",
+   "Yes, my brother does.",
+   "Yes, my brother is."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較。正解は「My brother does.」Who runs faster, A or B? は「AとBではどちらが速く走りますか」と2人を比べてたずねる文なので、Yes では答えず人を答える。runs をくり返さずに does で受ける。is では runs を受けられない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の4つの英文のうち、比較の表現が正しく使われているものを1つ選びなさい。",
+  "passage": "",
+  "choices": [
+   "Daiki is the tallest in the three brothers.",
+   "Daiki is taller of the three brothers.",
+   "Daiki is the tallest of the three brothers.",
+   "Daiki is taller in the three brothers."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「Daiki is the tallest of the three brothers.」「3人の兄弟の中でいちばん背が高い」のように3つ以上の中で「いちばん」と言うときは、2つを比べる比較級 taller ではなく最上級 the tallest を使う。また the three brothers のような複数を表す語句には of を使い、in は使わない。",
+  "form": "正誤",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の4つの英文のうち、誤りを含むものを1つ選びなさい。",
+  "passage": "",
+  "choices": [
+   "My bag is heavier than yours.",
+   "This book is more easier than mine.",
+   "Yuki is the tallest girl in her class.",
+   "I can't swim as well as my sister."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較。正解は「This book is more easier than mine.」easy は短い語なので比較級は easier だけでよく、more と -er を重ねて more easier とするのは誤り。ほかの3文は、heavier than / the tallest … in / as well as がどれも正しく使われている。",
+  "form": "正誤",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の日本文の意味になるように( )内の語を並べかえたとき、( )内で3番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\n数学と理科では、どちらがあなたにとって難しいですか。\n( difficult / for / is / more / which ) you, math or science?",
+  "passage": "",
+  "choices": [
+   "which",
+   "is",
+   "more",
+   "difficult"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較。正解は「more」。正しい文は Which is more difficult for you, math or science? で、「AとBではどちらが〜か」は Which is +比較級, A or B? の順。difficult は長い語なので比較級は more difficult になる。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の日本文の意味になるように( )内の語を並べかえたとき、( )内で2番目に来る語を選びなさい。\nソラは3人の中でいちばん速く走ります。\nSora ( fastest / of / runs / the / the / three ).",
+  "passage": "",
+  "choices": [
+   "the",
+   "runs",
+   "of",
+   "fastest"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較。正解は「the」。正しい文は Sora runs the fastest of the three. で、「3人の中でいちばん速く走る」は runs the fastest of the three の順。fast のような副詞の最上級にも the をつけてよく、「3人の中で」は of the three で表す。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の日本文の意味になるように( )内の語を並べかえたとき、( )内で2番目に来る語を選びなさい。\n私はあなたほど多くの本を持っていません。\nI don't have ( as / as / books / many / you ).",
+  "passage": "",
+  "choices": [
+   "as",
+   "you",
+   "books",
+   "many"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較。正解は「many」。正しい文は I don't have as many books as you. で、「…ほど多くの〜を持っていない」は not … as many +複数形の名詞+ as … の順。many books をひとまとまりにして as と as の間に置くのがポイント。",
+  "form": "並べかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nNo one in my class is as tall as Daiki.",
+  "passage": "",
+  "choices": [
+   "私のクラスでダイキほど背が高い人はいない。",
+   "私のクラスではダイキは背が高いほうではない。",
+   "ダイキは私のクラスの誰とも同じくらいの背の高さだ。",
+   "私のクラスには背の高い人が1人もいない。"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較。正解は「私のクラスでダイキほど背が高い人はいない。」No one … is as tall as Daiki. は「ダイキと同じくらい背が高い人は誰もいない」、つまりダイキがクラスでいちばん背が高いという意味で、Daiki is the tallest in my class. と同じ内容。ダイキが低いという意味にはならない。",
+  "form": "英文和訳",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "比較",
+  "unit": "比較",
+  "stem": "次の日本文の意味に合う英文として最も適切なものを選びなさい。\nこの橋はあの橋ほど長くありません。",
+  "passage": "",
+  "choices": [
+   "This bridge is as short as that one.",
+   "This bridge is not as short as that one.",
+   "This bridge is as long as that one.",
+   "This bridge is not as long as that one."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較。正解は「This bridge is not as long as that one.」「あの橋ほど長くない」は not as 〜 as … で表す。as long as that one だけでは「あの橋と同じくらい長い」という意味になり、not as short as では「あの橋ほど短くない」と意味が逆になるので、日本文と合わない。",
+  "form": "和文英訳",
+  "level": "標準"
+ }
+]

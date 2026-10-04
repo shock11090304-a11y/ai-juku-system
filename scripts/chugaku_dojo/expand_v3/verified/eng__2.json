@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Can your brother ride a unicycle?\nB: ( ) He practices every day.",
+  "passage": "",
+  "choices": [
+   "Yes, he does.",
+   "Yes, he can.",
+   "Yes, he is.",
+   "Yes, he will."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞。正解は「Yes, he can.」Can で始まる疑問文には、答えの文でも同じ can を使って Yes, he can. / No, he can't. と答える。does や is を使った答えは、質問の助動詞と合わないので誤り。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nMika can speak Chinese.\n= Mika ( ) speak Chinese.",
+  "passage": "",
+  "choices": [
+   "is able to",
+   "are able to",
+   "was able to",
+   "be able to"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「is able to」。can (〜できる) は be able to で書きかえられる。主語の Mika は 3 人称単数で現在の文なので is able to。was able to では過去の意味に変わり、are は主語に合わない。",
+  "form": "書きかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nRyo ( ) come to the party last night because he had a fever.",
+  "passage": "",
+  "choices": [
+   "couldn't",
+   "mustn't",
+   "shouldn't",
+   "can't"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「couldn't」。last night があるので過去の文。can の過去の形 could を使い、couldn't (= could not) で「来られなかった」。can't は現在の形なので last night と合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nCould you show me the way to the library?",
+  "passage": "",
+  "choices": [
+   "図書館への道を教えることができましたか。",
+   "図書館への道を教えていただけますか。",
+   "図書館への道を教えてもよいですか。",
+   "図書館への道を教えなければなりませんか。"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞。正解は「図書館への道を教えていただけますか。」Could you 〜? は「〜していただけますか」とていねいに頼む言い方。could は can の過去の形だが、この文では過去の意味 (できましたか) ではない。",
+  "form": "意味選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の日本文の意味を表す英文として最も適切なものを選びなさい。\n「この部屋で食べてもいいですか。」",
+  "passage": "",
+  "choices": [
+   "Must I eat in this room?",
+   "Shall I eat in this room?",
+   "May I eat in this room?",
+   "Will I eat in this room?"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞。正解は「May I eat in this room?」「〜してもいいですか」と許可を求めるときは May I 〜? を使う。Must I 〜? は「〜しなければなりませんか」、Shall I 〜? は「(私が)〜しましょうか」という意味で、許可を求める文にはならない。",
+  "form": "英文選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nStudents ( ) wear a uniform at this school. It's a rule.",
+  "passage": "",
+  "choices": [
+   "may",
+   "can",
+   "must",
+   "would"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞。正解は「must」。It's a rule. (規則だ) とあるので「〜しなければならない」の must。may や can は「〜してもよい」という許可の意味で、規則の説明に合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nYuta has three dogs and two cats. He must like animals.",
+  "passage": "",
+  "choices": [
+   "ユウタは動物が好きかもしれない。",
+   "ユウタは動物を好きにならなければならない。",
+   "ユウタは動物が好きにちがいない。",
+   "ユウタは動物が好きなはずがない。"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞。正解は「ユウタは動物が好きにちがいない。」must には「〜しなければならない」のほかに「〜にちがいない」という強い推量の意味がある。犬 3 匹と猫 2 匹を飼っているという根拠から推量している文。「〜かもしれない」は may の意味。",
+  "form": "意味選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Must I finish this report today?\nB: No, you ( ). You can do it tomorrow.",
+  "passage": "",
+  "choices": [
+   "must not",
+   "won't",
+   "can't",
+   "don't have to"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞。正解は「don't have to」。Must I 〜? に No で答えるときは No, you don't have to. (〜する必要はない) を使う。No, you must not. は「〜してはいけない」という禁止になり、「明日やってもいい」という続きの文と合わない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nIt is not necessary for you to come early tomorrow.\n= You ( ) come early tomorrow.",
+  "passage": "",
+  "choices": [
+   "don't have to",
+   "must not",
+   "are not able to",
+   "should not"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「don't have to」。not necessary (必要ではない) は don't have to (〜する必要はない) で表せる。must not は「〜してはいけない」という禁止で、意味が変わってしまう。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "「ここで走ってはいけません。」という意味の英文として正しいものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "You must not to run here.",
+   "You don't must run here.",
+   "You must not run here.",
+   "You not must run here."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞。正解は「You must not run here.」禁止は must not + 動詞の原形で表す。must のあとに to は入れない。否定は must のすぐあとに not を置き、don't は使わない。",
+  "form": "正誤",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の日本文の意味になるように〔 〕内の語を並べかえたとき、文の中で 3 番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\n「あなたはもっと野菜を食べるべきです。」\n〔 vegetables / eat / should / more / you 〕",
+  "passage": "",
+  "choices": [
+   "eat",
+   "should",
+   "more",
+   "vegetables"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「eat」。正しい語順は You should eat more vegetables. で、文の中で 3 番目に来る語は eat。should (〜すべきだ) のあとには動詞の原形 eat が続く。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nWill you carry this bag for me?",
+  "passage": "",
+  "choices": [
+   "このかばんを私のために運んでくれませんか。",
+   "このかばんを私のために運ぶことができますか。",
+   "このかばんを私のために運ばなければなりませんか。",
+   "このかばんを私のために運ぶつもりですか。"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「このかばんを私のために運んでくれませんか。」Will you 〜? は相手に「〜してくれませんか」と頼む言い方。「〜するつもりですか」と未来の予定をたずねる意味ではない。",
+  "form": "意味選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\n( ) you like to join our team? — Yes, I'd love to.",
+  "passage": "",
+  "choices": [
+   "May",
+   "Will",
+   "Shall",
+   "Would"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞。正解は「Would」。Would you like to 〜? は「〜しませんか」とていねいにさそう決まった言い方。Will you like to 〜? や Shall you 〜? という形は使わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Shall we have lunch at the new restaurant?\nB: ( ) I hear the pizza is good.",
+  "passage": "",
+  "choices": [
+   "Yes, we shall.",
+   "Yes, I do.",
+   "Yes, I am.",
+   "Yes, let's."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞。正解は「Yes, let's.」Shall we 〜? (〜しましょうか) は Let's 〜. と同じさそいの表現なので、Yes, let's. / No, let's not. で答える。Yes, we shall. とは答えない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nDo you want me to carry your bag?\n= ( ) carry your bag?",
+  "passage": "",
+  "choices": [
+   "Shall we",
+   "Shall I",
+   "Will you",
+   "Can you"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞。正解は「Shall I」。Do you want me to 〜? (私に〜してほしいですか) は Shall I 〜? (私が〜しましょうか) とほぼ同じ意味。Will you 〜? や Can you 〜? は相手に頼む言い方で、かばんを運ぶ人が相手になってしまう。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Will you help me with my homework?\nB: ( ) I'm free now.",
+  "passage": "",
+  "choices": [
+   "Yes, I do.",
+   "Yes, I will.",
+   "Yes, I was.",
+   "Yes, I am."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞。正解は「Yes, I will.」Will you 〜? (〜してくれませんか) という頼みには、Yes, I will. / Sure. / All right. などで答える。do や am は質問の will と合わない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\n( ) you call me back later? I'm busy now. — Sure.",
+  "passage": "",
+  "choices": [
+   "Will",
+   "Shall",
+   "May",
+   "Must"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞。正解は「Will」。「あとでかけ直してくれませんか」と相手に頼むときは Will you 〜? を使う。Shall you や May you という形は使わない。Must you 〜? は「〜しなければならないのですか」という意味で、Sure. という答えに合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の日本文の意味を表す英文として最も適切なものを選びなさい。\n「私があなたなら、そんなことは言わないでしょう。」",
+  "passage": "",
+  "choices": [
+   "If I am you, I won't say such a thing.",
+   "If I were you, I won't say such a thing.",
+   "If I am you, I would not say such a thing.",
+   "If I were you, I wouldn't say such a thing."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞。正解は「If I were you, I wouldn't say such a thing.」現実とちがう仮定 (私はあなたではない) は If I were you, I would 〜 の形で表す。if の文では am ではなく were を使い、あとの文は won't ではなく would not (wouldn't) にする。",
+  "form": "英文選択",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nI'm sorry I don't have a car.\n= I wish I ( ) a car.",
+  "passage": "",
+  "choices": [
+   "have",
+   "has",
+   "will have",
+   "had"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞。正解は「had」。I wish のあとは動詞を過去の形にして、現実とはちがう願いを表す。have の過去の形 had を使い「車を持っていたらいいのになあ」。have のままでは現実の文になってしまう。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の文の( )内の語句を適切な形にしたものを選びなさい。\nI (have to) go to the hospital yesterday because I had a stomachache.",
+  "passage": "",
+  "choices": [
+   "have to",
+   "had to",
+   "has to",
+   "will have to"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞。正解は「had to」。yesterday があるので過去の文。have to の過去の形は had to。must には過去の形がないので、「〜しなければならなかった」は had to で表す。",
+  "form": "語形変化",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "「彼女は一生けんめい勉強しなければなりません。」という意味の英文として正しいものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "She has study hard.",
+   "She have to study hard.",
+   "She have study hard.",
+   "She has to study hard."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞。正解は「She has to study hard.」主語が 3 人称単数の現在の文では has to を使い、あとに動詞の原形 study を続ける。have のままにしたり、to を落として has study としたりするのは誤り。",
+  "form": "正誤",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: You look cold. ( )\nB: Yes, please. Thank you.",
+  "passage": "",
+  "choices": [
+   "Must I close the window?",
+   "Will you close the window?",
+   "Shall I close the window?",
+   "Can you close the window?"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞。正解は「Shall I close the window?」Yes, please. (はい、お願いします) と答えているので、A は「(私が)〜しましょうか」と申し出る Shall I 〜? を使ったとわかる。Will you / Can you 〜? は相手に頼む言い方で、頼まれた側が Thank you. と答えるのはおかしい。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nMaybe Haru is at home.\n= Haru ( ) be at home.",
+  "passage": "",
+  "choices": [
+   "will",
+   "must",
+   "may",
+   "can"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞。正解は「may」。maybe (たぶん) は may (〜かもしれない) で表せる。must be は「〜にちがいない」で、maybe よりずっと強い言い方になってしまう。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "助動詞",
+  "unit": "助動詞",
+  "stem": "次の日本文の意味になるように〔 〕内の語を並べかえたとき、文の中で 3 番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\n「もう一度言ってくださいませんか。」\n〔 again / could / say / that / you 〕",
+  "passage": "",
+  "choices": [
+   "you",
+   "say",
+   "that",
+   "again"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞。正解は「say」。正しい語順は Could you say that again? で、文の中で 3 番目に来る語は say。Could you 〜? は「〜してくださいませんか」とていねいに頼む言い方で、you のあとに動詞の原形 say を置く。",
+  "form": "並べかえ",
+  "level": "標準"
+ }
+]

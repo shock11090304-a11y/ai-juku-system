@@ -109,3 +109,8 @@ scripts/eiken_junichi/mogi/bundle/*.pdf
 
 # 青学実戦の取り込み用 PDF (生成物・元は content.json と build.py)
 scripts/aoyama_eigo_mirror/bundle/*.pdf
+
+# 中学 入試道場プール増量 v3: 作問エージェントの生出力 (作業途中のもので保存しない。正典は verified/、本番に入れる行は build/rows.json)
+scripts/chugaku_dojo/expand_v3/drafts/
+# build.py が書くが誰も読まない設問一覧 (verified/ と同じ中身の写し)
+scripts/chugaku_dojo/expand_v3/build/blind.json

@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Excuse me. Can I see that blue cap, please?\nB: Sure. ( )\nA: Thank you. Oh, it's really nice.",
+  "passage": "",
+  "choices": [
+   "You're welcome.",
+   "Here you are.",
+   "After you.",
+   "Me, too."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】会話表現。正解は「Here you are.」品物を手渡すときの決まり文句で「はい、どうぞ」の意味。相手が Thank you. と言って受け取っていることから、手渡す場面だとわかる。You're welcome. は礼を言われたときの返事、After you. は「お先にどうぞ」で、品物を渡す場面には合わない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: ( )\nB: Yes, please. I'm looking for a present for my mother.\nA: How about this scarf? It's very popular.",
+  "passage": "",
+  "choices": [
+   "Can you help me?",
+   "May I try it on?",
+   "Can I help you?",
+   "How much is this?"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】会話表現。正解は「Can I help you?」店員が客に「何かお探しですか (いらっしゃいませ)」と声をかける決まり文句。客が Yes, please. と答えて探している品物を伝えているので、手伝いを申し出る文が入る。Can you help me? は客の側が店員に頼む言い方で、Yes, please. という返事につながらない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Excuse me. Is there a flower shop near here?\nB: Yes. Go straight for two blocks, and you'll see it on your left. ( )\nA: Thank you very much.",
+  "passage": "",
+  "choices": [
+   "Help yourself.",
+   "After you.",
+   "Hold on, please.",
+   "You can't miss it."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】会話表現。正解は「You can't miss it.」道案内の最後に添える決まり文句で「すぐにわかりますよ (見逃すはずがありません)」の意味。Help yourself. は「自由に取って食べてください」、Hold on, please. は電話で「少しお待ちください」、After you. は「お先にどうぞ」で、どれも道案内の場面には合わない。",
+  "form": "対話応答",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Hello. May I speak to Daiki?\nB: Daiki? ( ) There's no one here by that name.\nA: Oh, I'm sorry.",
+  "passage": "",
+  "choices": [
+   "I'm afraid he's not at home now.",
+   "I'm afraid he can't come to the phone.",
+   "I'm afraid he's talking on another phone.",
+   "I'm afraid you have the wrong number."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】会話表現。正解は「I'm afraid you have the wrong number.」電話で「番号をお間違えのようです」と伝える決まり文句。I'm afraid 〜 は「残念ながら〜」と言いにくいことを切り出す言い方。There's no one here by that name. (そういう名前の人はここにはいません) と続くので、かける先そのものが間違っている。he's not at home now (今は留守です) は、その名前の人がいる家につながった場合の返事なので合わない。",
+  "form": "対話応答",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Excuse me. ( )\nB: Certainly. That's 1,200 yen in total.\nA: Here's 2,000 yen.",
+  "passage": "",
+  "choices": [
+   "Can I have the menu, please?",
+   "Can I have some water, please?",
+   "Can I have the check, please?",
+   "Can I have a table by the window?"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】会話表現。正解は「Can I have the check, please?」check は飲食店で「お会計・勘定書」のこと。店員が合計金額 (1,200 yen in total) を伝え、客がお金を出しているので、お会計を頼む文が入る。Can I have the menu, please? はメニューを頼む文で、金額を答える返事にはつながらない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: I'm so hungry. ( )\nB: Good idea. I know a nice noodle shop near here.",
+  "passage": "",
+  "choices": [
+   "How was your lunch?",
+   "What did you have for lunch?",
+   "Why don't we have lunch?",
+   "Where did you have lunch?"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】会話表現。正解は「Why don't we have lunch?」Why don't we 〜? は「(一緒に) 〜しませんか」と誘う決まり文句。相手が Good idea. (いい考えだね) と答えて店を提案しているので、誘いの文が入る。How was your lunch? (昼食はどうだった) のような質問に Good idea. とは答えない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: What should we give Ms. Lee for her birthday?\nB: ( )\nA: That's a nice idea. She loves reading.",
+  "passage": "",
+  "choices": [
+   "How old is she?",
+   "How much is it?",
+   "How is the book?",
+   "How about a book?"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】会話表現。正解は「How about a book?」How about 〜? は「〜はどうですか」と提案する決まり文句。相手が That's a nice idea. と答え、She loves reading. (彼女は読書が好き) と続けているので、本を贈る提案が入る。How old is she? (彼女は何歳ですか) は質問であって提案ではないので、That's a nice idea. という返事に合わない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Shall we play tennis after school?\nB: ( ) I have to help my mother at home today.\nA: That's too bad. Maybe next time.",
+  "passage": "",
+  "choices": [
+   "Sounds good. See you then.",
+   "Sure. Let's go right now.",
+   "I'd love to, but I can't.",
+   "Yes, let's. I can't wait."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】会話表現。正解は「I'd love to, but I can't.」I'd love to, but 〜 は「ぜひそうしたいのですが、〜」と誘いをていねいに断る決まり文句。あとに I have to help my mother (母を手伝わなければならない) と断る理由が続き、相手も That's too bad. (残念だね) と言っているので、断りの返事が入る。Sounds good. (いいね) は誘いを受けるときの言い方。",
+  "form": "対話応答",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の英語の表現の意味として最も適切なものを選びなさい。\nHelp yourself.",
+  "passage": "",
+  "choices": [
+   "自分で何とかしてください。",
+   "手伝ってください。",
+   "自由に取って食べてください。",
+   "自分を大切にしてください。"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】会話表現。正解は「自由に取って食べてください。」Help yourself. は食べ物や飲み物をすすめるときの決まり文句で「ご自由にどうぞ」の意味。Help yourself to the cake. のように to 〜 を続けることもある。help の「手伝う」という意味から「手伝ってください」と考えるのは誤りで、「手伝ってください」は Please help me. と言う。",
+  "form": "表現の意味",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の英語の表現の意味として最も適切なものを選びなさい。\nTake your time.",
+  "passage": "",
+  "choices": [
+   "ゆっくりでいいですよ。",
+   "急いでください。",
+   "時間を教えてください。",
+   "時間を守ってください。"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「ゆっくりでいいですよ。」Take your time. は「あわてなくていいですよ」と相手を急がせないときの決まり文句。「急いでください」は Hurry up. で、意味が反対になる。「時間を教えてください」は Do you have the time? などで表す。",
+  "form": "表現の意味",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の対話で、客の発言の意味として最も適切なものを選びなさい。\nA: Can I help you?\nB: No, thank you. I'm just looking.",
+  "passage": "",
+  "choices": [
+   "見ているだけです。",
+   "探している物があります。",
+   "ちょうど見つけたところです。",
+   "見本を見せてください。"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「見ているだけです。」I'm just looking. は店で声をかけられたときに「見ているだけです」と断る決まり文句。just は「ただ〜だけ」の意味。I'm looking for 〜 (〜を探している) と形が似ているが、for 〜 がないので「探している物がある」の意味にはならない。",
+  "form": "表現の意味",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe are all looking ( ) to the school trip next month.",
+  "passage": "",
+  "choices": [
+   "after",
+   "at",
+   "for",
+   "forward"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】会話表現。正解は「forward」。look forward to 〜 で「〜を楽しみに待つ」という熟語。look after 〜 は「〜の世話をする」、look for 〜 は「〜を探す」、look at 〜 は「〜を見る」で、どれも to the school trip とはつながらない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy grandmother takes ( ) of three cats in her house.",
+  "passage": "",
+  "choices": [
+   "care",
+   "part",
+   "look",
+   "off"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「care」。take care of 〜 で「〜の世話をする」という熟語。take part in 〜 は「〜に参加する」、take a look at 〜 は「〜をちょっと見る」、take off 〜 は「〜を脱ぐ」で、of 〜 と組み合わせては使わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nLet's meet in ( ) of the station at ten tomorrow.",
+  "passage": "",
+  "choices": [
+   "front",
+   "side",
+   "top",
+   "middle"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「front」。in front of 〜 で「〜の前で (に)」という熟語。待ち合わせ場所として「駅の前」と言っている。on top of 〜 (〜の上に) や in the middle of 〜 (〜の真ん中に) とは形が違い、in top of / in middle of とは言わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI like winter sports, ( ) example, skiing and skating.",
+  "passage": "",
+  "choices": [
+   "as",
+   "in",
+   "for",
+   "to"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】会話表現。正解は「for」。for example で「例えば」という熟語。前の winter sports (冬のスポーツ) の例として skiing and skating を挙げている。as example や in example とは言わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\n( ) first, I couldn't understand my new classmates, but now we are good friends.",
+  "passage": "",
+  "choices": [
+   "In",
+   "At",
+   "On",
+   "For"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】会話表現。正解は「At」。at first で「最初は」という熟語。「最初は〜だったが、今は…」と、あとの but now 〜 と対比している。for the first time (初めて) と混同しないこと。In first や On first という言い方はない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThe math problem was very difficult, but Mika didn't give ( ) and finally solved it.",
+  "passage": "",
+  "choices": [
+   "away",
+   "up",
+   "back",
+   "off"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】会話表現。正解は「up」。give up で「あきらめる」という熟語。didn't give up (あきらめなかった) から finally solved it (ついに解いた) へと話がつながる。give away は「ただであげる」、give back は「返す」で、文の意味に合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nDaiki is going to take ( ) in the English speech contest next month.",
+  "passage": "",
+  "choices": [
+   "place",
+   "part",
+   "care",
+   "turn"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】会話表現。正解は「part」。take part in 〜 で「〜に参加する」という熟語。take place は「(行事などが) 行われる」の意味で、人が主語になって in 〜 (参加する行事) を続けることはない。take care of 〜 (〜の世話をする) は of を使う。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI usually ( ) at five thirty and take a walk with my dog before breakfast.",
+  "passage": "",
+  "choices": [
+   "get up",
+   "give up",
+   "grow up",
+   "pick up"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「get up」。get up で「起きる・起床する」という熟語。at five thirty (5時半に) と、そのあとの散歩・朝食という流れから、朝起きる動作だとわかる。give up は「あきらめる」、grow up は「成長する」、pick up は「拾い上げる」で、意味が合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nRyo is a very good swimmer.\n= Ryo is very good ( ) swimming.",
+  "passage": "",
+  "choices": [
+   "with",
+   "in",
+   "for",
+   "at"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】会話表現。正解は「at」。be good at 〜 で「〜が得意だ・〜が上手だ」という熟語。a very good swimmer (とても泳ぎの上手な人) を be very good at swimming で言いかえている。good for 〜 は「〜に役立つ・〜によい」の意味になり、「上手だ」の意味にはならない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nSora takes care of her little brother every Sunday.\n= Sora looks ( ) her little brother every Sunday.",
+  "passage": "",
+  "choices": [
+   "for",
+   "after",
+   "at",
+   "up"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】会話表現。正解は「after」。look after 〜 は「〜の世話をする」で、take care of 〜 と同じ意味の熟語。look for 〜 は「〜を探す」、look at 〜 は「〜を見る」で、世話をするという意味にはならない。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の日本文の意味になるように[ ]内の語を並べかえたとき、[ ]内で3番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\n図書館へはどう行けばいいですか。\n[ to / can / I / get / how ] the library?",
+  "passage": "",
+  "choices": [
+   "can",
+   "get",
+   "to",
+   "I"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】会話表現。正解は「I」。正しい文は How can I get to the library? で、How can I get to 〜? は「〜へはどう行けばいいですか」と道をたずねる決まり文句。get to 〜 は「〜に着く」という熟語。文の中で How, can, I の順に並ぶので、[ ]内で3番目に来る語は I。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の日本文の意味になるように[ ]内の語を並べかえたとき、[ ]内で3番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\nお願いがあるのですが。\n[ me / could / do / you / a / favor ]?",
+  "passage": "",
+  "choices": [
+   "you",
+   "do",
+   "me",
+   "favor"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】会話表現。正解は「do」。正しい文は Could you do me a favor? で、「お願いがあるのですが (ちょっとお願いしてもいいですか)」と人に頼みごとをするときの決まり文句。do 〜 a favor は「〜の頼みを聞く」という意味。Could you のあとに do me a favor と続くので、[ ]内で3番目に来る語は do。",
+  "form": "並べかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "会話表現",
+  "unit": "会話表現",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: We're going to have a party on Saturday. Would you like to come?\nB: ( ) What time does it start?\nA: At six. Please bring something to drink.",
+  "passage": "",
+  "choices": [
+   "I'd love to.",
+   "I'm afraid not.",
+   "No, thank you.",
+   "Not at all."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】会話表現。正解は「I'd love to.」Would you like to 〜? (〜しませんか) という誘いに「ぜひ」と喜んで応じる決まり文句。そのあと開始時刻をたずねているので、参加するつもりだとわかる。I'm afraid not. や No, thank you. は断る言い方なので、時刻をたずねる流れに合わない。",
+  "form": "対話応答",
+  "level": "標準"
+ }
+]

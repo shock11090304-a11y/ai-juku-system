@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThe students in this class ( ) very kind.",
+  "passage": "",
+  "choices": [
+   "is",
+   "are",
+   "am",
+   "does"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「are」。この文の主語は The students (複数) なので、be動詞は are を使う。直前の class (単数) につられて is を選ばないこと。kind は形容詞なので does は入らない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文を否定文にしたとき、正しいものを選びなさい。\nMy father is a doctor.",
+  "passage": "",
+  "choices": [
+   "My father does not a doctor.",
+   "My father not is a doctor.",
+   "My father does not is a doctor.",
+   "My father is not a doctor."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】be動詞・一般動詞。正解は「My father is not a doctor.」be動詞の否定文は be動詞のすぐあとに not を置く。be動詞の文に does not を使うことはなく、not を is の前に置くこともできない。",
+  "form": "書きかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Is that tall boy your brother?\nB: No, ( ). That's my cousin, Yuto.",
+  "passage": "",
+  "choices": [
+   "I'm not",
+   "he isn't",
+   "he doesn't",
+   "they aren't"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「he isn't」。Is that tall boy 〜? と be動詞でたずねられたら、答えも be動詞を使い、that tall boy は he で受けて No, he isn't. とする。doesn't は一般動詞の疑問文に答えるときの形。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMs. Lee ( ) English and music at our school.",
+  "passage": "",
+  "choices": [
+   "teaches",
+   "teachs",
+   "teach",
+   "teaching"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】be動詞・一般動詞。正解は「teaches」。主語 Ms. Lee は三人称単数なので動詞に s をつけるが、ch で終わる語は es をつけて teaches にする。teachs というつづりはない。",
+  "form": "語形変化",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nSora always ( ) hard in every game.",
+  "passage": "",
+  "choices": [
+   "tries",
+   "trys",
+   "trying",
+   "try"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】be動詞・一般動詞。正解は「tries」。主語 Sora は三人称単数。〈子音字+y〉で終わる try は y を i に変えて es をつけ、tries にする。trys というつづりはなく、trying は be動詞がないので使えない。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "「メイはニンジンが好きではありません。」を表す正しい英文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "Mei doesn't likes carrots.",
+   "Mei doesn't like carrots.",
+   "Mei don't like carrots.",
+   "Mei don't likes carrots."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「Mei doesn't like carrots.」主語 Mei は三人称単数なので一般動詞の否定文は doesn't を使い、あとの動詞は原形 like にもどす。doesn't likes のように s を残すのは誤りで、don't は主語が I / you / 複数のときに使う。",
+  "form": "正誤",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy grandparents ( ) live near here, so I see them only in summer.",
+  "passage": "",
+  "choices": [
+   "don't",
+   "doesn't",
+   "isn't",
+   "aren't"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】be動詞・一般動詞。正解は「don't」。主語 My grandparents は複数なので、一般動詞 live の否定文は don't を使う。doesn't は三人称単数の主語のとき。live は一般動詞なので aren't は入らない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Does Ms. Sato live in this town?\nB: ( ) She lives in Kobe.",
+  "passage": "",
+  "choices": [
+   "No, she isn't.",
+   "No, they aren't.",
+   "No, she don't.",
+   "No, she doesn't."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】be動詞・一般動詞。正解は「No, she doesn't.」Does 〜? でたずねられた一般動詞の疑問文には does/doesn't で答える。主語が she なので don't ではなく doesn't。isn't は be動詞の疑問文に答える形。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI ( ) a member of the tennis team.",
+  "passage": "",
+  "choices": [
+   "play",
+   "do",
+   "have",
+   "am"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】be動詞・一般動詞。正解は「am」。「私は〜の一員です」と主語とあとの語を結ぶ文なので be動詞を使い、主語 I には am。play や have を入れると「一員をする／持つ」となり意味が通らない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "「ハルは泳ぎが上手です。」を表す正しい英文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "Haru is swims well.",
+   "Haru does a good swimmer.",
+   "Haru is a good swimmer.",
+   "Haru does swims well."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「Haru is a good swimmer.」「ハルは上手な泳ぎ手だ」は be動詞で主語と a good swimmer を結ぶ。be動詞 is と一般動詞 swims を一文に並べる形はなく、does のあとに a good swimmer や swims を続けることもできない。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe ( ) a big dog. Its name is Momo.",
+  "passage": "",
+  "choices": [
+   "are",
+   "has",
+   "have",
+   "does"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「have」。「犬を飼っている」は一般動詞 have で表し、主語 We は複数なので s をつけない。are を入れると「私たちは大きな犬だ」となってしまう。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\n( ) careful. The floor is wet.",
+  "passage": "",
+  "choices": [
+   "Is",
+   "Are",
+   "Be",
+   "Do"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「Be」。「気をつけて」と相手に命令する文は動詞の原形で始める。be動詞の原形は be なので Be careful. となる。Are や Is は原形ではないので命令文の文頭には置けない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\n( ) be late for school. The first class starts at 8:30.",
+  "passage": "",
+  "choices": [
+   "Doesn't",
+   "Not",
+   "Don't",
+   "Aren't"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「Don't」。「〜するな」という否定の命令文は、be動詞の文でも Don't を文頭に置き、あとに原形 be を続ける。Not だけを文頭に置いたり、Aren't be と言ったりはしない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の語を並べかえて正しい英文にしたとき、3番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\n〔 to / animals / kind / be 〕",
+  "passage": "",
+  "choices": [
+   "kind",
+   "animals",
+   "to",
+   "be"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「to」。できる英文は Be kind to animals.（動物にやさしくしなさい）。命令文なので原形の Be で始め、Be kind のあとに to animals を続ける。文の中で 3 番目に来る語は to。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThere ( ) a big park near my house.",
+  "passage": "",
+  "choices": [
+   "are",
+   "is",
+   "am",
+   "have"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「is」。There is/are 〜. の文では、There のあとの名詞に be動詞を合わせる。a big park は単数なので is。「〜がある」でも have は使わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の語句を並べかえて正しい英文（肯定文）にしたとき、3番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\n〔 many / near here / are / stations / there 〕",
+  "passage": "",
+  "choices": [
+   "there",
+   "many",
+   "are",
+   "stations"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「many」。できる英文は There are many stations near here.（この近くには駅がたくさんある）。There のあとに are、その次に many stations と続けるので、3 番目に来る語は many。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: What does your father do?\nB: ( )",
+  "passage": "",
+  "choices": [
+   "Yes, he does.",
+   "He is a teacher.",
+   "He is doing well.",
+   "He is at home now."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】be動詞・一般動詞。正解は「He is a teacher.」What does 〜 do? は職業をたずねる言い方なので、be動詞を使って「〜です」と職業を答える。疑問詞で始まる疑問文には Yes/No では答えない。He is at home now. は場所の答え。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Where are you from?\nB: ( )",
+  "passage": "",
+  "choices": [
+   "Yes, I am.",
+   "I'm fine, thank you.",
+   "I'm thirteen years old.",
+   "I'm from Canada."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】be動詞・一般動詞。正解は「I'm from Canada.」Where are you from? は出身地をたずねる文なので、be動詞を使って I'm from 〜. と答える。Where で始まる疑問文には Yes, I am. では答えられない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Who ( ) the piano in your family?\nB: My sister does.",
+  "passage": "",
+  "choices": [
+   "plays",
+   "does",
+   "doing",
+   "play"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】be動詞・一般動詞。正解は「plays」。疑問詞 Who が主語の疑問文では、Who を三人称単数とみなして動詞に s をつけ、Who plays 〜? とする。do/does は使わないので、答えの does だけを見て Who does the piano とするのは誤り。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: How many brothers ( ) Kota have?\nB: He has two.",
+  "passage": "",
+  "choices": [
+   "do",
+   "are",
+   "does",
+   "have"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】be動詞・一般動詞。正解は「does」。一般動詞 have を使った疑問文で主語が Kota (三人称単数) なので does を使い、動詞は原形 have。brothers が複数でも主語は Kota なので do にはしない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: What time do you usually get up?\nB: ( )",
+  "passage": "",
+  "choices": [
+   "Yes, I do.",
+   "Yes, I am.",
+   "I am get up at six.",
+   "I get up at six."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】be動詞・一般動詞。正解は「I get up at six.」What time で時刻をたずねられているので、一般動詞 get up を使って時刻を答える。疑問詞で始まる疑問文に Yes, I do. や Yes, I am. では答えない。be動詞と一般動詞を並べた I am get up も誤り。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文を疑問文にしたとき、正しいものを選びなさい。\nYour mother works at the hospital.",
+  "passage": "",
+  "choices": [
+   "Does your mother work at the hospital?",
+   "Do your mother work at the hospital?",
+   "Does your mother works at the hospital?",
+   "Do your mother works at the hospital?"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】be動詞・一般動詞。正解は「Does your mother work at the hospital?」一般動詞 works の文で主語 your mother が三人称単数なので、Does を文頭に置き、動詞は原形 work にもどす。works の s を残すのは誤りで、Do は主語が I / you / 複数のときに使う。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "次の文を否定文にしたとき、正しいものを選びなさい。\nDaiki has a lot of homework today.",
+  "passage": "",
+  "choices": [
+   "Daiki doesn't have a lot of homework today.",
+   "Daiki does not has a lot of homework today.",
+   "Daiki isn't have a lot of homework today.",
+   "Daiki don't have a lot of homework today."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】be動詞・一般動詞。正解は「Daiki doesn't have a lot of homework today.」has は一般動詞 have の三単現なので、否定文は doesn't のあとに原形 have を置く。does not has と s を残すのは誤り。主語 Daiki は三人称単数なので don't は使えない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "be動詞・一般動詞",
+  "unit": "be動詞・一般動詞",
+  "stem": "「私は今、おなかがすいていません。」を表す正しい英文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "I don't am hungry now.",
+   "I don't hungry now.",
+   "I not am hungry now.",
+   "I am not hungry now."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】be動詞・一般動詞。正解は「I am not hungry now.」hungry は形容詞なので be動詞 am を使い、否定文は am のあとに not を置く。一般動詞がない文に don't は使えず、not を am の前に置くのも誤り。",
+  "form": "正誤",
+  "level": "基礎"
+ }
+]

@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nMr. Brown is a pilot ( ) flies to many countries.",
+  "passage": "",
+  "choices": [
+   "which",
+   "who",
+   "what",
+   "how"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「who」。先行詞 a pilot は人で、( )のあとに動詞 flies が続くので主格の who を使う。which は物を先行詞にするときの語なので人には使えない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nSora bought a bag ( ) has many pockets.",
+  "passage": "",
+  "choices": [
+   "who",
+   "what",
+   "where",
+   "which"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係代名詞。正解は「which」。先行詞 a bag は物で、( )のあとに動詞 has が続くので主格の which。who は先行詞が人のときに使う語なので a bag には使えない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nEverything ( ) he told me was true.",
+  "passage": "",
+  "choices": [
+   "that",
+   "what",
+   "who",
+   "where"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係代名詞。正解は「that」。先行詞 everything (物) を he told me (彼が私に話した) が後ろから説明する形で、told の目的語が抜けているので目的格の that。everything という先行詞があるので what は使えない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nThe boys who ( ) singing on the stage are my classmates.",
+  "passage": "",
+  "choices": [
+   "is",
+   "was",
+   "am",
+   "are"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係代名詞。正解は「are」。who のあとの動詞は先行詞 the boys (複数) に合わせるので are singing。文全体の主語も The boys なので、あとの are と形がそろう。is や was は先行詞が単数のときの形。",
+  "form": "語形変化",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切な語を選びなさい。\nMs. Lee has two sons who ( ) in Canada now.",
+  "passage": "",
+  "choices": [
+   "lives",
+   "living",
+   "live",
+   "lived"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「live」。who のあとの動詞は、文の主語 Ms. Lee ではなく先行詞 two sons (複数) に合わせるので s を付けない live。now があるので lived は合わない。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の対話の( )に入る最も適切な語を選びなさい。\nA: Do you know anyone who ( ) Spanish?\nB: Yes, my uncle does.",
+  "passage": "",
+  "choices": [
+   "speak",
+   "speaking",
+   "speaks",
+   "spoke"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「speaks」。who のあとの動詞は先行詞 anyone (単数扱い) に合わせて speaks にする。B が does と現在の形で答えているので spoke は合わない。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の 2 文を 1 文にしたものとして正しいものを選びなさい。\nAya has a brother. He plays the guitar well.",
+  "passage": "",
+  "choices": [
+   "Aya has a brother who plays the guitar well.",
+   "Aya has a brother which plays the guitar well.",
+   "Aya has a brother who play the guitar well.",
+   "Aya has a brother which play the guitar well."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係代名詞。正解は「Aya has a brother who plays the guitar well.」He を関係代名詞 who に変えて a brother のあとに続け、動詞は先行詞 a brother (単数) に合わせて plays のまま。物に使う which は a brother には使えない。",
+  "form": "書きかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の 2 文を 1 文にしたものとして正しいものを選びなさい。\nThis is the watch. My father gave it to me last year.",
+  "passage": "",
+  "choices": [
+   "This is the watch which my father gave it to me last year.",
+   "This is the watch who my father gave to me last year.",
+   "This is the watch who my father gave it to me last year.",
+   "This is the watch which my father gave to me last year."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係代名詞。正解は「This is the watch which my father gave to me last year.」it を目的格の関係代名詞 which に変えて the watch のあとに続ける。which に変えたあとに it を残すと目的語が二重になり、物の the watch に who は使えない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文のうち、正しいものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "The girl which is dancing in the big hall is my sister.",
+   "Mika has a friend who can play the violin very well.",
+   "The boy who live near my house is very kind.",
+   "This is the camera that I bought it last Sunday."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「Mika has a friend who can play the violin very well.」人の先行詞 a friend に who を使った正しい形。girl に which は使えず、bought のあとに it を残すのも、先行詞 the boy (単数) に live を使うのも誤り。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文のうち、誤りを含むものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "The book which I read yesterday was interesting.",
+   "The man who I saw him at the park was tall.",
+   "I know a woman who works at that hospital.",
+   "This is the pen that my aunt gave me."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「The man who I saw him at the park was tall.」関係代名詞 who が saw の目的語の働きをしているので、him を残してはいけない。him を取れば正しい文になる。",
+  "form": "正誤",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文のうち、( )内の that を省略できるものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "The pizza (that) we ate last night was good.",
+   "I know a boy (that) runs very fast.",
+   "This is the shop (that) sells nice cakes.",
+   "The bus (that) goes to the station is always late."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係代名詞。正解は「The pizza (that) we ate last night was good.」that のあとに we ate と主語+動詞が続く目的格の that は省略できる。ほかは that のあとにすぐ動詞が続く主格の that なので省略できない。",
+  "form": "用法識別",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文のうち、関係代名詞が省略されている文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "The dress my mother made for me is pretty.",
+   "I hope my mother will make a dress for me.",
+   "My mother made a pretty dress for me last year.",
+   "The dress is pretty, and my mother made it for me."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係代名詞。正解は「The dress my mother made for me is pretty.」The dress のすぐあとに my mother made と主語+動詞が続いているので、間に目的格の関係代名詞 which (that) が省略されている。I hope のあとに省略されているのは「〜ということ」の that で、関係代名詞ではない。",
+  "form": "用法識別",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文のうち、which が目的格の関係代名詞として使われている文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "I live in a town which has a big library.",
+   "This is a game which is popular in Japan.",
+   "The soup which Emi cooked was delicious.",
+   "She has a bike which was made in Italy."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「The soup which Emi cooked was delicious.」which のあとに Emi cooked と主語+動詞が続き、cooked の目的語の働きをしているので目的格。ほかの 3 文は which のすぐあとに動詞が続く主格。",
+  "form": "用法識別",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文で、who から window までの部分が説明している語を選びなさい。\nThe girl who is reading a book by the window is my cousin.",
+  "passage": "",
+  "choices": [
+   "window",
+   "book",
+   "girl",
+   "cousin"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「girl」。who is reading a book by the window は、直前の先行詞 the girl を後ろから説明している。「窓のそばで本を読んでいる女の子は私のいとこです」という意味で、cousin は説明される側ではなく文の述語の部分。",
+  "form": "文構造",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文で、文全体の主語 (「〜は」にあたる語) を選びなさい。\nThe cookies which my grandmother sent to our class from Hokkaido were delicious.",
+  "passage": "",
+  "choices": [
+   "grandmother",
+   "cookies",
+   "class",
+   "Hokkaido"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「cookies」。which my grandmother sent to our class from Hokkaido は the cookies を説明するかたまりで、文全体は The cookies ... were delicious (クッキーはおいしかった)。grandmother は説明のかたまりの中の主語で、文全体の主語ではない。",
+  "form": "文構造",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nThe woman who gave me this book is my aunt.",
+  "passage": "",
+  "choices": [
+   "私のおばは、この本を女性にあげました。",
+   "私にこの本をくれた女性は、私のおばです。",
+   "この本をくれた女性は、私のおばに会いました。",
+   "私は、私のおばである女性にこの本をあげました。"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「私にこの本をくれた女性は、私のおばです。」who gave me this book が the woman を説明し、文全体は The woman ... is my aunt。本をくれたのは女性で、私やおばではない。",
+  "form": "英文和訳",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nThe boy that Mika helped yesterday is from Canada.",
+  "passage": "",
+  "choices": [
+   "昨日ミカを助けた男の子は、カナダ出身です。",
+   "ミカは昨日、カナダ出身の男の子を助けました。",
+   "ミカが昨日助けた男の子は、カナダ出身です。",
+   "カナダ出身の男の子は、昨日ミカを助けました。"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「ミカが昨日助けた男の子は、カナダ出身です。」that のあとに Mika helped と主語+動詞が続く目的格なので、助けたのはミカで、助けられたのが男の子。文全体は The boy ... is from Canada。",
+  "form": "英文和訳",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の日本文の意味を表す英文として最も適切なものを選びなさい。\nユミが昨日買ったくつは、とても高かった。",
+  "passage": "",
+  "choices": [
+   "The shoes which bought Yumi yesterday were very expensive.",
+   "The shoes which Yumi bought yesterday were very expensive.",
+   "The shoes who Yumi bought yesterday were very expensive.",
+   "The shoes who bought Yumi yesterday were very expensive."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係代名詞。正解は「The shoes which Yumi bought yesterday were very expensive.」「ユミが買った」が the shoes を説明するので、物に使う which のあとに Yumi bought と主語+動詞を続ける。which bought Yumi では「くつがユミを買った」ことになってしまい、who は物の先行詞に使えない。",
+  "form": "和文英訳",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の日本文の意味を表す英文として最も適切なものを選びなさい。\n私には、京都で働いている兄弟が 2 人います。",
+  "passage": "",
+  "choices": [
+   "I have two brothers who works in Kyoto.",
+   "I have two brothers work in Kyoto.",
+   "I have two brothers which work in Kyoto.",
+   "I have two brothers who work in Kyoto."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係代名詞。正解は「I have two brothers who work in Kyoto.」人の先行詞 two brothers に who を使い、動詞は先行詞 (複数) に合わせて s の無い work。関係代名詞を抜いて brothers work と続けることはできない。",
+  "form": "和文英訳",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の( )内の語を並べかえて正しい英文にしたとき、( )内で 2 番目に来る語を選びなさい。\nThis is ( the / that / we / park / visited ) last spring.",
+  "passage": "",
+  "choices": [
+   "park",
+   "that",
+   "we",
+   "the"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係代名詞。正解は「park」。This is the park that we visited last spring. (これは私たちが去年の春に訪れた公園です) となり、( )内は the park that we visited の順。先行詞 the park のあとに目的格の that、主語 we、動詞 visited を続ける。",
+  "form": "並べかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の( )内の語を並べかえて正しい英文にしたとき、( )内で 3 番目に来る語を選びなさい。\nI want ( a / can / robot / which / clean ) my room.",
+  "passage": "",
+  "choices": [
+   "which",
+   "can",
+   "clean",
+   "robot"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係代名詞。正解は「which」。I want a robot which can clean my room. (私は部屋を掃除できるロボットがほしい) となる。先行詞 a robot のすぐあとに主格の which を置き、そのあとに can clean を続ける。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: What kind of movies do you like?\nB: I like movies ( ) me laugh.",
+  "passage": "",
+  "choices": [
+   "that makes",
+   "who make",
+   "who makes",
+   "which make"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係代名詞。正解は「which make」。先行詞 movies は物なので which、動詞は先行詞 (複数) に合わせて s の無い make。that makes は、先行詞が複数なのに makes になっているので誤り。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切なものを選びなさい。\nRyo is a student ( ) the drums very well.",
+  "passage": "",
+  "choices": [
+   "which plays",
+   "which play",
+   "that play",
+   "who plays"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係代名詞。正解は「who plays」。先行詞 a student は人なので who、そのあとの動詞は先行詞 a student (3 人称単数) に合わせて plays にする。that play は that 自体は使えるが、動詞に s が無いので誤り。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "関係代名詞",
+  "unit": "関係代名詞",
+  "stem": "次の英文の( )に入る最も適切なものを選びなさい。\nWe visited a museum ( ) many old ships.",
+  "passage": "",
+  "choices": [
+   "who has",
+   "that have",
+   "which has",
+   "who have"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係代名詞。正解は「which has」。先行詞 a museum は物なので which、動詞は先行詞 a museum (単数) に合わせて has。that have は、先行詞が単数なのに have になっているので誤り。",
+  "form": "空所補充",
+  "level": "標準"
+ }
+]

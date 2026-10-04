@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThe man ( ) a newspaper on the bench is Mr. Ito.",
+  "passage": "",
+  "choices": [
+   "read",
+   "reading",
+   "reads",
+   "is reading"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞。正解は「reading」。「新聞を読んでいる男性」と、名詞 the man をうしろから「〜している」の意味で説明するので現在分詞 reading を使う。文全体の動詞は is なので、is reading のように動詞をもう 1 つ置くことはできない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThe vegetables ( ) by my grandfather are delicious.",
+  "passage": "",
+  "choices": [
+   "growing",
+   "grown",
+   "grow",
+   "grew"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞。正解は「grown」。「祖父によって育てられた野菜」と、野菜は「育てられる」側なので過去分詞 grown で名詞 vegetables をうしろから説明する。growing だと「野菜が何かを育てている」という意味になり、by my grandfather とつながらない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe got up early to see the ( ) sun from the beach.",
+  "passage": "",
+  "choices": [
+   "rise",
+   "rising",
+   "rises",
+   "raising"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞。正解は「rising」。「のぼっていく太陽」と、名詞 sun を前から「〜している」の意味で説明するので現在分詞 rising を使う。raising は raise (〜を持ち上げる) の形で、太陽が自分でのぼる場合には使えない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy father bought a ( ) car because it was cheap.",
+  "passage": "",
+  "choices": [
+   "using",
+   "uses",
+   "use",
+   "used"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞。正解は「used」。「使われた車 (中古車)」と、車は「使われる」側なので過去分詞 used を名詞 car の前に置く。using だと「車が何かを使っている」という意味になり、おかしい。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Do you know the song ( ) by that singer?\nB: Yes. It's very popular among young people.",
+  "passage": "",
+  "choices": [
+   "singing",
+   "sang",
+   "sings",
+   "sung"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞。正解は「sung」。「あの歌手によって歌われている歌」と、歌は「歌われる」側なので過去分詞 sung で名詞 song をうしろから説明する。sang は「歌った」という過去の形で、名詞を説明する形としては使えない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Which boy is your brother?\nB: My brother is the boy ( ) a picture near the window.",
+  "passage": "",
+  "choices": [
+   "drawn",
+   "drawing",
+   "draws",
+   "is drawing"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞。正解は「drawing」。「窓の近くで絵をかいている男の子」と、名詞 the boy をうしろから「〜している」の意味で説明するので現在分詞 drawing を使う。drawn は「かかれた」の意味で、絵 (a picture drawn by 〜) を説明するときの形なので、人には合わない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の文の( )内の語を適切な形に変えたものを選びなさい。\nThe cat ( lie ) on the sofa is my sister's.",
+  "passage": "",
+  "choices": [
+   "lying",
+   "lied",
+   "lay",
+   "lies"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞。正解は「lying」。「ソファに横になっているネコ」と、名詞 the cat をうしろから「〜している」の意味で説明するので現在分詞にする。lie の -ing 形は ie を y に変えて lying とつづる。lay は「横になった」という過去の形で、名詞を説明する形としては使えない。",
+  "form": "語形変化",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の文の( )内の語を適切な形に変えたものを選びなさい。\nThe fish ( catch ) by my father was very big.",
+  "passage": "",
+  "choices": [
+   "catching",
+   "catched",
+   "catches",
+   "caught"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞。正解は「caught」。「父によってつかまえられた魚」と、魚は「つかまえられる」側なので過去分詞にする。catch は不規則に変化する語で、過去分詞は caught。catched という形はない。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の文の( )内の語を適切な形に変えたものを選びなさい。\nWho is the girl ( sit ) next to Daiki?",
+  "passage": "",
+  "choices": [
+   "sitting",
+   "siting",
+   "is sitting",
+   "sits"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞。正解は「sitting」。「ダイキの隣に座っている女の子」と、名詞 the girl をうしろから「〜している」の意味で説明するので現在分詞にする。sit の -ing 形は t を重ねて sitting とつづるので、siting はつづりの誤り。",
+  "form": "語形変化",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の文の( )内の語を適切な形に変えたものを選びなさい。\nThe pictures ( paint ) by Mika are on the wall.",
+  "passage": "",
+  "choices": [
+   "painting",
+   "painted",
+   "paints",
+   "paint"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞。正解は「painted」。「ミカによってかかれた絵」と、絵は「かかれる」側なので過去分詞 painted で名詞 pictures をうしろから説明する。painting だと「絵が何かをかいている」という意味になり、by Mika とつながらない。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の日本文の意味になるように〔 〕内の語を並べかえたとき、文の中で 3 番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\n「サッカーをしている少年たちは私のクラスメートです。」\n〔 are / boys / classmates / my / playing / soccer / the 〕",
+  "passage": "",
+  "choices": [
+   "playing",
+   "boys",
+   "soccer",
+   "classmates"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞。正解は「playing」。正しい文は The boys playing soccer are my classmates. で、「サッカーをしている」は現在分詞 playing soccer を名詞 the boys のうしろに置いて表す。文の中で 3 番目に来るのは playing。文全体の動詞は are の 1 つだけになる。",
+  "form": "並べかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の日本文の意味になるように〔 〕内の語を並べかえたとき、文の中で 5 番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\n「私は祖父によって書かれた手紙を見つけました。」\n〔 a / by / found / grandfather / I / letter / my / written 〕",
+  "passage": "",
+  "choices": [
+   "found",
+   "letter",
+   "written",
+   "grandfather"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「written」。正しい文は I found a letter written by my grandfather. で、「祖父によって書かれた」は過去分詞 written by my grandfather を名詞 a letter のうしろに置いて表す。文の中で 5 番目に来るのは written。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の日本文の意味になるように〔 〕内の語を並べかえたとき、文の中で 3 番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\n「あの店で売られているパンはとてもおいしいです。」\n〔 at / bread / delicious / is / shop / sold / that / the / very 〕",
+  "passage": "",
+  "choices": [
+   "shop",
+   "bread",
+   "sold",
+   "is"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「sold」。正しい文は The bread sold at that shop is very delicious. で、「あの店で売られている」は過去分詞 sold at that shop を名詞 the bread のうしろに置いて表す。文の中で 3 番目に来るのは sold。is をパンの直後に置くと「パンは〜です」と文が切れてしまい、残りの語が置けなくなる。",
+  "form": "並べかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の 2 つの文を 1 つの文にするとき、( )に入る最も適切なものを選びなさい。\nLook at the mountain. It is covered with snow.\n= Look at the mountain ( ) with snow.",
+  "passage": "",
+  "choices": [
+   "covering",
+   "covered",
+   "covers",
+   "cover"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞。正解は「covered」。「雪でおおわれている山」と、山は「おおわれる」側なので過去分詞 covered で名詞 the mountain をうしろから説明する。covering だと「山が何かをおおっている」という意味になり、with snow とつながらない。",
+  "form": "書きかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の 2 つの文を 1 つの文にするとき、( )に入る最も適切なものを選びなさい。\nWe visited a temple. It was built about 500 years ago.\n= We visited a temple ( ) about 500 years ago.",
+  "passage": "",
+  "choices": [
+   "building",
+   "build",
+   "builds",
+   "built"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞。正解は「built」。「約 500 年前に建てられた寺」と、寺は「建てられる」側なので過去分詞 built で名詞 a temple をうしろから説明する。building だと「寺が何かを建てている」という意味になる。",
+  "form": "書きかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の文とほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nThe girl who is singing on the stage is Aya.\n= The girl ( ) on the stage is Aya.",
+  "passage": "",
+  "choices": [
+   "sang",
+   "sung",
+   "singing",
+   "is singing"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「singing」。who is singing の部分は、現在分詞 singing だけで名詞 the girl をうしろから説明する形に書きかえられる。who を取るときは is も取るので、is singing をそのまま残すことはできない。sung は「歌われた」の意味で人には合わない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の文とほぼ同じ意味の文を選びなさい。\nThe girl who is reading a book under the tree is Mika.",
+  "passage": "",
+  "choices": [
+   "The girl read a book under the tree with Mika.",
+   "Mika is reading a book under the tree with a girl.",
+   "The girl reading a book under the tree is Mika.",
+   "The girl reading a book is under the tree with Mika."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「The girl reading a book under the tree is Mika.」who is reading を現在分詞 reading だけにして、名詞 the girl を「木の下で本を読んでいる」とうしろから説明する形にする。文全体の主語は the girl、動詞は is で、「その少女はミカです」という意味は変わらない。Mika を主語にした文や、「ミカと一緒に」の意味になる文は元の文と意味が違う。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文のうち、英文として正しいものを 1 つ選びなさい。(すべて「〜している／〜された＋名詞」の表現を使おうとした文です。)",
+  "passage": "",
+  "choices": [
+   "This is a cake making by my mother.",
+   "The letter writing in English was from Sora.",
+   "The man played the guitar over there is Mr. Ito.",
+   "The boy standing by the door is my cousin."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞。正解は「The boy standing by the door is my cousin.」「立っている男の子」は現在分詞 standing by the door を名詞 the boy のうしろに置いて表すので正しい。cake や letter は「作られる」「書かれる」側なので making・writing ではなく過去分詞 made・written が必要。「ギターを弾いている男性」は played ではなく現在分詞 playing を使う。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文のうち、名詞を説明している語の形が正しいものを 1 つ選びなさい。",
+  "passage": "",
+  "choices": [
+   "The dog sleeps under the big tree is Kuro.",
+   "This is a photo taking in Kyoto.",
+   "The cookies baked by Haru are delicious.",
+   "Who is the boy ran to the station?"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「The cookies baked by Haru are delicious.」クッキーは「焼かれる」側なので、過去分詞 baked by Haru を名詞 the cookies のうしろに置いて説明する形は正しい。photo は「撮られる」側なので taking ではなく過去分詞 taken が必要。「眠っている犬」「走った男の子」は sleeps・ran のままでは名詞を説明できず、現在分詞 sleeping・running にする。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nThe man talking to Ms. Lee is a famous writer.",
+  "passage": "",
+  "choices": [
+   "リー先生は有名な作家と話している男性です。",
+   "有名な作家はリー先生に男性のことを話しています。",
+   "リー先生と話したい男性は有名な作家です。",
+   "リー先生と話している男性は有名な作家です。"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞。正解は「リー先生と話している男性は有名な作家です。」talking to Ms. Lee は現在分詞のまとまりで、直前の名詞 the man を「リー先生と話している」とうしろから説明している。文全体の主語は the man、動詞は is なので、「リー先生は〜です」と訳すのは誤り。",
+  "form": "英文和訳",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nThis is the watch given to me by my uncle.",
+  "passage": "",
+  "choices": [
+   "これはおじが私のために買った時計です。",
+   "これは私がおじにあげた時計です。",
+   "これはおじが私にくれた時計です。",
+   "これは私がおじからもらいたい時計です。"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞。正解は「これはおじが私にくれた時計です。」given to me by my uncle は過去分詞のまとまりで、直前の名詞 the watch を「おじによって私に与えられた」とうしろから説明している。与えたのは my uncle、受け取ったのは me なので、「私がおじにあげた」は向きが逆で誤り。",
+  "form": "英文和訳",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の日本文の意味に合う英文として最も適切なものを選びなさい。\n向こうで犬と走っている男の子はダイキです。",
+  "passage": "",
+  "choices": [
+   "The boy running with a dog over there is Daiki.",
+   "The boy run with a dog over there is Daiki.",
+   "The boy ran with a dog over there is Daiki.",
+   "The boy runs with a dog over there is Daiki."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞。正解は「The boy running with a dog over there is Daiki.」「犬と走っている男の子」は現在分詞 running with a dog を名詞 the boy のうしろに置いて表す。runs や ran を入れると、文全体の動詞 is と合わせて動詞が 2 つになり、英文として成り立たない。",
+  "form": "和文英訳",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の日本文の意味に合う英文として最も適切なものを選びなさい。\nソラによってかかれた絵を見てください。",
+  "passage": "",
+  "choices": [
+   "Look at the picture drawn by Sora.",
+   "Look at the picture drew by Sora.",
+   "Look at the picture drawing by Sora.",
+   "Look at the picture was drawn by Sora."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞。正解は「Look at the picture drawn by Sora.」絵は「かかれる」側なので、過去分詞 drawn by Sora を名詞 the picture のうしろに置いて説明する。drew は「かいた」という過去の形で名詞を説明する形としては使えず、was drawn を入れると命令文の中に動詞がもう 1 つ入ってしまう。",
+  "form": "和文英訳",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "分詞",
+  "unit": "分詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMany people ( ) Spanish live in this city.",
+  "passage": "",
+  "choices": [
+   "speaking",
+   "spoken",
+   "spoke",
+   "are speaking"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞。正解は「speaking」。「スペイン語を話す人々」と、人は「話す」側なので現在分詞 speaking で名詞 people をうしろから説明する。spoken は「話される」の意味なので、言語そのもの (Spanish spoken in 〜) を説明するときに使い、人には使えない。",
+  "form": "空所補充",
+  "level": "標準"
+ }
+]

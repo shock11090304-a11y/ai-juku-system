@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThis is my sister, Aya. ( ) is a nurse.",
+  "passage": "",
+  "choices": [
+   "Her",
+   "Hers",
+   "She",
+   "Herself"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「She」。文の主語になるのは主格の She。Her は「彼女の・彼女を」、Hers は「彼女のもの」という意味で、主語の位置には置けない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nIs this ( ) notebook, Mika?",
+  "passage": "",
+  "choices": [
+   "yours",
+   "you",
+   "yourself",
+   "your"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「your」。あとに notebook という名詞が続くので「あなたの」を表す所有格 your を使う。yours は「あなたのもの」という意味で、あとに名詞を続けない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThose boys are my cousins. I often play soccer with ( ).",
+  "passage": "",
+  "choices": [
+   "their",
+   "them",
+   "they",
+   "theirs"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「them」。with のあとに代名詞を置くときは目的格にする。they は主格、their は所有格なので with の直後には置けない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Excuse me. Are these seats yours?\nB: Yes, they're ( ). We came here early.",
+  "passage": "",
+  "choices": [
+   "us",
+   "our",
+   "we",
+   "ours"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「ours」。「私たちのもの (= our seats)」を1語で表す所有代名詞は ours。our は「私たちの」という意味で、あとに名詞が必要になる。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThere are a lot of cookies on the table. Please help ( ), Sora.",
+  "passage": "",
+  "choices": [
+   "you",
+   "your",
+   "yourself",
+   "yourselves"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「yourself」。help yourself で「自由に取って食べてください」という意味。命令文の相手 (Sora 1人) 自身をさすので再帰代名詞 yourself を使い、yourselves は相手が2人以上のときの形。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nThose are Mika's pens.\n= Those pens are ( ).",
+  "passage": "",
+  "choices": [
+   "her's",
+   "she",
+   "her",
+   "hers"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「hers」。「ミカのもの (= her pens)」は所有代名詞 hers で表す。her's という形は英語にはなく、her だけでは「彼女の」の意味であとに名詞が必要になる。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nLook at that cat. ( ) eyes are blue.",
+  "passage": "",
+  "choices": [
+   "It's",
+   "Its",
+   "It",
+   "Itself"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「Its」。あとに eyes という名詞が続くので「それの」を表す所有格 its を使う。It's は It is を短くした形で、「それの」という意味にはならない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の日本文の意味になるように( )内の語を並べかえるとき、( )内で3番目に来る語を選びなさい。\n彼は私たちに自分の写真を見せてくれました。\nHe ( showed / his / us / pictures ).",
+  "passage": "",
+  "choices": [
+   "us",
+   "showed",
+   "pictures",
+   "his"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「his」。並べかえると He showed us his pictures. となる。「人に物を見せる」は show +人+物 の順で、人は目的格の us、物の前には「彼の」を表す所有格 his を置く。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の日本文の意味になるように( )内の語を並べかえるとき、( )内で3番目に来る語を選びなさい。\nダイキとソラはお互いをよく知っています。\nDaiki and Sora ( each / know / well / other ).",
+  "passage": "",
+  "choices": [
+   "know",
+   "well",
+   "other",
+   "each"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「other」。並べかえると Daiki and Sora know each other well. となる。「お互い」は each other の2語でひとまとまりの代名詞として know の目的語になり、well はそのあとに置く。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nSome students like soccer, and ( ) like baseball.",
+  "passage": "",
+  "choices": [
+   "other",
+   "another",
+   "others",
+   "each other"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「others」。Some 〜, others ... で「〜する人もいれば、…する人もいる」。残りの全員ではなく「ほかの人たち」を漠然とさすので the をつけず、複数なので others にする。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThis cake is delicious. Can I have another ( )?",
+  "passage": "",
+  "choices": [
+   "piece",
+   "a piece",
+   "some pieces",
+   "pieces"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「piece」。another は「もう 1 つの」という意味で、あとには a をつけない単数の名詞を置く。ケーキを切り分けた 1 切れは a piece of cake のように piece で数えるので、「もう 1 切れ」は another piece となる。a piece や pieces、some pieces のように a や複数形を another のあとに続けることはできない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThere aren't ( ) eggs in the fridge.",
+  "passage": "",
+  "choices": [
+   "any",
+   "some",
+   "much",
+   "no"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「any」。否定文で「1つも〜ない」と言うときは some ではなく any を使う。no は not と重ねて使わず、much は数えられない名詞につける語なので eggs には使えない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nI don't have any pets.\n= I have ( ) pets.",
+  "passage": "",
+  "choices": [
+   "no",
+   "some",
+   "any",
+   "not"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「no」。not 〜 any = no で「1つも〜ない」。no は名詞の前に置いて否定を表すので、I have no pets. で同じ意味になる。not を名詞の直前に置いて「〜がない」と言うことはできない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThere is ( ) in this box. It's empty.",
+  "passage": "",
+  "choices": [
+   "something",
+   "anything",
+   "nothing",
+   "everything"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「nothing」。「何も入っていない」= 空っぽ なので nothing を使う。anything は否定文や疑問文で使う語で、There is anything とは言えない。something や everything では It's empty. と矛盾する。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe didn't have ( ) snow in my town last winter.",
+  "passage": "",
+  "choices": [
+   "a few",
+   "much",
+   "few",
+   "many"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「much」。snow は数えられない名詞なので「多くの」は much で表す。many・a few・few は数えられる名詞の複数形につける語。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: How ( ) is this T-shirt?\nB: It's twenty dollars.",
+  "passage": "",
+  "choices": [
+   "long",
+   "much",
+   "old",
+   "many"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「much」。値段をたずねるときは How much 〜? を使う。答えが twenty dollars (金額) なので、数をたずねる How many や長さをたずねる How long は合わない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\n( ) of the three boys has a different hobby.",
+  "passage": "",
+  "choices": [
+   "All",
+   "Each",
+   "Both",
+   "Every"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「Each」。each of 〜 は「〜のそれぞれ」で1人ずつをさすので単数として扱い、動詞は has になる。All of the three boys は3人をまとめて複数として扱うので動詞は have になり、has とは合わない。every はあとに of を続けられず、both は2人のときにしか使えない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nDaiki has two sisters. ( ) of them are college students.",
+  "passage": "",
+  "choices": [
+   "Either",
+   "Both",
+   "Each",
+   "Every"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「Both」。「2人とも」は both of them で表し、2人をまとめて複数として扱うので、動詞は are、あとの college students も複数になる。Each of them は「1人1人それぞれ」をさし、単数として扱うので Each of them is a college student. の形になり、are や college students とは合わない。Either of them も「2人のうちどちらか一方」をさす単数の扱いで、are とは合わず、2人とも大学生だという意味にもならない。Every はあとに of を続けられない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の英文のうち、a と an の使い方が正しいものを1つ選びなさい。",
+  "passage": "",
+  "choices": [
+   "It was a exciting game for us.",
+   "She is an university student.",
+   "He bought a umbrella at the shop.",
+   "Ryo is an honest and kind boy."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「Ryo is an honest and kind boy.」honest は h を発音せず母音の音で始まるので an をつける。university は「ユ」という子音の音で始まるので a、umbrella と exciting は母音の音で始まるので an にしなければならない。",
+  "form": "正誤",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に、[ ]内の語を適切な形にかえて入れるとき、最も適切なものを選びなさい。\nPut these ( ) on the shelf, please. [box]",
+  "passage": "",
+  "choices": [
+   "boxies",
+   "box's",
+   "boxs",
+   "boxes"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「boxes」。these があるので複数形にする。box のように x で終わる語は s ではなく es をつけて boxes とする。",
+  "form": "語形変化",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に、[ ]内の語を適切な形にかえて入れるとき、最も適切なものを選びなさい。\nOur cat caught two ( ) last night. [mouse]",
+  "passage": "",
+  "choices": [
+   "mices",
+   "mouse",
+   "mice",
+   "mouses"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「mice」。two があるので複数形にする。mouse の複数形は s をつけず、形そのものが変わって mice になる不規則な変化。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の文の( )に、[ ]内の語を適切な形にかえて入れるとき、最も適切なものを選びなさい。\nCan I have two ( ) of milk? [glass]",
+  "passage": "",
+  "choices": [
+   "glasses",
+   "glass's",
+   "glass",
+   "glasss"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「glasses」。milk は数えられない名詞なので、a glass of milk「コップ1杯の牛乳」のように容器で数える。2杯なら glass を複数形にして two glasses of milk とする。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の英文のうち、名詞の形が正しいものを1つ選びなさい。",
+  "passage": "",
+  "choices": [
+   "We saw many deer in the forest.",
+   "There are three woman in the room.",
+   "She has a lot of friend in Osaka.",
+   "I need three sheet of paper."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「We saw many deer in the forest.」deer は単数も複数も同じ形なので many deer で正しい。woman は three のあとで women、friend は a lot of のあとで friends、sheet は three のあとで sheets と複数形にしなければならない。",
+  "form": "正誤",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "名詞・代名詞・冠詞",
+  "unit": "名詞・代名詞・冠詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: How's the weather in Sapporo today?\nB: ( ) is snowing a lot.",
+  "passage": "",
+  "choices": [
+   "It",
+   "This",
+   "There",
+   "That"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】名詞・代名詞・冠詞。正解は「It」。天気・時刻・曜日などを言うときの主語には it を使う。この it は「それ」とは訳さない。That や This は目の前のものをさす語で、天気を言う文の主語には使わない。",
+  "form": "対話応答",
+  "level": "基礎"
+ }
+]

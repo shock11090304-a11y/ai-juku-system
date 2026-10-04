@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nOur school festival ( ) every October.",
+  "passage": "",
+  "choices": [
+   "holds",
+   "is holding",
+   "held",
+   "is held"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態。正解は「is held」。学校祭は「開かれる」ものなので、受け身〈be 動詞 + 動詞の第3の形〉を使う。hold の第3の形は held で、every October があるので現在の文、主語の Our school festival は単数だから is held。holds や held だけでは「学校祭が(何かを)開く」という意味になってしまう。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThis TV program ( ) by children all over Japan.",
+  "passage": "",
+  "choices": [
+   "are watched",
+   "is watched",
+   "watches",
+   "is watching"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「is watched」。「この番組は子どもたちに見られている」という受け身の文。主語の This TV program は単数で現在の文だから is watched。are watched は主語が単数なので誤り。watches だと「番組が(何かを)見る」という意味になる。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMany kinds of fish ( ) near this island.",
+  "passage": "",
+  "choices": [
+   "are caught",
+   "catch",
+   "are catching",
+   "is caught"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態。正解は「are caught」。魚は「とられる」側なので受け身〈be 動詞 + 動詞の第3の形〉を使う。主語の Many kinds of fish は kinds が複数なので is ではなく are。catch のままだと「魚が(何かを)つかまえる」という意味になり誤り。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThe lost cat ( ) by Mika in the park yesterday.",
+  "passage": "",
+  "choices": [
+   "found",
+   "is found",
+   "was found",
+   "were found"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「was found」。yesterday があるので過去の文。ねこは「見つけられた」側なので受け身〈was + found〉にする。found だけだと「ねこが(何かを)見つけた」という意味になり、by Mika とつながらない。is found は現在の文になるので誤り。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThe soccer game ( ) because of the heavy rain yesterday.",
+  "passage": "",
+  "choices": [
+   "canceled",
+   "is canceled",
+   "was canceling",
+   "was canceled"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態。正解は「was canceled」。cancel は「〜を中止する」という動詞で、試合は「中止される」側なので受け身にする。yesterday があるので過去を表す was を使い was canceled。canceled だけでは「試合が(何かを)中止した」となり誤り。is canceled は現在の文になる。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Your bike looks new.\nB: Yes. It ( ) to me by my uncle last week.",
+  "passage": "",
+  "choices": [
+   "is given",
+   "gave",
+   "was given",
+   "was giving"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「was given」。「自転車はおじによって私に与えられた」という受け身の文。last week があるので過去を表す was を使い、give の第3の形 given を続ける。gave では「自転車が(何かを)与えた」となり、to me by my uncle とつながらない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文の( )内の語を適切な形にしたものを選びなさい。\nThese photos were ( take ) by Sora during the school trip.",
+  "passage": "",
+  "choices": [
+   "took",
+   "taken",
+   "taking",
+   "takes"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「taken」。were のあとに続けて「写真は Sora によって撮られた」という受け身にする。受け身は〈be 動詞 + 動詞の第3の形〉で、take の第3の形は taken (take - took - taken)。took は過去を表す形なので、were took とは言えない。",
+  "form": "語形変化",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文の( )内の語を適切な形にしたものを選びなさい。\nThis map was ( draw ) by Ryo for his friends.",
+  "passage": "",
+  "choices": [
+   "drew",
+   "drawn",
+   "drawing",
+   "draws"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「drawn」。was のあとなので受け身の形にする。draw は不規則に変化する動詞で、受け身で使う第3の形は drawn (draw - drew - drawn)。drew は過去を表す形なので was drew とはならない。drawing では「地図が描いている」という意味になる。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文の( )内の語を適切な形にしたものを選びなさい。\nHer bag was ( steal ) on the train last night.",
+  "passage": "",
+  "choices": [
+   "stole",
+   "stolen",
+   "steals",
+   "stealing"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「stolen」。「かばんが盗まれた」という受け身の文。steal は不規則に変化し、受け身で使う第3の形は stolen (steal - stole - stolen)。stole は過去を表す形なので was stole とは言えない。stealing では「かばんが盗んでいる」という意味になる。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: This song is beautiful. Who sang it?\nB: It ( ) by the students at the concert last year.",
+  "passage": "",
+  "choices": [
+   "was sang",
+   "sang",
+   "was sung",
+   "is sung"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「was sung」。「その歌は生徒たちによって歌われた」という受け身の文。last year があるので was を使い、sing の第3の形 sung を続ける (sing - sang - sung)。was sang は sang が過去を表す形なので誤り。sang だけでは「歌が歌った」という意味になる。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Is Japanese taught at your school in Australia?\nB: ( ) Many students take the class.",
+  "passage": "",
+  "choices": [
+   "No, it isn't.",
+   "Yes, it does.",
+   "Yes, I do.",
+   "Yes, it is."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態。正解は「Yes, it is.」Is Japanese taught 〜? という受け身の疑問文には、同じ be 動詞を使って Yes, it is. / No, it isn't. と答える。Japanese は it で受ける。Yes, it does. は does でたずねられていないので誤り。No, it isn't. では、あとの「多くの生徒がその授業を受けている」という内容と合わない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文を疑問文にしたものとして正しいものを選びなさい。\nThe concert tickets are sold at this shop.",
+  "passage": "",
+  "choices": [
+   "Are the concert tickets sell at this shop?",
+   "Is the concert tickets sold at this shop?",
+   "Is the concert tickets sell at this shop?",
+   "Are the concert tickets sold at this shop?"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態。正解は「Are the concert tickets sold at this shop?」受け身の文を疑問文にするときは、be 動詞 (are) を主語の前に出すだけで、sold の形は変えない。主語の the concert tickets は複数なので Is ではなく Are。sell にもどしてしまうと受け身の形がくずれる。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: ( )\nB: About five years ago. It's still new.",
+  "passage": "",
+  "choices": [
+   "When was this library built?",
+   "When did this library built?",
+   "When did this library build?",
+   "When was this library build?"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態。正解は「When was this library built?」About five years ago. と過去のことを答えているので、「この図書館はいつ建てられましたか」という過去の受け身の疑問文にする。When のあとに be 動詞 was、主語 this library、build の第3の形 built と続ける。did を使うと built と組み合わせられず、build のままでは受け身にならない。",
+  "form": "対話応答",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文を否定文にしたものとして正しいものを選びなさい。\nThe sandwiches were eaten by my brother.",
+  "passage": "",
+  "choices": [
+   "The sandwiches didn't eaten by my brother.",
+   "The sandwiches didn't eat by my brother.",
+   "The sandwiches weren't eating by my brother.",
+   "The sandwiches weren't eaten by my brother."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態。正解は「The sandwiches weren't eaten by my brother.」受け身の否定文は be 動詞のあとに not を置き、動詞は eaten のまま変えない。didn't eat にすると「サンドイッチが食べなかった」という意味になり、by my brother とつながらない。weren't eating は「食べていた」の否定で、受け身ではない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Is this room used for club activities?\nB: No. It ( ) now. We're going to clean it next week.",
+  "passage": "",
+  "choices": [
+   "doesn't use",
+   "isn't used",
+   "doesn't used",
+   "isn't use"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「isn't used」。「その部屋は今は使われていない」という受け身の否定文。be 動詞 is のあとに not を置き、use の第3の形 used を続ける。doesn't use では「部屋が(何かを)使わない」という意味になり誤り。isn't use は use が元の形のままなので受け身になっていない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の中から、英文として正しいものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "The new gym will be built next spring.",
+   "The new gym will building next spring.",
+   "The new gym will built next spring.",
+   "The new gym will be building next spring."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態。正解は「The new gym will be built next spring.」will のあとに受け身を続けるときは〈will be + 動詞の第3の形〉にする。体育館は「建てられる」ものなので will be built。will built は be が抜けていて、will be building は「建てている」という形なので、どちらも受け身にならない。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の語を並べかえて正しい英文にしたとき、( )内で 2 番目に来る語を選びなさい。\nThis homework ( finished / be / must / by ) Friday.",
+  "passage": "",
+  "choices": [
+   "be",
+   "must",
+   "finished",
+   "by"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態。正解は「be」。正しい文は This homework must be finished by Friday.「この宿題は金曜日までに終えられなければならない」。must のあとは動詞の元の形なので、受け身は〈must be + 動詞の第3の形〉となり、( )内は must → be → finished → by の順。by Friday は「金曜日までに」という意味。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の語を並べかえて正しい英文にしたとき、( )内で 3 番目に来る語を選びなさい。\nThis old bridge ( of / is / stone / made ).",
+  "passage": "",
+  "choices": [
+   "is",
+   "of",
+   "stone",
+   "made"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態。正解は「of」。正しい文は This old bridge is made of stone.「この古い橋は石でできている」。( )内は is → made → of → stone の順。「〜でできている」は be made of 〜 で表し、石のように材料がそのまま見えるときは of を使う。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の日本文の意味を表す英文として最も適切なものを選びなさい。\nこのジュースはりんごから作られています。",
+  "passage": "",
+  "choices": [
+   "This juice is made by apples.",
+   "This juice is making from apples.",
+   "This juice is made from apples.",
+   "This juice is making by apples."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「This juice is made from apples.」「〜から作られる」は be made from 〜 で表す。ジュースのように材料の形が変わっているときは from を使う。by は「〜によって」と作った人を表す語なので、材料の apples には使わない。is making では「ジュースが作っている」という意味になる。",
+  "form": "和文英訳",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文を受け身の文に書きかえたものとして正しいものを選びなさい。\nMy uncle grows these vegetables.",
+  "passage": "",
+  "choices": [
+   "These vegetables were grown by my uncle.",
+   "These vegetables are grew by my uncle.",
+   "These vegetables are grown by my uncle.",
+   "These vegetables were grew by my uncle."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「These vegetables are grown by my uncle.」目的語の these vegetables を主語にして、〈be 動詞 + 動詞の第3の形〉で表す。元の文は現在の文で主語が複数なので are grown。grow の第3の形は grown で、grew は過去を表す形だから are grew は誤り。were grown では過去の文になってしまう。",
+  "form": "書きかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文を、ほぼ同じ意味を表す文に書きかえたものとして正しいものを選びなさい。\nThese cookies were baked by Daiki.",
+  "passage": "",
+  "choices": [
+   "Daiki bake these cookies.",
+   "Daiki bakes these cookies.",
+   "Daiki baked these cookies.",
+   "Daiki was baking these cookies."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態。正解は「Daiki baked these cookies.」受け身の文の by のあとの Daiki を主語にして、「Daiki がこれらのクッキーを焼いた」という文にする。were baked は過去なので、動詞も過去を表す baked にする。bakes や bake では現在の文になり、was baking は「焼いていた (途中だった)」という意味で、焼き終えたことを表す元の文とは意味が変わる。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の文を受け身の文に書きかえたものとして正しいものを選びなさい。\nThey sell fresh bread at that shop every morning.",
+  "passage": "",
+  "choices": [
+   "Fresh bread are sold at that shop every morning.",
+   "Fresh bread is sell at that shop every morning.",
+   "Fresh bread are sell at that shop every morning.",
+   "Fresh bread is sold at that shop every morning."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態。正解は「Fresh bread is sold at that shop every morning.」fresh bread を主語にして〈be 動詞 + 動詞の第3の形〉で表す。元の文の they は店の人たちを大まかにさすだけなので、by them は書かない。bread は数えられない語で単数あつかいだから are ではなく is。is sell は sell が元の形のままで受け身になっていない。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の語を並べかえて正しい英文にしたとき、( )内で 3 番目に来る語を選びなさい。\nMy garden ( watered / is / my / by / grandmother ) every morning.",
+  "passage": "",
+  "choices": [
+   "by",
+   "watered",
+   "grandmother",
+   "is"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態。正解は「by」。正しい文は My garden is watered by my grandmother every morning.「私の庭は毎朝祖母によって水をやられる」。( )内は is → watered → by → my → grandmother の順で、「〜によって」を表す by は watered のあとに置く。3 番目は by。",
+  "form": "並べかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "受動態",
+  "unit": "受動態",
+  "stem": "次の語を並べかえて正しい英文にしたとき、( )内で 3 番目に来る語を選びなさい。(文の最初の語も小文字で示してあります)\n( this / was / painted / wall / when )?",
+  "passage": "",
+  "choices": [
+   "this",
+   "was",
+   "painted",
+   "when"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態。正解は「this」。正しい文は When was this wall painted?「この壁はいつ塗られましたか」。受け身の疑問文は be 動詞を主語の前に出すので、When のあとは was → this → wall → painted の順になる。3 番目は this。文の最初の when は大文字で書く。",
+  "form": "並べかえ",
+  "level": "やや応用"
+ }
+]

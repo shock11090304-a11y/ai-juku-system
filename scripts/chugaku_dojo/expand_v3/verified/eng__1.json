@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMika ( ) a new dictionary at the bookstore last Saturday.",
+  "passage": "",
+  "choices": [
+   "buys",
+   "buy",
+   "will buy",
+   "bought"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制。正解は「bought」。last Saturday(この前の土曜日)は過去を表す語句なので、動詞は過去形にする。buy は不規則に変化して過去形は bought になる。will buy は未来のことに使う形なので last Saturday とは合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nListen! Someone ( ) in the next room.",
+  "passage": "",
+  "choices": [
+   "sings",
+   "sang",
+   "is singing",
+   "was singing"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「is singing」。Listen!(聞いて)は今まさに起きていることに注意を向ける言葉なので、現在進行形〈be動詞 + 〜ing〉を使う。主語の Someone は単数扱いなので is singing。sang は過去形で「今」のことには使えない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMy brother ( ) going to join the soccer team next spring.",
+  "passage": "",
+  "choices": [
+   "will",
+   "is",
+   "do",
+   "are"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「is」。next spring(次の春)は未来のことで、あとに going to join があるので〈be going to + 動詞の原形〉の形。主語 My brother は三人称単数なので be動詞は is。will going to とは言わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nAya and I ( ) tennis in the park at three yesterday afternoon.",
+  "passage": "",
+  "choices": [
+   "are playing",
+   "was playing",
+   "were playing",
+   "play"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「were playing」。at three yesterday afternoon(昨日の午後3時に)という過去のある時点で「している最中だった」ので過去進行形。主語 Aya and I は複数なので was ではなく were を使う。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI will send you a message when I ( ) the station.",
+  "passage": "",
+  "choices": [
+   "leaves",
+   "left",
+   "leave",
+   "will leave"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「leave」。when 〜(〜するとき)が時を表す部分では、未来のことでも will を使わず現在形で表す。主語が I なので leave。will leave としないのがポイントで、left は過去形なので合わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Where ( ) you the day before yesterday? I called you many times.\nB: Sorry. I was at my uncle's house all day.",
+  "passage": "",
+  "choices": [
+   "were",
+   "was",
+   "did",
+   "will"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制。正解は「were」。the day before yesterday(おととい)は過去を表す語句で、答えの文も I was と過去形。主語 you に合わせて be動詞の過去形 were を使う。did はあとに動詞の原形が必要なので、動詞のないこの文には使えない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )内の語を適切な形にかえたものを選びなさい。\nHaru ( study ) math for two hours last night.",
+  "passage": "",
+  "choices": [
+   "studies",
+   "studied",
+   "studying",
+   "studyed"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「studied」。last night(昨夜)があるので過去形。study は〈子音字 + y〉で終わる語なので、y を i にかえて ed をつけ studied とする。studyed とつづるのは誤り。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の日本文の意味になるように( )内の語を並べかえたとき、( )内で3番目に来る語を選びなさい。\nダイキは昨日、宿題をしませんでした。\nDaiki ( his / do / didn't / homework ) yesterday.",
+  "passage": "",
+  "choices": [
+   "didn't",
+   "his",
+   "do",
+   "homework"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「his」。yesterday があるので過去の否定文で、〈didn't + 動詞の原形〉の形にする。didn't のあとに原形 do を置き、Daiki didn't do his homework yesterday. となる。( )内は didn't → do → his → homework の順に並ぶので、答えは his。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nHurry up, or you ( ) miss the first train.",
+  "passage": "",
+  "choices": [
+   "were",
+   "are",
+   "did",
+   "will"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制。正解は「will」。「急がないと(これから)電車に乗り遅れるよ」と、これから起こることを言っているので〈will + 動詞の原形〉。are や were のあとに動詞の原形 miss をそのまま続けることはできない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文を疑問文に書きかえるとき、文の最初に来る語を選びなさい。\nThe children were swimming in the river.",
+  "passage": "",
+  "choices": [
+   "Was",
+   "Were",
+   "Did",
+   "Does"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「Were」。were swimming は過去進行形で、疑問文は be動詞の were を文の最初に出して Were the children swimming in the river? とする。Did で始めると動詞は原形 swim にする必要があり、swimming の文には使えない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: ( ) you going to see the movie this evening?\nB: Yes, I am. Do you want to come with me?",
+  "passage": "",
+  "choices": [
+   "Did",
+   "Will",
+   "Do",
+   "Are"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制。正解は「Are」。あとに you going to see があるので〈be going to + 動詞の原形〉の疑問文。主語 you に合わせて be動詞は Are を文の最初に置く。答えの Yes, I am. も be動詞で答えていることがヒント。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: ( ) you be free tomorrow afternoon?\nB: Yes. Let's go shopping together.",
+  "passage": "",
+  "choices": [
+   "Are",
+   "Will",
+   "Does",
+   "Did"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「Will」。tomorrow afternoon(明日の午後)という未来のことをたずねているので、〈Will + 主語 + 動詞の原形〉の形。be は free とともに「ひまである」を表す原形。Are のあとに原形の be を続けることはできない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の中から、時制の使い方が正しい英文を1つ選びなさい。",
+  "passage": "",
+  "choices": [
+   "We will go hiking if it is sunny.",
+   "He didn't came to school yesterday.",
+   "She is knowing the answer now.",
+   "I am going to visit my aunt last summer."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制。正解は「We will go hiking if it is sunny.」if 〜(もし〜なら)の部分では未来のことでも現在形 is を使い、主となる文に will を使うので正しい。last summer に am going to を使った文、didn't のあとに came を置いた文、知っている状態の know を進行形にした文はいずれも誤り。",
+  "form": "正誤",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の中から、時制の使い方が誤っている英文を1つ選びなさい。",
+  "passage": "",
+  "choices": [
+   "My father is washing his car yesterday.",
+   "I was taking a bath when you called me.",
+   "Mika is going to buy a new bag tomorrow.",
+   "They will leave Japan next Friday."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制。正解は「My father is washing his car yesterday.」yesterday(昨日)は過去を表す語句なので、現在進行形 is washing とは合わず、was washing にする必要がある。ほかの3文は、過去進行形と when、be going to と tomorrow、will と next Friday がそれぞれ正しく対応している。",
+  "form": "正誤",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )内の語を適切な形にかえたものを選びなさい。\nMy aunt ( teach ) music at this school twenty years ago.",
+  "passage": "",
+  "choices": [
+   "teaches",
+   "teach",
+   "taught",
+   "teached"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「taught」。twenty years ago(20年前)は過去を表す語句なので過去形。teach は不規則に変化して過去形は taught になる。ed をつけた teached という形はない。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の日本文の意味を表す英文として最も適切なものを選びなさい。\n私は来週、祖父母を訪ねるつもりです。",
+  "passage": "",
+  "choices": [
+   "I am going to visit my grandparents next week.",
+   "I am visit my grandparents next week.",
+   "I visited my grandparents next week.",
+   "I was going to visit my grandparents last week."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制。正解は「I am going to visit my grandparents next week.」「〜するつもりです」という予定は〈be going to + 動詞の原形〉で表し、next week(来週)は未来なので am going to が正しい。am のあとに visit をそのまま置いた文や、過去形 visited を next week と組み合わせた文は誤り。",
+  "form": "英訳",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: What did you do last weekend?\nB: I ( ) fishing in the river with my father.",
+  "passage": "",
+  "choices": [
+   "went",
+   "am going",
+   "will go",
+   "go"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制。正解は「went」。last weekend(先週末)のことを did でたずねているので、答えも過去形で言う。go は不規則に変化して過去形は went になる。will go は未来のことに使う形なので合わない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文を否定文に書きかえたとき、( )に入る最も適切なものを選びなさい。\nRyo went to the gym after school yesterday.\n→ Ryo ( ) to the gym after school yesterday.",
+  "passage": "",
+  "choices": [
+   "doesn't went",
+   "didn't went",
+   "wasn't go",
+   "didn't go"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制。正解は「didn't go」。過去の文の否定文は〈didn't + 動詞の原形〉で作るので、went は原形の go に戻す。didn't のあとに went を続けたり、wasn't のあとに動詞の原形 go を置いたりするのは誤り。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )内の語を適切な形にかえたものを選びなさい。\nRyo ( run ) to the station now. He is late for school again.",
+  "passage": "",
+  "choices": [
+   "runs",
+   "is runing",
+   "was running",
+   "is running"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制。正解は「is running」。now(今)があるので「今走っているところだ」という現在進行形。run は〈短母音 + 子音字〉で終わるので n を重ねて running とする。runing とつづるのは誤り。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の日本文の意味になるように( )内の語を並べかえたとき、( )内で2番目に来る語を選びなさい。\n私たちは明日、何時に出発する予定ですか。\nWhat time ( we / going / are / to ) leave tomorrow?",
+  "passage": "",
+  "choices": [
+   "are",
+   "going",
+   "we",
+   "to"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「we」。「〜する予定ですか」は〈be going to + 動詞の原形〉の疑問文で、What time のあとは be動詞を主語の前に出して What time are we going to leave tomorrow? となる。( )内で2番目に来る語は主語の we。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の日本文の意味になるように( )内の語を並べかえたとき、( )内で4番目に来る語を選びなさい。\nミカが来たとき、私は手紙を書いていました。\nI ( a / writing / letter / was ) when Mika came.",
+  "passage": "",
+  "choices": [
+   "a",
+   "letter",
+   "writing",
+   "was"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制。正解は「letter」。「ミカが来たとき(過去の一点)に書いていた」ので過去進行形〈was + 〜ing〉。I was writing a letter when Mika came. となり、( )内で4番目に来る語は letter。a は writing と letter の間に入る。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Will Daiki come to the meeting tomorrow?\nB: No, he ( ). He has to see a dentist.",
+  "passage": "",
+  "choices": [
+   "won't",
+   "didn't",
+   "don't",
+   "wasn't"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制。正解は「won't」。Will 〜? と未来のことをたずねられているので、答えも will を使い、否定は won't(will not)。don't は主語 he に合わず、didn't は過去のことを表すので、will の質問の答えとしては時制が合わない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文の( )内の語を適切な形にかえたものを選びなさい。\nIt ( stop ) raining a few minutes ago, so let's go out.",
+  "passage": "",
+  "choices": [
+   "stops",
+   "stoped",
+   "stopped",
+   "stopping"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制。正解は「stopped」。a few minutes ago(数分前に)は過去を表す語句なので過去形。stop は〈短母音 + 子音字〉で終わるので p を重ねて stopped とする。stoped とつづるのは誤り。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "時制",
+  "unit": "時制",
+  "stem": "次の文を過去進行形の文に書きかえたとき、( )に入る最も適切なものを選びなさい。\nMy sister is talking with Mr. Brown now.\n→ My sister ( ) with Mr. Brown at that time.",
+  "passage": "",
+  "choices": [
+   "were talking",
+   "talked",
+   "is talking",
+   "was talking"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制。正解は「was talking」。現在進行形 is talking を at that time(そのとき)の過去進行形にするには、be動詞を過去形にして was talking とする。主語 My sister は三人称単数なので were は使わない。talked は進行形ではないので「話している最中だった」という意味にならない。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ }
+]

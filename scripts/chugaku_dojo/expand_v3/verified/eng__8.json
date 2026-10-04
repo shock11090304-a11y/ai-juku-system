@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMika has ( ) finished her homework, so she can watch TV now.",
+  "passage": "",
+  "choices": [
+   "yet",
+   "never",
+   "just",
+   "ago"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】現在完了。正解は「just」。just は「ちょうど〜したところだ」という意味で、has と finished の間に置く。yet は「まだ」「もう」の意味で否定文や疑問文で使う語なので、ふつうの肯定文には合わない。ago は have / has + 動詞の第3の形とは一緒に使えない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Has the movie started ( )?\nB: No. It'll start in five minutes.",
+  "passage": "",
+  "choices": [
+   "yet",
+   "ago",
+   "since",
+   "for"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「yet」。Has the movie started yet? のように、疑問文の文末に yet を置くと「もう〜しましたか」という意味になり、B の「まだで、5 分後に始まる」という返事とつながる。ago は have / has を使った文では使えない。since と for は「いつから」「どのくらいの間」と続いている期間を表す語で、「もう始まったか」とたずねるこの対話には合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Why don't we watch this movie tonight?\nB: ( ) Let's choose another one.",
+  "passage": "",
+  "choices": [
+   "I haven't seen it yet.",
+   "I have never seen it.",
+   "I have already seen it.",
+   "I have seen it two days ago."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】現在完了。正解は「I have already seen it.」「もう見てしまった」から「別のを選ぼう」と続く。まだ見ていない・一度も見たことがないという内容では、別の映画を選ぶ理由にならない。two days ago のように過去の 1 点を表す語句は have + 動詞の第3の形と一緒には使えない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI have ( ) eaten natto, but I want to try it someday.",
+  "passage": "",
+  "choices": [
+   "just",
+   "ever",
+   "already",
+   "never"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】現在完了。正解は「never」。「一度も食べたことがないが、いつか食べてみたい」という経験の文。never は have と eaten の間に置いて「一度も〜ない」を表す。already や just では「もう食べた」になり、but 以下とつながらない。ever は主に疑問文で使う語。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Have you ever tried kendo?\nB: ( ) This will be my first time.",
+  "passage": "",
+  "choices": [
+   "No, never.",
+   "Yes, once.",
+   "Yes, I do.",
+   "No, I did."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「No, never.」「今回が初めて」と続くので、「一度もない」と答える never が合う。Have you ever 〜? には have / has を使って答えるか、never・once・twice などの語で答える。do や did では問いの形と合わず、Yes, once. (一度ある) は「初めて」と矛盾する。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: How many times have you been to Nara?\nB: ( )",
+  "passage": "",
+  "choices": [
+   "I have been there for a week.",
+   "I have been there just once.",
+   "I have been there a week ago.",
+   "I have been there since May."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「I have been there just once.」How many times 〜? は回数をたずねる問いなので、once (一度) のように回数で答える。for a week や since May は期間や始まりの時点を表す言い方で回数の答えにならず、a week ago は have been と一緒に使えない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の 2 文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nThis is my first visit to Kyoto.\n= I ( ) to Kyoto before.",
+  "passage": "",
+  "choices": [
+   "has never being",
+   "have never been",
+   "have ever being",
+   "has ever been"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「have never been」。「初めての訪問だ」=「以前に一度も行ったことがない」。「〜へ行ったことがある」は have been to で表し、否定は never を have と been の間に置く。主語が I なので has は使えず、being は been の代わりにならない。ever は主に疑問文で使う語。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Where is your sister?\nB: She ( ) to the post office. She'll be back in ten minutes.",
+  "passage": "",
+  "choices": [
+   "have been",
+   "has been",
+   "have gone",
+   "has gone"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】現在完了。正解は「has gone」。has gone to 〜 は「〜へ行ってしまった (今ここにいない)」という意味で、「10 分で戻る」という内容に合う。has been to 〜 は「〜へ行ったことがある」「〜へ行ってきた」という意味で、今いない理由にならない。主語が she なので have は使えない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の英文のうち、「リナは今ここにいない」ことがわかる文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "Rina has gone to the station.",
+   "Rina has just come back from the station.",
+   "Rina has been to the station.",
+   "Rina has never been to the station."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「Rina has gone to the station.」has gone to 〜 は「〜へ行ってしまった」で、行った人が今ここにいないことを表す。has been to 〜 は「〜へ行ったことがある」、has just come back は「ちょうど戻ってきた」なので、どちらも本人は今ここにいる。",
+  "form": "意味判断",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nNana has practiced the violin for ( ).",
+  "passage": "",
+  "choices": [
+   "2020",
+   "last year",
+   "five years",
+   "she was five"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】現在完了。正解は「five years」。for のあとには five years のように「期間の長さ」を表す語句を置く。2020 や last year のような「始まった時点」は since を使って表し、she was five のような文の形も since のあとに置く。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: How long has Ms. Lee taught at this school?\nB: ( )",
+  "passage": "",
+  "choices": [
+   "Since 2018.",
+   "In 2018.",
+   "Two years ago.",
+   "Three times."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「Since 2018.」How long 〜? は「どのくらいの間」と期間をたずねる問いなので、since 2018 (2018 年から) や for 〜 years (〜年間) の形で答える。In 2018. や Two years ago. は過去の 1 点を答える言い方、Three times. は回数の答えで、期間の問いには合わない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の 2 文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nSora started to use this computer three years ago. He still uses it.\n= Sora ( ) this computer for three years.",
+  "passage": "",
+  "choices": [
+   "uses",
+   "used",
+   "is using",
+   "has used"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】現在完了。正解は「has used」。「3 年前に使い始めて今も使っている」=「3 年間ずっと使っている」という継続は、has + 動詞の第3の形で表し、期間は for で示す。used だけでは過去に使っていたことしか表せず、今も使っている意味が出ない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の 2 文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nMy grandfather died five years ago.\n= My grandfather has ( ) for five years.",
+  "passage": "",
+  "choices": [
+   "died",
+   "been dead",
+   "been died",
+   "been dying"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「been dead」。「5 年前に亡くなった」=「5 年間ずっと亡くなった状態である」。die は一瞬で終わる動作なので for five years と続けて使えず、状態を表す dead (死んでいる) を使って has been dead for 〜 とする。been dying だと「死にかけている」という別の意味になる。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の英文のうち、正しいものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "Aya has lived in Nagoya in 2020.",
+   "Aya has lived in Nagoya two years ago.",
+   "Aya has lived in Nagoya when she was ten.",
+   "Aya has lived in Nagoya since 2020."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】現在完了。正解は「Aya has lived in Nagoya since 2020.」has lived (ずっと住んでいる) には、since 2020 のように「いつから」を表す語句を続ける。in 2020・two years ago・when she was ten は過去の 1 点を表す語句なので、have / has + 動詞の第3の形とは一緒に使えない。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の 2 文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nTakumi began to study two hours ago, and he is still studying.\n= Takumi ( ) for two hours.",
+  "passage": "",
+  "choices": [
+   "was been studying",
+   "has been studying",
+   "was studying",
+   "has studying"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「has been studying」。「2 時間前に始めて今も勉強している」という動作の継続は、has been + -ing 形で表す。was studying だと過去のある時点で勉強していたことしか表せず、今も続いている意味が出ない。has のあとに直接 -ing 形は続けられない。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nMr. Green has been ( ) for the bus for twenty minutes.",
+  "passage": "",
+  "choices": [
+   "waited",
+   "waits",
+   "waiting",
+   "to wait"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】現在完了。正解は「waiting」。has been のあとに -ing 形を続けると「20 分間ずっと待ち続けている」という動作の継続を表す (現在完了進行形)。waited を入れると Mr. Green が「待たれる」側になってしまい、自分でバスを待っているこの文の意味に合わない。waits や to wait は has been のあとに置ける形ではない。",
+  "form": "語形変化",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Has the bell ( ) yet?\nB: Yes. Hurry up, or you'll be late for class.",
+  "passage": "",
+  "choices": [
+   "rang",
+   "rung",
+   "ring",
+   "ringing"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「rung」。Has 〜 yet? は「もう〜しましたか」という完了の疑問文で、has のあとは動詞の第3の形を使う。ring の変化は ring - rang - rung で、rang は過去の形なので has のあとには置けない。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の英文のうち、正しいものを選びなさい。",
+  "passage": "",
+  "choices": [
+   "How long have you known Mr. Brown?",
+   "How long are you knowing Mr. Brown?",
+   "How long have you knew Mr. Brown?",
+   "How long do you know Mr. Brown?"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「How long have you known Mr. Brown?」「どのくらいの間知っているか」と継続をたずねるときは How long + have + 主語 + 動詞の第3の形の順にする。know の変化は know - knew - known で、have のあとに knew は置けない。また know は -ing 形にして使わない。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nHana has been to the museum.",
+  "passage": "",
+  "choices": [
+   "ハナはその博物館に行ったことがある。",
+   "ハナはその博物館に行ってしまい、今はいない。",
+   "ハナはその博物館にずっといる。",
+   "ハナはその博物館へ行くつもりだ。"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】現在完了。正解は「ハナはその博物館に行ったことがある。」has been to 〜 は「〜へ行ったことがある」という経験を表す。「〜へ行ってしまい、今はいない」は has gone to 〜、「〜にずっといる」は has been in 〜 + 期間で表し、どちらも has been to とは意味が違う。",
+  "form": "意味判断",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の日本文の意味になるように [ ] 内の語句を並べかえたとき、[ ] 内で 3 番目に来る語句を選びなさい。\nあなたはここでどのくらいの間待っているのですか。\nHow long [ waiting / been / you / have / here ]?",
+  "passage": "",
+  "choices": [
+   "waiting",
+   "you",
+   "been",
+   "have"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】現在完了。正解は「been」。How long have you been waiting here? となる。How long のあとは have + 主語 + been + -ing 形という疑問文の語順にするので、[ ] 内は have → you → been → waiting → here と並び、3 番目は been。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の日本文の意味になるように [ ] 内の語句を並べかえたとき、[ ] 内で 2 番目に来る語句を選びなさい。\nあなたは英語で手紙を書いたことがありますか。\nHave [ written / ever / a letter / you / in English ]?",
+  "passage": "",
+  "choices": [
+   "written",
+   "a letter",
+   "you",
+   "ever"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】現在完了。正解は「ever」。Have you ever written a letter in English? となる。経験をたずねる疑問文では、Have + 主語のあとに ever を置き、その次に動詞の第3の形 written を続ける。[ ] 内は you → ever → written → a letter → in English と並び、2 番目は ever。",
+  "form": "並べかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の日本文の意味になるように [ ] 内の語句を並べかえたとき、[ ] 内で 4 番目に来る語句を選びなさい。\n昨夜からずっと雨が降り続いています。\nIt [ raining / since / been / has / last night ].",
+  "passage": "",
+  "choices": [
+   "raining",
+   "since",
+   "been",
+   "has"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】現在完了。正解は「since」。It has been raining since last night. となる。「ずっと降り続いている」は has been + -ing 形で表し、「昨夜から」は since last night と続ける。[ ] 内は has → been → raining → since → last night と並び、4 番目は since。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の日本文の意味になるように [ ] 内の語句を並べかえたとき、[ ] 内で 3 番目に来る語句を選びなさい。\nユウトは北海道のおじさんを 3 回訪ねたことがあります。\nYuto [ visited / three times / has / his uncle / in Hokkaido ].",
+  "passage": "",
+  "choices": [
+   "three times",
+   "visited",
+   "his uncle",
+   "in Hokkaido"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】現在完了。正解は「his uncle」。Yuto has visited his uncle in Hokkaido three times. となる。has + 動詞の第3の形 visited のあとに「だれを」にあたる his uncle を置き、場所、回数の順に続ける。[ ] 内は has → visited → his uncle → in Hokkaido → three times と並び、3 番目は his uncle。",
+  "form": "並べかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "現在完了",
+  "unit": "現在完了",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: ( ) has Yuki been in the hospital?\nB: For a week.",
+  "passage": "",
+  "choices": [
+   "How often",
+   "How far",
+   "How many",
+   "How long"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】現在完了。正解は「How long」。答えが For a week. (1 週間) と期間なので、「どのくらいの間」をたずねる How long を使う。How often は頻度、How far は距離をたずねる言い方で、How many はあとに数えるものの語が必要。",
+  "form": "空所補充",
+  "level": "基礎"
+ }
+]

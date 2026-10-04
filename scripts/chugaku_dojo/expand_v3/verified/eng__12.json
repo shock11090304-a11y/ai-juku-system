@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文によると、Mika が最初に心配していた (worried) 理由として最も適切なものはどれですか。",
+  "passage": "次の英文は、中学生の Mika が書いたものです。\n\nLast October, my class sang in the school chorus contest. We chose a song about the sea. At first, our singing was not good. Some students did not come to practice because they wanted to play soccer after school. I was the leader of our class, so I was worried. One day, our music teacher, Ms. Okada, said to me, \"Don't tell them to practice. Show them how fun singing is.\" So I asked Ryo, the best singer in our class, to sing the song alone in front of everyone. His voice was so beautiful that all the students stopped talking. After that, more and more students came to practice. We practiced for thirty minutes every morning for three weeks. On the day of the contest, we did not win first prize. We got second prize. But when we finished singing, my classmates were smiling, and some of them were crying. I learned that working together is more important than winning.",
+  "choices": [
+   "Ms. Okada did not come to the music room after school.",
+   "Some students did not come to practice after school.",
+   "Ryo did not want to sing the song in front of everyone.",
+   "The class could not choose a song for the contest."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】長文読解。正解は「Some students did not come to practice after school.」本文に Some students did not come to practice because they wanted to play soccer after school. I was the leader of our class, so I was worried. とある。Ms. Okada は練習に来なかったのではなく、Mika に助言をした先生なので誤り。",
+  "form": "読解理由",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文中の \"Don't tell them to practice.\" の them が指す人として最も適切なものはどれですか。",
+  "passage": "次の英文は、中学生の Mika が書いたものです。\n\nLast October, my class sang in the school chorus contest. We chose a song about the sea. At first, our singing was not good. Some students did not come to practice because they wanted to play soccer after school. I was the leader of our class, so I was worried. One day, our music teacher, Ms. Okada, said to me, \"Don't tell them to practice. Show them how fun singing is.\" So I asked Ryo, the best singer in our class, to sing the song alone in front of everyone. His voice was so beautiful that all the students stopped talking. After that, more and more students came to practice. We practiced for thirty minutes every morning for three weeks. On the day of the contest, we did not win first prize. We got second prize. But when we finished singing, my classmates were smiling, and some of them were crying. I learned that working together is more important than winning.",
+  "choices": [
+   "the classmates who were crying after singing",
+   "the teachers who listened to the chorus contest",
+   "the students who did not come to practice",
+   "the students who sang well like Ryo"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】長文読解。正解は「the students who did not come to practice」。Ms. Okada の Don't tell them to practice. は、直前の「練習に来ない生徒がいる」という Mika の悩みへの助言なので、them は練習に来なかった生徒たちを指す。Ryo のようにうまく歌える生徒に練習を言う必要はないので誤り。",
+  "form": "読解指示語",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文によると、コンテストに向けた練習について正しいものはどれですか。",
+  "passage": "次の英文は、中学生の Mika が書いたものです。\n\nLast October, my class sang in the school chorus contest. We chose a song about the sea. At first, our singing was not good. Some students did not come to practice because they wanted to play soccer after school. I was the leader of our class, so I was worried. One day, our music teacher, Ms. Okada, said to me, \"Don't tell them to practice. Show them how fun singing is.\" So I asked Ryo, the best singer in our class, to sing the song alone in front of everyone. His voice was so beautiful that all the students stopped talking. After that, more and more students came to practice. We practiced for thirty minutes every morning for three weeks. On the day of the contest, we did not win first prize. We got second prize. But when we finished singing, my classmates were smiling, and some of them were crying. I learned that working together is more important than winning.",
+  "choices": [
+   "They practiced for thirty minutes every morning for two weeks.",
+   "They practiced for thirty minutes every morning for three weeks.",
+   "They practiced for twenty minutes every morning for two weeks.",
+   "They practiced for twenty minutes every morning for three weeks."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】長文読解。正解は「They practiced for thirty minutes every morning for three weeks.」本文に We practiced for thirty minutes every morning for three weeks. とある。二十分や二週間という数は本文に出てこない。",
+  "form": "読解数値",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の最後で Mika が学んだこととして最も適切なものはどれですか。",
+  "passage": "次の英文は、中学生の Mika が書いたものです。\n\nLast October, my class sang in the school chorus contest. We chose a song about the sea. At first, our singing was not good. Some students did not come to practice because they wanted to play soccer after school. I was the leader of our class, so I was worried. One day, our music teacher, Ms. Okada, said to me, \"Don't tell them to practice. Show them how fun singing is.\" So I asked Ryo, the best singer in our class, to sing the song alone in front of everyone. His voice was so beautiful that all the students stopped talking. After that, more and more students came to practice. We practiced for thirty minutes every morning for three weeks. On the day of the contest, we did not win first prize. We got second prize. But when we finished singing, my classmates were smiling, and some of them were crying. I learned that working together is more important than winning.",
+  "choices": [
+   "Singing alone in front of everyone is the best way to win.",
+   "Working together is more important than winning first prize.",
+   "Practicing every morning is harder than playing soccer.",
+   "Choosing a song about the sea is the way to get second prize."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】長文読解。正解は「Working together is more important than winning first prize.」最後の文 I learned that working together is more important than winning. が Mika の学んだこと。クラスは二位だったが、みんなで歌えたことに価値があったという内容。Ryo が一人で歌ったのは練習に来てもらうためで、勝つための方法として述べられていない。",
+  "form": "読解要旨",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "Why did Daiki often think about leaving the band?",
+  "passage": "次の英文は、中学生の Daiki が書いたものです。\n\nI am a member of the brass band at my school, and I play the trumpet. When I joined the band two years ago, I could not play well. The other members were much better than me, so I often thought about leaving the band. One day in June, our band leader, Sora, asked me to practice with her after school. She did not teach me difficult things. She only said, \"Listen to your own sound carefully.\" We practiced together in the music room for an hour every day. Slowly, my sound became clearer. In November, our band played at a concert in the city hall. About three hundred people came to listen. My part was short, only eight bars, but I played it without any mistakes. After the concert, an old man came to me and said, \"Your trumpet sounded warm.\" I will never forget his words. Now I am the band leader, and I practice with the new members after school, just like Sora did.",
+  "choices": [
+   "Sora told him to practice alone in the music room.",
+   "He had to play in front of about three hundred people.",
+   "His part at the concert was only eight bars long.",
+   "The other members played much better than he did."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】長文読解。正解は「The other members played much better than he did.」本文に The other members were much better than me, so I often thought about leaving the band. とある。八小節の短いパートや三百人の観客はコンサートのときの話で、入部したころに辞めたいと思った理由ではない。",
+  "form": "読解理由",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文中の \"I will never forget his words.\" の his words が指す言葉として最も適切なものはどれですか。",
+  "passage": "次の英文は、中学生の Daiki が書いたものです。\n\nI am a member of the brass band at my school, and I play the trumpet. When I joined the band two years ago, I could not play well. The other members were much better than me, so I often thought about leaving the band. One day in June, our band leader, Sora, asked me to practice with her after school. She did not teach me difficult things. She only said, \"Listen to your own sound carefully.\" We practiced together in the music room for an hour every day. Slowly, my sound became clearer. In November, our band played at a concert in the city hall. About three hundred people came to listen. My part was short, only eight bars, but I played it without any mistakes. After the concert, an old man came to me and said, \"Your trumpet sounded warm.\" I will never forget his words. Now I am the band leader, and I practice with the new members after school, just like Sora did.",
+  "choices": [
+   "Listen to your own sound carefully.",
+   "Practice with me today.",
+   "You made no mistakes.",
+   "Your trumpet sounded warm."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】長文読解。正解は「Your trumpet sounded warm.」his words の his は直前の an old man を指すので、コンサートの後におじいさんが言った Your trumpet sounded warm. が答え。Listen to your own sound carefully. は部長の Sora の言葉なので誤り。",
+  "form": "読解指示語",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の内容に合うものを1つ選びなさい。",
+  "passage": "次の英文は、中学生の Daiki が書いたものです。\n\nI am a member of the brass band at my school, and I play the trumpet. When I joined the band two years ago, I could not play well. The other members were much better than me, so I often thought about leaving the band. One day in June, our band leader, Sora, asked me to practice with her after school. She did not teach me difficult things. She only said, \"Listen to your own sound carefully.\" We practiced together in the music room for an hour every day. Slowly, my sound became clearer. In November, our band played at a concert in the city hall. About three hundred people came to listen. My part was short, only eight bars, but I played it without any mistakes. After the concert, an old man came to me and said, \"Your trumpet sounded warm.\" I will never forget his words. Now I am the band leader, and I practice with the new members after school, just like Sora did.",
+  "choices": [
+   "Daiki could play the trumpet well when he joined the band.",
+   "Daiki played the trumpet at a concert in November.",
+   "Sora taught Daiki many difficult things every day.",
+   "About three hundred people played at the concert."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】長文読解。正解は「Daiki played the trumpet at a concert in November.」本文に In November, our band played at a concert in the city hall. とある。三百人は演奏した人数ではなく聞きに来た人数 (came to listen) なので誤り。入部したときは I could not play well とある。",
+  "form": "読解内容一致",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "What does Daiki do now?",
+  "passage": "次の英文は、中学生の Daiki が書いたものです。\n\nI am a member of the brass band at my school, and I play the trumpet. When I joined the band two years ago, I could not play well. The other members were much better than me, so I often thought about leaving the band. One day in June, our band leader, Sora, asked me to practice with her after school. She did not teach me difficult things. She only said, \"Listen to your own sound carefully.\" We practiced together in the music room for an hour every day. Slowly, my sound became clearer. In November, our band played at a concert in the city hall. About three hundred people came to listen. My part was short, only eight bars, but I played it without any mistakes. After the concert, an old man came to me and said, \"Your trumpet sounded warm.\" I will never forget his words. Now I am the band leader, and I practice with the new members after school, just like Sora did.",
+  "choices": [
+   "He is the band leader and practices with the new members.",
+   "He is thinking about leaving the band to help an old man.",
+   "He practices the trumpet alone in the city hall every day.",
+   "He listens to Sora's trumpet in the music room every day."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「He is the band leader and practices with the new members.」最後の文に Now I am the band leader, and I practice with the new members after school とある。Sora は以前の部長で、今は Daiki が部長として新入部員と練習している。",
+  "form": "読解内容一致",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文によると、Haru が小さいころ、祖父が仕事を好きな理由を理解できなかったのはなぜですか。",
+  "passage": "次の英文は、中学生の Haru が書いたものです。\n\nMy grandfather is seventy-five years old. He has a small shop near the station, and he repairs old clocks and watches there. When I was little, I didn't understand why he loved his job. The shop was quiet and dark, and he worked very slowly. Last summer, I stayed at his house for a week and helped him in the shop. One day, a woman brought a clock that stopped twenty years ago. It was her mother's clock. My grandfather opened it and looked at the small parts for a long time. He cleaned each part with a soft brush. It took him three days to repair the clock. When the clock started to move again, the woman cried and said, \"I can hear my mother's time again.\" My grandfather smiled and said to me, \"I don't repair clocks. I bring back people's memories.\" I finally understood his words. Now I want to learn more about his work and spend more time in his quiet shop.",
+  "choices": [
+   "The clocks in the shop were all old and did not move.",
+   "The shop was far from the station, and he worked alone.",
+   "The shop was quiet and dark, and he worked very slowly.",
+   "The grandfather did not talk with Haru in the shop."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】長文読解。正解は「The shop was quiet and dark, and he worked very slowly.」本文に I didn't understand why he loved his job. The shop was quiet and dark, and he worked very slowly. とある。店は near the station にあるので、駅から遠いという内容は誤り。",
+  "form": "読解理由",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "How long did it take Haru's grandfather to repair the woman's clock?",
+  "passage": "次の英文は、中学生の Haru が書いたものです。\n\nMy grandfather is seventy-five years old. He has a small shop near the station, and he repairs old clocks and watches there. When I was little, I didn't understand why he loved his job. The shop was quiet and dark, and he worked very slowly. Last summer, I stayed at his house for a week and helped him in the shop. One day, a woman brought a clock that stopped twenty years ago. It was her mother's clock. My grandfather opened it and looked at the small parts for a long time. He cleaned each part with a soft brush. It took him three days to repair the clock. When the clock started to move again, the woman cried and said, \"I can hear my mother's time again.\" My grandfather smiled and said to me, \"I don't repair clocks. I bring back people's memories.\" I finally understood his words. Now I want to learn more about his work and spend more time in his quiet shop.",
+  "choices": [
+   "Three weeks.",
+   "Twenty days.",
+   "Twenty weeks.",
+   "Three days."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】長文読解。正解は「Three days.」本文に It took him three days to repair the clock. とある。twenty years は時計が止まっていた期間、a week は Haru が祖父の家にいた期間なので、数と単位を取りちがえないこと。",
+  "form": "読解数値",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文中の \"I finally understood his words.\" の his words が指す言葉として最も適切なものはどれですか。",
+  "passage": "次の英文は、中学生の Haru が書いたものです。\n\nMy grandfather is seventy-five years old. He has a small shop near the station, and he repairs old clocks and watches there. When I was little, I didn't understand why he loved his job. The shop was quiet and dark, and he worked very slowly. Last summer, I stayed at his house for a week and helped him in the shop. One day, a woman brought a clock that stopped twenty years ago. It was her mother's clock. My grandfather opened it and looked at the small parts for a long time. He cleaned each part with a soft brush. It took him three days to repair the clock. When the clock started to move again, the woman cried and said, \"I can hear my mother's time again.\" My grandfather smiled and said to me, \"I don't repair clocks. I bring back people's memories.\" I finally understood his words. Now I want to learn more about his work and spend more time in his quiet shop.",
+  "choices": [
+   "I can hear my mother's time again after twenty years.",
+   "I don't repair clocks. I bring back people's memories.",
+   "It took me three days to repair this old clock.",
+   "Stay at my house and help me in the quiet shop for a week."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】長文読解。正解は「I don't repair clocks. I bring back people's memories.」his words の his は祖父を指し、直前で祖父が Haru に言った言葉が答え。I can hear my mother's time again. は時計を持ってきた女性の言葉なので誤り。",
+  "form": "読解指示語",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の最後の Haru の気持ちとして最も適切なものはどれですか。",
+  "passage": "次の英文は、中学生の Haru が書いたものです。\n\nMy grandfather is seventy-five years old. He has a small shop near the station, and he repairs old clocks and watches there. When I was little, I didn't understand why he loved his job. The shop was quiet and dark, and he worked very slowly. Last summer, I stayed at his house for a week and helped him in the shop. One day, a woman brought a clock that stopped twenty years ago. It was her mother's clock. My grandfather opened it and looked at the small parts for a long time. He cleaned each part with a soft brush. It took him three days to repair the clock. When the clock started to move again, the woman cried and said, \"I can hear my mother's time again.\" My grandfather smiled and said to me, \"I don't repair clocks. I bring back people's memories.\" I finally understood his words. Now I want to learn more about his work and spend more time in his quiet shop.",
+  "choices": [
+   "Haru wants to open a new shop near the station with the grandfather.",
+   "Haru thinks the shop is too quiet and dark to work in for a whole week.",
+   "Haru wants to give a new clock to the woman who cried in the shop.",
+   "Haru wants to learn about the work and stay in the quiet shop longer."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】長文読解。正解は「Haru wants to learn about the work and stay in the quiet shop longer.」最後の文に Now I want to learn more about his work and spend more time in his quiet shop. とある。店を静かで暗いと感じていたのは小さいころの話で、祖父の言葉を理解した今は、その店でもっと過ごしたいと気持ちが変わっている。新しい店を開くことや、女性に新しい時計をあげることは本文に書かれていない。",
+  "form": "読解心情",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "How often does Rin go to the home for elderly people?",
+  "passage": "次の英文は、中学生の Rin が書いたものです。\n\nOn the second and fourth Saturday of every month, I go to a home for elderly people in my town with four friends from my class. We started this volunteer work in April. At first, I didn't know what to do there. I just sat next to the elderly people and said nothing. Then Mr. Kimura, a man who is ninety years old, asked me, \"Can you play shogi?\" I said no, so he taught me. He is a very good player and a kind teacher. Now we play shogi together every time I visit. I have never won, but I am getting better. My friends sing songs or read newspapers to the people there. One woman, Ms. Hara, cannot see well, so my friend Yui reads the news to her every time. Last month, the people at the home made rice cakes for us to say thank you. I thought I was helping them, but they also give me a lot. I'm learning many things from them.",
+  "choices": [
+   "Three times a month, on Saturdays.",
+   "Twice a month, on Sundays.",
+   "Twice a month, on Saturdays.",
+   "Three times a month, on Sundays."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】長文読解。正解は「Twice a month, on Saturdays.」本文の On the second and fourth Saturday of every month は「毎月第二・第四土曜日」なので、月に二回。曜日は Saturday で、日曜日ではない。",
+  "form": "読解数値",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "Why does Yui read the news to Ms. Hara?",
+  "passage": "次の英文は、中学生の Rin が書いたものです。\n\nOn the second and fourth Saturday of every month, I go to a home for elderly people in my town with four friends from my class. We started this volunteer work in April. At first, I didn't know what to do there. I just sat next to the elderly people and said nothing. Then Mr. Kimura, a man who is ninety years old, asked me, \"Can you play shogi?\" I said no, so he taught me. He is a very good player and a kind teacher. Now we play shogi together every time I visit. I have never won, but I am getting better. My friends sing songs or read newspapers to the people there. One woman, Ms. Hara, cannot see well, so my friend Yui reads the news to her every time. Last month, the people at the home made rice cakes for us to say thank you. I thought I was helping them, but they also give me a lot. I'm learning many things from them.",
+  "choices": [
+   "Because Ms. Hara cannot hear well.",
+   "Because Ms. Hara cannot sing.",
+   "Because Ms. Hara cannot play shogi.",
+   "Because Ms. Hara cannot see well."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】長文読解。正解は「Because Ms. Hara cannot see well.」本文に One woman, Ms. Hara, cannot see well, so my friend Yui reads the news to her every time. とある。目がよく見えないから新聞を読んであげている。耳が聞こえにくいという内容は本文にない。",
+  "form": "読解理由",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の内容と合っているものはどれですか。",
+  "passage": "次の英文は、中学生の Rin が書いたものです。\n\nOn the second and fourth Saturday of every month, I go to a home for elderly people in my town with four friends from my class. We started this volunteer work in April. At first, I didn't know what to do there. I just sat next to the elderly people and said nothing. Then Mr. Kimura, a man who is ninety years old, asked me, \"Can you play shogi?\" I said no, so he taught me. He is a very good player and a kind teacher. Now we play shogi together every time I visit. I have never won, but I am getting better. My friends sing songs or read newspapers to the people there. One woman, Ms. Hara, cannot see well, so my friend Yui reads the news to her every time. Last month, the people at the home made rice cakes for us to say thank you. I thought I was helping them, but they also give me a lot. I'm learning many things from them.",
+  "choices": [
+   "Mr. Kimura taught Rin how to play shogi at the home.",
+   "Rin started the volunteer work with Mr. Kimura in April.",
+   "Rin has won a shogi game against Mr. Kimura once.",
+   "The people at the home made rice cakes with Rin's friends."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「Mr. Kimura taught Rin how to play shogi at the home.」本文に Can you play shogi? I said no, so he taught me. とある。I have never won とあるので、一度勝ったという内容は誤り。活動を始めたのはクラスの友人四人とで、Mr. Kimura は施設で出会った人。",
+  "form": "読解内容一致",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文中の \"I thought I was helping them, but they also give me a lot.\" で Rin が言いたいこととして最も適切なものはどれですか。",
+  "passage": "次の英文は、中学生の Rin が書いたものです。\n\nOn the second and fourth Saturday of every month, I go to a home for elderly people in my town with four friends from my class. We started this volunteer work in April. At first, I didn't know what to do there. I just sat next to the elderly people and said nothing. Then Mr. Kimura, a man who is ninety years old, asked me, \"Can you play shogi?\" I said no, so he taught me. He is a very good player and a kind teacher. Now we play shogi together every time I visit. I have never won, but I am getting better. My friends sing songs or read newspapers to the people there. One woman, Ms. Hara, cannot see well, so my friend Yui reads the news to her every time. Last month, the people at the home made rice cakes for us to say thank you. I thought I was helping them, but they also give me a lot. I'm learning many things from them.",
+  "choices": [
+   "自分が助けているつもりだったが、施設の人たちは手伝いを必要としていなかった。",
+   "自分が助けているつもりだったが、施設の人たちから多くのことを学んでいる。",
+   "施設の人たちを助けるために、もっと将棋がうまくならなければならない。",
+   "施設の人たちにお礼をするために、自分たちももちを作って持っていきたい。"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】長文読解。正解は「自分が助けているつもりだったが、施設の人たちから多くのことを学んでいる。」直後の文 I'm learning many things from them. がこの文の説明になっている。将棋がうまくなることや、もちを作ることは、この文で言いたいことではない。",
+  "form": "読解要旨",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "Why did the group of people in Kaito's town start to clean the beach?",
+  "passage": "次の英文は、中学生の Kaito が書いたものです。\n\nThere is a long beach near my town. Every summer, sea turtles come to the beach at night and lay their eggs in the sand. Three years ago, a group of people in my town started to clean the beach once a month because a lot of garbage was washed up by the sea. I joined the group last year with my sister. On my first day, we collected forty bags of garbage in two hours. Most of it was plastic: bottles, bags, and small pieces. Our leader, Ms. Tanaka, told us that sea turtles sometimes eat plastic bags because they look like jellyfish, their favorite food. I was shocked. Since then, I have tried to use less plastic in my daily life. This summer, the group found twelve turtle nests on the beach. Three years ago, there were only four. Ms. Tanaka said, \"The beach is getting cleaner, and the turtles know it.\" I believe small actions by many people can change the sea.",
+  "choices": [
+   "A lot of garbage was washed up on the beach by the sea.",
+   "Ms. Tanaka wanted to find turtle nests on the beach.",
+   "Sea turtles stopped coming to the beach to lay their eggs.",
+   "People in the town wanted to swim at the beach in summer."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「A lot of garbage was washed up on the beach by the sea.」本文に started to clean the beach once a month because a lot of garbage was washed up by the sea. とある。海がめが来なくなったという内容は本文にない。",
+  "form": "読解理由",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文によると、海がめがプラスチックの袋を食べてしまうことがある理由として最も適切なものはどれですか。",
+  "passage": "次の英文は、中学生の Kaito が書いたものです。\n\nThere is a long beach near my town. Every summer, sea turtles come to the beach at night and lay their eggs in the sand. Three years ago, a group of people in my town started to clean the beach once a month because a lot of garbage was washed up by the sea. I joined the group last year with my sister. On my first day, we collected forty bags of garbage in two hours. Most of it was plastic: bottles, bags, and small pieces. Our leader, Ms. Tanaka, told us that sea turtles sometimes eat plastic bags because they look like jellyfish, their favorite food. I was shocked. Since then, I have tried to use less plastic in my daily life. This summer, the group found twelve turtle nests on the beach. Three years ago, there were only four. Ms. Tanaka said, \"The beach is getting cleaner, and the turtles know it.\" I believe small actions by many people can change the sea.",
+  "choices": [
+   "Plastic bags look like jellyfish, their favorite food.",
+   "Plastic bags are washed up near the nests of the turtles.",
+   "Plastic bags smell like the small fish in the sea.",
+   "Plastic bags are softer than the sand on the beach."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「Plastic bags look like jellyfish, their favorite food.」本文に sea turtles sometimes eat plastic bags because they look like jellyfish, their favorite food. とある。好物のクラゲに見えるから食べてしまう。やわらかさや匂いの話は本文にない。",
+  "form": "読解理由",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の内容として正しいものはどれですか。",
+  "passage": "次の英文は、中学生の Kaito が書いたものです。\n\nThere is a long beach near my town. Every summer, sea turtles come to the beach at night and lay their eggs in the sand. Three years ago, a group of people in my town started to clean the beach once a month because a lot of garbage was washed up by the sea. I joined the group last year with my sister. On my first day, we collected forty bags of garbage in two hours. Most of it was plastic: bottles, bags, and small pieces. Our leader, Ms. Tanaka, told us that sea turtles sometimes eat plastic bags because they look like jellyfish, their favorite food. I was shocked. Since then, I have tried to use less plastic in my daily life. This summer, the group found twelve turtle nests on the beach. Three years ago, there were only four. Ms. Tanaka said, \"The beach is getting cleaner, and the turtles know it.\" I believe small actions by many people can change the sea.",
+  "choices": [
+   "The group found four turtle nests on the beach this summer.",
+   "The group collected twelve bags of garbage on Kaito's first day.",
+   "The group found twelve turtle nests on the beach this summer.",
+   "The group collected four bags of garbage on Kaito's first day."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】長文読解。正解は「The group found twelve turtle nests on the beach this summer.」本文に This summer, the group found twelve turtle nests on the beach. とある。四つは三年前の巣の数、四十は Kaito の初日に集めたごみの袋の数なので、数と内容の組み合わせを取りちがえないこと。",
+  "form": "読解内容一致",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文の最後で Kaito が述べている考えとして最も適切なものはどれですか。",
+  "passage": "次の英文は、中学生の Kaito が書いたものです。\n\nThere is a long beach near my town. Every summer, sea turtles come to the beach at night and lay their eggs in the sand. Three years ago, a group of people in my town started to clean the beach once a month because a lot of garbage was washed up by the sea. I joined the group last year with my sister. On my first day, we collected forty bags of garbage in two hours. Most of it was plastic: bottles, bags, and small pieces. Our leader, Ms. Tanaka, told us that sea turtles sometimes eat plastic bags because they look like jellyfish, their favorite food. I was shocked. Since then, I have tried to use less plastic in my daily life. This summer, the group found twelve turtle nests on the beach. Three years ago, there were only four. Ms. Tanaka said, \"The beach is getting cleaner, and the turtles know it.\" I believe small actions by many people can change the sea.",
+  "choices": [
+   "海岸の掃除は月に一度では少なすぎて意味がない。",
+   "海がめを守るには海で泳ぐのをやめなければならない。",
+   "多くの人の小さな行動が海を変えることができる。",
+   "海を変えるには田中さんのような指導者が必要だ。"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】長文読解。正解は「多くの人の小さな行動が海を変えることができる。」最後の文 I believe small actions by many people can change the sea. が Kaito の考え。月に一度の掃除で巣の数が四つから十二に増えたと書かれているので、月に一度では意味がないという内容は誤り。",
+  "form": "読解要旨",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "Why couldn't Riku and Lucas talk much on the first day?",
+  "passage": "次の英文は、中学生の Riku が書いたものです。\n\nLast spring, a boy from Brazil stayed with my family for three weeks. His name was Lucas, and he was fifteen years old, the same age as me. On the first day, we could not talk much. He didn't speak Japanese, and my English was poor. At dinner, my mother asked him what he wanted to eat, but he didn't understand her. Then I had an idea. I got a notebook and drew pictures of rice, fish, and noodles. He pointed at the noodles and laughed. From that day, we used the notebook every day. We drew pictures, wrote simple English words, and taught each other our languages. He taught me how to say \"thank you\" in Portuguese, and I taught him how to write his name in katakana. On his last day, he gave me the notebook. All the pages were full of our pictures and words. Now we send e-mails to each other once a week. His Japanese is getting better, and my English is, too. I learned that the fear of making mistakes is the biggest wall between people.",
+  "choices": [
+   "Lucas was fifteen years old, and Riku was older than him.",
+   "Riku did not have a notebook to draw pictures in.",
+   "Lucas did not like the dinner that Riku's mother cooked.",
+   "Lucas didn't speak Japanese, and Riku's English was poor."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】長文読解。正解は「Lucas didn't speak Japanese, and Riku's English was poor.」本文に He didn't speak Japanese, and my English was poor. とある。二人は the same age as me で同じ年なので、Riku の方が年上という内容は誤り。",
+  "form": "読解理由",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "本文中の \"Then I had an idea.\" の idea の内容として最も適切なものはどれですか。",
+  "passage": "次の英文は、中学生の Riku が書いたものです。\n\nLast spring, a boy from Brazil stayed with my family for three weeks. His name was Lucas, and he was fifteen years old, the same age as me. On the first day, we could not talk much. He didn't speak Japanese, and my English was poor. At dinner, my mother asked him what he wanted to eat, but he didn't understand her. Then I had an idea. I got a notebook and drew pictures of rice, fish, and noodles. He pointed at the noodles and laughed. From that day, we used the notebook every day. We drew pictures, wrote simple English words, and taught each other our languages. He taught me how to say \"thank you\" in Portuguese, and I taught him how to write his name in katakana. On his last day, he gave me the notebook. All the pages were full of our pictures and words. Now we send e-mails to each other once a week. His Japanese is getting better, and my English is, too. I learned that the fear of making mistakes is the biggest wall between people.",
+  "choices": [
+   "ノートに食べ物の絵をかいて、ルーカスに見せること。",
+   "母に英語で料理の名前を言って聞かせてもらうこと。",
+   "ルーカスにポルトガル語で食べたいものを言ってもらうこと。",
+   "ルーカスの名前をカタカナで紙に書いて見せること。"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「ノートに食べ物の絵をかいて、ルーカスに見せること。」idea の直後に I got a notebook and drew pictures of rice, fish, and noodles. とあり、これが思いついたこと。名前をカタカナで書いたのはその後の毎日の交流の中でのことで、このときの idea ではない。",
+  "form": "読解指示語",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "次のうち、本文の内容と合うものはどれですか。",
+  "passage": "次の英文は、中学生の Riku が書いたものです。\n\nLast spring, a boy from Brazil stayed with my family for three weeks. His name was Lucas, and he was fifteen years old, the same age as me. On the first day, we could not talk much. He didn't speak Japanese, and my English was poor. At dinner, my mother asked him what he wanted to eat, but he didn't understand her. Then I had an idea. I got a notebook and drew pictures of rice, fish, and noodles. He pointed at the noodles and laughed. From that day, we used the notebook every day. We drew pictures, wrote simple English words, and taught each other our languages. He taught me how to say \"thank you\" in Portuguese, and I taught him how to write his name in katakana. On his last day, he gave me the notebook. All the pages were full of our pictures and words. Now we send e-mails to each other once a week. His Japanese is getting better, and my English is, too. I learned that the fear of making mistakes is the biggest wall between people.",
+  "choices": [
+   "Riku gave Lucas a notebook on the first day.",
+   "Lucas taught Riku how to write his name in katakana.",
+   "Lucas gave the notebook to Riku on his last day.",
+   "Riku and Lucas send e-mails to each other every day."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】長文読解。正解は「Lucas gave the notebook to Riku on his last day.」本文に On his last day, he gave me the notebook. とある。カタカナを教えたのは Riku の方で、メールは once a week なので毎日という内容も誤り。",
+  "form": "読解内容一致",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "長文読解",
+  "unit": "長文読解",
+  "stem": "What did Riku learn from the three weeks with Lucas?",
+  "passage": "次の英文は、中学生の Riku が書いたものです。\n\nLast spring, a boy from Brazil stayed with my family for three weeks. His name was Lucas, and he was fifteen years old, the same age as me. On the first day, we could not talk much. He didn't speak Japanese, and my English was poor. At dinner, my mother asked him what he wanted to eat, but he didn't understand her. Then I had an idea. I got a notebook and drew pictures of rice, fish, and noodles. He pointed at the noodles and laughed. From that day, we used the notebook every day. We drew pictures, wrote simple English words, and taught each other our languages. He taught me how to say \"thank you\" in Portuguese, and I taught him how to write his name in katakana. On his last day, he gave me the notebook. All the pages were full of our pictures and words. Now we send e-mails to each other once a week. His Japanese is getting better, and my English is, too. I learned that the fear of making mistakes is the biggest wall between people.",
+  "choices": [
+   "The fear of making mistakes is the biggest wall between people.",
+   "Drawing pictures is more useful than learning English words.",
+   "Learning a language takes at least three weeks of practice.",
+   "People from Brazil can learn Japanese faster than other people."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】長文読解。正解は「The fear of making mistakes is the biggest wall between people.」最後の文 I learned that the fear of making mistakes is the biggest wall between people. とある。絵と英語の言葉のどちらが役に立つかという話は本文にない。",
+  "form": "読解要旨",
+  "level": "やや応用"
+ }
+]

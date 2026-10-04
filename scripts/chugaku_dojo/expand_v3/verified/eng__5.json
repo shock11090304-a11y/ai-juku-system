@@ -1,0 +1,434 @@
+[
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nThe students stopped ( ) and became quiet when Ms. Lee came into the classroom.",
+  "passage": "",
+  "choices": [
+   "to talk",
+   "talking",
+   "talk",
+   "talked"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「talking」。stop は「〜するのをやめる」の意味では動名詞 (-ing 形) を目的語にとるので stopped talking。stop to talk だと「話すために立ち止まる」という意味になり、あとの became quiet (静かになった) と合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nWe are planning ( ) a welcome party for Mr. Brown next week.",
+  "passage": "",
+  "choices": [
+   "to hold",
+   "holding",
+   "hold",
+   "held"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「to hold」。plan は「〜する計画だ」の意味で to +原形を目的語にとる (plan to 〜)。planning holding のように -ing 形を続けることはできない。hold a party で「パーティーを開く」。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )内の語を適切な形にしたものを選びなさい。\nLast Saturday night, Daiki and I enjoyed ( watch ) the stars from the hill.",
+  "passage": "",
+  "choices": [
+   "to watch",
+   "watch",
+   "watched",
+   "watching"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞・動名詞。正解は「watching」。enjoy は動名詞 (-ing 形) だけを目的語にとり、enjoy to 〜 とは言わない。enjoyed watching the stars で「星を見て楽しんだ」。",
+  "form": "語形変化",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: Did you finish ( ) your book report?\nB: Yes. I finished it last night.",
+  "passage": "",
+  "choices": [
+   "writing",
+   "to write",
+   "wrote",
+   "write"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「writing」。finish は動名詞 (-ing 形) を目的語にとるので finish writing で「書き終える」。finish to write とは言わない。wrote や write では「書くこと」という意味にならない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )内の語を適切な形にしたものを選びなさい。\nKeep ( practice ) hard, and your English will get better.",
+  "passage": "",
+  "choices": [
+   "to practice",
+   "practice",
+   "practiced",
+   "practicing"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞・動名詞。正解は「practicing」。keep -ing で「〜し続ける」。keep のあとに to +原形や原形をそのまま続けることはできない。Keep practicing hard で「一生けんめい練習し続けなさい」。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nHaru is learning ( ) Japanese food from his grandmother.",
+  "passage": "",
+  "choices": [
+   "cooking",
+   "to cook",
+   "cook",
+   "cooked"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「to cook」。learn は「〜することを学ぶ」の意味で to +原形を目的語にとる (learn to 〜)。learn to cook Japanese food で「日本食の作り方を学ぶ」。learn は enjoy や finish のように動名詞 (-ing 形) を目的語にとる動詞ではないので cooking は入らず、cook や cooked をそのまま続けることもできない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nYou don't need ( ) a ticket. This museum is free today.",
+  "passage": "",
+  "choices": [
+   "buying",
+   "buy",
+   "to buy",
+   "bought"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞・動名詞。正解は「to buy」。need は「〜する必要がある」の意味で to +原形を目的語にとり、don't need to 〜 で「〜する必要はない」。need buying や need buy とは言わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nI forgot ( ) the door this morning, so anyone could go into my house.",
+  "passage": "",
+  "choices": [
+   "locking",
+   "to lock",
+   "lock",
+   "locked"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「to lock」。forget to 〜 は「〜するのを忘れる (まだしていない)」。forget -ing は「〜したことを忘れる」なので、forgot locking だと「鍵をかけたことを忘れた」になり、「だれでも家に入れた」という文脈と合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の対話の( )に入る最も適切なものを選びなさい。\nA: What are you going to do after dinner?\nB: ( ) I have to hand it in tomorrow.",
+  "passage": "",
+  "choices": [
+   "I enjoy to write my science report.",
+   "I decided writing my science report.",
+   "I hope to finish my science report.",
+   "I want finishing my science report."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞・動名詞。正解は「I hope to finish my science report.」hope は to +原形を目的語にとる (hope to 〜「〜したいと思う」)。enjoy は -ing 形だけ、decide と want は to +原形だけを目的語にとるので、enjoy to write・decided writing・want finishing はどれも誤り。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )内の語を適切な形にしたものを選びなさい。\nDaiki learned a lot about Japanese history by ( visit ) old temples in Nara.",
+  "passage": "",
+  "choices": [
+   "visiting",
+   "to visit",
+   "visit",
+   "visited"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「visiting」。by 〜ing で「〜することによって」。by は前置詞なので、あとの動詞は動名詞 (-ing 形) にする。by to visit や by visited とは言わない。",
+  "form": "語形変化",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nAfter Rina finished dinner, she watched TV.\n= After ( ) dinner, Rina watched TV.",
+  "passage": "",
+  "choices": [
+   "to finish",
+   "finished",
+   "finish",
+   "finishing"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞・動名詞。正解は「finishing」。after は前置詞としても使えるので、「〜したあとで」は after +動名詞 (-ing 形) で表せる。After finishing dinner = After she finished dinner。after のあとに finished や to finish をそのまま置くことはできない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nCould you tell me when to leave for the station?",
+  "passage": "",
+  "choices": [
+   "駅へどのように行けばよいか教えてくれませんか。",
+   "駅のどこで待てばよいのか教えてくれませんか。",
+   "駅へ行って何をすればよいか教えてくれませんか。",
+   "駅へいつ出発すればよいか教えてくれませんか。"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞・動名詞。正解は「駅へいつ出発すればよいか教えてくれませんか。」when to 〜 は「いつ〜すればよいか」。how to 〜 なら「どのように」、where to 〜 なら「どこで」、what to 〜 なら「何を」の意味になるので、when を正しく訳しているものを選ぶ。leave for 〜 は「〜へ向けて出発する」。",
+  "form": "英文和訳",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nTo get up early is good for your health.\n= ( ) up early is good for your health.",
+  "passage": "",
+  "choices": [
+   "Getting",
+   "Get",
+   "Gets",
+   "Got"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「Getting」。「早く起きること」という主語は、To get up early のほかに動名詞 Getting up early でも表せる。Get や Got のような動詞の形はそのままでは主語になれない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nMika said to me, \"Please carry this box.\"\n= Mika asked me ( ) this box.",
+  "passage": "",
+  "choices": [
+   "carrying",
+   "to carry",
+   "carry",
+   "carried"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「to carry」。「〜してください」と人にたのむ内容は ask +人+ to 〜 で表す。asked me to carry this box で「私にこの箱を運ぶようにたのんだ」。ask のあとの人に続くのは to +原形で、carrying や carried は使えない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nThe water was so cold that we couldn't swim in it.\n= The water was too cold ( ) in.",
+  "passage": "",
+  "choices": [
+   "for us swimming",
+   "to us to swim",
+   "for us to swim",
+   "to us swimming"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞・動名詞。正解は「for us to swim」。so 〜 that +人+ can't … は too 〜 for +人+ to … で書きかえられる。「だれにとって」は for で表し、to のあとは原形。too cold for us to swim in で「私たちが泳ぐには冷たすぎる」。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の2文がほぼ同じ意味になるように、( )に入る最も適切なものを選びなさい。\nThis shirt is so cheap that I can buy two.\n= This shirt is cheap ( ) me to buy two.",
+  "passage": "",
+  "choices": [
+   "enough to",
+   "too to",
+   "too for",
+   "enough for"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞・動名詞。正解は「enough for」。so 〜 that +人+ can … は 〜 enough for +人+ to … で書きかえられる。「だれにとって」は for で表す。too だと「〜すぎて…できない」の意味になり、「2枚買える」という内容と合わない。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の英文の意味として最も適切なものを選びなさい。\nMy brother is old enough to drive a car.",
+  "passage": "",
+  "choices": [
+   "兄はもう車を運転できる年齢になっている。",
+   "兄は年を取りすぎていて車を運転できない。",
+   "兄は若すぎて車を運転することができない。",
+   "兄は年を取っているのに車を運転できない。"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「兄はもう車を運転できる年齢になっている。」old enough to 〜 は「〜できるほど十分に年を取っている」、つまり「〜できる年齢だ」という意味。too old to 〜 (年を取りすぎていて〜できない) と混同しないこと。",
+  "form": "英文和訳",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の日本文の意味になるように[ ]内の語(句)を並べかえたとき、文の中で3番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\n「リョウは眠すぎて宿題を終えられませんでした。」\n[ finish / was / too / Ryo / sleepy / to / his homework ]",
+  "passage": "",
+  "choices": [
+   "too",
+   "to",
+   "finish",
+   "sleepy"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞・動名詞。正解は「too」。「〜すぎて…できない」は too 〜 to … で表す。正しい文は Ryo was too sleepy to finish his homework. で、文の中で 3 番目に来る語は too。too は形容詞 sleepy の前に置く。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の日本文の意味になるように[ ]内の語(句)を並べかえたとき、文の中で4番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\n「私たちがお互いを理解することは大切です。」\n[ for / to / us / important / is / it / understand / each other ]",
+  "passage": "",
+  "choices": [
+   "us",
+   "to",
+   "for",
+   "important"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞・動名詞。正解は「for」。「(人) が〜することは…だ」は It is … for +人+ to 〜。正しい文は It is important for us to understand each other. で、文の中で 4 番目に来る語は for。for us は to understand の前に置く。",
+  "form": "並べかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の日本文の意味になるように[ ]内の語(句)を並べかえたとき、文の中で3番目に来る語を選びなさい。(文頭に来る語も小文字で示しています。)\n「ソラは私に明日お弁当を持ってくるように言いました。」\n[ bring / Sora / to / me / told / my lunch / tomorrow ]",
+  "passage": "",
+  "choices": [
+   "told",
+   "me",
+   "bring",
+   "to"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「me」。「(人) に〜するように言う」は tell +人+ to 〜。正しい文は Sora told me to bring my lunch tomorrow. で、文の中で 3 番目に来る語は me。told のすぐあとに人を置き、その次に to bring を続ける。",
+  "form": "並べかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の英文のうち、誤りのないものを1つ選びなさい。",
+  "passage": "",
+  "choices": [
+   "I'm interested in to learn Chinese.",
+   "Mika wants me helping her with this.",
+   "Would you mind turning down the music?",
+   "He gave up to play the guitar last year."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞・動名詞。正解は「Would you mind turning down the music?」mind は動名詞 (-ing 形) を目的語にとるので正しい。interested in のような前置詞のあとは -ing 形 (in learning)、want +人+ のあとは to +原形 (wants me to help)、give up のあとは -ing 形 (gave up playing) なので、ほかの文は誤り。",
+  "form": "正誤",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の日本文の意味を表す英文として最も適切なものを選びなさい。\nこの川で泳ぐことは危険です。",
+  "passage": "",
+  "choices": [
+   "Swim in this river is dangerous.",
+   "Swimming in this river is dangerous.",
+   "Swimming in this river are dangerous.",
+   "Swim in this river are dangerous."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞・動名詞。正解は「Swimming in this river is dangerous.」「泳ぐこと」は動名詞 Swimming で表して主語にする。動名詞が主語のときは単数として扱うので、動詞は is。Swim のままでは主語になれず、are も誤り。",
+  "form": "和文英訳",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nRyo was running in the park. He stopped ( ) some water because he was very thirsty.",
+  "passage": "",
+  "choices": [
+   "drinking",
+   "drink",
+   "to drink",
+   "drank"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞・動名詞。正解は「to drink」。stop to 〜 は「〜するために立ち止まる」。走っていたリョウが「のどがかわいていたので水を飲むために止まった」という流れになる。stopped drinking だと「水を飲むのをやめた」になり、because he was very thirsty と合わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "eng",
+  "filter": "不定詞・動名詞",
+  "unit": "不定詞・動名詞",
+  "stem": "次の文の( )に入る最も適切なものを選びなさい。\nHow about ( ) to the aquarium this Saturday?",
+  "passage": "",
+  "choices": [
+   "to go",
+   "went",
+   "go",
+   "going"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞・動名詞。正解は「going」。How about 〜ing? で「〜するのはどうですか」。about は前置詞なので、あとに動詞を続けるときは動名詞 (-ing 形) にする。前置詞のあとに to +原形は置けない。",
+  "form": "空所補充",
+  "level": "基礎"
+ }
+]
