@@ -23,7 +23,7 @@ python3 scripts/chugaku_dojo/expand_v3/check_expand_v3.py       # CI と同じ�
 # ── ここから本番 (塾長の端末・承認つき) ──
 railway run -s Postgres python3 scripts/chugaku_dojo/expand_v3/insert.py            # dry-run
 railway run -s Postgres python3 scripts/chugaku_dojo/expand_v3/insert.py --commit   # 本番投入 (冪等)
-python3 scripts/chugaku_dojo/expand_v3/post_check.py --before                       # (任意) 投入前: 本番の既存がリポジトリの見積もりと合うか
+python3 scripts/chugaku_dojo/expand_v3/post_check.py --before                       # ★必須: 投入前に本番の既存が見積もりと合うか (ずれたら insert しない)
 python3 scripts/chugaku_dojo/expand_v3/post_check.py                                # 投入後: 公開 API で配信を確認
 ```
 rollback: `DELETE FROM exam_questions WHERE model = 'chugaku-koukou-expand-v3';`
@@ -58,10 +58,21 @@ rollback: `DELETE FROM exam_questions WHERE model = 'chugaku-koukou-expand-v3';`
   今は `_v3lib._strip_one` がかっこの対応を数える。`build.py` のゲートは「作り直しても解説が変わらない」と
   「正解の後ろ半分が頭に重複していない」を見る。`check_expand_v3.py` は rows.json の解説・本文・選択肢の並びが verified と完全一致かも見る
   (verified を直して build.py を回し忘れると CI が落ちる)。
-- 道場にしかない英語カード: **過去形** は『過去形』を含む行が当たる (既存 9 行 = 時制 5・助動詞 2・be動詞 1・現在完了 1、v3 で時制 5 行が加わり 14 行)。
-  unit が「過去形」で始まる小問は 0 なので unitExact は効かず、これらの単元の小問が混ざって出る。
-  **未来形** は『未来形』を含む行が 0 → bank は単元で絞らず英語の新しい順 50 行を返す (全単元の混在)。どちらも v3 以前からの仕様で、
-  専用の問題を作るかカードを外すかは塾長の判断 (残件)。
+- 道場にしかない英語カード (不定詞の用法・過去形・未来形) にも専用の問題がある: 不定詞の用法 = `../futeishi/` の 30 問、
+  過去形・未来形 = `seed-data/chu2_grammar_v1.json` の 15 問ずつ (2026-07-09 `scripts/chu2_grammar/import_chugaku.py` で直 INSERT。
+  同じ seed の助動詞 15 問は『助動詞』カードに出る)。この 9 行は行ラベル (format_type) が「be動詞・一般動詞」のまま入っている
+  (取込時に既存行から写した) が、画面の絞り込み (dojo-drill.html の unitExact) と弱点の記録 (deriveUnit → q.unit) は小問の unit で
+  行うので生徒には出ない。唯一の実害は、この 9 行が『be動詞・一般動詞』カードの LIKE 予算を食うこと (v3 後 19/50。
+  build.py のゲートは行ラベルも数えるので見積もりに入っている)。
+  seed の選択肢順は 9bb60b2 (2026-08-02) で均し直してあり、本番の行とは 37 問で並びが違う (stem・選択肢の集合・正解テキスト・解説は同じ)。
+  `existing_questions` の chu2 は件数・sig・LIKE 見積もり専用で、choices の並び / answer_index を本番と照合してはいけない。
+- ★**本番に直 INSERT した問題の生成元は `_v3lib.existing_questions` に全部そろえる。** 2026-10-04 に `insert.py` の dry-run
+  (本番の既存 eng=387 ≠ 見積もり 342) と `post_check.py --before` (助動詞カード 39 問 ≠ 24) で、chu2 の 45 問が見積もりから
+  漏れていたと分かった。投入前の `--before` は必須。ずれがあればその source を足してから投入する。
+  既知の残り: 本番の行数 327 に対して見積もりは 326 行 (設問数は 5 教科とも一致)。設問を増やさない行が 1 行ある。所在は
+  オフラインでは特定できないが、どの単元も上限 (読解 32 / 他 50) に遠い (最大 20/50) ので投入の可否には影響しない。
+  調べるなら読むだけのクエリ: `SELECT model, part_key, COUNT(*) FROM exam_questions WHERE exam_id='chugaku' AND eiken_grade='koukou' GROUP BY 1,2 ORDER BY 1,2;`
+  (期待: chugaku-koukou-verified 125 / chugaku-koukou-expand-v1 45 / chugaku-{eng,kokugo,rika,shakai}-expand-v1 40,26,42,33 / chugaku-koukou-futeishi-v1 6 / chu2-grammar-verified 9)。
 - 正解位置は単元ごとに md5(stem) 順で 0,1,2,3 (均等・保存順に周期を作らない)。解説は正解テキスト参照なので入れ替えても壊れない。
 - 設問の同一判定は (設問文, 選択肢) の組 (`_v3lib.sig`)。lint / build / insert / post_check で同じ規則。
 - 盲検の答えは **添字でなく選択肢の本文**で受け取る ([[blind-solve-index-offbyone-2026-09-23]])。レビューの指し示しも stem。

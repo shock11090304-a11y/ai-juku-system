@@ -18,15 +18,18 @@
   読解カードの取得行数 32 をゲート・post_check に反映 / check_expand_v3 は rows.json の解説・本文・並びまで照合。
 - 変更後の差分を 3 観点で再レビュー (blocker 0)。insert.py に安全装置 (先に CI ゲート・idle_in_transaction/lock の timeout・
   同時実行の lock・dry-run で予算の見込み)、check_expand_v3 に subject・設問文の完全一致・id 重複、post_check に --before と再試行。
+- 投入前の基準確認 (`post_check.py --before` + dry-run) で、本番の英語が見積もりより 45 問多いと判明 (助動詞カード 39 ≠ 24)。
+  2026-07-09 の中2英語ドリル (seed-data/chu2_grammar_v1.json: 過去形 15・未来形 15・助動詞 15) が見積もりに無かった。
+  `_v3lib.existing_questions` に足して 5 教科とも本番と一致。以前の「過去形・未来形は専用問題なし」は誤りで訂正済み。
 
 ## 残っていること
 1. **本番投入 (塾長の端末で)**:
    ```
    cd ~/Documents/GitHub/ai-juku-system
-   python3 scripts/chugaku_dojo/expand_v3/post_check.py --before                       # (任意) 投入前の基準確認
+   python3 scripts/chugaku_dojo/expand_v3/post_check.py --before                       # ★必須: 投入前の基準確認 (2026-10-04 実施済み: 助動詞のみ 39≠24 → 見積もりを直して解消)
    railway run -s Postgres python3 scripts/chugaku_dojo/expand_v3/insert.py            # dry-run (書かない・単元名 LIKE の見込みも出る)
    railway run -s Postgres python3 scripts/chugaku_dojo/expand_v3/insert.py --commit   # 本番投入
    python3 scripts/chugaku_dojo/expand_v3/post_check.py                                # 公開 API で配信を確認
    ```
    戻し方: `DELETE FROM exam_questions WHERE model = 'chugaku-koukou-expand-v3';`
-2. 英語の「過去形」「未来形」カードは専用問題が無い (v3 以前から)。作るかカードを外すかは塾長の判断 (README 参照)。
+2. 本番の行数 327 と見積もり 326 の差 1 行の所在 (設問数は一致・上限に影響なし)。読むだけのクエリは README 参照。

@@ -16,6 +16,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DOJO = os.path.dirname(HERE)                       # scripts/chugaku_dojo
 SCRIPTS = os.path.dirname(DOJO)                    # scripts/
 UNITS_PATH = os.path.join(DOJO, "units.json")
+REPO = os.path.dirname(SCRIPTS)                    # リポジトリのルート
+CHU2_SEED = os.path.join(REPO, "seed-data", "chu2_grammar_v1.json")   # 2026-07-09 中2英語ドリル 45 問 (scripts/chu2_grammar/import_chugaku.py で直 INSERT 済み)
+CHU2_GROUP_UNIT = {"past": "過去形", "future": "未来形", "aux": "助動詞"}   # import_chugaku.py の GROUP2UNIT と同じ
+CHU2_FORMAT_TYPE = "be動詞・一般動詞"   # import_chugaku.py が既存行から写した行ラベル (助動詞カードの 3 行 19521〜19523 で 2026-10-04 に確認。小問の unit は上の 3 つ)
+#   ★seed の choices/answer_index は本番投入 (d5d99db) 後の 9bb60b2 (2026-08-02) で 45 問中 37 問が並べ替えられていて、本番の行とは並びが違う。
+#     本番と一致するのは stem・選択肢の集合 (sig)・正解テキスト・解説・unit だけ。既存行の answer を本番と照合する用途には使わない。
 
 PARTS = ["eng", "math", "kokugo", "rika", "shakai"]
 TARGET_ADD = 24          # 1単元に足す問題数 (24 → 48 問 = 8問セットが 6 回ぶん)
@@ -28,9 +34,10 @@ BANK_LIMIT = 50                           # bank API が返す最大行数 (crea
 READING_FETCH = 32                        # 読解カード (agg 4) は画面が limit=min(50, agg*8)=32 で取る (dojo-drill.html)
 
 # 道場にしかない英語の単元 (units.json に無いが本番に実在 / カードがある)。
-#   不定詞の用法 = futeishi/ の30問。過去形 = 専用問題なし (『過去形』を含む行が LIKE で当たる: 既存 9 行
-#   (時制・助動詞・be動詞・現在完了) + v3 の時制 5 行。unit が「過去形」で始まる小問は 0 → それらが混ざって出る)。
-#   未来形 = 『未来形』を含む行が 0 → bank は単元で絞らず英語の新しい順 50 行を返す (全単元の混在)。
+#   不定詞の用法 = futeishi/ の 30 問。過去形・未来形 = seed-data/chu2_grammar_v1.json の 15 問ずつ
+#   (unit は seed の unit 欄 (時制/助動詞) ではなく group から付ける: past→過去形, future→未来形, aux→助動詞 = CHU2_GROUP_UNIT)。
+#   ★2026-10-04 まで「過去形・未来形は専用問題なし」と書いていたが誤り。insert.py の dry-run (本番 eng=387 ≠ 見積もり 342) と
+#     post_check --before (助動詞カード 39 ≠ 24) で分かった。
 DOJO_ONLY_ENG = ["不定詞の用法", "過去形", "未来形"]
 
 
@@ -135,8 +142,10 @@ def rebuild_expl(filt, correct, expl):
 
 def existing_questions():
     """本番に入っている (= リポジトリ側の生成元) 全問題を part ごとに返す。
-    verified/ (v1) + add/ (数学 expand) + add2/ (英国理社 expand) + futeishi/items.py (不定詞の用法)。
-    返り値: {part: [ {filter, stem, choices, answer_index, explanation, passage, _src} ]}"""
+    verified/ (v1) + add/ (数学 expand) + add2/ (英国理社 expand) + futeishi/items.py (不定詞の用法)
+    + seed-data/chu2_grammar_v1.json (中2英語ドリル 45 問: 過去形・未来形・助動詞)。
+    ★本番に直 INSERT した問題の生成元は、ここに全部そろえること (post_check の期待値と bank の LIKE 予算の見積もりの土台)。
+    返り値: {part: [ {filter, stem, choices, answer_index, explanation, passage, _src, _format_type?} ]}"""
     out = {p: [] for p in PARTS}
     for d in ("verified", "add", "add2"):
         for fp in sorted(glob.glob(os.path.join(DOJO, d, "*.json"))):
@@ -166,6 +175,15 @@ def existing_questions():
                                    "explanation": it["expl"], "passage": "", "_src": "futeishi/items.py"})
         finally:
             sys.path.pop(0)
+    # 中2英語ドリル (import_chugaku.py と同じ組み立て: unit は group から、解説に接頭辞、行ラベルは写した既存行のもの)
+    if not os.path.exists(CHU2_SEED):   # 黙って飛ばすと見積もりが本番より 45 問少なくなり、post_check の期待値がまたずれる
+        raise FileNotFoundError(f"{CHU2_SEED} が無い (seed-data を動かしたなら CHU2_SEED を直す。見積もりから chu2 の 45 問が消える)")
+    if True:
+        for r in json.load(open(CHU2_SEED, encoding="utf-8")):
+            unit = CHU2_GROUP_UNIT[r["group"]]; ans = r["choices"][r["answer"]]
+            out["eng"].append({"filter": unit, "unit": unit, "stem": r["stem"], "choices": list(r["choices"]), "answer_index": r["answer"],
+                               "explanation": f"【単元】{unit}。正解は「{ans}」。{r['explanation']}", "passage": "",
+                               "_src": "seed-data/chu2_grammar_v1.json", "_format_type": CHU2_FORMAT_TYPE})
     return out
 
 
@@ -184,8 +202,9 @@ def existing_rows_text(part):
             for pg, g in groups.items():
                 rows.append(json.dumps({"passage": pg, "format_type": filt, "questions": g}, ensure_ascii=False))
         else:
+            ft = qs[0].get("_format_type") or filt   # 行ラベルが小問の unit と違う source (chu2) はその値で
             for i in range(0, len(qs), CHUNK):
-                rows.append(json.dumps({"format_type": filt, "questions": qs[i:i + CHUNK]}, ensure_ascii=False))
+                rows.append(json.dumps({"format_type": ft, "questions": qs[i:i + CHUNK]}, ensure_ascii=False))
     return rows
 
 

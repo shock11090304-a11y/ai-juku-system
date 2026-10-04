@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 """投入後の本番検証。生徒のブラウザと同じ経路 (公開 bank API) で、単元カードごとに配信される小問を確かめる。
     python3 scripts/chugaku_dojo/expand_v3/post_check.py            # 投入後
-    python3 scripts/chugaku_dojo/expand_v3/post_check.py --before   # 投入前 (任意): 期待 = 既存だけ・新規 0 問。
-        本番の既存プールがリポジトリの見積もりとずれていないかを先に確かめ、投入後の NG を「基準のずれ」と切り分ける。
-確認: (1) 各単元の topic LIKE → unitExact 後の小問数が「既存 + 24」になっている
+    python3 scripts/chugaku_dojo/expand_v3/post_check.py --before   # 投入前 (必須): 期待 = 既存だけ・新規 0 問。
+        本番の既存プールがリポジトリの見積もりとずれていないかを先に確かめる。ずれていたら、その source を
+        _v3lib.existing_questions に足してから投入する (2026-10-04 に中2英語ドリル 45 問の漏れをこれで見つけた)。
+確認: (1) 各単元の topic LIKE → unitExact 後の小問数が「既存 + 24」になっている (道場専用の英語 3 カードは既存のまま)
           (画面と同じ取得行数 = 読解 32 / それ以外 50 で取り、押し出されていないこと)
       (2) 新規の 24 問が全部届き、選択肢順・answer・解説 が手元の build/flat.json と一致 (投入時の化けを検出)
       (3) 読解単元の本文が手元の本文と完全一致
@@ -50,7 +51,8 @@ flat = json.load(open(os.path.join(L.HERE, "build", "flat.json"), encoding="utf-
 local = {L.sig(q["stem"], q["choices"]): q for q in flat}
 ex = L.existing_questions()
 fail = []
-for u in L.load_units():
+CARDS = L.load_units() + [{"part": "eng", "filter": f, "reading": False} for f in L.DOJO_ONLY_ENG]   # 道場専用の 3 カードも見る (新規 0 問)
+for u in CARDS:
     n_new = 0 if BEFORE else sum(1 for q in flat if q["unit"] == u["filter"] and q["part"] == u["part"])
     expect = sum(1 for q in ex[u["part"]] if q["filter"] == u["filter"]) + n_new
     subs = fetch(u["part"], u["filter"], L.bank_limit(u["reading"]))
