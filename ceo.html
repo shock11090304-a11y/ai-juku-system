@@ -2974,7 +2974,22 @@
         <button id="cvAddBtn" type="button" style="padding:0.55rem 1.2rem; background:linear-gradient(135deg,#C9A961,#a9853f); border:0; border-radius:8px; color:#1a1a1a; font-weight:800; cursor:pointer;">動画を登録</button>
         <span id="cvMsg" style="font-size:0.85rem;"></span>
       </div>
-      <p style="font-size:0.75rem; color:#71717a; margin:0.5rem 0 0;">公開日を未来にすると、その日までは視聴ページに出ず、メールも送りません（当日になったら、一覧のその動画の「📧 通知」を押してください。自動では送りません）。<br>同じ日に 2 本登録するときは、1 本目は「登録と同時に…知らせる」のチェックを外し、2 本目の「ひとこと」に 1 本目のタイトルも書いてから登録すると、お知らせが 1 通で済みます。<br>「📧 通知」は、その動画のお知らせをまだ受け取っていない受講者（あとから申し込んだ人など）にだけ送ります。</p>
+      <p style="font-size:0.75rem; color:#71717a; margin:0.5rem 0 0;">公開日を未来にすると、その日までは視聴ページに出ず、メールも送りません（当日になったら、一覧のその動画の「📧 通知」を押してください。自動では送りません）。<br>同じ日に 2 本登録するときは、1 本目は「登録と同時に…知らせる」のチェックを外し、2 本目の「ひとこと」に 1 本目のタイトルも書いてから登録すると、お知らせが 1 通で済みます（下の「📺 再生リストから取り込む」なら、何本でも自動で 1 通にまとまります）。<br>「📧 通知」は、その動画のお知らせをまだ受け取っていない受講者（あとから申し込んだ人など）にだけ送ります。</p>
+
+      <!-- 📺 再生リストから取り込む (2026-10-05)。授業録画の「① 確認する → ② この内容で登録」と同じ流れ。
+           判定はサーバ (POST /api/admin/course/import) だけが持つ。再生リスト ID は admin API からだけ読む (この HTML は PUBLIC)。 -->
+      <div id="cvImport" style="margin-top:1.1rem; padding:0.9rem 1rem; background:rgba(129,140,248,0.08); border:1px solid rgba(129,140,248,0.35); border-radius:10px;">
+        <h3 style="margin:0 0 0.3rem; font-size:0.95rem;">📺 再生リストから取り込む</h3>
+        <p style="font-size:0.78rem; color:#a1a1aa; margin:0 0 0.6rem; line-height:1.7;">講座ごとに YouTube の再生リストを 1 つ決めて URL を保存しておくと、その再生リストに入っていて<b>まだ登録していない動画</b>だけを取り込みます。タイトルは YouTube の動画名、公開日は取り込んだ日になります。お知らせメールは講座ごとに<b>まとめて 1 通</b>です。<br>★まず「① 確認する」を押してください。<b>この時点では 1 本も登録されず、メールも送りません。</b>内容を見てから「② この内容で登録」を押します。</p>
+        <div id="cvPlRows" style="display:grid; gap:0.45rem; font-size:0.84rem; color:#a1a1aa;">読み込み中…</div>
+        <div style="margin-top:0.75rem; display:flex; align-items:center; gap:0.7rem; flex-wrap:wrap;">
+          <button id="cvImpCheck" type="button" style="padding:0.55rem 1.1rem; background:linear-gradient(135deg,#818cf8,#6366f1); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">① 確認する（登録しない）</button>
+          <button id="cvImpApply" type="button" disabled style="padding:0.55rem 1.1rem; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">② この内容で登録</button>
+          <label style="font-size:0.82rem; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;"><input id="cvImpNotify" type="checkbox" checked> 取り込んだ動画を受講者へメールで知らせる（講座ごとにまとめて 1 通）</label>
+        </div>
+        <div id="cvImpResult" style="margin-top:0.6rem; font-size:0.82rem; line-height:1.7;"></div>
+        <p style="font-size:0.74rem; color:#71717a; margin:0.5rem 0 0;">再生リストは「限定公開」か「公開」にしてください（「非公開」だと読めません）。授業録画の再生リストそのものと、名前に曜日と限が入った授業録画の再生リスト（月曜1限 など）に入っている動画は取り込みません（その再生リストが 1 つでも読めないと、全講座とも取り込みを止めます）。CEO 画面で削除した動画は、再生リストに残っていても取り込みません（戻すときは上の欄から手で登録）。</p>
+      </div>
 
       <h3 style="margin:1.2rem 0 0.4rem; font-size:0.95rem;">登録済みの動画</h3>
       <div id="cvList" style="font-size:0.84rem; color:#a1a1aa;">読み込み中…</div>
@@ -12537,7 +12552,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
   // 🎥 月額講座 (動画配信): /api/admin/course/* を呼ぶ。通塾クラスの IIFE とは別スコープ。
   (function () {
     var COURSE_NAMES = { kaishaku: '英文解釈講座', bunpo: '英文法講座', kyotsu: '共通テスト対策講座' };
-    function esc(t) { var e = document.createElement('div'); e.textContent = (t == null ? '' : String(t)); return e.innerHTML; }
+    // ★引用符も逃がす: 取り込みで YouTube の動画名 (他人が付けた文字列) が data-title="…" に入るようになった (2026-10-05 レビュー)。
+    function esc(t) { var e = document.createElement('div'); e.textContent = (t == null ? '' : String(t)); return e.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
     async function cvJson(path, init) {
       var res = await window.AdminAuth.fetch(path, init || {});
       var data = null; try { data = await res.json(); } catch (e) {}
@@ -12586,7 +12602,108 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           }).join('') + '</tbody></table>';
       } catch (e) { box.innerHTML = '<div style="color:#fca5a5;">読み込めませんでした: ' + esc(e.message) + '</div>'; }
     }
-    function loadAll() { loadVideos(); loadMembers(); }
+    // 📺 再生リストから取り込む (2026-10-05): ① 確認 (dry-run・何も登録しない) → ② 登録 (① の plan_token と一致するときだけ)
+    var _impToken = null, _impPlan = null;
+    function resetPlan() { _impToken = null; _impPlan = null; document.getElementById('cvImpApply').disabled = true; }
+    async function loadPlaylists() {
+      var box = document.getElementById('cvPlRows');
+      try {
+        var d = await cvJson('/api/admin/course/playlists');
+        // ★貼っただけでまだ保存していない欄は描き直しても残す (1 講座ずつ保存すると、他の講座に貼った URL が消えていた)
+        var dirty = {};
+        Array.prototype.forEach.call(box.querySelectorAll('input[data-pl-input]'), function (inp) {
+          if (inp.value !== (inp.getAttribute('data-saved') || '')) dirty[inp.getAttribute('data-pl-input')] = inp.value;
+        });
+        box.innerHTML = (d.playlists || []).map(function (p) {
+          var url = p.playlist_id ? 'https://www.youtube.com/playlist?list=' + encodeURIComponent(p.playlist_id) : '';
+          return '<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">'
+            + '<span style="min-width:9rem; font-weight:700; color:#fff;">' + esc(p.course_name) + '</span>'
+            + '<input type="url" data-pl-input="' + esc(p.course_key) + '" data-saved="' + esc(url) + '" value="' + esc(Object.prototype.hasOwnProperty.call(dirty, p.course_key) ? dirty[p.course_key] : url) + '" placeholder="再生リストの URL を貼る（未設定）" style="flex:1 1 16rem; min-width:0; padding:0.45rem 0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:7px; color:#fff;">'
+            + '<button type="button" data-pl-save="' + esc(p.course_key) + '" style="' + BTN + '">保存</button>'
+            + (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" style="' + BTN + ' text-decoration:none;">開く ▶</a>' : '<span style="font-size:0.76rem; color:#71717a;">未設定</span>')
+            + '</div>';
+        }).join('');
+      } catch (e) { box.innerHTML = '<div style="color:#fca5a5;">読み込めませんでした: ' + esc(e.message) + '</div>'; }
+    }
+    function notifiedText(k, n) {
+      var nm = COURSE_NAMES[k] || k;
+      if (!n) return nm + ' 送信なし';
+      if (n.error) return nm + ' ' + n.error;
+      if (n.in_progress) return nm + ' 別の送信が進行中です（完了までお待ちください）';
+      if (n.recipients === 0) return nm + ' 受講者がいないため送信なし';
+      if (n.background) return nm + ' 受講者 ' + n.queued + ' 名へ順に送信中（数分後に一覧の「通知 累計」で確認できます）';
+      return nm + ' ' + n.sent + ' 通送信' + (n.failed ? '・失敗 ' + n.failed + '（一覧の「📧 通知」で送り直せます）' : '');
+    }
+    function renderPlan(d) {
+      var applied = d.mode === 'apply' && !d.refused && d.applied > 0;
+      var color = d.refused ? '#fca5a5' : (d.verified === false ? '#fbbf24' : (applied ? '#6ee7b7' : '#e4e4e7'));
+      var html = '<div style="margin-bottom:0.45rem; font-weight:700; color:' + color + ';">' + esc(d.message) + '</div>';
+      html += (d.courses || []).map(function (c) {
+        if (c.status === 'unset') return '<div style="color:#71717a;">・' + esc(c.course_name) + '：再生リスト未設定（取り込みません）</div>';
+        if (c.status === 'error') return '<div style="color:#fca5a5; padding:0.4rem 0.6rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35); border-radius:7px; margin:0.3rem 0;">⚠ <b>' + esc(c.course_name) + '</b>：' + esc(c.error) + '</div>';
+        var s = '<div style="padding:0.45rem 0.6rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:7px; margin:0.3rem 0;">'
+          + '<div><b style="color:#fff;">' + esc(c.course_name) + '</b>　再生リスト ' + c.total + ' 本・登録済み ' + c.already + ' 本・'
+          + '<b style="color:' + (c['new'].length ? '#6ee7b7' : '#a1a1aa') + ';">' + (applied ? '今回登録 ' + (c.registered != null ? c.registered : c['new'].length) : '新しく登録 ' + c['new'].length) + ' 本</b>'
+          + '（受講者 ' + (c.members != null ? c.members : '?') + ' 名）</div>';
+        if (c['new'].length) {
+          s += '<ol style="margin:0.25rem 0 0 1.3rem; padding:0;">' + c['new'].map(function (v) {
+            return '<li style="color:#fff;">' + esc(v.title) + (v.also_in && v.also_in.length ? ' <span style="color:#93c5fd; font-size:0.74rem;">（' + esc(v.also_in.join('・')) + 'にも登録済み）</span>' : '') + '</li>';
+          }).join('') + '</ol>';
+        }
+        (c.skipped || []).forEach(function (v) { s += '<div style="color:#fbbf24; font-size:0.78rem;">⏭ ' + esc(v.title) + ' — ' + esc(v.reason) + '</div>'; });
+        (c.notes || []).forEach(function (n) { s += '<div style="color:#a1a1aa; font-size:0.76rem;">ℹ ' + esc(n) + '</div>'; });
+        return s + '</div>';
+      }).join('');
+      var nk = Object.keys(d.notified || {});
+      if (nk.length) html += '<div style="margin-top:0.4rem;">📧 お知らせ：' + nk.map(function (k) { return esc(notifiedText(k, d.notified[k])); }).join(' ／ ') + '</div>';
+      document.getElementById('cvImpResult').innerHTML = html;
+    }
+    document.getElementById('cvPlRows').addEventListener('click', async function (e) {
+      var b = e.target.closest('button[data-pl-save]'); if (!b) return;
+      var key = b.getAttribute('data-pl-save'); var nm = COURSE_NAMES[key] || key;
+      var inp = document.querySelector('#cvPlRows input[data-pl-input="' + key + '"]');
+      var val = ((inp && inp.value) || '').trim();
+      if (!val && !confirm(nm + ' の再生リストの設定を外します。よろしいですか？')) return;
+      var box = document.getElementById('cvImpResult');
+      b.disabled = true; resetPlan();
+      try {
+        var r = await cvJson('/api/admin/course/playlists', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ course_key: key, playlist: val }) });
+        if (inp) inp.setAttribute('data-saved', inp.value);   // 保存した欄はサーバの値 (整えた URL) で描き直す
+        box.innerHTML = '<div style="color:#6ee7b7; font-weight:700;">' + esc(r.cleared ? ('✓ ' + nm + ' の再生リストの設定を外しました') : ('✓ ' + nm + ' の再生リストを保存しました。「① 確認する」で中身を確かめられます')) + '</div>';
+        loadPlaylists();
+      } catch (err) { box.innerHTML = '<div style="color:#fca5a5; font-weight:700;">保存できませんでした: ' + esc(err.message) + '</div>'; b.disabled = false; }
+    });
+    document.getElementById('cvImpCheck').addEventListener('click', async function () {
+      var btn = this; var box = document.getElementById('cvImpResult');
+      btn.disabled = true; resetPlan();
+      box.innerHTML = '<div style="color:#a1a1aa;">YouTube の再生リストを読んでいます…（数秒〜20 秒ほど）</div>';
+      try {
+        var d = await cvJson('/api/admin/course/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ apply: false }) });
+        renderPlan(d);
+        if (d.planned_total > 0 && d.plan_token) { _impToken = d.plan_token; _impPlan = d; document.getElementById('cvImpApply').disabled = false; }
+      } catch (e) { box.innerHTML = '<div style="color:#fca5a5; font-weight:700;">確認できませんでした: ' + esc(e.message) + '</div>'; }
+      finally { btn.disabled = false; }
+    });
+    document.getElementById('cvImpApply').addEventListener('click', async function () {
+      if (!_impToken || !_impPlan) return;
+      var notify = document.getElementById('cvImpNotify').checked;
+      var lines = (_impPlan.courses || []).filter(function (c) { return c.status === 'ok' && c['new'].length; }).map(function (c) {
+        return '・' + c.course_name + '：' + c['new'].length + ' 本' + (notify ? (c.members > 0 ? '（受講者 ' + c.members + ' 名へまとめて 1 通）' : '（受講者 0 名・メールなし）') : '');
+      });
+      if (!confirm('次の動画を登録します。登録すると、すぐに視聴ページに出ます。\n' + lines.join('\n') + '\n\n' + (notify ? 'お知らせメールを送ります。' : 'お知らせメールは送りません。') + '\nよろしいですか？')) return;
+      var btn = this; var chk = document.getElementById('cvImpCheck'); var box = document.getElementById('cvImpResult');
+      var token = _impToken;
+      btn.disabled = true; chk.disabled = true;
+      box.innerHTML = '<div style="color:#a1a1aa;">登録しています…（再生リストをもう一度読んで、① と同じ内容か確かめてから登録します）</div>';
+      try {
+        var d = await cvJson('/api/admin/course/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ apply: true, plan_token: token, notify: notify }) });
+        renderPlan(d);
+        loadVideos();
+      } catch (e) { box.innerHTML = '<div style="color:#fca5a5; font-weight:700;">登録できませんでした: ' + esc(e.message) + '<br>下の「登録済みの動画」を確かめてから、もう一度「① 確認する」から始めてください。</div>'; loadVideos(); }
+      finally { resetPlan(); chk.disabled = false; }
+    });
+
+    function loadAll() { loadVideos(); loadMembers(); loadPlaylists(); }
 
     document.getElementById('cvAddBtn').addEventListener('click', async function () {
       var msg = document.getElementById('cvMsg'); msg.style.color = '#a1a1aa'; msg.textContent = '';

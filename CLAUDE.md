@@ -68,6 +68,16 @@
   `COURSE_WELCOME_ENABLED=0` は Vercel (受講案内) と Railway (ログインリンク) で別々に効くので、止めるなら両方に入れる。
   Stripe の支払いリンクは決済ごとに新しい Customer を作る → `_course_fetch_from_stripe` は customer_id とメール検索の顧客を合算する (2026-09-17)。
 - テスト: `scripts/health_check/test_course_portal.py` (Stripe は `_course_fetch_from_stripe`、メールは `_course_send_email` を差し替え)。
+- 📺 **再生リストから取り込む** (2026-10-05 塾長「サブスクの動画登録も再生リストと同じように」): CEO「🎥 月額講座」で講座ごとに再生リスト URL を保存
+  (kv_settings `course_playlist:<講座>`) → 「① 確認する」(dry-run) → 「② この内容で登録」(`POST /api/admin/course/import`)。
+  再生リストの読み取りは授業録画と同じ `class_recording_assign.fetch_playlist` (読めなかった講座を「新着 0 本」と言わない)。
+  ★② は ① の `plan_token` と一致するときだけ登録 (間に再生リストが変わったら 1 本も入れない)。お知らせは**講座ごとに 1 人 1 通**
+  (`_course_notify_import`・台帳 `course_video_notices` は動画ごと)。CEO で削除した動画は `course_import_skip:<講座>:<動画 ID>` (1 動画 1 行・ON CONFLICT DO NOTHING) に載り生き返らない。
+  授業録画の再生リスト (`admin_youtube_playlists`) そのもの・曜日+限の名前の授業録画の再生リストに入っている動画 (クラス未割り当ての回も)・
+  `class_recordings` の動画は講座に入れない (塾生の授業を外部の受講者に出さない)。★その授業録画の再生リストが読めなければ全講座 1 本も取り込まない。
+  お知らせは講座をまたいで 1 本の流れで順に送る (講座ごとにスレッドを立てると `_email_rate_limit` の間隔が効かない)。
+  ★名前に曜日+限の無い授業録画の再生リストの中身は見ていない (古い回は `class_recordings` で見る)。
+  テスト: `scripts/health_check/test_course_playlist_import.py` (YouTube は `class_recording_assign.http_get` を差し替え)。
 - 環境変数: `COURSE_DELIVERY_START` (配信開始日・Railway と Vercel を同じ日付に)、`COURSE_LINE_URL` (公式 LINE)、`COURSE_REPLY_TO` (窓口。Railway/Vercel 両方)、
   `COURSE_PORTAL_URL` (Vercel・視聴ページ URL)、`COURSE_NOTIFY_EMAIL` (Vercel・塾長通知。★未設定だと講座・入塾の要対応通知が一切届かない)。既定値は両ファイルに直書き。
 - 🎓 体験授業 (taiken.html・¥1,500 支払いリンク `TAIKEN_TRIAL_PLINK_ID`・metadata 空) は students を作らない単発決済。本体 webhook の divert 分岐で

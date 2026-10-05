@@ -216,6 +216,13 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_course_portal.py
 
+      # 📺 月額講座「再生リストから取り込む」(2026-10-05)。YouTube (class_recording_assign.http_get) とメールは偽物。
+      - name: 月額講座 再生リスト取り込み 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_course_playlist_import.py
+
       # 🎓 体験授業 (taiken.html・¥1,500) の決済完了 → 申込者への案内メール (2026-09-17)。署名付き webhook は stripe 11.x で実行。
       - name: 体験授業 案内メール 回帰テスト
         if: ${{ !cancelled() }}
