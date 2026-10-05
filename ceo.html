@@ -2980,7 +2980,7 @@
            判定はサーバ (POST /api/admin/course/import) だけが持つ。再生リスト ID は admin API からだけ読む (この HTML は PUBLIC)。 -->
       <div id="cvImport" style="margin-top:1.1rem; padding:0.9rem 1rem; background:rgba(129,140,248,0.08); border:1px solid rgba(129,140,248,0.35); border-radius:10px;">
         <h3 style="margin:0 0 0.3rem; font-size:0.95rem;">📺 再生リストから取り込む</h3>
-        <p style="font-size:0.78rem; color:#a1a1aa; margin:0 0 0.6rem; line-height:1.7;">講座ごとに YouTube の再生リストを 1 つ決めて URL を保存しておくと、その再生リストに入っていて<b>まだ登録していない動画</b>だけを取り込みます。タイトルは YouTube の動画名、公開日は取り込んだ日になります。お知らせメールは講座ごとに<b>まとめて 1 通</b>です。<br>★まず「① 確認する」を押してください。<b>この時点では 1 本も登録されず、メールも送りません。</b>内容を見てから「② この内容で登録」を押します。</p>
+        <p style="font-size:0.78rem; color:#a1a1aa; margin:0 0 0.6rem; line-height:1.7;">講座ごとに YouTube の再生リストを 1 つ決めて URL を貼っておくと（「① 確認する」を押すと貼った URL も保存されます）、その再生リストに入っていて<b>まだ登録していない動画</b>だけを取り込みます。タイトルは YouTube の動画名、公開日は取り込んだ日になります。お知らせメールは講座ごとに<b>まとめて 1 通</b>です。<br>★まず「① 確認する」を押してください。<b>この時点では 1 本も登録されず、メールも送りません。</b>内容を見てから「② この内容で登録」を押します。</p>
         <div id="cvPlRows" style="display:grid; gap:0.45rem; font-size:0.84rem; color:#a1a1aa;">読み込み中…</div>
         <div style="margin-top:0.75rem; display:flex; align-items:center; gap:0.7rem; flex-wrap:wrap;">
           <button id="cvImpCheck" type="button" style="padding:0.55rem 1.1rem; background:linear-gradient(135deg,#818cf8,#6366f1); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">① 確認する（登録しない）</button>
@@ -2988,7 +2988,7 @@
           <label style="font-size:0.82rem; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;"><input id="cvImpNotify" type="checkbox" checked> 取り込んだ動画を受講者へメールで知らせる（講座ごとにまとめて 1 通）</label>
         </div>
         <div id="cvImpResult" style="margin-top:0.6rem; font-size:0.82rem; line-height:1.7;"></div>
-        <p style="font-size:0.74rem; color:#71717a; margin:0.5rem 0 0;">再生リストは「限定公開」か「公開」にしてください（「非公開」だと読めません）。授業録画の再生リストそのものと、名前に曜日と限が入った授業録画の再生リスト（月曜1限 など）に入っている動画は取り込みません（その再生リストが 1 つでも読めないと、全講座とも取り込みを止めます）。CEO 画面で削除した動画は、再生リストに残っていても取り込みません（戻すときは上の欄から手で登録）。</p>
+        <p style="font-size:0.74rem; color:#71717a; margin:0.5rem 0 0;">再生リストは「限定公開」か「公開」にしてください（「非公開」だと読めません）。「📺 YouTube 再生リスト」の授業録画の再生リスト（名前に曜日と限が入ったもの・名前のないもの・最初から登録されていたもの）は講座に使えず、曜日と限の入った再生リストの中の動画も取り込みません（あの一覧に自分で「英文解釈講座」のような名前で足した再生リストは使えます。授業録画の再生リストが読めなかったときは黄色で知らせるので、題名を確かめてから ② を押してください）。CEO 画面で削除した動画は、再生リストに残っていても取り込みません（戻すときは上の欄から手で登録）。</p>
       </div>
 
       <h3 style="margin:1.2rem 0 0.4rem; font-size:0.95rem;">登録済みの動画</h3>
@@ -12620,10 +12620,46 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             + '<span style="min-width:9rem; font-weight:700; color:#fff;">' + esc(p.course_name) + '</span>'
             + '<input type="url" data-pl-input="' + esc(p.course_key) + '" data-saved="' + esc(url) + '" value="' + esc(Object.prototype.hasOwnProperty.call(dirty, p.course_key) ? dirty[p.course_key] : url) + '" placeholder="再生リストの URL を貼る（未設定）" style="flex:1 1 16rem; min-width:0; padding:0.45rem 0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:7px; color:#fff;">'
             + '<button type="button" data-pl-save="' + esc(p.course_key) + '" style="' + BTN + '">保存</button>'
-            + (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" style="' + BTN + ' text-decoration:none;">開く ▶</a>' : '<span style="font-size:0.76rem; color:#71717a;">未設定</span>')
+            + (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" style="' + BTN + ' text-decoration:none;">開く ▶</a>' : '')
+            + '<span data-pl-state="' + esc(p.course_key) + '" style="font-size:0.76rem; min-width:5.5rem;"></span>'
             + '</div>';
         }).join('');
+        Array.prototype.forEach.call(box.querySelectorAll('input[data-pl-input]'), plState);
       } catch (e) { box.innerHTML = '<div style="color:#fca5a5;">読み込めませんでした: ' + esc(e.message) + '</div>'; }
+    }
+    // 行の右に「✓ 保存済み / ⚠ 未保存 / 未設定」を出す (貼っただけで保存されていないことが見えるように)
+    function plState(inp) {
+      var st = document.querySelector('#cvPlRows [data-pl-state="' + inp.getAttribute('data-pl-input') + '"]'); if (!st) return;
+      var saved = inp.getAttribute('data-saved') || '';
+      if ((inp.value || '').trim() !== saved) { st.style.color = '#fbbf24'; st.textContent = '⚠ 未保存'; }
+      else if (saved) { st.style.color = '#6ee7b7'; st.textContent = '✓ 保存済み'; }
+      else { st.style.color = '#71717a'; st.textContent = '未設定'; }
+    }
+    document.getElementById('cvPlRows').addEventListener('input', function (e) {
+      var inp = e.target.closest('input[data-pl-input]'); if (inp) plState(inp);
+    });
+    // ★貼っただけで「保存」を押していない URL は、① の前にここで保存する
+    //   (2026-10-05 塾長: URL を貼って ① を押したら「再生リストがまだ設定されていません」と出た)。保存できなければ ① は止める。
+    async function saveUnsavedPlaylists() {
+      var inps = Array.prototype.slice.call(document.querySelectorAll('#cvPlRows input[data-pl-input]'));
+      var n = 0;
+      try {
+        for (var i = 0; i < inps.length; i++) {
+          var inp = inps[i]; var key = inp.getAttribute('data-pl-input'); var nm = COURSE_NAMES[key] || key;
+          var val = (inp.value || '').trim();
+          if (val === (inp.getAttribute('data-saved') || '')) continue;
+          if (!val && !confirm(nm + ' の再生リストの欄が空になっています。この講座の設定を外しますか？\n（外さないときは「キャンセル」→ 欄に URL を貼り直してください）')) {
+            throw new Error(nm + ' の欄が空のままです。URL を貼り直すか、設定を外してください');
+          }
+          try {
+            await cvJson('/api/admin/course/playlists', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ course_key: key, playlist: val }) });
+          } catch (e) { throw new Error(nm + ' の再生リストを保存できませんでした — ' + e.message); }
+          inp.setAttribute('data-saved', inp.value); plState(inp); n++;
+        }
+      } finally {
+        if (n) await loadPlaylists();   // ★途中で失敗しても、保存できた行は「✓ 保存済み」に描き直す
+      }
+      return n;
     }
     function notifiedText(k, n) {
       var nm = COURSE_NAMES[k] || k;
@@ -12638,6 +12674,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var applied = d.mode === 'apply' && !d.refused && d.applied > 0;
       var color = d.refused ? '#fca5a5' : (d.verified === false ? '#fbbf24' : (applied ? '#6ee7b7' : '#e4e4e7'));
       var html = '<div style="margin-bottom:0.45rem; font-weight:700; color:' + color + ';">' + esc(d.message) + '</div>';
+      (d.warnings || []).forEach(function (w) { html += '<div style="color:#fbbf24; padding:0.4rem 0.6rem; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.35); border-radius:7px; margin:0.3rem 0;">⚠ ' + esc(w) + '</div>'; });
       html += (d.courses || []).map(function (c) {
         if (c.status === 'unset') return '<div style="color:#71717a;">・' + esc(c.course_name) + '：再生リスト未設定（取り込みません）</div>';
         if (c.status === 'error') return '<div style="color:#fca5a5; padding:0.4rem 0.6rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35); border-radius:7px; margin:0.3rem 0;">⚠ <b>' + esc(c.course_name) + '</b>：' + esc(c.error) + '</div>';
@@ -12676,8 +12713,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     document.getElementById('cvImpCheck').addEventListener('click', async function () {
       var btn = this; var box = document.getElementById('cvImpResult');
       btn.disabled = true; resetPlan();
-      box.innerHTML = '<div style="color:#a1a1aa;">YouTube の再生リストを読んでいます…（数秒〜20 秒ほど）</div>';
+      box.innerHTML = '<div style="color:#a1a1aa;">貼った URL を確かめています…</div>';
       try {
+        var nSaved = await saveUnsavedPlaylists();
+        box.innerHTML = '<div style="color:#a1a1aa;">' + (nSaved ? '貼った URL を保存しました（' + nSaved + ' 講座）。' : '') + 'YouTube の再生リストを読んでいます…（数秒〜20 秒ほど）</div>';
         var d = await cvJson('/api/admin/course/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ apply: false }) });
         renderPlan(d);
         if (d.planned_total > 0 && d.plan_token) { _impToken = d.plan_token; _impPlan = d; document.getElementById('cvImpApply').disabled = false; }
@@ -12690,7 +12729,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var lines = (_impPlan.courses || []).filter(function (c) { return c.status === 'ok' && c['new'].length; }).map(function (c) {
         return '・' + c.course_name + '：' + c['new'].length + ' 本' + (notify ? (c.members > 0 ? '（受講者 ' + c.members + ' 名へまとめて 1 通）' : '（受講者 0 名・メールなし）') : '');
       });
-      if (!confirm('次の動画を登録します。登録すると、すぐに視聴ページに出ます。\n' + lines.join('\n') + '\n\n' + (notify ? 'お知らせメールを送ります。' : 'お知らせメールは送りません。') + '\nよろしいですか？')) return;
+      var warn = (_impPlan.warnings && _impPlan.warnings.length) ? '\n\n⚠ 授業録画の再生リストのうち読めなかったものがあり、その中の動画とは照合していません。上の一覧の題名に授業の録画が混ざっていないことを確かめましたか？' : '';
+      if (!confirm('次の動画を登録します。登録すると、すぐに視聴ページに出ます。\n' + lines.join('\n') + warn + '\n\n' + (notify ? 'お知らせメールを送ります。' : 'お知らせメールは送りません。') + '\nよろしいですか？')) return;
       var btn = this; var chk = document.getElementById('cvImpCheck'); var box = document.getElementById('cvImpResult');
       var token = _impToken;
       btn.disabled = true; chk.disabled = true;

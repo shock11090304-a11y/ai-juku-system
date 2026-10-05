@@ -10,7 +10,8 @@
   T. ① のあとで再生リストが変わったら 1 本も登録しない (メールも送らない)
   N. notify=false はメールなし・あとで「📧 通知」で 1 本ずつ送れる
   L. 同時実行は 409
-  C. 授業録画の再生リストに入っている動画 (まだクラスに割り当てていない回も) は取り込まない・その再生リストが読めなければ全講座止める
+  C. 授業録画の再生リストに入っている動画 (まだクラスに割り当てていない回も) は取り込まない・読めない授業録画の再生リストは 1 回読み直し、
+     それでも読めなければ止めずに黄色の警告 (題名の確認を求める)
   S. 削除した動画の台帳は 1 動画 1 行 (同じ講座で 2 本消しても両方残る)
   B. 宛先が多い (合計 16 名以上) ときは 1 本のバックグラウンドで講座順に送る・宛先 0 の講座は「送信中」と言わない
 """
@@ -86,6 +87,8 @@ def main():
         pid = url.split("list=", 1)[1] if "list=" in url else ""
         FETCHED.append(pid)
         body = YT.get(pid)
+        if isinstance(body, list):          # [1 回目, 2 回目, …] = 1 回目だけ読めない、のような揺れ
+            body = body.pop(0) if len(body) > 1 else body[0]
         return (body, None) if body is not None else (None, "YouTube に接続できない — ネット接続を確認してもう一度実行してください")
     cra.http_get = fake_http_get
     MAILS = []
@@ -136,7 +139,22 @@ def main():
     conn.commit(); conn.close()
     YT["PLclassMon1"] = yt_page([("CLS00000002", "10/5")])     # まだクラスに割り当てていない授業録画
     cls = client.post("/api/admin/course/playlists", headers=ADMIN, json={"course_key": "kyotsu", "playlist": "PLclassMon1"})
-    check("P6. 授業録画の再生リストは講座に使えない (409)", cls.status_code == 409 and "授業録画" in cls.json().get("detail", ""), cls.text)
+    check("P6. 授業録画の再生リスト (曜日+限の名前) は講座に使えない (409)", cls.status_code == 409 and "授業録画" in cls.json().get("detail", "") and "月曜1限" in cls.json().get("detail", ""), cls.text)
+    # 「📺 YouTube 再生リスト」の一覧に、曜日+限の無い名前で講座の再生リストを並べている (2026-10-05 塾長の実際の操作)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("INSERT INTO admin_youtube_playlists (playlist_id, name, grp, sort_order) VALUES (?,?,?,?)", ("PLkyoList01", "共通テスト対策講座", "", 1))
+    conn.commit(); conn.close()
+    ok6 = client.post("/api/admin/course/playlists", headers=ADMIN, json={"course_key": "kyotsu", "playlist": "PLkyoList01"})
+    check("P6b. 一覧に曜日+限の無い名前で載っている再生リストは講座に使える", ok6.status_code == 200 and ok6.json()["playlist_id"] == "PLkyoList01", ok6.text)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("INSERT INTO admin_youtube_playlists (playlist_id, name, grp, sort_order) VALUES (?,?,?,?)", ("PLnoName001", "", "", 2))
+    c.execute("INSERT INTO admin_youtube_playlists (playlist_id, name, grp, sort_order) VALUES (?,?,?,?)", ("PLoldTerm01", "春期 長文読解", "以前の再生リスト", 3))
+    conn.commit(); conn.close()
+    nn = client.post("/api/admin/course/playlists", headers=ADMIN, json={"course_key": "kyotsu", "playlist": "PLnoName001"})
+    og = client.post("/api/admin/course/playlists", headers=ADMIN, json={"course_key": "kyotsu", "playlist": "PLoldTerm01"})
+    check("P6c. 一覧に名前なしで載っている再生リストは授業録画とみなして断る (名前を付ければ使えると案内)", nn.status_code == 409 and "名前なし" in nn.json().get("detail", "") and "名前を付けて" in nn.json().get("detail", ""), nn.text)
+    check("P6d. グループ付き (システムが登録した授業録画の一覧) の行は曜日+限が無くても断る", og.status_code == 409 and "以前の再生リスト" in og.json().get("detail", ""), og.text)
+    client.post("/api/admin/course/playlists", headers=ADMIN, json={"course_key": "kyotsu", "playlist": ""})
     g1 = client.get("/api/admin/course/playlists", headers=ADMIN).json()
     check("P7. 保存した ID が読める (kyotsu は未設定のまま)", {p["course_key"]: p["playlist_id"] for p in g1["playlists"]} == {"kaishaku": "PLkaishaku01", "bunpo": "PLbunpo0002", "kyotsu": ""}, g1)
     YT["PLclassTue2"] = yt_page([])
@@ -266,8 +284,13 @@ def main():
     check("F5. 本当に空の再生リストは ok・0 本", r10["status"] == "ok" and r10["total"] == 0 and d10["message"].startswith("新しい動画はありません"), (r10, d10["message"]))
     # 授業録画の再生リストに後から入れられた講座の再生リスト
     conn = mod.db(); c = conn.cursor()
-    c.execute("INSERT INTO admin_youtube_playlists (playlist_id, name, grp, sort_order) VALUES (?,?,?,?)", ("PLkyotsu003", "以前の再生リスト", "", 9))
+    c.execute("INSERT INTO admin_youtube_playlists (playlist_id, name, grp, sort_order) VALUES (?,?,?,?)", ("PLkyotsu003", "共通テスト（講座）", "", 9))
     conn.commit(); conn.close()
+    d11a = imp().json()
+    r11a = {r["course_key"]: r for r in d11a["courses"]}["kyotsu"]
+    check("F6a. 塾長が一覧に足した (グループなし・曜日+限なし) 行は取り込める・一覧の名前を出して授業録画でないか確かめさせる",
+          r11a["status"] == "ok" and any("共通テスト（講座）" in n and "授業録画ではない" in n for n in r11a["notes"]), r11a)
+    conn = mod.db(); c = conn.cursor(); c.execute("UPDATE admin_youtube_playlists SET name = '木曜2限' WHERE playlist_id = 'PLkyotsu003'"); conn.commit(); conn.close()
     d11 = imp().json()
     r11 = {r["course_key"]: r for r in d11["courses"]}["kyotsu"]
     check("F6. 授業録画の再生リストにも登録された再生リストは取り込まない (見出しは「読めなかった」と言わない)",
@@ -346,17 +369,31 @@ def main():
     r14 = {r["course_key"]: r for r in d14["courses"]}["kaishaku"]
     check("C1. 授業録画の再生リスト (月曜1限) に入っている動画は、クラス未割り当てでも取り込まない (理由に再生リスト名)",
           [v["title"] for v in r14["new"]] == ["第8回 強調構文"] and len(r14["skipped"]) == 1 and "月曜1限" in r14["skipped"][0]["reason"], r14)
-    YT["PLclassMon1"] = None
+    # 1 回目だけ読めない (本番で並行取得中に 1 本だけ別ページが返った) → 単独で読み直して通る
+    YT["PLclassMon1"] = ["<html>no data</html>", yt_page([("CLS00000002", "10/5")])]
+    FETCHED.clear()
+    d15r = imp().json()
+    r15r = {r["course_key"]: r for r in d15r["courses"]}["kaishaku"]
+    check("C2r. 1 回目だけ読めない授業録画の再生リストは読み直して照合する (警告なし・授業録画は取り込まない)",
+          FETCHED.count("PLclassMon1") == 2 and not d15r["warnings"] and [v["title"] for v in r15r["new"]] == ["第8回 強調構文"], (FETCHED, d15r["warnings"], r15r["new"]))
+    YT["PLclassMon1"] = None        # 偽 YouTube は「接続できない」を返す = YouTube 側が止まっている → 読み直さない
+    FETCHED.clear()
     d15 = imp().json()
-    check("C2. 授業録画の再生リストが読めないときは、全講座 1 本も取り込まない",
-          d15["planned_total"] == 0 and all(r["status"] == "error" and "授業録画の再生リスト" in r["error"] for r in d15["courses"] if r["status"] != "unset"), d15["courses"])
+    check("C2s. 「接続できない」「時間切れ」は読み直さない (待つだけで Vercel の時間を超えるため)", FETCHED.count("PLclassMon1") == 1, FETCHED)
+    r15 = {r["course_key"]: r for r in d15["courses"]}["kaishaku"]
+    check("C2. 授業録画の再生リストが読めないときは全講座を止めず、黄色の警告 (再生リスト名つき) で題名の確認を求める",
+          r15["status"] == "ok" and d15["planned_total"] >= 1 and len(d15["warnings"]) == 1 and "月曜1限" in d15["warnings"][0] and "題名で確かめて" in d15["warnings"][0], (d15["warnings"], r15))
     YT["PLclassMon1"] = yt_page([("CLS00000002", "10/5")])
     # 授業録画の再生リストが 100 本を超えた: 理由と直し方を出す (「少し待って」だけにしない)
     YT["PLclassMon1"] = yt_page([("CLM%08d" % i, "回 %d" % i) for i in range(100)], shown=130)
+    YT["PLkaishaku01"] = yt_page([("KAI00000001", "手で登録した回"), ("CLM00000005", "回 5"), ("KAI00000009", "第8回 強調構文")])
     d15b = imp().json()
+    r15b = {r["course_key"]: r for r in d15b["courses"]}["kaishaku"]
+    check("C2c. 100 本を超えた授業録画の再生リストでも、見えている 100 本とは照合して取り込まない",
+          [v["title"] for v in r15b["new"]] == ["第8回 強調構文"] and any("月曜1限" in x["reason"] for x in r15b["skipped"]), r15b)
     e15b = [r["error"] for r in d15b["courses"] if r["status"] == "error"]
-    check("C2b. 100 本を超えた授業録画の再生リスト → 理由 (1ページ上限) と「分けて」を出し、全講座止める",
-          d15b["planned_total"] == 0 and e15b and all("1ページ上限" in e and "分けてください" in e and "月曜1限" in e for e in e15b), e15b[:1])
+    check("C2b. 100 本を超えた授業録画の再生リスト → 警告に理由 (1ページ上限) と「分けて」を出す",
+          not e15b and d15b["warnings"] and "1ページ上限" in d15b["warnings"][0] and "分けてください" in d15b["warnings"][0] and "月曜1限" in d15b["warnings"][0], d15b["warnings"])
     YT["PLclassMon1"] = yt_page([("CLS00000002", "10/5")])
     # 講座 (共通テスト) の再生リストが後から授業録画の再生リスト (水曜1限) にもされた: その講座は止め、中身は他の講座から守る
     conn = mod.db(); c = conn.cursor()

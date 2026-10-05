@@ -52051,19 +52051,35 @@ def _course_import_skip_add(c, course_key: str, youtube_id: str) -> None:
               (f"{COURSE_IMPORT_SKIP_KV_PREFIX}{course_key}:{youtube_id}", "1", _utc_naive_iso()))
 
 
+def _class_playlist_reason(name, grp, slot_of) -> Optional[str]:
+    """「📺 YouTube 再生リスト」の 1 行が授業録画の再生リストか → 授業録画なら理由 (画面に出す)、講座に使ってよい行なら None。
+    ★授業録画とみなす: 名前から曜日+限を読める行 (自動割り当てと同じ定義)・名前が空の行 (新学期に名前を付ける前の授業録画)・
+      グループ (grp) 付きの行 (システムが登録した授業録画の一覧。曜日+限の無い旧学期の再生リストもここ)。
+    ★講座に使ってよい: 塾長が「➕ 再生リストを追加する」で足した (grp 空)、曜日+限の無い名前の行。塾長はあの一覧に講座の再生リストも
+      並べる (2026-10-05 実際の操作)。載っているだけで断ると講座に使えない。① ではその名前を出して確かめてもらう。"""
+    name, grp = (name or "").strip(), (grp or "").strip()
+    if not name:
+        return "名前なしで載っています (授業録画の再生リストかもしれません)"
+    if slot_of(name):
+        return f"授業録画「{name}」として使われています"
+    if grp:
+        return f"「{grp}」の欄に授業録画「{name}」として載っています"
+    return None
+
+
 def _course_import_plan(playlists: dict, fetched: dict, existing: dict, skipped: dict,
-                        class_vids: set, class_pids: set, class_list_vids: Optional[dict] = None,
-                        class_check_error: Optional[str] = None) -> dict:
+                        class_vids: set, class_pids, class_list_vids: Optional[dict] = None,
+                        listed: Optional[dict] = None) -> dict:
     """再生リストの中身 → 講座ごとの「何を登録するか」。DB にもネットにも触らない (材料は呼び出し側が渡す)。
       playlists : {講座: 再生リスト ID}
       fetched   : {講座: (items, fatal, warn)} … class_recording_assign.fetch_playlist の戻り値そのまま
       existing  : {講座: {登録済みの動画 ID}} (非公開の行も含む = 手で非公開にした動画を取り込み直さない)
       skipped   : {講座: {CEO 画面で削除した動画 ID}}
       class_vids: 通塾クラスの授業録画として登録済みの動画 ID
-      class_pids: 授業録画の再生リスト (admin_youtube_playlists) の ID
+      class_pids: {授業録画の再生リストの ID: 理由} … admin_youtube_playlists のうち _class_playlist_reason が授業録画とみなす行
+      listed    : {再生リスト ID: 名前} … 「📺 YouTube 再生リスト」に載っているが講座に使ってよい行 (① で名前を出して確かめてもらう)
       class_list_vids  : {動画 ID: 授業録画の再生リスト名} … 授業録画の再生リストに入っている動画 (まだクラスに割り当てていない回も含む)
-      class_check_error: 授業録画の再生リストを読めなかったときの理由。あれば**全講座**取り込まない
-                         (授業の動画が混ざっていないと確かめられないまま、外部の受講者に出してメールしない)
+                         ★読めなかった授業録画の再生リストの分は入らない (呼び出し側が warnings で塾長に題名の確認を求める)
     ★動画 ID は planned にだけ生で入る (登録に要る)。画面向けの rows には先頭 4 文字だけ (限定公開の ID はアクセス権そのもの)。
     """
     class_list_vids = class_list_vids or {}
@@ -52085,15 +52101,12 @@ def _course_import_plan(playlists: dict, fetched: dict, existing: dict, skipped:
             continue
         row["status"] = "error"
         if pid in class_pids:
-            row["error"] = ("この再生リストは「📺 YouTube 再生リスト」(授業録画用) にも登録されています。"
+            row["error"] = (f"この再生リストは「📺 YouTube 再生リスト」に{class_pids[pid] if isinstance(class_pids, dict) else '授業録画として載っています'}。"
                             "授業録画を外部の受講者に出さないよう、この講座は取り込みません。講座用の再生リストを別に作って貼り直してください")
             continue
         if len(owners.get(pid, [])) > 1:
             others = [COURSE_KEYS[o] for o in owners[pid] if o != k]
             row["error"] = f"同じ再生リストが {'・'.join(others)} にも設定されています。講座ごとに別の再生リストを貼ってください (この講座は取り込みません)"
-            continue
-        if class_check_error:
-            row["error"] = class_check_error
             continue
         items, fatal, warn = fetched.get(k) or (None, "再生リストを読みに行けなかった", None)
         if items is None:
@@ -52106,6 +52119,8 @@ def _course_import_plan(playlists: dict, fetched: dict, existing: dict, skipped:
         row["status"] = "ok"
         if warn:
             row["notes"].append(warn)
+        if listed and pid in listed:
+            row["notes"].append(f"この再生リストは「📺 YouTube 再生リスト」に「{listed[pid]}」の名前で載っています。授業録画ではないことを確かめてください")
         row["total"] = len(items)
         mine, gone = existing.get(k, set()), skipped.get(k, set())
         for vid, raw_title in items:
@@ -52251,15 +52266,20 @@ def admin_course_playlist_save(payload: CoursePlaylistSaveRequest, request: Requ
         conn = db()
         try:
             c = conn.cursor()
-            c.execute("SELECT 1 FROM admin_youtube_playlists WHERE playlist_id = ?", (pid,))
-            in_class = c.fetchone() is not None
+            c.execute("SELECT COALESCE(name, '') AS name, COALESCE(grp, '') AS grp FROM admin_youtube_playlists WHERE playlist_id = ?", (pid,))
+            row = c.fetchone()
         finally:
             conn.close()
-        if in_class:
+        # ★「📺 YouTube 再生リスト」に載っているだけでは断らない (塾長は講座の再生リストもあの一覧に並べる・2026-10-05)。
+        #   授業録画とみなす行だけ断る (判定は _class_playlist_reason に一本化)。
+        why = _class_playlist_reason(row["name"], row["grp"], _load_class_recording_assign().slot_of) if row else None
+        if why:
             # ★授業録画の再生リストを講座に繋ぐと、塾生の授業がそのまま外部の受講者の視聴ページに出る
             raise HTTPException(status_code=409,
-                                detail="この再生リストは「📺 YouTube 再生リスト」(授業録画用) に登録されています。"
-                                       "授業録画を外部の受講者に出さないよう、講座には使えません。講座用の再生リストを別に作ってください")
+                                detail=f"この再生リストは「📺 YouTube 再生リスト」に{why}。"
+                                       "授業録画を外部の受講者に出さないよう、講座には使えません。講座用の再生リストを別に作ってください"
+                                       + ("。授業録画でなければ、あの画面で「英文解釈講座」のような名前を付けてから保存してください"
+                                          if not (row["name"] or "").strip() else ""))
         others = [COURSE_KEYS[k2] for k2, p in _course_playlists_load().items() if p == pid and k2 != key]
         if others:
             raise HTTPException(status_code=409,
@@ -52298,8 +52318,8 @@ def admin_course_import(payload: CourseImportRequest, request: Request, authoriz
             conn = db()
             try:
                 c = conn.cursor()
-                c.execute("SELECT playlist_id, COALESCE(name, '') AS name FROM admin_youtube_playlists")
-                class_playlists = [(r["playlist_id"], r["name"]) for r in c.fetchall()]
+                c.execute("SELECT playlist_id, COALESCE(name, '') AS name, COALESCE(grp, '') AS grp FROM admin_youtube_playlists")
+                listed_rows = [(r["playlist_id"], r["name"], r["grp"]) for r in c.fetchall()]
             finally:
                 conn.close()
         except Exception as e:
@@ -52310,39 +52330,57 @@ def admin_course_import(payload: CourseImportRequest, request: Request, authoriz
         #   「名前から曜日+限を読める」再生リスト (= いま使っている授業の再生リスト)。それより古い回は class_recordings で見る。
         #   ★講座の再生リストと同じ ID の授業録画の再生リストも**除かない** (その講座は error になるが、中身は他の講座から守る)。
         course_pids = set(playlists.values())
-        class_check = [(pid, name) for pid, name in class_playlists
+        class_check = [(pid, name) for pid, name, _g in listed_rows
                        if (name or "").strip() and cra.slot_of(name)] if playlists else []
         # ★YouTube を読む間は DB の接続を持たない (CLAUDE.md: 接続を掴んだまま外部 API を待たない)
+        t_fetch = time.monotonic()
         cache = _auto_assign_prefetch(sorted(course_pids | {pid for pid, _ in class_check}), cra.http_get)
 
-        def _read(pid):
+        def _parse(pid, got):
             try:
-                return cra.fetch_playlist(pid, get=lambda _url, _p=pid: cache.get(_p) or cra.http_get(_url))
+                return cra.fetch_playlist(pid, get=lambda _url, _p=pid: got.get(_p) or cra.http_get(_url))
             except Exception as e:
                 # ★想定外の構造で落ちても「0 本」にしない (読めなかったとして扱う)
                 return (None, f"再生リストの解析で想定外のエラー ({type(e).__name__}) — この行をそのまま開発担当に伝えてください", None)
-        fetched = {k: _read(pid) for k, pid in playlists.items()}
+        read = {pid: _parse(pid, cache) for pid in sorted(course_pids | {pid for pid, _ in class_check})}
+        # ★読めなかった分を、少し間をおいて 1 回だけ読み直す。並行で読むと YouTube が 1 本だけ別のページ (ytInitialData 無し) を
+        #   返すことがある (2026-10-05 本番:「8月以降木曜日1時間目: YouTubeのページを解析できない」)。
+        #   ★時間に上限を付ける (Vercel のプロキシ時間内に返す): 読み直すのは「すぐ返ってきた失敗」だけ (時間切れ・接続できないは
+        #   YouTube 側が止まっている = 読み直しても待つだけ)、最大 4 本を同時に、1 回目で 20 秒以上かかっていたら読み直さない。
+        #   増える時間は最大 1 秒 + 15 秒。
+        def _slow(msg):
+            return any(w in (msg or "") for w in ("時間がかかりすぎ", "接続できない"))
+        failed = [pid for pid, r in read.items() if r[0] is None and not _slow(r[1])][:4]
+        if failed and time.monotonic() - t_fetch < 20:
+            time.sleep(1.0)
+            again = _auto_assign_prefetch(failed, cra.http_get, timeout=15, workers=len(failed))
+            for pid in failed:
+                read[pid] = _parse(pid, again)
+        fetched = {k: read[pid] for k, pid in playlists.items()}
         class_list_vids, class_unread = {}, []    # class_unread = [(再生リスト名, 理由, 1 ページ上限か)]
         for pid, name in class_check:
-            items, fatal, _warn = _read(pid)
+            items, fatal, _warn = read[pid]
+            for vid, _t in items or []:     # ★100 本超えでも、見えている 100 本とは照合する (捨てると素通りする)
+                class_list_vids.setdefault(vid, name)
             if items is None or fatal:      # 1 ページ上限超えも「全部は見えていない」= 確かめられない
                 class_unread.append((name, fatal or "理由不明", items is not None))
-                continue
-            for vid, _t in items:
-                class_list_vids.setdefault(vid, name)
-        class_check_error = None
+        class_check_warning = None
         if class_unread:
-            # ★本当の理由と直し方を出す (「少し待って」だけだと、100 本超えや消した再生リストでは何度押しても直らない)
+            # ★全講座を止めない (2026-10-05 本番で、授業録画の再生リスト 1 本が一時的に読めないだけで講座の取り込みが全部止まった)。
+            #   クラスに割り当て済みの授業録画 (class_recordings) とは常に照合している。読めなかった再生リストの中身とだけ照合できて
+            #   いないので、黄色で出して「題名で確かめてから ②」を求める (② の確認ダイアログにも出す)。
             how = []
             if any(lim for _n, _w, lim in class_unread):
                 how.append("100 本を超えた再生リストは分けてください")
             if any(not lim for _n, _w, lim in class_unread):
                 how.append("一時的なものなら少し待ってもう一度「① 確認する」。削除・非公開にした古い再生リストなら、"
                            "「📺 YouTube 再生リスト」の画面でその名前から曜日と限を外してください")
-            class_check_error = ("授業録画の再生リストを確かめられないので、授業の動画が混ざっていないか分かりません。今回は 1 本も取り込みません — "
-                                 + " / ".join(f"「{n}」: {w}" for n, w, _l in class_unread[:5])
-                                 + (f" ほか {len(class_unread) - 5} 件" if len(class_unread) > 5 else "")
-                                 + "。直し方: " + "。".join(how))
+            class_check_warning = ("授業録画の再生リスト "
+                                   + " / ".join(f"「{n}」({w})" for n, w, _l in class_unread[:5])
+                                   + (f" ほか {len(class_unread) - 5} 件" if len(class_unread) > 5 else "")
+                                   + " を全部は読めなかったので、読めなかった分の動画とは照合していません (クラスに割り当て済みの授業録画とは照合済み)。"
+                                   "下の「新しく登録」に授業の録画が混ざっていないか、題名で確かめてから ② を押してください。"
+                                   + "直し方: " + "。".join(how))
 
         members = {k: 0 for k in COURSE_KEYS}
         try:
@@ -52372,8 +52410,10 @@ def admin_course_import(payload: CourseImportRequest, request: Request, authoriz
             log.error(f"[course-import] db read failed: {type(e).__name__}")
             raise HTTPException(status_code=500, detail=f"登録済みの動画を読めませんでした ({type(e).__name__})。何も登録していません。もう一度押してください")
 
+        _reasons = {pid: _class_playlist_reason(name, grp, cra.slot_of) for pid, name, grp in listed_rows}
         plan = _course_import_plan(playlists, fetched, existing, skipped, class_vids,
-                                   {pid for pid, _ in class_playlists}, class_list_vids, class_check_error)
+                                   {pid: why for pid, why in _reasons.items() if why}, class_list_vids,
+                                   {pid: name for pid, name, _g in listed_rows if not _reasons.get(pid)})
         for row in plan["rows"]:
             row["members"] = members.get(row["course_key"], 0)
         errors = [r["course_name"] for r in plan["rows"] if r["status"] == "error"]
@@ -52381,7 +52421,8 @@ def admin_course_import(payload: CourseImportRequest, request: Request, authoriz
         not_taken = f"{'・'.join(errors)}は取り込みません（赤い行の理由を確認してください）。" if errors else ""
         out = {"ok": True, "mode": "apply" if apply_mode else "dry-run", "today": _course_today_jst(), "notify": notify,
                "courses": plan["rows"], "planned_total": len(plan["planned"]), "plan_token": plan["plan_token"],
-               "applied": 0, "verified": None, "duplicates": [], "notified": {}, "refused": None, "message": ""}
+               "applied": 0, "verified": None, "duplicates": [], "notified": {}, "refused": None, "message": "",
+               "warnings": [class_check_warning] if class_check_warning else []}
         if not apply_mode or not plan["planned"]:
             if not playlists:
                 out["message"] = "再生リストがまだ設定されていません。講座ごとに再生リストの URL を貼って「保存」してください。"
