@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(主格 who 人)",
+  "stem": "The nurse ( ) took care of my grandmother in the hospital was very patient.",
+  "passage": "",
+  "choices": [
+   "whom",
+   "who",
+   "why",
+   "whose"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係詞(主格 who 人)。正解は「who」。先行詞 The nurse は人で、空所の直後に動詞 took が続き、節の中で主語が欠けているので、主格の関係代名詞 who を入れる。whom は目的格なので主語の位置には使えない。whose は後ろに名詞を伴う所有格で、動詞の前に直接置くことはできない。why は the reason のような理由を表す先行詞を受ける関係副詞で、人を先行詞にはしない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(連鎖関係代名詞)",
+  "stem": "The medicine ( ) the doctor said would help me only made me sleepy.",
+  "passage": "",
+  "choices": [
+   "what",
+   "whose",
+   "whom",
+   "which"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係詞(連鎖関係代名詞)。正解は「which」。the doctor said が間に挟まった連鎖関係代名詞の文で、関係詞は would help の主語として働く。先行詞 The medicine は物なので主格の which を使う。whom は人の目的格で、物の先行詞にも主語の位置にも合わない。whose は後ろに名詞が必要な所有格。what は先行詞をとらない関係代名詞なので、The medicine の直後には置けない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(所有格 whose 物)",
+  "stem": "We stayed at a small hotel ( ) windows looked out over the lake.",
+  "passage": "",
+  "choices": [
+   "which",
+   "whom",
+   "what",
+   "whose"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係詞(所有格 whose 物)。正解は「whose」。「そのホテルの窓」という所有関係を表し、whose windows が looked out の主語になる。whose は人だけでなく物の所有にも使える。which は主格や目的格で、直後に名詞 windows を続けることはできない。whom は人の目的格で物には使えない。what は先行詞をとらないので、a small hotel の直後には置けない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(前置詞+関係代名詞 物)",
+  "stem": "Haru showed me the apartment ( ) his grandparents had lived for fifty years.",
+  "passage": "",
+  "choices": [
+   "on which",
+   "in that",
+   "in which",
+   "on that"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係詞(前置詞+関係代名詞 物)。正解は「in which」。元の文は His grandparents had lived in the apartment で、「住む」場所を表す前置詞は in。これを関係代名詞の前に出すと in which になる。on which は「〜の上に住む」となり、apartment には合わない。that は前置詞の直後に置けないので、in that と on that はどちらも不可。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(前置詞+関係代名詞 物)",
+  "stem": "The company offered me a job. I had applied to it last month.\n= The company ( ) I had applied last month offered me a job.",
+  "passage": "",
+  "choices": [
+   "for which",
+   "to which",
+   "for that",
+   "to that"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係詞(前置詞+関係代名詞 物)。正解は「to which」。元の文の applied to it の to をそのまま残し、it を関係代名詞 which に替えて前置詞ごと前に出した形。for which にすると apply for 「(職などに) 応募する」となり、元の文の「会社に申し込む」という to と一致しない。前置詞の直後に that は置けないので、to that と for that はいずれも不可。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(前置詞+関係代名詞 人)",
+  "stem": "Ms. Carter is the teacher ( ) I owe my interest in chemistry.",
+  "passage": "",
+  "choices": [
+   "to which",
+   "with which",
+   "to whom",
+   "with whom"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係詞(前置詞+関係代名詞 人)。正解は「to whom」。owe A to B 「A は B のおかげだ」の to を関係代名詞の前に出した形で、先行詞 the teacher は人なので whom を使う。to which は物を受ける形で人には合わない。with whom と with which は前置詞が with になっていて、owe と結びつく to が無くなるので意味が成り立たない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(関係代名詞の省略)",
+  "stem": "The bench ( ) was wet from the rain, so we got up right away.",
+  "passage": "",
+  "choices": [
+   "we sat on",
+   "we sat on it",
+   "on we sat",
+   "on that we sat"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係詞(関係代名詞の省略)。正解は「we sat on」。元は We sat on the bench で、目的格の関係代名詞 which や that は省略でき、前置詞 on は節の末尾に残る。we sat on it は目的語 it が残っているため、先行詞 The bench と重なって誤り。on we sat は前置詞の後ろに関係代名詞が無く、文がつながらない。on that we sat は前置詞の直後に that を置いており不可。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(関係代名詞の省略)",
+  "stem": "A: Who is the woman ( ) at the entrance?\nB: She is the organizer of the event.",
+  "passage": "",
+  "choices": [
+   "you were talking to her",
+   "to that you were talking",
+   "you were talking to",
+   "whom you were talking"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係詞(関係代名詞の省略)。正解は「you were talking to」。元は You were talking to the woman で、目的格の関係代名詞を省略し、前置詞 to を節の末尾に残した形。you were talking to her は her が先行詞と重複するので誤り。whom you were talking は talk に必要な前置詞 to が抜けている。to that you were talking は前置詞の直後に that を置いており不可。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(関係代名詞 what 主語)",
+  "stem": "( ) matters most in this job is patience, not speed.",
+  "passage": "",
+  "choices": [
+   "That",
+   "Who",
+   "Whose",
+   "What"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係詞(関係代名詞 what 主語)。正解は「What」。先行詞が無く、「〜なこと」という名詞のかたまりを作って文全体の主語になるのは、先行詞を含む関係代名詞 what。That を入れると That matters most ... と is の 2 つの動詞がぶつかり、文が成り立たない。Who は先行詞なしで名詞のかたまりを作る用法が現代の標準英語では使われず、is patience という内容とも合わない。Whose は後ろに名詞が必要。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(関係代名詞 what 目的語)",
+  "stem": "A: Did you understand the lecture?\nB: Not really. I couldn't follow ( ) the professor was explaining.",
+  "passage": "",
+  "choices": [
+   "what",
+   "which",
+   "that",
+   "whom"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係詞(関係代名詞 what 目的語)。正解は「what」。follow の目的語になる名詞のかたまりで、先行詞が無いので「〜すること」を表す what を使う。節の中では explaining の目的語が欠けており、what がその役目をする。which と whom は先行詞を必要とする関係代名詞で、ここには先行詞が無い。that は接続詞としても explaining の目的語を補えず、意味が通らない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(関係代名詞 what 慣用表現)",
+  "stem": "In this region, the long rainy season is ( ) people call tsuyu.",
+  "passage": "",
+  "choices": [
+   "which",
+   "what",
+   "as",
+   "that"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係詞(関係代名詞 what 慣用表現)。正解は「what」。what we call や what people call 「いわゆる〜」の形で、call の目的語が欠けた節を what がまとめて is の補語になる。which と that は先行詞が必要な関係代名詞だが、ここには先行詞が無い。as は「〜のように」という接続詞の働きになり、call の目的語を補えないので文が成り立たない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(関係副詞 where)",
+  "stem": "Ryo visited the stadium ( ) his favorite team plays its home games.",
+  "passage": "",
+  "choices": [
+   "when",
+   "which",
+   "whose",
+   "where"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係詞(関係副詞 where)。正解は「where」。後ろの his favorite team plays its home games は目的語までそろった完全な節で、欠けているのは「そのスタジアムで」という場所の副詞。場所の先行詞 the stadium を受ける関係副詞 where を使う。which は節の中で主語か目的語の役目が必要だが、その空きが無い。whose は後ろに名詞が必要。when は時の先行詞を受ける。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(関係副詞 when)",
+  "stem": "The company released its first smartphone in 2010.\n= 2010 was the year ( ) the company released its first smartphone.",
+  "passage": "",
+  "choices": [
+   "when",
+   "which",
+   "whose",
+   "where"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係詞(関係副詞 when)。正解は「when」。元の文の in 2010 が「その年に」という時の副詞なので、先行詞 the year を受けるのは関係副詞 when。後ろの節は released its first smartphone と目的語がそろっていて、which を入れても働く場所が無い。where は場所の先行詞を受ける。whose は後ろに名詞を必要とする所有格で、直後の the company とは結びつかない。",
+  "form": "書きかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(関係副詞 why)",
+  "stem": "Nobody knows the reason ( ) the old bridge was closed so suddenly.",
+  "passage": "",
+  "choices": [
+   "why",
+   "where",
+   "how",
+   "which"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係詞(関係副詞 why)。正解は「why」。先行詞 the reason を受け、後ろの the old bridge was closed so suddenly は受け身で完全な節なので、理由を表す関係副詞 why を使う。which は節の中で主語や目的語の役目が必要だが、その空きが無い。how は方法を表す関係副詞で、the reason を先行詞にはとらない。where は場所の先行詞を受ける。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(the way in which)",
+  "stem": "Everyone was impressed by the way ( ) Olivia handled the angry customer.",
+  "passage": "",
+  "choices": [
+   "at which",
+   "in that",
+   "at that",
+   "in which"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係詞(the way in which)。正解は「in which」。「〜する方法・やり方」は the way in which ... で表し、この in which は関係副詞 how と同じ働きをする。at which は the way と結びつく前置詞ではなく、「そのやり方で」の意味にならない。that は前置詞の直後に置けないので、in that と at that はどちらも不可。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(関係副詞 how と the way)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "This is how he fixed the radio.",
+   "This is the way how he fixed the radio.",
+   "This is the way in which he fixed the radio.",
+   "This is the way he fixed the radio."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係詞(関係副詞 how と the way)。正解は「This is the way how he fixed the radio.」方法を表すときは、how を単独で使うか、the way だけ、または the way in which の形にする。the way と how を重ねた the way how は標準的な英語では誤りとされる。This is how he fixed the radio. と This is the way he fixed the radio. はどちらも「こうして彼はラジオを直した」を表す正しい文で、the way in which もかたい書き方として正しい。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(非制限用法 whom)",
+  "stem": "Our neighbor Mr. Brown, ( ) everyone on the street likes, is moving away next month.",
+  "passage": "",
+  "choices": [
+   "which",
+   "whom",
+   "that",
+   "whose"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係詞(非制限用法 whom)。正解は「whom」。コンマで区切られた節の中は everyone on the street likes ( ) と、likes の目的語が欠けており、先行詞 Mr. Brown は人なので目的格の whom が合う。that はコンマで区切る非制限用法では使えない。which は人を先行詞にとれない。whose は後ろに名詞が必要な所有格で、直後の everyone とは結びつかない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(非制限用法 where)",
+  "stem": "We spent a week in Hakone, ( ) my aunt runs a small inn.",
+  "passage": "",
+  "choices": [
+   "that",
+   "which",
+   "where",
+   "what"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係詞(非制限用法 where)。正解は「where」。コンマの後ろの my aunt runs a small inn は主語も目的語もそろった完全な節で、欠けているのは「箱根で」という場所の副詞。地名 Hakone を補足説明する関係副詞 where を使う。which は節の中に働く場所が無い。that は非制限用法では使えず、前置詞も無いので場所の意味を補えない。what は先行詞をとらない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(前文を受ける which)",
+  "stem": "The team lost the final, ( ) nobody had expected.",
+  "passage": "",
+  "choices": [
+   "which",
+   "what",
+   "whose",
+   "that"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係詞(前文を受ける which)。正解は「which」。コンマの前の「チームが決勝で負けた」という文全体を先行詞として受け、had expected の目的語になるのは which。that はコンマで区切る非制限用法では使えない。what は先行詞をとらない関係代名詞なので、前の文を受ける形では用いない。whose は後ろに名詞が必要な所有格で、nobody とは結びつかない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(前文を受ける which)",
+  "stem": "Daiki arrived two hours late, ( ) he apologized to everyone.",
+  "passage": "",
+  "choices": [
+   "for whom",
+   "for whose",
+   "for which",
+   "for that"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係詞(前文を受ける which)。正解は「for which」。apologize for 〜 「〜のことを謝る」の for を前に出し、「2 時間遅れたこと」という前の文全体を which で受けている。for whom は人を受ける形だが、謝った内容は「遅刻」という出来事なので合わない。for that は前置詞の直後に that を置いており不可。for whose は後ろに名詞が必要で、he apologized とはつながらない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(数量詞+of whom)",
+  "stem": "Ms. Lee has taught hundreds of students, some of ( ) have become teachers themselves.",
+  "passage": "",
+  "choices": [
+   "them",
+   "whom",
+   "which",
+   "whose"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係詞(数量詞+of whom)。正解は「whom」。some of ( ) が先行詞 hundreds of students を受けて have become の主語になり、前置詞 of の後ろで人を受けるので目的格の whom を使う。them を入れると 2 つの文をコンマだけでつないだ形になり、接続詞が無いので誤り。which は人を先行詞にとれない。whose は後ろに名詞を伴う所有格で、ここには続く名詞が無い。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(複合関係代名詞 whatever)",
+  "stem": "A: I'm nervous about tomorrow's discussion.\nB: Don't worry. You can say ( ) you think; everyone is free to speak.",
+  "passage": "",
+  "choices": [
+   "whatever",
+   "however",
+   "whoever",
+   "wherever"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係詞(複合関係代名詞 whatever)。正解は「whatever」。say の目的語になる「〜することは何でも」という名詞節を作るのは whatever で、節の中では think の目的語の役目もしている。whoever は「〜する人はだれでも」で、「考えていることを言う」という意味に合わない。wherever と however は副詞の働きで、say に必要な目的語を補えないので文が成り立たない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(複合関係副詞 however)",
+  "stem": "No matter how expensive it is, I will buy that camera.\n= ( ) expensive it is, I will buy that camera.",
+  "passage": "",
+  "choices": [
+   "Whenever",
+   "However",
+   "Whichever",
+   "Whatever"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係詞(複合関係副詞 however)。正解は「However」。no matter how + 形容詞 「どんなに〜でも」は however + 形容詞 で書きかえられ、However expensive it is で「どんなに高くても」となる。Whatever と Whichever は名詞と結びつく語で、形容詞 expensive を直接修飾できない。Whenever は「〜するときはいつでも」で、程度を表す expensive とは結びつかない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(非制限用法 who 主格)",
+  "stem": "A: How many sisters does Mika have?\nB: Just one. Her sister, ( ) works at a bank, is getting married next month.",
+  "passage": "",
+  "choices": [
+   "that",
+   "whom",
+   "who",
+   "why"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係詞(非制限用法 who 主格)。正解は「who」。姉妹は 1 人だけなので、Her sister をコンマで区切って補足説明する非制限用法にし、works の主語になる主格の who を使う。コンマが無いと「銀行で働いているほうの姉妹」と複数の姉妹から絞る意味になってしまう。that は非制限用法では使えない。whom は目的格で主語にはならない。why は理由を表す関係副詞で、人を先行詞にとらない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(関係詞と接続詞の区別)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "I was surprised at the news whose she had won the prize.",
+   "I was surprised at the news which she had won the prize.",
+   "I was surprised at the news what she had won the prize.",
+   "I was surprised at the news that she had won the prize."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係詞(関係詞と接続詞の区別)。正解は「I was surprised at the news that she had won the prize.」the news の中身を「彼女が賞を取ったという知らせ」と説明する節は、主語も目的語もそろった完全な節なので、関係詞ではなく接続詞 that でつなぐ。which は節の中で主語か目的語の役目が必要だが、she had won the prize にはその空きが無い。what は先行詞 the news と一緒には使えない。whose は後ろに名詞が必要で、she とは結びつかない。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(前置詞の後の that は不可)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "This is the office in which Ms. Okada works.",
+   "This is the office where Ms. Okada works.",
+   "This is the office in that Ms. Okada works.",
+   "This is the office which Ms. Okada works in."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】関係詞(前置詞の後の that は不可)。正解は「This is the office in that Ms. Okada works.」関係代名詞 that は前置詞の直後に置くことができないので、in that の形が誤り。in which のように which を使うか、which ... in と前置詞を節の末尾に残すか、関係副詞 where を使えば正しい文になる。残りの 3 文はいずれも「ここがオカダさんが働いている事務所だ」を表す正しい形である。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(what は先行詞をとらない)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "What she needs now is a good night's rest.",
+   "What he told me yesterday was a big lie.",
+   "This is exactly what I wanted to say.",
+   "The book what she bought was expensive."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】関係詞(what は先行詞をとらない)。正解は「The book what she bought was expensive.」関係代名詞 what は先行詞を含んでいるので、The book のような先行詞の直後に置くことはできない。ここは which か that、または関係代名詞を省略した The book she bought が正しい。残りの 3 文は what が先行詞なしで「〜すること・もの」という名詞節を作っており、主語や補語としていずれも正しく使われている。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(非制限用法で that は不可)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "My aunt, that lives in Nara, is a nurse.",
+   "My aunt, who lives in Nara, is a nurse.",
+   "My aunt, whom I respect a lot, is a nurse.",
+   "My aunt, whose son is a doctor, is a nurse."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係詞(非制限用法で that は不可)。正解は「My aunt, that lives in Nara, is a nurse.」コンマで区切って先行詞を補足説明する非制限用法では、関係代名詞 that は使えず、人なら who か whom を用いる。who lives in Nara は主格、whom I respect a lot は respect の目的格、whose son is a doctor は所有格として、それぞれ正しい非制限用法の文になっている。",
+  "form": "正誤",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(数量詞+of which)",
+  "stem": "The library owns about 2,000 old maps, half ( ) have never been displayed.",
+  "passage": "",
+  "choices": [
+   "of which",
+   "of them",
+   "of whom",
+   "of whose"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】関係詞(数量詞+of which)。正解は「of which」。half of ( ) が先行詞 2,000 old maps を受けて have never been displayed の主語になる。先行詞は物なので of which。of whom は人を受ける形で、maps には使えない。of them では 2 つの文をコンマだけでつないだことになり、接続詞が無いので誤り。of whose は後ろに名詞を必要とするが、ここには無い。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "関係",
+  "unit": "関係詞(複合関係代名詞 whoever)",
+  "stem": "( ) left the window open should close it before the rain starts.",
+  "passage": "",
+  "choices": [
+   "Whomever",
+   "Whoever",
+   "Wherever",
+   "However"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】関係詞(複合関係代名詞 whoever)。正解は「Whoever」。「〜する人はだれでも」を表す whoever が、left の主語と should close の主語をまとめて文の主語の名詞節を作る。Whomever は目的格で、left の主語には使えない。Wherever と However は副詞の働きをする語で、「〜する人」という名詞のかたまりを作れず、文の主語になれない。",
+  "form": "空所補充",
+  "level": "基礎"
+ }
+]

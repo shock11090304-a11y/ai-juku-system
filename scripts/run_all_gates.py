@@ -84,6 +84,7 @@ SKIP = {
     "scripts/audit_pool_health.py": "本番APIに223回つなぐ・教材でなく出題プールの在庫監査",
     "scripts/chugaku_dojo/futeishi/post_check.py": "本番APIにつなぐ（取込後に手で回す）",
     "scripts/chugaku_dojo/expand_v3/post_check.py": "本番APIにつなぐ（取込後に手で回す）",
+    "scripts/kosei_dojo/eibunpo_v2/post_check.py": "本番APIにつなぐ（取込後に手で回す）",
     "scripts/aoyama_eigo_mirror/verify_imported.py":
         "冊子受験アプリのDBを読み返す（取込後に手で回す。講師アカウントの認証が要る）",
     "scripts/eiken_junichi/mogi/refresh_pdf.py":

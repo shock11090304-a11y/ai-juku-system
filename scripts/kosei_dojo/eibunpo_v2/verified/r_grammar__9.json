@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(等位接続詞 but の逆接)",
+  "stem": "The hotel was cheap, ( ) the rooms were surprisingly clean.",
+  "passage": "",
+  "choices": [
+   "but",
+   "for",
+   "so",
+   "or"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞(等位接続詞 but の逆接)。正解は「but」。前半「安かった」と後半「意外にきれいだった」は予想に反する組み合わせで、surprisingly がその対立を示しているので、逆接の but でつなぐ。so は「だから」で、安いことからきれいさは導けない。for は「というのは〜だから」と理由を添える語で、部屋がきれいなことは安さの理由にならない。or は「または」で、二者択一の文脈ではない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(名詞句 + and 〜すれば)",
+  "stem": "One more mistake, ( ) you will be dropped from the team.",
+  "passage": "",
+  "choices": [
+   "and",
+   "or",
+   "but",
+   "so"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞(名詞句 + and 〜すれば)。正解は「and」。命令文のときと同じように、名詞句のあとに and を置くと「〜すれば…」という条件の意味になり、「もう一度ミスをすれば、チームから外される」とつながる。or は「さもないと」で、ミスをしなければ外されるという逆の意味になる。but と so は前の名詞句を条件として受ける働きがなく、文が成り立たない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(not A but B)",
+  "stem": "It was ( ) Daiki but his younger brother who broke the window.",
+  "passage": "",
+  "choices": [
+   "yet",
+   "nor",
+   "and",
+   "not"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞(not A but B)。正解は「not」。後ろの but his younger brother と組んで not A but B「A ではなく B」の形になり、「窓を割ったのはダイキではなく弟だ」という意味になる。nor は neither と組む語で、but とは対にならない。and と yet は It was の直後に置くと文の形が崩れ、後ろの but ともつながらない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(both A and B の動詞の一致)",
+  "stem": "Both the bus and the train ( ) delayed because of the snow this morning.",
+  "passage": "",
+  "choices": [
+   "was",
+   "were",
+   "is",
+   "has been"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞(both A and B の動詞の一致)。正解は「were」。both A and B が主語になると A と B の両方を指すので動詞は常に複数で受け、this morning とあるので過去形の were が合う。was と is は単数の形で、2 つのものをまとめた主語に合わない。has been も単数の形で、this morning という過去の時点を述べる文にも合わない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(either A or B)",
+  "stem": "A: Which day works better for you, Monday or Wednesday?\nB: ( ) Monday or Wednesday works for me.",
+  "passage": "",
+  "choices": [
+   "Neither",
+   "Both",
+   "Either",
+   "Whether"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞(either A or B)。正解は「Either」。後ろの or と組んで either A or B「A か B のどちらか」となり、「月曜でも水曜でもどちらでもいい」という返事になる。Neither は nor と対になる語で、or とは組めない。Both は and と組む語で、or とはつながらない。Whether も or と使えるが、Whether Monday or Wednesday works for me では「〜かどうか」の名詞節だけで文が完結せず、返事として成り立たない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(結果の so that)",
+  "stem": "The printer broke down at noon, ( ) we had to deliver the documents by hand.",
+  "passage": "",
+  "choices": [
+   "in order that",
+   "now that",
+   "in case",
+   "so that"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞(結果の so that)。正解は「so that」。コンマのあとの so that は「その結果〜」と前の出来事の結果を述べる使い方で、「プリンターが壊れたので、書類を手で届けなければならなかった」とつながる。in order that は目的「〜するために」を表すので、had to という結果の内容に合わない。now that は「今や〜なので」と理由を述べる語で、壊れたことの理由にはならない。in case は「〜する場合に備えて」で、文脈に合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(同格の that)",
+  "stem": "Noah couldn't accept the idea ( ) robots would someday replace teachers.",
+  "passage": "",
+  "choices": [
+   "what",
+   "which",
+   "that",
+   "whether"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞(同格の that)。正解は「that」。idea のような「考え・事実」を表す名詞のあとに that 節を続けて、その名詞の中身を説明する同格の用法。robots would someday replace teachers は欠けた要素のない完全な文なので、名詞の中身をそのまま示す that が合う。which と what は節の中で主語や目的語の役目をする語だが、この節には欠けている要素がないので入れられない。whether は「〜かどうか」で、idea の中身を示す語として意味が合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(It is 形容詞 that 節)",
+  "stem": "It is surprising ( ) Haru finished the marathon in under four hours.",
+  "passage": "",
+  "choices": [
+   "that",
+   "who",
+   "what",
+   "whether"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞(It is 形容詞 that 節)。正解は「that」。It は形式上の主語で、本当の主語は that 以下「ハルが 4 時間を切ってマラソンを完走したこと」である。Haru finished the marathon in under four hours は欠けた要素のない完全な文なので、文全体を名詞節にまとめる that を使う。what と who は節の中で主語や目的語の役目をするので、完全な文の前には置けない。whether「〜かどうか」は surprising「驚くべきだ」と組み合わせると意味が通らない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(名詞節の that 主語)",
+  "stem": "( ) Olivia passed the entrance exam on her first try delighted her whole family.",
+  "passage": "",
+  "choices": [
+   "What",
+   "Who",
+   "Which",
+   "That"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞(名詞節の that 主語)。正解は「That」。That 節全体「オリビアが一度で入試に合格したこと」が文の主語になり、動詞 delighted につながる。節の中は Olivia passed the entrance exam と完全な文なので、欠けた要素を補う What・Which・Who は入らない。これらは節の中で主語や目的語になる語で、passed にはすでに目的語 the entrance exam があるため使えない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(whether の直後の or not)",
+  "stem": "I don't care ( ) or not Ryo agrees with my plan.",
+  "passage": "",
+  "choices": [
+   "whether",
+   "if",
+   "though",
+   "unless"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞(whether の直後の or not)。正解は「whether」。「〜かどうか」の名詞節を導く語のうち、直後に or not を続けられるのは whether だけで、whether or not Ryo agrees「リョウが賛成するかどうか」が care の目的語になる。if も「〜かどうか」を表せるが、if or not とは言えず、or not は節の最後に置くしかない。though と unless は「〜だが」「〜しなければ」の意味で、or not と組み合わせて「〜かどうか」を表すことはできない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(時の副詞節は現在形で未来を表す)",
+  "stem": "Ms. Lee will send us the report as soon as she ( ) the final data.",
+  "passage": "",
+  "choices": [
+   "will receive",
+   "received",
+   "receives",
+   "had received"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞(時の副詞節は現在形で未来を表す)。正解は「receives」。as soon as が導く時の副詞節では、未来のことでも will を使わず現在形で表すので、主節が will send でも節の中は receives になる。will receive は時の副詞節の中では使わない。received と had received は過去の形で、「これから送る」という未来の文脈に合わない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(after 節の時制)",
+  "stem": "After Liam ( ) his homework, he went out to play soccer with his friends.",
+  "passage": "",
+  "choices": [
+   "had finished",
+   "finishes",
+   "has finished",
+   "will finish"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞(after 節の時制)。正解は「had finished」。主節の went out が過去形なので、after が導く「宿題を終えた」はそれより前の出来事になり、過去完了 had finished (過去形 finished でもよい) で表す。finishes は現在形、has finished は現在完了で、過去の went out とは時間がかみ合わない。will finish は未来の形で、過去の話に合わない。",
+  "form": "語形選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(by the time 〜するときまでに)",
+  "stem": "( ) Mika woke up, her family had already left for work.",
+  "passage": "",
+  "choices": [
+   "By the time",
+   "In case",
+   "As long as",
+   "Unless"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞(by the time 〜するときまでに)。正解は「By the time」。主節が had already left と過去完了で「すでに出かけていた」とあるので、「ミカが目を覚ましたときまでに」と期限を表す by the time が合う。As long as「〜する限り」と Unless「〜しなければ」は条件を表し、過去の出来事の順序を示せない。In case は「〜する場合に備えて」で、意味がつながらない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(once いったん〜すると)",
+  "stem": "( ) you learn how to ride a bicycle, you never forget it.",
+  "passage": "",
+  "choices": [
+   "While",
+   "Once",
+   "Until",
+   "Unless"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞(once いったん〜すると)。正解は「Once」。once は接続詞として「いったん〜すると」の意味で、「自転車の乗り方をいったん覚えると、二度と忘れない」と自然につながる。While は「〜している間」で、覚えている最中に忘れないという意味になり不自然。Until は「〜まで」、Unless は「〜しなければ」で、どちらも後半の never forget と意味がかみ合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(時の as 〜するちょうどそのとき)",
+  "stem": "The phone rang just ( ) Sora was leaving the house for school.",
+  "passage": "",
+  "choices": [
+   "if",
+   "as",
+   "so",
+   "or"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞(時の as 〜するちょうどそのとき)。正解は「as」。just as で「ちょうど〜するときに」と 2 つの出来事が同時に起きたことを表し、「ソラが家を出ようとしたちょうどそのとき電話が鳴った」となる。if は条件「もし〜なら」で、過去の一回の出来事に合わない。or は「または」で、この形で節をつなげない。so は「だから・〜するように」で、電話が鳴った理由や目的として意味が通らない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(the instant 〜するとすぐに)",
+  "stem": "( ) Aya saw her test score, she jumped up and shouted with joy.",
+  "passage": "",
+  "choices": [
+   "No matter",
+   "The instant",
+   "In case",
+   "Unless"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞(the instant 〜するとすぐに)。正解は「The instant」。the instant は as soon as と同じく接続詞のように働き、「アヤは点数を見るとすぐに飛び上がって喜んだ」という意味になる。No matter は how や what などの疑問詞と組んで使う語で、直後に Aya saw と節を続けられない。In case「〜する場合に備えて」と Unless「〜しなければ」は、点数を見たことと喜んだことの時間的なつながりを表せない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(the moment 〜するとすぐに)",
+  "stem": "As soon as the bell rang, the students rushed out of the classroom.\n= ( ) the bell rang, the students rushed out of the classroom.",
+  "passage": "",
+  "choices": [
+   "The reason",
+   "The moment",
+   "The place",
+   "The point"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞(the moment 〜するとすぐに)。正解は「The moment」。the moment は名詞の形のまま接続詞として働き、as soon as と同じ「〜するとすぐに」を表すので、元の文と同じ意味になる。The reason は「〜する理由」、The place は「〜する場所」で、ベルが鳴ったことと生徒が飛び出したことの時間関係を表せない。The point は「〜する点」の意味で、節を導いて「〜するとすぐに」を表す使い方はない。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(理由の since)",
+  "stem": "( ) you have already eaten, let's skip dinner and go straight to the movie.",
+  "passage": "",
+  "choices": [
+   "Until",
+   "Since",
+   "Whether",
+   "Unless"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞(理由の since)。正解は「Since」。since には「〜して以来」のほかに「〜なので」と理由を表す使い方があり、「もう食べたのだから、夕食は抜いて映画に直行しよう」と前半が後半の提案の理由になる。Until「〜まで」は時の区切りを表し、提案の理由にならない。Whether は「〜かどうか」で、or not の無いこの形では副詞節を作れない。Unless「〜しなければ」は、食べていない場合に夕食を抜くという逆の意味になり不自然。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(理由の as)",
+  "stem": "Because all the seats were taken, we had to stand through the whole concert.\n= ( ) all the seats were taken, we had to stand through the whole concert.",
+  "passage": "",
+  "choices": [
+   "So",
+   "Or",
+   "Yet",
+   "As"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞(理由の as)。正解は「As」。as には「〜なので」と理由を表す使い方があり、文頭に置いて Because と同じように「席が全部埋まっていたので」と書きかえられる。So は「だから」と結果を導く語なので理由の節の先頭には置けず、So all the seats were taken, we had to stand では 2 つの文がつながらない。Or「または」と Yet「それでも」も 2 つの文を対等に並べる語で、理由を表す節を作れない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(条件の if 節は現在形で未来を表す)",
+  "stem": "If it ( ) tomorrow, the school festival will be held in the gym.",
+  "passage": "",
+  "choices": [
+   "rains",
+   "will rain",
+   "rained",
+   "has rained"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞(条件の if 節は現在形で未来を表す)。正解は「rains」。if が導く条件の副詞節では、tomorrow と未来のことでも will を使わず現在形で表すので、rains が合う。will rain は条件の副詞節の中では使わない。rained は過去形で、主節の will be held と組むと時間が合わない (仮定法なら主節も would になる)。has rained は現在完了で、tomorrow という未来の一時点を表す語と合わない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(条件の provided)",
+  "stem": "You can borrow my laptop ( ) you return it by Friday afternoon.",
+  "passage": "",
+  "choices": [
+   "whereas",
+   "whether",
+   "provided",
+   "as if"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞(条件の provided)。正解は「provided」。provided (that) は「〜という条件で・〜であれば」と条件を表し、「金曜の午後までに返すなら貸してあげる」とつながる。whereas は「〜であるのに対して」と 2 つを対比する語で、貸し借りの条件にならない。whether は「〜かどうか」で、or not の無いこの形では副詞節として成り立たない。as if は「まるで〜のように」で、返す約束を条件として示す意味にならない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(譲歩の even though 書きかえ)",
+  "stem": "Despite his injured knee, Yuki finished the race.\n= ( ) his knee was injured, Yuki finished the race.",
+  "passage": "",
+  "choices": [
+   "Even though",
+   "So that",
+   "In case",
+   "As long as"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】接続詞(譲歩の even though 書きかえ)。正解は「Even though」。Despite his injured knee「けがをした膝にもかかわらず」という名詞句を節で言いかえるには、「〜だけれども」と事実を述べて譲歩する even though を使う。As long as は「〜する限り」の条件で、けがとゴールの関係に合わない。So that は「〜するように・その結果」で意味がつながらない。In case は「〜する場合に備えて」で、すでに起きたけがを述べる文に合わない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(while と during の区別)",
+  "stem": "A: How did you hurt your ankle?\nB: I twisted it ( ) I was playing basketball at lunchtime.",
+  "passage": "",
+  "choices": [
+   "whether",
+   "during",
+   "unless",
+   "while"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞(while と during の区別)。正解は「while」。後ろに I was playing basketball という主語と動詞のある節が続くので、「〜している間に」を表す接続詞 while を使う。during も「〜の間に」だが、during lunchtime のように名詞を続ける語で、節は続けられない。unless「〜しなければ」と whether「〜かどうか」は、けがをした時を表す意味にならない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(because と because of の区別)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "We stayed inside because of it was raining hard outside.",
+   "We stayed inside because the heavy rain all day long.",
+   "We stayed inside because of the heavy rain all day.",
+   "We stayed inside during it was raining hard outside."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞(because と because of の区別)。正解は「We stayed inside because of the heavy rain all day.」because of は名詞 (the heavy rain) を続ける形で、because は主語と動詞のある節を続ける接続詞という使い分けがある。because of のあとに it was raining という節を続けた文と、because のあとに名詞 the heavy rain だけを続けた文は、この使い分けに反する。during も名詞を続ける語なので、during it was raining のように節は続けられない。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(結果の so)",
+  "stem": "A: Why did you take a taxi instead of the bus?\nB: It was raining really hard, ( ) I didn't want to get wet.",
+  "passage": "",
+  "choices": [
+   "for",
+   "so",
+   "or",
+   "nor"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞(結果の so)。正解は「so」。「ひどい雨だった」が原因で「ぬれたくなかった (からタクシーにした)」という結果につながるので、「だから」を表す so が合う。for は「というのは〜だから」と前の内容の理由を後ろに添える語で、ぬれたくない気持ちが雨の理由になるのは不自然。or は「または」、nor は否定文のあとに「〜もまた…ない」と続ける語で、どちらも因果関係を表せない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(as long as と as far as)",
+  "stem": "A: Can I use your computer for a while?\nB: Sure, ( ) you don't change any of the settings.",
+  "passage": "",
+  "choices": [
+   "as far as",
+   "as soon as",
+   "as long as",
+   "as well as"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞(as long as と as far as)。正解は「as long as」。「設定を変えないなら使っていい」と条件をつけて許可しているので、「〜する限り・〜という条件で」の as long as が合う。as far as も「〜する限り」と訳せるが、as far as I know のように知識や範囲の限界を表す語で、条件には使えない。as soon as は「〜するとすぐに」、as well as は「〜と同様に」で、どちらも条件の意味にならない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(not only but also 書きかえ)",
+  "stem": "Kaito plays the drums as well as the guitar in the school band.\n= Kaito plays not only the guitar ( ) the drums in the school band.",
+  "passage": "",
+  "choices": [
+   "as well",
+   "and also",
+   "or else",
+   "but also"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞(not only but also 書きかえ)。正解は「but also」。A as well as B「B だけでなく A も」は not only B but also A で書きかえられるので、the drums as well as the guitar は not only the guitar but also the drums となり、not only the guitar に対して but also the drums が対になる。and also は not only と対にして使う形ではなく、not only の後ろを and で受けると「〜だけでなく…も」の意味がつながらない。or else は「さもないと」の意味で、2 つの楽器を並べる文脈に合わない。as well は「〜も」を表す副詞で、not only A but B as well のように文の終わりに添えることはできるが、空所のように 2 つの名詞を直接つなぐ接続詞の位置には置けない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(目的の in order that)",
+  "stem": "The sign was written in four languages ( ) every visitor could understand it.",
+  "passage": "",
+  "choices": [
+   "in order to",
+   "so as to",
+   "in order that",
+   "for the purpose of"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】接続詞(目的の in order that)。正解は「in order that」。後ろに every visitor could understand it という主語と動詞のそろった節が続いているので、節を導いて目的「〜するように」を表す in order that が合う。in order to と so as to は動詞の原形を続けて目的を表す形で、主語のある節を続けられない。for the purpose of は名詞や -ing 形を続ける形で、節は続かない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(様態の as 〜するように)",
+  "stem": "Please fold the paper exactly ( ) I showed you in the video.",
+  "passage": "",
+  "choices": [
+   "so",
+   "as",
+   "that",
+   "than"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】接続詞(様態の as 〜するように)。正解は「as」。as には「〜するように・〜するとおりに」と様態を表す使い方があり、exactly as I showed you で「私が見せたとおりに」となる。so は「だから」や「〜するように (目的)」で、「やり方のとおりに」の意味にならない。than は比較級とともに使う語で、exactly のあとには置けない。that は「〜ということ」の名詞節などを導く語で、fold の仕方を示す副詞節にはならない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "接続詞",
+  "unit": "接続詞(様態の as though)",
+  "stem": "Ms. Park kept smiling ( ) nothing had happened at the meeting.",
+  "passage": "",
+  "choices": [
+   "except that",
+   "so that",
+   "in case",
+   "as though"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】接続詞(様態の as though)。正解は「as though」。as though は as if と同じ「まるで〜のように」で、実際には会議で何かあったのに「何もなかったかのように笑い続けた」と、事実と違うことを過去完了 had happened で述べている。so that は「〜するように・その結果〜」という目的・結果を表し、「何も起こらなかったように笑った」という様態の意味にはならない。in case は「〜する場合に備えて」と用心のための目的を表すので、「何も起こらなかった場合に備えて笑い続けた」となり意味が通らない。except that は「〜ということを除いて」と例外を述べる言い方で、笑い続けたことの例外として「何も起こらなかった」を挙げるのは意味が通らない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ }
+]

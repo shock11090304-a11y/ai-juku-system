@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(現在分詞の前置修飾)",
+  "stem": "Haru took a photo of the ( ) birds over the lake at sunrise.",
+  "passage": "",
+  "choices": [
+   "flying",
+   "flown",
+   "flies",
+   "fly"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞(現在分詞の前置修飾)。正解は「flying」。名詞 birds を前から修飾し、鳥が「飛んでいる」という能動・進行中の意味を表すので現在分詞 flying が合う (the flying birds「飛んでいる鳥」)。flown は fly の過去分詞。過去分詞が名詞を前から修飾するときは、a broken window「壊された窓」のような受動の意味か、fallen leaves「落ちてしまった葉」のような「〜してしまった」という完了の意味を表す。鳥は自分で飛ぶものなので「飛ばされた鳥」にはならず、「飛び終えた鳥」では湖の上を飛んでいる場面と合わないため、flown は使えない。flies と fly は述語動詞の形で、the と birds の間に置いて名詞を修飾することはできない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(過去分詞の前置修飾)",
+  "stem": "The ( ) vase on the floor was a present from my grandmother.",
+  "passage": "",
+  "choices": [
+   "break",
+   "broke",
+   "broken",
+   "breaking"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞(過去分詞の前置修飾)。正解は「broken」。床の上にある花びんは「割られた・割れてしまった」状態なので、受動・完了の意味を持つ過去分詞 broken が名詞 vase を前から修飾する。breaking は「割れつつある」という進行の意味になり、床に落ちた後の状態を表す文脈に合わない。broke は過去形、break は原形で、どちらも名詞を修飾する形ではない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(現在分詞の後置修飾)",
+  "stem": "Most of the families ( ) in this area work at the car factory.",
+  "passage": "",
+  "choices": [
+   "to live",
+   "lived",
+   "living",
+   "are living"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞(現在分詞の後置修飾)。正解は「living」。述語動詞は work で、空所から area までは名詞 families を後ろから修飾する部分。家族が「住んでいる」という能動の意味なので現在分詞 living (= who live) が合う。are living では are と work の 2 つの述語動詞が並ぶ。live は目的語を取らない動詞なので過去分詞 lived に受動の意味は作れず、to live は「これから住む予定の」という意味合いになって文脈に合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(過去分詞の後置修飾)",
+  "stem": "Please read the instructions ( ) on the back of the box before you start.",
+  "passage": "",
+  "choices": [
+   "printed",
+   "are printed",
+   "printing",
+   "to print"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞(過去分詞の後置修飾)。正解は「printed」。空所から box までは名詞 instructions を後ろから修飾する部分。説明は箱の裏に「印刷されている」という受動の意味なので過去分詞 printed が合う。printing だと「説明が印刷している」という能動の意味で不自然。are printed では read と are の 2 つの述語動詞が並ぶ。to print は「印刷すべき説明」の意味合いになり、すでに書かれた説明を読む文脈に合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(感情動詞の分詞・-ed)",
+  "stem": "The guests were ( ) with the meal and thanked the chef warmly.",
+  "passage": "",
+  "choices": [
+   "pleasing",
+   "pleased",
+   "pleases",
+   "please"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞(感情動詞の分詞・-ed)。正解は「pleased」。please は「〜を喜ばせる」という動詞で、主語 the guests は食事に「喜ばされた」側なので過去分詞 pleased が合う。後ろの with the meal も be pleased with「〜に満足している」の形。pleasing は「人を喜ばせるような」で物や様子を主語にする形であり、with を続けられない。please と pleases は述語動詞の形で、were の後ろには置けない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(知覚動詞+O+現在分詞)",
+  "stem": "Olivia saw a man ( ) out of the shop with a bag and shouted for help.",
+  "passage": "",
+  "choices": [
+   "to run",
+   "ran",
+   "running",
+   "runs"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞(知覚動詞+O+現在分詞)。正解は「running」。see のような知覚を表す動詞は「see + 目的語 + 現在分詞」で「〜が…しているのを見る」と動作の途中を表せる。目的語 a man が自分で「走っている」という能動の意味なので running が合う。ran や runs は述語動詞の形で、目的語の後ろに補語として置くことはできない。to run は see の目的語の後ろに置けない形で、知覚動詞の後に不定詞を使うなら to の無い原形になる。",
+  "form": "語形選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(知覚動詞+O+過去分詞)",
+  "stem": "From the hill we watched the old bridge ( ) by the flood.",
+  "passage": "",
+  "choices": [
+   "carrying away",
+   "carried away",
+   "to carry away",
+   "carry away"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞(知覚動詞+O+過去分詞)。正解は「carried away」。watch + 目的語 + 分詞の形で、目的語 the old bridge は洪水に「流される」側なので、受動の意味の過去分詞 carried away が合う。carrying away は「橋が運んでいる」という能動の意味で by the flood と合わない。carry away は原形で、橋が自分で何かを運び去ることになり意味が成り立たない。to carry away は知覚動詞の後ろに置けない形。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(使役 have+O+過去分詞)",
+  "stem": "Haru has to have his photo ( ) for his new passport this week.",
+  "passage": "",
+  "choices": [
+   "taking",
+   "to take",
+   "taken",
+   "to be taken"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞(使役 have+O+過去分詞)。正解は「taken」。「have + 目的語 + 過去分詞」で「〜を…してもらう」。写真は写真屋などに「撮られる」側なので過去分詞 taken が合う。taking は「写真が撮っている」という能動の意味になり不自然。to take と to be taken は to の付いた形で、使役の have は目的語の後ろに to 付きの形を続けないので、「〜してもらう」の意味は作れない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(使役 get+O+過去分詞)",
+  "stem": "We need to get this contract ( ) by a lawyer before we sign it.",
+  "passage": "",
+  "choices": [
+   "reviewing",
+   "reviewed",
+   "being reviewed",
+   "to review"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞(使役 get+O+過去分詞)。正解は「reviewed」。「get + 目的語 + 過去分詞」で「〜を…してもらう」。契約書は弁護士に「確認される」側なので過去分詞 reviewed が合い、by a lawyer ともつながる。reviewing は「契約書が確認している」という能動の意味で不自然。to review は「get + 目的語 + to 不定詞」で「〜に…させる・〜が…するようにする」という能動の意味になり、契約書が自分で確認することになってしまうので、by a lawyer とも合わない。being reviewed は get の目的語の後ろに続ける形ではなく、「〜してもらう」の受動の意味は過去分詞だけで表す。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(keep+O+現在分詞)",
+  "stem": "The coach kept the players ( ) until it got too dark to see the ball.",
+  "passage": "",
+  "choices": [
+   "practiced",
+   "practicing",
+   "to practice",
+   "being practiced"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞(keep+O+現在分詞)。正解は「practicing」。「keep + 目的語 + 現在分詞」で「〜に…させ続ける」。目的語 the players が自分で「練習している」という能動の意味なので practicing が合う。practiced は「選手が練習される」という受動の意味になり、選手が自ら練習する文脈に合わない。to practice は keep の目的語の後ろに置けない形。being practiced も受動の意味で、選手が何かをされる側になってしまう。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(leave+O+過去分詞)",
+  "stem": "The earthquake left hundreds of people ( ) in the mountains for two days.",
+  "passage": "",
+  "choices": [
+   "trapping",
+   "to trap",
+   "being trapped",
+   "trapped"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞(leave+O+過去分詞)。正解は「trapped」。「leave + 目的語 + 過去分詞」で「〜を…された状態のままにする」。目的語の人々は地震によって「閉じ込められた」側なので過去分詞 trapped が合う。trapping は「人々が何かを閉じ込めている」という能動の意味で不自然。to trap は leave の目的語の後ろに置いて結果の状態を表す形にはならない。being trapped は leave の目的語の補語として使う形ではない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(分詞構文・時)",
+  "stem": "( ) the final page of the novel, Emma sat quietly for a while.",
+  "passage": "",
+  "choices": [
+   "Finishing",
+   "Being finished",
+   "To be finished",
+   "Finished"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞(分詞構文・時)。正解は「Finishing」。接続詞と主語を省いて分詞で始める分詞構文。意味上の主語は主節の主語 Emma で、最後のページを「読み終える」という能動の意味なので現在分詞 Finishing (= When she finished) が合う。Finished は受動の意味で「Emma が終えられる」となり、目的語 the final page も続けられない。Being finished と To be finished も受動の形で、本を読み終える場面に合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(分詞構文・理由)",
+  "stem": "( ) a lot about history, Mr. Brown makes his lessons lively and interesting.",
+  "passage": "",
+  "choices": [
+   "Knowing",
+   "Known",
+   "Being known",
+   "To be known"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞(分詞構文・理由)。正解は「Knowing」。主節の主語 Mr. Brown が歴史を「よく知っている」ことが理由で、能動の意味なので現在分詞 Knowing で始める分詞構文 (= Because he knows) が合う。Known は過去分詞で「Mr. Brown が知られている」という受動の意味になり、後ろに a lot about history を続けられない。Being known と To be known も受動の形で、文意に合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(分詞構文・条件)",
+  "stem": "( ) regularly, these roses will keep blooming until late autumn.",
+  "passage": "",
+  "choices": [
+   "If watered",
+   "Unless watered",
+   "If watering",
+   "Unless watering"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞(分詞構文・条件)。正解は「If watered」。「接続詞 + 分詞」の分詞構文。主節の主語 these roses は「水をやられる」側なので過去分詞 watered を使い、「水をやれば咲き続ける」という条件なので If が合う。Unless watered は「水をやらなければ」となり、咲き続けるという主節と意味がつながらない。If watering と Unless watering は現在分詞で「バラが水をやる」という能動の意味になり不自然。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(分詞構文・譲歩)",
+  "stem": "( ) by many experts, the theory has not been proved yet.",
+  "passage": "",
+  "choices": [
+   "Though supporting",
+   "Since supported",
+   "Though supported",
+   "Since supporting"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞(分詞構文・譲歩)。正解は「Though supported」。接続詞を残した分詞構文。主節の主語 the theory は「支持される」側なので過去分詞 supported を使い、by many experts もそれを示す。逆接なので Though が合う。Since supported は理由になり意味が通らない。Though supporting と Since supporting は現在分詞で「理論が支持している」という能動の意味になり、by many experts と合わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(分詞構文・付帯状況)",
+  "stem": "The children ran toward the water, ( ) and shouting with joy.",
+  "passage": "",
+  "choices": [
+   "laughed",
+   "to laugh",
+   "being laughed",
+   "laughing"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞(分詞構文・付帯状況)。正解は「laughing」。主節の後ろに分詞を置き、「〜しながら」と同時の動作を添える付帯状況の分詞構文。主語 the children が「笑っている」という能動の意味なので現在分詞 laughing が合い、and の後ろの shouting とも形がそろう。laughed は過去分詞で「笑われる」という受動の意味になり、shouting と並べられない。being laughed も受動の形で不自然。to laugh は「笑うために」という目的の意味になる。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(分詞構文・結果)",
+  "stem": "The new library opened last spring, ( ) the town a popular place for students to study.",
+  "passage": "",
+  "choices": [
+   "made",
+   "making",
+   "to be made",
+   "being made"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞(分詞構文・結果)。正解は「making」。主節の後ろに置いた分詞構文で、「開館した結果、町を人気の場所にした」という結果を表す。意味上の主語は the new library で能動の意味なので現在分詞 making が合う。made では opened と made の 2 つの述語動詞が and 無しに並び誤り。being made と to be made は受動の形で、図書館が「作られる」ことになり、後ろの the town a popular place とつながらない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(受動の分詞構文)",
+  "stem": "( ) in a quiet village, the hotel is popular with people who want to relax.",
+  "passage": "",
+  "choices": [
+   "To locate",
+   "Locating",
+   "Having located",
+   "Located"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞(受動の分詞構文)。正解は「Located」。主節の主語 the hotel は静かな村に「位置させられている=ある」という受動の意味なので、being を省いた過去分詞 Located で始める分詞構文が合う。locate は「〜を置く」という目的語を取る動詞なので、Locating だと「ホテルが何かを置いている」ことになり、目的語も無く不自然。Having located も能動の完了形で同じ理由で誤り。To locate は「置くために」という目的の意味になる。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(受動の分詞構文・接続詞付き)",
+  "stem": "When ( ) by a stranger, the shy boy always looks down at his feet.",
+  "passage": "",
+  "choices": [
+   "speaking to",
+   "spoken to",
+   "speaking",
+   "spoken"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞(受動の分詞構文・接続詞付き)。正解は「spoken to」。接続詞 when を残した分詞構文。主節の主語 the shy boy は「話しかけられる」側なので受動の意味の過去分詞を使い、speak to の to は受動でも残るので spoken to が正しい。spoken だけでは to が抜け、人を直接の目的語に取らない speak が by a stranger とつながらない。speaking to と speaking は現在分詞で「少年が話しかける」という能動の意味になる。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(完了形の分詞構文・時のずれ)",
+  "stem": "As she had checked the map twice, Olivia knew the way to the hotel.\n= ( ) the map twice, Olivia knew the way to the hotel.",
+  "passage": "",
+  "choices": [
+   "Checking",
+   "Having checked",
+   "Having been checked",
+   "Checked"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞(完了形の分詞構文・時のずれ)。正解は「Having checked」。元の文は had checked という過去完了で、「地図を確かめた」ことが knew より前に起きたことを示す。このずれを分詞構文で表すには having + 過去分詞を使うので Having checked が合う。Checking だと主節と同時の出来事になり、元の文とずれる。Checked は受動の意味で目的語 the map を続けられない。Having been checked も受動で意味が成り立たない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(慣用的分詞構文 considering)",
+  "stem": "A: The students sang really well at the concert, didn't they?\nB: Yes, ( ) how little practice they had, it was a great performance.",
+  "passage": "",
+  "choices": [
+   "considered",
+   "considering",
+   "having considered",
+   "being considered"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】分詞(慣用的分詞構文 considering)。正解は「considering」。considering 〜「〜を考えると」は、意味上の主語を主節の主語に合わせなくてよい慣用的な分詞構文で、後ろに名詞や how 節を続けられる。considered は過去分詞で「考えられると」という受動の意味になり、慣用表現の形ではない。having considered は「それ (it) が考え終えてから」となり、主語 it と意味がつながらない。being considered も受動の形で、「考えると」の意味を表せない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(go+分詞)",
+  "stem": "A: You look tired. What did you do yesterday?\nB: I got up at four and went ( ) with my uncle at the lake.",
+  "passage": "",
+  "choices": [
+   "fished",
+   "to fishing",
+   "fishes",
+   "fishing"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞(go+分詞)。正解は「fishing」。go + 現在分詞で「〜しに行く」(go fishing / go swimming など)。went の後ろに置けるのは動作を表す現在分詞なので fishing が合う。fished は過去形・過去分詞で、went の後ろに続けて「釣りに行った」の意味は作れない。to fishing は to の後ろに -ing 形を置いた形で誤り。fishes は現在形 (または名詞の複数形) で、went と組み合わせられない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(be busy -ing)",
+  "stem": "A: Can you come to the movies with us tonight?\nB: Sorry, I'm busy ( ) for tomorrow's exam.",
+  "passage": "",
+  "choices": [
+   "to study",
+   "studied",
+   "studying",
+   "study"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞(be busy -ing)。正解は「studying」。be busy -ing で「〜するのに忙しい」。busy の後ろには動作を表す -ing 形を直接続けるので studying が合う (busy の後ろの in が省かれた形と考えられる)。to study は不定詞で、busy の直後に to 不定詞を続けて「〜するのに忙しい」とは言えない。studied は過去形・過去分詞、study は原形で、どちらも busy の後ろに置く形ではない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(自動詞の過去分詞)",
+  "stem": "A: Why are there so many police cars around here?\nB: They are looking for an ( ) prisoner from the city jail.",
+  "passage": "",
+  "choices": [
+   "escape",
+   "escapes",
+   "to escape",
+   "escaped"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞(自動詞の過去分詞)。正解は「escaped」。escape「逃げる」は目的語を取らない動詞で、その過去分詞 escaped は受動ではなく「逃げた・逃亡した」という完了の意味で名詞 prisoner を前から修飾する (= a prisoner who has escaped)。escape は原形、escapes は現在形で、an と prisoner の間に置いて名詞を修飾できない。to escape は不定詞で、名詞の前には置けない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(分詞の意味上の主語)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "Walking along the beach, a pretty shell was found in the sand.",
+   "Walking along the beach, the waves looked unusually big to us.",
+   "Walking along the beach, my hat was blown away by the wind.",
+   "Walking along the beach, I found a pretty shell in the sand."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞(分詞の意味上の主語)。正解は「Walking along the beach, I found a pretty shell in the sand.」分詞構文の意味上の主語は、特に示さない限り主節の主語と同じになる。浜辺を歩いていたのは「私」なので、主節の主語が I になっている文だけが正しい (= While I was walking along the beach)。a pretty shell・the waves・my hat を主語にした文では、貝や波や帽子が「浜辺を歩いていた」ことになり、分詞の意味上の主語と主節の主語が合わない。",
+  "form": "正誤",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(感情動詞の分詞・主語との対応)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "I was very surprising to hear that Noah had won the prize.",
+   "The lecture was so boring that half the class fell asleep.",
+   "We were all excited about the trip to the amusement park.",
+   "The ending of the film was disappointing to most of the fans."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞(感情動詞の分詞・主語との対応)。正解は「I was very surprising to hear that Noah had won the prize.」surprise は「〜を驚かせる」という動詞なので、知らせを聞いて「驚かされた」人 I を主語にするときは過去分詞 surprised を使う。surprising は「人を驚かせるような」で、知らせや出来事を主語にするときの形。lecture が boring、we が excited、ending が disappointing になっている他の 3 文は、人なら過去分詞・物や出来事なら現在分詞という使い分けに合っている。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(後置修飾への書きかえ)",
+  "stem": "The students who practice in the gym every day belong to the volleyball team.\n= The students ( ) in the gym every day belong to the volleyball team.",
+  "passage": "",
+  "choices": [
+   "practicing",
+   "are practicing",
+   "practiced",
+   "to practice"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞(後置修飾への書きかえ)。正解は「practicing」。who practice in the gym every day という節は、who を省いて動詞を分詞にし、名詞 the students を後ろから修飾する形に書きかえられる。生徒が「練習している」という能動の意味なので現在分詞 practicing が合う。practiced は受動の意味で「練習される生徒」となり文意に合わない。are practicing では belong と述語動詞が 2 つ並ぶ。to practice は意味が変わる。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(受動の後置修飾への書きかえ)",
+  "stem": "These are the photos that my grandfather took in the 1970s.\n= These are the photos ( ) by my grandfather in the 1970s.",
+  "passage": "",
+  "choices": [
+   "taking",
+   "took",
+   "taken",
+   "having taken"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】分詞(受動の後置修飾への書きかえ)。正解は「taken」。元の文では祖父が写真を「撮った」が、書きかえた文では photos を後ろから修飾し、写真が祖父に「撮られた」という受動の意味になるので過去分詞 taken が合う。taking は「写真が撮っている」という能動の意味で、by my grandfather とつながらない。took は過去形で、名詞を後ろから修飾する形ではない。having taken は能動の完了形で、写真が撮った側になってしまう。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(使役 have+O+過去分詞への書きかえ)",
+  "stem": "A dentist checked Liam's teeth last month.\n= Liam ( ) his teeth checked last month.",
+  "passage": "",
+  "choices": [
+   "had",
+   "let",
+   "did",
+   "made"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】分詞(使役 have+O+過去分詞への書きかえ)。正解は「had」。「人が〜を…してもらう」は「have + 目的語 + 過去分詞」で表す。歯は歯医者に「調べられる」側なので his teeth checked という受動の意味の組み合わせになり、過去のことなので have を過去形 had にする。made は「make + 目的語 + 原形」で「無理に〜させる」という言い方。make oneself understood のように make の後ろに過去分詞を置く言い方もあるが、限られた表現で、「人に〜してもらう」の意味は表せない。let は「let + 目的語 + 原形」で「〜させておく・許す」の意味で、過去分詞を続ける形にならない。did は「〜してもらう」の意味を持たず、did his teeth checked という形は成り立たない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "分詞",
+  "unit": "分詞(完了形の分詞構文)",
+  "stem": "( ) his glasses at home that morning, Sora could not read the small print on the menu.",
+  "passage": "",
+  "choices": [
+   "Having been left",
+   "To have left",
+   "Left",
+   "Having left"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】分詞(完了形の分詞構文)。正解は「Having left」。眼鏡を置いてきたのは that morning で、主節の「字が読めなかった」より前のこと。主節より前のことを表す分詞構文は having + 過去分詞にする。Sora が「置いてきた」という能動の意味なので Having left が合う。Having been left は受動で目的語 his glasses を続けられない。Left も受動の意味で目的語を取れず、To have left は分詞構文にならない。",
+  "form": "空所補充",
+  "level": "標準"
+ }
+]

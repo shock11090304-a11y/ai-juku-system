@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(原級 as ~ as の基本形)",
+  "stem": "The new gym at our school is ( ) the one at the city sports center.",
+  "passage": "",
+  "choices": [
+   "as large as",
+   "so large as",
+   "as larger than",
+   "so larger than"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較(原級 as ~ as の基本形)。正解は「as large as」。2 つのものが同じ程度であることは as + 形容詞の原級 + as で表し、形容詞は large のままにする。as larger than は前の as と後ろの than がかみ合わず、比較級なら larger than だけでよい。so large as は否定文や疑問文で使う形で、この肯定文では不可。so larger than は so と比較級を組み合わせた誤りで、文として成り立たない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(not so ~ as の否定)",
+  "stem": "This year's winter is ( ) last year's, and we still don't need thick coats.",
+  "passage": "",
+  "choices": [
+   "not so colder than",
+   "not so cold as",
+   "not more cold as",
+   "not more colder than"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較(not so ~ as の否定)。正解は「not so cold as」。「〜ほど…ではない」は not so + 原級 + as (または not as + 原級 + as) で表し、cold は原級のままにする。not so colder than は so の後ろに比較級 colder を置いたうえ than まで使っていて、not so ~ as の形になっていない。not more cold as は、cold の比較級は colder であって more cold という形は使わず、しかも more に続けるなら as ではなく than が必要なので、二重に誤り。not more colder than は more と -er を重ねた二重比較級で、文として成り立たない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(not as ~ as と比較級の書きかえ)",
+  "stem": "Daiki is not as tall as his cousin.\n= Daiki's cousin is ( ) Daiki.",
+  "passage": "",
+  "choices": [
+   "as tall as",
+   "taller than",
+   "not taller than",
+   "shorter than"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較(not as ~ as と比較級の書きかえ)。正解は「taller than」。not as tall as は「〜ほど背が高くない」なので、Daiki より cousin のほうが背が高い。主語を cousin に替えた文では比較級 taller than で表す。as tall as は 2 人が同じ身長という意味になり、元の文と合わない。not taller than と shorter than は cousin のほうが低いことになり、意味が逆になる。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(倍数表現 half as ~ as)",
+  "stem": "This tablet weighs only ( ) much as my laptop, so I carry it everywhere.",
+  "passage": "",
+  "choices": [
+   "the half than",
+   "half as",
+   "half than",
+   "the half as"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較(倍数表現 half as ~ as)。正解は「half as」。「〜の半分」は half as + 原級 + as で表し、後ろの much as my laptop と組み合わせる。half than は比較級がないのに than を置いた誤り。the half as と the half than は倍数を表す half に the をつけた形で、倍数表現では the をつけず、the half than は than の使い方も誤り。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(比較級の強調 many more 可算名詞)",
+  "stem": "After the article was published, the museum received ( ) more visitors than before.",
+  "passage": "",
+  "choices": [
+   "many",
+   "much",
+   "very",
+   "more"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較(比較級の強調 many more 可算名詞)。正解は「many」。visitors は数えられる名詞の複数形なので、「もっと多くの来館者」は many more visitors とする。much more は money のような数えられない名詞に使い、複数名詞には用いない。very は比較級を強められない。more を置くと more more visitors となり、語が重なって文が成り立たない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(the + 比較級, the + 比較級)",
+  "stem": "The higher we climbed up the mountain, ( ) the air became.",
+  "passage": "",
+  "choices": [
+   "colder",
+   "the coldest",
+   "coldest",
+   "the colder"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較(the + 比較級, the + 比較級)。正解は「the colder」。文の前半が The higher we climbed と the + 比較級で始まっているので、後半も the + 比較級にして「〜すればするほど…」の形にそろえる。colder だけでは the が欠けていて、この構文にならない。the coldest と coldest は最上級で、程度が連動して変わることを表せない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(the + 比較級 の後半 the less)",
+  "stem": "The longer Emma stayed in the noisy cafe, ( ) she could concentrate on her report.",
+  "passage": "",
+  "choices": [
+   "the little",
+   "the less",
+   "less",
+   "the least"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較(the + 比較級 の後半 the less)。正解は「the less」。前半が The longer と the + 比較級で始まるので、後半も the + 比較級にして「長くいればいるほど、集中できなくなった」と程度の連動を表す。the little は原級で比較級になっていない。less だけでは the が欠けて構文が成り立たない。the least は最上級で、この構文には使えない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(比較級 and 比較級 more and more)",
+  "stem": "As the festival drew closer, the streets became ( ) crowded every evening.",
+  "passage": "",
+  "choices": [
+   "more and most",
+   "most and most",
+   "more and more",
+   "much and much"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較(比較級 and 比較級 more and more)。正解は「more and more」。「ますます〜」は比較級 and 比較級で表し、crowded のような長い形容詞は more and more crowded とする。most and most は最上級を重ねた形で、英語ではこの意味に使わない。more and most は比較級と最上級が混ざっている。much and much は原級の much を重ねただけで、程度が増していく意味にならない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(no less than = as many as)",
+  "stem": "As many as two hundred students attended the lecture.\n= ( ) two hundred students attended the lecture.",
+  "passage": "",
+  "choices": [
+   "Not less than",
+   "No less than",
+   "Not more than",
+   "No more than"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較(no less than = as many as)。正解は「No less than」。no less than は「〜も」と数の多さを強調し、as many as と同じ意味になる。not less than は「少なくとも〜」と下限を示すだけで、多さの強調にはならない。no more than は「たった〜しか」と少なさを強調し、意味が逆。not more than は「多くても〜」と上限を示す言い方。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(no longer = もう〜ない)",
+  "stem": "Since the new highway opened, the small shop on the old road ( ) gets many customers.",
+  "passage": "",
+  "choices": [
+   "not more",
+   "not longer",
+   "no more",
+   "no longer"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較(no longer = もう〜ない)。正解は「no longer」。「以前はそうだったが、今はもう〜ない」は no longer を動詞の前に置いて表す。not longer は否定の形が誤りで、この意味では使わない。no more は文末に置いて「もう〜ない」を表す言い方で、動詞の直前に置く言い方としては使わない。not more は「それ以上ではない」という比較の表現で、動詞の前に置いて「もう〜ない」の意味にはならない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(最上級の強調 by far)",
+  "stem": "Of all the routes to the summit, this trail is ( ) the most dangerous.",
+  "passage": "",
+  "choices": [
+   "by far",
+   "much more",
+   "far more",
+   "very"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較(最上級の強調 by far)。正解は「by far」。後ろの the most dangerous という最上級を「断然・ずば抜けて」と強めるのは by far で、the の前に置く。very は the very best のように the の後ろに置く語なので、the の前のこの位置では使えない。much more と far more は比較級を強める形で、最上級の前には置けない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(最上級 → 比較級 than any other)",
+  "stem": "Noah is the fastest runner in our class.\n= Noah runs faster than ( ) in our class.",
+  "passage": "",
+  "choices": [
+   "all the other student",
+   "any other students",
+   "any other student",
+   "every other students"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較(最上級 → 比較級 than any other)。正解は「any other student」。最上級の文は「比較級 + than any other + 単数名詞」で同じ意味を表せる。any other の後ろは単数形にするので、any other students は数が合わない。all the other student は all に単数名詞が続いていて誤り。every other students は every の後ろが単数でなければならないのに複数形になっている。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(ラテン比較 prefer A to B の書きかえ)",
+  "stem": "Ms. Lee likes staying home better than going out on weekends.\n= Ms. Lee ( ) staying home to going out on weekends.",
+  "passage": "",
+  "choices": [
+   "likes",
+   "prefers",
+   "enjoys",
+   "chooses"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較(ラテン比較 prefer A to B の書きかえ)。正解は「prefers」。「B より A が好きだ」は like A better than B のほかに prefer A to B で表せ、比べる相手を than ではなく to で示す。likes は後ろに to going out を続けて比較の意味にすることができない。enjoys と chooses も to ~ing と組み合わせて「〜より好む」という意味にはならない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(ラテン比較 inferior to の正誤)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "The copy is inferior than the original in quality.",
+   "The copy is more inferior as the original in quality.",
+   "The copy is inferior to the original in quality.",
+   "The copy is inferior from the original in quality."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較(ラテン比較 inferior to の正誤)。正解は「The copy is inferior to the original in quality.」inferior「〜より劣った」はラテン語由来の比較を表す語で、比べる相手は than ではなく to で示す。inferior than は than を使った誤り。more inferior as は more を重ねたうえに as を使っていて二重に誤り。inferior from は前置詞が違い、この意味では使わない。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(less + 不可算名詞)",
+  "stem": "This year the factory used ( ) electricity than last year thanks to the new machines.",
+  "passage": "",
+  "choices": [
+   "fewer",
+   "few",
+   "little",
+   "less"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較(less + 不可算名詞)。正解は「less」。electricity は数えられない名詞なので、「より少ない〜」は little の比較級 less で表し、than と組み合わせる。fewer は students のような数えられる名詞の複数形につける比較級で、electricity には使えない。little と few は原級で、後ろの than とつながらない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(fewer + 可算名詞 than)",
+  "stem": "There are ( ) students in our club this year than there were last year.",
+  "passage": "",
+  "choices": [
+   "few",
+   "fewer",
+   "fewest",
+   "the fewest"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較(fewer + 可算名詞 than)。正解は「fewer」。後ろに than there were last year と比べる相手があるので比較級にする。students は数えられる名詞なので few の比較級 fewer を使う。few は原級で than と結べない。fewest と the fewest は最上級で、than とは組み合わせない。",
+  "form": "語形選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(比較対象の一致 those of)",
+  "stem": "The winters of Hokkaido are far colder than ( ) Tokyo, with heavy snow for months.",
+  "passage": "",
+  "choices": [
+   "that of",
+   "those of",
+   "one of",
+   "it of"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】比較(比較対象の一致 those of)。正解は「those of」。比べているのは「北海道の冬」と「東京の冬」なので、繰り返しを避けて the winters を代名詞で受ける。winters は複数形だから those を使う。that of は単数名詞を受ける形で数が合わない。it of と one of は前に出た複数名詞の繰り返しを表す使い方ができない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(as ~ as possible)",
+  "stem": "The nurse told the patient to take the medicine with ( ) water as possible.",
+  "passage": "",
+  "choices": [
+   "as many",
+   "so many",
+   "so much",
+   "as much"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較(as ~ as possible)。正解は「as much」。「できるだけ多くの水」は as much + 名詞 + as possible で表し、water は数えられない名詞なので much を使う。as many は数えられる名詞の複数形に使う語で、water には合わない。so much と so many は so ~ as の形になり、肯定文では使えないため不可。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(as ~ as one can)",
+  "stem": "A: When do you need the report?\nB: Please send it to me ( ) you can.",
+  "passage": "",
+  "choices": [
+   "as soon as",
+   "so soon as",
+   "as sooner than",
+   "so sooner than"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較(as ~ as one can)。正解は「as soon as」。「できるだけ早く」は as soon as possible のほか、as soon as you can とも言う。so soon as は肯定文では使えない形。as sooner than は as の後ろに比較級と than を続けていて、as ~ as の形が崩れている。so sooner than は so と比較級を組み合わせた誤りで、文として成り立たない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(最上級 + in + 場所)",
+  "stem": "A: Is this the oldest shrine ( ) the city?\nB: Yes, it was built about eight hundred years ago.",
+  "passage": "",
+  "choices": [
+   "in",
+   "than",
+   "of",
+   "among"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較(最上級 + in + 場所)。正解は「in」。最上級の後ろで the city のような場所や集団の範囲を示すときは in を使う。of は all や the three のように複数のものを並べた範囲に使い、the city という 1 つの場所には使わない。than は比較級とともに使う語。among は複数の人やものの「〜の中で」を表し、単数の the city には合わない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(副詞の比較級 more clearly)",
+  "stem": "Mr. Brown explains difficult ideas ( ) than my old teacher did.",
+  "passage": "",
+  "choices": [
+   "more clear",
+   "clearlier",
+   "most clearly",
+   "more clearly"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較(副詞の比較級 more clearly)。正解は「more clearly」。動詞 explains を修飾するので副詞 clearly を使い、than があるので比較級 more clearly にする。more clear は形容詞 clear の比較級で、動詞を修飾できない。clearlier は -ly で終わる副詞に -er をつけた誤りで、more をつけて比較級にする。most clearly は最上級で、than とは組み合わせない。",
+  "form": "語形選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(比較級の強調 much の正誤)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "This bag is lighter much than that one.",
+   "This bag is very lighter than that one.",
+   "This bag is more lighter than that one.",
+   "This bag is much lighter than that one."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較(比較級の強調 much の正誤)。正解は「This bag is much lighter than that one.」比較級 lighter を「ずっと・はるかに」と強めるときは much を比較級の直前に置く。very lighter は原級を強める very を比較級に使った誤り。more lighter は -er の比較級にさらに more をつけた二重の比較級。lighter much は強める語を比較級の後ろに置いていて語順が誤り。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(2 者の比較級 older than)",
+  "stem": "A: Is your brother the oldest in your family?\nB: No. Actually, I'm two years ( ) than he is.",
+  "passage": "",
+  "choices": [
+   "older",
+   "elder",
+   "oldest",
+   "old"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較(2 者の比較級 older than)。正解は「older」。後ろに than he is と比べる相手があるので比較級にし、「兄より 2 歳年上だ」と差を示す。elder は my elder brother のように名詞の前で使う語で、than とともには使わない。oldest は最上級で、than とは組み合わせない。old は原級で、比較の文にならない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(much less = 〜はなおさら〜ない)",
+  "stem": "Emma has never been to Osaka, ( ) to Okinawa, which is even farther away.",
+  "passage": "",
+  "choices": [
+   "much more",
+   "still more",
+   "much less",
+   "no less"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較(much less = 〜はなおさら〜ない)。正解は「much less」。前半が has never been と否定文なので、「大阪にさえ行ったことがない、沖縄はなおさらだ」は否定文の後に続ける much less で表す。much more と still more は肯定文の後に続けて「〜はもちろん」を表す形で、否定文の後には使わない。no less は「〜に劣らず」の意味で、この文脈では意味が通らない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(比較級 + than expected の省略)",
+  "stem": "The exam was much easier ( ), so most of the students finished early.",
+  "passage": "",
+  "choices": [
+   "than expecting",
+   "than to expect",
+   "than expected",
+   "as expecting"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較(比較級 + than expected の省略)。正解は「than expected」。easier という比較級の後ろに比べる相手を置くので than が必要で、than (was) expected「予想されていたより」の was が省かれた形。than expecting は「予想している」という能動の形で、試験が予想する側になってしまう。than to expect は than の後ろに to + 動詞を置いた不自然な形。as expecting は比較級の後ろに as を続けていて成り立たない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(最上級 + ever の強調)",
+  "stem": "This is the most moving speech that I have ( ) heard at a graduation ceremony.",
+  "passage": "",
+  "choices": [
+   "ever",
+   "once",
+   "already",
+   "never"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較(最上級 + ever の強調)。正解は「ever」。最上級の後ろに (that) I have ever heard「今までに聞いた中で」を続けて、最上級を強める。never を入れると「聞いたことがない」となり、This is the most moving speech という前半と矛盾する。once「一度」と already「すでに」は、最上級とともに「今までで」という範囲を表す使い方ができない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(序数 + 最上級 second largest)",
+  "stem": "Lake Biwa is the largest lake in Japan, and Lake Kasumigaura is the ( ) largest.",
+  "passage": "",
+  "choices": [
+   "second",
+   "two",
+   "twice",
+   "secondly"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】比較(序数 + 最上級 second largest)。正解は「second」。「2 番目に大きい」は the + 序数 + 最上級で表すので、順番を示す second を largest の前に置く。two は数そのものを表す語で、順番を表せない。twice は「2 倍・2 度」の意味で最上級の前には置かない。secondly は「第二に」と話の順序を示す副詞で、名詞を修飾する最上級の前には使えない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(as + 形容詞 + a + 名詞 + as)",
+  "stem": "Olivia is ( ) as anyone in her class, but she rarely speaks up.",
+  "passage": "",
+  "choices": [
+   "as a good student",
+   "as good student",
+   "as good students",
+   "as good a student"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】比較(as + 形容詞 + a + 名詞 + as)。正解は「as good a student」。as の後ろに形容詞 + 名詞を置くときは、as good a student のように形容詞を a の前に出す語順になる。as a good student は a が形容詞より前にあり、この構文の語順として誤り。as good student は単数の数えられる名詞 student に a が無い。as good students は主語 Olivia が 1 人なのに複数形で、数が合わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(差を表す語句 + 比較級)",
+  "stem": "Haru finished the marathon ( ) than her coach had predicted.",
+  "passage": "",
+  "choices": [
+   "ten minutes fast",
+   "faster ten minutes",
+   "ten minutes faster",
+   "ten minutes fastest"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較(差を表す語句 + 比較級)。正解は「ten minutes faster」。比較級の前に ten minutes のような数量を置くと「10 分だけ速く」と差の大きさを表せる。ten minutes fast は原級で、than とつながらない。faster ten minutes は差を表す語句を比較級の後ろに置いていて語順が誤り。ten minutes fastest は最上級で、than とともに使えない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "比較",
+  "unit": "比較(know better than to)",
+  "stem": "Mika knows ( ) than to leave her bike unlocked in front of the station.",
+  "passage": "",
+  "choices": [
+   "worse",
+   "more",
+   "better",
+   "best"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】比較(know better than to)。正解は「better」。know better than to + 動詞の原形は「〜するほど愚かではない・〜しないだけの分別がある」という決まった言い方で、「鍵をかけずに自転車を置くようなことはしない」となる。worse を入れると意味が逆になり、この形の言い方はない。more は knows more than to ... という言い方にならず、文意も通らない。best は最上級で than とともに使えない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ }
+]

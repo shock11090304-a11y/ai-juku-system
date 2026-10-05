@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(approach は目的語を直接とる)",
+  "stem": "As the train slowly ( ) the station, the passengers began to stand up.",
+  "passage": "",
+  "choices": [
+   "approached",
+   "approached to",
+   "arrived",
+   "reached to"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】語法(approach は目的語を直接とる)。正解は「approached」。approach「〜に近づく」は the station のような目的語を直接続ける他動詞なので、approached to とは言わない。arrived は目的語を直接とれず、arrived at the station の形が必要になる。reach も reached the station と目的語を直接続ける動詞なので、reached to は誤り。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(mention は about を付けない)",
+  "stem": "Noah didn't ( ) the accident to anyone at work for a long time.",
+  "passage": "",
+  "choices": [
+   "mention",
+   "mention about",
+   "speak",
+   "say about"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】語法(mention は about を付けない)。正解は「mention」。mention「〜のことを口に出す」は目的語を直接とる他動詞で、mention the accident to 人 の形になる。日本語の「〜について言う」につられた mention about は誤り。speak は speak about 〜 や speak to 人 の形で使い、the accident を目的語に直接続けられない。say about も、say は言う内容そのものを目的語にとるため成り立たない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(attend は目的語を直接とる)",
+  "stem": "More than two hundred students ( ) the career talk held in the gym last Friday.",
+  "passage": "",
+  "choices": [
+   "attended",
+   "attended at",
+   "took part",
+   "joined to"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】語法(attend は目的語を直接とる)。正解は「attended」。attend「〜に出席する」は the career talk を直接目的語にとる他動詞なので、attended the career talk となり、attended at とは言わない。take part は「参加する」の意味だが、何に参加したかを続けるには in が必要で、took part in the career talk の形になる。took part the career talk のように名詞を直接続けることはできない。join も attend と同じく join the talk と目的語を直接とる動詞なので、joined to は誤り。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(apologize to 人 for 事)",
+  "stem": "Liam ( ) his coworkers for arriving late to the morning meeting.",
+  "passage": "",
+  "choices": [
+   "apologized to",
+   "apologized with",
+   "apologized",
+   "apologized at"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】語法(apologize to 人 for 事)。正解は「apologized to」。apologize「謝る」は自動詞で、謝る相手は to、謝る理由は for で表し、apologize to 人 for 〜 の形になる。目的語を直接続けた apologized his coworkers は誤り。with や at は謝る相手を示す語としては使えないので、apologized with も apologized at も成り立たない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(complain to 人 about 事)",
+  "stem": "Several guests ( ) the front desk about the noise from the next room.",
+  "passage": "",
+  "choices": [
+   "complained with",
+   "claimed to",
+   "complained",
+   "complained to"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】語法(complain to 人 about 事)。正解は「complained to」。complain「不平を言う」は自動詞で、相手は to、内容は about で表す。complained the front desk のように目的語を直接続けることはできず、complained with も相手を表す形にならない。claim は「主張する・要求する」の意味で、日本語の「クレームを言う」の意味では使えない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(make 物 for 人・SVO for 型)",
+  "stem": "Mika made a cup of hot tea ( ) her grandmother, who had just come home.",
+  "passage": "",
+  "choices": [
+   "at",
+   "to",
+   "into",
+   "for"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】語法(make 物 for 人・SVO for 型)。正解は「for」。make や buy, cook, get のように「人のために何かを作る・手に入れる」動詞は、目的語を 2 つ並べる形を書きかえると make 物 for 人 となる。to は give や show, send のように相手に物が直接渡る動詞の書きかえで使うので、made a cup of tea to 人 とは言わない。into や at では「〜のために」の意味を表せない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(hand 物 to 人・SVOO の書きかえ)",
+  "stem": "The clerk handed Olivia the receipt with a smile.\n= The clerk handed the receipt ( ) Olivia with a smile.",
+  "passage": "",
+  "choices": [
+   "for",
+   "at",
+   "on",
+   "to"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】語法(hand 物 to 人・SVOO の書きかえ)。正解は「to」。hand は give や show と同じく「相手に物を渡す」動詞で、目的語を 2 つ並べた hand 人 物 を書きかえると hand 物 to 人 の形になる。for は make や buy のように「人のために」何かをする動詞の書きかえで使うので、ここでは意味が変わってしまう。on や at では渡す相手を表せない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(explain は人を直接目的語にしない)",
+  "stem": "The guide ( ) to us why the temple had been built on the hill.",
+  "passage": "",
+  "choices": [
+   "told",
+   "explained",
+   "informed",
+   "taught"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】語法(explain は人を直接目的語にしない)。正解は「explained」。explain は「人に」を to 人 で表し、explain to 人 + 説明する内容 の形をとるので、to us の後に why 節が続くこの文に合う。tell と teach は tell 人 事 のように人を直接目的語にとるので、told to us や taught to us は誤り。inform も inform 人 of 事 のように人を直接続ける動詞で、informed to us とは言わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(advise 人 to do・suggest 不可)",
+  "stem": "The pharmacist ( ) me to see a doctor if the fever continued.",
+  "passage": "",
+  "choices": [
+   "advised",
+   "proposed",
+   "demanded",
+   "suggested"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】語法(advise 人 to do・suggest 不可)。正解は「advised」。advise は advise 人 to do「人に〜するよう勧める」の形をとれる。suggest と propose は人を目的語にして to do を続けることができず、suggest that 人 (should) do や suggest doing の形で使う。demand も demand that 節 の形をとる動詞で、demand 人 to do とは言わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(不可算名詞 equipment)",
+  "stem": "The gym has bought some new ( ) for the volleyball team.",
+  "passage": "",
+  "choices": [
+   "equipments",
+   "equipment",
+   "an equipment",
+   "equipped"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】語法(不可算名詞 equipment)。正解は「equipment」。equipment「用具・設備」は数えられない名詞で、複数形にしたり a / an を付けたりしない。数えるときは a piece of equipment のように言う。equipments と an equipment はその規則に反する。equipped は動詞の過去形・過去分詞なので、some new の後に名詞として置くことはできない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(the number of+複数名詞+単数動詞)",
+  "stem": "( ) students who want to study abroad has been increasing lately.",
+  "passage": "",
+  "choices": [
+   "A number of",
+   "A lot of",
+   "The number of",
+   "Many of"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】語法(the number of+複数名詞+単数動詞)。正解は「The number of」。the number of 〜「〜の数」は数そのものが主語なので、動詞は単数の has been increasing で受ける。a number of 〜 は「多くの〜」の意味で students が主語になり、動詞は have になるはず。a lot of students も複数扱いで have が必要になる。many of は many of the students のように the や所有格の付いた名詞を続けて使う。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(neither of the two+単数動詞)",
+  "stem": "( ) of the two restaurants was open, so we had to cook at home.",
+  "passage": "",
+  "choices": [
+   "Either",
+   "Both",
+   "Neither",
+   "None"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】語法(neither of the two+単数動詞)。正解は「Neither」。「2 つの店のどちらも開いていなかった」ので家で料理した、という流れから、2 つの両方を否定する neither が合い、単数の was とも一致する。Both は「両方とも開いていた」で後半と矛盾し、動詞も were になる。Either は「どちらか一方は開いていた」の意味になり、料理する必要がなくなる。None はふつう 3 つ以上のものについて使い、of the two には合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(every+数詞+複数名詞「〜ごとに」)",
+  "stem": "The buses to the airport leave ( ) twenty minutes during the day.",
+  "passage": "",
+  "choices": [
+   "each",
+   "every",
+   "whole",
+   "either"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】語法(every+数詞+複数名詞「〜ごとに」)。正解は「every」。every は every twenty minutes「20 分ごとに」のように、数詞+複数名詞を続けて間隔を表せる。each は each minute のように単数名詞にしか付かず、each twenty minutes とは言わない。whole は the whole day のように the や所有格とともに使い、間隔の意味にならない。either は「どちらか一方の」で、この文では意味が通らない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(some 〜 and others 〜)",
+  "stem": "Some students walk to school, and ( ) come by bike or bus.",
+  "passage": "",
+  "choices": [
+   "other",
+   "others",
+   "another",
+   "the other"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】語法(some 〜 and others 〜)。正解は「others」。some 〜, others 〜 で「〜する者もいれば、…する者もいる」という対比を表し、others は other students を 1 語で表す代名詞。other は後ろに名詞を伴って使う語で、単独では主語になれない。another は単数の「もう 1 人」で、複数の動詞 come に合わない。the other は「残りの 1 人」を指す語で、ここでは複数の生徒を受けられない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(another+数詞+複数名詞「さらに〜」)",
+  "stem": "The project will take ( ) three weeks to complete.",
+  "passage": "",
+  "choices": [
+   "other",
+   "another",
+   "others",
+   "each other"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】語法(another+数詞+複数名詞「さらに〜」)。正解は「another」。another は本来単数名詞に付くが、another three weeks のように数詞+複数名詞をひとまとまりとみなして「さらに 3 週間」の意味で使える。other は other three weeks の語順では使えず、the other three weeks や three other weeks の形になる。others は代名詞で名詞の前に置けない。each other は「お互い」で意味が通らない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(most of the+名詞と almost)",
+  "stem": "( ) the students in my class have their own smartphones.",
+  "passage": "",
+  "choices": [
+   "Almost",
+   "Most of",
+   "Almost of",
+   "Most"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】語法(most of the+名詞と almost)。正解は「Most of」。the students のように the が付いた名詞に「〜の大部分」と言うときは most of the 〜 の形を使う。Most だけだと most students のように the の無い名詞を直接続ける形になり、Most the students とは言えない。Almost は副詞で名詞を直接修飾できず、almost all the students のように all などを伴う。Almost of という形は使わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(almost「もう少しで〜」と most)",
+  "stem": "I ( ) missed the last train home last night because the meeting ran late.",
+  "passage": "",
+  "choices": [
+   "most",
+   "mostly",
+   "almost",
+   "the most"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】語法(almost「もう少しで〜」と most)。正解は「almost」。almost は動詞の前に置いて「もう少しで〜するところだった」を表し、almost missed で「あと少しで乗り遅れそうだった」となり、会議が長引いたという理由にも合う。most は「大部分の」を表す形容詞・代名詞か、「最も」の意味の副詞 (what I like most など) であって、「もう少しで」の意味は持たないので、most missed では文意が通らない。mostly は「主に・たいてい」の意味で、「乗り遅れそうだった」という一度の出来事には合わない。the most は「最も〜」という最上級の形で、missed の前に置いて「もう少しで」の意味を表すことはできない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(hard と hardly の区別)",
+  "stem": "I could ( ) hear the announcement because of the noise on the platform.",
+  "passage": "",
+  "choices": [
+   "hard",
+   "hardest",
+   "harder",
+   "hardly"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】語法(hard と hardly の区別)。正解は「hardly」。hardly は「ほとんど〜ない」という否定の意味の副詞で、could hardly hear「ほとんど聞こえなかった」となり、騒音という理由に合う。hard は副詞としては「熱心に・激しく」の意味なので、could hard hear では意味が通らない。harder と hardest は hard の比較級・最上級で、同じく「ほとんど〜ない」の意味にはならない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(late と lately の区別)",
+  "stem": "A: Have you seen Sora ( )?\nB: No, she has missed club practice all week.",
+  "passage": "",
+  "choices": [
+   "late",
+   "later",
+   "latest",
+   "lately"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】語法(late と lately の区別)。正解は「lately」。lately は「最近」の意味の副詞で、現在完了の Have you seen 〜 と相性がよく、「最近ソラを見かけたか」という問いになる。late は「遅く・遅れて」の意味で、seen Sora late では「最近」の意味にならない。later は「あとで・もっと遅く」の意味で、やはり「最近」を表せない。latest は「最新の」という形容詞で、ここに置く形ではない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(mostly「大部分は」と most・almost)",
+  "stem": "The people at the meeting were ( ) parents of first-year students.",
+  "passage": "",
+  "choices": [
+   "mostly",
+   "most",
+   "the most",
+   "almost"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】語法(mostly「大部分は」と most・almost)。正解は「mostly」。mostly は「大部分は・主に」の意味の副詞で、were mostly parents「(出席者は) 大部分が保護者だった」となる。most は most people のように名詞に付けて「大部分の」を表す語で、were most parents とは言えない。the most は「最も多くの・最も〜」という最上級の形で、were the most parents では「最も多くの保護者だった」という不自然な意味になり、「大部分は」の意味は表せない。almost は「ほとんど・もう少しで」の意味の副詞で、almost parents では「ほとんど保護者 (に近い人)」のような意味になってしまい、文意が通らない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(交通手段 by+無冠詞の名詞)",
+  "stem": "Many of my classmates come to school ( ) every day, but I walk.",
+  "passage": "",
+  "choices": [
+   "by trains",
+   "by a train",
+   "by the train",
+   "by train"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】語法(交通手段 by+無冠詞の名詞)。正解は「by train」。交通手段を表すときは by train, by bus, by car のように、by の後に冠詞を付けない単数の名詞を置く決まった言い方をする。by a train や by the train のように冠詞を付けると、特定の 1 本の列車を指す形になり、手段を表す言い方にならない。by trains と複数形にするのも、この決まった言い方に合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(necessary は人を主語にしない)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "Is Friday afternoon convenient for you?",
+   "He was able to finish the work by noon.",
+   "She is necessary to attend the meeting.",
+   "I am sorry to hear about your accident."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】語法(necessary は人を主語にしない)。正解は「She is necessary to attend the meeting.」necessary「必要な」は人を主語にできず、It is necessary for her to attend the meeting. のように it を主語にして言う。convenient も同じ性質の形容詞で、Is Friday afternoon convenient for you? のように時を主語にするのは正しい。able と sorry は人を主語にして to+動詞の原形を続けられるので、残りの 2 文は正しい。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(listen to と hear の区別)",
+  "stem": "A: Did you hear what the teacher said about the test?\nB: Sorry, I wasn't ( ) her at that moment.",
+  "passage": "",
+  "choices": [
+   "hearing",
+   "listening to",
+   "listening",
+   "hearing to"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】語法(listen to と hear の区別)。正解は「listening to」。listen は「意識して耳を傾ける」という自動詞で、聞く相手・対象は to で示すため listening to her の形になる。listening だけでは her を直接続けられない。hear は「自然に耳に入る」の意味で、to を付けずに目的語を直接とるので hearing to は誤り。また hear はふつう進行形にせず、I wasn't hearing her では「聞いていなかった」の意味にもならない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(lie の過去形 lay)",
+  "stem": "Exhausted after the game, Daiki ( ) down on the grass and looked up at the sky.",
+  "passage": "",
+  "choices": [
+   "laid",
+   "lay",
+   "lain",
+   "lie"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】語法(lie の過去形 lay)。正解は「lay」。「横になる」の lie は lie - lay - lain と活用する自動詞で、過去の文なので過去形 lay が入り、lay down で「横になった」となる。laid は他動詞 lay「〜を置く」の過去形で、down の後に置く物を表す目的語がないこの文では使えない。lie は原形で、過去の文の中で looked と並べる形にならない。lain は過去分詞で、have などを伴わずに単独では使えない。",
+  "form": "語形選択",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(call O C・as を付けない)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "The long walk made all of us very hungry.",
+   "Please keep the door closed during the test.",
+   "She found the exam easier than expected.",
+   "They called their new brown puppy as Coco."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】語法(call O C・as を付けない)。正解は「They called their new brown puppy as Coco.」call は call O C「O を C と呼ぶ」の形で、名前を直接続けるので as は付けず、called their puppy Coco が正しい。「〜と見なす」の regard O as C と混同しやすい。make O C「O を C にする」、keep O C「O を C のままにする」、find O C「O が C だとわかる」の 3 文は、補語を直接続けていて正しい。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(introduce 人 to 人・SVOO 不可)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "She introduced me her brother at the party.",
+   "He explained the new rules to the students.",
+   "The guide suggested a nice restaurant to us.",
+   "My uncle taught me how to ride a horse."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】語法(introduce 人 to 人・SVOO 不可)。正解は「She introduced me her brother at the party.」introduce は目的語を 2 つ並べる形をとれず、introduced me to her brother のように、紹介する相手を to で示す。explain と suggest も相手を to で示す動詞なので、to the students と to us の 2 文は正しい。teach は teach 人 事 の形がとれるので、taught me how to 〜 も正しい。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(enter は into を付けない)",
+  "stem": "Mika went into the hall quietly so as not to disturb anyone.\n= Mika ( ) the hall quietly so as not to disturb anyone.",
+  "passage": "",
+  "choices": [
+   "entered into",
+   "entered in",
+   "entered",
+   "went"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】語法(enter は into を付けない)。正解は「entered」。enter「〜に入る」は目的語を直接とる他動詞で、go into the hall は entered the hall と書きかえられる。entered into は enter into a contract「契約を結ぶ」のような特定の言い方以外では使わず、場所に入る意味では誤り。entered in も同じく誤り。went は into を省くと目的語を直接続けられず、意味も変わってしまう。",
+  "form": "書きかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(want 人 to do・hope は不可)",
+  "stem": "Our teacher ( ) us to read at least one English book every month.",
+  "passage": "",
+  "choices": [
+   "wants",
+   "demands",
+   "suggests",
+   "hopes"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】語法(want 人 to do・hope は不可)。正解は「wants」。want は want 人 to do「人に〜してほしい」の形をとれる。hope は人を目的語にして to do を続けることができず、hope (that) 人 will do のように言う。suggest と demand も人+to do の形をとらず、suggest that 節 や demand that 節 の形で使う動詞なので、どちらも us to read には続けられない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(leave O C「O を〜の状態にしておく」)",
+  "stem": "The typhoon ( ) thousands of homes without electricity for two days.",
+  "passage": "",
+  "choices": [
+   "remained",
+   "made",
+   "left",
+   "stayed"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】語法(leave O C「O を〜の状態にしておく」)。正解は「left」。leave は leave O C「O を C の状態のままにする」の形をとり、left thousands of homes without electricity で「多くの家を停電のままにした」という結果を表す。make は make O 形容詞 の形はとるが、without 〜 を補語にして「〜のない状態にする」とは言わない。remain と stay は自動詞で、目的語を続けることができない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "語法",
+  "unit": "語法(agree with 人・agree to 提案)",
+  "stem": "I ( ) you that we should start preparing for the festival earlier.",
+  "passage": "",
+  "choices": [
+   "agree",
+   "agree to",
+   "agree with",
+   "agree about"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】語法(agree with 人・agree to 提案)。正解は「agree with」。agree は自動詞で、「人に同意する」は agree with 人 で表し、同意する内容は that 節で続ける。agree you のように人を直接目的語にはとれない。agree to は a plan や a proposal など提案・条件に同意するときの形で、人には使わない。agree about は「〜について意見が一致する」で、人ではなく話題となる事柄を続ける。",
+  "form": "空所補充",
+  "level": "標準"
+ }
+]

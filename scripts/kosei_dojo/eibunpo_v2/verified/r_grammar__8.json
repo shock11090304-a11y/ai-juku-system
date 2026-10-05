@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(主語になる動名詞)",
+  "stem": "( ) too much salt every day is bad for your heart.",
+  "passage": "",
+  "choices": [
+   "Eat",
+   "Ate",
+   "Eating",
+   "Eaten"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】動名詞(主語になる動名詞)。正解は「Eating」。文の動詞は is で、その前の「塩をとりすぎること」が主語になる。動詞を主語として使うには -ing 形 (動名詞) にして名詞のはたらきをさせる必要がある。Eat は原形のままでは主語になれない。Ate は過去形で、文中にすでに is があるため動詞が 2 つ並んでしまう。Eaten は過去分詞で、単独では名詞のはたらきをしない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(動名詞の主語は単数扱い)",
+  "stem": "Collecting old coins ( ) my grandfather's favorite hobby these days.",
+  "passage": "",
+  "choices": [
+   "is",
+   "be",
+   "being",
+   "are"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】動名詞(動名詞の主語は単数扱い)。正解は「is」。主語は Collecting old coins「古い硬貨を集めること」という動名詞句で、coins が複数でも動名詞のまとまりは 1 つのことがらとして単数扱いになる。are は coins を主語と見誤った形。be は原形で、主語の直後に時制をもつ動詞として置くことはできない。being は -ing 形で、この文には時制をもつ動詞がなくなってしまう。",
+  "form": "語形選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(補語になる動名詞)",
+  "stem": "Her part-time job is ( ) tables at a cafe near the station.",
+  "passage": "",
+  "choices": [
+   "wait",
+   "waits",
+   "waiting",
+   "waited"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】動名詞(補語になる動名詞)。正解は「waiting」。wait tables は「(飲食店で) 客に料理を運ぶ給仕の仕事をする」という決まった言い方。is のあとに「彼女のアルバイト＝給仕をすること」と説明する補語が必要なので、動詞を名詞のはたらきにする -ing 形 (動名詞) にして waiting tables とする。この is waiting は「仕事が待っている」という進行形ではなく、「仕事＝〜すること」とイコールで結ぶ形。wait は原形で、is の直後に動詞の原形は続けられない。waits は三単現の形で、文の中に動詞が 2 つ並んでしまう。waited は過去分詞と見ても「仕事が待たれる」という受け身になり、意味が通らない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(目的語になる動名詞 put off)",
+  "stem": "The city put off ( ) the new bridge because of the tight budget.",
+  "passage": "",
+  "choices": [
+   "to build",
+   "building",
+   "build",
+   "built"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】動名詞(目的語になる動名詞 put off)。正解は「building」。put off「延期する」は目的語に動名詞だけをとる動詞で、「橋を建てることを延期した」の意味になる。to build のような to +原形は put off の目的語にならない。build は原形で、目的語の位置に動詞の原形は置けない。built は過去形・過去分詞で、put off のあとに直接続けることはできない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(目的語になる動名詞 deny)",
+  "stem": "A: Who ate the last piece of cake?\nB: Sora denies ( ) it, but there is cream on his shirt.",
+  "passage": "",
+  "choices": [
+   "ate",
+   "to eat",
+   "eat",
+   "eating"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】動名詞(目的語になる動名詞 deny)。正解は「eating」。deny「〜していないと言う、否定する」は目的語に動名詞をとる動詞で、deny doing で「〜したことを否定する」となる。to eat のような to +原形を deny の目的語にすることはできない。eat は原形で、動詞の直後に目的語として置けない。ate は過去形で、denies という動詞のあとにもう 1 つ動詞を並べることになり文が成り立たない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(目的語になる動名詞 imagine)",
+  "stem": "I can't imagine ( ) in a town without any convenience stores.",
+  "passage": "",
+  "choices": [
+   "live",
+   "to live",
+   "lived",
+   "living"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】動名詞(目的語になる動名詞 imagine)。正解は「living」。imagine「〜を想像する」は目的語に動名詞をとり、imagine doing で「〜することを想像する」の意味になる。文全体は「コンビニのない町で暮らすことは想像できない」。to live のような to +原形は imagine の目的語に使えない。live は原形で目的語にならない。lived は過去形・過去分詞で、imagine の直後に続けることはできない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(目的語になる動名詞 miss)",
+  "stem": "Since moving to Tokyo, Haru has missed ( ) in the sea every summer.",
+  "passage": "",
+  "choices": [
+   "surf",
+   "surfed",
+   "to surf",
+   "surfing"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】動名詞(目的語になる動名詞 miss)。正解は「surfing」。miss「〜がなくて寂しく思う」は目的語に動名詞をとり、miss doing で「〜できないのを寂しく思う」となる。「東京に移ってから、毎夏海でサーフィンをすることができず寂しい」という意味。to surf のような to +原形は miss の目的語にはならない。surf は原形で目的語に置けない。surfed は過去形・過去分詞で、missed のあとに続けられない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(目的語になる動名詞 quit)",
+  "stem": "Daiki quit ( ) video games to prepare for the entrance exams.",
+  "passage": "",
+  "choices": [
+   "to play",
+   "playing",
+   "play",
+   "played"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】動名詞(目的語になる動名詞 quit)。正解は「playing」。quit「〜をやめる」は目的語に動名詞だけをとる動詞で、quit doing で「〜するのをやめる」となる。「入試に備えるためゲームをするのをやめた」の意味。to play のような to +原形は quit の目的語にならない。play は原形で、目的語の位置には置けない。played は過去形・過去分詞で、quit のあとに直接続けることはできない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(to+原形だけをとる refuse との対比)",
+  "stem": "The shop refused ( ) the broken camera because the warranty had expired.",
+  "passage": "",
+  "choices": [
+   "replace",
+   "replacing",
+   "to replace",
+   "replaced"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】動名詞(to+原形だけをとる refuse との対比)。正解は「to replace」。refuse「〜することを断る」は目的語に to +原形だけをとる動詞で、refuse to do の形で覚える。「保証が切れていたので交換を断った」の意味。replacing のような動名詞は refuse の目的語にならない。replace は原形で目的語に置けない。replaced は過去形・過去分詞で、refused のあとに続けることはできない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(try to do 〜しようと努力する)",
+  "stem": "Liam tried hard ( ) the heavy box, but he couldn't move it at all. 「〜しようと努力した」",
+  "passage": "",
+  "choices": [
+   "lifting",
+   "lift",
+   "to lift",
+   "lifted"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】動名詞(try to do 〜しようと努力する)。正解は「to lift」。try to do は「〜しようと努力する」、try doing は「試しに〜してみる」。tried hard「一生けんめい〜しようとした」と、あとの「まったく動かせなかった」から、努力したが実現しなかった try to do が合う。lifting では「試しに持ち上げてみた」となり、持ち上げられなかった文脈と合わない。lift は原形で tried の目的語にならない。lifted は過去形で、動詞が 2 つ並んでしまう。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(mean to do 〜するつもりだ)",
+  "stem": "I meant ( ) you back last night, but my phone battery died. 「〜するつもりだった」",
+  "passage": "",
+  "choices": [
+   "called",
+   "calling",
+   "call",
+   "to call"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】動名詞(mean to do 〜するつもりだ)。正解は「to call」。mean to do は「〜するつもりだ」、mean doing は「〜することを意味する」と意味が分かれる。「かけ直すつもりだったが電池が切れた」という文脈なので、意図を表す mean to do が合う。calling では「かけ直すことを意味した」となり文脈に合わない。call は原形で meant の目的語にならない。called は過去形・過去分詞で、meant のあとに続けられない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(by -ing 〜することによって)",
+  "stem": "Daiki saved money for the trip by ( ) his own lunch to school every day.",
+  "passage": "",
+  "choices": [
+   "bring",
+   "brought",
+   "to bring",
+   "bringing"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】動名詞(by -ing 〜することによって)。正解は「bringing」。by「〜によって」のあとに動詞の内容を続けるときは、名詞のはたらきをする動名詞にする。by bringing his own lunch で「自分の弁当を持っていくことによって」。bring は原形で by のあとに置けない。brought は過去形・過去分詞で、同じく by のあとに続けられない。to bring のような to +原形は by のあとには使えない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(instead of -ing)",
+  "stem": "Instead of ( ) a taxi, let's walk to the hotel and enjoy the view.",
+  "passage": "",
+  "choices": [
+   "to take",
+   "taking",
+   "took",
+   "take"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】動名詞(instead of -ing)。正解は「taking」。instead of「〜の代わりに」の of のあとには名詞か動名詞を置く。instead of taking a taxi で「タクシーに乗る代わりに」の意味になる。to take のような to +原形は of のあとに続けることができない。took は過去形で、of の目的語にはならない。take は原形で、of のあとに動詞の原形を置くことはできない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(insist on -ing)",
+  "stem": "Although it was very late, Emma insisted on ( ) us to the station.",
+  "passage": "",
+  "choices": [
+   "driving",
+   "to drive",
+   "drive",
+   "drove"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】動名詞(insist on -ing)。正解は「driving」。insist on doing は「〜すると言い張る」で、on のあとには動名詞を置く。「遅い時間だったが、駅まで車で送ると言い張った」の意味。drive は原形で、on のあとに動詞の原形は続けられない。to drive は to +原形で、on のあとには置けない。drove は過去形で、on の目的語にはならない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(be tired of -ing)",
+  "stem": "The students are tired of ( ) the same old songs in music class.",
+  "passage": "",
+  "choices": [
+   "singing",
+   "sang",
+   "to sing",
+   "sing"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】動名詞(be tired of -ing)。正解は「singing」。be tired of doing は「〜することにうんざりしている」で、of のあとには動名詞が続く。「音楽の授業で同じ古い歌ばかり歌うのにうんざりしている」の意味。to sing のような to +原形は of のあとに置けない。sang は過去形で、of の目的語になれない。sing は原形で、of のあとに動詞の原形は続けられない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(apologize for -ing)",
+  "stem": "The airline apologized for ( ) our flight twice in one day.",
+  "passage": "",
+  "choices": [
+   "delayed",
+   "delaying",
+   "delay",
+   "to delay"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】動名詞(apologize for -ing)。正解は「delaying」。apologize for doing は「〜したことを謝る」で、for のあとに動名詞を置く。「1 日に 2 回も便を遅らせたことを謝った」の意味。delayed は過去形・過去分詞で、for の目的語にはならない。to delay のような to +原形は for のあとに続けられない。delay は原形で、for のあとに置くことはできない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(be accustomed to -ing)",
+  "stem": "Nurses on the night shift are accustomed to ( ) long hours without a break.",
+  "passage": "",
+  "choices": [
+   "working",
+   "worked",
+   "to work",
+   "works"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】動名詞(be accustomed to -ing)。正解は「working」。be accustomed to doing は「〜することに慣れている」で、この to のあとには動詞の原形ではなく動名詞が続く。be used to doing と同じ使い方。worked は過去形・過去分詞で、to のあとに置けない。to work では to が重なり、accustomed to to work という形になってしまう。works は三単現の形で、to の目的語にはならない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(in addition to -ing)",
+  "stem": "In addition to ( ) three languages, Olivia plays the violin very well.",
+  "passage": "",
+  "choices": [
+   "speaking",
+   "speak",
+   "to speak",
+   "spoke"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】動名詞(in addition to -ing)。正解は「speaking」。in addition to「〜に加えて」の to のあとには名詞か動名詞を置き、in addition to speaking three languages で「3 か国語を話すことに加えて」の意味になる。speak は原形で、to +原形と取り違えた誤り。to speak では to が重なってしまう。spoke は過去形で、to のあとに置くことはできない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(意味上の主語 所有格と目的格)",
+  "stem": "I am sure that she will succeed as a designer.\n= I am sure of ( ) succeeding as a designer.",
+  "passage": "",
+  "choices": [
+   "she",
+   "hers",
+   "herself",
+   "her"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】動名詞(意味上の主語 所有格と目的格)。正解は「her」。that 節の主語 she を動名詞 succeeding の意味上の主語に変えるには、所有格か目的格にする。her は所有格・目的格のどちらとしても使える形なので、of her succeeding で「彼女が成功すること」を表せる。she は主格で、of のあとにも動名詞の前にも置けない。hers は「彼女のもの」という所有代名詞で意味上の主語にならない。herself は再帰代名詞で、この位置には置けない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(完了形の動名詞 having+過去分詞)",
+  "stem": "Ms. Lee thanked her students for ( ) so hard before the school festival.",
+  "passage": "",
+  "choices": [
+   "having been worked",
+   "having worked",
+   "to have worked",
+   "to have been worked"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】動名詞(完了形の動名詞 having+過去分詞)。正解は「having worked」。thank 人 for doing「〜してくれたことに感謝する」の for は前置詞なので、あとには動名詞を置く。感謝した (thanked) 時点より前に「がんばった」ことを示すのが having +過去分詞 (完了形の動名詞) で、for having worked so hard となる。がんばったのは生徒自身なので能動の形が合う。to have worked と to have been worked は to 不定詞で、前置詞 for のあとに to +動詞を続けることはできない (× thank 人 for to do)。having been worked は受け身の形で、生徒が「働かされた」ことになってしまい、感謝する内容として意味が通らない。",
+  "form": "語形選択",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(完了形の動名詞の否定)",
+  "stem": "I regret that I didn't listen to her advice.\n= I regret not ( ) to her advice.",
+  "passage": "",
+  "choices": [
+   "having been listened",
+   "having listened",
+   "to have listened",
+   "to have been listened"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】動名詞(完了形の動名詞の否定)。正解は「having listened」。元の文では「後悔している」のが現在で、「聞かなかった」のはそれより前の過去なので、時のずれを表す having +過去分詞 (完了形の動名詞) を regret の目的語にし、否定の not をその直前に置いて regret not having listened とする。聞かなかったのは「私」自身なので能動の形が合う。to have listened と to have been listened は to 不定詞で、regret to do は「残念ながら〜する」(regret to say など) の意味になるため、過去にしなかったことを後悔する元の文の書きかえにならない。having been listened は受け身の形で、「私が聞かれた」ことになり、あとの to her advice ともつながらない。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(否定 for not -ing)",
+  "stem": "A: Why was Daiki scolded by the coach?\nB: For ( ) to practice on time again.",
+  "passage": "",
+  "choices": [
+   "not to come",
+   "coming not",
+   "not coming",
+   "no coming"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】動名詞(否定 for not -ing)。正解は「not coming」。for のあとに動名詞を続け、「時間どおりに来なかったことで」と否定するときは not を動名詞の前に置く。coming not は not の位置が誤り。not to come のような to +原形は for のあとには置けない。no coming は、動名詞の否定に no を使う形が成り立たず、意味も通らない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(feel like -ing)",
+  "stem": "A: It's such a nice day. Do you feel like ( ) a walk along the river?\nB: Sure, let's go.",
+  "passage": "",
+  "choices": [
+   "taking",
+   "take",
+   "took",
+   "to take"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】動名詞(feel like -ing)。正解は「taking」。feel like doing は「〜したい気分だ」という意味で、like のあとには動名詞を置く。feel like taking a walk で「散歩したい気分だ」。to take のような to +原形は like のあとに続けられない。take は原形で、like の目的語にはならない。took は過去形で、like のあとに置くことはできない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(What do you say to -ing)",
+  "stem": "A: What do you say to ( ) a barbecue by the lake this weekend?\nB: Sounds great. I'll bring the drinks.",
+  "passage": "",
+  "choices": [
+   "have",
+   "had",
+   "to have",
+   "having"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】動名詞(What do you say to -ing)。正解は「having」。What do you say to doing? は「〜するのはどうですか」と提案する言い方で、この to のあとには動名詞が来る。have は原形で、to +原形と取り違えた誤り。had は過去形で、to のあとに置けない。to have では to が重なってしまい、文が成り立たない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(There is no -ing)",
+  "stem": "It is impossible to know how long the meeting will last.\n= There is no ( ) how long the meeting will last.",
+  "passage": "",
+  "choices": [
+   "know",
+   "knowing",
+   "known",
+   "to know"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】動名詞(There is no -ing)。正解は「knowing」。There is no doing は「〜することはできない」という意味の慣用表現で、It is impossible to do と同じ内容を表す。There is no knowing で「知ることはできない」。know は原形で、no のあとに置けない。known は過去分詞で、名詞のはたらきをしない。to know では There is no のあとに to +原形が続くことになり、この表現の形に合わない。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(go -ing)",
+  "stem": "My uncle goes ( ) in the river near his house every weekend.",
+  "passage": "",
+  "choices": [
+   "fishing",
+   "fishes",
+   "fish",
+   "fished"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】動名詞(go -ing)。正解は「fishing」。go doing は「〜しに行く」の意味で、go fishing「釣りに行く」、go shopping、go skiing のように使う。fish は原形で、goes のあとに動詞の原形は続けられない。fishes は三単現の形で、動詞が 2 つ並んでしまう。fished は過去形・過去分詞で、goes のあとに置くことはできない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(動名詞をとる動詞と to+原形をとる動詞)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "Noah enjoys to play the guitar after dinner.",
+   "Noah promised to help his sister with homework.",
+   "Noah finished to write his report last night.",
+   "Noah suggested to go to the beach on Sunday."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】動名詞(動名詞をとる動詞と to+原形をとる動詞)。正解は「Noah promised to help his sister with homework.」promise は目的語に to +原形をとる動詞なので promised to help は正しい。enjoy・finish・suggest はいずれも目的語に動名詞だけをとる動詞で、enjoys to play は enjoys playing、finished to write は finished writing、suggested to go は suggested going としなければならない。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(意味上の主語 所有格)",
+  "stem": "Would you mind ( ) taking a few photos of your garden?",
+  "passage": "",
+  "choices": [
+   "I",
+   "mine",
+   "my",
+   "myself"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】動名詞(意味上の主語 所有格)。正解は「my」。動名詞 taking の動作をするのが「私」であることを示すには、動名詞の直前に所有格 (または目的格) を置く。mind my taking で「私が写真を撮ることを気にしますか」の意味。I は主格で、動名詞の前に主格を置くことはできない。mine は所有代名詞で「私のもの」の意味になり、意味上の主語にはならない。myself は再帰代名詞で、この位置には置けない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(受け身の動名詞 being+過去分詞)",
+  "stem": "Most customers dislike ( ) to wait in a long line at the register.",
+  "passage": "",
+  "choices": [
+   "being made",
+   "making",
+   "having made",
+   "being making"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】動名詞(受け身の動名詞 being+過去分詞)。正解は「being made」。dislike の目的語には動名詞が入り、客は「待たされる」側なので受け身の意味をもつ being +過去分詞を使う。make 人 wait の受け身 be made to wait を動名詞にした形。making では客が誰かを待たせることになり、目的語もなく意味が通らない。having made は完了形で、やはり自分が待たせた意味になる。being making は動名詞としては成り立たない形。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "動名詞",
+  "unit": "動名詞(受け身の動名詞 of のあと)",
+  "stem": "The young actor is afraid of ( ) by fans wherever he goes.",
+  "passage": "",
+  "choices": [
+   "recognizing",
+   "having recognized",
+   "being recognized",
+   "being recognizing"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】動名詞(受け身の動名詞 of のあと)。正解は「being recognized」。of のあとには動名詞が入り、by fans「ファンに」があることから、俳優は「気づかれる」側だとわかる。受け身の意味は being +過去分詞で表す。recognizing では俳優が誰かに気づくことになり、目的語がなく by fans ともつながらない。having recognized は完了形で、同じく自分が気づく意味になる。being recognizing は正しい動名詞の形ではない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ }
+]

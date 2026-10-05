@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(仮定法過去・if節は過去形)",
+  "stem": "Sora lives far from the station. If she ( ) closer, she would walk to work every day.",
+  "passage": "",
+  "choices": [
+   "lived",
+   "lives",
+   "had lived",
+   "living"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】仮定法(仮定法過去・if節は過去形)。正解は「lived」。前の文に「駅から遠くに住んでいる」という現在の事実があり、それに反する想像を述べているので、if 節は仮定法過去の lived、主節は would walk という組み合わせになる。lives は実際にあり得る条件を述べる形で、主節の would とつり合わない。had lived は過去の事実に反する仮定を表し、現在の話に合わない。living は節の述語動詞になれない形である。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(仮定法過去完了・would have done)",
+  "stem": "If Emma had checked the weather forecast, she ( ) her umbrella with her yesterday.",
+  "passage": "",
+  "choices": [
+   "would take",
+   "had taken",
+   "would have taken",
+   "will take"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】仮定法(仮定法過去完了・would have done)。正解は「would have taken」。if 節が had checked という過去完了形で、yesterday もあるので、過去の事実に反する想像である。主節は would have + done の形にする。would take は現在や未来についての想像で、yesterday と合わない。had taken は if 節に使う形で、主節の述語にはならない。will take は現実の未来を述べる形で、過去の仮定と結びつかない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(混合仮定法・現在の仮定と過去の結果)",
+  "stem": "If Olivia had a car, she ( ) us a ride to the stadium last Saturday.",
+  "passage": "",
+  "choices": [
+   "would have given",
+   "gave",
+   "would give",
+   "will give"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】仮定法(混合仮定法・現在の仮定と過去の結果)。正解は「would have given」。if 節の had は「車を持っている」という現在の事実に反する仮定だが、主節には last Saturday があり、過去の結果を述べているので、主節は would have + done にする。would give は現在や未来の結果を表し、last Saturday と合わない。gave は事実として「送った」ことになり、仮定の結果にならない。will give は現実の未来を述べる形で、仮定法の文に合わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(I wish+過去形・現在の願望)",
+  "stem": "I live in a tiny apartment, so I wish I ( ) a vegetable garden.",
+  "passage": "",
+  "choices": [
+   "had",
+   "had had",
+   "will have",
+   "have"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】仮定法(I wish+過去形・現在の願望)。正解は「had」。小さな部屋に住んでいるという現在の事実に反して「庭があればいいのに」と願っているので、wish の後は仮定法過去 had を使う。have は現在の事実をそのまま述べる形で、wish の後では使わない。had had は過去の事実に反する後悔を表し、現在の願望に合わない。will have は未来の予定を述べる形で、wish の後には置けない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(I wish+had done・過去の後悔)",
+  "stem": "The concert last night was amazing. I wish you ( ) with us.",
+  "passage": "",
+  "choices": [
+   "had come",
+   "have come",
+   "come",
+   "would come"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】仮定法(I wish+had done・過去の後悔)。正解は「had come」。last night のコンサートについて「来てくれていたらよかったのに」と、過去の事実に反する残念な気持ちを述べているので、wish の後は過去完了形 had come にする。have come は現在完了で、wish の後には置かない形である。come は you に対する現在形で、事実をそのまま述べる形になるため、事実に反する願望を表す wish の後では使わない。would come は「これから来てくれたらいいのに」という今後の行動への願望で、終わった出来事には合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(I wish+would・相手への不満)",
+  "stem": "A: Your brother is playing the drums again, isn't he?\nB: Yes. I wish he ( ) during the day instead of late at night.",
+  "passage": "",
+  "choices": [
+   "practices",
+   "would practice",
+   "has practiced",
+   "will practice"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】仮定法(I wish+would・相手への不満)。正解は「would practice」。夜遅くにドラムを練習する兄に対して「昼間に練習してくれればいいのに」と、相手の行動が変わることを望んでいる。このように他人の今後の行動への不満や要望は wish + would + 原形で表す。practices は現在の習慣をそのまま述べる形で、wish の後では使わない。has practiced は現在完了で、願望の内容にならない。will practice は wish の後には置けない形である。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(as if+過去形・現在の事実に反する)",
+  "stem": "Ryo has never been abroad, but he talks about Paris as if he ( ) there now.",
+  "passage": "",
+  "choices": [
+   "lived",
+   "will live",
+   "had lived",
+   "has lived"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】仮定法(as if+過去形・現在の事実に反する)。正解は「lived」。海外に行ったことがないという事実に反して「今そこに住んでいるかのように」話すという内容なので、as if の後は現在の事実に反する仮定法過去 lived を使う。had lived は話している時点より前のことを想像する形で、now と合わない。will live は未来を述べる形で、as if の後の仮定に合わない。has lived は現在完了で、now と結びつかず、事実に反する想像も表せない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(as though+過去完了形)",
+  "stem": "When I met Daiki at the station, he looked as though he ( ) for hours.",
+  "passage": "",
+  "choices": [
+   "is waiting",
+   "has been waiting",
+   "had been waiting",
+   "will be waiting"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】仮定法(as though+過去完了形)。正解は「had been waiting」。looked という過去の時点から見て、それより前から続いていたことを「〜していたかのように」と述べているので、as though の後は過去完了進行形 had been waiting にする。for hours も継続を示している。is waiting と has been waiting は現在を基準にした形で、過去の looked と合わない。will be waiting は未来を述べる形で、見た時の様子の想像にはならない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(It is time+過去形)",
+  "stem": "The movie starts in ten minutes. It's time we ( ) for the theater.",
+  "passage": "",
+  "choices": [
+   "will leave",
+   "are leaving",
+   "left",
+   "have left"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】仮定法(It is time+過去形)。正解は「left」。It is time (that) + 主語 + 過去形は「もう〜すべき時間だ」と、まだしていないことを促す言い方で、動詞を仮定法過去にするので left が正しい。映画が 10 分後に始まる (starts in ten minutes) という状況も、今すぐ出発すべきだと示している。are leaving は実際に出発しつつあることを述べる形で、この構文には合わない。will leave は未来の予定を述べる形で、It is time の後には置かない。have left は「すでに出た」という完了の意味で、まだ出ていない状況に合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(if省略の倒置・Were)",
+  "stem": "( ) I in your shoes, I would ask the manager for a few days off.",
+  "passage": "",
+  "choices": [
+   "Had",
+   "Were",
+   "Should",
+   "Did"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】仮定法(if省略の倒置・Were)。正解は「Were」。If I were in your shoes「もし私が君の立場なら」の if を省略すると、were が主語の前に出て Were I in your shoes となる。Had は過去完了形の文の倒置に使う形で、後に had done の続きが無いので合わない。Should は後に原形が必要で、in your shoes という名詞句だけでは文が成り立たない。Did は仮定法の倒置には使わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(if省略の倒置・Had)",
+  "stem": "( ) the staff noticed the error earlier, the customers would not have received the wrong bills.",
+  "passage": "",
+  "choices": [
+   "Have",
+   "Had",
+   "Should",
+   "Were"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】仮定法(if省略の倒置・Had)。正解は「Had」。主節が would not have received という過去の事実に反する形なので、条件は If the staff had noticed という過去完了形である。if を省略すると had が主語の前に出て Had the staff noticed となる。Have は現在完了の形で、この倒置には使わない。Were の後に noticed は続かない。Should の後には原形が必要で、noticed は続かない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(if省略の倒置・Should)",
+  "stem": "A: What if I can't attend the seminar on Friday?\nB: ( ) you be unable to come, just let us know by Thursday.",
+  "passage": "",
+  "choices": [
+   "Would",
+   "Were",
+   "Had",
+   "Should"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】仮定法(if省略の倒置・Should)。正解は「Should」。If you should be unable to come「万一来られないなら」の if を省略した倒置で、should が主語の前に出て Should you be unable to come となる。後ろが原形 be であることが決め手で、主節は命令文である。Were の後には原形 be は続かない。Had は過去完了形の倒置に使う形で、be と結びつかない。Would は条件を表す倒置には使わず、疑問文のようになってしまう。",
+  "form": "対話応答",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(but for+would have done)",
+  "stem": "Sora nearly gave up. But for the cheering crowd, she ( ) before the finish line.",
+  "passage": "",
+  "choices": [
+   "would have stopped",
+   "had stopped",
+   "stopped",
+   "would stop"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】仮定法(but for+would have done)。正解は「would have stopped」。But for 〜「〜がなかったら」は if 節の代わりに条件を表す。前の文が過去形 gave up で、過去の出来事なので、主節は過去の事実に反する would have + done にする。would stop は現在や未来の想像で、過去の出来事に合わない。had stopped は条件の部分に使う形で、主節の述語にはならない。stopped は実際に止まったという事実になり、仮定の結果を表せない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(without との書きかえ)",
+  "stem": "If it were not for his glasses, Liam could not read the small print.\n= ( ) his glasses, Liam could not read the small print.",
+  "passage": "",
+  "choices": [
+   "Without",
+   "Unless",
+   "If not",
+   "With"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】仮定法(without との書きかえ)。正解は「Without」。If it were not for 〜「〜がなければ」は、前置詞 without 〜 で言いかえられる。主節が could not read という仮定法の形なので、without his glasses が条件の役目をしている。Unless は後に主語と動詞を持つ節が必要で、his glasses という名詞句だけでは使えない。If not は、If not for his glasses のように for を補うか、If it were not for のように節にしないと「〜がなければ」という条件にならず、his glasses を直接続けた文は成り立たない。With では「めがねがあれば読めない」となり、元の文と反対の意味になる。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(仮定法現在・demand の that節)",
+  "stem": "The landlord demanded that the tenant ( ) the rent by the end of the week.",
+  "passage": "",
+  "choices": [
+   "paying",
+   "to pay",
+   "has paid",
+   "pay"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】仮定法(仮定法現在・demand の that節)。正解は「pay」。demand「要求する」のように要求・提案・命令を表す動詞に続く that 節では、主語が三人称単数でも、主節が過去形でも、動詞は原形 (仮定法現在) を使う。paying は that 節の述語動詞になれない形である。to pay も節の中の述語にはならない。has paid は現在完了で、これから支払うよう求める内容に合わず、要求の that 節で使う形でもない。",
+  "form": "語形選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(仮定法現在・require の that節)",
+  "stem": "The club rules require that every new member ( ) this form beforehand.",
+  "passage": "",
+  "choices": [
+   "filling in",
+   "fill in",
+   "to fill in",
+   "filled in"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】仮定法(仮定法現在・require の that節)。正解は「fill in」。require「要求する」に続く that 節では、主語が every new member という三人称単数でも、動詞は原形 (仮定法現在) にする。filling in は述語動詞になれない形で、節が成り立たない。to fill in も that 節の述語にはならない。filled in は過去形で、「事前に記入すること」をこれから求める内容に合わず、要求の that 節の形としても使わない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(would rather+S+過去形)",
+  "stem": "A: Shall I open the window?\nB: I'd rather you ( ). It's quite cold outside.",
+  "passage": "",
+  "choices": [
+   "didn't",
+   "hadn't",
+   "won't",
+   "aren't"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】仮定法(would rather+S+過去形)。正解は「didn't」。would rather + 主語 + 過去形は「〜しないでほしい」「〜してくれたほうがよい」と相手の行動への希望を表す。窓を開けようかと聞かれて「開けないでほしい」と答えているので、open を省いた didn't が正しい。won't は would rather の後の節には使わない。hadn't は過去のことへの後悔を表すが、窓はまだ開けられていない。aren't は be 動詞で、open の代わりにならない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(if only+過去形)",
+  "stem": "If only Mika ( ) better at math; she wants to become an engineer.",
+  "passage": "",
+  "choices": [
+   "is",
+   "were",
+   "will be",
+   "had been"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】仮定法(if only+過去形)。正解は「were」。If only + 仮定法過去は「〜であればいいのに」と現在の事実に反する強い願望を表す。技術者になりたい (wants) という現在の状況から、数学が得意でないという今の事実への願いだとわかる。is は現在の事実を述べる形で、願望を表す If only には合わない。had been は「〜であったらよかったのに」と過去への後悔を表し、現在の話に合わない。will be は未来を述べる形で、If only の後には置かない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(if only+had done)",
+  "stem": "If only we ( ) the tickets earlier! Now the concert is completely sold out.",
+  "passage": "",
+  "choices": [
+   "have booked",
+   "had booked",
+   "would book",
+   "book"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】仮定法(if only+had done)。正解は「had booked」。If only + 過去完了形は「〜していればよかったのに」と過去の事実に反する後悔を表す。earlier と、今は売り切れだという次の文から、チケットを取らなかった過去を悔やんでいるとわかる。have booked は現在完了で、If only の後には置かない形である。would book は「これから取ってくれればいいのに」という今後への願望で、earlier と合わない。book は we に対する現在形で、事実をそのまま述べる形になるため、事実に反する願望を表す If only の後では使わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(would rather+原形 than)",
+  "stem": "Haru would rather ( ) at home than go to the crowded festival.",
+  "passage": "",
+  "choices": [
+   "to stay",
+   "staying",
+   "stay",
+   "stayed"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】仮定法(would rather+原形 than)。正解は「stay」。would rather + 原形 + than + 原形は「〜するよりむしろ〜したい」という意味で、rather の後には動詞の原形を置く。than の後の go が原形なので、前の動詞も原形 stay だと判断できる。to stay は would rather の後には置かない形である。staying は -ing 形で、助動詞 would の後に直接続けられない。stayed は過去形で、would の後に置く形ではない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(Would you mind if+過去形)",
+  "stem": "A: Would you mind if I ( ) the air conditioner? It's really hot in here.\nB: Not at all. Go ahead.",
+  "passage": "",
+  "choices": [
+   "will turn on",
+   "had turned on",
+   "turned on",
+   "am turning on"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】仮定法(Would you mind if+過去形)。正解は「turned on」。Would you mind if + 主語 + 過去形は「〜してもかまいませんか」と、仮定法過去を使って控えめに許可を求める表現である。will turn on は if 節の中で未来を表すためには使わない。had turned on は「すでにつけていたら」という過去の仮定になり、これから許可を求める場面に合わない。am turning on は実際にしつつあることを述べる形で、許可を求める表現にならない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(直説法条件文・if節は現在形)",
+  "stem": "Hurry up. If we ( ) the 8:15 train, we will be late for the entrance ceremony.",
+  "passage": "",
+  "choices": [
+   "will miss",
+   "missed",
+   "miss",
+   "had missed"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】仮定法(直説法条件文・if節は現在形)。正解は「miss」。主節が will be late という現実の未来を述べる形なので、これは仮定法ではなく、実際に起こり得る条件を述べる直説法の文である。条件を表す if 節では未来のことも現在形で表すため、miss が正しい。missed は仮定法過去で、主節の will と合わない。will miss は条件の if 節の中では使わない。had missed は過去の事実に反する仮定を表し、これからの話に合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(直説法 if+過去形・習慣の would)",
+  "stem": "When I was a child, if it ( ) on Sundays, my father would take us to the museum.",
+  "passage": "",
+  "choices": [
+   "had rained",
+   "would rain",
+   "rains",
+   "rained"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】仮定法(直説法 if+過去形・習慣の would)。正解は「rained」。When I was a child「子どものころ」という過去の話で、主節の would take は「よく〜したものだ」という過去の習慣を表す直説法の would である。したがって if 節は、実際にあった条件を事実として述べる過去形 rained が正しい。had rained は過去の事実に反する仮定になり、習慣の話に合わない。rains は現在形で、過去の話と合わない。would rain は条件を表す if 節の中では使わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(if節のない仮定法・過去の仮定)",
+  "stem": "A: I carried all those boxes upstairs by myself.\nB: Why didn't you ask me? I ( ) you.",
+  "passage": "",
+  "choices": [
+   "helped",
+   "would help",
+   "will help",
+   "would have helped"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】仮定法(if節のない仮定法・過去の仮定)。正解は「would have helped」。「頼んでくれていたら手伝ったのに」という意味で、If you had asked me という条件が省かれた仮定法の文である。箱を運んだのは過去の出来事 (carried) なので、would have + done の形になる。would help は現在や未来の話で、終わった出来事に合わない。will help は現実の未来を述べる形で、過去の仮定にならない。helped は「実際に手伝った」という事実になり、相手の発言と矛盾する。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(正誤・仮定法過去完了の形)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "If Aya has known the answer, she would have told us.",
+   "If Aya had known the answer, she would have told us.",
+   "If Aya has known the answer, she would tell us yesterday.",
+   "If Aya had known the answer, she would tell us yesterday."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】仮定法(正誤・仮定法過去完了の形)。正解は「If Aya had known the answer, she would have told us.」過去の事実に反する仮定は、if 節を過去完了形 had known、主節を would have + 過去分詞 (would have told) にするので、この文が正しい。If Aya has known the answer で始まる 2 つの文は、仮定法では使わない現在完了 has known を if 節に置いている点が誤り。she would tell us yesterday で終わる 2 つの文は、過去を表す yesterday があるのに主節が現在の想像を表す would tell になっている点が誤りで、過去の結果は would have told にしなければならない。if 節と主節の両方が正しい形になっているのは正解の文だけである。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(otherwise+would have done)",
+  "stem": "Liam left two hours early yesterday; otherwise he ( ) stuck in traffic and missed his flight.",
+  "passage": "",
+  "choices": [
+   "would be",
+   "had been",
+   "will be",
+   "would have been"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】仮定法(otherwise+would have done)。正解は「would have been」。otherwise「そうでなければ」は、前の事実と反対の状況を仮定する。yesterday の事実に反して「早く出ていなければ渋滞にはまっていただろう」と述べているので、would have + done の形が合う。would be は現在や未来の想像で、yesterday と合わない。had been は条件の部分に使う形で、主節には置かない。will be は現実の未来を述べる形で、過去の仮定に合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(might have done・過去の仮定)",
+  "stem": "If the pilot had reacted a second later, the plane ( ) off the runway.",
+  "passage": "",
+  "choices": [
+   "might go",
+   "might have gone",
+   "may go",
+   "had gone"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】仮定法(might have done・過去の仮定)。正解は「might have gone」。if 節が had reacted という過去完了形なので、過去の事実に反する仮定である。主節では would have done のほかに might have + done も使われ、「〜したかもしれない」という控えめな推量を表す。might go は現在や未来についての想像で、過去の if 節と合わない。may go は現実の推量を述べる形で、仮定法の文に合わない。had gone は if 節に使う形で、主節の述語にはならない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(混合仮定法・過去の仮定と現在の結果)",
+  "stem": "If Mika had accepted the Tokyo job last year, she ( ) in a big city now.",
+  "passage": "",
+  "choices": [
+   "would have lived",
+   "will live",
+   "would live",
+   "will have lived"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】仮定法(混合仮定法・過去の仮定と現在の結果)。正解は「would live」。if 節は last year という過去の事実に反する仮定なので過去完了形 had accepted だが、主節には now があり、「今は大都市に住んでいるだろう」という現在の状態を想像している。このように if 節と主節で時がずれる混合仮定法では、主節は仮定法過去の would + 原形にするので would live が正しい。would have lived は過去の結果を表す形で、now と合わない。will live と will have lived は現実の未来を述べる will を使っており、事実に反する仮定を表す if 節とは結びつかない。特に will have lived は未来完了で、今の状態を表す now とも合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(I wish+could・現在の願望)",
+  "stem": "I wish I ( ) the guitar as well as my sister does; it looks so easy.",
+  "passage": "",
+  "choices": [
+   "will play",
+   "could have played",
+   "will have played",
+   "could play"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】仮定法(I wish+could・現在の願望)。正解は「could play」。wish の後に could + 動詞の原形を置くと「〜できればいいのに」と、現在できないことへの願望を表す。my sister does という現在形と、it looks so easy という今の感想から、現在の願望だとわかる。could have played は過去にできなかったことへの後悔を表す形で、現在の話に合わない。will play と will have played は未来の予定や完了を述べる形で、事実に反する願望を表す wish の後には置けない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "仮定法",
+  "unit": "仮定法(仮定法過去完了・主節が疑問文)",
+  "stem": "A: The trains had stopped, so I took a taxi to the airport yesterday.\nB: If the trains had been running, how much ( )?",
+  "passage": "",
+  "choices": [
+   "will you have saved",
+   "will you save",
+   "would you save",
+   "would you have saved"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】仮定法(仮定法過去完了・主節が疑問文)。正解は「would you have saved」。if 節が had been running という過去完了進行形で、yesterday の出来事に反する仮定なので、主節は疑問文でも would have + done の形を保つ。would you save は現在や未来の結果を表し、節約は昨日の移動で決まった過去の結果なので合わない。will you have saved と will you save は現実の未来を述べる will で、事実に反する仮定とは結びつかない。",
+  "form": "対話応答",
+  "level": "標準"
+ }
+]

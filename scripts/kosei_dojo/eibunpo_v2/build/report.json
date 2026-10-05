@@ -1,0 +1,22 @@
+{
+ "questions": 390,
+ "rows": 65,
+ "per_part": {
+  "r_grammar_unit": 150,
+  "r_grammar": 240
+ },
+ "answer_dist": {
+  "1": 104,
+  "3": 91,
+  "2": 91,
+  "0": 104
+ },
+ "warnings": [
+  "r_grammar_unit/分詞 他カードの新規行 1 行に『分詞』が含まれる (LIKE 予算 26/50)",
+  "r_grammar__8 部分最多で当たる: 'Ms. Lee thanked her students for ( ) so ' / having been worked | having worked | to have worked | to have been worked",
+  "r_grammar__8 部分最多で当たる: \"I regret that I didn't listen to her adv\" / having been listened | having listened | to have listened | to have been listened",
+  "r_grammar/助動詞 他カードの新規行 1 行に『助動詞』が含まれる (LIKE 予算 29/50)",
+  "r_grammar/不定詞 他カードの新規行 2 行に『不定詞』が含まれる (LIKE 予算 29/50)",
+  "r_grammar/前置詞 他カードの新規行 1 行に『前置詞』が含まれる (LIKE 予算 33/50)"
+ ]
+}

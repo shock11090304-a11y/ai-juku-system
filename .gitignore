@@ -114,3 +114,8 @@ scripts/aoyama_eigo_mirror/bundle/*.pdf
 scripts/chugaku_dojo/expand_v3/drafts/
 # build.py が書くが誰も読まない設問一覧 (verified/ と同じ中身の写し)
 scripts/chugaku_dojo/expand_v3/build/blind.json
+
+# 高校 入試道場 英文法プール増量 v2: 作問エージェントの生出力 (保存しない。正典は verified/、本番に入れる行は build/rows.json)
+scripts/kosei_dojo/eibunpo_v2/drafts/
+# build.py が書くが誰も読まない設問一覧 (verified/ と同じ中身の写し)
+scripts/kosei_dojo/eibunpo_v2/build/blind.json

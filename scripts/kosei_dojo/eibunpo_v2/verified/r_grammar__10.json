@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(時の in・季節)",
+  "stem": "The trees around the lake turn red ( ) autumn, and many visitors come to see them.",
+  "passage": "",
+  "choices": [
+   "on",
+   "in",
+   "at",
+   "for"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】前置詞(時の in・季節)。正解は「in」。autumn のような季節や、月・年など幅のある時間には in を使う (in autumn / in May / in 2020)。on は曜日や特定の日 (on Sunday) に、at は時刻や時の一点 (at noon) に使うので、季節には合わない。for は for two weeks のように期間の長さを表す語句を続けるので、「秋に」という時の所属は表せない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(時の at・at the end of)",
+  "stem": "Students receive their report cards ( ) the end of each term and take them home.",
+  "passage": "",
+  "choices": [
+   "on",
+   "at",
+   "in",
+   "for"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】前置詞(時の at・at the end of)。正解は「at」。「学期の終わりに」のように、時の流れの中の一点を指す the end of 〜 には at を使う (at the end of the month / at the beginning of the class)。in は in the end「結局」の形では使うが、in the end of 〜 という時の表現にはならない。on は the end と組んで時を表す使い方がなく、for は期間の長さを表すので、「〜の終わりに」という時点は示せない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(時の until・継続「〜までずっと」)",
+  "stem": "The winter sale continues ( ) the end of this month, so you still have a few days.",
+  "passage": "",
+  "choices": [
+   "by",
+   "within",
+   "since",
+   "until"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】前置詞(時の until・継続「〜までずっと」)。正解は「until」。continues「続く」という状態がその時点まで続くことを表すので、継続の終点を示す until (till) が合う。by は「〜までに」とその時点までの完了・期限を表し、続いていく動作とは合わない。since は起点「〜以来」で現在完了などとともに使い、within は「〜以内に」と期間の幅を表すので、どちらもセールが続く終点を示せない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(時の by・過去の完了の期限)",
+  "stem": "All the guests had already left the party ( ) ten o'clock, so the room was quiet.",
+  "passage": "",
+  "choices": [
+   "until",
+   "in",
+   "for",
+   "by"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】前置詞(時の by・過去の完了の期限)。正解は「by」。had already left「すでに帰っていた」という完了した動作が、10 時という時点までに起きていたことを表すので、「〜までに」と期限を示す by が合う (by ten o'clock「10 時までに」)。until は「〜までずっと」と状態や動作の継続を表すので、一度きりの「帰る」という動作には合わない。in は in the morning のように幅のある時間帯に使う語で、時刻の一点には使わない (時刻は at ten o'clock)。for は for two hours のように期間の長さを表す語で、「10 時までに」という期限の意味は表せない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(時の during・特定の出来事の間)",
+  "stem": "The electricity went off twice ( ) the storm last night, and we had to use candles.",
+  "passage": "",
+  "choices": [
+   "while",
+   "at",
+   "for",
+   "during"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】前置詞(時の during・特定の出来事の間)。正解は「during」。the storm という特定の出来事を指す名詞を続けて「嵐の間に」と言うには during を使う。while も「〜の間」の意味だが、後ろには主語と動詞のある節が続く語なので、名詞だけを続けることはできない。for は for two hours のように期間の長さを表す語句を続け、at は時刻や地点を表すので、ここでは合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(時の for・期間の長さ)",
+  "stem": "A: How long did you stay in Hokkaido?\nB: We stayed there ( ) five days and enjoyed the snow festival.",
+  "passage": "",
+  "choices": [
+   "during",
+   "while",
+   "for",
+   "in"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】前置詞(時の for・期間の長さ)。正解は「for」。How long という質問に対して five days のように期間の長さを答えるときは for を使う。during は the summer vacation のような特定の期間を表す名詞に付け、five days のような数を伴う長さにはふつう使わない。while は後ろに節を続ける語で名詞句だけでは使えず、in は in five days「5 日後に」と今から経過する時間を表すので、滞在した長さには合わない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(時の within・「〜以内に」)",
+  "stem": "The ambulance reached the scene ( ) five minutes of the emergency call.",
+  "passage": "",
+  "choices": [
+   "for",
+   "since",
+   "until",
+   "within"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】前置詞(時の within・「〜以内に」)。正解は「within」。within five minutes of 〜 で「〜から 5 分以内に」と、ある時点から一定の時間が過ぎる前に起こったことを表す。for は「5 分間」と動作が続いた長さを表すので、reached「到着した」という一瞬の動作には合わない。since は起点「〜以来」、until は継続の終点「〜まで」を表し、どちらも「以内に」の意味にはならない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(時の from・開始の時点)",
+  "stem": "Ryo will be away on business ( ) next Monday until the end of the month.",
+  "passage": "",
+  "choices": [
+   "from",
+   "by",
+   "for",
+   "since"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】前置詞(時の from・開始の時点)。正解は「from」。until the end of the month「月末まで」という終点と組んで、「来週の月曜日から」という開始の時点を表すには from を使う (from A until B / from A to B)。since も「〜から」と訳せるが、過去の時点を起点にして現在まで続くことに使い、未来の next Monday には合わない。by は「〜までに」、for は期間の長さなので、開始点を表せない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(場所の on・階)",
+  "stem": "The teachers' room is ( ) the third floor of the main building, next to the library.",
+  "passage": "",
+  "choices": [
+   "in",
+   "on",
+   "at",
+   "to"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】前置詞(場所の on・階)。正解は「on」。建物の「〜階に」は、床という面の上にあると考えて on the third floor と言う。in は in the building のように囲まれた空間の内部に使うので、「階」には用いない。at は at the entrance のように 1 つの地点を指す語で、「3 階にある」という面の上の位置は表せない。to は「〜へ」と移動の方向・到達点を表す語で、go up to the third floor のように動きを表す動詞と組むので、is で「〜にある」と位置を述べるこの文には合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(over・「〜を越えて」)",
+  "stem": "The horse jumped ( ) the high fence easily and ran toward the hill.",
+  "passage": "",
+  "choices": [
+   "above",
+   "over",
+   "under",
+   "through"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】前置詞(over・「〜を越えて」)。正解は「over」。jump over 〜 で「〜を跳び越える」と、障害物の上を弧を描いて越える動きを表す。above は「〜より高い位置に」と止まった位置関係を表すので、跳び越える動きには使わない。under は「〜の下を」なので柵を跳ぶ動きと合わず、through は「〜を通り抜けて」で、柵の内部を通ることになり不自然。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(between・2 つの間)",
+  "stem": "Could you explain the difference ( ) these two words? They look very similar to me.",
+  "passage": "",
+  "choices": [
+   "from",
+   "among",
+   "between",
+   "through"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】前置詞(between・2 つの間)。正解は「between」。the difference between A and B「A と B の違い」のように、two words という 2 つのものの間の関係は between で表す。among は 3 つ以上のものの中を指すので、2 つのものには合わない。from は different from のように形容詞 different と組むが、名詞 difference には between を使う。through は「〜を通して」の意味で、違いを表す名詞とは結び付かない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(through・「〜を通り抜けて」)",
+  "stem": "The train passed ( ) a long dark tunnel and came out into the bright sunshine.",
+  "passage": "",
+  "choices": [
+   "across",
+   "over",
+   "among",
+   "through"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】前置詞(through・「〜を通り抜けて」)。正解は「through」。トンネルのように囲まれた空間の中を、一方の端から他方の端へ通り抜ける動きは through で表す。across は道路や川のように面の上を横切るときに使い、トンネルの内部を進む動きには合わない。over は「〜の上を越えて」なので、トンネルを通ったのではなく上を越えたことになり、文意に合わない。among は「〜の中で」と位置を表し、通り抜ける動きを表せない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(手段の by・無冠詞 by hand)",
+  "stem": "These traditional sweets are still made ( ) hand at a small family shop.",
+  "passage": "",
+  "choices": [
+   "with",
+   "by",
+   "in",
+   "on"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】前置詞(手段の by・無冠詞 by hand)。正解は「by」。「手作業で」は by hand と、冠詞を付けない名詞を by に続けて手段を表す決まった言い方 (by car / by email も同じ形)。with は with a knife / with his hands のように、使う道具や体の部分を具体的な名詞で示すときに使う語で、with hand という形は使わない。in hand は「手中にある・制御できている」、on hand は「手元にある」という別の意味の決まった言い方なので、文意に合わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(手段の on・媒体 on the Internet)",
+  "stem": "I found this recipe ( ) the Internet and tried it last weekend.",
+  "passage": "",
+  "choices": [
+   "on",
+   "in",
+   "by",
+   "at"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】前置詞(手段の on・媒体 on the Internet)。正解は「on」。インターネット・テレビ・ラジオなどの媒体で「〜で見た・聞いた」と言うときは on を使う (on the Internet / on TV / on the radio)。in は日本語の「〜の中で」から選びがちだが、媒体には用いない。by は by email のように冠詞のない名詞を続けて手段を表すので、the Internet とは組まない。at は地点を示す語で、媒体には合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(原因の due to)",
+  "stem": "( ) the sharp rise in food prices, many families are spending less on eating out.",
+  "passage": "",
+  "choices": [
+   "In spite of",
+   "Up to",
+   "Instead of",
+   "Due to"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】前置詞(原因の due to)。正解は「Due to」。食料品の値上がりが原因で外食を減らしている、という因果関係なので、「〜のために・〜が原因で」の due to が合う。in spite of は「〜にもかかわらず」で、値上がりしても外食を減らさない、という逆の内容になってしまう。instead of は「〜の代わりに」、up to は「〜まで・〜次第」の意味で、どちらも原因を表せない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(譲歩の for all)",
+  "stem": "( ) his great wealth, the old man never seemed to be truly happy.",
+  "passage": "",
+  "choices": [
+   "For all",
+   "Instead of",
+   "Up to",
+   "In case of"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】前置詞(譲歩の for all)。正解は「For all」。for all 〜 は「〜にもかかわらず」の意味で、in spite of 〜 とほぼ同じ働きをする。大きな富があるのに幸せそうではなかった、という意外さを表すのでこれが合う。instead of は「〜の代わりに」、in case of は「〜の場合には」、up to は「〜まで・〜次第」で、どれも「〜にもかかわらず」の意味にはならず、富と不幸せのつながりを表せない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(関連の on・「〜に関する」)",
+  "stem": "Professor Sato gave an interesting lecture ( ) the history of tea in Asia.",
+  "passage": "",
+  "choices": [
+   "on",
+   "with",
+   "at",
+   "for"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】前置詞(関連の on・「〜に関する」)。正解は「on」。a lecture on 〜 / a book on 〜 のように、講演や本などの専門的な主題は on で表す (about よりも学術的な響きになる)。for は「〜のために」で目的や利益を表し、主題は表せない。with は「〜と一緒に・〜を使って」、at は地点や時刻を示すので、「〜についての」の意味にならない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(関連の regarding・「〜に関して」)",
+  "stem": "Please contact the office if you have any questions about the new schedule.\n= Please contact the office if you have any questions ( ) the new schedule.",
+  "passage": "",
+  "choices": [
+   "regarding to",
+   "according to",
+   "regarding",
+   "in spite of"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】前置詞(関連の regarding・「〜に関して」)。正解は「regarding」。regarding は「〜に関して」の意味の前置詞で、about とほぼ同じ意味をやや改まった言い方で表す (concerning も同様)。regarding to は to が余計で、誤った形。according to は「〜によれば」と情報の出どころを示し、in spite of は「〜にもかかわらず」なので、どちらも about の書きかえにはならない。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(群前置詞 according to・「〜に従って」)",
+  "stem": "The students lined up ( ) height, from the shortest to the tallest.",
+  "passage": "",
+  "choices": [
+   "in spite of",
+   "instead of",
+   "according to",
+   "in front of"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】前置詞(群前置詞 according to・「〜に従って」)。正解は「according to」。according to 〜 は「〜によれば」のほかに「〜に従って・〜に応じて」の意味があり、line up according to height で「身長順に並ぶ」となる。instead of は「〜の代わりに」、in spite of は「〜にもかかわらず」で、並ぶ基準を表せない。in front of は「〜の前に」と位置を表すので、height「身長」を続けると意味が通らない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(群前置詞 instead of・「〜の代わりに」)",
+  "stem": "Why don't we walk to the park ( ) taking a taxi? It isn't far from here.",
+  "passage": "",
+  "choices": [
+   "instead of",
+   "because of",
+   "in front of",
+   "in spite of"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】前置詞(群前置詞 instead of・「〜の代わりに」)。正解は「instead of」。タクシーに乗る代わりに歩こう、という提案なので「〜の代わりに・〜ではなく」の instead of が合い、後ろには taking という -ing 形を続ける。in spite of は「〜にもかかわらず」、because of は「〜のために」で、タクシーに乗ることと歩くことの関係を表せない。in front of は「〜の前に」と位置を表すので、文意に合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(群前置詞 in addition to・「〜に加えて」)",
+  "stem": "( ) a good salary, the company offers its workers free lunch every day.",
+  "passage": "",
+  "choices": [
+   "In spite of",
+   "In addition to",
+   "In case of",
+   "In accordance with"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】前置詞(群前置詞 in addition to・「〜に加えて」)。正解は「In addition to」。良い給料に加えて無料の昼食も提供する、と 2 つのものを並べて付け加えるので、「〜に加えて」の in addition to が合う。in spite of は「〜にもかかわらず」で、給料が良いのに昼食を出す、という不自然な対立になる。in case of は「〜の場合には」、in accordance with は「〜に従って」で、どちらも付け加える意味にならない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(形容詞+前置詞 be different from)",
+  "stem": "Life in the countryside is quite different ( ) life in a big city.",
+  "passage": "",
+  "choices": [
+   "at",
+   "with",
+   "of",
+   "from"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】前置詞(形容詞+前置詞 be different from)。正解は「from」。「〜と違う」は be different from 〜 と、違いの基準となるものを from で示す。日本語の「〜と」につられて with を選びやすいが、different with とは言わない。of は「〜の」と所属などを表し、at は be good at のように別の形容詞と組む語なので、different とは結び付かない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(形容詞+前置詞 be similar to)",
+  "stem": "Your handwriting is very similar ( ) your mother's, so I can hardly tell them apart.",
+  "passage": "",
+  "choices": [
+   "with",
+   "from",
+   "to",
+   "as"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】前置詞(形容詞+前置詞 be similar to)。正解は「to」。「〜に似ている」は be similar to 〜 と、似ている相手を to で示す。with は「〜と」と訳せるため選びやすいが、similar with とは言わない。from は be different from のように「違い」を表す形容詞と組む語で、似ていることには使えない。as は the same as 〜「〜と同じ」で使う語で、similar には続けない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(形容詞+前置詞 be satisfied with)",
+  "stem": "A: Are you satisfied ( ) your new apartment?\nB: Yes, it's close to the station and very quiet.",
+  "passage": "",
+  "choices": [
+   "for",
+   "with",
+   "at",
+   "from"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】前置詞(形容詞+前置詞 be satisfied with)。正解は「with」。「〜に満足している」は be satisfied with 〜 と、満足の対象を with で示す (be pleased with も同じ形)。for は be famous for のように理由を表す形容詞と組み、satisfied には使わない。at は be surprised at のように驚きの対象を示す語、from は be different from のように違いの基準を示す語で、どちらも satisfied とは結び付かない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(他動詞に余計な前置詞 enter into)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "She married a kind doctor last year.",
+   "They discussed the new plan for hours.",
+   "He entered into the room very quietly.",
+   "We reached the small hotel at noon."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】前置詞(他動詞に余計な前置詞 enter into)。正解は「He entered into the room very quietly.」enter「〜に入る」は目的語を直接とるので、enter the room が正しく、into は余計。marry「〜と結婚する」、discuss「〜について話し合う」、reach「〜に到着する」も前置詞なしで目的語を続ける動詞なので、残る 3 文は正しい。なお enter into は enter into an agreement「契約を結ぶ」のような抽象的な場面でだけ使う。",
+  "form": "正誤",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(despite・in spite of の形)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "Although the long delay, the passengers stayed calm.",
+   "Despite the long delay, the passengers stayed calm.",
+   "Despite of the long delay, the passengers stayed calm.",
+   "In spite the long delay, the passengers stayed calm."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】前置詞(despite・in spite of の形)。正解は「Despite the long delay, the passengers stayed calm.」despite は 1 語で「〜にもかかわらず」を表す前置詞で、後ろに the long delay という名詞句を直接続ける。although は節を導く語なので、名詞句だけを続けた Although the long delay は誤り。despite of は of が余計で、in spite の後には of が必要なので、残る 2 文も形が誤っている。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(動詞+前置詞 look after)",
+  "stem": "Could you look ( ) my dog and feed him twice a day while I'm away next week?",
+  "passage": "",
+  "choices": [
+   "at",
+   "into",
+   "after",
+   "around"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】前置詞(動詞+前置詞 look after)。正解は「after」。look after 〜 は「〜の世話をする」(= take care of) で、犬に餌をやってほしいという後半の内容と合う。look at 〜 は「〜を見る」で世話の意味にはならず、look into 〜 は「〜を調べる」、look around 〜 は「〜を見て回る」の意味なので、どれも留守中に犬を頼む場面には合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(動詞+前置詞 result in)",
+  "stem": "The heavy snow resulted ( ) the cancellation of all the morning flights.",
+  "passage": "",
+  "choices": [
+   "in",
+   "to",
+   "from",
+   "at"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】前置詞(動詞+前置詞 result in)。正解は「in」。A result in B は「A が B という結果になる」で、大雪が原因、欠航が結果という順になっている。result from は「〜が原因で起こる」と原因と結果の向きが逆になり、大雪が欠航のせいで起きたことになって文意に合わない。result to や result at という組み合わせは使わないので、どちらも誤り。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(動詞+前置詞 object to)",
+  "stem": "Many residents object ( ) the plan for a large factory near the river.",
+  "passage": "",
+  "choices": [
+   "to",
+   "at",
+   "with",
+   "against"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】前置詞(動詞+前置詞 object to)。正解は「to」。object to 〜 で「〜に反対する」となり、名詞 objection to 〜 も同じ to を使う。against は「〜に反対して」の意味を持つが、be against 〜 や vote against 〜 のように使い、object の後には置かない。at や with は object と結び付かず、反対する対象を示せない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "前置詞",
+  "unit": "前置詞(名詞+前置詞 reason for)",
+  "stem": "Nobody knows the real reason ( ) his sudden decision to leave the company.",
+  "passage": "",
+  "choices": [
+   "for",
+   "of",
+   "to",
+   "about"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】前置詞(名詞+前置詞 reason for)。正解は「for」。「〜の理由」は the reason for 〜 と、理由の対象を for で示す。日本語の「〜の」から of を選びやすいが、the reason of 〜 とは言わない。to は the reason to do のように後ろに動詞の原形が続く形で使い、名詞 decision を直接続けることはできない。about は「〜について」で、reason とは組まない。",
+  "form": "空所補充",
+  "level": "標準"
+ }
+]

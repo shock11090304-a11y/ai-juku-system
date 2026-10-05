@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(Could you・丁寧な依頼)",
+  "stem": "( ) you possibly lend me your notes from yesterday's lecture? I missed the class.",
+  "passage": "",
+  "choices": [
+   "Must",
+   "Shall",
+   "May",
+   "Could"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞(Could you・丁寧な依頼)。正解は「Could」。ノートを貸してほしいと頼む場面で、possibly をはさんで控えめに依頼する Could you possibly 〜? が合う。May you 〜? は相手への依頼には使えず、祈願などの限られた場合にしか用いない。Shall you 〜? は依頼の形として成り立たない。Must you 〜? は「どうしても〜しなければならないのか」と相手を非難する響きになり、頼みごとの場面に合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(Would you・丁寧な依頼)",
+  "stem": "( ) you please keep your voice down? The baby is sleeping in the next room.",
+  "passage": "",
+  "choices": [
+   "May",
+   "Must",
+   "Shall",
+   "Would"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞(Would you・丁寧な依頼)。正解は「Would」。赤ちゃんが寝ているので声を小さくしてほしいと頼む場面で、please とともに丁寧に依頼する Would you 〜? が合う。May you 〜? は人に何かを頼む形としては使えない。Must you 〜? は「どうしても〜しなければならないのか」といらだちを表す言い方で、please と合わない。Shall you 〜? は現代英語の依頼表現としては使わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(Would you mind への応答)",
+  "stem": "A: Would you mind if I sat here? The other seats are all taken.\nB: ( ) Please go ahead.",
+  "passage": "",
+  "choices": [
+   "Yes, I would.",
+   "No, not at all.",
+   "Yes, please.",
+   "No, thank you."
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞(Would you mind への応答)。正解は「No, not at all.」Would you mind 〜? は「〜したら気にしますか」とたずねる形なので、承諾するときは「いいえ、気にしません」と否定で答える。Yes, I would. は「はい、気にします」という断りで、Please go ahead. と矛盾する。Yes, please. は何かをすすめられたときの受け方で、許可を求める問いの答えにならない。No, thank you. は申し出を断る言い方で、席を使うことを認める流れに合わない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(May I・許可を求める)",
+  "stem": "A: ( ) I leave a little early today? I have a dentist appointment at four.\nB: Yes, that's fine. Just finish the report first.",
+  "passage": "",
+  "choices": [
+   "Will",
+   "May",
+   "Would",
+   "Must"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞(May I・許可を求める)。正解は「May」。歯医者の予約があるので早く帰ってよいかと許可を求める場面で、B が Yes, that's fine. と認めているので、許可を求める May I 〜? が合う。Will I 〜? は自分の未来の行動を相手にたずねる形で、許可の意味にならない。Must I 〜? は「〜しなければなりませんか」と義務をたずねることになり、文脈に合わない。Would I 〜? も許可を求める言い方としては使えない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(must・規則の義務)",
+  "stem": "All passengers ( ) show a valid ticket before boarding the ferry; there are no exceptions.",
+  "passage": "",
+  "choices": [
+   "might",
+   "may",
+   "must",
+   "could"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞(must・規則の義務)。正解は「must」。there are no exceptions「例外は無い」とあるので、全員に課される義務「〜しなければならない」を表す must が合う。may は「〜してもよい」という許可で、提示が任意になってしまい、例外が無いという後半と合わない。might は「〜かもしれない」という推量や控えめな許可で、規則を述べる文に合わない。could も「〜できた」「〜かもしれない」で、義務の意味は無い。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(must・現在の推量・確信)",
+  "stem": "This bag has your name tag on it, so it ( ) be yours; there's no doubt about it.",
+  "passage": "",
+  "choices": [
+   "must",
+   "cannot",
+   "may",
+   "needn't"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞(must・現在の推量・確信)。正解は「must」。名札がついているという根拠と、there's no doubt about it「疑いの余地は無い」という後半から、強い確信をもって「〜にちがいない」と推量する must be が合う。may be は「〜かもしれない」と確信の弱い推量で、疑いが無いという内容と矛盾する。cannot be は「〜であるはずがない」と正反対の意味になる。needn't be は「〜である必要は無い」で、推量の文脈に合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(must not・禁止の書きかえ)",
+  "stem": "Smoking is not allowed anywhere in this building.\n= You ( ) smoke anywhere in this building.",
+  "passage": "",
+  "choices": [
+   "don't have to",
+   "must not",
+   "need not",
+   "could not"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞(must not・禁止の書きかえ)。正解は「must not」。is not allowed「許されていない」は禁止の意味なので、「〜してはいけない」を表す must not で書きかえる。don't have to は「〜する必要が無い」で、禁止ではなく不必要を表し、意味がずれる。need not も同じく「〜しなくてよい」で、禁止にはならない。could not は「〜できなかった」と過去の不可能を表し、現在の規則を述べる元の文と合わない。",
+  "form": "書きかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(have to・過去形 had to)",
+  "stem": "The last train was already gone, so Daiki ( ) take a taxi home from the station last night.",
+  "passage": "",
+  "choices": [
+   "had to",
+   "must",
+   "has to",
+   "will have to"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞(have to・過去形 had to)。正解は「had to」。last night があり過去の話なので、「〜しなければならなかった」は have to の過去形 had to で表す。must はそのままでは過去の一回の義務を表せず、last night と合わない。has to は現在形で、過去の出来事に使えない。will have to は未来の義務「〜しなければならないだろう」で、すでに終わった出来事を述べる文に合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(have to・主語による形 has to)",
+  "stem": "These days Olivia ( ) wear glasses for reading because her eyesight got worse last year.",
+  "passage": "",
+  "choices": [
+   "has to",
+   "had to",
+   "having to",
+   "have to"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞(have to・主語による形 has to)。正解は「has to」。have to は一般の動詞と同じように主語と時制で形が変わり、主語が三人称単数の Olivia で、These days「最近は」という現在の話なので has to になる。have to は主語が三人称単数のとき現在形としては使えない。had to は過去形で、These days と合わない。having to では文の述語動詞にならず、文が成り立たない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(need not・不必要)",
+  "stem": "You ( ) book a seat in advance, but you can if you want a good view.",
+  "passage": "",
+  "choices": [
+   "must not",
+   "cannot",
+   "ought to",
+   "need not"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞(need not・不必要)。正解は「need not」。後半の but you can if you want「したければ予約してもよい」から、前半は「予約する必要は無い」という不必要を表す need not が合う。must not は「予約してはいけない」という禁止で、but you can と矛盾する。cannot は「予約できない」で、やはり後半と合わない。ought to は「予約すべきだ」という助言で、but でつなぐ後半の内容と逆になる。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(don't have to・不必要の書きかえ)",
+  "stem": "It is not necessary for you to attend the orientation.\n= You ( ) attend the orientation.",
+  "passage": "",
+  "choices": [
+   "don't have to",
+   "must not",
+   "ought not to",
+   "are not allowed to"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞(don't have to・不必要の書きかえ)。正解は「don't have to」。It is not necessary for you to 〜「〜する必要は無い」は、不必要を表す don't have to で書きかえられる。must not は「〜してはいけない」という禁止で、必要が無いという意味とは別物。are not allowed to も「〜することを許されていない」という禁止の意味になる。ought not to は「〜すべきでない」という助言で、元の文の意味とずれる。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(should・助言)",
+  "stem": "Your essay has several careless mistakes; you ( ) read it over again before handing it in. 「〜すべきだ」",
+  "passage": "",
+  "choices": [
+   "can",
+   "may",
+   "should",
+   "shall"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞(should・助言)。正解は「should」。「〜すべきだ」という助言・義務は should で表し、うっかりミスが多いので提出前にもう一度読み直すべきだ、という文意に合う。can は「〜できる」「〜してもよい」で、助言の意味を表さない。may は「〜してもよい」「〜かもしれない」で、「〜すべきだ」にならない。shall は現代英語では人への助言には使わず、you shall 〜 は古風な命令の響きになる。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(ought not to・忠告)",
+  "stem": "You ( ) to leave your bike unlocked here, even for a minute; it could easily be stolen.",
+  "passage": "",
+  "choices": [
+   "would rather not",
+   "need not",
+   "had better not",
+   "ought not"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞(ought not to・忠告)。正解は「ought not」。空所の直後に to があるので、to を伴う助動詞 ought の否定形 ought not to「〜すべきでない」が合い、鍵をかけずに置くべきでないという忠告になる。need not・had better not・would rather not はどれも直後に動詞の原形を置き、to を続けないので入らない。意味の上でも need not は「〜する必要が無い」、would rather not は「〜したくない」で、忠告にならない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(had better not・否定の位置)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "You had better not eat so much before swimming.",
+   "You had not better eat so much before swimming.",
+   "You don't had better eat so much before swimming.",
+   "You had better don't eat so much before swimming."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞(had better not・否定の位置)。正解は「You had better not eat so much before swimming.」had better の否定は、had better のあとに not を置いて had better not + 動詞の原形とする。had not better のように not を better の前に置く形は誤り。don't had better は、助動詞のはたらきをする had better に don't を重ねており誤り。had better don't eat も、had better のあとは動詞の原形が続くので誤り。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(will・現在の習性)",
+  "stem": "No matter how carefully you plan a trip, small accidents ( ) happen now and then. 「〜するものだ」",
+  "passage": "",
+  "choices": [
+   "will",
+   "must",
+   "shall",
+   "used to"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞(will・現在の習性)。正解は「will」。「〜するものだ」と物事の習性・傾向を述べるときは will を使い、どれだけ注意して計画しても小さな事故はときどき起こるものだ、という意味になる。shall は現代英語で習性を表す用法が無く、この文には合わない。must は「〜しなければならない」「〜にちがいない」で、「〜するものだ」という一般的な傾向の意味にならない。used to は「以前は〜したものだ」と過去の習慣を表し、今はそうではないという含みが出るので、No matter how carefully you plan 〜 と現在形で一般的な事実を述べるこの文と合わない。なお now and then「ときどき」は過去の文にも使う語なので、現在か過去かの手がかりにはならない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(used to・be used to との区別)",
+  "stem": "In those days, people wrote most letters by hand.\n= In those days, people ( ) write most letters by hand.",
+  "passage": "",
+  "choices": [
+   "ought to",
+   "are used to",
+   "would rather",
+   "used to"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞(used to・be used to との区別)。正解は「used to」。「当時は手で手紙を書いていた」という過去の習慣は used to + 動詞の原形で表し、今はそうではないという含みも出る。are used to は「〜に慣れている」という意味で、あとには -ing 形が続くうえ、現在形なので In those days と合わない。would rather は「むしろ〜したい」、ought to は「〜すべきだ」で、過去の習慣の意味にならない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(Shall we・提案)",
+  "stem": "A: It's such a lovely day. ( ) we have lunch out in the garden?\nB: Good idea. I'll bring the plates.",
+  "passage": "",
+  "choices": [
+   "Will",
+   "Must",
+   "Shall",
+   "Would"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞(Shall we・提案)。正解は「Shall」。「庭で昼食にしませんか」と相手を誘う提案は Shall we 〜? で表し、B の Good idea. という応答とも合う。Will we 〜? は「私たちは〜するだろうか」と未来の予定をたずねる形で、提案にならない。Must we 〜? は「〜しなければならないのか」と義務をたずねることになる。Would we 〜? は「私たちは〜するだろうか」という仮の話をたずねる形で、誘いの表現にならない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(Shall I・申し出)",
+  "stem": "You seem a little lost. ( ) I show you the way to the ticket office?",
+  "passage": "",
+  "choices": [
+   "Will",
+   "Would",
+   "Must",
+   "Shall"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞(Shall I・申し出)。正解は「Shall」。道に迷っているらしい相手に「案内しましょうか」と申し出るときは Shall I 〜? を使う。Will I 〜? は自分の未来の行動を相手にたずねる形になり、申し出の意味にならない。Would I 〜? も同じく申し出には使えない。Must I 〜? は「私が案内しなければなりませんか」と義務をたずねることになり、親切に声をかける場面に合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(need・助動詞用法 needn't+原形)",
+  "stem": "You needn't ( ) the whole report tonight; just look over the summary on the first page.",
+  "passage": "",
+  "choices": [
+   "to read",
+   "read",
+   "reads",
+   "reading"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞(need・助動詞用法 needn't+原形)。正解は「read」。needn't は助動詞としての need の否定形で、助動詞のあとには動詞の原形を置くので read が合う。to read は一般動詞としての need を使った don't need to read の形と混同したもので、needn't のあとに to は続けない。reading は -ing 形で、助動詞の直後には置けない。reads は三人称単数現在の形で、助動詞のあとには使えない。",
+  "form": "語形選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(dare・過去形 dared not)",
+  "stem": "Yesterday Sora ( ) not tell her parents that she had broken the vase.",
+  "passage": "",
+  "choices": [
+   "dares",
+   "dare",
+   "dared",
+   "daring"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞(dare・過去形 dared not)。正解は「dared」。dare「あえて〜する」は否定文で助動詞のように使われ、Yesterday があるので過去形の dared not + 動詞の原形が合う。dare は現在形で、Yesterday という過去を示す語と合わない。dares も三人称単数の現在形で、やはり過去の文に使えない。daring は -ing 形で、文の述語動詞にならない。",
+  "form": "語形選択",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(would rather+原形・than)",
+  "stem": "Ryo would rather ( ) the truth now than hide it and regret it later.",
+  "passage": "",
+  "choices": [
+   "to tell",
+   "tell",
+   "told",
+   "telling"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞(would rather+原形・than)。正解は「tell」。would rather A than B「B するよりむしろ A したい」では、A と B に動詞の原形を置くので tell が合い、than のあとの hide とも形がそろう。to tell のように to を入れる形は誤り。telling は -ing 形で、would rather のあとには続けられない。told は過去形または過去分詞で、would rather の直後には置けない。",
+  "form": "語形選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(would like・want の丁寧表現)",
+  "stem": "Do you want some more coffee?\n= ( ) you like some more coffee?",
+  "passage": "",
+  "choices": [
+   "Will",
+   "Do",
+   "Would",
+   "Shall"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞(would like・want の丁寧表現)。正解は「Would」。want「〜がほしい」を丁寧に言うと would like になり、Would you like 〜? で「〜はいかがですか」とすすめる表現になる。Do you like 〜? は「〜が好きですか」と好みをたずねる文になり、some more「もう少し」と合わない。Will you like 〜? は未来に好きになるかをたずねる形で、意味が成り立たない。Shall you like 〜? という言い方は現代英語では使わない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(cannot help -ing)",
+  "stem": "Watching the puppies chase their own tails, Aya couldn't help ( ) out loud.",
+  "passage": "",
+  "choices": [
+   "laughing",
+   "laughs",
+   "to laugh",
+   "laughed"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞(cannot help -ing)。正解は「laughing」。cannot help -ing「〜せずにはいられない」の形で、ここでは過去形 couldn't help のあとに -ing 形の laughing を置く。この help は「避ける」という意味で -ing 形を目的語にとるので、to laugh のように to 不定詞を続ける形は誤り。「手伝う」の意味の help (help + (to) 動詞の原形) とは別の用法なので混同しないこと。laughs は三人称単数現在の形で、help の目的語にならない。laughed は過去形・過去分詞で、「笑うこと」という動作を名詞のように表せない。",
+  "form": "語形選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(cannot have+過去分詞・過去の否定推量)",
+  "stem": "The keys ( ) have fallen out of my bag; the zipper was closed the whole time.",
+  "passage": "",
+  "choices": [
+   "must",
+   "cannot",
+   "should",
+   "needn't"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞(cannot have+過去分詞・過去の否定推量)。正解は「cannot」。ジッパーがずっと閉まっていたという根拠から、「落ちたはずがない」と過去のことを強く否定して推量する cannot have + 過去分詞が合う。must have fallen は「落ちたにちがいない」で、閉まっていたという後半と矛盾する。should have fallen は「落ちるべきだったのに」という意味で、文脈に合わない。needn't have fallen は「落ちる必要は無かったのに」となり、意味が通らない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(might have+過去分詞・二つの可能性)",
+  "stem": "Your message ( ) have gone to my spam folder, or perhaps it was never sent at all.",
+  "passage": "",
+  "choices": [
+   "must",
+   "might",
+   "cannot",
+   "should"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞(might have+過去分詞・二つの可能性)。正解は「might」。「迷惑メールに入ったのかもしれない」という過去の控えめな推量は might have + 過去分詞で表し、or perhaps 〜 と別の可能性を並べる流れに合う。must have gone は「入ったにちがいない」という断定で、ほかの可能性を挙げる後半と合わない。cannot have gone は「入ったはずがない」で、前後がつながらない。should have gone は「入るべきだったのに」で、ここでは成り立たない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(would rather not・否定の位置)",
+  "stem": "I'd rather ( ) go out tonight; I've had a long day and just want to rest.",
+  "passage": "",
+  "choices": [
+   "not to",
+   "not",
+   "don't",
+   "no"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】助動詞(would rather not・否定の位置)。正解は「not」。would rather「むしろ〜したい」の否定は、would rather のあとに not を置いて would rather not + 動詞の原形とする。not to のように to を入れる形は誤りで、would rather のあとには原形が直接続く。don't は一般動詞の否定に使う形で、助動詞のはたらきをする would rather と重ねることはできない。no は名詞を打ち消す語で、動詞 go の前には置けない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(may well・十分ありうる)",
+  "stem": "Liam has lived in Spain for ten years, so he ( ) speak the language fluently by now.",
+  "passage": "",
+  "choices": [
+   "will well",
+   "must well",
+   "may well",
+   "should well"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞(may well・十分ありうる)。正解は「may well」。may well + 動詞の原形で「十分〜しそうだ」「〜するのももっともだ」という意味になり、スペインに十年住んでいるという根拠から「流ちょうに話せる可能性が十分ある」と述べる文に合う。must well・will well・should well という組み合わせはふつう使わず、推量を表す決まった言い方として成り立たない。must や will で推量するなら must speak・will speak とし、well をはさまない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(might as well・ほかに手がない)",
+  "stem": "The last bus has gone and taxis cost a fortune, so we ( ) as well walk home.",
+  "passage": "",
+  "choices": [
+   "must",
+   "should",
+   "might",
+   "would"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】助動詞(might as well・ほかに手がない)。正解は「might」。might as well + 動詞の原形は「ほかに良い手も無いので〜したほうがましだ」「〜するのも同じことだ」という意味で、バスが無くタクシーも高いという状況に合う。must・should・would には as well と組み合わせてこの意味を表す用法が無く、must as well や should as well という決まった言い方は無い。would as well も同様に成り立たない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(助動詞の重ね不可・will be able to)",
+  "stem": "The doctor says Emma will ( ) walk again within a few weeks of the surgery.",
+  "passage": "",
+  "choices": [
+   "can",
+   "is able to",
+   "could",
+   "be able to"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】助動詞(助動詞の重ね不可・will be able to)。正解は「be able to」。will のあとにさらに助動詞 can や could を重ねることはできないので、未来の「〜できるようになる」は will be able to で表す。can は will can という形が成り立たない。could も同様に will のあとには置けない。is able to は be が原形になっておらず、will のあとに is を続けることはできない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "助動詞",
+  "unit": "助動詞(can・可能性)",
+  "stem": "Mushrooms picked in the wild ( ) be poisonous, so never eat them without an expert's check.",
+  "passage": "",
+  "choices": [
+   "can",
+   "shall",
+   "need",
+   "must"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】助動詞(can・可能性)。正解は「can」。野生のきのこは「毒を持つことがありうる」という一般的な可能性を述べる文なので、理論上の可能性を表す can be が合う。must be は「毒があるにちがいない」と断定することになり、専門家に確認してもらえば食べられるという後半の内容と合わない。shall be は可能性の意味を表せない。need は助動詞としては主に否定文や疑問文で使い、この肯定文に置くことはできない。",
+  "form": "空所補充",
+  "level": "標準"
+ }
+]

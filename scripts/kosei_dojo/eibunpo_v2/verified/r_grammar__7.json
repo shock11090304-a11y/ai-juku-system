@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(目的語にとる動詞 afford)",
+  "stem": "We can't afford ( ) a new car this year, so we'll repair the old one.",
+  "passage": "",
+  "choices": [
+   "bought",
+   "buying",
+   "buy",
+   "to buy"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞(目的語にとる動詞 afford)。正解は「to buy」。afford は can't afford to do「〜する余裕がない」の形で、後ろに to +動詞の原形をとる。buying のような -ing 形を afford の目的語にすることはできない。buy は動詞の原形が 2 つ続く形になり、bought も afford の後ろに過去形や過去分詞を直接置けないので誤り。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(目的語にとる動詞 manage)",
+  "stem": "Despite the heavy snow, the rescue team ( ) the lost climbers before dark.",
+  "passage": "",
+  "choices": [
+   "succeeded to reach",
+   "managed to reach",
+   "managed reaching",
+   "succeeded reaching"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞(目的語にとる動詞 manage)。正解は「managed to reach」。manage は manage to do「どうにか〜する」の形で to +動詞の原形を目的語にとるので、managed reaching とは言えない。succeed は succeed in doing の形をとる動詞で、to reach を直接続けることも、in を抜いて reaching を続けることもできない。大雪にもかかわらず「どうにか到達した」という文脈にも managed が合う。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(形式主語 it)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "It is not easy keep a diary in English every day.",
+   "That is not easy to keep a diary in English every day.",
+   "It is not easy to keep a diary in English every day.",
+   "That is not easy keep a diary in English every day."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞(形式主語 it)。正解は「It is not easy to keep a diary in English every day.」本当の主語は to keep a diary in English every day で、長い主語を後ろに回し、文頭に形式主語の it を置く。That is not easy to keep ... の that は前に出た特定のものを指す語で、形式主語の働きはない。It is not easy keep ... と That is not easy keep ... は to が無く、動詞の原形をそのまま置いているので誤り。",
+  "form": "正誤",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(形式目的語 it)",
+  "stem": "The thick fog made ( ) impossible for the pilots to see the runway.",
+  "passage": "",
+  "choices": [
+   "them",
+   "it",
+   "one",
+   "so"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞(形式目的語 it)。正解は「it」。本当の目的語は for the pilots to see the runway で、長いので後ろに回し、make の直後には形式目的語の it を置いて make it impossible for A to do「A が〜するのを不可能にする」の形にする。them では「彼らを不可能にした」という意味になってしまい、one や so にはこの形式目的語の働きがないので、後ろの for the pilots to see とつながらない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(形容詞的用法・with が残る形)",
+  "stem": "The children had no toys ( ) at the camp, so they played tag instead.",
+  "passage": "",
+  "choices": [
+   "to play",
+   "to play with",
+   "to be played",
+   "playing with"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞(形容詞的用法・with が残る形)。正解は「to play with」。「おもちゃで遊ぶ」は play with toys と言うので、toys を修飾する不定詞でも with を残して toys to play with とする。to play だけでは with が抜けて toys との関係が成り立たない。playing with は toys が「遊んでいる」ことになり意味が通らず、to be played は受け身の形で with も無いため誤り。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(形容詞的用法・chance to do)",
+  "stem": "Daiki finally got a chance ( ) his favorite singer in person last weekend.",
+  "passage": "",
+  "choices": [
+   "meeting",
+   "to meet",
+   "met",
+   "to be met"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞(形容詞的用法・chance to do)。正解は「to meet」。a chance to do「〜する機会」のように、名詞 chance を後ろから修飾するのは to +動詞の原形。meeting では chance の直後に -ing 形が続く形になり、「〜する機会」の意味を表せない。met は動詞の過去形で名詞を修飾できず、to be met は「会われる」という受け身の意味で、自分が歌手に会うという文脈に合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(副詞的用法・目的の答え方)",
+  "stem": "A: Why did Sora go to the post office this morning?\nB: ( ) a parcel to her grandmother in Hokkaido.",
+  "passage": "",
+  "choices": [
+   "To send",
+   "To sending",
+   "For send",
+   "Sending"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞(副詞的用法・目的の答え方)。正解は「To send」。Why の質問に目的で答えるときは To +動詞の原形「〜するために」で始める。For send は for の後ろに動詞の原形を置いた誤った形で、To sending も to の後ろが -ing 形になっているので不可。Sending a parcel だけでは「小包を送ること」という名詞の働きになり、「なぜ」という問いの答えにならない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(副詞的用法・結果 live to be)",
+  "stem": "My great-grandmother ( ) ninety-eight and saw her first great-grandchild.",
+  "passage": "",
+  "choices": [
+   "lived being",
+   "lived be",
+   "lived to being",
+   "lived to be"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞(副詞的用法・結果 live to be)。正解は「lived to be」。live to be +年齢で「〜歳まで生きる」という結果を表す。lived の後ろに to be ninety-eight と続けて、生きた結果 98 歳になったことを示す。lived being や lived be は lived の後ろに動詞を直接置いた形で文が成り立たず、lived to being は to の後ろが -ing 形なので不可。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(副詞的用法・結果 only to)",
+  "stem": "The team worked all night on the report, ( ) that the deadline had been extended.",
+  "passage": "",
+  "choices": [
+   "only learning",
+   "only learned",
+   "only to learn",
+   "only to learning"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞(副詞的用法・結果 only to)。正解は「only to learn」。only to do は「(〜したが) 結局〜しただけだった」という残念な結果を表す。徹夜で作業した結果、締め切りが延びていたと知った、という流れに合う。only learning や only learned では文の後半が前半とつながらず、only to learning は to の後ろに -ing 形を置いた誤った形。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(副詞的用法・判断の根拠)",
+  "stem": "Daiki must be a genius ( ) that puzzle in less than a minute.",
+  "passage": "",
+  "choices": [
+   "solve",
+   "to solving",
+   "to solve",
+   "solved"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞(副詞的用法・判断の根拠)。正解は「to solve」。must be a genius「天才にちがいない」という判断の根拠を、後ろの to +動詞の原形「〜するとは」で示す形。1 分足らずでパズルを解いたことが、天才だと判断した根拠になっている。to solving は to の後ろが -ing 形で不可、solve と solved は genius の後ろに動詞を直接置く形になり文が成り立たない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(副詞的用法・条件)",
+  "stem": "( ) her speak French, you would think she was born in Paris.",
+  "passage": "",
+  "choices": [
+   "To hear",
+   "Heard",
+   "Hear",
+   "To be heard"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞(副詞的用法・条件)。正解は「To hear」。文頭の To +動詞の原形が「〜すれば」という条件を表し、後ろの you would think「〜と思うだろう」と組み合わさる。hear her speak は「彼女が話すのを聞く」(知覚動詞 hear + 目的語 her + 原形 speak) で、彼女がフランス語を話すのを聞けば、パリ生まれだと思うだろう、という意味。Heard や Hear を文頭に置いても条件の意味にならず、後ろの you would think とつながらない。To be heard は「聞かれる」という受け身の形で、受け身の後ろに目的語の her を続けることはできない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(too ~ for A to do)",
+  "stem": "The print on this map is too small for my grandfather ( ).",
+  "passage": "",
+  "choices": [
+   "to read",
+   "reading",
+   "to be read",
+   "to reading"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞(too ~ for A to do)。正解は「to read」。too + 形容詞 + for A to do で「A が〜するには…すぎる」という意味を表す。地図の文字が小さすぎて祖父には読めない、という文脈。to reading は to の後ろが -ing 形で誤り。reading は too small for my grandfather の後ろに直接続けることができず、to be read は受け身の形で「祖父が読む」という意味にならない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(enough to・語順)",
+  "stem": "Is this ladder ( ) to reach the top shelf of the bookcase?",
+  "passage": "",
+  "choices": [
+   "enough tall",
+   "as tall",
+   "tall enough",
+   "tall as"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞(enough to・語順)。正解は「tall enough」。「〜するのに十分…」は形容詞 + enough + to do の語順で、enough は形容詞の後ろに置く。enough tall は語順が逆で誤り。as tall や tall as は、後ろに to reach が続く形では「〜するのに十分な高さ」という意味を作れず、文が成り立たない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(so ~ as to)",
+  "stem": "He was so careless that he left his wallet on the train.\n= He was so careless ( ) leave his wallet on the train.",
+  "passage": "",
+  "choices": [
+   "so to",
+   "that to",
+   "for to",
+   "as to"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞(so ~ as to)。正解は「as to」。so + 形容詞 + as to do は「〜するほど…だ」という意味で、so ~ that ... の文を不定詞を使って書きかえた形。so to や for to は英語として成り立たない組み合わせで、that to は that の後ろに主語と動詞が無いので誤り。",
+  "form": "書きかえ",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(in order to)",
+  "stem": "Mika wrote the date on each box ( ) which food was older.",
+  "passage": "",
+  "choices": [
+   "in order to remember",
+   "in order that remember",
+   "in order for remembering",
+   "in order to remembering"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞(in order to)。正解は「in order to remember」。in order to do で「〜するために」という目的をはっきり示す。箱に日付を書いたのは、どちらの食品が古いか覚えておくためだという文脈。in order to remembering は to の後ろに -ing 形を置いた誤った形で、in order that remember は that の後ろに主語が無く、in order for remembering という言い方も英語にない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(so as not to)",
+  "stem": "Ryo spoke in a low voice on the train so as ( ) the other passengers.",
+  "passage": "",
+  "choices": [
+   "not to disturb",
+   "not disturb",
+   "not disturbing",
+   "not for disturbing"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞(so as not to)。正解は「not to disturb」。so as to do「〜するように」の否定は、to の直前に not を置いて so as not to do「〜しないように」とする。他の乗客の邪魔をしないように小声で話した、という意味。not disturbing や not disturb は so as の後ろに続けることができず、not for disturbing も英語として成り立たない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(意味上の主語 for A to do)",
+  "stem": "The teacher spoke slowly enough ( ) to take notes during the lecture.",
+  "passage": "",
+  "choices": [
+   "of the students",
+   "for the students",
+   "to the students",
+   "with the students"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞(意味上の主語 for A to do)。正解は「for the students」。不定詞 to take notes の動作をするのは生徒なので、その意味上の主語を for A の形で to の前に置き、enough for A to do「A が〜するのに十分…」とする。of A の形は kind や careless のように人の性質を表す形容詞の後でだけ使う。to the students や with the students は不定詞の意味上の主語を示す形ではない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(完了不定詞 claim to have done)",
+  "stem": "The man claims ( ) the mayor at a party last year, but nobody believes him.",
+  "passage": "",
+  "choices": [
+   "to be met",
+   "to meet",
+   "to have met",
+   "to have been met"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞(完了不定詞 claim to have done)。正解は「to have met」。claims は現在の主張で、会ったのは last year という過去のことなので、述語動詞より前の時を表す完了不定詞 to have + 過去分詞を使う。to meet では「これから会う」ことになり last year と合わない。to be met と to have been met は「会われる」という受け身の意味で、男が市長に会ったという文脈に合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(appear to・完了形)",
+  "stem": "Olivia appears ( ) a lot of weight since I saw her last spring.",
+  "passage": "",
+  "choices": [
+   "to lose",
+   "to have lost",
+   "having lost",
+   "to be lost"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞(appear to・完了形)。正解は「to have lost」。appear to do「〜するように見える」の形で、since I saw her last spring「去年の春に会ってから」という期間があるので、現在までに起きたことを表す完了形 to have + 過去分詞を使う。to lose は「これから痩せる」ことになり since と合わない。having lost は appear の後ろに直接続けられず、to be lost は「失われる」という意味で文脈に合わない。",
+  "form": "語形選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(否定 not to・tell A not to do)",
+  "stem": "Don't touch the paintings in the gallery.\n= Visitors are told ( ) the paintings in the gallery.",
+  "passage": "",
+  "choices": [
+   "not touch",
+   "to not touching",
+   "not to touch",
+   "not touching"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞(否定 not to・tell A not to do)。正解は「not to touch」。tell A to do「A に〜するように言う」の否定は to の直前に not を置いて tell A not to do「A に〜しないように言う」とする。この文はそれを受け身にした形なので、are told not to touch となる。not touch は to が無く、to not touching は to の後ろが -ing 形で誤り。not touching は are told の後ろに続けられない。",
+  "form": "書きかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(原形不定詞・使役 make)",
+  "stem": "The funny movie made everyone in the theater ( ) out loud.",
+  "passage": "",
+  "choices": [
+   "laugh",
+   "laughing",
+   "to laugh",
+   "laughs"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞(原形不定詞・使役 make)。正解は「laugh」。make A do「A に〜させる」の形では、目的語の後ろに to の無い動詞の原形を置く。to laugh は make の後ろでは使えず、laughing は make と組み合わせて「笑わせる」の意味を作れない。laughs は三人称単数現在の形で、made の後ろの目的語に続ける形としては誤り。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(原形不定詞・知覚 feel)",
+  "stem": "Mika felt the ground ( ) slightly during the night and woke up at once.",
+  "passage": "",
+  "choices": [
+   "to shake",
+   "to shaking",
+   "shook",
+   "shake"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞(原形不定詞・知覚 feel)。正解は「shake」。feel A do「A が〜するのを感じる」のように、feel や see、hear などの知覚を表す動詞では目的語の後ろに to の無い動詞の原形を置く。to shake は知覚を表す動詞の後ろでは使えない。shook は過去形で目的語の後ろに置けず、to shaking は to の後ろが -ing 形になっているので誤り。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(help A do)",
+  "stem": "The new app helps users ( ) their monthly spending in a few taps.",
+  "passage": "",
+  "choices": [
+   "track",
+   "tracks",
+   "to tracking",
+   "tracking"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞(help A do)。正解は「track」。help A do「A が〜するのを助ける」では、目的語の後ろに to の無い動詞の原形を置く (help A to do も可)。tracking は help の目的語の後ろに置くと「〜するのを助ける」の意味を作れず、tracks は三人称単数現在の形で、helps users の後ろに続ける形としては誤り。to tracking は to の後ろが -ing 形になっているので誤り。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(be to 不定詞・予定)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "The ceremony is to being held in the main hall next week.",
+   "The ceremony to be held in the main hall next week.",
+   "The ceremony to being held in the main hall next week.",
+   "The ceremony is to be held in the main hall next week."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞(be to 不定詞・予定)。正解は「The ceremony is to be held in the main hall next week.」be to do は「〜する予定だ」という公式な予定を表し、式典は「開催される」側なので is to be held という受け身の形になる。is to being held は to の後ろが -ing 形で誤り。The ceremony to be held ... と The ceremony to being held ... は主語に修飾語が付いただけで述語動詞が無く、文として成り立たない。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(代不定詞 I'd love to)",
+  "stem": "A: Would you like to join us for karaoke tonight?\nB: I'd love ( ), but I have to finish my report by tomorrow.",
+  "passage": "",
+  "choices": [
+   "to",
+   "do",
+   "be",
+   "so"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】不定詞(代不定詞 I'd love to)。正解は「to」。前に出た to join us for karaoke のくり返しを避け、to だけを残して I'd love to「ぜひそうしたい」と言う形。この to は代不定詞と呼ばれ、省いた動詞の内容を表す。so や do、be を I'd love の後ろに置いても、「カラオケに行くこと」を受ける働きはなく、文が成り立たない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(目的語にとる動詞 offer)",
+  "stem": "Liam offered ( ) his seat to the elderly woman on the crowded bus.",
+  "passage": "",
+  "choices": [
+   "giving",
+   "give",
+   "to giving",
+   "to give"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞(目的語にとる動詞 offer)。正解は「to give」。offer は offer to do「〜しようと申し出る」の形で、後ろに to +動詞の原形をとる。混んだバスでお年寄りの女性に席を譲ろうと申し出た、という意味。giving のような -ing 形を offer の目的語にすることはできない。give は過去形の offered の直後に動詞をそのまま並べた形で、動詞が 2 つ続いてしまい文が成り立たない。to giving は to の後ろが -ing 形になっているので誤り。",
+  "form": "語形選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(疑問詞 + to・when)",
+  "stem": "We haven't decided ( ) to hold the school festival, in May or in June.",
+  "passage": "",
+  "choices": [
+   "what",
+   "when",
+   "how",
+   "which"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞(疑問詞 + to・when)。正解は「when」。疑問詞 + to do は「いつ・何を・どのように〜すべきか」を表す名詞のまとまりになる。文末の in May or in June は時期を示しているので、when to hold「いつ開催するか」が合う。what to hold では「何を開催するか」で後ろの時期と合わず、how to hold は方法を、which to hold は選ぶ対象を問う形なので文脈に合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(疑問詞 + to・how much)",
+  "stem": "The recipe doesn't say ( ) sugar to add, so I'll use just a little.",
+  "passage": "",
+  "choices": [
+   "how many",
+   "how long",
+   "how much",
+   "how often"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】不定詞(疑問詞 + to・how much)。正解は「how much」。how much + 名詞 + to do で「どれだけの〜を…すべきか」を表す。sugar は数えられない名詞なので、量を問う how much を使う。how many は数えられる名詞に使い、how long は時間の長さ、how often は頻度を問う語で、直後に sugar を置くことができない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(happen to do)",
+  "stem": "I ( ) an old friend at the airport while waiting for my flight.",
+  "passage": "",
+  "choices": [
+   "happened meeting",
+   "happened to meet",
+   "happened meet",
+   "happened to meeting"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】不定詞(happen to do)。正解は「happened to meet」。happen to do で「たまたま〜する・偶然〜する」の意味を表す。空港で待っている間に偶然旧友に会った、という文脈に合う。happened meeting や happened meet は happen の後ろに置ける形ではなく、happened to meeting は to の後ろが -ing 形になっているので誤り。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "不定詞",
+  "unit": "不定詞(名詞的用法・補語)",
+  "stem": "The purpose of this meeting is ( ) the schedule for the school trip.",
+  "passage": "",
+  "choices": [
+   "decide",
+   "decided",
+   "to deciding",
+   "to decide"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】不定詞(名詞的用法・補語)。正解は「to decide」。主語 the purpose「目的」の内容を is の後ろで説明する補語の働きで、to +動詞の原形「〜すること」を使う。decide は原形のままで補語になれず、decided は「決められた」という過去分詞の意味になって目的の内容を表せない。to deciding は to の後ろが -ing 形になっているので誤り。",
+  "form": "空所補充",
+  "level": "標準"
+ }
+]

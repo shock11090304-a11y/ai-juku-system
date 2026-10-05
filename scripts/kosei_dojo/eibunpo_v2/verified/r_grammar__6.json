@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(現在形・毎年の習慣)",
+  "stem": "Thousands of letters ( ) to the city office every year.",
+  "passage": "",
+  "choices": [
+   "are delivered",
+   "deliver",
+   "are delivering",
+   "delivered"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態(現在形・毎年の習慣)。正解は「are delivered」。手紙は「届けられる」側なので受動態 be + 過去分詞にし、every year が毎年の習慣を表すので現在形の are を使う。deliver は手紙が何かを届けるという能動で、目的語も無い。are delivering は能動の進行形で、手紙が届けている最中という不自然な意味になる。delivered は過去形と読んでも能動で目的語が無く every year とも合わず、過去分詞と読むなら be が無く受動態の形になっていない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(過去形・by+動作主)",
+  "stem": "The castle on the hill ( ) by a famous architect in 1580.",
+  "passage": "",
+  "choices": [
+   "designed",
+   "were designing",
+   "has designed",
+   "was designed"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態(過去形・by+動作主)。正解は「was designed」。城は設計「される」側で、by a famous architect が動作主、in 1580 が過去を示すので was designed が合う。designed だけでは城が誰かを設計したという能動の意味になり、目的語も無い。has designed は能動で、しかも in 1580 のような過去の一点を表す語とは一緒に使えない。were designing は主語が単数なのに were で、能動の進行形という点でも誤り。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(未来 will be+過去分詞)",
+  "stem": "The new timetable ( ) to all students next week.",
+  "passage": "",
+  "choices": [
+   "will be sent",
+   "will send",
+   "is sending",
+   "will be sending"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態(未来 will be+過去分詞)。正解は「will be sent」。時間割は「送られる」側なので受動態にし、next week があるので未来を表す will be + 過去分詞を使う。will send は時間割が何かを送るという能動の意味になり、目的語も無いので成り立たない。is sending も能動で、時間割が送っている最中という不自然な意味になる。will be sending は進行形で、受動の意味を表せない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(be going to be+過去分詞)",
+  "stem": "The old stadium ( ) next spring to make room for a park.",
+  "passage": "",
+  "choices": [
+   "goes to demolish",
+   "is going to be demolished",
+   "goes to be demolished",
+   "is going to demolishing"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態(be going to be+過去分詞)。正解は「is going to be demolished」。スタジアムは取り壊「される」側なので、be going to の後に受動態の be + 過去分詞を続ける。is going to demolishing は to の後に -ing を置いた形で誤り。goes to be demolished は「〜へ行く」の go で、未来の予定を表す be going to の形になっていない。goes to demolish も同様で、しかもスタジアムが何かを壊すという能動の意味になる。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(現在進行形 is being+過去分詞)",
+  "stem": "Please wait in the lobby; your car ( ) right now.",
+  "passage": "",
+  "choices": [
+   "is washing",
+   "is being washed",
+   "is been washed",
+   "is being washing"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態(現在進行形 is being+過去分詞)。正解は「is being washed」。車は洗「われる」側で、right now から今まさに進行中とわかるので、進行形の受動態 be + being + 過去分詞を使う。is washing は車が何かを洗っているという能動の意味になり不自然。is been washed は be の後に been を置いた形で、英語として成り立たない。is being washing は being の後が過去分詞でないため、受動の意味にならない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(過去進行形 was being+過去分詞)",
+  "stem": "When we visited the museum, the main hall ( ), so we could not see it.",
+  "passage": "",
+  "choices": [
+   "was renovating",
+   "has been renovating",
+   "was been renovated",
+   "was being renovated"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態(過去進行形 was being+過去分詞)。正解は「was being renovated」。ホールは改装「される」側で、When we visited という過去の時点で工事が進行中だったので、過去進行形の受動態 was being + 過去分詞が合う。was renovating はホールが改装する側になる能動の形で、目的語も無い。was been renovated は be の後に been を続けた誤った形。has been renovating は能動の完了進行形で、過去の一時点を表す when 節と合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(現在完了 has been+過去分詞・回数)",
+  "stem": "This wooden temple ( ) three times since it was first built.",
+  "passage": "",
+  "choices": [
+   "has been rebuilt",
+   "has rebuilt",
+   "was being rebuilt",
+   "is rebuilt"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態(現在完了 has been+過去分詞・回数)。正解は「has been rebuilt」。寺は建て直「される」側で、since 〜「〜以来」と three times は現在までの経験・回数を表すので、現在完了の受動態 has been + 過去分詞が合う。has rebuilt は寺が何かを建て直したという能動の意味になる。was being rebuilt は過去のある時点で工事中だったという意味で、since 〜 と結びつかない。is rebuilt は現在形なので、since で示される期間を表せない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(過去完了 had been+過去分詞)",
+  "stem": "By the time I returned to the cafe, my seat ( ) by someone else.",
+  "passage": "",
+  "choices": [
+   "had been taken",
+   "had taken",
+   "has been taken",
+   "has taken"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態(過去完了 had been+過去分詞)。正解は「had been taken」。席は取「られる」側で、By the time I returned「私が戻った時までに」という過去の時点より前に起きたことなので、過去完了の受動態 had been + 過去分詞が合う。had taken は席が誰かを取ったという能動の意味になる。has been taken は現在完了で、過去の基準点 by the time I returned と合わない。has taken は能動で、時制も合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(must not be+過去分詞)",
+  "stem": "Smartphones ( ) during the exam, so put them in your bag.",
+  "passage": "",
+  "choices": [
+   "must not been used",
+   "must not use",
+   "must not be using",
+   "must not be used"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態(must not be+過去分詞)。正解は「must not be used」。スマートフォンは使「われる」側なので、must の後に受動態 be + 過去分詞を続け、否定の not は must の直後に置く。must not use はスマートフォンが何かを使うという能動の意味で成り立たない。must not be using は進行形で、受動の意味にならない。must not been used は be を飛ばして been を置いた形で、英語として誤り。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(can be+過去分詞)",
+  "stem": "Glass bottles ( ) many times if you wash them carefully.",
+  "passage": "",
+  "choices": [
+   "can reuse",
+   "can be reused",
+   "can be reusing",
+   "can reused"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態(can be+過去分詞)。正解は「can be reused」。瓶は再利用「される」側なので、can の後に受動態 be + 過去分詞を置く。can reuse は瓶が何かを再利用するという能動の意味になり、目的語も無いので不自然。can be reusing は進行形で、受動の意味を表せない。can reused は can の後に原形の be が無く、過去分詞を直接続けているため誤り。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(must have been+過去分詞)",
+  "stem": "The package ( ) to the wrong address, because it never arrived here.",
+  "passage": "",
+  "choices": [
+   "must have been sending",
+   "must be sent",
+   "must have been sent",
+   "must have sent"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態(must have been+過去分詞)。正解は「must have been sent」。「届かなかった」という事実から過去のことを推量しているので、must have + 過去分詞「〜だったにちがいない」に、荷物が送「られる」側を表す been + 過去分詞を組み合わせる。must be sent は現在の義務「送られなければならない」で文脈に合わない。must have been sending は能動の進行形で、荷物が何かを送っていたことになる。must have sent も能動で、荷物が送り主になる。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(should have been+過去分詞)",
+  "stem": "The essay ( ) by last Friday, but Ryo completely forgot about it.",
+  "passage": "",
+  "choices": [
+   "should have handed in",
+   "should be handed in",
+   "should have been handed in",
+   "should have been handing in"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態(should have been+過去分詞)。正解は「should have been handed in」。by last Friday と forgot から「提出されるべきだったのにされなかった」とわかるので、should have + 過去分詞に受動の been + 過去分詞を組み合わせる。should be handed in は現在の話で last Friday と合わない。should have been handing in は進行形で受動にならない。should have handed in は作文が提出する側の能動の形。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(SVOO 間接目的語が主語・show)",
+  "stem": "A: How did you find the hotel so easily?\nB: We ( ) the way by a kind old man at the station.",
+  "passage": "",
+  "choices": [
+   "showed",
+   "were shown",
+   "were showing",
+   "have shown"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態(SVOO 間接目的語が主語・show)。正解は「were shown」。show + 人 + 物「人に物を教える」の「人」を主語にした受動態で、We were shown the way「私たちは道を教えてもらった」となる。by a kind old man が動作主なので、私たちが教えた側になる showed や have shown では意味が通らず、「〜を使って」の by とも読めない。were showing は能動の進行形で、受動の意味を表せない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(SVOC 補語が形容詞 paint)",
+  "stem": "The walls of the little cafe ( ) bright yellow last month.",
+  "passage": "",
+  "choices": [
+   "was painting",
+   "painted",
+   "have painted",
+   "were painted"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態(SVOC 補語が形容詞 paint)。正解は「were painted」。paint the walls yellow「壁を黄色に塗る」の目的語 the walls を主語にした受動態で、補語 bright yellow は過去分詞の後に残る。last month があるので過去形。painted だけでは壁が何かを塗ったという能動の意味になり、目的語も無い。was painting は主語が複数なのに was で、能動の進行形という点でも誤り。have painted も壁が塗る側になり意味が通らない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(SVOC 補語が名詞 call)",
+  "stem": "This kind of fish ( ) 'tai' in Japanese, and it is served on special days.",
+  "passage": "",
+  "choices": [
+   "is called",
+   "calls",
+   "is calling",
+   "called"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態(SVOC 補語が名詞 call)。正解は「is called」。call A B「A を B と呼ぶ」の A を主語にした受動態 A is called B で、補語の 'tai' は過去分詞の後に残る。一般的な事実なので現在形。calls はこの魚が何かを呼ぶという能動の意味で不自然。is calling も能動の進行形で意味が通らない。called は過去形と読めば魚が何かを呼んだという能動になり意味が通らず、過去分詞の後置修飾と読めば前半に述語動詞が無く、後半の it is served とつながらない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(群動詞 look up to)",
+  "stem": "Ms. Lee ( ) by all the young nurses as a role model.",
+  "passage": "",
+  "choices": [
+   "is looking up to",
+   "is looked up",
+   "is looked up to",
+   "is looked to up"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態(群動詞 look up to)。正解は「is looked up to」。look up to「〜を尊敬する」は 3 語でひとまとまりの動詞として働くので、受動態でも be looked up to と語の並びを保つ。is looked up は to が抜けて「調べられる」のような別の意味になり、as a role model と合わない。is looked to up は語順が崩れている。is looking up to は能動の進行形で、Ms. Lee が尊敬する側になる。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(感情 bored と boring)",
+  "stem": "The audience was ( ) with the long speech and began to look at their phones.",
+  "passage": "",
+  "choices": [
+   "boring",
+   "bored",
+   "bore",
+   "to bore"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態(感情 bored と boring)。正解は「bored」。bore は「〜を退屈させる」という動詞なので、「退屈させられた＝退屈した」人を主語にするときは過去分詞 bored を使い、be bored with 〜「〜に退屈している」となる。boring は「人を退屈させる (ような)」という意味で、退屈の原因を説明する語。bore は原形で、was の後に置けない。to bore は was to bore「退屈させることになっていた」という別の意味になり、文脈に合わない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(感情 interested と interesting)",
+  "stem": "A: Why did Noah join the astronomy club?\nB: He ( ) in stars since he was a small child.",
+  "passage": "",
+  "choices": [
+   "has been interesting",
+   "has interested",
+   "has been interested",
+   "is interesting"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態(感情 interested と interesting)。正解は「has been interested」。interest は「〜に興味を持たせる」という動詞で、興味を持つ人を主語にするときは過去分詞を使い be interested in とする。since 節が期間を表すので現在完了 has been にする。has interested は能動で、Noah が誰かに興味を持たせたことになる。interesting は「人の興味を引く」側の語で、has been interesting と is interesting は「彼は面白い人だ」という意味になり、in stars と結びつかず since 節とも合わない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(受動態にできない動詞 have)",
+  "stem": "This apartment ( ) a balcony, so we dry our clothes inside.",
+  "passage": "",
+  "choices": [
+   "doesn't have",
+   "isn't had",
+   "isn't having",
+   "hasn't been had"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態(受動態にできない動詞 have)。正解は「doesn't have」。have「〜を持っている」は状態を表す動詞で、目的語があっても受動態にはしない。「アパートにはバルコニーが無い」は能動の否定文 doesn't have で表す。isn't had と hasn't been had は「持っている」の意味の have を受動態にした形で、ふつう使わない。isn't having は進行形だが、「持っている」という状態の意味では have を進行形にしないため誤り。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(受動態にできない自動詞・正誤)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "The windows were washed by the students after school yesterday.",
+   "The old castle was built on the hill by a powerful local lord.",
+   "A new shopping mall was appeared near the station last year.",
+   "My bag was taken from the locker during the lunch break today."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態(受動態にできない自動詞・正誤)。正解は「A new shopping mall was appeared near the station last year.」appear「現れる・開店する」は目的語をとらない自動詞なので受動態にできず、was appeared は誤りで、appeared とすべきである。ほかの 3 文は build・wash・take という目的語をとる動詞を be + 過去分詞にした正しい受動態で、by 〜 の動作主や時を表す語も自然に使われている。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(過去分詞の形・正誤)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "The bridge is being repaired at the moment, so use the other road.",
+   "This song is still loved by many people around the world today.",
+   "The letter was written by my aunt and arrived two days later.",
+   "The kitchen window was broke by the children yesterday afternoon."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態(過去分詞の形・正誤)。正解は「The kitchen window was broke by the children yesterday afternoon.」受動態は be + 過去分詞で作るが、break の過去分詞は broken であり、過去形 broke を置いた was broke は誤り。ほかの 3 文は、進行形の受動態 is being repaired、過去形の受動態 was written、現在形の受動態 is loved がそれぞれ正しく使われていて、時を表す語との組み合わせにも問題がない。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(能動→受動の書きかえ・現在完了)",
+  "stem": "Someone has stolen my bicycle from the parking area.\n= My bicycle ( ) from the parking area.",
+  "passage": "",
+  "choices": [
+   "has been stealing",
+   "has stolen",
+   "has been stolen",
+   "is stolen"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態(能動→受動の書きかえ・現在完了)。正解は「has been stolen」。元の文は現在完了 has stolen なので、目的語 my bicycle を主語にした受動態も現在完了 has been + 過去分詞にして時制をそろえる。has stolen は能動のままで、自転車が盗んだことになる。has been stealing は能動の完了進行形で、自転車が盗み続けていることになる。is stolen は現在形なので、元の文の「盗まれてしまった (今は無い)」という完了の意味を表せない。",
+  "form": "書きかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(能動→受動の書きかえ・疑問文)",
+  "stem": "Did anyone invite Mika to the welcome party?\n= ( ) to the welcome party?",
+  "passage": "",
+  "choices": [
+   "Did Mika invited",
+   "Was Mika invited",
+   "Were Mika invited",
+   "Did Mika invite"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態(能動→受動の書きかえ・疑問文)。正解は「Was Mika invited」。元の文は過去の疑問文で、目的語 Mika を主語にした受動態の疑問文は be 動詞を文頭に出して Was Mika invited 〜? とする。動作主 anyone は示さなくてよい。Did Mika invite は能動のままで、Mika が招待した側になり目的語も無い。Were Mika invited は主語が単数なのに were を使っている。Did Mika invited は過去分詞を Did と組み合わせた誤った形。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(S is said to be・書きかえ)",
+  "stem": "People say that Mr. Brown is a very good cook.\n= Mr. Brown ( ) a very good cook.",
+  "passage": "",
+  "choices": [
+   "said that",
+   "is said that",
+   "said to be",
+   "is said to be"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態(S is said to be・書きかえ)。正解は「is said to be」。People say that S is 〜 は、that 節の主語を文頭に出して S is said to be「〜だと言われている」と書きかえられる。is said that は主語が it のときの It is said that 〜 の形で、Mr. Brown を主語にできない。said to be と said that は be 動詞が無く、Mr. Brown 自身が言ったという能動の過去形になり、形も意味も合わない。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(過去形・行為者を示さない)",
+  "stem": "A: Where is Daiki? I can't find him anywhere.\nB: He ( ) to the nurse's office a few minutes ago.",
+  "passage": "",
+  "choices": [
+   "has taken",
+   "was taken",
+   "takes",
+   "was taking"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態(過去形・行為者を示さない)。正解は「was taken」。Daiki は保健室へ連れて行「かれた」側で、a few minutes ago があるので過去形の受動態 was taken が合う。誰が連れて行ったかは重要でないので by 〜 は付けない。has taken は能動の現在完了で、ago のような過去を表す語とは使えない。takes は現在形の能動で時制も意味も合わない。was taking は能動の進行形で、Daiki が何かを運んでいたことになる。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(群動詞 deal with)",
+  "stem": "Every complaint ( ) by the customer service team within two days.",
+  "passage": "",
+  "choices": [
+   "is dealt with",
+   "is dealt",
+   "deals with",
+   "is dealing with"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態(群動詞 deal with)。正解は「is dealt with」。deal with「〜を処理する」は 2 語でひとまとまりの動詞なので、受動態では be dealt with と with を残す。is dealt は with が抜けており、「処理される」の意味にならない。deals with は能動で、苦情が何かを処理するという意味になり by the customer service team と合わない。is dealing with も能動の進行形で、苦情が処理する側になってしまう。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(be made into)",
+  "stem": "In this region, most of the grapes ( ) wine rather than eaten fresh.",
+  "passage": "",
+  "choices": [
+   "are made by",
+   "are made of",
+   "are made from",
+   "are made into"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】受動態(be made into)。正解は「are made into」。A is made into B は「A は加工されて B になる」という意味で、ぶどうがワインに加工されるので into が合う。are made from と are made of は「〜から作られる」「〜でできている」と材料を表すので、ぶどうがワインから作られることになり逆になる。are made by は作り手を表すため、wine を後ろに置いても意味が通らない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(be married to)",
+  "stem": "Olivia ( ) a doctor who works at the city hospital.",
+  "passage": "",
+  "choices": [
+   "is married in",
+   "is married with",
+   "is married to",
+   "is married for"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】受動態(be married to)。正解は「is married to」。be married to 〜 は「〜と結婚している」という状態を表す決まった言い方で、相手を示す語は to を使う。日本語の「〜と」に引かれて is married with としがちだが、標準的な英語では誤り。is married in や is married for は結婚相手を示す語としては使えず、意味が通らない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(It is believed that)",
+  "stem": "It ( ) that the old mansion has a secret tunnel under its garden.",
+  "passage": "",
+  "choices": [
+   "believes",
+   "is believed",
+   "is believing",
+   "has believed"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】受動態(It is believed that)。正解は「is believed」。It is believed that 〜 は「〜だと信じられている・考えられている」という意味で、形式的な主語 it の後に受動態 be + 過去分詞を置き、本当の内容を that 節で述べる。believes と has believed は能動なので、it が信じる側になり意味が通らない。is believing は進行形で、「一般にそう信じられている」という受動の意味を表せない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "受動態",
+  "unit": "受動態(is thought to have been+過去分詞)",
+  "stem": "The painting is thought to ( ) by a student of the master in 1650.",
+  "passage": "",
+  "choices": [
+   "have been painted",
+   "be painted",
+   "have been painting",
+   "have painted"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】受動態(is thought to have been+過去分詞)。正解は「have been painted」。is thought「〜と考えられている」は現在のことだが、絵が描かれたのは in 1650 という過去なので、to の後は完了形 have + 過去分詞にし、さらに絵が描「かれる」側なので have been painted とする。be painted は現在のことになり、1650 年と合わない。have been painting と have painted は能動で、絵が何かを描いたことになる。",
+  "form": "空所補充",
+  "level": "やや応用"
+ }
+]

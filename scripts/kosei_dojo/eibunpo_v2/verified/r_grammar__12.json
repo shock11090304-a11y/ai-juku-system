@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(Not once 文頭の否定倒置)",
+  "stem": "Not once ( ) her voice during the long argument with her brother.",
+  "passage": "",
+  "choices": [
+   "Olivia raised",
+   "did Olivia raise",
+   "Olivia did raise",
+   "raised Olivia"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】倒置・強調(Not once 文頭の否定倒置)。正解は「did Olivia raise」。否定の意味をもつ Not once「一度も〜ない」が文頭に置かれているので、その後は疑問文と同じ語順になり、過去の文では did + 主語 + 動詞の原形の形をとる。Olivia raised と Olivia did raise はふつうの語順のままで、否定語句を文頭に出したときの倒置になっていない。raised Olivia は主語と動詞をそのまま入れ替えた形で、一般動詞の過去形ではこの語順はとれない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(At no time と倒置の対応)",
+  "stem": "( ) were the passengers told that the flight had been canceled.",
+  "passage": "",
+  "choices": [
+   "At no time",
+   "At that time",
+   "At one time",
+   "At the time"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】倒置・強調(At no time と倒置の対応)。正解は「At no time」。空所の後が were the passengers told と疑問文の語順になっているので、文頭には倒置を引き起こす否定の語句が必要であり、at no time「一度も〜ない」が合う。At that time や At the time、At one time はいずれも「その時に」「かつて」という単なる時の表現で、否定の意味がないため、後ろをこのような倒置の語順にすることはできない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(Never again 文頭の倒置)",
+  "stem": "A: Are you going to use that airline again?\nB: ( ) with them after that terrible flight.",
+  "passage": "",
+  "choices": [
+   "Never again I fly",
+   "Never again I will fly",
+   "Never again will I fly",
+   "Never again fly I"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】倒置・強調(Never again 文頭の倒置)。正解は「Never again will I fly」。Never again「二度と〜ない」を文頭に出すと、その後は will + 主語 + 動詞 の順の倒置になるので、Never again will I fly が正しい。Never again I will fly と Never again I fly は、否定語句を文頭に置きながら主語と動詞がふつうの語順のままである。Never again fly I は will がなく、一般動詞と主語を直接入れ替えた誤った形である。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(Only if 節の後の主節の倒置)",
+  "stem": "Only if you practice every single day ( ) this piece by the recital.",
+  "passage": "",
+  "choices": [
+   "will you master",
+   "you will master",
+   "master you",
+   "you master"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】倒置・強調(Only if 節の後の主節の倒置)。正解は「will you master」。only で始まる節が文頭に置かれると、続く主節は疑問文と同じ語順になるので、will you master が正しい。by the recital「発表会までに」から未来の内容だとわかる。you will master と you master はふつうの語順のままで、only の節を文頭に出したときの倒置になっていない。master you は will を使わずに主語と動詞だけを入れ替えた誤った形である。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(Only recently 文頭の倒置)",
+  "stem": "( ) has the company admitted that the product had a serious defect.",
+  "passage": "",
+  "choices": [
+   "Only recently",
+   "Recently",
+   "Very recently",
+   "Quite recently"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】倒置・強調(Only recently 文頭の倒置)。正解は「Only recently」。空所の後が has the company admitted と疑問文の語順になっているので、文頭には倒置を引き起こす語句が必要である。only + 副詞 を文頭に置くと「〜になって初めて」の意味で後ろが倒置になるため、Only recently が合う。Recently、Very recently、Quite recently は単に「最近」と時を述べる表現で、文頭に置いても倒置は起こらない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(否定への同意 neither+倒置)",
+  "stem": "Daiki can't swim very well, and ( ) his younger brother.",
+  "passage": "",
+  "choices": [
+   "neither can",
+   "so can",
+   "so can't",
+   "neither can't"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】倒置・強調(否定への同意 neither+倒置)。正解は「neither can」。前半が can't という否定文なので、「〜もまた…ない」と同意を加えるには neither を使い、その後を can + 主語 の順にする。neither 自体に否定の意味があるので can は肯定の形でよい。so can は肯定文に対する同意の形で、否定文には使えない。so can't は so と否定形を組み合わせたもので、このような同意の表現は作れない。neither can't は否定語を重ねることになり誤りである。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(肯定への同意 So would I)",
+  "stem": "A: I'd really like to see the northern lights someday.\nB: ( ) I. Let's plan a trip to Finland together.",
+  "passage": "",
+  "choices": [
+   "Neither do",
+   "Neither would",
+   "So do",
+   "So would"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】倒置・強調(肯定への同意 So would I)。正解は「So would」。A の I'd like は I would like の短縮形で、助動詞 would を使った肯定文である。「私もそうしたい」と同意を加えるときは、前の文で使われた助動詞をそのまま受けて So + 助動詞 + 主語 の順にするので、So would I が正しい。So do I は、前の文が I like のように一般動詞の現在形で述べられたときに使う形で、would を使った A の発言を受けることはできない。Neither would と Neither do は否定文に同意するときの形で、「見たい」という肯定の内容に合わない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(nor による否定の追加と倒置)",
+  "stem": "Sora hasn't seen the film, ( ) has she read the original novel.",
+  "passage": "",
+  "choices": [
+   "so",
+   "nor",
+   "either",
+   "too"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】倒置・強調(nor による否定の追加と倒置)。正解は「nor」。前半の hasn't seen という否定文に「〜もまた…ない」と別の否定の内容を加えるので nor を使い、その後は has she read と疑問文の語順にする。so は肯定文に同意を加えるときの語で、否定の内容には使えない。either は否定文の文末で not ... either の形で使う語で、節の先頭に置いて倒置を導くことはできない。too は肯定文の文末に添える「〜も」で、この位置には置けない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(場所句倒置と主語の一致)",
+  "stem": "Among the guests at last night's ceremony ( ) two well-known musicians.",
+  "passage": "",
+  "choices": [
+   "was",
+   "were",
+   "has been",
+   "have been"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】倒置・強調(場所句倒置と主語の一致)。正解は「were」。場所を表す語句 Among the guests が文頭に出て、動詞と主語の順が入れ替わった文である。主語は空所の後の two well-known musicians という複数の名詞なので動詞は複数に合わせ、last night's「昨夜の」から過去形の were が正しい。was は主語を単数と見誤った形である。has been と have been は現在完了で、昨夜という過去の一時点を表す語句とは一緒に使えない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(Here+代名詞主語は倒置しない)",
+  "stem": "A: Where's Emma? The movie is about to start.\nB: Look, here ( ), right on time.",
+  "passage": "",
+  "choices": [
+   "she comes",
+   "comes she",
+   "does she come",
+   "is she coming"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】倒置・強調(Here+代名詞主語は倒置しない)。正解は「she comes」。here や there を文頭に置く文では、主語が名詞なら Here comes the bus のように動詞を先に置くが、主語が she のような代名詞のときは倒置せず、Here she comes の語順になる。comes she は代名詞の主語を動詞の後ろに置いた誤った形である。does she come と is she coming は疑問文の語順で、「ほら、来たよ」と相手に知らせるこの文には合わない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(補語 Gone 文頭の倒置)",
+  "stem": "Gone ( ) the days when I could sleep until noon; now I have a baby.",
+  "passage": "",
+  "choices": [
+   "were",
+   "was",
+   "is",
+   "are"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】倒置・強調(補語 Gone 文頭の倒置)。正解は「are」。補語の gone が文頭に出て、主語 the days が動詞の後ろに置かれた倒置の文である。主語は複数の the days なので動詞は are を使い、後半の now I have a baby から現在の話だとわかる。is と was は主語を単数と見誤った形で the days に合わない。were は複数には合うが過去形で、「今は赤ん坊がいる」という現在の内容とつながらない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(仮定法 if 省略 Had S done)",
+  "stem": "( ) I known the museum was closed on Mondays, I wouldn't have driven all the way there.",
+  "passage": "",
+  "choices": [
+   "Did",
+   "Had",
+   "Have",
+   "Were"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】倒置・強調(仮定法 if 省略 Had S done)。正解は「Had」。wouldn't have driven から、過去の事実と反対の内容を述べる仮定法過去完了の文だとわかる。If I had known の if を省くと had が主語の前に出て、Had I known の語順になる。Have I known は現在完了の疑問文の形で仮定法にならない。Did I known は did の後に過去分詞が続いており成り立たない。Were は be 動詞を使う仮定法過去の形で、known とは合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(仮定法 if 省略 Should S)",
+  "stem": "( ) you have any questions about the new schedule, please contact Ms. Lee directly.",
+  "passage": "",
+  "choices": [
+   "Should",
+   "Would",
+   "Might",
+   "Could"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】倒置・強調(仮定法 if 省略 Should S)。正解は「Should」。If you should have any questions「万一質問があれば」の if を省くと、should が主語の前に出て Should you have の語順になる。後半が please contact という依頼の文であることも、「万一〜なら」という条件の表現に合う。Would、Might、Could を文頭に出しても「もし〜なら」という条件の意味にはならず、後ろの please contact とつながらない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(仮定法 if 省略 Were it not for)",
+  "stem": "( ) it not for the volunteers, the festival could not be held every year.",
+  "passage": "",
+  "choices": [
+   "Had",
+   "Did",
+   "Should",
+   "Were"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】倒置・強調(仮定法 if 省略 Were it not for)。正解は「Were」。If it were not for 〜 の if を省くと、were が主語 it の前に出て Were it not for「〜がなければ」の語順になる。could not be held は仮定法過去で、were と対応する。Had it not for は been が足りず、Had it not been for とする。Did it not for と Should it not for は動詞がなく成り立たない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(強調構文で強調する要素の判別)",
+  "stem": "Noah broke the blue vase in the hallway yesterday.\n= It was ( ) that Noah broke in the hallway yesterday.",
+  "passage": "",
+  "choices": [
+   "yesterday",
+   "Noah",
+   "in the hallway",
+   "the blue vase"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】倒置・強調(強調構文で強調する要素の判別)。正解は「the blue vase」。It was 〜 that ... の強調構文では、that の後の文から抜き出された要素が It was の後に置かれる。that 以下の Noah broke in the hallway yesterday では broke の目的語が欠けているので、抜き出されたのは the blue vase である。Noah、in the hallway、yesterday は that の後にそのまま残っており、二重に置くことになり誤り。",
+  "form": "書きかえ",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(強調の does の後の動詞の形)",
+  "stem": "Ryo seldom speaks in class, but he does ( ) carefully to everything the teacher says.",
+  "passage": "",
+  "choices": [
+   "listens",
+   "listened",
+   "listen",
+   "listening"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】倒置・強調(強調の does の後の動詞の形)。正解は「listen」。「めったに発言しないが、確かに聞いてはいる」と動詞を強調する does の後には、動詞の原形を置くので listen が正しい。主語が三人称単数であることは does がすでに示している。listens は does と三単現の s を二重に使った形になる。listened は過去形で does の後には置けず、前半の speaks という現在の文脈とも合わない。listening は -ing 形で、does の直後には置けない。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(the very + 名詞による強調)",
+  "stem": "The ( ) idea of giving a speech in English makes Yuki nervous.",
+  "passage": "",
+  "choices": [
+   "so",
+   "much",
+   "very",
+   "too"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】倒置・強調(the very + 名詞による強調)。正解は「very」。the very + 名詞 で「まさにその〜」「〜ということ自体」と名詞を強調する用法があり、the very idea of 〜「〜という考えだけで」が合う。much、so、too はいずれも形容詞や副詞を修飾する語で、the と名詞 idea の間に置いて名詞を直接修飾することはできない。very はふつう「とても」と形容詞を強める語だが、the の後で名詞の前に置くと「まさにその」という強調の意味になることに注意する。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(部分否定 not all of them)",
+  "stem": "A: Do the shops in this street close on Sundays?\nB: No, ( ) of them do. A few open in the afternoon.",
+  "passage": "",
+  "choices": [
+   "none",
+   "not all",
+   "neither",
+   "not any"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】倒置・強調(部分否定 not all of them)。正解は「not all」。「午後に開く店もいくつかある」と続くので、「全部が閉まるわけではない」という部分否定の not all of them が合う。none of them は「どの店も閉まらない」という全体の否定で、後半の内容と矛盾する。not any は文の主語の位置に置いて使う形ではない。neither は 2 つのものについて「どちらも〜ない」と言うときの語で、複数の店について述べるこの文には合わない。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(省略 while の後の主語+be)",
+  "stem": "While ( ) in Paris last spring, Mr. Brown visited the same museum three times.",
+  "passage": "",
+  "choices": [
+   "stayed",
+   "staying",
+   "stays",
+   "to stay"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】倒置・強調(省略 while の後の主語+be)。正解は「staying」。While he was staying in Paris の主語 he と was が省略され、while の直後に staying が残った形である。副詞節の主語が主節の主語 Mr. Brown と同じとき、主語と be 動詞をまとめて省くことができる。stayed と stays は、while の後に主語なしで置くことができない。to stay も while の直後には続けられず、「滞在している間に」という意味を表せない。",
+  "form": "語形選択",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(省略 Why not+原形)",
+  "stem": "A: I can't find my keys anywhere.\nB: ( ) check the pocket of your coat?",
+  "passage": "",
+  "choices": [
+   "What if",
+   "Why don't",
+   "Why not",
+   "How about"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】倒置・強調(省略 Why not+原形)。正解は「Why not」。Why not + 動詞の原形 は Why don't you 〜? の don't you を省いた形で、「〜してみたら」という提案を表すので、原形 check が続く空所に合う。Why don't は後ろに主語 you が必要で、Why don't check とは言えない。How about は後ろに -ing 形や名詞を置く表現で、原形の check とはつながらない。What if は後ろに主語と動詞を含む節を続ける。",
+  "form": "対話応答",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(挿入 do you suppose)",
+  "stem": "A: ( ) do you suppose left this umbrella in the classroom?\nB: Probably one of the first-year students.",
+  "passage": "",
+  "choices": [
+   "Whom",
+   "Whose",
+   "How",
+   "Who"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】倒置・強調(挿入 do you suppose)。正解は「Who」。do you suppose「〜だと思いますか」が疑問詞の直後に挿入された文で、空所の疑問詞は left this umbrella の主語にあたるので Who が正しい。B が「一年生の誰かだろう」と人を答えていることにも合う。Whom は目的語の形で、主語の位置には使えない。Whose は「誰の」で、後ろに名詞が必要なうえ left の主語にならない。How は「どのように」で、人を答える B の返事と合わない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(Never 文頭の倒置の語順)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "Never has Rin made such a careless mistake before.",
+   "Rarely does Rin make such a careless mistake.",
+   "Never Rin has made such a careless mistake before.",
+   "Seldom does Rin make such a careless mistake."
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】倒置・強調(Never 文頭の倒置の語順)。正解は「Never Rin has made such a careless mistake before.」否定の語 never を文頭に置いたときは、その直後を has + 主語 の順にしなければならないので、Never Rin has made とふつうの語順のままになっているこの文が誤り。Never has Rin made は正しい倒置の形である。Rarely does Rin make と Seldom does Rin make も、頻度の低さを表す語を文頭に出して does + 主語 + 動詞の原形 の順にした正しい文である。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(全体否定 none)",
+  "stem": "We checked all six meeting rooms, but ( ) was large enough for the whole team.",
+  "passage": "",
+  "choices": [
+   "neither",
+   "either",
+   "any",
+   "none"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】倒置・強調(全体否定 none)。正解は「none」。6 つの部屋について「どれも十分な広さではなかった」と全体を否定するので、3 つ以上のものを指す none が正しい。neither は 2 つのものについて「どちらも〜ない」と言う語で、6 つの部屋には使えない。any は否定の意味をもたず、単独で文の主語にして「どれも〜ない」と言うことはできない。either は「どちらか一方」の意味で、2 つのものに限られるうえ、否定の内容にもならない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(否定表現 beyond repair)",
+  "stem": "The old wooden bridge was damaged ( ) repair in last year's typhoon.",
+  "passage": "",
+  "choices": [
+   "above",
+   "beyond",
+   "over",
+   "under"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】倒置・強調(否定表現 beyond repair)。正解は「beyond」。beyond は「〜の範囲を超えて」を表し、beyond repair で「修理できないほど」という意味になる。否定語を使わずに「修理が不可能だ」という否定の内容を表す表現である。above repair と over repair は、この意味で使われる言い方ではない。under repair は「修理中」という意味の表現で、damaged と組み合わせても「台風で壊れた」というこの文の内容にはならない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(省略 if anything)",
+  "stem": "The weather didn't improve in the afternoon; ( ), it got worse.",
+  "passage": "",
+  "choices": [
+   "if possible",
+   "if ever",
+   "if anything",
+   "if necessary"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】倒置・強調(省略 if anything)。正解は「if anything」。if anything は「どちらかと言えば」「むしろ」という意味の省略表現で、「よくならなかった。むしろ悪くなった」と前の否定文の内容を補って強める。if possible「できれば」と if necessary「必要なら」は依頼や指示に添える表現で、天気の変化を述べる文には合わない。if ever は seldom, if ever のように頻度を表す語と組み合わせて「あるとしても」の意味で使う表現で、ここでは意味が通らない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(挿入 I thought と関係詞)",
+  "stem": "The woman who ( ) was the new teacher turned out to be a student's mother.",
+  "passage": "",
+  "choices": [
+   "did I think",
+   "I thought that",
+   "I thought",
+   "did I think that"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】倒置・強調(挿入 I thought と関係詞)。正解は「I thought」。who was the new teacher「新しい先生だった人」という関係詞の節に、I thought「私が思うには」が挿入された形である。関係詞 who の直後に I thought をそのまま置き、その後に was が続く。I thought that は、挿入の形では that を置くことができないので誤り。did I think と did I think that は疑問文の語順で、挿入の表現には使えない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(挿入 it seems)",
+  "stem": "Prices are, ( ), going to rise again next spring.",
+  "passage": "",
+  "choices": [
+   "it seems that",
+   "seems it",
+   "seems it that",
+   "it seems"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】倒置・強調(挿入 it seems)。正解は「it seems」。it seems「〜のようだ」は、コンマで区切って文の途中に挿入し、「物価はどうやらまた上がるようだ」と話し手の判断を添えることができる。it seems that は、that の後に文を続ける形なので、挿入としてコンマの間に置くことはできない。seems it と seems it that は主語の it が動詞の後ろにあり、挿入の表現としては使えない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(as の後の倒置 〜と同様に)",
+  "stem": "Liam enjoys hiking in the mountains, as ( ) most of his friends.",
+  "passage": "",
+  "choices": [
+   "do",
+   "is",
+   "does",
+   "are"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】倒置・強調(as の後の倒置 〜と同様に)。正解は「do」。「〜もそうであるように」を表す as の後では、動詞と主語の順を入れ替えて as + 動詞 + 主語 の形にすることができる。前半の enjoys は一般動詞なので、それを受けるのは do であり、主語の most of his friends が複数なので do が正しい。does は主語を単数と見誤った形である。is と are は be 動詞で、enjoys という一般動詞の内容を受けることはできない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(Only が主語を修飾するときの語順)",
+  "stem": "Only ( ) the final question, and both of them got full marks.",
+  "passage": "",
+  "choices": [
+   "two students attempted",
+   "did two students attempt",
+   "have two students attempted",
+   "two students attempt"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】倒置・強調(Only が主語を修飾するときの語順)。正解は「two students attempted」。only を文頭に置いたとき後ろが疑問文の語順になるのは、Only recently 〜 や Only if 〜 のように only が主語以外の語句 (副詞・副詞句・副詞節など) を強めて文頭に出したときである。この文では only が主語の two students「2 人の生徒だけ」を修飾しているので倒置は起こらず、ふつうの 主語 + 動詞 の語順で Only two students attempted the final question とする。後半の got から過去の話なので、過去形 attempted が合う。did two students attempt と have two students attempted は、only + 副詞句 を文頭に置いたときの倒置をまねた形で、主語を修飾する only の後には使えない。two students attempt は語順は正しいが現在形で、後半の got という過去形と時制が合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar",
+  "filter": "倒置",
+  "unit": "倒置・強調(There+一般動詞の倒置)",
+  "stem": "A hundred years ago, there ( ) in this small village by the river.",
+  "passage": "",
+  "choices": [
+   "a famous painter lived",
+   "lived a famous painter",
+   "was lived a famous painter",
+   "a famous painter was living"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】倒置・強調(There+一般動詞の倒置)。正解は「lived a famous painter」。there で始まる文では、be 動詞だけでなく live や come のような存在・出現を表す一般動詞も there + 動詞 + 主語 の順に置くことができる。a famous painter lived と a famous painter was living は、there の後に主語をそのまま続けた形で、この構文の語順にならない。was lived は、目的語をとらない live を受け身にした形で成り立たない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ }
+]

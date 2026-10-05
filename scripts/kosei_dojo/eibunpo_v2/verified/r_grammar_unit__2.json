@@ -1,0 +1,542 @@
+[
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(現在形 現在の習慣)",
+  "stem": "My grandfather is eighty, but he still ( ) a two-kilometer walk every morning.",
+  "passage": "",
+  "choices": [
+   "had taken",
+   "took",
+   "has taken",
+   "takes"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制(現在形 現在の習慣)。正解は「takes」。every morning「毎朝」と is eighty という現在の文脈から、今も繰り返している習慣を表す現在形 takes が合う。took は過去の習慣になり、still「今でも」や前半の現在形と合わない。has taken は現在完了で、毎朝の習慣を表す言い方にならない。had taken は過去完了で、過去のある時点より前の話になってしまう。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(現在形 不変の真理)",
+  "stem": "Even in the Southern Hemisphere, the sun ( ) in the east and sets in the west.",
+  "passage": "",
+  "choices": [
+   "rose",
+   "rises",
+   "is rising",
+   "has risen"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制(現在形 不変の真理)。正解は「rises」。太陽が東から昇るのはいつでも変わらない事実なので現在形で表し、後半の sets も現在形であることから前半も rises とそろえる。rose は過去形で、過去の一回の出来事に聞こえる。is rising は今まさに昇っている途中という意味になり、一般的な事実を述べる文に合わない。has risen は「もう昇ってしまった」という完了の意味で、文の内容と食い違う。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(時の副詞節 before と現在形)",
+  "stem": "Make sure you turn off the lights before you ( ) the classroom this evening.",
+  "passage": "",
+  "choices": [
+   "will leave",
+   "leave",
+   "left",
+   "will have left"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制(時の副詞節 before と現在形)。正解は「leave」。before が導く時の副詞節では、未来のことでも現在形で表すので leave が合う。主節の Make sure you turn off がこれからの行動を指示していることも手がかりになる。will leave と will have left は未来を表す形で、時の副詞節の中では使わない。left は過去形で、this evening というこれからの時間と合わない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(条件の副詞節 unless と現在形)",
+  "stem": "You won't improve your English unless you ( ) it a little every day.",
+  "passage": "",
+  "choices": [
+   "will practice",
+   "practice",
+   "practiced",
+   "had practiced"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制(条件の副詞節 unless と現在形)。正解は「practice」。unless「〜しなければ」は条件を表す副詞節を作るので、未来のことでも中の動詞は現在形 practice にする。主節の won't improve がこれからの話なので節の内容も未来だが、形は現在形で表す。will practice は条件の副詞節の中では使わない。practiced と had practiced は過去の形で、every day という今後の習慣の話と合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(if の名詞節と未来形)",
+  "stem": "I'm not sure if Haru ( ) to the party tonight, so let's not wait for him.",
+  "passage": "",
+  "choices": [
+   "will come",
+   "came",
+   "had come",
+   "comes"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制(if の名詞節と未来形)。正解は「will come」。この if 節は sure の内容を表す名詞節「〜かどうか」で、条件を表す副詞節ではない。名詞節の中では未来のことをそのまま will で表すので will come が合う。comes は現在形で、今夜来るかどうかという一回の未来の出来事には使えない。came と had come は過去の形で、tonight や let's not wait という文脈に合わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(現在進行形 進行中の動作)",
+  "stem": "Don't unplug the laptop yet because it ( ) a big update that is only halfway done.",
+  "passage": "",
+  "choices": [
+   "is installing",
+   "installed",
+   "installs",
+   "has installed"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制(現在進行形 進行中の動作)。正解は「is installing」。Don't unplug ... yet と only halfway done「まだ半分しか終わっていない」から、更新が今まさに進行中だとわかる。今進行中の動作は現在進行形 is installing で表す。installs は現在形で習慣や一般的な事実を表し、今の途中の状態に合わない。installed は過去形、has installed は現在完了で、「もう済んだ」ことになり、半分しか終わっていない内容と矛盾する。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(状態動詞と進行形)",
+  "stem": "Sora really ( ) her mother, especially when she smiles at someone.",
+  "passage": "",
+  "choices": [
+   "is resembling",
+   "resembled",
+   "resembles",
+   "has resembled"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制(状態動詞と進行形)。正解は「resembles」。resemble「〜に似ている」は状態を表す動詞で、ふだん進行形にしないため、現在の事実は現在形 resembles で表す。is resembling は状態動詞を進行形にした誤り。resembled は過去形で、when she smiles という現在の文脈と合わない。has resembled は現在完了で、「似ている」という変わらない性質を述べる文には不自然になる。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(過去形と現在完了の区別)",
+  "stem": "Noah ( ) his wallet on the train last night, and he still hasn't found it.",
+  "passage": "",
+  "choices": [
+   "has lost",
+   "is losing",
+   "loses",
+   "lost"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制(過去形と現在完了の区別)。正解は「lost」。last night「昨夜」のように過去の特定の時を表す語句があるときは、現在完了ではなく過去形を使うので lost が合う。has lost は現在完了で、last night のような過去の一点を示す語とは一緒に使えない。loses は現在形、is losing は現在進行形で、昨夜の出来事を述べる文にならない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(現在完了 継続)",
+  "stem": "Mika and I ( ) best friends since kindergarten, and we still talk every day.",
+  "passage": "",
+  "choices": [
+   "are",
+   "were",
+   "had been",
+   "have been"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制(現在完了 継続)。正解は「have been」。since kindergarten「幼稚園のときから」と still talk every day から、過去に始まった状態が今も続いているとわかる。継続は現在完了で表すので have been が合う。are は現在形で、since と組み合わせて「〜から続いている」とは言えない。were は過去形で今も友人である内容と合わず、had been は過去完了で、過去のある時点までの継続になってしまう。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(現在完了 経験 never)",
+  "stem": "Emma ( ) abroad, so this trip to Korea will be her first time overseas.",
+  "passage": "",
+  "choices": [
+   "is never being",
+   "has never been",
+   "had never been",
+   "will never be"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制(現在完了 経験 never)。正解は「has never been」。this trip ... will be her first time から、海外へ行った経験がないことがわかる。経験は現在完了で表し、never で「一度も〜したことがない」とする。is never being は be を進行形にした不自然な形。had never been は過去の時点までの経験になり、will be という未来の文と合わない。will never be は「今後も行かない」の意味で、旅行の内容と矛盾する。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(現在完了進行形 since)",
+  "stem": "Liam ( ) video games since he got home, and he hasn't even taken off his coat.",
+  "passage": "",
+  "choices": [
+   "is playing",
+   "had been playing",
+   "will be playing",
+   "has been playing"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制(現在完了進行形 since)。正解は「has been playing」。since he got home「帰宅してから」があり、hasn't even taken off his coat から今も続く動作だとわかる。今まで続く動作は現在完了進行形 has been playing で表す。is playing は今の動作だけを表し、since とは結びつかない。had been playing は過去の時点までの継続になる。will be playing は未来の形で、since の文に合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(現在完了進行形 動作の継続)",
+  "stem": "A: Why are your hands so dirty?\nB: I ( ) in the garden since lunch, and I'm not finished yet.",
+  "passage": "",
+  "choices": [
+   "am working",
+   "had been working",
+   "have been working",
+   "was working"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制(現在完了進行形 動作の継続)。正解は「have been working」。since lunch「昼食のときから」と I'm not finished yet から、昼から今まで作業が続いているとわかる。手が汚れている今の状態の理由を現在まで続く動作で説明するので現在完了進行形が合う。am working は今している動作だけを表し、since と一緒には使えない。had been working は過去のある時点までの継続、was working は過去のある時点での動作で、今の状態の説明にならない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(過去完了 大過去)",
+  "stem": "When Aya opened her lunch box, she found that someone ( ) half of her sandwich.",
+  "passage": "",
+  "choices": [
+   "has eaten",
+   "had eaten",
+   "eats",
+   "is eating"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制(過去完了 大過去)。正解は「had eaten」。弁当箱を開けて気づいた (opened, found) のは過去で、サンドイッチが食べられたのはそれよりさらに前の出来事である。過去のある時点より前に起きたことは過去完了 had eaten で表す。has eaten は現在完了で、過去の文の中には入らない。eats と is eating は現在の形で、found という過去の時点から見た出来事を表せない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(by the time と過去完了)",
+  "stem": "By the time the firefighters got there, the fire ( ) the house next door.",
+  "passage": "",
+  "choices": [
+   "has reached",
+   "had reached",
+   "reaches",
+   "is reaching"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制(by the time と過去完了)。正解は「had reached」。by the time ... got there「消防士が到着したときまでには」は過去の基準点を示し、火が隣家に達したのはそれより前である。過去の基準点より前に完了していたことは過去完了 had reached で表す。has reached は現在完了で、got という過去の基準には合わない。reaches と is reaching は現在の形で、過去の出来事を述べる文にならない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(by the time 節は現在形)",
+  "stem": "The guests will have left by the time Ms. Lee ( ) home from work tonight.",
+  "passage": "",
+  "choices": [
+   "will get",
+   "got",
+   "gets",
+   "had got"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制(by the time 節は現在形)。正解は「gets」。by the time「〜するときまでには」は時を表す副詞節を作るので、未来のことでも中の動詞は現在形 gets にする。主節の will have left が未来完了で、「リー先生が帰宅するまでには客は帰ってしまっているだろう」という未来の話であることも手がかりになる。will get は時の副詞節の中では使わない。got と had got は過去の形で、tonight というこれからの時間と合わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(until 節と過去形)",
+  "stem": "The children didn't go to bed until their father ( ) home from work that night.",
+  "passage": "",
+  "choices": [
+   "will come",
+   "comes",
+   "came",
+   "has come"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制(until 節と過去形)。正解は「came」。主節が didn't go to bed と過去形なので、until「〜するまで」の節もそれに合わせて過去形 came にする。comes は現在形、has come は現在完了で、過去の出来事を述べる主節とつながらない。will come は未来の形で、時を表す until の節では使えないうえ、過去の文脈とも合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(since 節は過去形)",
+  "stem": "Daiki has grown a lot since I last ( ) him two summers ago.",
+  "passage": "",
+  "choices": [
+   "see",
+   "saw",
+   "have seen",
+   "had seen"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制(since 節は過去形)。正解は「saw」。「〜してから」を表す since の節には、起点となる過去の出来事を過去形で置く。two summers ago「二つ前の夏に」という過去の一点を表す語句があることからも saw が合う。see は現在形で起点を表せない。have seen は現在完了で、ago のような過去の一点を示す語とは一緒に使えない。had seen は過去完了で、現在完了の主節 has grown の起点を示す文には合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(since と for の区別)",
+  "stem": "My aunt has been a vegetarian ( ) more than ten years, so she knows many recipes.",
+  "passage": "",
+  "choices": [
+   "before",
+   "since",
+   "ago",
+   "for"
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制(since と for の区別)。正解は「for」。more than ten years「10 年以上」は期間の長さを表す語句なので、現在完了と一緒に「〜の間」を表す for を使う。since は「〜以来」と起点を示す語で、後には時点を表す語句や節が続く。ago は「〜前に」で過去形と一緒に使い、現在完了の文には入らない。before はここでは「〜より前に」の意味になり、期間を表す語句とは結びつかない。",
+  "form": "空所補充",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(since と for の区別)",
+  "stem": "Mika moved to Osaka in 2020, and she still lives there.\n= Mika has lived in Osaka ( ) 2020.",
+  "passage": "",
+  "choices": [
+   "for",
+   "in",
+   "since",
+   "until"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制(since と for の区別)。正解は「since」。「2020 年に引っ越して今も住んでいる」を 1 文にすると、2020 年を起点として現在まで続く継続になる。起点を示すのは since「〜以来」で、現在完了 has lived と結びつく。for は期間の長さを表すので年号には使えない。in 2020 は過去の一点を示す言い方で、現在完了とは一緒に使わない。until は「〜まで」と終点を表し、今も住んでいる内容と矛盾する。",
+  "form": "書きかえ",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(未来完了 by then)",
+  "stem": "A: Can I borrow your tablet tomorrow morning?\nB: Sure. I ( ) my report by then, so I won't need it.",
+  "passage": "",
+  "choices": [
+   "have been finishing",
+   "had finished",
+   "will have finished",
+   "was finishing"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制(未来完了 by then)。正解は「will have finished」。by then「そのときまでには」は明日の朝を指し、その未来の時点までに完了していることを述べるので、未来完了 will have finished が合う。後半の won't need it も未来の話である。have been finishing は現在までの継続で、未来の期限とは結びつかない。had finished は過去完了、was finishing は過去進行形で、明日の話に過去の形は使えない。",
+  "form": "対話応答",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(現在進行形 近い未来の予定)",
+  "stem": "A: Are you free on Friday evening?\nB: Sorry, I ( ) dinner with my host family that night.",
+  "passage": "",
+  "choices": [
+   "am having",
+   "had",
+   "have had",
+   "was having"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制(現在進行形 近い未来の予定)。正解は「am having」。on Friday evening と that night から、これから先の金曜夜の予定を答えているとわかる。すでに決まっている近い未来の予定は現在進行形で表せるので am having が合う。had と was having は過去の形で、これからの予定を述べる場面に合わない。have had は現在完了で、「もう食べてしまった」という完了の意味になり、金曜の予定の話にならない。",
+  "form": "対話応答",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(過去完了進行形 before)",
+  "stem": "A: Why were your shoes so muddy yesterday?\nB: I ( ) in the rain for an hour before I finally found a taxi.",
+  "passage": "",
+  "choices": [
+   "had been walking",
+   "have been walking",
+   "am walking",
+   "will be walking"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制(過去完了進行形 before)。正解は「had been walking」。yesterday の出来事で、タクシーを見つけた (found) という過去の時点まで、for an hour「1 時間」歩き続けていたという内容なので、過去完了進行形 had been walking が合う。have been walking は現在までの継続で、昨日の話には使えない。am walking と will be walking は現在と未来の形で、過去の出来事を説明する答えにならない。",
+  "form": "対話応答",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(現在完了の形 have+done)",
+  "stem": "Ryo has never ( ) a horse before, so he is a little nervous today.",
+  "passage": "",
+  "choices": [
+   "ride",
+   "riding",
+   "ridden",
+   "rode"
+  ],
+  "answer_index": 2,
+  "explanation": "【単元】時制(現在完了の形 have+done)。正解は「ridden」。has never の後なので、現在完了〈have + done〉を作る ridden が入る。「今まで一度も馬に乗ったことがない」という経験の意味になる。ride は原形、rode は過去形で、has の後には置けない。riding は -ing 形で、has の直後に置くことはできず、進行形にするなら has been riding の形が必要になる。",
+  "form": "語形選択",
+  "level": "基礎"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(過去進行形と when 節の過去形)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "When I saw Sora at the station, she is talking on the phone.",
+   "When I see Sora at the station, she was talking on the phone.",
+   "When I see Sora at the station, she has talked on the phone.",
+   "When I saw Sora at the station, she was talking on the phone."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制(過去進行形と when 節の過去形)。正解は「When I saw Sora at the station, she was talking on the phone.」駅でソラを見かけた (saw) という過去の一時点に、ちょうど進行中だった動作は過去進行形 was talking で表すので、この文が正しい。When I saw ..., she is talking の文は、過去形 saw の場面に現在進行形 is talking を続けていて、時制がそろっていない。When I see ..., she was talking の文は、現在形 see と過去進行形 was talking が食い違っている。When I see ..., she has talked の文は、現在形 see に現在完了 has talked を続けた形で、「見かけたとき電話で話していた」という意味にならず、進行中の動作も表せない。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(時の副詞節 as soon as と現在形)",
+  "stem": "次のうち文法的に正しい文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "I will send you the photos as soon as I get home tonight.",
+   "I will send you the photos as soon as I will get home tonight.",
+   "I send you the photos as soon as I will get home tonight.",
+   "I will send you the photos as soon as I got home tonight."
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制(時の副詞節 as soon as と現在形)。正解は「I will send you the photos as soon as I get home tonight.」as soon as が導く時の副詞節では、未来のことでも現在形 get を使い、主節は未来を表す will send にするので、この文が正しい。as soon as I will get の 2 つの文は、時の副詞節の中に will を入れている点が誤り。as soon as I got の文は、tonight というこれからの時間に過去形を使っている点が誤り。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(状態動詞と進行形)",
+  "stem": "次のうち文法的に誤りを含む文を選びなさい。",
+  "passage": "",
+  "choices": [
+   "Riku is looking for his notebook in the classroom.",
+   "Riku is thinking about the answer to the question.",
+   "Riku is writing down the answer in his notebook.",
+   "Riku is knowing the answer to the last question."
+  ],
+  "answer_index": 3,
+  "explanation": "【単元】時制(状態動詞と進行形)。正解は「Riku is knowing the answer to the last question.」know「知っている」は状態を表す動詞で、ふだん進行形にはしないので、is knowing としたこの文が誤りで、knows とするのが正しい。is looking for と is writing down は動作を表す動詞の進行形で正しい。is thinking about は「〜について考えている」という進行中の動作を表す使い方で、こちらも正しい。",
+  "form": "正誤",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(used to 過去の状態)",
+  "stem": "There ( ) a small bookstore on this corner, but now it's a parking lot.",
+  "passage": "",
+  "choices": [
+   "used to be",
+   "would be",
+   "has been",
+   "is used to"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制(used to 過去の状態)。正解は「used to be」。but now it's a parking lot から、「以前は書店があったが今はない」という過去の状態を述べているとわかる。今はもう違う過去の状態や習慣は used to で表す。would be は過去の繰り返しの動作には使えるが、「あった」という状態は表せない。has been は現在完了で、今も書店があることになり後半と矛盾する。is used to は「〜に慣れている」という別の表現で、there とつながらない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(未来進行形)",
+  "stem": "Mr. Brown ( ) a lecture from one to three this afternoon, so he can't see you.",
+  "passage": "",
+  "choices": [
+   "will be giving",
+   "was giving",
+   "has been giving",
+   "had given"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制(未来進行形)。正解は「will be giving」。from one to three this afternoon「今日の午後 1 時から 3 時まで」という未来の時間帯に進行中の動作は、未来進行形 will be giving で表す。can't see you がこれからの話であることも手がかりになる。was giving は過去進行形、had given は過去完了で、過去の話になってしまう。has been giving は現在までの継続を表し、午後の予定には合わない。",
+  "form": "空所補充",
+  "level": "標準"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(未来進行形 when 節)",
+  "stem": "When you arrive at the airport tomorrow, I ( ) for you at the gate.",
+  "passage": "",
+  "choices": [
+   "have been waiting",
+   "will be waiting",
+   "was waiting",
+   "had been waiting"
+  ],
+  "answer_index": 1,
+  "explanation": "【単元】時制(未来進行形 when 節)。正解は「will be waiting」。when 節の arrive は現在形だが tomorrow があり、未来のことを表している。到着する時点でちょうど待っているところ、という未来のある時点で進行中の動作は未来進行形 will be waiting で表す。have been waiting は現在までの継続、had been waiting は過去のある時点までの継続、was waiting は過去のある時点での動作で、どれも明日の話に合わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ },
+ {
+  "subject": "英語",
+  "part": "r_grammar_unit",
+  "filter": "時制",
+  "unit": "時制(未来完了 回数)",
+  "stem": "By the end of this month, Noah ( ) his driving test three times.",
+  "passage": "",
+  "choices": [
+   "will have taken",
+   "has taken",
+   "had been taking",
+   "was taking"
+  ],
+  "answer_index": 0,
+  "explanation": "【単元】時制(未来完了 回数)。正解は「will have taken」。by the end of this month「今月末までには」は未来の期限を表し、その時点までに何回したことになるかを述べる文なので、未来完了 will have taken が合う。has taken は現在完了で、現在までに済んだことを表すため、未来の期限 by the end of this month とは結びつかない。had been taking は過去完了進行形で過去のある時点までの継続、was taking は過去進行形で過去のある時点での動作を表し、どちらも過去の話になってしまう。また three times のように回数を数える文では、動作の途中を表す進行形はそもそも使わない。",
+  "form": "空所補充",
+  "level": "やや応用"
+ }
+]
