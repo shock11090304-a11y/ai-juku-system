@@ -26954,6 +26954,30 @@ def admin_exam_questions_dump(
     return {"items": items, "count": len(items), "total": total, "offset": offset}
 
 
+# 🎯 [bank-unit-rank 2026-10-05] bank の topic 窓を単元タグ優先にするための多めの取得数と、単元の接頭辞。
+#    接頭辞は dojo-drill.html の unitExact (`split(/[（(：:]/)[0].trim()` → startsWith(filter)) と同じ規則。
+#    多めに取るのは従来の窓 (新しい順 limit 行) が満杯のときだけ・1 行 _BANK_TOPIC_OVERFETCH_MAX_CHARS 文字以下の行だけ
+#    (公開 API なので、図つきの大きな行 (二次面接は 1 行 35 万字前後) を 300 行読まされないように。道場の行は最大 2.3 万字ほど)。
+#    LIKE に当たる行は 2026-10-05 時点で英文法の不定詞・前置詞が約 130 行 (他教科は未計測)。300 を超えるカードでは、
+#    LIKE の新しい順 300 行より古い単元タグ行は従来どおり窓の外になる (そのときは 1 回だけ log に出す)。
+_BANK_TOPIC_OVERFETCH = 300
+_BANK_TOPIC_OVERFETCH_MAX_CHARS = 40000
+_BANK_UNIT_PREFIX_SPLIT = re.compile(r"[（(：:]")
+_BANK_OVERFETCH_SATURATED_LOGGED = set()   # (exam, part, grade, topic) — 公開 API の任意 topic で膨らまないよう 200 件で打ち止め
+
+
+def _bank_unit_prefix(unit):
+    return _BANK_UNIT_PREFIX_SPLIT.split("" if unit is None else str(unit), 1)[0].strip()
+
+
+def _bank_item_has_unit_prefix(item, topic):
+    """大問 (question_data) の小問のどれかの unit 接頭辞が topic で始まるか。"""
+    qs = item.get("questions") if isinstance(item, dict) else None
+    if not topic or not isinstance(qs, list):
+        return False
+    return any(isinstance(q, dict) and _bank_unit_prefix(q.get("unit")).startswith(topic) for q in qs)
+
+
 @app.get("/api/exam-questions/bank")
 def public_exam_questions_bank(
     exam: str,
@@ -26990,21 +27014,39 @@ def public_exam_questions_bank(
     # LIKE wildcard escape (Postgres/SQLite 互換: backslash escape) — 順序重要 (\\ 最初)
     topic_like_escaped = topic_norm.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") if topic_norm else ""
     topic_pattern = f"%{topic_like_escaped}%" if topic_like_escaped else None
+    ranked_by_unit = False
     try:
         rows = []
         if topic_pattern:
-            # topic 指定時: SQL の LIKE で「【単元】<topic>」を含む行のみ取得
-            if eiken_grade:
-                c.execute(
-                    "SELECT id, question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? AND eiken_grade = ? AND question_data LIKE ? ESCAPE '\\' ORDER BY created_at DESC LIMIT ?",
-                    (exam, part, eiken_grade, topic_pattern, limit),
-                )
-            else:
-                c.execute(
-                    "SELECT id, question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? AND question_data LIKE ? ESCAPE '\\' ORDER BY created_at DESC LIMIT ?",
-                    (exam, part, topic_pattern, limit),
-                )
-            rows = c.fetchall()
+            # topic 指定時: question_data のどこかに <topic> を含む行 (素の %<topic>% ・【単元】に限らない)。
+            # 🎯 [bank-unit-rank 2026-10-05] 窓 (limit) が「topic に言及するだけの行」や古い AI 生成行で埋まり、
+            #    単元別カード (dojo-drill.html の unitExact) が捨てる行で枠を使い切っていた (助動詞・日本史 古代 などが 50/50)。
+            #    → ① 従来の窓 (新しい順 limit 行) を取り、② 窓が満杯なら窓より古い行も _BANK_TOPIC_OVERFETCH 行まで (小さい行だけ) 足し、
+            #      小問の unit 接頭辞が topic で始まる行を先頭に並べてから limit で切る (下)。窓が満杯でなければ ② は要らない (LIKE の全行が窓にある)。
+            _like_sql = ("SELECT id, question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ?"
+                         + (" AND eiken_grade = ?" if eiken_grade else "")
+                         + " AND question_data LIKE ? ESCAPE '\\'")
+            _like_args = (exam, part) + ((eiken_grade,) if eiken_grade else ()) + (topic_pattern,)
+            c.execute(_like_sql + " ORDER BY created_at DESC, id DESC LIMIT ?", _like_args + (limit,))
+            rows = list(c.fetchall())
+            ranked_by_unit = bool(rows)
+            if len(rows) >= limit:
+                # ② の行はどれも ① の窓より後ろ (同じ並び順の続き) なので、① に足すだけで新しい順のまま。失敗しても ① の窓で続ける。
+                try:
+                    c.execute(_like_sql + " AND length(question_data) <= ? ORDER BY created_at DESC, id DESC LIMIT ?",
+                              _like_args + (_BANK_TOPIC_OVERFETCH_MAX_CHARS, _BANK_TOPIC_OVERFETCH))
+                    _extra = c.fetchall()
+                    _rid = lambda r: r["id"] if hasattr(r, "keys") else r[0]
+                    _seen = {_rid(r) for r in rows}
+                    rows += [r for r in _extra if _rid(r) not in _seen]
+                    _key = (exam, part, eiken_grade, topic_norm)
+                    if (len(_extra) >= _BANK_TOPIC_OVERFETCH and _key not in _BANK_OVERFETCH_SATURATED_LOGGED
+                            and len(_BANK_OVERFETCH_SATURATED_LOGGED) < 200):
+                        _BANK_OVERFETCH_SATURATED_LOGGED.add(_key)
+                        log.info(f"[ExamQ:UnitRank] {exam}/{part}/{eiken_grade} topic={topic_norm!r}: LIKE が {_BANK_TOPIC_OVERFETCH} 行を超える "
+                                 f"→ それより古い単元タグ行は窓に入らない (_BANK_TOPIC_OVERFETCH を見直す)")
+                except Exception as _e:
+                    log.warning(f"[ExamQ:UnitRank] overfetch skipped (従来の窓で配信): {_e}")
         if not rows:
             # topic 未指定 or topic マッチ 0 件 → 通常の取得 (fallback)
             if eiken_grade:
@@ -27032,6 +27074,14 @@ def public_exam_questions_bank(
             items.append(data)
         except Exception:
             pass
+
+    # 🎯 [bank-unit-rank 2026-10-05] 単元タグの行を先頭 → 残り、どちらも新しい順 (sort は安定なので SQL の順を保つ)。
+    #    ここで limit に切るので、以降 (blocklist・_matches_topic・補充判定・random.choice) が見る行は従来どおり limit 行まで
+    #    (窓が満杯で JSON の読めない行があると、多めに取ったぶんで埋まるので従来より少しだけ多くなりうる)。
+    #    fallback (LIKE 0 件) の行には topic を含む unit が無いので並べ替えない。
+    if ranked_by_unit:
+        items.sort(key=lambda it: 0 if _bank_item_has_unit_prefix(it, topic_norm) else 1)
+        items = items[:limit]
 
     # 🚫 [dojo-subq-blocklist 2026-06-21] 不良小問(解答キー誤り/曖昧/図・前問依存)を配信から除外する。
     #    (大問id, 小問id) 単位。大問内の不良小問だけ落とし、大問が空になれば大問ごと除外。

@@ -41,6 +41,8 @@ on:
       - 'seed-data/eiken_vocab_pool_v1.json'
       - 'seed-data/eiken_reading_pool_v1.json'
       - 'seed-data/grammar_drill_weakness_v1.json'
+      # 🎯 bank の単元タグ優先 (test_exam_bank_unit_rank.py) は画面の unitExact の規則をソースで照合する
+      - 'dojo-drill.html'
       # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
       - 'lp.html'
       - 'checkout.html'
@@ -300,6 +302,16 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_grammar_passage_drill.py
+
+      # 🎯 公開 bank の topic 窓 (2026-10-05): 小問の unit 接頭辞が topic で始まる行を新しい未タグ行より先に並べてから limit で切る
+      #   (入試道場の単元別カードが unitExact で捨てる行で窓を使い切らない)。接頭辞の規則は dojo-drill.html の unitExact とソースで照合。
+      #   多めに取るのは窓が満杯のときだけ・300 行・1 行 4 万字まで (公開 API で大きな行を読まされない)。
+      #   fallback (topic 0 件)・topic なし・limit・_matches_topic の後段フィルタは従来どおり。
+      - name: bank の単元タグ優先 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_exam_bank_unit_rank.py
 
       # ⏪ 自動ロールバックが「履歴の強制書き換え」ではなく revert commit を fast-forward で積むこと (2026-09-07)。
       - name: 自動ロールバック (revert commit 方式) 回帰テスト
