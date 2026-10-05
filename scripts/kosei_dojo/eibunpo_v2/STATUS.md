@@ -1,4 +1,4 @@
-# 進行状況 (2026-10-05: 13 カード × 30 問 = 390 問 確定・GitHub 保存済み・本番投入待ち)
+# 進行状況 (2026-10-05: 13 カード × 30 問 = 390 問・GitHub 保存済み (8904d09)・本番投入済み)
 
 ## 決めたこと
 - 範囲: 英文法 13 カード (塾長の選択)。各 +30 問 = 390 問。作問は 42 問/カード。
@@ -13,6 +13,12 @@
 - [x] N: 仮定法の入れ替え 1 問の最終チェック → drop 0・fix_expl 1 (用語「過去完了形」→「過去完了進行形」の訂正) を適用済み。**13 カード × 30 問 = 390 問 確定 (未コミット)。**
 - [ ] 助動詞の補充作問 8 問 (blind/topup_r_grammar__5.json) は予備の積み増し用 (カードは 30 問そろっている)。使うなら `topup.py prep r_grammar 5` → 盲検 3 名 → `topup.py score r_grammar 5` (余りは surplus へ)。使わなくてもよい。
 - [x] build 2 回同一 → check PASS → run_all_gates → PII ALL PASS → コミット前の 3 観点レビュー (blocker 0・should_fix 7 を反映: 押し出し判定を model で・post_check の --before 必須化・kosei_baseline.py をリポジトリへ・CI でもドリル重複検査・glob の接頭辞衝突) → commit/push
-- [ ] 本番 (塾長の端末): `python3 scripts/kosei_dojo/eibunpo_v2/post_check.py --before` と `kosei_baseline.py` (scratchpad) → `railway run -s Postgres python3 scripts/kosei_dojo/eibunpo_v2/insert.py` (dry-run) → `--commit` → `post_check.py`
-  基準取り (kosei_baseline.py) 2026-10-05 08:39 実施 → ~/Desktop/kosei_baseline_20261005.json。**助動詞カードは窓 50/50 で満杯、受動態 49・前置詞 48**
-  (AI の古い行 '?' が 2026-08-18 のタグ付けで LIKE に当たる)。insert.py は押し出される行が AI の古い行だけなら進め、手作りなら止める (README 参照)。
+- [x] 本番 (2026-10-05 塾長の端末で実施・完了)
+  - `post_check.py --before`: 13 カードの投入前の配信数を保存 (blind/postcheck_before.json)。
+  - `insert.py` dry-run: 6 カード (助動詞 19・受動態 12・不定詞 59・動名詞 34・接続詞 18・前置詞 59 行) で、窓から外れる行が
+    2026-05-13〜17 の claude-max-plan (定期テスト枠の作成直後に Claude の対話で一括生成して取り込んだ行) だったため止まった。
+    6 月の手作り (manual2) は日付が新しく窓に残る。塾長が了承し `--allow-pushout=<6 カード>` で投入。
+  - `insert.py --commit`: 65 行 / 390 小問 (r_grammar 40 行・r_grammar_unit 25 行)。既出で除いた設問 0。
+  - `post_check.py`: 13 カードとも新規一致 30・不一致 0・配信数は投入前 +30 (関係 88→118 … 倒置 91→121)。
+    英文法 総合 (filter なし) は 50 行中 40 行が今回の行 (README のとおり零和)。
+  - 窓から外れた 5 月の行は消えていない。bank の窓を単元タグ優先にする改修 (別作業として提案済み) で戻せる。
