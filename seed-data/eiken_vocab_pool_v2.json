@@ -6,14 +6,20 @@
   "units": {
    "2級 単語": 150,
    "2級 句動詞・熟語": 105,
-   "準1級 単語": 126,
-   "準1級 句動詞・熟語": 36
+   "準1級 単語": 154,
+   "準1級 句動詞・熟語": 44
   },
   "sources": [
-   "2級: 本番形式演習 第1〜15回 大問1 (Desktop/📚 教材/英語/04_英検/2級/英検2級_本番形式演習_*/_制作資料/part1.json)",
-   "準1級: 本番形式演習 第1〜9回 大問1 (Desktop/📚 教材/英語/04_英検/準1級/英検準1級_本番形式演習_第N回_*/_制作資料/content.py の P1)"
+   "2級: 本番形式演習 第1〜15回 大問1 (Desktop/📚 教材/英語/04_英検/2級/01_本番形式演習_第1〜15回/英検2級_本番形式演習_*/_制作資料/part1.json)",
+   "準1級: 本番形式演習 第1〜11回 大問1 (Desktop/📚 教材/英語/04_英検/準1級/01_本番形式演習_第1〜N回/英検準1級_本番形式演習_第N回_*/_制作資料/content.py の P1)"
   ],
-  "blind_review": "盲検 (2026-10-06): 正解を伏せた独立ソルバー 3 名が 語彙 417 問・長文 327 問を解き、語彙は全問・長文は 326 問が全員一致(正解表どおり・指摘なし)。残る 1 問 (準1級 第5回 大問2[A] 空所 1) は 3 名とも別解ありと指摘 → DROP_Q で落とした。生の解答はコミットしない。",
+  "blind_review": "盲検 (2026-10-06): 正解を伏せた独立ソルバー 3 名が 語彙 417 問・長文 327 問を解き、語彙は全問・長文は 326 問が全員一致(正解表どおり・指摘なし)。残る 1 問 (準1級 第5回 大問2[A] 空所 1) は 3 名とも別解ありと指摘 → DROP_Q で落とした。追加 (同日): 準1級 第10・11回 (語彙 36 問・長文 本文 8 本 26 問) と、作者の配布前検査で直った 第7回 語彙18・第8回 語彙7 を同じく 3 名で盲検 → 語彙 38 問・長文 26 問とも全員一致・指摘なし。生の解答はコミットしない。",
+  "retired_sources": [
+   {
+    "source": "eikenp1-honban-r7-18",
+    "stem": "To reduce paper use while still providing a few copies for those who needed them, the office decided to (   ) printed handouts and send most documents electronically."
+   }
+  ],
   "note": "全部トリリオンAI塾の書き下ろし (過去問なし)。v1 と同じ単元名・形式。解説は値で書く (①や『選択肢2』を書かない)。level は全問 standard。"
  },
  "questions": [
@@ -5721,15 +5727,15 @@
    "subject": "eiken",
    "unit": "準1級 句動詞・熟語",
    "level": "standard",
-   "stem": "To reduce paper use while still providing a few copies for those who needed them, the office decided to (   ) printed handouts and send most documents electronically.",
+   "stem": "To reduce paper use, the office decided to (   ) printed handouts, lowering the number from one hundred to ten per meeting and sending most documents electronically.",
    "choices": [
     "cut back on",
     "catch up on",
-    "hold on to",
+    "do away with",
     "make up for"
    ],
    "answer": 0,
-   "explanation": "正解は cut back on（量を減らす・削減する）。完全廃止せず、量や支出を少なくする。cut back on handouts。 誤答: catch up on（遅れを取り戻す）：配布物の量を減らすという方針ではない。 ／ hold on to（手放さずに保つ）：印刷物を維持する方向で、電子送付への変更と異なる。 ／ make up for（埋め合わせる）：不足を補うことで、使用量の削減ではない。 訳: 必要な人には少数の紙の資料を渡しつつ紙の使用を減らすため、事務所は印刷配布物を削減し、文書の大部分を電子的に送ることにした。",
+   "explanation": "正解は cut back on（量を減らす・削減する）。枚数を100枚から10枚に減らすという数量削減。完全廃止ではない。cut back on handouts。 誤答: catch up on（遅れを取り戻す）：配布物の量を減らすという方針ではない。 ／ do away with（廃止する・なくす）：会議ごとに10枚の印刷配布物を残すので、使用を完全に廃止することではない。 ／ make up for（埋め合わせる）：不足を補うことで、使用量の削減ではない。 訳: 紙の使用を減らすため、事務所は印刷配布物を削減し、会議ごとの枚数を100枚から10枚に減らして、文書の大部分を電子的に送ることにした。",
    "source": "eikenp1-honban-r7-18"
   },
   {
@@ -5828,13 +5834,13 @@
    "level": "standard",
    "stem": "The authorities sent additional police officers to the district after an (   ) of violence left local officers unable to maintain order on their own.",
    "choices": [
-    "aftermath",
-    "deficiency",
+    "inventory",
+    "absence",
     "outbreak",
     "intervention"
    ],
    "answer": 2,
-   "explanation": "正解は outbreak（突発的な発生）。暴力など望ましくない出来事の突然の発生。an outbreak of violence。 誤答: aftermath（余波・事後の状況）：暴力の発生後の状況でなく、暴力が突発的に起きたこと。 ／ deficiency（不足・欠乏）：暴力の不足は治安維持が困難になる原因ではない。 ／ intervention（介入）：当局が追加の警官を送る前に、暴力が発生している。 訳: 暴力が突発的に起き、地元の警官だけでは秩序を維持できなくなったため、当局は追加の警官をその地区に送った。",
+   "explanation": "正解は outbreak（突発的な発生）。暴力など望ましくない出来事の突然の発生。an outbreak of violence。 誤答: inventory（目録・在庫一覧）：暴力の一覧を作成したことではなく、暴力が発生して警官だけでは対応できなくなった場面。 ／ absence（不在・欠如）：暴力がないことは、地元の警官だけで秩序を維持できなくなる原因とはならない。 ／ intervention（介入）：当局が追加の警官を送る前に、暴力が発生している。 訳: 暴力が突発的に起き、地元の警官だけでは秩序を維持できなくなったため、当局は追加の警官をその地区に送った。",
    "source": "eikenp1-honban-r8-7"
   },
   {
@@ -6271,6 +6277,546 @@
    "answer": 0,
    "explanation": "正解は account for（説明する・原因となる）。増加の理由を説明する原因。account for most of the increase。 誤答: come across（偶然出会う・見つける）：燃料価格が費用増の原因になっており、偶然の発見ではない。 ／ hold back（抑える）：費用増を引き起こしており、抑制するのでない。 ／ look after（世話をする）：増加を世話するという意味にはならない。 訳: A：今月はなぜ輸送費が高いの。B：燃料価格の上昇が増加の大部分を説明する。配送距離と回数は先月からほとんど変わっていないんだ。",
    "source": "eikenp1-honban-r9-18"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The ladder was in a (   ) position, balanced on uneven ground beside the wall. Before climbing, the worker moved it to a firm, level surface to prevent it from falling.",
+   "choices": [
+    "prominent",
+    "precarious",
+    "serene",
+    "permanent"
+   ],
+   "answer": 1,
+   "explanation": "正解は precarious（不安定な・危険な）。uneven groundとfallingの危険が手掛かり。a precarious position。 誤答: prominent（目立つ・著名な）：目立つ位置かどうかでなく、倒れる危険を問題にしている。 ／ serene（穏やかな）：落ち着いた雰囲気でなく、足場の安全性の説明。 ／ permanent（恒久的な）：登る前に位置を変えており、恒久的な設置ではない。 訳: はしごは壁の横の凹凸のある地面に置かれ、不安定な位置にあった。作業員は登る前に、倒れないよう堅く平らな場所へ移した。",
+   "source": "eikenp1-honban-r10-1"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The new software will (   ) communication between the two offices. It allows staff to share documents instantly, making exchanges easier without changing who is responsible for approving the work.",
+   "choices": [
+    "obstruct",
+    "monopolize",
+    "authorize",
+    "facilitate"
+   ],
+   "answer": 3,
+   "explanation": "正解は facilitate（容易にする・促進する）。making exchanges easierの言い換え。facilitate communication。 誤答: obstruct（妨げる）：やり取りが容易になるので、妨害ではない。 ／ monopolize（独占する）：通信を自分だけのものにするとは述べていない。 ／ authorize（正式に許可する）：業務の承認権限を変える仕組みではない。 訳: 新しいソフトは二つの事務所の連絡を容易にする。職員は文書を即座に共有でき、業務の承認責任者を変えずにやり取りしやすくなる。",
+   "source": "eikenp1-honban-r10-2"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The inspection revealed a serious (   ) in the building's safety equipment. Several required fire alarms were missing, and the owner had to install them before the building could reopen.",
+   "choices": [
+    "deficiency",
+    "abundance",
+    "consistency",
+    "distinction"
+   ],
+   "answer": 0,
+   "explanation": "正解は deficiency（不足・欠陥）。必要な物が欠けている。a deficiency in ...。 誤答: abundance（豊富さ）：警報器が不足しているので、豊富なのではない。 ／ consistency（一貫性）：設備が欠けているという不備を表す必要がある。 ／ distinction（相違・区別）：他との違いを区別する場面ではなく、必要な設備の不足。 訳: 点検で建物の安全設備に重大な不足が判明した。必要な火災警報器がいくつか欠けており、再開する前に所有者は設置しなければならなかった。",
+   "source": "eikenp1-honban-r10-3"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "After several easy victories, the players became (   ) and stopped practicing seriously. Their coach warned that being too satisfied with past success could leave them unprepared for a stronger opponent.",
+   "choices": [
+    "vigilant",
+    "despondent",
+    "complacent",
+    "submissive"
+   ],
+   "answer": 2,
+   "explanation": "正解は complacent（現状に満足して油断した）。too satisfiedと練習の停止から、自己満足による油断。 誤答: vigilant（警戒している）：真剣な練習をやめており、警戒を続ける態度と逆。 ／ despondent（落胆した）：勝利に満足したのであり、失望していない。 ／ submissive（従順な）：他者に従う態度でなく、成功に満足しすぎた態度。 訳: 何度か楽に勝つと、選手たちは油断し、真剣な練習をやめた。監督は過去の成功に満足しすぎると強敵への準備ができなくなると警告した。",
+   "source": "eikenp1-honban-r10-4"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The scientist used the original laboratory records to (   ) the claim that the results had been invented. The dated measurements showed that the reported observations had actually been made.",
+   "choices": [
+    "reinforce",
+    "refute",
+    "fabricate",
+    "disregard"
+   ],
+   "answer": 1,
+   "explanation": "正解は refute（反証する・誤りを証明する）。捏造という主張が誤りだと証拠で示す。refute a claim。 誤答: reinforce（強める）：記録は捏造説を強めるのでなく、否定する。 ／ fabricate（捏造する）：原記録を示して疑いに反証しており、新たな主張を捏造するのではない。 ／ disregard（無視する）：証拠で答えているので、単に無視するのではない。 訳: 科学者は実験室の原記録を使い、結果が捏造されたという主張に反証した。日付入りの測定記録は、報告された観察が実際に行われたことを示した。",
+   "source": "eikenp1-honban-r10-5"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The local court had no (   ) over the case because the alleged crime had taken place in another country. The lawyer therefore asked the appropriate foreign authorities to handle it.",
+   "choices": [
+    "jurisdiction",
+    "verdict",
+    "testimony",
+    "immunity"
+   ],
+   "answer": 0,
+   "explanation": "正解は jurisdiction（司法権・管轄）。どの裁判所が事件を扱う権限を持つか。jurisdiction over a case。 誤答: verdict（評決）：事件を扱う権限の問題で、裁判で出す結論ではない。 ／ testimony（証言）：裁判所自身が証言を持つかという場面ではない。 ／ immunity（免責・免疫）：裁判所が責任を免れるかでなく、事件を扱う権限の有無。 訳: 申し立てられた犯罪は別の国で起きたため、地元の裁判所にその事件を扱う管轄権はなかった。弁護士は該当する外国の当局に対応を求めた。",
+   "source": "eikenp1-honban-r10-6"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "A: Is this version of the announcement acceptable? B: Yes. It is (   ): it gives all the essential information in just two sentences, without any unnecessary explanation or repeated details.",
+   "choices": [
+    "verbose",
+    "evasive",
+    "inaccurate",
+    "succinct"
+   ],
+   "answer": 3,
+   "explanation": "正解は succinct（簡潔な）。必要な情報を保って短く述べる。a succinct announcement。 誤答: verbose（冗長な）：二文で余分な説明がないので逆。 ／ evasive（はぐらかすような）：必要な情報は全て与えており、回答を避けていない。 ／ inaccurate（不正確な）：情報の誤りでなく、短く要点を述べる長所の説明。 訳: A：この告知の版でいいですか。B：ええ。簡潔ですね。不要な説明や詳細の繰り返しを入れず、わずか二文で必要な情報を全て示しています。",
+   "source": "eikenp1-honban-r10-7"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "Closing the only bridge could (   ) the town's existing traffic problems. Drivers would have to use longer routes through narrow residential streets, adding to delays rather than reducing them.",
+   "choices": [
+    "alleviate",
+    "resolve",
+    "exacerbate",
+    "conceal"
+   ],
+   "answer": 2,
+   "explanation": "正解は exacerbate（悪化させる）。adding to delaysとrather than reducingが悪化を示す。 誤答: alleviate（軽減する）：遅れを増やすので、軽減とは逆。 ／ resolve（解決する）：既存の問題をさらに深刻にする。 ／ conceal（隠す）：問題を見えなくするのでなく、混雑を増やす。 訳: 唯一の橋を閉鎖すると、町の既存の交通問題が悪化しかねない。運転手は狭い住宅街を通る遠回りの道を使う必要があり、遅れは減るどころか増える。",
+   "source": "eikenp1-honban-r10-8"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The two countries signed an international (   ) to protect migratory birds. The agreement sets out the responsibilities each government accepts, including measures to safeguard breeding areas along the birds' routes.",
+   "choices": [
+    "convention",
+    "hypothesis",
+    "variation",
+    "inventory"
+   ],
+   "answer": 0,
+   "explanation": "正解は convention（条約・協定）。signedとagreementから、国際的な取り決めという意味。会議・慣習という別の意味と区別する。 誤答: hypothesis（仮説）：政府間で署名する合意であり、検証前の説明ではない。 ／ variation（変化・変種）：政府の責任を定める取り決めを指す。 ／ inventory（在庫・目録）：鳥や物品の一覧ではなく、署名された合意。 訳: 二国は渡り鳥を保護する国際条約に署名した。協定には、鳥の移動経路にある繁殖地の保全策を含め、各政府が引き受ける責任が定められている。",
+   "source": "eikenp1-honban-r10-9"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The coastguard warned residents of the (   ) storm. It had not reached the island yet, but forecasts indicated that it would arrive within an hour, so people began securing their homes.",
+   "choices": [
+    "receding",
+    "impending",
+    "dormant",
+    "retrospective"
+   ],
+   "answer": 1,
+   "explanation": "正解は impending（差し迫った・間もなく起こる）。not ... yetとwithin an hourから、近く起こる状況。 誤答: receding（遠ざかっている）：到来前で、去りつつある嵐ではない。 ／ dormant（休止状態の）：一時間以内に来る活動中の嵐を表さない。 ／ retrospective（回顧的な）：過去を振り返るのでなく、これからの嵐への警告。 訳: 沿岸警備隊は迫っている嵐を住民に警告した。まだ島に達していなかったが、予報は一時間以内の到来を示し、人々は家の安全対策を始めた。",
+   "source": "eikenp1-honban-r10-10"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "At first the two paintings looked identical, but an expert could (   ) small differences in the brushwork. After examining them closely, she pointed out details that the other visitors had overlooked.",
+   "choices": [
+    "eliminate",
+    "manufacture",
+    "disperse",
+    "discern"
+   ],
+   "answer": 3,
+   "explanation": "正解は discern（見分ける・識別する）。気付きにくい違いを観察して認める。discern differences。 誤答: eliminate（除去する）：絵の違いを消すのでなく、見つける。 ／ manufacture（製造する）：新たに違いを作るのでなく、既にある違いを観察する。 ／ disperse（散らす）：違いを各地へ散らすという意味にはならない。 訳: 初めは二枚の絵が同一に見えたが、専門家は筆遣いの小さな違いを見分けられた。詳しく観察し、他の来館者が見落とした細部を指摘した。",
+   "source": "eikenp1-honban-r10-11"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The family showed remarkable courage in the face of (   ). Despite losing their home and income after the flood, they supported one another and gradually rebuilt their lives.",
+   "choices": [
+    "adversity",
+    "prosperity",
+    "affluence",
+    "conformity"
+   ],
+   "answer": 0,
+   "explanation": "正解は adversity（逆境・困難）。家と収入の喪失という困難。in the face of adversity。 誤答: prosperity（繁栄）：財産や収入を失った状況と逆。 ／ affluence（裕福さ）：困難な再建の場面であり、豊かな暮らしではない。 ／ conformity（同調・従うこと）：多数派や規則に従うことを問題にしていない。 訳: 一家は逆境に直面しても並外れた勇気を示した。洪水後に家と収入を失ったが、互いに支え合い、少しずつ生活を再建した。",
+   "source": "eikenp1-honban-r10-12"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The reviewer remained (   ) about the company's claim that its device would last for twenty years. She wanted independent test results before accepting the promise, rather than trusting the advertisement alone.",
+   "choices": [
+    "credulous",
+    "indifferent",
+    "skeptical",
+    "enthusiastic"
+   ],
+   "answer": 2,
+   "explanation": "正解は skeptical（懐疑的な・疑っている）。証拠がないまま主張を受け入れず疑問を持つ。skeptical about ...。 誤答: credulous（信じやすい）：広告だけで信用せず、別の証拠を求めている。 ／ indifferent（無関心な）：根拠を求めており、関心がないのではない。 ／ enthusiastic（熱心な・乗り気の）：主張に疑問を持つ態度で、積極的な賛同ではない。 訳: 評論家は装置が二十年間もつという会社の主張に懐疑的だった。広告だけを信用せず、約束を受け入れる前に独立した試験結果を求めた。",
+   "source": "eikenp1-honban-r10-13"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "As the bread baked, a pleasant smell began to (   ) the whole house. Even people upstairs could detect it, although the oven was in the kitchen on the ground floor.",
+   "choices": [
+    "seclude",
+    "renovate",
+    "deceive",
+    "permeate"
+   ],
+   "answer": 3,
+   "explanation": "正解は permeate（隅々まで広がる・浸透する）。発生源から離れた場所も含め全体に広がる。permeate the house。 誤答: seclude（隔離する）：香りが家を人目から隔離するわけではない。 ／ renovate（改修する）：家を建て直すのでなく、香りが広がる。 ／ deceive（だます）：香りの広がりを表す必要があり、家をだますのではない。 訳: パンが焼けると、よい香りが家中に広がり始めた。オーブンは一階の台所にあったが、二階の人々にも香りが分かった。",
+   "source": "eikenp1-honban-r10-14"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 句動詞・熟語",
+   "level": "standard",
+   "stem": "During her long career, the actor managed to (   ) an impressive list of awards. The exhibition displayed the prizes she had earned for performances in both films and stage productions.",
+   "choices": [
+    "write off",
+    "chalk up",
+    "pass down",
+    "dispose of"
+   ],
+   "answer": 1,
+   "explanation": "正解は chalk up（記録する・獲得する）。成果や勝利などを積み上げて記録する。chalk up awards。 誤答: write off（帳消しにする・見限る）：得た賞を失敗として処理するのでなく、獲得を述べる。 ／ pass down（伝える・受け継がせる）：他者に賞を渡すのでなく、本人の受賞実績。 ／ dispose of（処分する）：展示している獲得品を処分したという意味ではない。 訳: 長い経歴の中で、その俳優は見事な数々の賞を獲得した。展示には映画と舞台の両方の演技で得た賞が並んでいた。",
+   "source": "eikenp1-honban-r10-15"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 句動詞・熟語",
+   "level": "standard",
+   "stem": "A: Why did you cancel the magazine subscription? B: I decided to (   ) it after several disappointing issues. I will no longer receive copies, even though my friends still read it.",
+   "choices": [
+    "catch up on",
+    "hold on to",
+    "give up on",
+    "sign up for"
+   ],
+   "answer": 2,
+   "explanation": "正解は give up on（見切りをつける・諦める）。失望してこれ以上続けることを諦める。give up on something。 誤答: catch up on（遅れを取り戻す・未処理のことを済ませる）：未読号を読むのでなく、購読をやめる。 ／ hold on to（手放さずに持つ）：継続ではなく、購読を中止した。 ／ sign up for（申し込む）：すでにあった購読をやめたので、新規申込みではない。 訳: A：なぜ雑誌の購読をやめたの。B：何号か期待外れだったので見切りをつけたんだ。友人たちはまだ読んでいるけれど、僕はもう受け取らない。",
+   "source": "eikenp1-honban-r10-16"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 句動詞・熟語",
+   "level": "standard",
+   "stem": "We should (   ) traffic delays when planning the journey. Allowing an extra thirty minutes will help us arrive on time even if the roads are busier than expected.",
+   "choices": [
+    "allow for",
+    "take after",
+    "take over",
+    "set off"
+   ],
+   "answer": 0,
+   "explanation": "正解は allow for（考慮に入れる・見込む）。遅れの可能性を計画に含めて余裕を持たせる。allow for delays。 誤答: take after（似ている）：人に似ることを表す熟語で、遅れを予定に見込む意味ではない。 ／ take over（引き継ぐ・乗っ取る）：遅れの管理を誰かから引き継ぐ場面ではない。 ／ set off（出発する・引き起こす）：遅れを引き起こすのでなく、予測して備える。 訳: 旅程を立てる際には交通の遅れを見込むべきだ。三十分余分に確保すれば、予想以上に道路が混んでも時間どおりに到着しやすい。",
+   "source": "eikenp1-honban-r10-17"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 句動詞・熟語",
+   "level": "standard",
+   "stem": "The researchers plan to (   ) the interview data with a statistical analysis. The second method should support the personal accounts if similar patterns appear across a larger sample.",
+   "choices": [
+    "wipe out",
+    "back up",
+    "set aside",
+    "cut off"
+   ],
+   "answer": 1,
+   "explanation": "正解は back up（裏付ける・支える）。supportが手掛かり。ここでは予備コピーではなく、追加の証拠で支える意味。 誤答: wipe out（全滅させる・消す）：面談結果を消すのでなく、分析で支える。 ／ set aside（脇に置く・取っておく）：面談結果を使わずに置くのでなく、証拠を加える。 ／ cut off（遮断する・断ち切る）：データを遮断するのでなく、裏付ける。 訳: 研究者は統計分析で面談データを裏付ける予定だ。第二の方法は、より大きい標本で同様の傾向が見られれば、個人の報告を支えるはずだ。",
+   "source": "eikenp1-honban-r10-18"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The rescue team faced (   ) rain throughout the night. It continued without a break, and the workers had no opportunity to dry their clothes before returning to the flooded streets.",
+   "choices": [
+    "intermittent",
+    "superficial",
+    "relentless",
+    "provisional"
+   ],
+   "answer": 2,
+   "explanation": "正解は relentless（容赦なく続く・絶え間ない）。continued without a breakが、容赦なく続くという意味を示す。relentless rain。 誤答: intermittent（断続的な）：雨は途切れず続き、断続的ではない。 ／ superficial（表面的な）：雨の継続性を表す場面で、表面的という性質ではない。 ／ provisional（暫定的な）：仮の取り決めなどに使い、降り続く雨の説明にはならない。 訳: 救助隊は一晩中、絶え間ない雨に見舞われた。途切れることなく降り続き、作業員は洪水に見舞われた通りへ戻る前に服を乾かす機会がなかった。",
+   "source": "eikenp1-honban-r11-1"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "Employees must pay for their train tickets themselves, but the company will (   ) them afterward. They need to submit receipts showing the actual costs in order to receive the money back.",
+   "choices": [
+    "reimburse",
+    "notify",
+    "audit",
+    "invoice"
+   ],
+   "answer": 0,
+   "explanation": "正解は reimburse（立て替えた費用を払い戻す）。pay ... themselvesとreceive the money backから、立替費用を払い戻す。reimburse a person。 誤答: notify（通知する）：費用が返金されることを表す動詞が必要で、通知だけではない。 ／ audit（監査する）：領収書は確認するが、従業員への返金そのものを表さない。 ／ invoice（請求書を送る）：会社が従業員に追加請求するのでなく、払った費用を返す。 訳: 従業員は自分で列車の切符代を払う必要があるが、会社は後から払い戻す。返金を受けるには実費を示す領収書を提出する必要がある。",
+   "source": "eikenp1-honban-r11-2"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The new procedure created a (   ): a system intended to reduce paperwork actually required staff to complete more forms. Managers struggled to explain why an efficiency measure had produced the opposite result.",
+   "choices": [
+    "consensus",
+    "hierarchy",
+    "precedent",
+    "paradox"
+   ],
+   "answer": 3,
+   "explanation": "正解は paradox（逆説・一見矛盾した事態）。意図した効率化と、増えた書類仕事という逆の結果の組合せ。 誤答: consensus（意見の一致）：関係者の合意でなく、目的と結果の逆転を述べる。 ／ hierarchy（階層・序列）：職員の上下関係ではない。 ／ precedent（先例）：後の判断の先例になったという説明ではなく、逆の結果が焦点。 訳: 新しい手続きは一見矛盾した事態を生んだ。書類仕事を減らすはずの仕組みが、実際には職員により多くの用紙の記入を求めた。効率化策が逆の結果を生んだ理由を管理者は説明しにくかった。",
+   "source": "eikenp1-honban-r11-3"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The audience broke into (   ) applause when the child finished singing. Nobody had arranged a signal or asked them to clap; their enthusiastic response arose naturally at that moment.",
+   "choices": [
+    "rehearsed",
+    "spontaneous",
+    "reluctant",
+    "inaudible"
+   ],
+   "answer": 1,
+   "explanation": "正解は spontaneous（自然に起こった・自発的な）。合図も依頼もなく、その場で自然に起こった。spontaneous applause。 誤答: rehearsed（練習済みの）：事前の合図や準備による反応ではない。 ／ reluctant（気が進まない）：enthusiasticという熱心な反応と合わない。 ／ inaudible（聞こえない）：拍手が聞こえなかったという説明ではなく、その起こり方が焦点。 訳: 子どもが歌い終わると聴衆は自然に拍手を始めた。合図を決めたり拍手を頼んだりした人はおらず、その場で熱心な反応が自然に生じた。",
+   "source": "eikenp1-honban-r11-4"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "Asked whether she supported the proposal, the mayor gave an (   ) answer. Her qualified remarks left reporters unable to tell whether she would approve the plan or reject it.",
+   "choices": [
+    "equivocal",
+    "affirmative",
+    "unqualified",
+    "interim"
+   ],
+   "answer": 0,
+   "explanation": "正解は equivocal（どちらとも取れる・曖昧な）。approveかrejectかを判断できない。an equivocal answer。 誤答: affirmative（肯定的な）：承認すると明確に答えたわけではない。 ／ unqualified（留保のない・無条件の）：qualified remarksとあるので、留保のない答えではない。 ／ interim（暫定的な）：仮の答えという時間的な位置付けでなく、賛否の不明確さが焦点。 訳: 提案を支持するか尋ねられ、市長はどちらとも取れる答えをした。留保付きの発言から、記者は計画を承認するのか拒否するのか判断できなかった。",
+   "source": "eikenp1-honban-r11-5"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "After months of preparation, the researchers are ready to (   ) on a major study of coastal birds. The project will begin next week and continue through three breeding seasons.",
+   "choices": [
+    "abstain",
+    "persist",
+    "embark",
+    "refrain"
+   ],
+   "answer": 2,
+   "explanation": "正解は embark（着手する・乗り出す）。embark on a studyで研究に着手する。準備後、来週beginする流れ。 誤答: abstain（控える）：abstain fromが基本で、研究を開始する流れにも合わない。 ／ persist（やり続ける）：persist inが基本で、まだ始めていない研究への着手ではない。 ／ refrain（差し控える）：refrain fromが基本で、研究を始める説明と逆。 訳: 何か月も準備した後、研究者たちは沿岸の鳥の大規模研究に着手する準備ができた。計画は来週始まり、三回の繁殖期にわたって続く。",
+   "source": "eikenp1-honban-r11-6"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The ringing phone became a (   ) during the meeting. It posed no danger, but its repeated interruptions irritated everyone and made it difficult for participants to follow the discussion.",
+   "choices": [
+    "menace",
+    "nuisance",
+    "resource",
+    "privilege"
+   ],
+   "answer": 1,
+   "explanation": "正解は nuisance（迷惑なもの・厄介なもの）。危険でなくても、人を困らせたりいらだたせたりするもの。 誤答: menace（脅威）：posed no dangerなので、危険をもたらす脅威ではない。 ／ resource（役立つ資源）：議論を妨げ、役に立つ資源として扱われていない。 ／ privilege（特権）：繰り返す中断で全員が困り、特別な権利や恩恵ではない。 訳: 鳴り続ける電話は会議中の迷惑になった。危険ではなかったが、繰り返す中断が全員をいらだたせ、参加者は議論を追いにくくなった。",
+   "source": "eikenp1-honban-r11-7"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The new evidence helped to (   ) the scientist, whose findings had been dismissed as unreliable. Independent experiments produced the same results, showing that her original conclusions had been justified.",
+   "choices": [
+    "implicate",
+    "suspend",
+    "consult",
+    "vindicate"
+   ],
+   "answer": 3,
+   "explanation": "正解は vindicate（正しさを立証する・汚名を晴らす）。疑われた結論が正当だと証拠で示された。vindicate the scientist。 誤答: implicate（悪事への関与を示す）：疑いを強めるのでなく、研究者の正しさが示された。 ／ suspend（停職させる・停止する）：処分ではなく、結論の正当性が確認された。 ／ consult（相談する）：助言を求める行動でなく、証拠が正しさを示す場面。 訳: 新しい証拠は、結果が信頼できないと退けられていた科学者の正しさを立証する助けとなった。独立した実験で同じ結果が得られ、当初の結論が正当だったと示された。",
+   "source": "eikenp1-honban-r11-8"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "Rice has remained the (   ) crop in the valley for decades. It occupies nearly nine tenths of the cultivated land, while vegetables and other grains share the remaining fields.",
+   "choices": [
+    "marginal",
+    "exclusive",
+    "predominant",
+    "transient"
+   ],
+   "answer": 2,
+   "explanation": "正解は predominant（最も主要な・優勢な）。ほぼ九割を占めるので、最も主要な作物。 誤答: marginal（わずかな・重要性の低い）：耕作地の大半を占め、わずかな作物ではない。 ／ exclusive（唯一の・他を排除する）：野菜と他の穀物も栽培され、米だけではない。 ／ transient（一時的な）：for decadesとremainedから、一時的ではない。 訳: 米は何十年もの間、その谷の最も主要な作物であり続けている。耕作地のほぼ九割を占め、野菜と他の穀物が残りの畑を分け合っている。",
+   "source": "eikenp1-honban-r11-9"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "In (   ), losing that job was a useful turning point for Mina. Looking back several years later, she realized that the setback had led her toward a more satisfying career.",
+   "choices": [
+    "retrospect",
+    "retaliation",
+    "suspense",
+    "reserve"
+   ],
+   "answer": 0,
+   "explanation": "正解は retrospect（振り返ること・回顧）。in retrospectで振り返ってみると。Looking backが対応する。 誤答: retaliation（報復）：何かに仕返しをする話ではない。 ／ suspense（不安な期待・はらはらする状態）：結果を待つ状態でなく、後から過去を評価している。 ／ reserve（蓄え・控え）：in reserveは予備としてであり、過去を振り返る意味にならない。 訳: 振り返ってみると、その仕事を失ったことはミナにとって有益な転機だった。数年後に過去を顧みて、その挫折がより満足できる職業へ導いたと気付いた。",
+   "source": "eikenp1-honban-r11-10"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The price of the metal tends to (   ) sharply. Records show repeated rises and falls from one month to the next, making it difficult for manufacturers to predict their material costs.",
+   "choices": [
+    "stabilize",
+    "fluctuate",
+    "accumulate",
+    "stagnate"
+   ],
+   "answer": 1,
+   "explanation": "正解は fluctuate（上下する・変動する）。repeated rises and fallsが、上下する変動を示す。 誤答: stabilize（安定する）：上昇と下落を繰り返し、安定していない。 ／ accumulate（蓄積する）：量がたまるのでなく、価格が上下する。 ／ stagnate（停滞する）：変化せず停滞するのでなく、大きく変動する。 訳: その金属の価格は大きく変動する傾向がある。記録には月ごとの上昇と下落の繰り返しが見られ、製造業者は材料費を予測しにくい。",
+   "source": "eikenp1-honban-r11-11"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The organizers were disappointed by the residents' (   ) toward the campaign. Although participation was easy, most people showed no interest, asked no questions, and ignored the invitations to get involved.",
+   "choices": [
+    "curiosity",
+    "solidarity",
+    "hostility",
+    "apathy"
+   ],
+   "answer": 3,
+   "explanation": "正解は apathy（無関心）。showed no interestという関心の欠如。apathy toward ...。 誤答: curiosity（好奇心）：質問も興味も示さず、好奇心ではない。 ／ solidarity（連帯）：一緒に関わろうとせず、連帯の説明ではない。 ／ hostility（敵意）：攻撃や反対の行動でなく、関心を示さないことが焦点。 訳: 主催者は運動に対する住民の無関心に落胆した。参加しやすかったのに、ほとんどの人は興味を示さず、質問せず、参加への招待を無視した。",
+   "source": "eikenp1-honban-r11-12"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "Before adding the painting to the catalogue, the curator wanted to (   ) its exact date. She examined old letters and workshop records to establish when the artist had completed it.",
+   "choices": [
+    "ascertain",
+    "presume",
+    "alter",
+    "conceal"
+   ],
+   "answer": 0,
+   "explanation": "正解は ascertain（調べて確かめる）。資料を調べてestablish whenと確定しようとする。ascertain a date。 誤答: presume（推定する・当然と考える）：確かめず仮定するのでなく、資料によって確定する。 ／ alter（変更する）：制作時期を変えるのでなく、実際の時期を調べる。 ／ conceal（隠す）：時期を隠さず、正確に確定して目録へ記載する。 訳: 目録に絵を加える前に、学芸員は正確な制作時期を確かめたかった。画家がいつ完成させたかを確定するため、古い手紙と工房の記録を調べた。",
+   "source": "eikenp1-honban-r11-13"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 単語",
+   "level": "standard",
+   "stem": "The new program is (   ) with the old operating system. It cannot run in that environment, so the office must upgrade its computers before staff can use the software.",
+   "choices": [
+    "consistent",
+    "indispensable",
+    "interchangeable",
+    "incompatible"
+   ],
+   "answer": 3,
+   "explanation": "正解は incompatible（互換性がない・両立しない）。incompatible with ...。その環境で動作できないという不適合。 誤答: consistent（整合した・一貫した）：旧環境に適合しているのでなく、動作できない。 ／ indispensable（不可欠な）：必要性でなく、二つを組み合わせて使えないことが焦点。 ／ interchangeable（互いに置き換えられる）：プログラムと基本ソフトを置き換える説明ではない。 訳: 新しいプログラムは古い基本ソフトと互換性がない。その環境では動かないため、職員が使う前に事務所はコンピューターを更新する必要がある。",
+   "source": "eikenp1-honban-r11-14"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 句動詞・熟語",
+   "level": "standard",
+   "stem": "Our department cannot (   ) any additional projects this month. Everyone is already working at full capacity, and accepting another assignment would prevent us from finishing the tasks we have promised.",
+   "choices": [
+    "hand over",
+    "put off",
+    "take on",
+    "break down"
+   ],
+   "answer": 2,
+   "explanation": "正解は take on（引き受ける）。accepting another assignmentの言い換え。take on projects。 誤答: hand over（引き渡す）：他へ渡すことでなく、追加業務を受ける余力がない。 ／ put off（延期する）：新たな仕事を引き受けるかの話で、すでに受けた仕事の延期ではない。 ／ break down（細分化する・分解する）：仕事を小部分に分ける操作でなく、追加の受注が問題。 訳: 私たちの部署は今月これ以上の計画を引き受けられない。全員がすでに手いっぱいで、別の仕事を受けると約束した仕事を終えられなくなる。",
+   "source": "eikenp1-honban-r11-15"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 句動詞・熟語",
+   "level": "standard",
+   "stem": "Technical changes are occurring so rapidly that the staff struggle to (   ) them. They attend regular training sessions to avoid falling behind developments in the equipment they use every day.",
+   "choices": [
+    "look down on",
+    "keep up with",
+    "get rid of",
+    "fall out with"
+   ],
+   "answer": 1,
+   "explanation": "正解は keep up with（遅れずについていく）。avoid falling behindから、変化に遅れずついていく。 誤答: look down on（見下す）：進歩を軽視するのでなく、知識を更新して追いつこうとする。 ／ get rid of（取り除く）：変化を除去するのでなく、それについていくための研修。 ／ fall out with（仲たがいする）：人との不和ではなく、技術進歩への対応。 訳: 技術の変化が非常に速く、職員はそれについていくのに苦労している。日々使う設備の進歩に遅れないよう、定期研修に参加している。",
+   "source": "eikenp1-honban-r11-16"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 句動詞・熟語",
+   "level": "standard",
+   "stem": "The cabin has no internet connection, so we will have to (   ) online entertainment for a few days. We can still read, walk, and play board games during our stay.",
+   "choices": [
+    "take over",
+    "bring up",
+    "take up",
+    "do without"
+   ],
+   "answer": 3,
+   "explanation": "正解は do without（なしで済ませる）。接続がないため、オンライン娯楽を利用せずに過ごす。 誤答: take over（引き継ぐ・支配する）：娯楽の運営を引き継ぐ話ではない。 ／ bring up（話題に出す）：オンライン娯楽について話せないのでなく、利用できない。 ／ take up（始める・取り組む）：接続がなく、オンライン娯楽を新たに始めるのでなく、なしで過ごす。 訳: 小屋にはインターネット接続がないので、数日間はオンライン娯楽なしで過ごさなければならない。滞在中も読書、散歩、ボードゲームはできる。",
+   "source": "eikenp1-honban-r11-17"
+  },
+  {
+   "subject": "eiken",
+   "unit": "準1級 句動詞・熟語",
+   "level": "standard",
+   "stem": "Following a sharp decline in orders, the factory decided to (   ) some employees. Their positions were eliminated to reduce costs, even though the workers had performed their duties satisfactorily.",
+   "choices": [
+    "take after",
+    "lay off",
+    "catch up with",
+    "look up to"
+   ],
+   "answer": 1,
+   "explanation": "正解は lay off（人員削減で解雇する）。職がなくなり、勤務態度でなく費用削減が理由。lay off employees。 誤答: take after（人に似ている）：従業員と似るという話ではない。 ／ catch up with（追いつく）：従業員に追いつくことでなく、職を廃止する。 ／ look up to（尊敬する）：働きぶりの評価でなく、人員削減の決定が焦点。 訳: 受注が急減したため、工場は一部の従業員を人員削減で解雇すると決めた。働きぶりに問題はなかったが、費用を減らすため職が廃止された。",
+   "source": "eikenp1-honban-r11-18"
   }
  ]
 }

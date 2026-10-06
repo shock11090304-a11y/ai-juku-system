@@ -8,8 +8,10 @@
   塾長「数学Ⅲは自動配信は外して」→ 弱点ルーティンが数学を科目まるごとで配るときは 数学III の単元を出さない。
 
 固定する性質:
-  1. 同期: (subject, source) が一致する行の unit / explanation をシードに合わせる。選択肢は、配信していない問題だけ直し、
-     配信済みの問題は選択肢も解説も据え置いて kept_choices_delivered に数える。並び (表示位置) だけ違うのは書き換えない。
+  1. 同期: (subject, source, stem) が一致する行の unit / explanation をシードに合わせる。選択肢は、配信していない問題と、配信済みでも
+     正解の文と位置が同じ問題 (誤答の差し替えだけ) は直し、正解が動く配信済みの問題は選択肢も解説も据え置いて kept_choices_delivered に数える。
+     並び (表示位置) だけ違うのは書き換えない。source が束ごとの名前の在庫は、問題文なしでは触らない (ambiguous)。
+     作り直した問題の旧版は (source, 旧い問題文) で止め、直した版は残る。
      同じ source が 2 行あれば 1 行だけ残して active=0 (deduped)。
      retire_sources は active=0 (行は消さない)。dry_run は数えるだけ。2 回目は何も書き換えない (押し直しても同じ)。
      汎用の source (pool) と知らない source は触らない。認証が無ければ 401。stem は変えない
@@ -58,7 +60,7 @@ def sync_like_ceo(api, questions, retire, dry=False):
     """CEO の 📐 ボタンと同じ送り方 (400 問ずつ・止める問題は 1 本目だけ)"""
     tot = {}
     for i in range(0, len(questions), 400):
-        part = [{"source": q["source"], "unit": q["unit"], "explanation": q["explanation"], "choices": q["choices"], "answer": q["answer"]}
+        part = [{"source": q["source"], "stem": q["stem"], "unit": q["unit"], "explanation": q["explanation"], "choices": q["choices"], "answer": q["answer"]}
                 for q in questions[i:i + 400]]
         code, d = sync(api, {"subject": "math", "questions": part, "retire_sources": retire if i == 0 else [], "dry_run": dry})
         tot.setdefault("status", set()).add(code)
@@ -93,13 +95,27 @@ def main():
     for src in old_expl:
         execute(mod, "UPDATE grammar_questions SET explanation = ? WHERE source = ?", ("古い解説 3^{-1} √12", src))
     chg = [wb[5], wb[6]]
-    for q in chg:
-        old = list(q["choices"]); old[(q["answer"] + 1) % 4] = old[(q["answer"] + 1) % 4] + "（旧）"
-        execute(mod, "UPDATE grammar_questions SET choices = ? WHERE source = ?", (json.dumps(old, ensure_ascii=False), q["source"]))
-    delivered_q = by_src[chg[1]["source"]]
-    execute(mod, "UPDATE grammar_questions SET explanation = ? WHERE source = ?", ("配信済みの古い解説（古い誤答の説明）", chg[1]["source"]))
+    # chg[0] = 配信していない問題の誤答が違う → 直る
+    q0 = chg[0]; old = list(q0["choices"]); old[(q0["answer"] + 1) % 4] += "（旧）"
+    execute(mod, "UPDATE grammar_questions SET choices = ? WHERE source = ?", (json.dumps(old, ensure_ascii=False), q0["source"]))
+    # chg[1] = 配信済みで、旧版は正解の位置も違う (誤答も違う) → 据え置き (生徒の解答の番号と食い違う)
+    q1 = chg[1]; old = list(q1["choices"]); old[(q1["answer"] + 1) % 4] += "（旧）"; old = old[1:] + old[:1]
+    execute(mod, "UPDATE grammar_questions SET choices = ?, answer = ?, explanation = ? WHERE source = ?",
+            (json.dumps(old, ensure_ascii=False), (q1["answer"] - 1) % 4, "配信済みの古い解説（古い誤答の説明）", q1["source"]))
+    # same_key = 配信済みだが、正解の文と位置は同じで誤答だけ違う (英検 準1級 第8回 Q7 の形) → 配信済みでも直る
+    qk = wb[9]; old = list(qk["choices"]); old[(qk["answer"] + 2) % 4] += "（別解になりうる旧い誤答）"
+    execute(mod, "UPDATE grammar_questions SET choices = ?, explanation = ? WHERE source = ?",
+            (json.dumps(old, ensure_ascii=False), "旧い誤答の解説", qk["source"]))
+    # qa = 配信済み・正解の文と位置は同じだが、提出済みの解答が「差し替える誤答」の番号を選んでいる → 据え置き (過去の解答の表示が化ける)
+    qa = wb[10]; old = list(qa["choices"]); ci = (qa["answer"] + 1) % 4; old[ci] += "（生徒が選んだ旧い誤答）"
+    execute(mod, "UPDATE grammar_questions SET choices = ?, explanation = ? WHERE source = ?",
+            (json.dumps(old, ensure_ascii=False), "旧い解説 (選ばれた誤答の説明)", qa["source"]))
+    delivered_q = by_src[q1["source"]]
     execute(mod, "INSERT INTO grammar_drills (subject, title, unit, question_ids, created_by) VALUES ('math', 'テスト配信', '数学', ?, 'admin')",
-            (json.dumps([delivered_q["id"]]),))
+            (json.dumps([delivered_q["id"], by_src[qk["source"]]["id"], by_src[qa["source"]]["id"]]),))
+    execute(mod, "INSERT INTO grammar_drill_assignments (drill_id, student_id, status, score_correct, score_total, answers_json) "
+                 "VALUES ((SELECT MAX(id) FROM grammar_drills), 1, 'completed', 0, 3, ?)",
+            (json.dumps({str(by_src[qa["source"]]["id"]): ci}),))
     reorder = wb[7]
     ch = list(reorder["choices"]); a = reorder["answer"]
     rot = ch[1:] + ch[:1]
@@ -123,10 +139,12 @@ def main():
     print("\n[2] 認証・dry_run")
     code, _ = sync(api, {"subject": "math", "questions": []}, auth=False)
     check("認証が無ければ 401", code == 401, str(code))
+    code, d = sync(api, {"subject": "math", "questions": [], "retire_sources": [], "dry_run": True})
+    check("新しい照合の印 match='source+stem' を返す (CEO はこれが無い古いサーバでは同期も取込もしない)", code == 200 and d.get("match") == "source+stem", str(d))
     t = sync_like_ceo(api, qs, retire, dry=True)
-    check(f"dry_run は数えるだけ (単元 2・解説 3・選択肢 1・配信済み据え置き 1・二重の行 1・止める {len(retire)})",
-          t["status"] == {200} and t["updated_unit"] == 2 and t["updated_explanation"] == 3 and t["updated_choices"] == 1
-          and t["kept_choices_delivered"] == 1 and t["deduped"] == 1 and t["retired"] == len(retire), str(t))
+    check(f"dry_run は数えるだけ (単元 2・解説 4・選択肢 2・配信済み据え置き 2・二重の行 1・止める {len(retire)})",
+          t["status"] == {200} and t["updated_unit"] == 2 and t["updated_explanation"] == 4 and t["updated_choices"] == 2
+          and t["kept_choices_delivered"] == 2 and t["deduped"] == 1 and t["retired"] == len(retire), str(t))
     check("dry_run のあとも行は直る前のまま",
           rows(mod, "SELECT unit FROM grammar_questions WHERE source = ?", (wb[0]["source"],))[0]["unit"] == "数学C 複素数平面"
           and rows(mod, "SELECT COUNT(*) AS n FROM grammar_questions WHERE active = 0")[0]["n"] == 0)
@@ -135,16 +153,20 @@ def main():
     t = sync_like_ceo(api, qs, retire)
     check("応答: matched = シードの全問・not_found 0・invalid 0",
           t["status"] == {200} and t["ok"] == {True} and t["matched"] == len(qs) and t["not_found"] == 0 and t["invalid"] == 0, str(t))
-    check("単元 2・解説 3・選択肢 1 を直し、配信済み 1 問は選択肢も解説も据え置き・二重の行 1 を止める・retired を止める",
-          t["updated_unit"] == 2 and t["updated_explanation"] == 3 and t["updated_choices"] == 1
-          and t["kept_choices_delivered"] == 1 and t["deduped"] == 1 and t["multi_rows"] == 1 and t["retired"] == len(retire), str(t))
+    check("単元 2・解説 4・選択肢 2 を直し (配信済みでも正解が同じ 1 問を含む)、正解が動く配信済み 1 問は選択肢も解説も据え置き・二重の行 1・retired を止める",
+          t["updated_unit"] == 2 and t["updated_explanation"] == 4 and t["updated_choices"] == 2
+          and t["kept_choices_delivered"] == 2 and t["deduped"] == 1 and t["multi_rows"] == 1 and t["retired"] == len(retire), str(t))
     now = {r["source"]: r for r in rows(mod, "SELECT source, unit, explanation, choices, answer, stem, active FROM grammar_questions "
                                          "WHERE subject = 'math' ORDER BY active ASC, id DESC")}   # 同じ source が 2 行なら active の行を後に読む
     check("単元がシードどおりに戻る", all(now[s]["unit"] == next(q["unit"] for q in wb if q["source"] == s) for s in old_unit))
     check("解説がシードどおりに戻る", all(now[s]["explanation"] == next(q["explanation"] for q in wb if q["source"] == s) for s in old_expl))
     c0 = chg[0]
     check("配信していない問題の選択肢はシードどおり", json.loads(now[c0["source"]]["choices"]) == c0["choices"] and now[c0["source"]]["answer"] == c0["answer"])
-    check("配信済みの問題の選択肢は据え置き (生徒の解答の番号と食い違わない)", "（旧）" in now[chg[1]["source"]]["choices"])
+    check("配信済みで正解の位置が動く問題の選択肢は据え置き (生徒の解答の番号と食い違わない)", "（旧）" in now[chg[1]["source"]]["choices"])
+    check("配信済みで、提出済みの解答が選んだ番号の誤答が変わる問題は据え置き (過去の解答が別の文に化けない)",
+          "（生徒が選んだ旧い誤答）" in now[qa["source"]]["choices"] and now[qa["source"]]["explanation"] == "旧い解説 (選ばれた誤答の説明)")
+    check("配信済みでも正解の文と位置が同じ問題は、誤答と解説を直す (採点は変わらない)",
+          json.loads(now[qk["source"]]["choices"]) == qk["choices"] and now[qk["source"]]["explanation"] == qk["explanation"])
     check("配信済みで選択肢を据え置いた問題は解説も据え置き (【よくある誤り】が画面の誤答と食い違わない)",
           now[chg[1]["source"]]["explanation"] == "配信済みの古い解説（古い誤答の説明）")
     dup_rows = rows(mod, "SELECT id, unit, active FROM grammar_questions WHERE source = ? ORDER BY id", (dupq["source"],))
@@ -157,7 +179,7 @@ def main():
     t2 = sync_like_ceo(api, qs, retire)
     check("2 回目は何も書き換えない (押し直しても同じ)",
           t2["updated_unit"] == t2["updated_explanation"] == t2["updated_choices"] == t2["retired"] == t2["deduped"] == 0
-          and t2["already_retired"] == len(retire) and t2["kept_choices_delivered"] == 1, str(t2))
+          and t2["already_retired"] == len(retire) and t2["kept_choices_delivered"] == 2, str(t2))
     code, d = sync(api, {"subject": "math", "questions": [{"source": "pool", "unit": "基礎数学 微積", "explanation": "x"}],
                          "retire_sources": ["pool", "mathwb-no-such"]})
     check("汎用 source は invalid・知らない source は not_found に数えるだけ",
@@ -223,6 +245,30 @@ def main():
     picks = mod._weakness_routine_pick_drills(c, sid)
     conn.close()
     check("数学III 以外の数学の弱点があれば数学 (科目まるごと) も候補に入る", {"math", "english"} <= {p_["subject"] for p_ in picks}, str(picks))
+
+    print("\n[7] source が束ごとの名前の在庫 (英文法の manual-drill-v1 など) は、問題文なしの同期・取り外しで触らない")
+    for k in range(3):
+        execute(mod, "INSERT INTO grammar_questions (subject, unit, level, stem, choices, answer, explanation, source) VALUES "
+                     "('english', '時制', 'standard', ?, ?, 0, 'もとの解説', 'manual-drill-v1')", (f"束の問題 {k}", json.dumps(["a", "b", "c", "d"])))
+    code, d = sync(api, {"subject": "english", "questions": [{"source": "manual-drill-v1", "unit": "時制", "explanation": "上書き"}],
+                         "retire_sources": ["manual-drill-v1"]})
+    eng = rows(mod, "SELECT explanation, active FROM grammar_questions WHERE source = 'manual-drill-v1'")
+    check("問題文なしで送ると ambiguous に数えて書き換えも取り外しもしない",
+          code == 200 and d["ambiguous"] == 2 and all(r_["explanation"] == "もとの解説" and r_["active"] == 1 for r_ in eng), str(d))
+    code, d = sync(api, {"subject": "english", "questions": [{"source": "manual-drill-v1", "stem": "束の問題 1", "unit": "時制", "explanation": "直した解説"}]})
+    eng = {r_["stem"]: r_ for r_ in rows(mod, "SELECT stem, explanation FROM grammar_questions WHERE source = 'manual-drill-v1'")}
+    check("問題文つきなら、その 1 問だけ直す",
+          d["updated_explanation"] == 1 and eng["束の問題 1"]["explanation"] == "直した解説"
+          and eng["束の問題 0"]["explanation"] == eng["束の問題 2"]["explanation"] == "もとの解説", str(d))
+    print("\n[8] 作り直した問題の旧版だけを (source, 旧い問題文) で止める (英検 準1級 第7回 Q18 の形)")
+    for st in ("旧い問題文 (   ).", "直した問題文 (   )."):
+        execute(mod, "INSERT INTO grammar_questions (subject, unit, level, stem, choices, answer, explanation, source) VALUES "
+                     "('eiken', '準1級 単語', 'standard', ?, ?, 0, '解説', 'eikenp1-test-18')", (st, json.dumps(["a", "b", "c", "d"])))
+    code, d = sync(api, {"subject": "eiken", "questions": [], "retire_sources": ["eikenp1-test-18"]})
+    check("source だけで止めようとしても、問題文の違う生きている行が 2 つなら止めない", d.get("ambiguous") == 1 and d.get("retired") == 0, str(d))
+    code, d = sync(api, {"subject": "eiken", "questions": [], "retire_sources": [{"source": "eikenp1-test-18", "stem": "旧い問題文 (   )."}]})
+    ek = {r_["stem"]: r_["active"] for r_ in rows(mod, "SELECT stem, active FROM grammar_questions WHERE source = 'eikenp1-test-18'")}
+    check("(source, 旧い問題文) なら旧版だけ active=0、直した版は残る", d.get("retired") == 1 and ek == {"旧い問題文 (   ).": 0, "直した問題文 (   ).": 1}, str(ek))
 
     print()
     if FAILURES:

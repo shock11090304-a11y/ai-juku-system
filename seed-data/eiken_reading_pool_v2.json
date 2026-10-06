@@ -2,7 +2,7 @@
  "subject": "eiken",
  "version": "v2",
  "generated": "2026-10-06",
- "note": "英検 長文ドリル v2 (大問2 長文空所補充 / 大問3 内容一致)。出所は 本番形式演習 2級 第1〜15回・準1級 第1〜9回。全部この塾の書き下ろし。空所は ( 1 ) ( 2 ) … に正規化済み。盲検 (2026-10-06): 正解を伏せた独立ソルバー 3 名が 語彙 417 問・長文 327 問を解き、語彙は全問・長文は 326 問が全員一致(正解表どおり・指摘なし)。残る 1 問 (準1級 第5回 大問2[A] 空所 1) は 3 名とも別解ありと指摘 → DROP_Q で落とした。生の解答はコミットしない。",
+ "note": "英検 長文ドリル v2 (大問2 長文空所補充 / 大問3 内容一致)。出所は 本番形式演習 2級 第1〜15回・準1級 第1〜11回。全部この塾の書き下ろし。空所は ( 1 ) ( 2 ) … に正規化済み。盲検 (2026-10-06): 正解を伏せた独立ソルバー 3 名が 語彙 417 問・長文 327 問を解き、語彙は全問・長文は 326 問が全員一致(正解表どおり・指摘なし)。残る 1 問 (準1級 第5回 大問2[A] 空所 1) は 3 名とも別解ありと指摘 → DROP_Q で落とした。追加 (同日): 準1級 第10・11回 (語彙 36 問・長文 本文 8 本 26 問) と、作者の配布前検査で直った 第7回 語彙18・第8回 語彙7 を同じく 3 名で盲検 → 語彙 38 問・長文 26 問とも全員一致・指摘なし。生の解答はコミットしない。",
  "units": {
   "2級 長文空所補充": {
    "passages": 30,
@@ -13,12 +13,12 @@
    "questions": 120
   },
   "準1級 長文空所補充": {
-   "passages": 18,
-   "questions": 53
+   "passages": 22,
+   "questions": 65
   },
   "準1級 長文 内容一致": {
-   "passages": 18,
-   "questions": 63
+   "passages": 22,
+   "questions": 77
   }
  },
  "passages": [
@@ -3285,7 +3285,7 @@
    "level": "standard",
    "title": "When Forecasts Become Decisions",
    "body": "Imagine a university that develops a system for predicting which students are likely to withdraw before completing their courses. Using previous attendance records, assessment results, and enrollment information, the system assigns each student a risk score. Its designers argue that the scores will enable advisers to offer assistance before difficulties become overwhelming. In an initial trial, the university gives additional tutoring to students classified as being at high risk. Most of these students subsequently complete their courses. At first glance, this appears to show that the predictions were inaccurate. Yet that interpretation overlooks the purpose of the intervention. Had the students received no assistance, more might have withdrawn. A forecast used to change an outcome cannot necessarily be evaluated as if nothing had happened after it was made.\n\nThis creates a problem for the system's next stage of development. If the university trains a new version using only the trial's final results, it may classify students similar to those who received tutoring as needing little assistance. Their successful completion would be recorded, while the help responsible for it might disappear from the analysis. The university could then reduce support for precisely the group that had benefited from it. One proposed solution is to record which interventions were offered and when they occurred. Another is to compare groups receiving different forms of assistance. However, such comparisons must be designed carefully: withholding essential help merely to obtain clearer statistics would be ethically troubling. Better evidence is valuable, but the method of collecting it cannot be separated from the welfare of the students involved.\n\nRisk scores may also influence the people whose behavior they predict. An adviser who expects a student to withdraw might focus on encouraging a simpler course rather than helping the student complete a demanding one. The student could interpret this advice as a judgment about ability, lose confidence, and decide to withdraw. In that case, the prediction would partly produce the outcome later used to confirm it. Conversely, a student told that difficulties are manageable might become more willing to ask for help. Neither response is captured by treating the score as a neutral description of a fixed characteristic. What people are told, and how they are treated afterward, can alter the conditions on which the original calculation depended.\n\nThese difficulties do not mean that universities should abandon prediction. Rather, they suggest that success should be defined more broadly than agreement between a score and a later event. A useful system should help institutions improve students' opportunities while revealing which decisions contributed to the results. Advisers need explanations of a score's limitations and room to question recommendations that do not fit an individual case. Designers, meanwhile, need information about how the scores are being used in practice. The central question is therefore not simply whether a system can identify students likely to struggle. It is whether the institution can use that information responsibly, monitor the consequences of its own actions, and revise its approach when those actions change the situation it originally sought to predict.",
-   "body_ja": "履修を終える前に退学しそうな学生を予測する仕組みを開発する大学を想像してみよう。過去の出席記録、評価結果、在籍情報から、各学生にリスク点数をつける。設計者は、困難が手に負えなくなる前に助言担当者が支援できるようになると主張する。最初の試行では、大学は高リスクと分類された学生に追加の個別指導を提供する。その大半はその後、履修を終える。一見すると予測が不正確だったように見える。しかしその解釈は介入の目的を見落としている。支援がなければ、退学する人がもっと多かったかもしれない。結果を変えるために使った予測を、その後何も起こらなかったかのように評価できるとは限らない。\n\nこれは仕組みの次の開発段階で問題を生む。試行の最終結果だけで新版を訓練すると、個別指導を受けた学生と似た学生を、ほとんど支援が要らないと分類するかもしれない。無事に履修を終えたことは記録される一方、それをもたらした助けが分析から消えるおそれがある。すると大学は、支援の恩恵を受けたまさにその集団への支援を減らすかもしれない。一つの解決案は、どの介入をいつ提供したかを記録することだ。別の案は、異なる支援を受ける集団を比べることだ。しかし、比較は慎重に設計する必要がある。単に統計を明確にするために必要な助けを与えないのは倫理的に問題がある。より良い証拠には価値があるが、収集方法は関係する学生の福祉と切り離せない。\n\nリスク点数は、予測対象の人の行動にも影響し得る。学生が退学すると予想する担当者は、難しい科目を修了できるよう支援するより、簡単な科目を勧めることに重点を置くかもしれない。学生はその助言を能力の評価だと解釈し、自信を失って退学を決めるかもしれない。その場合、予測は、後でその予測を裏付けるために使われる結果を部分的に作り出すことになる。逆に、困難は対処できると伝えられた学生は、助けを求めようとしやすくなるかもしれない。点数を固定した特性の中立的な記述として扱っていては、どちらの反応も捉えられない。何を伝えられ、その後どう扱われるかによって、元の計算が依存していた条件が変わり得る。\n\nこうした問題は、大学が予測をやめるべきだという意味ではない。むしろ、成功は点数と後の出来事が一致することより広く定義すべきだと示している。有用な仕組みは、大学が学生の機会を改善する助けとなり、どの決定が結果に寄与したかも明らかにするべきだ。担当者には点数の限界の説明と、個々の事例に合わない推奨を問い直す余地が必要である。一方、設計者には点数が実際にどう使われているかの情報が必要だ。中心的な問いは、単に苦労しそうな学生を特定できるかではない。大学が情報を責任を持って使い、自らの行動の結果を監視し、その行動が当初予測しようとした状況を変えたら方針を修正できるかなのである。",
+   "body_ja": "履修中の科目を修了する前に中断しそうな学生を予測する仕組みを開発する大学を想像してみよう。過去の出席記録、評価結果、在籍情報から、各学生にリスク点数をつける。設計者は、困難が手に負えなくなる前に助言担当者が支援できるようになると主張する。最初の試行では、大学は高リスクと分類された学生に追加の個別指導を提供する。その大半はその後、履修を終える。一見すると予測が不正確だったように見える。しかしその解釈は介入の目的を見落としている。支援がなければ、履修を中断する人がもっと多かったかもしれない。結果を変えるために使った予測を、その後何も起こらなかったかのように評価できるとは限らない。\n\nこれは仕組みの次の開発段階で問題を生む。試行の最終結果だけで新版を訓練すると、個別指導を受けた学生と似た学生を、ほとんど支援が要らないと分類するかもしれない。無事に履修を終えたことは記録される一方、それをもたらした助けが分析から消えるおそれがある。すると大学は、支援の恩恵を受けたまさにその集団への支援を減らすかもしれない。一つの解決案は、どの介入をいつ提供したかを記録することだ。別の案は、異なる支援を受ける集団を比べることだ。しかし、比較は慎重に設計する必要がある。単に統計を明確にするために必要な助けを与えないのは倫理的に問題がある。より良い証拠には価値があるが、収集方法は関係する学生の福祉と切り離せない。\n\nリスク点数は、予測対象の人の行動にも影響し得る。学生が履修を中断すると予想する担当者は、難しい科目を修了できるよう支援するより、簡単な科目を勧めることに重点を置くかもしれない。学生はその助言を能力の評価だと解釈し、自信を失って履修の中断を決めるかもしれない。その場合、予測は、後でその予測を裏付けるために使われる結果を部分的に作り出すことになる。逆に、困難は対処できると伝えられた学生は、助けを求めようとしやすくなるかもしれない。点数を固定した特性の中立的な記述として扱っていては、どちらの反応も捉えられない。何を伝えられ、その後どう扱われるかによって、元の計算が依存していた条件が変わり得る。\n\nこうした問題は、大学が予測をやめるべきだという意味ではない。むしろ、成功は点数と後の出来事が一致することより広く定義すべきだと示している。有用な仕組みは、大学が学生の機会を改善する助けとなり、どの決定が結果に寄与したかも明らかにするべきだ。担当者には点数の限界の説明と、個々の事例に合わない推奨を問い直す余地が必要である。一方、設計者には点数が実際にどう使われているかの情報が必要だ。中心的な問いは、単に苦労しそうな学生を特定できるかではない。大学が情報を責任を持って使い、自らの行動の結果を監視し、その行動が当初予測しようとした状況を変えたら方針を修正できるかなのである。",
    "source": "eikenp1-honban-r1 大問3[B]",
    "questions": [
     {
@@ -3297,7 +3297,7 @@
       "The trial measured how many high-risk students would withdraw if they received no tutoring."
      ],
      "answer": 2,
-     "explanation": "正解 ③ Support may have prevented the very withdrawals that the system was designed to anticipate.（システムが予測対象としていた退学そのものを、支援が防いだ可能性がある）\n高リスクの学生には実際に追加支援を提供した。支援がなければ退学が増えた可能性があるため、修了したという結果だけで元のリスクを否定できない。\n【根拠】Had the students received no assistance, more might have withdrawn.\n【他の選択肢】\n① The results suggested attendance records were more useful than assessment results for predicting withdrawal.（出席記録の方が評価結果より退学の予測に有用だったことを結果は示した） … 出席記録と評価結果の有用性を比較した結果は示されていない。\n② Students who completed their courses had needed less assistance than their high risk scores suggested.（履修を終えた学生は、高いリスク点数が示したほどの支援を必要としていなかった） … 修了できたことは、支援が少なくてよかった証拠ではない。支援が結果を変えた可能性を見落としている。\n④ The trial measured how many high-risk students would withdraw if they received no tutoring.（個別指導を受けなかった場合に高リスクの学生が何人退学するかを試行で測定した） … 実際は支援を提供した。Had ... received no assistance は無支援の場合の反実仮想で、無支援で測った結果ではない。\n【復習】実際に行った介入と、行わなかった場合の仮定を分ける。結果だけで元の予測を判断しない。",
+     "explanation": "正解 ③ Support may have prevented the very withdrawals that the system was designed to anticipate.（システムが予測対象としていた履修中断そのものを、支援が防いだ可能性がある）\n高リスクの学生には実際に追加支援を提供した。支援がなければ履修の中断が増えた可能性があるため、修了したという結果だけで元のリスクを否定できない。\n【根拠】Had the students received no assistance, more might have withdrawn.\n【他の選択肢】\n① The results suggested attendance records were more useful than assessment results for predicting withdrawal.（出席記録の方が評価結果より履修中断の予測に有用だったことを結果は示した） … 出席記録と評価結果の有用性を比較した結果は示されていない。\n② Students who completed their courses had needed less assistance than their high risk scores suggested.（履修を終えた学生は、高いリスク点数が示したほどの支援を必要としていなかった） … 修了できたことは、支援が少なくてよかった証拠ではない。支援が結果を変えた可能性を見落としている。\n④ The trial measured how many high-risk students would withdraw if they received no tutoring.（個別指導を受けなかった場合に高リスクの学生が何人履修を中断するかを試行で測定した） … 実際は支援を提供した。Had ... received no assistance は無支援の場合の反実仮想で、無支援で測った結果ではない。\n【復習】実際に行った介入と、行わなかった場合の仮定を分ける。結果だけで元の予測を判断しない。",
      "source": "eikenp1-honban-r1"
     },
     {
@@ -3321,7 +3321,7 @@
       "People's responses to a risk score may change conditions and help produce the result it predicts."
      ],
      "answer": 3,
-     "explanation": "正解 ④ People's responses to a risk score may change conditions and help produce the result it predicts.（リスク点数への人々の反応が条件を変え、予測した結果を生み出す一因になり得る）\n点数に基づく助言や、その受け取り方が学生の行動を変える。退学を促す反応と支援を求める反応の両方を挙げ、予測時の条件そのものが変わり得ると一般化している。\n【根拠】In that case, the prediction would partly produce the outcome later used to confirm it.\n【他の選択肢】\n① The effect of risk scores depends mainly on whether students are told the numerical result.（リスク点数の影響は、主に数値結果を学生に知らせるかどうかにかかっている） … 数値を知らせるかどうかだけでなく、何を伝え、その後どう扱うかが影響する。数値の通知を主な要因とする比較はない。\n② Changing student plans can confirm a forecast without affecting the assumptions behind it.（学生の計画を変えても、予測の前提条件に影響を与えずに予測を裏付けられる） … 学生の行動が元の計算の条件を alter するという説明と逆。条件を変えずに裏付けられるとはいえない。\n③ Positive reactions reveal fixed qualities that negative reactions cannot measure accurately.（肯定的な反応は、否定的な反応では正確に測れない固定した特性を明らかにする） … どちらの反応も点数や扱いの影響を受ける。固定した特性を測る例ではない。\n【復習】例の良し悪しで終わらず、二つの反応に共通する「予測が行動を変える」関係をまとめる。",
+     "explanation": "正解 ④ People's responses to a risk score may change conditions and help produce the result it predicts.（リスク点数への人々の反応が条件を変え、予測した結果を生み出す一因になり得る）\n点数に基づく助言や、その受け取り方が学生の行動を変える。履修中断を促す反応と支援を求める反応の両方を挙げ、予測時の条件そのものが変わり得ると一般化している。\n【根拠】In that case, the prediction would partly produce the outcome later used to confirm it.\n【他の選択肢】\n① The effect of risk scores depends mainly on whether students are told the numerical result.（リスク点数の影響は、主に数値結果を学生に知らせるかどうかにかかっている） … 数値を知らせるかどうかだけでなく、何を伝え、その後どう扱うかが影響する。数値の通知を主な要因とする比較はない。\n② Changing student plans can confirm a forecast without affecting the assumptions behind it.（学生の計画を変えても、予測の前提条件に影響を与えずに予測を裏付けられる） … 学生の行動が元の計算の条件を alter するという説明と逆。条件を変えずに裏付けられるとはいえない。\n③ Positive reactions reveal fixed qualities that negative reactions cannot measure accurately.（肯定的な反応は、否定的な反応では正確に測れない固定した特性を明らかにする） … どちらの反応も点数や扱いの影響を受ける。固定した特性を測る例ではない。\n【復習】例の良し悪しで終わらず、二つの反応に共通する「予測が行動を変える」関係をまとめる。",
      "source": "eikenp1-honban-r1"
     },
     {
@@ -4891,6 +4891,398 @@
      "answer": 2,
      "explanation": "正解 ③ It should adapt explanations, preserve claims, and seek clarification.（主張を保ち、必要な確認を求めつつ、読み手に説明を合わせる。）\n表示と目録の目的に応じて説明を調整する。ただし主張を黙って変えず、未解決の曖昧さは著者へ確認する。\n【根拠】If an ambiguity cannot be resolved, asking the original author is preferable to inventing certainty.\n【他の選択肢】\n① It should use catalogue wording to give every visitor the same detail.（全員に同じ詳しさを与えるため、目録の表現を再現する。） … 短い表示と詳しい目録は目的が違い、同じ説明を常に載せられない。\n② It should settle unclear claims by choosing the most readable interpretation.（最も読みやすい解釈を選んで、不明確な原文の主張を解決する。） … 読みやすさで勝手に確実さを作るより著者に尋ねる。\n④ It should leave technical content to specialists and check only general language.（専門的説明を専門家に任せ、一般的な言葉だけ点検する。） … 専門家への相談に加え、意味・読者・未解決の疑問を翻訳者が点検する。\n【復習】providedの条件とpreferable toの選択を組み合わせる。",
      "source": "eikenp1-honban-r9"
+    }
+   ]
+  },
+  {
+   "unit": "準1級 長文空所補充",
+   "level": "standard",
+   "title": "A Choice Already Selected",
+   "body": "When people open a form, one option may already be selected. They can change it, but leaving it untouched requires less effort. This preselected option is called a default. It can influence decisions without removing alternatives. Suppose a fictional company changes its training system. Previously, employees had to register for a course themselves. Now they are enrolled automatically and can withdraw with a click. The available course and its cost remain the same. ( 1 ), the number of participants may increase.\n\nThis increase need not mean that workers have developed a stronger interest in training. Some might regard the company's initial selection as a recommendation. Others might postpone reviewing the form and remain enrolled simply because they do nothing. The participation rate therefore cannot, by itself, establish ( 2 ). To investigate preferences, the company would need additional information, such as employees' reasons for staying or leaving. A changed response can result from the arrangement of choices rather than a changed opinion about the course.\n\nDefaults can reduce the burden of making repeated decisions, but their influence creates responsibilities for whoever designs a form. A company should explain what will happen if no action is taken. It should also make changing the selection straightforward. Merely displaying an alternative is insufficient if reaching it requires several confusing steps. The important issue is ( 3 ). A default is most defensible when people understand its consequences and retain a practical way to choose differently.",
+   "body_ja": "入力用紙を開くと、一つの選択肢があらかじめ選ばれていることがある。変更はできるが、そのままにする方が手間は少ない。この初期選択をデフォルトという。別の選択肢をなくさずに意思決定に影響できる。架空の会社が研修制度を変えるとしよう。以前は従業員自身が講座へ登録する必要があった。今は自動登録され、クリックで辞退できる。提供される講座と費用は同じである。それにもかかわらず、参加者数は増えるかもしれない。\n\n増加は、働く人の研修への関心が高まったことを必ずしも意味しない。一部は会社の初期選択を推奨だと受け取るかもしれない。別の人は用紙の確認を先延ばしし、何もしないため登録されたままになるかもしれない。したがって参加率だけでは、従業員がその講座をどの程度強く望んでいるかは確定できない。好みを調べるには、残ったり辞退したりする理由などの追加情報が必要である。応答の変化は、講座への意見の変化でなく、選択肢の配置から生じる場合がある。\n\n初期設定は繰り返す判断の負担を減らせるが、その影響力は用紙の設計者に責任を生む。会社は何もしなければ何が起きるか説明すべきである。選択の変更も簡単にすべきだ。代替案があっても、それを選ぶのに紛らわしい手順がいくつも必要なら、表示だけでは不十分である。重要なのは、別の選択が情報に基づいて実際にできるかどうかである。結果を理解し、別を選ぶ現実的な方法があるとき、初期設定は最も正当化しやすい。",
+   "source": "eikenp1-honban-r10 大問2[A]",
+   "questions": [
+    {
+     "stem": "( 1 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "Similarly",
+      "For instance",
+      "Nevertheless",
+      "In other words"
+     ],
+     "answer": 2,
+     "explanation": "正解 ③ Nevertheless（それにもかかわらず）\n講座と費用は不変なのに参加が増えるという対比。Neverthelessが適切。\n【根拠】The available course and its cost remain the same.\n【他の選択肢】\n① Similarly（同様に） … 同じ方向の別の現象を加えるのではなく、不変と増加を対比する。\n② For instance（例えば） … 参加者数の増加は講座と費用が同じことの具体例ではない。\n④ In other words（言い換えると） … 不変を別表現に言い直しているのではなく、異なる結果を示す。\n【復習】前文の不変と後文の増加を対にして読む。",
+     "source": "eikenp1-honban-r10"
+    },
+    {
+     "stem": "( 2 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "how strongly employees favor the course",
+      "how the registration procedure was changed",
+      "whether the course remains available",
+      "whether employees can withdraw from the course"
+     ],
+     "answer": 0,
+     "explanation": "正解 ① how strongly employees favor the course（従業員が講座をどの程度強く望むか）\n後続の先延ばしという別の理由も含め、参加増だけで強い好みを確定できない。\n【根拠】Some might regard the company's initial selection as a recommendation.\n【他の選択肢】\n② how the registration procedure was changed（登録手続きがどのように変わったか） … 登録手続きの変更は第1段落ですでに説明され、調査対象の好みとは異なる。\n③ whether the course remains available（講座が引き続き利用できるか） … 講座は同じまま提供されていると第1段落にある。\n④ whether employees can withdraw from the course（従業員が講座を辞退できるか） … クリックで辞退できると第1段落に明記されている。\n【復習】観察できる参加と、その背後の好み・理由を区別する。",
+     "source": "eikenp1-honban-r10"
+    },
+    {
+     "stem": "( 3 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "whether every employee receives the same default",
+      "whether the course has become more interesting",
+      "whether the selected option is the most popular",
+      "whether choosing otherwise is informed and genuinely possible"
+     ],
+     "answer": 3,
+     "explanation": "正解 ④ whether choosing otherwise is informed and genuinely possible（別を選ぶことが情報に基づき実際にできるか）\n説明による理解と、実際に変更できる手段という二つの条件をまとめる。\n【根拠】A default is most defensible when people understand its consequences and retain a practical way to choose differently.\n【他の選択肢】\n① whether every employee receives the same default（全従業員が同じ初期設定を受けるか） … 同じ設定の配布では、理解や選択変更のしやすさは確保されない。\n② whether the course has become more interesting（講座が以前より興味深くなったか） … 関心の高まりを前提にできないと第2段落にある。\n③ whether the selected option is the most popular（初期選択が最も人気があるか） … 参加率と好みを区別しており、人気の順位を条件にしていない。\n【復習】understandとpractical wayの両方を残す選択肢を選ぶ。",
+     "source": "eikenp1-honban-r10"
+    }
+   ]
+  },
+  {
+   "unit": "準1級 長文空所補充",
+   "level": "standard",
+   "title": "When Small Cells Act Together",
+   "body": "A bacterium is a single cell, yet some bacteria change their behavior when many similar cells are nearby. They release chemical signals and detect the concentration around them. When only a few cells are present, the signals may escape into the surrounding space before enough accumulate to trigger a response. As a population grows, however, the concentration can rise. ( 1 ), certain activities begin only after the chemical signal reaches a sufficient level. This process is called quorum sensing.\n\nIt may seem that the cells are simply counting their neighbors. In fact, the signal level also depends on the surroundings. Flowing liquid can carry the chemicals away, while a sheltered pocket can allow them to collect. Two groups containing similar numbers of cells might therefore ( 2 ). Their different responses would not necessarily show that one group had lost the ability to produce the signal. They could reflect differences in how rapidly it is removed. The concentration gives information about local conditions as well as the nearby population.\n\nIn some species, coordinated behavior includes producing light; in others, it contributes to forming communities on surfaces. These responses depend on chemical systems, not conscious discussion among cells. Understanding the systems requires researchers to examine both biological mechanisms and physical conditions. Simply measuring how many bacteria are present may miss an important part of the explanation. To predict whether a response will occur, researchers also need to consider ( 3 ). The same population can behave differently when its signals are transported differently.",
+   "body_ja": "細菌は単一の細胞だが、近くに同種の細胞が多くあると行動を変える細菌もいる。化学信号を放出し、周囲の濃度を検知する。細胞が少ないと、応答を引き起こすほど蓄積する前に信号が周囲へ逃げることがある。しかし個体群が増えると濃度は上昇し得る。その結果、化学信号が十分な水準に達して初めて一定の活動が始まる。この過程をクオラムセンシングという。\n\n細胞が近隣の数を単に数えているように見えるかもしれない。実際には信号の水準は周囲にも左右される。流れる液体は化学物質を運び去り、流れから守られたくぼみでは蓄積しやすい。同程度の数の細胞を含む二集団でも、化学信号への応答が異なる可能性がある。応答の違いは、一方が信号を作る能力を失ったと必ずしも意味しない。信号が除去される速さの違いを反映し得る。濃度は近くの個体群だけでなく、局所的な条件についての情報も与える。\n\n種によっては協調した活動が発光を含み、別の種では表面に群集を形成することに寄与する。これらの応答は化学系によるもので、細胞同士の意識的な議論ではない。系を理解するには、生物学的な仕組みと物理的条件の両方を調べる必要がある。存在する細菌数を測るだけでは説明の重要な部分を見落としかねない。応答の発生を予測するには、信号がどの程度その場所に保たれたり運び去られたりするかも考慮しなければならない。同じ個体群でも信号の輸送が異なると活動が変わり得る。",
+   "source": "eikenp1-honban-r10 大問2[B]",
+   "questions": [
+    {
+     "stem": "( 1 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "By contrast",
+      "As a result",
+      "For example",
+      "In the meantime"
+     ],
+     "answer": 1,
+     "explanation": "正解 ② As a result（その結果）\n信号濃度が上がる結果、十分な水準で活動が始まるという因果。\n【根拠】As a population grows, however, the concentration can rise.\n【他の選択肢】\n① By contrast（対照的に） … 濃度上昇と開始は対立する内容ではない。\n③ For example（例えば） … 特定の活動を例示しておらず、一般的な濃度と応答の関係を示す。\n④ In the meantime（その間に） … 時間の同時進行だけでなく、濃度上昇による結果を表す必要がある。\n【復習】howeverは前の少数と多数の対比。空所はその後の因果をつなぐ。",
+     "source": "eikenp1-honban-r10"
+    },
+    {
+     "stem": "( 2 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "release signals that are chemically identical",
+      "grow at exactly the same rate",
+      "respond differently to the chemical signals",
+      "lose their capacity to sense the surroundings"
+     ],
+     "answer": 2,
+     "explanation": "正解 ③ respond differently to the chemical signals（化学信号への応答が異なる）\n同程度の細胞数でも輸送条件によって濃度が異なり、応答も異なり得る。\n【根拠】Flowing liquid can carry the chemicals away, while a sheltered pocket can allow them to collect.\n【他の選択肢】\n① release signals that are chemically identical（化学的に同一の信号を放出する） … 同じ信号を放出するかという比較ではなく、蓄積条件から応答差を導く。\n② grow at exactly the same rate（全く同じ速度で増殖する） … 細胞数が同程度でも増殖速度の一致は述べていない。\n④ lose their capacity to sense the surroundings（周囲を感知する能力を失う） … 能力の喪失を必要とせず、信号除去の違いで説明できる。\n【復習】thereforeの結論を、前の流れとくぼみの条件差から導く。",
+     "source": "eikenp1-honban-r10"
+    },
+    {
+     "stem": "( 3 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "whether the cells intend to cooperate",
+      "whether larger groups produce less chemical signal",
+      "whether the response occurs before signals accumulate",
+      "how effectively signals are retained or carried away"
+     ],
+     "answer": 3,
+     "explanation": "正解 ④ how effectively signals are retained or carried away（信号がどの程度保たれたり運び去られたりするか）\n細胞数だけで不足する説明は、信号の保持・輸送という物理条件。\n【根拠】The same population can behave differently when its signals are transported differently.\n【他の選択肢】\n① whether the cells intend to cooperate（細胞が協力するつもりか） … 意識的な議論によるものではないと本文にある。\n② whether larger groups produce less chemical signal（大集団が少ない信号を作るか） … 第1段落は個体群の増加で濃度が上がり得るとし、一般に信号が少なくなるとはしない。\n③ whether the response occurs before signals accumulate（信号が蓄積する前に応答が起こるか） … 十分な信号水準に達してから一定の活動が始まるという説明と逆。\n【復習】生物学的な機構に加えるphysical conditionsの内容を特定する。",
+     "source": "eikenp1-honban-r10"
+    }
+   ]
+  },
+  {
+   "unit": "準1級 長文 内容一致",
+   "level": "standard",
+   "title": "Pictures Made for Reproduction",
+   "body": "In the late eighteenth century, the German playwright Alois Senefelder was looking for an economical way to reproduce his writing. His experiments led to lithography, a printing method using a flat surface rather than a design carved into wood or cut into metal. A greasy material was used to draw on a prepared stone. Water and greasy printing ink behaved differently on its surface: the damp areas resisted the ink, while the marked areas accepted it. Pressing paper against the stone transferred the image. The surface could then be inked again to produce further impressions. This made it possible to reproduce a drawing without first translating its lines into a carved design. The attraction was not only the number of copies, but the relationship between drawing and printing.\n\nDuring the nineteenth century, lithography acquired both artistic and commercial uses. Artists could exploit marks resembling those made with a pencil or crayon, while publishers could distribute illustrations to many readers. Improvements also made larger printed images and color work more practical. Yet a colored print was not normally produced by putting every color onto one stone at once. Separate stones or other printing surfaces were prepared for different colors, and the paper passed through the press repeatedly. The impressions had to be aligned carefully; otherwise, the colored parts would appear in the wrong places. Increasing the range of effects therefore introduced demands for coordination and skill. Reproducibility did not remove the technical labor behind the final image.\n\nThe spread of printed pictures raises another distinction. A lithograph may reproduce an existing painting, but it may also be an original work conceived for printing. In the latter case, the production of several impressions is part of the artist's intended form, not evidence that the work has failed to be unique. Art historians therefore distinguish a reproduction of another work from an original print. This does not mean that every impression from a printing surface is identical in every respect: differences in ink, paper, or the state of the surface can affect the result. The method broadened access to images while offering artists a medium with its own possibilities. Understanding a lithograph involves asking how it was made and what kind of work it was intended to be, rather than assuming that multiple copies must simply be substitutes for a single original.",
+   "body_ja": "十八世紀末、ドイツの劇作家アロイス・ゼーネフェルダーは自分の文章を安価に複製する方法を探していた。実験から生まれたのが石版印刷で、木に図柄を彫ったり金属に刻んだりするのでなく、平らな面を使う印刷法だった。用意した石に油性の材料で描いた。水と油性のインクは表面で異なる振る舞いをした。湿った部分はインクを受け付けず、描かれた部分にはインクが付いた。紙を石へ押し付けると画像が移った。再びインクを付ければ次の刷りを作れた。そのため、描いた線を彫刻された図柄に変える工程を先に行わず、描画を複製できた。魅力は部数だけでなく、描画と印刷の関係にもあった。\n\n十九世紀、石版印刷は芸術と商業の両方に使われた。芸術家は鉛筆やクレヨンのような線を活用し、出版者は多くの読者に挿絵を届けられた。改良により大きな画像や色刷りも実用的になった。しかし通常、色刷りは全ての色を一度に一つの石へ載せて作るものではなかった。色ごとに別の石などの印刷面を準備し、紙を何度も印刷機へ通した。各刷りを慎重に合わせなければ、色の部分が違う場所へ出てしまった。表現の幅が増えることで、調整と技能の必要性が生じた。複製できることは、最終的な画像を支える技術的な労働をなくさなかった。\n\n印刷画像の普及は、別の区別を必要にする。石版画には既存の絵画を複製するものもあれば、印刷のために構想された独創的な作品もある。後者では複数の刷りを作ることが芸術家の意図した形式であり、作品の独自性が失われた証拠ではない。そのため美術史家は、別作品の複製とオリジナルの版画を区別する。ただし、同じ印刷面からの全ての刷りがあらゆる点で同一だという意味ではない。インク、紙、印刷面の状態の違いは結果に影響する。石版印刷は画像への接近を広げ、芸術家に独自の可能性を持つ表現媒体を提供した。石版画を理解するには、複数の刷りを単一の原作の代用品と決めつけず、製法と意図された作品の種類を問う必要がある。",
+   "source": "eikenp1-honban-r10 大問3[A]",
+   "questions": [
+    {
+     "stem": "What was one advantage of Senefelder's printing method?",
+     "choices": [
+      "Drawings could be reproduced without first being converted into carved designs.",
+      "Carved wooden surfaces could hold the greasy ink more effectively than stone.",
+      "The surface transferred its design to paper without requiring printing ink.",
+      "Writers could reproduce images only after changing their lines into metal cuts."
+     ],
+     "answer": 0,
+     "explanation": "正解 ① Drawings could be reproduced without first being converted into carved designs.（描画を先に彫刻された図柄へ変えず複製できた。）\n平面の描画を印刷へつなげ、事前の彫刻への変換を省く点を問う。\n【根拠】This made it possible to reproduce a drawing without first translating its lines into a carved design.\n【他の選択肢】\n② Carved wooden surfaces could hold the greasy ink more effectively than stone.（彫刻された木は石より油性インクをよく保てた。） … 木が石より有利という比較はなく、石の平面を使う方法を説明する。\n③ The surface transferred its design to paper without requiring printing ink.（インクを要せず図柄を紙へ移せた。） … 水と油性インクの異なる振る舞いを利用し、インクは必要。\n④ Writers could reproduce images only after changing their lines into metal cuts.（線を金属の刻みへ変えて初めて画像を複製できた。） … 彫刻への変換が不要という利点と逆。\n【復習】without firstが省ける工程を示す。",
+     "source": "eikenp1-honban-r10"
+    },
+    {
+     "stem": "What does the second paragraph say about color lithography?",
+     "choices": [
+      "Using several colors reduced the need to coordinate the printing process.",
+      "Different colors were usually applied to one stone before a single impression.",
+      "Repeated impressions had to be aligned to put each color in its intended place.",
+      "Large images became practical only when printers abandoned the use of color."
+     ],
+     "answer": 2,
+     "explanation": "正解 ③ Repeated impressions had to be aligned to put each color in its intended place.（各色を意図した位置へ置くため、繰り返す刷りを合わせる必要があった。）\n色ごとの別の印刷面と繰り返す刷りのため、位置合わせという技術的負担が生じる。\n【根拠】The impressions had to be aligned carefully; otherwise, the colored parts would appear in the wrong places.\n【他の選択肢】\n① Using several colors reduced the need to coordinate the printing process.（複数の色を使うと調整の必要が減った。） … 効果の範囲が増えるほど調整と技能が必要になったとある。\n② Different colors were usually applied to one stone before a single impression.（一度刷る前に、通常は一つの石へ別の色を載せた。） … 通常は色ごとに別の面を使い、紙を何度も通す。\n④ Large images became practical only when printers abandoned the use of color.（色を使わなくなって初めて大きな画像が実用的になった。） … 大判や色刷りが実用的になったのであり、大判のため色を捨てるとはしない。\n【復習】otherwiseの後の問題から、alignedの目的を確認する。",
+     "source": "eikenp1-honban-r10"
+    },
+    {
+     "stem": "What distinction does the final paragraph emphasize?",
+     "choices": [
+      "An original print gains its status because all its impressions look exactly alike.",
+      "A work designed for printing can be original even though several impressions exist.",
+      "A lithograph becomes an original work only when it reproduces an existing painting.",
+      "Technical differences between impressions show that the artist lacked a clear intention."
+     ],
+     "answer": 1,
+     "explanation": "正解 ② A work designed for printing can be original even though several impressions exist.（印刷用に構想した作品は、複数の刷りがあってもオリジナルであり得る。）\n別作品の複製と、印刷自体を表現形式に選んだ作品を区別する。\n【根拠】A lithograph may reproduce an existing painting, but it may also be an original work conceived for printing.\n【他の選択肢】\n① An original print gains its status because all its impressions look exactly alike.（全ての刷りが全く同じなのでオリジナルになる。） … 原作性の理由は刷りの完全一致ではなく、印刷用の構想。実際に刷り同士は異なり得る。\n③ A lithograph becomes an original work only when it reproduces an existing painting.（既存の絵画を複製した場合にだけオリジナル作品になる。） … 既存作品の複製とオリジナルの版画を区別するので、条件を逆転させている。\n④ Technical differences between impressions show that the artist lacked a clear intention.（刷りの技術的な違いは芸術家に明確な意図がなかったことを示す。） … インクや紙などが違いを生むので、意図の欠如を示すとはいえない。\n【復習】original workとreproductionの意味を混同しない。",
+     "source": "eikenp1-honban-r10"
+    }
+   ]
+  },
+  {
+   "unit": "準1級 長文 内容一致",
+   "level": "standard",
+   "title": "Restoration without a Frozen Past",
+   "body": "Restoring a damaged ecosystem may sound like returning it to exactly what it was before people disturbed it. In practice, deciding what to restore requires more than choosing an old photograph. A picture can show vegetation but conceal the processes that sustained it, such as seasonal water movement or the arrival of seeds. Ecologists use a reference model to describe the native ecosystem a project aims to recover. This model is informed by evidence about the past and by comparable places that have experienced less damage. It provides a reasoned direction for recovery rather than a demand to reproduce one moment. Several sources are needed because no single site necessarily reveals the full range of natural variation.\n\nConsider a fictional valley where drainage channels have dried a former wet meadow. Local residents propose planting the flowers visible in photographs taken decades earlier. The flowers are relevant evidence, but planting them alone might produce a display that needs continuous watering. A restoration team instead investigates how the meadow received and retained water. It compares surviving wet areas, examines soil records, and consults residents who remember seasonal flooding. These sources help the team design changes to the drainage system. Plants are still important, but the aim is to recover conditions that can support them, not merely their appearance. Historical knowledge helps identify a lost relationship between water and vegetation, even when the exact arrangement of flowers cannot be reconstructed.\n\nEnvironmental change complicates the reference further. If future summers become warmer and drier, a community that depended on the old climate may not persist in precisely its former form. This does not make historical evidence useless, nor does it justify selecting any attractive collection of plants. The team must consider which native species and populations are likely to tolerate the expected conditions while retaining important ecological relationships. Such judgments involve uncertainty. They should be explained and revised as evidence develops, rather than presented as a guaranteed solution. The reference remains a guide to the kind of ecosystem sought, while allowing its detailed expression to respond to circumstances that the project cannot simply reverse.\n\nEvaluation must also extend beyond whether the first planting looks successful. A meadow could look green while relying on frequent replacement of plants. Conversely, a site might initially look uneven while seedlings become established and natural processes recover. The team therefore plans repeated observations of several features: water conditions, the survival and reproduction of native plants, and the return of characteristic animals. A disappointing result can indicate that an intervention needs adjustment, but it is necessary to ask which part of the recovery is failing and why. Observations of water and vegetation can help distinguish a drainage problem from an unsuitable planting choice. The purpose of monitoring is not to declare the site permanently finished after one encouraging visit. It is to test whether the changes are moving the ecosystem toward the stated reference and to guide further action. Restoration is thus a process of informed recovery, using the past as evidence while recognizing that a living system continues to change.",
+   "body_ja": "損なわれた生態系の復元は、人が乱す前の状態へ正確に戻すことのように聞こえる。しかし実際に何を復元するか決めるには、古い写真を選ぶ以上のことが必要だ。写真は植生を示せるが、それを支えた季節的な水の動きや種子の到来などの過程は見えないことがある。生態学者は、事業が回復を目指す在来の生態系を記述する参照モデルを使う。モデルには、過去の証拠や損傷の少ない類似の場所の情報が反映される。それはある一瞬の再現要求でなく、回復の合理的な方向を与える。一つの場所だけでは自然変動の全幅を必ずしも示せないため、複数の情報源が必要だ。\n\n排水路によりかつての湿った草地が乾燥した架空の谷を考えよう。住民は数十年前の写真にある花を植えることを提案する。花は関連する証拠だが、植えるだけでは絶えず水やりを必要とする展示になりかねない。復元チームは代わりに、草地がどのように水を受け取り、保っていたか調査する。残存する湿地を比較し、土壌記録を調べ、季節的な洪水を覚える住民に話を聞く。これらの情報は排水系の変更を設計する助けになる。植物は依然重要だが、目的は見た目だけでなく、植物を支えられる条件の回復である。花の正確な配置を再現できなくても、歴史的な知識は失われた水と植生の関係を明らかにする。\n\n環境変化は参照モデルをさらに複雑にする。将来の夏が高温で乾燥すれば、旧来の気候に依存した群集は以前と全く同じ形では存続できないかもしれない。だからといって歴史的証拠が無用になるわけでも、見栄えのよい植物を好きに集めてよいわけでもない。チームは、重要な生態学的な関係を保ちつつ予想される条件に耐えそうな在来種や個体群を考慮する必要がある。判断には不確実性がある。確実な解決策として示すのでなく、説明し、証拠の進展に合わせて修正すべきだ。参照モデルは求める生態系の種類の指針であり続ける一方、事業では単純に元に戻せない状況に応じて、細部の表れ方は変わり得る。\n\n評価も最初の植栽が成功して見えるかを超える必要がある。頻繁な植え替えに頼りつつ緑に見える草地もある。逆に、苗が定着し自然の過程が回復する間、初めは不均一に見える場所もある。そのためチームは水の条件、在来植物の生存と繁殖、特徴的な動物の復帰など、複数の特徴を繰り返し観察する計画を立てる。不満足な結果は介入の調整が必要な合図になり得るが、回復のどの部分がなぜ失敗しているか問う必要がある。水と植生の観察は、排水の問題と不適切な植栽選択を区別する助けになる。監視の目的は、一度よい状態を見て永久に完成したと宣言することではない。変更が生態系を示した参照モデルへ近づけているか検証し、次の行動を導くことである。復元は、生命ある系が変わり続けると認め、過去を証拠として使う、情報に基づいた回復の過程なのである。",
+   "source": "eikenp1-honban-r10 大問3[B]",
+   "questions": [
+    {
+     "stem": "Why does a restoration reference model draw on several sources?",
+     "choices": [
+      "Current photographs are more reliable than records of past water conditions.",
+      "Different sources let the team choose the historical moment with the most flowers.",
+      "Combining information removes the need to examine conditions at the damaged site.",
+      "Several sources can reveal ecosystem processes and variation that one example misses."
+     ],
+     "answer": 3,
+     "explanation": "正解 ④ Several sources can reveal ecosystem processes and variation that one example misses.（複数の情報は一例では見落とす生態系の過程や変動を明らかにできる。）\n写真に見えない過程と一地点だけでは捉えない変動を補い、合理的な回復方向を得る。\n【根拠】Several sources are needed because no single site necessarily reveals the full range of natural variation.\n【他の選択肢】\n① Current photographs are more reliable than records of past water conditions.（現在の写真は過去の水の状態の記録より信頼できる。） … 写真と水の記録の信頼度の順位を付けていない。\n② Different sources let the team choose the historical moment with the most flowers.（複数の情報で最も花の多かった過去の一時点を選べる。） … ある一瞬を再現する要求ではないと明記されている。\n③ Combining information removes the need to examine conditions at the damaged site.（情報を組み合わせれば損傷地の条件を調べなくてよい。） … 第2段落では現場の水・土壌・記憶を調べる必要が示される。\n【復習】becauseの理由と第1段落のprocessesを合わせて読む。",
+     "source": "eikenp1-honban-r10"
+    },
+    {
+     "stem": "Why does the team investigate water conditions in the fictional valley?",
+     "choices": [
+      "It wants to reproduce the arrangement of flowers before changing the drainage system.",
+      "It needs to recover conditions that can sustain plants beyond a watered display.",
+      "It expects the surviving wet areas to provide all the species shown in old photographs.",
+      "It must establish that historical observations are less useful than soil records."
+     ],
+     "answer": 1,
+     "explanation": "正解 ② It needs to recover conditions that can sustain plants beyond a watered display.（水やりに頼る展示を超え、植物を支えられる条件を回復する必要があるから。）\n花を植える見た目だけでなく、水を得て保つ過程を戻す必要がある。\n【根拠】Plants are still important, but the aim is to recover conditions that can support them, not merely their appearance.\n【他の選択肢】\n① It wants to reproduce the arrangement of flowers before changing the drainage system.（排水系を変える前に花の配置を再現したいから。） … 正確な配置は再現できなくてもよく、水の条件を調べて排水系の変更を設計する。\n③ It expects the surviving wet areas to provide all the species shown in old photographs.（残る湿地が写真の全ての種を供給する見込みだから。） … 湿った場所は比較資料であり、写真の全種を供給するとは述べない。\n④ It must establish that historical observations are less useful than soil records.（歴史的な観察が土壌記録より役立たないと証明すべきだから。） … 住民の記憶も役立つ情報として採用し、資料の優劣の証明は目的ではない。\n【復習】not merelyは植物の不要を意味せず、外観を超える条件を求める。",
+     "source": "eikenp1-honban-r10"
+    },
+    {
+     "stem": "How should anticipated climate change affect the reference model?",
+     "choices": [
+      "It should inform adjustments while the goal of recovering a native ecosystem remains.",
+      "It should justify choosing plants primarily for their appearance rather than their origin.",
+      "It should lead the team to retain former details without examining future suitability.",
+      "It should replace historical evidence with a prediction guaranteed to remain accurate."
+     ],
+     "answer": 0,
+     "explanation": "正解 ① It should inform adjustments while the goal of recovering a native ecosystem remains.（在来の生態系の回復目標を保ちつつ調整へ反映すべきだ。）\n回復の方向は保ち、不可逆的な条件や予想される気候への適合に応じて細部を調整する。\n【根拠】The reference remains a guide to the kind of ecosystem sought, while allowing its detailed expression to respond to circumstances that the project cannot simply reverse.\n【他の選択肢】\n② It should justify choosing plants primarily for their appearance rather than their origin.（植物の由来より外観を主に選ぶ根拠にすべきだ。） … 好きな魅力的植物を選んでよいという結論は否定され、在来種などを考慮する。\n③ It should lead the team to retain former details without examining future suitability.（将来への適合を調べず以前の細部を保つべきだ。） … 旧来の気候に依存した群集が同じ形で続くとは限らず、適合を考える必要がある。\n④ It should replace historical evidence with a prediction guaranteed to remain accurate.（歴史的証拠を、必ず正しい予測へ置き換えるべきだ。） … 歴史的証拠は無用にならず、判断には不確実性がある。\n【復習】remainsとwhile allowingに分け、保つものと調整するものを整理する。",
+     "source": "eikenp1-honban-r10"
+    },
+    {
+     "stem": "What is the purpose of the team's repeated observations?",
+     "choices": [
+      "To certify permanent completion as soon as the first planting appears successful.",
+      "To identify the most attractive area and use its appearance as the recovery standard.",
+      "To assess progress toward the reference and identify where action needs adjustment.",
+      "To show that unsuccessful planting can be explained without studying water conditions."
+     ],
+     "answer": 2,
+     "explanation": "正解 ③ To assess progress toward the reference and identify where action needs adjustment.（参照モデルへの進展を評価し、調整が必要な箇所を特定する。）\n水・生存・繁殖・動物を繰り返し観察し、どの過程がなぜうまくいかないか判断して介入を調整する。\n【根拠】It is to test whether the changes are moving the ecosystem toward the stated reference and to guide further action.\n【他の選択肢】\n① To certify permanent completion as soon as the first planting appears successful.（最初の植栽が成功して見えたら永久の完成を認定する。） … 一度のよい状態で永久に終わったと宣言することは目的でない。\n② To identify the most attractive area and use its appearance as the recovery standard.（最も魅力的な区域を特定し、外観を回復の基準にする。） … 見た目だけは生態学的回復の指標として不足する。\n④ To show that unsuccessful planting can be explained without studying water conditions.（水の状態を調べず植栽失敗を説明できると示す。） … 水と植生の観察が、排水と植栽選択の問題を区別する助けになる。\n【復習】評価の対象・頻度・その後の行動を一組で確認する。",
+     "source": "eikenp1-honban-r10"
+    }
+   ]
+  },
+  {
+   "unit": "準1級 長文空所補充",
+   "level": "standard",
+   "title": "The Work You Give Up",
+   "body": "Being the quickest at every task does not necessarily mean that a person should perform every task alone. Imagine two workers who prepare displays and write descriptions for a museum. Lena is faster at both activities, but her advantage is much greater in preparing displays. During the time needed to write one description, she could prepare several displays. Omar works more slowly overall, yet writing a description costs him fewer displays. ( 1 ), assigning descriptions to Omar may increase what the pair can accomplish together.\n\nEconomists call this comparison one of opportunity costs. The relevant cost is the alternative work given up, rather than the number of minutes considered in isolation. Lena has an absolute advantage in both tasks because she needs less time. Omar can nevertheless have a comparative advantage in writing because he sacrifices less display work to do it. Thus, a useful division of labor need not be based solely on ( 2 ).\n\nThe museum example assumes that the work can be divided and combined without difficulty. Actual cooperation may involve additional costs. Instructions might be misunderstood, or completed descriptions might arrive too late for the displays. Differences in quality could also matter. Such problems do not erase the distinction between absolute and comparative advantage, but they affect whether a particular arrangement is worthwhile. Before specializing completely, the workers would need to compare the potential gains with ( 3 ). The principle identifies an opportunity for cooperation, not a guarantee that every proposed division will succeed.",
+   "body_ja": "すべての仕事で最も速い人が、必ずしもすべてを一人で行うべきとは限らない。博物館で展示を準備し、説明文を書く二人の作業者を考えよう。レナは両方で速いが、優位性は展示準備ではるかに大きい。一つの説明文を書く時間に、複数の展示を準備できる。オマルは全体として遅いが、一つの説明文を書くことで失う展示数はより少ない。したがって、説明文をオマルに任せると二人の総成果が増えるかもしれない。\n\n経済学者はこれを機会費用の比較と呼ぶ。関係する費用は、時間を単独で考えた分数ではなく、諦める別の仕事である。レナは時間がより少なくて済むので、両方で絶対優位を持つ。それでもオマルは、説明文を書くために失う展示作業が少ないので、説明文作成で比較優位を持ち得る。有用な分業は、誰が各仕事をより速く行うかだけに基づく必要はない。\n\nこの博物館の例は、作業を問題なく分けて組み合わせられると仮定する。現実の協力には追加の費用がかかり得る。指示の誤解や、展示に間に合わない説明文もあり、品質差も問題になり得る。これらは絶対優位と比較優位の区別をなくさないが、ある分業に価値があるかには影響する。完全に専門化する前に、二人は見込まれる利益と共同作業を調整する費用を比べる必要がある。原理は協力の機会を示すのであって、すべての分業案の成功を保証しない。",
+   "source": "eikenp1-honban-r11 大問2[A]",
+   "questions": [
+    {
+     "stem": "( 1 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "In contrast",
+      "For instance",
+      "Meanwhile",
+      "Consequently"
+     ],
+     "answer": 3,
+     "explanation": "正解 ④ Consequently（したがって）\nオマルが説明文を書くことで諦める展示作業は少ない。その比較から、説明文を任せる分業の利益という結論へ進むためConsequently。\n【根拠】Omar works more slowly overall, yet writing a description costs him fewer displays.\n【他の選択肢】\n① In contrast（それとは対照的に） … 全体では遅いという対比はyetで示されている。空所の後は、直前の機会費用から導かれる結果。\n② For instance（例えば） … 二人の具体例はすでに展開されており、ここでは例の追加より分業の結果を導く。\n③ Meanwhile（その間に） … 二つの出来事の同時進行を述べず、費用の比較と分業の利益を結ぶ。\n【復習】速さの絶対比較と、別の仕事を諦める相対的な費用を分けて読む。",
+     "source": "eikenp1-honban-r11"
+    },
+    {
+     "stem": "( 2 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "whether both workers enjoy the same activities",
+      "who completes each activity more quickly",
+      "how often the museum changes its displays",
+      "whether descriptions and displays require equal time"
+     ],
+     "answer": 1,
+     "explanation": "正解 ② who completes each activity more quickly（誰が各活動をより速く終えるか）\nレナは両方で速いが、オマルは失う展示作業が少ないので説明文で比較優位を持ち得る。分業は速さだけで決める必要がない。\n【根拠】Omar can nevertheless have a comparative advantage in writing because he sacrifices less display work to do it.\n【他の選択肢】\n① whether both workers enjoy the same activities（二人が同じ活動を楽しむか） … 好みの共通性は本文の比較基準ではない。\n③ how often the museum changes its displays（博物館が展示を変える頻度） … 展示替えの頻度でなく、各作業に伴う機会費用を比較している。\n④ whether descriptions and displays require equal time（説明文と展示に同じ時間が必要か） … 二つの作業に同じ時間がかかるという条件は示されていない。\n【復習】less timeは絶対優位、sacrifices lessは比較優位の説明と対応させる。",
+     "source": "eikenp1-honban-r11"
+    },
+    {
+     "stem": "( 3 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "the costs of coordinating their joint work",
+      "the number of tasks in which Lena is slower",
+      "the need for Omar to outperform Lena at both tasks",
+      "the assumption that every description must be identical"
+     ],
+     "answer": 0,
+     "explanation": "正解 ① the costs of coordinating their joint work（共同作業を調整する費用）\n後続の指示の誤解、遅い到着、品質差は、共同作業を組み合わせ調整する際の追加費用。分業の潜在利益と比べる。\n【根拠】Actual cooperation may involve additional costs.\n【他の選択肢】\n② the number of tasks in which Lena is slower（レナの方が遅い仕事の数） … レナは両方で速いので、彼女が遅い仕事を数える話ではない。\n③ the need for Omar to outperform Lena at both tasks（両方の仕事でオマルがレナを上回る必要） … オマルが両方で絶対優位を得る必要はないことが第2段落の要点。\n④ the assumption that every description must be identical（すべての説明文を同一にすべきという仮定） … 説明文をすべて同じにする条件はなく、品質差と同一性を混同している。\n【復習】利益の原理と、現実の実施費用を分け、not a guaranteeの限定を保つ。",
+     "source": "eikenp1-honban-r11"
+    }
+   ]
+  },
+  {
+   "unit": "準1級 長文空所補充",
+   "level": "standard",
+   "title": "Light on a Return Journey",
+   "body": "A road sign can look surprisingly bright when a car's headlights shine on it at night. The sign is not producing its own light. Without illumination, it cannot provide the same apparent glow by itself. Its surface contains structures that send much of the incoming light back toward the source. This property is called retroreflection. Ordinary surfaces scatter light in many directions, while a flat mirror sends it in a direction determined by the angle at which it arrives. A retroreflective surface instead returns light approximately along its incoming path. ( 1 ), it can appear bright to someone near the lamp.\n\nThis explains why a driver can see a reflective sign clearly while a person standing well to one side may not see the same brightness. The driver's eyes are close to the headlights, so they receive more of the returned light. Retroreflection therefore does not make a sign equally bright from every position. Its usefulness depends partly on ( 2 ). The material concentrates the returning light rather than increasing the amount of energy that originally reached it.\n\nTiny glass beads and small prism structures can produce this effect, although their performance varies. The optical structure also needs to remain effective. Dirt can cover parts of the surface, and frost or dew can change the path of light, reducing the amount returned. A sign that retains its familiar color by day may therefore perform less well at night. An assessment of such a surface should consider ( 3 ), rather than rely on its daytime appearance alone.",
+   "body_ja": "夜、車の前照灯が道路標識を照らすと、標識は驚くほど明るく見えることがある。自ら光を出すのではなく、照明がなければ単独で同じような輝きを生み出せない。表面の構造が入射光の多くを光源へ戻す。この性質を再帰反射という。普通の表面は光を様々な方向へ散らし、平らな鏡は入射角に応じた方向へ反射する。再帰反射面は、光が来た経路にほぼ沿って戻す。その結果、照明の近くにいる人には明るく見え得る。\n\n運転者が反射標識をはっきり見ても、ずっと横に立つ人には同じ明るさに見えないことがある理由はこれで説明できる。運転者の目は前照灯に近く、戻る光をより多く受ける。再帰反射はすべての位置から標識を同じ明るさにするわけではない。有用性は、観察者が光源に対してどこにいるかにも依存する。材料は戻る光を集中させ、最初に届いたエネルギーを増やすのではない。\n\n小さなガラス球やプリズム構造がこの効果を生み出せるが、性能は異なる。光学構造の有効性も保つ必要がある。汚れは表面を覆い、霜や露は光路を変えて戻る量を減らし得る。昼には見慣れた色を保つ標識でも、夜の性能は落ちているかもしれない。その表面の評価では、昼の外観だけに頼らず、実際の条件でどれだけ光を戻すかを考えるべきだ。",
+   "source": "eikenp1-honban-r11 大問2[B]",
+   "questions": [
+    {
+     "stem": "( 1 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "Nevertheless",
+      "For example",
+      "As a result",
+      "On the contrary"
+     ],
+     "answer": 2,
+     "explanation": "正解 ③ As a result（その結果）\n入射経路にほぼ沿って光を返すので、光源近くの観察者に明るく見える。この原因と結果をAs a resultで結ぶ。\n【根拠】A retroreflective surface instead returns light approximately along its incoming path.\n【他の選択肢】\n① Nevertheless（それにもかかわらず） … 経路に沿って戻ることと、光源近くで明るいことは逆接ではない。\n② For example（例えば） … 別の具体例でなく、直前の反射方向から生じる結果。\n④ On the contrary（それどころか） … 前の説明を否定しておらず、むしろそれを受けている。\n【復習】returns ... along its incoming pathを、観察者が受ける光の量と結び付ける。",
+     "source": "eikenp1-honban-r11"
+    },
+    {
+     "stem": "( 2 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "where the observer is in relation to the light source",
+      "whether the surface can generate additional light",
+      "how evenly light is spread across every viewing position",
+      "whether the observer stands farther away than everyone else"
+     ],
+     "answer": 0,
+     "explanation": "正解 ① where the observer is in relation to the light source（観察者が光源に対してどこにいるか）\n運転者の目は光源に近く、横の人とは受ける戻り光の量が違う。依存するのは光源と観察者の相対位置。\n【根拠】The driver's eyes are close to the headlights, so they receive more of the returned light.\n【他の選択肢】\n② whether the surface can generate additional light（表面が追加の光を生み出せるか） … 第1段落で標識は自ら光を作らないと明示されている。\n③ how evenly light is spread across every viewing position（すべての観察位置へどれほど均等に光が広がるか） … すべての位置へ均等に散らすのでなく、戻る光を集中させる。\n④ whether the observer stands farther away than everyone else（観察者が他の全員より遠くに立つか） … 全員との距離比較でなく、光源に対してどこにいるかが問題。\n【復習】明るく見えるという結果には、誰がどこから見ているかの条件を付ける。",
+     "source": "eikenp1-honban-r11"
+    },
+    {
+     "stem": "( 3 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "whether its color remains unchanged in daylight",
+      "how much energy it can produce without illumination",
+      "how much light it returns under actual conditions",
+      "whether its surface is brighter than the lamp itself"
+     ],
+     "answer": 2,
+     "explanation": "正解 ③ how much light it returns under actual conditions（実際の条件でどれだけ光を戻すか）\n汚れや霜・露で戻る光は減り得る。昼の色だけでは判定できず、実際の条件で光を戻す性能を確認する。\n【根拠】Dirt can cover parts of the surface, and frost or dew can change the path of light, reducing the amount returned.\n【他の選択肢】\n① whether its color remains unchanged in daylight（昼に色が変わらないか） … 昼の見た目が保たれても夜の性能は低下し得ると述べられている。\n② how much energy it can produce without illumination（照明なしでどれだけエネルギーを生めるか） … 光を生成する材料ではないので、照明なしのエネルギー産出量ではない。\n④ whether its surface is brighter than the lamp itself（表面が照明自体より明るいか） … 光源より明るいかという比較でなく、入射光を戻す性能が焦点。\n【復習】rather than以降の不十分な基準と、その前の採用すべき基準を区別する。",
+     "source": "eikenp1-honban-r11"
+    }
+   ]
+  },
+  {
+   "unit": "準1級 長文 内容一致",
+   "level": "standard",
+   "title": "An Ocean Brought into the Laboratory",
+   "body": "During the nineteenth century, the deep ocean became the subject of an expanding scientific debate. Some naturalists had argued that conditions below a certain depth made animal life impossible. Earlier expeditions, however, recovered organisms from depths beyond the proposed limit. These findings encouraged a more systematic investigation, rather than ending the need for research. The British expedition of HMS Challenger, which traveled from 1872 to 1876, aimed to study the oceans on a much broader scale. A naval vessel was adapted for science, with laboratories and equipment replacing much of its military armament. Its researchers would investigate seawater, the seabed, and living organisms together. The purpose was not merely to bring home surprising animals, but to relate discoveries to the physical environments from which they came.\n\nWorking from a ship presented considerable challenges. Long lines carried collecting equipment and instruments into water the researchers could not observe directly. Samples were obtained at selected stations, while measurements recorded such features as depth and temperature. Collecting an unfamiliar animal was only part of the work. Without information about where and under what conditions it had been found, the specimen would reveal less about the ocean. Records linked biological material to physical observations, enabling researchers to examine differences between locations. The resulting knowledge was nevertheless uneven: a voyage could investigate particular places, not continuously inspect the entire seabed. Discovering life in deep water did not establish that identical communities occupied every region. The expedition expanded the evidence available while leaving many questions for later investigation.\n\nReturning to Britain did not bring the scientific work to an end. Specialists examined the collections, classified organisms, and prepared detailed accounts. The results eventually filled fifty report volumes, reflecting an undertaking that extended well beyond the years at sea. Specimens and records were also preserved in institutions where later researchers could examine them again. New techniques can reveal features that the original observers did not investigate, and historical material can provide a basis for comparisons across time. Such comparisons require care, since differences in collecting and preserving samples can affect the results. The expedition's lasting value therefore includes more than its original conclusions. By keeping material connected to records of its origin, it created opportunities for questions that its organizers could not fully anticipate.",
+   "body_ja": "19世紀、深海は広がりつつある科学的議論の対象となった。ある深さより下では条件が動物の生存を不可能にすると考える博物学者もいた。しかし以前の探検は、想定された限界より深い場所から生物を回収していた。発見は研究の必要を終わらせず、より系統的な調査を促した。1872〜1876年に航海した英国のチャレンジャー号探検は、はるかに広い規模で海洋を研究することを目指した。軍艦は科学用に改造され、多くの武装が実験室と機器に置き換わった。研究者は海水、海底、生物を一緒に調べる。目的は驚く動物を持ち帰るだけでなく、発見をそれが得られた物理的環境と関連付けることだった。\n\n船上からの作業には大きな困難があった。長い綱が採集器具と機器を、研究者が直接見られない水中へ運んだ。選ばれた観測地点で試料を採り、深さや温度なども測定した。未知の動物を採ることは作業の一部分にすぎない。どこでどの条件の下で見つかったか分からなければ、標本から海洋について分かることは少なくなる。記録は生物資料を物理的観察と結び付け、地点間の違いを調べられるようにした。ただし知識は一様ではない。航海は特定地点を調べられても、海底全体を連続して調べられない。深海の生物発見は、すべての地域に同じ群集がいることを証明しない。探検は証拠を増やしたが、後の調査に多くの問いを残した。\n\n英国への帰還で科学的作業が終わったわけではない。専門家は収集物を調べ、生物を分類し、詳しい報告を準備した。結果は最終的に50巻の報告書となり、海上の年月を大きく超えて続いた事業を示す。標本と記録も施設に保管され、後の研究者は再調査できた。新技術は当初調べなかった特徴を明らかにでき、歴史的資料は時代間の比較の基礎にもなる。ただし採集・保存方法の違いが結果に影響するので、比較には注意が必要である。探検の長期的価値は当初の結論を超える。資料を出所の記録と結び付けて保つことで、主催者が完全には予想できなかった問いの機会を生んだ。",
+   "source": "eikenp1-honban-r11 大問3[A]",
+   "questions": [
+    {
+     "stem": "How did the earlier discoveries mentioned in the first paragraph influence research?",
+     "choices": [
+      "They showed that temperature measurements could replace collecting organisms.",
+      "They encouraged a wider investigation of ocean environments and living things.",
+      "They led the navy to send a ship equipped mainly for military action.",
+      "They established that biological research should be confined to coastal waters."
+     ],
+     "answer": 1,
+     "explanation": "正解 ② They encouraged a wider investigation of ocean environments and living things.（海洋環境と生物のより広い調査を促した。）\n以前の航海が想定限界より深くで生物を回収し、さらに系統的に海水・海底・生物を調べる探検につながった。\n【根拠】These findings encouraged a more systematic investigation, rather than ending the need for research.\n【他の選択肢】\n① They showed that temperature measurements could replace collecting organisms.（温度測定で生物採集を置き換えられると示した。） … 生物と物理的環境を一緒に研究するので、温度測定で採集を置き換えるのではない。\n③ They led the navy to send a ship equipped mainly for military action.（主に軍事行動用の装備を持つ船を海軍に送らせた。） … 多くの武装を実験室や科学機器へ置き換えたので、軍事装備中心とは逆。\n④ They established that biological research should be confined to coastal waters.（生物研究を沿岸に限るべきだと確定した。） … 深海での発見が広い調査を促し、沿岸に限定する結論ではない。\n【復習】以前の発見→追加研究の必要→探検の目的という順序を追う。",
+     "source": "eikenp1-honban-r11"
+    },
+    {
+     "stem": "What was important about the way the expedition recorded its collections?",
+     "choices": [
+      "The researchers treated temperature as a substitute for information about collection depth.",
+      "The researchers concentrated on naming animals instead of measuring properties of the water.",
+      "The researchers used environmental measurements mainly to decide which specimens deserved to be preserved.",
+      "The researchers connected specimens with information about the environments where they were found."
+     ],
+     "answer": 3,
+     "explanation": "正解 ④ The researchers connected specimens with information about the environments where they were found.（標本を発見場所の環境情報と結び付けた。）\n標本の採集だけでなく、出所と深さ・温度などの記録が、地点間の環境と生物の違いを調べる基礎となった。\n【根拠】Records linked biological material to physical observations, enabling researchers to examine differences between locations.\n【他の選択肢】\n① The researchers treated temperature as a substitute for information about collection depth.（深さの情報の代わりとして温度を扱った。） … 深さと温度などを記録し、一方で他方を置き換えていない。\n② The researchers concentrated on naming animals instead of measuring properties of the water.（水の性質を測らず、動物の命名に集中した。） … 生物資料と水中の物理的観察を関連付けることが大切だった。\n③ The researchers used environmental measurements mainly to decide which specimens deserved to be preserved.（主にどの標本を保存すべきか決めるため、環境を測定した。） … 本文で環境情報を結び付ける目的は、地点間の違いを調べること。保存に値する標本の選別という目的は述べられていない。\n【復習】採った物だけでなく、whereとunder what conditionsの記録が果たす役割を確認する。",
+     "source": "eikenp1-honban-r11"
+    },
+    {
+     "stem": "What does the final paragraph suggest about the expedition's collections?",
+     "choices": [
+      "Their continued value depends mainly on preserving the conclusions reached by the original specialists.",
+      "They preserve an unchanged picture of all ocean conditions throughout the voyage.",
+      "They can support later questions if differences in collecting and storage are considered.",
+      "They are best studied without the original records because modern techniques supply the environmental context."
+     ],
+     "answer": 2,
+     "explanation": "正解 ③ They can support later questions if differences in collecting and storage are considered.（採集と保存の違いに注意すれば、後の問いを調べる助けになる。）\n新技術による再調査や時代間の比較に使えるが、採集・保存方法の違いが結果に影響するため注意する。\n【根拠】Such comparisons require care, since differences in collecting and preserving samples can affect the results.\n【他の選択肢】\n① Their continued value depends mainly on preserving the conclusions reached by the original specialists.（長期的価値は主に当初の専門家の結論を保つことに依存する。） … 当初の結論の保存を主な価値とするのでなく、新技術や予想外の問いの機会を含め、結論を超える価値が述べられている。\n② They preserve an unchanged picture of all ocean conditions throughout the voyage.（航海全体にわたる全海洋の不変の状況を保存している。） … 第2段落で特定地点を調べる限界が述べられ、全海洋の連続した記録ではない。\n④ They are best studied without the original records because modern techniques supply the environmental context.（新技術が環境情報を与えるので、当初の記録なしで研究するのが最善だ。） … 資料を出所の記録と結び付けて保つことが新たな研究の基礎。新技術があるから元の記録は不要とはならない。\n【復習】新しい研究に使えるという価値と、比較方法への注意を一組で保持する。",
+     "source": "eikenp1-honban-r11"
+    }
+   ]
+  },
+  {
+   "unit": "準1級 長文 内容一致",
+   "level": "standard",
+   "title": "What a Digital Signature Establishes",
+   "body": "A digital signature is more than a picture of a handwritten name placed on a document. It is produced by a mathematical process using a private key, which the signer must protect. A corresponding public key allows others to check the signature without possessing the private one. In a properly working system, this check provides evidence that the signed data have not been changed and that the signature was made using the matching private key. Someone who edits the document cannot simply attach the old signature and expect the altered version to pass the same check. The public key can be shared widely, but its availability does not give everyone the ability to create signatures in the signer's place. Verification and signing have different requirements.\n\nIdentifying the key's owner is a separate issue. A stranger could create a key pair and sign a document while claiming to represent a familiar institution. The mathematical match would not, by itself, establish that claimed connection. A digital certificate can help by linking a public key to an identified owner through a trusted issuing organization. The reliability of that link depends on the issuer's checks, rather than the attractive appearance of the document. Moreover, protection of the private key remains essential. If an unauthorized person obtains it, apparently valid signatures may no longer provide dependable evidence of the intended author's participation. Trust in the system consequently includes arrangements for establishing identities and maintaining control of keys, as well as the mathematical procedure.\n\nConsider a fictional research group that publishes a signed report. Readers have independently confirmed which public key belongs to the group, and its private key remains secure. A successful check can reassure them that the downloaded text is the version signed by the group. It cannot show that every calculation inside is correct. The researchers might have made an honest numerical error before signing. If they later publish a corrected version, the changed data need a new signature. Provided the key remains valid, both the original and the replacement may pass verification. This does not make them equally current. Version labels and authenticated announcements are needed to indicate which report the group now recommends. An intact historical document can be genuine while having been superseded.\n\nThese distinctions matter because the word \"verified\" can invite a broader interpretation than the procedure supports. A signature addresses the relation between particular data and a particular key. Evidence about the key's owner supports a further conclusion about origin. Assessing the document's factual accuracy or suitability for a present purpose requires additional judgment. A signed report is not automatically a sound report, just as a correctly identified speaker can still make a mistake. Nor does preserving a signature convert an old publication into the latest guidance. The method remains valuable when its contribution is understood precisely: it helps establish origin and detect alteration within a system of trusted identities and protected keys. Treating it as an answer to every question about a document would replace careful evaluation with an unjustified shortcut.",
+   "body_ja": "電子署名は、手書きの名前の画像を文書に置く以上のものである。署名者が保護すべき秘密鍵を使う数学的処理で生成される。対応する公開鍵があれば、秘密鍵を持たなくても署名を検証できる。正常に働く仕組みでは、署名されたデータが変わっておらず、対応する秘密鍵で署名が作られたという証拠になる。文書を編集した人は、単に古い署名を付けて同じ検証に通すことはできない。公開鍵は広く共有できても、誰もが署名者の代わりに署名できるようになるわけではない。検証と署名では必要なものが違う。\n\n鍵の所有者の特定は別の問題である。見知らぬ人が鍵の組を作り、有名な機関の代表だと名乗って文書に署名できる。数学的一致だけで、その関係は立証できない。電子証明書は、信頼される発行機関を通して公開鍵を特定の所有者に結び付ける助けとなる。結び付きの信頼性は文書の美しい外観ではなく、発行者の確認に依存する。秘密鍵の保護も不可欠である。権限のない人が入手すると、一見有効な署名でも、本来の著者の関与を示す信頼できる証拠ではなくなり得る。したがって仕組みへの信頼には、数学的手続きとともに、身元の確立と鍵の管理体制が含まれる。\n\n署名付き報告を公表する架空の研究グループを考えよう。読者はそのグループの公開鍵を別途確認し、秘密鍵は安全に保たれている。検証成功は、入手した本文がグループの署名した版だと確かめる助けになる。しかし中の計算がすべて正しいとは示さない。署名前に正直な数値ミスをしたかもしれない。後で修正版を公表すると、変わったデータには新しい署名が必要になる。鍵が引き続き有効なら、元の版と修正版の両方が検証に通り得るが、同じように最新ではない。現在どちらを推奨するかは、版の表示と真正性が確かめられた告知で示す必要がある。変わっていない過去の文書は本物でも、後の版に置き換えられていることがある。\n\n「検証済み」という語が手続きの支える範囲を超えた解釈を招くので、区別は重要である。署名は特定のデータと特定の鍵の関係を扱う。鍵の所有者に関する証拠は、出所についてさらに判断する助けになる。事実の正確さや現在の目的への適合には追加の判断が必要である。身元の分かる話者も間違えるように、署名付き報告が自動的に正しい報告になるわけではない。署名を保持しても、古い出版物は最新の指針にならない。方法の寄与を正確に理解すれば有用であり、信頼される身元と保護された鍵の仕組みの中で、出所を確かめ改変を検出する助けになる。文書のあらゆる問いへの答えと見なすと、慎重な評価を正当でない近道に置き換えてしまう。",
+   "source": "eikenp1-honban-r11 大問3[B]",
+   "questions": [
+    {
+     "stem": "In a properly working system, what does checking a digital signature establish?",
+     "choices": [
+      "The data match what was signed using the private key corresponding to the public one.",
+      "The document has been revised to reflect the latest available information.",
+      "The public key has been kept secret from people other than the original signer.",
+      "The facts in the document have been reviewed by an independent issuing organization."
+     ],
+     "answer": 0,
+     "explanation": "正解 ① The data match what was signed using the private key corresponding to the public one.（データが公開鍵に対応する秘密鍵で署名された内容と一致する。）\n正常に機能する仕組みで、署名されたデータの改変の有無と、対応する秘密鍵による署名を検証する。最新性・事実の正しさまで検査しない。\n【根拠】In a properly working system, this check provides evidence that the signed data have not been changed and that the signature was made using the matching private key.\n【他の選択肢】\n② The document has been revised to reflect the latest available information.（文書が最新情報を反映するよう改訂された。） … 最新性は第3・4段落で追加の判断が必要とされる。\n③ The public key has been kept secret from people other than the original signer.（公開鍵が元の署名者以外に知られないよう保たれた。） … 公開鍵は広く共有できる。秘密に保護すべきものは秘密鍵。\n④ The facts in the document have been reviewed by an independent issuing organization.（独立した発行機関が文書中の事実を審査した。） … 証明書の発行者は鍵と所有者の結び付きを支え、文書の計算や事実の審査とは異なる。\n【復習】publicとprivateを分け、検証が示す範囲を限定する。",
+     "source": "eikenp1-honban-r11"
+    },
+    {
+     "stem": "Why does the second paragraph discuss a digital certificate?",
+     "choices": [
+      "It allows the public key to replace the private key when creating signatures.",
+      "It prevents the named owner from making an error in a signed document.",
+      "It makes a document's appearance a dependable guide to its scientific value.",
+      "It can support a link between a public key and an identified owner through a trusted issuer."
+     ],
+     "answer": 3,
+     "explanation": "正解 ④ It can support a link between a public key and an identified owner through a trusted issuer.（信頼される発行者を通じ、公開鍵と特定の所有者の結び付きを支え得る。）\n数学的一致だけでは、鍵の持ち主が名乗る機関との関係を確定できない。証明書は信頼される発行者を通して鍵と身元を結び付ける助けとなる。\n【根拠】A digital certificate can help by linking a public key to an identified owner through a trusted issuing organization.\n【他の選択肢】\n① It allows the public key to replace the private key when creating signatures.（署名生成で公開鍵を秘密鍵の代わりに使えるようにする。） … 公開鍵で検証できても、署名を作るには秘密鍵が必要。\n② It prevents the named owner from making an error in a signed document.（名義上の所有者が署名文書で間違えるのを防ぐ。） … 所有者の識別と、本文中の計算の正しさは別である。\n③ It makes a document's appearance a dependable guide to its scientific value.（文書の外観を科学的価値の信頼できる目安にする。） … 信頼性は発行者の確認に依存し、美しい外観ではないと明示されている。\n【復習】鍵の一致から身元を判断するには、さらに何の証拠が要るかを考える。",
+     "source": "eikenp1-honban-r11"
+    },
+    {
+     "stem": "What is illustrated by the research group's original and corrected reports?",
+     "choices": [
+      "An honest calculation error makes the original signature fail automatically.",
+      "Two versions can both pass verification even though one has replaced the other.",
+      "A corrected report can use the original signature despite its changed numerical content.",
+      "Publishing a replacement removes the need to indicate which version is recommended."
+     ],
+     "answer": 1,
+     "explanation": "正解 ② Two versions can both pass verification even though one has replaced the other.（一方が他方を置き換えていても、両版が検証に通り得る。）\n鍵が引き続き有効なら、当初の誤りを含む署名済み版と新たに署名した修正版は、両方が真正性の検証に通り得る。しかし推奨される現在の版は別途示す。\n【根拠】Provided the key remains valid, both the original and the replacement may pass verification. This does not make them equally current.\n【他の選択肢】\n① An honest calculation error makes the original signature fail automatically.（正直な計算ミスがあれば元の署名は自動的に検証に通らなくなる。） … 計算ミスは署名前に入り得る。検証は計算の正しさを検査しない。\n③ A corrected report can use the original signature despite its changed numerical content.（数値を変えた修正版でも元の署名をそのまま使える。） … データを変えたので新しい署名が必要と述べられている。\n④ Publishing a replacement removes the need to indicate which version is recommended.（修正版を出せば推奨版の表示は不要になる。） … 版表示と真正性が確かめられた告知で、推奨版を示す必要がある。\n【復習】intact／genuineとcurrentを混同せず、Providedの条件も残す。",
+     "source": "eikenp1-honban-r11"
+    },
+    {
+     "stem": "Which conclusion is supported by the passage?",
+     "choices": [
+      "Confidence in origin and unchanged data still leaves accuracy and present usefulness to be assessed.",
+      "Evidence that a report is genuine also establishes that it is the version intended for current use.",
+      "A trusted issuer's checks support the report's calculations as well as the key owner's identity.",
+      "Public verification lets readers make revised documents pass by using the published key."
+     ],
+     "answer": 0,
+     "explanation": "正解 ① Confidence in origin and unchanged data still leaves accuracy and present usefulness to be assessed.（出所と改変のないデータへの確信があっても、正確さと現在の有用性の評価は残る。）\n署名・身元の証拠が出所と改変を確かめる助けになっても、事実の正確さと現在の目的への適合は追加の評価が必要。\n【根拠】Assessing the document's factual accuracy or suitability for a present purpose requires additional judgment.\n【他の選択肢】\n② Evidence that a report is genuine also establishes that it is the version intended for current use.（報告が本物という証拠は、現在の利用を意図した版であることも確定する。） … 本物の過去の文書でも後の版に置き換えられ得るので、真正性だけで現在の推奨版とは決まらない。\n③ A trusted issuer's checks support the report's calculations as well as the key owner's identity.（信頼される発行者の確認は、鍵の所有者の身元とともに報告中の計算も支える。） … 発行者の確認は鍵と身元の結び付きを支える。正しく身元が分かる話者も間違えるという例が、計算の正確さとの区別を示す。\n④ Public verification lets readers make revised documents pass by using the published key.（公開の検証は、読者が公開鍵を使って改訂文書を検証に通すことを可能にする。） … 公開鍵は検証に使えるが、改訂データへの新しい署名を作るには秘密鍵が必要。\n【復習】署名と鍵、身元、正確さ、現在の用途という段階ごとの根拠を整理する。",
+     "source": "eikenp1-honban-r11"
     }
    ]
   }

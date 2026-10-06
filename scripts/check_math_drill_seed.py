@@ -188,7 +188,7 @@ def main():
         for u, v in unit_ranks.items():
             if sum(v) >= 6 and max(v) / sum(v) > 0.50:
                 bad.append(f"{name}: 単元 {u} の数値の選択肢で正解の順位が偏っている {v}")
-        retired = set((d.get("_meta") or {}).get("retired_sources") or [])
+        retired = {(r.get("source") if isinstance(r, dict) else r) for r in ((d.get("_meta") or {}).get("retired_sources") or [])}
         alive = retired & {q.get("source") for q in qs}
         if alive:
             bad.append(f"{name}: _meta.retired_sources (本番で止める問題) がシードの問題に残っている: {sorted(alive)[:5]}")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """🏅 seed-data/eiken_vocab_pool_v1.json / v2.json の形式ゲート (run_all_gates.py が拾う)。
-  v2 (2026-10-06) = 本番形式演習 2級 第1〜15回・準1級 第1〜9回 の大問1。CEO の補充ボタンは v1 → v2 の順に送る。
+  v2 (2026-10-06) = 本番形式演習 2級 第1〜15回・準1級 第1〜11回 の大問1。CEO の補充ボタンは v1 → v2 の順に送る。
 
 固定する不変条件 (壊れると単元ドリルで生徒が誤採点される / 取込で黙って skip される):
   - subject は 'eiken'、unit は 4 種 (2級 単語 / 2級 句動詞・熟語 / 準1級 単語 / 準1級 句動詞・熟語)、level は 'standard'
@@ -8,6 +8,8 @@
   - choices は 4 つ相異、answer は 0〜3、解説に正解語が出る、解説に ①〜④ や「選択肢2」を書かない
   - stem は一意 (取込の dedup は stem+unit+subject なので、同じ stem を別 unit に入れると二重に出る)。v1 と v2 をまたいでも一意
   - 正解位置は単元ごとに散らす (どの位置も 40% 以下)
+  - _meta.retired_sources (本番で止める作り直し前の旧版。{source, stem}) が、今のシードの問題 (同じ source と問題文) を指していない
+    (指していると、同期で止めた行と同じ問題文の行が取込の重複判定に当たって入らず、その問題が黙って消える)
 """
 import json
 import os
@@ -24,6 +26,14 @@ def main():
     seen = {}   # v1 と v2 をまたいで stem 一意
     for seed in SEEDS:
         check_seed(seed, seen, bad)
+    live = {(q.get("source"), (q.get("stem") or "").strip()) for seed in SEEDS for q in (json.load(open(seed, encoding="utf-8")).get("questions") or [])}
+    for seed in SEEDS:
+        for r in ((json.load(open(seed, encoding="utf-8")).get("_meta") or {}).get("retired_sources") or []):
+            src, st = (r.get("source"), (r.get("stem") or "").strip()) if isinstance(r, dict) else (r, None)
+            if not src or (isinstance(r, dict) and not st):
+                bad.append(f"{os.path.basename(seed)}: retired_sources の形が不正 (source と stem が要る): {r!r}")
+            elif (src, st) in live or (st is None and any(s_ == src for s_, _ in live)):
+                bad.append(f"{os.path.basename(seed)}: retired_sources が今のシードの問題を指している (止めると消える): {src}")
     if bad:
         print(f"❌ VIOLATION {len(bad)} 件")
         for b in bad[:60]:

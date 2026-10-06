@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""🏅 英検 本番形式演習 (2級 第1〜15回・準1級 第1〜9回) を単元ドリルのシード v2 にする (2026-10-06 塾長
+"""🏅 英検 本番形式演習 (2級 第1〜15回・準1級 第1〜11回) を単元ドリルのシード v2 にする (2026-10-06 塾長
 「デスクトップに英検の 2 級と準 1 級の問題演習があるので AI アプリの科目別ドリルに追加して」)。
 
 書き出すもの (v1 と同じ形・同じ単元名。CEO の補充ボタンが v1 と v2 を続けて送り、取込済みは server が dedup で飛ばす):
@@ -19,7 +19,8 @@
             n=1..14 → 単語、n=15..18 → 句動詞・熟語
           P2A/P2B (空所 ( 19 )…)・P3A/P3B と *_TITLE / *_JP。P2_QUESTIONS {19..24: (options, answer)}、
           P3_QUESTIONS {25..31: (question, options, answer)}、READING_NOTES {19..31: options_jp・evidence・reason・wrong["2：…"]・review}
-        _確認資料/最終検査.json の status が PASS_FINAL の回だけ使う (作業中の回を拾わない)。
+        _確認資料/最終検査.json の status が P1_PASS_STATUSES (PASS_FINAL / PASS_FINAL_INDEPENDENT_DELIVERY_CHECK = 別担当の配布前検査まで済んだ回)
+        の回だけ使う (作業中の回を拾わない。知らない PASS* は止める)。
 
 ★印刷物との照合: 各回の「問題冊子.pdf」の文字列を前から順に読み、全設問の stem と選択肢がデータと同じ順に並んでいるかを確かめる
   (データを直した後に刷り直していない・刷るときに選択肢を並べ替えた、を拾う)。1 か所でもずれたら書き出さない。
@@ -74,6 +75,18 @@ DROP_PASSAGE = {}        # {pid: 理由}
 #   (Going can seem to ( 1 ), even though the money is gone … は「お金を取り戻せる気がする」錯覚としても読める) → 全員一致だけ採用の原則で落とす。
 DROP_Q = {"eikenp1-honban-r5:P2A": {1}}
 
+# 準1級で使う回の最終検査の status (名前を決め打ち。2026-10-06 に別担当の配布前検査を経た回が _INDEPENDENT_DELIVERY_CHECK になった)
+P1_PASS_STATUSES = {"PASS_FINAL", "PASS_FINAL_INDEPENDENT_DELIVERY_CHECK"}
+
+# 本番に入った後で問題文が変わった問題 = 旧版の行を止める (CEO の 🏅 語彙ボタンが同期 /api/admin/grammar/sync で active=0 にする)。
+#   止めるのは (source, 旧い問題文) の組だけ = 直した新版 (同じ source・新しい問題文) は止まらない。
+#   2026-10-06: 作者の配布前の独立検査 (最終検査.json の correction) で直った分。正解の番号は変わっていない。
+#     第7回 Q18「100枚から10枚へ減らす文脈にし、紛らわしい誤答を交換」(hold on to → do away with・問題文も変更)
+#   ※第8回 Q7「別解になりうる誤答を交換」は問題文が同じなので止めずに同期で選択肢と解説をその場で直す (正解の文と位置は同じ)
+RETIRED_VOCAB = [
+    {"source": "eikenp1-honban-r7-18", "stem": "To reduce paper use while still providing a few copies for those who needed them, the office decided to (   ) printed handouts and send most documents electronically."},
+]
+
 # 2級 第1回の 3A だけ、出所に書き出し・結びの訳が無い (他の 14 回にはある) → ここで補う
 EMAIL_JA_FILL = {"eiken2-honban-r1:3A": {"salutation_translation": "ボランティアの皆さま",
                                          "closing_translation": "よろしくお願いいたします。\nエミリー・ウォード"}}
@@ -82,8 +95,21 @@ problems = []
 
 
 def rno(path):
-    m = re.search(r"第(\d+)回", path)
+    m = re.search(r"第(\d+)回", os.path.basename(str(path).rstrip("/")))   # 親フォルダ「01_本番形式演習_第1〜11回」を拾わない
     return int(m.group(1)) if m else 1
+
+
+def round_dirs(base, pattern):
+    """回フォルダ (base の直下か 1 段下)。2026-10-06 のデスクトップ整理で各回が「01_本番形式演習_第1〜N回」の中に入ったので、
+    直下だけ探すと 1 回も見つからない。同じ回のフォルダが 2 つあれば (コピーの置き忘れ) どちらを使うか決められないので止める。"""
+    ds = sorted({d for d in glob.glob(f"{base}/{pattern}") + glob.glob(f"{base}/*/{pattern}") if os.path.isdir(d)}, key=rno)
+    by = collections.defaultdict(list)
+    for d in ds:
+        by[rno(d)].append(d)
+    for r, v in by.items():
+        if len(v) > 1:
+            problems.append(f"同じ回のフォルダが {len(v)} つある (第{r}回): {v}")
+    return ds
 
 
 def clean_stem(s):
@@ -179,8 +205,7 @@ def paras_of(s):
 # ───────────────────────── 2級 ─────────────────────────
 def load_e2():
     vocab, passages = [], []
-    dirs = sorted(glob.glob(f"{E2_DIR}/英検2級_本番形式演習_*"), key=rno)
-    dirs = [d for d in dirs if os.path.isdir(d) and re.search(r"_2026\d{4}$", d)]
+    dirs = [d for d in round_dirs(E2_DIR, "英検2級_本番形式演習_*") if re.search(r"_2026\d{4}$", d)]
     if len(dirs) != 15:
         problems.append(f"2級 本番形式演習が 15 回分でない ({len(dirs)}) at {E2_DIR}")
     for d in dirs:
@@ -272,14 +297,16 @@ def load_e2():
 # ───────────────────────── 準1級 ─────────────────────────
 def load_p1():
     vocab, passages = [], []
-    dirs = sorted(glob.glob(f"{P1_DIR}/英検準1級_本番形式演習_第*回_*"), key=rno)
+    dirs = round_dirs(P1_DIR, "英検準1級_本番形式演習_第*回_*")
     used = []
     for d in dirs:
         r = rno(d)
         tag = f"eikenp1-honban-r{r}"
         fin = f"{d}/_確認資料/最終検査.json"
         st = json.load(open(fin, encoding="utf-8")).get("status") if os.path.exists(fin) else None
-        if st != "PASS_FINAL":
+        if st not in P1_PASS_STATUSES:   # 名前を決め打ちで許す (PASS_FINAL_PENDING のような作業中の印を黙って拾わない)
+            if str(st or "").startswith("PASS"):
+                problems.append(f"準1級 第{r}回: 最終検査の status {st!r} を知らない (使ってよい回なら P1_PASS_STATUSES に足す)")
             print(f"  (準1級 第{r}回は 最終検査 {st} → 使わない)")
             continue
         used.append(r)
@@ -451,9 +478,10 @@ def main():
         return
     today = date.today().isoformat()
     meta = {"name": "eiken_vocab_pool_v2", "created": today, "subject": "eiken", "units": {u: vu.get(u, 0) for u in VOCAB_UNITS},
-            "sources": ["2級: 本番形式演習 第1〜15回 大問1 (Desktop/📚 教材/英語/04_英検/2級/英検2級_本番形式演習_*/_制作資料/part1.json)",
-                        f"準1級: 本番形式演習 第{used[0]}〜{used[-1]}回 大問1 (Desktop/📚 教材/英語/04_英検/準1級/英検準1級_本番形式演習_第N回_*/_制作資料/content.py の P1)"],
+            "sources": ["2級: 本番形式演習 第1〜15回 大問1 (Desktop/📚 教材/英語/04_英検/2級/01_本番形式演習_第1〜15回/英検2級_本番形式演習_*/_制作資料/part1.json)",
+                        f"準1級: 本番形式演習 第{used[0]}〜{used[-1]}回 大問1 (Desktop/📚 教材/英語/04_英検/準1級/01_本番形式演習_第1〜N回/英検準1級_本番形式演習_第N回_*/_制作資料/content.py の P1)"],
             "blind_review": BLIND_NOTE,
+            "retired_sources": [{"source": x["source"], "stem": x["stem"]} for x in RETIRED_VOCAB],
             "note": "全部トリリオンAI塾の書き下ろし (過去問なし)。v1 と同じ単元名・形式。解説は値で書く (①や『選択肢2』を書かない)。level は全問 standard。"}
     os.makedirs(os.path.dirname(OUT_VOCAB), exist_ok=True)
     with open(OUT_VOCAB, "w", encoding="utf-8") as f:
@@ -470,7 +498,9 @@ def main():
 
 
 BLIND_NOTE = ("盲検 (2026-10-06): 正解を伏せた独立ソルバー 3 名が 語彙 417 問・長文 327 問を解き、語彙は全問・長文は 326 問が全員一致"
-              "(正解表どおり・指摘なし)。残る 1 問 (準1級 第5回 大問2[A] 空所 1) は 3 名とも別解ありと指摘 → DROP_Q で落とした。生の解答はコミットしない。")
+              "(正解表どおり・指摘なし)。残る 1 問 (準1級 第5回 大問2[A] 空所 1) は 3 名とも別解ありと指摘 → DROP_Q で落とした。"
+              "追加 (同日): 準1級 第10・11回 (語彙 36 問・長文 本文 8 本 26 問) と、作者の配布前検査で直った 第7回 語彙18・第8回 語彙7 を"
+              "同じく 3 名で盲検 → 語彙 38 問・長文 26 問とも全員一致・指摘なし。生の解答はコミットしない。")
 
 if __name__ == "__main__":
     main()

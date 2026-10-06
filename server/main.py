@@ -45704,19 +45704,24 @@ def admin_grammar_sync(
     authorization: Optional[str] = Header(None),
     x_cron_secret: Optional[str] = Header(None),
 ):
-    """📐 admin: 取込済みの問題を出典 (source) で照合して直す (2026-10-06 高校数学ドリルの直し)。
+    """📐🏅 admin: 取込済みの問題を出典 (source) + 問題文 (stem) で照合して直す (2026-10-06 高校数学ドリル・英検の直し)。
     取込 (/api/admin/grammar/import) は INSERT 専用で、取込済みの問題の解説・単元は押し直しても変わらない。
-    CEO の補充ボタンは取込の前にこれを呼び、シードで直した分を本番の行に移す。
-    payload: { subject, questions: [{source, unit, explanation, choices?, answer?}], retire_sources?: [source, ...], dry_run?: false }
-      - (subject, source) が一致する行の unit / explanation がシードと違えば書き換える
-      - choices / answer は、その問題がまだどのドリルにも入っていないときだけ書き換える
-        (配信済みの問題は生徒の解答 (選択肢の番号) と食い違うので据え置き、kept_choices_delivered に数える。
-        解説の【よくある誤り】は誤答ごとに書いてあるので、選択肢を据え置いた問題は解説も据え置く)。
-        並びだけ違う (同じ 4 つ・同じ正解) のは書き換えない (シードは単元ごとに表示位置を配り直すので並びは動く)
-      - retire_sources の行は active=0 (生徒に出さない。配信済みのドリルでも出ない = 生徒側の取得は active=1 限定)
+    CEO の補充ボタン (📐 数学・🏅 英検 語彙) は取込の前にこれを呼び、シードで直した分を本番の行に移す。
+    payload: { subject, questions: [{source, stem?, unit, explanation, choices?, answer?}], retire_sources?: [source | {source, stem}], dry_run? }
+      - 照合は (subject, source, stem)。stem を送らない古い呼び方は (subject, source) だけで照合するが、同じ source に問題文の違う
+        生きている行がある (英文法・中学の在庫のように source が束ごとの名前) ときは**触らない** (ambiguous に数える)。
+        ★これが無いと source = 'manual-drill-v1' の 703 問をまとめて書き換え/止めてしまう
+      - unit / explanation がシードと違えば書き換える
+      - choices / answer: まだどのドリルにも入っていない問題は書き換える。配信済みの問題は、正解の選択肢 (文と位置) が同じで、
+        提出済みの解答で選ばれた番号の文も変わらないときだけ書き換える (誤答の差し替え = 採点も過去の解答の表示も変わらない)。
+        それ以外は据え置き (生徒の解答は番号で残っている)、kept_choices_delivered に数える。
+        解説の【よくある誤り】は誤答ごとに書いてあるので、選択肢を据え置いた問題は解説も据え置く。
+        並びだけ違う (同じ選択肢・同じ正解) のは書き換えない (シードは表示位置を配り直すことがある)
+      - retire_sources の行は active=0 (生徒に出さない。配信済みのドリルでも出ない = 生徒側の取得は active=1 限定)。
+        文字列だけのときも、問題文の違う生きている行が複数あれば止めない (ambiguous)
+      - 同じ (source, stem) の生きている行が 2 つ以上 = 二重に入った同じ問題 → ドリルに入っている行 (無ければ id の小さい行) を残して active=0
       - stem は変えない (取込の重複判定の鍵)。見つからない source は not_found に数えるだけ (入れるのは取込)
-      - 取込の既定値のような汎用の source (pool 等) は照合しない (別の問題をまとめて書き換えない)
-      - 同じ source の行が 2 つ以上あれば二重に入った同じ問題 → ドリルに入っている行 (無ければ id の小さい行) を残して active=0 (deduped)
+      - 取込の既定値のような汎用の source (pool 等) は照合しない
     unit は取込と同じ規則 (並び順の決まっている科目は登録済みの単元名だけ)。dry_run=true は数えるだけで書き換えない。"""
     if not _grammar_admin_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
@@ -45730,8 +45735,22 @@ def admin_grammar_sync(
     if subj not in _GRAMMAR_CANON_SUBJECTS:
         raise HTTPException(status_code=422, detail=f"subject が不正です。{sorted(_GRAMMAR_CANON_SUBJECTS)} のいずれかで指定してください")
     dry = bool(payload.get("dry_run"))
-    out = {"matched": 0, "not_found": 0, "invalid": 0, "multi_rows": 0, "deduped": 0, "updated_unit": 0, "updated_explanation": 0,
-           "updated_choices": 0, "kept_choices_delivered": 0, "retired": 0, "already_retired": 0, "retire_not_found": 0}
+    out = {"matched": 0, "not_found": 0, "invalid": 0, "ambiguous": 0, "multi_rows": 0, "deduped": 0, "updated_unit": 0,
+           "updated_explanation": 0, "updated_choices": 0, "kept_choices_delivered": 0, "retired": 0, "already_retired": 0,
+           "retire_not_found": 0}
+
+    def _rows_for(c, src, stem):
+        """(subject, source[, stem]) の行。stem 無しで問題文の違う生きている行が複数あれば None (= ambiguous)"""
+        if stem:
+            c.execute("SELECT id, unit, explanation, choices, answer, active, stem FROM grammar_questions "
+                      "WHERE subject = ? AND source = ? AND stem = ?", (subj, src, stem))
+            return c.fetchall()
+        c.execute("SELECT id, unit, explanation, choices, answer, active, stem FROM grammar_questions WHERE subject = ? AND source = ?", (subj, src))
+        rs = c.fetchall()
+        if len({(r_["stem"] or "").strip() for r_ in rs if int(r_["active"] or 0) == 1}) > 1:
+            return None
+        return rs
+
     conn = db()
     try:
         c = conn.cursor()
@@ -45743,10 +45762,24 @@ def admin_grammar_sync(
                 delivered.update(int(x) for x in json.loads(r["question_ids"] or "[]"))
             except Exception:
                 continue
+        # 提出済みの解答で選ばれた選択肢の番号 {question_id: {index, ...}}。解答は番号で残るので、選ばれた番号の文を変えると
+        #   生徒の振り返りと CEO の「どの選択肢を選んだか」が別の文に化ける → 選ばれた番号の文が変わる問題は書き換えない
+        chosen = {}
+        c.execute("SELECT answers_json FROM grammar_drill_assignments WHERE answers_json IS NOT NULL")
+        for r in c.fetchall():
+            try:
+                for k_, v_ in (json.loads(r["answers_json"] or "{}") or {}).items():
+                    chosen.setdefault(int(k_), set()).add(int(v_))
+            except Exception:
+                continue
         order = _GRAMMAR_SUBJECT_UNIT_ORDER.get(subj)
         for q in questions:
-            src = str((q or {}).get("source") or "").strip()[:30] if isinstance(q, dict) else ""
-            unit = str(q.get("unit") or "").strip() if isinstance(q, dict) else ""
+            if not isinstance(q, dict):
+                out["invalid"] += 1
+                continue
+            src = str(q.get("source") or "").strip()[:30]
+            stem = str(q.get("stem") or "").strip()
+            unit = str(q.get("unit") or "").strip()
             if src in _GRAMMAR_SYNC_GENERIC_SOURCES or not unit or (order is not None and unit not in order):
                 out["invalid"] += 1
                 continue
@@ -45764,8 +45797,10 @@ def admin_grammar_sync(
                 if not ok_choices:
                     out["invalid"] += 1
                     continue
-            c.execute("SELECT id, unit, explanation, choices, answer, active FROM grammar_questions WHERE subject = ? AND source = ?", (subj, src))
-            rows = c.fetchall()
+            rows = _rows_for(c, src, stem)
+            if rows is None:
+                out["ambiguous"] += 1
+                continue
             if not rows:
                 out["not_found"] += 1
                 continue
@@ -45774,7 +45809,7 @@ def admin_grammar_sync(
             live = [r_ for r_ in rows if int(r_["active"] or 0) == 1]
             rows = live or rows
             if len(rows) > 1:
-                # 同じ source の生きている行が 2 つ以上 = 二重に入った同じ問題 (同期の前に古い画面で取り込んだなど)。
+                # 同じ (source, 問題文) の生きている行が 2 つ以上 = 二重に入った同じ問題 (同期の前に古い画面で取り込んだなど)。
                 #   ドリルに入っている行 (無ければ id の小さい行) を残し、ほかは active=0 にする
                 out["multi_rows"] += 1
                 rows = sorted(rows, key=lambda r_: (int(r_["id"]) not in delivered, int(r_["id"])))
@@ -45787,18 +45822,23 @@ def admin_grammar_sync(
                 sets, params = [], []
                 if r["unit"] != unit:
                     sets.append("unit = ?"); params.append(unit); out["updated_unit"] += 1
-                keep_old = False   # 配信済みで選択肢を据え置く問題は、解説 (【よくある誤り】が誤答ごと) も据え置く
+                keep_old = False   # 選択肢を据え置く問題は、解説 (【よくある誤り】が誤答ごと) も据え置く
                 if has_choices:
                     try:
                         cur = json.loads(r["choices"] or "[]")
                         cur_ans = int(r["answer"])
-                        # 並び (表示位置) だけ違うのは同じ問題 = 書き換えない (シードは単元ごとに位置を配り直すので並びは動く)
+                        # 並び (表示位置) だけ違うのは同じ問題 = 書き換えない (シードは表示位置を配り直すことがある)
                         same_q = (isinstance(cur, list) and sorted(map(str, cur)) == sorted(choices)
                                   and 0 <= cur_ans < len(cur) and str(cur[cur_ans]) == choices[answer])
+                        # 正解の選択肢が文も位置も同じ = 誤答の差し替えだけ (配信済みでも採点は変わらない)。
+                        #   ただし提出済みの解答で選ばれた番号の文が変わるなら据え置く (過去の解答の表示が別の文に化ける)
+                        same_key = (isinstance(cur, list) and cur_ans == answer and 0 <= cur_ans < len(cur)
+                                    and str(cur[cur_ans]) == choices[answer] and len(cur) == len(choices)
+                                    and not any(0 <= i_ < len(cur) and str(cur[i_]) != choices[i_] for i_ in chosen.get(int(r["id"]), ())))
                     except Exception:
-                        same_q = False
+                        same_q, same_key = False, False
                     if not same_q:
-                        if int(r["id"]) in delivered:
+                        if int(r["id"]) in delivered and not same_key:
                             keep_old = True
                             out["kept_choices_delivered"] += 1
                         else:
@@ -45809,13 +45849,18 @@ def admin_grammar_sync(
                     sets.append("explanation = ?"); params.append(expl or None); out["updated_explanation"] += 1
                 if sets and not dry:
                     c.execute(f"UPDATE grammar_questions SET {', '.join(sets)} WHERE id = ?", (*params, r["id"]))
-        for src in retire:
-            src = str(src or "").strip()[:30]
+        for item in retire:
+            if isinstance(item, dict):
+                src, stem = str(item.get("source") or "").strip()[:30], str(item.get("stem") or "").strip()
+            else:
+                src, stem = str(item or "").strip()[:30], ""
             if src in _GRAMMAR_SYNC_GENERIC_SOURCES:
                 out["invalid"] += 1
                 continue
-            c.execute("SELECT id, active FROM grammar_questions WHERE subject = ? AND source = ?", (subj, src))
-            rows = c.fetchall()
+            rows = _rows_for(c, src, stem)
+            if rows is None:
+                out["ambiguous"] += 1
+                continue
             if not rows:
                 out["retire_not_found"] += 1
                 continue
@@ -45831,7 +45876,8 @@ def admin_grammar_sync(
         else:
             conn.commit()
         log.info(f"[GrammarSync] subject={subj} dry_run={dry} {out}")
-        return {"ok": True, "subject": subj, "dry_run": dry, "received": len(questions), "retire_received": len(retire), **out}
+        # match = 照合の方式。CEO はこれが無い応答 (2026-10-06 baace27 の source だけで照合する版) を「サーバの反映待ち」として止める
+        return {"ok": True, "subject": subj, "dry_run": dry, "match": "source+stem", "received": len(questions), "retire_received": len(retire), **out}
     except HTTPException:
         raise
     except Exception as e:
