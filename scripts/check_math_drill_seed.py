@@ -3,9 +3,11 @@
 
 固定する不変条件 (壊れると単元ドリルで生徒が誤採点される / 数式が生の文字で出る / 取込で黙って skip される):
   - subject は 'math'、level は basic / standard / advanced、unit は入試道場の単元タイル (dojo-drill.html の topic) と同じ文字列
+    (道場にタイルが無い単元は EXTRA_UNITS に明記したものだけ)
     (math は server 側に単元の許可リストが無いので、綴り違いはここで止める。弱点が道場とドリルで別の行になるのを防ぐ)
   - choices は 4 つ相異・空でない、answer は 0〜3
   - 解説は 20 字以上で、選択肢の番号・記号 (⓪①…・選択肢2・アの解答群) を書かない (値で書く)
+  - 前後の問を指さない (「上の確率変数」「次の問」…)・問題文で定義していない (ア)〜(エ) を解説で使わない
   - stem に図への言及が無い (画面に図は出せない)
   - 数式の区切り \\( \\) の数が合う・生成元の独自記法 ([[f|..]] <sub> <super>) が残っていない
   - stem は全シードを通して一意 (取込の dedup は stem+unit+subject)
@@ -33,10 +35,16 @@ UNITS = {
     "数学III 極限", "数学III 微分法", "数学III 積分法",
     "基礎数学 ベクトル", "数学C 複素数平面", "数学C 平面上の曲線",
 }
+# 入試道場にタイルが無い単元 (問題集にはあるので足す)。道場の topic とは照合しない
+EXTRA_UNITS = {"数学II 複素数と方程式"}
 LEVELS = {"basic", "standard", "advanced"}
 NUMREF = re.compile(r"[⓪①②③④]|選択肢\s*[0-9０-９]|[アイウエ](?:の解答群|が正解)")
 FIGURE = re.compile(r"図(?:のように|は|に示|の(?:よう|ような|中|三角形|点))|下の図|右の図|左の図")
 LEFTOVER = re.compile(r"\[\[|<sub>|<super>|</?b>|\x00")
+# 1 問ずつ出るので、前後の問を指す言い回しは使えない (2026-10-06 「上の確率変数 X」で分布が無い問題が盲検 3 名に見つかった)
+XREF = re.compile(r"前の問|前問|次の問|下の問|上の問|上の確率変数")
+# 選択肢に記号は付かないので、問題文で定義していない (ア)〜(エ) を解説で使わない (問題集の記号つき選択肢の名残)
+LABEL = re.compile(r"[(（]([アイウエ])[)）]")
 
 
 def numeric_value(c):
@@ -79,7 +87,7 @@ def main():
             src = f"{name}:{q.get('source', '?')}"
             if q.get("subject") != "math":
                 bad.append(f"{src}: subject={q.get('subject')!r}")
-            if q.get("unit") not in UNITS:
+            if q.get("unit") not in UNITS and q.get("unit") not in EXTRA_UNITS:
                 bad.append(f"{src}: unit={q.get('unit')!r} (入試道場の topic と違う)")
             if q.get("level") not in LEVELS:
                 bad.append(f"{src}: level={q.get('level')!r}")
@@ -93,12 +101,17 @@ def main():
                 bad.append(f"{src}: choices={ch}")
             if not isinstance(a, int) or not (0 <= a <= 3):
                 bad.append(f"{src}: answer={a!r}")
-            elif q.get("unit") in UNITS:
+            elif q.get("unit") in UNITS or q.get("unit") in EXTRA_UNITS:
                 pos[q["unit"]][a] += 1
             if len(ex) < 20:
                 bad.append(f"{src}: 解説が短い ({len(ex)} 字)")
             if NUMREF.search(ex + stem):
                 bad.append(f"{src}: 選択肢の番号・記号の参照: {NUMREF.search(ex + stem).group(0)}")
+            if XREF.search(stem + ex):
+                bad.append(f"{src}: 前後の問を指す言い回し: {XREF.search(stem + ex).group(0)}")
+            stem_labels = set(LABEL.findall(stem))
+            if any(l not in stem_labels for l in LABEL.findall(ex)):
+                bad.append(f"{src}: 解説が問題文に無い記号 ({''.join(sorted(set(LABEL.findall(ex)) - stem_labels))}) を指す")
             if FIGURE.search(stem):
                 bad.append(f"{src}: stem に図への言及: {FIGURE.search(stem).group(0)}")
             for part, t in [("stem", stem), ("explanation", ex)] + [(f"choice{i}", c) for i, c in enumerate(ch) if isinstance(c, str)]:

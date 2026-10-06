@@ -175,7 +175,7 @@ def main():
     # 英検は CEO のボタンと同じく v1 → v2 (本番形式演習 2026-10) の順に送る。v2 は v1 と重ならない (skipped 0) こと
     for fname, subj in (("chugaku_drill_pool_v1.json", "chugaku"), ("chugaku_math_pool_v1.json", "chugaku_math"),
                         ("eiken_vocab_pool_v1.json", "eiken"), ("eiken_vocab_pool_v2.json", "eiken"),
-                        ("math_drill_ct_mock_v1.json", "math")):
+                        ("math_drill_ct_mock_v1.json", "math"), ("math_drill_workbook_v1.json", "math")):
         qs = load_seed(fname)["questions"]
         t = import_like_ceo(api, "questions", qs, subj, 400)
         check(f"{fname}: 全 {len(qs)} 問が入る (errors 0・skipped 0・警告なし)",
@@ -194,12 +194,17 @@ def main():
     ceo = open(os.path.join(REPO, "ceo.html"), encoding="utf-8").read()
     for btn, want in (("eikenPoolImportBtn", ("eiken_vocab_pool_v1.json", "eiken_vocab_pool_v2.json")),
                       ("eikenReadingImportBtn", ("eiken_reading_pool_v1.json", "eiken_reading_pool_v2.json")),
-                      ("mathPoolImportBtn", ("math_drill_ct_mock_v1.json",))):
+                      ("mathPoolImportBtn", ("math_drill_ct_mock_v1.json", "math_drill_workbook_v1.json"))):
         m = re.search(r'id="%s"[^>]*data-seed="([^"]+)"' % btn, ceo)
         urls = [u.strip() for u in (m.group(1).split(",") if m else []) if u.strip()]
         check(f"ceo.html #{btn} の data-seed が {' → '.join(want)} を順に指し、どれも実在する",
               [u.rsplit("/", 1)[-1] for u in urls] == list(want) and all(os.path.exists(os.path.join(REPO, u.lstrip("/"))) for u in urls),
               str(urls))
+    # 数学の補充ボタンの data-size (確認ダイアログの問題数) はシードの問題数の合計と同じ (第2弾を足したときの数え忘れ防止)
+    m = re.search(r'id="mathPoolImportBtn"[^>]*data-seed="([^"]+)"[^>]*data-size="(\d+)"', ceo)
+    n_math = sum(len(load_seed(u.strip().rsplit("/", 1)[-1])["questions"]) for u in (m.group(1).split(",") if m else []) if u.strip())
+    check("ceo.html #mathPoolImportBtn の data-size がシードの問題数の合計と同じ",
+          bool(m) and int(m.group(2)) == n_math, f"data-size={m.group(2) if m else None} seeds={n_math}")
     for subj in ("chugaku", "chugaku_math", "eiken"):
         got = api.units(subj)
         names = [u["unit"] for u in got]
