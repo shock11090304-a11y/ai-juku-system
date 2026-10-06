@@ -301,6 +301,15 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_grammar_import_units.py
 
+      # 📐 高校数学ドリルの直し (2026-10-06): 取込済みの問題を出典で直す同期 API (/api/admin/grammar/sync: 単元・解説・
+      #   配信していない問題の選択肢・重複の active=0。配信済みは据え置き・並びだけの違いは触らない・押し直しても同じ)と、
+      #   塾長「数学Ⅲは自動配信は外して」= 弱点ルーティンの数学 (科目まるごと) に 数学III を入れないこと。
+      - name: 高校数学ドリル 同期と数学III除外 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_math_drill_sync.py
+
       # 📖 長文型ドリル (2026-09-24 塾長指示): 本文 + 複数設問の取込 (本文ごとの dedup)・本文単位のドリル作成 (順序保持・
       #   前回の本文を除外)・生徒の取得/提出が本文 map を返す・分析が passage_id を持つ・単発問題の経路は不変。
       - name: 長文型ドリル 回帰テスト

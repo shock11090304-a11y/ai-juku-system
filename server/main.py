@@ -45572,7 +45572,13 @@ def admin_grammar_import(
                         c.execute("SELECT 1 FROM grammar_questions WHERE source_exam_question_id = ? AND stem = ? LIMIT 1", (seq, stem))
                     else:
                         c.execute("SELECT 1 FROM grammar_questions WHERE stem = ? AND unit = ? AND subject = ? LIMIT 1", (stem, unit, subj))
-                    if c.fetchone():
+                    _dup = c.fetchone()
+                    if not _dup and seq is None and source not in _GRAMMAR_SYNC_GENERIC_SOURCES:
+                        # 📐 2026-10-06: 同じ出典 (シードが 1 問ずつ付ける source) と同じ問題文の行があれば、単元が違っても同じ問題。
+                        #   単元を直したシードを同期 (/api/admin/grammar/sync) より先に取り込んでも二重に入らない (古い CEO タブなど)
+                        c.execute("SELECT 1 FROM grammar_questions WHERE subject = ? AND source = ? AND stem = ? LIMIT 1", (subj, source, stem))
+                        _dup = c.fetchone()
+                    if _dup:
                         skipped += 1
                         continue
                 c.execute(
@@ -45688,13 +45694,169 @@ def admin_grammar_import(
         conn.close()
 
 
-def _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, exclude_ids=None):
+# 出典 (source) が CEO の補充ボタンのシード由来とみなせない値 (取込の既定値など)。同期で一括に書き換えない
+_GRAMMAR_SYNC_GENERIC_SOURCES = {"", "pool", "legacy", "manual", "seed"}
+
+
+@app.post("/api/admin/grammar/sync")
+def admin_grammar_sync(
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """📐 admin: 取込済みの問題を出典 (source) で照合して直す (2026-10-06 高校数学ドリルの直し)。
+    取込 (/api/admin/grammar/import) は INSERT 専用で、取込済みの問題の解説・単元は押し直しても変わらない。
+    CEO の補充ボタンは取込の前にこれを呼び、シードで直した分を本番の行に移す。
+    payload: { subject, questions: [{source, unit, explanation, choices?, answer?}], retire_sources?: [source, ...], dry_run?: false }
+      - (subject, source) が一致する行の unit / explanation がシードと違えば書き換える
+      - choices / answer は、その問題がまだどのドリルにも入っていないときだけ書き換える
+        (配信済みの問題は生徒の解答 (選択肢の番号) と食い違うので据え置き、kept_choices_delivered に数える。
+        解説の【よくある誤り】は誤答ごとに書いてあるので、選択肢を据え置いた問題は解説も据え置く)。
+        並びだけ違う (同じ 4 つ・同じ正解) のは書き換えない (シードは単元ごとに表示位置を配り直すので並びは動く)
+      - retire_sources の行は active=0 (生徒に出さない。配信済みのドリルでも出ない = 生徒側の取得は active=1 限定)
+      - stem は変えない (取込の重複判定の鍵)。見つからない source は not_found に数えるだけ (入れるのは取込)
+      - 取込の既定値のような汎用の source (pool 等) は照合しない (別の問題をまとめて書き換えない)
+      - 同じ source の行が 2 つ以上あれば二重に入った同じ問題 → ドリルに入っている行 (無ければ id の小さい行) を残して active=0 (deduped)
+    unit は取込と同じ規則 (並び順の決まっている科目は登録済みの単元名だけ)。dry_run=true は数えるだけで書き換えない。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    questions = payload.get("questions") or []
+    retire = payload.get("retire_sources") or []
+    if not isinstance(questions, list) or not isinstance(retire, list):
+        raise HTTPException(status_code=422, detail="questions / retire_sources が配列ではありません")
+    if len(questions) > 2000 or len(retire) > 2000:
+        raise HTTPException(status_code=422, detail="一度に同期できるのは 2000 問までです")
+    subj = _canon_grammar_subject(payload.get("subject"))
+    if subj not in _GRAMMAR_CANON_SUBJECTS:
+        raise HTTPException(status_code=422, detail=f"subject が不正です。{sorted(_GRAMMAR_CANON_SUBJECTS)} のいずれかで指定してください")
+    dry = bool(payload.get("dry_run"))
+    out = {"matched": 0, "not_found": 0, "invalid": 0, "multi_rows": 0, "deduped": 0, "updated_unit": 0, "updated_explanation": 0,
+           "updated_choices": 0, "kept_choices_delivered": 0, "retired": 0, "already_retired": 0, "retire_not_found": 0}
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 配信済みの問題 id (どのドリルに入っているか)。選択肢を書き換えてよいかの判定に使う
+        delivered = set()
+        c.execute("SELECT question_ids FROM grammar_drills")
+        for r in c.fetchall():
+            try:
+                delivered.update(int(x) for x in json.loads(r["question_ids"] or "[]"))
+            except Exception:
+                continue
+        order = _GRAMMAR_SUBJECT_UNIT_ORDER.get(subj)
+        for q in questions:
+            src = str((q or {}).get("source") or "").strip()[:30] if isinstance(q, dict) else ""
+            unit = str(q.get("unit") or "").strip() if isinstance(q, dict) else ""
+            if src in _GRAMMAR_SYNC_GENERIC_SOURCES or not unit or (order is not None and unit not in order):
+                out["invalid"] += 1
+                continue
+            expl = q.get("explanation")
+            expl = None if expl is None else str(expl)
+            choices, answer = q.get("choices"), q.get("answer")
+            has_choices = choices is not None or answer is not None
+            if has_choices:
+                try:
+                    answer = int(answer)
+                    ok_choices = (isinstance(choices, list) and len(choices) >= 2 and all(isinstance(x, str) and x.strip() for x in choices)
+                                  and len({x.strip() for x in choices}) == len(choices) and 0 <= answer < len(choices))
+                except (TypeError, ValueError):
+                    ok_choices = False
+                if not ok_choices:
+                    out["invalid"] += 1
+                    continue
+            c.execute("SELECT id, unit, explanation, choices, answer, active FROM grammar_questions WHERE subject = ? AND source = ?", (subj, src))
+            rows = c.fetchall()
+            if not rows:
+                out["not_found"] += 1
+                continue
+            out["matched"] += 1
+            # 止めてある行 (重複で外した・不良で止めた) は数えない。生きている行が無ければ内容だけ合わせる (active は変えない)
+            live = [r_ for r_ in rows if int(r_["active"] or 0) == 1]
+            rows = live or rows
+            if len(rows) > 1:
+                # 同じ source の生きている行が 2 つ以上 = 二重に入った同じ問題 (同期の前に古い画面で取り込んだなど)。
+                #   ドリルに入っている行 (無ければ id の小さい行) を残し、ほかは active=0 にする
+                out["multi_rows"] += 1
+                rows = sorted(rows, key=lambda r_: (int(r_["id"]) not in delivered, int(r_["id"])))
+                for extra in rows[1:]:
+                    out["deduped"] += 1
+                    if not dry:
+                        c.execute("UPDATE grammar_questions SET active = 0 WHERE id = ?", (extra["id"],))
+                rows = rows[:1]
+            for r in rows:
+                sets, params = [], []
+                if r["unit"] != unit:
+                    sets.append("unit = ?"); params.append(unit); out["updated_unit"] += 1
+                keep_old = False   # 配信済みで選択肢を据え置く問題は、解説 (【よくある誤り】が誤答ごと) も据え置く
+                if has_choices:
+                    try:
+                        cur = json.loads(r["choices"] or "[]")
+                        cur_ans = int(r["answer"])
+                        # 並び (表示位置) だけ違うのは同じ問題 = 書き換えない (シードは単元ごとに位置を配り直すので並びは動く)
+                        same_q = (isinstance(cur, list) and sorted(map(str, cur)) == sorted(choices)
+                                  and 0 <= cur_ans < len(cur) and str(cur[cur_ans]) == choices[answer])
+                    except Exception:
+                        same_q = False
+                    if not same_q:
+                        if int(r["id"]) in delivered:
+                            keep_old = True
+                            out["kept_choices_delivered"] += 1
+                        else:
+                            sets += ["choices = ?", "answer = ?"]
+                            params += [json.dumps(choices, ensure_ascii=False), answer]
+                            out["updated_choices"] += 1
+                if expl is not None and not keep_old and (r["explanation"] or "") != expl:
+                    sets.append("explanation = ?"); params.append(expl or None); out["updated_explanation"] += 1
+                if sets and not dry:
+                    c.execute(f"UPDATE grammar_questions SET {', '.join(sets)} WHERE id = ?", (*params, r["id"]))
+        for src in retire:
+            src = str(src or "").strip()[:30]
+            if src in _GRAMMAR_SYNC_GENERIC_SOURCES:
+                out["invalid"] += 1
+                continue
+            c.execute("SELECT id, active FROM grammar_questions WHERE subject = ? AND source = ?", (subj, src))
+            rows = c.fetchall()
+            if not rows:
+                out["retire_not_found"] += 1
+                continue
+            for r in rows:
+                if int(r["active"] or 0) == 0:
+                    out["already_retired"] += 1
+                    continue
+                out["retired"] += 1
+                if not dry:
+                    c.execute("UPDATE grammar_questions SET active = 0 WHERE id = ?", (r["id"],))
+        if dry:
+            conn.rollback()
+        else:
+            conn.commit()
+        log.info(f"[GrammarSync] subject={subj} dry_run={dry} {out}")
+        return {"ok": True, "subject": subj, "dry_run": dry, "received": len(questions), "retire_received": len(retire), **out}
+    except HTTPException:
+        raise
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        log.warning(f"[GrammarSync] failed (この要求の書き換えは全部取り消し): {type(e).__name__}: {e}")
+        return {"ok": False, "detail": "同期中にエラーが起きたため、この要求の書き換えは全部取り消しました (押し直せます)"}
+    finally:
+        conn.close()
+
+
+def _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, exclude_ids=None,
+                                    exclude_unit_prefixes=()):
     """grammar_questions からドリル用の問題 id を count 問ランダム抽出 (active のみ)。
     subject_level=True は unit フィルタを外しその科目の全単元から出題。exclude_ids で前回出題を除外。
+    exclude_unit_prefixes は科目まるごとのときに外す単元名の接頭辞 (弱点ルーティンの数学III。単元指定の抽出には効かない)。
     grammar-drill/create endpoint と弱点ルーティン(_run_weakness_drill_routine)が同一抽出を共有する。"""
     ph = ",".join(["?"] * len(levels))
     unit_clause = "" if subject_level else "unit = ? AND "
     unit_params = () if subject_level else (unit,)
+    if subject_level and exclude_unit_prefixes:
+        unit_clause += "".join("unit NOT LIKE ? AND " for _ in exclude_unit_prefixes)
+        unit_params += tuple(str(p_) + "%" for p_ in exclude_unit_prefixes)
     # 📖 長文型の設問 (passage_id あり) は本文と一緒にしか出さない: 科目全体の抽出や弱点ルーティンで 1 問ずつバラけないように
     pass_clause = "AND passage_id IS NULL " if _grammar_has_passages() else ""
     if exclude_ids:
@@ -45977,6 +46139,10 @@ _ENG_DRILL_UNITS = ['時制', '助動詞', '受動態', '不定詞', '動名詞'
                     '名詞・代名詞', '形容詞・副詞', '話法', '語法・イディオム']
 _SUBJECT_LEVEL_DRILL = {'math': '数学', 'physics': '物理', 'chemistry': '化学', 'biology': '生物',
                         'earth': '地学', 'social': '社会'}
+# 📐 2026-10-06 塾長「数学Ⅲは自動配信は外して」: 弱点ルーティン (自動配信) が数学を科目まるごとで配るときは数学III の単元を出さない。
+#   高校数学ドリルに数学III (極限・微分法・積分法) が入ったので、文系の生徒に未習の数III が混ざり、誤答で数III の弱点行が立って
+#   次の自動配信もまた数学になる。CEO で単元を選ぶ配信と、塾長が押す 📨 弱点ドリルはこれまでどおり (数III も出る)。
+_ROUTINE_SUBJECT_LEVEL_EXCLUDE_UNIT_PREFIXES = {"math": ("数学III", "数学Ⅲ", "数III", "数Ⅲ")}
 
 
 def _weakness_drill_routine_enabled() -> bool:
@@ -46015,6 +46181,10 @@ def _weakness_routine_pick_drills(c, sid, limit=5):
     for w in _select_balanced_weak_topics(cands, cap=8):
         subj = _canon_grammar_subject(w.get("subject"))
         topic = w.get("topic") or ""
+        if any(topic.startswith(p_) for p_ in _ROUTINE_SUBJECT_LEVEL_EXCLUDE_UNIT_PREFIXES.get(subj, ())):
+            # 📐 数学III の弱点は自動配信の対象外 (2026-10-06 塾長)。ここで数学の候補にすると、数学III を出せない
+            #   数学の科目まるごとドリルが毎回選ばれ、数III の弱点は測り直されないまま先頭に残り、ほかの科目の弱点が配られない
+            continue
         cand = None
         if subj == "english":
             for u in _ENG_DRILL_UNITS:
@@ -46083,10 +46253,11 @@ def _create_routine_grammar_drill(c, conn, subject, unit, count, sid, st):
             exclude_ids = [int(x) for x in json.loads(raw)]
     except Exception:
         exclude_ids = []
-    qids = _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, exclude_ids)
+    excl_units = _ROUTINE_SUBJECT_LEVEL_EXCLUDE_UNIT_PREFIXES.get(subject, ()) if subject_level else ()
+    qids = _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, exclude_ids, excl_units)
     if len(qids) < count and exclude_ids:
-        # 新問が尽きたら除外なしで再取得 (同一問題でも復習の価値あり=配信を止めない)
-        qids = _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, None)
+        # 新問が尽きたら除外なしで再取得 (同一問題でも復習の価値あり=配信を止めない)。数学III を外すのは再取得でも同じ
+        qids = _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, None, excl_units)
     if len(qids) < count:
         return None  # 在庫不足 (earth / 現代文 等の薄い科目)
     level_label = "・".join(GRAMMAR_LEVELS.get(l, l) for l in levels)

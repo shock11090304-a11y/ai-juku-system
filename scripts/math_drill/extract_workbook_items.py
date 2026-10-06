@@ -53,9 +53,12 @@ UNIT_MAP = {
     "数列": "基礎数学 数列", "ベクトル": "基礎数学 ベクトル",
 }
 PROOF = re.compile(r"証明せよ|示せ|証明しなさい")
-FIGURE_REF = re.compile(r"図(?:のように|は|に示|の(?:よう|ような|中|三角形|点))|下の図|右の図|左の図|次の箱ひげ図|図のような")
+FIGURE_REF = re.compile(r"図(?:のように|は|に示|の(?:よう|ような|中|三角形|点))|下の図|右の図|左の図|上の図|次の図|(?<!以)下図|(?<!以)上図|次の箱ひげ図|図のような")
 # 図が無いと条件が足りない → 入れない
 FIGURE_DROP_PATTERNS = [r"次の箱ひげ図は", r"図のような碁盤目状の道"]   # 「右に3区画、上に2区画進む碁盤目状の道」は文で条件がそろうので入れる
+# 図の部分を data/workbook_choices.json の stem で文章に書き直したもの (ここでは図への言及を問題にしない。
+#   最後の stem は build_math_workbook_seed.py の validate と形式ゲートが同じ規則で見る)
+FIGURE_STEM_REWRITTEN = {"iib2:4:11": "「そのグラフの概形は下図の実線で表される」を落とし、振幅・周期・最大値と最大値をとる θ を問う"}
 # 図を指す言い回しだけ → 文を直す (条件は本文にそろっている)
 FIGURE_REWRITE = [
     (r"^右の図の直角三角形 ABC", "直角三角形 ABC"),
@@ -94,10 +97,8 @@ def dollars_to_paren(s):
     return "".join(out)
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--out", required=True)
-    a = ap.parse_args()
+def extract():
+    """問題集 8 冊を読んで {items, dropped, problems} を返す (ファイルは書かない。build_math_workbook_seed.py と鮮度ゲートが呼ぶ)。"""
     items, dropped, problems = [], [], []
     seen_stem = {}
     for mod, book, pre in BOOKS:
@@ -117,7 +118,7 @@ def main():
                     dropped.append({"id": pid, "why": "図が無いと解けない", "stem": stem_raw[:60]}); continue
                 for pat, rep in FIGURE_REWRITE:
                     stem_raw = re.sub(pat, rep, stem_raw)
-                if FIGURE_REF.search(stem_raw):
+                if FIGURE_REF.search(stem_raw) and pid not in FIGURE_STEM_REWRITTEN:
                     problems.append(f"{pid}: 図への言及が残る: {stem_raw[:80]}")
                 stem, ans, expl = dollars_to_paren(stem_raw), dollars_to_paren(q["answer"]), dollars_to_paren(q.get("explanation", ""))
                 if None in (stem, ans, expl):
@@ -130,11 +131,22 @@ def main():
                       "stem": stem, "answer": ans, "explanation": expl,
                       "av": repr(q["av"]) if "av" in q else None,
                       "figure_attached": bool(q.get("figure")),
-                      "stem_hash": hashlib.sha1(q["stem"].encode()).hexdigest()[:10]}
+                      "stem_hash": hashlib.sha1(q["stem"].encode()).hexdigest()[:10],
+                      # 元の答え (文と値) のハッシュ。問題集の答えを直したら builder が止まる (選択肢の正解と解説が食い違わないように)
+                      "answer_hash": hashlib.sha1((str(q["answer"]) + "|" + repr(q.get("av"))).encode()).hexdigest()[:10]}
                 if q.get("choices"):
                     it["mc_choices"] = [dollars_to_paren(c) for c in q["choices"]]
                     it["mc_answer"] = int(q["answer_index"])
                 items.append(it)
+    return {"items": items, "dropped": dropped, "problems": problems}
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", required=True)
+    a = ap.parse_args()
+    r = extract()
+    items, dropped, problems = r["items"], r["dropped"], r["problems"]
     if problems:
         print("❌", len(problems)); [print(" -", p) for p in problems[:40]]; sys.exit(1)
     json.dump({"items": items, "dropped": dropped}, open(a.out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)

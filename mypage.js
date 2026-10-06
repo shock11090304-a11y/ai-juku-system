@@ -4943,7 +4943,14 @@ async function initGrammarDrillSection() {
         const problem = String(r.stem || '') + '\n' +
           choices.map(function (cTxt, i) { return '(' + (letters[i] || (i + 1)) + ') ' + cTxt; }).join('\n');
         const ci = (r.correct_answer == null) ? null : Number(r.correct_answer);
-        const answer = (ci != null && letters[ci] ? '(' + letters[ci] + ') ' : '') + (ci != null ? (choices[ci] || '') : '');
+        // 📐 (2026-10-06) 問題文・選択肢の中の「(1)」「(ア)」(数式の f'(1)・3 進法の _{(3)}・作図の手順 (ア) など) を、復習カードの
+        //    選択肢パーサ (learning-brain の _parseChoices は (A)〜(D)・(ア)〜(エ)・(1)〜(4) を拾う) が選択肢の印と取り違え、
+        //    「解いてみる」のボタンが崩れて正解を選べなくなる → カードに載せる文だけ「( 1 )」に開く (印は下で付ける (A)〜(D) だけ)。
+        //    鍵 (key) は開く前の problem のまま (既存のカードを孤立させない)。KaTeX は数式中の空白を無視するので数式の見た目は同じ。
+        const _openMarks = function (t) { return String(t == null ? '' : t).replace(/\(\s*([A-Dア-エ1-4])\s*\)/g, '( $1 )'); };
+        const problemCard = _openMarks(r.stem) + '\n' +
+          choices.map(function (cTxt, i) { return '(' + (letters[i] || (i + 1)) + ') ' + _openMarks(cTxt); }).join('\n');
+        const answer = (ci != null && letters[ci] ? '(' + letters[ci] + ') ' : '') + (ci != null ? _openMarks(choices[ci] || '') : '');
         // 📖 長文型の設問は本文をまたいで同文 (「( 1 ) に入るもの」) になるので、question_id でカードを分ける。
         //    カード本文には本文を先に付ける (本文が無いと「( 1 ) に入るもの」だけのカードになって解けない)。
         //    本文中の「(1)」「(A)」は復習カードの選択肢パーサ (learning-brain の _parseChoices) が拾わないように「( 1 )」に開く。
@@ -4955,11 +4962,11 @@ async function initGrammarDrillSection() {
         const key = (_isPassageQ || _longMathQ)
           ? ('英語__gd' + String(r.question_id) + '__' + problem).slice(0, 200)
           : ('英語__' + problem).slice(0, 200);
-        let problemFull = problem.slice(0, 1200);
+        let problemFull = problemCard.slice(0, 1200);
         if (_isPassageQ) {
           const _pp = (res.passages || {})[String(r.passage_id)];
           const _pbody = _pp && _pp.body ? String(_pp.body).replace(/\(\s*([A-Dア-エ1-4])\s*\)/g, '( $1 )') : '';
-          const _pprob = problem.replace(/\(\s*([A-Dア-エ1-4])\s*\)(?=\s*に)/g, '( $1 )');  // 設問文の「(1) に入る」も同様に開く (選択肢の (A) は残す)
+          const _pprob = problemCard.replace(/\(\s*([A-Dア-エ1-4])\s*\)(?=\s*に)/g, '( $1 )');  // 設問文の「(1) に入る」も同様に開く (選択肢の (A) は残す)
           if (_pbody) problemFull = ('【本文】\n' + _pbody.slice(0, 5000) + '\n\n' + _pprob).slice(0, 6500);
         }
         // 🤔 「自信なし(勘)」申告つきの正解は誤答と同様に復習カード化する (2026-07-19 生徒要望):

@@ -8,18 +8,21 @@
   - choices は 4 つ相異・空でない、answer は 0〜3
   - 解説は 20 字以上で、選択肢の番号・記号 (⓪①…・選択肢2・アの解答群) を書かない (値で書く)
   - 前後の問を指さない (「上の確率変数」「次の問」…)・問題文で定義していない (ア)〜(エ) を解説で使わない
+  - 数式の外に ^ _{ \\コマンド √ を残さない (生の記号のまま表示される)
+  - _meta.retired_sources (本番で止める問題) がシードに残っていない
   - stem に図への言及が無い (画面に図は出せない)
   - 数式の区切り \\( \\) の数が合う・生成元の独自記法 ([[f|..]] <sub> <super>) が残っていない
   - stem は全シードを通して一意 (取込の dedup は stem+unit+subject)
   - 正解位置は単元ごとに散らす (10 問以上の単元で、どの位置も 40% 以下)
-  - 選択肢がすべて数値の問題では、正解の値の順位 (小さい方から何番目か) も散らす (10 問以上で、どの順位も 40% 以下)。
+  - 選択肢がすべて数値の問題では、正解の値の順位 (小さい方から何番目か) も散らす (10 問以上で、どの順位も 40% 以下・
+    単元ごとにも 6 問以上の単元で 50% 以下。分数・根号・π・「x=」つきも数値として読む)。
     表示の位置を散らしても「2 番目に大きい値を選ぶ」で当たるのを防ぐ (2026-10-06 共通テスト型で 45% だった)
   - $ を使わない (mypage・class.html では $ も数式の区切り。CEO のプレビューは \( \) だけを描く)
   - 単元名の照合先 dojo-drill.html が無ければ落とす (黙って照合を飛ばさない)。5 問未満の単元は表示だけ (単元配信は 5 問から)
 """
 import collections
-import fractions
 import glob
+import importlib.util
 import json
 import os
 import re
@@ -39,26 +42,68 @@ UNITS = {
 EXTRA_UNITS = {"数学II 複素数と方程式"}
 LEVELS = {"basic", "standard", "advanced"}
 NUMREF = re.compile(r"[⓪①②③④]|選択肢\s*[0-9０-９]|[アイウエ](?:の解答群|が正解)")
-FIGURE = re.compile(r"図(?:のように|は|に示|の(?:よう|ような|中|三角形|点))|下の図|右の図|左の図")
+# 図への言及は問題集の抽出 (scripts/math_drill/extract_workbook_items.py の FIGURE_REF) と同じ規則を読む (2 か所でずれないように)
+_ex_spec = importlib.util.spec_from_file_location("extract_workbook_items", os.path.join(REPO, "scripts", "math_drill", "extract_workbook_items.py"))
+_EX = importlib.util.module_from_spec(_ex_spec)
+_ex_spec.loader.exec_module(_EX)
+FIGURE = _EX.FIGURE_REF
 LEFTOVER = re.compile(r"\[\[|<sub>|<super>|</?b>|\x00")
 # 1 問ずつ出るので、前後の問を指す言い回しは使えない (2026-10-06 「上の確率変数 X」で分布が無い問題が盲検 3 名に見つかった)
-XREF = re.compile(r"前の問|前問|次の問|下の問|上の問|上の確率変数")
+#   ★「以下の問いに答えよ」「次の問いに答えよ」「3つ以上の問題」は前後を指していないので通す (XREF_SELFTEST で固定)
+XREF = re.compile(r"前の問|前問|(?<!以)上の問|(?<!以)下の問(?![い題])|次の問(?![い題])|上の確率変数")
+XREF_SELFTEST = (["上の確率変数 X について", "次の問と見比べること", "分散はちがう（下の問）", "前の問題で求めた値", "前問の結果を使う", "上の問で求めた",
+                  "前の問いで求めた a を用いて", "上の問いの結果より"],
+                 ["以下の問いに答えよ。", "次の問いに答えよ。", "3つ以上の問題", "次の問題に答えよ。", "以上の問いに", "以下の問題"])
+# 数式の外に LaTeX の記号を残さない: mypage の math-wrap.js は \( を含む文字ノードを包まないので、解説の「3^{-1}」「√12」は生のまま出る
+#   (2026-10-06 問題集の【よくある誤り】で 57 問。x² のような Unicode の上付きは文字として読めるので許す)
+RAW_TEX = re.compile(r"\^|_\{|\\[A-Za-z]|√")
 # 選択肢に記号は付かないので、問題文で定義していない (ア)〜(エ) を解説で使わない (問題集の記号つき選択肢の名残)
 LABEL = re.compile(r"[(（]([アイウエ])[)）]")
 
 
+_UNIT_SUFFIX = r"(?:個|円|分|人|組|通り|回|点|本|cm|m|度|倍|枚|日|時間|秒|歳|%|％)"
+
+
+def _tex_to_py(s):
+    s = s.replace("\\dfrac", "\\frac").replace("\\tfrac", "\\frac").replace("\\left", "").replace("\\right", "")
+    s = re.sub(r"\^\s*\{\\circ\}|\^\\circ", "", s)
+    for _ in range(6):
+        s = re.sub(r"\\frac\{([^{}]*)\}\{([^{}]*)\}", r"((\1)/(\2))", s)
+        s = re.sub(r"\\sqrt\[(\d+)\]\{([^{}]*)\}", r"((\2)**(1/(\1)))", s)
+        s = re.sub(r"\\sqrt\{([^{}]*)\}", r"(sqrt(\1))", s)
+    s = (s.replace("\\pi", "pi").replace("\\cdot", "*").replace("\\times", "*").replace("^", "**")
+         .replace("{", "(").replace("}", ")").replace("\\,", "").replace("\\ ", ""))
+    return re.sub(r"(\d|\))\s*(\(|pi|sqrt)", r"\1*\2", s)
+
+
 def numeric_value(c):
-    """選択肢が 1 つの数 (整数・小数・\\frac{整数}{整数}・単位つき) なら値を返す。それ以外は None。"""
-    t = re.sub(r"(個|円|分|人| ?m)$", "", str(c).strip()).strip()
-    m = re.fullmatch(r"(-?)\\\(\\frac\{(\d+)\}\{(\d+)\}\\\)", t)
-    if m:
-        return (-1 if m.group(1) else 1) * fractions.Fraction(int(m.group(2)), int(m.group(3)))
-    if re.fullmatch(r"-?\d+(?:\.\d+)?", t):
-        return fractions.Fraction(t)
-    return None
+    """選択肢が 1 つの実数 (整数・小数・分数・根号・π・「x=」「S=」つき・単位つき) なら float の値。式・文字・組なら None。
+    (2026-10-06 までは素の数と \\frac しか読めず、問題集の 341 問のうち 50 問しか順位を見ていなかった)"""
+    import sympy as sp
+    t = re.sub(_UNIT_SUFFIX + r"$", "", str(c).strip()).strip()
+    m = re.fullmatch(r"\\\((.*)\\\)\s*" + _UNIT_SUFFIX + "?", t, flags=re.S)
+    body = (m.group(1) if m else t).strip()
+    body = re.sub(r"^[A-Za-z](?:_\{?\w+\}?)?\s*=\s*", "", body)   # x= / S= / a_n= は外す
+    if re.search(r"[,，、<>=]|\\pm|\\mp|\\leq|\\geq", body):
+        return None
+    py = _tex_to_py(body)
+    if re.search(r"[A-Za-z]", re.sub(r"sqrt|pi", "", py)):
+        return None
+    try:
+        v = sp.sympify(py)
+        if v.free_symbols or not v.is_real:
+            return None
+        return float(v)
+    except Exception:
+        return None
 
 
 def main():
+    hit, miss = XREF_SELFTEST
+    wrong = [t for t in hit if not XREF.search(t)] + [t for t in miss if XREF.search(t)]
+    if wrong:
+        print(f"❌ ゲート自身の検査 (XREF) が期待どおりでない: {wrong}")
+        sys.exit(1)
     if not SEEDS:
         print("❌ seed-data/math_drill_*.json が 1 本も無い")
         sys.exit(1)
@@ -80,6 +125,7 @@ def main():
         qs = d.get("questions") or []
         pos = collections.defaultdict(lambda: [0, 0, 0, 0])
         ranks = [0, 0, 0, 0]
+        unit_ranks = collections.defaultdict(lambda: [0, 0, 0, 0])
         per_unit = collections.Counter()
         for q in qs:
             per_unit[q.get("unit")] += 1
@@ -121,9 +167,14 @@ def main():
                     bad.append(f"{src}: {part} に生成元の記法が残る: {LEFTOVER.search(t).group(0)}")
                 if "$" in t:
                     bad.append(f"{src}: {part} に $ (mypage・class.html では数式の区切りになる。\\( \\) で書く)")
+                raw = RAW_TEX.search(re.sub(r"\\\(.*?\\\)", "", t, flags=re.S))
+                if raw:
+                    bad.append(f"{src}: {part} の数式の外に LaTeX の記号 {raw.group(0)!r} (生の記号のまま表示される。\\( \\) の中に書く)")
             vals = [numeric_value(c) for c in ch] if len(ch) == 4 else []
             if vals and all(v is not None for v in vals) and len(set(vals)) == 4 and isinstance(a, int) and 0 <= a <= 3:
-                ranks[sorted(vals).index(vals[a])] += 1
+                rk = sorted(vals).index(vals[a])
+                ranks[rk] += 1
+                unit_ranks[q.get("unit")][rk] += 1
             k = stem.strip()
             if k in seen:
                 bad.append(f"{src}: stem が {seen[k]} と重複")
@@ -133,6 +184,14 @@ def main():
                 bad.append(f"{name}: 単元 {u} の正解位置が偏っている {v}")
         if sum(ranks) >= 10 and max(ranks) / sum(ranks) > 0.40:
             bad.append(f"{name}: 数値の選択肢で正解の順位 (小さい方から 0〜3) が偏っている {ranks}")
+        # 単元ドリルは 1 単元から出るので単元ごとにも見る (問題集で「数学I 数と式」の 10 問中 8 問が 2 番目に大きい値だった)
+        for u, v in unit_ranks.items():
+            if sum(v) >= 6 and max(v) / sum(v) > 0.50:
+                bad.append(f"{name}: 単元 {u} の数値の選択肢で正解の順位が偏っている {v}")
+        retired = set((d.get("_meta") or {}).get("retired_sources") or [])
+        alive = retired & {q.get("source") for q in qs}
+        if alive:
+            bad.append(f"{name}: _meta.retired_sources (本番で止める問題) がシードの問題に残っている: {sorted(alive)[:5]}")
         small = sorted(u for u, n in per_unit.items() if n < 5)
         print(f"{name}: {len(qs)} 問 / 単元 {len(pos)} / 数値の選択肢の正解順位 {ranks}"
               + (f" / 5 問未満の単元 (単元配信は不可・科目まるごとでは出る): {small}" if small else ""))
