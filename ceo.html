@@ -649,7 +649,7 @@
       <!-- ✏️ 問題プール補充 (2026-06-19): grammar_questions に手作り4択(3名検証済)を無課金で一括投入 -->
       <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.30);border-radius:10px;padding:0.8rem;margin-bottom:0.8rem;">
         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-          <button id="grammarPoolImportBtn" type="button" data-seed="/seed-data/grammar_drill_pool_v1.json,/seed-data/grammar_drill_pool_v2.json" data-size="1688" title="※このボタンは高校英語(英文法)ドリルのみ補充します。中学英語・中学数学・中学理科・中学社会・中学国語は下の🧒ボタン、高校の他科目(数学・理科 等)はシステム側で取込済みで補充ボタンはありません。&#10;英文法ドリルの問題プール(grammar_questions)を補充: 20単元×基礎/標準/やや難の手作り4択1,688問 (第1弾703問 + 第2弾985問。いずれも3名独立ソルバーの盲検で全員一致した問題だけを採用・解説は別担当が校閲・正解位置均等化・説明は値参照)。このボタンの取込後、在庫は1単元あたり79〜87問 (単元バッジは選ばれたレベルの在庫を出すので、既定の「標準〜やや難」では68〜75と表示される)。同じ単元を繰り返し配信しても問題が被りにくい。ただし基礎レベルは1単元11〜12問のままで、ここは増えない。再押下しても重複は自動スキップ。ワンクリック取込・無課金。" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">✏️ 英文法ドリルを補充 (英語専用・20単元 1,688問・無課金)</button>
+          <button id="grammarPoolImportBtn" type="button" data-seed="/seed-data/grammar_drill_pool_v1.json,/seed-data/grammar_drill_pool_v2.json" data-size="1688" title="※このボタンは高校英語(英文法)ドリルのみ補充します。中学英語・中学数学・中学理科・中学社会・中学国語は下の🧒ボタン、高校数学は下の📐ボタン、高校の他科目(理科 等)はシステム側で取込済みで補充ボタンはありません。&#10;英文法ドリルの問題プール(grammar_questions)を補充: 20単元×基礎/標準/やや難の手作り4択1,688問 (第1弾703問 + 第2弾985問。いずれも3名独立ソルバーの盲検で全員一致した問題だけを採用・解説は別担当が校閲・正解位置均等化・説明は値参照)。このボタンの取込後、在庫は1単元あたり79〜87問 (単元バッジは選ばれたレベルの在庫を出すので、既定の「標準〜やや難」では68〜75と表示される)。同じ単元を繰り返し配信しても問題が被りにくい。ただし基礎レベルは1単元11〜12問のままで、ここは増えない。再押下しても重複は自動スキップ。ワンクリック取込・無課金。" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">✏️ 英文法ドリルを補充 (英語専用・20単元 1,688問・無課金)</button>
           <span id="grammarPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">押すと全20単元のドリル在庫が緑(25問+)になります。第1弾703問＋第2弾985問を続けて取り込み、すでに入っている分は自動でスキップします。</span>
         </div>
         <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
@@ -679,6 +679,10 @@
         <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
           <button id="eikenReadingImportBtn" type="button" data-seed="/seed-data/eiken_reading_pool_v1.json,/seed-data/eiken_reading_pool_v2.json" data-size="本文196本・設問653問" title="📖 英検の長文ドリル (大問2 長文空所補充・大問3 内容一致) を補充: 2級 本文88本 (対策問題集 Vol.1/2 + 完全模試 全3回 + オリジナル模試 + 本番形式演習 第1〜15回) と 準1級 本文108本 (本番形式演習 第1弾/第2弾 + 完全模試 全3回 + 総合対策問題集 SET1-6 + 本番形式演習 第1〜9回)。全部この塾の書き下ろし (過去問なし)。取込後は①科目で「🏅 英検」を選ぶと単元「2級 長文空所補充 / 2級 長文 内容一致 / 準1級 長文空所補充 / 準1級 長文 内容一致」に本文の本数が出ます。配信は「本文の本数」単位 (既定 2 本 = 本番の大問 1 回分)。全訳は解き終わった後だけ見えます。重複は本文ごと自動スキップ・無課金。" style="background:linear-gradient(135deg,#6366f1,#4338ca);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">📖 英検 長文ドリルを補充 (2級 88本・準1級 108本・無課金)</button>
           <span id="eikenReadingImportMsg" style="font-size:0.8rem;color:#94a3b8;">長文空所補充・内容一致。本文 1 つに設問 2〜5 問、配信は「本文の本数」単位です。</span>
+        </div>
+        <div style="margin:0.5rem 0 0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+          <button id="mathPoolImportBtn" type="button" data-seed="/seed-data/math_drill_ct_mock_v1.json" data-size="122" title="📐 高校数学のドリル在庫を補充: 共通テスト数学 第1回・第2回オリジナル模試 (数学ⅠA 各29問・数学ⅡBC 各32問・この塾のオリジナル) を、大問の設定文つきの1問完結の4択にしたもの。単元名は入試道場の単元タイルと同じ (数学I 数と式 / 基礎数学 二次関数 / 基礎数学 確率 / 数学B 統計的な推測 など14単元) なので、弱点の「コーチの一手」から道場の同じ単元が開きます (道場は小問ごとの単元タグで記録するので、弱点の行は道場の分と別に並びます)。在庫は1単元4〜16問なので、④問題数は在庫以下 (5〜10問) にして配信してください。「数学I 数と式」「数学I 集合と命題」「数学A 図形の性質」は4問しかなく単元配信は5問からなので、次の問題集を足すまでは科目まるごと (弱点ドリル) で出ます。数式は生徒の画面で数式として表示されます (👀 問題を見る でも表示)。level は全問「標準」。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">📐 高校数学ドリルを補充 (共通テスト型 122問・無課金)</button>
+          <span id="mathPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">高校生用。押したあと①科目で「数学」を選ぶと使えます (例: 基礎数学 二次関数)。1単元4〜16問なので④問題数は5〜10問に。</span>
         </div>
         <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-top:0.6rem;padding-top:0.6rem;border-top:1px dashed rgba(255,255,255,0.12);">
           <button id="grammarWeaknessImportBtn" type="button" data-seed="/seed-data/grammar_drill_weakness_v1.json" title="弱点分析で抽出した検証済み4択32問を自動採点ドリルの問題プールに取り込みます。英語=関係詞・助動詞 / 古文=助動詞の意味・重要古語。取込後は単元『関係詞/助動詞/古文』を選んで該当生徒に配信できます。重複は自動スキップ・無課金。" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">📥 弱点特訓32問を取込 (英語 関係詞・助動詞 ＋ 古文)</button>
@@ -4839,12 +4843,37 @@
             + `</div>`;
         }).join('');
         box.innerHTML = head + body;
+        _gdPreviewMath(box);
         box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       } catch (e) {
         box.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(e.message || String(e))}</span>`;
       }
     }
     window.gdPreview = gdPreview;
+    // 🧮 👀 プレビューと 📊 問題別の分析の数式を描く (高校数学ドリルは \( \) の LaTeX)。生徒の画面と同じ KaTeX 0.16.11 (自前配信)。
+    //   区切りは \( \) と \[ \] だけ (英文の $20 を数式にしない)。数式の無いプレビューでは何も読み込まない。
+    let _gdKatexLoading = null;
+    function _gdLoadKatex() {
+      if (window.renderMathInElement) return Promise.resolve();
+      if (_gdKatexLoading) return _gdKatexLoading;
+      const add = (tag, attrs) => new Promise((res, rej) => { const e = document.createElement(tag); Object.assign(e, attrs); e.onload = res; e.onerror = rej; document.head.appendChild(e); });
+      // class.html と同じ自前配信 (jsdelivr は端末によって届かない・eafa43e)。10 秒で打ち切り、次の表示で読み直す
+      const v = '?v=0.16.11';
+      const load = add('link', { rel: 'stylesheet', href: '/vendor/katex/katex.min.css' + v })
+        .then(() => add('script', { src: '/vendor/katex/katex.min.js' + v }))
+        .then(() => add('script', { src: '/vendor/katex/auto-render.min.js' + v }));
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('KaTeX の読み込みが 10 秒で終わらない')), 10000));
+      _gdKatexLoading = Promise.race([load, timeout]).catch(e => { _gdKatexLoading = null; throw e; });
+      return _gdKatexLoading;
+    }
+    function _gdPreviewMath(box) {
+      if (!box || !/\\\(|\\\[/.test(box.textContent || '')) return;
+      _gdLoadKatex().then(() => {
+        try {
+          window.renderMathInElement(box, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false });
+        } catch (_e) {}
+      }).catch(() => {});
+    }
     async function gdCreate() {
       const msg = document.getElementById('gdCreateMsg');
       // 🧒 2026-09-24: 二度押しガード。25名一括が常態になったので、二度押すとドリルが2本でき
@@ -5110,11 +5139,12 @@
             const note = showBar ? '' : ` <span style="color:#71717a;">(回答者 ${answered}人・参考値)</span>`;
             dist = `<details${isOpen ? ' open' : ''} style="margin-top:0.2rem;"><summary style="cursor:pointer;font-size:0.72rem;color:#93c5fd;">選択肢の分布${note}</summary><div style="display:flex;flex-direction:column;gap:0.12rem;margin-top:0.2rem;">${rows}</div></details>`;
           }
-          return `<div style="border-top:1px solid #334155;padding:0.45rem 0;"><div style="font-size:0.82rem;color:#e5e7eb;"><strong>問${q.no}</strong> ・ 正解率 <span style="color:${rc};font-weight:800;">${rate}</span> <span style="color:#71717a;">(${q.correct}/${q.answered}人)</span></div><div style="font-size:0.8rem;color:#cbd5e1;margin:0.15rem 0;">${escapeHtml(q.stem)}</div><div style="font-size:0.75rem;color:#86efac;">${corr}</div>${dist}</div>`;
+          return `<div style="border-top:1px solid #334155;padding:0.45rem 0;"><div style="font-size:0.82rem;color:#e5e7eb;"><strong>問${q.no}</strong> ・ 正解率 <span style="color:${rc};font-weight:800;">${rate}</span> <span style="color:#71717a;">(${q.correct}/${q.answered}人)</span></div><div style="font-size:0.8rem;color:#cbd5e1;margin:0.15rem 0;white-space:pre-wrap;word-break:break-word;">${escapeHtml(q.stem)}</div><div style="font-size:0.75rem;color:#86efac;">${corr}</div>${dist}</div>`;
           })();
         }).join('');
         html += '</div>';
         box.innerHTML = html;
+        _gdPreviewMath(box);   // 数学ドリルの問題文・選択肢の数式 (\( \)) を描く。数式が無ければ何もしない
         box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       } catch (e) { box.innerHTML = `<span style="color:#fca5a5;">${escapeHtml(String(e))}</span>`; }
     }
@@ -5383,6 +5413,59 @@
       }
     }
     window.eikenPoolImport = eikenPoolImport;
+    // 📐 高校数学ドリル (subject=math) の取込。data-seed はカンマ区切りで複数 (今後の問題集の分を足していく)。流れは eikenPoolImport と同じ
+    async function mathPoolImport() {
+      const btn = document.getElementById('mathPoolImportBtn');
+      const msg = document.getElementById('mathPoolImportMsg');
+      if (!btn || !window.AdminAuth) return;
+      const seedUrls = (btn.getAttribute('data-seed') || '').split(',').map(s => s.trim()).filter(Boolean);
+      const sizeRaw = btn.getAttribute('data-size') || '';
+      const size = /^\d+$/.test(sizeRaw) ? Number(sizeRaw).toLocaleString('ja-JP') : sizeRaw;
+      if (!confirm(`📐 高校数学のドリル問題 ${size}問 (この塾のオリジナル) を照合し、まだ入っていない問題だけを取り込みます。よろしいですか？（取込済みの分は自動スキップ・無課金）`)) return;
+      btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ 取込中...';
+      if (msg) { msg.style.color = '#94a3b8'; msg.textContent = 'シード読込中...'; }
+      try {
+        const questions = [];
+        for (const seedUrl of seedUrls) {
+          const sr = await fetch(seedUrl, { cache: 'no-store' });
+          if (!sr.ok) throw new Error('シード取得失敗 HTTP ' + sr.status + ' (' + seedUrl + ')');
+          const seed = await sr.json();
+          questions.push(...((seed && seed.questions) || []));
+        }
+        if (!questions.length) throw new Error('シードに問題がありません');
+        const CHUNK = 400;
+        let inserted = 0, skipped = 0, errors = 0;
+        for (let i = 0; i < questions.length; i += CHUNK) {
+          const part = questions.slice(i, i + CHUNK);
+          if (msg) msg.textContent = `照合中... (${i + 1}〜${Math.min(i + CHUNK, questions.length)}問目 / 全${questions.length}問)`;
+          const res = await AdminAuth.fetch('/api/admin/grammar/import', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questions: part, subject: 'math', dedup: true }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            const d = data.detail;
+            throw new Error(((typeof d === 'string' && d) ? d : (d ? JSON.stringify(d) : ('取込失敗 HTTP ' + res.status)))
+              + (i === 0 ? '（1本目の送信で失敗しました。まだ何も取り込まれていません）'
+                          : `（${i}問目までは照合済み・うち新規 ${inserted}問を取り込み済み。押し直すと残りだけ入ります）`));
+          }
+          inserted += (data.inserted || 0); skipped += (data.skipped || 0); errors += (data.errors || 0);
+        }
+        if (msg) {
+          msg.style.color = errors ? '#fbbf24' : '#86efac';
+          msg.textContent = `${errors ? '⚠️' : '✅'} 新しく取り込んだ問題 ${inserted}問 / 取り込まなかった問題 ${skipped}問（すでに入っている分と、形式が合わず弾かれた分の合計）/ エラー ${errors}。①科目で「数学」を選ぶと使えます。`;
+        }
+      } catch (e) {
+        if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || String(e)); }
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+        try {
+          const cur = (document.getElementById('gdSubject') || {}).value;
+          if (cur === 'math') { await gdLoadUnits(); }
+        } catch (_e) {}
+      }
+    }
+    window.mathPoolImport = mathPoolImport;
     // 📖 英検 長文ドリル (本文 + 設問) の取込。eikenPoolImport と同じ流れだが passages[] を 20 本ずつ送る
     //    (本文ごと dedup・設問が壊れた本文は本文ごと skip・DB エラーは server が rollback して ok:false)。
     async function eikenReadingImport() {
@@ -5487,6 +5570,8 @@
       if (be) be.addEventListener('click', eikenPoolImport);
       const ber = document.getElementById('eikenReadingImportBtn');
       if (ber) ber.addEventListener('click', eikenReadingImport);
+      const bm = document.getElementById('mathPoolImportBtn');
+      if (bm) bm.addEventListener('click', mathPoolImport);
     });
 
     // ========== 📤 宿題 一括割当 (2026-06-19 塾長指示: 英文法ドリルのように複数生徒へ一括で宿題) ==========

@@ -42,6 +42,7 @@ on:
       - 'seed-data/eiken_reading_pool_v1.json'
       - 'seed-data/eiken_vocab_pool_v2.json'
       - 'seed-data/eiken_reading_pool_v2.json'
+      - 'seed-data/math_drill_ct_mock_v1.json'
       # 英検の補充ボタンの data-seed (v1 → v2) の配線も同じテストが ceo.html を読んで確かめる
       - 'ceo.html'
       - 'seed-data/grammar_drill_weakness_v1.json'

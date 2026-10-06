@@ -4674,7 +4674,7 @@ function _gdRenderQuestionBlock(drillId, q, opts) {
         ? '<span style="color:#6ee7b7;">✓</span>' : '<span style="color:#fca5a5;">✗</span>')
     : '';
   return `<div class="gd-q" data-gd-q-block="${_gdEscape(String(q.question_id))}" style="padding:14px 15px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:10px; margin-bottom:12px;">
-    <div style="font-weight:bold; color:#fff; font-size:0.95rem; margin-bottom:10px; line-height:1.6;"><span style="color:#5eead4; margin-right:6px;">Q${_gdEscape(String(q.no))}.</span> ${statusMark} ${_gdRich(q.stem)}</div>
+    <div style="font-weight:bold; color:#fff; font-size:0.95rem; margin-bottom:10px; line-height:1.6;"><span style="color:#5eead4; margin-right:6px;">Q${_gdEscape(String(q.no))}.</span> ${statusMark} <span style="white-space:pre-wrap; word-break:break-word;">${_gdRich(q.stem)}</span></div>
     ${body}
   </div>`;
 }
@@ -4718,7 +4718,7 @@ function _gdRenderResultItem(r) {
   // 間違えた問題だけ explanation を展開 (正解は details で任意展開)
   const explBlock = _gdExplanationBlock({ explanation: r.explanation }, isCorrect);
   return `<div style="padding:14px 15px; background:rgba(255,255,255,0.02); border:1px solid ${isCorrect ? 'rgba(52,211,153,0.25)' : 'rgba(239,68,68,0.3)'}; border-radius:10px; margin-bottom:12px;">
-    <div style="font-weight:bold; color:#fff; font-size:0.95rem; margin-bottom:10px; line-height:1.6;"><span style="color:#5eead4; margin-right:6px;">Q${_gdEscape(String(r.no))}.</span> ${head}${guessBadge} <span style="margin-left:4px;">${_gdRich(r.stem)}</span></div>
+    <div style="font-weight:bold; color:#fff; font-size:0.95rem; margin-bottom:10px; line-height:1.6;"><span style="color:#5eead4; margin-right:6px;">Q${_gdEscape(String(r.no))}.</span> ${head}${guessBadge} <span style="margin-left:4px; white-space:pre-wrap; word-break:break-word;">${_gdRich(r.stem)}</span></div>
     ${choiceLines}
     ${explBlock}
   </div>`;
@@ -4948,7 +4948,11 @@ async function initGrammarDrillSection() {
         //    カード本文には本文を先に付ける (本文が無いと「( 1 ) に入るもの」だけのカードになって解けない)。
         //    本文中の「(1)」「(A)」は復習カードの選択肢パーサ (learning-brain の _parseChoices) が拾わないように「( 1 )」に開く。
         const _isPassageQ = (r.passage_id != null && r.question_id != null);
-        const key = _isPassageQ
+        // 📐 高校数学 (2026-10-06): 共通テスト型は大問の設定文を各 stem の先頭に付けているので、先頭 200 字が同じ問題がある
+        //    (統計の 3 問は 244 字まで同じ) → 200 字で切ると別の問題が 1 枚のカードに混ざる。切れる長さの math だけ question_id で分ける
+        //    (英語・中学・英検の鍵は従来どおり = 既存のカードを孤立させない)。
+        const _longMathQ = (String((res && res.subject) || '') === 'math' && r.question_id != null && ('英語__' + problem).length > 200);
+        const key = (_isPassageQ || _longMathQ)
           ? ('英語__gd' + String(r.question_id) + '__' + problem).slice(0, 200)
           : ('英語__' + problem).slice(0, 200);
         let problemFull = problem.slice(0, 1200);

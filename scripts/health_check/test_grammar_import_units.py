@@ -8,7 +8,7 @@
   弱点 topic も入試道場の単元フィルタと一致しない。取込は INSERT 専用なので、入ったら手で直すしかない。
 
 固定する性質:
-  1. コミット済みのシード 4 本 (中学英語・中学数学・英検 語彙・英検 長文) が CEO の補充ボタンと同じ送り方で全部入る
+  1. コミット済みのシード (中学英語・中学数学・英検 語彙 v1/v2・英検 長文 v1/v2・高校数学) が CEO の補充ボタンと同じ送り方で全部入る
      (errors 0・skipped 0・unknown_units / warning なし)。取込後の単元一覧は _GRAMMAR_SUBJECT_UNIT_ORDER と完全一致で、
      どの単元にも在庫がある
   2. 3 科目とも、知らない単元名の問題は入れずに errors に数え、応答の unknown_units / warning に単元名が出る。
@@ -174,7 +174,8 @@ def main():
     print("\n[1] コミット済みのシードが CEO のボタンと同じ送り方で全部入る")
     # 英検は CEO のボタンと同じく v1 → v2 (本番形式演習 2026-10) の順に送る。v2 は v1 と重ならない (skipped 0) こと
     for fname, subj in (("chugaku_drill_pool_v1.json", "chugaku"), ("chugaku_math_pool_v1.json", "chugaku_math"),
-                        ("eiken_vocab_pool_v1.json", "eiken"), ("eiken_vocab_pool_v2.json", "eiken")):
+                        ("eiken_vocab_pool_v1.json", "eiken"), ("eiken_vocab_pool_v2.json", "eiken"),
+                        ("math_drill_ct_mock_v1.json", "math")):
         qs = load_seed(fname)["questions"]
         t = import_like_ceo(api, "questions", qs, subj, 400)
         check(f"{fname}: 全 {len(qs)} 問が入る (errors 0・skipped 0・警告なし)",
@@ -192,10 +193,11 @@ def main():
     # CEO の補充ボタンが読むシード (data-seed はカンマ区切り) が全部実在し、v1 と v2 の両方を含む
     ceo = open(os.path.join(REPO, "ceo.html"), encoding="utf-8").read()
     for btn, want in (("eikenPoolImportBtn", ("eiken_vocab_pool_v1.json", "eiken_vocab_pool_v2.json")),
-                      ("eikenReadingImportBtn", ("eiken_reading_pool_v1.json", "eiken_reading_pool_v2.json"))):
+                      ("eikenReadingImportBtn", ("eiken_reading_pool_v1.json", "eiken_reading_pool_v2.json")),
+                      ("mathPoolImportBtn", ("math_drill_ct_mock_v1.json",))):
         m = re.search(r'id="%s"[^>]*data-seed="([^"]+)"' % btn, ceo)
         urls = [u.strip() for u in (m.group(1).split(",") if m else []) if u.strip()]
-        check(f"ceo.html #{btn} の data-seed が v1 と v2 を順に指し、どれも実在する",
+        check(f"ceo.html #{btn} の data-seed が {' → '.join(want)} を順に指し、どれも実在する",
               [u.rsplit("/", 1)[-1] for u in urls] == list(want) and all(os.path.exists(os.path.join(REPO, u.lstrip("/"))) for u in urls),
               str(urls))
     for subj in ("chugaku", "chugaku_math", "eiken"):
