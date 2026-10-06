@@ -631,6 +631,12 @@
           <button type="button" onclick="hwbSaveGroup()" title="名前を入力し、チェック中の生徒をこの名前で保存" style="background:none;color:#c4b5fd;border:1px dashed #6d28d9;border-radius:12px;padding:0.15rem 0.65rem;font-size:0.72rem;cursor:pointer;">＋ 選択中を保存</button>
           <span id="hwbGroupMsg" style="font-size:0.72rem;margin-left:0.2rem;"></span>
         </div>
+        <div id="hwbAutoGroupsRow" style="display:flex;align-items:center;flex-wrap:wrap;gap:0.35rem;margin:-0.15rem 0 0.45rem;font-size:0.76rem;">
+          <span style="color:#5eead4;font-weight:700;">🗓 受講クラスから自動</span>
+          <span style="color:#71717a;font-size:0.68rem;">（生徒の在籍クラスから作る・保存しない＝上の 👥 グループはそのまま。入るのは在籍中の通塾生）</span>
+          <span id="hwbAutoGroupChips" style="display:flex;flex-wrap:wrap;gap:0.3rem;"><span style="color:#52525b;">読み込み中…</span></span>
+          <span id="hwbAutoGroupMsg" style="font-size:0.72rem;margin-left:0.2rem;"></span>
+        </div>
         <div id="hwbStudents" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.2rem;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:0.5rem;margin-bottom:0.7rem;">読み込み中...</div>
         <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
           <button type="button" onclick="hwbAssign()" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;padding:0.55rem 1.2rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📤 宿題を一括割当</button>
@@ -756,6 +762,12 @@
           <input id="gdGroupNameInput" placeholder="グループ名(例:高3クラス)" maxlength="30" onkeydown="if(event.key==='Enter'){event.preventDefault();gdSaveGroup();}" style="background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:0.2rem 0.5rem;font-size:0.72rem;width:9rem;">
           <button type="button" onclick="gdSaveGroup()" title="名前を入力し、チェック中の生徒をこの名前で保存" style="background:none;color:#c4b5fd;border:1px dashed #6d28d9;border-radius:12px;padding:0.15rem 0.65rem;font-size:0.72rem;cursor:pointer;">＋ 選択中を保存</button>
           <span id="gdGroupMsg" style="font-size:0.72rem;margin-left:0.2rem;"></span>
+        </div>
+        <div id="gdAutoGroupsRow" style="display:flex;align-items:center;flex-wrap:wrap;gap:0.35rem;margin:-0.15rem 0 0.45rem;font-size:0.76rem;">
+          <span style="color:#5eead4;font-weight:700;">🗓 受講クラスから自動</span>
+          <span style="color:#71717a;font-size:0.68rem;">（生徒の在籍クラスから作る・保存しない＝上の 👥 グループはそのまま。入るのは在籍中の通塾生）</span>
+          <span id="gdAutoGroupChips" style="display:flex;flex-wrap:wrap;gap:0.3rem;"><span style="color:#52525b;">読み込み中…</span></span>
+          <span id="gdAutoGroupMsg" style="font-size:0.72rem;margin-left:0.2rem;"></span>
         </div>
         <div id="gdStudents" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.2rem;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:0.5rem;margin-bottom:0.35rem;">読み込み中...</div>
         <div style="font-size:0.76rem;color:#a1a1aa;margin-bottom:0.55rem;">🏫 = 塾生アプリ登録の生徒 → 配信したドリルは<b>塾生アプリの「📝 宿題」タブ</b>にも出ます。無印の生徒はマイページの宿題に出ます。問題も自動採点も同じです。</div>
@@ -4583,6 +4595,8 @@
       gdRenderStudents('');
       DGrenderChips('gd');
       DG.load();
+      DGA.ready.gd = true;
+      DGAload();
     }
     function gdRenderStudents(filter) {
       const box = document.getElementById('gdStudents'); if (!box) return;
@@ -4761,25 +4775,226 @@
         DGsetMsg(panel, '<span style="color:#fca5a5;">保存に失敗: ' + escapeHtml(String((e && e.message) || e)) + '</span>');
       }
     }
+    // 選択に ids を足す (手動グループと自動グループで共通)。フィルタを外して全生徒を描き直し、既存の選択は残す
+    //   (＝複数グループを足し合わせられる)。戻り値は名簿に居た人数。
+    function DGselectIds(panel, ids) {
+      const p = DG_PANELS[panel]; if (!p) return 0;
+      const already = new Set(Array.from(document.querySelectorAll('.' + p.st + ':checked')).map(c => parseInt(c.value, 10)));
+      const filt = document.getElementById(p.filter); if (filt) filt.value = '';
+      // 🧒 2026-09-24: 学年フィルタも外す。外さないとグループ員が描画されず
+      //   「12名は不在」(＝退会したように読める) と出て、実際は配り漏れになる。
+      if (panel === 'gd') { const gfEl = document.getElementById('gdGradeFilter'); if (gfEl) gfEl.value = ''; }
+      p.render('');
+      ids.forEach(x => already.add(Number(x)));
+      document.querySelectorAll('.' + p.st).forEach(c => { if (already.has(parseInt(c.value, 10))) c.checked = true; });
+      if (p.after) p.after();
+      return ids.filter(x => document.querySelector('.' + p.st + '[value="' + x + '"]')).length;
+    }
     function DGapply(panel, id) {
       try {
-        const p = DG_PANELS[panel]; if (!p) return;
         const g = DG.cache.find(x => x.id === id); if (!g) return;
-        // フィルタを解除して全生徒を再描画 → 既存選択を維持しつつグループ員を追加(＝複数グループの合成が可能)
-        const already = new Set(Array.from(document.querySelectorAll('.' + p.st + ':checked')).map(c => parseInt(c.value, 10)));
-        const filt = document.getElementById(p.filter); if (filt) filt.value = '';
-        // 🧒 2026-09-24: 学年フィルタも外す。外さないとグループ員が描画されず
-        //   「12名は不在」(＝退会したように読める) と出て、実際は配り漏れになる。
-        if (panel === 'gd') { const gfEl = document.getElementById('gdGradeFilter'); if (gfEl) gfEl.value = ''; }
-        p.render('');
-        g.student_ids.forEach(x => already.add(Number(x)));
-        document.querySelectorAll('.' + p.st).forEach(c => { if (already.has(parseInt(c.value, 10))) c.checked = true; });
-        if (p.after) p.after();
-        const present = g.student_ids.filter(x => document.querySelector('.' + p.st + '[value="' + x + '"]')).length;
+        const present = DGselectIds(panel, g.student_ids);
         const miss = g.student_ids.length - present;
         DGsetMsg(panel, `<span style="color:#86efac;">👥「${escapeHtml(g.name)}」の ${present}名を選択に追加${miss > 0 ? `（${miss}名は不在）` : ''}</span>`);
       } catch (e) {
         DGsetMsg(panel, '<span style="color:#fca5a5;">エラー: ' + escapeHtml(String((e && e.message) || e)) + '</span>');
+      }
+    }
+    // 🗓 受講クラスから自動で作るグループ (2026-10-06 塾長「グループの設定を受講科目から自動で反映できない？任意の設定は残して」)。
+    //   生徒の在籍クラス (students.class_labels = 時間割の正式ラベル。/api/admin/stats が生徒ごとに返す) から画面で作る。
+    //   作るのはページを開いたとき・🔄 読み直す・同じ画面で在籍クラスを保存したとき (window.__dgaRefresh。ハブでセクションを開き直すだけでは作り直さない)。
+    //   ★保存しない (delivery_groups に入れない): 手動グループは名前で上書き保存・✕ で即削除の作りなので、混ぜると名前がぶつかって
+    //     手動の中身が書き換わる/自動のものを消せてしまう。
+    //   クラスとコースの一覧は /api/admin/class/timetable-classes (時間割の正典。ここに写しを作らない = check_timetable_sync の外でずれない)。
+    //   コースは「全コマを受講している生徒」だけ (一斉送信のクラス絞り込みと同じ。1コマだけの単品受講者はコース生にしない)。
+    //   ★students.course='kokuritsu_nankan' は通塾生全員 (中学生も) に付く在籍フラグなので、コースの判定には使わない。
+    //   入れる生徒 (クラス宿題の一括配信 = _tsujuku_roster + 受講開始月 と同じ考え方 + 在籍中だけ):
+    //     通塾生 (course=kokuritsu_nankan か plan=student_addon。本クラスから外した生徒は class_labels が残っても入れない) で、
+    //     status が trial/paid/past_due (past_due は猶予切れで自動退会になる = _enrolled_sql と同じ集合) で、受講開始前でない。
+    //     受講開始前の判定はドリル (⑤) は今月、宿題 (⑥) は期限の月 (期限が空なら今月) = クラス宿題と同じ。外した人数は押したときに出す。
+    const DGA = { classes: null, courses: [], loading: false, failed: '', groups: { gd: [], hwb: [] }, ready: { gd: false, hwb: false },
+                  msgKind: { gd: '', hwb: '' }, applied: { gd: null, hwb: null } };
+    const DGA_PANELS = {   // list は呼ぶたびに読む (_hwbStudents はこの下で宣言されるので、読めないときは空として扱う)
+      gd:  { chips: 'gdAutoGroupChips',  msg: 'gdAutoGroupMsg',  list: () => { try { return _gdStudents; } catch (e) { return []; } } },
+      hwb: { chips: 'hwbAutoGroupChips', msg: 'hwbAutoGroupMsg', list: () => { try { return _hwbStudents; } catch (e) { return []; } } },
+    };
+    const DGA_ACTIVE = new Set(['trial', 'paid', 'past_due']);
+    function DGAlabels(s) {
+      let v = s && s.class_labels;
+      if (typeof v === 'string') { try { v = JSON.parse(v); } catch (e) { v = []; } }
+      return Array.isArray(v) ? v.map(String) : [];
+    }
+    function DGAisTsujuku(s) { return !!s && (s.course === 'kokuritsu_nankan' || s.plan === 'student_addon'); }
+    // 同じ人かどうかの名前の照合 (サーバの _normalize_person_name と同じ: NFKC → 空白・中黒・句読点を除く → 小文字)
+    function DGAnameKey(n) { let t = String(n || ''); try { t = t.normalize('NFKC'); } catch (e) {} return t.replace(/[\s　・,.、。]+/g, '').toLowerCase(); }
+    function DGArefMonth(panel) {   // 受講開始前の判定に使う月 (YYYY-MM)。宿題は期限の月
+      if (panel === 'hwb') { const d = ((document.getElementById('hwbDue') || {}).value || '').slice(0, 7); if (/^\d{4}-\d{2}$/.test(d)) return d; }
+      const j = new Date(Date.now() + 9 * 3600 * 1000);   // JST の今月 (サーバの _jst_month_str と同じ)
+      return j.toISOString().slice(0, 7);
+    }
+    function DGAbeforeStart(s, month) { const sm = String((s && s.start_month) || ''); return /^\d{4}-\d{2}$/.test(sm) ? month < sm : !!(s && s.before_start); }
+    function DGAlink(s, extra) {   // 押すと生徒詳細が開く名前 (id は数値なので onclick に直接入れてよい)
+      const id = Number(s.id);
+      return `<a href="#" onclick="event.preventDefault();window.showStudentDetail&&window.showStudentDetail(${id})" style="color:inherit;text-decoration:underline dotted;">${escapeHtml(String(s.name || ''))} #${id}</a>` + (extra ? escapeHtml(extra) : '');
+    }
+    async function DGAloadTimetable() {
+      const res = await AdminAuth.fetch('/api/admin/class/timetable-classes');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      DGA.classes = (d.classes || []).map(c => String(c.label || '')).filter(Boolean);
+      DGA.courses = (d.courses || []).map(c => ({ name: String(c.name || ''), labels: (c.labels || []).map(String) })).filter(c => c.name && c.labels.length);
+      DGA.failed = '';
+    }
+    async function DGAload() {
+      if (DGA.classes || DGA.loading) { DGArenderAll(); return; }
+      DGA.loading = true;
+      try { await DGAloadTimetable(); }
+      catch (e) { DGA.failed = String((e && e.message) || e); }
+      finally { DGA.loading = false; DGArenderAll(); }
+    }
+    function DGAbuild(panel) {
+      const list = (DGA_PANELS[panel].list() || []);
+      const month = DGArefMonth(panel);
+      const mk = (key, name, rule, has) => {
+        const ids = [], before = [], inactive = [], notTsu = [];
+        list.forEach(s => {
+          if (!has(DGAlabels(s))) return;
+          if (!DGAisTsujuku(s)) notTsu.push(s);
+          else if (!DGA_ACTIVE.has(String(s.status || ''))) inactive.push(s);
+          else if (DGAbeforeStart(s, month)) before.push(s);
+          else ids.push(s.id);
+        });
+        // 同じ名前が 2 人以上 = 別メールで二重登録した同じ生徒かもしれない (クラス宿題の一括配信と同じ注意)
+        const byName = {};
+        list.filter(s => ids.includes(s.id)).forEach(s => { const k = DGAnameKey(s.name); if (k) (byName[k] = byName[k] || []).push(s); });
+        const dups = Object.keys(byName).filter(k => byName[k].length > 1).map(k => byName[k]);
+        return { key, name, rule, ids, before, inactive, notTsu, dups, month };
+      };
+      const out = [];
+      DGA.courses.forEach(c => out.push(mk('course:' + c.name, c.name, c.labels.length + 'コマ全部を受講している生徒だけ。1コマだけの生徒は各クラスのボタンから', ls => c.labels.every(l => ls.includes(l)))));
+      (DGA.classes || []).forEach(l => out.push(mk('class:' + l, l, '', ls => ls.includes(l))));
+      return out.filter(g => g.ids.length + g.before.length + g.inactive.length > 0);   // 通塾生でない人だけのクラスは出さない
+    }
+    // 在籍中の通塾生のうち、在籍クラスが空の生徒 (オンラインの学習管理コース生はクラスが無いのが正しい = 情報だけ) と、
+    //   時間割に無いクラス名が残っている生徒 (時間割の改名で移し忘れた等 = 直しが要る) を分けて返す
+    function DGAproblems(panel) {
+      const known = new Set(DGA.classes || []);
+      const act = (DGA_PANELS[panel].list() || []).filter(s => DGAisTsujuku(s) && DGA_ACTIVE.has(String(s.status || '')));
+      return { none: act.filter(s => !DGAlabels(s).length), stale: act.filter(s => DGAlabels(s).some(l => !known.has(l))) };
+    }
+    const DGA_REFRESH_BTN = ` <button type="button" onclick="DGArefresh()" title="名簿と時間割を読み直して作り直す (チェック中の選択はそのまま)" style="background:none;border:1px solid #475569;border-radius:12px;padding:0.1rem 0.5rem;color:#94a3b8;font-size:0.7rem;cursor:pointer;">🔄 読み直す</button>`;
+    function DGArender(panel) {
+      const P = DGA_PANELS[panel]; if (!P) return;
+      const box = document.getElementById(P.chips); if (!box) return;
+      if (DGA.failed) { box.innerHTML = '<span style="color:#fca5a5;">時間割クラスを読めませんでした（' + escapeHtml(DGA.failed) + '）</span>' + DGA_REFRESH_BTN; DGA.groups[panel] = []; return; }
+      if (!DGA.classes || !DGA.ready[panel]) { box.innerHTML = '<span style="color:#52525b;">読み込み中…</span>'; DGA.groups[panel] = []; return; }
+      const gs = DGAbuild(panel);
+      DGA.groups[panel] = gs;
+      const pr = DGAproblems(panel);
+      const btn = (kind, color, text) => `<button type="button" onclick="DGAshowProblems('${panel}','${kind}')" style="background:none;border:1px solid ${color};border-radius:12px;padding:0.1rem 0.5rem;color:${color};font-size:0.7rem;cursor:pointer;">${text}</button>`;
+      const info = (pr.stale.length ? ' ' + btn('stale', '#fbbf24', `⚠️ 時間割に無いクラス名が残っている ${pr.stale.length}名`) : '')
+        + (pr.none.length ? ' ' + btn('none', '#71717a', `在籍クラス未設定の通塾生 ${pr.none.length}名`) : '');
+      const chips = gs.map((g, i) => {
+        const isCourse = g.key.startsWith('course:');
+        const label = (isCourse ? '🎓 ' + g.name + '（全コマ）' : g.name);
+        return `<button type="button" onclick="DGAapply('${panel}',${i})" style="background:${isCourse ? 'rgba(45,212,191,0.22)' : 'rgba(45,212,191,0.10)'};border:1px solid rgba(45,212,191,${isCourse ? '0.7' : '0.4'});border-radius:12px;padding:0.1rem 0.55rem;color:#ccfbf1;font-size:0.74rem;font-weight:700;cursor:pointer;opacity:${g.ids.length ? '1' : '0.55'};">${escapeHtml(label)} <span style="color:#5eead4;">· ${g.ids.length}名</span></button>`;
+      }).join('');
+      box.innerHTML = (chips || '<span style="color:#52525b;">（在籍クラスが入っている通塾生がいません）</span>') + info + DGA_REFRESH_BTN;
+    }
+    function DGArenderAll() { DGArender('gd'); DGArender('hwb'); }
+    function DGAsetMsg(panel, html, kind) { const P = DGA_PANELS[panel]; const el = P && document.getElementById(P.msg); if (el) el.innerHTML = html; DGA.msgKind[panel] = kind || ''; }
+    function DGAnames(arr, extra) { return arr.slice(0, 40).map(s => DGAlink(s, extra ? extra(s) : '')).join('・') + (arr.length > 40 ? ` ほか${arr.length - 40}名` : ''); }
+    function DGAapply(panel, idx) {
+      try {
+        const p = DG_PANELS[panel];
+        const g = (DGA.groups[panel] || [])[idx]; if (!g) return;
+        const before = new Set(Array.from(document.querySelectorAll('.' + p.st + ':checked')).map(c => parseInt(c.value, 10)));
+        const present = g.ids.length ? DGselectIds(panel, g.ids) : 0;
+        // このボタンで新しくチェックした生徒を覚える (宿題の期限を変えたときに、この分だけ選び直す)
+        DGA.applied[panel] = { key: g.key, added: g.ids.filter(x => !before.has(Number(x))).map(Number) };
+        DGAsetMsg(panel, DGAapplyMsg(panel, g, present), 'apply');
+      } catch (e) {
+        DGAsetMsg(panel, '<span style="color:#fca5a5;">エラー: ' + escapeHtml(String((e && e.message) || e)) + '</span>');
+      }
+    }
+    function DGAapplyMsg(panel, g, present, head) {
+      const skip = [];
+      if (g.before.length) skip.push(`受講開始前 ${g.before.length}名 (${panel === 'hwb' ? '期限の月' : '今月'} ${g.month} で判定): ${DGAnames(g.before, s => s.start_month ? '（' + s.start_month + ' 開始）' : '')}`);
+      if (g.inactive.length) skip.push(`在籍していない ${g.inactive.length}名: ${DGAnames(g.inactive)}`);
+      if (g.notTsu.length) skip.push(`通塾生でない ${g.notTsu.length}名 (在籍クラスだけ残っている)`);
+      return `<span style="color:#5eead4;">${head || `🗓「${escapeHtml(g.name)}」の ${present}名を選択に追加`}${g.rule ? `（${escapeHtml(g.rule)}）` : ''}</span>`
+        + (skip.length ? `<br><span style="color:#94a3b8;">入れていない: ${skip.join(' ／ ')}</span>` : '')
+        + (g.dups.length ? `<br><span style="color:#fbbf24;">⚠️ 同じ名前の生徒が複数います (二重登録かもしれません): ${g.dups.map(arr => arr.map(s => DGAlink(s)).join(' と ')).join('、')}。名前を押すと生徒詳細が開くので、使っていない方のチェックを外してください</span>` : '');
+    }
+    function DGAshowProblems(panel, kind) {
+      const pr = DGAproblems(panel);
+      if (kind === 'stale') {
+        if (!pr.stale.length) { DGAsetMsg(panel, '<span style="color:#86efac;">✓ 時間割に無いクラス名が残っている生徒はいなくなりました</span>'); return; }
+        const known = new Set(DGA.classes || []);
+        DGAsetMsg(panel, `<span style="color:#fbbf24;">時間割に無いクラス名が残っている ${pr.stale.length}名: ${DGAnames(pr.stale, s => '（' + DGAlabels(s).filter(l => !known.has(l)).join('・') + '）')}</span>`
+          + '<br><span style="color:#94a3b8;">→ 名前を押して生徒詳細の「在籍クラス」の ✏️ 編集を開き、正しいクラスにチェックして「保存」を押すと、時間割に無い名前は消えます (クラス別 受講生 一括登録では消えません)。保存すると、ここのグループも作り直します。</span>', 'stale');
+        return;
+      }
+      if (!pr.none.length) { DGAsetMsg(panel, '<span style="color:#86efac;">✓ 在籍クラス未設定の通塾生はいなくなりました</span>'); return; }
+      DGAsetMsg(panel, `<span style="color:#cbd5e1;">在籍クラス未設定の通塾生 ${pr.none.length}名: ${DGAnames(pr.none)}</span>`
+        + '<br><span style="color:#94a3b8;">オンラインの学習管理コース生など、教室のクラスに出ていない生徒はこのままで大丈夫です。教室のクラスに出ている生徒は、名前を押して生徒詳細の「在籍クラス」の ✏️ 編集か、🏫 通塾クラス (ファイル/録画/出欠) の「クラス別 受講生 一括登録」で設定すると、ここのグループに入ります。</span>', 'none');
+    }
+    // 名簿と時間割を読み直して作り直す (🔄 ボタンと、同じ画面で在籍クラスを保存したとき)。チェック中の選択はそのまま。
+    //   読み直し中にもう一度呼ばれたら (続けて保存したなど)、終わったあとにもう一回読む (先の読み込みには後の保存が入っていない)
+    let _dgaRefreshing = null, _dgaAgain = false;
+    function DGArelist(panel) {   // 生徒の一覧を今の絞り込みのまま描き直す (チェックは付け直す)
+      const p = DG_PANELS[panel]; if (!p || !DGA.ready[panel]) return;
+      const keep = new Set(Array.from(document.querySelectorAll('.' + p.st + ':checked')).map(c => parseInt(c.value, 10)));
+      p.render(((document.getElementById(p.filter) || {}).value) || '');
+      document.querySelectorAll('.' + p.st).forEach(c => { if (keep.has(parseInt(c.value, 10))) c.checked = true; });
+      if (p.after) p.after();
+    }
+    function DGArefresh() {
+      if (_dgaRefreshing) { _dgaAgain = true; return _dgaRefreshing; }
+      _dgaRefreshing = (async () => {
+        let note = '';
+        try {
+          const res = await AdminAuth.fetch('/api/admin/stats');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          const live = (data.students || []).filter(s => s.status !== 'canceled');
+          if (DGA.ready.gd) _gdStudents = live;
+          if (DGA.ready.hwb) { try { _hwbStudents = live; } catch (e) {} }
+          try { await DGAloadTimetable(); } catch (e) { if (!DGA.classes) DGA.failed = String((e && e.message) || e); }
+          const t = new Date(); note = `<span style="color:#86efac;">✓ 名簿と時間割を読み直しました (${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')})</span>`;
+        } catch (e) {
+          note = '<span style="color:#fca5a5;">読み直しに失敗しました（' + escapeHtml(String((e && e.message) || e)) + '）— 前の名簿のままです</span>';
+        } finally {
+          ['gd', 'hwb'].forEach(pn => { try { DGArelist(pn); } catch (e) {} });
+          DGArenderAll();
+          ['gd', 'hwb'].forEach(pn => {
+            const k = DGA.msgKind[pn];
+            if (k === 'stale' || k === 'none') DGAshowProblems(pn, k);   // 開いている一覧も今の名簿で出し直す
+            else if (DGA.ready[pn]) DGAsetMsg(pn, note);
+          });
+          _dgaRefreshing = null;
+          if (_dgaAgain) { _dgaAgain = false; DGArefresh(); }
+        }
+      })();
+      return _dgaRefreshing;
+    }
+    // ⑥ 宿題の期限を変えたら、受講開始前の判定 (期限の月) が変わる → 直前に 🗓 で足した生徒だけ選び直す
+    //   (手でチェックした生徒・手動グループで足した生徒には触らない)
+    function DGAdueChanged() {
+      DGArender('hwb');
+      const a = DGA.applied.hwb; if (!a) return;
+      const g = (DGA.groups.hwb || []).find(x => x.key === a.key);
+      const p = DG_PANELS.hwb;
+      const box = (id) => document.querySelector('.' + p.st + '[value="' + id + '"]');
+      const now = new Set((g ? g.ids : []).map(Number));
+      const off = a.added.filter(id => !now.has(id) && box(id) && box(id).checked);
+      off.forEach(id => { box(id).checked = false; });
+      const on = g ? g.ids.map(Number).filter(id => box(id) && !box(id).checked) : [];
+      on.forEach(id => { box(id).checked = true; });
+      a.added = a.added.filter(id => now.has(id)).concat(on);
+      if (p.after) p.after();
+      if (g && (off.length || on.length)) {
+        DGAsetMsg('hwb', DGAapplyMsg('hwb', g, g.ids.length, `🗓 期限の月 ${g.month} で「${escapeHtml(g.name)}」を選び直しました（外した ${off.length}名・足した ${on.length}名）`), 'apply');
       }
     }
     async function DGdelete(panel, id) {
@@ -5245,6 +5460,9 @@
     window._gdMode = _gdMode;  // 🧒 同じく「やるべきこと」が中学ドリルのボタンを出す生徒を学年で決める (未設定・その他 = '')
     // 👥 配信グループ (inline onclick から呼ぶため window 公開必須 — このscriptはIIFEなので公開を忘れると ReferenceError で無反応になる)
     window.gdSaveGroup = gdSaveGroup; window.hwbSaveGroup = hwbSaveGroup; window.DGapply = DGapply; window.DGdelete = DGdelete;
+    window.DGAapply = DGAapply; window.DGAshowProblems = DGAshowProblems; window.DGArefresh = DGArefresh;  // 🗓 受講クラスから自動のグループ (同じく inline onclick から呼ぶ)
+    window.__dgaRefresh = DGArefresh;   // 在籍クラスを保存する 3 か所 (生徒詳細・生徒別・クラス別一括) が呼ぶ
+    { const _due = document.getElementById('hwbDue'); if (_due) _due.addEventListener('change', DGAdueChanged); }   // 宿題の受講開始前は期限の月で判定
     document.addEventListener('DOMContentLoaded', gdInit);
 
     // ✏️ 英文法ドリル 問題プール補充 (2026-06-19): seed JSON を grammar_questions に一括投入 (無課金・dedup)
@@ -5633,6 +5851,8 @@
       hwbRenderStudents('');
       DGrenderChips('hwb');
       DG.load();
+      DGA.ready.hwb = true;
+      DGAload();
     }
     function hwbRenderStudents(filter) {
       const box = document.getElementById('hwbStudents'); if (!box) return;
@@ -9972,6 +10192,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
                 if (_live && _live !== st) _live.class_labels = st.class_labels;
                 // 🏫 通塾クラス管理 (生徒別・クラス別・宿題の人数) のキャッシュも更新 (全表示モードでは同じ画面に見えている)
                 if (typeof window.__scReloadStudents === 'function') { try { window.__scReloadStudents(); } catch (_e) {} }
+                if (typeof window.__dgaRefresh === 'function') { try { window.__dgaRefresh(); } catch (_e) {} }   // 🗓 ⑤⑥ の受講クラスから自動のグループも作り直す
                 if (typeof ceoToast === 'function') ceoToast(`✓ 在籍クラスを保存しました (${st.class_labels.length} クラス)`, 'success');
                 showStudentDetail(sid);   // 行を描き直す (モーダルは開いたまま・申込内容タブ)
               } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + (e.message || String(e)); sv.disabled = false; }
@@ -12512,6 +12733,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         await adminJson('/api/admin/class/student-classes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ student_id: Number(sid), class_labels: labels }) });
         msg.style.color = '#6ee7b7'; msg.textContent = '✓ 保存しました（' + labels.length + 'クラス）';
         var stu = _scStudents.filter(function (s) { return String(s.id) === String(sid); })[0]; if (stu) stu.class_labels = labels;
+        if (typeof window.__dgaRefresh === 'function') { try { window.__dgaRefresh(); } catch (_e) {} }   // 🗓 ⑤⑥ の自動グループも作り直す
       } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + e.message; }
       finally { btn.disabled = false; }
     }
@@ -12565,6 +12787,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           else if (!want[s.id] && has) s.class_labels = (s.class_labels || []).filter(function (x) { return x !== label; });
         });
         if (typeof hwUpdateCount === 'function') hwUpdateCount();  // 宿題カウントも同期
+        if (typeof window.__dgaRefresh === 'function') { try { window.__dgaRefresh(); } catch (_e) {} }   // 🗓 ⑤⑥ の自動グループも作り直す
       } catch (e) { msg.style.color = '#fca5a5'; msg.textContent = '失敗: ' + (e.message || 'エラー'); }
       finally { if (btn) btn.disabled = false; }
     }
