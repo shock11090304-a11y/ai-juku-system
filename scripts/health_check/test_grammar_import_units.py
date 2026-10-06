@@ -35,6 +35,7 @@ import hmac
 import importlib.util
 import json
 import os
+import re
 import sys
 import tempfile
 
@@ -171,21 +172,32 @@ def main():
           not ({"english", "math", "japanese", "social"} & set(ORDER)), str(sorted(ORDER)))
 
     print("\n[1] コミット済みのシードが CEO のボタンと同じ送り方で全部入る")
+    # 英検は CEO のボタンと同じく v1 → v2 (本番形式演習 2026-10) の順に送る。v2 は v1 と重ならない (skipped 0) こと
     for fname, subj in (("chugaku_drill_pool_v1.json", "chugaku"), ("chugaku_math_pool_v1.json", "chugaku_math"),
-                        ("eiken_vocab_pool_v1.json", "eiken")):
+                        ("eiken_vocab_pool_v1.json", "eiken"), ("eiken_vocab_pool_v2.json", "eiken")):
         qs = load_seed(fname)["questions"]
         t = import_like_ceo(api, "questions", qs, subj, 400)
         check(f"{fname}: 全 {len(qs)} 問が入る (errors 0・skipped 0・警告なし)",
               t["status"] == {200} and t["inserted"] == len(qs) and t["skipped"] == 0 and t["errors"] == 0
               and not t["warnings"] and not t["unknown"],
               f"status={t['status']} inserted={t['inserted']} skipped={t['skipped']} errors={t['errors']} unknown={t['unknown'][:3]}")
-    reading = load_seed("eiken_reading_pool_v1.json")["passages"]
-    n_rq = sum(len(p.get("questions") or []) for p in reading)
-    t = import_like_ceo(api, "passages", reading, "eiken", 20)
-    check(f"eiken_reading_pool_v1.json: 本文 {len(reading)} 本・設問 {n_rq} 問が全部入る (errors 0・警告なし)",
-          t["status"] == {200} and t["ok"] == {True} and t["passages_inserted"] == len(reading) and t["passages_skipped"] == 0
-          and t["inserted"] == n_rq and t["errors"] == 0 and not t["warnings"] and not t["unknown"],
-          f"status={t['status']} p_ins={t['passages_inserted']} p_skip={t['passages_skipped']} q_ins={t['inserted']} errors={t['errors']} unknown={t['unknown'][:3]}")
+    for rname in ("eiken_reading_pool_v1.json", "eiken_reading_pool_v2.json"):
+        reading = load_seed(rname)["passages"]
+        n_rq = sum(len(p.get("questions") or []) for p in reading)
+        t = import_like_ceo(api, "passages", reading, "eiken", 20)
+        check(f"{rname}: 本文 {len(reading)} 本・設問 {n_rq} 問が全部入る (errors 0・警告なし)",
+              t["status"] == {200} and t["ok"] == {True} and t["passages_inserted"] == len(reading) and t["passages_skipped"] == 0
+              and t["inserted"] == n_rq and t["errors"] == 0 and not t["warnings"] and not t["unknown"],
+              f"status={t['status']} p_ins={t['passages_inserted']} p_skip={t['passages_skipped']} q_ins={t['inserted']} errors={t['errors']} unknown={t['unknown'][:3]}")
+    # CEO の補充ボタンが読むシード (data-seed はカンマ区切り) が全部実在し、v1 と v2 の両方を含む
+    ceo = open(os.path.join(REPO, "ceo.html"), encoding="utf-8").read()
+    for btn, want in (("eikenPoolImportBtn", ("eiken_vocab_pool_v1.json", "eiken_vocab_pool_v2.json")),
+                      ("eikenReadingImportBtn", ("eiken_reading_pool_v1.json", "eiken_reading_pool_v2.json"))):
+        m = re.search(r'id="%s"[^>]*data-seed="([^"]+)"' % btn, ceo)
+        urls = [u.strip() for u in (m.group(1).split(",") if m else []) if u.strip()]
+        check(f"ceo.html #{btn} の data-seed が v1 と v2 を順に指し、どれも実在する",
+              [u.rsplit("/", 1)[-1] for u in urls] == list(want) and all(os.path.exists(os.path.join(REPO, u.lstrip("/"))) for u in urls),
+              str(urls))
     for subj in ("chugaku", "chugaku_math", "eiken"):
         got = api.units(subj)
         names = [u["unit"] for u in got]
