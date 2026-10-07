@@ -389,6 +389,14 @@
   .pol li::before{content:"❖";position:absolute;left:0;color:var(--gold-ink)}
   .pol li b{color:var(--navy);font-weight:800}
 
+  /* ===== PDF教材の案内 ===== */
+  .materials-teaser{max-width:860px;margin:0 auto;background:var(--paper);border:1px solid var(--line);border-top:4px solid var(--gold);border-radius:16px;padding:1.6rem 1.8rem;box-shadow:var(--shadow);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1.2rem}
+  .materials-teaser ul{list-style:none;display:grid;gap:.55rem;flex:1 1 420px}
+  .materials-teaser li{font-size:.92rem;color:var(--ink-soft);padding-left:1.4em;position:relative;line-height:1.65}
+  .materials-teaser li::before{content:"❖";position:absolute;left:0;color:var(--gold-ink)}
+  .materials-teaser li b{color:var(--navy);font-weight:800;margin-right:.6em}
+  @media(max-width:520px){.materials-teaser .btn{width:100%}}
+
   /* ===== 最終CTA ===== */
   .final{background:linear-gradient(160deg,var(--navy),#0a1830 60%,#0e2246);color:#fff;text-align:center;padding:88px 0}
   .final h2{font-size:clamp(1.7rem,4vw,2.6rem);font-weight:700;margin-bottom:1rem}
@@ -458,6 +466,7 @@
     <a href="#ai">AI学習</a>
     <a href="#courses">コース</a>
     <a href="#pricing">料金</a>
+    <a href="materials.html">PDF教材</a>
     <a href="taiken.html" class="btn btn-gold">体験授業</a>
     <details class="m-menu">
       <summary aria-label="メニューを開く">☰</summary>
@@ -470,6 +479,7 @@
         <a href="#courses">コース</a>
         <a href="#pricing">料金</a>
         <a href="#flow">入塾の流れ</a>
+        <a href="materials.html">PDF教材（オンライン販売）</a>
         <a href="https://graceful-eclair-56bdac.netlify.app/">入塾申込</a>
       </div>
     </details>
@@ -1268,6 +1278,26 @@
   </div>
 </section>
 
+<!-- ===== PDF教材 (2026-10-07・商品は materials.html / materials-data.js) ===== -->
+<section class="sec" id="materials">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-kicker">PDF Materials</div>
+      <h2>自習用のPDF教材も、オンラインで販売しています</h2>
+      <p>塾に通っていない方もご購入いただけます。英検準1級の要約・英作文、英文法、古文、情報Ⅰ、数学Ⅰ・Aの教材を、無料見本で中身を確かめてからお選びいただけます。</p>
+      <div class="rule"></div>
+    </div>
+    <div class="materials-teaser reveal">
+      <ul>
+        <li><b>英検準1級</b>要約・英作文のテンプレと演習</li>
+        <li><b>英文法・入試英語</b>図解ハンドブック、早稲田の文挿入、旧帝大の記述</li>
+        <li><b>古文・情報Ⅰ・数学</b>古文の読み方と文法、共通テスト形式の情報Ⅰ、数学Ⅰ・Aの弱点発見</li>
+      </ul>
+      <a href="materials.html" class="btn btn-ink">PDF教材の一覧を見る</a>
+    </div>
+  </div>
+</section>
+
 <!-- ===== 最終CTA ===== -->
 <section class="final" id="contact">
   <div class="wrap">
@@ -1296,6 +1326,7 @@
       <a href="#app">塾生アプリ</a>
       <a href="#courses">コース</a>
       <a href="#pricing">料金</a>
+      <a href="materials.html">PDF教材</a>
       <a href="taiken.html">体験授業</a>
       <a href="https://graceful-eclair-56bdac.netlify.app/">入塾申込</a>
     </nav>
