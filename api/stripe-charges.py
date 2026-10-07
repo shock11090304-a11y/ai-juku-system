@@ -1,11 +1,16 @@
 """Vercel Function: Stripe Charges 取得 (juku-payment 月謝管理用)
 
-Endpoint: GET /payment-api/stripe-charges?month=YYYY-MM
+Endpoint: GET /payment/api/stripe-charges?month=YYYY-MM
   (vercel.json の rewrites で /api/stripe-charges に流れる)
+
+認証: X-Admin-Password (CHAT_ADMIN_PASSWORD)。他の管理 API と同じ総当たり上限つき。
+  🔐 2026-10-08 まで無認証で、URL を知っていれば誰でも月の決済一覧 (支払者の氏名・メール) を取れた。
 
 Env:
   STRIPE_SECRET_KEY  Stripe Dashboard → Developers → API keys → Secret key
                      (sk_live_... / sk_test_...)
+  CHAT_ADMIN_PASSWORD  管理パスワード (未設定なら常に 401)
+  KV_REST_API_URL / KV_REST_API_TOKEN  失敗回数の記録 (無ければ比較のみ)
 
 Response (200):
   {
@@ -19,7 +24,7 @@ Response (200):
         "currency": "jpy",
         "description": "...",
         "customer_email": "...",
-        "customer_name": "ナオイ サチコ",
+        "customer_name": "(カード名義)",
         "receipt_email": "...",
         "metadata": {...}
       },
@@ -27,6 +32,7 @@ Response (200):
     ]
   }
 
+Response (401): 管理パスワードが無い・違う・失敗が上限 (IP 10回/時・全体 60回/時) に達している
 Response (503): STRIPE_SECRET_KEY 未設定
 Response (400): month 形式不正
 Response (502): Stripe API エラー (生エラー転送)
@@ -36,6 +42,7 @@ Response (502): Stripe API エラー (生エラー転送)
 
 from http.server import BaseHTTPRequestHandler
 from datetime import datetime, timezone
+import hmac
 import json
 import os
 import urllib.parse
@@ -51,6 +58,75 @@ def _json(handler, status, payload):
     handler.send_header("Content-Length", str(len(body)))
     handler.end_headers()
     handler.wfile.write(body)
+
+
+# 🔐 2026-09-07 総当たり対策 (システム点検で確定): パスワード比較だけで試行回数の上限が無く、月末の一括引き落とし・
+#   スポット課金・任意宛先メール・顧客一覧が総当たりで開く状態だった。失敗回数を Upstash KV (webhook の冪等化で
+#   常用) に IP ごと・全体で記録し、上限に達したら比較せずに拒否する。KV が無い環境では従来どおり比較のみ。
+#   ★10 本の関数に同じ塊を置いている (Vercel の Python 関数は 1 ファイル 1 関数で共有モジュールを持たない)。
+#     直すときは全部一緒に直すこと。scripts/health_check/test_vercel_admin_guard.py が 10 本とも検査する。
+_ADMIN_FAIL_IP_LIMIT = 10        # 同一 IP: 10 回/時
+_ADMIN_FAIL_GLOBAL_LIMIT = 60    # 全体: 60 回/時 (IP を変えながらの総当たりを止める)
+_ADMIN_FAIL_WINDOW_SEC = 3600
+
+
+def _admin_kv(*args):
+    url = os.environ.get("KV_REST_API_URL", "").strip()
+    token = os.environ.get("KV_REST_API_TOKEN", "").strip()
+    if not url or not token:
+        return None
+    try:
+        req = urllib.request.Request(url, data=json.dumps(list(args)).encode(),
+                                     headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        return None
+
+
+def _admin_client_ip(handler) -> str:
+    # Vercel が付ける x-real-ip を優先 (x-forwarded-for の先頭は利用者側で細工できる)
+    ip = (handler.headers.get("x-real-ip") or "").strip()
+    if not ip:
+        xff = (handler.headers.get("x-forwarded-for") or "").strip()
+        ip = xff.split(",")[-1].strip() if xff else ""
+    return (ip or "unknown")[:64]
+
+
+def _admin_fail_count(key) -> int:
+    r = _admin_kv("GET", key)
+    try:
+        return int((r or {}).get("result") or 0)
+    except (TypeError, ValueError, AttributeError):
+        return 0
+
+
+def _admin_fail_record(key):
+    r = _admin_kv("INCR", key)
+    try:
+        if int((r or {}).get("result") or 0) == 1:
+            _admin_kv("EXPIRE", key, str(_ADMIN_FAIL_WINDOW_SEC))
+    except (TypeError, ValueError, AttributeError):
+        pass
+
+
+def _verify_admin(handler) -> bool:
+    """X-Admin-Password ヘッダで認証。失敗が上限 (IP 10回/時・全体 60回/時) に達していると正しくても通さない。"""
+    expected = os.environ.get("CHAT_ADMIN_PASSWORD", "").strip()
+    if not expected:
+        return False
+    got = handler.headers.get("X-Admin-Password", "").strip()
+    if not got:
+        return False
+    ip_key = f"adminfail:ip:{_admin_client_ip(handler)}"
+    if (_admin_fail_count(ip_key) >= _ADMIN_FAIL_IP_LIMIT
+            or _admin_fail_count("adminfail:global") >= _ADMIN_FAIL_GLOBAL_LIMIT):
+        return False
+    if hmac.compare_digest(got, expected):
+        return True
+    _admin_fail_record(ip_key)
+    _admin_fail_record("adminfail:global")
+    return False
 
 
 def _month_range(month_str):
@@ -118,6 +194,17 @@ def _fetch_stripe_charges(secret_key, start_ts, end_ts):
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
+            # 🔐 Stripe を呼ぶ前・設定の有無を返す前に認証する (支払者の氏名・メールを返す API のため)
+            if not _verify_admin(self):
+                _json(self, 401, {
+                    "error": "UNAUTHORIZED",
+                    "message": "管理パスワードが違うか、入力されていません。失敗が続くと 1 時間ほど受け付けなくなります。",
+                    # 認証を付ける前の画面 (開いたままの月謝アプリ) は管理パスワードを送らず、hint だけを表示する
+                    "hint": "画面が古いままの場合は再読み込み (Mac は ⌘R・Dock のアプリは開き直す) すると、"
+                            "この枠に「🔒 管理パスワード」欄が出ます。",
+                })
+                return
+
             qs = urllib.parse.urlparse(self.path).query
             params = urllib.parse.parse_qs(qs)
             month = (params.get("month", [""])[0] or "").strip()

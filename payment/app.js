@@ -5123,21 +5123,71 @@ function chargesToRows(charges) {
   });
 }
 
+// 🔐 2026-10-08 stripe-charges は管理パスワード必須 (支払者の氏名・メールを返すため)。
+// 取込欄で入れた値を優先し、無ければ月末引き落とし・チャットのタブと共有しているパスワードを使う。
+function getStripeImportAdminPw() {
+  return document.getElementById('stripeImportAdminPw')?.value?.trim() || getMonthEndAdminPw();
+}
+
+// サーバが通したパスワードだけを他のタブと共有する。入力欄の change で共有すると、打ち間違いが正しい共有パスワードを
+// 上書きし、チャットの定期取得などが裏で失敗し続けて失敗回数の上限 (1 時間ロック) を使い切ってしまう。
+function shareVerifiedAdminPw(pw) {
+  if (!pw) return;
+  const prev = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || '';
+  try { sessionStorage.setItem(CHAT_PW_KEY, pw); } catch (_) {}
+  if (typeof CHAT_STATE !== 'undefined') CHAT_STATE.pw = pw;
+  for (const id of ['monthEndAdminPw', 'chatAdminPw']) {   // 他のタブに古い (違う) 値が入っていたら直す
+    const el = document.getElementById(id);
+    if (el && el.value && el.value.trim() !== pw) el.value = pw;
+  }
+  if (prev !== pw) {   // チャット欄の change と同じく、カード登録の一覧を新しいパスワードで取り直させる
+    STRIPE_CUST_CACHE.customers = [];
+    STRIPE_CUST_CACHE.loadedAt = 0;
+    STRIPE_CUST_CACHE._allTabTried = false;
+  }
+}
+
+// 月初リマインダーの対象月を取り込めたら、バナーから押したかどうかに関係なく「取込済み」にして閉じる
+function markAutoImportDoneIfTarget(month) {
+  const banner = document.getElementById('autoImportBanner');
+  if (!banner || banner.dataset.targetMonth !== month) return;
+  try { setAutoImportDone(month); } catch (_) {}   // localStorage が満杯でも、取り込めた結果をエラー表示に変えない
+  banner.classList.add('hidden');
+}
+
+// 戻り値: 取得できたら true (0 件も含む)。
 async function importFromStripe() {
   const status = document.getElementById('stripeImportStatus');
   const btn = document.getElementById('stripeImportBtn');
+  if (btn.disabled) return false;   // 取得中 (Enter の連打で二重に送ると、パスワード違いのとき失敗回数を 2 回分使う)
   const month = STATE.currentMonth;
   if (!month || !/^\d{4}-\d{2}$/.test(month)) {
     status.innerHTML = '<span style="color:var(--error)">⚠ 対象月が選択されていません (画面上部の月セレクタで選んでください)</span>';
-    return;
+    return false;
+  }
+  const pw = getStripeImportAdminPw();
+  if (!pw) {
+    status.innerHTML = '<span style="color:#fbbf24">🔒 管理パスワードを、この枠の「🔒 管理パスワード」欄に入力してから取り込んでください (ここで一度通れば「💬 チャット」「💳 月末引き落とし」でも入力不要になります。アプリを閉じると入れ直しが必要です)</span>';
+    document.getElementById('stripeImportAdminPw')?.focus();
+    return false;
   }
   btn.disabled = true;
   status.textContent = '🔄 Stripe API から取得中...';
   try {
     const url = `/payment/api/stripe-charges?month=${encodeURIComponent(month)}`;
-    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    const r = await fetch(url, { headers: { 'Accept': 'application/json', 'X-Admin-Password': pw } });
     let data = null;
     try { data = await r.json(); } catch (e) { /* fallthrough: 非JSON応答 */ }
+    if (r.status === 401) {
+      status.innerHTML = '<span style="color:var(--error)">❌ 認証失敗。管理パスワードを確認して、この枠の「🔒 管理パスワード」欄に入れ直してください。<br>※ 正しいパスワードでも失敗する場合は、間違いが続いたため最大 1 時間受け付けを止めています。時間をおいてからもう一度押してください。</span>';
+      const pwField = document.getElementById('stripeImportAdminPw');
+      if (pwField) {
+        // 通らなかった値を欄に残すと、他のタブで正しく入れ直しても毎回こちらが優先されて失敗回数を使う
+        if (pwField.value.trim() === pw) pwField.value = '';
+        pwField.focus();
+      }
+      return false;
+    }
     if (!r.ok) {
       const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.startsWith('192.168.');
       const msg = (data && (data.message || data.error)) || `HTTP ${r.status}`;
@@ -5150,15 +5200,23 @@ async function importFromStripe() {
                 : ''));
       const link = data && data.dashboard ? `<br><a href="${escapeHtml(data.dashboard)}" target="_blank" style="color:var(--primary-light)">→ Vercel Dashboard を開く</a>` : '';
       status.innerHTML = `<span style="color:var(--error)">⚠ ${escapeHtml(msg)}</span>${hint}${link}`;
-      return;
+      return false;
     }
-    if (!data || data.count === 0) {
+    if (!data || !Array.isArray(data.charges)) {   // 200 でも中身を読めない応答は取込済みにしない・パスワードも共有しない
+      status.innerHTML = '<span style="color:var(--error)">⚠ Stripe 取込の応答を読み取れませんでした。少し待ってからもう一度押してください</span>';
+      return false;
+    }
+    if (data.charges.length === 0) {
       status.innerHTML = `<span style="color:var(--text-muted)">✓ ${escapeHtml(month)} の Stripe 入金は 0 件でした (テスト環境キーの場合は本番キーに切替えてください)</span>`;
-      return;
+    } else {
+      const rows = chargesToRows(data.charges);
+      processImport(rows);
+      status.innerHTML = `<span style="color:var(--success,#10b981)">✓ Stripe ${data.count} 件取込み完了。下の「要確認」リストでマッチを確認 → 「💾 確定して入金反映」を押してください</span>`;
     }
-    const rows = chargesToRows(data.charges);
-    processImport(rows);
-    status.innerHTML = `<span style="color:var(--success,#10b981)">✓ Stripe ${data.count} 件取込み完了。下の「要確認」リストでマッチを確認 → 「💾 確定して入金反映」を押してください</span>`;
+    // 一覧を作り終えてから: 通ったパスワードの共有と月初リマインダーの「取込済み」
+    shareVerifiedAdminPw(pw);
+    markAutoImportDoneIfTarget(month);
+    return true;
   } catch (err) {
     console.error(err);
     const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.startsWith('192.168.');
@@ -5166,6 +5224,7 @@ async function importFromStripe() {
       ? '<br><span style="color:var(--text-muted);font-size:0.82rem">ローカル開発時は Stripe 取込は本番 (https://www.trillion-ai-juku.com/payment/) でのみ動作します</span>'
       : '';
     status.innerHTML = `<span style="color:var(--error)">⚠ 通信エラー: ${escapeHtml(err.message)}</span>${localhostHint}`;
+    return false;
   } finally {
     btn.disabled = false;
   }
@@ -5223,9 +5282,9 @@ async function runAutoImport() {
   if (importMonthTag) importMonthTag.textContent = `対象月: ${target}`;
   refresh();
   await new Promise(r => setTimeout(r, 200));
+  // 取込済みの記録とバナーを閉じるのは importFromStripe が取得できたときだけ行う (markAutoImportDoneIfTarget)。
+  // パスワード未入力・認証失敗・通信エラーのときはバナーを残し、入力後にもう一度押せるようにする
   await importFromStripe();
-  setAutoImportDone(target);
-  banner.classList.add('hidden');
 }
 
 function dismissAutoImport() {
@@ -7511,6 +7570,10 @@ async function init() {
   if (stripeMonthTag) stripeMonthTag.textContent = STATE.currentMonth;
   const stripeBtn = document.getElementById('stripeImportBtn');
   if (stripeBtn) stripeBtn.addEventListener('click', importFromStripe);
+  // 🔐 取込欄のパスワードは取込が通ったときに他のタブと共有する (shareVerifiedAdminPw)
+  document.getElementById('stripeImportAdminPw')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') importFromStripe();
+  });
 }
 
 init().then(() => {
