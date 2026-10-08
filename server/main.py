@@ -3601,6 +3601,16 @@ async def _start_background_tasks():
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Midweek nudge scheduler launched (target Wed JST 18:00)")
 
+    # 🎬 授業録画の自動割り当て scheduler (毎日 JST 7:00・2026-10-08 塾長決定「毎日自動にしたい」):
+    #   CEO の再生リスト画面のボタン (① 確認 → ② 登録) と同じ処理を「取れた分だけ登録」で回す。
+    #   CLASS_REC_AUTO_ASSIGN_ENABLED=0 なら登録しない (= 実行履歴が増えないだけ。監視の対象からも外れる)。
+    if CRON_SECRET and CLASS_REC_AUTO_ASSIGN_ENABLED:
+        task = asyncio.create_task(_class_rec_auto_assign_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info(f"[Startup] Class recording auto-assign scheduler launched (target JST {_CLASS_REC_AUTO_ASSIGN_HOUR_JST}:00 daily)")
+    elif CRON_SECRET:
+        log.info("[Startup] Class recording auto-assign scheduler disabled (CLASS_REC_AUTO_ASSIGN_ENABLED=0)")
+
     # 🎯 弱点分類 scheduler (毎日 JST 4:00): ai_tutor_solve_log → student_weakness 集計
     # 塾長指示 2026-05-13「個別問題推薦」の基盤。過去 30 日の写真質問から弱点を抽出し、
     # 該当 pool 問題 (exam_questions) を生徒ダッシュで TOP3 推薦。
@@ -5540,20 +5550,28 @@ def _run_daily_sns_post() -> dict:
 # 体験管理 in-process scheduler (毎日 JST 10:00)
 # 外部 cron が無くても expire-trials / trial-reminders / trial-followups を自動実行
 # ==========================================================================
-def _check_scheduler_ran_today_jst(event_name: str) -> bool:
-    """今日(JST)に同じスケジューラタスクが events に記録されているか確認。
-    multi-replica の重複実行を防ぐ (DB 共有 = lock 代わり)。"""
+def _scheduler_ran_today_jst_on(c, event_name: str) -> bool:
+    """_check_scheduler_ran_today_jst の判定本体 (呼び出し側のカーソルで読む)。
+    ★授業録画の自動割り当てが**書き込みと同じトランザクション・同じ錠の中**で確かめるために切り出した
+      (別の接続で確かめると、確かめてから書くまでの間に別の replica が書けてしまう)。例外は呼び出し側へ。"""
     JST = timezone(timedelta(hours=9))
     today_jst = datetime.now(JST).date()
     today_start_utc = datetime.combine(today_jst, dt_time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+    c.execute(
+        "SELECT COUNT(*) AS n FROM events WHERE name = ? AND created_at >= ?",
+        (event_name, today_start_utc)
+    )
+    row = c.fetchone()
+    return bool(row and row["n"])
+
+
+def _check_scheduler_ran_today_jst(event_name: str) -> bool:
+    """今日(JST)に同じスケジューラタスクが events に記録されているか確認。
+    multi-replica の重複実行を防ぐ (DB 共有 = lock 代わり)。"""
     conn = db()
     c = conn.cursor()
     try:
-        c.execute(
-            "SELECT COUNT(*) AS n FROM events WHERE name = ? AND created_at >= ?",
-            (event_name, today_start_utc)
-        )
-        n = c.fetchone()["n"]
+        n = 1 if _scheduler_ran_today_jst_on(c, event_name) else 0
     except Exception as e:
         log.warning(f"_check_scheduler_ran_today_jst({event_name}) failed: {e}")
         n = 0
@@ -9453,6 +9471,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "r2_backup_success": "DB バックアップ (毎日3時・R2)",
             "admission_recompute_run": "合格スコア再計算 (毎日4時)",
             "events_retention_run": "計測イベントの掃除 (毎日4時)",
+            "class_rec_assign_run": "授業録画の自動割り当て (毎朝7時)",
         }
         _lines = "、".join(
             f"{_label.get(s['name'], s['name'])} は最終実行 {s['last_run_jst']}"
@@ -9479,6 +9498,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "r2_backup_success": "DB バックアップ (毎日3時・R2)",
             "admission_recompute_run": "合格スコア再計算 (毎日4時)",
             "events_retention_run": "計測イベントの掃除 (毎日4時)",
+            "class_rec_assign_run": "授業録画の自動割り当て (毎朝7時)",
         }
         _lines_f = "、".join(
             f"{_label_f.get(s['name'], s['name'])} (最終実行 {s['last_run_jst']}): {s['error']}"
@@ -30398,6 +30418,9 @@ _SCHEDULER_MAX_AGE_DAYS = {
     "r2_backup_success": 2,
     "admission_recompute_run": 2,    # 合格スコアの日次再計算 (2026-09-06 追加・4:00 の弱点集計の直後)
     "events_retention_run": 2,       # 🧹 計測/監視イベントの掃除 (2026-09-07 追加・同じ 4:00 枠)
+    # 🎬 授業録画の自動割り当て (毎朝7時・2026-10-08 追加)。新着が無い日も実行記録を残すので 2 日で停止扱い。
+    #   無効化 (CLASS_REC_AUTO_ASSIGN_ENABLED=0) 中は外す (midweek と同じ理由: 止めた後に「停止」と誤報し続けない)。
+    **({"class_rec_assign_run": 2} if os.getenv("CLASS_REC_AUTO_ASSIGN_ENABLED", "1") == "1" else {}),
 }
 
 
@@ -52858,7 +52881,19 @@ def admin_youtube_playlist_save(payload: dict, authorization: Optional[str] = He
 #     手元の端末か Railway でしか行えない。ボタンにすると塾長がターミナルを開かずに済む。
 _AUTO_ASSIGN_LOCK = threading.Lock()   # ★同時実行の禁止。class_recordings に UNIQUE 制約が
 #     無いので、2つのタブから同時に走らせると同じ動画が2件入り、取り返しがつかない。
-#     (単一プロセス前提。ターミナル実行とは排他できない — 同時に回さないこと)
+#     これは**同じプロセスの中**の錠。プロセスをまたぐ排他 (デプロイ切り替えで新旧2コンテナが同時に
+#     7時を迎える等) は下の advisory lock が書き込みの直前に受け持つ (_class_rec_try_db_lock)。
+#     ターミナル (scripts/class_recordings/assign_from_playlists.py) とは今も排他できない — 同時に回さないこと。
+_AUTO_ASSIGN_PG_LOCK_KEY = 8675312   # pg_try_advisory_xact_lock の固定 key (8675309〜8675311 は別の処理が使用中)
+_CLASS_REC_ASSIGN_EVENT = "class_rec_assign_run"   # 毎朝の実行記録 (events.name)。監視 _SCHEDULER_MAX_AGE_DAYS と同じ名前
+# 🎬 毎朝の自動実行 (2026-10-08 塾長決定)。0 で止める (起動時に scheduler を登録しない)。ボタンは止まらない。
+CLASS_REC_AUTO_ASSIGN_ENABLED = os.getenv("CLASS_REC_AUTO_ASSIGN_ENABLED", "1") == "1"
+_CLASS_REC_AUTO_ASSIGN_HOUR_JST = 7
+
+
+class _AutoAssignBusy(Exception):
+    """別の割り当てが実行中 (同じプロセスの _AUTO_ASSIGN_LOCK か、別プロセスの advisory lock)。
+    ボタンは 409、毎朝の実行は 10 分後に最初からやり直す。"""
 
 
 def _load_class_recording_assign():
@@ -52942,26 +52977,167 @@ def _auto_assign_prefetch(pids, http_get, timeout=15, workers=6):
     return dict(zip(pids, results))
 
 
-@app.post("/api/admin/class-recordings/auto-assign")
-def admin_class_recordings_auto_assign(payload: dict, request: Request,
-                                       authorization: Optional[str] = Header(None)):
-    """🎬 塾長: 再生リストを見て、未登録の授業録画を各クラスに割り当てる。
+def _class_rec_try_db_lock(c) -> bool:
+    """書き込みの直前に取る、**プロセスをまたぐ**排他。取れたら True (取れなければ待たずに False)。
 
-    payload: {"apply": bool (既定 false = 何も登録しない), "allow_partial": bool}
-    ★既定は dry-run。塾長が一覧を見てから「この内容で登録」を押したときだけ書き込む。
-    ★apply でも**計画はサーバ側で取り直す**。画面が持っている古い計画をそのまま
-      信じると、間に別の登録が入ったときに二重登録になる。
+    ★なぜ書き込みの直前だけなのか (2026-10-08 設計):
+      錠を持つには接続とトランザクションが要る。YouTube の取得 (最大で数十秒) の間それを持つと、
+      idle_in_transaction_session_timeout に切られ、プールも 1 本塞ぐ (CLAUDE.md「db() の接続を
+      掴んだまま外部APIを待たない」)。そこで「① DB を読む → 返す → ② YouTube → ③ 新しい接続で
+      錠を取り、**錠の中で**登録済みを読み直してから書く」にした。二重登録を防ぐのは ③ の読み直しで、
+      錠はその読み直しと書き込みを 1 つの実行だけに絞る役。
+    ★pg_try_advisory_**xact**_lock (待たない・トランザクション終了で自動解放):
+      ・セッション錠にしない: 例外で unlock を飛ばすと、錠を持ったままの接続がプールに返り、
+        次にその接続を借りた別の要求が錠の持ち主になる。xact 錠は close (= rollback) で必ず外れる。
+      ・待たない: 相手の書き込みは数十ミリ秒で終わる。待って続けるより、ボタンは 409 で押し直し、
+        毎朝の実行は 10 分後に最初から (= 相手が書いた後の状態で) やり直す方が単純で確か。
+    ★key は main.py 内の他の advisory lock (8675309〜8675311) と重ねない。
+    SQLite (手元テスト) は 1 プロセスなので _AUTO_ASSIGN_LOCK だけで足りる → 常に True。
     """
-    _check_rate_limit_ip(request, bucket="class_autoassign", limit=6, window=60)
-    _verify_admin_required(authorization)
-    class_recording_assign = _load_class_recording_assign()
-    apply_mode = bool(payload.get("apply"))
-    allow_partial = bool(payload.get("allow_partial"))
+    if not USE_POSTGRES:
+        return True
+    c.execute(f"SELECT pg_try_advisory_xact_lock({int(_AUTO_ASSIGN_PG_LOCK_KEY)}) AS ok")
+    row = c.fetchone()
+    return bool(row["ok"]) if row is not None else False
 
+
+def _auto_assign_fetch(cra, pids, scheduled: bool = False) -> dict:
+    """再生リストを並行で読み、**すぐ返ってきた失敗だけ**を少し間をおいて 1 回だけ読み直す → {pid: (本文, エラー文)}。
+
+    前例は月額講座の取り込み (admin_course_import): 並行で読むと YouTube が 1 本だけ別のページ
+    (ytInitialData 無し) を返すことがある (2026-10-05 本番)。読み直さないと、その 1 本のせいで
+    毎朝の実行が「取得できず」になり、そのクラスの配布が翌朝まで止まる。
+    ★時間切れ・接続できないは読み直さない (YouTube 側が止まっている = 待つだけ)。
+    ★ボタンは Vercel のプロキシ時間内に返す必要があるので、読み直しは最大 4 本・1 回目が 20 秒以内のときだけ
+      (前例と同じ上限)。毎朝の実行は画面が待っていないので本数・時間の上限を外す。
+    ★失敗の判定は fetch_playlist (正典) で解析してから決める。本文が返っていても解析できなければ失敗。
+    """
+    t0 = time.monotonic()
+    cache = _auto_assign_prefetch(pids, cra.http_get)
+
+    def _needs_retry(pid):
+        body, err = cache.get(pid) or (None, None)
+        if body is None:
+            return not any(w in (err or "") for w in ("時間がかかりすぎ", "接続できない"))
+        try:
+            items, _fatal, _warn = cra.fetch_playlist(pid, get=lambda _u, _b=body: (_b, None))
+        except Exception:
+            return True
+        return items is None
+
+    failed = [p for p in pids if _needs_retry(p)]
+    if not scheduled:
+        failed = failed[:4]
+    if failed and (scheduled or time.monotonic() - t0 < 20):
+        time.sleep(1.0)
+        again = _auto_assign_prefetch(failed, cra.http_get, timeout=15, workers=min(len(failed), 6))
+        cache.update(again)   # ★2 回目も失敗ならその結果のまま build_plan へ (「取得できず」として止める側に倒れる)
+    return cache
+
+
+# ★メール・実行記録に載せる文から、動画ID・再生リストIDになりうる部分を消す。
+#   problems の文は画面用で「動画 abcd…」(先頭4文字) や伏せた URL を含む。限定公開動画の ID は
+#   アクセス権そのもので、メールは転送・誤送信で画面より広く出回るので、先頭4文字も出さない。
+_CLASS_REC_ID_LIKE = re.compile(
+    r"https?://\S+|(?:youtu\.be|youtube\.com)/\S*|[A-Za-z0-9_-]+…"
+    r"|(?<![A-Za-z0-9_-])[A-Za-z0-9_-]{11,}(?![A-Za-z0-9_-])")
+
+
+def _class_rec_mail_safe(text) -> str:
+    return _CLASS_REC_ID_LIKE.sub("…", str(text or ""))
+
+
+def _class_rec_held_count(out: dict) -> int:
+    """保留 = 新着なのに登録しなかった動画の本数 + 取得できなかった再生リストの本数。"""
+    rows = out.get("rows") or []
+    return (sum(int(r.get("skipped") or 0) for r in rows if r.get("ok"))
+            + sum(1 for r in rows if not r.get("ok")))
+
+
+def _class_rec_assign_stop_reason(out: dict) -> Optional[str]:
+    """**全体が止まった**ときの理由 (= 監視では失敗 props.error として扱う)。部分的な保留は None。
+
+    ★「登録を断った / 保留あり」は例外ではないので、そのままでは監視 (_failed_schedulers は props.error を見る)
+      に一切出ない。全クラスの配布が止まる形だけを error にする:
+        ・二重登録の恐れで登録を全部断った (hazard は「取れた分だけ」でも免除しない = 毎朝止まり続ける)
+        ・登録後の確認で重複・欠落が見つかった (取り返せない損害の可能性)
+        ・授業があるのに 1 クラスも再生リストを見に行けなかった (YouTube 全断・名前の付け忘れ)
+      一部のクラスだけの保留 (日付が読めない動画・1 本の取得失敗) は error にしない。毎朝 critical が
+      鳴り続けると本物の停止が埋もれる (警告疲れ)。保留はその日のメールで知らせる。
+    """
+    if out.get("refused"):
+        hz = int(out.get("hazard") or 0)
+        return (f"登録を全部止めました: 二重登録の恐れがある項目が {hz}件 (「取れた分だけ」でも免除しません)"
+                if hz else "登録を全部止めました: 確認が要る項目があります")
+    if out.get("duplicates"):
+        return f"登録後の確認で異常が {len(out['duplicates'])}件 (CEO 画面の授業録画で重複を確かめてください)"
+    s = out.get("summary") or {}
+    if int(s.get("sessions_total") or 0) > 0 and not int(s.get("covered") or 0):
+        return "どの授業の再生リストも見に行けませんでした (YouTube に接続できない・再生リスト名の付け忘れ)"
+    return None
+
+
+def _class_rec_written_by_class(out: dict) -> dict:
+    """{授業名: ['M/D', ...]} (今回実際に登録した分)。動画IDは持たない。"""
+    by = {}
+    for w in out.get("_written") or []:
+        by.setdefault(w["session_title"], []).append(w["label"])
+    return by
+
+
+def _class_rec_assign_record(out: dict, source: str) -> dict:
+    """events (_record_scheduler_run と同じ表) に残す**要約**。
+
+    ★動画ID・再生リストIDを入れない: rep["planned"] (生の動画IDが入っている) は件数だけ使う。
+      載せるのは件数・授業名・日付 (M/D) だけ。/api/admin/scheduler/status がこれをそのまま返す。
+    ★4000 字で切られて JSON が壊れないよう、3500 字を超えたら授業ごとの一覧を落として件数だけにする
+      (_record_scheduler_run は文字列を [:4000] で切る = 超えると監視が props を読めず failed も判定できない)。
+    """
+    s = out.get("summary") or {}
+    classes = [{"class": _class_rec_mail_safe(t)[:40], "dates": d[:12]}
+               for t, d in list(_class_rec_written_by_class(out).items())[:20]]
+    rec = {
+        "source": source, "today": out.get("today"), "mode": out.get("mode"),
+        "applied": int(out.get("applied") or 0), "already": int(out.get("_already") or 0),
+        "planned": len(out.get("planned") or []), "held": _class_rec_held_count(out),
+        "problems": len(out.get("problems") or []), "blocking": int(out.get("blocking") or 0),
+        "hazard": int(out.get("hazard") or 0), "refused": bool(out.get("refused")),
+        "verified": out.get("verified"), "duplicates": len(out.get("duplicates") or []),
+        "covered": s.get("covered"), "sessions_total": s.get("sessions_total"),
+        "playlist_named": s.get("playlist_named"), "fetched": s.get("fetched"),
+        "classes": classes,
+    }
+    stop = _class_rec_assign_stop_reason(out)
+    if stop:
+        rec["error"] = stop
+    if len(json.dumps(rec, ensure_ascii=False)) > 3500:
+        rec["classes_omitted"] = len(rec.pop("classes"))
+    return rec
+
+
+def _class_rec_auto_assign_run(dry_run: bool = True, allow_partial: bool = False, source: str = "button") -> dict:
+    """🎬 授業録画の自動割り当ての本体。CEO 画面のボタン (POST .../auto-assign) と毎朝の自動実行が呼ぶ。
+
+    手順 (2026-10-08 毎朝の自動実行を足したときにこの形にした):
+      ① DB を読む → 接続を返す
+      ② YouTube の再生リストを読む (接続を持たない。すぐ返ってきた失敗だけ 1 回読み直す)
+      ③ build_plan (判定は class_recording_assign が正典)
+      ④ 新しい接続で advisory lock を取り、**錠の中で登録済みを読み直して**から書く
+         (① と ④ の間に別の実行・手での登録が入りうる。読み直さないと同じ動画が 2 件入る。UNIQUE 制約は無い)
+    dry_run=True は何も書かない。allow_partial=True は「取れた分だけ登録」(hazard は免除しない)。
+    source="scheduled" (毎朝の実行) は ④ で「今日もう走ったか」を錠の中で確かめ、実行記録 (events) を
+    登録と**同じトランザクション**で書く (新旧 2 コンテナが同時に 7 時を迎えても 1 回分しか記録・通知しない)。
+
+    返り値: API の応答 (out)。"_" で始まるキーは内部用で、API は落としてから返す。
+    例外: _AutoAssignBusy (別の割り当てが実行中) / HTTPException 500 (モジュール欠落・書き込み失敗)。
+    """
+    cra = _load_class_recording_assign()
+    scheduled = source == "scheduled"
     if not _AUTO_ASSIGN_LOCK.acquire(blocking=False):
         # ★待たせない。待たせると2件目が終わった頃に同じ計画で書き込みかねない。
-        raise HTTPException(status_code=409, detail="いま別の割り当てが実行中です。終わってからもう一度押してください")
+        raise _AutoAssignBusy()
     try:
+        # --- ① DB を読む → すぐ返す -------------------------------------------------
         conn = db()
         try:
             c = conn.cursor()
@@ -52980,71 +53156,104 @@ def admin_class_recordings_auto_assign(payload: dict, request: Request,
                       "COALESCE(title, '') AS title, id FROM class_recordings")
             recordings = [(r["session_id"], r["video_url"], r["provider"], r["title"], r["id"])
                           for r in c.fetchall()]
+        finally:
+            conn.close()
 
-            named_pids = [p for p, n in playlists if (n or "").strip() and class_recording_assign.slot_of(n)]
-            cache = _auto_assign_prefetch(named_pids, class_recording_assign.http_get)
+        # --- ② YouTube (DB の接続を持たない) --------------------------------------------
+        named_pids = [p for p, n in playlists if (n or "").strip() and cra.slot_of(n)]
+        cache = _auto_assign_fetch(cra, named_pids, scheduled=scheduled)
 
-            def _get(url):
-                m = re.search(r"[?&]list=([A-Za-z0-9_-]+)", url)
-                hit = cache.get(m.group(1)) if m else None
-                # ★取れていなければその場で取りに行く (キャッシュ漏れを「取得できず」にしない)
-                return hit if hit is not None else class_recording_assign.http_get(url)
+        def _get(url):
+            m = re.search(r"[?&]list=([A-Za-z0-9_-]+)", url)
+            hit = cache.get(m.group(1)) if m else None
+            # ★取れていなければその場で取りに行く (キャッシュ漏れを「取得できず」にしない)
+            return hit if hit is not None else cra.http_get(url)
 
-            rep = class_recording_assign.build_plan(
-                class_recording_assign.today_jst(), playlists, sessions, recordings, last_rec, get=_get)
+        # --- ③ 計画 (正典) -------------------------------------------------------------
+        today = cra.today_jst()
+        rep = cra.build_plan(today, playlists, sessions, recordings, last_rec, get=_get)
 
-            out = {
-                "ok": True,
-                "mode": "apply" if apply_mode else "dry-run",
-                "today": class_recording_assign.today_jst().isoformat(),
-                "summary": {
-                    "playlist_total": rep["playlist_total"], "playlist_named": rep["playlist_named"],
-                    "sessions_total": rep["sessions_total"], "recordings_total": rep["recordings_total"],
-                    "fetched": rep["fetched"], "skipped_name": rep["skipped_name"],
-                    "covered": rep["covered"], "uncovered": rep["uncovered"],
-                    "no_playlist": rep["no_playlist"],
-                },
-                "rows": rep["rows"],
-                # ★動画IDは先頭4文字だけ返す (限定公開動画のIDはアクセス権そのもの)。
-                #   登録に使う本物は下のサーバ側だけが持つ。
-                "planned": [{"slot": p["slot"], "label": p["label"], "session_id": p["session_id"],
-                             "session_title": p["session_title"], "video": p["video_id"][:4] + "…"}
-                            for p in rep["planned"]],
-                "problems": rep["problems"], "notes": rep["notes"],
-                "blocking": rep["blocking"], "hazard": rep["hazard"],
-                "applied": 0, "refused": None,
-            }
-            if not apply_mode or not rep["planned"]:
-                if not rep["planned"]:
-                    out["message"] = ("新しい録画はありません。" if not rep["problems"]
-                                      else "登録できる新着はありません (確認が要る項目があります)。")
-                else:
-                    out["message"] = f"{len(rep['planned'])}件を登録できます (まだ登録していません)。"
+        out = {
+            "ok": True,
+            "mode": "dry-run" if dry_run else "apply",
+            "today": today.isoformat(),
+            "summary": {
+                "playlist_total": rep["playlist_total"], "playlist_named": rep["playlist_named"],
+                "sessions_total": rep["sessions_total"], "recordings_total": rep["recordings_total"],
+                "fetched": rep["fetched"], "skipped_name": rep["skipped_name"],
+                "covered": rep["covered"], "uncovered": rep["uncovered"],
+                "no_playlist": rep["no_playlist"],
+            },
+            "rows": rep["rows"],
+            # ★動画IDは先頭4文字だけ返す (限定公開動画のIDはアクセス権そのもの)。
+            #   登録に使う本物は下のサーバ側だけが持つ。
+            "planned": [{"slot": p["slot"], "label": p["label"], "session_id": p["session_id"],
+                         "session_title": p["session_title"], "video": p["video_id"][:4] + "…"}
+                        for p in rep["planned"]],
+            "problems": rep["problems"], "notes": rep["notes"],
+            "blocking": rep["blocking"], "hazard": rep["hazard"],
+            "applied": 0, "refused": None,
+        }
+        # ★毎朝の実行は新着が無い日も ④ へ進む (錠の中で「今日の実行記録」を書く = 生存監視と重複防止)
+        if dry_run or (not rep["planned"] and not scheduled):
+            if not rep["planned"]:
+                out["message"] = ("新しい録画はありません。" if not rep["problems"]
+                                  else "登録できる新着はありません (確認が要る項目があります)。")
+            else:
+                out["message"] = f"{len(rep['planned'])}件を登録できます (まだ登録していません)。"
+            return out
+
+        # --- ここから書き込み。CLI (--apply) と同じ順序で同じ理由で止める ---
+        if rep["hazard"]:
+            out["refused"] = (f"二重登録の恐れがある項目が {rep['hazard']}件あるので登録しません "
+                              f"(「取れた分だけ」でも免除しません — 重複は取り返せないため)")
+        elif rep["blocking"] and not allow_partial:
+            out["refused"] = (f"見落としの恐れがある項目が {rep['blocking']}件あるので登録しません。"
+                              f"直してからもう一度実行してください "
+                              f"(承知のうえで取れた分だけ入れるなら「取れた分だけ登録」)")
+        if out["refused"]:
+            out["message"] = out["refused"]
+            if not scheduled:
                 return out
 
-            # --- ここから書き込み。CLI (--apply) と同じ順序で同じ理由で止める ---
-            if rep["hazard"]:
-                out["refused"] = (f"二重登録の恐れがある項目が {rep['hazard']}件あるので登録しません "
-                                  f"(「取れた分だけ」でも免除しません — 重複は取り返せないため)")
-                out["message"] = out["refused"]
+        _has_ld = _table_has_column("class_recordings", "lesson_date")   # ★自前の接続を使うので ④ の前に
+        # --- ④ 新しい接続で、錠の中で読み直してから書く ------------------------------------
+        conn = db()
+        try:
+            c = conn.cursor()
+            if not _class_rec_try_db_lock(c):
+                raise _AutoAssignBusy()
+            if scheduled and _scheduler_ran_today_jst_on(c, _CLASS_REC_ASSIGN_EVENT):
+                # 別の replica が錠の直前に今日の分を済ませた (外側の確認をすり抜けた形)。記録も通知もしない。
+                out["_skipped_today"] = True
                 return out
-            if rep["blocking"] and not allow_partial:
-                out["refused"] = (f"見落としの恐れがある項目が {rep['blocking']}件あるので登録しません。"
-                                  f"直してからもう一度実行してください "
-                                  f"(承知のうえで取れた分だけ入れるなら「取れた分だけ登録」)")
-                out["message"] = out["refused"]
-                return out
-
-            now = _utc_naive_iso()
-            _has_ld = _table_has_column("class_recordings", "lesson_date")
-            _today_for_ld = class_recording_assign.today_jst()
-            try:
+            to_write, already = [], 0
+            if rep["planned"] and not out["refused"]:
+                # ★登録済みの読み直し。① から今までに入った行を見る。(授業, 動画) の組だけでなく、
+                #   **どこかに入った動画**は全部飛ばす (① の時点ではどこにも無かった動画なので、今あるなら
+                #   この実行の外で誰かが登録した = 合同授業か取り違えか機械には分からない → 人に回す)。
+                #   ★URL の文字列ではなく video_id() で比べる (watch?v= と youtu.be/ の書き方違いで素通りさせない)。
+                #   ★同じ実行で 2 クラスに配る合同授業は、読み直しを 1 回にしているので両方入る (build_plan と同じ)。
+                c.execute("SELECT video_url FROM class_recordings")
+                vids_now = {v for v in (cra.video_id(r["video_url"]) for r in c.fetchall()) if v}
                 for p in rep["planned"]:
+                    if p["video_id"] in vids_now:
+                        already += 1
+                    else:
+                        to_write.append(p)
+            if already:
+                out["problems"].append(
+                    f"{already}件は確認のあとに別の登録が先に入っていたので、今回は登録していません "
+                    f"(二重登録の防止)。CEO 画面の授業録画で、正しいクラスに入っているか確かめてください")
+            now = _utc_naive_iso()
+            bad = []
+            try:
+                for p in to_write:
                     # 🎬 授業日: label は date_label が検証済みの 'M/D' → 判定日から見て直近の過去 (resolve_year と同じ)
                     _ld = None
                     try:
                         _mo, _dy = [int(x) for x in str(p["label"]).split("/")]
-                        _best, _ = class_recording_assign.resolve_year(_mo, _dy, _today_for_ld)
+                        _best, _ = cra.resolve_year(_mo, _dy, today)
                         _ld = _best.isoformat() if _best else None
                     except Exception:
                         _ld = None
@@ -53052,14 +53261,46 @@ def admin_class_recordings_auto_assign(payload: dict, request: Request,
                         c.execute(
                             "INSERT INTO class_recordings (session_id, title, video_url, provider, is_published, created_at, lesson_date) "
                             "VALUES (?,?,?,'youtube',1,?,?)",
-                            (int(p["session_id"]), p["label"],
-                             class_recording_assign.recording_url(p["video_id"]), now, _ld))
+                            (int(p["session_id"]), p["label"], cra.recording_url(p["video_id"]), now, _ld))
                     else:
                         c.execute(
                             "INSERT INTO class_recordings (session_id, title, video_url, provider, is_published, created_at) "
                             "VALUES (?,?,?,'youtube',1,?)",
-                            (int(p["session_id"]), p["label"],
-                             class_recording_assign.recording_url(p["video_id"]), now))
+                            (int(p["session_id"]), p["label"], cra.recording_url(p["video_id"]), now))
+                # ★入った行を1件ずつ読み直す。件数の引き算では重複を見抜けない。
+                #   (錠の中・commit 前に読む = 自分の書いた行が見える。別の実行は錠で入ってこない)
+                for p in to_write:
+                    c.execute("SELECT COUNT(*) AS n FROM class_recordings WHERE session_id = ? AND video_url = ?",
+                              (int(p["session_id"]), cra.recording_url(p["video_id"])))
+                    row = c.fetchone()
+                    # ★sqlite3.Row には .get が無い (dict_row の Postgres だけ通って
+                    #   SQLite で落ちる = 手元テストだけ壊れる書き方をしない)
+                    n = row["n"] if row is not None else 0
+                    if n != 1:
+                        bad.append(f"{p['slot']} {p['label']} 動画 {p['video_id'][:4]}… が {n}件")
+                out["applied"] = len(to_write)
+                out["verified"] = not bad
+                out["duplicates"] = bad
+                out["_already"] = already
+                out["_written"] = [{"session_title": p["session_title"], "slot": p["slot"], "label": p["label"]}
+                                   for p in to_write]
+                if bad:
+                    out["message"] = (f"⚠ {len(to_write)}件を登録しましたが、確認で異常がありました。"
+                                      f"CEO 画面で直してください")
+                elif to_write:
+                    out["message"] = f"✅ {len(to_write)}件を登録しました (各1件で入っていることを確認済み)"
+                elif out["refused"]:
+                    pass   # 断った理由をそのまま出す
+                elif already:
+                    out["message"] = "新しく登録する録画はありませんでした (確認のあとに別の登録が先に入っていました)"
+                else:
+                    out["message"] = ("新しい録画はありません。" if not rep["problems"]
+                                      else "登録できる新着はありません (確認が要る項目があります)。")
+                if scheduled:
+                    # ★実行記録は登録と同じトランザクションで書く (= 「今日もう走ったか」と登録が必ず一致する)
+                    out["_record"] = _class_rec_assign_record(out, source)
+                    c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, 'in_process_scheduler')",
+                              (_CLASS_REC_ASSIGN_EVENT, json.dumps(out["_record"], ensure_ascii=False)))
                 conn.commit()
             except Exception as e:
                 try:
@@ -53067,33 +53308,161 @@ def admin_class_recordings_auto_assign(payload: dict, request: Request,
                 except Exception:
                     pass
                 # ★例外文をそのまま返さない (Postgres の DETAIL は失敗行の URL = 動画IDを平文で載せる)
-                log.error(f"[AutoAssign] insert failed: {type(e).__name__}")
+                log.error(f"[AutoAssign] insert failed ({source}): {type(e).__name__}")
                 raise HTTPException(status_code=500,
                                     detail=f"登録に失敗しました ({type(e).__name__})。ほぼ確実に1件も登録されていませんが、"
                                            f"CEO 画面の授業録画を確認してからもう一度実行してください")
-            # ★入った行を1件ずつ読み直す。件数の引き算では重複を見抜けない。
-            bad = []
-            for p in rep["planned"]:
-                c.execute("SELECT COUNT(*) AS n FROM class_recordings WHERE session_id = ? AND video_url = ?",
-                          (int(p["session_id"]), class_recording_assign.recording_url(p["video_id"])))
-                row = c.fetchone()
-                # ★sqlite3.Row には .get が無い (dict_row の Postgres だけ通って
-                #   SQLite で落ちる = 手元テストだけ壊れる書き方をしない)
-                n = row["n"] if row is not None else 0
-                if n != 1:
-                    bad.append(f"{p['slot']} {p['label']} 動画 {p['video_id'][:4]}… が {n}件")
-            out["applied"] = len(rep["planned"])
-            out["verified"] = not bad
-            out["duplicates"] = bad
-            out["message"] = (f"✅ {len(rep['planned'])}件を登録しました (各1件で入っていることを確認済み)"
-                              if not bad else
-                              f"⚠ {len(rep['planned'])}件を登録しましたが、確認で異常がありました。CEO 画面で直してください")
-            log.info(f"[AutoAssign] applied={out['applied']} problems={len(rep['problems'])} verified={out['verified']}")
-            return out
         finally:
             conn.close()
+        log.info(f"[AutoAssign] source={source} applied={out['applied']} already={already} "
+                 f"problems={len(out['problems'])} verified={out.get('verified')}")
+        return out
     finally:
         _AUTO_ASSIGN_LOCK.release()
+
+
+@app.post("/api/admin/class-recordings/auto-assign")
+def admin_class_recordings_auto_assign(payload: dict, request: Request,
+                                       authorization: Optional[str] = Header(None)):
+    """🎬 塾長: 再生リストを見て、未登録の授業録画を各クラスに割り当てる。
+
+    payload: {"apply": bool (既定 false = 何も登録しない), "allow_partial": bool}
+    ★既定は dry-run。塾長が一覧を見てから「この内容で登録」を押したときだけ書き込む。
+    ★apply でも**計画はサーバ側で取り直す**。画面が持っている古い計画をそのまま
+      信じると、間に別の登録が入ったときに二重登録になる。
+    ★中身は _class_rec_auto_assign_run (毎朝 7 時の自動実行と共有)。ここは認証・回数制限・409 だけ。
+    """
+    _check_rate_limit_ip(request, bucket="class_autoassign", limit=6, window=60)
+    _verify_admin_required(authorization)
+    try:
+        out = _class_rec_auto_assign_run(dry_run=not bool(payload.get("apply")),
+                                         allow_partial=bool(payload.get("allow_partial")),
+                                         source="button")
+    except _AutoAssignBusy:
+        raise HTTPException(status_code=409, detail="いま別の割り当てが実行中です。終わってからもう一度押してください")
+    return {k: v for k, v in out.items() if not k.startswith("_")}
+
+
+# ==========================================================================
+# 🎬 授業録画の自動割り当て — 毎朝 JST 7:00 の自動実行 (2026-10-08 塾長決定「毎日自動にしたい」)
+# ==========================================================================
+def _class_rec_assign_mail(out: Optional[dict], rec: dict):
+    """塾長へのメール (件名, HTML)。★載せるのは授業名・日付 (M/D)・件数・保留の理由だけ。
+    動画ID・再生リストID・生徒の情報は入れない (理由の文も _class_rec_mail_safe を通す)。"""
+    today = _today_jst()
+    md = f"{today.month}/{today.day}"
+    esc = html_escape_safe
+    tags = []
+    if rec.get("applied"):
+        tags.append(f"{rec['applied']}件 登録")
+    if rec.get("error"):
+        tags.append("⚠ 停止")
+    elif rec.get("held") or rec.get("blocking"):
+        tags.append("保留あり")
+    subject = f"🎬 授業録画の自動割り当て {md}: " + (" / ".join(tags) or "結果")
+    body = [f"<p>毎朝 {_CLASS_REC_AUTO_ASSIGN_HOUR_JST}時の授業録画の自動割り当て ({md}) の結果です。</p>"]
+    if rec.get("error"):
+        body.append(f"<p><b>⚠ {esc(_class_rec_mail_safe(rec['error']))}</b></p>")
+    by_class = _class_rec_written_by_class(out or {})
+    if by_class:
+        body.append(f"<p>登録した録画 ({rec.get('applied', 0)}件・そのクラスの受講生にだけ表示されます):</p><ul>")
+        for title, labels in by_class.items():
+            body.append(f"<li>{esc(_class_rec_mail_safe(title))}: {esc('・'.join(labels))}</li>")
+        body.append("</ul>")
+    probs = [_class_rec_mail_safe(p) for p in ((out or {}).get("problems") or [])]
+    if probs:
+        body.append(f"<p>保留・確認が要る項目 ({len(probs)}件。保留の動画は登録していません):</p><ul>")
+        for p in probs[:15]:
+            body.append(f"<li>{esc(p)}</li>")
+        if len(probs) > 15:
+            body.append(f"<li>ほか {len(probs) - 15}件</li>")
+        body.append("</ul>")
+    body.append("<p>詳しくは CEO 画面 →「📺 YouTube 再生リスト」→「🎬 授業録画をクラスに割り当てる」の「① 確認する」で見られます"
+                "（動画・再生リストの番号はこのメールには書きません）。保留の動画は CEO 画面の授業詳細から手で登録してください。</p>"
+                "<p>※ 新着が無く保留も無い日はこのメールは届きません。</p>")
+    return subject, "".join(body)
+
+
+def _class_rec_assign_notify(out: Optional[dict], rec: dict) -> bool:
+    """登録した日・保留/停止があった日だけ塾長へメール (何も無い日は送らない)。送れたら True。
+    宛先は監視通知と同じ MONITORING_TO_EMAIL (未設定なら DAILY_SNS_TO_EMAIL)。Resend キーか宛先が
+    無ければ _send_monitor_email が送らずにログだけ残す。"""
+    if not (rec.get("applied") or rec.get("held") or rec.get("blocking") or rec.get("error")):
+        return False
+    try:
+        subject, body = _class_rec_assign_mail(out, rec)
+        res = _send_monitor_email(subject, body)
+        return bool(res and res.get("sent"))
+    except Exception as e:
+        log.warning(f"[ClassRecAssign] notify failed: {type(e).__name__}")
+        return False
+
+
+def _class_rec_auto_assign_daily() -> dict:
+    """毎朝の 1 回分 (同期。scheduler から asyncio.to_thread で呼ぶ)。
+
+    返り値の status: done / skipped_today (今日はもう走った) / busy (別の割り当てが実行中 → 10 分後にやり直す)
+                     / error (例外。実行記録に error を残す) / disabled
+    ★dry_run=False・allow_partial=True (「取れた分だけ登録」)。hazard (二重登録の恐れ) は従来どおり免除しない。
+    """
+    if not CLASS_REC_AUTO_ASSIGN_ENABLED:
+        return {"status": "disabled"}
+    if _check_scheduler_ran_today_jst(_CLASS_REC_ASSIGN_EVENT):
+        return {"status": "skipped_today"}
+    try:
+        out = _class_rec_auto_assign_run(dry_run=False, allow_partial=True, source="scheduled")
+    except _AutoAssignBusy:
+        log.info("[ClassRecAssign] busy (another assign is running) — retry later")
+        return {"status": "busy"}
+    except Exception as e:
+        # ★HTTPException の detail は画面向けに伏せてある文。それ以外は型名だけ (例外文に URL = 動画IDが載りうる)
+        why = e.detail if isinstance(e, HTTPException) else type(e).__name__
+        rec = {"source": "scheduled", "error": f"実行時エラー: {_class_rec_mail_safe(why)[:200]}"}
+        log.error(f"[ClassRecAssign] failed: {type(e).__name__}")
+        _record_scheduler_run(_CLASS_REC_ASSIGN_EVENT, rec)
+        return {"status": "error", "record": rec, "mailed": _class_rec_assign_notify(None, rec)}
+    if out.get("_skipped_today"):
+        return {"status": "skipped_today"}
+    rec = out.get("_record") or {}
+    mailed = _class_rec_assign_notify(out, rec)
+    log.info(f"[ClassRecAssign] done applied={rec.get('applied')} held={rec.get('held')} "
+             f"error={bool(rec.get('error'))} mailed={mailed}")
+    return {"status": "done", "record": rec, "mailed": mailed}
+
+
+async def _class_rec_auto_assign_scheduler():
+    """🎬 毎日 JST 7:00 に _class_rec_auto_assign_daily を 1 回 (CRON_SECRET があり、CLASS_REC_AUTO_ASSIGN_ENABLED=1 のとき起動)。
+
+    ★同期処理は必ず asyncio.to_thread で呼ぶ (YouTube の取得は数十秒。ループ上で直接呼ぶとサーバ全体が止まる。
+      2026-07-26 に体験管理バッチで実際に起きた)。今日もう走ったかの確認 (DB) も to_thread。
+    ★7 時を過ぎてから起動したら (デプロイ・再起動)、その日まだ走っていなければすぐ走る。他の scheduler の
+      「次の目標時刻まで寝る」だけだと、7 時ちょうどのデプロイでその日が丸ごと抜ける。二重に走らないことは
+      「今日の実行記録」(錠の中で確認し、登録と同じトランザクションで書く) が保証する。
+    ★busy (別の割り当てが実行中) は 10 分後に最初からやり直す。相手が登録した後の状態で読み直すので二重にならない。
+    """
+    JST = timezone(timedelta(hours=9))
+    log.info(f"[ClassRecAssign] Scheduler started, target JST {_CLASS_REC_AUTO_ASSIGN_HOUR_JST}:00 daily")
+    await asyncio.sleep(120)   # 起動直後 (DDL・他の起動タスク・healthcheck) と重ねない
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            target = now_jst.replace(hour=_CLASS_REC_AUTO_ASSIGN_HOUR_JST, minute=0, second=0, microsecond=0)
+            if now_jst >= target:
+                res = await asyncio.to_thread(_class_rec_auto_assign_daily)
+                log.info(f"[ClassRecAssign] status={res.get('status')}")
+                if res.get("status") == "busy":
+                    await asyncio.sleep(600)
+                    continue
+                target += timedelta(days=1)
+            sleep_secs = max(60.0, (target - datetime.now(JST)).total_seconds())
+            log.info(f"[ClassRecAssign] Next run at {target.isoformat()} (in {int(sleep_secs)}s)")
+            await asyncio.sleep(sleep_secs)
+        except asyncio.CancelledError:
+            log.info("[ClassRecAssign] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[ClassRecAssign] Scheduler loop error: {type(e).__name__}", exc_info=True)
+            await asyncio.sleep(3600)
 
 
 @app.get("/api/admin/class/attendance")

@@ -573,6 +573,9 @@ def check_scheduler_live(cur):
         "r2_backup_success": 2,          # 🗄️ 2026-09-07 DB バックアップ (毎日 JST 3:00 → R2)
         "admission_recompute_run": 2,    # 合格スコア再計算 (毎日 4:00・2026-09-06 追加)
         "events_retention_run": 2,       # 🧹 計測/監視イベントの掃除 (毎日 4:00・2026-09-07 追加)
+        # 🎬 授業録画の自動割り当て (毎朝 7:00・2026-10-08 追加。新着が無い日も記録を残す)。
+        #   ★API 側で CLASS_REC_AUTO_ASSIGN_ENABLED=0 にしているときはここも WARN になる (この点検は API の env を見られない)。
+        "class_rec_assign_run": 2,
     }
     for name, max_days in watched.items():
         try:

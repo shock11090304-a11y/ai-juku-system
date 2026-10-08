@@ -666,13 +666,34 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 
 ## 授業録画の割り当て (YouTube 限定公開 → 各クラス)
 - 塾長が YouTube の**再生リスト**に授業動画を上げる → それを各クラスの `class_recordings` に割り当てる。
-  **自動では走らない** (常駐スケジューラも cron も無い)。走らせ方は 2 つ:
+  **毎朝 JST 7:00 に自動で走る** (2026-10-08 塾長決定「毎日自動にしたい」。それまでは自動では走らなかった)。
+  - API プロセス内の常駐スケジューラ `_class_rec_auto_assign_scheduler` (起動条件: `CRON_SECRET` があり、
+    `CLASS_REC_AUTO_ASSIGN_ENABLED` が `0` でない)。**止めるときは Railway の env `CLASS_REC_AUTO_ASSIGN_ENABLED=0` → 再起動**
+    (ボタンとターミナルは止まらない)。7 時を過ぎてから起動したら、その日まだ走っていなければすぐ走る。
+  - 中身はボタンと同じ `_class_rec_auto_assign_run` を **dry_run=False・allow_partial=True (「取れた分だけ登録」)** で呼ぶ。
+    hazard (二重登録の恐れ) は従来どおり免除しない = その日は 1 件も登録しない。
+  - **塾長へのメールは、登録した日・保留/停止があった日だけ** (`_send_monitor_email` = 宛先 `MONITORING_TO_EMAIL`、
+    未設定なら `DAILY_SNS_TO_EMAIL`。Resend キーか宛先が無ければ送らずログだけ)。本文は授業名・日付 (M/D)・件数・保留の理由だけで、
+    動画ID・再生リストIDは先頭4文字も載せない (`_class_rec_mail_safe`)。何も無い日は送らない。
+  - 実行記録は events `class_rec_assign_run` (件数の要約だけ。新着が無い日も書く)。**登録と同じトランザクション・同じ錠の中で**
+    書くので 1 日 1 回 (新旧 2 コンテナが同時に 7 時を迎えても 1 回分)。2 日記録が無ければ停止、全体停止
+    (hazard で全部断った・登録後の確認で異常・1 クラスも見に行けなかった) は `props.error` = 5 分監視の「定期実行の失敗」に乗る。
+    一部クラスの保留は error にしない (毎朝 critical が鳴ると本物が埋もれる) → その日のメールで知らせる。
+  - 手で走らせる方法も残っている:
   ```
   railway run -s Postgres python3 scripts/class_recordings/assign_from_playlists.py           # 確認だけ (何も登録しない)
   railway run -s Postgres python3 scripts/class_recordings/assign_from_playlists.py --apply   # 投入
   ```
   または **CEO の再生リスト一覧 `youtube-playlists.html` の「🎬 授業録画をクラスに割り当てる」ボタン**
   (サーバ側で同じ処理・ターミナル不要。① 確認する → ② この内容で登録 の 2 段)。
+- ★**手順は「① DB を読む → 接続を返す → ② YouTube を読む → ③ build_plan → ④ 新しい接続で錠を取り、錠の中で登録済みを
+  読み直してから書く」**。YouTube を待つ間に DB の接続を持たない (冒頭の「`db()` の接続を掴んだまま外部APIを待たない」)。① と ④ の間に入った登録は
+  ④ の読み直し (`video_id()` で比べる = URL の書き方違いも拾う) で飛ばす。並行で読むと YouTube が 1 本だけ解析できない
+  ページを返すことがあるので、すぐ返ってきた失敗だけ 1 回読み直す (時間切れ・接続できないは読み直さない)。
+- ★**排他は 2 段**: 同じプロセスは `_AUTO_ASSIGN_LOCK` (取れなければボタン 409・定期実行は 10 分後にやり直す)、
+  プロセスをまたぐのは `pg_try_advisory_xact_lock(8675312)` を ④ の書き込み直前に取る (待たない・トランザクション終了で外れる)。
+  **錠を YouTube の取得中に持たない** (接続とトランザクションが要るので、`idle_in_transaction_session_timeout` に切られ、プールも 1 本塞ぐ)。
+  `class_recordings` に UNIQUE 制約は足さない (起動時DDLの規則: 既存の重複が 1 件でもあると executescript 全体が巻き戻る)。
 - ★**判定の正典は `server/class_recording_assign.py`**。CLI とボタンの API がこれを共有する。
   ロジックを `main.py` や CLI に書き写さないこと (片方だけ直されて判定がずれる)。
   置き場所が `server/` なのは Railway のデプロイ範囲がそこだから (`scripts/` は本番に無い)。
@@ -717,8 +738,10 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   YouTube と Railway を遮断しており (403)、認証情報の問題ではないので回避できない。
   塾長の端末の Claude Code なら `railway run` が通る。クラウドのセッションに頼むときは
   **CEO 画面のボタンを塾長が押す**か、ターミナルの出力を貼って判断だけさせる。
-- `class_recordings` に UNIQUE 制約が無く**重複は取り返せない**。ボタンとターミナルを同時に走らせないこと
-  (ボタン側は同時実行を 409 で弾くが、ターミナルとは排他できない)。
+- `class_recordings` に UNIQUE 制約が無く**重複は取り返せない**。ボタン・毎朝の自動実行とターミナルを同時に走らせないこと
+  (ボタンと自動実行は上の 2 段の錠で互いに排他するが、ターミナル `assign_from_playlists.py --apply` とは排他できない。
+  朝 7 時台にターミナルで --apply しない)。
+- 書き込む側 (毎朝の実行・排他・読み直し・伏せ字・通知・監視) は `scripts/health_check/test_class_rec_daily_assign.py` も見る。
 
 ## かきじゅん (書き順学習 PWA・`kakijun-app/`)
 - **作業前に `kakijun-app/HANDOFF.md` を必ず読む**。設計の分離 (お手本=フォント / 判定=線データ /

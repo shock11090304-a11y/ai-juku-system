@@ -155,6 +155,15 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_auto_assign_api.py
 
+      # 🎬 授業録画の自動割り当て — 毎朝 7 時の自動実行 (2026-10-08)。定期実行が「取れた分だけ登録」で本体を呼ぶこと・
+      #   1 日 1 回・2 回目や取得中の別登録で二重登録しないこと・排他 (同じプロセス / advisory lock)・取得失敗の 1 回読み直し・
+      #   実行記録とメールに動画ID/再生リストIDが入らないこと・全体停止が監視の失敗に乗ること・ボタンの応答の形を見る。
+      - name: 授業録画 毎朝の自動割り当て 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_class_rec_daily_assign.py
+
       # 📅 塾カレンダーの一括入力。**書き込む側**なので、dry-run が本当に書かないこと・
       #   同じ日を二重に入れないこと・エラーが1件でもあれば1件も書かないことを見る。
       #   ★曜日を返すことも固定する。塾長が日付の打ち間違いに気づける唯一の手がかり。
