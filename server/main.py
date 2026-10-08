@@ -3603,13 +3603,15 @@ async def _start_background_tasks():
 
     # 🎬 授業録画の自動割り当て scheduler (毎日 JST 7:00・2026-10-08 塾長決定「毎日自動にしたい」):
     #   CEO の再生リスト画面のボタン (① 確認 → ② 登録) と同じ処理を「取れた分だけ登録」で回す。
-    #   CLASS_REC_AUTO_ASSIGN_ENABLED=0 なら登録しない (= 実行履歴が増えないだけ。監視の対象からも外れる)。
+    #   CLASS_REC_AUTO_ASSIGN_ENABLED が 0 / false / off / no なら登録しない (= 実行履歴が増えないだけ。監視の対象からも外れる)。
     if CRON_SECRET and CLASS_REC_AUTO_ASSIGN_ENABLED:
         task = asyncio.create_task(_class_rec_auto_assign_scheduler())
         _BACKGROUND_TASKS.append(task)
         log.info(f"[Startup] Class recording auto-assign scheduler launched (target JST {_CLASS_REC_AUTO_ASSIGN_HOUR_JST}:00 daily)")
     elif CRON_SECRET:
-        log.info("[Startup] Class recording auto-assign scheduler disabled (CLASS_REC_AUTO_ASSIGN_ENABLED=0)")
+        # ★実際の値を出す (秘密ではない)。「=0」と決め打ちで出すと、true 等を入れて止まったときに原因を取り違える
+        log.info(f"[Startup] Class recording auto-assign scheduler disabled "
+                 f"(CLASS_REC_AUTO_ASSIGN_ENABLED={os.getenv('CLASS_REC_AUTO_ASSIGN_ENABLED')!r})")
 
     # 🎯 弱点分類 scheduler (毎日 JST 4:00): ai_tutor_solve_log → student_weakness 集計
     # 塾長指示 2026-05-13「個別問題推薦」の基盤。過去 30 日の写真質問から弱点を抽出し、
@@ -5551,9 +5553,8 @@ def _run_daily_sns_post() -> dict:
 # 外部 cron が無くても expire-trials / trial-reminders / trial-followups を自動実行
 # ==========================================================================
 def _scheduler_ran_today_jst_on(c, event_name: str) -> bool:
-    """_check_scheduler_ran_today_jst の判定本体 (呼び出し側のカーソルで読む)。
-    ★授業録画の自動割り当てが**書き込みと同じトランザクション・同じ錠の中**で確かめるために切り出した
-      (別の接続で確かめると、確かめてから書くまでの間に別の replica が書けてしまう)。例外は呼び出し側へ。"""
+    """_check_scheduler_ran_today_jst の判定本体 (呼び出し側のカーソルで読む)。例外は呼び出し側へ。
+    ★授業録画の自動割り当ては「やり直せる失敗の記録」を数えない別の判定 (_class_rec_ran_today_on) を使う。"""
     JST = timezone(timedelta(hours=9))
     today_jst = datetime.now(JST).date()
     today_start_utc = datetime.combine(today_jst, dt_time(0, 0), tzinfo=JST).astimezone(timezone.utc)
@@ -30404,6 +30405,13 @@ def admin_monitor_daily_summary_now(authorization: Optional[str] = Header(None),
 #   出ていないのかを DB 端末なしで切り分けられるよう HTTP からも読めるようにする。
 #   閾値は healthcheck 側と同じ値を使う (二重管理を避けるためここを正典とし、
 #   healthcheck 側の watched dict と数値を揃えてある)。
+def _class_rec_auto_assign_env_enabled() -> bool:
+    """🎬 CLASS_REC_AUTO_ASSIGN_ENABLED の判定 (起動分岐と監視の対象の**両方**がこれを使う)。
+    ★「0 で止める」が仕様 (CLAUDE.md)。== "1" で読むと true / yes / 空文字 / " 1" でも黙って止まり、
+      監視の対象からも外れて誰も気づかない (2026-10-08 review)。止まるのは 0 / false / off / no だけ。"""
+    return os.getenv("CLASS_REC_AUTO_ASSIGN_ENABLED", "1").strip().lower() not in ("0", "false", "off", "no")
+
+
 _SCHEDULER_MAX_AGE_DAYS = {
     "weakness_aggregation_run": 2,   # 日次
     "weekly_reports_run": 8,         # 週次 (日曜)
@@ -30420,7 +30428,7 @@ _SCHEDULER_MAX_AGE_DAYS = {
     "events_retention_run": 2,       # 🧹 計測/監視イベントの掃除 (2026-09-07 追加・同じ 4:00 枠)
     # 🎬 授業録画の自動割り当て (毎朝7時・2026-10-08 追加)。新着が無い日も実行記録を残すので 2 日で停止扱い。
     #   無効化 (CLASS_REC_AUTO_ASSIGN_ENABLED=0) 中は外す (midweek と同じ理由: 止めた後に「停止」と誤報し続けない)。
-    **({"class_rec_assign_run": 2} if os.getenv("CLASS_REC_AUTO_ASSIGN_ENABLED", "1") == "1" else {}),
+    **({"class_rec_assign_run": 2} if _class_rec_auto_assign_env_enabled() else {}),
 }
 
 
@@ -52887,8 +52895,16 @@ _AUTO_ASSIGN_LOCK = threading.Lock()   # ★同時実行の禁止。class_record
 _AUTO_ASSIGN_PG_LOCK_KEY = 8675312   # pg_try_advisory_xact_lock の固定 key (8675309〜8675311 は別の処理が使用中)
 _CLASS_REC_ASSIGN_EVENT = "class_rec_assign_run"   # 毎朝の実行記録 (events.name)。監視 _SCHEDULER_MAX_AGE_DAYS と同じ名前
 # 🎬 毎朝の自動実行 (2026-10-08 塾長決定)。0 で止める (起動時に scheduler を登録しない)。ボタンは止まらない。
-CLASS_REC_AUTO_ASSIGN_ENABLED = os.getenv("CLASS_REC_AUTO_ASSIGN_ENABLED", "1") == "1"
+#   判定は _class_rec_auto_assign_env_enabled (0 / false / off / no だけが無効。監視の対象と同じ関数)。
+CLASS_REC_AUTO_ASSIGN_ENABLED = _class_rec_auto_assign_env_enabled()
 _CLASS_REC_AUTO_ASSIGN_HOUR_JST = 7
+# 一時的な失敗 (例外・YouTube 全断) のやり直し: 30 分おきに最大 2 回 (7:00 → 7:30 → 8:00)。最後の回だけ記録・メールする。
+_CLASS_REC_RETRY_MAX = 2
+_CLASS_REC_RETRY_WAIT_SECS = 1800
+# 毎朝の実行で「接続できない・時間切れ」の再生リストを読み直す前に待つ秒数 (画面が待っていないので待てる)
+_CLASS_REC_SCHED_FETCH_RETRY_WAIT = 20
+_CLASS_REC_MAIL_EVENT = "class_rec_assign_mail"   # メールの送信結果 (送れた保留の指紋)。監視の対象ではない
+_CLASS_REC_RENOTIFY_DAYS = 7                       # 同じ保留だけの日は、この日数ごとにだけ再通知する
 
 
 class _AutoAssignBusy(Exception):
@@ -53007,18 +53023,24 @@ def _auto_assign_fetch(cra, pids, scheduled: bool = False) -> dict:
     前例は月額講座の取り込み (admin_course_import): 並行で読むと YouTube が 1 本だけ別のページ
     (ytInitialData 無し) を返すことがある (2026-10-05 本番)。読み直さないと、その 1 本のせいで
     毎朝の実行が「取得できず」になり、そのクラスの配布が翌朝まで止まる。
-    ★時間切れ・接続できないは読み直さない (YouTube 側が止まっている = 待つだけ)。
+    ★ボタンでは時間切れ・接続できないは読み直さない (YouTube 側が止まっている = 画面を待たせるだけ)。
     ★ボタンは Vercel のプロキシ時間内に返す必要があるので、読み直しは最大 4 本・1 回目が 20 秒以内のときだけ
-      (前例と同じ上限)。毎朝の実行は画面が待っていないので本数・時間の上限を外す。
+      (前例と同じ上限)。毎朝の実行は画面が待っていないので本数・時間の上限を外し、時間切れ・接続できないも
+      _CLASS_REC_SCHED_FETCH_RETRY_WAIT 秒あけて 1 回読み直す (一瞬の回線断で 1 クラスの配布が翌朝まで止まらないように。
+      全部が取れない日は scheduler が 30 分後に最初からやり直す = _class_rec_assign_is_transient)。
     ★失敗の判定は fetch_playlist (正典) で解析してから決める。本文が返っていても解析できなければ失敗。
     """
     t0 = time.monotonic()
     cache = _auto_assign_prefetch(pids, cra.http_get)
+    slow_failed = []
 
     def _needs_retry(pid):
         body, err = cache.get(pid) or (None, None)
         if body is None:
-            return not any(w in (err or "") for w in ("時間がかかりすぎ", "接続できない"))
+            if any(w in (err or "") for w in ("時間がかかりすぎ", "接続できない")):
+                slow_failed.append(pid)
+                return scheduled
+            return True
         try:
             items, _fatal, _warn = cra.fetch_playlist(pid, get=lambda _u, _b=body: (_b, None))
         except Exception:
@@ -53029,7 +53051,7 @@ def _auto_assign_fetch(cra, pids, scheduled: bool = False) -> dict:
     if not scheduled:
         failed = failed[:4]
     if failed and (scheduled or time.monotonic() - t0 < 20):
-        time.sleep(1.0)
+        time.sleep(float(_CLASS_REC_SCHED_FETCH_RETRY_WAIT) if (scheduled and slow_failed) else 1.0)
         again = _auto_assign_prefetch(failed, cra.http_get, timeout=15, workers=min(len(failed), 6))
         cache.update(again)   # ★2 回目も失敗ならその結果のまま build_plan へ (「取得できず」として止める側に倒れる)
     return cache
@@ -53077,6 +53099,70 @@ def _class_rec_assign_stop_reason(out: dict) -> Optional[str]:
     return None
 
 
+def _class_rec_assign_is_transient(out: dict) -> bool:
+    """全体停止のうち**時間をおけば直りうるもの** = 授業があるのに 1 クラスも取得できず、しかも取得を試みた
+    再生リストがある (YouTube 全断・Railway 側の回線断)。毎朝の実行はこれを 30 分後にやり直す。
+    ★hazard・登録後の照合異常は人の対応が要るので含めない (やり直しても同じ結果 = 即 error でメール)。
+    ★名前の付け忘れ (試みた再生リストが 0 本) も含めない (待っても直らない)。"""
+    if out.get("refused") or out.get("duplicates"):
+        return False
+    s = out.get("summary") or {}
+    return (int(s.get("sessions_total") or 0) > 0 and not int(s.get("covered") or 0)
+            and any(not r.get("ok") for r in (out.get("rows") or [])))
+
+
+def _class_rec_ran_today_on(c) -> bool:
+    """毎朝の実行が**今日もう済んだか** (呼び出し側のカーソルで読む。例外は呼び出し側へ)。
+    ★数えるのは source=scheduled で retryable でない記録だけ (2026-10-08 review):
+      ・retryable (例外・YouTube 全断で止まった記録) を数えると、一瞬の不調でその日の配布が丸ごと抜け、
+        さらに新旧 2 コンテナが同時に 7 時を迎えたとき、片方の例外の記録がもう片方の正常な実行を打ち消す。
+      ・ボタン (source=button) の回復記録は数えない (朝 7 時前に押しても、その日の自動実行は走らせる)。
+    ★props を Python で読む (TEXT 列に JSON 文字列。SQL の LIKE で読むと SQLite と Postgres で書き方が割れる)。
+      読めない行は「済んだ」に倒す (二重登録の側に倒さない)。"""
+    JST = timezone(timedelta(hours=9))
+    today_start_utc = datetime.combine(datetime.now(JST).date(), dt_time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+    c.execute("SELECT props FROM events WHERE name = ? AND created_at >= ?",
+              (_CLASS_REC_ASSIGN_EVENT, today_start_utc))
+    for r in c.fetchall():
+        try:
+            p = json.loads(r["props"]) if isinstance(r["props"], str) else (r["props"] or {})
+        except Exception:
+            return True
+        if not isinstance(p, dict):
+            return True
+        if p.get("source", "scheduled") == "scheduled" and not p.get("retryable"):
+            return True
+    return False
+
+
+def _class_rec_ran_today() -> bool:
+    """_class_rec_ran_today_on を自前の接続で (錠の外の、安く済ませるための先回りの確認)。
+    読めなければ False (= 進む。錠の中でもう一度確かめるので二重にはならない)。"""
+    try:
+        conn = db()
+    except Exception as e:
+        log.warning(f"[ClassRecAssign] ran-today check failed: {type(e).__name__}")
+        return False
+    try:
+        return _class_rec_ran_today_on(conn.cursor())
+    except Exception as e:
+        log.warning(f"[ClassRecAssign] ran-today check failed: {type(e).__name__}")
+        return False
+    finally:
+        conn.close()
+
+
+def _class_rec_hold_fingerprint(out: dict) -> str:
+    """保留・確認事項の**指紋** (同じ保留だけの日に毎朝同じメールを送らないため)。ID は含まない。
+    ★_class_rec_mail_safe を通した文を並べ替えてハッシュする (動画・再生リストの ID は先に消える)。
+    ★「最新の録画が N日前」の N は毎日変わるので伏せる (伏せないと STALE が毎朝「新しい保留」に見える)。
+    ★集合でなく並べ替えた列 (同じ題名の保留動画が 1 本増えたら別の指紋 = 知らせる)。"""
+    probs = sorted(re.sub(r"\d+日前", "N日前", _class_rec_mail_safe(p)) for p in (out.get("problems") or []))
+    if not probs:
+        return ""
+    return hashlib.sha1("\n".join(probs).encode("utf-8")).hexdigest()[:12]
+
+
 def _class_rec_written_by_class(out: dict) -> dict:
     """{授業名: ['M/D', ...]} (今回実際に登録した分)。動画IDは持たない。"""
     by = {}
@@ -53105,17 +53191,21 @@ def _class_rec_assign_record(out: dict, source: str) -> dict:
         "verified": out.get("verified"), "duplicates": len(out.get("duplicates") or []),
         "covered": s.get("covered"), "sessions_total": s.get("sessions_total"),
         "playlist_named": s.get("playlist_named"), "fetched": s.get("fetched"),
+        "stale": int(out.get("_stale") or 0), "fp": _class_rec_hold_fingerprint(out),
         "classes": classes,
     }
     stop = _class_rec_assign_stop_reason(out)
     if stop:
         rec["error"] = stop
+        if _class_rec_assign_is_transient(out):
+            rec["retryable"] = True   # 「今日はもう済んだ」に数えない (再起動したら走り直せる)
     if len(json.dumps(rec, ensure_ascii=False)) > 3500:
         rec["classes_omitted"] = len(rec.pop("classes"))
     return rec
 
 
-def _class_rec_auto_assign_run(dry_run: bool = True, allow_partial: bool = False, source: str = "button") -> dict:
+def _class_rec_auto_assign_run(dry_run: bool = True, allow_partial: bool = False, source: str = "button",
+                               final_attempt: bool = True) -> dict:
     """🎬 授業録画の自動割り当ての本体。CEO 画面のボタン (POST .../auto-assign) と毎朝の自動実行が呼ぶ。
 
     手順 (2026-10-08 毎朝の自動実行を足したときにこの形にした):
@@ -53125,6 +53215,8 @@ def _class_rec_auto_assign_run(dry_run: bool = True, allow_partial: bool = False
       ④ 新しい接続で advisory lock を取り、**錠の中で登録済みを読み直して**から書く
          (① と ④ の間に別の実行・手での登録が入りうる。読み直さないと同じ動画が 2 件入る。UNIQUE 制約は無い)
     dry_run=True は何も書かない。allow_partial=True は「取れた分だけ登録」(hazard は免除しない)。
+    final_attempt=False (毎朝の実行の、やり直しが残っている回) は、YouTube 全断 (_class_rec_assign_is_transient) なら
+    ④ に進まず out["_retry"]=True で返す (記録も通知もしない = 30 分後にやり直す)。
     source="scheduled" (毎朝の実行) は ④ で「今日もう走ったか」を錠の中で確かめ、実行記録 (events) を
     登録と**同じトランザクション**で書く (新旧 2 コンテナが同時に 7 時を迎えても 1 回分しか記録・通知しない)。
 
@@ -53193,6 +53285,7 @@ def _class_rec_auto_assign_run(dry_run: bool = True, allow_partial: bool = False
             "problems": rep["problems"], "notes": rep["notes"],
             "blocking": rep["blocking"], "hazard": rep["hazard"],
             "applied": 0, "refused": None,
+            "_stale": int(rep.get("stale") or 0),   # 配布が止まっている合図の件数 (メール用。応答には出さない)
         }
         # ★毎朝の実行は新着が無い日も ④ へ進む (錠の中で「今日の実行記録」を書く = 生存監視と重複防止)
         if dry_run or (not rep["planned"] and not scheduled):
@@ -53215,6 +53308,10 @@ def _class_rec_auto_assign_run(dry_run: bool = True, allow_partial: bool = False
             out["message"] = out["refused"]
             if not scheduled:
                 return out
+        if scheduled and not final_attempt and _class_rec_assign_is_transient(out):
+            # ★YouTube 全断。記録 (=「今日は済んだ」) を書かずに返し、scheduler が 30 分後にやり直す
+            out["_retry"] = True
+            return out
 
         _has_ld = _table_has_column("class_recordings", "lesson_date")   # ★自前の接続を使うので ④ の前に
         # --- ④ 新しい接続で、錠の中で読み直してから書く ------------------------------------
@@ -53223,7 +53320,7 @@ def _class_rec_auto_assign_run(dry_run: bool = True, allow_partial: bool = False
             c = conn.cursor()
             if not _class_rec_try_db_lock(c):
                 raise _AutoAssignBusy()
-            if scheduled and _scheduler_ran_today_jst_on(c, _CLASS_REC_ASSIGN_EVENT):
+            if scheduled and _class_rec_ran_today_on(c):
                 # 別の replica が錠の直前に今日の分を済ませた (外側の確認をすり抜けた形)。記録も通知もしない。
                 out["_skipped_today"] = True
                 return out
@@ -53340,6 +53437,8 @@ def admin_class_recordings_auto_assign(payload: dict, request: Request,
                                          source="button")
     except _AutoAssignBusy:
         raise HTTPException(status_code=409, detail="いま別の割り当てが実行中です。終わってからもう一度押してください")
+    if payload.get("apply"):
+        _class_rec_mark_recovered(out)   # 毎朝の実行が error のままなら回復の記録 (監視の critical を止める)
     return {k: v for k, v in out.items() if not k.startswith("_")}
 
 
@@ -53357,8 +53456,10 @@ def _class_rec_assign_mail(out: Optional[dict], rec: dict):
         tags.append(f"{rec['applied']}件 登録")
     if rec.get("error"):
         tags.append("⚠ 停止")
-    elif rec.get("held") or rec.get("blocking"):
+    elif rec.get("held") or rec.get("blocking") or rec.get("already"):
         tags.append("保留あり")
+    elif rec.get("stale"):
+        tags.append("録画が止まっているクラスあり")
     subject = f"🎬 授業録画の自動割り当て {md}: " + (" / ".join(tags) or "結果")
     body = [f"<p>毎朝 {_CLASS_REC_AUTO_ASSIGN_HOUR_JST}時の授業録画の自動割り当て ({md}) の結果です。</p>"]
     if rec.get("error"):
@@ -53379,50 +53480,202 @@ def _class_rec_assign_mail(out: Optional[dict], rec: dict):
         body.append("</ul>")
     body.append("<p>詳しくは CEO 画面 →「📺 YouTube 再生リスト」→「🎬 授業録画をクラスに割り当てる」の「① 確認する」で見られます"
                 "（動画・再生リストの番号はこのメールには書きません）。保留の動画は CEO 画面の授業詳細から手で登録してください。</p>"
-                "<p>※ 新着が無く保留も無い日はこのメールは届きません。</p>")
+                f"<p>※ 新着が無く保留も無い日はこのメールは届きません。前の通知と同じ保留だけの日も届かず、"
+                f"{_CLASS_REC_RENOTIFY_DAYS}日ごとにもう一度お知らせします。</p>")
     return subject, "".join(body)
 
 
+def _class_rec_events_ts(ts):
+    """events.created_at → tz 付き UTC datetime (読めなければ None)。SQLite は文字列・tz 無しで返る。"""
+    if isinstance(ts, str):
+        try:
+            ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    if not isinstance(ts, datetime):
+        return None
+    return ts.replace(tzinfo=timezone.utc) if ts.tzinfo is None else ts
+
+
+def _class_rec_last_sent_mail():
+    """直近に**送れた**通知の (指紋, 送った日時)。無ければ (None, None)。例外は呼び出し側へ。"""
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT props, created_at FROM events WHERE name = ? ORDER BY created_at DESC LIMIT 30",
+                  (_CLASS_REC_MAIL_EVENT,))
+        for r in c.fetchall():
+            try:
+                p = json.loads(r["props"]) if isinstance(r["props"], str) else (r["props"] or {})
+            except Exception:
+                continue
+            if isinstance(p, dict) and p.get("sent"):
+                return (p.get("fp") or ""), _class_rec_events_ts(r["created_at"])
+    finally:
+        conn.close()
+    return None, None
+
+
+def _class_rec_notify_reason(rec: dict) -> Optional[str]:
+    """メールを送る理由 (送らないなら None)。
+    ・停止 (error) と登録した日 → 必ず送る
+    ・保留・確認事項 (held / blocking / 読み直しで飛ばした / STALE・録画0本) だけの日 → **前回送れた通知と中身
+      (指紋) が違うときだけ**。同じなら _CLASS_REC_RENOTIFY_DAYS 日ごとに再通知。
+    ★2026-10-08 review: 対応しないと決めた保留 (授業でない動画・録画を撮らない授業) が 1 つあるだけで同じメールが
+      毎朝届き、数日で読まれなくなって本物の停止が埋もれる (警告疲れ)。
+    ★STALE・録画0本も理由に入れる: build_plan は blocking にも skipped にも数えないが、毎朝自動にすると塾長が
+      ① 確認を押さなくなり、配布が止まっている合図を見る人がいなくなる。
+    """
+    if rec.get("error"):
+        return "error"
+    if rec.get("applied"):
+        return "applied"
+    if not (rec.get("held") or rec.get("blocking") or rec.get("already") or rec.get("stale")):
+        return None
+    try:
+        fp, ts = _class_rec_last_sent_mail()
+    except Exception as e:
+        log.warning(f"[ClassRecAssign] last-mail lookup failed: {type(e).__name__}")
+        return "hold"   # 読めなければ送る側に倒す (黙るより 1 通多い方がまし)
+    if fp is None or fp != (rec.get("fp") or ""):
+        return "new_hold"
+    if ts is None or datetime.now(timezone.utc) - ts >= timedelta(days=_CLASS_REC_RENOTIFY_DAYS):
+        return "renotify"
+    return None
+
+
 def _class_rec_assign_notify(out: Optional[dict], rec: dict) -> bool:
-    """登録した日・保留/停止があった日だけ塾長へメール (何も無い日は送らない)。送れたら True。
+    """塾長へメール (送る日は _class_rec_notify_reason)。送れたら True。
     宛先は監視通知と同じ MONITORING_TO_EMAIL (未設定なら DAILY_SNS_TO_EMAIL)。Resend キーか宛先が
-    無ければ _send_monitor_email が送らずにログだけ残す。"""
-    if not (rec.get("applied") or rec.get("held") or rec.get("blocking") or rec.get("error")):
+    無ければ _send_monitor_email が送らずにログだけ残す。
+    ★送信結果を events (_CLASS_REC_MAIL_EVENT) に残す (sent・理由・指紋だけ)。送れなかった保留は「送った指紋」に
+      ならないので、翌朝の実行でもう一度送る (送れなかった日の保留が、指紋の重複抑止で二度と知らされない、を防ぐ)。"""
+    why = _class_rec_notify_reason(rec)
+    if not why:
         return False
+    sent = False
     try:
         subject, body = _class_rec_assign_mail(out, rec)
         res = _send_monitor_email(subject, body)
-        return bool(res and res.get("sent"))
+        sent = bool(res and res.get("sent"))
     except Exception as e:
         log.warning(f"[ClassRecAssign] notify failed: {type(e).__name__}")
+    if not sent:
+        log.error(f"[ClassRecAssign] notify NOT sent (why={why}) — 翌朝の実行でもう一度送る")
+    try:   # ★db() 自体が落ちる日 (DB 停止) に例外を scheduler まで上げない (上げると 1 時間ごとに走り直してメールが続く)
+        _record_scheduler_run(_CLASS_REC_MAIL_EVENT, {"sent": sent, "why": why, "fp": rec.get("fp") or ""})
+    except Exception as e:
+        log.warning(f"[ClassRecAssign] mail result not recorded: {type(e).__name__}")
+    return sent
+
+
+def _class_rec_record_error_locked(rec: dict) -> str:
+    """例外で終わった日の error 記録を**錠の中で**書く。返り値 recorded / busy / skipped_today / failed。
+    ★_record_scheduler_run (錠の外・今日の確認なし) で書くと、新旧 2 コンテナが同時に 7 時の実行に入ったとき、
+      片方の例外の記録がもう片方の正常な記録の後に入って最新が error になる (登録は済んでいるのに監視が critical・
+      「停止」メール)。錠の中で「今日もう済んだか」を確かめてから書く (2026-10-08 review)。"""
+    try:
+        conn = db()
+    except Exception as e:
+        log.error(f"[ClassRecAssign] error record skipped (no db): {type(e).__name__}")
+        return "failed"
+    try:
+        c = conn.cursor()
+        if not _class_rec_try_db_lock(c):
+            return "busy"
+        if _class_rec_ran_today_on(c):
+            return "skipped_today"
+        c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, 'in_process_scheduler')",
+                  (_CLASS_REC_ASSIGN_EVENT, json.dumps(rec, ensure_ascii=False)))
+        conn.commit()
+        return "recorded"
+    except Exception as e:
+        log.error(f"[ClassRecAssign] error record failed: {type(e).__name__}")
+        return "failed"
+    finally:
+        conn.close()
+
+
+def _class_rec_mark_recovered(out: dict) -> bool:
+    """ボタンの登録 (apply) が全体停止なしで終わり、毎朝の実行の**最新の記録が error** なら、回復の記録
+    (source=button・recovered) を足す。書いたら True。
+    ★書かないと、塾長がボタンで直しても監視 (_failed_schedulers = 最新の記録の props.error) が翌朝 7 時まで
+      critical を出し続ける (2026-10-08 review)。
+    ★最新が error のときだけ書く。毎回書くと、毎朝の実行が止まっていてもボタンを押すたびに「生きている」に見える。
+    ★_class_rec_ran_today_on は source=button を数えないので、朝 7 時前に押してもその日の自動実行は走る。
+    ★応答は変えない (監視の記録のためだけ。失敗してもログだけ)。"""
+    if (out.get("mode") != "apply" or out.get("refused") or out.get("duplicates")
+            or _class_rec_assign_stop_reason(out)):
+        return False
+    try:
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT props FROM events WHERE name = ? ORDER BY created_at DESC, id DESC LIMIT 1",
+                      (_CLASS_REC_ASSIGN_EVENT,))
+            row = c.fetchone()
+            if row is None:
+                return False
+            try:
+                p = json.loads(row["props"]) if isinstance(row["props"], str) else (row["props"] or {})
+            except Exception:
+                return False
+            if not (isinstance(p, dict) and p.get("error")):
+                return False
+            rec = _class_rec_assign_record(out, "button")
+            rec["recovered"] = True
+            c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, 'in_process_scheduler')",
+                      (_CLASS_REC_ASSIGN_EVENT, json.dumps(rec, ensure_ascii=False)))
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+    except Exception as e:
+        log.warning(f"[ClassRecAssign] recovery record failed: {type(e).__name__}")
         return False
 
 
-def _class_rec_auto_assign_daily() -> dict:
+def _class_rec_auto_assign_daily(final_attempt: bool = True) -> dict:
     """毎朝の 1 回分 (同期。scheduler から asyncio.to_thread で呼ぶ)。
 
     返り値の status: done / skipped_today (今日はもう走った) / busy (別の割り当てが実行中 → 10 分後にやり直す)
-                     / error (例外。実行記録に error を残す) / disabled
+                     / retry (一時的な失敗。記録もメールもしない → 30 分後にやり直す。final_attempt=False のときだけ)
+                     / error (やり直しの最後の回も例外。錠の中で error を記録してメール) / disabled
     ★dry_run=False・allow_partial=True (「取れた分だけ登録」)。hazard (二重登録の恐れ) は従来どおり免除しない。
+    ★一時的な失敗 (例外・YouTube 全断) は最後の回 (final_attempt=True) でだけ記録・メールする (2026-10-08 review:
+      7:00 の一瞬の不調でその日の配布が丸ごと抜け、監視も翌朝まで critical のままだった)。
     """
     if not CLASS_REC_AUTO_ASSIGN_ENABLED:
         return {"status": "disabled"}
-    if _check_scheduler_ran_today_jst(_CLASS_REC_ASSIGN_EVENT):
+    if _class_rec_ran_today():
         return {"status": "skipped_today"}
     try:
-        out = _class_rec_auto_assign_run(dry_run=False, allow_partial=True, source="scheduled")
+        out = _class_rec_auto_assign_run(dry_run=False, allow_partial=True, source="scheduled",
+                                         final_attempt=final_attempt)
     except _AutoAssignBusy:
         log.info("[ClassRecAssign] busy (another assign is running) — retry later")
         return {"status": "busy"}
     except Exception as e:
+        log.error(f"[ClassRecAssign] failed: {type(e).__name__} (final_attempt={final_attempt})")
+        if not final_attempt:
+            return {"status": "retry"}
         # ★HTTPException の detail は画面向けに伏せてある文。それ以外は型名だけ (例外文に URL = 動画IDが載りうる)
         why = e.detail if isinstance(e, HTTPException) else type(e).__name__
-        rec = {"source": "scheduled", "error": f"実行時エラー: {_class_rec_mail_safe(why)[:200]}"}
-        log.error(f"[ClassRecAssign] failed: {type(e).__name__}")
-        _record_scheduler_run(_CLASS_REC_ASSIGN_EVENT, rec)
-        return {"status": "error", "record": rec, "mailed": _class_rec_assign_notify(None, rec)}
+        # retryable: 「今日はもう済んだ」に数えない (再起動・別の replica が走り直せる)
+        rec = {"source": "scheduled", "error": f"実行時エラー: {_class_rec_mail_safe(why)[:200]}",
+               "retryable": True}
+        st = _class_rec_record_error_locked(rec)
+        if st == "busy":
+            return {"status": "busy"}
+        if st == "skipped_today":   # 別の replica が今日の分を済ませていた → この失敗は記録も通知もしない
+            return {"status": "skipped_today"}
+        return {"status": "error", "record": rec, "recorded": st == "recorded",
+                "mailed": _class_rec_assign_notify(None, rec)}
     if out.get("_skipped_today"):
         return {"status": "skipped_today"}
+    if out.get("_retry"):
+        log.warning("[ClassRecAssign] no playlist could be fetched — retry later")
+        return {"status": "retry"}
     rec = out.get("_record") or {}
     mailed = _class_rec_assign_notify(out, rec)
     log.info(f"[ClassRecAssign] done applied={rec.get('applied')} held={rec.get('held')} "
@@ -53431,7 +53684,8 @@ def _class_rec_auto_assign_daily() -> dict:
 
 
 async def _class_rec_auto_assign_scheduler():
-    """🎬 毎日 JST 7:00 に _class_rec_auto_assign_daily を 1 回 (CRON_SECRET があり、CLASS_REC_AUTO_ASSIGN_ENABLED=1 のとき起動)。
+    """🎬 毎日 JST 7:00 に _class_rec_auto_assign_daily を 1 回 (CRON_SECRET があり、CLASS_REC_AUTO_ASSIGN_ENABLED が
+    0 / false / off / no でないとき起動)。
 
     ★同期処理は必ず asyncio.to_thread で呼ぶ (YouTube の取得は数十秒。ループ上で直接呼ぶとサーバ全体が止まる。
       2026-07-26 に体験管理バッチで実際に起きた)。今日もう走ったかの確認 (DB) も to_thread。
@@ -53439,19 +53693,29 @@ async def _class_rec_auto_assign_scheduler():
       「次の目標時刻まで寝る」だけだと、7 時ちょうどのデプロイでその日が丸ごと抜ける。二重に走らないことは
       「今日の実行記録」(錠の中で確認し、登録と同じトランザクションで書く) が保証する。
     ★busy (別の割り当てが実行中) は 10 分後に最初からやり直す。相手が登録した後の状態で読み直すので二重にならない。
+    ★retry (例外・YouTube 全断) は 30 分後に最大 _CLASS_REC_RETRY_MAX 回やり直し、最後の回だけ記録・メールする。
+      回数はこのループの変数 (日付が変わったら 0 に戻す)。
     """
     JST = timezone(timedelta(hours=9))
     log.info(f"[ClassRecAssign] Scheduler started, target JST {_CLASS_REC_AUTO_ASSIGN_HOUR_JST}:00 daily")
     await asyncio.sleep(120)   # 起動直後 (DDL・他の起動タスク・healthcheck) と重ねない
+    attempt, attempt_day = 0, None
     while True:
         try:
             now_jst = datetime.now(JST)
+            if attempt_day != now_jst.date():
+                attempt, attempt_day = 0, now_jst.date()
             target = now_jst.replace(hour=_CLASS_REC_AUTO_ASSIGN_HOUR_JST, minute=0, second=0, microsecond=0)
             if now_jst >= target:
-                res = await asyncio.to_thread(_class_rec_auto_assign_daily)
-                log.info(f"[ClassRecAssign] status={res.get('status')}")
+                final = attempt >= _CLASS_REC_RETRY_MAX
+                res = await asyncio.to_thread(_class_rec_auto_assign_daily, final_attempt=final)
+                log.info(f"[ClassRecAssign] status={res.get('status')} attempt={attempt}")
                 if res.get("status") == "busy":
                     await asyncio.sleep(600)
+                    continue
+                if res.get("status") == "retry" and not final:
+                    attempt += 1
+                    await asyncio.sleep(_CLASS_REC_RETRY_WAIT_SECS)
                     continue
                 target += timedelta(days=1)
             sleep_secs = max(60.0, (target - datetime.now(JST)).total_seconds())

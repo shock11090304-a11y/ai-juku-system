@@ -668,17 +668,28 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - 塾長が YouTube の**再生リスト**に授業動画を上げる → それを各クラスの `class_recordings` に割り当てる。
   **毎朝 JST 7:00 に自動で走る** (2026-10-08 塾長決定「毎日自動にしたい」。それまでは自動では走らなかった)。
   - API プロセス内の常駐スケジューラ `_class_rec_auto_assign_scheduler` (起動条件: `CRON_SECRET` があり、
-    `CLASS_REC_AUTO_ASSIGN_ENABLED` が `0` でない)。**止めるときは Railway の env `CLASS_REC_AUTO_ASSIGN_ENABLED=0` → 再起動**
+    `CLASS_REC_AUTO_ASSIGN_ENABLED` が `0` / `false` / `off` / `no` でない。判定は `_class_rec_auto_assign_env_enabled` 1 か所で、
+    監視の対象もこれで決まる)。**止めるときは Railway の env `CLASS_REC_AUTO_ASSIGN_ENABLED=0` → 再起動**
     (ボタンとターミナルは止まらない)。7 時を過ぎてから起動したら、その日まだ走っていなければすぐ走る。
   - 中身はボタンと同じ `_class_rec_auto_assign_run` を **dry_run=False・allow_partial=True (「取れた分だけ登録」)** で呼ぶ。
     hazard (二重登録の恐れ) は従来どおり免除しない = その日は 1 件も登録しない。
-  - **塾長へのメールは、登録した日・保留/停止があった日だけ** (`_send_monitor_email` = 宛先 `MONITORING_TO_EMAIL`、
-    未設定なら `DAILY_SNS_TO_EMAIL`。Resend キーか宛先が無ければ送らずログだけ)。本文は授業名・日付 (M/D)・件数・保留の理由だけで、
+  - **塾長へのメール** (`_send_monitor_email` = 宛先 `MONITORING_TO_EMAIL`、未設定なら `DAILY_SNS_TO_EMAIL`。
+    Resend キーか宛先が無ければ送らずログだけ)。本文は授業名・日付 (M/D)・件数・保留の理由だけで、
     動画ID・再生リストIDは先頭4文字も載せない (`_class_rec_mail_safe`)。何も無い日は送らない。
+    登録した日・停止の日は必ず送る。**保留・確認事項だけの日は、前回送れた通知と中身 (指紋 `fp`) が違うときだけ**
+    (同じなら 7 日ごとに再通知 = 対応しないと決めた保留で毎朝同じメールが届き、本物が埋もれるのを防ぐ)。
+    STALE (最新の録画が 28 日より前)・録画 0 本のクラスも通知の理由に入る (`build_plan` の `stale`。自動にすると ① 確認を
+    見る人がいなくなるため)。送信結果は events `class_rec_assign_mail` (sent・理由・指紋だけ)。送れなかった保留は翌朝もう一度送る。
   - 実行記録は events `class_rec_assign_run` (件数の要約だけ。新着が無い日も書く)。**登録と同じトランザクション・同じ錠の中で**
     書くので 1 日 1 回 (新旧 2 コンテナが同時に 7 時を迎えても 1 回分)。2 日記録が無ければ停止、全体停止
     (hazard で全部断った・登録後の確認で異常・1 クラスも見に行けなかった) は `props.error` = 5 分監視の「定期実行の失敗」に乗る。
     一部クラスの保留は error にしない (毎朝 critical が鳴ると本物が埋もれる) → その日のメールで知らせる。
+  - **一時的な失敗 (例外・YouTube 全断 = 1 クラスも取得できない) は 30 分おきに最大 2 回やり直し** (7:00 → 7:30 → 8:00)、
+    最後の回だけ error を記録してメールする。その記録は `retryable` で「今日はもう済んだ」に数えない (再起動すれば走り直す)。
+    例外の記録も錠の中で「今日もう済んだか」を確かめてから書く (新旧 2 コンテナの片方の例外が、もう片方の正常な記録を上書きしない)。
+    判定は `_class_rec_ran_today_on` (source=scheduled で retryable でない記録だけを数える)。
+  - 毎朝の実行が error のまま塾長がボタンの「② 登録」で直したら、回復の記録 (source=button・recovered) を足して監視の
+    critical を止める (`_class_rec_mark_recovered`。最新の記録が error のときだけ書く = ボタンで停止を隠さない)。
   - 手で走らせる方法も残っている:
   ```
   railway run -s Postgres python3 scripts/class_recordings/assign_from_playlists.py           # 確認だけ (何も登録しない)
@@ -689,7 +700,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - ★**手順は「① DB を読む → 接続を返す → ② YouTube を読む → ③ build_plan → ④ 新しい接続で錠を取り、錠の中で登録済みを
   読み直してから書く」**。YouTube を待つ間に DB の接続を持たない (冒頭の「`db()` の接続を掴んだまま外部APIを待たない」)。① と ④ の間に入った登録は
   ④ の読み直し (`video_id()` で比べる = URL の書き方違いも拾う) で飛ばす。並行で読むと YouTube が 1 本だけ解析できない
-  ページを返すことがあるので、すぐ返ってきた失敗だけ 1 回読み直す (時間切れ・接続できないは読み直さない)。
+  ページを返すことがあるので、すぐ返ってきた失敗だけ 1 回読み直す (ボタンでは時間切れ・接続できないは読み直さない。
+  毎朝の実行は画面が待っていないので、それも 20 秒あけて 1 回読み直す)。
 - ★**排他は 2 段**: 同じプロセスは `_AUTO_ASSIGN_LOCK` (取れなければボタン 409・定期実行は 10 分後にやり直す)、
   プロセスをまたぐのは `pg_try_advisory_xact_lock(8675312)` を ④ の書き込み直前に取る (待たない・トランザクション終了で外れる)。
   **錠を YouTube の取得中に持たない** (接続とトランザクションが要るので、`idle_in_transaction_session_timeout` に切られ、プールも 1 本塞ぐ)。

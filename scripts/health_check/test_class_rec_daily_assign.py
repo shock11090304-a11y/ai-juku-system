@@ -6,15 +6,19 @@
 _class_rec_auto_assign_scheduler) の性質を固定する:
 
   1. 定期実行は dry_run=False・allow_partial=True・source="scheduled" で本体を呼ぶ。scheduler は to_thread 経由で呼び、
-     busy なら 10 分後にやり直す。起動時の登録は CRON_SECRET と CLASS_REC_AUTO_ASSIGN_ENABLED の両方が要る
+     busy なら 10 分後、一時的な失敗 (retry) なら 30 分後に最大 2 回やり直す (最後の回だけ final_attempt=True)。
+     起動時の登録は CRON_SECRET と CLASS_REC_AUTO_ASSIGN_ENABLED の両方が要る。env は 0/false/off/no だけが無効
   2. 同じ日に 2 回走らない (外側の確認・錠の中の確認の両方)
   3. 2 回目の実行で二重登録しない / 取得している間に別の登録が入っても二重にしない (書く直前の読み直し)
   4. 排他: 同じプロセスの並行実行は片方が諦める (ボタン 409・定期 busy)。別プロセスの錠 (advisory lock) が
      取れないときも 1 件も書かない
-  5. すぐ返ってきた取得失敗だけを 1 回読み直す (時間切れ・接続できないは読み直さない)
+  5. すぐ返ってきた取得失敗を 1 回読み直す (ボタンは時間切れ・接続できないを読み直さない。毎朝の実行は読み直す)
   6. 実行記録とメール本文に動画ID・再生リストIDが入らない (先頭4文字も)。記録は 4000 字で切られても JSON のまま
-  7. 何も無い日はメールしない。登録した日・保留の日・停止の日は送る。全体停止は props.error = 監視の失敗に乗る
-  8. ボタンの応答の形 (キー) が変わらない
+  7. 何も無い日はメールしない。登録した日・停止の日は送る。保留だけの日は前回送れた通知と中身が違う日だけ
+     (同じなら 7 日ごと・送れなかったら翌朝もう一度)。STALE・録画0本も知らせる。全体停止は props.error = 監視の失敗に乗る
+  8. 例外・YouTube 全断は最後の回だけ記録・メールし、その記録は「今日は済んだ」に数えない。例外の記録は錠の中で
+     「今日もう済んだか」を確かめてから書く。ボタンで直したら回復の記録で監視の失敗を止める
+  9. ボタンの応答の形 (キー) と主な値が変わらない
 
 実行:
     python3 scripts/health_check/test_class_rec_daily_assign.py
@@ -68,6 +72,7 @@ def load_main():
     sys.modules[spec.name] = mod
     spec.loader.exec_module(mod)
     mod.init_db()
+    mod._CLASS_REC_SCHED_FETCH_RETRY_WAIT = 0   # 毎朝の実行の「接続できない」読み直し前の待ち (試験では待たない)
     return mod
 
 
@@ -220,30 +225,46 @@ def main():
     finally:
         mod._class_rec_auto_assign_run = real_run
     check("dry_run=False・allow_partial=True・source=scheduled で本体を呼ぶ",
-          seen == [{"dry_run": False, "allow_partial": True, "source": "scheduled"}], seen)
+          seen == [{"dry_run": False, "allow_partial": True, "source": "scheduled", "final_attempt": True}], seen)
     check("何も無い日はメールしない", r.get("mailed") is False and not mails, r)
     check("起動時の登録は CRON_SECRET と CLASS_REC_AUTO_ASSIGN_ENABLED の両方が要る",
           "if CRON_SECRET and CLASS_REC_AUTO_ASSIGN_ENABLED:\n        task = asyncio.create_task(_class_rec_auto_assign_scheduler())" in src)
     sched_src = inspect.getsource(mod._class_rec_auto_assign_scheduler)
     check("scheduler は asyncio.to_thread 経由で呼ぶ (直接呼ぶとサーバ全体が止まる)",
-          "asyncio.to_thread(_class_rec_auto_assign_daily)" in sched_src
-          and "_class_rec_auto_assign_daily()" not in sched_src)
+          "asyncio.to_thread(_class_rec_auto_assign_daily, " in sched_src
+          and "_class_rec_auto_assign_daily(" not in sched_src.replace("asyncio.to_thread(_class_rec_auto_assign_daily, ", ""))
     mod.CLASS_REC_AUTO_ASSIGN_ENABLED = False
     check("CLASS_REC_AUTO_ASSIGN_ENABLED=0 なら何もしない",
           mod._class_rec_auto_assign_daily().get("status") == "disabled")
     mod.CLASS_REC_AUTO_ASSIGN_ENABLED = True
+    env_bad = []
+    for v, exp in [("0", False), ("false", False), ("OFF", False), (" no ", False),
+                   ("1", True), ("true", True), ("yes", True), ("", True), (" 1", True)]:
+        os.environ["CLASS_REC_AUTO_ASSIGN_ENABLED"] = v
+        if mod._class_rec_auto_assign_env_enabled() is not exp:
+            env_bad.append(v)
+    os.environ.pop("CLASS_REC_AUTO_ASSIGN_ENABLED")
+    if mod._class_rec_auto_assign_env_enabled() is not True:
+        env_bad.append("(未設定)")
+    os.environ["CLASS_REC_AUTO_ASSIGN_ENABLED"] = "1"
+    check("env は 0 / false / off / no だけが無効 (true・空文字・' 1' は有効 = 黙って止まらない)", not env_bad, env_bad)
+    check("監視の対象 (_SCHEDULER_MAX_AGE_DAYS) も同じ判定関数で決める",
+          '**({"class_rec_assign_run": 2} if _class_rec_auto_assign_env_enabled() else {})' in src
+          and "CLASS_REC_AUTO_ASSIGN_ENABLED = _class_rec_auto_assign_env_enabled()" in src)
 
     # scheduler のループを実際に回す (sleep を差し替え・目標時刻を 0 時にして「過ぎている」状態を作る)
     real_sleep, real_daily, real_hour = asyncio.sleep, mod._class_rec_auto_assign_daily, mod._CLASS_REC_AUTO_ASSIGN_HOUR_JST
-    sleeps, daily_threads, results = [], [], [{"status": "busy"}, {"status": "done"}]
+    sleeps, daily_threads, finals = [], [], []
+    results = [{"status": "busy"}, {"status": "retry"}, {"status": "retry"}, {"status": "done"}]
 
     async def fake_sleep(secs, *a, **k):
         sleeps.append((secs, len(daily_threads)))   # (寝た秒数, それまでに本体を呼んだ回数)
-        if len(sleeps) >= 3:
+        if len(sleeps) >= 5:
             raise asyncio.CancelledError()
 
-    def spy_daily():
+    def spy_daily(final_attempt=True):
         daily_threads.append(threading.get_ident())
+        finals.append(final_attempt)
         return results.pop(0) if results else {"status": "done"}
 
     asyncio.sleep = fake_sleep
@@ -259,9 +280,13 @@ def main():
         asyncio.sleep, mod._class_rec_auto_assign_daily = real_sleep, real_daily
         mod._CLASS_REC_AUTO_ASSIGN_HOUR_JST = real_hour
     check("7時を過ぎて起動したら、その日の分をすぐ走らせる・busy なら 10 分後にやり直す",
-          len(sleeps) == 3 and sleeps[0] == (120, 0) and sleeps[1] == (600, 1), f"sleeps={sleeps}")
+          len(sleeps) == 5 and sleeps[0] == (120, 0) and sleeps[1] == (600, 1), f"sleeps={sleeps}")
+    check("一時的な失敗 (retry) は 30 分後に最大 2 回やり直す (busy は回数に数えない)",
+          sleeps[2:4] == [(1800, 2), (1800, 3)], sleeps)
+    check("最後のやり直しの回だけ final_attempt=True (そこでだけ記録・メールする)",
+          finals == [False, False, False, True], finals)
     check("やり直しで済ませた後は翌日の目標時刻まで寝る (1 日 1 回)",
-          len(sleeps) == 3 and sleeps[2][0] > 20 * 3600 and sleeps[2][1] == 2, sleeps)
+          len(sleeps) == 5 and sleeps[4][0] > 20 * 3600 and sleeps[4][1] == 4, sleeps)
     check("本体はイベントループとは別のスレッドで動く",
           daily_threads and all(t != threading.get_ident() for t in daily_threads))
 
@@ -278,7 +303,7 @@ def main():
     check("取得できない水曜は保留 (止めずに他を登録)", rec.get("blocking", 0) >= 1 and not rec.get("error"), rec)
     check("日付の読めない動画は保留に数える", rec.get("held", 0) >= 2, rec.get("held"))
     check("すぐ返ってきた取得失敗 (解析できないページ) は 1 回だけ読み直す", calls.get(PL_THU) == 2, calls)
-    check("接続できない (YouTube 側が止まっている) は読み直さない", calls.get(PL_WED) == 1, calls)
+    check("毎朝の実行は「接続できない」も 1 回だけ読み直す (画面が待っていない)", calls.get(PL_WED) == 2, calls)
     check("読み直しで取れた木曜の新着が入る", n_vid(V_THU_NEW) == 1)
     ev = events()
     check("実行記録が 1 件", len(ev) == 1, len(ev))
@@ -314,20 +339,65 @@ def main():
 
     print("4) 翌日 (2 回目の実行) で二重登録しない")
     q("DELETE FROM events WHERE name = ?", (mod._CLASS_REC_ASSIGN_EVENT,))
-    n0 = n_rec()
+    n0, nm = n_rec(), len(mails)
     r3 = mod._class_rec_auto_assign_daily()
     check("翌日の実行は新着 0", (r3.get("record") or {}).get("applied") == 0, r3.get("record"))
     check("行が増えない", n_rec() == n0, f"{n0}→{n_rec()}")
     check("どの動画も 1 件ずつ", all(n_vid(v) == 1 for v in (V_MON_NEW, V_TUE_NEW, V_THU_NEW)))
+    check("前の通知と同じ保留だけの日はメールを繰り返さない", len(mails) == nm and r3.get("mailed") is False,
+          (r3.get("record") or {}).get("fp"))
+
+    print("4b) 通知の重複抑止: 新しい保留・7 日ごとの再通知・送れなかった日の再送")
+    V_TUE_BAD2 = "TueBad00002"
+    ALL_IDS.append(V_TUE_BAD2)
+    PAGES[PL_TUE] = lambda: yt_page([(V_TUE_NEW, md(TUE_D)), (V_TUE_BAD, "第3回 まとめ"), (V_TUE_BAD2, "第4回 演習")])
+    real_mail = mod._send_monitor_email
+    mod._send_monitor_email = lambda *a, **k: {"sent": False}   # Resend の一時障害
+    try:
+        q("DELETE FROM events WHERE name = ?", (mod._CLASS_REC_ASSIGN_EVENT,))
+        rf = mod._class_rec_auto_assign_daily()
+    finally:
+        mod._send_monitor_email = real_mail
+    mev = q("SELECT props FROM events WHERE name = ? ORDER BY id", (mod._CLASS_REC_MAIL_EVENT,))
+    last_mev = json.loads(mev[-1]["props"]) if mev else {}
+    check("新しい保留が増えた日は送ろうとする・送れなかったことを記録に残す",
+          rf.get("mailed") is False and last_mev.get("sent") is False and last_mev.get("why") == "new_hold", last_mev)
+    check("送信結果の記録に ID が入らない", not leaks(json.dumps(last_mev, ensure_ascii=False)))
+    nm = len(mails)
+    q("DELETE FROM events WHERE name = ?", (mod._CLASS_REC_ASSIGN_EVENT,))
+    rr = mod._class_rec_auto_assign_daily()
+    check("送れなかった保留は翌朝もう一度送る", rr.get("mailed") is True and len(mails) == nm + 1, rr.get("mailed"))
+    check("増えた保留がメールに出る (題名で。ID は出さない)",
+          "第4回 演習" in mails[-1][1] and not leaks(mails[-1][0] + mails[-1][1]) if mails else False)
+    q("DELETE FROM events WHERE name = ?", (mod._CLASS_REC_ASSIGN_EVENT,))
+    rs = mod._class_rec_auto_assign_daily()
+    check("同じ保留の翌日は送らない", rs.get("mailed") is False and len(mails) == nm + 1)
+    q("UPDATE events SET created_at = ? WHERE name = ?",
+      ((datetime.datetime.utcnow() - datetime.timedelta(days=8)).strftime("%Y-%m-%d %H:%M:%S"),
+       mod._CLASS_REC_MAIL_EVENT))
+    q("DELETE FROM events WHERE name = ?", (mod._CLASS_REC_ASSIGN_EVENT,))
+    rw = mod._class_rec_auto_assign_daily()
+    check("同じ保留でも 7 日たったらもう一度知らせる", rw.get("mailed") is True and len(mails) == nm + 2, rw.get("mailed"))
+    fp_a = mod._class_rec_hold_fingerprint({"problems": ["月曜1限: 最新の録画が 30日前 (2026-09-01) で止まっている"]})
+    fp_b = mod._class_rec_hold_fingerprint({"problems": ["月曜1限: 最新の録画が 31日前 (2026-09-01) で止まっている"]})
+    fp_c = mod._class_rec_hold_fingerprint({"problems": ["火曜1限: 最新の録画が 30日前 (2026-09-01) で止まっている"]})
+    fp_d = mod._class_rec_hold_fingerprint({"problems": [f"月曜1限: 動画 {V_MON_NEW[:4]}… ('x') が別の授業に登録されている"]})
+    fp_e = mod._class_rec_hold_fingerprint({"problems": [f"月曜1限: 動画 {V_MON_OLD[:4]}… ('x') が別の授業に登録されている"]})
+    check("指紋: 毎日変わる「N日前」は同じ扱い・クラスが違えば別", fp_a == fp_b and fp_a != fp_c, (fp_a, fp_b, fp_c))
+    check("指紋は ID を伏せた文から作る (ID の先頭4文字だけ違う保留は同じ扱い)", fp_d == fp_e)
 
     print("5) 取得している間に別の登録が入っても二重にしない (書く直前の読み直し)")
     mon_items.append((V_RACE, md(MON_2W)))
     side_effect[PL_MON] = lambda: q(
         "INSERT INTO class_recordings (session_id, title, video_url, provider, is_published) VALUES (?,?,?,'youtube',1)",
         (sess["月曜1限 中学応用"], md(MON_2W), f"https://www.youtube.com/watch?v={V_RACE}"))
+    calls.clear()
+    n_ev = len(events())
     resp = button({"apply": True, "allow_partial": True})
     out = resp.json()
     check("ボタンは 200", resp.status_code == 200, resp.status_code)
+    check("ボタンは「接続できない」を読み直さない (画面を待たせない)", calls.get(PL_WED) == 1, calls)
+    check("毎朝の実行の最新の記録が error でなければ、ボタンは実行記録を足さない", len(events()) == n_ev)
     check("計画には入っていた (① の読みの後に登録された)", any(p["label"] == md(MON_2W) for p in out.get("planned", [])))
     check("書く直前の読み直しで飛ばす (URL の書き方が違っても)", n_vid(V_RACE) == 1, n_vid(V_RACE))
     check("飛ばしたことを確認事項に出す", any("別の登録が先に入っていた" in p for p in out.get("problems", [])))
@@ -410,8 +480,27 @@ def main():
     check("監視アラートの表示名が 2 か所にある", src.count(f'"{mod._CLASS_REC_ASSIGN_EVENT}": "{snap_lbl}"') == 2)
     check("停止の日はメールする (件名に停止)", len(mails) == nm + 1 and "停止" in mails[-1][0], mails[-1][0] if mails else "")
     check("停止メールにも ID が入らない", not leaks(mails[-1][0] + mails[-1][1]) if mails else False)
+    check("hazard の停止は「今日は済んだ」に数える (人の対応が要る = やり直しても同じ)", mod._class_rec_ran_today())
     q("DELETE FROM class_recordings WHERE title = ?", ("手入力",))
-    mon_items.pop()        # HazVid は登録されないまま残るので、以降の「何も無い日」から外す
+    # 塾長が悪い URL を直してボタンで登録 → 回復の記録で監視の失敗が止まる
+    q("UPDATE events SET created_at = ? WHERE name = ?",
+      ((datetime.datetime.utcnow() - datetime.timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S"),
+       mod._CLASS_REC_ASSIGN_EVENT))   # SQLite の時刻は秒単位。同じ秒だと「最新」がどちらか決まらない
+    rb_fix = button({"apply": True, "allow_partial": True})
+    check("直した後のボタンで HazVid が 1 件入る", rb_fix.status_code == 200 and n_vid("HazVid00001") == 1,
+          rb_fix.status_code)
+    evs = events()
+    last_p = json.loads(evs[-1]["props"]) if evs else {}
+    check("最新が error のときボタンで直したら回復の記録 (source=button・recovered) を足す",
+          len(evs) == 2 and last_p.get("source") == "button" and last_p.get("recovered") is True
+          and not last_p.get("error"), last_p)
+    check("回復の記録にも ID が入らない", not leaks(evs[-1]["props"]) if evs else False)
+    rows = {e["name"]: e for e in mod._scheduler_status_rows()}
+    check("回復の記録の後は監視の失敗 (_failed_schedulers) に乗らない",
+          mod._CLASS_REC_ASSIGN_EVENT not in [e["name"] for e in mod._failed_schedulers(list(rows.values()))])
+    check("ボタンの回復の記録は「今日の自動実行は済んだ」に数えない (hazard の記録を消した状態で)",
+          (q("DELETE FROM events WHERE name = ? AND props NOT LIKE ?", (mod._CLASS_REC_ASSIGN_EVENT, '%"button"%'))
+           or True) and not mod._class_rec_ran_today())
     # 例外で落ちた日
     q("DELETE FROM events WHERE name = ?", (mod._CLASS_REC_ASSIGN_EVENT,))
 
@@ -426,6 +515,56 @@ def main():
     check("例外の日は status=error で記録し、error に理由", re_.get("status") == "error" and len(evs) == 1
           and "登録に失敗しました" in json.loads(evs[0]["props"]).get("error", ""), re_)
     check("例外の記録にも ID が入らない", not leaks(evs[0]["props"]) if evs else False, evs[0]["props"] if evs else "")
+    check("例外の記録は retryable =「今日は済んだ」に数えない (再起動・別の replica が走り直せる)",
+          json.loads(evs[0]["props"]).get("retryable") is True and not mod._class_rec_ran_today() if evs else False)
+    # やり直しが残っている回の例外 → 記録もメールもしない
+    q("DELETE FROM events WHERE name = ?", (mod._CLASS_REC_ASSIGN_EVENT,))
+    nm = len(mails)
+    mod._class_rec_auto_assign_run = boom
+    try:
+        rr_ = mod._class_rec_auto_assign_daily(final_attempt=False)
+    finally:
+        mod._class_rec_auto_assign_run = real_run
+    check("やり直しが残っている回の例外は status=retry・記録もメールもしない",
+          rr_.get("status") == "retry" and not events() and len(mails) == nm, rr_)
+    # 別の replica が今日の分を正常に済ませた後に、こちらが最後の回で例外 → 打ち消さない・上書きしない
+    mod._record_scheduler_run(mod._CLASS_REC_ASSIGN_EVENT, {"source": "scheduled", "applied": 1})
+    real_ran_today = mod._class_rec_ran_today
+    mod._class_rec_ran_today = lambda: False   # 外側の確認をすり抜けた形 (同時に入った)
+    mod._class_rec_auto_assign_run = boom
+    try:
+        rx = mod._class_rec_auto_assign_daily(final_attempt=True)
+    finally:
+        mod._class_rec_auto_assign_run = real_run
+        mod._class_rec_ran_today = real_ran_today
+    check("例外の記録も錠の中で「今日もう済んだか」を確かめる (正常な記録の後に error を書かない・メールしない)",
+          rx.get("status") == "skipped_today" and len(events()) == 1 and len(mails) == nm, rx)
+    check("例外の記録は錠の中で書く", "_class_rec_try_db_lock(c)" in inspect.getsource(mod._class_rec_record_error_locked))
+
+    print("7b) YouTube 全断 (1 クラスも取得できない) は 30 分後にやり直し、最後の回だけ記録")
+    q("DELETE FROM events WHERE name = ?", (mod._CLASS_REC_ASSIGN_EVENT,))
+    saved_pages = dict(PAGES)
+    for k in list(PAGES):
+        PAGES[k] = lambda: None
+    nm = len(mails)
+    calls.clear()
+    try:
+        rt = mod._class_rec_auto_assign_daily(final_attempt=False)
+        check("やり直しが残っている回は status=retry・記録もメールもしない",
+              rt.get("status") == "retry" and not events() and len(mails) == nm, rt)
+        check("毎朝の実行は「接続できない」を 1 回読み直してから諦める", calls.get(PL_MON) == 2, calls)
+        rt2 = mod._class_rec_auto_assign_daily(final_attempt=True)
+        rect = rt2.get("record") or {}
+        check("最後の回は error (retryable) を記録して「停止」メール",
+              rt2.get("status") == "done" and "見に行けませんでした" in str(rect.get("error"))
+              and rect.get("retryable") is True and len(mails) == nm + 1 and "停止" in mails[-1][0], rect)
+        check("全断の記録は「今日は済んだ」に数えない (回線が戻った後の再起動で走り直せる)",
+              len(events()) == 1 and not mod._class_rec_ran_today())
+    finally:
+        PAGES.update(saved_pages)
+    check("hazard は「一時的な失敗」に数えない (やり直さず即 error)",
+          not mod._class_rec_assign_is_transient({"refused": "x", "summary": {"sessions_total": 3, "covered": 0},
+                                                  "rows": [{"ok": False}]}))
 
     print("8) 何も無い日はメールしない")
     # 水曜のクラスを閉じる (授業を非公開にし、再生リストも一覧から外す。片方だけだと「0件マッチ」で保留が残る)
@@ -440,6 +579,30 @@ def main():
           and not recq.get("error"), recq)
     check("その日はメールを送らない", len(mails) == nm and rq.get("mailed") is False)
     check("それでも実行記録は残す (生存監視)", len(events()) == 1)
+
+    print("8b) 配布が止まっているクラス (STALE) も知らせる")
+    q("INSERT INTO class_sessions (title, is_published) VALUES (?,1)", ("金曜1限 高校理科",))
+    sid_fri = q("SELECT id FROM class_sessions WHERE title = ?", ("金曜1限 高校理科",))[0]["id"]
+    PL_FRI, V_FRI = "PLtest_fri", "FriOld00001"
+    ALL_IDS.extend([PL_FRI, V_FRI])
+    q("INSERT INTO admin_youtube_playlists (playlist_id, name) VALUES (?,?)", (PL_FRI, "8月以降金曜日1時間目"))
+    old_d = recent(4, 6)
+    q("INSERT INTO class_recordings (session_id, title, video_url, provider, is_published, created_at) "
+      "VALUES (?,?,?,'youtube',1,?)", (sid_fri, md(old_d), f"https://youtu.be/{V_FRI}",
+                                       (datetime.datetime.utcnow() - datetime.timedelta(days=40)).strftime("%Y-%m-%d %H:%M:%S")))
+    PAGES[PL_FRI] = lambda: yt_page([(V_FRI, md(old_d))])
+    q("DELETE FROM events WHERE name = ?", (mod._CLASS_REC_ASSIGN_EVENT,))
+    nm = len(mails)
+    rst = mod._class_rec_auto_assign_daily()
+    recst = rst.get("record") or {}
+    check("STALE は登録も止めず保留にも数えないが、件数を記録に残す",
+          recst.get("stale") == 1 and recst.get("held") == 0 and recst.get("blocking") == 0 and not recst.get("error"), recst)
+    check("STALE だけの日もメールで知らせる", rst.get("mailed") is True and len(mails) == nm + 1
+          and "止まって" in mails[-1][1] and not leaks(mails[-1][0] + mails[-1][1]) if len(mails) > nm else False,
+          mails[-1][0] if mails else "")
+    q("DELETE FROM events WHERE name = ?", (mod._CLASS_REC_ASSIGN_EVENT,))
+    rst2 = mod._class_rec_auto_assign_daily()
+    check("同じ STALE は翌日は送らない", rst2.get("mailed") is False and len(mails) == nm + 1)
 
     print("9) 実行記録は 4000 字で切られても壊れない")
     big = {"today": "2026-10-08", "mode": "apply", "applied": 300, "summary": {}, "rows": [], "planned": [],
@@ -463,13 +626,26 @@ def main():
     print("10) ボタンの応答の形が変わらない")
     base_keys = {"ok", "mode", "today", "summary", "rows", "planned", "problems", "notes",
                  "blocking", "hazard", "applied", "refused", "message"}
+    summary_keys = {"playlist_total", "playlist_named", "sessions_total", "recordings_total", "fetched",
+                    "skipped_name", "covered", "uncovered", "no_playlist"}
     d = button({}).json()
     check("dry-run の応答のキーは従来どおり", set(d) == base_keys, sorted(set(d) ^ base_keys))
+    check("dry-run の応答の値も従来どおり (mode・applied・refused・message・summary のキー)",
+          d.get("mode") == "dry-run" and d.get("applied") == 0 and d.get("refused") is None and d.get("ok") is True
+          and d.get("message") == ("新しい録画はありません。" if not d.get("problems")
+                                   else "登録できる新着はありません (確認が要る項目があります)。")
+          and set(d.get("summary") or {}) == summary_keys and d.get("summary", {}).get("covered") == 4, d.get("message"))
     mon_items.append(("ShapeV00001", md(recent(0, 5))))
     ALL_IDS.append("ShapeV00001")
     a = button({"apply": True, "allow_partial": True}).json()
     check("apply の応答のキーは従来どおり (+ verified / duplicates)",
           set(a) == base_keys | {"verified", "duplicates"}, sorted(set(a) ^ (base_keys | {"verified", "duplicates"})))
+    check("apply の応答の値も従来どおり (mode・applied・verified・duplicates・refused・message)",
+          a.get("mode") == "apply" and a.get("applied") == 1 and a.get("verified") is True and a.get("duplicates") == []
+          and a.get("refused") is None and a.get("message") == "✅ 1件を登録しました (各1件で入っていることを確認済み)"
+          and len(a.get("planned") or []) == 1 and a["planned"][0].get("video") == "Shap…", a.get("message"))
+    d2 = button({}).json()
+    check("登録の後の dry-run は新着 0 (planned 空・applied 0)", d2.get("planned") == [] and d2.get("applied") == 0)
     check("応答に内部用のキー (_ で始まる) を出さない", not [k for k in list(d) + list(a) if k.startswith("_")])
     check("応答に動画IDの生値が載らない", not [x for x in ALL_IDS if x in json.dumps(a, ensure_ascii=False)])
 
@@ -478,7 +654,7 @@ def main():
         for f in FAILURES:
             print(f"   - {f}")
         return 1
-    print("\n=== ALL PASS (定期実行の経路・1日1回・二重登録防止・排他・読み直し・伏せ字・通知・監視・応答の形) ===")
+    print("\n=== ALL PASS (定期実行の経路・1日1回・やり直し・二重登録防止・排他・読み直し・伏せ字・通知の重複抑止・監視・応答の形) ===")
     return 0
 
 

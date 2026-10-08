@@ -513,6 +513,9 @@ def build_plan(today, playlists, sessions, recordings, last_rec, get=None, progr
         "rows": [], "planned": [], "problems": [], "notes": [],
         "blocking": 0, "hazard": 0, "fetched": 0, "skipped_name": 0,
         "covered": 0, "uncovered": [], "no_playlist": [],
+        # 配布が止まっている合図 (STALE・録画0本) の件数。blocking/skipped には数えない (登録は止めない) が、
+        # 毎朝の自動実行はこれで塾長にメールする (ボタンを押さなくなると、画面で見る人がいなくなるため)。
+        "stale": 0,
     }
     problems, notes = rep["problems"], rep["notes"]
     # ★「走査」は実際に YouTube を見に行った本数。名前が読めずに飛ばしたものを
@@ -691,6 +694,7 @@ def build_plan(today, playlists, sessions, recordings, last_rec, get=None, progr
             problems.append(f"{raw_slot}: このクラスの録画が1本も登録されていない "
                             f"(再生リストは {len(items)}本) — 講師が別の再生リストに上げていないか、"
                             f"別のクラスに登録されていないか確認する (新設で初回前なら無視してよい)")
+            rep["stale"] += 1
         if _last:
             _d = _last.date() if hasattr(_last, "date") else _last
             if isinstance(_d, str):
@@ -708,6 +712,7 @@ def build_plan(today, playlists, sessions, recordings, last_rec, get=None, progr
                     problems.append(f"{raw_slot}: 最新の録画が {_age}日前 ({_d}) で止まっている — "
                                     f"再生リストを作り直して名前を付け忘れていないか / "
                                     f"アップロード漏れが無いか確認する (長期休みなら無視してよい)")
+                    rep["stale"] += 1
         line = (f"  {raw_slot:<7} {len(items):>3}本  新着 {fresh} / 登録済 {known} / 保留 {skipped}  "
                 f"{_last_s:<18} [{stitle}]{_note}")
         rep["rows"].append({"slot": raw_slot, "session": stitle, "ok": True, "items": len(items),
