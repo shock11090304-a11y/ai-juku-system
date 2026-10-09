@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""📺 スタサプ講座カタログ (server/main.py のコード定数) の検査ゲート (2026-10-10 スタサプ段階 A)。
+"""📺 スタサプ講座カタログ (server/main.py のコード定数) の検査ゲート (2026-10-10 スタサプ段階 A・B)。
 
 server/main.py を **import せず ast で読む** (標準ライブラリだけ・DB に触れない)。引数なし = 全部を検査する。
 
@@ -16,6 +16,10 @@ server/main.py を **import せず ast で読む** (標準ライブラリだけ�
   6. 旧初期データ (SAPURI_LECTURES_SEED) の参照が残っていない・起動時に sapuri_lectures へ投入しない・
      sapuri_lectures 表を SELECT/INSERT する箇所が無い
   7. 講の題名の置き場にしない: リポジトリに high_category*.tsv / sapuri_lessons_*.json / sapuri_import/ が無い
+  9. 段階 B (講データ): sapuri_lessons / sapuri_lesson_tags / sapuri_topic_lessons の DDL が _schema_sql にあり student_id 列が無い /
+     取込 API は管理者 Bearer だけ (_verify_admin_required・X-Cron-Secret を受けない) / 照合 (_sapuri_recommend) を
+     weakness-top3・週次プリントの共有カーソルで呼ばない / サーバのログに題名 (title) を出さない /
+     文化史 (TIER1_ONLY) は field=文化史 で同じ科目キーの通史が SAPURI_COVERS にある / 史料・テーマ史は照合に使わない
   8. app.js の講数上限表を **実際の JS で** 動かす (node か osascript の JavaScriptCore。CI の ubuntu には node がある):
      SAPURI_COURSES の 138 講座を実行時の表に入れても、参考書のタスク (「セミナー生物 p.100-120」「化学基礎 一問一答 No.30-60」
      「漢文 句法 第15講」等) が入れる前と同じ結果になる / 実行時の鍵に科目名だけ・6 文字未満の鍵が無い /
@@ -45,6 +49,9 @@ KEYS = {"code", "name", "subject", "field", "level", "band", "first", "last", "t
         "weeks", "has_lessons", "notes"}
 
 problems = []
+# 科目キーごとに「この学年帯の講座が無いのが正しい」例外 (科目キー → (学年帯, …))。足すときは理由をコメントに書く。
+#   2026-10-10 時点: 15 科目キーとも 高3 / 高1・2 (全学年を含む) の講座があるので空。
+_BAND_EXCEPTIONS = {}
 
 
 def bad(msg):
@@ -192,6 +199,59 @@ def check_appjs_caps_runtime(courses):
              f"スタサプの上限と第41講・控えの読み直し")
 
 
+def _fn_src(src, tree, name):
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            return ast.get_source_segment(src, node) or ""
+    return None
+
+
+def check_stage_b(src, tree):
+    """[9] 段階 B の構造 (講データの表・取込 API の認証・照合の接続・ログ)。"""
+    print("\n[9] 段階 B (講データの表・取込 API・照合の接続・ログに題名を出さない)")
+    n0 = len(problems)
+    m = re.search(r'_schema_sql = f"""(.*?)"""', src, re.S)
+    schema = m.group(1) if m else ""
+    for tbl, cols in (("sapuri_lessons", ("lesson_key", "course_code", "seq", "title", "active")),
+                      ("sapuri_lesson_tags", ("course_code", "lesson_key", "subject_key", "tag")),
+                      ("sapuri_topic_lessons", ("course_code", "subject_key", "topic_norm", "lesson_key"))):
+        mm = re.search(r"CREATE TABLE IF NOT EXISTS " + tbl + r" \((.*?)\);", schema, re.S)
+        if not mm:
+            bad(f"_schema_sql に {tbl} の CREATE TABLE が無い")
+            continue
+        body = mm.group(1)
+        for col in cols:
+            if not re.search(r"\b" + col + r"\b", body):
+                bad(f"{tbl} に列 {col} が無い")
+        if re.search(r"\bstudent_id\b", body):
+            bad(f"{tbl} に student_id 列がある (生徒の削除・統合の一覧に足す必要が出る。講データは生徒に紐づけない)")
+    if "ON sapuri_lessons(lesson_key)" not in schema:
+        bad("sapuri_lessons(lesson_key) の UNIQUE INDEX が無い (取込の ON CONFLICT(lesson_key) が効かない)")
+    imp = _fn_src(src, tree, "admin_sapuri_lessons_import")
+    if imp is None:
+        bad("取込 API admin_sapuri_lessons_import が無い")
+    else:
+        if "_verify_admin_required(authorization)" not in imp:
+            bad("取込 API が _verify_admin_required で認証していない")
+        if "x_cron_secret" in imp or "_grammar_admin_authed" in imp or "CRON_SECRET" in imp:
+            bad("取込 API が cron の合言葉を受け付けている (GitHub Actions から叩く経路を作らない)")
+    for fname, must in (("student_weakness_top3", "_sapuri_attach_top3(student_id, weaknesses, pool)"),
+                        ("_run_weekly_worksheet_generation", "_sapuri_for_subject_topics(sid, sgrade, subject_topics)")):
+        body = _fn_src(src, tree, fname) or ""
+        if must not in body:
+            bad(f"{fname} が {must} を呼んでいない")
+        if re.search(r"_sapuri_recommend\(\s*c\b|_sapuri_\w+\(\s*c\s*,", body):
+            bad(f"{fname} が共有カーソル c を照合に渡している (Postgres で 1 文の失敗がトランザクションを壊す)")
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name.startswith(("_sapuri", "admin_sapuri", "student_class_sapuri")):
+            seg = ast.get_source_segment(src, node) or ""
+            for line in seg.split("\n"):
+                if re.search(r"\blog\.(info|warning|error|debug)\(", line) and re.search(r"title|題名|\blessons\[", line):
+                    bad(f"{node.name}: ログに題名を出している気配: {line.strip()[:80]}")
+    if len(problems) == n0:
+        good("3 表 (student_id なし・lesson_key の UNIQUE)・取込は管理者 Bearer だけ・照合は自分の接続・ログに題名なし")
+
+
 def main():
     print("📺 スタサプ講座カタログ ゲート (server/main.py を ast で検査)\n")
     src, tree, K = load_consts()
@@ -259,14 +319,25 @@ def main():
                     bad(f"{label}: {code} の {sk} のタグが語彙外 ({tags})")
     for code in set(covers) & set(tier1):
         bad(f"{code} が SAPURI_COVERS と TIER1_ONLY の両方にある")
+    for code, m in tier1.items():
+        c = by_code.get(code)
+        if c and c["field"] != "文化史":
+            bad(f"SAPURI_COVERS_TIER1_ONLY: {code} の field が {c['field']} (文化史だけを置く)")
+        for sk in m:
+            if not any(sk in mm and by_code.get(cc, {}).get("field") == "通史" for cc, mm in covers.items()):
+                bad(f"SAPURI_COVERS_TIER1_ONLY: {code} の {sk} に通史の講座 (SAPURI_COVERS) が無い")
+    for code, c in by_code.items():
+        if c["field"].startswith("史料") and (code in covers or code in tier1):
+            bad(f"{code} (史料・テーマ史) を照合に使っている (段階 B の決定: 使わない)")
     for sk in skeys:
         bands = {by_code[code]["band"] for code, m in covers.items() if sk in m and code in by_code}
-        if not (bands & {"高3", "全学年"}):
-            bad(f"科目キー {sk} に 高3 (または全学年) の講座が無い")
-        if not (bands & {"高1・2", "全学年"}):
-            bad(f"科目キー {sk} に 高1・2 (または全学年) の講座が無い")
+        exc = _BAND_EXCEPTIONS.get(sk, ())
+        if not (bands & {"高3", "全学年"}) and "高3" not in exc:
+            bad(f"科目キー {sk} に 高3 (または全学年) の講座が無い (無いのが正しいなら _BAND_EXCEPTIONS に理由つきで)")
+        if not (bands & {"高1・2", "全学年"}) and "高1・2" not in exc:
+            bad(f"科目キー {sk} に 高1・2 (または全学年) の講座が無い (無いのが正しいなら _BAND_EXCEPTIONS に理由つきで)")
     if len(problems) == n0:
-        good(f"{len(covers)} 講座 (+ 文化史・史料 {len(tier1)}): 実在・語彙内・{len(skeys)} 科目キーとも 高3 / 高1・2 の講座あり")
+        good(f"{len(covers)} 講座 (+ 文化史 {len(tier1)}): 実在・語彙内・{len(skeys)} 科目キーとも 高3 / 高1・2 の講座あり")
 
     print("\n[3] タグの語彙と別名")
     n0 = len(problems)
@@ -370,6 +441,8 @@ def main():
             bad(f"講の題名の元データ・取込ファイルがリポジトリにある: {f}")
         if len(problems) == n0:
             good(f"high_category*.tsv / sapuri_lessons_*.json / sapuri_import/ はリポジトリに無い ({len([f for f in files if f])} ファイル)")
+
+    check_stage_b(src, tree)
 
     check_appjs_caps_runtime(courses)
 

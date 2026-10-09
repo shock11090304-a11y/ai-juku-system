@@ -344,7 +344,10 @@ jobs:
       #   停止スイッチ・宣言と実行時のクラス名)・カリキュラムの保存でスタサプが消えない / 旧文字列と AI の講座名を捨てる /
       #   対象外は空・apply-gap-fix・expand-to-plans の ON CONFLICT (重複が混ざっても他が入る)・AI 弱点プリントに
       #   スタサプを書かせない・/api/sapuri-lectures のカタログ・/api/student/sapuri/status。カタログ定数のゲートも回す。
-      - name: スタサプ 段階 A 回帰テスト
+      #   段階 B: 講データの取込 (管理者だけ・cron 拒否・講数の検査・冪等・他講座を止めない・表が無いと 503)・照合
+      #   (part_key・講座選択・Tier 1/2/3・止めた講)・TOP3 / class.html / 週次プリント (メール・LINE は題名なし) /
+      #   AI 弱点プリントの sapuri・CEO の status / preview / coverage。講の題名はすべて架空 (D1)。
+      - name: スタサプ 段階 A・B 回帰テスト
         if: ${{ !cancelled() }}
         run: |
           python3 -m pip install --quiet httpx

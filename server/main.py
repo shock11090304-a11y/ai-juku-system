@@ -1786,6 +1786,42 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_sapuri_lectures_dev ON sapuri_lectures(subject, suitable_dev_min, suitable_dev_max);
     CREATE UNIQUE INDEX IF NOT EXISTS uq_sapuri_lectures_name_subject
         ON sapuri_lectures(name, subject);
+    -- 📺 スタサプ 段階 B (2026-10-10): 講 (第N講) の一覧と弱点の照合表。講の題名は本番 DB だけに置く (D1・リポジトリに書かない)。
+    --   取込は CEO から 1 講座ずつ (POST /api/admin/sapuri/lessons/import・講座の中だけ入れ替え)。行は消さず active=0 で止める。
+    --   lesson_key = 「講座コード#講番号」(安定キー)。student_id 列は無い (生徒の削除・統合の一覧に足さない)。
+    CREATE TABLE IF NOT EXISTS sapuri_lessons (
+        id {pk},
+        lesson_key TEXT NOT NULL,
+        course_code TEXT NOT NULL,
+        seq INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        active INTEGER NOT NULL DEFAULT 1,
+        source TEXT,
+        imported_at TIMESTAMP
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_sapuri_lessons_key ON sapuri_lessons(lesson_key);
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_sapuri_lessons_course_seq ON sapuri_lessons(course_code, seq);
+    -- 講ごとの弱点タグ (Tier 2)。科目キー × タグは server/main.py の SAPURI_TAG_VOCAB の語だけ
+    CREATE TABLE IF NOT EXISTS sapuri_lesson_tags (
+        id {pk},
+        course_code TEXT NOT NULL,
+        lesson_key TEXT NOT NULL,
+        subject_key TEXT NOT NULL,
+        tag TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_sapuri_lesson_tags ON sapuri_lesson_tags(lesson_key, subject_key, tag);
+    CREATE INDEX IF NOT EXISTS idx_sapuri_lesson_tags_course ON sapuri_lesson_tags(course_code, subject_key, tag);
+    -- 弱点 topic (「タグ(細目)」・NFKC) → 講 (Tier 1)
+    CREATE TABLE IF NOT EXISTS sapuri_topic_lessons (
+        id {pk},
+        course_code TEXT NOT NULL,
+        subject_key TEXT NOT NULL,
+        topic_norm TEXT NOT NULL,
+        lesson_key TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_sapuri_topic_lessons
+        ON sapuri_topic_lessons(course_code, subject_key, topic_norm, lesson_key);
+    CREATE INDEX IF NOT EXISTS idx_sapuri_topic_lessons_topic ON sapuri_topic_lessons(subject_key, topic_norm);
     -- 📄 過去問 → AI 類題生成パイプライン (塾長指示 2026-05-14・γ 究極最適化方式)
     -- 1 PDF を Gemini Flash で解析 → Claude Sonnet で 18 類題バッチ生成 → 3 人検閲 + AI Self-Critique
     -- ⚠️ 著作権法 30 条の 4 遵守: 元問題のテキスト化結果 (Gemini 解析結果) は DB に保存しない。
@@ -2968,10 +3004,10 @@ SAPURI_COVERS = {
     "KZ129000": {"gendai": ["評論", "評論読解", "小説読解"]},
     "KZ354000": {"gendai": ["評論", "評論読解", "小説読解"]},
 }
-# 文化史・史料の講座は「弱点の topic → 講」の対応 (Tier 1) が取り込まれているときだけ候補にする (段階 B)。
+# 文化史の講座は、通史の講座に「弱点の topic → 講」の対応 (Tier 1) が無いときの Tier 1 だけに使う (段階 B)。
+#   史料・テーマ史 (KZ493000) は照合に使わない (2026-10-10 段階 B: 史料問題の弱点 topic が無く、時代タグで当てると誤推薦になる)。
 SAPURI_COVERS_TIER1_ONLY = {
     "KZ121000": {"nihonshi": "*"},
-    "KZ493000": {"nihonshi": "*"},
     "KZ120000": {"sekaishi": "*"},
 }
 # 旧初期データ (2026-05-14・74 講座) の講座名 → 今の講座コード。空 = 架空の講座 (対応なし)。
@@ -6304,6 +6340,7 @@ def _run_weekly_worksheet_generation() -> dict:
                 if not all_problem_ids:
                     continue
                 all_problems = all_problem_ids  # 後方互換変数名
+                subject_topics = _sapuri_for_subject_topics(sid, sgrade, subject_topics)  # 📺 対象生徒だけ (自分の接続)
 
                 # worksheet_archives に保存
                 c.execute(
@@ -6345,7 +6382,7 @@ def _run_weekly_worksheet_generation() -> dict:
                             f"<p>今週の弱点プリントを準備しました。マイページから確認できます:</p>"
                             f"<p><a href='{BASE_URL}/mypage.html?focus=worksheet'>📅 今週の弱点プリントを開く</a></p>"
                             f"<p>苦手分野 ({subject_summary}) から計 {len(all_problems)} 問を抽出しました。</p>"
-                        )
+                        ) + _sapuri_mail_html(subject_topics)
                         # 既存 _send_monitor_email 関数を流用 (subject + body_html + to_email)
                         if "_send_monitor_email" in globals():
                             mail_resp = _send_monitor_email(subj, body_html, to_email=semail)
@@ -6364,6 +6401,7 @@ def _run_weekly_worksheet_generation() -> dict:
                             "subject_summary": subject_summary,
                             "question_count": len(all_problems),
                             "url": BASE_URL,
+                            "sapuri_line": _sapuri_line_text(subject_topics),
                         }
                         line_resp = _do_line_push(int(sid), "weekly_worksheet", params)
                         if isinstance(line_resp, dict) and line_resp.get("ok"):
@@ -6469,7 +6507,8 @@ def student_worksheet_this_week(authorization: Optional[str] = Header(None)):
         ws = {
             "id": _g("id", 0),
             "week_start_date": _g("week_start_date", 1),
-            "subject_topics": json.loads(_g("subject_topics", 2) or "[]") if _g("subject_topics", 2) else [],
+            # 📺 いま対象外の生徒には保存済みの sapuri を外して返す (行は書き換えない・2026-10-10 段階 B)
+            "subject_topics": _sapuri_strip_topics(sid, json.loads(_g("subject_topics", 2) or "[]") if _g("subject_topics", 2) else []),
             "questions": hydrated_questions,
             "question_count": _g("question_count", 4),
             "attempted_at": _g("attempted_at", 5),
@@ -6507,7 +6546,7 @@ def student_worksheet_history(authorization: Optional[str] = Header(None), limit
             out.append({
                 "id": _g("id", 0),
                 "week_start_date": _g("week_start_date", 1),
-                "subject_topics": json.loads(_g("subject_topics", 2) or "[]") if _g("subject_topics", 2) else [],
+                "subject_topics": _sapuri_strip_topics(sid, json.loads(_g("subject_topics", 2) or "[]") if _g("subject_topics", 2) else []),
                 "question_count": _g("question_count", 3),
                 "attempted_at": _g("attempted_at", 4),
                 "score_total": _g("score_total", 5),
@@ -7429,6 +7468,9 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
                 "slow_but_correct": slow_but_correct,
                 "recommended_action": recommended_action,
             })
+        # 📺 2026-10-10 スタサプ段階 B: 対象生徒 (query の student_id の生徒で判定) なら各項目に sapuri を付ける。
+        #   ★メインのループの後・自分の接続で照合する (この関数の共有カーソル c には触らない)。対象外はキーを足さない。
+        _sapuri_el = _sapuri_attach_top3(student_id, weaknesses, pool)
         # 🎯 [review fix #2] 「正答だが遅い単元」は不正確優先ソートの top-N に乗りにくいため、
         #   全単元から別途 1 件 (最も遅い・正答率>=0.6・試行>=3) を time_focus として返す。
         #   mypage が本命の弱点とは別に「明示」表示できる。
@@ -7472,7 +7514,7 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
         except Exception:
             mastered = []
         return {"ok": True, "student_id": student_id, "weaknesses": weaknesses, "time_focus": time_focus,
-                "mastered": mastered, "mastered_count": len(mastered),
+                "mastered": mastered, "mastered_count": len(mastered), "sapuri_eligible": bool(_sapuri_el),
                 "mastery_threshold": {"accuracy": _WEAKNESS_MASTERY_ACCURACY,
                                       "min_attempts": _WEAKNESS_MASTERY_MIN_ATTEMPTS}}
     finally:
@@ -34256,12 +34298,15 @@ LINE_TEMPLATES = {
                 f"心当たりがない場合は無視してください。"
     },
     # 📅 2026-05-22 塾長指示: 週次弱点プリント自動配信
+    # 📺 2026-10-10 スタサプ段階 B: sapuri_line (省略可・既定 '') = 「📺 今週見るスタサプ：講座名 第N講」(題名なし・対象生徒だけ)。
+    #   空なら空行も出さない。
     "weekly_worksheet": lambda p: {
         "type": "text",
         "text": f"📅 今週の弱点プリントが届きました\n\n"
                 f"{p.get('name', '生徒')}さんの苦手分野 ({p.get('subject_summary', '弱点 TOP3')}) から\n"
                 f"計 {p.get('question_count', 0)} 問を準備しました。\n\n"
-                f"マイページから確認できます👇\n"
+                + (f"{p.get('sapuri_line')}\n\n" if p.get('sapuri_line') else "")
+                + f"マイページから確認できます👇\n"
                 f"{p.get('url', BASE_URL)}/mypage.html?focus=worksheet"
     },
     # 📝 2026-06-07 塾長指示: 英文法ドリル配信時に生徒へ能動通知 (「配信=通知ゼロ」問題の恒久対策)
@@ -55652,7 +55697,7 @@ def admin_reject_course_application(app_id: int, payload: CourseApplicationRejec
 # Routes: Weak-Points Worksheet (Phase 4.6 - AI 弱点プリント生成 / 国公立難関大学コース限定)
 # 塾長指示 2026-05-06: 弱点はスタサプ講義で補強 + AI で弱点プリント自動生成
 # 📺 2026-10-10 スタサプ段階 A: AI にスタサプを書かせない (全員分)。AI が記憶で書いた講座名は架空のことがあり、
-#   対象外の生徒 (D2) にも出ていた。sapuri_lectures は段階 A では常に [] (段階 B で対象生徒にサーバ照合の結果を入れる)。
+#   対象外の生徒 (D2) にも出ていた。段階 B: 対象生徒だけ、サーバの照合結果を sapuri_lessons (と互換の sapuri_lectures) で返す。
 # ==========================================================================
 class WorksheetGenRequest(BaseModel):
     subject: str
@@ -55769,8 +55814,9 @@ def generate_weak_points_worksheet(payload: WorksheetGenRequest, request: Reques
                 "answer": _sanitize_text(p.get("answer"), 400) or "",
                 "explanation": _sanitize_text(p.get("explanation"), 600) or "",
             })
-        # 📺 AI の出力にスタサプがあっても使わない (段階 A は常に空。段階 B でサーバ照合の結果だけを入れる)
-        out_lectures = []
+        # 📺 AI の出力にスタサプがあっても使わない。対象生徒だけ、(科目, 入力した topic) をサーバで照合した結果を入れる
+        #   (2026-10-10 段階 B・Tier 3 = 講座だけも可)。sapuri_lectures は旧画面との互換 [{title: label, level, reason}]。
+        out_sapuri, out_lectures = _sapuri_for_worksheet(student["id"], subject, topic)
         out = {
             "ok": True,
             "subject": subject,
@@ -55778,6 +55824,7 @@ def generate_weak_points_worksheet(payload: WorksheetGenRequest, request: Reques
             "weak_point_analysis": _sanitize_text(parsed.get("weak_point_analysis"), 300) or "",
             "problems": out_problems,
             "sapuri_lectures": out_lectures,
+            "sapuri_lessons": out_sapuri,
             "model": data.get("_actual_model"),
         }
         log.info(f"[Worksheet] gen student={student['id']} subj={subject} topic={topic} n={len(out_problems)}")
@@ -56754,8 +56801,8 @@ def student_sapuri_status(request: Request, authorization: Optional[str] = Heade
     return {
         "ok": True,
         "eligible": eligible,
-        # 段階 B (講の一覧 sapuri_lessons の取込) までは常に False
-        "lessons_loaded": False,
+        # 講の一覧 (sapuri_lessons) が取り込まれているか (段階 B)。対象外には常に False
+        "lessons_loaded": _sapuri_lessons_loaded() if eligible else False,
         "course_codes": [c["code"] for c in SAPURI_COURSES if _sapuri_course_allowed(c["code"])] if eligible else [],
         "band": el.get("band") if eligible else None,   # 学年帯 (高3 / 高1・2)。講座を絞る目安
     }
@@ -56784,6 +56831,795 @@ def admin_sapuri_settings_set(payload: SapuriSettingsRequest, request: Request, 
         raise HTTPException(status_code=503, detail="設定を保存できませんでした。もう一度お試しください")
     log.info(f"[Sapuri] enabled={bool(payload.enabled)}")
     return {"ok": True, "enabled": bool(payload.enabled)}
+
+
+# ==========================================================================
+# 📺 スタサプ 段階 B — 講データ (第N講) の取込と照合 (2026-10-10・SPEC2 §4〜§5)
+#   D1: 講の題名は本番 DB (sapuri_lessons) だけに置く。リポジトリ・サーバのログ・認証なしの API・AI のプロンプト・
+#     メール/LINE には出さない。生徒画面に返すのは「その生徒に推薦した回」の題名だけ。テストの題名は架空。
+#   照合の順: コード定数 SAPURI_COVERS で講座を 1 つ決める (講データの有無は見ない・学年帯 → 偏差値) →
+#     その講座の中で Tier 1 (弱点 topic → 講の対応表) → Tier 2 (タグの講が 4 講以下のときだけ) → Tier 3 (講座だけ)。
+#     文化史 (SAPURI_COVERS_TIER1_ONLY) は通史の講座に Tier 1 が無いときの Tier 1 だけに使う。
+#   ★照合は自分の db() を開いて finally で閉じる (呼び出し側の共有カーソルに触らない = Postgres で 1 文の失敗が
+#     TOP3・週次プリントのトランザクションを壊さない)。例外は握って空にする。
+#   表示の決まり: TOP3・class.html・週次プリントは matched_by が topic/tag の項目だけ・1 項目に最初の 1 講 (+範囲)・
+#     項目間で同じ講は 1 回・主因がうっかり/時間/読み違いの弱点には出さない。Tier 3 はカリキュラムと AI 弱点プリントだけ。
+# ==========================================================================
+_SAPURI_TIER2_MAX = 4                                    # タグで引いた講がこれ以下のときだけ Tier 2 (粗いタグで「最初の 4 講」を出さない)
+_SAPURI_FIELD_PRIORITY = {"通史": 0, "文化史": 1}        # 同点のときの講座の優先 (通史 > 文化史 > その他)
+_SAPURI_PART_KEY_SUBJECT = {"nihonshi": "nihonshi", "sekaishi": "sekaishi", "chiri": "chiri", "rinri": "rinri",
+                            "seiji_keizai": "seikei"}    # exam_questions.part_key → 科目キー (kouminka 等は決めない)
+# 科目キー → topic の接頭辞 (科目が別の手がかりで決まったとき、接頭辞を付けて _sapuri_parse_topic に読み直させる)
+_SAPURI_KEY_PREFIX = {"eng_grammar": "英文法", "math": "基礎数学", "physics": "物理", "physics_basic": "物理基礎",
+                      "chemistry": "化学", "chemistry_basic": "化学基礎", "biology_basic": "生物基礎", "nihonshi": "日本史",
+                      "sekaishi": "世界史", "chiri": "地理", "seikei": "政経", "rinri": "倫理", "kobun": "古文",
+                      "kanbun": "漢文", "gendai": "現代文"}
+_SAPURI_UNSHOWN_REASONS = ("careless", "time", "misread")  # 講義を勧めても的外れな主因
+# AI 弱点プリントの科目ラベル (_STUDY_SUBJECTS) → 弱点の科目コード / 接頭辞 / 「語彙全体で 1 科目にだけあるタグ」で決める科目群
+_SAPURI_WS_SUBJECT_CODE = {"英語": "english", "数学": "math", "国語": "japanese", "物理": "physics", "化学": "chemistry",
+                           "生物": "biology"}
+_SAPURI_WS_PREFIX = {"古文": "古文", "漢文": "漢文", "現代文": "現代文", "日本史": "日本史", "世界史": "世界史",
+                     "地理": "地理", "倫理": "倫理", "政経": "政経"}
+_SAPURI_WS_GROUP = {"理科": ("physics", "physics_basic", "chemistry", "chemistry_basic", "biology_basic"),
+                    "社会": ("nihonshi", "sekaishi", "chiri", "seikei", "rinri")}
+_SAPURI_LESSONS_LOADED = {"until": 0.0, "value": False}
+_SAPURI_IMPORT_MAX_TOPICS = 3000                         # 1 講座の topic_lessons の上限 (展開前の件数)
+_SAPURI_IMPORT_CHUNK = 200                               # 複数行 VALUES の 1 文あたりの行数
+
+
+def _sapuri_tables_ready() -> bool:
+    """段階 B の 3 表があるか (起動時 DDL がロック待ちで飛んだデプロイでは無い)。"""
+    return (_table_has_column("sapuri_lessons", "lesson_key") and _table_has_column("sapuri_lesson_tags", "tag")
+            and _table_has_column("sapuri_topic_lessons", "topic_norm"))
+
+
+def _sapuri_lessons_loaded() -> bool:
+    """有効な講が 1 つでも取り込まれているか (60 秒キャッシュ。取込で即時に読み直す)。"""
+    import time as _t
+    now = _t.time()
+    if now < _SAPURI_LESSONS_LOADED["until"]:
+        return bool(_SAPURI_LESSONS_LOADED["value"])
+    val = False
+    if _sapuri_tables_ready():
+        conn = None
+        try:
+            conn = db()
+            c = conn.cursor()
+            c.execute("SELECT COUNT(*) AS n FROM sapuri_lessons WHERE active = 1")
+            r = c.fetchone()
+            val = bool(r and int(r["n"] or 0) > 0)
+        except Exception as e:
+            log.warning(f"[Sapuri] lessons count failed: {type(e).__name__}")
+        finally:
+            if conn is not None:
+                try: conn.close()
+                except Exception: pass
+    _SAPURI_LESSONS_LOADED.update({"until": now + 60.0, "value": val})
+    return val
+
+
+def _sapuri_dominant_reason(raw) -> Optional[str]:
+    """reason_counts (JSON) → 主因。weakness-top3 と同じ決め方 (件数降順 → 指導優先度)。"""
+    try:
+        rc = json.loads(raw) if isinstance(raw, str) else (raw if isinstance(raw, dict) else {})
+    except Exception:
+        rc = {}
+    if not rc:
+        return None
+    pri = {"understanding": 0, "misread": 1, "time": 2, "careless": 3, "other": 4, "guess": 5}
+    try:
+        return sorted(rc.items(), key=lambda kv: (-float(kv[1] or 0), pri.get(kv[0], 99)))[0][0]
+    except Exception:
+        return None
+
+
+def _sapuri_candidates(sk: str, tags: list, table: dict) -> list:
+    """科目キー (とタグ) を扱う講座 (講数が公開のものだけ)。タグが無ければ「その科目の全タグ (*)」の講座を優先。"""
+    out, star = [], []
+    for code, m in table.items():
+        cov = m.get(sk)
+        c = SAPURI_COURSE_BY_CODE.get(code)
+        if cov is None or not c or int(c.get("total_lessons") or 0) <= 0:
+            continue
+        if tags and cov != "*" and not (set(tags) & set(cov)):
+            continue
+        out.append(c)
+        if cov == "*":
+            star.append(c)
+    if not tags and star:
+        return star
+    return out
+
+
+def _sapuri_pick_course(cands: list, band: str, dev: float) -> Optional[dict]:
+    """講座を 1 つ決める (決定的): 学年帯 (全学年は両方) → 無ければもう一方 → 偏差値が範囲内 → 範囲の中央が近い →
+    field (通史 > 文化史) → code。範囲に入るものが無ければ範囲に最も近いもの。"""
+    if not cands:
+        return None
+    inband = [c for c in cands if c["band"] in (band, "全学年")]
+    pool = inband or cands
+
+    def _key(c):
+        lo, hi = float(c["dev_min"]), float(c["dev_max"])
+        dist = 0.0 if lo <= dev <= hi else min(abs(dev - lo), abs(dev - hi))
+        return (dist, abs((lo + hi) / 2.0 - dev), _SAPURI_FIELD_PRIORITY.get(c.get("field"), 5), c["code"])
+    return sorted(pool, key=_key)[0]
+
+
+def _sapuri_lessons_by(c, sql: str, params: tuple) -> list:
+    c.execute(sql, params)
+    out, seen = [], set()
+    for r in c.fetchall() or []:
+        k = r["lesson_key"]
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append({"lesson_key": k, "seq": int(r["seq"]), "title": r["title"]})
+    out.sort(key=lambda x: x["seq"])
+    return out
+
+
+def _sapuri_tier1(c, code: str, sk: str, topic_norm: str) -> list:
+    if not topic_norm:
+        return []
+    return _sapuri_lessons_by(
+        c, "SELECT l.lesson_key AS lesson_key, l.seq AS seq, l.title AS title FROM sapuri_topic_lessons t "
+           "JOIN sapuri_lessons l ON l.lesson_key = t.lesson_key "
+           "WHERE t.course_code = ? AND t.subject_key = ? AND t.topic_norm = ? AND l.active = 1 AND l.course_code = ?",
+        (code, sk, topic_norm, code))
+
+
+def _sapuri_tier2(c, code: str, sk: str, tags: list) -> list:
+    if not tags:
+        return []
+    ph = ",".join("?" * len(tags))
+    return _sapuri_lessons_by(
+        c, "SELECT l.lesson_key AS lesson_key, l.seq AS seq, l.title AS title FROM sapuri_lesson_tags g "
+           "JOIN sapuri_lessons l ON l.lesson_key = g.lesson_key "
+           f"WHERE g.course_code = ? AND g.subject_key = ? AND g.tag IN ({ph}) AND l.active = 1 AND l.course_code = ?",
+        (code, sk, *tags, code))
+
+
+def _sapuri_label(course: dict, lessons: list) -> str:
+    """「📺 スタサプ：{講座名} 第{a}講「{題名}」（第{b}講まで）」/ 講座だけなら「📺 スタサプ：{講座名}」。"""
+    if not lessons:
+        return f"📺 スタサプ：{course['name']}"
+    a = lessons[0]
+    s = f"📺 スタサプ：{course['name']} 第{a['seq']}講「{a['title']}」"
+    if len(lessons) >= 2 and lessons[-1]["seq"] != a["seq"]:
+        s += f"（第{lessons[-1]['seq']}講まで）"
+    return s
+
+
+def _sapuri_part_key_subject(c, sid: int, topic: str) -> Optional[str]:
+    """社会の時代タグ等: この生徒がその topic を解いた問題の part_key が既知の 1 つだけなら科目キー (grammar_drill は除く =
+    exam_question_id が grammar_questions を指すため)。0 個・2 個以上・未知 (kouminka 等) なら None (推測しない)。"""
+    c.execute("SELECT DISTINCT eq.part_key AS part_key FROM question_attempts qa "
+              "JOIN exam_questions eq ON eq.id = qa.exam_question_id "
+              "WHERE qa.student_id = ? AND qa.topic = ? AND qa.source <> 'grammar_drill' "
+              "AND qa.exam_question_id IS NOT NULL LIMIT 5", (sid, topic))
+    pks = {r["part_key"] for r in (c.fetchall() or [])}
+    if len(pks) != 1:
+        return None
+    return _SAPURI_PART_KEY_SUBJECT.get(next(iter(pks)))
+
+
+def _sapuri_match_one(conn, c, sid: int, item: dict, band: str, dev_cache: dict, tables: bool) -> Optional[dict]:
+    """弱点 1 件 → 推薦 (§4.2 の形) / None。conn / c は _sapuri_recommend の自分の接続とそのカーソル。"""
+    subj = str(item.get("subject_code") or "").strip().lower()
+    topic = str(item.get("topic") or "")
+    if subj in ("chugaku", "eiken"):
+        return None
+    p = _sapuri_parse_topic(subj, topic)
+    if p["subject_key"] is None and subj == "social" and p.get("tag") and topic:
+        sk2 = None
+        try:
+            sk2 = _sapuri_part_key_subject(c, sid, topic)
+        except Exception as e:
+            log.warning(f"[Sapuri] part_key lookup failed: {type(e).__name__}")
+            try: conn.rollback()
+            except Exception: pass
+        if not sk2:
+            return None
+        p = _sapuri_parse_topic(None, f"{_SAPURI_KEY_PREFIX[sk2]} {unicodedata.normalize('NFKC', topic).strip()}")
+    sk = p["subject_key"]
+    if not sk or sk not in SAPURI_SUBJECT_KEYS:
+        return None
+    tags = list(p.get("tags") or ([p["tag"]] if p.get("tag") else []))
+    if sk not in dev_cache:
+        dev_cache[sk] = _sapuri_dev_for(c, sid, sk)
+        # _sapuri_dev_for は失敗を握るだけで rollback しない → Postgres で後の照合が全部落ちないよう読み取りを区切る
+        try: conn.rollback()
+        except Exception: pass
+    dev = dev_cache[sk]
+    course = _sapuri_pick_course(_sapuri_candidates(sk, tags, SAPURI_COVERS), band, dev)
+    if not course:
+        return None
+    lessons, matched_by = [], "course"
+    if tables:
+        lessons = _sapuri_tier1(c, course["code"], sk, p["topic_norm"])
+        if lessons:
+            matched_by = "topic"
+        else:
+            # 文化史: 通史の講座に Tier 1 が無いときだけ、その学年帯の文化史の講座の Tier 1 を見る
+            for alt in sorted(_sapuri_candidates(sk, tags, SAPURI_COVERS_TIER1_ONLY), key=lambda x: x["code"]):
+                if alt["band"] not in (band, "全学年"):
+                    continue
+                got = _sapuri_tier1(c, alt["code"], sk, p["topic_norm"])
+                if got:
+                    course, lessons, matched_by = alt, got, "topic"
+                    break
+        if not lessons:
+            got = _sapuri_tier2(c, course["code"], sk, tags)
+            if 0 < len(got) <= _SAPURI_TIER2_MAX:
+                lessons, matched_by = got, "tag"
+    return {"subject_key": sk, "topic": topic, "tag": p.get("tag"), "course_code": course["code"],
+            "course_name": course["name"], "lessons": lessons, "label": _sapuri_label(course, lessons),
+            "matched_by": matched_by}
+
+
+def _sapuri_recommend(student_id, weak_items, *, limit_per_item: int = 1, band: Optional[str] = None) -> list:
+    """📺 弱点 → スタサプの講 (SPEC2 §4.2)。DB だけ・AI なし・**自分の接続** (finally で閉じる)・例外は握って []。
+    weak_items: [{subject_code, topic}] (student_weakness の行)。返り値は weak_items と同じ並びで、
+    要素は {subject_key, topic, tag, course_code, course_name, lessons:[{lesson_key, seq, title}], label,
+    matched_by: "topic"|"tag"|"course"} か None (科目が決まらない・対象科目外)。limit_per_item は 1 (1 項目 1 講座)。
+    ★対象判定 (_sapuri_eligible_by_id) は呼び出し側で行う。band を省くと students.grade から決める。"""
+    items = list(weak_items or [])
+    if not items:
+        return []
+    conn = None
+    try:
+        sid = int(student_id)
+        tables = _sapuri_tables_ready()
+        conn = db()
+        c = conn.cursor()
+        if band is None:
+            c.execute("SELECT grade FROM students WHERE id = ?", (sid,))
+            r = c.fetchone()
+            band = _sapuri_band(r["grade"] if r else None)
+        dev_cache: dict = {}
+        out = []
+        for it in items:
+            try:
+                out.append(_sapuri_match_one(conn, c, sid, it if isinstance(it, dict) else {}, band, dev_cache, tables))
+            except Exception as e:
+                log.warning(f"[Sapuri] match failed sid={sid}: {type(e).__name__}: {str(e)[:120]}")
+                try: conn.rollback()
+                except Exception: pass
+                out.append(None)
+        return out
+    except Exception as e:
+        log.warning(f"[Sapuri] recommend failed: {type(e).__name__}: {str(e)[:120]}")
+        return []
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+
+
+def _sapuri_display(recs: list, reasons: list) -> list:
+    """表示の決まり (TOP3・class.html・週次プリント): matched_by が topic/tag・主因がうっかり/時間/読み違いでない・
+    1 項目に最初の 1 講 (label は範囲つき)・項目間で同じ講は 1 回。返り値は reasons と同じ長さ (出さない項目は None)。"""
+    out, seen = [], set()
+    for i in range(len(reasons)):
+        r = recs[i] if i < len(recs) else None
+        if not r or r.get("matched_by") not in ("topic", "tag") or not r.get("lessons"):
+            out.append(None)
+            continue
+        if (reasons[i] or "") in _SAPURI_UNSHOWN_REASONS:
+            out.append(None)
+            continue
+        first = r["lessons"][0]
+        if first["lesson_key"] in seen:
+            out.append(None)
+            continue
+        seen.add(first["lesson_key"])
+        d = dict(r)
+        d["lessons"] = [first]
+        d["to_seq"] = r["lessons"][-1]["seq"]
+        out.append(d)
+    return out
+
+
+def _sapuri_weak_rows(sid: int, limit: int = 3) -> list:
+    """未習得の弱点の上位 (weakness-top3 と同じ並び・英検/中学を除く) → [{subject, topic, dominant_reason}]。自分の接続。"""
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        try:
+            c.execute(
+                "SELECT subject, topic, reason_counts FROM student_weakness WHERE student_id = ? "
+                "AND subject NOT IN ('eiken', 'chugaku') "
+                "AND NOT (COALESCE(qa_accuracy, -1) >= ? AND COALESCE(qa_attempts, 0) >= ?) "
+                "ORDER BY (CASE WHEN COALESCE(qa_attempts, 0) >= 2 THEN qa_accuracy ELSE 1.0 END) ASC, "
+                "question_count DESC, COALESCE(avg_confidence_score, 0.5) ASC, last_seen_at DESC LIMIT ?",
+                (sid, _WEAKNESS_MASTERY_ACCURACY, _WEAKNESS_MASTERY_MIN_ATTEMPTS, int(limit)))
+            rows = c.fetchall() or []
+            return [{"subject": r["subject"], "topic": r["topic"] or "",
+                     "dominant_reason": _sapuri_dominant_reason(r["reason_counts"])} for r in rows]
+        except Exception as e:
+            # 後付け列 (qa_accuracy / reason_counts) が無いデプロイ直後: 件数順だけで読む
+            log.warning(f"[Sapuri] weak rows fallback: {type(e).__name__}")
+            try: conn.rollback()
+            except Exception: pass
+            c.execute("SELECT subject, topic FROM student_weakness WHERE student_id = ? "
+                      "AND subject NOT IN ('eiken', 'chugaku') ORDER BY question_count DESC LIMIT ?", (sid, int(limit)))
+            return [{"subject": r["subject"], "topic": r["topic"] or "", "dominant_reason": None}
+                    for r in (c.fetchall() or [])]
+    except Exception as e:
+        log.warning(f"[Sapuri] weak rows failed: {type(e).__name__}")
+        return []
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+
+
+def _sapuri_reason_map(sid: int) -> dict:
+    """(subject, topic) → 主因 (週次プリント用・自分の接続)。読めなければ {}。"""
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute("SELECT subject, topic, reason_counts FROM student_weakness WHERE student_id = ?", (sid,))
+        return {(r["subject"], r["topic"] or ""): _sapuri_dominant_reason(r["reason_counts"]) for r in (c.fetchall() or [])}
+    except Exception:
+        return {}
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+
+
+def _sapuri_attach_top3(student_id: int, weaknesses: list, pool: Optional[str]) -> bool:
+    """weakness-top3: 対象生徒 (query の student_id の生徒で判定) なら各項目に sapuri (表示規則を通したもの / None) を付ける。
+    ★メインのループの後に呼ぶ (自分の接続)。対象外・中学プールなら何も付けない (キー自体を足さない)。返り値 = 対象か。"""
+    try:
+        if (pool or "").strip().lower() == "chugaku" or not weaknesses:
+            return False
+        if not _sapuri_eligible_by_id(student_id).get("eligible"):
+            return False
+        recs = _sapuri_recommend(student_id, [{"subject_code": w.get("subject"), "topic": w.get("topic")} for w in weaknesses])
+        disp = _sapuri_display(recs, [w.get("dominant_reason") for w in weaknesses])
+        for w, d in zip(weaknesses, disp):
+            w["sapuri"] = d
+        return True
+    except Exception as e:
+        log.warning(f"[Sapuri] top3 attach failed: {type(e).__name__}")
+        return False
+
+
+def _sapuri_for_subject_topics(student_id, grade, subject_topics: list) -> list:
+    """週次弱点プリント (_run_weekly_worksheet_generation) が INSERT 直前に 1 行で呼ぶ。対象生徒なら subject_topics の
+    各要素に sapuri (表示規則を通したもの) を足した新しいリストを返す。対象外・失敗は元のまま (自分の接続・共有カーソルに触らない)。"""
+    try:
+        if not subject_topics or not _sapuri_eligible_by_id(student_id).get("eligible"):
+            return subject_topics
+        sid = int(student_id)
+        rmap = _sapuri_reason_map(sid)
+        items = [{"subject_code": (s or {}).get("subject"), "topic": (s or {}).get("topic")} for s in subject_topics]
+        recs = _sapuri_recommend(sid, items, band=_sapuri_band(grade))
+        disp = _sapuri_display(recs, [rmap.get(((s or {}).get("subject"), (s or {}).get("topic") or "")) for s in subject_topics])
+        out = []
+        for s, d in zip(subject_topics, disp):
+            q = dict(s) if isinstance(s, dict) else s
+            if d and isinstance(q, dict):
+                q["sapuri"] = d
+            out.append(q)
+        return out
+    except Exception as e:
+        log.warning(f"[Sapuri] weekly attach failed sid={student_id}: {type(e).__name__}")
+        return subject_topics
+
+
+def _sapuri_weekly_lines(subject_topics) -> list:
+    """週次メール・LINE の 1 行 (講座名と講番号だけ・題名なし・最大 2 件)。"""
+    out = []
+    for s in (subject_topics if isinstance(subject_topics, list) else []):
+        d = (s or {}).get("sapuri") if isinstance(s, dict) else None
+        if not isinstance(d, dict) or not d.get("lessons"):
+            continue
+        out.append(f"📺 今週見るスタサプ：{d.get('course_name') or ''} 第{d['lessons'][0].get('seq')}講")
+        if len(out) >= 2:
+            break
+    return out
+
+
+def _sapuri_mail_html(subject_topics) -> str:
+    lines = _sapuri_weekly_lines(subject_topics)
+    return ("<p>" + "<br>".join(_html_mod.escape(x) for x in lines) + "</p>") if lines else ""
+
+
+def _sapuri_line_text(subject_topics) -> str:
+    return "\n".join(_sapuri_weekly_lines(subject_topics))
+
+
+def _sapuri_strip_topics(student_id, subject_topics):
+    """/this-week・/history: いま対象外の生徒には保存済みの sapuri を外して返す (行は書き換えない)。"""
+    if not isinstance(subject_topics, list) or not any(isinstance(s, dict) and "sapuri" in s for s in subject_topics):
+        return subject_topics
+    if _sapuri_eligible_by_id(student_id).get("eligible"):
+        return subject_topics
+    return [({k: v for k, v in s.items() if k != "sapuri"} if isinstance(s, dict) else s) for s in subject_topics]
+
+
+def _sapuri_ws_item(subject_label: str, topic: str) -> Optional[dict]:
+    """AI 弱点プリントの (科目ラベル, 自由入力の topic) → 照合の 1 件 / None。理科・社会はタグが語彙全体で 1 科目にだけ
+    あるときだけ確定 (2 科目以上に当たれば推測しない)。地学・情報・小論文などは None。"""
+    lab = str(subject_label or "").strip()
+    t = unicodedata.normalize("NFKC", str(topic or "")).strip()
+    if lab in _SAPURI_WS_SUBJECT_CODE:
+        return {"subject_code": _SAPURI_WS_SUBJECT_CODE[lab], "topic": t}
+    if lab in _SAPURI_WS_PREFIX:
+        return {"subject_code": None, "topic": f"{_SAPURI_WS_PREFIX[lab]} {t}".strip()}
+    if lab in _SAPURI_WS_GROUP and t:
+        hits = []
+        for sk in _SAPURI_WS_GROUP[lab]:
+            p = _sapuri_parse_topic(None, f"{_SAPURI_KEY_PREFIX[sk]} {t}")
+            if p.get("tags"):
+                hits.append(sk)
+        if len(hits) == 1:
+            return {"subject_code": None, "topic": f"{_SAPURI_KEY_PREFIX[hits[0]]} {t}"}
+    return None
+
+
+def _sapuri_for_worksheet(student_id: int, subject_label: str, topic: str) -> tuple:
+    """AI 弱点プリント: 対象生徒なら (科目ラベル, 自由入力 topic) をサーバで照合 → (sapuri_lessons, 互換 sapuri_lectures)。
+    Tier 3 (講座だけ) も返す。AI の出力のスタサプは使わない。対象外・科目が決まらなければ ([], [])。"""
+    try:
+        if not _sapuri_eligible_by_id(student_id).get("eligible"):
+            return [], []
+        it = _sapuri_ws_item(subject_label, topic)
+        if not it:
+            return [], []
+        recs = [r for r in _sapuri_recommend(student_id, [it]) if r]
+        return recs, [{"title": r["label"], "level": "", "reason": ""} for r in recs]
+    except Exception as e:
+        log.warning(f"[Sapuri] worksheet match failed: {type(e).__name__}")
+        return [], []
+
+
+@app.get("/api/student/class/sapuri")
+def student_class_sapuri(request: Request, authorization: Optional[str] = Header(None)):
+    """📺 通塾生アプリ (class.html) の「今週見るスタサプ」カード (SPEC2 §5.1)。対象生徒にだけ、未習得の弱点の上位から
+    表示規則を通した最大 3 行。対象外・0 件は items=[] (カードごと出さない)。AI 呼び出しなし。
+    ★prefix /api/student/class/ は AIなし枠でも許可済み (許可集合は変えない)。本人のトークンだけ。"""
+    _check_rate_limit_ip(request, bucket="class_sapuri", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    sid = int(student["id"])
+    if not _sapuri_eligible_by_id(sid).get("eligible"):
+        return {"ok": True, "items": []}
+    rows = _sapuri_weak_rows(sid, limit=8)
+    recs = _sapuri_recommend(sid, [{"subject_code": r["subject"], "topic": r["topic"]} for r in rows])
+    disp = _sapuri_display(recs, [r["dominant_reason"] for r in rows])
+    items = []
+    for r, d in zip(rows, disp):
+        if d:
+            items.append(dict(d, subject=r["subject"]))
+        if len(items) >= 3:
+            break
+    return {"ok": True, "items": items}
+
+
+class SapuriImportRequest(BaseModel):
+    # 型は緩く受けて自前で検査する (1 件の不正で 422 にせず、講座ごとに理由を返す)
+    dry_run: bool = False
+    course_code: Optional[str] = None
+    source: Optional[str] = None
+    lessons: list = []
+    topic_lessons: list = []
+
+
+def _sapuri_import_validate(payload: SapuriImportRequest) -> dict:
+    """取込 1 講座の検査 → {course, lessons:[(seq, title)], tags:[(seq, sk, tag)], topics:[(sk, norm, [seq])], dropped}。
+    講座ごと拒否する違反は HTTPException(400)。"""
+    code = str(payload.course_code or "").strip()
+    course = SAPURI_COURSE_BY_CODE.get(code)
+    if not course:
+        raise HTTPException(status_code=400, detail=f"講座コードがカタログにありません: {code[:40]}")
+    if not course.get("has_lessons"):
+        raise HTTPException(status_code=400, detail=f"この講座は講義一覧を取り込まない講座です (講数が公式と合わない等): {code}")
+    first, last = int(course["first"]), int(course["last"])
+    raw = payload.lessons if isinstance(payload.lessons, list) else []
+    if len(raw) > 200:
+        raise HTTPException(status_code=400, detail="講が多すぎます (1 講座 200 講まで)")
+    lessons, tags, seen = [], [], set()
+    dropped_tags, dropped_topics = [], []
+    for it in raw:
+        if not isinstance(it, dict):
+            raise HTTPException(status_code=400, detail="lessons の要素が不正です")
+        try:
+            seq = int(it.get("seq"))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="seq が整数ではありません")
+        if not (first <= seq <= last):
+            raise HTTPException(status_code=400, detail=f"seq {seq} が講座の範囲 第{first}〜{last}講 の外です")
+        if seq in seen:
+            raise HTTPException(status_code=400, detail=f"seq {seq} が重複しています")
+        seen.add(seq)
+        title = str(it.get("title") or "").strip()
+        if not (1 <= len(title) <= 80):
+            raise HTTPException(status_code=400, detail=f"第{seq}講の題名が空か 80 字を超えています")
+        if re.search(r"[\r\n<>]", title) or "&lt;" in title or "&gt;" in title:
+            raise HTTPException(status_code=400, detail=f"第{seq}講の題名に改行や HTML が含まれています")
+        if "講師" in title or "先生" in title:
+            raise HTTPException(status_code=400, detail=f"第{seq}講の題名に講師名の気配 (講師/先生) があります")
+        lessons.append((seq, title))
+        for tg in (it.get("tags") if isinstance(it.get("tags"), list) else [])[:20]:
+            sk = str((tg or {}).get("subject_key") or "").strip() if isinstance(tg, dict) else ""
+            tag = str((tg or {}).get("tag") or "").strip() if isinstance(tg, dict) else ""
+            if sk in SAPURI_SUBJECT_KEYS and tag in SAPURI_TAG_VOCAB.get(sk, []):
+                if (seq, sk, tag) not in tags:
+                    tags.append((seq, sk, tag))
+            else:
+                dropped_tags.append({"seq": seq, "subject_key": sk[:30], "tag": tag[:30]})
+    if len(lessons) != last - first + 1:
+        raise HTTPException(status_code=400, detail=(
+            f"講数が公式と違うので取り込みません: {course['name']} (ファイル {len(lessons)} 講 / 公式 第{first}〜{last}講)"))
+    raw_t = payload.topic_lessons if isinstance(payload.topic_lessons, list) else []
+    if len(raw_t) > _SAPURI_IMPORT_MAX_TOPICS:
+        raise HTTPException(status_code=400, detail=f"topic_lessons が多すぎます ({_SAPURI_IMPORT_MAX_TOPICS} 件まで)")
+    topics = []
+    seen_t = set()
+    for it in raw_t:
+        if not isinstance(it, dict):
+            dropped_topics.append({"topic_norm": "", "why": "形式"})
+            continue
+        sk = str(it.get("subject_key") or "").strip()
+        norm = unicodedata.normalize("NFKC", str(it.get("topic_norm") or it.get("topic") or "")).strip()
+        seqs = it.get("seqs") if isinstance(it.get("seqs"), list) else []
+        try:
+            seqs = sorted({int(x) for x in seqs})
+        except (TypeError, ValueError):
+            seqs = []
+        why = None
+        if sk not in SAPURI_SUBJECT_KEYS:
+            why = "科目キー"
+        elif not norm or len(norm) > 120:
+            why = "topic"
+        elif not (1 <= len(seqs) <= 3) or any(s not in seen for s in seqs):
+            why = "講番号"
+        if why:
+            dropped_topics.append({"subject_key": sk[:30], "topic_norm": norm[:60], "why": why})
+            continue
+        if (sk, norm) in seen_t:
+            continue
+        seen_t.add((sk, norm))
+        topics.append((sk, norm, seqs))
+    return {"course": course, "lessons": sorted(lessons), "tags": tags, "topics": topics,
+            "dropped": {"tags": dropped_tags[:200], "topics": dropped_topics[:200]}}
+
+
+def _sapuri_lesson_key(code: str, seq: int) -> str:
+    return f"{code}#{int(seq)}"
+
+
+@app.post("/api/admin/sapuri/lessons/import")
+def admin_sapuri_lessons_import(payload: SapuriImportRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """📺 スタサプの講義一覧を 1 講座ずつ取り込む (SPEC2 §4.3)。管理者 Bearer だけ (X-Cron-Secret は受け付けない =
+    GitHub Actions から叩く経路を作らない)。講座の中だけ入れ替える (他の講座は止めない)。冪等。
+    - 空の dry_run (course_code なし) は版の確認だけ: {ok, match:"lesson_key", dry_run:true, probe:true}
+    - 講数が公式 (last-first+1) と違う講座は丸ごと拒否 (400)。表が無いデプロイ直後は 503。
+    ★ログには講座コードと件数だけを出す (題名は出さない = D1)。"""
+    _check_rate_limit_ip(request, bucket="admin_sapuri_import", limit=120, window=60)
+    _verify_admin_required(authorization)
+    if not _sapuri_tables_ready():
+        raise HTTPException(status_code=503, detail="表の準備待ちです (デプロイ直後は数分かかります)")
+    if payload.dry_run and not str(payload.course_code or "").strip() and not payload.lessons:
+        return {"ok": True, "match": "lesson_key", "dry_run": True, "probe": True}
+    v = _sapuri_import_validate(payload)
+    course = v["course"]
+    code = course["code"]
+    key_of = {seq: _sapuri_lesson_key(code, seq) for seq, _ in v["lessons"]}
+    tag_rows = [(code, key_of[seq], sk, tag) for seq, sk, tag in v["tags"]]
+    topic_rows = []
+    seen_tr = set()
+    for sk, norm, seqs in v["topics"]:
+        for s in seqs:
+            k = (sk, norm, key_of[s])
+            if k not in seen_tr:
+                seen_tr.add(k)
+                topic_rows.append((code, sk, norm, key_of[s]))
+    sample = [{"seq": s, "title": t} for s, t in (v["lessons"][:2] + v["lessons"][-1:])] if v["lessons"] else []
+    if len(v["lessons"]) <= 2:
+        sample = [{"seq": s, "title": t} for s, t in v["lessons"]]
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute("SELECT seq FROM sapuri_lessons WHERE course_code = ? AND active = 1", (code,))
+        file_seqs = set(key_of)
+        retire = sorted({int(r["seq"]) for r in (c.fetchall() or [])} - file_seqs)
+        resp = {"ok": True, "match": "lesson_key", "course_code": code, "course_name": course["name"],
+                "dry_run": bool(payload.dry_run), "lessons": len(v["lessons"]), "tags": len(tag_rows),
+                "topic_lessons": len(topic_rows), "retired": len(retire), "dropped": v["dropped"], "sample": sample,
+                "idempotent": True}
+        if payload.dry_run:
+            return resp
+        now = datetime.now(timezone.utc).isoformat()
+        src = _sanitize_text(payload.source, 100) or "import"
+        rows = [(key_of[s], code, s, t, 1, src, now) for s, t in v["lessons"]]
+        for i in range(0, len(rows), _SAPURI_IMPORT_CHUNK):
+            chunk = rows[i:i + _SAPURI_IMPORT_CHUNK]
+            c.execute(
+                "INSERT INTO sapuri_lessons (lesson_key, course_code, seq, title, active, source, imported_at) VALUES "
+                + ",".join(["(?, ?, ?, ?, ?, ?, ?)"] * len(chunk))
+                + " ON CONFLICT(lesson_key) DO UPDATE SET course_code = excluded.course_code, seq = excluded.seq, "
+                  "title = excluded.title, active = 1, source = excluded.source, imported_at = excluded.imported_at",
+                tuple(x for r in chunk for x in r))
+        if retire:
+            ph = ",".join("?" * len(retire))
+            c.execute(f"UPDATE sapuri_lessons SET active = 0 WHERE course_code = ? AND seq IN ({ph})", (code, *retire))
+        c.execute("DELETE FROM sapuri_lesson_tags WHERE course_code = ?", (code,))
+        for i in range(0, len(tag_rows), _SAPURI_IMPORT_CHUNK):
+            chunk = tag_rows[i:i + _SAPURI_IMPORT_CHUNK]
+            c.execute("INSERT INTO sapuri_lesson_tags (course_code, lesson_key, subject_key, tag) VALUES "
+                      + ",".join(["(?, ?, ?, ?)"] * len(chunk)), tuple(x for r in chunk for x in r))
+        c.execute("DELETE FROM sapuri_topic_lessons WHERE course_code = ?", (code,))
+        for i in range(0, len(topic_rows), _SAPURI_IMPORT_CHUNK):
+            chunk = topic_rows[i:i + _SAPURI_IMPORT_CHUNK]
+            c.execute("INSERT INTO sapuri_topic_lessons (course_code, subject_key, topic_norm, lesson_key) VALUES "
+                      + ",".join(["(?, ?, ?, ?)"] * len(chunk)), tuple(x for r in chunk for x in r))
+        conn.commit()
+        _SAPURI_LESSONS_LOADED.update({"until": 0.0})
+        log.info(f"[Sapuri] import {code}: lessons={len(rows)} tags={len(tag_rows)} topics={len(topic_rows)} "
+                 f"retired={len(retire)} dropped_tags={len(v['dropped']['tags'])} dropped_topics={len(v['dropped']['topics'])}")
+        return resp
+    except HTTPException:
+        raise
+    except Exception as e:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        # ★例外の本文は出さない (Postgres の DETAIL に取込中の値が載りうる = D1)。型名と講座コードだけ
+        log.error(f"[Sapuri] import {code} failed: {type(e).__name__}")
+        return JSONResponse(status_code=500, content={"ok": False, "course_code": code,
+                                                       "error": f"取り込みに失敗しました ({type(e).__name__})。もう一度お試しください (何度でもやり直せます)"})
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+
+
+def _sapuri_course_students() -> list:
+    """CEO 用: 国公立難関大コース (course) か、対象の 3 コマのどれかに在籍している生徒と対象判定。"""
+    if not _table_has_column("students", "class_labels"):
+        return []
+    has_ai = _table_has_column("students", "ai_disabled")
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        cols = "id, name, grade, course, class_labels" + (", ai_disabled" if has_ai else "")
+        c.execute(f"SELECT {cols} FROM students WHERE course = ? OR class_labels LIKE ? OR class_labels LIKE ? "
+                  "ORDER BY id LIMIT 1000", (_STUDY_LOG_TARGET_COURSE, "%国公立コース%", "%日曜 高校国語%"))
+        rows = c.fetchall() or []
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+    out = []
+    for r in rows:
+        labels = set(_parse_labels(r["class_labels"]))
+        if (r["course"] or "") != _STUDY_LOG_TARGET_COURSE and not (labels & set(_SAPURI_COURSE_LABELS_DECLARED)):
+            continue
+        el = _sapuri_eligible_by_id(r["id"])
+        out.append({"id": int(r["id"]), "name": r["name"] or "", "grade": r["grade"] or "",
+                    "band": el.get("band") or _sapuri_band(r["grade"]), "eligible": bool(el.get("eligible")),
+                    "reason": el.get("reason"), "ai_disabled": bool(int(r["ai_disabled"] or 0)) if has_ai else False})
+    return out
+
+
+@app.get("/api/admin/sapuri/status")
+def admin_sapuri_status(authorization: Optional[str] = Header(None)):
+    """📺 CEO「スタサプ講義データ」の状態: 停止スイッチ・設定の健全性・講座ごとの取込講数と最終取込日時・対象生徒の一覧
+    (対象外になった在籍コース生も理由つき)。題名は返さない。"""
+    _verify_admin_required(authorization)
+    _SAPURI_SWITCH_CACHE.update({"until": 0.0})
+    ok, why = _sapuri_config_ok()
+    tables = _sapuri_tables_ready()
+    per = {}
+    if tables:
+        conn = None
+        try:
+            conn = db()
+            c = conn.cursor()
+            c.execute("SELECT course_code, COUNT(*) AS n, SUM(CASE WHEN active = 1 THEN 1 ELSE 0 END) AS act, "
+                      "MAX(imported_at) AS last_at FROM sapuri_lessons GROUP BY course_code")
+            for r in c.fetchall() or []:
+                per[r["course_code"]] = {"lessons_total": int(r["n"] or 0), "lessons_active": int(r["act"] or 0),
+                                         "last_imported_at": str(r["last_at"]) if r["last_at"] else None,
+                                         "tags": 0, "topic_lessons": 0}
+            for tbl, k in (("sapuri_lesson_tags", "tags"), ("sapuri_topic_lessons", "topic_lessons")):
+                c.execute(f"SELECT course_code, COUNT(*) AS n FROM {tbl} GROUP BY course_code")
+                for r in c.fetchall() or []:
+                    per.setdefault(r["course_code"], {"lessons_total": 0, "lessons_active": 0, "last_imported_at": None,
+                                                      "tags": 0, "topic_lessons": 0})[k] = int(r["n"] or 0)
+        finally:
+            if conn is not None:
+                try: conn.close()
+                except Exception: pass
+    used = set(SAPURI_COVERS) | set(SAPURI_COVERS_TIER1_ONLY)
+    courses = []
+    for co in SAPURI_COURSES:
+        if not co["has_lessons"] and co["code"] not in per:
+            continue
+        p = per.get(co["code"]) or {"lessons_total": 0, "lessons_active": 0, "last_imported_at": None, "tags": 0,
+                                    "topic_lessons": 0}
+        courses.append(dict(p, code=co["code"], name=co["name"], subject=co["subject"], first=co["first"],
+                            last=co["last"], has_lessons=co["has_lessons"], used_for_match=co["code"] in used))
+    students = _sapuri_course_students()
+    eligible = [s for s in students if s["eligible"]]
+    return {"ok": True, "enabled": _sapuri_enabled(), "config_ok": ok, "config_reason": why, "tables_ready": tables,
+            "lessons_loaded": _sapuri_lessons_loaded(), "subject_keys": list(SAPURI_SUBJECT_KEYS),
+            "courses": courses, "courses_imported": sum(1 for x in courses if x["lessons_active"] > 0),
+            "lessons_active": sum(x["lessons_active"] for x in courses),
+            "students": students, "eligible_count": len(eligible),
+            "eligible_ai_disabled_count": sum(1 for s in eligible if s["ai_disabled"])}
+
+
+@app.get("/api/admin/sapuri/preview")
+def admin_sapuri_preview(student_id: int, authorization: Optional[str] = Header(None)):
+    """📺 CEO「生徒の見え方」: その生徒の TOP3・週次プリント・class.html に出る 📺 行を生徒画面と同じ形で + 弱点ごとの matched_by。
+    対象外の生徒は eligible=false と理由 (生徒画面には何も出ない)。照合結果は参考として weaknesses に出す。"""
+    _verify_admin_required(authorization)
+    try:
+        sid = int(student_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="student_id が不正です")
+    el = _sapuri_eligible_by_id(sid)
+    rows = _sapuri_weak_rows(sid, limit=8)
+    recs = _sapuri_recommend(sid, [{"subject_code": r["subject"], "topic": r["topic"]} for r in rows]) if rows else []
+    disp = _sapuri_display(recs, [r["dominant_reason"] for r in rows])
+    weaknesses = []
+    for i, r in enumerate(rows):
+        rec = recs[i] if i < len(recs) else None
+        weaknesses.append({"subject": r["subject"], "topic": r["topic"], "dominant_reason": r["dominant_reason"],
+                           "matched_by": (rec or {}).get("matched_by") or "none", "recommendation": rec,
+                           "shown": disp[i] if (i < len(disp) and el.get("eligible")) else None})
+    shown_top3 = [w["shown"] for w in weaknesses[:3] if w["shown"]] if el.get("eligible") else []
+    class_items = [w["shown"] for w in weaknesses if w["shown"]][:3] if el.get("eligible") else []
+    return {"ok": True, "student_id": sid, "eligible": bool(el.get("eligible")), "reason": el.get("reason"),
+            "band": el.get("band"), "top3": shown_top3, "class_items": class_items,
+            "weekly_lines": _sapuri_weekly_lines([{"sapuri": d} for d in shown_top3]),
+            "weaknesses": weaknesses}
+
+
+@app.get("/api/admin/sapuri/coverage")
+def admin_sapuri_coverage(authorization: Optional[str] = Header(None)):
+    """📺 CEO カバー状況: 対象生徒全体の未習得の弱点 (各生徒 上位 30) の matched_by 内訳と、講 (topic/tag) まで
+    推薦できなかった弱点の上位 20 (科目・科目キー・タグ・件数)。その場で計算する (対象は数十名)。"""
+    _verify_admin_required(authorization)
+    counts = {"topic": 0, "tag": 0, "course": 0, "none": 0}
+    missed = {}
+    students = [s for s in _sapuri_course_students() if s["eligible"]]
+    for s in students:
+        rows = _sapuri_weak_rows(s["id"], limit=30)
+        if not rows:
+            continue
+        recs = _sapuri_recommend(s["id"], [{"subject_code": r["subject"], "topic": r["topic"]} for r in rows])
+        for i, r in enumerate(rows):
+            rec = recs[i] if i < len(recs) else None
+            mb = (rec or {}).get("matched_by") or "none"
+            counts[mb] = counts.get(mb, 0) + 1
+            if mb in ("topic", "tag"):
+                continue
+            if rec:
+                key = (r["subject"], rec.get("subject_key"), rec.get("tag"), mb)
+            else:
+                p = _sapuri_parse_topic(r["subject"], r["topic"])
+                key = (r["subject"], p.get("subject_key"), p.get("tag"), mb)
+            ent = missed.setdefault(key, {"subject": key[0], "subject_key": key[1], "tag": key[2], "matched_by": key[3],
+                                          "count": 0, "example_topic": (r["topic"] or "")[:60]})
+            ent["count"] += 1
+    top = sorted(missed.values(), key=lambda x: (-x["count"], str(x["subject"]), str(x["tag"])))[:20]
+    return {"ok": True, "students": len(students), "weaknesses": sum(counts.values()), "matched_by": counts,
+            "unmatched_top": top}
 
 
 # ==========================================================================

@@ -139,7 +139,7 @@ def phase(name, sd, ed, **kw):
 
 
 def main():
-    print("📺 スタサプ 段階 A 回帰テスト\n")
+    print("📺 スタサプ 段階 A・B 回帰テスト\n")
     mod = load_main()
     from fastapi.testclient import TestClient
     client = TestClient(mod.app)
@@ -381,7 +381,16 @@ def main():
         r = client.post("/api/weak-points/generate-worksheet", json={"subject": "英語", "topic": "関係詞", "num_problems": 3},
                         headers=tok(sid))
         j = r.json() if r.status_code == 200 else {}
-        check(f"生徒 {sid}: 200 で sapuri_lectures は常に [] (AI が書いても使わない)", r.status_code == 200 and j.get("sapuri_lectures") == [], r.text)
+        lec = j.get("sapuri_lectures")
+        if sid == sid_ai:
+            check(f"対象外 (生徒 {sid}): 200 で sapuri_lectures / sapuri_lessons は [] (AI が書いても使わない)",
+                  r.status_code == 200 and lec == [] and j.get("sapuri_lessons") == [], r.text)
+        else:
+            # 段階 B: 対象生徒はサーバの照合結果だけ (講データの取込前なので講座だけ = Tier 3)。AI が書いた名前は使わない
+            check(f"対象生徒 (生徒 {sid}): サーバ照合の講座だけ (AI の名前は使わない・取込前は講座だけ)",
+                  r.status_code == 200 and isinstance(lec, list) and len(lec) == 1
+                  and lec[0].get("title") == "📺 スタサプ：高3 ハイレベル英語＜文法編＞" and "AI が書いた" not in r.text
+                  and (j.get("sapuri_lessons") or [{}])[0].get("matched_by") == "course", r.text)
     last = fake.calls[-1]
     check("プロンプトでスタサプの推薦を求めない (出力形式に sapuri_lectures が無い)",
           "sapuri_lectures" not in last["user"] and "スタサプ講義" not in last["user"] and "スタサプ" not in last["system"], last)
@@ -579,13 +588,416 @@ def main():
     check("/api/sapuri-lectures に version (カタログの版)", isinstance(d.get("version"), str) and len(d["version"]) == 12
           and d["version"] == mod.SAPURI_CATALOG_VERSION, d.get("version"))
 
+    # ======================================================================
+    # 段階 B (講データ・照合・表示)。講の題名はすべて架空 (「テスト講義A1」等)。
+    # ======================================================================
+    print("\n[13] 取込 API (管理者だけ・cron の合言葉は拒否・表が無いと 503・講数の検査・dry_run・冪等・他講座を止めない)")
+    mod._RATE_LIMIT_STORE.clear()
+    mod._SAPURI_ELIGIBLE_CACHE.clear()
+
+    def lessons_for(code, prefix, tags=None):
+        co = mod.SAPURI_COURSE_BY_CODE[code]
+        out = []
+        for n in range(co["first"], co["last"] + 1):
+            out.append({"seq": n, "title": f"{prefix}{n}", "tags": (tags or {}).get(n, [])})
+        return out
+
+    EG = "eng_grammar"
+    kza_tags = {n: [{"subject_key": EG, "tag": "時制"}] for n in (1, 2, 3, 4, 7, 8)}   # 粗いタグ (6 講) → Tier 2 にしない
+    kza_tags[5] = [{"subject_key": EG, "tag": "関係詞"}]
+    kza_tags[6] = [{"subject_key": EG, "tag": "関係詞"}]
+    kza_tags[10] = [{"subject_key": EG, "tag": "架空タグ"}, {"subject_key": "nope", "tag": "時制"}]   # 語彙外 → 捨てて報告
+    kza_body = {"course_code": "KZA02000", "source": "test", "lessons": lessons_for("KZA02000", "テスト講義A", kza_tags),
+                "topic_lessons": [{"subject_key": EG, "topic_norm": "仮定法(I wish + 仮定法過去)", "seqs": [9]},
+                                  {"subject_key": EG, "topic_norm": "比較(倍数表現)", "seqs": [11, 12, 13, 14]},   # 4 講 → 捨てる
+                                  {"subject_key": EG, "topic_norm": "比較(最上級)", "seqs": [99]}]}               # 範囲外 → 捨てる
+    IMP = "/api/admin/sapuri/lessons/import"
+    r = client.post(IMP, json=dict(kza_body, dry_run=True))
+    check("取込: 未認証は 401", r.status_code == 401, r.status_code)
+    r = client.post(IMP, json=dict(kza_body, dry_run=True), headers=tok(sid_ok))
+    check("取込: 生徒のトークンは 401", r.status_code == 401, r.status_code)
+    orig_cron = mod.CRON_SECRET
+    mod.CRON_SECRET = "cron-test-secret"
+    try:
+        r = client.post(IMP, json=dict(kza_body, dry_run=True), headers={"X-Cron-Secret": "cron-test-secret"})
+        check("取込: X-Cron-Secret は受け付けない (401・GitHub Actions から叩く経路を作らない)", r.status_code == 401, r.status_code)
+    finally:
+        mod.CRON_SECRET = orig_cron
+    orig_ready = mod._sapuri_tables_ready
+    mod._sapuri_tables_ready = lambda: False
+    try:
+        r = client.post(IMP, json={"dry_run": True}, headers=adm)
+        check("取込: 表が無い (DDL 未反映) なら 503", r.status_code == 503, r.status_code)
+        rr = mod._sapuri_recommend(sid_ok, [{"subject_code": "english", "topic": "関係詞"}])
+        check("表が無いときの照合は講座だけ (落ちない)", rr and rr[0] and rr[0]["matched_by"] == "course" and rr[0]["lessons"] == [], rr)
+    finally:
+        mod._sapuri_tables_ready = orig_ready
+    r = client.post(IMP, json={"dry_run": True}, headers=adm)
+    check("取込: 空の dry_run は版の確認 (match=lesson_key)", r.status_code == 200 and r.json().get("match") == "lesson_key"
+          and r.json().get("probe") is True, r.text)
+
+    def n_rows(sql, args=()):
+        conn = mod.db(); c = conn.cursor()
+        c.execute(sql, args)
+        v = c.fetchone()[0]
+        conn.close()
+        return v
+
+    r = client.post(IMP, json=dict(kza_body, dry_run=True), headers=adm)
+    j = r.json() if r.status_code == 200 else {}
+    check("dry_run: 講数・タグ・topic の件数と見本 (先頭 2 講と最終講)", r.status_code == 200 and j.get("lessons") == 24
+          and j.get("tags") == 8 and j.get("topic_lessons") == 1 and j.get("dry_run") is True
+          and [x["seq"] for x in j.get("sample", [])] == [1, 2, 24], r.text)
+    check("dry_run: 語彙外のタグと範囲外・4 講以上の topic は捨てて報告",
+          len(j.get("dropped", {}).get("tags", [])) == 2 and len(j.get("dropped", {}).get("topics", [])) == 2, j.get("dropped"))
+    check("dry_run は書かない", n_rows("SELECT COUNT(*) FROM sapuri_lessons") == 0)
+
+    bad = dict(kza_body, lessons=kza_body["lessons"][:-1])
+    r = client.post(IMP, json=bad, headers=adm)
+    check("講数が公式 (last-first+1) と違う講座は丸ごと拒否 (400)", r.status_code == 400 and "講数" in r.text, r.text)
+    r = client.post(IMP, json=dict(kza_body, course_code="KZ240000", lessons=lessons_for("KZ240000", "テスト講義S")), headers=adm)
+    check("has_lessons=False の講座 (講数が公式と合わない) は拒否", r.status_code == 400, r.status_code)
+    r = client.post(IMP, json=dict(kza_body, course_code="ZZ999"), headers=adm)
+    check("カタログに無い講座は拒否", r.status_code == 400, r.status_code)
+    bl = [dict(x) for x in kza_body["lessons"]]
+    bl[3]["title"] = "テスト講義 講師の紹介"
+    r = client.post(IMP, json=dict(kza_body, lessons=bl), headers=adm)
+    check("題名に「講師」→ 拒否", r.status_code == 400 and "講師" in r.text, r.text)
+    bl[3]["title"] = "テスト<b>講義</b>"
+    r = client.post(IMP, json=dict(kza_body, lessons=bl), headers=adm)
+    check("題名に HTML → 拒否", r.status_code == 400, r.status_code)
+    bl[3]["title"] = "テ" * 81
+    r = client.post(IMP, json=dict(kza_body, lessons=bl), headers=adm)
+    check("題名が 80 字超 → 拒否", r.status_code == 400, r.status_code)
+    bl = [dict(x) for x in kza_body["lessons"]]
+    bl[1]["seq"] = 1
+    r = client.post(IMP, json=dict(kza_body, lessons=bl), headers=adm)
+    check("seq の重複 → 拒否", r.status_code == 400, r.status_code)
+    check("拒否された取込は何も書かない", n_rows("SELECT COUNT(*) FROM sapuri_lessons") == 0)
+
+    r = client.post(IMP, json=kza_body, headers=adm)
+    check("本番の取込 (KZA02000)", r.status_code == 200 and r.json().get("ok") is True and r.json().get("lessons") == 24, r.text)
+    check("取込の応答に題名は見本だけ", r.status_code == 200 and "テスト講義A7" not in r.text, r.text[:200])
+    # 日本史 (通史 KZ277000) と文化史 (KZ121000) — Tier 1 の対応つき
+    nh_body = {"course_code": "KZ277000", "source": "test", "lessons": lessons_for("KZ277000", "テスト講義N", {
+        n: [{"subject_key": "nihonshi", "tag": "中世"}] for n in range(8, 16)}),
+        "topic_lessons": [{"subject_key": "nihonshi", "topic_norm": "中世(元寇)", "seqs": [12]}]}
+    r = client.post(IMP, json=nh_body, headers=adm)
+    check("本番の取込 (KZ277000)", r.status_code == 200 and r.json().get("lessons") == 28, r.text)
+    bk_body = {"course_code": "KZ121000", "source": "test", "lessons": lessons_for("KZ121000", "テスト講義B"),
+               "topic_lessons": [{"subject_key": "nihonshi", "topic_norm": "近世(元禄文化)", "seqs": [5]}]}
+    r = client.post(IMP, json=bk_body, headers=adm)
+    check("本番の取込 (KZ121000 文化史・補講は取り込まない = 12 講)", r.status_code == 200 and r.json().get("lessons") == 12, r.text)
+    check("他講座を止めない (KZA02000 の 24 講は有効のまま)",
+          n_rows("SELECT COUNT(*) FROM sapuri_lessons WHERE course_code='KZA02000' AND active=1") == 24)
+    before = (n_rows("SELECT COUNT(*) FROM sapuri_lessons"), n_rows("SELECT COUNT(*) FROM sapuri_lesson_tags"),
+              n_rows("SELECT COUNT(*) FROM sapuri_topic_lessons"))
+    r = client.post(IMP, json=kza_body, headers=adm)
+    after = (n_rows("SELECT COUNT(*) FROM sapuri_lessons"), n_rows("SELECT COUNT(*) FROM sapuri_lesson_tags"),
+             n_rows("SELECT COUNT(*) FROM sapuri_topic_lessons"))
+    check("冪等 (同じファイルをもう一度入れても行数が同じ)", r.status_code == 200 and before == after, (before, after))
+    kza2 = json.loads(json.dumps(kza_body))
+    kza2["lessons"][6]["title"] = "テスト講義A7改"
+    r = client.post(IMP, json=kza2, headers=adm)
+    check("題名の修正は上書き (lesson_key で upsert)",
+          r.status_code == 200 and n_rows("SELECT COUNT(*) FROM sapuri_lessons WHERE lesson_key='KZA02000#7' AND title='テスト講義A7改'") == 1)
+    r = client.post(IMP, json=kza_body, headers=adm)
+    st = client.get("/api/student/sapuri/status", headers=tok(sid_ok)).json()
+    check("status API: 取込後は lessons_loaded=true (対象生徒)", st.get("lessons_loaded") is True, st)
+    st = client.get("/api/student/sapuri/status", headers=tok(sid_ai)).json()
+    check("status API: 対象外は lessons_loaded=false", st.get("lessons_loaded") is False, st)
+
+    print("\n[14] 照合 (parse・part_key・講座選択・Tier 1/2/3・止めた講は出さない)")
+    R = mod._sapuri_recommend
+    conn = mod.db(); c = conn.cursor()
+    def eq_row(part):
+        c.execute("INSERT INTO exam_questions (exam_id, part_key, question_data) VALUES (?, ?, ?) RETURNING id",
+                  ("daigaku", part, json.dumps({"questions": []})))
+        return c.fetchone()[0]
+    q_nh, q_se, q_ko = eq_row("nihonshi"), eq_row("sekaishi"), eq_row("kouminka")
+    def qa(sid, topic, qid, source="practice"):
+        c.execute("INSERT INTO question_attempts (student_id, source, exam_question_id, subject, topic, is_correct) "
+                  "VALUES (?, ?, ?, 'social', ?, 0)", (sid, source, qid, topic))
+    qa(sid_ok, "中世(元寇)", q_nh)
+    qa(sid_ok, "中世(元寇)", q_se, source="grammar_drill")   # grammar_drill の id は grammar_questions を指す → 使わない
+    qa(sid_ok, "近世(鎖国)", q_nh)
+    qa(sid_ok, "近世(鎖国)", q_se)                           # 2 科目にまたがる → 推測しない
+    qa(sid_ok, "現代(冷戦)", q_ko)                           # 未知の part_key (kouminka) → 推測しない
+    qa(sid_ok, "近世(元禄文化)", q_nh)
+    conn.commit(); conn.close()
+    rr = R(sid_ok, [{"subject_code": "social", "topic": "中世(元寇)"}, {"subject_code": "social", "topic": "近世(鎖国)"},
+                    {"subject_code": "social", "topic": "現代(冷戦)"}, {"subject_code": "social", "topic": "近世(元禄文化)"}])
+    check("part_key で日本史に確定 (grammar_drill の行は使わない) → Tier 1", rr[0] and rr[0]["subject_key"] == "nihonshi"
+          and rr[0]["course_code"] == "KZ277000" and rr[0]["matched_by"] == "topic" and rr[0]["lessons"][0]["seq"] == 12, rr[0])
+    check("part_key が 2 つ (日本史と世界史) なら推薦しない", rr[1] is None, rr[1])
+    check("未知の part_key (kouminka) なら推薦しない", rr[2] is None, rr[2])
+    check("通史に Tier 1 が無いときだけ文化史の Tier 1", rr[3] and rr[3]["course_code"] == "KZ121000"
+          and rr[3]["matched_by"] == "topic" and rr[3]["lessons"][0]["seq"] == 5, rr[3])
+    rr = R(sid_ok, [{"subject_code": "social", "topic": "日本史 中世(承久の乱)"}])
+    check("日本史の接頭辞があれば part_key なしで決まる・粗い時代タグ (8 講) は講座だけ",
+          rr[0] and rr[0]["course_code"] == "KZ277000" and rr[0]["matched_by"] == "course" and rr[0]["lessons"] == [], rr[0])
+    rr = R(sid_ok, [{"subject_code": "english", "topic": "英文法 関係代名詞(非制限用法)"},
+                    {"subject_code": "english", "topic": "時制(現在完了)"},
+                    {"subject_code": "english", "topic": "仮定法（I wish + 仮定法過去）"},
+                    {"subject_code": "english", "topic": "長文読解"},
+                    {"subject_code": "eiken", "topic": "関係詞"},
+                    {"subject_code": "chugaku", "topic": "英文法 関係詞"},
+                    {"subject_code": "japanese", "topic": "古文"}])
+    check("Tier 2: 具体的なタグ (2 講) → tag・seq 順", rr[0] and rr[0]["matched_by"] == "tag"
+          and [x["seq"] for x in rr[0]["lessons"]] == [5, 6] and rr[0]["course_code"] == "KZA02000", rr[0])
+    check("label は「📺 スタサプ：講座名 第a講「題名」（第b講まで）」", rr[0] and rr[0]["label"] ==
+          "📺 スタサプ：高3 ハイレベル英語＜文法編＞ 第5講「テスト講義A5」（第6講まで）", rr[0] and rr[0]["label"])
+    check("Tier 2 は粗いタグ (5 講以上) なら講座だけ (course)", rr[1] and rr[1]["matched_by"] == "course" and rr[1]["lessons"] == []
+          and rr[1]["label"] == "📺 スタサプ：高3 ハイレベル英語＜文法編＞", rr[1])
+    check("Tier 1: 全角かっこの topic も NFKC で当たる", rr[2] and rr[2]["matched_by"] == "topic"
+          and rr[2]["lessons"][0]["seq"] == 9, rr[2])
+    check("english の語彙外 (長文) は推薦しない", rr[3] is None, rr[3])
+    check("英検・中学の弱点には出さない", rr[4] is None and rr[5] is None, rr[4:6])
+    check("裸の「古文」は古文の講座だけ (Tier 3)", rr[6] and rr[6]["subject_key"] == "kobun" and rr[6]["course_code"] == "KZ016000"
+          and rr[6]["matched_by"] == "course", rr[6])
+    conn = mod.db(); c = conn.cursor()
+    c.execute("UPDATE sapuri_lessons SET active = 0 WHERE lesson_key = 'KZA02000#9'")
+    c.execute("UPDATE sapuri_lessons SET active = 0 WHERE lesson_key = 'KZA02000#5'")
+    conn.commit(); conn.close()
+    rr = R(sid_ok, [{"subject_code": "english", "topic": "仮定法(I wish + 仮定法過去)"}, {"subject_code": "english", "topic": "関係詞"}])
+    check("止めた講 (active=0) は Tier 1 に出さない", rr[0] and rr[0]["matched_by"] == "course", rr[0])
+    check("止めた講 (active=0) は Tier 2 に出さない", rr[1] and [x["seq"] for x in rr[1]["lessons"]] == [6], rr[1])
+    r = client.post(IMP, json=kza_body, headers=adm)   # 取り込み直すと戻る
+    rr = R(sid_ok, [{"subject_code": "english", "topic": "関係詞"}])
+    check("取り込み直すと有効に戻る", rr[0] and [x["seq"] for x in rr[0]["lessons"]] == [5, 6], rr[0])
+
+    # 講座選択 (学年帯・偏差値・全学年)
+    PC, CA = mod._sapuri_pick_course, mod._sapuri_candidates
+    pick = lambda sk, tags, band, dev: (PC(CA(sk, tags, mod.SAPURI_COVERS), band, dev) or {}).get("code")
+    check("英文法 高3・偏差値 61 → ハイ (範囲の中央が近い)", pick(EG, ["関係詞"], "高3", 61) == "KZA02000")
+    check("英文法 高3・偏差値 72 → トップ", pick(EG, ["関係詞"], "高3", 72) == "KZA01000")
+    check("英文法 高3・偏差値 50 → スタンダード", pick(EG, ["関係詞"], "高3", 50) == "KZA03000")
+    check("英文法 高1・2 は高1・2 の講座 (高3 に移らない)", pick(EG, ["関係詞"], "高1・2", 61) == "KZ375000")
+    check("英文法 高1・2・偏差値 40 → ベーシック", pick(EG, ["関係詞"], "高1・2", 40) == "EKZB310000")
+    check("どの範囲にも入らない偏差値は最も近い講座 (30 → ベーシック)", pick(EG, ["関係詞"], "高1・2", 30) == "EKZB310000")
+    check("日本史 高1・2・偏差値 60 → 全学年の講座 (高1・2 にも属する)", pick("nihonshi", ["中世"], "高1・2", 60) == "KZ277000")
+    check("日本史 高3・偏差値 70 → トップ&ハイの通史 (文化史は候補にしない)", pick("nihonshi", ["中世"], "高3", 70) == "KZ373000")
+    check("数学 二次関数 高3 → 数学IAIIB+C の講座", pick("math", ["二次関数"], "高3", 61) in ("MKZA10000_1", "MKZ118000_1", "MKZ371000"))
+    check("数学 二次関数 高1・2 → 高1・2 の数学I の講座", pick("math", ["二次関数"], "高1・2", 61) == "X-h12-high-math1")
+    check("数学 極限 高3 → 数学III+C の講座", pick("math", ["極限"], "高3", 61) == "MKZ135000")
+    check("化学基礎 → 化学基礎の講座 (高3 化学にしない)", pick("chemistry_basic", ["物質量"], "高3", 61) == "KZ282000")
+    check("物理 原子 高3 偏差値 70 → 原子編 (トップ&ハイの本編は原子を扱わない)", pick("physics", ["原子"], "高3", 70) == "KZ123000")
+    check("物理 原子 高3 偏差値 55 → スタンダード (全範囲の講座)", pick("physics", ["原子"], "高3", 55) == "KZ191000")
+    check("物理 力学 高3 偏差値 70 → トップ&ハイの本編", pick("physics", ["力学"], "高3", 70) == "KZA17000")
+    check("史料・テーマ史 (KZ493000) は照合の母集団に無い",
+          "KZ493000" not in mod.SAPURI_COVERS and "KZ493000" not in mod.SAPURI_COVERS_TIER1_ONLY)
+
+    print("\n[15] weakness-top3 の sapuri (対象生徒だけ・表示規則)")
+    conn = mod.db(); c = conn.cursor()
+    def weak(sid, subj, topic, acc, reason):
+        c.execute("INSERT INTO student_weakness (student_id, subject, topic, question_count, avg_confidence_score, last_seen_at, "
+                  "reason_counts, qa_accuracy, qa_attempts) VALUES (?, ?, ?, 5, 0.5, ?, ?, ?, 3)",
+                  (sid, subj, topic, datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                   json.dumps({reason: 3}), acc))
+    for sid in (sid_ok, sid_ai):
+        weak(sid, "english", "関係代名詞(非制限用法)", 0.10, "understanding")   # tag → #5 (〜#6)
+        weak(sid, "english", "関係詞(whose)", 0.20, "understanding")            # 同じ #5 → 2 回目は出さない
+        weak(sid, "english", "仮定法(I wish + 仮定法過去)", 0.30, "careless")   # Tier 1 だが主因がうっかり → 出さない
+        weak(sid, "social", "中世(元寇)", 0.40, "understanding")               # part_key → Tier 1 #12
+        weak(sid, "english", "時制(現在完了)", 0.50, "understanding")           # 粗いタグ → 講座だけ → 出さない
+    conn.commit(); conn.close()
+    r = client.get(f"/api/student/weakness-top3?student_id={sid_ok}&limit=5", headers=tok(sid_ok))
+    j = r.json() if r.status_code == 200 else {}
+    ws = j.get("weaknesses") or []
+    sp = [w.get("sapuri") for w in ws]
+    check("対象生徒: 200・sapuri_eligible=true・全項目に sapuri キー", r.status_code == 200 and j.get("sapuri_eligible") is True
+          and len(ws) == 5 and all("sapuri" in w for w in ws), r.text[:300])
+    check("1 位: タグの講 (最初の 1 講 + 範囲)", sp and sp[0] and sp[0]["matched_by"] == "tag" and len(sp[0]["lessons"]) == 1
+          and sp[0]["lessons"][0]["seq"] == 5 and sp[0]["to_seq"] == 6 and "テスト講義A5" in sp[0]["label"], sp[:1])
+    check("2 位: 同じ講は 2 回出さない", len(sp) > 1 and sp[1] is None, sp[1:2])
+    check("3 位: 主因がうっかりの弱点には出さない", len(sp) > 2 and sp[2] is None, sp[2:3])
+    check("4 位: 社会の時代タグは part_key で日本史 → Tier 1", len(sp) > 3 and sp[3] and sp[3]["course_code"] == "KZ277000"
+          and sp[3]["lessons"][0]["seq"] == 12, sp[3:4])
+    check("5 位: 講座だけ (Tier 3) は TOP3 に出さない", len(sp) > 4 and sp[4] is None, sp[4:5])
+    r = client.get(f"/api/student/weakness-top3?student_id={sid_ai}&limit=5", headers=tok(sid_ai))
+    j = r.json() if r.status_code == 200 else {}
+    check("対象外: sapuri キーが無い・題名も出ない・sapuri_eligible=false", r.status_code == 200
+          and all("sapuri" not in w for w in j.get("weaknesses") or [{}]) and "テスト講義" not in r.text
+          and j.get("sapuri_eligible") is False, r.text[:300])
+    r = client.get(f"/api/student/weakness-top3?student_id={sid_ai}&limit=5", headers=adm)
+    check("管理者が対象外の生徒を引いても対象外の判定 (呼んだ人でなく生徒の行で判定)", r.status_code == 200
+          and all("sapuri" not in w for w in r.json().get("weaknesses") or [{}]), r.text[:200])
+    r = client.get(f"/api/student/weakness-top3?student_id={sid_ok}&limit=5&pool=chugaku", headers=tok(sid_ok))
+    check("中学プールでは付けない", r.status_code == 200 and "テスト講義" not in r.text, r.text[:200])
+    switch(False)
+    try:
+        r = client.get(f"/api/student/weakness-top3?student_id={sid_ok}&limit=5", headers=tok(sid_ok))
+        check("停止スイッチ OFF の間は対象生徒にも出さない", r.status_code == 200 and "テスト講義" not in r.text
+              and all("sapuri" not in w for w in r.json().get("weaknesses") or [{}]), r.text[:200])
+    finally:
+        switch(True)
+    # 照合が落ちても TOP3 は壊れない (自分の接続・例外は握る)
+    orig_rec = mod._sapuri_recommend
+    mod._sapuri_recommend = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
+    try:
+        r = client.get(f"/api/student/weakness-top3?student_id={sid_ok}&limit=5", headers=tok(sid_ok))
+        check("照合が例外でも TOP3 は 200 (sapuri だけ欠ける)", r.status_code == 200 and len(r.json().get("weaknesses") or []) == 5, r.text[:200])
+    finally:
+        mod._sapuri_recommend = orig_rec
+    src = open(MAIN_PY, encoding="utf-8").read()
+    fn = src[src.index("def student_weakness_top3("):src.index("@app.get(\"/api/student/weakness-progress\")")]
+    check("TOP3 の照合は共有カーソルを渡さない (_sapuri_attach_top3 は student_id だけ)",
+          "_sapuri_attach_top3(student_id, weaknesses, pool)" in fn and "_sapuri_recommend(c" not in fn)
+
+    print("\n[16] 通塾生アプリ GET /api/student/class/sapuri")
+    r = client.get("/api/student/class/sapuri")
+    check("未ログインは 401", r.status_code == 401, r.status_code)
+    r = client.get("/api/student/class/sapuri", headers=tok(sid_ok))
+    j = r.json() if r.status_code == 200 else {}
+    items = j.get("items") or []
+    check("対象生徒: 最大 3 行 (タグの講・Tier 1)・うっかり/講座だけ/重複は出さない", r.status_code == 200 and len(items) == 2
+          and [(x["course_code"], x["lessons"][0]["seq"]) for x in items] == [("KZA02000", 5), ("KZ277000", 12)], r.text[:400])
+    r = client.get("/api/student/class/sapuri", headers=tok(sid_ai))
+    check("対象外: items は空 (カードごと出さない)", r.status_code == 200 and r.json().get("items") == [], r.text)
+    sid_noai = make_student(mod, "AIなし枠 H", "sapuri-h@example.org", labels=LABELS3)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("UPDATE students SET ai_disabled = 1 WHERE id = ?", (sid_noai,))
+    conn.commit(); conn.close()
+    mod._AI_DISABLED_CACHE.clear()
+    r = client.get("/api/student/class/sapuri", headers=tok(sid_noai))
+    check("AIなし枠 (塾生アプリのみ) の対象生徒でも 200 (prefix /api/student/class/ は許可済み)", r.status_code == 200
+          and r.json().get("items") == [], r.text)
+    r = client.get(f"/api/student/weakness-top3?student_id={sid_noai}", headers=tok(sid_noai))
+    check("(参考) AIなし枠は weakness-top3 には入れない (許可集合は変えていない)", r.status_code == 403, r.status_code)
+
+    print("\n[17] 週次弱点プリント (subject_topics に sapuri・メールは題名なし・LINE の sapuri_line・対象外は外す)")
+    conn = mod.db(); c = conn.cursor()
+    c.execute("INSERT INTO exam_questions (exam_id, part_key, question_data) VALUES ('daigaku', 'r_long', ?)",
+              (json.dumps({"questions": [{"q": "x"}]}),))
+    c.execute("UPDATE students SET line_user_id = 'U-test-line' WHERE id = ?", (sid_ok,))
+    conn.commit(); conn.close()
+    mails, lines = [], []
+    orig_mail, orig_line = mod._send_monitor_email, mod._do_line_push
+    mod._send_monitor_email = lambda subj, body, to_email=None: (mails.append((to_email, body)) or {"sent": True})
+    mod._do_line_push = lambda sid, tmpl, params: (lines.append((sid, tmpl, params)) or {"ok": True})
+    try:
+        res = mod._run_weekly_worksheet_generation()
+    finally:
+        mod._send_monitor_email, mod._do_line_push = orig_mail, orig_line
+    check("週次プリントが作られる", res.get("worksheets_created", 0) >= 2, res)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("SELECT student_id, subject_topics FROM worksheet_archives WHERE student_id IN (?, ?)", (sid_ok, sid_ai))
+    arch = {r["student_id"]: json.loads(r["subject_topics"]) for r in c.fetchall()}
+    conn.close()
+    st_ok, st_ai = arch.get(sid_ok) or [], arch.get(sid_ai) or []
+    check("対象生徒: subject_topics の 1 位に sapuri (表示規則つき)", st_ok and (st_ok[0].get("sapuri") or {}).get("lessons", [{}])[0].get("seq") == 5
+          and all("sapuri" not in x for x in st_ok[1:]), st_ok)
+    check("対象外: subject_topics に sapuri が無い", st_ai and all("sapuri" not in x for x in st_ai), st_ai)
+    m_ok = next((b for to, b in mails if to == "sapuri-a@example.org"), "")
+    m_ai = next((b for to, b in mails if to == "sapuri-b@example.org"), "")
+    check("メール: 「📺 今週見るスタサプ：講座名 第N講」(題名なし)", "📺 今週見るスタサプ：高3 ハイレベル英語＜文法編＞ 第5講" in m_ok
+          and "テスト講義" not in m_ok, m_ok)
+    check("メール: 対象外には 📺 の行が無い", m_ai and "スタサプ" not in m_ai, m_ai)
+    lp = next((p for s_, t_, p in lines if s_ == sid_ok), {})
+    check("LINE: sapuri_line に講座名と講番号 (題名なし)", lp.get("sapuri_line") == "📺 今週見るスタサプ：高3 ハイレベル英語＜文法編＞ 第5講", lp)
+    txt = mod.LINE_TEMPLATES["weekly_worksheet"](lp)["text"]
+    check("LINE テンプレ: sapuri_line を本文に入れる", "📺 今週見るスタサプ：" in txt and "テスト講義" not in txt, txt)
+    txt0 = mod.LINE_TEMPLATES["weekly_worksheet"]({"name": "テスト", "subject_summary": "english", "question_count": 3, "url": "https://x"})
+    check("LINE テンプレ: sapuri_line が無ければ従来の本文 (空行も足さない)", txt0["text"] ==
+          "📅 今週の弱点プリントが届きました\n\nテストさんの苦手分野 (english) から\n計 3 問を準備しました。\n\nマイページから確認できます👇\nhttps://x/mypage.html?focus=worksheet",
+          txt0["text"])
+    h = mod._sapuri_mail_html([{"sapuri": {"course_name": "高3 トップ&ハイレベル日本史<通史>", "lessons": [{"seq": 3}]}}] * 3)
+    check("メールの行は html.escape・最大 2 件", "&amp;" in h and "&lt;" in h and h.count("📺") == 2, h)
+    r = client.get("/api/student/worksheet/this-week", headers=tok(sid_ok))
+    check("this-week: 対象生徒には sapuri (題名つき)", r.status_code == 200
+          and "テスト講義A5" in json.dumps(r.json().get("worksheet", {}).get("subject_topics"), ensure_ascii=False), r.text[:300])
+    switch(False)
+    try:
+        r = client.get("/api/student/worksheet/this-week", headers=tok(sid_ok))
+        check("this-week: いま対象外 (停止スイッチ OFF) なら sapuri を外す", r.status_code == 200 and "テスト講義" not in r.text
+              and all("sapuri" not in x for x in r.json()["worksheet"]["subject_topics"]), r.text[:300])
+        r = client.get("/api/student/worksheet/history", headers=tok(sid_ok))
+        check("history: いま対象外なら sapuri を外す", r.status_code == 200 and "テスト講義" not in r.text, r.text[:300])
+    finally:
+        switch(True)
+    r = client.get("/api/student/worksheet/history", headers=tok(sid_ok))
+    check("history: 対象生徒には残る", r.status_code == 200 and "テスト講義A5" in r.text, r.text[:300])
+    conn = mod.db(); c = conn.cursor()
+    c.execute("SELECT subject_topics FROM worksheet_archives WHERE student_id = ?", (sid_ok,))
+    check("隠すだけで保存した行は書き換えない", "テスト講義A5" in (c.fetchone()["subject_topics"] or ""))
+    conn.close()
+    src = open(MAIN_PY, encoding="utf-8").read()
+    wfn = src[src.index("def _run_weekly_worksheet_generation("):src.index("@app.get(\"/api/student/worksheet/this-week\")")]
+    check("週次プリントの関数内はヘルパーを 1 行で呼ぶだけ (共有カーソルを渡さない)",
+          wfn.count("_sapuri_for_subject_topics(sid, sgrade, subject_topics)") == 1 and "_sapuri_recommend" not in wfn)
+
+    print("\n[18] AI 弱点プリント (対象生徒だけサーバ照合・AI 出力のスタサプは使わない・理科/社会は 1 科目に決まるときだけ)")
+    mod._RATE_LIMIT_STORE.clear()
+    fake.reply = {"topic_used": "関係詞", "weak_point_analysis": "テスト",
+                  "problems": [{"no": 1, "difficulty": "標準", "question": "Q", "answer": "A", "explanation": "E"}],
+                  "sapuri_lectures": [{"title": "高3 テスト講義Z (AI が書いた名前)", "level": "ハイ", "reason": "x"}]}
+    def ws(sid, subject, topic):
+        r = client.post("/api/weak-points/generate-worksheet", json={"subject": subject, "topic": topic, "num_problems": 3},
+                        headers=tok(sid))
+        return r.status_code, (r.json() if r.status_code == 200 else {}), r.text
+    code, j, t = ws(sid_ok, "英語", "関係詞")
+    sl = j.get("sapuri_lessons") or []
+    check("対象生徒: sapuri_lessons はサーバの照合 (タグの講)", code == 200 and len(sl) == 1 and sl[0]["matched_by"] == "tag"
+          and [x["seq"] for x in sl[0]["lessons"]] == [5, 6], t[:300])
+    check("互換の sapuri_lectures は [{title: label, level:'', reason:''}]・AI の名前は無い",
+          j.get("sapuri_lectures") == [{"title": sl[0]["label"] if sl else None, "level": "", "reason": ""}] and "AI が書いた" not in t, t[:300])
+    check("AI へのプロンプトに題名・スタサプを入れない", "テスト講義" not in fake.calls[-1]["user"] + fake.calls[-1]["system"]
+          and "スタサプ" not in fake.calls[-1]["system"], fake.calls[-1])
+    code, j, t = ws(sid_ok, "古文", "助動詞")
+    check("古文 + 語彙外の入力 → 古文の講座だけ (Tier 3)", code == 200 and (j.get("sapuri_lessons") or [{}])[0].get("course_code") == "KZ016000"
+          and j["sapuri_lessons"][0]["matched_by"] == "course", t[:300])
+    code, j, t = ws(sid_ok, "理科", "力学")
+    check("理科 + 力学 (物理だけの語) → 物理の講座", code == 200 and (j.get("sapuri_lessons") or [{}])[0].get("subject_key") == "physics", t[:300])
+    code, j, t = ws(sid_ok, "社会", "近代")
+    check("社会 + 近代 (日本史・世界史・倫理にある語) → 推薦しない", code == 200 and j.get("sapuri_lessons") == [] and j.get("sapuri_lectures") == [], t[:300])
+    code, j, t = ws(sid_ok, "地学", "地震")
+    check("地学 → 推薦しない", code == 200 and j.get("sapuri_lessons") == [], t[:300])
+    code, j, t = ws(sid_ai, "英語", "関係詞")
+    check("対象外: sapuri_lessons / sapuri_lectures は空", code == 200 and j.get("sapuri_lessons") == [] and j.get("sapuri_lectures") == []
+          and "テスト講義" not in t, t[:300])
+
+    print("\n[19] CEO: status / preview / coverage (管理者だけ・題名は preview だけ)")
+    for path in ("/api/admin/sapuri/status", f"/api/admin/sapuri/preview?student_id={sid_ok}", "/api/admin/sapuri/coverage"):
+        r = client.get(path, headers=tok(sid_ok))
+        check(f"{path.split('?')[0]}: 生徒のトークンは 401", r.status_code == 401, r.status_code)
+    r = client.get("/api/admin/sapuri/status", headers=adm)
+    j = r.json() if r.status_code == 200 else {}
+    byc = {x["code"]: x for x in j.get("courses", [])}
+    stu = {x["id"]: x for x in j.get("students", [])}
+    check("status: 停止スイッチ・設定の健全性・表の有無", r.status_code == 200 and j.get("enabled") is True and j.get("config_ok") is True
+          and j.get("tables_ready") is True, r.text[:300])
+    check("status: 講座ごとの取込講数・最終取込日時", byc.get("KZA02000", {}).get("lessons_active") == 24
+          and byc["KZA02000"].get("last_imported_at") and byc["KZA02000"].get("used_for_match") is True
+          and byc.get("KZ493000", {}).get("used_for_match") is False, byc.get("KZA02000"))
+    check("status: 対象生徒の一覧 (理由つき・AIなし枠の数)", stu.get(sid_ok, {}).get("eligible") is True
+          and stu.get(sid_ai, {}).get("reason") == "labels" and stu.get(sid_two, {}).get("reason") == "labels"
+          and stu.get(sid_noai, {}).get("ai_disabled") is True and j.get("eligible_ai_disabled_count", 0) >= 1, list(stu.values())[:3])
+    check("status: 題名を返さない", "テスト講義" not in r.text)
+    r = client.get(f"/api/admin/sapuri/preview?student_id={sid_ok}", headers=adm)
+    j = r.json() if r.status_code == 200 else {}
+    check("preview: 生徒画面と同じ 📺 行 (TOP3・class.html・週次)", r.status_code == 200 and j.get("eligible") is True
+          and [x["lessons"][0]["seq"] for x in j.get("top3", [])] == [5]
+          and [x["lessons"][0]["seq"] for x in j.get("class_items", [])] == [5, 12]
+          and j.get("weekly_lines") == ["📺 今週見るスタサプ：高3 ハイレベル英語＜文法編＞ 第5講"], r.text[:400])
+    check("preview: 弱点ごとの matched_by", [w["matched_by"] for w in j.get("weaknesses", [])] == ["tag", "tag", "topic", "topic", "course"],
+          [w.get("matched_by") for w in j.get("weaknesses", [])])
+    r = client.get(f"/api/admin/sapuri/preview?student_id={sid_ai}", headers=adm)
+    check("preview: 対象外の生徒は何も出ない (理由つき)", r.status_code == 200 and r.json().get("eligible") is False
+          and r.json().get("top3") == [] and r.json().get("reason") == "labels", r.text[:200])
+    r = client.get("/api/admin/sapuri/coverage", headers=adm)
+    j = r.json() if r.status_code == 200 else {}
+    check("coverage: matched_by の内訳と推薦できなかった弱点の上位", r.status_code == 200 and j.get("matched_by", {}).get("tag", 0) >= 2
+          and j["matched_by"].get("topic", 0) >= 2 and any(x.get("tag") == "時制" and x.get("matched_by") == "course"
+                                                             for x in j.get("unmatched_top", [])), r.text[:400])
+    check("coverage: 題名を返さない", "テスト講義" not in r.text)
+
     print()
     if FAILURES:
         print(f"❌ FAIL: {len(FAILURES)} 件")
         for f in FAILURES:
             print(f"   - {f}")
         return 1
-    print("✅ PASS: スタサプ 段階 A")
+    print("✅ PASS: スタサプ 段階 A・B")
     return 0
 
 
