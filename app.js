@@ -3849,11 +3849,11 @@ async function generateCurriculum() {
 - ③ Lesson/Unit/Chapter: 「Lesson 1」「Unit 5」「Chapter 3」
 **絶対禁止**: 単元名で固定表記 (例: 「世界史B 古代オリエント章」「英文法 関係詞節」)。生徒が複数週にわたって同じ単元名を見ると「進歩感がない」と感じる。代わりに「世界史B 第1章 (古代オリエント)」「英文法 第3講 (関係詞節)」のように **第N表記 + 補足説明** を使うこと。
 
-🔑 **単語帳は1日150語ペース必須 (塾長指示 2026-05-18・スタサプ並み密度)**:
+🔑 **単語帳は1日150語ペース必須 (塾長指示 2026-05-18・高密度)**:
 - 単語帳 (シス単/ターゲット/速読英単語/古文単語/英熟語) のタスクは <strong>1日150語</strong> をデフォルトとする (高速回転式・15-25分・3周回す前提)
 - 例: 月曜「シス単 No.1-150」(20分) → 火曜「シス単 No.151-300」(20分) → ... 14日で 2021語 1周完了
 - 例外: 中学英語レベル/高1の基礎期は 100語/日 で OK / 過去問期は 200-300語/日 で高速回転
-- 「30分で60語」「45分で80語」など低密度は禁止 (スタサプ・東進等の速読派教材で標準は 100-200/日)
+- 「30分で60語」「45分で80語」など低密度は禁止 (速読派教材の標準は 100-200/日)
 
 🔑 **週末は別教材で気分転換 (塾長指示 2026-05-18・控えめローテーション)**:
 - 平日 (月-金) は基幹教材で進捗を稼ぐ (同じ教材を継続)
@@ -3930,41 +3930,52 @@ ${textbookContext}`;
 
   // 📺 スタサプ講座 DB から偏差値マッチング推薦を取得 (塾長指示 2026-05-14)
   // 「高3 トップレベル英語〈構文編〉」のような実在しない講座名を AI が出力するのを防止
+  // 📺 2026-10-10 スタサプ段階 A (D2 塾長決定): スタサプを勧めるのは授業コース (水3・金3・日) の在籍生だけ。
+  //   /api/student/sapuri/status が eligible のときだけ講座カタログを入れる (非 200 = AIなし枠の 403 等は対象外扱い)。
+  //   対象なら関係科目の講座を全部入れる (以前の 8 件で切る処理はやめた)。対象外なら「映像授業サービスは推薦しない」と指示する。
   let sapuriLecturesSnippet = '';
+  let sapuriEligible = false;
   try {
-    const levelText2 = (level || '');
-    const re2 = /(\d{2,3})(?!\s*[年月日時分])/g;
-    const dm2 = [];
-    let mm2;
-    while ((mm2 = re2.exec(levelText2)) !== null) dm2.push(mm2[1]);
-    const devs2 = dm2.map(s => parseInt(s, 10)).filter(n => n >= 30 && n <= 80);
-    const targetDev2 = devs2.length ? Math.round(devs2.reduce((a, b) => a + b, 0) / devs2.length) : null;
-    const params2 = new URLSearchParams({ limit: '80' });
-    if (targetDev2 !== null) params2.set('dev', String(targetDev2));
-    const sl = await fetch(`${BACKEND_URL || ''}/api/sapuri-lectures?${params2}`);
-    if (sl.ok) {
-      const slData = await sl.json();
-      const lectures = (slData && slData.lectures) || [];
+    let st = null;
+    try { st = await idxMmApiFetch('/api/student/sapuri/status'); } catch (_) { st = null; }
+    sapuriEligible = !!(st && st.eligible === true);
+    if (sapuriEligible) {
+      const allowed = new Set(Array.isArray(st.course_codes) ? st.course_codes : []);
+      const levelText2 = (level || '');
+      const re2 = /(\d{2,3})(?!\s*[年月日時分])/g;
+      const dm2 = [];
+      let mm2;
+      while ((mm2 = re2.exec(levelText2)) !== null) dm2.push(mm2[1]);
+      const devs2 = dm2.map(s => parseInt(s, 10)).filter(n => n >= 30 && n <= 80);
+      const targetDev2 = devs2.length ? Math.round(devs2.reduce((a, b) => a + b, 0) / devs2.length) : null;
+      const catalog = await _sapuriCatalogLoad();
+      const lectures = catalog.filter(l => allowed.has(l.code) && l.last > 0
+        && (!st.band || l.grade === st.band || l.grade === '全学年')
+        && (targetDev2 === null || (l.suitable_dev_min - 5 <= targetDev2 && targetDev2 <= l.suitable_dev_max + 5))
+        && _sapuriFocusMatch(l.subject, subjectsList));
       if (lectures.length) {
         const bySubj2 = {};
         lectures.forEach(l => { (bySubj2[l.subject] = bySubj2[l.subject] || []).push(l); });
-        const lines2 = ['', '📺 スタディサプリ講座 DB (偏差値マッチング・実在講座のみ):'];
+        const lines2 = ['', '📺 スタディサプリ講座 (偏差値マッチング・実在講座のみ・講番号の範囲つき):'];
         Object.entries(bySubj2).forEach(([s, list]) => {
           lines2.push(`### ${s}`);
-          list.slice(0, 8).forEach(l => {
-            const tl = l.total_lessons ? `全${l.total_lessons}講` : '';
-            const wk = l.weeks_to_complete ? `${l.weeks_to_complete}週で完了` : '';
+          list.forEach(l => {
+            const tl = `第${l.first}〜${l.last}講`;
+            const wk = l.weeks_to_complete ? `${l.weeks_to_complete}週で完了目安` : '';
             const dev = l.suitable_dev_min ? `偏差値${l.suitable_dev_min}-${l.suitable_dev_max}` : '';
-            const lv = l.level ? `[${l.level}]` : '';
+            const lv = (l.level && l.level !== '—') ? `[${l.level}]` : '';
             const details = [tl, wk, dev, lv].filter(x => x).join(' / ');
             lines2.push(`- **${l.name}**: ${details}`);
           });
         });
-        lines2.push('→ **上記 DB の講座名のみ使用すること**。架空講義名 (例: 「高3 トップレベル英語〈構文編〉」のような実在しない講座) は出力禁止。');
+        lines2.push('→ **上記の講座名のみ使用すること**。講番号は各講座の範囲内 (第N講は範囲を超えない)。上記に無い講座名・講の題名は出力禁止。');
         sapuriLecturesSnippet = '\n\n' + lines2.join('\n');
       }
     }
-  } catch (_) { /* 取得失敗時は無視 */ }
+  } catch (_) { /* 取得失敗時は無視 (対象外と同じ扱い) */ }
+  const sapuriRule = sapuriEligible
+    ? '**スタサプ講座**: 上記スタサプ講座に記載のある講座名と講番号の範囲だけを使用すること。記載のない講座名 (架空) は絶対に出力しないこと。'
+    : '**映像授業サービス (スタディサプリ等) は推薦しないこと**。市販教材だけで設計すること。';
 
   const userMsg = `生徒: ${student.name} (${student.grade})
 志望校: ${goal}
@@ -3977,7 +3988,7 @@ ${level}
 
 上記データベースから生徒のレベル・志望校に合う教材を具体的に指定し、曜日単位の実行可能なカリキュラムを設計してください。ページ範囲・問題番号も示してください。
 **重要**: 主要教材 DB に記載のある教材は、その「全○講/問」の実数値を厳守すること。マドンナ古文が全33講なら第34講以降を出すのは禁止。教材総数を超えない範囲で週次の進捗を逆算配分すること。
-**スタサプ講座**: 上記スタサプ講座 DB に記載のある講座名のみ使用すること。DB にない講座名 (架空) は絶対に出力しないこと。`;
+${sapuriRule}`;
 
   const response = await callClaude(systemPrompt, userMsg, { kind: 'curriculum', maxTokens: 6000, abortKey: CURRICULUM_ABORT_KEY });
   // ★描画する **前に** meta を読む (2026-08-21)。2026-08-20 に demoResponse の保存だけを止めたが、
@@ -4332,6 +4343,13 @@ function spLoad() {
       try { localStorage.setItem(spStorageKey(), JSON.stringify(data)); } catch {}
       try { console.log(`[sp-migration] ${mutated} 件のタスクをマイグレーション (recap/synced_min)`); } catch {}
     }
+    // 📺 2026-10-10: 「第N講」のタスクがあればスタサプの講数表を (1 回だけ) 読みに行く。読めた後の spLoad から新しい上限が効く
+    try {
+      if (!_sapuriRuntimeCaps && Array.isArray(data.tasks)
+          && data.tasks.some(t => t && typeof t.title === 'string' && /第\s*\d+\s*講/.test(t.title))) {
+        _sapuriCatalogLoad();
+      }
+    } catch (_) {}
     return data;
   } catch { return { tasks: [], streak: { current: 0, best: 0, last_active: null } }; }
 }
@@ -4509,10 +4527,11 @@ function _parsePhases(md) {
   return phases;
 }
 
-// 教材ごとの総 unit 数 (server/main.py REFERENCE_BOOKS_SEED / SAPURI_LECTURES_SEED と一致)
+// 教材ごとの総 unit 数 (server/main.py REFERENCE_BOOKS_SEED と一致)
 // 進捗 advance 時に total_units を超えると「(N 周目)」表記で循環させる (塾長指示 2026-05-17)
 // 「ポラリスやスタサプの講義数や章数が反映されていないので実際のページ数との乖離が激しい」報告対応
 // 新しい教材を server seed に追加する際はここにも追記すること
+// 📺 スタサプ講座は 2026-10-10 からこの表に書かない (下の SAPURI_LEGACY_CAPS と /api/sapuri-lectures の実行時の表)
 const TEXTBOOK_TOTAL_UNITS = {
   // 英語 単語帳
   'システム英単語': 2021, 'シス単': 2021,
@@ -4524,27 +4543,6 @@ const TEXTBOOK_TOTAL_UNITS = {
   'Vintage': 1400, 'ヴィンテージ': 1400,
   '大岩のいちばんはじめの英文法': 27,
   '肘井学のゼロから英文法': 33,
-  // スタサプ レベル別英文法・読解・解釈 (24 講)
-  'ベーシックレベル英文法': 24, 'スタンダードレベル英文法': 24,
-  'ハイレベル英文法': 24, 'トップレベル英文法': 24,
-  'スタンダードレベル英語 〈読解編〉': 24, 'ハイレベル英語 〈読解編〉': 24,
-  'トップレベル英語 〈読解編〉': 24,
-  'スタンダードレベル英語〈読解編〉': 24, 'ハイレベル英語〈読解編〉': 24,
-  'トップレベル英語〈読解編〉': 24,
-  'スタンダードレベル英語〈英文解釈編〉': 24, 'ハイレベル英語〈英文解釈編〉': 24,
-  'トップレベル英語〈英文解釈編〉': 24,
-  'スタンダードレベル英語〈長文演習編〉': 24, 'ハイレベル英語〈長文演習編〉': 24,
-  'トップレベル英語〈長文演習編〉': 24,
-  '英作文対策講座': 24,
-  'スタンダードレベル英語〈リスニング編〉': 12, 'ハイレベル英語〈リスニング編〉': 12,
-  // スタサプ 数学
-  'スタンダードレベル数学IA': 40, 'スタンダードレベル数学IIB': 40,
-  'ベーシックレベル数学IAIIB': 40, 'スタンダードレベル数学IAIIB': 40,
-  'ハイレベル数学IAIIB': 40, 'トップレベル数学IAIIB': 40,
-  'スタンダードレベル数学III': 24, 'ハイレベル数学III': 24, 'トップレベル数学III': 24,
-  // スタサプ 古文・漢文
-  'スタンダードレベル古文〈読解編〉': 24, 'ハイレベル古文〈読解編〉': 24,
-  '漢文ベーシックレベル': 12,
   // 英語 構文・読解 (参考書)
   '基礎英文解釈の技術100': 100, '英文解釈の技術100': 100,
   'ポレポレ英文読解プロセス50': 50, 'ポレポレ': 50,
@@ -4625,15 +4623,217 @@ const TEXTBOOK_TOTAL_UNITS = {
   '現代社会一問一答': 180,
 };
 
-// title から教材を検出し総 unit 数を返す。検出失敗時は null (cap なし = 従来通り無制限 advance)
-function _getTextbookCap(title) {
+// 📺 2026-10-10 スタサプ段階 A: スタサプ講座の講数の上限は上の表に手書きしない (旧初期データは架空の講座名・丸めた講数だった)。
+//   /api/sapuri-lectures (講座名と講番号の範囲だけ・講の題名は無い・全生徒が読める) の name / first / last から実行時に作る。
+//   上限は last、折り返しは first から数える (総合問題編の「第41講」を「第1講 (6周目)」に書き換えない)。
+//   API が読めないとき・端末に残った旧名のタスクは下の静的表 (旧名 → [first, last]) で上限を保つ (際限なく第N講が進む不具合の再発防止)。
+//   照合は両側の〈〉＜＞<> ・空白・全角半角 (NFKC) をそろえてから、長い鍵を優先して行う。
+// 旧初期データの講座名 (学年を外した形) → [first, last]。server/main.py の SAPURI_LEGACY_NAME_TO_CODE と SAPURI_COURSES から
+//   作った写し (対応する講座が無い架空の旧名は旧来の上限のまま)。照合はゲート scripts/sapuri_lessons/check_sapuri_catalog.py。
+const SAPURI_LEGACY_CAPS = {
+  "ベーシックレベル英文法": [1, 33],
+  "スタンダードレベル英文法": [1, 24],
+  "ハイレベル英文法": [1, 24],
+  "トップレベル英文法": [1, 24],
+  "スタンダードレベル英語 〈読解編〉": [1, 24],
+  "ハイレベル英語 〈読解編〉": [1, 24],
+  "トップレベル英語 〈読解編〉": [1, 24],
+  "スタンダードレベル英語〈読解編〉": [1, 24],
+  "ハイレベル英語〈読解編〉": [1, 24],
+  "トップレベル英語〈読解編〉": [1, 24],
+  "スタンダードレベル英語〈英文解釈編〉": [1, 8],
+  "ハイレベル英語〈英文解釈編〉": [1, 8],
+  "トップレベル英語〈英文解釈編〉": [1, 8],
+  "スタンダードレベル英語〈長文演習編〉": [1, 8],
+  "ハイレベル英語〈長文演習編〉": [1, 8],
+  "トップレベル英語〈長文演習編〉": [1, 8],
+  "英作文対策講座": [1, 7],
+  "スタンダードレベル英語〈リスニング編〉": [1, 12],
+  "ハイレベル英語〈リスニング編〉": [1, 4],
+  "スタンダードレベル数学IA": [1, 13],
+  "スタンダードレベル数学IIB": [1, 18],
+  "ベーシックレベル数学IAIIB": [1, 40],
+  "スタンダードレベル数学IAIIB": [1, 48],
+  "ハイレベル数学IAIIB": [1, 48],
+  "トップレベル数学IAIIB": [1, 48],
+  "スタンダードレベル数学III": [1, 24],
+  "ハイレベル数学III": [1, 24],
+  "トップレベル数学III": [1, 24],
+  "スタンダードレベル古文〈読解編〉": [1, 10],
+  "ハイレベル古文〈読解編〉": [1, 12],
+  "漢文ベーシックレベル": [1, 26],
+  "スタンダードレベル数学IAIIB+C(ベクトル)": [1, 48],
+  "ハイレベル数学IAIIB+C(ベクトル)": [1, 48],
+  "トップレベル数学IAIIB+C(ベクトル)": [1, 48],
+  "スタンダードレベル数学III+C(平面上の曲線・複素数平面)": [1, 24],
+  "ハイレベル数学III+C(平面上の曲線・複素数平面)": [1, 24],
+  "トップレベル数学III+C(平面上の曲線・複素数平面)": [1, 24],
+  "古文文法ベーシックレベル": [1, 30],
+  "古文文法スタンダードレベル": [1, 19],
+  "漢文スタンダードレベル": [1, 11],
+  "スタンダードレベル現代文": [1, 24],
+  "ハイレベル現代文": [1, 24],
+  "トップレベル現代文": [1, 24],
+  "スタンダードレベル物理": [1, 24],
+  "ハイレベル物理": [1, 48],
+  "トップレベル物理": [1, 48],
+  "スタンダードレベル化学〈理論編〉": [1, 24],
+  "ハイレベル化学〈理論編〉": [1, 48],
+  "トップレベル化学〈理論編〉": [1, 48],
+  "スタンダードレベル化学〈無機編〉": [1, 12],
+  "ハイレベル化学〈無機編〉": [1, 12],
+  "トップレベル化学〈無機編〉": [1, 12],
+  "スタンダードレベル化学〈有機編〉": [1, 22],
+  "ハイレベル化学〈有機編〉": [1, 27],
+  "トップレベル化学〈有機編〉": [1, 27],
+  "スタンダードレベル生物": [1, 48],
+  "ハイレベル生物": [1, 10],
+  "スタンダードレベル日本史〈通史編〉": [1, 28],
+  "トップ&ハイレベル日本史〈通史編〉": [1, 50],
+  "スタンダードレベル世界史〈通史編〉": [1, 29],
+  "トップ&ハイレベル世界史〈通史編〉": [1, 50],
+  "スタンダード&ハイレベル地理": [1, 20],
+  "スタンダード&ハイレベル政治・経済": [1, 20],
+};
+const _SAPURI_CAPS_LS_KEY = 'ai_juku_sapuri_caps_v1';
+let _sapuriRuntimeCaps = null;      // [{name, first, last}] (API から・端末に控え)
+let _sapuriCatalog = null;          // /api/sapuri-lectures の lectures 全件
+let _sapuriCatalogPromise = null;
+let _sapuriCatalogFailedAt = 0;
+let _tbCapIndex = null;             // [{k: 正規化した鍵, label, first, last}] (長い鍵が先)
+
+function _tbNorm(s) {
+  let t = String(s || '');
+  try { t = t.normalize('NFKC'); } catch (_) {}
+  return t.replace(/[〈《<]/g, '<').replace(/[〉》>]/g, '>').replace(/\s+/g, '');
+}
+
+function _sapuriSetRuntimeCaps(list) {
+  const caps = (Array.isArray(list) ? list : [])
+    .filter(l => l && typeof l.name === 'string' && Number.isInteger(l.first) && Number.isInteger(l.last)
+      && l.first >= 1 && l.last >= l.first)
+    .map(l => ({ name: l.name, first: l.first, last: l.last }));
+  if (!caps.length) return;   // 旧サーバ (first/last の無い応答) では作らない = 静的表のまま
+  _sapuriRuntimeCaps = caps;
+  _tbCapIndex = null;
+  try { localStorage.setItem(_SAPURI_CAPS_LS_KEY, JSON.stringify(caps)); } catch (_) {}
+}
+
+// 端末の控え (前回読めた講数表) を先に使う。読めなくても静的表で動く
+(function () {
+  try {
+    const raw = localStorage.getItem(_SAPURI_CAPS_LS_KEY);
+    const v = raw ? JSON.parse(raw) : null;
+    if (Array.isArray(v)) _sapuriSetRuntimeCaps(v);
+  } catch (_) {}
+})();
+
+// 📺 スタサプ講座カタログ (全件) を 1 回だけ読む。失敗は [] (5 分は読み直さない)。上限表もここで作り直す
+function _sapuriCatalogLoad() {
+  if (_sapuriCatalog) return Promise.resolve(_sapuriCatalog);
+  if (_sapuriCatalogPromise) return _sapuriCatalogPromise;
+  if (_sapuriCatalogFailedAt && Date.now() - _sapuriCatalogFailedAt < 300000) return Promise.resolve([]);
+  _sapuriCatalogPromise = (async () => {
+    try {
+      const base = (typeof BACKEND_URL !== 'undefined' && BACKEND_URL) ? BACKEND_URL : '';
+      const r = await fetch(`${base}/api/sapuri-lectures?limit=200`);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      const list = (d && Array.isArray(d.lectures)) ? d.lectures : [];
+      _sapuriCatalog = list;
+      _sapuriSetRuntimeCaps(list);
+      return list;
+    } catch (_) {
+      _sapuriCatalogFailedAt = Date.now();
+      return [];
+    } finally {
+      _sapuriCatalogPromise = null;
+    }
+  })();
+  return _sapuriCatalogPromise;
+}
+
+// AI コーチングの「重点科目」(英語,数学,国語,理科,社会 / 物理 等) にカタログの科目が入るか
+function _sapuriFocusMatch(subj, focusList) {
+  const list = Array.isArray(focusList) ? focusList : [];
+  if (!list.length) return true;
+  const groups = { '理科': ['物理', '化学', '生物', '地学'], '社会': ['日本史', '世界史', '地理', '政経', '倫理', '公共'],
+                   '国語': ['国語'], '現代文': ['国語'], '古文': ['国語'], '漢文': ['国語'] };
+  return list.some(f => {
+    const ff = String(f || '');
+    if (!ff) return false;
+    if (ff.indexOf(subj) !== -1 || subj.indexOf(ff) !== -1) return true;
+    return Object.keys(groups).some(g => ff.indexOf(g) !== -1 && groups[g].indexOf(subj) !== -1);
+  });
+}
+
+function _tbBuildIndex() {
+  const m = new Map();
+  const put = (label, first, last) => {
+    const k = _tbNorm(label);
+    if (k && first >= 1 && last >= first) m.set(k, { label: label, first: first, last: last });
+  };
+  Object.keys(TEXTBOOK_TOTAL_UNITS).forEach(k => put(k, 1, TEXTBOOK_TOTAL_UNITS[k]));
+  Object.keys(SAPURI_LEGACY_CAPS).forEach(k => put(k, SAPURI_LEGACY_CAPS[k][0], SAPURI_LEGACY_CAPS[k][1]));
+  if (Array.isArray(_sapuriRuntimeCaps)) {
+    // 学年を外した形 (「高3 」が付いていないタスク) も鍵にする。同じ形の講座が複数あれば範囲を合わせる
+    const bare = new Map();
+    for (const c of _sapuriRuntimeCaps) {
+      const b = String(c.name).replace(/^\s*高[123](?:・高[123])*\s*/, '');
+      if (!b || b === c.name) continue;
+      const k = _tbNorm(b);
+      const p = bare.get(k);
+      bare.set(k, p ? { label: b, first: Math.min(p.first, c.first), last: Math.max(p.last, c.last) }
+                    : { label: b, first: c.first, last: c.last });
+    }
+    bare.forEach(v => put(v.label, v.first, v.last));
+    _sapuriRuntimeCaps.forEach(c => put(c.name, c.first, c.last));
+  }
+  return Array.from(m.entries())
+    .map(([k, v]) => ({ k: k, label: v.label, first: v.first, last: v.last }))
+    .sort((a, b) => b.k.length - a.k.length);
+}
+
+// title から教材を検出 → {label, first, last} (検出失敗は null)。部分一致・長い鍵を優先 ("シス単" より "システム英単語")
+function _tbDetect(title) {
   if (!title) return null;
-  // 部分一致でルックアップ・長い key を優先 ("シス単" より "システム英単語" を先に評価)
-  const keys = Object.keys(TEXTBOOK_TOTAL_UNITS).sort((a, b) => b.length - a.length);
-  for (const k of keys) {
-    if (title.indexOf(k) !== -1) return TEXTBOOK_TOTAL_UNITS[k];
+  if (!_tbCapIndex) _tbCapIndex = _tbBuildIndex();
+  const t = _tbNorm(title);
+  for (const e of _tbCapIndex) {
+    if (t.indexOf(e.k) !== -1) return e;
   }
   return null;
+}
+
+// title から教材を検出し講番号の範囲 {first, last} を返す。検出失敗時は null (cap なし = 従来通り無制限 advance)
+// (2026-10-10 まで総 unit 数の数値を返していた。参考書は first=1 なので挙動は同じ)
+function _getTextbookCap(title) {
+  const e = _tbDetect(title);
+  return e ? { first: e.first, last: e.last } : null;
+}
+
+// 単独カウンタ (第N講など) を first..last の中で循環。n が last 以下ならそのまま (first より前も触らない)
+// n=42, {1,33} → {n:9, cycle:1} → 表示「第9講 (2周目)」 / n=49, {41,48} → {n:41, cycle:1}
+function _tbCapSingle(cap, n) {
+  if (!cap || n <= cap.last) return { n: n, cycle: 0 };
+  const span = cap.last - cap.first + 1;
+  const idx = n - cap.first;
+  return { n: cap.first + (idx % span), cycle: Math.floor(idx / span) };
+}
+
+// 範囲 (No.X-Y) を first..last の中で循環
+function _tbCapRange(cap, start, end) {
+  if (!cap || end <= cap.last) return { start: start, end: end, cycle: 0 };
+  if (start > cap.last) {
+    // 両端とも cap 超え → 周回
+    const span = end - start + 1;
+    const L = cap.last - cap.first + 1;
+    const idx = start - cap.first;
+    const ns = cap.first + (idx % L);
+    return { start: ns, end: Math.min(ns + span - 1, cap.last), cycle: Math.floor(idx / L) };
+  }
+  // 末尾だけ cap 超え → cap で打ち切り (1 周目内)
+  return { start: start, end: cap.last, cycle: 0 };
 }
 
 // 週次テンプレを開始週数オフセットで"進捗"させる (塾長指示 2026-05-14 強化・2026-05-17 cap 追加)
@@ -4648,30 +4848,6 @@ function _advanceTaskRange(title, weekOffset) {
   // 教材ごとの cap を検出 (検出失敗時は null = 従来通り無制限)
   const cap = _getTextbookCap(title);
 
-  // Helper: 単独カウンタ (第N講・Lesson N) を cap 内に循環
-  // n=42, cap=33 → {n:9, cycle:1} → 表示「第9講 (2周目)」
-  function _capSingle(n) {
-    if (!cap || n <= cap) return { n: n, cycle: 0 };
-    const cycle = Math.floor((n - 1) / cap);
-    return { n: ((n - 1) % cap) + 1, cycle: cycle };
-  }
-
-  // Helper: 範囲 (No.X-Y) を cap 内に循環
-  function _capRange(start, end) {
-    if (!cap) return { start: start, end: end, cycle: 0 };
-    const span = end - start + 1;
-    if (end <= cap) return { start: start, end: end, cycle: 0 };
-    if (start > cap) {
-      // 両端とも cap 超え → 周回
-      const cycle = Math.floor((start - 1) / cap);
-      const ns = ((start - 1) % cap) + 1;
-      const ne = Math.min(ns + span - 1, cap);
-      return { start: ns, end: ne, cycle: cycle };
-    }
-    // 末尾だけ cap 超え → cap で打ち切り (1 周目内)
-    return { start: start, end: cap, cycle: 0 };
-  }
-
   let result = title;
   let matched = false;
 
@@ -4681,7 +4857,7 @@ function _advanceTaskRange(title, weekOffset) {
       matched = true;
       const start = parseInt(s), end = parseInt(e);
       const span = end - start + 1;
-      const r = _capRange(start + weekOffset * span, end + weekOffset * span);
+      const r = _tbCapRange(cap, start + weekOffset * span, end + weekOffset * span);
       const suffix = r.cycle > 0 ? ` (${r.cycle + 1}周目)` : '';
       return `${prefix}${r.start}-${r.end}${suffix}`;
     });
@@ -4691,7 +4867,7 @@ function _advanceTaskRange(title, weekOffset) {
   result = result.replace(/(第\s*)(\d+)(\s*(?:題|章|講|節|課))/g,
     (full, pre, n, sfx) => {
       matched = true;
-      const r = _capSingle(parseInt(n) + weekOffset);
+      const r = _tbCapSingle(cap, parseInt(n) + weekOffset);
       const suffix = r.cycle > 0 ? ` (${r.cycle + 1}周目)` : '';
       return `${pre}${r.n}${sfx}${suffix}`;
     });
@@ -4699,7 +4875,7 @@ function _advanceTaskRange(title, weekOffset) {
   result = result.replace(/(Lesson|Unit|Chapter)\s*(\d+)/gi,
     (full, kw, n) => {
       matched = true;
-      const r = _capSingle(parseInt(n) + weekOffset);
+      const r = _tbCapSingle(cap, parseInt(n) + weekOffset);
       const suffix = r.cycle > 0 ? ` (${r.cycle + 1}周目)` : '';
       return `${kw} ${r.n}${suffix}`;
     });
@@ -4716,7 +4892,7 @@ function _advanceTaskRange(title, weekOffset) {
       // 不正範囲 (end <= start) は skip
       if (span <= 0) return full;
       matched = true;
-      const r = _capRange(start + weekOffset * span, end + weekOffset * span);
+      const r = _tbCapRange(cap, start + weekOffset * span, end + weekOffset * span);
       const suffix = r.cycle > 0 ? ` (${r.cycle + 1}周目)` : '';
       return `${r.start}-${r.end}${suffix}`;
     });
@@ -4724,8 +4900,9 @@ function _advanceTaskRange(title, weekOffset) {
 }
 
 // 旧 _advanceTaskRange (cap 無し版) で localStorage に保存済の「第41講」「No.9601-9840」等
-// を後付けで cap 内に正規化する。塾長指示 2026-05-17 (小川くん端末で既存データが残留)。
+// を後付けで cap 内に正規化する。塾長指示 2026-05-17 (生徒の端末に既存データが残留)。
 // 進捗 advance は行わず、cap 超過分のみ循環表記に変換する純粋関数。
+// 📺 2026-10-10: 上限は last・折り返しは first から (分割講座の「第41講」は範囲内なので触らない)。
 function _recapTaskTitle(title) {
   if (!title || typeof title !== 'string') return title || '';
   // 既に「(N周目)」付き → 再 cap 不要 (idempotent)
@@ -4739,36 +4916,27 @@ function _recapTaskTitle(title) {
   result = result.replace(/(No\.|p\.|P\.|例題|問題|問)\s*(\d+)\s*[-〜~–]\s*(\d+)/gi,
     (full, prefix, s, e) => {
       const start = parseInt(s), end = parseInt(e);
-      if (end <= cap) return full; // cap 内なら触らない
-      const span = end - start + 1;
-      if (start > cap) {
-        const cycle = Math.floor((start - 1) / cap);
-        const ns = ((start - 1) % cap) + 1;
-        const ne = Math.min(ns + span - 1, cap);
-        return `${prefix}${ns}-${ne} (${cycle + 1}周目)`;
-      }
-      // 末尾だけ cap 超 → cap で打ち切り (1周目内)
-      return `${prefix}${start}-${cap}`;
+      if (end <= cap.last) return full; // cap 内なら触らない
+      const r = _tbCapRange(cap, start, end);
+      return r.cycle > 0 ? `${prefix}${r.start}-${r.end} (${r.cycle + 1}周目)` : `${prefix}${r.start}-${r.end}`;
     });
 
   // Pattern 2: 第N題/章/講/節/課
   result = result.replace(/(第\s*)(\d+)(\s*(?:題|章|講|節|課))/g,
     (full, pre, n, sfx) => {
       const num = parseInt(n);
-      if (num <= cap) return full;
-      const cycle = Math.floor((num - 1) / cap);
-      const newN = ((num - 1) % cap) + 1;
-      return `${pre}${newN}${sfx} (${cycle + 1}周目)`;
+      if (num <= cap.last) return full;
+      const r = _tbCapSingle(cap, num);
+      return `${pre}${r.n}${sfx} (${r.cycle + 1}周目)`;
     });
 
   // Pattern 3: Lesson/Unit/Chapter N
   result = result.replace(/(Lesson|Unit|Chapter)\s*(\d+)/gi,
     (full, kw, n) => {
       const num = parseInt(n);
-      if (num <= cap) return full;
-      const cycle = Math.floor((num - 1) / cap);
-      const newN = ((num - 1) % cap) + 1;
-      return `${kw} ${newN} (${cycle + 1}周目)`;
+      if (num <= cap.last) return full;
+      const r = _tbCapSingle(cap, num);
+      return `${kw} ${r.n} (${r.cycle + 1}周目)`;
     });
 
   return result;
@@ -5641,17 +5809,17 @@ function spRenderTextbookProgress() {
   // (未来の予定タスクまで max を取ると、最終週の範囲が 2021 になり常に 100% 表示される致命バグ)
   const today = spTodayJST();
   const byBook = {};
-  const keys = Object.keys(TEXTBOOK_TOTAL_UNITS).sort((a, b) => b.length - a.length);
+  // 📺 2026-10-10: 教材の検出と講数は _advanceTaskRange と同じ表 (_tbDetect: 参考書 + スタサプの実行時の表 + 旧名)。
+  //   スタサプの分割講座は講番号が first から始まる (総合問題編 第41〜48講 = 8 講) ので、進捗は first からの通し番号で数える。
   for (const t of data.tasks) {
     if (!t.title) continue;
-    let detectedBook = null;
-    for (const k of keys) {
-      if (t.title.indexOf(k) !== -1) { detectedBook = k; break; }
-    }
-    if (!detectedBook) continue;
+    const hit = _tbDetect(t.title);
+    if (!hit) continue;
+    const detectedBook = hit.label;
     if (!byBook[detectedBook]) {
       byBook[detectedBook] = {
-        total: TEXTBOOK_TOTAL_UNITS[detectedBook],
+        first: hit.first,
+        total: hit.last - hit.first + 1,
         completedTasks: 0,
         totalTasks: 0,
         plannedMaxUnit: 0, // 計画上の最大 unit (全タスク・完走予定の参考)
@@ -5668,6 +5836,7 @@ function spRenderTextbookProgress() {
     let n = 0;
     if (rangeM) n = parseInt(rangeM[2]);
     else if (singleM) n = parseInt(singleM[1]);
+    if (n > 0) n = Math.max(0, n - b.first + 1);
     // 計画上の最大値 (全タスクから集計)
     if (n > b.plannedMaxUnit) b.plannedMaxUnit = n;
     // 進捗バー本体: 完了済のみ

@@ -2689,98 +2689,364 @@ except Exception as _se:
     log.warning(f"[seed_reference_books] failed: {_se}")
 
 
-# 📺 スタディサプリ講義 DB 初期データ (塾長指示 2026-05-14・選択肢 A: 講師名抜き商品名)
-# 4 レベル (ベーシック/スタンダード/ハイ/トップ) × 主要科目で代表約 60 講座を選定
-# AI カリキュラム生成時に偏差値マッチング + 講義名を inject して架空講義名を防止
-# 教師名禁止ルール (ai-juku 不変) に従い、講師名抜きの汎用商品名で登録
-SAPURI_LECTURES_SEED = [
-    # 英語 20 講座 (文法 8 / 読解 3 / 英作文 1 / 英文解釈 3 / 長文演習 3 / リスニング 2 ・共通テスト R/L は別カテゴリ)
-    {"name": "高1 ベーシックレベル英文法", "level": "ベーシック", "grade": "高1", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 35, "suitable_dev_max": 52, "weeks_to_complete": 12, "notes": "中学英文法の復習〜高校英文法導入・偏差値 35-50 帯の独学スタートに最適"},
-    {"name": "高1 スタンダードレベル英文法", "level": "スタンダード", "grade": "高1", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 48, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "高 1 学年の標準英文法・中堅大対応"},
-    {"name": "高2 スタンダードレベル英文法", "level": "スタンダード", "grade": "高2", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "高 2 学年の標準英文法・MARCH 関関同立対応"},
-    {"name": "高2 ハイレベル英文法", "level": "ハイ", "grade": "高2", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "高 2 で難関大学レベルへ・GMARCH 上位〜旧帝大向け"},
-    {"name": "高3 ベーシックレベル英文法", "level": "ベーシック", "grade": "高3", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "高 3 で英文法をゼロから復習する基礎の基礎"},
-    {"name": "高3 スタンダードレベル英文法", "level": "スタンダード", "grade": "高3", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅私大の英文法対策"},
-    {"name": "高3 ハイレベル英文法", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "MARCH 上位〜難関国公立の英文法対策"},
-    {"name": "高3 トップレベル英文法", "level": "トップ", "grade": "高3", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/早慶上智の英文法対策"},
-    {"name": "高3 スタンダードレベル英語 〈読解編〉", "level": "スタンダード", "grade": "高3", "subject": "英語", "sub_genre": "読解", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "中堅大の英語長文読解対策"},
-    {"name": "高3 ハイレベル英語 〈読解編〉", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "読解", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "MARCH〜難関国公立の英語長文読解対策"},
-    {"name": "高3 トップレベル英語 〈読解編〉", "level": "トップ", "grade": "高3", "subject": "英語", "sub_genre": "読解", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/早慶上智の英語長文読解対策"},
-    {"name": "高3 英作文対策講座", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "英作文", "total_lessons": 24, "suitable_dev_min": 55, "suitable_dev_max": 75, "weeks_to_complete": 12, "notes": "和文英訳 + 自由英作文の難関大対策"},
-    # Round 4 改善 (2026-05-14): 公式分野 (英文解釈編・長文演習編・リスニング編) を追加
-    {"name": "高3 スタンダードレベル英語〈英文解釈編〉", "level": "スタンダード", "grade": "高3", "subject": "英語", "sub_genre": "英文解釈", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "中堅大の英文解釈 (SVOC 振り・構文把握) 対策"},
-    {"name": "高3 ハイレベル英語〈英文解釈編〉", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "英文解釈", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "MARCH〜難関国公立の英文解釈対策"},
-    {"name": "高3 トップレベル英語〈英文解釈編〉", "level": "トップ", "grade": "高3", "subject": "英語", "sub_genre": "英文解釈", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/早慶上智の英文解釈対策"},
-    {"name": "高3 スタンダードレベル英語〈長文演習編〉", "level": "スタンダード", "grade": "高3", "subject": "英語", "sub_genre": "長文演習", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "中堅大の長文演習 (時間配分・問題形式) 対策"},
-    {"name": "高3 ハイレベル英語〈長文演習編〉", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "長文演習", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "MARCH〜難関国公立の長文演習対策"},
-    {"name": "高3 トップレベル英語〈長文演習編〉", "level": "トップ", "grade": "高3", "subject": "英語", "sub_genre": "長文演習", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/早慶上智の長文演習対策"},
-    {"name": "高3 スタンダードレベル英語〈リスニング編〉", "level": "スタンダード", "grade": "高3", "subject": "英語", "sub_genre": "リスニング", "total_lessons": 12, "suitable_dev_min": 50, "suitable_dev_max": 65, "weeks_to_complete": 6, "notes": "共通テスト〜中堅大のリスニング対策"},
-    {"name": "高3 ハイレベル英語〈リスニング編〉", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "リスニング", "total_lessons": 12, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 6, "notes": "難関国公立・東大リスニング対策"},
-    # 数学 9 講座 (新課程対応: IAIIB+C(ベクトル) / III+C(平面上の曲線・複素数平面) / 共通テスト数学 IA/IIB は別カテゴリ)
-    {"name": "高1 スタンダードレベル数学IA", "level": "スタンダード", "grade": "高1", "subject": "数学", "sub_genre": "IA", "total_lessons": 40, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 20, "notes": "高 1 学年の数学 IA 標準・中堅大対応"},
-    {"name": "高2 スタンダードレベル数学IIB", "level": "スタンダード", "grade": "高2", "subject": "数学", "sub_genre": "IIB", "total_lessons": 40, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 20, "notes": "高 2 学年の数学 IIB 標準・中堅大対応"},
-    {"name": "高3 ベーシックレベル数学IAIIB+C(ベクトル)", "level": "ベーシック", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB+C", "total_lessons": 40, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 20, "notes": "新課程 (2025 年度〜) 対応・IAIIB+C(ベクトル) をゼロから復習"},
-    {"name": "高3 スタンダードレベル数学IAIIB+C(ベクトル)", "level": "スタンダード", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB+C", "total_lessons": 40, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 20, "notes": "新課程対応・共通テスト〜中堅大の IAIIB+C 対策"},
-    {"name": "高3 ハイレベル数学IAIIB+C(ベクトル)", "level": "ハイ", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB+C", "total_lessons": 40, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 20, "notes": "新課程対応・MARCH 上位〜難関国公立の IAIIB+C 対策"},
-    {"name": "高3 トップレベル数学IAIIB+C(ベクトル)", "level": "トップ", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB+C", "total_lessons": 40, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 20, "notes": "新課程対応・東大/京大/早慶の IAIIB+C 対策"},
-    {"name": "高3 スタンダードレベル数学III+C(平面上の曲線・複素数平面)", "level": "スタンダード", "grade": "高3", "subject": "数学", "sub_genre": "III+C", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "新課程対応・理系標準の III+C 対策"},
-    {"name": "高3 ハイレベル数学III+C(平面上の曲線・複素数平面)", "level": "ハイ", "grade": "高3", "subject": "数学", "sub_genre": "III+C", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "新課程対応・難関国公立理系の III+C 対策"},
-    {"name": "高3 トップレベル数学III+C(平面上の曲線・複素数平面)", "level": "トップ", "grade": "高3", "subject": "数学", "sub_genre": "III+C", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "新課程対応・東大/京大/医学部の III+C 対策"},
-    # 国語 10 講座 (古文文法/古文読解/漢文/現代文 / 共通テスト国語は別カテゴリ)
-    {"name": "古文文法ベーシックレベル", "level": "ベーシック", "grade": "高1高2高3", "subject": "国語", "sub_genre": "古文文法", "total_lessons": 12, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 6, "notes": "古文文法の基礎の基礎・全学年対応"},
-    {"name": "古文文法スタンダードレベル", "level": "スタンダード", "grade": "高1高2高3", "subject": "国語", "sub_genre": "古文文法", "total_lessons": 12, "suitable_dev_min": 48, "suitable_dev_max": 62, "weeks_to_complete": 6, "notes": "古文文法の標準・中堅大対応"},
-    {"name": "高3 スタンダードレベル古文〈読解編〉", "level": "スタンダード", "grade": "高3", "subject": "国語", "sub_genre": "古文読解", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の古文読解対策"},
-    {"name": "高3 ハイレベル古文〈読解編〉", "level": "ハイ", "grade": "高3", "subject": "国語", "sub_genre": "古文読解", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "難関国公立/早慶の古文読解対策"},
-    {"name": "漢文ベーシックレベル", "level": "ベーシック", "grade": "高1高2高3", "subject": "国語", "sub_genre": "漢文", "total_lessons": 12, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 6, "notes": "漢文句法の基礎の基礎・全学年対応"},
-    {"name": "漢文スタンダードレベル", "level": "スタンダード", "grade": "高1高2高3", "subject": "国語", "sub_genre": "漢文", "total_lessons": 12, "suitable_dev_min": 48, "suitable_dev_max": 65, "weeks_to_complete": 6, "notes": "漢文句法 + 読解の標準・共通テスト〜難関大"},
-    {"name": "高3 ベーシックレベル現代文", "level": "ベーシック", "grade": "高3", "subject": "国語", "sub_genre": "現代文", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "現代文読解の基礎の基礎"},
-    {"name": "高3 スタンダードレベル現代文", "level": "スタンダード", "grade": "高3", "subject": "国語", "sub_genre": "現代文", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の現代文読解対策"},
-    {"name": "高3 ハイレベル現代文", "level": "ハイ", "grade": "高3", "subject": "国語", "sub_genre": "現代文", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "MARCH 上位〜難関国公立の現代文読解対策"},
-    {"name": "高3 トップレベル現代文", "level": "トップ", "grade": "高3", "subject": "国語", "sub_genre": "現代文", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/早慶の現代文読解対策"},
-    # 物理 4 講座
-    {"name": "高3 ベーシックレベル物理", "level": "ベーシック", "grade": "高3", "subject": "物理", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "物理基礎の復習〜高校物理導入・偏差値 38-50 帯"},
-    {"name": "高3 スタンダードレベル物理", "level": "スタンダード", "grade": "高3", "subject": "物理", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の物理対策"},
-    {"name": "高3 ハイレベル物理", "level": "ハイ", "grade": "高3", "subject": "物理", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "難関国公立/早慶理工の物理対策"},
-    {"name": "高3 トップレベル物理", "level": "トップ", "grade": "高3", "subject": "物理", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/医学部の物理対策"},
-    # 化学 12 講座 (公式分野: 〈理論編〉4 + 〈無機編〉4 + 〈有機編〉4 × ベーシック/スタンダード/ハイ/トップ)
-    {"name": "高3 ベーシックレベル化学〈理論編〉", "level": "ベーシック", "grade": "高3", "subject": "化学", "sub_genre": "理論", "total_lessons": 12, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 6, "notes": "化学理論ゼロからの基礎の基礎・偏差値 38-50 帯"},
-    {"name": "高3 スタンダードレベル化学〈理論編〉", "level": "スタンダード", "grade": "高3", "subject": "化学", "sub_genre": "理論", "total_lessons": 12, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 6, "notes": "共通テスト〜中堅大の理論化学対策"},
-    {"name": "高3 ハイレベル化学〈理論編〉", "level": "ハイ", "grade": "高3", "subject": "化学", "sub_genre": "理論", "total_lessons": 12, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 6, "notes": "難関国公立/早慶理工の理論化学対策"},
-    {"name": "高3 トップレベル化学〈理論編〉", "level": "トップ", "grade": "高3", "subject": "化学", "sub_genre": "理論", "total_lessons": 12, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 6, "notes": "東大/京大/医学部の理論化学対策"},
-    {"name": "高3 ベーシックレベル化学〈無機編〉", "level": "ベーシック", "grade": "高3", "subject": "化学", "sub_genre": "無機", "total_lessons": 8, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 4, "notes": "無機化学ゼロからの基礎の基礎・暗記主体"},
-    {"name": "高3 スタンダードレベル化学〈無機編〉", "level": "スタンダード", "grade": "高3", "subject": "化学", "sub_genre": "無機", "total_lessons": 8, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 4, "notes": "共通テスト〜中堅大の無機化学対策"},
-    {"name": "高3 ハイレベル化学〈無機編〉", "level": "ハイ", "grade": "高3", "subject": "化学", "sub_genre": "無機", "total_lessons": 8, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 4, "notes": "難関国公立/早慶理工の無機化学対策"},
-    {"name": "高3 トップレベル化学〈無機編〉", "level": "トップ", "grade": "高3", "subject": "化学", "sub_genre": "無機", "total_lessons": 8, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 4, "notes": "東大/京大/医学部の無機化学対策"},
-    {"name": "高3 ベーシックレベル化学〈有機編〉", "level": "ベーシック", "grade": "高3", "subject": "化学", "sub_genre": "有機", "total_lessons": 12, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 6, "notes": "有機化学ゼロからの基礎の基礎・構造決定の入門"},
-    {"name": "高3 スタンダードレベル化学〈有機編〉", "level": "スタンダード", "grade": "高3", "subject": "化学", "sub_genre": "有機", "total_lessons": 12, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 6, "notes": "共通テスト〜中堅大の有機化学対策"},
-    {"name": "高3 ハイレベル化学〈有機編〉", "level": "ハイ", "grade": "高3", "subject": "化学", "sub_genre": "有機", "total_lessons": 12, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 6, "notes": "難関国公立/早慶理工の有機化学・構造決定対策"},
-    {"name": "高3 トップレベル化学〈有機編〉", "level": "トップ", "grade": "高3", "subject": "化学", "sub_genre": "有機", "total_lessons": 12, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 6, "notes": "東大/京大/医学部の有機化学・天然有機化合物対策"},
-    # 生物 3 講座
-    {"name": "高3 ベーシックレベル生物", "level": "ベーシック", "grade": "高3", "subject": "生物", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "生物基礎の復習〜高校生物導入・偏差値 38-50 帯"},
-    {"name": "高3 スタンダードレベル生物", "level": "スタンダード", "grade": "高3", "subject": "生物", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の生物対策"},
-    {"name": "高3 ハイレベル生物", "level": "ハイ", "grade": "高3", "subject": "生物", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "難関国公立/医学部の生物対策"},
-    # 日本史 3 講座 (公式分野: 〈通史編〉)
-    {"name": "高3 ベーシックレベル日本史〈通史編〉", "level": "ベーシック", "grade": "高3", "subject": "日本史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "日本史通史の基礎の基礎"},
-    {"name": "高3 スタンダードレベル日本史〈通史編〉", "level": "スタンダード", "grade": "高3", "subject": "日本史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の日本史対策"},
-    {"name": "高3 トップ&ハイレベル日本史〈通史編〉", "level": "トップ&ハイ", "grade": "高3", "subject": "日本史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "MARCH 上位〜東大/京大/早慶の日本史対策"},
-    # 世界史 3 講座 (公式分野: 〈通史編〉)
-    {"name": "高3 ベーシックレベル世界史〈通史編〉", "level": "ベーシック", "grade": "高3", "subject": "世界史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "世界史通史の基礎の基礎"},
-    {"name": "高3 スタンダードレベル世界史〈通史編〉", "level": "スタンダード", "grade": "高3", "subject": "世界史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の世界史対策"},
-    {"name": "高3 トップ&ハイレベル世界史〈通史編〉", "level": "トップ&ハイ", "grade": "高3", "subject": "世界史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "MARCH 上位〜東大/京大/早慶の世界史対策"},
-    # 地理 2 講座
-    {"name": "高3 ベーシックレベル地理", "level": "ベーシック", "grade": "高3", "subject": "地理", "sub_genre": "系統地理+地誌", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "地理の基礎の基礎・共通テスト導入"},
-    {"name": "高3 スタンダード&ハイレベル地理", "level": "スタンダード&ハイ", "grade": "高3", "subject": "地理", "sub_genre": "系統地理+地誌", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "共通テスト〜難関国公立の地理対策"},
-    # 公民 3 講座
-    {"name": "高3 ベーシックレベル政治・経済", "level": "ベーシック", "grade": "高3", "subject": "公民", "sub_genre": "政治・経済", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "政経の基礎の基礎"},
-    {"name": "高3 スタンダード&ハイレベル政治・経済", "level": "スタンダード&ハイ", "grade": "高3", "subject": "公民", "sub_genre": "政治・経済", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "共通テスト〜MARCH 上位の政経対策"},
-    {"name": "高3 ベーシックレベル現代社会", "level": "ベーシック", "grade": "高3", "subject": "公民", "sub_genre": "現代社会", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 58, "weeks_to_complete": 12, "notes": "現代社会の共通テスト対策"},
-    # 共通テスト対策 5 講座 (subject 別では 英語 R/L → 英語 2 / 数学 IA/IIB → 数学 2 / 国語 1)
-    {"name": "共通テスト対策講座 英語(リーディング)", "level": "共通テスト", "grade": "高3", "subject": "英語", "sub_genre": "共通テスト", "total_lessons": 12, "suitable_dev_min": 45, "suitable_dev_max": 68, "weeks_to_complete": 6, "notes": "共通テスト英語リーディング対策・直前期向け"},
-    {"name": "共通テスト対策講座 英語(リスニング)", "level": "共通テスト", "grade": "高3", "subject": "英語", "sub_genre": "共通テスト", "total_lessons": 12, "suitable_dev_min": 45, "suitable_dev_max": 68, "weeks_to_complete": 6, "notes": "共通テスト英語リスニング対策・直前期向け"},
-    {"name": "共通テスト対策講座 数学IA", "level": "共通テスト", "grade": "高3", "subject": "数学", "sub_genre": "共通テスト", "total_lessons": 12, "suitable_dev_min": 45, "suitable_dev_max": 68, "weeks_to_complete": 6, "notes": "共通テスト数学 IA 対策・直前期向け"},
-    {"name": "共通テスト対策講座 数学IIB", "level": "共通テスト", "grade": "高3", "subject": "数学", "sub_genre": "共通テスト", "total_lessons": 12, "suitable_dev_min": 45, "suitable_dev_max": 68, "weeks_to_complete": 6, "notes": "共通テスト数学 IIB 対策・直前期向け"},
-    {"name": "共通テスト対策講座 国語", "level": "共通テスト", "grade": "高3", "subject": "国語", "sub_genre": "共通テスト", "total_lessons": 12, "suitable_dev_min": 45, "suitable_dev_max": 68, "weeks_to_complete": 6, "notes": "共通テスト国語 (現代文/古文/漢文) 対策・直前期向け"},
+# 📺 スタディサプリ 講座カタログ (2026-10-10 塾長決定・スタサプ段階 A)
+#   旧初期データ (2026-05-14・74 講座) は架空の講座名と丸めた講数 (12/24/40) が混ざっていたので廃止し、
+#   公開ラインナップから作ったこのコード定数だけを正典にする (sapuri_lectures 表はもう読まない・起動時の投入もしない)。
+#   _meta: 出所 = スタディサプリ公式の 2026 年度ラインナップ (講座名・講数) と 2022 年公開の講義一覧 (講番号の範囲)。
+#     ★dev_min/dev_max (偏差値) と weeks (完了の目安週数) は公式の値ではなく **塾の目安** (塾長が確かめて直す数値)。
+#     ★講師名・講の題名は書かない (D1: 題名は本番 DB だけ。公開リポジトリ・Vercel・認証なしの API に出さない)。
+#   first..last = 講番号の範囲 (分割講座 _1/_2 は続き番号 = 総合問題編は第41〜48講など)。total_lessons = 講数
+#   (番号の無い補講を含むので last-first+1 より 1 多い講座がある・共通テスト対策は講数非公開で 0)。
+#   has_lessons = 講義一覧 (第N講) を取り込める講座か (2022 年版と講数が合わない講座・新課程の講座は False)。
+#   band = 高3 / 高1・2 / 全学年。検査: scripts/sapuri_lessons/check_sapuri_catalog.py (ast で読む)。
+SAPURI_COURSES = [
+    {"code": "KZ225000", "name": "高1・高2・高3 英語超入門", "subject": "英語", "field": "入門", "level": "ベーシック", "band": "全学年", "first": 1, "last": 2, "total_lessons": 2, "dev_min": 30, "dev_max": 48, "weeks": 1, "has_lessons": True, "notes": "両ラインナップに同じ2講 (高3表はスタンダード欄・高1・2表はベーシック欄)。内容は受験英語のガイダンス (ウオーミングアップ講座) なので dev は中学総復習と同じ 30-48。"},
+    {"code": "KZA01000", "name": "高3 トップレベル英語＜文法編＞", "subject": "英語", "field": "文法", "level": "トップ", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 65, "dev_max": 78, "weeks": 12, "has_lessons": True, "notes": "3レベルとも同じ単元順。"},
+    {"code": "KZA02000", "name": "高3 ハイレベル英語＜文法編＞", "subject": "英語", "field": "文法", "level": "ハイ", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 58, "dev_max": 70, "weeks": 12, "has_lessons": True, "notes": "3レベルとも同じ単元順。"},
+    {"code": "KZA03000", "name": "高3 スタンダードレベル英語＜文法編＞", "subject": "英語", "field": "文法", "level": "スタンダード", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 48, "dev_max": 62, "weeks": 12, "has_lessons": True, "notes": "3レベルとも同じ単元順。"},
+    {"code": "KZ574000", "name": "高3 トップレベル英語 リーディング＜英文解釈編＞", "subject": "英語", "field": "英文解釈", "level": "トップ", "band": "高3", "first": 1, "last": 8, "total_lessons": 8, "dev_min": 65, "dev_max": 78, "weeks": 4, "has_lessons": True, "notes": "ラインナップ表記は「英語＜英文解釈編＞」。"},
+    {"code": "KZ578000", "name": "高3 ハイレベル英語 リーディング＜英文解釈編＞", "subject": "英語", "field": "英文解釈", "level": "ハイ", "band": "高3", "first": 1, "last": 8, "total_lessons": 8, "dev_min": 58, "dev_max": 70, "weeks": 4, "has_lessons": True, "notes": "ラインナップ表記は「英語＜英文解釈編＞」。"},
+    {"code": "KZ580000", "name": "高3 スタンダードレベル英語 リーディング＜英文解釈編＞", "subject": "英語", "field": "英文解釈", "level": "スタンダード", "band": "高3", "first": 1, "last": 8, "total_lessons": 8, "dev_min": 48, "dev_max": 62, "weeks": 4, "has_lessons": True, "notes": "ラインナップ表記は「英語＜英文解釈編＞」。"},
+    {"code": "MKZ286000", "name": "高3 トップレベル英語＜読解編＞", "subject": "英語", "field": "読解", "level": "トップ", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 65, "dev_max": 78, "weeks": 12, "has_lessons": True, "notes": "講ごとに構文・テーマを扱う。"},
+    {"code": "MKZ206000", "name": "高3 ハイレベル英語＜読解編＞", "subject": "英語", "field": "読解", "level": "ハイ", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 58, "dev_max": 70, "weeks": 12, "has_lessons": True, "notes": "講ごとに構文・テーマを扱う。"},
+    {"code": "MKZ160000", "name": "高3 スタンダードレベル英語＜読解編＞", "subject": "英語", "field": "読解", "level": "スタンダード", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 48, "dev_max": 62, "weeks": 12, "has_lessons": True, "notes": "講ごとに構文・テーマを扱う。"},
+    {"code": "KZ576000", "name": "高3 トップレベル英語 リーディング＜長文演習編＞", "subject": "英語", "field": "長文演習", "level": "トップ", "band": "高3", "first": 1, "last": 8, "total_lessons": 8, "dev_min": 65, "dev_max": 78, "weeks": 4, "has_lessons": True, "notes": "講ごとの単元名なし (回単位の弱点照合は不可)。"},
+    {"code": "KZ579000", "name": "高3 ハイレベル英語 リーディング＜長文演習編＞", "subject": "英語", "field": "長文演習", "level": "ハイ", "band": "高3", "first": 1, "last": 8, "total_lessons": 8, "dev_min": 58, "dev_max": 70, "weeks": 4, "has_lessons": True, "notes": "講ごとの単元名なし (回単位の弱点照合は不可)。"},
+    {"code": "KZ581000", "name": "高3 スタンダードレベル英語 リーディング＜長文演習編＞", "subject": "英語", "field": "長文演習", "level": "スタンダード", "band": "高3", "first": 1, "last": 8, "total_lessons": 8, "dev_min": 48, "dev_max": 62, "weeks": 4, "has_lessons": True, "notes": "講ごとの単元名なし (回単位の弱点照合は不可)。"},
+    {"code": "KZ577000", "name": "高3 トップ&ハイレベル英語 リスニング", "subject": "英語", "field": "リスニング", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 4, "total_lessons": 4, "dev_min": 58, "dev_max": 78, "weeks": 2, "has_lessons": True, "notes": "ラインナップ表記は「英語＜リスニング編＞」。スタンダードのリスニング講座は無い。"},
+    {"code": "KZ177000", "name": "高3 トップ&ハイレベル英語＜英作文編＞", "subject": "英語", "field": "英作文", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 7, "total_lessons": 7, "dev_min": 58, "dev_max": 78, "weeks": 4, "has_lessons": True, "notes": "和文英訳 第1〜3講 + 自由英作文 第4〜7講 の1講座。"},
+    {"code": "X-h3-std-eng-wabun", "name": "高3 スタンダードレベル英語＜和文英訳編＞", "subject": "英語", "field": "英作文", "level": "スタンダード", "band": "高3", "first": 1, "last": 3, "total_lessons": 3, "dev_min": 48, "dev_max": 62, "weeks": 2, "has_lessons": False, "notes": "2022 公開データに無い新講座 (講義一覧なし)。名称はラインナップ表記から組み立て。"},
+    {"code": "X-h3-std-eng-jiyu", "name": "高3 スタンダードレベル英語＜自由英作文編＞", "subject": "英語", "field": "英作文", "level": "スタンダード", "band": "高3", "first": 1, "last": 3, "total_lessons": 3, "dev_min": 48, "dev_max": 62, "weeks": 2, "has_lessons": False, "notes": "2022 公開データに無い新講座 (講義一覧なし)。名称はラインナップ表記から組み立て。"},
+    {"code": "KZ114000", "name": "高3 ハイ&スタンダードレベル英語＜英単語補充編＞", "subject": "英語", "field": "英単語", "level": "ハイ&スタンダード", "band": "高3", "first": 1, "last": 3, "total_lessons": 3, "dev_min": 48, "dev_max": 70, "weeks": 2, "has_lessons": True, "notes": "表現テーマごとの講座。"},
+    {"code": "KZA35000", "name": "高1・高2 トップレベル英語＜文法編＞", "subject": "英語", "field": "文法", "level": "トップ", "band": "高1・2", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 65, "dev_max": 78, "weeks": 12, "has_lessons": True, "notes": ""},
+    {"code": "KZ375000", "name": "高1・高2 ハイレベル英語＜文法編＞", "subject": "英語", "field": "文法", "level": "ハイ", "band": "高1・2", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 58, "dev_max": 70, "weeks": 12, "has_lessons": True, "notes": ""},
+    {"code": "EKZB320000", "name": "高1・高2 スタンダードレベル英語＜文法・読解編＞", "subject": "英語", "field": "文法・読解", "level": "スタンダード", "band": "高1・2", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 48, "dev_max": 62, "weeks": 12, "has_lessons": True, "notes": "[新版]。講番号は topic_code (EKGB32{講}{Chapter}0) から。旧版 KZ376000 (24講) は不採用。"},
+    {"code": "EKZB310000", "name": "ベーシックレベル英語", "subject": "英語", "field": "文法・読解", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 33, "total_lessons": 33, "dev_min": 38, "dev_max": 55, "weeks": 17, "has_lessons": True, "notes": "[新版]。講番号は topic_code (EKGB31{講}{Chapter}0) から。旧版 KZ288000 (33講) は不採用。"},
+    {"code": "MKZA47000", "name": "高1・高2 トップレベル英語＜読解編＞", "subject": "英語", "field": "読解", "level": "トップ", "band": "高1・2", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 65, "dev_max": 78, "weeks": 12, "has_lessons": True, "notes": ""},
+    {"code": "MKZA49000", "name": "高1・高2 ハイレベル英語＜読解編＞", "subject": "英語", "field": "読解", "level": "ハイ", "band": "高1・2", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 58, "dev_max": 70, "weeks": 12, "has_lessons": True, "notes": ""},
+    {"code": "MKZ495000", "name": "高1・高2 トップ&ハイレベル英語＜長文編＞", "subject": "英語", "field": "長文", "level": "トップ&ハイ", "band": "高1・2", "first": 1, "last": 10, "total_lessons": 10, "dev_min": 58, "dev_max": 78, "weeks": 5, "has_lessons": True, "notes": ""},
+    {"code": "X-h12-std-eng-chobun", "name": "高1・高2 スタンダードレベル英語＜長文編＞", "subject": "英語", "field": "長文", "level": "スタンダード", "band": "高1・2", "first": 1, "last": 10, "total_lessons": 10, "dev_min": 48, "dev_max": 62, "weeks": 5, "has_lessons": False, "notes": "2022 公開データに無い (トップ&ハイ版 MKZ495000 のみ)。講義一覧なし。"},
+    {"code": "KZ110000", "name": "高1・高2 英語＜英単語入門編＞", "subject": "英語", "field": "英単語", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 3, "total_lessons": 3, "dev_min": 38, "dev_max": 55, "weeks": 2, "has_lessons": True, "notes": "ラインナップはベーシック欄のみ。中学範囲・ガイダンスではないのでベーシックの既定 38-55。"},
+    {"code": "KZ473000", "name": "中学総復習 英語", "subject": "英語", "field": "中学総復習", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 10, "total_lessons": 10, "dev_min": 30, "dev_max": 48, "weeks": 5, "has_lessons": True, "notes": "高校講座の中学範囲復習 (中学講座ではない)。dev は英語超入門と同じ 30-48。"},
+    {"code": "MKZ371000", "name": "高3 トップレベル数学IAIIB＋C（ベクトル）", "subject": "数学", "field": "IAIIB+C", "level": "トップ", "band": "高3", "first": 1, "last": 48, "total_lessons": 48, "dev_min": 65, "dev_max": 78, "weeks": 24, "has_lessons": True, "notes": "2022 データ名は「高3 トップレベル数学IAIIB」。"},
+    {"code": "MKZA10000_1", "name": "高3 ハイレベル数学IAIIB＋C（ベクトル）＜単元別学習編＞", "subject": "数学", "field": "IAIIB+C", "level": "ハイ", "band": "高3", "first": 1, "last": 32, "total_lessons": 32, "dev_min": 58, "dev_max": 70, "weeks": 16, "has_lessons": True, "notes": "＜総合問題編＞ (第33〜48講) と分割。2022 データ名は「数学IAIIB」。"},
+    {"code": "MKZA10000_2", "name": "高3 ハイレベル数学IAIIB＋C（ベクトル）＜総合問題編＞", "subject": "数学", "field": "IAIIB+C", "level": "ハイ", "band": "高3", "first": 33, "last": 48, "total_lessons": 16, "dev_min": 58, "dev_max": 70, "weeks": 8, "has_lessons": True, "notes": "第33〜48講 (単元別学習編の続き番号)。総合問題で単元名なし。"},
+    {"code": "MKZ118000_1", "name": "高3 スタンダードレベル数学IAIIB＋C（ベクトル）＜単元別学習編＞", "subject": "数学", "field": "IAIIB+C", "level": "スタンダード", "band": "高3", "first": 1, "last": 40, "total_lessons": 40, "dev_min": 48, "dev_max": 62, "weeks": 20, "has_lessons": True, "notes": "＜総合問題編＞ (第41〜48講) と分割。2022 データ名は「数学IAIIB」。"},
+    {"code": "MKZ118000_2", "name": "高3 スタンダードレベル数学IAIIB＋C（ベクトル）＜総合問題編＞", "subject": "数学", "field": "IAIIB+C", "level": "スタンダード", "band": "高3", "first": 41, "last": 48, "total_lessons": 8, "dev_min": 48, "dev_max": 62, "weeks": 4, "has_lessons": True, "notes": "第41〜48講 (単元別学習編の続き番号)。総合問題で単元名なし。"},
+    {"code": "MKZ119000", "name": "高3 トップレベル数学III＋C（平面上の曲線/複素数平面）", "subject": "数学", "field": "III+C", "level": "トップ", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 65, "dev_max": 78, "weeks": 12, "has_lessons": True, "notes": "2022 データ名は「数学III」。ラインナップ注記: ベーシックレベル講座も受講可。"},
+    {"code": "MKZ135000", "name": "高3 ハイレベル数学III＋C（平面上の曲線/複素数平面）", "subject": "数学", "field": "III+C", "level": "ハイ", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 58, "dev_max": 70, "weeks": 12, "has_lessons": True, "notes": "2022 データ名は「数学III」。ラインナップ注記: ベーシックレベル講座も受講可。"},
+    {"code": "MKZ188000", "name": "高3 スタンダードレベル数学III＋C（平面上の曲線/複素数平面）", "subject": "数学", "field": "III+C", "level": "スタンダード", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 48, "dev_max": 62, "weeks": 12, "has_lessons": True, "notes": "2022 データ名は「数学III」。ラインナップ注記: ベーシックレベル講座も受講可。"},
+    {"code": "KZA37000", "name": "高1・高2 トップレベル数学IAIIB＋C（ベクトル）", "subject": "数学", "field": "IAIIB+C", "level": "トップ", "band": "高1・2", "first": 1, "last": 49, "total_lessons": 49, "dev_min": 65, "dev_max": 78, "weeks": 25, "has_lessons": True, "notes": "2022 データ名は「高1・高2 トップレベル数学IAIIB」(49講)。講数一致のため同一講座と判断。"},
+    {"code": "X-h12-high-math1", "name": "高1・高2 ハイレベル数学I", "subject": "数学", "field": "数学I", "level": "ハイ", "band": "高1・2", "first": 1, "last": 11, "total_lessons": 11, "dev_min": 58, "dev_max": 70, "weeks": 6, "has_lessons": False, "notes": "新課程の高校講座 (2022 公開データに無い)。講義一覧なし。"},
+    {"code": "X-h12-std-math1", "name": "高1・高2 スタンダードレベル数学I", "subject": "数学", "field": "数学I", "level": "スタンダード", "band": "高1・2", "first": 1, "last": 13, "total_lessons": 13, "dev_min": 48, "dev_max": 62, "weeks": 7, "has_lessons": False, "notes": "新課程の高校講座 (2022 データの KZA43000 (51講) とは別物)。講義一覧なし。"},
+    {"code": "X-basic-math1", "name": "ベーシックレベル数学I", "subject": "数学", "field": "数学I", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 15, "total_lessons": 15, "dev_min": 38, "dev_max": 55, "weeks": 8, "has_lessons": False, "notes": "新課程の高校講座 (2022 公開データに無い)。講義一覧なし。"},
+    {"code": "X-h12-high-matha", "name": "高1・高2 ハイレベル数学A", "subject": "数学", "field": "数学A", "level": "ハイ", "band": "高1・2", "first": 1, "last": 9, "total_lessons": 9, "dev_min": 58, "dev_max": 70, "weeks": 5, "has_lessons": False, "notes": "新課程の高校講座 (2022 公開データに無い)。講義一覧なし。"},
+    {"code": "X-h12-std-matha", "name": "高1・高2 スタンダードレベル数学A", "subject": "数学", "field": "数学A", "level": "スタンダード", "band": "高1・2", "first": 1, "last": 9, "total_lessons": 9, "dev_min": 48, "dev_max": 62, "weeks": 5, "has_lessons": False, "notes": "新課程の高校講座 (2022 データの KZA43000 (51講) とは別物)。講義一覧なし。"},
+    {"code": "X-basic-matha", "name": "ベーシックレベル数学A", "subject": "数学", "field": "数学A", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 11, "total_lessons": 11, "dev_min": 38, "dev_max": 55, "weeks": 6, "has_lessons": False, "notes": "新課程の高校講座 (2022 公開データに無い)。講義一覧なし。"},
+    {"code": "X-h12-high-math2", "name": "高1・高2 ハイレベル数学II", "subject": "数学", "field": "数学II", "level": "ハイ", "band": "高1・2", "first": 1, "last": 19, "total_lessons": 19, "dev_min": 58, "dev_max": 70, "weeks": 10, "has_lessons": False, "notes": "新課程の高校講座 (2022 公開データに無い)。講義一覧なし。"},
+    {"code": "X-h12-std-math2", "name": "高1・高2 スタンダードレベル数学II", "subject": "数学", "field": "数学II", "level": "スタンダード", "band": "高1・2", "first": 1, "last": 18, "total_lessons": 18, "dev_min": 48, "dev_max": 62, "weeks": 9, "has_lessons": False, "notes": "新課程の高校講座 (2022 データの KZA43000 (51講) とは別物)。講義一覧なし。"},
+    {"code": "X-basic-math2", "name": "ベーシックレベル数学II", "subject": "数学", "field": "数学II", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 19, "total_lessons": 19, "dev_min": 38, "dev_max": 55, "weeks": 10, "has_lessons": False, "notes": "新課程の高校講座 (2022 公開データに無い)。講義一覧なし。"},
+    {"code": "X-h12-high-mathbc", "name": "高1・高2 ハイレベル数学B＋C（ベクトル）", "subject": "数学", "field": "数学B+C", "level": "ハイ", "band": "高1・2", "first": 1, "last": 14, "total_lessons": 14, "dev_min": 58, "dev_max": 70, "weeks": 7, "has_lessons": False, "notes": "新課程の高校講座 (2022 公開データに無い)。講義一覧なし。"},
+    {"code": "X-h12-std-mathbc", "name": "高1・高2 スタンダードレベル数学B＋C（ベクトル）", "subject": "数学", "field": "数学B+C", "level": "スタンダード", "band": "高1・2", "first": 1, "last": 16, "total_lessons": 16, "dev_min": 48, "dev_max": 62, "weeks": 8, "has_lessons": False, "notes": "新課程の高校講座 (2022 データの KZA43000 (51講) とは別物)。講義一覧なし。"},
+    {"code": "X-basic-mathb", "name": "ベーシックレベル数学B", "subject": "数学", "field": "数学B", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 10, "total_lessons": 10, "dev_min": 38, "dev_max": 55, "weeks": 5, "has_lessons": False, "notes": "ラインナップ「数学B＋C（ベクトル）」ベーシック欄「10講＋6講」の 10講側。2026 ラインナップの「＋」表記はどれも別々の講座 (MKZA10000_1/_2・MKZ118000_1/_2・KZA17000/KZ123000) なので 2講座に分けた。科目名の割り当て (10講=数学B) と正式名は推定 (要確認)。講義一覧なし。"},
+    {"code": "X-basic-mathc-vector", "name": "ベーシックレベル数学C（ベクトル編）", "subject": "数学", "field": "数学C", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 6, "total_lessons": 6, "dev_min": 38, "dev_max": 55, "weeks": 3, "has_lessons": False, "notes": "同欄「10講＋6講」の 6講側 (数学C のベクトル)。正式名は 2026 の「数学C（平面上の曲線/複素数平面編）」にならった推定。番号はベーシックの分冊 (EKZB440000/EKZB480000 は各講座とも第1講から) にならい第1〜6講としたが、第11〜16講の続き番号の可能性あり (要確認)。講義一覧なし。"},
+    {"code": "EKZB440000", "name": "ベーシックレベル数学III", "subject": "数学", "field": "数学III", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 22, "total_lessons": 22, "dev_min": 38, "dev_max": 55, "weeks": 11, "has_lessons": False, "notes": "2022 データは配信途中の「ベーシックレベル数学III＜極限/微分法/積分法編＞」(6講ぶんのみ) → 講義一覧は不完全。"},
+    {"code": "EKZB480000", "name": "ベーシックレベル数学C（平面上の曲線/複素数平面編）", "subject": "数学", "field": "数学C", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 8, "total_lessons": 8, "dev_min": 38, "dev_max": 55, "weeks": 4, "has_lessons": True, "notes": "2022 データ名は「ベーシックレベル数学III＜平面上の曲線/複素数平面編＞」[新版]。講番号は topic_code から (8講で一致)。"},
+    {"code": "KZ117000", "name": "中学総復習 数学", "subject": "数学", "field": "中学総復習", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 10, "total_lessons": 10, "dev_min": 30, "dev_max": 48, "weeks": 5, "has_lessons": True, "notes": "高校講座の中学範囲復習 (中学講座ではない)。dev は英語超入門と同じ 30-48。"},
+    {"code": "KZA15000", "name": "高3 トップ&ハイレベル現代文", "subject": "国語", "field": "現代文", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 58, "dev_max": 78, "weeks": 12, "has_lessons": True, "notes": "評論テーマごとの講座。"},
+    {"code": "KZ137000", "name": "高3 スタンダードレベル現代文", "subject": "国語", "field": "現代文", "level": "スタンダード", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 48, "dev_max": 62, "weeks": 12, "has_lessons": True, "notes": "評論テーマごとの講座。"},
+    {"code": "KZ272000", "name": "高1・高2・高3 現代文＜重要語句・知識編＞", "subject": "国語", "field": "現代文語句", "level": "—", "band": "全学年", "first": 1, "last": 3, "total_lessons": 3, "dev_min": 38, "dev_max": 78, "weeks": 2, "has_lessons": True, "notes": "両ラインナップに同じ3講 (高3表はスタンダード欄・高1・2表はベーシック欄)。語句・知識 (漢字・慣用句・文学史など) の講座はこれだけで、上位の現代文講座は読解の講座なので、上位層もこの講座 → level は「—」、dev 38-78。"},
+    {"code": "KZ016000", "name": "高3 古文＜文法編＞", "subject": "国語", "field": "古文文法", "level": "—", "band": "高3", "first": 1, "last": 12, "total_lessons": 12, "dev_min": 48, "dev_max": 78, "weeks": 6, "has_lessons": True, "notes": "トップ・ハイ・スタンダード共通の1講座。"},
+    {"code": "KZ155000", "name": "高3 トップ&ハイレベル古文＜読解編＞", "subject": "国語", "field": "古文読解", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 12, "total_lessons": 12, "dev_min": 58, "dev_max": 78, "weeks": 6, "has_lessons": True, "notes": "出典作品ごとの講座。"},
+    {"code": "KZ033000", "name": "高3 スタンダードレベル古文＜読解編＞", "subject": "国語", "field": "古文読解", "level": "スタンダード", "band": "高3", "first": 1, "last": 10, "total_lessons": 10, "dev_min": 48, "dev_max": 62, "weeks": 5, "has_lessons": True, "notes": "出典作品ごとの講座。"},
+    {"code": "KZ474000", "name": "高3 古文＜和歌・文学史編＞", "subject": "国語", "field": "和歌・文学史", "level": "—", "band": "高3", "first": 1, "last": 8, "total_lessons": 8, "dev_min": 48, "dev_max": 78, "weeks": 4, "has_lessons": True, "notes": "トップ・ハイ・スタンダード共通の1講座。"},
+    {"code": "KZ229000", "name": "高3 トップ&ハイレベル漢文", "subject": "国語", "field": "漢文", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 12, "total_lessons": 12, "dev_min": 58, "dev_max": 78, "weeks": 6, "has_lessons": True, "notes": "出典作品ごとの講座。"},
+    {"code": "EKZB360000", "name": "高1・高2・高3 漢文", "subject": "国語", "field": "漢文", "level": "—", "band": "全学年", "first": 1, "last": 11, "total_lessons": 11, "dev_min": 48, "dev_max": 78, "weeks": 6, "has_lessons": True, "notes": "[新版]。高3表ではスタンダード欄、高1・2表では3欄共通 (トップ〜スタンダード) → level「—」・dev 48-78。講番号は topic_code から。旧版 KZ269000 (10講) は不採用。"},
+    {"code": "KZ129000", "name": "高1・高2 現代文", "subject": "国語", "field": "現代文", "level": "スタンダード", "band": "高1・2", "first": 1, "last": 14, "total_lessons": 14, "dev_min": 48, "dev_max": 62, "weeks": 7, "has_lessons": True, "notes": "ラインナップはスタンダード欄。名称にレベルなし"},
+    {"code": "KZ354000", "name": "ベーシックレベル現代文", "subject": "国語", "field": "現代文", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 8, "total_lessons": 8, "dev_min": 38, "dev_max": 55, "weeks": 4, "has_lessons": True, "notes": ""},
+    {"code": "EKZB340000", "name": "高1・高2 古文＜文法編＞", "subject": "国語", "field": "古文文法", "level": "スタンダード", "band": "高1・2", "first": 1, "last": 19, "total_lessons": 19, "dev_min": 48, "dev_max": 62, "weeks": 10, "has_lessons": True, "notes": "[新版]。講番号は topic_code から。旧版 KZ125000 (12講) は不採用。"},
+    {"code": "EKZB330000", "name": "ベーシックレベル古文＜文法編＞", "subject": "国語", "field": "古文文法", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 30, "total_lessons": 30, "dev_min": 38, "dev_max": 55, "weeks": 15, "has_lessons": True, "notes": "[新版]。講番号は topic_code から。旧版 KZ291000 (24講) は不採用。"},
+    {"code": "KZ127000", "name": "高1・高2 古文＜読解編＞", "subject": "国語", "field": "古文読解", "level": "スタンダード", "band": "高1・2", "first": 1, "last": 12, "total_lessons": 12, "dev_min": 48, "dev_max": 62, "weeks": 6, "has_lessons": True, "notes": "ラインナップはスタンダード欄。名称にレベルなし"},
+    {"code": "KZ350000", "name": "ベーシックレベル古文＜読解編＞", "subject": "国語", "field": "古文読解", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 20, "total_lessons": 20, "dev_min": 38, "dev_max": 55, "weeks": 10, "has_lessons": True, "notes": ""},
+    {"code": "EKZB350000", "name": "ベーシックレベル漢文", "subject": "国語", "field": "漢文", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 26, "total_lessons": 26, "dev_min": 38, "dev_max": 55, "weeks": 13, "has_lessons": True, "notes": "[新版]。講番号は topic_code から。旧版 KZ352000 (23講) は不採用。"},
+    {"code": "KZA17000", "name": "高3 トップ&ハイレベル物理", "subject": "物理", "field": "全範囲", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 48, "total_lessons": 48, "dev_min": 58, "dev_max": 78, "weeks": 24, "has_lessons": True, "notes": "＜原子編＞ (KZ123000, 10講) と分割。"},
+    {"code": "KZ123000", "name": "高3 トップ&ハイレベル物理＜原子編＞", "subject": "物理", "field": "原子", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 10, "total_lessons": 10, "dev_min": 58, "dev_max": 78, "weeks": 5, "has_lessons": True, "notes": "番号は第1〜10講 (本編の続き番号ではない)。"},
+    {"code": "KZ191000", "name": "高3 スタンダードレベル物理", "subject": "物理", "field": "全範囲", "level": "スタンダード", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 48, "dev_max": 62, "weeks": 12, "has_lessons": True, "notes": ""},
+    {"code": "KZA14000", "name": "高3 トップ&ハイレベル化学＜理論編＞", "subject": "化学", "field": "理論", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 48, "total_lessons": 48, "dev_min": 58, "dev_max": 78, "weeks": 24, "has_lessons": True, "notes": ""},
+    {"code": "KZ190000", "name": "高3 スタンダードレベル化学＜理論編＞", "subject": "化学", "field": "理論", "level": "スタンダード", "band": "高3", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 48, "dev_max": 62, "weeks": 12, "has_lessons": True, "notes": ""},
+    {"code": "KZ219000", "name": "高3 化学＜無機編＞", "subject": "化学", "field": "無機", "level": "スタンダード", "band": "高3", "first": 1, "last": 12, "total_lessons": 12, "dev_min": 48, "dev_max": 78, "weeks": 6, "has_lessons": True, "notes": "無機はこの1講座のみ (トップ・ハイ欄は空)。上位層もこの講座なので dev_max を 78 に広げた (level はラインナップどおりスタンダード)。"},
+    {"code": "KZ136000", "name": "高3 トップ&ハイレベル化学＜有機編＞", "subject": "化学", "field": "有機", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 27, "total_lessons": 27, "dev_min": 58, "dev_max": 78, "weeks": 14, "has_lessons": True, "notes": ""},
+    {"code": "KZ290000", "name": "高3 スタンダードレベル化学＜有機編＞", "subject": "化学", "field": "有機", "level": "スタンダード", "band": "高3", "first": 1, "last": 22, "total_lessons": 22, "dev_min": 48, "dev_max": 62, "weeks": 11, "has_lessons": True, "notes": ""},
+    {"code": "KZ278000", "name": "高3 トップ&ハイレベル生物", "subject": "生物", "field": "考察問題", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 10, "total_lessons": 10, "dev_min": 58, "dev_max": 78, "weeks": 5, "has_lessons": True, "notes": "難問・考察問題の解き方を扱うテーマ型の10講で、各講は独立。全範囲の講義は KZ122000。"},
+    {"code": "KZ122000", "name": "高3 生物", "subject": "生物", "field": "全範囲", "level": "スタンダード", "band": "高3", "first": 1, "last": 48, "total_lessons": 48, "dev_min": 48, "dev_max": 62, "weeks": 24, "has_lessons": True, "notes": "ラインナップはスタンダード欄。名称にレベルなし。上位層はトップ&ハイ版 KZ278000 (考察問題 10講・生物の各単元を扱う) があるので dev は既定の 48-62 のまま。"},
+    {"code": "KZ267000", "name": "高1・高2・高3 物理基礎", "subject": "物理", "field": "物理基礎", "level": "スタンダード", "band": "全学年", "first": 1, "last": 10, "total_lessons": 10, "dev_min": 48, "dev_max": 62, "weeks": 5, "has_lessons": True, "notes": "高3・高1・2 ともスタンダード欄に掲載。上位層は物理の講座 (KZA17000 など) が同じ単元を扱うので dev は既定の 48-62。"},
+    {"code": "KZ282000", "name": "高1・高2・高3 化学基礎", "subject": "化学", "field": "化学基礎", "level": "スタンダード", "band": "全学年", "first": 1, "last": 8, "total_lessons": 8, "dev_min": 48, "dev_max": 62, "weeks": 4, "has_lessons": True, "notes": "高3・高1・2 ともスタンダード欄に掲載。上位層は化学＜理論編＞ (KZA14000 など) が同じ単元を扱うので dev は既定の 48-62。"},
+    {"code": "KZ242000", "name": "高1・高2・高3 生物基礎", "subject": "生物", "field": "生物基礎", "level": "スタンダード", "band": "全学年", "first": 1, "last": 12, "total_lessons": 12, "dev_min": 48, "dev_max": 62, "weeks": 6, "has_lessons": True, "notes": "高3・高1・2 ともスタンダード欄に掲載。上位層は生物の講座 (KZ122000 / KZ278000) が同じ単元を扱うので dev は既定の 48-62。"},
+    {"code": "X-std-chigaku-kiso", "name": "高1・高2・高3 地学基礎", "subject": "地学", "field": "地学基礎", "level": "スタンダード", "band": "全学年", "first": 1, "last": 11, "total_lessons": 11, "dev_min": 48, "dev_max": 62, "weeks": 6, "has_lessons": False, "notes": "2022 公開データに無い (ベーシック版 EKZB430000 のみ)。講義一覧なし。名称は他の基礎科目にならって組み立て。"},
+    {"code": "EKZB420000", "name": "ベーシックレベル物理基礎", "subject": "物理", "field": "物理基礎", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 9, "total_lessons": 9, "dev_min": 38, "dev_max": 55, "weeks": 5, "has_lessons": False, "notes": "[新版]。2022 データは配信途中で 6講ぶんのみ → 講義一覧は不完全。"},
+    {"code": "EKZB400000", "name": "ベーシックレベル化学基礎", "subject": "化学", "field": "化学基礎", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 24, "total_lessons": 24, "dev_min": 38, "dev_max": 55, "weeks": 12, "has_lessons": False, "notes": "[新版]。2022 データは配信途中で 7講ぶんのみ → 講義一覧は不完全。"},
+    {"code": "EKZB410000", "name": "ベーシックレベル生物基礎", "subject": "生物", "field": "生物基礎", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 6, "total_lessons": 6, "dev_min": 38, "dev_max": 55, "weeks": 3, "has_lessons": False, "notes": "[新版]。2022 データは配信途中で 2講ぶんのみ → 講義一覧は不完全。"},
+    {"code": "EKZB430000", "name": "ベーシックレベル地学基礎", "subject": "地学", "field": "地学基礎", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 12, "total_lessons": 12, "dev_min": 38, "dev_max": 55, "weeks": 6, "has_lessons": False, "notes": "[新版]。2022 データは配信途中で 9講ぶんのみ → 講義一覧は不完全。"},
+    {"code": "X-basic-physics", "name": "ベーシックレベル物理", "subject": "物理", "field": "全範囲", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 16, "total_lessons": 16, "dev_min": 38, "dev_max": 55, "weeks": 8, "has_lessons": False, "notes": "新課程の高校講座 (2022 データの KZ327000 (50講) とは別物)。講義一覧なし。"},
+    {"code": "X-basic-chemistry", "name": "ベーシックレベル化学", "subject": "化学", "field": "全範囲", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 25, "total_lessons": 25, "dev_min": 38, "dev_max": 55, "weeks": 13, "has_lessons": False, "notes": "新課程の高校講座 (2022 データの KZ511000/513000/516000 とは別物)。講義一覧なし。"},
+    {"code": "X-basic-biology", "name": "ベーシックレベル生物", "subject": "生物", "field": "全範囲", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 19, "total_lessons": 19, "dev_min": 38, "dev_max": 55, "weeks": 10, "has_lessons": False, "notes": "新課程の高校講座 (2022 データの KZ329000 (40講) とは別物)。講義一覧なし。"},
+    {"code": "X-basic-earthsci", "name": "ベーシックレベル地学", "subject": "地学", "field": "全範囲", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 22, "total_lessons": 22, "dev_min": 38, "dev_max": 55, "weeks": 11, "has_lessons": False, "notes": "2022 公開データに無い。講義一覧なし。"},
+    {"code": "KZ240000", "name": "高1・高2・高3 スタンダードレベル世界史", "subject": "世界史", "field": "通史", "level": "スタンダード", "band": "全学年", "first": 1, "last": 29, "total_lessons": 29, "dev_min": 48, "dev_max": 62, "weeks": 15, "has_lessons": False, "notes": "2022 データは25講 (第1〜25講) で 2026 の29講と不一致 → 講義一覧は使わない。"},
+    {"code": "KZ372000", "name": "高3 トップ&ハイレベル世界史＜通史編＞", "subject": "世界史", "field": "通史", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 50, "total_lessons": 51, "dev_min": 58, "dev_max": 78, "weeks": 26, "has_lessons": True, "notes": "※旧課程の学習内容に基づく講座 (ラインナップ注記)。第1〜50講 + 補講1本 = 51。last は番号つきの講だけ。"},
+    {"code": "KZ120000", "name": "高3 トップ&ハイレベル世界史＜文化史編＞", "subject": "世界史", "field": "文化史", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 12, "total_lessons": 12, "dev_min": 58, "dev_max": 78, "weeks": 6, "has_lessons": True, "notes": "※旧課程の学習内容に基づく講座 (ラインナップ注記)。"},
+    {"code": "KZ355000", "name": "高3 世界史＜論述編＞", "subject": "世界史", "field": "論述", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 7, "total_lessons": 7, "dev_min": 58, "dev_max": 78, "weeks": 4, "has_lessons": True, "notes": "※旧課程の学習内容に基づく講座 (ラインナップ注記)。"},
+    {"code": "KZ277000", "name": "高1・高2・高3 スタンダードレベル日本史", "subject": "日本史", "field": "通史", "level": "スタンダード", "band": "全学年", "first": 1, "last": 28, "total_lessons": 29, "dev_min": 48, "dev_max": 62, "weeks": 15, "has_lessons": True, "notes": "第1〜28講 + 補講1本 = 29。last は番号つきの講だけ。2026 は大学受験講座の欄だけに掲載。"},
+    {"code": "KZ373000", "name": "高3 トップ&ハイレベル日本史＜通史編＞", "subject": "日本史", "field": "通史", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 50, "total_lessons": 51, "dev_min": 58, "dev_max": 78, "weeks": 26, "has_lessons": True, "notes": "※旧課程の学習内容に基づく講座 (ラインナップ注記)。第1〜50講 + 補講1本 = 51。last は番号つきの講だけ。"},
+    {"code": "KZ121000", "name": "高3 トップ&ハイレベル日本史＜文化史編＞", "subject": "日本史", "field": "文化史", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 12, "total_lessons": 13, "dev_min": 58, "dev_max": 78, "weeks": 7, "has_lessons": True, "notes": "※旧課程の学習内容に基づく講座 (ラインナップ注記)。第1〜12講 + 補講1本 = 13。last は番号つきの講だけ。"},
+    {"code": "KZ289000", "name": "高3 日本史＜論述編＞", "subject": "日本史", "field": "論述", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 7, "total_lessons": 7, "dev_min": 58, "dev_max": 78, "weeks": 4, "has_lessons": True, "notes": "※旧課程の学習内容に基づく講座 (ラインナップ注記)。"},
+    {"code": "KZ493000", "name": "高3 日本史＜史料問題・テーマ史編＞", "subject": "日本史", "field": "史料・テーマ史", "level": "—", "band": "高3", "first": 1, "last": 10, "total_lessons": 10, "dev_min": 48, "dev_max": 78, "weeks": 5, "has_lessons": True, "notes": "※旧課程の学習内容に基づく講座 (ラインナップ注記)。 3レベル共通の1講座。"},
+    {"code": "KZ256000", "name": "高1・高2・高3 地理", "subject": "地理", "field": "系統地理", "level": "ハイ&スタンダード", "band": "全学年", "first": 1, "last": 20, "total_lessons": 20, "dev_min": 48, "dev_max": 70, "weeks": 10, "has_lessons": False, "notes": "2022 データは24講で 2026 の20講と不一致 (作り直しの可能性) → 講義一覧は使わない。"},
+    {"code": "KZ479000", "name": "高1・高2・高3 地理＜地誌編＞", "subject": "地理", "field": "地誌", "level": "ハイ&スタンダード", "band": "全学年", "first": 1, "last": 5, "total_lessons": 5, "dev_min": 48, "dev_max": 70, "weeks": 3, "has_lessons": True, "notes": "講数は 2022 データと一致 (5講)。"},
+    {"code": "KZ279000", "name": "高3 地理＜論述編＞", "subject": "地理", "field": "論述", "level": "トップ&ハイ", "band": "高3", "first": 1, "last": 5, "total_lessons": 5, "dev_min": 58, "dev_max": 78, "weeks": 3, "has_lessons": True, "notes": "※旧課程の学習内容に基づく講座 (ラインナップ注記)。"},
+    {"code": "KZ504000", "name": "高1・高2・高3 トップ&ハイレベル政治経済＜政治編＞", "subject": "政経", "field": "政治", "level": "トップ&ハイ", "band": "全学年", "first": 1, "last": 20, "total_lessons": 20, "dev_min": 58, "dev_max": 78, "weeks": 10, "has_lessons": True, "notes": "2026 は大学受験講座の欄だけに掲載"},
+    {"code": "KZ245000", "name": "高1・高2・高3 政治経済＜政治編＞", "subject": "政経", "field": "政治", "level": "スタンダード", "band": "全学年", "first": 1, "last": 13, "total_lessons": 13, "dev_min": 48, "dev_max": 62, "weeks": 7, "has_lessons": True, "notes": "ラインナップはスタンダード欄。名称にレベルなし。2026 は大学受験講座の欄だけに掲載"},
+    {"code": "KZ510000", "name": "高1・高2・高3 トップ&ハイレベル政治経済＜経済編＞", "subject": "政経", "field": "経済", "level": "トップ&ハイ", "band": "全学年", "first": 1, "last": 20, "total_lessons": 20, "dev_min": 58, "dev_max": 78, "weeks": 10, "has_lessons": True, "notes": "2026 は大学受験講座の欄だけに掲載"},
+    {"code": "KZ247000", "name": "高1・高2・高3 政治経済＜経済編＞", "subject": "政経", "field": "経済", "level": "スタンダード", "band": "全学年", "first": 1, "last": 13, "total_lessons": 13, "dev_min": 48, "dev_max": 62, "weeks": 7, "has_lessons": True, "notes": "ラインナップはスタンダード欄。名称にレベルなし。2026 は大学受験講座の欄だけに掲載"},
+    {"code": "KZ468000", "name": "高1・高2・高3 倫理", "subject": "倫理", "field": "全範囲", "level": "スタンダード", "band": "全学年", "first": 1, "last": 25, "total_lessons": 26, "dev_min": 48, "dev_max": 78, "weeks": 13, "has_lessons": True, "notes": "倫理はこの1講座のみ (トップ・ハイ欄は空) なので dev_max を 78 に広げた。第1〜25講 + 補講1本 = 26。last は番号つきの講だけ。"},
+    {"code": "EKZB370000", "name": "ベーシックレベル地理総合", "subject": "地理", "field": "地理総合", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 15, "total_lessons": 15, "dev_min": 38, "dev_max": 55, "weeks": 8, "has_lessons": False, "notes": "[新版]。2022 データは配信途中で 2講ぶんのみ → 講義一覧は不完全。"},
+    {"code": "X-basic-chiri-tankyu", "name": "ベーシックレベル地理探究", "subject": "地理", "field": "地理探究", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 20, "total_lessons": 20, "dev_min": 38, "dev_max": 55, "weeks": 10, "has_lessons": False, "notes": "新課程の高校講座 (2022 公開データに無い)。講義一覧なし。"},
+    {"code": "EKZB380000", "name": "ベーシックレベル歴史総合", "subject": "世界史", "field": "歴史総合", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 16, "total_lessons": 16, "dev_min": 38, "dev_max": 55, "weeks": 8, "has_lessons": False, "notes": "[新版]。日本史・世界史にまたがる科目。2022 データ (配信途中の7講ぶん・28 PART) は 20 PART が日本以外の歴史 (日本中心は 6・混在 2) なので subject は世界史。日本史の弱点にも関係する。topic_code の講番号が 00 から始まる → 講義一覧は不完全 (has_lessons=false)。"},
+    {"code": "X-basic-nihonshi-tankyu", "name": "ベーシックレベル日本史探究", "subject": "日本史", "field": "通史", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 23, "total_lessons": 23, "dev_min": 38, "dev_max": 55, "weeks": 12, "has_lessons": False, "notes": "新課程の高校講座 (2022 公開データに無い)。講義一覧なし。"},
+    {"code": "X-basic-sekaishi-tankyu", "name": "ベーシックレベル世界史探究", "subject": "世界史", "field": "通史", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 21, "total_lessons": 21, "dev_min": 38, "dev_max": 55, "weeks": 11, "has_lessons": False, "notes": "新課程の高校講座 (2022 公開データに無い)。講義一覧なし。"},
+    {"code": "EKZB390000", "name": "ベーシックレベル公共", "subject": "公共", "field": "全範囲", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 15, "total_lessons": 15, "dev_min": 38, "dev_max": 55, "weeks": 8, "has_lessons": False, "notes": "[新版]。公共の全範囲 (倫理・政治・経済・国際・持続可能な社会) を扱う講座。2022 データは配信途中で 8講ぶんのみ → 講義一覧は不完全。"},
+    {"code": "X-basic-joho1", "name": "ベーシックレベル情報I", "subject": "情報", "field": "情報I", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 9, "total_lessons": 9, "dev_min": 38, "dev_max": 55, "weeks": 5, "has_lessons": False, "notes": "2022 公開データに無い。講義一覧なし。"},
+    {"code": "X-std-joho1-programming", "name": "高1・高2・高3 情報I＜プログラミング編＞", "subject": "情報", "field": "プログラミング", "level": "スタンダード", "band": "全学年", "first": 1, "last": 48, "total_lessons": 48, "dev_min": 48, "dev_max": 62, "weeks": 24, "has_lessons": False, "notes": "2022 公開データに無い。講義一覧なし。名称の学年表記は組み立て。"},
+    {"code": "X-h3-top-shoronbun", "name": "高3 トップレベル小論文", "subject": "小論文", "field": "小論文", "level": "トップ", "band": "高3", "first": 1, "last": 20, "total_lessons": 20, "dev_min": 65, "dev_max": 78, "weeks": 10, "has_lessons": False, "notes": "2022 データの小論文 (KZ132000 10講・KZ223000 入門3講) とは別講座。講義一覧なし。"},
+    {"code": "X-h3-hs-shoronbun", "name": "高3 ハイ&スタンダードレベル小論文", "subject": "小論文", "field": "小論文", "level": "ハイ&スタンダード", "band": "高3", "first": 1, "last": 20, "total_lessons": 20, "dev_min": 48, "dev_max": 70, "weeks": 10, "has_lessons": False, "notes": "2022 データの小論文とは別講座。講義一覧なし。"},
+    {"code": "X-basic-shoronbun", "name": "ベーシックレベル小論文", "subject": "小論文", "field": "小論文", "level": "ベーシック", "band": "高1・2", "first": 1, "last": 20, "total_lessons": 20, "dev_min": 38, "dev_max": 55, "weeks": 10, "has_lessons": False, "notes": "2022 データの小論文とは別講座。講義一覧なし。"},
+    {"code": "X-kyotsu-eng-reading", "name": "共通テスト対策講座 英語＜リーディング編＞", "subject": "英語", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。 公式名の【英語音声付き】は外した。"},
+    {"code": "X-kyotsu-eng-listening", "name": "共通テスト対策講座 英語＜リスニング編＞", "subject": "英語", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。 公式名の【英語音声付き】は外した。"},
+    {"code": "X-kyotsu-gendai", "name": "共通テスト対策講座 現代文", "subject": "国語", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-kobun-kanbun", "name": "共通テスト対策講座 古文漢文", "subject": "国語", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-sekaishi", "name": "共通テスト対策講座 歴史総合，世界史探究", "subject": "世界史", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-nihonshi", "name": "共通テスト対策講座 歴史総合，日本史探究", "subject": "日本史", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-chiri", "name": "共通テスト対策講座 地理総合，地理探究", "subject": "地理", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-rinri", "name": "共通テスト対策講座 公共，倫理", "subject": "倫理", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-seikei", "name": "共通テスト対策講座 公共，政治経済", "subject": "政経", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-math-1a", "name": "共通テスト対策講座 数学IA", "subject": "数学", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。 ページ注記「※ 2026年秋頃リリース予定」がこの講座に付いている。"},
+    {"code": "X-kyotsu-math-2bc", "name": "共通テスト対策講座 数学IIBC", "subject": "数学", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。 ページ注記「※ 2026年秋頃リリース予定」がこの講座に付いている。"},
+    {"code": "X-kyotsu-physics-kiso", "name": "共通テスト対策講座 物理基礎", "subject": "物理", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-physics", "name": "共通テスト対策講座 物理", "subject": "物理", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-chemistry-kiso", "name": "共通テスト対策講座 化学基礎", "subject": "化学", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-chemistry", "name": "共通テスト対策講座 化学", "subject": "化学", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-biology-kiso", "name": "共通テスト対策講座 生物基礎", "subject": "生物", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-biology", "name": "共通テスト対策講座 生物", "subject": "生物", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-earthsci-kiso", "name": "共通テスト対策講座 地学基礎", "subject": "地学", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
+    {"code": "X-kyotsu-joho1", "name": "共通テスト対策講座 情報I", "subject": "情報", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
 ]
+SAPURI_COURSE_BY_CODE = {_c["code"]: _c for _c in SAPURI_COURSES}
+
+# 📺 科目キー (D3 2026-10-10 塾長「英語・国語も含める」)。止めたい科目はここから外す (推薦・プロンプトから消える)。
+SAPURI_SUBJECT_KEYS = ("eng_grammar", "math", "physics", "physics_basic", "chemistry", "chemistry_basic",
+                       "biology_basic", "nihonshi", "sekaishi", "chiri", "seikei", "rinri", "kobun", "kanbun", "gendai")
+
+# 📺 弱点のタグ語彙 (科目キーごと)。弱点の topic「タグ(細目)」のタグがここに無ければ「科目だけ分かった」扱い。
+SAPURI_TAG_VOCAB = {
+    "eng_grammar": ["時制", "助動詞", "受動態", "不定詞", "動名詞", "分詞", "分詞構文", "比較", "関係詞", "仮定法", "接続詞",
+                    "前置詞", "倒置", "否定", "疑問詞", "話法", "強調", "名詞・代名詞", "冠詞", "形容詞・副詞", "語法"],
+    "math": ["数と式", "集合と命題", "二次関数", "図形と計量", "データの分析", "場合の数・確率", "整数", "図形の性質", "式と証明",
+             "複素数と方程式", "図形と方程式", "三角関数", "指数・対数", "微分・積分", "数列", "統計的な推測", "ベクトル",
+             "複素数平面", "平面上の曲線", "極限", "微分法", "積分法"],
+    "physics": ["力学", "熱力学", "波動", "電磁気", "原子"],
+    "physics_basic": ["運動", "仕事", "熱", "波", "電気"],
+    "chemistry": ["理論化学", "無機化学", "有機化学"],
+    "chemistry_basic": ["構成", "結合", "物質量", "酸塩基", "酸化還元"],
+    "biology_basic": ["細胞", "代謝", "遺伝情報", "体内環境", "生態系"],
+    "nihonshi": ["古代", "中世", "近世", "近代", "現代"],
+    "sekaishi": ["古代", "中世", "近世", "近代", "現代"],
+    "chiri": ["地形", "気候", "産業", "人口", "地誌"],
+    "seikei": ["政治", "経済", "国際"],
+    "rinri": ["源流", "近代", "日本", "現代"],
+    "kobun": ["単語", "文法", "敬語"],
+    "kanbun": ["句法", "重要語", "漢詩"],
+    "gendai": ["漢字", "語彙", "評論", "評論読解", "小説読解"],
+}
+# 別名 → タグ (値は必ず SAPURI_TAG_VOCAB の同じ科目の語)。2 つに分かれるもの (倒置・強調) は両方の和集合。
+#   英文法は週次プリントの _UNIT_TAG_ALIASES も _sapuri_parse_topic で併用する。
+#   数学の「データ」「微積」「指数対数」は単元ドリル (基礎数学 X) の単元名。
+SAPURI_TAG_ALIASES = {
+    "eng_grammar": {"倒置・強調": ["倒置", "強調"], "接続詞・関係詞との区別": ["接続詞", "関係詞"],
+                    "接続詞・複合関係詞との区別": ["接続詞", "関係詞"]},
+    "math": {"確率": ["場合の数・確率"], "整数の性質": ["整数"], "微分積分": ["微分・積分"], "指数関数・対数関数": ["指数・対数"],
+             "対数": ["指数・対数"], "高次方程式": ["複素数と方程式"], "軌跡と領域": ["図形と方程式"],
+             "二次方程式と判別式": ["二次関数"], "二次不等式": ["二次関数"], "1次不等式": ["数と式"],
+             "絶対値を含む不等式": ["数と式"], "絶対値を含む方程式": ["数と式"], "連立1次不等式": ["数と式"],
+             "データ": ["データの分析"], "微積": ["微分・積分"], "指数対数": ["指数・対数"]},
+    "biology_basic": {"遺伝": ["遺伝情報"]},
+    "chiri": {"人口都市": ["人口"]},
+    "rinri": {"源流思想": ["源流"], "近代思想": ["近代"], "日本思想": ["日本"], "現代思想": ["現代"]},
+}
+# 数学のタグ → 高1・2 新課程の科目 (講座を絞る目安。高3 は IAIIB+C と III+C の 2 系統)
+SAPURI_MATH_TAG_FIELD = {
+    "数と式": "数学I", "集合と命題": "数学I", "二次関数": "数学I", "図形と計量": "数学I", "データの分析": "数学I",
+    "場合の数・確率": "数学A", "整数": "数学A", "図形の性質": "数学A",
+    "式と証明": "数学II", "複素数と方程式": "数学II", "図形と方程式": "数学II", "三角関数": "数学II", "指数・対数": "数学II",
+    "微分・積分": "数学II",
+    "数列": "数学B+C(数学B)", "統計的な推測": "数学B+C(数学B)", "ベクトル": "数学B+C(数学C)",
+    "複素数平面": "数学C", "平面上の曲線": "数学C",
+    "極限": "数学III", "微分法": "数学III", "積分法": "数学III",
+}
+# 📺 講座がどの科目キー (とタグ) を扱うか = 弱点から講座を選ぶ母集団 (講データの有無に依存しない)。
+#   値は {subject_key: [タグ] or "*" (その科目の全タグ)}。総合問題編 (_2)・共通テスト対策・中学総復習は入れない。
+SAPURI_COVERS = {
+    "KZA01000": {"eng_grammar": "*"},
+    "KZA02000": {"eng_grammar": "*"},
+    "KZA03000": {"eng_grammar": "*"},
+    "KZA35000": {"eng_grammar": "*"},
+    "KZ375000": {"eng_grammar": "*"},
+    "EKZB320000": {"eng_grammar": "*"},
+    "EKZB310000": {"eng_grammar": "*"},
+    "MKZ371000": {"math": ["数と式", "集合と命題", "二次関数", "図形と計量", "データの分析", "場合の数・確率", "整数", "図形の性質", "式と証明", "複素数と方程式", "図形と方程式", "三角関数", "指数・対数", "微分・積分", "数列", "統計的な推測", "ベクトル"]},
+    "MKZA10000_1": {"math": ["数と式", "集合と命題", "二次関数", "図形と計量", "データの分析", "場合の数・確率", "整数", "図形の性質", "式と証明", "複素数と方程式", "図形と方程式", "三角関数", "指数・対数", "微分・積分", "数列", "統計的な推測", "ベクトル"]},
+    "MKZ118000_1": {"math": ["数と式", "集合と命題", "二次関数", "図形と計量", "データの分析", "場合の数・確率", "整数", "図形の性質", "式と証明", "複素数と方程式", "図形と方程式", "三角関数", "指数・対数", "微分・積分", "数列", "統計的な推測", "ベクトル"]},
+    "KZA37000": {"math": ["数と式", "集合と命題", "二次関数", "図形と計量", "データの分析", "場合の数・確率", "整数", "図形の性質", "式と証明", "複素数と方程式", "図形と方程式", "三角関数", "指数・対数", "微分・積分", "数列", "統計的な推測", "ベクトル"]},
+    "MKZ119000": {"math": ["複素数平面", "平面上の曲線", "極限", "微分法", "積分法"]},
+    "MKZ135000": {"math": ["複素数平面", "平面上の曲線", "極限", "微分法", "積分法"]},
+    "MKZ188000": {"math": ["複素数平面", "平面上の曲線", "極限", "微分法", "積分法"]},
+    "X-h12-high-math1": {"math": ["数と式", "集合と命題", "二次関数", "図形と計量", "データの分析"]},
+    "X-h12-std-math1": {"math": ["数と式", "集合と命題", "二次関数", "図形と計量", "データの分析"]},
+    "X-basic-math1": {"math": ["数と式", "集合と命題", "二次関数", "図形と計量", "データの分析"]},
+    "X-h12-high-matha": {"math": ["場合の数・確率", "整数", "図形の性質"]},
+    "X-h12-std-matha": {"math": ["場合の数・確率", "整数", "図形の性質"]},
+    "X-basic-matha": {"math": ["場合の数・確率", "整数", "図形の性質"]},
+    "X-h12-high-math2": {"math": ["式と証明", "複素数と方程式", "図形と方程式", "三角関数", "指数・対数", "微分・積分"]},
+    "X-h12-std-math2": {"math": ["式と証明", "複素数と方程式", "図形と方程式", "三角関数", "指数・対数", "微分・積分"]},
+    "X-basic-math2": {"math": ["式と証明", "複素数と方程式", "図形と方程式", "三角関数", "指数・対数", "微分・積分"]},
+    "X-h12-high-mathbc": {"math": ["数列", "統計的な推測", "ベクトル"]},
+    "X-h12-std-mathbc": {"math": ["数列", "統計的な推測", "ベクトル"]},
+    "X-basic-mathb": {"math": ["数列", "統計的な推測"]},
+    "X-basic-mathc-vector": {"math": ["ベクトル"]},
+    "EKZB440000": {"math": ["極限", "微分法", "積分法"]},
+    "EKZB480000": {"math": ["複素数平面", "平面上の曲線"]},
+    "KZA17000": {"physics": ["力学", "熱力学", "波動", "電磁気"]},
+    "KZ191000": {"physics": "*"},
+    "KZ123000": {"physics": ["原子"]},
+    "X-basic-physics": {"physics": "*"},
+    "KZ267000": {"physics_basic": "*"},
+    "EKZB420000": {"physics_basic": "*"},
+    "KZA14000": {"chemistry": ["理論化学"]},
+    "KZ190000": {"chemistry": ["理論化学"]},
+    "KZ219000": {"chemistry": ["無機化学"]},
+    "KZ136000": {"chemistry": ["有機化学"]},
+    "KZ290000": {"chemistry": ["有機化学"]},
+    "X-basic-chemistry": {"chemistry": "*"},
+    "KZ282000": {"chemistry_basic": "*"},
+    "EKZB400000": {"chemistry_basic": "*"},
+    "KZ242000": {"biology_basic": "*"},
+    "EKZB410000": {"biology_basic": "*"},
+    "KZ277000": {"nihonshi": "*"},
+    "KZ373000": {"nihonshi": "*"},
+    "X-basic-nihonshi-tankyu": {"nihonshi": "*"},
+    "KZ372000": {"sekaishi": "*"},
+    "KZ240000": {"sekaishi": "*"},
+    "X-basic-sekaishi-tankyu": {"sekaishi": "*"},
+    "KZ256000": {"chiri": ["地形", "気候", "産業", "人口"]},
+    "KZ479000": {"chiri": ["地誌"]},
+    "KZ245000": {"seikei": ["政治", "国際"]},
+    "KZ504000": {"seikei": ["政治", "国際"]},
+    "KZ247000": {"seikei": ["経済", "国際"]},
+    "KZ510000": {"seikei": ["経済", "国際"]},
+    "KZ468000": {"rinri": "*"},
+    "KZ016000": {"kobun": "*"},
+    "EKZB340000": {"kobun": "*"},
+    "EKZB330000": {"kobun": "*"},
+    "EKZB360000": {"kanbun": "*"},
+    "EKZB350000": {"kanbun": "*"},
+    "KZ272000": {"gendai": ["漢字", "語彙"]},
+    "KZ137000": {"gendai": ["評論", "評論読解", "小説読解"]},
+    "KZA15000": {"gendai": ["評論", "評論読解", "小説読解"]},
+    "KZ129000": {"gendai": ["評論", "評論読解", "小説読解"]},
+    "KZ354000": {"gendai": ["評論", "評論読解", "小説読解"]},
+}
+# 文化史・史料の講座は「弱点の topic → 講」の対応 (Tier 1) が取り込まれているときだけ候補にする (段階 B)。
+SAPURI_COVERS_TIER1_ONLY = {
+    "KZ121000": {"nihonshi": "*"},
+    "KZ493000": {"nihonshi": "*"},
+    "KZ120000": {"sekaishi": "*"},
+}
+# 旧初期データ (2026-05-14・74 講座) の講座名 → 今の講座コード。空 = 架空の講座 (対応なし)。
+#   既存データ (学習計画・端末に残ったタスク) の読み替え用。app.js の SAPURI_LEGACY_CAPS はこの表から作った写し。
+SAPURI_LEGACY_NAME_TO_CODE = {
+    "高1 ベーシックレベル英文法": ["EKZB310000"],
+    "高1 スタンダードレベル英文法": ["EKZB320000"],
+    "高2 スタンダードレベル英文法": ["EKZB320000"],
+    "高2 ハイレベル英文法": ["KZ375000"],
+    "高3 ベーシックレベル英文法": [],
+    "高3 スタンダードレベル英文法": ["KZA03000"],
+    "高3 ハイレベル英文法": ["KZA02000"],
+    "高3 トップレベル英文法": ["KZA01000"],
+    "高3 スタンダードレベル英語 〈読解編〉": ["MKZ160000"],
+    "高3 ハイレベル英語 〈読解編〉": ["MKZ206000"],
+    "高3 トップレベル英語 〈読解編〉": ["MKZ286000"],
+    "高3 英作文対策講座": ["KZ177000"],
+    "高3 スタンダードレベル英語〈英文解釈編〉": ["KZ580000"],
+    "高3 ハイレベル英語〈英文解釈編〉": ["KZ578000"],
+    "高3 トップレベル英語〈英文解釈編〉": ["KZ574000"],
+    "高3 スタンダードレベル英語〈長文演習編〉": ["KZ581000"],
+    "高3 ハイレベル英語〈長文演習編〉": ["KZ579000"],
+    "高3 トップレベル英語〈長文演習編〉": ["KZ576000"],
+    "高3 スタンダードレベル英語〈リスニング編〉": [],
+    "高3 ハイレベル英語〈リスニング編〉": ["KZ577000"],
+    "高1 スタンダードレベル数学IA": ["X-h12-std-math1", "X-h12-std-matha"],
+    "高2 スタンダードレベル数学IIB": ["X-h12-std-math2", "X-h12-std-mathbc"],
+    "高3 ベーシックレベル数学IAIIB+C(ベクトル)": [],
+    "高3 スタンダードレベル数学IAIIB+C(ベクトル)": ["MKZ118000_1", "MKZ118000_2"],
+    "高3 ハイレベル数学IAIIB+C(ベクトル)": ["MKZA10000_1", "MKZA10000_2"],
+    "高3 トップレベル数学IAIIB+C(ベクトル)": ["MKZ371000"],
+    "高3 スタンダードレベル数学III+C(平面上の曲線・複素数平面)": ["MKZ188000"],
+    "高3 ハイレベル数学III+C(平面上の曲線・複素数平面)": ["MKZ135000"],
+    "高3 トップレベル数学III+C(平面上の曲線・複素数平面)": ["MKZ119000"],
+    "古文文法ベーシックレベル": ["EKZB330000"],
+    "古文文法スタンダードレベル": ["EKZB340000", "KZ016000"],
+    "高3 スタンダードレベル古文〈読解編〉": ["KZ033000"],
+    "高3 ハイレベル古文〈読解編〉": ["KZ155000"],
+    "漢文ベーシックレベル": ["EKZB350000"],
+    "漢文スタンダードレベル": ["EKZB360000"],
+    "高3 ベーシックレベル現代文": [],
+    "高3 スタンダードレベル現代文": ["KZ137000"],
+    "高3 ハイレベル現代文": ["KZA15000"],
+    "高3 トップレベル現代文": ["KZA15000"],
+    "高3 ベーシックレベル物理": [],
+    "高3 スタンダードレベル物理": ["KZ191000"],
+    "高3 ハイレベル物理": ["KZA17000", "KZ123000"],
+    "高3 トップレベル物理": ["KZA17000", "KZ123000"],
+    "高3 ベーシックレベル化学〈理論編〉": [],
+    "高3 スタンダードレベル化学〈理論編〉": ["KZ190000"],
+    "高3 ハイレベル化学〈理論編〉": ["KZA14000"],
+    "高3 トップレベル化学〈理論編〉": ["KZA14000"],
+    "高3 ベーシックレベル化学〈無機編〉": [],
+    "高3 スタンダードレベル化学〈無機編〉": ["KZ219000"],
+    "高3 ハイレベル化学〈無機編〉": ["KZ219000"],
+    "高3 トップレベル化学〈無機編〉": ["KZ219000"],
+    "高3 ベーシックレベル化学〈有機編〉": [],
+    "高3 スタンダードレベル化学〈有機編〉": ["KZ290000"],
+    "高3 ハイレベル化学〈有機編〉": ["KZ136000"],
+    "高3 トップレベル化学〈有機編〉": ["KZ136000"],
+    "高3 ベーシックレベル生物": [],
+    "高3 スタンダードレベル生物": ["KZ122000"],
+    "高3 ハイレベル生物": ["KZ278000"],
+    "高3 ベーシックレベル日本史〈通史編〉": [],
+    "高3 スタンダードレベル日本史〈通史編〉": ["KZ277000"],
+    "高3 トップ&ハイレベル日本史〈通史編〉": ["KZ373000"],
+    "高3 ベーシックレベル世界史〈通史編〉": [],
+    "高3 スタンダードレベル世界史〈通史編〉": ["KZ240000"],
+    "高3 トップ&ハイレベル世界史〈通史編〉": ["KZ372000"],
+    "高3 ベーシックレベル地理": [],
+    "高3 スタンダード&ハイレベル地理": ["KZ256000", "KZ479000"],
+    "高3 ベーシックレベル政治・経済": [],
+    "高3 スタンダード&ハイレベル政治・経済": ["KZ245000", "KZ247000", "KZ504000", "KZ510000"],
+    "高3 ベーシックレベル現代社会": [],
+    "共通テスト対策講座 英語(リーディング)": ["X-kyotsu-eng-reading"],
+    "共通テスト対策講座 英語(リスニング)": ["X-kyotsu-eng-listening"],
+    "共通テスト対策講座 数学IA": ["X-kyotsu-math-1a"],
+    "共通テスト対策講座 数学IIB": ["X-kyotsu-math-2bc"],
+    "共通テスト対策講座 国語": ["X-kyotsu-gendai", "X-kyotsu-kobun-kanbun"],
+}
 
 
 def _cleanup_old_sapuri_lectures():
@@ -2857,66 +3123,12 @@ def _cleanup_old_sapuri_lectures():
 
 
 def _seed_sapuri_lectures():
-    """スタディサプリ主要講座の初期データを sapuri_lectures に投入 (重複は skip・冪等)。
+    """(廃止 2026-10-10・スタサプ段階 A) 旧初期データ (2026-05-14・74 講座) の投入。
 
-    Round 2 改修 (2026-05-14・B 案): 新規 INSERT 前に旧名レコードのクリーンアップ migration を実行。
+    架空の講座名・丸めた講数が混ざっていたので初期データごと廃止し、起動時の呼び出しも外した
+    (講座の正典はコード定数 SAPURI_COURSES)。sapuri_lectures 表と DDL は既存データのため残すが、どこからも読まない。
     """
-    # 🔧 B 案改修: 旧名レコードを cleanup してから新名 INSERT
-    try:
-        _cleanup_old_sapuri_lectures()
-    except Exception as _ce:
-        log.warning(f"[seed_sapuri_lectures] cleanup phase failed (continue with seed): {_ce}")
-    conn = _startup_db()
-    c = conn.cursor()
-    inserted = 0
-    skipped = 0
-    for lec in SAPURI_LECTURES_SEED:
-        try:
-            c.execute(
-                "INSERT INTO sapuri_lectures (name, level, grade, subject, sub_genre, "
-                "total_lessons, suitable_dev_min, suitable_dev_max, weeks_to_complete, notes) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?)",
-                (lec["name"], lec.get("level"), lec.get("grade"), lec["subject"], lec.get("sub_genre"),
-                 lec.get("total_lessons"), lec.get("suitable_dev_min"), lec.get("suitable_dev_max"),
-                 lec.get("weeks_to_complete"), lec.get("notes"))
-            )
-            conn.commit()
-            inserted += 1
-        except IntegrityError:
-            try: conn.rollback()
-            except Exception: pass
-            skipped += 1
-        except Exception as e:
-            try: conn.rollback()
-            except Exception: pass
-            # 🔒 [startup-lock-timeout 2026-09-03] ロック待ちで倒れたら残りも同じ結果になるので打ち切る。
-            #   1件ごとに lock_timeout ぶん待つと (件数×10秒) で起動が healthcheck に間に合わない。
-            #   投入できなかったぶんは次回起動で入る (この seed は冪等)。
-            if getattr(e, "sqlstate", None) in _DDL_TRANSIENT_LOCK_SQLSTATES:
-                skipped += 1
-                log.warning(
-                    f"[seed_sapuri_lectures] テーブルがロックされているため初期データ投入を打ち切りました "
-                    f"(残りは次回の起動で入ります): {type(e).__name__}"
-                )
-                break
-            log.warning(f"[seed_sapuri_lectures] {lec['name']}: {type(e).__name__}: {str(e)[:100]}")
-            skipped += 1
-    conn.close()
-    # multi-replica log noise 最適化 (案 B: idempotent check)
-    total_seed = len(SAPURI_LECTURES_SEED)
-    if inserted > 0:
-        log.info(f"[seed_sapuri_lectures] inserted={inserted} skipped={skipped} (total seed={total_seed})")
-    elif skipped == total_seed:
-        log.debug(f"[seed_sapuri_lectures] all skipped - idempotent state (seed={total_seed})")
-    else:
-        log.warning(f"[seed_sapuri_lectures] UNEXPECTED state: inserted={inserted} skipped={skipped} != {total_seed}")
-    return inserted, skipped
-
-
-try:
-    _seed_sapuri_lectures()
-except Exception as _se:
-    log.warning(f"[seed_sapuri_lectures] failed: {_se}")
+    return 0, 0
 
 
 # ==========================================================================
@@ -5794,6 +6006,19 @@ async def _weekly_worksheet_scheduler():
             await asyncio.sleep(3600)
 
 
+# 弱点 topic がタグ語彙より細かい別名のときの正規化 (例:「関係代名詞(主格)」→ prefix「関係代名詞」
+# はタグ「関係詞」に startswith しない)。値はタグ語彙 21 語のいずれか。
+# 📺 2026-10-10 スタサプ段階 A: 週次プリントの関数内ローカルから module 定数に引き上げ、スタサプの弱点タグの
+#   正規化 (_sapuri_parse_topic) と共用する (週次プリントの挙動は変えない)。
+_UNIT_TAG_ALIASES = {
+    "関係代名詞": "関係詞", "関係副詞": "関係詞", "複合関係詞": "関係詞",
+    "仮定法過去完了": "仮定法", "仮定法過去": "仮定法", "仮定法現在": "仮定法",
+    "現在完了": "時制", "過去完了": "時制", "未来完了": "時制", "進行形": "時制",
+    "代名詞": "名詞・代名詞", "不定代名詞": "名詞・代名詞", "受け身": "受動態",
+    "強調構文": "強調", "間接疑問": "疑問詞", "熟語": "語法", "イディオム": "語法", "慣用表現": "語法",
+}
+
+
 def _run_weekly_worksheet_generation() -> dict:
     """📅 全生徒の弱点プリント生成・保存。
     各生徒の student_weakness TOP3 (count desc + low score) から bank endpoint で 3 問ずつ抽出、
@@ -5845,15 +6070,7 @@ def _run_weekly_worksheet_generation() -> dict:
         #   _derive_question_unit (q.unit > 解説/設問の【単元】)。候補行の全小問を Python で照合し
         #   混在大問を弾く。run 内キャッシュで同一単元の走査は全生徒で 1 回。
         _unit_rows_cache = {}
-        # 弱点 topic がタグ語彙より細かい別名のときの正規化 (例:「関係代名詞(主格)」→ prefix「関係代名詞」
-        # はタグ「関係詞」に startswith しない)。値はタグ語彙 21 語のいずれか。
-        _UNIT_TAG_ALIASES = {
-            "関係代名詞": "関係詞", "関係副詞": "関係詞", "複合関係詞": "関係詞",
-            "仮定法過去完了": "仮定法", "仮定法過去": "仮定法", "仮定法現在": "仮定法",
-            "現在完了": "時制", "過去完了": "時制", "未来完了": "時制", "進行形": "時制",
-            "代名詞": "名詞・代名詞", "不定代名詞": "名詞・代名詞", "受け身": "受動態",
-            "強調構文": "強調", "間接疑問": "疑問詞", "熟語": "語法", "イディオム": "語法", "慣用表現": "語法",
-        }
+        # 弱点 topic がタグ語彙より細かい別名のときの正規化は module 定数 _UNIT_TAG_ALIASES (2026-10-10 に引き上げ)。
 
         def _grammar_unit_rows(prefix):
             """r_grammar から「全小問の単元が prefix に一致する大問」の id リスト (run 内キャッシュ)。"""
@@ -55321,6 +55538,11 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
                 body_text += "\n\n※マイページ (AI学習: 学習記録・AI弱点プリント・AIチューター) も使えます。ログイン後のメニューから開けます。"
         else:
             welcome_subject = "✅ 国公立難関大学コース ご加入承認"
+            # 📺 2026-10-10 D2: スタサプの行は授業コースの在籍生 (_sapuri_eligible_by_id) だけ。オンラインの AI 学習管理コースや
+            #   コース外の承認には書かない (スタサプを勧めない)。承認で在籍クラスが変わりうるのでキャッシュを捨ててから読む。
+            _SAPURI_ELIGIBLE_CACHE.pop(int(student_id), None)
+            _ws_line = ("🎯 AI 弱点プリント生成 + スタサプ補強推薦" if _sapuri_eligible_by_id(student_id).get("eligible")
+                        else "🎯 AI 弱点プリント生成")
             body_text = (
                 f"{name} さん\n\n"
                 f"国公立難関大学コースへのご加入が承認されました!\n"
@@ -55330,7 +55552,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
                 f"📚 学習記録 + ヒートマップ\n"
                 f"🎓 合格カリキュラム (AI 自動生成)\n"
                 f"📊 模試結果 + AI ギャップ分析\n"
-                f"🎯 AI 弱点プリント生成 + スタサプ補強推薦\n"
+                f"{_ws_line}\n"
                 f"📅 学習計画 (ガント + カレンダー)\n"
                 f"📨 塾長との直接メッセージ\n\n"
                 f"ご利用料金につきましては別途ご案内いたします。"
@@ -55403,6 +55625,8 @@ def admin_reject_course_application(app_id: int, payload: CourseApplicationRejec
 # ==========================================================================
 # Routes: Weak-Points Worksheet (Phase 4.6 - AI 弱点プリント生成 / 国公立難関大学コース限定)
 # 塾長指示 2026-05-06: 弱点はスタサプ講義で補強 + AI で弱点プリント自動生成
+# 📺 2026-10-10 スタサプ段階 A: AI にスタサプを書かせない (全員分)。AI が記憶で書いた講座名は架空のことがあり、
+#   対象外の生徒 (D2) にも出ていた。sapuri_lectures は段階 A では常に [] (段階 B で対象生徒にサーバ照合の結果を入れる)。
 # ==========================================================================
 class WorksheetGenRequest(BaseModel):
     subject: str
@@ -55413,7 +55637,7 @@ class WorksheetGenRequest(BaseModel):
 
 @app.post("/api/weak-points/generate-worksheet")
 def generate_weak_points_worksheet(payload: WorksheetGenRequest, request: Request, authorization: Optional[str] = Header(None)):
-    """生徒: 弱点プリントを AI 生成 + スタサプ講義補強推薦。"""
+    """生徒: 弱点プリントを AI 生成 (スタサプの推薦は AI に書かせない・2026-10-10)。"""
     _check_rate_limit_ip(request, bucket="weak_worksheet", limit=10, window=600)
     student = _get_current_student(authorization)
     if not student:
@@ -55456,13 +55680,13 @@ def generate_weak_points_worksheet(payload: WorksheetGenRequest, request: Reques
     except Exception as e:
         log.warning(f"[Worksheet] exam context fetch failed: {e}")
 
-    sys_prompt = "難関大学受験の問題作成のプロです。生徒の弱点科目に合わせて練習問題を作成し、解答・解説・対応するスタディサプリ講義も提案します。教師名 (講師名) は塾長指示で出力禁止。スタサプ講座は『高3 トップレベル英文法』のような講師名抜きの汎用商品名のみで記載すること。純粋な JSON のみ返答 (前置きや解説不要)。"
+    sys_prompt = "難関大学受験の問題作成のプロです。生徒の弱点科目に合わせて練習問題を作成し、解答・解説を付けます。教師名 (講師名) は塾長指示で出力禁止。映像授業サービス (スタディサプリ等) の講座・講義は書かない。純粋な JSON のみ返答 (前置きや解説不要)。"
     user_prompt = f"""科目: {subject}
 {('テーマ/単元: ' + topic) if topic else 'テーマ/単元: AI が模試結果から推測して設定'}
 {('志望校: ' + target_uni) if target_uni else ''}
 問題数: {n} 問{exam_context}
 
-上記の弱点を補強する練習問題を生成してください。問題は易→難の順で並べ、各問題に解答と解説を付けます。さらに対応するスタサプ講義 (3-5 件、レベル別) を推薦してください。
+上記の弱点を補強する練習問題を生成してください。問題は易→難の順で並べ、各問題に解答と解説を付けます。
 
 出力形式 (フェンスや前置きなし、純粋な JSON):
 {{
@@ -55476,16 +55700,12 @@ def generate_weak_points_worksheet(payload: WorksheetGenRequest, request: Reques
       "answer": "解答 (簡潔に)",
       "explanation": "解説 (200字以内、なぜそうなるか・解法の核を明示)"
     }}
-  ],
-  "sapuri_lectures": [
-    {{"title": "スタサプ講義名 (商品名そのまま)", "level": "ベーシック|スタンダード|ハイレベル|トップレベル", "reason": "この弱点克服に有効な理由 (60字以内)"}}
   ]
 }}
 
 注意:
 - 問題は前提知識を上げすぎず、弱点克服に集中
-- 解説は「公式暗記」ではなく「なぜそうなるか」の理解促進
-- スタサプ講義名は実在の商品 (ベーシック → トップレベルの順で 3-5 件)"""
+- 解説は「公式暗記」ではなく「なぜそうなるか」の理解促進"""
 
     body = {
         "model": "gemini-2.5-flash",
@@ -55523,13 +55743,8 @@ def generate_weak_points_worksheet(payload: WorksheetGenRequest, request: Reques
                 "answer": _sanitize_text(p.get("answer"), 400) or "",
                 "explanation": _sanitize_text(p.get("explanation"), 600) or "",
             })
+        # 📺 AI の出力にスタサプがあっても使わない (段階 A は常に空。段階 B でサーバ照合の結果だけを入れる)
         out_lectures = []
-        for r in (parsed.get("sapuri_lectures") or [])[:6]:
-            out_lectures.append({
-                "title": _sanitize_text(r.get("title"), 120) or "",
-                "level": _sanitize_text(r.get("level"), 30) or "",
-                "reason": _sanitize_text(r.get("reason"), 200) or "",
-            })
         out = {
             "ok": True,
             "subject": subject,
@@ -55559,6 +55774,12 @@ class CurriculumPhase(BaseModel):
     focus: str  # 例: 「英文法と数学IAの基礎完成」
     materials: List[str] = []  # 推奨教材
     milestones: List[str] = []  # マイルストーン (例: 「7月末までに英単語1900完了」)
+    # 📺 2026-10-10 スタサプ段階 A: 欄が無いと pydantic が黙って捨て、保存 (POST/PUT) でスタサプが消えていた。
+    #   sapuri = [{course_code, from_seq, to_seq}] (正典・カタログで検査)。sapuri_lectures は表示用の写しで、
+    #   サーバが sapuri から作り直す (クライアントの文字列は使わない)。1 件の不正で 422 にしないよう型を縛らずに受け、
+    #   _sapuri_validate_items が dict 以外・範囲外を捨てる。
+    sapuri_lectures: list = []
+    sapuri: list = []
 
 
 class CurriculumCreateRequest(BaseModel):
@@ -55620,8 +55841,9 @@ def _validate_curr_dates(start_date: str, exam_date: str) -> tuple:
     return sd, ed
 
 
-def _validate_curr_phases(phases: list) -> list:
-    """phases を validate して JSON serializable な list に正規化。"""
+def _validate_curr_phases(phases: list, eligible: bool = False) -> list:
+    """phases を validate して JSON serializable な list に正規化。
+    📺 eligible = スタサプの対象生徒か (_sapuri_eligible_by_id)。スタサプ欄は _sapuri_phase_normalize で検査・作り直す。"""
     if not phases:
         raise HTTPException(status_code=400, detail="phases は 1 件以上必須")
     if len(phases) > 10:
@@ -55652,16 +55874,14 @@ def _validate_curr_phases(phases: list) -> list:
             if t:
                 milestones.append(t)
         # スタサプ講義 (Phase 4.5 / 塾長指示 2026-05-06)
-        sapuri_lectures = []
-        for m in (d.get("sapuri_lectures") or [])[:8]:
-            t = _sanitize_text(m, 120)
-            if t:
-                sapuri_lectures.append(t)
+        # 📺 2026-10-10 段階 A: 旧形式の文字列 (sapuri_lectures) は捨て、sapuri をカタログで検査して作り直す。
+        #   対象外の生徒は空。materials のスタサプの語を含む要素は全生徒で捨てる。
+        sp = _sapuri_phase_normalize({"materials": materials, "sapuri": d.get("sapuri")}, eligible)
         out.append({
             "name": name, "focus": focus,
             "start_date": sd.isoformat(), "end_date": ed.isoformat(),
-            "materials": materials, "milestones": milestones,
-            "sapuri_lectures": sapuri_lectures,
+            "materials": sp["materials"], "milestones": milestones,
+            "sapuri": sp["sapuri"], "sapuri_lectures": sp["sapuri_lectures"],
         })
     return out
 
@@ -55680,7 +55900,7 @@ def create_curriculum(payload: CurriculumCreateRequest, request: Request, author
         raise HTTPException(status_code=400, detail="志望校は必須です")
     target_faculty = _sanitize_text(payload.target_faculty, 100)
     sd, ed = _validate_curr_dates(payload.start_date, payload.exam_date)
-    phases_list = _validate_curr_phases(payload.phases)
+    phases_list = _validate_curr_phases(payload.phases, _sapuri_eligible_by_id(student["id"])["eligible"])
     daily = None
     if payload.daily_minutes is not None:
         try:
@@ -55778,7 +55998,7 @@ def update_curriculum(curr_id: int, payload: CurriculumUpdateRequest, request: R
             updates["start_date"] = sd.isoformat()
             updates["exam_date"] = ed.isoformat()
         if payload.phases is not None:
-            phases_list = _validate_curr_phases(payload.phases)
+            phases_list = _validate_curr_phases(payload.phases, _sapuri_eligible_by_id(student["id"])["eligible"])
             updates["phases"] = json.dumps(phases_list, ensure_ascii=False)
 
         if not updates:
@@ -55828,6 +56048,8 @@ def get_my_curricula(authorization: Optional[str] = Header(None)):
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
     _require_study_log_course(student)
+    # 📺 2026-10-10 段階 A: 読むときもスタサプ欄をそろえる (旧形式の文字列・対象外の生徒のスタサプは出さない)
+    _sp_eligible = _sapuri_eligible_by_id(student["id"])["eligible"]
     conn = db()
     try:
         c = conn.cursor()
@@ -55843,6 +56065,8 @@ def get_my_curricula(authorization: Optional[str] = Header(None)):
                 phases = json.loads(r["phases"] or "[]")
             except Exception:
                 phases = []
+            phases = [_sapuri_phase_normalize(p, _sp_eligible) if isinstance(p, dict) else p
+                      for p in (phases if isinstance(phases, list) else [])]
             # 🗓 2026-05-30: daily_minutes_by_dow JSON → weekly_minutes [月,火,水,木,金,土,日] 配列に変換
             weekly_minutes = None
             try:
@@ -55968,100 +56192,523 @@ def get_reference_books(subject: Optional[str] = None, dev: Optional[float] = No
         conn.close()
 
 
-def _build_sapuri_lectures_prompt_snippet(target_dev: Optional[float] = None, subjects: Optional[list] = None) -> str:
-    """📺 スタディサプリ講義 DB から偏差値マッチング + 科目フィルタした推薦講座を AI prompt 用に整形。
+# ==========================================================================
+# 📺 スタサプ 共通部品 (2026-10-10 スタサプ段階 A・SPEC2 §2)
+#   D2 塾長決定: スタサプを勧めるのは授業コース (水3・金3・日のライブ授業) の在籍生だけ。オンラインの AI 学習管理コース
+#   (LP「国公立難関大学コース」) には勧めない。D4: 入塾した生徒だけ (本科生は承認時に status='trial'・trial_end +10 年で
+#   作られるので status='paid' では判定できない → _enrolled_sql)。判定は必ず「対象の生徒の行」で行う (管理者の呼び出しも同じ)。
+#   講座の正典はコード定数 SAPURI_COURSES (sapuri_lectures 表は読まない)。講の題名 (D1) はこの段階では扱わない。
+# ==========================================================================
+_SAPURI_COURSE_NAME = "国公立難関大コース"
+# ★_COURSE_CLASSES[_SAPURI_COURSE_NAME] と同じ 3 つ (ゲート check_sapuri_catalog.py が一致を検査)。実行時の一覧は起動時の
+#   自己修復で時間割に無い label が落ちて縮みうる → 縮んだ一覧で「1 コマだけの生徒」まで対象に広がらないよう、宣言と完全一致を要求する。
+_SAPURI_COURSE_LABELS_DECLARED = ("水曜3限 国公立コース 英文法", "金曜3限 国公立コース 長文読解", "日曜 高校国語")
+_SAPURI_ENABLED_KV = "sapuri_enabled"     # kv_settings の停止スイッチ (既定 "1" = 出す)。CEO から切り替える
+_SAPURI_ELIGIBLE_TTL = 30.0               # 対象判定のプロセス内キャッシュ (秒・student_id 単位)
+_SAPURI_ELIGIBLE_CACHE: dict = {}
+_SAPURI_SWITCH_CACHE = {"until": 0.0, "enabled": True}
+# 生徒に出すスタサプの語 (自由記述の欄からは全員分捨てる。スタサプはキー (sapuri) 経由でしか入れない)
+_SAPURI_WORD_RE = re.compile(r"スタサプ|スタディサプリ|studysapuri|study\s*sapuri", re.IGNORECASE)
+_SAPURI_MAX_ITEMS = 8                     # 1 フェーズのスタサプ範囲の上限
+# カタログの科目 → 科目キー (D3 の SAPURI_SUBJECT_KEYS で止めた科目の講座はカリキュラムにも出さない)。国語は field で分ける。
+_SAPURI_CATALOG_SUBJECT_KEYS = {
+    "英語": ("eng_grammar",), "数学": ("math",), "物理": ("physics", "physics_basic"),
+    "化学": ("chemistry", "chemistry_basic"), "生物": ("biology_basic",), "日本史": ("nihonshi",),
+    "世界史": ("sekaishi",), "地理": ("chiri",), "政経": ("seikei",), "倫理": ("rinri",), "公共": ("seikei", "rinri"),
+}
+# 偏差値を探す exam_results.subject (_STUDY_SUBJECTS) の順。無ければ全科目の平均 → 60 (国公立難関の既定)
+_SAPURI_DEV_SUBJECTS = {
+    "eng_grammar": ("英語",), "math": ("数学",),
+    "physics": ("物理", "理科"), "physics_basic": ("物理", "理科"),
+    "chemistry": ("化学", "理科"), "chemistry_basic": ("化学", "理科"), "biology_basic": ("生物", "理科"),
+    "nihonshi": ("日本史", "社会"), "sekaishi": ("世界史", "社会"), "chiri": ("地理", "社会"),
+    "seikei": ("政経", "社会"), "rinri": ("倫理", "社会"),
+    "kobun": ("古文", "国語"), "kanbun": ("漢文", "国語"), "gendai": ("現代文", "国語"),
+}
+# 弱点 topic の接頭辞 → 科目キー (最長一致・空白の有無を問わない)。「共通テスト…」は科目もタグも決めない。
+_SAPURI_TOPIC_PREFIXES = sorted([
+    ("英文法", "eng_grammar"),
+    ("基礎数学", "math"), ("数学I", "math"), ("数学A", "math"), ("数学II", "math"), ("数学B", "math"),
+    ("数学C", "math"), ("数学III", "math"),
+    ("物理基礎", "physics_basic"), ("物理", "physics"), ("化学基礎", "chemistry_basic"), ("化学", "chemistry"),
+    ("生物基礎", "biology_basic"), ("日本史", "nihonshi"), ("世界史", "sekaishi"), ("地理", "chiri"),
+    ("政経", "seikei"), ("政治経済", "seikei"), ("倫理", "rinri"),
+    ("古文", "kobun"), ("漢文", "kanbun"), ("現代文", "gendai"),
+], key=lambda x: -len(x[0]))
+_SAPURI_JP_TAGS = {
+    "kobun": ("単語", "文法", "敬語"), "kanbun": ("句法", "重要語", "漢詩"),
+    "gendai": ("漢字", "語彙", "評論", "評論読解", "小説読解"),
+}
 
-    塾長指示 2026-05-14: スタサプ講義名を AI に渡して「実在しない講座名」(架空) を防止し、
-    レベル × 偏差値で適切な講座を提案させる。
 
-    Args:
-      target_dev: 生徒の現状偏差値 (None なら制限なし)
-      subjects: 提案対象科目 ['英語', '数学'] 等 (None なら全科目)
+def _sapuri_enabled() -> bool:
+    """停止スイッチ (kv_settings sapuri_enabled)。既定 ON。読めなければ ON のまま (判定は生徒の行で別途落ちる)。"""
+    import time as _t
+    now = _t.time()
+    if now < _SAPURI_SWITCH_CACHE["until"]:
+        return bool(_SAPURI_SWITCH_CACHE["enabled"])
+    v = _kv_get(_SAPURI_ENABLED_KV)
+    enabled = not (v is not None and str(v).strip().lower() in ("0", "false", "off", "no"))
+    _SAPURI_SWITCH_CACHE.update({"until": now + _SAPURI_ELIGIBLE_TTL, "enabled": enabled})
+    return enabled
 
-    Returns:
-      AI prompt 用の snippet (空文字なら inject なし)
-    """
-    out = ""
-    conn = None
+
+def _sapuri_set_enabled(enabled: bool) -> bool:
+    ok = _kv_set(_SAPURI_ENABLED_KV, "1" if enabled else "0")
+    # 切り替えはこのプロセスでは即反映 (他のプロセスは最長 30 秒遅れる)
+    _SAPURI_SWITCH_CACHE.update({"until": 0.0})
+    _SAPURI_ELIGIBLE_CACHE.clear()
+    return ok
+
+
+def _sapuri_config_ok() -> tuple:
+    """(bool, 理由)。実行時の _COURSE_CLASSES が宣言の 3 ラベルと完全一致 (順不同) でなければ False。"""
+    runtime = list(_COURSE_CLASSES.get(_SAPURI_COURSE_NAME) or [])
+    if len(runtime) != len(_SAPURI_COURSE_LABELS_DECLARED) or set(runtime) != set(_SAPURI_COURSE_LABELS_DECLARED):
+        return False, "クラス名が時間割と合っていません (国公立難関大コースの 3 コマを確認してください)"
+    return True, ""
+
+
+def _sapuri_band(grade) -> str:
+    """学年 (自由記述) → 講座の学年帯。高1/高2 → 「高1・2」、高3・既卒・浪人・空・読めない → 「高3」。"""
+    g = unicodedata.normalize("NFKC", str(grade or "")).replace(" ", "")
+    if any(k in g for k in ("高1", "高2", "高校1年", "高校2年", "高一", "高二")):
+        return "高1・2"
+    return "高3"
+
+
+def _sapuri_eligible_compute(sid: int) -> dict:
+    out = {"eligible": False, "reason": "error", "band": None}
     try:
-        conn = db()
-        c = conn.cursor()
-        sql = "SELECT name, level, grade, subject, sub_genre, total_lessons, suitable_dev_min, suitable_dev_max, weeks_to_complete, notes FROM sapuri_lectures"
-        params = []
-        clauses = []
-        if target_dev is not None:
-            clauses.append("suitable_dev_min - 5 <= ? AND suitable_dev_max + 5 >= ?")
-            params.extend([target_dev, target_dev])
-        if subjects:
-            placeholders = ",".join(["?"] * len(subjects))
-            clauses.append(f"subject IN ({placeholders})")
-            params.extend(subjects)
-        if clauses:
-            sql += " WHERE " + " AND ".join(clauses)
-        # LIMIT 100: 現 SAPURI_LECTURES_SEED 約 60 件 → 全件カバー。将来 100 件超過時は要調整。
-        sql += " ORDER BY subject, suitable_dev_min, name LIMIT 100"
-        c.execute(sql, params)
-        rows = c.fetchall()
-        if not rows:
-            return ""
-        lines = ["", "## 📺 スタディサプリ講座 DB (偏差値マッチング済・実在講座のみ):"]
-        by_subj = {}
-        for r in rows:
-            by_subj.setdefault(r["subject"], []).append(r)
-        for subj, lectures in by_subj.items():
-            lines.append(f"\n### {subj}")
-            for l in lectures:
-                tl = f"全{l['total_lessons']}講" if l['total_lessons'] else ""
-                wk = f"{l['weeks_to_complete']}週で完了予定" if l['weeks_to_complete'] else ""
-                dev_range = f"偏差値{l['suitable_dev_min']}-{l['suitable_dev_max']}" if l['suitable_dev_min'] else ""
-                lv = f"[{l['level']}]" if l['level'] else ""
-                details = " / ".join(x for x in [tl, wk, dev_range, lv] if x)
-                lines.append(f"- **{l['name']}**: {details}")
-        lines.append("\n→ **上記講座から偏差値レベルに合うものを選択し、講座の総講数を超えないように週次計画を立てること**。")
-        lines.append("**重要**: 上記 DB に記載のないスタサプ講座名 (例: 「高3 トップレベル英語〈構文編〉」のような実在しない講座) は出力禁止。")
-        out = "\n".join(lines)
+        if not _sapuri_enabled():
+            out["reason"] = "disabled"
+            return out
+        if not _sapuri_config_ok()[0]:
+            out["reason"] = "config"
+            return out
+        if not _table_has_column("students", "class_labels"):
+            out["reason"] = "labels"
+            return out
+        has_sm = _table_has_column("students", "start_month")
+        conn = None
+        try:
+            conn = db()
+            c = conn.cursor()
+            cols = "course, grade, class_labels" + (", start_month" if has_sm else "")
+            c.execute(f"SELECT {cols}, CASE WHEN {_enrolled_sql()} THEN 1 ELSE 0 END AS enrolled "
+                      f"FROM students WHERE id = ?", (sid,))
+            r = c.fetchone()
+        finally:
+            if conn is not None:
+                try: conn.close()
+                except Exception: pass
+        if not r:
+            out["reason"] = "not_found"
+            return out
+        out["band"] = _sapuri_band(r["grade"])
+        if (r["course"] or "") != _STUDY_LOG_TARGET_COURSE:
+            out["reason"] = "not_course"
+        elif not int(r["enrolled"] or 0):
+            out["reason"] = "not_enrolled"
+        elif not set(_SAPURI_COURSE_LABELS_DECLARED) <= set(_parse_labels(r["class_labels"])):
+            out["reason"] = "labels"   # 3 コマ全部が要る (1〜2 コマだけ・部分一致は対象外)
+        elif has_sm and _valid_month_or_none(r["start_month"]) and _jst_month_str() < _valid_month_or_none(r["start_month"]):
+            out["reason"] = "not_started"
+        else:
+            out.update({"eligible": True, "reason": "ok"})
+        return out
     except Exception as e:
-        log.warning(f"[SapuriLectures] inject failed: {type(e).__name__}: {str(e)[:200]}")
-    finally:
-        if conn is not None:
-            try: conn.close()
-            except Exception: pass
+        log.warning(f"[Sapuri] eligibility failed sid={sid}: {type(e).__name__}: {str(e)[:120]}")
+        return {"eligible": False, "reason": "error", "band": out.get("band")}
+
+
+def _sapuri_eligible_by_id(student_id) -> dict:
+    """📺 スタサプを出してよい生徒か → {eligible, reason, band}。★自分で db() を開いて閉じる (呼び出し側のカーソルを使わない =
+    Postgres で失敗した 1 文が呼び出し側のトランザクションを壊さない)。例外は False (reason="error")。30 秒キャッシュ。
+    reason: ok / disabled (停止スイッチ) / config (クラス名の不一致) / not_found / not_course / not_enrolled / labels / not_started / error"""
+    import time as _t
+    try:
+        sid = int(student_id)
+    except (TypeError, ValueError):
+        return {"eligible": False, "reason": "not_found", "band": None}
+    now = _t.time()
+    ent = _SAPURI_ELIGIBLE_CACHE.get(sid)
+    if ent and ent[0] > now:
+        return dict(ent[1])
+    res = _sapuri_eligible_compute(sid)
+    if len(_SAPURI_ELIGIBLE_CACHE) > 5000:
+        _SAPURI_ELIGIBLE_CACHE.clear()
+    _SAPURI_ELIGIBLE_CACHE[sid] = (now + _SAPURI_ELIGIBLE_TTL, res)
+    return dict(res)
+
+
+def _sapuri_course_keys(course: dict) -> tuple:
+    """講座 → 科目キー (国語は field で 古文/漢文/現代文 に分ける)。"""
+    subj = course.get("subject") or ""
+    if subj == "国語":
+        f = course.get("field") or ""
+        if f.startswith("古文") or f.startswith("和歌"):
+            return ("kobun",)
+        if f.startswith("漢文"):
+            return ("kanbun",)
+        if f.startswith("現代文"):
+            return ("gendai",)
+        return ()
+    return _SAPURI_CATALOG_SUBJECT_KEYS.get(subj, ())
+
+
+def _sapuri_course_allowed(code) -> Optional[dict]:
+    """カリキュラム・プロンプトに出してよい講座 (存在・講数が公開・科目キーが SAPURI_SUBJECT_KEYS で止められていない)。"""
+    c = SAPURI_COURSE_BY_CODE.get(str(code or "").strip())
+    if not c or int(c.get("total_lessons") or 0) <= 0 or int(c.get("last") or 0) <= 0:
+        return None
+    if not any(k in SAPURI_SUBJECT_KEYS for k in _sapuri_course_keys(c)):
+        return None
+    return c
+
+
+def _sapuri_range_label(course: dict, a: int, b: int) -> str:
+    """「講座名 第a〜b講」(a==b なら「第a講」)。題名は入れない。"""
+    return f"{course['name']} 第{a}講" if a == b else f"{course['name']} 第{a}〜{b}講"
+
+
+def _sapuri_study_subject(course: dict) -> str:
+    """講座 → study_plans.subject (_STUDY_SUBJECTS の値)。_guess_subject (教材名の推測) には頼らない明示表。"""
+    subj = course.get("subject") or ""
+    f = course.get("field") or ""
+    if subj == "国語":
+        if f.startswith("古文") or f.startswith("和歌"):
+            return "古文"
+        if f.startswith("漢文"):
+            return "漢文"
+        if f.startswith("現代文"):
+            return "現代文"
+        return "国語"
+    if subj == "公共":
+        return "社会"
+    return subj if subj in _STUDY_SUBJECTS else "その他"
+
+
+def _sapuri_validate_items(items) -> list:
+    """[{course_code, from_seq, to_seq}] をカタログで検査して正規化 (寛容: 不正な要素は捨てるだけで 422 にしない)。
+    存在・講数が公開・first ≤ from ≤ to ≤ last・同じ講座の重複は範囲を統合・最大 _SAPURI_MAX_ITEMS 件。"""
+    merged = {}
+    order = []
+    for it in (items if isinstance(items, list) else [])[:40]:
+        if not isinstance(it, dict):
+            continue
+        c = _sapuri_course_allowed(it.get("course_code"))
+        if not c:
+            continue
+        try:
+            a = int(it.get("from_seq"))
+            b = int(it.get("to_seq") if it.get("to_seq") is not None else a)
+        except (TypeError, ValueError):
+            continue
+        if not (int(c["first"]) <= a <= b <= int(c["last"])):
+            continue
+        code = c["code"]
+        if code in merged:
+            merged[code] = (min(merged[code][0], a), max(merged[code][1], b))
+        else:
+            if len(order) >= _SAPURI_MAX_ITEMS:
+                continue
+            merged[code] = (a, b)
+            order.append(code)
+    return [{"course_code": k, "from_seq": merged[k][0], "to_seq": merged[k][1]} for k in order]
+
+
+def _sapuri_labels(items: list) -> list:
+    return [_sapuri_range_label(SAPURI_COURSE_BY_CODE[i["course_code"]], i["from_seq"], i["to_seq"]) for i in items]
+
+
+def _sapuri_strip_words(values, maxlen: int = 100) -> list:
+    """自由記述のリスト (materials 等) からスタサプの語を含む要素を捨てる (全生徒)。"""
+    out = []
+    for m in (values if isinstance(values, list) else []):
+        t = _sanitize_text(m, maxlen)
+        if t and not _SAPURI_WORD_RE.search(t):
+            out.append(t)
     return out
 
 
-@app.get("/api/sapuri-lectures")
-def get_sapuri_lectures(subject: Optional[str] = None, dev: Optional[float] = None, limit: int = 50):
-    """📺 スタディサプリ主要講座 DB を生徒向けに公開 (admin auth 不要・読み取り専用)。
-    塾長指示 2026-05-14: 生徒が偏差値マッチング講座推薦を見られるように。
-    """
-    conn = db()
+def _sapuri_phase_normalize(phase: dict, eligible: bool) -> dict:
+    """カリキュラムの 1 フェーズのスタサプ欄を正典の形にそろえる (POST/PUT・/me・ai-generate・gap・apply・expand で共用)。
+    - sapuri [{course_code, from_seq, to_seq}] をカタログで検査し、sapuri_lectures (表示用の「講座名 第a〜b講」) を作り直す。
+    - 旧形式の文字列だけの sapuri_lectures は捨てる (架空の講座名・AI が書いた名前が混ざるため)。
+    - 対象外の生徒 (eligible=False) は両方とも空。materials のスタサプの語を含む要素は全生徒で捨てる。"""
+    p = dict(phase) if isinstance(phase, dict) else {}
+    items = _sapuri_validate_items(p.get("sapuri")) if eligible else []
+    p["materials"] = _sapuri_strip_words(p.get("materials"))[:10]
+    p["sapuri"] = items
+    p["sapuri_lectures"] = _sapuri_labels(items)
+    return p
+
+
+def _sapuri_strip_sentences(text, maxlen: int = 600) -> str:
+    """自由記述の文章からスタサプの語を含む文 (。区切り) を落とす (対象外の生徒の AI 出力)。"""
+    t = str(text or "")
+    if not _SAPURI_WORD_RE.search(t):
+        return t[:maxlen]
+    parts = re.split(r"(?<=[。．\n])", t)
+    return "".join(x for x in parts if not _SAPURI_WORD_RE.search(x)).strip()[:maxlen]
+
+
+def _sapuri_gap_adjustments(adjs, eligible: bool) -> list:
+    """gap-analyze の phase_adjustments を D2 の規則でそろえる (AI の出力をそのまま生徒に返さない)。
+    - AI が書いた new_sapuri_lectures (講座名の文字列) は捨て、new_sapuri をカタログで検査して作り直す (対象外は空)。
+    - action「スタサプ追加」は対象外 (または検査を通る講座が無い) なら「教材追加」に読み替える。
+    - detail にスタサプの語を含む提案: 対象外は提案ごと捨てる / 対象生徒は講座名を AI に書かせない定型文に置き換える。
+    - new_materials のスタサプの語を含む要素は全生徒で捨てる。"""
+    out = []
+    for adj in (adjs if isinstance(adjs, list) else [])[:20]:
+        if not isinstance(adj, dict):
+            continue
+        a = dict(adj)
+        a.pop("new_sapuri_lectures", None)
+        items = _sapuri_validate_items(a.get("new_sapuri")) if eligible else []
+        if _SAPURI_WORD_RE.search(str(a.get("detail") or "")):
+            if not items:
+                continue
+            a["detail"] = "スタディサプリの講座を追加します (下の 📺 の範囲)"
+        if "スタサプ" in str(a.get("action") or "") and not items:
+            a["action"] = "教材追加"
+        a["new_materials"] = _sapuri_strip_words(a.get("new_materials"))[:10]
+        a["new_sapuri"] = items
+        a["new_sapuri_lectures"] = _sapuri_labels(items)
+        out.append(a)
+    return out
+
+
+def _sapuri_parse_topic(subject_code, topic) -> dict:
+    """弱点の (科目コード, topic) → {subject_key, tag, tags, detail, topic_norm}。AI なし・DB なし。
+    - NFKC・前後空白。接頭辞 (英文法 / 数学II / 物理基礎 / 古文 …) を**外す前に**科目キーを決める (最長一致)。
+    - tag = 「(」「（」「:」の前 / detail = かっこ内 / topic_norm = 接頭辞を外した「tag(detail)」(Tier 1 の鍵)。
+    - 接頭辞で決まらなければ科目コードと生のタグで決める (english は語彙にあるときだけ・social の時代タグは None = 段階 B の part_key 解決)。
+    - 別名は科目キーが決まった後に適用。2 つに分かれる別名 (倒置・強調) は tags に両方。語彙に無いタグは tag=None。"""
+    s = unicodedata.normalize("NFKC", str(topic or "")).strip()
+    res = {"subject_key": None, "tag": None, "tags": [], "detail": None, "topic_norm": ""}
+    if not s or s.startswith("共通テスト"):
+        res["topic_norm"] = s
+        return res
+    sk = None
+    rest = s
+    for pre, key in _SAPURI_TOPIC_PREFIXES:
+        if s.startswith(pre):
+            sk, rest = key, s[len(pre):].strip()
+            break
+    raw_tag = re.split(r"[(（:：]", rest)[0].strip()
+    m = re.search(r"[(（](.*)[)）]", rest)
+    res["detail"] = (m.group(1).strip() or None) if m else None
+    res["topic_norm"] = rest
+    subj = str(subject_code or "").strip().lower()
+    by_english = False
+    if sk is None:
+        if subj == "english":
+            sk, by_english = "eng_grammar", True
+        elif subj == "math":
+            sk = "math"
+        elif subj == "physics":
+            sk = "physics_basic" if raw_tag in SAPURI_TAG_VOCAB["physics_basic"] else "physics"
+        elif subj == "chemistry":
+            sk = "chemistry_basic" if raw_tag in SAPURI_TAG_VOCAB["chemistry_basic"] else "chemistry"
+        elif subj == "biology":
+            sk = "biology_basic"
+        elif subj == "japanese":
+            sk = next((k for k, tags in _SAPURI_JP_TAGS.items() if raw_tag in tags), None)
+        elif subj == "social":
+            if raw_tag in SAPURI_TAG_VOCAB["chiri"] or raw_tag in SAPURI_TAG_ALIASES["chiri"]:
+                sk = "chiri"
+            elif raw_tag in SAPURI_TAG_VOCAB["seikei"]:
+                sk = "seikei"
+            elif raw_tag.endswith("思想") or raw_tag in ("源流", "日本"):
+                sk = "rinri"
+            else:
+                # 時代タグ (古代〜現代) と倫理の 近代/現代 は日本史・世界史・倫理で衝突 → 段階 B の part_key 解決に回す
+                res["tag"] = raw_tag or None
+                return res
+        if sk is None:
+            return res
+    res["subject_key"] = sk
+    if not raw_tag:
+        if by_english:
+            res["subject_key"] = None
+        return res
+    vocab = SAPURI_TAG_VOCAB.get(sk, [])
+    aliases = SAPURI_TAG_ALIASES.get(sk, {})
+
+    def _one(t):
+        if t in vocab:
+            return [t]
+        if t in aliases:
+            return list(aliases[t])
+        if sk == "eng_grammar" and _UNIT_TAG_ALIASES.get(t) in vocab:
+            return [_UNIT_TAG_ALIASES[t]]
+        return []
+
+    tags = _one(raw_tag)
+    if not tags and "・" in raw_tag:
+        # 「否定・倒置」「疑問詞・間接疑問」のような複合 topic は ・区切りの各パートの和集合 (週次プリントと同じ考え方)
+        for part in raw_tag.split("・"):
+            for t in _one(part.strip()):
+                if t not in tags:
+                    tags.append(t)
+    if by_english and not tags:
+        # english の topic は語彙にあるときだけ英文法と決める (長文・読解の弱点を文法に寄せない)
+        res["subject_key"] = None
+        return res
+    res["tags"] = tags
+    res["tag"] = tags[0] if tags else None
+    return res
+
+
+def _sapuri_dev_for(c, student_id, subject_key) -> float:
+    """科目キーの偏差値 = exam_results の最新 (_SAPURI_DEV_SUBJECTS の順) → 全科目の最新の平均 → 60。
+    c は呼び出し側のカーソル。★行は r["col"] で読む (.get は sqlite3.Row で落ちる)。"""
     try:
-        c = conn.cursor()
-        sql = "SELECT name, level, grade, subject, sub_genre, total_lessons, suitable_dev_min, suitable_dev_max, weeks_to_complete, notes FROM sapuri_lectures"
-        params = []
-        clauses = []
-        if subject:
-            clauses.append("subject = ?")
-            params.append(subject)
-        if dev is not None:
-            clauses.append("suitable_dev_min - 5 <= ? AND suitable_dev_max + 5 >= ?")
-            params.extend([dev, dev])
-        if clauses:
-            sql += " WHERE " + " AND ".join(clauses)
-        sql += " ORDER BY subject, suitable_dev_min, name LIMIT ?"
-        params.append(min(max(1, int(limit or 50)), 200))
-        c.execute(sql, params)
-        rows = c.fetchall()
-        lectures = [{
-            "name": r["name"], "level": r["level"], "grade": r["grade"],
-            "subject": r["subject"], "sub_genre": r["sub_genre"],
-            "total_lessons": r["total_lessons"],
-            "suitable_dev_min": r["suitable_dev_min"], "suitable_dev_max": r["suitable_dev_max"],
-            "weeks_to_complete": r["weeks_to_complete"], "notes": r["notes"],
-        } for r in rows]
-        return {"ok": True, "lectures": lectures, "count": len(lectures)}
-    finally:
-        conn.close()
+        c.execute("SELECT subject, deviation FROM exam_results WHERE student_id = ? AND deviation IS NOT NULL "
+                  "ORDER BY exam_date DESC, id DESC LIMIT 60", (student_id,))
+        latest = {}
+        for r in c.fetchall():
+            s = r["subject"]
+            if s not in latest and r["deviation"] is not None:
+                latest[s] = float(r["deviation"])
+    except Exception as e:
+        log.warning(f"[Sapuri] dev lookup failed: {type(e).__name__}: {str(e)[:120]}")
+        return 60.0
+    for s in _SAPURI_DEV_SUBJECTS.get(subject_key, ()):
+        if s in latest:
+            return latest[s]
+    if latest:
+        return round(sum(latest.values()) / len(latest), 1)
+    return 60.0
+
+
+def _sapuri_prompt_courses(band: Optional[str] = None, target_dev: Optional[float] = None,
+                           subjects: Optional[list] = None) -> list:
+    """プロンプトに渡してよい講座 (_sapuri_course_allowed)・学年帯 (全学年は両方)・偏差値 ±5・科目で絞る。"""
+    out = []
+    for c in SAPURI_COURSES:
+        if not _sapuri_course_allowed(c["code"]):
+            continue
+        if band and c["band"] not in (band, "全学年"):
+            continue
+        if target_dev is not None and not (c["dev_min"] - 5 <= target_dev <= c["dev_max"] + 5):
+            continue
+        if subjects and c["subject"] not in subjects:
+            continue
+        out.append(c)
+    return out
+
+
+def _build_sapuri_lectures_prompt_snippet(target_dev: Optional[float] = None, subjects: Optional[list] = None,
+                                          band: Optional[str] = None) -> str:
+    """📺 スタサプ講座カタログ (SAPURI_COURSES) を AI prompt 用に整形 (2026-10-10 段階 A で表 sapuri_lectures から切り替え)。
+
+    ★対象生徒 (_sapuri_eligible_by_id) のときだけ呼ぶ。渡すのはコード・講座名・講番号の範囲・レベル・偏差値の目安だけ
+      (講の題名は渡さない = D1)。AI には sapuri:[{course_code, from_seq, to_seq}] で出させ、サーバがカタログで検査する。
+
+    Args:
+      target_dev: 生徒の現状偏差値 (None なら制限なし)
+      subjects: 提案対象科目 ['英語', '数学'] 等 (カタログの subject・None なら全科目)
+      band: 学年帯 (高3 / 高1・2・None なら制限なし)
+    """
+    rows = _sapuri_prompt_courses(band=band, target_dev=target_dev, subjects=subjects)
+    if not rows:
+        return ""
+    lines = ["", "## 📺 スタディサプリ講座カタログ (実在講座のみ・コードで指定):"]
+    by_subj = {}
+    for r in rows:
+        by_subj.setdefault(r["subject"], []).append(r)
+    for subj, lst in by_subj.items():
+        lines.append(f"\n### {subj}")
+        for r in lst:
+            lv = f"[{r['level']}]" if r["level"] and r["level"] != "—" else ""
+            details = " / ".join(x for x in [f"第{r['first']}〜{r['last']}講", f"偏差値{r['dev_min']}-{r['dev_max']}",
+                                              f"{r['weeks']}週で完了目安", lv] if x)
+            lines.append(f"- {r['code']}: {r['name']} ({details})")
+    lines.append("\n→ スタサプは **上記のコードだけ** を sapuri 欄に {\"course_code\", \"from_seq\", \"to_seq\"} で書く "
+                 "(講番号は各講座の範囲内・分割講座 _1/_2 は別コード)。materials にはスタサプを書かない。")
+    lines.append("**重要**: 上記に無い講座・講座名・講の題名は書かない。")
+    return "\n".join(lines)
+
+
+def _sapuri_public_course(c: dict) -> dict:
+    """/api/sapuri-lectures の 1 件 (旧 sapuri_lectures 表と互換の項目 + code/first/last/has_lessons)。題名は無い。"""
+    return {
+        "name": c["name"], "level": c["level"], "grade": c["band"], "subject": c["subject"], "sub_genre": c["field"],
+        "total_lessons": c["total_lessons"], "suitable_dev_min": c["dev_min"], "suitable_dev_max": c["dev_max"],
+        "weeks_to_complete": c["weeks"], "notes": c["notes"],
+        "code": c["code"], "first": c["first"], "last": c["last"], "has_lessons": c["has_lessons"],
+    }
+
+
+@app.get("/api/sapuri-lectures")
+def get_sapuri_lectures(request: Request, subject: Optional[str] = None, dev: Optional[float] = None, limit: int = 50):
+    """📺 スタディサプリ講座カタログを公開 (admin auth 不要・読み取り専用)。
+    塾長指示 2026-05-14: 生徒が偏差値マッチング講座推薦を見られるように。
+    2026-10-10 段階 A: 表ではなくコード定数 SAPURI_COURSES を返す。講座名と講数 (公開ラインナップの情報) だけで
+      講の題名は返さないので認証は付けない (app.js の講数上限表が全生徒で読む)。流量だけ制限する。
+    """
+    _check_rate_limit_ip(request, bucket="sapuri_lectures", limit=60, window=60)
+    rows = SAPURI_COURSES
+    if subject:
+        rows = [c for c in rows if c["subject"] == subject]
+    if dev is not None:
+        rows = [c for c in rows if c["dev_min"] - 5 <= dev <= c["dev_max"] + 5]
+    rows = sorted(rows, key=lambda c: (c["subject"], c["dev_min"], c["name"]))
+    try:
+        n = min(max(1, int(limit or 50)), 200)
+    except (TypeError, ValueError):
+        n = 50
+    lectures = [_sapuri_public_course(c) for c in rows[:n]]
+    return {"ok": True, "lectures": lectures, "count": len(lectures)}
+
+
+@app.get("/api/student/sapuri/status")
+def student_sapuri_status(request: Request, authorization: Optional[str] = Header(None)):
+    """📺 この生徒にスタサプを出してよいか (app.js の AI コーチング・mypage の見出し)。AI 呼び出しなし。
+    非 200 (AIなし枠の 403 等) は画面側で「対象外」扱いにする。理由は返さない (生徒に見せる情報ではない)。
+    course_codes = プロンプトに入れてよい講座 (SAPURI_SUBJECT_KEYS で止めた科目は入らない)・band = 学年帯。"""
+    _check_rate_limit_ip(request, bucket="sapuri_status", limit=60, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    el = _sapuri_eligible_by_id(student["id"])
+    eligible = bool(el.get("eligible"))
+    return {
+        "ok": True,
+        "eligible": eligible,
+        # 段階 B (講の一覧 sapuri_lessons の取込) までは常に False
+        "lessons_loaded": False,
+        "course_codes": [c["code"] for c in SAPURI_COURSES if _sapuri_course_allowed(c["code"])] if eligible else [],
+        "band": el.get("band") if eligible else None,   # 学年帯 (高3 / 高1・2)。講座を絞る目安
+    }
+
+
+class SapuriSettingsRequest(BaseModel):
+    enabled: bool
+
+
+@app.get("/api/admin/sapuri/settings")
+def admin_sapuri_settings_get(authorization: Optional[str] = Header(None)):
+    """📺 停止スイッチと設定の健全性 (CEO 用)。"""
+    _verify_admin_required(authorization)
+    ok, why = _sapuri_config_ok()
+    _SAPURI_SWITCH_CACHE.update({"until": 0.0})
+    return {"ok": True, "enabled": _sapuri_enabled(), "config_ok": ok, "config_reason": why,
+            "subject_keys": list(SAPURI_SUBJECT_KEYS)}
+
+
+@app.post("/api/admin/sapuri/settings")
+def admin_sapuri_settings_set(payload: SapuriSettingsRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """📺 停止スイッチ (2026-10-10・SPEC2 §2.4)。OFF にすると全画面でスタサプ欄を出さない (対象判定が False)。"""
+    _check_rate_limit_ip(request, bucket="admin_sapuri_settings", limit=20, window=60)
+    _verify_admin_required(authorization)
+    if not _sapuri_set_enabled(bool(payload.enabled)):
+        raise HTTPException(status_code=503, detail="設定を保存できませんでした。もう一度お試しください")
+    log.info(f"[Sapuri] enabled={bool(payload.enabled)}")
+    return {"ok": True, "enabled": bool(payload.enabled)}
 
 
 # ==========================================================================
@@ -57106,9 +57753,28 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
         pass
     reference_books_summary = _build_reference_books_prompt_snippet(target_dev=target_dev)
     # 📺 スタサプ講座 DB を AI に渡す (塾長指示 2026-05-14) → 架空講義名の出力を防止
-    sapuri_lectures_summary = _build_sapuri_lectures_prompt_snippet(target_dev=target_dev)
+    # 📺 2026-10-10 段階 A (D2): 渡すのは対象生徒 (授業コースの在籍生) だけ。カタログのコードで sapuri 欄に出させ、
+    #   サーバが _validate_curr_phases で検査する。対象外の生徒には「スタディサプリは使わない・書かない」と指示する。
+    _sp = _sapuri_eligible_by_id(student["id"])
+    _sp_eligible = bool(_sp["eligible"])
+    sapuri_lectures_summary = (_build_sapuri_lectures_prompt_snippet(target_dev=target_dev, band=_sp["band"])
+                               if _sp_eligible else "")
+    if _sp_eligible:
+        _sp_sys = ("各フェーズは現実的な期間と教材で構成し、必要ならスタディサプリ (スタサプ) の講座を sapuri 欄に加える。"
+                   "スタサプは **必ずプロンプト内の『スタディサプリ講座カタログ』のコード** で指定すること "
+                   "(sapuri: [{\"course_code\": コード, \"from_seq\": 開始講, \"to_seq\": 終了講}]・講番号は講座の範囲内)。"
+                   "カタログに無い講座・講座名・講の題名は出力禁止。市販の参考書教材 (materials) にはスタサプを書かない。")
+        _sp_task = "各フェーズには市販教材 (materials) を、必要ならスタディサプリの講座 (sapuri・カタログのコードと講番号の範囲) を提案してください。"
+        _sp_field = '\n      "sapuri": [{"course_code": "カタログのコード", "from_seq": 1, "to_seq": 6}],'
+        _sp_note = ("\n- 各フェーズに市販教材 2-4 件、スタサプの講座 0-3 件 (sapuri)、マイルストーン 2-4 件"
+                    "\n- スタサプは偏差値と学年に合う講座をカタログから選び、講番号の範囲をフェーズの期間でこなせる量にする")
+    else:
+        _sp_sys = "各フェーズは現実的な期間と市販の教材で構成。スタディサプリ (スタサプ) 等の映像授業サービスは使わない・書かない。"
+        _sp_task = "各フェーズには市販教材 (materials) を提案してください。スタディサプリ等の映像授業は書かないでください。"
+        _sp_field = ""
+        _sp_note = "\n- 各フェーズに市販教材 2-4 件、マイルストーン 2-4 件"
 
-    sys_prompt = "受験戦略を立てる学習プランナーです。難関大学 (国公立・難関私立) 志望者に対し、入試日から逆算した全体カリキュラムを 4-6 フェーズに分割して提案します。各フェーズは現実的な期間と教材 + スタディサプリ (スタサプ) の対応講義で構成。スタサプ講義は **必ずプロンプト内の『スタディサプリ講座 DB』に記載されている講座名のみ** を使用すること (例: 『高3 トップレベル英語 〈読解編〉』『高3 ハイレベル数学IAIIB+C(ベクトル)』『高3 スタンダードレベル化学〈理論編〉』『古文文法ベーシックレベル』)。DB にない講座名は出力禁止 (架空講義回避)。市販の参考書教材とスタサプ講義は別フィールドに分けて出力。純粋な JSON のみ返答 (前置きや解説不要)。"
+    sys_prompt = "受験戦略を立てる学習プランナーです。難関大学 (国公立・難関私立) 志望者に対し、入試日から逆算した全体カリキュラムを 4-6 フェーズに分割して提案します。" + _sp_sys + "純粋な JSON のみ返答 (前置きや解説不要)。"
     user_prompt = f"""志望校: {target_university}{(' / ' + target_faculty) if target_faculty else ''}
 開始日: {sd.isoformat()}
 入試日: {ed.isoformat()} (期間 {months} ヶ月)
@@ -57117,7 +57783,7 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
 
 上記から、難関大学合格までの全体カリキュラムを 4-6 フェーズに分割して JSON で返してください。
 模試結果が含まれている場合は、特に偏差値が低い科目に厚めの教材配分をしてください。
-各フェーズには市販教材 (materials) と スタディサプリ講義 (sapuri_lectures) の両方を提案してください。
+{_sp_task}
 
 出力形式 (フェンスや前置きなし):
 {{
@@ -57127,8 +57793,7 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
       "start_date": "YYYY-MM-DD",
       "end_date": "YYYY-MM-DD",
       "focus": "このフェーズの主軸 (60字以内、例: 英文法基礎 + 数学IA基礎完成)",
-      "materials": ["定番市販教材1 (例: ターゲット1900)", "定番市販教材2", "定番市販教材3"],
-      "sapuri_lectures": ["対応するスタサプ講義名 (例: 高3 トップレベル英語〈読解編〉)", "...", "..."],
+      "materials": ["定番市販教材1 (例: ターゲット1900)", "定番市販教材2", "定番市販教材3"],{_sp_field}
       "milestones": ["月末までに〇〇完了 (60字以内)", "...", "..."]
     }}
   ]
@@ -57136,10 +57801,8 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
 
 注意:
 - フェーズの期間は重複・空白なく開始日〜入試日を埋める
-- 直前期は入試日 1-2 ヶ月前から
-- 各フェーズに市販教材 2-4 件、スタサプ講義 2-4 件、マイルストーン 2-4 件
+- 直前期は入試日 1-2 ヶ月前から{_sp_note}
 - 受験科目構成 (志望校に必要な科目) を考慮
-- スタサプ講義はレベル (ベーシック/スタンダード/ハイレベル/トップレベル) と科目を明示した商品名で記載
 - フェーズ進行に応じて段階的にレベルを上げる (例: 基礎期=ベーシック→標準期=スタンダード→応用期=ハイレベル→直前期=トップレベル)
 - **🔑 重要 (フェーズ別教材切替必須・塾長指示 2026-05-14 強化)**: 各フェーズには **必ず前フェーズにはなかった新規教材を 2 件以上含めること** (1 件では不十分・塾長から「タームが変わっても同じ教材のみ反復」のクレームあり)。
   - **通年使用 OK の例外**: 単語帳 (ターゲット1900 / シス単 / 速読英単語)・構文書 (基本はここだ / ポレポレ) — これらだけは複数フェーズに繰り返し OK
@@ -57323,8 +57986,8 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
         phases_raw = parsed.get("phases") or []
         if not phases_raw:
             raise HTTPException(status_code=503, detail="AI が phases を返しませんでした (再生成をお試しください)")
-        # validate
-        phases_list = _validate_curr_phases(phases_raw)
+        # validate (📺 スタサプは対象生徒だけ・カタログのコードで検査。AI が書いた講座名の文字列は使わない)
+        phases_list = _validate_curr_phases(phases_raw, _sp_eligible)
         log.info(f"[Curriculum] ai-generate student={student['id']} univ={target_university} phases={len(phases_list)}")
         return {
             "ok": True,
@@ -57417,15 +58080,38 @@ def curriculum_gap_analyze(curr_id: int, request: Request, authorization: Option
         exam_lines.append(f"- {s}: 偏差値 {l['deviation']}{jd} ({l['exam']} {l['date']}) | 推移: {d['trend']} ({'+' if d['trend_diff']>0 else ''}{d['trend_diff']})")
     exam_block = "\n".join(exam_lines)
 
+    # 📺 2026-10-10 段階 A (D2): スタサプは対象生徒 (授業コースの在籍生) だけ。現行フェーズのスタサプも対象生徒の
+    #   検査済みの分 (sapuri から作り直した「講座名 第a〜b講」) だけを AI に渡す。提案はカタログのコードで new_sapuri に出させる。
+    _sp = _sapuri_eligible_by_id(student["id"])
+    _sp_eligible = bool(_sp["eligible"])
+    phases = [_sapuri_phase_normalize(p, _sp_eligible) for p in phases if isinstance(p, dict)]
+
     # フェーズ summary
     phase_lines = []
     for i, p in enumerate(phases):
         mats = ", ".join((p.get("materials") or [])[:5])
         sapuri = ", ".join((p.get("sapuri_lectures") or [])[:5])
-        phase_lines.append(f"  フェーズ{i+1}: {p.get('name','')} ({p.get('start_date','')}〜{p.get('end_date','')}) focus: {p.get('focus','')} / 教材: {mats} / スタサプ: {sapuri}")
+        _sp_part = f" / スタサプ: {sapuri}" if _sp_eligible else ""
+        phase_lines.append(f"  フェーズ{i+1}: {p.get('name','')} ({p.get('start_date','')}〜{p.get('end_date','')}) focus: {p.get('focus','')} / 教材: {mats}{_sp_part}")
     phase_block = "\n".join(phase_lines) if phase_lines else "  (なし)"
 
-    sys_prompt = "難関大学受験の戦略アドバイザーです。生徒の現状偏差値と志望校に必要な偏差値のギャップを科目別に分析し、現行カリキュラムに具体的な修正提案を行います。教師名 (講師名) は塾長指示で出力禁止。スタサプ講座は『高3 トップレベル英文法』のような講師名抜きの汎用商品名のみで記載すること。純粋な JSON のみ返答 (前置き解説不要)。"
+    if _sp_eligible:
+        _latest_devs = [d["latest"]["deviation"] for d in by_subj.values() if d["latest"]["deviation"] is not None]
+        _sp_catalog = _build_sapuri_lectures_prompt_snippet(
+            target_dev=(sum(_latest_devs) / len(_latest_devs)) if _latest_devs else None, band=_sp["band"])
+        _sp_sys = ("スタディサプリ (スタサプ) を足すときは、プロンプト内の『スタディサプリ講座カタログ』のコードと講番号の範囲を "
+                   "new_sapuri に書くこと (講座名・講の題名は書かない)。")
+        _sp_actions = "教材追加|教材削減|期間延長|期間短縮|スタサプ追加|フェーズ名変更"
+        _sp_field = '\n      "new_sapuri": [{"course_code": "カタログのコード", "from_seq": 1, "to_seq": 4}],'
+        _sp_note = "\n- スタサプはカタログのコードと講番号の範囲 (new_sapuri) だけで提案する (detail・new_materials に講座名を書かない)"
+    else:
+        _sp_catalog = ""
+        _sp_sys = "スタディサプリ (スタサプ) 等の映像授業サービスは提案しない・書かない。"
+        _sp_actions = "教材追加|教材削減|期間延長|期間短縮|フェーズ名変更"
+        _sp_field = ""
+        _sp_note = ""
+
+    sys_prompt = "難関大学受験の戦略アドバイザーです。生徒の現状偏差値と志望校に必要な偏差値のギャップを科目別に分析し、現行カリキュラムに具体的な修正提案を行います。教師名 (講師名) は塾長指示で出力禁止。" + _sp_sys + "純粋な JSON のみ返答 (前置き解説不要)。"
     user_prompt = f"""## 志望校
 {row['target_university']}{(' / ' + row['target_faculty']) if row['target_faculty'] else ''}
 
@@ -57439,7 +58125,7 @@ def curriculum_gap_analyze(curr_id: int, request: Request, authorization: Option
 {exam_block}
 
 ## 現行カリキュラム ({len(phases)} フェーズ)
-{phase_block}
+{phase_block}{_sp_catalog}
 
 上記を踏まえて、ギャップ分析と修正提案を JSON で返してください。
 
@@ -57462,18 +58148,16 @@ def curriculum_gap_analyze(curr_id: int, request: Request, authorization: Option
     {{
       "phase_index": 0,
       "phase_name": "対象フェーズ名",
-      "action": "教材追加|教材削減|期間延長|期間短縮|スタサプ追加|フェーズ名変更",
+      "action": "{_sp_actions}",
       "detail": "具体修正内容 (100字以内)",
-      "new_materials": ["新規追加教材1", "..."],
-      "new_sapuri_lectures": ["新規追加スタサプ講義1", "..."]
+      "new_materials": ["新規追加教材1", "..."],{_sp_field}
     }}
   ],
   "overall_recommendation": "総合戦略アドバイス (200字以内、3-5 個の actionable items)"
 }}
 
 注意:
-- ギャップが 5 以上の科目は priority=高
-- スタサプ講義は商品名そのまま (例: 高3 ハイレベル英文法)
+- ギャップが 5 以上の科目は priority=高{_sp_note}
 - phase_adjustments は変更が必要なフェーズだけ提案 (全フェーズ列挙不要)"""
 
     body = {
@@ -57499,6 +58183,14 @@ def curriculum_gap_analyze(curr_id: int, request: Request, authorization: Option
             if not m:
                 raise HTTPException(status_code=503, detail="AI 出力 JSON 解析失敗")
             parsed = json.loads(m.group(0))
+        if not isinstance(parsed, dict):
+            raise HTTPException(status_code=503, detail="AI 出力 JSON 解析失敗")
+        # 📺 2026-10-10 段階 A: AI の出力をそのまま返さない (スタサプはカタログで検査・対象外の生徒には出さない)
+        parsed["phase_adjustments"] = _sapuri_gap_adjustments(parsed.get("phase_adjustments"), _sp_eligible)
+        if not _sp_eligible:
+            for _k in ("gap_summary", "overall_recommendation"):
+                if isinstance(parsed.get(_k), str):
+                    parsed[_k] = _sapuri_strip_sentences(parsed[_k])
 
         log.info(f"[Curriculum] gap-analyze curr={curr_id} student={student['id']} adjustments={len(parsed.get('phase_adjustments') or [])}")
         return {
@@ -57516,7 +58208,7 @@ def curriculum_gap_analyze(curr_id: int, request: Request, authorization: Option
 
 
 class GapApplyRequest(BaseModel):
-    phase_adjustments: List[dict]  # [{phase_index, action, new_materials, new_sapuri_lectures}]
+    phase_adjustments: List[dict]  # [{phase_index, action, new_materials, new_sapuri}] (new_sapuri_lectures の文字列は 2026-10-10 から使わない)
 
 
 @app.post("/api/curricula/{curr_id}/apply-gap-fix")
@@ -57527,6 +58219,7 @@ def curriculum_apply_gap_fix(curr_id: int, payload: GapApplyRequest, request: Re
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
     _require_study_log_course(student)
+    _sp_eligible = _sapuri_eligible_by_id(student["id"])["eligible"]
 
     conn = db()
     try:
@@ -57550,25 +58243,25 @@ def curriculum_apply_gap_fix(curr_id: int, payload: GapApplyRequest, request: Re
             if idx < 0 or idx >= len(phases):
                 continue
             phase = phases[idx]
-            new_mats = adj.get("new_materials") or []
-            new_sapuri = adj.get("new_sapuri_lectures") or []
-            mats_clean = [m for m in (_sanitize_text(x, 100) for x in new_mats) if m]
-            sapuri_clean = [m for m in (_sanitize_text(x, 120) for x in new_sapuri) if m]
+            if not isinstance(phase, dict):
+                continue
+            # 📺 2026-10-10 段階 A: クライアントが送るスタサプの文字列 (new_sapuri_lectures) は使わない。
+            #   new_sapuri をカタログで検査して足し (対象生徒だけ)、表示用の文字列はサーバが作り直す。
+            mats_clean = _sapuri_strip_words(adj.get("new_materials"))
             if mats_clean:
                 cur = phase.get("materials") or []
                 for m in mats_clean:
                     if m not in cur:
                         cur.append(m)
                 phase["materials"] = cur[:10]
-            if sapuri_clean:
-                cur = phase.get("sapuri_lectures") or []
-                for m in sapuri_clean:
-                    if m not in cur:
-                        cur.append(m)
-                phase["sapuri_lectures"] = cur[:8]
+            if _sp_eligible:
+                _cur_sp = phase.get("sapuri") if isinstance(phase.get("sapuri"), list) else []
+                _new_sp = adj.get("new_sapuri") if isinstance(adj.get("new_sapuri"), list) else []
+                phase["sapuri"] = _sapuri_validate_items(_cur_sp + _new_sp)
             applied += 1
         if not applied:
             return {"ok": True, "applied": 0, "message": "適用すべき変更がありませんでした"}
+        phases = [_sapuri_phase_normalize(p, _sp_eligible) if isinstance(p, dict) else p for p in phases]
         # update DB
         if USE_POSTGRES:
             updated_at = datetime.now(timezone.utc).isoformat()
@@ -57591,6 +58284,7 @@ def expand_curriculum_to_plans(curr_id: int, request: Request, authorization: Op
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
     _require_study_log_course(student)
+    _sp_eligible = _sapuri_eligible_by_id(student["id"])["eligible"]
     conn = db()
     try:
         c = conn.cursor()
@@ -57639,7 +58333,10 @@ def expand_curriculum_to_plans(curr_id: int, request: Request, authorization: Op
         # 例: phase1+2+3+4 全てに「ターゲット1900」がある場合 → 1 plan (全期間) として登録。
         # phase ごとに異なる参考書 (例: phase1=英文法ポラリス1, phase2=ポラリス2) は別 plan で登録される。
         material_map = {}  # key=(material_clean, source_tag), value=list of {start, end, name, focus}
+        sapuri_subject = {}  # 📺 スタサプの material → 科目 (カタログの明示表。_guess_subject に頼らない)
         for ph in phases:
+            if not isinstance(ph, dict):
+                continue
             ph_start = ph.get("start_date")
             ph_end = ph.get("end_date")
             if not ph_start or not ph_end:
@@ -57649,9 +58346,16 @@ def expand_curriculum_to_plans(curr_id: int, request: Request, authorization: Op
                 p_ed = datetime.strptime(ph_end, "%Y-%m-%d").date()
             except Exception:
                 continue
+            # 📺 2026-10-10 段階 A: 旧形式の sapuri_lectures 文字列は使わず、検査済みの sapuri だけを「講座名 第a〜b講」で展開する
+            #   (対象外の生徒は空・materials のスタサプの語を含む要素は捨てる)。
+            ph = _sapuri_phase_normalize(ph, _sp_eligible)
             materials = ph.get("materials") or []
-            sapuri_lectures = ph.get("sapuri_lectures") or []
-            combined = [(m, "市販") for m in materials] + [(s, "スタサプ") for s in sapuri_lectures]
+            combined = [(m, "市販") for m in materials]
+            for it in ph.get("sapuri") or []:
+                _course = SAPURI_COURSE_BY_CODE[it["course_code"]]
+                _lab = _sapuri_range_label(_course, it["from_seq"], it["to_seq"])[:100]
+                sapuri_subject[_lab] = _sapuri_study_subject(_course)
+                combined.append((_lab, "スタサプ"))
             for (mat, source_tag) in combined:
                 mat_clean = (mat or "").strip()[:100]
                 if not mat_clean:
@@ -57683,7 +58387,8 @@ def expand_curriculum_to_plans(curr_id: int, request: Request, authorization: Op
                 title_prefix = f"[{unique_phase_names[0]}〜{unique_phase_names[-1]}]"
             else:
                 title_prefix = f"[{unique_phase_names[0]}]"
-            subject = _guess_subject(mat_clean)
+            subject = sapuri_subject.get(mat_clean) if source_tag == "スタサプ" else None
+            subject = subject or _guess_subject(mat_clean)
             color = subject_colors.get(subject, "#6366f1")
             src_prefix = "📺 " if source_tag == "スタサプ" else ""
             title = f"{title_prefix} {src_prefix}{mat_clean}"[:100]
@@ -57700,18 +58405,25 @@ def expand_curriculum_to_plans(curr_id: int, request: Request, authorization: Op
                 f"登場フェーズ: {', '.join(unique_phase_names[:4])}"
                 f"{' 他' if len(unique_phase_names) > 4 else ''}"
             )[:1000]
+            # 🔧 2026-10-10: 重複は ON CONFLICT DO NOTHING (衝突先を書かない = 部分・式の一意索引 uq_study_plans_no_dup にも効く)。
+            #   従来は IntegrityError を拾って続けていたが、Postgres では 1 件の重複でトランザクションが失敗状態になり、
+            #   以降の INSERT も最後の commit も黙って ROLLBACK される (応答は added>0 のまま) 不具合だった。
+            #   それ以外の失敗は rollback して止める (続けると同じ理由で「200 なのに 0 件」になる)。
             try:
                 c.execute(
                     "INSERT INTO study_plans (student_id, title, subject, material, start_date, end_date, target_minutes, color, note) "
-                    "VALUES (?,?,?,?,?,?,?,?,?)",
+                    "VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING RETURNING id",
                     (student["id"], title, subject, mat_clean, start_date, end_date, per_item_min, color, note)
                 )
-                added += 1
-            except IntegrityError:
-                skipped += 1
+                if c.fetchone():
+                    added += 1
+                else:
+                    skipped += 1
             except Exception as ee:
-                log.warning(f"[Curriculum] expand insert failed: {ee}")
-                skipped += 1
+                try: conn.rollback()
+                except Exception: pass
+                log.warning(f"[Curriculum] expand insert failed: {type(ee).__name__}: {str(ee)[:200]}")
+                raise HTTPException(status_code=500, detail="学習計画の保存に失敗しました (何も追加していません)。もう一度お試しください")
         conn.commit()
         log.info(f"[Curriculum] expand-to-plans curr={curr_id} added={added} skipped={skipped} unique_materials={total_unique}")
         return {"ok": True, "added": added, "skipped": skipped, "unique_materials": total_unique}

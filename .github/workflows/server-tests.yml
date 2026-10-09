@@ -49,6 +49,9 @@ on:
       - 'seed-data/grammar_drill_weakness_v1.json'
       # 🎯 bank の単元タグ優先 (test_exam_bank_unit_rank.py) は画面の unitExact の規則をソースで照合する
       - 'dojo-drill.html'
+      # 📺 スタサプ段階 A: カタログのゲート (check_sapuri_catalog.py) は app.js の旧名の上限表 (SAPURI_LEGACY_CAPS) も照合する
+      - 'app.js'
+      - 'scripts/sapuri_lessons/**'
       # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
       - 'lp.html'
       - 'checkout.html'
@@ -336,6 +339,17 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_exam_bank_unit_rank.py
+
+      # 📺 スタサプ段階 A (2026-10-10 塾長決定 D2「授業コースの在籍生だけ」): 対象判定 (3 コマ全部・本科の長期 trial・開始月・
+      #   停止スイッチ・宣言と実行時のクラス名)・カリキュラムの保存でスタサプが消えない / 旧文字列と AI の講座名を捨てる /
+      #   対象外は空・apply-gap-fix・expand-to-plans の ON CONFLICT (重複が混ざっても他が入る)・AI 弱点プリントに
+      #   スタサプを書かせない・/api/sapuri-lectures のカタログ・/api/student/sapuri/status。カタログ定数のゲートも回す。
+      - name: スタサプ 段階 A 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_sapuri_lessons.py
+          python3 scripts/sapuri_lessons/check_sapuri_catalog.py
 
       # ⏪ 自動ロールバックが「履歴の強制書き換え」ではなく revert commit を fast-forward で積むこと (2026-09-07)。
       - name: 自動ロールバック (revert commit 方式) 回帰テスト

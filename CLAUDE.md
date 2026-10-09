@@ -617,6 +617,28 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - **LINE 連携 CTA** (`#lineLinkSection`) は `/api/auth/me` の `line_linked === false` の生徒にだけ出る (LINE の userId は返さない)。
 - 回帰テスト: `scripts/health_check/test_student_ux_2026_09.py` (CI `server-tests.yml`)。
 
+## 📺 スタサプ 第N講 (講単位) — 題名は本番 DB だけ (2026-10-10 塾長決定・段階 A 実装済み / 段階 B は未実装)
+- **D1 講の題名 (第N講の題名) はリポジトリ・Vercel で配信されるファイル・認証なしの API・Actions のログ・サーバのログ・
+  AI へのプロンプト・メール/LINE 本文に出さない。** 本番 DB だけに置く (段階 B の取込)。テストの題名は架空 (「テスト講義A」等)。
+  講座名と講数 (公開ラインナップの情報) は書いてよい。講師名は書かない。
+- **D2 スタサプを勧めるのは授業コース (水3・金3・日のライブ授業) の在籍生だけ**。オンラインの AI 学習管理コース
+  (LP「国公立難関大学コース」・course は同じ kokuritsu_nankan で在籍クラスが空) には勧めない (LP・承認メールの文言も外した)。
+  **D3** 科目は英語・国語も含む (`SAPURI_SUBJECT_KEYS` から外すと科目ごとに止まる)。**D4** 入塾した生徒だけ。
+- 判定は `_sapuri_eligible_by_id(student_id)` 1 か所 (自分の接続・30 秒キャッシュ・例外は対象外): 停止スイッチ (kv_settings
+  `sapuri_enabled`・`POST /api/admin/sapuri/settings`) / 実行時の `_COURSE_CLASSES` が宣言 `_SAPURI_COURSE_LABELS_DECLARED` と完全一致 /
+  course=kokuritsu_nankan / `_enrolled_sql` (本科の長期 trial を含む) / 在籍クラスに 3 コマ全部 / 受講開始月を過ぎている。
+  ★status='paid' では判定しない (本科生は承認時に status='trial'・trial_end +10 年)。生徒画面は `GET /api/student/sapuri/status`。
+- 講座の正典はコード定数 `SAPURI_COURSES` (138 講座・code / first..last / 偏差値と週数は塾の目安)。旧初期データ (2026-05 の 74 講座) は
+  架空の講座名が混ざっていたので廃止し、`sapuri_lectures` 表は読まない。`/api/sapuri-lectures` はこの定数を返す (題名は無い)。
+- カリキュラムのスタサプは `sapuri: [{course_code, from_seq, to_seq}]` が正典。`sapuri_lectures` (「講座名 第a〜b講」) はサーバが
+  作り直す表示用の写し (`_sapuri_phase_normalize`・POST/PUT・/me・ai-generate・gap-analyze・apply-gap-fix・expand-to-plans で共用)。
+  旧形式の文字列・AI が書いた講座名・materials のスタサプの語は捨てる。対象外の生徒は空。AI 弱点プリントは AI にスタサプを書かせない。
+- app.js の講数の上限は `/api/sapuri-lectures` の name/first/last から実行時に作る (上限は last・折り返しは first から =
+  総合問題編の「第41講」を書き換えない)。端末に残った旧名のタスクは静的表 `SAPURI_LEGACY_CAPS` (`SAPURI_LEGACY_NAME_TO_CODE` の写し)。
+- 検査: `scripts/health_check/test_sapuri_lessons.py` (server-tests) と `scripts/sapuri_lessons/check_sapuri_catalog.py` (カタログ・別名・
+  宣言ラベル・app.js の写し・旧データの参照・題名の元データがリポジトリに無いこと)。
+- ★Claude とスクリプトは studysapuri.jp・mediacdn を取得しない (講の一覧は塾長がブラウザで保存したファイルから作る = 段階 B)。
+
 ## 塾生アプリのみ枠 (AIなし) と宿題ドリル (2026-09-24 塾長決定)
 - **塾長方針: 英語の自由演習は開かない。AIなしの生徒が解けるのは「塾長が出した宿題」と「配信した単元ドリル」だけ。**
   `_AI_DISABLED_ALLOWED_EXACT / _PREFIXES` (middleware の許可集合) は変えない。`check_light_tier_middleware.py` が固定している。

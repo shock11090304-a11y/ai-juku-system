@@ -3228,6 +3228,13 @@ async function generateCurriculumWithAi() {
   }
 }
 
+// 📺 2026-10-10 スタサプ段階 A: 表示してよいのはサーバがカタログで検査した sapuri から作った「講座名 第a〜b講」だけ。
+//   sapuri (正典) の無い旧形式の文字列 (架空の講座名・AI が書いた名前・古い下書き) は出さない。対象外の生徒はサーバが空にする。
+function _cuSapuriLabels(p) {
+  if (!p || !Array.isArray(p.sapuri) || !p.sapuri.length || !Array.isArray(p.sapuri_lectures)) return [];
+  return p.sapuri_lectures.filter(m => typeof m === 'string' && m);
+}
+
 function renderCurriculumPreview(c) {
   const examDate = c.exam_date;
   const startDate = c.start_date;
@@ -3250,7 +3257,7 @@ function renderCurriculumPreview(c) {
           </div>
           <div style="font-size:0.85rem; color:#e4e4e7; margin-bottom:0.4rem;">🎯 ${escapeHtml(p.focus)}</div>
           ${p.materials && p.materials.length ? `<div style="font-size:0.78rem; color:#a1a1aa; margin-bottom:0.3rem;">📚 市販教材: ${p.materials.map(m => `<span style="background:rgba(99,102,241,0.15); color:#c7d2fe; padding:0.1rem 0.4rem; border-radius:4px; margin-right:0.2rem; display:inline-block; margin-bottom:0.2rem;">${escapeHtml(m)}</span>`).join('')}</div>` : ''}
-          ${p.sapuri_lectures && p.sapuri_lectures.length ? `<div style="font-size:0.78rem; color:#a1a1aa; margin-bottom:0.3rem;">📺 スタサプ講義: ${p.sapuri_lectures.map(m => `<span style="background:rgba(251,113,133,0.15); color:#fda4af; padding:0.1rem 0.4rem; border-radius:4px; margin-right:0.2rem; display:inline-block; margin-bottom:0.2rem;">${escapeHtml(m)}</span>`).join('')}</div>` : ''}
+          ${_cuSapuriLabels(p).length ? `<div style="font-size:0.78rem; color:#a1a1aa; margin-bottom:0.3rem;">${_cuSapuriLabels(p).map(m => `<span style="background:rgba(251,113,133,0.15); color:#fda4af; padding:0.1rem 0.4rem; border-radius:4px; margin-right:0.2rem; display:inline-block; margin-bottom:0.2rem;">📺 スタサプ：${escapeHtml(m)}</span>`).join('')}</div>` : ''}
           ${p.milestones && p.milestones.length ? `<div style="font-size:0.78rem; color:#a1a1aa;">📌 マイルストーン: <ul style="margin:0.2rem 0 0 1rem; padding:0;">${p.milestones.map(m => `<li>${escapeHtml(m)}</li>`).join('')}</ul></div>` : ''}
         </div>
       `).join('')}
@@ -3346,7 +3353,7 @@ async function loadMyCurricula() {
                 </div>
                 <div style="font-size:0.78rem; color:#d4d4d8; margin-top:0.3rem;">🎯 ${escapeHtml(p.focus)}</div>
                 ${p.materials && p.materials.length ? `<div style="font-size:0.75rem; color:#a1a1aa; margin-top:0.3rem;">📚 ${p.materials.map(m => escapeHtml(m)).join(' / ')}</div>` : ''}
-                ${p.sapuri_lectures && p.sapuri_lectures.length ? `<div style="font-size:0.75rem; color:#fda4af; margin-top:0.3rem;">📺 スタサプ: ${p.sapuri_lectures.map(m => escapeHtml(m)).join(' / ')}</div>` : ''}
+                ${_cuSapuriLabels(p).length ? `<div style="font-size:0.75rem; color:#fda4af; margin-top:0.3rem;">${_cuSapuriLabels(p).map(m => '📺 スタサプ：' + escapeHtml(m)).join(' / ')}</div>` : ''}
                 ${p.milestones && p.milestones.length ? `<div style="font-size:0.75rem; color:#a1a1aa; margin-top:0.3rem;">📌 ${p.milestones.map(m => '・' + escapeHtml(m)).join(' ')}</div>` : ''}
               </div>
             `).join('')}
@@ -3879,7 +3886,20 @@ async function deleteExamResult(id) {
 // ==========================================================================
 // 🎯 AI 弱点プリント生成 (Phase 4.6)
 // ==========================================================================
+// 📺 2026-10-10 D2: 弱点プリントの見出しは「(AI 問題作成)」。スタサプの回を返せる対象生徒 (授業コースの在籍生・
+//   講の一覧の取込済み) だけ「＋スタサプの回」を足す。非 200 (AIなし枠・旧サーバ) は足さない。
+async function _wpSapuriHeading() {
+  const el = document.getElementById('wpSapuriSuffix');
+  if (!el || el._wpChecked) return;
+  el._wpChecked = true;
+  try {
+    const st = await slApiFetch('/api/student/sapuri/status');
+    if (st && st.eligible === true && st.lessons_loaded === true) el.textContent = ' ＋スタサプの回';
+  } catch (_) { /* 対象外と同じ扱い */ }
+}
+
 function bindWeakPointButtons() {
+  _wpSapuriHeading();
   // subject options 投入 + 弱点 hint
   const sel = document.getElementById('wpSubject');
   if (sel && !sel.options.length) {
@@ -4158,7 +4178,7 @@ function showGapAnalysisModal(state, ctx) {
       </div>
       <div style="font-size:0.85rem; color:#e4e4e7; margin-bottom:0.3rem;">${escapeHtml(adj.detail || '')}</div>
       ${adj.new_materials && adj.new_materials.length ? `<div style="font-size:0.78rem; color:#a1a1aa;">📚 追加教材: ${adj.new_materials.map(m => `<span style="background:rgba(99,102,241,0.15); color:#c7d2fe; padding:0.1rem 0.4rem; border-radius:4px; margin-right:0.2rem; display:inline-block; margin-bottom:0.2rem;">${escapeHtml(m)}</span>`).join('')}</div>` : ''}
-      ${adj.new_sapuri_lectures && adj.new_sapuri_lectures.length ? `<div style="font-size:0.78rem; color:#a1a1aa; margin-top:0.2rem;">📺 追加スタサプ: ${adj.new_sapuri_lectures.map(m => `<span style="background:rgba(251,113,133,0.15); color:#fda4af; padding:0.1rem 0.4rem; border-radius:4px; margin-right:0.2rem; display:inline-block; margin-bottom:0.2rem;">${escapeHtml(m)}</span>`).join('')}</div>` : ''}
+      ${(Array.isArray(adj.new_sapuri) && adj.new_sapuri.length && Array.isArray(adj.new_sapuri_lectures) && adj.new_sapuri_lectures.length) ? `<div style="font-size:0.78rem; color:#a1a1aa; margin-top:0.2rem;">追加: ${adj.new_sapuri_lectures.map(m => `<span style="background:rgba(251,113,133,0.15); color:#fda4af; padding:0.1rem 0.4rem; border-radius:4px; margin-right:0.2rem; display:inline-block; margin-bottom:0.2rem;">📺 スタサプ：${escapeHtml(m)}</span>`).join('')}</div>` : ''}
     </div>
   `).join('');
 
