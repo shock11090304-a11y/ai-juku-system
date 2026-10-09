@@ -166,13 +166,15 @@
     .tab-badge { position:absolute; top:0.15rem; right:50%; transform:translateX(1.2rem); min-width:16px; height:16px; padding:0 4px; box-sizing:border-box; background:#ec4899; color:#fff; border-radius:999px; font-size:0.62rem; font-weight:800; line-height:16px; text-align:center; display:none; }
     .tab-badge.show { display:block; }
 
-    /* 📺 今週見るスタサプ: 1 行で省略記号 (nowrap は使わない = 長い題名が画面幅を押し広げない。日本語はどこでも折れる) */
+    /* 📺 今週見るスタサプ: 講座名 (1 行で省略記号) と「第N講「題名」」(2 行まで) を分ける = スマホでも第N講が切れない。
+       nowrap は使わない (長い題名が画面幅を押し広げない。日本語はどこでも折れる) */
     .sp-card { border-color:rgba(251,113,133,0.35); background:rgba(251,113,133,0.06); }
     .sp-card .card-title { margin-top:0; font-size:0.98rem; }
     .sp-row { margin-top:0.45rem; padding-top:0.45rem; border-top:1px solid rgba(255,255,255,0.07); min-width:0; }
     .sp-row:first-of-type { border-top:0; padding-top:0; }
     .sp-subj { font-size:0.72rem; color:#fda4af; font-weight:800; }
-    .sp-line { font-size:0.88rem; color:#fecdd3; line-height:1.5; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; line-clamp:1; overflow:hidden; word-break:break-all; }
+    .sp-course { font-size:0.78rem; color:#fecdd3; opacity:0.85; line-height:1.5; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; line-clamp:1; overflow:hidden; word-break:break-all; }
+    .sp-line { font-size:0.88rem; color:#fecdd3; font-weight:700; line-height:1.5; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden; word-break:break-all; }
     .toast { position:fixed; left:50%; bottom:84px; transform:translateX(-50%); background:rgba(20,20,40,0.97); border:1px solid rgba(129,140,248,0.5); color:#e4e4e7; padding:0.7rem 1.1rem; border-radius:10px; font-size:0.88rem; font-weight:700; z-index:60; box-shadow:0 6px 24px rgba(0,0,0,0.5); opacity:0; transition:opacity .2s; pointer-events:none; }
     .toast.show { opacity:1; } .toast.err { border-color:rgba(239,68,68,0.6); color:#fca5a5; }
     [hidden] { display:none !important; }
@@ -1433,26 +1435,36 @@
     // サーバが対象生徒 (授業コースの在籍生) にだけ、弱点に合う回を返す。0 件・対象外・失敗 (旧サーバの 404 等) はカードごと出さない。
     // ★題名はこの生徒に推薦した回だけ (サーバが絞る)。値はすべて esc() を通す。
     var SP_SUBJ_JA = { math: '数学', physics: '物理', chemistry: '化学', biology: '生物', english: '英語', japanese: '国語', social: '社会' };
-    function spLineText(it) {
-      if (!it || typeof it !== 'object') return '';
+    // 最初の講から講番号が 1 つずつ続く範囲の最後 (2 講以上続くときだけ。飛び飛びは null)。サーバの _sapuri_run_end と同じ。
+    function spRunEnd(ls) {
+      if (!ls.length) return null;
+      var a = Number(ls[0].seq), end = a;
+      for (var i = 1; i < ls.length; i++) { if (Number(ls[i].seq) !== end + 1) break; end += 1; }
+      return end > a ? end : null;
+    }
+    // → {course, lesson} (講座名 / 「第N講「題名」（第b講まで）」)。講座だけ (講なし) はこのカードに出さない (サーバも返さない)
+    function spLineParts(it) {
+      if (!it || typeof it !== 'object') return null;
       var course = String(it.course_name == null ? '' : it.course_name).trim();
       var ls = Array.isArray(it.lessons) ? it.lessons.filter(function (l) { return l && isFinite(Number(l.seq)) && l.seq !== null && l.seq !== ''; }) : [];
-      if (!course || !ls.length) return '';   // 講座だけ (講なし) はこのカードに出さない (サーバも返さない)
+      if (!course || !ls.length) return null;
       var a = Number(ls[0].seq);
-      var to = (it.to_seq != null && isFinite(Number(it.to_seq))) ? Number(it.to_seq) : Number(ls[ls.length - 1].seq);
+      // to_seq はサーバが「講番号が続くときだけ」入れる (null = 範囲なし)。キーが無い旧形式は lessons の連続部分から
+      var to = ('to_seq' in it) ? ((it.to_seq != null && isFinite(Number(it.to_seq))) ? Number(it.to_seq) : null) : spRunEnd(ls);
       var title = String(ls[0].title == null ? '' : ls[0].title).trim();
-      return course + ' 第' + a + '講' + (title ? '「' + title + '」' : '') + (to > a ? '（第' + to + '講まで）' : '');
+      return { course: course, lesson: '第' + a + '講' + (title ? '「' + title + '」' : '') + (to > a ? '（第' + to + '講まで）' : '') };
     }
     function sapuriCardHtml(items) {
       var rows = [];
       (Array.isArray(items) ? items : []).slice(0, 3).forEach(function (it) {
-        var t = spLineText(it);
-        if (!t) return;
+        var p = spLineParts(it);
+        if (!p) return;
+        var t = p.course + ' ' + p.lesson;
         var subj = SP_SUBJ_JA[String(it.subject || '').toLowerCase()] || '';
         var topic = String(it.topic == null ? '' : it.topic).trim();
         var head = (subj ? subj : '') + (subj && topic ? '・' : '') + topic;
-        rows.push('<div class="sp-row">' + (head ? '<div class="sp-subj">' + esc(head) + '</div>' : '')
-          + '<div class="sp-line" title="' + esc(t) + '">' + esc(t) + '</div></div>');
+        rows.push('<div class="sp-row" title="' + esc(t) + '">' + (head ? '<div class="sp-subj">' + esc(head) + '</div>' : '')
+          + '<div class="sp-course">' + esc(p.course) + '</div><div class="sp-line">' + esc(p.lesson) + '</div></div>');
       });
       if (!rows.length) return '';
       return '<div class="card sp-card"><div class="card-title">📺 今週見るスタサプ</div>'

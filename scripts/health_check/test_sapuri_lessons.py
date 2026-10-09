@@ -20,6 +20,9 @@
   6. AI 弱点プリント: AI 出力のスタサプを使わない・プロンプトでスタサプを書かせない
   7. ai-generate / gap-analyze: 対象生徒だけカタログを渡す・応答の検査
   8. /api/sapuri-lectures はカタログ (code/first/last) を返す・起動時に sapuri_lectures 表へ投入しない
+  20-23. 段階 B レビュー修正: タグの無い弱点は学年帯の外・別系統の講座に移らない (AI 弱点プリントの実ルート) /
+      講データの無い講座を選んだら講データのある同じ科目の講座で Tier 1/2 / 「（第b講まで）」は講番号が続くときだけ /
+      停止スイッチは読めなければ閉じる側 / 止めた科目の保存済み週次プリントは読むときに外す
   12. レビュー修正: milestones/focus/name のスタサプの語を消す (全生徒) / 停止スイッチ OFF の間の apply-gap-fix・PUT で
       保存済みの範囲を消さない (ON に戻すと出る) / 下書き (curriculum_draft) は読むときに今の判定でそろえる /
       展開済みのスタサプの計画は対象外に出さない (行は消さない) / /api/sapuri-lectures の version
@@ -990,6 +993,148 @@ def main():
           and j["matched_by"].get("topic", 0) >= 2 and any(x.get("tag") == "時制" and x.get("matched_by") == "course"
                                                              for x in j.get("unmatched_top", [])), r.text[:400])
     check("coverage: 題名を返さない", "テスト講義" not in r.text)
+
+    # ======================================================================
+    # 段階 B レビューの修正 (2026-10-10)
+    # ======================================================================
+    print("\n[20] タグの無い弱点は学年帯の外・別系統の講座に移らない (AI 弱点プリントの実ルート)")
+    sid_n = make_student(mod, "スタサプ対象 N", "sapuri-n@example.org", labels=LABELS3)          # 高3・模試なし = 偏差値 60
+    sid_n2 = make_student(mod, "スタサプ対象 N2", "sapuri-n2@example.org", labels=LABELS3, grade="高校2年")
+
+    def ws_one(sid, subject, topic):
+        mod._RATE_LIMIT_STORE.clear()
+        code, j, t = ws(sid, subject, topic)
+        return code, (j.get("sapuri_lessons") or []), t
+    for subject, topic, why in (("数学", "三角関数の合成", "語彙に無い数学 (数学III+C に寄せない)"),
+                                ("数学", "ベクトルの内積", "語彙に無い数学"),
+                                ("化学", "中和滴定", "高3 に高1・2 のベーシック化学を出さない"),
+                                ("化学", "化学平衡", "高3 に高1・2 のベーシック化学を出さない"),
+                                ("現代文", "要約", "現代文を語句 (漢字・語彙) の講座に寄せない")):
+        code, sl, t = ws_one(sid_n, subject, topic)
+        check(f"タグなし {subject}「{topic}」→ 推薦しない ({why})", code == 200 and sl == [], t[:300])
+    code, sl, t = ws_one(sid_n, "数学", "数学II 加法定理")
+    co = mod.SAPURI_COURSE_BY_CODE.get((sl or [{}])[0].get("course_code")) or {}
+    check("数学II の接頭辞 (タグなし) → 高3 の数学IAIIB+C の講座 (数学III+C にしない)", code == 200 and len(sl) == 1
+          and co.get("field") == "IAIIB+C" and co.get("band") == "高3" and sl[0]["matched_by"] == "course", t[:300])
+    code, sl, t = ws_one(sid_n, "数学", "数学III 区分求積法")
+    co = mod.SAPURI_COURSE_BY_CODE.get((sl or [{}])[0].get("course_code")) or {}
+    check("数学III の接頭辞 (タグなし) → 数学III+C の講座", code == 200 and len(sl) == 1 and co.get("field") == "III+C", t[:300])
+    code, sl, t = ws_one(sid_n2, "化学", "中和滴定")
+    check("高1・2 の化学 (タグなし) → 学年帯にある全範囲の講座 (高1・2)", code == 200 and len(sl) == 1
+          and (mod.SAPURI_COURSE_BY_CODE.get(sl[0]["course_code"]) or {}).get("band") == "高1・2", t[:300])
+    code, sl, t = ws_one(sid_n, "古文", "助動詞")
+    check("古文 (タグなし) は学年帯に全範囲の講座があるので講座だけ (従来どおり)", code == 200 and len(sl) == 1
+          and sl[0]["course_code"] == "KZ016000", t[:300])
+    C3 = mod._sapuri_choose_course
+    check("タグなしの数学 (接頭辞なし) は講座を選ばない", C3("math", [], "高3", 60) is None)
+    check("タグありは従来どおり学年帯に無ければもう一方 (高1・2 の有機化学 → 学年帯の全範囲の講座)",
+          (C3("chemistry", ["有機化学"], "高1・2", 60) or {}).get("band") == "高1・2")
+
+    print("\n[21] 選んだ講座に講データが無ければ、講データのある同じ科目の講座で引く・範囲は講番号が続くときだけ")
+    sk_body = {"course_code": "KZ372000", "source": "test", "lessons": lessons_for("KZ372000", "テスト講義W", {
+        10: [{"subject_key": "sekaishi", "tag": "中世"}], 11: [{"subject_key": "sekaishi", "tag": "中世"}]}),
+        "topic_lessons": [{"subject_key": "sekaishi", "topic_norm": "中世(イスラーム世界)", "seqs": [7]},
+                          {"subject_key": "sekaishi", "topic_norm": "近世(大航海時代)", "seqs": [3, 15]},
+                          {"subject_key": "sekaishi", "topic_norm": "近代(産業革命)", "seqs": [20, 21, 30]}]}
+    r = client.post(IMP, json=sk_body, headers=adm)
+    check("本番の取込 (KZ372000 世界史 通史)", r.status_code == 200 and r.json().get("ok") is True, r.text[:300])
+    check("前提: 高3・偏差値 60 の世界史は講データの無いスタンダード (KZ240000) を選ぶ",
+          (C3("sekaishi", ["中世"], "高3", 60) or {}).get("code") == "KZ240000"
+          and mod.SAPURI_COURSE_BY_CODE["KZ240000"]["has_lessons"] is False)
+    rr = R(sid_n, [{"subject_code": "social", "topic": "世界史 中世(イスラーム世界)"},
+                   {"subject_code": "social", "topic": "世界史 中世(十字軍)"},
+                   {"subject_code": "social", "topic": "世界史 古代(ローマ)"},
+                   {"subject_code": "social", "topic": "世界史 近世(大航海時代)"},
+                   {"subject_code": "social", "topic": "世界史 近代(産業革命)"}])
+    check("Tier 1 は講データのある講座 (KZ372000) で引く", rr[0] and rr[0]["course_code"] == "KZ372000"
+          and rr[0]["matched_by"] == "topic" and [x["seq"] for x in rr[0]["lessons"]] == [7], rr[0])
+    check("Tier 2 も講データのある講座で引く (2 講)", rr[1] and rr[1]["course_code"] == "KZ372000"
+          and rr[1]["matched_by"] == "tag" and [x["seq"] for x in rr[1]["lessons"]] == [10, 11] and rr[1]["to_seq"] == 11, rr[1])
+    check("当たらなければ Tier 3 は選んだ講座 (講データ無しの印つき)", rr[2] and rr[2]["course_code"] == "KZ240000"
+          and rr[2]["matched_by"] == "course" and rr[2]["course_has_lessons"] is False, rr[2])
+    check("飛び飛び [3, 15] は「（第15講まで）」を付けない (label・to_seq)", rr[3] and rr[3]["to_seq"] is None
+          and "まで" not in rr[3]["label"] and "第3講「テスト講義W3」" in rr[3]["label"], rr[3])
+    check("[20, 21, 30] は続く所まで (第21講まで)", rr[4] and rr[4]["to_seq"] == 21 and rr[4]["label"].endswith("（第21講まで）"), rr[4])
+    conn = mod.db(); c = conn.cursor()
+    for tp in ("世界史 近世(大航海時代)", "世界史 近代(産業革命)", "世界史 中世(イスラーム世界)"):
+        c.execute("INSERT INTO student_weakness (student_id, subject, topic, question_count, avg_confidence_score, last_seen_at, "
+                  "reason_counts, qa_accuracy, qa_attempts) VALUES (?, 'social', ?, 5, 0.5, ?, ?, 0.1, 3)",
+                  (sid_n, tp, datetime.datetime.now(datetime.timezone.utc).isoformat(), json.dumps({"understanding": 3})))
+    conn.commit(); conn.close()
+    r = client.get("/api/student/class/sapuri", headers=tok(sid_n))
+    items = (r.json() if r.status_code == 200 else {}).get("items") or []
+    byt = {x["topic"]: x for x in items}
+    check("class.html: 高3・偏差値 60 の世界史の弱点にも回が出る (3 件)", r.status_code == 200 and len(items) == 3
+          and all(x["course_code"] == "KZ372000" for x in items), r.text[:400])
+    check("class.html: 飛び飛びの対応は to_seq=null (範囲を書かない)", (byt.get("世界史 近世(大航海時代)") or {}).get("to_seq", "x") is None,
+          byt.get("世界史 近世(大航海時代)"))
+    check("class.html: 続く範囲は to_seq=21", (byt.get("世界史 近代(産業革命)") or {}).get("to_seq") == 21, byt.get("世界史 近代(産業革命)"))
+    r = client.get("/api/admin/sapuri/coverage", headers=adm)
+    check("coverage: 講座だけの弱点に「講データ無し」の印 (no_lessons)", r.status_code == 200
+          and all("no_lessons" in x for x in r.json().get("unmatched_top", [])), r.text[:300])
+
+    print("\n[22] 停止スイッチは読めなければ閉じる側 (塾長が OFF にした後の一時的な DB の失敗で出し直さない)")
+    class _Cur:
+        def __init__(self, cur): self._c = cur
+        def execute(self, sql, *a):
+            if "kv_settings" in sql:
+                raise RuntimeError("kv read failed (test)")
+            return self._c.execute(sql, *a)
+        def __getattr__(self, n): return getattr(self._c, n)
+    class _Conn:
+        def __init__(self, conn): self._k = conn
+        def cursor(self): return _Cur(self._k.cursor())
+        def __getattr__(self, n): return getattr(self._k, n)
+    orig_db = mod.db
+    switch(False)
+    try:
+        mod.db = lambda *a, **k: _Conn(orig_db(*a, **k))
+        mod._SAPURI_SWITCH_CACHE.update({"until": 0.0})
+        mod._SAPURI_ELIGIBLE_CACHE.clear()
+        check("OFF の後に kv の読み取りが失敗しても OFF のまま (控え)", mod._sapuri_enabled() is False
+              and mod._sapuri_eligible_by_id(sid_ok).get("eligible") is False)
+        r = client.get("/api/student/class/sapuri", headers=tok(sid_ok))
+        check("その間も生徒画面に出さない (class.html)", r.status_code == 200 and r.json().get("items") == [], r.text[:200])
+        mod._SAPURI_SWITCH_CACHE.update({"until": 0.0, "known": False, "enabled": True})
+        mod._SAPURI_ELIGIBLE_CACHE.clear()
+        check("一度も読めていないプロセスで読み取りが失敗したら OFF", mod._sapuri_enabled() is False
+              and mod._sapuri_eligible_by_id(sid_ok).get("eligible") is False)
+        check("失敗は 30 秒覚えない (5 秒)", mod._SAPURI_SWITCH_CACHE["until"] - time.time() <= mod._SAPURI_SWITCH_FAIL_TTL + 0.5)
+    finally:
+        mod.db = orig_db
+        switch(True)
+    mod._SAPURI_SWITCH_CACHE.update({"until": 0.0})
+    mod._SAPURI_ELIGIBLE_CACHE.clear()
+    check("読めるようになれば ON に戻る", mod._sapuri_enabled() is True and mod._sapuri_eligible_by_id(sid_ok).get("eligible") is True)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("DELETE FROM kv_settings WHERE key = 'sapuri_enabled'")
+    conn.commit(); conn.close()
+    mod._SAPURI_SWITCH_CACHE.update({"until": 0.0})
+    check("行が無いのは既定の ON (読み取り失敗とは別)", mod._sapuri_enabled() is True)
+
+    print("\n[23] 止めた科目 (SAPURI_SUBJECT_KEYS) の保存済み週次プリントは読むときに外す")
+    mod._SAPURI_ELIGIBLE_CACHE.clear()
+    r = client.get("/api/student/worksheet/this-week", headers=tok(sid_ok))
+    check("前提: this-week に英文法の sapuri (題名つき)", r.status_code == 200 and "テスト講義A5" in r.text, r.text[:200])
+    orig_keys = mod.SAPURI_SUBJECT_KEYS
+    mod.SAPURI_SUBJECT_KEYS = tuple(k for k in orig_keys if k != "eng_grammar")
+    try:
+        r = client.get("/api/student/worksheet/this-week", headers=tok(sid_ok))
+        check("this-week: 英文法を止めたら対象生徒でも外す", r.status_code == 200 and "テスト講義" not in r.text
+              and all("sapuri" not in x for x in r.json()["worksheet"]["subject_topics"]), r.text[:300])
+        r = client.get("/api/student/worksheet/history", headers=tok(sid_ok))
+        check("history: 英文法を止めたら外す", r.status_code == 200 and "テスト講義" not in r.text, r.text[:300])
+    finally:
+        mod.SAPURI_SUBJECT_KEYS = orig_keys
+    orig_cov = mod.SAPURI_COVERS
+    mod.SAPURI_COVERS = {k: v for k, v in orig_cov.items() if k != "KZA02000"}
+    try:
+        r = client.get("/api/student/worksheet/this-week", headers=tok(sid_ok))
+        check("this-week: 照合から外した講座の sapuri も外す", r.status_code == 200 and "テスト講義" not in r.text, r.text[:300])
+    finally:
+        mod.SAPURI_COVERS = orig_cov
+    r = client.get("/api/student/worksheet/this-week", headers=tok(sid_ok))
+    check("戻せばまた出る (保存した行は書き換えていない)", r.status_code == 200 and "テスト講義A5" in r.text, r.text[:200])
 
     print()
     if FAILURES:

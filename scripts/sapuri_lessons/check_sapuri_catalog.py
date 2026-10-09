@@ -24,6 +24,9 @@ server/main.py を **import せず ast で読む** (標準ライブラリだけ�
      SAPURI_COURSES の 138 講座を実行時の表に入れても、参考書のタスク (「セミナー生物 p.100-120」「化学基礎 一問一答 No.30-60」
      「漢文 句法 第15講」等) が入れる前と同じ結果になる / 実行時の鍵に科目名だけ・6 文字未満の鍵が無い /
      スタサプのタスクには上限が効く (総合問題編の第41講は書き換えない) / 端末の控えは 1 日・版なしで読み直し扱い
+ 10. 生徒画面の「📺 第N講」の組み立て (mypage.js sapuriRecParts/sapuriRecText/sapuriRecLineHtml・class.html の今週見るスタサプ・
+     ceo.html の見え方) を **実際の JS で** 動かす: 「（第b講まで）」は講番号が続くときだけ (飛び飛び [3, 15] には付けない・
+     to_seq=null は範囲なし) / 画面は講座名の行と「第N講…」の行を分ける (1 行に丸めるとスマホで第N講が切れる)
 
 実行: python3 scripts/sapuri_lessons/check_sapuri_catalog.py   # exit 0 = 合格 / 1 = 違反あり
 """
@@ -40,6 +43,9 @@ import unicodedata
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MAIN_PY = os.path.join(REPO, "server", "main.py")
 APP_JS = os.path.join(REPO, "app.js")
+MYPAGE_JS = os.path.join(REPO, "mypage.js")
+CLASS_HTML = os.path.join(REPO, "class.html")
+CEO_HTML = os.path.join(REPO, "ceo.html")
 
 LEVELS = {"ベーシック", "スタンダード", "ハイ", "トップ", "トップ&ハイ", "ハイ&スタンダード", "共通テスト", "—"}
 BANDS = {"高3", "高1・2", "全学年"}
@@ -197,6 +203,96 @@ def check_appjs_caps_runtime(courses):
     if len(problems) == n0:
         good(f"{len(lines)} 件 OK ({eng[0]}): 参考書 {len(_NON_SAPURI_TITLES)} 件は実行時の表を入れても同じ・科目名だけの鍵なし・"
              f"スタサプの上限と第41講・控えの読み直し")
+
+
+# [10] の JS。mypage.js / class.html / ceo.html の 📺 行の組み立て部分の後ろに付けて実行する (題名は架空)。
+_JS_REC_CASES = r"""
+var out = [];
+function eq(label, got, want) { out.push((got === want ? 'OK  ' : 'NG  ') + label + ' => ' + JSON.stringify(got) + (got === want ? '' : ' (want ' + JSON.stringify(want) + ')')); }
+function L(seqs) { return seqs.map(function (n) { return { seq: n, title: 'テスト講義' + n }; }); }
+var CN = 'テスト講座X';
+var A = { course_name: CN, lessons: L([3, 15]) };                 // 飛び飛び・to_seq なし (AI 弱点プリント)
+var B = { course_name: CN, lessons: L([3, 4, 15]) };              // 先頭が続く
+var C = { course_name: CN, lessons: L([12]), to_seq: 14 };        // 表示用 (TOP3・週次・class)
+var D = { course_name: CN, lessons: L([12]), to_seq: null };      // 範囲なし
+var E = { course_name: CN, lessons: L([3, 15]), to_seq: null };   // サーバが範囲なしと決めた
+var F = { course_name: CN, lessons: [] };                         // 講座だけ (Tier 3)
+// mypage.js
+eq('mypage: 飛び飛び [3,15] は範囲を書かない', sapuriRecText(A, false), CN + ' 第3講「テスト講義3」');
+eq('mypage: [3,4,15] は続く所まで', sapuriRecText(B, false), CN + ' 第3講「テスト講義3」（第4講まで）');
+eq('mypage: to_seq 14', sapuriRecText(C), '📺 スタサプ：' + CN + ' 第12講「テスト講義12」（第14講まで）');
+eq('mypage: to_seq null は範囲なし', sapuriRecText(D, false), CN + ' 第12講「テスト講義12」');
+eq('mypage: to_seq null は lessons が飛び飛びでも範囲なし', sapuriRecText(E, false), CN + ' 第3講「テスト講義3」');
+eq('mypage: 講座だけ', sapuriRecText(F), '📺 スタサプ：' + CN);
+eq('mypage: 講座だけは requireLesson で出さない', sapuriRecText(F, true, true), '');
+var h = sapuriRecLineHtml(C, { requireLesson: true });
+eq('mypage: 画面は講座名の行と第N講の行を分ける', /<div[^>]*line-clamp:1[^>]*>📺 スタサプ：テスト講座X<\/div><div[^>]*line-clamp:2[^>]*>第12講「テスト講義12」（第14講まで）<\/div>/.test(h), true);
+eq('mypage: 講座だけの行は 1 段', /第\d+講/.test(sapuriRecLineHtml(F)) || sapuriRecLineHtml(F).indexOf(CN) < 0, false);
+// class.html
+eq('class: 飛び飛び [3,15] は範囲を書かない', spLineParts(A).lesson, '第3講「テスト講義3」');
+eq('class: to_seq 14', spLineParts(C).lesson, '第12講「テスト講義12」（第14講まで）');
+eq('class: to_seq null', spLineParts(E).lesson, '第3講「テスト講義3」');
+eq('class: 講座だけは出さない', spLineParts(F), null);
+var ch = sapuriCardHtml([Object.assign({ subject: 'english', topic: '関係詞' }, C)]);
+eq('class: 講座名の行と第N講の行 (2 行まで) を分ける', ch.indexOf('<div class="sp-course">' + CN + '</div><div class="sp-line">第12講「テスト講義12」（第14講まで）</div>') >= 0, true);
+// ceo.html (生徒の見え方)
+eq('ceo: 飛び飛び [3,15] は範囲を書かない', recText(A, false), CN + ' 第3講「テスト講義3」');
+eq('ceo: [3,4,15] は続く所まで', recText(B, false), CN + ' 第3講「テスト講義3」（第4講まで）');
+eq('ceo: to_seq 14', recText(C, true), '📺 スタサプ：' + CN + ' 第12講「テスト講義12」（第14講まで）');
+eq('ceo: to_seq null', recText(D, false), CN + ' 第12講「テスト講義12」');
+eq('ceo: 画面は 2 段 (生徒画面と同じ)', /line-clamp:1;[^>]*>📺 スタサプ：テスト講座X<\/div><div[^>]*line-clamp:2;[^>]*>第12講/.test(recLineHtml(C, true)), true);
+var __res = out.join('\n');
+if (typeof process !== 'undefined' && typeof console !== 'undefined') { console.log(__res); }
+__res;
+"""
+
+
+def _cut(text, start, end, label):
+    try:
+        a = text.index(start)
+        return text[a:text.index(end, a)]
+    except ValueError:
+        bad(f"{label} の範囲 ({start.strip()[:40]} 〜 {end.strip()[:40]}) が見つからない")
+        return None
+
+
+def check_front_rec_runtime():
+    """[10] 生徒画面の 📺 行の組み立てを実際の JS で動かす (node / osascript)。"""
+    print("\n[10] 生徒画面の「📺 第N講」(mypage.js・class.html・ceo.html を JS で実行)")
+    n0 = len(problems)
+    segs = [
+        _cut(open(MYPAGE_JS, encoding="utf-8").read(), "function _sapuriRunEnd(ls) {", "window.sapuriRecParts = sapuriRecParts;", "mypage.js"),
+        _cut(open(CLASS_HTML, encoding="utf-8").read(), "    function spRunEnd(ls) {", "    async function loadSapuriCard() {", "class.html"),
+        _cut(open(CEO_HTML, encoding="utf-8").read(), "    function recRunEnd(ls) {", "    function previewHtml(d) {", "ceo.html"),
+    ]
+    if any(x is None for x in segs):
+        return
+    eng = _js_engine()
+    if not eng:
+        bad("JS の実行環境 (node / osascript) が無い — 📺 行の組み立てを実行して確かめられない")
+        return
+    stubs = ("function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')"
+             ".replace(/>/g, '&gt;').replace(/\"/g, '&quot;'); }\nvar esc = escapeHtml;\n"
+             "var SP_SUBJ_JA = { english: '英語' };\n")
+    with tempfile.TemporaryDirectory() as td:
+        path = os.path.join(td, "rec_check.js")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(stubs + "\n".join(segs) + "\n" + _JS_REC_CASES)
+        try:
+            r = subprocess.run(eng + [path], capture_output=True, text=True, timeout=120)
+        except Exception as e:
+            bad(f"JS の実行に失敗 ({type(e).__name__})")
+            return
+    outp = (r.stdout or "").strip()
+    if r.returncode != 0 or not outp:
+        bad(f"JS が失敗した (exit {r.returncode}): {(r.stderr or '')[:400]}")
+        return
+    lines = outp.split("\n")
+    for l in lines:
+        if l.startswith("NG"):
+            bad(l[4:])
+    if len(problems) == n0:
+        good(f"{len(lines)} 件 OK ({eng[0]}): 範囲は講番号が続くときだけ・画面は講座名と第N講を分ける (3 画面とも)")
 
 
 def _fn_src(src, tree, name):
@@ -445,6 +541,8 @@ def main():
     check_stage_b(src, tree)
 
     check_appjs_caps_runtime(courses)
+
+    check_front_rec_runtime()
 
     print()
     if problems:

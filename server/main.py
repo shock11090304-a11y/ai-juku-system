@@ -56290,7 +56290,9 @@ _SAPURI_COURSE_LABELS_DECLARED = ("水曜3限 国公立コース 英文法", "�
 _SAPURI_ENABLED_KV = "sapuri_enabled"     # kv_settings の停止スイッチ (既定 "1" = 出す)。CEO から切り替える
 _SAPURI_ELIGIBLE_TTL = 30.0               # 対象判定のプロセス内キャッシュ (秒・student_id 単位)
 _SAPURI_ELIGIBLE_CACHE: dict = {}
-_SAPURI_SWITCH_CACHE = {"until": 0.0, "enabled": True}
+# 停止スイッチの控え: enabled = 最後に読めた値・known = 一度でも読めたか (読み取り失敗のときは控えか False に倒す)
+_SAPURI_SWITCH_CACHE = {"until": 0.0, "enabled": True, "known": False}
+_SAPURI_SWITCH_FAIL_TTL = 5.0             # 読み取りに失敗したときの控えの寿命 (秒)。満期の 30 秒は覚えない
 # 生徒に出すスタサプの語 (自由記述の欄からは全員分捨てる。スタサプはキー (sapuri) 経由でしか入れない)
 _SAPURI_WORD_RE = re.compile(r"スタサプ|スタディサプリ|studysapuri|study\s*sapuri", re.IGNORECASE)
 _SAPURI_MAX_ITEMS = 8                     # 1 フェーズのスタサプ範囲の上限
@@ -56325,21 +56327,52 @@ _SAPURI_JP_TAGS = {
 }
 
 
+def _sapuri_read_switch() -> bool:
+    """kv_settings の sapuri_enabled を読む。行が無ければ True (既定 ON)。★読み取りの失敗は例外のまま上げる
+    (_kv_get は失敗を「行が無い」= None に丸めるので使わない: 塾長が止めたのに DB の一時的な失敗で出てしまう)。"""
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS kv_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+        c.execute("SELECT value FROM kv_settings WHERE key = ?", (_SAPURI_ENABLED_KV,))
+        row = c.fetchone()
+        if not row:
+            return True
+        v = row["value"]
+        return not (v is not None and str(v).strip().lower() in ("0", "false", "off", "no"))
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+
+
 def _sapuri_enabled() -> bool:
-    """停止スイッチ (kv_settings sapuri_enabled)。既定 ON。読めなければ ON のまま (判定は生徒の行で別途落ちる)。"""
+    """停止スイッチ (kv_settings sapuri_enabled)。既定 ON (行が無い)。30 秒キャッシュ。
+    ★読めなかったら閉じる側に倒す (2026-10-10 段階 B レビュー): 最後に読めた値を使い、一度も読めていなければ False。
+    失敗は 5 秒だけ覚える (満期の 30 秒は覚えない)。塾長が OFF にした後の一時的な DB の失敗で出し直さないため。"""
     import time as _t
     now = _t.time()
     if now < _SAPURI_SWITCH_CACHE["until"]:
         return bool(_SAPURI_SWITCH_CACHE["enabled"])
-    v = _kv_get(_SAPURI_ENABLED_KV)
-    enabled = not (v is not None and str(v).strip().lower() in ("0", "false", "off", "no"))
-    _SAPURI_SWITCH_CACHE.update({"until": now + _SAPURI_ELIGIBLE_TTL, "enabled": enabled})
+    try:
+        enabled = _sapuri_read_switch()
+    except Exception as e:
+        log.warning(f"[Sapuri] switch read failed (控えか OFF に倒す): {type(e).__name__}: {str(e)[:120]}")
+        enabled = bool(_SAPURI_SWITCH_CACHE["enabled"]) if _SAPURI_SWITCH_CACHE.get("known") else False
+        # 控えの値はそのまま (known は変えない)。一度も読めていなければ OFF を 5 秒だけ覚える
+        _SAPURI_SWITCH_CACHE.update({"until": now + _SAPURI_SWITCH_FAIL_TTL, "enabled": enabled})
+        return enabled
+    _SAPURI_SWITCH_CACHE.update({"until": now + _SAPURI_ELIGIBLE_TTL, "enabled": enabled, "known": True})
     return enabled
 
 
 def _sapuri_set_enabled(enabled: bool) -> bool:
     ok = _kv_set(_SAPURI_ENABLED_KV, "1" if enabled else "0")
-    # 切り替えはこのプロセスでは即反映 (他のプロセスは最長 30 秒遅れる)
+    # 切り替えはこのプロセスでは即反映 (他のプロセスは最長 30 秒遅れる)。保存できたら控えも新しい値にする
+    #   (直後の読み直しが失敗しても、控え = いま塾長が選んだ値で判定する)
+    if ok:
+        _SAPURI_SWITCH_CACHE.update({"enabled": bool(enabled), "known": True})
     _SAPURI_SWITCH_CACHE.update({"until": 0.0})
     _SAPURI_ELIGIBLE_CACHE.clear()
     return ok
@@ -56609,7 +56642,7 @@ def _sapuri_parse_topic(subject_code, topic) -> dict:
     - 接頭辞で決まらなければ科目コードと生のタグで決める (english は語彙にあるときだけ・social の時代タグは None = 段階 B の part_key 解決)。
     - 別名は科目キーが決まった後に適用。2 つに分かれる別名 (倒置・強調) は tags に両方。語彙に無いタグは tag=None。"""
     s = unicodedata.normalize("NFKC", str(topic or "")).strip()
-    res = {"subject_key": None, "tag": None, "tags": [], "detail": None, "topic_norm": ""}
+    res = {"subject_key": None, "tag": None, "tags": [], "detail": None, "topic_norm": "", "math_prefix": None}
     if not s or s.startswith("共通テスト"):
         res["topic_norm"] = s
         return res
@@ -56618,6 +56651,8 @@ def _sapuri_parse_topic(subject_code, topic) -> dict:
     for pre, key in _SAPURI_TOPIC_PREFIXES:
         if s.startswith(pre):
             sk, rest = key, s[len(pre):].strip()
+            if key == "math":
+                res["math_prefix"] = pre   # 数学I/A/II/B/C/III (タグが無いときの講座の系統。基礎数学は決めない)
             break
     raw_tag = re.split(r"[(（:：]", rest)[0].strip()
     m = re.search(r"[(（](.*)[)）]", rest)
@@ -56837,8 +56872,9 @@ def admin_sapuri_settings_set(payload: SapuriSettingsRequest, request: Request, 
 # 📺 スタサプ 段階 B — 講データ (第N講) の取込と照合 (2026-10-10・SPEC2 §4〜§5)
 #   D1: 講の題名は本番 DB (sapuri_lessons) だけに置く。リポジトリ・サーバのログ・認証なしの API・AI のプロンプト・
 #     メール/LINE には出さない。生徒画面に返すのは「その生徒に推薦した回」の題名だけ。テストの題名は架空。
-#   照合の順: コード定数 SAPURI_COVERS で講座を 1 つ決める (講データの有無は見ない・学年帯 → 偏差値) →
-#     その講座の中で Tier 1 (弱点 topic → 講の対応表) → Tier 2 (タグの講が 4 講以下のときだけ) → Tier 3 (講座だけ)。
+#   照合の順: コード定数 SAPURI_COVERS で講座を 1 つ決める (学年帯 → 偏差値。タグの無い弱点は学年帯の外へ移らない =
+#     _sapuri_choose_course) → その講座の中で Tier 1 (弱点 topic → 講の対応表) → Tier 2 (タグの講が 4 講以下のときだけ) →
+#     Tier 3 (講座だけ)。選んだ講座に講データが無ければ、講データのある同じ科目の講座で Tier 1/2 を引く (_sapuri_lesson_courses)。
 #     文化史 (SAPURI_COVERS_TIER1_ONLY) は通史の講座に Tier 1 が無いときの Tier 1 だけに使う。
 #   ★照合は自分の db() を開いて finally で閉じる (呼び出し側の共有カーソルに触らない = Postgres で 1 文の失敗が
 #     TOP3・週次プリントのトランザクションを壊さない)。例外は握って空にする。
@@ -56913,8 +56949,9 @@ def _sapuri_dominant_reason(raw) -> Optional[str]:
         return None
 
 
-def _sapuri_candidates(sk: str, tags: list, table: dict) -> list:
-    """科目キー (とタグ) を扱う講座 (講数が公開のものだけ)。タグが無ければ「その科目の全タグ (*)」の講座を優先。"""
+def _sapuri_candidates(sk: str, tags: list, table: dict, prefer_star: bool = True) -> list:
+    """科目キー (とタグ) を扱う講座 (講数が公開のものだけ)。タグが無ければ「その科目の全タグ (*)」の講座を優先
+    (prefer_star=False なら * に絞らずその科目の全講座)。"""
     out, star = [], []
     for code, m in table.items():
         cov = m.get(sk)
@@ -56926,24 +56963,71 @@ def _sapuri_candidates(sk: str, tags: list, table: dict) -> list:
         out.append(c)
         if cov == "*":
             star.append(c)
-    if not tags and star:
+    if prefer_star and not tags and star:
         return star
     return out
 
 
+def _sapuri_in_band(c: dict, band: str) -> bool:
+    return c["band"] in (band, "全学年")
+
+
+def _sapuri_rank_key(c: dict, dev: float) -> tuple:
+    """講座の並び (決定的): 偏差値が範囲内 → 範囲の中央が近い → field (通史 > 文化史) → code。"""
+    lo, hi = float(c["dev_min"]), float(c["dev_max"])
+    dist = 0.0 if lo <= dev <= hi else min(abs(dev - lo), abs(dev - hi))
+    return (dist, abs((lo + hi) / 2.0 - dev), _SAPURI_FIELD_PRIORITY.get(c.get("field"), 5), c["code"])
+
+
 def _sapuri_pick_course(cands: list, band: str, dev: float) -> Optional[dict]:
     """講座を 1 つ決める (決定的): 学年帯 (全学年は両方) → 無ければもう一方 → 偏差値が範囲内 → 範囲の中央が近い →
-    field (通史 > 文化史) → code。範囲に入るものが無ければ範囲に最も近いもの。"""
+    field (通史 > 文化史) → code。範囲に入るものが無ければ範囲に最も近いもの。★タグで決まった候補にだけ使う
+    (タグの無い弱点は _sapuri_choose_course が学年帯の外へ移らない)。"""
     if not cands:
         return None
-    inband = [c for c in cands if c["band"] in (band, "全学年")]
+    inband = [c for c in cands if _sapuri_in_band(c, band)]
     pool = inband or cands
+    return sorted(pool, key=lambda c: _sapuri_rank_key(c, dev))[0]
 
-    def _key(c):
-        lo, hi = float(c["dev_min"]), float(c["dev_max"])
-        dist = 0.0 if lo <= dev <= hi else min(abs(dev - lo), abs(dev - hi))
-        return (dist, abs((lo + hi) / 2.0 - dev), _SAPURI_FIELD_PRIORITY.get(c.get("field"), 5), c["code"])
-    return sorted(pool, key=_key)[0]
+
+# 数学の接頭辞 → その科目のタグ (タグの無い数学の弱点で講座の系統を決める)。数学C (ベクトル = IAIIB+C 側 /
+#   複素数平面・平面上の曲線 = III+C 側) と基礎数学は系統が 1 つに決まらないので入れない。
+_SAPURI_MATH_PREFIX_TAGS = {
+    "数学I": [t for t, f in SAPURI_MATH_TAG_FIELD.items() if f == "数学I"],
+    "数学A": [t for t, f in SAPURI_MATH_TAG_FIELD.items() if f == "数学A"],
+    "数学II": [t for t, f in SAPURI_MATH_TAG_FIELD.items() if f == "数学II"],
+    "数学B": [t for t, f in SAPURI_MATH_TAG_FIELD.items() if f == "数学B+C(数学B)"],
+    "数学III": [t for t, f in SAPURI_MATH_TAG_FIELD.items() if f == "数学III"],
+}
+
+
+def _sapuri_choose_course(sk: str, tags: list, band: str, dev: float) -> Optional[dict]:
+    """弱点 1 件の講座 (Tier 3 の講座・Tier 1/2 を引く講座)。
+    - タグあり: そのタグを扱う講座から _sapuri_pick_course (学年帯に無ければもう一方)。
+    - タグなし (2026-10-10 段階 B レビュー): 学年帯 (全学年を含む) に「その科目の全範囲 (*)」の講座があるときだけ、
+      その中から偏差値で選ぶ。無ければ、学年帯にその科目の講座が 1 つだけのときだけそれ。それ以外は None
+      (高3 に高1・2 のベーシック化学・数学の弱点に数学III・現代文の弱点に語句の講座、を出さない)。"""
+    if tags:
+        return _sapuri_pick_course(_sapuri_candidates(sk, tags, SAPURI_COVERS), band, dev)
+    inb = [c for c in _sapuri_candidates(sk, [], SAPURI_COVERS, prefer_star=False) if _sapuri_in_band(c, band)]
+    star = [c for c in inb if SAPURI_COVERS.get(c["code"], {}).get(sk) == "*"]
+    if star:
+        return sorted(star, key=lambda c: _sapuri_rank_key(c, dev))[0]
+    if len(inb) == 1:
+        return inb[0]
+    return None
+
+
+def _sapuri_lesson_courses(course: dict, sk: str, tags: list, band: str, dev: float, with_lessons: set) -> list:
+    """Tier 1/2 を引く講座の順。選んだ講座に講データがあればそれだけ。無ければ (has_lessons=False・未取込)、同じ科目
+    (とタグ) の講データがある講座を 学年帯 → もう一方 の順・各々偏差値の近い順に (2026-10-10 段階 B レビュー:
+    高3 世界史のスタンダード・高1・2 の物理/化学/世界史のベーシックは講の一覧が無く、取り込んだ対応が使われなかった)。"""
+    if course["code"] in with_lessons:
+        return [course]
+    alts = [c for c in _sapuri_candidates(sk, tags, SAPURI_COVERS, prefer_star=False)
+            if c["code"] in with_lessons and c["code"] != course["code"]]
+    return (sorted([c for c in alts if _sapuri_in_band(c, band)], key=lambda c: _sapuri_rank_key(c, dev))
+            + sorted([c for c in alts if not _sapuri_in_band(c, band)], key=lambda c: _sapuri_rank_key(c, dev)))
 
 
 def _sapuri_lessons_by(c, sql: str, params: tuple) -> list:
@@ -56980,14 +57064,29 @@ def _sapuri_tier2(c, code: str, sk: str, tags: list) -> list:
         (code, sk, *tags, code))
 
 
+def _sapuri_run_end(lessons: list) -> Optional[int]:
+    """最初の講から講番号が 1 つずつ続く範囲の最後 (2 講以上続くときだけ)。飛び飛び ([12, 30]) なら None
+    (「（第30講まで）」と書くと関係の無い間の講まで見る量に見える。2026-10-10 段階 B レビュー)。"""
+    if not lessons:
+        return None
+    end = int(lessons[0]["seq"])
+    for x in lessons[1:]:
+        if int(x["seq"]) != end + 1:
+            break
+        end += 1
+    return end if end > int(lessons[0]["seq"]) else None
+
+
 def _sapuri_label(course: dict, lessons: list) -> str:
-    """「📺 スタサプ：{講座名} 第{a}講「{題名}」（第{b}講まで）」/ 講座だけなら「📺 スタサプ：{講座名}」。"""
+    """「📺 スタサプ：{講座名} 第{a}講「{題名}」（第{b}講まで）」/ 講座だけなら「📺 スタサプ：{講座名}」。
+    「（第b講まで）」は第a講から講番号が続いているときだけ (_sapuri_run_end)。"""
     if not lessons:
         return f"📺 スタサプ：{course['name']}"
     a = lessons[0]
     s = f"📺 スタサプ：{course['name']} 第{a['seq']}講「{a['title']}」"
-    if len(lessons) >= 2 and lessons[-1]["seq"] != a["seq"]:
-        s += f"（第{lessons[-1]['seq']}講まで）"
+    b = _sapuri_run_end(lessons)
+    if b is not None:
+        s += f"（第{b}講まで）"
     return s
 
 
@@ -57004,12 +57103,14 @@ def _sapuri_part_key_subject(c, sid: int, topic: str) -> Optional[str]:
     return _SAPURI_PART_KEY_SUBJECT.get(next(iter(pks)))
 
 
-def _sapuri_match_one(conn, c, sid: int, item: dict, band: str, dev_cache: dict, tables: bool) -> Optional[dict]:
+def _sapuri_match_one(conn, c, sid: int, item: dict, band: str, dev_cache: dict, tables: bool,
+                      with_lessons: Optional[set] = None) -> Optional[dict]:
     """弱点 1 件 → 推薦 (§4.2 の形) / None。conn / c は _sapuri_recommend の自分の接続とそのカーソル。"""
     subj = str(item.get("subject_code") or "").strip().lower()
     topic = str(item.get("topic") or "")
     if subj in ("chugaku", "eiken"):
         return None
+    with_lessons = with_lessons if with_lessons is not None else set()
     p = _sapuri_parse_topic(subj, topic)
     if p["subject_key"] is None and subj == "social" and p.get("tag") and topic:
         sk2 = None
@@ -57032,30 +57133,43 @@ def _sapuri_match_one(conn, c, sid: int, item: dict, band: str, dev_cache: dict,
         try: conn.rollback()
         except Exception: pass
     dev = dev_cache[sk]
-    course = _sapuri_pick_course(_sapuri_candidates(sk, tags, SAPURI_COVERS), band, dev)
+    # 講座を選ぶタグ: 弱点のタグ。タグが無い数学は接頭辞 (数学II 等) の系統のタグで選ぶ (Tier 2 には使わない)
+    sel_tags = tags or (list(_SAPURI_MATH_PREFIX_TAGS.get(p.get("math_prefix") or "", [])) if sk == "math" else [])
+    course = _sapuri_choose_course(sk, sel_tags, band, dev)
     if not course:
         return None
+    label_course = course
     lessons, matched_by = [], "course"
     if tables:
-        lessons = _sapuri_tier1(c, course["code"], sk, p["topic_norm"])
-        if lessons:
-            matched_by = "topic"
-        else:
+        order = _sapuri_lesson_courses(course, sk, sel_tags, band, dev, with_lessons)
+        for lc in order:
+            got = _sapuri_tier1(c, lc["code"], sk, p["topic_norm"])
+            if got:
+                course, lessons, matched_by = lc, got, "topic"
+                break
+        if not lessons:
             # 文化史: 通史の講座に Tier 1 が無いときだけ、その学年帯の文化史の講座の Tier 1 を見る
             for alt in sorted(_sapuri_candidates(sk, tags, SAPURI_COVERS_TIER1_ONLY), key=lambda x: x["code"]):
-                if alt["band"] not in (band, "全学年"):
+                if not _sapuri_in_band(alt, band):
                     continue
                 got = _sapuri_tier1(c, alt["code"], sk, p["topic_norm"])
                 if got:
                     course, lessons, matched_by = alt, got, "topic"
                     break
-        if not lessons:
-            got = _sapuri_tier2(c, course["code"], sk, tags)
-            if 0 < len(got) <= _SAPURI_TIER2_MAX:
-                lessons, matched_by = got, "tag"
+        if not lessons and tags:
+            # Tier 2: タグの講がある最初の講座で、4 講以下のときだけ (粗いタグで次の講座へ移って「当たり」を探さない)
+            for lc in order:
+                got = _sapuri_tier2(c, lc["code"], sk, tags)
+                if got:
+                    if len(got) <= _SAPURI_TIER2_MAX:
+                        course, lessons, matched_by = lc, got, "tag"
+                    break
+    if not lessons:
+        course = label_course   # Tier 3 は選んだ講座 (講データが無くても講座名は出せる)
     return {"subject_key": sk, "topic": topic, "tag": p.get("tag"), "course_code": course["code"],
-            "course_name": course["name"], "lessons": lessons, "label": _sapuri_label(course, lessons),
-            "matched_by": matched_by}
+            "course_name": course["name"], "lessons": lessons, "to_seq": _sapuri_run_end(lessons),
+            "label": _sapuri_label(course, lessons), "matched_by": matched_by,
+            "course_has_lessons": (course["code"] in with_lessons) if tables else None}
 
 
 def _sapuri_recommend(student_id, weak_items, *, limit_per_item: int = 1, band: Optional[str] = None) -> list:
@@ -57078,10 +57192,21 @@ def _sapuri_recommend(student_id, weak_items, *, limit_per_item: int = 1, band: 
             r = c.fetchone()
             band = _sapuri_band(r["grade"] if r else None)
         dev_cache: dict = {}
+        with_lessons: set = set()
+        if tables:
+            # 講データ (有効な講) がある講座。選んだ講座に講が無いとき、講のある講座で Tier 1/2 を引くため
+            try:
+                c.execute("SELECT DISTINCT course_code FROM sapuri_lessons WHERE active = 1")
+                with_lessons = {r["course_code"] for r in (c.fetchall() or [])}
+            except Exception as e:
+                log.warning(f"[Sapuri] lesson courses read failed: {type(e).__name__}")
+                try: conn.rollback()
+                except Exception: pass
         out = []
         for it in items:
             try:
-                out.append(_sapuri_match_one(conn, c, sid, it if isinstance(it, dict) else {}, band, dev_cache, tables))
+                out.append(_sapuri_match_one(conn, c, sid, it if isinstance(it, dict) else {}, band, dev_cache, tables,
+                                             with_lessons))
             except Exception as e:
                 log.warning(f"[Sapuri] match failed sid={sid}: {type(e).__name__}: {str(e)[:120]}")
                 try: conn.rollback()
@@ -57116,7 +57241,7 @@ def _sapuri_display(recs: list, reasons: list) -> list:
         seen.add(first["lesson_key"])
         d = dict(r)
         d["lessons"] = [first]
-        d["to_seq"] = r["lessons"][-1]["seq"]
+        d["to_seq"] = _sapuri_run_end(r["lessons"])   # 講番号が続くときだけ (飛び飛びなら None = 範囲を書かない)
         out.append(d)
     return out
 
@@ -57235,13 +57360,32 @@ def _sapuri_line_text(subject_topics) -> str:
     return "\n".join(_sapuri_weekly_lines(subject_topics))
 
 
+def _sapuri_stored_rec_allowed(d) -> bool:
+    """保存済みの sapuri (週次プリント) を今も出してよいか: 科目キーが SAPURI_SUBJECT_KEYS に残っていて、講座が今も
+    照合の母集団 (SAPURI_COVERS / SAPURI_COVERS_TIER1_ONLY) でその科目キーを扱う。D3 で科目を止めたら、保存済みの
+    週次プリントからも次の日曜を待たずに消える (2026-10-10 段階 B レビュー)。"""
+    if not isinstance(d, dict):
+        return False
+    sk = str(d.get("subject_key") or "")
+    code = str(d.get("course_code") or "")
+    if sk not in SAPURI_SUBJECT_KEYS:
+        return False
+    return sk in (SAPURI_COVERS.get(code) or {}) or sk in (SAPURI_COVERS_TIER1_ONLY.get(code) or {})
+
+
 def _sapuri_strip_topics(student_id, subject_topics):
-    """/this-week・/history: いま対象外の生徒には保存済みの sapuri を外して返す (行は書き換えない)。"""
+    """/this-week・/history: いま対象外の生徒には保存済みの sapuri を外して返す (行は書き換えない)。
+    対象生徒でも、止めた科目 (SAPURI_SUBJECT_KEYS から外した科目キー)・照合から外した講座の sapuri は外す。"""
     if not isinstance(subject_topics, list) or not any(isinstance(s, dict) and "sapuri" in s for s in subject_topics):
         return subject_topics
-    if _sapuri_eligible_by_id(student_id).get("eligible"):
-        return subject_topics
-    return [({k: v for k, v in s.items() if k != "sapuri"} if isinstance(s, dict) else s) for s in subject_topics]
+    eligible = bool(_sapuri_eligible_by_id(student_id).get("eligible"))
+    out = []
+    for s in subject_topics:
+        if isinstance(s, dict) and "sapuri" in s and (not eligible or not _sapuri_stored_rec_allowed(s.get("sapuri"))):
+            out.append({k: v for k, v in s.items() if k != "sapuri"})
+        else:
+            out.append(s)
+    return out
 
 
 def _sapuri_ws_item(subject_label: str, topic: str) -> Optional[dict]:
@@ -57609,12 +57753,15 @@ def admin_sapuri_coverage(authorization: Optional[str] = Header(None)):
             counts[mb] = counts.get(mb, 0) + 1
             if mb in ("topic", "tag"):
                 continue
+            # 講座だけ (course) のうち、選んだ講座に講データが無いもの (講のある講座でも当たらなかった) は「講データ無し」と分けて出す
+            no_lessons = bool(rec and mb == "course" and rec.get("course_has_lessons") is False)
             if rec:
-                key = (r["subject"], rec.get("subject_key"), rec.get("tag"), mb)
+                key = (r["subject"], rec.get("subject_key"), rec.get("tag"), mb, no_lessons)
             else:
                 p = _sapuri_parse_topic(r["subject"], r["topic"])
-                key = (r["subject"], p.get("subject_key"), p.get("tag"), mb)
+                key = (r["subject"], p.get("subject_key"), p.get("tag"), mb, False)
             ent = missed.setdefault(key, {"subject": key[0], "subject_key": key[1], "tag": key[2], "matched_by": key[3],
+                                          "no_lessons": key[4], "course_code": (rec or {}).get("course_code"),
                                           "count": 0, "example_topic": (r["topic"] or "")[:60]})
             ent["count"] += 1
     top = sorted(missed.values(), key=lambda x: (-x["count"], str(x["subject"]), str(x["tag"])))[:20]

@@ -13652,7 +13652,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           return '<tr style="background:rgba(239,68,68,0.08);">' + td(esc(f.code || f.name) + '<div style="color:#71717a; font-size:0.72rem;">' + esc(f.name) + '</div>')
             + td('<span style="color:#fca5a5; font-weight:700;">✕ ' + esc(why) + '</span>', '') + td('') + td('') + td('') + td('') + '</tr>';
         }
-        if (!dr) return '<tr>' + td(esc(f.code) + '<div style="color:#71717a; font-size:0.72rem;">' + esc(f.name) + '</div>') + td('<span style="color:#94a3b8;">確かめ中…</span>') + td('') + td('') + td('') + td('') + '</tr>';
+        // 結果がまだ無い講座: 試している間は「確かめ中…」。止まった後 (サーバの反映待ち・失敗) は「未確認」と次の操作を出す
+        if (!dr) return '<tr>' + td(esc(f.code) + '<div style="color:#71717a; font-size:0.72rem;">' + esc(f.name) + '</div>')
+          + td(_spBusy ? '<span style="color:#94a3b8;">確かめ中…</span>' : '<span style="color:#fbbf24;">未確認（「🔍 もう一度確かめる」を押してください）</span>')
+          + td('') + td('') + td('') + td('') + '</tr>';
         var r = dr.resp || {};
         var dt = (r.dropped && r.dropped.tags) || [], dp = (r.dropped && r.dropped.topics) || [];
         var retired = num(r.retired);
@@ -13680,23 +13683,35 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       b.style.opacity = b.disabled ? '0.5' : '1';
       b.textContent = n ? ('⬆️ 取り込む（' + n + ' 講座）') : '⬆️ 取り込む';
       var cb = el('spImpCheckBtn'); if (cb) cb.disabled = _spBusy || !_spFiles.length;
+      // 試し・取込の最中はファイルを選び直せない (選び直しても前のファイルのまま進むため)
+      var fi = el('spImpFiles'); if (fi) fi.disabled = _spBusy;
     }
     async function sapuriImportFilesChosen() {
-      if (_spBusy) return;
       var inp = el('spImpFiles');
+      if (_spBusy) {
+        // 選び直しは無視される → 黙って捨てず、選んだ表示も戻す (前のファイルのまま進んでいることを伝える)
+        if (inp) { try { inp.value = ''; } catch (_) {} }
+        setText('spImpMsg', '⏳ 処理中です。終わってから選び直してください（いま選んだファイルは使っていません）', '#fbbf24');
+        return;
+      }
       var files = inp && inp.files ? Array.prototype.slice.call(inp.files) : [];
       _spFiles = []; _spDry = {};
       setText('spImpProgress', '');
       var skipped = 0, seen = {};
-      for (var i = 0; i < files.length; i++) {
-        var f = files[i];
-        if (f.name === 'summary.json') { skipped++; continue; }
-        var ent;
-        try { ent = spParseImportFile(f.name, await readFileText(f)); }
-        catch (_) { ent = { name: f.name, code: '', payload: null, error: '取込用のファイルではありません' }; }
-        if (!ent.error && seen[ent.code]) ent = { name: f.name, code: '', payload: null, error: '同じ講座 (' + ent.code + ') のファイルが 2 つあります' };
-        if (!ent.error) seen[ent.code] = true;
-        _spFiles.push(ent);
+      _spBusy = true; updateRunBtn();   // 読んでいる間も選び直しを受け付けない
+      try {
+        for (var i = 0; i < files.length; i++) {
+          var f = files[i];
+          if (f.name === 'summary.json') { skipped++; continue; }
+          var ent;
+          try { ent = spParseImportFile(f.name, await readFileText(f)); }
+          catch (_) { ent = { name: f.name, code: '', payload: null, error: '取込用のファイルではありません' }; }
+          if (!ent.error && seen[ent.code]) ent = { name: f.name, code: '', payload: null, error: '同じ講座 (' + ent.code + ') のファイルが 2 つあります' };
+          if (!ent.error) seen[ent.code] = true;
+          _spFiles.push(ent);
+        }
+      } finally {
+        _spBusy = false;
       }
       _spFiles.sort(function (a, b) { return String(a.code || a.name).localeCompare(String(b.code || b.name)); });
       setText('spImpMsg', _spFiles.length ? ('📂 ' + _spFiles.length + ' ファイルを読みました' + (skipped ? '（summary.json は飛ばしました）' : '')) : 'ファイルが選ばれていません', '#cbd5e1');
@@ -13734,7 +13749,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       } catch (e) {
         setText('spImpMsg', '❌ 試しに失敗しました: ' + (e && e.message ? e.message : e) + '（まだ何も変わっていません）', '#fca5a5');
       } finally {
-        _spBusy = false; updateRunBtn();
+        // 途中で止まった (反映待ち・401・失敗) ときも表を描き直す: 結果の無い講座を「確かめ中…」のまま残さない
+        _spBusy = false; updateRunBtn(); renderImportSummary();
       }
     }
     async function sapuriImportRun() {
@@ -13776,22 +13792,39 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
 
     // ---------- ③ 生徒の見え方 ----------
     // 生徒画面 (mypage.js の sapuriRecText / class.html の今週見るスタサプ) と同じ組み立て
-    function recText(rec, prefix) {
-      if (!rec || typeof rec !== 'object') return '';
-      var course = String(rec.course_name == null ? '' : rec.course_name).trim();
-      if (!course) return '';
-      var ls = (Array.isArray(rec.lessons) ? rec.lessons : []).filter(function (l) { return l && l.seq != null && isFinite(Number(l.seq)); });
-      var s = (prefix === false ? '' : '📺 スタサプ：') + course;
-      if (!ls.length) return s;
-      var a = Number(ls[0].seq);
-      var to = (rec.to_seq != null && isFinite(Number(rec.to_seq))) ? Number(rec.to_seq) : Number(ls[ls.length - 1].seq);
-      var title = String(ls[0].title == null ? '' : ls[0].title).trim();
-      return s + ' 第' + a + '講' + (title ? '「' + title + '」' : '') + (to > a ? '（第' + to + '講まで）' : '');
+    // 最初の講から講番号が 1 つずつ続く範囲の最後 (2 講以上続くときだけ。飛び飛びは null)。サーバの _sapuri_run_end と同じ
+    function recRunEnd(ls) {
+      if (!ls.length) return null;
+      var a = Number(ls[0].seq), end = a;
+      for (var i = 1; i < ls.length; i++) { if (Number(ls[i].seq) !== end + 1) break; end += 1; }
+      return end > a ? end : null;
     }
+    // → {head: (📺 スタサプ：)講座名, lesson: 第N講「題名」（第b講まで） or ''} / null
+    function recParts(rec, prefix) {
+      if (!rec || typeof rec !== 'object') return null;
+      var course = String(rec.course_name == null ? '' : rec.course_name).trim();
+      if (!course) return null;
+      var ls = (Array.isArray(rec.lessons) ? rec.lessons : []).filter(function (l) { return l && l.seq != null && isFinite(Number(l.seq)); });
+      var head = (prefix === false ? '' : '📺 スタサプ：') + course;
+      if (!ls.length) return { head: head, lesson: '' };
+      var a = Number(ls[0].seq);
+      var to = ('to_seq' in rec) ? ((rec.to_seq != null && isFinite(Number(rec.to_seq))) ? Number(rec.to_seq) : null) : recRunEnd(ls);
+      var title = String(ls[0].title == null ? '' : ls[0].title).trim();
+      return { head: head, lesson: '第' + a + '講' + (title ? '「' + title + '」' : '') + (to > a ? '（第' + to + '講まで）' : '') };
+    }
+    function recText(rec, prefix) {
+      var p = recParts(rec, prefix);
+      return p ? p.head + (p.lesson ? ' ' + p.lesson : '') : '';
+    }
+    // 生徒画面 (mypage.js sapuriRecLineHtml / class.html) と同じ 2 段: 講座名 1 行 + 「第N講…」2 行まで
     function recLineHtml(rec, prefix, color) {
-      var t = recText(rec, prefix);
-      if (!t) return '';
-      return '<div title="' + esc(t) + '" style="font-size:0.8rem; color:' + (color || '#fda4af') + '; margin-top:0.25rem; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden; word-break:break-all; line-height:1.5;">' + esc(t) + '</div>';
+      var p = recParts(rec, prefix);
+      if (!p) return '';
+      var t = p.head + (p.lesson ? ' ' + p.lesson : '');
+      var clamp = function (n) { return 'display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:' + n + '; overflow:hidden; word-break:break-all;'; };
+      return '<div title="' + esc(t) + '" style="font-size:0.8rem; color:' + (color || '#fda4af') + '; margin-top:0.25rem; line-height:1.5; min-width:0;">'
+        + '<div style="' + clamp(p.lesson ? 1 : 2) + (p.lesson ? ' opacity:0.85; font-size:0.92em;' : '') + '">' + esc(p.head) + '</div>'
+        + (p.lesson ? '<div style="' + clamp(2) + ' font-weight:700;">' + esc(p.lesson) + '</div>' : '') + '</div>';
     }
     function previewHtml(d) {
       var st = (_spStatus && Array.isArray(_spStatus.students)) ? _spStatus.students.filter(function (s) { return num(s.id) === num(d.student_id); })[0] : null;
@@ -13869,7 +13902,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
               + '<td style="padding:0.2rem 0.45rem;">' + esc(SUBJ_JA[String(x.subject || '').toLowerCase()] || x.subject || '—') + '</td>'
               + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(x.subject_key || '（決まらない）') + '</td>'
               + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(x.tag || '（なし）') + '</td>'
-              + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(MATCH_JA[x.matched_by] || x.matched_by || '') + '</td>'
+              + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(MATCH_JA[x.matched_by] || x.matched_by || '')
+              + (x.no_lessons ? '<div style="color:#fbbf24; font-size:0.72rem;" title="' + esc(x.course_code || '') + '">講座に講データ無し</div>' : '') + '</td>'
               + '<td style="padding:0.2rem 0.45rem; color:#cbd5e1;">' + esc(x.example_topic || '') + '</td></tr>';
           }).join('') + '</tbody></table></div>';
       }

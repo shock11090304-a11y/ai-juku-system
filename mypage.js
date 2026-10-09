@@ -3236,10 +3236,21 @@ function _cuSapuriLabels(p) {
 }
 
 // 📺 2026-10-10 スタサプ段階 B: サーバが照合した「その弱点の回」(rec) の表示。rec の形:
-//   {course_name, lessons:[{seq, title}], to_seq?, label, matched_by}。表示用 (TOP3・週次) は lessons が 1 講で to_seq つき、
-//   AI 弱点プリントの rec は lessons が全部 (範囲の最後 = lessons の最後)・講座だけ (Tier 3) なら lessons が空。
+//   {course_name, lessons:[{seq, title}], to_seq, label, matched_by}。表示用 (TOP3・週次) は lessons が 1 講、
+//   AI 弱点プリントの rec は lessons が全部・講座だけ (Tier 3) なら lessons が空。to_seq は講番号が続くときだけ (null = 範囲なし)。
 //   ★題名を出してよいのは「その生徒に推薦した回」だけ (D1)。サーバが対象外の生徒には rec を返さないので、ここは来たものだけ出す。
 //   mypage.html の TOP3 カード・週次プリント (表示・印刷) もこの 2 つを使う (window に公開)。
+// 最初の講から講番号が 1 つずつ続く範囲の最後 (2 講以上続くときだけ。飛び飛び [12, 30] は null)。サーバの _sapuri_run_end と同じ。
+function _sapuriRunEnd(ls) {
+  if (!ls.length) return null;
+  const a = Number(ls[0].seq);
+  let end = a;
+  for (let i = 1; i < ls.length; i++) {
+    if (Number(ls[i].seq) !== end + 1) break;
+    end += 1;
+  }
+  return end > a ? end : null;
+}
 function sapuriRecParts(rec) {
   if (!rec || typeof rec !== 'object') return null;
   const course = String(rec.course_name == null ? '' : rec.course_name).trim();
@@ -3248,33 +3259,44 @@ function sapuriRecParts(rec) {
     .filter(l => l && typeof l === 'object' && Number.isFinite(Number(l.seq)));
   if (!ls.length) return { course, seq: null, title: '', toSeq: null };
   const a = Number(ls[0].seq);
-  let to = (rec.to_seq != null && Number.isFinite(Number(rec.to_seq))) ? Number(rec.to_seq) : Number(ls[ls.length - 1].seq);
+  // to_seq はサーバが「講番号が続くときだけ」入れる (null = 範囲なし)。キーが無い旧形式は lessons の連続部分から
+  let to = ('to_seq' in rec)
+    ? ((rec.to_seq != null && Number.isFinite(Number(rec.to_seq))) ? Number(rec.to_seq) : null)
+    : _sapuriRunEnd(ls);
   if (!(to > a)) to = null;
   return { course, seq: a, title: String(ls[0].title == null ? '' : ls[0].title).trim(), toSeq: to };
+}
+// 講の部分「第N講「題名」（第b講まで）」(講が無ければ '')。
+function _sapuriLessonText(p) {
+  if (!p || p.seq == null) return '';
+  return `第${p.seq}講` + (p.title ? `「${p.title}」` : '') + (p.toSeq != null ? `（第${p.toSeq}講まで）` : '');
 }
 // 1 行の文 (エスケープ前)。prefix=false なら「📺 スタサプ：」を付けない (見出しが既に「📺 …スタサプ」のカード用)。
 // requireLesson=true なら講 (第N講) の無いもの (講座だけ) は '' (TOP3・週次は講まで決まった弱点だけに出す決まり)。
 function sapuriRecText(rec, prefix, requireLesson) {
   const p = sapuriRecParts(rec);
   if (!p || (requireLesson && p.seq == null)) return '';
-  let s = (prefix === false ? '' : '📺 スタサプ：') + p.course;
-  if (p.seq != null) {
-    s += ` 第${p.seq}講`;
-    if (p.title) s += `「${p.title}」`;
-    if (p.toSeq != null) s += `（第${p.toSeq}講まで）`;
-  }
-  return s;
+  const lt = _sapuriLessonText(p);
+  return (prefix === false ? '' : '📺 スタサプ：') + p.course + (lt ? ' ' + lt : '');
 }
-// 画面用の 1 行 (スマホ幅では 1 行で省略記号「…」で切る・全文は title 属性)。出すものが無ければ ''。
+// 画面用 (出すものが無ければ '')。講座名の行 (1 行で省略記号) と「第N講「題名」（第b講まで）」の行 (2 行まで) に分ける
+//   (2026-10-10 段階 B レビュー: 1 行に丸めると、スマホでは長い講座名の後ろの「第N講」が切れて、どの回か分からなかった)。
+//   全文は title 属性。印刷・メールは sapuriRecText の 1 行のまま。
 //   ★white-space:nowrap は使わない: TOP3・週次の親は display:grid (暗黙の auto 列) なので、折り返さない長い行が
-//   列の最小幅を押し広げて画面の横にはみ出す。1 行に丸める line-clamp なら日本語はどこでも折れる = 最小幅が小さいまま。
+//   列の最小幅を押し広げて画面の横にはみ出す。line-clamp なら日本語はどこでも折れる = 最小幅が小さいまま。
 function sapuriRecLineHtml(rec, opts) {
   const o = opts || {};
   const text = sapuriRecText(rec, o.prefix, o.requireLesson);
   if (!text) return '';
+  const p = sapuriRecParts(rec);
+  const lt = _sapuriLessonText(p);
+  const head = (o.prefix === false ? '' : '📺 スタサプ：') + p.course;
+  const clamp = n => `display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:${n};line-clamp:${n};overflow:hidden;word-break:break-all;`;
   return `<div class="sapuri-rec-line" title="${escapeHtml(text)}" style="font-size:${o.fontSize || '0.8rem'};color:${o.color || '#fda4af'};`
-    + `margin-top:${o.marginTop || '0.3rem'};display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;line-clamp:1;`
-    + `overflow:hidden;word-break:break-all;line-height:1.5;">${escapeHtml(text)}</div>`;
+    + `margin-top:${o.marginTop || '0.3rem'};line-height:1.5;min-width:0;">`
+    + `<div style="${clamp(lt ? 1 : 2)}${lt ? 'opacity:0.85;font-size:0.92em;' : ''}">${escapeHtml(head)}</div>`
+    + (lt ? `<div style="${clamp(2)}font-weight:700;">${escapeHtml(lt)}</div>` : '')
+    + `</div>`;
 }
 window.sapuriRecParts = sapuriRecParts;
 window.sapuriRecText = sapuriRecText;
