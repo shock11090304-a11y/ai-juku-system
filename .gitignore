@@ -119,3 +119,10 @@ scripts/chugaku_dojo/expand_v3/build/blind.json
 scripts/kosei_dojo/eibunpo_v2/drafts/
 # build.py が書くが誰も読まない設問一覧 (verified/ と同じ中身の写し)
 scripts/kosei_dojo/eibunpo_v2/build/blind.json
+
+# 📺 スタサプ 第N講の題名の元データと取込用 JSON (塾長決定 D1: 講の題名は本番 DB だけ・公開リポジトリに入れない)。
+#   置き場は ~/Desktop/🏫 運営・集客/塾運営/スタサプ講義データ/ (builder はリポジトリ内のパスを拒否する)。ここは念のための網。
+**/sapuri_lessons_*.json
+**/high_category*.tsv
+**/sapuri_import/
+scripts/sapuri_lessons/out/

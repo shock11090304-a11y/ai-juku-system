@@ -617,7 +617,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - **LINE 連携 CTA** (`#lineLinkSection`) は `/api/auth/me` の `line_linked === false` の生徒にだけ出る (LINE の userId は返さない)。
 - 回帰テスト: `scripts/health_check/test_student_ux_2026_09.py` (CI `server-tests.yml`)。
 
-## 📺 スタサプ 第N講 (講単位) — 題名は本番 DB だけ (2026-10-10 塾長決定・段階 A 実装済み / 段階 B は未実装)
+## 📺 スタサプ 第N講 (講単位) — 題名は本番 DB だけ (2026-10-10 塾長決定・段階 A = カタログと対象判定 / 段階 B = 講データと照合)
 - **D1 講の題名 (第N講の題名) はリポジトリ・Vercel で配信されるファイル・認証なしの API・Actions のログ・サーバのログ・
   AI へのプロンプト・メール/LINE 本文に出さない。** 本番 DB だけに置く (段階 B の取込)。テストの題名は架空 (「テスト講義A」等)。
   講座名と講数 (公開ラインナップの情報) は書いてよい。講師名は書かない。
@@ -645,7 +645,36 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   来るときは当てない。端末の控えは版 (`version`) と取得日時つきで、1 日より古ければ読み直す。ゲートの [8] が実際の JS で確かめる。
 - 検査: `scripts/health_check/test_sapuri_lessons.py` (server-tests) と `scripts/sapuri_lessons/check_sapuri_catalog.py` (カタログ・別名・
   宣言ラベル・app.js の写し・旧データの参照・題名の元データがリポジトリに無いこと)。
-- ★Claude とスクリプトは studysapuri.jp・mediacdn を取得しない (講の一覧は塾長がブラウザで保存したファイルから作る = 段階 B)。
+- ★**Claude とスクリプトは studysapuri.jp・mediacdn を取得しない** (URL も通信処理も置かない)。講の一覧は塾長がブラウザで保存した
+  ファイルから作る。更新したいときは塾長に保存してもらう。
+- **段階 B の講データ (第N講) は本番 DB の 3 表だけ**: `sapuri_lessons` (lesson_key =「講座コード#講番号」・題名・active) /
+  `sapuri_lesson_tags` (講 → 科目キー・タグ) / `sapuri_topic_lessons` (弱点の topic そのもの → 講)。student_id 列は無い。
+  表が無いデプロイ直後は新 API が 503・照合は空。行は消さず、取込で消えた講は active=0。
+- **照合 `_sapuri_recommend`** (DB だけ・AI なし・自分の接続): 弱点 topic を `_sapuri_parse_topic` で科目キーとタグに分け
+  (社会の時代タグ等は question_attempts→exam_questions の part_key が 1 つに決まるときだけ・grammar_drill は除く)、
+  `SAPURI_COVERS` から講座を 1 つ選ぶ (生徒の band → 偏差値が dev_min..dev_max に入る → 中央が近い → code 順・決定的)。
+  講座の中は Tier 1 = topic が一致する講 / Tier 2 = タグが一致する講が **4 講以下**のときだけ / Tier 3 = 講座だけ (講なし)。
+  TOP3・class.html・週次プリントは Tier 1/2 だけ・1 弱点 1 講 (+範囲)・同じ講は 1 回・主因が careless/time/misread の弱点には出さない。
+  Tier 3 はカリキュラムと AI 弱点プリントだけ。メール・LINE は講座名と第N講だけ (題名なし)。
+- **取込 (塾長の操作)**: CEO「📺 スタサプ講義データ」でフォルダの `sapuri_lessons_<講座コード>.json` を複数選択 → 自動で dry_run して
+  要約 (講数・見本 3 講・捨てたタグ・止まる講・講数が合わず拒否された講座) → 「取り込む」で講座ごとに順に本番。
+  API は `POST /api/admin/sapuri/lessons/import` (管理者 Bearer だけ・X-Cron-Secret 不可 = Actions から叩く経路を作らない・
+  1 回 1 講座・講座の中だけ入れ替え・冪等・講数が first..last と違えば講座ごと 400)。取り込む前にスタサプのアプリで
+  2〜3 講座を見比べてもらう (元データは 2022-06 時点の公開一覧)。状態は `GET /api/admin/sapuri/status`、
+  生徒の見え方は `/preview?student_id=`、弱点のカバー状況は `/coverage`。どれも題名をログに出さない。
+- **講データの作り直し (Claude が手元で)**: 元データと出力は Desktop の `🏫 運営・集客/塾運営/スタサプ講義データ/` だけに置く
+  (`元データ/high_category.tsv` = 公開の通年講座一覧・`タグ付け/tagged_final.json` = 講と弱点 topic のタグ付け・`取込用/` = 出力)。
+  `python3 scripts/sapuri_lessons/build_sapuri_import.py --tsv … --tags … --out-dir …` (既定はこの 3 か所)。builder は
+  server/main.py の `SAPURI_COURSES` / `SAPURI_SUBJECT_KEYS` / `SAPURI_TAG_VOCAB` / `SAPURI_TAG_ALIASES` を ast で読み、
+  has_lessons=True かつ講が first..last に 1 講ずつそろう講座だけ書く (合わない講座は summary.json の skipped に理由)。
+  補講・第0講は捨て、EKZB は topic_code の講番号で束ねて「／」連結、80 字で切る。語彙外のタグ・科目キーは捨てて数える。
+  TSV の講師名 (presenter_name) を含む題名があれば何も書かずに失敗する (名前は表示しない)。
+  ★**git の作業ツリーの中のパスは builder が拒否する**。`.gitignore` にも `**/sapuri_lessons_*.json` `**/high_category*.tsv`
+  `**/sapuri_import/` `scripts/sapuri_lessons/out/` を入れてある。前回の出力は消さない (summary.json の stale_files に出る)。
+- 検査 (段階 B): `scripts/sapuri_lessons/check_build_sapuri_import.py` (builder の自己テスト・架空のデータ・run_all_gates が拾う) と
+  `scripts/sapuri_lessons/check_no_titles_in_diff.py` (**手元専用**: 取込用 JSON の 4 文字以上の題名が `git diff --cached` /
+  `--range A..B` (コミットメッセージ込み) / `--all-files` に無いか。題名は表示しない。データが無い端末・CI は SKIP)。
+  単元名と同じ題名 (タグ語彙・基準コミット 6857cfe に既にある語) は一般語として数えるだけ。**スタサプの作業を commit する前に回す。**
 
 ## 塾生アプリのみ枠 (AIなし) と宿題ドリル (2026-09-24 塾長決定)
 - **塾長方針: 英語の自由演習は開かない。AIなしの生徒が解けるのは「塾長が出した宿題」と「配信した単元ドリル」だけ。**

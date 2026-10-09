@@ -122,6 +122,12 @@ WRITE_OK = {
     "kyotsu2026_mirror/build/qa_machine.py": "QA レポートを書くだけ",
     "math_workbook/ia_jaku_gate.py": "KaTeX 描画用の一時HTML/PDFを書いて消すだけ",
     "math_workbook/unit_check_ia_jaku.py": "KaTeX 描画用の一時HTML/PDFを書いて消すだけ",
+    "sapuri_lessons/check_sapuri_catalog.py":
+        "[8] で app.js の上限表を実行する JS を tempfile.TemporaryDirectory に書いて node / osascript に渡すだけ"
+        "（抜けると自動で消える・リポジトリには書かない）",
+    "sapuri_lessons/check_build_sapuri_import.py":
+        "tempfile の使い捨てディレクトリに架空の TSV・タグ付け・定数ファイルを置いて builder を回し、最後に消すだけ"
+        "（builder 自身がリポジトリ内の出力先を拒否する・リポジトリには書かない）",
 }
 
 # 「検査なのに通信する」ことが正当なもの。★127.0.0.1 に自分で立てた偽サーバとの
