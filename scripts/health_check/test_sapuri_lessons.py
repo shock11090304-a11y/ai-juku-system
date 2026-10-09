@@ -20,6 +20,9 @@
   6. AI 弱点プリント: AI 出力のスタサプを使わない・プロンプトでスタサプを書かせない
   7. ai-generate / gap-analyze: 対象生徒だけカタログを渡す・応答の検査
   8. /api/sapuri-lectures はカタログ (code/first/last) を返す・起動時に sapuri_lectures 表へ投入しない
+  12. レビュー修正: milestones/focus/name のスタサプの語を消す (全生徒) / 停止スイッチ OFF の間の apply-gap-fix・PUT で
+      保存済みの範囲を消さない (ON に戻すと出る) / 下書き (curriculum_draft) は読むときに今の判定でそろえる /
+      展開済みのスタサプの計画は対象外に出さない (行は消さない) / /api/sapuri-lectures の version
 
 実行:
     python3 scripts/health_check/test_sapuri_lessons.py
@@ -453,6 +456,128 @@ def main():
     check("偏差値: 科目が無ければ全科目の平均", mod._sapuri_dev_for(c, sid_ok, "kobun") == 61.0)
     check("偏差値: 模試が無ければ 60", mod._sapuri_dev_for(c, sid_two, "math") == 60.0)
     conn.close()
+
+    print("\n[12] 段階 A レビューの修正 (自由記述・書くときに消さない・下書き・展開済みの計画・講数表の版)")
+    switch = lambda on: client.post("/api/admin/sapuri/settings", json={"enabled": on}, headers=adm)
+    # (a) milestones / focus / name のスタサプの語 (旧プロンプトはスタサプを各フェーズに必須にしていた)
+    ph_txt = [phase("スタサプ期", sd, ed, focus="英文法を固める。スタサプで毎日1講見る。",
+                    milestones=["スタサプ 高3 架空レベル英文法 全24講 視聴完了", "模試で偏差値60"],
+                    sapuri=[{"course_code": "KZA02000", "from_seq": 1, "to_seq": 2}])]
+    r = client.post("/api/curricula", json=dict(body, phases=ph_txt), headers=tok(sid_ok))
+    cid_txt = r.json().get("id") if r.status_code == 200 else None
+    got = next((x for x in client.get("/api/curricula/me", headers=tok(sid_ok)).json()["curricula"] if x["id"] == cid_txt), {})
+    p = (got.get("phases") or [{}])[0]
+    check("POST: milestones のスタサプの語を含む要素は捨てる (全生徒)", p.get("milestones") == ["模試で偏差値60"], p.get("milestones"))
+    check("POST: focus はスタサプの文だけ落とす", p.get("focus") == "英文法を固める。", p.get("focus"))
+    check("POST: name にスタサプの語があれば「フェーズ」", p.get("name") == "フェーズ", p.get("name"))
+    check("POST: スタサプはキー (sapuri) からだけ出る", p.get("sapuri_lectures") == ["高3 ハイレベル英語＜文法編＞ 第1〜2講"], p)
+    legacy_txt = [{"name": "基礎期", "start_date": sd, "end_date": ed,
+                   "focus": "基礎を固める。スタディサプリのハイレベル英文法で文法を仕上げる。",
+                   "materials": ["青チャート"], "milestones": ["スタサプ 高3 ハイレベル英文法 全24講 視聴完了", "青チャート例題1周"]}]
+    conn = mod.db(); c = conn.cursor()
+    c.execute("UPDATE curricula SET phases = ? WHERE id = ?", (json.dumps(legacy_txt, ensure_ascii=False), cid_ai))
+    conn.commit(); conn.close()
+    p = next(x for x in client.get("/api/curricula/me", headers=tok(sid_ai)).json()["curricula"] if x["id"] == cid_ai)["phases"][0]
+    check("/me: 保存済みの milestones のスタサプは出さない", p.get("milestones") == ["青チャート例題1周"], p.get("milestones"))
+    check("/me: 保存済みの focus のスタサプの文は出さない", p.get("focus") == "基礎を固める。", p.get("focus"))
+    fake.reply = {"phases": [phase("基礎期", sd, ed, focus="長文を読む。スタサプで補強。", milestones=["スタサプ 全講修了", "過去問5年"])]}
+    r = client.post("/api/curricula/ai-generate", json=gen, headers=tok(sid_ai))
+    pp = ((r.json() if r.status_code == 200 else {}).get("preview") or {}).get("phases") or [{}]
+    check("ai-generate (_validate_curr_phases): milestones・focus のスタサプも消す",
+          pp[0].get("milestones") == ["過去問5年"] and pp[0].get("focus") == "長文を読む。", pp[0])
+
+    # (b) 停止スイッチ OFF の間の apply-gap-fix / PUT で保存済みの範囲を消さない (読むときに隠す・書くときに消さない)
+    ph_two = [phase("前期", sd, mid, materials=["ポラリス1"], sapuri=[{"course_code": "KZA02000", "from_seq": 1, "to_seq": 6}]),
+              phase("後期", mid, ed, materials=["過去問"], sapuri=[{"course_code": "KZA02000", "from_seq": 7, "to_seq": 12}])]
+    r = client.post("/api/curricula", json=dict(body, phases=ph_two), headers=tok(sid_ok))
+    cid_two = r.json().get("id") if r.status_code == 200 else None
+    want_sp = [[{"course_code": "KZA02000", "from_seq": 1, "to_seq": 6}], [{"course_code": "KZA02000", "from_seq": 7, "to_seq": 12}]]
+    def me_two():
+        return next(x for x in client.get("/api/curricula/me", headers=tok(sid_ok)).json()["curricula"] if x["id"] == cid_two)["phases"]
+    def raw_two():
+        conn_ = mod.db(); c_ = conn_.cursor()
+        c_.execute("SELECT phases FROM curricula WHERE id = ?", (cid_two,))
+        v = json.loads(c_.fetchone()["phases"]); conn_.close()
+        return v
+    check("前提: 2 フェーズとも範囲が保存されている", [x.get("sapuri") for x in me_two()] == want_sp, me_two())
+    switch(False)
+    try:
+        check("OFF: /me では隠れる", all(x.get("sapuri") == [] and x.get("sapuri_lectures") == [] for x in me_two()), me_two())
+        r = client.post(f"/api/curricula/{cid_two}/apply-gap-fix",
+                        json={"phase_adjustments": [{"phase_index": 0, "action": "教材追加", "new_materials": ["ネクステ"],
+                                                     "new_sapuri": [{"course_code": "KZ016000", "from_seq": 1, "to_seq": 3}]}]},
+                        headers=tok(sid_ok))
+        check("OFF: apply-gap-fix は通る", r.status_code == 200 and r.json().get("applied") == 1, r.text)
+        raw = raw_two()
+        check("OFF: apply-gap-fix のあとも DB の範囲は 2 フェーズとも残る (新しいスタサプは足さない)",
+              [x.get("sapuri") for x in raw] == want_sp and "ネクステ" in raw[0].get("materials", []), raw)
+        # PUT: 画面 (/me) から受け取った phases (sapuri は空) を送り直す + 新しいスタサプを混ぜる
+        put_ph = me_two()
+        put_ph[1] = dict(put_ph[1], sapuri=[{"course_code": "KZ016000", "from_seq": 1, "to_seq": 3}])
+        r = client.put(f"/api/curricula/{cid_two}", json={"phases": put_ph}, headers=tok(sid_ok))
+        check("OFF: PUT は通る", r.status_code == 200, r.text)
+        check("OFF: PUT で送り直しても保存済みの範囲は残り、新しいスタサプは入らない",
+              [x.get("sapuri") for x in raw_two()] == want_sp, raw_two())
+    finally:
+        switch(True)
+    got = me_two()
+    check("ON に戻すと 2 フェーズとも元の範囲が出る", [x.get("sapuri") for x in got] == want_sp
+          and got[1].get("sapuri_lectures") == ["高3 ハイレベル英語＜文法編＞ 第7〜12講"], got)
+    stor = mod._sapuri_phases_for_store([{"name": "後期", "sapuri": []}, {"name": "新", "sapuri": []}],
+                                        [{"name": "前期", "sapuri": want_sp[0]}, {"name": "x"}, {"name": "後期", "sapuri": want_sp[1]}], False)
+    check("フェーズ数が変わったときは同じ名前のフェーズの範囲を残す・無ければ空",
+          stor[0]["sapuri"] == want_sp[1] and stor[1]["sapuri"] == [], stor)
+
+    # (c) 下書き (curriculum_draft) は読むときに今の判定でそろえる
+    draft = {"target_university": "テスト大学", "phases": [phase("基礎期", sd, ed, materials=["ポラリス1"],
+             sapuri=[{"course_code": "KZA02000", "from_seq": 1, "to_seq": 3}], sapuri_lectures=["架空の講座名"])]}
+    for sid in (sid_ok, sid_ai):
+        r = client.put("/api/student-state/curriculum_draft", json={"payload": draft}, headers=tok(sid))
+        check(f"下書きを保存できる (生徒 {sid})", r.status_code == 200, r.text)
+    dget = lambda sid: (client.get("/api/student-state/curriculum_draft", headers=tok(sid)).json().get("payload") or {}).get("phases") or [{}]
+    check("下書き: 対象生徒にはカタログから作り直した範囲", dget(sid_ok)[0].get("sapuri_lectures") == ["高3 ハイレベル英語＜文法編＞ 第1〜3講"],
+          dget(sid_ok)[0])
+    check("下書き: 対象外の生徒には出さない", dget(sid_ai)[0].get("sapuri") == [] and dget(sid_ai)[0].get("sapuri_lectures") == [],
+          dget(sid_ai)[0])
+    switch(False)
+    try:
+        check("下書き: OFF の間は対象生徒にも出さない", dget(sid_ok)[0].get("sapuri_lectures") == [], dget(sid_ok)[0])
+    finally:
+        switch(True)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("SELECT payload FROM student_json_state WHERE student_id = ? AND kind = 'curriculum_draft'", (sid_ok,))
+    stored_draft = json.loads(c.fetchone()["payload"])
+    conn.close()
+    check("下書き: 保存した中身は書き換えない (読むときだけ)", stored_draft["phases"][0].get("sapuri") == draft["phases"][0]["sapuri"],
+          stored_draft["phases"][0])
+
+    # (d) 「学習計画に展開」で作られたスタサプの計画は、対象外の生徒には出さない (行は消さない)
+    conn = mod.db(); c = conn.cursor()
+    for sid in (sid_ai, sid_ok):
+        c.execute("INSERT INTO study_plans (student_id, title, subject, material, start_date, end_date, target_minutes, color, note) "
+                  "VALUES (?,?,?,?,?,?,?,?,?)", (sid, "[基礎期] 📺 高3 架空レベル英文法", "英語", "高3 架空レベル英文法", sd, ed, 60,
+                                                 "#000000", "カリキュラム自動展開 / 出典: スタサプ / 登場フェーズ: 基礎期"))
+    conn.commit(); conn.close()
+    plans_of = lambda sid: [x["material"] for x in client.get("/api/study-plans/me", headers=tok(sid)).json().get("plans", [])]
+    check("対象外: スタサプの計画は出さない・他の計画は出る",
+          "高3 架空レベル英文法" not in plans_of(sid_ai) and "青チャート" in plans_of(sid_ai), plans_of(sid_ai))
+    check("対象生徒: スタサプの計画は出る", "高3 架空レベル英文法" in plans_of(sid_ok), plans_of(sid_ok))
+    switch(False)
+    try:
+        check("OFF の間は対象生徒にもスタサプの計画を出さない", "高3 架空レベル英文法" not in plans_of(sid_ok)
+              and "ポラリス1" in plans_of(sid_ok), plans_of(sid_ok))
+    finally:
+        switch(True)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("SELECT COUNT(*) AS n FROM study_plans WHERE note LIKE '%出典: スタサプ%' AND student_id = ?", (sid_ai,))
+    n_hidden = c.fetchone()["n"]
+    conn.close()
+    check("隠すだけで行は消さない", n_hidden == 1, n_hidden)
+
+    # (e) /api/sapuri-lectures は講数表の版を返す (端末の控えを作り直す目安)
+    d = client.get("/api/sapuri-lectures?limit=200").json()
+    check("/api/sapuri-lectures に version (カタログの版)", isinstance(d.get("version"), str) and len(d["version"]) == 12
+          and d["version"] == mod.SAPURI_CATALOG_VERSION, d.get("version"))
 
     print()
     if FAILURES:

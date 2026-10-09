@@ -628,13 +628,21 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   `sapuri_enabled`・`POST /api/admin/sapuri/settings`) / 実行時の `_COURSE_CLASSES` が宣言 `_SAPURI_COURSE_LABELS_DECLARED` と完全一致 /
   course=kokuritsu_nankan / `_enrolled_sql` (本科の長期 trial を含む) / 在籍クラスに 3 コマ全部 / 受講開始月を過ぎている。
   ★status='paid' では判定しない (本科生は承認時に status='trial'・trial_end +10 年)。生徒画面は `GET /api/student/sapuri/status`。
+  停止スイッチは CEO 画面の「📺 スタサプ」(生徒・学習) から切り替える (ceo.html 内のスクリプト)。
 - 講座の正典はコード定数 `SAPURI_COURSES` (138 講座・code / first..last / 偏差値と週数は塾の目安)。旧初期データ (2026-05 の 74 講座) は
   架空の講座名が混ざっていたので廃止し、`sapuri_lectures` 表は読まない。`/api/sapuri-lectures` はこの定数を返す (題名は無い)。
 - カリキュラムのスタサプは `sapuri: [{course_code, from_seq, to_seq}]` が正典。`sapuri_lectures` (「講座名 第a〜b講」) はサーバが
   作り直す表示用の写し (`_sapuri_phase_normalize`・POST/PUT・/me・ai-generate・gap-analyze・apply-gap-fix・expand-to-plans で共用)。
-  旧形式の文字列・AI が書いた講座名・materials のスタサプの語は捨てる。対象外の生徒は空。AI 弱点プリントは AI にスタサプを書かせない。
+  旧形式の文字列・AI が書いた講座名・materials / milestones のスタサプの語を含む要素・focus / name のスタサプの文は捨てる (全生徒)。
+  対象外の生徒は空。AI 弱点プリントは AI にスタサプを書かせない。
+  ★**読むときに隠す・書くときに消さない**: 対象外 (停止スイッチ OFF・ラベル変更直後など一時的なものを含む) を理由に保存済みの
+  `sapuri` を消さない。保存 (apply-gap-fix・PUT の phases) は `_sapuri_phases_for_store` を通し、対象外のときは新しいスタサプだけ入れない。
+  表示 (/me・下書き `curriculum_draft` の GET・`/api/study-plans/me` の「出典: スタサプ」の計画) は今の判定で隠す (行は消さない)。
 - app.js の講数の上限は `/api/sapuri-lectures` の name/first/last から実行時に作る (上限は last・折り返しは first から =
   総合問題編の「第41講」を書き換えない)。端末に残った旧名のタスクは静的表 `SAPURI_LEGACY_CAPS` (`SAPURI_LEGACY_NAME_TO_CODE` の写し)。
+  ★学年を外した鍵は講座に固有の形 (「レベル」か「＜…＞」・6 文字以上) だけ。「生物」「地理」「化学基礎」のような科目名だけの鍵を作ると
+  参考書のタスク (「セミナー生物 p.100-120」) を「(N周目)」に書き換えて端末に保存してしまう (戻せない)。実行時の鍵は直後に名前の続きが
+  来るときは当てない。端末の控えは版 (`version`) と取得日時つきで、1 日より古ければ読み直す。ゲートの [8] が実際の JS で確かめる。
 - 検査: `scripts/health_check/test_sapuri_lessons.py` (server-tests) と `scripts/sapuri_lessons/check_sapuri_catalog.py` (カタログ・別名・
   宣言ラベル・app.js の写し・旧データの参照・題名の元データがリポジトリに無いこと)。
 - ★Claude とスクリプトは studysapuri.jp・mediacdn を取得しない (講の一覧は塾長がブラウザで保存したファイルから作る = 段階 B)。

@@ -4343,9 +4343,9 @@ function spLoad() {
       try { localStorage.setItem(spStorageKey(), JSON.stringify(data)); } catch {}
       try { console.log(`[sp-migration] ${mutated} 件のタスクをマイグレーション (recap/synced_min)`); } catch {}
     }
-    // 📺 2026-10-10: 「第N講」のタスクがあればスタサプの講数表を (1 回だけ) 読みに行く。読めた後の spLoad から新しい上限が効く
+    // 📺 2026-10-10: 「第N講」のタスクがあり、端末の講数表が無い・1 日より古い・版が無いなら読みに行く (裏で)。読めた後の spLoad から新しい上限が効く
     try {
-      if (!_sapuriRuntimeCaps && Array.isArray(data.tasks)
+      if (_sapuriCapsStale() && Array.isArray(data.tasks)
           && data.tasks.some(t => t && typeof t.title === 'string' && /第\s*\d+\s*講/.test(t.title))) {
         _sapuriCatalogLoad();
       }
@@ -4695,8 +4695,13 @@ const SAPURI_LEGACY_CAPS = {
   "スタンダード&ハイレベル地理": [1, 20],
   "スタンダード&ハイレベル政治・経済": [1, 20],
 };
-const _SAPURI_CAPS_LS_KEY = 'ai_juku_sapuri_caps_v1';
+// 端末の控え: {v: カタログの版, at: 取得した時刻 (ms), caps: [{name, first, last}]}。
+//   2026-10-10 レビュー: 控えを一度作ると読み直さず、講数を直しても古い上限で「(N周目)」に書き換え続けたので、
+//   1 日より古い控え・版の無い控えは spLoad が読み直す (_sapuriCapsStale)。v1 (時刻なし) は捨てる。
+const _SAPURI_CAPS_LS_KEY = 'ai_juku_sapuri_caps_v2';
+const _SAPURI_CAPS_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 let _sapuriRuntimeCaps = null;      // [{name, first, last}] (API から・端末に控え)
+let _sapuriCapsMeta = { v: null, at: 0 };
 let _sapuriCatalog = null;          // /api/sapuri-lectures の lectures 全件
 let _sapuriCatalogPromise = null;
 let _sapuriCatalogFailedAt = 0;
@@ -4708,7 +4713,7 @@ function _tbNorm(s) {
   return t.replace(/[〈《<]/g, '<').replace(/[〉》>]/g, '>').replace(/\s+/g, '');
 }
 
-function _sapuriSetRuntimeCaps(list) {
+function _sapuriSetRuntimeCaps(list, meta) {
   const caps = (Array.isArray(list) ? list : [])
     .filter(l => l && typeof l.name === 'string' && Number.isInteger(l.first) && Number.isInteger(l.last)
       && l.first >= 1 && l.last >= l.first)
@@ -4716,19 +4721,32 @@ function _sapuriSetRuntimeCaps(list) {
   if (!caps.length) return;   // 旧サーバ (first/last の無い応答) では作らない = 静的表のまま
   _sapuriRuntimeCaps = caps;
   _tbCapIndex = null;
-  try { localStorage.setItem(_SAPURI_CAPS_LS_KEY, JSON.stringify(caps)); } catch (_) {}
+  const m = meta || {};
+  _sapuriCapsMeta = { v: (typeof m.v === 'string' && m.v) ? m.v : null, at: Number(m.at) || Date.now() };
+  try {
+    localStorage.setItem(_SAPURI_CAPS_LS_KEY, JSON.stringify({ v: _sapuriCapsMeta.v, at: _sapuriCapsMeta.at, caps: caps }));
+  } catch (_) {}
+}
+
+// 控えが無い・1 日より古い・版が無い → 読み直す
+function _sapuriCapsStale() {
+  if (!_sapuriRuntimeCaps) return true;
+  if (!_sapuriCapsMeta.v) return true;
+  const age = Date.now() - (_sapuriCapsMeta.at || 0);
+  return !(age >= 0 && age < _SAPURI_CAPS_MAX_AGE_MS);
 }
 
 // 端末の控え (前回読めた講数表) を先に使う。読めなくても静的表で動く
 (function () {
+  try { localStorage.removeItem('ai_juku_sapuri_caps_v1'); } catch (_) {}
   try {
     const raw = localStorage.getItem(_SAPURI_CAPS_LS_KEY);
     const v = raw ? JSON.parse(raw) : null;
-    if (Array.isArray(v)) _sapuriSetRuntimeCaps(v);
+    if (v && Array.isArray(v.caps)) _sapuriSetRuntimeCaps(v.caps, { v: v.v, at: v.at });
   } catch (_) {}
 })();
 
-// 📺 スタサプ講座カタログ (全件) を 1 回だけ読む。失敗は [] (5 分は読み直さない)。上限表もここで作り直す
+// 📺 スタサプ講座カタログ (全件) を読む (ページを開いている間は 1 回)。失敗は [] (5 分は読み直さない)。上限表もここで作り直す
 function _sapuriCatalogLoad() {
   if (_sapuriCatalog) return Promise.resolve(_sapuriCatalog);
   if (_sapuriCatalogPromise) return _sapuriCatalogPromise;
@@ -4741,7 +4759,7 @@ function _sapuriCatalogLoad() {
       const d = await r.json();
       const list = (d && Array.isArray(d.lectures)) ? d.lectures : [];
       _sapuriCatalog = list;
-      _sapuriSetRuntimeCaps(list);
+      _sapuriSetRuntimeCaps(list, { v: (d && typeof d.version === 'string') ? d.version : null, at: Date.now() });
       return list;
     } catch (_) {
       _sapuriCatalogFailedAt = Date.now();
@@ -4767,31 +4785,67 @@ function _sapuriFocusMatch(subj, focusList) {
   });
 }
 
+// 学年を外したスタサプ講座名を上限表の鍵にしてよいか (正規化済みの鍵で判定)。
+//   講座に固有の形だけ: 「…レベル…」か「＜…＞」を含み、6 文字以上。科目名・分野名だけの鍵 (生物・地理・倫理・漢文・
+//   現代文・物理基礎・化学基礎・生物基礎・地学基礎・英語超入門 等) は作らない (参考書のタスクに当たるため)。
+function _sapuriBareKeyOk(k) {
+  const t = String(k || '');
+  if (t.length < 6) return false;
+  return t.indexOf('レベル') !== -1 || /<[^<>]+>/.test(t);
+}
+// 正式名 (学年つき) も、短いもの (「高3 生物」→「高3生物」) は参考書のタスクに「高3生物 セミナー p.100」のように
+//   書かれ得るので鍵にしない。講座に固有の形か 7 文字以上 (「高1・高2・高3地理」「中学総復習英語」) だけ。
+function _sapuriFullKeyOk(k) {
+  const t = String(k || '');
+  return _sapuriBareKeyOk(t) || t.length >= 7;
+}
+
 function _tbBuildIndex() {
   const m = new Map();
-  const put = (label, first, last) => {
+  // rt = API の講座名から作った鍵 (照合の後ろに名前の続きが来るときは当てない: _tbDetect)。参考書・旧名の鍵と同じなら従来どおり
+  const put = (label, first, last, rt) => {
     const k = _tbNorm(label);
-    if (k && first >= 1 && last >= first) m.set(k, { label: label, first: first, last: last });
+    if (k && first >= 1 && last >= first) {
+      const prev = m.get(k);
+      m.set(k, { label: label, first: first, last: last, rt: !!rt && !(prev && !prev.rt) });
+    }
   };
   Object.keys(TEXTBOOK_TOTAL_UNITS).forEach(k => put(k, 1, TEXTBOOK_TOTAL_UNITS[k]));
   Object.keys(SAPURI_LEGACY_CAPS).forEach(k => put(k, SAPURI_LEGACY_CAPS[k][0], SAPURI_LEGACY_CAPS[k][1]));
   if (Array.isArray(_sapuriRuntimeCaps)) {
-    // 学年を外した形 (「高3 」が付いていないタスク) も鍵にする。同じ形の講座が複数あれば範囲を合わせる
+    // 学年を外した形 (「高3 」が付いていないタスク) も鍵にする。同じ形の講座が複数あれば範囲を合わせる。
+    // ★2026-10-10 レビュー: 学年を外すと「生物」「地理」「倫理」「漢文」「現代文」「化学基礎」のような科目名だけの鍵が
+    //   できて、参考書のタスク (「セミナー生物 p.100-120」等) にスタサプの講数で上限を掛けて「(N周目)」に書き換えていた。
+    //   学年を外した鍵は講座に固有の形 (_sapuriBareKeyOk) のときだけ作る。学年つきの正式名はそのまま鍵にする。
     const bare = new Map();
     for (const c of _sapuriRuntimeCaps) {
       const b = String(c.name).replace(/^\s*高[123](?:・高[123])*\s*/, '');
       if (!b || b === c.name) continue;
       const k = _tbNorm(b);
+      if (!_sapuriBareKeyOk(k)) continue;
       const p = bare.get(k);
       bare.set(k, p ? { label: b, first: Math.min(p.first, c.first), last: Math.max(p.last, c.last) }
                     : { label: b, first: c.first, last: c.last });
     }
-    bare.forEach(v => put(v.label, v.first, v.last));
-    _sapuriRuntimeCaps.forEach(c => put(c.name, c.first, c.last));
+    bare.forEach(v => put(v.label, v.first, v.last, true));
+    _sapuriRuntimeCaps.forEach(c => { if (_sapuriFullKeyOk(_tbNorm(c.name))) put(c.name, c.first, c.last, true); });
   }
   return Array.from(m.entries())
-    .map(([k, v]) => ({ k: k, label: v.label, first: v.first, last: v.last }))
+    .map(([k, v]) => ({ k: k, label: v.label, first: v.first, last: v.last, rt: v.rt }))
     .sort((a, b) => b.k.length - a.k.length);
+}
+
+// API の講座名の鍵は、照合した直後に名前の続き (英数字・「・」「+」「(」「<」「&」) が来るときは当てない。
+//   「ハイレベル数学I」が参考書「ハイレベル数学I・A・II・Bの完全攻略」や「ハイレベル数学III」に当たらないように。
+const _TB_RT_CONT = /[A-Za-z0-9・+(<&]/;
+function _tbRtHit(t, k) {
+  let i = t.indexOf(k);
+  while (i !== -1) {
+    const nx = t.charAt(i + k.length);
+    if (!nx || !_TB_RT_CONT.test(nx)) return true;
+    i = t.indexOf(k, i + 1);
+  }
+  return false;
 }
 
 // title から教材を検出 → {label, first, last} (検出失敗は null)。部分一致・長い鍵を優先 ("シス単" より "システム英単語")
@@ -4800,7 +4854,7 @@ function _tbDetect(title) {
   if (!_tbCapIndex) _tbCapIndex = _tbBuildIndex();
   const t = _tbNorm(title);
   for (const e of _tbCapIndex) {
-    if (t.indexOf(e.k) !== -1) return e;
+    if (e.rt ? _tbRtHit(t, e.k) : t.indexOf(e.k) !== -1) return e;
   }
   return null;
 }

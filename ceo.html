@@ -507,6 +507,7 @@
             <button type="button" class="tb-btn hub-btn" data-hub-target="messagesSection" data-hub-label="📨 メッセージ配信"><span class="tb-icon">💬</span><span class="tb-label">メッセージ</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="classMgmtSection" data-hub-label="🏫 通塾クラス (ファイル/録画/出欠)"><span class="tb-icon">🏫</span><span class="tb-label">通塾クラス</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="courseVideosSection" data-hub-label="🎥 月額講座 (動画配信・受講者)"><span class="tb-icon">🎥</span><span class="tb-label">月額講座</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="sapuriSwitchSection" data-hub-label="📺 スタサプ 停止スイッチ"><span class="tb-icon">📺</span><span class="tb-label">スタサプ</span></button>
           </div>
         </div>
         <div class="tb-group">
@@ -2964,6 +2965,21 @@
       <!-- 授業一覧 -->
       <div style="font-size:0.95rem; color:#c7d2fe; font-weight:700; margin-bottom:0.5rem;">📅 授業一覧</div>
       <div id="clsSessionList"><div style="color:#a1a1aa; font-size:0.85rem;">読み込み中…</div></div>
+    </section>
+
+    <!-- 📺 スタサプ 停止スイッチ (2026-10-10 スタサプ段階 A・SPEC2 §2.4)。OFF にすると全生徒の画面からスタサプを消す
+         (授業コースの在籍生の対象判定が False になる)。保存済みの講座の範囲は消えない (ON に戻すと元どおり出る)。
+         API: GET/POST /api/admin/sapuri/settings。講の一覧の取込や対象生徒の一覧は段階 B のパネルで足す。 -->
+    <section id="sapuriSwitchSection" style="margin:1.5rem 0; padding:1.2rem; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.30); border-radius:14px;">
+      <h2 style="margin:0 0 0.3rem; font-size:1.05rem;">📺 スタサプ 停止スイッチ</h2>
+      <p style="font-size:0.8rem; color:#a1a1aa; margin:0 0 0.8rem;">スタサプの講座は授業コース（水曜3限・金曜3限・日曜の3コマ）に在籍している生徒の画面にだけ出ます。「止める」を押すと全生徒の画面からスタサプを消します。カリキュラムに入っている講座の範囲は消えないので、「出す」に戻すと元どおり表示されます。</p>
+      <div style="display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap;">
+        <span id="spwState" style="font-size:0.95rem; font-weight:800; color:#e4e4e7;">読み込み中…</span>
+        <button id="spwToggleBtn" type="button" disabled style="background:rgba(56,189,248,0.18); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45); padding:0.45rem 1rem; border-radius:8px; font-size:0.84rem; font-weight:800; cursor:pointer;">…</button>
+        <button id="spwReloadBtn" type="button" style="background:transparent; color:#94a3b8; border:1px solid rgba(148,163,184,0.35); padding:0.4rem 0.8rem; border-radius:8px; font-size:0.78rem; cursor:pointer;">🔄 状態を読み直す</button>
+      </div>
+      <div id="spwConfig" style="font-size:0.8rem; margin-top:0.6rem; color:#94a3b8;"></div>
+      <div id="spwMsg" style="font-size:0.8rem; margin-top:0.4rem;"></div>
     </section>
 
     <!-- 🎥 月額講座 (英文解釈 ¥1,000/月・英文法 ¥1,500/月・共通テスト対策 ¥1,500/月) の動画配信 (2026-09-16)。
@@ -13352,6 +13368,74 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     var rb = document.getElementById('teqReload'); if (rb) rb.addEventListener('click', load);
     var hb = document.querySelector('#ceoHubMenu [data-hub-target="trialExpiringSection"]'); if (hb) hb.addEventListener('click', load);
     if (window.AdminAuth && AdminAuth.getToken && AdminAuth.getToken()) setTimeout(load, 400);
+  })();
+  </script>
+  <script>
+  // 📺 スタサプ 停止スイッチ (2026-10-10 段階 A): GET/POST /api/admin/sapuri/settings。
+  //   CLAUDE.md の作法どおり、ラッパー関数・DOMContentLoaded の addEventListener・window への公開。
+  (function () {
+    var _spwEnabled = null;
+    function el(id) { return document.getElementById(id); }
+    function setMsg(text, color) { var m = el('spwMsg'); if (m) { m.textContent = text || ''; m.style.color = color || '#94a3b8'; } }
+    function render(d) {
+      _spwEnabled = !!d.enabled;
+      var st = el('spwState'), btn = el('spwToggleBtn'), cfg = el('spwConfig');
+      if (st) {
+        st.textContent = _spwEnabled ? '🟢 いま: 出している' : '⏸ いま: 止めている（全生徒の画面に出していません）';
+        st.style.color = _spwEnabled ? '#86efac' : '#fbbf24';
+      }
+      if (btn) { btn.disabled = false; btn.textContent = _spwEnabled ? '⏸ スタサプを止める' : '▶️ スタサプを出す'; }
+      if (cfg) {
+        if (d.config_ok) { cfg.style.color = '#94a3b8'; cfg.textContent = '設定: 授業コースの3コマの名前は時間割と一致しています。'; }
+        else { cfg.style.color = '#fca5a5'; cfg.textContent = '⚠️ 設定: ' + (d.config_reason || '授業コースのクラス名が時間割と合っていません') + '（合うまでは「出す」にしても誰にも出ません）'; }
+      }
+    }
+    async function sapuriSwitchLoad() {
+      if (!window.AdminAuth) return;
+      setMsg('');
+      try {
+        var r = await window.AdminAuth.fetch('/api/admin/sapuri/settings');
+        if (r.status === 401) { setMsg('ログインし直してください', '#fca5a5'); return; }
+        if (r.status === 404 || r.status === 405) { setMsg('サーバの反映待ちです。数分後にもう一度「状態を読み直す」を押してください', '#fbbf24'); return; }
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        render(await r.json());
+      } catch (e) {
+        var st = el('spwState'); if (st) st.textContent = '読み込めませんでした';
+        setMsg('❌ ' + (e && e.message ? e.message : e), '#fca5a5');
+      }
+    }
+    async function sapuriSwitchToggle() {
+      if (_spwEnabled === null || !window.AdminAuth) return;
+      var next = !_spwEnabled;
+      var q = next ? '授業コースの在籍生の画面にスタサプを出します。よろしいですか？'
+                   : '全生徒の画面からスタサプを消します（カリキュラムの講座の範囲は消えません）。よろしいですか？';
+      if (!confirm(q)) return;
+      var btn = el('spwToggleBtn'); if (btn) btn.disabled = true;
+      setMsg('保存中…');
+      try {
+        var r = await window.AdminAuth.fetch('/api/admin/sapuri/settings', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: next }),
+        });
+        if (r.status === 401) { setMsg('ログインし直してください', '#fca5a5'); return; }
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        await sapuriSwitchLoad();
+        // 生徒側の判定は最大 30 秒キャッシュされる (読み直しの後に出す。読み直しは案内を消すため)
+        setMsg(next ? '✅ 出すにしました（生徒の画面に反映されるまで最大 30 秒）' : '✅ 止めました（生徒の画面から消えるまで最大 30 秒）', '#86efac');
+      } catch (e) {
+        setMsg('❌ 保存できませんでした: ' + (e && e.message ? e.message : e), '#fca5a5');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+    window.sapuriSwitchLoad = sapuriSwitchLoad;
+    window.sapuriSwitchToggle = sapuriSwitchToggle;
+    function bind() {
+      var b = el('spwToggleBtn'); if (b) b.addEventListener('click', sapuriSwitchToggle);
+      var rb = el('spwReloadBtn'); if (rb) rb.addEventListener('click', sapuriSwitchLoad);
+      var hb = document.querySelector('#ceoHubMenu [data-hub-target="sapuriSwitchSection"]'); if (hb) hb.addEventListener('click', sapuriSwitchLoad);
+      if (window.AdminAuth && AdminAuth.getToken && AdminAuth.getToken()) setTimeout(sapuriSwitchLoad, 500);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();
   })();
   </script>
 </body>

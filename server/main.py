@@ -2840,6 +2840,11 @@ SAPURI_COURSES = [
     {"code": "X-kyotsu-joho1", "name": "共通テスト対策講座 情報I", "subject": "情報", "field": "共通テスト", "level": "共通テスト", "band": "高3", "first": 0, "last": 0, "total_lessons": 0, "dev_min": 45, "dev_max": 68, "weeks": 0, "has_lessons": False, "notes": "講数・講義一覧とも非公開 (total_lessons=0 は「不明」の意味)。"},
 ]
 SAPURI_COURSE_BY_CODE = {_c["code"]: _c for _c in SAPURI_COURSES}
+# 講数表の版 (2026-10-10 段階 A レビュー): app.js は /api/sapuri-lectures の name/first/last から上限表を作って端末に控える。
+#   講座名・講番号の範囲を直したら変わるので、端末は版と取得日時を見て読み直す (控えが古いまま上限を掛け続けない)。
+SAPURI_CATALOG_VERSION = hashlib.sha1(json.dumps(
+    [[_c["code"], _c["name"], _c["first"], _c["last"]] for _c in SAPURI_COURSES], ensure_ascii=False
+).encode("utf-8")).hexdigest()[:12]
 
 # 📺 科目キー (D3 2026-10-10 塾長「英語・国語も含める」)。止めたい科目はここから外す (推薦・プロンプトから消える)。
 SAPURI_SUBJECT_KEYS = ("eng_grammar", "math", "physics", "physics_basic", "chemistry", "chemistry_basic",
@@ -28337,6 +28342,19 @@ def get_student_state(kind: str, request: Request, authorization: Optional[str] 
         # (500 にするとクライアントが「サーバに無い」ではなく「エラー」に倒れて復元導線が死ぬ)
         log.warning(f"[student-state] broken payload student={student['id']} kind={kind}")
         return {"kind": kind, "payload": None, "updated_at": None}
+    # 📺 2026-10-10 スタサプ段階 A レビュー: 下書きは生成した時点の対象判定のまま保存されている。読むときに今の判定で
+    #   スタサプ欄をそろえる (停止スイッチ OFF・対象外になった生徒の画面に 📺 を出さない)。中身は書き換えない (読むときだけ)。
+    if kind == "curriculum_draft" and isinstance(parsed, dict) and isinstance(parsed.get("phases"), list):
+        try:
+            _sp_eligible = bool(_sapuri_eligible_by_id(student["id"])["eligible"])
+            parsed = dict(parsed)
+            parsed["phases"] = [_sapuri_phase_normalize(p, _sp_eligible) if isinstance(p, dict) else p
+                                for p in parsed["phases"]]
+        except Exception as e:
+            log.warning(f"[student-state] curriculum_draft sapuri normalize failed: {type(e).__name__}")
+            parsed = dict(parsed)
+            parsed["phases"] = [dict(p, sapuri=[], sapuri_lectures=[]) if isinstance(p, dict) else p
+                                for p in parsed["phases"]]
     _ua = row["updated_at"]
     return {"kind": kind, "payload": parsed, "updated_at": (_ua.isoformat() if hasattr(_ua, "isoformat") else _ua)}
 
@@ -48814,8 +48832,16 @@ def get_my_study_plans(authorization: Optional[str] = Header(None), status: Opti
                 (student["id"],)
             )
         rows = c.fetchall()
+        # 📺 2026-10-10 スタサプ段階 A レビュー (D2「既存データの表示も」): 「学習計画に展開」で作られたスタサプの計画
+        #   (note「出典: スタサプ」・旧版は AI が書いた講座名) は、対象外の生徒には出さない。行は消さない (読むときに隠すだけ。
+        #   対象に戻れば見える)。対象判定は自分の接続を開く (共有カーソルに触らない)。
+        _sp_hide = False
+        if any("出典: スタサプ" in str(r["note"] or "") for r in rows):
+            _sp_hide = not bool(_sapuri_eligible_by_id(student["id"])["eligible"])
         plans = []
         for r in rows:
+            if _sp_hide and "出典: スタサプ" in str(r["note"] or ""):
+                continue
             plans.append({
                 "id": r["id"],
                 "student_id": r["student_id"],
@@ -55875,12 +55901,13 @@ def _validate_curr_phases(phases: list, eligible: bool = False) -> list:
                 milestones.append(t)
         # スタサプ講義 (Phase 4.5 / 塾長指示 2026-05-06)
         # 📺 2026-10-10 段階 A: 旧形式の文字列 (sapuri_lectures) は捨て、sapuri をカタログで検査して作り直す。
-        #   対象外の生徒は空。materials のスタサプの語を含む要素は全生徒で捨てる。
-        sp = _sapuri_phase_normalize({"materials": materials, "sapuri": d.get("sapuri")}, eligible)
+        #   対象外の生徒は空。materials・milestones・focus・name のスタサプの語は全生徒で消す (_sapuri_phase_normalize)。
+        sp = _sapuri_phase_normalize({"name": name, "focus": focus, "materials": materials, "milestones": milestones,
+                                      "sapuri": d.get("sapuri")}, eligible)
         out.append({
-            "name": name, "focus": focus,
+            "name": sp["name"], "focus": sp["focus"],
             "start_date": sd.isoformat(), "end_date": ed.isoformat(),
-            "materials": sp["materials"], "milestones": milestones,
+            "materials": sp["materials"], "milestones": sp["milestones"],
             "sapuri": sp["sapuri"], "sapuri_lectures": sp["sapuri_lectures"],
         })
     return out
@@ -55998,7 +56025,17 @@ def update_curriculum(curr_id: int, payload: CurriculumUpdateRequest, request: R
             updates["start_date"] = sd.isoformat()
             updates["exam_date"] = ed.isoformat()
         if payload.phases is not None:
-            phases_list = _validate_curr_phases(payload.phases, _sapuri_eligible_by_id(student["id"])["eligible"])
+            _sp_eligible = bool(_sapuri_eligible_by_id(student["id"])["eligible"])
+            phases_list = _validate_curr_phases(payload.phases, _sp_eligible)
+            if not _sp_eligible:
+                # 📺 対象外 (一時的なものを含む) のときは送られたスタサプを使わず、保存済みの範囲を残す (書くときに消さない)
+                c.execute("SELECT phases FROM curricula WHERE id = ? AND student_id = ?", (curr_id, student["id"]))
+                _prow = c.fetchone()
+                try:
+                    _stored = json.loads((_prow["phases"] if _prow else None) or "[]")
+                except Exception:
+                    _stored = []
+                phases_list = _sapuri_phases_for_store(phases_list, _stored, False)
             updates["phases"] = json.dumps(phases_list, ensure_ascii=False)
 
         if not updates:
@@ -56433,16 +56470,54 @@ def _sapuri_strip_words(values, maxlen: int = 100) -> list:
 
 
 def _sapuri_phase_normalize(phase: dict, eligible: bool) -> dict:
-    """カリキュラムの 1 フェーズのスタサプ欄を正典の形にそろえる (POST/PUT・/me・ai-generate・gap・apply・expand で共用)。
+    """カリキュラムの 1 フェーズのスタサプ欄を正典の形にそろえる (POST/PUT・/me・ai-generate・gap・apply・expand・下書きで共用)。
     - sapuri [{course_code, from_seq, to_seq}] をカタログで検査し、sapuri_lectures (表示用の「講座名 第a〜b講」) を作り直す。
     - 旧形式の文字列だけの sapuri_lectures は捨てる (架空の講座名・AI が書いた名前が混ざるため)。
-    - 対象外の生徒 (eligible=False) は両方とも空。materials のスタサプの語を含む要素は全生徒で捨てる。"""
+    - 対象外の生徒 (eligible=False) は両方とも空。
+    - 自由記述の欄は全生徒でスタサプの語を消す (スタサプは sapuri キー経由でしか入れない。旧プロンプトは各フェーズに
+      スタサプを必須にしていたので、保存済みの milestones / focus / name に AI が書いた講座名 (架空のものも) が残っている):
+      materials・milestones はその要素を捨て、focus・name はその文を落とす (name が空になれば「フェーズ」)。
+    ★表示用 (読むとき・応答) に使う。保存するときに eligible=False を渡すと、一時的に対象外 (停止スイッチ OFF 等) の
+      生徒の保存済みの範囲が消える → 保存は _sapuri_phases_for_store を通す。"""
     p = dict(phase) if isinstance(phase, dict) else {}
     items = _sapuri_validate_items(p.get("sapuri")) if eligible else []
     p["materials"] = _sapuri_strip_words(p.get("materials"))[:10]
+    if "milestones" in p:
+        p["milestones"] = _sapuri_strip_words(p.get("milestones"), 200)[:10]
+    if isinstance(p.get("focus"), str):
+        p["focus"] = _sapuri_strip_sentences(p["focus"], 200)
+    if isinstance(p.get("name"), str) and _SAPURI_WORD_RE.search(p["name"]):
+        p["name"] = _sapuri_strip_sentences(p["name"], 60) or "フェーズ"
     p["sapuri"] = items
     p["sapuri_lectures"] = _sapuri_labels(items)
     return p
+
+
+def _sapuri_phases_for_store(new_phases: list, stored_phases, eligible: bool) -> list:
+    """保存する phases のスタサプ欄 (2026-10-10 段階 A レビュー「読むときに隠す・書くときに消さない」)。
+    - 対象生徒: 送られた sapuri をカタログで検査したもの (_sapuri_phase_normalize(p, True))。
+    - 対象外 (停止スイッチ OFF・ラベル変更直後の設定不一致・30 秒キャッシュ等で一時的に外れた生徒を含む):
+      新しく送られた sapuri は使わず、保存済みのフェーズの sapuri をそのまま残す (検査は掛ける)。
+      保存済みとの対応は、フェーズ数が同じなら位置、違えば同じ名前の最初のフェーズ。対応が無ければ空。"""
+    stored = [x for x in (stored_phases if isinstance(stored_phases, list) else [])]
+    same_len = len(stored) == len(new_phases)
+    out = []
+    for i, ph in enumerate(new_phases):
+        if not isinstance(ph, dict):
+            out.append(ph)
+            continue
+        if eligible:
+            out.append(_sapuri_phase_normalize(ph, True))
+            continue
+        old = None
+        if same_len:
+            old = stored[i] if isinstance(stored[i], dict) else None
+        else:
+            old = next((x for x in stored if isinstance(x, dict) and x.get("name") == ph.get("name")), None)
+        q = dict(ph)
+        q["sapuri"] = (old or {}).get("sapuri") if isinstance((old or {}).get("sapuri"), list) else []
+        out.append(_sapuri_phase_normalize(q, True))
+    return out
 
 
 def _sapuri_strip_sentences(text, maxlen: int = 600) -> str:
@@ -56662,7 +56737,7 @@ def get_sapuri_lectures(request: Request, subject: Optional[str] = None, dev: Op
     except (TypeError, ValueError):
         n = 50
     lectures = [_sapuri_public_course(c) for c in rows[:n]]
-    return {"ok": True, "lectures": lectures, "count": len(lectures)}
+    return {"ok": True, "lectures": lectures, "count": len(lectures), "version": SAPURI_CATALOG_VERSION}
 
 
 @app.get("/api/student/sapuri/status")
@@ -58261,7 +58336,9 @@ def curriculum_apply_gap_fix(curr_id: int, payload: GapApplyRequest, request: Re
             applied += 1
         if not applied:
             return {"ok": True, "applied": 0, "message": "適用すべき変更がありませんでした"}
-        phases = [_sapuri_phase_normalize(p, _sp_eligible) if isinstance(p, dict) else p for p in phases]
+        # 📺 保存は「書くときに消さない」: 対象外 (停止スイッチ OFF 等で一時的なものを含む) でも保存済みの sapuri は残す。
+        #   新しいスタサプは上の _sp_eligible のときだけ足している。表示側 (/me 等) が対象外なら隠す。
+        phases = [_sapuri_phase_normalize(p, True) if isinstance(p, dict) else p for p in phases]
         # update DB
         if USE_POSTGRES:
             updated_at = datetime.now(timezone.utc).isoformat()

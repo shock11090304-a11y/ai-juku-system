@@ -16,14 +16,21 @@ server/main.py を **import せず ast で読む** (標準ライブラリだけ�
   6. 旧初期データ (SAPURI_LECTURES_SEED) の参照が残っていない・起動時に sapuri_lectures へ投入しない・
      sapuri_lectures 表を SELECT/INSERT する箇所が無い
   7. 講の題名の置き場にしない: リポジトリに high_category*.tsv / sapuri_lessons_*.json / sapuri_import/ が無い
+  8. app.js の講数上限表を **実際の JS で** 動かす (node か osascript の JavaScriptCore。CI の ubuntu には node がある):
+     SAPURI_COURSES の 138 講座を実行時の表に入れても、参考書のタスク (「セミナー生物 p.100-120」「化学基礎 一問一答 No.30-60」
+     「漢文 句法 第15講」等) が入れる前と同じ結果になる / 実行時の鍵に科目名だけ・6 文字未満の鍵が無い /
+     スタサプのタスクには上限が効く (総合問題編の第41講は書き換えない) / 端末の控えは 1 日・版なしで読み直し扱い
 
 実行: python3 scripts/sapuri_lessons/check_sapuri_catalog.py   # exit 0 = 合格 / 1 = 違反あり
 """
 import ast
+import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import unicodedata
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -76,6 +83,113 @@ def norm(s):
     s = re.sub(r"[〈《<]", "<", s)
     s = re.sub(r"[〉》>]", ">", s)
     return re.sub(r"\s+", "", s)
+
+
+
+# [8] の JS。app.js の上限表の部分 (TEXTBOOK_TOTAL_UNITS 〜 _recapTaskTitle) の後ろに付けて実行する。
+#   参考書のタスクは「実行時の表を入れる前」と「入れた後」で結果が同じでなければならない (差分で見る = 期待値を手書きしない)。
+_JS_CASES = r"""
+var out = [];
+function eq(label, got, want) { out.push((got === want ? 'OK  ' : 'NG  ') + label + ' => ' + JSON.stringify(got) + (got === want ? '' : ' (want ' + JSON.stringify(want) + ')')); }
+var NON_SAPURI = __NON_SAPURI__;
+var ADV = __ADV__;
+function snap() {
+  var r = {};
+  NON_SAPURI.forEach(function (t) { r['recap:' + t] = _recapTaskTitle(t); });
+  ADV.forEach(function (a) { [1, 3, 8].forEach(function (w) { r['adv' + w + ':' + a] = _advanceTaskRange(a, w); }); });
+  return r;
+}
+var before = snap();
+_sapuriSetRuntimeCaps(__CAPS__, { v: 'gate', at: Date.now() });
+var after = snap();
+Object.keys(before).forEach(function (k) { eq('実行時の表を入れても参考書のタスクは同じ: ' + k, after[k], before[k]); });
+// 実行時の鍵に科目名だけ・短い鍵が無い
+var BANNED = ['英語', '数学', '国語', '古文', '漢文', '現代文', '物理', '化学', '生物', '地学', '日本史', '世界史', '地理', '倫理',
+              '政治経済', '政経', '公共', '物理基礎', '化学基礎', '生物基礎', '地学基礎', '英語超入門', '情報I', '小論文', '高3生物'];
+_tbCapIndex = null;
+var idx = _tbBuildIndex();
+var rt = idx.filter(function (e) { return e.rt; });
+eq('実行時の鍵がある', rt.length > 50, true);
+rt.forEach(function (e) {
+  if (e.k.length < 6) eq('実行時の鍵が短い: ' + e.k, false, true);
+  if (BANNED.indexOf(e.k) !== -1) eq('実行時の鍵が科目名だけ: ' + e.k, false, true);
+});
+// スタサプのタスクには効く
+eq('総合問題編 第41講は書き換えない', _recapTaskTitle('高3 スタンダードレベル数学IAIIB＋C（ベクトル）＜総合問題編＞ 第41講'), '高3 スタンダードレベル数学IAIIB＋C（ベクトル）＜総合問題編＞ 第41講');
+eq('総合問題編 第50講 → 第42講 (2周目)', _recapTaskTitle('高3 スタンダードレベル数学IAIIB＋C（ベクトル）＜総合問題編＞ 第50講'), '高3 スタンダードレベル数学IAIIB＋C（ベクトル）＜総合問題編＞ 第42講 (2周目)');
+eq('学年なしの講座名にも上限', _recapTaskTitle('ハイレベル英語<文法編> 第25講'), 'ハイレベル英語<文法編> 第1講 (2周目)');
+eq('学年つきの正式名 (地理 20 講) に上限', _recapTaskTitle('高1・高2・高3 地理 第25講'), '高1・高2・高3 地理 第5講 (2周目)');
+eq('旧名タスクの上限は残る', _recapTaskTitle('高3 ハイレベル英文法 第30講'), '高3 ハイレベル英文法 第6講 (2周目)');
+eq('未知の講座は上限なし', _advanceTaskRange('謎の講座 第1講', 100), '謎の講座 第101講');
+// 端末の控えの鮮度
+eq('取得したばかりの控えは新しい', _sapuriCapsStale(), false);
+_sapuriSetRuntimeCaps(__CAPS__, { v: 'gate', at: Date.now() - 2 * 24 * 60 * 60 * 1000 });
+eq('2 日前の控えは読み直す', _sapuriCapsStale(), true);
+_sapuriSetRuntimeCaps(__CAPS__, { v: null, at: Date.now() });
+eq('版の無い控えは読み直す', _sapuriCapsStale(), true);
+var __res = out.join('\n');
+if (typeof process !== 'undefined' && typeof console !== 'undefined') { console.log(__res); }
+__res;
+"""
+
+# 参考書・一般の教材のタスク (スタサプではない)。科目名を含むものを中心に
+_NON_SAPURI_TITLES = [
+    "セミナー生物 p.100-120", "リードLightノート生物 No.60-80", "セミナー物理基礎 p.40-60", "化学基礎 一問一答 No.30-60",
+    "地理 一問一答 No.100-200", "倫理 用語集 p.40-80", "漢文 句法 第15講", "現代文 評論 第20題", "地学基礎 第15章",
+    "生物 P.50-60", "化学基礎 P.20-45", "地理総合 P.30-50", "現代文 第15講", "物理基礎 第11章", "セミナー化学基礎 例題 10-25",
+    "生物基礎 問題 No.20-40", "政治経済 一問一答 No.300-400", "英語超入門 第5講", "古文 単語 No.200-260",
+    "ハイレベル数学I・A・II・Bの完全攻略 p.30-50", "日本史 一問一答 No.500-600", "世界史 用語集 p.120-160",
+    "マドンナ古文 第41講", "シス単 No.1-150",
+]
+_ADV_TITLES = ["化学基礎 問題 1-30", "生物 P.50-60", "現代文 第15講", "地理 No.100-120", "漢文 第3講"]
+
+
+def _js_engine():
+    if shutil.which("node"):
+        return ["node"]
+    if shutil.which("osascript"):
+        return ["osascript", "-l", "JavaScript"]
+    return None
+
+
+def check_appjs_caps_runtime(courses):
+    """[8] app.js の上限表を実際の JS で動かす (node / osascript)。"""
+    print("\n[8] app.js の講数上限表 (実行時の表 = SAPURI_COURSES を入れて JS で実行)")
+    n0 = len(problems)
+    js = open(APP_JS, encoding="utf-8").read()
+    try:
+        seg = js[js.index("const TEXTBOOK_TOTAL_UNITS = {"):js.index("// 指定日がどのフェーズに属するかを判定")]
+    except ValueError:
+        bad("app.js の上限表の範囲 (const TEXTBOOK_TOTAL_UNITS 〜 「指定日がどのフェーズに属するかを判定」) が見つからない")
+        return
+    eng = _js_engine()
+    if not eng:
+        bad("JS の実行環境 (node / osascript) が無い — 上限表を実行して確かめられない")
+        return
+    caps = [{"name": c["name"], "first": c["first"], "last": c["last"]} for c in courses]
+    cases = (_JS_CASES.replace("__CAPS__", json.dumps(caps, ensure_ascii=False))
+             .replace("__NON_SAPURI__", json.dumps(_NON_SAPURI_TITLES, ensure_ascii=False))
+             .replace("__ADV__", json.dumps(_ADV_TITLES, ensure_ascii=False)))
+    with tempfile.TemporaryDirectory() as td:
+        path = os.path.join(td, "caps_check.js")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(seg + "\n" + cases)
+        try:
+            r = subprocess.run(eng + [path], capture_output=True, text=True, timeout=120)
+        except Exception as e:
+            bad(f"JS の実行に失敗 ({type(e).__name__})")
+            return
+    outp = (r.stdout or "").strip()
+    if r.returncode != 0 or not outp:
+        bad(f"JS が失敗した (exit {r.returncode}): {(r.stderr or '')[:400]}")
+        return
+    lines = outp.split("\n")
+    ng = [l for l in lines if l.startswith("NG")]
+    for l in ng:
+        bad(l[4:])
+    if len(problems) == n0:
+        good(f"{len(lines)} 件 OK ({eng[0]}): 参考書 {len(_NON_SAPURI_TITLES)} 件は実行時の表を入れても同じ・科目名だけの鍵なし・"
+             f"スタサプの上限と第41講・控えの読み直し")
 
 
 def main():
@@ -256,6 +370,8 @@ def main():
             bad(f"講の題名の元データ・取込ファイルがリポジトリにある: {f}")
         if len(problems) == n0:
             good(f"high_category*.tsv / sapuri_lessons_*.json / sapuri_import/ はリポジトリに無い ({len([f for f in files if f])} ファイル)")
+
+    check_appjs_caps_runtime(courses)
 
     print()
     if problems:
