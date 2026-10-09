@@ -507,7 +507,7 @@
             <button type="button" class="tb-btn hub-btn" data-hub-target="messagesSection" data-hub-label="📨 メッセージ配信"><span class="tb-icon">💬</span><span class="tb-label">メッセージ</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="classMgmtSection" data-hub-label="🏫 通塾クラス (ファイル/録画/出欠)"><span class="tb-icon">🏫</span><span class="tb-label">通塾クラス</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="courseVideosSection" data-hub-label="🎥 月額講座 (動画配信・受講者)"><span class="tb-icon">🎥</span><span class="tb-label">月額講座</span></button>
-            <button type="button" class="tb-btn hub-btn" data-hub-target="sapuriSwitchSection" data-hub-label="📺 スタサプ 停止スイッチ"><span class="tb-icon">📺</span><span class="tb-label">スタサプ</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="sapuriSection" data-hub-label="📺 スタサプ講義データ (停止スイッチ・取込・見え方)"><span class="tb-icon">📺</span><span class="tb-label">スタサプ</span></button>
           </div>
         </div>
         <div class="tb-group">
@@ -2967,12 +2967,16 @@
       <div id="clsSessionList"><div style="color:#a1a1aa; font-size:0.85rem;">読み込み中…</div></div>
     </section>
 
-    <!-- 📺 スタサプ 停止スイッチ (2026-10-10 スタサプ段階 A・SPEC2 §2.4)。OFF にすると全生徒の画面からスタサプを消す
-         (授業コースの在籍生の対象判定が False になる)。保存済みの講座の範囲は消えない (ON に戻すと元どおり出る)。
-         API: GET/POST /api/admin/sapuri/settings。講の一覧の取込や対象生徒の一覧は段階 B のパネルで足す。 -->
-    <section id="sapuriSwitchSection" style="margin:1.5rem 0; padding:1.2rem; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.30); border-radius:14px;">
-      <h2 style="margin:0 0 0.3rem; font-size:1.05rem;">📺 スタサプ 停止スイッチ</h2>
-      <p style="font-size:0.8rem; color:#a1a1aa; margin:0 0 0.8rem;">スタサプの講座は授業コース（水曜3限・金曜3限・日曜の3コマ）に在籍している生徒の画面にだけ出ます。「止める」を押すと全生徒の画面からスタサプを消します。カリキュラムに入っている講座の範囲は消えないので、「出す」に戻すと元どおり表示されます。</p>
+    <!-- 📺 スタサプ講義データ (2026-10-10 段階 A の停止スイッチ + 段階 B・SPEC2 §4.5)。
+         ① 状態 (停止スイッチ・設定の健全性・対象生徒・講座ごとの取込講数)  ② 講の一覧の取込 (講座別 JSON を複数選択 → 自動で dry_run → 「取り込む」で講座ごとに順に)
+         ③ 生徒の見え方 (preview)  ④ カバー状況 (coverage)。
+         API: GET /api/admin/sapuri/status・GET/POST /api/admin/sapuri/settings・POST /api/admin/sapuri/lessons/import・GET /api/admin/sapuri/preview・GET /api/admin/sapuri/coverage。
+         ★講の題名は本番 DB だけ (D1)。この画面に題名が出るのは dry_run の見本と「生徒の見え方」だけ (どちらも管理者の画面の中だけ・保存しない)。 -->
+    <section id="sapuriSection" style="margin:1.5rem 0; padding:1.2rem; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.30); border-radius:14px;">
+      <h2 style="margin:0 0 0.3rem; font-size:1.05rem;">📺 スタサプ講義データ</h2>
+      <p style="font-size:0.8rem; color:#a1a1aa; margin:0 0 0.8rem; line-height:1.6;">スタサプの「弱点に合った回（第N講）」は、授業コース（水曜3限・金曜3限・日曜の3コマ）に在籍している生徒の画面にだけ出ます。講の題名は本番のデータベースにだけ入り、生徒には自分に推薦された回だけが見えます。「止める」を押すと全生徒の画面からスタサプを消します（カリキュラムに入っている講座の範囲は消えないので、「出す」に戻すと元どおり表示されます）。</p>
+
+      <h3 style="margin:0.6rem 0 0.4rem; font-size:0.92rem; color:#7dd3fc;">① 状態</h3>
       <div style="display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap;">
         <span id="spwState" style="font-size:0.95rem; font-weight:800; color:#e4e4e7;">読み込み中…</span>
         <button id="spwToggleBtn" type="button" disabled style="background:rgba(56,189,248,0.18); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45); padding:0.45rem 1rem; border-radius:8px; font-size:0.84rem; font-weight:800; cursor:pointer;">…</button>
@@ -2980,6 +2984,42 @@
       </div>
       <div id="spwConfig" style="font-size:0.8rem; margin-top:0.6rem; color:#94a3b8;"></div>
       <div id="spwMsg" style="font-size:0.8rem; margin-top:0.4rem;"></div>
+      <div id="spStatusSummary" style="font-size:0.82rem; margin-top:0.5rem; color:#cbd5e1; line-height:1.7;"></div>
+      <details id="spStudentsWrap" style="margin-top:0.5rem;">
+        <summary style="cursor:pointer; font-size:0.84rem; color:#bae6fd; font-weight:700;">👥 対象生徒の一覧</summary>
+        <div id="spStudents" style="margin-top:0.4rem; overflow-x:auto;"></div>
+      </details>
+      <details id="spCoursesWrap" style="margin-top:0.4rem;">
+        <summary style="cursor:pointer; font-size:0.84rem; color:#bae6fd; font-weight:700;">📚 講座ごとの取込状況</summary>
+        <div id="spCourses" style="margin-top:0.4rem; overflow-x:auto;"></div>
+      </details>
+
+      <h3 style="margin:1.1rem 0 0.4rem; font-size:0.92rem; color:#7dd3fc;">② 講の一覧を取り込む</h3>
+      <div style="font-size:0.82rem; color:#fde68a; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.30); border-radius:8px; padding:0.5rem 0.7rem; margin-bottom:0.5rem; line-height:1.6;">⚠️ 2022年6月時点の公開一覧です。スタサプのアプリで 2〜3 講座だけ見比べてから取り込んでください。</div>
+      <p style="font-size:0.78rem; color:#a1a1aa; margin:0 0 0.5rem; line-height:1.6;">デスクトップの「🏫 運営・集客 → 塾運営 → スタサプ講義データ → 取込用」にある <code>sapuri_lessons_講座コード.json</code> をまとめて選んでください（summary.json は選ばなくて大丈夫です）。選ぶと自動で「試し（何も書き込まない）」をして、講座ごとの要約を出します。中身を確かめてから「取り込む」を押してください。何度取り込んでも同じ結果になります。</p>
+      <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+        <input id="spImpFiles" type="file" multiple accept=".json,application/json" style="font-size:0.82rem; color:#cbd5e1; max-width:100%;">
+        <button id="spImpCheckBtn" type="button" disabled style="background:transparent; color:#94a3b8; border:1px solid rgba(148,163,184,0.35); padding:0.4rem 0.8rem; border-radius:8px; font-size:0.78rem; cursor:pointer;">🔍 もう一度確かめる</button>
+      </div>
+      <div id="spImpMsg" style="font-size:0.82rem; margin-top:0.5rem; line-height:1.6;"></div>
+      <div id="spImpSummary" style="margin-top:0.5rem; overflow-x:auto;"></div>
+      <div style="margin-top:0.6rem;">
+        <button id="spImpRunBtn" type="button" disabled style="background:linear-gradient(135deg,#0ea5e9,#38bdf8); color:#fff; border:0; padding:0.55rem 1.2rem; border-radius:8px; font-size:0.86rem; font-weight:800; cursor:pointer; opacity:0.5;">⬆️ 取り込む</button>
+      </div>
+      <div id="spImpProgress" style="font-size:0.82rem; margin-top:0.5rem; line-height:1.6;"></div>
+
+      <h3 style="margin:1.1rem 0 0.4rem; font-size:0.92rem; color:#7dd3fc;">③ 生徒の見え方</h3>
+      <p style="font-size:0.78rem; color:#a1a1aa; margin:0 0 0.5rem;">生徒を選ぶと、その生徒のマイページ（弱点 TOP3）・通塾生アプリ・週次プリントのメールに出る 📺 の行を、生徒の画面と同じ形で出します。</p>
+      <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+        <select id="spPrevStudent" style="background:#0f172a; color:#e4e4e7; border:1px solid rgba(148,163,184,0.35); border-radius:8px; padding:0.4rem 0.5rem; font-size:0.84rem; max-width:100%;"><option value="">（先に「状態を読み直す」）</option></select>
+        <button id="spPrevBtn" type="button" style="background:rgba(56,189,248,0.18); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45); padding:0.4rem 0.9rem; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer;">👀 見え方を表示</button>
+      </div>
+      <div id="spPrevOut" style="margin-top:0.6rem;"></div>
+
+      <h3 style="margin:1.1rem 0 0.4rem; font-size:0.92rem; color:#7dd3fc;">④ カバー状況</h3>
+      <p style="font-size:0.78rem; color:#a1a1aa; margin:0 0 0.5rem;">対象生徒全員の弱点のうち、どれだけに「回（第N講）」まで出せているかと、出せなかった弱点の多いものを数えます。</p>
+      <button id="spCovBtn" type="button" style="background:rgba(56,189,248,0.18); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45); padding:0.4rem 0.9rem; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer;">📊 カバー状況を数える</button>
+      <div id="spCovOut" style="margin-top:0.6rem;"></div>
     </section>
 
     <!-- 🎥 月額講座 (英文解釈 ¥1,000/月・英文法 ¥1,500/月・共通テスト対策 ¥1,500/月) の動画配信 (2026-09-16)。
@@ -13371,13 +13411,73 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
   })();
   </script>
   <script>
-  // 📺 スタサプ 停止スイッチ (2026-10-10 段階 A): GET/POST /api/admin/sapuri/settings。
+  // 📺 スタサプ講義データ (2026-10-10 段階 A の停止スイッチ + 段階 B の取込・見え方・カバー状況。SPEC2 §4.5)。
   //   CLAUDE.md の作法どおり、ラッパー関数・DOMContentLoaded の addEventListener・window への公開。
+  //   ★講の題名は dry_run の見本と「生徒の見え方」にだけ出す (画面の中だけ・保存しない・ログに出さない)。値はすべて esc() を通す。
   (function () {
     var _spwEnabled = null;
+    var _spStatus = null;
+    var _spBusy = false;
+    var _spFiles = [];   // [{name, code, payload, error}]
+    var _spDry = {};     // code → {ok, resp, error}
+    var SP_PACE_MS = 600;   // 取込 API の上限 (1 分 120 回) に当たらない間隔
+    var REASON_JA = {
+      ok: '対象', disabled: '停止スイッチで止めている', config: 'クラス名が時間割と合っていない', not_found: '生徒が見つからない',
+      not_course: '国公立難関大コースではない', not_enrolled: '在籍していない（退塾・支払い停止など）',
+      labels: '授業コースの3コマのどれかに入っていない', not_started: '受講開始月の前', error: '判定できなかった'
+    };
+    var DOM_REASON_JA = { understanding: '理解不足', misread: '読み違い', time: '時間不足', careless: 'うっかり', other: 'その他', guess: '勘' };
+    var MATCH_JA = { topic: '単元が一致', tag: 'タグが一致', course: '講座だけ', none: 'なし' };
+    var SUBJ_JA = { math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', english: '英語', japanese: '国語', social: '社会' };
     function el(id) { return document.getElementById(id); }
-    function setMsg(text, color) { var m = el('spwMsg'); if (m) { m.textContent = text || ''; m.style.color = color || '#94a3b8'; } }
-    function render(d) {
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+    function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+    function fmtAt(s) {
+      if (!s) return '—';
+      var t = (typeof _fmtJst === 'function') ? _fmtJst(s) : null;
+      return t || String(s).slice(0, 16).replace('T', ' ');
+    }
+    function setText(id, text, color) { var m = el(id); if (m) { m.textContent = text || ''; if (color) m.style.color = color; } }
+    function setMsg(text, color) { setText('spwMsg', text, color || '#94a3b8'); }
+    // 応答の文言 (SPEC2 §4.5): 401「ログインし直してください」・503「表の準備待ちです…」・404/405「サーバの反映待ちです…」
+    function errText(status, data) {
+      if (status === 401) return 'ログインし直してください';
+      if (status === 503) return '表の準備待ちです (デプロイ直後は数分かかります)';
+      if (status === 404 || status === 405) return 'サーバの反映待ちです。数分後にもう一度';
+      if (status === 429) return '混み合っています。1 分ほど待ってからもう一度';
+      var d = data && (data.detail != null ? data.detail : data.error);
+      if (typeof d === 'string' && d) return d;
+      if (Array.isArray(d)) return '送った内容の形が違います (' + d.length + ' 件)';
+      return 'エラー (HTTP ' + status + ')';
+    }
+    async function spFetch(path, init) {
+      if (!window.AdminAuth) return { status: 0, ok: false, data: null };
+      var r = await window.AdminAuth.fetch(path, init);
+      var data = null;
+      try { data = await r.json(); } catch (_) { data = null; }
+      return { status: r.status, ok: r.ok, data: data };
+    }
+    // 取込 API は 1 分 120 回まで。429 は少し待ってやり直す (最大 4 回)。
+    async function spPostImport(body) {
+      var res = null;
+      for (var i = 0; i < 5; i++) {
+        res = await spFetch('/api/admin/sapuri/lessons/import', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        if (res.status !== 429) return res;
+        setText('spImpProgress', '⏳ 混み合いを避けるため 20 秒待っています…', '#fbbf24');
+        await sleep(20000);
+      }
+      return res;
+    }
+
+    // ---------- ① 状態 ----------
+    function renderSwitch(d) {
       _spwEnabled = !!d.enabled;
       var st = el('spwState'), btn = el('spwToggleBtn'), cfg = el('spwConfig');
       if (st) {
@@ -13390,15 +13490,90 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         else { cfg.style.color = '#fca5a5'; cfg.textContent = '⚠️ 設定: ' + (d.config_reason || '授業コースのクラス名が時間割と合っていません') + '（合うまでは「出す」にしても誰にも出ません）'; }
       }
     }
+    function renderStatus(d) {
+      _spStatus = d;
+      renderSwitch(d);
+      var students = Array.isArray(d.students) ? d.students : [];
+      var courses = Array.isArray(d.courses) ? d.courses : [];
+      var sum = el('spStatusSummary');
+      if (sum) {
+        var tbl = d.tables_ready ? '' : '<div style="color:#fbbf24;">⏳ 講データの表の準備待ちです (デプロイ直後は数分かかります)</div>';
+        var withLessons = courses.filter(function (c) { return c.has_lessons; }).length;
+        sum.innerHTML = tbl
+          + '<div>📚 講の一覧: <strong>' + esc(num(d.courses_imported)) + '</strong> / ' + esc(withLessons) + ' 講座を取込済み（使える講 '
+          + esc(num(d.lessons_active)) + ' 講）' + (d.lessons_loaded ? '' : ' <span style="color:#fbbf24;">— まだ生徒には「回」が出ません</span>') + '</div>'
+          + '<div>👥 対象生徒: <strong>' + esc(num(d.eligible_count)) + ' 名</strong>'
+          + (num(d.eligible_ai_disabled_count) ? '（うち AI なし枠 ' + esc(num(d.eligible_ai_disabled_count)) + ' 名 = 通塾生アプリとメールだけに出ます）' : '')
+          + ' / 授業コース関係の生徒 ' + esc(students.length) + ' 名</div>'
+          + (num(d.eligible_count) === 0 ? '<div style="color:#fca5a5;">⚠️ 対象生徒が 0 名です。下の一覧の理由を確かめてください。</div>' : '');
+      }
+      var sb = el('spStudents');
+      if (sb) {
+        if (!students.length) { sb.innerHTML = '<div style="color:#a1a1aa; font-size:0.8rem;">該当する生徒はいません。</div>'; }
+        else {
+          var rows = students.slice().sort(function (a, b) { return (b.eligible ? 1 : 0) - (a.eligible ? 1 : 0) || num(a.id) - num(b.id); })
+            .map(function (s) {
+              var why = s.eligible ? '<span style="color:#86efac;">✅ 対象</span>'
+                : '<span style="color:#fca5a5;">対象外: ' + esc(REASON_JA[s.reason] || s.reason || '') + '</span>';
+              return '<tr><td style="padding:0.25rem 0.5rem;">' + esc(s.name || ('#' + s.id)) + '</td>'
+                + '<td style="padding:0.25rem 0.5rem; color:#94a3b8;">' + esc(s.grade || '—') + '</td>'
+                + '<td style="padding:0.25rem 0.5rem; color:#94a3b8;">' + esc(s.band || '') + '</td>'
+                + '<td style="padding:0.25rem 0.5rem;">' + why + (s.ai_disabled ? ' <span style="color:#94a3b8;">(AIなし)</span>' : '') + '</td></tr>';
+            }).join('');
+          sb.innerHTML = '<table style="border-collapse:collapse; font-size:0.8rem; min-width:420px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
+            + '<th style="padding:0.25rem 0.5rem;">氏名</th><th style="padding:0.25rem 0.5rem;">学年</th><th style="padding:0.25rem 0.5rem;">学年帯</th><th style="padding:0.25rem 0.5rem;">判定</th></tr></thead><tbody>'
+            + rows + '</tbody></table>';
+        }
+      }
+      var cb = el('spCourses');
+      if (cb) {
+        if (!courses.length) { cb.innerHTML = '<div style="color:#a1a1aa; font-size:0.8rem;">講座がありません。</div>'; }
+        else {
+          cb.innerHTML = '<table style="border-collapse:collapse; font-size:0.78rem; min-width:620px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
+            + '<th style="padding:0.2rem 0.45rem;">講座</th><th style="padding:0.2rem 0.45rem;">科目</th><th style="padding:0.2rem 0.45rem;">範囲</th>'
+            + '<th style="padding:0.2rem 0.45rem;">使える講</th><th style="padding:0.2rem 0.45rem;">タグ</th><th style="padding:0.2rem 0.45rem;">単元の対応</th>'
+            + '<th style="padding:0.2rem 0.45rem;">最終取込 (日本時間)</th></tr></thead><tbody>'
+            + courses.map(function (c) {
+              var exp = num(c.last) - num(c.first) + 1;
+              var act = num(c.lessons_active);
+              var col = act === 0 ? '#71717a' : (act === exp ? '#86efac' : '#fbbf24');
+              return '<tr><td style="padding:0.2rem 0.45rem;">' + esc(c.name) + ' <span style="color:#71717a;">' + esc(c.code) + '</span>'
+                + (c.used_for_match ? '' : ' <span style="color:#71717a;">(照合に使わない)</span>') + '</td>'
+                + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(c.subject || '') + '</td>'
+                + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">第' + esc(c.first) + '〜' + esc(c.last) + '講</td>'
+                + '<td style="padding:0.2rem 0.45rem; color:' + col + ';">' + esc(act) + ' / ' + esc(exp) + '</td>'
+                + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(num(c.tags)) + '</td>'
+                + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(num(c.topic_lessons)) + '</td>'
+                + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(fmtAt(c.last_imported_at)) + '</td></tr>';
+            }).join('') + '</tbody></table>';
+        }
+      }
+      var sel = el('spPrevStudent');
+      if (sel) {
+        var keep = sel.value;
+        var opts = students.slice().sort(function (a, b) { return (b.eligible ? 1 : 0) - (a.eligible ? 1 : 0) || num(a.id) - num(b.id); })
+          .map(function (s) {
+            return '<option value="' + esc(s.id) + '">' + esc((s.name || ('#' + s.id)) + '（' + (s.band || '') + '・' + (s.eligible ? '対象' : '対象外') + '）') + '</option>';
+          }).join('');
+        sel.innerHTML = '<option value="">生徒を選んでください</option>' + opts;
+        if (keep) sel.value = keep;
+      }
+    }
     async function sapuriSwitchLoad() {
       if (!window.AdminAuth) return;
       setMsg('');
       try {
-        var r = await window.AdminAuth.fetch('/api/admin/sapuri/settings');
+        var r = await spFetch('/api/admin/sapuri/status');
+        if (r.ok && r.data && r.data.ok) { renderStatus(r.data); return; }
         if (r.status === 401) { setMsg('ログインし直してください', '#fca5a5'); return; }
-        if (r.status === 404 || r.status === 405) { setMsg('サーバの反映待ちです。数分後にもう一度「状態を読み直す」を押してください', '#fbbf24'); return; }
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        render(await r.json());
+        // 段階 B のサーバがまだ出ていない間は、停止スイッチだけ従来の API で出す
+        if (r.status === 404 || r.status === 405) {
+          var s = await spFetch('/api/admin/sapuri/settings');
+          if (s.ok && s.data) { renderSwitch(s.data); }
+          setMsg('講データの状態はサーバの反映待ちです。数分後にもう一度「状態を読み直す」を押してください', '#fbbf24');
+          return;
+        }
+        throw new Error(errText(r.status, r.data));
       } catch (e) {
         var st = el('spwState'); if (st) st.textContent = '読み込めませんでした';
         setMsg('❌ ' + (e && e.message ? e.message : e), '#fca5a5');
@@ -13413,11 +13588,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var btn = el('spwToggleBtn'); if (btn) btn.disabled = true;
       setMsg('保存中…');
       try {
-        var r = await window.AdminAuth.fetch('/api/admin/sapuri/settings', {
+        var r = await spFetch('/api/admin/sapuri/settings', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: next }),
         });
-        if (r.status === 401) { setMsg('ログインし直してください', '#fca5a5'); return; }
-        if (!r.ok) throw new Error('HTTP ' + r.status);
+        if (!r.ok) throw new Error(errText(r.status, r.data));
         await sapuriSwitchLoad();
         // 生徒側の判定は最大 30 秒キャッシュされる (読み直しの後に出す。読み直しは案内を消すため)
         setMsg(next ? '✅ 出すにしました（生徒の画面に反映されるまで最大 30 秒）' : '✅ 止めました（生徒の画面から消えるまで最大 30 秒）', '#86efac');
@@ -13427,12 +13601,316 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         if (btn) btn.disabled = false;
       }
     }
+
+    // ---------- ② 取込 ----------
+    function readFileText(f) {
+      if (f && typeof f.text === 'function') return f.text();
+      return new Promise(function (res, rej) {
+        var fr = new FileReader();
+        fr.onload = function () { res(String(fr.result || '')); };
+        fr.onerror = function () { rej(fr.error || new Error('read')); };
+        fr.readAsText(f, 'utf-8');
+      });
+    }
+    // 講座別 JSON 1 つ → 取込 API に送る形 (built_at など余分なキーは送らない)。形が違えば error。
+    function spParseImportFile(name, text) {
+      var j = null;
+      try { j = JSON.parse(text); } catch (_) { j = null; }
+      if (!j || typeof j !== 'object' || Array.isArray(j) || typeof j.course_code !== 'string' || !j.course_code.trim()
+          || !Array.isArray(j.lessons) || (j.topic_lessons != null && !Array.isArray(j.topic_lessons))) {
+        return { name: name, code: '', payload: null, error: '取込用のファイルではありません' };
+      }
+      var code = j.course_code.trim();
+      return { name: name, code: code, error: null, payload: {
+        course_code: code, source: typeof j.source === 'string' ? j.source.slice(0, 100) : '', lessons: j.lessons,
+        topic_lessons: Array.isArray(j.topic_lessons) ? j.topic_lessons : []
+      } };
+    }
+    function spSampleText(sample) {
+      return (Array.isArray(sample) ? sample : []).map(function (s) {
+        return '第' + (s && s.seq) + '講「' + (s && s.title != null ? s.title : '') + '」';
+      }).join(' ／ ');
+    }
+    function spDroppedTitle(arr, kind) {
+      return (Array.isArray(arr) ? arr : []).slice(0, 15).map(function (x) {
+        return kind === 'tags' ? ('第' + x.seq + '講 ' + (x.subject_key || '') + ':' + (x.tag || ''))
+          : ((x.subject_key || '') + ' ' + (x.topic_norm || '') + ' (' + (x.why || '') + ')');
+      }).join('\n');
+    }
+    function spReadyCodes() {
+      return _spFiles.filter(function (f) { return !f.error && _spDry[f.code] && _spDry[f.code].ok; }).map(function (f) { return f.code; });
+    }
+    function renderImportSummary() {
+      var box = el('spImpSummary');
+      if (!box) return;
+      if (!_spFiles.length) { box.innerHTML = ''; return; }
+      var rows = _spFiles.map(function (f) {
+        var dr = f.code ? _spDry[f.code] : null;
+        var td = function (h, extra) { return '<td style="padding:0.25rem 0.45rem; vertical-align:top;' + (extra || '') + '">' + h + '</td>'; };
+        if (f.error || (dr && !dr.ok)) {
+          var why = f.error || (dr && dr.error) || '';
+          return '<tr style="background:rgba(239,68,68,0.08);">' + td(esc(f.code || f.name) + '<div style="color:#71717a; font-size:0.72rem;">' + esc(f.name) + '</div>')
+            + td('<span style="color:#fca5a5; font-weight:700;">✕ ' + esc(why) + '</span>', '') + td('') + td('') + td('') + td('') + '</tr>';
+        }
+        if (!dr) return '<tr>' + td(esc(f.code) + '<div style="color:#71717a; font-size:0.72rem;">' + esc(f.name) + '</div>') + td('<span style="color:#94a3b8;">確かめ中…</span>') + td('') + td('') + td('') + td('') + '</tr>';
+        var r = dr.resp || {};
+        var dt = (r.dropped && r.dropped.tags) || [], dp = (r.dropped && r.dropped.topics) || [];
+        var retired = num(r.retired);
+        return '<tr>' + td(esc(r.course_name || f.code) + '<div style="color:#71717a; font-size:0.72rem;">' + esc(f.code) + '</div>')
+          + td('<span style="color:#86efac; font-weight:700;">○ ' + esc(num(r.lessons)) + ' 講</span><div style="color:#94a3b8; font-size:0.72rem;">タグ ' + esc(num(r.tags)) + '・単元の対応 ' + esc(num(r.topic_lessons)) + '</div>')
+          + td('<div style="max-width:28rem; color:#e4e4e7; font-size:0.76rem; line-height:1.5;">' + esc(spSampleText(r.sample)) + '</div>')
+          + td(dt.length ? '<span title="' + esc(spDroppedTitle(dt, 'tags')) + '" style="color:#fbbf24;">' + esc(dt.length) + '</span>' : '<span style="color:#71717a;">0</span>')
+          + td(dp.length ? '<span title="' + esc(spDroppedTitle(dp, 'topics')) + '" style="color:#fbbf24;">' + esc(dp.length) + '</span>' : '<span style="color:#71717a;">0</span>')
+          + td(retired ? '<span style="color:#fbbf24; font-weight:700;">' + esc(retired) + ' 講</span>' : '<span style="color:#71717a;">0</span>')
+          + '</tr>';
+      }).join('');
+      var bad = _spFiles.filter(function (f) { return f.error || (f.code && _spDry[f.code] && !_spDry[f.code].ok); }).length;
+      box.innerHTML = '<table style="border-collapse:collapse; font-size:0.8rem; min-width:720px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
+        + '<th style="padding:0.25rem 0.45rem;">講座</th><th style="padding:0.25rem 0.45rem;">講数</th><th style="padding:0.25rem 0.45rem;">見本 (先頭 2 講と最終講)</th>'
+        + '<th style="padding:0.25rem 0.45rem;" title="語彙に無いので捨てるタグ">捨てるタグ</th><th style="padding:0.25rem 0.45rem;" title="範囲外・4 講以上などで捨てる単元の対応">捨てる対応</th>'
+        + '<th style="padding:0.25rem 0.45rem;" title="今は使えるが、このファイルに無いので止まる講">止まる講</th></tr></thead><tbody>'
+        + rows + '</tbody></table>'
+        + (bad ? '<div style="color:#fca5a5; font-size:0.8rem; margin-top:0.35rem;">✕ の ' + esc(bad) + ' 講座は取り込みません（ほかの講座は取り込めます）。</div>' : '');
+    }
+    function updateRunBtn() {
+      var b = el('spImpRunBtn');
+      if (!b) return;
+      var n = spReadyCodes().length;
+      b.disabled = _spBusy || n === 0;
+      b.style.opacity = b.disabled ? '0.5' : '1';
+      b.textContent = n ? ('⬆️ 取り込む（' + n + ' 講座）') : '⬆️ 取り込む';
+      var cb = el('spImpCheckBtn'); if (cb) cb.disabled = _spBusy || !_spFiles.length;
+    }
+    async function sapuriImportFilesChosen() {
+      if (_spBusy) return;
+      var inp = el('spImpFiles');
+      var files = inp && inp.files ? Array.prototype.slice.call(inp.files) : [];
+      _spFiles = []; _spDry = {};
+      setText('spImpProgress', '');
+      var skipped = 0, seen = {};
+      for (var i = 0; i < files.length; i++) {
+        var f = files[i];
+        if (f.name === 'summary.json') { skipped++; continue; }
+        var ent;
+        try { ent = spParseImportFile(f.name, await readFileText(f)); }
+        catch (_) { ent = { name: f.name, code: '', payload: null, error: '取込用のファイルではありません' }; }
+        if (!ent.error && seen[ent.code]) ent = { name: f.name, code: '', payload: null, error: '同じ講座 (' + ent.code + ') のファイルが 2 つあります' };
+        if (!ent.error) seen[ent.code] = true;
+        _spFiles.push(ent);
+      }
+      _spFiles.sort(function (a, b) { return String(a.code || a.name).localeCompare(String(b.code || b.name)); });
+      setText('spImpMsg', _spFiles.length ? ('📂 ' + _spFiles.length + ' ファイルを読みました' + (skipped ? '（summary.json は飛ばしました）' : '')) : 'ファイルが選ばれていません', '#cbd5e1');
+      renderImportSummary(); updateRunBtn();
+      if (_spFiles.length) await sapuriImportDryRun();
+    }
+    async function sapuriImportDryRun() {
+      if (_spBusy || !_spFiles.length || !window.AdminAuth) return;
+      _spBusy = true; _spDry = {}; updateRunBtn(); renderImportSummary();
+      try {
+        // 先に空の dry_run 1 回で、講データの取込ができる版のサーバか確かめる (Vercel はサーバより先に出る)
+        setText('spImpMsg', 'サーバの版を確かめています…', '#cbd5e1');
+        var pr = await spPostImport({ dry_run: true });
+        if (!pr.ok || !pr.data || pr.data.match !== 'lesson_key') {
+          var m = (pr.ok || pr.status === 404 || pr.status === 405) ? 'サーバの反映待ちです。数分後にもう一度' : errText(pr.status, pr.data);
+          setText('spImpMsg', '❌ ' + m + '（まだ何も変わっていません）', '#fca5a5');
+          return;
+        }
+        var todo = _spFiles.filter(function (f) { return !f.error; });
+        for (var i = 0; i < todo.length; i++) {
+          var f = todo[i];
+          setText('spImpMsg', '🔍 試しています（何も書き込みません）… ' + (i + 1) + '/' + todo.length + ' 講座', '#cbd5e1');
+          var body = Object.assign({ dry_run: true }, f.payload);
+          var r = await spPostImport(body);
+          if (r.status === 401 || r.status === 503 || r.status === 404 || r.status === 405) {
+            setText('spImpMsg', '❌ ' + errText(r.status, r.data) + '（まだ何も変わっていません）', '#fca5a5');
+            return;
+          }
+          _spDry[f.code] = (r.ok && r.data && r.data.ok) ? { ok: true, resp: r.data } : { ok: false, error: errText(r.status, r.data) };
+          renderImportSummary();
+          if (i + 1 < todo.length) await sleep(SP_PACE_MS);
+        }
+        var n = spReadyCodes().length;
+        setText('spImpMsg', '✅ 試し終わりました: 取り込める講座 ' + n + ' / ' + _spFiles.length + '。内容を確かめてから「取り込む」を押してください。', n ? '#86efac' : '#fbbf24');
+      } catch (e) {
+        setText('spImpMsg', '❌ 試しに失敗しました: ' + (e && e.message ? e.message : e) + '（まだ何も変わっていません）', '#fca5a5');
+      } finally {
+        _spBusy = false; updateRunBtn();
+      }
+    }
+    async function sapuriImportRun() {
+      if (_spBusy || !window.AdminAuth) return;
+      var codes = spReadyCodes();
+      if (!codes.length) return;
+      if (!confirm(codes.length + ' 講座の講の一覧を本番に取り込みます。\n（講座の中だけ入れ替えます。何度やり直しても同じ結果になります）\nよろしいですか？')) return;
+      _spBusy = true; updateRunBtn();
+      var done = 0, fails = [];
+      var prog = el('spImpProgress');
+      try {
+        for (var i = 0; i < codes.length; i++) {
+          var f = _spFiles.filter(function (x) { return x.code === codes[i]; })[0];
+          var name = (_spDry[f.code] && _spDry[f.code].resp && _spDry[f.code].resp.course_name) || f.code;
+          if (prog) { prog.style.color = '#cbd5e1'; prog.textContent = '⬆️ 取り込んでいます… ' + (i + 1) + '/' + codes.length + ' 講座（' + name + '）'; }
+          var r = await spPostImport(Object.assign({ dry_run: false }, f.payload));
+          if (r.ok && r.data && r.data.ok) { done++; }
+          else {
+            fails.push({ name: name, code: f.code, why: errText(r.status, r.data) });
+            if (r.status === 401) break;   // ログインが切れたら続けても全部失敗する
+          }
+          if (i + 1 < codes.length) await sleep(SP_PACE_MS);
+        }
+      } catch (e) {
+        fails.push({ name: '', code: '', why: '通信が切れました: ' + (e && e.message ? e.message : e) });
+      } finally {
+        _spBusy = false; updateRunBtn();
+      }
+      if (prog) {
+        var rest = codes.length - done - fails.length;
+        prog.style.color = fails.length ? '#fca5a5' : '#86efac';
+        prog.innerHTML = (done ? '✅ ' + esc(done) + ' 講座を取り込みました。' : '')
+          + (fails.length ? '<div>❌ 取り込めなかった講座（もう一度押せばやり直せます）:</div><ul style="margin:0.2rem 0 0 1.1rem; padding:0;">'
+              + fails.map(function (x) { return '<li>' + esc(x.name) + (x.code && x.code !== x.name ? ' <span style="color:#71717a;">' + esc(x.code) + '</span>' : '') + ' — ' + esc(x.why) + '</li>'; }).join('') + '</ul>' : '')
+          + (rest > 0 ? '<div style="color:#fbbf24;">⏸ 残り ' + esc(rest) + ' 講座は送っていません。</div>' : '');
+      }
+      sapuriSwitchLoad();
+    }
+
+    // ---------- ③ 生徒の見え方 ----------
+    // 生徒画面 (mypage.js の sapuriRecText / class.html の今週見るスタサプ) と同じ組み立て
+    function recText(rec, prefix) {
+      if (!rec || typeof rec !== 'object') return '';
+      var course = String(rec.course_name == null ? '' : rec.course_name).trim();
+      if (!course) return '';
+      var ls = (Array.isArray(rec.lessons) ? rec.lessons : []).filter(function (l) { return l && l.seq != null && isFinite(Number(l.seq)); });
+      var s = (prefix === false ? '' : '📺 スタサプ：') + course;
+      if (!ls.length) return s;
+      var a = Number(ls[0].seq);
+      var to = (rec.to_seq != null && isFinite(Number(rec.to_seq))) ? Number(rec.to_seq) : Number(ls[ls.length - 1].seq);
+      var title = String(ls[0].title == null ? '' : ls[0].title).trim();
+      return s + ' 第' + a + '講' + (title ? '「' + title + '」' : '') + (to > a ? '（第' + to + '講まで）' : '');
+    }
+    function recLineHtml(rec, prefix, color) {
+      var t = recText(rec, prefix);
+      if (!t) return '';
+      return '<div title="' + esc(t) + '" style="font-size:0.8rem; color:' + (color || '#fda4af') + '; margin-top:0.25rem; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden; word-break:break-all; line-height:1.5;">' + esc(t) + '</div>';
+    }
+    function previewHtml(d) {
+      var st = (_spStatus && Array.isArray(_spStatus.students)) ? _spStatus.students.filter(function (s) { return num(s.id) === num(d.student_id); })[0] : null;
+      var who = st ? (st.name || ('#' + st.id)) : ('#' + d.student_id);
+      var h = '<div style="font-size:0.86rem; font-weight:800; color:#e4e4e7;">' + esc(who) + ' <span style="color:#94a3b8; font-weight:500;">' + esc(d.band || '') + '</span> '
+        + (d.eligible ? '<span style="color:#86efac;">✅ 対象</span>' : '<span style="color:#fca5a5;">対象外: ' + esc(REASON_JA[d.reason] || d.reason || '') + '（この生徒の画面にはスタサプは出ません）</span>') + '</div>';
+      var box = function (title, inner) {
+        return '<div style="margin-top:0.55rem; padding:0.6rem 0.75rem; background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.10); border-radius:10px; min-width:0;">'
+          + '<div style="font-size:0.76rem; color:#94a3b8; margin-bottom:0.2rem;">' + title + '</div>' + inner + '</div>';
+      };
+      var none = '<div style="color:#71717a; font-size:0.8rem;">（出ません）</div>';
+      var top3 = (Array.isArray(d.top3) ? d.top3 : []).map(function (r) { return recLineHtml(r, true); }).join('');
+      h += box('マイページ「弱点 TOP3」のカードに出る行', top3 || none);
+      var cls = (Array.isArray(d.class_items) ? d.class_items : []).map(function (r) {
+        var head = (SUBJ_JA[String(r.subject || '').toLowerCase()] || '') + (r.topic ? '・' + r.topic : '');
+        return '<div style="margin-top:0.3rem;">' + (head ? '<div style="font-size:0.72rem; color:#fda4af; font-weight:800;">' + esc(head) + '</div>' : '') + recLineHtml(r, false, '#fecdd3') + '</div>';
+      }).join('');
+      h += box('通塾生アプリ「📺 今週見るスタサプ」', cls || none);
+      var wl = (Array.isArray(d.weekly_lines) ? d.weekly_lines : []).map(function (x) { return '<div style="font-size:0.8rem; color:#e4e4e7;">' + esc(x) + '</div>'; }).join('');
+      h += box('週次プリントのメール・LINE に入る行（題名なし）', wl || none);
+      var ws = Array.isArray(d.weaknesses) ? d.weaknesses : [];
+      if (ws.length) {
+        h += '<div style="margin-top:0.6rem; overflow-x:auto;"><table style="border-collapse:collapse; font-size:0.78rem; min-width:640px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
+          + '<th style="padding:0.2rem 0.45rem;">#</th><th style="padding:0.2rem 0.45rem;">弱点</th><th style="padding:0.2rem 0.45rem;">主な原因</th>'
+          + '<th style="padding:0.2rem 0.45rem;">照合</th><th style="padding:0.2rem 0.45rem;">推薦（参考）</th><th style="padding:0.2rem 0.45rem;">生徒に出す</th></tr></thead><tbody>'
+          + ws.map(function (w, i) {
+            var mb = w.matched_by || 'none';
+            var mcol = (mb === 'topic' || mb === 'tag') ? '#86efac' : (mb === 'course' ? '#fbbf24' : '#71717a');
+            return '<tr><td style="padding:0.2rem 0.45rem; color:#71717a;">' + (i + 1) + '</td>'
+              + '<td style="padding:0.2rem 0.45rem;">' + esc((SUBJ_JA[String(w.subject || '').toLowerCase()] || w.subject || '') + (w.topic ? '・' + w.topic : '')) + '</td>'
+              + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(DOM_REASON_JA[w.dominant_reason] || w.dominant_reason || '—') + '</td>'
+              + '<td style="padding:0.2rem 0.45rem; color:' + mcol + ';">' + esc(MATCH_JA[mb] || mb) + '</td>'
+              + '<td style="padding:0.2rem 0.45rem; color:#cbd5e1; max-width:24rem;">' + esc(recText(w.recommendation, false) || '—') + '</td>'
+              + '<td style="padding:0.2rem 0.45rem;">' + (w.shown ? '<span style="color:#86efac;">✅</span>' : '<span style="color:#71717a;">—</span>') + '</td></tr>';
+          }).join('') + '</tbody></table>'
+          + '<div style="color:#71717a; font-size:0.72rem; margin-top:0.25rem;">生徒に出すのは「単元が一致」「タグが一致」の弱点だけ（主な原因がうっかり・時間不足・読み違いの弱点と、上と同じ回は出しません）。「講座だけ」はカリキュラムと AI 弱点プリントでだけ使います。</div></div>';
+      } else {
+        h += '<div style="color:#a1a1aa; font-size:0.8rem; margin-top:0.5rem;">この生徒にはまだ弱点の記録がありません。</div>';
+      }
+      return h;
+    }
+    async function sapuriPreviewShow() {
+      var sel = el('spPrevStudent'), out = el('spPrevOut');
+      if (!out) return;
+      var sid = sel ? sel.value : '';
+      if (!sid) { out.innerHTML = '<div style="color:#fbbf24; font-size:0.8rem;">生徒を選んでください（一覧が空なら「状態を読み直す」）。</div>'; return; }
+      out.innerHTML = '<div style="color:#a1a1aa; font-size:0.8rem;">読み込み中…</div>';
+      try {
+        var r = await spFetch('/api/admin/sapuri/preview?student_id=' + encodeURIComponent(sid));
+        if (!r.ok || !r.data || !r.data.ok) { out.innerHTML = '<div style="color:#fca5a5; font-size:0.8rem;">❌ ' + esc(errText(r.status, r.data)) + '</div>'; return; }
+        out.innerHTML = previewHtml(r.data);
+      } catch (e) {
+        out.innerHTML = '<div style="color:#fca5a5; font-size:0.8rem;">❌ ' + esc(e && e.message ? e.message : e) + '</div>';
+      }
+    }
+
+    // ---------- ④ カバー状況 ----------
+    function coverageHtml(d) {
+      var mb = d.matched_by || {};
+      var total = num(d.weaknesses);
+      var pct = function (n) { return total ? Math.round(num(n) * 100 / total) + '%' : '—'; };
+      var h = '<div style="font-size:0.82rem; color:#cbd5e1; line-height:1.7;">対象生徒 ' + esc(num(d.students)) + ' 名・弱点 ' + esc(total) + ' 件のうち:<br>'
+        + '<span style="color:#86efac;">単元が一致 ' + esc(num(mb.topic)) + ' 件 (' + pct(mb.topic) + ')</span>・'
+        + '<span style="color:#86efac;">タグが一致 ' + esc(num(mb.tag)) + ' 件 (' + pct(mb.tag) + ')</span>・'
+        + '<span style="color:#fbbf24;">講座だけ ' + esc(num(mb.course)) + ' 件 (' + pct(mb.course) + ')</span>・'
+        + '<span style="color:#a1a1aa;">なし ' + esc(num(mb.none)) + ' 件 (' + pct(mb.none) + ')</span></div>';
+      var top = Array.isArray(d.unmatched_top) ? d.unmatched_top : [];
+      if (top.length) {
+        h += '<div style="margin-top:0.5rem; overflow-x:auto;"><div style="font-size:0.78rem; color:#94a3b8; margin-bottom:0.2rem;">回（第N講）まで出せなかった弱点（多い順・上位 20）</div>'
+          + '<table style="border-collapse:collapse; font-size:0.78rem; min-width:560px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
+          + '<th style="padding:0.2rem 0.45rem;">件数</th><th style="padding:0.2rem 0.45rem;">科目</th><th style="padding:0.2rem 0.45rem;">科目キー</th>'
+          + '<th style="padding:0.2rem 0.45rem;">タグ</th><th style="padding:0.2rem 0.45rem;">照合</th><th style="padding:0.2rem 0.45rem;">例</th></tr></thead><tbody>'
+          + top.map(function (x) {
+            return '<tr><td style="padding:0.2rem 0.45rem; font-weight:700;">' + esc(num(x.count)) + '</td>'
+              + '<td style="padding:0.2rem 0.45rem;">' + esc(SUBJ_JA[String(x.subject || '').toLowerCase()] || x.subject || '—') + '</td>'
+              + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(x.subject_key || '（決まらない）') + '</td>'
+              + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(x.tag || '（なし）') + '</td>'
+              + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(MATCH_JA[x.matched_by] || x.matched_by || '') + '</td>'
+              + '<td style="padding:0.2rem 0.45rem; color:#cbd5e1;">' + esc(x.example_topic || '') + '</td></tr>';
+          }).join('') + '</tbody></table></div>';
+      }
+      return h;
+    }
+    async function sapuriCoverageShow() {
+      var out = el('spCovOut');
+      if (!out) return;
+      var b = el('spCovBtn'); if (b) b.disabled = true;
+      out.innerHTML = '<div style="color:#a1a1aa; font-size:0.8rem;">数えています…（対象生徒が多いと 10 秒ほどかかります）</div>';
+      try {
+        var r = await spFetch('/api/admin/sapuri/coverage');
+        if (!r.ok || !r.data || !r.data.ok) { out.innerHTML = '<div style="color:#fca5a5; font-size:0.8rem;">❌ ' + esc(errText(r.status, r.data)) + '</div>'; return; }
+        out.innerHTML = coverageHtml(r.data);
+      } catch (e) {
+        out.innerHTML = '<div style="color:#fca5a5; font-size:0.8rem;">❌ ' + esc(e && e.message ? e.message : e) + '</div>';
+      } finally {
+        if (b) b.disabled = false;
+      }
+    }
+
     window.sapuriSwitchLoad = sapuriSwitchLoad;
     window.sapuriSwitchToggle = sapuriSwitchToggle;
+    window.sapuriImportFilesChosen = sapuriImportFilesChosen;
+    window.sapuriImportDryRun = sapuriImportDryRun;
+    window.sapuriImportRun = sapuriImportRun;
+    window.sapuriPreviewShow = sapuriPreviewShow;
+    window.sapuriCoverageShow = sapuriCoverageShow;
+    // 検査用 (osascript のハーネスが描画だけを確かめる。画面の動作には使わない)
+    window._sapuriPanelTest = { spParseImportFile: spParseImportFile, previewHtml: previewHtml, coverageHtml: coverageHtml,
+      renderStatus: renderStatus, recText: recText, errText: errText, renderImportSummary: renderImportSummary,
+      _set: function (files, dry) { _spFiles = files; _spDry = dry; } };
     function bind() {
       var b = el('spwToggleBtn'); if (b) b.addEventListener('click', sapuriSwitchToggle);
       var rb = el('spwReloadBtn'); if (rb) rb.addEventListener('click', sapuriSwitchLoad);
-      var hb = document.querySelector('#ceoHubMenu [data-hub-target="sapuriSwitchSection"]'); if (hb) hb.addEventListener('click', sapuriSwitchLoad);
+      var fi = el('spImpFiles'); if (fi) fi.addEventListener('change', sapuriImportFilesChosen);
+      var cb = el('spImpCheckBtn'); if (cb) cb.addEventListener('click', sapuriImportDryRun);
+      var ib = el('spImpRunBtn'); if (ib) ib.addEventListener('click', sapuriImportRun);
+      var pb = el('spPrevBtn'); if (pb) pb.addEventListener('click', sapuriPreviewShow);
+      var cv = el('spCovBtn'); if (cv) cv.addEventListener('click', sapuriCoverageShow);
+      var hb = document.querySelector('#ceoHubMenu [data-hub-target="sapuriSection"]'); if (hb) hb.addEventListener('click', sapuriSwitchLoad);
       if (window.AdminAuth && AdminAuth.getToken && AdminAuth.getToken()) setTimeout(sapuriSwitchLoad, 500);
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();

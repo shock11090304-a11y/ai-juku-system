@@ -1466,7 +1466,7 @@
   <script src="exam-prep.js?v=20260721-xstudent-batch2"></script>
   <script src="referral-program.js?v=20260721-xstudent-batch2"></script>
   <script src="student-mode.js?v=20260604-junior-preview"></script>
-  <script src="mypage.js?v=20261010a-sapuri-stage-a"></script>
+  <script src="mypage.js?v=20261010c-sapuri-stage-b"></script>
   <script>
     // ウィジェット初期描画
     (function() {
@@ -1707,6 +1707,10 @@
             // 🎯 [習得クローズドループ 2026-06-17] 「習得(卒業)まであと何が必要か」を明示
             const masteryRow = w.mastery_hint
               ? `<div style="font-size:0.8rem;color:#86efac;margin-top:0.25rem;">🎯 ${escapeHTML(w.mastery_hint)}</div>` : '';
+            // 📺 2026-10-10 スタサプ段階 B: サーバが照合した「その弱点の回」を 1 行 (対象生徒だけ w.sapuri が付く・無ければ出さない)。
+            //   描画は mypage.js の sapuriRecLineHtml (エスケープ・スマホ幅は省略記号)。mypage.js が古い版でも何も出さないだけ。
+            const sapuriRow = (w.sapuri && typeof window.sapuriRecLineHtml === 'function')
+              ? window.sapuriRecLineHtml(w.sapuri, { fontSize: '0.8rem', marginTop: '0.3rem', requireLesson: true }) : '';
 
             // 推薦リンク: ai-tutor-photo.html へ subject/topic プリセット遷移
             // 🎯 Task 1 (2026-05-13): topic LIKE 絞り込み完了 → match_quality でピンポイント表示
@@ -1739,6 +1743,7 @@
                 </div>
                 ${countRow}
                 ${masteryRow}
+                ${sapuriRow}
                 ${recHtml}
               </div>`;
           });
@@ -1846,6 +1851,18 @@
       //   try 内で const 宣言すると印刷時に ReferenceError で無音で何も出ない (実測)。
       let ws = null;
       const CIRCLED = '①②③④⑤⑥⑦⑧';
+      // 📺 週次プリントの「その弱点の回」(表示と印刷で共用)。mypage.js の描画関数が無い (古い版) ときは出さない。
+      function wsSapuriTexts(w) {
+        if (!w || !Array.isArray(w.subject_topics) || typeof window.sapuriRecText !== 'function'
+            || typeof window.sapuriRecLineHtml !== 'function') return [];
+        const out = [];
+        w.subject_topics.forEach(s => {
+          if (!s || !s.sapuri) return;
+          const t = window.sapuriRecText(s.sapuri, false, true);
+          if (t) out.push({ rec: s.sapuri, text: t });
+        });
+        return out;
+      }
 
       try {
         const res = await fetch(`${API_BASE}/api/student/worksheet/this-week`, { headers });
@@ -1887,6 +1904,15 @@
           html += `<div class="ws-solve" style="margin:0 0 0.7rem;padding:0.6rem 0.75rem;background:rgba(99,102,241,0.10);border:1px solid rgba(99,102,241,0.30);border-radius:10px;">
             <div style="font-size:0.8rem;color:#c7d2fe;font-weight:700;margin-bottom:0.45rem;">⏱ 解いて弱点を「習得（卒業）」しよう <span style="color:#94a3b8;font-weight:500;">— 正答率80%・5問で弱点から外れます</span></div>
             <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">${solveLinks}</div>
+          </div>`;
+        }
+        // 📺 2026-10-10 スタサプ段階 B: 対象生徒の週次プリントには、サーバが照合した「その弱点の回」(subject_topics[i].sapuri) が
+        //   付く (対象外になった生徒には /this-week が外して返す)。1 弱点 1 行・題名つき。無ければ欄ごと出さない。
+        const sapuriLines = wsSapuriTexts(ws);
+        if (sapuriLines.length) {
+          html += `<div class="ws-sapuri" style="margin:0 0 0.7rem;padding:0.6rem 0.75rem;background:rgba(251,113,133,0.08);border:1px solid rgba(251,113,133,0.30);border-radius:10px;min-width:0;">
+            <div style="font-size:0.8rem;color:#fda4af;font-weight:700;margin-bottom:0.3rem;">📺 今週見るスタサプ <span style="color:#94a3b8;font-weight:500;">— 解く前に見ておくと効く回</span></div>
+            ${sapuriLines.map(x => window.sapuriRecLineHtml(x.rec, { prefix: false, requireLesson: true, fontSize: '0.82rem', color: '#fecdd3', marginTop: '0.2rem' })).join('')}
           </div>`;
         }
         // ★2026-08-18 生徒報告「解けない」の修正: 旧実装は最初の小問 stem だけを表示し、
@@ -1940,6 +1966,9 @@
       //   → データ (ws) から明色テーマの自己完結 HTML を組み立てる。解答は載せない。
       function buildWorksheetPrintHtml() {
         const topics = (ws.subject_topics || []).map(s => escHtml(subjJa(s.subject) + (s.topic ? '・' + s.topic : ''))).join(' / ') || '（弱点情報なし）';
+        const _spl = wsSapuriTexts(ws);
+        const sapuriPrint = _spl.length
+          ? `<div class="sp"><div class="sph">📺 今週見るスタサプ</div>${_spl.map(x => `<div>□ ${escHtml(x.text)}</div>`).join('')}</div>` : '';
         let body = '';
         (ws.questions || []).forEach((q, i) => {
           const qd = q.question_data || {};
@@ -1975,6 +2004,8 @@
           .sq{font-size:0.9rem;margin:0 0 0.3rem;white-space:pre-wrap;}
           .chs{font-size:0.85rem;margin:0 0 0.6rem 1.2rem;}
           .ans{height:5.5em;border:1px solid #999;border-radius:4px;margin:0.2rem 0 0.7rem;}
+          .sp{font-size:0.85rem;border:1px solid #e11d48;border-radius:4px;padding:0.45rem 0.7rem;margin:0 0 1rem;break-inside:avoid;}
+          .sph{font-weight:800;color:#9f1239;margin:0 0 0.2rem;}
           /* ★改ページ制御は小さい単位だけ。大問カード (.q) に break-inside:avoid を付けると
              1ページ級の高さで改ページ前に大量の空白ができ紙が半分死ぬ (過去の実測 59p→46p)。 */
           .sq,.chs,.ans{break-inside:avoid;}
@@ -1983,6 +2014,7 @@
         </style></head><body>
         <h1>📅 今週の弱点プリント</h1>
         <div class="meta">${escHtml(ws.week_start_date || '')} の週 / 対象弱点: ${topics} / 全 ${ws.question_count} 問　　名前:＿＿＿＿＿＿＿＿＿＿</div>
+        ${sapuriPrint}
         ${body}
         </body></html>`;
       }

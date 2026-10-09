@@ -166,6 +166,13 @@
     .tab-badge { position:absolute; top:0.15rem; right:50%; transform:translateX(1.2rem); min-width:16px; height:16px; padding:0 4px; box-sizing:border-box; background:#ec4899; color:#fff; border-radius:999px; font-size:0.62rem; font-weight:800; line-height:16px; text-align:center; display:none; }
     .tab-badge.show { display:block; }
 
+    /* 📺 今週見るスタサプ: 1 行で省略記号 (nowrap は使わない = 長い題名が画面幅を押し広げない。日本語はどこでも折れる) */
+    .sp-card { border-color:rgba(251,113,133,0.35); background:rgba(251,113,133,0.06); }
+    .sp-card .card-title { margin-top:0; font-size:0.98rem; }
+    .sp-row { margin-top:0.45rem; padding-top:0.45rem; border-top:1px solid rgba(255,255,255,0.07); min-width:0; }
+    .sp-row:first-of-type { border-top:0; padding-top:0; }
+    .sp-subj { font-size:0.72rem; color:#fda4af; font-weight:800; }
+    .sp-line { font-size:0.88rem; color:#fecdd3; line-height:1.5; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; line-clamp:1; overflow:hidden; word-break:break-all; }
     .toast { position:fixed; left:50%; bottom:84px; transform:translateX(-50%); background:rgba(20,20,40,0.97); border:1px solid rgba(129,140,248,0.5); color:#e4e4e7; padding:0.7rem 1.1rem; border-radius:10px; font-size:0.88rem; font-weight:700; z-index:60; box-shadow:0 6px 24px rgba(0,0,0,0.5); opacity:0; transition:opacity .2s; pointer-events:none; }
     .toast.show { opacity:1; } .toast.err { border-color:rgba(239,68,68,0.6); color:#fca5a5; }
     [hidden] { display:none !important; }
@@ -183,6 +190,8 @@
 
     <section id="view-schedule" class="view" hidden>
       <h1 class="view-title">📅 予定<span class="sub">週間の時間割と、授業ごとの配布ファイル・出欠の連絡</span></h1>
+      <!-- 📺 今週見るスタサプ (2026-10-10 スタサプ段階 B)。授業コースの在籍生で、弱点に合う回があるときだけ出す (それ以外はカードごと隠す) -->
+      <div id="sapuriCard" hidden></div>
       <div id="scheduleBody"><div class="loading">読み込み中…</div></div>
     </section>
 
@@ -1419,6 +1428,50 @@
       } catch (e) { toast('添付の取得に失敗しました', true); }
     }
 
+    // ===================== 📺 今週見るスタサプ (2026-10-10 段階 B) =====================
+    // GET /api/student/class/sapuri → {items:[{subject, topic, course_name, lessons:[{seq,title}], to_seq, ...}]} (最大 3 件)。
+    // サーバが対象生徒 (授業コースの在籍生) にだけ、弱点に合う回を返す。0 件・対象外・失敗 (旧サーバの 404 等) はカードごと出さない。
+    // ★題名はこの生徒に推薦した回だけ (サーバが絞る)。値はすべて esc() を通す。
+    var SP_SUBJ_JA = { math: '数学', physics: '物理', chemistry: '化学', biology: '生物', english: '英語', japanese: '国語', social: '社会' };
+    function spLineText(it) {
+      if (!it || typeof it !== 'object') return '';
+      var course = String(it.course_name == null ? '' : it.course_name).trim();
+      var ls = Array.isArray(it.lessons) ? it.lessons.filter(function (l) { return l && isFinite(Number(l.seq)) && l.seq !== null && l.seq !== ''; }) : [];
+      if (!course || !ls.length) return '';   // 講座だけ (講なし) はこのカードに出さない (サーバも返さない)
+      var a = Number(ls[0].seq);
+      var to = (it.to_seq != null && isFinite(Number(it.to_seq))) ? Number(it.to_seq) : Number(ls[ls.length - 1].seq);
+      var title = String(ls[0].title == null ? '' : ls[0].title).trim();
+      return course + ' 第' + a + '講' + (title ? '「' + title + '」' : '') + (to > a ? '（第' + to + '講まで）' : '');
+    }
+    function sapuriCardHtml(items) {
+      var rows = [];
+      (Array.isArray(items) ? items : []).slice(0, 3).forEach(function (it) {
+        var t = spLineText(it);
+        if (!t) return;
+        var subj = SP_SUBJ_JA[String(it.subject || '').toLowerCase()] || '';
+        var topic = String(it.topic == null ? '' : it.topic).trim();
+        var head = (subj ? subj : '') + (subj && topic ? '・' : '') + topic;
+        rows.push('<div class="sp-row">' + (head ? '<div class="sp-subj">' + esc(head) + '</div>' : '')
+          + '<div class="sp-line" title="' + esc(t) + '">' + esc(t) + '</div></div>');
+      });
+      if (!rows.length) return '';
+      return '<div class="card sp-card"><div class="card-title">📺 今週見るスタサプ</div>'
+        + '<div class="card-meta" style="margin-bottom:0.35rem;">あなたの弱点に合う回です。スタディサプリのアプリで見てから、宿題やドリルに取り組みましょう。</div>'
+        + rows.join('') + '</div>';
+    }
+    async function loadSapuriCard() {
+      var box = document.getElementById('sapuriCard');
+      if (!box) return;
+      try {
+        var d = await api('/api/student/class/sapuri');
+        var h = sapuriCardHtml(d && d.items);
+        box.innerHTML = h;
+        box.hidden = !h;
+      } catch (e) {
+        box.innerHTML = ''; box.hidden = true;   // 出せないときは黙って隠す (予定の表示を邪魔しない)
+      }
+    }
+
     function updateBadge(id, n) {
       var b = document.getElementById(id);
       if (!b) return;
@@ -1482,6 +1535,7 @@
         updateBadge('hwBadge', n);
       }).catch(function () {});
       api('/api/messages/me/unread-count').then(function (d) { updateBadge('msgBadge', d.unread_count || 0); }).catch(function () {});
+      loadSapuriCard();
       // タブ
       Array.prototype.forEach.call(document.querySelectorAll('#tabbar button'), function (b) {
         b.addEventListener('click', function () { showTab(b.getAttribute('data-tab')); });

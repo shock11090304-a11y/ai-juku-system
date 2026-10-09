@@ -3235,6 +3235,51 @@ function _cuSapuriLabels(p) {
   return p.sapuri_lectures.filter(m => typeof m === 'string' && m);
 }
 
+// 📺 2026-10-10 スタサプ段階 B: サーバが照合した「その弱点の回」(rec) の表示。rec の形:
+//   {course_name, lessons:[{seq, title}], to_seq?, label, matched_by}。表示用 (TOP3・週次) は lessons が 1 講で to_seq つき、
+//   AI 弱点プリントの rec は lessons が全部 (範囲の最後 = lessons の最後)・講座だけ (Tier 3) なら lessons が空。
+//   ★題名を出してよいのは「その生徒に推薦した回」だけ (D1)。サーバが対象外の生徒には rec を返さないので、ここは来たものだけ出す。
+//   mypage.html の TOP3 カード・週次プリント (表示・印刷) もこの 2 つを使う (window に公開)。
+function sapuriRecParts(rec) {
+  if (!rec || typeof rec !== 'object') return null;
+  const course = String(rec.course_name == null ? '' : rec.course_name).trim();
+  if (!course) return null;
+  const ls = (Array.isArray(rec.lessons) ? rec.lessons : [])
+    .filter(l => l && typeof l === 'object' && Number.isFinite(Number(l.seq)));
+  if (!ls.length) return { course, seq: null, title: '', toSeq: null };
+  const a = Number(ls[0].seq);
+  let to = (rec.to_seq != null && Number.isFinite(Number(rec.to_seq))) ? Number(rec.to_seq) : Number(ls[ls.length - 1].seq);
+  if (!(to > a)) to = null;
+  return { course, seq: a, title: String(ls[0].title == null ? '' : ls[0].title).trim(), toSeq: to };
+}
+// 1 行の文 (エスケープ前)。prefix=false なら「📺 スタサプ：」を付けない (見出しが既に「📺 …スタサプ」のカード用)。
+// requireLesson=true なら講 (第N講) の無いもの (講座だけ) は '' (TOP3・週次は講まで決まった弱点だけに出す決まり)。
+function sapuriRecText(rec, prefix, requireLesson) {
+  const p = sapuriRecParts(rec);
+  if (!p || (requireLesson && p.seq == null)) return '';
+  let s = (prefix === false ? '' : '📺 スタサプ：') + p.course;
+  if (p.seq != null) {
+    s += ` 第${p.seq}講`;
+    if (p.title) s += `「${p.title}」`;
+    if (p.toSeq != null) s += `（第${p.toSeq}講まで）`;
+  }
+  return s;
+}
+// 画面用の 1 行 (スマホ幅では 1 行で省略記号「…」で切る・全文は title 属性)。出すものが無ければ ''。
+//   ★white-space:nowrap は使わない: TOP3・週次の親は display:grid (暗黙の auto 列) なので、折り返さない長い行が
+//   列の最小幅を押し広げて画面の横にはみ出す。1 行に丸める line-clamp なら日本語はどこでも折れる = 最小幅が小さいまま。
+function sapuriRecLineHtml(rec, opts) {
+  const o = opts || {};
+  const text = sapuriRecText(rec, o.prefix, o.requireLesson);
+  if (!text) return '';
+  return `<div class="sapuri-rec-line" title="${escapeHtml(text)}" style="font-size:${o.fontSize || '0.8rem'};color:${o.color || '#fda4af'};`
+    + `margin-top:${o.marginTop || '0.3rem'};display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;line-clamp:1;`
+    + `overflow:hidden;word-break:break-all;line-height:1.5;">${escapeHtml(text)}</div>`;
+}
+window.sapuriRecParts = sapuriRecParts;
+window.sapuriRecText = sapuriRecText;
+window.sapuriRecLineHtml = sapuriRecLineHtml;
+
 function renderCurriculumPreview(c) {
   const examDate = c.exam_date;
   const startDate = c.start_date;
@@ -4008,6 +4053,11 @@ async function generateWeakPointWorksheet() {
   }
 }
 
+// 📺 AI 弱点プリントの「その弱点の回」(サーバ照合の sapuri_lessons・0〜1 件)。形の崩れた要素は捨てる。
+function _wpSapuriRecs(d) {
+  return ((d && Array.isArray(d.sapuri_lessons)) ? d.sapuri_lessons : []).filter(r => sapuriRecText(r));
+}
+
 function renderWorksheet(d) {
   const probsHtml = (d.problems || []).map(p => {
     const diffColor = { '易': '#86efac', '標準': '#fbbf24', '応用': '#f97316', '発展': '#fca5a5' }[p.difficulty] || '#a1a1aa';
@@ -4028,13 +4078,12 @@ function renderWorksheet(d) {
         </div>
       </div>`;
   }).join('');
-  const lecturesHtml = (d.sapuri_lectures || []).map((l, i) => `
-    <div style="background:rgba(251,113,133,0.08); border-left:3px solid #fb7185; border-radius:6px; padding:0.6rem; margin-bottom:0.4rem;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
-        <div style="font-weight:700; color:#fda4af; font-size:0.88rem;">${i + 1}. 📺 ${escapeHtml(l.title)}</div>
-        <span style="background:rgba(251,113,133,0.2); color:#fda4af; padding:0.1rem 0.5rem; border-radius:4px; font-size:0.7rem; font-weight:700;">${escapeHtml(l.level)}</span>
-      </div>
-      <div style="color:#d4d4d8; font-size:0.78rem;">💡 ${escapeHtml(l.reason)}</div>
+  // 📺 2026-10-10 段階 B: サーバが照合した「その弱点の回」(sapuri_lessons) だけを出す。AI が書いたスタサプ (旧 sapuri_lectures) は
+  //   出さない (D1/D2)。対象外の生徒・照合できない弱点は [] → 欄ごと出さない。講座だけ (Tier 3) なら講座名だけの行。
+  const sapuriRecs = _wpSapuriRecs(d);
+  const lecturesHtml = sapuriRecs.map(r => `
+    <div style="background:rgba(251,113,133,0.08); border-left:3px solid #fb7185; border-radius:6px; padding:0.55rem 0.7rem; margin-bottom:0.4rem; min-width:0;">
+      ${sapuriRecLineHtml(r, { fontSize: '0.86rem', marginTop: '0' })}
     </div>`).join('');
   return `
     <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1rem;">
@@ -4052,7 +4101,7 @@ function renderWorksheet(d) {
       ${probsHtml}
       ${lecturesHtml ? `
         <div style="margin-top:1rem; padding-top:0.7rem; border-top:1px solid rgba(255,255,255,0.1);">
-          <div style="font-size:0.88rem; color:#fda4af; font-weight:700; margin-bottom:0.4rem;">📺 補強推薦: スタサプ講義 (${d.sapuri_lectures.length} 件・易→難)</div>
+          <div style="font-size:0.88rem; color:#fda4af; font-weight:700; margin-bottom:0.4rem;">📺 この弱点のスタサプ</div>
           ${lecturesHtml}
         </div>` : ''}
     </div>`;
@@ -4061,14 +4110,13 @@ function renderWorksheet(d) {
 function printWorksheet(d) {
   const probsHtml = (d.problems || []).map(p => `
     <div style="page-break-inside:avoid; margin-bottom:1rem; border-bottom:1px solid #ccc; padding-bottom:0.7rem;">
-      <h3 style="margin:0 0 0.3rem 0;">問題 ${p.no} <span style="font-size:0.7em; background:#eee; padding:1px 5px; border-radius:3px;">${p.difficulty}</span></h3>
+      <h3 style="margin:0 0 0.3rem 0;">問題 ${p.no} <span style="font-size:0.7em; background:#eee; padding:1px 5px; border-radius:3px;">${escapeHtml(p.difficulty)}</span></h3>
       <div style="white-space:pre-wrap; line-height:1.6;">${escapeHtml(p.question)}</div>
       <div style="margin-top:0.5rem; padding:0.4rem; background:#f0fdf4;"><strong>解答:</strong> ${escapeHtml(p.answer)}</div>
       <div style="margin-top:0.3rem; padding:0.4rem; background:#eff6ff;"><strong>解説:</strong> ${escapeHtml(p.explanation)}</div>
     </div>`).join('');
-  const lectHtml = (d.sapuri_lectures || []).map((l, i) => `
-    <li style="margin-bottom:0.3rem;"><strong>${i + 1}. ${escapeHtml(l.title)}</strong> [${escapeHtml(l.level)}] - ${escapeHtml(l.reason)}</li>
-  `).join('');
+  const lectHtml = _wpSapuriRecs(d).map(r => sapuriRecText(r)).filter(Boolean)
+    .map(t => `<li style="margin-bottom:0.3rem;">${escapeHtml(t)}</li>`).join('');
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(d.subject)} 弱点プリント</title>
     <style>body{font-family:'Hiragino Sans','Yu Gothic',sans-serif; padding:2rem; max-width:800px; margin:0 auto; line-height:1.6;} h1{border-bottom:2px solid #333;} h3{margin-top:1rem;} @media print { body{padding:1rem;} }</style>
     </head><body>
@@ -4077,7 +4125,7 @@ function printWorksheet(d) {
     ${d.weak_point_analysis ? `<div style="background:#fef3c7; padding:0.7rem; border-left:4px solid #f59e0b; margin:1rem 0;"><strong>🎯 弱点分析:</strong> ${escapeHtml(d.weak_point_analysis)}</div>` : ''}
     <hr>
     ${probsHtml}
-    ${lectHtml ? `<h2>📺 補強推薦: スタサプ講義</h2><ul>${lectHtml}</ul>` : ''}
+    ${lectHtml ? `<h2>📺 この弱点のスタサプ</h2><ul>${lectHtml}</ul>` : ''}
     </body></html>`;
   const w = window.open('', '_blank');
   if (!w) { alert('ポップアップがブロックされました'); return; }
