@@ -241,6 +241,18 @@ eq('ceo: [3,4,15] は続く所まで', recText(B, false), CN + ' 第3講「テ�
 eq('ceo: to_seq 14', recText(C, true), '📺 スタサプ：' + CN + ' 第12講「テスト講義12」（第14講まで）');
 eq('ceo: to_seq null', recText(D, false), CN + ' 第12講「テスト講義12」');
 eq('ceo: 画面は 2 段 (生徒画面と同じ)', /line-clamp:1;[^>]*>📺 スタサプ：テスト講座X<\/div><div[^>]*line-clamp:2;[^>]*>第12講/.test(recLineHtml(C, true)), true);
+// ceo.html ③ 生徒の見え方・④ カバー状況 (2026-10-10 取込後の点検: 科目の「・」・出さない理由・レベルの根拠・例 3 つ)
+var PV = previewHtml({ student_id: 1, band: '高3', eligible: true, top3: [], weekly_lines: [],
+  class_items: [Object.assign({ subject: 'english', topic: 'テスト単元' }, C), Object.assign({ topic: 'テスト単元2' }, D)],
+  weaknesses: [{ subject: 'english', topic: 'テスト読解', matched_by: 'none', recommendation: null, shown: null, why: 'english_non_grammar', dev_basis: null },
+               { subject: 'english', topic: 'テスト単元', matched_by: 'tag', recommendation: C, shown: C, why: null, dev_basis: '英語の模試 57' }] });
+eq('ceo: 見え方のカードの見出しは「英語・単元」(class.html と同じつなぎ方)', PV.indexOf('>英語・テスト単元<') >= 0, true);
+eq('ceo: 科目が無ければ頭に「・」を付けない', PV.indexOf('>・テスト単元2<') < 0 && PV.indexOf('>テスト単元2<') >= 0, true);
+eq('ceo: 出さない理由の文言', PV.indexOf(esc(SP_WHY_JA.english_non_grammar)) >= 0, true);
+eq('ceo: 講座のレベルの根拠', PV.indexOf('レベルの根拠: 英語の模試 57') >= 0, true);
+var CV = coverageHtml({ students: 1, weaknesses: 3, matched_by: { none: 3 }, unmatched_top: [{ count: 3, subject: 'english', subject_key: null,
+  tag: null, matched_by: 'none', why: 'english_non_grammar', example_topics: ['テスト読解A', 'テスト読解B', 'テスト読解C'] }] });
+eq('ceo: カバー状況に理由と例 (3 つまで)', CV.indexOf(esc(SP_WHY_JA.english_non_grammar)) >= 0 && CV.indexOf('<div>テスト読解C</div>') >= 0, true);
 var __res = out.join('\n');
 if (typeof process !== 'undefined' && typeof console !== 'undefined') { console.log(__res); }
 __res;
@@ -264,6 +276,9 @@ def check_front_rec_runtime():
         _cut(open(MYPAGE_JS, encoding="utf-8").read(), "function _sapuriRunEnd(ls) {", "window.sapuriRecParts = sapuriRecParts;", "mypage.js"),
         _cut(open(CLASS_HTML, encoding="utf-8").read(), "    function spRunEnd(ls) {", "    async function loadSapuriCard() {", "class.html"),
         _cut(open(CEO_HTML, encoding="utf-8").read(), "    function recRunEnd(ls) {", "    function previewHtml(d) {", "ceo.html"),
+        _cut(open(CEO_HTML, encoding="utf-8").read(), "    var REASON_JA = {", "    function el(id) {", "ceo.html (文言の表)"),
+        _cut(open(CEO_HTML, encoding="utf-8").read(), "    function previewHtml(d) {", "    async function sapuriPreviewShow() {", "ceo.html (見え方)"),
+        _cut(open(CEO_HTML, encoding="utf-8").read(), "    function coverageHtml(d) {", "    async function sapuriCoverageShow() {", "ceo.html (カバー状況)"),
     ]
     if any(x is None for x in segs):
         return
@@ -273,7 +288,8 @@ def check_front_rec_runtime():
         return
     stubs = ("function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')"
              ".replace(/>/g, '&gt;').replace(/\"/g, '&quot;'); }\nvar esc = escapeHtml;\n"
-             "var SP_SUBJ_JA = { english: '英語' };\n")
+             "var SP_SUBJ_JA = { english: '英語' };\n"
+             "var _spStatus = null;\nfunction num(v) { var n = Number(v); return isFinite(n) ? n : 0; }\n")
     with tempfile.TemporaryDirectory() as td:
         path = os.path.join(td, "rec_check.js")
         with open(path, "w", encoding="utf-8") as f:
@@ -292,7 +308,8 @@ def check_front_rec_runtime():
         if l.startswith("NG"):
             bad(l[4:])
     if len(problems) == n0:
-        good(f"{len(lines)} 件 OK ({eng[0]}): 範囲は講番号が続くときだけ・画面は講座名と第N講を分ける (3 画面とも)")
+        good(f"{len(lines)} 件 OK ({eng[0]}): 範囲は講番号が続くときだけ・画面は講座名と第N講を分ける (3 画面とも)・"
+             f"CEO の見え方の見出し・出さない理由・レベルの根拠")
 
 
 def _fn_src(src, tree, name):

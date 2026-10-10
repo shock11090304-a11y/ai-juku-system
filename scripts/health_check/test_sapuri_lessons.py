@@ -40,6 +40,7 @@ import hmac
 import importlib.util
 import json
 import os
+import re
 import sys
 import tempfile
 import time
@@ -465,8 +466,12 @@ def main():
     check("共通テスト… はタグなし", P("english", "共通テスト英語 第3問")["tag"] is None)
     conn = mod.db(); c = conn.cursor()
     check("偏差値: 科目の最新 (数学 61)", mod._sapuri_dev_for(c, sid_ok, "math") == 61.0)
-    check("偏差値: 科目が無ければ全科目の平均", mod._sapuri_dev_for(c, sid_ok, "kobun") == 61.0)
+    check("偏差値: その科目の模試が無ければ既定 60 (他の科目・全科目の平均は使わない)", mod._sapuri_dev_for(c, sid_ok, "kobun") == 60.0)
     check("偏差値: 模試が無ければ 60", mod._sapuri_dev_for(c, sid_two, "math") == 60.0)
+    check("偏差値の根拠: 「数学の模試 61」", mod._sapuri_dev_basis(c, sid_ok, "math") == (61.0, "数学の模試 61"),
+          mod._sapuri_dev_basis(c, sid_ok, "math"))
+    check("偏差値の根拠: 「古文の模試なし → 既定 60」", mod._sapuri_dev_basis(c, sid_ok, "kobun") == (60.0, "古文の模試なし → 既定 60"),
+          mod._sapuri_dev_basis(c, sid_ok, "kobun"))
     conn.close()
 
     print("\n[12] 段階 A レビューの修正 (自由記述・書くときに消さない・下書き・展開済みの計画・講数表の版)")
@@ -984,6 +989,20 @@ def main():
           and j.get("weekly_lines") == ["📺 今週見るスタサプ：高3 ハイレベル英語＜文法編＞ 第5講"], r.text[:400])
     check("preview: 弱点ごとの matched_by", [w["matched_by"] for w in j.get("weaknesses", [])] == ["tag", "tag", "topic", "topic", "course"],
           [w.get("matched_by") for w in j.get("weaknesses", [])])
+    # 2026-10-10 取込後の点検 (塾長「4つとも直して」): A 見え方の class_items は生徒の class.html と同じもの (科目つき)
+    rc = client.get("/api/student/class/sapuri", headers=tok(sid_ok))
+    check("preview: class_items は /api/student/class/sapuri の items と同じ (subject を含む)", rc.status_code == 200
+          and j.get("class_items") == rc.json().get("items") and all(x.get("subject") for x in j.get("class_items") or [None]),
+          (j.get("class_items"), rc.text[:300]))
+    # B 出さない理由のコード (出す弱点は None)
+    check("preview: 出さない理由 (同じ回・主因がうっかり・粗いタグ)", [w.get("why") for w in j.get("weaknesses", [])]
+          == [None, "duplicate", "hidden_reason", None, "tag_too_broad"], [w.get("why") for w in j.get("weaknesses", [])])
+    # C 講座のレベルの根拠
+    check("preview: 講座のレベルの根拠 (英語の模試が無い → 既定 60)", (j.get("weaknesses") or [{}])[0].get("dev_basis")
+          == "英語の模試なし → 既定 60", (j.get("weaknesses") or [{}])[0])
+    check("preview: 推薦の dict に理由・根拠を混ぜない (生徒の応答の形は変えない)",
+          all("why" not in (w.get("recommendation") or {}) and "dev_basis" not in (w.get("recommendation") or {})
+              and "why" not in (w.get("shown") or {}) for w in j.get("weaknesses", [])))
     r = client.get(f"/api/admin/sapuri/preview?student_id={sid_ai}", headers=adm)
     check("preview: 対象外の生徒は何も出ない (理由つき)", r.status_code == 200 and r.json().get("eligible") is False
           and r.json().get("top3") == [] and r.json().get("reason") == "labels", r.text[:200])
@@ -993,6 +1012,10 @@ def main():
           and j["matched_by"].get("topic", 0) >= 2 and any(x.get("tag") == "時制" and x.get("matched_by") == "course"
                                                              for x in j.get("unmatched_top", [])), r.text[:400])
     check("coverage: 題名を返さない", "テスト講義" not in r.text)
+    check("coverage: 出せなかった弱点に理由のコードと例 (3 つまで)", r.status_code == 200
+          and any(x.get("tag") == "時制" and x.get("why") == "tag_too_broad" for x in j.get("unmatched_top", []))
+          and all(isinstance(x.get("example_topics"), list) and 1 <= len(x["example_topics"]) <= 3 for x in j.get("unmatched_top", [])),
+          j.get("unmatched_top"))
 
     # ======================================================================
     # 段階 B レビューの修正 (2026-10-10)
@@ -1135,6 +1158,97 @@ def main():
         mod.SAPURI_COVERS = orig_cov
     r = client.get("/api/student/worksheet/this-week", headers=tok(sid_ok))
     check("戻せばまた出る (保存した行は書き換えていない)", r.status_code == 200 and "テスト講義A5" in r.text, r.text[:200])
+
+    print("\n[24] 取込後の点検の修正 (2026-10-10 塾長「4つとも直して」): 理由のコード・偏差値はその科目だけ・同じ学年帯の代わりの講座")
+    mod._RATE_LIMIT_STORE.clear()
+    mod._SAPURI_ELIGIBLE_CACHE.clear()
+    # 理由のコード (照合)
+    sid_r = make_student(mod, "スタサプ対象 R", "sapuri-r@example.org", labels=LABELS3)
+    dets = []
+    rr = R(sid_r, [{"subject_code": "english", "topic": "事実把握"},
+                   {"subject_code": "chemistry", "topic": "化学"},
+                   {"subject_code": "chemistry", "topic": "化学基礎"},
+                   {"subject_code": "eiken", "topic": "関係詞"},
+                   {"subject_code": "social", "topic": "近代(明治維新)"},
+                   {"subject_code": "earth", "topic": "地震"},
+                   {"subject_code": "japanese", "topic": "要旨把握"},
+                   {"subject_code": "english", "topic": "時制(現在完了)"}], details=dets)
+    whys = [d.get("reason") for d in dets]
+    check("理由: 読解・設問タイプ / 科目名だけ / 講座だけ / 対象外 / 社会が決まらない / 対象外 / 国語が決まらない / 粗いタグ",
+          whys == ["english_non_grammar", "subject_only", "course_only", "out_of_scope", "undetermined_social",
+                   "out_of_scope", "undetermined_japanese", "tag_too_broad"], whys)
+    check("理由のある項目の推薦は None か講座だけ (返り値の形は従来どおり)", rr[0] is None and rr[1] is None
+          and rr[2] and rr[2]["matched_by"] == "course" and "reason" not in rr[2] and "why" not in rr[2], rr[:3])
+    orig_keys = mod.SAPURI_SUBJECT_KEYS
+    mod.SAPURI_SUBJECT_KEYS = tuple(k for k in orig_keys if k != "kobun")
+    try:
+        dets = []
+        R(sid_r, [{"subject_code": "japanese", "topic": "古文 敬語"}], details=dets)
+        check("理由: 止めている科目 (subject_stopped)", dets and dets[0].get("reason") == "subject_stopped", dets)
+    finally:
+        mod.SAPURI_SUBJECT_KEYS = orig_keys
+    ceo_src = open(os.path.join(REPO, "ceo.html"), encoding="utf-8").read()
+    js_keys = set(re.findall(r"^\s{6}([a-z_]+): '", ceo_src[ceo_src.index("var SP_WHY_JA = {"):ceo_src.index("function whyText(code)")], re.M))
+    check("理由のコードは全部 ceo.html の SP_WHY_JA に文言がある (余りも無い)", js_keys == set(mod._SAPURI_WHY_CODES),
+          (sorted(set(mod._SAPURI_WHY_CODES) - js_keys), sorted(js_keys - set(mod._SAPURI_WHY_CODES))))
+
+    # C 偏差値はその科目の模試だけ (化学 50 だけの生徒の英文法はハイ・英語 55 ならスタンダード)
+    sid_chem = make_student(mod, "スタサプ対象 S", "sapuri-s@example.org", labels=LABELS3)
+    sid_eng55 = make_student(mod, "スタサプ対象 T", "sapuri-t@example.org", labels=LABELS3)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("INSERT INTO exam_results (student_id, exam_name, exam_date, subject, deviation) VALUES (?,?,?,?,?)",
+              (sid_chem, "テスト模試", sd, "化学", 50.0))
+    c.execute("INSERT INTO exam_results (student_id, exam_name, exam_date, subject, deviation) VALUES (?,?,?,?,?)",
+              (sid_eng55, "テスト模試", sd, "英語", 55.0))
+    c.execute("INSERT INTO exam_results (student_id, exam_name, exam_date, subject, deviation) VALUES (?,?,?,?,?)",
+              (sid_eng55, "テスト模試", sd, "化学", 72.0))
+    conn.commit(); conn.close()
+    dets = []
+    rr = R(sid_chem, [{"subject_code": "english", "topic": "関係詞"}], details=dets)
+    check("化学 50 だけの生徒の英文法 → ハイ (KZA02000・既定 60)", rr and rr[0] and rr[0]["course_code"] == "KZA02000"
+          and dets[0].get("dev") == 60.0 and dets[0].get("dev_basis") == "英語の模試なし → 既定 60", (rr, dets))
+    dets = []
+    # (KZA03000 は講データが無いので回は講データのある KZA02000 から引く。講座の選択は講の無い単元の Tier 3 で見る)
+    rr = R(sid_eng55, [{"subject_code": "english", "topic": "仮定法(should)"}], details=dets)
+    check("英語 55 の生徒の英文法 → スタンダード (KZA03000・化学 72 は使わない)", rr and rr[0] and rr[0]["course_code"] == "KZA03000"
+          and dets[0].get("dev") == 55.0 and dets[0].get("dev_basis") == "英語の模試 55", (rr, dets))
+    rr = R(sid_chem, [{"subject_code": "english", "topic": "仮定法(should)"}])
+    check("同じ単元で化学 50 だけの生徒はハイ (KZA02000)", rr and rr[0] and rr[0]["course_code"] == "KZA02000", rr)
+
+    # D 選んだ講座に講データがあるのにそのタグの講が無い → 同じ学年帯でそのタグの講がある講座 (偏差値の目安が近い順)
+    EGT = lambda tag: [{"subject_key": EG, "tag": tag}]
+    for code, tagmap in (("KZ375000", {n: EGT("関係詞") for n in (5, 6)}),                 # 高1・2 ハイ: 語法の講なし
+                         ("EKZB320000", {n: EGT("比較") for n in (7, 8)}),                 # 高1・2 スタンダード: 語法の講なし
+                         ("KZA35000", {1: EGT("語法"), 2: EGT("語法")}),                    # 高1・2 トップ: 語法 2 講
+                         ("EKZB310000", {9: EGT("語法")})):                                 # ベーシック: 語法 1 講
+        r = client.post(IMP, json={"course_code": code, "source": "test", "lessons": lessons_for(code, "テスト講義" + code[-4:], tagmap),
+                                   "topic_lessons": []}, headers=adm)
+        check(f"本番の取込 ({code})", r.status_code == 200 and r.json().get("ok") is True, r.text[:200])
+    sid_k60 = make_student(mod, "スタサプ対象 U", "sapuri-u@example.org", labels=LABELS3, grade="高校2年")
+    sid_k52 = make_student(mod, "スタサプ対象 V", "sapuri-v@example.org", labels=LABELS3, grade="高校2年")
+    conn = mod.db(); c = conn.cursor()
+    c.execute("INSERT INTO exam_results (student_id, exam_name, exam_date, subject, deviation) VALUES (?,?,?,?,?)",
+              (sid_k52, "テスト模試", sd, "英語", 52.0))
+    conn.commit(); conn.close()
+    check("前提: 高1・2・偏差値 60 の英文法は KZ375000 / 52 は EKZB320000",
+          (C3(EG, ["語法"], "高1・2", 60) or {}).get("code") == "KZ375000" and (C3(EG, ["語法"], "高1・2", 52) or {}).get("code") == "EKZB320000")
+    rr = R(sid_k60, [{"subject_code": "english", "topic": "語法・イディオム"}])
+    check("偏差値 60: 語法の講が無い KZ375000 → 同じ学年帯の KZA35000 (中央 71.5 が 46.5 より近い) の Tier 2",
+          rr and rr[0] and rr[0]["course_code"] == "KZA35000" and rr[0]["matched_by"] == "tag"
+          and [x["seq"] for x in rr[0]["lessons"]] == [1, 2], rr)
+    rr = R(sid_k52, [{"subject_code": "english", "topic": "語法・イディオム"}])
+    check("偏差値 52: 語法の講が無い EKZB320000 → 中央が近いベーシック (EKZB310000) の Tier 2",
+          rr and rr[0] and rr[0]["course_code"] == "EKZB310000" and rr[0]["matched_by"] == "tag"
+          and [x["seq"] for x in rr[0]["lessons"]] == [9], rr)
+    dets = []
+    rr = R(sid_k60, [{"subject_code": "english", "topic": "仮定法(I wish)"}], details=dets)
+    check("学年帯は越えない: 高1・2 のどの講座にも仮定法の講が無ければ講座だけ (高3 の講座に移らない)",
+          rr and rr[0] and rr[0]["course_code"] == "KZ375000" and rr[0]["matched_by"] == "course"
+          and dets[0].get("reason") == "no_lesson_for_tag", (rr, dets))
+    dets = []
+    rr = R(sid_k60, [{"subject_code": "english", "topic": "関係詞(whose)"}], details=dets)
+    check("選んだ講座にタグの講があれば従来どおり (代わりを探さない)", rr and rr[0] and rr[0]["course_code"] == "KZ375000"
+          and [x["seq"] for x in rr[0]["lessons"]] == [5, 6] and dets[0].get("reason") is None, (rr, dets))
 
     print()
     if FAILURES:

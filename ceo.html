@@ -13429,6 +13429,26 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     var DOM_REASON_JA = { understanding: '理解不足', misread: '読み違い', time: '時間不足', careless: 'うっかり', other: 'その他', guess: '勘' };
     var MATCH_JA = { topic: '単元が一致', tag: 'タグが一致', course: '講座だけ', none: 'なし' };
     var SUBJ_JA = { math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', english: '英語', japanese: '国語', social: '社会' };
+    // 回（第N講）を出さない理由 (サーバの _SAPURI_WHY_CODES と同じ鍵。test_sapuri_lessons.py が一致を検査する)
+    var SP_WHY_JA = {
+      english_non_grammar: '読解・設問タイプの弱点: スタサプに対応する回が無い（授業と ⏱ドリルで扱う）',
+      exam_format: '共通テストの大問など形式の弱点: 単元が決まらない',
+      undetermined_japanese: '古文・漢文・現代文のどれか（または単元）が決まらない',
+      undetermined_social: '日本史/世界史などが決まらない',
+      out_of_scope: '中学・英検など対象外の科目',
+      subject_stopped: '止めている科目',
+      subject_only: '単元の無い弱点（科目名だけ）: 講座が1つに決まらない',
+      no_course: 'この単元を扱う講座が無い',
+      course_only: '講座だけ（カリキュラムと AI 弱点プリントでだけ使う）',
+      no_lesson_data: 'この科目の講データ（第N講の一覧）がまだ無い',
+      no_lesson_for_tag: 'この講座にこの単元の回が無い',
+      tag_too_broad: 'この単元の回が5講以上あり1つに絞れない（講座だけ）',
+      error: '照合できなかった',
+      hidden_reason: '主な原因がうっかり・時間不足・読み違いなので出さない',
+      duplicate: '上と同じ回なので出さない',
+      not_eligible: 'この生徒は対象外'
+    };
+    function whyText(code) { return code ? (SP_WHY_JA[code] || code) : ''; }
     function el(id) { return document.getElementById(id); }
     function esc(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -13839,7 +13859,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var top3 = (Array.isArray(d.top3) ? d.top3 : []).map(function (r) { return recLineHtml(r, true); }).join('');
       h += box('マイページ「弱点 TOP3」のカードに出る行', top3 || none);
       var cls = (Array.isArray(d.class_items) ? d.class_items : []).map(function (r) {
-        var head = (SUBJ_JA[String(r.subject || '').toLowerCase()] || '') + (r.topic ? '・' + r.topic : '');
+        // class.html の sapuriCardHtml と同じつなぎ方 (科目が無ければ「・」を付けない)
+        var subj = SUBJ_JA[String(r.subject || '').toLowerCase()] || '';
+        var topic = String(r.topic == null ? '' : r.topic).trim();
+        var head = subj + (subj && topic ? '・' : '') + topic;
         return '<div style="margin-top:0.3rem;">' + (head ? '<div style="font-size:0.72rem; color:#fda4af; font-weight:800;">' + esc(head) + '</div>' : '') + recLineHtml(r, false, '#fecdd3') + '</div>';
       }).join('');
       h += box('通塾生アプリ「📺 今週見るスタサプ」', cls || none);
@@ -13849,7 +13872,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       if (ws.length) {
         h += '<div style="margin-top:0.6rem; overflow-x:auto;"><table style="border-collapse:collapse; font-size:0.78rem; min-width:640px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
           + '<th style="padding:0.2rem 0.45rem;">#</th><th style="padding:0.2rem 0.45rem;">弱点</th><th style="padding:0.2rem 0.45rem;">主な原因</th>'
-          + '<th style="padding:0.2rem 0.45rem;">照合</th><th style="padding:0.2rem 0.45rem;">推薦（参考）</th><th style="padding:0.2rem 0.45rem;">生徒に出す</th></tr></thead><tbody>'
+          + '<th style="padding:0.2rem 0.45rem;">照合</th><th style="padding:0.2rem 0.45rem;">推薦（参考）</th><th style="padding:0.2rem 0.45rem;">生徒に出す（出さない理由）</th></tr></thead><tbody>'
           + ws.map(function (w, i) {
             var mb = w.matched_by || 'none';
             var mcol = (mb === 'topic' || mb === 'tag') ? '#86efac' : (mb === 'course' ? '#fbbf24' : '#71717a');
@@ -13857,10 +13880,12 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
               + '<td style="padding:0.2rem 0.45rem;">' + esc((SUBJ_JA[String(w.subject || '').toLowerCase()] || w.subject || '') + (w.topic ? '・' + w.topic : '')) + '</td>'
               + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(DOM_REASON_JA[w.dominant_reason] || w.dominant_reason || '—') + '</td>'
               + '<td style="padding:0.2rem 0.45rem; color:' + mcol + ';">' + esc(MATCH_JA[mb] || mb) + '</td>'
-              + '<td style="padding:0.2rem 0.45rem; color:#cbd5e1; max-width:24rem;">' + esc(recText(w.recommendation, false) || '—') + '</td>'
-              + '<td style="padding:0.2rem 0.45rem;">' + (w.shown ? '<span style="color:#86efac;">✅</span>' : '<span style="color:#71717a;">—</span>') + '</td></tr>';
+              + '<td style="padding:0.2rem 0.45rem; color:#cbd5e1; max-width:24rem;">' + esc(recText(w.recommendation, false) || '—')
+              + (w.dev_basis ? '<div style="color:#71717a; font-size:0.72rem;">レベルの根拠: ' + esc(w.dev_basis) + '</div>' : '') + '</td>'
+              + '<td style="padding:0.2rem 0.45rem; max-width:18rem;">' + (w.shown ? '<span style="color:#86efac;">✅</span>'
+                : '<span style="color:#71717a;">—</span>' + (w.why ? '<div style="color:#a1a1aa; font-size:0.72rem; line-height:1.45;">' + esc(whyText(w.why)) + '</div>' : '')) + '</td></tr>';
           }).join('') + '</tbody></table>'
-          + '<div style="color:#71717a; font-size:0.72rem; margin-top:0.25rem;">生徒に出すのは「単元が一致」「タグが一致」の弱点だけ（主な原因がうっかり・時間不足・読み違いの弱点と、上と同じ回は出しません）。「講座だけ」はカリキュラムと AI 弱点プリントでだけ使います。</div></div>';
+          + '<div style="color:#71717a; font-size:0.72rem; margin-top:0.25rem;">生徒に出すのは「単元が一致」「タグが一致」の弱点だけ（主な原因がうっかり・時間不足・読み違いの弱点と、上と同じ回は出しません）。「講座だけ」はカリキュラムと AI 弱点プリントでだけ使います。講座のレベルはその科目の模試の偏差値で決めます（その科目の模試が無ければ 60）。</div></div>';
       } else {
         h += '<div style="color:#a1a1aa; font-size:0.8rem; margin-top:0.5rem;">この生徒にはまだ弱点の記録がありません。</div>';
       }
@@ -13894,9 +13919,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var top = Array.isArray(d.unmatched_top) ? d.unmatched_top : [];
       if (top.length) {
         h += '<div style="margin-top:0.5rem; overflow-x:auto;"><div style="font-size:0.78rem; color:#94a3b8; margin-bottom:0.2rem;">回（第N講）まで出せなかった弱点（多い順・上位 20）</div>'
-          + '<table style="border-collapse:collapse; font-size:0.78rem; min-width:560px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
+          + '<table style="border-collapse:collapse; font-size:0.78rem; min-width:720px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
           + '<th style="padding:0.2rem 0.45rem;">件数</th><th style="padding:0.2rem 0.45rem;">科目</th><th style="padding:0.2rem 0.45rem;">科目キー</th>'
-          + '<th style="padding:0.2rem 0.45rem;">タグ</th><th style="padding:0.2rem 0.45rem;">照合</th><th style="padding:0.2rem 0.45rem;">例</th></tr></thead><tbody>'
+          + '<th style="padding:0.2rem 0.45rem;">タグ</th><th style="padding:0.2rem 0.45rem;">照合</th><th style="padding:0.2rem 0.45rem;">出せない理由</th><th style="padding:0.2rem 0.45rem;">例（3つまで）</th></tr></thead><tbody>'
           + top.map(function (x) {
             return '<tr><td style="padding:0.2rem 0.45rem; font-weight:700;">' + esc(num(x.count)) + '</td>'
               + '<td style="padding:0.2rem 0.45rem;">' + esc(SUBJ_JA[String(x.subject || '').toLowerCase()] || x.subject || '—') + '</td>'
@@ -13904,7 +13929,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
               + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(x.tag || '（なし）') + '</td>'
               + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(MATCH_JA[x.matched_by] || x.matched_by || '')
               + (x.no_lessons ? '<div style="color:#fbbf24; font-size:0.72rem;" title="' + esc(x.course_code || '') + '">講座に講データ無し</div>' : '') + '</td>'
-              + '<td style="padding:0.2rem 0.45rem; color:#cbd5e1;">' + esc(x.example_topic || '') + '</td></tr>';
+              + '<td style="padding:0.2rem 0.45rem; color:#e4e4e7; max-width:18rem; line-height:1.45;">' + esc(whyText(x.why) || '—') + '</td>'
+              + '<td style="padding:0.2rem 0.45rem; color:#cbd5e1; max-width:16rem;">' + (Array.isArray(x.example_topics) && x.example_topics.length
+                ? x.example_topics.map(function (t) { return '<div>' + esc(t) + '</div>'; }).join('') : esc(x.example_topic || '')) + '</td></tr>';
           }).join('') + '</tbody></table></div>';
       }
       return h;
@@ -13933,7 +13960,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     window.sapuriPreviewShow = sapuriPreviewShow;
     window.sapuriCoverageShow = sapuriCoverageShow;
     // 検査用 (osascript のハーネスが描画だけを確かめる。画面の動作には使わない)
-    window._sapuriPanelTest = { spParseImportFile: spParseImportFile, previewHtml: previewHtml, coverageHtml: coverageHtml,
+    window._sapuriPanelTest = { spParseImportFile: spParseImportFile, previewHtml: previewHtml, coverageHtml: coverageHtml, SP_WHY_JA: SP_WHY_JA,
       renderStatus: renderStatus, recText: recText, errText: errText, renderImportSummary: renderImportSummary,
       _set: function (files, dry) { _spFiles = files; _spDry = dry; } };
     function bind() {
