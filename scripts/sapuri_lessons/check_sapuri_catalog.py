@@ -250,6 +250,12 @@ eq('ceo: 見え方のカードの見出しは「英語・単元」(class.html �
 eq('ceo: 科目が無ければ頭に「・」を付けない', PV.indexOf('>・テスト単元2<') < 0 && PV.indexOf('>テスト単元2<') >= 0, true);
 eq('ceo: 出さない理由の文言', PV.indexOf(esc(SP_WHY_JA.english_non_grammar)) >= 0, true);
 eq('ceo: 講座のレベルの根拠', PV.indexOf('レベルの根拠: 英語の模試 57') >= 0, true);
+// 同じ学年帯の代わりの講座から出したときは、最初に選んだ講座を書く (レベルの根拠と講座のレベルの食い違いの説明・2026-10-10 レビュー)
+var PV2 = previewHtml({ student_id: 1, band: '高1・2', eligible: true, top3: [], weekly_lines: [], class_items: [],
+  weaknesses: [{ subject: 'english', topic: 'テスト単元', matched_by: 'tag', recommendation: C, shown: C, why: null, dev_basis: '英語の模試 62',
+                 fallback_from: { code: 'X1', name: 'テスト講座<Y>' } }] });
+eq('ceo: 代わりの講座から出したら元の講座を書く', PV2.indexOf('選んだ講座（テスト講座&lt;Y&gt;）にこの単元の回が無いので、同じ学年帯の講座から') >= 0, true);
+eq('ceo: 代わりでなければ書かない', PV.indexOf('同じ学年帯の講座から') < 0, true);
 var CV = coverageHtml({ students: 1, weaknesses: 3, matched_by: { none: 3 }, unmatched_top: [{ count: 3, subject: 'english', subject_key: null,
   tag: null, matched_by: 'none', why: 'english_non_grammar', example_topics: ['テスト読解A', 'テスト読解B', 'テスト読解C'] }] });
 eq('ceo: カバー状況に理由と例 (3 つまで)', CV.indexOf(esc(SP_WHY_JA.english_non_grammar)) >= 0 && CV.indexOf('<div>テスト読解C</div>') >= 0, true);
@@ -309,7 +315,7 @@ def check_front_rec_runtime():
             bad(l[4:])
     if len(problems) == n0:
         good(f"{len(lines)} 件 OK ({eng[0]}): 範囲は講番号が続くときだけ・画面は講座名と第N講を分ける (3 画面とも)・"
-             f"CEO の見え方の見出し・出さない理由・レベルの根拠")
+             f"CEO の見え方の見出し・出さない理由・レベルの根拠・代わりの講座")
 
 
 def _fn_src(src, tree, name):

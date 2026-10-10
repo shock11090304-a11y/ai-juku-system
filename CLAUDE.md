@@ -667,9 +667,15 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   ★**取込後の点検 (2026-10-10 塾長「4つとも直して」)**: 偏差値は**その科目の模試だけ** (`_sapuri_dev_basis`・無ければ既定 60。
   全科目の平均は使わない = 化学の低い偏差値で英文法の講座が下がらない)。選んだ講座に講データがあるのにそのタグの講が 1 つも無いとき
   (文型だけの講から語法を外した 高1・2 の語法など) は、**同じ band (全学年を含む)** でそのタグの講がある講座のうち偏差値の目安の中央が
-  最も近い 1 つで Tier 1/2 (`_sapuri_fallback_courses`・band は越えない)。講まで出せなかった理由は `_sapuri_recommend(..., details=[])`
+  最も近い 1 つで Tier 1/2 (`_sapuri_fallback_courses`・band は越えない)。★ただし生徒の偏差値がその講座の目安 ±5
+  (`_sapuri_dev_window_ok`) に入るときだけ (ベーシックの生徒をトップへ送らない・理由 `fallback_too_far`)。代わりから出したら
+  CEO ③ に「選んだ講座（…）にこの単元の回が無いので、同じ学年帯の講座から」(details の `fallback_from`)。
+  カリキュラム (ai-generate・gap-analyze) のカタログも講座ごとにその科目の偏差値で絞る (`_sapuri_dev_map`・全科目の平均は使わない)。
+  講まで出せなかった理由は `_sapuri_recommend(..., details=[])`
   が返すコード (`_SAPURI_WHY_CODES`・推薦の dict には入れない = 生徒の応答の形は不変)。文言は ceo.html の `SP_WHY_JA`
-  (テストが鍵の一致を検査)。CEO の見え方の class_items は `/api/student/class/sapuri` と同じもの (`_sapuri_class_items`・科目つき)。
+  (テストが鍵の一致を検査)。`subject_only` は topic が科目名だけ (「化学」「数学C」) のときだけ。単元名が語彙・別名に無いもの
+  (「化学平衡」・英語の「不定詞の意味上の主語」) は `unit_not_in_vocab` (語彙・別名に足せば出せる)。
+  CEO の見え方の class_items は `/api/student/class/sapuri` と同じもの (`_sapuri_class_items`・科目つき)。
 - **取込 (塾長の操作)**: CEO「📺 スタサプ講義データ」でフォルダの `sapuri_lessons_<講座コード>.json` を複数選択 → 自動で dry_run して
   要約 (講数・見本 3 講・捨てたタグ・止まる講・講数が合わず拒否された講座) → 「取り込む」で講座ごとに順に本番。
   API は `POST /api/admin/sapuri/lessons/import` (管理者 Bearer だけ・X-Cron-Secret 不可 = Actions から叩く経路を作らない・

@@ -13438,10 +13438,12 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       out_of_scope: '中学・英検など対象外の科目',
       subject_stopped: '止めている科目',
       subject_only: '単元の無い弱点（科目名だけ）: 講座が1つに決まらない',
+      unit_not_in_vocab: '単元名がスタサプの単元の分類（語彙・別名）に無い: 回を決められない（語彙・別名に足せば出せる）',
       no_course: 'この単元を扱う講座が無い',
       course_only: '講座だけ（カリキュラムと AI 弱点プリントでだけ使う）',
-      no_lesson_data: 'この科目の講データ（第N講の一覧）がまだ無い',
+      no_lesson_data: '選んだ講座の講データ（第N講の一覧）が無く、講データのある講座からも引けない',
       no_lesson_for_tag: 'この講座にこの単元の回が無い',
+      fallback_too_far: 'この講座にこの単元の回が無く、同じ学年帯で回がある講座はレベルが離れている（偏差値の目安±5の外）ので出さない',
       tag_too_broad: 'この単元の回が5講以上あり1つに絞れない（講座だけ）',
       error: '照合できなかった',
       hidden_reason: '主な原因がうっかり・時間不足・読み違いなので出さない',
@@ -13881,6 +13883,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
               + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(DOM_REASON_JA[w.dominant_reason] || w.dominant_reason || '—') + '</td>'
               + '<td style="padding:0.2rem 0.45rem; color:' + mcol + ';">' + esc(MATCH_JA[mb] || mb) + '</td>'
               + '<td style="padding:0.2rem 0.45rem; color:#cbd5e1; max-width:24rem;">' + esc(recText(w.recommendation, false) || '—')
+              + (w.fallback_from && w.fallback_from.name ? '<div style="color:#fbbf24; font-size:0.72rem;">選んだ講座（' + esc(w.fallback_from.name) + '）にこの単元の回が無いので、同じ学年帯の講座から</div>' : '')
               + (w.dev_basis ? '<div style="color:#71717a; font-size:0.72rem;">レベルの根拠: ' + esc(w.dev_basis) + '</div>' : '') + '</td>'
               + '<td style="padding:0.2rem 0.45rem; max-width:18rem;">' + (w.shown ? '<span style="color:#86efac;">✅</span>'
                 : '<span style="color:#71717a;">—</span>' + (w.why ? '<div style="color:#a1a1aa; font-size:0.72rem; line-height:1.45;">' + esc(whyText(w.why)) + '</div>' : '')) + '</td></tr>';

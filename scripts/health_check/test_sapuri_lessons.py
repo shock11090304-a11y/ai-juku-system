@@ -1250,6 +1250,77 @@ def main():
     check("選んだ講座にタグの講があれば従来どおり (代わりを探さない)", rr and rr[0] and rr[0]["course_code"] == "KZ375000"
           and [x["seq"] for x in rr[0]["lessons"]] == [5, 6] and dets[0].get("reason") is None, (rr, dets))
 
+    print("\n[25] 取込後の点検のレビュー指摘 (2026-10-10): 語彙に無い単元・講データの無い講座の理由・代わりの講座のレベル上限・カタログの偏差値")
+    mod._RATE_LIMIT_STORE.clear()
+    # (1) 単元名はあるのに語彙・別名に無い → unit_not_in_vocab (科目名だけの subject_only・読解の english_non_grammar と分ける)
+    dets = []
+    R(sid_r, [{"subject_code": "chemistry", "topic": "化学平衡(テスト)"},
+              {"subject_code": "english", "topic": "不定詞の意味上の主語"},
+              {"subject_code": "japanese", "topic": "現代文 読解"},
+              {"subject_code": "math", "topic": "数学C"},
+              {"subject_code": "chemistry", "topic": "化学"},
+              {"subject_code": "english", "topic": "事実把握(否定)"}], details=dets)
+    whys = [d.get("reason") for d in dets]
+    check("理由: 語彙に無い単元 ×3 / 科目名だけ ×2 / 読解の設問タイプ",
+          whys == ["unit_not_in_vocab", "unit_not_in_vocab", "unit_not_in_vocab", "subject_only", "subject_only",
+                   "english_non_grammar"], whys)
+    check("英文法らしい語彙外の単元はカバー状況で英文法の行にまとめる (科目キー eng_grammar)",
+          dets[1].get("subject_key") == "eng_grammar" and dets[5].get("subject_key") is None, dets)
+
+    # (2) 選んだ講座に講データが無く、講データのある代わりの講座にもその単元の回が無い → no_lesson_data (no_lesson_for_tag ではない)
+    dets = []
+    rr = R(sid_eng55, [{"subject_code": "english", "topic": "話法(テスト)"}], details=dets)
+    check("講データの無い KZA03000 が選ばれ、どの講座にも話法の回が無い → no_lesson_data",
+          rr and rr[0] and rr[0]["course_code"] == "KZA03000" and rr[0]["matched_by"] == "course"
+          and rr[0]["course_has_lessons"] is False and dets[0].get("reason") == "no_lesson_data", (rr, dets))
+
+    # (3) 代わりの講座は生徒の偏差値がその講座の目安 ±5 に入るときだけ (レベルが大きく離れた講座へ送らない)
+    sid_k75 = make_student(mod, "スタサプ対象 W", "sapuri-w@example.org", labels=LABELS3, grade="高校2年")
+    sid_k45 = make_student(mod, "スタサプ対象 X", "sapuri-x@example.org", labels=LABELS3, grade="高校2年")
+    conn = mod.db(); c = conn.cursor()
+    c.execute("INSERT INTO exam_results (student_id, exam_name, exam_date, subject, deviation) VALUES (?,?,?,?,?)",
+              (sid_k75, "テスト模試", sd, "英語", 75.0))
+    c.execute("INSERT INTO exam_results (student_id, exam_name, exam_date, subject, deviation) VALUES (?,?,?,?,?)",
+              (sid_k45, "テスト模試", sd, "英語", 45.0))
+    conn.commit(); conn.close()
+    check("前提: 高1・2・偏差値 75 の英文法は KZA35000 / 45 は EKZB310000",
+          (C3(EG, ["比較"], "高1・2", 75) or {}).get("code") == "KZA35000" and (C3(EG, ["関係詞"], "高1・2", 45) or {}).get("code") == "EKZB310000")
+    dets = []
+    rr = R(sid_k75, [{"subject_code": "english", "topic": "比較(テスト)"}], details=dets)
+    check("偏差値 75: 比較の回はスタンダード (EKZB320000・48-62) にしか無い → 送らず講座だけ (fallback_too_far)",
+          rr and rr[0] and rr[0]["course_code"] == "KZA35000" and rr[0]["matched_by"] == "course"
+          and dets[0].get("reason") == "fallback_too_far" and dets[0].get("fallback_from") is None, (rr, dets))
+    dets = []
+    rr = R(sid_k45, [{"subject_code": "english", "topic": "関係詞(テスト)"}], details=dets)
+    check("偏差値 45: 関係詞の回はハイ (KZ375000・58-70) にしか無い → 送らず講座だけ (fallback_too_far)",
+          rr and rr[0] and rr[0]["course_code"] == "EKZB310000" and rr[0]["matched_by"] == "course"
+          and dets[0].get("reason") == "fallback_too_far", (rr, dets))
+    dets = []
+    rr = R(sid_k60, [{"subject_code": "english", "topic": "語法・イディオム"}], details=dets)
+    check("代わりの講座から出したら最初に選んだ講座を details の fallback_from に (推薦の dict には入れない)",
+          rr and rr[0] and rr[0]["course_code"] == "KZA35000" and (dets[0].get("fallback_from") or {}).get("code") == "KZ375000"
+          and "fallback_from" not in rr[0], (rr, dets))
+    conn = mod.db(); c = conn.cursor()
+    c.execute("INSERT INTO student_weakness (student_id, subject, topic, question_count, avg_confidence_score, last_seen_at, "
+              "reason_counts, qa_accuracy, qa_attempts) VALUES (?, ?, ?, 5, 0.5, ?, ?, ?, 3)",
+              (sid_k60, "english", "語法・イディオム", datetime.datetime.now(datetime.timezone.utc).isoformat(),
+               json.dumps({"understanding": 3}), 0.1))
+    conn.commit(); conn.close()
+    mod._SAPURI_ELIGIBLE_CACHE.clear()
+    r = client.get(f"/api/admin/sapuri/preview?student_id={sid_k60}", headers=adm)
+    pw = (r.json().get("weaknesses") or [{}])[0] if r.status_code == 200 else {}
+    check("preview の弱点行に fallback_from (CEO ③ に「選んだ講座…から」と出す)",
+          (pw.get("fallback_from") or {}).get("code") == "KZ375000" and pw.get("shown"), pw)
+
+    # (4) カリキュラムのカタログも講座ごとにその科目の偏差値で絞る (全科目の平均は使わない)
+    snip_chem = mod._build_sapuri_lectures_prompt_snippet(band="高3", student_id=sid_chem)
+    snip_old = mod._build_sapuri_lectures_prompt_snippet(band="高3", target_dev=50.0)
+    check("化学 50 だけの生徒のカタログに英文法のハイ (KZA02000) が残る (英語は既定 60)",
+          "KZA02000:" in snip_chem and "KZA02000:" not in snip_old, (len(snip_chem), len(snip_old)))
+    snip_e55 = mod._build_sapuri_lectures_prompt_snippet(band="高3", student_id=sid_eng55)
+    check("英語 55 の生徒のカタログに英文法のトップ (KZA01000・65-78) は入らず、スタンダード (KZA03000) は入る",
+          "KZA01000:" not in snip_e55 and "KZA03000:" in snip_e55, len(snip_e55))
+
     print()
     if FAILURES:
         print(f"❌ FAIL: {len(FAILURES)} 件")

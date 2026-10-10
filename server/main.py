@@ -56757,16 +56757,61 @@ def _sapuri_dev_for(c, student_id, subject_key) -> float:
     return _sapuri_dev_basis(c, student_id, subject_key)[0]
 
 
+def _sapuri_dev_window_ok(course: dict, dev: float) -> bool:
+    """偏差値が講座の目安 ±5 に入るか (カリキュラムのカタログと、同じ学年帯の代わりの講座 _sapuri_fallback_courses で共用)。"""
+    return float(course["dev_min"]) - 5 <= float(dev) <= float(course["dev_max"]) + 5
+
+
+def _sapuri_course_dev_keys(course: dict) -> list:
+    """講座のレベルを決める科目キー = SAPURI_COVERS の科目キー + カタログの科目名を模試の科目に持つ科目キー
+    (共通テスト対策・英文解釈など照合に入れない講座もその科目の模試で絞る。地学・情報など無ければ空 = 既定 60)。"""
+    keys = list((SAPURI_COVERS.get(course["code"]) or {}).keys())
+    for sk, labels in _SAPURI_DEV_SUBJECTS.items():
+        if course.get("subject") in labels and sk not in keys:
+            keys.append(sk)
+    return keys
+
+
+def _sapuri_dev_map(student_id) -> dict:
+    """科目キー → その科目の模試の偏差値 (_sapuri_dev_basis・無ければ既定 60)。カリキュラムのカタログ用・自分の接続。
+    2026-10-10 レビュー: カタログも全科目の平均ではなくその科目の偏差値で絞る (照合と同じ規則)。読めなければ {}。"""
+    conn = None
+    try:
+        sid = int(student_id)
+        conn = db()
+        c = conn.cursor()
+        out = {}
+        for sk in _SAPURI_DEV_SUBJECTS:
+            out[sk] = _sapuri_dev_basis(c, sid, sk)[0]
+            # _sapuri_dev_basis は失敗を握るだけ → Postgres で次の科目の読み取りが落ちないよう区切る
+            try: conn.rollback()
+            except Exception: pass
+        return out
+    except Exception as e:
+        log.warning(f"[Sapuri] dev map failed: {type(e).__name__}")
+        return {}
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+
+
 def _sapuri_prompt_courses(band: Optional[str] = None, target_dev: Optional[float] = None,
-                           subjects: Optional[list] = None) -> list:
-    """プロンプトに渡してよい講座 (_sapuri_course_allowed)・学年帯 (全学年は両方)・偏差値 ±5・科目で絞る。"""
+                           subjects: Optional[list] = None, dev_by_key: Optional[dict] = None) -> list:
+    """プロンプトに渡してよい講座 (_sapuri_course_allowed)・学年帯 (全学年は両方)・偏差値 ±5・科目で絞る。
+    dev_by_key (科目キー → 偏差値・_sapuri_dev_map) を渡すと、講座ごとにその科目の偏差値で絞る (target_dev は使わない。
+    講座の科目キーのどれかが ±5 に入れば残す・科目キーの無い講座は既定 60)。"""
     out = []
     for c in SAPURI_COURSES:
         if not _sapuri_course_allowed(c["code"]):
             continue
         if band and c["band"] not in (band, "全学年"):
             continue
-        if target_dev is not None and not (c["dev_min"] - 5 <= target_dev <= c["dev_max"] + 5):
+        if dev_by_key is not None:
+            devs = [dev_by_key.get(k, _SAPURI_DEFAULT_DEV) for k in _sapuri_course_dev_keys(c)] or [_SAPURI_DEFAULT_DEV]
+            if not any(_sapuri_dev_window_ok(c, d) for d in devs):
+                continue
+        elif target_dev is not None and not _sapuri_dev_window_ok(c, target_dev):
             continue
         if subjects and c["subject"] not in subjects:
             continue
@@ -56775,7 +56820,7 @@ def _sapuri_prompt_courses(band: Optional[str] = None, target_dev: Optional[floa
 
 
 def _build_sapuri_lectures_prompt_snippet(target_dev: Optional[float] = None, subjects: Optional[list] = None,
-                                          band: Optional[str] = None) -> str:
+                                          band: Optional[str] = None, student_id: Optional[int] = None) -> str:
     """📺 スタサプ講座カタログ (SAPURI_COURSES) を AI prompt 用に整形 (2026-10-10 段階 A で表 sapuri_lectures から切り替え)。
 
     ★対象生徒 (_sapuri_eligible_by_id) のときだけ呼ぶ。渡すのはコード・講座名・講番号の範囲・レベル・偏差値の目安だけ
@@ -56785,8 +56830,11 @@ def _build_sapuri_lectures_prompt_snippet(target_dev: Optional[float] = None, su
       target_dev: 生徒の現状偏差値 (None なら制限なし)
       subjects: 提案対象科目 ['英語', '数学'] 等 (カタログの subject・None なら全科目)
       band: 学年帯 (高3 / 高1・2・None なら制限なし)
+      student_id: 渡すと講座ごとにその科目の模試の偏差値で絞る (_sapuri_dev_map・無ければ既定 60。target_dev は使わない =
+        全科目の平均で英語の講座が下がらない。2026-10-10 レビュー: 照合 (TOP3・class.html) と同じ規則)
     """
-    rows = _sapuri_prompt_courses(band=band, target_dev=target_dev, subjects=subjects)
+    dev_by_key = _sapuri_dev_map(student_id) if student_id is not None else None
+    rows = _sapuri_prompt_courses(band=band, target_dev=target_dev, subjects=subjects, dev_by_key=dev_by_key)
     if not rows:
         return ""
     lines = ["", "## 📺 スタディサプリ講座カタログ (実在講座のみ・コードで指定):"]
@@ -56893,6 +56941,8 @@ def admin_sapuri_settings_set(payload: SapuriSettingsRequest, request: Request, 
 #     Tier 3 (講座だけ)。選んだ講座に講データが無ければ、講データのある同じ科目の講座で Tier 1/2 を引く (_sapuri_lesson_courses)。
 #     講データがあってもそのタグの講が 1 つも無ければ、同じ学年帯 (全学年を含む) でそのタグの講がある講座のうち偏差値の目安の
 #     中央が最も近い 1 つで Tier 1/2 を引く (_sapuri_fallback_courses・学年帯は越えない。2026-10-10 取込後の点検)。
+#     ただし生徒の偏差値がその講座の目安 ±5 (_sapuri_dev_window_ok) に入るときだけ (ベーシックの生徒をトップへ・トップの生徒を
+#     ベーシックへ送らない。2026-10-10 レビュー)。入らなければ Tier 3 で理由 fallback_too_far。
 #     偏差値はその科目の模試だけ (無ければ既定 60・全科目の平均は使わない = _sapuri_dev_basis)。
 #     文化史 (SAPURI_COVERS_TIER1_ONLY) は通史の講座に Tier 1 が無いときの Tier 1 だけに使う。
 #   ★照合は自分の db() を開いて finally で閉じる (呼び出し側の共有カーソルに触らない = Postgres で 1 文の失敗が
@@ -56913,11 +56963,15 @@ _SAPURI_UNSHOWN_REASONS = ("careless", "time", "misread")  # 講義を勧めて�
 # 生徒に回 (第N講) を出さない理由のコード (2026-10-10 取込後の点検・CEO の「生徒の見え方」「カバー状況」だけで使う。
 #   生徒の応答には入れない)。文言は ceo.html の SP_WHY_JA (test_sapuri_lessons.py が両方の一致を検査する)。
 #   照合 (_sapuri_match_one): english_non_grammar / exam_format / undetermined_japanese / undetermined_social /
-#     out_of_scope / subject_stopped / subject_only / no_course / course_only / no_lesson_data / no_lesson_for_tag /
-#     tag_too_broad / error。表示の決まり (_sapuri_display_ex): hidden_reason / duplicate。CEO: not_eligible。
+#     out_of_scope / subject_stopped / subject_only / unit_not_in_vocab / no_course / course_only / no_lesson_data /
+#     no_lesson_for_tag / fallback_too_far / tag_too_broad / error。表示の決まり (_sapuri_display_ex): hidden_reason /
+#     duplicate。CEO: not_eligible。
+#   ★subject_only は topic が科目名 (接頭辞) だけのとき (「化学」「数学C」)。単元名はあるのに語彙・別名に無いもの (「化学平衡」・
+#     英語の「不定詞の意味上の主語」) は unit_not_in_vocab (語彙・別名に足せば出せる。2026-10-10 レビュー)。
 _SAPURI_WHY_CODES = ("english_non_grammar", "exam_format", "undetermined_japanese", "undetermined_social", "out_of_scope",
-                     "subject_stopped", "subject_only", "no_course", "course_only", "no_lesson_data", "no_lesson_for_tag",
-                     "tag_too_broad", "error", "hidden_reason", "duplicate", "not_eligible")
+                     "subject_stopped", "subject_only", "unit_not_in_vocab", "no_course", "course_only", "no_lesson_data",
+                     "no_lesson_for_tag", "fallback_too_far", "tag_too_broad", "error", "hidden_reason", "duplicate",
+                     "not_eligible")
 # AI 弱点プリントの科目ラベル (_STUDY_SUBJECTS) → 弱点の科目コード / 接頭辞 / 「語彙全体で 1 科目にだけあるタグ」で決める科目群
 _SAPURI_WS_SUBJECT_CODE = {"英語": "english", "数学": "math", "国語": "japanese", "物理": "physics", "化学": "chemistry",
                            "生物": "biology"}
@@ -57133,7 +57187,8 @@ def _sapuri_part_key_subject(c, sid: int, topic: str) -> Optional[str]:
 def _sapuri_fallback_courses(c, sk: str, tags: list, band: str, dev: float, tried: set, with_lessons: set) -> list:
     """2026-10-10 取込後の点検 (塾長): 選んだ講座に講データがあるのに、そのタグの講が 1 つも無いとき (純粋な文型の講から
     語法を外した後の 高1・2 ハイ/スタンダードの「語法」など)、**同じ学年帯** (全学年を含む) で同じ科目キーとタグを扱い、
-    そのタグの有効な講がある講座を、偏差値の目安の中央が近い順に返す (最初の 1 つだけ使う)。学年帯は越えない。"""
+    そのタグの有効な講がある講座を、偏差値の目安の中央が近い順に返す (最初の 1 つだけ使う)。学年帯は越えない。
+    ★レベルの上限はここでは掛けない (呼び出し側が _sapuri_dev_window_ok で見て、外れたら理由 fallback_too_far)。"""
     cands = [x for x in _sapuri_candidates(sk, tags, SAPURI_COVERS, prefer_star=False)
              if _sapuri_in_band(x, band) and x["code"] in with_lessons and x["code"] not in tried]
     cands.sort(key=lambda x: (abs((float(x["dev_min"]) + float(x["dev_max"])) / 2.0 - dev),
@@ -57145,10 +57200,30 @@ def _sapuri_fallback_courses(c, sk: str, tags: list, band: str, dev: float, trie
     return out
 
 
+def _sapuri_raw_unit(topic_norm) -> str:
+    """接頭辞を外した topic (_sapuri_parse_topic の topic_norm) の単元名の部分 (「(」「:」の前)。空なら科目名だけの弱点。"""
+    return re.split(r"[(（:：]", str(topic_norm or ""))[0].strip()
+
+
+def _sapuri_english_grammar_like(topic: str) -> bool:
+    """語彙に無い英語の topic が英文法の単元らしいか (単元名の部分が英文法のタグ・別名の語を含む = 「不定詞の意味上の主語」)。
+    CEO の理由の表示だけに使う (照合はしない)。読解の設問タイプ (「事実把握」「内容一致(否定)」) は単元名の部分に含まないので False。"""
+    s = unicodedata.normalize("NFKC", str(topic or "")).strip()
+    if s.startswith("共通テスト"):
+        return False
+    unit = _sapuri_raw_unit(s)
+    words = (list(SAPURI_TAG_VOCAB.get("eng_grammar", [])) + list(SAPURI_TAG_ALIASES.get("eng_grammar", {}).keys())
+             + list(_UNIT_TAG_ALIASES.keys()))
+    parts = [w2 for w in words for w2 in str(w).split("・") if len(w2) >= 2]
+    return bool(unit) and any(w in unit for w in parts)
+
+
 def _sapuri_miss_reason(subj: str, topic: str) -> str:
     """科目キーが決まらなかった弱点の理由 (_sapuri_parse_topic の分岐と同じ順)。"""
     s = unicodedata.normalize("NFKC", str(topic or "")).strip()
     if subj == "english":
+        if _sapuri_english_grammar_like(s):
+            return "unit_not_in_vocab"       # 英文法の単元だが語彙・別名に無い (「不定詞の意味上の主語」)
         return "english_non_grammar"         # 長文・読解・設問タイプ (語彙に無い英語の topic)・共通テスト英語
     if s.startswith("共通テスト"):
         return "exam_format"
@@ -57161,12 +57236,13 @@ def _sapuri_miss_reason(subj: str, topic: str) -> str:
 
 def _sapuri_match_one(conn, c, sid: int, item: dict, band: str, dev_cache: dict, tables: bool,
                       with_lessons: Optional[set] = None) -> tuple:
-    """弱点 1 件 → (推薦 (§4.2 の形) / None, 詳細 {reason, subject_key, dev, dev_basis})。conn / c は _sapuri_recommend の
-    自分の接続とそのカーソル。reason は講 (topic/tag) まで出せなかった理由のコード (出せたら None)。CEO の画面だけが使う
-    (生徒の応答の形は変えない = 推薦の dict には入れない)。"""
+    """弱点 1 件 → (推薦 (§4.2 の形) / None, 詳細 {reason, subject_key, dev, dev_basis, fallback_from})。conn / c は
+    _sapuri_recommend の自分の接続とそのカーソル。reason は講 (topic/tag) まで出せなかった理由のコード (出せたら None)。
+    fallback_from は同じ学年帯の代わりの講座から回を出したときの、最初に選んだ講座 {code, name} (無ければ None)。
+    CEO の画面だけが使う (生徒の応答の形は変えない = 推薦の dict には入れない)。"""
     subj = str(item.get("subject_code") or "").strip().lower()
     topic = str(item.get("topic") or "")
-    det = {"reason": None, "subject_key": None, "dev": None, "dev_basis": None}
+    det = {"reason": None, "subject_key": None, "dev": None, "dev_basis": None, "fallback_from": None}
 
     def miss(code):
         det["reason"] = code
@@ -57188,7 +57264,10 @@ def _sapuri_match_one(conn, c, sid: int, item: dict, band: str, dev_cache: dict,
         p = _sapuri_parse_topic(None, f"{_SAPURI_KEY_PREFIX[sk2]} {unicodedata.normalize('NFKC', topic).strip()}")
     sk = p["subject_key"]
     if not sk:
-        return miss(_sapuri_miss_reason(subj, topic))
+        why0 = _sapuri_miss_reason(subj, topic)
+        if why0 == "unit_not_in_vocab" and subj == "english":
+            det["subject_key"] = "eng_grammar"   # カバー状況で英文法の行にまとめる (照合はしていない)
+        return miss(why0)
     det["subject_key"] = sk
     if sk not in SAPURI_SUBJECT_KEYS:
         return miss("subject_stopped")
@@ -57202,13 +57281,15 @@ def _sapuri_match_one(conn, c, sid: int, item: dict, band: str, dev_cache: dict,
     det["dev"] = dev
     # 講座を選ぶタグ: 弱点のタグ。タグが無い数学は接頭辞 (数学II 等) の系統のタグで選ぶ (Tier 2 には使わない)
     sel_tags = tags or (list(_SAPURI_MATH_PREFIX_TAGS.get(p.get("math_prefix") or "", [])) if sk == "math" else [])
+    # 単元名はあるのに語彙・別名に無い (「化学平衡」「現代文 読解」) → 科目名だけの弱点 (subject_only) と分ける
+    unit_unknown = not tags and bool(_sapuri_raw_unit(p.get("topic_norm")))
     course = _sapuri_choose_course(sk, sel_tags, band, dev)
     if not course:
-        return miss("subject_only" if not sel_tags else "no_course")
+        return miss("unit_not_in_vocab" if unit_unknown else ("subject_only" if not sel_tags else "no_course"))
     label_course = course
     lessons, matched_by = [], "course"
     # 講 (topic/tag) まで出せなかったときの理由。タグの無い弱点は「講座だけ」が本来の理由 (講データの有無によらない)
-    why = "course_only" if not tags else "no_lesson_for_tag"
+    why = ("unit_not_in_vocab" if unit_unknown else "course_only") if not tags else "no_lesson_for_tag"
     if not tables:
         if tags:
             why = "no_lesson_data"
@@ -57245,7 +57326,11 @@ def _sapuri_match_one(conn, c, sid: int, item: dict, band: str, dev_cache: dict,
             if not hit and order:
                 # 選んだ講座 (と講データのある代わり) にそのタグの講が 1 つも無い → 同じ学年帯で、そのタグの講がある
                 # 講座のうち偏差値の目安が最も近い 1 つで Tier 1 → Tier 2 (4 講以下) を引く。学年帯は越えない。
-                fb = _sapuri_fallback_courses(c, sk, tags, band, dev, {x["code"] for x in order}, with_lessons)
+                # ★生徒の偏差値がその講座の目安 ±5 に入るときだけ (レベルが大きく離れた講座へ送らない・2026-10-10 レビュー)
+                fb_all = _sapuri_fallback_courses(c, sk, tags, band, dev, {x["code"] for x in order}, with_lessons)
+                fb = [x for x in fb_all if _sapuri_dev_window_ok(x, dev)]
+                if fb_all and not fb:
+                    why = "fallback_too_far"
                 if fb:
                     alt = fb[0]
                     got = _sapuri_tier1(c, alt["code"], sk, p["topic_norm"])
@@ -57257,8 +57342,13 @@ def _sapuri_match_one(conn, c, sid: int, item: dict, band: str, dev_cache: dict,
                             course, lessons, matched_by = alt, got, "tag"
                         else:
                             why = "tag_too_broad"
+                    if lessons:
+                        det["fallback_from"] = {"code": label_course["code"], "name": label_course["name"]}
     if not lessons:
         course = label_course   # Tier 3 は選んだ講座 (講データが無くても講座名は出せる)
+        if why == "no_lesson_for_tag" and label_course["code"] not in with_lessons:
+            # 選んだ講座 (CEO に出る講座) に講データが無く、代わりの講座にもその単元の回が無い →「この講座に回が無い」とは言えない
+            why = "no_lesson_data"
         det["reason"] = why
     rec = {"subject_key": sk, "topic": topic, "tag": p.get("tag"), "course_code": course["code"],
            "course_name": course["name"], "lessons": lessons, "to_seq": _sapuri_run_end(lessons),
@@ -57273,7 +57363,8 @@ def _sapuri_recommend(student_id, weak_items, *, limit_per_item: int = 1, band: 
     weak_items: [{subject_code, topic}] (student_weakness の行)。返り値は weak_items と同じ並びで、
     要素は {subject_key, topic, tag, course_code, course_name, lessons:[{lesson_key, seq, title}], label,
     matched_by: "topic"|"tag"|"course"} か None (科目が決まらない・対象科目外)。limit_per_item は 1 (1 項目 1 講座)。
-    details にリストを渡すと、同じ並びで {reason, subject_key, dev, dev_basis} を足す (CEO の画面用。生徒の応答には入れない)。
+    details にリストを渡すと、同じ並びで {reason, subject_key, dev, dev_basis, fallback_from} を足す (CEO の画面用。
+    生徒の応答には入れない)。
     ★対象判定 (_sapuri_eligible_by_id) は呼び出し側で行う。band を省くと students.grade から決める。"""
     items = list(weak_items or [])
     if not items:
@@ -57308,7 +57399,7 @@ def _sapuri_recommend(student_id, weak_items, *, limit_per_item: int = 1, band: 
                 log.warning(f"[Sapuri] match failed sid={sid}: {type(e).__name__}: {str(e)[:120]}")
                 try: conn.rollback()
                 except Exception: pass
-                rec, det = None, {"reason": "error", "subject_key": None, "dev": None, "dev_basis": None}
+                rec, det = None, {"reason": "error", "subject_key": None, "dev": None, "dev_basis": None, "fallback_from": None}
             out.append(rec)
             dets.append(det)
         if details is not None:
@@ -57825,7 +57916,9 @@ def admin_sapuri_preview(student_id: int, authorization: Optional[str] = Header(
     """📺 CEO「生徒の見え方」: その生徒の TOP3・週次プリント・class.html に出る 📺 行を生徒画面と同じ形で + 弱点ごとの matched_by。
     対象外の生徒は eligible=false と理由 (生徒画面には何も出ない)。照合結果は参考として weaknesses に出す。
     2026-10-10 取込後の点検 (塾長): class_items は /api/student/class/sapuri と同じもの (科目コードつき)・出さない弱点には
-    理由のコード why (_SAPURI_WHY_CODES・文言は ceo.html)・講座のレベルを決めた偏差値の根拠 dev_basis を足す。"""
+    理由のコード why (_SAPURI_WHY_CODES・文言は ceo.html)・講座のレベルを決めた偏差値の根拠 dev_basis を足す。
+    同じ学年帯の代わりの講座から回を出したときは fallback_from (最初に選んだ講座 {code, name}) も足す (レベルの根拠と講座の
+    レベルが食い違って見えるため・2026-10-10 レビュー)。"""
     _verify_admin_required(authorization)
     try:
         sid = int(student_id)
@@ -57850,7 +57943,8 @@ def admin_sapuri_preview(student_id: int, authorization: Optional[str] = Header(
         weaknesses.append({"subject": r["subject"], "topic": r["topic"], "dominant_reason": r["dominant_reason"],
                            "matched_by": (rec or {}).get("matched_by") or "none", "recommendation": rec,
                            "shown": shown, "why": why, "subject_key": det.get("subject_key"),
-                           "dev": det.get("dev"), "dev_basis": det.get("dev_basis")})
+                           "dev": det.get("dev"), "dev_basis": det.get("dev_basis"),
+                           "fallback_from": det.get("fallback_from")})
     shown_top3 = [w["shown"] for w in weaknesses[:3] if w["shown"]] if eligible else []
     class_items = _sapuri_class_items(rows, [w["shown"] for w in weaknesses]) if eligible else []
     return {"ok": True, "student_id": sid, "eligible": eligible, "reason": el.get("reason"),
@@ -58949,7 +59043,8 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
     #   サーバが _validate_curr_phases で検査する。対象外の生徒には「スタディサプリは使わない・書かない」と指示する。
     _sp = _sapuri_eligible_by_id(student["id"])
     _sp_eligible = bool(_sp["eligible"])
-    sapuri_lectures_summary = (_build_sapuri_lectures_prompt_snippet(target_dev=target_dev, band=_sp["band"])
+    # 講座のレベルは科目ごとにその科目の模試で絞る (全科目の平均 target_dev は使わない・2026-10-10 レビュー)
+    sapuri_lectures_summary = (_build_sapuri_lectures_prompt_snippet(band=_sp["band"], student_id=student["id"])
                                if _sp_eligible else "")
     if _sp_eligible:
         _sp_sys = ("各フェーズは現実的な期間と教材で構成し、必要ならスタディサプリ (スタサプ) の講座を sapuri 欄に加える。"
@@ -59288,9 +59383,8 @@ def curriculum_gap_analyze(curr_id: int, request: Request, authorization: Option
     phase_block = "\n".join(phase_lines) if phase_lines else "  (なし)"
 
     if _sp_eligible:
-        _latest_devs = [d["latest"]["deviation"] for d in by_subj.values() if d["latest"]["deviation"] is not None]
-        _sp_catalog = _build_sapuri_lectures_prompt_snippet(
-            target_dev=(sum(_latest_devs) / len(_latest_devs)) if _latest_devs else None, band=_sp["band"])
+        # 講座のレベルは科目ごとにその科目の模試で絞る (全科目の平均は使わない・2026-10-10 レビュー)
+        _sp_catalog = _build_sapuri_lectures_prompt_snippet(band=_sp["band"], student_id=student["id"])
         _sp_sys = ("スタディサプリ (スタサプ) を足すときは、プロンプト内の『スタディサプリ講座カタログ』のコードと講番号の範囲を "
                    "new_sapuri に書くこと (講座名・講の題名は書かない)。")
         _sp_actions = "教材追加|教材削減|期間延長|期間短縮|スタサプ追加|フェーズ名変更"
