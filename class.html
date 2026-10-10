@@ -1525,8 +1525,15 @@
         box.innerHTML = h;
         box.hidden = !h;
       } catch (e) {
-        box.innerHTML = ''; box.hidden = true;   // 旧サーバ (404)・対象外・失敗は黙って隠す
+        // 押した後の読み直しが失敗 (429・通信) しても、いま出ている一覧は消さない (取り消した直後に一覧が消えると記録が消えたように見える)。
+        // 隠すのは最初の読み込みの失敗と旧サーバ (404)・対象外 (403)・401 だけ (2026-10-10 レビュー指摘)
+        if (spWatchedKeepOnError(e, !!box.innerHTML)) return;
+        box.innerHTML = ''; box.hidden = true;
       }
+    }
+    function spWatchedKeepOnError(e, hasList) {
+      var st = e && e.status;
+      return hasList && st !== 401 && st !== 403 && st !== 404;
     }
     var _spWatchBusy = {};
     function spWatchErrText(e) {

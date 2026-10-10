@@ -13915,11 +13915,17 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       return h;
     }
     // 📺 見た回の一覧 (管理者だけ題名つき・止めた講も)。日付はサーバの日本時間の日付文字列をそのまま出す
+    //   見出しに生徒の名前を出す (生徒を切り替えたのに前の生徒の一覧が残って、別の生徒の回に見えないように・2026-10-10 レビュー指摘)
+    function spStudentLabel(sid) {
+      var st = (_spStatus && Array.isArray(_spStatus.students)) ? _spStatus.students.filter(function (s) { return num(s.id) === num(sid); })[0] : null;
+      return st ? (st.name || ('#' + st.id)) : ('#' + sid);
+    }
     function watchedListHtml(d) {
       var items = (d && Array.isArray(d.items)) ? d.items : [];
-      if (!items.length) return '<div style="color:#a1a1aa; font-size:0.8rem;">この生徒はまだ「見た」を付けていません。</div>';
+      var who = '<span style="font-weight:800; color:#e4e4e7;">' + esc(spStudentLabel(d && d.student_id)) + '</span> の';
+      if (!items.length) return '<div style="color:#a1a1aa; font-size:0.8rem;">' + who + '見た回: まだ「見た」を付けていません。</div>';
       var SRC_JA = { 'class': '通塾生アプリ', top3: 'マイページ TOP3', weekly: '週次プリント', list: '見た回の一覧', plan: '学習計画', student: '生徒', impersonation: '塾長の確認入室' };
-      return '<div style="font-size:0.8rem; color:#cbd5e1; margin-bottom:0.25rem;">見た回 ' + esc(num(d.total)) + ' 講（新しい順）</div>'
+      return '<div style="font-size:0.8rem; color:#cbd5e1; margin-bottom:0.25rem;">' + who + '見た回 ' + esc(num(d.total)) + ' 講（新しい順）</div>'
         + '<div style="overflow-x:auto;"><table style="border-collapse:collapse; font-size:0.78rem; min-width:520px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
         + '<th style="padding:0.2rem 0.45rem;">見た日</th><th style="padding:0.2rem 0.45rem;">講座</th><th style="padding:0.2rem 0.45rem;">回</th><th style="padding:0.2rem 0.45rem;">押した画面</th></tr></thead><tbody>'
         + items.map(function (x) {
@@ -13939,6 +13945,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       out.innerHTML = '<div style="color:#a1a1aa; font-size:0.8rem;">読み込み中…</div>';
       try {
         var r = await spFetch('/api/admin/sapuri/progress?student_id=' + encodeURIComponent(sid));
+        if (sel && sel.value !== sid) return;   // 読み込み中に生徒を切り替えた (前の生徒の一覧を出さない)
         if (!r.ok || !r.data || !r.data.ok) { out.innerHTML = '<div style="color:#fca5a5; font-size:0.8rem;">❌ ' + esc(errText(r.status, r.data)) + '</div>'; return; }
         out.innerHTML = watchedListHtml(r.data);
       } catch (e) {
@@ -13948,6 +13955,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     async function sapuriPreviewShow() {
       var sel = el('spPrevStudent'), out = el('spPrevOut');
       if (!out) return;
+      var wl = el('spPrevWatched'); if (wl) wl.innerHTML = '';   // 前の生徒の「見た回」を残さない
       var sid = sel ? sel.value : '';
       if (!sid) { out.innerHTML = '<div style="color:#fbbf24; font-size:0.8rem;">生徒を選んでください（一覧が空なら「状態を読み直す」）。</div>'; return; }
       out.innerHTML = '<div style="color:#a1a1aa; font-size:0.8rem;">読み込み中…</div>';
@@ -14027,6 +14035,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var ib = el('spImpRunBtn'); if (ib) ib.addEventListener('click', sapuriImportRun);
       var pb = el('spPrevBtn'); if (pb) pb.addEventListener('click', sapuriPreviewShow);
       var wb = el('spPrevWatchedBtn'); if (wb) wb.addEventListener('click', sapuriProgressShow);
+      var ps = el('spPrevStudent'); if (ps) ps.addEventListener('change', function () {
+        var wl = el('spPrevWatched'); if (wl) wl.innerHTML = '';   // 生徒を切り替えたら前の生徒の「見た回」と見え方を消す
+        var po = el('spPrevOut'); if (po) po.innerHTML = '';
+      });
       var cv = el('spCovBtn'); if (cv) cv.addEventListener('click', sapuriCoverageShow);
       var hb = document.querySelector('#ceoHubMenu [data-hub-target="sapuriSection"]'); if (hb) hb.addEventListener('click', sapuriSwitchLoad);
       if (window.AdminAuth && AdminAuth.getToken && AdminAuth.getToken()) setTimeout(sapuriSwitchLoad, 500);

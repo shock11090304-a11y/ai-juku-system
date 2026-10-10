@@ -57570,32 +57570,42 @@ def _sapuri_lesson_parts(key) -> Optional[tuple]:
     return co, seq
 
 
-def _sapuri_range_progress(code: str, a: int, b: int, wmap: dict) -> dict:
-    """講座の第a〜b講のうち見た回の数 (DB なし)。"""
+def _sapuri_range_progress(code: str, a: int, b: int, wmap: dict, active: set) -> Optional[dict]:
+    """講座の第a〜b講の「見た x / y 講」(DB なし)。数えるのは記録できる回だけ = 有効な講 (active) と、すでに見た回 (取込で止めた講の記録も残す)。
+    ★数える回が 1 つも無い (講データの無い講座・範囲の講が全部止まっていて見た回も無い) ときは None = 進み具合を付けない
+    (x が永久に 0 のまま・押すボタンも無いバーを出さない。計画カードは勉強時間のバーのまま)。2026-10-10 レビュー指摘。"""
     a, b = int(a), int(b)
-    return {"watched_count": sum(1 for s_ in range(a, b + 1) if f"{code}#{s_}" in wmap), "total": max(0, b - a + 1)}
+    keys = [f"{code}#{s_}" for s_ in range(a, b + 1)]
+    countable = [k for k in keys if k in active or k in wmap]
+    if not countable:
+        return None
+    return {"watched_count": sum(1 for k in countable if k in wmap), "total": len(countable)}
 
 
 def _sapuri_annotate_phase_progress(student_id, phases) -> None:
     """カリキュラムの各フェーズに sapuri_progress を書く (応答用・保存しない): sapuri と同じ並び・同じ数の
-    [{course_code, watched_count, total}] (範囲の中で見た回の数)。sapuri 自体の形 ({course_code, from_seq, to_seq}) は変えない。
-    sapuri の項目が 1 つも無ければ読まない。複数のカリキュラムの phases をまとめて渡して、見た回の読み取りを 1 回にする。
+    [{course_code, watched_count, total} | None] (範囲の中の記録できる回のうち見た回の数)。数える回が無い範囲 (講データの無い講座) は None
+    = mypage はその範囲のラベルに「（見た x / y 講）」を足さない。全部 None ならキーを付けない。sapuri 自体の形
+    ({course_code, from_seq, to_seq}) は変えない。sapuri の項目が 1 つも無ければ読まない。複数のカリキュラムの phases をまとめて渡して、
+    見た回と有効な講の読み取りを 1 回ずつにする。
     ★保存には戻らない: _sapuri_phase_normalize が sapuri_progress を捨て、_validate_curr_phases は決まった欄だけを作る。"""
     try:
         targets = [ph for ph in (phases or []) if isinstance(ph, dict) and isinstance(ph.get("sapuri"), list) and ph["sapuri"]]
         if not targets:
             return
         wmap = _sapuri_watched_map(student_id)
+        active = _sapuri_active_keys({str(it.get("course_code") or "") for ph in targets for it in ph["sapuri"] if isinstance(it, dict)})
         for ph in targets:
             prog = []
             for it in ph["sapuri"]:
                 try:
                     code = str(it["course_code"])
-                    prog.append(dict(_sapuri_range_progress(code, int(it["from_seq"]), int(it["to_seq"]), wmap), course_code=code))
+                    pr = _sapuri_range_progress(code, int(it["from_seq"]), int(it["to_seq"]), wmap, active)
+                    prog.append(dict(pr, course_code=code) if pr else None)
                 except Exception:
                     prog = None
                     break
-            if prog is not None:
+            if prog is not None and any(prog):
                 ph["sapuri_progress"] = prog
     except Exception as e:
         log.warning(f"[Sapuri] phase progress failed: {type(e).__name__}")
@@ -57620,8 +57630,10 @@ def _sapuri_plan_range(p: dict) -> Optional[tuple]:
 
 def _sapuri_attach_plan_progress(student_id, plans: list) -> None:
     """/api/study-plans/me: スタサプの計画に sapuri_progress {watched, total, next_seq, next_key, course_code} を付ける (応答用)。
-    next_* は範囲の中で次にまだ見ていない回のうち、講データ (有効な講) のあるもの (計画カードの「☐ 第N講を見た」)。無ければ None。
-    material が読めない計画にはキーを付けない。見た回の読み取りは 1 回だけ (計画ごとに読まない)。"""
+    total は範囲の中の記録できる回 (有効な講 + すでに見た回) の数 = watched は必ず total に届きうる。数える回が 1 つも無い計画
+    (講データの無い講座など) にはキーを付けない = mypage は従来の勉強時間のバーのまま (2026-10-10 レビュー指摘)。
+    next_* は範囲の中で次にまだ見ていない有効な講 (計画カードの「☐ 第N講を見た」)。無ければ None。
+    material が読めない計画にはキーを付けない。見た回と有効な講の読み取りは 1 回ずつ (計画ごとに読まない)。"""
     try:
         targets = [(p, rg) for p in (plans or []) if isinstance(p, dict) for rg in [_sapuri_plan_range(p)] if rg]
         if not targets:
@@ -57629,7 +57641,9 @@ def _sapuri_attach_plan_progress(student_id, plans: list) -> None:
         wmap = _sapuri_watched_map(student_id)
         active = _sapuri_active_keys({co["code"] for _, (co, _a, _b) in targets})
         for p, (co, a, b) in targets:
-            pr = _sapuri_range_progress(co["code"], a, b, wmap)
+            pr = _sapuri_range_progress(co["code"], a, b, wmap, active)
+            if not pr:
+                continue
             nxt = next((s_ for s_ in range(a, b + 1)
                         if f"{co['code']}#{s_}" not in wmap and f"{co['code']}#{s_}" in active), None)
             p["sapuri_progress"] = {"watched": pr["watched_count"], "total": pr["total"], "course_code": co["code"],
@@ -57640,16 +57654,21 @@ def _sapuri_attach_plan_progress(student_id, plans: list) -> None:
 
 def _sapuri_active_keys(codes) -> set:
     """講座コードの集合 → 有効な講の lesson_key の集合 (自分の接続・表が無い/失敗は空)。"""
-    codes = sorted({str(x) for x in (codes or []) if x})[:40]
+    # カタログにある講座だけ (任意の文字列で IN 句を膨らませない)。40 ずつに分けて読む (黙って切り捨てると後ろの講座が「講データ無し」扱いになる)
+    codes = sorted({str(x) for x in (codes or []) if x and str(x) in SAPURI_COURSE_BY_CODE})
     if not codes or not _sapuri_tables_ready():
         return set()
     conn = None
     try:
         conn = db()
         c = conn.cursor()
-        c.execute(f"SELECT lesson_key FROM sapuri_lessons WHERE active = 1 AND course_code IN ({','.join('?' * len(codes))})",
-                  tuple(codes))
-        return {r["lesson_key"] for r in (c.fetchall() or [])}
+        out = set()
+        for i in range(0, len(codes), 40):
+            chunk = codes[i:i + 40]
+            c.execute(f"SELECT lesson_key FROM sapuri_lessons WHERE active = 1 AND course_code IN ({','.join('?' * len(chunk))})",
+                      tuple(chunk))
+            out |= {r["lesson_key"] for r in (c.fetchall() or [])}
+        return out
     except Exception as e:
         log.warning(f"[Sapuri] active keys read failed: {type(e).__name__}")
         return set()
@@ -57937,7 +57956,7 @@ def student_class_sapuri_watched(payload: SapuriWatchedRequest, request: Request
     取り消し (watched=false) は行を消す (止めた講 = active=0 の記録も消せる)。AI 呼び出しなし。
     ★prefix /api/student/class/ は AIなし枠でも許可済み (許可集合は変えない)。塾長の確認入室中は source='impersonation' で残す。
     ★既知の割り切り: 対象生徒は任意の有効な講を記録してから一覧を読めば、その講の題名を読める (1 分 60 回)。CLAUDE.md に記録。"""
-    _check_rate_limit_ip(request, bucket="class_sapuri_watched", limit=60, window=60)
+    _check_rate_limit_caller(request, authorization, bucket="class_sapuri_watched", limit=60, window=60)   # 生徒ごと (IP 単位にしない: Vercel rewrite で全生徒が 1 枠を共有する)
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -57995,7 +58014,7 @@ def student_class_sapuri_watched(payload: SapuriWatchedRequest, request: Request
 def student_class_sapuri_progress(request: Request, authorization: Optional[str] = Header(None)):
     """📺 見たスタサプの一覧 (新しい順・最大 200・日付つき)。本人だけ。対象外の生徒には出さない (行は消さない = 読むときに隠す)。
     題名は有効な講 (active=1) だけ。止めた科目・カタログに無い講座の行は出さない。"""
-    _check_rate_limit_ip(request, bucket="class_sapuri_progress", limit=30, window=60)
+    _check_rate_limit_caller(request, authorization, bucket="class_sapuri_progress", limit=60, window=60)   # 生徒ごと (IP 単位にしない: Vercel rewrite で全生徒が 1 枠を共有する)
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")

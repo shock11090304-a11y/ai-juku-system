@@ -1533,9 +1533,8 @@ def main():
     check("前提: カリキュラムを保存", r.status_code == 200, r.text[:200])
     cur = client.get("/api/curricula/me", headers=tok(sid_p)).json()["curricula"][0]
     ph0 = cur["phases"][0]
-    check("/me: 範囲ごとに見た x / y 講 (sapuri と同じ並び・sapuri の形は変えない)",
-          ph0.get("sapuri_progress") == [{"course_code": "KZA02000", "watched_count": 2, "total": 4},
-                                         {"course_code": "KZ016000", "watched_count": 0, "total": 3}]
+    check("/me: 範囲ごとに見た x / y 講 (sapuri と同じ並び・講データの無い講座の範囲は None・sapuri の形は変えない)",
+          ph0.get("sapuri_progress") == [{"course_code": "KZA02000", "watched_count": 2, "total": 4}, None]
           and ph0.get("sapuri") == [{"course_code": "KZA02000", "from_seq": 5, "to_seq": 8}, {"course_code": "KZ016000", "from_seq": 1, "to_seq": 3}], ph0)
     r = client.put(f"/api/curricula/{cur['id']}", json={"phases": cur["phases"]}, headers=tok(sid_p))
     conn = mod.db(); c = conn.cursor()
@@ -1558,9 +1557,8 @@ def main():
     check("/study-plans/me: スタサプの計画に見た x / y 講と次の回", pk.get("sapuri_progress") == {
         "watched": 2, "total": 4, "course_code": "KZA02000", "next_seq": 7, "next_key": "KZA02000#7"}, pk.get("sapuri_progress"))
     pko = bym.get("高3 古文＜文法編＞ 第1〜3講") or {}
-    check("/study-plans/me: 講データの無い講座の範囲は次の回なし (押しても 400 になるボタンを出さない)",
-          pko.get("sapuri_progress") == {"watched": 0, "total": 3, "course_code": "KZ016000", "next_seq": None, "next_key": None},
-          pko.get("sapuri_progress"))
+    check("/study-plans/me: 講データの無い講座の計画には付けない (永久に 0 / 3 のバーにせず勉強時間のバーのまま)",
+          bool(pko) and "sapuri_progress" not in pko and pko.get("target_minutes") is not None, pko)
     check("/study-plans/me: スタサプ以外・material が読めない計画には付けない", "sapuri_progress" not in (bym.get("ポラリス1") or {"sapuri_progress": 1})
           and "sapuri_progress" not in (bym.get("架空の講座 第1〜3講") or {"sapuri_progress": 1}), list(bym))
     watch(sid_p, "KZA02000#7")
@@ -1568,6 +1566,30 @@ def main():
     pk = {x["material"]: x for x in r.json().get("plans") or []}.get("高3 ハイレベル英語＜文法編＞ 第5〜8講") or {}
     check("計画の「☐ 第7講を見た」を押すと 3 / 4・次は第8講", (pk.get("sapuri_progress") or {}).get("watched") == 3
           and (pk.get("sapuri_progress") or {}).get("next_seq") == 8, pk.get("sapuri_progress"))
+    # 取込で止めた講 (active=0): まだ見ていなければ分母から外す (押せない回で止まらない)・見た回は記録が残るので数える
+    def plan_and_phase():
+        mod._RATE_LIMIT_STORE.clear()
+        pk_ = {x["material"]: x for x in client.get("/api/study-plans/me", headers=tok(sid_p)).json().get("plans") or []}
+        ph_ = client.get("/api/curricula/me", headers=tok(sid_p)).json()["curricula"][0]["phases"][0]
+        return (pk_.get("高3 ハイレベル英語＜文法編＞ 第5〜8講") or {}).get("sapuri_progress"), ph_.get("sapuri_progress")
+    conn = mod.db(); c = conn.cursor()
+    c.execute("UPDATE sapuri_lessons SET active = 0 WHERE lesson_key IN ('KZA02000#8', ?)", (K5,))
+    conn.commit(); conn.close()
+    try:
+        sp_, pp_ = plan_and_phase()
+        check("止めた講: まだ見ていない #8 は分母から外す・見た #5 は数える → 3 / 3・次の回なし (✅ 全部見ました)",
+              sp_ == {"watched": 3, "total": 3, "course_code": "KZA02000", "next_seq": None, "next_key": None}, sp_)
+        check("止めた講: カリキュラムの範囲も 3 / 3", (pp_ or [None])[0] == {"course_code": "KZA02000", "watched_count": 3, "total": 3}, pp_)
+        conn = mod.db(); c = conn.cursor()
+        c.execute("UPDATE sapuri_lessons SET active = 0 WHERE lesson_key LIKE 'KZA02000#%'")
+        c.execute("DELETE FROM sapuri_lesson_progress WHERE student_id = ?", (sid_p,))
+        conn.commit(); conn.close()
+        sp_, pp_ = plan_and_phase()
+        check("範囲の講が全部止まっていて見た回も無い → 計画にもカリキュラムにも付けない", sp_ is None and pp_ is None, (sp_, pp_))
+    finally:
+        client.post(IMP, json=kza_body, headers=adm)   # 戻す
+        for k in (K5, K6, "KZA02000#7"):
+            watch(sid_p, k)
 
     # (10) 統合: 早い方の日時を残す・消す側の行は 0
     sid_ma = make_student(mod, "統合 残す側", "sapuri-ma@example.org", labels=LABELS3)
@@ -1640,6 +1662,26 @@ def main():
               r.text[:200])
     finally:
         mod.SAPURI_SUBJECT_KEYS = orig_keys
+
+    # (12b) 回数制限は生徒ごと (Vercel rewrite で全生徒が同じ IP になっても、1 人の連打で他の生徒が 429 にならない)
+    mod._RATE_LIMIT_STORE.clear()
+    codes = [client.get(PG, headers=tok(sid_ok)).status_code for _ in range(61)]
+    check("progress: 1 人 1 分 60 回までは 200・61 回目は 429", codes[:60] == [200] * 60 and codes[60] == 429, codes[-3:])
+    r = client.get(PG, headers=tok(sid_light))
+    check("progress: 同じ IP の別の生徒は 200 (IP 単位の枠を共有しない)", r.status_code == 200, r.status_code)
+    mod._RATE_LIMIT_STORE.clear()
+    body_ = {"lesson_key": K12, "watched": True, "surface": "class"}
+    codes = [client.post(W, json=body_, headers=tok(sid_light)).status_code for _ in range(61)]
+    check("watched: 1 人 1 分 60 回までは 200・61 回目は 429", codes[:60] == [200] * 60 and codes[60] == 429, codes[-3:])
+    r = client.post(W, json=body_, headers=tok(sid_noai))
+    check("watched: 同じ IP の別の生徒は 200", r.status_code == 200, r.status_code)
+    src_ = open(MAIN_PY, encoding="utf-8").read()
+    for fn_ in ("student_class_sapuri_watched", "student_class_sapuri_progress"):
+        body_src = src_[src_.index(f"def {fn_}("):]
+        body_src = body_src[:body_src.index("\n@app.")]
+        check(f"{fn_}: 回数制限は _check_rate_limit_caller (IP 単位の _check_rate_limit_ip を使わない)",
+              "_check_rate_limit_caller(request, authorization" in body_src and "_check_rate_limit_ip(" not in body_src)
+    mod._RATE_LIMIT_STORE.clear()
 
     # (13) 見た回の読み取りは画面ごとに 1 回 (N+1 にしない)・カバー状況は読まない
     calls = []

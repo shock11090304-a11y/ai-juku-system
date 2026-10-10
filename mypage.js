@@ -3416,18 +3416,28 @@ function _sapuriWatchErrText(e) {
   return '記録できませんでした';
 }
 // 見た回の一覧 (学習管理の中の #spSapuriWatched)。対象外・0 件・旧サーバ (404) は隠す
+//   対象外 (eligible:false) と分かったら、このページを開いている間はもう読まない (学習計画を開くたびに全生徒が呼ばない)。
+//   押した後の読み直しが失敗 (429・通信) しても、いま出ている一覧は消さない (取り消した直後に一覧が消えると記録が消えたように見える)。
+//   隠すのは最初の読み込みの失敗と 401/403/404 だけ (2026-10-10 レビュー指摘)。
+let _sapuriWatchedIneligible = false;
 async function loadSapuriWatchedList() {
   const box = document.getElementById('spSapuriWatched');
-  if (!box) return;
+  if (!box || _sapuriWatchedIneligible) return;
   const wasOpen = !!box.querySelector('details[open]');
   try {
     const d = await slApiFetch('/api/student/class/sapuri/progress');
+    if (d && d.eligible === false) _sapuriWatchedIneligible = true;
     const h = sapuriWatchedListHtml(d, wasOpen);
     box.innerHTML = h;
     box.hidden = !h;
   } catch (e) {
+    if (_sapuriWatchedKeepOnError(e, !!box.innerHTML)) return;
     box.innerHTML = ''; box.hidden = true;
   }
+}
+function _sapuriWatchedKeepOnError(e, hasList) {
+  const st = e && e.status;
+  return hasList && st !== 401 && st !== 403 && st !== 404;
 }
 window.loadSapuriWatchedList = loadSapuriWatchedList;
 const _sapuriWatchBusy = {};

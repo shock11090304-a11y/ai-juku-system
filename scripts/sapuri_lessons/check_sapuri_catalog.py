@@ -306,6 +306,35 @@ eq('ceo: 全部見たら ✅ 全部 と理由の文言', PV3.indexOf(WCELL + '<s
 eq('ceo: TOP3 の見終わりの行', PV3.indexOf('この単元のスタサプは見終わり') >= 0, true);
 var CWL = watchedListHtml({ total: 1, items: [{ lesson_key: 'X1#12', course_name: CN, seq: 12, title: 'テスト講義<12>', active: false, source: 'class', watched_date_jst: '2026-10-09' }] });
 eq('ceo: 見た回の一覧 (題名はエスケープ・止めた回の印・押した画面)', CWL.indexOf('テスト講義&lt;12&gt;') >= 0 && CWL.indexOf('取込で止めた回') >= 0 && CWL.indexOf('通塾生アプリ') >= 0, true);
+// 2026-10-10 レビュー指摘: CEO の「見た回」の見出しに生徒の名前 (生徒を切り替えても前の生徒の一覧に見えない)
+_spStatus = { students: [{ id: 7, name: 'S7<x>' }] };
+eq('ceo: 見た回の見出しに生徒の名前 (エスケープ)', watchedListHtml({ student_id: 7, total: 1, items: [{ lesson_key: 'X1#12', course_name: CN, seq: 12, title: null, watched_date_jst: '2026-10-09' }] })
+   .indexOf('S7&lt;x&gt;</span> の見た回 1 講') >= 0, true);
+eq('ceo: 0 件でも名前を出す', watchedListHtml({ student_id: 7, total: 0, items: [] }).indexOf('S7&lt;x&gt;') >= 0, true);
+_spStatus = null;
+// 学習計画カード: 講データの無い講座 (サーバが sapuri_progress を付けない) は勉強時間のバーのまま・付いていれば「見た x / y 講」
+var PL = { id: 1, title: 'テスト計画', subject: '英語', material: CN + ' 第1〜3講', start_date: '2026-10-01', end_date: '2026-10-31',
+           status: 'active', color: '#000000', week_pattern: 'all', progress_minutes_pct: 50, actual_minutes: 150, target_minutes: 300,
+           progress_pages_pct: null, actual_pages: 0, note: '出典: スタサプ' };
+var plNo = renderSpPlanGroup('進行中', [PL], '#fff');
+eq('mypage 計画: sapuri_progress が無ければ勉強時間のバー (見た x / y は出さない)', plNo.indexOf('勉強時間 150/300分') >= 0 && plNo.indexOf('📺 見た') < 0, true);
+var plSp = renderSpPlanGroup('進行中', [Object.assign({}, PL, { sapuri_progress: { watched: 1, total: 3, course_code: 'X1', next_seq: 2, next_key: 'X1#2' } })], '#fff');
+eq('mypage 計画: sapuri_progress があれば見た x / y 講と次の回のボタン', plSp.indexOf('📺 見た 1 / 3 講') >= 0 && plSp.indexOf('☐ 第2講を見た') >= 0
+   && plSp.indexOf('勉強時間 150/300分') < 0, true);
+var plDone = renderSpPlanGroup('進行中', [Object.assign({}, PL, { sapuri_progress: { watched: 3, total: 3, course_code: 'X1', next_seq: null, next_key: null } })], '#fff');
+eq('mypage 計画: 全部見たら ✅', plDone.indexOf('✅ この範囲は全部見ました') >= 0, true);
+eq('mypage 計画: total 0 は勉強時間のバー (旧サーバの値でも動かないバーにしない)',
+   renderSpPlanGroup('進行中', [Object.assign({}, PL, { sapuri_progress: { watched: 0, total: 0 } })], '#fff').indexOf('勉強時間 150/300分') >= 0, true);
+// カリキュラムの範囲: 講データの無い範囲は null (ラベルに x / y を足さない)
+eq('mypage: 講データの無い範囲 (null) は「見た x / y」を足さない', JSON.stringify(_cuSapuriLabels({ sapuri: CP.sapuri, sapuri_lectures: CP.sapuri_lectures,
+   sapuri_progress: [CP.sapuri_progress[0], null] })), JSON.stringify([CN + ' 第1〜10講（見た 2 / 10 講）', CN + '2 第3〜4講']));
+// 見た回の一覧: 押した後の読み直しが失敗 (429・通信) しても一覧は消さない。最初の読み込みと 401/403/404 は隠す
+eq('mypage: 一覧があれば 429 で消さない', _sapuriWatchedKeepOnError({ status: 429 }, true), true);
+eq('mypage: 一覧があれば通信エラーで消さない', _sapuriWatchedKeepOnError(new Error('x'), true), true);
+eq('mypage: 最初の読み込みの失敗は隠す', _sapuriWatchedKeepOnError({ status: 429 }, false), false);
+eq('mypage: 404/403 は隠す', _sapuriWatchedKeepOnError({ status: 404 }, true) || _sapuriWatchedKeepOnError({ status: 403 }, true), false);
+eq('class: 一覧があれば 429 で消さない', spWatchedKeepOnError({ status: 429 }, true), true);
+eq('class: 最初の読み込みの失敗・404 は隠す', spWatchedKeepOnError({ status: 500 }, false) || spWatchedKeepOnError({ status: 404 }, true), false);
 var __res = out.join('\n');
 if (typeof process !== 'undefined' && typeof console !== 'undefined') { console.log(__res); }
 __res;
@@ -328,6 +357,9 @@ def check_front_rec_runtime():
     segs = [
         _cut(open(MYPAGE_JS, encoding="utf-8").read(), "function _sapuriRunEnd(ls) {", "window.sapuriRecParts = sapuriRecParts;", "mypage.js"),
         _cut(open(MYPAGE_JS, encoding="utf-8").read(), "function _cuSapuriLabels(p) {", "// 📺 2026-10-10 スタサプ段階 B: サーバが照合した", "mypage.js (カリキュラムの範囲)"),
+        _cut(open(MYPAGE_JS, encoding="utf-8").read(), "function _formatWeekPattern(pattern) {", "async function editStudyPlan(id) {", "mypage.js (学習計画カード)"),
+        _cut(open(MYPAGE_JS, encoding="utf-8").read(), "function _sapuriWatchedKeepOnError(e, hasList) {", "window.loadSapuriWatchedList = ", "mypage.js (見た回の一覧の読み直し)"),
+        _cut(open(CLASS_HTML, encoding="utf-8").read(), "    function spWatchedKeepOnError(e, hasList) {", "    var _spWatchBusy = {};", "class.html (見た回の一覧の読み直し)"),
         _cut(open(CLASS_HTML, encoding="utf-8").read(), "    function spRunEnd(ls) {", "    async function loadSapuriCard() {", "class.html"),
         _cut(open(CEO_HTML, encoding="utf-8").read(), "    function recRunEnd(ls) {", "    function previewHtml(d) {", "ceo.html"),
         _cut(open(CEO_HTML, encoding="utf-8").read(), "    var REASON_JA = {", "    function el(id) {", "ceo.html (文言の表)"),
@@ -343,7 +375,8 @@ def check_front_rec_runtime():
     stubs = ("function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')"
              ".replace(/>/g, '&gt;').replace(/\"/g, '&quot;'); }\nvar esc = escapeHtml;\n"
              "var SP_SUBJ_JA = { english: '英語' };\n"
-             "var _spStatus = null;\nfunction num(v) { var n = Number(v); return isFinite(n) ? n : 0; }\n")
+             "var _spStatus = null;\nfunction num(v) { var n = Number(v); return isFinite(n) ? n : 0; }\n"
+             "function _slJstDate(o) { return '2026-10-16'; }\n")
     with tempfile.TemporaryDirectory() as td:
         path = os.path.join(td, "rec_check.js")
         with open(path, "w", encoding="utf-8") as f:
