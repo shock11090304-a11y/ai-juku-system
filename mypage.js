@@ -1764,6 +1764,7 @@ function initStudyPlan() {
     // AI 機能 (A+B+C)
     bindStudyPlanAiButtons();
     loadMyStudyPlans();
+    loadSapuriWatchedList();   // 📺 見たスタサプの一覧 (対象外・0 件なら隠れたまま)
     // 📚 マイ参考書 (塾長指示 2026-05-14): 学習計画タブ内 + カリキュラム生成画面 両方 init
     initMyMaterials('mm');
     initMyMaterials('cum');
@@ -2462,6 +2463,25 @@ function renderSpPlanGroup(label, plans, accentColor) {
     const isToday = p.status === 'active' && _isTodayLearningDay(wp);
     const cardBg = isToday ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)';
     const cardBorder = isToday ? '4px solid #22c55e' : `4px solid ${escapeHtml(p.color)}`;
+    // 📺 スタサプの計画 (2026-10-10): 勉強時間の % の代わりに「見た x / y 講」とバー + 次にまだ見ていない回の「☐ 第N講を見た」
+    const sp = p.sapuri_progress;
+    const spW = sp ? Number(sp.watched) : NaN, spT = sp ? Number(sp.total) : NaN;
+    const spSapuri = Number.isFinite(spW) && Number.isFinite(spT) && spT > 0;
+    const spPct = spSapuri ? Math.min(100, Math.round(spW / spT * 100)) : 0;
+    const spNext = (spSapuri && sp.next_key && Number.isFinite(Number(sp.next_seq)) && p.status === 'active')
+      ? _sapuriWatchBtnHtml({ lesson_key: sp.next_key, watched: false }, 'plan', `☐ 第${Number(sp.next_seq)}講を見た`) : '';
+    const spSapuriHtml = spSapuri ? `
+          <div style="margin-top:0.4rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:#a1a1aa; margin-bottom:0.2rem;">
+              <span>📺 見た ${spW} / ${spT} 講</span>
+              <span style="color:${spPct >= dayPct ? '#86efac' : '#fca5a5'};">${spPct}% (経過 ${dayPct}%)</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.05); border-radius:4px; height:6px; overflow:hidden; position:relative;">
+              <div style="background:linear-gradient(90deg,#fb7185,#f59e0b); height:100%; width:${spPct}%;"></div>
+              <div style="position:absolute; top:0; left:${Math.min(100, dayPct)}%; width:1px; height:100%; background:#fbbf24;"></div>
+            </div>
+            ${spNext ? `<div>${spNext}</div>` : (spW >= spT ? '<div style="font-size:0.75rem; color:#86efac; margin-top:0.3rem;">✅ この範囲は全部見ました</div>' : '')}
+          </div>` : '';
     return `
       <div style="background:${cardBg}; border-left:${cardBorder}; border-radius:8px; padding:0.85rem; margin-bottom:0.6rem;">
         <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.4rem;">
@@ -2485,7 +2505,7 @@ function renderSpPlanGroup(label, plans, accentColor) {
             <button data-id="${p.id}" class="sp-delete-btn" aria-label="削除" title="削除" style="background:none; border:0; color:#71717a; cursor:pointer; font-size:0.9rem;">🗑</button>
           </div>
         </div>
-        ${minPct !== null && minPct !== undefined ? `
+        ${spSapuri ? spSapuriHtml : minPct !== null && minPct !== undefined ? `
           <div style="margin-top:0.4rem;">
             <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:#a1a1aa; margin-bottom:0.2rem;">
               <span>勉強時間 ${p.actual_minutes}/${p.target_minutes}分</span>
@@ -3230,9 +3250,18 @@ async function generateCurriculumWithAi() {
 
 // 📺 2026-10-10 スタサプ段階 A: 表示してよいのはサーバがカタログで検査した sapuri から作った「講座名 第a〜b講」だけ。
 //   sapuri (正典) の無い旧形式の文字列 (架空の講座名・AI が書いた名前・古い下書き) は出さない。対象外の生徒はサーバが空にする。
+//   📺 見た回 (2026-10-10): サーバが範囲ごとの「見た x / y 講」(sapuri_progress・sapuri と同じ並び) を返したら各ラベルに足す
+//   (読むときだけの値・保存しない)。数が合わない・値が数でないときは足さない。
 function _cuSapuriLabels(p) {
   if (!p || !Array.isArray(p.sapuri) || !p.sapuri.length || !Array.isArray(p.sapuri_lectures)) return [];
-  return p.sapuri_lectures.filter(m => typeof m === 'string' && m);
+  const prog = (Array.isArray(p.sapuri_progress) && p.sapuri_progress.length === p.sapuri.length
+    && p.sapuri.length === p.sapuri_lectures.length) ? p.sapuri_progress : null;
+  return p.sapuri_lectures.map((m, i) => {
+    if (typeof m !== 'string' || !m) return '';
+    const g = prog ? prog[i] : null;
+    const w = g ? Number(g.watched_count) : NaN, t = g ? Number(g.total) : NaN;
+    return (Number.isFinite(w) && Number.isFinite(t) && t > 0) ? `${m}（見た ${w} / ${t} 講）` : m;
+  }).filter(Boolean);
 }
 
 // 📺 2026-10-10 スタサプ段階 B: サーバが照合した「その弱点の回」(rec) の表示。rec の形:
@@ -3284,6 +3313,53 @@ function sapuriRecText(rec, prefix, requireLesson) {
 //   全文は title 属性。印刷・メールは sapuriRecText の 1 行のまま。
 //   ★white-space:nowrap は使わない: TOP3・週次の親は display:grid (暗黙の auto 列) なので、折り返さない長い行が
 //   列の最小幅を押し広げて画面の横にはみ出す。line-clamp なら日本語はどこでも折れる = 最小幅が小さいまま。
+// 📺 見た回 (2026-10-10): 日付はサーバの日本時間の日付文字列 "2026-10-10" を「10/10」に切るだけ (new Date しない = 9 時間ずれ対策)
+function _sapuriMD(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s == null ? '' : s));
+  return m ? `${Number(m[2])}/${Number(m[3])}` : '';
+}
+function _sapuriWatchLabel(on, date) {
+  const md = _sapuriMD(date);
+  return on ? ('✅ 見た' + (md ? ` (${md})` : '')) : '☐ 見た';
+}
+const _SAPURI_WATCH_BTN_STYLE = 'margin-top:0.35rem;min-height:40px;padding:0.35rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:800;cursor:pointer;';
+function _sapuriWatchBtnStyle(on) {
+  return _SAPURI_WATCH_BTN_STYLE + (on ? 'border:1px solid rgba(134,239,172,0.55);background:rgba(34,197,94,0.14);color:#86efac;'
+    : 'border:1px solid rgba(251,113,133,0.45);background:rgba(251,113,133,0.10);color:#fecdd3;');
+}
+// 「☐ 見た」/「✅ 見た (10/10)」。lesson に watched (bool) の印があるときだけ (印の無い旧サーバと組み合わさる間は出さない)・
+// 塾長のプレビュー表示中は出さない。label を渡すとその文言 (学習計画の「☐ 第N講を見た」)。
+function _sapuriWatchBtnHtml(lesson, surface, label) {
+  if (!lesson || typeof lesson !== 'object' || !lesson.lesson_key || typeof lesson.watched !== 'boolean') return '';
+  if (typeof window !== 'undefined' && typeof window.ajPreviewMode === 'function' && window.ajPreviewMode()) return '';
+  const on = lesson.watched === true;
+  return `<button type="button" class="sapuri-watch-btn" data-key="${escapeHtml(lesson.lesson_key)}" data-on="${on ? '1' : '0'}"`
+    + ` data-surface="${escapeHtml(surface || 'top3')}" aria-pressed="${on ? 'true' : 'false'}" style="${_sapuriWatchBtnStyle(on)}">`
+    + `${escapeHtml(label || _sapuriWatchLabel(on, lesson.watched_date_jst))}</button>`;
+}
+// TOP3 の「見終わり」(弱点に合う回を全部見た = サーバの sapuri.all_watched)。題名は来ない
+function sapuriAllWatchedHtml(w) {
+  const sq = encodeURIComponent((w && w.subject) || ''), tq = encodeURIComponent((w && w.topic) || '');
+  return `<div class="sapuri-all-watched" style="font-size:0.8rem;color:#86efac;margin-top:0.3rem;line-height:1.5;">`
+    + `✅ この単元のスタサプは見終わりました → <a href="dojo-drill.html?w_subject=${sq}&w_topic=${tq}" style="color:#c7d2fe;font-weight:700;">⏱ ドリルで確認</a></div>`;
+}
+// 見た回の一覧 (GET /api/student/class/sapuri/progress)。0 件なら ''。新しい順・日付つき・各行に取り消しのボタン
+function sapuriWatchedListHtml(d, open) {
+  const items = (d && Array.isArray(d.items)) ? d.items.filter(x => x && x.lesson_key) : [];
+  if (!items.length) return '';
+  const total = Number(d.total);
+  const rows = items.map(x => {
+    const t = String(x.course_name || '') + (x.seq != null ? ` 第${x.seq}講` : '') + (x.title ? `「${x.title}」` : '');
+    const md = _sapuriMD(x.watched_date_jst);
+    return `<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid rgba(255,255,255,0.07);min-width:0;">`
+      + `<div style="flex:1 1 12rem;min-width:0;font-size:0.82rem;color:#fecdd3;line-height:1.5;word-break:break-all;">`
+      + (md ? `<span style="font-size:0.74rem;color:#94a3b8;margin-right:0.35rem;">${escapeHtml(md)}</span>` : '') + `${escapeHtml(t)}</div>`
+      + _sapuriWatchBtnHtml({ lesson_key: x.lesson_key, watched: true, watched_date_jst: x.watched_date_jst }, 'list') + `</div>`;
+  }).join('');
+  return `<details class="sapuri-watched-list"${open ? ' open' : ''} style="margin-top:0.8rem;padding:0.7rem 0.85rem;background:rgba(251,113,133,0.06);border:1px solid rgba(251,113,133,0.30);border-radius:10px;min-width:0;">`
+    + `<summary style="cursor:pointer;font-weight:800;color:#fecdd3;font-size:0.9rem;">📺 見たスタサプ (${escapeHtml(Number.isFinite(total) && total > 0 ? total : items.length)} 講)</summary>`
+    + `<div style="font-size:0.74rem;color:#94a3b8;margin-top:0.3rem;">新しい順です。押し間違えたら「✅ 見た」を押すと取り消せます。</div>${rows}</details>`;
+}
 function sapuriRecLineHtml(rec, opts) {
   const o = opts || {};
   const text = sapuriRecText(rec, o.prefix, o.requireLesson);
@@ -3296,11 +3372,106 @@ function sapuriRecLineHtml(rec, opts) {
     + `margin-top:${o.marginTop || '0.3rem'};line-height:1.5;min-width:0;">`
     + `<div style="${clamp(lt ? 1 : 2)}${lt ? 'opacity:0.85;font-size:0.92em;' : ''}">${escapeHtml(head)}</div>`
     + (lt ? `<div style="${clamp(2)}font-weight:700;">${escapeHtml(lt)}</div>` : '')
+    + (o.watchBtn && lt ? _sapuriWatchBtnHtml((rec.lessons || [])[0], o.surface) : '')
     + `</div>`;
 }
 window.sapuriRecParts = sapuriRecParts;
 window.sapuriRecText = sapuriRecText;
 window.sapuriRecLineHtml = sapuriRecLineHtml;
+window.sapuriAllWatchedHtml = sapuriAllWatchedHtml;
+
+// 📺 見た回のチェック (2026-10-10 塾長「見た回のチェック（進み具合の記録）機能も作って」)
+//   ボタンは TOP3・週次プリントの画面・見た回の一覧・学習計画のカード。document に 1 回だけ委任する。
+//   押すと POST /api/student/class/sapuri/watched (同じボタンで取り消し・確認は出さない)。同じ回のボタンは全部書き換える。
+//   次の回は読み直したとき (次に開いたとき) に出る。ブラウザの confirm/alert は使わない (トーストだけ)。
+let _sapuriToastTimer = null;
+function _sapuriToast(msg, isErr) {
+  let t = document.getElementById('sapuriToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'sapuriToast';
+    t.setAttribute('role', 'status');
+    t.setAttribute('aria-live', 'polite');
+    t.style.cssText = 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);max-width:calc(100vw - 32px);'
+      + 'background:rgba(20,20,40,0.97);border:1px solid rgba(129,140,248,0.5);color:#e4e4e7;padding:0.7rem 1.1rem;'
+      + 'border-radius:10px;font-size:0.88rem;font-weight:700;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,0.5);'
+      + 'opacity:0;transition:opacity .2s;pointer-events:none;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.borderColor = isErr ? 'rgba(239,68,68,0.6)' : 'rgba(129,140,248,0.5)';
+  t.style.color = isErr ? '#fca5a5' : '#e4e4e7';
+  t.style.opacity = '1';
+  clearTimeout(_sapuriToastTimer);
+  _sapuriToastTimer = setTimeout(() => { t.style.opacity = '0'; }, 2600);
+}
+function _sapuriWatchErrText(e) {
+  if (e && e.preview) return 'プレビューでは記録しません';
+  const st = e && e.status;
+  if (st === 403) return '授業コースの生徒だけが記録できます';
+  if (st === 400) return (e && e.message) || 'この回は記録できません';
+  if (st === 404 || st === 405) return 'サーバの更新待ちです。数分後にもう一度';
+  if (st === 429) return '少し時間をおいてください';
+  if (st === 503) return '準備中です（デプロイ直後）';
+  return '記録できませんでした';
+}
+// 見た回の一覧 (学習管理の中の #spSapuriWatched)。対象外・0 件・旧サーバ (404) は隠す
+async function loadSapuriWatchedList() {
+  const box = document.getElementById('spSapuriWatched');
+  if (!box) return;
+  const wasOpen = !!box.querySelector('details[open]');
+  try {
+    const d = await slApiFetch('/api/student/class/sapuri/progress');
+    const h = sapuriWatchedListHtml(d, wasOpen);
+    box.innerHTML = h;
+    box.hidden = !h;
+  } catch (e) {
+    box.innerHTML = ''; box.hidden = true;
+  }
+}
+window.loadSapuriWatchedList = loadSapuriWatchedList;
+const _sapuriWatchBusy = {};
+async function _sapuriWatchClick(btn) {
+  const key = btn.getAttribute('data-key');
+  if (!key || _sapuriWatchBusy[key]) return;
+  const on = btn.getAttribute('data-on') === '1';
+  const surface = btn.getAttribute('data-surface') || 'top3';
+  const same = Array.prototype.filter.call(document.querySelectorAll('.sapuri-watch-btn'), b => b.getAttribute('data-key') === key);
+  _sapuriWatchBusy[key] = true;
+  same.forEach(b => { b.disabled = true; });
+  try {
+    const r = await slApiFetch('/api/student/class/sapuri/watched', {
+      method: 'POST', body: JSON.stringify({ lesson_key: key, watched: !on, surface }) });
+    const nowOn = !!(r && r.watched);
+    same.forEach(b => {
+      b.setAttribute('data-on', nowOn ? '1' : '0');
+      b.setAttribute('aria-pressed', nowOn ? 'true' : 'false');
+      b.setAttribute('style', _sapuriWatchBtnStyle(nowOn));
+      if (b.getAttribute('data-surface') !== 'plan') b.textContent = _sapuriWatchLabel(nowOn, r && r.watched_date_jst);
+    });
+    _sapuriToast(nowOn ? '記録しました（次に開いたとき、次の回が出ます）' : '取り消しました');
+    loadSapuriWatchedList();
+    // 学習計画の「見た x / y 講」も読み直す (スタサプの計画があるときだけ)
+    if (surface === 'plan' || (Array.isArray(_spLastPlans) && _spLastPlans.some(p => p && p.sapuri_progress))) {
+      try { loadMyStudyPlans(); } catch (_) {}
+    }
+  } catch (e) {
+    _sapuriToast(_sapuriWatchErrText(e), true);
+  } finally {
+    _sapuriWatchBusy[key] = false;
+    same.forEach(b => { b.disabled = false; });
+  }
+}
+if (!window.__sapuriWatchBound) {
+  window.__sapuriWatchBound = true;
+  document.addEventListener('click', ev => {
+    const b = ev.target && ev.target.closest ? ev.target.closest('.sapuri-watch-btn') : null;
+    if (!b) return;
+    ev.preventDefault();
+    if (typeof window.ajPreviewMode === 'function' && window.ajPreviewMode()) { _sapuriToast('プレビューでは記録しません', true); return; }
+    _sapuriWatchClick(b);
+  });
+}
 
 function renderCurriculumPreview(c) {
   const examDate = c.exam_date;

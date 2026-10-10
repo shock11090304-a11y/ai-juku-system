@@ -695,6 +695,36 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   `scripts/sapuri_lessons/check_no_titles_in_diff.py` (**手元専用**: 取込用 JSON の 4 文字以上の題名が `git diff --cached` /
   `--range A..B` (コミットメッセージ込み) / `--all-files` に無いか。題名は表示しない。データが無い端末・CI は SKIP)。
   単元名と同じ題名 (タグ語彙・基準コミット 6857cfe に既にある語) は一般語として数えるだけ。**スタサプの作業を commit する前に回す。**
+- **見た回のチェック (2026-10-10 塾長「見た回のチェック（進み具合の記録）機能も作って」)**: 表 `sapuri_lesson_progress`
+  (student_id, lesson_key, watched_at, source・UNIQUE(student_id, lesson_key)・題名は持たない)。student_id を持つので削除・統合の
+  5 つの一覧に入れてある。統合で同じ講を両方が見ていたら早い方の watched_at を残す (admin_student_merge で残す側を早い方へそろえてから
+  汎用の重複処理)。★書き込みは必ず `_utc_naive_iso()` (DEFAULT CURRENT_TIMESTAMP は形とタイムゾーンが DB で違い、早い方の比較が狂う)。
+  - 生徒 API (prefix `/api/student/class/` = AIなし枠でも通る・許可集合は変えていない): `POST /api/student/class/sapuri/watched`
+    `{lesson_key, watched, surface}` (本人だけ・body の student_id は読まない・対象外は 403・有効な講で止めていない科目の講座だけ (400)・
+    冪等で最初の日時のまま・取り消しは行を DELETE・止めた講の記録も消せる・回数 60/60 秒) と `GET /api/student/class/sapuri/progress`
+    (新しい順 200 件・題名は active な講だけ・止めた科目の行は読むときに隠す・対象外は items 空)。塾長の確認入室中は source='impersonation'。
+  - **読み取りは `_sapuri_watched_map` の 1 か所・画面ごとに 1 回** (テストが数える。ループの中で呼ばない)。照合 (`_sapuri_recommend`) は
+    lessons[*] に watched を付けるだけで label・to_seq・matched_by は変えない。**見た回を飛ばすのは `_sapuri_display_ex` の 1 か所だけ**:
+    表示する講は「まだ見ていない最初の講」、範囲は見ていない回の連続、label はそこから作り直す (見た回の題名を残さない)。
+    照合が返した回 (当たった層だけ: Tier 1 で当たれば Tier 2 は見ない) を全部見たら all_watched: 通塾生アプリと週次には出さず次の弱点が
+    上がる・TOP3 は「✅ 見終わりました → ⏱ ドリルで確認」(題名なし)。取込で単元の対応が変わると見終わりが戻ることがある (受け入れ)。
+    カバー状況と AI 弱点プリントは見た回を見ない (`mark_watched=False`)。
+  - 週次プリント: 作るときは見た回を飛ばす (保存する sapuri に watched の印は入れない)。**保存済みは作り直さない** (メール・紙と同じ週の控え):
+    /this-week が読むときに表示する講へ watched と日付を付けるだけ。送った後で見てもメールは変わらない。
+  - 進み具合: カリキュラムの各フェーズに `sapuri_progress` [{course_code, watched_count, total}] (sapuri と同じ並び・/me・ai-generate の
+    プレビュー・下書きの GET で読むときに付ける)。**保存しない**: `_sapuri_phase_normalize` が捨て、`_validate_curr_phases` は決まった欄だけ。
+    学習計画は /api/study-plans/me の「出典: スタサプ」の計画に `sapuri_progress` {watched, total, course_code, next_seq, next_key}
+    (material を SAPURI_COURSES の名前と完全一致で読む・読めなければ付けない)。next は範囲の中で次にまだ見ていない有効な講 = 計画カードの
+    「☐ 第N講を見た」(講データの無い講座では出さない)。mypage の計画カードは勉強時間の % の代わりに「📺 見た x / y 講」とバー。
+  - 画面のボタン (class.html のカードと一覧・mypage の TOP3・週次プリントの画面・一覧・計画カード) は lesson に watched (bool) の印が
+    あるときだけ出す (Vercel が先に出て古いサーバと組み合わさる間に 404 のボタンを出さない)。日付はサーバの日本時間の日付文字列を切るだけ
+    (new Date しない)。confirm/alert は使わず、同じボタンで即取り消し + トースト。CEO は ① の生徒一覧に見た講数と最後に見た日・③ に「見た」列と
+    「📺 見た回」(`GET /api/admin/sapuri/progress?student_id=`・管理者だけ題名つき・止めた講も)。
+  - ★既知の割り切り (D1・塾長判断待ち): 対象生徒は任意の有効な講を「見た」にしてから一覧を読めば、その講の題名を読める (1 分 60 回まで)。
+    厳しくするなら POST を「その生徒にいま推薦している講・カリキュラムの範囲の講」に絞る (POST ごとに照合が 1 回増える)。
+  - ★回数制限は IP 単位: 塾の Wi-Fi (全員が同じ IP) で授業中に一斉に押すと 429「少し時間をおいてください」がありうる。
+  - ★push の後は `/api/health` の `init_ddl_skipped==0` を確かめてから生徒の削除・統合を使う (表が無いまま走らせると Postgres で 500)。
+    表が無い間の新 API は 503、照合は「何も見ていない」扱いで従来どおり出る。
 
 ## 塾生アプリのみ枠 (AIなし) と宿題ドリル (2026-09-24 塾長決定)
 - **塾長方針: 英語の自由演習は開かない。AIなしの生徒が解けるのは「塾長が出した宿題」と「配信した単元ドリル」だけ。**

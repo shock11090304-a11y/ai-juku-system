@@ -3009,12 +3009,14 @@
       <div id="spImpProgress" style="font-size:0.82rem; margin-top:0.5rem; line-height:1.6;"></div>
 
       <h3 style="margin:1.1rem 0 0.4rem; font-size:0.92rem; color:#7dd3fc;">③ 生徒の見え方</h3>
-      <p style="font-size:0.78rem; color:#a1a1aa; margin:0 0 0.5rem;">生徒を選ぶと、その生徒のマイページ（弱点 TOP3）・通塾生アプリ・週次プリントのメールに出る 📺 の行を、生徒の画面と同じ形で出します。</p>
+      <p style="font-size:0.78rem; color:#a1a1aa; margin:0 0 0.5rem;">生徒を選ぶと、その生徒のマイページ（弱点 TOP3）・通塾生アプリ・週次プリントのメールに出る 📺 の行を、生徒の画面と同じ形で出します。「📺 見た回」は、その生徒が「見た」を付けた回の一覧です（題名つきはこの画面だけ）。生徒が見た回は飛ばして、次のまだ見ていない回を出します。</p>
       <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
         <select id="spPrevStudent" style="background:#0f172a; color:#e4e4e7; border:1px solid rgba(148,163,184,0.35); border-radius:8px; padding:0.4rem 0.5rem; font-size:0.84rem; max-width:100%;"><option value="">（先に「状態を読み直す」）</option></select>
         <button id="spPrevBtn" type="button" style="background:rgba(56,189,248,0.18); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45); padding:0.4rem 0.9rem; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer;">👀 見え方を表示</button>
+        <button id="spPrevWatchedBtn" type="button" style="background:rgba(134,239,172,0.14); color:#86efac; border:1px solid rgba(134,239,172,0.40); padding:0.4rem 0.9rem; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer;">📺 見た回</button>
       </div>
       <div id="spPrevOut" style="margin-top:0.6rem;"></div>
+      <div id="spPrevWatched" style="margin-top:0.6rem;"></div>
 
       <h3 style="margin:1.1rem 0 0.4rem; font-size:0.92rem; color:#7dd3fc;">④ カバー状況</h3>
       <p style="font-size:0.78rem; color:#a1a1aa; margin:0 0 0.5rem;">対象生徒全員の弱点のうち、どれだけに「回（第N講）」まで出せているかと、出せなかった弱点の多いものを数えます。</p>
@@ -11969,7 +11971,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             grammar_drill_assignments: 'ドリルの配信記録', student_weakness: '弱点分析', student_materials: '生徒が登録した使用中の教材',
             worksheet_archives: '週次プリントの控え', lesson_print_downloads: 'プリントのダウンロード履歴',
             admission_likelihood: '合格可能性の判定', class_attend: '出欠(クラス・日付単位)', class_attendance: '出欠(授業単位)',
-            ai_tutor_solve_log: 'AIチューターの解答ログ', line_link_tokens: 'LINE連携コード',
+            ai_tutor_solve_log: 'AIチューターの解答ログ', line_link_tokens: 'LINE連携コード', sapuri_lesson_progress: 'スタサプの見た回',
             study_logs: '学習ログ', study_plans: '学習計画', exam_results: '模試結果', curricula: 'カリキュラム',
             notifications: '通知', usage_monthly: '月間利用量', mock_exam_sessions: '模試の受験記録',
             ai_tutor_messages: 'AIチューターの会話', homework_assignments: '宿題', student_json_state: 'アプリの保存状態',
@@ -13448,7 +13450,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       error: '照合できなかった',
       hidden_reason: '主な原因がうっかり・時間不足・読み違いなので出さない',
       duplicate: '上と同じ回なので出さない',
-      not_eligible: 'この生徒は対象外'
+      not_eligible: 'この生徒は対象外',
+      all_watched: '弱点に合う回を全部見た（マイページ TOP3 には「見終わり」を出す・通塾生アプリと週次には出さない）'
     };
     function whyText(code) { return code ? (SP_WHY_JA[code] || code) : ''; }
     function el(id) { return document.getElementById(id); }
@@ -13540,10 +13543,14 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
               return '<tr><td style="padding:0.25rem 0.5rem;">' + esc(s.name || ('#' + s.id)) + '</td>'
                 + '<td style="padding:0.25rem 0.5rem; color:#94a3b8;">' + esc(s.grade || '—') + '</td>'
                 + '<td style="padding:0.25rem 0.5rem; color:#94a3b8;">' + esc(s.band || '') + '</td>'
-                + '<td style="padding:0.25rem 0.5rem;">' + why + (s.ai_disabled ? ' <span style="color:#94a3b8;">(AIなし)</span>' : '') + '</td></tr>';
+                + '<td style="padding:0.25rem 0.5rem;">' + why + (s.ai_disabled ? ' <span style="color:#94a3b8;">(AIなし)</span>' : '') + '</td>'
+                // 📺 見た回 (2026-10-10): 見た講の数と最後に見た日 (日本時間の日付。サーバが文字列で返す = new Date しない)
+                + '<td style="padding:0.25rem 0.5rem; color:#cbd5e1; text-align:right;">' + ('watched_count' in s ? esc(num(s.watched_count)) + ' 講' : '—') + '</td>'
+                + '<td style="padding:0.25rem 0.5rem; color:#94a3b8;">' + esc(s.last_watched_at || '—') + '</td></tr>';
             }).join('');
-          sb.innerHTML = '<table style="border-collapse:collapse; font-size:0.8rem; min-width:420px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
-            + '<th style="padding:0.25rem 0.5rem;">氏名</th><th style="padding:0.25rem 0.5rem;">学年</th><th style="padding:0.25rem 0.5rem;">学年帯</th><th style="padding:0.25rem 0.5rem;">判定</th></tr></thead><tbody>'
+          sb.innerHTML = '<table style="border-collapse:collapse; font-size:0.8rem; min-width:560px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
+            + '<th style="padding:0.25rem 0.5rem;">氏名</th><th style="padding:0.25rem 0.5rem;">学年</th><th style="padding:0.25rem 0.5rem;">学年帯</th><th style="padding:0.25rem 0.5rem;">判定</th>'
+            + '<th style="padding:0.25rem 0.5rem;">見た講</th><th style="padding:0.25rem 0.5rem;">最後に見た日</th></tr></thead><tbody>'
             + rows + '</tbody></table>';
         }
       }
@@ -13849,6 +13856,14 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         + (p.lesson ? '<div style="' + clamp(2) + ' font-weight:700;">' + esc(p.lesson) + '</div>' : '') + '</div>';
     }
     function previewHtml(d) {
+      // 📺 見た回 (2026-10-10): 推薦の回のうち見た数 k/n・全部見たら「✅ 全部」・印の無い旧サーバ / 回の無い行は「—」
+      function watchedCell(w) {
+        var ls = (w && w.recommendation && Array.isArray(w.recommendation.lessons)) ? w.recommendation.lessons : [];
+        if (w && w.all_watched) return '<span style="color:#86efac;">✅ 全部</span>';
+        if (!ls.length || !ls.every(function (l) { return l && typeof l.watched === 'boolean'; })) return '<span style="color:#71717a;">—</span>';
+        var k = ls.filter(function (l) { return l.watched; }).length;
+        return '<span style="color:' + (k ? '#fde68a' : '#94a3b8') + ';">' + esc(k) + '/' + esc(ls.length) + '</span>';
+      }
       var st = (_spStatus && Array.isArray(_spStatus.students)) ? _spStatus.students.filter(function (s) { return num(s.id) === num(d.student_id); })[0] : null;
       var who = st ? (st.name || ('#' + st.id)) : ('#' + d.student_id);
       var h = '<div style="font-size:0.86rem; font-weight:800; color:#e4e4e7;">' + esc(who) + ' <span style="color:#94a3b8; font-weight:500;">' + esc(d.band || '') + '</span> '
@@ -13858,7 +13873,11 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           + '<div style="font-size:0.76rem; color:#94a3b8; margin-bottom:0.2rem;">' + title + '</div>' + inner + '</div>';
       };
       var none = '<div style="color:#71717a; font-size:0.8rem;">（出ません）</div>';
-      var top3 = (Array.isArray(d.top3) ? d.top3 : []).map(function (r) { return recLineHtml(r, true); }).join('');
+      var top3 = (Array.isArray(d.top3) ? d.top3 : []).map(function (r) {
+        // 📺 見終わった弱点 (all_watched) はマイページでも「見終わり」の 1 行 (題名は来ない)
+        if (r && r.all_watched) return '<div style="font-size:0.8rem; color:#86efac; margin-top:0.25rem;">✅ ' + esc(r.course_name || '') + ' — この単元のスタサプは見終わり（⏱ ドリルで確認）</div>';
+        return recLineHtml(r, true);
+      }).join('');
       h += box('マイページ「弱点 TOP3」のカードに出る行', top3 || none);
       var cls = (Array.isArray(d.class_items) ? d.class_items : []).map(function (r) {
         // class.html の sapuriCardHtml と同じつなぎ方 (科目が無ければ「・」を付けない)
@@ -13874,7 +13893,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       if (ws.length) {
         h += '<div style="margin-top:0.6rem; overflow-x:auto;"><table style="border-collapse:collapse; font-size:0.78rem; min-width:640px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
           + '<th style="padding:0.2rem 0.45rem;">#</th><th style="padding:0.2rem 0.45rem;">弱点</th><th style="padding:0.2rem 0.45rem;">主な原因</th>'
-          + '<th style="padding:0.2rem 0.45rem;">照合</th><th style="padding:0.2rem 0.45rem;">推薦（参考）</th><th style="padding:0.2rem 0.45rem;">生徒に出す（出さない理由）</th></tr></thead><tbody>'
+          + '<th style="padding:0.2rem 0.45rem;">照合</th><th style="padding:0.2rem 0.45rem;">推薦（参考）</th><th style="padding:0.2rem 0.45rem;">見た</th><th style="padding:0.2rem 0.45rem;">生徒に出す（出さない理由）</th></tr></thead><tbody>'
           + ws.map(function (w, i) {
             var mb = w.matched_by || 'none';
             var mcol = (mb === 'topic' || mb === 'tag') ? '#86efac' : (mb === 'course' ? '#fbbf24' : '#71717a');
@@ -13885,6 +13904,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
               + '<td style="padding:0.2rem 0.45rem; color:#cbd5e1; max-width:24rem;">' + esc(recText(w.recommendation, false) || '—')
               + (w.fallback_from && w.fallback_from.name ? '<div style="color:#fbbf24; font-size:0.72rem;">選んだ講座（' + esc(w.fallback_from.name) + '）にこの単元の回が無いので、同じ学年帯の講座から</div>' : '')
               + (w.dev_basis ? '<div style="color:#71717a; font-size:0.72rem;">レベルの根拠: ' + esc(w.dev_basis) + '</div>' : '') + '</td>'
+              + '<td style="padding:0.2rem 0.45rem; white-space:nowrap;">' + watchedCell(w) + '</td>'
               + '<td style="padding:0.2rem 0.45rem; max-width:18rem;">' + (w.shown ? '<span style="color:#86efac;">✅</span>'
                 : '<span style="color:#71717a;">—</span>' + (w.why ? '<div style="color:#a1a1aa; font-size:0.72rem; line-height:1.45;">' + esc(whyText(w.why)) + '</div>' : '')) + '</td></tr>';
           }).join('') + '</tbody></table>'
@@ -13893,6 +13913,37 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         h += '<div style="color:#a1a1aa; font-size:0.8rem; margin-top:0.5rem;">この生徒にはまだ弱点の記録がありません。</div>';
       }
       return h;
+    }
+    // 📺 見た回の一覧 (管理者だけ題名つき・止めた講も)。日付はサーバの日本時間の日付文字列をそのまま出す
+    function watchedListHtml(d) {
+      var items = (d && Array.isArray(d.items)) ? d.items : [];
+      if (!items.length) return '<div style="color:#a1a1aa; font-size:0.8rem;">この生徒はまだ「見た」を付けていません。</div>';
+      var SRC_JA = { 'class': '通塾生アプリ', top3: 'マイページ TOP3', weekly: '週次プリント', list: '見た回の一覧', plan: '学習計画', student: '生徒', impersonation: '塾長の確認入室' };
+      return '<div style="font-size:0.8rem; color:#cbd5e1; margin-bottom:0.25rem;">見た回 ' + esc(num(d.total)) + ' 講（新しい順）</div>'
+        + '<div style="overflow-x:auto;"><table style="border-collapse:collapse; font-size:0.78rem; min-width:520px;"><thead><tr style="color:#7dd3fc; text-align:left;">'
+        + '<th style="padding:0.2rem 0.45rem;">見た日</th><th style="padding:0.2rem 0.45rem;">講座</th><th style="padding:0.2rem 0.45rem;">回</th><th style="padding:0.2rem 0.45rem;">押した画面</th></tr></thead><tbody>'
+        + items.map(function (x) {
+          var lesson = (x.seq != null ? '第' + esc(x.seq) + '講' : esc(x.lesson_key || '')) + (x.title ? '「' + esc(x.title) + '」' : '')
+            + (x.active === false ? ' <span style="color:#fbbf24;">（取込で止めた回）</span>' : '');
+          return '<tr><td style="padding:0.2rem 0.45rem; color:#94a3b8; white-space:nowrap;">' + esc(x.watched_date_jst || '—') + '</td>'
+            + '<td style="padding:0.2rem 0.45rem;">' + esc(x.course_name || x.course_code || '') + '</td>'
+            + '<td style="padding:0.2rem 0.45rem; color:#e4e4e7;">' + lesson + '</td>'
+            + '<td style="padding:0.2rem 0.45rem; color:#94a3b8;">' + esc(SRC_JA[x.source] || x.source || '—') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    async function sapuriProgressShow() {
+      var sel = el('spPrevStudent'), out = el('spPrevWatched');
+      if (!out) return;
+      var sid = sel ? sel.value : '';
+      if (!sid) { out.innerHTML = '<div style="color:#fbbf24; font-size:0.8rem;">生徒を選んでください（一覧が空なら「状態を読み直す」）。</div>'; return; }
+      out.innerHTML = '<div style="color:#a1a1aa; font-size:0.8rem;">読み込み中…</div>';
+      try {
+        var r = await spFetch('/api/admin/sapuri/progress?student_id=' + encodeURIComponent(sid));
+        if (!r.ok || !r.data || !r.data.ok) { out.innerHTML = '<div style="color:#fca5a5; font-size:0.8rem;">❌ ' + esc(errText(r.status, r.data)) + '</div>'; return; }
+        out.innerHTML = watchedListHtml(r.data);
+      } catch (e) {
+        out.innerHTML = '<div style="color:#fca5a5; font-size:0.8rem;">❌ ' + esc(e && e.message ? e.message : e) + '</div>';
+      }
     }
     async function sapuriPreviewShow() {
       var sel = el('spPrevStudent'), out = el('spPrevOut');
@@ -13962,8 +14013,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     window.sapuriImportRun = sapuriImportRun;
     window.sapuriPreviewShow = sapuriPreviewShow;
     window.sapuriCoverageShow = sapuriCoverageShow;
+    window.sapuriProgressShow = sapuriProgressShow;
     // 検査用 (osascript のハーネスが描画だけを確かめる。画面の動作には使わない)
     window._sapuriPanelTest = { spParseImportFile: spParseImportFile, previewHtml: previewHtml, coverageHtml: coverageHtml, SP_WHY_JA: SP_WHY_JA,
+      watchedListHtml: watchedListHtml,
       renderStatus: renderStatus, recText: recText, errText: errText, renderImportSummary: renderImportSummary,
       _set: function (files, dry) { _spFiles = files; _spDry = dry; } };
     function bind() {
@@ -13973,6 +14026,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var cb = el('spImpCheckBtn'); if (cb) cb.addEventListener('click', sapuriImportDryRun);
       var ib = el('spImpRunBtn'); if (ib) ib.addEventListener('click', sapuriImportRun);
       var pb = el('spPrevBtn'); if (pb) pb.addEventListener('click', sapuriPreviewShow);
+      var wb = el('spPrevWatchedBtn'); if (wb) wb.addEventListener('click', sapuriProgressShow);
       var cv = el('spCovBtn'); if (cv) cv.addEventListener('click', sapuriCoverageShow);
       var hb = document.querySelector('#ceoHubMenu [data-hub-target="sapuriSection"]'); if (hb) hb.addEventListener('click', sapuriSwitchLoad);
       if (window.AdminAuth && AdminAuth.getToken && AdminAuth.getToken()) setTimeout(sapuriSwitchLoad, 500);

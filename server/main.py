@@ -1822,6 +1822,19 @@ def init_db():
     CREATE UNIQUE INDEX IF NOT EXISTS uq_sapuri_topic_lessons
         ON sapuri_topic_lessons(course_code, subject_key, topic_norm, lesson_key);
     CREATE INDEX IF NOT EXISTS idx_sapuri_topic_lessons_topic ON sapuri_topic_lessons(subject_key, topic_norm);
+    -- 📺 スタサプの見た回 (2026-10-10 塾長「見た回のチェック（進み具合の記録）機能も作って」)。題名は持たない (lesson_key だけ)。
+    --   student_id を持つ → 生徒の削除・統合の 5 つの一覧に入れてある (check_student_cascade_lists.py)。取り消しは DELETE。
+    --   講が取込で active=0 になっても行は残す。watched_at は書き込み側が必ず _utc_naive_iso() を入れる (DEFAULT に頼らない =
+    --   Postgres のセッションのタイムゾーンと SQLite の形の差で、統合の「早い方を残す」比較が狂わないように)。
+    CREATE TABLE IF NOT EXISTS sapuri_lesson_progress (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        lesson_key TEXT NOT NULL,
+        watched_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        source TEXT
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_sapuri_lesson_progress ON sapuri_lesson_progress(student_id, lesson_key);
+    CREATE INDEX IF NOT EXISTS idx_sapuri_lesson_progress_student ON sapuri_lesson_progress(student_id, watched_at);
     -- 📄 過去問 → AI 類題生成パイプライン (塾長指示 2026-05-14・γ 究極最適化方式)
     -- 1 PDF を Gemini Flash で解析 → Claude Sonnet で 18 類題バッチ生成 → 3 人検閲 + AI Self-Critique
     -- ⚠️ 著作権法 30 条の 4 遵守: 元問題のテキスト化結果 (Gemini 解析結果) は DB に保存しない。
@@ -6504,11 +6517,15 @@ def student_worksheet_this_week(authorization: Optional[str] = Header(None)):
                 "weakness_topic": q.get("weakness_topic"),
                 "question_data": _qdata,
             })
+        # 📺 いま対象外の生徒には保存済みの sapuri を外して返す (行は書き換えない・2026-10-10 段階 B)。
+        #   見た回 (2026-10-10): sapuri があるときだけ見た回を 1 回読み (自分の接続)、表示する講に ✅ の印を付ける (作り直さない)
+        _st_raw = json.loads(_g("subject_topics", 2) or "[]") if _g("subject_topics", 2) else []
+        _st_w = (_sapuri_watched_map(sid) if isinstance(_st_raw, list)
+                 and any(isinstance(x, dict) and x.get("sapuri") for x in _st_raw) else None)
         ws = {
             "id": _g("id", 0),
             "week_start_date": _g("week_start_date", 1),
-            # 📺 いま対象外の生徒には保存済みの sapuri を外して返す (行は書き換えない・2026-10-10 段階 B)
-            "subject_topics": _sapuri_strip_topics(sid, json.loads(_g("subject_topics", 2) or "[]") if _g("subject_topics", 2) else []),
+            "subject_topics": _sapuri_strip_topics(sid, _st_raw, watched=_st_w),
             "questions": hydrated_questions,
             "question_count": _g("question_count", 4),
             "attempted_at": _g("attempted_at", 5),
@@ -25928,6 +25945,7 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             ("student_materials", "student_id"),
             ("ai_tutor_solve_log", "student_id"),
             ("line_link_tokens", "student_id"),
+            ("sapuri_lesson_progress", "student_id"),   # 📺 スタサプの見た回 (2026-10-10)
             ("student_json_state", "student_id"),
             ("anthropic_usage_log", "student_id"),   # 削除ではなく参照解除だが、影響行数としてプレビューに出す
         ]
@@ -26020,6 +26038,7 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             ("student_materials", "DELETE FROM student_materials WHERE student_id=?"),
             ("ai_tutor_solve_log", "DELETE FROM ai_tutor_solve_log WHERE student_id=?"),
             ("line_link_tokens", "DELETE FROM line_link_tokens WHERE student_id=?"),
+            ("sapuri_lesson_progress", "DELETE FROM sapuri_lesson_progress WHERE student_id=?"),
             # ★AI利用コストの記録は「塾の会計データ」であって生徒のデータではない。消すと CEO ダッシュの
             #   費用合計 (SUM(cost_usd)) が過去にさかのぼって下がって見える。参照だけ外して行は残す。
             #   ★残しても個人情報上の問題は無い: このテーブルはトークン数/コスト/モデル名/種別だけで、
@@ -28392,6 +28411,8 @@ def get_student_state(kind: str, request: Request, authorization: Optional[str] 
             parsed = dict(parsed)
             parsed["phases"] = [_sapuri_phase_normalize(p, _sp_eligible) if isinstance(p, dict) else p
                                 for p in parsed["phases"]]
+            if _sp_eligible:
+                _sapuri_annotate_phase_progress(student["id"], parsed["phases"])   # 📺 見た x / y 講 (読むときだけ)
         except Exception as e:
             log.warning(f"[student-state] curriculum_draft sapuri normalize failed: {type(e).__name__}")
             parsed = dict(parsed)
@@ -30101,6 +30122,7 @@ _ORPHAN_SWEEP_TABLES = (
     "class_attend", "class_attendance", "ai_tutor_solve_log", "line_link_tokens",
     "study_logs", "study_plans", "exam_results", "curricula", "notifications", "usage_monthly",
     "mock_exam_sessions", "ai_tutor_messages", "homework_assignments", "student_json_state",
+    "sapuri_lesson_progress",
 )
 
 
@@ -30162,6 +30184,8 @@ _MERGE_STUDENT_TABLES = (
     ("worksheet_archives", ("week_start_date",)), ("class_attend", ("class_label", "att_date")), ("class_attendance", ("session_id",)),
     ("lesson_print_downloads", None), ("student_materials", None), ("ai_tutor_solve_log", None), ("line_link_tokens", None),
     ("student_json_state", ("kind",)), ("anthropic_usage_log", None), ("course_applications", None),
+    # 📺 見た回: 同じ講は残す側が勝つ汎用処理の前に、admin_student_merge の中で残す側の watched_at を早い方へそろえる。
+    ("sapuri_lesson_progress", ("lesson_key",)),
 )
 # keep 側が空なら drop 側の値で埋める列 (メール系は下で個別に扱う)
 _MERGE_FILL_FIELDS = ("grade", "goal", "plan", "course", "stripe_customer_id", "stripe_subscription_id", "line_user_id",
@@ -30220,6 +30244,14 @@ def admin_student_merge(student_id: int, payload: StudentMergeRequest, authoriza
             n = _merge_n(c.fetchone())
             if not n:
                 continue
+            if tbl == "sapuri_lesson_progress" and not dry:
+                # 📺 同じ講を両方が見ていたら、残す側の行に早い方の見た日時を入れる (この後の汎用処理が消す側の重複行を捨てる
+                #   = ON CONFLICT DO NOTHING で吸収して早い方を残すのと同じ結果)。watched_at はどちらも _utc_naive_iso の形。
+                c.execute("UPDATE sapuri_lesson_progress SET watched_at = (SELECT MIN(d.watched_at) FROM sapuri_lesson_progress d "
+                          "WHERE d.student_id = ? AND d.lesson_key = sapuri_lesson_progress.lesson_key) "
+                          "WHERE student_id = ? AND EXISTS (SELECT 1 FROM sapuri_lesson_progress d WHERE d.student_id = ? "
+                          "AND d.lesson_key = sapuri_lesson_progress.lesson_key AND d.watched_at < sapuri_lesson_progress.watched_at)",
+                          (drop_id, keep_id, drop_id))
             dup = 0
             if ukey is not None:
                 if tbl == "student_json_state":
@@ -30429,6 +30461,7 @@ def admin_students_purge_stale(payload: dict = None, authorization: Optional[str
                 ("student_materials", f"DELETE FROM student_materials WHERE student_id IN ({placeholders})"),
                 ("ai_tutor_solve_log", f"DELETE FROM ai_tutor_solve_log WHERE student_id IN ({placeholders})"),
                 ("line_link_tokens", f"DELETE FROM line_link_tokens WHERE student_id IN ({placeholders})"),
+                ("sapuri_lesson_progress", f"DELETE FROM sapuri_lesson_progress WHERE student_id IN ({placeholders})"),
                 ("anthropic_usage_log", f"UPDATE anthropic_usage_log SET student_id=NULL WHERE student_id IN ({placeholders})"),
             ]
             for tbl, sql in cascade_tables:
@@ -48904,6 +48937,9 @@ def get_my_study_plans(authorization: Optional[str] = Header(None), status: Opti
                 "created_at": str(r["created_at"]) if r["created_at"] else None,
             })
         plans = _enrich_plans_with_progress(c, plans)
+        # 📺 見た回 (2026-10-10): スタサプの計画に「見た x / y 講」(sapuri_progress)。隠した計画は plans に無い = 対象生徒の分だけ
+        if not _sp_hide:
+            _sapuri_attach_plan_progress(student["id"], plans)
         return {"ok": True, "plans": plans, "count": len(plans)}
     finally:
         conn.close()
@@ -56175,6 +56211,9 @@ def get_my_curricula(authorization: Optional[str] = Header(None)):
                 "note": r["note"],
                 "created_at": str(r["created_at"]) if r["created_at"] else None,
             })
+        # 📺 見た回 (2026-10-10): 範囲ごとに「見た x / y 講」(読むときに計算・保存しない)。全カリキュラムで読み取り 1 回
+        if _sp_eligible:
+            _sapuri_annotate_phase_progress(student["id"], [ph for it in items for ph in (it["phases"] or [])])
         return {"ok": True, "curricula": items}
     finally:
         conn.close()
@@ -56562,6 +56601,7 @@ def _sapuri_phase_normalize(phase: dict, eligible: bool) -> dict:
     ★表示用 (読むとき・応答) に使う。保存するときに eligible=False を渡すと、一時的に対象外 (停止スイッチ OFF 等) の
       生徒の保存済みの範囲が消える → 保存は _sapuri_phases_for_store を通す。"""
     p = dict(phase) if isinstance(phase, dict) else {}
+    p.pop("sapuri_progress", None)   # 📺 見た x / y 講は読むときに付け直す (クライアントが送り返した写しは使わない・保存しない)
     items = _sapuri_validate_items(p.get("sapuri")) if eligible else []
     p["materials"] = _sapuri_strip_words(p.get("materials"))[:10]
     if "milestones" in p:
@@ -56965,13 +57005,13 @@ _SAPURI_UNSHOWN_REASONS = ("careless", "time", "misread")  # 講義を勧めて�
 #   照合 (_sapuri_match_one): english_non_grammar / exam_format / undetermined_japanese / undetermined_social /
 #     out_of_scope / subject_stopped / subject_only / unit_not_in_vocab / no_course / course_only / no_lesson_data /
 #     no_lesson_for_tag / fallback_too_far / tag_too_broad / error。表示の決まり (_sapuri_display_ex): hidden_reason /
-#     duplicate。CEO: not_eligible。
+#     duplicate / all_watched (弱点に合う回を全部見た = 通塾生アプリと週次には出さない・TOP3 は「見終わり」)。CEO: not_eligible。
 #   ★subject_only は topic が科目名 (接頭辞) だけのとき (「化学」「数学C」)。単元名はあるのに語彙・別名に無いもの (「化学平衡」・
 #     英語の「不定詞の意味上の主語」) は unit_not_in_vocab (語彙・別名に足せば出せる。2026-10-10 レビュー)。
 _SAPURI_WHY_CODES = ("english_non_grammar", "exam_format", "undetermined_japanese", "undetermined_social", "out_of_scope",
                      "subject_stopped", "subject_only", "unit_not_in_vocab", "no_course", "course_only", "no_lesson_data",
                      "no_lesson_for_tag", "fallback_too_far", "tag_too_broad", "error", "hidden_reason", "duplicate",
-                     "not_eligible")
+                     "not_eligible", "all_watched")
 # AI 弱点プリントの科目ラベル (_STUDY_SUBJECTS) → 弱点の科目コード / 接頭辞 / 「語彙全体で 1 科目にだけあるタグ」で決める科目群
 _SAPURI_WS_SUBJECT_CODE = {"英語": "english", "数学": "math", "国語": "japanese", "物理": "physics", "化学": "chemistry",
                            "生物": "biology"}
@@ -57358,13 +57398,16 @@ def _sapuri_match_one(conn, c, sid: int, item: dict, band: str, dev_cache: dict,
 
 
 def _sapuri_recommend(student_id, weak_items, *, limit_per_item: int = 1, band: Optional[str] = None,
-                      details: Optional[list] = None) -> list:
+                      details: Optional[list] = None, mark_watched: bool = True) -> list:
     """📺 弱点 → スタサプの講 (SPEC2 §4.2)。DB だけ・AI なし・**自分の接続** (finally で閉じる)・例外は握って []。
     weak_items: [{subject_code, topic}] (student_weakness の行)。返り値は weak_items と同じ並びで、
     要素は {subject_key, topic, tag, course_code, course_name, lessons:[{lesson_key, seq, title}], label,
     matched_by: "topic"|"tag"|"course"} か None (科目が決まらない・対象科目外)。limit_per_item は 1 (1 項目 1 講座)。
     details にリストを渡すと、同じ並びで {reason, subject_key, dev, dev_basis, fallback_from} を足す (CEO の画面用。
     生徒の応答には入れない)。
+    mark_watched=True (既定) なら講 (Tier 1/2) の各 lesson に watched (bool) を付ける (見た回の読み取りは同じ接続で 1 回だけ・
+    講のある推薦が 1 つも無ければ読まない)。照合そのもの (label・to_seq・matched_by) は見た回で変えない = 見た回を飛ばすのは
+    表示の決まり _sapuri_display_ex の 1 か所だけ。CEO のカバー状況は mark_watched=False (見た回に左右されない)。
     ★対象判定 (_sapuri_eligible_by_id) は呼び出し側で行う。band を省くと students.grade から決める。"""
     items = list(weak_items or [])
     if not items:
@@ -57402,6 +57445,11 @@ def _sapuri_recommend(student_id, weak_items, *, limit_per_item: int = 1, band: 
                 rec, det = None, {"reason": "error", "subject_key": None, "dev": None, "dev_basis": None, "fallback_from": None}
             out.append(rec)
             dets.append(det)
+        if mark_watched and any(r and r.get("lessons") for r in out):
+            wmap = _sapuri_watched_map(sid, conn)   # 失敗は {} (この接続を rollback 済み)
+            for r in out:
+                for l in ((r or {}).get("lessons") or []):
+                    l["watched"] = l.get("lesson_key") in wmap
         if details is not None:
             details.extend(dets)
         return out
@@ -57414,10 +57462,15 @@ def _sapuri_recommend(student_id, weak_items, *, limit_per_item: int = 1, band: 
             except Exception: pass
 
 
-def _sapuri_display_ex(recs: list, reasons: list) -> tuple:
+def _sapuri_display_ex(recs: list, reasons: list, keep_all_watched: bool = False) -> tuple:
     """_sapuri_display の本体 → (表示する項目, 出さない理由)。理由は表示の決まりで落としたものだけ
-    (hidden_reason = 主因がうっかり/時間/読み違い・duplicate = 上と同じ回)。照合で講まで出なかったもの (None・講座だけ) は
-    None (照合の理由は _sapuri_recommend の details にある)。"""
+    (hidden_reason = 主因がうっかり/時間/読み違い・duplicate = 上と同じ回・all_watched = 弱点に合う回を全部見た)。
+    照合で講まで出なかったもの (None・講座だけ) は None (照合の理由は _sapuri_recommend の details にある)。
+    📺 見た回 (2026-10-10): **見た回を飛ばすのはここ 1 か所だけ**。表示する 1 講は「まだ見ていない最初の講」、範囲 (to_seq) は
+    その講から続く見ていない回の連続だけ、label もそこから作り直す (見た回の題名を残さない)。照合が返した回 (当たった層の講) を
+    全部見ていたら、keep_all_watched=True (TOP3) なら {lessons: [], to_seq: None, all_watched: True, label: 講座名だけ}
+    (題名なし・「見終わり」の表示用)、False (通塾生アプリ・週次) なら出さない。見終わった項目は重複の判定に数えない。
+    lesson に watched の印が無い (mark_watched=False で照合した) ときは全部まだ見ていない扱い。"""
     out, why, seen = [], [], set()
     for i in range(len(reasons)):
         r = recs[i] if i < len(recs) else None
@@ -57427,22 +57480,183 @@ def _sapuri_display_ex(recs: list, reasons: list) -> tuple:
         if (reasons[i] or "") in _SAPURI_UNSHOWN_REASONS:
             out.append(None); why.append("hidden_reason")
             continue
-        first = r["lessons"][0]
+        unw = [l for l in r["lessons"] if not l.get("watched")]
+        if not unw:
+            if keep_all_watched:
+                out.append(dict(r, lessons=[], to_seq=None, all_watched=True, label=f"📺 スタサプ：{r['course_name']}"))
+                why.append(None)
+            else:
+                out.append(None); why.append("all_watched")
+            continue
+        first = unw[0]
         if first["lesson_key"] in seen:
             out.append(None); why.append("duplicate")
             continue
         seen.add(first["lesson_key"])
-        d = dict(r)
-        d["lessons"] = [first]
-        d["to_seq"] = _sapuri_run_end(r["lessons"])   # 講番号が続くときだけ (飛び飛びなら None = 範囲を書かない)
+        d = dict(r, all_watched=False)
+        d["lessons"] = [dict(first, watched=False)]
+        d["to_seq"] = _sapuri_run_end(unw)   # 見ていない回で講番号が続くときだけ (飛び飛びなら None = 範囲を書かない)
+        d["label"] = _sapuri_label({"name": r["course_name"]}, unw)
         out.append(d); why.append(None)
     return out, why
 
 
-def _sapuri_display(recs: list, reasons: list) -> list:
+def _sapuri_display(recs: list, reasons: list, keep_all_watched: bool = False) -> list:
     """表示の決まり (TOP3・class.html・週次プリント): matched_by が topic/tag・主因がうっかり/時間/読み違いでない・
-    1 項目に最初の 1 講 (label は範囲つき)・項目間で同じ講は 1 回。返り値は reasons と同じ長さ (出さない項目は None)。"""
-    return _sapuri_display_ex(recs, reasons)[0]
+    1 項目にまだ見ていない最初の 1 講 (label は範囲つき)・項目間で同じ講は 1 回・全部見た弱点は出さない (TOP3 だけ
+    keep_all_watched=True で「見終わり」を残す)。返り値は reasons と同じ長さ (出さない項目は None)。"""
+    return _sapuri_display_ex(recs, reasons, keep_all_watched)[0]
+
+
+# ---------------------------------------------------------------------------
+# 📺 見た回 (2026-10-10 塾長「見た回のチェック（進み具合の記録）機能も作って」)
+#   表 sapuri_lesson_progress (student_id, lesson_key, watched_at, source)。題名は持たない。
+#   ★読み取りは _sapuri_watched_map の 1 か所 (各画面で 1 回だけ・ループの中で呼ばない)。見た回を飛ばすのは _sapuri_display_ex だけ。
+#   カリキュラム・学習計画の「見た x / y 講」は読むときに計算して付ける (保存しない・PUT/apply-gap-fix は
+#   _sapuri_validate_items が {course_code, from_seq, to_seq} だけに作り直すので戻ってきても捨てられる)。
+# ---------------------------------------------------------------------------
+_SAPURI_LESSON_KEY_RE = re.compile(r"^([A-Za-z0-9_-]{2,40})#([0-9]{1,3})$")
+_SAPURI_WATCH_SOURCES = ("class", "top3", "weekly", "list", "plan")   # クライアントの申告 (どの画面で押したか・記録の参考だけ)
+_SAPURI_COURSE_BY_NAME = {_c["name"]: _c for _c in SAPURI_COURSES}   # 名前は 138 講座とも一意 (前方一致の組はある → 完全一致で引く)
+_SAPURI_PLAN_MATERIAL_RE = re.compile(r"^(.+) 第(\d+)(?:[〜～~](\d+))?講$")   # expand-to-plans の material (_sapuri_range_label)
+
+
+def _sapuri_progress_ready() -> bool:
+    """見た回の表があるか (起動時 DDL がロック待ちで飛んだデプロイでは無い → 新 API は 503・照合は「何も見ていない」扱い)。"""
+    return _table_has_column("sapuri_lesson_progress", "lesson_key")
+
+
+def _sapuri_jst_date(raw) -> Optional[str]:
+    """DB の watched_at → 日本時間の日付 "2026-10-10"。画面はこの文字列を切るだけ (new Date しない = 9 時間ずれ対策)。"""
+    dt = _parse_db_dt(raw)
+    return dt.astimezone(JST).date().isoformat() if dt else None
+
+
+def _sapuri_watched_map(student_id, conn=None) -> dict:
+    """★見た回の唯一の読み取り → {lesson_key: watched_at (DB の生値)}。conn を渡せばその接続 (呼び出し側の自分の接続) で読み、
+    失敗したらその接続を rollback して {} (呼び出し側の後続の文を Postgres で巻き込まない)。無ければ自分の db() を開いて finally で閉じる。
+    表が無い (DDL 未反映) ・例外は {} (= 何も見ていない扱い。推薦は従来どおり出る)。"""
+    if not _sapuri_progress_ready():
+        return {}
+    own = conn is None
+    cx = None
+    try:
+        sid = int(student_id)
+        cx = db() if own else conn
+        c = cx.cursor()
+        c.execute("SELECT lesson_key, watched_at FROM sapuri_lesson_progress WHERE student_id = ?", (sid,))
+        return {r["lesson_key"]: r["watched_at"] for r in (c.fetchall() or [])}
+    except Exception as e:
+        log.warning(f"[Sapuri] watched read failed: {type(e).__name__}")
+        if cx is not None and not own:
+            try: cx.rollback()
+            except Exception: pass
+        return {}
+    finally:
+        if own and cx is not None:
+            try: cx.close()
+            except Exception: pass
+
+
+def _sapuri_lesson_parts(key) -> Optional[tuple]:
+    """lesson_key「講座コード#講番号」→ (講座, 講番号)。形・カタログにある講座・first..last を見る (止めた科目かは見ない)。"""
+    m = _SAPURI_LESSON_KEY_RE.match(str(key or "").strip())
+    if not m:
+        return None
+    co = SAPURI_COURSE_BY_CODE.get(m.group(1))
+    seq = int(m.group(2))
+    if not co or not (int(co.get("first") or 0) <= seq <= int(co.get("last") or 0)):
+        return None
+    return co, seq
+
+
+def _sapuri_range_progress(code: str, a: int, b: int, wmap: dict) -> dict:
+    """講座の第a〜b講のうち見た回の数 (DB なし)。"""
+    a, b = int(a), int(b)
+    return {"watched_count": sum(1 for s_ in range(a, b + 1) if f"{code}#{s_}" in wmap), "total": max(0, b - a + 1)}
+
+
+def _sapuri_annotate_phase_progress(student_id, phases) -> None:
+    """カリキュラムの各フェーズに sapuri_progress を書く (応答用・保存しない): sapuri と同じ並び・同じ数の
+    [{course_code, watched_count, total}] (範囲の中で見た回の数)。sapuri 自体の形 ({course_code, from_seq, to_seq}) は変えない。
+    sapuri の項目が 1 つも無ければ読まない。複数のカリキュラムの phases をまとめて渡して、見た回の読み取りを 1 回にする。
+    ★保存には戻らない: _sapuri_phase_normalize が sapuri_progress を捨て、_validate_curr_phases は決まった欄だけを作る。"""
+    try:
+        targets = [ph for ph in (phases or []) if isinstance(ph, dict) and isinstance(ph.get("sapuri"), list) and ph["sapuri"]]
+        if not targets:
+            return
+        wmap = _sapuri_watched_map(student_id)
+        for ph in targets:
+            prog = []
+            for it in ph["sapuri"]:
+                try:
+                    code = str(it["course_code"])
+                    prog.append(dict(_sapuri_range_progress(code, int(it["from_seq"]), int(it["to_seq"]), wmap), course_code=code))
+                except Exception:
+                    prog = None
+                    break
+            if prog is not None:
+                ph["sapuri_progress"] = prog
+    except Exception as e:
+        log.warning(f"[Sapuri] phase progress failed: {type(e).__name__}")
+
+
+def _sapuri_plan_range(p: dict) -> Optional[tuple]:
+    """expand-to-plans で作ったスタサプの計画 (note「出典: スタサプ」・material「講座名 第a〜b講」) → (講座, a, b) / None。"""
+    if "出典: スタサプ" not in str(p.get("note") or ""):
+        return None
+    m = _SAPURI_PLAN_MATERIAL_RE.match(str(p.get("material") or "").strip())
+    if not m:
+        return None
+    co = _SAPURI_COURSE_BY_NAME.get(m.group(1))
+    if not co or not _sapuri_course_allowed(co["code"]):
+        return None
+    a = int(m.group(2))
+    b = int(m.group(3)) if m.group(3) else a
+    if not (int(co["first"]) <= a <= b <= int(co["last"])):
+        return None
+    return co, a, b
+
+
+def _sapuri_attach_plan_progress(student_id, plans: list) -> None:
+    """/api/study-plans/me: スタサプの計画に sapuri_progress {watched, total, next_seq, next_key, course_code} を付ける (応答用)。
+    next_* は範囲の中で次にまだ見ていない回のうち、講データ (有効な講) のあるもの (計画カードの「☐ 第N講を見た」)。無ければ None。
+    material が読めない計画にはキーを付けない。見た回の読み取りは 1 回だけ (計画ごとに読まない)。"""
+    try:
+        targets = [(p, rg) for p in (plans or []) if isinstance(p, dict) for rg in [_sapuri_plan_range(p)] if rg]
+        if not targets:
+            return
+        wmap = _sapuri_watched_map(student_id)
+        active = _sapuri_active_keys({co["code"] for _, (co, _a, _b) in targets})
+        for p, (co, a, b) in targets:
+            pr = _sapuri_range_progress(co["code"], a, b, wmap)
+            nxt = next((s_ for s_ in range(a, b + 1)
+                        if f"{co['code']}#{s_}" not in wmap and f"{co['code']}#{s_}" in active), None)
+            p["sapuri_progress"] = {"watched": pr["watched_count"], "total": pr["total"], "course_code": co["code"],
+                                    "next_seq": nxt, "next_key": (f"{co['code']}#{nxt}" if nxt is not None else None)}
+    except Exception as e:
+        log.warning(f"[Sapuri] plan progress failed: {type(e).__name__}")
+
+
+def _sapuri_active_keys(codes) -> set:
+    """講座コードの集合 → 有効な講の lesson_key の集合 (自分の接続・表が無い/失敗は空)。"""
+    codes = sorted({str(x) for x in (codes or []) if x})[:40]
+    if not codes or not _sapuri_tables_ready():
+        return set()
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(f"SELECT lesson_key FROM sapuri_lessons WHERE active = 1 AND course_code IN ({','.join('?' * len(codes))})",
+                  tuple(codes))
+        return {r["lesson_key"] for r in (c.fetchall() or [])}
+    except Exception as e:
+        log.warning(f"[Sapuri] active keys read failed: {type(e).__name__}")
+        return set()
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
 
 
 def _sapuri_class_items(rows: list, disp: list) -> list:
@@ -57516,7 +57730,7 @@ def _sapuri_attach_top3(student_id: int, weaknesses: list, pool: Optional[str]) 
         if not _sapuri_eligible_by_id(student_id).get("eligible"):
             return False
         recs = _sapuri_recommend(student_id, [{"subject_code": w.get("subject"), "topic": w.get("topic")} for w in weaknesses])
-        disp = _sapuri_display(recs, [w.get("dominant_reason") for w in weaknesses])
+        disp = _sapuri_display(recs, [w.get("dominant_reason") for w in weaknesses], keep_all_watched=True)
         for w, d in zip(weaknesses, disp):
             w["sapuri"] = d
         return True
@@ -57540,6 +57754,9 @@ def _sapuri_for_subject_topics(student_id, grade, subject_topics: list) -> list:
         for s, d in zip(subject_topics, disp):
             q = dict(s) if isinstance(s, dict) else s
             if d and isinstance(q, dict):
+                # 📺 見た回の印 (watched / all_watched) は読むときの値なので保存しない (/this-week が読むときに付け直す)
+                d = {k: v for k, v in d.items() if k != "all_watched"}
+                d["lessons"] = [{k: v for k, v in l.items() if k != "watched"} for l in (d.get("lessons") or [])]
                 q["sapuri"] = d
             out.append(q)
         return out
@@ -57583,9 +57800,11 @@ def _sapuri_stored_rec_allowed(d) -> bool:
     return sk in (SAPURI_COVERS.get(code) or {}) or sk in (SAPURI_COVERS_TIER1_ONLY.get(code) or {})
 
 
-def _sapuri_strip_topics(student_id, subject_topics):
+def _sapuri_strip_topics(student_id, subject_topics, watched: Optional[dict] = None):
     """/this-week・/history: いま対象外の生徒には保存済みの sapuri を外して返す (行は書き換えない)。
-    対象生徒でも、止めた科目 (SAPURI_SUBJECT_KEYS から外した科目キー)・照合から外した講座の sapuri は外す。"""
+    対象生徒でも、止めた科目 (SAPURI_SUBJECT_KEYS から外した科目キー)・照合から外した講座の sapuri は外す。
+    📺 watched ({lesson_key: watched_at}) を渡されたら、残す sapuri の表示する講 (lessons[0]) の写しに watched (bool) と
+    watched_date_jst を足す (/this-week の「✅ 見た」用)。保存済みの週次プリントは作り直さない (メール・紙と同じ週の控え)。"""
     if not isinstance(subject_topics, list) or not any(isinstance(s, dict) and "sapuri" in s for s in subject_topics):
         return subject_topics
     eligible = bool(_sapuri_eligible_by_id(student_id).get("eligible"))
@@ -57593,6 +57812,14 @@ def _sapuri_strip_topics(student_id, subject_topics):
     for s in subject_topics:
         if isinstance(s, dict) and "sapuri" in s and (not eligible or not _sapuri_stored_rec_allowed(s.get("sapuri"))):
             out.append({k: v for k, v in s.items() if k != "sapuri"})
+        elif isinstance(watched, dict) and isinstance(s, dict) and isinstance(s.get("sapuri"), dict) \
+                and isinstance(s["sapuri"].get("lessons"), list) and s["sapuri"]["lessons"] \
+                and isinstance(s["sapuri"]["lessons"][0], dict):
+            l0 = dict(s["sapuri"]["lessons"][0])
+            k = l0.get("lesson_key")
+            l0["watched"] = bool(k) and k in watched
+            l0["watched_date_jst"] = _sapuri_jst_date(watched.get(k)) if l0["watched"] else None
+            out.append(dict(s, sapuri=dict(s["sapuri"], lessons=[l0] + list(s["sapuri"]["lessons"][1:]))))
         else:
             out.append(s)
     return out
@@ -57627,7 +57854,8 @@ def _sapuri_for_worksheet(student_id: int, subject_label: str, topic: str) -> tu
         it = _sapuri_ws_item(subject_label, topic)
         if not it:
             return [], []
-        recs = [r for r in _sapuri_recommend(student_id, [it]) if r]
+        # 見た回は AI 弱点プリントの範囲外 (講の全部を出す・印も付けない = 形は従来どおり・読み取りもしない)
+        recs = [r for r in _sapuri_recommend(student_id, [it], mark_watched=False) if r]
         return recs, [{"title": r["label"], "level": "", "reason": ""} for r in recs]
     except Exception as e:
         log.warning(f"[Sapuri] worksheet match failed: {type(e).__name__}")
@@ -57650,6 +57878,139 @@ def student_class_sapuri(request: Request, authorization: Optional[str] = Header
     recs = _sapuri_recommend(sid, [{"subject_code": r["subject"], "topic": r["topic"]} for r in rows])
     disp = _sapuri_display(recs, [r["dominant_reason"] for r in rows])
     return {"ok": True, "items": _sapuri_class_items(rows, disp)}
+
+
+class SapuriWatchedRequest(BaseModel):
+    lesson_key: Optional[str] = None
+    watched: Optional[bool] = True
+    surface: Optional[str] = None   # どの画面で押したか ('class'|'top3'|'weekly'|'list'|'plan')。記録の参考だけ (白リスト外は 'student')
+
+
+def _sapuri_watch_item(row, *, admin: bool = False) -> Optional[dict]:
+    """見た回の一覧の 1 行。生徒には止めた科目・カタログに無い講座の行を出さない (読むときに隠す・行は消さない)。
+    題名は生徒には有効な講 (active=1) だけ、管理者には DB にあれば出す。"""
+    key = row["lesson_key"]
+    parts = _sapuri_lesson_parts(key)
+    if not parts:
+        if not admin:
+            return None
+        co, seq = None, None
+        m = _SAPURI_LESSON_KEY_RE.match(str(key or ""))
+        if m:
+            co, seq = SAPURI_COURSE_BY_CODE.get(m.group(1)), int(m.group(2))
+    else:
+        co, seq = parts
+        if not admin and not _sapuri_course_allowed(co["code"]):
+            return None
+    active = row["active"]
+    is_active = active is not None and int(active) == 1
+    it = {"lesson_key": key, "course_code": (co or {}).get("code") or str(key).split("#")[0],
+          "course_name": (co or {}).get("name") or "", "seq": seq,
+          "title": (row["title"] if (admin or is_active) else None) or None,
+          "watched_at": _utc_iso_or_none(row["watched_at"]), "watched_date_jst": _sapuri_jst_date(row["watched_at"])}
+    if admin:
+        it["active"] = bool(is_active)
+        it["source"] = row["source"]
+    return it
+
+
+def _sapuri_watch_rows(sid: int, limit: int) -> list:
+    """見た回 (新しい順・同じ秒は id の大きい順)。講の題名と active は講データの表から 1 文で引く。自分の接続。"""
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute("SELECT p.lesson_key AS lesson_key, p.watched_at AS watched_at, p.source AS source, l.title AS title, "
+                  "l.active AS active FROM sapuri_lesson_progress p LEFT JOIN sapuri_lessons l ON l.lesson_key = p.lesson_key "
+                  "WHERE p.student_id = ? ORDER BY p.watched_at DESC, p.id DESC LIMIT ?", (int(sid), int(limit)))
+        return c.fetchall() or []
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+
+
+@app.post("/api/student/class/sapuri/watched")
+def student_class_sapuri_watched(payload: SapuriWatchedRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """📺 見た回のチェック (☐ 見た / ✅ 見た の切り替え)。本人のトークンだけ (body の student_id は読まない)・授業コースの対象生徒だけ
+    (対象外は 403)・lesson_key は有効な講で、止めていない科目 (SAPURI_SUBJECT_KEYS) の講座。冪等 (二度押しでも 1 行・最初の日時のまま)。
+    取り消し (watched=false) は行を消す (止めた講 = active=0 の記録も消せる)。AI 呼び出しなし。
+    ★prefix /api/student/class/ は AIなし枠でも許可済み (許可集合は変えない)。塾長の確認入室中は source='impersonation' で残す。
+    ★既知の割り切り: 対象生徒は任意の有効な講を記録してから一覧を読めば、その講の題名を読める (1 分 60 回)。CLAUDE.md に記録。"""
+    _check_rate_limit_ip(request, bucket="class_sapuri_watched", limit=60, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    sid = int(student["id"])
+    if not _sapuri_eligible_by_id(sid).get("eligible"):
+        raise HTTPException(status_code=403, detail="授業コースの生徒だけが使えます")
+    key = str(payload.lesson_key or "").strip()
+    parts = _sapuri_lesson_parts(key)
+    if not parts or not _sapuri_course_allowed(parts[0]["code"]):
+        raise HTTPException(status_code=400, detail="この回は記録できません")
+    key = f"{parts[0]['code']}#{parts[1]}"
+    if not (_sapuri_progress_ready() and _sapuri_tables_ready()):
+        raise HTTPException(status_code=503, detail="表の準備待ちです (デプロイ直後は数分かかります)")
+    want = payload.watched is not False
+    surface = str(payload.surface or "").strip()
+    source = "impersonation" if _is_impersonation_auth(authorization) else (surface if surface in _SAPURI_WATCH_SOURCES else "student")
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        at = None
+        if want:
+            c.execute("SELECT active FROM sapuri_lessons WHERE lesson_key = ?", (key,))
+            r = c.fetchone()
+            if not r or int(r["active"] or 0) != 1:
+                raise HTTPException(status_code=400, detail="この回は記録できません")
+            c.execute("INSERT INTO sapuri_lesson_progress (student_id, lesson_key, watched_at, source) VALUES (?, ?, ?, ?) "
+                      "ON CONFLICT DO NOTHING", (sid, key, _utc_naive_iso(), source))
+            conn.commit()
+            c.execute("SELECT watched_at FROM sapuri_lesson_progress WHERE student_id = ? AND lesson_key = ?", (sid, key))
+            r = c.fetchone()
+            at = r["watched_at"] if r else None
+        else:
+            c.execute("DELETE FROM sapuri_lesson_progress WHERE student_id = ? AND lesson_key = ?", (sid, key))
+            conn.commit()
+        return {"ok": True, "lesson_key": key, "watched": want, "watched_at": _utc_iso_or_none(at) if want else None,
+                "watched_date_jst": _sapuri_jst_date(at) if want else None}
+    except HTTPException:
+        raise
+    except Exception as e:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        log.error(f"[Sapuri] watched write failed sid={sid}: {type(e).__name__}")
+        return JSONResponse(status_code=500, content={"ok": False, "error": "記録できませんでした。もう一度お試しください"})
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+
+
+@app.get("/api/student/class/sapuri/progress")
+def student_class_sapuri_progress(request: Request, authorization: Optional[str] = Header(None)):
+    """📺 見たスタサプの一覧 (新しい順・最大 200・日付つき)。本人だけ。対象外の生徒には出さない (行は消さない = 読むときに隠す)。
+    題名は有効な講 (active=1) だけ。止めた科目・カタログに無い講座の行は出さない。"""
+    _check_rate_limit_ip(request, bucket="class_sapuri_progress", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    sid = int(student["id"])
+    if not _sapuri_eligible_by_id(sid).get("eligible"):
+        return {"ok": True, "eligible": False, "total": 0, "items": []}
+    if not (_sapuri_progress_ready() and _sapuri_tables_ready()):
+        return {"ok": True, "eligible": True, "total": 0, "items": []}
+    try:
+        rows = _sapuri_watch_rows(sid, 1000)
+    except Exception as e:
+        log.warning(f"[Sapuri] progress read failed sid={sid}: {type(e).__name__}")
+        return JSONResponse(status_code=500, content={"ok": False, "error": "読み込めませんでした"})
+    items = [x for x in (_sapuri_watch_item(r) for r in rows) if x]
+    return {"ok": True, "eligible": True, "total": len(items), "items": items[:200]}
 
 
 class SapuriImportRequest(BaseModel):
@@ -57902,6 +58263,25 @@ def admin_sapuri_status(authorization: Optional[str] = Header(None)):
         courses.append(dict(p, code=co["code"], name=co["name"], subject=co["subject"], first=co["first"],
                             last=co["last"], has_lessons=co["has_lessons"], used_for_match=co["code"] in used))
     students = _sapuri_course_students()
+    # 📺 見た回の数と最後に見た日 (生徒ごとに 1 文で数える。WHERE IN は使わない = SQLite の変数の上限に当たらない)
+    wstat = {}
+    if _sapuri_progress_ready():
+        conn = None
+        try:
+            conn = db()
+            c = conn.cursor()
+            c.execute("SELECT student_id, COUNT(*) AS n, MAX(watched_at) AS last_at FROM sapuri_lesson_progress GROUP BY student_id")
+            wstat = {int(r["student_id"]): (int(r["n"] or 0), r["last_at"]) for r in (c.fetchall() or [])}
+        except Exception as e:
+            log.warning(f"[Sapuri] status watched count failed: {type(e).__name__}")
+        finally:
+            if conn is not None:
+                try: conn.close()
+                except Exception: pass
+    for st in students:
+        n_, last_ = wstat.get(int(st["id"]), (0, None))
+        st["watched_count"] = n_
+        st["last_watched_at"] = _sapuri_jst_date(last_) if last_ else None
     eligible = [s for s in students if s["eligible"]]
     return {"ok": True, "enabled": _sapuri_enabled(), "config_ok": ok, "config_reason": why, "tables_ready": tables,
             "lessons_loaded": _sapuri_lessons_loaded(), "subject_keys": list(SAPURI_SUBJECT_KEYS),
@@ -57931,6 +58311,8 @@ def admin_sapuri_preview(student_id: int, authorization: Optional[str] = Header(
     recs = _sapuri_recommend(sid, [{"subject_code": r["subject"], "topic": r["topic"]} for r in rows],
                              details=dets) if rows else []
     disp, dwhy = _sapuri_display_ex(recs, [r["dominant_reason"] for r in rows])
+    # TOP3 だけ「見終わり」を残す (生徒の weakness-top3 と同じ)。純 Python (問い合わせは増えない)
+    disp_top3 = _sapuri_display(recs, [r["dominant_reason"] for r in rows][:3], keep_all_watched=True)
     weaknesses = []
     for i, r in enumerate(rows):
         rec = recs[i] if i < len(recs) else None
@@ -57944,12 +58326,14 @@ def admin_sapuri_preview(student_id: int, authorization: Optional[str] = Header(
                            "matched_by": (rec or {}).get("matched_by") or "none", "recommendation": rec,
                            "shown": shown, "why": why, "subject_key": det.get("subject_key"),
                            "dev": det.get("dev"), "dev_basis": det.get("dev_basis"),
-                           "fallback_from": det.get("fallback_from")})
-    shown_top3 = [w["shown"] for w in weaknesses[:3] if w["shown"]] if eligible else []
+                           "fallback_from": det.get("fallback_from"),
+                           "all_watched": bool(rec and rec.get("matched_by") in ("topic", "tag") and rec.get("lessons")
+                                               and all(l.get("watched") for l in rec["lessons"]))})
+    shown_top3 = [d for d in disp_top3 if d] if eligible else []
     class_items = _sapuri_class_items(rows, [w["shown"] for w in weaknesses]) if eligible else []
     return {"ok": True, "student_id": sid, "eligible": eligible, "reason": el.get("reason"),
             "band": el.get("band"), "top3": shown_top3, "class_items": class_items,
-            "weekly_lines": _sapuri_weekly_lines([{"sapuri": d} for d in shown_top3]),
+            "weekly_lines": _sapuri_weekly_lines([{"sapuri": d} for d in shown_top3 if not d.get("all_watched")]),
             "weaknesses": weaknesses}
 
 
@@ -57968,7 +58352,8 @@ def admin_sapuri_coverage(authorization: Optional[str] = Header(None)):
         if not rows:
             continue
         dets: list = []
-        recs = _sapuri_recommend(s["id"], [{"subject_code": r["subject"], "topic": r["topic"]} for r in rows], details=dets)
+        recs = _sapuri_recommend(s["id"], [{"subject_code": r["subject"], "topic": r["topic"]} for r in rows], details=dets,
+                                 mark_watched=False)   # カバー状況は見た回に左右されない
         for i, r in enumerate(rows):
             rec = recs[i] if i < len(recs) else None
             det = dets[i] if i < len(dets) else {}
@@ -57995,6 +58380,22 @@ def admin_sapuri_coverage(authorization: Optional[str] = Header(None)):
     top = sorted(missed.values(), key=lambda x: (-x["count"], str(x["subject"]), str(x["tag"]), str(x["why"])))[:20]
     return {"ok": True, "students": len(students), "weaknesses": sum(counts.values()), "matched_by": counts,
             "why_counts": by_why, "unmatched_top": top}
+
+
+@app.get("/api/admin/sapuri/progress")
+def admin_sapuri_progress(student_id: int, authorization: Optional[str] = Header(None)):
+    """📺 CEO: 生徒が見た回の一覧 (新しい順・最大 500)。管理者だけ (生徒トークン・cron の合言葉は 401)。題名は DB にあれば
+    止めた講 (active=0) も出す (画面の中だけ・ログに出さない)。表が無ければ 503。"""
+    _verify_admin_required(authorization)
+    try:
+        sid = int(student_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="student_id が不正です")
+    if not (_sapuri_progress_ready() and _sapuri_tables_ready()):
+        raise HTTPException(status_code=503, detail="表の準備待ちです (デプロイ直後は数分かかります)")
+    rows = _sapuri_watch_rows(sid, 1000)
+    items = [x for x in (_sapuri_watch_item(r, admin=True) for r in rows) if x]
+    return {"ok": True, "student_id": sid, "total": len(items), "items": items[:500]}
 
 
 # ==========================================================================
@@ -59276,6 +59677,9 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
         # validate (📺 スタサプは対象生徒だけ・カタログのコードで検査。AI が書いた講座名の文字列は使わない)
         phases_list = _validate_curr_phases(phases_raw, _sp_eligible)
         log.info(f"[Curriculum] ai-generate student={student['id']} univ={target_university} phases={len(phases_list)}")
+        if _sp_eligible:
+            # 📺 プレビューにも「見た x / y 講」(AI の応答を受け取った後に読む・保存すると _sapuri_validate_items が捨てる)
+            _sapuri_annotate_phase_progress(student["id"], phases_list)
         return {
             "ok": True,
             "preview": {

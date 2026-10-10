@@ -259,6 +259,53 @@ eq('ceo: 代わりでなければ書かない', PV.indexOf('同じ学年帯の�
 var CV = coverageHtml({ students: 1, weaknesses: 3, matched_by: { none: 3 }, unmatched_top: [{ count: 3, subject: 'english', subject_key: null,
   tag: null, matched_by: 'none', why: 'english_non_grammar', example_topics: ['テスト読解A', 'テスト読解B', 'テスト読解C'] }] });
 eq('ceo: カバー状況に理由と例 (3 つまで)', CV.indexOf(esc(SP_WHY_JA.english_non_grammar)) >= 0 && CV.indexOf('<div>テスト読解C</div>') >= 0, true);
+// 📺 見た回のチェック (2026-10-10): ボタンは watched (bool) の印があるときだけ (印の無い旧サーバでは出さない)・日付は M/D・data-key はエスケープ
+function LW(seq, w, date, key) { return { seq: seq, title: 'テスト講義' + seq, lesson_key: key || ('X1#' + seq), watched: w, watched_date_jst: date }; }
+var W0 = { course_name: CN, lessons: [LW(12, false)], to_seq: 14 };
+var W1 = { course_name: CN, lessons: [LW(12, true, '2026-10-09')], to_seq: null };
+var WQ = { course_name: CN, lessons: [LW(12, false, null, 'X"<1#12')], to_seq: null };
+var hw0 = sapuriRecLineHtml(W0, { requireLesson: true, watchBtn: true, surface: 'top3' });
+eq('mypage: watchBtn と watched があればボタン (☐ 見た)', hw0.indexOf('class="sapuri-watch-btn" data-key="X1#12" data-on="0" data-surface="top3"') >= 0 && hw0.indexOf('>☐ 見た</button>') >= 0, true);
+eq('mypage: ボタンは第N講の行の後ろ (2 段の並びは崩さない)', /line-clamp:2[^>]*>第12講「テスト講義12」（第14講まで）<\/div><button /.test(hw0), true);
+eq('mypage: watched の印が無い (旧サーバ) ならボタンを出さない', sapuriRecLineHtml(C, { requireLesson: true, watchBtn: true }).indexOf('sapuri-watch-btn') < 0, true);
+eq('mypage: watchBtn を渡さなければ出さない (AI 弱点プリント・印刷)', sapuriRecLineHtml(W0, { requireLesson: true }).indexOf('sapuri-watch-btn') < 0, true);
+eq('mypage: 見た回は ✅ 見た (M/D)', sapuriRecLineHtml(W1, { watchBtn: true }).indexOf('>✅ 見た (10/9)</button>') >= 0, true);
+eq('mypage: data-key はエスケープ', sapuriRecLineHtml(WQ, { watchBtn: true }).indexOf('data-key="X&quot;&lt;1#12"') >= 0, true);
+var AW = sapuriAllWatchedHtml({ subject: 'english', topic: 'テスト単元&x', sapuri: { all_watched: true, course_name: CN, lessons: [] } });
+eq('mypage: 見終わりの 1 行 (ドリルへ・題名なし)', AW.indexOf('この単元のスタサプは見終わりました') >= 0 && AW.indexOf('w_topic=' + encodeURIComponent('テスト単元&x')) >= 0 && AW.indexOf('テスト講義') < 0, true);
+var WL = sapuriWatchedListHtml({ total: 2, items: [{ lesson_key: 'X1#12', course_name: CN, seq: 12, title: 'テスト講義<12>', watched_date_jst: '2026-10-09' },
+                                                  { lesson_key: 'X1#3', course_name: CN, seq: 3, title: null, watched_date_jst: '2026-01-02' }] });
+eq('mypage: 見た回の一覧 (件数・日付 M/D・題名はエスケープ・各行に取り消しのボタン)', WL.indexOf('📺 見たスタサプ (2 講)') >= 0 && WL.indexOf('>10/9<') >= 0
+   && WL.indexOf('>1/2<') >= 0 && WL.indexOf('テスト講義&lt;12&gt;') >= 0 && (WL.match(/data-on="1"/g) || []).length === 2, true);
+eq('mypage: 見た回が 0 件なら出さない', sapuriWatchedListHtml({ total: 0, items: [] }), '');
+var CP = { sapuri: [{ course_code: 'X1', from_seq: 1, to_seq: 10 }, { course_code: 'X2', from_seq: 3, to_seq: 4 }],
+           sapuri_lectures: [CN + ' 第1〜10講', CN + '2 第3〜4講'],
+           sapuri_progress: [{ course_code: 'X1', watched_count: 2, total: 10 }, { course_code: 'X2', watched_count: 0, total: 2 }] };
+eq('mypage: カリキュラムの範囲に「見た x / y 講」', JSON.stringify(_cuSapuriLabels(CP)), JSON.stringify([CN + ' 第1〜10講（見た 2 / 10 講）', CN + '2 第3〜4講（見た 0 / 2 講）']));
+eq('mypage: 数が合わなければ足さない', JSON.stringify(_cuSapuriLabels({ sapuri: CP.sapuri, sapuri_lectures: CP.sapuri_lectures, sapuri_progress: [CP.sapuri_progress[0]] })),
+   JSON.stringify(CP.sapuri_lectures));
+// class.html
+eq('class: watched の印があればボタン', spWatchBtnHtml(LW(12, false), 'class'), '<button type="button" class="sp-watch-btn" data-key="X1#12" data-on="0" data-surface="class" aria-pressed="false">☐ 見た</button>');
+eq('class: 見た回は ✅ 見た (M/D)', spWatchBtnHtml(LW(12, true, '2026-10-10')).indexOf('>✅ 見た (10/10)</button>') >= 0, true);
+eq('class: 印が無ければ出さない', spWatchBtnHtml({ seq: 12, lesson_key: 'X1#12' }), '');
+var chw = sapuriCardHtml([Object.assign({ subject: 'english', topic: '関係詞' }, W0)]);
+eq('class: カードの第N講の行の後ろにボタン', chw.indexOf('<div class="sp-line">第12講「テスト講義12」（第14講まで）</div><button type="button" class="sp-watch-btn" data-key="X1#12"') >= 0, true);
+var cwl = spWatchedListHtml({ total: 1, items: [{ lesson_key: 'X1#12', course_name: CN, seq: 12, title: 'テスト講義12', watched_date_jst: '2026-10-09' }] });
+eq('class: 見た回の一覧 (日付・取り消しボタン)', cwl.indexOf('📺 見たスタサプ (1 講)') >= 0 && cwl.indexOf('>10/9<') >= 0 && cwl.indexOf('data-on="1" data-surface="list"') >= 0, true);
+// ceo.html ③ の「見た」列
+var WCELL = '<td style="padding:0.2rem 0.45rem; white-space:nowrap;">';
+var PV3 = previewHtml({ student_id: 1, band: '高3', eligible: true, top3: [{ course_name: CN, lessons: [], to_seq: null, all_watched: true }], weekly_lines: [], class_items: [],
+  weaknesses: [{ subject: 'english', topic: 'テスト単元', dominant_reason: 'understanding', matched_by: 'tag', recommendation: C, shown: C, why: null },
+               { subject: 'english', topic: 'テスト単元2', dominant_reason: 'understanding', matched_by: 'tag',
+                 recommendation: { course_name: CN, lessons: [LW(5, true), LW(6, false)] }, shown: null, why: null },
+               { subject: 'english', topic: 'テスト単元3', dominant_reason: 'understanding', matched_by: 'topic', all_watched: true,
+                 recommendation: { course_name: CN, lessons: [LW(9, true)] }, shown: null, why: 'all_watched' }] });
+eq('ceo: 「見た」列は watched の印が無ければ —', PV3.indexOf(WCELL + '<span style="color:#71717a;">—</span></td>') >= 0, true);
+eq('ceo: 「見た」列は k/n', PV3.indexOf(WCELL + '<span style="color:#fde68a;">1/2</span></td>') >= 0, true);
+eq('ceo: 全部見たら ✅ 全部 と理由の文言', PV3.indexOf(WCELL + '<span style="color:#86efac;">✅ 全部</span></td>') >= 0 && PV3.indexOf(esc(SP_WHY_JA.all_watched)) >= 0, true);
+eq('ceo: TOP3 の見終わりの行', PV3.indexOf('この単元のスタサプは見終わり') >= 0, true);
+var CWL = watchedListHtml({ total: 1, items: [{ lesson_key: 'X1#12', course_name: CN, seq: 12, title: 'テスト講義<12>', active: false, source: 'class', watched_date_jst: '2026-10-09' }] });
+eq('ceo: 見た回の一覧 (題名はエスケープ・止めた回の印・押した画面)', CWL.indexOf('テスト講義&lt;12&gt;') >= 0 && CWL.indexOf('取込で止めた回') >= 0 && CWL.indexOf('通塾生アプリ') >= 0, true);
 var __res = out.join('\n');
 if (typeof process !== 'undefined' && typeof console !== 'undefined') { console.log(__res); }
 __res;
@@ -280,6 +327,7 @@ def check_front_rec_runtime():
     n0 = len(problems)
     segs = [
         _cut(open(MYPAGE_JS, encoding="utf-8").read(), "function _sapuriRunEnd(ls) {", "window.sapuriRecParts = sapuriRecParts;", "mypage.js"),
+        _cut(open(MYPAGE_JS, encoding="utf-8").read(), "function _cuSapuriLabels(p) {", "// 📺 2026-10-10 スタサプ段階 B: サーバが照合した", "mypage.js (カリキュラムの範囲)"),
         _cut(open(CLASS_HTML, encoding="utf-8").read(), "    function spRunEnd(ls) {", "    async function loadSapuriCard() {", "class.html"),
         _cut(open(CEO_HTML, encoding="utf-8").read(), "    function recRunEnd(ls) {", "    function previewHtml(d) {", "ceo.html"),
         _cut(open(CEO_HTML, encoding="utf-8").read(), "    var REASON_JA = {", "    function el(id) {", "ceo.html (文言の表)"),
@@ -315,7 +363,7 @@ def check_front_rec_runtime():
             bad(l[4:])
     if len(problems) == n0:
         good(f"{len(lines)} 件 OK ({eng[0]}): 範囲は講番号が続くときだけ・画面は講座名と第N講を分ける (3 画面とも)・"
-             f"CEO の見え方の見出し・出さない理由・レベルの根拠・代わりの講座")
+             f"CEO の見え方の見出し・出さない理由・レベルの根拠・代わりの講座・見た回のボタン (印があるときだけ)・見た x / y 講")
 
 
 def _fn_src(src, tree, name):

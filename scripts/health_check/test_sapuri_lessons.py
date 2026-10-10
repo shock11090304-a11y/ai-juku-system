@@ -23,6 +23,9 @@
   20-23. 段階 B レビュー修正: タグの無い弱点は学年帯の外・別系統の講座に移らない (AI 弱点プリントの実ルート) /
       講データの無い講座を選んだら講データのある同じ科目の講座で Tier 1/2 / 「（第b講まで）」は講番号が続くときだけ /
       停止スイッチは読めなければ閉じる側 / 止めた科目の保存済み週次プリントは読むときに外す
+  26. 見た回のチェック (2026-10-10): POST /api/student/class/sapuri/watched・GET progress (認証・対象・AIなし/ライトで 200・
+      入力の検査・冪等・他人の行・次の回へ・見終わり・取り消し・週次のメール/LINE・カリキュラムと計画の x/y・統合で早い方の日時・
+      削除と孤児の掃除・CEO の status/progress/preview・見た回の読み取りは画面ごとに 1 回)
   12. レビュー修正: milestones/focus/name のスタサプの語を消す (全生徒) / 停止スイッチ OFF の間の apply-gap-fix・PUT で
       保存済みの範囲を消さない (ON に戻すと出る) / 下書き (curriculum_draft) は読むときに今の判定でそろえる /
       展開済みのスタサプの計画は対象外に出さない (行は消さない) / /api/sapuri-lectures の version
@@ -1320,6 +1323,370 @@ def main():
     snip_e55 = mod._build_sapuri_lectures_prompt_snippet(band="高3", student_id=sid_eng55)
     check("英語 55 の生徒のカタログに英文法のトップ (KZA01000・65-78) は入らず、スタンダード (KZA03000) は入る",
           "KZA01000:" not in snip_e55 and "KZA03000:" in snip_e55, len(snip_e55))
+
+    # ======================================================================
+    # 📺 見た回のチェックと進み具合 (2026-10-10 塾長「見た回のチェック（進み具合の記録）機能も作って」)。題名は架空。
+    # ======================================================================
+    print("\n[26] 見た回のチェック (POST watched / GET progress・次の回へ・見終わり・週次・カリキュラムと計画の x/y・統合と削除)")
+    mod._RATE_LIMIT_STORE.clear()
+    mod._SAPURI_ELIGIBLE_CACHE.clear()
+    mod._AI_DISABLED_CACHE.clear()
+    W, PG = "/api/student/class/sapuri/watched", "/api/student/class/sapuri/progress"
+    K5, K6, K12 = "KZA02000#5", "KZA02000#6", "KZ277000#12"
+
+    def watch(sid, key, on=True, extra=None, headers=None):
+        mod._RATE_LIMIT_STORE.clear()
+        body = {"lesson_key": key, "watched": on, "surface": "class"}
+        body.update(extra or {})
+        return client.post(W, json=body, headers=headers if headers is not None else tok(sid))
+
+    def prog_rows(sid):
+        conn = mod.db(); c = conn.cursor()
+        c.execute("SELECT lesson_key, watched_at FROM sapuri_lesson_progress WHERE student_id = ? ORDER BY lesson_key", (sid,))
+        out = [(r["lesson_key"], str(r["watched_at"])) for r in c.fetchall()]
+        conn.close()
+        return out
+
+    def cls(sid):
+        mod._RATE_LIMIT_STORE.clear()
+        r = client.get("/api/student/class/sapuri", headers=tok(sid))
+        return r.status_code, ((r.json() if r.status_code == 200 else {}).get("items") or []), r.text
+
+    def top3(sid):
+        mod._RATE_LIMIT_STORE.clear()
+        r = client.get(f"/api/student/weakness-top3?student_id={sid}", headers=tok(sid))
+        return r.status_code, [w.get("sapuri") for w in ((r.json() if r.status_code == 200 else {}).get("weaknesses") or [])], r.text
+
+    # (1) 認証と対象
+    check("前提: 見た回の記録は 0 行", n_rows("SELECT COUNT(*) FROM sapuri_lesson_progress") == 0)
+    r = client.post(W, json={"lesson_key": K5, "watched": True})
+    check("watched: 未ログインは 401", r.status_code == 401, r.status_code)
+    r = client.get(PG)
+    check("progress: 未ログインは 401", r.status_code == 401, r.status_code)
+    r = watch(sid_ai, K5)
+    check("watched: 対象外 (AI 学習管理コース) は 403", r.status_code == 403 and "授業コース" in r.text, r.text)
+    r = client.get(PG, headers=tok(sid_ai))
+    check("progress: 対象外は 200・items 空 (読むときに隠す)", r.status_code == 200 and r.json().get("items") == []
+          and r.json().get("eligible") is False, r.text)
+    r = watch(sid_noai, K12)
+    check("watched: AIなし枠 (塾生アプリのみ) の対象生徒でも 200 (prefix /api/student/class/ は許可済み)", r.status_code == 200
+          and r.json().get("watched") is True, r.text)
+    sid_light = make_student(mod, "ライト L", "sapuri-light@example.org", labels=LABELS3)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("UPDATE students SET feature_tier = 'light' WHERE id = ?", (sid_light,))
+    conn.commit(); conn.close()
+    mod._AI_DISABLED_CACHE.clear()
+    r = watch(sid_light, K12)
+    check("watched: ライトの対象生徒も 200 (AI を呼ばない)", r.status_code == 200, r.text)
+    mod._RATE_LIMIT_STORE.clear()
+    r = client.get(PG, headers=tok(sid_light))
+    check("progress: ライトも 200", r.status_code == 200 and r.json().get("total") == 1, r.text)
+
+    # (2) 入力の検査
+    for bad_key, why in (("KZA02000-5", "形が違う"), ("ZZ999#1", "カタログに無い講座"), ("KZA02000#99", "範囲外の講番号"),
+                         ("KZA02000#0", "第0講"), ("", "空"), ("KZ240000#3", "講データの無い講座 (DB に無い講)")):
+        r = watch(sid_ok, bad_key)
+        check(f"watched: {why} は 400", r.status_code == 400, (bad_key, r.status_code, r.text[:120]))
+    conn = mod.db(); c = conn.cursor()
+    c.execute("UPDATE sapuri_lessons SET active = 0 WHERE lesson_key = 'KZA02000#7'")
+    conn.commit(); conn.close()
+    r = watch(sid_ok, "KZA02000#7")
+    check("watched: 止めた講 (active=0) は記録できない (400)", r.status_code == 400, r.text)
+    r = watch(sid_ok, "KZA02000#7", on=False)
+    check("watched: 止めた講の取り消しは 200 (記録を消せる)", r.status_code == 200 and r.json().get("watched") is False, r.text)
+    client.post(IMP, json=kza_body, headers=adm)   # 戻す
+    orig_keys = mod.SAPURI_SUBJECT_KEYS
+    mod.SAPURI_SUBJECT_KEYS = tuple(k for k in orig_keys if k != "eng_grammar")
+    try:
+        r = watch(sid_ok, K5)
+        check("watched: 止めた科目 (SAPURI_SUBJECT_KEYS から外した) の講は 400", r.status_code == 400, r.text)
+    finally:
+        mod.SAPURI_SUBJECT_KEYS = orig_keys
+    orig_ready = mod._sapuri_progress_ready
+    mod._sapuri_progress_ready = lambda: False
+    try:
+        r = watch(sid_ok, K5)
+        check("watched: 表が無い (DDL 未反映) なら 503", r.status_code == 503, r.text)
+        rr = R(sid_ok, [{"subject_code": "english", "topic": "関係詞"}])
+        check("表が無いときの照合は従来どおり (全部まだ見ていない扱い)", rr[0] and [x["seq"] for x in rr[0]["lessons"]] == [5, 6]
+              and all(x.get("watched") is False for x in rr[0]["lessons"]), rr[0])
+    finally:
+        mod._sapuri_progress_ready = orig_ready
+    check("ここまでで sid_ok の記録は 0 行 (拒否は書かない)", prog_rows(sid_ok) == [], prog_rows(sid_ok))
+
+    # (3) 冪等
+    r1 = watch(sid_ok, K5)
+    time.sleep(1.1)
+    r2 = watch(sid_ok, K5)
+    j1, j2 = (r1.json() if r1.status_code == 200 else {}), (r2.json() if r2.status_code == 200 else {})
+    check("watched: 200・{ok, lesson_key, watched, watched_at (offset つき), watched_date_jst}", r1.status_code == 200
+          and j1.get("ok") is True and j1.get("lesson_key") == K5 and j1.get("watched") is True
+          and str(j1.get("watched_at") or "").endswith("+00:00") and re.match(r"^\d{4}-\d{2}-\d{2}$", str(j1.get("watched_date_jst"))), r1.text)
+    check("冪等: 二度押しでも 1 行・最初の日時のまま", len(prog_rows(sid_ok)) == 1 and j1.get("watched_at") == j2.get("watched_at"),
+          (prog_rows(sid_ok), j1, j2))
+    check("watched_at は _utc_naive_iso の形 (offset なし)", "+" not in prog_rows(sid_ok)[0][1] and "T" in prog_rows(sid_ok)[0][1],
+          prog_rows(sid_ok))
+    r = watch(sid_ok, K6, on=False)
+    r2 = watch(sid_ok, K6, on=False)
+    check("取り消しは見ていない回でも 200 (冪等)", r.status_code == 200 and r2.status_code == 200, (r.text, r2.text))
+
+    # (4) 他人
+    r = watch(sid_now, K5, extra={"student_id": sid_ok})
+    check("body の student_id は読まない (トークンの生徒に書く)", r.status_code == 200
+          and [k for k, _ in prog_rows(sid_now)] == [K5] and len(prog_rows(sid_ok)) == 1, (prog_rows(sid_now), prog_rows(sid_ok)))
+    r = watch(sid_now, K5, on=False)
+    check("他人が同じ講を取り消しても自分の行は残る", r.status_code == 200 and prog_rows(sid_now) == [] and len(prog_rows(sid_ok)) == 1,
+          (prog_rows(sid_now), prog_rows(sid_ok)))
+    mod._RATE_LIMIT_STORE.clear()
+    r = client.get(PG, headers=tok(sid_now))
+    check("他人の一覧に自分の見た回は出ない", r.status_code == 200 and r.json().get("items") == [], r.text)
+    mod._RATE_LIMIT_STORE.clear()
+    r = client.get(PG, headers=tok(sid_ok))
+    j = r.json() if r.status_code == 200 else {}
+    it0 = (j.get("items") or [{}])[0]
+    check("progress: 自分の見た回 (講座名・第N講・題名・日付)", r.status_code == 200 and j.get("total") == 1
+          and it0.get("lesson_key") == K5 and it0.get("course_code") == "KZA02000" and it0.get("seq") == 5
+          and it0.get("course_name") == "高3 ハイレベル英語＜文法編＞" and it0.get("title") == "テスト講義A5"
+          and it0.get("watched_date_jst") == j1.get("watched_date_jst"), r.text[:300])
+
+    # (5) 次の回へ進む
+    code, items, t = cls(sid_ok)
+    check("class: 見た #5 を飛ばして #6 (範囲なし・watched=false・all_watched=false)", code == 200 and items
+          and (items[0]["course_code"], items[0]["lessons"][0]["seq"]) == ("KZA02000", 6) and items[0]["to_seq"] is None
+          and items[0]["lessons"][0].get("watched") is False and items[0].get("all_watched") is False, t[:400])
+    check("class: label も #6 から作り直す (見た #5 の題名を残さない)", items and "テスト講義A6" in items[0]["label"]
+          and "テスト講義A5" not in json.dumps(items[0], ensure_ascii=False), items[:1])
+    code, sp, t = top3(sid_ok)
+    check("TOP3: 次の回 (#6)・2 位は重複のまま出さない", code == 200 and sp and sp[0] and sp[0]["lessons"][0]["seq"] == 6
+          and sp[0].get("all_watched") is False and sp[1] is None, t[:300])
+
+    # this-week: 保存済みの週次プリント (#5) は作り直さず ✅ の印だけ
+    r = client.get("/api/student/worksheet/this-week", headers=tok(sid_ok))
+    st0 = ((r.json().get("worksheet") or {}).get("subject_topics") or [{}])[0] if r.status_code == 200 else {}
+    l0 = ((st0.get("sapuri") or {}).get("lessons") or [{}])[0]
+    check("this-week: 保存済みの回 (#5) に watched=true と日付・作り直さない", r.status_code == 200 and l0.get("seq") == 5
+          and l0.get("watched") is True and l0.get("watched_date_jst") == j1.get("watched_date_jst") and "テスト講義A5" in r.text, st0)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("SELECT subject_topics FROM worksheet_archives WHERE student_id = ?", (sid_ok,))
+    check("this-week: 保存した行は書き換えない (watched を保存しない)", '"watched"' not in (c.fetchone()["subject_topics"] or ""))
+    conn.close()
+
+    # (6) 全部見た
+    watch(sid_ok, K6)
+    code, items, t = cls(sid_ok)
+    check("class: 弱点に合う回を全部見たら出さず、次の弱点 (#12) が上がる", code == 200 and [(x["course_code"], x["lessons"][0]["seq"]) for x in items]
+          == [("KZ277000", 12)], t[:400])
+    code, sp, t = top3(sid_ok)
+    check("TOP3: 見終わり (all_watched=true・lessons 空・題名なし)", code == 200 and sp and sp[0] and sp[0].get("all_watched") is True
+          and sp[0]["lessons"] == [] and sp[0]["to_seq"] is None and "テスト講義" not in json.dumps(sp[0], ensure_ascii=False)
+          and sp[0]["course_code"] == "KZA02000", sp[:1])
+    r = client.get(f"/api/admin/sapuri/preview?student_id={sid_ok}", headers=adm)
+    j = r.json() if r.status_code == 200 else {}
+    pw = j.get("weaknesses") or []
+    check("preview: class_items から消え、why=all_watched・all_watched=true・lessons の watched", r.status_code == 200
+          and [(x["course_code"], x["lessons"][0]["seq"]) for x in j.get("class_items") or []] == [("KZ277000", 12)]
+          and pw and pw[0].get("why") == "all_watched" and pw[0].get("all_watched") is True
+          and all(l.get("watched") is True for l in pw[0]["recommendation"]["lessons"]), r.text[:400])
+    check("preview: top3 は見終わりを残す (生徒の TOP3 と同じ)", j.get("top3") and j["top3"][0].get("all_watched") is True, j.get("top3"))
+    rc = client.get("/api/student/class/sapuri", headers=tok(sid_ok))
+    check("preview: class_items は生徒の class と同じ", rc.status_code == 200 and j.get("class_items") == rc.json().get("items"), rc.text[:200])
+
+    # (7) 取り消すと戻る
+    watch(sid_ok, K6, on=False)
+    code, sp, t = top3(sid_ok)
+    check("取り消し: TOP3 にまた #6", code == 200 and sp and sp[0] and sp[0]["lessons"][0]["seq"] == 6 and sp[0].get("all_watched") is False, sp[:1])
+    watch(sid_ok, K6)
+
+    # (8) 週次: 見た回はメール・LINE に出さない
+    conn = mod.db(); c = conn.cursor()
+    c.execute("DELETE FROM worksheet_archives WHERE student_id = ?", (sid_ok,))
+    conn.commit(); conn.close()
+    mails, lines = [], []
+    orig_mail, orig_line = mod._send_monitor_email, mod._do_line_push
+    mod._send_monitor_email = lambda subj, body, to_email=None: (mails.append((to_email, body)) or {"sent": True})
+    mod._do_line_push = lambda sid, tmpl, params: (lines.append((sid, tmpl, params)) or {"ok": True})
+    try:
+        res = mod._run_weekly_worksheet_generation()
+    finally:
+        mod._send_monitor_email, mod._do_line_push = orig_mail, orig_line
+    m_ok = next((b for to, b in mails if to == "sapuri-a@example.org"), None)
+    lp = next((p_ for s_, t_, p_ in lines if s_ == sid_ok), None)
+    check("週次: プリントは作り直される (前提)", m_ok is not None and lp is not None, (res, len(mails), len(lines)))
+    check("週次: 見終わった英文法の回はメールに出ない", m_ok is not None and "ハイレベル英語＜文法編＞" not in m_ok and "テスト講義" not in m_ok, m_ok)
+    check("週次: LINE の sapuri_line にも出ない", lp is not None and "ハイレベル英語＜文法編＞" not in str(lp.get("sapuri_line") or ""), lp)
+    conn = mod.db(); c = conn.cursor()
+    c.execute("SELECT subject_topics FROM worksheet_archives WHERE student_id = ?", (sid_ok,))
+    row = c.fetchone()
+    conn.close()
+    st_new = json.loads(row["subject_topics"]) if row else []
+    check("週次: 保存した subject_topics にも見終わった回は無い", row is not None and all(((x.get("sapuri") or {}).get("course_code") != "KZA02000")
+                                                                for x in st_new), st_new)
+
+    # (9) カリキュラムと学習計画の「見た x / y 講」
+    sid_p = make_student(mod, "スタサプ対象 P", "sapuri-p@example.org", labels=LABELS3)
+    for k in (K5, K6):
+        watch(sid_p, k)
+    body = {"target_university": "テスト大学", "exam_date": ed, "start_date": sd,
+            "phases": [phase("基礎期", sd, ed, materials=["ポラリス1"], sapuri=[{"course_code": "KZA02000", "from_seq": 5, "to_seq": 8},
+                                                                             {"course_code": "KZ016000", "from_seq": 1, "to_seq": 3}])]}
+    r = client.post("/api/curricula", json=body, headers=tok(sid_p))
+    check("前提: カリキュラムを保存", r.status_code == 200, r.text[:200])
+    cur = client.get("/api/curricula/me", headers=tok(sid_p)).json()["curricula"][0]
+    ph0 = cur["phases"][0]
+    check("/me: 範囲ごとに見た x / y 講 (sapuri と同じ並び・sapuri の形は変えない)",
+          ph0.get("sapuri_progress") == [{"course_code": "KZA02000", "watched_count": 2, "total": 4},
+                                         {"course_code": "KZ016000", "watched_count": 0, "total": 3}]
+          and ph0.get("sapuri") == [{"course_code": "KZA02000", "from_seq": 5, "to_seq": 8}, {"course_code": "KZ016000", "from_seq": 1, "to_seq": 3}], ph0)
+    r = client.put(f"/api/curricula/{cur['id']}", json={"phases": cur["phases"]}, headers=tok(sid_p))
+    conn = mod.db(); c = conn.cursor()
+    c.execute("SELECT phases FROM curricula WHERE id = ?", (cur["id"],))
+    raw = c.fetchone()["phases"]
+    conn.close()
+    check("PUT で送り返しても見た x / y 講は保存しない", r.status_code == 200 and "sapuri_progress" not in raw and "watched_count" not in raw, raw[:300])
+    st = mod._sapuri_phase_normalize(dict(ph0), True)
+    check("正規化は送り返された sapuri_progress を捨てる (apply-gap-fix・下書きの保存も同じ)", "sapuri_progress" not in st, st)
+    r = client.post(f"/api/curricula/{cur['id']}/expand-to-plans", headers=tok(sid_p))
+    check("前提: 学習計画に展開", r.status_code == 200 and r.json().get("added", 0) >= 3, r.text[:200])
+    conn = mod.db(); c = conn.cursor()
+    c.execute("INSERT INTO study_plans (student_id, title, subject, material, start_date, end_date, target_minutes, color, note) "
+              "VALUES (?,?,?,?,?,?,?,?,?)", (sid_p, "手入力", "英語", "架空の講座 第1〜3講", sd, ed, 60, "#000000", "出典: スタサプ (手入力)"))
+    conn.commit(); conn.close()
+    r = client.get("/api/study-plans/me", headers=tok(sid_p))
+    plans = r.json().get("plans") or [] if r.status_code == 200 else []
+    bym = {x["material"]: x for x in plans}
+    pk = bym.get("高3 ハイレベル英語＜文法編＞ 第5〜8講") or {}
+    check("/study-plans/me: スタサプの計画に見た x / y 講と次の回", pk.get("sapuri_progress") == {
+        "watched": 2, "total": 4, "course_code": "KZA02000", "next_seq": 7, "next_key": "KZA02000#7"}, pk.get("sapuri_progress"))
+    pko = bym.get("高3 古文＜文法編＞ 第1〜3講") or {}
+    check("/study-plans/me: 講データの無い講座の範囲は次の回なし (押しても 400 になるボタンを出さない)",
+          pko.get("sapuri_progress") == {"watched": 0, "total": 3, "course_code": "KZ016000", "next_seq": None, "next_key": None},
+          pko.get("sapuri_progress"))
+    check("/study-plans/me: スタサプ以外・material が読めない計画には付けない", "sapuri_progress" not in (bym.get("ポラリス1") or {"sapuri_progress": 1})
+          and "sapuri_progress" not in (bym.get("架空の講座 第1〜3講") or {"sapuri_progress": 1}), list(bym))
+    watch(sid_p, "KZA02000#7")
+    r = client.get("/api/study-plans/me", headers=tok(sid_p))
+    pk = {x["material"]: x for x in r.json().get("plans") or []}.get("高3 ハイレベル英語＜文法編＞ 第5〜8講") or {}
+    check("計画の「☐ 第7講を見た」を押すと 3 / 4・次は第8講", (pk.get("sapuri_progress") or {}).get("watched") == 3
+          and (pk.get("sapuri_progress") or {}).get("next_seq") == 8, pk.get("sapuri_progress"))
+
+    # (10) 統合: 早い方の日時を残す・消す側の行は 0
+    sid_ma = make_student(mod, "統合 残す側", "sapuri-ma@example.org", labels=LABELS3)
+    sid_mb = make_student(mod, "統合 消す側", "sapuri-mb@example.org", labels=LABELS3)
+    t0 = mod._utc_naive_iso(datetime.datetime(2026, 9, 1, 3, 0, tzinfo=datetime.timezone.utc))
+    t1 = mod._utc_naive_iso(datetime.datetime(2026, 10, 1, 3, 0, tzinfo=datetime.timezone.utc))
+    conn = mod.db(); c = conn.cursor()
+    c.execute("INSERT INTO sapuri_lesson_progress (student_id, lesson_key, watched_at, source) VALUES (?, ?, ?, 'class')", (sid_ma, K5, t1))
+    c.execute("INSERT INTO sapuri_lesson_progress (student_id, lesson_key, watched_at, source) VALUES (?, ?, ?, 'class')", (sid_mb, K5, t0))
+    c.execute("INSERT INTO sapuri_lesson_progress (student_id, lesson_key, watched_at, source) VALUES (?, ?, ?, 'class')", (sid_mb, K6, t1))
+    conn.commit(); conn.close()
+    r = client.post(f"/api/admin/students/{sid_ma}/merge", json={"from_id": sid_mb, "dry_run": True}, headers=adm)
+    jd = r.json() if r.status_code == 200 else {}
+    check("統合 dry_run: 衝突 1・移す 1・何も書かない", r.status_code == 200 and (jd.get("conflicts") or {}).get("sapuri_lesson_progress") == 1
+          and (jd.get("moved") or {}).get("sapuri_lesson_progress") == 1 and prog_rows(sid_ma) == [(K5, t1)], (r.text[:300], prog_rows(sid_ma)))
+    r = client.post(f"/api/admin/students/{sid_ma}/merge", json={"from_id": sid_mb, "dry_run": False}, headers=adm)
+    check("統合: 残す側に #5 (早い方の日時) と #6・消す側は 0 行", r.status_code == 200 and prog_rows(sid_ma) == [(K5, t0), (K6, t1)]
+          and prog_rows(sid_mb) == [], (r.text[:200], prog_rows(sid_ma), prog_rows(sid_mb)))
+
+    # (11) 削除と孤児の掃除
+    r = client.post(f"/api/admin/students/{sid_ma}/delete", json={"confirm_email": "sapuri-ma@example.org", "dry_run": True}, headers=adm)
+    check("削除の下見: related_counts に見た回 (2 行)", r.status_code == 200
+          and ((r.json().get("snapshot") or {}).get("related_counts") or {}).get("sapuri_lesson_progress") == 2,
+          r.text[:300])
+    r = client.post(f"/api/admin/students/{sid_ma}/delete", json={"confirm_email": "sapuri-ma@example.org", "dry_run": False,
+                                                                  "cancel_stripe": False}, headers=adm)
+    check("削除: 見た回の行も消える", r.status_code == 200 and prog_rows(sid_ma) == [], (r.text[:200], prog_rows(sid_ma)))
+    conn = mod.db(); c = conn.cursor()
+    c.execute("INSERT INTO sapuri_lesson_progress (student_id, lesson_key, watched_at) VALUES (?, ?, ?)", (987654, K5, t1))
+    conn.commit()
+    sw = mod._sweep_student_orphans(conn, c, dry_run=False)
+    conn.close()
+    check("孤児の掃除: students に無い生徒の見た回を消す", sw.get("sapuri_lesson_progress") == 1 and prog_rows(987654) == [], sw)
+    check("_ORPHAN_SWEEP_TABLES と _MERGE_STUDENT_TABLES の両方にある", "sapuri_lesson_progress" in mod._ORPHAN_SWEEP_TABLES
+          and any(t == "sapuri_lesson_progress" for t, _ in mod._MERGE_STUDENT_TABLES))
+
+    # (12) 管理
+    r = client.get("/api/admin/sapuri/status", headers=adm)
+    stu = {x["id"]: x for x in (r.json() if r.status_code == 200 else {}).get("students", [])}
+    check("status: 生徒ごとの見た講数と最後に見た日 (日本時間の日付)", stu.get(sid_ok, {}).get("watched_count") == 2
+          and re.match(r"^\d{4}-\d{2}-\d{2}$", str(stu.get(sid_ok, {}).get("last_watched_at")))
+          and stu.get(sid_ai, {}).get("watched_count") == 0 and stu.get(sid_ai, {}).get("last_watched_at") is None, stu.get(sid_ok))
+    check("status: 題名を返さない", "テスト講義" not in r.text)
+    for hdr in (tok(sid_ok), {}):
+        r = client.get(f"/api/admin/sapuri/progress?student_id={sid_ok}", headers=hdr)
+        check("admin progress: 生徒のトークン・未認証は 401", r.status_code == 401, r.status_code)
+    r = client.get(f"/api/admin/sapuri/progress?student_id={sid_ok}", headers=adm)
+    ja = r.json() if r.status_code == 200 else {}
+    check("admin progress: 題名つき・active・source・新しい順", r.status_code == 200 and ja.get("total") == 2
+          and [x["lesson_key"] for x in ja.get("items", [])] == [K6, K5] and ja["items"][1].get("title") == "テスト講義A5"
+          and ja["items"][0].get("active") is True and ja["items"][0].get("source") == "class", r.text[:300])
+    conn = mod.db(); c = conn.cursor()
+    c.execute("UPDATE sapuri_lessons SET active = 0 WHERE lesson_key = ?", (K5,))
+    conn.commit(); conn.close()
+    mod._RATE_LIMIT_STORE.clear()
+    r = client.get(PG, headers=tok(sid_ok))
+    i5 = next((x for x in (r.json() if r.status_code == 200 else {}).get("items", []) if x["lesson_key"] == K5), {})
+    check("生徒の一覧: 止めた講 (active=0) の記録は残すが題名は出さない (講座名と第N講だけ)", i5.get("seq") == 5 and i5.get("title") is None
+          and i5.get("course_name"), i5)
+    r = client.get(f"/api/admin/sapuri/progress?student_id={sid_ok}", headers=adm)
+    a5 = next((x for x in (r.json() if r.status_code == 200 else {}).get("items", []) if x["lesson_key"] == K5), {})
+    check("管理者の一覧: 止めた講も題名と active=false", a5.get("title") == "テスト講義A5" and a5.get("active") is False, a5)
+    client.post(IMP, json=kza_body, headers=adm)   # 戻す
+    orig_keys = mod.SAPURI_SUBJECT_KEYS
+    mod.SAPURI_SUBJECT_KEYS = tuple(k for k in orig_keys if k != "eng_grammar")
+    try:
+        mod._RATE_LIMIT_STORE.clear()
+        r = client.get(PG, headers=tok(sid_ok))
+        check("生徒の一覧: 止めた科目の行は出さない (消さない)", r.status_code == 200 and r.json().get("items") == [] and len(prog_rows(sid_ok)) == 2,
+              r.text[:200])
+    finally:
+        mod.SAPURI_SUBJECT_KEYS = orig_keys
+
+    # (13) 見た回の読み取りは画面ごとに 1 回 (N+1 にしない)・カバー状況は読まない
+    calls = []
+    orig_wm = mod._sapuri_watched_map
+    def counting(*a, **k):
+        calls.append(1)
+        return orig_wm(*a, **k)
+    mod._sapuri_watched_map = counting
+    try:
+        def n_calls(fn):
+            calls.clear()
+            mod._RATE_LIMIT_STORE.clear()
+            r_ = fn()
+            return r_.status_code, len(calls)
+        conn = mod.db(); c = conn.cursor()
+        c.execute("DELETE FROM worksheet_archives WHERE student_id = ?", (sid_p,))
+        c.execute("INSERT INTO worksheet_archives (student_id, week_start_date, subject_topics, questions_json, question_count) "
+                  "VALUES (?, ?, ?, '[]', 0)", (sid_p, sd, json.dumps([{"subject": "english", "topic": "関係詞", "sapuri": {
+                      "subject_key": EG, "course_code": "KZA02000", "course_name": "高3 ハイレベル英語＜文法編＞",
+                      "lessons": [{"lesson_key": K5, "seq": 5, "title": "テスト講義A5"}], "to_seq": 6, "matched_by": "tag"}},
+                      {"subject": "english", "topic": "時制", "sapuri": {"subject_key": EG, "course_code": "KZA02000",
+                       "course_name": "高3 ハイレベル英語＜文法編＞", "lessons": [{"lesson_key": "KZA02000#1", "seq": 1, "title": "テスト講義A1"}],
+                       "to_seq": None, "matched_by": "tag"}}], ensure_ascii=False)))
+        conn.commit(); conn.close()
+        for label, fn, want in (
+                ("class/sapuri", lambda: client.get("/api/student/class/sapuri", headers=tok(sid_ok)), 1),
+                ("weakness-top3", lambda: client.get(f"/api/student/weakness-top3?student_id={sid_ok}&limit=5", headers=tok(sid_ok)), 1),
+                ("this-week (sapuri 2 件)", lambda: client.get("/api/student/worksheet/this-week", headers=tok(sid_p)), 1),
+                ("curricula/me", lambda: client.get("/api/curricula/me", headers=tok(sid_p)), 1),
+                ("study-plans/me", lambda: client.get("/api/study-plans/me", headers=tok(sid_p)), 1),
+                ("admin preview", lambda: client.get(f"/api/admin/sapuri/preview?student_id={sid_ok}", headers=adm), 1),
+                ("coverage (見た回に左右されない)", lambda: client.get("/api/admin/sapuri/coverage", headers=adm), 0)):
+            code, n = n_calls(fn)
+            check(f"見た回の読み取り: {label} は {want} 回", code == 200 and n == want, (code, n))
+        r = client.get("/api/student/worksheet/this-week", headers=tok(sid_p))
+        sts = (r.json().get("worksheet") or {}).get("subject_topics") or []
+        check("this-week: 見た回 (#5) は ✅・見ていない回 (#1) は ☐", [((x.get("sapuri") or {}).get("lessons") or [{}])[0].get("watched") for x in sts]
+              == [True, False], sts)
+    finally:
+        mod._sapuri_watched_map = orig_wm
+    src = open(MAIN_PY, encoding="utf-8").read()
+    wfn = src[src.index("def _run_weekly_worksheet_generation("):src.index("@app.get(\"/api/student/worksheet/this-week\")")]
+    check("週次プリントの関数は変えていない (見た回を読まない・1 行で呼ぶだけ)", "_sapuri_watched_map" not in wfn
+          and wfn.count("_sapuri_for_subject_topics(sid, sgrade, subject_topics)") == 1)
+    dfn = src[src.index("def _sapuri_display_ex("):src.index("def _sapuri_display(")]
+    check("見た回を飛ばすのは _sapuri_display_ex だけ (照合は watched の印を付けるだけ)",
+          'l.get("watched")' in dfn and 'if not l.get("watched")' not in src[src.index("def _sapuri_match_one("):src.index("def _sapuri_display_ex(")])
 
     print()
     if FAILURES:

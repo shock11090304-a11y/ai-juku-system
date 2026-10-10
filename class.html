@@ -175,6 +175,15 @@
     .sp-subj { font-size:0.72rem; color:#fda4af; font-weight:800; }
     .sp-course { font-size:0.78rem; color:#fecdd3; opacity:0.85; line-height:1.5; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; line-clamp:1; overflow:hidden; word-break:break-all; }
     .sp-line { font-size:0.88rem; color:#fecdd3; font-weight:700; line-height:1.5; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden; word-break:break-all; }
+    /* 📺 見た回のチェック (2026-10-10)。押しやすい高さ (40px) */
+    .sp-watch-btn { margin-top:0.35rem; min-height:40px; padding:0.35rem 0.85rem; border-radius:999px; border:1px solid rgba(251,113,133,0.45); background:rgba(251,113,133,0.10); color:#fecdd3; font-size:0.84rem; font-weight:800; cursor:pointer; }
+    .sp-watch-btn[data-on="1"] { border-color:rgba(134,239,172,0.55); background:rgba(34,197,94,0.14); color:#86efac; }
+    .sp-watch-btn:disabled { opacity:0.55; cursor:wait; }
+    .sp-watched summary { cursor:pointer; font-weight:800; color:#fecdd3; font-size:0.92rem; min-height:32px; }
+    .sp-wrow { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-top:0.45rem; padding-top:0.45rem; border-top:1px solid rgba(255,255,255,0.07); min-width:0; }
+    .sp-wrow .sp-wtext { flex:1 1 12rem; min-width:0; font-size:0.84rem; color:#fecdd3; line-height:1.5; word-break:break-all; }
+    .sp-wrow .sp-wdate { font-size:0.76rem; color:#94a3b8; margin-right:0.35rem; }
+    .sp-wrow .sp-watch-btn { margin-top:0; }
     .toast { position:fixed; left:50%; bottom:84px; transform:translateX(-50%); background:rgba(20,20,40,0.97); border:1px solid rgba(129,140,248,0.5); color:#e4e4e7; padding:0.7rem 1.1rem; border-radius:10px; font-size:0.88rem; font-weight:700; z-index:60; box-shadow:0 6px 24px rgba(0,0,0,0.5); opacity:0; transition:opacity .2s; pointer-events:none; }
     .toast.show { opacity:1; } .toast.err { border-color:rgba(239,68,68,0.6); color:#fca5a5; }
     [hidden] { display:none !important; }
@@ -194,6 +203,8 @@
       <h1 class="view-title">📅 予定<span class="sub">週間の時間割と、授業ごとの配布ファイル・出欠の連絡</span></h1>
       <!-- 📺 今週見るスタサプ (2026-10-10 スタサプ段階 B)。授業コースの在籍生で、弱点に合う回があるときだけ出す (それ以外はカードごと隠す) -->
       <div id="sapuriCard" hidden></div>
+      <!-- 📺 見たスタサプの一覧 (2026-10-10・見た回が 1 つも無ければ隠す)。押し間違いはここの「✅ 見た」でも取り消せる -->
+      <div id="sapuriWatched" hidden></div>
       <div id="scheduleBody"><div class="loading">読み込み中…</div></div>
     </section>
 
@@ -1454,6 +1465,38 @@
       var title = String(ls[0].title == null ? '' : ls[0].title).trim();
       return { course: course, lesson: '第' + a + '講' + (title ? '「' + title + '」' : '') + (to > a ? '（第' + to + '講まで）' : '') };
     }
+    // 📺 見た回 (2026-10-10): 「☐ 見た」/「✅ 見た (10/10)」のボタン。lesson に watched (bool) の印があるときだけ出す
+    //   (印の無い旧サーバと組み合わさる間は 404 になるボタンを出さない)。日付はサーバの日本時間の日付文字列を切るだけ (new Date しない)。
+    function spMD(s) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s == null ? '' : s));
+      return m ? (Number(m[2]) + '/' + Number(m[3])) : '';
+    }
+    function spWatchLabel(on, date) {
+      var md = spMD(date);
+      return on ? ('✅ 見た' + (md ? ' (' + md + ')' : '')) : '☐ 見た';
+    }
+    function spWatchBtnHtml(lesson, surface) {
+      if (!lesson || typeof lesson !== 'object' || !lesson.lesson_key || typeof lesson.watched !== 'boolean') return '';
+      var on = lesson.watched === true;
+      return '<button type="button" class="sp-watch-btn" data-key="' + esc(lesson.lesson_key) + '" data-on="' + (on ? '1' : '0') + '"'
+        + ' data-surface="' + esc(surface || 'class') + '" aria-pressed="' + (on ? 'true' : 'false') + '">'
+        + esc(spWatchLabel(on, lesson.watched_date_jst)) + '</button>';
+    }
+    // GET /api/student/class/sapuri/progress → 折りたたみの一覧 (新しい順・日付つき)。0 件なら ''
+    function spWatchedListHtml(d, open) {
+      var items = (d && Array.isArray(d.items)) ? d.items : [];
+      if (!items.length) return '';
+      var total = Number(d.total);
+      var rows = items.map(function (x) {
+        if (!x || !x.lesson_key) return '';
+        var t = String(x.course_name || '') + (x.seq != null ? ' 第' + x.seq + '講' : '') + (x.title ? '「' + x.title + '」' : '');
+        var md = spMD(x.watched_date_jst);
+        return '<div class="sp-wrow"><div class="sp-wtext">' + (md ? '<span class="sp-wdate">' + esc(md) + '</span>' : '') + esc(t) + '</div>'
+          + spWatchBtnHtml({ lesson_key: x.lesson_key, watched: true, watched_date_jst: x.watched_date_jst }, 'list') + '</div>';
+      }).join('');
+      return '<details class="card sp-card sp-watched"' + (open ? ' open' : '') + '><summary>📺 見たスタサプ (' + esc(isFinite(total) && total > 0 ? total : items.length) + ' 講)</summary>'
+        + '<div class="card-meta" style="margin-top:0.3rem;">新しい順です。押し間違えたら「✅ 見た」を押すと取り消せます。</div>' + rows + '</details>';
+    }
     function sapuriCardHtml(items) {
       var rows = [];
       (Array.isArray(items) ? items : []).slice(0, 3).forEach(function (it) {
@@ -1464,12 +1507,61 @@
         var topic = String(it.topic == null ? '' : it.topic).trim();
         var head = (subj ? subj : '') + (subj && topic ? '・' : '') + topic;
         rows.push('<div class="sp-row" title="' + esc(t) + '">' + (head ? '<div class="sp-subj">' + esc(head) + '</div>' : '')
-          + '<div class="sp-course">' + esc(p.course) + '</div><div class="sp-line">' + esc(p.lesson) + '</div></div>');
+          + '<div class="sp-course">' + esc(p.course) + '</div><div class="sp-line">' + esc(p.lesson) + '</div>'
+          + spWatchBtnHtml(it.lessons && it.lessons[0], 'class') + '</div>');
       });
       if (!rows.length) return '';
       return '<div class="card sp-card"><div class="card-title">📺 今週見るスタサプ</div>'
-        + '<div class="card-meta" style="margin-bottom:0.35rem;">あなたの弱点に合う回です。スタディサプリのアプリで見てから、宿題やドリルに取り組みましょう。</div>'
+        + '<div class="card-meta" style="margin-bottom:0.35rem;">あなたの弱点に合う回です。スタディサプリのアプリで見たら「☐ 見た」を押しましょう（次に開いたとき、その弱点の次の回が出ます）。見てから、宿題やドリルに取り組みましょう。</div>'
         + rows.join('') + '</div>';
+    }
+    async function loadSapuriWatched() {
+      var box = document.getElementById('sapuriWatched');
+      if (!box) return;
+      var wasOpen = !!box.querySelector('details[open]');
+      try {
+        var d = await api('/api/student/class/sapuri/progress');
+        var h = spWatchedListHtml(d, wasOpen);
+        box.innerHTML = h;
+        box.hidden = !h;
+      } catch (e) {
+        box.innerHTML = ''; box.hidden = true;   // 旧サーバ (404)・対象外・失敗は黙って隠す
+      }
+    }
+    var _spWatchBusy = {};
+    function spWatchErrText(e) {
+      var st = e && e.status;
+      if (st === 403) return '授業コースの生徒だけが記録できます';
+      if (st === 400) return (e && e.message) || 'この回は記録できません';
+      if (st === 404 || st === 405) return 'サーバの更新待ちです。数分後にもう一度';
+      if (st === 429) return '少し時間をおいてください';
+      if (st === 503) return '準備中です（デプロイ直後）';
+      return '記録できませんでした';
+    }
+    async function spWatchClick(btn) {
+      var key = btn.getAttribute('data-key');
+      if (!key || _spWatchBusy[key]) return;
+      var on = btn.getAttribute('data-on') === '1';
+      var same = Array.prototype.filter.call(document.querySelectorAll('.sp-watch-btn'), function (b) { return b.getAttribute('data-key') === key; });
+      _spWatchBusy[key] = true;
+      same.forEach(function (b) { b.disabled = true; });
+      try {
+        var r = await api('/api/student/class/sapuri/watched', { method: 'POST',
+          body: JSON.stringify({ lesson_key: key, watched: !on, surface: btn.getAttribute('data-surface') || 'class' }) });
+        var nowOn = !!(r && r.watched);
+        same.forEach(function (b) {
+          b.setAttribute('data-on', nowOn ? '1' : '0');
+          b.setAttribute('aria-pressed', nowOn ? 'true' : 'false');
+          b.textContent = spWatchLabel(nowOn, r && r.watched_date_jst);
+        });
+        toast(nowOn ? '記録しました（次に開いたとき、次の回が出ます）' : '取り消しました');
+        loadSapuriWatched();
+      } catch (e) {
+        toast(spWatchErrText(e), true);
+      } finally {
+        _spWatchBusy[key] = false;
+        same.forEach(function (b) { b.disabled = false; });
+      }
     }
     async function loadSapuriCard() {
       var box = document.getElementById('sapuriCard');
@@ -1548,6 +1640,16 @@
       }).catch(function () {});
       api('/api/messages/me/unread-count').then(function (d) { updateBadge('msgBadge', d.unread_count || 0); }).catch(function () {});
       loadSapuriCard();
+      loadSapuriWatched();
+      // 📺 見た回のボタン (カードと一覧の両方)。予定タブに 1 回だけ委任する
+      var vs = document.getElementById('view-schedule');
+      if (vs && !vs.__spWatchBound) {
+        vs.__spWatchBound = true;
+        vs.addEventListener('click', function (ev) {
+          var b = ev.target && ev.target.closest ? ev.target.closest('.sp-watch-btn') : null;
+          if (b) { ev.preventDefault(); spWatchClick(b); }
+        });
+      }
       // タブ
       Array.prototype.forEach.call(document.querySelectorAll('#tabbar button'), function (b) {
         b.addEventListener('click', function () { showTab(b.getAttribute('data-tab')); });
