@@ -354,6 +354,14 @@ jobs:
           python3 scripts/health_check/test_sapuri_lessons.py
           python3 scripts/sapuri_lessons/check_sapuri_catalog.py
 
+      # 📅 週次弱点プリントを塾生アプリのみ枠 (ai_disabled=1) に配らない (2026-10-12)。AI 体験中は配る (_ai_blocked_now と同じ)。
+      #   従来は抽出 SQL が ai_disabled を見ず、LINE「今週の弱点プリントが届きました」→ mypage → class.html に戻されて見えなかった。
+      - name: 週次弱点プリント AIなし枠の除外 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_weekly_worksheet_ai_disabled.py
+
       # ⏪ 自動ロールバックが「履歴の強制書き換え」ではなく revert commit を fast-forward で積むこと (2026-09-07)。
       - name: 自動ロールバック (revert commit 方式) 回帰テスト
         if: ${{ !cancelled() }}

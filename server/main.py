@@ -3441,8 +3441,9 @@ def _ai_blocked_now(ai_disabled, ai_trial_until) -> bool:
     ★この判定を2箇所に書かないこと。過去に述語を複数箇所に散らして
       「押しても戻される壊れたボタン」を作った ([[tsujuku-app-only-ai-disabled]])。
       row を持っている呼び出し側 (_verify_student_active / _check_ai_budget) も必ずこれを通す。
-    ★例外 (Python を通らない一括抽出 SQL): 週次弱点プリント配信は SQL 側で同じ条件を書いている
-      (体験中も配信する)。休眠再活性ナッジ・夏期コホート合流は素の ai_disabled のままで、
+    ★例外 (Python を通らない一括抽出 SQL): 3日ドリル routine (_run_weakness_drill_routine) と
+      週次弱点プリント (_run_weekly_worksheet_generation・2026-10-12 まで条件が抜けていた) は SQL 側で
+      同じ条件を書いている (体験中も配信する)。休眠再活性ナッジ・夏期コホート合流は素の ai_disabled のままで、
       体験中でも対象外/拒否のまま = 意図どおり。SQL を足すときはここに追記すること。
     """
     if not (ai_disabled or 0):
@@ -6097,13 +6098,20 @@ def _run_weekly_worksheet_generation() -> dict:
 
         # 全アクティブ生徒 (paid または trial・最終ログイン 60 日以内)
         # Postgres / SQLite 両対応: cutoff を Python 側で計算してパラメータ化
+        # 🚫 2026-10-12: 塾生アプリのみ枠 (ai_disabled=1) は対象外。期限付き AI 体験中 (ai_trial_until が未来) は含める
+        #   (_ai_blocked_now と同じ条件・3日ドリル routine の抽出 SQL と同じ書き方)。
+        #   従来は外しておらず、宿題のドリル (2026-09-24〜 question_attempts に保存) などで弱点が溜まった AIなし枠の生徒に
+        #   「今週の弱点プリントが届きました」の LINE/メールが届いていた。リンク先の mypage はその生徒を
+        #   class.html へ送り返し、this-week API も AI 遮断で 403 = プリントはどこにも見えない。
+        #   塾長方針 (2026-09-24「自由演習は開かない。あくまでも僕が出した宿題のみ」) どおり、AI が選ぶ自動配信は出さない。
         login_cutoff = (datetime.now(timezone.utc) - timedelta(days=60)).isoformat()
         c.execute(
             "SELECT id, name, email, line_user_id, grade FROM students "
             f"WHERE {_enrolled_sql()} "
             "AND (last_login_at IS NULL OR last_login_at >= ?) "
+            "AND (COALESCE(ai_disabled, 0) = 0 OR (ai_trial_until IS NOT NULL AND ai_trial_until > ?)) "
             "LIMIT 500",
-            (login_cutoff,)
+            (login_cutoff, _utc_naive_iso())
         )
         students = c.fetchall() or []
 
