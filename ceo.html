@@ -3269,7 +3269,7 @@
   <!-- ★ceo.js を変えたら必ず ?v= を更新する。vercel.json の no-cache は *.html と
        auth-guard.js / cache-purge.js だけで、ceo.js はこのクエリだけが頼り。
        据え置くと「新しい ceo.html + キャッシュされた古い ceo.js」で動く端末が出る。 -->
-  <script src="ceo.js?v=20260924a-start-month"></script>
+  <script src="ceo.js?v=20261014a-reload-roster"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -3396,12 +3396,30 @@
     }
 
     // 本番DBから実 KPI 値 + 生徒ロスターを取得して上書き描画 (デモデータを置換)
-    async function loadLiveMetrics() {
-      if (!window.AdminAuth || !AdminAuth.getToken()) return;
+    // 🔄 [2026-10-14 塾長「全データ更新で生徒一覧も読み込みできるようにして」] 戻り値は
+    //   描画できたら true / 取れなかった (未認証・HTTP エラー・例外) ら false / もっと新しい応答が先に
+    //   描画済みだったので描かなかったら null。「全データ更新」ボタンが成否を数えるのに使う。
+    //   60 秒ごとの自動更新とボタン (や保存後の取り直し) が重なると、先に始まった (=古い) 応答が後から
+    //   届いて新しい名簿を上書きしうる。そこで「画面に出ている応答より後に始まった呼び出し」だけが描く。
+    //   ★「最後に始まった呼び出しだけ描く」にはしない: 応答に 60 秒以上かかる日 (Stripe 照会が詰まる等)
+    //   は次の自動更新が毎回前の呼び出しを追い越し、名簿が一度も描かれなくなる。
+    //   opts.dropOlder (生徒詳細で保存した直後に使う): これより前に始まった呼び出しは保存前の DB を読んで
+    //   いるので、後から届いても描かない (描くと、手元で反映した保存値が一瞬古い値に戻る)。
+    let _liveMetricsSeq = 0;       // 始まった呼び出しの通し番号
+    let _liveMetricsShown = 0;     // いま画面に出ている応答の番号
+    let _liveMetricsFloor = 0;     // これより小さい番号の応答は描かない (保存前の DB を読んでいる)
+    async function loadLiveMetrics(opts) {
+      if (!window.AdminAuth || !AdminAuth.getToken()) return false;
+      const mySeq = ++_liveMetricsSeq;
+      if (opts && opts.dropOlder) _liveMetricsFloor = mySeq;
+      let rosterDrawn = false;
       try {
         const res = await AdminAuth.fetch('/api/admin/stats');
-        if (!res.ok) return;
+        if (!res.ok) return false;
         const data = await res.json();
+        // もっと新しい応答が既に出ている / 保存前に始まった呼び出し
+        if (mySeq < _liveMetricsShown || mySeq < _liveMetricsFloor) return null;
+        _liveMetricsShown = mySeq;
         const s = data.summary || {};
         const mrr = s.mrr_yen || 0;
         const arr = s.arr_yen || 0;
@@ -3484,6 +3502,7 @@
         if (typeof renderRoster === 'function') {
           renderRoster(apiStudents);
         }
+        rosterDrawn = true;   // ここまで来れば名簿と生徒詳細は新しい。この先 (チャート等) で投げても「生徒一覧は取れた」
 
         // 学年別チャートのソースバッジを LIVE 表示に
         const gradeSrc = document.getElementById('gradeChartSource');
@@ -3527,6 +3546,8 @@
           const ar = await AdminAuth.fetch('/api/admin/students/active-no-record?days=7');
           if (ar.ok) {
             const ad = await ar.json();
+            // 待っている間にもっと新しい応答が描かれていたら、この集計も残り (MRR 内訳・チャート) もそちらに任せる
+            if (mySeq < _liveMetricsShown) return null;
             const arEl = document.getElementById('activeNoRecordAlert');
             const arCount = document.getElementById('activeNoRecordCount');
             const arUsing = document.getElementById('activeNoRecordUsingTutor');
@@ -3541,8 +3562,12 @@
                 window.__activeNoRecordStudents = [];
               }
             }
+            // 「再集計」ボタンが、集計まで取り直せたかを見分けるための印 (名簿だけ取れて集計が失敗した場合と区別する)
+            window.__activeNoRecordStamp = (window.__activeNoRecordStamp || 0) + 1;
           }
         } catch (_e) { /* fail-soft: 既存 roster 表示を妨げない */ }
+        // 上の await の間にもっと新しい応答が描かれていたら、残り (MRR 内訳・チャート) はそちらに任せる
+        if (mySeq < _liveMetricsShown) return null;
 
         // === 💰 MRR 内訳: 有料生徒の月謝を一覧化して合計を MRR と突合 ===
         const paidStudents = apiStudents.filter(st => st.status === 'paid');
@@ -3688,7 +3713,8 @@
 
         // 4) CEO 今週の意思決定ポイントも LIVE データで再生成
         if (typeof renderActionItems === 'function') renderActionItems(liveMetrics);
-      } catch (e) { console.warn('[loadLiveMetrics] failed:', e); }
+        return true;
+      } catch (e) { console.warn('[loadLiveMetrics] failed:', e); return rosterDrawn; }
     }
 
     // 内訳セクション専用の HTML エスケープ (ceo.js の escapeHtml と独立)
@@ -3702,6 +3728,14 @@
     //   生徒削除後のロスター再取得 (ceo.js confirmAndDeleteStudent) がここを叩く。
     //   export し忘れると「呼んだつもりで何も起きない」silent fail になる (2026-05-10 に同型の事故)。
     window.loadLiveMetrics = loadLiveMetrics;
+    // 🔄 [2026-10-14] 右下の「🔄 全データ更新」「⚡ 監視 即診断」(別の <script>) から呼ぶ読み込み関数。
+    //   従来は向こうで typeof loadXxx === 'function' と名前で探していたが、ここは IIFE の中なので
+    //   必ず false になり、10 件中 9 件 (生徒一覧を含む) を黙って飛ばしていた。function 宣言は
+    //   巻き上げられるので、下で定義しているものもここで出せる。
+    Object.assign(window, {
+      loadSignupSummary, loadFoundersDualCount, loadAnalyticsDashboard, loadMonitorHealth,
+      loadE2ESyntheticStatus, loadRevenueTimeline, loadPoolStatus, loadRealtimeVisitors,
+    });
 
     // 創設メンバー 残枠 (実数値 vs 公開カモフラージュ値) を並べて表示
     async function loadFoundersDualCount() {
@@ -9760,6 +9794,17 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         <div style="color:${valColor || '#e4e4e7'};">${value}</div>
       </div>`;
     }
+    // 🔄 [2026-10-14] 生徒詳細で保存した値を、開き直したときにも見えるようにする。モーダルを開いている間に
+    //   60 秒ごとの名簿更新 (loadLiveMetrics) が走ると __studentsById が作り直され、開いた時点の st は古い
+    //   オブジェクトになる。st にだけ書くと、開き直したときに古い値に戻って見える (2026-10-14 子供メールを
+    //   登録 → 開き直すと「未登録」)。live 側にも書き、名簿もサーバから取り直す (保存前に出た自動更新の
+    //   応答は loadLiveMetrics の追い越しガードで捨てられる)。在籍クラスの保存も同じ考え方で live 側に書いている。
+    function _applySavedToStudent(sid, st, patch) {
+      if (st) Object.assign(st, patch);
+      const live = (window.__studentsById || {})[String(sid)];
+      if (live && live !== st) Object.assign(live, patch);
+      if (typeof window.loadLiveMetrics === 'function') Promise.resolve(window.loadLiveMetrics({ dropOlder: true })).catch(() => {});
+    }
     function showStudentDetail(id) {
       const map = window.__studentsById || {};
       const st = map[String(id)];
@@ -10272,10 +10317,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
                 });
                 const d = await res.json().catch(() => ({}));
                 if (!res.ok || !d.ok) throw new Error((typeof d.detail === 'string' && d.detail) || ('HTTP ' + res.status));
-                st.class_labels = Array.isArray(d.class_labels) ? d.class_labels : labels;
-                // 60 秒ごとの名簿更新で __studentsById が作り直されていると st は古いオブジェクト → live 側にも書く
-                const _live = (window.__studentsById || {})[String(sid)];
-                if (_live && _live !== st) _live.class_labels = st.class_labels;
+                // 60 秒ごとの名簿更新で __studentsById が作り直されていると st は古いオブジェクト → live 側にも書く。
+                //   (2026-10-14) 保存前に出た自動更新の応答が後から届いて古いクラスに戻らないよう、名簿も取り直す
+                _applySavedToStudent(sid, st, { class_labels: Array.isArray(d.class_labels) ? d.class_labels : labels });
                 // 🏫 通塾クラス管理 (生徒別・クラス別・宿題の人数) のキャッシュも更新 (全表示モードでは同じ画面に見えている)
                 if (typeof window.__scReloadStudents === 'function') { try { window.__scReloadStudents(); } catch (_e) {} }
                 if (typeof window.__dgaRefresh === 'function') { try { window.__dgaRefresh(); } catch (_e) {} }   // 🗓 ⑤⑥ の受講クラスから自動のグループも作り直す
@@ -10317,9 +10361,12 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
               const data = await res.json().catch(() => ({}));
               if (!res.ok || !data.ok) { alert(`更新失敗: ${data.detail || data.message || 'HTTP ' + res.status}`); return; }
               alert(`✅ ${data.message || '子供メールを更新しました'}`);
-              if (st) st.student_email = trimmed || null;
               // 🛡️ 2026-06-12: admin 設定は確認済み扱い (サーバ側と同期・未確認バッジを消す)
-              if (st) st.student_email_verified = trimmed ? true : false;
+              //   アドレスはサーバが正規化した値 (小文字化など) を優先する
+              _applySavedToStudent(sid, st, {
+                student_email: ('student_email' in data) ? (data.student_email || null) : (trimmed || null),
+                student_email_verified: trimmed ? true : false,
+              });
               btn.dataset.current = trimmed;
               const closeBtn = document.getElementById('studentDetailClose');
               if (closeBtn) closeBtn.click();
@@ -10351,7 +10398,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             }
             alert(`✅ ${label}を「${trimmed}」に更新しました`);
             // 🎯 2026-05-26 audit follow-up (Regression G fix): in-memory も更新で再 click 時に新値表示
-            if (st) st[field] = trimmed;
+            //   (2026-10-14: 自動更新で作り直された live 側にも書き、名簿の学年表示もサーバから取り直す)
+            _applySavedToStudent(sid, st, { [field]: trimmed });
             btn.dataset.current = trimmed;
             // 🧒 2026-09-29: 「やるべきこと」の 📨 は描いたときの学年を data-grade に持ち、押したときの ⚠️ をそれで決める。
             //   ⚠️ が「✏️ 編集」へ誘導するので、直したらこの生徒のボタンの学年だけ差し替える。一覧は読み直さない
@@ -11944,9 +11992,20 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         arRefreshBtn.disabled = true;
         const orig = arRefreshBtn.textContent;
         arRefreshBtn.textContent = '⏳ 集計中...';
-        try { await loadLiveRoster(); } catch (_) {}
+        // loadLiveRoster は生徒ロスター側の IIFE の中で、ここからは ReferenceError → 握りつぶし で何もしていなかった
+        // 集計 (active-no-record) は loadLiveMetrics の中で黙って失敗しうるので、取り直せたかは印 (stamp) で見る
+        const stampBefore = window.__activeNoRecordStamp || 0;
+        let rosterOk = false;
+        try { rosterOk = (await window.loadLiveMetrics()) !== false; } catch (_) {}
+        const ok = rosterOk && (window.__activeNoRecordStamp || 0) !== stampBefore;
         arRefreshBtn.disabled = false;
         arRefreshBtn.textContent = orig;
+        // 開いている「👀 対象を確認」の一覧は前の集計のまま → 閉じる (押し直すと新しい一覧が出る)
+        const _arList = document.getElementById('activeNoRecordList');
+        if (ok && _arList) _arList.style.display = 'none';
+        if (typeof ceoToast === 'function') {
+          ceoToast(ok ? '✓ 集計し直しました' : '⚠️ 集計を読み込めませんでした。少し待ってからもう一度押してください。', ok ? 'success' : 'warn', ok ? 2400 : 5000);
+        }
       }
       const purgeBtn = e.target.closest && e.target.closest('#purgeStaleBtn');
       if (purgeBtn) {
@@ -12116,34 +12175,82 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     }
 
     // ---- 🔄 全データ即更新 ----
+    // 🔄 [2026-10-14 塾長「全データ更新で生徒一覧も読み込みできるようにして」] 学習記録以外の読み込み関数は
+    //   生徒ロスター側の <script> の IIFE の中にあり、ここから名前では見えない。以前は typeof が黙って false に
+    //   なって 10 件中 9 件 (生徒一覧を含む) を飛ばし、それでも「全 1 widget 更新完了」と出ていた。
+    //   IIFE が window に出したものを window から引き、見つからない・取れなかった項目はトーストに名前で出す。
+    const _reloadLabels = {
+      signupSummary: '申込サマリ', liveRoster: '生徒一覧', foundersDual: '創設メンバー残枠',
+      analytics: 'アクセス数', monitor: '監視', e2e: 'E2E 監視', revenue: '収益推移',
+      pool: '試験問題プール', realtime: 'リアルタイム閲覧者', studyLog: '学習記録',
+    };
+    let _reloadRun = null;   // 読み込み中の 1 回分。20 秒で待つのをやめた後も、終わるまでは次を重ねない
     document.getElementById('ceoActReload')?.addEventListener('click', async () => {
       const btn = document.getElementById('ceoActReload');
+      if (_reloadRun) {
+        // 詰まっているサーバに同じ読み込みを重ねると、余計に遅くなる。
+        // ⌘R は勧めない: サーバが止まっている間に再読み込みすると、ログイン確認 (checkSession) が失敗して
+        // ログイン情報が消え、復旧するまで画面に入れなくなる。
+        ceoToast('⏳ サーバの応答を待っています。数分おいてから、もう一度押してください。', 'warn', 5000);
+        return;
+      }
       const orig = btn.textContent;
       btn.disabled = true;
       btn.textContent = '⏳ 更新中...';
-      const tasks = [
-        ['signupSummary',   typeof loadSignupSummary === 'function' ? loadSignupSummary : null],
-        ['liveRoster',      typeof loadLiveRoster === 'function' ? loadLiveRoster : null],
-        ['foundersDual',    typeof loadFoundersDualCount === 'function' ? loadFoundersDualCount : null],
-        ['analytics',       typeof loadAnalyticsDashboard === 'function' ? loadAnalyticsDashboard : null],
-        ['monitor',         typeof loadMonitorHealth === 'function' ? loadMonitorHealth : null],
-        ['e2e',             typeof loadE2ESyntheticStatus === 'function' ? loadE2ESyntheticStatus : null],
-        ['revenue',         typeof loadRevenueTimeline === 'function' ? loadRevenueTimeline : null],
-        ['pool',            typeof loadPoolStatus === 'function' ? loadPoolStatus : null],
-        ['realtime',        typeof loadRealtimeVisitors === 'function' ? loadRealtimeVisitors : null],
+      const all = [
+        ['signupSummary',   window.loadSignupSummary],
+        ['liveRoster',      window.loadLiveMetrics],   // KPI・生徒ロスター・生徒詳細 (__studentsById) を取り直す
+        ['foundersDual',    window.loadFoundersDualCount],
+        ['analytics',       window.loadAnalyticsDashboard],
+        ['monitor',         window.loadMonitorHealth],
+        ['e2e',             window.loadE2ESyntheticStatus],
+        ['revenue',         window.loadRevenueTimeline],
+        ['pool',            window.loadPoolStatus],
+        ['realtime',        window.loadRealtimeVisitors],
         ['studyLog',        typeof loadStudyLogDashboard === 'function' ? loadStudyLogDashboard : null],   // 📚 2026-09-07 学習記録も更新
-      ].filter(t => t[1]);
-      const t0 = performance.now();
-      const results = await Promise.allSettled(tasks.map(t => Promise.resolve(t[1]())));
-      const elapsed = Math.round(performance.now() - t0);
-      const failed = results.filter(r => r.status === 'rejected').length;
+      ];
+      const label = k => _reloadLabels[k] || k;
+      const tasks = all.filter(t => typeof t[1] === 'function');
+      const missingKeys = all.filter(t => typeof t[1] !== 'function').map(t => t[0]);
+      if (missingKeys.length) console.warn('[ceoActReload] 読み込み関数が見つからない:', missingKeys);
+      const run = Promise.allSettled(tasks.map(t => Promise.resolve().then(() => t[1]())));
+      _reloadRun = run;
+      run.then(() => { _reloadRun = null; });
+      // AdminAuth.fetch には時間切れが無い。本番 API が詰まっている間 (students のロック待ちなど) も
+      // 「⏳ 更新中...」のまま固まらないよう、20 秒で待つのをやめて知らせる (読み込み自体は裏で続く)。
+      let timer = null;
+      const timedOut = new Promise(res => { timer = setTimeout(() => res('timeout'), 20000); });
+      const results = await Promise.race([run, timedOut]);
+      clearTimeout(timer);
       btn.disabled = false;
       btn.textContent = orig;
-      if (failed === 0) {
-        ceoToast(`✅ 全 ${tasks.length} widget 更新完了 (${elapsed}ms)`, 'success');
-      } else {
-        ceoToast(`⚠️ ${tasks.length - failed}/${tasks.length} widget 更新 (${failed} 失敗・${elapsed}ms)`, 'warn', 3500);
+      // 生徒詳細は開いた時点のデータで描いているので、開いたままでは中身が変わらない
+      const modal = document.getElementById('studentDetailModal');
+      const reopenNote = (modal && modal.style.display && modal.style.display !== 'none')
+        ? '<br>開いている生徒詳細は、閉じて開き直すと最新になります。' : '';
+      if (results === 'timeout') {
+        ceoToast('⚠️ 20 秒待っても応答がありません。サーバが混んでいるかもしれません。少し待ってからもう一度押してください。', 'warn', 6000);
+        return;
       }
+      // 401 を受けると AdminAuth がログイン情報を消してログイン画面を出す。「少し待って」では直らないので別の案内にする
+      if (window.AdminAuth && !AdminAuth.getToken()) {
+        ceoToast('⚠️ ログインの期限が切れています。ログインし直してから、もう一度押してください。', 'warn', 6000);
+        return;
+      }
+      // 件数は出さない: 生徒一覧以外の読み込みは失敗しても黙って戻る (成否が分からない) ため、数えると事実と合わない。
+      // 生徒一覧 (loadLiveMetrics) だけは取れなかったとき false を返すので、そこは必ず伝える。
+      const failedKeys = tasks.filter((t, i) => results[i].status === 'rejected' || results[i].value === false).map(t => t[0]);
+      if (!failedKeys.length && !missingKeys.length) {
+        ceoToast(`✅ 最新にしました (生徒一覧も読み直しました)${reopenNote}`, 'success', reopenNote ? 4500 : 2400);
+        return;
+      }
+      const lines = [];
+      if (failedKeys.includes('liveRoster')) lines.push('⚠️ 生徒一覧を読み込めませんでした。少し待ってからもう一度押してください。');
+      else if (!missingKeys.includes('liveRoster')) lines.push('✅ 生徒一覧は読み直しました。');
+      const otherFailed = failedKeys.filter(k => k !== 'liveRoster');
+      if (otherFailed.length) lines.push(`⚠️ 読み込めなかった項目: ${otherFailed.map(label).join('・')}`);
+      if (missingKeys.length) lines.push(`⚠️ 画面の読み込みが途中で止まっています (${missingKeys.map(label).join('・')})。⌘R でページを再読み込みしてください。`);
+      ceoToast(lines.join('<br>') + reopenNote, 'warn', 6000);
     });
 
     // ---- ⚡ 監視 即診断 (manual monitor trigger) ----
@@ -12163,7 +12270,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         } else {
           ceoToast(`⚠️ アラート ${alerts.length} 件: ${alerts.map(a => a.key || '?').join(', ')}`, 'warn', 4000);
         }
-        if (typeof loadMonitorHealth === 'function') loadMonitorHealth();
+        // 監視パネルの再描画。関数は生徒ロスター側の IIFE の中なので window 経由 (名前で探すと必ず見つからない)
+        if (typeof window.loadMonitorHealth === 'function') window.loadMonitorHealth();
       } catch (e) {
         ceoToast(`❌ 診断失敗: ${e.message}`, 'error', 3500);
       }

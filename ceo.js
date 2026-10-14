@@ -1539,8 +1539,9 @@ function _refreshAfterStudentDelete(studentId, opts) {
   //   いちばん壊れやすい DOM 再描画の後ろに置くと、そちらが投げたときに実行されない。
   try {
     // ceo.html 側で window に出している (IIFE 内なので直接は呼べない)
+    // dropOlder: 削除の前に出ていた 60 秒ごとの自動更新の応答 (消した生徒が載っている) が後から届いても描かない
     if (typeof window.loadLiveMetrics === 'function') {
-      Promise.resolve(window.loadLiveMetrics()).catch(() => {});
+      Promise.resolve(window.loadLiveMetrics({ dropOlder: true })).catch(() => {});
     }
     const cm = document.getElementById('slCourseManageModal');
     if (typeof openCourseManageModal === 'function' && cm && cm.style.display !== 'none') {
