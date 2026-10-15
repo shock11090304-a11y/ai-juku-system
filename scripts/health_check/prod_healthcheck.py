@@ -568,8 +568,9 @@ def check_scheduler_live(cur):
     watched = {
         "weakness_aggregation_run": 2,   # 日次想定 → 2日以内
         "weekly_reports_run": 8,         # 週次(日曜) → 8日以内
-        "weekly_worksheet_run": 8,       # 週次プリント生成
-        "trial_mgmt_run": 2,             # 体験フォロー/リマインダの日次バッチ(実イベント名)
+        # 📅 週次プリント生成 (weekly_worksheet_run) は 2026-10-15 塾長決定で停止 (API の env WEEKLY_WORKSHEET_ENABLED・既定 OFF)。
+        #   ここに残すと最後の実行から 8 日後に WARN が出続ける (この点検は API の env を見られない)。再開したら戻す。
+        "trial_mgmt_run": 2,            # 体験フォロー/リマインダの日次バッチ(実イベント名)
         "r2_backup_success": 2,          # 🗄️ 2026-09-07 DB バックアップ (毎日 JST 3:00 → R2)
         "admission_recompute_run": 2,    # 合格スコア再計算 (毎日 4:00・2026-09-06 追加)
         "events_retention_run": 2,       # 🧹 計測/監視イベントの掃除 (毎日 4:00・2026-09-07 追加)

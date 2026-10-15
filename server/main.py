@@ -3891,10 +3891,16 @@ async def _start_background_tasks():
     # 📅 週次弱点プリント scheduler (毎週日曜 JST 5:00): 全生徒の弱点 TOP3 から問題選別 → worksheet_archives 保存 + メール/LINE 通知
     # 塾長指示 2026-05-22「データを蓄積して 1 週間に 1 度でも弱点プリントを出題」の実装。
     # AI 生成は使わず既存 pool から選別 ($0)・notifications dedup 付き。
-    if CRON_SECRET:
+    # ⛔ 2026-10-15 塾長決定で停止 (既定)。出題元の exam_questions (入試道場) には AI 生成の行が混ざり、
+    #   「自動配信はレビュー済みの科目別ドリルだけ」に反するため。WEEKLY_WORKSHEET_ENABLED=1 のときだけ登録する。
+    if CRON_SECRET and _weekly_worksheet_env_enabled():
         task = asyncio.create_task(_weekly_worksheet_scheduler())
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Weekly worksheet scheduler launched (target Sun JST 5:00)")
+    elif CRON_SECRET:
+        # ★実際の値を出す (class_rec と同じ。決め打ちで「=0」と出すと、値の書き間違いで止まったときに原因を取り違える)
+        log.info(f"[Startup] Weekly worksheet scheduler disabled "
+                 f"(WEEKLY_WORKSHEET_ENABLED={os.getenv('WEEKLY_WORKSHEET_ENABLED')!r}・2026-10-15 塾長決定で既定は停止)")
 
     # 🎯 弱点ドリル 3日ルーティン scheduler (毎日 JST 5:30・env WEAKNESS_DRILL_ROUTINE_ENABLED で ON):
     # 塾長要望 2026-07-22「3日に1回・分析後に弱点を自動出題」。4:00 弱点集計→5:00 週次プリントの後に走らせ、
@@ -6043,6 +6049,11 @@ async def _weekly_worksheet_scheduler():
             sleep_secs = (target - now_jst).total_seconds()
             log.info(f"[WeeklyWorksheet] Next run at {target.isoformat()} (in {int(sleep_secs)}s)")
             await asyncio.sleep(sleep_secs)
+            # ⛔ 2026-10-15: 停止中 (WEEKLY_WORKSHEET_ENABLED 未設定) は何もしない。起動時に登録しない形で止めているが、
+            #   ほかの経路でこのループが動いても配らないように、起きるたびに env を読み直す。
+            if not _weekly_worksheet_env_enabled():
+                log.info("[WeeklyWorksheet] Skipped (WEEKLY_WORKSHEET_ENABLED が無効・2026-10-15 塾長決定で停止)")
+                continue
             if _check_scheduler_ran_today_jst("weekly_worksheet_run"):
                 log.info("[WeeklyWorksheet] Skipped (already ran today by another replica)")
                 continue
@@ -6458,22 +6469,36 @@ def _run_weekly_worksheet_generation() -> dict:
 def student_worksheet_this_week(authorization: Optional[str] = Header(None)):
     """📅 mypage 表示用: 今週の弱点プリントを取得 (生徒自身)。
     返却: {ok, worksheet: {id, week_start_date, subject_topics, questions, question_count, attempted_at, score_total, score_max}}
+    ⛔ 2026-10-15 塾長決定で週次プリントを停止 (WEEKLY_WORKSHEET_ENABLED 未設定) している間は discontinued: true を足し、
+      week_start_date が JST の今日から 7 日前以降の行だけを返す (日曜に作った分は翌週月曜が week_start なので、最後の 1 枚は
+      その週のあいだ見える。古い行を「今週」として出し続けない)。行は消さない (📚 履歴 = /history はそのまま全部出る)。
     """
     student = _get_current_student(authorization) if "_get_current_student" in globals() else None
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
     sid = student["id"]
+    _ws_on = _weekly_worksheet_env_enabled()
+    _ws_extra = {} if _ws_on else {"discontinued": True}
     conn = db()
     c = conn.cursor()
     try:
-        c.execute(
-            "SELECT id, week_start_date, subject_topics, questions_json, question_count, attempted_at, score_total, score_max, delivered_via, created_at "
-            "FROM worksheet_archives WHERE student_id=? ORDER BY week_start_date DESC LIMIT 1",
-            (sid,)
-        )
+        if _ws_on:
+            c.execute(
+                "SELECT id, week_start_date, subject_topics, questions_json, question_count, attempted_at, score_total, score_max, delivered_via, created_at "
+                "FROM worksheet_archives WHERE student_id=? ORDER BY week_start_date DESC LIMIT 1",
+                (sid,)
+            )
+        else:
+            # week_start_date は 'YYYY-MM-DD' の TEXT なので文字列比較で日付順になる
+            _ws_floor = (datetime.now(timezone(timedelta(hours=9))).date() - timedelta(days=7)).isoformat()
+            c.execute(
+                "SELECT id, week_start_date, subject_topics, questions_json, question_count, attempted_at, score_total, score_max, delivered_via, created_at "
+                "FROM worksheet_archives WHERE student_id=? AND week_start_date >= ? ORDER BY week_start_date DESC LIMIT 1",
+                (sid, _ws_floor)
+            )
         row = c.fetchone()
         if not row:
-            return {"ok": True, "worksheet": None}
+            return {"ok": True, "worksheet": None, **_ws_extra}
         def _g(key, idx):
             return row[key] if hasattr(row, "keys") and key in row.keys() else row[idx]
         questions_raw = json.loads(_g("questions_json", 3) or "[]")
@@ -6542,7 +6567,7 @@ def student_worksheet_this_week(authorization: Optional[str] = Header(None)):
             "delivered_via": _g("delivered_via", 8),
             "created_at": _g("created_at", 9),
         }
-        return {"ok": True, "worksheet": ws}
+        return {"ok": True, "worksheet": ws, **_ws_extra}
     finally:
         conn.close()
 
@@ -6586,8 +6611,10 @@ def student_worksheet_history(authorization: Optional[str] = Header(None), limit
 @app.post("/api/admin/worksheet/run-weekly-now")
 def admin_run_weekly_worksheet_now(authorization: Optional[str] = Header(None),
                                     x_cron_secret: Optional[str] = Header(None)):
-    """🧪 週次弱点プリント生成を即時実行 (CEO ダッシュ「今すぐ生成」/ 動作確認用)
-    通常は毎週日曜 JST 5:00 だが、手動でテスト時に使用。"""
+    """🧪 週次弱点プリント生成を即時実行 (動作確認用・管理者トークンか X-Cron-Secret)。
+    通常は毎週日曜 JST 5:00 だが、手動でテスト時に使用。CEO ダッシュの画面からは呼んでいない。
+    ⛔ 2026-10-15 塾長決定で停止中 (WEEKLY_WORKSHEET_ENABLED 未設定) は 409 を返し、何も作らない・送らない。
+      再開は env を 1 にする意図的な操作だけにする (強制実行のフラグは作らない)。"""
     authed = False
     if authorization and authorization.startswith("Bearer "):
         token = authorization[len("Bearer "):].strip()
@@ -6597,6 +6624,12 @@ def admin_run_weekly_worksheet_now(authorization: Optional[str] = Header(None),
         authed = True
     if not authed:
         raise HTTPException(status_code=401, detail="未認証")
+    if not _weekly_worksheet_env_enabled():
+        raise HTTPException(
+            status_code=409,
+            detail="週次弱点プリントは停止中です (環境変数 WEEKLY_WORKSHEET_ENABLED が未設定。2026-10-15 塾長決定: "
+                   "自動の弱点配信は科目別ドリルの3日ドリルだけにする)",
+        )
     try:
         result = _run_weekly_worksheet_generation()
         return {"ok": True, **result}
@@ -30730,13 +30763,24 @@ def _class_rec_auto_assign_env_enabled() -> bool:
     return os.getenv("CLASS_REC_AUTO_ASSIGN_ENABLED", "1").strip().lower() not in ("0", "false", "off", "no")
 
 
+def _weekly_worksheet_env_enabled() -> bool:
+    """📅 WEEKLY_WORKSHEET_ENABLED の判定 (起動時の登録・スケジューラ・手動実行 API・this-week・監視の対象がすべてこれを使う)。
+    ★2026-10-15 塾長決定で日曜 5:00 の週次弱点プリントを止めた (既定 = 停止)。動くのは 1 / true / yes / on のときだけ。
+      理由: 出題元が入試道場の exam_questions (AI 生成の行を含む) で、「自動配信はレビュー済みの科目別ドリルだけ」に反する。
+      自動の弱点配信は科目別ドリルの 3日ドリル (WEAKNESS_DRILL_ROUTINE_ENABLED) に一本化する。
+    保存済みのプリント (worksheet_archives) と 📚 履歴は消さない。呼ぶたびに env を読む (起動時の登録と監視の dict は import 時)。"""
+    return os.getenv("WEEKLY_WORKSHEET_ENABLED", "0").strip().lower() in ("1", "true", "yes", "on")
+
+
 _SCHEDULER_MAX_AGE_DAYS = {
     "weakness_aggregation_run": 2,   # 日次
     "weekly_reports_run": 8,         # 週次 (日曜)
     # 📣 週半ばの一声 (水曜18時・2026-09-09 追加)。無効化 (MIDWEEK_NUDGE_ENABLED=0) 中は監視対象から外す
     #   (一度でも走った後に止めると「停止」の誤検知が出続けるため・review 指摘)。定数は下で定義されるので env を直接読む。
     **({"midweek_nudge_run": 8} if os.getenv("MIDWEEK_NUDGE_ENABLED", "1") == "1" else {}),
-    "weekly_worksheet_run": 8,       # 週次プリント生成
+    # 📅 週次プリント生成 (日曜5時)。2026-10-15 塾長決定で既定は停止 (WEEKLY_WORKSHEET_ENABLED)。止めている間は監視から外す
+    #   (外さないと最後の実行から 8 日後に「停止」の critical が出続ける)。
+    **({"weekly_worksheet_run": 8} if _weekly_worksheet_env_enabled() else {}),
     "trial_mgmt_run": 2,             # 体験フォローの日次バッチ
     "daily_sns_post": 2,             # 日次 SNS 投稿
     # 🗄️ 2026-09-07: DB バックアップ (毎日 JST 3:00 → Cloudflare R2)。成功時に r2_backup_success を書くので
@@ -58361,6 +58405,8 @@ def admin_sapuri_preview(student_id: int, authorization: Optional[str] = Header(
     return {"ok": True, "student_id": sid, "eligible": eligible, "reason": el.get("reason"),
             "band": el.get("band"), "top3": shown_top3, "class_items": class_items,
             "weekly_lines": _sapuri_weekly_lines([{"sapuri": d} for d in shown_top3 if not d.get("all_watched")]),
+            # ⛔ 2026-10-15: 週次プリントを止めている間は weekly_lines はどのメール・LINE にも入らない (CEO が「停止中」と出す)
+            "weekly_enabled": _weekly_worksheet_env_enabled(),
             "weaknesses": weaknesses}
 
 

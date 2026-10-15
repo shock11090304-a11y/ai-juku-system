@@ -52,6 +52,9 @@ on:
       # 📺 スタサプ段階 A: カタログのゲート (check_sapuri_catalog.py) は app.js の旧名の上限表 (SAPURI_LEGACY_CAPS) も照合する
       - 'app.js'
       - 'scripts/sapuri_lessons/**'
+      # ⛔ 週次弱点プリントの停止 (test_weekly_worksheet_stop.py) は mypage.html の終了表示と prod_healthcheck の監視対象もソースで見る
+      - 'mypage.html'
+      - 'scripts/health_check/prod_healthcheck.py'
       # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
       - 'lp.html'
       - 'checkout.html'
@@ -361,6 +364,15 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_weekly_worksheet_ai_disabled.py
+
+      # ⛔ 週次弱点プリントを止める (2026-10-15 塾長決定・WEEKLY_WORKSHEET_ENABLED 既定 OFF)。出題元の exam_questions に AI 生成の行が混ざり
+      #   「自動配信はレビュー済みの科目別ドリルだけ」に反するため。起動時の登録・ループ・手動実行 (409)・監視の対象から外れること、
+      #   this-week が古い行を「今週」にしないこと、保存済みの行と 📚 履歴は消さないこと、CEO / mypage の停止表示を見る。
+      - name: 週次弱点プリント 停止 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_weekly_worksheet_stop.py
 
       # ⏪ 自動ロールバックが「履歴の強制書き換え」ではなく revert commit を fast-forward で積むこと (2026-09-07)。
       - name: 自動ロールバック (revert commit 方式) 回帰テスト

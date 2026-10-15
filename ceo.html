@@ -13996,7 +13996,13 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       }).join('');
       h += box('通塾生アプリ「📺 今週見るスタサプ」', cls || none);
       var wl = (Array.isArray(d.weekly_lines) ? d.weekly_lines : []).map(function (x) { return '<div style="font-size:0.8rem; color:#e4e4e7;">' + esc(x) + '</div>'; }).join('');
-      h += box('週次プリントのメール・LINE に入る行（題名なし）', wl || none);
+      // ⛔ 2026-10-15 塾長決定で週次プリントを停止中 (サーバが weekly_enabled: false) は、この行はどのメール・LINE にも入らない。
+      //   古いサーバ (フィールド無し) では従来の見出しのまま。
+      if (d.weekly_enabled === false) {
+        h += box('週次プリントは停止中（メール・LINE には出ません）', '<div style="color:#71717a; font-size:0.8rem;">（2026-10-15 から週次弱点プリントは配信していません）</div>');
+      } else {
+        h += box('週次プリントのメール・LINE に入る行（題名なし）', wl || none);
+      }
       var ws = Array.isArray(d.weaknesses) ? d.weaknesses : [];
       if (ws.length) {
         h += '<div style="margin-top:0.6rem; overflow-x:auto;"><table style="border-collapse:collapse; font-size:0.78rem; min-width:640px;"><thead><tr style="color:#7dd3fc; text-align:left;">'

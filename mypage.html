@@ -406,7 +406,7 @@
     <!-- 📅 2026-05-22 塾長指示: 週次弱点プリント (毎週日曜朝 5:00 JST 自動配信) -->
     <section id="weeklyWorksheetSection" class="aj-adv1" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(59,130,246,0.10)); border: 1px solid rgba(16,185,129,0.35); border-radius: 14px;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.6rem; flex-wrap:wrap;">
-        <h3 style="margin:0; font-size:1.05rem; color:#fff; font-weight:800;">📅 今週の弱点プリント <span style="font-size:0.65em; color:#10b981; font-weight:600;">(毎週日曜 5:00 自動生成)</span></h3>
+        <h3 style="margin:0; font-size:1.05rem; color:#fff; font-weight:800;">📅 今週の弱点プリント <span id="worksheetSchedLabel" style="font-size:0.65em; color:#10b981; font-weight:600;">(毎週日曜 5:00 自動生成)</span></h3>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
           <button type="button" id="worksheetPrintBtn" style="padding:0.35rem 0.8rem; background:rgba(16,185,129,0.30); border:1px solid rgba(16,185,129,0.50); border-radius:8px; color:#fff; font-weight:700; font-size:0.82rem; cursor:pointer;">🖨️ 印刷</button>
           <button type="button" id="worksheetHistoryBtn" style="padding:0.35rem 0.7rem; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.20); border-radius:8px; color:#cbd5e1; font-weight:700; font-size:0.78rem; cursor:pointer;">📚 履歴</button>
@@ -1873,8 +1873,26 @@
         const res = await fetch(`${API_BASE}/api/student/worksheet/this-week`, { headers });
         if (!res.ok) { section.style.display = 'none'; return; }
         const data = await res.json();
-        section.style.display = '';
         ws = data.worksheet;
+        // ⛔ 2026-10-15 塾長決定で週次プリントの配信は終了 (サーバが discontinued: true を返す)。欄は消さずに「終了しました」と
+        //   📚 履歴 を案内する。プリントを一度も受け取っていない生徒には欄ごと出さない (終わったものを新しく見せない)。
+        //   古いサーバ (フラグ無し) のあいだは従来どおり。
+        const discontinued = data && data.discontinued === true;
+        const schedLabel = document.getElementById('worksheetSchedLabel');
+        if (discontinued) {
+          if (schedLabel) { schedLabel.textContent = '(配信は終了しました・過去分は 📚 履歴)'; schedLabel.style.color = '#94a3b8'; }
+          if (!ws) {
+            let hasHistory = true;  // 読めなかったときは案内を出す側に倒す
+            try {
+              const hr = await fetch(`${API_BASE}/api/student/worksheet/history?limit=1`, { headers });
+              if (hr.ok) { const hd = await hr.json(); hasHistory = !!(hd && Array.isArray(hd.history) && hd.history.length); }
+            } catch (e) { /* 案内を出す */ }
+            if (!hasHistory) { section.style.display = 'none'; return; }
+          }
+          if (printBtn && (!ws || !ws.questions || ws.questions.length === 0)) printBtn.style.display = 'none';
+          if (emptyEl) emptyEl.textContent = '週次の弱点プリントの配信は終了しました。過去のプリントは右上の 📚 履歴 から見られます。';
+        }
+        section.style.display = '';
         // 🧒 2026-07-03 中学生モードは chugaku バケットの問題/リンクのみ表示 (万一 旧プリントに大学問題が
         //   混在していても中学生には見せない=二重の流入遮断。生成側は _subj_scope で既に chugaku 限定)。
         const _wsMode = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';

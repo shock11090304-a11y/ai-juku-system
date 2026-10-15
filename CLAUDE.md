@@ -733,6 +733,25 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   - ★push の後は `/api/health` の `init_ddl_skipped==0` を確かめてから生徒の削除・統合を使う (表が無いまま走らせると Postgres で 500)。
     表が無い間の新 API は 503、照合は「何も見ていない」扱いで従来どおり出る。
 
+## 🎯 自動の弱点配信 (2026-10-15 塾長決定)
+- **日曜 5:00 の週次弱点プリントは止めた** (env `WEEKLY_WORKSHEET_ENABLED`・既定 = 停止。動くのは `1` / `true` / `yes` / `on` だけ)。
+  理由: 出題元が入試道場の `exam_questions` で AI 生成の行が混ざる。塾長方針は「自動で配るのはレビュー済みの科目別ドリルだけ」。
+  自動の弱点配信は科目別ドリルの 3日ドリル (`WEAKNESS_DRILL_ROUTINE_ENABLED`・別途 ON にするまで OFF) に一本化する。
+  ★止めてから 3日ドリルを ON にするまでの間は、自動の弱点配信が 1 本も無い (AI 体験中の生徒も)。順番は 停止 → dry-run → 3日ドリル ON。
+- 止めている間の動き (判定は `_weekly_worksheet_env_enabled()` 1 か所):
+  - 起動時にスケジューラを登録しない (ログに実際の値を出す)。ループも起きるたびに env を見て、無効なら何もしない。
+  - `POST /api/admin/worksheet/run-weekly-now` は 409 (何も作らない・送らない)。CEO 画面からは呼んでいない。
+  - 監視: `_SCHEDULER_MAX_AGE_DAYS` から `weekly_worksheet_run` を外す (import 時に評価 = env を変えたら再起動)。
+    `prod_healthcheck.py` の scheduler_live からも外した (API の env を見られないので、再開したら手で戻す)。
+  - `GET /api/student/worksheet/this-week` は `discontinued: true` を足し、`week_start_date` が JST の今日から 7 日前以降の行だけ返す
+    (最後の 1 枚はその週のあいだ見える)。**行は消さない**。`/history` (📚 履歴) は全部出る。
+  - mypage の欄は「配信は終了しました・過去分は 📚 履歴」と出す。プリントを一度も受け取っていない生徒には欄ごと出さない。
+  - CEO「📺 生徒の見え方」(`/api/admin/sapuri/preview` の `weekly_enabled`) は週次の行の箱を「停止中」と出す。
+    週次メール・LINE の「📺 今週見るスタサプ」は届かなくなる (TOP3・class.html のスタサプは変わらない)。
+  - 公開ページ (light.html・academy.html) の「週1回の弱点プリント」の文言は、3日ドリルを ON にした後に塾長の OK をもらってから直す。
+- `_run_weekly_worksheet_generation` 自体には env の判定を入れていない (テストが直接呼ぶ)。止めるのは呼び出し側だけ。
+- 回帰テスト: `scripts/health_check/test_weekly_worksheet_stop.py` (CI `server-tests.yml`)。
+
 ## 塾生アプリのみ枠 (AIなし) と宿題ドリル (2026-09-24 塾長決定)
 - **塾長方針: 英語の自由演習は開かない。AIなしの生徒が解けるのは「塾長が出した宿題」と「配信した単元ドリル」だけ。**
   `_AI_DISABLED_ALLOWED_EXACT / _PREFIXES` (middleware の許可集合) は変えない。`check_light_tier_middleware.py` が固定している。
