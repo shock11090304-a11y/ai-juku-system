@@ -22,6 +22,11 @@
   [8] 監視と競合: 全員の作成に失敗した実行は props.error (監視 _failed_schedulers が拾う)。要約は 60 名でも 4000 字未満の正しい JSON で
       名前を含まない。計画と書き込みの間に別の実行が配った生徒は skipped_race (2 本目を作らない)
   [9] LINE は 1 回も送らない・既定ではメールも送らない (自動配信は source='auto')
+  [10] CEO の配信済みドリル一覧 (2026-10-15 塾長決定: 既定は塾長が配ったドリルだけ): kind 無し = owner (今日の1問は出る・自動配信と
+      初回診断は出ない) / routine / class_hw (印からクラス名と区分を読む) / auto / all・初回診断はどの kind にも出ない・科目で絞る
+      (別名・空の科目 = english も拾う)・知らない kind と科目は 422・自動配信が 60 本増えても既定の 50 本から塾長の配信が押し出されない。
+      ceo.html: 絞り込みの帯と 🎯 確認カードの位置・localStorage は try の中・CEO から 3日ドリルを本番で回さない (dry_run: true だけ)・
+      確認カードの描画を JS で実行 (名前・学年は escape・plan_version が無ければ「サーバ反映待ち」)
 
 実行:
     python3 scripts/health_check/test_weakness_routine_auto_delivery.py
@@ -32,6 +37,7 @@ import importlib.util
 import json
 import os
 import random
+import re
 import subprocess
 import sys
 import tempfile
@@ -43,6 +49,8 @@ MAIN_PY = os.path.join(REPO, "server", "main.py")
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(REPO, "server"))
 from test_grammar_import_units import admin_token, import_like_ceo, load_seed, Api  # noqa: E402
+from test_grade_band_consistency import js_engine, run_js  # noqa: E402
+CEO_HTML = os.path.join(REPO, "ceo.html")
 
 FAILURES = []
 ROUTINE = "weakness_routine_3d"
@@ -662,6 +670,254 @@ def main():
     check("既定 (HOMEWORK_NOTIFY_EMAIL 未設定) ではメールも 0 通 (自動配信は source='auto')", rec.mails == [], rec.mails[:3])
     run_src = src[src.index("def _run_weakness_drill_routine"):][:12000]
     check("3日ドリルのお知らせは source='auto'", 'source="auto"' in run_src and "source=\"manual\"" not in run_src)
+
+    # ------------------------------------------------------------------
+    print("\n[10] CEO の配信済みドリル一覧の絞り込み (kind・subject) と 🎯 確認カード")
+    adm = {"Authorization": "Bearer " + admin_token(mod)}
+    stamp = [0]
+
+    def mk_drill(created_by, subject="english", unit="時制", when=None):
+        stamp[0] += 1
+        conn = mod.db(); c = conn.cursor()
+        c.execute("INSERT INTO grammar_drills (subject, title, unit, level, question_ids, created_by, created_at) "
+                  "VALUES (?, ?, ?, 'standard', '[]', ?, ?) RETURNING id",
+                  (subject, f"一覧の絞り込みの架空のドリル {stamp[0]}", unit, created_by,
+                   when or f"2030-01-01 00:{stamp[0] // 60:02d}:{stamp[0] % 60:02d}"))
+        did_ = c.fetchone()["id"]
+        conn.commit(); conn.close()
+        return did_
+
+    d_admin = mk_drill("admin", "english")
+    d_nullcb = mk_drill(None, "chugaku_math", unit="正負の数")
+    d_today = mk_drill("today_question", "english", unit="今日の1問")
+    d_diag = mk_drill("diagnostic", None, unit="実力チェック")
+    d_rt = mk_drill(ROUTINE, "math", unit="数学")
+    d_chw = mk_drill("class_hw_auto:kosei:月曜3限 長文読解 Lv.1", "english")
+    d_chw2 = mk_drill("class_hw_auto:chugaku:中学クラス: 架空", "chugaku", unit="関係代名詞")
+    d_nosubj = mk_drill("admin", None)          # 科目の列が空の古い行 = 英文法
+    d_alias = mk_drill("admin", "英語")          # 別名で入った行
+    d_upper = mk_drill("admin", "English")
+    d_math = mk_drill("admin", "数学")
+    owner_ids = {d_admin, d_nullcb, d_today, d_nosubj, d_alias, d_upper, d_math}
+    mine = owner_ids | {d_diag, d_rt, d_chw, d_chw2}
+
+    def lst(**params):
+        r = client.get("/api/admin/grammar-drill/list", params=dict({"limit": 200}, **params), headers=adm)
+        j = r.json() if r.status_code == 200 else {}
+        return r.status_code, j, {it["id"]: it for it in j.get("items", [])}
+
+    r = client.get("/api/admin/grammar-drill/list")
+    check("認証なし → 401", r.status_code == 401, r.status_code)
+    sc, j, items = lst()
+    auto_cb = lambda cb: cb == ROUTINE or str(cb).startswith("class_hw_auto:")  # noqa: E731
+    check("kind 無し = owner (応答に kind・subject を返す)", sc == 200 and j.get("kind") == "owner" and j.get("subject") is None, (sc, j.get("kind")))
+    check("owner: 塾長の配信・created_by が空の古い行・今日の1問は出る", owner_ids <= set(items), sorted(owner_ids - set(items)))
+    check("owner: 3日ドリル・クラス自動宿題・初回診断は 1 本も出ない",
+          not ({d_rt, d_chw, d_chw2, d_diag} & set(items))
+          and all(not auto_cb(it["created_by"]) and it["created_by"] != "diagnostic" and it["origin"] == "" for it in items.values()),
+          [(it["id"], it["created_by"]) for it in items.values() if auto_cb(it["created_by"])][:3])
+    check("各行に created_by (空の古い行は admin)", items.get(d_nullcb, {}).get("created_by") == "admin"
+          and items.get(d_today, {}).get("created_by") == "today_question", items.get(d_nullcb))
+    check("既存の項目 (done/pending/assigned) はそのまま", all(k in items.get(d_admin, {}) for k in ("done", "pending", "assigned", "completed", "subject")))
+    sc, j, items = lst(kind="routine")
+    check("routine: 3日ドリルだけ (origin routine)", sc == 200 and d_rt in items
+          and all(it["created_by"] == ROUTINE and it["origin"] == "routine" for it in items.values()), (sc, list(items)[:5]))
+    sc, j, items = lst(kind="class_hw")
+    check("class_hw: クラス自動宿題だけ", sc == 200 and set(items) == {d_chw, d_chw2}, sorted(items))
+    check("印から区分とクラス名を読む (クラス名の ':' はそのまま)",
+          items.get(d_chw, {}).get("group") == "kosei" and items.get(d_chw, {}).get("class_label") == "月曜3限 長文読解 Lv.1"
+          and items.get(d_chw2, {}).get("group") == "chugaku" and items.get(d_chw2, {}).get("class_label") == "中学クラス: 架空"
+          and items.get(d_chw, {}).get("origin") == "class_hw", [items.get(d_chw), items.get(d_chw2)])
+    sc, j, items = lst(kind="auto")
+    check("auto: 3日ドリルとクラス自動宿題の両方だけ", sc == 200 and {d_rt, d_chw, d_chw2} <= set(items)
+          and all(auto_cb(it["created_by"]) for it in items.values()), sorted(items)[:8])
+    sc, j, items = lst(kind="all")
+    check("all: 初回診断を除く全部", sc == 200 and (mine - {d_diag}) <= set(items) and d_diag not in items, sorted(mine - set(items)))
+    leaks = []
+    for k_ in ("owner", "routine", "class_hw", "auto", "all", "OWNER"):
+        sc, j, items = lst(kind=k_)
+        if sc != 200 or d_diag in items or any(it["created_by"] == "diagnostic" for it in items.values()):
+            leaks.append((k_, sc))
+    check("初回診断 (diagnostic) はどの kind にも出ない (大文字の kind も通る)", not leaks, leaks)
+    sc, j, items = lst(kind="all", subject="chugaku_math")
+    check("subject=chugaku_math: 中学数学だけ", sc == 200 and j.get("subject") == "chugaku_math" and d_nullcb in items
+          and all(it["subject"] == "chugaku_math" for it in items.values()), (sc, j.get("subject"), sorted(items)))
+    sc, j, items = lst(subject="english")
+    want = {d_admin, d_today, d_nosubj, d_alias, d_upper}
+    check("subject=english: 空の科目・別名 (英語)・大文字 (English) の行も拾う (表示と同じ答え)", sc == 200 and want <= set(items)
+          and not ({d_math, d_nullcb, d_chw} & set(items)) and all(it["subject"] == "english" for it in items.values()),
+          (sorted(want - set(items)), sorted(items)))
+    sc, j, items = lst(subject="数学")
+    check("subject=数学 (別名) → math に直して絞る", sc == 200 and j.get("subject") == "math" and d_math in items and d_rt not in items,
+          (sc, j.get("subject")))
+    sc, j, items = lst(kind="routine", subject="math")
+    check("kind と subject を組み合わせる (routine × math)", sc == 200 and d_rt in items and all(it["subject"] == "math" for it in items.values()))
+    for v in ("", "all"):
+        sc, j, items = lst(subject=v)
+        check(f"subject={v!r} は絞らない", sc == 200 and j.get("subject") is None and owner_ids <= set(items), (sc, j.get("subject")))
+    for params in ({"kind": "manual"}, {"kind": "bogus"}, {"subject": "xyz"}, {"subject": "english' OR 1=1 --"}):
+        sc, j, items = lst(**params)
+        check(f"{params} → 422", sc == 422, sc)
+    conn = mod.db(); c = conn.cursor()
+    for i in range(60):   # 自動配信は生徒ごとに 1 本ずつ → 塾長の配信より新しい行が 60 本
+        c.execute("INSERT INTO grammar_drills (subject, title, unit, level, question_ids, created_by, created_at) "
+                  "VALUES ('english', ?, '時制', 'standard', '[]', ?, ?)", (f"自動の架空のドリル {i}", ROUTINE, f"2031-01-01 00:{i // 60:02d}:{i % 60:02d}"))
+    conn.commit(); conn.close()
+    r = client.get("/api/admin/grammar-drill/list", headers=adm)
+    ids50 = {it["id"] for it in r.json().get("items", [])} if r.status_code == 200 else set()
+    r_all = client.get("/api/admin/grammar-drill/list", params={"kind": "all"}, headers=adm)
+    ids50_all = {it["id"] for it in r_all.json().get("items", [])} if r_all.status_code == 200 else set()
+    check("自動配信が 60 本増えても、既定 (50 本) から塾長の配信が押し出されない", d_admin in ids50 and len(ids50) <= 50, len(ids50))
+    check("(比較: all の 50 本は新しい自動配信で埋まる = 既定を owner にした理由)", d_admin not in ids50_all and len(ids50_all) == 50, len(ids50_all))
+    lsrc = src[src.index("def admin_grammar_drill_list"):][:4000]
+    check("一覧に索引の DDL を足していない (起動時の DDL を増やさない)", "CREATE INDEX" not in lsrc and "ALTER TABLE" not in lsrc)
+
+    print("  (ceo.html: 絞り込みの帯と 🎯 確認カード)")
+    html = open(CEO_HTML, encoding="utf-8").read()
+    try:
+        pos = [html.index('id="gdRoutineBox"'), html.index('id="gdListBar"'), html.index('<div id="gdList"')]
+    except ValueError as e:
+        pos = []
+        check("ceo.html に 🎯 確認カード・絞り込みの帯・一覧がある", False, e)
+    check("並び: 🎯 確認カード → 絞り込みの帯 → 一覧", len(pos) == 3 and pos[0] < pos[1] < pos[2], pos)
+    bar = html[html.index('id="gdListBar"'):html.index('<div id="gdList"')] if len(pos) == 3 else ""
+    kinds = set(re.findall(r'data-kind="([a-z_]+)"', bar))
+    check("帯の kind は owner / routine / class_hw / all (サーバが知っている値)", kinds == {"owner", "routine", "class_hw", "all"}
+          and kinds <= set(mod._GRAMMAR_DRILL_LIST_KINDS), kinds)
+    opts = set(re.findall(r'<option value="([a-z_]*)"', bar)) - {""}
+    future = {"english_long", "proficiency_test"}   # 英語長文・習熟度テストの取込 (後のコミット) までは 422 = 「読めませんでした」と出る
+    check("科目の選択肢 = サーバの科目すべて (+ 英語長文・習熟度テスト)", set(mod._GRAMMAR_CANON_SUBJECTS) <= opts
+          and opts - set(mod._GRAMMAR_CANON_SUBJECTS) <= future, (sorted(set(mod._GRAMMAR_CANON_SUBJECTS) - opts), sorted(opts)))
+    def js_fn(name):
+        i = html.find(f"function {name}(")
+        j_ = html.find("\n    }\n", i)
+        return html[i:j_ + 6] if i >= 0 and j_ > i else ""
+    ref = js_fn("gdRefresh")
+    check("gdRefresh は ?kind=&subject= を付けて読む", "'/api/admin/grammar-drill/list' + _gdListQuery(_gdListKind, _gdListSubject)" in ref, ref[:300])
+    check("gdRefresh は古い応答で新しい絞り込みを上書きしない (seq)", "seq !== _gdListSeq" in ref)
+    ls_fns = [js_fn("_gdListLoadFilter"), js_fn("_gdListSaveFilter")]
+    check("絞り込みの localStorage は try の中だけ", all(f_ and "localStorage" in f_ and f_.index("try {") < f_.index("localStorage") for f_ in ls_fns)
+          and html.count("_GD_LIST_LS_KEY") == 3, ls_fns)
+    dry = js_fn("gdRoutineDryRun")
+    check("🎯 の 🔍 は dry_run: true と include_names: true だけを送る", "dry_run: true, include_names: true" in dry and "dry_run: false" not in dry, dry[:400])
+    calls = re.findall(r"""[`'"]/api/admin/weakness-drill-routine/run""", html)   # 文字列としての URL (コメントは数えない)
+    check("CEO の画面から 3日ドリルを回す呼び出しは 🔍 の 1 か所だけ (本番の配信ボタンは無い)", len(calls) == 1, calls)
+    check("📦 は source-inventory を読む", "/api/admin/grammar/source-inventory" in js_fn("gdRoutineInventory"))
+    check("inline onclick から呼ぶ関数を window に出している",
+          all(f"window.{f_} = {f_}" in html for f_ in ("gdListSetKind", "gdListSetSubject", "gdRoutineDryRun", "gdRoutineInventory")))
+
+    # 確認カードの描画を JS で実行する (本物の API の応答を渡す。名前・学年に HTML を入れて escape を確かめる)
+    reset_routine()
+    ex(mod, "UPDATE students SET name = ? WHERE id = ?", ("架空 <img src=x onerror=alert(1)> 生徒", k1))
+    ex(mod, "UPDATE students SET grade = ? WHERE id = ?", ("<b>未設定</b>", u1))
+    ex(mod, "DELETE FROM grammar_drill_assignments WHERE student_id = ?", (k1,))
+    only_active([k1, c1, u1])
+    rt = client.post("/api/admin/weakness-drill-routine/run", json={"dry_run": True, "include_names": True, "seed": 7}, headers=adm)
+    rtj = rt.json() if rt.status_code == 200 else {}
+    check("CEO の管理者のトークンで dry-run が読める (名前つき)", rt.status_code == 200 and rtj.get("dry_run") is True
+          and any(e.get("id") == k1 for e in rtj.get("delivered_students", [])) and rtj.get("grade_unknown_students"), (rt.status_code, rtj)[:2])
+    inv = client.get("/api/admin/grammar/source-inventory", headers=adm)
+    invj = inv.json() if inv.status_code == 200 else {}
+    eng = js_engine()
+    check("JS の実行環境がある (node / osascript / jsc。無ければ FAIL)", bool(eng))
+    a0_ = html.index("    function escapeHtml(s) { return (s||'')")
+    esc_line = html[a0_:html.index("\n", a0_)]
+    subj_ja = html[html.index("    const _GD_SUBJ_JA = {"):html.index("};", html.index("    const _GD_SUBJ_JA = {")) + 2]
+    kinds_js = html[html.index("    const _GD_LIST_KINDS = "):html.index("\n", html.index("    const _GD_LIST_KINDS = "))]
+    query_js = js_fn("_gdListQuery")
+    card_js = html[html.index("    const _GD_RT_REASON_JA = {"):html.index("    let _gdRtBusy = false;")]
+    prog = "\n".join([
+        "var window = (typeof globalThis !== 'undefined') ? globalThis : this;",
+        esc_line, subj_ja, kinds_js, query_js, card_js,
+        "var __o = {};",
+        f"__o.render = _gdRtRender({json.dumps(rtj, ensure_ascii=False)});",
+        "__o.old = _gdRtRender({ ok: true, delivered: 1, skipped_grade: 2 });",
+        f"__o.inv = _gdRtInvRender({json.dumps(invj, ensure_ascii=False)});",
+        "__o.invOld = _gdRtInvRender({ ok: true });",
+        "__o.q1 = _gdListQuery('class_hw', 'chugaku_math'); __o.q2 = _gdListQuery('owner', ''); __o.q3 = _gdListQuery('bogus', 'x y');",
+        "__o.reason = _gdRtReasonLabel('band_mismatch:chugaku'); __o.reason2 = _gdRtReasonLabel('eng_not_grammar_unit');",
+        "var __s = 'RESULT ' + JSON.stringify(__o);",
+        "if (typeof process !== 'undefined' && typeof console !== 'undefined' && console.log) console.log(__s);",
+        "else if (typeof print === 'function') print(__s);",
+        "else if (typeof console !== 'undefined' && console.log) console.log(__s);",
+    ])
+    out, err = run_js(eng, prog) if eng else (None, "no engine")
+    check("確認カードの描画が JS で動く", out is not None, err)
+    out = out or {}
+    rend = out.get("render", "")
+    check("名前の HTML は escape される (<img を出さない)", "&lt;img" in rend and "<img" not in rend, rend[:300])
+    check("学年の HTML も escape される", "&lt;b&gt;未設定&lt;/b&gt;" in rend and "<b>未設定" not in rend, rend[:300])
+    check("配る生徒は id つきで並び、押すと生徒詳細を開く", f"#{k1}<" in rend and f"window.showStudentDetail({k1})" in rend, rend[:300])
+    check("ON/OFF が出る (既定は OFF)", "自動配信 OFF" in rend)
+    check("plan_version の無い古い応答は「サーバ反映待ち」(古い形を表にしない)", "反映待ち" in out.get("old", "") and "配る" not in out.get("old", ""))
+    check("📦 の在庫が科目名つきで出る", "自動で出せる在庫" in out.get("inv", "") and "英文法" in out.get("inv", ""), out.get("inv", "")[:200])
+    check("📦: 古いサーバは「サーバ反映待ち」", "反映待ち" in out.get("invOld", ""))
+    check("一覧の問い合わせ文字列 (知らない kind は owner・科目は encode)",
+          (out.get("q1"), out.get("q2"), out.get("q3")) == ("?kind=class_hw&subject=chugaku_math", "?kind=owner", "?kind=owner&subject=x%20y"),
+          (out.get("q1"), out.get("q2"), out.get("q3")))
+    check("弱点を外した理由は日本語 (科目名つき)", out.get("reason") == "学年と科目が合わない：中学英語"
+          and out.get("reason2", "").startswith("英語の弱点が文法の単元に当たらない"), (out.get("reason"), out.get("reason2")))
+
+    # 絞り込みの帯の動き (偽の DOM・偽の fetch で ceo.html の本物のコードを動かす): 端末に覚えた値の復元・古い応答で上書きしない・
+    #   localStorage が使えない端末・古いサーバ (kind を返さない)・422 の表示
+    filt_js = html[html.index("    const _GD_LIST_KINDS = "):html.index("    function _gdRateColor(")]
+    prog2 = "\n".join([
+        "var window = (typeof globalThis !== 'undefined') ? globalThis : this;",
+        "var __store = {}; var localStorage = { getItem: function (k) { return (k in __store) ? __store[k] : null; }, setItem: function (k, v) { __store[k] = String(v); } };",
+        "__store['aj_ceo_gd_list_filter_v1'] = JSON.stringify({ kind: 'class_hw', subject: 'chugaku_math' });",
+        "function __btn(k) { return { k: k, style: {}, getAttribute: function (a) { return a === 'data-kind' ? this.k : null; } }; }",
+        "var __btns = ['owner', 'routine', 'class_hw', 'all'].map(__btn);",
+        "var __sel = { value: '', options: [{ value: '' }, { value: 'english' }, { value: 'chugaku_math' }] };",
+        "var __list = { innerHTML: '' };",
+        "var document = { querySelectorAll: function () { return __btns; }, getElementById: function (id) { return id === 'gdListSubject' ? __sel : (id === 'gdList' ? __list : null); } };",
+        "var __calls = [], __pending = [], __rendered = [];",
+        "var AdminAuth = { fetch: function (path) { __calls.push(path); return new Promise(function (r) { __pending.push(r); }); } };",
+        "function __res(status, body) { return { ok: status === 200, status: status, json: function () { return Promise.resolve(body); } }; }",
+        "var _gdItems = [], _gdShowAllGroups = false;",
+        # ★console は宣言し直さない (node の module スコープでは var console が本物を隠して何も出なくなる)
+        "if (typeof console === 'undefined') { window.console = { warn: function () {}, log: function () {} }; }",
+        "function gdRenderList() { __rendered.push({ ids: _gdItems.map(function (x) { return x.id; }), note: _gdListNote }); }",
+        esc_line, filt_js,
+        "var __o = { restored: [_gdListKind, _gdListSubject] };",
+        "async function __ticks() { for (var i = 0; i < 20; i++) { await null; } }",
+        "(async function () {",
+        "  gdRefresh();",
+        "  __o.weight = __btns.map(function (b) { return b.style.fontWeight; }); __o.sel = __sel.value;",
+        "  gdListSetKind('routine');",
+        "  __pending[1](__res(200, { ok: true, kind: 'routine', items: [{ id: 2 }] })); await __ticks();",
+        "  __pending[0](__res(200, { ok: true, kind: 'class_hw', items: [{ id: 1 }] })); await __ticks();",
+        "  __o.calls = __calls.slice(); __o.rendered = __rendered.slice(); __o.saved = __store['aj_ceo_gd_list_filter_v1'];",
+        "  gdListSetKind('evil'); __o.callsAfterEvil = __calls.length;",
+        "  gdListSetSubject(''); __pending[2](__res(200, { ok: true, items: [{ id: 3 }] })); await __ticks();",
+        "  __o.oldServerNote = __rendered[__rendered.length - 1].note;",
+        "  gdListSetSubject('chugaku_math'); __pending[3](__res(422, { detail: '<b>科目</b> はこのサーバでは使えません' })); await __ticks();",
+        "  __o.err = __list.innerHTML;",
+        "  _gdListKind = 'owner'; _gdListSubject = '';",
+        "  __store['aj_ceo_gd_list_filter_v1'] = JSON.stringify({ kind: 'evil', subject: '<x>' }); _gdListLoadFilter();",
+        "  __o.garbage = [_gdListKind, _gdListSubject];",
+        "  localStorage = { getItem: function () { throw new Error('blocked'); }, setItem: function () { throw new Error('blocked'); } };",
+        "  try { _gdListLoadFilter(); _gdListSaveFilter(); __o.blockedOk = true; } catch (e) { __o.blockedOk = String(e); }",
+        "  var __s = 'RESULT ' + JSON.stringify(__o);",
+        "  if (typeof process !== 'undefined' && console.log) console.log(__s); else if (typeof print === 'function') print(__s); else console.log(__s);",
+        "})();",
+    ])
+    out2, err2 = run_js(eng, prog2) if eng else (None, "no engine")
+    check("絞り込みの帯のコードが JS で動く", out2 is not None, err2)
+    out2 = out2 or {}
+    check("端末に覚えた絞り込み (🏫・中学数学) を開き直したときに戻す", out2.get("restored") == ["class_hw", "chugaku_math"]
+          and out2.get("sel") == "chugaku_math" and out2.get("weight") == ["400", "400", "800", "400"], out2)
+    check("押した順に ?kind=&subject= で読む", (out2.get("calls") or [])[:2] == [
+        "/api/admin/grammar-drill/list?kind=class_hw&subject=chugaku_math", "/api/admin/grammar-drill/list?kind=routine&subject=chugaku_math"],
+        out2.get("calls"))
+    check("後から届いた古い応答 (🏫) で新しい絞り込み (🎯) の表示を上書きしない", [r_["ids"] for r_ in out2.get("rendered", [])] == [[2]],
+          out2.get("rendered"))
+    check("選んだ値を端末に覚える", json.loads(out2.get("saved") or "{}") == {"kind": "routine", "subject": "chugaku_math"}, out2.get("saved"))
+    check("知らない kind は無視 (読み直さない)", out2.get("callsAfterEvil") == 2, out2.get("callsAfterEvil"))
+    check("古いサーバ (kind を返さない) で絞り込み中なら「反映待ち」と出す", "反映待ち" in str(out2.get("oldServerNote")), out2.get("oldServerNote"))
+    check("422 は今の一覧を消して理由を出す (escape して)", "読めませんでした" in out2.get("err", "") and "&lt;b&gt;科目" in out2.get("err", "")
+          and "<b>科目" not in out2.get("err", ""), out2.get("err"))
+    check("覚えた値が壊れていたら既定 (👤・すべて)", out2.get("garbage") == ["owner", ""], out2.get("garbage"))
+    check("localStorage が使えない端末でも落ちない", out2.get("blockedOk") is True, out2.get("blockedOk"))
 
     print()
     if FAILURES:

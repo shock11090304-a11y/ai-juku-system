@@ -448,7 +448,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - 形式ゲートは `scripts/check_chugaku_drill_seed.py` (中学英語・中学数学・中学理科・中学社会・中学国語を1本で見る)、回帰テストは
   `scripts/health_check/test_chugaku_math_drill_pool.py` (CI の server-tests に登録済み)。
 - 次の教科を足すときは、`_GRAMMAR_CANON_SUBJECTS`・別名・ラベル・`_GRAMMAR_SUBJECT_UNIT_ORDER` に1行ずつ、
-  CEO の科目選択と補充ボタン・CEO のラベル表 2 つ (学年ミスマッチの確認に出る `_gdGradeMismatchText` の `_subjJa`・配信済みドリルのチップの `SUBJ_JA`)、
+  CEO の科目選択と補充ボタン・CEO のラベル表 2 つ (学年ミスマッチの確認に出る `_gdGradeMismatchText` の `_subjJa`・配信済みドリルのチップと 🎯 確認カードの `_GD_SUBJ_JA`)、
+  CEO の配信済みドリル一覧の科目の絞り込み (`gdListSubject` の選択肢。無いと `test_weakness_routine_auto_delivery.py` が落ちる)、
   CEO「やるべきこと」の `_CHU_DRILL_UNITS` / `_CHU_DRILL_LABEL` と `scripts/check_ceo_chugaku_drill_links.py` の `DOJO_SUBJ`
   (無いとその教科の弱点に 📨 が出ない。ゲートが落ちて教えてくれる。クラス宿題でも出すなら、ゲートの `HW_SUBJS` に教科を足し、
   道場のカードを 1 枚ずつ `HW_DRILL_TOPICS` に `s: 'chugaku'` で足す — これもゲートが見る)、
@@ -793,7 +794,14 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   - ON にする手順: 塾長が dry-run を見る (`POST /api/admin/weakness-drill-routine/run` `{"dry_run": true}`・X-Cron-Secret) →
     `skipped_grade_unknown` の学年を直す・`mode_changed_by_normalization` の生徒が本当に中学生か確かめる・`capped` が多ければ `WEAKNESS_DRILL_ROUTINE_CAP` →
     Railway で `WEAKNESS_DRILL_ROUTINE_ENABLED=1`。★ON の前にデスクトップの予約タスク「2日に1回 弱点15問ミッション」を止める (二重配信になる)。
-  - 回帰テスト: `scripts/health_check/test_weakness_routine_auto_delivery.py` (CI `server-tests.yml`)。
+  - CEO (📝 科目別 単元ドリル の下): 「🎯 自動の弱点ドリル」カードの 🔍 は `dry_run: true`・`include_names: true` だけを送る
+    (ON/OFF・配る生徒と単元・在庫・学年が判定できない生徒・理由。**CEO から 3日ドリルを本番で回すボタンは作らない** = ON/OFF は env)。
+    📦 は `source-inventory`。応答に `plan_version` が無ければ「サーバ反映待ち」。名前・学年は escapeHtml (inline だけ・ceo.js は触らない)。
+  - 配信済みドリル一覧 (`GET /api/admin/grammar-drill/list`) の既定は **塾長が配った分だけ** (`kind=owner`・今日の1問は出る)。
+    自動配信は生徒ごとに 1 本ずつ作るので、混ぜると新しい 50 本から塾長の配信が押し出される。`kind=routine|class_hw|auto|all`・
+    `subject=` (別名可・空の科目は english) で切り替える (CEO の帯・選んだ値は端末の localStorage)。初回診断はどれにも出さない。
+    知らない kind・科目は 422。各行に `created_by` と `origin` / `group` / `class_label` (`class_hw_auto:<区分>:<クラス名>` から読む)。索引は足さない。
+  - 回帰テスト: `scripts/health_check/test_weakness_routine_auto_delivery.py` (CI `server-tests.yml`。[10] が一覧と CEO のカード)。
 - 生徒が自分で始める **今日の1問・初回診断** (配信ではないが中身はサーバが選ぶ) も、学年で科目を決めてレビュー済みの出典だけから出す
   (中学英語の節・`test_self_issued_drill_band.py`)。
 

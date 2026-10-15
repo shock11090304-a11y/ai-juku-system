@@ -47898,29 +47898,91 @@ def admin_weakness_drill_routine_run(
     }
 
 
+# 📋 CEO の配信済みドリル一覧の絞り込み (2026-10-15 塾長決定: 既定は塾長が配ったドリルだけ・自動配信は切り替えて見る)。
+#   自動配信は生徒 1 人に 1 本ずつドリルを作るので、既定に混ぜると「新しい 50 本」が自動配信で埋まり、塾長の配信が押し出される。
+#   生徒の自己発行ミニ診断 (created_by='diagnostic') はどれでも出さない (2026-06-11 から)。今日の1問 (today_question) は
+#   今までどおり既定の一覧にも出す (塾長決定)。値はすべて定数 (SQL に利用者の入力を埋めない)。
+_GRAMMAR_DRILL_LIST_KINDS = ("owner", "routine", "class_hw", "auto", "all")
+
+
+def _grammar_drill_list_kind_sql(kind: str) -> str:
+    """一覧の kind → grammar_drills の WHERE 条件 (パラメータなし)。
+    owner = 自動配信 (3日ドリル・クラス自動宿題) と初回診断を除く全部 / routine = 3日ドリル / class_hw = クラス自動宿題 /
+    auto = その両方 / all = 初回診断を除く全部。知らない kind は ValueError (呼び出し側で 422)。"""
+    no_diag = "COALESCE(created_by, 'admin') != 'diagnostic'"
+    n = len(_CLASS_HW_CREATED_BY_PREFIX)
+    if kind == "owner":
+        return f"{no_diag} AND NOT {_auto_created_by_sql()}"
+    if kind == "routine":
+        return f"COALESCE(created_by, '') = '{_ROUTINE_CREATED_BY}'"
+    if kind == "class_hw":
+        return f"substr(COALESCE(created_by, ''), 1, {n}) = '{_CLASS_HW_CREATED_BY_PREFIX}'"
+    if kind == "auto":
+        return _auto_created_by_sql()
+    if kind == "all":
+        return no_diag
+    raise ValueError(f"unknown kind: {kind!r}")
+
+
+def _drill_auto_origin(created_by) -> dict:
+    """grammar_drills.created_by → 一覧に添える自動配信の印。
+    'weakness_routine_3d' → {origin: 'routine'} / 'class_hw_auto:<group>:<クラス名>' → {origin: 'class_hw', group, class_label}
+    (クラス名に ':' が入っても 2 個目の ':' より後ろを全部クラス名にする) / それ以外 → {origin: ''}。"""
+    cb = str(created_by or "")
+    if cb == _ROUTINE_CREATED_BY:
+        return {"origin": "routine", "group": None, "class_label": None}
+    if cb.startswith(_CLASS_HW_CREATED_BY_PREFIX):
+        group, _sep, label = cb[len(_CLASS_HW_CREATED_BY_PREFIX):].partition(":")
+        return {"origin": "class_hw", "group": group or None, "class_label": label or None}
+    return {"origin": "", "group": None, "class_label": None}
+
+
 @app.get("/api/admin/grammar-drill/list")
 def admin_grammar_drill_list(
     limit: int = 50,
+    kind: Optional[str] = None,
+    subject: Optional[str] = None,
     authorization: Optional[str] = Header(None),
     x_cron_secret: Optional[str] = Header(None),
 ):
-    """🧑‍🏫 admin: 作成済みドリル一覧 + 配信/完了/平均正解率サマリ。"""
+    """🧑‍🏫 admin: 作成済みドリル一覧 + 配信/完了/平均正解率サマリ。
+    📋 2026-10-15: kind で絞る (owner = 既定・塾長が配った分と今日の1問 / routine = 3日ドリル / class_hw = クラス自動宿題 /
+    auto = 自動配信の両方 / all = 全部。初回診断はどれでも出さない)。subject で科目を絞る (別名も可・canonical に直して比べる。
+    科目が空の古い行は english)。知らない kind・科目は 422。新しい順に limit 本 (既定 50) は今までどおり (絞り込んだ後の 50 本)。
+    各行に created_by と、自動配信なら origin / group / class_label (クラス自動宿題の印から読む) を添える。
+    索引は足さない (起動時の DDL を増やさない・grammar_drills は小さい)。"""
     if not _grammar_admin_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
     try:
         limit = max(1, min(int(limit or 50), 200))
     except Exception:
         limit = 50
+    kind_n = str(kind or "owner").strip().lower() or "owner"
+    if kind_n not in _GRAMMAR_DRILL_LIST_KINDS:
+        raise HTTPException(status_code=422, detail=f"kind は {' / '.join(_GRAMMAR_DRILL_LIST_KINDS)} のどれかです")
+    where = _grammar_drill_list_kind_sql(kind_n)
+    params = []
+    subj_raw = str(subject or "").strip()
+    subj_canon = None
+    if subj_raw and subj_raw.lower() not in ("all", "*"):
+        subj_canon = _canon_grammar_subject(subj_raw)
+        if not subj_canon:
+            raise HTTPException(status_code=422, detail=f"科目「{subj_raw[:40]}」はこのサーバでは使えません (サーバの反映待ちか、科目名の誤り)")
+        # 表示側 (_canon_grammar_subject(d.subject) or 'english') と同じ答えになるよう、別名と空 (= english) も拾う
+        variants = sorted({subj_canon} | {k for k, v in _GRAMMAR_SUBJECT_ALIASES.items() if v == subj_canon})
+        where += f" AND LOWER(COALESCE(NULLIF(TRIM(subject), ''), 'english')) IN ({','.join(['?'] * len(variants))})"
+        params.extend(variants)
     conn = db()
     try:
         c = conn.cursor()
         c.execute(
             # 生徒の自己発行ミニ診断 (created_by='diagnostic') は除外 (2026-06-11):
             # 生徒数分の「🔰 実力チェック」行が CEO の配信ドリル一覧 TOP50 を押し出すのを防ぐ
-            "SELECT id, title, subject, unit, level, question_ids, created_at FROM grammar_drills "
-            "WHERE COALESCE(created_by, 'admin') != 'diagnostic' "
+            # (2026-10-15 から自動配信も既定では除く = _grammar_drill_list_kind_sql)
+            "SELECT id, title, subject, unit, level, question_ids, created_by, created_at FROM grammar_drills "
+            f"WHERE {where} "
             "ORDER BY created_at DESC, id DESC LIMIT ?",
-            (limit,),
+            (*params, limit),
         )
         drills = c.fetchall()
         # 👥 [drill-who 2026-09-03 塾長指示「誰が完了しているのか一目でわかるように」]
@@ -48003,8 +48065,12 @@ def admin_grammar_drill_list(
                 "pending": _pending,
                 "deleted_done": _gone_done,
                 "deleted_pending": _gone_pending,
+                # 📋 2026-10-15: 誰が作ったドリルか (admin / today_question / weakness_routine_3d / class_hw_auto:<group>:<クラス名>)。
+                #   CEO は origin で 🎯 3日ドリル・🏫 クラス名 のチップを出す。
+                "created_by": str(d["created_by"] or "admin"),
+                **_drill_auto_origin(d["created_by"]),
             })
-        return {"ok": True, "items": items}
+        return {"ok": True, "items": items, "kind": kind_n, "subject": subj_canon}
     finally:
         conn.close()
 
