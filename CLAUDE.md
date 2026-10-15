@@ -895,7 +895,10 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   - mypage の欄は「配信は終了しました・過去分は 📚 履歴」と出す。プリントを一度も受け取っていない生徒には欄ごと出さない。
   - CEO「📺 生徒の見え方」(`/api/admin/sapuri/preview` の `weekly_enabled`) は週次の行の箱を「停止中」と出す。
     週次メール・LINE の「📺 今週見るスタサプ」は届かなくなる (TOP3・class.html のスタサプは変わらない)。
-  - 公開ページ (light.html・academy.html) の「週1回の弱点プリント」の文言は、3日ドリルを ON にした後に塾長の OK をもらってから直す。
+  - 公開ページ (light.html・academy.html) の「週1回の弱点プリント」の文言は 2026-10-16 塾長決定で直した (3日ドリルは本番 ON):
+    light.html = トリリオン・ライト (feature_tier='light' = AI 月10回・AIなし枠ではない = 3日ドリルの側) は「3日ごとの弱点ドリル（自動配信・自動採点）」
+    (10 回を消費しないものの列挙も 弱点プリント → 弱点ドリル)・academy.html の「弱点“習得”ループ」は「3日ごとに届く弱点ドリル
+    （レビュー済みの問題・自動採点）」+ 科目の注記 (高校生は英文法・数学、中学生は 5 教科)。★出す科目・周期を変えたらここも直す。
 - `_run_weekly_worksheet_generation` 自体には env の判定を入れていない (テストが直接呼ぶ)。止めるのは呼び出し側だけ。
 - 回帰テスト: `scripts/health_check/test_weekly_worksheet_stop.py` (CI `server-tests.yml`)。
 - **3日ドリル (毎日 5:30・`WEAKNESS_DRILL_ROUTINE_ENABLED`・既定 OFF) が自動の弱点配信の本線** (2026-10-15 版・plan_version 2):
