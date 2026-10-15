@@ -47304,6 +47304,12 @@ def admin_grammar_drill_create(
 # 🎯 弱点ドリル 3日ルーティン (2026-07-22 塾長要望「3日に1回・分析後に弱点を自動出題」)
 #   毎日 JST 5:30 (4:00 の弱点集計の後) に、各生徒の最優先弱点を自動採点ドリル(10問)化して配信。生徒ごと3日周期・
 #   未提出 (status <> 'completed') が残っていれば積まない。env WEAKNESS_DRILL_ROUTINE_ENABLED で ON (既定OFF=段階投入)。
+#   ★2026-10-16 塾長決定: ① 3 日は JST の日付で数える (最後に配った日 <= 今日 − 3 日なら配る。72 時間ちょうどで切ると、
+#     5:30:00 に起きる実行で 3 日前の 5:30:xx の配信がまだ「3 日以内」になり 4 日ごとになっていた)。
+#     ② 積まない判定に数える未提出は直近 WEAKNESS_ROUTINE_OPEN_STALE_DAYS (既定 14) 日に配った分だけ (それより前の未提出が
+#     残っているだけで新しいドリルが永久に届かないのを止める。古いドリルは消さず、生徒の画面にも残る。0 = 従来どおり全部数える)。
+#     ③ 数えるのは 3日ドリルの印 (created_by='weakness_routine_3d') の行だけ。デスクトップの予約タスク「2日に1回 弱点15問ミッション」の
+#     行 (created_by='mission_2day_routine') は数えない = 両方届く (塾長決定「両方配ってよい」)。
 #   ★2026-10-15 塾長決定で自動の弱点配信はこれ 1 本 (日曜の週次弱点プリントは既定で停止)。
 #     - 出すのはレビュー済みの出典だけ (_auto_delivery_source_ok・下の 🤖 自動配信の共通部品)
 #     - 学年の区分 (_student_grade_band) で中高を分ける: 高校生 = english (文法 20 単元) と math (科目まるごと・数学III なし)、
@@ -47354,6 +47360,40 @@ def _weakness_routine_send_cap() -> int:
         return max(1, min(int(os.getenv("WEAKNESS_DRILL_ROUTINE_CAP", "60")), 500))
     except (TypeError, ValueError):
         return 60
+
+
+def _auto_open_stale_days(env_name: str, min_days: int) -> int:
+    """自動配信の「積まない」判定に数える未提出の日数 (2026-10-16 塾長決定・既定 14)。
+    0 (と負の値) = 従来どおり全部数える。それ以外は min_days (周期の日数。それより短くしても周期の判定が先に止める) 〜 365 に丸める。
+    読めない値は既定の 14 (_env_int)。呼ぶたびに env を読む (Railway で変えれば次の実行から効く)。"""
+    v = _env_int(env_name, 14, 0, 365)
+    return 0 if v <= 0 else max(int(min_days), v)
+
+
+def _jst_day_start_utc_txt(now_utc: datetime, days_back: int) -> str:
+    """JST の今日から days_back 日前の 0:00 (JST) を naive UTC の 'YYYY-MM-DD HH:MM:SS' で返す
+    (assigned_at / created_at と同じ形 = _ts_text の値と文字列で比べられる・SQL の ? にもそのまま渡せる)。"""
+    if now_utc.tzinfo is None:
+        now_utc = now_utc.replace(tzinfo=timezone.utc)
+    d = (now_utc.astimezone(timezone.utc) + timedelta(hours=9)).date() - timedelta(days=int(days_back))
+    return (datetime(d.year, d.month, d.day) - timedelta(hours=9)).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _weakness_routine_cutoffs(now: Optional[datetime] = None) -> dict:
+    """🎯 3日ドリルの 2 つの境目 (2026-10-16 塾長決定)。一括の判定 (_run_weakness_drill_routine) と錠の中の読み直し
+    (_create_routine_grammar_drill) は**同じ値**を使う (1 回の実行で 1 度だけ作って渡す)。
+      cadence: JST の今日 − (3 − 1) 日の 0:00 (naive UTC)。最後に配ったのがこれ以降 (= JST の日付で 3 日たっていない) なら skipped_recent。
+        例: 10/19 の 5:30 の実行では 10/17 0:00 JST。10/16 に配った生徒 (5:30:xx でも 23:59 でも) は 10/19 に届く。
+      open_stale: JST の今日 − WEAKNESS_ROUTINE_OPEN_STALE_DAYS 日の 0:00 (naive UTC)。これより前に配った未提出は
+        「未提出が残っている」に数えない (既定 14 日: 10/1 に配った未提出は 10/16 の朝から数えない)。0 日の設定なら None (全部数える)。
+        assigned_at が空の未提出は新しいものとして数える (積まない側に倒す)。"""
+    now = now or datetime.now(timezone.utc)
+    stale_days = _auto_open_stale_days("WEAKNESS_ROUTINE_OPEN_STALE_DAYS", _WEAKNESS_ROUTINE_CADENCE_DAYS)
+    return {
+        "cadence": _jst_day_start_utc_txt(now, _WEAKNESS_ROUTINE_CADENCE_DAYS - 1),
+        "open_stale": _jst_day_start_utc_txt(now, stale_days) if stale_days else None,
+        "open_stale_days": stale_days,
+    }
 
 
 # ========================================================================
@@ -47994,7 +48034,8 @@ def _student_has_recent_routine_drill(c, sid, days=8):
         return False
 
 
-def _create_routine_grammar_drill(c, conn, subject, unit, count, sid, st, *, band, levels=None, qids=None, label=None):
+def _create_routine_grammar_drill(c, conn, subject, unit, count, sid, st, *, band, levels=None, qids=None, label=None,
+                                  cutoffs=None):
     """1名分の弱点ルーティンドリルを作成 + 割当。在庫不足・読み直しで不合格・学年ガードなら None (書かない)、
     錠が取れない / 錠の中で読み直したら未提出か 3 日以内の 3日ドリルがあった (別のレプリカが先に配った) なら {'race': True}。
     成功時 {unit, subject, band, drill_id, qids, s (お知らせ用)}。created_by=_WEAKNESS_ROUTINE_CREATED_BY (周期・積まない判定に使う)。
@@ -48005,7 +48046,9 @@ def _create_routine_grammar_drill(c, conn, subject, unit, count, sid, st, *, ban
       ② qids が無ければ自分で選ぶ (レビュー済み・その生徒の既出を避ける)。旧版の「全生徒の直前の同じ単元のドリルの問題を除く」はやめた。
       ③ qids を読み直す: 全部が active・同じ科目・同じ単元 (単元指定のとき)・レビュー済みの出典・数学III でない。違えば書かない。
       ④ Postgres では pg_try_advisory_xact_lock(8675313, 生徒ID) を f-string で埋めて取り (psycopg3 は Python の int を bigint で
-         送ることがあり (integer, bigint) の関数が無いので ? にしない)、錠の中で未提出・3 日以内の 3日ドリルを読み直す。"""
+         送ることがあり (integer, bigint) の関数が無いので ? にしない)、錠の中で未提出・3 日以内の 3日ドリルを読み直す。
+      ⑤ 2026-10-16: 読み直しの境目は一括の判定と同じ cutoffs (_weakness_routine_cutoffs・JST の日付で 3 日・14 日より前の未提出は
+         数えない)。呼び出し側が渡さなければここで作る。数えるのは 3日ドリルの印の行だけ (予約タスクの行は数えない)。"""
     global _ROUTINE_BAND_GUARD_TRIPS
     if not (_drill_subject_band_ok(subject, band) and subject in _ROUTINE_SUBJECTS_BY_BAND.get(band, ())):
         _ROUTINE_BAND_GUARD_TRIPS += 1
@@ -48036,7 +48079,7 @@ def _create_routine_grammar_drill(c, conn, subject, unit, count, sid, st, *, ban
                 or (excl and str(r["unit"] or "").startswith(excl))):
             log.warning(f"[WeaknessRoutine] 問題の読み直しで不合格 sid={sid} qid={q} → 書かない")
             return None
-    cadence_cutoff = (datetime.utcnow() - timedelta(days=_WEAKNESS_ROUTINE_CADENCE_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+    cut = cutoffs or _weakness_routine_cutoffs()
     level_label = "・".join(GRAMMAR_LEVELS.get(l, l) for l in levels)
     title = f"🎯弱点対策 {label or disp_unit}ドリル（{level_label}・{count}問）"
     try:
@@ -48046,11 +48089,19 @@ def _create_routine_grammar_drill(c, conn, subject, unit, count, sid, st, *, ban
             if not (lk is not None and lk["ok"]):
                 conn.rollback()
                 return {"race": True, "why": "lock"}
+        # 未提出 (completed 以外) か、JST の日付で 3 日たっていない 3日ドリルがあれば配らない。未提出は open_stale より後に
+        #   配った分 (と assigned_at が空の分) だけ数える (一括の判定 routine_state と同じ境目・同じ数え方)
+        open_cond = "COALESCE(a.status, 'open') <> 'completed'"
+        params = [_WEAKNESS_ROUTINE_CREATED_BY, sid]
+        if cut.get("open_stale"):
+            open_cond = f"({open_cond} AND (a.assigned_at IS NULL OR a.assigned_at >= ?))"
+            params.append(cut["open_stale"])
+        params.append(cut["cadence"])
         c.execute(
             "SELECT 1 FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
             "WHERE d.created_by = ? AND a.student_id = ? "
-            "AND (COALESCE(a.status, 'open') <> 'completed' OR a.assigned_at >= ?) LIMIT 1",
-            (_WEAKNESS_ROUTINE_CREATED_BY, sid, cadence_cutoff),
+            f"AND ({open_cond} OR a.assigned_at >= ?) LIMIT 1",
+            tuple(params),
         )
         if c.fetchone() is not None:
             conn.rollback()
@@ -48089,25 +48140,31 @@ def _create_routine_grammar_drill(c, conn, subject, unit, count, sid, st, *, ban
 
 
 def _run_weakness_drill_routine(only_student_id: Optional[int] = None, dry_run: bool = False, *,
-                                include_names: bool = False, seed=None) -> dict:
+                                include_names: bool = False, seed=None, now: Optional[datetime] = None) -> dict:
     """🎯 3日ルーティン本体 (2026-10-15 版・plan_version 2)。
     対象 = 在籍 (trial/paid・合成監視とテスト系の名前を除く)・直近30日ログインあり・AIあり か AI 体験中
     (_auto_delivery_ai_path == 'ai'。SQL は広めの絞り込みだけ) ・学年の区分が高校生か中学生 (_student_grade_band)。
-    生徒ごと3日周期 (直近3日に配信済み=skip)・未提出 (completed 以外) が残る=skip。開始月 (start_month) は見ない
+    生徒ごと3日周期 (JST の日付で 3 日たっていない=skip)・未提出 (completed 以外・直近 WEAKNESS_ROUTINE_OPEN_STALE_DAYS 日に
+    配った分だけ数える) が残る=skip (それより前の未提出だけの生徒は stale_open_ignored に数えて先へ進む)。開始月 (start_month) は見ない
     (AIあり は承認した日から全部使える・2026-09-24 決定)。CAP で1回の配信人数を制限。
     dry_run=True は副作用ゼロ (書き込み・お知らせなし) で、本番と同じ計画関数 (在庫・既出の除外を含む) の結果を返す。
     seed を渡すと生徒ごとの乱数が決まる (同じ seed なら dry-run と本番で同じ問題)。include_names は CEO の確認カード用 (応答だけ)。
-    返却: {eligible, delivered, skipped_*, create_failed, capped, cap, band_counts, reasons, delivered_students, ...}"""
+    now はテスト用 (既定 = 今。境目 _weakness_routine_cutoffs の基準)。
+    返却: {eligible, delivered, skipped_*, stale_open_ignored, open_stale_days, create_failed, capped, cap, band_counts, reasons,
+    delivered_students, ...}"""
     import time as _t
     import random as _random
     from collections import defaultdict
     conn = db()
     c = conn.cursor()
-    now = datetime.now(timezone.utc)
-    # cadence_cutoff は routine_state.last_at (=str(assigned_at)=naive UTC "YYYY-MM-DD HH:MM:SS[.ffffff]")
-    #   と Python 側で文字列比較するため、同一書式の naive UTC 文字列にする (aware isoformat だと 'T'/offset で
-    #   書式不一致→日付粒度に劣化する 3並列レビュー指摘の堅牢化)。login_cutoff は SQL 側比較なので isoformat 可。
-    cadence_cutoff = (datetime.utcnow() - timedelta(days=_WEAKNESS_ROUTINE_CADENCE_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    # 境目 (2026-10-16 塾長決定): cadence = JST の日付で 3 日・open_stale = 14 日より前の未提出は数えない。どちらも naive UTC の
+    #   'YYYY-MM-DD HH:MM:SS' (routine_state の _ts_text の値と文字列で比べる)。錠の中の読み直しにも同じ値を渡す。
+    #   login_cutoff は SQL 側比較なので isoformat 可。
+    cut = _weakness_routine_cutoffs(now)
+    cadence_cutoff, stale_cutoff = cut["cadence"], cut["open_stale"]
     login_cutoff = (now - timedelta(days=30)).isoformat()
     cap = _weakness_routine_send_cap()
     unknown_as_kosei = _weakness_routine_unknown_as_kosei()
@@ -48117,6 +48174,7 @@ def _run_weakness_drill_routine(only_student_id: Optional[int] = None, dry_run: 
         "skipped_no_weakness": 0, "skipped_no_reviewed_inventory": 0,
         "skipped_grade_unknown": 0, "skipped_shougaku": 0, "skipped_ai_nashi": 0, "skipped_test_name": 0,
         "skipped_race": 0, "create_failed": 0, "capped": 0, "cap": cap, "dry_run": bool(dry_run),
+        "stale_open_ignored": 0, "open_stale_days": cut["open_stale_days"],
         "unknown_grade_as_kosei": unknown_as_kosei, "band_counts": {}, "reasons": {},
         "delivered_students": [], "grade_unknown_students": [],
     }
@@ -48138,20 +48196,30 @@ def _run_weakness_drill_routine(only_student_id: Optional[int] = None, dry_run: 
         c.execute(sql, tuple(params))
         students = c.fetchall() or []
 
-        # 既存 routine 配信状況 (cadence + 未提出) を一括取得。未提出 = completed 以外 (デスクトップの予約タスクが書く 'assigned' も)
+        # 既存 routine 配信状況 (cadence + 未提出) を一括取得。数えるのは 3日ドリルの印 (created_by='weakness_routine_3d') の行だけ
+        #   (2026-10-16 塾長決定: デスクトップの予約タスク「2日に1回 弱点15問ミッション」の行 = created_by='mission_2day_routine' は
+        #   数えない = 両方届く)。3日ドリルの行の未提出 = completed 以外 ('open' と、外から書いた 'assigned' など)。
+        #   未提出は open_stale より後に配った分 (と assigned_at が空の分) だけ数える。それより前の未提出だけの生徒は stale_open に入れて
+        #   積まない判定から外す (ドリルは消さない・生徒の画面にも残る)。境目の比較は Python 側 (_ts_text) で、SELECT にパラメータを置かない。
         routine_state = {}
         try:
             c.execute(
                 "SELECT a.student_id AS sid, MAX(a.assigned_at) AS last_at, "
-                "SUM(CASE WHEN COALESCE(a.status, 'open') <> 'completed' THEN 1 ELSE 0 END) AS open_cnt "
+                "SUM(CASE WHEN COALESCE(a.status, 'open') <> 'completed' THEN 1 ELSE 0 END) AS open_cnt, "
+                "SUM(CASE WHEN COALESCE(a.status, 'open') <> 'completed' AND a.assigned_at IS NULL THEN 1 ELSE 0 END) AS open_null_cnt, "
+                "MAX(CASE WHEN COALESCE(a.status, 'open') <> 'completed' THEN a.assigned_at END) AS open_last_at "
                 "FROM grammar_drill_assignments a JOIN grammar_drills d ON a.drill_id = d.id "
                 "WHERE d.created_by = ? GROUP BY a.student_id",
                 (_WEAKNESS_ROUTINE_CREATED_BY,),
             )
             for r in c.fetchall():
+                open_cnt = int(r["open_cnt"] or 0)
+                fresh = open_cnt > 0 and (stale_cutoff is None or int(r["open_null_cnt"] or 0) > 0
+                                          or _ts_text(r["open_last_at"]) >= stale_cutoff)
                 routine_state[r["sid"]] = {
-                    "last_at": str(r["last_at"]) if r["last_at"] else None,
-                    "open": int(r["open_cnt"] or 0),
+                    "last_at": _ts_text(r["last_at"]) or None,
+                    "open": open_cnt if fresh else 0,
+                    "stale_open": 0 if fresh else open_cnt,
                 }
         except Exception as e:
             log.warning(f"[WeaknessRoutine] routine_state fetch failed: {e}")
@@ -48184,6 +48252,9 @@ def _run_weakness_drill_routine(only_student_id: Optional[int] = None, dry_run: 
                 if rs["open"] > 0:
                     summary["skipped_open"] += 1
                     continue
+                if rs["stale_open"] > 0:
+                    # 古い未提出 (open_stale より前に配った分) だけが残っている → 積まない判定に数えずに先へ (2026-10-16 塾長決定)
+                    summary["stale_open_ignored"] += 1
                 if rs["last_at"] and rs["last_at"] >= cadence_cutoff:
                     summary["skipped_recent"] += 1
                     continue
@@ -48203,6 +48274,7 @@ def _run_weakness_drill_routine(only_student_id: Optional[int] = None, dry_run: 
                 "id": sid, "band": band, "subject": plan["subject"], "unit": plan["unit"], "label": plan["label"],
                 "levels": plan["levels"], "qids": plan["qids"], "reviewed_available": plan["reviewed_available"],
                 "unseen_available": plan["unseen_available"], "reused_seen": plan["reused_seen"],
+                "stale_open": (rs or {}).get("stale_open", 0),
             }, st)
             if dry_run:
                 entry["dry_run"] = True
@@ -48211,7 +48283,7 @@ def _run_weakness_drill_routine(only_student_id: Optional[int] = None, dry_run: 
                 continue
             created = _create_routine_grammar_drill(
                 c, conn, plan["subject"], plan["unit"], _WEAKNESS_ROUTINE_DRILL_COUNT, sid, st,
-                band=band, levels=plan["levels"], qids=plan["qids"], label=plan["label"])
+                band=band, levels=plan["levels"], qids=plan["qids"], label=plan["label"], cutoffs=cut)
             if created is None:
                 summary["create_failed"] += 1
                 continue

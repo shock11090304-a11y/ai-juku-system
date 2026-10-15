@@ -831,8 +831,10 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - **ドリルの印** (`grammar_drills.created_by`・列は足していない): `admin` = 塾長が CEO で配った / `today_question` = 今日の1問 /
   `diagnostic` = 初回診断 (CEO の一覧に出さない) / `weakness_routine_3d` = 3日ドリル / `class_hw_auto:<kosei|chugaku>:<クラス名>` = クラス自動宿題。
   CEO の配信済み一覧は `kind=owner` (既定・自動配信と初回診断を除く) / `routine` / `class_hw` / `auto` / `all`。
-  ★デスクトップの予約タスク「2日に1回 弱点15問ミッション」は本番 DB に直接 `status='assigned'` を書く (許可リスト・学年ガード・監視を通らない)。
-  3日ドリルを ON にする前に止める。
+  ★デスクトップの予約タスク「2日に1回 弱点15問ミッション」は本番 DB に直接 `status='assigned'` を書く (許可リスト・学年ガード・監視を通らない・
+  印は `created_by='mission_2day_routine'`)。**2026-10-16 塾長決定: 予約タスクも 3日ドリルも両方配ってよい** (止めない)。
+  3日ドリルの「積まない」「3 日以内」の判定は自分の印 (`weakness_routine_3d`) の行だけを数えるので、予約タスクの行では止まらない
+  (一括の判定も錠の中の読み直しも同じ・`test_weakness_routine_auto_delivery.py` [11])。生徒の画面の未提出の数には両方が入る。
 - **出してよい問題** (`_auto_delivery_source_ok`・許可リスト `_AUTO_DELIVERY_REVIEWED_SOURCES_DEFAULT`): english `manual-drill-v1` `-v2`・
   math `mathct-*` `mathwb-*`・chugaku `chugaku-drill-v1`〜`v4` と `chu2grammar-20260709` (この出典は chugaku の中だけ)・中学 4 教科 `chugaku-<教科>-v1`・
   eiken `eiken2-*` `eikenp1-*`・english_long `el-*` `englong:*`。本文型は本文と全設問の両方が通ること。
@@ -851,6 +853,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   - `WEEKLY_WORKSHEET_ENABLED` 既定 停止: 日曜の週次弱点プリント (`1` / `true` / `yes` / `on` で再開)。
   - `WEAKNESS_DRILL_ROUTINE_ENABLED` 既定 OFF: 🎯 3日ドリル。`WEAKNESS_DRILL_ROUTINE_CAP` 60 (1〜500) = 1 回の人数。
     `WEAKNESS_ROUTINE_UNKNOWN_GRADE_AS_KOSEI` 0 = 学年が判定できない生徒には出さない (1 で高校生扱い・3日ドリルだけ)。
+    `WEAKNESS_ROUTINE_OPEN_STALE_DAYS` 14 (0 = 全部数える・それ以外は 3〜365) = 積まない判定に数える未提出の日数 (2026-10-16)。
   - `CLASS_HW_AUTO_ENABLED` 既定 OFF: 🏫 クラス自動宿題。`CLASS_HW_AUTO_HOUR_JST` 6 (5〜22)・`CLASS_HW_INTERVAL_DAYS` 2 (1〜14・題名の 〆 も配った日 + この日数)・
     `CLASS_HW_AUTO_COUNT` 10 (5〜25)・`CLASS_HW_AUTO_PASSAGES` 2 (1〜5・英検の長文)・`CLASS_HW_READING_MIN_PASSAGES` 4 (1〜50・長文クラスの開始本数)・
     `CLASS_HW_UNIT_COOLDOWN_DAYS` 14 (0〜90)・`CLASS_HW_AUTO_ONLY_CLASSES` 空 = 全クラス (段階投入・カンマか「、」区切り。全角・空白の違いは
@@ -866,7 +869,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   2 引数 = (8675313, 生徒ID) 3日ドリル。**新しい錠は 8675315 以降の空いた番号**。
 - **実行記録**: events の `weakness_drill_routine_run` / `class_hw_auto_run` は `_compact_run_props` の要約 (数・理由・生徒 id 30 件まで・名前なし・4000 字未満)。
   名前は dry-run で `include_names: true` のときだけ (CEO のカード)。クラス自動宿題は配信ごとに events `class_hw_auto_delivered` (生徒 id だけ)。
-- **ON にする順番** (塾長): 週次プリント停止 (既定) → 🎯 の dry-run (学年・`mode_changed_by_normalization`・在庫を見る) → デスクトップの予約タスクを止める →
+- **ON にする順番** (塾長): 週次プリント停止 (既定) → 🎯 の dry-run (学年・`mode_changed_by_normalization`・在庫を見る) → (予約タスクは止めない = 2026-10-16 塾長決定) →
   `WEAKNESS_DRILL_ROUTINE_ENABLED=1` → 🏫 の 🔍 → 1 クラスを 📤 → `CLASS_HW_AUTO_ONLY_CLASSES` と `CLASS_HW_AUTO_ENABLED=1` → 1 回まわったら ONLY を外す。
   ★週次プリントを止めてから 3日ドリルを ON にするまでは、自動の弱点配信が 1 本も無い (AI 体験中の生徒も)。
 - **回帰テスト** (CI `server-tests.yml`・一時 SQLite・本番に触れない。何を見るかは `scripts/health_check/README.md`):
@@ -896,6 +899,15 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - **3日ドリル (毎日 5:30・`WEAKNESS_DRILL_ROUTINE_ENABLED`・既定 OFF) が自動の弱点配信の本線** (2026-10-15 版・plan_version 2):
   - 対象: 在籍 (trial/paid)・直近 30 日ログイン・AIあり か AI 体験中 (`_auto_delivery_ai_path == 'ai'`。AIなし枠はクラス自動宿題の側 = 1 人 1 経路)・
     テスト系の名前と合成監視を除く。開始月 (start_month) は見ない。生徒ごと 3 日周期・未提出 (completed 以外) があれば積まない。
+  - **周期と積まない判定の境目 (2026-10-16 塾長決定・`_weakness_routine_cutoffs` 1 か所)**:
+    - 3 日は **JST の日付**で数える: 最後に配った日 (JST) <= 今日 − 3 日なら配る (10/16 に配った生徒は 5:30:xx でも 23:59 でも 10/19 の朝に届く)。
+      旧版は「実行を始めた時刻 − 72 時間」で、毎朝 5:30:00 に起きる実行では 3 日前の 5:30:xx の配信がまだ 3 日以内 = 実際は 4 日ごとだった。
+    - 積まない判定に数える未提出は **直近 `WEAKNESS_ROUTINE_OPEN_STALE_DAYS` (既定 14) 日 (JST の日付) に配った分だけ** (10/1 に配った未提出は
+      10/16 の朝から数えない)。古い未提出が残っているだけで新しいレビュー済みのドリルが届かなかった (10/16 の dry-run で 41 名中 30 名)。
+      **古いドリルは消さない** (生徒の一覧にも未提出の数にも残る)。数えずに先へ進めた生徒は dry-run の `stale_open_ignored` (人数)・
+      配る生徒の行の `stale_open` (本数)。assigned_at が空の未提出は新しいものとして数える。`0` で従来どおり全部数える。
+    - 一括の判定 (`routine_state`) と錠の中の読み直し (`_create_routine_grammar_drill(cutoffs=)`) は同じ値を使う (1 回の実行で 1 度だけ作って渡す)。
+      比べ方は一括 = Python で `_ts_text` の文字列・錠の中 = SQL の `a.assigned_at >= ?` (naive UTC の 'YYYY-MM-DD HH:MM:SS' を渡す・従来と同じ形)。
   - **出すのはレビュー済みの出典だけ** (`_auto_delivery_source_ok`・上の英文法プールの節)。高校の理科・社会・国語と英検は自動では出さない。
   - **学年で中高を分ける** (`_student_grade_band`): 高校生 = english (文法 20 単元・`_eng_drill_unit_for_topic`) と math (科目まるごと・数学III なし)、
     中学生 = 高校入試演習の 'chugaku' の弱点を中学 5 教科の単元に完全一致で当てる (`_chu_drill_for_topic`。前置きつきの写しは使わない)。
@@ -908,13 +920,14 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
     応答に `skipped_*`・`reasons` (区分違い・在庫なしの内訳)・`band_counts`・`grade_unknown_students`・`mode_changed_by_normalization`
     (全角・漢数字の学年で画面のモードが変わる生徒)・`allowlist`・`plan_version: 2`。名前は `include_names: true` のときだけ。
   - 二重配信の防止: Postgres では書き込み直前に `pg_try_advisory_xact_lock(8675313, 生徒ID)` (2 引数・f-string で埋める) を取り、
-    錠の中で未提出・3 日以内の 3日ドリルを読み直す (あれば `skipped_race`)。**1 引数の 8675309〜8675312・8675314 (クラス自動宿題) と番号を重ねない** (新しい錠は 8675315 以降)。
+    錠の中で未提出 (14 日より前は数えない)・JST の日付で 3 日以内の 3日ドリルを読み直す (あれば `skipped_race`)。**1 引数の 8675309〜8675312・8675314 (クラス自動宿題) と番号を重ねない** (新しい錠は 8675315 以降)。
   - 監視: ON で起動したときだけ `_SCHEDULER_MAX_AGE_DAYS` に `weakness_drill_routine_run` (2 日)。実行記録は `_compact_run_props` の要約
     (名前なし・4000 字未満)。全員の作成に失敗したら / 学年ガードが動いたら `props.error` (失敗の通知)。`prod_healthcheck.py` は
     `OPTIONAL_UNTIL_FIRST_RUN` (履歴が無いうちは PASS。ON の後で OFF に戻したらそこから外す)。
   - ON にする手順: 塾長が dry-run を見る (`POST /api/admin/weakness-drill-routine/run` `{"dry_run": true}`・X-Cron-Secret) →
     `skipped_grade_unknown` の学年を直す・`mode_changed_by_normalization` の生徒が本当に中学生か確かめる・`capped` が多ければ `WEAKNESS_DRILL_ROUTINE_CAP` →
-    Railway で `WEAKNESS_DRILL_ROUTINE_ENABLED=1`。★ON の前にデスクトップの予約タスク「2日に1回 弱点15問ミッション」を止める (二重配信になる)。
+    Railway で `WEAKNESS_DRILL_ROUTINE_ENABLED=1` (★2026-10-16 時点で本番は ON・その日の 5:30 に新しいコードが回った)。
+    デスクトップの予約タスク「2日に1回 弱点15問ミッション」は止めない (2026-10-16 塾長決定「両方配ってよい」・3日ドリルは予約タスクの行を数えない)。
   - CEO (📝 科目別 単元ドリル の下): 「🎯 自動の弱点ドリル」カードの 🔍 は `dry_run: true`・`include_names: true` だけを送る
     (ON/OFF・配る生徒と単元・在庫・学年が判定できない生徒・理由。**CEO から 3日ドリルを本番で回すボタンは作らない** = ON/OFF は env)。
     📦 は `source-inventory`。応答に `plan_version` が無ければ「サーバ反映待ち」。名前・学年は escapeHtml (inline だけ・ceo.js は触らない)。
@@ -1020,7 +1033,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - CEO の配信結果の文は `_drill_create_message` (経路に合わせる。「LINE/メールで通知を送信しました」と決め打ちしない・習熟度テストで飛ばした
   配信済みの生徒の数もここ)。応答に `notify_channels`。習熟度テストのメールは件名「🧪 習熟度テスト「…」が届きました」(📖🧪 の節)。
   3日ドリルの summary (dry-run も) に `notify` = {line, email}。
-- 未提出 = `status <> 'completed'` (提出 API と同じ。デスクトップの予約タスクが書く `'assigned'` も未提出)。`GET /api/student/grammar-drills` の
+- 未提出 = `status <> 'completed'` (提出 API と同じ。デスクトップの予約タスクが書く `'assigned'` も未提出)。★これは生徒の画面の数え方。
+  3日ドリルの「積まない」判定は自分の印の行の、直近 14 日の分だけを数える (🎯 の節)。`GET /api/student/grammar-drills` の
   `summary.open`・並び順、LINE の「やること」もこの数え方。`self_issued` = 生徒が自分で始めたもの (今日の1問・初回診断) で「新しい宿題」に数えない
   (`created_by` の生の値は返さない)。
 - **アプリ内の「🆕 新しい宿題」** は `hw-notice.js` (root・ES5) の 1 か所で数える。class.html と mypage.html の両方が `?v=` 付きで読む

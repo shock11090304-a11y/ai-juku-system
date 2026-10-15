@@ -22,6 +22,10 @@
   [8] 監視と競合: 全員の作成に失敗した実行は props.error (監視 _failed_schedulers が拾う)。要約は 60 名でも 4000 字未満の正しい JSON で
       名前を含まない。計画と書き込みの間に別の実行が配った生徒は skipped_race (2 本目を作らない)
   [9] LINE は 1 回も送らない・既定ではメールも送らない (自動配信は source='auto')
+  [11] 2026-10-16 塾長決定: 3 日は JST の日付で数える (5:30:00 の実行で 3 日前の 5:30:xx の配信が「3 日以内」に残って 4 日ごとに
+      なっていた)・積まない判定に数える未提出は直近 WEAKNESS_ROUTINE_OPEN_STALE_DAYS (既定 14・0 = 全部・3〜365 に丸める) 日の分だけ
+      (古いドリルは消さず生徒の一覧に残る・stale_open_ignored)・assigned_at が空の未提出は数える・錠の中の読み直しも同じ境目・
+      デスクトップの予約タスクの行 (created_by='mission_2day_routine') は数えない = 両方届く
   [10] CEO の配信済みドリル一覧 (2026-10-15 塾長決定: 既定は塾長が配ったドリルだけ): kind 無し = owner (今日の1問は出る・自動配信と
       初回診断は出ない) / routine / class_hw (印からクラス名と区分を読む) / auto / all・初回診断はどの kind にも出ない・科目で絞る
       (別名・空の科目 = english も拾う)・知らない kind と科目は 422・自動配信が 60 本増えても既定の 50 本から塾長の配信が押し出されない。
@@ -55,7 +59,8 @@ CEO_HTML = os.path.join(REPO, "ceo.html")
 FAILURES = []
 ROUTINE = "weakness_routine_3d"
 ENV_KEYS = ("WEAKNESS_DRILL_ROUTINE_ENABLED", "WEAKNESS_ROUTINE_UNKNOWN_GRADE_AS_KOSEI", "AUTO_DELIVERY_REVIEWED_SOURCES",
-            "HOMEWORK_NOTIFY_EMAIL", "HOMEWORK_NOTIFY_LINE", "WEAKNESS_DRILL_ROUTINE_CAP", "WEEKLY_WORKSHEET_ENABLED")
+            "HOMEWORK_NOTIFY_EMAIL", "HOMEWORK_NOTIFY_LINE", "WEAKNESS_DRILL_ROUTINE_CAP", "WEEKLY_WORKSHEET_ENABLED",
+            "WEAKNESS_ROUTINE_OPEN_STALE_DAYS")
 SEEDS = (("grammar_drill_pool_v1.json", "english"), ("chugaku_drill_pool_v1.json", "chugaku"),
          ("chugaku_math_pool_v1.json", "chugaku_math"), ("math_drill_ct_mock_v1.json", "math"))
 
@@ -471,7 +476,7 @@ def main():
     check("同じ日にもう一度回しても積まない (未提出 = skipped_open)", res2["delivered"] == 0 and res2["skipped_open"] == 4, res2)
     ex(mod, "UPDATE grammar_drill_assignments SET status = 'assigned' WHERE drill_id IN (SELECT id FROM grammar_drills WHERE created_by = ?)", (ROUTINE,))
     res3 = mod._run_weakness_drill_routine(seed=5)
-    check("status='assigned' (デスクトップの予約タスクの書き方) も未提出として数える", res3["skipped_open"] == 4 and res3["delivered"] == 0, res3)
+    check("3日ドリルの印の行は status='assigned' でも未提出として数える (completed 以外)", res3["skipped_open"] == 4 and res3["delivered"] == 0, res3)
     ex(mod, "UPDATE grammar_drill_assignments SET status = 'completed' WHERE drill_id IN (SELECT id FROM grammar_drills WHERE created_by = ?)", (ROUTINE,))
     res4 = mod._run_weakness_drill_routine(seed=5)
     check("提出済みでも 3 日以内なら配らない (skipped_recent)", res4["skipped_recent"] == 4 and res4["delivered"] == 0, res4)
@@ -663,7 +668,9 @@ def main():
     lock_src = src[src.index("def _create_routine_grammar_drill"):][:6000]
     check("Postgres の錠は 2 引数 (8675313, 生徒ID) を f-string で埋める (psycopg3 の bigint を避ける)",
           "pg_try_advisory_xact_lock({int(_ROUTINE_PG_LOCK_KEY)}, {int(sid)})" in lock_src and "_ROUTINE_PG_LOCK_KEY = 8675313" in src)
-    check("錠の中で未提出 (completed 以外)・3 日以内を読み直す", "<> 'completed' OR a.assigned_at >= ?" in lock_src)
+    check("錠の中で未提出 (completed 以外・14 日より前は数えない)・JST の日付で 3 日以内を読み直す (一括の判定と同じ境目)",
+          "cut = cutoffs or _weakness_routine_cutoffs()" in lock_src and "(a.assigned_at IS NULL OR a.assigned_at >= ?)" in lock_src
+          and "OR a.assigned_at >= ?) LIMIT 1" in lock_src and "cutoffs=cut)" in src[src.index("def _run_weakness_drill_routine"):][:16000])
 
     # ------------------------------------------------------------------
     print("\n[9] お知らせ")
@@ -919,6 +926,145 @@ def main():
           and "<b>科目" not in out2.get("err", ""), out2.get("err"))
     check("覚えた値が壊れていたら既定 (👤・すべて)", out2.get("garbage") == ["owner", ""], out2.get("garbage"))
     check("localStorage が使えない端末でも落ちない", out2.get("blockedOk") is True, out2.get("blockedOk"))
+
+    # ------------------------------------------------------------------
+    print("\n[11] 2026-10-16 塾長決定: 3 日は JST の日付で・14 日より前の未提出は数えない・予約タスクの行は数えない")
+    UTC = datetime.timezone.utc
+    JST = datetime.timezone(datetime.timedelta(hours=9))
+
+    def at_jst(y, m, d, hh=0, mm=0, ss=0):
+        """JST の時刻 → aware UTC (now= に渡す)。"""
+        return datetime.datetime(y, m, d, hh, mm, ss, tzinfo=JST).astimezone(UTC)
+
+    def utc_txt(dt):
+        return dt.astimezone(UTC).strftime("%Y-%m-%d %H:%M:%S")
+
+    def give(sid, when, status="completed", created_by=ROUTINE, null_at=False):
+        """sid に 1 本配った記録を足す (when = aware。null_at なら assigned_at を空にする)。"""
+        conn = mod.db(); c = conn.cursor()
+        c.execute("INSERT INTO grammar_drills (subject, title, unit, level, question_ids, created_by) VALUES "
+                  "('english', '架空の過去の配信', '時制', 'standard', '[]', ?) RETURNING id", (created_by,))
+        d_ = c.fetchone()["id"]
+        if null_at:
+            c.execute("INSERT INTO grammar_drill_assignments (drill_id, student_id, status, assigned_at) VALUES (?, ?, ?, NULL)", (d_, sid, status))
+        else:
+            c.execute("INSERT INTO grammar_drill_assignments (drill_id, student_id, status, assigned_at) VALUES (?, ?, ?, ?)",
+                      (d_, sid, status, utc_txt(when)))
+        conn.commit(); conn.close()
+        return d_
+
+    def clear(sid):
+        ex(mod, "DELETE FROM grammar_drill_assignments WHERE student_id = ?", (sid,))
+
+    def dry_at(sid, now_):
+        return mod._run_weakness_drill_routine(only_student_id=sid, dry_run=True, seed=1, now=now_)
+
+    N19 = at_jst(2026, 10, 19, 5, 30, 0)          # 毎朝の実行 (5:30:00 ちょうどに起きる)
+    cut = mod._weakness_routine_cutoffs(N19)
+    check("境目: 10/19 5:30 の実行の cadence = 10/17 0:00 JST (UTC 10/16 15:00)・open_stale = 10/5 0:00 JST・既定 14 日",
+          cut == {"cadence": "2026-10-16 15:00:00", "open_stale": "2026-10-04 15:00:00", "open_stale_days": 14}, cut)
+    for v, want in ((None, 14), ("", 14), ("0", 0), ("-5", 0), ("1", 3), ("2", 3), ("7", 7), ("30", 30), ("999", 365), ("14日", 14)):
+        with Env(WEAKNESS_ROUTINE_OPEN_STALE_DAYS=v):
+            got = mod._weakness_routine_cutoffs(N19)
+            check(f"WEAKNESS_ROUTINE_OPEN_STALE_DAYS={v!r} → {want} 日 (0 = 全部数える・3〜365 に丸める・読めない値は既定)",
+                  got["open_stale_days"] == want and ((got["open_stale"] is None) == (want == 0)), got)
+    # ① 3 日は JST の日付で (4 日ごとにならない)
+    g1 = make("高校2年")
+    weak(g1, "english", "時制")
+    give(g1, at_jst(2026, 10, 16, 5, 30, 4))      # 3 日前の 5:30 の実行で配った (書き込みは実行を始めた数秒後)
+    old_rule = utc_txt(at_jst(2026, 10, 16, 5, 30, 4)) >= utc_txt(N19 - datetime.timedelta(days=3))
+    check("(前提) 旧版の「今 − 72 時間」なら 3 日前の 5:30:04 はまだ 3 日以内 = 4 日目まで届かなかった", old_rule)
+    r = dry_at(g1, N19)
+    check("3 日前 (10/16 5:30:04) に配った生徒は 10/19 5:30:00 の実行で届く (skipped_recent にしない)",
+          r["delivered"] == 1 and r["skipped_recent"] == 0, r)
+    r = dry_at(g1, at_jst(2026, 10, 18, 5, 30, 0))
+    check("2 日後 (10/18) は届かない (skipped_recent)", r["delivered"] == 0 and r["skipped_recent"] == 1, r)
+    clear(g1)
+    give(g1, at_jst(2026, 10, 16, 23, 59, 59))
+    r = dry_at(g1, N19)
+    check("10/16 23:59 に配った生徒も 10/19 に届く (JST の日付で 3 日)", r["delivered"] == 1, r)
+    clear(g1)
+    give(g1, at_jst(2026, 10, 17, 0, 0, 0))
+    r = dry_at(g1, at_jst(2026, 10, 19, 23, 59, 0))
+    check("10/17 0:00 に配った生徒は 10/19 のうちは届かない", r["delivered"] == 0 and r["skipped_recent"] == 1, r)
+    # 錠の中の読み直しも同じ境目 (一括の判定と食い違うと skipped_race で 1 日ずれる)
+    clear(g1)
+    give(g1, at_jst(2026, 10, 16, 5, 30, 4))
+    conn = mod.db(); c = conn.cursor()
+    r_race = mod._create_routine_grammar_drill(c, conn, "english", "時制", 10, g1, st_of(g1), band="kosei",
+                                               cutoffs=mod._weakness_routine_cutoffs(at_jst(2026, 10, 18, 5, 30, 0)))
+    r_ok = mod._create_routine_grammar_drill(c, conn, "english", "時制", 10, g1, st_of(g1), band="kosei",
+                                             cutoffs=mod._weakness_routine_cutoffs(N19))
+    conn.close()
+    check("錠の中の読み直し: 10/18 の境目では 3 日以内 (race)・10/19 の境目では書ける (一括の判定と同じ)",
+          r_race == {"race": True, "why": "already"} and isinstance(r_ok, dict) and r_ok.get("drill_id"), (r_race, r_ok))
+    # ② 14 日より前の未提出は「未提出が残っている」に数えない
+    s1 = make("高校2年")
+    weak(s1, "english", "時制")
+    give(s1, at_jst(2026, 10, 4, 23, 59, 0), status="open")      # 15 日前 (10/4) の未提出
+    r = dry_at(s1, N19)
+    ent = (r.get("delivered_students") or [{}])[0]
+    check("15 日前 (10/4) の未提出だけなら数えずに配る (stale_open_ignored 1・open_stale_days 14)",
+          r["delivered"] == 1 and r["skipped_open"] == 0 and r["stale_open_ignored"] == 1 and r["open_stale_days"] == 14
+          and ent.get("stale_open") == 1, r)
+    with Env(WEAKNESS_ROUTINE_OPEN_STALE_DAYS="0"):
+        r = dry_at(s1, N19)
+        check("WEAKNESS_ROUTINE_OPEN_STALE_DAYS=0 なら従来どおり数える (skipped_open)", r["delivered"] == 0 and r["skipped_open"] == 1
+              and r["stale_open_ignored"] == 0 and r["open_stale_days"] == 0, r)
+    with Env(WEAKNESS_ROUTINE_OPEN_STALE_DAYS="30"):
+        r = dry_at(s1, N19)
+        check("WEAKNESS_ROUTINE_OPEN_STALE_DAYS=30 なら 15 日前の未提出も数える", r["skipped_open"] == 1 and r["open_stale_days"] == 30, r)
+    clear(s1)
+    give(s1, at_jst(2026, 10, 5, 0, 0, 0), status="open")         # ちょうど 14 日前 (10/5) の未提出
+    r = dry_at(s1, N19)
+    check("ちょうど 14 日前 (10/5) の未提出はまだ数える (skipped_open)", r["delivered"] == 0 and r["skipped_open"] == 1
+          and r["stale_open_ignored"] == 0, r)
+    clear(s1)
+    give(s1, at_jst(2026, 9, 1, 5, 30), status="open")
+    give(s1, at_jst(2026, 10, 18, 5, 30), status="open")
+    r = dry_at(s1, N19)
+    check("古い未提出と新しい未提出の両方があれば積まない (skipped_open・stale_open_ignored に数えない)",
+          r["skipped_open"] == 1 and r["stale_open_ignored"] == 0, r)
+    clear(s1)
+    give(s1, None, status="open", null_at=True)
+    r = dry_at(s1, N19)
+    check("assigned_at が空の未提出は新しいものとして数える (積まない側)", r["skipped_open"] == 1 and r["delivered"] == 0, r)
+    clear(s1)
+    give(s1, at_jst(2026, 9, 1, 5, 30), status="assigned")
+    r = dry_at(s1, N19)
+    check("'assigned' の古い 3日ドリルも 14 日より前なら数えない", r["delivered"] == 1 and r["stale_open_ignored"] == 1, r)
+    # 本番 (dry-run でない) でも錠の中の読み直しが古い未提出で止めない・古いドリルは消さず生徒の一覧に残る
+    clear(s1)
+    real_now = datetime.datetime.now(UTC)
+    old_did = give(s1, real_now - datetime.timedelta(days=20), status="open")
+    before_n = q(mod, "SELECT COUNT(*) AS n FROM grammar_drill_assignments WHERE student_id = ?", (s1,))[0]["n"]
+    r = mod._run_weakness_drill_routine(only_student_id=s1, seed=1)
+    rows_s1 = q(mod, "SELECT a.drill_id, a.status FROM grammar_drill_assignments a WHERE a.student_id = ? ORDER BY a.id", (s1,))
+    check("本番: 20 日前の未提出があっても新しい 3日ドリルを書く (錠の中の読み直しで race にしない)",
+          r["delivered"] == 1 and r["skipped_race"] == 0 and r["stale_open_ignored"] == 1 and len(rows_s1) == before_n + 1, (r, rows_s1))
+    check("古いドリルは消さない (未提出のまま残る)", any(x["drill_id"] == old_did and x["status"] == "open" for x in rows_s1), rows_s1)
+    import base64 as _b64, hashlib as _hl, hmac as _hm
+    exp_ = int(time.time()) + 3600
+    pl_ = f"session.{s1}.{exp_}"
+    tok_ = _b64.urlsafe_b64encode(f"{pl_}.{_hm.new(mod.MAGIC_LINK_SECRET.encode(), pl_.encode(), _hl.sha256).hexdigest()}".encode()).decode().rstrip("=")
+    rs_ = client.get("/api/student/grammar-drills", headers={"Authorization": "Bearer " + tok_})
+    its_ = rs_.json().get("items", []) if rs_.status_code == 200 else []
+    check("生徒の一覧に古いドリルも新しいドリルも出る (summary.open 2)", rs_.status_code == 200 and old_did in {x["drill_id"] for x in its_}
+          and rs_.json().get("summary", {}).get("open") == 2, (rs_.status_code, [(x["drill_id"], x["status"]) for x in its_]))
+    r = mod._run_weakness_drill_routine(only_student_id=s1, seed=1)
+    check("新しい未提出があれば次の日も積まない (skipped_open)", r["delivered"] == 0 and r["skipped_open"] == 1, r)
+    # ③ デスクトップの予約タスクの行は数えない (2026-10-16 塾長決定「両方配ってよい」)
+    m1 = make("高校2年")
+    weak(m1, "english", "時制")
+    give(m1, real_now, status="assigned", created_by="mission_2day_routine")
+    r = mod._run_weakness_drill_routine(only_student_id=m1, dry_run=True, seed=1)
+    check("予約タスク (created_by='mission_2day_routine') の未提出 'assigned' は 3日ドリルを止めない (両方届く)",
+          r["delivered"] == 1 and r["skipped_open"] == 0 and r["skipped_recent"] == 0 and r["stale_open_ignored"] == 0, r)
+    run_src = src[src.index("def _run_weakness_drill_routine"):][:16000]
+    check("コメントは「予約タスクの行は数えない」(数えると書いた古いコメントを残さない)",
+          "デスクトップの予約タスクが書く 'assigned' も)" not in run_src and "mission_2day_routine" in run_src, "")
+    props = mod._compact_run_props(r)
+    check("実行記録の要約に stale_open_ignored と open_stale_days が残る", "stale_open_ignored" in props and props.get("open_stale_days") == 14, props)
 
     print()
     if FAILURES:
