@@ -56415,8 +56415,9 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
 #   AIなし (塾生アプリのみ) の通塾生に、受講している英語のクラスの宿題として、科目別ドリルの**レビュー済みの問題だけ**で
 #   自動採点ドリルを配る (AIあり・AI 体験中の生徒は 3日ドリルの側 = 1 人 1 経路・_auto_delivery_ai_path)。
 #   - 塾長決定「基本的に2日に1回」: 毎朝 6:00 (CLASS_HW_AUTO_HOUR_JST・5〜22 に丸める) に回し、1 人に届くのは
-#     どのクラスからでも **2 日に 1 本まで** (CLASS_HW_INTERVAL_DAYS)。未提出 (completed 以外) のクラス自動宿題が残っている生徒には積まない。
-#     英語のクラスを 2 つ以上取っている生徒は、最後に届いたのが古いクラスから順に回す。そのクラスが次の新しいドリルを待っている朝
+#     どのクラスからでも **2 日に 1 本まで** (CLASS_HW_INTERVAL_DAYS)。未提出 (completed 以外) のクラス自動宿題が残っている生徒には積まない
+#     (2026-10-16 塾長決定: 数える未提出は直近 CLASS_HW_OPEN_STALE_DAYS (既定 14・0 = 全部) 日 (JST の日付) に配った分だけ。3日ドリルと同じ考え方。
+#     古いドリルは消さない)。英語のクラスを 2 つ以上取っている生徒は、最後に届いたのが古いクラスから順に回す。そのクラスが次の新しいドリルを待っている朝
 #     (wait_next) は、後に届いたクラスに回さずにそのクラスの次の新しいドリル (ふつうは翌朝) を待つ (回すと、ドリルを作る日が 1 日ずれたクラスがずっと届かない)。
 #   - ドリルは (クラス, 区分) ごとに 1 本 = 同じクラスの同じ区分の生徒は同じ問題 (CEO の問題別の正解率が比べられる)。
 #     同じ日 (JST) に作ったドリルがあれば新しく作らず、後から受け取れるようになった生徒をそのドリルに足す。前の日に作ったドリルが
@@ -56531,8 +56532,11 @@ def _class_hw_settings() -> dict:
                 known.append(hit[0])
         else:
             unknown.append(x)
+    interval_days = _env_int("CLASS_HW_INTERVAL_DAYS", 2, 1, 14)
     return {
-        "interval_days": _env_int("CLASS_HW_INTERVAL_DAYS", 2, 1, 14),
+        "interval_days": interval_days,
+        # 積まない判定に数える未提出の日数 (2026-10-16 塾長決定・既定 14・0 = 全部数える・それ以外は interval_days〜365)
+        "open_stale_days": _auto_open_stale_days("CLASS_HW_OPEN_STALE_DAYS", interval_days),
         "hour_jst": _class_hw_hour_jst(),
         "count": _env_int("CLASS_HW_AUTO_COUNT", 10, 5, 25),
         "passages": _env_int("CLASS_HW_AUTO_PASSAGES", 2, 1, 5),
@@ -56560,6 +56564,17 @@ def _class_hw_join_cutoff(now_txt: str) -> str:
     (前の日のドリルに足すと受け取ってから 〆 まで 1 日しか無い)。"""
     d = (datetime.strptime(now_txt, "%Y-%m-%d %H:%M:%S") + timedelta(hours=9)).date()
     return (datetime(d.year, d.month, d.day) - timedelta(hours=9)).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _class_hw_open_is_fresh(open_cnt, open_null_cnt, open_last_at, open_stale_cutoff) -> bool:
+    """クラス自動宿題の未提出が「積まない」判定に数える新しさか (2026-10-16 塾長決定)。計画 (_class_hw_plan) と錠の中の読み直し
+    (_class_hw_deliver_group) の 1 か所。未提出が無ければ False / 境目なし (CLASS_HW_OPEN_STALE_DAYS=0) なら True /
+    assigned_at が空の未提出があれば True (積まない側) / 一番新しい未提出が境目以降なら True。"""
+    if int(open_cnt or 0) <= 0:
+        return False
+    if not open_stale_cutoff or int(open_null_cnt or 0) > 0:
+        return True
+    return _ts_text(open_last_at) >= open_stale_cutoff
 
 
 def _class_hw_range(label, group):
@@ -56731,7 +56746,8 @@ def _class_hw_plan(c, *, now, settings, selected, include_names=False, seed=None
     (表で grammar / eiken / reading) があり・学年の区分が中学か高校・受講開始月を過ぎている (start_month が NULL なら制限なし)。
     外す理由 (生徒ごとに 1 つ・この順に判定): ai_trial (AI 体験中 = 3日ドリルの側) / not_tsujuku / test_name / no_class (英語のクラスが無い) /
     grade_unknown / shougaku / hold_only (GMARCH・早慶だけ) / no_range (区分に出す範囲が無い = 長文クラスの中学生など) /
-    before_start / not_selected (CLASS_HW_AUTO_ONLY_CLASSES・📤 のクラス以外) / open (未提出のクラス自動宿題がある = 積まない) /
+    before_start / not_selected (CLASS_HW_AUTO_ONLY_CLASSES・📤 のクラス以外) / open (直近 open_stale_days 日に配った未提出のクラス自動宿題が
+    ある = 積まない。それより前の未提出だけなら数えずに先へ = stale_open_ignored・2026-10-16 塾長決定) /
     recent (2 日のうちに受け取った) / wait_next (クラスのドリルが前の日に作ったもの = 次の新しいドリルを待つ) /
     no_inventory (どのクラスもレビュー済みの在庫が足りない)。
     受け取れる生徒は 1 回に 1 クラスだけ: 最後に届いたのが古いクラスから (届いたことが無いクラスが先・同じなら時間割の順)。
@@ -56742,6 +56758,10 @@ def _class_hw_plan(c, *, now, settings, selected, include_names=False, seed=None
     now_txt = now.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     now_naive = datetime.strptime(now_txt, "%Y-%m-%d %H:%M:%S")
     interval_cutoff = (now_naive - timedelta(hours=interval * 24 - _CLASS_HW_INTERVAL_SLACK_HOURS)).strftime("%Y-%m-%d %H:%M:%S")
+    # 積まない判定に数える未提出の境目 (2026-10-16 塾長決定): JST の今日 − open_stale_days 日の 0:00 (naive UTC)。これより前に配った
+    #   未提出は数えない (0 日の設定なら None = 全部数える)。錠の中の読み直し (_class_hw_deliver_group) にも同じ値を渡す
+    stale_days = int(settings.get("open_stale_days") or 0)
+    open_stale_cutoff = _jst_day_start_utc_txt(now, stale_days) if stale_days else None
     hist_cutoff = (now_naive - timedelta(days=400)).strftime("%Y-%m-%d %H:%M:%S")
     today_jst = (now_naive + timedelta(hours=9)).date()
     month_jst = f"{today_jst.year:04d}-{today_jst.month:02d}"
@@ -56756,18 +56776,26 @@ def _class_hw_plan(c, *, now, settings, selected, include_names=False, seed=None
     c.execute(f"SELECT {cols} FROM students WHERE {_enrolled_sql()} AND {_synth_exclude_sql()} "
               f"AND {_auto_delivery_ai_prefilter_sql('ai_nashi')} ORDER BY id LIMIT 2000")
     rows = c.fetchall() or []
-    # 生徒ごと・クラスごとのクラス自動宿題の受け取り (未提出の数・最後に受け取った日時)。未提出 = completed 以外
+    # 生徒ごと・クラスごとのクラス自動宿題の受け取り (未提出の数・最後に受け取った日時)。未提出 = completed 以外。
+    #   未提出は open_stale_cutoff より後に配った分 (と assigned_at が空の分) だけ st_open に数える。それより前の未提出は st_stale
+    #   (ドリルは消さない・生徒の画面にも残る)。境目の比較は Python 側 (_ts_text) で、SELECT にパラメータを置かない
     c.execute(
         "SELECT a.student_id AS sid, d.created_by AS cb, MAX(a.assigned_at) AS last_at, "
-        "SUM(CASE WHEN COALESCE(a.status, 'open') <> 'completed' THEN 1 ELSE 0 END) AS open_cnt "
+        "SUM(CASE WHEN COALESCE(a.status, 'open') <> 'completed' THEN 1 ELSE 0 END) AS open_cnt, "
+        "SUM(CASE WHEN COALESCE(a.status, 'open') <> 'completed' AND a.assigned_at IS NULL THEN 1 ELSE 0 END) AS open_null_cnt, "
+        "MAX(CASE WHEN COALESCE(a.status, 'open') <> 'completed' THEN a.assigned_at END) AS open_last_at "
         "FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
         f"WHERE {_class_hw_created_by_sql('d.created_by')} GROUP BY a.student_id, d.created_by"
     )
-    st_open, st_last, st_last_label = {}, {}, {}
+    st_open, st_stale, st_last, st_last_label = {}, {}, {}, {}
     for r in c.fetchall() or []:
         sid_ = int(r["sid"])
         ts = _ts_text(r["last_at"])
-        st_open[sid_] = st_open.get(sid_, 0) + int(r["open_cnt"] or 0)
+        oc = int(r["open_cnt"] or 0)
+        if _class_hw_open_is_fresh(oc, r["open_null_cnt"], r["open_last_at"], open_stale_cutoff):
+            st_open[sid_] = st_open.get(sid_, 0) + oc
+        elif oc:
+            st_stale[sid_] = st_stale.get(sid_, 0) + oc
         if ts > st_last.get(sid_, ""):
             st_last[sid_] = ts
         lb = _drill_auto_origin(r["cb"]).get("class_label") or ""
@@ -56791,6 +56819,7 @@ def _class_hw_plan(c, *, now, settings, selected, include_names=False, seed=None
              "created_at": _ts_text(r["created_at"])})
 
     students, members = {}, {}
+    stale_ignored = 0
     for st in rows:
         sid = int(st["id"])
         info = {"id": sid, "status": "", "band": "", "labels": [], "chosen": None}
@@ -56840,6 +56869,10 @@ def _class_hw_plan(c, *, now, settings, selected, include_names=False, seed=None
         if st_open.get(sid, 0) > 0:
             info["status"] = "open"
             continue
+        if st_stale.get(sid, 0) > 0:
+            # 古い未提出 (open_stale_cutoff より前に配った分) だけ → 積まない判定に数えずに先へ (2026-10-16 塾長決定)
+            info["stale_open"] = st_stale[sid]
+            stale_ignored += 1
         if st_last.get(sid, "") >= interval_cutoff:
             info["status"] = "recent"
             continue
@@ -56897,17 +56930,19 @@ def _class_hw_plan(c, *, now, settings, selected, include_names=False, seed=None
         if k in sk:
             sk[k] += 1
     return {"skips": sk, "groups": groups, "assign": assign, "students": students, "members": members,
-            "now_txt": now_txt, "interval_cutoff": interval_cutoff, "today_jst": today_jst.isoformat()}
+            "now_txt": now_txt, "interval_cutoff": interval_cutoff, "today_jst": today_jst.isoformat(),
+            "open_stale_cutoff": open_stale_cutoff, "stale_open_ignored": stale_ignored}
 
 
-def _class_hw_deliver_group(c, conn, label, group, gp, studs, *, now_txt, interval_cutoff) -> dict:
+def _class_hw_deliver_group(c, conn, label, group, gp, studs, *, now_txt, interval_cutoff, open_stale_cutoff=None) -> dict:
     """🏫 (クラス, 区分) 1 組を書く (1 トランザクション)。返り値 {assigned: [生徒の s], drill_id, mode, race: [id], error?}。
     ① 学年ガード: 科目がこの区分で出してよいもの (_drill_subject_band_ok かつ _CLASS_HW_SUBJECTS_BY_GROUP) で、全員の区分が group。
        違えば書かずに _CLASS_HW_BAND_GUARD_TRIPS を数える (正常な実行では 0)。
     ② 新しく作るドリルの問題を読み直す: 全部が active・同じ科目・同じ単元・レビュー済みの出典 (長文は本文の出典も)。違えば書かない。
     ③ Postgres では pg_try_advisory_xact_lock(8675314) を f-string で埋めて取り (psycopg3 は Python の int を bigint で送ることがある)、
        錠の中で「2 日のうちのこのクラスのこの区分のドリル」(同じ日 (JST) に作ったものならそれに足す・前の日のものなら配らない = race) と、
-       生徒ごとの未提出・2 日以内の受け取りを読み直す (別の実行が先に配った生徒は race)。新しいドリルに 1 人も入らなければドリルも書かない。"""
+       生徒ごとの未提出・2 日以内の受け取りを読み直す (別の実行が先に配った生徒は race)。新しいドリルに 1 人も入らなければドリルも書かない。
+       未提出は計画と同じ境目 (open_stale_cutoff より後に配った分と assigned_at が空の分) だけ数える (2026-10-16 塾長決定)。"""
     global _CLASS_HW_BAND_GUARD_TRIPS
     res = {"assigned": [], "drill_id": None, "mode": gp.get("mode"), "race": [], "unit": gp.get("unit"),
            "subject": gp.get("subject"), "nq": len(gp.get("qids") or [])}
@@ -56999,13 +57034,16 @@ def _class_hw_deliver_group(c, conn, label, group, gp, studs, *, now_txt, interv
         ph = ",".join(["?"] * len(ids))
         c.execute(
             "SELECT a.student_id AS sid, MAX(a.assigned_at) AS last_at, "
-            "SUM(CASE WHEN COALESCE(a.status, 'open') <> 'completed' THEN 1 ELSE 0 END) AS open_cnt "
+            "SUM(CASE WHEN COALESCE(a.status, 'open') <> 'completed' THEN 1 ELSE 0 END) AS open_cnt, "
+            "SUM(CASE WHEN COALESCE(a.status, 'open') <> 'completed' AND a.assigned_at IS NULL THEN 1 ELSE 0 END) AS open_null_cnt, "
+            "MAX(CASE WHEN COALESCE(a.status, 'open') <> 'completed' THEN a.assigned_at END) AS open_last_at "
             "FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
             f"WHERE {_class_hw_created_by_sql('d.created_by')} AND a.student_id IN ({ph}) GROUP BY a.student_id",
             tuple(ids),
         )
         busy = {int(r["sid"]) for r in c.fetchall()
-                if int(r["open_cnt"] or 0) > 0 or _ts_text(r["last_at"]) >= interval_cutoff}
+                if _class_hw_open_is_fresh(int(r["open_cnt"] or 0), r["open_null_cnt"], r["open_last_at"], open_stale_cutoff)
+                or _ts_text(r["last_at"]) >= interval_cutoff}
         for s in studs:
             if int(s["id"]) in busy:
                 res["race"].append(int(s["id"]))
@@ -57088,6 +57126,7 @@ def _run_class_homework_routine(dry_run: bool = True, only_label: Optional[str] 
         c = conn.cursor()
         plan = _class_hw_plan(c, now=now, settings=settings, selected=selected, include_names=include_names, seed=seed)
         summary.update(plan["skips"])
+        summary["stale_open_ignored"] = int(plan.get("stale_open_ignored") or 0)   # 古い未提出を数えずに先へ進めた生徒 (人数・2026-10-16)
         summary["now_jst"] = (datetime.strptime(plan["now_txt"], "%Y-%m-%d %H:%M:%S") + timedelta(hours=9)).strftime("%Y-%m-%d %H:%M")
         students, groups, assign = plan["students"], plan["groups"], plan["assign"]
         for gp in groups.values():
@@ -57105,7 +57144,8 @@ def _run_class_homework_routine(dry_run: bool = True, only_label: Optional[str] 
                                 "race": [], "unit": gp["unit"], "subject": gp["subject"], "nq": len(gp["qids"])}
             else:
                 results[key] = _class_hw_deliver_group(c, conn, key[0], key[1], gp, studs,
-                                                       now_txt=plan["now_txt"], interval_cutoff=plan["interval_cutoff"])
+                                                       now_txt=plan["now_txt"], interval_cutoff=plan["interval_cutoff"],
+                                                       open_stale_cutoff=plan.get("open_stale_cutoff"))
             r = results[key]
             if r.get("error"):
                 summary["create_failed"] += len(studs)

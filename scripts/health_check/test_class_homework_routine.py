@@ -32,6 +32,10 @@
   [12] 1 人 1 経路 (3日ドリルと合わせて): ai_disabled 0/1 × 体験の期限 なし/過去/未来/壊れた値 の全員が、ちょうど 1 つの自動配信に入る
   [13] 競合と監視: 計画と書き込みの間に別の実行が配った生徒は race (2 本目を作らない)・全部の書き込みに失敗したら props.error・
       要約は 4000 字未満の正しい JSON で名前を含まない・配信の記録 (events) は生徒 id だけ
+  [15] 2026-10-16 塾長決定: 積まない判定に数える未提出は直近 CLASS_HW_OPEN_STALE_DAYS (既定 14・0 = 全部・interval〜365) 日 (JST の日付) に
+      配った分だけ (3日ドリルと同じ考え方)。15 日前の未提出だけなら配る (stale_open_ignored)・ちょうど 14 日前は数える・0 で従来どおり・
+      assigned_at が空は数える・本番でも錠の中の読み直しで race にしない・古いドリルは消さない。2 日に 1 本の周期は数秒の遅れで
+      3 日にずれない (6 時間の遊び)
   [14] 画面: CEO「🏫 クラス自動宿題」カード (🎯 確認カードと配信済み一覧の帯の間・🔍 は dry_run: true・📤 は confirm() の後だけ本番で
       1 クラス・「📋 結果」は一覧を class_hw に切り替える・名前は escape・古いサーバは「サーバ反映待ち」) と塾生アプリのカードの 2 行目
       (題名に 〆 があれば「いつでもOK」と書かない)。ceo.html / class.html の本物のコードを JS エンジンで動かす (無ければ FAIL)
@@ -65,7 +69,7 @@ CEO_HTML = os.path.join(REPO, "ceo.html")
 CLASS_HTML = os.path.join(REPO, "class.html")
 
 FAILURES = []
-ENV_KEYS = ("CLASS_HW_AUTO_ENABLED", "CLASS_HW_AUTO_HOUR_JST", "CLASS_HW_INTERVAL_DAYS", "CLASS_HW_AUTO_COUNT",
+ENV_KEYS = ("CLASS_HW_AUTO_ENABLED", "CLASS_HW_AUTO_HOUR_JST", "CLASS_HW_INTERVAL_DAYS", "CLASS_HW_AUTO_COUNT", "CLASS_HW_OPEN_STALE_DAYS",
             "CLASS_HW_AUTO_PASSAGES", "CLASS_HW_READING_MIN_PASSAGES", "CLASS_HW_UNIT_COOLDOWN_DAYS", "CLASS_HW_AUTO_ONLY_CLASSES",
             "AUTO_DELIVERY_REVIEWED_SOURCES", "HOMEWORK_NOTIFY_EMAIL", "HOMEWORK_NOTIFY_LINE", "WEAKNESS_DRILL_ROUTINE_ENABLED",
             "WEAKNESS_ROUTINE_UNKNOWN_GRADE_AS_KOSEI", "WEAKNESS_DRILL_ROUTINE_CAP", "WEEKLY_WORKSHEET_ENABLED")
@@ -1107,6 +1111,67 @@ def main():
     check("全部の書き込みに失敗したら error (監視 _failed_schedulers が拾う)", res["delivered"] == 0 and res["create_failed"] == 2
           and "1 本も配れません" in str(res.get("error")), res.get("error"))
     check("error は要約にも残る", "error" in mod._compact_run_props(res))
+
+    # ------------------------------------------------------------------
+    print("\n[15] 2026-10-16 塾長決定: 14 日より前の未提出は「積まない」に数えない (CLASS_HW_OPEN_STALE_DAYS・古いドリルは消さない)")
+    check("既定は 14 日", mod._class_hw_settings()["open_stale_days"] == 14, mod._class_hw_settings().get("open_stale_days"))
+    for v, want in (("0", 0), ("-1", 0), ("1", 2), ("7", 7), ("400", 365), ("x", 14)):
+        with Env(CLASS_HW_OPEN_STALE_DAYS=v):
+            check(f"CLASS_HW_OPEN_STALE_DAYS={v!r} → {want} 日 (0 = 全部数える・2 日に 1 本の間隔〜365 に丸める)",
+                  mod._class_hw_settings()["open_stale_days"] == want, mod._class_hw_settings().get("open_stale_days"))
+    with Env(CLASS_HW_OPEN_STALE_DAYS="1", CLASS_HW_INTERVAL_DAYS="5"):
+        check("間隔を 5 日にしたら下限も 5 日", mod._class_hw_settings()["open_stale_days"] == 5, mod._class_hw_settings())
+
+    def give_old(sid, when, status="open", null_at=False):
+        txt = when.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        conn = mod.db(); c = conn.cursor()
+        c.execute("INSERT INTO grammar_drills (subject, title, unit, level, question_ids, created_by, created_at) "
+                  "VALUES ('english', '架空の古い宿題', '時制', 'standard', '[]', ?, ?) RETURNING id", (f"{PREFIX}kosei:{LV2}", txt))
+        d_ = c.fetchone()["id"]
+        c.execute("INSERT INTO grammar_drill_assignments (drill_id, student_id, status, assigned_at) VALUES (?, ?, ?, ?)",
+                  (d_, sid, status, None if null_at else txt))
+        conn.commit(); conn.close()
+        return d_
+
+    reset_chw()
+    o1 = make("高校2年", [LV2])
+    only_active([o1])
+    old_did = give_old(o1, at(-15))           # T0 = JST 10/21 6:00 → 10/6 の未提出 (15 日前)
+    res = run(dry=True)
+    check("15 日前の未提出だけなら数えずに配る (stale_open_ignored 1・settings.open_stale_days 14)",
+          status_of(res, o1) == "deliver" and res["skipped_open"] == 0 and res.get("stale_open_ignored") == 1
+          and res["settings"].get("open_stale_days") == 14, (status_of(res, o1), res.get("stale_open_ignored"), res["skipped_open"]))
+    with Env(CLASS_HW_OPEN_STALE_DAYS="0"):
+        res = run(dry=True)
+        check("CLASS_HW_OPEN_STALE_DAYS=0 なら従来どおり数える (open)", status_of(res, o1) == "open" and res["skipped_open"] == 1
+              and res.get("stale_open_ignored") == 0, (status_of(res, o1), res.get("stale_open_ignored")))
+    res = run()
+    do1 = drills_of(o1)
+    check("本番: 錠の中の読み直しでも古い未提出で止めない (race にしない)・新しいドリルを 1 本", res["delivered"] == 1 and res["skipped_race"] == 0
+          and len(do1) == 2, (res.get("delivered"), res.get("skipped_race"), [(x["id"], x["status"]) for x in do1]))
+    check("古いドリルは消さない (未提出のまま残る)", any(x["id"] == old_did and x["status"] == "open" for x in do1), do1)
+    res = run(now=at(2))
+    check("新しい未提出があれば 2 日後も積まない (open)", status_of(res, o1) == "open" and res["delivered"] == 0, status_of(res, o1))
+    reset_chw()
+    give_old(o1, at(-14))                     # ちょうど 14 日前 (10/7) の未提出
+    res = run(dry=True)
+    check("ちょうど 14 日前の未提出はまだ数える (open)", status_of(res, o1) == "open" and res.get("stale_open_ignored") == 0, status_of(res, o1))
+    reset_chw()
+    give_old(o1, at(-30), null_at=True)
+    res = run(dry=True)
+    check("assigned_at が空の未提出は新しいものとして数える (open)", status_of(res, o1) == "open", status_of(res, o1))
+    reset_chw()
+    give_old(o1, at(-30))
+    give_old(o1, at(-1))
+    res = run(dry=True)
+    check("古い未提出と新しい未提出の両方があれば積まない", status_of(res, o1) == "open" and res.get("stale_open_ignored") == 0, status_of(res, o1))
+    # 2 日に 1 本の周期のずれ (3日ドリルの「72 時間ちょうど」で 1 日ずれた件と同じことが起きないか・2026-10-16 に確かめた):
+    #   2 日前の実行が数秒遅れて書いた配信も、2 日後の実行 (少し早く起きても) では「2 日たった」= 6 時間の遊び
+    reset_chw()
+    give_old(o1, at(-2, 30 / 3600), status="completed")
+    res = run(dry=True, now=at(0, -30 / 3600))
+    check("2 日前の 6:00:35 に受け取って提出した生徒は、2 日後の 5:59:35 の実行でも届く (周期が 3 日にずれない)",
+          status_of(res, o1) == "deliver", status_of(res, o1))
 
     # [14] 画面: 名前・学年に HTML を入れた生徒で 🔍 の応答を作り、CEO のカードを JS で描く
     reset_chw()

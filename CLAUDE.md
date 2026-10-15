@@ -856,7 +856,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
     `WEAKNESS_ROUTINE_OPEN_STALE_DAYS` 14 (0 = 全部数える・それ以外は 3〜365) = 積まない判定に数える未提出の日数 (2026-10-16)。
   - `CLASS_HW_AUTO_ENABLED` 既定 OFF: 🏫 クラス自動宿題。`CLASS_HW_AUTO_HOUR_JST` 6 (5〜22)・`CLASS_HW_INTERVAL_DAYS` 2 (1〜14・題名の 〆 も配った日 + この日数)・
     `CLASS_HW_AUTO_COUNT` 10 (5〜25)・`CLASS_HW_AUTO_PASSAGES` 2 (1〜5・英検の長文)・`CLASS_HW_READING_MIN_PASSAGES` 4 (1〜50・長文クラスの開始本数)・
-    `CLASS_HW_UNIT_COOLDOWN_DAYS` 14 (0〜90)・`CLASS_HW_AUTO_ONLY_CLASSES` 空 = 全クラス (段階投入・カンマか「、」区切り。全角・空白の違いは
+    `CLASS_HW_UNIT_COOLDOWN_DAYS` 14 (0〜90)・`CLASS_HW_OPEN_STALE_DAYS` 14 (0 = 全部数える・それ以外は間隔〜365 = 積まない判定に数える未提出の日数・
+    2026-10-16)・`CLASS_HW_AUTO_ONLY_CLASSES` 空 = 全クラス (段階投入・カンマか「、」区切り。全角・空白の違いは
     同じ名前 = `_class_hw_label_key`。★当たる名前が 1 つも無い (打ち間違い・保留のクラスだけ) ときは全クラスに広げず 0 クラス + `props.error`)。
   - `HOMEWORK_NOTIFY_EMAIL` 既定 `manual` (`all` / `off`)・`HOMEWORK_NOTIFY_LINE` 既定 0 (1 で宿題の LINE を戻す非常スイッチ)。
   - `AUTO_DELIVERY_REVIEWED_SOURCES` 既定 空 = 上の許可リスト (`english=manual-drill-v1;math=mathct-*` のように科目ごとに差し替え・禁止は外せない)。
@@ -975,7 +976,10 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   宿題タブが開ける)・受講クラスに英語のクラスがある・学年の区分が中学か高校 (`_student_grade_band`。空・「その他」・小学生には配らない =
   dry-run の `grade_unknown_students` に名前を出すので CEO で学年を直す)・受講開始月を過ぎている (NULL は制限なし)。
 - **2 日に 1 回**: 毎朝 6:00 (`CLASS_HW_AUTO_HOUR_JST`・5〜22 に丸める) に回し、1 人に届くのはどのクラスからでも 2 日に 1 本まで
-  (`CLASS_HW_INTERVAL_DAYS`・判定は 6 時間の遊びつき)。未提出 (completed 以外) のクラス自動宿題が残っていれば積まない。
+  (`CLASS_HW_INTERVAL_DAYS`・判定は 6 時間の遊びつき = 毎朝 6:00 の実行で 2 日前の 6:00:xx の配信も「2 日たった」になる。
+  3日ドリルのような 1 日ずれは無いことを 2026-10-16 に確かめた・テスト [15])。未提出 (completed 以外) のクラス自動宿題が残っていれば積まない
+  (2026-10-16 塾長決定: 数えるのは直近 `CLASS_HW_OPEN_STALE_DAYS`=14 日 (JST の日付) に配った未提出だけ・3日ドリルと同じ考え方・
+  古いドリルは消さない・数えずに先へ進めた生徒は dry-run の `stale_open_ignored`・判定は `_class_hw_open_is_fresh` 1 か所 = 計画と錠の中)。
   英語のクラスを 2 つ取る生徒は、最後に届いたのが古いクラスから (同じなら時間割の順)。★そのクラスが下の wait_next の朝は、後に届いた
   クラスに回さずに、そのクラスの次の新しいドリル (ふつうは翌朝) を待つ。回すと、ドリルを作る日が 1 日ずれた 2 クラス (ON の手順の ONLY で
   1 クラスを先に始めたときなど) で、期限どおりに出す生徒ほどずっと同じクラスだけになる。待った回だけ間が 3 日 (テスト [6] が 10 日分で固定)。
@@ -998,7 +1002,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - 学年ガードは選ぶとき (区分の範囲だけ) と書き込む直前 (`_class_hw_deliver_group`: `_drill_subject_band_ok`・区分の科目・全員の区分・
   問題と本文の読み直し) の 2 回。止めたら `_CLASS_HW_BAND_GUARD_TRIPS` と `props.error`。
 - 二重配信の防止: Postgres では書き込みの直前に `pg_try_advisory_xact_lock(8675314)` (1 引数・f-string) を取り、錠の中で 2 日のうちのドリルと
-  生徒ごとの未提出・2 日以内の受け取りを読み直す (別の実行が先に配った生徒は `skipped_race`)。毎朝の実行は events の実行記録で 1 日 1 回。
+  生徒ごとの未提出 (計画と同じ境目 = 14 日より前は数えない)・2 日以内の受け取りを読み直す (別の実行が先に配った生徒は `skipped_race`)。毎朝の実行は events の実行記録で 1 日 1 回。
 - お知らせは自動配信なので `source='auto'` (既定では LINE もメールも送らない・アプリ内の「🆕 新しい宿題」だけ)。
 - 監視: ON で起動したときだけ `_SCHEDULER_MAX_AGE_DAYS` に `class_hw_auto_run` (2 日・配る生徒がいない日も記録)。記録は `_compact_run_props`
   (名前なし)。1 本も書けなかった / 学年ガードが動いたら `props.error`。`prod_healthcheck.py` は `OPTIONAL_UNTIL_FIRST_RUN`。
