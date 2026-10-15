@@ -817,7 +817,7 @@
           お知らせは既定ではアプリの中だけです（LINE・メールなし）。毎朝の自動配信の ON/OFF は Railway の <code style="color:#6ee7b7;">CLASS_HW_AUTO_ENABLED</code>。
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-          <button id="chwDryBtn" type="button" onclick="chwDryRun()" title="今日の朝に回ったら、どのクラスの誰に何を配るかを、本番と同じ選び方で計算して出します。配信はせず、生徒には何も届きません" style="background:rgba(16,185,129,0.16);color:#a7f3d0;border:1px solid rgba(16,185,129,0.5);padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">🔍 次の宿題を確認（配信しない）</button>
+          <button id="chwDryBtn" type="button" onclick="chwDryRun()" title="今もう一度回したら、どのクラスの誰に何を配るかを、本番と同じ選び方で計算して出します。配信はせず、生徒には何も届きません" style="background:rgba(16,185,129,0.16);color:#a7f3d0;border:1px solid rgba(16,185,129,0.5);padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">🔍 次の宿題を確認（配信しない）</button>
           <button id="chwResultBtn" type="button" onclick="chwShowResults()" title="下の配信済みドリル一覧を「🏫 クラス自動宿題」に切り替えます (誰が解いたか・問題別の正解率)" style="background:rgba(148,163,184,0.12);color:#cbd5e1;border:1px solid #475569;padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;">📋 クラス自動宿題の結果</button>
           <span id="chwMsg" style="font-size:0.76rem;"></span>
         </div>
@@ -5586,6 +5586,7 @@
       if (lr === undefined) return '';
       const st = 'font-size:0.78rem;margin:0.45rem 0 0.05rem;';
       if (!lr) return `<div style="${st}color:#a1a1aa;">前回の自動配信: まだ記録がありません</div>`;
+      if (lr.read_failed) return `<div style="${st}color:#fcd34d;">前回の自動配信: 記録を読めませんでした（時間をおいて 🔍 を押し直してください）</div>`;
       const when = _gdRtE(lr.at_jst || '?');
       const dv = (lr.delivered === null || lr.delivered === undefined) ? null : (Number(lr.delivered) || 0);
       if (lr.error) {

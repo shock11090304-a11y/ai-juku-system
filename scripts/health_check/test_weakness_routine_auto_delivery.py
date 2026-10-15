@@ -1124,7 +1124,10 @@ def main():
         lr4 = mod._auto_delivery_last_run("weakness_drill_routine_run")
     finally:
         mod.db = orig_db
-    check("events が読めなくても例外を出さず None (dry-run の応答を止めない)", lr4 is None, lr4)
+    check("events が読めなくても例外を出さず {read_failed: True} (dry-run の応答を止めない・「記録なし」と区別)", lr4 == {"read_failed": True}, lr4)
+    _ceo_src = open(os.path.join(REPO, "ceo.html"), encoding="utf-8").read()
+    check("CEO カードは read_failed を「記録を読めませんでした」と出す (まだ記録がありませんと分ける)",
+          "lr.read_failed" in _ceo_src and "記録を読めませんでした" in _ceo_src, None)
     ex(mod, "DELETE FROM events WHERE name = 'weakness_drill_routine_run' AND created_at >= '2099-01-01'")
     before = counts(mod)
     client.post("/api/admin/weakness-drill-routine/run", json={"dry_run": True}, headers=cron)

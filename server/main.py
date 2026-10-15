@@ -47879,8 +47879,9 @@ def _compact_run_props(summary, *, max_ids: int = 30, max_chars: int = 3800) -> 
 def _auto_delivery_last_run(event_name: str) -> Optional[dict]:
     """🎯 / 🏫 CEO カードの「前回の自動配信」(2026-10-16 塾長決定)。毎朝のスケジューラが events に書いた最後の実行記録
     (_record_scheduler_run・中身は _compact_run_props の要約) を読むだけ (書かない・名前は入っていない)。
-    返り値 {at_jst: 'M/D HH:MM', at: 'YYYY-MM-DD HH:MM', delivered: int|None, error: str|None} / 記録が無い・読めない → None。
-    ★dry-run の応答を止めないよう、失敗はすべて握って None (ログだけ)。CEO の 🔍 だけが読む (監視は _scheduler_status_rows)。"""
+    返り値 {at_jst: 'M/D HH:MM', at: 'YYYY-MM-DD HH:MM', delivered: int|None, error: str|None} / 記録が無い → None /
+    読めない (DB の一時的な失敗) → {read_failed: True} (カードで「まだ記録がありません」と読み違えないよう分ける・2026-10-16 レビュー指摘)。
+    ★dry-run の応答を止めないよう、失敗はすべて握る (ログだけ)。CEO の 🔍 だけが読む (監視は _scheduler_status_rows)。"""
     conn = None
     try:
         conn = db()
@@ -47913,7 +47914,7 @@ def _auto_delivery_last_run(event_name: str) -> Optional[dict]:
         }
     except Exception as e:
         log.warning(f"[AutoDelivery] last_run({event_name}) の読み取りに失敗: {type(e).__name__}: {e}")
-        return None
+        return {"read_failed": True}
     finally:
         if conn is not None:
             try:
