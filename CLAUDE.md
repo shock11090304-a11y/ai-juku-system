@@ -175,6 +175,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   新しいシードは **ほかと重ならない出典の接頭辞** にし、盲検 3 名を通したら許可リストと `test_auto_delivery_shared.py` の `REVIEWED_SEEDS` に
   1 行ずつ足す (盲検していないなら `NOT_AUTO_SEEDS`)。どちらにも無い `*pool*` / `*_drill_*` / `*grammar*` のシードがあるとテストが落ちる。
   習熟度テスト (科目 `proficiency_test`・出典 `pt-` / `ptest:`) は env `AUTO_DELIVERY_REVIEWED_SOURCES` でも外せない禁止。
+  英語長文 (`english_long`) は取込スクリプトの出典 `el-` / `englong:` を許可 (取込でサーバが盲検の記録を必須にしているため・下の 📖🧪 の節)。
   本番の在庫は `GET /api/admin/grammar/source-inventory` (読むだけ・CEO の管理者か X-Cron-Secret) で、自動配信できない古い行 (`legacy_active`) と単元ごとの在庫を見る。
 - **取込 API の落とし穴**: `POST /api/admin/grammar/import` は 1 リクエスト **2000 問まで**。
   `unit` は english なら `server/main.py` の `GRAMMAR_UNITS` と**完全一致**でないと **無言で skip** される。
@@ -187,6 +188,10 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   重複判定は `source_exam_question_id` があれば (その id + stem)、無ければ (stem + unit + subject) の完全一致。
   **押し直しても二重登録されない**代わりに、既存問題の解説を直したいときは再 import では**上書きされない** (INSERT 専用)。
   直すなら DB を直接更新するか、行を無効化 (`active=0`) してから入れ直すこと。
+- 取込 API の任意の指定 (2026-10-15): `dry_run: true` は数えて rollback (何も書かない)・`all_or_nothing: true` は本文 (passages) が
+  1 本でも形式不正・知らない単元名なら要求ごと取り消して `ok:false` (`rejected_index` / `reason`。questions[] には効かない)。
+  **本文型だけの科目** (`_PASSAGE_ONLY_SUBJECTS` = 英語長文・習熟度テスト) は questions[] で来たら 422、`review` (盲検 3 名の記録) が無ければ 422。
+  CEO の補充ボタンはどれも送らないので動きは変わらない。
 - **解説に ①②③ や「選択肢2」を書かない**。生徒画面は選択肢の並びをそのまま出すが、値で説明しておけば並びが変わっても壊れない。
 - **正解の一意性は盲検でしか取れない** (上記③と同じ)。v2 (985問) は生成 → 機械検査 → 既存との重複照合 →
   **正解を伏せた独立ソルバー 3 名が全問を解いて全員一致した問題だけ採用** → 別担当が解説を校閲 の順で作った。
@@ -348,6 +353,35 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   `_meta.retired_sources` の (source, 旧い問題文) で止め、直した版を取込で入れる = builder の `RETIRED_VOCAB`)。
   第1回 大問3[B] の和訳・解説は本番では旧版のまま (長文の設問は source が回ごとの名前で 1 問ずつ照合できない・答えは変わらない)。
   盲検: 第10・11回 (語彙 36 問・長文 26 問) と直った 2 問を 3 名で → 全員一致・指摘なし。
+
+### 📖 英語長文 (科目 `english_long`) と 🧪 習熟度テスト (科目 `proficiency_test`) — 手元のファイルから取込・seed-data に置かない (2026-10-15 塾長決定)
+- Codex (別の AI) が取込仕様書 (`docs/drill-import-spec.md`・ファイルの中の番号は 1 始まり) どおりに作って盲検 3 名を通し、塾長が手元の取込スクリプト
+  (`scripts/drill_import/`・0 始まりに直して送る) で入れる。**seed-data にもリポジトリにも置かない** (公開されるため。テストの答えが漏れる)。
+- english に混ぜず別科目にした理由: english は単元が `GRAMMAR_UNITS` 固定で本文を受けず、今日の1問・初回診断・3日ドリル・弱点 TOP3 が english を
+  直書きしている (混ぜると長文の設問が 1 問だけ切り離されて出る)。別科目なら自動の経路に構造上混ざらない。
+  別名は「英語長文」「習熟度テスト」だけ。★「長文」「長文読解」は足さない (`/api/question-attempts` が日本語の科目名を寄せるので、入試道場の「長文読解」が化ける)。
+  どちらも本文型だけ (`_PASSAGE_ONLY_SUBJECTS`) = 全設問が本文に紐づくので、1 問ずつの抽出 (`passage_id IS NULL`) には出てこない。
+- **英語長文**: 単元 = 長文クラス (`長文 Lv.1` 月曜3限・`長文 Lv.2` 火曜3限・`国公立 長文` 金曜3限・`_GRAMMAR_SUBJECT_UNIT_ORDER`)。level は standard だけ
+  (取込でそろえる)。出典は設問 `el-<set_id>-<qid>`・本文 `englong:<set_id>:<pid>` で、自動配信の許可リストに入っている。自動で出すのは
+  長文クラスのクラス自動宿題 (高校生だけ・1 回 1 本) だけで、3日ドリルの科目ではない。CEO の配信は従来の長文型と同じ (本文 2 本・ランダム)。
+- **習熟度テスト**: 1 ファイル = 1 回分 = 1 単元「高校英語 習熟度テスト 第1回」(`_PTEST_UNIT_RE`・直した版は「…第1回改1」)・大問 1 つ = 本文 1 つ
+  (1 回分 12 大問・60 問まで)。CEO で配ると **全大問を取込順のまま 1 本のドリル** (`_grammar_pick_drill_passages` は習熟度テストだけ ORDER BY id。
+  レベル・本数の指定は使わない・👀 プレビューもテスト全体)。同じ生徒に 2 回は配らない (応答の `already_taken`・全員なら 409・`allow_retake: true` で
+  解除 = CEO には出さない)。`exclude_drill_id` と単元なしは 422。答えは提出直後に見えるので、全クラス同じ日に実施する。
+  お知らせのメールの件名は「🧪 習熟度テスト「…」が届きました」(「解説がその場で」は書かない・アプリの帯は「🆕 新しい宿題」のまま)。
+- **習熟度テストはどの自動配信にも出さない**: `_AUTO_DELIVERY_DENY_SUBJECTS` (env でも外せない)・出典 `pt-` / `ptest:` も禁止・
+  `_drill_subject_band_ok` はどの区分にも False。自動配信の関数は許可リスト方式なので、名前を書かなくても出ない (テストがソースを見て固定)。
+- 弱点: 習熟度テストの解答は `subject='proficiency_test'`・topic=単元で記録し、弱点集計は読まない (単元名が弱点にならない)。
+  env `PTEST_FEEDS_WEAKNESS=1` (既定 0) のときだけ、取込時に skill を付けた設問をその単元ドリルの科目・単元で記録する
+  (skill は kv_settings `ptest_meta:<単元>` = 取込と同じトランザクションで保存)。英語長文の解答は弱点集計に入るが、弱点 TOP3・週次プリントの範囲
+  (`_WEAKNESS_TOP3_EXCLUDED_SUBJECTS`) からは英検と同じく外す (推薦プールが無い)。週次レポートの小テスト・科目別にはどちらも入る。
+- 取込 API の決まり (この 2 科目): `review` = {protocol `trillion-blind/v1`・日付つきの別々の解き手 3 名・`all_agree: true`} が無ければ 422 で何も書かない。
+  ★サーバが見るのは形だけ (自己申告)。解き手の答えと正解の照合・item_hash は手元の検査スクリプト (validate_drill_import.py) が行う。
+  まとまり (テストの単元 / 英語長文の set_id) が取込済みなら新しい本文は足さない (`ok:false`・`reason: group_exists`)・同じ要求の再送は
+  `already_imported: true` で何も増えない (dedup の指定にかかわらず本文の重複を見る)。入れたら events `grammar_import_review` (盲検の要約・名前なし)。
+- 取り込んだ後の直し方: 解説・単元は同期 (`/api/admin/grammar/sync`)。選択肢・正解は配る前なら同期、配った後は止めて (retire) 新しい ID で入れ直す。
+  テストは revision を上げて「第N回改1」。本文を直すときは新しい pid / set_id (本文の重複判定は active を見ない)。
+- 回帰テスト: `scripts/health_check/test_english_long_drill.py`・`test_proficiency_test_import.py` (CI `server-tests.yml`)・`test_auto_delivery_shared.py` の [10]。
 
 ### 📐 高校数学ドリル (科目 `math`) のシード (2026-10-06 塾長「数学教材は使える？」→「1→2でやって」)
 - 科目 `math` は前から canonical (server 変更なし・単元の許可リスト無し)。これまでは「システム側で取込済み」で補充ボタンが無かった
@@ -808,6 +842,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 ## 塾生アプリのみ枠 (AIなし) と宿題ドリル (2026-09-24 塾長決定)
 - **塾長方針: 英語の自由演習は開かない。AIなしの生徒が解けるのは「塾長が出した宿題」と「配信した単元ドリル」だけ。**
   `_AI_DISABLED_ALLOWED_EXACT / _PREFIXES` (middleware の許可集合) は変えない。`check_light_tier_middleware.py` が固定している。
+  塾長が CEO で配る 🧪 習熟度テスト・📖 英語長文も「配信した単元ドリル」なので、許可集合を変えずに AIなし枠でも解ける。
 - 宿題の「📝 ドリルで解く」(class.html → `dojo-drill.html?w_subject=&w_topic=&hw=<宿題ID>`) の結果保存は
   `POST /api/student/homework/{id}/drill-attempt` (prefix `/api/student/homework/` は元から許可)。本人の宿題でなければ 404、
   payload と INSERT は `/api/question-attempts` と同じ (`_record_question_attempt_core`)。`metadata.homework_id` で宿題を追える。
@@ -844,7 +879,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - メールのリンク: AIなし枠 (`_ai_blocked_now` が True) は `class.html?tab=homework`、AIあり・AI 体験中は `mypage.html?focus=homework`。
   ★`#homework` のような # 付きのリンクは使わない (ログインをはさむと auth-guard.js が path と search しか引き継がず # が消える)。
   照会は 1 回の SELECT (`_homework_notify_link_paths`)・失敗したら mypage (AIなし枠は mypage が class.html へ送り返す)。
-- CEO の配信結果の文は `_drill_create_message` (経路に合わせる。「LINE/メールで通知を送信しました」と決め打ちしない)。応答に `notify_channels`。
+- CEO の配信結果の文は `_drill_create_message` (経路に合わせる。「LINE/メールで通知を送信しました」と決め打ちしない・習熟度テストで飛ばした
+  配信済みの生徒の数もここ)。応答に `notify_channels`。習熟度テストのメールは件名「🧪 習熟度テスト「…」が届きました」(📖🧪 の節)。
   3日ドリルの summary (dry-run も) に `notify` = {line, email}。
 - 未提出 = `status <> 'completed'` (提出 API と同じ。デスクトップの予約タスクが書く `'assigned'` も未提出)。`GET /api/student/grammar-drills` の
   `summary.open`・並び順、LINE の「やること」もこの数え方。`self_issued` = 生徒が自分で始めたもの (今日の1問・初回診断) で「新しい宿題」に数えない

@@ -6201,7 +6201,8 @@ def _run_weekly_worksheet_generation() -> dict:
                 smode = _student_mode_from_grade(sgrade)
                 # 🏅 英検 語彙 (subject='eiken') は弱点プリントの出題プールが無い (_WEAKNESS_SUBJECT_TO_POOL に無い) ので、
                 #   TOP3 の枠を食って空の節を作らないよう最初から外す (中学は別プール・それ以外は eiken を除いた全科目)
-                _subj_scope = "AND subject = 'chugaku' " if smode == "chugaku" else "AND subject <> 'eiken' "
+                #   📖🧪 2026-10-15: 英語長文・習熟度テストも同じ (推薦プールが無い) = _WEAKNESS_TOP3_EXCLUDED_SUBJECTS
+                _subj_scope = "AND subject = 'chugaku' " if smode == "chugaku" else _weakness_top3_exclude_sql()
 
                 # 🎯 2026-07-22: 3日ドリルルーティン(WEAKNESS_DRILL_ROUTINE_ENABLED)が有効なとき、routine が
                 #   実際に配信している受験生は週次プリントから stand-down し二重送信を防ぐ。★ただし stand-down は
@@ -6902,11 +6903,14 @@ def _run_weakness_aggregation(only_student_id: Optional[int] = None) -> dict:
                 agg[key]["last"] = created
 
         # === 系統 2: 過去 30 日の question_attempts (mock_exam / practice / essay_grade) ===
+        # 🧪 2026-10-15 習熟度テスト (subject='proficiency_test') の解答は弱点にしない (単元名「高校英語 習熟度テスト 第1回」が
+        #   弱点として立つため)。PTEST_FEEDS_WEAKNESS=1 で skill を付けた設問は、提出の時点でその単元ドリルの科目・単元で記録される
         c.execute(
             "SELECT student_id, subject, topic, is_correct, score_got, score_max, created_at, metadata, elapsed_ms "
             "FROM question_attempts "
             "WHERE student_id IS NOT NULL AND student_id > 0 "
             "AND subject IS NOT NULL "
+            "AND COALESCE(subject, '') <> 'proficiency_test' "
             "AND created_at >= ?" + _sid_clause,
             ((cutoff, _only_sid) if _only_sid else (cutoff,)),
         )
@@ -7397,7 +7401,8 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
     # 🧒 2026-07-03 中学生モードは pool=chugaku を渡す → subject="chugaku" バケットのみ返す。
     #   大学プール由来(english/math/social…)の弱点・推薦を中学生に一切出さない(厳守・サーバ側で遮断)。
     # 🏅 英検 語彙 (eiken) は推薦プールが無く、mypage の科目ラベルにも無いので TOP3 から外す (週次プリントと同じ扱い)
-    _pool_clause = "AND subject = 'chugaku' " if (pool or "").strip().lower() == "chugaku" else "AND subject <> 'eiken' "
+    #   📖🧪 2026-10-15: 英語長文・習熟度テストも同じ = _WEAKNESS_TOP3_EXCLUDED_SUBJECTS
+    _pool_clause = "AND subject = 'chugaku' " if (pool or "").strip().lower() == "chugaku" else _weakness_top3_exclude_sql()
 
     conn = db()
     try:
@@ -45599,6 +45604,10 @@ _GRAMMAR_SUBJECT_UNIT_ORDER = {
     "eiken": ["2級 単語", "2級 句動詞・熟語", "準1級 単語", "準1級 句動詞・熟語",
               # 📖 長文型 (本文 + 設問)。在庫は本文の本数で数える
               "2級 長文空所補充", "2級 長文 内容一致", "準1級 長文空所補充", "準1級 長文 内容一致"],
+    # 📖 2026-10-15 英語長文 (長文読解クラス用・科目 english_long)。本文型だけ (questions[] では入らない)。単元 = クラス:
+    #   長文 Lv.1 = 月曜3限 長文読解 Lv.1 / 長文 Lv.2 = 火曜3限 長文読解 Lv.2 / 国公立 長文 = 金曜3限 国公立コース 長文読解。
+    #   取込は手元のファイルから (取込仕様書 docs/drill-import-spec.md・seed-data には置かない)。level は standard だけ。
+    "english_long": ["長文 Lv.1", "長文 Lv.2", "国公立 長文"],
 }
 
 # 🧩 2026-06-21 [multi-subject-drill] question_attempts.subject は弱点集計 _WEAKNESS_SUBJECT_TO_POOL の
@@ -45622,8 +45631,10 @@ _GRAMMAR_SUBJECT_UNIT_ORDER = {
 #     入試道場も中学の5教科を 'chugaku' の1バケット＋topic=単元名 で記録しており、弱点・週次プリント・弱点 TOP3 は
 #     その前提で組まれている。'chugaku_math' で記録すると中学生の弱点プリントの対象 (subject='chugaku') から外れ、
 #     同じ「正負の数」の弱点が入試道場とドリルで別々に数えられてしまう。
+# 📖🧪 2026-10-15 英語長文 (english_long) と習熟度テスト (proficiency_test) も別科目 (下の _PASSAGE_ONLY_SUBJECTS の注記)。
 _GRAMMAR_CANON_SUBJECTS = {"english", "math", "physics", "chemistry", "biology", "earth", "japanese", "social",
-                           "chugaku", "eiken", "chugaku_math", "chugaku_rika", "chugaku_shakai", "chugaku_kokugo"}
+                           "chugaku", "eiken", "chugaku_math", "chugaku_rika", "chugaku_shakai", "chugaku_kokugo",
+                           "english_long", "proficiency_test"}
 _GRAMMAR_SUBJECT_ALIASES = {
     "英語": "english", "eng": "english", "english grammar": "english", "英文法": "english",
     "数学": "math", "mathematics": "math", "数iii": "math", "数学iii": "math",
@@ -45643,6 +45654,10 @@ _GRAMMAR_SUBJECT_ALIASES = {
     "中学国語": "chugaku_kokugo", "chugaku kokugo": "chugaku_kokugo",
     # 🏅 英検 語彙 (2級・準1級)。english (英文法) とは別バンク
     "英検": "eiken", "英検語彙": "eiken", "英検 語彙": "eiken", "eiken vocab": "eiken", "eiken2": "eiken", "eikenp1": "eiken",
+    # 📖🧪 英語長文・習熟度テスト。★「長文」「長文読解」は足さない: /api/question-attempts と弱点集計が日本語の科目名を
+    #   ここで canonical に寄せるので、入試道場などの「長文読解」が english_long に化ける (取り違えようのない名前だけにする)
+    "英語長文": "english_long", "english long": "english_long",
+    "習熟度テスト": "proficiency_test", "proficiency test": "proficiency_test",
 }
 def _canon_grammar_subject(s):
     """ドリル科目を弱点集計の canonical キーへ正規化。未指定は後方互換で 'english'、未知の非別名は '' を返す
@@ -45664,6 +45679,8 @@ _GRAMMAR_SUBJECT_LABEL_JA = {
     "chugaku_rika": "中学理科",
     "chugaku_shakai": "中学社会",
     "chugaku_kokugo": "中学国語",
+    "english_long": "英語長文",
+    "proficiency_test": "習熟度テスト",
 }
 def _drill_attempt_subject(drill_subject) -> str:
     """単元ドリルの解答を question_attempts に記録するときの subject。
@@ -45675,6 +45692,49 @@ def _drill_attempt_subject(drill_subject) -> str:
 
 def _grammar_subject_label_ja(subject):
     return _GRAMMAR_SUBJECT_LABEL_JA.get(_canon_grammar_subject(subject), "英文法")
+
+
+# 📖🧪 2026-10-15 英語長文 (english_long) と習熟度テスト (proficiency_test)。どちらも Codex が書いた手元のファイルを取込スクリプト
+#   (scripts/drill_import・ファイルの中は 1 始まり → 0 始まりに直して送る) で入れる。seed-data には置かない (公開されるため)。
+#   english に混ぜない理由: english は単元が GRAMMAR_UNITS 固定で本文を受けず、今日の1問・初回診断・3日ドリル・弱点 TOP3 が english を
+#   直書きしている (混ぜると長文の設問が 1 問だけ切り離されて出る)。別科目なら中学英語・英検と同じ型で、自動の経路に構造上混ざらない。
+#   - 本文型だけ (_PASSAGE_ONLY_SUBJECTS): questions[] (1 問ずつ) で来たら 422 → 全行が passage_id つき = 1 問ずつの抽出
+#     (passage_id IS NULL) には出てこない
+#   - 取込に盲検 3 名の記録 (review) が要る (_REVIEW_REQUIRED_SUBJECTS)。中身の照合は手元の検査スクリプト (validate_drill_import.py)
+#   - 習熟度テストは 1 ファイル = 1 回分 = 1 単元 (大問 1 つ = 本文 1 つ)。単元名は _PTEST_UNIT_RE。全大問を取込順のまま 1 本のドリルにして
+#     塾長が配る (自動配信には一切出さない = _AUTO_DELIVERY_DENY_SUBJECTS)。解答は弱点集計に入れない (PTEST_FEEDS_WEAKNESS=1 のときだけ
+#     skill を付けた設問を、その単元ドリルの科目・単元として記録する)
+_PASSAGE_ONLY_SUBJECTS = frozenset({"english_long", "proficiency_test"})
+_REVIEW_REQUIRED_SUBJECTS = frozenset({"english_long", "proficiency_test"})
+_GRAMMAR_REVIEW_PROTOCOL = "trillion-blind/v1"
+_PTEST_SUBJECT = "proficiency_test"
+_PTEST_MAX_SECTIONS = 12     # 1 回分の大問 (本文) の上限
+_PTEST_MAX_QUESTIONS = 60    # 1 回分の設問の上限
+# 単元名 = 取込スクリプトが組み立てる「<高校|中学><科目> <シリーズ名> 第<回>回」(直した版は「…第1回改1」)。接頭辞で CEO の学年確認を分ける
+_PTEST_UNIT_RE = re.compile(r"^(高校|中学)(英語|数学|国語|理科|社会) (\S{1,10}) 第([1-9][0-9]?)回(?:改([1-9]))?$")
+_PTEST_META_KV_PREFIX = "ptest_meta:"   # kv_settings の 'ptest_meta:<単元>' = テストの情報と設問ごとの skill
+# 弱点 TOP3・週次プリントの科目範囲から外す科目 (推薦プール _WEAKNESS_SUBJECT_TO_POOL が無い = 空の節を作らない)
+_WEAKNESS_TOP3_EXCLUDED_SUBJECTS = ("eiken", "english_long", "proficiency_test")
+
+
+def _weakness_top3_exclude_sql() -> str:
+    """弱点 TOP3・週次プリントの科目範囲の SQL 断片 (定数だけを埋める・パラメータなし)。"""
+    return "AND subject NOT IN (" + ",".join(f"'{s}'" for s in _WEAKNESS_TOP3_EXCLUDED_SUBJECTS) + ") "
+
+
+def _ptest_feeds_weakness() -> bool:
+    """PTEST_FEEDS_WEAKNESS (既定 0): 1/true/yes/on のときだけ、習熟度テストの skill を付けた設問の解答を
+    その単元ドリルの科目・単元で記録する (→ 弱点集計 → 3日ドリルはレビュー済みの単元ドリルから出す)。呼ぶたびに env を読む。"""
+    return str(os.getenv("PTEST_FEEDS_WEAKNESS", "0") or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _ptest_unit_sort_key(unit):
+    """習熟度テストの単元の自然な並び (高校 → 中学・科目・シリーズ・回・改)。形の違う単元名は最後に名前順。"""
+    m = _PTEST_UNIT_RE.match(str(unit or ""))
+    if not m:
+        return (1, 0, 0, "", 0, 0, str(unit or ""))
+    return (0, ("高校", "中学").index(m.group(1)), ("英語", "数学", "国語", "理科", "社会").index(m.group(2)),
+            m.group(3), int(m.group(4)), int(m.group(5) or 0), "")
 
 
 def _grammar_admin_authed(authorization, x_cron_secret):
@@ -45727,6 +45787,9 @@ def admin_grammar_units(subject: str = "english", authorization: Optional[str] =
             for u, slot in agg.items():
                 if u not in _order:
                     units.append(slot)
+        elif subj == _PTEST_SUBJECT:
+            # 🧪 習熟度テストは 1 回分 = 1 単元。在庫の多い順ではなく 高校/中学・科目・シリーズ・回・改 の順に並べる
+            units = sorted(agg.values(), key=lambda s: _ptest_unit_sort_key(s["unit"]))
         else:
             # 他科目は在庫のある単元のみ(total 降順) — 単元集合は科目ごとに取込内容で決まる
             units = sorted(agg.values(), key=lambda s: -s["total"])
@@ -45777,8 +45840,11 @@ def _grammar_unit_passage_count(c, subject, unit) -> int:
 def _grammar_pick_drill_passages(c, subject, unit, levels, passage_count, exclude_ids=None):
     """本文をランダムに passage_count 本選び、その設問 id を本文順 (passage_seq) で返す → (qids, passage_ids)。
     exclude_ids は前回ドリルの question_ids。その設問が属する **本文ごと** 除外する (同じ本文の残りの設問だけ出さない)。
-    設問が全部 inactive の本文は選ばない (枠だけ消費して 0 問になるのを防ぐ)。"""
+    設問が全部 inactive の本文は選ばない (枠だけ消費して 0 問になるのを防ぐ)。
+    🧪 2026-10-15 習熟度テスト (proficiency_test) だけは本文 (= 大問) を取込順 (ORDER BY id) に選ぶ = 出題順のまま。
+    英検・英語長文は従来どおりランダム。"""
     ph = ",".join(["?"] * len(levels))
+    _order = "ORDER BY id" if subject == _PTEST_SUBJECT else "ORDER BY RANDOM()"
     ex_pids = []
     if exclude_ids:
         ex_ph = ",".join(["?"] * len(exclude_ids))
@@ -45789,14 +45855,14 @@ def _grammar_pick_drill_passages(c, subject, unit, levels, passage_count, exclud
         c.execute(
             f"SELECT id FROM grammar_passages p WHERE subject = ? AND unit = ? AND level IN ({ph}) AND active = 1 "
             f"AND EXISTS (SELECT 1 FROM grammar_questions q WHERE q.passage_id = p.id AND q.active = 1) "
-            f"AND id NOT IN ({exp}) ORDER BY RANDOM() LIMIT ?",
+            f"AND id NOT IN ({exp}) {_order} LIMIT ?",
             (subject, unit, *levels, *ex_pids, passage_count),
         )
     else:
         c.execute(
             f"SELECT id FROM grammar_passages p WHERE subject = ? AND unit = ? AND level IN ({ph}) AND active = 1 "
             f"AND EXISTS (SELECT 1 FROM grammar_questions q WHERE q.passage_id = p.id AND q.active = 1) "
-            f"ORDER BY RANDOM() LIMIT ?",
+            f"{_order} LIMIT ?",
             (subject, unit, *levels, passage_count),
         )
     pids = [int(r["id"]) for r in c.fetchall()]
@@ -45853,6 +45919,7 @@ def admin_grammar_preview(
     """🧑‍🏫 admin: 単元の問題を答え・解説つきでランダムに見る (配信前の確認用・DB には何も書かない)。
     塾長は生徒名簿に居ないので自分にドリルを配って確かめられない (2026-09-24「どんな問題か確認したい」) → CEO の「👀 問題を見る」がこれを呼ぶ。
     長文型の単元 (本文あり) は本文 passage_count 本 (既定 1・上限 3) とその設問を本文順で、それ以外は count 問 (既定 5・上限 20)。
+    🧪 習熟度テストは本数・レベルの指定を使わず、テスト全体 (全大問・取込順) を出す (配る前に全部を確かめるため)。
     抽出は配信と同じ関数 (_grammar_pick_drill_passages / _grammar_pick_drill_question_ids) なので、見えるものと配られるものの形は同じ。"""
     if not _grammar_admin_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
@@ -45875,6 +45942,10 @@ def admin_grammar_preview(
         passage_count = 1
     count = max(1, min(count, 20))
     passage_count = max(1, min(passage_count, 3))
+    if subj == _PTEST_SUBJECT:
+        # 🧪 習熟度テストは配る前にテスト全体 (全大問・出題順・答えと解説つき) を見る。本数とレベルの指定は使わない (配信と同じ)
+        passage_count = _PTEST_MAX_SECTIONS
+        lv = list(GRAMMAR_LEVELS.keys())
     conn = db()
     try:
         c = conn.cursor()
@@ -45944,13 +46015,110 @@ def _grammar_unknown_units_report(unknown_units: dict) -> dict:
         parts.append(f"{_grammar_subject_label_ja(s)}「{_show(u, 40)}」{'本文' if k == '本' else ''}{n}{k}"
                      + (f" (登録済みの「{like}」と見た目が同じで文字が違う)" if like else ""))
     more = f" ほか {len(items) - len(shown)} 種類" if len(items) > len(shown) else ""
+    # 🧪 習熟度テストの単元名は一覧ではなく形 (_PTEST_UNIT_RE) で決まる
+    ptest_hint = ("習熟度テストの単元名は「高校英語 習熟度テスト 第1回」(直した版は「…第1回改1」) の形にしてください "
+                  "(取込スクリプトが組み立てる)。" if any(k[0] == _PTEST_SUBJECT for k in unknown_units) else "")
     return {
         "unknown_units": entries,
         "warning": ("単元名が登録されている単元と一致しないため、取り込まなかった問題・本文があります (エラーに計上): "
                     + "、".join(parts) + more
                     + "。単元名は server/main.py の _GRAMMAR_SUBJECT_UNIT_ORDER と完全一致させてください (綴り・空白・全角/半角)。"
+                    + ptest_hint
                     + "新しい単元を足した直後なら、サーバの反映を待って押し直せば残りだけ入ります。"),
     }
+
+
+def _grammar_import_review_problem(review) -> str:
+    """📖🧪 取込の盲検の記録 (payload['review']) の形の検査。'' = 足りている / それ以外 = 足りないもの (422 の理由)。
+    形: {protocol: 'trillion-blind/v1', solvers: [{label, kind, date}, …] (日付のある別々の解き手 3 名以上), all_agree: true}。
+    ★ここで見るのは形だけ (自己申告)。解き手の答えと正解の照合・item_hash の照合は手元の検査スクリプト (validate_drill_import.py) が行い、
+      取込スクリプトはエラー 0 のときだけ all_agree: true を付けて送る。"""
+    if not isinstance(review, dict):
+        return "review がありません"
+    if review.get("protocol") != _GRAMMAR_REVIEW_PROTOCOL:
+        return f"protocol が {_GRAMMAR_REVIEW_PROTOCOL} ではありません"
+    solvers = review.get("solvers")
+    if not isinstance(solvers, list):
+        return "solvers (解き手) がありません"
+    labels = set()
+    for i, s in enumerate(solvers):
+        if isinstance(s, dict) and isinstance(s.get("date"), str) and s.get("date").strip():
+            labels.add(str(s.get("label") or f"#{i}").strip())
+    if len(labels) < 3:
+        return f"日付のある解き手が 3 名に足りません ({len(labels)} 名)"
+    if review.get("all_agree") is not True:
+        return "all_agree が true ではありません (3 名の答えが正解と一致していない問題が残っている)"
+    return ""
+
+
+def _grammar_import_review_summary(review) -> dict:
+    """events 'grammar_import_review' に残す盲検の要約。名前・モデル名・メモは入れない (公開リポジトリの方針と同じく events にも個人名を残さない)。"""
+    r = review if isinstance(review, dict) else {}
+    out = {}
+    for k in ("protocol", "validator", "file_sha256", "kind", "set_id", "test_id"):
+        v = r.get(k)
+        if isinstance(v, str):
+            out[k] = v[:80]
+    out["all_agree"] = r.get("all_agree") is True
+    solvers = r.get("solvers") if isinstance(r.get("solvers"), list) else []
+    out["solvers"] = [{"label": str(s.get("label") or "")[:10], "kind": str(s.get("kind") or "")[:20],
+                       "date": str(s.get("date") or "")[:20]} for s in solvers[:10] if isinstance(s, dict)]
+    return out
+
+
+def _englong_set_prefix(source) -> str:
+    """英語長文の本文の出典 'englong:<set_id>:<pid>' → まとまりの接頭辞 'englong:<set_id>:'。形が違えば ''。"""
+    parts = str(source or "").strip().split(":")
+    if len(parts) >= 3 and parts[0] == "englong" and parts[1]:
+        return f"englong:{parts[1]}:"
+    return ""
+
+
+def _ptest_meta_from_payload(meta, ptest_units) -> dict:
+    """🧪 payload['ptest_meta'] → {'unit', 'value'} (kv_settings 'ptest_meta:<単元>' に入れる JSON)。おかしければ ValueError
+    (取込は 422 で何も書かない)。ptest_units = {単元: {sections, questions, sources}} (この要求の習熟度テストの本文から数えたもの)。
+    skills = {設問の出典: '科目|単元'}: 設問がこの要求にあり、科目が単元ドリルの科目で、単元がその科目の一覧
+    (english は GRAMMAR_UNITS・ほかは _GRAMMAR_SUBJECT_UNIT_ORDER) にあるものだけ。高校の math などは単元名が決まっていないので不可。"""
+    if not isinstance(meta, dict):
+        raise ValueError("dict ではありません")
+    if len(ptest_units) != 1:
+        raise ValueError("習熟度テストの本文 (1 回分 = 1 単元) と一緒に 1 回分だけ送ってください")
+    unit = next(iter(ptest_units))
+    if meta.get("unit") not in (None, "", unit):
+        raise ValueError("unit が本文の単元と違います")
+    sources = ptest_units[unit]["sources"]
+    skills_in = meta.get("skills") or {}
+    if not isinstance(skills_in, dict):
+        raise ValueError("skills が dict ではありません")
+    skills = {}
+    for src, val in skills_in.items():
+        src_s = str(src or "").strip()[:30]
+        if src_s not in sources:
+            raise ValueError(f"skills の設問 {src_s!r} がこのテストに無い")
+        if not isinstance(val, str) or "|" not in val:
+            raise ValueError(f"skills の値 {str(val)[:40]!r} は '科目|単元' の形ではない")
+        s_raw, u_raw = val.split("|", 1)
+        s_c = _canon_grammar_subject(s_raw.strip()) if s_raw.strip() else ""
+        u_c = u_raw.strip()
+        ok = s_c != _PTEST_SUBJECT and ((s_c == "english" and u_c in GRAMMAR_UNITS)
+                                        or (s_c in _GRAMMAR_SUBJECT_UNIT_ORDER and u_c in _GRAMMAR_SUBJECT_UNIT_ORDER[s_c]))
+        if not ok:
+            raise ValueError(f"skills の単元 {val[:40]!r} は単元ドリルに無い")
+        skills[src_s] = f"{s_c}|{u_c}"
+
+    def _s(k, n):
+        v = meta.get(k)
+        return v.strip()[:n] if isinstance(v, str) else None
+
+    def _i(k):
+        v = meta.get(k)
+        return v if isinstance(v, int) and not isinstance(v, bool) else None
+
+    value = {"unit": unit, "test_id": _s("test_id", 20), "title": _s("title", 120), "target": _s("target", 10),
+             "subject": _s("subject", 20), "round": _i("round"), "revision": _i("revision") or 0,
+             "time_limit_min": _i("time_limit_min"), "section_count": ptest_units[unit]["sections"],
+             "question_count": ptest_units[unit]["questions"], "skills": skills}
+    return {"unit": unit, "value": value}
 
 
 @app.post("/api/admin/grammar/import")
@@ -45962,8 +46130,21 @@ def admin_grammar_import(
     """🧑‍🏫 admin/CRON: grammar_questions に分類済み英文法問題を一括投入。
     payload: { questions: [ {unit, level, stem, choices:[..], answer:int(0始まり), explanation?, source?, source_exam_question_id?} ], dedup?: true }
     dedup=true (既定) なら同一 (source_exam_question_id + stem) / (stem + unit + subject) は skip。再投入で重複しない。
-    単元の並びが決まっている科目 (_GRAMMAR_SUBJECT_UNIT_ORDER = 中学英語・中学数学・英検) は、そこに無い unit を入れずに
-    errors に数え、応答の unknown_units / warning で返す。english (GRAMMAR_UNITS で skip) と他科目 (任意 unit) は従来どおり。"""
+    単元の並びが決まっている科目 (_GRAMMAR_SUBJECT_UNIT_ORDER = 中学英語・中学数学・英検・英語長文) は、そこに無い unit を入れずに
+    errors に数え、応答の unknown_units / warning で返す。english (GRAMMAR_UNITS で skip) と他科目 (任意 unit) は従来どおり。
+    📖🧪 2026-10-15 (英語長文 english_long・習熟度テスト proficiency_test を手元の取込スクリプト scripts/drill_import から入れるため):
+      - 任意の dry_run: true … 最後まで数えて rollback する (何も書かない)。応答に dry_run
+      - 任意の all_or_nothing: true … 本文 (passages) が 1 本でも形式不正・知らない単元名・english の本文なら、この要求を全部取り消して
+        ok:false (rejected_index / reason)。取込済みの本文 (重複) は不正ではない。questions[] には効かない
+      - 本文型だけの科目 (_PASSAGE_ONLY_SUBJECTS) は questions[] で来たら 422。盲検の記録 review が必須 (_REVIEW_REQUIRED_SUBJECTS・
+        _grammar_import_review_problem)。無い・足りなければ 422 で何も書かない。この 2 科目は dedup の指定にかかわらず本文の重複を見て、
+        level は standard にそろえる
+      - まとまりの照合: 習熟度テストは単元、英語長文は本文の出典 'englong:<set_id>:' ごと。取込済みのまとまりに新しい本文を足す要求は
+        ok:false (別のテストとの合体・set_id の使い回しを防ぐ)。全部取込済みなら already_imported: true (何も増えない)
+      - 習熟度テストの単元名は _PTEST_UNIT_RE (合わなければ errors + unknown_units)・1 回分は大問 _PTEST_MAX_SECTIONS・
+        設問 _PTEST_MAX_QUESTIONS まで (超えたら 422)。ptest_meta (任意) は同じトランザクションで kv_settings 'ptest_meta:<単元>' に保存
+      - この 2 科目の本文を 1 本でも入れたら events 'grammar_import_review' (盲検の要約・名前なし)
+      ★CEO の補充ボタン (dry_run・all_or_nothing・review を送らない) の動きは変わらない。"""
     if not _grammar_admin_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
     questions = payload.get("questions") or []
@@ -45972,18 +46153,112 @@ def admin_grammar_import(
     if len(questions) > 2000:
         raise HTTPException(status_code=422, detail="一度に投入できるのは2000問までです")
     dedup = payload.get("dedup", True)
+    dry_run = bool(payload.get("dry_run"))
+    all_or_nothing = bool(payload.get("all_or_nothing"))
     # 🧩 2026-06-21 [multi-subject-drill] 科目を受理(既定 english=後方互換)。canonical科目コードへ正規化(弱点集計の整合)。english 以外は GRAMMAR_UNITS 検証を外す。
     _subj_in = payload.get("subject")
     subject_default = _canon_grammar_subject(_subj_in)
     if _subj_in and subject_default not in _GRAMMAR_CANON_SUBJECTS:
         raise HTTPException(status_code=422, detail=f"subject が不正です。{sorted(_GRAMMAR_CANON_SUBJECTS)} のいずれか(別名 数学/英語/国語/社会等も可)で指定してください")
+    # 📖 [長文型 2026-09-24] passages: [{unit, level?, title?, body, body_ja?, source?, questions:[{stem, choices, answer, explanation?}]}]
+    #   本文は body の正規化ハッシュで重複判定 (同じ本文は本文ごと skip)。設問は stem の重複判定をしない
+    #   (大問2 の設問は「( 1 ) に入る語」のように本文をまたいで同文になるため)。english は GRAMMAR_UNITS 固定で長文の単元が無いので受けない。
+    #   (2026-10-15: 形の検査は何か書く前に行う。以前は問題を入れた後に 422 で投げ、commit しないので同じく何も入らなかった)
+    passages = payload.get("passages") or []
+    if passages and not isinstance(passages, list):
+        raise HTTPException(status_code=422, detail="passages が配列ではありません")
+    if len(passages) > 200:
+        raise HTTPException(status_code=422, detail="一度に投入できる本文は 200 本までです")
+    # 📖🧪 事前の検査 (何か書く前に 422): 本文型だけの科目の questions[]・盲検の記録・習熟度テストの大きさ・ptest_meta
+    for q in questions:
+        if isinstance(q, dict) and _canon_grammar_subject(q.get("subject") or subject_default) in _PASSAGE_ONLY_SUBJECTS:
+            raise HTTPException(status_code=422, detail="英語長文・習熟度テストは passages[] (本文 + 設問) でだけ取り込めます (questions[] では入れません)")
+    groups = {}            # (科目, まとまりの鍵) -> {(単元, 本文の body_hash)}。鍵 = 単元 (習熟度テスト) / 'englong:<set_id>:' (英語長文)
+    review_passages = 0    # 盲検の記録が要る科目の本文の数
+    ungrouped = 0          # そのうちまとまりの鍵が無い本文 (英語長文で出典の形が違う)
+    ptest_units = {}       # 習熟度テストの単元 -> {sections, questions, sources}
+    for p in passages:
+        if not isinstance(p, dict):
+            continue
+        p_subj = _canon_grammar_subject(p.get("subject") or subject_default)
+        if p_subj not in _REVIEW_REQUIRED_SUBJECTS:
+            continue
+        review_passages += 1
+        p_unit = p.get("unit").strip() if isinstance(p.get("unit"), str) else ""
+        p_qs = p.get("questions") if isinstance(p.get("questions"), list) else []
+        if p_subj == _PTEST_SUBJECT:
+            st = ptest_units.setdefault(p_unit, {"sections": 0, "questions": 0, "sources": set()})
+            st["sections"] += 1
+            st["questions"] += len(p_qs)
+            for q in p_qs:
+                if isinstance(q, dict):
+                    st["sources"].add(str(q.get("source") or p.get("source") or "pool").strip()[:30])
+            key = p_unit
+        else:
+            key = _englong_set_prefix(p.get("source"))
+        body = p.get("body")
+        if key and isinstance(body, str) and body.strip():
+            groups.setdefault((p_subj, key), set()).add((p_unit, _grammar_passage_hash(body.strip())))
+        else:
+            ungrouped += 1
+    if review_passages:
+        why = _grammar_import_review_problem(payload.get("review"))
+        if why:
+            raise HTTPException(status_code=422, detail=f"英語長文・習熟度テストの取込には盲検 3 名の記録 (review) が要ります: {why}。何も取り込んでいません")
+    for u, st in ptest_units.items():
+        if st["sections"] > _PTEST_MAX_SECTIONS or st["questions"] > _PTEST_MAX_QUESTIONS:
+            raise HTTPException(status_code=422, detail=(
+                f"習熟度テスト「{u[:40]}」は 1 回分 大問 {_PTEST_MAX_SECTIONS}・設問 {_PTEST_MAX_QUESTIONS} までです "
+                f"(大問 {st['sections']}・設問 {st['questions']})。何も取り込んでいません"))
+    ptest_meta = None
+    if payload.get("ptest_meta") is not None:
+        try:
+            ptest_meta = _ptest_meta_from_payload(payload.get("ptest_meta"), ptest_units)
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=f"ptest_meta が不正です: {e}。何も取り込んでいません")
     inserted = 0
     skipped = 0
     errors = 0
     unknown_units = {}  # 🧷 (subject, unit, "問" | "本") -> 件数。_GRAMMAR_SUBJECT_UNIT_ORDER に無い単元名で弾いた分
+    p_inserted = p_skipped = 0
+    review_done = {"passages": 0, "questions": 0, "subjects": set(), "units": set(), "prefixes": set()}
+    ptest_landed = set()   # 本文が入った (または取込済みだった) 習熟度テストの単元
     conn = db()
     try:
         c = conn.cursor()
+
+        def _reject(index, reason, detail):
+            # all_or_nothing / まとまりの照合で止める: この要求で書いたものは全部取り消す (何も入らない)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            log.warning(f"[GrammarImport] 取込を取り消し (reason={reason} index={index}): {detail}")
+            return {"ok": False, "dry_run": dry_run, "inserted": 0, "skipped": skipped, "errors": errors,
+                    "received": len(questions), "passages_inserted": 0, "passages_skipped": p_skipped,
+                    "passages_received": len(passages), "rejected_index": index, "reason": reason, "detail": detail,
+                    **_grammar_unknown_units_report(unknown_units)}
+
+        # 📖🧪 まとまり (習熟度テストの単元 / 英語長文の set_id) の照合: 取込済みのまとまりには本文を足さない
+        already_groups = 0
+        if groups and _grammar_has_passages():
+            for (g_subj, key), hashes in sorted(groups.items()):
+                # 単元ごと比べる (同じ set_id を別の単元で入れ直すのも「足す」に数える = 同じ本文が 2 つの単元に入らない)
+                if g_subj == _PTEST_SUBJECT:
+                    c.execute("SELECT unit, body_hash FROM grammar_passages WHERE subject = ? AND unit = ?", (g_subj, key))
+                else:
+                    c.execute(f"SELECT unit, body_hash FROM grammar_passages WHERE subject = ? "
+                              f"AND substr(COALESCE(source, ''), 1, {int(len(key))}) = ?", (g_subj, key))
+                have = {(str(r["unit"] or ""), str(r["body_hash"] or "")) for r in c.fetchall()}
+                if not have:
+                    continue
+                if hashes - have:
+                    what = f"習熟度テスト「{key[:40]}」" if g_subj == _PTEST_SUBJECT else f"英語長文の set_id「{key[8:-1][:20]}」"
+                    return _reject(None, "group_exists", (
+                        f"{what} は取込済みで、そこに新しい本文を足すことはできません (別のテストとの合体・set_id の使い回しを防ぐため)。"
+                        "直した版は習熟度テストなら revision を上げて「第N回改1」、英語長文なら新しい set_id で入れてください"))
+                already_groups += 1
+        already_imported = bool(groups) and already_groups == len(groups) and not ungrouped
         for q in questions:
             try:
                 unit = (q.get("unit") or "").strip()
@@ -46046,21 +46321,14 @@ def admin_grammar_import(
                 inserted += 1
             except Exception:
                 errors += 1
-        # 📖 [長文型 2026-09-24] passages: [{unit, level?, title?, body, body_ja?, source?, questions:[{stem, choices, answer, explanation?}]}]
-        #   本文は body の正規化ハッシュで重複判定 (同じ本文は本文ごと skip)。設問は stem の重複判定をしない
-        #   (大問2 の設問は「( 1 ) に入る語」のように本文をまたいで同文になるため)。english は GRAMMAR_UNITS 固定で長文の単元が無いので受けない。
-        passages = payload.get("passages") or []
-        if passages and not isinstance(passages, list):
-            raise HTTPException(status_code=422, detail="passages が配列ではありません")
-        if len(passages) > 200:
-            raise HTTPException(status_code=422, detail="一度に投入できる本文は 200 本までです")
-        p_inserted = p_skipped = 0
         if passages:
             if not _grammar_has_passages():
                 raise HTTPException(status_code=503, detail="長文用の列/表 (passage_id / grammar_passages) がまだありません (デプロイ反映待ちの可能性)")
-            for p in passages:
+            for p_idx, p in enumerate(passages):
                 try:
                     if not isinstance(p, dict):
+                        if all_or_nothing:
+                            return _reject(p_idx, "invalid_passage", f"本文 {p_idx + 1} 本目が object ではありません")
                         p_skipped += 1
                         continue
                     unit = (p.get("unit") or "").strip()
@@ -46069,15 +46337,26 @@ def admin_grammar_import(
                     subj = _canon_grammar_subject(p.get("subject") or subject_default)
                     if (not unit or not body or not isinstance(pqs, list) or not pqs
                             or subj not in _GRAMMAR_CANON_SUBJECTS or subj == "english"):
+                        if all_or_nothing:
+                            return _reject(p_idx, "invalid_passage",
+                                           f"本文 {p_idx + 1} 本目の unit / body / questions / subject が不正です (english の本文は受けない)")
                         p_skipped += 1
                         continue
                     if subj in _GRAMMAR_SUBJECT_UNIT_ORDER and unit not in _GRAMMAR_SUBJECT_UNIT_ORDER[subj]:
                         errors += 1  # 🧷 設問と同じ: 知らない単元名の本文は設問ごと入れず、エラーとして知らせる
                         unknown_units[(subj, unit, "本")] = unknown_units.get((subj, unit, "本"), 0) + 1
+                        if all_or_nothing:
+                            return _reject(p_idx, "unknown_unit", f"本文 {p_idx + 1} 本目の単元名「{unit[:40]}」が登録されていません")
+                        continue
+                    if subj == _PTEST_SUBJECT and not _PTEST_UNIT_RE.match(unit):
+                        errors += 1  # 🧪 習熟度テストの単元名は一覧ではなく形で決まる (「高校英語 習熟度テスト 第1回」)
+                        unknown_units[(subj, unit, "本")] = unknown_units.get((subj, unit, "本"), 0) + 1
+                        if all_or_nothing:
+                            return _reject(p_idx, "unknown_unit", f"本文 {p_idx + 1} 本目の単元名「{unit[:40]}」が習熟度テストの形ではありません")
                         continue
                     level = (p.get("level") or "standard").strip()
-                    if level not in GRAMMAR_LEVELS:
-                        level = "standard"
+                    if level not in GRAMMAR_LEVELS or subj in _PASSAGE_ONLY_SUBJECTS:
+                        level = "standard"   # 📖🧪 英語長文・習熟度テストは standard だけ (クラス自動宿題も standard で引く)
                     # 文字列であるべき欄が list/dict だと c.execute で落ちる (psycopg "cannot adapt") → 先に弾く
                     for _k in ("title", "body_ja", "source"):
                         if p.get(_k) is not None and not isinstance(p.get(_k), str):
@@ -46103,10 +46382,12 @@ def admin_grammar_import(
                         norm_qs.append((stem, choices, answer, _expl or None,
                                         str(q.get("source") or p.get("source") or "pool").strip()[:30]))
                     bh = _grammar_passage_hash(body)
-                    if dedup:
+                    if dedup or subj in _PASSAGE_ONLY_SUBJECTS:
                         c.execute("SELECT id FROM grammar_passages WHERE subject = ? AND unit = ? AND body_hash = ? LIMIT 1", (subj, unit, bh))
                         if c.fetchone():
                             p_skipped += 1
+                            if subj == _PTEST_SUBJECT:
+                                ptest_landed.add(unit)
                             continue
                     c.execute(
                         "INSERT INTO grammar_passages (subject, unit, level, title, body, body_ja, source, body_hash) "
@@ -46124,8 +46405,20 @@ def admin_grammar_import(
                         )
                         inserted += 1
                     p_inserted += 1
-                except (ValueError, TypeError, AttributeError):
+                    if subj in _REVIEW_REQUIRED_SUBJECTS:
+                        review_done["passages"] += 1
+                        review_done["questions"] += len(norm_qs)
+                        review_done["subjects"].add(subj)
+                        review_done["units"].add(unit)
+                        _pref = _englong_set_prefix(p.get("source")) if subj != _PTEST_SUBJECT else ""
+                        if _pref:
+                            review_done["prefixes"].add(_pref)
+                    if subj == _PTEST_SUBJECT:
+                        ptest_landed.add(unit)
+                except (ValueError, TypeError, AttributeError) as _ve:
                     # 形式不正 (数値でない answer・文字列でない unit/body/stem など) は本文ごと skip。SQL の前で落ちるので取り消し不要
+                    if all_or_nothing:
+                        return _reject(p_idx, "invalid_question", f"本文 {p_idx + 1} 本目の形式が不正です ({str(_ve)[:40]})")
                     p_skipped += 1
                 except Exception as _pe:
                     # ★本文 INSERT の後で落ちると Postgres はトランザクションが失敗状態になり、以降の本文は全部 errors、
@@ -46136,17 +46429,67 @@ def admin_grammar_import(
                         conn.rollback()
                     except Exception:
                         pass
-                    return {"ok": False, "inserted": 0, "skipped": skipped, "errors": errors, "received": len(questions),
+                    return {"ok": False, "dry_run": dry_run, "inserted": 0, "skipped": skipped, "errors": errors, "received": len(questions),
                             "passages_inserted": 0, "passages_skipped": p_skipped, "passages_received": len(passages),
                             "detail": "本文の取込中にエラーが起きたため、この要求の取込は全部取り消しました (同じ内容を再送できます)",
                             **_grammar_unknown_units_report(unknown_units)}
-        conn.commit()
+        # 🧪 テストの情報 (ptest_meta) は本文と同じトランザクションで kv に入れる (dry_run なら下の rollback で消える。
+        #   _kv_set は別の接続を開くので使わない)。本文が入らなかった (単元名の誤りなど) テストの分は入れない
+        ptest_meta_saved = False
+        if ptest_meta is not None and ptest_meta["unit"] in ptest_landed:
+            try:
+                c.execute(_KV_SETTINGS_DDL)
+                c.execute(
+                    "INSERT INTO kv_settings (key, value) VALUES (?, ?) "
+                    "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP",
+                    (_PTEST_META_KV_PREFIX + ptest_meta["unit"], json.dumps(ptest_meta["value"], ensure_ascii=False)),
+                )
+                ptest_meta_saved = True
+            except Exception as _ke:
+                # 失敗したトランザクションの commit は Postgres では黙って ROLLBACK になる → ここで取り消して正直に返す
+                log.warning(f"[GrammarImport] ptest_meta の保存に失敗 (この要求の取込は全部取り消し): {type(_ke).__name__}: {_ke}")
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+                return {"ok": False, "dry_run": dry_run, "inserted": 0, "skipped": skipped, "errors": errors + 1,
+                        "received": len(questions), "passages_inserted": 0, "passages_skipped": p_skipped,
+                        "passages_received": len(passages),
+                        "detail": "テストの情報 (ptest_meta) を保存できなかったため、この要求の取込は全部取り消しました (同じ内容を再送できます)"}
+        if dry_run:
+            conn.rollback()
+        else:
+            conn.commit()
         unknown_report = _grammar_unknown_units_report(unknown_units)
         if unknown_report:
             log.warning(f"[GrammarImport] {unknown_report['warning']}")
-        return {"ok": True, "inserted": inserted, "skipped": skipped, "errors": errors, "received": len(questions),
-                "passages_inserted": p_inserted, "passages_skipped": p_skipped, "passages_received": len(passages),
-                **unknown_report}
+        if review_done["passages"] and not dry_run:
+            # 📖🧪 盲検の記録を残す (_EVENTS_RETENTION に載らない名前なので消えない)。取込の後に別に書く
+            #   (同じトランザクションで書いて失敗すると、Postgres では取込ごと黙って消えるため)
+            try:
+                c.execute(
+                    "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                    ("grammar_import_review", json.dumps({
+                        "subjects": sorted(review_done["subjects"]), "units": sorted(review_done["units"])[:20],
+                        "passages_inserted": review_done["passages"], "inserted": review_done["questions"],
+                        "source_prefix": sorted(review_done["prefixes"])[:20],
+                        "review": _grammar_import_review_summary(payload.get("review")),
+                    }, ensure_ascii=False), "admin"),
+                )
+                conn.commit()
+            except Exception as _ee:
+                log.warning(f"[GrammarImport] grammar_import_review の記録に失敗 (取込は済んでいる): {type(_ee).__name__}: {_ee}")
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+        out = {"ok": True, "dry_run": dry_run, "inserted": inserted, "skipped": skipped, "errors": errors, "received": len(questions),
+               "passages_inserted": p_inserted, "passages_skipped": p_skipped, "passages_received": len(passages),
+               **unknown_report}
+        if review_passages:
+            out["already_imported"] = already_imported
+            out["ptest_meta_saved"] = ptest_meta_saved
+        return out
     finally:
         conn.close()
 
@@ -46517,19 +46860,23 @@ def _homework_notify_channels(source: str = "auto") -> dict:
     return {"line": line, "email": email, "email_mode": mode, "source": src}
 
 
-def _drill_create_message(n: int, title: str, ch: Optional[dict]) -> str:
+def _drill_create_message(n: int, title: str, ch: Optional[dict], already_taken: int = 0) -> str:
     """🧑‍🏫 CEO の配信結果の文 (admin_grammar_drill_create の message)。お知らせの経路 (_homework_notify_channels) に合わせて書く。
-    ★「LINE/メールで通知を送信しました」と決め打ちしない (2026-10-15 から既定は LINE を送らない)。習熟度テストの配信 (D6) も使う。"""
+    ★「LINE/メールで通知を送信しました」と決め打ちしない (2026-10-15 から既定は LINE を送らない)。
+    already_taken = 🧪 習熟度テストを前に配られていたので外した生徒の数 (全員なら 409 の detail にもこの文を使う)。"""
+    taken_note = f"（このテストを配信済みの {already_taken}名は飛ばしました）" if already_taken else ""
     if not n:
+        if already_taken:
+            return f"⚠️ 「{title}」: 選んだ生徒は全員このテストを配信済みです（新しく配った生徒はいません。同じ生徒に同じテストは 2 回配れません）"
         return f"✅ ドリル「{title}」: 新しく配った生徒はいません（配信済みの生徒は飛ばしました）"
     ch = ch or {}
     if ch.get("line"):
         via = "LINE・メール" if ch.get("email") else "LINE"
-        return f"✅ ドリル「{title}」を {n}名に配信しました（アプリに表示＋{via}でお知らせ）"
+        return f"✅ ドリル「{title}」を {n}名に配信しました（アプリに表示＋{via}でお知らせ）" + taken_note
     if ch.get("email"):
-        return f"✅ ドリル「{title}」を {n}名に配信しました（アプリに表示＋登録メールでお知らせ）"
+        return f"✅ ドリル「{title}」を {n}名に配信しました（アプリに表示＋登録メールでお知らせ）" + taken_note
     return (f"✅ ドリル「{title}」を {n}名に配信しました（生徒がアプリを開くと「🆕 新しい宿題」と表示されます。"
-            f"LINE・メールは送っていません）")
+            f"LINE・メールは送っていません）" + taken_note)
 
 
 def _homework_notify_link_paths(student_ids: list) -> dict:
@@ -46573,6 +46920,8 @@ def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count:
     notify_list: [{"id":int,"name":str,"email":str|None,"line_user_id":str|None}]
     - リンク: AIなし枠は {BASE_URL}/class.html?tab=homework、AIあり・AI 体験中は {BASE_URL}/mypage.html?focus=homework。
       ★# 付きのリンクは使わない (ログインをはさむと auth-guard.js が path と search しか引き継がず # が消える)。
+    - 🧪 習熟度テスト (subject='proficiency_test') はメールの件名を「🧪 習熟度テスト「…」が届きました」にし、
+      「解説がその場で表示」は書かない (アプリ内の帯は「🆕 新しい宿題」のまま・2026-10-15)。
     - _do_line_push は line_user_id 無しだと 404 を投げるため、紐付け済みのみ呼ぶ。
     - 1 人失敗しても他生徒の通知は止めない ([[feedback-silent-fail-send-email]] 準拠で log に残す)。
     - 同期 def なので FastAPI は threadpool で実行 = event loop を塞がない (admin_send_message と同方式)。
@@ -46587,6 +46936,7 @@ def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count:
                  f"email_mode={ch['email_mode']} line={ch['line']} n={len(notify_list or [])}")
         return result
     subj_label = _grammar_subject_label_ja(subject)  # 🧩 科目別ラベル(数学/国語… ・既定 英文法)
+    is_ptest = _canon_grammar_subject(subject) == _PTEST_SUBJECT
     line_ok = mail_ok = mail_fail = 0
     email_idx = 0
     paths = _homework_notify_link_paths([s.get("id") for s in notify_list]) if ch["email"] else {}
@@ -46613,7 +46963,6 @@ def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count:
         if email_idx > 0:
             _t.sleep(1.5)  # Resend rate limit 回避
         email_idx += 1
-        subj = f"📝 新しい{subj_label}の宿題「{unit}」が届きました"
         try:
             _path = paths.get(int(sid), "mypage")
         except (TypeError, ValueError):
@@ -46622,11 +46971,21 @@ def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count:
             where = f"塾生アプリの「📝 宿題」タブから挑戦してください:\n{BASE_URL}/class.html?tab=homework"
         else:
             where = f"マイページの「📚 宿題」から挑戦してください:\n{BASE_URL}/mypage.html?focus=homework"
-        body = (
-            f"「{unit}」の{subj_label}ドリル（全{question_count}問）が配信されました。\n\n"
-            f"{where}\n\n"
-            f"※ 解いて提出すると、間違えた問題の解説がその場で表示されます。"
-        )
+        if is_ptest:
+            # 🧪 習熟度テスト (2026-10-15): テストと分かる件名にし、「解説がその場で」は書かない (授業の指示どおりに解く・提出は 1 回)
+            subj = f"🧪 習熟度テスト「{unit}」が届きました"
+            body = (
+                f"習熟度テスト「{unit}」（全{question_count}問）が配信されました。\n\n"
+                f"{where}\n\n"
+                f"※ 授業の指示どおりに解いて提出してください（提出は1回だけです）。"
+            )
+        else:
+            subj = f"📝 新しい{subj_label}の宿題「{unit}」が届きました"
+            body = (
+                f"「{unit}」の{subj_label}ドリル（全{question_count}問）が配信されました。\n\n"
+                f"{where}\n\n"
+                f"※ 解いて提出すると、間違えた問題の解説がその場で表示されます。"
+            )
         res = None
         for attempt in range(3):  # 429 リトライ (最大3回・指数バックオフ)
             try:
@@ -46659,7 +47018,11 @@ def admin_grammar_drill_create(
     payload: { unit (必須), levels?: ["standard","advanced"] (既定=偏差値55-65), count?: 25, student_ids: [..] (必須・非空),
                exclude_drill_id?: int (任意・このドリルで出した問題を除外=同単元の新問のみ出題), title?: str (任意・タイトル上書き) }
     作成時に出題を固定 (全生徒同一問題) → 問題別正解率が比較可能。
-    🎯 exclude_drill_id を渡すと「弱点対策ドリル」: 間違いの多かった単元を、前回と被らない新しい問題で再出題できる。"""
+    🎯 exclude_drill_id を渡すと「弱点対策ドリル」: 間違いの多かった単元を、前回と被らない新しい問題で再出題できる。
+    🧪 2026-10-15 習熟度テスト (subject='proficiency_test'): 単元 (= 1 回分) の全大問を取込順のまま 1 本のドリルにする
+      (levels・count・passage_count は使わない)。単元が空 (科目まるごと) と exclude_drill_id は 422。このテストを前に配られた生徒は
+      配信先から外して応答の already_taken に出し、全員が外れたら 409 (空のドリルは作らない)。allow_retake: true で外さない (CEO には出さない)。
+      お知らせのメールの件名は「🧪 習熟度テスト「…」が届きました」(件名と本文は _notify_grammar_drill_assigned を参照)。"""
     if not _grammar_admin_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
 
@@ -46667,6 +47030,9 @@ def admin_grammar_drill_create(
     if subject not in _GRAMMAR_CANON_SUBJECTS:
         raise HTTPException(status_code=422, detail=f"subject が不正です。{sorted(_GRAMMAR_CANON_SUBJECTS)} のいずれか(別名 数学/英語/国語/社会等も可)で指定してください")
     unit = (payload.get("unit") or "").strip()
+    is_ptest = subject == _PTEST_SUBJECT
+    if is_ptest and not unit:
+        raise HTTPException(status_code=422, detail="習熟度テストは、配るテスト (単元) を選んでください")
     # 🧩 2026-07-01 [科目単位ドリル] unit 空 = その科目のプール全体からまとめて出題。
     #   数学/理科/社会は単元が粗い(各2-5種)ため CEO 弱点パネルからは科目まるごと配信する。
     #   unit 指定あり(英語の関係詞・国語の古文 等)は従来通り単元ピンポイント。
@@ -46680,6 +47046,8 @@ def admin_grammar_drill_create(
     levels = [str(l).strip() for l in levels if str(l).strip() in GRAMMAR_LEVELS]
     if not levels:
         levels = ["standard", "advanced"]
+    if is_ptest:
+        levels = list(GRAMMAR_LEVELS.keys())   # 🧪 テストはレベルで絞らない (CEO の ③ の指定で 0 本になって 400 にしない)
     try:
         count = int(payload.get("count") or 25)
     except (TypeError, ValueError):
@@ -46701,6 +47069,9 @@ def admin_grammar_drill_create(
             exclude_drill_id = int(exclude_drill_id)
         except (TypeError, ValueError):
             exclude_drill_id = None
+    if is_ptest and exclude_drill_id:
+        raise HTTPException(status_code=422, detail="習熟度テストは弱点対策の再配信に使えません (同じテストを配り直すことはできません)")
+    allow_retake = is_ptest and payload.get("allow_retake") is True
     # タイトル上書き (任意): 対策ドリルに「🎯弱点対策」等を付けて一覧/宿題で識別できるようにする。
     # str() で囲うのは title が非文字列 (数値/配列等) で来ても 500 を出さず無害化するため (count/student_ids と同方針)。
     title_override = str(payload.get("title") or "").strip()[:200] or None
@@ -46723,7 +47094,18 @@ def admin_grammar_drill_create(
         #   ★判定は単元の在庫で行う (client の指定に依存しない): 弱点対策の再配信など古い経路から来ても本文がバラけない。
         passage_ids = []
         _n_pass = 0 if subject_level else _grammar_unit_passage_count(c, subject, unit)
-        if _n_pass > 0:
+        if is_ptest and _n_pass > 0:
+            # 🧪 習熟度テスト: 全大問 (生きている設問のある本文すべて) を取込順のまま (_grammar_pick_drill_passages が ORDER BY id)
+            if _n_pass > _PTEST_MAX_SECTIONS:
+                raise HTTPException(status_code=400, detail=f"習熟度テスト「{unit}」の大問が {_n_pass} 本あり、上限 {_PTEST_MAX_SECTIONS} 本を超えています")
+            qids, passage_ids = _grammar_pick_drill_passages(c, subject, unit, levels, _n_pass, None)
+            if not qids:
+                raise HTTPException(status_code=400, detail=f"習熟度テスト「{unit}」に出せる設問がありません (止めた設問だけ)")
+            count = len(qids)
+            title = title_override or f"🧪 {unit}（全{count}問）"
+        elif is_ptest:
+            raise HTTPException(status_code=400, detail=f"習熟度テスト「{unit}」は取り込まれていません (本文 0 本)。単元名を確かめてください")
+        elif _n_pass > 0:
             try:
                 passage_count = int(payload.get("passage_count") or 2)
             except (TypeError, ValueError):
@@ -46753,6 +47135,23 @@ def admin_grammar_drill_create(
                 )
             level_label = "・".join(GRAMMAR_LEVELS.get(l, l) for l in levels)
             title = title_override or f"{unit}ドリル（{level_label}・{count}問）"
+
+        # 🧪 同じ生徒に同じテストを 2 回は配らない (答えは提出直後に見えるので、2 回目は点数の意味がない)。
+        #   前に配られた生徒は外して already_taken に出す。全員なら空のドリルを作らずに 409。allow_retake で外さない
+        already_taken = []
+        if is_ptest:
+            _ph_t = ",".join(["?"] * len(student_ids))
+            c.execute(
+                f"SELECT DISTINCT a.student_id FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
+                f"WHERE d.subject = ? AND d.unit = ? AND a.student_id IN ({_ph_t})",
+                (subject, unit, *student_ids),
+            )
+            _taken = sorted({int(r["student_id"]) for r in c.fetchall()})
+            if _taken and not allow_retake:
+                already_taken = _taken
+                student_ids = [s_ for s_ in student_ids if s_ not in set(_taken)]
+                if not student_ids:
+                    raise HTTPException(status_code=409, detail=_drill_create_message(0, title, None, already_taken=len(_taken)))
 
         # 2) ドリル作成 (question_ids 固定)
         c.execute(
@@ -46823,6 +47222,12 @@ def admin_grammar_drill_create(
                 log.warning(f"[GrammarDrillNotify] schedule failed: {e}")
         sent_ch = {"line": bool(ch["line"] and scheduled), "email": bool(ch["email"] and scheduled)}
 
+        taken_list = []
+        if already_taken:
+            _ph_n = ",".join(["?"] * len(already_taken))
+            c.execute(f"SELECT id, name FROM students WHERE id IN ({_ph_n})", tuple(already_taken))
+            _names = {int(r["id"]): r["name"] for r in c.fetchall()}
+            taken_list = [{"student_id": s_, "name": _names.get(s_)} for s_ in already_taken]
         return {
             "ok": True,
             "drill_id": drill_id,
@@ -46832,10 +47237,11 @@ def admin_grammar_drill_create(
             "passage_count": len(passage_ids),   # 📖 長文型なら本文の本数 (0 = 従来の 1 問ずつ)
             "passage_ids": passage_ids,
             "assigned": assigned,
+            "already_taken": taken_list,         # 🧪 習熟度テストを前に配られていたので外した生徒 (それ以外は常に [])
             "notified": len(notify_list) if scheduled else 0,
             "notify_channels": {"line": ch["line"], "email": ch["email"]},
             "skipped": [s for s in student_ids if s not in found],
-            "message": _drill_create_message(len(assigned), title, sent_ch),
+            "message": _drill_create_message(len(assigned), title, sent_ch, already_taken=len(already_taken)),
         }
     except HTTPException:
         raise
@@ -46917,6 +47323,9 @@ def _weakness_routine_send_cap() -> int:
 #     exam_questions を分解した古い数学の行 (source 'pool' 等) は出さない
 #   - chugaku*: 中学 5 教科のシード (chugaku_*_pool_v1.json。作問 → 盲検 3 名 → 点検)
 #   - eiken: 英検 2級 eiken2-* / 準1級 eikenp1-* (語彙・長文とも。eiken_*_pool_*.json の blind_review)。本文の source も同じ接頭辞
+#   - english_long: 英語長文 (2026-10-15)。取込でサーバが盲検 3 名の記録 (review) を必須にしている科目なので、取込スクリプト
+#     (scripts/drill_import) が付ける出典の形 = 設問 el-<set_id>-<qid> / 本文 englong:<set_id>:<pid> をそのまま許可する。
+#     自動で配るのはクラス自動宿題の長文クラス (高校生) だけ (3日ドリルの科目ではない・_drill_subject_band_ok で中学生には出ない)
 #   ★入っていないもの: 高校の物理・化学・生物・地学・社会・国語 (盲検記録のあるシードが無い)・弱点特訓 32 問 weakness_v1
 #     (検証済みと書かれているが盲検 3 名の記録が無い・塾長の判断待ち)・english の chu2grammar-20260709・exam_questions を分解した
 #     古い英文法の行 (pool / legacy / '' など)。
@@ -46931,6 +47340,7 @@ _AUTO_DELIVERY_REVIEWED_SOURCES_DEFAULT = {
     "chugaku_shakai": ("chugaku-shakai-v1",),
     "chugaku_kokugo": ("chugaku-kokugo-v1",),
     "eiken": ("eiken2-*", "eikenp1-*"),
+    "english_long": ("el-*", "englong:*"),
 }
 # ⛔ 自動配信に絶対に出さないもの (env AUTO_DELIVERY_REVIEWED_SOURCES の '*' でも外せない)。
 #   習熟度テスト (subject 'proficiency_test'・出典 'pt-<テストID>-<設問>' / 本文 'ptest:<テストID>:S<nn>') は 1 回分 = 1 本のドリルで
@@ -47000,7 +47410,8 @@ _CHU_DRILL_SUBJECTS = ("chugaku", "chugaku_math", "chugaku_rika", "chugaku_shaka
 # 高校 (大学受験) のプール。中学生にも小学生にも出さない
 _KOSEI_ONLY_DRILL_SUBJECTS = frozenset({"english", "math", "english_long", "physics", "chemistry", "biology", "earth",
                                         "japanese", "social"})
-# 3日ドリル (AIあり) が自動で出す科目 (band ごと)。高校の理科・社会・国語・英検は出さない (盲検記録なし / 英検はクラス宿題だけ)。
+# 3日ドリル (AIあり) が自動で出す科目 (band ごと)。高校の理科・社会・国語・英検・英語長文は出さない
+#   (盲検記録なし / 英検と英語長文はクラス宿題だけ・習熟度テストはどの自動配信にも出ない)。
 _ROUTINE_SUBJECTS_BY_BAND = {"kosei": ("english", "math"), "chugaku": _CHU_DRILL_SUBJECTS}
 
 
@@ -47420,7 +47831,9 @@ def _weakness_routine_pick_drills(c, sid, limit=5, *, band, reasons=None):
                 _why("band_mismatch:chugaku")
                 continue
             if key not in _ROUTINE_SUBJECTS_BY_BAND["kosei"]:
-                _why(f"no_reviewed_pool:{key}" if key in _KOSEI_ONLY_DRILL_SUBJECTS else f"not_routine_subject:{key or '?'}")
+                # 英語長文は許可リストがあっても 3日ドリルでは出さない (長文クラスのクラス自動宿題だけ) = not_routine_subject
+                _why(f"no_reviewed_pool:{key}" if (key in _KOSEI_ONLY_DRILL_SUBJECTS and not allow.get(key))
+                     else f"not_routine_subject:{key or '?'}")
                 continue
             if not allow.get(key):
                 _why(f"no_reviewed_pool:{key}")
@@ -48887,7 +49300,8 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
             # unit は 2026-06-11 追加: 横断ミニ診断 (drill.unit='診断') では設問ごとに単元が異なるため、
             # 弱点集計 (question_attempts.topic) を設問自身の単元で記録する
             _pcol = ", passage_id" if _grammar_has_passages() else ""
-            c.execute(f"SELECT id, unit, stem, choices, answer, explanation{_pcol} FROM grammar_questions WHERE id IN ({ph}) AND active = 1", tuple(qids))
+            # source は 🧪 習熟度テストの skill (ptest_meta の鍵 = 設問の出典) を引くため (2026-10-15)
+            c.execute(f"SELECT id, unit, stem, choices, answer, explanation, source{_pcol} FROM grammar_questions WHERE id IN ({ph}) AND active = 1", tuple(qids))
             for r in c.fetchall():
                 qmap[r["id"]] = r
         # 📖 長文型: 採点結果の画面でも本文を 1 回だけ出す (提出後なので全訳つき)
@@ -48923,6 +49337,10 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
             except (KeyError, TypeError, IndexError):
                 q_unit = unit
             guessed = str(qid) in unsure_set  # 🤔 自信なし自己申告 (正誤に関わらず記録・集計側で解釈)
+            try:
+                q_source = q["source"]
+            except (KeyError, TypeError, IndexError):
+                q_source = None
             results.append({
                 "no": idx,
                 "question_id": qid,
@@ -48936,7 +49354,7 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
                 "explanation": q["explanation"],
                 "passage_id": (int(q["passage_id"]) if ("passage_id" in q.keys() and q["passage_id"] is not None) else None),
             })
-            attempts.append((qid, 1 if is_correct else 0, q_unit, guessed))
+            attempts.append((qid, 1 if is_correct else 0, q_unit, guessed, q_source))
 
         total = len(results)  # 実在問題数 (削除済みを除く・表示数と一致)
         # assignment 更新
@@ -48953,18 +49371,41 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
         conn.commit()
         # question_attempts に記録 (source=grammar_drill・既存の弱点集計に乗せる)
         # topic は設問自身の単元 (2026-06-11): 横断ミニ診断で単元別の弱点が正しく立つように
+        # 🧪 2026-10-15 習熟度テスト: subject='proficiency_test'・topic=テストの単元で記録し、弱点集計は読まない。
+        #   PTEST_FEEDS_WEAKNESS=1 のときだけ、取込時に skill (ptest_meta の skills = {設問の出典: '科目|単元'}) を付けた設問を
+        #   その単元ドリルの科目・単元で記録する (→ 弱点集計 → 3日ドリルはレビュー済みの単元ドリルから出す)。
+        is_ptest = (_canon_grammar_subject(drill_subject) or "") == _PTEST_SUBJECT
+        ptest_skills = {}
+        if is_ptest and _ptest_feeds_weakness():
+            try:
+                _raw = _kv_get(_PTEST_META_KV_PREFIX + str(unit or ""))   # 別の接続で読む (この接続の書き込みは commit 済み)
+                _skills = (json.loads(_raw) or {}).get("skills") if _raw else None
+                ptest_skills = _skills if isinstance(_skills, dict) else {}
+            except Exception as _ke:
+                log.warning(f"[grammar_drill_submit] ptest_meta read failed (skill なしで記録): {type(_ke).__name__}: {_ke}")
+                ptest_skills = {}
         has_guessed = False
         try:
-            for (eq_id, is_corr, q_unit, guessed) in attempts:
+            for (eq_id, is_corr, q_unit, guessed, q_source) in attempts:
                 meta_dict = {"drill_id": drill_id, "unit": q_unit, "drill_unit": unit}
                 if guessed:
                     meta_dict["guessed"] = True  # 🤔 弱点集計 (_run_weakness_aggregation) が正解 credit を割引
                     has_guessed = True
+                att_subject, att_topic = _drill_attempt_subject(drill_subject), q_unit
+                if is_ptest:
+                    meta_dict["ptest_unit"] = unit
+                    _sk = ptest_skills.get(str(q_source or "").strip())
+                    if isinstance(_sk, str) and "|" in _sk:
+                        _s_raw, _u_raw = _sk.split("|", 1)
+                        _s_c = _canon_grammar_subject(_s_raw.strip()) if _s_raw.strip() else ""
+                        if _s_c and _s_c != _PTEST_SUBJECT and _u_raw.strip():
+                            att_subject, att_topic = _drill_attempt_subject(_s_c), _u_raw.strip()
+                            meta_dict["ptest_skill"] = True
                 meta = json.dumps(meta_dict, ensure_ascii=False)
                 c.execute(
                     "INSERT INTO question_attempts (student_id, source, exam_question_id, subject, topic, "
                     "is_correct, score_got, score_max, metadata, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                    (student["id"], "grammar_drill", eq_id, _drill_attempt_subject(drill_subject), q_unit,
+                    (student["id"], "grammar_drill", eq_id, att_subject, att_topic,
                      is_corr, is_corr, 1, meta, now_iso),
                 )
             conn.commit()

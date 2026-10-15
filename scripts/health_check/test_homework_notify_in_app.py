@@ -291,7 +291,7 @@ def main():
               and "新しく配った生徒はいません" in j.get("message", ""), (r.status_code, j.get("message"), f.mails))
     check("message の文は _drill_create_message の 1 か所 (D6 の習熟度テストも使う)",
           "名に配信し、LINE/メールで通知を送信しました" not in src and "def _drill_create_message(" in src
-          and '"message": _drill_create_message(len(assigned), title, sent_ch)' in src)
+          and '"message": _drill_create_message(len(assigned), title, sent_ch, already_taken=len(already_taken))' in src)
     check("_drill_create_message: LINE の非常スイッチの文", "LINE・メールでお知らせ" in mod._drill_create_message(3, "x", {"line": True, "email": True})
           and "LINEでお知らせ" in mod._drill_create_message(3, "x", {"line": True, "email": False}))
 

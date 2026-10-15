@@ -19,6 +19,9 @@
       設問の科目が違う本文は本文ごと外す / 前に見た本文は本文ごと避ける
   [8] GET /api/admin/grammar/source-inventory: 認証なし 401・古い 'pool' の行が legacy_active に出る・単元ごとの在庫
   [9] _compact_run_props: 4000 字に収まる正しい JSON・名前とメールを含まない・error は残る / _auto_created_by_sql
+  [10] 英語長文と習熟度テスト (コミット 8): 習熟度テストは 3日ドリルの計画にも、クラス自動宿題が使う 2 つの抽出
+      (_auto_pick_reviewed_question_ids / _auto_pick_reviewed_passages) にも出ない (出典が許可リストの形でも・env でも)。
+      英語長文 (出典 el- / englong:) は許可リストを通るが、学年の区分は高校生だけで、3日ドリルの計画には出ない
 
 実行:
     python3 scripts/health_check/test_auto_delivery_shared.py
@@ -185,7 +188,12 @@ def main():
         ("math", "mathct-r1-ia-1-1", True), ("math", "pool", False), ("eiken", "eikenp1-mock-v1 S1-A", True),
         ("eiken", "eiken2-honban-r1 大問2[2A]", True), ("eiken", "pool", False),
         ("chugaku_math", "chugaku-math-v1", True), ("chugaku_math", "chugaku-drill-v1", False),
-        ("proficiency_test", "pt-t1-1", False), ("english", "pt-t1-1", False), ("english_long", "el-x", False),
+        ("proficiency_test", "pt-t1-1", False), ("english", "pt-t1-1", False),
+        # 📖 英語長文 (2026-10-15 コミット 8): 取込が盲検の記録を必須にしているので、取込スクリプトの出典の形だけを許可
+        ("english_long", "el-L1S001-P01-Q1", True), ("english_long", "englong:L1S001:P01", True),
+        ("english_long", "pool", False), ("english_long", "manual-drill-v1", False), ("english_long", "pt-T1-Q01", False),
+        ("english", "el-L1S001-P01-Q1", False), ("proficiency_test", "el-L1S001-P01-Q1", False),
+        ("proficiency_test", "englong:L1S001:P01", False),
     ]
     for subj, src, want in cases:
         check(f"既定: ({subj}, {src!r}) → {want}", ok_src(subj, src) is want)
@@ -568,6 +576,55 @@ def main():
     c.execute(f"SELECT COUNT(*) AS n FROM grammar_drills d WHERE d.title = '印のテスト' AND {mod._auto_created_by_sql('d.created_by')}")
     check("列名の別名 (d.created_by) でも使える", int(c.fetchone()["n"]) == 3)
     check("_ROUTINE_CREATED_BY は 3日ドリルの印と同じ", mod._ROUTINE_CREATED_BY == mod._WEAKNESS_ROUTINE_CREATED_BY == "weakness_routine_3d")
+
+    # ------------------------------------------------------------------
+    print("\n[10] 習熟度テストはどの自動配信にも出ない・英語長文は高校生だけ")
+    review = {"protocol": "trillion-blind/v1", "all_agree": True, "solvers": [{"label": x, "kind": "ai", "date": "2026-10-21"} for x in "ABC"]}
+
+    def long_passage(subject, unit, src_p, src_q, n):
+        return {"subject": subject, "unit": unit, "level": "standard", "title": f"架空 {n}", "body": f"架空の本文 {subject} {n} ( 1 ).",
+                "source": src_p, "questions": [{"stem": f"架空の設問 {n}-{k}", "choices": ["a", "b", "c", "d"], "answer": k % 4,
+                                                "source": src_q.format(k=k)} for k in range(1, 4)]}
+
+    pt_unit = "高校英語 習熟度テスト 第1回"
+    # 出典が英語長文・英検の許可リストの形でも、科目が proficiency_test なら出さない (科目の禁止が先)
+    pts = [long_passage("proficiency_test", pt_unit, f"englong:T{n}:P01", "el-T%d-P01-Q{k}" % n, n) for n in range(1, 4)]
+    els = [long_passage("english_long", "長文 Lv.1", f"englong:L1S9{n}:P01", "el-L1S9%d-P01-Q{k}" % n, n) for n in range(1, 4)]
+    for body in ({"subject": "proficiency_test", "passages": pts, "review": review},
+                 {"subject": "english_long", "passages": els, "review": review}):
+        mod._RATE_LIMIT_STORE.clear()
+        rr = client.post("/api/admin/grammar/import", json=body, headers=H)
+        check(f"{body['subject']} の本文 3 本を取込 (review つき)", rr.status_code == 200 and rr.json().get("passages_inserted") == 3, rr.text[:300])
+    for env_v in (None, "english=*;proficiency_test=*;english_long=*"):
+        with Env(env_v):
+            r1 = mod._auto_pick_reviewed_question_ids(c, "proficiency_test", "", ["basic", "standard", "advanced"], 1, {}, rng=random.Random(1))
+            r2 = mod._auto_pick_reviewed_passages(c, "proficiency_test", pt_unit, ["standard"], 1, {}, rng=random.Random(1))
+            r3 = mod._auto_pick_reviewed_passages(c, "proficiency_test", "", None, 1, {}, rng=random.Random(1))
+            check(f"習熟度テスト: 1 問ずつの抽出 0・本文の抽出 0 (単元指定・科目まるごと) (env={env_v!r})",
+                  r1["ids"] == [] and r2["qids"] == [] and r2["reviewed_available"] == 0 and r3["qids"] == [], (r1, r2, r3))
+            r4 = mod._auto_pick_reviewed_passages(c, "english_long", "長文 Lv.1", ["standard"], 1, {}, rng=random.Random(1))
+            check(f"英語長文: 本文 1 本を抽出できる (env={env_v!r})", len(r4["passage_ids"]) == 1 and len(r4["qids"]) == 3, r4)
+    check("学年の区分: 習熟度テストはどの区分にも出ない・英語長文は高校生だけ",
+          not any(band_ok("proficiency_test", b) for b in bands) and band_ok("english_long", "kosei")
+          and not any(band_ok("english_long", b) for b in ("chugaku", "shougaku", "")))
+    check("3日ドリルの科目に英語長文も習熟度テストも無い",
+          not ({"english_long", "proficiency_test"} & {s_ for v in mod._ROUTINE_SUBJECTS_BY_BAND.values() for s_ in v}))
+    # 3日ドリルの計画: 英語長文・習熟度テストの弱点の行しか無い高校生には配らない
+    c.execute("INSERT INTO students (name, email, status, grade, ai_disabled) VALUES ('架空 長文とテスト', 'auto-el-pt@example.org', "
+              "'paid', '高校2年', 0) RETURNING id")
+    sid10 = int(c.fetchone()["id"])
+    for subj, topic in (("english_long", "長文 Lv.1"), ("proficiency_test", pt_unit)):
+        c.execute("INSERT INTO student_weakness (student_id, subject, topic, question_count, qa_accuracy, qa_attempts) "
+                  "VALUES (?, ?, ?, 10, 0.1, 10)", (sid10, subj, topic))
+    conn.commit()
+    c.execute("SELECT id, name, email, line_user_id, grade, ai_disabled, ai_trial_until FROM students WHERE id = ?", (sid10,))
+    st10 = c.fetchone()
+    for band in ("kosei", "chugaku"):
+        reasons = {}
+        plan = mod._weakness_routine_plan(c, st10, band, rng=random.Random(2), reasons=reasons)
+        check(f"3日ドリルの計画 ({band}): 英語長文・習熟度テストの弱点からは配らない",
+              not plan["ok"] and not any(t_["subject"] in ("english_long", "proficiency_test") for t_ in plan.get("tried") or []),
+              (plan, reasons))
     conn.close()
 
     print()

@@ -350,6 +350,24 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_grammar_passage_drill.py
 
+      # 📖 英語長文 (科目 english_long・2026-10-15): 本文型だけ (questions[] は 422)・取込に盲検 3 名の記録 (review) が必須・
+      #   dry_run / all_or_nothing・set_id ごとの照合 (取込済みに足さない・再送は already_imported)・本文の順はランダムのまま・
+      #   今日の1問 / 初回診断 / 3日ドリル / 弱点 TOP3 に出ない・自動配信は出典 el- / englong: で高校生だけ。
+      - name: 英語長文 取込・配信 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_english_long_drill.py
+
+      # 🧪 習熟度テスト (科目 proficiency_test・2026-10-15): 1 回分 = 1 単元・1 始まり → 0 始まりの照合・全大問を取込順のまま 1 本のドリル・
+      #   同じ生徒に 2 回は配らない (409 / allow_retake)・弱点集計に入れない (PTEST_FEEDS_WEAKNESS=1 で skill つきだけ)・
+      #   どの自動配信の抽出にも出ない (env でも)・ptest_meta (kv)・メールの件名「🧪 習熟度テスト「…」が届きました」。
+      - name: 習熟度テスト 取込・出題順・自動配信からの除外 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_proficiency_test_import.py
+
       # 🎯 公開 bank の topic 窓 (2026-10-05): 小問の unit 接頭辞が topic で始まる行を新しい未タグ行より先に並べてから limit で切る
       #   (入試道場の単元別カードが unitExact で捨てる行で窓を使い切らない)。接頭辞の規則は dojo-drill.html の unitExact とソースで照合。
       #   多めに取るのは窓が満杯のときだけ・300 行・1 行 4 万字まで (公開 API で大きな行を読まされない)。
@@ -466,6 +484,7 @@ jobs:
       # 🤖 自動配信の共通部品 (2026-10-15 塾長決定「自動で配るのはレビュー済みの科目別ドリルだけ」): 出典の許可リスト
       #   (シードの分類を固定・習熟度テストは env でも外せない)・弱点 topic → 単元・学年の区分と科目・AI の振り分け (1 人 1 経路)・
       #   既出を避ける抽出 (1 問ずつ・本文ごと)・在庫照会 API・実行記録の要約 (名前を入れない・4000 字)。
+      #   習熟度テストは 3日ドリルにもクラス自動宿題の抽出にも出ない・英語長文は高校生だけ (コミット 8)。
       - name: 自動配信の共通部品 (レビュー済みだけ・中高の取り違えなし) 回帰テスト
         if: ${{ !cancelled() }}
         run: |
