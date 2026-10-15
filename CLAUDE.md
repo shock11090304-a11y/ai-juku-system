@@ -202,6 +202,9 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - ★**未知の `level` は import で黙って `standard` に丸められ、dedup は level を見ない**ので、入れ間違えると
   手で DELETE するまで英文法プールが汚染される。未知の `subject` は skip されるだけなので、取込順を間違えても汚染しない。
 - 初回診断・今日の1問は科目で出題先を決めるので、科目を分けるだけで「高3の最初の1問が中2の過去形」を避けられる。
+  ★2026-10-15 から学年でも分ける (`_self_issued_subject` = 画面のモードと同じ `_student_mode_from_grade`・未入力は高校生):
+  今日の1問は 高校生 = english・中学生 = chugaku・小学生モード = 409 (mypage は alert で理由を出す)。初回診断は高校生だけ (中学生・小学生は 409)。
+  どちらもレビュー済みの出典の行だけ (`_self_issued_reviewed_ids`・`ORDER BY RANDOM()` をやめて Python で選ぶ)。回帰テスト `test_self_issued_drill_band.py`。
   3日ドリル (弱点ルーティン) は 2026-10-15 から学年の区分 (`_student_grade_band`) で english/math と中学 5 教科を分ける (下の 🎯 自動の弱点配信)。
 - CEO のレベル4択は「範囲の軸」なので、そこに学年の軸を混ぜると「基礎も含める」と区別できなくなる。
 - 単元名は `scripts/chugaku_dojo/units.json` の eng の `filter` と**完全一致**させる (入試道場の弱点 topic と突き合わせるため)。
@@ -791,6 +794,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
     `skipped_grade_unknown` の学年を直す・`mode_changed_by_normalization` の生徒が本当に中学生か確かめる・`capped` が多ければ `WEAKNESS_DRILL_ROUTINE_CAP` →
     Railway で `WEAKNESS_DRILL_ROUTINE_ENABLED=1`。★ON の前にデスクトップの予約タスク「2日に1回 弱点15問ミッション」を止める (二重配信になる)。
   - 回帰テスト: `scripts/health_check/test_weakness_routine_auto_delivery.py` (CI `server-tests.yml`)。
+- 生徒が自分で始める **今日の1問・初回診断** (配信ではないが中身はサーバが選ぶ) も、学年で科目を決めてレビュー済みの出典だけから出す
+  (中学英語の節・`test_self_issued_drill_band.py`)。
 
 ## 塾生アプリのみ枠 (AIなし) と宿題ドリル (2026-09-24 塾長決定)
 - **塾長方針: 英語の自由演習は開かない。AIなしの生徒が解けるのは「塾長が出した宿題」と「配信した単元ドリル」だけ。**

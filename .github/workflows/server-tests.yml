@@ -481,6 +481,14 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_weakness_routine_auto_delivery.py
 
+      # 🔰 今日の1問・初回診断 (生徒が自分で始める): 学年で科目を分ける (中学生に高校の英文法を出さない・小学生モードは 409)・
+      #   レビュー済みの出典だけ (未レビューの古い行は出さない・無ければ 503)。
+      - name: 今日の1問・初回診断 (学年で科目を分ける・レビュー済みだけ) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_self_issued_drill_band.py
+
       # 📚 学習記録ダッシュボードの運用改善 (2026-09-07): タイムラインのページング / 1 日合計の上限 / 演習の重ね表示 /
       #   テスト系の名前の除外 / パネル別の読み込みと配色 (ソース検査)。
       - name: 学習記録ダッシュボード 運用改善 回帰テスト

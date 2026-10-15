@@ -45608,7 +45608,8 @@ _GRAMMAR_SUBJECT_UNIT_ORDER = {
 #   (1) 未知の level は下の import で黙って standard に丸められ、dedup が level を見ないので手 DELETE でしか戻せない。
 #       未知の subject は skip されるだけなので、投入順序を間違えても汚染しない。
 #   (2) 初回診断・今日の1問は科目で出題先を決めるので、科目を分けるだけで「高3の最初の1問が中2の過去形」を避けられる
-#       (2026-10-15: 3日ドリルは学年の区分 _student_grade_band で english/math と中学 5 教科を分ける)。
+#       (2026-10-15: 3日ドリルは学年の区分 _student_grade_band で english/math と中学 5 教科を分ける。今日の1問・初回診断も
+#       学年で科目を決める = _self_issued_subject: 中学生の今日の1問は chugaku・初回診断は高校生だけ)。
 #   (3) CEO のレベル4択は「範囲の軸」で、そこに学年の軸を混ぜると「基礎も含める」と区別できなくなる。
 # 🏅 2026-09-24 [eiken-vocab 塾長指示「英検対策コースの子にも問題プールから英検の語彙問題を出題したい」]:
 #   英検の語彙 (大問1 形式・空所 4 択) を **別科目 `eiken`** として足す。級は level ではなく unit 名で分ける
@@ -48471,6 +48472,34 @@ _DIAGNOSTIC_UNIT_PREFS = ["時制", "関係詞", "仮定法", "不定詞", "比�
 _DIAGNOSTIC_UNIT_LABEL = "診断"  # grammar_drills.unit のマーカー (submit 側の即時集計トリガーと対応)
 
 
+# 🔰 2026-10-15 塾長「中学生と高校生は問題の配信はミスらないように」(+ 自動で選ぶものはレビュー済みだけ):
+#   生徒が自分で始める今日の1問・初回診断も、出す科目を学年で決め、レビュー済みの出典 (_auto_delivery_source_ok) の行だけから選ぶ。
+#   従来は学年を見ずに english の全行 (exam_questions を分解した未レビューの古い行を含む) から ORDER BY RANDOM() で選んでいた。
+#   学年の判定は画面のモードと同じ _student_mode_from_grade (= student-mode.js の ajStudentMode。未入力・「その他」は高校生 =
+#   登録直後の生徒の最初の1問を止めない)。小学生モードには出さない。
+def _self_issued_subject(student) -> str:
+    """今日の1問・初回診断の出題科目: 高校生 (と学年未入力) 'english' / 中学生 'chugaku' (中学英語) / 小学生 '' (出さない)。"""
+    mode = _student_mode_from_grade((student or {}).get("grade"))
+    return {"kosei": "english", "chugaku": "chugaku"}.get(mode, "")
+
+
+def _self_issued_reviewed_ids(c, subject, *, unit=None, level=None) -> list:
+    """今日の1問・初回診断の出題候補 = レビュー済みの出典の行の id (id 順・1 問ずつの行だけ)。
+    出典の判定は _auto_delivery_source_ok 1 か所 (SQL に LIKE を書かない)。抽選は呼び出し側が Python で行う。"""
+    sql = "SELECT id, source FROM grammar_questions WHERE subject = ? AND active = 1"
+    params = [subject]
+    if unit:
+        sql += " AND unit = ?"
+        params.append(unit)
+    if level:
+        sql += " AND level = ?"
+        params.append(level)
+    if _grammar_has_passages():
+        sql += " AND passage_id IS NULL"
+    c.execute(sql + " ORDER BY id", tuple(params))
+    return [int(r["id"]) for r in c.fetchall() if _auto_delivery_source_ok(subject, r["source"])]
+
+
 @app.post("/api/student/diagnostic/start")
 def student_diagnostic_start(request: Request, authorization: Optional[str] = Header(None)):
     """🔰 生徒: ミニ診断ドリルを自己発行する (1 人 1 回・冪等)。
@@ -48479,11 +48508,16 @@ def student_diagnostic_start(request: Request, authorization: Optional[str] = He
     - 単元選定: _DIAGNOSTIC_UNIT_PREFS の先頭から「基礎+標準が 1 問ずつ取れる単元」を 5 つ採用。
       レベル別在庫が無い単元は任意レベル 2 問で代替。3 単元未満しか組めない場合は 503。
     - 出題は既存の grammar_drill フロー (一覧/取得/提出/採点/弱点集計) に乗る。
+    - 🔰 2026-10-15: 高校の英文法の診断なので、中学生・小学生モードの生徒には出さない (409)。
+      問題はレビュー済みの出典の行だけ (_self_issued_reviewed_ids)。
     """
     _check_rate_limit_ip(request, bucket="diagnostic_start", limit=10, window=60)
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
+    if _self_issued_subject(student) != "english":
+        raise HTTPException(status_code=409, detail="はじめての実力チェックは高校の英文法の問題です。中学生は「中学生ドリル」で単元を選んで解いてください")
+    import random as _random
     conn = db()
     try:
         c = conn.cursor()
@@ -48509,22 +48543,13 @@ def student_diagnostic_start(request: Request, authorization: Optional[str] = He
                 break
             unit_qids = []
             for lv in ("basic", "standard"):
-                c.execute(
-                    "SELECT id FROM grammar_questions WHERE unit = ? AND level = ? AND active = 1 AND subject = 'english' "
-                    "ORDER BY RANDOM() LIMIT 1",
-                    (u, lv),
-                )
-                r = c.fetchone()
-                if r:
-                    unit_qids.append(r["id"])
+                cand = _self_issued_reviewed_ids(c, "english", unit=u, level=lv)
+                if cand:
+                    unit_qids.append(_random.choice(cand))
             if len(unit_qids) < 2:
                 # レベル別に揃わない単元は任意レベルで 2 問 (それも無ければこの単元はスキップ)
-                c.execute(
-                    "SELECT id FROM grammar_questions WHERE unit = ? AND active = 1 AND subject = 'english' "
-                    "ORDER BY RANDOM() LIMIT 2",
-                    (u,),
-                )
-                unit_qids = [r["id"] for r in c.fetchall()]
+                cand = _self_issued_reviewed_ids(c, "english", unit=u)
+                unit_qids = _random.sample(cand, 2) if len(cand) >= 2 else []
             if len(unit_qids) >= 2:
                 picked_qids.extend(unit_qids[:2])
                 picked_units.append(u)
@@ -48591,49 +48616,48 @@ def student_today_question_start(request: Request, authorization: Optional[str] 
     登録しても最初の1問に辿り着けず離脱する層(実データで過半)を activation させるため、
     1問だけの grammar_drill を発行して既存のドリル提出/採点/記録フローに乗せる
     (=1問解けば question_attempts に記録され弱点集計にも入る)。10問診断より入口を軽くする狙い。
-    open の今日の1問があれば再利用・完了後は習慣化のため新しい1問を再発行する。"""
+    open の今日の1問があれば再利用・完了後は習慣化のため新しい1問を再発行する。
+    🔰 2026-10-15: 出す科目は学年で決める (_self_issued_subject: 高校生と学年未入力 = 英文法 english・中学生 = 中学英語 chugaku・
+    小学生モード = 409)。問題はレビュー済みの出典の行だけ。再利用も同じ科目の「今日の1問」だけ (前に出た別の科目の 1 問は再利用しない)。"""
     # 🛡️ 生徒トークン単位のレート制限 (校内NAT/Vercel共有egressで複数生徒が同一IPを共有しても
     #   誤って 429 を出さないため、純IPではなく caller(トークン)基準。2026-05-26 audit M5 の規約に合わせる)
     _check_rate_limit_caller(request, authorization, bucket="today_question_start", limit=20, window=60)
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
+    subject = _self_issued_subject(student)
+    if not subject:
+        raise HTTPException(status_code=409, detail="今日の1問は中学・高校の英語の問題です。小学生モードではまだ使えません")
+    import random as _random
     conn = db()
     try:
         c = conn.cursor()
-        # 冪等: 未完了の「今日の1問」があれば再利用 (二重発行を防ぐ)
+        # 冪等: 未完了の「今日の1問」(同じ科目) があれば再利用 (二重発行を防ぐ)
         c.execute(
             "SELECT a.drill_id FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
             "WHERE a.student_id = ? AND d.created_by = 'today_question' AND a.status = 'open' "
+            "AND COALESCE(d.subject, 'english') = ? "
             "ORDER BY a.assigned_at DESC LIMIT 1",
-            (student["id"],),
+            (student["id"], subject),
         )
         ex = c.fetchone()
         if ex:
             return {"ok": True, "drill_id": (ex["drill_id"] if hasattr(ex, "keys") else ex[0]), "reused": True}
-        # 🔰 2026-07-02: 最初の1問は basic 優先 → standard → 任意レベル english の順にフォールバック。
+        # 🔰 2026-07-02: 最初の1問は basic 優先 → standard → 任意レベルの順にフォールバック。
         #   独学挫折の高2等に共テ標準をいきなり出すと1問目で心が折れるため、最も易しい層から出して
         #   「折れさせない最初の1歩」にする(basic 在庫が無い場合のみ standard 以上へ)。
-        r = None
-        for _lv in ("basic", "standard"):
-            c.execute(
-                "SELECT id FROM grammar_questions WHERE subject = 'english' AND level = ? AND active = 1 "
-                "ORDER BY RANDOM() LIMIT 1",
-                (_lv,),
-            )
-            r = c.fetchone()
-            if r:
+        qid = None
+        for _lv in ("basic", "standard", None):
+            cand = _self_issued_reviewed_ids(c, subject, level=_lv)
+            if cand:
+                qid = _random.choice(cand)
                 break
-        if not r:
-            c.execute("SELECT id FROM grammar_questions WHERE subject = 'english' AND active = 1 ORDER BY RANDOM() LIMIT 1")
-            r = c.fetchone()
-        if not r:
+        if qid is None:
             raise HTTPException(status_code=503, detail="出題できる問題がありません (塾長に連絡してください)")
-        qid = r["id"] if hasattr(r, "keys") else r[0]
         c.execute(
             "INSERT INTO grammar_drills (subject, title, unit, level, question_ids, created_by) "
-            "VALUES ('english', '📝 今日の1問', '今日の1問', 'standard', ?, 'today_question') RETURNING id",
-            (json.dumps([qid]),),
+            "VALUES (?, '📝 今日の1問', '今日の1問', 'standard', ?, 'today_question') RETURNING id",
+            (subject, json.dumps([qid])),
         )
         dr = c.fetchone()
         drill_id = (dr["id"] if hasattr(dr, "keys") else dr[0]) if dr else None
