@@ -518,6 +518,16 @@ jobs:
           node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
           python3 scripts/health_check/test_weakness_routine_auto_delivery.py
 
+      # 🏫 クラス自動宿題 (塾生アプリのみ枠 = AIなし・英語だけ・2026-10-15 塾長決定「基本的に2日に1回」): クラスの表 = 時間割・
+      #   AIなし の通塾生だけ (体験中は 3日ドリル = 1 人 1 経路を 3日ドリルと合わせて検査)・学年で中高を分ける (選ぶときと書く直前)・
+      #   レビュー済みだけ (長文クラスは本文が 4 本から)・2 日に 1 本・未提出なら積まない・(クラス, 区分) のドリルは 2 日に 1 本・
+      #   単元は弱点 → 順番 → 一番前・dry-run は本番と同じ計画・LINE は 0 回・競合は race・監視 (ON のときだけ・失敗は props.error)。
+      - name: クラス自動宿題 (塾生アプリのみ枠・英語・2 日に 1 回) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_class_homework_routine.py
+
       # 🔰 今日の1問・初回診断 (生徒が自分で始める): 学年で科目を分ける (中学生に高校の英文法を出さない・小学生モードは 409)・
       #   レビュー済みの出典だけ (未レビューの古い行は出さない・無ければ 503)。
       - name: 今日の1問・初回診断 (学年で科目を分ける・レビュー済みだけ) 回帰テスト

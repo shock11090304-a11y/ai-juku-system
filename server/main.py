@@ -3447,7 +3447,8 @@ def _ai_blocked_now(ai_disabled, ai_trial_until) -> bool:
     ★2026-10-15: 週次弱点プリントは既定で停止 (WEEKLY_WORKSHEET_ENABLED)。自動配信 (3日ドリル・塾生アプリのみ枠の
       クラス自動宿題) の振り分けは _auto_delivery_ai_path (= この関数) で決め、SQL は _auto_delivery_ai_prefilter_sql の
       広めの絞り込みだけにする (SQL の文字列比較と Python の日時の読み取りが食い違うと、同じ生徒が両方に入る/どちらにも入らない)。
-      3日ドリル (_run_weakness_drill_routine) はこの形に置き換え済み (SQL の写しは持たない)。
+      3日ドリル (_run_weakness_drill_routine) とクラス自動宿題 (_class_hw_plan: AIなし枠で、かつこの関数が True の生徒だけに配る)
+      はこの形 (SQL の写しは持たない)。2 つを合わせると在籍の生徒は 1 人 1 経路 (test_class_homework_routine.py の振り分けの検査)。
     """
     if not (ai_disabled or 0):
         return False
@@ -3915,6 +3916,16 @@ async def _start_background_tasks():
         task = asyncio.create_task(_weakness_drill_routine_scheduler())
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Weakness drill routine scheduler launched (target JST 5:30 daily, gated by WEAKNESS_DRILL_ROUTINE_ENABLED)")
+
+    # 🏫 クラス自動宿題 scheduler (毎朝 JST 6:00・env CLASS_HW_AUTO_ENABLED で ON・2026-10-15 塾長決定):
+    # 塾生アプリのみ枠 (AIなし) の通塾生に、英語のクラスの宿題としてレビュー済みの科目別ドリルを 2 日に 1 本 (_run_class_homework_routine)。
+    # 5:30 の 3日ドリル (AIあり・AI 体験中) の後。お知らせはアプリ内表示だけ (source='auto')。登録は CRON_SECRET だけで決め、
+    # ループが毎日 env を見る (OFF の日は何もしない・実行記録も残さない)。
+    if CRON_SECRET:
+        task = asyncio.create_task(_class_hw_routine_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info(f"[Startup] Class homework routine scheduler launched (target JST {_class_hw_hour_jst()}:00 daily, "
+                 f"gated by CLASS_HW_AUTO_ENABLED={os.getenv('CLASS_HW_AUTO_ENABLED')!r})")
 
     # 🗄️ R2 daily DB backup scheduler (毎日 JST R2_BACKUP_HOUR_JST=3:00):
     # 2026-05-20 Railway 全体障害で「DB と app の同居 = DB も道連れ」教訓から実装。
@@ -9840,6 +9851,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "midweek_nudge_run": "週半ばの一声 (水曜18時)",
             "weekly_worksheet_run": "週次弱点プリント (日曜5時)",
             "weakness_drill_routine_run": "弱点ドリル 3日ごと (毎日5時半)",
+            "class_hw_auto_run": "クラス自動宿題 (毎朝6時・塾生アプリのみ枠)",
             "weakness_aggregation_run": "弱点集計 (毎日)",
             "trial_mgmt_run": "体験フォロー (毎日)",
             "daily_sns_post": "SNS 投稿 (毎日)",
@@ -9868,6 +9880,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "midweek_nudge_run": "週半ばの一声 (水曜18時)",
             "weekly_worksheet_run": "週次弱点プリント (日曜5時)",
             "weakness_drill_routine_run": "弱点ドリル 3日ごと (毎日5時半)",
+            "class_hw_auto_run": "クラス自動宿題 (毎朝6時・塾生アプリのみ枠)",
             "weakness_aggregation_run": "弱点集計 (毎日)",
             "trial_mgmt_run": "体験フォロー (毎日)",
             "daily_sns_post": "SNS 投稿 (毎日)",
@@ -30832,6 +30845,13 @@ def _weakness_drill_routine_env_enabled() -> bool:
     return str(os.getenv("WEAKNESS_DRILL_ROUTINE_ENABLED", "")).strip().lower() in ("1", "true", "yes", "on")
 
 
+def _class_hw_routine_env_enabled() -> bool:
+    """🏫 CLASS_HW_AUTO_ENABLED の判定 (クラス自動宿題のスケジューラ・監視の対象・CEO の ON/OFF 表示がすべてこれを使う)。
+    動くのは 1 / true / yes / on のときだけ (既定 = OFF・塾長が dry-run と 1 クラスの試しを見てから ON にする)。
+    ★ここ (監視の dict より上) に置く: _SCHEDULER_MAX_AGE_DAYS は import 時に評価されるので、下で定義すると呼べない。"""
+    return str(os.getenv("CLASS_HW_AUTO_ENABLED", "")).strip().lower() in ("1", "true", "yes", "on")
+
+
 _SCHEDULER_MAX_AGE_DAYS = {
     "weakness_aggregation_run": 2,   # 日次
     "weekly_reports_run": 8,         # 週次 (日曜)
@@ -30844,6 +30864,9 @@ _SCHEDULER_MAX_AGE_DAYS = {
     # 🎯 3日ドリル (毎日 5:30)。ON の間は配る生徒がいない日も実行記録を残すので 2 日で停止扱い。
     #   OFF の間は何も記録しないので監視から外す (2026-10-15。env を変えたら再起動で反映)。
     **({"weakness_drill_routine_run": 2} if _weakness_drill_routine_env_enabled() else {}),
+    # 🏫 クラス自動宿題 (毎朝 6:00・塾生アプリのみ枠)。ON の間は配る生徒がいない日も実行記録を残すので 2 日で停止扱い。
+    #   OFF の間は何も記録しないので監視から外す (2026-10-15。env を変えたら再起動で反映)。
+    **({"class_hw_auto_run": 2} if _class_hw_routine_env_enabled() else {}),
     "trial_mgmt_run": 2,             # 体験フォローの日次バッチ
     "daily_sns_post": 2,             # 日次 SNS 投稿
     # 🗄️ 2026-09-07: DB バックアップ (毎日 JST 3:00 → Cloudflare R2)。成功時に r2_backup_success を書くので
@@ -54787,7 +54810,8 @@ _AUTO_ASSIGN_LOCK = threading.Lock()   # ★同時実行の禁止。class_record
 #     7時を迎える等) は下の advisory lock が書き込みの直前に受け持つ (_class_rec_try_db_lock)。
 #     ターミナル (scripts/class_recordings/assign_from_playlists.py) とは今も排他できない — 同時に回さないこと。
 _AUTO_ASSIGN_PG_LOCK_KEY = 8675312   # pg_try_advisory_xact_lock の固定 key (8675309〜8675311 は別の処理が使用中。
-#     2 引数の (8675313, 生徒ID) は 3日ドリルの生徒ごとの錠 = _ROUTINE_PG_LOCK_KEY。新しい錠は 8675314 以降の空いた番号に)
+#     2 引数の (8675313, 生徒ID) は 3日ドリルの生徒ごとの錠 = _ROUTINE_PG_LOCK_KEY・1 引数の 8675314 はクラス自動宿題 = _CLASS_HW_PG_LOCK_KEY。
+#     新しい錠は 8675315 以降の空いた番号に)
 _CLASS_REC_ASSIGN_EVENT = "class_rec_assign_run"   # 毎朝の実行記録 (events.name)。監視 _SCHEDULER_MAX_AGE_DAYS と同じ名前
 # 🎬 毎朝の自動実行 (2026-10-08 塾長決定)。0 で止める (起動時に scheduler を登録しない)。ボタンは止まらない。
 #   判定は _class_rec_auto_assign_env_enabled (0 / false / off / no だけが無効。監視の対象と同じ関数)。
@@ -54902,7 +54926,7 @@ def _class_rec_try_db_lock(c) -> bool:
         次にその接続を借りた別の要求が錠の持ち主になる。xact 錠は close (= rollback) で必ず外れる。
       ・待たない: 相手の書き込みは数十ミリ秒で終わる。待って続けるより、ボタンは 409 で押し直し、
         毎朝の実行は 10 分後に最初から (= 相手が書いた後の状態で) やり直す方が単純で確か。
-    ★key は main.py 内の他の advisory lock (8675309〜8675311・3日ドリルの 2 引数 (8675313, 生徒ID)) と重ねない。
+    ★key は main.py 内の他の advisory lock (8675309〜8675311・3日ドリルの 2 引数 (8675313, 生徒ID)・クラス自動宿題の 8675314) と重ねない。
     SQLite (手元テスト) は 1 プロセスなので _AUTO_ASSIGN_LOCK だけで足りる → 常に True。
     """
     if not USE_POSTGRES:
@@ -56284,6 +56308,815 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
                 "warnings": dup_warnings}
     finally:
         conn.close()
+
+
+# ==========================================================================
+# 🏫 クラス自動宿題 (塾生アプリのみ枠 = AIなし・英語だけ) (2026-10-15 塾長決定・CLASS_HW_AUTO_ENABLED・既定 OFF)
+#   AIなし (塾生アプリのみ) の通塾生に、受講している英語のクラスの宿題として、科目別ドリルの**レビュー済みの問題だけ**で
+#   自動採点ドリルを配る (AIあり・AI 体験中の生徒は 3日ドリルの側 = 1 人 1 経路・_auto_delivery_ai_path)。
+#   - 塾長決定「基本的に2日に1回」: 毎朝 6:00 (CLASS_HW_AUTO_HOUR_JST・5〜22 に丸める) に回し、1 人に届くのは
+#     どのクラスからでも **2 日に 1 本まで** (CLASS_HW_INTERVAL_DAYS)。未提出 (completed 以外) のクラス自動宿題が残っている生徒には積まない。
+#     英語のクラスを 2 つ以上取っている生徒は、最後に届いたのが古いクラスから順に回す。
+#   - ドリルは (クラス, 区分) ごとに 1 本 = 同じクラスの同じ区分の生徒は同じ問題 (CEO の問題別の正解率が比べられる)。
+#     2 日のうちに作ったドリルがあれば新しく作らず、その日に受け取れる生徒をそのドリルに足す。
+#   - 区分 = 生徒の学年 (_student_grade_band・判定できない学年と小学生には出さない)。英文法・中学英語のクラスは
+#     高校生 → english / 中学生 → chugaku。英検のクラスはクラスの級 (学年を問わない)。長文のクラスは english_long (高校生だけ・
+#     レビュー済みの本文が CLASS_HW_READING_MIN_PASSAGES 本になったら始まる)。GMARCH・早慶は hold (まだ出さない)、日曜 高校国語は出さない。
+#   - 単元: そのクラスのその区分の AIなし生の弱点 (student_weakness) を合わせて正答率の低い順。直近 14 日に出した単元は飛ばす
+#     (CLASS_HW_UNIT_COOLDOWN_DAYS)。弱点のデータが無ければ単元を順番に回す。全部が飛ばす期間なら一番前に出した単元。
+#   - 題名「【<クラス名>】宿題 <単元>（N問・〆M/D）」(〆 = 配った日 + CLASS_HW_INTERVAL_DAYS 日・JST)。
+#   - お知らせは自動配信なので source='auto' (既定では LINE もメールも送らない・アプリ内の「🆕 新しい宿題」だけ)。
+#   - 二重配信の防止: Postgres では書き込みの直前に pg_try_advisory_xact_lock(8675314) (1 引数・f-string で埋める) を取り、
+#     錠の中で「2 日のうちのドリル」と生徒ごとの未提出・2 日以内の受け取りを読み直す。毎朝の実行は events の実行記録でも 1 日 1 回。
+#   - テーブルの変更 (DDL) は無し。クラスとドリルの対応は grammar_drills.created_by = 'class_hw_auto:<区分>:<クラス名>'。
+# ==========================================================================
+_CLASS_HW_PG_LOCK_KEY = 8675314   # pg_try_advisory_xact_lock の 1 引数の key (8675309〜8675312 は別の処理・2 引数の (8675313, 生徒ID) は 3日ドリル)
+_CLASS_HW_LOCK = threading.Lock()  # 同じプロセスの中の排他 (毎朝の実行と CEO の 📤 が同時に書かない)
+# 「2 日に 1 回」の判定の遊び (時間)。毎朝 6:00 に配ったドリルは、2 日後の 6:00 の実行で「2 日たった」と数える
+#   (ぴったり 48 時間で切ると、前回の書き込みが数秒遅いだけで 1 日ずれる)
+_CLASS_HW_INTERVAL_SLACK_HOURS = 6
+_CLASS_HW_READING_PASSAGES = 1     # 長文のクラス (english_long) は本文 1 本
+_CLASS_HW_ALL_LEVELS = ("basic", "standard", "advanced")
+# 書き込み直前の学年ガードで止めた回数 (プロセス内)。正常な実行では必ず 0 (テストが固定する)
+_CLASS_HW_BAND_GUARD_TRIPS = 0
+# 中学基礎・中学2年 英語: 中1・中2 で習う 8 単元 (_GRAMMAR_SUBJECT_UNIT_ORDER['chugaku'] の並び・同じ文字列)
+_CHU_ENG_UNITS_JH12 = ("be動詞・一般動詞", "時制", "助動詞", "名詞・代名詞・冠詞", "比較", "不定詞・動名詞", "接続詞・前置詞", "会話表現")
+# 区分ごとに出してよい科目 (書き込み直前のガード。_drill_subject_band_ok に加えて見る = 英検・長文以外の高校の科目を出さない)
+_CLASS_HW_SUBJECTS_BY_GROUP = {"kosei": ("english", "eiken", "english_long"), "chugaku": ("chugaku", "eiken")}
+
+
+def _chw_grammar(chugaku_levels, kosei_levels, chugaku_units=None):
+    """英文法・中学英語のクラス: 生徒の学年で 中学 (chugaku) / 高校 (english) のドリルに分ける。"""
+    return {"kind": "grammar", "groups": {
+        "chugaku": {"subject": "chugaku", "units": tuple(chugaku_units or _GRAMMAR_SUBJECT_UNIT_ORDER["chugaku"]),
+                    "levels": tuple(chugaku_levels)},
+        "kosei": {"subject": "english", "units": tuple(GRAMMAR_UNITS), "levels": tuple(kosei_levels)},
+    }}
+
+
+def _chw_eiken(grade_label):
+    """英検のクラス: クラスの級の語彙と長文 (生徒の学年を問わない・中3 が 2 級を受ける)。単語 → 長文空所補充 → 句動詞 → 内容一致 の順に回す。"""
+    units = tuple(f"{grade_label} {u}" for u in ("単語", "長文空所補充", "句動詞・熟語", "長文 内容一致"))
+    g = {"subject": "eiken", "units": units, "levels": _CLASS_HW_ALL_LEVELS}
+    return {"kind": "eiken", "groups": {"kosei": dict(g), "chugaku": dict(g)}}
+
+
+def _chw_reading(unit):
+    """長文読解のクラス: 英語長文 (english_long) のクラスの単元 1 つ。高校生だけ (中学生には no_range)。"""
+    return {"kind": "reading", "groups": {"kosei": {"subject": "english_long", "units": (unit,), "levels": ("standard",)}}}
+
+
+# ★キーは時間割のクラス名 (_TIMETABLE_LABELS) と**完全に同じ**にする。クラスが増えた・名前が変わったら、ここに明示の 1 行を足す
+#   (test_class_homework_routine.py が落ちる)。kind: grammar / eiken / reading = 配る・hold = まだ出さない (塾長の確認待ち)・none = 英語ではない。
+#   レベル (2026-10-15 塾長決定の既定): 英文法 Lv.1 基礎+標準 / Lv.2・国公立 標準+やや難 / 高2英文法 標準 / 中学応用 標準+やや難 /
+#   中学基礎・中2 基礎+標準 (中1・中2 の 8 単元)。もう片方の区分 (中学のクラスの高校生など) のレベルは下の表のとおり。
+_CLASS_HW_ROUTINE_MAP = {
+    "月曜1限 中学応用": _chw_grammar(("standard", "advanced"), ("basic", "standard")),
+    "月曜2限 英文法 Lv.1": _chw_grammar(("standard", "advanced"), ("basic", "standard")),
+    "月曜3限 長文読解 Lv.1": _chw_reading("長文 Lv.1"),
+    "火曜1限 中学基礎": _chw_grammar(("basic", "standard"), ("basic", "standard"), _CHU_ENG_UNITS_JH12),
+    "火曜2限 英文法 Lv.2": _chw_grammar(("standard", "advanced"), ("standard", "advanced")),
+    "火曜3限 長文読解 Lv.2": _chw_reading("長文 Lv.2"),
+    "水曜1限 中学2年 英語": _chw_grammar(("basic", "standard"), ("basic", "standard"), _CHU_ENG_UNITS_JH12),
+    "水曜2限 GMARCH": {"kind": "hold"},
+    "水曜3限 国公立コース 英文法": _chw_grammar(("standard", "advanced"), ("standard", "advanced")),
+    "木曜1限 英検準1級対策": _chw_eiken("準1級"),
+    "木曜2限 早慶クラス": {"kind": "hold"},
+    "金曜1限 高2 英文法": _chw_grammar(("standard", "advanced"), ("standard",)),
+    "金曜2限 英検2級対策": _chw_eiken("2級"),
+    "金曜3限 国公立コース 長文読解": _chw_reading("国公立 長文"),
+    "日曜 高校国語": {"kind": "none"},
+}
+_CLASS_HW_ORDER = {c_["label"]: i_ for i_, c_ in enumerate(_TIMETABLE_CLASSES)}
+if set(_CLASS_HW_ROUTINE_MAP) != _TIMETABLE_LABELS:
+    log.error(f"[ClassHW] _CLASS_HW_ROUTINE_MAP と時間割のクラス名が違います: 表だけ {sorted(set(_CLASS_HW_ROUTINE_MAP) - _TIMETABLE_LABELS)} / "
+              f"時間割だけ {sorted(_TIMETABLE_LABELS - set(_CLASS_HW_ROUTINE_MAP))} (時間割だけのクラスには配りません)")
+
+
+def _class_hw_routine_enabled() -> bool:
+    """クラス自動宿題の毎朝の実行の ON/OFF。判定は _class_hw_routine_env_enabled 1 か所 (監視の対象と同じ関数)。"""
+    return _class_hw_routine_env_enabled()
+
+
+def _class_hw_hour_jst() -> int:
+    """毎朝の実行時刻 (JST の時)。4:00 の弱点集計と 5:30 の 3日ドリルより後に回すので 5〜22 に丸める (丸めたら警告ログ)。"""
+    return _env_int("CLASS_HW_AUTO_HOUR_JST", 6, 5, 22)
+
+
+def _class_hw_settings() -> dict:
+    """クラス自動宿題の設定 (呼ぶたびに env を読む)。CLASS_HW_AUTO_ONLY_CLASSES はカンマか「、」区切りのクラス名
+    (段階投入用・空 = 全部)。時間割に無い名前は無視して only_classes_unknown に出す。"""
+    raw = str(os.getenv("CLASS_HW_AUTO_ONLY_CLASSES", "") or "")
+    only = [s.strip() for s in re.split(r"[,、，]", raw) if s.strip()]
+    return {
+        "interval_days": _env_int("CLASS_HW_INTERVAL_DAYS", 2, 1, 14),
+        "hour_jst": _class_hw_hour_jst(),
+        "count": _env_int("CLASS_HW_AUTO_COUNT", 10, 5, 25),
+        "passages": _env_int("CLASS_HW_AUTO_PASSAGES", 2, 1, 5),
+        "reading_passages": _CLASS_HW_READING_PASSAGES,
+        "reading_min_passages": _env_int("CLASS_HW_READING_MIN_PASSAGES", 4, 1, 50),
+        "unit_cooldown_days": _env_int("CLASS_HW_UNIT_COOLDOWN_DAYS", 14, 0, 90),
+        "only_classes": [x for x in only if x in _TIMETABLE_LABELS],
+        "only_classes_unknown": [x for x in only if x not in _TIMETABLE_LABELS],
+    }
+
+
+def _class_hw_created_by(label, group) -> str:
+    return f"{_CLASS_HW_CREATED_BY_PREFIX}{group}:{label}"
+
+
+def _class_hw_created_by_sql(col: str = "created_by") -> str:
+    """クラス自動宿題のドリルに当たる SQL の条件 (定数だけを埋める・LIKE を使わない = クラス名の % や _ で崩れない)。"""
+    n = len(_CLASS_HW_CREATED_BY_PREFIX)
+    return f"substr(COALESCE({col}, ''), 1, {n}) = '{_CLASS_HW_CREATED_BY_PREFIX}'"
+
+
+def _class_hw_range(label, group):
+    """(クラス, 区分) → 出題範囲 {kind, subject, units, levels} / None (このクラスのこの区分には出さない)。"""
+    ent = _CLASS_HW_ROUTINE_MAP.get(label) or {}
+    if ent.get("kind") not in ("grammar", "eiken", "reading"):
+        return None
+    g = (ent.get("groups") or {}).get(group)
+    if not g:
+        return None
+    return {"kind": ent["kind"], "subject": g["subject"], "units": tuple(g["units"]), "levels": tuple(g["levels"])}
+
+
+def _class_hw_unit_size(subject, unit, settings) -> tuple:
+    """単元 1 回分の量: ('passages', 本数) か ('questions', 問数)。長文 (english_long・英検の「長文」の単元) は本文の本数で数える。"""
+    if subject == "english_long":
+        return ("passages", int(settings.get("reading_passages") or _CLASS_HW_READING_PASSAGES))
+    if subject == "eiken" and "長文" in str(unit or ""):
+        return ("passages", int(settings.get("passages") or 2))
+    return ("questions", int(settings.get("count") or 10))
+
+
+def _class_hw_weak_units(subject, rows) -> dict:
+    """クラスの区分の生徒の弱点 (student_weakness の行) → {単元: {correct, attempts, students}}。
+    高校 = english の文法 20 単元 (_eng_drill_unit_for_topic)・中学 = 'chugaku' の弱点を中学英語の単元に完全一致
+    (_chu_drill_for_topic。前置きつきの写しと他教科は数えない)・英検と英語長文 = topic が単元名そのもの。"""
+    out = {}
+    for r in rows:
+        key = _weakness_subject_key(r["subject"])
+        topic = str(r["topic"] or "")
+        unit = None
+        if subject == "english" and key == "english":
+            unit = _eng_drill_unit_for_topic(topic)
+        elif subject == "chugaku" and key == "chugaku":
+            m = _chu_drill_for_topic(topic)
+            if m and m[0] == "chugaku" and not m[2]:
+                unit = m[1]
+        elif subject in ("eiken", "english_long") and key == subject:
+            unit = topic.strip()
+        if not unit:
+            continue
+        try:
+            att = int(r["qa_attempts"] or 0)
+            acc = float(r["qa_accuracy"]) if r["qa_accuracy"] is not None else None
+        except (TypeError, ValueError):
+            continue
+        if att <= 0 or acc is None:
+            continue
+        a = out.setdefault(unit, {"correct": 0.0, "attempts": 0, "students": set()})
+        a["correct"] += acc * att
+        a["attempts"] += att
+        a["students"].add(int(r["student_id"]))
+    return out
+
+
+def _class_hw_plan_group(c, label, group, *, members, weak_rows, hist, settings, now_txt, interval_cutoff, rng) -> dict:
+    """🏫 (クラス, 区分) 1 組の計画 (dry-run と本番が同じ関数を通る)。
+    ① 2 日のうちに作ったこのクラスのこの区分のドリルがあれば、それに足す (mode='join'・新しく作らない)。
+    ② 無ければ単元を決めて問題を選ぶ (mode='new'): 弱点 (正答率の低い順・合計 3 回以上・正答率 0.8 未満) → 順番 (前回の次の単元から) →
+       一番前に出した単元。直近 unit_cooldown_days 日に出した単元は弱点・順番では飛ばす。問題はレビュー済みだけ
+       (_auto_pick_reviewed_question_ids / 長文は _auto_pick_reviewed_passages)。このクラスのこの区分に前に出した問題は避ける
+       (足りなければ古い順に足す)。英語長文はレビュー済みの本文が reading_min_passages 本に満たなければ始めない。
+    返り値 {ok, mode, subject, unit, unit_reason, levels, qids, title, drill_id?, reviewed_available, unseen_available, reused_seen,
+    passages, tried, reason?}。"""
+    rg = _class_hw_range(label, group)
+    out = {"label": label, "group": group, "ok": False, "mode": "", "subject": rg["subject"] if rg else "",
+           "levels": list(rg["levels"]) if rg else [], "unit": "", "unit_reason": "", "qids": [], "title": "",
+           "reviewed_available": 0, "unseen_available": 0, "reused_seen": 0, "passages": 0, "tried": [],
+           "members": len(members)}
+    if not rg:
+        out["reason"] = "no_range"
+        return out
+    subject, units = rg["subject"], list(rg["units"])
+    drills = hist or []
+    cur = None
+    for d in reversed(drills):
+        if d["created_at"] >= interval_cutoff:
+            cur = d
+            break
+    if cur is not None:
+        if str(cur["subject"] or "") != subject:
+            out["reason"] = "current_subject_mismatch"   # 起きないはず (クラスの表を変えた直後など)。書かずに知らせる
+            return out
+        out.update(ok=True, mode="join", drill_id=cur["id"], unit=cur["unit"], unit_reason="current", qids=list(cur["qids"]),
+                   title=cur["title"])
+        return out
+    last_by_unit = {}
+    for d in drills:
+        u = str(d["unit"] or "")
+        if d["created_at"] > last_by_unit.get(u, ""):
+            last_by_unit[u] = d["created_at"]
+    cd_days = int(settings.get("unit_cooldown_days") or 0)
+    now_dt = datetime.strptime(now_txt, "%Y-%m-%d %H:%M:%S")
+    cd_cutoff = (now_dt - timedelta(days=cd_days)).strftime("%Y-%m-%d %H:%M:%S")
+    cool = {u for u, ts in last_by_unit.items() if cd_days > 0 and ts >= cd_cutoff}
+    idx = {u: i for i, u in enumerate(units)}
+    weak = _class_hw_weak_units(subject, weak_rows)
+    weak_list = []
+    for u, a in weak.items():
+        if u not in idx or a["attempts"] < 3:
+            continue
+        acc = a["correct"] / a["attempts"] if a["attempts"] else 1.0
+        if acc >= _WEAKNESS_MASTERY_ACCURACY:
+            continue
+        weak_list.append((acc, -len(a["students"]), idx[u], u))
+    weak_list.sort()
+    cands, seen_u = [], set()
+
+    def _add(u, why):
+        if u not in seen_u:
+            seen_u.add(u)
+            cands.append((u, why))
+
+    if len(units) == 1:
+        _add(units[0], "fixed")
+    for _acc, _n, _i, u in weak_list:
+        if u not in cool:
+            _add(u, "weakness")
+    last_unit = drills[-1]["unit"] if drills else None
+    start = (idx[last_unit] + 1) if last_unit in idx else 0
+    for k in range(len(units)):
+        u = units[(start + k) % len(units)]
+        if u not in cool:
+            _add(u, "rotation")
+    for u in sorted(units, key=lambda x: (last_by_unit.get(x, ""), idx[x])):
+        _add(u, "oldest")
+    seen = {}
+    for d in drills:
+        for q in d["qids"]:
+            if q not in seen or d["created_at"] > seen[q]:
+                seen[q] = d["created_at"]
+    levels = list(rg["levels"])
+    for u, why in cands:
+        kind, n = _class_hw_unit_size(subject, u, settings)
+        if kind == "passages":
+            r = _auto_pick_reviewed_passages(c, subject, u, levels, n, seen, rng=rng)
+            ids = r["qids"]
+            if subject == "english_long" and 0 < r["reviewed_available"] < int(settings.get("reading_min_passages") or 1):
+                ids = []   # 長文のクラスはレビュー済みの本文が決まった本数になってから始める (CLASS_HW_READING_MIN_PASSAGES)
+                out["tried"].append({"unit": u, "reason": why, "reviewed_available": r["reviewed_available"], "below_threshold": True})
+            else:
+                out["tried"].append({"unit": u, "reason": why, "reviewed_available": r["reviewed_available"]})
+        else:
+            r = _auto_pick_reviewed_question_ids(c, subject, u, levels, n, seen, rng=rng)
+            ids = r["ids"]
+            out["tried"].append({"unit": u, "reason": why, "reviewed_available": r["reviewed_available"]})
+        if ids:
+            due = (now_dt + timedelta(hours=9)).date() + timedelta(days=int(settings.get("interval_days") or 2))
+            out.update(ok=True, mode="new", unit=u, unit_reason=why, qids=list(ids), levels=levels,
+                       reviewed_available=r["reviewed_available"], unseen_available=r["unseen_available"],
+                       reused_seen=r["reused_seen"], passages=(n if kind == "passages" else 0),
+                       title=f"【{label}】宿題 {u}（{len(ids)}問・〆{due.month}/{due.day}）")
+            return out
+    out["reason"] = ("below_threshold" if any(t.get("below_threshold") for t in out["tried"]) else "no_reviewed_inventory")
+    return out
+
+
+def _class_hw_plan(c, *, now, settings, selected, include_names=False, seed=None) -> dict:
+    """🏫 クラス自動宿題の計画 (dry-run と本番が同じ関数を通る・ここでは何も書かない)。
+    対象 = 在籍 (_enrolled_sql)・合成監視とテスト系の名前を除く・AIなし枠 (_auto_delivery_ai_path == 'ai_nashi'。SQL は広めの
+    絞り込みだけ)・通塾生 (course=kokuritsu_nankan か plan=student_addon = 塾生アプリの宿題タブが開ける)・受講クラスに英語のクラス
+    (表で grammar / eiken / reading) があり・学年の区分が中学か高校・受講開始月を過ぎている (start_month が NULL なら制限なし)。
+    外す理由 (生徒ごとに 1 つ・この順に判定): ai_trial (AI 体験中 = 3日ドリルの側) / not_tsujuku / test_name / no_class (英語のクラスが無い) /
+    grade_unknown / shougaku / hold_only (GMARCH・早慶だけ) / no_range (区分に出す範囲が無い = 長文クラスの中学生など) /
+    before_start / not_selected (CLASS_HW_AUTO_ONLY_CLASSES・📤 のクラス以外) / open (未提出のクラス自動宿題がある = 積まない) /
+    recent (2 日のうちに受け取った) / no_inventory (どのクラスもレビュー済みの在庫が足りない)。
+    受け取れる生徒は 1 回に 1 クラスだけ: 最後に届いたのが古いクラスから (届いたことが無いクラスが先・同じなら時間割の順)。
+    返り値 {summary の数, groups {(クラス, 区分): 計画}, assign {(クラス, 区分): [生徒]}, students {id: 情報}}。"""
+    import random as _random
+    interval = int(settings["interval_days"])
+    now_txt = now.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    now_naive = datetime.strptime(now_txt, "%Y-%m-%d %H:%M:%S")
+    interval_cutoff = (now_naive - timedelta(hours=interval * 24 - _CLASS_HW_INTERVAL_SLACK_HOURS)).strftime("%Y-%m-%d %H:%M:%S")
+    hist_cutoff = (now_naive - timedelta(days=400)).strftime("%Y-%m-%d %H:%M:%S")
+    today_jst = (now_naive + timedelta(hours=9)).date()
+    month_jst = f"{today_jst.year:04d}-{today_jst.month:02d}"
+    sk = {k: 0 for k in ("skipped_ai_trial", "skipped_not_tsujuku", "skipped_test_name", "skipped_no_class",
+                         "skipped_grade_unknown", "skipped_shougaku", "skipped_hold_only", "skipped_no_range",
+                         "skipped_not_selected", "skipped_before_start", "skipped_open", "skipped_recent", "skipped_no_inventory")}
+    has_trial = _students_has_ai_trial_until()
+    has_sm = _table_has_column("students", "start_month")
+    cols = ("id, name, email, line_user_id, grade, class_labels, course, plan, ai_disabled"
+            + (", ai_trial_until" if has_trial else "") + (", start_month" if has_sm else ""))
+    c.execute(f"SELECT {cols} FROM students WHERE {_enrolled_sql()} AND {_synth_exclude_sql()} "
+              f"AND {_auto_delivery_ai_prefilter_sql('ai_nashi')} ORDER BY id LIMIT 2000")
+    rows = c.fetchall() or []
+    # 生徒ごと・クラスごとのクラス自動宿題の受け取り (未提出の数・最後に受け取った日時)。未提出 = completed 以外
+    c.execute(
+        "SELECT a.student_id AS sid, d.created_by AS cb, MAX(a.assigned_at) AS last_at, "
+        "SUM(CASE WHEN COALESCE(a.status, 'open') <> 'completed' THEN 1 ELSE 0 END) AS open_cnt "
+        "FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
+        f"WHERE {_class_hw_created_by_sql('d.created_by')} GROUP BY a.student_id, d.created_by"
+    )
+    st_open, st_last, st_last_label = {}, {}, {}
+    for r in c.fetchall() or []:
+        sid_ = int(r["sid"])
+        ts = _ts_text(r["last_at"])
+        st_open[sid_] = st_open.get(sid_, 0) + int(r["open_cnt"] or 0)
+        if ts > st_last.get(sid_, ""):
+            st_last[sid_] = ts
+        lb = _drill_auto_origin(r["cb"]).get("class_label") or ""
+        if ts > st_last_label.get((sid_, lb), ""):
+            st_last_label[(sid_, lb)] = ts
+    # (クラス, 区分) ごとのドリルの履歴 (単元の回し方・飛ばす期間・前に出した問題・2 日のうちのドリル)
+    c.execute(
+        "SELECT id, created_by, subject, unit, title, question_ids, created_at FROM grammar_drills "
+        f"WHERE {_class_hw_created_by_sql()} AND created_at >= ? ORDER BY id",
+        (hist_cutoff,),
+    )
+    hist = {}
+    for r in c.fetchall() or []:
+        o = _drill_auto_origin(r["created_by"])
+        try:
+            qids = [int(x) for x in json.loads(r["question_ids"] or "[]")]
+        except (TypeError, ValueError):
+            qids = []
+        hist.setdefault((o.get("class_label") or "", o.get("group") or ""), []).append(
+            {"id": int(r["id"]), "subject": r["subject"], "unit": r["unit"], "title": r["title"], "qids": qids,
+             "created_at": _ts_text(r["created_at"])})
+
+    students, members = {}, {}
+    for st in rows:
+        sid = int(st["id"])
+        info = {"id": sid, "status": "", "band": "", "labels": [], "chosen": None}
+        if include_names:
+            info["name"] = st["name"]
+        students[sid] = info
+        # 英語のクラス (表で grammar / eiken / reading / hold)。外した生徒もクラスの表 (CEO の 🔍) に理由つきで出すので先に読む
+        labels = [lb for lb in _parse_labels(st["class_labels"]) if lb in _CLASS_HW_ROUTINE_MAP]
+        eng = [lb for lb in labels if _CLASS_HW_ROUTINE_MAP[lb].get("kind") in ("grammar", "eiken", "reading", "hold")]
+        info["labels"] = sorted(set(eng), key=lambda x: _CLASS_HW_ORDER.get(x, 99))
+        tu = st["ai_trial_until"] if has_trial else None
+        if _auto_delivery_ai_path(st["ai_disabled"], tu) != "ai_nashi":
+            info["status"] = "ai_trial"
+            continue
+        if not (st["course"] == _STUDY_LOG_TARGET_COURSE or str(st["plan"] or "").lower() in _TSUJUKU_ALLOWED_PLANS):
+            info["status"] = "not_tsujuku"
+            continue
+        if _is_blocked_test_name(st["name"]):
+            info["status"] = "test_name"
+            continue
+        if not eng:
+            info["status"] = "no_class"
+            continue
+        band = _student_grade_band(st["grade"])   # クラス自動宿題は判定できない学年を高校生扱いにしない (critic C5)
+        info["band"] = band
+        if not band:
+            info["status"] = "grade_unknown"
+            info["grade"] = st["grade"]
+            continue
+        if band == "shougaku":
+            info["status"] = "shougaku"
+            continue
+        ranged = [lb for lb in info["labels"] if _class_hw_range(lb, band)]
+        if not ranged:
+            info["status"] = "hold_only" if all(_CLASS_HW_ROUTINE_MAP[lb]["kind"] == "hold" for lb in info["labels"]) else "no_range"
+            continue
+        if has_sm and _before_start_month(st["start_month"], month_jst):
+            info["status"] = "before_start"
+            continue
+        for lb in ranged:
+            members.setdefault((lb, band), []).append(sid)
+        info["ranged"] = ranged
+        sel = [lb for lb in ranged if lb in selected]
+        if not sel:
+            info["status"] = "not_selected"
+            continue
+        if st_open.get(sid, 0) > 0:
+            info["status"] = "open"
+            continue
+        if st_last.get(sid, "") >= interval_cutoff:
+            info["status"] = "recent"
+            continue
+        info["status"] = "pending"
+        info["sel"] = sel
+        info["s"] = {"id": sid, "name": st["name"], "email": st["email"], "line_user_id": st["line_user_id"]}
+
+    # クラスの区分の弱点 (1 回の SELECT で全員分)
+    ids_all = sorted({s for v in members.values() for s in v})
+    weak_by_sid = {}
+    if ids_all:
+        ph = ",".join(["?"] * len(ids_all))
+        c.execute(f"SELECT student_id, subject, topic, qa_accuracy, qa_attempts FROM student_weakness "
+                  f"WHERE student_id IN ({ph}) AND qa_attempts > 0", tuple(ids_all))
+        for r in c.fetchall() or []:
+            weak_by_sid.setdefault(int(r["student_id"]), []).append(r)
+    groups = {}
+    for (lb, g) in sorted(members, key=lambda k: (_CLASS_HW_ORDER.get(k[0], 99), k[1])):
+        if lb not in selected:
+            continue
+        rng = _random.Random(f"{seed}:{lb}:{g}") if seed is not None else _random.Random()
+        wr = [r for s in members[(lb, g)] for r in weak_by_sid.get(s, [])]
+        groups[(lb, g)] = _class_hw_plan_group(
+            c, lb, g, members=members[(lb, g)], weak_rows=wr, hist=hist.get((lb, g)), settings=settings,
+            now_txt=now_txt, interval_cutoff=interval_cutoff, rng=rng)
+    assign = {}
+    for sid in sorted(students):
+        info = students[sid]
+        if info["status"] != "pending":
+            continue
+        order = sorted(info["sel"], key=lambda lb: (st_last_label.get((sid, lb), ""), _CLASS_HW_ORDER.get(lb, 99)))
+        for lb in order:
+            gp = groups.get((lb, info["band"]))
+            if gp and gp["ok"]:
+                info["status"], info["chosen"] = "deliver", lb
+                assign.setdefault((lb, info["band"]), []).append(info)
+                break
+        else:
+            info["status"] = "no_inventory"
+    for info in students.values():
+        k = "skipped_" + info["status"]
+        if k in sk:
+            sk[k] += 1
+    return {"skips": sk, "groups": groups, "assign": assign, "students": students, "members": members,
+            "now_txt": now_txt, "interval_cutoff": interval_cutoff, "today_jst": today_jst.isoformat()}
+
+
+def _class_hw_deliver_group(c, conn, label, group, gp, studs, *, now_txt, interval_cutoff) -> dict:
+    """🏫 (クラス, 区分) 1 組を書く (1 トランザクション)。返り値 {assigned: [生徒の s], drill_id, mode, race: [id], error?}。
+    ① 学年ガード: 科目がこの区分で出してよいもの (_drill_subject_band_ok かつ _CLASS_HW_SUBJECTS_BY_GROUP) で、全員の区分が group。
+       違えば書かずに _CLASS_HW_BAND_GUARD_TRIPS を数える (正常な実行では 0)。
+    ② 新しく作るドリルの問題を読み直す: 全部が active・同じ科目・同じ単元・レビュー済みの出典 (長文は本文の出典も)。違えば書かない。
+    ③ Postgres では pg_try_advisory_xact_lock(8675314) を f-string で埋めて取り (psycopg3 は Python の int を bigint で送ることがある)、
+       錠の中で「2 日のうちのこのクラスのこの区分のドリル」(あればそれに足す) と、生徒ごとの未提出・2 日以内の受け取りを読み直す
+       (別の実行が先に配った生徒は race)。新しいドリルに 1 人も入らなければドリルも書かない。"""
+    global _CLASS_HW_BAND_GUARD_TRIPS
+    res = {"assigned": [], "drill_id": None, "mode": gp.get("mode"), "race": [], "unit": gp.get("unit"),
+           "subject": gp.get("subject"), "nq": len(gp.get("qids") or [])}
+    subject = str(gp.get("subject") or "")
+    if (not _drill_subject_band_ok(subject, group) or subject not in _CLASS_HW_SUBJECTS_BY_GROUP.get(group, ())
+            or any(s.get("band") != group for s in studs)):
+        _CLASS_HW_BAND_GUARD_TRIPS += 1
+        log.error(f"[ClassHW] BAND GUARD: class={label!r} group={group!r} subject={subject!r} → 書かない")
+        res["error"] = "band_guard"
+        return res
+    created_by = _class_hw_created_by(label, group)
+    qids = [int(q) for q in (gp.get("qids") or [])]
+    if gp.get("mode") == "new":
+        if not qids or len(set(qids)) != len(qids):
+            res["error"] = "no_questions"
+            return res
+        ph = ",".join(["?"] * len(qids))
+        has_p = _grammar_has_passages()
+        c.execute(f"SELECT id, subject, unit, source, active{', passage_id' if has_p else ''} FROM grammar_questions WHERE id IN ({ph})",
+                  tuple(qids))
+        got = {int(r["id"]): r for r in c.fetchall()}
+        pids = set()
+        for q in qids:
+            r = got.get(q)
+            if (r is None or int(r["active"] or 0) != 1 or str(r["subject"] or "") != subject
+                    or str(r["unit"] or "") != str(gp.get("unit") or "") or not _auto_delivery_source_ok(subject, r["source"])):
+                log.warning(f"[ClassHW] 問題の読み直しで不合格 class={label!r} qid={q} → 書かない")
+                res["error"] = "recheck_failed"
+                return res
+            if has_p and r["passage_id"] is not None:
+                pids.add(int(r["passage_id"]))
+        if pids:
+            php = ",".join(["?"] * len(pids))
+            c.execute(f"SELECT id, subject, source, active FROM grammar_passages WHERE id IN ({php})", tuple(sorted(pids)))
+            prow = {int(r["id"]): r for r in c.fetchall()}
+            for pid in pids:
+                r = prow.get(pid)
+                if (r is None or int(r["active"] or 0) != 1 or str(r["subject"] or "") != subject
+                        or not _auto_delivery_source_ok(subject, r["source"])):
+                    log.warning(f"[ClassHW] 本文の読み直しで不合格 class={label!r} passage={pid} → 書かない")
+                    res["error"] = "recheck_failed"
+                    return res
+    try:
+        if USE_POSTGRES:
+            c.execute(f"SELECT pg_try_advisory_xact_lock({int(_CLASS_HW_PG_LOCK_KEY)}) AS ok")
+            lk = c.fetchone()
+            if not (lk is not None and lk["ok"]):
+                conn.rollback()
+                res["race"] = [s["id"] for s in studs]
+                return res
+        c.execute("SELECT id, subject, unit, title, question_ids FROM grammar_drills WHERE created_by = ? AND created_at >= ? "
+                  "ORDER BY id DESC LIMIT 1", (created_by, interval_cutoff))
+        cur = c.fetchone()
+        if cur is not None:
+            if str(cur["subject"] or "") != subject:
+                conn.rollback()
+                res["error"] = "current_subject_mismatch"
+                return res
+            drill_id, mode = int(cur["id"]), "join"
+            try:
+                res["nq"] = len(json.loads(cur["question_ids"] or "[]"))
+            except (TypeError, ValueError):
+                pass
+            res["unit"] = cur["unit"]
+        elif gp.get("mode") == "join":
+            # 計画では足すはずのドリルが消えていた (塾長が 🗑 で消した直後など)。新しい問題を選んでいないので今回は配らない
+            conn.rollback()
+            res["race"] = [s["id"] for s in studs]
+            return res
+        else:
+            c.execute(
+                "INSERT INTO grammar_drills (subject, title, unit, level, question_ids, created_by, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
+                (subject, gp["title"], gp["unit"], ",".join(gp.get("levels") or []), json.dumps(qids), created_by, now_txt),
+            )
+            dr = c.fetchone()
+            drill_id = (dr["id"] if hasattr(dr, "keys") else dr[0]) if dr else None
+            if not drill_id:
+                conn.rollback()
+                res["error"] = "insert_failed"
+                return res
+            drill_id, mode = int(drill_id), "new"
+        ids = [int(s["id"]) for s in studs]
+        ph = ",".join(["?"] * len(ids))
+        c.execute(
+            "SELECT a.student_id AS sid, MAX(a.assigned_at) AS last_at, "
+            "SUM(CASE WHEN COALESCE(a.status, 'open') <> 'completed' THEN 1 ELSE 0 END) AS open_cnt "
+            "FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
+            f"WHERE {_class_hw_created_by_sql('d.created_by')} AND a.student_id IN ({ph}) GROUP BY a.student_id",
+            tuple(ids),
+        )
+        busy = {int(r["sid"]) for r in c.fetchall()
+                if int(r["open_cnt"] or 0) > 0 or _ts_text(r["last_at"]) >= interval_cutoff}
+        for s in studs:
+            if int(s["id"]) in busy:
+                res["race"].append(int(s["id"]))
+                continue
+            c.execute(
+                "INSERT INTO grammar_drill_assignments (drill_id, student_id, status, score_total, assigned_at) "
+                "VALUES (?, ?, 'open', ?, ?) ON CONFLICT (drill_id, student_id) DO NOTHING RETURNING id",
+                (drill_id, int(s["id"]), res["nq"], now_txt),
+            )
+            if c.fetchone():
+                res["assigned"].append(s["s"])
+            else:
+                res["race"].append(int(s["id"]))
+        if not res["assigned"]:
+            conn.rollback()   # 新しいドリルに 1 人も入らない = ドリルも書かない
+            return res
+        conn.commit()
+        res["drill_id"], res["mode"] = drill_id, mode
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        log.warning(f"[ClassHW] deliver failed class={label!r} group={group!r}: {type(e).__name__}: {e}")
+        res["assigned"] = []
+        res["error"] = "exception"
+        return res
+    try:   # 配信の記録 (生徒 id だけ・名前は入れない)。書き込みは commit 済みなので失敗しても配信は残る
+        c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                  ("class_hw_auto_delivered", json.dumps({
+                      "class_label": label, "group": group, "drill_id": res["drill_id"], "mode": res["mode"],
+                      "subject": subject, "unit": res["unit"], "student_ids": [s["id"] for s in res["assigned"]][:200],
+                  }, ensure_ascii=False)[:4000], "class_hw_auto"))
+        conn.commit()
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+    return res
+
+
+def _run_class_homework_routine(dry_run: bool = True, only_label: Optional[str] = None, *, all_classes: bool = False,
+                                include_names: bool = False, seed=None, now: Optional[datetime] = None) -> dict:
+    """🏫 クラス自動宿題の本体 (毎朝の実行・CEO の 🔍 / 📤・管理 API が同じ関数を通る)。
+    dry_run=True は副作用ゼロ (書き込み・お知らせなし) で、本番と同じ計画 (_class_hw_plan) を返す。
+    only_label = 1 クラスだけ (📤・CLASS_HW_AUTO_ONLY_CLASSES より優先)。all_classes = CLASS_HW_AUTO_ONLY_CLASSES を無視して全クラス
+    (CEO の 🔍)。seed を渡すと (クラス, 区分) ごとの乱数が決まる (dry-run と本番で同じ問題)。include_names は CEO 用 (応答だけ)。
+    now はテスト用 (既定 = 今)。返却: {delivered, drills_created, drills_joined, skipped_*, classes, assigned_students, ...}"""
+    import time as _t
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    settings = _class_hw_settings()
+    ranged_labels = [c_["label"] for c_ in _TIMETABLE_CLASSES
+                     if _CLASS_HW_ROUTINE_MAP.get(c_["label"], {}).get("kind") in ("grammar", "eiken", "reading")]
+    if only_label:
+        selected = {only_label} if only_label in ranged_labels else set()
+    elif all_classes or not settings["only_classes"]:
+        selected = set(ranged_labels)
+    else:
+        selected = {x for x in settings["only_classes"] if x in ranged_labels}
+    trips_before = _CLASS_HW_BAND_GUARD_TRIPS
+    summary = {
+        "dry_run": bool(dry_run), "settings": settings, "selected_classes": [x for x in ranged_labels if x in selected],
+        "eligible": 0, "delivered": 0, "drills_created": 0, "drills_joined": 0, "skipped_race": 0, "create_failed": 0,
+        "classes": [], "assigned_students": [], "grade_unknown_students": [], "reasons": {},
+    }
+    locked = False
+    if not dry_run:
+        if not _CLASS_HW_LOCK.acquire(timeout=120):
+            summary["error"] = "別のクラス自動宿題の実行が終わっていません (しばらくしてからもう一度)"
+            summary["busy"] = True
+            return summary
+        locked = True
+    conn = db()
+    try:
+        c = conn.cursor()
+        plan = _class_hw_plan(c, now=now, settings=settings, selected=selected, include_names=include_names, seed=seed)
+        summary.update(plan["skips"])
+        summary["now_jst"] = (datetime.strptime(plan["now_txt"], "%Y-%m-%d %H:%M:%S") + timedelta(hours=9)).strftime("%Y-%m-%d %H:%M")
+        students, groups, assign = plan["students"], plan["groups"], plan["assign"]
+        for gp in groups.values():
+            if not gp["ok"]:
+                k = f"{gp.get('reason') or 'no_plan'}:{gp['subject'] or '?'}"
+                summary["reasons"][k] = summary["reasons"].get(k, 0) + 1
+        notify_groups = []
+        results = {}
+        for key in sorted(assign, key=lambda k: (_CLASS_HW_ORDER.get(k[0], 99), k[1])):
+            studs = assign[key]
+            gp = groups[key]
+            summary["eligible"] += len(studs)
+            if dry_run:
+                results[key] = {"assigned": [s["s"] for s in studs], "drill_id": gp.get("drill_id"), "mode": gp["mode"],
+                                "race": [], "unit": gp["unit"], "subject": gp["subject"], "nq": len(gp["qids"])}
+            else:
+                results[key] = _class_hw_deliver_group(c, conn, key[0], key[1], gp, studs,
+                                                       now_txt=plan["now_txt"], interval_cutoff=plan["interval_cutoff"])
+            r = results[key]
+            if r.get("error"):
+                summary["create_failed"] += len(studs)
+                summary["reasons"][f"write_{r['error']}"] = summary["reasons"].get(f"write_{r['error']}", 0) + 1
+                for s in studs:
+                    s["status"] = "create_failed"
+                continue
+            summary["skipped_race"] += len(r["race"])
+            done = {int(s_["id"]) for s_ in r["assigned"]}
+            for s in studs:
+                if int(s["id"]) not in done:
+                    s["status"] = "race"
+            if not done:
+                continue
+            summary["delivered"] += len(done)
+            if r["mode"] == "new":
+                summary["drills_created"] += 1
+            else:
+                summary["drills_joined"] += 1
+            for s in studs:
+                if int(s["id"]) in done:
+                    e = {"id": s["id"], "label": key[0], "group": key[1], "drill_id": r.get("drill_id"), "mode": r["mode"]}
+                    if include_names:
+                        e["name"] = s.get("name")
+                    summary["assigned_students"].append(e)
+            if not dry_run:
+                notify_groups.append({"notify": r["assigned"], "unit": r["unit"], "nq": r["nq"], "subject": r["subject"]})
+        # クラスごとの表 (CEO の 🔍)。時間割の順に全クラス
+        for cl in _TIMETABLE_CLASSES:
+            lb = cl["label"]
+            ent = _CLASS_HW_ROUTINE_MAP.get(lb) or {}
+            row = {"label": lb, "kind": ent.get("kind") or "none", "selected": lb in selected, "groups": [], "students": []}
+            for g in ("kosei", "chugaku"):
+                rg = _class_hw_range(lb, g)
+                if not rg:
+                    continue
+                gp = groups.get((lb, g))
+                ge = {"group": g, "subject": rg["subject"], "units_n": len(rg["units"]), "levels": list(rg["levels"]),
+                      "members": len(plan["members"].get((lb, g), []))}
+                if gp:
+                    r = results.get((lb, g)) or {}
+                    ge.update(ok=gp["ok"], mode=gp["mode"], unit=gp["unit"], unit_reason=gp["unit_reason"], title=gp["title"],
+                              qids_n=len(gp["qids"]), passages=gp["passages"], reviewed_available=gp["reviewed_available"],
+                              unseen_available=gp["unseen_available"], reused_seen=gp["reused_seen"],
+                              drill_id=r.get("drill_id") or gp.get("drill_id"), reason=gp.get("reason", ""),
+                              tried=gp["tried"][:6], deliver_n=len(r.get("assigned") or []))
+                row["groups"].append(ge)
+            for info in students.values():
+                if lb not in info.get("labels", []):
+                    continue
+                st_ = info["status"]
+                if st_ == "deliver" and info.get("chosen") != lb:
+                    st_ = "other_class"
+                e = {"id": info["id"], "status": st_, "band": info.get("band") or ""}
+                if include_names:
+                    e["name"] = info.get("name")
+                row["students"].append(e)
+            summary["classes"].append(row)
+        for info in students.values():
+            if info["status"] == "grade_unknown":
+                e = {"id": info["id"], "grade": info.get("grade")}
+                if include_names:
+                    e["name"] = info.get("name")
+                summary["grade_unknown_students"].append(e)
+        trips = _CLASS_HW_BAND_GUARD_TRIPS - trips_before
+        summary["band_guard_trips"] = trips
+        if trips:
+            summary["error"] = f"学年ガードで {trips} 組止めました (中高の取り違え・選ぶ側の不具合)"
+        elif not dry_run and summary["create_failed"] > 0 and summary["delivered"] == 0:
+            summary["error"] = f"クラス自動宿題を 1 本も配れませんでした (書き込みの失敗 {summary['create_failed']} 名)"
+        if settings["only_classes_unknown"]:
+            summary["reasons"]["only_classes_unknown"] = len(settings["only_classes_unknown"])
+        # 読むだけのトランザクションを閉じてからお知らせ (idle in transaction のまま students を持たない)
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        # お知らせ: 自動配信なので source='auto' (既定は LINE もメールも送らない = ループも待ちも走らない)。新しく配った生徒だけ
+        _ch = _homework_notify_channels("auto")
+        summary["notify"] = {"line": _ch["line"], "email": _ch["email"]}
+        if notify_groups and (_ch["line"] or _ch["email"]):
+            first = True
+            for g in notify_groups:
+                if not first:
+                    _t.sleep(1.5)
+                first = False
+                try:
+                    _notify_grammar_drill_assigned(g["notify"], g["unit"], g["nq"], g["subject"], source="auto")
+                except Exception as e:
+                    log.warning(f"[ClassHW] notify failed: {type(e).__name__}: {e}")
+        return summary
+    finally:
+        conn.close()
+        if locked:
+            _CLASS_HW_LOCK.release()
+
+
+async def _class_hw_routine_scheduler():
+    """🏫 クラス自動宿題の scheduler: 毎朝 JST CLASS_HW_AUTO_HOUR_JST 時 (既定 6:00・5〜22) に起動。
+    env CLASS_HW_AUTO_ENABLED が有効な日だけ配る (既定 OFF = 毎日起きて env を見るだけ)。同じ日の 2 回目は実行記録で飛ばす
+    (レプリカが 2 つでも 1 回)。配る生徒がいない日も実行記録を残す (監視 class_hw_auto_run は 2 日で停止扱い)。
+    実行記録 (events.props) は _compact_run_props の要約 (数・理由・生徒 id 30 件まで・名前なし)。
+    同期処理 (DB・お知らせ) は asyncio.to_thread で呼ぶ (event loop を塞がない)。"""
+    JST_ = timezone(timedelta(hours=9))
+    log.info(f"[ClassHW] Scheduler started, target JST {_class_hw_hour_jst()}:00 daily (gated by CLASS_HW_AUTO_ENABLED)")
+    while True:
+        try:
+            now_jst = datetime.now(JST_)
+            target = now_jst.replace(hour=_class_hw_hour_jst(), minute=0, second=0, microsecond=0)
+            if target <= now_jst:
+                target += timedelta(days=1)
+            await asyncio.sleep((target - now_jst).total_seconds())
+            if not _class_hw_routine_enabled():
+                continue  # env OFF の間は毎日チェックのみで何もしない
+            if await asyncio.to_thread(_check_scheduler_ran_today_jst, "class_hw_auto_run"):
+                log.info("[ClassHW] Skipped (already ran today by another replica)")
+                continue
+            try:
+                result = await asyncio.to_thread(_run_class_homework_routine, False)
+                props = _compact_run_props(result)
+                log.info(f"[ClassHW] result: {props}")
+                await asyncio.to_thread(_record_scheduler_run, "class_hw_auto_run", props)
+            except Exception as e:
+                log.error(f"[ClassHW] failed: {type(e).__name__}: {e}", exc_info=True)
+                await asyncio.to_thread(_record_scheduler_run, "class_hw_auto_run", {"error": f"{type(e).__name__}: {e}"[:300]})
+        except asyncio.CancelledError:
+            log.info("[ClassHW] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[ClassHW] Scheduler loop error: {e}", exc_info=True)
+            await asyncio.sleep(3600)
+
+
+@app.post("/api/admin/class-homework-routine/run")
+def admin_class_homework_routine_run(
+    payload: Optional[dict] = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🏫 admin: クラス自動宿題の確認 / 今すぐ配信。env の ON/OFF に関わらず実行できる。
+    payload: { dry_run?: bool (既定 true = 何も書かない・送らない), class_label?: 時間割のクラス名 (そのクラスだけ・📤),
+    all_classes?: bool (CLASS_HW_AUTO_ONLY_CLASSES を無視して全クラスを計算・🔍), include_names?: bool (CEO だけ true),
+    seed?: int (dry-run と本番で同じ問題) }。
+    塾長が押しても中身はアルゴリズムが選ぶので、お知らせは source='auto' (既定では LINE もメールも送らない)。
+    2 日に 1 本・未提出があれば積まない・(クラス, 区分) ごとに 2 日に 1 本は 📤 でも同じ (押し直しても増えない)。
+    応答: enabled_env / plan_version=1 (CEO は plan_version が無ければ「サーバ反映待ち」) / allowlist (英語の科目だけ)。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    payload = payload or {}
+    dry = payload.get("dry_run")
+    dry = True if dry is None else bool(dry)   # 既定 dry_run (誤爆防止)
+    label = payload.get("class_label")
+    if label is not None:
+        label = str(label).strip()
+        if label not in _TIMETABLE_LABELS:
+            raise HTTPException(status_code=400, detail="class_label が時間割クラスと一致しません")
+        if not any(_class_hw_range(label, g) for g in ("kosei", "chugaku")):
+            raise HTTPException(status_code=400, detail=f"「{label}」はクラス自動宿題を出さないクラスです (hold / 英語以外)")
+    seed = payload.get("seed")
+    try:
+        seed = int(seed) if seed is not None and not isinstance(seed, bool) else None
+    except (TypeError, ValueError):
+        seed = None
+    result = _run_class_homework_routine(dry_run=dry, only_label=label, all_classes=bool(payload.get("all_classes")),
+                                         include_names=bool(payload.get("include_names")), seed=seed)
+    al = _auto_delivery_allowlist()
+    return {
+        "ok": True, **result,
+        "enabled_env": _class_hw_routine_enabled(),
+        "allowlist": {k: list(al.get(k, ())) for k in ("english", "chugaku", "eiken", "english_long")},
+        "plan_version": 1,
+    }
 
 
 # ==========================================================================

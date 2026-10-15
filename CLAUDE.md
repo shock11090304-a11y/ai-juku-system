@@ -834,7 +834,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
     応答に `skipped_*`・`reasons` (区分違い・在庫なしの内訳)・`band_counts`・`grade_unknown_students`・`mode_changed_by_normalization`
     (全角・漢数字の学年で画面のモードが変わる生徒)・`allowlist`・`plan_version: 2`。名前は `include_names: true` のときだけ。
   - 二重配信の防止: Postgres では書き込み直前に `pg_try_advisory_xact_lock(8675313, 生徒ID)` (2 引数・f-string で埋める) を取り、
-    錠の中で未提出・3 日以内の 3日ドリルを読み直す (あれば `skipped_race`)。**1 引数の 8675309〜8675312 と番号を重ねない** (新しい錠は 8675314 以降)。
+    錠の中で未提出・3 日以内の 3日ドリルを読み直す (あれば `skipped_race`)。**1 引数の 8675309〜8675312・8675314 (クラス自動宿題) と番号を重ねない** (新しい錠は 8675315 以降)。
   - 監視: ON で起動したときだけ `_SCHEDULER_MAX_AGE_DAYS` に `weakness_drill_routine_run` (2 日)。実行記録は `_compact_run_props` の要約
     (名前なし・4000 字未満)。全員の作成に失敗したら / 学年ガードが動いたら `props.error` (失敗の通知)。`prod_healthcheck.py` は
     `OPTIONAL_UNTIL_FIRST_RUN` (履歴が無いうちは PASS。ON の後で OFF に戻したらそこから外す)。
@@ -854,6 +854,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 
 ## 塾生アプリのみ枠 (AIなし) と宿題ドリル (2026-09-24 塾長決定)
 - **塾長方針: 英語の自由演習は開かない。AIなしの生徒が解けるのは「塾長が出した宿題」と「配信した単元ドリル」だけ。**
+  2026-10-15 から、英語の受講クラスの宿題として科目別ドリルのレビュー済みの問題を自動で配る (下の 🏫 クラス自動宿題・既定 OFF)。
+  これも「配信した単元ドリル」なので許可集合は変えない。
   `_AI_DISABLED_ALLOWED_EXACT / _PREFIXES` (middleware の許可集合) は変えない。`check_light_tier_middleware.py` が固定している。
   塾長が CEO で配る 🧪 習熟度テスト・📖 英語長文も「配信した単元ドリル」なので、許可集合を変えずに AIなし枠でも解ける。
 - 宿題の「📝 ドリルで解く」(class.html → `dojo-drill.html?w_subject=&w_topic=&hw=<宿題ID>`) の結果保存は
@@ -877,6 +879,43 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   生徒にだけ AI学習アプリの案内 1 つ + 「💬 塾長に聞く」を出す (2026-09-24 塾長方針・`gdAiHintHtml` / `gdWireAskAi`)。ボタンは 💬 メッセージタブへ
   移るだけで mypage / 道場 / AI への入口にはしない。AIあり・旧バックエンド (undefined)・feed 未取得では出ない。
   金額 (+5,000 円) は `payment/courses.json` / `api/register-subscribe.py` に手で追従する (`check_course_price_sync.py` は class.html を見ない)。
+
+## 🏫 クラス自動宿題 (塾生アプリのみ枠・英語だけ) (2026-10-15 塾長決定「基本的に2日に1回」)
+- **AIなし (塾生アプリのみ) の通塾生に、受講している英語のクラスの宿題として、科目別ドリルのレビュー済みの問題だけで自動採点ドリルを配る**
+  (`_run_class_homework_routine`)。AIあり・AI 体験中の生徒は 3日ドリルの側 (`_auto_delivery_ai_path` 1 か所で振り分け = 1 人 1 経路)。
+  ON/OFF は env `CLASS_HW_AUTO_ENABLED` (既定 OFF・1/true/yes/on)。CEO の 🔍 / 📤 と管理 API は ON/OFF に関係なく動く。
+- 対象: 在籍 (`_enrolled_sql`)・合成監視とテスト系の名前を除く・AIなし枠 (体験中でない)・通塾生 (course=kokuritsu_nankan か plan=student_addon =
+  宿題タブが開ける)・受講クラスに英語のクラスがある・学年の区分が中学か高校 (`_student_grade_band`。空・「その他」・小学生には配らない =
+  dry-run の `grade_unknown_students` に名前を出すので CEO で学年を直す)・受講開始月を過ぎている (NULL は制限なし)。
+- **2 日に 1 回**: 毎朝 6:00 (`CLASS_HW_AUTO_HOUR_JST`・5〜22 に丸める) に回し、1 人に届くのはどのクラスからでも 2 日に 1 本まで
+  (`CLASS_HW_INTERVAL_DAYS`・判定は 6 時間の遊びつき)。未提出 (completed 以外) のクラス自動宿題が残っていれば積まない。
+  英語のクラスを 2 つ取る生徒は、最後に届いたのが古いクラスから (同じなら時間割の順)。
+- ドリルは (クラス, 区分) ごとに 2 日に 1 本 = 同じクラスの同じ区分は同じ問題 (CEO の問題別の正解率が比べられる)。2 日のうちのドリルがあれば
+  新しく作らず、その日に受け取れるようになった生徒をそのドリルに足す (`drills_joined`)。印は `created_by = class_hw_auto:<区分>:<クラス名>` (列は足さない)。
+- クラスと範囲は `_CLASS_HW_ROUTINE_MAP` (★キー = 時間割のクラス名。クラスが増えたら明示の 1 行を足す・テストが落ちる):
+  英文法・中学英語のクラス → 高校生は english (文法 20 単元)・中学生は chugaku (中学基礎・中学2年 英語は中1・中2 の 8 単元) /
+  英検のクラス → クラスの級の eiken (単語 → 長文空所補充 → 句動詞・熟語 → 内容一致・学年を問わない) / 長文のクラス → english_long の
+  クラスの単元 (高校生だけ・レビュー済みの本文が `CLASS_HW_READING_MIN_PASSAGES`=4 本になったら始まる・本文 1 本) /
+  GMARCH・早慶 = hold (まだ出さない) / 日曜 高校国語 = none。レベルは表の値 (英文法 Lv.1 基礎+標準・Lv.2/国公立 標準+やや難・高2 標準・
+  中学応用 標準+やや難・中学基礎/中2 基礎+標準)。量は 10 問 (`CLASS_HW_AUTO_COUNT`)・英検の長文は本文 2 本 (`CLASS_HW_AUTO_PASSAGES`)。
+- 単元: そのクラスのその区分の生徒の弱点 (student_weakness・合計 3 回以上・正答率 0.8 未満) を合わせた正答率の低い順 → 無ければ前回の次の単元 →
+  全部が直近 `CLASS_HW_UNIT_COOLDOWN_DAYS`=14 日に出した単元なら一番前に出した単元。中学は前置きつきの写し (「中学英語 時制」) を数えない。
+  問題はレビュー済みだけ (`_auto_pick_reviewed_question_ids` / 長文は `_auto_pick_reviewed_passages`)・そのクラスのその区分に前に出した問題は避ける。
+- 題名「【<クラス名>】宿題 <単元>（N問・〆M/D）」(〆 = 配った日 + `CLASS_HW_INTERVAL_DAYS` 日 = 既定 2 日・JST)。
+- 学年ガードは選ぶとき (区分の範囲だけ) と書き込む直前 (`_class_hw_deliver_group`: `_drill_subject_band_ok`・区分の科目・全員の区分・
+  問題と本文の読み直し) の 2 回。止めたら `_CLASS_HW_BAND_GUARD_TRIPS` と `props.error`。
+- 二重配信の防止: Postgres では書き込みの直前に `pg_try_advisory_xact_lock(8675314)` (1 引数・f-string) を取り、錠の中で 2 日のうちのドリルと
+  生徒ごとの未提出・2 日以内の受け取りを読み直す (別の実行が先に配った生徒は `skipped_race`)。毎朝の実行は events の実行記録で 1 日 1 回。
+- お知らせは自動配信なので `source='auto'` (既定では LINE もメールも送らない・アプリ内の「🆕 新しい宿題」だけ)。
+- 監視: ON で起動したときだけ `_SCHEDULER_MAX_AGE_DAYS` に `class_hw_auto_run` (2 日・配る生徒がいない日も記録)。記録は `_compact_run_props`
+  (名前なし)。1 本も書けなかった / 学年ガードが動いたら `props.error`。`prod_healthcheck.py` は `OPTIONAL_UNTIL_FIRST_RUN`。
+  配信ごとの記録は events `class_hw_auto_delivered` (生徒 id だけ)。
+- 管理 API `POST /api/admin/class-homework-routine/run` (管理者トークンか X-Cron-Secret): 既定 `dry_run: true`・`class_label` (1 クラスだけ)・
+  `all_classes` (`CLASS_HW_AUTO_ONLY_CLASSES` を無視)・`include_names` (CEO だけ)・`seed`。応答に `classes` (15 クラス・区分ごとの次の単元と理由・
+  生徒ごとの状態)・`skipped_*`・`plan_version: 1`。
+- ON にする手順: CEO の 🔍 で全クラスを見る (学年未設定・クラス未登録・在庫) → 1 クラスを 📤 で試す → Railway で
+  `CLASS_HW_AUTO_ONLY_CLASSES=<そのクラス>` と `CLASS_HW_AUTO_ENABLED=1` → 1 回まわったら ONLY を外す。止めるのは `CLASS_HW_AUTO_ENABLED` を消すだけ。
+- 回帰テスト: `scripts/health_check/test_class_homework_routine.py` (CI `server-tests.yml`)。3日ドリルと合わせた 1 人 1 経路の検査もここ。
 
 ## 📣 宿題・ドリルのお知らせはアプリの中で (2026-10-15 塾長決定「アプリを開けば分かる」)
 - 宿題・ドリルを配ったときのお知らせは**アプリ内表示が基本**。LINE は宿題・ドリルのお知らせに使わない
@@ -917,7 +956,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - `students.start_month` ('YYYY-MM'・JST) が入っている生徒は、**開始月より前**は ①クラス宿題の一括配信 (`/api/admin/class/homework`) の対象外
   (期限の月 / 期限なしは今月で判定・response `skipped_before_start`) ②出欠を出さない (class.html) / 受けない (400) / 塾長の出欠名簿に載せない
   ③入塾月 (開始月の 1 日) より前の授業の録画を feed で出さない (`archive_from`・`hidden_recordings`) ④水曜の一声・ゼロ週メールを送らない
-  (活動があった週の通常レポートは送る = 保護者向けの見本)。生徒を指名する配信 (単元ドリル・個別宿題) は対象外 = 塾長が選んだ生徒には出る。
+  (活動があった週の通常レポートは送る = 保護者向けの見本) ⑤クラス自動宿題を配らない (配る日の月で判定・skipped before_start)。
+  生徒を指名する配信 (単元ドリル・個別宿題) は対象外 = 塾長が選んだ生徒には出る。3日ドリル (AIあり) も開始月を見ない。
 - **`start_month` が NULL の生徒 (既存全員) はどの判定も従来と同じ経路** (feed の録画ループは `_cutoff` が None なら新しい分岐に入らない = 挙動は従来と同一)。
   2026-08-07 の「絞り込みで 36 名の録画が消えた」型の事故を繰り返さないための不変条件。`test_start_month_archive.py` が固定する。
 - 承認時、入塾申込フォームの行の備考「受講開始月: 2026年10月（…）」(stripe-webhook が書く) から **新規生徒にだけ** 自動で入る。

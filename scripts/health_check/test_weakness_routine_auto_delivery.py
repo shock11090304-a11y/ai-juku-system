@@ -275,7 +275,8 @@ def main():
     hc.results.clear()
     hc.check_scheduler_live(_HcCur())
     mine = [r for r in hc.results if "weakness_drill_routine_run" in r[2]]
-    others = [r for r in hc.results if "weakness_drill_routine_run" not in r[2]]
+    # ほか = OPTIONAL_UNTIL_FIRST_RUN に無いもの (2026-10-15 からクラス自動宿題 class_hw_auto_run も履歴が無いうちは PASS)
+    others = [r for r in hc.results if not any(n_ in r[2] for n_ in hc.OPTIONAL_UNTIL_FIRST_RUN)]
     check("実行履歴が無いうちは PASS (未有効化)", mine and all(r[1] == hc.PASS for r in mine), mine)
     check("ほかのスケジューラは今までどおり 実行履歴なし = WARN", others and all(r[1] == hc.WARN for r in others), others[:2])
 
