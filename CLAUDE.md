@@ -902,6 +902,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   全部が直近 `CLASS_HW_UNIT_COOLDOWN_DAYS`=14 日に出した単元なら一番前に出した単元。中学は前置きつきの写し (「中学英語 時制」) を数えない。
   問題はレビュー済みだけ (`_auto_pick_reviewed_question_ids` / 長文は `_auto_pick_reviewed_passages`)・そのクラスのその区分に前に出した問題は避ける。
 - 題名「【<クラス名>】宿題 <単元>（N問・〆M/D）」(〆 = 配った日 + `CLASS_HW_INTERVAL_DAYS` 日 = 既定 2 日・JST)。
+  塾生アプリのカードの 2 行目 (class.html `gdMetaText`) は、題名に 〆 があれば「いつでもOK」を出さない (題名と食い違うため)。
 - 学年ガードは選ぶとき (区分の範囲だけ) と書き込む直前 (`_class_hw_deliver_group`: `_drill_subject_band_ok`・区分の科目・全員の区分・
   問題と本文の読み直し) の 2 回。止めたら `_CLASS_HW_BAND_GUARD_TRIPS` と `props.error`。
 - 二重配信の防止: Postgres では書き込みの直前に `pg_try_advisory_xact_lock(8675314)` (1 引数・f-string) を取り、錠の中で 2 日のうちのドリルと
@@ -915,7 +916,12 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   生徒ごとの状態)・`skipped_*`・`plan_version: 1`。
 - ON にする手順: CEO の 🔍 で全クラスを見る (学年未設定・クラス未登録・在庫) → 1 クラスを 📤 で試す → Railway で
   `CLASS_HW_AUTO_ONLY_CLASSES=<そのクラス>` と `CLASS_HW_AUTO_ENABLED=1` → 1 回まわったら ONLY を外す。止めるのは `CLASS_HW_AUTO_ENABLED` を消すだけ。
+- CEO (📝 科目別 単元ドリル の下・🎯 カードの次): 「🏫 クラス自動宿題」カード。🔍 は `dry_run: true`・`all_classes`・`include_names` だけ
+  (15 クラスの表 = 出題範囲・区分ごとの次の単元と理由と在庫・配る生徒・外した生徒と理由・学年が判定できない生徒)。
+  クラスの行の 📤 は confirm() の後でだけ `dry_run: false` + `class_label` (そのクラスだけ・押し直しても増えない)。
+  「📋 結果」は下の配信済みドリル一覧を `kind=class_hw` に切り替える。inline だけ (ceo.js は触らない)。名前・学年・クラス名は escapeHtml。
 - 回帰テスト: `scripts/health_check/test_class_homework_routine.py` (CI `server-tests.yml`)。3日ドリルと合わせた 1 人 1 経路の検査もここ。
+  [14] が CEO のカードと塾生アプリのカードの 〆 を JS エンジンで実際に動かす (無ければ FAIL)。
 
 ## 📣 宿題・ドリルのお知らせはアプリの中で (2026-10-15 塾長決定「アプリを開けば分かる」)
 - 宿題・ドリルを配ったときのお知らせは**アプリ内表示が基本**。LINE は宿題・ドリルのお知らせに使わない

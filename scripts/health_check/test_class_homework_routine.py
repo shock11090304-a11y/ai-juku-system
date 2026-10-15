@@ -29,6 +29,9 @@
   [12] 1 人 1 経路 (3日ドリルと合わせて): ai_disabled 0/1 × 体験の期限 なし/過去/未来/壊れた値 の全員が、ちょうど 1 つの自動配信に入る
   [13] 競合と監視: 計画と書き込みの間に別の実行が配った生徒は race (2 本目を作らない)・全部の書き込みに失敗したら props.error・
       要約は 4000 字未満の正しい JSON で名前を含まない・配信の記録 (events) は生徒 id だけ
+  [14] 画面: CEO「🏫 クラス自動宿題」カード (🎯 確認カードと配信済み一覧の帯の間・🔍 は dry_run: true・📤 は confirm() の後だけ本番で
+      1 クラス・「📋 結果」は一覧を class_hw に切り替える・名前は escape・古いサーバは「サーバ反映待ち」) と塾生アプリのカードの 2 行目
+      (題名に 〆 があれば「いつでもOK」と書かない)。ceo.html / class.html の本物のコードを JS エンジンで動かす (無ければ FAIL)
 
 実行:
     python3 scripts/health_check/test_class_homework_routine.py
@@ -54,6 +57,9 @@ MAIN_PY = os.path.join(REPO, "server", "main.py")
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(REPO, "server"))
 from test_grammar_import_units import admin_token, import_like_ceo, load_seed, Api  # noqa: E402
+from test_grade_band_consistency import js_engine, run_js  # noqa: E402
+CEO_HTML = os.path.join(REPO, "ceo.html")
+CLASS_HTML = os.path.join(REPO, "class.html")
 
 FAILURES = []
 ENV_KEYS = ("CLASS_HW_AUTO_ENABLED", "CLASS_HW_AUTO_HOUR_JST", "CLASS_HW_INTERVAL_DAYS", "CLASS_HW_AUTO_COUNT",
@@ -196,6 +202,153 @@ def el_passage(set_id, n, unit="長文 Lv.1", nq=3):
           for k in range(1, nq + 1)]
     return {"subject": "english_long", "unit": unit, "level": "standard", "title": f"Fictional {n}", "body": body,
             "body_ja": f"架空の全訳 {n}", "source": f"englong:{set_id}:{pid}", "questions": qs}
+
+
+def _js_block(src, head, end="\n    }\n"):
+    """src の head から、同じ字下げで閉じる } までを切り出す (無ければ '')。"""
+    i = src.find(head)
+    if i < 0:
+        return ""
+    j = src.find(end, i)
+    return src[i:j + len(end)] if j > i else ""
+
+
+def _js_between(src, a, b):
+    i = src.find(a)
+    j = src.find(b, i + 1) if i >= 0 else -1
+    return src[i:j] if 0 <= i < j else ""
+
+
+def _js_line(src, head):
+    i = src.find(head)
+    return src[i:src.find("\n", i)] if i >= 0 else ""
+
+
+_JS_OUT = ("var __s = 'RESULT ' + JSON.stringify(__o);\n"
+           "if (typeof process !== 'undefined' && typeof console !== 'undefined' && console.log) console.log(__s);\n"
+           "else if (typeof print === 'function') print(__s);\n"
+           "else if (typeof console !== 'undefined' && console.log) console.log(__s);\n")
+
+
+def check_screens(mod, client, adm, ids):
+    """[14] CEO「🏫 クラス自動宿題」カードと塾生アプリのカードの 2 行目 (本物のコードを JS エンジンで動かす)。"""
+    print("\n[14] 画面: CEO 🏫 カード (🔍 は dry-run・📤 は confirm の後だけ・名前は escape) / 塾生アプリのカードの 〆")
+    import re
+    ceo = open(CEO_HTML, encoding="utf-8").read()
+    cls = open(CLASS_HTML, encoding="utf-8").read()
+    try:
+        pos = [ceo.index('id="gdRoutineBox"'), ceo.index('id="chwBox"'), ceo.index('id="gdListBar"'), ceo.index('<div id="gdList"')]
+    except ValueError as e:
+        pos = []
+        check("ceo.html に 🎯 カード・🏫 カード・絞り込みの帯・一覧がある", False, e)
+    check("並び: 🎯 確認カード → 🏫 クラス自動宿題 → 絞り込みの帯 → 一覧", len(pos) == 4 and pos == sorted(pos), pos)
+    urls = re.findall(r"""[`'"]/api/admin/class-homework-routine/run""", ceo)
+    check("クラス自動宿題の URL は 1 か所 (_CHW_URL) だけに書く", len(urls) == 1 and "const _CHW_URL = '/api/admin/class-homework-routine/run';" in ceo, urls)
+    check("3日ドリルを回す呼び出しは今までどおり 🔍 の 1 か所だけ", len(re.findall(r"""[`'"]/api/admin/weakness-drill-routine/run""", ceo)) == 1)
+    dry = _js_block(ceo, "    async function chwDryRun() {")
+    runc = _js_block(ceo, "    async function chwRunClass(i) {")
+    check("🔍 は dry_run: true・all_classes・include_names だけを送る (本番にしない)",
+          "_CHW_URL" in dry and "dry_run: true, all_classes: true, include_names: true" in dry and "dry_run: false" not in dry, dry[:300])
+    check("📤 は confirm() の後でだけ dry_run: false と class_label を送る",
+          "_CHW_URL" in runc and "dry_run: false, class_label: String(row.label)" in runc
+          and 0 <= runc.find("confirm(") < runc.find("dry_run: false"), runc[:300])
+    check("📤 の onclick にはクラス名を入れず番号だけ (引用符で壊れない)", "onclick=\"chwRunClass(${i})\"" in ceo)
+    check("「📋 結果」は一覧を class_hw に切り替える", "window.gdListSetKind('class_hw')" in _js_block(ceo, "    function chwShowResults() {"))
+    check("inline onclick から呼ぶ関数を window に出している",
+          all(f"window.{f_} = {f_}" in ceo for f_ in ("chwDryRun", "chwRunClass", "chwShowResults")))
+
+    rd = client.post("/api/admin/class-homework-routine/run", json={"dry_run": True, "all_classes": True, "include_names": True}, headers=adm)
+    dj = rd.json() if rd.status_code == 200 else {}
+    check("CEO の管理者のトークンで 🔍 の応答が読める (名前つき)", rd.status_code == 200 and dj.get("plan_version") == 1, (rd.status_code, rd.text[:200]))
+    eng = js_engine()
+    check("JS の実行環境がある (node / osascript / jsc。無ければ FAIL)", bool(eng))
+    esc_line = _js_line(ceo, "    function escapeHtml(s) { return (s||'')")
+    subj_ja = _js_between(ceo, "    const _GD_SUBJ_JA = {", "    // 📋 配信済みドリルの絞り込み")
+    rt_card = _js_between(ceo, "    const _GD_RT_REASON_JA = {", "    let _gdRtBusy = false;")
+    chw = _js_between(ceo, "    // 🏫 クラス自動宿題の確認・配信カード", "    async function gdAnalytics(drillId) {")
+    check("CEO のコードを切り出せた", all((esc_line, subj_ja, rt_card, chw)))
+    if not eng or not all((esc_line, subj_ja, rt_card, chw)):
+        return
+    run_resp = {"ok": True, "plan_version": 1, "dry_run": False, "delivered": 2, "drills_created": 1, "drills_joined": 0, "skipped_race": 1}
+    prog = "\n".join([
+        "var window = (typeof globalThis !== 'undefined') ? globalThis : this;",
+        "var __els = {};",
+        "function __el(id) { if (!__els[id]) __els[id] = { id: id, innerHTML: '', disabled: false, scrollIntoView: function () { __o.scrolled = true; } }; return __els[id]; }",
+        "var document = { getElementById: function (id) { return __el(id); } };",
+        "var __o = { posts: [], confirms: [], kinds: [] };",
+        "var __confirmAnswer = false;",
+        "function confirm(t) { __o.confirms.push(String(t)); return __confirmAnswer; }",
+        f"var __dry = {json.dumps(dj, ensure_ascii=False)};",
+        f"var __run = {json.dumps(run_resp, ensure_ascii=False)};",
+        "function __res(status, body) { return { ok: status === 200, status: status, json: function () { return Promise.resolve(body); } }; }",
+        "var AdminAuth = { fetch: function (path, opt) { var b = JSON.parse((opt && opt.body) || '{}'); __o.posts.push({ path: path, body: b });"
+        " return Promise.resolve(__res(200, b.dry_run === false ? __run : __dry)); } };",
+        "window.gdListSetKind = function (k) { __o.kinds.push(k); };",
+        esc_line, subj_ja, rt_card, chw,
+        "__o.render = _chwRender(__dry);",
+        "__o.old = _chwRender({ ok: true, delivered: 3 });",
+        "async function __ticks() { for (var i = 0; i < 30; i++) { await null; } }",
+        "(async function () {",
+        "  await chwDryRun();",
+        "  __o.afterDry = __el('chwResult').innerHTML; __o.state = __el('chwState').innerHTML;",
+        "  var idx = -1; for (var i = 0; i < __dry.classes.length; i++) { if (__dry.classes[i].students.some(function (e) { return e.status === 'deliver'; })) { idx = i; break; } }",
+        "  __o.idx = idx; __o.label = idx >= 0 ? __dry.classes[idx].label : null;",
+        "  await chwRunClass(idx); __o.postsAfterNo = __o.posts.length;",
+        "  __confirmAnswer = true; await chwRunClass(idx); await __ticks();",
+        "  __o.msg = __el('chwMsg').innerHTML;",
+        "  await chwRunClass(999); __o.postsAfterBad = __o.posts.length;",
+        "  chwShowResults();",
+        "  " + _JS_OUT.replace("\n", "\n  "),
+        "})();",
+    ])
+    out, err = run_js(eng, prog)
+    check("🏫 カードのコードが JS で動く", out is not None, err)
+    out = out or {}
+    rend = out.get("render", "")
+    check("15 クラスの表 (クラス名つき)", rend.count("<tr>") >= 15 + 1 and "火曜2限 英文法 Lv.2" in rend, rend[:300])
+    check("名前の HTML は escape される (<img を出さない)", "&lt;img" in rend and "<img" not in rend, rend[:300])
+    check("学年の HTML も escape される", "&lt;b&gt;未設定&lt;/b&gt;" in rend and "<b>未設定" not in rend)
+    check("配る生徒は id つき・押すと生徒詳細", f"window.showStudentDetail({ids['deliver']})" in rend, ids)
+    check("ON/OFF が出る (既定は OFF)・お知らせはアプリの中だけ", "毎朝の自動配信 OFF" in rend and "アプリの中だけ" in rend)
+    check("外した理由が日本語のチップで出る (学年が判定できない・GMARCH・早慶だけ)", "学年が判定できない" in rend and "GMARCH・早慶だけ" in rend)
+    check("📤 はクラスの番号だけを渡す", re.search(r'onclick="chwRunClass\(\d+\)"', rend) is not None)
+    check("plan_version の無い古い応答は「サーバ反映待ち」", "反映待ち" in out.get("old", "") and "配る" not in out.get("old", ""))
+    posts = out.get("posts") or []
+    check("🔍 → 送ったのは dry_run: true・all_classes・include_names", posts[:1] and posts[0]["path"] == "/api/admin/class-homework-routine/run"
+          and posts[0]["body"] == {"dry_run": True, "all_classes": True, "include_names": True}, posts[:1])
+    check("📤 で confirm() に「いいえ」なら送らない", out.get("postsAfterNo") == 1 and out.get("confirms"), out.get("postsAfterNo"))
+    check("confirm() の文にクラス名と人数", out.get("confirms") and out.get("label") and out["label"] in out["confirms"][0]
+          and "名に、クラス自動宿題を今すぐ配信" in out["confirms"][0], out.get("confirms"))
+    check("📤 で「はい」→ dry_run: false と class_label (そのクラスだけ)・その後 🔍 で表を読み直す",
+          len(posts) >= 3 and posts[1]["body"] == {"dry_run": False, "class_label": out.get("label"), "include_names": True}
+          and posts[2]["body"].get("dry_run") is True, posts[1:3])
+    check("📤 の結果の文 (配った人数・新しいドリル・別の実行が先に配った)", "2 名に配信しました" in out.get("msg", "") and "別の実行が先に配った 1 名" in out.get("msg", ""),
+          out.get("msg"))
+    check("知らない番号の 📤 は何も送らない", out.get("postsAfterBad") == len(posts), (out.get("postsAfterBad"), len(posts)))
+    check("「📋 結果」→ 一覧の絞り込みを class_hw に", out.get("kinds") == ["class_hw"] and out.get("scrolled") is True, out.get("kinds"))
+
+    parts = [_js_block(cls, "    function esc(s) {"), _js_line(cls, "    function _pad2(n) {"), _js_line(cls, "    function gdIsOpen(x) {"),
+             _js_block(cls, "    function gdLocalDate(s, withTime) {"), _js_block(cls, "    function gdMetaText(it) {")]
+    check("class.html のカードのコードを切り出せた", all(parts))
+    if not all(parts):
+        return
+    prog2 = "\n".join(["var window = (typeof globalThis !== 'undefined') ? globalThis : this;"] + parts + [
+        "var __o = {};",
+        "__o.due = gdMetaText({ subject: 'english', title: '【火曜2限 英文法 Lv.2】宿題 時制（10問・〆10/23）', status: 'open', score_total: 10 });",
+        "__o.plain = gdMetaText({ subject: 'english', title: '時制ドリル（標準・10問）', status: 'open', score_total: 10 });",
+        "__o.pt = gdMetaText({ subject: 'proficiency_test', title: 'テスト〆', status: 'open', score_total: 9 });",
+        "__o.done = gdMetaText({ subject: 'english', title: '宿題（10問・〆10/23）', status: 'completed', score_correct: 7, score_total: 10 });",
+        _JS_OUT,
+    ])
+    out2, err2 = run_js(eng, prog2)
+    check("塾生アプリのカードの 2 行目のコードが JS で動く", out2 is not None, err2)
+    out2 = out2 or {}
+    check("題名に 〆 があれば「いつでもOK」と書かない (題名の 10問 も重ねない)",
+          "いつでもOK" not in out2.get("due", "x") and "その場で自動採点" in out2.get("due", "") and "全 10 問" not in out2.get("due", ""), out2.get("due"))
+    check("〆 の無い題名は今までどおり「その場で自動採点 ・ いつでもOK」", "その場で自動採点 ・ いつでもOK" in out2.get("plain", ""), out2.get("plain"))
+    check("習熟度テストの文は変えない", "授業の指示どおりに解いて提出 ・ 提出は1回だけ" in out2.get("pt", ""), out2.get("pt"))
+    check("提出済みはスコア", "スコア 7 / 10" in out2.get("done", ""), out2.get("done"))
+    check("class.html: カードの 2 行目は今も gdMetaText(it) の 1 か所", "var meta = gdMetaText(it);" in cls)
 
 
 def main():
@@ -840,6 +993,14 @@ def main():
     check("全部の書き込みに失敗したら error (監視 _failed_schedulers が拾う)", res["delivered"] == 0 and res["create_failed"] == 2
           and "1 本も配れません" in str(res.get("error")), res.get("error"))
     check("error は要約にも残る", "error" in mod._compact_run_props(res))
+
+    # [14] 画面: 名前・学年に HTML を入れた生徒で 🔍 の応答を作り、CEO のカードを JS で描く
+    reset_chw()
+    v1 = make("高校2年", [LV2], name="架空 <img src=x onerror=alert(1)> 生徒")
+    v2 = make("<b>未設定</b>", [LV2])
+    v3 = make("高校3年", ["水曜2限 GMARCH"])
+    only_active([v1, v2, v3])
+    check_screens(mod, client, adm, {"deliver": v1})
 
     print()
     if FAILURES:

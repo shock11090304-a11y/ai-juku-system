@@ -805,6 +805,24 @@
         <div id="gdRoutineResult" style="margin-top:0.5rem;"></div>
         <div id="gdRoutineInv" style="margin-top:0.5rem;"></div>
       </details>
+      <!-- 🏫 クラス自動宿題 (塾生アプリのみ枠 = AIなし・英語だけ) の確認・配信カード (2026-10-15 塾長決定「基本的に2日に1回」)。
+           開いただけではサーバに聞かない。🔍 は dry_run: true (配信しない・全クラス・名前つき)。📤 はクラスごとに confirm() のあとだけ
+           本番 (そのクラスだけ・2 日に 1 本と未提出なら積まないはサーバが守る = 押し直しても増えない)。毎朝の自動配信の ON/OFF は Railway の env。
+           inline だけ = ceo.js は触らない (?v= の更新なし) -->
+      <details id="chwBox" style="margin-bottom:0.6rem;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.32);border-radius:10px;padding:0.55rem 0.8rem;">
+        <summary style="cursor:pointer;font-size:0.84rem;color:#6ee7b7;font-weight:800;">🏫 クラス自動宿題（塾生アプリのみ・英語のクラス・2日に1回） <span id="chwState" style="font-size:0.72rem;color:#a1a1aa;font-weight:400;">— 🔍 で ON/OFF と次の宿題を確認</span></summary>
+        <div style="font-size:0.74rem;color:#a1a1aa;line-height:1.65;margin:0.5rem 0 0.55rem;">
+          塾生アプリのみ（AIなし）の生徒に、受講している英語のクラスの宿題として科目別ドリル（<b style="color:#e5e7eb;">レビュー済みの問題だけ</b>・10問）を配ります。1人に届くのは 2 日に 1 本まで、未提出が残っていれば積みません。
+          中学生と高校生は学年で別のドリルにします（学年が判定できない生徒には配りません）。英検のクラスはクラスの級、長文のクラスはレビュー済みの本文が 4 本になってから。GMARCH・早慶は保留。
+          お知らせは既定ではアプリの中だけです（LINE・メールなし）。毎朝の自動配信の ON/OFF は Railway の <code style="color:#6ee7b7;">CLASS_HW_AUTO_ENABLED</code>。
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+          <button id="chwDryBtn" type="button" onclick="chwDryRun()" title="今日の朝に回ったら、どのクラスの誰に何を配るかを、本番と同じ選び方で計算して出します。配信はせず、生徒には何も届きません" style="background:rgba(16,185,129,0.16);color:#a7f3d0;border:1px solid rgba(16,185,129,0.5);padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">🔍 次の宿題を確認（配信しない）</button>
+          <button id="chwResultBtn" type="button" onclick="chwShowResults()" title="下の配信済みドリル一覧を「🏫 クラス自動宿題」に切り替えます (誰が解いたか・問題別の正解率)" style="background:rgba(148,163,184,0.12);color:#cbd5e1;border:1px solid #475569;padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;">📋 クラス自動宿題の結果</button>
+          <span id="chwMsg" style="font-size:0.76rem;"></span>
+        </div>
+        <div id="chwResult" style="margin-top:0.5rem;"></div>
+      </details>
       <!-- 📋 配信済みドリルの絞り込み (2026-10-15 塾長決定: 既定は塾長が配ったドリルだけ・自動配信は切り替えて見る)。
            選んだ値はこの端末に覚える (localStorage は try/catch の中だけ)。サーバが絞ってから新しい順に 50 本を返す -->
       <div id="gdListBar" style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.45rem;font-size:0.8rem;color:#94a3b8;">
@@ -5699,6 +5717,157 @@
         out.innerHTML = `<div style="color:#fca5a5;font-size:0.78rem;">通信エラー: ${_gdRtE(e && e.message ? e.message : e)}</div>`;
       } finally { if (btn) btn.disabled = false; }
     }
+    // 🏫 クラス自動宿題の確認・配信カード (2026-10-15 塾長決定「基本的に2日に1回」)。サーバ = POST /api/admin/class-homework-routine/run。
+    //   🔍 は dry_run: true (全クラス・名前つき・何も書かない)。📤 はクラスごとに confirm() のあとで dry_run: false + class_label
+    //   (中身はアルゴリズムが選ぶのでお知らせは source='auto'。2 日に 1 本・未提出なら積まないはサーバが守る = 押し直しても増えない)。
+    //   応答に plan_version が無い = 古いサーバ → 「サーバ反映待ち」。名前・クラス名・単元・学年は必ず escapeHtml。
+    //   📤 の onclick にはクラス名を入れず、最後の応答の classes の番号だけを渡す (引用符で壊れない)。
+    const _CHW_URL = '/api/admin/class-homework-routine/run';
+    const _CHW_STATUS_JA = {
+      deliver: '配る', other_class: '別のクラスで配る', open: '未提出あり (積まない)', recent: '2日以内に受け取った', before_start: '受講開始前',
+      grade_unknown: '学年が判定できない', shougaku: '小学生', hold_only: 'GMARCH・早慶だけ', no_range: 'このクラスの範囲外',
+      not_selected: '今回の対象クラス外', no_inventory: '在庫が足りない', ai_trial: 'AI体験中 (3日ドリルの側)', not_tsujuku: '通塾生でない',
+      test_name: 'テスト用の名前', race: '別の実行が先に配った', create_failed: '作成に失敗', no_class: '英語のクラスなし',
+    };
+    const _CHW_UNIT_REASON_JA = { weakness: '弱点', rotation: '順番', oldest: '一番前に出した単元', fixed: 'クラスの単元', current: '2日以内のドリルに追加' };
+    const _CHW_PLAN_REASON_JA = { below_threshold: 'レビュー済みの本文がまだ足りない', no_reviewed_inventory: 'レビュー済みの在庫が無い', no_range: '範囲なし',
+                                  current_subject_mismatch: '2日以内のドリルの科目が違う' };
+    const _CHW_KIND_JA = { grammar: '英文法', eiken: '英検', reading: '長文', hold: '保留 (まだ出さない)', none: '英語以外 (出さない)' };
+    const _CHW_GROUP_JA = { kosei: '高校', chugaku: '中学' };
+    let _chwLast = null, _chwBusy = false;
+    function _chwPlanCell(g) {
+      const n = v => Number(v) || 0;
+      const head = `<b>${_gdRtE(_CHW_GROUP_JA[g.group] || g.group)}</b> ${_gdRtE(_GD_SUBJ_JA[g.subject] || g.subject)}`;
+      if (!g.members) return `<div style="color:#71717a;">${head}: 生徒なし</div>`;
+      if (g.ok === undefined) return `<div style="color:#71717a;">${head}: 生徒 ${n(g.members)} 名 (今回の対象クラス外)</div>`;
+      if (!g.ok) {
+        const best = (Array.isArray(g.tried) ? g.tried : []).reduce((m, t) => Math.max(m, n(t.reviewed_available)), 0);
+        return `<div style="color:#fbbf24;">${head}: ❌ ${_gdRtE(_CHW_PLAN_REASON_JA[g.reason] || g.reason || '配れない')}${best ? ` (レビュー済み ${best})` : ''}</div>`;
+      }
+      const lv = (Array.isArray(g.levels) ? g.levels : []).map(l => _GD_RT_LEVEL_JA[l] || l).join('+');
+      const stock = g.unit_reason === 'current' ? `ドリル #${n(g.drill_id)}` : `在庫 ${n(g.unseen_available)}/${n(g.reviewed_available)}${g.passages ? ' 本' : ' 問'}`;
+      return `<div>${head}: <b style="color:#e5e7eb;">${_gdRtE(g.unit)}</b> <span style="color:#94a3b8;">(${_gdRtE(_CHW_UNIT_REASON_JA[g.unit_reason] || g.unit_reason)}・${n(g.qids_n)}問・${_gdRtE(lv)}・${_gdRtE(stock)})</span>`
+        + `${n(g.deliver_n) ? `<span style="color:#6ee7b7;"> → ${n(g.deliver_n)} 名</span>` : ''}</div>`;
+    }
+    function _chwRender(d) {
+      if (!d || !d.plan_version) {
+        return '<div style="color:#fbbf24;font-size:0.8rem;">⚠️ サーバ反映待ちです（クラス自動宿題がまだ本番に出ていません）。数分後にもう一度押してください。</div>';
+      }
+      const n = v => Number(v) || 0;
+      const pill = _gdRtPill;
+      const st = d.settings || {};
+      const nt = d.notify || {};
+      let h = '<div style="font-size:0.78rem;color:#cbd5e1;line-height:1.8;">';
+      h += d.enabled_env ? pill(`毎朝の自動配信 ON (${n(st.hour_jst) || 6}:00)`, '#86efac', 'rgba(52,211,153,0.12)')
+                         : pill('毎朝の自動配信 OFF (CLASS_HW_AUTO_ENABLED が未設定)', '#fca5a5', 'rgba(248,113,113,0.10)');
+      h += pill(`1人 ${n(st.interval_days) || 2} 日に 1 本・${n(st.count) || 10} 問・単元は ${n(st.unit_cooldown_days)} 日あける`, '#cbd5e1', 'rgba(148,163,184,0.08)');
+      h += pill('お知らせ: ' + (nt.line ? 'LINE も送る' : (nt.email ? 'メールも送る' : 'アプリの中だけ')), '#93c5fd', 'rgba(96,165,250,0.10)');
+      if (Array.isArray(st.only_classes) && st.only_classes.length) h += pill('毎朝の対象: ' + st.only_classes.join('・'), '#fbbf24', 'rgba(251,191,36,0.10)');
+      h += '</div>';
+      if (d.error) h += `<div style="color:#fca5a5;font-size:0.8rem;font-weight:700;margin:0.3rem 0;">❌ ${_gdRtE(d.error)}</div>`;
+      if (n(d.band_guard_trips)) h += `<div style="color:#fca5a5;font-size:0.78rem;font-weight:700;">⚠️ 学年ガードが ${n(d.band_guard_trips)} 組止めました (中高の取り違え・選ぶ側の不具合)</div>`;
+      h += `<div style="font-size:0.84rem;color:#a7f3d0;font-weight:800;margin:0.4rem 0 0.1rem;">${d.dry_run ? '今朝回ったら配る' : '配った'}: ${n(d.delivered)} 名`
+        + `<span style="font-size:0.72rem;color:#a1a1aa;font-weight:400;">（新しいドリル ${n(d.drills_created)} 本・2日以内のドリルに追加 ${n(d.drills_joined)} 組）</span></div>`;
+      const SK = [['skipped_open', '未提出あり'], ['skipped_recent', '2日以内に受け取った'], ['skipped_grade_unknown', '学年が判定できない'],
+                  ['skipped_before_start', '受講開始前'], ['skipped_no_inventory', '在庫が足りない'], ['skipped_no_class', '英語のクラスなし'],
+                  ['skipped_hold_only', 'GMARCH・早慶だけ'], ['skipped_no_range', 'クラスの範囲外'], ['skipped_shougaku', '小学生'],
+                  ['skipped_not_selected', '今回の対象クラス外'], ['skipped_ai_trial', 'AI体験中 (3日ドリルの側)'], ['skipped_not_tsujuku', '通塾生でない'],
+                  ['skipped_test_name', 'テスト用の名前'], ['skipped_race', '別の実行が先に配った'], ['create_failed', '作成に失敗']];
+      const sk = SK.filter(p => n(d[p[0]]) > 0).map(p => pill(`${p[1]} ${n(d[p[0]])}名`, '#cbd5e1', 'rgba(148,163,184,0.08)')).join('');
+      if (sk) h += `<div style="margin-top:0.3rem;font-size:0.74rem;color:#94a3b8;">配らない生徒: ${sk}</div>`;
+      const cls = Array.isArray(d.classes) ? d.classes : [];
+      if (cls.length) {
+        const th = 'style="text-align:left;padding:0.2rem 0.45rem;color:#94a3b8;font-weight:700;border-bottom:1px solid #334155;white-space:nowrap;"';
+        const td = 'style="padding:0.25rem 0.45rem;border-bottom:1px solid rgba(51,65,85,0.5);vertical-align:top;"';
+        h += `<div style="overflow-x:auto;margin-top:0.4rem;"><table style="border-collapse:collapse;font-size:0.76rem;color:#e5e7eb;min-width:100%;"><thead><tr><th ${th}>クラス</th><th ${th}>出題範囲</th><th ${th}>次の宿題 (区分ごと)</th><th ${th}>配る生徒</th><th ${th}>外した生徒</th><th ${th}></th></tr></thead><tbody>`;
+        h += cls.map((row, i) => {
+          const gs = Array.isArray(row.groups) ? row.groups : [];
+          const sts = Array.isArray(row.students) ? row.students : [];
+          const range = (_CHW_KIND_JA[row.kind] || row.kind || '') + (gs.length ? '<div style="color:#71717a;font-size:0.7rem;">'
+            + gs.map(g => `${_gdRtE(_CHW_GROUP_JA[g.group] || g.group)}: ${_gdRtE(_GD_SUBJ_JA[g.subject] || g.subject)} ${n(g.units_n)} 単元`).join(' / ') + '</div>' : '');
+          const plan = gs.length ? gs.map(_chwPlanCell).join('') : '<span style="color:#71717a;">—</span>';
+          const dl = sts.filter(e => e.status === 'deliver');
+          const sk2 = sts.filter(e => e.status !== 'deliver');
+          const who = dl.length ? dl.map(e => `${_gdRtName(e)} <span style="color:#71717a;">${_gdRtE(_CHW_GROUP_JA[e.band] || '')}</span>`).join('、') : '<span style="color:#71717a;">—</span>';
+          const skip = sk2.map(e => `<div>${_gdRtName(e)} ${pill(_CHW_STATUS_JA[e.status] || e.status, '#cbd5e1', 'rgba(148,163,184,0.08)')}</div>`).join('');
+          const btn = (d.dry_run && row.selected !== false && dl.length)
+            ? `<button type="button" onclick="chwRunClass(${i})" title="このクラスの「配る」生徒に今すぐ配信します (確認あり)" style="background:rgba(16,185,129,0.18);color:#a7f3d0;border:1px solid rgba(16,185,129,0.5);border-radius:6px;padding:0.2rem 0.55rem;font-size:0.74rem;font-weight:800;cursor:pointer;white-space:nowrap;">📤 今すぐ配信 (${dl.length}名)</button>` : '';
+          return `<tr><td ${td}><b>${_gdRtE(row.label)}</b></td><td ${td}>${range}</td><td ${td}>${plan}</td><td ${td}>${who}</td><td ${td}>${skip || '<span style="color:#71717a;">—</span>'}</td><td ${td}>${btn}</td></tr>`;
+        }).join('');
+        h += '</tbody></table></div>';
+      }
+      const gu = Array.isArray(d.grade_unknown_students) ? d.grade_unknown_students : [];
+      if (gu.length) {
+        h += `<div style="margin-top:0.5rem;font-size:0.76rem;color:#fbbf24;font-weight:700;">⚠️ 学年が判定できない生徒 ${gu.length} 名（配りません。名前を押して生徒詳細で学年を直してください）</div>`
+          + `<div style="font-size:0.74rem;color:#cbd5e1;line-height:1.8;">${gu.map(e => `${_gdRtName(e)} <span style="color:#71717a;">学年「${_gdRtE(e.grade || '未設定')}」</span>`).join('、')}</div>`;
+      }
+      return h;
+    }
+    async function chwDryRun() {
+      if (_chwBusy) return;
+      const btn = document.getElementById('chwDryBtn'), msg = document.getElementById('chwMsg');
+      const out = document.getElementById('chwResult'), st = document.getElementById('chwState');
+      _chwBusy = true; if (btn) btn.disabled = true;
+      if (msg) msg.innerHTML = '<span style="color:#94a3b8;">⏳ 計算中…（配信はしません）</span>';
+      try {
+        const res = await AdminAuth.fetch(_CHW_URL, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dry_run: true, all_classes: true, include_names: true }),
+        });
+        let d = null;
+        try { d = await res.json(); } catch (_) {}
+        if (!res.ok) {
+          if (msg) msg.innerHTML = `<span style="color:#fca5a5;">${res.status === 404 || res.status === 405 ? 'サーバの反映待ちです' : '取得できませんでした (' + res.status + (d && d.detail ? '・' + _gdRtE(d.detail) : '') + ')'}</span>`;
+          return;
+        }
+        _chwLast = d && d.plan_version ? d : null;
+        if (out) out.innerHTML = _chwRender(d);
+        if (st && d && d.plan_version) st.innerHTML = d.enabled_env ? '<span style="color:#86efac;font-weight:700;">— 毎朝の自動配信 ON</span>' : '<span style="color:#fca5a5;font-weight:700;">— 毎朝の自動配信 OFF</span>';
+        if (msg) msg.innerHTML = d && d.plan_version ? '<span style="color:#86efac;">✅ 計算しました（配信はしていません）</span>' : '';
+      } catch (e) {
+        if (msg) msg.innerHTML = `<span style="color:#fca5a5;">通信エラー: ${_gdRtE(e && e.message ? e.message : e)}</span>`;
+      } finally { _chwBusy = false; if (btn) btn.disabled = false; }
+    }
+    async function chwRunClass(i) {
+      const row = _chwLast && Array.isArray(_chwLast.classes) ? _chwLast.classes[Number(i)] : null;
+      if (!row || _chwBusy) return;
+      const msg = document.getElementById('chwMsg');
+      const names = (Array.isArray(row.students) ? row.students : []).filter(e => e.status === 'deliver').map(e => e.name || ('ID' + e.id));
+      if (!names.length) return;
+      if (!confirm(`「${row.label}」の ${names.length} 名に、クラス自動宿題を今すぐ配信します。\n\n${names.join('、')}\n\n（中身は 🔍 の表のとおり・お知らせはアプリの中だけ。2 日に 1 本・未提出なら積まないはサーバが守ります）`)) return;
+      _chwBusy = true;
+      if (msg) msg.innerHTML = '<span style="color:#94a3b8;">⏳ 配信中…</span>';
+      let ok = false;
+      try {
+        const res = await AdminAuth.fetch(_CHW_URL, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dry_run: false, class_label: String(row.label), include_names: true }),
+        });
+        let d = null;
+        try { d = await res.json(); } catch (_) {}
+        if (!res.ok) {
+          if (msg) msg.innerHTML = `<span style="color:#fca5a5;">配信できませんでした (${res.status}${d && d.detail ? '・' + _gdRtE(d.detail) : ''})</span>`;
+          return;
+        }
+        const n = v => Number(v) || 0;
+        ok = true;
+        if (msg) msg.innerHTML = d && d.error
+          ? `<span style="color:#fca5a5;">❌ ${_gdRtE(d.error)}</span>`
+          : `<span style="color:#86efac;">✅ 「${_gdRtE(row.label)}」: ${n(d && d.delivered)} 名に配信しました（新しいドリル ${n(d && d.drills_created)} 本・追加 ${n(d && d.drills_joined)} 組${n(d && d.skipped_race) ? `・別の実行が先に配った ${n(d.skipped_race)} 名` : ''}）。結果は 📋 で見られます</span>`;
+      } catch (e) {
+        if (msg) msg.innerHTML = `<span style="color:#fca5a5;">通信エラー: ${_gdRtE(e && e.message ? e.message : e)}</span>`;
+      } finally { _chwBusy = false; }
+      if (ok) {
+        const keep = msg ? msg.innerHTML : '';
+        await chwDryRun();   // 表を配った後の状態に (配った生徒は「未提出あり」になる)
+        if (msg) msg.innerHTML = keep;
+      }
+    }
+    function chwShowResults() {
+      if (typeof window.gdListSetKind === 'function') window.gdListSetKind('class_hw');
+      const box = document.getElementById('gdListBar');
+      if (box && box.scrollIntoView) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
     async function gdAnalytics(drillId) {
       const box = document.getElementById('gdAnalytics'); if (!box) return;
       _gdClearRemediation();  // 別ドリルの分析を開く/開き直す = 文脈リセット (stale な対策モードを持ち越さない)
@@ -5907,6 +6076,7 @@
     window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits; window.gdDelete = gdDelete; window.gdRemediation = gdRemediation; window._gdClearRemediation = _gdClearRemediation; window.gdSubjectChange = gdSubjectChange; window.gdToggleUnit = gdToggleUnit; window.gdShowAllGroups = gdShowAllGroups; window.gdUpdateSelCount = gdUpdateSelCount;  /* ★inline onchange から呼ぶので window 公開が必須 (このscriptはIIFE。忘れると ReferenceError で無反応) */
     // 📋 配信済みドリルの絞り込みと 🎯 自動の弱点ドリルの確認カード (2026-10-15・inline onclick から呼ぶので window 公開が必須)
     window.gdListSetKind = gdListSetKind; window.gdListSetSubject = gdListSetSubject; window.gdRoutineDryRun = gdRoutineDryRun; window.gdRoutineInventory = gdRoutineInventory;
+    window.chwDryRun = chwDryRun; window.chwRunClass = chwRunClass; window.chwShowResults = chwShowResults;
     window._gdGradeMismatchText = _gdGradeMismatchText;  // 🧒「やるべきこと」の 📨 弱点ドリル配信 (別の script) が同じ取り違えガードを使う
     window._gdMode = _gdMode;  // 🧒 同じく「やるべきこと」が中学ドリルのボタンを出す生徒を学年で決める (未設定・その他 = '')
     // 👥 配信グループ (inline onclick から呼ぶため window 公開必須 — このscriptはIIFEなので公開を忘れると ReferenceError で無反応になる)
