@@ -562,6 +562,13 @@ def check_monitor_storm(cur):
         add("monitor_storm", WARN, f"照会失敗 {type(e).__name__}: {e}")
 
 
+# 実行履歴が無いうちは「未有効化」として PASS にするもの (この点検は API の env を見られない = OFF と停止を区別できない)。
+#   一度でも走った後に止まれば WARN になる。★ON にした後で OFF に戻したら、ここと watched から外す (外さないと 2 日後から WARN)。
+OPTIONAL_UNTIL_FIRST_RUN = {
+    "weakness_drill_routine_run",   # 🎯 3日ドリル (毎日 5:30・WEAKNESS_DRILL_ROUTINE_ENABLED・2026-10-15 の既定は OFF)
+}
+
+
 def check_scheduler_live(cur):
     if not _table_exists(cur, "events"):
         return
@@ -577,6 +584,8 @@ def check_scheduler_live(cur):
         # 🎬 授業録画の自動割り当て (毎朝 7:00・2026-10-08 追加。新着が無い日も記録を残す)。
         #   ★API 側で CLASS_REC_AUTO_ASSIGN_ENABLED=0 にしているときはここも WARN になる (この点検は API の env を見られない)。
         "class_rec_assign_run": 2,
+        # 🎯 3日ドリル (毎日 5:30。ON の間は配る生徒がいない日も実行記録を残す)。OFF の間は履歴が無い → OPTIONAL_UNTIL_FIRST_RUN で PASS
+        "weakness_drill_routine_run": 2,
     }
     for name, max_days in watched.items():
         try:
@@ -584,7 +593,10 @@ def check_scheduler_live(cur):
                 "SELECT MAX(created_at) FROM events WHERE name=%s", (name,))
             last = cur.fetchone()[0]
             if last is None:
-                add("scheduler_live", WARN, f"{name}: 実行履歴なし")
+                if name in OPTIONAL_UNTIL_FIRST_RUN:
+                    add("scheduler_live", PASS, f"{name}: 未有効化 (実行履歴なし・API の env で ON にすると記録が始まる)")
+                else:
+                    add("scheduler_live", WARN, f"{name}: 実行履歴なし")
                 continue
             cur.execute("SELECT (NOW() - %s) < (%s || ' days')::interval", (last, max_days))
             ok = cur.fetchone()[0]

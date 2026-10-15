@@ -201,15 +201,16 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 塾長「この問題プールに中学生レベルも追加できますか」→ **レベルを増やさず科目を増やした**。理由と落とし穴:
 - ★**未知の `level` は import で黙って `standard` に丸められ、dedup は level を見ない**ので、入れ間違えると
   手で DELETE するまで英文法プールが汚染される。未知の `subject` は skip されるだけなので、取込順を間違えても汚染しない。
-- 初回診断・今日の1問・弱点ルーティンは `subject = 'english'` を直書きしているので、科目を分けるだけで
-  「高3の最初の1問が中2の過去形」を防御コード無しに避けられる。
+- 初回診断・今日の1問は科目で出題先を決めるので、科目を分けるだけで「高3の最初の1問が中2の過去形」を避けられる。
+  3日ドリル (弱点ルーティン) は 2026-10-15 から学年の区分 (`_student_grade_band`) で english/math と中学 5 教科を分ける (下の 🎯 自動の弱点配信)。
 - CEO のレベル4択は「範囲の軸」なので、そこに学年の軸を混ぜると「基礎も含める」と区別できなくなる。
 - 単元名は `scripts/chugaku_dojo/units.json` の eng の `filter` と**完全一致**させる (入試道場の弱点 topic と突き合わせるため)。
   並び順は `server/main.py` の `_GRAMMAR_SUBJECT_UNIT_ORDER` が持つ (english 以外は既定で在庫数の降順になり、学習順にならない)。
 - ★**`question_attempts.subject = 'chugaku'` は中学生の英数国理社が collapse した 1 バケット** (`:6705` の注記)。
   ドリル科目の「中学英語」とは別物なので、週次レポートの科目ラベルは `_WEEKLY_SUBJECT_LABEL_OVERRIDE` で
   「高校入試演習」に差し替えてある。ここを `_GRAMMAR_SUBJECT_LABEL_JA` に任せると、数学しか解いていない生徒の
-  保護者レポートが「中学英語が苦手」になる。弱点ルーティンが chugaku をドリル化しないのも同じ理由 (科目が特定できない)。
+  保護者レポートが「中学英語が苦手」になる。★3日ドリルは中学生の 'chugaku' の弱点を **単元名の完全一致** で中学 5 教科の単元に当てる
+  (`_chu_drill_for_topic`・単元表は `_GRAMMAR_SUBJECT_UNIT_ORDER`。当たらない topic は配らない = 科目を推測しない)。
 - **在庫は 1 単元 138〜149 問 (標準+やや難 103〜113)**。2026-09-24 に中学生が 25 名いると分かったので 741→1,213 問、
   2026-09-29 に 1,730 問へ増やした (v4 は追記のみ・source `chugaku-drill-v4`)。同じ単元で 25 問のドリルを **4 回**まで配れる。
   ★v4 は 590 問を作って盲検・点検を通したが、**独立レビューで「名前や物だけ入れ替えた同じ枠」が 73 問**見つかり外した
@@ -255,7 +256,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   模試の選択肢は問題冊子の活用形 = 解説冊子の意味行は原形)。★リポジトリ外の教材は Desktop 側にある (無ければ builder は落ちる = 欠けたシードを書かない)。
   出力の形式は `scripts/check_eiken_vocab_seed.py` が固定する (空所 1 つ・4 択・番号参照なし・正解位置 40% 以下・stem 一意)。
 - 学年で縛らない (2級を中3が受ける・準1級を高1が受ける)。CEO の取り違えガードは `eiken` を素通しにしている。
-- 提出は `question_attempts.subject='eiken'` / `topic=単元名` で記録される。診断・今日の1問・弱点ルーティンは english 直書きなので英検問題は流れない。
+- 提出は `question_attempts.subject='eiken'` / `topic=単元名` で記録される。診断・今日の1問は英文法だけ・3日ドリルは英検を出さない (英検の自動配信は
+  塾生アプリのみ枠のクラス自動宿題だけ) ので、英検問題は流れない。
   **週次の弱点プリントと mypage の弱点 TOP3 は `subject <> 'eiken'` で英検を外す** (`_WEAKNESS_SUBJECT_TO_POOL` に eiken が無く、
   枠だけ食って空の節を作るため)。生徒画面の科目ラベル (class.html `GD_SUBJ_JA` / mypage.js `_SUBJ_DRILL_LABEL` / mypage.html `subjectLabel`) には
   eiken を入れてある (入れないと生の `eiken` や「英文法」と出る)。
@@ -292,7 +294,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   になり、Postgres では失敗したトランザクションが同じ接続の単発ドリル抽出まで 500 にする)。**本文のある単元は「本文 N 本」単位で出題**
   (`_grammar_pick_drill_passages`・設問は passage_seq 順・score_total は設問数・`passage_count` 既定 2 = 本番の大問 1 回分・上限 5・設問が全部
   inactive の本文は選ばない)。判定はサーバが単元の在庫で行う (client が count を送っても無視) ので、弱点対策の再配信など古い経路から来ても本文が
-  バラけない。`exclude_drill_id` は前回の **本文ごと** 除外。1 問ずつの抽出 (`_grammar_pick_drill_question_ids` = 科目全体・弱点ルーティン) は
+  バラけない。`exclude_drill_id` は前回の **本文ごと** 除外。1 問ずつの抽出 (`_grammar_pick_drill_question_ids` = CEO の科目全体・3日ドリルの `_auto_pick_reviewed_question_ids`) は
   `passage_id IS NULL` で長文の設問を拾わない。本文の無い単元は出題ロジック不変 (応答に `passages: {}` / `passage_count: 0` / `passage_ids: []` / `passage_id: null` が増えるだけ)。
 - 取込は `POST /api/admin/grammar/import` の `passages: [{unit, level?, title?, body, body_ja?, source?, questions:[{stem, choices, answer, explanation?}]}]`
   (1 リクエスト 200 本まで)。本文は body の正規化ハッシュで重複判定 (本文ごと skip)。**設問は stem で重複判定しない**
@@ -413,13 +415,14 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   同期より先に取り込んでも (古い CEO タブ) 二重に入らない。シード 8,979 問に「同じ source・同じ問題文で単元だけ違う」問題は無いことを確かめた。
   回帰テスト `scripts/health_check/test_math_drill_sync.py` (CI の server-tests に登録)。
 - ★**弱点ルーティン (3 日ごと・環境変数 `WEAKNESS_DRILL_ROUTINE_ENABLED`) は math を「科目まるごと」で配る** (`_SUBJECT_LEVEL_DRILL`・
-  標準+やや難から 10 問)。★2026-10-06 塾長「数学Ⅲは自動配信は外して」→ ルーティンの科目まるごとでは **数学III の単元を出さない**
-  (`_ROUTINE_SUBJECT_LEVEL_EXCLUDE_UNIT_PREFIXES`・`_grammar_pick_drill_question_ids` の `exclude_unit_prefixes`。数学III を除いて 10 問に足りなければ
+  標準+やや難から 10 問)。★2026-10-15 から**出典が `mathct-*` / `mathwb-*` (このシード) の行だけ** (`_auto_pick_reviewed_question_ids`)。
+  exam_questions を分解した古い数学の行は自動では出ない (CEO で手で配るのは今までどおり)。
+  ★2026-10-06 塾長「数学Ⅲは自動配信は外して」→ ルーティンの科目まるごとでは **数学III の単元を出さない**
+  (`_ROUTINE_SUBJECT_LEVEL_EXCLUDE_UNIT_PREFIXES`・抽出の `exclude_unit_prefixes`。数学III を除いて 10 問に足りなければ
   その弱点は配らず次の弱点へ)。★数学III の弱点 (topic が「数学III」で始まる) は `_weakness_routine_pick_drills` が候補にしない (数学の候補にすると
   数III を出せない数学ドリルが毎回選ばれ、数III の弱点は測り直されないまま先頭に残り、ほかの科目の弱点が配られない)。
   CEO で単元を選ぶ配信と、塾長が押す 📨 弱点ドリル (科目まるごと) は除外しない (数学III も出る)。数学C は除外していない。
-  ★本番に前からある数学の在庫 (exam_questions を分解した分) の単元名は確かめていない。「数学III」「数学Ⅲ」「数III」「数Ⅲ」で始まる単元だけを外す。
-  CLAUDE.md の「弱点ルーティンは english 直書き」は math には当てはまらない。
+  「数学III」「数学Ⅲ」「数III」「数Ⅲ」で始まる単元だけを外す。
 - 生徒の復習カード (learning-brain の `_parseChoices`) は問題文中の「(1)」「(ア)」(f'(1)・3 進法の _{(3)}・作図の手順) を選択肢の印と取り違える →
   mypage.js `_gdSyncResultsToReview` がカードの文だけ「( 1 )」に開く (鍵は開く前の文のまま)。★残件: learning-brain.js の見出しは 100 字で切るので
   数式の途中で切れると生の LaTeX が見える (問題集の 4 割)。learning-brain.js は index.html / english-exam.html など 5 枚が読み、?v= を全部上げる必要がある。
@@ -765,6 +768,29 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   - 公開ページ (light.html・academy.html) の「週1回の弱点プリント」の文言は、3日ドリルを ON にした後に塾長の OK をもらってから直す。
 - `_run_weekly_worksheet_generation` 自体には env の判定を入れていない (テストが直接呼ぶ)。止めるのは呼び出し側だけ。
 - 回帰テスト: `scripts/health_check/test_weekly_worksheet_stop.py` (CI `server-tests.yml`)。
+- **3日ドリル (毎日 5:30・`WEAKNESS_DRILL_ROUTINE_ENABLED`・既定 OFF) が自動の弱点配信の本線** (2026-10-15 版・plan_version 2):
+  - 対象: 在籍 (trial/paid)・直近 30 日ログイン・AIあり か AI 体験中 (`_auto_delivery_ai_path == 'ai'`。AIなし枠はクラス自動宿題の側 = 1 人 1 経路)・
+    テスト系の名前と合成監視を除く。開始月 (start_month) は見ない。生徒ごと 3 日周期・未提出 (completed 以外) があれば積まない。
+  - **出すのはレビュー済みの出典だけ** (`_auto_delivery_source_ok`・上の英文法プールの節)。高校の理科・社会・国語と英検は自動では出さない。
+  - **学年で中高を分ける** (`_student_grade_band`): 高校生 = english (文法 20 単元・`_eng_drill_unit_for_topic`) と math (科目まるごと・数学III なし)、
+    中学生 = 高校入試演習の 'chugaku' の弱点を中学 5 教科の単元に完全一致で当てる (`_chu_drill_for_topic`。前置きつきの写しは使わない)。
+    小学生・学年が判定できない生徒 (空・「その他」) には出さない (`WEAKNESS_ROUTINE_UNKNOWN_GRADE_AS_KOSEI=1` で判定できない生徒だけ高校生扱い)。
+    選ぶとき (並べる前に区分の弱点だけ残す) と書き込む直前 (`_create_routine_grammar_drill` のガード・`_ROUTINE_BAND_GUARD_TRIPS`) の 2 回。
+  - レベル: 高校生 標準+やや難・中3 標準+やや難・中1/中2/学年の数字なし 基礎+標準。
+  - **既出の除外**: その生徒に前に配ったドリル (誰が配ったかを問わない) と単元ドリルの解答の問題は出さない。足りなければ最後に見たのが古い問題から足す。
+    レビュー済みが 10 問に満たない単元は配らず次の弱点へ。
+  - **dry-run は本番と同じ計画関数** (`_weakness_routine_plan`・在庫と既出の除外を含む)。`seed` を渡すと dry-run と本番で同じ問題になる。
+    応答に `skipped_*`・`reasons` (区分違い・在庫なしの内訳)・`band_counts`・`grade_unknown_students`・`mode_changed_by_normalization`
+    (全角・漢数字の学年で画面のモードが変わる生徒)・`allowlist`・`plan_version: 2`。名前は `include_names: true` のときだけ。
+  - 二重配信の防止: Postgres では書き込み直前に `pg_try_advisory_xact_lock(8675313, 生徒ID)` (2 引数・f-string で埋める) を取り、
+    錠の中で未提出・3 日以内の 3日ドリルを読み直す (あれば `skipped_race`)。**1 引数の 8675309〜8675312 と番号を重ねない** (新しい錠は 8675314 以降)。
+  - 監視: ON で起動したときだけ `_SCHEDULER_MAX_AGE_DAYS` に `weakness_drill_routine_run` (2 日)。実行記録は `_compact_run_props` の要約
+    (名前なし・4000 字未満)。全員の作成に失敗したら / 学年ガードが動いたら `props.error` (失敗の通知)。`prod_healthcheck.py` は
+    `OPTIONAL_UNTIL_FIRST_RUN` (履歴が無いうちは PASS。ON の後で OFF に戻したらそこから外す)。
+  - ON にする手順: 塾長が dry-run を見る (`POST /api/admin/weakness-drill-routine/run` `{"dry_run": true}`・X-Cron-Secret) →
+    `skipped_grade_unknown` の学年を直す・`mode_changed_by_normalization` の生徒が本当に中学生か確かめる・`capped` が多ければ `WEAKNESS_DRILL_ROUTINE_CAP` →
+    Railway で `WEAKNESS_DRILL_ROUTINE_ENABLED=1`。★ON の前にデスクトップの予約タスク「2日に1回 弱点15問ミッション」を止める (二重配信になる)。
+  - 回帰テスト: `scripts/health_check/test_weakness_routine_auto_delivery.py` (CI `server-tests.yml`)。
 
 ## 塾生アプリのみ枠 (AIなし) と宿題ドリル (2026-09-24 塾長決定)
 - **塾長方針: 英語の自由演習は開かない。AIなしの生徒が解けるのは「塾長が出した宿題」と「配信した単元ドリル」だけ。**

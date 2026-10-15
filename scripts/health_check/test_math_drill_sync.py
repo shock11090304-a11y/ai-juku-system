@@ -201,15 +201,20 @@ def main():
     sid = rows(mod, "SELECT id FROM students WHERE email = 'routine-test@example.invalid'")[0]["id"]
     st = {"name": "テスト 文系", "email": "routine-test@example.invalid", "line_user_id": None}
     units_seen = set()
+    made = 0
     for _ in range(40):
         conn = mod.db(); c = conn.cursor()
-        r = mod._create_routine_grammar_drill(c, conn, "math", "", 10, sid, st)
+        r = mod._create_routine_grammar_drill(c, conn, "math", "", 10, sid, st, band="kosei")
         conn.close()
-        if not r:
+        if not r or r.get("race"):
             break
+        made += 1
         d = rows(mod, "SELECT question_ids FROM grammar_drills WHERE created_by = ? ORDER BY id DESC LIMIT 1", (mod._WEAKNESS_ROUTINE_CREATED_BY,))[0]
         ids = json.loads(d["question_ids"])
         units_seen |= {x["unit"] for x in rows(mod, f"SELECT unit FROM grammar_questions WHERE id IN ({','.join('?' * len(ids))})", tuple(ids))}
+        # 2026-10-15: 3日ドリルは未提出か 3 日以内の 3日ドリルがあると書かない (錠の中の読み直し) → 毎回 提出済み・ずっと前の配信にして次を作る
+        execute(mod, "UPDATE grammar_drill_assignments SET status = 'completed', assigned_at = '2000-01-01 00:00:00' WHERE student_id = ?", (sid,))
+    check("40 回とも配れる (未提出・3 日以内が無ければ毎回作る)", made == 40, made)
     check("40 回配っても 数学III の単元が 1 問も入らない", units_seen and not any(u.startswith("数学III") for u in units_seen),
           f"{len(units_seen)} 単元: {sorted(u for u in units_seen if u.startswith('数学III'))}")
     conn = mod.db(); c = conn.cursor()
@@ -228,7 +233,7 @@ def main():
     # 数学III しか無い科目プールでは配信しない (数学III で埋めない)
     execute(mod, "UPDATE grammar_questions SET active = 0 WHERE subject = 'math' AND unit NOT LIKE '数学III%'")
     conn = mod.db(); c = conn.cursor()
-    r = mod._create_routine_grammar_drill(c, conn, "math", "", 10, sid, st)
+    r = mod._create_routine_grammar_drill(c, conn, "math", "", 10, sid, st, band="kosei")
     conn.close()
     check("数学III しか残っていなければ配信しない (在庫不足 = None)", r is None, str(r)[:100])
     check("除外の表は数学だけ (英語などの自動配信は変わらない)", set(mod._ROUTINE_SUBJECT_LEVEL_EXCLUDE_UNIT_PREFIXES) == {"math"})
@@ -236,13 +241,13 @@ def main():
     execute(mod, "INSERT INTO student_weakness (student_id, subject, topic, question_count, qa_accuracy, qa_attempts) VALUES (?, 'math', '数学III 微分法', 10, 0.1, 10)", (sid,))
     execute(mod, "INSERT INTO student_weakness (student_id, subject, topic, question_count, qa_accuracy, qa_attempts) VALUES (?, 'english', '時制の一致', 10, 0.4, 10)", (sid,))
     conn = mod.db(); c = conn.cursor()
-    picks = mod._weakness_routine_pick_drills(c, sid)
+    picks = mod._weakness_routine_pick_drills(c, sid, band="kosei")
     conn.close()
     check("数学III の弱点 (正答 10%) より軽い英語の弱点が選ばれ、数学は候補に入らない",
           [p_["subject"] for p_ in picks] == ["english"], str(picks))
     execute(mod, "INSERT INTO student_weakness (student_id, subject, topic, question_count, qa_accuracy, qa_attempts) VALUES (?, 'math', '基礎数学 二次関数', 10, 0.5, 10)", (sid,))
     conn = mod.db(); c = conn.cursor()
-    picks = mod._weakness_routine_pick_drills(c, sid)
+    picks = mod._weakness_routine_pick_drills(c, sid, band="kosei")
     conn.close()
     check("数学III 以外の数学の弱点があれば数学 (科目まるごと) も候補に入る", {"math", "english"} <= {p_["subject"] for p_ in picks}, str(picks))
 

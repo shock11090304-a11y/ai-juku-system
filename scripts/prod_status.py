@@ -89,6 +89,7 @@ def show_schedulers(body):
     label = {
         'weekly_reports_run': '週次レポート (日曜19時)',
         'weekly_worksheet_run': '週次弱点プリント (日曜5時)',
+        'weakness_drill_routine_run': '弱点ドリル 3日ごと (毎日5時半)',
         'weakness_aggregation_run': '弱点集計 (毎日)',
         'trial_mgmt_run': '体験フォロー (毎日)',
         'daily_sns_post': 'SNS 投稿 (毎日)',
