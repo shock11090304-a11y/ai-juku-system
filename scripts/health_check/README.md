@@ -49,13 +49,23 @@ CI/cron の判定は**終了コード / FAIL 件数**で行うこと(`WARN>0` �
 `deploy_freshness` は push 直後は一時的に FAIL(Vercel 反映まで数秒)になり得るので、
 デプロイ直後の実行では数十秒おいてから判定すること。
 
-## 回帰テスト (`test_*.py`) — 英語長文・習熟度テストの取込 (2026-10-15)
+## 回帰テスト (`test_*.py`) — 自動配信・お知らせ・取込 (2026-10-15)
 
 `test_*.py` は本番には触れない回帰テスト (一時 SQLite・`DATABASE_URL=''`)。CI は `.github/workflows/server-tests.yml`。
-ここには取込の 3 本だけを書く (ほかは server-tests.yml の各 step のコメントを見る)。
+手元では `python3 scripts/health_check/<ファイル>` (exit 0 = PASS)。
+ここには 2026-10-15 の自動配信の見直し (CLAUDE.md「🗺️ 自動配信の全体図」) で足した分だけを書く (ほかは server-tests.yml の各 step のコメントを見る)。
+「JS」の付いたテストは画面の本物のコードを JS エンジン (CI は node・Mac は osascript / jsc) で動かし、エンジンが無ければ FAIL する。
 
 | テスト | 何を見るか |
 |---|---|
+| `test_weekly_worksheet_stop.py` | 日曜の週次弱点プリントの停止 (`WEEKLY_WORKSHEET_ENABLED`・既定 停止): 起動時に登録しない・監視の表から外す・今すぐ生成は 409・mypage の「終了しました」・📚 履歴は消さない |
+| `test_homework_notify_in_app.py` | 宿題・ドリルのお知らせ: 宿題の LINE は 0 回・メールは塾長の配信 (`source='manual'`) だけ (`HOMEWORK_NOTIFY_EMAIL`)・リンクは AIなし = `class.html?tab=homework` / AIあり = `mypage.html?focus=homework`・'assigned' も未提出・ログインコードの LINE と AIなし枠の許可集合は不変 |
+| `test_hw_notice_js.py` (JS) | アプリ内の「🆕 新しい宿題 N 件」: hw-notice.js の数え方と「見た」の記録 (端末ごと・72 時間)・塾生アプリの帯と `?tab=homework`・マイページのチップ |
+| `test_grade_band_consistency.py` (JS・無ければソースの突き合わせ) | 学年の判定 (「中２」「中三」も中学): サーバの `_student_grade_band`・student-mode.js・ceo.html の `_gdMode` が同じ答え・student-mode.js の `?v=` がそろっている |
+| `test_auto_delivery_shared.py` | 自動配信の共通部品: レビュー済みの出典の許可リスト (シードの分類を固定)・習熟度テストの禁止・弱点 → 単元・学年の区分と科目・AI の振り分け (1 人 1 経路)・既出の除外・在庫照会 API・実行記録の要約 |
+| `test_weakness_routine_auto_delivery.py` (JS は [10]) | 🎯 3日ドリル: レビュー済みだけ・中高の取り違えなし (選ぶときと書く直前)・dry-run と本番が同じ問題・監視・競合・LINE 0 回。[10] は CEO の配信済み一覧の絞り込みと 🎯 カード |
+| `test_self_issued_drill_band.py` | 生徒が自分で始める今日の1問・初回診断: 学年で科目を分ける (小学生モードは 409)・レビュー済みだけ |
+| `test_class_homework_routine.py` (JS は [14]) | 🏫 クラス自動宿題: クラスの表 = 時間割・AIなしの通塾生だけ (3日ドリルと合わせて 1 人 1 経路)・中高の取り違えなし・2 日に 1 本・未提出なら積まない・単元の選び方・LINE 0 回。[14] は CEO の 🏫 カードと塾生アプリのカードの 〆 |
 | `test_english_long_drill.py` | 英語長文 (`english_long`) の取込 API: 本文型だけ・盲検の記録 (review) 必須・dry_run / all_or_nothing・set_id ごとの照合・配信と自動配信の範囲 |
 | `test_proficiency_test_import.py` | 習熟度テスト (`proficiency_test`): 取込 (送る形は `scripts/drill_import/import_drill_file.py` の `build_payloads`)・全大問を出題順・同じ生徒に 2 回配らない・弱点と自動配信に入らない。[13] で `scripts/drill_import/fixtures` を取込スクリプトで試運転 → `--apply` → 読み返し (通信は TestClient) し、全問の 1 始まり → 0 始まりを照合。[14] で画面 (CEO ① 科目・④・学年の確認・配信 / 塾生アプリとマイページのカード) の本物のコードを JS エンジンで動かす (無ければ FAIL) |
 | `test_drill_import_parity.py` | 取込の検査・取込スクリプト (デスクトップの `_tools/` で単体で動かす) に写したサーバの単元表が `server/main.py` と同じか・出典の形・Python 3.9 の標準ライブラリだけで `python3 -I` で動くか・取込スクリプトの安全装置・仕様書 11 章のコード |

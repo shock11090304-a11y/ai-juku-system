@@ -801,6 +801,68 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   - ★push の後は `/api/health` の `init_ddl_skipped==0` を確かめてから生徒の削除・統合を使う (表が無いまま走らせると Postgres で 500)。
     表が無い間の新 API は 503、照合は「何も見ていない」扱いで従来どおり出る。
 
+## 🗺️ 自動配信の全体図 (2026-10-15 塾長決定・横断のまとめ)
+誰に・いつ・何が・どの印で自動で届くかの一覧。細部は下の 🎯 自動の弱点配信・塾生アプリのみ枠・🏫 クラス自動宿題・📣 お知らせ と、上の 📖🧪 の節。
+- **塾長方針**: 自動で配るのはレビュー済みの科目別ドリルだけ (盲検 3 名の記録がある出典)・中学生と高校生を取り違えない・
+  宿題とドリルのお知らせはアプリの中 (「アプリを開けば分かる」)。問題の自動配信 (週次プリント・3日ドリル・クラス自動宿題) はどれも既定 OFF で、塾長が dry-run を見てから env で ON にする。
+- **朝の順番 (JST)**: 3:00 DB バックアップ → 4:00 弱点集計 (`student_weakness`・合格スコア・events 掃除) →
+  (日曜 5:00 週次弱点プリント = 既定で停止) → 5:30 🎯 3日ドリル → 6:00 🏫 クラス自動宿題 → 7:00 🎬 授業録画の割り当て。
+  3日ドリルとクラス自動宿題は 4:00 の集計を読むので、それより前に回さない (`CLASS_HW_AUTO_HOUR_JST` は 5〜22 に丸める)。
+  夕方は 水曜 18:00 週半ばの一声・日曜 19:00 週次レポート (20:05 に GitHub Actions の予備が同じ API を叩く)。
+- **1 人 1 経路** (振り分けは `_auto_delivery_ai_path` = `_ai_blocked_now` の 1 か所。SQL は広めの絞り込みだけ):
+  - AIあり・AI 体験中 (`'ai'`) → 🎯 3日ドリル (`WEAKNESS_DRILL_ROUTINE_ENABLED`): 本人の弱点の単元から 10 問・生徒ごとに 3 日に 1 本。
+  - AIなし (塾生アプリのみ・体験中でない) の通塾生 (`'ai_nashi'`) → 🏫 クラス自動宿題 (`CLASS_HW_AUTO_ENABLED`): 受講している英語のクラスの宿題・
+    10 問 (英検の長文は本文 2 本・長文クラスは本文 1 本)・1 人 2 日に 1 本。
+  - 小学生・学年が判定できない (`_student_grade_band` が `shougaku` / 空) → どちらも出さない (dry-run に名前 → CEO で学年を直す)。
+  - ほかの条件でどちらにも入らない生徒もいる (3日ドリル = 30 日以上ログインしていない / クラス自動宿題 = 通塾生でない・英語のクラスが無い・受講開始月の前)。
+    理由は両方の dry-run に出る。生徒が自分で始める今日の1問・初回診断は配信ではないが、同じく学年で科目を分けてレビュー済みだけから出す。
+    塾長が CEO で手で配るもの (📝 科目別 単元ドリル・📖 英語長文・🧪 習熟度テスト) はこの振り分けの外 (学年の確認ダイアログだけ)。
+- **ドリルの印** (`grammar_drills.created_by`・列は足していない): `admin` = 塾長が CEO で配った / `today_question` = 今日の1問 /
+  `diagnostic` = 初回診断 (CEO の一覧に出さない) / `weakness_routine_3d` = 3日ドリル / `class_hw_auto:<kosei|chugaku>:<クラス名>` = クラス自動宿題。
+  CEO の配信済み一覧は `kind=owner` (既定・自動配信と初回診断を除く) / `routine` / `class_hw` / `auto` / `all`。
+  ★デスクトップの予約タスク「2日に1回 弱点15問ミッション」は本番 DB に直接 `status='assigned'` を書く (許可リスト・学年ガード・監視を通らない)。
+  3日ドリルを ON にする前に止める。
+- **出してよい問題** (`_auto_delivery_source_ok`・許可リスト `_AUTO_DELIVERY_REVIEWED_SOURCES_DEFAULT`): english `manual-drill-v1` `-v2`・
+  math `mathct-*` `mathwb-*`・chugaku `chugaku-drill-v1`〜`v4` と `chu2grammar-20260709` (この出典は chugaku の中だけ)・中学 4 教科 `chugaku-<教科>-v1`・
+  eiken `eiken2-*` `eikenp1-*`・english_long `el-*` `englong:*`。本文型は本文と全設問の両方が通ること。
+  ⛔ 習熟度テスト (科目 `proficiency_test`・出典 `pt-` / `ptest:`) はどの env でも出さない。高校の理科・社会・国語・弱点特訓 32 問 (weakness_v1)・
+  exam_questions を分けた古い行 (`pool`) は盲検の記録が無いので出さない。
+  ★新しいシードの順番: ほかと重ならない出典の接頭辞 → 盲検 3 名 → 許可リストと `test_auto_delivery_shared.py` の `REVIEWED_SEEDS` に 1 行ずつ
+  (盲検していなければ `NOT_AUTO_SEEDS`。どちらにも無いとテストが落ちる)。本番の在庫は `GET /api/admin/grammar/source-inventory`。
+- **中高のガードは 2 回**: 選ぶとき (区分の科目だけ = `_ROUTINE_SUBJECTS_BY_BAND` / `_CLASS_HW_ROUTINE_MAP`) と書き込む直前 (`_drill_subject_band_ok`:
+  chugaku* は中学生だけ・english / math / english_long / 理社国は高校生だけ・eiken は両方・proficiency_test はなし)。
+  直前で止まったら `_ROUTINE_BAND_GUARD_TRIPS` / `_CLASS_HW_BAND_GUARD_TRIPS` と `props.error` (失敗の通知が飛ぶ)。
+  学年の読み取りは `_student_grade_band` 1 つ (「中２」「中三」も中学。student-mode.js の `ajNormGrade` と ceo.html の `_gdMode` も同じ表)。
+- **お知らせ** (`_homework_notify_channels(source)`): `source='manual'` は `POST /api/admin/grammar-drill/create` だけ (塾長が生徒と中身を選ぶ)。
+  アルゴリズムが中身を選ぶものは CEO の 📤 / 「今すぐ」でも `'auto'`。既定では manual = 登録メールだけ・auto = 何も送らない・宿題の LINE はどちらも送らない。
+  生徒にはアプリの「🆕 新しい宿題 N 件」(hw-notice.js) で見える。ログインコードの LINE と週次レポートの LINE はこの対象外。
+- **env** (★既定値の正典はコード。ここと食い違ったらコードが正しい):
+  - `WEEKLY_WORKSHEET_ENABLED` 既定 停止: 日曜の週次弱点プリント (`1` / `true` / `yes` / `on` で再開)。
+  - `WEAKNESS_DRILL_ROUTINE_ENABLED` 既定 OFF: 🎯 3日ドリル。`WEAKNESS_DRILL_ROUTINE_CAP` 60 (1〜500) = 1 回の人数。
+    `WEAKNESS_ROUTINE_UNKNOWN_GRADE_AS_KOSEI` 0 = 学年が判定できない生徒には出さない (1 で高校生扱い・3日ドリルだけ)。
+  - `CLASS_HW_AUTO_ENABLED` 既定 OFF: 🏫 クラス自動宿題。`CLASS_HW_AUTO_HOUR_JST` 6 (5〜22)・`CLASS_HW_INTERVAL_DAYS` 2 (1〜14・題名の 〆 も配った日 + この日数)・
+    `CLASS_HW_AUTO_COUNT` 10 (5〜25)・`CLASS_HW_AUTO_PASSAGES` 2 (1〜5・英検の長文)・`CLASS_HW_READING_MIN_PASSAGES` 4 (1〜50・長文クラスの開始本数)・
+    `CLASS_HW_UNIT_COOLDOWN_DAYS` 14 (0〜90)・`CLASS_HW_AUTO_ONLY_CLASSES` 空 = 全クラス (段階投入・カンマか「、」区切り)。
+  - `HOMEWORK_NOTIFY_EMAIL` 既定 `manual` (`all` / `off`)・`HOMEWORK_NOTIFY_LINE` 既定 0 (1 で宿題の LINE を戻す非常スイッチ)。
+  - `AUTO_DELIVERY_REVIEWED_SOURCES` 既定 空 = 上の許可リスト (`english=manual-drill-v1;math=mathct-*` のように科目ごとに差し替え・禁止は外せない)。
+  - `PTEST_FEEDS_WEAKNESS` 既定 0 (1 で習熟度テストの skill 付きの設問を弱点に記録)。
+  - ほとんどは呼ぶたびに読む (Railway で変えれば次の実行から効く)。★監視の表 `_SCHEDULER_MAX_AGE_DAYS` だけは import 時に ON/OFF を読む
+    (変えたら API の再起動で反映)。`prod_healthcheck.py` は API の env を読めないので、3日ドリルとクラス自動宿題は `OPTIONAL_UNTIL_FIRST_RUN`
+    (履歴が無いうちは PASS・ON の後で OFF に戻したら手で外す)・週次プリントは監視から外した (再開したら手で戻す)。
+- **advisory lock の番号** (Postgres の xact 錠・番号は f-string で埋める。psycopg3 が int を bigint で送ると関数が見つからないため):
+  1 引数 = 8675309 授業プリントの同期・8675310 / 8675311 入試道場の解説の差し替え / 取り消し・8675312 授業録画の割り当て・8675314 クラス自動宿題。
+  2 引数 = (8675313, 生徒ID) 3日ドリル。**新しい錠は 8675315 以降の空いた番号**。
+- **実行記録**: events の `weakness_drill_routine_run` / `class_hw_auto_run` は `_compact_run_props` の要約 (数・理由・生徒 id 30 件まで・名前なし・4000 字未満)。
+  名前は dry-run で `include_names: true` のときだけ (CEO のカード)。クラス自動宿題は配信ごとに events `class_hw_auto_delivered` (生徒 id だけ)。
+- **ON にする順番** (塾長): 週次プリント停止 (既定) → 🎯 の dry-run (学年・`mode_changed_by_normalization`・在庫を見る) → デスクトップの予約タスクを止める →
+  `WEAKNESS_DRILL_ROUTINE_ENABLED=1` → 🏫 の 🔍 → 1 クラスを 📤 → `CLASS_HW_AUTO_ONLY_CLASSES` と `CLASS_HW_AUTO_ENABLED=1` → 1 回まわったら ONLY を外す。
+  ★週次プリントを止めてから 3日ドリルを ON にするまでは、自動の弱点配信が 1 本も無い (AI 体験中の生徒も)。
+- **回帰テスト** (CI `server-tests.yml`・一時 SQLite・本番に触れない。何を見るかは `scripts/health_check/README.md`):
+  `test_weekly_worksheet_stop.py`・`test_homework_notify_in_app.py`・`test_hw_notice_js.py`・`test_grade_band_consistency.py`・`test_auto_delivery_shared.py`・
+  `test_weakness_routine_auto_delivery.py`・`test_self_issued_drill_band.py`・`test_class_homework_routine.py`・`test_english_long_drill.py`・
+  `test_proficiency_test_import.py`・`test_drill_import_parity.py`。画面の JS を動かすもの (hw_notice・3日ドリルの [10]・クラス自動宿題の [14]・
+  習熟度テストの [14]) は JS エンジン (CI は node・Mac は osascript / jsc) が無いと FAIL する (grade_band だけはソースの突き合わせに落とす)。
+
 ## 🎯 自動の弱点配信 (2026-10-15 塾長決定)
 - **日曜 5:00 の週次弱点プリントは止めた** (env `WEEKLY_WORKSHEET_ENABLED`・既定 = 停止。動くのは `1` / `true` / `yes` / `on` だけ)。
   理由: 出題元が入試道場の `exam_questions` で AI 生成の行が混ざる。塾長方針は「自動で配るのはレビュー済みの科目別ドリルだけ」。
