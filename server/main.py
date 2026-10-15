@@ -56344,7 +56344,8 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
 #   自動採点ドリルを配る (AIあり・AI 体験中の生徒は 3日ドリルの側 = 1 人 1 経路・_auto_delivery_ai_path)。
 #   - 塾長決定「基本的に2日に1回」: 毎朝 6:00 (CLASS_HW_AUTO_HOUR_JST・5〜22 に丸める) に回し、1 人に届くのは
 #     どのクラスからでも **2 日に 1 本まで** (CLASS_HW_INTERVAL_DAYS)。未提出 (completed 以外) のクラス自動宿題が残っている生徒には積まない。
-#     英語のクラスを 2 つ以上取っている生徒は、最後に届いたのが古いクラスから順に回す。
+#     英語のクラスを 2 つ以上取っている生徒は、最後に届いたのが古いクラスから順に回す。そのクラスが次の新しいドリルを待っている朝
+#     (wait_next) は、後に届いたクラスに回さずにそのクラスの次の新しいドリル (ふつうは翌朝) を待つ (回すと、ドリルを作る日が 1 日ずれたクラスがずっと届かない)。
 #   - ドリルは (クラス, 区分) ごとに 1 本 = 同じクラスの同じ区分の生徒は同じ問題 (CEO の問題別の正解率が比べられる)。
 #     同じ日 (JST) に作ったドリルがあれば新しく作らず、後から受け取れるようになった生徒をそのドリルに足す。前の日に作ったドリルが
 #     2 日のうちにあれば、その朝に受け取れるようになった生徒は足さずに次の新しいドリルを待つ (wait_next。〆 = 配った日 + 2 日を守る:
@@ -56662,6 +56663,7 @@ def _class_hw_plan(c, *, now, settings, selected, include_names=False, seed=None
     recent (2 日のうちに受け取った) / wait_next (クラスのドリルが前の日に作ったもの = 次の新しいドリルを待つ) /
     no_inventory (どのクラスもレビュー済みの在庫が足りない)。
     受け取れる生徒は 1 回に 1 クラスだけ: 最後に届いたのが古いクラスから (届いたことが無いクラスが先・同じなら時間割の順)。
+    一番古いクラスが wait_next なら、それより後に届いたクラスには回さずに wait_next (そのクラスの次の新しいドリル = ふつうは翌朝 で配る = 回す順を守る)。
     返り値 {summary の数, groups {(クラス, 区分): 計画}, assign {(クラス, 区分): [生徒]}, students {id: 情報}}。"""
     import random as _random
     interval = int(settings["interval_days"])
@@ -56797,16 +56799,27 @@ def _class_hw_plan(c, *, now, settings, selected, include_names=False, seed=None
         if info["status"] != "pending":
             continue
         order = sorted(info["sel"], key=lambda lb: (st_last_label.get((sid, lb), ""), _CLASS_HW_ORDER.get(lb, 99)))
+        chosen, wait_ts = None, None
         for lb in order:
+            ts_ = st_last_label.get((sid, lb), "")
+            if wait_ts is not None and ts_ > wait_ts:
+                # 最後に届いたのが古いクラスが次の新しいドリルを待っている → それより後に届いたクラスには回さずに待つ
+                #   (回すと、ドリルを作る日が 1 日ずれた 2 クラスでは、期限どおりに出す生徒ほど毎回同じクラスだけになる。
+                #    待つのはそのクラスの次の新しいドリル (〆 まで 2 日) まで = ふつうは翌朝。その回だけ間が 3 日になる)。
+                #   届いた日時が同じクラス (どちらも届いたことが無い など) は時間割の順の同点なので待たずに次へ
+                break
             gp = groups.get((lb, info["band"]))
             if gp and gp["ok"]:
-                info["status"], info["chosen"] = "deliver", lb
-                assign.setdefault((lb, info["band"]), []).append(info)
+                chosen = lb
                 break
+            if wait_ts is None and gp and gp.get("reason") == "wait_next":
+                wait_ts = ts_
+        if chosen:
+            info["status"], info["chosen"] = "deliver", chosen
+            assign.setdefault((chosen, info["band"]), []).append(info)
         else:
             # 前の日のドリルを待っているクラスがあれば wait_next (次の新しいドリルで配る)・無ければ在庫切れ
-            waits = any((groups.get((lb, info["band"])) or {}).get("reason") == "wait_next" for lb in order)
-            info["status"] = "wait_next" if waits else "no_inventory"
+            info["status"] = "wait_next" if wait_ts is not None else "no_inventory"
     for info in students.values():
         k = "skipped_" + info["status"]
         if k in sk:

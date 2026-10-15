@@ -18,7 +18,8 @@
   [6] 2 日に 1 回: 同じ日の 2 回目は増えない (未提出・積まない)・提出しても 2 日たつまで配らない・2 日後に次の単元・
       (クラス, 区分) のドリルは 2 日に 1 本 (同じ日に後から受け取れるようになった生徒は同じドリルに足す・前の日のドリルには足さず
       次の新しいドリルを待つ = wait_next)・〆 の日に出す生徒も届くドリルの 〆 はいつも受け取った日 + 2 日 (1 日遅れのまま固定しない)・
-      英語のクラスを 2 つ取る生徒は 1 回に 1 本で、次は最後に届いたのが古いクラス
+      英語のクラスを 2 つ取る生徒は 1 回に 1 本で、次は最後に届いたのが古いクラス・ドリルを作る日が 1 日ずれた 2 クラスでも
+      (ON の手順の ONLY) 両方が交互に届く (古いクラスが wait_next なら後に届いたクラスに回さず翌朝まで待つ・届いたことが無ければ待たない)
   [7] 単元の選び方: クラスの区分の弱点の正答率の低い順 (合計 3 回未満・0.8 以上は数えない)・直近 14 日に出した単元は飛ばす・
       弱点が無ければ単元の順番・全部が飛ばす期間なら一番前に出した単元・中学は「中学英語 時制」(写し) を数えず「時制（過去）」は 時制
   [8] お知らせ: LINE は 1 回も送らない・既定ではメールも送らない (source='auto')・HOMEWORK_NOTIFY_EMAIL=all ならリンクは
@@ -807,6 +808,40 @@ def main():
     check("その次は最後に届いたのが古いクラス (英文法 Lv.2)", len(dm) == 3 and dm[2]["created_by"].endswith(LV2), [x["created_by"] for x in dm])
     check("1 人に届くのは 2 日に 1 本まで (3 本の配信日がそれぞれ 2 日ずつ離れている)",
           [x["assigned_at"][:10] for x in dm] == ["2026-10-20", "2026-10-22", "2026-10-24"], [x["assigned_at"] for x in dm])
+    # ドリルを作る日が 1 日ずれた 2 クラス (ON の手順どおり ONLY で 英文法 Lv.2 を 1 日先に始める)。どちらのクラスにも別の生徒がいて、
+    #   全員が毎日出す。2 クラスの生徒にも両方のクラスが交互に届く (wait_next のクラスを飛ばして後に届いたクラスばかり配らない)
+    reset_chw()
+    ms, mu, mt = make("高校2年", [EIKEN2, LV2]), make("高校2年", [LV2]), make("高校2年", [EIKEN2])
+    only_active([ms, mu, mt])
+    st_ms = {}
+    for d_ in range(10):
+        with Env(CLASS_HW_AUTO_ONLY_CLASSES=(LV2 if d_ == 0 else None)):
+            res = run(now=at(d_))
+        st_ms[d_] = (status_of(res, ms, EIKEN2), status_of(res, ms, LV2))
+        complete_all()
+    dms = drills_of(ms)
+    cls_ms = [EIKEN2 if x["created_by"].endswith(EIKEN2) else LV2 for x in dms]
+    check("ずれた 2 クラス: 2 クラスの生徒にも両方のクラスが交互に届く (10 日で 英文法 → 英検 → 英文法 → 英検)",
+          cls_ms == [LV2, EIKEN2, LV2, EIKEN2], [(x["created_by"], x["assigned_at"]) for x in dms])
+    check("ずれた 2 クラス: 英検のドリルが前の日のものの朝は待つ (CEO の 🔍 も wait_next・別のクラスで配ったことにしない)",
+          st_ms[2] == ("wait_next", "wait_next"), st_ms)
+    gaps = [(recv_jst(b_) - recv_jst(a_)).days for a_, b_ in zip(dms, dms[1:])]
+    bad = [x["title"] for x in dms if due_of(x) != recv_jst(x) + datetime.timedelta(days=2)]
+    check("ずれた 2 クラス: 間は 2〜3 日 (2 日に 1 本まで・待つのは翌朝まで)・〆 はいつも受け取った日 + 2 日",
+          gaps and all(2 <= g_ <= 3 for g_ in gaps) and not bad, (gaps, bad))
+    dmu, dmt = drills_of(mu), drills_of(mt)
+    check("ずれた 2 クラス: 1 クラスだけの生徒は 2 日に 1 本のまま (英文法 5 本・英検 5 本)", len(dmu) == 5 and len(dmt) == 5,
+          (len(dmu), len(dmt)))
+    # 届いたことが無い生徒は、時間割の順で先のクラスが wait_next でも待たずに次のクラス (届いた日時が同じ = 同点)
+    run(now=at(10))         # 英文法 Lv.2 の新しいドリル (mu)
+    complete_all()
+    mn = make("高校2年", [EIKEN2, LV2])
+    only_active([ms, mu, mt, mn])
+    res = run(now=at(11))   # 英文法 Lv.2 は前の日のドリル (wait_next)・英検2級対策は今日の新しいドリル (mt)
+    dmn = drills_of(mn)
+    check("届いたことが無い 2 クラスの生徒は、先のクラスが wait_next でも次のクラスの今日のドリルを受け取る",
+          group_of(res, LV2, "kosei").get("reason") == "wait_next" and len(dmn) == 1 and dmn[0]["created_by"].endswith(EIKEN2),
+          (group_of(res, LV2, "kosei").get("reason"), [x["created_by"] for x in dmn]))
 
     # ------------------------------------------------------------------
     print("\n[7] 単元の選び方 (弱点 → 順番 → 一番前)")
