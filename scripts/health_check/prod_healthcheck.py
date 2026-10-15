@@ -526,13 +526,16 @@ def check_weekly_report(cur):
         props = json.loads(row[0]) if isinstance(row[0], str) else (row[0] or {})
         sent = int(props.get("sent_email", 0)) + int(props.get("sent_line", 0))
         skipped = int(props.get("skipped", 0))
+        # 🔁 2026-10-15: 直近 6 日に送り済みで飛ばした生徒 (LINE も dedup する) は「集計が生きている」側に数える
+        #   (全員が送り済みの回を断絶と誤報しない)。古いサーバの記録には無いので 0。
+        dup = int(props.get("skipped_dup", 0) or 0)
         total = int(props.get("total_students", 0) or (sent + skipped))
-        if total > 0 and sent == 0:
+        if total > 0 and sent == 0 and dup == 0:
             add("weekly_report", FAIL,
                 f"直近の週次レポートが全スキップ (sent=0 / skipped={skipped} / total={total}) "
                 f"= 集計ソース断絶の無音no-op")
         else:
-            add("weekly_report", PASS, f"直近の週次レポート sent={sent} skipped={skipped}")
+            add("weekly_report", PASS, f"直近の週次レポート sent={sent} skipped={skipped}" + (f" dup={dup}" if dup else ""))
     except Exception as e:
         add("weekly_report", WARN, f"照会失敗 {type(e).__name__}: {e}")
 

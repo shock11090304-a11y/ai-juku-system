@@ -53,7 +53,7 @@ CI/cron の判定は**終了コード / FAIL 件数**で行うこと(`WARN>0` �
 
 `test_*.py` は本番には触れない回帰テスト (一時 SQLite・`DATABASE_URL=''`)。CI は `.github/workflows/server-tests.yml`。
 手元では `python3 scripts/health_check/<ファイル>` (exit 0 = PASS)。
-ここには 2026-10-15 の自動配信の見直し (CLAUDE.md「🗺️ 自動配信の全体図」) で足した分だけを書く (ほかは server-tests.yml の各 step のコメントを見る)。
+ここには 2026-10-15 の自動配信の見直し (CLAUDE.md「🗺️ 自動配信の全体図」) と週次レポートの二重送信防止で足した分だけを書く (ほかは server-tests.yml の各 step のコメントを見る)。
 「JS」の付いたテストは画面の本物のコードを JS エンジン (CI は node・Mac は osascript / jsc) で動かし、エンジンが無ければ FAIL する。
 
 | テスト | 何を見るか |
@@ -66,6 +66,7 @@ CI/cron の判定は**終了コード / FAIL 件数**で行うこと(`WARN>0` �
 | `test_weakness_routine_auto_delivery.py` (JS は [10]) | 🎯 3日ドリル: レビュー済みだけ・中高の取り違えなし (選ぶときと書く直前)・dry-run と本番が同じ問題・監視・競合・LINE 0 回。[10] は CEO の配信済み一覧の絞り込みと 🎯 カード |
 | `test_self_issued_drill_band.py` | 生徒が自分で始める今日の1問・初回診断: 学年で科目を分ける (小学生モードは 409)・レビュー済みだけ |
 | `test_class_homework_routine.py` (JS は [14]) | 🏫 クラス自動宿題: クラスの表 = 時間割・AIなしの通塾生だけ (3日ドリルと合わせて 1 人 1 経路)・中高の取り違えなし・2 日に 1 本・未提出なら積まない・単元の選び方・LINE 0 回。[14] は CEO の 🏫 カードと塾生アプリのカードの 〆 |
+| `test_weekly_report_dedup.py` | 週次レポートの二重送信防止: 日曜 19:00 の本命と 20:05 の予備で、生徒メール・保護者メール・LINE をそれぞれ 6 日 dedup・AI コメントは dedup の後・失敗行は止めない・上限 80 は不変・send-one は dedup しない・全員が送り済みの回を断絶と誤報しない・予備スクリプトの表示 |
 | `test_english_long_drill.py` | 英語長文 (`english_long`) の取込 API: 本文型だけ・盲検の記録 (review) 必須・dry_run / all_or_nothing・set_id ごとの照合・配信と自動配信の範囲 |
 | `test_proficiency_test_import.py` | 習熟度テスト (`proficiency_test`): 取込 (送る形は `scripts/drill_import/import_drill_file.py` の `build_payloads`)・全大問を出題順・同じ生徒に 2 回配らない・弱点と自動配信に入らない。[13] で `scripts/drill_import/fixtures` を取込スクリプトで試運転 → `--apply` → 読み返し (通信は TestClient) し、全問の 1 始まり → 0 始まりを照合。[14] で画面 (CEO ① 科目・④・学年の確認・配信 / 塾生アプリとマイページのカード) の本物のコードを JS エンジンで動かす (無ければ FAIL) |
 | `test_drill_import_parity.py` | 取込の検査・取込スクリプト (デスクトップの `_tools/` で単体で動かす) に写したサーバの単元表が `server/main.py` と同じか・出典の形・Python 3.9 の標準ライブラリだけで `python3 -I` で動くか・取込スクリプトの安全装置・仕様書 11 章のコード |

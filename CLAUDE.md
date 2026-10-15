@@ -677,6 +677,17 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   `MIDWEEK_NUDGE_ENABLED=0` で停止 (スケジューラ自体を登録しない)。`?dry_run=true` は送らずに対象を返す。
   ★`MIDWEEK_NUDGE_ENABLED` / `ZERO_WEEK_REPORT_ENABLED` は import 時に読む定数。**Railway で env を変えたら ai-juku-api を
   再起動**しないと効かない。無効化中は `midweek_nudge_run` を health の停止監視から外す (誤検知防止)。
+- **週次レポートの重複防止** (2026-10-15): 日曜 19:00 の本命 (`_weekly_reports_scheduler`) と 20:05 の GitHub Actions の予備
+  (`weekly-reports-backup.yml` → `scripts/trigger_weekly_reports.py`) が同じ API を叩く。生徒ごとに直近 6 日に**成功した**
+  生徒メール (`weekly_report_email`)・保護者メール (`weekly_report_parent_email`)・LINE (`weekly_report`) を 1 回の SELECT で引き
+  (`_weekly_report_sent_templates`)、送り済みの経路は送らない。★それまで LINE だけ dedup が無く、連携済みの家庭に毎週 2 通届いていた。
+  失敗行 (success=0) は数えない = 本命で失敗した分は予備が送り直す (予備のログに「予備が送りました」)。
+  AI コメントは判定の後で、メールを送る必要があり上限にも達していないときだけ作る (予備の回で作り直さない)。
+  応答に `skipped_dup` (経路が全部送り済みの生徒)・`skipped_dup_line` (LINE だけ飛ばした数)。`skipped` は今までどおり「活動なし」。
+  `_weekly_report_verdict` と `prod_healthcheck.py` の weekly_report は `skipped_dup` があれば「断絶」と言わない。
+  メールの上限 `WEEKLY_REPORT_EMAIL_CAP` (既定 80・1 回の実行ごと) は変えていない (2026-10-15 の既定案は二重送信の修正だけ)。送り済みの家庭は `capped` に数えない。
+  手動の即送信 `POST /api/weekly-reports/send-one` は dedup しない。ただし送った行が残るので、6 日以内の日曜はその生徒に送らない (LINE も)。
+  回帰テスト `scripts/health_check/test_weekly_report_dedup.py`。
 - **平日に `POST /api/cron/weekly-reports?dry_run=true` を叩くと「先週の完了週」で評価される** (`_weekly_report_window`)。
   日曜だけ「今週」。平日の dry run で対象外と出ても日曜に送られないとは限らない。
 - **mypage の初期化は補助スクリプトを最大 10 秒しか待たない** (`_ajWidgetWait`)。`slApiFetch` は既定 30 秒でタイムアウト
@@ -808,7 +819,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - **朝の順番 (JST)**: 3:00 DB バックアップ → 4:00 弱点集計 (`student_weakness`・合格スコア・events 掃除) →
   (日曜 5:00 週次弱点プリント = 既定で停止) → 5:30 🎯 3日ドリル → 6:00 🏫 クラス自動宿題 → 7:00 🎬 授業録画の割り当て。
   3日ドリルとクラス自動宿題は 4:00 の集計を読むので、それより前に回さない (`CLASS_HW_AUTO_HOUR_JST` は 5〜22 に丸める)。
-  夕方は 水曜 18:00 週半ばの一声・日曜 19:00 週次レポート (20:05 に GitHub Actions の予備が同じ API を叩く)。
+  夕方は 水曜 18:00 週半ばの一声・日曜 19:00 週次レポート (20:05 に GitHub Actions の予備が同じ API を叩く。メールも LINE も 6 日 dedup)。
 - **1 人 1 経路** (振り分けは `_auto_delivery_ai_path` = `_ai_blocked_now` の 1 か所。SQL は広めの絞り込みだけ):
   - AIあり・AI 体験中 (`'ai'`) → 🎯 3日ドリル (`WEAKNESS_DRILL_ROUTINE_ENABLED`): 本人の弱点の単元から 10 問・生徒ごとに 3 日に 1 本。
   - AIなし (塾生アプリのみ・体験中でない) の通塾生 (`'ai_nashi'`) → 🏫 クラス自動宿題 (`CLASS_HW_AUTO_ENABLED`): 受講している英語のクラスの宿題・

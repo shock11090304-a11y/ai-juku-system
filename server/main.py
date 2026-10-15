@@ -30946,14 +30946,17 @@ def _weekly_report_verdict(rows: list) -> str:
         #   (活動ゼロと判定された生徒に送るもの) ので、断絶検知では除いて数える (2026-09-09 review)。
         sent = int(p.get("sent_email", 0) or 0) + int(p.get("sent_line", 0) or 0) - int(p.get("zero_week", 0) or 0)
         skipped = int(p.get("skipped", 0) or 0) + int(p.get("zero_week_queued", 0) or 0)
+        # 🔁 2026-10-15: 直近 6 日に送り済みで飛ばした生徒 (LINE も dedup するようになった) は「集計が生きている」側に数える
+        #   (全員が送り済みの回を「断絶」と誤報しない)。
+        dup = int(p.get("skipped_dup", 0) or 0)
         if p.get("error"):
             weekly_verdict = f"直近の実行がエラー: {str(p['error'])[:200]}"
         elif weekly["stale"]:
             weekly_verdict = "8日以上実行されていない = スケジューラ停止の疑い"
-        elif sent == 0 and skipped > 0:
+        elif sent == 0 and dup == 0 and skipped > 0:
             weekly_verdict = f"実行されたが送信 0 件 (skipped={skipped}) = 集計ソース断絶の疑い"
         else:
-            weekly_verdict = f"正常: 送信 {sent} 件 / スキップ {skipped} 件"
+            weekly_verdict = f"正常: 送信 {sent} 件 / スキップ {skipped} 件" + (f" / 重複防止 {dup} 名 (送り済み)" if dup else "")
     return weekly_verdict
 
 
@@ -37845,11 +37848,36 @@ def cron_midweek_nudge(x_cron_secret: str = Header(None), dry_run: bool = False)
     }
 
 
+def _weekly_report_sent_templates(student_id: int) -> set:
+    """📊 週次レポートの重複防止 (2026-10-15): 直近 6 日に**成功した**週次レポートのテンプレートを 1 回の SELECT で返す
+    (生徒コピー weekly_report_email・保護者コピー weekly_report_parent_email・LINE weekly_report = _do_line_push が書く行)。日曜 19:00 の本命 (_weekly_reports_scheduler) と 20:05 の GitHub の予備
+    (weekly-reports-backup.yml → scripts/trigger_weekly_reports.py) が同じ API を叩くので、メールだけでなく LINE もここで止める
+    (以前は LINE に dedup が無く、連携済みの家庭に毎週 2 通届いていた)。失敗行 (success=0) は数えない = 19:00 に失敗した分は
+    20:05 が送り直す。期間の境は従来のメールの dedup と同じ (now - 6 日の ISO 文字列)。
+    例外はそのまま上げる (呼び出し側の生徒ごとの except で failed に数え、その生徒には送らない = 従来のメールの dedup と同じ閉じ方)。"""
+    since = (datetime.now(timezone.utc) - timedelta(days=6)).isoformat()
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT DISTINCT template FROM notifications WHERE student_id = ? AND success = 1 AND sent_at > ? "
+            "AND template IN ('weekly_report_email', 'weekly_report_parent_email', 'weekly_report')",
+            (int(student_id), since),
+        )
+        return {r["template"] for r in c.fetchall()}
+    finally:
+        conn.close()
+
+
 @app.post("/api/cron/weekly-reports")
 def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False):
-    """毎週日曜19時 (JST) にスケジューラから実行。
+    """毎週日曜19時 (JST) にスケジューラから実行 (20:05 に GitHub Actions の予備が同じ API を叩く)。
     メール配信 (全生徒) + LINE 配信 (連携済みのみ) のデュアルチャネル。
-    notifications テーブルで週次 dedup (同一生徒に週2回送らない)。"""
+    notifications テーブルで週次 dedup (同一生徒に週2回送らない)。2026-10-15 から LINE も 6 日 dedup
+    (_weekly_report_sent_templates・生徒メール / 保護者メール / LINE を生徒ごとに 1 回で引く)。AI コメントは
+    dedup の後で、メールを送る必要があり上限 (WEEKLY_REPORT_EMAIL_CAP) にも達していないときだけ作る
+    (予備の回で全員分を作り直さない)。送り済みで飛ばした生徒は skipped_dup、LINE だけ飛ばした数は skipped_dup_line
+    (skipped は従来どおり「活動なし」の意味)。"""
     if not CRON_SECRET:
         log.error("CRON_SECRET not configured; refusing cron request")
         raise HTTPException(status_code=503, detail="Cron not configured")
@@ -37884,6 +37912,8 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
     failed = 0
     capped = 0
     zero_week = 0
+    skipped_dup = 0        # 🔁 送る経路が全部 直近 6 日に送り済み (19:00 の本命の後の 20:05 の予備など)
+    skipped_dup_line = 0   # 🔁 LINE だけ送り済みで飛ばした数 (メールは送った生徒も含む)
     previews = []
     email_index = 0
     _zero_week_queue = []  # 📭 (row, zw, student_to, parent_to) — 通常レポートの後に残り枠で送る
@@ -37921,19 +37951,34 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
             # ctx 生成ゲートも同じ結果を使う (review 指摘: raw email 参照のままだと preview が
             # 新しい送り分けを映さず「日曜前の本番検証」に使えない)
             email, _wr_parent_to = _weekly_report_recipients(row)
+            # ★row["line_user_id"] (列は上の SELECT にある)。row.get は sqlite3.Row に無く、手元のテストで LINE の経路が
+            #   AttributeError → failed になっていた (Postgres の行は dict なので本番の挙動は同じ)。
+            _wr_line_uid = row["line_user_id"]
             if dry_run:
                 previews.append({
                     "student_id": row["id"], "name": row["name"], "stats": stats,
                     "would_send_email": bool(email),
                     "student_copy_to": email or None,
                     "parent_copy_to": _wr_parent_to,
-                    "would_send_line": bool(row.get("line_user_id")),
+                    "would_send_line": bool(_wr_line_uid),
                 })
                 continue
+            # 🔁 重複防止 (2026-10-15): 直近 6 日に送れた経路を先に 1 回で引き、送る必要がある経路だけ残す。
+            #   AI コメントより前に判定する (20:05 の予備で全員分の AI コメントを作り直さない)。
+            _wr_recent = _weekly_report_sent_templates(row["id"])
+            need_student = bool(email) and "weekly_report_email" not in _wr_recent
+            need_parent = bool(_wr_parent_to) and "weekly_report_parent_email" not in _wr_recent
+            need_line = bool(_wr_line_uid) and "weekly_report" not in _wr_recent
+            if _wr_line_uid and not need_line:
+                skipped_dup_line += 1
+            if (email or _wr_parent_to or _wr_line_uid) and not (need_student or need_parent or need_line):
+                skipped_dup += 1
+                log.debug(f"[WeeklyReport] dedup skip student {row['id']} (sent within 6 days: {sorted(_wr_recent)})")
+                continue
             # 📊 リッチ週次レポートのコンテキスト + AIコーチコメントを1回だけ生成 (生徒+保護者メールで共用)。
-            #   メール宛先が全く無い生徒 (LINE のみ等) では AI 呼び出しを省く。
+            #   メールを送る必要が無い生徒 (LINE のみ・メールは送り済み) と、上限に達した後の生徒では AI 呼び出しを省く。
             _wr_ctx = None
-            if email or _wr_parent_to:
+            if (need_student or need_parent) and sent_email < WEEKLY_REPORT_EMAIL_CAP:
                 try:
                     _wr_ctx = _weekly_coach_comments(_build_weekly_report_ctx(row["id"], row["name"], stats))
                 except Exception as _wre:
@@ -37941,83 +37986,62 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
                     log.warning(f"[WeeklyReport] ctx build failed sid={row['id']}: {type(_wre).__name__}: {str(_wre)[:150]}")
                     _wr_ctx = _weekly_report_minimal_ctx(row["name"], stats)
             # --- メール配信 (全生徒) ---
-            if email and sent_email >= WEEKLY_REPORT_EMAIL_CAP:
+            #   重複 (直近 6 日に送り済み) は上の need_student で判定済み = 送り済みの家庭は capped にも数えない。
+            if need_student and sent_email >= WEEKLY_REPORT_EMAIL_CAP:
                 capped += 1
                 log.warning(f"[WeeklyReport] Email cap ({WEEKLY_REPORT_EMAIL_CAP}) reached, skipping student {row['id']}")
-            elif email:
-                # 週次 dedup: 直近7日以内に同テンプレートで成功送信済みならスキップ
-                _dup_conn = db()
-                _dup_c = _dup_conn.cursor()
-                _seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=6)).isoformat()
-                _dup_c.execute(
-                    "SELECT id FROM notifications WHERE student_id=? AND template='weekly_report_email' AND success=1 AND sent_at > ? LIMIT 1",
-                    (row["id"], _seven_days_ago)
+            elif need_student:
+                # Resend rate limit 対策: 2通目以降は 1.5秒待機
+                if email_index > 0:
+                    _t.sleep(1.5)
+                email_index += 1
+                res = _send_weekly_report_email(email, _wr_ctx)
+                _ok = res.get("sent", False)
+                # notifications テーブルに記録
+                _n_conn = db()
+                _n_c = _n_conn.cursor()
+                _n_c.execute(
+                    """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                       VALUES (?, 'email', 'weekly_report_email', ?, ?, ?)""",
+                    (row["id"], json.dumps(stats, ensure_ascii=False)[:500], 1 if _ok else 0,
+                     res.get("error", "")[:200] if not _ok else None)
                 )
-                already_sent = _dup_c.fetchone()
-                _dup_conn.close()
-                if already_sent:
-                    log.debug(f"[WeeklyReport] dedup skip email for student {row['id']}")
+                _n_conn.commit()
+                _n_conn.close()
+                if _ok:
+                    sent_email += 1
                 else:
-                    # Resend rate limit 対策: 2通目以降は 1.5秒待機
-                    if email_index > 0:
-                        _t.sleep(1.5)
-                    email_index += 1
-                    res = _send_weekly_report_email(email, _wr_ctx)
-                    _ok = res.get("sent", False)
-                    # notifications テーブルに記録
-                    _n_conn = db()
-                    _n_c = _n_conn.cursor()
-                    _n_c.execute(
-                        """INSERT INTO notifications (student_id, channel, template, payload, success, error)
-                           VALUES (?, 'email', 'weekly_report_email', ?, ?, ?)""",
-                        (row["id"], json.dumps(stats, ensure_ascii=False)[:500], 1 if _ok else 0,
-                         res.get("error", "")[:200] if not _ok else None)
-                    )
-                    _n_conn.commit()
-                    _n_conn.close()
-                    if _ok:
-                        sent_email += 1
-                    else:
-                        failed += 1
+                    failed += 1
             # --- 📊 保護者向け並行配信 (塾長指示 2026-05-26) ---
-            # 宛先と重複判定は _weekly_report_recipients が決定済み (実際の生徒コピー先と比較)。
+            # 宛先は _weekly_report_recipients が決定済み (実際の生徒コピー先と比較)・重複は need_parent で判定済み。
             parent_email = _wr_parent_to
-            if parent_email:
+            if need_parent:
                 if sent_email >= WEEKLY_REPORT_EMAIL_CAP:
                     capped += 1
                 else:
-                    # 週次 dedup: per parent_email per template
-                    _pdup_conn = db()
-                    _pdup_c = _pdup_conn.cursor()
-                    _seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=6)).isoformat()
-                    _pdup_c.execute(
-                        "SELECT id FROM notifications WHERE student_id=? AND template='weekly_report_parent_email' AND success=1 AND sent_at > ? LIMIT 1",
-                        (row["id"], _seven_days_ago)
+                    if email_index > 0:
+                        _t.sleep(1.5)
+                    email_index += 1
+                    pres = _send_weekly_report_email(parent_email, _wr_ctx)
+                    _pok = pres.get("sent", False)
+                    _pn_conn = db()
+                    _pn_c = _pn_conn.cursor()
+                    _pn_c.execute(
+                        """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                           VALUES (?, 'email', 'weekly_report_parent_email', ?, ?, ?)""",
+                        (row["id"], json.dumps({"to": parent_email, **stats}, ensure_ascii=False)[:500], 1 if _pok else 0,
+                         pres.get("error", "")[:200] if not _pok else None)
                     )
-                    already_sent_p = _pdup_c.fetchone()
-                    _pdup_conn.close()
-                    if not already_sent_p:
-                        if email_index > 0:
-                            _t.sleep(1.5)
-                        email_index += 1
-                        pres = _send_weekly_report_email(parent_email, _wr_ctx)
-                        _pok = pres.get("sent", False)
-                        _pn_conn = db()
-                        _pn_c = _pn_conn.cursor()
-                        _pn_c.execute(
-                            """INSERT INTO notifications (student_id, channel, template, payload, success, error)
-                               VALUES (?, 'email', 'weekly_report_parent_email', ?, ?, ?)""",
-                            (row["id"], json.dumps({"to": parent_email, **stats}, ensure_ascii=False)[:500], 1 if _pok else 0,
-                             pres.get("error", "")[:200] if not _pok else None)
-                        )
-                        _pn_conn.commit()
-                        _pn_conn.close()
-                        if _pok:
-                            sent_email += 1
-                        else:
-                            failed += 1
+                    _pn_conn.commit()
+                    _pn_conn.close()
+                    if _pok:
+                        sent_email += 1
+                    else:
+                        failed += 1
             # --- LINE 配信 (連携済みのみ・従来互換) ---
-            if row.get("line_user_id"):
+            #   2026-10-15 から 6 日 dedup (need_line)。成功も失敗も _do_line_push が notifications (template 'weekly_report') に書く
+            #   = 失敗した分は 20:05 の予備が送り直す。
+            if need_line:
                 try:
                     params = {
                         "hours": stats["hours"],
@@ -38100,6 +38124,8 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
     return {
         "sent_email": sent_email, "sent_line": sent_line,
         "skipped": skipped, "failed": failed, "capped": capped,
+        # 🔁 2026-10-15: 送り済みで飛ばした生徒 (経路が全部 6 日以内に送れている) と、LINE だけ飛ばした数
+        "skipped_dup": skipped_dup, "skipped_dup_line": skipped_dup_line,
         "zero_week": zero_week,  # 📭 うち「今週は 0 問」の軽量メール (生徒+保護者の通数・sent_email に含む)
         "zero_week_queued": len(_zero_week_queue),
         "total_students": len(students),
@@ -38136,7 +38162,9 @@ def weekly_reports_preview(payload: dict, request: Request, x_stats_token: str =
 @app.post("/api/weekly-reports/send-one")
 def weekly_reports_send_one(payload: dict, request: Request, x_stats_token: str = Header(None),
                             authorization: Optional[str] = Header(None)):
-    """塾長ダッシュボードから、特定生徒にレポートを即送信 (メール + LINE)"""
+    """塾長ダッシュボードから、特定生徒にレポートを即送信 (メール + LINE)。
+    手動の明示の操作なので重複防止はしない。ここで送ると notifications に weekly_report_email / weekly_report の行が残るので、
+    6 日以内の日曜の本命・予備はその生徒のメールと LINE を送らない (2026-10-15 から LINE も同じ)。"""
     if not _origin_allowed(request):
         raise HTTPException(status_code=403, detail="Origin not allowed")
     _require_admin_or_stats_token(authorization, x_stats_token)
@@ -38172,8 +38200,8 @@ def weekly_reports_send_one(payload: dict, request: Request, x_stats_token: str 
         )
         _n_conn.commit()
         _n_conn.close()
-    # LINE 送信 (連携済みなら)
-    if row.get("line_user_id"):
+    # LINE 送信 (連携済みなら)。row["line_user_id"] (sqlite3.Row に .get は無い・Postgres の行は dict で同じ)
+    if row["line_user_id"]:
         try:
             params = {
                 "hours": stats["hours"],
