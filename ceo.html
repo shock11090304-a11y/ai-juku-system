@@ -5728,10 +5728,12 @@
       grade_unknown: '学年が判定できない', shougaku: '小学生', hold_only: 'GMARCH・早慶だけ', no_range: 'このクラスの範囲外',
       not_selected: '今回の対象クラス外', no_inventory: '在庫が足りない', ai_trial: 'AI体験中 (3日ドリルの側)', not_tsujuku: '通塾生でない',
       test_name: 'テスト用の名前', race: '別の実行が先に配った', create_failed: '作成に失敗', no_class: '英語のクラスなし',
+      wait_next: '次の新しいドリルを待つ (〆まで2日)',
     };
-    const _CHW_UNIT_REASON_JA = { weakness: '弱点', rotation: '順番', oldest: '一番前に出した単元', fixed: 'クラスの単元', current: '2日以内のドリルに追加' };
+    const _CHW_UNIT_REASON_JA = { weakness: '弱点', rotation: '順番', oldest: '一番前に出した単元', fixed: 'クラスの単元', current: '今日のドリルに追加' };
     const _CHW_PLAN_REASON_JA = { below_threshold: 'レビュー済みの本文がまだ足りない', no_reviewed_inventory: 'レビュー済みの在庫が無い', no_range: '範囲なし',
-                                  current_subject_mismatch: '2日以内のドリルの科目が違う' };
+                                  current_subject_mismatch: '2日以内のドリルの科目が違う',
+                                  wait_next: '前の日のドリルが2日以内 (今日は足さない・次は新しいドリル)' };
     const _CHW_KIND_JA = { grammar: '英文法', eiken: '英検', reading: '長文', hold: '保留 (まだ出さない)', none: '英語以外 (出さない)' };
     const _CHW_GROUP_JA = { kosei: '高校', chugaku: '中学' };
     let _chwLast = null, _chwBusy = false;
@@ -5740,6 +5742,9 @@
       const head = `<b>${_gdRtE(_CHW_GROUP_JA[g.group] || g.group)}</b> ${_gdRtE(_GD_SUBJ_JA[g.subject] || g.subject)}`;
       if (!g.members) return `<div style="color:#71717a;">${head}: 生徒なし</div>`;
       if (g.ok === undefined) return `<div style="color:#71717a;">${head}: 生徒 ${n(g.members)} 名 (今回の対象クラス外)</div>`;
+      if (!g.ok && g.reason === 'wait_next') {
+        return `<div style="color:#94a3b8;">${head}: ⏸ ${_gdRtE(_CHW_PLAN_REASON_JA.wait_next)}${g.drill_id ? ` (ドリル #${n(g.drill_id)})` : ''}</div>`;
+      }
       if (!g.ok) {
         const best = (Array.isArray(g.tried) ? g.tried : []).reduce((m, t) => Math.max(m, n(t.reviewed_available)), 0);
         return `<div style="color:#fbbf24;">${head}: ❌ ${_gdRtE(_CHW_PLAN_REASON_JA[g.reason] || g.reason || '配れない')}${best ? ` (レビュー済み ${best})` : ''}</div>`;
@@ -5763,12 +5768,17 @@
       h += pill(`1人 ${n(st.interval_days) || 2} 日に 1 本・${n(st.count) || 10} 問・単元は ${n(st.unit_cooldown_days)} 日あける`, '#cbd5e1', 'rgba(148,163,184,0.08)');
       h += pill('お知らせ: ' + (nt.line ? 'LINE も送る' : (nt.email ? 'メールも送る' : 'アプリの中だけ')), '#93c5fd', 'rgba(96,165,250,0.10)');
       if (Array.isArray(st.only_classes) && st.only_classes.length) h += pill('毎朝の対象: ' + st.only_classes.join('・'), '#fbbf24', 'rgba(251,191,36,0.10)');
+      // CLASS_HW_AUTO_ONLY_CLASSES の打ち間違い (時間割に無い名前)。名前が 1 つも当たらなければ毎朝は 0 クラス (全クラスに広げない)
+      if (Array.isArray(st.only_classes_unknown) && st.only_classes_unknown.length) {
+        h += pill('⚠️ CLASS_HW_AUTO_ONLY_CLASSES の知らないクラス名: ' + st.only_classes_unknown.join('・')
+          + ((Array.isArray(st.only_classes) && st.only_classes.length) ? '' : ' (毎朝はどのクラスにも配りません)'), '#fca5a5', 'rgba(248,113,113,0.10)');
+      }
       h += '</div>';
       if (d.error) h += `<div style="color:#fca5a5;font-size:0.8rem;font-weight:700;margin:0.3rem 0;">❌ ${_gdRtE(d.error)}</div>`;
       if (n(d.band_guard_trips)) h += `<div style="color:#fca5a5;font-size:0.78rem;font-weight:700;">⚠️ 学年ガードが ${n(d.band_guard_trips)} 組止めました (中高の取り違え・選ぶ側の不具合)</div>`;
       h += `<div style="font-size:0.84rem;color:#a7f3d0;font-weight:800;margin:0.4rem 0 0.1rem;">${d.dry_run ? '今朝回ったら配る' : '配った'}: ${n(d.delivered)} 名`
-        + `<span style="font-size:0.72rem;color:#a1a1aa;font-weight:400;">（新しいドリル ${n(d.drills_created)} 本・2日以内のドリルに追加 ${n(d.drills_joined)} 組）</span></div>`;
-      const SK = [['skipped_open', '未提出あり'], ['skipped_recent', '2日以内に受け取った'], ['skipped_grade_unknown', '学年が判定できない'],
+        + `<span style="font-size:0.72rem;color:#a1a1aa;font-weight:400;">（新しいドリル ${n(d.drills_created)} 本・今日のドリルに追加 ${n(d.drills_joined)} 組）</span></div>`;
+      const SK = [['skipped_open', '未提出あり'], ['skipped_recent', '2日以内に受け取った'], ['skipped_wait_next', '次のドリル待ち'], ['skipped_grade_unknown', '学年が判定できない'],
                   ['skipped_before_start', '受講開始前'], ['skipped_no_inventory', '在庫が足りない'], ['skipped_no_class', '英語のクラスなし'],
                   ['skipped_hold_only', 'GMARCH・早慶だけ'], ['skipped_no_range', 'クラスの範囲外'], ['skipped_shougaku', '小学生'],
                   ['skipped_not_selected', '今回の対象クラス外'], ['skipped_ai_trial', 'AI体験中 (3日ドリルの側)'], ['skipped_not_tsujuku', '通塾生でない'],

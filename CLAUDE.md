@@ -853,7 +853,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
     `WEAKNESS_ROUTINE_UNKNOWN_GRADE_AS_KOSEI` 0 = 学年が判定できない生徒には出さない (1 で高校生扱い・3日ドリルだけ)。
   - `CLASS_HW_AUTO_ENABLED` 既定 OFF: 🏫 クラス自動宿題。`CLASS_HW_AUTO_HOUR_JST` 6 (5〜22)・`CLASS_HW_INTERVAL_DAYS` 2 (1〜14・題名の 〆 も配った日 + この日数)・
     `CLASS_HW_AUTO_COUNT` 10 (5〜25)・`CLASS_HW_AUTO_PASSAGES` 2 (1〜5・英検の長文)・`CLASS_HW_READING_MIN_PASSAGES` 4 (1〜50・長文クラスの開始本数)・
-    `CLASS_HW_UNIT_COOLDOWN_DAYS` 14 (0〜90)・`CLASS_HW_AUTO_ONLY_CLASSES` 空 = 全クラス (段階投入・カンマか「、」区切り)。
+    `CLASS_HW_UNIT_COOLDOWN_DAYS` 14 (0〜90)・`CLASS_HW_AUTO_ONLY_CLASSES` 空 = 全クラス (段階投入・カンマか「、」区切り。全角・空白の違いは
+    同じ名前 = `_class_hw_label_key`。★当たる名前が 1 つも無い (打ち間違い・保留のクラスだけ) ときは全クラスに広げず 0 クラス + `props.error`)。
   - `HOMEWORK_NOTIFY_EMAIL` 既定 `manual` (`all` / `off`)・`HOMEWORK_NOTIFY_LINE` 既定 0 (1 で宿題の LINE を戻す非常スイッチ)。
   - `AUTO_DELIVERY_REVIEWED_SOURCES` 既定 空 = 上の許可リスト (`english=manual-drill-v1;math=mathct-*` のように科目ごとに差し替え・禁止は外せない)。
   - `PTEST_FEEDS_WEAKNESS` 既定 0 (1 で習熟度テストの skill 付きの設問を弱点に記録)。
@@ -964,7 +965,10 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   (`CLASS_HW_INTERVAL_DAYS`・判定は 6 時間の遊びつき)。未提出 (completed 以外) のクラス自動宿題が残っていれば積まない。
   英語のクラスを 2 つ取る生徒は、最後に届いたのが古いクラスから (同じなら時間割の順)。
 - ドリルは (クラス, 区分) ごとに 2 日に 1 本 = 同じクラスの同じ区分は同じ問題 (CEO の問題別の正解率が比べられる)。2 日のうちのドリルがあれば
-  新しく作らず、その日に受け取れるようになった生徒をそのドリルに足す (`drills_joined`)。印は `created_by = class_hw_auto:<区分>:<クラス名>` (列は足さない)。
+  新しく作らない。**同じ日 (JST) に作ったドリル**なら、後から受け取れるようになった生徒をそれに足す (`drills_joined`)。前の日に作ったドリルなら
+  その朝は足さずに次の新しいドリルを待つ (`skipped_wait_next`・CEO「次の新しいドリルを待つ」)。★前の日のドリルに足すと 〆 まで 1 日になり、
+  〆 の日 (6:00 の後) に出す生徒は毎回そうなって 1 日遅れのまま戻らない (`_class_hw_join_cutoff`・テスト [6] が 10 日分で固定)。
+  印は `created_by = class_hw_auto:<区分>:<クラス名>` (列は足さない)。
 - クラスと範囲は `_CLASS_HW_ROUTINE_MAP` (★キー = 時間割のクラス名。クラスが増えたら明示の 1 行を足す・テストが落ちる):
   英文法・中学英語のクラス → 高校生は english (文法 20 単元)・中学生は chugaku (中学基礎・中学2年 英語は中1・中2 の 8 単元) /
   英検のクラス → クラスの級の eiken (単語 → 長文空所補充 → 句動詞・熟語 → 内容一致・学年を問わない) / 長文のクラス → english_long の
@@ -989,6 +993,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   生徒ごとの状態)・`skipped_*`・`plan_version: 1`。
 - ON にする手順: CEO の 🔍 で全クラスを見る (学年未設定・クラス未登録・在庫) → 1 クラスを 📤 で試す → Railway で
   `CLASS_HW_AUTO_ONLY_CLASSES=<そのクラス>` と `CLASS_HW_AUTO_ENABLED=1` → 1 回まわったら ONLY を外す。止めるのは `CLASS_HW_AUTO_ENABLED` を消すだけ。
+  ONLY の名前が時間割と 1 つも一致しなければ、その朝はどのクラスにも配らず実行記録が error になる (全クラスに広げない)。🔍 の表の上にも赤いチップで出る。
 - CEO (📝 科目別 単元ドリル の下・🎯 カードの次): 「🏫 クラス自動宿題」カード。🔍 は `dry_run: true`・`all_classes`・`include_names` だけ
   (15 クラスの表 = 出題範囲・区分ごとの次の単元と理由と在庫・配る生徒・外した生徒と理由・学年が判定できない生徒)。
   クラスの行の 📤 は confirm() の後でだけ `dry_run: false` + `class_label` (そのクラスだけ・押し直しても増えない)。

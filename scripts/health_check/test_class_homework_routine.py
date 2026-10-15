@@ -16,14 +16,16 @@
       CLASS_HW_READING_MIN_PASSAGES (既定 4) 本になるまで始めない (未レビューの本文は数えない)・4 本で本文 1 本の宿題
   [5] 英検: 英検2級対策の中3 → 2級の単元・長文の単元は本文 2 本 (設問は本文ごとに passage_seq 順)
   [6] 2 日に 1 回: 同じ日の 2 回目は増えない (未提出・積まない)・提出しても 2 日たつまで配らない・2 日後に次の単元・
-      (クラス, 区分) のドリルは 2 日に 1 本 (後から受け取れるようになった生徒は同じドリルに足す)・英語のクラスを 2 つ取る生徒は
-      1 回に 1 本で、次は最後に届いたのが古いクラス
+      (クラス, 区分) のドリルは 2 日に 1 本 (同じ日に後から受け取れるようになった生徒は同じドリルに足す・前の日のドリルには足さず
+      次の新しいドリルを待つ = wait_next)・〆 の日に出す生徒も届くドリルの 〆 はいつも受け取った日 + 2 日 (1 日遅れのまま固定しない)・
+      英語のクラスを 2 つ取る生徒は 1 回に 1 本で、次は最後に届いたのが古いクラス
   [7] 単元の選び方: クラスの区分の弱点の正答率の低い順 (合計 3 回未満・0.8 以上は数えない)・直近 14 日に出した単元は飛ばす・
       弱点が無ければ単元の順番・全部が飛ばす期間なら一番前に出した単元・中学は「中学英語 時制」(写し) を数えず「時制（過去）」は 時制
   [8] お知らせ: LINE は 1 回も送らない・既定ではメールも送らない (source='auto')・HOMEWORK_NOTIFY_EMAIL=all ならリンクは
       /class.html?tab=homework (# を使わない)
   [9] dry-run: 何も書かない・15 クラスすべてを返す・同じ seed なら dry-run と本番で同じ単元・問題・生徒。名前は include_names のときだけ・
-      管理 API (401・既定は dry-run・時間割に無いクラスと hold のクラスは 400)・CLASS_HW_AUTO_ONLY_CLASSES・📤 の 1 クラスだけ
+      管理 API (401・既定は dry-run・時間割に無いクラスと hold のクラスは 400)・CLASS_HW_AUTO_ONLY_CLASSES (全角・空白の違いは同じ名前・
+      打ち間違いや保留のクラスだけの指定は全クラスに広げず 0 クラス + props.error)・📤 の 1 クラスだけ
   [10] AIなし の生徒が塾生アプリで解ける: /api/student/homework 200・一覧に出る・取得と提出が 200 (許可集合は変えていない)
   [11] CEO の配信済み一覧: 既定 (塾長) には出ない・kind=class_hw でクラス名と区分つき
   [12] 1 人 1 経路 (3日ドリルと合わせて): ai_disabled 0/1 × 体験の期限 なし/過去/未来/壊れた値 の全員が、ちょうど 1 つの自動配信に入る
@@ -287,6 +289,8 @@ def check_screens(mod, client, adm, ids):
         esc_line, subj_ja, rt_card, chw,
         "__o.render = _chwRender(__dry);",
         "__o.old = _chwRender({ ok: true, delivered: 3 });",
+        "__o.unk = _chwRender({ plan_version: 1, settings: { only_classes: [], only_classes_unknown: ['火曜2限 英文法 Lv.3<b>'] }, classes: [] });",
+        "__o.wait = _chwPlanCell({ group: 'kosei', subject: 'english', members: 2, ok: false, mode: 'wait', reason: 'wait_next', drill_id: 7, tried: [] });",
         "async function __ticks() { for (var i = 0; i < 30; i++) { await null; } }",
         "(async function () {",
         "  await chwDryRun();",
@@ -313,6 +317,11 @@ def check_screens(mod, client, adm, ids):
     check("外した理由が日本語のチップで出る (学年が判定できない・GMARCH・早慶だけ)", "学年が判定できない" in rend and "GMARCH・早慶だけ" in rend)
     check("📤 はクラスの番号だけを渡す", re.search(r'onclick="chwRunClass\(\d+\)"', rend) is not None)
     check("plan_version の無い古い応答は「サーバ反映待ち」", "反映待ち" in out.get("old", "") and "配る" not in out.get("old", ""))
+    check("CLASS_HW_AUTO_ONLY_CLASSES の知らない名前を赤いチップで出す (escape・当たる名前が無ければ「どのクラスにも配りません」)",
+          "知らないクラス名" in out.get("unk", "") and "&lt;b&gt;" in out.get("unk", "") and "<b>" not in out.get("unk", "x").split("知らないクラス名")[1]
+          and "どのクラスにも配りません" in out.get("unk", ""), out.get("unk", "")[:300])
+    check("前の日のドリルを待つ区分は ⏸ で出す (❌ にしない)", "⏸" in out.get("wait", "") and "❌" not in out.get("wait", "x")
+          and "ドリル #7" in out.get("wait", ""), out.get("wait"))
     posts = out.get("posts") or []
     check("🔍 → 送ったのは dry_run: true・all_classes・include_names", posts[:1] and posts[0]["path"] == "/api/admin/class-homework-routine/run"
           and posts[0]["body"] == {"dry_run": True, "all_classes": True, "include_names": True}, posts[:1])
@@ -413,6 +422,16 @@ def main():
         return q(mod, "SELECT d.id, d.subject, d.unit, d.title, d.question_ids, d.created_by, d.level, a.status, a.assigned_at "
                       "FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
                       f"WHERE a.student_id = ? AND substr(COALESCE(d.created_by,''),1,14) = '{PREFIX}' ORDER BY d.id", (sid,))
+
+    def due_of(x):
+        """題名の 〆M/D → date (2026 年)。無ければ None。"""
+        import re as _re
+        m = _re.search(r"〆(\d+)/(\d+)", x.get("title") or "")
+        return datetime.date(2026, int(m.group(1)), int(m.group(2))) if m else None
+
+    def recv_jst(x):
+        """受け取った日 (assigned_at = naive UTC) の JST の日付。"""
+        return (datetime.datetime.strptime(str(x["assigned_at"])[:19], "%Y-%m-%d %H:%M:%S") + datetime.timedelta(hours=9)).date()
 
     def status_of(res, sid, label=None):
         for row in res.get("classes", []):
@@ -727,7 +746,7 @@ def main():
     da = drills_of(a1)
     check("2 日後 (同じ時刻) に次のドリル・単元は前と違う", res["delivered"] == 2 and res["drills_created"] == 1 and len(da) == 2
           and da[0]["unit"] != da[1]["unit"], [(x["unit"], x["assigned_at"]) for x in da])
-    # 後から受け取れるようになった生徒は、2 日のうちのドリルに足す (新しいドリルは作らない)
+    # 後から受け取れるようになった生徒: 同じ日 (JST) のドリルには足す・前の日のドリルには足さず次の新しいドリルを待つ
     reset_chw()
     b1, b2 = make("高校2年", [LV2]), make("高校2年", [LV2])
     only_active([b1, b2])
@@ -737,9 +756,40 @@ def main():
     check("b1 だけ新しいドリル (b2 は未提出なので積まない)", res["delivered"] == 1 and res["drills_created"] == 1 and res["skipped_open"] == 1, res)
     complete_all(b2)
     res = run(now=at(1))
+    db2 = drills_of(b2)
+    check("翌日 b2 が提出 → 昨日のドリルには足さない (〆 まで 1 日になる)・新しいドリルも作らない (wait_next)",
+          res["delivered"] == 0 and res["drills_created"] == 0 and res["drills_joined"] == 0 and res.get("skipped_wait_next") == 1
+          and status_of(res, b2) == "wait_next" and len(db2) == 1 and group_of(res, LV2, "kosei").get("reason") == "wait_next",
+          (res.get("skipped_wait_next"), status_of(res, b2), group_of(res, LV2, "kosei")))
+    complete_all(b1)
+    res = run(now=at(2))
     db1, db2 = drills_of(b1), drills_of(b2)
-    check("翌日 b2 が提出 → 昨日のドリルに足す (2 日に 1 本のまま・drills_joined)", res["delivered"] == 1 and res["drills_created"] == 0
-          and res["drills_joined"] == 1 and db1[-1]["id"] == db2[-1]["id"], (res, db1[-1:], db2[-1:]))
+    check("2 日後: b1 と b2 に同じ新しいドリル (足並みがそろう・〆 は配った日 + 2 日)", res["delivered"] == 2 and res["drills_created"] == 1
+          and db1[-1]["id"] == db2[-1]["id"] and due_of(db2[-1]) == recv_jst(db2[-1]) + datetime.timedelta(days=2),
+          (res.get("delivered"), db1[-1:], db2[-1:]))
+    b3 = make("高校2年", [LV2])
+    only_active([b1, b2, b3])
+    res = run(now=at(2, 5))         # 同じ日 (JST) の 11:00 (📤 など)
+    db3 = drills_of(b3)
+    check("同じ日に後から受け取れるようになった生徒は今日のドリルに足す (drills_joined・〆 は同じ)", res["delivered"] == 1
+          and res["drills_joined"] == 1 and res["drills_created"] == 0 and len(db3) == 1 and db3[0]["id"] == db1[-1]["id"],
+          (res.get("delivered"), res.get("drills_joined"), db3))
+    # 〆 の日 (6:00 の実行のあと) に出す生徒も、届くドリルの 〆 はいつも受け取った日 + 2 日 (前の日のドリルに足して 〆 まで 1 日にしない・
+    #   それが毎回続いて 1 日遅れのまま戻らない、を防ぐ)。fa はその日のうちに出す・fb は 〆 の日の夕方に出す
+    reset_chw()
+    fa, fb = make("高校2年", [LV2]), make("高校2年", [LV2])
+    only_active([fa, fb])
+    for d_ in range(10):
+        run(now=at(d_))
+        today_ = (at(d_) + datetime.timedelta(hours=9)).date()
+        complete_all(fa)
+        for x in drills_of(fb):
+            if x["status"] != "completed" and due_of(x) is not None and due_of(x) <= today_:
+                ex(mod, "UPDATE grammar_drill_assignments SET status = 'completed' WHERE drill_id = ? AND student_id = ?", (x["id"], fb))
+    dfa, dfb = drills_of(fa), drills_of(fb)
+    bad = [(x["title"], x["assigned_at"]) for x in dfa + dfb if due_of(x) != recv_jst(x) + datetime.timedelta(days=2)]
+    check("〆 の日の夕方に出す生徒も、届くドリルの 〆 はいつも受け取った日 + 2 日 (10 日間)", len(dfa) == 5 and len(dfb) >= 3 and not bad,
+          (bad[:4], len(dfa), len(dfb)))
     # 英語のクラスを 2 つ取る生徒
     reset_chw()
     m2 = make("高校2年", [EIKEN2, LV2])
@@ -878,9 +928,38 @@ def main():
         r = run(dry=True)
         check("CLASS_HW_AUTO_ONLY_CLASSES: そのクラスだけ (ほかのクラスの生徒は not_selected)・知らない名前は only_classes_unknown",
               r["selected_classes"] == [EIKEN2] and status_of(r, p1) == "not_selected" and status_of(r, p3) == "deliver"
-              and r["settings"]["only_classes_unknown"] == ["架空のクラス"], (r["selected_classes"], status_of(r, p1), r["settings"]))
+              and r["settings"]["only_classes_unknown"] == ["架空のクラス"] and not r.get("error"),
+              (r["selected_classes"], status_of(r, p1), r["settings"], r.get("error")))
         r = run(dry=True, all_classes=True)
         check("all_classes (CEO の 🔍) は CLASS_HW_AUTO_ONLY_CLASSES を無視して全クラス", status_of(r, p1) == "deliver" and len(r["selected_classes"]) == 12)
+    # 打ち間違いだけの指定 (段階投入の 1 クラスのつもり) を全クラスに広げない (fail closed・props.error = 監視に出る)
+    with Env(CLASS_HW_AUTO_ONLY_CLASSES="火曜2限 英文法 Lv.3、架空のクラス"):
+        r = run(dry=True)
+        check("CLASS_HW_AUTO_ONLY_CLASSES が打ち間違いだけ → 0 クラス (全クラスに広げない)・error に設定の名前",
+              r["selected_classes"] == [] and status_of(r, p1) == "not_selected" and status_of(r, p3) == "not_selected"
+              and r["eligible"] == 0 and "CLASS_HW_AUTO_ONLY_CLASSES" in (r.get("error") or ""), (r["selected_classes"], r.get("error")))
+        before = counts(mod)
+        r = run()
+        after = counts(mod)
+        check("打ち間違いだけの指定で毎朝の実行 (本番) を回しても 1 本も書かない・実行記録の要約に error が残る",
+              r["delivered"] == 0 and after["grammar_drills"] == before["grammar_drills"]
+              and after["grammar_drill_assignments"] == before["grammar_drill_assignments"]
+              and "CLASS_HW_AUTO_ONLY_CLASSES" in str(mod._compact_run_props(r).get("error") or ""), (r["delivered"], before, after))
+        r = run(dry=True, all_classes=True)
+        check("🔍 (all_classes) は打ち間違いの指定があっても全クラスを計算し error にしない", len(r["selected_classes"]) == 12 and not r.get("error"))
+    with Env(CLASS_HW_AUTO_ONLY_CLASSES="水曜2限 GMARCH"):
+        r = run(dry=True)
+        check("保留のクラスだけの指定も 0 クラス・error", r["selected_classes"] == [] and bool(r.get("error")), (r["selected_classes"], r.get("error")))
+    with Env(CLASS_HW_AUTO_ONLY_CLASSES="火曜２限　英文法　Lv．2，金曜2限 英検2級対策 "):   # 全角の数字・空白・記号と区切り
+        r = run(dry=True)
+        check("全角の数字・空白・記号の違いは同じクラス名 (only_classes は時間割の正しい名前)",
+              r["selected_classes"] == [LV2, EIKEN2] and r["settings"]["only_classes"] == [LV2, EIKEN2]
+              and r["settings"]["only_classes_unknown"] == [] and not r.get("error") and status_of(r, p1) == "deliver", (r["selected_classes"], r["settings"]))
+    with Env(CLASS_HW_AUTO_ONLY_CLASSES="火曜2限 英文法Lv.2"):   # 空白の抜け
+        r = run(dry=True)
+        check("空白の抜けも同じクラス名", r["selected_classes"] == [LV2] and r["settings"]["only_classes"] == [LV2], (r["selected_classes"], r["settings"]))
+    check("時間割の 15 クラスは照合の形 (_class_hw_label_key) でも重ならない",
+          len({mod._class_hw_label_key(x) for x in mod._TIMETABLE_LABELS}) == len(mod._TIMETABLE_LABELS) == 15)
     mod._RATE_LIMIT_STORE.clear()
     r_ = client.post("/api/admin/class-homework-routine/run", json={"dry_run": False, "class_label": "火曜1限 中学基礎"}, headers=adm)
     j = r_.json() if r_.status_code == 200 else {}

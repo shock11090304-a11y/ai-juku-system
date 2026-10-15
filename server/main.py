@@ -56346,7 +56346,9 @@ def admin_class_homework_assign(payload: AdminClassHomeworkRequest, request: Req
 #     どのクラスからでも **2 日に 1 本まで** (CLASS_HW_INTERVAL_DAYS)。未提出 (completed 以外) のクラス自動宿題が残っている生徒には積まない。
 #     英語のクラスを 2 つ以上取っている生徒は、最後に届いたのが古いクラスから順に回す。
 #   - ドリルは (クラス, 区分) ごとに 1 本 = 同じクラスの同じ区分の生徒は同じ問題 (CEO の問題別の正解率が比べられる)。
-#     2 日のうちに作ったドリルがあれば新しく作らず、その日に受け取れる生徒をそのドリルに足す。
+#     同じ日 (JST) に作ったドリルがあれば新しく作らず、後から受け取れるようになった生徒をそのドリルに足す。前の日に作ったドリルが
+#     2 日のうちにあれば、その朝に受け取れるようになった生徒は足さずに次の新しいドリルを待つ (wait_next。〆 = 配った日 + 2 日を守る:
+#     前の日のドリルに足すと 〆 まで 1 日になり、〆 の日に出す生徒は毎回そうなって 1 日遅れのまま戻らない)。
 #   - 区分 = 生徒の学年 (_student_grade_band・判定できない学年と小学生には出さない)。英文法・中学英語のクラスは
 #     高校生 → english / 中学生 → chugaku。英検のクラスはクラスの級 (学年を問わない)。長文のクラスは english_long (高校生だけ・
 #     レビュー済みの本文が CLASS_HW_READING_MIN_PASSAGES 本になったら始まる)。GMARCH・早慶は hold (まだ出さない)、日曜 高校国語は出さない。
@@ -56431,11 +56433,31 @@ def _class_hw_hour_jst() -> int:
     return _env_int("CLASS_HW_AUTO_HOUR_JST", 6, 5, 22)
 
 
+def _class_hw_label_key(s) -> str:
+    """クラス名の照合用の形: NFKC (全角の数字・英字・記号・空白を半角に)・空白を全部消す・小文字。
+    Railway に手で打つ CLASS_HW_AUTO_ONLY_CLASSES の「月曜２限　英文法 Lv.1」「月曜2限 英文法Lv.1」も時間割のクラス名に当てる
+    (時間割の 15 クラスはこの形でも重ならない = テストが固定する)。"""
+    return re.sub(r"\s+", "", unicodedata.normalize("NFKC", str(s or ""))).lower()
+
+
 def _class_hw_settings() -> dict:
     """クラス自動宿題の設定 (呼ぶたびに env を読む)。CLASS_HW_AUTO_ONLY_CLASSES はカンマか「、」区切りのクラス名
-    (段階投入用・空 = 全部)。時間割に無い名前は無視して only_classes_unknown に出す。"""
+    (段階投入用・空 = 全部)。名前は _class_hw_label_key で時間割のクラス名に当てる (全角・空白の違いは同じ名前)。
+    当たらない名前は only_classes_unknown に出す。★指定があるのに配れるクラスが 1 つも無いときは全クラスに広げない
+    (_run_class_homework_routine が 0 クラスにして props.error = 監視に出す)。"""
     raw = str(os.getenv("CLASS_HW_AUTO_ONLY_CLASSES", "") or "")
     only = [s.strip() for s in re.split(r"[,、，]", raw) if s.strip()]
+    by_key = {}
+    for lb in _TIMETABLE_LABELS:
+        by_key.setdefault(_class_hw_label_key(lb), []).append(lb)
+    known, unknown = [], []
+    for x in only:
+        hit = by_key.get(_class_hw_label_key(x)) or []
+        if len(hit) == 1:
+            if hit[0] not in known:
+                known.append(hit[0])
+        else:
+            unknown.append(x)
     return {
         "interval_days": _env_int("CLASS_HW_INTERVAL_DAYS", 2, 1, 14),
         "hour_jst": _class_hw_hour_jst(),
@@ -56444,8 +56466,8 @@ def _class_hw_settings() -> dict:
         "reading_passages": _CLASS_HW_READING_PASSAGES,
         "reading_min_passages": _env_int("CLASS_HW_READING_MIN_PASSAGES", 4, 1, 50),
         "unit_cooldown_days": _env_int("CLASS_HW_UNIT_COOLDOWN_DAYS", 14, 0, 90),
-        "only_classes": [x for x in only if x in _TIMETABLE_LABELS],
-        "only_classes_unknown": [x for x in only if x not in _TIMETABLE_LABELS],
+        "only_classes": known,
+        "only_classes_unknown": unknown,
     }
 
 
@@ -56457,6 +56479,14 @@ def _class_hw_created_by_sql(col: str = "created_by") -> str:
     """クラス自動宿題のドリルに当たる SQL の条件 (定数だけを埋める・LIKE を使わない = クラス名の % や _ で崩れない)。"""
     n = len(_CLASS_HW_CREATED_BY_PREFIX)
     return f"substr(COALESCE({col}, ''), 1, {n}) = '{_CLASS_HW_CREATED_BY_PREFIX}'"
+
+
+def _class_hw_join_cutoff(now_txt: str) -> str:
+    """後から生徒を足してよいドリルの作成日時の下限 = 今日 (JST) の 0:00 を naive UTC の 'YYYY-MM-DD HH:MM:SS' で。
+    題名の 〆 はドリルを作った日 + CLASS_HW_INTERVAL_DAYS 日なので、足してよいのは同じ日 (JST) に作ったドリルだけ
+    (前の日のドリルに足すと受け取ってから 〆 まで 1 日しか無い)。"""
+    d = (datetime.strptime(now_txt, "%Y-%m-%d %H:%M:%S") + timedelta(hours=9)).date()
+    return (datetime(d.year, d.month, d.day) - timedelta(hours=9)).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _class_hw_range(label, group):
@@ -56514,7 +56544,8 @@ def _class_hw_weak_units(subject, rows) -> dict:
 
 def _class_hw_plan_group(c, label, group, *, members, weak_rows, hist, settings, now_txt, interval_cutoff, rng) -> dict:
     """🏫 (クラス, 区分) 1 組の計画 (dry-run と本番が同じ関数を通る)。
-    ① 2 日のうちに作ったこのクラスのこの区分のドリルがあれば、それに足す (mode='join'・新しく作らない)。
+    ① 2 日のうちに作ったこのクラスのこの区分のドリルがあれば新しく作らない。同じ日 (JST) に作ったものならそれに足す (mode='join')。
+       前の日に作ったものなら今朝は配らない (mode='wait'・reason='wait_next' = 〆 まで 2 日の次の新しいドリルを待つ)。
     ② 無ければ単元を決めて問題を選ぶ (mode='new'): 弱点 (正答率の低い順・合計 3 回以上・正答率 0.8 未満) → 順番 (前回の次の単元から) →
        一番前に出した単元。直近 unit_cooldown_days 日に出した単元は弱点・順番では飛ばす。問題はレビュー済みだけ
        (_auto_pick_reviewed_question_ids / 長文は _auto_pick_reviewed_passages)。このクラスのこの区分に前に出した問題は避ける
@@ -56539,6 +56570,12 @@ def _class_hw_plan_group(c, label, group, *, members, weak_rows, hist, settings,
     if cur is not None:
         if str(cur["subject"] or "") != subject:
             out["reason"] = "current_subject_mismatch"   # 起きないはず (クラスの表を変えた直後など)。書かずに知らせる
+            return out
+        if cur["created_at"] < _class_hw_join_cutoff(now_txt):
+            # 前の日 (JST) に作ったドリルが 2 日のうちにある → 足すと 〆 まで 1 日になる (〆 の日に出す生徒がずっと 1 日遅れになる)。
+            #   今朝は配らず、このドリルが 2 日たった朝に作る新しいドリル (〆 まで 2 日) で配る
+            out.update(mode="wait", drill_id=cur["id"], unit=cur["unit"], title=cur["title"])
+            out["reason"] = "wait_next"
             return out
         out.update(ok=True, mode="join", drill_id=cur["id"], unit=cur["unit"], unit_reason="current", qids=list(cur["qids"]),
                    title=cur["title"])
@@ -56622,7 +56659,8 @@ def _class_hw_plan(c, *, now, settings, selected, include_names=False, seed=None
     外す理由 (生徒ごとに 1 つ・この順に判定): ai_trial (AI 体験中 = 3日ドリルの側) / not_tsujuku / test_name / no_class (英語のクラスが無い) /
     grade_unknown / shougaku / hold_only (GMARCH・早慶だけ) / no_range (区分に出す範囲が無い = 長文クラスの中学生など) /
     before_start / not_selected (CLASS_HW_AUTO_ONLY_CLASSES・📤 のクラス以外) / open (未提出のクラス自動宿題がある = 積まない) /
-    recent (2 日のうちに受け取った) / no_inventory (どのクラスもレビュー済みの在庫が足りない)。
+    recent (2 日のうちに受け取った) / wait_next (クラスのドリルが前の日に作ったもの = 次の新しいドリルを待つ) /
+    no_inventory (どのクラスもレビュー済みの在庫が足りない)。
     受け取れる生徒は 1 回に 1 クラスだけ: 最後に届いたのが古いクラスから (届いたことが無いクラスが先・同じなら時間割の順)。
     返り値 {summary の数, groups {(クラス, 区分): 計画}, assign {(クラス, 区分): [生徒]}, students {id: 情報}}。"""
     import random as _random
@@ -56635,7 +56673,8 @@ def _class_hw_plan(c, *, now, settings, selected, include_names=False, seed=None
     month_jst = f"{today_jst.year:04d}-{today_jst.month:02d}"
     sk = {k: 0 for k in ("skipped_ai_trial", "skipped_not_tsujuku", "skipped_test_name", "skipped_no_class",
                          "skipped_grade_unknown", "skipped_shougaku", "skipped_hold_only", "skipped_no_range",
-                         "skipped_not_selected", "skipped_before_start", "skipped_open", "skipped_recent", "skipped_no_inventory")}
+                         "skipped_not_selected", "skipped_before_start", "skipped_open", "skipped_recent", "skipped_wait_next",
+                         "skipped_no_inventory")}
     has_trial = _students_has_ai_trial_until()
     has_sm = _table_has_column("students", "start_month")
     cols = ("id, name, email, line_user_id, grade, class_labels, course, plan, ai_disabled"
@@ -56765,7 +56804,9 @@ def _class_hw_plan(c, *, now, settings, selected, include_names=False, seed=None
                 assign.setdefault((lb, info["band"]), []).append(info)
                 break
         else:
-            info["status"] = "no_inventory"
+            # 前の日のドリルを待っているクラスがあれば wait_next (次の新しいドリルで配る)・無ければ在庫切れ
+            waits = any((groups.get((lb, info["band"])) or {}).get("reason") == "wait_next" for lb in order)
+            info["status"] = "wait_next" if waits else "no_inventory"
     for info in students.values():
         k = "skipped_" + info["status"]
         if k in sk:
@@ -56780,8 +56821,8 @@ def _class_hw_deliver_group(c, conn, label, group, gp, studs, *, now_txt, interv
        違えば書かずに _CLASS_HW_BAND_GUARD_TRIPS を数える (正常な実行では 0)。
     ② 新しく作るドリルの問題を読み直す: 全部が active・同じ科目・同じ単元・レビュー済みの出典 (長文は本文の出典も)。違えば書かない。
     ③ Postgres では pg_try_advisory_xact_lock(8675314) を f-string で埋めて取り (psycopg3 は Python の int を bigint で送ることがある)、
-       錠の中で「2 日のうちのこのクラスのこの区分のドリル」(あればそれに足す) と、生徒ごとの未提出・2 日以内の受け取りを読み直す
-       (別の実行が先に配った生徒は race)。新しいドリルに 1 人も入らなければドリルも書かない。"""
+       錠の中で「2 日のうちのこのクラスのこの区分のドリル」(同じ日 (JST) に作ったものならそれに足す・前の日のものなら配らない = race) と、
+       生徒ごとの未提出・2 日以内の受け取りを読み直す (別の実行が先に配った生徒は race)。新しいドリルに 1 人も入らなければドリルも書かない。"""
     global _CLASS_HW_BAND_GUARD_TRIPS
     res = {"assigned": [], "drill_id": None, "mode": gp.get("mode"), "race": [], "unit": gp.get("unit"),
            "subject": gp.get("subject"), "nq": len(gp.get("qids") or [])}
@@ -56832,13 +56873,18 @@ def _class_hw_deliver_group(c, conn, label, group, gp, studs, *, now_txt, interv
                 conn.rollback()
                 res["race"] = [s["id"] for s in studs]
                 return res
-        c.execute("SELECT id, subject, unit, title, question_ids FROM grammar_drills WHERE created_by = ? AND created_at >= ? "
+        c.execute("SELECT id, subject, unit, title, question_ids, created_at FROM grammar_drills WHERE created_by = ? AND created_at >= ? "
                   "ORDER BY id DESC LIMIT 1", (created_by, interval_cutoff))
         cur = c.fetchone()
         if cur is not None:
             if str(cur["subject"] or "") != subject:
                 conn.rollback()
                 res["error"] = "current_subject_mismatch"
+                return res
+            if _ts_text(cur["created_at"]) < _class_hw_join_cutoff(now_txt):
+                # 前の日 (JST) のドリル (計画では見えなかった = 起きないはず)。足すと 〆 まで 1 日になるので今回は配らない
+                conn.rollback()
+                res["race"] = [s["id"] for s in studs]
                 return res
             drill_id, mode = int(cur["id"]), "join"
             try:
@@ -56931,9 +56977,11 @@ def _run_class_homework_routine(dry_run: bool = True, only_label: Optional[str] 
     settings = _class_hw_settings()
     ranged_labels = [c_["label"] for c_ in _TIMETABLE_CLASSES
                      if _CLASS_HW_ROUTINE_MAP.get(c_["label"], {}).get("kind") in ("grammar", "eiken", "reading")]
+    # 段階投入の指定 (CLASS_HW_AUTO_ONLY_CLASSES) が空でないか。打ち間違いだけの指定でも「指定あり」= 全クラスに広げない (fail closed)
+    restricted = bool(settings["only_classes"] or settings["only_classes_unknown"])
     if only_label:
         selected = {only_label} if only_label in ranged_labels else set()
-    elif all_classes or not settings["only_classes"]:
+    elif all_classes or not restricted:
         selected = set(ranged_labels)
     else:
         selected = {x for x in settings["only_classes"] if x in ranged_labels}
@@ -57045,6 +57093,10 @@ def _run_class_homework_routine(dry_run: bool = True, only_label: Optional[str] 
             summary["error"] = f"クラス自動宿題を 1 本も配れませんでした (書き込みの失敗 {summary['create_failed']} 名)"
         if settings["only_classes_unknown"]:
             summary["reasons"]["only_classes_unknown"] = len(settings["only_classes_unknown"])
+        if restricted and not only_label and not all_classes and not selected and not summary.get("error"):
+            # 指定があるのに配れるクラスが 0 (打ち間違い・保留や国語のクラスだけ)。どこにも配っていないことを監視に出す
+            summary["error"] = ("CLASS_HW_AUTO_ONLY_CLASSES に配れるクラスがありません (時間割のクラス名と一致しない・保留のクラスだけ)。"
+                                "どのクラスにも配っていません: " + "、".join(settings["only_classes_unknown"] + settings["only_classes"])[:120])
         # 読むだけのトランザクションを閉じてからお知らせ (idle in transaction のまま students を持たない)
         try:
             conn.rollback()
