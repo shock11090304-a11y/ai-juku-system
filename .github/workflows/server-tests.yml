@@ -60,6 +60,11 @@ on:
       - 'hw-notice.js'
       - 'class.html'
       - 'mypage.js'
+      # 🧒 学年の判定 (test_grade_band_consistency.py) は student-mode.js と ceo.html の _gdMode を JS で動かし、
+      #   student-mode.js を読む画面の ?v= もそろっているか見る (画面だけ直した push でも走らせる)
+      - 'student-mode.js'
+      - 'mock-exam.html'
+      - 'ai-tutor-photo.html'
       # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
       - 'lp.html'
       - 'checkout.html'
@@ -443,6 +448,13 @@ jobs:
         run: |
           node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
           python3 scripts/health_check/test_hw_notice_js.py
+
+      # 🧒 学年の判定を 1 つに (2026-10-15 塾長「中学生と高校生は問題の配信はミスらないように」): 「中２」「中三」「小６」のような
+      #   全角・漢数字を半角にそろえてから読む規則を、サーバ (_student_mode_from_grade / _student_grade_band)・student-mode.js
+      #   (ajNormGrade / ajStudentMode)・ceo.html (_gdMode) で同じにした。JS は node で実際に動かして突き合わせる。
+      - name: 学年の判定 (サーバ・student-mode.js・ceo.html の一致) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: python3 scripts/health_check/test_grade_band_consistency.py
 
       # 📚 学習記録ダッシュボードの運用改善 (2026-09-07): タイムラインのページング / 1 日合計の上限 / 演習の重ね表示 /
       #   テスト系の名前の除外 / パネル別の読み込みと配色 (ソース検査)。

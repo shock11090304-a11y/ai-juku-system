@@ -3265,7 +3265,7 @@
   </footer>
 
   <script src="plans.js?v=20260529-waive-enrollment"></script>
-  <script src="student-mode.js?v=20260604-junior-preview"></script>
+  <script src="student-mode.js?v=20261016b-grade-norm"></script>
   <!-- ★ceo.js を変えたら必ず ?v= を更新する。vercel.json の no-cache は *.html と
        auth-guard.js / cache-purge.js だけで、ceo.js はこのクエリだけが頼り。
        据え置くと「新しい ceo.html + キャッシュされた古い ceo.js」で動く端末が出る。 -->
@@ -4757,9 +4757,12 @@
     //   ★空欄だけでなく「その他」も判定不能にする。登録フォーム3本(juku-register / payment/register /
     //     exam-app/signup)に「その他」があり、ajStudentMode はこれを kosei に倒す。中学生が「その他」で
     //     登録していると「🧒 中学生だけ」に出てこず、チップも付かないので痕跡なく配り漏れる。
+    //   ★2026-10-15: 全角・漢数字 (「中２」「中三」「高２」) は student-mode.js の ajNormGrade で半角にそろえてから読む
+    //     (サーバ _student_grade_band と同じ答え。test_grade_band_consistency.py が実際に動かして突き合わせる)。
     function _gdMode(grade) {
-      const g = String(grade == null ? '' : grade).trim();
+      let g = String(grade == null ? '' : grade).trim();
       if (!g) return '';
+      try { if (typeof window.ajNormGrade === 'function') g = window.ajNormGrade(g); } catch (e) {}
       if (!/小学|小[1-6]年?|中学|中[1-3]年?|中受|高校|高[1-3]年?|既卒|浪人|大学/.test(g)) return '';  // 「その他」等
       try { return (typeof ajStudentMode === 'function') ? ajStudentMode(g) : ''; } catch (e) { return ''; }
     }
@@ -10838,11 +10841,12 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       const grade = btn.getAttribute('data-grade') || '';
       let warn = (typeof window._gdGradeMismatchText === 'function')
         ? window._gdGradeMismatchText(subject, [{ id: Number(sid), name: sname, grade }]) : '';
-      // 中学ドリルを、学年から中学生と判定できない生徒 (未設定・その他・「高２」のような自由入力) に送るときも ⚠️。
+      // 中学ドリルを、学年から中学生と判定できない生徒 (未設定・その他・「社会人」のような自由入力) に送るときも ⚠️。
+      //   (2026-10-15 から「中２」「中三」「高２」のような全角・漢数字は半角にそろえて読む = 中学/高校と判定できる)
       //   その生徒の画面 (student-mode.js) は高校生モードで出ている。📨 はこちらから勧めるボタンなので確認を挟む。
       if (!warn && /^chugaku/.test(subject) && !(typeof window._gdMode === 'function' && window._gdMode(grade) === 'chugaku')) {
         warn = (grade ? `学年「${grade}」からは中学生かどうか判定できません` : '学年が未設定なので、中学生かどうか判定できません')
-          + '（この生徒の画面は高校生モードで表示されています）。\n中学生なら、先に生徒詳細の「学年」の横の「✏️ 編集」で「中学2年」のように入れてください（「中２」「中三」は中学生と判定されません）。';
+          + '（この生徒の画面は高校生モードで表示されています）。\n中学生なら、先に生徒詳細の「学年」の横の「✏️ 編集」で「中学2年」「中２」のように入れてください（「中」と学年の数字があれば中学生と判定されます。漢数字・全角も可）。';
       }
       if (!confirm(warn
         ? `⚠️ ${warn}\n\nそれでも ${sname} さんに「${label}」の自動採点ドリル(10問)を配信しますか？`

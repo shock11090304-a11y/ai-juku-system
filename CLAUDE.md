@@ -486,7 +486,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
     元の単元名でも記録する (`dojo-drill.html` の `drillOrigin`) ので、前置きなしの「正負の数」の行の写しになる。単元ドリルの結果は
     「正負の数」にしか入らないため、写しでボタンを出すと克服しても最長 4 か月ほど出続ける (30 日で退役 → 退役弱点として 90 日、
     の窓から算出・review で指摘)。ボタンは前置きなしの行に任せる。写しの行そのもの (弱点一覧・TOP3 に同じ単元が 2 行出る) は道場側の未対応。
-  - ★**中学ドリルのボタンは学年が中学か、判定できない (未設定・その他・「高２」のような自由入力) 生徒にだけ出す** (`window._gdMode`)。
+  - ★**中学ドリルのボタンは学年が中学か、判定できない (未設定・その他・「社会人」のような自由入力) 生徒にだけ出す** (`window._gdMode`)。
     入試道場の中学タブは誰でも解けるので高校生にも高校入試演習の弱点が立ち、ボタンにすると上限 5 個の枠を高校の科目から奪っていた
     (review で実測)。学年が高校・小学と読める生徒のカードは従来と 1 文字も変わらない (学年の判定の student-mode.js が読めないときも出さない)。
     並びは学年に合うボタンが先: 中学生は中学ドリルが先頭、判定できない生徒はほかの科目のボタンの後ろ。
@@ -497,7 +497,14 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
     学年を直すとその生徒の 📨 が持つ学年 (`data-grade`) も差し替える。★一覧は読み直さない: 読み直すと押した「✅ 配信済」が 📨 に戻り、
     同じドリルを二重に配りうる (`grammar-drill/create` に重複の防止は無い。お知らせはアプリ内表示・メールは `HOMEWORK_NOTIFY_EMAIL` 次第)。
     ボタンの並び・中学ドリルの有無は 🔄 で反映)。
-    ★全角・漢数字の学年 (「中２」「中三」) は student-mode.js もサーバの `_student_mode_from_grade` も中学と読まない (高校生モードで表示される)。
+    ★**学年の判定は 1 つの規則** (2026-10-15): 全角・漢数字・ローマ数字 (「中２」「中三」「中Ⅲ」「小６」「高二」) は半角にそろえてから読む。
+    サーバ `_normalize_grade_numerals` ↔ student-mode.js `ajNormGrade` (同じ表) を `_student_mode_from_grade` (表示用 3 値・未知は kosei)・
+    `ajStudentMode`・ceo.html `_gdMode` が通す。自動配信は 4 値の `_student_grade_band(grade, *, unknown_as_kosei=False)`
+    (`shougaku`/`chugaku`/`kosei`/'' = 判定できない。`_GRADE_KNOWN_RE` は `_gdMode` と同じ) と `_student_chugaku_year` を使い、
+    別の学年パーサを書かない (NFKC は「中三」を直さない)。「中高一貫 高2」は高校。テスト `test_grade_band_consistency.py` が
+    約 30 の学年をサーバ・student-mode.js・`_gdMode` (JS を node / osascript で実行) で突き合わせる。
+    ★student-mode.js を変えたら、読む 5 画面 (mypage / ceo / dojo-drill / mock-exam / ai-tutor-photo) の `?v=` を全部同じ値に上げる
+    (テストが同じ値かを見る)。「中２」などの生徒はこの変更でマイページが中学生モードに切り替わる。
   - クラス宿題のドリル単元 (`HW_DRILL_TOPICS`) に中学数学15単元を足した (科目は英語と同じ `chugaku`。理科・社会・国語の宿題単元はまだ無い)。★**クラス宿題には学年の
     取り違えガードが無い** (英語の頃から)。英検2級/準1級対策のクラスは中3と高校生が混ざるので、クラス単位で確認を出すと毎回出る。
   - ゲート `scripts/check_ceo_chugaku_drill_links.py` (run_all_gates が拾う・material-gates CI): `_CHU_DRILL_UNITS` は server の

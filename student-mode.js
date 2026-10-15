@@ -10,9 +10,23 @@
 (function () {
   'use strict';
 
-  // 学年文字列 → モードキー
-  function ajStudentMode(grade) {
+  // 🧒 2026-10-15 学年の数字ゆれ (全角・漢数字・ローマ数字) → 半角数字。
+  //   サーバ _normalize_grade_numerals と同じ表 (test_grade_band_consistency.py が突き合わせる)。
+  //   「中２」「中三」「中Ⅲ」を中学、「小６」を小学と読む (以前は高校生モードで表示していた)。
+  var GRADE_NUM_MAP = {
+    '１': '1', '２': '2', '３': '3', '４': '4', '５': '5', '６': '6',
+    '一': '1', '二': '2', '三': '3', '四': '4', '五': '5', '六': '6',
+    'Ⅰ': '1', 'Ⅱ': '2', 'Ⅲ': '3', 'ⅰ': '1', 'ⅱ': '2', 'ⅲ': '3'
+  };
+  var GRADE_NUM_RE = new RegExp('[' + Object.keys(GRADE_NUM_MAP).join('') + ']', 'g');
+  function ajNormGrade(grade) {
     var g = String(grade == null ? '' : grade);
+    return g.replace(GRADE_NUM_RE, function (ch) { return GRADE_NUM_MAP[ch] || ch; });
+  }
+
+  // 学年文字列 → モードキー (数字ゆれを半角にそろえてから読む)
+  function ajStudentMode(grade) {
+    var g = ajNormGrade(grade);
     if (/小学|小[1-6]年?|中学受験|中受/.test(g)) return 'shougaku';
     if (/中学|中[1-3]年?/.test(g)) return 'chugaku';
     return 'kosei';
@@ -65,6 +79,7 @@
   }
 
   window.ajStudentMode = ajStudentMode;
+  window.ajNormGrade = ajNormGrade;
   window.AJ_MODE_META = META;
   window.ajModeMeta = ajModeMeta;
   window.ajSessionStudent = ajSessionStudent;

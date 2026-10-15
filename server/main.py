@@ -7252,14 +7252,47 @@ _WEAKNESS_MASTERY_MIN_ATTEMPTS = 5
 def _student_mode_from_grade(grade) -> str:
     """🧒 2026-07-03 学年(grade) → 学習モード。student-mode.js `ajStudentMode` と同一規約
     (小学/中学受験=shougaku・中学=chugaku・その他/未設定=kosei)。弱点ループの pool 分離
-    (中学生に大学プールを出さない) をサーバ側でも一貫判定するため。"""
+    (中学生に大学プールを出さない) をサーバ側でも一貫判定するため。
+    🧒 2026-10-15: 判定の前に全角・漢数字・ローマ数字を半角にそろえる (_normalize_grade_numerals)。
+      「中２」「中三」「中Ⅲ」を中学と読む・「小６」を小学と読む (以前はどれも kosei だった)。
+      student-mode.js の ajNormGrade が同じ表を持つ (test_grade_band_consistency.py が突き合わせる)。
+    ★表示用の 3 値 (未知は kosei)。自動配信の判定には 4 値の _student_grade_band を使う (未知を kosei に倒さない)。"""
     import re as _re
-    g = str(grade or "")
+    g = _normalize_grade_numerals(grade)
     if _re.search(r"小学|小[1-6]年?|中学受験|中受", g):
         return "shougaku"
     if _re.search(r"中学|中[1-3]年?", g):
         return "chugaku"
     return "kosei"
+
+
+# 🧒 2026-10-15 学年として読める語 (ceo.html の _gdMode と同じ正規表現)。これに当たらない学年 (空・「その他」・「社会人」…) は
+#   中学か高校か判定できない = 自動配信では出さない (4 値の band の '')。
+_GRADE_KNOWN_RE = r"小学|小[1-6]年?|中学|中[1-3]年?|中受|高校|高[1-3]年?|既卒|浪人|大学"
+
+
+def _student_grade_band(grade, *, unknown_as_kosei: bool = False) -> str:
+    """🧒 2026-10-15 自動配信用の学年の区分 (4 値): 'shougaku' | 'chugaku' | 'kosei' | '' (判定できない)。
+    塾長「中学生と高校生は問題の配信はミスらないように」→ 3日ドリル・クラス自動宿題はこれ 1 つで中高を分ける
+    (別の学年パーサを書かない。NFKC は「中三」を半角にしないので使わない)。
+    判定: 数字ゆれを半角にそろえ → _GRADE_KNOWN_RE に当たらなければ '' (unknown_as_kosei=True なら 'kosei') →
+    当たれば _student_mode_from_grade と同じ 3 値。ceo.html の _gdMode と同じ答え (test_grade_band_consistency.py)。"""
+    import re as _re
+    g = _normalize_grade_numerals(grade).strip()
+    if not g or not _re.search(_GRADE_KNOWN_RE, g):
+        return "kosei" if unknown_as_kosei else ""
+    return _student_mode_from_grade(g)
+
+
+def _student_chugaku_year(grade) -> Optional[int]:
+    """🧒 2026-10-15 中学生の学年 (1〜3)。「中2」「中学３年」「中三」→ 2/3/3。中学生でない・学年が読めない (「中学生」) は None。
+    3日ドリルのレベル (中3 は標準+やや難・中1/中2 は基礎+標準) に使う。"""
+    import re as _re
+    g = _normalize_grade_numerals(grade)
+    if _student_grade_band(g) != "chugaku":
+        return None
+    m = _re.search(r"中学?\s*([1-3])", g)
+    return int(m.group(1)) if m else None
 
 
 def _weakness_recommended_action(dominant_reason: Optional[str], slow: bool = False, accurate: bool = False) -> dict:
