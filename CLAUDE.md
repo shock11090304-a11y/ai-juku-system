@@ -170,6 +170,12 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 セッション側で作って `seed-data/` に JSON を置き、ボタンの取込だけで本番に入れる。
 - **シードの追加手順**: `seed-data/grammar_drill_pool_vN.json` を追加 → `ceo.html` の `#grammarPoolImportBtn` の
   `data-seed` にカンマ区切りで足し、`data-size` を合計問数に更新するだけ。ハンドラが順に POST する。
+- ★**自動配信 (3日ドリル・クラス自動宿題) に出るのはレビュー済みの出典だけ** (2026-10-15 塾長決定)。出典 (`source`) の許可リストは
+  `server/main.py` の `_AUTO_DELIVERY_REVIEWED_SOURCES_DEFAULT` (科目ごと・末尾 `*` は前方一致・判定は `_auto_delivery_source_ok`)。
+  新しいシードは **ほかと重ならない出典の接頭辞** にし、盲検 3 名を通したら許可リストと `test_auto_delivery_shared.py` の `REVIEWED_SEEDS` に
+  1 行ずつ足す (盲検していないなら `NOT_AUTO_SEEDS`)。どちらにも無い `*pool*` / `*_drill_*` / `*grammar*` のシードがあるとテストが落ちる。
+  習熟度テスト (科目 `proficiency_test`・出典 `pt-` / `ptest:`) は env `AUTO_DELIVERY_REVIEWED_SOURCES` でも外せない禁止。
+  本番の在庫は `GET /api/admin/grammar/source-inventory` (読むだけ・CEO の管理者か X-Cron-Secret) で、自動配信できない古い行 (`legacy_active`) と単元ごとの在庫を見る。
 - **取込 API の落とし穴**: `POST /api/admin/grammar/import` は 1 リクエスト **2000 問まで**。
   `unit` は english なら `server/main.py` の `GRAMMAR_UNITS` と**完全一致**でないと **無言で skip** される。
   `_GRAMMAR_SUBJECT_UNIT_ORDER` に載っている科目 (中学英語・中学数学・英検) は、そこに無い単元名の問題・本文を

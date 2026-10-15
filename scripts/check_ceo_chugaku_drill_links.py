@@ -31,6 +31,9 @@
      server の単元はすべて道場にカードがある。中学のカードに同じ topic が 2 枚ない
   4. HW_DRILL_TOPICS の中学の行 (s='chugaku' か t が「中学」で始まる) は s='chugaku' で、t が道場のカードの topic に実在する。
      HW_SUBJS (英語・数学) の道場のカードは、すべて HW_DRILL_TOPICS にある (クラス宿題で選べる)
+  5. (2026-10-15 自動配信) server の _chu_drill_for_topic (ceo.html の _chuDrillFor の移植) が読む表もそろっている:
+     _CHU_DRILL_SUBJECTS == _GRAMMAR_SUBJECT_UNIT_ORDER の chugaku* (重複なし)、
+     ceo.html の _CHU_DRILL_LABEL == server の _GRAMMAR_SUBJECT_LABEL_JA の chugaku* (前置き「中学数学 …」を同じ文字で外すため)
   ★読めない書き方は「読み漏れ」として落とす。正規表現で読めたものだけ照合すると、読めなかった行が素通りして緑になる
     (2026-09-29 の review で実測)。JS はコメント・文字列・テンプレート (入れ子の ${…} も追う)・正規表現リテラルの中身を空白にしてから
     読む (js_mask)。落とすもの: 宣言が 1 つでない (コメントの中の写しは数えない)・オブジェクト以外の要素 (変数・スプレッド)・
@@ -67,7 +70,7 @@ DOJO_ONLY = {"英語": {"過去形", "未来形", "不定詞の用法", "長文�
 # クラス宿題 (HW_DRILL_TOPICS) で単元を選べるようにしてある教科 = 道場のカードを 1 枚ずつ宿題の単元にも出す
 #   (理科・社会・国語は 2026-09-30 時点で宿題の単元に出していない。出すならここに足し、HW_DRILL_TOPICS に s: 'chugaku' で並べる)
 HW_SUBJS = ("英語", "数学")
-SERVER_NAMES = ("_GRAMMAR_SUBJECT_UNIT_ORDER", "_GRAMMAR_CANON_SUBJECTS")
+SERVER_NAMES = ("_GRAMMAR_SUBJECT_UNIT_ORDER", "_GRAMMAR_CANON_SUBJECTS", "_GRAMMAR_SUBJECT_LABEL_JA", "_CHU_DRILL_SUBJECTS")
 # server の dict / list / set を書き換えるメソッド (読むだけのメソッド .get / .index / .issuperset … は通す)
 MUTATORS = {"append", "extend", "insert", "remove", "pop", "popitem", "clear", "update", "add", "discard",
             "setdefault", "sort", "reverse", "difference_update", "intersection_update",
@@ -442,8 +445,11 @@ def main():
     srv = server_constants(bad)
     order = srv.get("_GRAMMAR_SUBJECT_UNIT_ORDER") or {}
     canon = srv.get("_GRAMMAR_CANON_SUBJECTS") or set()
-    if not order or not canon:
-        print("❌ server/main.py から _GRAMMAR_SUBJECT_UNIT_ORDER / _GRAMMAR_CANON_SUBJECTS を読めない")
+    label_ja = srv.get("_GRAMMAR_SUBJECT_LABEL_JA") or {}
+    chu_subjs = srv.get("_CHU_DRILL_SUBJECTS") or ()
+    if not order or not canon or not label_ja or not chu_subjs:
+        print("❌ server/main.py から _GRAMMAR_SUBJECT_UNIT_ORDER / _GRAMMAR_CANON_SUBJECTS / _GRAMMAR_SUBJECT_LABEL_JA / "
+              "_CHU_DRILL_SUBJECTS を読めない")
         for b in bad:
             print("   ❌ " + b)
         return 1
@@ -565,12 +571,25 @@ def main():
             if p.get("topic") not in hw_topics:
                 bad.append(f"道場の中学{dsubj}のカード「{p.get('topic')}」が HW_DRILL_TOPICS に無い (クラス宿題で選べない)")
 
+    # --- 5. server: 自動配信の中学の振り分け (_chu_drill_for_topic) が読む表 (2026-10-15) ---
+    want_subjs = [k for k in order if k.startswith("chugaku")]
+    print(f"  server _CHU_DRILL_SUBJECTS: {list(chu_subjs)}")
+    if not isinstance(chu_subjs, (tuple, list)) or len(chu_subjs) != len(set(chu_subjs)):
+        bad.append(f"server の _CHU_DRILL_SUBJECTS が重複なしのタプルでない: {chu_subjs!r}")
+    elif set(chu_subjs) != set(want_subjs):
+        bad.append(f"server の _CHU_DRILL_SUBJECTS {sorted(chu_subjs)} が _GRAMMAR_SUBJECT_UNIT_ORDER の中学の科目 {sorted(want_subjs)} と違う "
+                   f"(3日ドリルが中学生のその教科の弱点をドリルにできない / 存在しない科目を探す)")
+    srv_chu_labels = {k: label_ja.get(k) for k in want_subjs}
+    if labels and labels != srv_chu_labels:
+        bad.append(f"ceo.html の _CHU_DRILL_LABEL {labels} が server の _GRAMMAR_SUBJECT_LABEL_JA の中学の科目 {srv_chu_labels} と違う "
+                   f"(自動配信と 📨 で「中学数学 …」の前置きの外し方が食い違う)")
+
     if bad:
         print(f"\n❌ 中学の単元のずれ {len(bad)} 件")
         for b in bad:
             print("   ❌ " + b)
         return 1
-    print("\n✅ 中学の単元は server・ceo.html (弱点ドリル / クラス宿題)・入試道場で一致")
+    print("\n✅ 中学の単元は server (単元ドリル・自動配信の振り分け)・ceo.html (弱点ドリル / クラス宿題)・入試道場で一致")
     return 0
 
 

@@ -65,6 +65,11 @@ on:
       - 'student-mode.js'
       - 'mock-exam.html'
       - 'ai-tutor-photo.html'
+      # 🤖 自動配信の共通部品 (test_auto_delivery_shared.py) は単元ドリルのシードを全部読み、自動配信の許可リストを
+      #   通るか (レビュー済み) / 通らないか (未レビュー) を固定する (シードだけ足した push でも走らせる)
+      - 'seed-data/grammar_drill_pool_v1.json'
+      - 'seed-data/grammar_drill_pool_v2.json'
+      - 'seed-data/chu2_grammar_v1.json'
       # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
       - 'lp.html'
       - 'checkout.html'
@@ -455,6 +460,15 @@ jobs:
       - name: 学年の判定 (サーバ・student-mode.js・ceo.html の一致) 回帰テスト
         if: ${{ !cancelled() }}
         run: python3 scripts/health_check/test_grade_band_consistency.py
+
+      # 🤖 自動配信の共通部品 (2026-10-15 塾長決定「自動で配るのはレビュー済みの科目別ドリルだけ」): 出典の許可リスト
+      #   (シードの分類を固定・習熟度テストは env でも外せない)・弱点 topic → 単元・学年の区分と科目・AI の振り分け (1 人 1 経路)・
+      #   既出を避ける抽出 (1 問ずつ・本文ごと)・在庫照会 API・実行記録の要約 (名前を入れない・4000 字)。
+      - name: 自動配信の共通部品 (レビュー済みだけ・中高の取り違えなし) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_auto_delivery_shared.py
 
       # 📚 学習記録ダッシュボードの運用改善 (2026-09-07): タイムラインのページング / 1 日合計の上限 / 演習の重ね表示 /
       #   テスト系の名前の除外 / パネル別の読み込みと配色 (ソース検査)。

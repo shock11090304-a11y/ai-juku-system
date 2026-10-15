@@ -3445,6 +3445,10 @@ def _ai_blocked_now(ai_disabled, ai_trial_until) -> bool:
       週次弱点プリント (_run_weekly_worksheet_generation・2026-10-12 まで条件が抜けていた) は SQL 側で
       同じ条件を書いている (体験中も配信する)。休眠再活性ナッジ・夏期コホート合流は素の ai_disabled のままで、
       体験中でも対象外/拒否のまま = 意図どおり。SQL を足すときはここに追記すること。
+    ★2026-10-15: 週次弱点プリントは既定で停止 (WEEKLY_WORKSHEET_ENABLED)。自動配信 (3日ドリル・塾生アプリのみ枠の
+      クラス自動宿題) の振り分けは _auto_delivery_ai_path (= この関数) で決め、SQL は _auto_delivery_ai_prefilter_sql の
+      広めの絞り込みだけにする (SQL の文字列比較と Python の日時の読み取りが食い違うと、同じ生徒が両方に入る/どちらにも入らない)。
+      3日ドリルの SQL を _auto_delivery_ai_prefilter_sql に置き換えるまでは、上の SQL の写しが残っている。
     """
     if not (ai_disabled or 0):
         return False
@@ -46323,6 +46327,115 @@ def admin_grammar_sync(
         conn.close()
 
 
+def _grammar_source_group(source) -> str:
+    """出典 (source) を「どのシードか」の単位にまとめる (在庫照会の表示用)。
+    ':' 以降と空白以降を落とし、末尾の -数字 / -r数字 / -S数字 を繰り返し外す
+    (mathwb-ia:1:1 → mathwb-ia・eiken2-honban-r1-3 → eiken2-honban・'eikenp1-mock-v1 S1-A' → eikenp1-mock-v1)。v1/v2 は区別したまま。"""
+    s = str(source or "").strip().split(":", 1)[0].split(" ", 1)[0]
+    prev = None
+    while prev != s:
+        prev = s
+        s = re.sub(r"-[rRsS]?\d+$", "", s)
+    return s or "(空)"
+
+
+@app.get("/api/admin/grammar/source-inventory")
+def admin_grammar_source_inventory(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🤖 2026-10-15 自動配信の「レビュー済みの出典だけ」を本番の在庫で確かめる読み取り専用の照会 (塾長が CEO か curl で見る)。
+    科目 × 出典のまとまり (_grammar_source_group) ごとに、生きている/止めた行の数・レベル別・本文の設問か・自動配信してよいか
+    (_auto_delivery_source_ok) を返す。legacy_active = 生きているのに自動配信できない行 (exam_questions を分解した古い英文法の
+    'pool' など)。auto_units = 許可リストのある科目の単元ごとの、自動配信できる 1 問ずつの在庫 (レベル別) と本文の本数。
+    書き込みはしない。名前などの個人情報は返さない。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    has_p = _grammar_has_passages()
+    single = "CASE WHEN passage_id IS NULL THEN 1 ELSE 0 END" if has_p else "1"
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            f"SELECT subject, unit, source, level, active, {single} AS single, COUNT(*) AS n FROM grammar_questions "
+            f"GROUP BY subject, unit, source, level, active, {single}"
+        )
+        qrows = c.fetchall()
+        prows = []
+        if has_p:
+            c.execute("SELECT subject, unit, source, level, active, COUNT(*) AS n FROM grammar_passages "
+                      "GROUP BY subject, unit, source, level, active")
+            prows = c.fetchall()
+        allow = _auto_delivery_allowlist()
+        groups, units = {}, {}
+        for r in qrows:
+            subj, src, n = str(r["subject"] or ""), str(r["source"] or ""), int(r["n"] or 0)
+            ok = _auto_delivery_source_ok(subj, src)
+            g = groups.setdefault((subj, _grammar_source_group(src)), {
+                "subject": subj, "source_group": _grammar_source_group(src), "kind": "question", "sources": set(),
+                "ok_sources": 0, "active": 0, "inactive": 0, "in_passage": 0,
+                "by_level": {"basic": 0, "standard": 0, "advanced": 0}})
+            if src not in g["sources"]:
+                g["sources"].add(src)
+                g["ok_sources"] += 1 if ok else 0
+            if int(r["active"] or 0) == 1:
+                g["active"] += n
+                lv = str(r["level"] or "")
+                g["by_level"][lv] = g["by_level"].get(lv, 0) + n
+                if not int(r["single"] or 0):
+                    g["in_passage"] += n
+                elif ok and subj in allow:
+                    u = units.setdefault((subj, str(r["unit"] or "")), {
+                        "subject": subj, "unit": str(r["unit"] or ""), "reviewed": {"basic": 0, "standard": 0, "advanced": 0},
+                        "passages": 0})
+                    u["reviewed"][lv] = u["reviewed"].get(lv, 0) + n
+            else:
+                g["inactive"] += n
+        for r in prows:
+            subj, src, n = str(r["subject"] or ""), str(r["source"] or ""), int(r["n"] or 0)
+            ok = _auto_delivery_source_ok(subj, src)
+            g = groups.setdefault((subj, _grammar_source_group(src) + " (本文)"), {
+                "subject": subj, "source_group": _grammar_source_group(src) + " (本文)", "kind": "passage", "sources": set(),
+                "ok_sources": 0, "active": 0, "inactive": 0, "in_passage": 0,
+                "by_level": {"basic": 0, "standard": 0, "advanced": 0}})
+            if src not in g["sources"]:
+                g["sources"].add(src)
+                g["ok_sources"] += 1 if ok else 0
+            if int(r["active"] or 0) == 1:
+                g["active"] += n
+                lv = str(r["level"] or "")
+                g["by_level"][lv] = g["by_level"].get(lv, 0) + n
+            else:
+                g["inactive"] += n
+        # 本文の在庫は抽出と同じ判定 (本文と全設問がレビュー済み) で数える
+        for subj in sorted({k[0] for k in groups if k[0] in allow}):
+            for p in _auto_reviewed_passages(c, subj)["passages"].values():
+                u = units.setdefault((subj, str(p["unit"] or "")), {
+                    "subject": subj, "unit": str(p["unit"] or ""), "reviewed": {"basic": 0, "standard": 0, "advanced": 0},
+                    "passages": 0})
+                u["passages"] += 1
+        out_groups, legacy = [], []
+        for (subj, sg), g in sorted(groups.items()):
+            n_src = len(g["sources"])
+            auto_ok = "yes" if g["ok_sources"] == n_src else ("no" if g["ok_sources"] == 0 else "mixed")
+            out_groups.append({
+                "subject": subj, "source_group": sg, "kind": g["kind"], "distinct_sources": n_src,
+                "active": g["active"], "inactive": g["inactive"], "in_passage": g["in_passage"],
+                "by_level": g["by_level"], "auto_ok": auto_ok,
+            })
+            if g["active"] and auto_ok != "yes":
+                legacy.append({"subject": subj, "source_group": sg, "kind": g["kind"], "active": g["active"], "auto_ok": auto_ok})
+        return {
+            "ok": True,
+            "groups": out_groups,
+            "legacy_active": legacy,
+            "auto_units": [units[k] for k in sorted(units)],
+            "allowlist": {k: list(v) for k, v in sorted(allow.items())},
+            "deny_subjects": sorted(_AUTO_DELIVERY_DENY_SUBJECTS),
+            "deny_source_prefixes": list(_AUTO_DELIVERY_DENY_SOURCE_PREFIXES),
+            "env_override": bool(str(os.getenv("AUTO_DELIVERY_REVIEWED_SOURCES", "") or "").strip()),
+        }
+    finally:
+        conn.close()
+
+
 def _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, count, exclude_ids=None,
                                     exclude_unit_prefixes=()):
     """grammar_questions からドリル用の問題 id を count 問ランダム抽出 (active のみ)。
@@ -46740,6 +46853,481 @@ def _weakness_routine_send_cap() -> int:
         return max(1, min(int(os.getenv("WEAKNESS_DRILL_ROUTINE_CAP", "60")), 500))
     except (TypeError, ValueError):
         return 60
+
+
+# ========================================================================
+# 🤖 自動配信の共通部品 (2026-10-15 塾長決定)
+#   塾長「自動で配るのはレビュー済みの科目別ドリルだけ」「中学生と高校生は問題の配信はミスらないように」。
+#   3日ドリル (_run_weakness_drill_routine) と塾生アプリのみ枠 (AIなし) のクラス自動宿題が、ここの判定だけを使う
+#   (それぞれが自前の許可リスト・学年判定・AI 判定を持つと食い違う = critic C2/C5/C6/C7)。
+#   ★CEO の手で配る経路 (grammar-drill/create・📨 弱点ドリル・👀 プレビュー) には掛けない。塾長が中身を選ぶ配信は対象外で、
+#     CEO の抽出 (_grammar_pick_drill_question_ids / _grammar_pick_drill_passages) は変えない。自動配信は下の専用の抽出を使う。
+#   ★スキーマは変えない (列・表・索引を足さない)。
+# ------------------------------------------------------------------------
+# ✅ 自動配信してよい出典 (grammar_questions.source / grammar_passages.source) = 盲検 3 名の記録があるシードだけ。
+#   科目ごとに持つ (同じ文字列 'chu2grammar-20260709' が中学英語 chugaku と english/basic (chu2_grammar_v1.json・ボタン無し・
+#   盲検記録なし) の両方にあるため、科目をまたいだ許可にしない)。末尾 '*' は前方一致、それ以外は完全一致。
+#   取込は問題の source を 30 字・本文の source を 60 字で切る (admin_grammar_import) ので、パターンは短く保つ。
+#   - english: 英文法 v1 (703) / v2 (985) — 盲検 3 名の全員一致のみ (seed-data/grammar_drill_pool_v1/v2.json の _meta)
+#   - math: 共通テスト模試 mathct-* / 問題集 mathwb-* (math_drill_*.json の blind_review)。
+#     exam_questions を分解した古い数学の行 (source 'pool' 等) は出さない
+#   - chugaku*: 中学 5 教科のシード (chugaku_*_pool_v1.json。作問 → 盲検 3 名 → 点検)
+#   - eiken: 英検 2級 eiken2-* / 準1級 eikenp1-* (語彙・長文とも。eiken_*_pool_*.json の blind_review)。本文の source も同じ接頭辞
+#   ★入っていないもの: 高校の物理・化学・生物・地学・社会・国語 (盲検記録のあるシードが無い)・弱点特訓 32 問 weakness_v1
+#     (検証済みと書かれているが盲検 3 名の記録が無い・塾長の判断待ち)・english の chu2grammar-20260709・exam_questions を分解した
+#     古い英文法の行 (pool / legacy / '' など)。
+#   ★新しいシードを自動配信に載せるとき: 盲検 3 名 → ここに 1 行 + test_auto_delivery_shared.py の REVIEWED_SEEDS に 1 行
+#     (盲検していないシードは NOT_AUTO_SEEDS へ。どちらにも無い *pool* / *_drill_* のシードがあるとテストが落ちる)。
+_AUTO_DELIVERY_REVIEWED_SOURCES_DEFAULT = {
+    "english": ("manual-drill-v1", "manual-drill-v2"),
+    "math": ("mathct-*", "mathwb-*"),
+    "chugaku": ("chugaku-drill-v1", "chugaku-drill-v2", "chugaku-drill-v3", "chugaku-drill-v4", "chu2grammar-20260709"),
+    "chugaku_math": ("chugaku-math-v1",),
+    "chugaku_rika": ("chugaku-rika-v1",),
+    "chugaku_shakai": ("chugaku-shakai-v1",),
+    "chugaku_kokugo": ("chugaku-kokugo-v1",),
+    "eiken": ("eiken2-*", "eikenp1-*"),
+}
+# ⛔ 自動配信に絶対に出さないもの (env AUTO_DELIVERY_REVIEWED_SOURCES の '*' でも外せない)。
+#   習熟度テスト (subject 'proficiency_test'・出典 'pt-<テストID>-<設問>' / 本文 'ptest:<テストID>:S<nn>') は 1 回分 = 1 本のドリルで
+#   塾長が配るもの。自動で拾うと答えを先に見た生徒が出る (critic C3)。
+_AUTO_DELIVERY_DENY_SUBJECTS = frozenset({"proficiency_test"})
+_AUTO_DELIVERY_DENY_SOURCE_PREFIXES = ("pt-", "ptest:")
+_AUTO_DELIVERY_ALLOWLIST_CACHE: dict = {}
+
+
+def _auto_delivery_allowlist() -> dict:
+    """自動配信の許可リスト {科目: (パターン…)}。既定は _AUTO_DELIVERY_REVIEWED_SOURCES_DEFAULT。
+    env AUTO_DELIVERY_REVIEWED_SOURCES で科目ごとに差し替えられる: 'english=manual-drill-v1,manual-drill-v2;math=mathct-*'
+    (書いた科目だけ差し替え・'physics=' は空 = 出さない・末尾 * は前方一致)。読めない書き方 (= が無い・知らない科目) は
+    警告して既定に戻す (半分だけ効く状態を作らない)。env の値ごとにプロセス内でキャッシュする (Railway で変えたら次の呼び出しから効く)。
+    ★禁止 (_AUTO_DELIVERY_DENY_*) はここでは外せない。判定は _auto_delivery_source_ok。"""
+    raw = str(os.getenv("AUTO_DELIVERY_REVIEWED_SOURCES", "") or "").strip()
+    hit = _AUTO_DELIVERY_ALLOWLIST_CACHE.get(raw)
+    if hit is not None:
+        return hit
+    out = {k: tuple(v) for k, v in _AUTO_DELIVERY_REVIEWED_SOURCES_DEFAULT.items()}
+    if raw:
+        override, bad = {}, []
+        for part in raw.split(";"):
+            part = part.strip()
+            if not part:
+                continue
+            if "=" not in part:
+                bad.append(part)
+                continue
+            subj, pats = part.split("=", 1)
+            subj = subj.strip().lower()
+            if subj not in _GRAMMAR_CANON_SUBJECTS:
+                bad.append(part)
+                continue
+            override[subj] = tuple(p.strip() for p in pats.split(",") if p.strip())
+        if bad:
+            log.warning(f"[AutoDelivery] AUTO_DELIVERY_REVIEWED_SOURCES を読めない ({bad[:3]}) → 既定の許可リストを使う")
+        else:
+            out.update(override)
+            log.info(f"[AutoDelivery] 許可リストを env で差し替え: {sorted(override)}")
+    _AUTO_DELIVERY_ALLOWLIST_CACHE.clear()
+    _AUTO_DELIVERY_ALLOWLIST_CACHE[raw] = out
+    return out
+
+
+def _auto_delivery_source_ok(subject, source) -> bool:
+    """この科目・出典の問題/本文を自動配信で出してよいか。禁止 (習熟度テスト) が先・次に科目ごとの許可リスト。
+    3日ドリルもクラス自動宿題もこれ 1 つで決める (SQL の LIKE を組み立てず Python で判定する = 判定を 2 か所に書かない)。"""
+    subj = str(subject or "").strip().lower()
+    src = str(source or "").strip()
+    if subj in _AUTO_DELIVERY_DENY_SUBJECTS:
+        return False
+    if src.lower().startswith(_AUTO_DELIVERY_DENY_SOURCE_PREFIXES):
+        return False
+    for pat in _auto_delivery_allowlist().get(subj, ()):
+        if pat.endswith("*"):
+            if src.startswith(pat[:-1]):
+                return True
+        elif src == pat:
+            return True
+    return False
+
+
+# 🧒 中学の単元ドリルの科目 (ceo.html の _CHU_DRILL_UNITS / _CHU_DRILL_LABEL と同じ並び)。
+#   scripts/check_ceo_chugaku_drill_links.py が _GRAMMAR_SUBJECT_UNIT_ORDER の chugaku* と同じかを照合する。
+_CHU_DRILL_SUBJECTS = ("chugaku", "chugaku_math", "chugaku_rika", "chugaku_shakai", "chugaku_kokugo")
+# 高校 (大学受験) のプール。中学生にも小学生にも出さない
+_KOSEI_ONLY_DRILL_SUBJECTS = frozenset({"english", "math", "english_long", "physics", "chemistry", "biology", "earth",
+                                        "japanese", "social"})
+# 3日ドリル (AIあり) が自動で出す科目 (band ごと)。高校の理科・社会・国語・英検は出さない (盲検記録なし / 英検はクラス宿題だけ)。
+_ROUTINE_SUBJECTS_BY_BAND = {"kosei": ("english", "math"), "chugaku": _CHU_DRILL_SUBJECTS}
+
+
+def _drill_subject_band_ok(subject, band) -> bool:
+    """🧒 学年の区分 (band = _student_grade_band の値) とドリルの科目が合うか (critic C17・どの配信経路でも同じ)。
+    中学の科目 (chugaku*) ⇔ 中学生だけ / 高校の科目 (english・math・english_long・理社国) ⇒ 高校生だけ /
+    英検 eiken ⇒ 中学生・高校生 (中3 が 2 級を受ける) / 習熟度テストは自動では一切出さない / 小学生と判定できない学年 ('') には何も出さない。
+    自動配信は「選ぶとき」と「書き込む直前」の 2 回これを通す (書き込みの直前に食い違えば書かずに数える)。"""
+    s = str(subject or "").strip().lower()
+    b = str(band or "")
+    if b not in ("chugaku", "kosei") or not s:
+        return False
+    if s in _AUTO_DELIVERY_DENY_SUBJECTS:
+        return False
+    if s.startswith("chugaku"):
+        return b == "chugaku"
+    if s == "eiken":
+        return True
+    if s in _KOSEI_ONLY_DRILL_SUBJECTS:
+        return b == "kosei"
+    return False
+
+
+def _chu_drill_for_topic(topic):
+    """🧒 高校入試演習 (student_weakness.subject='chugaku' = 中学 5 教科の 1 バケット) の弱点 topic → (科目, 単元, prefixed) / None。
+    ceo.html の _chuDrillFor をサーバに移したもの: 先頭の「中学数学 」のような前置きは _GRAMMAR_SUBJECT_LABEL_JA のラベルで外し
+    (その教科の単元とだけ照合・prefixed=True)、「正負の数（累乗）」「天体：月」はかっこ・コロンの前で切り、
+    _GRAMMAR_SUBJECT_UNIT_ORDER の単元と**完全一致**したときだけ返す (単元表を新しく作らない)。
+    ★prefixed=True の行 (宿題の「📝 ドリルで解く」から道場が元の単元名でも記録した写し) は自動配信に使わない
+    (ドリルの結果は前置きなしの行に入るので、写しは克服しても消えず同じドリルを出し続ける)。判断は呼び出し側。"""
+    t, only = str(topic or "").strip(), None
+    for subj in _CHU_DRILL_SUBJECTS:
+        lb = _GRAMMAR_SUBJECT_LABEL_JA.get(subj) or ""
+        m = re.match(r"^" + re.escape(lb) + r"\s+(.+)$", t) if lb else None
+        if m:
+            only, t = subj, m.group(1)
+            break
+    t = re.split(r"[（(：:]", t)[0].strip()
+    if not t:
+        return None
+    for subj in _CHU_DRILL_SUBJECTS:
+        if only and subj != only:
+            continue
+        if t in (_GRAMMAR_SUBJECT_UNIT_ORDER.get(subj) or ()):
+            return (subj, t, bool(only))
+    return None
+
+
+def _eng_drill_unit_for_topic(topic):
+    """高校英語 (english) の弱点 topic → 英文法ドリルの単元 (GRAMMAR_UNITS のどれか) / None (長文・語彙など文法の単元でない)。
+    旧ルーティンの「単元名の一部が topic に含まれる」照合は「関係代名詞」を「名詞・代名詞」(名詞 が部分一致) にしていた → 直した順序:
+    ① かっこ・コロンの前で切る ② GRAMMAR_UNITS と完全一致 ③ 別名 _UNIT_TAG_ALIASES のキー (長い順) が含まれていれば、そのタグの単元
+    (「関係代名詞」→ 関係詞・「間接疑問文」→ 疑問詞・間接疑問) ④ 単元の「・」区切りの各部分のうち topic に含まれる最長のもの
+    (同じ長さなら GRAMMAR_UNITS の順)。"""
+    t = re.split(r"[（(：:]", str(topic or "").strip())[0].strip()
+    if not t:
+        return None
+    if t in GRAMMAR_UNITS:
+        return t
+
+    def _unit_of_tag(tag):
+        for u in GRAMMAR_UNITS:
+            if u == tag or tag in u.split("・"):
+                return u
+        return None
+
+    for key in sorted(_UNIT_TAG_ALIASES, key=lambda k: (-len(k), k)):
+        if key in t:
+            u = _unit_of_tag(_UNIT_TAG_ALIASES[key])
+            if u:
+                return u
+    best, best_len = None, 0
+    for u in GRAMMAR_UNITS:
+        for part in u.split("・"):
+            if part and part in t and len(part) > best_len:
+                best, best_len = u, len(part)
+    return best
+
+
+def _auto_delivery_ai_path(ai_disabled, ai_trial_until) -> str:
+    """生徒がどちらの自動配信に乗るか: 'ai' (3日ドリル・AIあり と AI 体験中) / 'ai_nashi' (塾生アプリのみ枠のクラス自動宿題)。
+    ★判定は _ai_blocked_now 1 つ (critic C7)。SQL の文字列比較 (ai_trial_until > ?) と Python の日時の読み取りは、
+    SQLite や壊れた値で食い違い、同じ生徒が両方に入る / どちらにも入らない。SQL では下の広めの絞り込み
+    (_auto_delivery_ai_prefilter_sql) だけをかけ、最後はここで決める。読めない期限は体験なし = 'ai_nashi' (AI を開けっ放しにしない側)。"""
+    return "ai_nashi" if _ai_blocked_now(ai_disabled, ai_trial_until) else "ai"
+
+
+def _auto_delivery_ai_prefilter_sql(path: str) -> str:
+    """_auto_delivery_ai_path の SQL 側の**広めの**絞り込み (students の列名そのまま・パラメータなし)。
+    'ai' = ai_disabled が 0 か、体験の期限が入っている生徒 (期限が過ぎているかは Python で見る)。
+    'ai_nashi' = ai_disabled が 0 以外 (体験中かは Python で見る)。2 つを合わせると全員が入り、最終の振り分けは 1 人 1 経路。
+    ai_trial_until の列が無い環境 (起動時の ALTER が飛んだ) では列名を書かない (書くと経路ごと 500)。"""
+    if path == "ai":
+        if _students_has_ai_trial_until():
+            return "(COALESCE(ai_disabled, 0) = 0 OR ai_trial_until IS NOT NULL)"
+        return "COALESCE(ai_disabled, 0) = 0"
+    if path == "ai_nashi":
+        return "COALESCE(ai_disabled, 0) <> 0"
+    raise ValueError(f"unknown ai path: {path!r}")
+
+
+# 自動配信のドリルの印 (grammar_drills.created_by)。CEO の配信済み一覧の絞り込み・3日ドリルの周期の判定に使う。
+_ROUTINE_CREATED_BY = _WEAKNESS_ROUTINE_CREATED_BY               # 'weakness_routine_3d'
+_CLASS_HW_CREATED_BY_PREFIX = "class_hw_auto:"                   # 'class_hw_auto:<group>:<クラス名>'
+
+
+def _auto_created_by_sql(col: str = "created_by") -> str:
+    """自動配信のドリル (3日ドリル・クラス自動宿題) に当たる SQL の条件 (パラメータなし・定数だけを埋める)。
+    LIKE を使わない (クラス名に % や _ が入っても前方一致が崩れない)。"""
+    n = len(_CLASS_HW_CREATED_BY_PREFIX)
+    return (f"(COALESCE({col}, '') = '{_ROUTINE_CREATED_BY}' "
+            f"OR substr(COALESCE({col}, ''), 1, {n}) = '{_CLASS_HW_CREATED_BY_PREFIX}')")
+
+
+def _ts_text(v) -> str:
+    """TIMESTAMP の値を 'YYYY-MM-DD HH:MM:SS' の文字列に (SQLite は文字列・Postgres は datetime で返る。比べられる形にそろえる)。"""
+    if v is None:
+        return ""
+    if hasattr(v, "strftime"):
+        return v.strftime("%Y-%m-%d %H:%M:%S")
+    return str(v)[:19]
+
+
+def _student_seen_grammar_qids(c, sid) -> dict:
+    """生徒が前に受け取った・解いた単元ドリルの問題 {grammar_questions.id: 最後に見た日時の文字列}。
+    ① これまでに配られたドリル (誰が配ったか・提出したかを問わない) の question_ids と配信日時
+    ② 単元ドリルの解答の記録 (question_attempts.source='grammar_drill' の exam_question_id = grammar_questions.id)。
+       塾長が 🗑 で消したドリルの問題もここで拾える。★source を必ず見る: 入試道場の解答は同じ列に exam_questions の id を
+       入れるので、id の空間が衝突する (道場で解いた id を除くと無関係なドリルの問題が抜ける)。"""
+    seen = {}
+
+    def _put(qid, ts):
+        try:
+            q = int(qid)
+        except (TypeError, ValueError):
+            return
+        s = _ts_text(ts)
+        if q not in seen or s > seen[q]:
+            seen[q] = s
+
+    c.execute(
+        "SELECT d.question_ids AS qids, a.assigned_at AS ts FROM grammar_drill_assignments a "
+        "JOIN grammar_drills d ON d.id = a.drill_id WHERE a.student_id = ?",
+        (sid,),
+    )
+    for r in c.fetchall():
+        try:
+            ids = json.loads(r["qids"] or "[]")
+        except (TypeError, ValueError):
+            ids = []
+        for q in ids if isinstance(ids, list) else []:
+            _put(q, r["ts"])
+    c.execute(
+        "SELECT exam_question_id AS qid, MAX(created_at) AS ts FROM question_attempts "
+        "WHERE student_id = ? AND source = 'grammar_drill' AND exam_question_id IS NOT NULL GROUP BY exam_question_id",
+        (sid,),
+    )
+    for r in c.fetchall():
+        _put(r["qid"], r["ts"])
+    return seen
+
+
+def _auto_pick_from(cands, count, seen, rng):
+    """候補 (id の並び・決まった順) から count 個: 見ていないものを rng で選び、足りなければ前に見たものを古い順に足して混ぜる。
+    → (選んだ id, 見ていない候補の数, 足した既出の数)。"""
+    unseen = [i for i in cands if i not in seen]
+    if len(unseen) >= count:
+        picked, reused = rng.sample(unseen, count), 0
+    else:
+        old = sorted((i for i in cands if i in seen), key=lambda i: (seen[i], i))
+        picked = list(unseen) + old[:count - len(unseen)]
+        reused = count - len(unseen)
+    rng.shuffle(picked)
+    return picked, len(unseen), reused
+
+
+def _auto_pick_reviewed_question_ids(c, subject, unit, levels, count, seen, exclude_unit_prefixes=(), rng=None) -> dict:
+    """🤖 自動配信用の 1 問ずつの抽出 (レビュー済みの出典だけ)。CEO の _grammar_pick_drill_question_ids とは別 (CEO は変えない)。
+    unit が空なら科目まるごと。exclude_unit_prefixes の単元 (数学III) は出さない。長文の設問 (passage_id あり) は拾わない。
+    SQL は RANDOM / LIMIT を使わず id 順に全部読み、出典の判定 (_auto_delivery_source_ok) と抽選は Python で行う
+    (dry-run と本番が同じ rng で同じ問題を選べるように)。seen (_student_seen_grammar_qids) の問題は避け、足りなければ古い順に足す。
+    返り値 {ids, reviewed_available, unseen_available, reused_seen}。レビュー済みが count に足りなければ ids は [] (その単元は配らない)。"""
+    import random as _random
+    rng = rng or _random.Random()
+    levels = [lv for lv in (levels or ("standard", "advanced")) if lv in GRAMMAR_LEVELS]
+    out = {"ids": [], "reviewed_available": 0, "unseen_available": 0, "reused_seen": 0}
+    try:
+        count = int(count)
+    except (TypeError, ValueError):
+        return out
+    if count < 1 or not levels:
+        return out
+    ph = ",".join(["?"] * len(levels))
+    sql = f"SELECT id, source, unit FROM grammar_questions WHERE subject = ? AND level IN ({ph}) AND active = 1"
+    params = [subject, *levels]
+    if unit:
+        sql += " AND unit = ?"
+        params.append(unit)
+    if _grammar_has_passages():
+        sql += " AND passage_id IS NULL"
+    c.execute(sql + " ORDER BY id", tuple(params))
+    pref = tuple(exclude_unit_prefixes or ())
+    cands = [int(r["id"]) for r in c.fetchall()
+             if _auto_delivery_source_ok(subject, r["source"]) and not (pref and str(r["unit"] or "").startswith(pref))]
+    out["reviewed_available"] = len(cands)
+    if len(cands) < count:
+        out["unseen_available"] = len([i for i in cands if i not in (seen or {})])
+        return out
+    picked, n_unseen, reused = _auto_pick_from(cands, count, seen or {}, rng)
+    out.update(ids=picked, unseen_available=n_unseen, reused_seen=reused)
+    return out
+
+
+def _auto_reviewed_passages(c, subject, unit=None, levels=None) -> dict:
+    """🤖 自動配信してよい本文 {passage_id: {unit, level, qids (passage_seq 順)}} と、外した本文の数 {'unreviewed_body', 'unreviewed_question', 'no_question'}。
+    本文の source と、その本文の**生きている設問すべて**の source が許可リストに入っていて、設問の科目が本文と同じものだけ
+    (本文はレビュー済みでも設問が 1 問でも未レビューなら本文ごと外す = 長文は本文単位で出すので一部だけ外せない)。"""
+    accepted, rejected = {}, {"unreviewed_body": 0, "unreviewed_question": 0, "no_question": 0}
+    if not _grammar_has_passages():
+        return {"passages": accepted, "rejected": rejected}
+    where, params = ["p.subject = ?", "p.active = 1"], [subject]
+    if unit:
+        where.append("p.unit = ?")
+        params.append(unit)
+    lv = [x for x in (levels or ()) if x in GRAMMAR_LEVELS]
+    if lv:
+        where.append(f"p.level IN ({','.join(['?'] * len(lv))})")
+        params.extend(lv)
+    c.execute(f"SELECT p.id, p.unit, p.level, p.source FROM grammar_passages p WHERE {' AND '.join(where)} ORDER BY p.id",
+              tuple(params))
+    ps = {int(r["id"]): {"unit": r["unit"], "level": r["level"], "source": r["source"], "qids": [], "ok": True}
+          for r in c.fetchall()}
+    if not ps:
+        return {"passages": accepted, "rejected": rejected}
+    c.execute(
+        f"SELECT q.id, q.passage_id, q.source, q.subject FROM grammar_questions q JOIN grammar_passages p ON p.id = q.passage_id "
+        f"WHERE {' AND '.join(where)} AND q.active = 1 ORDER BY q.passage_id, q.passage_seq, q.id",
+        tuple(params),
+    )
+    for r in c.fetchall():
+        p = ps.get(int(r["passage_id"]))
+        if p is None:
+            continue
+        p["qids"].append(int(r["id"]))
+        if str(r["subject"] or "") != str(subject) or not _auto_delivery_source_ok(subject, r["source"]):
+            p["ok"] = False
+    for pid, p in ps.items():
+        if not _auto_delivery_source_ok(subject, p["source"]):
+            rejected["unreviewed_body"] += 1
+        elif not p["qids"]:
+            rejected["no_question"] += 1
+        elif not p["ok"]:
+            rejected["unreviewed_question"] += 1
+        else:
+            accepted[pid] = {"unit": p["unit"], "level": p["level"], "qids": p["qids"]}
+    return {"passages": accepted, "rejected": rejected}
+
+
+def _auto_pick_reviewed_passages(c, subject, unit, levels, passage_count, seen, rng=None) -> dict:
+    """🤖 自動配信用の本文の抽出 (英検の長文・英語長文)。本文と全設問がレビュー済みの本文だけ (_auto_reviewed_passages)。
+    前に見た本文 (設問の 1 問でも seen にある) は本文ごと避け、足りなければ最後に見たのが古い本文から足す。
+    返り値 {qids (本文ごとに passage_seq 順), passage_ids, reviewed_available (本文の本数), unseen_available, reused_seen, rejected}。
+    レビュー済みの本文が passage_count に足りなければ qids は []。"""
+    import random as _random
+    rng = rng or _random.Random()
+    seen = seen or {}
+    idx = _auto_reviewed_passages(c, subject, unit, levels)
+    acc = idx["passages"]
+    out = {"qids": [], "passage_ids": [], "reviewed_available": len(acc), "unseen_available": 0, "reused_seen": 0,
+           "rejected": idx["rejected"]}
+    try:
+        passage_count = int(passage_count)
+    except (TypeError, ValueError):
+        return out
+    p_seen = {}
+    for pid, p in acc.items():
+        ts = [seen[q] for q in p["qids"] if q in seen]
+        if ts:
+            p_seen[pid] = max(ts)
+    if passage_count < 1 or len(acc) < passage_count:
+        out["unseen_available"] = len([pid for pid in acc if pid not in p_seen])
+        return out
+    picked, n_unseen, reused = _auto_pick_from(sorted(acc), passage_count, p_seen, rng)
+    qids = []
+    for pid in picked:
+        qids.extend(acc[pid]["qids"])
+    out.update(qids=qids, passage_ids=picked, unseen_available=n_unseen, reused_seen=reused)
+    return out
+
+
+# 実行記録 (events.props) に入れない項目 = 名前・連絡先・本文。_record_scheduler_run は 4000 字で切るので、要約して入れる
+_COMPACT_PROPS_DROP_KEYS = frozenset({"name", "names", "student_name", "email", "parent_email", "line_user_id", "title",
+                                      "body", "stem", "message"})
+
+
+def _compact_run_props(summary, *, max_ids: int = 30, max_chars: int = 3800) -> dict:
+    """🤖 自動配信の実行結果 (dry-run 応答と同じ summary) → スケジューラの実行記録 (events.props) に入れる要約 (critic C16)。
+    数・理由の内訳・生徒 id (各リスト先頭 max_ids 件) だけを残し、**名前は入れない** (公開リポジトリ・events は監視が読む)。
+    _record_scheduler_run は JSON を 4000 字で切るので、切られると壊れた JSON になり props.error が監視 (_failed_schedulers) から
+    見えなくなる → max_chars に収まるまで内訳を削る。'error' は必ず残す。"""
+    if not isinstance(summary, dict):
+        return {"error": "summary が dict でない", "type": type(summary).__name__}
+
+    def _scalar(v):
+        return v is None or isinstance(v, (bool, int, float))
+
+    def _id_of(it):
+        if isinstance(it, bool):
+            return None
+        if isinstance(it, int):
+            return it
+        if isinstance(it, dict):
+            v = it.get("id", it.get("student_id"))
+            return v if isinstance(v, int) and not isinstance(v, bool) else None
+        return None
+
+    out, hists = {}, []
+    for k, v in summary.items():
+        k = str(k)[:60]
+        if k in _COMPACT_PROPS_DROP_KEYS:
+            continue
+        if _scalar(v):
+            out[k] = v
+        elif isinstance(v, str):
+            out[k] = v[:300] if k == "error" else v[:120]
+        elif isinstance(v, dict):
+            h = {}
+            for kk, vv in v.items():
+                kk = str(kk)[:60]
+                if kk in _COMPACT_PROPS_DROP_KEYS:
+                    continue
+                if _scalar(vv):
+                    h[kk] = vv
+                elif isinstance(vv, dict):
+                    h[kk] = {str(a)[:40]: b for a, b in list(vv.items())[:20]
+                             if _scalar(b) and str(a) not in _COMPACT_PROPS_DROP_KEYS}
+                elif isinstance(vv, (list, tuple)):
+                    h[kk] = len(vv)
+            out[k] = h
+            hists.append(k)
+        elif isinstance(v, (list, tuple)):
+            ids = [i for i in (_id_of(it) for it in v) if i is not None]
+            out[k + "_n"] = len(v)
+            if ids:
+                out[k + "_ids"] = ids[:max_ids]
+
+    def _size():
+        return len(json.dumps(out, ensure_ascii=False, default=str))
+
+    # 収まらなければ: 内訳を大きい順に 10 件へ → id の並びを 10 件へ → 内訳を落とす → id の並びを落とす
+    if _size() > max_chars:
+        for k in hists:
+            h = out.get(k)
+            if isinstance(h, dict) and len(h) > 10:
+                top = sorted(h.items(), key=lambda kv: -(kv[1] if isinstance(kv[1], (int, float)) else 0))[:10]
+                out[k] = dict(top)
+                out[k]["_truncated"] = True
+    if _size() > max_chars:
+        for k in [k for k in out if k.endswith("_ids")]:
+            out[k] = out[k][:10]
+    if _size() > max_chars:
+        for k in hists:
+            out.pop(k, None)
+        out["_dropped"] = "breakdown"
+    if _size() > max_chars:
+        for k in [k for k in out if k.endswith("_ids")]:
+            out.pop(k, None)
+    if _size() > max_chars:
+        out = {k: v for k, v in out.items() if _scalar(v) or k == "error"}
+        out["_dropped"] = "all_but_counts"
+    return out
 
 
 def _weakness_routine_pick_drills(c, sid, limit=5):
