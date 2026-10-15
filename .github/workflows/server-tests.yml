@@ -421,10 +421,12 @@ jobs:
       # ⛔ 週次弱点プリントを止める (2026-10-15 塾長決定・WEEKLY_WORKSHEET_ENABLED 既定 OFF)。出題元の exam_questions に AI 生成の行が混ざり
       #   「自動配信はレビュー済みの科目別ドリルだけ」に反するため。起動時の登録・ループ・手動実行 (409)・監視の対象から外れること、
       #   this-week が古い行を「今週」にしないこと、保存済みの行と 📚 履歴は消さないこと、CEO / mypage の停止表示を見る。
+      #   mypage の renderWeeklyWorksheet は node で実際に動かす (今週のプリントが無くても 📚 履歴 を押せる・JS エンジンが無ければ FAIL)。
       - name: 週次弱点プリント 停止 回帰テスト
         if: ${{ !cancelled() }}
         run: |
           python3 -m pip install --quiet httpx
+          node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
           python3 scripts/health_check/test_weekly_worksheet_stop.py
 
       # ⏪ 自動ロールバックが「履歴の強制書き換え」ではなく revert commit を fast-forward で積むこと (2026-09-07)。

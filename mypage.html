@@ -1873,6 +1873,38 @@
         return out;
       }
 
+      // 履歴ボタン。★今週のプリントの取得 (下の try) より前に付ける: プリントが無い週・配信終了 (discontinued) で下が早く return しても
+      //   「過去分は 📚 履歴」の案内どおりに押せる (後ろで付けていたので、空の週は押しても何も起きなかった)。
+      //   onclick 代入 = 2 回描画しても listener が積み上がらない。
+      if (histBtn && histList) {
+        histBtn.onclick = async () => {
+          if (histList.style.display !== 'none') { histList.style.display = 'none'; histBtn.textContent = '📚 履歴'; return; }
+          histList.style.display = '';
+          histBtn.textContent = '📚 閉じる';
+          histList.innerHTML = '<div style="color:#a1a1aa;font-size:0.85rem;">📂 取得中…</div>';
+          try {
+            const r = await fetch(`${API_BASE}/api/student/worksheet/history?limit=12`, { headers });
+            const d = await r.json();
+            const items = (d && d.history) || [];
+            if (items.length === 0) {
+              histList.innerHTML = '<div style="color:#a1a1aa;font-size:0.85rem;">過去の弱点プリントはまだありません。</div>';
+              return;
+            }
+            histList.innerHTML = `
+              <div style="font-size:0.85rem;color:#cbd5e1;margin-bottom:0.4rem;font-weight:700;">📚 過去の弱点プリント (最新 ${items.length} 件)</div>
+              <div style="display:grid;gap:0.4rem;">
+                ${items.map(it => `
+                  <div style="padding:0.55rem 0.7rem;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.10);border-radius:8px;">
+                    <div style="font-size:0.85rem;color:#fff;">📅 ${escHtml(it.week_start_date || '')} 週 — ${it.question_count} 問</div>
+                    <div style="font-size:0.75rem;color:#94a3b8;margin-top:0.2rem;">対象: ${(it.subject_topics || []).map(s => escHtml(subjJa(s.subject) + (s.topic ? '・' + s.topic : ''))).join(' / ') || '（情報なし）'}</div>
+                  </div>`).join('')}
+              </div>`;
+          } catch (e) {
+            histList.innerHTML = '<div style="color:#fca5a5;font-size:0.78rem;">取得エラー</div>';
+          }
+        };
+      }
+
       try {
         const res = await fetch(`${API_BASE}/api/student/worksheet/this-week`, { headers });
         if (!res.ok) { section.style.display = 'none'; return; }
@@ -1909,6 +1941,7 @@
           metaEl.innerHTML = '';
           probEl.innerHTML = '';
           emptyEl.style.display = '';
+          if (printBtn) printBtn.style.display = 'none';   // 印刷するプリントが無い (この道では印刷の onclick を付けない)
           return;
         }
         emptyEl.style.display = 'none';
@@ -2064,36 +2097,6 @@
           w.document.close();
           setTimeout(() => { try { w.focus(); w.print(); } catch (e) { /* 印刷ダイアログはユーザー操作でも開ける */ } }, 400);
         };
-      }
-
-      // 履歴ボタン
-      if (histBtn && histList) {
-        histBtn.addEventListener('click', async () => {
-          if (histList.style.display !== 'none') { histList.style.display = 'none'; histBtn.textContent = '📚 履歴'; return; }
-          histList.style.display = '';
-          histBtn.textContent = '📚 閉じる';
-          histList.innerHTML = '<div style="color:#a1a1aa;font-size:0.85rem;">📂 取得中…</div>';
-          try {
-            const r = await fetch(`${API_BASE}/api/student/worksheet/history?limit=12`, { headers });
-            const d = await r.json();
-            const items = (d && d.history) || [];
-            if (items.length === 0) {
-              histList.innerHTML = '<div style="color:#a1a1aa;font-size:0.85rem;">過去の弱点プリントはまだありません。</div>';
-              return;
-            }
-            histList.innerHTML = `
-              <div style="font-size:0.85rem;color:#cbd5e1;margin-bottom:0.4rem;font-weight:700;">📚 過去の弱点プリント (最新 ${items.length} 件)</div>
-              <div style="display:grid;gap:0.4rem;">
-                ${items.map(it => `
-                  <div style="padding:0.55rem 0.7rem;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.10);border-radius:8px;">
-                    <div style="font-size:0.85rem;color:#fff;">📅 ${escHtml(it.week_start_date || '')} 週 — ${it.question_count} 問</div>
-                    <div style="font-size:0.75rem;color:#94a3b8;margin-top:0.2rem;">対象: ${(it.subject_topics || []).map(s => escHtml(subjJa(s.subject) + (s.topic ? '・' + s.topic : ''))).join(' / ') || '（情報なし）'}</div>
-                  </div>`).join('')}
-              </div>`;
-          } catch (e) {
-            histList.innerHTML = '<div style="color:#fca5a5;font-size:0.78rem;">取得エラー</div>';
-          }
-        });
       }
     }
 

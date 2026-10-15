@@ -15,7 +15,9 @@
   5. GET /api/student/worksheet/this-week は停止中 discontinued: true。JST の今日から 7 日前以降の行だけ返し、
      それより古い行は「今週」として出さない。/history は全部出す (行は消さない)
   6. CEO「生徒の見え方」(admin sapuri preview) は weekly_enabled を返し、ceo.html は false のとき「停止中」と出す
-  7. mypage.html は discontinued のとき「終了しました」と 📚 履歴 を案内する / prod_healthcheck は監視から外す
+  7. mypage.html は discontinued のとき「終了しました」と 📚 履歴 を案内する / prod_healthcheck は監視から外す。
+     案内した 📚 履歴 は今週のプリントが無くても押せる (renderWeeklyWorksheet の本物のコードを JS エンジンで動かす・
+     配信終了・中学生モードで全部外れた週・ふつうの週。JS エンジンが無ければ FAIL)
 
 実行:
     python3 scripts/health_check/test_weekly_worksheet_stop.py
@@ -125,6 +127,97 @@ def _scheduler_dict_in_subprocess(value):
         if line.startswith("KEYS="):
             return json.loads(line[len("KEYS="):])
     raise RuntimeError(f"subprocess failed rc={r.returncode}: {(r.stderr or '')[-800:]}")
+
+
+_WS_JS_HARNESS = r"""
+var window = (typeof globalThis !== 'undefined') ? globalThis : this;
+var __o = {};
+var __els = {}, __fetches = [], __route = null;
+function __el(id) {
+  if (!__els[id]) {
+    __els[id] = { id: id, innerHTML: '', textContent: '', onclick: null, __ls: [],
+                  style: { display: (id === 'worksheetHistoryList' || id === 'worksheetEmpty' || id === 'weeklyWorksheetSection') ? 'none' : '' },
+                  addEventListener: function (t, f) { if (t === 'click') this.__ls.push(f); } };
+  }
+  return __els[id];
+}
+var document = { getElementById: function (id) { return __el(id); } };
+window.location = { origin: 'https://example.invalid' };
+var localStorage = { getItem: function () { return 'tok'; } };
+// console は宣言し直さない (node の module スコープで var console と書くと本物の console が隠れて結果が出ない)
+if (typeof console === 'undefined') { window.console = { warn: function () {}, log: function () {} }; }
+function fetch(url) {
+  __fetches.push(String(url));
+  var path = String(url).replace(/^https?:\/\/[^\/]+/, '');
+  var body = __route(path);
+  return Promise.resolve({ ok: true, status: 200, json: function () { return Promise.resolve(body); } });
+}
+var HIST = { history: [{ week_start_date: '2026-10-12', question_count: 8, subject_topics: [{ subject: 'english', topic: '関係詞<b>' }] }] };
+async function __click(el) {
+  var fs = (typeof el.onclick === 'function' ? [el.onclick] : []).concat(el.__ls);
+  for (var i = 0; i < fs.length; i++) { await fs[i](); }
+  return fs.length;
+}
+async function __case(name, thisWeek, mode, renders) {
+  __els = {}; __fetches = [];
+  window.ajCurrentMode = function () { return mode; };
+  __route = function (p) {
+    if (p.indexOf('/api/student/worksheet/this-week') === 0) return thisWeek;
+    if (p.indexOf('/api/student/worksheet/history') === 0) return HIST;
+    return {};
+  };
+  for (var r = 0; r < (renders || 1); r++) { await renderWeeklyWorksheet({ id: 1 }); }
+  var b = __el('worksheetHistoryBtn'), hl = __el('worksheetHistoryList');
+  var res = { section: __el('weeklyWorksheetSection').style.display, empty: __el('worksheetEmpty').textContent,
+              print: __el('worksheetPrintBtn').style.display, handlers: (typeof b.onclick === 'function' ? 1 : 0) + b.__ls.length };
+  await __click(b);
+  res.open = hl.style.display; res.list = hl.innerHTML; res.btn = b.textContent;
+  res.histFetch = __fetches.filter(function (u) { return u.indexOf('/history?limit=12') >= 0; }).length;
+  await __click(b);
+  res.closed = hl.style.display;
+  __o[name] = res;
+}
+%(fn)s
+(async function () {
+  try {
+    await __case('stopped', { worksheet: null, discontinued: true }, 'kosei');
+    await __case('chugaku_filtered', { worksheet: { week_start_date: '2026-10-12', question_count: 1, subject_topics: [],
+      questions: [{ weakness_subject: 'english', question_data: { prompt: 'x' } }] } }, 'chugaku');
+    await __case('normal', { worksheet: { week_start_date: '2026-10-12', question_count: 1, subject_topics: [],
+      questions: [{ weakness_subject: 'english', question_data: { prompt: 'x' } }] } }, 'kosei', 2);
+  } catch (e) { __o.error = String(e && e.stack || e); }
+  var __s = 'RESULT ' + JSON.stringify(__o);
+  if (typeof process !== 'undefined' && typeof console !== 'undefined' && console.log) console.log(__s);
+  else if (typeof print === 'function') print(__s);
+  else if (typeof console !== 'undefined' && console.log) console.log(__s);
+})();
+"""
+
+
+def _check_history_button_js(fn):
+    """📚 履歴 の押せる・押せないを mypage.html の本物の renderWeeklyWorksheet で確かめる (偽の DOM と fetch)。"""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from test_grade_band_consistency import js_engine, run_js
+    eng = js_engine()
+    check("JS の実行環境がある (node / osascript / jsc。無ければ FAIL)", bool(eng))
+    if not eng:
+        return
+    out, err = run_js(eng, _WS_JS_HARNESS % {"fn": fn})
+    check("renderWeeklyWorksheet が JS で動く", out is not None and not (out or {}).get("error"), err or (out or {}).get("error"))
+    out = out or {}
+    st = out.get("stopped") or {}
+    check("配信終了・今週のプリント無し (履歴あり): 欄を出して「📚 履歴 から見られます」・印刷は隠す",
+          st.get("section") == "" and "📚 履歴" in st.get("empty", "") and st.get("print") == "none", st)
+    check("配信終了の週でも 📚 履歴 を押すと過去のプリントが出る (押せない = 案内と食い違う)",
+          st.get("handlers") == 1 and st.get("open") == "" and "2026-10-12" in st.get("list", "") and st.get("histFetch") == 1
+          and st.get("btn") == "📚 閉じる" and st.get("closed") == "none", st)
+    check("履歴の単元名は escape される", "&lt;b&gt;" in st.get("list", "") and "関係詞<b>" not in st.get("list", ""), st.get("list", "")[:300])
+    cf = out.get("chugaku_filtered") or {}
+    check("中学生モードで今週のプリントが全部外れた週も 📚 履歴 を押せる・印刷は隠す",
+          cf.get("handlers") == 1 and cf.get("open") == "" and "2026-10-12" in cf.get("list", "") and cf.get("print") == "none", cf)
+    nm = out.get("normal") or {}
+    check("ふつうの週 (2 回描画) も 📚 履歴 は 1 回押せば開き、もう 1 回で閉じる (listener を積まない)",
+          nm.get("handlers") == 1 and nm.get("open") == "" and nm.get("closed") == "none" and nm.get("print") == "", nm)
 
 
 def main():
@@ -347,6 +440,7 @@ def main():
           "data.discontinued === true" in fn and "終了しました" in fn and "📚 履歴" in fn)
     check("プリントを一度も受け取っていない生徒には欄ごと出さない (history?limit=1 で確かめる)",
           "/api/student/worksheet/history?limit=1" in fn)
+    _check_history_button_js(fn)
 
     print()
     if FAILURES:

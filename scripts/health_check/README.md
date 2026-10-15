@@ -58,7 +58,7 @@ CI/cron の判定は**終了コード / FAIL 件数**で行うこと(`WARN>0` �
 
 | テスト | 何を見るか |
 |---|---|
-| `test_weekly_worksheet_stop.py` | 日曜の週次弱点プリントの停止 (`WEEKLY_WORKSHEET_ENABLED`・既定 停止): 起動時に登録しない・監視の表から外す・今すぐ生成は 409・mypage の「終了しました」・📚 履歴は消さない |
+| `test_weekly_worksheet_stop.py` | 日曜の週次弱点プリントの停止 (`WEEKLY_WORKSHEET_ENABLED`・既定 停止): 起動時に登録しない・監視の表から外す・今すぐ生成は 409・mypage の「終了しました」・📚 履歴は消さない (今週のプリントが無くても 📚 履歴 を押せる = mypage の本物のコードを JS で動かす) |
 | `test_homework_notify_in_app.py` | 宿題・ドリルのお知らせ: 宿題の LINE は 0 回・メールは塾長の配信 (`source='manual'`) だけ (`HOMEWORK_NOTIFY_EMAIL`)・リンクは AIなし = `class.html?tab=homework` / AIあり = `mypage.html?focus=homework`・'assigned' も未提出・ログインコードの LINE と AIなし枠の許可集合は不変 |
 | `test_hw_notice_js.py` (JS) | アプリ内の「🆕 新しい宿題 N 件」: hw-notice.js の数え方と「見た」の記録 (端末ごと・72 時間)・塾生アプリの帯と `?tab=homework`・マイページのチップ |
 | `test_grade_band_consistency.py` (JS・無ければソースの突き合わせ) | 学年の判定 (「中２」「中三」も中学): サーバの `_student_grade_band`・student-mode.js・ceo.html の `_gdMode` が同じ答え・student-mode.js の `?v=` がそろっている |
