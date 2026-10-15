@@ -38,7 +38,9 @@
       3 日にずれない (6 時間の遊び)
   [14] 画面: CEO「🏫 クラス自動宿題」カード (🎯 確認カードと配信済み一覧の帯の間・🔍 は dry_run: true・📤 は confirm() の後だけ本番で
       1 クラス・「📋 結果」は一覧を class_hw に切り替える・名前は escape・古いサーバは「サーバ反映待ち」) と塾生アプリのカードの 2 行目
-      (題名に 〆 があれば「いつでもOK」と書かない)。ceo.html / class.html の本物のコードを JS エンジンで動かす (無ければ FAIL)
+      (題名に 〆 があれば「いつでもOK」と書かない)。ceo.html / class.html の本物のコードを JS エンジンで動かす (無ければ FAIL)。
+      2026-10-16: 🔍 の応答の last_run (毎朝の実行の最後の記録)・見出しは「今もう一度回したら配る」・その上に「前回の自動配信」・
+      古い未提出を数えなかった生徒のチップ
 
 実行:
     python3 scripts/health_check/test_class_homework_routine.py
@@ -267,6 +269,14 @@ def check_screens(mod, client, adm, ids):
     rd = client.post("/api/admin/class-homework-routine/run", json={"dry_run": True, "all_classes": True, "include_names": True}, headers=adm)
     dj = rd.json() if rd.status_code == 200 else {}
     check("CEO の管理者のトークンで 🔍 の応答が読める (名前つき)", rd.status_code == 200 and dj.get("plan_version") == 1, (rd.status_code, rd.text[:200]))
+    check("毎朝の実行の記録が無ければ last_run は null (キーはある・2026-10-16)", "last_run" in dj and dj["last_run"] is None, dj.get("last_run"))
+    mod._record_scheduler_run("class_hw_auto_run", mod._compact_run_props({"delivered": 5, "drills_created": 2, "assigned_students": [{"id": 1, "name": "架空"}]}))
+    ev = q(mod, "SELECT created_at FROM events WHERE name = 'class_hw_auto_run' ORDER BY id DESC LIMIT 1")[0]
+    ev_jst = datetime.datetime.strptime(str(ev["created_at"])[:19], "%Y-%m-%d %H:%M:%S") + datetime.timedelta(hours=9)
+    lr = (client.post("/api/admin/class-homework-routine/run", json={"dry_run": True, "all_classes": True}, headers=adm).json() or {}).get("last_run") or {}
+    check("last_run: 毎朝の実行 (class_hw_auto_run) の最後の記録の JST の時刻と人数", lr.get("delivered") == 5 and lr.get("error") is None
+          and lr.get("at_jst") == f"{ev_jst.month}/{ev_jst.day} {ev_jst:%H:%M}", (lr, str(ev["created_at"])))
+    ex(mod, "DELETE FROM events WHERE name = 'class_hw_auto_run'")
     eng = js_engine()
     check("JS の実行環境がある (node / osascript / jsc。無ければ FAIL)", bool(eng))
     esc_line = _js_line(ceo, "    function escapeHtml(s) { return (s||'')")
@@ -293,6 +303,9 @@ def check_screens(mod, client, adm, ids):
         "window.gdListSetKind = function (k) { __o.kinds.push(k); };",
         esc_line, subj_ja, rt_card, chw,
         "__o.render = _chwRender(__dry);",
+        "var __d2 = JSON.parse(JSON.stringify(__dry)); __d2.last_run = { at_jst: '10/21 06:00', delivered: 5, error: null }; __d2.stale_open_ignored = 1;",
+        "__d2.settings = __d2.settings || {}; __d2.settings.open_stale_days = 14; __o.renderLr = _chwRender(__d2);",
+        "__o.renderRun = _chwRender({ plan_version: 1, dry_run: false, delivered: 2, last_run: { at_jst: '10/21 06:00', delivered: 5 }, settings: {}, classes: [] });",
         "__o.old = _chwRender({ ok: true, delivered: 3 });",
         "__o.unk = _chwRender({ plan_version: 1, settings: { only_classes: [], only_classes_unknown: ['火曜2限 英文法 Lv.3<b>'] }, classes: [] });",
         "__o.wait = _chwPlanCell({ group: 'kosei', subject: 'english', members: 2, ok: false, mode: 'wait', reason: 'wait_next', drill_id: 7, tried: [] });",
@@ -315,6 +328,13 @@ def check_screens(mod, client, adm, ids):
     out = out or {}
     rend = out.get("render", "")
     check("15 クラスの表 (クラス名つき)", rend.count("<tr>") >= 15 + 1 and "火曜2限 英文法 Lv.2" in rend, rend[:300])
+    rl = out.get("renderLr", "")
+    check("見出しは「今もう一度回したら配る」(「今朝回ったら」は朝の実行の後に読み違える・2026-10-16)・記録なしは「まだ記録がありません」",
+          "今もう一度回したら配る:" in rend and "今朝回ったら" not in rend and "前回の自動配信: まだ記録がありません" in rend, rend[:400])
+    check("前回の自動配信: 10/21 06:00 に 5 名 (見出しの上)・古い未提出のチップ (14日より前)", "前回の自動配信: 10/21 06:00 に 5 名" in rl
+          and rl.index("前回の自動配信") < rl.index("今もう一度回したら配る") and "14日より前の未提出は数えない 1名" in rl, rl[:400])
+    check("📤 の後の応答 (dry_run: false) は「配った」で、前回の自動配信は出さない", "配った: 2 名" in out.get("renderRun", "")
+          and "前回の自動配信" not in out.get("renderRun", ""), out.get("renderRun", "")[:300])
     check("名前の HTML は escape される (<img を出さない)", "&lt;img" in rend and "<img" not in rend, rend[:300])
     check("学年の HTML も escape される", "&lt;b&gt;未設定&lt;/b&gt;" in rend and "<b>未設定" not in rend)
     check("配る生徒は id つき・押すと生徒詳細", f"window.showStudentDetail({ids['deliver']})" in rend, ids)

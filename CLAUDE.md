@@ -870,6 +870,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   2 引数 = (8675313, 生徒ID) 3日ドリル。**新しい錠は 8675315 以降の空いた番号**。
 - **実行記録**: events の `weakness_drill_routine_run` / `class_hw_auto_run` は `_compact_run_props` の要約 (数・理由・生徒 id 30 件まで・名前なし・4000 字未満)。
   名前は dry-run で `include_names: true` のときだけ (CEO のカード)。クラス自動宿題は配信ごとに events `class_hw_auto_delivered` (生徒 id だけ)。
+  2 つの管理 API の応答の `last_run` = この実行記録の最後の 1 行 (`_auto_delivery_last_run`・読むだけ・失敗は null) = CEO の「前回の自動配信」。
 - **ON にする順番** (塾長): 週次プリント停止 (既定) → 🎯 の dry-run (学年・`mode_changed_by_normalization`・在庫を見る) → (予約タスクは止めない = 2026-10-16 塾長決定) →
   `WEAKNESS_DRILL_ROUTINE_ENABLED=1` → 🏫 の 🔍 → 1 クラスを 📤 → `CLASS_HW_AUTO_ONLY_CLASSES` と `CLASS_HW_AUTO_ENABLED=1` → 1 回まわったら ONLY を外す。
   ★週次プリントを止めてから 3日ドリルを ON にするまでは、自動の弱点配信が 1 本も無い (AI 体験中の生徒も)。
@@ -932,6 +933,10 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   - CEO (📝 科目別 単元ドリル の下): 「🎯 自動の弱点ドリル」カードの 🔍 は `dry_run: true`・`include_names: true` だけを送る
     (ON/OFF・配る生徒と単元・在庫・学年が判定できない生徒・理由。**CEO から 3日ドリルを本番で回すボタンは作らない** = ON/OFF は env)。
     📦 は `source-inventory`。応答に `plan_version` が無ければ「サーバ反映待ち」。名前・学年は escapeHtml (inline だけ・ceo.js は触らない)。
+    ★2026-10-16 塾長決定: 見出しは「今もう一度回したら配る: N 名」(旧「今日 ON なら配る」は、朝の実行の後は配った生徒が「未提出」
+    「3日以内」に移ってふつう 0 名になり、動いていないと読み違えた)。その上に「前回の自動配信: M/D HH:MM に N 名」(応答の `last_run`
+    {at_jst, at, delivered, error}・失敗は ❌ と理由・記録が無ければ「まだ記録がありません」・`last_run` の無い古いサーバでは出さない)。
+    古い未提出を数えずに先へ進めた生徒は「14日より前の未提出は数えない N名」のチップ・配る生徒の行に「古い未提出 N 本」。
   - 配信済みドリル一覧 (`GET /api/admin/grammar-drill/list`) の既定は **塾長が配った分だけ** (`kind=owner`・今日の1問は出る)。
     自動配信は生徒ごとに 1 本ずつ作るので、混ぜると新しい 50 本から塾長の配信が押し出される。`kind=routine|class_hw|auto|all`・
     `subject=` (別名可・空の科目は english) で切り替える (CEO の帯・選んだ値は端末の localStorage)。初回診断はどれにも出さない。
@@ -1017,6 +1022,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   (15 クラスの表 = 出題範囲・区分ごとの次の単元と理由と在庫・配る生徒・外した生徒と理由・学年が判定できない生徒)。
   クラスの行の 📤 は confirm() の後でだけ `dry_run: false` + `class_label` (そのクラスだけ・押し直しても増えない)。
   「📋 結果」は下の配信済みドリル一覧を `kind=class_hw` に切り替える。inline だけ (ceo.js は触らない)。名前・学年・クラス名は escapeHtml。
+  2026-10-16: 🎯 と同じく見出しは「今もう一度回したら配る」(旧「今朝回ったら配る」)・その上に「前回の自動配信」(`last_run` = events
+  `class_hw_auto_run`。📤 の手動配信は入らない)・古い未提出のチップ。📤 の後の応答 (dry_run: false) は「配った」のまま。
 - 回帰テスト: `scripts/health_check/test_class_homework_routine.py` (CI `server-tests.yml`)。3日ドリルと合わせた 1 人 1 経路の検査もここ。
   [14] が CEO のカードと塾生アプリのカードの 〆 を JS エンジンで実際に動かす (無ければ FAIL)。
 

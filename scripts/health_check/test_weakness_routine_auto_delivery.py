@@ -26,6 +26,10 @@
       なっていた)・積まない判定に数える未提出は直近 WEAKNESS_ROUTINE_OPEN_STALE_DAYS (既定 14・0 = 全部・3〜365 に丸める) 日の分だけ
       (古いドリルは消さず生徒の一覧に残る・stale_open_ignored)・assigned_at が空の未提出は数える・錠の中の読み直しも同じ境目・
       デスクトップの予約タスクの行 (created_by='mission_2day_routine') は数えない = 両方届く
+  [12] CEO の 🎯 カードの「前回の自動配信」(2026-10-16 塾長決定): dry-run の応答の last_run = events の最後の実行記録 {at_jst (M/D HH:MM・JST),
+      at, delivered, error} / 記録なしは null・いちばん新しい行・壊れた props でも落ちない・DB が読めなければ None・何も書かない・名前なし。
+      カード ([10] の JS): 見出しは「今もう一度回したら配る」・その上に「前回の自動配信: M/D HH:MM に N 名」(失敗は ❌ と理由を escape)・
+      古い未提出を数えなかった生徒はチップ
   [10] CEO の配信済みドリル一覧 (2026-10-15 塾長決定: 既定は塾長が配ったドリルだけ): kind 無し = owner (今日の1問は出る・自動配信と
       初回診断は出ない) / routine / class_hw (印からクラス名と区分を読む) / auto / all・初回診断はどの kind にも出ない・科目で絞る
       (別名・空の科目 = english も拾う)・知らない kind と科目は 422・自動配信が 60 本増えても既定の 50 本から塾長の配信が押し出されない。
@@ -844,6 +848,16 @@ def main():
         "__o.invOld = _gdRtInvRender({ ok: true });",
         "__o.q1 = _gdListQuery('class_hw', 'chugaku_math'); __o.q2 = _gdListQuery('owner', ''); __o.q3 = _gdListQuery('bogus', 'x y');",
         "__o.reason = _gdRtReasonLabel('band_mismatch:chugaku'); __o.reason2 = _gdRtReasonLabel('eng_not_grammar_unit');",
+        # 2026-10-16: 前回の自動配信 (last_run)・見出しの言い方・古い未提出のチップ
+        "__o.lr1 = _gdAutoLastRun({ at_jst: '10/16 05:30', at: '2026-10-16 05:30', delivered: 3, error: null });",
+        "__o.lr0 = _gdAutoLastRun({ at_jst: '10/16 05:30', delivered: 0, error: null });",
+        "__o.lrNone = _gdAutoLastRun(null); __o.lrOld = _gdAutoLastRun(undefined);",
+        "__o.lrErr = _gdAutoLastRun({ at_jst: '10/16 05:30', delivered: null, error: '<b>失敗</b>' });",
+        "__o.lrErr2 = _gdAutoLastRun({ at_jst: '10/16 05:30', delivered: 2, error: '学年ガード' });",
+        f"var __rs = {json.dumps(rtj, ensure_ascii=False)}; __rs.last_run = {{ at_jst: '10/16 05:30', delivered: 4, error: null }};",
+        "__rs.stale_open_ignored = 2; __rs.open_stale_days = 14; if (__rs.delivered_students && __rs.delivered_students[0]) __rs.delivered_students[0].stale_open = 3;",
+        "__o.stale = _gdRtRender(__rs);",
+        "__rs.stale_open_ignored = 0; __o.noStale = _gdRtRender(__rs);",
         "var __s = 'RESULT ' + JSON.stringify(__o);",
         "if (typeof process !== 'undefined' && typeof console !== 'undefined' && console.log) console.log(__s);",
         "else if (typeof print === 'function') print(__s);",
@@ -863,6 +877,18 @@ def main():
     check("一覧の問い合わせ文字列 (知らない kind は owner・科目は encode)",
           (out.get("q1"), out.get("q2"), out.get("q3")) == ("?kind=class_hw&subject=chugaku_math", "?kind=owner", "?kind=owner&subject=x%20y"),
           (out.get("q1"), out.get("q2"), out.get("q3")))
+    check("見出しは「今もう一度回したら配る」(「今日 ON なら」は朝の実行の後に 0 名と出て動いていないと読み違える・2026-10-16)",
+          "今もう一度回したら配る:" in rend and "今日 ON なら" not in rend and "ふつう 0 名" in rend, rend[:300])
+    check("前回の自動配信は見出しの上 (last_run の時刻と人数)", "前回の自動配信: 10/16 05:30 に 4 名" in out.get("stale", "")
+          and out.get("stale", "").index("前回の自動配信") < out.get("stale", "").index("今もう一度回したら配る"), out.get("stale", "")[:400])
+    check("前回の自動配信: 人数 / 0 名 / 記録なし / 古いサーバ (何も出さない)",
+          "前回の自動配信: 10/16 05:30 に 3 名" in out.get("lr1", "") and "10/16 05:30 に 0 名" in out.get("lr0", "")
+          and "まだ記録がありません" in out.get("lrNone", "") and out.get("lrOld") == "", (out.get("lr1"), out.get("lrNone"), out.get("lrOld")))
+    check("前回の自動配信が失敗なら ❌ と理由 (escape)・配った人数があれば添える",
+          "❌" in out.get("lrErr", "") and "&lt;b&gt;失敗" in out.get("lrErr", "") and "<b>失敗" not in out.get("lrErr", "")
+          and "配信 2 名" in out.get("lrErr2", ""), (out.get("lrErr"), out.get("lrErr2")))
+    check("古い未提出を数えなかった生徒はチップ (14日より前の未提出は数えない 2名)・配る生徒の行に本数", "14日より前の未提出は数えない 2名" in out.get("stale", "")
+          and "古い未提出 3 本" in out.get("stale", "") and "より前の未提出は数えない" not in out.get("noStale", "x"), out.get("stale", "")[:300])
     check("弱点を外した理由は日本語 (科目名つき)", out.get("reason") == "学年と科目が合わない：中学英語"
           and out.get("reason2", "").startswith("英語の弱点が文法の単元に当たらない"), (out.get("reason"), out.get("reason2")))
 
@@ -1065,6 +1091,44 @@ def main():
           "デスクトップの予約タスクが書く 'assigned' も)" not in run_src and "mission_2day_routine" in run_src, "")
     props = mod._compact_run_props(r)
     check("実行記録の要約に stale_open_ignored と open_stale_days が残る", "stale_open_ignored" in props and props.get("open_stale_days") == 14, props)
+
+    # ------------------------------------------------------------------
+    print("\n[12] 2026-10-16 塾長決定: CEO の 🎯 カードの「前回の自動配信」(last_run = events の実行記録を読むだけ)")
+    ex(mod, "DELETE FROM events WHERE name = 'weakness_drill_routine_run'")
+    j0 = client.post("/api/admin/weakness-drill-routine/run", json={"dry_run": True}, headers=cron).json()
+    check("実行記録が無ければ last_run は null (キーはある)", "last_run" in j0 and j0["last_run"] is None, j0.get("last_run"))
+    mod._record_scheduler_run("weakness_drill_routine_run", mod._compact_run_props({"delivered": 3, "eligible": 3, "delivered_students": [{"id": 1, "name": "架空"}]}))
+    ev = q(mod, "SELECT created_at FROM events WHERE name = 'weakness_drill_routine_run' ORDER BY id DESC LIMIT 1")[0]
+    ev_jst = datetime.datetime.strptime(str(ev["created_at"])[:19], "%Y-%m-%d %H:%M:%S") + datetime.timedelta(hours=9)
+    j1 = client.post("/api/admin/weakness-drill-routine/run", json={"dry_run": True}, headers=cron).json()
+    lr = j1.get("last_run") or {}
+    check("last_run: 最後の実行の JST の時刻 (M/D HH:MM) と配った人数・error なし",
+          lr.get("delivered") == 3 and lr.get("error") is None and lr.get("at_jst") == f"{ev_jst.month}/{ev_jst.day} {ev_jst:%H:%M}"
+          and lr.get("at") == ev_jst.strftime("%Y-%m-%d %H:%M"), (lr, str(ev["created_at"])))
+    check("last_run に名前は入らない (実行記録は名前なし)", "架空" not in json.dumps(lr, ensure_ascii=False), lr)
+    ex(mod, "INSERT INTO events (name, props, session_id, created_at) VALUES ('weakness_drill_routine_run', ?, 'in_process_scheduler', '2099-01-01 00:00:00')",
+       (json.dumps({"error": "ValueError: 架空の失敗"}),))
+    lr2 = client.post("/api/admin/weakness-drill-routine/run", json={"dry_run": True}, headers=cron).json().get("last_run") or {}
+    check("いちばん新しい実行記録を読む・例外で終わった実行は delivered なし + error", lr2.get("at_jst") == "1/1 09:00"
+          and lr2.get("delivered") is None and "架空の失敗" in str(lr2.get("error")), lr2)
+    ex(mod, "INSERT INTO events (name, props, session_id, created_at) VALUES ('weakness_drill_routine_run', 'not json', 'x', '2099-01-02 00:00:00')")
+    lr3 = mod._auto_delivery_last_run("weakness_drill_routine_run")
+    check("props が壊れていても落ちない (時刻だけ)", lr3 and lr3.get("at_jst") == "1/2 09:00" and lr3.get("delivered") is None, lr3)
+    orig_db = mod.db
+
+    def broken_db():
+        raise RuntimeError("DB に届かない (架空)")
+
+    mod.db = broken_db
+    try:
+        lr4 = mod._auto_delivery_last_run("weakness_drill_routine_run")
+    finally:
+        mod.db = orig_db
+    check("events が読めなくても例外を出さず None (dry-run の応答を止めない)", lr4 is None, lr4)
+    ex(mod, "DELETE FROM events WHERE name = 'weakness_drill_routine_run' AND created_at >= '2099-01-01'")
+    before = counts(mod)
+    client.post("/api/admin/weakness-drill-routine/run", json={"dry_run": True}, headers=cron)
+    check("last_run を読んでも何も書かない", counts(mod) == before, (before, counts(mod)))
 
     print()
     if FAILURES:

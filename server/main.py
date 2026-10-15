@@ -47876,6 +47876,52 @@ def _compact_run_props(summary, *, max_ids: int = 30, max_chars: int = 3800) -> 
     return out
 
 
+def _auto_delivery_last_run(event_name: str) -> Optional[dict]:
+    """🎯 / 🏫 CEO カードの「前回の自動配信」(2026-10-16 塾長決定)。毎朝のスケジューラが events に書いた最後の実行記録
+    (_record_scheduler_run・中身は _compact_run_props の要約) を読むだけ (書かない・名前は入っていない)。
+    返り値 {at_jst: 'M/D HH:MM', at: 'YYYY-MM-DD HH:MM', delivered: int|None, error: str|None} / 記録が無い・読めない → None。
+    ★dry-run の応答を止めないよう、失敗はすべて握って None (ログだけ)。CEO の 🔍 だけが読む (監視は _scheduler_status_rows)。"""
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute("SELECT created_at, props FROM events WHERE name = ? ORDER BY created_at DESC, id DESC LIMIT 1", (event_name,))
+        row = c.fetchone()
+        if not row:
+            return None
+        ts, props = row["created_at"], row["props"]
+        if isinstance(ts, str):
+            ts = datetime.fromisoformat(ts.strip().replace("Z", "+00:00"))
+        if ts is None or not hasattr(ts, "astimezone"):
+            return None
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)   # events.created_at は UTC で入る (SQLite / 古い行は tz-naive)
+        jst = ts.astimezone(timezone(timedelta(hours=9)))
+        try:
+            p = json.loads(props) if isinstance(props, str) else (props or {})
+        except (TypeError, ValueError):
+            p = {}
+        if not isinstance(p, dict):
+            p = {}
+        dv = p.get("delivered")
+        err = p.get("error")
+        return {
+            "at_jst": f"{jst.month}/{jst.day} {jst:%H:%M}",
+            "at": jst.strftime("%Y-%m-%d %H:%M"),
+            "delivered": dv if isinstance(dv, int) and not isinstance(dv, bool) else None,
+            "error": str(err)[:300] if err else None,
+        }
+    except Exception as e:
+        log.warning(f"[AutoDelivery] last_run({event_name}) の読み取りに失敗: {type(e).__name__}: {e}")
+        return None
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
 def _routine_row_val(row, key):
     """sqlite3.Row / psycopg の dict / ただの dict から 1 列 (無ければ None)。"""
     try:
@@ -48405,7 +48451,8 @@ def admin_weakness_drill_routine_run(
     dry_run=true は一切配信せず「誰に何が配信されるか」を本番と同じ選び方 (在庫・既出の除外を含む) で返す。
     塾長が押しても中身はアルゴリズムが選ぶので、お知らせは source='auto' (既定では LINE もメールも送らない)。
     応答: enabled_env / weekly_worksheet_enabled / allowlist (効いている許可リスト) / deny / plan_version=2
-    (CEO は plan_version が無ければ「サーバ反映待ち」と出す)。"""
+    (CEO は plan_version が無ければ「サーバ反映待ち」と出す) / last_run = 毎朝の実行の最後の記録 {at_jst, at, delivered, error} か null
+    (2026-10-16: 朝の実行の後の dry-run は、配った生徒が「未提出」「3日以内」に移るのでふつう 0 名。CEO が前回の人数を並べて出す)。"""
     if not _grammar_admin_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
     payload = payload or {}
@@ -48431,6 +48478,7 @@ def admin_weakness_drill_routine_run(
         "deny": {"subjects": sorted(_AUTO_DELIVERY_DENY_SUBJECTS),
                  "source_prefixes": list(_AUTO_DELIVERY_DENY_SOURCE_PREFIXES)},
         "plan_version": 2,
+        "last_run": _auto_delivery_last_run("weakness_drill_routine_run"),
     }
 
 
@@ -57295,7 +57343,8 @@ def admin_class_homework_routine_run(
     seed?: int (dry-run と本番で同じ問題) }。
     塾長が押しても中身はアルゴリズムが選ぶので、お知らせは source='auto' (既定では LINE もメールも送らない)。
     2 日に 1 本・未提出があれば積まない・(クラス, 区分) ごとに 2 日に 1 本は 📤 でも同じ (押し直しても増えない)。
-    応答: enabled_env / plan_version=1 (CEO は plan_version が無ければ「サーバ反映待ち」) / allowlist (英語の科目だけ)。"""
+    応答: enabled_env / plan_version=1 (CEO は plan_version が無ければ「サーバ反映待ち」) / allowlist (英語の科目だけ) /
+    last_run = 毎朝の実行の最後の記録 {at_jst, at, delivered, error} か null (2026-10-16・📤 の手動配信は入らない)。"""
     if not _grammar_admin_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
     payload = payload or {}
@@ -57321,6 +57370,7 @@ def admin_class_homework_routine_run(
         "enabled_env": _class_hw_routine_enabled(),
         "allowlist": {k: list(al.get(k, ())) for k in ("english", "chugaku", "eiken", "english_long")},
         "plan_version": 1,
+        "last_run": _auto_delivery_last_run("class_hw_auto_run"),
     }
 
 

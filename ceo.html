@@ -794,11 +794,11 @@
         <summary style="cursor:pointer;font-size:0.84rem;color:#f9a8d4;font-weight:800;">🎯 自動の弱点ドリル（3日ごと・AIあり／AI体験中の生徒） <span id="gdRoutineState" style="font-size:0.72rem;color:#a1a1aa;font-weight:400;">— 🔍 で ON/OFF と配る予定を確認</span></summary>
         <div style="font-size:0.74rem;color:#a1a1aa;line-height:1.65;margin:0.5rem 0 0.55rem;">
           毎朝 5:30 に、弱点に合う科目別ドリル（<b style="color:#e5e7eb;">レビュー済みの問題だけ</b>・10問）を生徒ごとに 3 日に 1 本配ります。高校生は英文法・数学、中学生は中学の単元（学年で分けます。学年が判定できない生徒には配りません）。
-          未提出が残っている生徒には積みません。塾生アプリのみ（AIなし）の生徒は対象外です。お知らせは既定ではアプリの中だけです（LINE・メールなし）。
+          未提出が残っている生徒には積みません（既定では 14 日より前に配った未提出は数えません。古いドリルは消さず、生徒の画面に残ります）。3 日は日付で数えます。塾生アプリのみ（AIなし）の生徒は対象外です。お知らせは既定ではアプリの中だけです（LINE・メールなし）。
           ON/OFF は Railway の <code style="color:#f9a8d4;">WEAKNESS_DRILL_ROUTINE_ENABLED</code>（このカードからは配信しません）。
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-          <button id="gdRoutineDryBtn" type="button" onclick="gdRoutineDryRun()" title="今日 ON だったら誰に何を配るかを、本番と同じ選び方で計算して出します。配信はせず、生徒には何も届きません" style="background:rgba(236,72,153,0.16);color:#fbcfe8;border:1px solid rgba(236,72,153,0.5);padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">🔍 試しに見る（配信しない）</button>
+          <button id="gdRoutineDryBtn" type="button" onclick="gdRoutineDryRun()" title="今もう一度回したら誰に何を配るかを、本番と同じ選び方で計算して出します。前回の毎朝の自動配信の時刻と人数も出します。配信はせず、生徒には何も届きません" style="background:rgba(236,72,153,0.16);color:#fbcfe8;border:1px solid rgba(236,72,153,0.5);padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">🔍 試しに見る（配信しない）</button>
           <button id="gdRoutineInvBtn" type="button" onclick="gdRoutineInventory()" title="自動配信に使ってよい出典 (レビュー済み) の在庫を、科目・単元ごとに出します。自動では出さない古い行の数も出ます。読むだけです" style="background:rgba(148,163,184,0.12);color:#cbd5e1;border:1px solid #475569;padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;">📦 出どころの在庫</button>
           <span id="gdRoutineMsg" style="font-size:0.76rem;"></span>
         </div>
@@ -812,7 +812,7 @@
       <details id="chwBox" style="margin-bottom:0.6rem;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.32);border-radius:10px;padding:0.55rem 0.8rem;">
         <summary style="cursor:pointer;font-size:0.84rem;color:#6ee7b7;font-weight:800;">🏫 クラス自動宿題（塾生アプリのみ・英語のクラス・2日に1回） <span id="chwState" style="font-size:0.72rem;color:#a1a1aa;font-weight:400;">— 🔍 で ON/OFF と次の宿題を確認</span></summary>
         <div style="font-size:0.74rem;color:#a1a1aa;line-height:1.65;margin:0.5rem 0 0.55rem;">
-          塾生アプリのみ（AIなし）の生徒に、受講している英語のクラスの宿題として科目別ドリル（<b style="color:#e5e7eb;">レビュー済みの問題だけ</b>・10問）を配ります。1人に届くのは 2 日に 1 本まで、未提出が残っていれば積みません。
+          塾生アプリのみ（AIなし）の生徒に、受講している英語のクラスの宿題として科目別ドリル（<b style="color:#e5e7eb;">レビュー済みの問題だけ</b>・10問）を配ります。1人に届くのは 2 日に 1 本まで、未提出が残っていれば積みません（既定では 14 日より前に配った未提出は数えません。古いドリルは消しません）。
           中学生と高校生は学年で別のドリルにします（学年が判定できない生徒には配りません）。英検のクラスはクラスの級、長文のクラスはレビュー済みの本文が 4 本になってから。GMARCH・早慶は保留。
           お知らせは既定ではアプリの中だけです（LINE・メールなし）。毎朝の自動配信の ON/OFF は Railway の <code style="color:#6ee7b7;">CLASS_HW_AUTO_ENABLED</code>。
         </div>
@@ -5553,7 +5553,10 @@
     // 🎯 自動の弱点ドリル (3日ごと) の確認カード (2026-10-15 塾長決定「自動で配るのはレビュー済みの科目別ドリルだけ」
     //   「中学生と高校生は問題の配信はミスらないように」)。
     //   🔍 = POST /api/admin/weakness-drill-routine/run {dry_run: true, include_names: true}。本番と同じ計画関数で
-    //   「今日 ON なら誰に何を配るか」を出す (何も書かない・お知らせも出ない)。★このカードは dry_run: true 以外を送らない。
+    //   「今もう一度回したら誰に何を配るか」を出す (何も書かない・お知らせも出ない)。★このカードは dry_run: true 以外を送らない。
+    //   2026-10-16 塾長決定: 朝の実行の後の 🔍 は、配った生徒が「未提出」「3日以内」に移るのでふつう 0 名 → 見出しを「今日 ON なら」から
+    //   「今もう一度回したら」に変え、その上に「前回の自動配信: M/D HH:MM に N 名」(サーバの last_run = events の実行記録) を出す。
+    //   古い未提出を数えずに先へ進めた生徒 (stale_open_ignored) はチップで出す。
     //   📦 = GET /api/admin/grammar/source-inventory (読むだけ・名前なし)。
     //   応答に plan_version が無い = 古いサーバ → 「サーバ反映待ち」と出し、古い形の応答を表にしない。名前・学年・単元は必ず escapeHtml。
     const _GD_RT_REASON_JA = {
@@ -5579,6 +5582,22 @@
     function _gdRtPill(txt, col, bg) {
       return `<span style="display:inline-block;font-size:0.72rem;padding:0.08rem 0.5rem;border-radius:10px;background:${bg};color:${col};border:1px solid ${col}55;margin:0.1rem 0.25rem 0.1rem 0;">${_gdRtE(txt)}</span>`;
     }
+    function _gdAutoLastRun(lr) {   // 🎯 / 🏫 共通: 前回の毎朝の自動配信 (サーバの last_run)。undefined = 古いサーバ → 何も出さない
+      if (lr === undefined) return '';
+      const st = 'font-size:0.78rem;margin:0.45rem 0 0.05rem;';
+      if (!lr) return `<div style="${st}color:#a1a1aa;">前回の自動配信: まだ記録がありません</div>`;
+      const when = _gdRtE(lr.at_jst || '?');
+      const dv = (lr.delivered === null || lr.delivered === undefined) ? null : (Number(lr.delivered) || 0);
+      if (lr.error) {
+        return `<div style="${st}color:#fca5a5;font-weight:700;">前回の自動配信: ${when} ❌ ${_gdRtE(lr.error)}${dv !== null ? `（配信 ${dv} 名）` : ''}</div>`;
+      }
+      return `<div style="${st}color:#e5e7eb;font-weight:700;">前回の自動配信: ${when} に ${dv !== null ? dv : 0} 名</div>`;
+    }
+    function _gdAutoStaleChip(d, days) {   // 古い未提出を数えずに先へ進めた生徒 (0 なら出さない)
+      const k = Number(d && d.stale_open_ignored) || 0;
+      if (!k) return '';
+      return `<div style="margin-top:0.2rem;font-size:0.74rem;color:#94a3b8;">${_gdRtPill(`${Number(days) || 14}日より前の未提出は数えない ${k}名`, '#fde68a', 'rgba(251,191,36,0.08)')}<span style="color:#71717a;">（古いドリルは消さず、生徒の画面に残ります）</span></div>`;
+    }
     function _gdRtRender(d) {
       if (!d || !d.plan_version) {
         return '<div style="color:#fbbf24;font-size:0.8rem;">⚠️ サーバ反映待ちです（新しい 3日ドリルがまだ本番に出ていません）。数分後にもう一度押してください。</div>';
@@ -5597,8 +5616,9 @@
       if (d.error) h += `<div style="color:#fca5a5;font-size:0.8rem;font-weight:700;margin:0.3rem 0;">❌ ${_gdRtE(d.error)}</div>`;
       if (n(d.band_guard_trips)) h += `<div style="color:#fca5a5;font-size:0.78rem;font-weight:700;">⚠️ 学年ガードが ${n(d.band_guard_trips)} 回止めました (中高の取り違え・選ぶ側の不具合)</div>`;
       const ds = Array.isArray(d.delivered_students) ? d.delivered_students : [];
-      h += `<div style="font-size:0.84rem;color:#fbcfe8;font-weight:800;margin:0.4rem 0 0.1rem;">今日 ON なら配る: ${n(d.delivered)} 名</div>`;
-      h += `<div style="font-size:0.72rem;color:#a1a1aa;">(1 回の上限 ${n(d.cap)} 名${n(d.capped) ? `・上限で今日は外れる ${n(d.capped)} 名 = 次の日に回る` : ''})</div>`;
+      h += _gdAutoLastRun(d.last_run);
+      h += `<div style="font-size:0.84rem;color:#fbcfe8;font-weight:800;margin:0.4rem 0 0.1rem;">今もう一度回したら配る: ${n(d.delivered)} 名</div>`;
+      h += `<div style="font-size:0.72rem;color:#a1a1aa;">(1 回の上限 ${n(d.cap)} 名${n(d.capped) ? `・上限で外れる ${n(d.capped)} 名 = 次の日に回る` : ''}。朝の自動配信の後は、配った生徒が「未提出」か「3日以内」に移るので、ふつう 0 名です)</div>`;
       // 配らない生徒の数 (0 の項目は出さない)
       const SK = [['skipped_open', '未提出が残っている'], ['skipped_recent', '3日以内に配った'], ['skipped_no_weakness', '配れる弱点が無い'],
                   ['skipped_no_reviewed_inventory', 'レビュー済みの在庫が足りない'], ['skipped_grade_unknown', '学年が判定できない'],
@@ -5606,6 +5626,7 @@
                   ['skipped_race', '別の実行が先に配った'], ['create_failed', '作成に失敗']];
       const sk = SK.filter(p => n(d[p[0]]) > 0).map(p => pill(`${p[1]} ${n(d[p[0]])}名`, '#cbd5e1', 'rgba(148,163,184,0.08)')).join('');
       if (sk) h += `<div style="margin-top:0.3rem;font-size:0.74rem;color:#94a3b8;">配らない生徒: ${sk}</div>`;
+      h += _gdAutoStaleChip(d, d.open_stale_days);
       const bc = d.band_counts || {};
       const bcs = Object.keys(bc).map(k => `${_GD_RT_BAND_JA[k] || k} ${n(bc[k])}名`).join(' / ');
       if (bcs) h += `<div style="font-size:0.72rem;color:#71717a;margin-top:0.15rem;">学年の区分 (候補の生徒): ${_gdRtE(bcs)}</div>`;
@@ -5618,7 +5639,8 @@
           // 英文法は label が単元名だけ (時制) なので科目名を足す。数学・中学はサーバの label に科目名が入っている
           const what = e.subject === 'english' ? `英文法 ${e.label || e.unit || ''}` : (e.label || e.unit || _GD_SUBJ_JA[e.subject] || e.subject || '');
           const reuse = n(e.reused_seen) ? `<div style="color:#fbbf24;font-size:0.7rem;">既出から ${n(e.reused_seen)} 問</div>` : '';
-          return `<tr><td ${td}>${_gdRtName(e)}</td><td ${td}>${_gdRtE(_GD_RT_BAND_JA[e.band] || e.band)}</td><td ${td}>${_gdRtE(what)}</td><td ${td}>${_gdRtE(lv)}</td><td ${td}>${n(e.unseen_available)} / ${n(e.reviewed_available)}${reuse}</td></tr>`;
+          const stale = n(e.stale_open) ? `<div style="color:#fbbf24;font-size:0.7rem;">古い未提出 ${n(e.stale_open)} 本 (数えない)</div>` : '';
+          return `<tr><td ${td}>${_gdRtName(e)}${stale}</td><td ${td}>${_gdRtE(_GD_RT_BAND_JA[e.band] || e.band)}</td><td ${td}>${_gdRtE(what)}</td><td ${td}>${_gdRtE(lv)}</td><td ${td}>${n(e.unseen_available)} / ${n(e.reviewed_available)}${reuse}</td></tr>`;
         }).join('');
         h += '</tbody></table></div>';
       }
@@ -5776,7 +5798,8 @@
       h += '</div>';
       if (d.error) h += `<div style="color:#fca5a5;font-size:0.8rem;font-weight:700;margin:0.3rem 0;">❌ ${_gdRtE(d.error)}</div>`;
       if (n(d.band_guard_trips)) h += `<div style="color:#fca5a5;font-size:0.78rem;font-weight:700;">⚠️ 学年ガードが ${n(d.band_guard_trips)} 組止めました (中高の取り違え・選ぶ側の不具合)</div>`;
-      h += `<div style="font-size:0.84rem;color:#a7f3d0;font-weight:800;margin:0.4rem 0 0.1rem;">${d.dry_run ? '今朝回ったら配る' : '配った'}: ${n(d.delivered)} 名`
+      if (d.dry_run) h += _gdAutoLastRun(d.last_run);
+      h += `<div style="font-size:0.84rem;color:#a7f3d0;font-weight:800;margin:0.4rem 0 0.1rem;">${d.dry_run ? '今もう一度回したら配る' : '配った'}: ${n(d.delivered)} 名`
         + `<span style="font-size:0.72rem;color:#a1a1aa;font-weight:400;">（新しいドリル ${n(d.drills_created)} 本・今日のドリルに追加 ${n(d.drills_joined)} 組）</span></div>`;
       const SK = [['skipped_open', '未提出あり'], ['skipped_recent', '2日以内に受け取った'], ['skipped_wait_next', '次のドリル待ち'], ['skipped_grade_unknown', '学年が判定できない'],
                   ['skipped_before_start', '受講開始前'], ['skipped_no_inventory', '在庫が足りない'], ['skipped_no_class', '英語のクラスなし'],
@@ -5785,6 +5808,7 @@
                   ['skipped_test_name', 'テスト用の名前'], ['skipped_race', '別の実行が先に配った'], ['create_failed', '作成に失敗']];
       const sk = SK.filter(p => n(d[p[0]]) > 0).map(p => pill(`${p[1]} ${n(d[p[0]])}名`, '#cbd5e1', 'rgba(148,163,184,0.08)')).join('');
       if (sk) h += `<div style="margin-top:0.3rem;font-size:0.74rem;color:#94a3b8;">配らない生徒: ${sk}</div>`;
+      h += _gdAutoStaleChip(d, st.open_stale_days);
       const cls = Array.isArray(d.classes) ? d.classes : [];
       if (cls.length) {
         const th = 'style="text-align:left;padding:0.2rem 0.45rem;color:#94a3b8;font-weight:700;border-bottom:1px solid #334155;white-space:nowrap;"';
