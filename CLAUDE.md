@@ -495,7 +495,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
     (`_gdGradeMismatchText`・`window` 経由) を通り、学年が合わないときは ⚠️ と「それでも…配信しますか？」でいつもの確認と見分ける。
     判定できない学年の生徒に中学ドリルを送るときも ⚠️ (その生徒の画面は高校生モード。生徒詳細の「学年」の横の「✏️ 編集」へ誘導し、
     学年を直すとその生徒の 📨 が持つ学年 (`data-grade`) も差し替える。★一覧は読み直さない: 読み直すと押した「✅ 配信済」が 📨 に戻り、
-    同じドリルと LINE/メールを二重に送りうる (`grammar-drill/create` に重複の防止は無い)。ボタンの並び・中学ドリルの有無は 🔄 で反映)。
+    同じドリルを二重に配りうる (`grammar-drill/create` に重複の防止は無い。お知らせはアプリ内表示・メールは `HOMEWORK_NOTIFY_EMAIL` 次第)。
+    ボタンの並び・中学ドリルの有無は 🔄 で反映)。
     ★全角・漢数字の学年 (「中２」「中三」) は student-mode.js もサーバの `_student_mode_from_grade` も中学と読まない (高校生モードで表示される)。
   - クラス宿題のドリル単元 (`HW_DRILL_TOPICS`) に中学数学15単元を足した (科目は英語と同じ `chugaku`。理科・社会・国語の宿題単元はまだ無い)。★**クラス宿題には学年の
     取り違えガードが無い** (英語の頃から)。英検2級/準1級対策のクラスは中3と高校生が混ざるので、クラス単位で確認を出すと毎回出る。
@@ -776,6 +777,27 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   生徒にだけ AI学習アプリの案内 1 つ + 「💬 塾長に聞く」を出す (2026-09-24 塾長方針・`gdAiHintHtml` / `gdWireAskAi`)。ボタンは 💬 メッセージタブへ
   移るだけで mypage / 道場 / AI への入口にはしない。AIあり・旧バックエンド (undefined)・feed 未取得では出ない。
   金額 (+5,000 円) は `payment/courses.json` / `api/register-subscribe.py` に手で追従する (`check_course_price_sync.py` は class.html を見ない)。
+
+## 📣 宿題・ドリルのお知らせはアプリの中で (2026-10-15 塾長決定「アプリを開けば分かる」)
+- 宿題・ドリルを配ったときのお知らせは**アプリ内表示が基本**。LINE は宿題・ドリルのお知らせに使わない
+  (★ログインコードの LINE `_try_line_login_push` / `magic_link_login` は従来どおり)。送る経路は `_homework_notify_channels(source)` 1 か所で決める。
+  env は呼ぶたびに読む (Railway で変えれば再起動は要らない):
+  - `HOMEWORK_NOTIFY_EMAIL` (既定 `manual`): `manual` = 塾長が CEO で手で配ったときだけ登録メール (多くは保護者のアドレス) /
+    `all` = 自動配信でも毎回 / `off` = 送らない。`1`/`true`/`on` は all、`0`/`false`/`off` は off。不明な値は manual (警告ログ)。
+  - `HOMEWORK_NOTIFY_LINE` (既定 `0`): `1` で従来の LINE (`grammar_drill_assigned`) に戻す非常スイッチ。
+- **source の契約**: `_notify_grammar_drill_assigned(..., source=)` の `'manual'` は `POST /api/admin/grammar-drill/create`
+  (塾長が生徒と中身を選ぶ) だけ。アルゴリズムが中身を選ぶもの (3日ドリル・クラス自動宿題。塾長が「今すぐ実行」を押した場合も) は `'auto'`。
+  既定値は `'auto'` (渡し忘れてもメールを増やさない側に倒れる)。既定の env では自動配信は LINE もメールも 0 で、通知のループも待ちも走らない。
+  新しい配信経路を足すときは必ず source を明示する (test が呼び出しを全部検査する)。
+- メールのリンク: AIなし枠 (`_ai_blocked_now` が True) は `class.html?tab=homework`、AIあり・AI 体験中は `mypage.html?focus=homework`。
+  ★`#homework` のような # 付きのリンクは使わない (ログインをはさむと auth-guard.js が path と search しか引き継がず # が消える)。
+  照会は 1 回の SELECT (`_homework_notify_link_paths`)・失敗したら mypage (AIなし枠は mypage が class.html へ送り返す)。
+- CEO の配信結果の文は `_drill_create_message` (経路に合わせる。「LINE/メールで通知を送信しました」と決め打ちしない)。応答に `notify_channels`。
+  3日ドリルの summary (dry-run も) に `notify` = {line, email}。
+- 未提出 = `status <> 'completed'` (提出 API と同じ。デスクトップの予約タスクが書く `'assigned'` も未提出)。`GET /api/student/grammar-drills` の
+  `summary.open`・並び順、LINE の「やること」もこの数え方。`self_issued` = 生徒が自分で始めたもの (今日の1問・初回診断) で「新しい宿題」に数えない
+  (`created_by` の生の値は返さない)。
+- 回帰テスト: `scripts/health_check/test_homework_notify_in_app.py` (CI `server-tests.yml`)。
 
 ## 📅 受講開始月と 🎬 入塾前アーカイブ (2026-09-24 塾長決定)
 - **翌月開始の生徒も申込直後に承認してよい** (承認は課金に触れない・Stripe/台帳は月謝アプリ側)。承認すると予定表・配信された単元ドリル・メッセージは即使える。

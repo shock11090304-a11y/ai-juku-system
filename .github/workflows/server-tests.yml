@@ -421,6 +421,16 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_student_ux_2026_09.py
 
+      # 📣 宿題・ドリルのお知らせはアプリの中で (2026-10-15 塾長決定「アプリを開けば分かる」): LINE は既定で送らない
+      #   (HOMEWORK_NOTIFY_LINE)・メールは塾長が CEO で配ったときだけ (HOMEWORK_NOTIFY_EMAIL=manual)・自動配信は source='auto' で
+      #   LINE もメールも 0・リンクは AIなし = class.html?tab=homework / AIあり・体験中 = mypage.html?focus=homework。
+      #   'assigned' も未提出・self_issued・ログインコードの LINE と AIなし枠の許可集合は不変。
+      - name: 宿題のお知らせ (アプリ内表示・LINE 停止) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_homework_notify_in_app.py
+
       # 📚 学習記録ダッシュボードの運用改善 (2026-09-07): タイムラインのページング / 1 日合計の上限 / 演習の重ね表示 /
       #   テスト系の名前の除外 / パネル別の読み込みと配色 (ソース検査)。
       - name: 学習記録ダッシュボード 運用改善 回帰テスト

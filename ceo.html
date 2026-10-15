@@ -5480,7 +5480,8 @@
     }
     // 🎯 弱点対策ドリル: 分析中ドリルで正解率の低かった生徒に、同単元の「新しい問題」を再配信する準備。
     //    配信フォームを対策モードにプリセットし、塾長が問題数を確認して「📤 ドリルを配信」を押すだけにする
-    //    (外部送信=LINE/メール通知が走るため、ワンクリック完結ではなく塾長の最終確認を挟む)。
+    //    (配信すると生徒画面に新しい宿題として出る (メールは HOMEWORK_NOTIFY_EMAIL 次第・LINE は既定で送らない 2026-10-15) ため、
+    //     ワンクリック完結ではなく塾長の最終確認を挟む)。
     async function gdRemediation(drillId) {
       const msg = document.getElementById('gdCreateMsg');
       const data = _gdLastAnalytics;
@@ -10403,7 +10404,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             btn.dataset.current = trimmed;
             // 🧒 2026-09-29: 「やるべきこと」の 📨 は描いたときの学年を data-grade に持ち、押したときの ⚠️ をそれで決める。
             //   ⚠️ が「✏️ 編集」へ誘導するので、直したらこの生徒のボタンの学年だけ差し替える。一覧は読み直さない
-            //   (読み直すと押した「✅ 配信済」が 📨 に戻り、同じドリルと LINE/メールを二重に送りうる)。
+            //   (読み直すと押した「✅ 配信済」が 📨 に戻り、同じドリルを二重に配りうる。お知らせは生徒画面の新しい宿題・
+            //    メールは HOMEWORK_NOTIFY_EMAIL 次第)。
             if (field === 'grade') document.querySelectorAll(`#actionListBody [data-assign-drill][data-sid="${sid}"]`).forEach(b => { b.dataset.grade = trimmed; });
             // 詳細モーダル閉じる (再 click で最新値表示)
             const closeBtn = document.getElementById('studentDetailClose');

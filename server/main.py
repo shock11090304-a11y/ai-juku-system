@@ -3904,7 +3904,8 @@ async def _start_background_tasks():
 
     # 🎯 弱点ドリル 3日ルーティン scheduler (毎日 JST 5:30・env WEAKNESS_DRILL_ROUTINE_ENABLED で ON):
     # 塾長要望 2026-07-22「3日に1回・分析後に弱点を自動出題」。4:00 弱点集計→5:00 週次プリントの後に走らせ、
-    # 各生徒(受験生)の最優先弱点を自動採点ドリル(10問)化→3日周期で LINE/メール配信 (閉ループで再採点)。
+    # 各生徒(受験生)の最優先弱点を自動採点ドリル(10問)化→3日周期で配信 (閉ループで再採点)。
+    # お知らせはアプリ内表示だけ (2026-10-15 塾長決定: LINE は使わない・メールは HOMEWORK_NOTIFY_EMAIL=all のときだけ)。
     # 既定OFF(env 未設定=何もしない)で段階投入。ON時は週次プリントが受験生を stand-down し二重送信を防ぐ。
     if CRON_SECRET:
         task = asyncio.create_task(_weakness_drill_routine_scheduler())
@@ -34395,13 +34396,15 @@ LINE_TEMPLATES = {
                 f"{p.get('url', BASE_URL)}/mypage.html?focus=worksheet"
     },
     # 📝 2026-06-07 塾長指示: 英文法ドリル配信時に生徒へ能動通知 (「配信=通知ゼロ」問題の恒久対策)
+    # ⛔ 2026-10-15 塾長決定 (宿題のお知らせはアプリ内表示・LINE は使わない): 既定では送らない。HOMEWORK_NOTIFY_LINE=1 の
+    #   非常スイッチで戻したときだけ使う。リンクは ?focus=homework (# はログインをはさむと消える。AIなし枠は mypage が class.html へ送る)。
     "grammar_drill_assigned": lambda p: {
         "type": "text",
         "text": f"📝 新しい{p.get('subject_label', '英文法')}の宿題が届きました\n\n"
                 f"{p.get('name', '生徒')}さんへ、「{p.get('unit', '')}」の問題 {p.get('question_count', 25)}問が配信されました。\n\n"
                 f"解いて提出すると、間違えた問題はその場で解説が出ます。\n"
                 f"マイページから挑戦👇\n"
-                f"{p.get('url', BASE_URL)}/mypage.html"
+                f"{p.get('url', BASE_URL)}/mypage.html?focus=homework"
     },
 }
 
@@ -34840,13 +34843,13 @@ def _line_build_todo_text(student) -> str:
         c.execute(
             "SELECT d.title, d.unit FROM grammar_drill_assignments a "
             "JOIN grammar_drills d ON d.id = a.drill_id "
-            "WHERE a.student_id = ? AND a.status = 'open' "
+            "WHERE a.student_id = ? AND a.status <> 'completed' "   # 未提出 = completed 以外 (予約タスクの 'assigned' も・2026-10-15)
             "ORDER BY a.assigned_at LIMIT 3",
             (sid,),
         )
         drills = list(c.fetchall())
         c.execute(
-            "SELECT COUNT(*) AS n FROM grammar_drill_assignments WHERE student_id = ? AND status = 'open'",
+            "SELECT COUNT(*) AS n FROM grammar_drill_assignments WHERE student_id = ? AND status <> 'completed'",
             (sid,),
         )
         drill_total = c.fetchone()["n"] or 0
@@ -46317,31 +46320,124 @@ def _grammar_pick_drill_question_ids(c, subject, unit, subject_level, levels, co
     return [r["id"] for r in c.fetchall()]
 
 
-def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count: int, subject: str = "english"):
-    """BackgroundTasks: 配信されたドリルを各生徒へ LINE / メールで能動通知 (best-effort)。
+_HOMEWORK_NOTIFY_EMAIL_MODES = {
+    "": "manual", "manual": "manual",
+    "all": "all", "1": "all", "true": "all", "yes": "all", "on": "all",
+    "off": "off", "0": "off", "false": "off", "no": "off", "none": "off",
+}
+
+
+def _homework_notify_channels(source: str = "auto") -> dict:
+    """📣 宿題・ドリルを配ったときのお知らせの経路 (2026-10-15 塾長決定「アプリを開けば分かる」= アプリ内表示が基本)。
+    呼ぶたびに env を読む (Railway で変えれば再起動なしで効く)。
+    - HOMEWORK_NOTIFY_LINE (既定 0): 1/true/yes/on のときだけ LINE も送る (障害時に元へ戻す非常スイッチ)。
+      ★ログインコードの LINE (_try_line_login_push / magic_link_login) はこの値と関係なく送る。
+    - HOMEWORK_NOTIFY_EMAIL (既定 manual): manual = 塾長が CEO で手で配ったときだけメール / all = 自動配信でも毎回 /
+      off = 送らない。1/true/on は all、0/false/off は off と同じ。それ以外の値は manual として扱い警告ログを出す。
+    source の契約: 'manual' は POST /api/admin/grammar-drill/create (塾長が生徒と中身を選ぶ) だけ。
+      アルゴリズムが中身を選ぶもの (3日ドリル・クラス自動宿題。塾長が「今すぐ実行」を押した場合も) はすべて 'auto'。
+      それ以外の値は 'auto' 扱い (渡し忘れてもメールを増やさない側に倒す)。
+    返却: {line, email, email_mode, source}"""
+    line = str(os.getenv("HOMEWORK_NOTIFY_LINE", "0") or "").strip().lower() in ("1", "true", "yes", "on")
+    raw = str(os.getenv("HOMEWORK_NOTIFY_EMAIL", "") or "").strip().lower()
+    mode = _HOMEWORK_NOTIFY_EMAIL_MODES.get(raw)
+    if mode is None:
+        log.warning(f"[GrammarDrillNotify] HOMEWORK_NOTIFY_EMAIL={raw[:40]!r} は不明な値 → manual として扱います (manual|all|off)")
+        mode = "manual"
+    src = "manual" if source == "manual" else "auto"
+    email = mode == "all" or (mode == "manual" and src == "manual")
+    return {"line": line, "email": email, "email_mode": mode, "source": src}
+
+
+def _drill_create_message(n: int, title: str, ch: Optional[dict]) -> str:
+    """🧑‍🏫 CEO の配信結果の文 (admin_grammar_drill_create の message)。お知らせの経路 (_homework_notify_channels) に合わせて書く。
+    ★「LINE/メールで通知を送信しました」と決め打ちしない (2026-10-15 から既定は LINE を送らない)。習熟度テストの配信 (D6) も使う。"""
+    if not n:
+        return f"✅ ドリル「{title}」: 新しく配った生徒はいません（配信済みの生徒は飛ばしました）"
+    ch = ch or {}
+    if ch.get("line"):
+        via = "LINE・メール" if ch.get("email") else "LINE"
+        return f"✅ ドリル「{title}」を {n}名に配信しました（アプリに表示＋{via}でお知らせ）"
+    if ch.get("email"):
+        return f"✅ ドリル「{title}」を {n}名に配信しました（アプリに表示＋登録メールでお知らせ）"
+    return (f"✅ ドリル「{title}」を {n}名に配信しました（生徒がアプリを開くと「🆕 新しい宿題」と表示されます。"
+            f"LINE・メールは送っていません）")
+
+
+def _homework_notify_link_paths(student_ids: list) -> dict:
+    """宿題のお知らせのリンク先を生徒ごとに決める: {sid: 'class' | 'mypage'}。
+    AIなし枠 (_ai_blocked_now が True) は塾生アプリ (class.html)、AIあり・AI 体験中は mypage (D5: 体験中は AIあり扱い)。
+    1 回の SELECT で読む。読めないとき (列が無い・DB 障害) は mypage (AIなし枠は mypage が class.html へ送り返す)。"""
+    ids = sorted({int(x) for x in (student_ids or []) if x})
+    out = {sid: "mypage" for sid in ids}
+    if not ids:
+        return out
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        ph = ",".join(["?"] * len(ids))
+        has_trial = _students_has_ai_trial_until()
+        cols = "id, ai_disabled, ai_trial_until" if has_trial else "id, ai_disabled"
+        c.execute(f"SELECT {cols} FROM students WHERE id IN ({ph})", tuple(ids))
+        for r in c.fetchall() or []:
+            tu = r["ai_trial_until"] if has_trial else None
+            if _ai_blocked_now(r["ai_disabled"], tu):
+                out[int(r["id"])] = "class"
+    except Exception as e:
+        log.warning(f"[GrammarDrillNotify] link path lookup failed (mypage に倒す): {type(e).__name__}: {e}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    return out
+
+
+def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count: int, subject: str = "english",
+                                   source: str = "auto") -> dict:
+    """BackgroundTasks: 配信されたドリルのお知らせ (best-effort)。
+    ★2026-10-15 塾長決定: 宿題・ドリルのお知らせはアプリ内表示 (「🆕 新しい宿題」) が基本。LINE は既定で送らない
+      (HOMEWORK_NOTIFY_LINE)。メールは HOMEWORK_NOTIFY_EMAIL (既定 manual = 塾長が手で配ったときだけ)。経路は
+      _homework_notify_channels(source) が決める。source は 'manual' (CEO の配信) か 'auto' (自動配信・既定)。
+      どちらの経路も無いときは何もせずすぐ返す (自動配信のグループ間の待ちも発生しない)。
     notify_list: [{"id":int,"name":str,"email":str|None,"line_user_id":str|None}]
+    - リンク: AIなし枠は {BASE_URL}/class.html?tab=homework、AIあり・AI 体験中は {BASE_URL}/mypage.html?focus=homework。
+      ★# 付きのリンクは使わない (ログインをはさむと auth-guard.js が path と search しか引き継がず # が消える)。
     - _do_line_push は line_user_id 無しだと 404 を投げるため、紐付け済みのみ呼ぶ。
     - 1 人失敗しても他生徒の通知は止めない ([[feedback-silent-fail-send-email]] 準拠で log に残す)。
     - 同期 def なので FastAPI は threadpool で実行 = event loop を塞がない (admin_send_message と同方式)。
     - Resend 無料枠 (1通/秒) 回避: email は 2通目以降 1.5秒間隔 + 429 は指数バックオフ
-      (_dispatch_message_emails と同方針)。「全選択」で 100名超でも 429 silent fail しない。"""
+      (_dispatch_message_emails と同方針)。「全選択」で 100名超でも 429 silent fail しない。
+    返却: {line_ok, mail_ok, mail_fail, channels}"""
     import time as _t
+    ch = _homework_notify_channels(source)
+    result = {"line_ok": 0, "mail_ok": 0, "mail_fail": 0, "channels": ch}
+    if not notify_list or not (ch["line"] or ch["email"]):
+        log.info(f"[GrammarDrillNotify] アプリ内表示のみ (LINE・メールは送らない): source={ch['source']} "
+                 f"email_mode={ch['email_mode']} line={ch['line']} n={len(notify_list or [])}")
+        return result
     subj_label = _grammar_subject_label_ja(subject)  # 🧩 科目別ラベル(数学/国語… ・既定 英文法)
     line_ok = mail_ok = mail_fail = 0
     email_idx = 0
+    paths = _homework_notify_link_paths([s.get("id") for s in notify_list]) if ch["email"] else {}
     for s in notify_list:
         sid = s.get("id")
         if not sid:
             continue
-        # LINE (紐付け済みのみ・無いと _do_line_push が 404 を投げるためガード)
-        try:
-            if s.get("line_user_id"):
-                r = _do_line_push(int(sid), "grammar_drill_assigned",
-                                  {"unit": unit, "question_count": question_count, "url": BASE_URL, "subject_label": subj_label})
-                if isinstance(r, dict) and r.get("ok"):
-                    line_ok += 1
-        except Exception as e:
-            log.warning(f"[GrammarDrillNotify] LINE failed sid={sid}: {e}")
+        # LINE (HOMEWORK_NOTIFY_LINE=1 のときだけ・紐付け済みのみ・無いと _do_line_push が 404 を投げるためガード)
+        if ch["line"]:
+            try:
+                if s.get("line_user_id"):
+                    r = _do_line_push(int(sid), "grammar_drill_assigned",
+                                      {"unit": unit, "question_count": question_count, "url": BASE_URL, "subject_label": subj_label})
+                    if isinstance(r, dict) and r.get("ok"):
+                        line_ok += 1
+            except Exception as e:
+                log.warning(f"[GrammarDrillNotify] LINE failed sid={sid}: {e}")
+        if not ch["email"]:
+            continue
         # メール (有効アドレスのみ・synthetic は _send_message_email 側で skip)
         email = (s.get("email") or "").strip()
         if not (email and "@" in email):
@@ -46350,10 +46446,17 @@ def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count:
             _t.sleep(1.5)  # Resend rate limit 回避
         email_idx += 1
         subj = f"📝 新しい{subj_label}の宿題「{unit}」が届きました"
+        try:
+            _path = paths.get(int(sid), "mypage")
+        except (TypeError, ValueError):
+            _path = "mypage"
+        if _path == "class":
+            where = f"塾生アプリの「📝 宿題」タブから挑戦してください:\n{BASE_URL}/class.html?tab=homework"
+        else:
+            where = f"マイページの「📚 宿題」から挑戦してください:\n{BASE_URL}/mypage.html?focus=homework"
         body = (
             f"「{unit}」の{subj_label}ドリル（全{question_count}問）が配信されました。\n\n"
-            f"マイページからログインして挑戦してください:\n"
-            f"{BASE_URL}/mypage.html\n\n"
+            f"{where}\n\n"
             f"※ 解いて提出すると、間違えた問題の解説がその場で表示されます。"
         )
         res = None
@@ -46372,7 +46475,9 @@ def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count:
         else:
             mail_fail += 1
             log.warning(f"[GrammarDrillNotify] email not sent sid={sid}: {(res or {}).get('error')}")
-    log.info(f"[GrammarDrillNotify] done: line_ok={line_ok} mail_ok={mail_ok} mail_fail={mail_fail}")
+    log.info(f"[GrammarDrillNotify] done: source={ch['source']} line_ok={line_ok} mail_ok={mail_ok} mail_fail={mail_fail}")
+    result.update({"line_ok": line_ok, "mail_ok": mail_ok, "mail_fail": mail_fail})
+    return result
 
 
 @app.post("/api/admin/grammar-drill/create")
@@ -46499,7 +46604,7 @@ def admin_grammar_drill_create(
         for r in c.fetchall():
             found[r["id"]] = {"name": r["name"], "email": r["email"], "line_user_id": r["line_user_id"]}
         assigned = []
-        notify_list = []  # 🔔 配信通知用 (LINE/メール) — 新規割当に成功した生徒のみ
+        notify_list = []  # 🔔 お知らせ用 (メールは HOMEWORK_NOTIFY_EMAIL・LINE は既定で送らない) — 新規割当に成功した生徒のみ
         for sid in student_ids:
             if sid not in found:
                 continue
@@ -46535,14 +46640,19 @@ def admin_grammar_drill_create(
         except Exception:
             pass
 
-        # 5) 🔔 配信通知 (LINE/メール) を BackgroundTasks で非同期送信。
-        #    DB 書込(配信)と通知を分離し HTTP は即返却。新規割当に成功した生徒のみが対象なので
-        #    既存ドリルの再通知 (uq 重複 skip 分) は起きない。
-        if notify_list:
+        # 5) 🔔 お知らせ (2026-10-15 塾長決定: アプリ内表示が基本・LINE は既定で送らない)。
+        #    塾長が生徒と中身を選んで配る唯一の経路なので source='manual' (HOMEWORK_NOTIFY_EMAIL=manual の既定では登録メールを送る)。
+        #    送る経路があるときだけ BackgroundTasks で非同期送信 (DB 書込(配信)と通知を分離し HTTP は即返却)。
+        #    新規割当に成功した生徒のみが対象なので、同じドリルの既配信 (uq 重複 skip 分) への再通知は起きない。
+        ch = _homework_notify_channels("manual")
+        scheduled = False
+        if notify_list and (ch["line"] or ch["email"]):
             try:
-                background_tasks.add_task(_notify_grammar_drill_assigned, notify_list, unit, count, subject)
+                background_tasks.add_task(_notify_grammar_drill_assigned, notify_list, unit, count, subject, "manual")
+                scheduled = True
             except Exception as e:
                 log.warning(f"[GrammarDrillNotify] schedule failed: {e}")
+        sent_ch = {"line": bool(ch["line"] and scheduled), "email": bool(ch["email"] and scheduled)}
 
         return {
             "ok": True,
@@ -46553,9 +46663,10 @@ def admin_grammar_drill_create(
             "passage_count": len(passage_ids),   # 📖 長文型なら本文の本数 (0 = 従来の 1 問ずつ)
             "passage_ids": passage_ids,
             "assigned": assigned,
-            "notified": len(notify_list),
+            "notified": len(notify_list) if scheduled else 0,
+            "notify_channels": {"line": ch["line"], "email": ch["email"]},
             "skipped": [s for s in student_ids if s not in found],
-            "message": f"✅ ドリル「{title}」を {len(assigned)}名に配信し、LINE/メールで通知を送信しました",
+            "message": _drill_create_message(len(assigned), title, sent_ch),
         }
     except HTTPException:
         raise
@@ -46835,9 +46946,13 @@ def _run_weakness_drill_routine(only_student_id: Optional[int] = None, dry_run: 
             summary["delivered_students"].append({"id": sid, "unit": created["unit"], "subject": created["subject"]})
             notify_list.append(created)
 
-        # 通知 (best-effort・同期)。(subject, unit) でグループ化し既存の _notify_grammar_drill_assigned を再利用。
+        # お知らせ (best-effort・同期)。自動配信なので source='auto' (2026-10-15 塾長決定: アプリ内表示だけ。既定では
+        #   LINE もメールも送らない = ループも待ちも走らない)。HOMEWORK_NOTIFY_EMAIL=all / HOMEWORK_NOTIFY_LINE=1 のときだけ送る。
+        # (subject, unit) でグループ化し既存の _notify_grammar_drill_assigned を再利用。
         # グループ内は同関数が 1.5s throttle・グループ間も 1.5s sleep で Resend レート制限(1通/秒)を回避。
-        if notify_list and not dry_run:
+        _ch = _homework_notify_channels("auto")
+        summary["notify"] = {"line": _ch["line"], "email": _ch["email"]}
+        if notify_list and not dry_run and (_ch["line"] or _ch["email"]):
             groups = defaultdict(list)
             for n in notify_list:
                 groups[(n["subject"], n["unit"])].append(n["s"])
@@ -46847,7 +46962,7 @@ def _run_weakness_drill_routine(only_student_id: Optional[int] = None, dry_run: 
                     _t.sleep(1.5)
                 first = False
                 try:
-                    _notify_grammar_drill_assigned(slist, unit, _WEAKNESS_ROUTINE_DRILL_COUNT, subj)
+                    _notify_grammar_drill_assigned(slist, unit, _WEAKNESS_ROUTINE_DRILL_COUNT, subj, source="auto")
                 except Exception as e:
                     log.warning(f"[WeaknessRoutine] notify group ({subj},{unit}) failed: {e}")
         return summary
@@ -47439,7 +47554,10 @@ def student_coach_done(payload: dict, request: Request, authorization: Optional[
 
 @app.get("/api/student/grammar-drills")
 def student_grammar_drills(request: Request, authorization: Optional[str] = Header(None)):
-    """🎓 生徒: 自分に配信されたドリル一覧 (未完了→完了の順)。"""
+    """🎓 生徒: 自分に配信されたドリル一覧 (未完了→完了の順)。
+    2026-10-15 (宿題のお知らせはアプリ内表示): 未提出 = status <> 'completed' (提出 API と同じ。デスクトップの予約タスクが
+    書く 'assigned' も未提出)。self_issued = 生徒が自分で始めたもの (今日の1問・初回診断) で「🆕 新しい宿題」に数えない
+    (created_by の生の値は出さない)。"""
     _check_rate_limit_caller(request, authorization, bucket="grammar_drills_list", limit=30, window=60)
     student = _get_current_student(authorization)
     if not student:
@@ -47449,10 +47567,10 @@ def student_grammar_drills(request: Request, authorization: Optional[str] = Head
         c = conn.cursor()
         c.execute(
             "SELECT a.id AS assignment_id, a.drill_id, a.status, a.score_correct, a.score_total, "
-            "       a.assigned_at, a.completed_at, d.title, d.unit, d.level, d.subject "
+            "       a.assigned_at, a.completed_at, d.title, d.unit, d.level, d.subject, d.created_by "
             "FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
             "WHERE a.student_id = ? "
-            "ORDER BY (a.status = 'open') DESC, a.assigned_at DESC",
+            "ORDER BY (a.status <> 'completed') DESC, a.assigned_at DESC",
             (student["id"],),
         )
         items = []
@@ -47468,8 +47586,9 @@ def student_grammar_drills(request: Request, authorization: Optional[str] = Head
                 "score_total": r["score_total"],
                 "assigned_at": str(r["assigned_at"]) if r["assigned_at"] else None,
                 "completed_at": str(r["completed_at"]) if r["completed_at"] else None,
+                "self_issued": (r["created_by"] or "") in ("today_question", "diagnostic"),
             })
-        open_count = sum(1 for it in items if it["status"] == "open")
+        open_count = sum(1 for it in items if it["status"] != "completed")
         completed_count = sum(1 for it in items if it["status"] == "completed")
         return {"ok": True, "items": items, "summary": {"open": open_count, "completed": completed_count, "total": len(items)}}
     finally:
