@@ -367,10 +367,12 @@ jobs:
       #   同じ生徒に 2 回は配らない (409 / allow_retake)・弱点集計に入れない (PTEST_FEEDS_WEAKNESS=1 で skill つきだけ)・
       #   どの自動配信の抽出にも出ない (env でも)・ptest_meta (kv)・メールの件名「🧪 習熟度テスト「…」が届きました」。
       #   送る形は取込スクリプトの build_payloads で作り、scripts/drill_import/fixtures を取込スクリプトで試運転 → --apply → 読み返し (全問照合)。
-      - name: 習熟度テスト 取込・出題順・自動配信からの除外 回帰テスト
+      #   [14] 画面 (CEO ① 科目・④・学年の確認・配信 / 塾生アプリとマイページのカード) は ceo.html・class.html・mypage.js の本物のコードを node で動かす。
+      - name: 習熟度テスト 取込・出題順・自動配信からの除外・画面 回帰テスト
         if: ${{ !cancelled() }}
         run: |
           python3 -m pip install --quiet httpx
+          node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
           python3 scripts/health_check/test_proficiency_test_import.py
 
       # 📖🧪 取込の検査スクリプト・取込スクリプト (scripts/drill_import・2026-10-15): 塾長のデスクトップの _tools/ に写して

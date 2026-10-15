@@ -57,5 +57,5 @@ CI/cron の判定は**終了コード / FAIL 件数**で行うこと(`WARN>0` �
 | テスト | 何を見るか |
 |---|---|
 | `test_english_long_drill.py` | 英語長文 (`english_long`) の取込 API: 本文型だけ・盲検の記録 (review) 必須・dry_run / all_or_nothing・set_id ごとの照合・配信と自動配信の範囲 |
-| `test_proficiency_test_import.py` | 習熟度テスト (`proficiency_test`): 取込 (送る形は `scripts/drill_import/import_drill_file.py` の `build_payloads`)・全大問を出題順・同じ生徒に 2 回配らない・弱点と自動配信に入らない。[13] で `scripts/drill_import/fixtures` を取込スクリプトで試運転 → `--apply` → 読み返し (通信は TestClient) し、全問の 1 始まり → 0 始まりを照合 |
+| `test_proficiency_test_import.py` | 習熟度テスト (`proficiency_test`): 取込 (送る形は `scripts/drill_import/import_drill_file.py` の `build_payloads`)・全大問を出題順・同じ生徒に 2 回配らない・弱点と自動配信に入らない。[13] で `scripts/drill_import/fixtures` を取込スクリプトで試運転 → `--apply` → 読み返し (通信は TestClient) し、全問の 1 始まり → 0 始まりを照合。[14] で画面 (CEO ① 科目・④・学年の確認・配信 / 塾生アプリとマイページのカード) の本物のコードを JS エンジンで動かす (無ければ FAIL) |
 | `test_drill_import_parity.py` | 取込の検査・取込スクリプト (デスクトップの `_tools/` で単体で動かす) に写したサーバの単元表が `server/main.py` と同じか・出典の形・Python 3.9 の標準ライブラリだけで `python3 -I` で動くか・取込スクリプトの安全装置・仕様書 11 章のコード |

@@ -388,8 +388,13 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   そのためサーバの単元表を `SERVER_TABLES` に写して持つ → **単元・科目・テストの単元名の形を変えたら同じ commit で写しも直し**
   (`test_drill_import_parity.py` が落ちる)、デスクトップの `_tools/` にも写し直す。公開リポジトリに取込ファイルが入ったら
   `check_no_test_keys_in_repo.py` (run_all_gates) が落とす (fixtures は架空・`_fixture: true` だけ可)。
-- 回帰テスト: `scripts/health_check/test_english_long_drill.py`・`test_proficiency_test_import.py` (CI `server-tests.yml`)・`test_auto_delivery_shared.py` の [10]・
-  `test_drill_import_parity.py`・`scripts/drill_import/validate_drill_import.py` の自己検査 (run_all_gates)。
+- 画面: CEO ① 科目に 📖 英語長文・🧪 習熟度テスト (在庫 0 の単元は「本文0本」)。テストは ④ を隠して「テスト全体 (大問N・全M問) を出題順のまま配信」・
+  単元チップ「🧪 大問N・M問」・本数 / 問題数 / 弱点対策の除外を送らない・飛ばした生徒 (`already_taken`) の名前を出す・409 は黄色・分析に 🎯 弱点対策は出さない。
+  学年の確認 `_gdGradeMismatchText(subject, students, unit)` はテストだけ単元名の頭で分ける (「中学…」= 中学生だけ・それ以外 = 中学生・小学生に確認)。
+  塾生アプリ (`gdMetaText`) とマイページのカードは「授業の指示どおりに解いて提出 ・ 提出は1回だけ」(「いつでもOK」と書かない)。
+  ★ラベル表は 7 か所 (ceo.html 4・class.html・mypage.js・mypage.html)。科目を足すときは全部に足す (`test_proficiency_test_import.py` [14] が見る)。
+- 回帰テスト: `scripts/health_check/test_english_long_drill.py`・`test_proficiency_test_import.py` (CI `server-tests.yml`・[14] は画面のコードを JS エンジンで動かす)・
+  `test_auto_delivery_shared.py` の [10]・`test_drill_import_parity.py`・`scripts/drill_import/validate_drill_import.py` の自己検査 (run_all_gates)。
 
 ### 📐 高校数学ドリル (科目 `math`) のシード (2026-10-06 塾長「数学教材は使える？」→「1→2でやって」)
 - 科目 `math` は前から canonical (server 変更なし・単元の許可リスト無し)。これまでは「システム側で取込済み」で補充ボタンが無かった

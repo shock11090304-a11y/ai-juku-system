@@ -4570,7 +4570,7 @@ function _renderHomeworkItem(item) {
 // 📝 英文法ドリルを「宿題カード」として描画 (2026-06-16 塾長指示「ドリルも宿題に入れる」)。
 // クリック → window._gdOpenDrill(drill_id) が解答エリア(#grammarDrillSection)に問題を展開する。
 // 🧩 2026-06-21 [multi-subject-drill] 科目別ラベル。english は従来どおり「英文法」、他科目は科目名で表示。
-const _SUBJ_DRILL_LABEL = { english: '英文法', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語', eiken: '英検', chugaku_math: '中学数学', chugaku_rika: '中学理科', chugaku_shakai: '中学社会', chugaku_kokugo: '中学国語' };
+const _SUBJ_DRILL_LABEL = { english: '英文法', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語', eiken: '英検', chugaku_math: '中学数学', chugaku_rika: '中学理科', chugaku_shakai: '中学社会', chugaku_kokugo: '中学国語', english_long: '英語長文', proficiency_test: '習熟度テスト' };
 // ドリルの level は "standard,advanced" のような内部コードなので、生徒には日本語で見せる (2026-09-29)
 function _gdLevelJa(lv) {
   const ja = { basic: '基礎', standard: '標準', advanced: 'やや難' };
@@ -4580,12 +4580,20 @@ function _renderDrillAsHwItem(item) {
   const isOpen = item.status !== 'completed';
   const newBadge = (isOpen && _hwIsNew(_hwNewIds.d, item.drill_id)) ? _HW_NEW_BADGE : '';
   const _subjLabel = _SUBJ_DRILL_LABEL[item.subject] || '英文法';
-  const typeBadge = `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(20,184,166,0.22); color:#5eead4; border-radius:8px; font-weight:bold;">📝 ${_subjLabel}ドリル</span>`;
-  const unitBadge = item.unit
+  // 🧪 習熟度テスト (2026-10-15) は「ドリル」と書かない・レベルも出さない (テスト全体を出題順のまま 1 本・授業で一斉に解く)
+  const _isPtest = item.subject === 'proficiency_test';
+  const typeBadge = _isPtest
+    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(139,92,246,0.22); color:#c4b5fd; border-radius:8px; font-weight:bold;">🧪 習熟度テスト</span>`
+    : `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(20,184,166,0.22); color:#5eead4; border-radius:8px; font-weight:bold;">📝 ${_subjLabel}ドリル</span>`;
+  const unitBadge = (item.unit && !_isPtest)   // テストの題名に単元 (「高校英語 習熟度テスト 第1回」) が入っている
     ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(99,102,241,0.2); color:#a5b4fc; border-radius:8px;">${_hwEscape(item.unit)}</span>`
     : '';
-  const levelBadge = item.level
+  const levelBadge = (item.level && !_isPtest)
     ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(255,255,255,0.06); color:#a1a1aa; border-radius:8px;">${_hwEscape(_gdLevelJa(item.level))}</span>`
+    : '';
+  // 塾生アプリ (class.html gdMetaText) と同じ文言。宿題のドリルと思って先に開かせない
+  const ptestNote = (_isPtest && isOpen)
+    ? `<div style="margin-top:4px; font-size:0.78rem; color:#c4b5fd;">授業の指示どおりに解いて提出 ・ 提出は1回だけ</div>`
     : '';
   const scoreBlock = (!isOpen && item.score_total != null)
     ? `<div style="margin-top:8px; padding:8px 11px; background:rgba(52,211,153,0.08); border-left:3px solid #34d399; border-radius:6px; font-size:0.78rem; color:#6ee7b7;">✅ 完了 スコア ${_hwEscape(String(item.score_correct == null ? '?' : item.score_correct))}/${_hwEscape(String(item.score_total))}</div>`
@@ -4598,7 +4606,7 @@ function _renderDrillAsHwItem(item) {
   return `<div class="hw-item hw-drill-item" style="padding:14px 16px; background:${isOpen ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isOpen ? 'rgba(20,184,166,0.3)' : 'rgba(255,255,255,0.06)'}; border-radius:10px; margin-bottom:10px;">
     <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">${newBadge}${typeBadge}${unitBadge}${levelBadge}</div>
     <div style="margin-top:8px; color:${isOpen ? '#fff' : '#a1a1aa'}; font-weight:bold; font-size:0.96rem;">${_gdRich(item.title)}</div>
-    ${scoreBlock}
+    ${ptestNote}${scoreBlock}
     <div>${btn}</div>
   </div>`;
 }
@@ -5281,7 +5289,11 @@ async function initGrammarDrillSection() {
     const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
     // 復習カードの科目 (LB の科目別プロフィールに入る)。英語系 (英文法・中学英語・英検) は従来どおり「英語」。
     //   res.subject は 2026-09-29 からサーバが返す (旧サーバでは未定義 → 「英語」= 従来の挙動)
-    const _lbSubj = ({ math: '数学', chugaku_math: '数学', chugaku_rika: '理科', chugaku_shakai: '社会', chugaku_kokugo: '国語', physics: '物理', chemistry: '化学', biology: '生物',
+    //   🧪 習熟度テスト (2026-10-15) は単元名の頭「高校英語 / 中学数学 …」(サーバ _PTEST_UNIT_RE) の教科にする (読めなければ「英語」)。
+    //   📖 英語長文は既定の「英語」のまま。
+    const _ptestSubj = (String((res && res.subject) || '') === 'proficiency_test')
+      ? ((String((res && res.unit) || '').match(/^(高校|中学)(英語|数学|国語|理科|社会)/) || [])[2] || '') : '';
+    const _lbSubj = _ptestSubj || ({ math: '数学', chugaku_math: '数学', chugaku_rika: '理科', chugaku_shakai: '社会', chugaku_kokugo: '国語', physics: '物理', chemistry: '化学', biology: '生物',
       earth: '地学', japanese: '国語', social: '社会' })[String((res && res.subject) || '')] || '英語';
     results.forEach(function (r) {
       try {

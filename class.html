@@ -1110,7 +1110,7 @@
     // 塾長が CEO「📝 科目別 単元ドリル」で配信した固定N問。ここで 解答 → サーバ採点 → 解説 まで完結する
     // (AI 管理の生徒が mypage で解くのと同じ機構・同じ問題プール・同じ解答キー)。
     // 解答は送るまでサーバが正解を返さない (未提出は answer/explanation を伏せて配信) ので答えは覗けない。
-    var GD_SUBJ_JA = { english: '英語', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語', eiken: '英検', chugaku_math: '中学数学', chugaku_rika: '中学理科', chugaku_shakai: '中学社会', chugaku_kokugo: '中学国語' };
+    var GD_SUBJ_JA = { english: '英語', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会', chugaku: '中学英語', eiken: '英検', chugaku_math: '中学数学', chugaku_rika: '中学理科', chugaku_shakai: '中学社会', chugaku_kokugo: '中学国語', english_long: '英語長文', proficiency_test: '習熟度テスト' };
     // 「科目まるごと配信」(unit 未指定) のとき、サーバは unit を科目の日本語ラベルで補完する。
     // その語がこちらの表示ラベルと違う科目 (english → サーバは「英文法」) があるので、
     // 単元チップの重複判定はサーバ側の語も含めて見る。
@@ -1168,7 +1168,10 @@
       }
       var n = Number(it.score_total || 0);   // 未設定(NULL)の古い配信があるので「全 0 問」を出さない
       var showN = n > 0 && title.indexOf(n + '問') < 0;   // タイトルに「25問」が入っていれば重ねない
-      return (showN ? ('全 ' + n + ' 問 ・ ') : '') + 'その場で自動採点 ・ いつでもOK'
+      // 🧪 習熟度テスト (2026-10-15): 授業で一斉に解くテスト。提出は 1 回だけで、出した直後に答えと解説が出る
+      //   (「いつでもOK」「その場で自動採点」と書かない = 宿題のドリルと思って先に開かせない)
+      var how = it.subject === 'proficiency_test' ? '授業の指示どおりに解いて提出 ・ 提出は1回だけ' : 'その場で自動採点 ・ いつでもOK';
+      return (showN ? ('全 ' + n + ' 問 ・ ') : '') + how
         + (it.assigned_at ? (' ・ 出題 ' + esc(gdLocalDate(it.assigned_at))) : '');
     }
     // 一覧に出すドリルカード (宿題カードと同じ見た目に揃える)

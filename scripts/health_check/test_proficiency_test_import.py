@@ -25,6 +25,11 @@
   (13) 取込スクリプトの往復: scripts/drill_import/fixtures の ok_proficiency_test / ok_english_long を、取込スクリプト (run) で
       試運転 → --apply → 読み返し (通信は TestClient に差し替え)。DB の全問が 1 始まり → 0 始まりで一致・ptest_meta の skill・
       再送は「取込済み」で増えない・リポジトリの中のファイルは送らない・記録 (import_log) に秘密が無い
+  (14) 画面 (CEO・塾生アプリ・マイページ): CEO ① の科目に 📖 英語長文・🧪 習熟度テスト (= サーバの科目すべて)・ラベル表 7 か所・
+      ceo.html / class.html / mypage.js の本物のコードを JS エンジン (node → osascript → jsc。無ければ FAIL) で動かす:
+      学年の確認 _gdGradeMismatchText(subject, students, unit) はテストの単元名の「中学」「高校」で分ける・④ は隠して
+      「テスト全体 (大問N・全M問)」・単元チップ「🧪 大問N・M問」・配信は本数・問題数・弱点対策を送らない・飛ばした生徒の名前 (escape)・
+      409 は黄色・在庫 0 の英語長文は送らない・塾生アプリのカード「授業の指示どおりに解いて提出 ・ 提出は1回だけ」・マイページのカード
 
 実行:
     python3 scripts/health_check/test_proficiency_test_import.py
@@ -43,6 +48,7 @@ import io
 import json
 import os
 import random
+import re
 import shutil
 import sys
 import tempfile
@@ -52,7 +58,14 @@ import urllib.parse
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 MAIN_PY = os.path.join(REPO, "server", "main.py")
 DRILL_IMPORT = os.path.join(REPO, "scripts", "drill_import")
+CEO_HTML = os.path.join(REPO, "ceo.html")
+CLASS_HTML = os.path.join(REPO, "class.html")
+MYPAGE_JS = os.path.join(REPO, "mypage.js")
+MYPAGE_HTML = os.path.join(REPO, "mypage.html")
+STUDENT_MODE_JS = os.path.join(REPO, "student-mode.js")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "server"))
+from test_grade_band_consistency import js_engine, run_js  # noqa: E402  (JS エンジンの選び方は 3 本のテストで同じ)
 
 FAILURES = []
 CIRCLED = "①②③④⑤⑥⑦⑧"
@@ -188,6 +201,237 @@ def to_payload(doc):
     pls = IMP.build_payloads(doc, "0" * 64)
     assert len(pls) == 1, len(pls)
     return pls[0]
+
+
+def _rd(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
+def _js_block(src, head, end="\n    }\n"):
+    """src の head から、同じ字下げで閉じる } までを切り出す (無ければ '')。"""
+    i = src.find(head)
+    if i < 0:
+        return ""
+    j = src.find(end, i)
+    return src[i:j + len(end)] if j > i else ""
+
+
+def _js_between(src, a, b):
+    i = src.find(a)
+    j = src.find(b, i + 1) if i >= 0 else -1
+    return src[i:j] if 0 <= i < j else ""
+
+
+def _js_line(src, head):
+    i = src.find(head)
+    return src[i:src.find("\n", i)] if i >= 0 else ""
+
+
+def check_screens(mod):
+    """[14] 画面: CEO の ① 科目・④・学年の確認・配信 / 塾生アプリのカード / マイページのカードとラベル (2026-10-15)。
+    ceo.html / class.html / mypage.js の本物のコードを切り出して JS エンジンで動かす (偽の DOM・偽の fetch・名前に HTML を入れて escape を確かめる)。"""
+    print("\n[14] 画面: CEO ① 科目・④・学年の確認・配信 / 塾生アプリのカード / マイページ")
+    ceo, cls, myjs, myhtml = _rd(CEO_HTML), _rd(CLASS_HTML), _rd(MYPAGE_JS), _rd(MYPAGE_HTML)
+
+    i_sel = ceo.find('<select id="gdSubject"')
+    opts = set(re.findall(r'<option value="([a-z_]+)"', ceo[i_sel:ceo.find("</select>", i_sel)])) if i_sel >= 0 else set()
+    check("CEO ① 科目の選択肢 = サーバの科目すべて (📖 英語長文・🧪 習熟度テストを含む)",
+          opts == set(mod._GRAMMAR_CANON_SUBJECTS), sorted(opts ^ set(mod._GRAMMAR_CANON_SUBJECTS)))
+    want = {k: mod._GRAMMAR_SUBJECT_LABEL_JA[k] for k in ("english_long", "proficiency_test")}
+    tables = [("ceo.html _GD_SUBJ_JA (配信済み一覧・🎯 確認カード)", ceo, "const _GD_SUBJ_JA = {"),
+              ("ceo.html _gdGradeMismatchText の科目名", ceo, "const _subjJa = {"),
+              ("ceo.html やるべきこと SUBJ", ceo, "const SUBJ = { english: '英語'"),
+              ("ceo.html _SJ_LABEL (📨 の対象外の注記)", ceo, "var _SJ_LABEL = {"),
+              ("class.html GD_SUBJ_JA (宿題カードの科目チップ)", cls, "var GD_SUBJ_JA = {"),
+              ("mypage.js _SUBJ_DRILL_LABEL (宿題カード)", myjs, "const _SUBJ_DRILL_LABEL = {"),
+              ("mypage.html subjectLabel (弱点 TOP3)", myhtml, "const subjectLabel = {")]
+    for name, src_, head in tables:
+        i = src_.find(head)
+        body = src_[i:src_.find("};", i)] if i >= 0 else ""
+        got = {}
+        for k in want:
+            m = re.search(r"\b" + k + r":\s*'([^']*)'", body)
+            got[k] = m.group(1) if m else None
+        check(f"{name} に英語長文・習熟度テストのラベル", i >= 0 and all(got[k] and want[k] in got[k] for k in want), got)
+    check("_gdGradeMismatchText は 3 引数 (subject, students, unit)", "function _gdGradeMismatchText(subject, students, unit) {" in ceo)
+    check("📤 配信 (gdCreate) は単元を渡す", re.search(r"_gdGradeMismatchText\(_gdSubject \|\| 'english', [^\n]*, _gdSelUnit\)", ceo) is not None)
+    check("📨 弱点ドリル (_assignWeaknessDrill) は今までどおり 2 引数",
+          "window._gdGradeMismatchText(subject, [{ id: Number(sid), name: sname, grade }])" in ceo)
+    pre = "^(高校|中学)(英語|数学|国語|理科|社会)"
+    check("テストの単元名の頭 (高校/中学 + 教科) はサーバ _PTEST_UNIT_RE と同じ形 (マイページの復習カードの教科もこれで読む)",
+          mod._PTEST_UNIT_RE.pattern.startswith(pre) and "/" + pre + "/" in myjs, mod._PTEST_UNIT_RE.pattern)
+
+    esc_line = _js_line(ceo, "    function escapeHtml(s) {")
+    parts = {
+        "ceo gdCurrentLevels": _js_block(ceo, "    function gdCurrentLevels() {"),
+        "ceo 単元チップと④": _js_between(ceo, "    const _GD_PASSAGE_ONLY = ", "    function gdSelUnit("),
+        "ceo 学年の確認": _js_between(ceo, "    function _gdMode(grade) {", "    function gdFilterStudents("),
+        "ceo gdCreate": _js_block(ceo, "    async function gdCreate() {"),
+        "class esc": _js_block(cls, "    function esc(s) {"),
+        "class _pad2": _js_line(cls, "    function _pad2(n) {"),
+        "class gdIsOpen": _js_line(cls, "    function gdIsOpen(x) {"),
+        "class gdLocalDate": _js_block(cls, "    function gdLocalDate(s, withTime) {"),
+        "class gdMetaText": _js_block(cls, "    function gdMetaText(it) {"),
+        "mypage _hwEscape": _js_block(myjs, "function _hwEscape(s) {", "\n}\n"),
+        "mypage _hwIsNew": _js_line(myjs, "function _hwIsNew(map, id) {"),
+        "mypage _SUBJ_DRILL_LABEL": _js_line(myjs, "const _SUBJ_DRILL_LABEL = {"),
+        "mypage _gdLevelJa": _js_block(myjs, "function _gdLevelJa(lv) {", "\n}\n"),
+        "mypage _renderDrillAsHwItem": _js_block(myjs, "function _renderDrillAsHwItem(item) {", "\n}\n"),
+    }
+    check("画面のコードを切り出せた", esc_line and all(parts.values()), [k for k, v in parts.items() if not v])
+    eng = js_engine()
+    check("JS の実行環境がある (node / osascript / jsc。無ければ FAIL)", bool(eng))
+    if not eng or not all(parts.values()):
+        return
+    ku, cu = "高校英語 習熟度テスト 第1回", "中学英語 習熟度テスト 第1回"
+    prog = "\n".join([
+        "var window = (typeof globalThis !== 'undefined') ? globalThis : this;",
+        "(function () {", _rd(STUDENT_MODE_JS), "})();",
+        esc_line,
+        "var __els = {};",
+        "function __el(id) { if (!__els[id]) __els[id] = { id: id, value: '', innerHTML: '', textContent: '', style: {}, dataset: {} }; return __els[id]; }",
+        "var __checked = [];",
+        "var document = { getElementById: function (id) { return __el(id); }, querySelectorAll: function (sel) {"
+        " return sel === '.gd-st:checked' ? __checked.map(function (v) { return { value: String(v), checked: true }; }) : []; } };",
+        "var __confirms = [], __confirmAnswer = true;",
+        "function confirm(t) { __confirms.push(String(t)); return __confirmAnswer; }",
+        "var __posts = [], __resp = null;",
+        "var AdminAuth = { fetch: function (path, opt) { __posts.push({ path: path, body: JSON.parse((opt && opt.body) || '{}') }); return Promise.resolve(__resp); } };",
+        "function __r(status, body) { return { ok: status >= 200 && status < 300, status: status, json: function () { return Promise.resolve(body); } }; }",
+        "function gdSelectAll() {} function gdRefresh() {}",
+        "var _gdCreating = false, _gdSelUnit = null, _gdSubject = 'english', _gdUnits = [], _gdStudents = [], _gdExcludeDrillId = null;",
+        "function _gdClearRemediation() { _gdExcludeDrillId = null; }",
+        parts["ceo gdCurrentLevels"], parts["ceo 単元チップと④"], parts["ceo 学年の確認"], parts["ceo gdCreate"],
+        parts["class esc"], parts["class _pad2"], parts["class gdIsOpen"], parts["class gdLocalDate"], parts["class gdMetaText"],
+        parts["mypage _hwEscape"], parts["mypage _hwIsNew"],
+        "var _hwNewIds = { d: {}, h: {} }, _HW_NEW_BADGE = '<b>NEW</b>';",
+        "function _gdRich(t) { return _hwEscape(t); }",
+        parts["mypage _SUBJ_DRILL_LABEL"], parts["mypage _gdLevelJa"], parts["mypage _renderDrillAsHwItem"],
+        f"var KU = {json.dumps(ku, ensure_ascii=False)}, CU = {json.dumps(cu, ensure_ascii=False)};",
+        "var STU = [{ id: 1, name: '架空 高校生', grade: '高2' }, { id: 2, name: '架空 中学生', grade: '中２' },"
+        " { id: 3, name: '架空 未設定', grade: '' }, { id: 4, name: '架空 小学生', grade: '小６' }];",
+        "var __o = {};",
+        "function __sync() { return [__el('gdCountWrap').style.display, __el('gdPassageCountWrap').style.display, __el('gdPtestWrap').style.display, __el('gdPtestText').textContent]; }",
+        "__o.mmPtK = _gdGradeMismatchText('proficiency_test', STU, KU);",
+        "__o.mmPtC = _gdGradeMismatchText('proficiency_test', STU, CU);",
+        "__o.mmPtNoUnit = _gdGradeMismatchText('proficiency_test', STU);",
+        "__o.mmLong = _gdGradeMismatchText('english_long', STU, '長文 Lv.1');",
+        "__o.mmEiken = _gdGradeMismatchText('eiken', STU, '2級 単語');",
+        "__o.mmChu = _gdGradeMismatchText('chugaku', STU);",
+        "__o.mmEngOk = _gdGradeMismatchText('english', [STU[0], STU[2]], '時制');",
+        "_gdSubject = 'proficiency_test';",
+        "_gdUnits = [{ unit: KU, basic: 0, standard: 9, advanced: 0, total: 9, passages: 3 }, { unit: '高校英語 習熟度テスト 第2回<b>', total: 0, passages: 0 }];",
+        "_gdSelUnit = null; gdRenderUnits(); __o.chips = __el('gdUnits').innerHTML; __o.syncNoSel = __sync();",
+        "_gdSelUnit = KU; _gdSyncCountInputs(); __o.syncSel = __sync();",
+        "_gdSubject = 'english_long'; _gdUnits = [{ unit: '長文 Lv.1', total: 10, passages: 2 }, { unit: '長文 Lv.2', total: 0, passages: 0 }];",
+        "_gdSelUnit = '長文 Lv.2'; gdRenderUnits(); __o.longChips = __el('gdUnits').innerHTML; __o.syncLong = __sync();",
+        "_gdSubject = 'english'; _gdUnits = [{ unit: '時制', basic: 0, standard: 30, advanced: 0, total: 30, passages: 0 }];",
+        "_gdSelUnit = '時制'; gdRenderUnits(); __o.syncEng = __sync();",
+        "__o.metaPt = gdMetaText({ subject: 'proficiency_test', title: '🧪 ' + KU + '（全9問）', status: 'open', score_total: 9, assigned_at: '2026-10-16 00:00:00' });",
+        "__o.metaPtAssigned = gdMetaText({ subject: 'proficiency_test', title: 'テスト', status: 'assigned', score_total: 9 });",
+        "__o.metaEng = gdMetaText({ subject: 'english', title: '時制ドリル（標準・10問）', status: 'open', score_total: 10 });",
+        "__o.metaDone = gdMetaText({ subject: 'proficiency_test', title: 'テスト', status: 'completed', score_correct: 7, score_total: 9 });",
+        "__o.cardPt = _renderDrillAsHwItem({ drill_id: 5, subject: 'proficiency_test', unit: KU, level: 'basic,standard,advanced', title: '🧪 ' + KU + '（全9問）', status: 'open' });",
+        "__o.cardPtDone = _renderDrillAsHwItem({ drill_id: 5, subject: 'proficiency_test', unit: KU, level: 'basic,standard,advanced', title: 'テスト', status: 'completed', score_correct: 7, score_total: 9 });",
+        "__o.cardLong = _renderDrillAsHwItem({ drill_id: 6, subject: 'english_long', unit: '長文 Lv.1', level: 'standard', title: '長文 Lv.1ドリル（本文2本・8問）', status: 'open' });",
+        "function __out() { var __s = 'RESULT ' + JSON.stringify(__o);",
+        "  if (typeof process !== 'undefined' && typeof console !== 'undefined' && console.log) console.log(__s);",
+        "  else if (typeof print === 'function') print(__s);",
+        "  else if (typeof console !== 'undefined' && console.log) console.log(__s); }",
+        "(async function () {",
+        "  try {",
+        # (a) テスト: 本数・問題数・弱点対策の除外を送らない。飛ばした生徒の名前は escape
+        "  _gdSubject = 'proficiency_test'; _gdUnits = [{ unit: KU, total: 9, passages: 3 }]; _gdSelUnit = KU;",
+        "  __el('gdLevel').value = 'adv'; __el('gdCount').value = '30'; __el('gdPassageCount').value = '4';",
+        "  _gdStudents = STU; __checked = [1, 3]; _gdExcludeDrillId = 77;",
+        "  __resp = __r(200, { ok: true, message: '✅ ドリル「テスト」を 1名に配信しました', already_taken: [{ student_id: 3, name: '架空 <i>未設定</i>' }] });",
+        "  await gdCreate(); __o.a = { posts: __posts.slice(), msg: __el('gdCreateMsg').innerHTML, confirms: __confirms.length, excl: _gdExcludeDrillId };",
+        # (b) 409 = 全員配信済み → 黄色
+        "  __posts = []; __resp = __r(409, { detail: '⚠️ 「テスト」: 選んだ生徒は全員このテストを配信済みです' });",
+        "  await gdCreate(); __o.b = { n: __posts.length, msg: __el('gdCreateMsg').innerHTML };",
+        # (c) 高校のテストに中学生 → 確認 → いいえ
+        "  __posts = []; __confirms = []; __confirmAnswer = false; __checked = [1, 2];",
+        "  await gdCreate(); __o.c = { n: __posts.length, confirms: __confirms.slice(), msg: __el('gdCreateMsg').innerHTML }; __confirmAnswer = true;",
+        # (d) 英語長文: 本文の本数を送る
+        "  __posts = []; __confirms = []; _gdSubject = 'english_long'; _gdUnits = [{ unit: '長文 Lv.1', total: 10, passages: 4 }, { unit: '長文 Lv.2', total: 0, passages: 0 }];",
+        "  _gdSelUnit = '長文 Lv.1'; __checked = [1]; __el('gdPassageCount').value = '1';",
+        "  __resp = __r(200, { ok: true, message: 'ok', already_taken: [] });",
+        "  await gdCreate(); __o.d = { posts: __posts.slice(), msg: __el('gdCreateMsg').innerHTML };",
+        # (e) 在庫 0 の英語長文 → 送らない
+        "  __posts = []; _gdSelUnit = '長文 Lv.2'; await gdCreate(); __o.e = { n: __posts.length, msg: __el('gdCreateMsg').innerHTML };",
+        # (f) 英文法は従来どおり count・detail が配列の 422 でも落ちない
+        "  __posts = []; _gdSubject = 'english'; _gdUnits = [{ unit: '時制', standard: 30, total: 30, passages: 0 }]; _gdSelUnit = '時制';",
+        "  __resp = __r(422, { detail: [{ msg: 'x' }] }); await gdCreate(); __o.f = { posts: __posts.slice(), msg: __el('gdCreateMsg').innerHTML };",
+        "  } catch (e) { __o.error = String(e && e.stack || e); }",
+        "  __out();",
+        "})();",
+    ])
+    out, err = run_js(eng, prog)
+    check("画面のコードが JS で動く", out is not None and not (out or {}).get("error"), (out or {}).get("error") or err)
+    o = out or {}
+
+    def has(s, *subs):
+        return isinstance(s, str) and all(x in s for x in subs)
+
+    def lacks(s, *subs):
+        return isinstance(s, str) and not any(x in s for x in subs)
+
+    check("学年の確認: 高校のテストは中学生・小学生だけ (高校生・学年未設定は出さない)・「高校生用」",
+          has(o.get("mmPtK"), "架空 中学生", "架空 小学生", "2名", "高校生用") and lacks(o.get("mmPtK"), "架空 高校生", "架空 未設定"), o.get("mmPtK"))
+    check("学年の確認: 「中学英語 …」のテストは中学生以外 (高校生・小学生)・「中学生用」",
+          has(o.get("mmPtC"), "架空 高校生", "架空 小学生", "中学生用") and lacks(o.get("mmPtC"), "架空 中学生", "架空 未設定"), o.get("mmPtC"))
+    check("学年の確認: 単元が無いテスト (📨 の 2 引数の呼び方) は高校の規則に倒す",
+          has(o.get("mmPtNoUnit"), "架空 中学生", "高校生用") and lacks(o.get("mmPtNoUnit"), "架空 高校生"), o.get("mmPtNoUnit"))
+    check("学年の確認: 英語長文は大学受験の規則 (中学生・小学生に確認・科目名「英語長文」)",
+          has(o.get("mmLong"), "架空 中学生", "架空 小学生", "英語長文", "大学受験用") and lacks(o.get("mmLong"), "架空 高校生"), o.get("mmLong"))
+    check("学年の確認: 英検は縛らない・中学英語は今までどおり・高校生への英文法は確認なし",
+          o.get("mmEiken") == "" and has(o.get("mmChu"), "架空 高校生", "高校入試の問題") and o.get("mmEngOk") == "",
+          (o.get("mmEiken"), o.get("mmChu"), o.get("mmEngOk")))
+    check("単元チップ: テストは「🧪 大問3・9問」・単元名の HTML は escape",
+          has(o.get("chips"), "🧪 大問3・9問", "第2回&lt;b&gt;") and lacks(o.get("chips"), "第2回<b>"), (o.get("chips") or "")[:300])
+    check("④: テストは問題数・本文の本数を隠し「テスト全体を出題順のまま配信」(未選択はテストを選ぶ案内)",
+          o.get("syncNoSel") == ["none", "none", "", "テスト全体を出題順のまま配信 (② でテストを選んでください)"]
+          and o.get("syncSel") == ["none", "none", "", "テスト全体 (大問3・全9問) を出題順のまま配信"], (o.get("syncNoSel"), o.get("syncSel")))
+    check("④: 英語長文は在庫 0 でも本文の本数 (チップも「本文0本」)・英文法は問題数",
+          has(o.get("longChips"), "本文2本", "本文0本") and (o.get("syncLong") or [None] * 3)[:3] == ["none", "", "none"]
+          and (o.get("syncEng") or [None] * 3)[:3] == ["", "none", "none"], (o.get("syncLong"), o.get("syncEng")))
+    a = o.get("a") or {}
+    body_a = ((a.get("posts") or [{}])[0] or {}).get("body") or {}
+    check("配信 (テスト): 送るのは科目・単元・生徒だけ (本数・問題数・弱点対策の除外・題名を送らない)",
+          len(a.get("posts") or []) == 1 and a["posts"][0].get("path") == "/api/admin/grammar-drill/create"
+          and body_a.get("subject") == "proficiency_test" and body_a.get("unit") == ku and body_a.get("student_ids") == [1, 3]
+          and not ({"passage_count", "count", "exclude_drill_id", "title"} & set(body_a)) and a.get("confirms") == 0, body_a)
+    check("配信 (テスト): 配信済みで飛ばした生徒の名前を出す (escape)",
+          has(a.get("msg"), "配信済みで飛ばした生徒", "架空 &lt;i&gt;未設定&lt;/i&gt;") and lacks(a.get("msg"), "<i>"), a.get("msg"))
+    b = o.get("b") or {}
+    check("配信 (テスト): 409 (全員配信済み) は黄色で理由を出す (❌ にしない)",
+          b.get("n") == 1 and has(b.get("msg"), "全員このテストを配信済み", "#fbbf24") and lacks(b.get("msg"), "❌"), b)
+    c = o.get("c") or {}
+    check("配信 (テスト): 高校のテストを中学生に配ろうとすると確認が出て、いいえなら送らない",
+          c.get("n") == 0 and len(c.get("confirms") or []) == 1 and has((c.get("confirms") or [""])[0], "架空 中学生", "高校生用")
+          and has(c.get("msg"), "配信を中止しました"), c)
+    d = o.get("d") or {}
+    body_d = ((d.get("posts") or [{}])[0] or {}).get("body") or {}
+    check("配信 (英語長文): 本文の本数を送る", body_d.get("subject") == "english_long" and body_d.get("passage_count") == 1
+          and "exclude_drill_id" not in body_d, body_d)
+    e = o.get("e") or {}
+    check("配信 (英語長文): 本文 0 本の単元はサーバに送らず理由を出す", e.get("n") == 0 and has(e.get("msg"), "本文がまだありません"), e)
+    f = o.get("f") or {}
+    body_f = ((f.get("posts") or [{}])[0] or {}).get("body") or {}
+    check("配信 (英文法): 今までどおり問題数を送る・detail が配列の 422 でも「❌ 配信失敗 (HTTP 422)」",
+          body_f.get("count") == 30 and "passage_count" not in body_f and has(f.get("msg"), "❌", "HTTP 422"), f)
+    check("塾生アプリのカード: テストは「授業の指示どおりに解いて提出 ・ 提出は1回だけ」(いつでもOK・自動採点と書かない)",
+          has(o.get("metaPt"), "授業の指示どおりに解いて提出 ・ 提出は1回だけ", "出題 ") and lacks(o.get("metaPt"), "いつでもOK", "自動採点", "全 9 問")
+          and has(o.get("metaPtAssigned"), "全 9 問 ・ 授業の指示どおりに解いて提出"), (o.get("metaPt"), o.get("metaPtAssigned")))
+    check("塾生アプリのカード: ドリルは今までどおり・提出済みのテストはスコア",
+          has(o.get("metaEng"), "その場で自動採点 ・ いつでもOK") and has(o.get("metaDone"), "スコア 7 / 9"), (o.get("metaEng"), o.get("metaDone")))
+    check("マイページのカード: テストは「🧪 習熟度テスト」+ 提出の決まり (「ドリル」・レベル・単元のチップは出さない)",
+          has(o.get("cardPt"), "🧪 習熟度テスト", "授業の指示どおりに解いて提出 ・ 提出は1回だけ")
+          and lacks(o.get("cardPt"), "ドリル</span>", "基礎・標準・やや難", "📝 "), (o.get("cardPt") or "")[:400])
+    check("マイページのカード: 提出済みのテストは決まりを出さずスコア・英語長文は「📝 英語長文ドリル」",
+          has(o.get("cardPtDone"), "スコア 7/9") and lacks(o.get("cardPtDone"), "授業の指示どおり")
+          and has(o.get("cardLong"), "📝 英語長文ドリル", "長文 Lv.1"), ((o.get("cardPtDone") or "")[:200], (o.get("cardLong") or "")[:200]))
 
 
 def main():
@@ -607,6 +851,8 @@ def main():
         check("リポジトリの中のファイルは送らない (exit 2・通信しない)", rc == 2 and len(calls) == n_calls, out.getvalue()[-300:])
     check("送った要求はすべて X-Cron-Secret つき・送り先は AI_JUKU_API_BASE", calls and all(c[2] and c[3] for c in calls), calls[:3])
     shutil.rmtree(work, ignore_errors=True)
+
+    check_screens(mod)
 
     print()
     if FAILURES:

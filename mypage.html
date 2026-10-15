@@ -1470,7 +1470,7 @@
   <script src="student-mode.js?v=20261016b-grade-norm"></script>
   <!-- 🆕 新しい宿題の数え方と「見た」の記録 (class.html と共通・2026-10-15)。mypage.js より前に読む。変えたら両方の ?v= を上げる -->
   <script src="hw-notice.js?v=20261016a-hw-notice"></script>
-  <script src="mypage.js?v=20261016a-hw-notice"></script>
+  <script src="mypage.js?v=20261016c-ptest"></script>
   <script>
     // ウィジェット初期描画
     (function() {
@@ -1654,7 +1654,9 @@
         math: '🧮 数学', physics: '⚛️ 物理', chemistry: '🧪 化学', biology: '🧬 生物', earth: '🌍 地学',
         english: '📘 英語', japanese: '📕 国語', social: '🌏 社会', other: '📚 その他',
         chugaku: '🧒 中学', // 🧒 中学生バケット(単元は topic 側に出る。例「🧒 中学 「正負の数」」)
-        eiken: '🏅 英検'   // 🏅 英検 語彙ドリル (TOP3 からは除外しているが、念のためラベルを持つ)
+        eiken: '🏅 英検',  // 🏅 英検 語彙ドリル (TOP3 からは除外しているが、念のためラベルを持つ)
+        english_long: '📖 英語長文',          // 📖🧪 2026-10-15: どちらも TOP3 からは除外 (サーバ _WEAKNESS_TOP3_EXCLUDED_SUBJECTS)。
+        proficiency_test: '🧪 習熟度テスト'   //   英検と同じく念のためラベルを持つ
       };
       // 🧒 2026-07-03 中学生モードは pool=chugaku を付けて chugaku バケットのみ取得(大学プール流入を遮断)。
       const _wMode = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';
