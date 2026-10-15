@@ -797,7 +797,19 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - 未提出 = `status <> 'completed'` (提出 API と同じ。デスクトップの予約タスクが書く `'assigned'` も未提出)。`GET /api/student/grammar-drills` の
   `summary.open`・並び順、LINE の「やること」もこの数え方。`self_issued` = 生徒が自分で始めたもの (今日の1問・初回診断) で「新しい宿題」に数えない
   (`created_by` の生の値は返さない)。
-- 回帰テスト: `scripts/health_check/test_homework_notify_in_app.py` (CI `server-tests.yml`)。
+- **アプリ内の「🆕 新しい宿題」** は `hw-notice.js` (root・ES5) の 1 か所で数える。class.html と mypage.html の両方が `?v=` 付きで読む
+  (★変えたら**両方**の `?v=` を上げる)。新しい = 未提出で自分で始めたものではなく、この端末で前に宿題を見たときに無かったもの
+  (記録は localStorage `aj_hw_seen_v1:<生徒ID>` に ID だけ・**端末ごと**・読み書きは全部 try/catch。記録が無ければ届いて 72 時間以内)。
+  取れなかった一覧は記録を変えない。
+  - 塾生アプリ (class.html): 宿題タブ以外の画面の上に帯「🆕 新しい宿題が N 件届いています」(押すと宿題タブ。無ければ期限切れの帯)・カードに 🆕 新着。
+    宿題タブで一覧を描いたら「見た」。`?tab=homework` と `#homework` で宿題タブに着地 (URL から消す)・401 のログインに `redirect=`。
+    ドリルの未提出判定は `gdIsOpen` (completed 以外。以前は 'assigned' を「完了」と表示していた)・カードの 2 行目は `gdMetaText(it)` の 1 か所
+    (〆・習熟度テストの文言はここに足す)。宿題 API が 403 (通塾生コース外) でも配られたドリルは出す。
+  - マイページ (mypage.js): 📌 要対応チップが「🆕 新しい宿題 N 件」・カードに 🆕 新着。宿題欄が 1.5 秒見えたら / ドリルを開いたら「見た」。
+    `?focus=homework` で宿題欄へスクロール。AIなし枠の送り返しは `class.html?tab=homework` に引き継ぐ。`AJHwNotice` は `_hwNotice()` 経由だけ
+    (hw-notice.js が読めない端末は今までどおり)。
+- 回帰テスト: `scripts/health_check/test_homework_notify_in_app.py` (サーバ)・`test_hw_notice_js.py` (hw-notice.js・class.html・mypage を
+  node / osascript で実際に動かす。JS エンジンが無ければ FAIL) (CI `server-tests.yml`)。
 
 ## 📅 受講開始月と 🎬 入塾前アーカイブ (2026-09-24 塾長決定)
 - **翌月開始の生徒も申込直後に承認してよい** (承認は課金に触れない・Stripe/台帳は月謝アプリ側)。承認すると予定表・配信された単元ドリル・メッセージは即使える。

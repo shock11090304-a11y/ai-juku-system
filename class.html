@@ -165,6 +165,13 @@
     .tabbar button.active .ic { transform:translateY(-1px); }
     .tab-badge { position:absolute; top:0.15rem; right:50%; transform:translateX(1.2rem); min-width:16px; height:16px; padding:0 4px; box-sizing:border-box; background:#ec4899; color:#fff; border-radius:999px; font-size:0.62rem; font-weight:800; line-height:16px; text-align:center; display:none; }
     .tab-badge.show { display:block; }
+    /* 🆕 新しい宿題のお知らせ (2026-10-15 塾長決定「アプリを開けば分かる」: 宿題のお知らせは LINE でなくアプリの中で)。
+       宿題タブ以外の画面の上に出す帯 (押すと宿題タブ)。押しやすい高さ (44px 以上)・色はタブのバッジと同じピンク */
+    .hw-notice { display:flex; align-items:center; justify-content:space-between; gap:0.6rem; width:100%; box-sizing:border-box; min-height:44px; margin:0 0 0.9rem; padding:0.6rem 0.9rem; background:rgba(236,72,153,0.14); border:1px solid rgba(236,72,153,0.55); border-radius:12px; color:#fbcfe8; font-family:inherit; font-size:0.92rem; font-weight:800; line-height:1.45; text-align:left; cursor:pointer; }
+    .hw-notice .hw-notice-go { flex-shrink:0; font-size:0.8rem; color:#f9a8d4; }
+    .hw-notice.warn { background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.5); color:#fecaca; }
+    .hw-notice.warn .hw-notice-go { color:#fca5a5; }
+    .chip-new { background:rgba(236,72,153,0.20); border:1px solid rgba(236,72,153,0.55); color:#fbcfe8; }
 
     /* 📺 今週見るスタサプ: 講座名 (1 行で省略記号) と「第N講「題名」」(2 行まで) を分ける = スマホでも第N講が切れない。
        nowrap は使わない (長い題名が画面幅を押し広げない。日本語はどこでも折れる) */
@@ -198,6 +205,8 @@
 
   <main class="wrap">
     <div id="gate"></div>
+    <!-- 🆕 新しい宿題の帯 (2026-10-15)。hw-notice.js で数え、宿題タブ以外のときだけ出す -->
+    <div id="hwNotice" hidden></div>
 
     <section id="view-schedule" class="view" hidden>
       <h1 class="view-title">📅 予定<span class="sub">週間の時間割と、授業ごとの配布ファイル・出欠の連絡</span></h1>
@@ -234,6 +243,8 @@
   <div id="toast" class="toast"></div>
 
   <script src="auth-guard.js?v=20260625-juku-app"></script>
+  <!-- 🆕 新しい宿題の数え方と「見た」の記録 (mypage.html と共通)。変えたら両方の ?v= を上げる -->
+  <script src="hw-notice.js?v=20261016a-hw-notice"></script>
   <script>
   (function () {
     const BACKEND_URL = (window.location.hostname === 'localhost' && window.location.port === '8090')
@@ -296,8 +307,10 @@
       return (m === 'application/pdf' || m.indexOf('image/') === 0) ? '📄 開く' : '⬇ 取得';
     }
     var TABS = ['schedule', 'homework', 'videos', 'messages'];
+    var curTab = '';
 
     function showTab(name) {
+      curTab = name;
       TABS.forEach(function (t) {
         var v = document.getElementById('view-' + t);
         if (v) v.hidden = (t !== name);
@@ -306,8 +319,46 @@
         b.classList.toggle('active', b.getAttribute('data-tab') === name);
       });
       try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
+      renderHwNotice();   // 宿題タブでは帯を隠す (ほかのタブでは出す)
       if (name === 'homework' && !hwLoaded) loadHomework();
       if (name === 'messages' && !msgLoaded) loadMessages();
+    }
+
+    // ===================== 🆕 新しい宿題のお知らせ (2026-10-15 塾長決定「アプリを開けば分かる」) =====================
+    // 宿題・ドリルのお知らせは LINE を使わず、アプリを開いたときに画面の上の帯で知らせる。数え方と「見た」の記録は
+    // hw-notice.js (mypage と共通)。新しい = 未提出で、この端末で前に宿題タブを開いたときに無かったもの (記録が無ければ届いて 72 時間以内)。
+    // 宿題タブを開いて一覧を描いたら「見た」と記録する (取れた一覧だけ)。hw-notice.js が読めない端末では帯も 🆕 も出ない (今までどおり)。
+    var hwNotice = null;               // AJHwNotice.compute の結果 (帯)
+    var hwNewDrill = {}, hwNewHw = {}; // いま描く一覧で 🆕 新着を付ける ID (宿題タブを開く直前の「新しい」)
+    function hwSid() {
+      try {
+        var s = window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent();
+        return (s && s.id != null) ? String(s.id) : '';
+      } catch (e) { return ''; }
+    }
+    // drills / hwItems: 取れた一覧 (配列)。取れなかった一覧は null (「新しい」にも数えない)
+    function hwComputeNotice(drills, hwItems) {
+      if (!window.AJHwNotice) return null;
+      try {
+        return window.AJHwNotice.compute({ drills: drills, homework: hwItems, seen: window.AJHwNotice.loadSeen(hwSid()) });
+      } catch (e) { return null; }
+    }
+    function hwIsNew(map, id) { return !!map && id != null && Object.prototype.hasOwnProperty.call(map, String(id)); }
+    function renderHwNotice() {
+      var box = document.getElementById('hwNotice');
+      if (!box) return;
+      var n = hwNotice, html = '';
+      if (n && window.AJHwNotice && curTab && curTab !== 'homework') {
+        if (n.newCount > 0) {
+          html = '<button type="button" class="hw-notice"><span>' + esc(window.AJHwNotice.newLabel(n.newCount)) + '</span><span class="hw-notice-go">開く ›</span></button>';
+        } else if (n.overdue > 0) {
+          html = '<button type="button" class="hw-notice warn"><span>' + esc(window.AJHwNotice.overdueLabel(n.overdue)) + '</span><span class="hw-notice-go">開く ›</span></button>';
+        }
+      }
+      box.innerHTML = html;
+      box.hidden = !html;
+      var b = html ? box.querySelector('button') : null;
+      if (b) b.addEventListener('click', function () { showTab('homework'); });
     }
 
     // ===================== 予定 (schedule) =====================
@@ -890,7 +941,11 @@
 
     // 宿題とドリルを並行取得。★ドリル側が落ちても宿題の表示は続ける (取得失敗 ≠ 0件)。
     function _settle(p) { return p.then(function (d) { return { ok: true, d: d }; }, function (e) { return { ok: false, e: e }; }); }
-    function gdOpenCount() { return gdDrills.filter(function (x) { return x.status === 'open'; }).length; }
+    // 未提出のドリル = completed 以外 (2026-10-15: 提出 API と同じ。デスクトップの予約タスクが書く 'assigned' も未提出。
+    //   以前は 'open' だけを見ていて、'assigned' のドリルが「完了」と表示され、バッジにも数えられていなかった)。
+    //   判定は hw-notice.js と 1 か所 (読めない端末でも同じ規則に倒す)
+    function gdIsOpen(x) { return window.AJHwNotice ? window.AJHwNotice.isOpenDrill(x) : (!!x && x.status !== 'completed'); }
+    function gdOpenCount() { return gdDrills.filter(gdIsOpen).length; }
     // 生の "Failed to fetch" 等を生徒に見せない
     var GD_NET_MSG = '通信できませんでした。電波の良い場所でもう一度おためしください。';
     function gdErrMsg(e) {
@@ -920,29 +975,52 @@
       gdDrills = gdRes.ok ? ((gdRes.d && gdRes.d.items) || []) : [];
       if (!hwRes.ok) {
         var e = hwRes.e;
-        if (e.status === 403) { body.innerHTML = '<div class="empty">この機能は通塾生のみ利用できます。</div>'; return; }
+        if (e.status === 403) {
+          // 宿題 API は通塾生コースの生徒だけ (403 = コース外)。単元ドリルは誰にでも配れるので、
+          // 配られたドリルがあればドリルだけ出す (2026-10-15: 帯とバッジがドリルを数えるのに、開くと行き止まりだった)
+          if (!gdDrills.length) { body.innerHTML = '<div class="empty">この機能は通塾生のみ利用できます。</div>'; return; }
+          hwLoaded = true;
+          hwRenderAndMark({ items: [] }, null, []);
+          updateBadge('hwBadge', gdOpenCount());
+          return;
+        }
         // 宿題APIが落ちても、取得できたドリルは出す (片方の失敗で両方消えるのを防ぐ)
         // ★hwLoaded は true にする: false のままだとタブを移動して戻った瞬間に showTab が
         //   loadHomework() を再実行し、解答中のドリルを確認なしで捨ててしまう (戻るconfirmの迂回路)
         hwLoaded = true;
-        renderHomework({ items: [] }, gdErrMsg(e));
+        hwRenderAndMark({ items: [] }, gdErrMsg(e), null);
         // ★両方落ちたときはバッジを触らない (未提出があるのに 0 に見えるのを防ぐ)
         if (gdRes.ok) updateBadge('hwBadge', gdOpenCount());
         return;
       }
       hwLoaded = true;
-      renderHomework(hwRes.d);
+      hwRenderAndMark(hwRes.d, null, (hwRes.d && hwRes.d.items) || []);
       // ★ドリルが取れなかったときはバッジを更新しない (0件と誤って「宿題なし」に見えるのを防ぐ。
       //   古い数字が残るほうが、未提出を見落とすより安全)
       if (!gdFailed) updateBadge('hwBadge', ((hwRes.d.summary && hwRes.d.summary.open) || 0) + gdOpenCount());
+    }
+    // 🆕 一覧を描く前に「新しい」を数えてカードに 🆕 新着を付け、描いた後に「見た」と記録する (2026-10-15)。
+    //   hwItems: 取れた宿題の一覧 (403 = コース外は [])・取れなかったら null。ドリルは gdFailed なら null。
+    //   取れなかった一覧は記録を変えない (失敗で「新しい」を消したり作ったりしない)
+    function hwRenderAndMark(d, errMsg, hwItems) {
+      var drills = gdFailed ? null : gdDrills;
+      hwNotice = hwComputeNotice(drills, hwItems);
+      hwNewDrill = (hwNotice && hwNotice.newDrillMap) || {};
+      hwNewHw = (hwNotice && hwNotice.newHwMap) || {};
+      renderHomework(d, errMsg);
+      if (window.AJHwNotice) {
+        try { window.AJHwNotice.markSeen(hwSid(), drills, hwItems); } catch (e) { /* 記録できなくても表示は続ける */ }
+        hwNotice = hwComputeNotice(drills, hwItems);
+      }
+      renderHwNotice();
     }
     function _reloadBtn() { return '<div style="text-align:center;margin-top:0.7rem;"><button class="btn btn-ghost hw-reload">🔄 再読み込み</button></div>'; }
     function _errBox(title, msg) { return '<div class="notice err" style="margin-bottom:0.9rem;"><h2>⚠️ ' + esc(title) + '</h2>' + esc(msg) + _reloadBtn() + '</div>'; }
     function renderHomework(d, errMsg) {
       var body = document.getElementById('homeworkBody');
       var items = (d && d.items) || [];
-      var openDrills = gdDrills.filter(function (x) { return x.status === 'open'; });
-      var doneDrills = gdDrills.filter(function (x) { return x.status !== 'open'; });
+      var openDrills = gdDrills.filter(gdIsOpen);
+      var doneDrills = gdDrills.filter(function (x) { return !gdIsOpen(x); });
       // ★両方落ちたときに同じ赤い箱と再読み込みボタンを2つ並べない (どっちを押すのか分からなくなる)
       var errBox = (errMsg && gdFailed) ? _errBox('読み込めませんでした', GD_NET_MSG)
         : errMsg ? _errBox('宿題を読み込めませんでした', errMsg)
@@ -960,6 +1038,7 @@
         var overdue = !done && it.due_date && it.due_date < today;
         var statusChip = done ? '<span class="chip chip-done">完了</span>'
           : (overdue ? '<span class="chip chip-over">期限切れ</span>' : '<span class="chip chip-open">未提出</span>');
+        if (!done && hwIsNew(hwNewHw, it.id)) statusChip += ' <span class="chip chip-new">🆕 新着</span>';
         // 科目 'chugaku' は中学(高校受験)ドリルへの内部キー。生の chugaku を生徒に見せない。
         // 単元チップが「中学英語 …」等で始まるときは科目チップが重複するだけなので出さない。
         // (ラベルは週次プリントの subjJa と同じ規約: chugaku → 中学)
@@ -1079,10 +1158,24 @@
       var ymd = d.getFullYear() + '-' + _pad2(d.getMonth() + 1) + '-' + _pad2(d.getDate());
       return withTime ? (ymd + ' ' + _pad2(d.getHours()) + ':' + _pad2(d.getMinutes())) : ymd;
     }
+    // カードの 2 行目 (HTML・値は esc 済み)。未提出: 問題数・自動採点・出題日 / 完了: スコア・提出日時。
+    // ★ドリルの種類ごとの文言 (〆のある宿題・習熟度テストなど) はここに足す (2026-10-15: カードの組み立てを 1 か所に)
+    function gdMetaText(it) {
+      var title = String(it.title || 'ドリル');
+      if (!gdIsOpen(it)) {
+        return 'スコア ' + esc(String(it.score_correct == null ? 0 : it.score_correct)) + ' / ' + esc(String(it.score_total || 0))
+          + (it.completed_at ? (' ・ 提出: ' + esc(gdLocalDate(it.completed_at, true))) : '');
+      }
+      var n = Number(it.score_total || 0);   // 未設定(NULL)の古い配信があるので「全 0 問」を出さない
+      var showN = n > 0 && title.indexOf(n + '問') < 0;   // タイトルに「25問」が入っていれば重ねない
+      return (showN ? ('全 ' + n + ' 問 ・ ') : '') + 'その場で自動採点 ・ いつでもOK'
+        + (it.assigned_at ? (' ・ 出題 ' + esc(gdLocalDate(it.assigned_at))) : '');
+    }
     // 一覧に出すドリルカード (宿題カードと同じ見た目に揃える)
     function gdCardHtml(it) {
-      var done = it.status !== 'open';
+      var done = !gdIsOpen(it);
       var chip = done ? '<span class="chip chip-done">完了</span>' : '<span class="chip chip-open">未提出</span>';
+      if (!done && hwIsNew(hwNewDrill, it.drill_id)) chip += ' <span class="chip chip-new">🆕 新着</span>';
       var sj = gdSubjJa(it.subject);
       var title = String(it.title || 'ドリル');
       var subjChip = sj ? ' <span class="chip chip-subj">' + esc(sj) + '</span>' : '';
@@ -1092,16 +1185,7 @@
       // 単元が途中に来る配信もあるので、前方一致ではなく含有で見る
       var unitDup = !it.unit || gdIsSubjectUnit(it.unit, it.subject, sj) || title.indexOf(it.unit) >= 0;
       var unitChip = unitDup ? '' : (' <span class="chip chip-topic">🎯 ' + esc(it.unit) + '</span>');
-      var meta;
-      if (done) {
-        meta = 'スコア ' + esc(String(it.score_correct == null ? 0 : it.score_correct)) + ' / ' + esc(String(it.score_total || 0))
-          + (it.completed_at ? (' ・ 提出: ' + esc(gdLocalDate(it.completed_at, true))) : '');
-      } else {
-        var n = Number(it.score_total || 0);   // 未設定(NULL)の古い配信があるので「全 0 問」を出さない
-        var showN = n > 0 && title.indexOf(n + '問') < 0;   // タイトルに「25問」が入っていれば重ねない
-        meta = (showN ? ('全 ' + n + ' 問 ・ ') : '') + 'その場で自動採点 ・ いつでもOK'
-          + (it.assigned_at ? (' ・ 出題 ' + esc(gdLocalDate(it.assigned_at))) : '');
-      }
+      var meta = gdMetaText(it);
       var actions = '<div class="row-actions"><button class="btn ' + (done ? 'btn-ghost' : 'btn-primary') + ' gd-open" data-id="'
         + esc(String(it.drill_id)) + '">' + (done ? '🔁 解説を見る' : '▶ 解いて提出する') + '</button></div>';
       return '<div class="card">' + chip + subjChip + unitChip
@@ -1605,7 +1689,12 @@
             + '<div style="margin-top:0.9rem;"><a class="btn btn-ghost" href="mypage.html">← マイページに戻る</a></div></div>';
           return;
         }
-        if (e.status === 401) { gate.innerHTML = '<div class="notice"><h2>ログインが必要です</h2><a class="btn btn-primary" href="login.html">ログイン</a></div>'; return; }
+        if (e.status === 401) {
+          // ログイン後にこのページ (?tab=homework 付き = お知らせメールのリンク) へ戻す。login.html は同じオリジンの相対パスだけ受け付ける
+          var _back = 'login.html?redirect=' + encodeURIComponent(location.pathname + location.search);
+          gate.innerHTML = '<div class="notice"><h2>ログインが必要です</h2><a class="btn btn-primary" href="' + esc(_back) + '">ログイン</a></div>';
+          return;
+        }
         gate.innerHTML = '<div class="notice err"><h2>⚠️ 読み込みに失敗しました</h2>' + esc(e.message || '')
           + '<div style="margin-top:0.7rem;"><button class="btn btn-ghost" onclick="location.reload()">再読み込み</button></div></div>';
         return;
@@ -1628,9 +1717,21 @@
       }
       renderSchedule();
       renderVideos();
-      // 📝 dojo-drill の「塾生アプリの宿題に戻る」は #homework で戻ってくる → 宿題タブを開いた状態で着地
-      showTab(location.hash === '#homework' ? 'homework' : 'schedule');
-      if (location.hash === '#homework') { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }
+      // 📝 宿題タブを開いた状態で着地する入口は 2 つ:
+      //   - dojo-drill の「塾生アプリの宿題に戻る」は #homework で戻ってくる
+      //   - 宿題のお知らせメール・mypage からの送り返しは ?tab=homework (2026-10-15。# はログインをはさむと消えるので ? で渡す)
+      //   どちらも着地したら URL から消す (再読み込みや共有で毎回宿題タブに飛ばない)
+      var _tabQ = null;
+      try { _tabQ = new URLSearchParams(location.search).get('tab'); } catch (e) { _tabQ = null; }
+      var _hashHw = location.hash === '#homework';
+      showTab((_hashHw || _tabQ === 'homework') ? 'homework' : 'schedule');
+      if (_hashHw || _tabQ !== null) {
+        try {
+          var _sp = new URLSearchParams(location.search); _sp.delete('tab');
+          var _qs = _sp.toString();
+          history.replaceState(null, '', location.pathname + (_qs ? '?' + _qs : '') + (_hashHw ? '' : location.hash));
+        } catch (e) {}
+      }
       // 塾長登録の休塾日/予定 + 自分の出欠を読み込んで再描画（祝日カレンダーは即表示済み）
       Promise.all([loadCalendar(), loadMyAttend()]).then(function () { renderSchedule(); });
       // バッジ（宿題未提出・メッセージ未読）を先読み。宿題タブは クラス宿題 + 単元ドリル の未提出合計。
@@ -1638,11 +1739,18 @@
         _settle(api('/api/student/homework')),
         _settle(api('/api/student/grammar-drills'))
       ]).then(function (r) {
+        // 宿題 API の 403 (通塾生コース外) は「宿題 0 件」と同じ (単元ドリルは配られうる。loadHomework と同じ扱い)
+        var hwOk = r[0].ok || !!(r[0].e && r[0].e.status === 403);
+        var hwItems = r[0].ok ? ((r[0].d && r[0].d.items) || []) : (hwOk ? [] : null);
+        var drills = r[1].ok ? ((r[1].d && r[1].d.items) || []) : null;
+        // 🆕 帯は取れた一覧だけで数える (取れた一覧は「新しい」を足すだけ。取れなかった側を「無い」とは言わない)。
+        //   宿題タブを先に開いて「見た」と記録済みなら、その記録で数える (帯は出ない)
+        hwNotice = hwComputeNotice(drills, hwItems);
+        renderHwNotice();
         // ★片方でも取れなければバッジを出さない (部分合計 = 未提出があるのに少なく見える。
         //   loadHomework と同じ方針。タブを開けば正しい数字と赤バナーが出る)
-        if (!r[0].ok || !r[1].ok) return;
-        var n = ((r[0].d.summary && r[0].d.summary.open) || 0)
-          + ((r[1].d.items) || []).filter(function (x) { return x.status === 'open'; }).length;
+        if (!hwOk || !drills) return;
+        var n = (r[0].ok ? ((r[0].d.summary && r[0].d.summary.open) || 0) : 0) + drills.filter(gdIsOpen).length;
         updateBadge('hwBadge', n);
       }).catch(function () {});
       api('/api/messages/me/unread-count').then(function (d) { updateBadge('msgBadge', d.unread_count || 0); }).catch(function () {});

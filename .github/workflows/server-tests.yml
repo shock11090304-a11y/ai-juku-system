@@ -55,6 +55,11 @@ on:
       # ⛔ 週次弱点プリントの停止 (test_weekly_worksheet_stop.py) は mypage.html の終了表示と prod_healthcheck の監視対象もソースで見る
       - 'mypage.html'
       - 'scripts/health_check/prod_healthcheck.py'
+      # 🆕 新しい宿題のお知らせ (test_hw_notice_js.py) は hw-notice.js と class.html / mypage.js を JS で実際に動かす
+      #   (画面だけ直した push でも走らせる。?v= 検査 js_cache_bust.py もこの workflow の中で回る)
+      - 'hw-notice.js'
+      - 'class.html'
+      - 'mypage.js'
       # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
       - 'lp.html'
       - 'checkout.html'
@@ -430,6 +435,14 @@ jobs:
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_homework_notify_in_app.py
+
+      # 🆕 新しい宿題のお知らせ (アプリ内表示・2026-10-15): hw-notice.js の数え方と「見た」の記録・塾生アプリ (class.html) の帯と
+      #   ?tab=homework・'assigned' のドリルも未提出・mypage の「🆕 新しい宿題 N 件」を node で実際に動かす (JS エンジンが無ければ FAIL)。
+      - name: 宿題のお知らせ JS (hw-notice.js・class.html・mypage) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
+          python3 scripts/health_check/test_hw_notice_js.py
 
       # 📚 学習記録ダッシュボードの運用改善 (2026-09-07): タイムラインのページング / 1 日合計の上限 / 演習の重ね表示 /
       #   テスト系の名前の除外 / パネル別の読み込みと配色 (ソース検査)。

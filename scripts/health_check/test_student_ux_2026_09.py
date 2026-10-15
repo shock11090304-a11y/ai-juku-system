@@ -274,7 +274,11 @@ def main():
     check("演習の入口が 1 枚 (practiceChooser) に統合・NEW バッジ撤去", 'id="practiceChooser"' in html and "action-badge-new" not in html)
     check("LINE 連携 CTA は line_linked===false で表示", "line_linked === false" in html)
     check("合格可能性スコアは失敗時に消えず再試行を案内", "showFetchError(" in html)
-    check("mypage.js / mypage.css の ?v= が最終変更 (mypage.js 2026-10-10 スタサプ段階 A) 以降", "mypage.js?v=20261010" in html and "mypage.css?v=20260909" in html)
+    # ?v= の日付が最終変更の日以降 (古い値に戻っていない)。2026-10-16 = 🆕 新しい宿題のお知らせ (hw-notice.js) で mypage.js を変更
+    import re as _re
+    _mv = _re.search(r'mypage\.js\?v=(\d{8})', html)
+    check("mypage.js / mypage.css の ?v= が最終変更 (mypage.js 2026-10-16 新しい宿題のお知らせ) 以降",
+          bool(_mv) and _mv.group(1) >= "20261016" and "mypage.css?v=20260909" in html, _mv and _mv.group(0))
     check("learning-brain.js の ?v= が最終変更 (2026-07-14) より新しい", "learning-brain.js?v=20260909" in html)
     import re as _re
     visible = _re.sub(r"<!--.*?-->", "", html, flags=_re.S)  # HTML コメントは生徒に見えないので除外

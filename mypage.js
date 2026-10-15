@@ -4517,8 +4517,21 @@ function _hwDueDateBadge(dueDate, status) {
   return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(255,255,255,0.06); color:#a1a1aa; border-radius:8px;">期限 ${_hwEscape(dueDate)}</span>`;
 }
 
+// 🆕 新しい宿題 (2026-10-15 塾長決定「アプリを開けば分かる」: 宿題・ドリルのお知らせは LINE でなくアプリの中で)。
+//   数え方と「見た」の記録は hw-notice.js (class.html と共通)。新しい = 未提出で、この端末で前に宿題欄を見たときに
+//   無かったもの (記録が無ければ届いて 72 時間以内)。hw-notice.js が読めなかった端末では今までどおり (🆕 も文言の変化も無し)。
+//   ★AJHwNotice は必ず _hwNotice() 経由で使う (無ければ null が返る)
+let _hwNewIds = { d: {}, h: {} };   // いま描く一覧で 🆕 新着を付ける ID (ドリル / クラス宿題)
+function _hwNotice() { return (typeof window !== 'undefined' && window.AJHwNotice) ? window.AJHwNotice : null; }
+function _hwSid() {
+  try { const s = getCurrentStudent(); return (s && s.id != null) ? String(s.id) : ''; } catch (_) { return ''; }
+}
+function _hwIsNew(map, id) { return !!map && id != null && Object.prototype.hasOwnProperty.call(map, String(id)); }
+const _HW_NEW_BADGE = '<span style="font-size:0.72rem; padding:2px 7px; background:rgba(236,72,153,0.22); color:#fbcfe8; border:1px solid rgba(236,72,153,0.55); border-radius:8px; font-weight:bold;">🆕 新着</span>';
+
 function _renderHomeworkItem(item) {
   const isOpen = item.status === 'open';
+  const newBadge = (isOpen && _hwIsNew(_hwNewIds.h, item.id)) ? _HW_NEW_BADGE : '';
   const dueBadge = _hwDueDateBadge(item.due_date, item.status);
   // 科目 'chugaku' は中学(高校受験)ドリルへの内部キー。生の chugaku を生徒に見せない
   // (mypage.html の SUBJ_JA と同じ規約)。★mypage は単元(topic)バッジを描かないので、
@@ -4545,7 +4558,7 @@ function _renderHomeworkItem(item) {
     : '';
   return `<div class="hw-item" data-hw-id="${_hwEscape(item.id)}" style="padding:14px 16px; background:${isOpen ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isOpen ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.06)'}; border-radius:10px; margin-bottom:10px;">
     <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
-      ${subjectBadge}${dueBadge}
+      ${newBadge}${subjectBadge}${dueBadge}
     </div>
     <div style="margin-top:8px; color:${isOpen ? '#fff' : '#a1a1aa'}; font-weight:bold; font-size:0.96rem; ${isOpen ? '' : 'text-decoration:line-through;'}">${_hwEscape(item.title)}</div>
     ${desc}
@@ -4565,6 +4578,7 @@ function _gdLevelJa(lv) {
 }
 function _renderDrillAsHwItem(item) {
   const isOpen = item.status !== 'completed';
+  const newBadge = (isOpen && _hwIsNew(_hwNewIds.d, item.drill_id)) ? _HW_NEW_BADGE : '';
   const _subjLabel = _SUBJ_DRILL_LABEL[item.subject] || '英文法';
   const typeBadge = `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(20,184,166,0.22); color:#5eead4; border-radius:8px; font-weight:bold;">📝 ${_subjLabel}ドリル</span>`;
   const unitBadge = item.unit
@@ -4582,7 +4596,7 @@ function _renderDrillAsHwItem(item) {
     : 'background:rgba(255,255,255,0.05); color:#a1a1aa; border:1px solid rgba(255,255,255,0.12);';
   const btn = `<button type="button" data-hw-drill-open="${_hwEscape(item.drill_id)}" style="margin-top:10px; padding:8px 16px; ${btnStyle} border-radius:8px; font-weight:bold; font-size:0.86rem; cursor:pointer;">${cta}</button>`;
   return `<div class="hw-item hw-drill-item" style="padding:14px 16px; background:${isOpen ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isOpen ? 'rgba(20,184,166,0.3)' : 'rgba(255,255,255,0.06)'}; border-radius:10px; margin-bottom:10px;">
-    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">${typeBadge}${unitBadge}${levelBadge}</div>
+    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">${newBadge}${typeBadge}${unitBadge}${levelBadge}</div>
     <div style="margin-top:8px; color:${isOpen ? '#fff' : '#a1a1aa'}; font-weight:bold; font-size:0.96rem;">${_gdRich(item.title)}</div>
     ${scoreBlock}
     <div>${btn}</div>
@@ -4616,14 +4630,18 @@ async function initHomeworkSection() {
   let showCompleted = false;
   let previewMode = false;   // preview(?preview_mode=) no-op 検出 → section 非表示 (旧 teal 挙動を踏襲)
   let drillsFailed = false;  // ドリル取得の「真の失敗」検出 → 空と区別しエラー表示 (非表示にしない)
+  // 🆕 取れた一覧そのもの (null = 取れなかった・対象外)。「新しい」の数え方と「見た」の記録に使う (hw-notice.js)
+  let hwItems = null, drillItems = null;
+  let focusDone = false;     // ?focus=homework (宿題のお知らせのリンク) のスクロールは最初の 1 回だけ
 
   // 宿題 (premium のみ・403/失敗時はドリルだけで続行)
   async function loadHomework() {
-    openHw = []; doneHw = []; overdueN = 0;
+    openHw = []; doneHw = []; overdueN = 0; hwItems = null;
     if (!premium) return;
     try {
       const data = await slApiFetch('/api/student/homework?limit=100');
       const items = (data && data.items) || [];
+      hwItems = items;
       openHw = items.filter(it => it.status === 'open');
       doneHw = items.filter(it => it.status === 'completed');
       overdueN = (data.summary && data.summary.overdue) || 0;
@@ -4635,10 +4653,11 @@ async function initHomeworkSection() {
 
   // 英文法ドリル (全生徒・配信されていれば宿題として表示)
   async function loadDrills() {
-    openDrills = []; doneDrills = []; drillsFailed = false;
+    openDrills = []; doneDrills = []; drillsFailed = false; drillItems = null;
     try {
       const data = await slApiFetch('/api/student/grammar-drills');
       const items = (data && data.items) || [];
+      drillItems = items;
       openDrills = items.filter(it => it.status !== 'completed');
       doneDrills = items.filter(it => it.status === 'completed');
     } catch (e) {
@@ -4659,14 +4678,10 @@ async function initHomeworkSection() {
     section.style.display = 'block';
     // badge: 未完了(宿題 + ドリル)
     const openTotal = openHw.length + openDrills.length;
-    // 📌 コーチカード直下の「要対応」チップ (宿題欄は十数スクロール下で気づけないため・2026-09-09)
-    try {
-      if (window.AJ_TODO) {
-        AJ_TODO.set('homework', openTotal > 0
-          ? { label: (overdueN > 0 ? '⚠️ ' : '📝 ') + '宿題 ' + openTotal + ' 件' + (overdueN > 0 ? '（うち期限切れ ' + overdueN + ' 件）' : ''), target: 'homeworkSection', order: 1, urgent: overdueN > 0 }
-          : null);
-      }
-    } catch (_) { /* noop */ }
+    // 🆕 新しい宿題: 描く前に数えてカードに 🆕 新着を付ける (「見た」の記録は宿題欄が見えたとき・ドリルを開いたとき)
+    const notice = computeNotice();
+    _hwNewIds = { d: (notice && notice.newDrillMap) || {}, h: (notice && notice.newHwMap) || {} };
+    setTodo(notice);
     if (openTotal > 0) {
       badge.style.display = 'inline-block';
       if (overdueN > 0) {
@@ -4680,6 +4695,44 @@ async function initHomeworkSection() {
       badge.style.display = 'none';
     }
     render();
+    // 宿題のお知らせのリンク (mypage.html?focus=homework) で来たら宿題欄へ (最初の 1 回だけ)
+    if (!focusDone) {
+      focusDone = true;
+      try {
+        if (new URLSearchParams(window.location.search).get('focus') === 'homework') section.scrollIntoView({ block: 'start' });
+      } catch (_) { /* noop */ }
+    }
+  }
+
+  // 🆕 この端末の「見た」の記録と比べた「新しい宿題」(hw-notice.js が無ければ null = 今までどおり)
+  function computeNotice() {
+    const HN = _hwNotice();
+    if (!HN) return null;
+    try { return HN.compute({ drills: drillItems, homework: hwItems, seen: HN.loadSeen(_hwSid()) }); } catch (_) { return null; }
+  }
+  // 📌 コーチカード直下の「要対応」チップ (宿題欄は十数スクロール下で気づけないため・2026-09-09)。
+  //   新しい宿題があれば「🆕 新しい宿題 N 件」(2026-10-15)、無ければ今までどおり「📝 宿題 N 件」
+  function setTodo(notice) {
+    const openTotal = openHw.length + openDrills.length;
+    const nNew = (notice && notice.newCount) || 0;
+    try {
+      if (window.AJ_TODO) {
+        const HN = _hwNotice();
+        const label = (HN && nNew > 0) ? HN.todoLabel(nNew, openTotal, overdueN)
+          : (overdueN > 0 ? '⚠️ ' : '📝 ') + '宿題 ' + openTotal + ' 件' + (overdueN > 0 ? '（うち期限切れ ' + overdueN + ' 件）' : '');
+        AJ_TODO.set('homework', openTotal > 0
+          ? { label: label, target: 'homeworkSection', order: 1, urgent: overdueN > 0 || nNew > 0 }
+          : null);
+      }
+    } catch (_) { /* noop */ }
+  }
+  // 🆕 宿題を「見た」と記録する (取れた一覧だけ)。カードの 🆕 はこの表示のあいだは残し (見ている最中に消えると戸惑う)、
+  //   チップだけ「📝 宿題 N 件」に戻す。次に読み直したときにカードの 🆕 も消える
+  function markSeenNow() {
+    const HN = _hwNotice();
+    if (!HN || (drillItems === null && hwItems === null)) return;
+    try { HN.markSeen(_hwSid(), drillItems, hwItems); } catch (_) { return; }
+    setTodo(computeNotice());
   }
 
   function render() {
@@ -4791,6 +4844,7 @@ async function initHomeworkSection() {
     if (!dbtn) return;
     const did = dbtn.getAttribute('data-hw-drill-open');
     if (!did) return;
+    markSeenNow();   // 🆕 開いた = 見た
     if (typeof window._gdOpenDrill === 'function') {
       window._gdOpenDrill(did);
     } else {
@@ -4803,6 +4857,27 @@ async function initHomeworkSection() {
     showCompleted = !showCompleted;
     render();
   });
+
+  // 🆕 宿題欄が 30% 以上 (縦に長いときは画面の半分以上) 見えた状態が 1.5 秒続いたら「見た」と記録する。
+  //   IntersectionObserver の無い端末は「ドリルを開いたとき」だけ記録する
+  try {
+    if (_hwNotice() && ('IntersectionObserver' in window)) {
+      let seenTimer = null;
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((en) => {
+          const vh = window.innerHeight || 0;
+          const visible = en.isIntersecting && (en.intersectionRatio >= 0.3
+            || (vh > 0 && en.intersectionRect && en.intersectionRect.height >= vh * 0.5));
+          if (visible) {
+            if (!seenTimer) seenTimer = setTimeout(() => { seenTimer = null; markSeenNow(); }, 1500);
+          } else if (seenTimer) {
+            clearTimeout(seenTimer); seenTimer = null;
+          }
+        });
+      }, { threshold: [0, 0.05, 0.1, 0.2, 0.3, 0.5] });
+      io.observe(section);
+    }
+  } catch (_) { /* noop */ }
 
   await refresh();
 }
