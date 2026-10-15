@@ -1,0 +1,50 @@
+{
+ "format": "trillion-blind-answers/v1",
+ "_fixture": true,
+ "solver": "C",
+ "date": "2026-10-21",
+ "answers": [
+  {
+   "qid": "Q01",
+   "item_hash": "62f5850efde3c974",
+   "choice_no": 2,
+   "note": ""
+  },
+  {
+   "qid": "Q02",
+   "item_hash": "924573f96b016aa8",
+   "choice_no": 4,
+   "note": ""
+  },
+  {
+   "qid": "Q03",
+   "item_hash": "0912aa5428ecf5e7",
+   "choice_no": 1,
+   "note": ""
+  },
+  {
+   "qid": "Q04",
+   "item_hash": "b355d0e863b872e9",
+   "choice_no": 3,
+   "note": ""
+  },
+  {
+   "qid": "Q05",
+   "item_hash": "474e24e5be0512a7",
+   "choice_no": 2,
+   "note": ""
+  },
+  {
+   "qid": "Q06",
+   "item_hash": "310620e6b826a78e",
+   "choice_no": 1,
+   "note": ""
+  },
+  {
+   "qid": "Q07",
+   "item_hash": "486870513a6c6ea6",
+   "choice_no": 4,
+   "note": ""
+  }
+ ]
+}

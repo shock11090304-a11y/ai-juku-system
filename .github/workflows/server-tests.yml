@@ -72,6 +72,10 @@ on:
       - 'seed-data/chu2_grammar_v1.json'
       # 🎯 3日ドリル (test_weakness_routine_auto_delivery.py) は prod_status.py のスケジューラのラベルもソースで見る
       - 'scripts/prod_status.py'
+      # 📖🧪 英語長文・習熟度テストの取込 (test_proficiency_test_import.py・test_drill_import_parity.py) は取込スクリプトと
+      #   fixtures を実際に動かし、検査スクリプトに写したサーバの単元表・仕様書 11 章のコードを照合する (スクリプトだけ直した push でも走らせる)
+      - 'scripts/drill_import/**'
+      - 'docs/drill-import-spec.md'
       # 合成監視が fix marker / リンクを照合している実ファイル。壊れたら検知したい。
       - 'lp.html'
       - 'checkout.html'
@@ -362,11 +366,20 @@ jobs:
       # 🧪 習熟度テスト (科目 proficiency_test・2026-10-15): 1 回分 = 1 単元・1 始まり → 0 始まりの照合・全大問を取込順のまま 1 本のドリル・
       #   同じ生徒に 2 回は配らない (409 / allow_retake)・弱点集計に入れない (PTEST_FEEDS_WEAKNESS=1 で skill つきだけ)・
       #   どの自動配信の抽出にも出ない (env でも)・ptest_meta (kv)・メールの件名「🧪 習熟度テスト「…」が届きました」。
+      #   送る形は取込スクリプトの build_payloads で作り、scripts/drill_import/fixtures を取込スクリプトで試運転 → --apply → 読み返し (全問照合)。
       - name: 習熟度テスト 取込・出題順・自動配信からの除外 回帰テスト
         if: ${{ !cancelled() }}
         run: |
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_proficiency_test_import.py
+
+      # 📖🧪 取込の検査スクリプト・取込スクリプト (scripts/drill_import・2026-10-15): 塾長のデスクトップの _tools/ に写して
+      #   単体で動かす (Python 3.9 の標準ライブラリだけ・python3 -I) ため、サーバの単元表を SERVER_TABLES に写して持つ。
+      #   その写しが server/main.py と同じか (構文木で読む)・出典の形が自動配信の許可リスト / 禁止と合うか・3.9 の文法・
+      #   fixtures の無い写しでも動くか・取込スクリプトの安全装置 (https・0600 の秘密・リポジトリの中は送らない)・仕様書 11 章のコード。
+      - name: 取込の検査・取込スクリプト (サーバの表の写し・単体で動く) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: python3 scripts/health_check/test_drill_import_parity.py
 
       # 🎯 公開 bank の topic 窓 (2026-10-05): 小問の unit 接頭辞が topic で始まる行を新しい未タグ行より先に並べてから limit で切る
       #   (入試道場の単元別カードが unitExact で捨てる行で窓を使い切らない)。接頭辞の規則は dojo-drill.html の unitExact とソースで照合。

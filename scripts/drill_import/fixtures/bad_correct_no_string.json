@@ -1,0 +1,93 @@
+{
+ "format": "trillion-drill-import/v1",
+ "kind": "english_long",
+ "_fixture": true,
+ "_note": "わざと壊した例 (自己検査用): E_CORRECT_NO だけが出ること",
+ "set_id": "FX001",
+ "unit": "長文 Lv.1",
+ "created": "2026-10-20",
+ "author": "fixture",
+ "copyright": {
+  "original": true,
+  "not_published_anywhere": true,
+  "fact_sources": []
+ },
+ "passages": [
+  {
+   "pid": "P01",
+   "title": "The Bicycle Library",
+   "body": "[1] When the public library in the small town of Harrow Bay closed for a year of repairs, many people worried about losing a quiet place to read. The building stood on a hill at the edge of town, and the temporary office that replaced it was a single room above the post office. Many older residents could no longer reach the books they needed. ( 1 ), the staff decided to bring the books to the readers instead.\n\n[2] The idea came from a librarian who had cycled to work for twenty years. She attached a wooden box to the back of an old cargo bicycle and filled it with novels, cookbooks and large-print magazines. Every morning she rode a different route, stopping at parks, bus shelters and the steps of apartment buildings. People could borrow a book simply by writing their name in a notebook that she carried in her coat pocket.\n\n[3] At first, few people stopped. Some thought the rider was selling something, and others felt embarrassed to choose a book in front of strangers. ［A：The turning point came on a rainy Tuesday］, when a group of children waiting for a late bus asked whether they could look inside the box. By the time the bus arrived, every picture book had been borrowed. The next week, parents began to wait at the same stop.\n\n[4] Within six months, the bicycle library had more regular users than the old building had attracted in its final year. The staff were surprised, but they soon understood the reason. The building on the hill had been easy to ignore, while a bicycle in the middle of the street was impossible to miss. In addition, borrowing a book had become a small conversation rather than a formal visit. ( 2 ), people who had never owned a library card started to ask for one.\n\n[5] When the repaired library finally reopened, the town council asked whether the bicycle should be retired. The answer from residents was clear. Today the building is busy again, but two bicycles still leave its doors every morning, and the notebook in the librarian's pocket has become a small symbol of the town.",
+   "body_ja": "[1] ハロウ・ベイという小さな町の公立図書館が 1 年間の改修で閉まったとき、多くの人が静かに本を読める場所を失うことを心配した。建物は町のはずれの丘の上にあり、代わりの仮の事務所は郵便局の 2 階のひと部屋だけだった。多くの年配の住民は、必要な本に手が届かなくなった。( 1 )、職員は本を読者のもとへ届けることにした。\n\n[2] この案は、20 年間自転車で通勤してきた司書が出したものだった。彼女は古い荷物用自転車の後ろに木の箱を取り付け、小説や料理の本、大きな文字の雑誌を詰めた。毎朝ちがう道を走り、公園やバス停の待合所、集合住宅の階段の前で止まった。人々は、彼女がコートのポケットに入れているノートに名前を書くだけで本を借りることができた。\n\n[3] 最初は、足を止める人はほとんどいなかった。乗っている人が何かを売っていると思う人もいれば、知らない人の前で本を選ぶのを恥ずかしく感じる人もいた。［A：転機は雨の火曜日に訪れた］。遅れているバスを待っていた子どもたちが、箱の中を見てもいいかとたずねたのだ。バスが着くころには、絵本はすべて借りられていた。次の週には、親たちが同じ停留所で待つようになった。\n\n[4] 6 か月のうちに、自転車図書館の常連の利用者は、古い建物が最後の 1 年に集めた人数を上回った。職員は驚いたが、すぐに理由が分かった。丘の上の建物は見過ごされやすかったが、通りの真ん中にいる自転車は見逃しようがなかった。加えて、本を借りることは改まった訪問ではなく、ちょっとした会話になっていた。( 2 )、図書館のカードを一度も持ったことのない人々が、カードを作りたいと言い始めた。\n\n[5] 改修した図書館がついに再開したとき、町議会は自転車をやめるべきかどうかをたずねた。住民の答えははっきりしていた。今では建物は再びにぎわっているが、毎朝 2 台の自転車がその扉から出発し、司書のポケットのノートは町の小さな象徴になっている。",
+   "questions": [
+    {
+     "qid": "P01-Q1",
+     "type": "空所補充",
+     "stem": "( 1 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "For example",
+      "In contrast",
+      "As a result",
+      "Nevertheless"
+     ],
+     "correct_choice_no": "3",
+     "explanation": "正解 ③ As a result\n【根拠】Many older residents could no longer reach the books they needed.\n【訳】多くの年配の住民は、必要な本に手が届かなくなった。\n【他の選択肢】\n① For example … 前の文の具体例を挙げる流れではない。\n② In contrast … 前後は対比の関係ではない。\n④ Nevertheless … 「それにもかかわらず」では、困った状況への対策という因果の流れに合わない。"
+    },
+    {
+     "qid": "P01-Q2",
+     "type": "下線部の意味",
+     "stem": "下線部Aが表している内容として最も適切なものを選びなさい。",
+     "choices": [
+      "the day the librarian bought a new bicycle",
+      "the moment when people began to accept the bicycle library",
+      "the week the bus service was cancelled",
+      "the afternoon when the children returned all of the picture books late"
+     ],
+     "correct_choice_no": 2,
+     "explanation": "正解 ② the moment when people began to accept the bicycle library\n【根拠】The next week, parents began to wait at the same stop.\n【訳】次の週には、親たちが同じ停留所で待つようになった。\n【他の選択肢】\n① the day the librarian bought a new bicycle … 新しい自転車を買った話は本文に無い。\n③ the week the bus service was cancelled … バスの運行が取りやめになった話は無い。\n④ the afternoon when the children returned all of the picture books late … 子どもたちは絵本を借りたのであって、遅れて返した話ではない。"
+    },
+    {
+     "qid": "P01-Q3",
+     "type": "内容一致",
+     "stem": "本文の内容に合うものを選びなさい。",
+     "choices": [
+      "The temporary library office was larger than the old building.",
+      "People had to show a library card to borrow books from the bicycle.",
+      "The librarian rode the same route every morning.",
+      "Borrowers wrote their names in a notebook to take a book."
+     ],
+     "correct_choice_no": 4,
+     "explanation": "正解 ④ Borrowers wrote their names in a notebook to take a book.\n【根拠】People could borrow a book simply by writing their name in a notebook that she carried in her coat pocket.\n【訳】人々は、彼女がコートのポケットに入れているノートに名前を書くだけで本を借りることができた。\n【他の選択肢】\n① The temporary library office was larger than the old building. … 仮の事務所はひと部屋だけだった。\n② People had to show a library card to borrow books from the bicycle. … カードではなくノートに名前を書くだけで借りられた。\n③ The librarian rode the same route every morning. … 毎朝ちがう道を走った。"
+    },
+    {
+     "qid": "P01-Q4",
+     "type": "空所補充",
+     "stem": "( 2 ) に入れるのに最も適切なものを選びなさい。",
+     "choices": [
+      "However",
+      "On the other hand",
+      "Consequently",
+      "For instance"
+     ],
+     "correct_choice_no": 3,
+     "explanation": "正解 ③ Consequently\n【根拠】In addition, borrowing a book had become a small conversation rather than a formal visit.\n【訳】加えて、本を借りることは改まった訪問ではなく、ちょっとした会話になっていた。\n【他の選択肢】\n① However … 前の内容と逆の流れではない。\n② On the other hand … 対比ではなく、前の内容の結果を述べている。\n④ For instance … 前の内容の具体例ではない。"
+    },
+    {
+     "qid": "P01-Q5",
+     "type": "主題・タイトル",
+     "stem": "本文の主題として最も適切なものを選びなさい。",
+     "choices": [
+      "A small change in how books reached people made the library more popular.",
+      "Cycling is the healthiest way for librarians to travel to work.",
+      "Old library buildings on hills should always be replaced by small temporary offices in town.",
+      "Children read more picture books when the weather is bad."
+     ],
+     "correct_choice_no": 1,
+     "explanation": "正解 ① A small change in how books reached people made the library more popular.\n【根拠】The building on the hill had been easy to ignore, while a bicycle in the middle of the street was impossible to miss.\n【訳】丘の上の建物は見過ごされやすかったが、通りの真ん中にいる自転車は見逃しようがなかった。\n【他の選択肢】\n② Cycling is the healthiest way for librarians to travel to work. … 健康の話は本文に無い。\n③ Old library buildings on hills should always be replaced by small temporary offices in town. … 建物は再開しており、置き換えるべきだとは述べていない。\n④ Children read more picture books when the weather is bad. … 雨の日の出来事は転機の一例で、主題ではない。"
+    }
+   ]
+  }
+ ],
+ "_expect": [
+  "E_CORRECT_NO"
+ ]
+}

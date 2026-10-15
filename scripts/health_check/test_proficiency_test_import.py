@@ -3,7 +3,7 @@
 
 習熟度テストは Codex が作ったファイル (1 ファイル = 1 回分・番号は 1 始まり) を取込スクリプトが 0 始まりに直して送る。
 1 回分 = 1 単元 (大問 1 つ = 本文 1 つ)。塾長が CEO で配り、全大問を出題順のまま 1 本のドリルにする。自動配信には一切出さない。
-このテストでは取込スクリプトの変換 (1 始まり → 0 始まり) を手書きの to_payload で再現する (中身はすべて架空・_fixture)。
+送る形は取込スクリプト scripts/drill_import/import_drill_file.py の build_payloads (通信しない純関数) で作る (中身はすべて架空・_fixture)。
 
   (1) 取込: 大問 3・設問 9 が入る・kv_settings 'ptest_meta:<単元>' (大問数・設問数・skill)
   (2) 1 始まり → 0 始まり: DB の choices[answer] がファイルの choices[correct_choice_no - 1] と全問一致
@@ -22,6 +22,9 @@
   (11) CEO の配信済み一覧 subject=proficiency_test はテストだけ・単元一覧は 高校/中学・回・改 の順
   (12) 自動配信の関数のソースに proficiency_test / _PTEST_SUBJECT が出てこない (許可リストに入れていない静的な確認)・
       お知らせのメールの件名「🧪 習熟度テスト「…」が届きました」
+  (13) 取込スクリプトの往復: scripts/drill_import/fixtures の ok_proficiency_test / ok_english_long を、取込スクリプト (run) で
+      試運転 → --apply → 読み返し (通信は TestClient に差し替え)。DB の全問が 1 始まり → 0 始まりで一致・ptest_meta の skill・
+      再送は「取込済み」で増えない・リポジトリの中のファイルは送らない・記録 (import_log) に秘密が無い
 
 実行:
     python3 scripts/health_check/test_proficiency_test_import.py
@@ -36,15 +39,19 @@ import hashlib
 import hmac
 import importlib.util
 import inspect
+import io
 import json
 import os
 import random
+import shutil
 import sys
 import tempfile
 import time
+import urllib.parse
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 MAIN_PY = os.path.join(REPO, "server", "main.py")
+DRILL_IMPORT = os.path.join(REPO, "scripts", "drill_import")
 sys.path.insert(0, os.path.join(REPO, "server"))
 
 FAILURES = []
@@ -81,6 +88,19 @@ def load_main():
     spec.loader.exec_module(mod)
     mod.init_db()
     return mod
+
+
+def load_importer():
+    """取込スクリプト (scripts/drill_import/import_drill_file.py)。読み込むと隣の検査スクリプトも読む。通信は HTTP を差し替えるまでしない。"""
+    sys.dont_write_bytecode = True
+    spec = importlib.util.spec_from_file_location("import_drill_file_ptest", os.path.join(DRILL_IMPORT, "import_drill_file.py"))
+    imp_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(imp_mod)
+    sys.dont_write_bytecode = False
+    return imp_mod
+
+
+IMP = load_importer()
 
 
 def admin_token(mod, hours=1):
@@ -152,7 +172,9 @@ def ptest_doc(test_id="HSENG01", round_=1, revision=0, per=(3, 2, 4), target="ko
                          "body_ja": None, "questions": qs})
     return {"format": "trillion-drill-import/v1", "kind": "proficiency_test", "_fixture": True, "test_id": test_id,
             "target": target, "subject": "english", "subject_ja": subject_ja, "series_ja": "習熟度テスト", "round": round_,
-            "revision": revision, "title": f"架空 習熟度テスト 第{round_}回", "time_limit_min": 60, "sections": sections}
+            "revision": revision, "title": f"架空 習熟度テスト 第{round_}回", "time_limit_min": 60, "sections": sections,
+            "_review": {"protocol": "trillion-blind/v1", "blind": {"dropped_qids": [], "solvers": [
+                {"label": x, "kind": "ai", "date": "2026-10-21", "answers_file": f"_review/blind_{x}.json"} for x in "ABC"]}}}
 
 
 def unit_of(doc):
@@ -161,27 +183,11 @@ def unit_of(doc):
 
 
 def to_payload(doc):
-    """取込スクリプト (scripts/drill_import の build_payloads) と同じ変換: 1 始まり → 0 始まり・出典 pt-<test_id>-<qid> /
-    本文 ptest:<test_id>:S<nn>・skill は ptest_meta へ。"""
-    unit, passages, skills = unit_of(doc), [], {}
-    for sec in sorted(doc["sections"], key=lambda s: s["section_no"]):
-        qs = []
-        for qq in sec["questions"]:
-            src = f"pt-{doc['test_id']}-{qq['qid']}"
-            qs.append({"stem": qq["stem"], "choices": qq["choices"], "answer": qq["correct_choice_no"] - 1,
-                       "explanation": qq["explanation"], "source": src})
-            if qq.get("skill"):
-                skills[src] = f"{qq['skill']['subject']}|{qq['skill']['unit']}"
-        passages.append({"subject": "proficiency_test", "unit": unit, "level": "standard", "title": sec["title"],
-                         "body": sec["body"], "body_ja": sec.get("body_ja"),
-                         "source": f"ptest:{doc['test_id']}:S{sec['section_no']:02d}", "questions": qs})
-    return {"subject": "proficiency_test", "dedup": True, "all_or_nothing": True, "passages": passages,
-            "review": {"protocol": "trillion-blind/v1", "all_agree": True, "validator": "validate_drill_import/v1",
-                       "file_sha256": "0" * 64, "kind": "proficiency_test", "test_id": doc["test_id"],
-                       "solvers": [{"label": x, "kind": "ai", "date": "2026-10-21"} for x in "ABC"]},
-            "ptest_meta": {"test_id": doc["test_id"], "title": doc["title"], "target": doc["target"], "subject": doc["subject"],
-                           "round": doc["round"], "revision": doc.get("revision", 0), "time_limit_min": doc.get("time_limit_min"),
-                           "skills": skills}}
+    """取込スクリプトの build_payloads で送る形にする (1 始まり → 0 始まり・出典 pt-<test_id>-<qid> / 本文 ptest:<test_id>:S<nn>・
+    skill は ptest_meta へ)。1 回分 = 1 要求。"""
+    pls = IMP.build_payloads(doc, "0" * 64)
+    assert len(pls) == 1, len(pls)
+    return pls[0]
 
 
 def main():
@@ -223,7 +229,8 @@ def main():
     print("\n[1] 取込")
     doc = ptest_doc()
     unit = unit_of(doc)
-    check("単元名は「高校英語 習熟度テスト 第1回」(_PTEST_UNIT_RE に合う)", unit == "高校英語 習熟度テスト 第1回" and bool(mod._PTEST_UNIT_RE.match(unit)))
+    check("単元名は「高校英語 習熟度テスト 第1回」(_PTEST_UNIT_RE に合う・取込スクリプトと同じ組み立て)",
+          unit == "高校英語 習熟度テスト 第1回" and bool(mod._PTEST_UNIT_RE.match(unit)) and IMP.V.ptest_unit_name(doc) == unit)
     pl = to_payload(doc)
     code, d = imp(pl)
     check("大問 3・設問 9 が入る (ok・errors 0・already_imported false・ptest_meta_saved)",
@@ -522,6 +529,84 @@ def main():
     check("本文に「全9問」と提出は 1 回・「解説がその場で」は書かない",
           mails and "全9問" in mails[0][1] and "提出は1回だけ" in mails[0][1] and "解説がその場で" not in mails[0][1], mails)
     check("LINE は送らない (既定)", res.get("line_ok") == 0 and res.get("channels", {}).get("line") is False, res)
+
+    # ------------------------------------------------------------------
+    print("\n[13] 取込スクリプトの往復 (fixtures → 試運転 → --apply → 読み返し・通信は TestClient に差し替え)")
+    calls = []
+    base = "https://ai-juku-api.test.invalid"
+
+    def fake_http(method, url, headers, body=None):
+        u = urllib.parse.urlsplit(url)
+        calls.append((method, u.path, headers.get("X-Cron-Secret") == "test-cron-secret", url.startswith(base + "/")))
+        mod._RATE_LIMIT_STORE.clear()
+        r = client.request(method, u.path, params=dict(urllib.parse.parse_qsl(u.query)) or None, json=body, headers=headers)
+        try:
+            return r.status_code, r.json()
+        except ValueError:
+            return r.status_code, {"_text": r.text[:300]}
+
+    IMP.HTTP = fake_http
+    work = tempfile.mkdtemp(prefix="ptest_fx_")
+    shutil.copytree(os.path.join(DRILL_IMPORT, "fixtures"), os.path.join(work, "fixtures"))
+    fxd = os.path.join(work, "fixtures")
+    with Env(AI_JUKU_API_BASE=base, CRON_SECRET="test-cron-secret"):
+        for name in ("ok_proficiency_test.json", "ok_english_long.json"):
+            path = os.path.join(fxd, name)
+            fdoc = json.load(open(path, encoding="utf-8"))
+            r0 = IMP.V.validate(path)
+            check(f"{name}: 検査スクリプトでエラー・警告なし", not r0.errors and not r0.warnings, (r0.errors + r0.warnings)[:3])
+            before = counts(mod)
+            out = io.StringIO()
+            rc = IMP.run([path], out=out)
+            check(f"{name}: 試運転 → exit 0・DB は増えない", rc == 0 and "試運転 OK" in out.getvalue() and counts(mod) == before,
+                  out.getvalue()[-500:])
+            out = io.StringIO()
+            rc = IMP.run([path, "--apply"], out=out)
+            check(f"{name}: --apply → 入れて読み返しも一致 (単元の本数・👀 プレビュー)",
+                  rc == 0 and "取り込みました (読み返しも一致)" in out.getvalue(), out.getvalue()[-700:])
+            if fdoc["kind"] == "english_long":
+                pref, groups, unit_f = f"el-{fdoc['set_id']}-", fdoc["passages"], fdoc["unit"]
+            else:
+                pref, groups, unit_f = f"pt-{fdoc['test_id']}-", fdoc["sections"], IMP.V.ptest_unit_name(fdoc)
+            rows = {r["source"]: r for r in q(mod, "SELECT g.source, g.unit, g.stem, g.choices, g.answer, g.explanation, p.body, p.body_ja "
+                                                  "FROM grammar_questions g JOIN grammar_passages p ON p.id = g.passage_id "
+                                                  "WHERE g.subject = ?", (fdoc["kind"],)) if str(r["source"]).startswith(pref)}
+            bad, nq = [], 0
+            for g in groups:
+                for qq in g["questions"]:
+                    nq += 1
+                    r = rows.get(pref + qq["qid"])
+                    ch = json.loads(r["choices"]) if r else None
+                    if (not r or r["unit"] != unit_f or r["stem"] != qq["stem"].strip() or ch != qq["choices"]
+                            or int(r["answer"]) != qq["correct_choice_no"] - 1
+                            or ch[int(r["answer"])] != qq["choices"][qq["correct_choice_no"] - 1]
+                            or r["explanation"] != qq["explanation"] or r["body"] != g["body"].strip()
+                            or (r["body_ja"] or None) != (g.get("body_ja") or None)):
+                        bad.append(qq["qid"])
+            check(f"{name}: 全 {nq} 問が DB と一致 (answer = correct_choice_no - 1・選択肢・解説・本文・全訳・単元)",
+                  not bad and len(rows) == nq, (bad, len(rows), nq))
+            if fdoc["kind"] == "proficiency_test":
+                kv = q(mod, "SELECT value FROM kv_settings WHERE key = ?", ("ptest_meta:" + unit_f,))
+                want = {pref + qq["qid"]: f"{qq['skill']['subject']}|{qq['skill']['unit']}"
+                        for g in groups for qq in g["questions"] if qq.get("skill")}
+                got = json.loads(kv[0]["value"]).get("skills") if kv else None
+                check(f"{name}: ptest_meta の skill = ファイルの skill ({len(want)} 問)", got == want and want, (got, want))
+            before = counts(mod)
+            out = io.StringIO()
+            n_calls = len(calls)
+            rc = IMP.run([path, "--apply"], out=out)
+            check(f"{name}: 2 回目の --apply は「取込済み」で何も増えない (試運転だけ送る)",
+                  rc == 0 and "取込済み" in out.getvalue() and counts(mod) == before
+                  and [c[1] for c in calls[n_calls:]] == ["/api/admin/grammar/import"], out.getvalue()[-300:])
+            log = open(path + ".import_log.json", encoding="utf-8").read()
+            check(f"{name}: 記録 (import_log.json) は 3 回分・秘密は書かない",
+                  len(json.loads(log)) == 3 and "test-cron-secret" not in log, log[:200])
+        n_calls = len(calls)
+        out = io.StringIO()
+        rc = IMP.run([os.path.join(DRILL_IMPORT, "fixtures", "ok_english_long.json"), "--apply"], out=out)
+        check("リポジトリの中のファイルは送らない (exit 2・通信しない)", rc == 2 and len(calls) == n_calls, out.getvalue()[-300:])
+    check("送った要求はすべて X-Cron-Secret つき・送り先は AI_JUKU_API_BASE", calls and all(c[2] and c[3] for c in calls), calls[:3])
+    shutil.rmtree(work, ignore_errors=True)
 
     print()
     if FAILURES:

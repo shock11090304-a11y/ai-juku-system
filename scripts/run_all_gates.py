@@ -115,6 +115,10 @@ WRITE_OK = {
     "class_timetable/check_timetable_sync_selftest.py":
         "tempfile の使い捨てディレクトリに正典と写しを複製し、そこだけを壊してゲートを回すだけ"
         "（リポジトリは1文字も書き換えない）",
+    "drill_import/validate_drill_import.py":
+        "引数なし (ランナーが回す形) は自己検査で、fixtures の写しと盲検シートを tempfile.TemporaryDirectory にだけ書く。"
+        "--make-blind (塾長が手で使う) は指定された出力先にだけ書き、git リポジトリ・seed-data の中なら何も作らずに拒否する"
+        "（リポジトリには書かない・2026-10-15 取込仕様書の検査スクリプト）",
     "eng_hinshi_bunkai/qa.py": "出力ディレクトリを作るだけ",
     "kobun_kyotsu_enshu/check_gates.py":
         "tempfile の使い捨てディレクトリにパッケージを丸ごと写し、その写しの中だけを壊して"

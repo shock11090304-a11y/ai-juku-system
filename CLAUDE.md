@@ -381,7 +381,15 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   `already_imported: true` で何も増えない (dedup の指定にかかわらず本文の重複を見る)。入れたら events `grammar_import_review` (盲検の要約・名前なし)。
 - 取り込んだ後の直し方: 解説・単元は同期 (`/api/admin/grammar/sync`)。選択肢・正解は配る前なら同期、配った後は止めて (retire) 新しい ID で入れ直す。
   テストは revision を上げて「第N回改1」。本文を直すときは新しい pid / set_id (本文の重複判定は active を見ない)。
-- 回帰テスト: `scripts/health_check/test_english_long_drill.py`・`test_proficiency_test_import.py` (CI `server-tests.yml`)・`test_auto_delivery_shared.py` の [10]。
+- 手元の道具 (`scripts/drill_import/`・README あり): `validate_drill_import.py` (検査・`--make-blind` で盲検のシート・解答用紙の照合 =
+  item_hash で直した後の盲検を無効にする・0 始まりで書いた解き手を止める) と `import_drill_file.py` (既定は試運転・`--apply` で本番へ・
+  入れた後に読み返す・git と seed-data の中のファイルは拒否・秘密は `~/.ai-juku-cron-secret` (0600) を表示しない)。
+  ★塾長のデスクトップ `~/Desktop/📝 模試・演習/習熟度テスト/_tools/` に写して単体で動かす (Python 3.9 標準ライブラリだけ・`python3 -I`)。
+  そのためサーバの単元表を `SERVER_TABLES` に写して持つ → **単元・科目・テストの単元名の形を変えたら同じ commit で写しも直し**
+  (`test_drill_import_parity.py` が落ちる)、デスクトップの `_tools/` にも写し直す。公開リポジトリに取込ファイルが入ったら
+  `check_no_test_keys_in_repo.py` (run_all_gates) が落とす (fixtures は架空・`_fixture: true` だけ可)。
+- 回帰テスト: `scripts/health_check/test_english_long_drill.py`・`test_proficiency_test_import.py` (CI `server-tests.yml`)・`test_auto_delivery_shared.py` の [10]・
+  `test_drill_import_parity.py`・`scripts/drill_import/validate_drill_import.py` の自己検査 (run_all_gates)。
 
 ### 📐 高校数学ドリル (科目 `math`) のシード (2026-10-06 塾長「数学教材は使える？」→「1→2でやって」)
 - 科目 `math` は前から canonical (server 変更なし・単元の許可リスト無し)。これまでは「システム側で取込済み」で補充ボタンが無かった

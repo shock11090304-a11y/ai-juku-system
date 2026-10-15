@@ -1,0 +1,157 @@
+{
+ "format": "trillion-drill-import/v1",
+ "kind": "proficiency_test",
+ "_fixture": true,
+ "_note": "わざと壊した例 (自己検査用): E_CONDITIONAL だけが出ること",
+ "test_id": "FXHS01",
+ "target": "kosei",
+ "subject": "english",
+ "subject_ja": "英語",
+ "series_ja": "架空テスト",
+ "round": 1,
+ "revision": 0,
+ "title": "架空 高校英語 習熟度テスト 第1回",
+ "time_limit_min": 30,
+ "created": "2026-10-20",
+ "author": "fixture",
+ "copyright": {
+  "original": true,
+  "not_published_anywhere": true,
+  "no_past_exam_text": true
+ },
+ "sections": [
+  {
+   "section_no": 1,
+   "title": "第1問 A",
+   "body": "第1問 A\nYou are visiting a sports hall in your town and see this notice.\n［表］\n曜日｜開館時間\n月〜金｜9:00〜18:00\n土｜10:00〜15:00",
+   "body_ja": null,
+   "questions": [
+    {
+     "qid": "Q01",
+     "stem": "If you want to use the hall on a Saturday, you must leave by",
+     "choices": [
+      "12:00",
+      "15:00",
+      "17:00",
+      "18:00"
+     ],
+     "correct_choice_no": 2,
+     "explanation": "正解 ② 15:00\n【根拠】土｜10:00〜15:00\n【他の選択肢】\n① 12:00 … 土曜の閉館は 12 時ではない。\n③ 17:00 … 該当する時刻が無い。\n④ 18:00 … 平日の閉館時刻。",
+     "skill": null
+    },
+    {
+     "qid": "Q02",
+     "stem": "On weekdays, the hall is open from",
+     "choices": [
+      "10:00 to 15:00",
+      "9:00 to 15:00",
+      "10:00 to 18:00",
+      "9:00 to 18:00"
+     ],
+     "correct_choice_no": 4,
+     "explanation": "正解 ④ 9:00 to 18:00\n【根拠】月〜金｜9:00〜18:00\n【他の選択肢】\n① 10:00 to 15:00 … 土曜の時間。\n② 9:00 to 15:00 … 閉館の時刻が違う。\n③ 10:00 to 18:00 … 開館の時刻が違う。",
+     "skill": null
+    }
+   ]
+  },
+  {
+   "section_no": 2,
+   "title": "第2問",
+   "body": "第2問 次の各文の空所に入れるのに最も適当なものを選べ。",
+   "body_ja": null,
+   "questions": [
+    {
+     "qid": "Q03",
+     "stem": "This is the town (     ) my grandfather was born.",
+     "choices": [
+      "where",
+      "which",
+      "what",
+      "whose"
+     ],
+     "correct_choice_no": 1,
+     "explanation": "正解 ① where\n【解説】先行詞 the town の後ろが欠けの無い文 (my grandfather was born) なので、関係副詞 where を使う。\n【他の選択肢】\n② which … 後ろに名詞の欠けが無いので不可 (in which なら可)。\n③ what … 先行詞を取らない。\n④ whose … 後ろに名詞が続いていない。",
+     "skill": {
+      "subject": "english",
+      "unit": "関係詞"
+     }
+    },
+    {
+     "qid": "Q04",
+     "stem": "Q03 で ① を選んだ場合は、次の文の空所に入る語を選べ。If I (     ) more time, I would read every book in the library.",
+     "choices": [
+      "have",
+      "will have",
+      "had",
+      "am having"
+     ],
+     "correct_choice_no": 3,
+     "explanation": "正解 ③ had\n【解説】主節が would read なので、現在の事実に反する仮定 (仮定法過去)。if 節は過去形 had。\n【他の選択肢】\n① have … 直説法の現在形では主節の would と合わない。\n② will have … if 節に will は使わない。\n④ am having … 進行形は合わない。",
+     "skill": {
+      "subject": "english",
+      "unit": "仮定法"
+     }
+    },
+    {
+     "qid": "Q05",
+     "stem": "She is looking forward to (     ) her cousin next week.",
+     "choices": [
+      "see",
+      "seeing",
+      "saw",
+      "be seen"
+     ],
+     "correct_choice_no": 2,
+     "explanation": "正解 ② seeing\n【解説】look forward to の to は前置詞なので、後ろは動名詞 seeing。\n【他の選択肢】\n① see … 前置詞の後ろに原形は置けない。\n③ saw … 過去形は置けない。\n④ be seen … 受け身では意味が合わない。",
+     "skill": {
+      "subject": "english",
+      "unit": "動名詞"
+     }
+    },
+    {
+     "qid": "Q06",
+     "stem": "The bridge (     ) last year is already famous.",
+     "choices": [
+      "built",
+      "building",
+      "to build",
+      "builds"
+     ],
+     "correct_choice_no": 1,
+     "explanation": "正解 ① built\n【解説】橋は「建てられた」ものなので、過去分詞 built が後ろから名詞を修飾する。\n【他の選択肢】\n② building … 現在分詞だと橋が建てる側になる。\n③ to build … last year と合わない。\n④ builds … 動詞が 2 つになる。",
+     "skill": {
+      "subject": "english",
+      "unit": "分詞"
+     }
+    }
+   ]
+  },
+  {
+   "section_no": 3,
+   "title": "第3問",
+   "body": "第3問 次の文章を読み、問いに答えよ。\nMany students in the town club like to walk to school. ( 1 ), some of them ride bicycles when the weather is bad.",
+   "body_ja": "町のクラブの多くの生徒は、歩いて登校するのが好きだ。( 1 )、天気が悪い日には自転車に乗る生徒もいる。",
+   "questions": [
+    {
+     "qid": "Q07",
+     "stem": "( 1 ) に入れるのに最も適当なものを選べ。",
+     "choices": [
+      "Therefore",
+      "For example",
+      "In addition",
+      "However"
+     ],
+     "correct_choice_no": 4,
+     "explanation": "正解 ④ However\n【根拠】Many students in the town club like to walk to school.\n【解説】歩くのが好きだが、天気が悪い日は自転車、という逆の流れ。\n【他の選択肢】\n① Therefore … 因果の流れではない。\n② For example … 具体例ではない。\n③ In addition … 付け足しではなく逆の内容。",
+     "skill": {
+      "subject": "english",
+      "unit": "接続詞"
+     }
+    }
+   ]
+  }
+ ],
+ "_expect": [
+  "E_CONDITIONAL"
+ ]
+}

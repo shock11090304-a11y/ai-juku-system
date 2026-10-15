@@ -48,3 +48,14 @@ CI/cron の判定は**終了コード / FAIL 件数**で行うこと(`WARN>0` �
 日次で回すなら cron / GitHub Actions から `--json` 出力を保存し、FAIL 時に通知。
 `deploy_freshness` は push 直後は一時的に FAIL(Vercel 反映まで数秒)になり得るので、
 デプロイ直後の実行では数十秒おいてから判定すること。
+
+## 回帰テスト (`test_*.py`) — 英語長文・習熟度テストの取込 (2026-10-15)
+
+`test_*.py` は本番には触れない回帰テスト (一時 SQLite・`DATABASE_URL=''`)。CI は `.github/workflows/server-tests.yml`。
+ここには取込の 3 本だけを書く (ほかは server-tests.yml の各 step のコメントを見る)。
+
+| テスト | 何を見るか |
+|---|---|
+| `test_english_long_drill.py` | 英語長文 (`english_long`) の取込 API: 本文型だけ・盲検の記録 (review) 必須・dry_run / all_or_nothing・set_id ごとの照合・配信と自動配信の範囲 |
+| `test_proficiency_test_import.py` | 習熟度テスト (`proficiency_test`): 取込 (送る形は `scripts/drill_import/import_drill_file.py` の `build_payloads`)・全大問を出題順・同じ生徒に 2 回配らない・弱点と自動配信に入らない。[13] で `scripts/drill_import/fixtures` を取込スクリプトで試運転 → `--apply` → 読み返し (通信は TestClient) し、全問の 1 始まり → 0 始まりを照合 |
+| `test_drill_import_parity.py` | 取込の検査・取込スクリプト (デスクトップの `_tools/` で単体で動かす) に写したサーバの単元表が `server/main.py` と同じか・出典の形・Python 3.9 の標準ライブラリだけで `python3 -I` で動くか・取込スクリプトの安全装置・仕様書 11 章のコード |
