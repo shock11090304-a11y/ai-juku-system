@@ -18,6 +18,9 @@
   7. mypage.html は discontinued のとき「終了しました」と 📚 履歴 を案内する / prod_healthcheck は監視から外す。
      案内した 📚 履歴 は今週のプリントが無くても押せる (renderWeeklyWorksheet の本物のコードを JS エンジンで動かす・
      配信終了・中学生モードで全部外れた週・ふつうの週。JS エンジンが無ければ FAIL)
+  8. 公開ページ (light.html・academy.html) は止めた週次プリントを約束しない。light.html の 3日ドリルの行は
+     「小学生には届きません」と科目を注記する (申込フォームで小学生を選べるため・2026-10-16 レビュー指摘)。
+     注記の学年・科目は _ROUTINE_SUBJECTS_BY_BAND と突き合わせる
 
 実行:
     python3 scripts/health_check/test_weekly_worksheet_stop.py
@@ -441,6 +444,25 @@ def main():
     check("プリントを一度も受け取っていない生徒には欄ごと出さない (history?limit=1 で確かめる)",
           "/api/student/worksheet/history?limit=1" in fn)
     _check_history_button_js(fn)
+
+    print("[8] 公開ページ (light.html・academy.html) は止めた週次プリントを約束せず、3日ドリルの対象を注記する")
+    light = open(os.path.join(REPO, "light.html"), encoding="utf-8").read()
+    academy = open(os.path.join(REPO, "academy.html"), encoding="utf-8").read()
+    check("light.html・academy.html に「週1回の弱点プリント」「毎週の弱点プリント」が無い",
+          not any(w in t for t in (light, academy) for w in ("週1回の弱点プリント", "毎週の弱点プリント")))
+    can = light[light.index("✅ ライトで使えるもの"):light.index("ライトでは使えないもの")]
+    item = can[can.index("<li>3日ごとの弱点ドリル"):]
+    item = item[:item.index("</li>")]
+    check("light.html の 3日ドリルの行に「小学生には届きません」の注記がある (申込フォームは 小学5年・小学6年 を選べる)",
+          "小学生には届きません" in item and "中学生・高校生" in item and '<option value="小学5年">' in light, item[:200])
+    # 注記の中身をコードと突き合わせる (配る学年・科目を変えたら公開ページも直す)
+    bands = mod._ROUTINE_SUBJECTS_BY_BAND
+    check("3日ドリルは小学生に配らない (_ROUTINE_SUBJECTS_BY_BAND に shougaku が無い = 注記どおり)",
+          "shougaku" not in bands and mod._student_grade_band("小学5年") == "shougaku"
+          and mod._student_grade_band("既卒生") == "kosei", sorted(bands))
+    check("高校生は英文法・数学、中学生は 5 教科 (light.html・academy.html の注記どおり)",
+          tuple(bands.get("kosei") or ()) == ("english", "math") and len(bands.get("chugaku") or ()) == 5
+          and all("（現在は高校生は英文法・数学、中学生は5教科）" in t for t in (item, academy)), bands)
 
     print()
     if FAILURES:
