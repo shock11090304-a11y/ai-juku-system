@@ -5216,6 +5216,37 @@
     // 👀 選択中の単元の問題を答え・解説つきで見る (配信しない)。塾長は生徒名簿に居ないので自分に配って確かめられない (2026-09-24)。
     //    長文型なら本文 1 本 + その設問、それ以外は 5 問。「🔄 別の問題」でランダムに引き直す。
     const _GD_LEVEL_JA = { basic: '基礎', standard: '標準', advanced: 'やや難' };
+    // 📊 [表 2026-10-17 塾長「アプリ側で表を直しておいて」] 取込仕様 §2 の表 = 「［表］」の行 + 「｜」区切りの行 (1 行目 = 見出し) を <table> にする
+    //   (👀 問題を見る の本文・全訳と、📊 分析の 📖 本文)。s は**エスケープ済み**の本文 (生の本文を入れない)。表は「［表］」の次の行から
+    //   「｜」の無い行 (空行) の手前まで。★本文の箱は pre-wrap なので表の HTML に改行・字下げを入れない。「［表］」の行は消し、表の直後の改行
+    //   1 つは表が吸う (空行を増やさない)。半角 | は表にしない (仕様は全角 ｜ だけ)。列の数がそろわない行は空のセルで埋める。表の無い本文は 1 文字も変えない。
+    //   同じ規則が class.html (gdPassageTables)・mypage.js (_gdPassageTables) にある (test_passage_table_render.py が 3 つを突き合わせる)。
+    function _gdPassageTables(s) {
+      s = String(s);
+      if (s.indexOf('［表］') < 0) return s;
+      var L = s.split('\n'), out = '', prev = '', i = 0;
+      var CELL = 'border:1px solid rgba(165,180,252,0.35);padding:0.22rem 0.55rem;white-space:nowrap;text-align:left;vertical-align:top;';
+      while (i < L.length) {
+        var j = i + 1;
+        if (L[i].trim() === '［表］') while (j < L.length && L[j].indexOf('｜') >= 0) j++;
+        if (j === i + 1) { out += (prev === 'text' ? '\n' : '') + L[i]; prev = 'text'; i++; continue; }
+        var rows = L.slice(i + 1, j).map(function (r) { return r.split('｜'); }), n = 0;
+        rows.forEach(function (r) { n = Math.max(n, r.length); });
+        var trs = rows.map(function (r, k) {
+          var c = '';
+          for (var x = 0; x < n; x++) {
+            c += (k ? '<td style="' + CELL + '">' : '<th style="' + CELL + 'background:rgba(129,140,248,0.18);color:#c7d2fe;font-weight:700;">')
+              + (x < r.length ? r[x].trim() : '') + (k ? '</td>' : '</th>');
+          }
+          return '<tr>' + c + '</tr>';
+        });
+        out += (prev === 'text' ? '\n' : '') + '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;margin:0.3rem 0;">'
+          + '<table style="border-collapse:collapse;font-size:0.95em;line-height:1.45;"><thead>' + trs[0] + '</thead>'
+          + (trs.length > 1 ? '<tbody>' + trs.slice(1).join('') + '</tbody>' : '') + '</table></div>';
+        prev = 'table'; i = j;
+      }
+      return out;
+    }
     async function gdPreview() {
       const box = document.getElementById('gdPreviewBox'); if (!box) return;
       const unit = _gdSelUnit;
@@ -5256,11 +5287,11 @@
           if (q.passage_id != null && !seen[String(q.passage_id)]) {
             seen[String(q.passage_id)] = true;
             const p = pmap[String(q.passage_id)] || {};
-            const bodyHtml = escapeHtml(p.body || '').replace(/\(\s*(\d{1,2})\s*\)/g, '<span style="font-weight:800;color:#fde68a;">( $1 )</span>');
+            const bodyHtml = _gdPassageTables(escapeHtml(p.body || '').replace(/\(\s*(\d{1,2})\s*\)/g, '<span style="font-weight:800;color:#fde68a;">( $1 )</span>'));
             ph = `<div style="margin:0.4rem 0 0.6rem;padding:0.6rem 0.8rem;background:rgba(129,140,248,0.08);border:1px solid rgba(129,140,248,0.32);border-radius:8px;">`
               + (p.title ? `<div style="font-size:0.82rem;font-weight:800;color:#c7d2fe;margin-bottom:0.3rem;">📖 ${escapeHtml(p.title)}</div>` : '')
               + `<div style="font-size:0.82rem;color:#e5e7eb;line-height:1.75;white-space:pre-wrap;word-break:break-word;">${bodyHtml}</div>`
-              + (p.body_ja ? `<details style="margin-top:0.4rem;"><summary style="cursor:pointer;font-size:0.76rem;color:#a5b4fc;">📖 全訳（生徒には解き終わった後だけ表示）</summary><div style="margin-top:0.3rem;font-size:0.78rem;color:#cbd5e1;line-height:1.7;white-space:pre-wrap;">${escapeHtml(p.body_ja)}</div></details>` : '')
+              + (p.body_ja ? `<details style="margin-top:0.4rem;"><summary style="cursor:pointer;font-size:0.76rem;color:#a5b4fc;">📖 全訳（生徒には解き終わった後だけ表示）</summary><div style="margin-top:0.3rem;font-size:0.78rem;color:#cbd5e1;line-height:1.7;white-space:pre-wrap;">${_gdPassageTables(escapeHtml(p.body_ja))}</div></details>` : '')
               + `</div>`;
           }
           const choices = Array.isArray(q.choices) ? q.choices : [];
@@ -5984,7 +6015,7 @@
           if (q.passage_id != null && !_pseen[String(q.passage_id)]) {
             _pseen[String(q.passage_id)] = true;
             const _p = _pmap[String(q.passage_id)] || {};
-            _ph = `<details style="margin:0.5rem 0 0.2rem;padding:0.4rem 0.6rem;background:rgba(129,140,248,0.08);border:1px solid rgba(129,140,248,0.3);border-radius:8px;"><summary style="cursor:pointer;font-size:0.8rem;color:#c7d2fe;font-weight:700;">📖 本文: ${escapeHtml(_p.title || ('#' + q.passage_id))}</summary><div style="margin-top:0.4rem;font-size:0.8rem;color:#e5e7eb;line-height:1.7;white-space:pre-wrap;">${escapeHtml(_p.body || '')}</div></details>`;
+            _ph = `<details style="margin:0.5rem 0 0.2rem;padding:0.4rem 0.6rem;background:rgba(129,140,248,0.08);border:1px solid rgba(129,140,248,0.3);border-radius:8px;"><summary style="cursor:pointer;font-size:0.8rem;color:#c7d2fe;font-weight:700;">📖 本文: ${escapeHtml(_p.title || ('#' + q.passage_id))}</summary><div style="margin-top:0.4rem;font-size:0.8rem;color:#e5e7eb;line-height:1.7;white-space:pre-wrap;">${_gdPassageTables(escapeHtml(_p.body || ''))}</div></details>`;
           }
           return _ph + (function () {
           const rate = q.correct_rate == null ? '—' : `${q.correct_rate}%`;

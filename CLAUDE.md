@@ -313,6 +313,13 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   class.html / mypage.js は「本文カード (1 回) → その本文の設問…」の順に並べ (`gdBlocksHtml` / `_gdBlocksWithPassages`)、
   空所番号「( 1 )」を黄色にし、本文は KaTeX の対象外 (`ignoredClasses: ['gd-nomath']` = 英文の $20 を数式にしない)。
   復習カード (mypage.js) は長文の設問だけキーを question_id で分け (同文の stem が本文をまたいで衝突するため)、カード本文に【本文】を先に付ける。
+- **本文の表 (2026-10-17 塾長「アプリ側で表を直しておいて」)**: 取込仕様 §2 の「［表］」の行 + 全角「｜」区切りの行 (1 行目 = 見出し・「｜」の無い行で終わり) を
+  `<table>` にする。class.html `gdPassageTables`・mypage.js `_gdPassageTables`・ceo.html `_gdPassageTables` (👀 問題を見る の本文と全訳・📊 分析の 📖 本文) に
+  **同じ規則を 1 つずつ** 持つ (共通 JS にしない = 読み込み順の心配を作らない)。**エスケープ → 空所の黄色 → 表** の順で、表の関数はエスケープ済みの
+  文字列だけを受ける。箱は pre-wrap なので表の HTML に改行・字下げを入れない (「［表］」の行は消し、表の直後の改行 1 つは表が吸う = 空行を増やさない)。
+  スマホ (カード幅 約 270〜309px) は折り返さずに横スクロール (`overflow-x:auto`・セルは nowrap)。半角 `|` は表にしない。列の数がそろわない行は空のセルで埋めて出す
+  (取込の検査 E_TABLE は止める)。表の無い本文は今までと 1 文字も変わらない。復習カード (learning-brain) の【本文】は生の文字のまま (対象外)。
+  回帰テスト `scripts/health_check/test_passage_table_render.py` (3 ファイルの本物の関数を JS エンジンで動かして突き合わせる・変更前の関数と比べる)。
 - CEO: 本文のある単元はバッジが「📖 本文N本」、④ が「本文の本数」の select に切り替わる (`_gdUnitIsPassage`)。分析は本文を折りたたみで 1 回だけ出す。
 - **👀 問題を見る** (`gdPreview` → `GET /api/admin/grammar/preview?subject&unit&levels&count&passage_count`): 選択中の単元の問題を答え・解説・全訳つきで
   ランダムに出す (長文型は本文 1 本、それ以外は 5 問)。配信もドリル作成もしない。塾長は生徒名簿に居ないので自分に配って確かめられない

@@ -4967,12 +4967,45 @@ function _gdRenderChoices(drillId, q) {
   }).join('');
 }
 
+// 📊 [表 2026-10-17 塾長「アプリ側で表を直しておいて」] 取込仕様 §2 の表 = 「［表］」の行 + 「｜」区切りの行 (1 行目 = 見出し) を <table> にする。
+//   s は**エスケープ済み**の本文 (生の本文を入れない)。表は「［表］」の次の行から「｜」の無い行 (空行) の手前まで。
+//   ★本文カードは pre-wrap なので表の HTML に改行・字下げを入れない。「［表］」の行は消し、表の直後の改行 1 つは表が吸う (空行を増やさない)。
+//   スマホ (カード幅 約 270px) では列を折り返さず横にスクロールする。半角 | は表にしない (仕様は全角 ｜ だけ)。
+//   列の数がそろわない行は空のセルで埋める。表の無い本文は 1 文字も変えない。
+//   同じ規則が class.html (gdPassageTables)・ceo.html (_gdPassageTables) にある (test_passage_table_render.py が 3 つを突き合わせる)。
+function _gdPassageTables(s) {
+  s = String(s);
+  if (s.indexOf('［表］') < 0) return s;
+  var L = s.split('\n'), out = '', prev = '', i = 0;
+  var CELL = 'border:1px solid rgba(165,180,252,0.35); padding:4px 9px; white-space:nowrap; text-align:left; vertical-align:top;';
+  while (i < L.length) {
+    var j = i + 1;
+    if (L[i].trim() === '［表］') while (j < L.length && L[j].indexOf('｜') >= 0) j++;
+    if (j === i + 1) { out += (prev === 'text' ? '\n' : '') + L[i]; prev = 'text'; i++; continue; }
+    var rows = L.slice(i + 1, j).map(function (r) { return r.split('｜'); }), n = 0;
+    rows.forEach(function (r) { n = Math.max(n, r.length); });
+    var trs = rows.map(function (r, k) {
+      var c = '';
+      for (var x = 0; x < n; x++) {
+        c += (k ? '<td style="' + CELL + '">' : '<th style="' + CELL + ' background:rgba(129,140,248,0.18); color:#c7d2fe; font-weight:700;">')
+          + (x < r.length ? r[x].trim() : '') + (k ? '</td>' : '</th>');
+      }
+      return '<tr>' + c + '</tr>';
+    });
+    out += (prev === 'text' ? '\n' : '') + '<div style="overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%; margin:5px 0;">'
+      + '<table style="border-collapse:collapse; font-size:0.8rem; line-height:1.45;"><thead>' + trs[0] + '</thead>'
+      + (trs.length > 1 ? '<tbody>' + trs.slice(1).join('') + '</tbody>' : '') + '</table></div>';
+    prev = 'table'; i = j;
+  }
+  return out;
+}
+
 // 📖 [長文型 2026-09-24] 本文カード (1 本文に複数設問)。空所番号「( 1 )」は目立たせ、完了後は全訳を折りたたみで出す。
 function _gdPassageBlock(p, review) {
   if (!p) return '';
-  const body = _gdEscape(p.body || '').replace(/\(\s*(\d{1,2})\s*\)/g, '<span style="font-weight:800; color:#fde68a;">( $1 )</span>');
+  const body = _gdPassageTables(_gdEscape(p.body || '').replace(/\(\s*(\d{1,2})\s*\)/g, '<span style="font-weight:800; color:#fde68a;">( $1 )</span>'));
   const ja = (review && p.body_ja)
-    ? `<details style="margin-top:8px;"><summary style="cursor:pointer; color:#a5b4fc; font-size:0.8rem;">📖 全訳を見る</summary><div style="margin-top:6px; color:#cbd5e1; font-size:0.86rem; line-height:1.7; white-space:pre-wrap;">${_gdEscape(p.body_ja)}</div></details>`
+    ? `<details style="margin-top:8px;"><summary style="cursor:pointer; color:#a5b4fc; font-size:0.8rem;">📖 全訳を見る</summary><div style="margin-top:6px; color:#cbd5e1; font-size:0.86rem; line-height:1.7; white-space:pre-wrap;">${_gdPassageTables(_gdEscape(p.body_ja))}</div></details>`
     : '';
   // ★pre-wrap の中にテンプレートの改行/インデントを入れない (入れると空行と字下げがそのまま画面に出る)
   const title = p.title ? `<div style="font-weight:800; color:#c7d2fe; margin-bottom:6px; font-size:0.9rem;">📖 ${_gdEscape(p.title)}</div>` : '';

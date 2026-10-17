@@ -504,6 +504,15 @@ jobs:
           node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
           python3 scripts/health_check/test_hw_notice_js.py
 
+      # 📊 本文の表 (2026-10-17 塾長「アプリ側で表を直しておいて」): 取込仕様 §2 の「［表］」+「｜」区切りの行を、塾生アプリ (class.html)・
+      #   マイページ (mypage.js)・CEO (ceo.html の 👀 問題を見る と 📊 分析) で <table> (横スクロール・折り返さない) にする規則を node で実際に
+      #   動かして突き合わせる (エスケープが先・pre-wrap の中に改行を入れない・表の無い本文は 1 文字も変えない。JS エンジンが無ければ FAIL)。
+      - name: 本文の表 (class.html・mypage.js・ceo.html) 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
+          python3 scripts/health_check/test_passage_table_render.py
+
       # 🧒 学年の判定を 1 つに (2026-10-15 塾長「中学生と高校生は問題の配信はミスらないように」): 「中２」「中三」「小６」のような
       #   全角・漢数字を半角にそろえてから読む規則を、サーバ (_student_mode_from_grade / _student_grade_band)・student-mode.js
       #   (ajNormGrade / ajStudentMode)・ceo.html (_gdMode) で同じにした。JS は node で実際に動かして突き合わせる。

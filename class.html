@@ -109,6 +109,11 @@
     .gd-passage .gd-blank { font-weight:800; color:#fde68a; }
     .gd-passage details { margin-top:0.6rem; } .gd-passage summary { cursor:pointer; color:#a5b4fc; font-size:0.82rem; }
     .gd-passage .gd-ja { margin-top:0.4rem; color:#cbd5e1; font-size:0.86rem; line-height:1.7; }
+    /* 📊 本文の表 (取込仕様 §2「［表］」+「｜」・2026-10-17)。スマホでは列を折り返さず横にスクロールする (折り返すと列がずれる) */
+    .gd-passage .gd-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%; margin:0.3rem 0; }
+    .gd-passage .gd-table { border-collapse:collapse; font-size:0.8rem; line-height:1.45; }
+    .gd-passage .gd-table th, .gd-passage .gd-table td { border:1px solid rgba(165,180,252,0.35); padding:0.28rem 0.6rem; white-space:nowrap; text-align:left; vertical-align:top; }
+    .gd-passage .gd-table th { background:rgba(129,140,248,0.18); color:#c7d2fe; font-weight:700; }
     /* タップ領域は 44pt 以上を確保 (スマホで押しにくいと誤タップが増える) */
     .gd-choice { display:flex; gap:0.55rem; align-items:flex-start; padding:0.7rem 0.65rem; margin:0.32rem 0; background:rgba(0,0,0,0.22); border:1px solid rgba(255,255,255,0.10); border-radius:9px; font-size:0.9rem; line-height:1.5; cursor:pointer; word-break:break-word; }
     div.gd-choice { cursor:default; }   /* 復習表示 (label でなく div) は押せないので手の形にしない */
@@ -1198,12 +1203,38 @@
         + '<div class="card-meta">' + meta + '</div>' + actions + '</div>';
     }
 
+    // 📊 [表 2026-10-17 塾長「アプリ側で表を直しておいて」] 取込仕様 §2 の表 = 「［表］」の行 + 「｜」区切りの行 (1 行目 = 見出し) を <table> にする。
+    //   s は**エスケープ済み**の本文 (生の本文を入れない)。表は「［表］」の次の行から「｜」の無い行 (空行) の手前まで。
+    //   ★本文カードは pre-wrap なので表の HTML に改行・字下げを入れない。「［表］」の行は消し、表の直後の改行 1 つは表が吸う (空行を増やさない)。
+    //   半角 | は表にしない (仕様は全角 ｜ だけ)。列の数がそろわない行は空のセルで埋める。表の無い本文は 1 文字も変えない。
+    //   同じ規則が mypage.js / ceo.html の _gdPassageTables にある (test_passage_table_render.py が 3 つを突き合わせる)。
+    function gdPassageTables(s) {
+      s = String(s);
+      if (s.indexOf('［表］') < 0) return s;
+      var L = s.split('\n'), out = '', prev = '', i = 0;
+      while (i < L.length) {
+        var j = i + 1;
+        if (L[i].trim() === '［表］') while (j < L.length && L[j].indexOf('｜') >= 0) j++;
+        if (j === i + 1) { out += (prev === 'text' ? '\n' : '') + L[i]; prev = 'text'; i++; continue; }
+        var rows = L.slice(i + 1, j).map(function (r) { return r.split('｜'); }), n = 0;
+        rows.forEach(function (r) { n = Math.max(n, r.length); });
+        var trs = rows.map(function (r, k) {
+          var t = k ? 'td' : 'th', c = '';
+          for (var x = 0; x < n; x++) c += '<' + t + '>' + (x < r.length ? r[x].trim() : '') + '</' + t + '>';
+          return '<tr>' + c + '</tr>';
+        });
+        out += (prev === 'text' ? '\n' : '') + '<div class="gd-table-wrap"><table class="gd-table"><thead>' + trs[0] + '</thead>'
+          + (trs.length > 1 ? '<tbody>' + trs.slice(1).join('') + '</tbody>' : '') + '</table></div>';
+        prev = 'table'; i = j;
+      }
+      return out;
+    }
     // 1問ぶん。review=true は採点後/提出ずみの復習表示 (正解・自分の解答・解説を出す)。
     // 📖 [長文型 2026-09-24] 本文カード。空所番号「( 1 )」は目立たせる。完了後 (review) は全訳を折りたたみで出す。
     function gdPassageHtml(p, review) {
       if (!p) return '';
-      var body = esc(p.body || '').replace(/\(\s*(\d{1,2})\s*\)/g, '<span class="gd-blank">( $1 )</span>');
-      var ja = (review && p.body_ja) ? '<details><summary>📖 全訳を見る</summary><div class="gd-ja">' + esc(p.body_ja) + '</div></details>' : '';
+      var body = gdPassageTables(esc(p.body || '').replace(/\(\s*(\d{1,2})\s*\)/g, '<span class="gd-blank">( $1 )</span>'));
+      var ja = (review && p.body_ja) ? '<details><summary>📖 全訳を見る</summary><div class="gd-ja">' + gdPassageTables(esc(p.body_ja)) + '</div></details>' : '';
       return '<div class="gd-passage gd-nomath">' + (p.title ? '<div class="gd-ptitle">📖 ' + esc(p.title) + '</div>' : '') + body + ja + '</div>';
     }
     // 設問の配列を「本文カード → その本文の設問…」の順に並べた HTML にする (本文の無い設問は従来どおり)
