@@ -60,6 +60,9 @@ on:
       - 'hw-notice.js'
       - 'class.html'
       - 'mypage.js'
+      # 📊 本文の表 (test_passage_table_render.py) はマイページの「今日の復習」(learning-brain.js) もまるごと JS で動かす
+      #   (learning-brain.js だけ直した push でも走らせる = ?v= 検査 js_cache_bust.py も回る)
+      - 'learning-brain.js'
       # 🧒 学年の判定 (test_grade_band_consistency.py) は student-mode.js と ceo.html の _gdMode を JS で動かし、
       #   student-mode.js を読む画面の ?v= もそろっているか見る (画面だけ直した push でも走らせる)
       - 'student-mode.js'
@@ -507,7 +510,9 @@ jobs:
       # 📊 本文の表 (2026-10-17 塾長「アプリ側で表を直しておいて」): 取込仕様 §2 の「［表］」+「｜」区切りの行を、塾生アプリ (class.html)・
       #   マイページ (mypage.js)・CEO (ceo.html の 👀 問題を見る と 📊 分析) で <table> (横スクロール・折り返さない) にする規則を node で実際に
       #   動かして突き合わせる (エスケープが先・pre-wrap の中に改行を入れない・表の無い本文は 1 文字も変えない。JS エンジンが無ければ FAIL)。
-      - name: 本文の表 (class.html・mypage.js・ceo.html) 回帰テスト
+      #   2026-10-17 塾長「今日の復習カードの表も直しておいて」: マイページの「🔁 今日の復習」(learning-brain.js renderTodayReview) も
+      #   まるごと動かし、全文・解いてみるの問題文・解答と解説の全文が表になる・短い表示は 1 行の文字・表の無いカードは変更前と同じを見る。
+      - name: 本文の表 (class.html・mypage.js・ceo.html・learning-brain.js) 回帰テスト
         if: ${{ !cancelled() }}
         run: |
           node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"

@@ -6,16 +6,26 @@
   375px のスマホでは本文カードが 約 309px (塾生アプリ class.html)・約 270px (マイページ) しかなく、行が折り返して列がずれる。
   → 「［表］」の塊を本物の <table> (1 行目 = 見出し <th>) にし、横スクロールの箱 (overflow-x:auto) に入れ、セルは折り返さない。
 
-固定する性質 (class.html の gdPassageTables / mypage.js と ceo.html の _gdPassageTables):
+続き (2026-10-17 塾長「今日の復習カードの表も直しておいて」): マイページの「🔁 今日の復習」(learning-brain.js renderTodayReview) は、
+  長文型ドリルのカードの problem に「【本文】\n」+ 生の本文を持つ (mypage.js が保存。保存する形は変えない) ので、表が生のまま見えていた。
+  → 描くときに直す (今あるカードも直る): pre-wrap の箱 (「… 全文を見る」・「📝 解いてみる」の問題文・解答と解説の「… 全文を見る」) は
+  _lbPassageTables で <table>、1 行の短い表示 (先頭 100 字・解答 300 字・解説 500 字) は _lbTablesInline で表を 1 行の文字にしてから切る。
+
+固定する性質 (class.html の gdPassageTables / mypage.js と ceo.html の _gdPassageTables / learning-brain.js の _lbPassageTables):
   [1] class.html: 表になる (見出し・行・セルの数)・「［表］」の行が消える・表の HTML に改行が無い・表の前後の改行の数
       (「［表］」の行の分の空行を残さない・表の直後の改行 1 つは表が吸う)・XSS (エスケープが先・本文がタグや属性にならない)・
       空所「( 1 )」の黄色は表の中でも外でも効く・表の無い本文は今までと 1 文字も変わらない (変更前の関数と比べる)・列の数が
       そろわない行 (空のセルで埋める)・本文の最後の表・表 2 つ (間に文 / 続けて)・半角 | は表にしない・全訳 (body_ja) の表
   [2] mypage.js: 同じ性質を _gdPassageBlock で
   [3] ceo.html: 👀 問題を見る の本文 (const bodyHtml = … の式をソースから取り出して動かす)・全訳と 📊 分析の 📖 本文の呼び出し
-  [4] 3 つのファイルが同じ入力に同じ表の構造 (タグと中身。属性 = 見た目だけ違う) を返す
-  [5] 構文 (new Function): class.html の inline script・mypage.js・ceo.html の inline script
-  [6] ソース検査: CSS (横スクロール・折り返さない・枠線)・呼び出し箇所・mypage.js の ?v=・ceo.js を触っていない前提の確認・CI 登録
+  [4] 4 つのファイルが同じ入力に同じ表の構造 (タグと中身。属性 = 見た目だけ違う) を返す (learning-brain はマイページと見た目も同じ)
+  [5] 構文 (new Function): class.html の inline script・mypage.js・ceo.html の inline script・learning-brain.js
+  [6] ソース検査: CSS (横スクロール・折り返さない・枠線)・呼び出し箇所・mypage.js / learning-brain.js の ?v=・ceo.js を触っていない前提の確認・
+      mypage.js が保存するカードの形を変えていない・今日の復習を描くのはマイページ (暗い画面) だけ・CI 登録
+  [7] learning-brain.js: _lbTablesInline (表を 1 行の文字に)・本物の learning-brain.js をまるごと偽の window / document / localStorage で
+      動かし、renderTodayReview の HTML で 「… 全文を見る」・「📝 解いてみる」の問題文・解答と解説の全文が表になる (【本文】の行はそのまま)・
+      短い表示は表を作らず「［表］」「｜」・タグの切れ端を出さない (表の途中で切れても)・XSS・表の HTML に改行が無い・選択肢と正解は今までどおり・
+      表の無いカードは変更前 (呼び出しを外した learning-brain.js) と 1 文字も変わらない
 
 ★JS エンジンが無ければ FAIL (飛ばさない)。CI (ubuntu) は node、塾長の Mac は osascript -l JavaScript (node は無い)。
   AJ_JS_ENGINE=node|osascript|jsc で選べる。本文はすべて架空 (取込前のテストの本文をリポジトリに入れない)。
@@ -37,6 +47,7 @@ CLASS_HTML = os.path.join(REPO, "class.html")
 MYPAGE_HTML = os.path.join(REPO, "mypage.html")
 MYPAGE_JS = os.path.join(REPO, "mypage.js")
 CEO_HTML = os.path.join(REPO, "ceo.html")
+LB_JS = os.path.join(REPO, "learning-brain.js")
 CI_YML = os.path.join(REPO, ".github", "workflows", "server-tests.yml")
 JSC = "/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc"
 
@@ -297,17 +308,47 @@ CASES_CEO = r"""
 })();
 """
 
+CASES_LB_UNIT = r"""
+(function () {
+  var L = 'learning-brain.js: ';
+  // _lbPassageTables (pre-wrap の箱) = マイページと同じ表
+  var out = B.tables(C.esc(FX_BASIC));
+  ok(L + '表になる・「［表］」の行が消える', tables(out).length === 1 && out.indexOf('［表］') < 0 && out.indexOf('｜') < 0, out);
+  eq(L + '見出しは <th> 3 つ・行は <td> 3 つ × 2', rowsCells(tables(out)[0] || ''), [[3, 0], [0, 3], [0, 3]]);
+  var t0 = tables(out)[0] || '';
+  ok(L + '横スクロールの箱 (overflow-x:auto)・セルは折り返さない・枠線あり', /^<div style="[^"]*overflow-x:auto/.test(t0)
+    && count(t0, 'white-space:nowrap') === 9 && count(t0, 'border:1px solid') === 9, t0);
+  ok(L + '表の HTML に改行・タブ・字下げが無い', [FX_BASIC, FX_TWO, FX_RAGGED, FX_CRLF, FX_XSS].every(function (b) {
+    return tables(B.tables(C.esc(b))).every(function (t) { return !/[\n\r\t]/.test(t) && !/>\s+</.test(t); });
+  }));
+  // _lbTablesInline (1 行の短い表示): 「［表］」を消し、セルを「 / 」・行を「 ・ 」でつなぐ。生の文字を受けて生の文字を返す (タグを作らない)
+  eq(L + '短い表示: 表を 1 行の文字にする', B.inline(FX_BASIC),
+    'Read the notice.\n\nDay / Open / Close ・ Mon ( 1 ) / 9:00 / 17:00 ・ Sat / 10:00 / 15:00\n\nThe hall ( 2 ) on Sunday.');
+  eq(L + '短い表示: 空行の無い表', B.inline(FX_TIGHT), 'Para one.\nItem / Price ・ Tea / $3\nNext line.');
+  eq(L + '短い表示: 表 2 つ (続けて)', B.inline(FX_ADJ), 'A / B ・ 1 / 2\nC / D ・ 3 / 4');
+  eq(L + '短い表示: 列の数がそろわない行 (埋めない)', B.inline(FX_RAGGED), 'x\nA / B / C ・ 1 / 2 ・ 3 / 4 / 5 / 6\ny');
+  eq(L + '短い表示: 見出しだけ・本文の最後の表', [B.inline(FX_HEADONLY), B.inline(FX_END_NL)], ['A / B\nafter', 'Prices are below.\n\nSize / Cost ・ S / 100 ・ L / 200\n']);
+  eq(L + '短い表示: セルの前後の空白 (全角も) と CRLF の \\r は外す', [B.inline(FX_SPACES), B.inline(FX_CRLF)], ['x\nRoom / Seats ・ Hall A / 120\ny', 'x\r\nA / B ・ 1 / 2\n\r\ny']);
+  eq(L + '短い表示: 本文の中の文字はそのまま (エスケープはこの後の _escHtml がする)', B.inline('a <b>\n［表］\nX｜<i>Y</i>\n1｜&'), 'a <b>\nX / <i>Y</i> ・ 1 / &');
+  // 表の無い文は 1 文字も変えない (生の文字にもエスケープ済みの文字にも)
+  var bad = NO_TABLE.filter(function (b) { return B.tables(b) !== b || B.tables(C.esc(b)) !== C.esc(b) || B.inline(b) !== b; });
+  ok(L + '表の無い文 (' + NO_TABLE.length + ' 本) は 2 つの関数とも 1 文字も変えない', bad.length === 0, bad);
+})();
+"""
+
 CASES_SAME = r"""
 (function () {
-  var L = '3 ファイル: ';
-  var FX = [FX_BASIC, FX_TIGHT, FX_END, FX_END_NL, FX_TWO, FX_ADJ, FX_RAGGED, FX_HEADONLY, FX_SPACES, FX_CRLF, FX_BENIGN,
-    '訳です。\n\n［表］\n曜日｜時間\n月｜9時\n\n以上。'].concat(NO_TABLE);
-  var bad = [];
+  var L = '4 ファイル: ';
+  var FX = [FX_BASIC, FX_TIGHT, FX_END, FX_END_NL, FX_TWO, FX_ADJ, FX_RAGGED, FX_HEADONLY, FX_SPACES, FX_CRLF, FX_BENIGN, FX_XSS,
+    '訳です。\n\n［表］\n曜日｜時間\n月｜9時\n\n以上。', '【本文】\n' + FX_BASIC + '\n\n( 1 ) に入るもの\n(A) is\n(B) are'].concat(NO_TABLE);
+  var bad = [], badLook = [];
   FX.forEach(function (b) {
-    var s = C.esc(b), c = norm(C.tables(s)), m = norm(M.tables(s)), e = norm(E.tables(s));
-    if (c !== m || c !== e) bad.push([b, c, m, e]);
+    var s = C.esc(b), c = norm(C.tables(s)), m = norm(M.tables(s)), e = norm(E.tables(s)), lb = norm(B.tables(s));
+    if (c !== m || c !== e || c !== lb) bad.push([b, c, m, e, lb]);
+    if (B.tables(s) !== M.tables(s)) badLook.push([b, B.tables(s), M.tables(s)]);
   });
-  ok(L + '同じ入力に同じ表の構造 (タグと中身・前後の改行) を返す (' + FX.length + ' 本)', bad.length === 0, bad[0]);
+  ok(L + '同じ入力に同じ表の構造 (タグと中身・前後の改行) を返す (class.html・mypage.js・ceo.html・learning-brain.js / ' + FX.length + ' 本)', bad.length === 0, bad[0]);
+  ok(L + 'learning-brain.js (今日の復習) の表は見た目 (inline style) もマイページの本文カードと同じ', badLook.length === 0, badLook[0]);
   // 本文の通し (エスケープ → 空所 → 表) も構造は同じ (class.html の本文カードの中身 = mypage / ceo の本文)
   var inner = function (h) { return h.replace(/^<div class="gd-passage gd-nomath">/, '').replace(/<\/div>$/, ''); };
   var inner2 = function (h) { return h.replace(/^<div class="gd-nomath" style="[^"]*">/, '').replace(/<\/div>$/, ''); };
@@ -317,6 +358,135 @@ CASES_SAME = r"""
     if (c !== m || c !== e) bad2.push([b, c, m, e]);
   });
   ok(L + '本文の通し (エスケープ → 空所 → 表) の構造も同じ', bad2.length === 0, bad2[0]);
+})();
+__emit();
+"""
+
+# [7] 本物の learning-brain.js をまるごと動かす。偽の window / document / localStorage / setInterval / console を引数で渡す
+#     (グローバルを書き換えない = node の localStorage などに触らない)。NEW = 今のファイル、OLD = 表の関数の呼び出しを外したもの。
+LB_LOADER = r"""
+var __lbWarns = [];
+function __mkLB(__src) {
+  var win = {}, els = {};
+  var doc = { getElementById: function (id) { return Object.prototype.hasOwnProperty.call(els, id) ? els[id] : null; } };
+  var store = {};
+  var ls = { getItem: function (k) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null; },
+             setItem: function (k, v) { store[k] = String(v); }, removeItem: function (k) { delete store[k]; } };
+  __src(win, doc, ls, function () { return 0; }, function () {}, { log: function () {}, warn: function () { __lbWarns.push([].slice.call(arguments).join(' ')); } });
+  var LBx = win.LB;
+  // カード 1 枚 (今日が期限) だけを入れて「今日の復習」を描き、innerHTML を返す
+  LBx.renderOne = function (card) {
+    var c = { key: 'k1', subject: '英語', topic: '長文', problem: '', answer: '', explanation: '', difficulty: '標準',
+      ease: 2.5, interval: 1, repetitions: 0, dueDate: LBx._todayStr(), lapses: 1,
+      history: [{ date: LBx._todayStr(), hour: 10, dow: 1, correct: false, ease: 2.5 }] };
+    for (var k in card) c[k] = card[k];
+    var cards = {}; cards[c.key] = c;
+    LBx._write('sid', 'cards', cards);
+    els.box = { innerHTML: '', dataset: {}, addEventListener: function () {} };
+    LBx.renderTodayReview('box', 'sid');
+    return els.box.innerHTML;
+  };
+  return LBx;
+}
+"""
+
+CASES_LB_RENDER = r"""
+(function () {
+  var L = 'learning-brain.js 今日の復習: ';
+  // innerHTML から箱を取り出す (開始の印の後ろから、終わりの印 (正規表現) の手前まで)
+  function box(html, opener, endRe, nth) {
+    var i = -1, from = 0;
+    for (var t = 0; t <= (nth || 0); t++) { i = html.indexOf(opener, from); if (i < 0) return null; from = i + opener.length; }
+    var rest = html.slice(from), m = rest.match(endRe);
+    return m ? rest.slice(0, m.index) : null;
+  }
+  var SHORT = '<div style="font-size: 0.92rem; color: #e4e4e7; margin: 0.3rem 0; line-height: 1.5;">';
+  var FULL = 'line-height:1.6; max-height:300px; overflow-y:auto;">';
+  var STEM = '<div style="margin-bottom: 0.7rem; white-space: pre-wrap; line-height: 1.6; color: #e4e4e7;">';
+  var AE = 'border-radius:6px; white-space:pre-wrap; max-height:300px; overflow-y:auto;">';   // 解答 (1 つ目)・解説 (2 つ目) の全文
+  var shortOf = function (h) { return box(h, SHORT, /<details|<\/div>/); };
+  var fullOf = function (h) { return box(h, FULL, /<\/div><\/details>/); };
+  var stemOf = function (h) { return box(h, STEM, /<\/div>\s*<div class="lb-choices"/); };
+  var noNl = function (h) { return tables(h).every(function (t) { return !/[\n\r\t]/.test(t) && !/>\s+</.test(t); }); };
+  var LONG = new Array(40).join('This is a long paragraph without any table. ');   // 100 字を超えさせる (「… 全文を見る」を出す)
+
+  // 長文型ドリルの復習カード (mypage.js が保存する形 = 「【本文】\n」+ 本文 + 空行 + 設問 + 選択肢)。本文はすべて架空
+  var Q1 = '( 1 ) に入れるのに最も適切なものを選びなさい。';
+  var P1 = '【本文】\n' + FX_BASIC + '\n\n' + Q1 + '\n(A) opens\n(B) closes\n(C) opened\n(D) closing';
+  var h = NEW.renderOne({ problem: P1, answer: '(A) opens', explanation: '表の Mon の行を見る。' });
+  var full = fullOf(h), stem = stemOf(h), sh = shortOf(h);
+  ok(L + '箱が取り出せる (短い表示・… 全文を見る・解いてみるの問題文)', full !== null && stem !== null && sh !== null, h.slice(0, 600));
+  full = full || ''; stem = stem || ''; sh = sh || '';
+  ok(L + '… 全文を見る: 表になる・「［表］」と「｜」が消える', tables(full).length === 1 && full.indexOf('［表］') < 0 && full.indexOf('｜') < 0, full);
+  eq(L + '… 全文を見る: 見出しは <th> 3 つ・行は <td> 3 つ × 2', rowsCells(tables(full)[0] || ''), [[3, 0], [0, 3], [0, 3]]);
+  eq(L + '… 全文を見る: 構造は塾生アプリ (class.html) の表と同じ (【本文】の行・前後の改行・設問と選択肢はそのまま)', norm(full), norm(C.tables(C.esc(P1))));
+  ok(L + '… 全文を見る: 【本文】の行の次に本文、表の後に本文の続き・設問', full.indexOf('【本文】\nRead the notice.\n\n<div style="overflow-x:auto') === 0
+    && full.indexOf('</table></div>\nThe hall ( 2 ) on Sunday.\n\n' + Q1 + '\n(A) opens') > 0, full);
+  ok(L + '📝 解いてみるの問題文: 表になる (選択肢の前まで = 【本文】から設問まで)', tables(stem).length === 1 && stem.indexOf('［表］') < 0
+    && norm(stem) === norm(C.tables(C.esc('【本文】\n' + FX_BASIC + '\n\n' + Q1))), stem);
+  ok(L + '📝 解いてみる: 選択肢 4 つ・正解 (A) は今までどおり', count(h, 'class="lb-choice-btn"') === 4 && h.indexOf('data-correct="A"') > 0, h.slice(0, 400));
+  var C1 = '【本文】\nRead the notice.\n\nDay / Open / Close ・ Mon ( 1 ) / 9:00 / 17:00 ・ Sat / 10:00 / 15:00\n\nThe hall ( 2 ) on Sunday.\n\n' + Q1;
+  eq(L + '短い表示 (先頭 100 字): 表を 1 行の文字にしてから切る', sh, C.esc(C1.slice(0, 100)));
+  ok(L + '短い表示: 表を作らない・「［表］」「｜」・タグが出ない', sh.indexOf('<') < 0 && sh.indexOf('［表］') < 0 && sh.indexOf('｜') < 0, sh);
+  ok(L + '表の HTML に改行・タブ・字下げが無い (カード全体)', tables(h).length === 2 && noNl(h), tables(h));
+
+  // 【本文】の次の行がすぐ「［表］」
+  var P2 = '【本文】\n［表］\nRoom｜Seats\nHall A｜120\nHall B｜80\n\nThe ( 1 ) hall is larger than the other one, so the club uses it for every meeting.\n' + Q1 + '\n(A) first\n(B) second';
+  var h2 = NEW.renderOne({ problem: P2, answer: '(A) first' });
+  var f2 = fullOf(h2) || '', s2 = stemOf(h2) || '', sh2 = shortOf(h2) || '';
+  ok(L + '【本文】の次の行が「［表］」: 【本文】の行を残して表にする', f2.indexOf('【本文】\n<div style="overflow-x:auto') === 0 && tables(f2).length === 1
+    && norm(f2) === norm(C.tables(C.esc(P2))) && s2.indexOf('【本文】\n<div style="overflow-x:auto') === 0, [f2, s2]);
+  eq(L + '【本文】の次の行が「［表］」: 短い表示', sh2, C.esc(('【本文】\nRoom / Seats ・ Hall A / 120 ・ Hall B / 80\n\nThe ( 1 ) hall is larger than the other one, so the club uses it for every meeting.\n' + Q1).slice(0, 100)));
+
+  // 表の途中で 100 字に切れる (前置きの長さを 1 字ずつ変える)。短い表示に「［表］」「｜」・タグの切れ端が出ない
+  var rowsTxt = '';
+  for (var r = 1; r <= 8; r++) rowsTxt += '\nRow ' + r + '｜' + (r * 7) + ' min｜Gate ' + r;
+  var badCut = [];
+  for (var n = 0; n <= 70; n++) {
+    var P3 = '【本文】\n' + new Array(n + 1).join('w') + '\n［表］\nName｜Time｜Place' + rowsTxt + '\n\nQ?\n(A) a\n(B) b';
+    var h3 = NEW.renderOne({ problem: P3, answer: '(A) a' }), sh3 = shortOf(h3);
+    var want = C.esc(NEW_INLINE(P3).slice(0, 100));
+    if (sh3 !== want || /[<｜［］]/.test(sh3) || tables(fullOf(h3) || '').length !== 1) badCut.push([n, sh3]);
+  }
+  ok(L + '短い表示は表の途中で切れても安全 (前置き 0〜70 字の 71 通り)', badCut.length === 0, badCut[0]);
+
+  // 解答・解説の全文 (pre-wrap) は表・短い表示は 1 行の文字
+  var EX = 'The table shows the times.\n［表］\nDay｜Open\nMon｜9:00\nSat｜10:00\n\n' + new Array(60).join('Read each row carefully. ');
+  var ANS = '(B) closes\n［表］\nWord｜Meaning\nclose｜to shut\n\n' + new Array(25).join('more notes ');
+  var h4 = NEW.renderOne({ problem: 'Choose.\n(A) a\n(B) b', answer: ANS, explanation: EX });
+  var a4 = box(h4, AE, /<\/div><\/details>/, 0) || '', e4 = box(h4, AE, /<\/div><\/details>/, 1) || '';
+  ok(L + '解答の全文 (300 字超) は表になる', ANS.length > 300 && tables(a4).length === 1 && a4.indexOf('［表］') < 0 && norm(a4) === norm(C.tables(C.esc(ANS))), a4);
+  ok(L + '解説の全文 (500 字超) は表になる', EX.length > 500 && tables(e4).length === 1 && e4.indexOf('［表］') < 0 && norm(e4) === norm(C.tables(C.esc(EX))), e4);
+  ok(L + '解答・解説の短い表示は 1 行の文字 (表の塊は「 / 」「 ・ 」)', h4.indexOf(C.esc(NEW_INLINE(ANS).slice(0, 300)) + '<details') > 0
+    && h4.indexOf('<strong>解説:</strong> ' + C.esc(NEW_INLINE(EX).slice(0, 500)) + '<details') > 0, h4);
+  var h5 = NEW.renderOne({ problem: 'Choose.\n(A) a\n(B) b', answer: '(A) a', explanation: '短い解説。\n［表］\nA｜B\n1｜2' });
+  ok(L + '短い解説 (500 字以下・pre-wrap でない箱) は表を作らず 1 行の文字', h5.indexOf('<strong>解説:</strong> 短い解説。\nA / B ・ 1 / 2</div></details>') > 0 && tables(h5).length === 0, h5);
+  ok(L + '表の HTML に改行が無い (解答・解説)', noNl(h4), tables(h4));
+
+  // XSS: エスケープが先。カードの本文がタグにも属性にもならない (表の中でも外でも)
+  var PX = '【本文】\n' + FX_XSS + '\n' + LONG + '\n\nQ?\n(A) a\n(B) b', PB = '【本文】\n' + FX_BENIGN + '\n' + LONG + '\n\nQ?\n(A) a\n(B) b';
+  var hx = NEW.renderOne({ problem: PX, answer: '(A) a', explanation: FX_XSS }), hb = NEW.renderOne({ problem: PB, answer: '(A) a', explanation: FX_BENIGN });
+  ok(L + 'XSS: <script> / <img> / <b> / <i> がタグにならない', !/<script|<img|<b>|<i>/i.test(hx), hx);
+  ok(L + 'XSS: &lt;script&gt;・&amp;・&quot; にエスケープされる', hx.indexOf('&lt;script&gt;alert(x)&lt;/script&gt;') >= 0 && hx.indexOf('&amp;') >= 0 && hx.indexOf('&quot;q&quot;') >= 0, hx);
+  ok(L + 'XSS: セルの中の </td> で列が増えない (2 列 × 2 行・全文と解いてみるの両方)', tables(hx).length === 2
+    && tables(hx).every(function (t) { return JSON.stringify(rowsCells(t)) === '[[2,0],[0,2]]'; }), tables(hx).map(rowsCells));
+  var bt = openTags(hb);
+  ok(L + 'XSS: 出るタグ (属性つき) は害の無いカードと同じものだけ', openTags(hx).every(function (t) { return bt.indexOf(t) >= 0; }), [openTags(hx), bt]);
+  ok(L + 'XSS: 短い表示にタグが出ない', (shortOf(hx) || '<').indexOf('<') < 0, shortOf(hx));
+
+  // 表の無いカードは変更前 (表の関数の呼び出しを外した learning-brain.js) と 1 文字も変わらない
+  var cardsNo = [];
+  NO_TABLE.forEach(function (b) {
+    cardsNo.push({ problem: b, answer: b, explanation: b });
+    cardsNo.push({ problem: '【本文】\n' + b + '\n' + LONG + '\n\n' + Q1 + '\n(A) x\n(B) y', answer: LONG + b, explanation: LONG + LONG + b });
+  });
+  cardsNo.push({ problem: '下線部 の誤りを選べ。 (A) He go (B) to school (C) every (D) day.', answer: '(A) He go', explanation: '<u>go</u> は goes' });
+  cardsNo.push({ problem: '【本文】\nx\n［表］\n' + LONG + '\n\nQ?\n(1) a\n(2) b', answer: '2', explanation: '' });
+  var badNo = cardsNo.filter(function (cd) { return NEW.renderOne(cd) !== OLD.renderOne(cd); });
+  ok(L + '表の無いカード (' + cardsNo.length + ' 枚。長い本文・【本文】・下線部・<u>・半角 | など) は変更前と 1 文字も変わらない', badNo.length === 0,
+    badNo.length ? [badNo[0], NEW.renderOne(badNo[0]).slice(0, 300), OLD.renderOne(badNo[0]).slice(0, 300)] : '');
+  ok(L + '表のあるカードは変更前と違う (この検査が呼び出しを外した版と本当に比べている)', NEW.renderOne({ problem: P1 }) !== OLD.renderOne({ problem: P1 }));
+  eq(L + 'console.warn が出ない (描画が例外を出していない)', __lbWarns, []);
 })();
 __emit();
 """
@@ -360,6 +530,7 @@ def main():
     mypage_js = read(MYPAGE_JS)
     mypage_html = read(MYPAGE_HTML)
     ceo_html = read(CEO_HTML)
+    lb_js = read(LB_JS)
     class_inline = inline_scripts(class_html)
     class_script = class_inline[0] if len(class_inline) == 1 else ""
     check("class.html の inline script は 1 つ", len(class_inline) == 1, len(class_inline))
@@ -370,13 +541,23 @@ def main():
     e_fns = [extract_fn(ceo_html, n, "    ", "ceo.html") for n in ("escapeHtml", "_gdPassageTables")]
     m_expr = re.findall(r"^\s*const bodyHtml = (.+);\s*$", ceo_html, re.M)
     check("ceo.html: 👀 問題を見る の const bodyHtml = … がちょうど 1 つ", len(m_expr) == 1, len(m_expr))
+    # learning-brain.js (今日の復習) は IIFE の 2 字下げ。OLD = 表の関数の呼び出し 7 か所 (短い表示 3・pre-wrap の箱 4) を外した版
+    #   (`_lbX(…)` → `(…)` = 変更前と同じ式。表の無いカードで innerHTML が 1 文字も変わらないことを見る)
+    b_fns = [extract_fn(lb_js, n, "  ", "learning-brain.js") for n in ("_lbPassageTables", "_lbTablesInline")]
+    lb_old, n_calls = re.subn(r"(?<!function )\b_lb(?:PassageTables|TablesInline)\(", "(", lb_js)
+    check("learning-brain.js: 表の関数の呼び出しは 7 か所 (_lbTablesInline 3・_lbPassageTables 4)", n_calls == 7
+          and len(re.findall(r"(?<!function )\b_lbTablesInline\(", lb_js)) == 3, n_calls)
 
     eng = js_engine()
     print(f"JS エンジン: {eng[0] if eng else 'なし'}")
     check("JS の実行環境がある (node / osascript / jsc。無ければ FAIL)", bool(eng),
           "node も osascript も jsc も見つからない (AJ_JS_ENGINE の指定も確認)")
 
-    if eng and all(c_fns) and all(m_fns) and all(e_fns) and len(m_expr) == 1:
+    lb_part = ""
+    if all(b_fns):
+        lb_part = "var B = (function () {\n" + "\n".join(b_fns) + \
+            "\nreturn { tables: _lbPassageTables, inline: _lbTablesInline };\n})();\n"
+    if eng and all(c_fns) and all(m_fns) and all(e_fns) and len(m_expr) == 1 and lb_part:
         prog = PRELUDE
         prog += "var C = (function () {\n" + "\n".join(c_fns) + OLD_CLASS + \
             "\nreturn { esc: esc, tables: gdPassageTables, passage: gdPassageHtml, passageOld: gdPassageHtml_OLD };\n})();\n"
@@ -385,13 +566,24 @@ def main():
         prog += "var E = (function () {\n" + "\n".join(e_fns) + OLD_CEO + \
             "\nfunction previewBody(p) { return " + m_expr[0] + "; }\n" + \
             "return { esc: escapeHtml, tables: _gdPassageTables, previewBody: previewBody, previewBodyOld: previewBody_OLD };\n})();\n"
-        prog += CASES + CASES_CLASS + CASES_MYPAGE + CASES_CEO + CASES_SAME
-        print("\n[1]〜[4] 本文の表 (class.html・mypage.js・ceo.html の本物の関数)")
+        prog += lb_part
+        prog += CASES + CASES_CLASS + CASES_MYPAGE + CASES_CEO + CASES_LB_UNIT + CASES_SAME
+        print("\n[1]〜[4] 本文の表 (class.html・mypage.js・ceo.html・learning-brain.js の本物の関数)")
         run_js(eng, prog, "[1-4]")
+
+        # [7] 本物の learning-brain.js をまるごと動かす (今の版 NEW と 呼び出しを外した版 OLD)
+        prog7 = PRELUDE + CASES + "var C = (function () {\n" + "\n".join(c_fns) + OLD_CLASS + \
+            "\nreturn { esc: esc, tables: gdPassageTables };\n})();\n" + lb_part + "var NEW_INLINE = B.inline;\n" + LB_LOADER
+        for name, src in (("NEW", lb_js), ("OLD", lb_old)):
+            prog7 += "var " + name + " = __mkLB(function (window, document, localStorage, setInterval, clearInterval, console) {\n" + \
+                src + "\n});\n"
+        prog7 += CASES_LB_RENDER
+        print("\n[7] 今日の復習 (learning-brain.js renderTodayReview をまるごと動かす)")
+        run_js(eng, prog7, "[7]")
 
     if eng:
         print("\n[5] 構文 (new Function)")
-        srcs = {"mypage.js": mypage_js}
+        srcs = {"mypage.js": mypage_js, "learning-brain.js": lb_js}
         for i, b in enumerate(class_inline):
             srcs[f"class.html inline #{i}"] = b
         for i, b in enumerate(inline_scripts(ceo_html)):
@@ -418,10 +610,41 @@ def main():
     check("mypage.html: mypage.js を ?v= 付きで読む (変えたら上げる。検査は js_cache_bust.py)", re.search(r'<script src="mypage\.js\?v=[^"]+"></script>', mypage_html) is not None)
     ceo_js = read(os.path.join(REPO, "ceo.js"))
     check("ceo.js には表の処理を足していない (ceo.html の inline だけで直す = ceo.js の ?v= を上げない)", "［表］" not in ceo_js)
+    # 今日の復習 (learning-brain.js)
+    for frag in ("const probShort = _lbTablesInline(c.problem || '').slice(0, 100);",
+                 "const ansShort = _lbTablesInline(c.answer || '').slice(0, 300);",
+                 "const explShort = _lbTablesInline(c.explanation || '').slice(0, 500);",
+                 "${_lbPassageTables(_escHtml(c.problem))}", "${_lbPassageTables(_escHtml(c.answer))}",
+                 "${_lbPassageTables(_escHtml(c.explanation))}", "${_lbPassageTables(_escHtml(parsed.stem))}"):
+        check(f"learning-brain.js: {frag[:60]}", lb_js.count(frag) == 1, lb_js.count(frag))
+    check("learning-brain.js: pre-wrap の箱は全部表の関数を通す (_escHtml の直書きが pre-wrap の箱に残っていない)",
+          re.search(r'pre-wrap[^`]*?">\$\{_escHtml\(', lb_js) is None, re.findall(r'pre-wrap[^`]{0,80}?">\$\{_escHtml\([^)]*\)', lb_js))
+    check("mypage.js: 復習カードに保存する形は変えていない (「【本文】\\n」+ 本文 5000 字 + 設問)",
+          r"problemFull = ('【本文】\n' + _pbody.slice(0, 5000) + '\n\n' + _pprob).slice(0, 6500);" in mypage_js)
+    callers = []
+    for root, dirs, files in os.walk(REPO):
+        dirs[:] = [d for d in dirs if d not in (".git", "node_modules", "vendor")]
+        for fn in files:
+            if fn.endswith((".html", ".js")) and fn != "learning-brain.js":
+                fp = os.path.join(root, fn)
+                try:
+                    if "renderTodayReview(" in read(fp):
+                        callers.append(os.path.relpath(fp, REPO))
+                except (UnicodeDecodeError, OSError):
+                    pass
+    check("今日の復習を描くのはマイページだけ (表の色はマイページの暗い画面に合わせている。明るい画面で描くなら色を見直す)",
+          callers == ["mypage.html"], callers)
+    lb_refs = {}
+    for fn in sorted(os.listdir(REPO)):
+        if fn.endswith(".html"):
+            for m in re.finditer(r'<script[^>]+src="learning-brain\.js([^"]*)"', read(os.path.join(REPO, fn))):
+                lb_refs.setdefault(fn, []).append(m.group(1))
+    check("learning-brain.js を読む HTML はどれも ?v= 付き (変えたら全部上げる。検査は js_cache_bust.py)",
+          len(lb_refs) >= 5 and all(v.startswith("?v=") and len(v) > 3 for vs in lb_refs.values() for v in vs), lb_refs)
     ci = read(CI_YML)
     check("CI (server-tests.yml) にこのテストの step がある", "python3 scripts/health_check/test_passage_table_render.py" in ci)
     paths_block = ci.split("pull_request:")[0]
-    for p in ("'class.html'", "'mypage.js'", "'ceo.html'", "'scripts/health_check/test_*.py'"):
+    for p in ("'class.html'", "'mypage.js'", "'ceo.html'", "'learning-brain.js'", "'scripts/health_check/test_*.py'"):
         check(f"CI の paths に {p} (画面だけの push でも走らせる)", p in paths_block)
 
     print()

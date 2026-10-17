@@ -426,6 +426,60 @@
     const id = setInterval(() => { tries++; if (run() || tries > 20) clearInterval(id); }, 200);
   }
 
+  // 📊 [表 2026-10-17 塾長「今日の復習カードの表も直しておいて」] 取込仕様 §2 の表 = 「［表］」の行 + 「｜」区切りの行 (1 行目 = 見出し) を
+  //   <table> にする (復習カードの「… 全文を見る」・「📝 解いてみる」の問題文・解答と解説の「… 全文を見る」= pre-wrap の箱)。
+  //   長文型ドリルの復習カードは problem の先頭に「【本文】\n」+ 生の本文を持つ (mypage.js が保存。保存する形は変えない) ので、
+  //   今あるカードも描くときに直す。s は**エスケープ済み** (_escHtml の後) の文字列 (生の文字を入れない)。表は「［表］」の次の行から
+  //   「｜」の無い行 (空行) の手前まで。★pre-wrap の箱なので表の HTML に改行・字下げを入れない。「［表］」の行は消し、表の直後の改行
+  //   1 つは表が吸う (空行を増やさない)。半角 | は表にしない (仕様は全角 ｜ だけ)。列の数がそろわない行は空のセルで埋める。表の無い文は 1 文字も変えない。
+  //   同じ規則・同じ見た目 (マイページの暗い画面) が mypage.js / ceo.html の _gdPassageTables・class.html の gdPassageTables にある
+  //   (test_passage_table_render.py が 4 つを突き合わせる)。
+  function _lbPassageTables(s) {
+    s = String(s);
+    if (s.indexOf('［表］') < 0) return s;
+    var L = s.split('\n'), out = '', prev = '', i = 0;
+    var CELL = 'border:1px solid rgba(165,180,252,0.35); padding:4px 9px; white-space:nowrap; text-align:left; vertical-align:top;';
+    while (i < L.length) {
+      var j = i + 1;
+      if (L[i].trim() === '［表］') while (j < L.length && L[j].indexOf('｜') >= 0) j++;
+      if (j === i + 1) { out += (prev === 'text' ? '\n' : '') + L[i]; prev = 'text'; i++; continue; }
+      var rows = L.slice(i + 1, j).map(function (r) { return r.split('｜'); }), n = 0;
+      rows.forEach(function (r) { n = Math.max(n, r.length); });
+      var trs = rows.map(function (r, k) {
+        var c = '';
+        for (var x = 0; x < n; x++) {
+          c += (k ? '<td style="' + CELL + '">' : '<th style="' + CELL + ' background:rgba(129,140,248,0.18); color:#c7d2fe; font-weight:700;">')
+            + (x < r.length ? r[x].trim() : '') + (k ? '</td>' : '</th>');
+        }
+        return '<tr>' + c + '</tr>';
+      });
+      out += (prev === 'text' ? '\n' : '') + '<div style="overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%; margin:5px 0;">'
+        + '<table style="border-collapse:collapse; font-size:0.8rem; line-height:1.45;"><thead>' + trs[0] + '</thead>'
+        + (trs.length > 1 ? '<tbody>' + trs.slice(1).join('') + '</tbody>' : '') + '</table></div>';
+      prev = 'table'; i = j;
+    }
+    return out;
+  }
+  // 📊 1 行の短い表示 (カードの先頭 100 字・解答 300 字・解説 500 字。pre-wrap でない箱) は表を作らず、表の塊を 1 行の文字にする:
+  //   「［表］」の行を消し、セルを「 / 」・行を「 ・ 」でつなぐ (例「曜日 / 開館時間 ・ 月〜金 / 9:00〜18:00」)。
+  //   s は**生の**文字列 (エスケープの前に通し、結果はいつもどおり _escHtml する)。文字を切るのはこの後なので、表の途中で切れても
+  //   「［表］」や「｜」・タグの切れ端は出ない。表の無い文は 1 文字も変えない。
+  function _lbTablesInline(s) {
+    s = String(s);
+    if (s.indexOf('［表］') < 0) return s;
+    var L = s.split('\n'), out = [], i = 0;
+    while (i < L.length) {
+      var j = i + 1;
+      if (L[i].trim() === '［表］') while (j < L.length && L[j].indexOf('｜') >= 0) j++;
+      if (j === i + 1) { out.push(L[i]); i++; continue; }
+      out.push(L.slice(i + 1, j).map(function (r) {
+        return r.split('｜').map(function (c) { return c.trim(); }).join(' / ');
+      }).join(' ・ '));
+      i = j;
+    }
+    return out.join('\n');
+  }
+
   function renderTodayReview(containerId, studentId) {
     const el = document.getElementById(containerId);
     if (!el) return;
@@ -541,21 +595,22 @@
           ${due.slice(0, 10).map(c => {
             const overdue = c.dueDate < _todayStr();
             // ✅ 2026-05-22 塾長指示: 問題文が 100 字超過時は details で「全文を見る」展開
-            const probShort = (c.problem || '').slice(0, 100);
+            // 📊 2026-10-17: 短い表示は表を 1 行の文字にしてから切る (_lbTablesInline)・pre-wrap の全文は <table> (_lbPassageTables)。解答・解説・解いてみるも同じ
+            const probShort = _lbTablesInline(c.problem || '').slice(0, 100);
             const probIsLong = c.problem && c.problem.length > 100;
             const probFullHtml = probIsLong
-              ? `${_escHtml(probShort)}<details style="display:inline; margin-left:0.3rem;"><summary style="cursor:pointer; color:#a78bfa; display:inline; font-size:0.82rem;">… 全文を見る</summary><div style="margin-top:0.4rem; padding:0.6rem; background:rgba(0,0,0,0.30); border:1px solid rgba(167,139,250,0.20); border-radius:6px; color:#e4e4e7; white-space:pre-wrap; line-height:1.6; max-height:300px; overflow-y:auto;">${_escHtml(c.problem)}</div></details>`
+              ? `${_escHtml(probShort)}<details style="display:inline; margin-left:0.3rem;"><summary style="cursor:pointer; color:#a78bfa; display:inline; font-size:0.82rem;">… 全文を見る</summary><div style="margin-top:0.4rem; padding:0.6rem; background:rgba(0,0,0,0.30); border:1px solid rgba(167,139,250,0.20); border-radius:6px; color:#e4e4e7; white-space:pre-wrap; line-height:1.6; max-height:300px; overflow-y:auto;">${_lbPassageTables(_escHtml(c.problem))}</div></details>`
               : _escHtml(probShort);
             // 解答・解説も同様に全文展開可能に
-            const ansShort = (c.answer || '').slice(0, 300);
+            const ansShort = _lbTablesInline(c.answer || '').slice(0, 300);
             const ansIsLong = c.answer && c.answer.length > 300;
-            const explShort = (c.explanation || '').slice(0, 500);
+            const explShort = _lbTablesInline(c.explanation || '').slice(0, 500);
             const explIsLong = c.explanation && c.explanation.length > 500;
             const ansHtml = ansIsLong
-              ? `${_escHtml(ansShort)}<details style="display:inline; margin-left:0.3rem;"><summary style="cursor:pointer; color:#a78bfa; display:inline; font-size:0.78rem;">… 全文を見る</summary><div style="margin-top:0.3rem; padding:0.5rem; background:rgba(0,0,0,0.25); border-radius:6px; white-space:pre-wrap; max-height:300px; overflow-y:auto;">${_escHtml(c.answer)}</div></details>`
+              ? `${_escHtml(ansShort)}<details style="display:inline; margin-left:0.3rem;"><summary style="cursor:pointer; color:#a78bfa; display:inline; font-size:0.78rem;">… 全文を見る</summary><div style="margin-top:0.3rem; padding:0.5rem; background:rgba(0,0,0,0.25); border-radius:6px; white-space:pre-wrap; max-height:300px; overflow-y:auto;">${_lbPassageTables(_escHtml(c.answer))}</div></details>`
               : _escHtml(ansShort);
             const explHtml = explIsLong
-              ? `${_escHtml(explShort)}<details style="display:inline; margin-left:0.3rem;"><summary style="cursor:pointer; color:#a78bfa; display:inline; font-size:0.78rem;">… 全文を見る</summary><div style="margin-top:0.3rem; padding:0.5rem; background:rgba(0,0,0,0.25); border-radius:6px; white-space:pre-wrap; max-height:300px; overflow-y:auto;">${_escHtml(c.explanation)}</div></details>`
+              ? `${_escHtml(explShort)}<details style="display:inline; margin-left:0.3rem;"><summary style="cursor:pointer; color:#a78bfa; display:inline; font-size:0.78rem;">… 全文を見る</summary><div style="margin-top:0.3rem; padding:0.5rem; background:rgba(0,0,0,0.25); border-radius:6px; white-space:pre-wrap; max-height:300px; overflow-y:auto;">${_lbPassageTables(_escHtml(c.explanation))}</div></details>`
               : _escHtml(explShort);
             // ✅ 2026-05-22 塾長指示: 選択肢自動採点 UI (問題文に (A)(B)(C)(D) パターンがあれば有効化)
             const parsed = _parseChoices(c.problem);
@@ -568,7 +623,7 @@
               <details class="lb-interactive" data-key="${_escAttr(c.key)}" data-sid="${_escAttr(studentId)}" data-correct="${_escAttr(correctLetter || '')}" style="margin-top: 0.6rem; font-size: 0.85rem;">
                 <summary style="cursor: pointer; color: #10b981; font-weight: 700; padding: 0.4rem 0.7rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); border-radius: 8px;">📝 解いてみる (選択肢から選ぶ・自動採点)</summary>
                 <div style="padding: 0.8rem; background: rgba(0,0,0,0.30); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px; margin-top: 0.4rem;">
-                  ${parsed.stem ? `<div style="margin-bottom: 0.7rem; white-space: pre-wrap; line-height: 1.6; color: #e4e4e7;">${_escHtml(parsed.stem)}</div>` : ''}
+                  ${parsed.stem ? `<div style="margin-bottom: 0.7rem; white-space: pre-wrap; line-height: 1.6; color: #e4e4e7;">${_lbPassageTables(_escHtml(parsed.stem))}</div>` : ''}
                   <div class="lb-choices" style="display: grid; gap: 0.4rem;">
                     ${parsed.choices.map(ch => `
                       <button type="button" class="lb-choice-btn" data-choice="${_escAttr(ch.letter)}" style="text-align: left; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0.55rem 0.85rem; color: #e4e4e7; font-size: 0.88rem; cursor: pointer; line-height: 1.5;">(${_escHtml(ch.letter)}) ${_escHtml(ch.text)}</button>

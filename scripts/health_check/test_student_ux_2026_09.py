@@ -279,7 +279,10 @@ def main():
     _mv = _re.search(r'mypage\.js\?v=(\d{8})', html)
     check("mypage.js / mypage.css の ?v= が最終変更 (mypage.js 2026-10-16 新しい宿題のお知らせ) 以降",
           bool(_mv) and _mv.group(1) >= "20261016" and "mypage.css?v=20260909" in html, _mv and _mv.group(0))
-    check("learning-brain.js の ?v= が最終変更 (2026-07-14) より新しい", "learning-brain.js?v=20260909" in html)
+    # learning-brain.js の最終変更 = 2026-10-17 (今日の復習カードの表)。その後の改修でも進むので「この日より前の値に戻っていない」ことを見る
+    _lv = _re.search(r'learning-brain\.js\?v=(\d{8})', html)
+    check("learning-brain.js の ?v= が最終変更 (2026-10-17 今日の復習カードの表) 以降",
+          bool(_lv) and _lv.group(1) >= "20261017", _lv and _lv.group(0))
     import re as _re
     visible = _re.sub(r"<!--.*?-->", "", html, flags=_re.S)  # HTML コメントは生徒に見えないので除外
     # 🙈 2026-09-09 塾長判断で非表示にした 6 か所 (利用状況 / テスト日程 / 紹介×2 / AIコーチの言葉 / 保護者メール欄)
