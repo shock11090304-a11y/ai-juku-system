@@ -450,6 +450,12 @@ CASES_LB_RENDER = r"""
   }
   ok(L + '短い表示は表の途中で切れても安全 (前置き 0〜70 字の 71 通り)', badCut.length === 0, badCut[0]);
 
+  // 元は 100 字以下でも、1 行にすると 100 字を超えるカード: 切ったら「… 全文を見る」を必ず出す (2026-10-17 レビュー指摘)
+  var P4 = '【本文】\n［表］\nA｜B｜C｜D\n1｜2｜3｜4\n5｜6｜7｜8\n9｜0｜1｜2\n3｜4｜5｜6\n7｜8｜9｜0\n\nQ?\n(A) a\n(B) b';
+  var h4 = NEW.renderOne({ problem: P4, answer: '(A) a' });
+  ok(L + '1 行にすると上限を超える短いカード: 前提 (元 ≤ 100 字・1 行 > 100 字)', P4.length <= 100 && NEW_INLINE(P4).length > 100, [P4.length, NEW_INLINE(P4).length]);
+  ok(L + '1 行にすると上限を超える短いカード: 「… 全文を見る」が出て、全文は表', h4.indexOf('… 全文を見る') > 0 && tables(fullOf(h4) || '').length === 1, h4.slice(0, 500));
+
   // 解答・解説の全文 (pre-wrap) は表・短い表示は 1 行の文字
   var EX = 'The table shows the times.\n［表］\nDay｜Open\nMon｜9:00\nSat｜10:00\n\n' + new Array(60).join('Read each row carefully. ');
   var ANS = '(B) closes\n［表］\nWord｜Meaning\nclose｜to shut\n\n' + new Array(25).join('more notes ');
@@ -611,9 +617,12 @@ def main():
     ceo_js = read(os.path.join(REPO, "ceo.js"))
     check("ceo.js には表の処理を足していない (ceo.html の inline だけで直す = ceo.js の ?v= を上げない)", "［表］" not in ceo_js)
     # 今日の復習 (learning-brain.js)
-    for frag in ("const probShort = _lbTablesInline(c.problem || '').slice(0, 100);",
-                 "const ansShort = _lbTablesInline(c.answer || '').slice(0, 300);",
-                 "const explShort = _lbTablesInline(c.explanation || '').slice(0, 500);",
+    for frag in ("const probInline = _lbTablesInline(c.problem || '');", "const probShort = probInline.slice(0, 100);",
+                 "const probIsLong = !!c.problem && (c.problem.length > 100 || probInline.length > 100);",
+                 "const ansInline = _lbTablesInline(c.answer || '');", "const ansShort = ansInline.slice(0, 300);",
+                 "const ansIsLong = !!c.answer && (c.answer.length > 300 || ansInline.length > 300);",
+                 "const explInline = _lbTablesInline(c.explanation || '');", "const explShort = explInline.slice(0, 500);",
+                 "const explIsLong = !!c.explanation && (c.explanation.length > 500 || explInline.length > 500);",
                  "${_lbPassageTables(_escHtml(c.problem))}", "${_lbPassageTables(_escHtml(c.answer))}",
                  "${_lbPassageTables(_escHtml(c.explanation))}", "${_lbPassageTables(_escHtml(parsed.stem))}"):
         check(f"learning-brain.js: {frag[:60]}", lb_js.count(frag) == 1, lb_js.count(frag))

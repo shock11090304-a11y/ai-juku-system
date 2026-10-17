@@ -596,16 +596,21 @@
             const overdue = c.dueDate < _todayStr();
             // ✅ 2026-05-22 塾長指示: 問題文が 100 字超過時は details で「全文を見る」展開
             // 📊 2026-10-17: 短い表示は表を 1 行の文字にしてから切る (_lbTablesInline)・pre-wrap の全文は <table> (_lbPassageTables)。解答・解説・解いてみるも同じ
-            const probShort = _lbTablesInline(c.problem || '').slice(0, 100);
-            const probIsLong = c.problem && c.problem.length > 100;
+            //   「… 全文を見る」を出すかは、元の文字数か 1 行にした文字数のどちらかが上限を超えたとき (1 行にすると「｜」→「 / 」で長くなり、
+            //   短いカードでも切れることがある。切ったのに全文を見る手段が無い、を作らない・2026-10-17 レビュー指摘)
+            const probInline = _lbTablesInline(c.problem || '');
+            const probShort = probInline.slice(0, 100);
+            const probIsLong = !!c.problem && (c.problem.length > 100 || probInline.length > 100);
             const probFullHtml = probIsLong
               ? `${_escHtml(probShort)}<details style="display:inline; margin-left:0.3rem;"><summary style="cursor:pointer; color:#a78bfa; display:inline; font-size:0.82rem;">… 全文を見る</summary><div style="margin-top:0.4rem; padding:0.6rem; background:rgba(0,0,0,0.30); border:1px solid rgba(167,139,250,0.20); border-radius:6px; color:#e4e4e7; white-space:pre-wrap; line-height:1.6; max-height:300px; overflow-y:auto;">${_lbPassageTables(_escHtml(c.problem))}</div></details>`
               : _escHtml(probShort);
             // 解答・解説も同様に全文展開可能に
-            const ansShort = _lbTablesInline(c.answer || '').slice(0, 300);
-            const ansIsLong = c.answer && c.answer.length > 300;
-            const explShort = _lbTablesInline(c.explanation || '').slice(0, 500);
-            const explIsLong = c.explanation && c.explanation.length > 500;
+            const ansInline = _lbTablesInline(c.answer || '');
+            const ansShort = ansInline.slice(0, 300);
+            const ansIsLong = !!c.answer && (c.answer.length > 300 || ansInline.length > 300);
+            const explInline = _lbTablesInline(c.explanation || '');
+            const explShort = explInline.slice(0, 500);
+            const explIsLong = !!c.explanation && (c.explanation.length > 500 || explInline.length > 500);
             const ansHtml = ansIsLong
               ? `${_escHtml(ansShort)}<details style="display:inline; margin-left:0.3rem;"><summary style="cursor:pointer; color:#a78bfa; display:inline; font-size:0.78rem;">… 全文を見る</summary><div style="margin-top:0.3rem; padding:0.5rem; background:rgba(0,0,0,0.25); border-radius:6px; white-space:pre-wrap; max-height:300px; overflow-y:auto;">${_lbPassageTables(_escHtml(c.answer))}</div></details>`
               : _escHtml(ansShort);
