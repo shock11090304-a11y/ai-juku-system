@@ -12,6 +12,7 @@
   [4] 取込スクリプトの安全装置: 送り先は https (手元の 127.0.0.1 だけ http)・秘密のファイルは 0600 で自分のもの・
       値は画面に出さない・リポジトリの中のファイルは送らない
   [5] 仕様書 (docs/drill-import-spec.md) 11 章のエラー・警告のコードを検査スクリプトが全部持つ
+  [6] 盲検の note の別解の申告の判定 (「複数の証拠」のような普通の「複数」は拾わない・2026-10-17)
 
 実行:
     python3 scripts/health_check/test_drill_import_parity.py      # exit 0 = PASS / 1 = FAIL
@@ -271,6 +272,19 @@ def main():
           have - codes == {"W_QUESTIONS", "W_SKILL"}, sorted(have - codes))
     readme = open(os.path.join(DI, "README.md"), encoding="utf-8").read()
     check("README に W_QUESTIONS と W_SKILL の説明", "W_QUESTIONS" in readme and "W_SKILL" in readme)
+
+    print("\n[6] 盲検の note の「別解・正解が 2 つ」の判定 (2026-10-17 塾長「「複数」の誤判定も直して」)")
+    pos = ["別解あり", "正解が2つある", "正解が複数ある", "正解が２つ", "複数の正解がありうる", "2つの正答", "答えが複数",
+           "②と③のどちらも正しい", "両方とも成り立つ", "いずれも当てはまる", "正解がない", "どれも当てはまらない",
+           "どれも正しくない", "一つに決まらない", "あいまい", "曖昧", "ambiguous", "two correct answers", "both are correct",
+           "no correct answer"]
+    neg = ["利用者数・利用できなかった要求・返却の障害など複数の証拠で評価し、空棚だけで成功としないという主旨。",
+           "複数の段落を読んで判断した", "①と④はどちらも本文に無い", "②と③はどちらも当てはまらない", "誤答はどちらも正しくない",
+           "どちらも正解ではない", "複数回読んだ", "正解は③で確信あり", "both distractors are wrong", "時制の一致が2つの文で必要"]
+    missed = [x for x in pos if not V._AMBIG_RE.search(x)]
+    wrong = [x for x in neg if V._AMBIG_RE.search(x)]
+    check("別解・正解が 2 つ以上・正解なし・あいまい の申告は全部拾う", not missed, missed)
+    check("「複数の証拠」「どちらも正しくない (誤答 2 つ)」のような普通の文は拾わない (HSENG01 Q26 の誤判定)", not wrong, wrong)
 
     print()
     if FAILURES:
