@@ -3512,7 +3512,7 @@
       const chips = disp.map(x => `<span style="display:inline-block;padding:2px 7px;margin:2px;border-radius:6px;background:rgba(99,102,241,0.18);color:#e0e7ff;font-size:0.78rem;">問${h(x.no)} <b>${h(x.label)}</b></span>`).join('');
       return `<div style="color:#86efac;font-weight:700;margin-bottom:3px;">✅ ${h(d.num_questions)} 問ぶん読めました（${h(d.num_choices)} 択・${h(styleName(d.label_style))}）。生徒に見せる前に、プリントの正解と見比べてください</div><div style="line-height:1.9;">${chips}</div>`;
     }
-    // root の中の .hws-box を動かす。返す ctl: getAnswerSheet() / setPrint(id) / reset() / markSaved(saved, sent) / isChoice()
+    // root の中の .hws-box を動かす。返す ctl: getAnswerSheet(opts) / setPrint(id) / reset() / markSaved(saved, sent, opts) / isChoice()
     function wire(root) {
       const $ = c => root.querySelector(c);
       const box = $('.hws-box'), mode = $('.hws-mode'), detail = $('.hws-detail'), nq = $('.hws-nq'), nc = $('.hws-nc'),
@@ -3582,6 +3582,13 @@
         if (String(f.print == null ? '' : f.print) !== String(st.printId == null ? '' : st.printId)) return null;
         return f;
       }
+      // プリントなしの正解表 #f.id (📤 一括で出した表) を、題名の違う宿題に出そうとしているか (2026-10-18 点検 L1)。プリントなしでは
+      //   宿題を見分けるものが題名しかない。題名を替えたのに #id (key_id) で出すと 2 つの宿題が 1 つの表を使い、✏️ で片方を直すと
+      //   もう片方の宿題の点数も黙って変わっていた。opts.title が無い呼び出し (生徒詳細) / 題名を持たない表 (プリントあり) は見ない
+      function otherHomework(f, opts) {
+        if (!f || f.print != null || f.title == null || !opts || opts.title == null) return false;
+        return String(opts.title).trim() !== f.title;
+      }
       function fillFrom(k) {
         putKey(k);
         // used = その表を使う解答用紙の数 (サーバの一覧から)。📤 一括で出した直後の表 (markSaved) は数を持たないので出さない
@@ -3649,6 +3656,7 @@
         if (!f || String(f.id) !== id || st.autofilled == null || key.value !== st.autofilled) return;
         clearTimeout(timer); st.seq++;
         putKey(k);
+        if (st.fromKey && f.title != null) st.fromKey.title = f.title;   // プリントなしの表は、出した宿題の題名を持ったまま (L1)
         Object.assign(st, { pending: false, valid: false, error: '', result: null, checked: null });
         reuse.innerHTML = `✏️ 正解表 #${h(k.id)} が直されたので、直した正解を入れ直しました（このまま出すと、直した正解表で採点します）`;
         if (isChoice()) schedule(); else render();
@@ -3658,8 +3666,9 @@
         isChoice,
         setPrint,
         // 割当の payload に入れる answer_sheet (null = 解答用紙なし = 今までと同じ payload)。確認が済んでいなければ ok:false
-        //   warn = 解答用紙なしで出すのに、選んだプリントには正解表がある (📤 一括の確認に 1 行足す。付け忘れに気づけるように)
-        getAnswerSheet() {
+        //   warn = 解答用紙なしで出すのに、選んだプリントには正解表がある / プリントなしで出した正解を題名の違う宿題に出す
+        //   (📤 一括の確認に 1 行足す。付け忘れ・前の宿題の正解のままに気づけるように)。opts.title = 出す宿題の題名 (📤 一括だけ)
+        getAnswerSheet(opts) {
           if (!isChoice()) {
             const r = { ok: true, value: null };
             if (st.ready && st.reuseKey) r.warn = '⚠ 記号の解答用紙なし（このプリントには正解表があります。付けるなら「✍️ 答え方」で「記号の解答用紙」を選んでください）';
@@ -3673,8 +3682,15 @@
           //   ✏️ で直した後は中身が合わずに直す前の正解で新しい表ができ、プリントなしでは組ごとに別の表になって ✏️ で直しても
           //   他の組を採点し直せなかった。key_id ならサーバはいまの (直した) 正解表をそのまま使う
           const f = keyIdToSend();
+          const byText = { mode: 'choice', key: { num_questions: c.num_questions, num_choices: c.num_choices, label_style: c.label_style, key: c.key } };
+          // ★プリントなしで出した正解を、題名の違う宿題に出す (2026-10-18 点検 L1): 別の宿題かもしれない。正解表 #id は使い回さずに
+          //   文字で送り (この宿題用の新しい表 = ✏️ で直しても前の宿題の点数は変わらない)、確認に ⚠ で前の宿題の題名を出す
+          if (f && otherHomework(f, opts)) {
+            return { ok: true, value: byText, label,
+                     warn: `⚠ 入っている正解は、宿題「${f.title}」で使った正解表 #${f.id} のままです。別の宿題なら、取り消して正解を打ち直してください（このまま出すと、この宿題用に新しい正解表を作ります。同じ宿題なら題名を「${f.title}」に戻すと正解表 #${f.id} を使います）` };
+          }
           if (f) return { ok: true, value: { mode: 'choice', key_id: f.id }, label: `${label}・正解表 #${f.id} をそのまま使います` };
-          return { ok: true, value: { mode: 'choice', key: { num_questions: c.num_questions, num_choices: c.num_choices, label_style: c.label_style, key: c.key } }, label };
+          return { ok: true, value: byText, label };
         },
         reset() {
           clearTimeout(timer); st.seq++; st.printSeq++;
@@ -3689,14 +3705,15 @@
         //   saved = サーバの answer_sheet (key_id・print_id)・sent = 送った answer_sheet ({key} か {key_id})。送った後に打ち直した /
         //   プリントを替えたなら何もしない (いま入っているのは保存したものではない)。返り値 = 保存した表として扱ったか
         //   ★プリントなしでも、次の組には同じ正解表 #id (key_id) を送る (2026-10-18 点検: 文字で送ると組ごとに別の表になり、
-        //   ✏️ で直しても他の組は直す前の正解のまま採点されていた)
-        markSaved(saved, sent) {
+        //   ✏️ で直しても他の組は直す前の正解のまま採点されていた)。ただし同じ題名の宿題のときだけ: opts.title = 出した宿題の題名を
+        //   表に控え、題名を替えたら getAnswerSheet が文字で送って ⚠ を出す (2026-10-18 点検 L1: 別の宿題が 1 つの表を使っていた)
+        markSaved(saved, sent, opts) {
           if (!saved || saved.key_id == null || !sent || !isChoice() || st.pending || !st.valid || !st.result || !st.checked) return false;
           const c = st.checked;
           if (key.value !== c.key) return false;
           if (sent.key_id != null) {
             const f = keyIdToSend();   // 正解表 #id をそのまま送った: 送った後も入れたままで、その表が返ってきた
-            if (!f || String(f.id) !== String(sent.key_id) || String(saved.key_id) !== String(sent.key_id)) return false;
+            if (!f || otherHomework(f, opts) || String(f.id) !== String(sent.key_id) || String(saved.key_id) !== String(sent.key_id)) return false;
           } else {
             const k = sent.key;
             if (!k || c.key !== k.key || c.num_questions !== k.num_questions || c.num_choices !== k.num_choices || c.label_style !== k.label_style) return false;
@@ -3705,10 +3722,14 @@
           if (savedPrint !== (st.printId == null ? '' : String(st.printId))) return false;
           st.autofilled = key.value; st.keyPrint = null;
           st.fromKey = { id: saved.key_id, num_questions: st.result.num_questions, num_choices: st.result.num_choices, label_style: st.result.label_style, print: st.printId };
+          // プリントなしの表は、出した宿題の題名を控える (題名が違う宿題には #id を使い回さない・L1)
+          const title = (!savedPrint && opts && opts.title != null) ? String(opts.title).trim() : null;
+          if (title != null) st.fromKey.title = title;
           // このプリントの「前の正解表」はいま保存した表 (古い表のままだと、答え方を切り替えたときに古い正解で置き換わる)
           st.reuseKey = savedPrint ? { id: saved.key_id, print_id: saved.print_id, num_questions: st.result.num_questions, num_choices: st.result.num_choices,
                                        label_style: st.result.label_style, key: st.result.key, used: null } : null;
-          reuse.innerHTML = `💾 この正解を正解表 #${h(saved.key_id)} として保存しました。次の組にも同じ${savedPrint ? 'プリント' : '宿題'}を出すなら、このまま 📤 を押せば同じ正解表 #${h(saved.key_id)} の記号の解答用紙が付きます（✏️ 正解を直すと、この表で出した組をまとめて採点し直します・プリントや科目を替えると消えます）`;
+          reuse.innerHTML = `💾 この正解を正解表 #${h(saved.key_id)} として保存しました。次の組にも同じ${savedPrint ? 'プリント' : '宿題'}を出すなら、このまま 📤 を押せば同じ正解表 #${h(saved.key_id)} の記号の解答用紙が付きます（✏️ 正解を直すと、この表で出した組をまとめて採点し直します・`
+            + (title != null ? `題名「${h(title)}」から替えると、確認で ⚠ を出して新しい正解表にします・` : '') + 'プリントや科目を替えると消えます）';
           updateHint();
           return true;
         },
@@ -7127,10 +7148,11 @@
       const due = document.getElementById('hwbDue').value;
       const printVal = (document.getElementById('hwbPrint') || {}).value || '';
       // 📝 記号の解答用紙 (2026-10-18): 確認表が通っていなければ止める (数が合わない・読めない記号)。なし = 今までと同じ payload
-      const sheet = _hwbSheet ? _hwbSheet.getAnswerSheet() : { ok: true, value: null };
+      //   題名も渡す: プリントなしで出した正解表は同じ題名の宿題にだけ使い回す (題名を替えたら文字で送って ⚠・2026-10-18 点検 L1)
+      const sheet = _hwbSheet ? _hwbSheet.getAnswerSheet({ title }) : { ok: true, value: null };
       if (!sheet.ok) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(sheet.error)}</span>`; return; }
-      // 解答用紙つきなら 📝 の 1 行・解答用紙なしなのにプリントに正解表があれば ⚠ の 1 行 (付け忘れに気づけるように)
-      const sheetLine = sheet.value ? '\n' + sheet.label : (sheet.warn ? '\n' + sheet.warn : '');
+      // 解答用紙つきなら 📝 の 1 行・解答用紙なしなのにプリントに正解表がある / 前の宿題の正解のまま題名を替えたら ⚠ の 1 行
+      const sheetLine = (sheet.value ? '\n' + sheet.label : '') + (sheet.warn ? '\n' + sheet.warn : '');
       if (!window.confirm(`${ids.length}名に宿題「${title}」を一括割当します。${sheetLine}\nよろしいですか？`)) return;
       if (msg) msg.innerHTML = '⏳ 一括割当中...';
       try {
@@ -7164,7 +7186,7 @@
         // 📝 「✍️ 答え方」は戻さない (2026-10-18 点検)。題名・プリント・期限は残るので、同じプリントを次の組に出すときも記号の解答用紙が
         //   付くように、いまの正解を「このプリントに保存した正解表」にする (別のプリント / 科目に替えたら setPrint で消える)。
         //   保存されなかった (全員スキップ = answer_sheet が返らない) ときは何もしない = 打った正解をそのまま出し直せる
-        if (_hwbSheet && sheet.value && data.answer_sheet) _hwbSheet.markSaved(data.answer_sheet, sheet.value);
+        if (_hwbSheet && sheet.value && data.answer_sheet) _hwbSheet.markSaved(data.answer_sheet, sheet.value, { title });
         // 「📚 宿題 実施状況」パネルがあれば即更新 (scope非依存にボタンclickで)
         const rb = document.getElementById('refreshHomeworkStatusBtn'); if (rb) rb.click();
       } catch (e) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(String(e))}</span>`; }
