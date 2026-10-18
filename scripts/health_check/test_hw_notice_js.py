@@ -311,8 +311,11 @@ var TIMERS = [];
 function setTimeout(fn, ms) { TIMERS.push({ fn: fn, ms: ms }); return TIMERS.length; }
 function clearTimeout(id) { if (TIMERS[id - 1]) TIMERS[id - 1].fn = null; }
 var IO_LIST = [];
-function IntersectionObserver(cb, opts) { this.cb = cb; this.opts = opts; IO_LIST.push(this); }
-IntersectionObserver.prototype.observe = function (el) { this.el = el; };
+function IntersectionObserver(cb, opts) { this.cb = cb; this.opts = opts; this.els = []; IO_LIST.push(this); }
+IntersectionObserver.prototype.observe = function (el) { this.el = el; if (this.els.indexOf(el) < 0) this.els.push(el); };
+IntersectionObserver.prototype.unobserve = function (el) { this.els = this.els.filter(function (x) { return x !== el; }); };
+IntersectionObserver.prototype.disconnect = function () { this.els = []; };
+function sectionObservers() { return IO_LIST.filter(function (o) { return o.el === SECTION; }); }   // 宿題欄の監視 (🆕 の「見た」)
 window.IntersectionObserver = IntersectionObserver;   // 画面は 'IntersectionObserver' in window で見る
 function confirm() { return true; }
 function alert() {}
@@ -363,7 +366,7 @@ JS_MYPAGE_CASES = r"""
     await initHomeworkSection(); await flush();
     eq('hw-notice.js なし: チップは今までの文言 (assigned も未提出に数える)', TODO.homework && TODO.homework.label, '⚠️ 宿題 5 件（うち期限切れ 1 件）');
     eq('hw-notice.js なし: 🆕 新着は付かない', count(ELS['#homeworkList'].innerHTML, '🆕 新着'), 0);
-    eq('hw-notice.js なし: 見えたかの監視は作らない', IO_LIST.length, 0);
+    eq('hw-notice.js なし: 宿題欄の見えたかの監視は作らない', sectionObservers().length, 0);
     eq('hw-notice.js なし: ?focus=homework でも宿題欄へスクロール', SECTION.scrolled, 1);
 
     // (b) hw-notice.js あり・記録の無い端末
@@ -378,9 +381,9 @@ JS_MYPAGE_CASES = r"""
     ok('🆕 新着は新しいドリルのカードに付く', /🆕 新着<\/span>[^]*?data-hw-drill-open="101"/.test(html) && !/🆕 新着<\/span><span[^>]*>📝 英文法ドリル<\/span><span[^>]*>関係詞/.test(html));
     eq('assigned のドリルも「▶ 解いて提出する」(未提出の 3 枚)', count(html, '▶ 解いて提出する'), 3);
     eq('?focus=homework で宿題欄へスクロール (1 回)', SECTION.scrolled, 1);
-    eq('見えたかの監視を 1 つ作る', IO_LIST.length, 1);
+    eq('宿題欄の見えたかの監視を 1 つ作る', sectionObservers().length, 1);
     eq('描いただけでは「見た」にしない', Object.keys(st._m).length, 0);
-    var io = IO_LIST[0];
+    var io = sectionObservers()[0];
     io.cb([{ isIntersecting: true, intersectionRatio: 0.4, intersectionRect: { height: 200 } }]);
     eq('宿題欄が見えたら 1.5 秒待つ', TIMERS.length && TIMERS[TIMERS.length - 1].ms, 1500);
     io.cb([{ isIntersecting: false, intersectionRatio: 0, intersectionRect: { height: 0 } }]);

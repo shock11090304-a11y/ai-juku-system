@@ -21,7 +21,8 @@
       ドリルと宿題のカードに「〆今日」「〆を過ぎました」・👀 の POST (中身だけの宿題は一覧に出たら・解答用紙・プリント・
       「📝 ドリルで解く」(keepalive)・提出済みは送らない・このページで 1 件 1 回・予定タブでは送らない)
   [6] mypage.js (偽の DOM・TZ=America/Los_Angeles): ドリルと宿題のカードの 〆 (端末の日付ではなく JST)・📌 要対応チップと欄のバッジの 〆・
-      👀 の POST (宿題欄が見えたら中身だけの宿題 (単元のある宿題も = マイページには「📝 ドリルで解く」が無い)・解答用紙・PDF)
+      👀 の POST (中身だけの宿題 (単元のある宿題も = マイページには「📝 ドリルで解く」が無い) は**そのカード**が半分以上 1.5 秒見えたら・
+      宿題欄が見えただけ / ドリルを開いただけでは送らない (点検 owner-F1)・解答用紙・PDF)
   [7] CEO の 🗓 授業ブリーフ (ceo.html の本物のコード): 「👀 未開封」「開いたが未提出 (M/D)」「👀 未開封 N」・null と古いサーバでは出さない・escape
   [8] ソース検査: ルートは /api/student/homework/ の下・許可集合は不変・hw-notice.js の ?v= が 2 ページでそろう・CI 登録
 
@@ -641,6 +642,34 @@ Date.now = function () { return NOW_MS; };
 window.AJHwSheet = { state: function () { return 'open'; }, answerButtonLabel: function () { return '✏️ 解答用紙に答える'; }, scoreText: function () { return ''; },
   fmtJst: function (s) { return String(s); }, openOverlay: function () { return {}; } };
 function myOpened() { return CALLS3.filter(function (c) { return c.method === 'POST' && /\/opened$/.test(c.path); }).map(function (c) { return c.path; }); }
+// 👀 カード 1 枚ごとの監視 (点検 owner-F1): 偽の宿題欄の querySelectorAll('.hw-item[data-hw-id]') は描いた HTML のカードを返す
+//   (描き直すまで同じ要素)。カードの監視 = data-hw-id の要素を見ている IntersectionObserver
+var __baseNewSection = newSection;
+newSection = function () {
+  __baseNewSection();
+  var lst = ELS['#homeworkList'];
+  lst.querySelectorAll = function (sel) {
+    if (sel !== '.hw-item[data-hw-id]') return [];
+    if (this._cardsFor !== this._html) {
+      this._cardsFor = this._html; this._cards = [];
+      var re = /class="hw-item[^"]*" data-hw-id="([^"]*)"/g, m;
+      while ((m = re.exec(this._html))) { var el = new FakeEl(); el.setAttribute('data-hw-id', m[1]); this._cards.push(el); }
+    }
+    return this._cards.slice();
+  };
+};
+function cardEl(id) { var cs = ELS['#homeworkList'].querySelectorAll('.hw-item[data-hw-id]'); for (var i = 0; i < cs.length; i++) if (cs[i].getAttribute('data-hw-id') === String(id)) return cs[i]; return null; }
+function cardIo() { var r = IO_LIST.filter(function (o) { return o.el && o.el.getAttribute && o.el.getAttribute('data-hw-id') != null; }); return r[r.length - 1] || null; }
+function watched() { var o = cardIo(); return o ? o.els.map(function (e) { return e.getAttribute('data-hw-id'); }) : []; }
+function seeCard(id, ratio, h) {
+  var o = cardIo(); if (!o) throw new Error('カードの監視が無い');
+  o.cb([{ target: cardEl(id), isIntersecting: ratio > 0, intersectionRatio: ratio, intersectionRect: { height: h == null ? ratio * 200 : h } }]);
+}
+function seeSection() {
+  var o = IO_LIST.filter(function (x) { return x.el === SECTION; }).pop();
+  o.cb([{ isIntersecting: true, intersectionRatio: 0.5, intersectionRect: { height: 400 } }]);
+  TIMERS[TIMERS.length - 1].fn();
+}
 function clickSel(attr, val, card) {
   var btn = new FakeEl(); btn.setAttribute(attr, String(val));
   btn.closest = function (sel) { return (sel === '[data-hw-id]' && card) ? card : null; };
@@ -676,11 +705,21 @@ JS_MYPAGE_DUE_CASES = r"""
     eq('…目立たせる (urgent)', TODO.homework && TODO.homework.urgent, true);
     eq('宿題欄のバッジ', ELS['#homeworkBadge'].textContent, '⚠ 〆を過ぎた 1 / 未完了 6');
     eq('描いただけでは 👀 の POST を送らない', myOpened(), []);
-    var io = IO_LIST[IO_LIST.length - 1];
-    io.cb([{ isIntersecting: true, intersectionRatio: 0.5, intersectionRect: { height: 400 } }]);
-    TIMERS[TIMERS.length - 1].fn();
-    await flush();
-    eq('宿題欄が 1.5 秒見えたら中身だけの未提出の宿題に POST /opened (プリント・解答用紙つき・提出済みは送らない)', myOpened(), ['/api/student/homework/901/opened']);
+    // (owner-F1) 宿題欄が見えた ≠ そのカードが見えた: ドリルのカードが上に 3 枚並ぶと宿題のカードは画面の外のことがある
+    seeSection(); await flush();
+    eq('宿題欄が 1.5 秒見えても、カードが見えていなければ POST しない (欄の監視は 🆕 の「見た」だけ)', myOpened(), []);
+    ok('…🆕 の「見た」は記録する (今までどおり)', JSON.parse(st._m['aj_hw_seen_v1:7']).h.indexOf('901') >= 0);
+    eq('カードの監視は中身だけの未提出の宿題だけ (プリント・解答用紙つき・提出済み・ドリルは見ない)', watched(), ['901']);
+    var nT = TIMERS.length;
+    seeCard(901, 0.3); await flush();
+    eq('カードが半分未満しか見えなければ待たない', TIMERS.length, nT);
+    seeCard(901, 0.6);
+    eq('カードが半分以上見えたら 1.5 秒待つ', TIMERS.length === nT + 1 && TIMERS[TIMERS.length - 1].ms, 1500);
+    seeCard(901, 0.2);
+    eq('1.5 秒たつ前に外れたら送らない', [TIMERS[TIMERS.length - 1].fn, myOpened()], [null, []]);
+    seeCard(901, 0.6); TIMERS[TIMERS.length - 1].fn(); await flush();
+    eq('カードが 1.5 秒見えたら POST /opened', myOpened(), ['/api/student/homework/901/opened']);
+    eq('送ったカードは見るのをやめる', watched(), []);
     var card902 = new FakeEl(); card902.setAttribute('data-hw-id', '902');
     clickSel('data-hw-print', 55, card902); await flush();
     ok('「📄 PDFを開く」→ POST /api/student/homework/902/opened (カードの data-hw-id)', myOpened().indexOf('/api/student/homework/902/opened') >= 0, myOpened());
@@ -697,7 +736,7 @@ JS_MYPAGE_DUE_CASES = r"""
     eq('〆今日だけ: チップ「⏰ 宿題 3 件（〆今日 1 件）」・バッジ「⏰ 〆今日 1 / 未完了 3」', [TODO.homework && TODO.homework.label, ELS['#homeworkBadge'].textContent],
        ['⏰ 宿題 3 件（〆今日 1 件）', '⏰ 〆今日 1 / 未完了 3']);
     // (F1 2026-10-18 点検) 単元 (topic) のある宿題: マイページのカードには「📝 ドリルで解く」が無く、題名と説明が宿題のすべて
-    //   → 宿題欄が見えたら中身だけの宿題と同じく POST /opened (class.html の「単元のある宿題は除く」を写すと 👀 未開封 のまま)。
+    //   → カードが見えたら中身だけの宿題と同じく POST /opened (class.html の「単元のある宿題は除く」を写すと 👀 未開封 のまま)。
     //   プリント・解答用紙つきは今までどおり、それを開いたときだけ
     newSection(); TODO = {}; CALLS3 = [];
     var MH_TOPIC = { id: 905, title: '関係代名詞の宿題', subject: 'english', topic: '関係代名詞', status: 'open', created_at: '2026-10-10 01:00:00', due_date: '2026-10-25' };
@@ -710,11 +749,22 @@ JS_MYPAGE_DUE_CASES = r"""
     await initHomeworkSection(); await flush();
     ok('単元のある宿題のカードは題名・説明・✅ 完了する だけ (開くリンクが無い = カードが中身)',
        String(ELS['#homeworkList'].innerHTML).indexOf('dojo-drill') < 0 && String(ELS['#homeworkList'].innerHTML).indexOf('data-hw-complete="905"') >= 0);
-    var io2 = IO_LIST[IO_LIST.length - 1];
-    io2.cb([{ isIntersecting: true, intersectionRatio: 0.5, intersectionRect: { height: 400 } }]);
-    TIMERS[TIMERS.length - 1].fn();
-    await flush();
-    eq('単元のある宿題も、宿題欄が見えたら POST /opened (プリント・解答用紙つきは送らない)', myOpened(), ['/api/student/homework/905/opened']);
+    eq('単元のある宿題もカードを見る (プリント・解答用紙つきは見ない)', watched(), ['905']);
+    seeSection(); await flush();
+    eq('宿題欄が見えただけでは単元のある宿題も POST しない', myOpened(), []);
+    clickSel('data-hw-drill-open', 999); await flush();
+    eq('ドリルを開いても (🆕 の「見た」) 宿題には POST しない', myOpened(), []);
+    seeCard(905, 0.3, 450);   // 画面 (800) より背の高いカード: 3 割でも画面の半分以上
+    var tTall = TIMERS[TIMERS.length - 1];
+    ok('画面より背の高いカードは画面の半分以上見えたら数える', !!(tTall && tTall.ms === 1500 && tTall.fn));
+    // 待っている間に一覧を読み直した → 前の描画の待ちは捨て、新しいカードを見直す
+    await window._hwRefreshDrills(); await flush();
+    eq('読み直したら前の描画の待ちは捨てる', [tTall.fn, myOpened()], [null, []]);
+    eq('…新しいカードを見直す', watched(), ['905']);
+    seeCard(905, 0.6); TIMERS[TIMERS.length - 1].fn(); await flush();
+    eq('単元のある宿題も、カードが 1.5 秒見えたら POST /opened (プリント・解答用紙つきは送らない)', myOpened(), ['/api/student/homework/905/opened']);
+    await window._hwRefreshDrills(); await flush();
+    eq('送った宿題は読み直しても見ない (このページで 1 件 1 回)', [watched(), myOpened().length], [[], 1]);
   } catch (e) {
     ok('例外なし', false, String((e && e.stack) || e));
   }

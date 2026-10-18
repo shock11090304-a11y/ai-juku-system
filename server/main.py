@@ -45886,7 +45886,8 @@ def _item_open_load(c, sids) -> tuple:
 @app.post("/api/student/homework/{homework_id}/opened")
 def mark_my_homework_opened(homework_id: int, request: Request, authorization: Optional[str] = Header(None)):
     """👀 宿題を開いた (2026-10-18 塾長「②の残りも作っておいて」)。塾生アプリ・マイページの宿題カードで解答用紙・プリント・
-    「📝 ドリルで解く」を開いたとき / 中身だけの宿題 (単元・プリント・解答用紙が無い = カードが中身) が一覧に出たときに画面が呼ぶ (返事は待たない)。
+    「📝 ドリルで解く」を開いたとき / 中身だけの宿題 (単元・プリント・解答用紙が無い = カードが中身) が一覧に出たとき
+    (マイページは単元のある宿題も含め、そのカードが半分以上 1.5 秒見えたとき) に画面が呼ぶ (返事は待たない)。
     - 元から許可されている prefix "/api/student/homework/" の下 = AIなし枠の許可集合は変えない。AI は呼ばない。本文は読まない。
     - 本人の宿題でなければ 404。記録は events hw_open に 1 件 1 行 (_record_item_open・同じ JST の日は何も書かない = 1 日 1 回まで)。
     - 塾長のなりすまし・提出済みの宿題は記録しない (200 で recorded に理由)。"""

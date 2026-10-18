@@ -4805,9 +4805,13 @@ async function initHomeworkSection() {
     } catch (_) { /* noop */ }
   }
   // 👀 宿題を開いた (2026-10-18 塾長「②の残りも作っておいて」= 塾長の 🗓 授業ブリーフの「👀 未開封」/「開いたが未提出」)。
-  //   解答用紙・PDF を開いた / 中身だけの宿題 (プリント・解答用紙が無い = カードが中身) が宿題欄で見えた → POST /api/student/homework/{id}/opened
+  //   解答用紙・PDF を開いた / 中身だけの宿題 (プリント・解答用紙が無い = カードが中身) のカードそのものが見えた → POST /api/student/homework/{id}/opened
   //   ★単元 (topic) のある宿題も中身だけに数える: マイページのカードには「📝 ドリルで解く」が無く、題名と説明と ✅ 完了する が宿題のすべて
   //     (class.html はドリルのリンクを押したときに送るので単元のある宿題を除く。その規則をここに写すと、読んだ生徒が 👀 未開封 のままになる)
+  //   ★中身だけの宿題は「宿題欄が見えた」では送らない (点検 owner-F1): ドリルのカードが上に並ぶと宿題のカードは画面の外にあり、
+  //     欄が見えただけで送ると見ていない宿題が授業ブリーフで「開いたが未提出」になる (👀 未開封 が要る生徒ほど隠れる)。
+  //     カード 1 枚ごとに見て、半分以上 (画面より背の高いカードは画面の半分以上) が 1.5 秒続けて見えたら送る (watchBareCards)。
+  //     IntersectionObserver の無い端末は送らない (👀 未開封 のまま = 見ていないのに「開いた」にはしない)。ドリル・解答用紙を開いても送らない
   //   (prefix は元から許可)。未提出の宿題だけ・このページで 1 件 1 回・返事は待たない・失敗しても何も出さない (サーバも 1 日 1 回まで)。
   //   ドリルを開いたことはサーバが GET /api/student/grammar-drill/{id} の中で記録する (ここでは送らない)
   const openedSent = {};
@@ -4820,16 +4824,58 @@ async function initHomeworkSection() {
       Promise.resolve(slApiFetch(`/api/student/homework/${encodeURIComponent(k)}/opened`, { method: 'POST', body: JSON.stringify({}) })).catch(() => {});
     } catch (_) { /* 記録できなくても表示は続ける */ }
   }
-  function pingBareCards() {
-    (hwItems || []).forEach((it) => {
-      if (it && it.status === 'open' && !(it.attachment_print && it.attachment_print.id != null) && _hwSheetState(it) === 'none') pingOpened(it);
-    });
+  function isBareOpen(it) {
+    return !!(it && it.status === 'open' && it.id != null && !(it.attachment_print && it.attachment_print.id != null) && _hwSheetState(it) === 'none');
   }
   function hwItemById(id) { return (hwItems || []).find(it => it && String(it.id) === String(id)) || null; }
+  // 👀 中身だけの未提出の宿題のカードを 1 枚ずつ見る (描くたびに見直す: 前の描画の待ちは捨て、まだ送っていないカードだけ見る)
+  let cardIo = null;
+  let cardTimers = {};
+  function cardVisible(en) {
+    const vh = window.innerHeight || 0;
+    return !!(en && en.isIntersecting && (en.intersectionRatio >= 0.5
+      || (vh > 0 && en.intersectionRect && en.intersectionRect.height >= vh * 0.5)));
+  }
+  function onCardsSeen(entries) {
+    (entries || []).forEach((en) => {
+      const el = en && en.target;
+      const k = (el && el.getAttribute) ? el.getAttribute('data-hw-id') : null;
+      if (k == null || k === '') return;
+      if (cardVisible(en)) {
+        if (!cardTimers[k]) {
+          cardTimers[k] = setTimeout(() => {
+            delete cardTimers[k];
+            const it = hwItemById(k);
+            if (isBareOpen(it)) pingOpened(it);
+            try { if (cardIo) cardIo.unobserve(el); } catch (_) { /* noop */ }
+          }, 1500);
+        }
+      } else if (cardTimers[k]) {
+        clearTimeout(cardTimers[k]); delete cardTimers[k];
+      }
+    });
+  }
+  function watchBareCards() {
+    try {
+      Object.keys(cardTimers).forEach((k) => { clearTimeout(cardTimers[k]); });
+      cardTimers = {};
+      if (cardIo) cardIo.disconnect();
+      if (!('IntersectionObserver' in window) || !list.querySelectorAll) return;
+      const els = list.querySelectorAll('.hw-item[data-hw-id]');
+      const targets = [];
+      for (let i = 0; i < els.length; i++) {
+        const it = hwItemById(els[i].getAttribute('data-hw-id'));
+        if (isBareOpen(it) && !openedSent[String(it.id)]) targets.push(els[i]);
+      }
+      if (!targets.length) return;
+      if (!cardIo) cardIo = new IntersectionObserver(onCardsSeen, { threshold: [0, 0.1, 0.25, 0.4, 0.5, 0.75, 1] });
+      targets.forEach((el) => cardIo.observe(el));
+    } catch (_) { /* 記録できなくても表示は続ける */ }
+  }
   // 🆕 宿題を「見た」と記録する (取れた一覧だけ)。カードの 🆕 はこの表示のあいだは残し (見ている最中に消えると戸惑う)、
-  //   チップだけ「📝 宿題 N 件」に戻す。次に読み直したときにカードの 🆕 も消える
+  //   チップだけ「📝 宿題 N 件」に戻す。次に読み直したときにカードの 🆕 も消える。
+  //   ★ここでは 👀 の POST を送らない (宿題欄が見えた ≠ そのカードが見えた・点検 owner-F1)
   function markSeenNow() {
-    pingBareCards();   // 👀 宿題欄を見た = 中身だけの宿題は開いた
     const HN = _hwNotice();
     if (!HN || (drillItems === null && hwItems === null)) return;
     try { HN.markSeen(_hwSid(), drillItems, hwItems); } catch (_) { return; }
@@ -4846,6 +4892,7 @@ async function initHomeworkSection() {
     if (totalAll === 0) {
       list.innerHTML = errBanner + `<div style="color:#71717a; text-align:center; padding:1.5rem 0; font-size:0.88rem;">${emptyMsg}<br><span style="font-size:0.74rem;">塾長が出すと、ここに表示されます。最近やったのに無い時は、ページを再読み込みしてみてください。</span></div>`;
       toggleWrap.style.display = 'none';
+      watchBareCards();   // 前の描画のカードの監視を捨てる
       return;
     }
     let html = errBanner;
@@ -4864,6 +4911,7 @@ async function initHomeworkSection() {
       </div>`;
     }
     list.innerHTML = html;
+    watchBareCards();   // 👀 中身だけの宿題はカードそのものが見えたら開いた
     // toggle 表示制御
     if (doneCount > 0) {
       toggleWrap.style.display = 'block';
@@ -4992,7 +5040,8 @@ async function initHomeworkSection() {
   });
 
   // 🆕 宿題欄が 30% 以上 (縦に長いときは画面の半分以上) 見えた状態が 1.5 秒続いたら「見た」と記録する。
-  //   IntersectionObserver の無い端末は「ドリルを開いたとき」だけ記録する
+  //   IntersectionObserver の無い端末は「ドリルを開いたとき」だけ記録する。
+  //   ★これは 🆕 の「見た」だけ。👀 の「開いた」はカード 1 枚ごと (watchBareCards・欄が見えただけでは送らない)
   try {
     if (_hwNotice() && ('IntersectionObserver' in window)) {
       let seenTimer = null;
