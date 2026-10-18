@@ -8,6 +8,7 @@
  * 本番ドメイン以外 (ローカルのプレビューなど) では送らず console に出すだけ。
  * 2026-10-18: 見出し画像 (image)・演習回数 (rounds)・重複の注意 (overlap / compare)・印刷 (printing)・教材ごとの利用条件 (terms) に対応。
  *   重複の注意は、カードでも詳細でも購入ボタンより前に出す。見本の無い教材は、カードの 2 つ目のボタンを購入にする。
+ * 2026-10-18 (2 回目): 同じ教科に見出し画像のある教材と無い教材が混ざったので、画像の有無で格子を分ける (gridsHtml)。
  */
 (function () {
   'use strict';
@@ -157,6 +158,18 @@
       '</div>' +
     '</article>';
   }
+  // カードの格子。見出し画像のあるカードと無いカードは同じ格子に入れない (同じ行に並ぶと、無いカードが画像の高さだけ間延びする)。
+  // 並びはデータの順のまま、画像の有無が切り替わるところで格子を分ける
+  function gridsHtml(items, h) {
+    var runs = [];
+    items.forEach(function (m) {
+      var last = runs[runs.length - 1];
+      if (last && imageOk(last[0]) === imageOk(m)) last.push(m); else runs.push([m]);
+    });
+    return runs.map(function (r) {
+      return '<div class="mgrid">' + r.map(function (m) { return cardHtml(m, h); }).join('') + '</div>';
+    }).join('');
+  }
 
   function initList(root) {
     var filtersEl = document.getElementById('filters');
@@ -177,7 +190,7 @@
         if (!items.length) return '';
         return '<section class="mgroup" aria-labelledby="mg-' + i + '">' +
           '<h3 class="mgroup-h" id="mg-' + i + '">' + esc(s) + '<span class="cnt">' + items.length + '点</span></h3>' +
-          '<div class="mgrid">' + items.map(function (m) { return cardHtml(m, 'h4'); }).join('') + '</div></section>';
+          gridsHtml(items, 'h4') + '</section>';
       }).join('');
       root.innerHTML = shown.length ? groups : '<p class="empty">この教科の教材は準備中です。</p>';
       noteEl.textContent = (current === 'all' ? 'すべての教科' : current) + '：' + shown.length + '点';
@@ -291,7 +304,7 @@
     // 同じ教科のほかの教材
     var rel = ITEMS.filter(function (x) { return x.subject === m.subject && x.id !== m.id; });
     if (rel.length) {
-      html += '<section class="sec alt"><div class="wrap"><div class="sec-head"><h2>' + esc(m.subject) + 'のほかの教材</h2></div><div class="mgrid">' + rel.map(function (x) { return cardHtml(x, 'h3'); }).join('') + '</div>' +
+      html += '<section class="sec alt"><div class="wrap"><div class="sec-head"><h2>' + esc(m.subject) + 'のほかの教材</h2></div>' + gridsHtml(rel, 'h3') +
         '<p style="margin-top:1.4rem"><a class="inline-link" href="materials.html">すべての教材を見る</a></p></div></section>';
     }
     root.innerHTML = html;
@@ -306,12 +319,20 @@
       // 重複の注意がある教材は、注意の全文がバーより上に見えてから下部バーを出す (注意より先に購入ボタンを見せない)。
       // 見張るのは注意の直後のボタン列。下 120px (バーの高さ＋iPhone の下端の余白) を除いた範囲に入ったら、注意は全部バーの上にある。
       // 開いた時点でもう通り過ぎている (再読み込みでスクロール位置が戻る・#receive へ直接飛ぶ) ときもすぐ出す。
+      // IntersectionObserver は「画面の下の外 → 上の外」へ一瞬で飛ぶと通知が来ない (#receive への直接移動・視差効果を減らす設定の本文へ移動) ので、
+      // スクロールのたびにボタン列の位置を見る (出したら外す)
       var gate = m.overlap && m.overlap.length ? hero.querySelector('.buybox .acts') : null;
-      if (gate && 'IntersectionObserver' in window) {
-        var io = new IntersectionObserver(function (es) {
-          if (es.some(function (e) { return e.isIntersecting || e.boundingClientRect.top < 0; })) { showBar(); io.disconnect(); }
-        }, { threshold: 0, rootMargin: '0px 0px -120px 0px' });
-        io.observe(gate);
+      if (gate) {
+        var check = function () {
+          if (gate.getBoundingClientRect().top < window.innerHeight - 120) {
+            showBar();
+            window.removeEventListener('scroll', check);
+            window.removeEventListener('resize', check);
+          }
+        };
+        window.addEventListener('scroll', check, { passive: true });
+        window.addEventListener('resize', check);
+        check();
       } else {
         showBar();
       }
