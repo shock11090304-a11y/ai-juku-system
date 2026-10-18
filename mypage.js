@@ -673,6 +673,44 @@ function _slFormatErrDetail(detail) {
   return String(detail);
 }
 
+
+// ⏱ 2026-10-19 塾長「ギャップ分析を直して」「弱点プリントも直して」: AI のカリキュラム生成・ギャップ分析・弱点プリントは、
+//   Gemini が途中で切れたらサーバが Sonnet でやり直す。既定の 30 秒で打ち切ると、サーバは答えを作れているのに
+//   画面が「タイムアウト」になる (画面には「15-40秒」「15-30秒」と出していた)。
+//   ★Vercel の中継 (/api/:path* の rewrite) は最初の 1 バイトを 120 秒しか待たない (全プラン・変えられない) ので、
+//   この 4 か所は Railway に直接送る (longApi: true → SL_LONG_API_BASE。english-exam.js のカリキュラム生成と同じ・
+//   CORS は trillion-ai-juku.com / www とも許可済み)。
+//   ★Railway の入口も「5 分データが流れない要求は切る」(公式 Specs & Limits)。待ち時間は、サーバの 1 回分より長く・
+//   Railway の 300 秒より短くする (先に日本語のタイムアウトを出す): ギャップ分析 = Gemini 75 秒 (打ち切り) + Sonnet 180 秒 /
+//   弱点プリント = 60 + 210 / カリキュラム生成 = 100 + 180 (どれも 280 秒以下) → 画面は 285 秒。
+const SL_GAP_ANALYZE_TIMEOUT_MS = 285000;
+const SL_CURRICULUM_AI_TIMEOUT_MS = 285000;
+const SL_WORKSHEET_AI_TIMEOUT_MS = 285000;
+const SL_LONG_API_BASE = window.location.hostname === 'localhost' && window.location.port === '8090'
+  ? 'http://localhost:8000' : 'https://ai-juku-api-production.up.railway.app';
+// 🛰 Railway 直に届くかを、長い呼び出しの前に 1 回だけ確かめる (GET /api/health・ヘッダなし = preflight なし・5 秒)。
+//   届かない (失敗・5 秒で返らない・ok でない) ならこのページの間は Vercel 経由 (120 秒まで) で送る。
+//   重い POST そのものを途中で打ち切って別の経路でやり直すことはしない (サーバが作り始めていると二重に課金)。
+const SL_LONG_API_PROBE_MS = 5000;
+let _slLongBaseProbe = null;
+function _slPickLongBase() {
+  if (SL_LONG_API_BASE === SL_API_BASE) return Promise.resolve(SL_API_BASE);
+  if (!_slLongBaseProbe) {
+    _slLongBaseProbe = (async function () {
+      const c = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const t = c ? setTimeout(function () { c.abort(); }, SL_LONG_API_PROBE_MS) : null;
+      try {
+        const r = await fetch(SL_LONG_API_BASE + '/api/health', Object.assign({ cache: 'no-store' }, c ? { signal: c.signal } : {}));
+        return (r && r.ok) ? SL_LONG_API_BASE : SL_API_BASE;
+      } catch (e) {
+        return SL_API_BASE;
+      } finally {
+        if (t) clearTimeout(t);
+      }
+    })();
+  }
+  return _slLongBaseProbe;
+}
 async function slApiFetch(path, options = {}) {
   // 🧒 塾長プレビュー (2026-06-04): ?preview_mode= 中は実 API を一切叩かない (no-op)。
   //   実生徒データを表示せず、session token も触らない (401→clearSession による session 破壊を防止)。
@@ -689,9 +727,27 @@ async function slApiFetch(path, options = {}) {
   const timeoutMs = (options.timeoutMs != null) ? Number(options.timeoutMs) : 30000;
   const ctrl = (timeoutMs > 0 && typeof AbortController !== 'undefined' && !options.signal) ? new AbortController() : null;
   const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, timeoutMs) : null;
+  // 🛰 2026-10-19: options.longApi = Vercel の 120 秒の中継を通さず Railway に直接送る (長い AI 生成だけ・届くかは先に確かめる)。
+  const base = options.longApi ? await _slPickLongBase() : SL_API_BASE;
+  const fetchOpts = Object.assign({}, options, { headers }, ctrl ? { signal: ctrl.signal } : {});
+  delete fetchOpts.timeoutMs; delete fetchOpts.longApi;
+  const t0 = Date.now();
   let res;
   try {
-    res = await fetch(SL_API_BASE + path, Object.assign({}, options, { headers }, ctrl ? { signal: ctrl.signal } : {}));
+    try {
+      res = await fetch(base + path, fetchOpts);
+    } catch (e1) {
+      // 🛟 Railway 直がすぐ失敗した (DNS・TLS・CORS など 10 秒以内の TypeError = 送る前の失敗) ときだけ、Vercel 経由で 1 回
+      //   やり直す (そちらは 120 秒まで)。10 秒より後の失敗とタイムアウトはサーバが作り始めている恐れがあるのでやり直さない
+      //   (二重に作って二重に課金しない)。★詰まって返ってこない形 (2026-05-21 の「永久 pending」) は、このやり直しでは救えない
+      //   → 送る前の _slPickLongBase (5 秒の到達確認) で「その時点で届かない」形だけ避ける。確認の結果はページの間覚えるので、
+      //   確認が通った後に Railway 直が詰まる形は救えず 285 秒でタイムアウトになる (Vercel に回すと二重に作るので回さない・許容)。
+      if (base !== SL_API_BASE && !(ctrl && ctrl.signal.aborted) && (Date.now() - t0) < 10000) {
+        res = await fetch(SL_API_BASE + path, fetchOpts);
+      } else {
+        throw e1;
+      }
+    }
   } catch (e) {
     if (ctrl && ctrl.signal.aborted) {
       const te = new Error('サーバの応答がありません（タイムアウト）。時間をおいて再読み込みしてください');
@@ -3203,12 +3259,14 @@ async function generateCurriculumWithAi() {
     if (_hasAny) weeklyMinutes = _wm;
   }
 
-  btn.disabled = true; btn.textContent = '🤖 AI 生成中... (15-40秒)';
+  btn.disabled = true; btn.textContent = '🤖 AI 生成中... (30秒〜数分)';
   msg.style.color = '#c4b5fd'; msg.textContent = '🤖 入試日から逆算してフェーズ分割しています...';
   previewEl.innerHTML = '';
   try {
     const data = await slApiFetch('/api/curricula/ai-generate', {
       method: 'POST',
+      timeoutMs: SL_CURRICULUM_AI_TIMEOUT_MS,
+      longApi: true,
       body: JSON.stringify({
         target_university: univ,
         target_faculty: faculty || undefined,
@@ -3618,13 +3676,24 @@ async function loadMyCurricula() {
       const id = b.getAttribute('data-id');
       const curr = (_cuLastList || []).find(c => String(c.id) === String(id));
       if (!curr) return;
+      // 🔢 2026-10-19: 分析中にもう一度押したら (閉じた後でも)、新しく送らずに走っている分析のモーダルを開き直す
+      //   (届いた答えはそのまま出す・二重に作って二重に課金しない)。disabled にすると閉じた後に数分押しても何も起きなかった。
+      if (b._gapSeq && b._gapSeq === _gapSeq) {
+        _gapDismissedSeq = b._gapSeq - 1;
+        showGapAnalysisModal('loading', { curriculum: curr, seq: b._gapSeq });
+        return;
+      }
       (async () => {
+        const seq = ++_gapSeq;
+        b._gapSeq = seq;
         try {
-          showGapAnalysisModal('loading', { curriculum: curr });
-          const data = await slApiFetch(`/api/curricula/${encodeURIComponent(id)}/gap-analyze`, { method: 'POST' });
-          showGapAnalysisModal('result', { curriculum: curr, ...data });
+          showGapAnalysisModal('loading', { curriculum: curr, seq });
+          const data = await slApiFetch(`/api/curricula/${encodeURIComponent(id)}/gap-analyze`, { method: 'POST', timeoutMs: SL_GAP_ANALYZE_TIMEOUT_MS, longApi: true });
+          showGapAnalysisModal('result', { curriculum: curr, ...data, seq });
         } catch (e) {
-          showGapAnalysisModal('error', { curriculum: curr, error: e.message });
+          showGapAnalysisModal('error', { curriculum: curr, error: e.message, seq });
+        } finally {
+          if (b._gapSeq === seq) b._gapSeq = null;
         }
       })();
     }));
@@ -4227,12 +4296,14 @@ async function generateWeakPointWorksheet() {
   if (!subject) { msg.style.color = '#fca5a5'; msg.textContent = '科目を選択してください'; return; }
   if (num < 3 || num > 15) { msg.style.color = '#fca5a5'; msg.textContent = '問題数は 3-15 で指定'; return; }
 
-  btn.disabled = true; btn.textContent = '🤖 AI が問題作成中... (15-30秒)';
+  btn.disabled = true; btn.textContent = '🤖 AI が問題作成中... (30秒〜数分)';
   msg.style.color = '#fbbf24'; msg.textContent = '🎯 弱点を分析して問題を生成しています...';
   result.innerHTML = '';
   try {
     const data = await slApiFetch('/api/weak-points/generate-worksheet', {
       method: 'POST',
+      timeoutMs: SL_WORKSHEET_AI_TIMEOUT_MS,
+      longApi: true,
       body: JSON.stringify({
         subject, topic: topic || undefined, num_problems: num, target_university: uni || undefined,
       }),
@@ -4252,7 +4323,7 @@ async function generateWeakPointWorksheet() {
   } catch (e) {
     msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || '生成失敗');
   } finally {
-    btn.disabled = false; btn.textContent = '✨ 弱点プリントを生成 (15-30秒)';
+    btn.disabled = false; btn.textContent = '✨ 弱点プリントを生成 (30秒〜数分)';
   }
 }
 
@@ -4353,18 +4424,32 @@ async function triggerAutoGapAnalysis() {
   const active = (_cuLastList || []).find(c => c.status === 'active');
   if (!active) return;
   // 通知 + 分析開始
+  const seq = ++_gapSeq;
   try {
-    showGapAnalysisModal('loading', { curriculum: active });
-    const data = await slApiFetch(`/api/curricula/${encodeURIComponent(active.id)}/gap-analyze`, { method: 'POST' });
-    showGapAnalysisModal('result', { curriculum: active, ...data });
+    showGapAnalysisModal('loading', { curriculum: active, seq });
+    const data = await slApiFetch(`/api/curricula/${encodeURIComponent(active.id)}/gap-analyze`, { method: 'POST', timeoutMs: SL_GAP_ANALYZE_TIMEOUT_MS, longApi: true });
+    showGapAnalysisModal('result', { curriculum: active, ...data, seq });
   } catch (e) {
     console.error('gap analyze failed:', e);
-    showGapAnalysisModal('error', { curriculum: active, error: e.message });
+    showGapAnalysisModal('error', { curriculum: active, error: e.message, seq });
   }
 }
 
+// 🔢 2026-10-19: ギャップ分析は 1 回に数分かかりうる (降格)・模試を 1 科目保存するたびに自動で走る。
+//   要求ごとに連番を振り、古い答えは捨てる (後から届いた前の分析で新しい分析を上書きしない)・
+//   閉じた後に届いた答えではモーダルを開き直さない (次の科目を入力中に勝手に開かない)。
+let _gapSeq = 0;
+let _gapDismissedSeq = 0;
+function _gapDismiss(modal) { _gapDismissedSeq = _gapSeq; modal.style.display = 'none'; }
+
 function showGapAnalysisModal(state, ctx) {
+  if (ctx && ctx.seq != null) {
+    if (ctx.seq !== _gapSeq) return;                                  // 古い要求の答え
+    if (state !== 'loading' && _gapDismissedSeq >= ctx.seq) return;   // 閉じた後に届いた答え
+  }
   let modal = document.getElementById('gapAnalysisModal');
+  // 開く前に見えていたか (作るときの cssText に display:flex が入るので、作った後の display では判定できない)
+  const wasOpen = !!modal && modal.style.display === 'flex';
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'gapAnalysisModal';
@@ -4378,10 +4463,12 @@ function showGapAnalysisModal(state, ctx) {
         <div id="gapModalBody"></div>
       </div>`;
     document.body.appendChild(modal);
-    modal.querySelector('#gapModalClose').addEventListener('click', () => modal.style.display = 'none');
-    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.style.display === 'flex') modal.style.display = 'none'; });
+    modal.querySelector('#gapModalClose').addEventListener('click', () => _gapDismiss(modal));
+    // 開いた直後 (0.8 秒) の背景クリックは閉じない (開いたボタンの二重押しの 2 回目が背景に当たる)
+    modal.addEventListener('click', e => { if (e.target === modal && Date.now() - (modal._openedAt || 0) > 800) _gapDismiss(modal); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.style.display === 'flex') _gapDismiss(modal); });
   }
+  if (!wasOpen) modal._openedAt = Date.now();
   modal.style.display = 'flex';
   const body = modal.querySelector('#gapModalBody');
 
@@ -4389,7 +4476,7 @@ function showGapAnalysisModal(state, ctx) {
     body.innerHTML = `
       <div style="text-align:center; padding:2rem; color:#a1a1aa;">
         <div style="font-size:2.5rem; margin-bottom:0.5rem;">🤖</div>
-        <div>AI が「${escapeHtml(ctx.curriculum.target_university || '志望校')}」までのギャップを分析中... (10-25秒)</div>
+        <div>AI が「${escapeHtml(ctx.curriculum.target_university || '志望校')}」までのギャップを分析中... (30秒〜数分)</div>
         <div style="font-size:0.8rem; color:#71717a; margin-top:0.5rem;">模試結果 + 現行カリキュラムを総合判断</div>
       </div>`;
     return;

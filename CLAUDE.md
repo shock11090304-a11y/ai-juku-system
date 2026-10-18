@@ -792,6 +792,52 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - **LINE 連携 CTA** (`#lineLinkSection`) は `/api/auth/me` の `line_linked === false` の生徒にだけ出る (LINE の userId は返さない)。
 - 回帰テスト: `scripts/health_check/test_student_ux_2026_09.py` (CI `server-tests.yml`)。
 
+## 🤖 学習管理の AI (ai-generate・gap-analyze・弱点プリント) は Gemini → Sonnet に降格 (2026-10-19 塾長「ギャップ分析を直して」「弱点プリントも直して」)
+- マイページの「AI ギャップ分析」(`POST /api/curricula/{id}/gap-analyze`・ボタンと模試保存後の自動) は本番で 10-12〜10-18 に
+  **5 回中 5 回 503** だった。gemini-2.5-flash を max_tokens 3500 で 1 回だけ呼び、**2.5 Flash は考える分も出力の枠から使う**ので
+  `finish_reason=MAX_TOKENS` で切れ (`_call_gemini` が例外にする)、降格が無かった。「AI 弱点プリント」
+  (`POST /api/weak-points/generate-worksheet`) も同じ形 (4000・降格なし・15 問で切れうる・dict でない問題 1 つで 503)。
+- 今はどちらも共通の `_gemini_then_sonnet_json` (ai-generate と同じ形): Gemini は max_tokens 16000・`response_format` json_object →
+  例外 / 空 / JSON が読めない / dict でない / `ok(parsed)` が False (弱点プリントは問題文のある問題が 1 つも無い) のときは
+  `_call_anthropic_safe` (claude-sonnet-4-6・3 段降格 + リトライ・`kind=<kind>_fallback`・**student_id を渡す** = ライトの上限が効く)
+  で 1 回だけやり直す。両方駄目なときだけ 503 (生徒に内部のエラー文を出さない・ログには両方の理由)。Sonnet の 429 (ライトの上限) は
+  そのまま。Gemini が未構成なら Sonnet だけ。JSON の取り出しは `_ai_reply_json_dict` (フェンス・前後の文を外す・dict 以外は None)。
+  - ギャップ分析: temperature 0.3・Sonnet 8000。スタサプの検査 (`_sapuri_gap_adjustments`・対象外は `_sapuri_strip_sentences`) は
+    どちらの答えにも同じようにかける。
+  - 弱点プリント: temperature 0.7 (今までの既定 = 問題の幅を変えない)・Sonnet 12000・`_timeout_s` 210 (15 問 × 問題・解答・解説で
+    1 万字近い・1 回分を Railway の 300 秒より短く)。dict でない / 問題文が空の問題は捨てて番号を詰める。AI が書いたスタサプは使わない (2026-10-10 のまま)。
+- ★**Gemini の打ち切り**: 後ろに Sonnet が控える 3 本は Gemini に `_timeout_cap_s` を渡す (ギャップ分析 75・弱点プリント 60・
+  カリキュラム生成 100)。`_gemini_request_options` が **min** で効かせ (`_timeout_s` は max なので短くできなかった)、SDK の既定の
+  再試行 (ServiceUnavailable を deadline 600 秒まで = cap を超えて粘る) を **cap の中で終わる短い再試行** (503 だけ・cap の 1/3・
+  最大 20 秒) に替える = 一瞬の 503 は Gemini でやり直し (Sonnet より安い)、詰まり続けたら cap 秒で Sonnet へ。cap の無い呼び出し
+  (動画 600 秒・PDF 300 秒・`_call_anthropic_safe` の Tier 4 ほか) は今までと同じ。
+- ★**Vercel の中継は 120 秒で切る** (`/api/:path*` の外部 rewrite・最初の 1 バイトまで・全プラン・設定で変えられない・
+  english-exam.js が 2026-07-20 に本番で 502 ROUTER_EXTERNAL_TARGET_ERROR を実測)。サーバの同期ルートは全部終わってから返すので、
+  降格した回ほど切られる。→ mypage.js の 4 か所 (ギャップ分析 2・カリキュラム生成・弱点プリント) は **`longApi: true` で Railway に
+  直接送る** (`SL_LONG_API_BASE`・CORS は trillion-ai-juku.com / www とも許可済み)。送る前にページの間 1 回だけ **到達確認**
+  (`_slPickLongBase` = Railway 直の GET /api/health・ヘッダなし = preflight なし・5 秒) をし、届かない (失敗・ok でない・5 秒で
+  返らない = 2026-05-21 の「永久 pending」の形) ならそのページの間は Vercel 経由で送る。到達確認の後に Railway 直が**すぐ**失敗
+  (10 秒以内の TypeError) したときだけ同じオリジンで 1 回やり直す。10 秒より後の失敗とタイムアウトはやり直さない (サーバが作り
+  始めていると二重に作って二重に課金)。★到達確認の結果 (成功も) はページの間覚えるので、確認が通った後に Railway 直が詰まる形
+  (開いたまま回線が変わった・後から入口が詰まった) は救えず 285 秒でタイムアウトになる (許容・再読み込みで確かめ直す)。
+- ★**Railway の入口も「5 分データが流れない要求は切る」** (公式 Specs & Limits・データが流れ続ければ 15 分)。なので
+  **サーバの 1 回分 < 画面の待ち < 300 秒**: ギャップ分析 75 + Sonnet 180 = 255 秒・弱点プリント 60 + Sonnet 210 = 270 秒・
+  カリキュラム生成 100 + Sonnet 180 = 280 秒 → 画面 (`SL_GAP_ANALYZE_TIMEOUT_MS`・`SL_CURRICULUM_AI_TIMEOUT_MS`・
+  `SL_WORKSHEET_AI_TIMEOUT_MS`) は 3 本とも 285 秒 (到達確認の 5 秒を含めても 300 秒より前に日本語のタイムアウトを出す)。
+  表示は「30秒〜数分」(カリキュラム生成は「15-40秒」と出しながら 30 秒で切っていた)。★画面が先に切れても Railway が先に切っても、
+  サーバは Sonnet を最後まで走らせて課金し、結果は捨てられる (3 本とも保存しない)。これより長く待たせたいなら、
+  StreamingResponse で空白を流し続けるか、ジョブ化してポーリングする。新しい AI の呼び出しを足すときは timeoutMs
+  (と 120 秒を超えうるなら longApi) を必ず渡す。Gemini 直行で max_tokens が小さい経路が危ない。
+- ギャップ分析のモーダルは要求ごとに連番 (`_gapSeq`): 古い要求の答えは捨てる・閉じた (×・外側・Esc) 後に届いた答えでは開き直さない
+  (模試を 1 科目保存するたびに自動で走るため)。開いた直後 0.8 秒の背景クリックは閉じない (二重押しの 2 回目が背景に当たって
+  「閉じた」扱いになっていた・★初めて作るときは cssText に display:flex が入るので、開く前に見えていたか `wasOpen` で判定)。
+  分析中にボタンをもう一度押したら (閉じた後でも)、新しく送らずに走っている分析のモーダルを開き直す (`b._gapSeq`・答えはそのまま出す・
+  disabled にすると閉じた後に数分押しても何も起きなかった)。
+- 残り (2026-10-19 のレビューで見つけた既存の作り・未対応): `_call_anthropic_safe` は Sonnet 3 回 → Haiku 3 回 → Gemini → OpenAI と
+  降格するので、1 回押すと最悪 9 回呼びうる (Tier 4 で失敗したばかりの Gemini をもう一度呼ぶ・タイムアウトも 3 回やり直す)。
+  ai-generate は生徒に内部のエラー文を返し、Sonnet の降格に student_id を渡していない (ライトの上限が効かない)。
+- 回帰テスト `scripts/health_check/test_gap_analyze_fallback.py` (CI 登録済み・ギャップ分析と弱点プリントの両方)。
+
 ## 📺 スタサプ 第N講 (講単位) — 題名は本番 DB だけ (2026-10-10 塾長決定・段階 A = カタログと対象判定 / 段階 B = 講データと照合)
 - **D1 講の題名 (第N講の題名) はリポジトリ・Vercel で配信されるファイル・認証なしの API・Actions のログ・サーバのログ・
   AI へのプロンプト・メール/LINE 本文に出さない。** 本番 DB だけに置く (段階 B の取込)。テストの題名は架空 (「テスト講義A」等)。

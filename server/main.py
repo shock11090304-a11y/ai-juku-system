@@ -14045,6 +14045,28 @@ def _gemini_request_options(body: dict = None, *, default_s: int = None) -> dict
             base = max(int(base or 0), int(body["_timeout_s"]))
     except (TypeError, ValueError):
         pass
+    # ⏱ 2026-10-19 (ギャップ分析・弱点プリント・カリキュラム生成の降格): "_timeout_cap_s" = **短くする**上限 (min)。
+    #   後ろに Sonnet のやり直しが控えている呼び出しだけが使う。_timeout_s は max なので短くできなかった。
+    #   ★cap のときは SDK の既定の再試行 (ServiceUnavailable を deadline 600 秒まで = cap を超えて粘る) を、cap の中で終わる
+    #   短い再試行 (最大 20 秒・cap の 1/3 まで) に替える = 一瞬の 503 は Gemini でやり直し (Sonnet より安い)、詰まり続けたら
+    #   cap 秒で Sonnet に回す。google.api_core が読めなければ retry=None (1 回だけ)。cap の無い呼び出しは今までと 1 文字も同じ。
+    cap = None
+    try:
+        if isinstance(body, dict) and body.get("_timeout_cap_s"):
+            cap = max(30, min(900, int(body["_timeout_cap_s"])))
+    except (TypeError, ValueError):
+        cap = None
+    if cap:
+        b = int(base or 0)
+        t = min(max(30, min(900, b)), cap) if b > 0 else cap
+        rt = None
+        try:
+            from google.api_core import retry as _gretry, exceptions as _gexc
+            rt = _gretry.Retry(predicate=_gretry.if_exception_type(_gexc.ServiceUnavailable),
+                               initial=1.0, maximum=5.0, multiplier=1.3, timeout=float(min(20, max(5, t // 3))))
+        except Exception:
+            rt = None
+        return {"request_options": {"timeout": t, "retry": rt}}
     if base and int(base) > 0:
         return {"request_options": {"timeout": max(30, min(900, int(base)))}}
     return {}
@@ -60846,6 +60868,94 @@ def admin_reject_course_application(app_id: int, payload: CourseApplicationRejec
 # 📺 2026-10-10 スタサプ段階 A: AI にスタサプを書かせない (全員分)。AI が記憶で書いた講座名は架空のことがあり、
 #   対象外の生徒 (D2) にも出ていた。段階 B: 対象生徒だけ、サーバの照合結果を sapuri_lessons (と互換の sapuri_lectures) で返す。
 # ==========================================================================
+def _ai_reply_json_dict(data) -> Optional[dict]:
+    """AI の応答 (Anthropic 互換の content) から JSON の dict を取り出す。取り出せなければ None (例外にしない)。
+    ```json フェンス・前後の文は外す。dict でない JSON (配列・数) は None。"""
+    try:
+        text = "".join(c.get("text", "") for c in ((data or {}).get("content") or []) if isinstance(c, dict)).strip()
+    except Exception:
+        return None
+    if not text:
+        return None
+    cleaned = text
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r'^```(?:json)?\s*|\s*```$', '', cleaned).strip()
+    try:
+        parsed = json.loads(cleaned)
+    except Exception:
+        m = re.search(r'\{[\s\S]*\}', cleaned)
+        if not m:
+            return None
+        try:
+            parsed = json.loads(m.group(0))
+        except Exception:
+            return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _gemini_then_sonnet_json(*, system: str, user: str, kind: str, student_id: int, ok=None,
+                             gemini_max_tokens: int = 16000, gemini_temperature: float = 0.3,
+                             gemini_timeout_cap_s: int = 75,
+                             sonnet_max_tokens: int = 8000, sonnet_timeout_s: int = None, log_tag: str = "AI"):
+    """🩹 2026-10-19 塾長「ギャップ分析を直して」「弱点プリントも直して」: Gemini (2.5 Flash) → 駄目なら Sonnet 4.6 を 1 回。
+    gap-analyze・弱点プリントは gemini-2.5-flash を小さい max_tokens (3500 / 4000) で 1 回だけ呼び、2.5 Flash は
+    考える分も出力の枠から使うので finish_reason=MAX_TOKENS で切れ (_call_gemini が例外にする)、降格が無くて 503 だった
+    (gap-analyze は本番 5/5 回)。ai-generate と同じ形: Gemini は大きい枠・JSON 強制 → 例外 / 空 / JSON が読めない /
+    ok(parsed) が False のときは _call_anthropic_safe (3 段降格 + リトライ・student_id を渡す = ライトの上限が効く) で 1 回。
+    戻り値 (parsed, data)。両方駄目なら HTTPException 503 (生徒に内部のエラー文を出さない・ログには両方の理由)。
+    Sonnet の 429 (ライトの上限) はそのまま上げる。Gemini が未構成なら Sonnet だけ。
+    ⏱ Gemini は gemini_timeout_cap_s (既定 75 秒・SDK の再試行なし) で打ち切って Sonnet に回す (既定の 180 秒 + 600 秒の
+    再試行まで粘ると、Sonnet の答えが画面の待ち時間に間に合わない・2026-10-19 レビュー)。画面 (mypage.js) はこの 3 本を
+    Vercel の 120 秒の中継を通さず Railway に直接送る (SL_LONG_API_BASE)。"""
+    check = ok or (lambda _p: True)
+    gemini_err = ""
+    if GEMINI_API_KEY:
+        try:
+            data = _call_gemini({
+                "model": "gemini-2.5-flash",
+                "max_tokens": int(gemini_max_tokens),
+                "system": system,
+                "messages": [{"role": "user", "content": user}],
+                "response_format": {"type": "json_object"},
+                "temperature": float(gemini_temperature),
+                "_timeout_cap_s": int(gemini_timeout_cap_s),  # 内部キー (_gemini_request_options が読む・API には送らない)
+            }, model="gemini-2.5-flash", kind=kind)
+            parsed = _ai_reply_json_dict(data)
+            if parsed is not None and check(parsed):
+                return parsed, data
+            gemini_err = "空か JSON が読めない" if parsed is None else "必要な欄が無い"
+        except Exception as _ge:
+            gemini_err = f"{type(_ge).__name__}: {str(_ge)[:200]}"
+        log.warning(f"[{log_tag}] Gemini failed ({gemini_err}) - falling back to Sonnet 4.6")
+    if not ANTHROPIC_API_KEY:
+        log.error(f"[{log_tag}] failed: Gemini ({gemini_err or '未構成'}) / Anthropic 未構成")
+        raise HTTPException(status_code=503, detail="AI が混み合っています。少し時間をおいてもう一度お試しください。")
+    sonnet_body = {
+        "model": "claude-sonnet-4-6",  # alias (_call_anthropic_safe が 3 段降格 + リトライ)
+        "max_tokens": int(sonnet_max_tokens),
+        "system": system,
+        "messages": [{"role": "user", "content": user}],
+        "temperature": float(gemini_temperature),
+    }
+    if sonnet_timeout_s:
+        sonnet_body["_timeout_s"] = int(sonnet_timeout_s)  # 内部キー (API には送らない)
+    try:
+        data = _call_anthropic_safe(sonnet_body, kind=f"{kind}_fallback", student_id=student_id)
+    except HTTPException as _he:
+        if _he.status_code == 429:
+            raise
+        log.error(f"[{log_tag}] failed: Gemini ({gemini_err or '未構成'}) / Sonnet {_he.status_code}: {str(_he.detail)[:200]}")
+        raise HTTPException(status_code=503, detail="2 つの AI とも応答できませんでした。少し時間をおいてもう一度お試しください。")
+    except Exception as _ae:
+        log.error(f"[{log_tag}] failed: Gemini ({gemini_err or '未構成'}) / Sonnet {type(_ae).__name__}: {str(_ae)[:200]}")
+        raise HTTPException(status_code=503, detail="2 つの AI とも応答できませんでした。少し時間をおいてもう一度お試しください。")
+    parsed = _ai_reply_json_dict(data)
+    if parsed is None or not check(parsed):
+        log.error(f"[{log_tag}] failed: Gemini ({gemini_err or '未構成'}) / Sonnet の出力 JSON 解析失敗")
+        raise HTTPException(status_code=503, detail="AI 出力 JSON 解析失敗。少し時間をおいてもう一度お試しください。")
+    return parsed, data
+
+
 class WorksheetGenRequest(BaseModel):
     subject: str
     topic: Optional[str] = None  # 空欄なら AI が模試結果から推測
@@ -60861,8 +60971,9 @@ def generate_weak_points_worksheet(payload: WorksheetGenRequest, request: Reques
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
     _require_study_log_course(student)
-    if not GEMINI_API_KEY:
-        raise HTTPException(status_code=503, detail="Gemini が構成されていません")
+    # 🩹 2026-10-19: Gemini が無くても Sonnet で作る (_gemini_then_sonnet_json)。どちらも無いときだけ 503
+    if not GEMINI_API_KEY and not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="AI が構成されていません")
 
     subject = (payload.subject or "").strip()
     if subject not in _STUDY_SUBJECTS:
@@ -60925,32 +61036,20 @@ def generate_weak_points_worksheet(payload: WorksheetGenRequest, request: Reques
 - 問題は前提知識を上げすぎず、弱点克服に集中
 - 解説は「公式暗記」ではなく「なぜそうなるか」の理解促進"""
 
-    body = {
-        "model": "gemini-2.5-flash",
-        "max_tokens": 4000,
-        "system": sys_prompt,
-        "messages": [{"role": "user", "content": user_prompt}],
-    }
+    # 🩹 2026-10-19 塾長「弱点プリントも直して」: gemini-2.5-flash を max_tokens 4000 で 1 回だけ呼び、降格が無かった
+    #   (gap-analyze と同じ形・15 問だと考える分と合わせて枠が尽きて切れる)。Gemini は 16000・JSON 強制 → 切れ / 空 /
+    #   読めない / 問題が 1 つも無いときは Sonnet 4.6 で 1 回 (15 問 × 問題・解答・解説で 1 万字近いので 12000・210 秒)。
+    #   ★1 回分 (Gemini 60 秒 + Sonnet 210 秒 = 270 秒) は Railway の「5 分データが流れない要求は切る」より短く収める
+    #   (画面は 285 秒まで待つ・2026-10-19 レビュー)。temperature は今までの既定 (0.7) のまま = 問題の幅を変えない。
+    def _ws_ok(_p):
+        _probs = _p.get("problems")
+        return isinstance(_probs, list) and any(isinstance(x, dict) and str(x.get("question") or "").strip() for x in _probs)
+    parsed, data = _gemini_then_sonnet_json(
+        system=sys_prompt, user=user_prompt, kind="weak_worksheet", student_id=student["id"], ok=_ws_ok,
+        gemini_max_tokens=16000, gemini_temperature=0.7, gemini_timeout_cap_s=60, sonnet_max_tokens=12000, sonnet_timeout_s=210,
+        log_tag="Worksheet")
     try:
-        data = _call_gemini(body, model="gemini-2.5-flash", kind="weak_worksheet")
-        text = "".join(c.get("text", "") for c in (data.get("content") or []) if isinstance(c, dict)).strip()
-        if not text:
-            raise HTTPException(status_code=503, detail="AI が空文字を返しました")
-        cleaned = text.strip()
-        if cleaned.startswith("```"):
-            import re as _re
-            cleaned = _re.sub(r'^```(?:json)?\s*|\s*```$', '', cleaned).strip()
-        try:
-            parsed = json.loads(cleaned)
-        except Exception:
-            import re as _re
-            m = _re.search(r'\{[\s\S]*\}', cleaned)
-            if not m:
-                raise HTTPException(status_code=503, detail="AI 出力 JSON 解析失敗")
-            parsed = json.loads(m.group(0))
-        problems = parsed.get("problems") or []
-        if not problems:
-            raise HTTPException(status_code=503, detail="AI が problems を返しませんでした")
+        problems = [p for p in (parsed.get("problems") or []) if isinstance(p, dict) and str(p.get("question") or "").strip()]
         # validate / sanitize
         out_problems = []
         for i, p in enumerate(problems[:n]):
@@ -60980,7 +61079,7 @@ def generate_weak_points_worksheet(payload: WorksheetGenRequest, request: Reques
         raise
     except Exception as e:
         log.error(f"[Worksheet] failed: {type(e).__name__}: {str(e)[:200]}")
-        raise HTTPException(status_code=503, detail=f"AI 生成失敗: {str(e)[:200]}")
+        raise HTTPException(status_code=503, detail="AI 生成失敗。少し時間をおいてもう一度お試しください。")
 
 
 # ==========================================================================
@@ -64645,6 +64744,10 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
         "messages": [{"role": "user", "content": user_prompt}],
         "response_format": {"type": "json_object"},
         "temperature": 0.3,
+        # ⏱ 2026-10-19: Gemini は 100 秒で打ち切って Sonnet に回す (既定は 180 秒 + SDK の 503 再試行が 600 秒まで粘り、
+        #   画面と Railway の「5 分データが流れない要求は切る」より先に Sonnet に届かなかった)。1 回分 = 100 + Sonnet 180 = 280 秒。
+        #   内部キー (_gemini_request_options が読む・API には送らない)。
+        "_timeout_cap_s": 100,
     }
     # Gemini → Sonnet 4.6 fallback 経路
     data = None
@@ -64841,8 +64944,9 @@ def curriculum_gap_analyze(curr_id: int, request: Request, authorization: Option
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
     _require_study_log_course(student)
-    if not GEMINI_API_KEY:
-        raise HTTPException(status_code=503, detail="Gemini が構成されていません")
+    # 🩹 2026-10-19: Gemini が無くても Sonnet で答える (下の降格)。どちらも無いときだけ 503
+    if not GEMINI_API_KEY and not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="AI が構成されていません")
 
     conn = db()
     try:
@@ -64982,31 +65086,16 @@ def curriculum_gap_analyze(curr_id: int, request: Request, authorization: Option
 - ギャップが 5 以上の科目は priority=高{_sp_note}
 - phase_adjustments は変更が必要なフェーズだけ提案 (全フェーズ列挙不要)"""
 
-    body = {
-        "model": "gemini-2.5-flash",
-        "max_tokens": 3500,
-        "system": sys_prompt,
-        "messages": [{"role": "user", "content": user_prompt}],
-    }
+    # 🩹 2026-10-19 塾長「ギャップ分析を直して」: 本番で 5 回中 5 回 503 だった (10-12〜10-18)。
+    #   gemini-2.5-flash を max_tokens 3500 で 1 回だけ呼び、2.5 Flash は考える分も出力の枠から使うので
+    #   finish_reason=MAX_TOKENS で切れ (_call_gemini が例外にする)、降格が無いので生徒に「AI 分析失敗」が出ていた。
+    #   ai-generate と同じ形 (_gemini_then_sonnet_json): Gemini は 16000・JSON 強制・temperature 0.3 → 失敗 / 切れ / 空 /
+    #   JSON が読めないときは Sonnet 4.6 で 1 回だけやり直す。両方駄目なときだけ 503。
+    #   スタサプの検査 (_sapuri_gap_adjustments) はどちらの答えにも同じようにかける。
+    parsed, data = _gemini_then_sonnet_json(
+        system=sys_prompt, user=user_prompt, kind="curr_gap_analyze", student_id=student["id"],
+        gemini_max_tokens=16000, gemini_temperature=0.3, sonnet_max_tokens=8000, log_tag="Curriculum gap-analyze")
     try:
-        data = _call_gemini(body, model="gemini-2.5-flash", kind="curr_gap_analyze")
-        text = "".join(c.get("text", "") for c in (data.get("content") or []) if isinstance(c, dict)).strip()
-        if not text:
-            raise HTTPException(status_code=503, detail="AI が空文字を返しました")
-        cleaned = text.strip()
-        if cleaned.startswith("```"):
-            import re as _re
-            cleaned = _re.sub(r'^```(?:json)?\s*|\s*```$', '', cleaned).strip()
-        try:
-            parsed = json.loads(cleaned)
-        except Exception:
-            import re as _re
-            m = _re.search(r'\{[\s\S]*\}', cleaned)
-            if not m:
-                raise HTTPException(status_code=503, detail="AI 出力 JSON 解析失敗")
-            parsed = json.loads(m.group(0))
-        if not isinstance(parsed, dict):
-            raise HTTPException(status_code=503, detail="AI 出力 JSON 解析失敗")
         # 📺 2026-10-10 段階 A: AI の出力をそのまま返さない (スタサプはカタログで検査・対象外の生徒には出さない)
         parsed["phase_adjustments"] = _sapuri_gap_adjustments(parsed.get("phase_adjustments"), _sp_eligible)
         if not _sp_eligible:
@@ -65026,7 +65115,7 @@ def curriculum_gap_analyze(curr_id: int, request: Request, authorization: Option
         raise
     except Exception as e:
         log.error(f"[Curriculum] gap-analyze failed: {type(e).__name__}: {str(e)[:200]}")
-        raise HTTPException(status_code=503, detail=f"AI 分析失敗: {str(e)[:200]}")
+        raise HTTPException(status_code=503, detail="AI 分析失敗。少し時間をおいてもう一度お試しください。")
 
 
 class GapApplyRequest(BaseModel):
