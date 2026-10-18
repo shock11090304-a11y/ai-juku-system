@@ -4497,20 +4497,37 @@ function _hwEscape(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
+// ⏰ 〆 (2026-10-18 塾長「②の残りも作っておいて」): 期限は JST の今日と日付の文字列で比べる (端末のタイムゾーンに依らない・サーバと同じ)。
+//   判定と文言は hw-notice.js (dueState / dueChipText) の 1 か所 (読めない端末だけ同じ規則に倒す)。クラス宿題の期限と、
+//   クラス自動宿題のドリルの 〆 (サーバの due_date = 題名の「〆M/D」) の両方に使う
+function _hwJstToday() { return new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10); }
+function _hwDueState(dueDate, today) {
+  const HN = _hwNotice();
+  if (HN && HN.dueState) return HN.dueState(dueDate, today);
+  const d = String(dueDate == null ? '' : dueDate).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return '';
+  return d < today ? 'over' : (d === today ? 'today' : '');
+}
+function _hwDueChipText(st) {
+  const HN = _hwNotice();
+  if (HN && HN.dueChipText) return HN.dueChipText(st);
+  return st === 'over' ? '〆を過ぎました' : (st === 'today' ? '〆今日' : '');
+}
 function _hwDueDateBadge(dueDate, status) {
   if (!dueDate) return '';
-  const today = new Date(); today.setHours(0,0,0,0);
-  const due = new Date(dueDate + 'T00:00:00');
-  const days = Math.floor((due - today) / 86400000);
+  const today = _hwJstToday();
+  const d = String(dueDate).slice(0, 10);
   if (status === 'completed') {
-    return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(52,211,153,0.18); color:#6ee7b7; border-radius:8px;">期限 ${_hwEscape(dueDate)}</span>`;
+    return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(52,211,153,0.18); color:#6ee7b7; border-radius:8px;">期限 ${_hwEscape(d)}</span>`;
   }
-  if (days < 0) {
-    return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(239,68,68,0.18); color:#fca5a5; border-radius:8px; font-weight:bold;">⚠ 期限超過 (${_hwEscape(dueDate)})</span>`;
+  const st = _hwDueState(d, today);
+  if (st === 'over') {
+    return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(239,68,68,0.18); color:#fca5a5; border-radius:8px; font-weight:bold;">⚠ ${_hwEscape(_hwDueChipText(st))} (${_hwEscape(d)})</span>`;
   }
-  if (days === 0) {
-    return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(251,191,36,0.22); color:#fde68a; border-radius:8px; font-weight:bold;">🔥 今日が期限</span>`;
+  if (st === 'today') {
+    return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(251,146,60,0.22); color:#fed7aa; border-radius:8px; font-weight:bold;">⏰ ${_hwEscape(_hwDueChipText(st))}</span>`;
   }
+  const days = /^\d{4}-\d{2}-\d{2}$/.test(d) ? Math.round((Date.parse(d + 'T00:00:00Z') - Date.parse(today + 'T00:00:00Z')) / 86400000) : NaN;
   if (days <= 3) {
     return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(251,191,36,0.16); color:#fde68a; border-radius:8px;">あと ${days} 日 (${_hwEscape(dueDate)})</span>`;
   }
@@ -4612,6 +4629,8 @@ function _gdLevelJa(lv) {
 function _renderDrillAsHwItem(item) {
   const isOpen = item.status !== 'completed';
   const newBadge = (isOpen && _hwIsNew(_hwNewIds.d, item.drill_id)) ? _HW_NEW_BADGE : '';
+  // ⏰ クラス自動宿題の 〆 (サーバの due_date = 題名の「〆M/D」)。未提出のときだけ (〆今日 / 〆を過ぎました / あと N 日)
+  const dueBadge = (isOpen && item.due_date) ? _hwDueDateBadge(item.due_date, 'open') : '';
   const _subjLabel = _SUBJ_DRILL_LABEL[item.subject] || '英文法';
   // 🧪 習熟度テスト (2026-10-15) は「ドリル」と書かない・レベルも出さない (テスト全体を出題順のまま 1 本・授業で一斉に解く)
   const _isPtest = item.subject === 'proficiency_test';
@@ -4637,7 +4656,7 @@ function _renderDrillAsHwItem(item) {
     : 'background:rgba(255,255,255,0.05); color:#a1a1aa; border:1px solid rgba(255,255,255,0.12);';
   const btn = `<button type="button" data-hw-drill-open="${_hwEscape(item.drill_id)}" style="margin-top:10px; padding:8px 16px; ${btnStyle} border-radius:8px; font-weight:bold; font-size:0.86rem; cursor:pointer;">${cta}</button>`;
   return `<div class="hw-item hw-drill-item" style="padding:14px 16px; background:${isOpen ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isOpen ? 'rgba(20,184,166,0.3)' : 'rgba(255,255,255,0.06)'}; border-radius:10px; margin-bottom:10px;">
-    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">${newBadge}${typeBadge}${unitBadge}${levelBadge}</div>
+    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">${newBadge}${typeBadge}${dueBadge}${unitBadge}${levelBadge}</div>
     <div style="margin-top:8px; color:${isOpen ? '#fff' : '#a1a1aa'}; font-weight:bold; font-size:0.96rem;">${_gdRich(item.title)}</div>
     ${ptestNote}${scoreBlock}
     <div>${btn}</div>
@@ -4724,11 +4743,15 @@ async function initHomeworkSection() {
     const notice = computeNotice();
     _hwNewIds = { d: (notice && notice.newDrillMap) || {}, h: (notice && notice.newHwMap) || {} };
     setTodo(notice);
+    const due = dueCounts(notice);
     if (openTotal > 0) {
       badge.style.display = 'inline-block';
-      if (overdueN > 0) {
-        badge.textContent = `⚠ 期限超過 ${overdueN} / 未完了 ${openTotal}`;
+      if (due.over > 0) {
+        badge.textContent = `⚠ 〆を過ぎた ${due.over} / 未完了 ${openTotal}`;
         badge.style.background = '#ef4444';
+      } else if (due.today > 0) {
+        badge.textContent = `⏰ 〆今日 ${due.today} / 未完了 ${openTotal}`;
+        badge.style.background = '#ea580c';
       } else {
         badge.textContent = `未完了 ${openTotal}`;
         badge.style.background = '#6366f1';
@@ -4754,23 +4777,51 @@ async function initHomeworkSection() {
   }
   // 📌 コーチカード直下の「要対応」チップ (宿題欄は十数スクロール下で気づけないため・2026-09-09)。
   //   新しい宿題があれば「🆕 新しい宿題 N 件」(2026-10-15)、無ければ今までどおり「📝 宿題 N 件」
+  // ⏰ 〆を過ぎた / 〆今日 の未提出の数 (2026-10-18)。hw-notice.js があれば宿題の期限とドリルの 〆 を JST で数える (compute の結果)。
+  //   無ければ今までどおりサーバの宿題の期限切れの数だけ (〆今日は数えない)
+  function dueCounts(notice) {
+    if (_hwNotice() && notice) return { over: notice.overdue || 0, today: notice.dueToday || 0 };
+    return { over: overdueN, today: 0 };
+  }
   function setTodo(notice) {
     const openTotal = openHw.length + openDrills.length;
     const nNew = (notice && notice.newCount) || 0;
+    const due = dueCounts(notice);
     try {
       if (window.AJ_TODO) {
         const HN = _hwNotice();
-        const label = (HN && nNew > 0) ? HN.todoLabel(nNew, openTotal, overdueN)
+        const label = (HN && notice) ? HN.todoLabel(nNew, openTotal, due.over, due.today)
           : (overdueN > 0 ? '⚠️ ' : '📝 ') + '宿題 ' + openTotal + ' 件' + (overdueN > 0 ? '（うち期限切れ ' + overdueN + ' 件）' : '');
         AJ_TODO.set('homework', openTotal > 0
-          ? { label: label, target: 'homeworkSection', order: 1, urgent: overdueN > 0 || nNew > 0 }
+          ? { label: label, target: 'homeworkSection', order: 1, urgent: due.over > 0 || due.today > 0 || nNew > 0 }
           : null);
       }
     } catch (_) { /* noop */ }
   }
+  // 👀 宿題を開いた (2026-10-18 塾長「②の残りも作っておいて」= 塾長の 🗓 授業ブリーフの「👀 未開封」/「開いたが未提出」)。
+  //   解答用紙・PDF を開いた / 中身だけの宿題 (単元・プリント・解答用紙が無い = カードが中身) が宿題欄で見えた → POST /api/student/homework/{id}/opened
+  //   (prefix は元から許可)。未提出の宿題だけ・このページで 1 件 1 回・返事は待たない・失敗しても何も出さない (サーバも 1 日 1 回まで)。
+  //   ドリルを開いたことはサーバが GET /api/student/grammar-drill/{id} の中で記録する (ここでは送らない)
+  const openedSent = {};
+  function pingOpened(item) {
+    if (!item || item.status !== 'open' || item.id == null) return;
+    const k = String(item.id);
+    if (openedSent[k]) return;
+    openedSent[k] = 1;
+    try {
+      Promise.resolve(slApiFetch(`/api/student/homework/${encodeURIComponent(k)}/opened`, { method: 'POST', body: JSON.stringify({}) })).catch(() => {});
+    } catch (_) { /* 記録できなくても表示は続ける */ }
+  }
+  function pingBareCards() {
+    (hwItems || []).forEach((it) => {
+      if (it && it.status === 'open' && !it.topic && !(it.attachment_print && it.attachment_print.id != null) && _hwSheetState(it) === 'none') pingOpened(it);
+    });
+  }
+  function hwItemById(id) { return (hwItems || []).find(it => it && String(it.id) === String(id)) || null; }
   // 🆕 宿題を「見た」と記録する (取れた一覧だけ)。カードの 🆕 はこの表示のあいだは残し (見ている最中に消えると戸惑う)、
   //   チップだけ「📝 宿題 N 件」に戻す。次に読み直したときにカードの 🆕 も消える
   function markSeenNow() {
+    pingBareCards();   // 👀 宿題欄を見た = 中身だけの宿題は開いた
     const HN = _hwNotice();
     if (!HN || (drillItems === null && hwItems === null)) return;
     try { HN.markSeen(_hwSid(), drillItems, hwItems); } catch (_) { return; }
@@ -4834,6 +4885,11 @@ async function initHomeworkSection() {
     //   タブを開けなかった (ブロックされた) ときは同じタブで開く。
     let _tab = null;
     try { _tab = window.open('', '_blank'); } catch (_eo) { _tab = null; }
+    // 👀 PDF を開いた (宿題のカードの「PDFを開く」= カードの data-hw-id・解答用紙の画面の「プリントを開く」= ボタンの data-id)
+    try {
+      const _card = pbtn.closest ? pbtn.closest('[data-hw-id]') : null;
+      pingOpened(hwItemById(pbtn.getAttribute('data-id') || (_card ? _card.getAttribute('data-hw-id') : '')));
+    } catch (_ep) { /* noop */ }
     // 白紙のタブが数秒見えると「固まった?」と感じるので、準備中の表示を入れておく
     if (_tab) { try { _tab.document.write('<p style="font-family:sans-serif; padding:1.5rem;">📄 PDFを準備中…</p>'); } catch (_ew) {} }
     try {
@@ -4867,6 +4923,7 @@ async function initHomeworkSection() {
     const st = _hwSheetState(item);
     if (!L || (st !== 'open' && st !== 'submitted')) { alert('解答用紙を開けませんでした。ページを再読み込みしてください。'); return; }
     markSeenNow();
+    if (st === 'open') pingOpened(item);   // 👀 解答用紙を開いた (未提出のときだけ)
     const pr = item.attachment_print && item.attachment_print.id != null;
     L.openOverlay({
       hw: item, sid: _hwSid(), api: slApiFetch,

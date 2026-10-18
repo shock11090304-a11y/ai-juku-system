@@ -438,8 +438,10 @@ JS_PRINT_CASES = r"""
     } finally {
       Date.now = realNow;
     }
-    ok('JST で昨日が期限 → 期限切れ (UTC の日付ではまだ当日)', cardOf('昨日が期限').indexOf('chip-over">期限切れ') >= 0, cardOf('昨日が期限'));
-    ok('JST で今日が期限 → 未提出 (期限切れではない)', cardOf('今日が期限').indexOf('chip-open">未提出') >= 0, cardOf('今日が期限'));
+    // ⏰ 2026-10-18 から 期限切れは「未提出」+「〆を過ぎました」・今日が期限は「未提出」+「〆今日」(hw-notice.js の dueState)
+    ok('JST で昨日が期限 → 〆を過ぎました (UTC の日付ではまだ当日)', cardOf('昨日が期限').indexOf('chip-over">〆を過ぎました') >= 0, cardOf('昨日が期限'));
+    ok('JST で今日が期限 → 未提出・〆今日 (〆を過ぎたではない)', cardOf('今日が期限').indexOf('chip-open">未提出') >= 0
+       && cardOf('今日が期限').indexOf('chip-soon">〆今日') >= 0 && cardOf('今日が期限').indexOf('〆を過ぎました') < 0, cardOf('今日が期限'));
     ok('期限なし → 未提出', cardOf('期限なし').indexOf('chip-open">未提出') >= 0, cardOf('期限なし'));
 
     // (T3) メッセージの日時も JST (以前は fmtDate = 文字列を切っただけで 9 時間早く出ていた)

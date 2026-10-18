@@ -424,7 +424,9 @@ function clickIn(el, attrs) { var t = target(attrs); el.dispatch('click', { targ
 function press(q, v, el) { return clickIn(el || body(), { 'data-hs-q': String(q), 'data-hs-v': String(v) }); }
 function act(name, el) { return clickIn(el || body(), { 'data-hs-act': name }); }
 function row(i, el) { return (el || body())._qs['[data-hs-row="' + i + '"]']; }
-function posts() { return CALLS.filter(function (c) { return c.method === 'POST'; }); }
+// 👀 POST /api/student/homework/{id}/opened (開いたの記録・2026-10-18) は提出とは別の通信なので、提出の数え方から外す (test_item_open_due.py が見る)
+function isOpenedPing(c) { return /\/opened$/.test(String(c.path).split('?')[0]); }
+function posts() { return CALLS.filter(function (c) { return c.method === 'POST' && !isOpenedPing(c); }); }
 function listGets() { return CALLS.filter(function (c) { return c.method === 'GET' && c.path.split('?')[0] === '/api/student/homework'; }).length; }
 function msgText() { return body()._qs['[data-hs-msg]'] ? body()._qs['[data-hs-msg]'].textContent : ''; }
 """
@@ -579,7 +581,7 @@ JS_CLASS_SHEET_CASES = r"""
     window.AJHwSheet.saveDraft(7, B, { num_questions: 3, num_choices: 4, reset_count: 0 }, [1, 1, 1]);
     setApi({ '/api/student/homework': { status: 200, body: FX.L2 } });
     await bootSheetPage();
-    ok('やり直しで開き直した宿題は未提出・答えるボタン', !!sheetBtn(B) && cardOf(B).indexOf('chip-over">期限切れ') >= 0, cardOf(B));
+    ok('やり直しで開き直した宿題は未提出・答えるボタン・〆を過ぎました', !!sheetBtn(B) && cardOf(B).indexOf('chip-over">〆を過ぎました') >= 0, cardOf(B));
     sheetBtn(B).dispatch('click');
     eq('やり直しの前の下書きは入れない', count(body().innerHTML, 'hs-sel'), 0);
 
@@ -808,7 +810,7 @@ JS_MYPAGE_SHEET_CASES = r"""
     FX.ANS_A.forEach(function (v, i) { if (v != null) clickIn(inner, { 'data-hs-q': String(i), 'data-hs-v': String(v) }); });
     API['/api/student/homework/' + A + '/sheet'] = FX.R_A;
     clickIn(inner, { 'data-hs-act': 'submit' }); await flush();
-    var p = CALLS.filter(function (c) { return c.method === 'POST'; });
+    var p = CALLS.filter(function (c) { return c.method === 'POST' && !/\/opened$/.test(String(c.path).split('?')[0]); });   // 👀 開いたの記録は別の通信
     eq('マイページも同じ本文で 1 回だけ提出', p.map(function (c) { return [c.path, c.body]; }), [['/api/student/homework/' + A + '/sheet', JSON.stringify({ answers: FX.ANS_A })]]);
     ok('重ねの中に結果 (4 / 5)', inner.innerHTML.indexOf('提出しました<span class="hs-n">4 / 5</span>') >= 0, inner.innerHTML.slice(0, 300));
     ok('トーストを出す', BODY.children.some(function (c) { return c.id === 'aj-hw-sheet-toast' && c.textContent === '提出しました！ 4 / 5 正解'; }));

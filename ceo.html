@@ -15345,6 +15345,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
   //   重ねはダイアログ (フォーカスを中へ・Tab は中だけ・外へ向いた Enter / Space は止める・画面のショートカットへ流さない・閉じたら元へ)。
   //   ハブのボタンと 🏫 カードのボタンは JST の今日を読む (cbSetDay(0))。🔄・日付・クラスの絞り込みは選んだ日のまま (cbLoad)。
   //   未提出 0 本の生徒は「届いた分は全部出した」と「📭 届いていない」(直近 14 日に何も届いていない) に分け、🎉 は前者だけのとき。
+  //   👀 (2026-10-18) 未提出の行に「👀 未開封」/「開いたが未提出 (M/D)」(サーバの opened・null は出さない)・生徒の行に「👀 未開封 N」。
   (function () {
     var CB_URL = '/api/admin/class-brief';
     var KIND_JA = { class_hw: '🏫 クラス自動宿題', routine: '🎯 3日ドリル', mission: '🧩 15問ミッション', admin: '📝 塾長のドリル', homework: '📚 宿題', other: '📝 ドリル' };
@@ -15374,6 +15375,16 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
       return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() : -1;
     }
+    // 👀 開いたか (2026-10-18 塾長「②の残りも作っておいて」): サーバの opened = true →「開いたが未提出 (M/D = 最後に開いた日)」/
+    //   false →「👀 未開封」/ null・無し (記録が始まる前に配った分・古いサーバ) → 何も出さない (分からないものを未開封と言わない)
+    function _cbOpenTag(it) {
+      if (it.opened === true) {
+        return ' <span title="開いた記録はあるが、まだ出していない (声かけ: 最後まで出そう)" style="color:#93c5fd;">開いたが未提出'
+          + (it.opened_last_jst ? ' (' + _cbE(it.opened_last_jst) + ')' : '') + '</span>';
+      }
+      if (it.opened === false) return ' <span title="配ってから一度も開いていない (声かけ: 宿題が届いているよ)" style="color:#fde68a;">👀 未開封</span>';
+      return '';
+    }
     function _cbMemberRow(s) {
       var items = Array.isArray(s.open_items) ? s.open_items : [];
       var nashi = s.ai_path === 'ai_nashi';
@@ -15383,6 +15394,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       h += _cbPill('未提出 ' + _cbN(s.open_count) + ' 本', '#fecaca', 'rgba(248,113,113,0.10)');
       if (_cbN(s.overdue_count)) h += _cbPill('〆過ぎ ' + _cbN(s.overdue_count), '#fca5a5', 'rgba(248,113,113,0.18)', '期限 (〆) を過ぎた未提出');
       if (_cbN(s.blocking_count)) h += _cbPill('⛔ 次が止まる', '#fcd34d', 'rgba(251,191,36,0.12)', '出さないと次の自動の宿題が届きません');
+      if (_cbN(s.unopened_count)) h += _cbPill('👀 未開封 ' + _cbN(s.unopened_count), '#fde68a', 'rgba(250,204,21,0.10)', '配ってから一度も開いていない未提出 (声かけ: 宿題が届いているよ)');
       if (s.oldest_days != null) h += _cbPill(_cbN(s.oldest_days) + '日', '#cbd5e1', 'rgba(148,163,184,0.08)', 'いちばん古い未提出を配ってからの日数');
       if (s.login_stale) {
         h += _cbPill('🔑 ログイン切れの疑い（' + (s.last_login_jst ? '最終 ' + s.last_login_jst : 'ログインなし') + '）', '#fca5a5', 'rgba(248,113,113,0.10)',
@@ -15399,6 +15411,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           return '<div>' + _cbE(KIND_JA[it.kind] || it.kind || '') + ' · ' + _cbE(it.title || '(題名なし)')
             + ' <span style="color:#71717a;">' + _cbE(bits.join(' · ')) + '</span>'
             + (it.overdue ? ' <b style="color:#fca5a5;">〆過ぎ</b>' : '')
+            + _cbOpenTag(it)
             + (it.blocking ? ' <span title="出さないと次の自動の宿題が届きません" style="color:#fcd34d;">⛔</span>' : '')
             + (it.answer_sheet ? ' <span style="color:#a5b4fc;">✍️ 解答用紙</span>' : '') + '</div>';
         }).join('');

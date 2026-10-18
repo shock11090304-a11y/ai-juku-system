@@ -45758,6 +45758,163 @@ def open_my_homework_print(homework_id: int, request: Request, authorization: Op
         conn.close()
 
 
+# 👀 生徒が宿題・ドリルを「開いた」の記録 (2026-10-18 塾長「②の残りも作っておいて」= 成績を上げる提案 ②「開いたかの記録」)。
+#   未提出が「見ていない」(入口・見え方の問題 → 声かけ) か「開いたが出していない」(手間・難しさの問題) かを分け、
+#   CEO の 🗓 今日の授業ブリーフに「👀 未開封」/「開いたが未提出 (M/D)」と出す。
+#   - events に 1 件 1 行: name = gd_open (単元ドリル・GET /api/student/grammar-drill/{id} の中で) / hw_open (塾長の宿題・
+#     POST /api/student/homework/{id}/opened)。session_id = 生徒 ID の文字列 (生徒の統合で移る・週次レポートや活動の集計は name で絞るので数えない)・
+#     props = {student_id, kind, item_id, last_opened (naive UTC), days (開いた JST の日数)} = ID と時刻だけ (名前は入れない)。
+#     created_at = 初めて開いた時刻。2 回目からは同じ行の last_opened / days を **JST の日付が変わったときだけ** 書き換える
+#     (同じ日にもう一度開いても何も書かない = 1 日 1 回まで・表は足さない・DDL なし)。
+#   - 記録するのは本人が未提出のものを開いたときだけ (塾長のなりすまし・提出済み・今日の1問 / 初回診断は記録しない)。
+#   - _EVENTS_RETENTION に載せない = 消さない (1 件 1 行なので増え方は配った本数と同じ)。
+#   - 記録に失敗しても開く処理は止めない (rollback して続ける・ログに名前も ID も出さない)。
+_ITEM_OPEN_EVENTS = {"gd": "gd_open", "hw": "hw_open"}
+_ITEM_OPEN_KIND_BY_NAME = {v: k for k, v in _ITEM_OPEN_EVENTS.items()}
+_ITEM_OPEN_SELF_ISSUED = ("today_question", "diagnostic")   # 生徒が自分で始めたもの (未提出にも「新しい宿題」にも数えない) = 開いたも記録しない
+
+
+def _item_open_props(raw) -> dict:
+    """events.props (JSON の文字列) → dict。読めなければ {}。"""
+    try:
+        p = json.loads(raw) if isinstance(raw, str) else (raw or {})
+        return p if isinstance(p, dict) else {}
+    except (TypeError, ValueError):
+        return {}
+
+
+def _item_open_dump(sid: int, kind: str, item_id: int, last_txt: str, days: int) -> str:
+    # ★キーの順番を変えない (_record_item_open の LIKE '%"item_id": <id>,%' で行を絞る。見つけた行は Python でもう一度確かめる)
+    return json.dumps({"student_id": int(sid), "kind": kind, "item_id": int(item_id), "last_opened": last_txt, "days": int(days)})
+
+
+def _record_item_open(conn, student_id, kind, item_id, *, now=None) -> str:
+    """👀 本人が開いた (呼び出し側で本人・未提出・なりすましでないことを確かめてから呼ぶ)。
+    返り値: 'first' (初めて = 1 行足した) / 'touched' (別の日にまた開いた = last_opened と days を更新) / 'same_day' (今日はもう記録済み = 何も書かない) /
+    'skipped' (種類や ID が変) / 'error' (書けなかった = rollback 済み)。決して例外を投げない (開く処理を止めない)。"""
+    name = _ITEM_OPEN_EVENTS.get(kind)
+    try:
+        sid, iid = int(student_id), int(item_id)
+    except (TypeError, ValueError):
+        return "skipped"
+    if not name or sid <= 0 or iid <= 0:
+        return "skipped"
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    now_txt = now.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    today = now.astimezone(_JST).date()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, props FROM events WHERE session_id = ? AND name = ? AND props LIKE ? ORDER BY id LIMIT 20",
+                  (str(sid), name, f'%"item_id": {iid},%'))
+        hit = None
+        for r in c.fetchall() or []:
+            p = _item_open_props(r["props"])
+            if p.get("kind") == kind and p.get("item_id") == iid:
+                hit = (r["id"], p)
+                break
+        if hit is None:
+            c.execute("INSERT INTO events (name, props, session_id, created_at) VALUES (?, ?, ?, ?)",
+                      (name, _item_open_dump(sid, kind, iid, now_txt, 1), str(sid), now_txt))
+            conn.commit()
+            return "first"
+        rid, p = hit
+        last = _class_brief_jst(p.get("last_opened"))
+        if last is not None and last.date() >= today:
+            return "same_day"
+        try:
+            days = max(1, int(p.get("days") or 1)) + 1
+        except (TypeError, ValueError):
+            days = 2
+        c.execute("UPDATE events SET props = ? WHERE id = ?", (_item_open_dump(sid, kind, iid, now_txt, days), rid))
+        conn.commit()
+        return "touched"
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        log.warning(f"[item_open] 開いたの記録に失敗しました (開く処理は続けます): {type(e).__name__}")
+        return "error"
+
+
+def _item_open_load(c, sids) -> tuple:
+    """👀 授業ブリーフ用 (読むだけ): 生徒 id の一覧 → ({(生徒 id, 'gd'|'hw', item_id): {first, last, days}}, {'gd'|'hw': 記録が始まった時刻 (naive UTC の文字列)})。
+    SELECT は「種類ごとの最初の記録」1 回 + 生徒 id 500 件ずつの IN 1 回 (生徒ごとに回さない)。first / last は 'YYYY-MM-DD HH:MM:SS' (naive UTC)。"""
+    names = tuple(_ITEM_OPEN_EVENTS.values())
+    since = {}
+    c.execute(f"SELECT name, MIN(created_at) AS t FROM events WHERE name IN ({','.join(['?'] * len(names))}) GROUP BY name", names)
+    for r in c.fetchall() or []:
+        k = _ITEM_OPEN_KIND_BY_NAME.get(r["name"])
+        t = _class_brief_ts(r["t"])
+        if k and t:
+            since[k] = t
+    out = {}
+    for chunk in _class_brief_chunks(sorted({int(s) for s in sids})):
+        ph = ",".join(["?"] * len(chunk))
+        c.execute(f"SELECT name, session_id, props, created_at FROM events WHERE name IN ({','.join(['?'] * len(names))}) "
+                  f"AND session_id IN ({ph})", names + tuple(str(s) for s in chunk))
+        for r in c.fetchall() or []:
+            kind = _ITEM_OPEN_KIND_BY_NAME.get(r["name"])
+            p = _item_open_props(r["props"])
+            iid = p.get("item_id")
+            try:
+                sid = int(str(r["session_id"]))
+            except (TypeError, ValueError):
+                continue
+            if not kind or isinstance(iid, bool) or not isinstance(iid, int):
+                continue
+            first = _class_brief_ts(r["created_at"])
+            last = _class_brief_ts(p.get("last_opened")) or first
+            try:
+                days = max(1, int(p.get("days") or 1))
+            except (TypeError, ValueError):
+                days = 1
+            key = (sid, kind, iid)
+            cur = out.get(key)
+            if cur is None:
+                out[key] = {"first": first, "last": max(first, last), "days": days}
+            else:   # 同時に開いて 2 行になった (競合) = 早い方の初回・遅い方の最後
+                fs = [x for x in (cur["first"], first) if x]
+                cur["first"] = min(fs) if fs else ""
+                cur["last"] = max(cur["last"], last, first)
+                cur["days"] = max(cur["days"], days)
+    return out, since
+
+
+@app.post("/api/student/homework/{homework_id}/opened")
+def mark_my_homework_opened(homework_id: int, request: Request, authorization: Optional[str] = Header(None)):
+    """👀 宿題を開いた (2026-10-18 塾長「②の残りも作っておいて」)。塾生アプリ・マイページの宿題カードで解答用紙・プリント・
+    「📝 ドリルで解く」を開いたとき / 中身だけの宿題 (単元・プリント・解答用紙が無い = カードが中身) が一覧に出たときに画面が呼ぶ (返事は待たない)。
+    - 元から許可されている prefix "/api/student/homework/" の下 = AIなし枠の許可集合は変えない。AI は呼ばない。本文は読まない。
+    - 本人の宿題でなければ 404。記録は events hw_open に 1 件 1 行 (_record_item_open・同じ JST の日は何も書かない = 1 日 1 回まで)。
+    - 塾長のなりすまし・提出済みの宿題は記録しない (200 で recorded に理由)。"""
+    _check_rate_limit_caller(request, authorization, bucket="hw_opened", limit=60, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    try:
+        homework_id = int(homework_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=404, detail="この宿題はあなたに出されていません")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, status FROM homework_assignments WHERE id = ? AND student_id = ?", (homework_id, int(student["id"])))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="この宿題はあなたに出されていません")
+        if _is_impersonation_auth(authorization):
+            return {"ok": True, "homework_id": homework_id, "recorded": "impersonation"}
+        if str(row["status"] or "open") == "completed":
+            return {"ok": True, "homework_id": homework_id, "recorded": "completed"}
+        return {"ok": True, "homework_id": homework_id, "recorded": _record_item_open(conn, student["id"], "hw", homework_id)}
+    finally:
+        conn.close()
+
+
 @app.post("/api/student/homework/{homework_id}/sheet")
 def submit_my_homework_sheet(homework_id: int, request: Request, payload: Any = Body(None),
                              authorization: Optional[str] = Header(None)):
@@ -50323,12 +50480,29 @@ def student_coach_done(payload: dict, request: Request, authorization: Optional[
     return {"ok": True, "recorded": recorded, **_student_activity_summary(sid)}
 
 
+def _student_drill_due_date(created_by, title, assigned_raw) -> Optional[str]:
+    """生徒のドリル一覧の due_date: クラス自動宿題 (created_by = class_hw_auto:…) の題名の「〆M/D」→ 'YYYY-MM-DD'。
+    読み方は授業ブリーフ (_class_brief_title_due・年は受け取った日 = assigned_at の JST の日付から) と 1 か所。
+    ほかのドリル・〆の無い / 読めない題名・受け取った日時が無い行は None (〆を出さない)。"""
+    try:
+        if _class_brief_drill_kind(created_by) != "class_hw":
+            return None
+        aj = _class_brief_jst(assigned_raw)
+        due = _class_brief_title_due(title, aj.date() if aj else None)
+        return due.isoformat() if due else None
+    except Exception:
+        return None
+
+
 @app.get("/api/student/grammar-drills")
 def student_grammar_drills(request: Request, authorization: Optional[str] = Header(None)):
     """🎓 生徒: 自分に配信されたドリル一覧 (未完了→完了の順)。
     2026-10-15 (宿題のお知らせはアプリ内表示): 未提出 = status <> 'completed' (提出 API と同じ。デスクトップの予約タスクが
     書く 'assigned' も未提出)。self_issued = 生徒が自分で始めたもの (今日の1問・初回診断) で「🆕 新しい宿題」に数えない
-    (created_by の生の値は出さない)。"""
+    (created_by の生の値は出さない)。
+    2026-10-18 (塾長「②の残りも作っておいて」= 〆を見せる): due_date = クラス自動宿題の題名の「〆M/D」を 'YYYY-MM-DD' (JST) にしたもの
+    (読み方は授業ブリーフと同じ _class_brief_title_due・年は受け取った日 (JST) から)。ほかのドリルと読めない題名は None。
+    画面 (hw-notice.js) はこれで「〆今日」「〆を過ぎました」と帯を出す (題名を JS で読まない)。"""
     _check_rate_limit_caller(request, authorization, bucket="grammar_drills_list", limit=30, window=60)
     student = _get_current_student(authorization)
     if not student:
@@ -50358,6 +50532,7 @@ def student_grammar_drills(request: Request, authorization: Optional[str] = Head
                 "assigned_at": str(r["assigned_at"]) if r["assigned_at"] else None,
                 "completed_at": str(r["completed_at"]) if r["completed_at"] else None,
                 "self_issued": (r["created_by"] or "") in ("today_question", "diagnostic"),
+                "due_date": _student_drill_due_date(r["created_by"], r["title"], r["assigned_at"]),
             })
         open_count = sum(1 for it in items if it["status"] != "completed")
         completed_count = sum(1 for it in items if it["status"] == "completed")
@@ -50594,7 +50769,10 @@ def student_today_question_start(request: Request, authorization: Optional[str] 
 
 @app.get("/api/student/grammar-drill/{drill_id}")
 def student_grammar_drill_get(drill_id: int, request: Request, authorization: Optional[str] = Header(None)):
-    """🎓 生徒: ドリルの問題を取得 (解答用)。未完了なら answer/explanation は隠す。完了済みなら復習用に開示。"""
+    """🎓 生徒: ドリルの問題を取得 (解答用)。未完了なら answer/explanation は隠す。完了済みなら復習用に開示。
+    👀 2026-10-18 (塾長「②の残りも作っておいて」): 本人が未提出のドリルを開いたら events gd_open に記録する (_record_item_open・
+    1 本に 1 行・2 回目からは JST の日付が変わったときだけ last_opened を書き換える)。なりすまし・提出済み・今日の1問 / 初回診断は記録しない。
+    記録に失敗してもドリルは返す。"""
     _check_rate_limit_caller(request, authorization, bucket="grammar_drill_get", limit=60, window=60)
     student = _get_current_student(authorization)
     if not student:
@@ -50611,7 +50789,7 @@ def student_grammar_drill_get(drill_id: int, request: Request, authorization: Op
         a = c.fetchone()
         if not a:
             raise HTTPException(status_code=404, detail="このドリルは配信されていません")
-        c.execute("SELECT id, title, unit, level, question_ids FROM grammar_drills WHERE id = ?", (drill_id,))
+        c.execute("SELECT id, title, unit, level, question_ids, created_by FROM grammar_drills WHERE id = ?", (drill_id,))
         d = c.fetchone()
         if not d:
             raise HTTPException(status_code=404, detail="ドリルが見つかりません")
@@ -50654,6 +50832,10 @@ def student_grammar_drill_get(drill_id: int, request: Request, authorization: Op
                 item["explanation"] = q["explanation"]
                 item["your_answer"] = prev_ans.get(str(qid), prev_ans.get(qid))
             questions.append(item)
+        # 👀 開いた (読み終えた後に 1 回だけ書く・失敗しても返す)。本人が未提出のものだけ (塾長のなりすまし確認・復習・自分で始めた 1 問は数えない)
+        if (not reveal and str(d["created_by"] or "") not in _ITEM_OPEN_SELF_ISSUED
+                and not _is_impersonation_auth(authorization)):
+            _record_item_open(conn, student["id"], "gd", drill_id)
         return {
             "ok": True,
             "drill": {"id": drill_id, "title": d["title"], "unit": d["unit"], "level": d["level"]},
@@ -58763,6 +58945,35 @@ def _class_brief_is_ptest(subject, source) -> bool:
     return str(source or "").strip().lower().startswith(_AUTO_DELIVERY_DENY_SOURCE_PREFIXES)
 
 
+def _class_brief_mark_open(it, sid, opens, open_since) -> None:
+    """👀 未提出の行に「開いたか」を付ける (2026-10-18 塾長「②の残りも作っておいて」)。opens / open_since は _item_open_load の値。
+    opened = True (開いた記録がある) / False (記録が始まった後に配ったのに記録が無い = 👀 未開封) /
+    None (記録が始まる前に配った分で記録が無い・配った日時が無い・その種類の記録がまだ 1 件も無い = 分からない → 画面は何も出さない)。
+    opened_last_jst = 最後に開いた日 (JST の M/D)・opened_at / opened_last_at = offset 付き UTC・open_days = 開いた日数 (JST)。"""
+    key = None
+    if it.get("drill_id") is not None:
+        key = (int(sid), "gd", int(it["drill_id"]))
+    elif it.get("homework_id") is not None:
+        key = (int(sid), "hw", int(it["homework_id"]))
+    it.update({"opened": None, "opened_at": None, "opened_last_at": None, "opened_last_jst": None, "open_days": 0})
+    rec = opens.get(key) if key else None
+    if rec:
+        f = _class_brief_jst(rec.get("first"))
+        last = _class_brief_jst(rec.get("last")) or f
+        it.update({
+            "opened": True,
+            "opened_at": f.astimezone(timezone.utc).isoformat() if f else None,
+            "opened_last_at": last.astimezone(timezone.utc).isoformat() if last else None,
+            "opened_last_jst": f"{last.month}/{last.day}" if last else None,
+            "open_days": int(rec.get("days") or 1),
+        })
+        return
+    since = _parse_db_dt(open_since.get(key[1])) if key and open_since.get(key[1]) else None
+    assigned = _parse_db_dt(it.get("assigned_at"))
+    if since is not None and assigned is not None and assigned >= since:
+        it["opened"] = False
+
+
 def _class_brief_build(conn, *, brief_day, only_label=None, now=None) -> dict:
     """🗓 授業ブリーフの中身 (読むだけ)。brief_day = JST の date・only_label = 時間割のクラス名 (曜日が違っても出す)。
     名簿 = 在籍 (_enrolled_sql)・合成監視とテスト系の名前を除く・通塾生 (course=kokuritsu_nankan か plan=student_addon)・受講クラスに
@@ -58978,6 +59189,18 @@ def _class_brief_build(conn, *, brief_day, only_label=None, now=None) -> dict:
         for r in c.fetchall() or []:
             ptitles[int(r["id"])] = r["title"] or ""
 
+    # 👀 開いたかの記録 (events gd_open / hw_open・読むだけ。読めなければ印なしで続ける = rollback してから次の SELECT)
+    opens, open_since = {}, {}
+    try:
+        opens, open_since = _item_open_load(c, ids)
+    except Exception as _oe:
+        log.warning(f"[ClassBrief] 開いたかの記録を読めませんでした (印なしで続けます): {type(_oe).__name__}")
+        opens, open_since = {}, {}
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
     # 宿題の解答用紙 (記号) の印と前回の授業からの点数 (表が無い DB・読めないときは印なしで続ける。Postgres は失敗した 1 文で止まるので rollback)
     sheets = {}
     sheet_ids = [int(r["id"]) for r in hw_rows] + [int(r["id"]) for r in hw_done]
@@ -59002,8 +59225,12 @@ def _class_brief_build(conn, *, brief_day, only_label=None, now=None) -> dict:
 
     for sid, its in items_by_sid.items():
         s = stud[sid]
+        for it in its:
+            _class_brief_mark_open(it, sid, opens, open_since)
         its.sort(key=lambda x: (not x["overdue"], not x["blocking"], -(x["days_open"] if x["days_open"] is not None else -1)))
         s["open_count"] = len(its)
+        s["unopened_count"] = sum(1 for x in its if x.get("opened") is False)
+        s["opened_open_count"] = sum(1 for x in its if x.get("opened") is True)
         s["overdue_count"] = sum(1 for x in its if x["overdue"])
         s["blocking_count"] = sum(1 for x in its if x["blocking"])
         ds = [x["days_open"] for x in its if x["days_open"] is not None]
@@ -59118,7 +59345,8 @@ def admin_class_brief(request: Request, authorization: Optional[str] = Header(No
     ★管理者トークンだけ (生徒の名前を返すので X-Cron-Secret では読めない)。書かない・events にも残さない。
     応答 version=1 (CEO は無ければ「サーバ反映待ち」) / classes[]: label・time・在籍 members_n・未提出のいる人数 open_members_n・
     members[] (id・name・学年の区分・AIあり/なし・最終ログイン (JST)・ログイン切れの疑い・未提出の行 = 種類・題名・配った日・〆・〆過ぎ・
-    何日たったか・次の自動配信を止めているか・直近 14 日に届いた本数 received_n・届いていない not_delivered・届かない理由 delivery_note) /
+    何日たったか・次の自動配信を止めているか・開いたか opened (True / False = 👀 未開封 / None = 記録の前で分からない)・最後に開いた日
+    opened_last_jst・直近 14 日に届いた本数 received_n・届いていない not_delivered・届かない理由 delivery_note・未開封の本数 unopened_count) /
     all_done_n・not_delivered_n / submitted_this_week[] (前回の授業の開始 praise_since から出した本数・一番よい点・満点) /
     top_missed[] (このクラスのクラス自動宿題の問題が先・ほかのドリルはこのクラスの科目だけ・正解率の低い 3 問: 問題文・選択肢・
     正解の番号 (0 始まり)・正解率・回答数・一番選ばれた誤答。無効化した問題は出さない)。timetable = クラスの選択肢。"""

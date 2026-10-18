@@ -292,10 +292,10 @@ if (setWindowStorage({ configurable: true, get: function () { throw new Error('S
 
 // 文言
 eq('帯: 新しい宿題', N.newLabel(3), '🆕 新しい宿題が 3 件届いています');
-eq('帯: 期限切れ', N.overdueLabel(2), '⚠️ 期限切れの宿題が 2 件あります');
-eq('チップ: 新しい + 未提出 + 期限切れ', N.todoLabel(2, 5, 1), '🆕 新しい宿題 2 件（未提出 5 件・うち期限切れ 1 件）');
+eq('帯: 〆を過ぎた (2026-10-18 から 〆 の言い方)', N.overdueLabel(2), '⚠️ 〆を過ぎた宿題が 2 件あります');
+eq('チップ: 新しい + 未提出 + 〆を過ぎた', N.todoLabel(2, 5, 1), '🆕 新しい宿題 2 件（未提出 5 件・うち〆を過ぎた 1 件）');
 eq('チップ: 新しいものだけ', N.todoLabel(2, 2, 0), '🆕 新しい宿題 2 件');
-eq('チップ: 新しいものが無ければ今までの文言', [N.todoLabel(0, 3, 0), N.todoLabel(0, 3, 1)], ['📝 宿題 3 件', '⚠️ 宿題 3 件（うち期限切れ 1 件）']);
+eq('チップ: 新しいものが無いとき', [N.todoLabel(0, 3, 0), N.todoLabel(0, 3, 1)], ['📝 宿題 3 件', '⚠️ 宿題 3 件（うち〆を過ぎた 1 件）']);
 eq('記録なしの窓は 72 時間', N.FIRST_VISIT_WINDOW_MS, 72 * 3600 * 1000);
 __emit();
 """
@@ -372,7 +372,7 @@ JS_MYPAGE_CASES = r"""
     newSection(); setApi([D_NEW, D_OLD, D_SELF, D_DONE], [H_NEW, H_OVER, H_DONE], 1);
     await initHomeworkSection(); await flush();
     var html = ELS['#homeworkList'].innerHTML;
-    eq('チップ「🆕 新しい宿題 N 件」(届いて 72 時間以内のドリル 1 + 宿題 1)', TODO.homework && TODO.homework.label, '🆕 新しい宿題 2 件（未提出 5 件・うち期限切れ 1 件）');
+    eq('チップ「🆕 新しい宿題 N 件」(届いて 72 時間以内のドリル 1 + 宿題 1)', TODO.homework && TODO.homework.label, '🆕 新しい宿題 2 件（未提出 5 件・うち〆を過ぎた 1 件）');
     eq('新しいときはチップを目立たせる (urgent)', TODO.homework && TODO.homework.urgent, true);
     eq('🆕 新着はドリル 1 枚 + 宿題 1 枚', count(html, '🆕 新着'), 2);
     ok('🆕 新着は新しいドリルのカードに付く', /🆕 新着<\/span>[^]*?data-hw-drill-open="101"/.test(html) && !/🆕 新着<\/span><span[^>]*>📝 英文法ドリル<\/span><span[^>]*>関係詞/.test(html));
@@ -389,7 +389,7 @@ JS_MYPAGE_CASES = r"""
     var t = TIMERS[TIMERS.length - 1]; ok('縦に長い欄は画面の半分以上見えたら数える', !!(t && t.fn));
     t.fn();
     eq('見たら localStorage に記録', Object.keys(st._m), ['aj_hw_seen_v1:7']);
-    eq('見たらチップは今までの文言に戻る', TODO.homework && TODO.homework.label, '⚠️ 宿題 5 件（うち期限切れ 1 件）');
+    eq('見たらチップは「📝/⚠️ 宿題 N 件」に戻る', TODO.homework && TODO.homework.label, '⚠️ 宿題 5 件（うち〆を過ぎた 1 件）');
     eq('見ている最中はカードの 🆕 を消さない', count(ELS['#homeworkList'].innerHTML, '🆕 新着'), 2);
     await window._hwRefreshDrills(); await flush();
     eq('読み直したら 🆕 は消える', count(ELS['#homeworkList'].innerHTML, '🆕 新着'), 0);
@@ -399,10 +399,10 @@ JS_MYPAGE_CASES = r"""
     var D_NEXT = { drill_id: 105, title: '仮定法ドリル', unit: '仮定法', subject: 'english', status: 'open', assigned_at: utcNaive(5 * 60 * 1000) };
     setApi([D_NEXT, D_NEW, D_OLD, D_SELF, D_DONE], [H_NEW, H_OVER, H_DONE], 1);
     await window._hwRefreshDrills(); await flush();
-    eq('次に届いたドリルだけが新しい', [TODO.homework && TODO.homework.label, count(ELS['#homeworkList'].innerHTML, '🆕 新着')], ['🆕 新しい宿題 1 件（未提出 6 件・うち期限切れ 1 件）', 1]);
+    eq('次に届いたドリルだけが新しい', [TODO.homework && TODO.homework.label, count(ELS['#homeworkList'].innerHTML, '🆕 新着')], ['🆕 新しい宿題 1 件（未提出 6 件・うち〆を過ぎた 1 件）', 1]);
     clickDrill(105);
     eq('ドリルを開く (_gdOpenDrill)', OPENED, ['105']);
-    eq('開いたら「見た」でチップが戻る', TODO.homework && TODO.homework.label, '⚠️ 宿題 6 件（うち期限切れ 1 件）');
+    eq('開いたら「見た」でチップが戻る', TODO.homework && TODO.homework.label, '⚠️ 宿題 6 件（うち〆を過ぎた 1 件）');
     eq('記録に新しいドリルが入る', JSON.parse(st._m['aj_hw_seen_v1:7']).d, ['105', '101', '102', '103']);
 
     // ドリルの取得に失敗 → ドリルの記録は変えない
@@ -564,14 +564,14 @@ JS_CLASS_CASES = r"""
     tab('homework'); await flush();
     ok('宿題 403 でドリルも無ければ今までの案内', ELS.homeworkBody.innerHTML.indexOf('通塾生のみ') >= 0);
 
-    // (G) 新しいものは無いが期限切れの宿題がある → 期限切れの帯
+    // (G) 新しいものは無いが〆を過ぎた宿題がある → 〆を過ぎた帯 (2026-10-18 から 〆 の言い方)
     var H3 = { id: 403, title: '単語テストの準備', subject: 'english', topic: '', status: 'open', created_at: utcNaive(20 * DAY), due_date: '2000-01-01' };
     var stG = memStore();
     if (!setWindowStorage({ configurable: true, writable: true, value: stG })) window.AJHwNotice._useStorage(stG);
     stG._m['aj_hw_seen_v1:7'] = JSON.stringify({ v: 1, d: [], h: ['403'] });   // 前に見た宿題
     setApi({ '/api/student/homework': hwBody([H3]), '/api/student/grammar-drills': drillBody([]) });
     await bootPage('/class.html', '', '');
-    ok('期限切れだけなら「⚠️ 期限切れの宿題が 1 件あります」', banner().indexOf('⚠️ 期限切れの宿題が 1 件あります') >= 0 && banner().indexOf('hw-notice warn') >= 0, banner());
+    ok('〆を過ぎただけなら「⚠️ 〆を過ぎた宿題が 1 件あります」(赤い帯)', banner().indexOf('⚠️ 〆を過ぎた宿題が 1 件あります') >= 0 && banner().indexOf('hw-notice warn') >= 0, banner());
 
     // (H) ドリルの取得に失敗: 帯は取れた宿題だけで数え、ドリルの記録は変えない
     var st2 = memStore();

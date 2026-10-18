@@ -621,6 +621,18 @@ jobs:
           node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
           python3 scripts/health_check/test_student_session_renew.py
 
+      # ⏰👀 〆の印と帯・開いたかの記録 (2026-10-18 塾長「②の残りも作っておいて」): grammar-drills の due_date (クラス自動宿題の題名の 〆M/D・
+      #   授業ブリーフと同じ読み方)・events gd_open / hw_open (1 件 1 行・同じ JST の日は書かない・ID だけ・なりすまし / 提出済み / 他人は記録しない・
+      #   保持期限で消えない)・POST /api/student/homework/{id}/opened (許可集合は不変)・授業ブリーフの 👀 未開封 / 開いたが未提出 (読むだけ)。
+      #   hw-notice.js の 〆 と帯・class.html / mypage.js のチップと 👀 の POST・CEO の表示を node で実際に動かす (TZ=America/Los_Angeles。
+      #   JS エンジンが無ければ FAIL)。
+      - name: 〆の印と帯・開いたかの記録 (gd_open / hw_open)・授業ブリーフの 👀 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
+          python3 scripts/health_check/test_item_open_due.py
+
       # 🔰 今日の1問・初回診断 (生徒が自分で始める): 学年で科目を分ける (中学生に高校の英文法を出さない・小学生モードは 409)・
       #   レビュー済みの出典だけ (未レビューの古い行は出さない・無ければ 503)。
       - name: 今日の1問・初回診断 (学年で科目を分ける・レビュー済みだけ) 回帰テスト

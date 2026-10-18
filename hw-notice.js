@@ -10,6 +10,11 @@
  * - 記録は localStorage 'aj_hw_seen_v1:<生徒ID>' に ID だけ (端末ごと。スマホで見ても PC では新着のまま = 塾長了承済みの割り切り)。
  *   読み書きはすべて try/catch。保存できない端末でも、ページ内の記録で「見たら帯が消える」は守る。
  *   取れた一覧だけを記録する (取得に失敗した一覧は前の記録を残す = 失敗で「新しい」を消したり作ったりしない)。
+ * - 〆 (2026-10-18 塾長「②の残りも作っておいて」): クラス宿題の期限 (due_date) と、クラス自動宿題のドリルの題名の「〆M/D」
+ *   (サーバが grammar-drills の due_date に 'YYYY-MM-DD' で入れる・JS で題名を読まない) を JST の今日と比べる (dueState)。
+ *   〆を過ぎた = overdue・〆が今日 = dueToday (どちらも未提出だけ)。塾生アプリの帯 (banner) は新しい宿題があれば新着の帯に 〆 の数を添え、
+ *   無ければ 〆を過ぎた / 〆今日 の未提出があるあいだ出し続ける (「見た」の記録に関係なく消えない)。カードのチップは dueChipText。
+ *   帯・チップの文言はこのファイルの 1 か所 (scripts/health_check/test_item_open_due.py と test_hw_notice_js.py が動かして確かめる)。
  * - DOM には触らない (scripts/health_check/test_hw_notice_js.py が node / osascript で実際に動かして検査する)。
  * ★ES5 で書く (古い iOS Safari で読み込みに失敗すると帯もバッジも出ない)。
  * ★このファイルを変えたら class.html と mypage.html の hw-notice.js?v= を両方上げる (CI js_cache_bust.py)。
@@ -42,6 +47,22 @@
     var ms = (typeof now === 'number' && !isNaN(now)) ? now : Date.now();
     return new Date(ms + JST_OFFSET_MS).toISOString().slice(0, 10);
   }
+  // 〆の日付 'YYYY-MM-DD' (サーバの due_date。'YYYY-MM-DD HH:MM:SS' でも先頭の日付だけ)。形が違えば ''
+  var YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
+  function dueYmd(v) {
+    var s = (v == null) ? '' : String(v).replace(/^\s+/, '').slice(0, 10);
+    return YMD_RE.test(s) ? s : '';
+  }
+  // 〆の状態: 'over' = 〆を過ぎた (〆の日 < JST の今日) / 'today' = 〆今日 / '' = 〆なし・まだ先・読めない。
+  //   日付の文字列で比べる (サーバの _today_jst().isoformat() と同じ)。today を省くと JST の今日
+  function dueState(due, today) {
+    var d = dueYmd(due);
+    if (!d) return '';
+    var t = (typeof today === 'string' && YMD_RE.test(today)) ? today : todayJst();
+    return d < t ? 'over' : (d === t ? 'today' : '');
+  }
+  // カードのチップの文言 (塾生アプリ・マイページ共通)
+  function dueChipText(st) { return st === 'over' ? '〆を過ぎました' : (st === 'today' ? '〆今日' : ''); }
 
   function storage() {
     if (testStore !== undefined) return testStore;
@@ -160,12 +181,16 @@
     var today = (typeof opts.today === 'string' && opts.today) ? opts.today : todayJst(now);
     var seenD = (seen && isArray(seen.d)) ? seen.d : null;
     var seenH = (seen && isArray(seen.h)) ? seen.h : null;
-    var openDrills = [], openHw = [], newDrillIds = [], newHwIds = [], overdue = 0, i, id;
+    var openDrills = [], openHw = [], newDrillIds = [], newHwIds = [], overdue = 0, i, id, ds;
+    var overdueDrills = 0, overdueHw = 0, dueToday = 0;
     if (drills) {
       for (i = 0; i < drills.length; i++) {
         var d = drills[i];
         if (!isOpenDrill(d)) continue;
         openDrills.push(d);
+        // 〆 (クラス自動宿題の題名の 〆M/D = サーバの due_date)。自分で始めたもの (〆なし) も数え方は同じ
+        ds = dueState(d.due_date, today);
+        if (ds === 'over') { overdue++; overdueDrills++; } else if (ds === 'today') dueToday++;
         if (d.self_issued === true || d.drill_id == null) continue;
         id = String(d.drill_id);
         if (inList(newDrillIds, id)) continue;
@@ -177,7 +202,8 @@
         var h = homework[i];
         if (!isOpenHw(h)) continue;
         openHw.push(h);
-        if (h.due_date && String(h.due_date) < today) overdue++;
+        ds = dueState(h.due_date, today);
+        if (ds === 'over') { overdue++; overdueHw++; } else if (ds === 'today') dueToday++;
         if (h.id == null) continue;
         id = String(h.id);
         if (inList(newHwIds, id)) continue;
@@ -193,23 +219,56 @@
       newDrillMap: toMap(newDrillIds),
       newHwMap: toMap(newHwIds),
       newCount: newDrillIds.length + newHwIds.length,
-      overdue: overdue
+      overdue: overdue,               // 〆を過ぎた未提出 (クラス宿題 + 〆のあるドリル)
+      overdueHw: overdueHw,
+      overdueDrills: overdueDrills,
+      dueToday: dueToday              // 〆が今日の未提出
     };
   }
 
   // 表示の文言 (塾生アプリの帯・マイページの 📌 要対応チップ)
   function newLabel(n) { return '🆕 新しい宿題が ' + n + ' 件届いています'; }
-  function overdueLabel(n) { return '⚠️ 期限切れの宿題が ' + n + ' 件あります'; }
-  function todoLabel(newCount, openCount, overdueCount) {
-    newCount = newCount || 0; openCount = openCount || 0; overdueCount = overdueCount || 0;
+  function overdueLabel(n) { return '⚠️ 〆を過ぎた宿題が ' + n + ' 件あります'; }
+  function dueParts(overdueCount, dueTodayCount) {
+    var p = [];
+    if (overdueCount > 0) p.push('〆を過ぎた ' + overdueCount + ' 件');
+    if (dueTodayCount > 0) p.push('〆今日 ' + dueTodayCount + ' 件');
+    return p;
+  }
+  // 〆の帯の文言 (新しい宿題が無いとき): 〆を過ぎた (+ 〆今日) / 〆今日だけ
+  function dueLabel(overdueCount, dueTodayCount) {
+    overdueCount = overdueCount || 0; dueTodayCount = dueTodayCount || 0;
+    if (overdueCount > 0) return overdueLabel(overdueCount) + (dueTodayCount > 0 ? '（〆今日 ' + dueTodayCount + ' 件）' : '');
+    if (dueTodayCount > 0) return '⏰ 今日が〆の宿題が ' + dueTodayCount + ' 件あります';
+    return '';
+  }
+  // 塾生アプリの帯 (宿題タブ以外の画面の上)。compute() の結果 → {kind, text} か null (帯なし)。
+  //   kind 'new' = 新しい宿題 (〆を過ぎた / 〆今日 の数を添える) / 'over' = 〆を過ぎた未提出がある / 'today' = 〆今日の未提出がある。
+  //   'over' / 'today' は「見た」の記録に関係なく、未提出が残っているあいだ出し続ける (提出すれば消える)
+  function banner(n) {
+    if (!n) return null;
+    var nn = n.newCount || 0, ov = n.overdue || 0, td = n.dueToday || 0;
+    if (nn > 0) {
+      var p = dueParts(ov, td);
+      return { kind: 'new', text: newLabel(nn) + (p.length ? '（' + p.join('・') + '）' : '') };
+    }
+    if (ov > 0) return { kind: 'over', text: dueLabel(ov, td) };
+    if (td > 0) return { kind: 'today', text: dueLabel(0, td) };
+    return null;
+  }
+  function todoLabel(newCount, openCount, overdueCount, dueTodayCount) {
+    newCount = newCount || 0; openCount = openCount || 0; overdueCount = overdueCount || 0; dueTodayCount = dueTodayCount || 0;
+    var parts = [];
     if (newCount > 0) {
-      var parts = [];
       if (openCount > newCount) parts.push('未提出 ' + openCount + ' 件');
-      if (overdueCount > 0) parts.push('うち期限切れ ' + overdueCount + ' 件');
+      if (overdueCount > 0) parts.push('うち〆を過ぎた ' + overdueCount + ' 件');
+      if (dueTodayCount > 0) parts.push('〆今日 ' + dueTodayCount + ' 件');
       return '🆕 新しい宿題 ' + newCount + ' 件' + (parts.length ? '（' + parts.join('・') + '）' : '');
     }
-    // 新しいものが無いときは今までと同じ文言
-    return (overdueCount > 0 ? '⚠️ ' : '📝 ') + '宿題 ' + openCount + ' 件' + (overdueCount > 0 ? '（うち期限切れ ' + overdueCount + ' 件）' : '');
+    if (overdueCount > 0) parts.push('うち〆を過ぎた ' + overdueCount + ' 件');
+    if (dueTodayCount > 0) parts.push('〆今日 ' + dueTodayCount + ' 件');
+    return (overdueCount > 0 ? '⚠️ ' : (dueTodayCount > 0 ? '⏰ ' : '📝 ')) + '宿題 ' + openCount + ' 件'
+      + (parts.length ? '（' + parts.join('・') + '）' : '');
   }
 
   root.AJHwNotice = {
@@ -219,11 +278,15 @@
     isOpenHw: isOpenHw,
     parseServerTs: parseServerTs,
     todayJst: todayJst,
+    dueState: dueState,
+    dueChipText: dueChipText,
     loadSeen: loadSeen,
     markSeen: markSeen,
     compute: compute,
     newLabel: newLabel,
     overdueLabel: overdueLabel,
+    dueLabel: dueLabel,
+    banner: banner,
     todoLabel: todoLabel,
     // テスト用 (scripts/health_check/test_hw_notice_js.py)。画面からは呼ばない
     _useStorage: function (s) { testStore = s; },

@@ -176,6 +176,10 @@
     .hw-notice .hw-notice-go { flex-shrink:0; font-size:0.8rem; color:#f9a8d4; }
     .hw-notice.warn { background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.5); color:#fecaca; }
     .hw-notice.warn .hw-notice-go { color:#fca5a5; }
+    /* ⏰ 〆今日 の帯とチップ (2026-10-18 塾長「②の残りも作っておいて」)。〆を過ぎた = 赤 (warn / chip-over)・〆今日 = 橙 */
+    .hw-notice.soon { background:rgba(251,146,60,0.12); border-color:rgba(251,146,60,0.55); color:#fed7aa; }
+    .hw-notice.soon .hw-notice-go { color:#fdba74; }
+    .chip-soon { background:rgba(251,146,60,0.20); border:1px solid rgba(251,146,60,0.55); color:#fed7aa; }
     .chip-new { background:rgba(236,72,153,0.20); border:1px solid rgba(236,72,153,0.55); color:#fbcfe8; }
 
     /* 📺 今週見るスタサプ: 講座名 (1 行で省略記号) と「第N講「題名」」(2 行まで) を分ける = スマホでも第N講が切れない。
@@ -249,7 +253,7 @@
 
   <script src="auth-guard.js?v=20261018-session-renew"></script>
   <!-- 🆕 新しい宿題の数え方と「見た」の記録 (mypage.html と共通)。変えたら両方の ?v= を上げる -->
-  <script src="hw-notice.js?v=20261016a-hw-notice"></script>
+  <script src="hw-notice.js?v=20261018a-due-open"></script>
   <!-- 📝 記号の解答用紙 (マーク・2026-10-18。mypage.html と共通)。変えたら両方の ?v= を上げる -->
   <script src="hw-sheet.js?v=20261018b-hw-sheet"></script>
   <script>
@@ -350,15 +354,17 @@
       } catch (e) { return null; }
     }
     function hwIsNew(map, id) { return !!map && id != null && Object.prototype.hasOwnProperty.call(map, String(id)); }
+    // 帯の文言と色は hw-notice.js の banner() (新しい宿題 / 〆を過ぎた / 〆今日)。〆の帯は「見た」に関係なく未提出が残るあいだ出し続ける
+    var HW_BANNER_CLS = { 'new': 'hw-notice', over: 'hw-notice warn', today: 'hw-notice soon' };
     function renderHwNotice() {
       var box = document.getElementById('hwNotice');
       if (!box) return;
       var n = hwNotice, html = '';
       if (n && window.AJHwNotice && curTab && curTab !== 'homework') {
-        if (n.newCount > 0) {
-          html = '<button type="button" class="hw-notice"><span>' + esc(window.AJHwNotice.newLabel(n.newCount)) + '</span><span class="hw-notice-go">開く ›</span></button>';
-        } else if (n.overdue > 0) {
-          html = '<button type="button" class="hw-notice warn"><span>' + esc(window.AJHwNotice.overdueLabel(n.overdue)) + '</span><span class="hw-notice-go">開く ›</span></button>';
+        var bn = null;
+        try { bn = window.AJHwNotice.banner ? window.AJHwNotice.banner(n) : null; } catch (e) { bn = null; }
+        if (bn && bn.text && Object.prototype.hasOwnProperty.call(HW_BANNER_CLS, bn.kind)) {
+          html = '<button type="button" class="' + HW_BANNER_CLS[bn.kind] + '"><span>' + esc(bn.text) + '</span><span class="hw-notice-go">開く ›</span></button>';
         }
       }
       box.innerHTML = html;
@@ -1010,8 +1016,10 @@
     // 🆕 一覧を描く前に「新しい」を数えてカードに 🆕 新着を付け、描いた後に「見た」と記録する (2026-10-15)。
     //   hwItems: 取れた宿題の一覧 (403 = コース外は [])・取れなかったら null。ドリルは gdFailed なら null。
     //   取れなかった一覧は記録を変えない (失敗で「新しい」を消したり作ったりしない)
+    var hwLastHwItems = null;   // 帯を数え直すための、最後に取れた宿題の一覧 (取れなかったら null)
     function hwRenderAndMark(d, errMsg, hwItems) {
       var drills = gdFailed ? null : gdDrills;
+      hwLastHwItems = hwItems;
       hwNotice = hwComputeNotice(drills, hwItems);
       hwNewDrill = (hwNotice && hwNotice.newDrillMap) || {};
       hwNewHw = (hwNotice && hwNotice.newHwMap) || {};
@@ -1021,6 +1029,17 @@
         hwNotice = hwComputeNotice(drills, hwItems);
       }
       renderHwNotice();
+    }
+    // ⏰ 提出した直後 (一覧を読み直す前) に帯を数え直す: 出したドリル / 宿題を完了として数える
+    //   (結果の画面から宿題タブ以外へ直接移っても、出したものの 〆 の帯が残らない。一覧に戻れば読み直しで正しい数になる)
+    function hwNoticeAfterSubmit(hwDoneId) {
+      try {
+        var hw = hwLastHwItems ? hwLastHwItems.map(function (h) {
+          return (hwDoneId != null && h && String(h.id) === String(hwDoneId)) ? Object.assign({}, h, { status: 'completed' }) : h;
+        }) : null;
+        hwNotice = hwComputeNotice(gdFailed ? null : gdDrills, hw);
+        if (hwDoneId != null) hwLastHwItems = hw;
+      } catch (e) { /* 数え直せなくても提出は済んでいる */ }
     }
     function _reloadBtn() { return '<div style="text-align:center;margin-top:0.7rem;"><button class="btn btn-ghost hw-reload">🔄 再読み込み</button></div>'; }
     function _errBox(title, msg) { return '<div class="notice err" style="margin-bottom:0.9rem;"><h2>⚠️ ' + esc(title) + '</h2>' + esc(msg) + _reloadBtn() + '</div>'; }
@@ -1054,9 +1073,9 @@
         var sheetSt = hwSheetState(it);
         // 解答用紙の宿題も「提出 = completed」(やり直しで open に戻る)。数え方は hw-notice.js・サーバの summary と同じ
         var done = it.status === 'completed';
-        var overdue = !done && it.due_date && it.due_date < today;
-        var statusChip = done ? '<span class="chip chip-done">完了</span>'
-          : (overdue ? '<span class="chip chip-over">期限切れ</span>' : '<span class="chip chip-open">未提出</span>');
+        // ⏰ 〆 (2026-10-18): 未提出は「未提出」+「〆今日」/「〆を過ぎました」(JST の今日・判定と文言は hw-notice.js と 1 か所)
+        var statusChip = (done ? '<span class="chip chip-done">完了</span>' : '<span class="chip chip-open">未提出</span>')
+          + (done ? '' : gdDueChip(it.due_date, today));
         if (sheetSt === 'submitted') {
           var sc = window.AJHwSheet.scoreText(it.answer_sheet);
           if (sc) statusChip += ' <span class="chip chip-topic">' + esc(sc) + '</span>';
@@ -1094,7 +1113,7 @@
           // 📝 [2026-10-18] 記号の解答用紙の宿題: ✓完了 は出さない (完了 = 提出・サーバも /complete を 400 で止める)
           if (sheetSt === 'open') {
             if (pr) printBtn = printBtn.replace('btn-primary', 'btn-ghost');
-            actions += printBtn + (hasDrill ? '<a class="btn btn-ghost" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>' : '')
+            actions += printBtn + (hasDrill ? '<a class="btn btn-ghost hw-drill" data-id="' + esc(String(it.id)) + '" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>' : '')
               + '<button class="btn btn-primary hw-sheet" data-id="' + esc(String(it.id)) + '">' + esc(window.AJHwSheet.answerButtonLabel(it.answer_sheet)) + '</button>'
               + '<div class="muted" style="flex-basis:100%;margin-top:0.35rem;">' + (pr ? 'プリントを解いたら' : '解いたら')
               + '、解答用紙に答えの記号を入れて提出してね（提出は 1 回だけ）</div>';
@@ -1110,7 +1129,7 @@
         } else if (!done) {
           // ★ このカードは「別ページで練習 → 自分で完了を押す」型。単元ドリル(その場で自動採点)と
           //   ボタンの色・形が似ているので、戻ってくることを一言添える。
-          actions += printBtn + (hasDrill ? '<a class="btn btn-primary" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>' : '')
+          actions += printBtn + (hasDrill ? '<a class="btn btn-primary hw-drill" data-id="' + esc(String(it.id)) + '" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>' : '')
             + '<button class="btn btn-green hw-done" data-id="' + esc(String(it.id)) + '">✓ 提出（完了）にする</button>'
             + '<div class="muted" style="flex-basis:100%;margin-top:0.35rem;">' + (hasDrill ? '解き終わったら' : (pr ? 'プリントを解き終わったら' : '終わったら')) + '「✓ 提出（完了）にする」を押してね</div>';
         } else {
@@ -1142,7 +1161,13 @@
       body.querySelectorAll('.gd-open').forEach(function (btn) {
         btn.addEventListener('click', function () { gdOpen(btn.getAttribute('data-id')); });
       });
+      // 👀 「📝 ドリルで解く」は dojo-drill へ移るリンク (移るのは止めない・keepalive で届く)
+      body.querySelectorAll('.hw-drill').forEach(function (a) {
+        a.addEventListener('click', function () { hwPingOpened(a.getAttribute('data-id')); });
+      });
       _wireReload(body);
+      // 👀 中身だけの宿題 (単元・プリント・解答用紙が無い) は、一覧に出た = 開いた
+      items.forEach(function (it) { if (it && it.status !== 'completed' && hwIsBareCard(it, hwSheetState(it))) hwPingOpened(it.id); });
     }
     function _wireReload(root) {
       root.querySelectorAll('.hw-reload').forEach(function (b) {
@@ -1155,6 +1180,25 @@
     //   ★answer_sheet_ready (サーバに解答用紙の表がある) のときだけ。静的が API より先に出た窓・表が無い DB では今までどおり
     var hwSheetReady = false, hwPrintOpen = false, hwItemsById = {};
     var hwListShown = false;   // 宿題タブに一覧が出ている (loadHomework で true・ドリル / 解答用紙を開くと false)
+    // 👀 [2026-10-18 塾長「②の残りも作っておいて」] 宿題を開いたことをサーバに知らせる (塾長の 🗓 授業ブリーフの「👀 未開封」/「開いたが未提出」)。
+    //   POST /api/student/homework/{id}/opened (prefix /api/student/homework/ は元から許可 = AIなし枠の許可集合は不変)。
+    //   開いた = 解答用紙・プリント・「📝 ドリルで解く」を押した / 中身だけの宿題 (単元・プリント・解答用紙が無い = カードが中身) が一覧に出た。
+    //   未提出の宿題だけ・このページで 1 件 1 回・返事は待たない (keepalive = ドリルへ移っても届く)・失敗しても何も出さない (サーバも 1 日 1 回まで)。
+    //   単元ドリルを開いたことはサーバが GET /api/student/grammar-drill/{id} の中で記録する (ここでは送らない)
+    var hwOpenedSent = {};
+    function hwPingOpened(id) {
+      var k = (id == null) ? '' : String(id);
+      var it = hwItemsById[k];
+      if (!k || !it || it.status === 'completed' || hwOpenedSent[k]) return;
+      hwOpenedSent[k] = 1;
+      try {
+        api('/api/student/homework/' + encodeURIComponent(k) + '/opened', { method: 'POST', body: '{}', keepalive: true })
+          .then(function () {}, function () {});
+      } catch (e) { /* 記録できなくても開く処理は続ける */ }
+    }
+    function hwIsBareCard(it, sheetSt) {   // 単元・プリント・解答用紙の無い宿題 = カードの題名と説明が中身
+      return !!it && !it.topic && !(it.attachment_print && it.attachment_print.id != null) && sheetSt === 'none';
+    }
     function hwSheetState(it) {
       if (!it || !it.answer_sheet || !hwSheetReady) return 'none';
       if (!window.AJHwSheet) return 'noscript';
@@ -1168,6 +1212,7 @@
       var st = hwSheetState(it);
       if (st !== 'open' && st !== 'submitted') { toast('解答用紙を開けませんでした。再読み込みしてね', true); return; }
       var wasOpen = st === 'open';
+      if (wasOpen) hwPingOpened(id);   // 👀 解答用紙を開いた (未提出のときだけ)
       hwListShown = false;
       var pr = (hwPrintOpen && it.attachment_print && it.attachment_print.id != null);
       var ctl = null;
@@ -1186,6 +1231,7 @@
             return;
           }
           // 提出済みになったので、一覧に戻る前にタブのバッジを減らしておく (gdSubmit と同じ。'99+' は触らない)
+          if (wasOpen) hwNoticeAfterSubmit(id);   // ⏰ 出した宿題の 〆 の帯を消す
           var badge = document.getElementById('hwBadge');
           var curTxt = String((badge && badge.textContent) || ''), cur = parseInt(curTxt, 10);
           if (wasOpen && curTxt.indexOf('+') < 0 && cur > 0) updateBadge('hwBadge', cur - 1);
@@ -1212,6 +1258,7 @@
     async function openHomeworkPrint(btn) {
       var id = btn.getAttribute('data-id');
       if (!id || btn.disabled) return;
+      hwPingOpened(id);   // 👀 プリントを開いた (未提出の宿題だけ・返事は待たない)
       btn.disabled = true; var orig = btn.textContent; btn.textContent = '⏳ 準備中…';
       var tab = null;
       try { tab = window.open('', '_blank'); } catch (e0) { tab = null; }
@@ -1303,6 +1350,23 @@
       var ms = (typeof nowMs === 'number' && !isNaN(nowMs)) ? nowMs : Date.now();
       return new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 10);
     }
+    // ⏰ 〆のチップ (2026-10-18 塾長「②の残りも作っておいて」): 〆の日 'YYYY-MM-DD' (クラス宿題の期限・クラス自動宿題のドリルはサーバの due_date =
+    //   題名の「〆M/D」) と JST の今日 →「〆今日」(橙) /「〆を過ぎました」(赤) / ''。判定と文言は hw-notice.js (dueState / dueChipText) の 1 か所
+    //   (hw-notice.js が読めない端末だけ同じ規則 = 日付の文字列の比較に倒す)
+    function gdDueState(due, today) {
+      var H = window.AJHwNotice, t = today || jstToday();
+      if (H && H.dueState) return H.dueState(due, t);
+      var d = String(due == null ? '' : due).slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return '';
+      return d < t ? 'over' : (d === t ? 'today' : '');
+    }
+    function gdDueChip(due, today) {
+      var st = gdDueState(due, today);
+      if (!st) return '';
+      var H = window.AJHwNotice;
+      var txt = (H && H.dueChipText) ? H.dueChipText(st) : (st === 'over' ? '〆を過ぎました' : '〆今日');
+      return ' <span class="chip ' + (st === 'over' ? 'chip-over' : 'chip-soon') + '">' + esc(txt) + '</span>';
+    }
     // カードの 2 行目 (HTML・値は esc 済み)。未提出: 問題数・自動採点・出題日 / 完了: スコア・提出日時。
     // ★ドリルの種類ごとの文言 (〆のある宿題・習熟度テストなど) はここに足す (2026-10-15: カードの組み立てを 1 か所に)
     function gdMetaText(it) {
@@ -1325,6 +1389,7 @@
     function gdCardHtml(it) {
       var done = !gdIsOpen(it);
       var chip = done ? '<span class="chip chip-done">完了</span>' : '<span class="chip chip-open">未提出</span>';
+      if (!done) chip += gdDueChip(it.due_date);   // ⏰ クラス自動宿題の 〆 (サーバの due_date)
       if (!done && hwIsNew(hwNewDrill, it.drill_id)) chip += ' <span class="chip chip-new">🆕 新着</span>';
       var sj = gdSubjJa(it.subject);
       var title = String(it.title || 'ドリル');
@@ -1518,6 +1583,7 @@
       hwLoaded = false;  // 一覧に戻ったら最新(完了扱い)で読み直す
       // このドリルは提出済みになったので、一覧に戻る前にタブのバッジを減らしておく
       gdDrills.forEach(function (x) { if (String(x.drill_id) === String(drillId)) x.status = 'completed'; });
+      hwNoticeAfterSubmit(null);   // ⏰ 出したドリルの 〆 の帯を消す
       var badge = document.getElementById('hwBadge');
       var curTxt = (badge && badge.textContent) || '';
       var cur = parseInt(curTxt, 10);

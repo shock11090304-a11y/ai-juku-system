@@ -686,6 +686,28 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   AIなし枠は mypage が `class.html?tab=homework` へ送る)。返信 (reply) だけで push は増やさない。
 - 回帰テスト `scripts/health_check/test_student_session_renew.py` (CI `server-tests.yml`・auth-guard.js を JS エンジンで動かす)。
 
+## ⏰ 〆の印と帯・👀 開いたかの記録 (2026-10-18 塾長「②の残りも作っておいて」)
+- **〆**: `GET /api/student/grammar-drills` の各 item に `due_date` = クラス自動宿題 (`class_hw_auto:…`) の題名の「〆M/D」を 'YYYY-MM-DD' に
+  (`_student_drill_due_date` → 授業ブリーフと同じ `_class_brief_title_due`・年は受け取った日 (JST) から・ほかのドリルは None。**JS で題名を読まない**)。
+  判定と文言は hw-notice.js の 1 か所 (`dueState` = JST の今日と日付の文字列で比べる・`dueChipText`・`banner`・`todoLabel(新, 未提出, 〆を過ぎた, 〆今日)`)。
+  compute の `overdue` は宿題の期限 + ドリルの 〆 (未提出だけ)・`dueToday`。
+  - 塾生アプリ (class.html): カードは「未提出」+「〆今日」(橙 `chip-soon`) /「〆を過ぎました」(赤 `chip-over`)。旧「期限切れ」の状態チップはやめた。
+    宿題タブ以外の帯 = `banner()`: 新しい宿題があれば新着の帯に「（〆を過ぎた N 件・〆今日 M 件）」、無ければ〆を過ぎた (赤) / 〆今日 (橙) の帯を
+    **「見た」に関係なく未提出が残るあいだ出し続ける** (提出すれば消える)。
+  - マイページ (mypage.js): カードのバッジは JST (`_hwJstToday`。旧版は端末の日付)・ドリルのカードにも 〆・📌 要対応チップと欄のバッジに 〆今日。
+    hw-notice.js が読めない端末は今までどおり (サーバの宿題の期限切れだけ)。
+- **👀 開いた**: events に 1 件 1 行 (`_record_item_open`・表は足さない・DDL なし)。`gd_open` = 単元ドリル (`GET /api/student/grammar-drill/{id}` の中・
+  新しいルートなし) / `hw_open` = 塾長の宿題 (`POST /api/student/homework/{id}/opened`・prefix は元から許可 = 許可集合は不変)。session_id = 生徒 ID の文字列
+  (統合で移る)・props = {student_id, kind, item_id, last_opened (naive UTC), days} = **ID と時刻だけ**・created_at = 初めて開いた時刻。
+  2 回目からは同じ行の last_opened / days を JST の日付が変わったときだけ書き換える (同じ日は書かない)。本人が未提出のものだけ
+  (なりすまし・提出済み・今日の1問 / 初回診断・他人の行は記録しない)。`_EVENTS_RETENTION` に載せない (消さない)。書けなくても開く処理は止めない。
+  - 画面が /opened を呼ぶのは: 解答用紙を開いた・プリントを開いた・「📝 ドリルで解く」(keepalive)・中身だけの宿題 (単元・プリント・解答用紙なし) が
+    一覧に出た (マイページは宿題欄が 1.5 秒見えたら)。未提出だけ・1 ページ 1 件 1 回・返事は待たない。
+  - 🗓 授業ブリーフ: 未提出の行に `opened` (True = 開いたが未提出・`opened_last_jst` / False = 👀 未開封 / None = 記録が始まる前に配った分 = 分からない) と
+    生徒の `unopened_count`。記録の始まり = 種類ごとの最初の記録 (`_item_open_load`・読むだけ・SELECT は 2 回)。CEO は「👀 未開封」「開いたが未提出 (M/D)」と
+    生徒の行に「👀 未開封 N」(null・古いサーバでは出さない)。
+- 回帰テスト `scripts/health_check/test_item_open_due.py` (CI `server-tests.yml`・JS は TZ=America/Los_Angeles)。★hw-notice.js を変えたら class.html と mypage.html の `?v=` を両方上げる。
+
 ## 生徒画面 (mypage) の「続ける仕組み」と家庭への連絡 (2026-09-09 レビュー反映)
 - **連続学習日数・「✅ できた！」はサーバ実績が正典** (`GET /api/student/activity-summary` / `POST /api/student/coach-done`)。
   演習 (`question_attempts`)・学習記録 (`study_logs`)・できた！(`events name='coach_done'`, `session_id=str(student_id)`) の
@@ -1175,6 +1197,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   開いている間は背後をスクロールさせない (止めないと Chrome は押した 📺 にフォーカスを残し、Space で 問1 に戻る・Tab → Enter で生徒詳細が重ねの下に開いて
   ✕ で閉じた瞬間に Zoom に出る)。404 / 405 / version なし = サーバ反映待ち・503 = 一時的。
   遅れて届いた前の応答で上書きしない (`_cbSeq`)。文字はすべて `_cbE` (escape)。
+- 👀 未提出の行の「未開封 / 開いたが未提出」(`opened`・`unopened_count`) は ⏰👀 の節 (`_item_open_load` / `_class_brief_mark_open`・読むだけ)。
 - 回帰テスト: `scripts/health_check/test_class_brief.py` (CI `server-tests.yml`・[8] の画面は node / osascript / jsc が無ければ FAIL)。
   [9] = 届いていない・クラスの科目・クラス自動宿題を先に・無効化した問題。[8] は 📺 のフォーカス (Tab・外へ向いた Space / Enter・R・閉じたら戻す・
   最後の問題で見せた後の Space / Enter で閉じない・1 問だけのクラス)・ハブ / 🏫 のボタンが今日を読むこと・🎉 の条件も見る。
@@ -1204,7 +1227,7 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   (★変えたら**両方**の `?v=` を上げる)。新しい = 未提出で自分で始めたものではなく、この端末で前に宿題を見たときに無かったもの
   (記録は localStorage `aj_hw_seen_v1:<生徒ID>` に ID だけ・**端末ごと**・読み書きは全部 try/catch。記録が無ければ届いて 72 時間以内)。
   取れなかった一覧は記録を変えない。
-  - 塾生アプリ (class.html): 宿題タブ以外の画面の上に帯「🆕 新しい宿題が N 件届いています」(押すと宿題タブ。無ければ期限切れの帯)・カードに 🆕 新着。
+  - 塾生アプリ (class.html): 宿題タブ以外の画面の上に帯「🆕 新しい宿題が N 件届いています」(押すと宿題タブ。無ければ 〆を過ぎた / 〆今日 の帯 = ⏰ の節)・カードに 🆕 新着。
     宿題タブで一覧を描いたら「見た」。`?tab=homework` と `#homework` で宿題タブに着地 (URL から消す)・401 のログインに `redirect=`。
     ドリルの未提出判定は `gdIsOpen` (completed 以外。以前は 'assigned' を「完了」と表示していた)・カードの 2 行目は `gdMetaText(it)` の 1 か所
     (〆・習熟度テストの文言はここに足す)。宿題 API が 403 (通塾生コース外) でも配られたドリルは出す。
