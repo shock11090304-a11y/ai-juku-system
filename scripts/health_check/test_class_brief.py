@@ -11,17 +11,25 @@
   [4] 未提出: クラス自動宿題・3日ドリル・15問ミッション・塾長のドリル・塾長の宿題 (記号の解答用紙の印)。今日の1問・初回診断は数えない。
       〆 (宿題の期限・クラス自動宿題の題名の「〆M/D」) を授業の日に過ぎていれば overdue・配ってからの日数・
       次の自動配信を止めている (クラス自動宿題と 3日ドリルの直近 14 日の未提出だけ) = blocking・最終ログイン (JST) と 30 日のログイン切れの疑い
-  [5] 今週出した人: 月曜 0:00 JST から (日曜 23:59:59 の提出は入らない)・本数 (ドリル + 宿題)・一番よい点 (解答用紙の点も)・満点
+  [5] 出した人: 前回の授業 (その日より前で一番近い同じ曜日) の開始時刻 (JST) から (1 秒前の提出は入らない・月曜のクラスでも土日の提出が入る)・
+      本数 (ドリル + 宿題)・一番よい点 (解答用紙の点も)・満点
   [6] 誤答の多い 3 問: このクラスのクラス自動宿題 + ほかのドリルはこのクラスの 2 人以上に配った分だけ・直近 14 日・数えるのはこのクラスの
-      生徒の答えだけ・回答 2 件未満と誤答なしは選ばない・正解率が同じならこのクラスのクラス自動宿題が先 → 回答の多い順 → 問題 id・
-      一番選ばれた誤答 (同数なら番号の小さい方)・本文は題名だけ (本文の中身は返さない)・習熟度テスト (科目・出典 pt- / ptest:) は出さない
+      生徒の答えだけ・回答 2 件未満と誤答なしは選ばない・このクラスのクラス自動宿題の問題で先に埋める (ほかのドリルの 0% より先) →
+      正解率 → 回答の多い順 → 問題 id・一番選ばれた誤答 (同数なら番号の小さい方)・本文は題名だけ (本文の中身は返さない)・
+      習熟度テスト (科目・出典 pt- / ptest:) は出さない
+  [9] (木曜・日曜のクラス) 届いていない (未提出 0 本でも直近 14 日に何も届いていない = 出し終えた生徒と分ける・学年が読めない理由)・
+      ほかのドリルはクラスの科目だけ (英検のクラスに英文法・どのクラスにも数学を出さない・保留の英語のクラスは英語の 4 科目・国語のクラスは国語)・
+      無効化した問題 (active = 0) は 0% でも出さない・前回の授業の開始の求め方
   [7] 読むだけ: 何も書かない (INSERT/UPDATE/DELETE が 1 文も走らない・events も増えない)・ログに名前を出さない・
       生徒の数を 10 倍にしても SELECT の数は同じ (生徒ごとに回さない)・コードに DDL が無い
   [8] 画面: ceo.html の本物のコードを JS エンジンで動かす (CI は node・Mac は osascript / jsc。無ければ FAIL)。ハブの「👨‍🎓 生徒・学習」の
-      先頭のボタン・🏫 クラス自動宿題カードのボタン・クラスごとの表 (在籍・未提出・〆過ぎ・N日・ログイン切れの疑い・今週出した人・
+      先頭のボタン・🏫 クラス自動宿題カードのボタン・クラスごとの表 (在籍・未提出・〆過ぎ・N日・ログイン切れの疑い・前回の授業から出した人・
       誤答の多い 3 問)・名前の escape・📺 問題だけ表示 (名前を出さない・「正解を見せる」まで正解・正解率・一番多かった誤答を出さない・
       ← → で移動すると正解はまた隠す・Esc で閉じる)・古いサーバ (404 / 405 / version なし = 反映待ち・503 = 一時的)・遅れて届いた前の応答で
-      上書きしない・その曜日に無いクラスの絞り込みは「すべて」に戻す・JST の今日 (端末のタイムゾーンに関係なく)
+      上書きしない・その曜日に無いクラスの絞り込みは「すべて」に戻す・JST の今日 (端末のタイムゾーンに関係なく)・
+      📺 はダイアログ (開くとフォーカスを中へ・Tab は中だけ・外へ向いた Enter / Space は止める・ショートカットへ流さない・閉じたら元へ)・
+      ハブと 🏫 カードのボタンは前に選んだ日ではなく JST の今日 (🔄 は選んだ日のまま)・🎉 は全員が届いた分を出したときだけ
+      (届いていない生徒がいれば 📭・届いた本数を返さないサーバでも 🎉 にしない)・出した人の境目の表示
 
 実行:
     python3 scripts/health_check/test_class_brief.py
@@ -233,6 +241,11 @@ def build_fixtures(mod):
     f.assign("D11", "E", assigned_at="2026-09-20 21:00:00", status="completed", completed_at="2026-09-21 10:00:00", answers={"q11": 1})
     f.drill("D13", chw, ["q13"], title=f"【{L2}】宿題 比較（1問・〆10/3）", created_at="2026-09-30 21:00:00")
     f.assign("D13", "A", assigned_at="2026-09-30 21:00:00")                                                    # 14 日より前 = 止めない
+    # 出した人の境目 = 前回の月曜2限の開始 10/12 20:25 JST (= 11:25:00 UTC)。ちょうどは入る・1 秒前は入らない (どちらも配ったのは 14 日より前)
+    f.drill("D14", "admin", ["q13"], title="塾長の前のドリル", created_at="2026-10-01 01:00:00")
+    f.assign("D14", "E", assigned_at="2026-10-01 01:00:00", status="completed", completed_at="2026-10-12 11:25:00")
+    f.drill("D15", "admin", ["q13"], title="塾長の前のドリル 2", created_at="2026-10-01 01:00:00")
+    f.assign("D15", "A", assigned_at="2026-10-01 01:00:00", status="completed", completed_at="2026-10-12 11:24:59")
     # ── 宿題 (塾長が出した分) ──
     f.homework("H1", "C", "架空プリント第3回", due="2026-10-15", created_at="2026-10-12 03:00:00")
     f.homework("H2", "A", "架空プリント第4回", due="2026-10-25", created_at="2026-10-18 03:00:00")
@@ -294,9 +307,10 @@ def check_server(mod, client, adm, f, sheet_ready):
     check("class の全角・空白の違いは同じクラス (1 クラスだけ)", [c["label"] for c in d.get("classes", [])] == [L2] and d.get("class_filter") == L2,
           [c["label"] for c in d.get("classes", [])])
     d = get(client, adm, date="2026-10-19", **{"class": T2}).json()
-    check("曜日の違うクラスを指定しても出す (meets_on_date: false)",
+    check("曜日の違うクラスを指定しても出す (meets_on_date: false)・出した人は前回の火曜2限 (10/13 20:25) から",
           [c["label"] for c in d.get("classes", [])] == [T2] and d["classes"][0]["meets_on_date"] is False
-          and [m["id"] for m in d["classes"][0]["members"]] == [ids["K"]], d.get("classes"))
+          and [m["id"] for m in d["classes"][0]["members"]] == [ids["K"]] and d["classes"][0].get("praise_since_jst") == "10/13 20:25",
+          d.get("classes"))
     d = get(client, adm, date="2026-10-20").json()
     check("明日 (10/20 火) は火曜のクラス", d.get("dow") == 2 and T2 in by_label(d), [c["label"] for c in d.get("classes", [])])
     check("timetable = 15 クラス (CEO のクラスの選択肢)", len(d.get("timetable") or []) == 15 and all({"label", "dow", "time"} <= set(t) for t in d["timetable"]))
@@ -304,10 +318,13 @@ def check_server(mod, client, adm, f, sheet_ready):
     print("\n[3] 名簿")
     mon = get(client, adm, date="2026-10-19").json()
     check("version: 1 (CEO の「サーバ反映待ち」の判定)", mon.get("version") == 1 and mon.get("ok") is True)
-    check("today・as_of・week_start (月曜)", mon.get("today") == "2026-10-19" and mon.get("as_of") == "2026-10-19"
-          and mon.get("week_start") == "2026-10-19", (mon.get("today"), mon.get("as_of"), mon.get("week_start")))
     cl = by_label(mon)
     c2 = cl.get(L2) or {}
+    check("today・as_of・出した人の境目 = 前回の月曜2限の開始 (10/12 20:25 JST = 11:25 UTC)・月曜1限は 19:15",
+          mon.get("today") == "2026-10-19" and mon.get("as_of") == "2026-10-19" and "week_start" not in mon
+          and c2.get("praise_since") == "2026-10-12T11:25:00+00:00" and c2.get("praise_since_jst") == "10/12 20:25"
+          and (cl.get(L1) or {}).get("praise_since_jst") == "10/12 19:15",
+          (mon.get("today"), mon.get("as_of"), c2.get("praise_since"), c2.get("praise_since_jst")))
     mem = {m["id"]: m for m in c2.get("members", [])}
     check("月曜2限 = A・B・D・E (合成監視・テスト名・退会・通塾生でない・受講開始前・火曜だけ は入れない)",
           set(mem) == {ids[k] for k in "ABDE"}, sorted(mem))
@@ -325,6 +342,12 @@ def check_server(mod, client, adm, f, sheet_ready):
     check("一度もログインしていない = ログイン切れの疑い", b.get("login_stale") is True and b.get("last_login_jst") is None and b.get("login_days") is None)
     check("39 日前のログイン = ログイン切れの疑い・10 日前は違う", cc.get("login_stale") is True and cc.get("login_days") == 39 and dd.get("login_stale") is False,
           (cc.get("login_days"), dd.get("login_days")))
+    check("届いた本数 (直近 14 日に配った分・提出済みも・今日の1問 / 初回診断 / 14 日より前は数えない): A 3・B 4・D 5・E 2",
+          (a.get("received_n"), b.get("received_n"), dd.get("received_n"), e.get("received_n")) == (3, 4, 5, 2),
+          (a.get("received_n"), b.get("received_n"), dd.get("received_n"), e.get("received_n")))
+    check("未提出 0 本の D・E は「届いた分は全部出した」(届いていないではない)・月曜2限 all_done_n 2・not_delivered_n 0",
+          dd.get("not_delivered") is False and e.get("not_delivered") is False and c2.get("all_done_n") == 2 and c2.get("not_delivered_n") == 0
+          and a.get("delivery_note") == "" and cc.get("delivery_note") == "", (c2.get("all_done_n"), c2.get("not_delivered_n")))
 
     print("\n[4] 未提出")
     a_items = a.get("open_items") or []
@@ -370,33 +393,45 @@ def check_server(mod, client, adm, f, sheet_ready):
         else:
             os.environ["CLASS_HW_OPEN_STALE_DAYS"] = with_env
 
-    print("\n[5] 今週出した人 (月曜 0:00 JST から)")
+    print("\n[5] 出した人 (前回の授業の開始 = 10/12 20:25 JST から)")
     pr = c2.get("submitted_this_week") or []
-    check("今週出した人 = D (2 本) → B (1 本)・日曜 23:59:59 に出した E と未提出の A は入らない",
-          [p["id"] for p in pr] == [ids["D"], ids["B"]], [(p.get("id"), p.get("count")) for p in pr])
+    check("出した人 = D (5 本) → E (3 本・日曜 23:59:59 の提出と境目ちょうどの提出も入る) → B (3 本・名前の順)・境目の 1 秒前に出しただけの A は入らない",
+          [p["id"] for p in pr] == [ids["D"], ids["E"], ids["B"]], [(p.get("id"), p.get("count")) for p in pr])
     p_d = pr[0] if pr else {}
-    check("D: ドリル 1 (月曜 0:00:00 ちょうど) + 宿題 1", p_d.get("count") == 2 and p_d.get("drills") == 1 and p_d.get("homework") == 1, p_d)
+    check("D: ドリル 4 (水曜の 3 本 + 月曜 0:00:00 の 1 本) + 宿題 1", p_d.get("count") == 5 and p_d.get("drills") == 4 and p_d.get("homework") == 1, p_d)
+    p_e = pr[1] if len(pr) > 1 else {}
+    check("E: ドリル 2 (日曜 23:59:59・10/12 20:25:00 ちょうど) + 宿題 1・一番よい点 2/4", p_e.get("count") == 3 and p_e.get("drills") == 2
+          and p_e.get("homework") == 1 and p_e.get("best") == {"correct": 2, "total": 4, "pct": 50}, p_e)
     if sheet_ready:
         check("一番よい点は解答用紙の 5/5・満点", p_d.get("best") == {"correct": 5, "total": 5, "pct": 100} and p_d.get("perfect") is True, p_d)
     else:
         check("一番よい点はドリルの 2/5", p_d.get("best") == {"correct": 2, "total": 5, "pct": 40}, p_d)
-    p_b = pr[1] if len(pr) > 1 else {}
-    check("B: 点の無い宿題だけ → best なし・名前つき", p_b.get("best") is None and p_b.get("count") == 1 and p_b.get("name") == mem[ids["B"]]["name"], p_b)
+    p_b = pr[2] if len(pr) > 2 else {}
+    check("B: ドリル 2 (0/2・0/1) + 点の無い宿題 1 → 一番よい点 0/2・名前つき", p_b.get("best") == {"correct": 0, "total": 2, "pct": 0}
+          and p_b.get("count") == 3 and p_b.get("name") == mem[ids["B"]]["name"], p_b)
+    check("前回の授業の開始: 月曜のクラスを月曜に開く = 7 日前・水曜に開く = 2 日前・日曜に開く = 6 日前・時刻が読めなければ 0:00",
+          mod._class_brief_prev_meeting({"dow": 1, "time": "20:25–21:25"}, datetime.date(2026, 10, 19)) == datetime.datetime(2026, 10, 12, 20, 25)
+          and mod._class_brief_prev_meeting({"dow": 1, "time": "20:25–21:25"}, datetime.date(2026, 10, 21)) == datetime.datetime(2026, 10, 19, 20, 25)
+          and mod._class_brief_prev_meeting({"dow": 1, "time": "20:25–21:25"}, datetime.date(2026, 10, 18)) == datetime.datetime(2026, 10, 12, 20, 25)
+          and mod._class_brief_prev_meeting({"dow": 0, "time": "21:15–22:15"}, datetime.date(2026, 10, 18)) == datetime.datetime(2026, 10, 11, 21, 15)
+          and mod._class_brief_prev_meeting({"dow": 5, "time": ""}, datetime.date(2026, 10, 19)) == datetime.datetime(2026, 10, 16, 0, 0))
 
     print("\n[6] 誤答の多い 3 問")
     top = c2.get("top_missed") or []
     qid = {v: k for k, v in ids.items() if k.startswith("q")}
-    check("3 問 = q1 (0%・このクラス) → q5 (0%・ほかのドリル 2 名) → q2 (50%・q4 と同じなら id の小さい方)",
-          [qid.get(t["question_id"]) for t in top] == ["q1", "q5", "q2"], [qid.get(t["question_id"]) for t in top])
+    check("3 問 = このクラスのクラス自動宿題で埋める: q1 (0%) → q2 (50%) → q4 (50%・同じなら id の小さい方)。ほかのドリルの q5 (0%) は 4 番目で出ない",
+          [qid.get(t["question_id"]) for t in top] == ["q1", "q2", "q4"] and all(t.get("from_class_hw") is True for t in top),
+          [(qid.get(t["question_id"]), t.get("from_class_hw")) for t in top])
+    check("月曜2限 (英文法) のほかのドリルに数える科目 = english・chugaku", c2.get("top_missed_subjects") == ["chugaku", "english"], c2.get("top_missed_subjects"))
     t1 = top[0] if top else {}
     check("q1: 正解率 0 (0/2)・一番選ばれた誤答は ③ (2 件)・選択肢の数・このクラスのクラス自動宿題",
           t1.get("accuracy") == 0 and t1.get("accuracy_pct") == 0 and t1.get("n") == 2 and t1.get("correct_n") == 0
           and t1.get("wrong_top") == {"index": 2, "count": 2} and t1.get("choice_counts") == [0, 0, 2, 0] and t1.get("from_class_hw") is True
           and t1.get("answer") == 1 and t1.get("choices") == ["q1-c0", "q1-c1", "q1-c2", "q1-c3"], t1)
     t2 = top[1] if len(top) > 1 else {}
-    check("q5: ほかのドリル・誤答が 1 件ずつなら番号の小さい方 (③)", t2.get("from_class_hw") is False and t2.get("wrong_top") == {"index": 2, "count": 1}, t2)
+    check("q2: 本文は題名だけ・50% (1/2)", t2.get("passage_title") == "Fictional Passage Title" and t2.get("accuracy_pct") == 50 and t2.get("n") == 2, t2)
     t3 = top[2] if len(top) > 2 else {}
-    check("q2: 本文は題名だけ", t3.get("passage_title") == "Fictional Passage Title" and t3.get("accuracy_pct") == 50, t3)
+    check("q4: 50%・誤答は ② (1 件)", t3.get("accuracy_pct") == 50 and t3.get("wrong_top") == {"index": 1, "count": 1} and t3.get("passage_title") is None, t3)
     dump = json.dumps(mon, ensure_ascii=False)
     check("本文の中身は応答のどこにも無い", PASSAGE_BODY not in dump)
     check("習熟度テスト (科目 / 出典 pt- / ptest:) の問題は出ない", "PTEST-STEM-ONE" not in dump and "PTEST-STEM-TWO" not in dump)
@@ -483,6 +518,82 @@ def check_server(mod, client, adm, f, sheet_ready):
     return mon
 
 
+TH1 = "木曜1限 英検準1級対策"
+TH2 = "木曜2限 早慶クラス"
+SUN = "日曜 高校国語"
+
+
+def check_delivery_and_subjects(mod, client, adm, f):
+    print("\n[9] 届いていない・クラスの科目・クラス自動宿題を先に・無効化した問題 (木曜・日曜のクラス)")
+    f.student("P", "架空 木一", labels=[TH1, TH2, SUN], grade="高2", last_login="2026-10-18 01:00:00")
+    f.student("Q", "架空 木二", labels=[TH1, TH2, SUN], grade="高3", last_login="2026-10-18 01:00:00")
+    f.student("R", "架空 学年不明", labels=[TH2], grade="", last_login="2026-10-18 01:00:00")
+    f.student("S", "架空 出し終え", labels=[TH2], grade="高1", last_login="2026-10-18 01:00:00")
+    f.question("e1", 1, subject="eiken", source="eikenp1-v1")
+    f.question("e2", 0, subject="eiken", source="eikenp1-v1")
+    f.question("e3", 0, subject="eiken", source="eikenp1-v1")
+    f.question("en1", 0)
+    f.question("m1", 0, subject="math", source="mathct-v1")
+    f.question("j1", 0, subject="japanese", source="manual-kokugo-v1")
+    f.question("s1", 0)
+    at, done_at = "2026-10-16 21:00:00", "2026-10-17 10:00:00"
+
+    def pair(dkey, created_by, qkey, subject, ans_p, ans_q):   # P と Q の 2 人に配って 2 人とも提出 (= ほかのドリルの条件 2 人以上)
+        f.drill(dkey, created_by, [qkey], title=f"架空 {dkey}", subject=subject, created_at=at)
+        f.assign(dkey, "P", assigned_at=at, status="completed", completed_at=done_at, answers={qkey: ans_p})
+        f.assign(dkey, "Q", assigned_at=at, status="completed", completed_at=done_at, answers={qkey: ans_q})
+
+    f.drill("DT1", f"class_hw_auto:kosei:{TH1}", ["e1", "e3"], title=f"【{TH1}】宿題（2問・〆10/18）", subject="eiken", created_at=at)
+    f.assign("DT1", "P", assigned_at=at, status="completed", completed_at=done_at, answers={"e1": 1, "e3": 1})
+    f.assign("DT1", "Q", assigned_at=at, status="completed", completed_at=done_at, answers={"e1": 0, "e3": 1})
+    pair("DT2", "admin", "e2", "eiken", 2, 3)       # 英検 0%・誤答は 1 件ずつ (③ と ④ → 番号の小さい方)
+    pair("DT3", "admin", "en1", "english", 1, 1)    # 英文法 0%
+    pair("DT4", "admin", "m1", "math", 1, 2)        # 数学 0% = どのクラスにも出さない
+    pair("DT5", "admin", "j1", "japanese", 1, 1)    # 国語 0% = 国語のクラスだけ
+    f.drill("DT6", "admin", ["s1"], title="架空 DT6", created_at=at)
+    f.assign("DT6", "S", assigned_at=at, status="completed", completed_at=done_at, answers={"s1": 0})
+    qid = {f.ids[k]: k for k in ("e1", "e2", "e3", "en1", "m1", "j1", "s1")}
+
+    def tops(d, lb):
+        return [qid.get(t["question_id"], t["question_id"]) for t in (by_label(d).get(lb) or {}).get("top_missed", [])]
+
+    d = get(client, adm, date="2026-10-22").json()
+    check("英検のクラス: このクラスのクラス自動宿題の e3 (0%) → e1 (50%) → ほかのドリルの英検 e2 (0%)。英文法・数学は数えない",
+          tops(d, TH1) == ["e3", "e1", "e2"], tops(d, TH1))
+    ex(mod, "UPDATE grammar_questions SET active = 0 WHERE id = ?", (f.ids["e3"],))   # 正解の誤りなどで無効にした
+    d = get(client, adm, date="2026-10-22").json()
+    c1, c2 = by_label(d).get(TH1) or {}, by_label(d).get(TH2) or {}
+    dump = json.dumps(d, ensure_ascii=False)
+    check("無効化した問題 (active = 0) は 0% でも出さない・応答のどこにも無い (前の答えが残っていても)",
+          tops(d, TH1) == ["e1", "e2"] and "架空の問題 e3 " not in dump, tops(d, TH1))
+    check("英検のクラスのほかのドリルに数える科目 = eiken だけ", c1.get("top_missed_subjects") == ["eiken"], c1.get("top_missed_subjects"))
+    e2t = next((t for t in c1.get("top_missed", []) if t["question_id"] == f.ids["e2"]), {})
+    check("ほかのドリルの問題: from_class_hw false・誤答が 1 件ずつなら番号の小さい方 (③)",
+          e2t.get("from_class_hw") is False and e2t.get("wrong_top") == {"index": 2, "count": 1}, e2t)
+    check("保留の英語のクラス (早慶): 英語の 4 科目 (英検・英文法) は数え、数学・国語は数えない・同じ 0% なら問題 id の順",
+          tops(d, TH2) == ["e2", "en1", "e1"] and c2.get("routine_kind") == "hold"
+          and c2.get("top_missed_subjects") == ["chugaku", "eiken", "english", "english_long"], (tops(d, TH2), c2.get("top_missed_subjects")))
+    check("どのクラスにも数学の m1 を出さない", all("m1" not in tops(d, lb) for lb in (TH1, TH2)))
+    sm = {m["id"]: m for m in c2.get("members", [])}
+    r_, s_, p_ = sm.get(f.ids["R"], {}), sm.get(f.ids["S"], {}), sm.get(f.ids["P"], {})
+    check("早慶: 在籍 4・未提出 0・届いた分は全部出した 3 (P・Q・S)・届いていない 1 (R)",
+          (c2.get("members_n"), c2.get("open_members_n"), c2.get("all_done_n"), c2.get("not_delivered_n")) == (4, 0, 3, 1),
+          (c2.get("members_n"), c2.get("open_members_n"), c2.get("all_done_n"), c2.get("not_delivered_n")))
+    check("R: 未提出 0 本・届いた 0 本 = 届いていない・理由 = 学年が読めない", r_.get("open_count") == 0 and r_.get("received_n") == 0
+          and r_.get("not_delivered") is True and r_.get("delivery_note") == "grade_unknown" and r_.get("band") == "", r_)
+    check("S: 未提出 0 本・届いた 1 本 = 届いていないではない / P: 届いた 5 本", s_.get("not_delivered") is False and s_.get("received_n") == 1
+          and p_.get("received_n") == 5 and p_.get("not_delivered") is False, (s_, p_.get("received_n")))
+    check("木曜のクラスの出した人: 前回の木曜 (10/15) の授業の開始から・P・Q (5 本ずつ)",
+          c1.get("praise_since_jst") == "10/15 19:15" and c2.get("praise_since_jst") == "10/15 20:25"
+          and sorted(p["id"] for p in c1.get("submitted_this_week", [])) == sorted([f.ids["P"], f.ids["Q"]])
+          and all(p["count"] == 5 for p in c1.get("submitted_this_week", [])), [(p["id"], p["count"]) for p in c1.get("submitted_this_week", [])])
+    ds = get(client, adm, date="2026-10-22", **{"class": SUN}).json()
+    cs = by_label(ds).get(SUN) or {}
+    check("国語のクラス: 国語の j1 だけ (英検・英文法・数学は出さない)", tops(ds, SUN) == ["j1"]
+          and cs.get("top_missed_subjects") == ["chugaku_kokugo", "japanese"] and cs.get("routine_kind") == "none", (tops(ds, SUN), cs.get("top_missed_subjects")))
+    return d
+
+
 def _js_script_block(src):
     head = "  // 🗓 今日の授業ブリーフ (2026-10-18"
     i = src.find(head)
@@ -514,18 +625,41 @@ def check_screens(mon, sat, f):
                    | {p["name"] for c in mon["classes"] for p in c["submitted_this_week"]})
     c2i = [c["label"] for c in mon["classes"]].index(L2)
     ids = f.ids
+    def _m(i, name, received=None, note="", band="kosei"):
+        m = {"id": 9000 + i, "name": name, "ai_path": "ai_nashi", "ai_label": "AIなし", "band": band, "open_count": 0, "open_items": [],
+             "overdue_count": 0, "blocking_count": 0, "oldest_days": None, "login_stale": False, "delivery_note": note}
+        if received is not None:
+            m["received_n"] = received
+        return m
+    syn = {"ok": True, "version": 1, "date": "2026-10-22", "dow": 4, "dow_ja": "木", "today": "2026-10-19", "timetable": mon["timetable"], "classes": [
+        {"label": TH1, "time": "19:15–20:15", "routine_kind": "eiken", "members_n": 2, "open_members_n": 0, "praise_since_jst": "10/15 19:15",
+         "members": [_m(1, "架空 全出し一", 2), _m(2, "架空 全出し二", 1)], "submitted_this_week": [], "top_missed": []},
+        {"label": TH2, "time": "20:25–21:25", "routine_kind": "hold", "members_n": 2, "open_members_n": 0, "praise_since_jst": "10/15 20:25",
+         "members": [_m(3, "架空 届かず<b>", 0, "grade_unknown", ""), _m(4, "架空 出し終え", 1)], "submitted_this_week": [], "top_missed": []},
+        {"label": "金曜1限 高2 英文法", "time": "19:15–20:15", "routine_kind": "grammar", "members_n": 2, "open_members_n": 0,
+         "members": [_m(5, "架空 旧一"), _m(6, "架空 旧二")], "submitted_this_week": [], "top_missed": []},   # 届いた本数を返さないサーバ
+    ]}
     tue = {"ok": True, "version": 1, "date": "2026-10-20", "dow": 2, "dow_ja": "火", "today": "2026-10-19", "timetable": mon["timetable"],
            "classes": [{"label": T2, "time": "20:25–21:25", "members": [], "members_n": 0, "open_members_n": 0, "submitted_this_week": [], "top_missed": []}]}
     prog = "\n".join([
         "var window = (typeof globalThis !== 'undefined') ? globalThis : this;",
         "var __o = { urls: [], moved: false };",
         "var __els = {};",
-        "function __el(id) { if (!__els[id]) __els[id] = { id: id, innerHTML: '', value: '', style: {}, parentNode: null }; return __els[id]; }",
-        "var __keys = [];",
-        "var document = { readyState: 'complete', body: { appendChild: function (e) { e.parentNode = document.body; __o.moved = true; } },",
-        "  getElementById: function (id) { return __el(id); }, querySelector: function () { return null; },",
-        "  addEventListener: function (t, fn) { if (t === 'keydown') __keys.push(fn); } };",
-        "function __key(k) { for (var i = 0; i < __keys.length; i++) __keys[i]({ key: k, preventDefault: function () {} }); }",
+        "function __el(id) { if (!__els[id]) __els[id] = { id: id, innerHTML: '', value: '', style: {}, parentNode: null,",
+        "  focus: function () { document.activeElement = this; } }; return __els[id]; }",
+        "var __keys = [], __ls = [], __hubFns = [];",
+        "var __hub = { addEventListener: function (t, fn) { if (t === 'click') __hubFns.push(fn); } };",
+        # 📺 の中のボタン (id が cbShare…Btn) は、重ねの中身にその id があるときだけ見つかる (本物の DOM と同じ)
+        "function __shareBtn(id) { return /^cbShare.+Btn$/.test(id); }",
+        "var document = { readyState: 'complete', activeElement: null, documentElement: { style: { overflow: '' } },",
+        "  body: { appendChild: function (e) { e.parentNode = document.body; __o.moved = true; } },",
+        "  getElementById: function (id) { if (__shareBtn(id)) return __el('cbShare').innerHTML.indexOf('id=\"' + id + '\"') >= 0 ? __el(id) : null; return __el(id); },",
+        "  querySelector: function (sel) { return String(sel).indexOf('classBriefSection') >= 0 ? __hub : null; },",
+        "  addEventListener: function (t, fn, cap) { __ls.push({ t: t, cap: !!cap }); if (t === 'keydown') __keys.push(fn); } };",
+        "__el('cbShare').contains = function (t) { return !!t && (t === this || (typeof t.id === 'string' && __shareBtn(t.id) && this.innerHTML.indexOf('id=\"' + t.id + '\"') >= 0)); };",
+        "function __key(k, opt) { opt = opt || {}; var ev = { key: k, shiftKey: !!opt.shiftKey, target: opt.target || document.activeElement, prevented: false, stopped: false,",
+        "  preventDefault: function () { this.prevented = true; }, stopPropagation: function () { this.stopped = true; }, stopImmediatePropagation: function () { this.stopped = true; } };",
+        "  for (var i = 0; i < __keys.length; i++) __keys[i](ev); return ev; }",
         "var __queue = [];",
         "function __res(status, body) { return { ok: status >= 200 && status < 300, status: status,",
         "  json: function () { return body === undefined ? Promise.reject(new Error('no json')) : Promise.resolve(body); } }; }",
@@ -533,11 +667,15 @@ def check_screens(mon, sat, f):
         f"var MON = {json.dumps(mon, ensure_ascii=False)};",
         f"var SAT = {json.dumps(sat, ensure_ascii=False)};",
         f"var TUE = {json.dumps(tue, ensure_ascii=False)};",
+        f"var SYN = {json.dumps(syn, ensure_ascii=False)};",
+        "function __one(i) { var d = JSON.parse(JSON.stringify(SYN)); d.classes = [SYN.classes[i]]; return window._cbTest.render(d); }",
         "var __realNow = Date.now;",
         "Date.now = function () { return Date.UTC(2026, 9, 19, 1, 0, 0); };",
         blk,
         "(async function () {",
         "  __o.keyBound = __keys.length; __o.movedAtInit = __o.moved;",
+        "  __o.keyCap = __ls.filter(function (l) { return l.t === 'keydown'; }).map(function (l) { return l.cap; });",
+        "  __o.focusInCap = __ls.filter(function (l) { return l.t === 'focusin'; }).map(function (l) { return l.cap; }); __o.hubBound = __hubFns.length;",
         "  __queue.push(__res(200, MON)); await cbSetDay(0);",
         "  __o.url1 = __o.urls[0]; __o.date1 = __el('cbDate').value; __o.render = __el('cbResult').innerHTML;",
         "  __o.msg = __el('cbMsg').innerHTML; __o.opts = __el('cbClass').innerHTML;",
@@ -553,6 +691,22 @@ def check_screens(mon, sat, f):
         "  window.cbShareOpen(0); __o.shareNoTop = __el('cbShare').style.display;",
         "  window.cbShareOpen(99); __o.shareBad = __el('cbShare').style.display;",
         "  window.cbShareOpen(" + str(c2i) + "); window.cbShareClose(); __o.shareClosed = __el('cbShare').style.display;",
+        # 📺 はダイアログ: 下に隠れた 📺 (cbUnder) にフォーカスがある状態で開く
+        "  var under = __el('cbUnder'); under.focus();",
+        f"  window.cbShareOpen({c2i}); __o.f1 = document.activeElement && document.activeElement.id; __o.ovf = document.documentElement.style.overflow;",
+        "  var ev = __key('Tab'); __o.f2 = document.activeElement.id; __o.tabPrev = ev.prevented;",
+        "  __key('Tab'); __o.f3 = document.activeElement.id;",
+        "  __key('Tab', { shiftKey: true }); __o.f4 = document.activeElement.id;",
+        "  ev = __key(' ', { target: under }); __o.spOut = [ev.prevented, ev.stopped, window._cbTest.state().qi, document.activeElement.id];",
+        "  ev = __key('Enter', { target: under }); __o.enOut = [ev.prevented, ev.stopped, window._cbTest.state().qi];",
+        "  ev = __key('Enter'); __o.enIn = [ev.prevented, ev.stopped];",
+        "  ev = __key('r'); __o.rKey = [ev.prevented, ev.stopped];",
+        "  under.focus(); window._cbTest.focusIn({ target: under }); __o.fFocusIn = document.activeElement.id;",
+        "  window.cbShareReveal(); __o.f5 = document.activeElement.id;",
+        "  __key('ArrowRight'); __o.f6 = document.activeElement.id;",
+        "  __key('ArrowRight'); window.cbShareReveal(); __o.f7 = document.activeElement.id;",
+        "  __key('Escape'); __o.f8 = document.activeElement && document.activeElement.id; __o.ovf2 = document.documentElement.style.overflow;",
+        "  ev = __key('r'); __o.rAfter = [ev.prevented, ev.stopped];",
         "  var nu = __o.urls.length;",
         f"  __el('cbClass').value = {json.dumps(T2, ensure_ascii=False)}; __queue.push(__res(200, MON)); await cbLoad();",
         "  __o.urlReset = __o.urls[nu]; __o.selAfterReset = __el('cbClass').value;",
@@ -568,6 +722,12 @@ def check_screens(mon, sat, f):
         "  var r1, r2; __queue.push(new Promise(function (res) { r1 = res; })); __queue.push(new Promise(function (res) { r2 = res; }));",
         "  var p1 = cbLoad(); var p2 = cbLoad(); r2(__res(200, TUE)); await p2; r1(__res(404, {})); await p1;",
         "  __o.race = __el('cbResult').innerHTML;",
+        # ハブと 🏫 カードのボタンは前に選んだ日 (明日) ではなく JST の今日・🔄 (cbLoad) は選んだ日のまま
+        "  window.ceoHubShow = function (id) { __o.hubShown = id; };",
+        "  __el('cbDate').value = '2026-10-20'; __queue.push(__res(200, MON)); await __hubFns[0](); __o.urlHub = __o.urls[__o.urls.length - 1];",
+        "  __el('cbDate').value = '2026-10-20'; __queue.push(__res(200, MON)); await window.cbOpenFromCard(); __o.urlCard = __o.urls[__o.urls.length - 1];",
+        "  __el('cbDate').value = '2026-10-20'; __queue.push(__res(200, TUE)); await cbLoad(); __o.urlKeep = __o.urls[__o.urls.length - 1];",
+        "  __o.synAll = __one(0); __o.synNd = __one(1); __o.synOld = __one(2);",
         "  Date.now = function () { return Date.UTC(2026, 9, 18, 14, 59, 59); }; __o.jstSun = window._cbTest.jstDay(0);",
         "  Date.now = function () { return Date.UTC(2026, 9, 18, 15, 0, 0); }; __o.jstMon = window._cbTest.jstDay(0); __o.jstTue = window._cbTest.jstDay(1);",
         "  __o.dowMon = window._cbTest.dow('2026-10-19'); __o.dowSun = window._cbTest.dow('2026-10-18');",
@@ -582,16 +742,21 @@ def check_screens(mon, sat, f):
     rend = out.get("render", "")
     check("読み込み: date = JST の今日 (10/19)・GET /api/admin/class-brief?date=2026-10-19",
           out.get("url1") == "/api/admin/class-brief?date=2026-10-19" and out.get("date1") == "2026-10-19", (out.get("url1"), out.get("date1")))
-    check("📺 の重ねを body の直下へ移す・Esc / ← → のキーを 1 回だけ登録", out.get("movedAtInit") is True and out.get("keyBound") == 1)
+    check("📺 の重ねを body の直下へ移す・キーは document の capture で 1 回だけ登録 (画面のほかのキー操作より先)・focusin も capture・ハブのボタン 1 つ",
+          out.get("movedAtInit") is True and out.get("keyBound") == 1 and out.get("keyCap") == [True] and out.get("focusInCap") == [True]
+          and out.get("hubBound") == 1, (out.get("keyBound"), out.get("keyCap"), out.get("focusInCap"), out.get("hubBound")))
     check("クラスごとの見出し (クラス名・在籍・未提出)", L2 in rend and "在籍 4" in rend and "未提出 2名" in rend and L1 in rend and L3 in rend, rend[:300])
     check("名前は escape (<img を出さない)", "&lt;img" in rend and "<img" not in rend)
     check("名前を押すと生徒詳細 (id は数値)", f"window.showStudentDetail({ids['A']})" in rend and f"window.showStudentDetail({ids['B']})" in rend)
     check("〆過ぎ・⛔ 次が止まる・N日・ログイン切れの疑い・15問ミッション の印",
           "〆過ぎ 2" in rend and "⛔ 次が止まる" in rend and "18日" in rend and "29日" in rend and "🔑 ログイン切れの疑い（ログインなし）" in rend
           and "🔑 ログイン切れの疑い（最終 9/10）" in rend and "🧩 15問ミッション" in rend, rend[:200])
-    check("今週出した人 (D ✓2・B ✓1)", "✓2" in rend and "✓1" in rend and "👏 今週出した人 2名" in rend)
-    check("誤答の多い 3 問: q1 → q5 → q2 の順・正解 ◯・一番多かった誤答 ✗・本文は題名", 0 <= rend.find("q1-c0") < rend.find("q5-c0") < rend.find("q2-c0")
-          and "◯ ② q1-c1" in rend and "✗ ③ q1-c2" in rend and "いちばん多かった誤答 2件" in rend and "📖 本文: Fictional Passage Title" in rend, rend[:200])
+    check("出した人 (D ✓5・E ✓3・B ✓3)・前回の授業からの境目を出す", "✓5" in rend and "✓3" in rend and "👏 前回の授業から出した人 3名" in rend
+          and "（10/12 20:25 から）" in rend and "今週" not in rend, rend[max(0, rend.find("👏") - 10):rend.find("👏") + 300])
+    check("誤答の多い 3 問: q1 → q2 → q4 の順・正解 ◯・一番多かった誤答 ✗・本文は題名・このクラスの宿題の印", 0 <= rend.find("q1-c0") < rend.find("q2-c0") < rend.find("q4-c0")
+          and "q5-c0" not in rend and "◯ ② q1-c1" in rend and "✗ ③ q1-c2" in rend and "いちばん多かった誤答 2件" in rend
+          and "📖 本文: Fictional Passage Title" in rend and "🏫 このクラスの宿題" in rend, rend[:200])
+    check("未提出のいるクラス・在籍のいないクラスでは 🎉 を出さない", "🎉" not in rend)
     check("📺 問題だけ表示のボタンは問題のあるクラスだけ (番号だけを渡す)", f'onclick="cbShareOpen({c2i})"' in rend
           and rend.count("📺 問題だけ表示") == 1)
     check("クラスの選択肢 = その日のクラス (サーバの時間割から)", all(lb in out.get("opts", "") for lb in (L1, L2, L3)) and T2 not in out.get("opts", ""))
@@ -604,14 +769,29 @@ def check_screens(mon, sat, f):
     check("📺: 「正解を見せる」→ ◯ ② と正解・クラスの正解率・一番多かった答え", "◯ ② q1-c1" in s1r and "正解 ②" in s1r and "正解率 0%" in s1r
           and "いちばん多かった答え" in s1r and "正解を見せる" not in s1r, s1r[:300])
     s2 = out.get("share2", "")
-    check("📺: → で次の問題 (正解はまた隠す)", "架空の問題 q5" in s2 and "問 2 / 3" in s2 and "◯" not in s2 and "正解を見せる" in s2, s2[:200])
+    check("📺: → で次の問題 (正解はまた隠す)", "架空の問題 q2" in s2 and "問 2 / 3" in s2 and "◯" not in s2 and "正解を見せる" in s2, s2[:200])
+    check("📺: 本文は題名だけ・中身は出さない", "📖 Fictional Passage Title" in s2 and PASSAGE_BODY not in s2, s2[:200])
     s3 = out.get("share3", "")
-    check("📺: 本文は題名だけ・中身は出さない", "架空の問題 q2" in s3 and "📖 Fictional Passage Title" in s3 and PASSAGE_BODY not in s3, s3[:200])
-    check("📺: 最後の問題で → を押しても動かない・← で戻る", out.get("share3b") == s3 and "架空の問題 q5" in out.get("share2b", ""))
-    check("📺: 開いている間に読み直しても中身は変わらない (開いた時点の問題を持つ)", "架空の問題 q5" in out.get("shareAfterReload", ""))
+    check("📺: 3 問目", "架空の問題 q4" in s3 and "問 3 / 3" in s3 and "📖" not in s3, s3[:200])
+    check("📺: 最後の問題で → を押しても動かない・← で戻る", out.get("share3b") == s3 and "架空の問題 q2" in out.get("share2b", ""))
+    check("📺: 開いている間に読み直しても中身は変わらない (開いた時点の問題を持つ)", "架空の問題 q2" in out.get("shareAfterReload", ""))
     check("📺: Esc で閉じる", out.get("shareDispEsc") == "none" and out.get("shareEsc") == "")
     check("📺: 問題の無いクラス・知らない番号では開かない・✕ で閉じる", out.get("shareNoTop") == "none" and out.get("shareBad") == "none"
           and out.get("shareClosed") == "none", (out.get("shareNoTop"), out.get("shareBad"), out.get("shareClosed")))
+    check("📺 はダイアログ: 開くと下の 📺 からフォーカスを「正解を見せる」へ移す・背後のページを動かさない",
+          out.get("f1") == "cbShareRevealBtn" and out.get("ovf") == "hidden", (out.get("f1"), out.get("ovf")))
+    check("📺: Tab は重ねの中だけを回る (正解を見せる → 次 → ✕ → Shift+Tab で 次)",
+          (out.get("f2"), out.get("f3"), out.get("f4"), out.get("tabPrev")) == ("cbShareNextBtn", "cbShareCloseBtn", "cbShareNextBtn", True),
+          (out.get("f2"), out.get("f3"), out.get("f4"), out.get("tabPrev")))
+    check("📺: 重ねの外 (下の 📺) に向いた Space / Enter は止める (問 1 に戻らない・フォーカスは中へ)",
+          out.get("spOut") == [True, True, 0, "cbShareRevealBtn"] and out.get("enOut") == [True, True, 0], (out.get("spOut"), out.get("enOut")))
+    check("📺: 中のボタンの Enter は止めない (押せる)・どのキーも画面のショートカットへ流さない (R で読み直さない)",
+          out.get("enIn") == [False, True] and out.get("rKey") == [False, True], (out.get("enIn"), out.get("rKey")))
+    check("📺: 重ねの外へフォーカスが移ったら中へ戻す", out.get("fFocusIn") == "cbShareRevealBtn", out.get("fFocusIn"))
+    check("📺: 正解を見せたら 次 → へ・次の問題では 正解を見せる へ・最後の問題で見せたら ✕ へ",
+          (out.get("f5"), out.get("f6"), out.get("f7")) == ("cbShareNextBtn", "cbShareRevealBtn", "cbShareCloseBtn"), (out.get("f5"), out.get("f6"), out.get("f7")))
+    check("📺: Esc で閉じたら開く前の場所 (📺) へフォーカスを戻す・スクロールを戻す・閉じた後のキーは止めない",
+          out.get("f8") == "cbUnder" and out.get("ovf2") == "" and out.get("rAfter") == [False, False], (out.get("f8"), out.get("ovf2"), out.get("rAfter")))
     check("その日の曜日に無いクラスの絞り込みは「すべて」に戻す", out.get("urlReset") == "/api/admin/class-brief?date=2026-10-19"
           and out.get("selAfterReset") == "", (out.get("urlReset"), out.get("selAfterReset")))
     check("その日のクラスなら &class= (encodeURIComponent)", out.get("urlClass") == "/api/admin/class-brief?date=2026-10-19&class=" + _enc(L2), out.get("urlClass"))
@@ -627,6 +807,20 @@ def check_screens(mon, sat, f):
     check("JST の今日: 日曜 23:59:59 → 10/18・月曜 0:00 → 10/19・明日 10/20 (端末のタイムゾーンに関係なく)",
           (out.get("jstSun"), out.get("jstMon"), out.get("jstTue")) == ("2026-10-18", "2026-10-19", "2026-10-20"), (out.get("jstSun"), out.get("jstMon"), out.get("jstTue")))
     check("曜日の読み取り (月=1・日=0)", out.get("dowMon") == 1 and out.get("dowSun") == 0)
+    check("ハブの「今日の授業」: 前に 明日 (10/20) を選んでいても JST の今日 (10/19) を読む",
+          out.get("urlHub") == "/api/admin/class-brief?date=2026-10-19", out.get("urlHub"))
+    check("🏫 カードの「今日の授業ブリーフ」: ブリーフの画面を開いて JST の今日 (10/19) を読む",
+          out.get("urlCard") == "/api/admin/class-brief?date=2026-10-19" and out.get("hubShown") == "classBriefSection", (out.get("urlCard"), out.get("hubShown")))
+    check("🔄 (cbLoad) は選んだ日 (10/20) のまま", out.get("urlKeep") == "/api/admin/class-brief?date=2026-10-20", out.get("urlKeep"))
+    green0 = '#86efac55;margin:0.1rem 0.25rem 0.1rem 0;white-space:nowrap;">未提出 0名'
+    sa, sn, so = out.get("synAll", ""), out.get("synNd", ""), out.get("synOld", "")
+    check("全員が届いた分を出した = 🎉 と緑の「未提出 0名」", "全員、届いた分を出しています 🎉" in sa and green0 in sa and "📭" not in sa, sa[:300])
+    check("前回の授業からまだいない = 境目つきで出す", "前回の授業（10/15 19:15）からまだいません" in sa and "（10/15 19:15 から）" in sa, sa[:300])
+    check("何も届いていない生徒がいる = 🎉 も緑も出さず「📭 届いていない」に名前 (escape・押すと生徒詳細)・学年が読めない・保留のクラス",
+          "🎉" not in sn and green0 not in sn and "📭 届いていない 1名" in sn and "架空 届かず&lt;b&gt;" in sn and "<b>架空" not in sn
+          and "window.showStudentDetail(9003)" in sn and "学年が読めない" in sn and "保留中" in sn and "届いた分は全部出した 1名" in sn
+          and "未提出はありません" in sn, sn[:400])
+    check("届いた本数を返さないサーバ = 🎉 にしない (未提出なし N名)", "🎉" not in so and green0 not in so and "未提出なし 2名" in so and "📭" not in so, so[:300])
     wf = open(WORKFLOW, encoding="utf-8").read()
     check("CI (server-tests.yml) に登録", "python3 scripts/health_check/test_class_brief.py" in wf)
 
@@ -649,6 +843,7 @@ def main():
     mon = check_server(mod, client, adm, f, sheet_ready)
     sat = get(client, adm, date="2026-10-24").json()
     check_screens(mon, sat, f)
+    check_delivery_and_subjects(mod, client, adm, f)
     print()
     if FAILURES:
         print(f"❌ FAIL: {len(FAILURES)} 件")

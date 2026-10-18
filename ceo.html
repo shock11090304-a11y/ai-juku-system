@@ -495,7 +495,7 @@
         <div class="tb-group">
           <h3>👨‍🎓 生徒・学習</h3>
           <div class="tb-buttons">
-            <button type="button" class="tb-btn hub-btn" data-hub-target="classBriefSection" data-hub-label="🗓 今日の授業ブリーフ (未提出・今週出した人・誤答の多い3問)" title="授業の前に 1 分: クラスごとの未提出・今週出した人・誤答の多い 3 問 (📺 で問題だけを画面共有)"><span class="tb-icon">🗓</span><span class="tb-label">今日の授業</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="classBriefSection" data-hub-label="🗓 今日の授業ブリーフ (未提出・前回の授業から出した人・誤答の多い3問)" title="授業の前に 1 分: クラスごとの未提出・前回の授業から出した人・誤答の多い 3 問 (📺 で問題だけを画面共有)"><span class="tb-icon">🗓</span><span class="tb-label">今日の授業</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="rosterSection" data-hub-label="📋 生徒ロスター (課金状況)"><span class="tb-icon">📋</span><span class="tb-label">生徒ロスター</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="weaknessHeatmapSection" data-hub-label="🎯 全生徒弱点ヒートマップ"><span class="tb-icon">🎯</span><span class="tb-label">弱点ヒートマップ</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="homeworkStatusSection" data-hub-label="📚 宿題 実施状況"><span class="tb-icon">📚</span><span class="tb-label">宿題状況</span></button>
@@ -547,13 +547,13 @@
     </section>
 
     <!-- 🗓 今日の授業ブリーフ (2026-10-18 塾長「①の授業前ブリーフも作っておいて」= 成績を上げる提案 ①「授業で宿題を回す」)。
-         授業の前に 1 分で見る画面: クラスごとの未提出・今週出した人 (ほめる用)・誤答の多い 3 問 (📺 で Zoom の画面共有用に問題だけ大きく出す)。
+         授業の前に 1 分で見る画面: クラスごとの未提出・届いていない生徒・前回の授業から出した人 (ほめる用)・誤答の多い 3 問 (📺 で Zoom の画面共有用に問題だけ大きく出す)。
          読むだけ = GET /api/admin/class-brief (管理者トークン・書かない)。開いたときだけ読む (ページを開いただけではサーバに聞かない)。
          置き場所: ハブの「👨‍🎓 生徒・学習」の先頭のボタン (CEO を開いて最初に目に入る) + 📝 科目別 単元ドリルの 🏫 クラス自動宿題カードのボタン。
          名前・題名・問題文はすべて esc()。📺 の画面には生徒の名前を出さず、正解は「正解を見せる」まで出さない。inline だけ = ceo.js は触らない -->
     <section id="classBriefSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.32); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;flex-wrap:wrap;gap:0.5rem;">
-        <h2 style="font-size:1.15rem;color:#7dd3fc;margin:0;">🗓 今日の授業ブリーフ <span style="font-size:0.72rem;color:#94a3b8;font-weight:400;">(授業の前に 1 分: 未提出・今週出した人・誤答の多い 3 問)</span></h2>
+        <h2 style="font-size:1.15rem;color:#7dd3fc;margin:0;">🗓 今日の授業ブリーフ <span style="font-size:0.72rem;color:#94a3b8;font-weight:400;">(授業の前に 1 分: 未提出・出した人・誤答の多い 3 問)</span></h2>
       </div>
       <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;margin-bottom:0.5rem;font-size:0.8rem;">
         <button id="cbTodayBtn" type="button" onclick="cbSetDay(0)" style="background:rgba(56,189,248,0.16);color:#bae6fd;border:1px solid rgba(56,189,248,0.5);padding:0.35rem 0.85rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">今日</button>
@@ -567,11 +567,12 @@
       </div>
       <div style="font-size:0.74rem;color:#a1a1aa;line-height:1.65;margin-bottom:0.55rem;">
         未提出 = クラス自動宿題・3日ドリル・塾長が配ったドリルと宿題（生徒が自分で始めた今日の1問は数えません）。<b style="color:#fcd34d;">⛔ 次が止まる</b> = 出さないと次の自動の宿題が届かない分。
-        <b style="color:#fca5a5;">🔑 ログイン切れの疑い</b> = 最終ログインから 30 日を過ぎた（か一度も無い）生徒。今週出した人は月曜 0:00 から。誤答の多い 3 問は直近 14 日にこのクラスの生徒に配ったドリルから（回答 2 件以上・習熟度テストは出しません）。
-        「📺 問題だけ表示」は Zoom の画面共有用です（生徒の名前は出ません・正解は「正解を見せる」まで隠します・← → で移動・Esc で閉じる）。
+        <b style="color:#fca5a5;">🔑 ログイン切れの疑い</b> = 最終ログインから 30 日を過ぎた（か一度も無い）生徒。<b style="color:#cbd5e1;">📭 届いていない</b> = 未提出は 0 本でも、直近 14 日に宿題・ドリルが 1 本も届いていない生徒（出し終えた生徒とは分けます）。
+        出した人は前回の授業（先週の同じ曜日の授業の開始）から。誤答の多い 3 問は直近 14 日にこのクラスの生徒に配ったドリルから（このクラスのクラス自動宿題を先に・ほかのドリルはこのクラスの科目だけ・回答 2 件以上・習熟度テストと無効にした問題は出しません）。
+        「📺 問題だけ表示」は Zoom の画面共有用です（生徒の名前は出ません・正解は「正解を見せる」まで隠します・← → で移動・Space / Enter で押せます・Esc で閉じる）。
       </div>
       <div id="cbResult"><div style="color:#71717a;font-size:0.8rem;">「今日」か「明日」を押すと読み込みます。</div></div>
-      <div id="cbShare" role="dialog" aria-modal="true" aria-label="問題だけ表示" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100000;background:#0b1120;color:#f8fafc;overflow:auto;"></div>
+      <div id="cbShare" role="dialog" aria-modal="true" aria-label="問題だけ表示" tabindex="-1" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100000;background:#0b1120;color:#f8fafc;overflow:auto;"></div>
     </section>
 
     <!-- 🎯 全生徒弱点ヒートマップ (2026-05-13 Task 3) - 教材作成優先度の意思決定支援 -->
@@ -849,7 +850,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
           <button id="chwDryBtn" type="button" onclick="chwDryRun()" title="今もう一度回したら、どのクラスの誰に何を配るかを、本番と同じ選び方で計算して出します。配信はせず、生徒には何も届きません" style="background:rgba(16,185,129,0.16);color:#a7f3d0;border:1px solid rgba(16,185,129,0.5);padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">🔍 次の宿題を確認（配信しない）</button>
-          <button id="chwBriefBtn" type="button" onclick="cbOpenFromCard()" title="授業の前に 1 分: クラスごとの未提出・今週出した人・誤答の多い 3 問 (📺 で問題だけを画面共有)。読むだけです" style="background:rgba(56,189,248,0.14);color:#bae6fd;border:1px solid rgba(56,189,248,0.5);padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">🗓 今日の授業ブリーフ</button>
+          <button id="chwBriefBtn" type="button" onclick="cbOpenFromCard()" title="授業の前に 1 分: クラスごとの未提出・前回の授業から出した人・誤答の多い 3 問 (📺 で問題だけを画面共有)。読むだけです" style="background:rgba(56,189,248,0.14);color:#bae6fd;border:1px solid rgba(56,189,248,0.5);padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">🗓 今日の授業ブリーフ</button>
           <button id="chwResultBtn" type="button" onclick="chwShowResults()" title="下の配信済みドリル一覧を「🏫 クラス自動宿題」に切り替えます (誰が解いたか・問題別の正解率)" style="background:rgba(148,163,184,0.12);color:#cbd5e1;border:1px solid #475569;padding:0.4rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;">📋 クラス自動宿題の結果</button>
           <span id="chwMsg" style="font-size:0.76rem;"></span>
         </div>
@@ -15341,6 +15342,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
   //   名前・題名・問題文・クラス名は必ず _cbE (escape)。onclick には生徒 id とクラス・問題の番号 (数値) だけを入れる (引用符で壊れない)。
   //   📺 問題だけ表示 (_cbShareHtml) は top_missed の問題文・選択肢とクラス名だけを読む (生徒の名前を一切読まない)。
   //   正解・クラスの正解率・一番多かった誤答は「正解を見せる」の後だけ。← → で移動 (移ると正解はまた隠す)・Esc / ✕ で閉じる。
+  //   重ねはダイアログ (フォーカスを中へ・Tab は中だけ・外へ向いた Enter / Space は止める・画面のショートカットへ流さない・閉じたら元へ)。
+  //   ハブのボタンと 🏫 カードのボタンは JST の今日を読む (cbSetDay(0))。🔄・日付・クラスの絞り込みは選んだ日のまま (cbLoad)。
+  //   未提出 0 本の生徒は「届いた分は全部出した」と「📭 届いていない」(直近 14 日に何も届いていない) に分け、🎉 は前者だけのとき。
   (function () {
     var CB_URL = '/api/admin/class-brief';
     var KIND_JA = { class_hw: '🏫 クラス自動宿題', routine: '🎯 3日ドリル', mission: '🧩 15問ミッション', admin: '📝 塾長のドリル', homework: '📚 宿題', other: '📝 ドリル' };
@@ -15406,7 +15410,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     function _cbPraise(p) {
       var b = p.best ? (' ' + _cbN(p.best.correct) + '/' + _cbN(p.best.total)) : '';
       return '<span style="display:inline-block;margin:0.15rem 0.3rem 0.15rem 0;padding:0.12rem 0.55rem;border-radius:12px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.4);font-size:0.76rem;">'
-        + _cbName(p.id, p.name) + ' <span title="今週出した本数と一番よい点" style="color:#86efac;">✓' + _cbN(p.count) + _cbE(b) + '</span>'
+        + _cbName(p.id, p.name) + ' <span title="前回の授業から出した本数と一番よい点" style="color:#86efac;">✓' + _cbN(p.count) + _cbE(b) + '</span>'
         + (p.perfect ? ' <span title="満点あり">💯</span>' : '') + '</span>';
     }
     function _cbQuestion(q, i) {   // CEO の画面 (塾長だけが見る): 正解 ◯・一番多かった誤答 ✗・選んだ数
@@ -15415,7 +15419,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var wt = (q.wrong_top && q.wrong_top.index != null) ? _cbN(q.wrong_top.index) : -1;
       var h = '<div style="padding:0.35rem 0;border-bottom:1px solid rgba(51,65,85,0.5);">';
       h += '<div style="font-size:0.74rem;color:#94a3b8;">問' + (i + 1) + ' · 正解率 <b style="color:#fca5a5;">' + _cbN(q.accuracy_pct) + '%</b>（'
-        + _cbN(q.correct_n) + '/' + _cbN(q.n) + '）· ' + _cbE(q.subject_ja || '') + (q.unit ? ' ' + _cbE(q.unit) : '') + '</div>';
+        + _cbN(q.correct_n) + '/' + _cbN(q.n) + '）· ' + _cbE(q.subject_ja || '') + (q.unit ? ' ' + _cbE(q.unit) : '')
+        + (q.from_class_hw === true ? ' · 🏫 このクラスの宿題' : (q.from_class_hw === false ? ' · 📝 ほかのドリル' : '')) + '</div>';
       if (q.passage_title) h += '<div style="font-size:0.72rem;color:#a5b4fc;">📖 本文: ' + _cbE(q.passage_title) + '</div>';
       h += '<div style="font-size:0.82rem;color:#e5e7eb;white-space:pre-wrap;margin:0.15rem 0;">' + _cbE(q.stem) + '</div>';
       h += ch.map(function (c, k) {
@@ -15426,18 +15431,43 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       }).join('');
       return h + '</div>';
     }
+    var NOTE_JA = { grade_unknown: '学年が読めない（自動の宿題は届きません・生徒詳細で学年を直す）', shougaku: '小学生（自動の宿題は出しません）' };
+    var HOLD_JA = { hold: 'このクラスの 🏫 クラス自動宿題は保留中です（塾長の確認待ち）', none: 'このクラスは自動の宿題の対象外です' };
+    function _cbSplitDone(mem) {   // 未提出 0 本の生徒を「届いた分は全部出した」と「直近 14 日に何も届いていない」に分ける
+      var done = [], nd = [], unknown = [];
+      mem.forEach(function (s) {
+        if (_cbN(s.open_count) > 0) return;
+        if (typeof s.received_n !== 'number') unknown.push(s);   // 届いた本数を返さないサーバ = どちらとも言わない
+        else if (s.received_n > 0) done.push(s);
+        else nd.push(s);
+      });
+      return { done: done, nd: nd, unknown: unknown };
+    }
+    function _cbNotDelivered(s) {
+      var h = '<div style="padding:0.2rem 0;">' + _cbName(s.id, s.name) + ' ';
+      h += _cbPill(s.ai_label || (s.ai_path === 'ai_nashi' ? 'AIなし' : 'AIあり'), s.ai_path === 'ai_nashi' ? '#5eead4' : '#c4b5fd', 'rgba(148,163,184,0.08)');
+      if (NOTE_JA[s.delivery_note]) h += _cbPill(NOTE_JA[s.delivery_note], '#fcd34d', 'rgba(251,191,36,0.10)');
+      if (s.login_stale) h += _cbPill('🔑 ログイン切れの疑い', '#fca5a5', 'rgba(248,113,113,0.10)');
+      return h + '</div>';
+    }
     function _cbClassCard(cl, ci) {
       var mem = Array.isArray(cl.members) ? cl.members : [];
       var open = mem.filter(function (s) { return _cbN(s.open_count) > 0; });
+      var sp = _cbSplitDone(mem);
       var pr = Array.isArray(cl.submitted_this_week) ? cl.submitted_this_week : [];
       var top = Array.isArray(cl.top_missed) ? cl.top_missed : [];
       var om = _cbN(cl.open_members_n);
+      // 🎉 と緑の「未提出 0名」は、全員が何か受け取ってそれを全部出したときだけ (何も届いていない生徒がいたら言わない)
+      var allDone = mem.length > 0 && !open.length && !sp.nd.length && !sp.unknown.length;
+      var pillCol = om ? '#fca5a5' : (allDone ? '#86efac' : '#cbd5e1');
+      var pillBg = om ? 'rgba(248,113,113,0.12)' : (allDone ? 'rgba(52,211,153,0.10)' : 'rgba(148,163,184,0.08)');
       var h = '<div class="cb-class" style="margin:0 0 0.8rem;padding:0.7rem 0.85rem;background:rgba(15,23,42,0.55);border:1px solid rgba(56,189,248,0.28);border-radius:10px;">';
       h += '<div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;margin-bottom:0.4rem;">'
         + '<b style="color:#e0f2fe;font-size:0.95rem;">' + _cbE(cl.label) + '</b>'
         + '<span style="color:#94a3b8;font-size:0.76rem;">' + _cbE(cl.time || '') + (cl.meets_on_date === false ? '（' + _cbE(cl.dow_ja || '') + '曜のクラス）' : '') + '</span>'
         + _cbPill('在籍 ' + _cbN(cl.members_n), '#bae6fd', 'rgba(56,189,248,0.10)')
-        + _cbPill('未提出 ' + om + '名', om ? '#fca5a5' : '#86efac', om ? 'rgba(248,113,113,0.12)' : 'rgba(52,211,153,0.10)')
+        + _cbPill('未提出 ' + om + '名', pillCol, pillBg)
+        + (sp.nd.length ? _cbPill('📭 届いていない ' + sp.nd.length + '名', '#cbd5e1', 'rgba(148,163,184,0.10)', '未提出は 0 本でも、直近 14 日に宿題・ドリルが 1 本も届いていない生徒') : '')
         + (top.length ? '<button type="button" onclick="cbShareOpen(' + _cbN(ci) + ')" title="Zoom の画面共有用に、誤答の多い問題だけを大きく出します (名前は出ません・正解は押すまで隠します)" '
           + 'style="margin-left:auto;background:rgba(56,189,248,0.18);color:#e0f2fe;border:1px solid rgba(56,189,248,0.55);border-radius:8px;padding:0.3rem 0.8rem;font-size:0.8rem;font-weight:800;cursor:pointer;">📺 問題だけ表示</button>' : '')
         + '</div>';
@@ -15446,12 +15476,23 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           + (_cbN(cl.before_start_n) ? '・受講開始前 ' + _cbN(cl.before_start_n) + '名' : '') + '</div>';
       }
       h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0.7rem;">';
-      h += '<div><div style="font-size:0.8rem;color:#fca5a5;font-weight:800;margin-bottom:0.2rem;">📮 未提出 ' + open.length + '名</div>'
-        + (open.length ? open.map(_cbMemberRow).join('') : (mem.length ? '<div style="color:#86efac;font-size:0.78rem;">全員出しています 🎉</div>' : ''))
-        + (open.length && open.length < mem.length ? '<div style="color:#71717a;font-size:0.72rem;margin-top:0.2rem;">未提出なし ' + (mem.length - open.length) + '名</div>' : '')
-        + '</div>';
-      h += '<div><div style="font-size:0.8rem;color:#86efac;font-weight:800;margin-bottom:0.2rem;">👏 今週出した人 ' + pr.length + '名</div>'
-        + (pr.length ? pr.map(_cbPraise).join('') : '<div style="color:#71717a;font-size:0.78rem;">今週（月曜 0:00 から）はまだいません</div>') + '</div>';
+      h += '<div><div style="font-size:0.8rem;color:#fca5a5;font-weight:800;margin-bottom:0.2rem;">📮 未提出 ' + open.length + '名</div>';
+      if (open.length) h += open.map(_cbMemberRow).join('');
+      else if (allDone) h += '<div style="color:#86efac;font-size:0.78rem;">全員、届いた分を出しています 🎉</div>';
+      else if (mem.length) h += '<div style="color:#94a3b8;font-size:0.78rem;">未提出はありません' + (sp.nd.length ? '（ただし何も届いていない生徒がいます ↓）' : '') + '</div>';
+      if (!allDone && sp.done.length) h += '<div style="color:#71717a;font-size:0.72rem;margin-top:0.2rem;">届いた分は全部出した ' + sp.done.length + '名</div>';
+      if (sp.unknown.length) h += '<div style="color:#71717a;font-size:0.72rem;margin-top:0.2rem;">未提出なし ' + sp.unknown.length + '名</div>';
+      if (sp.nd.length) {
+        h += '<div style="margin-top:0.35rem;padding-top:0.25rem;border-top:1px dashed #334155;">'
+          + '<div style="font-size:0.76rem;color:#cbd5e1;font-weight:800;">📭 届いていない ' + sp.nd.length + '名 <span style="font-weight:400;color:#94a3b8;">（直近 14 日に宿題・ドリルが 1 本も届いていません）</span></div>'
+          + (HOLD_JA[cl.routine_kind] ? '<div style="font-size:0.72rem;color:#fcd34d;">' + _cbE(HOLD_JA[cl.routine_kind]) + '</div>' : '')
+          + sp.nd.map(_cbNotDelivered).join('') + '</div>';
+      }
+      h += '</div>';
+      var since = cl.praise_since_jst ? String(cl.praise_since_jst) : '';
+      h += '<div><div style="font-size:0.8rem;color:#86efac;font-weight:800;margin-bottom:0.2rem;">👏 ' + (since ? '前回の授業から' : '') + '出した人 ' + pr.length + '名'
+        + (since ? ' <span style="font-weight:400;color:#94a3b8;font-size:0.72rem;">（' + _cbE(since) + ' から）</span>' : '') + '</div>'
+        + (pr.length ? pr.map(_cbPraise).join('') : '<div style="color:#71717a;font-size:0.78rem;">' + (since ? '前回の授業（' + _cbE(since) + '）から' : '') + 'まだいません</div>') + '</div>';
       h += '<div><div style="font-size:0.8rem;color:#fcd34d;font-weight:800;margin-bottom:0.2rem;">❌ 誤答の多い 3 問</div>'
         + (top.length ? top.map(_cbQuestion).join('') : '<div style="color:#71717a;font-size:0.78rem;">直近 14 日の回答がまだ足りません（回答 2 件以上で誤答のある問題から選びます）</div>') + '</div>';
       return h + '</div></div>';
@@ -15534,7 +15575,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       var h = '<div style="max-width:1100px;margin:0 auto;padding:1.5rem 2rem 2rem;">';
       h += '<div style="display:flex;align-items:center;gap:1rem;font-size:1.1rem;color:#94a3b8;margin-bottom:1.2rem;flex-wrap:wrap;">'
         + '<span>' + _cbE(cl.label || '') + ' · 問 ' + (qi + 1) + ' / ' + top.length + '</span>'
-        + '<button type="button" onclick="cbShareClose()" title="閉じる (Esc)" style="margin-left:auto;' + btn + '">✕ 閉じる</button></div>';
+        + '<button type="button" id="cbShareCloseBtn" onclick="cbShareClose()" title="閉じる (Esc)" style="margin-left:auto;' + btn + '">✕ 閉じる</button></div>';
       if (q.passage_title) h += '<div style="font-size:1.2rem;color:#a5b4fc;margin-bottom:0.6rem;">📖 ' + _cbE(q.passage_title) + '</div>';
       h += '<div style="font-size:2rem;line-height:1.6;white-space:pre-wrap;margin-bottom:1.4rem;">' + _cbE(q.stem) + '</div>';
       h += ch.map(function (c, k) {
@@ -15545,12 +15586,42 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           + (wr ? ' <span style="font-size:1.1rem;color:#fca5a5;">← いちばん多かった答え</span>' : '') + '</div>';
       }).join('');
       h += '<div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-top:1.4rem;">'
-        + '<button type="button" onclick="cbShareNav(-1)"' + (qi > 0 ? '' : ' disabled') + ' style="' + btn + '">← 前</button>'
+        + '<button type="button" id="cbSharePrevBtn" onclick="cbShareNav(-1)"' + (qi > 0 ? '' : ' disabled') + ' style="' + btn + '">← 前</button>'
         + (reveal ? '<span style="font-size:1.3rem;color:#86efac;font-weight:800;">正解 ' + _cbE(_cbChoiceLabel(_cbN(q.answer))) + '（クラスの正解率 ' + _cbN(q.accuracy_pct) + '%）</span>'
-                  : '<button type="button" onclick="cbShareReveal()" style="' + btn + 'background:rgba(34,197,94,0.22);border-color:#22c55e;">正解を見せる</button>')
-        + '<button type="button" onclick="cbShareNav(1)"' + (qi < top.length - 1 ? '' : ' disabled') + ' style="' + btn + '">次 →</button>'
-        + '<span style="margin-left:auto;font-size:0.9rem;color:#64748b;">← → で移動 · Esc で閉じる</span></div>';
+                  : '<button type="button" id="cbShareRevealBtn" onclick="cbShareReveal()" style="' + btn + 'background:rgba(34,197,94,0.22);border-color:#22c55e;">正解を見せる</button>')
+        + '<button type="button" id="cbShareNextBtn" onclick="cbShareNav(1)"' + (qi < top.length - 1 ? '' : ' disabled') + ' style="' + btn + '">次 →</button>'
+        + '<span style="margin-left:auto;font-size:0.9rem;color:#64748b;">← → で移動 · Space / Enter で押す · Esc で閉じる</span></div>';
       return h + '</div>';
+    }
+    // 📺 の重ねはダイアログとして動かす (ceo.js の ceoConfirmDialog と同じ型): 開いたらフォーカスを中のボタンへ移し・Tab は中だけを回り・
+    //   重ねの外 (下に隠れた 📺 や生徒の名前のリンク) に向いた Enter / Space は止め・開いている間は画面のショートカット (R で読み直し・
+    //   Esc で生徒詳細を閉じる など) へ流さない (伝播だけ止める)・閉じたら開く前の場所へフォーカスを戻す。
+    //   ★止めないと Chrome は押した 📺 にフォーカスを残すので、→ の後の Space で 問1 に戻り、Tab → Enter で生徒詳細が重ねの下に開き、
+    //   ✕ で閉じた瞬間に Zoom の画面に出る (2026-10-18 点検)
+    var _cbPrevFocus = null, _cbPrevOverflow = null;
+    function _cbShareIds() {   // 重ねの中で押せるボタン (画面の並び順)。開いている問題の状態から決める
+      if (!_cbShare) return [];
+      var n = _cbShare.cl.top_missed.length, qi = _cbShare.qi, ids = ['cbShareCloseBtn'];
+      if (qi > 0) ids.push('cbSharePrevBtn');
+      if (!_cbShare.reveal) ids.push('cbShareRevealBtn');
+      if (qi < n - 1) ids.push('cbShareNextBtn');
+      return ids;
+    }
+    function _cbFocusEl(el) {
+      if (!el || typeof el.focus !== 'function') return false;
+      try { el.focus({ preventScroll: true }); } catch (_e) { try { el.focus(); } catch (_e2) { return false; } }
+      return true;
+    }
+    function _cbShareFocus() {   // まだ隠している正解の「正解を見せる」→ 次 → → ✕ の順 (Space を押していけば 見せる → 次 と進む)
+      if (!_cbShare) return;
+      var want = !_cbShare.reveal ? 'cbShareRevealBtn' : (_cbShare.qi < _cbShare.cl.top_missed.length - 1 ? 'cbShareNextBtn' : 'cbShareCloseBtn');
+      if (!_cbFocusEl(document.getElementById(want))) _cbFocusEl(document.getElementById('cbShare'));
+    }
+    function _cbInShare(t) {
+      var box = document.getElementById('cbShare');
+      if (!box || !t) return false;
+      if (t === box) return true;
+      try { return typeof box.contains === 'function' && !!box.contains(t); } catch (_e) { return false; }
     }
     function _cbShareDraw() {
       var box = document.getElementById('cbShare');
@@ -15559,10 +15630,17 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       if (!html) { _cbShare = null; box.innerHTML = ''; box.style.display = 'none'; return; }
       box.innerHTML = html;
       box.style.display = 'block';
+      _cbShareFocus();   // 描き直すと押したボタンが消えるので、毎回中のボタンへ置き直す
     }
     function cbShareOpen(ci) {
       var cl = (_cbLast && Array.isArray(_cbLast.classes)) ? _cbLast.classes[Number(ci)] : null;
       if (!cl || !Array.isArray(cl.top_missed) || !cl.top_missed.length) return;
+      if (!_cbShare) {
+        var ae = document.activeElement;
+        _cbPrevFocus = (ae && !_cbInShare(ae)) ? ae : null;
+        var de = document.documentElement;
+        if (de && de.style) { _cbPrevOverflow = de.style.overflow; de.style.overflow = 'hidden'; }   // 背後のページを動かさない
+      }
       _cbShare = { cl: { label: cl.label, top_missed: cl.top_missed }, qi: 0, reveal: false };   // 名前の入った members は持たない
       _cbShareDraw();
     }
@@ -15575,17 +15653,49 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       _cbShareDraw();
     }
     function cbShareReveal() { if (_cbShare) { _cbShare.reveal = true; _cbShareDraw(); } }
-    function cbShareClose() { _cbShare = null; _cbShareDraw(); }
-    function _cbKey(e) {
+    function cbShareClose() {
+      var was = !!_cbShare;
+      _cbShare = null;
+      _cbShareDraw();
+      if (!was) return;
+      var de = document.documentElement;
+      if (de && de.style && _cbPrevOverflow !== null) de.style.overflow = _cbPrevOverflow;
+      _cbPrevOverflow = null;
+      var pf = _cbPrevFocus;
+      _cbPrevFocus = null;
+      _cbFocusEl(pf);   // 開く前の場所 (📺 のボタン) へ戻す
+    }
+    function _cbKey(e) {   // document の capture で 1 つだけ (画面のほかのキー操作より先に受ける)
       if (!_cbShare || !e) return;
       var k = e.key;
-      if (k === 'Escape' || k === 'Esc') { if (e.preventDefault) e.preventDefault(); cbShareClose(); }
-      else if (k === 'ArrowRight') { if (e.preventDefault) e.preventDefault(); cbShareNav(1); }
-      else if (k === 'ArrowLeft') { if (e.preventDefault) e.preventDefault(); cbShareNav(-1); }
+      var stop = function () { if (e.stopPropagation) e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation(); };
+      var prevent = function () { if (e.preventDefault) e.preventDefault(); };
+      var t = e.target || document.activeElement;
+      stop();   // 開いている間は画面のショートカットへ流さない (preventDefault はしない = ⌘R などは効く)
+      if (k === 'Escape' || k === 'Esc') { prevent(); cbShareClose(); }
+      else if (k === 'ArrowRight') { prevent(); cbShareNav(1); }
+      else if (k === 'ArrowLeft') { prevent(); cbShareNav(-1); }
+      else if (k === 'Tab') {   // 重ねの中だけを回る
+        prevent();
+        var ids = _cbShareIds();
+        if (!ids.length) return;
+        var cur = document.activeElement, at = -1;
+        for (var i = 0; i < ids.length; i++) { if (cur && cur.id === ids[i]) at = i; }
+        var nx = at < 0 ? (e.shiftKey ? ids.length - 1 : 0) : (at + (e.shiftKey ? ids.length - 1 : 1)) % ids.length;
+        _cbFocusEl(document.getElementById(ids[nx]));
+      }
+      else if ((k === 'Enter' || k === ' ' || k === 'Spacebar') && !_cbInShare(t)) {   // 下に隠れたボタン・リンクを押させない
+        prevent();
+        _cbShareFocus();
+      }
     }
-    function cbOpenFromCard() {   // 🏫 クラス自動宿題カードのボタン: ブリーフの画面に移って読み込む
+    function _cbFocusIn(e) {   // マウスなどで重ねの外にフォーカスが移ったら中へ戻す
+      if (!_cbShare || !e || _cbInShare(e.target)) return;
+      _cbShareFocus();
+    }
+    function cbOpenFromCard() {   // 🏫 クラス自動宿題カードのボタン: ブリーフの画面に移って **JST の今日** を読み込む (前に選んだ 明日 / 日付 は使わない)
       if (typeof window.ceoHubShow === 'function') window.ceoHubShow('classBriefSection');
-      return cbLoad();
+      return cbSetDay(0);
     }
     window.cbLoad = cbLoad;
     window.cbSetDay = cbSetDay;
@@ -15595,15 +15705,17 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     window.cbShareClose = cbShareClose;
     window.cbOpenFromCard = cbOpenFromCard;
     // 検査用 (test_class_brief.py が JS エンジンで描画を確かめる。画面の動作には使わない)
-    window._cbTest = { render: _cbRender, shareHtml: _cbShareHtml, jstDay: _cbJstDay, dow: _cbDow, key: _cbKey,
+    window._cbTest = { render: _cbRender, shareHtml: _cbShareHtml, jstDay: _cbJstDay, dow: _cbDow, key: _cbKey, focusIn: _cbFocusIn,
       state: function () { return _cbShare; } };
     function bind() {
       // 📺 の重ねは body の直下へ (ハブで別のセクションを開くと親が display:none になり、position:fixed でも見えなくなるため)
       var sh = document.getElementById('cbShare');
       if (sh && document.body && sh.parentNode !== document.body && typeof document.body.appendChild === 'function') document.body.appendChild(sh);
-      document.addEventListener('keydown', _cbKey);
+      document.addEventListener('keydown', _cbKey, true);
+      document.addEventListener('focusin', _cbFocusIn, true);
       var hb = document.querySelector ? document.querySelector('#ceoHubMenu [data-hub-target="classBriefSection"]') : null;
-      if (hb) hb.addEventListener('click', function () { cbLoad(); });
+      // ハブの「今日の授業」は **JST の今日** (前に 明日 を押した・タブを開いたまま日付が変わった でも今日に戻す)。🔄・日付・クラスは選んだ日のまま
+      if (hb) hb.addEventListener('click', function () { return cbSetDay(0); });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();
   })();
