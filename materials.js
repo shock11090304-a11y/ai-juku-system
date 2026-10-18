@@ -6,6 +6,8 @@
  *   material_sample_click {id, from, type}         無料見本を押した (from: list / detail / bar)
  *   material_buy_click {id, store, from}           購入先へ移動するボタンを押した (★購入完了・売上ではない)
  * 本番ドメイン以外 (ローカルのプレビューなど) では送らず console に出すだけ。
+ * 2026-10-18: 見出し画像 (image)・演習回数 (rounds)・重複の注意 (overlap / compare)・印刷 (printing)・教材ごとの利用条件 (terms) に対応。
+ *   重複の注意は、カードでも詳細でも購入ボタンより前に出す。見本の無い教材は、カードの 2 つ目のボタンを購入にする。
  */
 (function () {
   'use strict';
@@ -60,7 +62,25 @@
     if (s.type === 'pdf') return '無料見本を見る（' + s.pages + 'ページ）';
     return s.label || '無料部分を読む';
   }
-  function sampleShort(m) { return m.sample && m.sample.type === 'pdf' ? '無料見本（PDF）' : '無料部分を読む'; }
+  function sampleShort(m) {
+    if (m.sample && m.sample.short) return m.sample.short;
+    return m.sample && m.sample.type === 'pdf' ? '無料見本（PDF）' : '無料部分を読む';
+  }
+  // 見出し画像はリポジトリ内の materials/images/ だけ (外部 URL・購入者用ファイルを指させない)
+  function imageOk(m) { return !!(m.image && /^materials\/images\/[a-z0-9-]+\.png$/.test(m.image.src || '')); }
+  // 重複・再収録の注意。カードでも詳細でも、購入ボタンより前に置く (一覧と詳細で同じ m.overlap を使う)
+  function overlapHtml(m, h) {
+    if (!m.overlap || !m.overlap.length) return '';
+    var cmp = (m.compare || []).filter(function (c) {
+      return c && c.label && (isHttps(c.href) || /^material\.html\?id=[a-z0-9-]+$/.test(c.href || ''));
+    }).map(function (c) {
+      var ext = isHttps(c.href);
+      return '<a class="inline-link' + (ext ? ' ext' : '') + '" href="' + esc(c.href) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + '>' +
+        esc(c.label) + (ext ? '<span class="sr-only">（新しいタブで開きます）</span>' : '') + '</a>';
+    });
+    return '<div class="overlap"><' + h + ' class="ov-h">重複のご注意</' + h + '>' + list(m.overlap, 'ov-list') +
+      (cmp.length ? '<p class="ov-cmp">' + cmp.join('') + '</p>' : '') + '</div>';
+  }
   function sampleAttrs(m, from) {
     var s = m.sample;
     var ext = s.type !== 'pdf';
@@ -76,7 +96,7 @@
     var st = storeOf(m);
     return '<a class="' + cls + ' ext" href="' + esc(m.buyUrl) + '" target="_blank" rel="noopener"' +
       ' data-track="buy" data-id="' + esc(m.id) + '" data-store="' + esc(m.store) + '" data-from="' + from + '">' +
-      esc(st.buyLabel) + '<span class="sr-only">（新しいタブで開きます）</span></a>';
+      esc(st.buyLabel) + '<span class="sr-only">' + (from === 'list' ? '：' + esc(m.name) : '') + '（新しいタブで開きます）</span></a>';
   }
   function statusHtml(m) {
     return canBuy(m)
@@ -108,22 +128,31 @@
   });
 
   /* ---------- 一覧ページ ---------- */
-  function cardHtml(m) {
-    var sample = sampleOk(m)
-      ? '<a class="btn btn-ink" ' + sampleAttrs(m, 'list') + '>' + sampleShort(m) + '</a>'
-      : '<span class="btn btn-ink" aria-disabled="true">見本準備中</span>';
-    return '<article class="mcard" data-subject="' + esc(m.subject) + '">' +
+  // h: 商品名の見出しの段 (一覧は教科の見出し h3 の下なので h4、詳細の「ほかの教材」は h3)
+  function cardHtml(m, h) {
+    h = h === 'h4' ? 'h4' : 'h3';
+    // 2 つ目のボタン: 無料見本があれば見本、無ければ購入 (見本の無い教材に「見本」のボタンを出さない)
+    var second = sampleOk(m)
+      ? '<a class="btn btn-ink" ' + sampleAttrs(m, 'list') + '>' + esc(sampleShort(m)) + '</a>'
+      : buyHtml(m, 'list');
+    // 画像は直下の見出しと同じ商品名なので、読み上げは見出しに任せる (alt="")。同じ詳細へのリンクはタブ移動から外す
+    var thumb = imageOk(m)
+      ? '<a class="thumb" href="' + detailUrl(m) + '" tabindex="-1" aria-hidden="true"><img src="' + esc(m.image.src) + '" alt="" width="1280" height="670" loading="lazy" decoding="async"></a>'
+      : '';
+    return '<article class="mcard" data-subject="' + esc(m.subject) + '">' + thumb +
       '<div class="top">' +
         '<div class="tags"><span class="tag subj">' + esc(m.subject) + '</span><span class="tag lvl">' + esc(m.level) + '</span></div>' +
-        '<h3><a href="' + detailUrl(m) + '">' + esc(m.name) + '</a></h3>' +
+        '<' + h + ' class="mt"><a href="' + detailUrl(m) + '">' + esc(m.name) + '</a></' + h + '>' +
+        (m.rounds ? '<p class="rounds"><span class="k">演習</span>' + esc(m.rounds) + '</p>' : '') +
         '<p class="purpose">' + esc(m.purpose) + '</p>' +
         (m.format ? '<p class="fmt">' + esc(m.format) + '</p>' : '') +
+        overlapHtml(m, h === 'h4' ? 'h5' : 'h4') +
       '</div>' +
       '<div class="bottom">' +
         '<div class="price-row">' + priceHtml(m) + statusHtml(m) + '</div>' +
         '<div class="card-actions">' +
           '<a class="btn btn-navy" href="' + detailUrl(m) + '">詳しく見る<span class="sr-only">：' + esc(m.name) + '</span></a>' +
-          sample +
+          second +
         '</div>' +
       '</div>' +
     '</article>';
@@ -140,9 +169,17 @@
       if (q && subjects.indexOf(q) >= 0) current = q;
     } catch (e) {}
 
+    // 教科ごとに見出しと格子を分ける (見出し画像のあるカードと無いカードが同じ行に並んで、空白だらけの行にならないように)
     function render() {
       var shown = ITEMS.filter(function (m) { return current === 'all' || m.subject === current; });
-      root.innerHTML = shown.length ? shown.map(cardHtml).join('') : '<p class="empty">この教科の教材は準備中です。</p>';
+      var groups = (current === 'all' ? subjects : [current]).map(function (s, i) {
+        var items = shown.filter(function (m) { return m.subject === s; });
+        if (!items.length) return '';
+        return '<section class="mgroup" aria-labelledby="mg-' + i + '">' +
+          '<h3 class="mgroup-h" id="mg-' + i + '">' + esc(s) + '<span class="cnt">' + items.length + '点</span></h3>' +
+          '<div class="mgrid">' + items.map(function (m) { return cardHtml(m, 'h4'); }).join('') + '</div></section>';
+      }).join('');
+      root.innerHTML = shown.length ? groups : '<p class="empty">この教科の教材は準備中です。</p>';
       noteEl.textContent = (current === 'all' ? 'すべての教科' : current) + '：' + shown.length + '点';
       [].forEach.call(filtersEl.querySelectorAll('button'), function (b) {
         b.setAttribute('aria-pressed', b.getAttribute('data-subject') === current ? 'true' : 'false');
@@ -193,11 +230,15 @@
         '<div>' +
           '<div class="tags"><span class="tag subj">' + esc(m.subject) + '</span><span class="tag lvl">' + esc(m.level) + '</span></div>' +
           '<h1>' + esc(m.name) + '</h1>' +
+          (imageOk(m) ? '<img class="d-cover" src="' + esc(m.image.src) + '" alt="' + esc(m.image.alt || m.name) + '" width="1280" height="670" decoding="async">' : '') +
           '<p class="lede">' + esc(m.purpose) + '</p>' +
+          (m.disclaimer ? '<p class="disclaimer">' + esc(m.disclaimer) + '</p>' : '') +
           (m.storeTitle ? '<p class="store-title">販売ページでの商品名：' + esc(m.storeTitle) + '</p>' : '') +
         '</div>' +
         '<aside class="buybox" aria-label="価格と購入">' +
           '<div class="row">' + priceHtml(m) + statusHtml(m) + '</div>' +
+          (m.rounds ? '<p class="rounds"><span class="k">演習</span>' + esc(m.rounds) + '</p>' : '') +
+          overlapHtml(m, 'h2') +
           '<div class="acts">' +
             (hasSample ? '<a class="btn btn-ink" ' + sampleAttrs(m, 'detail') + '>' + esc(sampleLabel(m)) + '</a>' : '') +
             buyHtml(m, 'detail') +
@@ -233,6 +274,7 @@
     if (m.learn && m.learn.length) blocks += '<div class="block"><h2>学べること</h2>' + list(m.learn) + '</div>';
     if (m.howto && m.howto.length) blocks += '<div class="block"><h2>使い方</h2><ol>' + m.howto.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol></div>';
     if (m.contents && m.contents.length) blocks += '<div class="block wide"><h2>収録内容</h2>' + list(m.contents) + (m.format ? '<p class="fine"><b>形式</b>：' + esc(m.format) + '</p>' : '') + '</div>';
+    if (m.printing) blocks += '<div class="block wide"><h2>印刷について</h2><p>' + esc(m.printing) + '</p></div>';
     var notes = (m.excludes ? [m.excludes] : []).concat(m.notes || []);
     if (notes.length) blocks += '<div class="block wide"><h2>購入前にご確認ください</h2>' + list(notes) + '</div>';
     html += '<section class="sec alt"><div class="wrap"><div class="blocks">' + blocks + '</div></div></section>';
@@ -241,7 +283,7 @@
     var recv = canBuy(m) ? list(st.receive) : '<p>販売の準備ができしだい、購入先と受け取り方をこのページでご案内します。</p>';
     html += '<section class="sec" id="receive"><div class="wrap"><div class="blocks">' +
       '<div class="block"><h2>購入と受け取りの流れ</h2>' + recv + '</div>' +
-      '<div class="block"><h2>ご利用について</h2>' + list(TERMS) + '</div>' +
+      '<div class="block"><h2>ご利用について</h2>' + list(m.terms && m.terms.length ? m.terms : TERMS) + '</div>' +
       '<div class="block wide"><h2>お問い合わせ</h2><p>教材の内容や、授業・塾での利用についてのご相談は、公式 LINE（<a class="inline-link" href="https://lin.ee/ZHlrRjh" target="_blank" rel="noopener">友だち追加</a>）またはメール（<a class="inline-link" href="mailto:info@trillion-ai-juku.com">info@trillion-ai-juku.com</a>）へどうぞ。' +
         (canBuy(m) && m.store === 'note' ? '決済やダウンロードの不具合は、<a class="inline-link" href="https://www.help-note.com/hc/ja" target="_blank" rel="noopener">noteのヘルプセンター</a>もご確認ください。' : '') + '</p></div>' +
     '</div></div></section>';
@@ -249,7 +291,7 @@
     // 同じ教科のほかの教材
     var rel = ITEMS.filter(function (x) { return x.subject === m.subject && x.id !== m.id; });
     if (rel.length) {
-      html += '<section class="sec alt"><div class="wrap"><div class="sec-head"><h2>' + esc(m.subject) + 'のほかの教材</h2></div><div class="mgrid">' + rel.map(cardHtml).join('') + '</div>' +
+      html += '<section class="sec alt"><div class="wrap"><div class="sec-head"><h2>' + esc(m.subject) + 'のほかの教材</h2></div><div class="mgrid">' + rel.map(function (x) { return cardHtml(x, 'h3'); }).join('') + '</div>' +
         '<p style="margin-top:1.4rem"><a class="inline-link" href="materials.html">すべての教材を見る</a></p></div></section>';
     }
     root.innerHTML = html;
@@ -258,10 +300,21 @@
     var bar = document.getElementById('buybar');
     if (bar) {
       bar.innerHTML = '<span class="bp">' + (Number.isInteger(m.price) ? yen(m.price) + '円<small>税込</small>' : '') + '</span>' +
-        (hasSample ? '<a class="btn btn-ink" ' + sampleAttrs(m, 'bar') + '>' + sampleShort(m) + '</a>' : '') +
+        (hasSample ? '<a class="btn btn-ink" ' + sampleAttrs(m, 'bar') + '>' + esc(sampleShort(m)) + '</a>' : '') +
         buyHtml(m, 'bar');
-      bar.removeAttribute('hidden');
-      document.body.classList.add('has-buybar');
+      var showBar = function () { bar.removeAttribute('hidden'); document.body.classList.add('has-buybar'); };
+      // 重複の注意がある教材は、注意の全文がバーより上に見えてから下部バーを出す (注意より先に購入ボタンを見せない)。
+      // 見張るのは注意の直後のボタン列。下 120px (バーの高さ＋iPhone の下端の余白) を除いた範囲に入ったら、注意は全部バーの上にある。
+      // 開いた時点でもう通り過ぎている (再読み込みでスクロール位置が戻る・#receive へ直接飛ぶ) ときもすぐ出す。
+      var gate = m.overlap && m.overlap.length ? hero.querySelector('.buybox .acts') : null;
+      if (gate && 'IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (es) {
+          if (es.some(function (e) { return e.isIntersecting || e.boundingClientRect.top < 0; })) { showBar(); io.disconnect(); }
+        }, { threshold: 0, rootMargin: '0px 0px -120px 0px' });
+        io.observe(gate);
+      } else {
+        showBar();
+      }
     }
     track('material_detail_view', { id: m.id });
   }
