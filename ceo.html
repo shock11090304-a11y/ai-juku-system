@@ -15590,7 +15590,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         + (reveal ? '<span style="font-size:1.3rem;color:#86efac;font-weight:800;">正解 ' + _cbE(_cbChoiceLabel(_cbN(q.answer))) + '（クラスの正解率 ' + _cbN(q.accuracy_pct) + '%）</span>'
                   : '<button type="button" id="cbShareRevealBtn" onclick="cbShareReveal()" style="' + btn + 'background:rgba(34,197,94,0.22);border-color:#22c55e;">正解を見せる</button>')
         + '<button type="button" id="cbShareNextBtn" onclick="cbShareNav(1)"' + (qi < top.length - 1 ? '' : ' disabled') + ' style="' + btn + '">次 →</button>'
-        + '<span style="margin-left:auto;font-size:0.9rem;color:#64748b;">← → で移動 · Space / Enter で押す · Esc で閉じる</span></div>';
+        + '<span style="margin-left:auto;font-size:0.9rem;color:#64748b;">' + ((reveal && qi >= top.length - 1) ? ('最後の問題です' + (qi > 0 ? ' · ← で戻る' : '') + ' · 閉じるのは Esc か ✕') : '← → で移動 · Space / Enter で押す · Esc で閉じる') + '</span></div>';
       return h + '</div>';
     }
     // 📺 の重ねはダイアログとして動かす (ceo.js の ceoConfirmDialog と同じ型): 開いたらフォーカスを中のボタンへ移し・Tab は中だけを回り・
@@ -15612,10 +15612,13 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       try { el.focus({ preventScroll: true }); } catch (_e) { try { el.focus(); } catch (_e2) { return false; } }
       return true;
     }
-    function _cbShareFocus() {   // まだ隠している正解の「正解を見せる」→ 次 → → ✕ の順 (Space を押していけば 見せる → 次 と進む)
+    function _cbShareFocus() {   // まだ隠している正解の「正解を見せる」→ 次 → の順 (Space を押していけば 見せる → 次 と進む)
+      //   ★最後の問題で正解を見せたら ✕ ではなく重ねそのもの (#cbShare・tabindex=-1) へ置く。✕ に置くと、続けて押した Space / Enter
+      //   (癖・二度押し・Enter の押しっぱなし) で閉じて、下の画面 (未提出の名前・🔑・📭・点) が Zoom に映る。閉じるのは Esc か ✕ を押したときだけ
+      //   (2026-10-18 点検)
       if (!_cbShare) return;
-      var want = !_cbShare.reveal ? 'cbShareRevealBtn' : (_cbShare.qi < _cbShare.cl.top_missed.length - 1 ? 'cbShareNextBtn' : 'cbShareCloseBtn');
-      if (!_cbFocusEl(document.getElementById(want))) _cbFocusEl(document.getElementById('cbShare'));
+      var want = !_cbShare.reveal ? 'cbShareRevealBtn' : (_cbShare.qi < _cbShare.cl.top_missed.length - 1 ? 'cbShareNextBtn' : '');
+      if (!want || !_cbFocusEl(document.getElementById(want))) _cbFocusEl(document.getElementById('cbShare'));
     }
     function _cbInShare(t) {
       var box = document.getElementById('cbShare');
@@ -15687,6 +15690,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       else if ((k === 'Enter' || k === ' ' || k === 'Spacebar') && !_cbInShare(t)) {   // 下に隠れたボタン・リンクを押させない
         prevent();
         _cbShareFocus();
+      }
+      else if ((k === 'Enter' || k === ' ' || k === 'Spacebar') && t === document.getElementById('cbShare')) {   // 重ねそのもの (最後の問題で見せた後) では何もしない
+        prevent();
       }
     }
     function _cbFocusIn(e) {   // マウスなどで重ねの外にフォーカスが移ったら中へ戻す

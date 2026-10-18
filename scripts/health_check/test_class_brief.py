@@ -660,6 +660,13 @@ def check_screens(mon, sat, f):
         "function __key(k, opt) { opt = opt || {}; var ev = { key: k, shiftKey: !!opt.shiftKey, target: opt.target || document.activeElement, prevented: false, stopped: false,",
         "  preventDefault: function () { this.prevented = true; }, stopPropagation: function () { this.stopped = true; }, stopImmediatePropagation: function () { this.stopped = true; } };",
         "  for (var i = 0; i < __keys.length; i++) __keys[i](ev); return ev; }",
+        # 本物のボタンと同じ: 止められなかった Space / Enter はフォーカスのあるボタンを押す (✕ なら閉じる)
+        "function __press(k) { var ev = __key(k); var t = ev.target;",
+        "  if (!ev.prevented && (k === ' ' || k === 'Enter') && t && typeof t.id === 'string' && __el('cbShare').contains(t)) {",
+        "    if (t.id === 'cbShareCloseBtn') window.cbShareClose(); else if (t.id === 'cbShareRevealBtn') window.cbShareReveal();",
+        "    else if (t.id === 'cbShareNextBtn') window.cbShareNav(1); else if (t.id === 'cbSharePrevBtn') window.cbShareNav(-1); }",
+        "  return ev; }",
+        "function __open() { return [__el('cbShare').style.display, !!window._cbTest.state()]; }",
         "var __queue = [];",
         "function __res(status, body) { return { ok: status >= 200 && status < 300, status: status,",
         "  json: function () { return body === undefined ? Promise.reject(new Error('no json')) : Promise.resolve(body); } }; }",
@@ -704,9 +711,24 @@ def check_screens(mon, sat, f):
         "  under.focus(); window._cbTest.focusIn({ target: under }); __o.fFocusIn = document.activeElement.id;",
         "  window.cbShareReveal(); __o.f5 = document.activeElement.id;",
         "  __key('ArrowRight'); __o.f6 = document.activeElement.id;",
-        "  __key('ArrowRight'); window.cbShareReveal(); __o.f7 = document.activeElement.id;",
+        "  __key('ArrowRight'); window.cbShareReveal(); __o.f7 = document.activeElement.id; __o.lastHint = __el('cbShare').innerHTML;",
+        # 最後の問題で見せた後の Space / Enter (癖・二度押し・Enter の押しっぱなし) で閉じない (閉じると下の名前が Zoom に映る)
+        "  ev = __press(' '); __o.lastSp = [ev.prevented].concat(__open(), [document.activeElement.id]);",
+        "  __press('Enter'); __press('Enter'); ev = __press('Enter'); __o.lastEn = [ev.prevented].concat(__open(), [document.activeElement.id]);",
+        "  __o.lastTab = __key('Tab').prevented && document.activeElement.id;",
         "  __key('Escape'); __o.f8 = document.activeElement && document.activeElement.id; __o.ovf2 = document.documentElement.style.overflow;",
         "  ev = __key('r'); __o.rAfter = [ev.prevented, ev.stopped];",
+        # Space だけで最後まで進めても閉じない (3 問: 見せる → 次 → … を 12 回)
+        f"  under.focus(); window.cbShareOpen({c2i}); for (var sp = 0; sp < 12; sp++) __press(' ');",
+        "  __o.spWalk = __open().concat([window._cbTest.state() && window._cbTest.state().qi, window._cbTest.state() && window._cbTest.state().reveal, document.activeElement.id]);",
+        "  __key('Escape'); __o.spWalkEsc = __open();",
+        # 問題が 1 問だけのクラス: 開く → Space (見せる) → Space でも閉じない
+        f"  var M1 = JSON.parse(JSON.stringify(MON)); M1.classes[{c2i}].top_missed = M1.classes[{c2i}].top_missed.slice(0, 1);",
+        "  __queue.push(__res(200, M1)); await cbLoad();",
+        f"  under.focus(); window.cbShareOpen({c2i}); __o.one1 = document.activeElement.id;",
+        "  __press(' '); __o.one2 = __open().concat([document.activeElement.id]); __o.oneHint = __el('cbShare').innerHTML;",
+        "  __press(' '); __press('Enter'); __o.one3 = __open().concat([document.activeElement.id]);",
+        "  __press('Escape'); __o.oneEsc = __open().concat([document.activeElement && document.activeElement.id]);",
         "  var nu = __o.urls.length;",
         f"  __el('cbClass').value = {json.dumps(T2, ensure_ascii=False)}; __queue.push(__res(200, MON)); await cbLoad();",
         "  __o.urlReset = __o.urls[nu]; __o.selAfterReset = __el('cbClass').value;",
@@ -788,8 +810,22 @@ def check_screens(mon, sat, f):
     check("📺: 中のボタンの Enter は止めない (押せる)・どのキーも画面のショートカットへ流さない (R で読み直さない)",
           out.get("enIn") == [False, True] and out.get("rKey") == [False, True], (out.get("enIn"), out.get("rKey")))
     check("📺: 重ねの外へフォーカスが移ったら中へ戻す", out.get("fFocusIn") == "cbShareRevealBtn", out.get("fFocusIn"))
-    check("📺: 正解を見せたら 次 → へ・次の問題では 正解を見せる へ・最後の問題で見せたら ✕ へ",
-          (out.get("f5"), out.get("f6"), out.get("f7")) == ("cbShareNextBtn", "cbShareRevealBtn", "cbShareCloseBtn"), (out.get("f5"), out.get("f6"), out.get("f7")))
+    check("📺: 正解を見せたら 次 → へ・次の問題では 正解を見せる へ・最後の問題で見せたら ✕ ではなく重ねそのもの (#cbShare) へ",
+          (out.get("f5"), out.get("f6"), out.get("f7")) == ("cbShareNextBtn", "cbShareRevealBtn", "cbShare"), (out.get("f5"), out.get("f6"), out.get("f7")))
+    check("📺: 最後の問題で見せた後の Space / Enter (二度押し・押しっぱなし) では閉じない (下の名前を Zoom に出さない)",
+          out.get("lastSp") == [True, "block", True, "cbShare"] and out.get("lastEn") == [True, "block", True, "cbShare"],
+          (out.get("lastSp"), out.get("lastEn")))
+    lh = out.get("lastHint", "")
+    check("📺: 最後の問題で見せた後の案内 = 閉じるのは Esc か ✕ (Space / Enter で押す と書かない)",
+          "最後の問題です · ← で戻る · 閉じるのは Esc か ✕" in lh and "Space / Enter で押す" not in lh, lh[-300:])
+    check("📺: 重ねそのものから Tab を押すと中のボタンへ (✕ は自分で選んだときだけ)", out.get("lastTab") == "cbShareCloseBtn", out.get("lastTab"))
+    check("📺: Space だけで最後の問題まで進めても閉じない (問 3 / 3・正解を見せたまま・フォーカスは重ね)・Esc で閉じる",
+          out.get("spWalk") == ["block", True, 2, True, "cbShare"] and out.get("spWalkEsc") == ["none", False], (out.get("spWalk"), out.get("spWalkEsc")))
+    oh = out.get("oneHint", "")
+    check("📺: 1 問だけのクラス: 開く → Space (見せる) → Space / Enter でも閉じない・← で戻る は出さない・Esc で閉じて 📺 へ戻る",
+          out.get("one1") == "cbShareRevealBtn" and out.get("one2") == ["block", True, "cbShare"] and out.get("one3") == ["block", True, "cbShare"]
+          and "問 1 / 1" in oh and "◯" in oh and "最後の問題です · 閉じるのは Esc か ✕" in oh and "← で戻る" not in oh
+          and out.get("oneEsc") == ["none", False, "cbUnder"], (out.get("one1"), out.get("one2"), out.get("one3"), out.get("oneEsc")))
     check("📺: Esc で閉じたら開く前の場所 (📺) へフォーカスを戻す・スクロールを戻す・閉じた後のキーは止めない",
           out.get("f8") == "cbUnder" and out.get("ovf2") == "" and out.get("rAfter") == [False, False], (out.get("f8"), out.get("ovf2"), out.get("rAfter")))
     check("その日の曜日に無いクラスの絞り込みは「すべて」に戻す", out.get("urlReset") == "/api/admin/class-brief?date=2026-10-19"
