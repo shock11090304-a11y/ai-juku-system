@@ -29,7 +29,8 @@ CEO (ceo.html の CeoHwSheet = 生徒詳細「📚 宿題」と 📤 一括割�
   [4] CEO の CeoHwSheet (ceo.html の inline script を本物のサーバの応答で): 表が無ければ「✍️ 答え方」を出さない・確認表 (問1 ウ …)・
       数が合わない / 確認中は割当を止める・正誤は 2 択に固定・同じプリントの前の正解表を入れる (打った正解は勝手に消さない)・
       プリント / 科目を替えたら前のプリントから自動で入れた正解は消して止める (正解表の無いプリントに前の正解を ✅ のまま付けない)・
-      前のプリントの「入れる」は出さない・📤 一括割当は出したら元に戻して同じプリントの正解表を探し直す・
+      前のプリントの「入れる」は出さない・📤 一括割当 (hwbAssign をそのまま) は出した後も答え方を残す = 同じプリントの次の組にも
+      解答用紙が付く・別のプリントに替えたら消える・全員スキップなら何も変えない・解答用紙なしでプリントに正解表があれば確認に ⚠・
       宿題履歴の 📝 4/5・提出時刻・期限後・📊 問ごとの正解率と選ばれた記号・✏️ 正解を直す (確認 → PUT → 採点し直し)・↩️ やり直し (確認 → POST)・
       実施状況のチップの点数・escape
   [5] サーバに戻して確かめる: CEO が作った answer_sheet で割当 / 一括割当が 200・正解表 → 入力欄の文字 → サーバの読み方で同じ正解
@@ -170,6 +171,25 @@ def build_fixtures():
     rPut = client.put(f"/api/admin/homework/answer-keys/{keyA}", json=put_body, headers=admin)
     check("やり直し (B) → 200・正解の訂正 (同じ正解) → 200・採点し直し 1 人", rReset.status_code == 200 and rPut.status_code == 200
           and rPut.json().get("regraded") == 1, (rReset.text[:160], rPut.text[:160]))
+    # 📤 一括割当の本物の応答 (CEO の hwbAssign に返す)。上の一覧・正解表の一覧を取った後に出す (使った生徒の数などを変えない)
+    bulk_sheet = sheet(5, 4, "katakana", "ウ ア エ イ エ")
+    rBP1 = client.post("/api/admin/homework/assign-bulk", headers=admin,
+                       json={"student_ids": [sid], "title": "関係詞 一括 マーク", "attachment_print_id": p1, "answer_sheet": bulk_sheet})
+    rBSkip = client.post("/api/admin/homework/assign-bulk", headers=admin,
+                         json={"student_ids": [sid + 100000], "title": "関係詞 一括 (全員スキップ)", "attachment_print_id": p1, "answer_sheet": bulk_sheet})
+    rBNoPrint = client.post("/api/admin/homework/assign-bulk", headers=admin,
+                            json={"student_ids": [sid], "title": "プリントなし 一括 マーク", "answer_sheet": sheet(5, 4, "katakana", "ウアエイエ")})
+    rBPlain = client.post("/api/admin/homework/assign-bulk", headers=admin,
+                          json={"student_ids": [sid], "title": "関係詞 一括 (完了ボタンだけ)", "attachment_print_id": p1})
+    aBP1 = (rBP1.json() or {}).get("answer_sheet") or {}
+    aBNo = (rBNoPrint.json() or {}).get("answer_sheet") or {}
+    check("📤 一括 (P1・前と同じ正解) → 200・1 名・正解表 A を使い回す・print_id = P1", rBP1.status_code == 200 and rBP1.json().get("assigned_count") == 1
+          and aBP1.get("key_id") == keyA and aBP1.get("reused_key") is True and aBP1.get("print_id") == p1, rBP1.text[:300])
+    check("📤 一括 (全員スキップ) → 200・0 名・answer_sheet なし (正解表は保存しない)", rBSkip.status_code == 200 and rBSkip.json().get("assigned_count") == 0
+          and rBSkip.json().get("skipped_count") == 1 and "answer_sheet" not in rBSkip.json(), rBSkip.text[:300])
+    check("📤 一括 (プリントなし) → 200・新しい正解表・print_id なし", rBNoPrint.status_code == 200 and aBNo.get("key_id") not in (None, keyA)
+          and aBNo.get("reused_key") is False and aBNo.get("print_id") is None, rBNoPrint.text[:300])
+    check("📤 一括 (完了ボタンだけ) → 200・answer_sheet なし", rBPlain.status_code == 200 and "answer_sheet" not in rBPlain.json(), rBPlain.text[:300])
 
     fx = {
         "SID": sid, "NAME": fake_name, "A": A, "B": B, "C": C, "D": D, "E": E, "KEY_A": keyA, "P1": p1, "P2": p2,
@@ -181,6 +201,10 @@ def build_fixtures():
         "ADMIN_LIST": admin_list, "KEYRES_A": key_res_a, "KEYS_P1": keys_p1,
         "RESET_B": {"status": rReset.status_code, "body": rReset.json()},
         "PUT_A": {"status": rPut.status_code, "body": rPut.json()}, "PUT_BODY": put_body,
+        "BULK_P1": {"status": rBP1.status_code, "body": rBP1.json()},
+        "BULK_SKIP": {"status": rBSkip.status_code, "body": rBSkip.json()},
+        "BULK_NOPRINT": {"status": rBNoPrint.status_code, "body": rBNoPrint.json()},
+        "BULK_PLAIN": {"status": rBPlain.status_code, "body": rBPlain.json()},
         "ANS_A": ANS_A,
         "EXP": {
             "submitted_jst_A": jst_min(vA.get("submitted_at")),
@@ -651,7 +675,7 @@ var CONFIRMS = [], CONFIRM_OK = true, ALERTS = [];
 window.confirm = function (m) { CONFIRMS.push(String(m)); return CONFIRM_OK; };
 window.alert = function (m) { ALERTS.push(String(m)); };
 function alert(m) { ALERTS.push(String(m)); }
-var REQS = [], PROBE_STATUS = 200, UNEXPECTED = [], DEFER = null;
+var REQS = [], PROBE_STATUS = 200, UNEXPECTED = [], DEFER = null, BULK_NEXT = [];
 var AdminAuth = {
   getToken: function () { return 't'; },
   fetch: function (url, opts) {
@@ -665,6 +689,7 @@ var AdminAuth = {
     else if (url === '/api/admin/homework/answer-keys/' + FX.KEY_A && method === 'GET') r = { status: 200, body: FX.KEYRES_A };
     else if (url === '/api/admin/homework/answer-keys/' + FX.KEY_A && method === 'PUT') r = FX.PUT_A;
     else if (url === '/api/admin/homework/' + FX.B + '/sheet/reset' && method === 'POST') r = FX.RESET_B;
+    else if (url === '/api/admin/homework/assign-bulk' && method === 'POST') r = BULK_NEXT.shift() || null;   // 本物のサーバの応答を順に返す
     if (!r) { UNEXPECTED.push(method + ' ' + url + ' ' + body); r = { status: 599, body: { detail: 'テストに無い呼び出し' } }; }
     var resp = { ok: r.status >= 200 && r.status < 300, status: r.status, json: function () { return Promise.resolve(JSON.parse(JSON.stringify(r.body))); } };
     if (DEFER && url === '/api/admin/homework/answer-keys/check') return new Promise(function (res) { DEFER.push(function () { res(resp); }); });
@@ -686,6 +711,22 @@ function formRoot() {
 function el(R, c) { return R.querySelector(c); }
 function setVal(R, c, v, ev) { var e = el(R, c); e.value = v; e.dispatch(ev || 'input'); }
 function emit(tag, v) { __out.push('OUT ' + tag + ' ' + JSON.stringify(v)); }
+// 📤 一括割当: ceo.html の hwbAssign をそのまま __makeBulk に入れて動かす (画面の要素は偽物・生徒は架空の 1 人・応答は本物のサーバ)
+function bulkEnv(ctl, printId) {
+  var els = {};
+  ['hwbMsg', 'hwbTitle', 'hwbDesc', 'hwbSubject', 'hwbDue', 'hwbPrint'].forEach(function (id) { els[id] = new FakeEl(id); });
+  els.hwbPrint.value = printId == null ? '' : String(printId);
+  var env = { sheet: ctl, esc: window.CeoHwSheet._h, selected: [], checked: [], els: els };
+  env.document = {
+    getElementById: function (id) { return els[id] || null; },
+    querySelectorAll: function (sel) { return sel === '.hwb-st:checked' ? env.checked : []; }
+  };
+  env.run = __makeBulk(env);
+  env.pick = function () { env.checked = [{ value: String(FX.SID) }]; };   // 配信グループのチップで組を選んだのと同じ
+  return env;
+}
+function bulkBodies() { return REQS.filter(function (r) { return r.url === '/api/admin/homework/assign-bulk'; }).map(function (r) { return JSON.parse(r.body); }); }
+function lastBulk() { var b = bulkBodies(); return b[b.length - 1]; }
 """
 
 JS_CEO_CASES = r"""
@@ -824,15 +865,125 @@ JS_CEO_CASES = r"""
     await ctl5.setPrint(FX.P2); await flush();
     ok('P2 に替えたら P1 の「入れる」を消す (打った正解はそのまま・プリントを選ぶ前に打った正解なので案内も出さない)',
        el(R5, '.hws-reuse').innerHTML === '' && el(R5, '.hws-key').value === 'ウアエイエ', el(R5, '.hws-reuse').innerHTML);
-    // 📤 一括割当は出した後 reset() → 選んだままのプリントの正解表を探し直す (hwbAssign と同じ順)
+    // reset() (個別で出した後) の後にプリントを選ぶと、正解表は案内だけ
     ctl4.reset(); await ctl4.setPrint(FX.P1); await flush();
-    ok('出した後: 答え方は元に戻し、同じプリントの前の正解表は案内だけ', el(R4, '.hws-mode').value === 'none' && el(R4, '.hws-key').value === ''
+    ok('reset() の後: 答え方は元に戻し、プリントの前の正解表は案内だけ', el(R4, '.hws-mode').value === 'none' && el(R4, '.hws-key').value === ''
        && el(R4, '.hws-reuse').innerHTML === '' && el(R4, '.hws-hint').textContent.indexOf('このプリントには前に使った正解表があります') >= 0
        && ctl4.getAnswerSheet().value === null, [el(R4, '.hws-mode').value, el(R4, '.hws-key').value, el(R4, '.hws-hint').textContent]);
     setVal(R4, '.hws-mode', 'choice', 'change');
     eq('… 記号にするとそのプリントの正解表が入る', el(R4, '.hws-key').value, 'ウ ア エ イ エ');
     await ctl4.setPrint(FX.P2); await flush(); await runTimers();
     eq('… 続けて正解表の無いプリントに替えると空で止める', [el(R4, '.hws-key').value, ctl4.getAnswerSheet().ok], ['', false]);
+    TIMERS = [];
+
+    // (E4c) 📤 一括割当 (ceo.html の hwbAssign をそのまま・応答は本物のサーバ): 出した後も「✍️ 答え方」を残す (2026-10-18 点検:
+    //   reset() で「完了ボタンだけ」に戻すと、題名・プリント・期限は残ったまま、次の組は黙って ✓完了 の宿題になった)
+    CONFIRM_OK = true;
+    var RB = formRoot(); var cb = W.wire(RB); await flush();
+    var BK = bulkEnv(cb, FX.P1);
+    BK.els.hwbTitle.value = '関係詞 一括';
+    setVal(RB, '.hws-mode', 'choice', 'change'); TIMERS = [];
+    await cb.setPrint(String(FX.P1)); await flush(); await runTimers();
+    eq('一括: P1 を選ぶと前の正解表が入って通る', [el(RB, '.hws-key').value, cb.getAnswerSheet().ok], ['ウ ア エ イ エ', true]);
+    var nB = bulkBodies().length;
+    CONFIRMS = []; BK.pick(); BULK_NEXT = [FX.BULK_P1];
+    await BK.run(); await flush();
+    var b1 = lastBulk();
+    eq('組 A: 1 回送る・answer_sheet つき', [bulkBodies().length - nB, !!(b1 && b1.answer_sheet)], [1, true]);
+    ok('組 A: 確認に 📝 の 1 行', CONFIRMS.length === 1 && CONFIRMS[0].indexOf('📝 記号の解答用紙つき（5 問・4 択・ア イ ウ…）') >= 0, CONFIRMS);
+    ok('組 A: 出せた (✅ 1名・正解表 #A・前の正解表を使い回し)', BK.els.hwbMsg.innerHTML.indexOf('✅ 1名に宿題') >= 0
+       && BK.els.hwbMsg.innerHTML.indexOf('正解表 #' + FX.KEY_A + '・前の正解表を使い回し') >= 0, BK.els.hwbMsg.innerHTML);
+    eq('組 A の後: 生徒の選択は外す・答え方は記号のまま・正解も確認表も残る',
+       [BK.selected, el(RB, '.hws-mode').value, el(RB, '.hws-key').value, cb.getAnswerSheet().ok, cb.getAnswerSheet().value],
+       [[false], 'choice', 'ウ ア エ イ エ', true, b1 && b1.answer_sheet]);
+    ok('… 「💾 正解表 #A として保存しました」と知らせる', el(RB, '.hws-reuse').innerHTML.indexOf('💾 この正解を正解表 #' + FX.KEY_A + ' として保存しました') >= 0,
+       el(RB, '.hws-reuse').innerHTML);
+    emit('BULK', b1);
+    // 組 B (同じ題名・プリント・期限): そのまま 📤 → 記号の解答用紙が付く
+    CONFIRMS = []; BK.pick(); BULK_NEXT = [FX.BULK_P1];
+    await BK.run(); await flush();
+    var b2 = lastBulk();
+    eq('組 B: 同じプリントを続けて出すと、同じ answer_sheet が付く', [bulkBodies().length - nB, b2.answer_sheet, b2.attachment_print_id], [2, b1.answer_sheet, FX.P1]);
+    ok('組 B: 確認にも 📝 の 1 行', CONFIRMS.length === 1 && CONFIRMS[0].indexOf('📝 記号の解答用紙つき') >= 0, CONFIRMS);
+    emit('BULK', b2);
+    // 「完了ボタンだけ」で出すのに、このプリントに正解表がある → 確認に ⚠ の 1 行
+    setVal(RB, '.hws-mode', 'none', 'change');
+    var gn = cb.getAnswerSheet();
+    ok('完了ボタンだけ + 正解表のあるプリント: answer_sheet なし・warn つき', gn.ok === true && gn.value === null && String(gn.warn).indexOf('⚠ 記号の解答用紙なし') === 0, gn);
+    ok('… 案内の行も出す', el(RB, '.hws-hint').textContent.indexOf('このプリントには前に使った正解表があります') >= 0, el(RB, '.hws-hint').textContent);
+    CONFIRMS = []; BK.pick(); BULK_NEXT = [FX.BULK_PLAIN];
+    await BK.run(); await flush();
+    var b3 = lastBulk();
+    ok('… 確認に ⚠「記号の解答用紙なし（このプリントには正解表があります…）」・📝 は出さない', CONFIRMS.length === 1
+       && CONFIRMS[0].indexOf('\n⚠ 記号の解答用紙なし（このプリントには正解表があります') >= 0 && CONFIRMS[0].indexOf('📝') < 0, CONFIRMS);
+    eq('… payload は今までと同じ (answer_sheet なし)', Object.keys(b3).sort(), ['attachment_print_id', 'description', 'due_date', 'student_ids', 'subject', 'title']);
+    emit('BULK', b3);
+    setVal(RB, '.hws-mode', 'choice', 'change');
+    eq('記号に戻すと、いま保存した正解表 (A) が入る', el(RB, '.hws-key').value, 'ウ ア エ イ エ');
+    ok('… 使った生徒の数は出さない (この画面では分からない)', el(RB, '.hws-reuse').innerHTML.indexOf('♻️ このプリントの前の正解表（5 問・4 択・ア イ ウ…）を入れました') >= 0,
+       el(RB, '.hws-reuse').innerHTML);
+    await runTimers();
+    eq('… そのまま出せる', cb.getAnswerSheet().ok, true);
+    // 別のプリント (正解表なし) に替えたら、保存した正解は消える (前のプリントの正解を付けない)
+    BK.els.hwbPrint.value = String(FX.P2);
+    await cb.setPrint(String(FX.P2)); await flush();
+    eq('出した後に P2 へ替えると P1 の正解を消して止める', [el(RB, '.hws-key').value, el(RB, '.hws-nq').value, el(RB, '.hws-reuse').innerHTML, cb.getAnswerSheet().ok],
+       ['', '', '', false]);
+    TIMERS = [];
+    // 打ち直した正解で出した → P1 の正解表になったので、P2 に替えたら消える (⚠ で残さない)
+    BK.els.hwbPrint.value = String(FX.P1);
+    await cb.setPrint(String(FX.P1)); await flush(); await runTimers();
+    setVal(RB, '.hws-key', 'ウアエイエ'); await runTimers();
+    CONFIRMS = []; BK.pick(); BULK_NEXT = [FX.BULK_P1];
+    await BK.run(); await flush();
+    var b4 = lastBulk();
+    eq('打ち直した正解で出す → 打った文字のまま送る', b4.answer_sheet && b4.answer_sheet.key.key, 'ウアエイエ');
+    emit('BULK', b4);
+    eq('… 出した後も残る', [el(RB, '.hws-key').value, cb.getAnswerSheet().ok], ['ウアエイエ', true]);
+    BK.els.hwbPrint.value = String(FX.P2);
+    await cb.setPrint(String(FX.P2)); await flush();
+    eq('… P2 に替えると消える (P1 に保存した正解表なので ⚠ で残さない)', [el(RB, '.hws-key').value, el(RB, '.hws-reuse').innerHTML], ['', '']);
+    TIMERS = [];
+    // 全員スキップ (保存されない) → 何も変えない = 打った正解でそのまま出し直せる
+    BK.els.hwbPrint.value = String(FX.P1);
+    await cb.setPrint(String(FX.P1)); await flush(); await runTimers();
+    setVal(RB, '.hws-key', 'ウアエイエ'); await runTimers();
+    var keyPrintBefore = cb._state.keyPrint;
+    CONFIRMS = []; BK.pick(); BULK_NEXT = [FX.BULK_SKIP];
+    await BK.run(); await flush();
+    ok('全員スキップ: 0 名・⚠ スキップの知らせ', BK.els.hwbMsg.innerHTML.indexOf('✅ 0名に宿題') >= 0 && BK.els.hwbMsg.innerHTML.indexOf('1名スキップ') >= 0, BK.els.hwbMsg.innerHTML);
+    eq('… 答え方・打った正解・確認表はそのまま (💾 にしない)',
+       [el(RB, '.hws-mode').value, el(RB, '.hws-key').value, cb.getAnswerSheet().ok, el(RB, '.hws-reuse').innerHTML.indexOf('💾') < 0, cb._state.keyPrint === keyPrintBefore && keyPrintBefore != null],
+       ['choice', 'ウアエイエ', true, true, true]);
+    CONFIRMS = []; BK.pick(); BULK_NEXT = [FX.BULK_P1];
+    await BK.run(); await flush();
+    eq('… 選び直して出し直すと answer_sheet が付く', lastBulk().answer_sheet && lastBulk().answer_sheet.key.key, 'ウアエイエ');
+    // 送った後に打ち直した / プリントが違う → 保存した表として扱わない (いま入っているのは保存したものではない)
+    var sentNow = cb.getAnswerSheet().value;
+    eq('markSaved: 送った正解と違えば何もしない', cb.markSaved(FX.BULK_P1.body.answer_sheet,
+       { mode: 'choice', key: { num_questions: 5, num_choices: 4, label_style: 'katakana', key: 'アアアアア' } }), false);
+    eq('markSaved: 保存したプリントが違えば何もしない', cb.markSaved({ key_id: FX.KEY_A, print_id: FX.P2 }, sentNow), false);
+    eq('markSaved: 同じなら保存した表にする', cb.markSaved(FX.BULK_P1.body.answer_sheet, sentNow), true);
+    TIMERS = [];
+    // プリントなしで出す → 次の組にも付く・プリントを選んだら消える
+    var RN = formRoot(); var cn = W.wire(RN); await flush();
+    var BN = bulkEnv(cn, null);
+    BN.els.hwbTitle.value = 'プリントなし 一括';
+    setVal(RN, '.hws-mode', 'choice', 'change');
+    setVal(RN, '.hws-nq', '5'); setVal(RN, '.hws-style', 'katakana', 'change'); setVal(RN, '.hws-key', 'ウアエイエ'); await runTimers();
+    CONFIRMS = []; BN.pick(); BULK_NEXT = [FX.BULK_NOPRINT];
+    await BN.run(); await flush();
+    var bn1 = lastBulk();
+    ok('プリントなし: 「💾 … 次の組にも同じ宿題を出すなら」', el(RN, '.hws-reuse').innerHTML.indexOf('💾 この正解を正解表 #' + FX.BULK_NOPRINT.body.answer_sheet.key_id
+       + ' として保存しました。次の組にも同じ宿題を') >= 0, el(RN, '.hws-reuse').innerHTML);
+    emit('BULK', bn1);
+    CONFIRMS = []; BN.pick(); BULK_NEXT = [FX.BULK_NOPRINT];
+    await BN.run(); await flush();
+    eq('… 続けて出しても answer_sheet が付く', [lastBulk().answer_sheet, lastBulk().attachment_print_id], [bn1.answer_sheet, null]);
+    BN.els.hwbPrint.value = String(FX.P2);
+    await cn.setPrint(String(FX.P2)); await flush();
+    eq('… プリント (正解表なし) を選んだら消して止める', [el(RN, '.hws-key').value, cn.getAnswerSheet().ok], ['', false]);
+    eq('📤 一括: 応答は全部使った', BULK_NEXT.length, 0);
     TIMERS = [];
 
     // (E5) 正解表 → 入力欄の文字 (サーバで読み戻す)
@@ -958,17 +1109,35 @@ def ceo_block(ceo_html):
     return blocks[0] if len(blocks) == 1 else None
 
 
+def bulk_assign_src(ceo_html):
+    """ceo.html の 📤 一括割当 hwbAssign() の本文 (そのまま JS のテストで動かす)。見つからなければ None。"""
+    i = ceo_html.find("    async function hwbAssign() {")
+    if i < 0:
+        return None
+    j = ceo_html.find("\n    }\n", i)
+    return ceo_html[i:j + len("\n    }\n")] if j > i else None
+
+
+def bulk_maker(src):
+    # hwbAssign が使う document / _hwbSheet / escapeHtml / hwbSelectAll は、このテストの偽物に差し替える (閉包で見える名前)
+    body = src or "async function hwbAssign() { throw new Error('ceo.html に hwbAssign が無い'); }"
+    return ("function __makeBulk(env) {\n  var document = env.document, _hwbSheet = env.sheet, escapeHtml = env.esc;\n"
+            "  function hwbSelectAll(v) { env.selected.push(v); env.checked = []; }\n" + body + "\n  return hwbAssign;\n}\n")
+
+
 def main():
     mod, client, admin, fx = build_fixtures()
     class_html, mypage_html, mypage_js, ceo_html = read(CLASS_HTML), read(MYPAGE_HTML), read(MYPAGE_JS), read(CEO_HTML)
     sheet_src, notice_src = read(HW_SHEET_JS), read(HW_NOTICE_JS)
     class_inline = H.inline_scripts(class_html)
     blk = ceo_block(ceo_html)
+    bulk = bulk_assign_src(ceo_html)
     eng = H.js_engine()
     print(f"\nJS エンジン: {eng[0] if eng else 'なし'}")
     check("JS の実行環境がある (node / osascript / jsc。無ければ FAIL)", bool(eng), "node も osascript も jsc も見つからない (AJ_JS_ENGINE の指定も確認)")
     check("class.html の inline script は 1 つ", len(class_inline) == 1, len(class_inline))
     check("ceo.html に CeoHwSheet の inline script がちょうど 1 つ", blk is not None)
+    check("ceo.html に 📤 一括割当の hwbAssign() がある (JS のテストでそのまま動かす)", bulk is not None)
     loaders = ("function __loadHwSheet() {\n" + sheet_src + "\n}\n" + "function __loadHwNotice() {\n" + notice_src + "\n}\n"
                + "var FX = " + json.dumps(fx, ensure_ascii=True) + ";\n")
     tz = {"TZ": "America/Los_Angeles"}   # 端末のタイムゾーンが JST でなくても JST で出す
@@ -990,7 +1159,8 @@ def main():
             run_js(eng, H.PRELUDE + H.POLYFILL + H.FAKE_DOM + loaders + JS_MYPAGE_SHEET_SETUP + sl + "\n" + JS_MYPAGE_SHEET_CASES, "[3]", tz)
         if blk:
             print("\n[4] CEO の CeoHwSheet (本物のサーバの応答)")
-            prog = H.PRELUDE + H.POLYFILL + H.FAKE_DOM + loaders + JS_CEO_SETUP + "function __loadCeo() {\n" + blk + "\n}\n" + JS_CEO_CASES
+            prog = (H.PRELUDE + H.POLYFILL + H.FAKE_DOM + loaders + JS_CEO_SETUP + bulk_maker(bulk)
+                    + "function __loadCeo() {\n" + blk + "\n}\n" + JS_CEO_CASES)
             outs = run_js(eng, prog, "[4]", tz)
 
     print("\n[5] 画面が作った値をサーバに戻して確かめる")
@@ -1004,6 +1174,20 @@ def main():
               and a.get("label_style") == "katakana", r.text[:300])
         r = client.post("/api/admin/homework/assign-bulk", headers=admin, json={"student_ids": [fx["SID"]], "title": "CEO の答え方から (一括)", "answer_sheet": sheets[0]})
         check("その answer_sheet で 📤 一括割当 → 200・1 名", r.status_code == 200 and r.json().get("assigned_count") == 1 and r.json().get("answer_sheet"), r.text[:300])
+    # 📤 一括割当 (hwbAssign) が送った本文を本物のサーバに送り直す: 解答用紙つきは 200・P1 なら正解表 A の使い回し・なしは今までどおり
+    bulks = [v for t, v in outs if t == "BULK"]
+    check("📤 一括割当 (hwbAssign) が送った本文を 5 つ受け取った (組 A・組 B・完了ボタンだけ・打ち直し・プリントなし)", len(bulks) == 5, len(bulks))
+    for i, b in enumerate(bulks):
+        r = client.post("/api/admin/homework/assign-bulk", headers=admin, json=b)
+        d = r.json() if r.status_code == 200 else {}
+        a = d.get("answer_sheet") or {}
+        if "answer_sheet" not in b:
+            ok_b = r.status_code == 200 and d.get("assigned_count") == 1 and "answer_sheet" not in d
+        elif b.get("attachment_print_id") == fx["P1"]:
+            ok_b = r.status_code == 200 and d.get("assigned_count") == 1 and a.get("key_id") == fx["KEY_A"] and a.get("reused_key") is True
+        else:
+            ok_b = r.status_code == 200 and d.get("assigned_count") == 1 and a.get("key_id") and a.get("print_id") is None
+        check(f"📤 一括の本文 {i + 1} (answer_sheet {'あり' if 'answer_sheet' in b else 'なし'}) をサーバに送り直す → 200", ok_b, r.text[:300])
     check("正解表 → 入力欄の文字を 6 つ以上受け取った", len(k2t) >= 6, len(k2t))
     for x in k2t:
         try:
@@ -1043,10 +1227,13 @@ def main():
     check("CEO: プリントを選んだら前の正解表を探す (個別・一括)", "sheetCtl.setPrint(printSel.value || null)" in ceo_html and "_hwbSheet.setPrint(pp.value || null)" in ceo_html)
     i_bulk = ceo_html.find("async function hwbAssign() {")
     bulk_src = ceo_html[i_bulk:ceo_html.find("\n    }\n", i_bulk)] if i_bulk >= 0 else ""
-    bulk_reset = "if (_hwbSheet) { _hwbSheet.reset(); _hwbSheet.setPrint((document.getElementById('hwbPrint') || {}).value || null); }"
-    check("CEO: 📤 一括割当は出せたら「✍️ 答え方」を元に戻す (次のプリントに前の正解を残さない)・選んだままのプリントの正解表を探し直す",
-          bulk_reset in bulk_src and bulk_src.find("hwbSelectAll(false);") < bulk_src.find(bulk_reset)
-          and bulk_src.find("if (!res.ok) {") < bulk_src.find(bulk_reset), len(bulk_src))
+    bulk_saved = "if (_hwbSheet && sheet.value && data.answer_sheet) _hwbSheet.markSaved(data.answer_sheet, sheet.value);"
+    check("CEO: 📤 一括割当は出せたら「✍️ 答え方」を戻さず markSaved (同じプリントの次の組にも付く・別のプリントに替えたら消える)・reset() は呼ばない",
+          bulk_saved in bulk_src and bulk_src.find("hwbSelectAll(false);") < bulk_src.find(bulk_saved)
+          and bulk_src.find("if (!res.ok) {") < bulk_src.find(bulk_saved) and "_hwbSheet.reset()" not in bulk_src, len(bulk_src))
+    check("CEO: 📤 一括の確認は 📝 の 1 行 / 解答用紙なしでプリントに正解表があれば ⚠ の 1 行 (sheet.warn)",
+          "const sheetLine = sheet.value ? '\\n' + sheet.label : (sheet.warn ? '\\n' + sheet.warn : '');" in bulk_src
+          and "${sheetLine}\\nよろしいですか？" in bulk_src)
     check("CEO: 個別は出せたら sheetCtl.reset() (前の正解を残さない)", "if (sheetCtl) sheetCtl.reset();" in ceo_html)
     check("CEO: 宿題履歴に結果・📊・✏️・↩️ (CeoHwSheet.historyHtml / wireHistory)", "CeoHwSheet.historyHtml(it, fmtDate)" in ceo_html
           and "CeoHwSheet.wireHistory(histBox, items, { studentName, onChanged: refreshList });" in ceo_html)

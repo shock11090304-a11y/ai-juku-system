@@ -3501,7 +3501,7 @@
       const chips = disp.map(x => `<span style="display:inline-block;padding:2px 7px;margin:2px;border-radius:6px;background:rgba(99,102,241,0.18);color:#e0e7ff;font-size:0.78rem;">問${h(x.no)} <b>${h(x.label)}</b></span>`).join('');
       return `<div style="color:#86efac;font-weight:700;margin-bottom:3px;">✅ ${h(d.num_questions)} 問ぶん読めました（${h(d.num_choices)} 択・${h(styleName(d.label_style))}）。生徒に見せる前に、プリントの正解と見比べてください</div><div style="line-height:1.9;">${chips}</div>`;
     }
-    // root の中の .hws-box を動かす。返す ctl: getAnswerSheet() / setPrint(id) / reset() / isChoice()
+    // root の中の .hws-box を動かす。返す ctl: getAnswerSheet() / setPrint(id) / reset() / markSaved(saved, sent) / isChoice()
     function wire(root) {
       const $ = c => root.querySelector(c);
       const box = $('.hws-box'), mode = $('.hws-mode'), detail = $('.hws-detail'), nq = $('.hws-nq'), nc = $('.hws-nc'),
@@ -3558,7 +3558,9 @@
         syncStyle();
         key.value = keyToText(k.key, k.label_style);
         st.autofilled = key.value;
-        reuse.innerHTML = `♻️ このプリントの前の正解表（${h(k.num_questions)} 問・${h(k.num_choices)} 択・${h(styleName(k.label_style))}・使った生徒 ${h(k.used || 0)} 人）を入れました。直して出すと新しい正解表になります（前に出した生徒の採点は変わりません）`;
+        // used = その表を使う解答用紙の数 (サーバの一覧から)。📤 一括で出した直後の表 (markSaved) は数を持たないので出さない
+        const used = (k.used == null) ? '' : `・使った生徒 ${h(k.used)} 人`;
+        reuse.innerHTML = `♻️ このプリントの前の正解表（${h(k.num_questions)} 問・${h(k.num_choices)} 択・${h(styleName(k.label_style))}${used}）を入れました。直して出すと新しい正解表になります（前に出した生徒の採点は変わりません）`;
         schedule();
       }
       function maybeAutofill() {
@@ -3612,8 +3614,13 @@
         isChoice,
         setPrint,
         // 割当の payload に入れる answer_sheet (null = 解答用紙なし = 今までと同じ payload)。確認が済んでいなければ ok:false
+        //   warn = 解答用紙なしで出すのに、選んだプリントには正解表がある (📤 一括の確認に 1 行足す。付け忘れに気づけるように)
         getAnswerSheet() {
-          if (!isChoice()) return { ok: true, value: null };
+          if (!isChoice()) {
+            const r = { ok: true, value: null };
+            if (st.ready && st.reuseKey) r.warn = '⚠ 記号の解答用紙なし（このプリントには正解表があります。付けるなら「✍️ 答え方」で「記号の解答用紙」を選んでください）';
+            return r;
+          }
           if (st.pending) return { ok: false, error: '正解を確認中です。少し待ってからもう一度押してください' };
           if (!st.valid || !st.result || !st.checked) return { ok: false, error: '解答用紙の正解: ' + (st.error || '確認が済んでいません') };
           const c = st.checked;
@@ -3625,6 +3632,27 @@
           mode.value = 'none'; detail.hidden = true; nq.value = ''; nc.value = '4'; style.value = 'circled'; nc.disabled = false; key.value = '';
           Object.assign(st, { pending: false, valid: false, error: '', result: null, checked: null, reuseKey: null, autofilled: null, printId: null, keyPrint: null });
           reuse.innerHTML = ''; check.innerHTML = ''; hint.textContent = '';
+        },
+        // 📤 一括割当で出せた後 (2026-10-18 点検): 解答用紙は戻さずに残す。題名・プリント・期限は残るので、同じプリントを次の組に
+        //   出すときにそのまま記号の解答用紙が付くように (reset() で「完了ボタンだけ」に戻すと、次の組は黙って ✓完了 の宿題になる)。
+        //   いまの正解は「このプリントに保存した正解表」になる = 打ち直していない正解 (st.autofilled) と同じ扱い → 別のプリント / 科目に
+        //   替えたら setPrint() → clearAutofilled() で消える (前のプリントの正解を別のプリントに付けない)。
+        //   saved = サーバの answer_sheet (key_id・print_id)・sent = 送った answer_sheet。送った後に打ち直した / プリントを替えたなら
+        //   何もしない (いま入っているのは保存したものではない)。返り値 = 保存した表として扱ったか
+        markSaved(saved, sent) {
+          if (!saved || saved.key_id == null || !sent || !sent.key || !isChoice() || st.pending || !st.valid || !st.result || !st.checked) return false;
+          const c = st.checked, k = sent.key;
+          if (c.key !== k.key || c.num_questions !== k.num_questions || c.num_choices !== k.num_choices || c.label_style !== k.label_style
+              || key.value !== c.key) return false;
+          const savedPrint = saved.print_id == null ? '' : String(saved.print_id);
+          if (savedPrint !== (st.printId == null ? '' : String(st.printId))) return false;
+          st.autofilled = key.value; st.keyPrint = null;
+          // このプリントの「前の正解表」はいま保存した表 (古い表のままだと、答え方を切り替えたときに古い正解で置き換わる)
+          st.reuseKey = savedPrint ? { id: saved.key_id, print_id: saved.print_id, num_questions: st.result.num_questions, num_choices: st.result.num_choices,
+                                       label_style: st.result.label_style, key: st.result.key, used: null } : null;
+          reuse.innerHTML = `💾 この正解を正解表 #${h(saved.key_id)} として保存しました。次の組にも同じ${savedPrint ? 'プリント' : '宿題'}を出すなら、このまま 📤 を押せば記号の解答用紙が付きます（プリントや科目を替えると消えます）`;
+          updateHint();
+          return true;
         },
         _state: st,
       };
@@ -7041,7 +7069,9 @@
       // 📝 記号の解答用紙 (2026-10-18): 確認表が通っていなければ止める (数が合わない・読めない記号)。なし = 今までと同じ payload
       const sheet = _hwbSheet ? _hwbSheet.getAnswerSheet() : { ok: true, value: null };
       if (!sheet.ok) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(sheet.error)}</span>`; return; }
-      if (!window.confirm(`${ids.length}名に宿題「${title}」を一括割当します。${sheet.value ? '\n' + sheet.label : ''}\nよろしいですか？`)) return;
+      // 解答用紙つきなら 📝 の 1 行・解答用紙なしなのにプリントに正解表があれば ⚠ の 1 行 (付け忘れに気づけるように)
+      const sheetLine = sheet.value ? '\n' + sheet.label : (sheet.warn ? '\n' + sheet.warn : '');
+      if (!window.confirm(`${ids.length}名に宿題「${title}」を一括割当します。${sheetLine}\nよろしいですか？`)) return;
       if (msg) msg.innerHTML = '⏳ 一括割当中...';
       try {
         const body = {
@@ -7071,9 +7101,10 @@
         }
         if (msg) msg.innerHTML = html;
         hwbSelectAll(false);
-        // 📝 出したら「✍️ 答え方」を元に戻す (個別の sheetCtl.reset() と同じ)。戻さないと、次に選んだ正解表の無いプリントにも
-        //   この正解が ✅ のまま付いてしまう。プリントの選択は残るので、そのプリントの正解表 (いま保存したもの) を探し直す
-        if (_hwbSheet) { _hwbSheet.reset(); _hwbSheet.setPrint((document.getElementById('hwbPrint') || {}).value || null); }
+        // 📝 「✍️ 答え方」は戻さない (2026-10-18 点検)。題名・プリント・期限は残るので、同じプリントを次の組に出すときも記号の解答用紙が
+        //   付くように、いまの正解を「このプリントに保存した正解表」にする (別のプリント / 科目に替えたら setPrint で消える)。
+        //   保存されなかった (全員スキップ = answer_sheet が返らない) ときは何もしない = 打った正解をそのまま出し直せる
+        if (_hwbSheet && sheet.value && data.answer_sheet) _hwbSheet.markSaved(data.answer_sheet, sheet.value);
         // 「📚 宿題 実施状況」パネルがあれば即更新 (scope非依存にボタンclickで)
         const rb = document.getElementById('refreshHomeworkStatusBtn'); if (rb) rb.click();
       } catch (e) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(String(e))}</span>`; }
