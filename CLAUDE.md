@@ -673,6 +673,19 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   引き継ぎ通知 (`renderInheritNoticeBanner`) は**実際に画面に入った回数** (`aj_inherit_notice_seen:<id>`) を数え、2 回見せたら
   了承扱い。挿入しただけでは数えない (スクロールせず離脱した生徒の「取り消し」の機会を奪わないため)。
 
+## 🔁 生徒ログインの自動延長と LINE「やること」のリンク (2026-10-18 塾長「②の残りも作っておいて」)
+- 生徒トークン (`_sign_session_token`・30 日) は、**在籍中の生徒が使っているあいだ自動で延長**する。`GET /api/auth/me` が、残りが
+  `STUDENT_SESSION_RENEW_WINDOW_SECONDS` (15 日 = TTL の半分) を切った種別 `session` のトークン (旧 3 パートも) にだけ
+  `renewed = {token, expires_at}` を返し (応答は `private, no-store`)、auth-guard.js の `storeRenewedSession` がログインと同じキー
+  (`ai_juku_session_token` / `ai_juku_session_expires`) に保存する。保存するのは、問い合わせたトークンが今も保存されていて新しい期限の方が先のときだけ (try/catch)。
+- 在籍 = `_enrolled_sql` かつ合成監視・テスト系の名前でない (`_student_session_renewal`)。延長しない: canceled / expired / 体験切れ / 猶予切れの past_due
+  (国公立難関大コースで `_get_current_student` が通す生徒も)・なりすまし (impersonation)・講座 / dl / magic。トークンは生徒 id と期限だけ
+  (親・子のどちらのアドレスで入ったかは持たない) なので延長しても意味は同じ。ログインコード・OTP・マジックリンク・LINE ログインは不変。管理者は従来どおり `/api/admin/verify`。
+- ★auth-guard.js を読む HTML (16 本) は同じ `?v=` にそろえる (テストが 1 つの版を求める)。
+- LINE「やること」の返信リンクは全員 `{BASE_URL}/mypage.html?focus=homework&openExternalBrowser=1` (`_LINE_TODO_LINK_PATH`・リッチメニュー A「宿題を開く」と同じ。
+  AIなし枠は mypage が `class.html?tab=homework` へ送る)。返信 (reply) だけで push は増やさない。
+- 回帰テスト `scripts/health_check/test_student_session_renew.py` (CI `server-tests.yml`・auth-guard.js を JS エンジンで動かす)。
+
 ## 生徒画面 (mypage) の「続ける仕組み」と家庭への連絡 (2026-09-09 レビュー反映)
 - **連続学習日数・「✅ できた！」はサーバ実績が正典** (`GET /api/student/activity-summary` / `POST /api/student/coach-done`)。
   演習 (`question_attempts`)・学習記録 (`study_logs`)・できた！(`events name='coach_done'`, `session_id=str(student_id)`) の

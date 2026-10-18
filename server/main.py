@@ -31281,6 +31281,57 @@ def juku_payment_set_overrides(payload: dict, authorization: Optional[str] = Hea
     return {"ok": True, "updated_at": updated_at, "size_bytes": len(val.encode("utf-8"))}
 
 
+# 🔁 生徒ログインの自動延長 (2026-10-18 塾長「②の残りも作っておいて」= 成績を上げる提案 ②「入口の壁を取る」)。
+#   生徒のトークンはログインから SESSION_TTL_SECONDS (30 日) で必ず切れ、延長が無かった (管理者は admin_verify が延長する)。
+#   「やろう」と思って開いた日にログイン画面が出ると、その日の宿題は出ない。そこで全ページのガード (auth-guard.js) が叩く
+#   GET /api/auth/me で、残りが STUDENT_SESSION_RENEW_WINDOW_SECONDS (15 日) を切った在籍中の生徒にだけ、ログインと同じ
+#   _sign_session_token で作った新しいトークンを応答の renewed = {token, expires_at} で返す。auth-guard がログインと同じキーに保存する。
+#   ・延長するのは種別 'session' (旧 3 パート形式を含む) だけ。管理者のなりすまし (impersonation)・講座・dl などは延長しない
+#   ・在籍 = _enrolled_sql (trial / paid / 猶予中の past_due) で、合成監視・テスト系の名前でない生徒。canceled / expired は延長しない
+#     (国公立難関大コースは _get_current_student が status に関係なく通すが、在籍でなければ延長しない)
+#   ・トークンに入っているのは生徒 id と期限だけ (親と子のどちらのアドレスで入ったかは持たない) なので、延長しても親・子の
+#     ログインの意味は変わらない。ログインコード・OTP・マジックリンク・LINE ログインには触れない
+#   ・SELECT は残りが 15 日を切ったトークンのときだけ (新しいトークンを保存した端末では 15 日間走らない)。トークンはログに出さない
+STUDENT_SESSION_RENEW_WINDOW_SECONDS = max(0, min(15 * 86400, SESSION_TTL_SECONDS // 2))
+
+
+def _student_session_renewal(token: Optional[str], student: Optional[dict]) -> Optional[dict]:
+    """延長するなら {"token", "expires_at"}、しないなら None。判定や SELECT に失敗しても None (確認そのものは成功している)。"""
+    if not token or not student or STUDENT_SESSION_RENEW_WINDOW_SECONDS <= 0:
+        return None
+    claims = _verify_session_token(token)
+    if not claims or claims.get("token_type") != "session":
+        return None
+    sid = int(claims["student_id"])
+    if sid != int(student.get("id") or 0):
+        return None
+    left = int(claims["exp"]) - int(time.time())
+    if left >= STUDENT_SESSION_RENEW_WINDOW_SECONDS:
+        return None
+    try:
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute(f"SELECT id, name, email, goal FROM students WHERE id = ? AND {_enrolled_sql()} AND {_synth_exclude_sql()}",
+                      (sid,))
+            row = c.fetchone()
+        finally:
+            conn.close()
+    except Exception as e:
+        log.warning(f"[auth_me] session renew check skipped: {type(e).__name__}")
+        return None
+    if not row:
+        return None
+    if _is_synthetic_student(row["email"], row["goal"], row["name"]) or _is_blocked_test_name(row["name"]):
+        return None
+    new_token = _sign_session_token(sid)
+    new_claims = _verify_session_token(new_token)
+    if not new_claims:
+        return None
+    log.info(f"[auth_me] session renewed: student_id={sid} days_left={max(0, left) // 86400}")
+    return {"token": new_token, "expires_at": int(new_claims["exp"])}
+
+
 @app.get("/api/auth/me")
 def auth_me(authorization: Optional[str] = Header(None)):
     """現在のセッションを検証して生徒情報を返す。全ページのアクセスガードに使う。
@@ -31413,6 +31464,18 @@ def auth_me(authorization: Optional[str] = Header(None)):
     except Exception as _jae:
         student["is_tsujuku_app"] = False
         log.warning(f"[auth_me] is_tsujuku_app calc skipped: {_jae}")
+    # 🔁 2026-10-18 ログインの自動延長 (在籍中の生徒・残り 15 日を切ったときだけ・_student_session_renewal)。
+    #   新しいトークンを載せた応答はキャッシュさせない (private, no-store)。延長できなくても確認は成功のまま返す
+    try:
+        _renew_tok = authorization[len("Bearer "):].strip() if (authorization and authorization.startswith("Bearer ")) else None
+        _renewed = _student_session_renewal(_renew_tok, student)
+    except Exception as _rne:
+        _renewed = None
+        log.warning(f"[auth_me] session renew skipped: {type(_rne).__name__}")
+    if _renewed:
+        from fastapi.encoders import jsonable_encoder as _jenc
+        return JSONResponse(_jenc({"ok": True, "student": student, "renewed": _renewed}),
+                            headers={"Cache-Control": "private, no-store"})
     return {"ok": True, "student": student}
 
 
@@ -34959,6 +35022,8 @@ _LINE_CODE_LIKE = _line_re.compile(r"^[A-Za-z0-9_-]{20,28}$")
 #   ・質問:     「質問」単独 (使い方案内) または「質問 <内容>」「質問：<内容>」(区切りり必須)。
 #               「質問があります」のような自然文は区切りが無いため反応しない (有人チャット誤爆防止)
 _LINE_CMD_TODO = _line_re.compile(r"^(やること|今日のやること)$")
+# 「やること」の返信に付けるリンク (BASE_URL の後ろ)。リッチメニュー A「宿題を開く」と同じ (2026-10-18)
+_LINE_TODO_LINK_PATH = "/mypage.html?focus=homework&openExternalBrowser=1"
 _LINE_CMD_QUESTION = _line_re.compile(r"^質問($|[\s:：]+)")
 _LINE_NOT_LINKED_GUIDE = (
     "このLINEはまだ生徒アカウントと連携されていません。\n"
@@ -35034,7 +35099,10 @@ def _line_build_todo_text(student) -> str:
         lines.append(f"⏱ 今日の学習記録: {today_min}分")
     else:
         lines.append("⏱ 今日の学習記録: まだ0分 — まず1つ取り組んでみよう")
-    lines += ["", "▶ マイページで取り組む", f"{BASE_URL}/mypage.html"]
+    # 🔗 2026-10-18 (塾長「②の残りも作っておいて」): リンクは全員 宿題欄 (リッチメニュー A「宿題を開く」と同じ URL)。
+    #   AIなし枠は mypage が class.html?tab=homework へ送る。openExternalBrowser=1 = LINE の中のブラウザではなく
+    #   端末のいつものブラウザで開く (リッチメニュー A と同じ)。返信 (reply) だけで、push は増やさない
+    lines += ["", "▶ 宿題を開く", f"{BASE_URL}{_LINE_TODO_LINK_PATH}"]
     return "\n".join(lines)
 
 

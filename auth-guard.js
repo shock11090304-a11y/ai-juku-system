@@ -10,6 +10,8 @@
  *  - 本物の検証は /api/auth/me で backend が署名を確認。ここでの expires_at は
  *    UI 用のヒントにすぎず、サーバー側で常に再検証されるため改ざん耐性あり。
  *  - 各 fetch で Authorization: Bearer <token> を自動付与するヘルパも公開
+ *  - 2026-10-18: 在籍中の生徒は使っているあいだ自動で延長される (/api/auth/me の renewed を
+ *    storeRenewedSession がログインと同じキーに保存。残りが 15 日を切ったときだけサーバが返す)
  */
 (function () {
   const SESSION_TOKEN_KEY = 'ai_juku_session_token';
@@ -108,6 +110,27 @@
     return Math.floor(Date.now() / 1000) >= exp;
   }
 
+  // 🔁 2026-10-18 ログインの自動延長: /api/auth/me が renewed = {token, expires_at} を返したら
+  //   (在籍中の生徒で、残りが 15 日を切ったときだけサーバが返す)、ログインと同じキー・同じ形
+  //   (トークン文字列 / epoch 秒の文字列) で置き換える。置き換えるのは、問い合わせに使ったトークンが
+  //   今も保存されていて、新しい期限の方が先のときだけ (応答待ちの間にログアウト・別の生徒でログイン
+  //   していたら触らない)。保存できない端末では今のトークンのまま (期限までは使える)。トークンはログに出さない。
+  function storeRenewedSession(sentToken, renewed) {
+    if (!renewed || typeof renewed.token !== 'string' || !renewed.token) return false;
+    const exp = parseInt(renewed.expires_at, 10);
+    if (!exp || exp <= Math.floor(Date.now() / 1000)) return false;
+    try {
+      if (localStorage.getItem(SESSION_TOKEN_KEY) !== sentToken) return false;
+      const cur = parseInt(localStorage.getItem(SESSION_EXPIRES_KEY) || '0', 10);
+      if (cur && exp <= cur) return false;
+      localStorage.setItem(SESSION_TOKEN_KEY, renewed.token);
+      localStorage.setItem(SESSION_EXPIRES_KEY, String(exp));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /**
    * 認証済み fetch。通常の fetch と同じシグネチャだが、自動で
    * Authorization ヘッダを付与し、401 応答時に login.html へリダイレクトする。
@@ -164,6 +187,8 @@
         // 🔑 サーバ検証済み本人を全表示ポインタに固定 (session_student だけでなく
         //   current_student / students / aj_current_student_id まで本人へ揃える)
         applyVerifiedStudent(data.student);
+        // 🔁 2026-10-18 ログインの自動延長 (サーバが renewed を返したときだけ置き換わる・使える生徒だけ)
+        if (data.renewed && data.student.entitled !== false) storeRenewedSession(token, data.renewed);
         // 🚪 2026-06-19 [login-allow-inactive] 方針A: 体験切れ/未契約 (entitled===false) は
         //   ログインへ飛ばさず「継続登録(再開)」画面へ誘導する。upgrade.html / checkout 系は
         //   auth-guard を読まないのでループしない。entitled が未定義(旧backend等)なら従来通り通す

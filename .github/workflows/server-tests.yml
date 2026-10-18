@@ -62,6 +62,8 @@ on:
       - 'mypage.js'
       # 📝 記号の解答用紙の画面 (test_homework_sheet_front.py) は hw-sheet.js・class.html・mypage.js・ceo.html の CeoHwSheet を JS で動かす
       - 'hw-sheet.js'
+      # 🔁 生徒ログインの自動延長 (test_student_session_renew.py) は auth-guard.js を JS で動かし、読み込む HTML の ?v= をそろえて見る
+      - 'auth-guard.js'
       # 📊 本文の表 (test_passage_table_render.py) はマイページの「今日の復習」(learning-brain.js) もまるごと JS で動かす
       #   (learning-brain.js だけ直した push でも走らせる = ?v= 検査 js_cache_bust.py も回る)
       - 'learning-brain.js'
@@ -608,6 +610,16 @@ jobs:
           python3 -m pip install --quiet httpx
           node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
           python3 scripts/health_check/test_class_brief.py
+
+      # 🔁 生徒ログインの自動延長 (2026-10-18): 在籍中の生徒だけ・残り 15 日を切ったときだけ /api/auth/me が同じ形のトークンを返す・
+      #   親/子のログインの意味は変えない・canceled / 合成監視 / なりすましは延長しない・管理者の経路は不変・auth-guard.js の保存 (JS で実行)・
+      #   LINE「やること」の返信リンク (reply だけ・push なし)。
+      - name: 生徒ログインの自動延長・LINE「やること」の返信リンク 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          node --version || echo "node が無い (テストが「JS の実行環境がある」で FAIL する)"
+          python3 scripts/health_check/test_student_session_renew.py
 
       # 🔰 今日の1問・初回診断 (生徒が自分で始める): 学年で科目を分ける (中学生に高校の英文法を出さない・小学生モードは 409)・
       #   レビュー済みの出典だけ (未レビューの古い行は出さない・無ければ 503)。
