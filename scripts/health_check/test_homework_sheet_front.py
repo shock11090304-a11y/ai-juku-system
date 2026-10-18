@@ -35,8 +35,11 @@ CEO (ceo.html の CeoHwSheet = 生徒詳細「📚 宿題」と 📤 一括割�
       前のプリントの「入れる」は出さない・📤 一括割当 (hwbAssign をそのまま) は出した後も答え方を残す = 同じプリントの次の組にも
       解答用紙が付く・別のプリントに替えたら消える・全員スキップなら何も変えない・解答用紙なしでプリントに正解表があれば確認に ⚠・
       宿題履歴の 📝 4/5・提出時刻・期限後・📊 問ごとの正解率と選ばれた記号・✏️ 正解を直す (確認 → PUT → 採点し直し)・↩️ やり直し (確認 → POST)・
-      実施状況のチップの点数・escape
-  [5] サーバに戻して確かめる: CEO が作った answer_sheet で割当 / 一括割当が 200・正解表 → 入力欄の文字 → サーバの読み方で同じ正解
+      実施状況のチップの点数・escape・
+      保存した正解表を入れたまま (打ち直していない) なら文字ではなく key_id を送る (プリントなしの次の組も同じ表)・
+      ✏️ 正解を直したら、その表を入れたままのフォームに直した正解を入れ直す (打ち直したフォームは触らない) (2026-10-18 点検 S1/F1)
+  [5] サーバに戻して確かめる: CEO が作った answer_sheet で割当 / 一括割当が 200・正解表 → 入力欄の文字 → サーバの読み方で同じ正解・
+      プリントなしで 2 組に出すと同じ正解表 → ✏️ で直すと両方の組を採点し直す・直した後の次の組は直した表で採点 (直す前の表を作らない)
   [6] ソース検査: 読み込み順と ?v=・ES5・CEO の payload は解答用紙のときだけ answer_sheet を足す・案内文・CI 登録
 
 ★JS エンジンが無ければ FAIL (飛ばさない)。CI (ubuntu) は node、塾長の Mac は osascript -l JavaScript。AJ_JS_ENGINE で選べる。
@@ -140,10 +143,11 @@ def build_fixtures():
     checks = {}
     for params in ({"num_questions": 5, "num_choices": 4, "label_style": "katakana", "key": "ウアエイ"},
                    {"num_questions": 5, "num_choices": 4, "label_style": "katakana", "key": "ウアエイエ"},
-                   {"num_questions": 5, "num_choices": 4, "label_style": "katakana", "key": "ウ ア エ イ エ"}):
+                   {"num_questions": 5, "num_choices": 4, "label_style": "katakana", "key": "ウ ア エ イ エ"},
+                   {"num_questions": 5, "num_choices": 4, "label_style": "katakana", "key": "ウ ア エ イ ア"}):
         r = client.post("/api/admin/homework/answer-keys/check", json=params, headers=admin)
         checks[json.dumps(params, ensure_ascii=False, separators=(",", ":"))] = {"status": r.status_code, "body": r.json()}
-    check("確認表: 4 個は 422・5 個は 200 (サーバの読み方)", [v["status"] for v in checks.values()] == [422, 200, 200],
+    check("確認表: 4 個は 422・5 個は 200 (サーバの読み方)", [v["status"] for v in checks.values()] == [422, 200, 200, 200],
           [v["status"] for v in checks.values()])
 
     ANS_A = [3, 1, None, 2, 4]
@@ -193,6 +197,33 @@ def build_fixtures():
     check("📤 一括 (プリントなし) → 200・新しい正解表・print_id なし", rBNoPrint.status_code == 200 and aBNo.get("key_id") not in (None, keyA)
           and aBNo.get("reused_key") is False and aBNo.get("print_id") is None, rBNoPrint.text[:300])
     check("📤 一括 (完了ボタンだけ) → 200・answer_sheet なし", rBPlain.status_code == 200 and "answer_sheet" not in rBPlain.json(), rBPlain.text[:300])
+    # プリントなしの 2 組目: フォームは出した正解表 (KNP) を key_id で送る (2026-10-18 点検 S1: 文字で送ると組ごとに別の表になった)
+    knp = aBNo.get("key_id")
+    rBNoPrintB = client.post("/api/admin/homework/assign-bulk", headers=admin,
+                             json={"student_ids": [sid], "title": "プリントなし 一括 マーク", "answer_sheet": {"mode": "choice", "key_id": knp}})
+    aBNoB = (rBNoPrintB.json() or {}).get("answer_sheet") or {}
+    check("📤 一括 (プリントなし・key_id) → 200・同じ正解表 KNP を使い回す・print_id なし", rBNoPrintB.status_code == 200
+          and aBNoB.get("key_id") == knp and aBNoB.get("reused_key") is True and aBNoB.get("print_id") is None, rBNoPrintB.text[:300])
+    # 📤 一括で出した後に ✏️ で正解を直す (2026-10-18 点検 F1): まだ正解表の無い P3 を打った正解で組 A に出す → 正解表 K3 →
+    #   ✏️ で K3 を直す (PUT) → 組 B にはフォームが送る key_id (K3) で出す = 直した正解表で採点・直す前の正解の表を作らない
+    p3 = S.make_print(mod, "不定詞 (正解を直す) テスト", "/lesson-prints/eng_futeishi_front_03.pdf")
+    keys_p3_empty = client.get(f"/api/admin/homework/answer-keys?print_id={p3}&limit=5", headers=admin).json()
+    rBP3A = client.post("/api/admin/homework/assign-bulk", headers=admin,
+                        json={"student_ids": [sid], "title": "不定詞 一括 マーク", "attachment_print_id": p3, "answer_sheet": sheet(5, 4, "katakana", "ウアエイエ")})
+    aBP3A = (rBP3A.json() or {}).get("answer_sheet") or {}
+    key3 = aBP3A.get("key_id")
+    keys_p3_mid = client.get(f"/api/admin/homework/answer-keys?print_id={p3}&limit=5", headers=admin).json()
+    key_res_3 = client.get(f"/api/admin/homework/answer-keys/{key3}", headers=admin).json()
+    put3_body = {"key": "ウ ア エ イ ア", "label_style": "katakana"}
+    rPut3 = client.put(f"/api/admin/homework/answer-keys/{key3}", json=put3_body, headers=admin)
+    rBP3B = client.post("/api/admin/homework/assign-bulk", headers=admin,
+                        json={"student_ids": [sid], "title": "不定詞 一括 マーク", "attachment_print_id": p3, "answer_sheet": {"mode": "choice", "key_id": key3}})
+    aBP3B = (rBP3B.json() or {}).get("answer_sheet") or {}
+    check("F1 の土台: P3 は正解表なし → 組 A (打った正解) で新しい正解表 K3 → ✏️ で直す → 組 B (key_id) は K3 を使い回す",
+          keys_p3_empty.get("items") == [] and rBP3A.status_code == 200 and key3 and aBP3A.get("reused_key") is False
+          and [it["id"] for it in keys_p3_mid.get("items") or []] == [key3] and key_res_3.get("ok") and rPut3.status_code == 200
+          and rBP3B.status_code == 200 and aBP3B.get("key_id") == key3 and aBP3B.get("reused_key") is True and aBP3B.get("print_id") == p3,
+          (rBP3A.text[:160], rPut3.text[:160], rBP3B.text[:160]))
 
     fx = {
         "SID": sid, "NAME": fake_name, "A": A, "B": B, "C": C, "D": D, "E": E, "KEY_A": keyA, "P1": p1, "P2": p2,
@@ -208,6 +239,12 @@ def build_fixtures():
         "BULK_SKIP": {"status": rBSkip.status_code, "body": rBSkip.json()},
         "BULK_NOPRINT": {"status": rBNoPrint.status_code, "body": rBNoPrint.json()},
         "BULK_PLAIN": {"status": rBPlain.status_code, "body": rBPlain.json()},
+        "BULK_NOPRINT_B": {"status": rBNoPrintB.status_code, "body": rBNoPrintB.json()},
+        "P3": p3, "KEY_3": key3, "HW_P3A": ((rBP3A.json() or {}).get("assigned") or [{}])[0].get("homework_id"),
+        "KEYS_P3_EMPTY": keys_p3_empty, "KEYS_P3_MID": keys_p3_mid, "KEYRES_3": key_res_3,
+        "PUT_3": {"status": rPut3.status_code, "body": rPut3.json()}, "PUT3_BODY": put3_body,
+        "BULK_P3_A": {"status": rBP3A.status_code, "body": rBP3A.json()},
+        "BULK_P3_B": {"status": rBP3B.status_code, "body": rBP3B.json()},
         "ANS_A": ANS_A,
         "EXP": {
             "submitted_jst_A": jst_min(vA.get("submitted_at")),
@@ -854,6 +891,7 @@ window.confirm = function (m) { CONFIRMS.push(String(m)); return CONFIRM_OK; };
 window.alert = function (m) { ALERTS.push(String(m)); };
 function alert(m) { ALERTS.push(String(m)); }
 var REQS = [], PROBE_STATUS = 200, UNEXPECTED = [], DEFER = null, BULK_NEXT = [];
+var P3_LIST = FX.KEYS_P3_EMPTY;   // P3 の正解表の一覧 (F1: 組 A に出す前は空・出した後は K3)
 var AdminAuth = {
   getToken: function () { return 't'; },
   fetch: function (url, opts) {
@@ -866,6 +904,9 @@ var AdminAuth = {
     else if (url === '/api/admin/homework/answer-keys?print_id=' + FX.P2 + '&limit=5') r = { status: 200, body: FX.KEYS_P2 };
     else if (url === '/api/admin/homework/answer-keys/' + FX.KEY_A && method === 'GET') r = { status: 200, body: FX.KEYRES_A };
     else if (url === '/api/admin/homework/answer-keys/' + FX.KEY_A && method === 'PUT') r = FX.PUT_A;
+    else if (url === '/api/admin/homework/answer-keys?print_id=' + FX.P3 + '&limit=5') r = { status: 200, body: P3_LIST };
+    else if (url === '/api/admin/homework/answer-keys/' + FX.KEY_3 && method === 'GET') r = { status: 200, body: FX.KEYRES_3 };
+    else if (url === '/api/admin/homework/answer-keys/' + FX.KEY_3 && method === 'PUT') r = FX.PUT_3;
     else if (url === '/api/admin/homework/' + FX.B + '/sheet/reset' && method === 'POST') r = FX.RESET_B;
     else if (url === '/api/admin/homework/assign-bulk' && method === 'POST') r = BULK_NEXT.shift() || null;   // 本物のサーバの応答を順に返す
     if (!r) { UNEXPECTED.push(method + ' ' + url + ' ' + body); r = { status: 599, body: { detail: 'テストに無い呼び出し' } }; }
@@ -1068,7 +1109,9 @@ JS_CEO_CASES = r"""
     await BK.run(); await flush();
     var b1 = lastBulk();
     eq('組 A: 1 回送る・answer_sheet つき', [bulkBodies().length - nB, !!(b1 && b1.answer_sheet)], [1, true]);
-    ok('組 A: 確認に 📝 の 1 行', CONFIRMS.length === 1 && CONFIRMS[0].indexOf('📝 記号の解答用紙つき（5 問・4 択・ア イ ウ…）') >= 0, CONFIRMS);
+    eq('組 A: 前の正解表を入れたまま → 文字ではなく正解表 #A (key_id) を送る', b1 && b1.answer_sheet, { mode: 'choice', key_id: FX.KEY_A });
+    ok('組 A: 確認に 📝 の 1 行 (正解表 #A をそのまま使う)', CONFIRMS.length === 1
+       && CONFIRMS[0].indexOf('📝 記号の解答用紙つき（5 問・4 択・ア イ ウ…）・正解表 #' + FX.KEY_A + ' をそのまま使います') >= 0, CONFIRMS);
     ok('組 A: 出せた (✅ 1名・正解表 #A・前の正解表を使い回し)', BK.els.hwbMsg.innerHTML.indexOf('✅ 1名に宿題') >= 0
        && BK.els.hwbMsg.innerHTML.indexOf('正解表 #' + FX.KEY_A + '・前の正解表を使い回し') >= 0, BK.els.hwbMsg.innerHTML);
     eq('組 A の後: 生徒の選択は外す・答え方は記号のまま・正解も確認表も残る',
@@ -1155,9 +1198,18 @@ JS_CEO_CASES = r"""
     ok('プリントなし: 「💾 … 次の組にも同じ宿題を出すなら」', el(RN, '.hws-reuse').innerHTML.indexOf('💾 この正解を正解表 #' + FX.BULK_NOPRINT.body.answer_sheet.key_id
        + ' として保存しました。次の組にも同じ宿題を') >= 0, el(RN, '.hws-reuse').innerHTML);
     emit('BULK', bn1);
-    CONFIRMS = []; BN.pick(); BULK_NEXT = [FX.BULK_NOPRINT];
+    var KNP = FX.BULK_NOPRINT.body.answer_sheet.key_id;
+    eq('プリントなし: 1 組目は打った正解 (文字) で送る', bn1.answer_sheet, { mode: 'choice', key: { num_questions: 5, num_choices: 4, label_style: 'katakana', key: 'ウアエイエ' } });
+    eq('… 出した後は、出した正解表 #KNP をそのまま使う (key_id)', cn.getAnswerSheet().value, { mode: 'choice', key_id: KNP });
+    CONFIRMS = []; BN.pick(); BULK_NEXT = [FX.BULK_NOPRINT_B];
     await BN.run(); await flush();
-    eq('… 続けて出しても answer_sheet が付く', [lastBulk().answer_sheet, lastBulk().attachment_print_id], [bn1.answer_sheet, null]);
+    var bn2 = lastBulk();
+    eq('… 続けて出すと同じ正解表 #KNP を key_id で送る (2026-10-18 点検: 組ごとに別の表になり ✏️ で直しても他の組を採点し直せなかった)',
+       [bn2.answer_sheet, bn2.attachment_print_id], [{ mode: 'choice', key_id: KNP }, null]);
+    ok('… 確認に「正解表 #KNP をそのまま使います」', CONFIRMS.length === 1 && CONFIRMS[0].indexOf('・正解表 #' + KNP + ' をそのまま使います') >= 0, CONFIRMS);
+    ok('… 2 組目の後も 💾 #KNP (key_id のまま)', el(RN, '.hws-reuse').innerHTML.indexOf('💾 この正解を正解表 #' + KNP + ' として保存しました') >= 0
+       && cn.getAnswerSheet().value.key_id === KNP, el(RN, '.hws-reuse').innerHTML);
+    emit('BULK', bn2);
     BN.els.hwbPrint.value = String(FX.P2);
     await cn.setPrint(String(FX.P2)); await flush();
     eq('… プリント (正解表なし) を選んだら消して止める', [el(RN, '.hws-key').value, cn.getAnswerSheet().ok], ['', false]);
@@ -1234,6 +1286,76 @@ JS_CEO_CASES = r"""
        ['POST /api/admin/homework/' + FX.B + '/sheet/reset']);
     eq('やり直したら履歴を読み直す', changed, 2);
     eq('テストに無い呼び出しをしていない', UNEXPECTED, []);
+
+    // (E7b) ✏️ で正解を直したら、その正解表を入れたままのフォームは直した正解表で出す (2026-10-18 点検 F1: 直した後も📤 一括の
+    //   フォームに直す前の文字が残り、次の組に出すと直す前の正解で新しい正解表ができ、以後そのプリントの「前の正解表」になっていた)
+    CONFIRM_OK = true; P3_LIST = FX.KEYS_P3_EMPTY; TIMERS = [];
+    var RF = formRoot(); var cf = W.wire(RF); await flush();
+    var BF = bulkEnv(cf, FX.P3);
+    BF.els.hwbTitle.value = '不定詞 一括 マーク';
+    setVal(RF, '.hws-mode', 'choice', 'change'); TIMERS = [];
+    await cf.setPrint(String(FX.P3)); await flush();
+    setVal(RF, '.hws-nq', '5'); setVal(RF, '.hws-style', 'katakana', 'change'); setVal(RF, '.hws-key', 'ウアエイエ'); await runTimers();
+    eq('F1: 正解表の無い P3 は打った正解 (文字) で出す', cf.getAnswerSheet().value,
+       { mode: 'choice', key: { num_questions: 5, num_choices: 4, label_style: 'katakana', key: 'ウアエイエ' } });
+    CONFIRMS = []; BF.pick(); BULK_NEXT = [FX.BULK_P3_A];
+    await BF.run(); await flush();
+    ok('F1: 組 A に出せた (正解表 #K3・新しい正解表)', BF.els.hwbMsg.innerHTML.indexOf('正解表 #' + FX.KEY_3 + '・新しい正解表') >= 0, BF.els.hwbMsg.innerHTML);
+    var gF = cf.getAnswerSheet();
+    eq('F1: 出した後は正解表 #K3 をそのまま使う (key_id)', gF.value, { mode: 'choice', key_id: FX.KEY_3 });
+    eq('F1: … 確認の 1 行', gF.label, '📝 記号の解答用紙つき（5 問・4 択・ア イ ウ…）・正解表 #' + FX.KEY_3 + ' をそのまま使います');
+    // 同じプリントの別のフォーム: 「完了ボタンだけ」のまま (前の正解表は案内だけ) / 入れた後に打ち直した
+    P3_LIST = FX.KEYS_P3_MID;
+    var RG = formRoot(); var cg = W.wire(RG); await flush();
+    await cg.setPrint(String(FX.P3)); await flush();
+    var RE = formRoot(); var ce = W.wire(RE); await flush();
+    setVal(RE, '.hws-mode', 'choice', 'change'); TIMERS = [];
+    await ce.setPrint(String(FX.P3)); await flush(); await runTimers();
+    eq('F1: P3 を選ぶと K3 (直す前) が入り、key_id で出す', [el(RE, '.hws-key').value, ce.getAnswerSheet().value], ['ウ ア エ イ エ', { mode: 'choice', key_id: FX.KEY_3 }]);
+    setVal(RE, '.hws-key', 'ウアエイエ'); await runTimers();
+    var gE = ce.getAnswerSheet().value;
+    eq('F1: 打ち直したら文字で送る (key_id にしない)', [gE && gE.key_id, gE && gE.key && gE.key.key], [undefined, 'ウアエイエ']);
+    // ✏️ 正解を直す (宿題履歴から・本物の GET / PUT の応答)
+    var HF = new FakeEl('histF'), paneF = new FakeEl();
+    paneF.setAttribute('data-hw-id', String(FX.HW_P3A)); paneF.hidden = true;
+    HF.querySelectorAll = function (sel) { return sel === '.hws-pane' ? [paneF] : []; };
+    HF.contains = function () { return true; };
+    W.wireHistory(HF, [{ id: FX.HW_P3A, title: '不定詞 一括 マーク', answer_sheet: { key_id: FX.KEY_3 } }],
+                  { studentName: FX.NAME, onChanged: function () { return Promise.resolve(); } });
+    var bE = new FakeEl(); bE.setAttribute('data-hws-act', 'edit'); bE.setAttribute('data-hw-id', String(FX.HW_P3A)); bE.setAttribute('data-key-id', String(FX.KEY_3));
+    HF.dispatch('click', { target: { closest: function (sel) { return sel === '[data-hws-act]' ? bE : null; } } });
+    await flush();
+    eq('F1: ✏️ に K3 の今の正解 (直す前)', paneF.querySelector('.hws-e-key').value, 'ウ ア エ イ エ');
+    paneF.querySelector('.hws-e-key').value = 'ウ ア エ イ ア';
+    paneF.querySelector('.hws-e-key').dispatch('input'); await runTimers();
+    ok('F1: ✏️ の確認表を通す', paneF.querySelector('.hws-e-check').innerHTML.indexOf('✅ 5 問ぶん読めました') >= 0, paneF.querySelector('.hws-e-check').innerHTML);
+    paneF.querySelector('.hws-e-save').dispatch('click'); await flush();
+    eq('F1: PUT /api/admin/homework/answer-keys/K3 {key: ウ ア エ イ ア}',
+       REQS.filter(function (r) { return r.method === 'PUT' && r.url === '/api/admin/homework/answer-keys/' + FX.KEY_3; }).map(function (r) { return JSON.parse(r.body); }),
+       [FX.PUT3_BODY]);
+    ok('F1: 直した (サーバの文言)', paneF.querySelector('.hws-e-msg').innerHTML.indexOf(FX.PUT_3.body.message) >= 0, paneF.querySelector('.hws-e-msg').innerHTML);
+    eq('F1: 📤 一括のフォーム (K3 を入れたまま) に直した正解を入れ直す', [el(RF, '.hws-key').value, el(RF, '.hws-nq').value, el(RF, '.hws-nc').value, el(RF, '.hws-style').value],
+       ['ウ ア エ イ ア', '5', '4', 'katakana']);
+    ok('F1: … 入れ直したと知らせる', el(RF, '.hws-reuse').innerHTML.indexOf('✏️ 正解表 #' + FX.KEY_3 + ' が直されたので、直した正解を入れ直しました') >= 0, el(RF, '.hws-reuse').innerHTML);
+    eq('F1: … 確認し直すまで割当を止める', cf.getAnswerSheet().ok, false);
+    await runTimers();
+    ok('F1: … 確認表は直した正解 (問5 ア)', el(RF, '.hws-check').innerHTML.indexOf('問5 <b>ア</b>') >= 0, el(RF, '.hws-check').innerHTML);
+    eq('F1: … 次の組も正解表 #K3 (key_id) で出す', cf.getAnswerSheet().value, { mode: 'choice', key_id: FX.KEY_3 });
+    eq('F1: 打ち直したフォームの正解は触らない (文字で送る)', [el(RE, '.hws-key').value, ce.getAnswerSheet().value.key.key], ['ウアエイエ', 'ウアエイエ']);
+    setVal(RG, '.hws-mode', 'choice', 'change');
+    eq('F1: 「完了ボタンだけ」だったフォームも、記号にすると直した正解が入る', el(RG, '.hws-key').value, 'ウ ア エ イ ア');
+    await runTimers();
+    eq('F1: … key_id で出す', cg.getAnswerSheet().value, { mode: 'choice', key_id: FX.KEY_3 });
+    CONFIRMS = []; BF.pick(); BULK_NEXT = [FX.BULK_P3_B];
+    await BF.run(); await flush();
+    var bf = lastBulk();
+    eq('F1: 組 B の本文 = 正解表 #K3 (key_id)・P3', [bf.answer_sheet, bf.attachment_print_id], [{ mode: 'choice', key_id: FX.KEY_3 }, FX.P3]);
+    ok('F1: 組 B の確認に「正解表 #K3 をそのまま使います」', CONFIRMS.length === 1 && CONFIRMS[0].indexOf('・正解表 #' + FX.KEY_3 + ' をそのまま使います') >= 0, CONFIRMS);
+    ok('F1: 組 B の後も 💾 #K3・key_id のまま', el(RF, '.hws-reuse').innerHTML.indexOf('💾 この正解を正解表 #' + FX.KEY_3 + ' として保存しました') >= 0
+       && cf.getAnswerSheet().value.key_id === FX.KEY_3, el(RF, '.hws-reuse').innerHTML);
+    emit('BULK_F1', bf);
+    eq('F1: 応答は全部使った・テストに無い呼び出しをしていない', [BULK_NEXT.length, UNEXPECTED], [0, []]);
+    TIMERS = [];
 
     // (E8) 表が無い (503) → 「✍️ 答え方」を出さない
     PROBE_STATUS = 503;
@@ -1354,18 +1476,64 @@ def main():
         check("その answer_sheet で 📤 一括割当 → 200・1 名", r.status_code == 200 and r.json().get("assigned_count") == 1 and r.json().get("answer_sheet"), r.text[:300])
     # 📤 一括割当 (hwbAssign) が送った本文を本物のサーバに送り直す: 解答用紙つきは 200・P1 なら正解表 A の使い回し・なしは今までどおり
     bulks = [v for t, v in outs if t == "BULK"]
-    check("📤 一括割当 (hwbAssign) が送った本文を 5 つ受け取った (組 A・組 B・完了ボタンだけ・打ち直し・プリントなし)", len(bulks) == 5, len(bulks))
+    check("📤 一括割当 (hwbAssign) が送った本文を 6 つ受け取った (組 A・組 B・完了ボタンだけ・打ち直し・プリントなし 2 組)", len(bulks) == 6, len(bulks))
     for i, b in enumerate(bulks):
         r = client.post("/api/admin/homework/assign-bulk", headers=admin, json=b)
         d = r.json() if r.status_code == 200 else {}
         a = d.get("answer_sheet") or {}
         if "answer_sheet" not in b:
             ok_b = r.status_code == 200 and d.get("assigned_count") == 1 and "answer_sheet" not in d
+        elif b["answer_sheet"].get("key_id") is not None:   # 入れた正解表をそのまま (key_id) → その表を使い回す・プリントも表のもの
+            ok_b = (r.status_code == 200 and d.get("assigned_count") == 1 and a.get("key_id") == b["answer_sheet"]["key_id"]
+                    and a.get("reused_key") is True and a.get("print_id") == b.get("attachment_print_id"))
         elif b.get("attachment_print_id") == fx["P1"]:
             ok_b = r.status_code == 200 and d.get("assigned_count") == 1 and a.get("key_id") == fx["KEY_A"] and a.get("reused_key") is True
         else:
             ok_b = r.status_code == 200 and d.get("assigned_count") == 1 and a.get("key_id") and a.get("print_id") is None
         check(f"📤 一括の本文 {i + 1} (answer_sheet {'あり' if 'answer_sheet' in b else 'なし'}) をサーバに送り直す → 200", ok_b, r.text[:300])
+    # S1 (2026-10-18 点検): プリントなしで組 A → 組 B と続けて出すと、組 B も同じ正解表 (KNP)。✏️ で直すと両方の組を採点し直す
+    tok_a = {"Authorization": "Bearer " + S.student_token(mod, fx["SID"])}
+    gb = S.make_student(mod, "架空 組B <前面>", "hwfront-b@example.org")   # 架空 (公開リポジトリ)
+    tok_b = {"Authorization": "Bearer " + S.student_token(mod, gb)}
+    knp = fx["BULK_NOPRINT"]["body"]["answer_sheet"]["key_id"]
+    hw_na = fx["BULK_NOPRINT"]["body"]["assigned"][0]["homework_id"]
+    bn2 = [b for b in bulks if "attachment_print_id" in b and b.get("attachment_print_id") is None and (b.get("answer_sheet") or {}).get("key_id") is not None]
+    check("S1: プリントなしの 2 組目の本文は正解表 KNP の key_id", len(bn2) == 1 and bn2[0]["answer_sheet"] == {"mode": "choice", "key_id": knp},
+          json.dumps(bn2, ensure_ascii=False)[:300])
+    if bn2:
+        body = dict(bn2[0], student_ids=[gb])
+        r = client.post("/api/admin/homework/assign-bulk", headers=admin, json=body)
+        a = (r.json() or {}).get("answer_sheet") or {}
+        check("S1: 組 B (別の生徒) に出す → 200・組 A と同じ正解表 KNP", r.status_code == 200 and a.get("key_id") == knp and a.get("reused_key") is True, r.text[:300])
+        hw_nb = ((r.json() or {}).get("assigned") or [{}])[0].get("homework_id")
+        ans = [3, 1, 4, 2, 4]   # ウアエイエ = 直す前の正解で全問正解
+        ra = client.post(f"/api/student/homework/{hw_na}/sheet", json={"answers": ans}, headers=tok_a)
+        rb = client.post(f"/api/student/homework/{hw_nb}/sheet", json={"answers": ans}, headers=tok_b)
+        sa, sb = (x.json().get("answer_sheet") or {} for x in (ra, rb))
+        check("S1: 組 A・組 B が同じ答えを出す → どちらも 5/5", ra.status_code == 200 and rb.status_code == 200
+              and (sa.get("score_correct"), sb.get("score_correct")) == (5, 5), (ra.text[:160], rb.text[:160]))
+        rp = client.put(f"/api/admin/homework/answer-keys/{knp}", json={"key": "ウアエイア", "label_style": "katakana"}, headers=admin)
+        check("S1: 組 A の 📊 から ✏️ で KNP を直す → 提出済み 2 人 (両方の組) を採点し直し・2 人の点が変わる", rp.status_code == 200
+              and rp.json().get("regraded") == 2 and rp.json().get("changed") == 2, rp.text[:300])
+        kr = client.get(f"/api/admin/homework/answer-keys/{knp}", headers=admin).json()
+        scores = {s["student_id"]: (s["score_correct"], s["score_total"]) for s in kr.get("students") or [] if s.get("submitted")}
+        check("S1: 直した後は組 A・組 B とも 4/5 (組 B が直す前の正解のまま残らない)", scores == {fx["SID"]: (4, 5), gb: (4, 5)}, scores)
+    # F1 (2026-10-18 点検): ✏️ で直した後の組 B の本文 (key_id K3) → 直した正解表で採点・直す前の正解で新しい表を作らない
+    bf1 = [v for t, v in outs if t == "BULK_F1"]
+    check("F1: 直した後の組 B の本文を受け取った (key_id K3・P3)", len(bf1) == 1 and bf1[0].get("answer_sheet") == {"mode": "choice", "key_id": fx["KEY_3"]}
+          and bf1[0].get("attachment_print_id") == fx["P3"], json.dumps(bf1, ensure_ascii=False)[:300])
+    if bf1:
+        r = client.post("/api/admin/homework/assign-bulk", headers=admin, json=dict(bf1[0], student_ids=[gb]))
+        a = (r.json() or {}).get("answer_sheet") or {}
+        check("F1: 組 B (別の生徒) に出す → 200・直した正解表 K3 を使い回す", r.status_code == 200 and a.get("key_id") == fx["KEY_3"] and a.get("reused_key") is True,
+              r.text[:300])
+        lst = client.get(f"/api/admin/homework/answer-keys?print_id={fx['P3']}&limit=5", headers=admin).json()
+        check("F1: P3 の正解表は K3 の 1 つだけ・中身は直した正解 (直す前の正解の表が先頭に来ない)",
+              [(it["id"], it["key"]) for it in lst.get("items") or []] == [(fx["KEY_3"], [3, 1, 4, 2, 1])], lst.get("items"))
+        hw_fb = ((r.json() or {}).get("assigned") or [{}])[0].get("homework_id")
+        rs = client.post(f"/api/student/homework/{hw_fb}/sheet", json={"answers": [3, 1, 4, 2, 1]}, headers=tok_b)
+        v = (rs.json() or {}).get("answer_sheet") or {}
+        check("F1: 組 B の生徒は直した正解で採点 (ウアエイア → 5/5)", rs.status_code == 200 and (v.get("score_correct"), v.get("score_total")) == (5, 5), rs.text[:300])
     check("正解表 → 入力欄の文字を 6 つ以上受け取った", len(k2t) >= 6, len(k2t))
     for x in k2t:
         try:

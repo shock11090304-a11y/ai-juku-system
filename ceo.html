@@ -3459,6 +3459,17 @@
     function postJson(url, body, method) {
       return req(url, { method: method || 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     }
+    // 「✍️ 答え方」のフォーム (wire) の控え。✏️ 正解を直す (PUT) が通ったら、その正解表を入れたままのフォームに直した正解を入れ直す
+    //   (2026-10-18 点検: 直した後もフォームに直す前の文字が残り、次の組に出すと直す前の正解で新しい正解表ができていた)
+    const _forms = [];
+    function notifyKeyUpdated(info) {
+      if (!info || info.id == null) return;
+      for (let i = _forms.length - 1; i >= 0; i--) {
+        const f = _forms[i];
+        if (f.el && f.el.isConnected === false) { _forms.splice(i, 1); continue; }   // 閉じた / 描き直した生徒詳細のフォーム
+        try { f.fn(info); } catch (_e) { /* 1 つのフォームの失敗で他のフォームを止めない */ }
+      }
+    }
 
     // サーバに解答用紙の表があるか (無い / 未デプロイなら「✍️ 答え方」を出さない)。失敗したら次に聞き直す
     let _ready = null;
@@ -3506,7 +3517,8 @@
       const $ = c => root.querySelector(c);
       const box = $('.hws-box'), mode = $('.hws-mode'), detail = $('.hws-detail'), nq = $('.hws-nq'), nc = $('.hws-nc'),
         style = $('.hws-style'), key = $('.hws-key'), check = $('.hws-check'), reuse = $('.hws-reuse'), hint = $('.hws-hint');
-      const st = { ready: false, seq: 0, printSeq: 0, pending: false, valid: false, error: '', result: null, checked: null, reuseKey: null, autofilled: null, printId: null, keyPrint: null };
+      // fromKey = 入力欄の正解は保存済みの正解表 #fromKey.id を入れたまま (st.autofilled の文字を打ち直していない)。その間は割当で key_id を送る
+      const st = { ready: false, seq: 0, printSeq: 0, pending: false, valid: false, error: '', result: null, checked: null, reuseKey: null, autofilled: null, fromKey: null, printId: null, keyPrint: null };
       let timer = null;
       if (!box) return null;
       probeReady().then(ok => { st.ready = ok; box.hidden = !ok; });
@@ -3551,13 +3563,27 @@
         hint.textContent = (st.reuseKey && mode.value !== 'choice')
           ? '📝 このプリントには前に使った正解表があります（「記号の解答用紙」を選ぶと自動で入ります）' : '';
       }
-      function fillFrom(k) {
+      // 正解表 k の問題数・択数・記号・正解を入力欄に入れる。入れた文字を打ち直していない間は、割当で正解表 #k.id をそのまま使う (st.fromKey)
+      function putKey(k) {
         nq.value = String(k.num_questions);
         nc.value = String(k.num_choices);
         style.value = k.label_style;
         syncStyle();
         key.value = keyToText(k.key, k.label_style);
         st.autofilled = key.value;
+        st.fromKey = (k.id == null) ? null
+          : { id: k.id, num_questions: Number(k.num_questions), num_choices: Number(k.num_choices), label_style: k.label_style, print: st.printId };
+      }
+      // 割当で key_id を送れるか (入れた正解表を打ち直していない・問題数 / 択数 / 記号も同じ・同じプリント)。送れるなら st.fromKey
+      function keyIdToSend() {
+        const f = st.fromKey, c = st.checked;
+        if (!f || !c || st.autofilled == null || key.value !== st.autofilled || c.key !== st.autofilled) return null;
+        if (c.num_questions !== f.num_questions || c.num_choices !== f.num_choices || c.label_style !== f.label_style) return null;
+        if (String(f.print == null ? '' : f.print) !== String(st.printId == null ? '' : st.printId)) return null;
+        return f;
+      }
+      function fillFrom(k) {
+        putKey(k);
         // used = その表を使う解答用紙の数 (サーバの一覧から)。📤 一括で出した直後の表 (markSaved) は数を持たないので出さない
         const used = (k.used == null) ? '' : `・使った生徒 ${h(k.used)} 人`;
         reuse.innerHTML = `♻️ このプリントの前の正解表（${h(k.num_questions)} 問・${h(k.num_choices)} 択・${h(styleName(k.label_style))}${used}）を入れました。直して出すと新しい正解表になります（前に出した生徒の採点は変わりません）`;
@@ -3576,13 +3602,14 @@
         clearTimeout(timer); st.seq++;
         nq.value = ''; nc.value = '4'; style.value = 'circled'; key.value = '';
         syncStyle();
-        Object.assign(st, { pending: false, valid: false, error: '', result: null, checked: null, autofilled: null });
+        Object.assign(st, { pending: false, valid: false, error: '', result: null, checked: null, autofilled: null, fromKey: null });
         if (isChoice()) schedule(); else render();
       }
       async function setPrint(pid) {
         const my = ++st.printSeq;
         st.printId = pid || null;
         st.reuseKey = null;
+        st.fromKey = null;   // 前のプリントの正解表 (#id) は、いま選んだプリントで使わない
         // ★プリントを変えたら、前のプリントの正解は残さない (2026-10-18 点検)。残すと、正解表の無いプリントに替えても前の正解が
         //   ✅ のまま割当てられ、サーバはそれを新しいプリントの正解表として保存し、次からそのプリントの「前の正解表」として入ってしまう
         if (st.autofilled != null && key.value === st.autofilled) clearAutofilled();
@@ -3610,6 +3637,23 @@
       key.addEventListener('input', () => { st.keyPrint = st.printId; schedule(); });   // どのプリントを選んでいる間に打った正解か
       nc.addEventListener('change', schedule);
       style.addEventListener('change', () => { syncStyle(); schedule(); });
+      // ✏️ 正解を直す (PUT) が通った正解表 k (2026-10-18 点検): このプリントの「前の正解表」ならその中身を差し替え、
+      //   入れたまま (打ち直していない) なら直した正解を入れ直す。塾長が打ち直した正解は触らない
+      function onKeyUpdated(k) {
+        if (!k || k.id == null || !Array.isArray(k.key)) return;
+        const id = String(k.id);
+        if (st.reuseKey && String(st.reuseKey.id) === id) {
+          st.reuseKey = Object.assign({}, st.reuseKey, { num_questions: k.num_questions, num_choices: k.num_choices, label_style: k.label_style, key: k.key });
+        }
+        const f = st.fromKey;
+        if (!f || String(f.id) !== id || st.autofilled == null || key.value !== st.autofilled) return;
+        clearTimeout(timer); st.seq++;
+        putKey(k);
+        Object.assign(st, { pending: false, valid: false, error: '', result: null, checked: null });
+        reuse.innerHTML = `✏️ 正解表 #${h(k.id)} が直されたので、直した正解を入れ直しました（このまま出すと、直した正解表で採点します）`;
+        if (isChoice()) schedule(); else render();
+      }
+      _forms.push({ el: box, fn: onKeyUpdated });
       return {
         isChoice,
         setPrint,
@@ -3624,33 +3668,47 @@
           if (st.pending) return { ok: false, error: '正解を確認中です。少し待ってからもう一度押してください' };
           if (!st.valid || !st.result || !st.checked) return { ok: false, error: '解答用紙の正解: ' + (st.error || '確認が済んでいません') };
           const c = st.checked;
-          return { ok: true, value: { mode: 'choice', key: { num_questions: c.num_questions, num_choices: c.num_choices, label_style: c.label_style, key: c.key } },
-                   label: `📝 記号の解答用紙つき（${st.result.num_questions} 問・${st.result.num_choices} 択・${styleName(st.result.label_style)}）` };
+          const label = `📝 記号の解答用紙つき（${st.result.num_questions} 問・${st.result.num_choices} 択・${styleName(st.result.label_style)}）`;
+          // ★入れた正解表を打ち直していなければ、文字ではなく正解表 #id (key_id) を送る (2026-10-18 点検)。文字で送ると
+          //   ✏️ で直した後は中身が合わずに直す前の正解で新しい表ができ、プリントなしでは組ごとに別の表になって ✏️ で直しても
+          //   他の組を採点し直せなかった。key_id ならサーバはいまの (直した) 正解表をそのまま使う
+          const f = keyIdToSend();
+          if (f) return { ok: true, value: { mode: 'choice', key_id: f.id }, label: `${label}・正解表 #${f.id} をそのまま使います` };
+          return { ok: true, value: { mode: 'choice', key: { num_questions: c.num_questions, num_choices: c.num_choices, label_style: c.label_style, key: c.key } }, label };
         },
         reset() {
           clearTimeout(timer); st.seq++; st.printSeq++;
           mode.value = 'none'; detail.hidden = true; nq.value = ''; nc.value = '4'; style.value = 'circled'; nc.disabled = false; key.value = '';
-          Object.assign(st, { pending: false, valid: false, error: '', result: null, checked: null, reuseKey: null, autofilled: null, printId: null, keyPrint: null });
+          Object.assign(st, { pending: false, valid: false, error: '', result: null, checked: null, reuseKey: null, autofilled: null, fromKey: null, printId: null, keyPrint: null });
           reuse.innerHTML = ''; check.innerHTML = ''; hint.textContent = '';
         },
         // 📤 一括割当で出せた後 (2026-10-18 点検): 解答用紙は戻さずに残す。題名・プリント・期限は残るので、同じプリントを次の組に
         //   出すときにそのまま記号の解答用紙が付くように (reset() で「完了ボタンだけ」に戻すと、次の組は黙って ✓完了 の宿題になる)。
         //   いまの正解は「このプリントに保存した正解表」になる = 打ち直していない正解 (st.autofilled) と同じ扱い → 別のプリント / 科目に
         //   替えたら setPrint() → clearAutofilled() で消える (前のプリントの正解を別のプリントに付けない)。
-        //   saved = サーバの answer_sheet (key_id・print_id)・sent = 送った answer_sheet。送った後に打ち直した / プリントを替えたなら
-        //   何もしない (いま入っているのは保存したものではない)。返り値 = 保存した表として扱ったか
+        //   saved = サーバの answer_sheet (key_id・print_id)・sent = 送った answer_sheet ({key} か {key_id})。送った後に打ち直した /
+        //   プリントを替えたなら何もしない (いま入っているのは保存したものではない)。返り値 = 保存した表として扱ったか
+        //   ★プリントなしでも、次の組には同じ正解表 #id (key_id) を送る (2026-10-18 点検: 文字で送ると組ごとに別の表になり、
+        //   ✏️ で直しても他の組は直す前の正解のまま採点されていた)
         markSaved(saved, sent) {
-          if (!saved || saved.key_id == null || !sent || !sent.key || !isChoice() || st.pending || !st.valid || !st.result || !st.checked) return false;
-          const c = st.checked, k = sent.key;
-          if (c.key !== k.key || c.num_questions !== k.num_questions || c.num_choices !== k.num_choices || c.label_style !== k.label_style
-              || key.value !== c.key) return false;
+          if (!saved || saved.key_id == null || !sent || !isChoice() || st.pending || !st.valid || !st.result || !st.checked) return false;
+          const c = st.checked;
+          if (key.value !== c.key) return false;
+          if (sent.key_id != null) {
+            const f = keyIdToSend();   // 正解表 #id をそのまま送った: 送った後も入れたままで、その表が返ってきた
+            if (!f || String(f.id) !== String(sent.key_id) || String(saved.key_id) !== String(sent.key_id)) return false;
+          } else {
+            const k = sent.key;
+            if (!k || c.key !== k.key || c.num_questions !== k.num_questions || c.num_choices !== k.num_choices || c.label_style !== k.label_style) return false;
+          }
           const savedPrint = saved.print_id == null ? '' : String(saved.print_id);
           if (savedPrint !== (st.printId == null ? '' : String(st.printId))) return false;
           st.autofilled = key.value; st.keyPrint = null;
+          st.fromKey = { id: saved.key_id, num_questions: st.result.num_questions, num_choices: st.result.num_choices, label_style: st.result.label_style, print: st.printId };
           // このプリントの「前の正解表」はいま保存した表 (古い表のままだと、答え方を切り替えたときに古い正解で置き換わる)
           st.reuseKey = savedPrint ? { id: saved.key_id, print_id: saved.print_id, num_questions: st.result.num_questions, num_choices: st.result.num_choices,
                                        label_style: st.result.label_style, key: st.result.key, used: null } : null;
-          reuse.innerHTML = `💾 この正解を正解表 #${h(saved.key_id)} として保存しました。次の組にも同じ${savedPrint ? 'プリント' : '宿題'}を出すなら、このまま 📤 を押せば記号の解答用紙が付きます（プリントや科目を替えると消えます）`;
+          reuse.innerHTML = `💾 この正解を正解表 #${h(saved.key_id)} として保存しました。次の組にも同じ${savedPrint ? 'プリント' : '宿題'}を出すなら、このまま 📤 を押せば同じ正解表 #${h(saved.key_id)} の記号の解答用紙が付きます（✏️ 正解を直すと、この表で出した組をまとめて採点し直します・プリントや科目を替えると消えます）`;
           updateHint();
           return true;
         },
@@ -3770,6 +3828,8 @@
           const u = await postJson(`${KEYS_URL}/${encodeURIComponent(keyId)}`, { key: checked.key, label_style: checked.label_style }, 'PUT');
           if (!u.ok) { msg.innerHTML = `<span style="color:#fca5a5;">❌ ${h(errDetail(u.d, u.status))}</span>`; save.disabled = false; return; }
           msg.innerHTML = `<span style="color:#86efac;">${h(u.d.message || '✅ 直しました')}</span>`;
+          // 「✍️ 答え方」にこの正解表を入れたままのフォーム (📤 一括・生徒詳細) に、直した正解を入れ直す (直す前の正解で次の組に出さない)
+          notifyKeyUpdated(u.d && u.d.key);
           if (typeof onChanged === 'function') setTimeout(onChanged, 900);
         } catch (e) { msg.innerHTML = `<span style="color:#fca5a5;">❌ ${h(e && e.message || e)}</span>`; save.disabled = false; }
       });
