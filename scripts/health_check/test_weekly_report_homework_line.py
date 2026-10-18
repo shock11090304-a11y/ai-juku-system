@@ -30,11 +30,13 @@
        notifications の payload は数だけ (単元の名前は入れない)
   [11] 上限と重複: WEEKLY_REPORT_EMAIL_CAP・ZERO_WEEK_REPORT_CAP は今までどおり (通常レポートの席を奪わない・宿題で新しく入った家庭は
        前からの対象の後ろ = 枠を先に使わない)・6 日 dedup で 2 回目以降は何も送らない (メールも LINE も)・ログに生徒の名前と単元の名前を出さない。
-       ★点検 sending-R1: 「今週は 0 問」の 2 つの枠は日曜 1 日 (JST) で数える = 19:00 に枠で止めた家庭に同じ日の 20:05 の予備は送らない
-       (C)・メールの枠も今日の通数で使い切る (C2)・枠を広げれば今日の残りだけ (C3)・今日の通数を数えられない回は送らない・
-       日が変われば枠が戻る (E)・送り済みの家庭は capped に数えない
-  [15] 今日 (JST) の通数 (_weekly_report_sent_today): JST 0:00 ちょうどは入る・23:59:59 は入る・次の日 0:00 は入らない・
-       失敗行・LINE・ほかのメールは数えない・SELECT 1 文・cron は 1 回の実行で 1 回
+       ★点検 sending-R1: 「今週は 0 問」の 2 つの枠は週次レポートの 1 回分 (日曜 0:00 JST 〜 次の日曜 0:00 JST) で数える
+       = 19:00 に枠で止めた家庭に予備は送らない (C)・メールの枠もこの 1 回分の通数で使い切る (C2)・枠を広げれば残りだけ (C3)・
+       通数を数えられない回は送らない・★点検 R1: 月曜 0 時を過ぎて始まる予備 (月曜 01:34 JST) と土曜 23:59:59 の手動でも枠は戻らない (E0)・
+       次の日曜の 1 回分で枠が戻り、止めた家庭に送る (E)・送り済みの家庭は capped に数えない
+  [15] 1 回分の通数 (_weekly_report_batch_sent / _weekly_report_batch_bounds): 日曜 0:00 JST ちょうどは入る・土曜 23:59:59 JST は入る・
+       次の日曜 0:00 は次の 1 回分・月曜 01:34 JST (予備の実際の時刻) と月曜 9:30 (UTC の日も変わった後) も日曜と同じ数・
+       _weekly_report_window と同じ週 (窓の始まり + 6 日の日曜)・失敗行・LINE・ほかのメールは数えない・SELECT 1 文・cron は 1 回の実行で 1 回
   [12] send-one (手動) も同じ 1 行・ソース (env の既定・DDL なし・CI 登録・CLAUDE.md)
   [13] 「今週は 0 問」の文 (点検 family-F1): 宿題を全部出した週は「お声がけ」「演習まで進まなかった」と書かない・AIなし枠は
        「今日の 1 問」を勧めずボタンは塾生アプリの宿題・今週 宿題を出していれば「ログインがありません」と書かない
@@ -276,6 +278,7 @@ def main():
     fx = Fx(mod)
     B = mod._weekly_report_homework_batch
     line_of = mod._weekly_report_homework_line
+    real_window = mod._weekly_report_window   # [10]・[14] で差し替える前の本物 ([15] で 1 回分の境と突き合わせる)
 
     # ── 固定の週 (月〜日) と「今」: 窓 = 10/12 (月) 0:00 JST 〜 10/19 (月) 0:00 JST・今 = 10/19 0:30 JST (= 10/18 15:30 UTC) ──
     LO = datetime.datetime(2026, 10, 12, 0, 0, tzinfo=JST).astimezone(UTC)   # = 10/11 15:00 UTC
@@ -651,8 +654,8 @@ def main():
     check("A: homework_lines 6 (送った P1・P2・P4 + 積んだ Z1・Z3・Z4)・homework_error なし",
           isinstance(j, dict) and j.get("homework_lines") == 6 and j.get("homework_error") is None, j)
 
-    check("A: 応答に「この実行の前に今日送れた通数」(0・0)", isinstance(j, dict) and j.get("email_sent_today_before") == 0
-          and j.get("zero_week_sent_today_before") == 0, j)
+    check("A: 応答に「この実行の前に今回の 1 回分で送れた通数」(0・0)", isinstance(j, dict) and j.get("email_sent_batch_before") == 0
+          and j.get("zero_week_sent_batch_before") == 0, j)
     mod.ZERO_WEEK_REPORT_CAP = 1
     try:
         st, j = run()   # B = 19:00 の本命 (「今週は 0 問」の枠 1 通)
@@ -660,18 +663,18 @@ def main():
               and not [m for m in wire.mails if m["to"].startswith("p")] and not wire.lines and j.get("skipped_dup") == 4, j)
         b_mails = list(wire.mails)
         zb = [m["to"] for m in b_mails]
-        check("B: 「今週は 0 問」は 1 通だけ・残りの 3 家庭は capped・今日の前の通数は A の通常レポートだけ",
+        check("B: 「今週は 0 問」は 1 通だけ・残りの 3 家庭は capped・前の通数は A の通常レポートだけ",
               len(zb) == 1 and j.get("zero_week") == 1 and j.get("capped") == 3
-              and j.get("email_sent_today_before") == reg_emails and j.get("zero_week_sent_today_before") == 0, (zb, j))
+              and j.get("email_sent_batch_before") == reg_emails and j.get("zero_week_sent_batch_before") == 0, (zb, j))
         check("B: 枠は前からの対象 (Z4・Z7 = 直近 28 日に演習) が先に使う (宿題で新しく入った Z1・Z3 は後ろ = 締め出さない)",
               zb in (["z4@example.org"], ["z7@example.org"]), zb)
-        # ★点検 sending-R1: 枠は日曜 1 日で数える。C = 同じ日の 20:05 の予備 (同じ枠) は、B で枠で止めた家庭に送らない
+        # ★点検 sending-R1: 枠は 1 回分 (日曜 0:00 JST 〜) で数える。C = 予備 (同じ枠) は、B で枠で止めた家庭に送らない
         st, j = run()
-        check("C (同じ日の 20:05 の予備・同じ枠): 何も送らない (メールも LINE も)", st == 200 and not wire.mails and not wire.lines,
+        check("C (予備・同じ枠): 何も送らない (メールも LINE も)", st == 200 and not wire.mails and not wire.lines,
               (wire.mails, wire.lines))
-        check("C: 枠で止めた 3 家庭は capped・B で送った家庭は数えない・今日の前の通数 = A + B",
+        check("C: 枠で止めた 3 家庭は capped・B で送った家庭は数えない・前の通数 = A + B",
               isinstance(j, dict) and j.get("capped") == 3 and j.get("zero_week") == 0 and j.get("sent_email") == 0
-              and j.get("zero_week_sent_today_before") == 1 and j.get("email_sent_today_before") == reg_emails + 1, j)
+              and j.get("zero_week_sent_batch_before") == 1 and j.get("email_sent_batch_before") == reg_emails + 1, j)
     finally:
         mod.ZERO_WEEK_REPORT_CAP = 24
     os.environ["WEEKLY_REPORT_EMAIL_CAP"] = str(reg_emails + 1)
@@ -679,7 +682,7 @@ def main():
         st, j = run()
     finally:
         os.environ.pop("WEEKLY_REPORT_EMAIL_CAP", None)
-    check("C2: 「今週は 0 問」の枠 (24) が空いていても、メールの枠を今日の通数 (A + B) で使い切っていれば送らない",
+    check("C2: 「今週は 0 問」の枠 (24) が空いていても、メールの枠を 1 回分の通数 (A + B) で使い切っていれば送らない",
           st == 200 and not wire.mails and isinstance(j, dict) and j.get("capped") == 3 and j.get("zero_week") == 0, (wire.mails, j))
     mod.ZERO_WEEK_REPORT_CAP = 2
     try:
@@ -688,30 +691,49 @@ def main():
         mod.ZERO_WEEK_REPORT_CAP = 24
     c3_mails = list(wire.mails)
     zc3 = [m["to"] for m in c3_mails]
-    check("C3 (同じ日に ZERO_WEEK_REPORT_CAP=2): 今日の残り 1 通だけ = 前からの対象のもう 1 家庭・Z1・Z3 は capped",
+    check("C3 (同じ 1 回分で ZERO_WEEK_REPORT_CAP=2): 残り 1 通だけ = 前からの対象のもう 1 家庭・Z1・Z3 は capped",
           sorted(zb + zc3) == ["z4@example.org", "z7@example.org"] and isinstance(j, dict) and j.get("zero_week") == 1
-          and j.get("capped") == 2 and j.get("zero_week_sent_today_before") == 1, (zb, zc3, j))
-    real_day = mod._weekly_report_sent_today
+          and j.get("capped") == 2 and j.get("zero_week_sent_batch_before") == 1, (zb, zc3, j))
+    real_bs = mod._weekly_report_batch_sent
 
     def day_boom(*a, **k):
         raise RuntimeError("fixture: count failed")
-    mod._weekly_report_sent_today = day_boom
+    mod._weekly_report_batch_sent = day_boom
     try:
         st, j = run()
     finally:
-        mod._weekly_report_sent_today = real_day
-    check("今日の通数を数えられない回は「今週は 0 問」を送らない (枠を守る側)・200・応答は None",
+        mod._weekly_report_batch_sent = real_bs
+    check("1 回分の通数を数えられない回は「今週は 0 問」を送らない (枠を守る側)・200・応答は None",
           st == 200 and not wire.mails and isinstance(j, dict) and j.get("zero_week") == 0 and j.get("capped") == 2
-          and j.get("email_sent_today_before") is None and j.get("zero_week_sent_today_before") is None, (wire.mails, j))
-    # 日が変わる (今日の行を 1 日前へ = 枠は戻る・6 日 dedup はそのまま) → 枠で止めた Z1・Z3 にはその日に送る
-    ex(mod, "UPDATE notifications SET sent_at = datetime(sent_at, '-1 day') WHERE sent_at >= ?",
-       (mod._jst_day_start_utc_txt(datetime.datetime.now(UTC), 0),))
-    st, j = run()
+          and j.get("email_sent_batch_before") is None and j.get("zero_week_sent_batch_before") is None, (wire.mails, j))
+    # ★点検 R1: 予備 (weekly-reports-backup.yml) は 20:05 の予定でも、実際は月曜 0:14〜1:34 JST に始まる週が多い (直近 8 週で 4 回)。
+    #   JST の日で数えていたときは、月曜 01:34 の予備で枠が戻り、止めた Z1・Z3 に深夜に送っていた。同じ 1 回分の月曜 01:34 /
+    #   土曜 23:59:59 (手動の再実行) に数えても枠は戻らない (行は本物の時刻のまま・数える「今」だけ動かす = 曜日に関係なく同じ結果)
+    _bs_lo = datetime.datetime.strptime(mod._weekly_report_batch_bounds()[0], "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
+
+    def run_counted_at(at):
+        # 枠は C3 と同じ ZERO_WEEK_REPORT_CAP=2 (この 1 回分では B + C3 で使い切っている)
+        mod._weekly_report_batch_sent = lambda now=None: real_bs(at)
+        mod.ZERO_WEEK_REPORT_CAP = 2
+        try:
+            return run()
+        finally:
+            mod._weekly_report_batch_sent = real_bs
+            mod.ZERO_WEEK_REPORT_CAP = 24
+    for tag, at in (("月曜 01:34 JST の予備", _bs_lo + datetime.timedelta(days=1, hours=1, minutes=34)),
+                    ("土曜 23:59:59 JST の手動", _bs_lo + datetime.timedelta(days=7, seconds=-1))):
+        st, j = run_counted_at(at)
+        check(f"E0 ({tag} = 日付は変わったが同じ 1 回分・枠 2): 枠は戻らず、止めた Z1・Z3 に送らない・前の通数 = A + B + C3",
+              st == 200 and not wire.mails and not wire.lines and isinstance(j, dict) and j.get("capped") == 2
+              and j.get("zero_week_sent_batch_before") == 2 and j.get("email_sent_batch_before") == reg_emails + 2,
+              (j, [m["to"] for m in wire.mails]))
+    # 次の 1 回分 (次の日曜 19:00 JST) に数えると枠が戻る → 枠で止めた Z1・Z3 (行を書いていない) に送る (6 日 dedup は本物の時刻のまま)
+    st, j = run_counted_at(_bs_lo + datetime.timedelta(days=7, hours=19))
     e_mails = list(wire.mails)
     ze = [m["to"] for m in e_mails]
-    check("E (次の日): 枠が戻り、止めていた Z1・Z3 に送る (送った家庭・通常レポートには送らない・LINE 0)",
+    check("E (次の日曜の 1 回分・枠 2): 枠が戻り、止めていた Z1・Z3 に送る (送った家庭・通常レポートには送らない・LINE 0)",
           sorted(ze) == ["z1@example.org", "z3@example.org"] and not wire.lines and isinstance(j, dict)
-          and j.get("capped") == 0 and j.get("zero_week_sent_today_before") == 0, (ze, j))
+          and j.get("capped") == 0 and j.get("zero_week_sent_batch_before") == 0, (ze, j))
     st, j = run()
     check("D: その後は何も送らない (メールも LINE も・6 日 dedup)", not wire.mails and not wire.lines, (wire.mails, wire.lines))
     all_zero = {m["to"]: m for m in b_mails + c3_mails + e_mails}
@@ -905,36 +927,57 @@ def main():
           and off["stream_oldest_done"] == [] and off["stale_stopped"] == [0, 1] and off["stream_practice"] == [9, 10], off)
 
     # ------------------------------------------------------------------
-    print("\n[15] 今日 (JST) の通数の境目 (_weekly_report_sent_today・点検 sending-R1)")
-    GHOST = 990001   # どの生徒でもない id (母集団に入らない)・2020 年の行 = ほかの節の窓に入らない
-    for at, tmpl, ok in (("2020-01-04 14:59:59", "weekly_report_zero_week", 1),        # 1/4 23:59:59 JST = 前の日
-                         ("2020-01-04 15:00:00", "weekly_report_email", 1),            # 1/5 0:00 JST ちょうど = 入る
+    print("\n[15] 1 回分 (日曜 0:00 JST 〜 次の日曜 0:00 JST) の通数の境目 (_weekly_report_batch_sent・点検 sending-R1 / R1)")
+    GHOST = 990001   # どの生徒でもない id (母集団に入らない)・2020 年の行 = ほかの節の窓に入らない。2020-01-05 は日曜
+    for at, tmpl, ok in (("2020-01-04 14:59:59", "weekly_report_zero_week", 1),        # 1/4 (土) 23:59:59 JST = 前の 1 回分
+                         ("2020-01-04 15:00:00", "weekly_report_email", 1),            # 1/5 (日) 0:00 JST ちょうど = 入る
                          ("2020-01-05 09:00:00", "weekly_report_zero_week", 0),        # 失敗行は数えない
                          ("2020-01-05 09:00:00", "weekly_report", 1),                  # LINE は数えない
                          ("2020-01-05 09:00:00", "midweek_nudge", 1),                  # ほかのメールは数えない
-                         ("2020-01-05 09:30:00", "weekly_report_parent_email", 1),
+                         ("2020-01-05 09:30:00", "weekly_report_parent_email", 1),     # 日曜 18:30 JST (19:00 の本命)
                          ("2020-01-05 09:40:00", "weekly_report_zero_week", 1),
-                         ("2020-01-05 14:59:59", "weekly_report_zero_week_parent", 1),  # 1/5 23:59:59 JST = 入る
-                         ("2020-01-05 15:00:00", "weekly_report_parent_email", 1)):     # 1/6 0:00 JST = 次の日
+                         ("2020-01-05 14:59:59", "weekly_report_zero_week_parent", 1),  # 日曜 23:59:59 JST = 入る
+                         ("2020-01-05 16:34:00", "weekly_report_zero_week", 1),        # 月曜 01:34 JST (予備の実際の時刻) = 入る
+                         ("2020-01-11 14:59:59", "weekly_report_parent_email", 1),     # 1/11 (土) 23:59:59 JST (send-one) = 入る
+                         ("2020-01-11 15:00:00", "weekly_report_parent_email", 1)):    # 1/12 (日) 0:00 JST = 次の 1 回分
         ex(mod, "INSERT INTO notifications (student_id, channel, template, payload, success, sent_at) VALUES (?, 'email', ?, '{}', ?, ?)",
            (GHOST, tmpl, ok, at))
-    D = mod._weekly_report_sent_today
-    sun_19 = datetime.datetime(2020, 1, 5, 19, 0, tzinfo=JST)
-    check("日曜 19:00 JST: メール 4 通 (生徒コピー 0:00 ちょうど・保護者コピー・「今週は 0 問」2 通)・「今週は 0 問」2 通",
-          D(sun_19.astimezone(UTC)) == {"email": 4, "zero_week": 2}, D(sun_19.astimezone(UTC)))
-    check("同じ JST の日の 0:00 ちょうど・23:59:59 も同じ数 (UTC では前の日 15:00 〜)",
-          D(datetime.datetime(2020, 1, 5, 0, 0, tzinfo=JST)) == {"email": 4, "zero_week": 2}
-          and D(datetime.datetime(2020, 1, 5, 23, 59, 59, tzinfo=JST)) == {"email": 4, "zero_week": 2})
-    check("前の日 (1/4 JST) は 23:59:59 の 1 通だけ・次の日 (1/6 JST) は 0:00 の 1 通だけ",
+    D = mod._weekly_report_batch_sent
+    want = {"email": 6, "zero_week": 3}
+    probes = {"日曜 0:00": datetime.datetime(2020, 1, 5, 0, 0, tzinfo=JST), "日曜 19:00": datetime.datetime(2020, 1, 5, 19, 0, tzinfo=JST),
+              "月曜 01:34 (予備の実際の時刻)": datetime.datetime(2020, 1, 6, 1, 34, tzinfo=JST),
+              "月曜 9:30 (UTC の日も変わった)": datetime.datetime(2020, 1, 6, 9, 30, tzinfo=JST),
+              "土曜 23:59:59": datetime.datetime(2020, 1, 11, 23, 59, 59, tzinfo=JST)}
+    got15 = {k: D(v.astimezone(UTC)) for k, v in probes.items()}
+    check("同じ 1 回分なら日曜 0:00・19:00・月曜 01:34・月曜 9:30・土曜 23:59:59 のどこで数えても同じ "
+          "(メール 6 通 = 生徒コピー 0:00 ちょうど・保護者コピー 2・「今週は 0 問」3 通)",
+          all(g == want for g in got15.values()), got15)
+    check("★点検 R1: 月曜 01:34 JST の予備は日曜 19:00 の行を数える (JST の日で数えていたときは 0 だった)",
+          got15["月曜 01:34 (予備の実際の時刻)"]["zero_week"] == 3, got15)
+    check("前の 1 回分 (1/4 土 23:59:59 JST) は 23:59:59 の 1 通だけ・次の 1 回分 (1/12 日 0:00 JST) は 0:00 の 1 通だけ",
           D(datetime.datetime(2020, 1, 4, 23, 59, 59, tzinfo=JST)) == {"email": 1, "zero_week": 1}
-          and D(datetime.datetime(2020, 1, 6, 0, 0, tzinfo=JST)) == {"email": 1, "zero_week": 0})
+          and D(datetime.datetime(2020, 1, 12, 0, 0, tzinfo=JST)) == {"email": 1, "zero_week": 0})
+    check("tz の無い時刻は UTC として読む (月曜 01:34 JST = 日曜 16:34 UTC)", D(datetime.datetime(2020, 1, 5, 16, 34)) == want)
     ex(mod, "DELETE FROM notifications WHERE student_id = ?", (GHOST,))
-    i2 = src.index("def _weekly_report_sent_today(")
+    BB = mod._weekly_report_batch_bounds
+    check("境: 1/5 (日) 0:00 JST 〜 1/12 (日) 0:00 JST (naive UTC の文字列)",
+          BB(datetime.datetime(2020, 1, 6, 1, 34, tzinfo=JST)) == ("2020-01-04 15:00:00", "2020-01-11 15:00:00"),
+          BB(datetime.datetime(2020, 1, 6, 1, 34, tzinfo=JST)))
+    mism = []
+    t_ = datetime.datetime(2019, 12, 29, 0, 0, tzinfo=UTC)
+    while t_ < datetime.datetime(2020, 1, 26, tzinfo=UTC):
+        w_lo = real_window(t_.astimezone(JST))[0]
+        if BB(t_)[0] != (w_lo + datetime.timedelta(days=6)).strftime("%Y-%m-%d %H:%M:%S"):
+            mism.append(t_.isoformat())
+        t_ += datetime.timedelta(minutes=37)
+    check("_weekly_report_window と同じ週をさす (4 週を 37 分おきに: 窓の始まり + 6 日の日曜 0:00 JST = 1 回分の始まり)", not mism, mism[:5])
+    i2 = src.index("def _weekly_report_batch_bounds(")
     body2 = src[i2:src.index("\n@app.post", i2)]
-    check("今日の通数は SELECT 1 文だけ (書かない・DDL なし)", body2.count("c.execute(") == 1
+    check("1 回分の通数は SELECT 1 文だけ (書かない・DDL なし)", body2.count("c.execute(") == 1
           and not re.search(r"\b(INSERT|UPDATE|DELETE|ALTER|CREATE|DROP)\b", body2), body2[:200])
-    check("cron は今日の通数を生徒のループの前に 1 回だけ数える (生徒ごとに回さない)",
-          cron.count("_weekly_report_sent_today()") == 1 and cron.index("_weekly_report_sent_today()") < cron.index("for row in students:"))
+    check("cron は 1 回分の通数を生徒のループの前に 1 回だけ数える (生徒ごとに回さない)",
+          cron.count("_weekly_report_batch_sent()") == 1 and cron.index("_weekly_report_batch_sent()") < cron.index("for row in students:"))
+    check("JST の今日で数える古い関数は残っていない", "_weekly_report_sent_today" not in src)
 
     print()
     if FAILURES:
