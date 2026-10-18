@@ -1694,6 +1694,12 @@ def main():
     for p in ("'hw-sheet.js'", "'class.html'", "'mypage.js'", "'mypage.html'", "'ceo.html'"):
         check(f"CI の paths に {p} (画面だけの push でも走らせる)", p in paths_block)
 
+    # 2026-10-18 最終点検 L2・L3 (ceo.html CeoHwSheet)
+    check("CEO: 「入れる (今の正解を置き換え)」は押した時点の st.reuseKey を入れる (✏️ で直す前の正解を入れない・L3)",
+          "if (b) b.addEventListener('click', () => { if (st.reuseKey) fillFrom(st.reuseKey); });" in ceo_html)
+    check("CEO: ✏️ で正解表が直されても、問題数・択数・記号を変えた入力欄は入れ直さない (L2)",
+          "parseInt(nq.value, 10) !== Number(f.num_questions) || parseInt(nc.value, 10) !== Number(f.num_choices) || style.value !== f.label_style" in ceo_html)
+
     print()
     if FAILURES:
         print(f"❌ FAIL {len(FAILURES)} 件: " + " / ".join(FAILURES[:20]))

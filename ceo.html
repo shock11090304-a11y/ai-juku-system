@@ -3602,7 +3602,8 @@
         if (!key.value.trim() || key.value === st.autofilled) { fillFrom(k); return; }
         reuse.innerHTML = '♻️ このプリントには前の正解表があります <button type="button" class="hws-fill" style="padding:2px 8px;border-radius:5px;border:1px solid rgba(147,197,253,0.5);background:rgba(59,130,246,0.15);color:#bfdbfe;cursor:pointer;font-size:0.74rem;">入れる (今の正解を置き換え)</button>';
         const b = reuse.querySelector('.hws-fill');
-        if (b) b.addEventListener('click', () => fillFrom(k));
+        // 押した時点の st.reuseKey を入れる (✏️ で直された後に押しても直す前の正解を入れない・2026-10-18 点検 L3)
+        if (b) b.addEventListener('click', () => { if (st.reuseKey) fillFrom(st.reuseKey); });
       }
       // 前のプリントから自動で入れた正解 (打ち直していない) は、前のプリントのもの。問題数・択数・記号・正解・確認表をまっさらに戻す
       function clearAutofilled() {
@@ -3654,6 +3655,11 @@
         }
         const f = st.fromKey;
         if (!f || String(f.id) !== id || st.autofilled == null || key.value !== st.autofilled) return;
+        // 問題数・択数・記号を塾長が変えていたら入れ直さない (変えた設定を黙って戻さない・2026-10-18 点検 L2)
+        if (parseInt(nq.value, 10) !== Number(f.num_questions) || parseInt(nc.value, 10) !== Number(f.num_choices) || style.value !== f.label_style) {
+          reuse.innerHTML = `✏️ 正解表 #${h(k.id)} が直されました。問題数・択数・記号を変えているので、入力欄はそのままにしています（正解を確かめてください）`;
+          return;
+        }
         clearTimeout(timer); st.seq++;
         putKey(k);
         if (st.fromKey && f.title != null) st.fromKey.title = f.title;   // プリントなしの表は、出した宿題の題名を持ったまま (L1)
