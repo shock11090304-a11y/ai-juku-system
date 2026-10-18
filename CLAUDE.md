@@ -755,17 +755,25 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
     週 = レポートと同じ `_weekly_report_window` (JST)。N = 配った日時が窓の中・M = 窓の中に出した本数 (前の週に届いた分も = M > N もある)・
     K = いま未提出で 〆 (宿題の期限 / クラス自動宿題の題名の「〆M/D」= `_class_brief_title_due`) < JST の今日 (hw-notice.js と同じ・古さで切らない・3日ドリル / 塾長のドリルに 〆 は無い)。
     数える = クラス自動宿題・3日ドリル・塾長のドリル (15問ミッションも)・塾長の宿題 (解答用紙も)。今日の1問・初回診断は数えない (`_CLASS_BRIEF_NOT_SELF_SQL`)。
-    単元 = 〆過ぎの単元 (無ければ窓の中に届いた未提出の単元を「（未提出: …）」) を新しい順に 3 つ。N・M・K が全部 0 の生徒は 1 行なし (今までと同じ本文)。
+    未提出 (pending) = いま未提出の全部 (前の週に届いた 〆なしの 3日ドリル・〆がまだ先の宿題も・窓の後に届いて 〆前の分は除く・古さで切らない)。
+    単元 = 〆過ぎの単元 (無ければ未提出の単元を「（未提出: …）」) を新しい順に 3 つ。N・M・K が 0 で未提出も無い生徒だけ 1 行なし (今までと同じ本文)。
+    ★点検 correct-F1: 前は窓の中に届いた分と 〆過ぎだけを数え、前の週からの 3日ドリル (次を止めている) が消えていた → 「…0 本（未提出: 仮定法）」と出す。
   - リンク: AIなし枠 `class.html?tab=homework`・ほか `mypage.html?focus=homework` (`_homework_notify_link_paths`)。LINE は `&openExternalBrowser=1`。
     LINE は前から受け取っている生徒 (連携済み・`need_line`) の `weekly_report` の中だけ (1 行が無ければ本文は 1 文字も変わらない)。「今週は 0 問」は LINE を送らない (今までどおり)。
-  - 「今週は 0 問」: 演習の記録が一度も無い・休眠 (28 日より前) の生徒でも、未提出 (窓の中に届いて未提出 / 〆過ぎ) があれば送る
-    (`WEEKLY_REPORT_HOMEWORK_ZERO_WEEK` 既定 `1`・`0` / off で従来どおり・呼ぶたびに読む・`_zero_week_report_decision(homework_pending=True)` → `via_homework`)。
+  - 「今週は 0 問」: 演習の記録が一度も無い・休眠 (28 日より前) の生徒でも、宿題の新しい知らせ (`pending_recent` = 窓の中に届いた未提出 /
+    〆が直近 `ZERO_WEEK_REPORT_ACTIVE_WINDOW_DAYS` (28) 日の 〆過ぎ) があれば送る (`WEEKLY_REPORT_HOMEWORK_ZERO_WEEK` 既定 `1`・`0` / off で従来どおり・
+    呼ぶたびに読む・`_zero_week_report_decision(homework_pending=True, homework_since=oldest_open_at)` → `via_homework`)。
     ★上限 (`ZERO_WEEK_REPORT_CAP`・`WEEKLY_REPORT_EMAIL_CAP`・連続 2 週 = 29 日に 2 回まで)・6 日 dedup・受講開始前のスキップ・水曜の一声との重ね方は同じ。
+    ★`via_homework` は「1 回の停止につき 2 週」も: 最後の演習といちばん古い未提出が届いた時刻の新しい方より後に 2 週送ったら送らない
+    (点検 sending-F1 / correct-F2: 29 日の上限だけだと古い 〆過ぎで休眠の家庭に 5 週に 2 回ずつ終わりなく届いた。新しい宿題が毎週届いても 2 週で止まる・
+    演習するか いちばん古い未提出を出すと数え直す)。古い 〆過ぎだけでは送らない (1 行には出る)。
+    宿題を全部出した週 (未提出 0・提出 1 本以上) は「お声がけ」「演習まで進まなかった」と書かない・今週 宿題を出していれば「ログインがありません」と書かない・
+    AIなし枠は「今日の 1 問」を勧めずボタンは塾生アプリの宿題 (点検 family-F1: 解答用紙・✓完了は演習の記録にならないので全部出した生徒にも届く)。
     第 2 パスは前からの対象を先に送り、`via_homework` の家庭は後ろ (枠を先に使って前から届いていた家庭を締め出さない)。
     記録が無い生徒には「最後の演習」を書かない。未提出があるとボタンは「📝 宿題を開く」(AIなし枠は「今日の 1 問」を開けないため)。payload は数だけ (`hw` = n/m/k)。
   - 応答 (events `weekly_reports_run` にも残る・名前なし): `homework_lines`・`zero_week_homework`・`homework_totals` {students, delivered, submitted, overdue}・
-    `homework_zero_week_enabled`・`homework_error` (数えられなければ 1 行なしで送る)。dry-run の preview に `homework` {delivered, submitted, overdue, pending, units, link, line}・`zero_week_via_homework`。
-  - 回帰テスト `scripts/health_check/test_weekly_report_homework_line.py` (CI `server-tests.yml`)。
+    `homework_zero_week_enabled`・`homework_error` (数えられなければ 1 行なしで送る)。dry-run の preview に `homework` {delivered, submitted, overdue, pending, pending_recent, units, link, line}・`zero_week_via_homework`。
+  - 回帰テスト `scripts/health_check/test_weekly_report_homework_line.py` (CI `server-tests.yml`・[14] は 0〜15 週を続けて回して送る週を固定する)。
 - **平日に `POST /api/cron/weekly-reports?dry_run=true` を叩くと「先週の完了週」で評価される** (`_weekly_report_window`)。
   日曜だけ「今週」。平日の dry run で対象外と出ても日曜に送られないとは限らない。
 - **mypage の初期化は補助スクリプトを最大 10 秒しか待たない** (`_ajWidgetWait`)。`slApiFetch` は既定 30 秒でタイムアウト

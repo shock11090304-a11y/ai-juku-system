@@ -36048,15 +36048,25 @@ def _compute_weekly_stats(student_id: int, days: int = 7, week_aligned: bool = T
 #     (生徒の画面 hw-notice.js の「〆を過ぎた」と同じ数え方・古さで切らない。3日ドリル・塾長のドリルには 〆 が無い = K に入らない)。
 #   - 数えるもの: クラス自動宿題・3日ドリル・塾長のドリル (15問ミッションも)・塾長の宿題 (記号の解答用紙の宿題も)。
 #     今日の1問・初回診断は数えない (_CLASS_BRIEF_NOT_SELF_SQL = 授業ブリーフ・生徒の「新しい宿題」と同じ)。
-#   - 未提出 (pending) = 窓の中に届いて未提出 + 〆を過ぎた未提出。単元 = 〆を過ぎた未提出の単元 (無ければ pending の単元) を新しい順に 3 つまで
+#   - 未提出 (pending) = いま未提出の全部 (窓の中に届いた分・〆を過ぎた分・前の週に届いて 〆 が無い / まだ先の分。窓の後に届いた分は
+#     〆を過ぎていなければ数えない。生徒の画面 hw-notice.js の「未提出」と同じく古さで切らない)。
+#     ★2026-10-18 点検 correct-F1: 前は「窓の中に届いた + 〆過ぎ」だけで、前の週に届いた 3日ドリル (〆なし・次の 3日ドリルを止めている) や
+#       〆がまだ先の宿題が 1 行からも単元からも消えていた = 「未提出で次が届かない」家庭ほど何も届かなかった。
+#     単元 = 〆を過ぎた未提出の単元 (無ければ未提出の単元) を新しい順に 3 つまで
 #     (同じ名前は 1 つ・ドリルは unit・宿題は topic か題名・先頭の【…】は外す・20 字まで)。
-#   - N・M・K が全部 0 (何も届かず・何も出さず・〆を過ぎた未提出も無い) の生徒は 1 行を出さない (返す dict に入れない)。
+#   - N・M・K が全部 0 で未提出も無い (何も届かず・何も出さず・残っている未提出も無い) 生徒は 1 行を出さない (返す dict に入れない)。
+#     N・M・K が 0 でも未提出が残っていれば「…〆を過ぎた未提出 0 本（未提出: 単元）」と出す。
+#   - 「今週は 0 問」に宿題で入れる合図 (pending_recent) = 窓の中に届いた未提出 + 〆が直近 ZERO_WEEK_REPORT_ACTIVE_WINDOW_DAYS 日の
+#     〆過ぎ (★点検 sending-F1 / correct-F2: 古い 〆過ぎだけで送ると、休眠の家庭に 5 週に 2 回ずつ終わりなく届いていた)。
+#     oldest_open_at = いちばん古い未提出が届いた時刻 (_zero_week_report_decision の「1 回の停止につき最大 MAX 週」の起点)。
 #   - リンク: AIなし枠は {BASE_URL}/class.html?tab=homework・ほかは {BASE_URL}/mypage.html?focus=homework (宿題のお知らせと同じ
 #     _homework_notify_link_paths = _ai_blocked_now)。LINE は &openExternalBrowser=1 を足す (LINE の中のブラウザはログインを持たない =
 #     2026-10-18 の LINE「やること」・リッチメニューと同じ)。
 #   - SELECT はレポートの全生徒で ドリル 1・宿題 1 (生徒 id は 500 件ずつの IN)・リンク 1。生徒ごとに回さない。書かない・DDL なし・ログに名前を出さない。
-#   - 「今週は 0 問」メール: 演習の記録が無い / 休眠の生徒でも pending があれば送る (WEEKLY_REPORT_HOMEWORK_ZERO_WEEK・既定 1。
-#     _zero_week_report_decision(homework_pending=True))。上限 (ZERO_WEEK_REPORT_CAP・WEEKLY_REPORT_EMAIL_CAP・連続 2 週)・6 日 dedup は同じ。
+#   - 「今週は 0 問」メール: 演習の記録が無い / 休眠の生徒でも pending_recent があれば送る (WEEKLY_REPORT_HOMEWORK_ZERO_WEEK・既定 1。
+#     _zero_week_report_decision(homework_pending=True, homework_since=oldest_open_at))。上限 (ZERO_WEEK_REPORT_CAP・
+#     WEEKLY_REPORT_EMAIL_CAP・29 日に 2 週)・6 日 dedup は同じで、宿題で入った家庭は「最後の演習 (無ければいちばん古い未提出が
+#     届いた時) から 2 週まで」= 新しい宿題が届き続けても 1 回の停止につき 2 週 (演習するか、いちばん古い未提出を出すと数え直す)。
 # ══════════════════════════════════════════════════════════════════
 _WEEKLY_HW_UNITS_MAX = 3
 _WEEKLY_HW_UNIT_CHARS = 20
@@ -36088,14 +36098,16 @@ def _weekly_report_homework_url(link_path: str, line: bool = False) -> str:
 
 def _weekly_report_homework_line(hw) -> str:
     """📝 1 行の文 (メール・LINE・「今週は 0 問」で同じ)。hw = _weekly_report_homework_batch の 1 生徒分。出さないときは ''。
-    単元は 〆を過ぎた未提出のもの (K の後ろにそのまま) か、無ければ未提出のもの (「未提出: …」と書く = 〆過ぎと読ませない)。"""
+    単元は 〆を過ぎた未提出のもの (K の後ろにそのまま) か、無ければ未提出のもの (「未提出: …」と書く = 〆過ぎと読ませない)。
+    N・M・K が 0 でも未提出 (pending) が残っていれば出す (前の週に届いた 3日ドリルが残っている家庭にも届ける = 点検 correct-F1)。"""
     if not hw:
         return ""
     try:
         n, m, k = int(hw.get("delivered") or 0), int(hw.get("submitted") or 0), int(hw.get("overdue") or 0)
+        p = int(hw.get("pending") or 0)
     except (TypeError, ValueError):
         return ""
-    if not (n or m or k):
+    if not (n or m or k or p):
         return ""
     s = f"📝 今週の宿題: 届いた {n} 本／提出 {m} 本／〆を過ぎた未提出 {k} 本"
     units = [str(u) for u in (hw.get("units") or []) if u][:_WEEKLY_HW_UNITS_MAX]
@@ -36109,15 +36121,20 @@ def _weekly_hw_preview(hw) -> Optional[dict]:
     if not hw:
         return None
     return {"delivered": hw.get("delivered", 0), "submitted": hw.get("submitted", 0), "overdue": hw.get("overdue", 0),
-            "pending": hw.get("pending", 0), "units": list(hw.get("units") or []), "link": hw.get("link"),
+            "pending": hw.get("pending", 0), "pending_recent": hw.get("pending_recent", 0),
+            "units": list(hw.get("units") or []), "link": hw.get("link"),
             "line": _weekly_report_homework_line(hw)}
 
 
 def _weekly_report_homework_batch(student_ids, since_utc, until_utc=None, *, now_utc=None, conn=None) -> dict:
     """📝 週次レポートの「今週の宿題」を全生徒まとめて数える (読むだけ)。返り値 {生徒ID: {delivered, submitted, overdue, pending,
-    units, units_of, link, url, line_url, text}} (N・M・K が全部 0 の生徒は入れない)。since_utc / until_utc = _weekly_report_window の値
-    (until None = いままで)。now_utc = 〆を過ぎたかの基準 (JST の今日)。conn を渡せばそれで読む (閉じない)。
-    SQL は 1 日広めに読み (SQLite の 'T' 区切りの時刻も文字列で比べるため)、窓の境目は Python で datetime どうしで比べる。"""
+    pending_recent, oldest_open_at, units, units_of, link, url, line_url, text}} (N・M・K が全部 0 で未提出も無い生徒は入れない)。
+    since_utc / until_utc = _weekly_report_window の値 (until None = いままで)。now_utc = 〆を過ぎたかの基準 (JST の今日)。
+    conn を渡せばそれで読む (閉じない)。
+    SQL は 1 日広めに読み (SQLite の 'T' 区切りの時刻も文字列で比べるため)、窓の境目は Python で datetime どうしで比べる。
+    pending = いま未提出の全部 (窓の後に届いて 〆を過ぎていない分は除く)・pending_recent = 窓の中に届いた未提出 + 〆が直近
+    ZERO_WEEK_REPORT_ACTIVE_WINDOW_DAYS 日の 〆過ぎ (「今週は 0 問」に宿題で入れる合図)・oldest_open_at = いちばん古い未提出が
+    届いた時刻 (UTC の ISO・届いた時刻が読めない未提出だけなら None)。"""
     ids = sorted({int(x) for x in (student_ids or []) if x is not None})
     if not ids:
         return {}
@@ -36129,6 +36146,8 @@ def _weekly_report_homework_batch(student_ids, since_utc, until_utc=None, *, now
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
     today = now.astimezone(_JST).date()
+    # 〆過ぎを「今週は 0 問」の合図に数えるのは 〆が直近 ZERO_WEEK_REPORT_ACTIVE_WINDOW_DAYS 日の分だけ (古い 〆過ぎは 1 行には出すが合図にしない)
+    recent_due_floor = today - timedelta(days=max(1, int(ZERO_WEEK_REPORT_ACTIVE_WINDOW_DAYS)))
     sql_lo = (lo.astimezone(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
     has_topic = _table_has_column("homework_assignments", "topic")
 
@@ -36141,7 +36160,7 @@ def _weekly_report_homework_batch(student_ids, since_utc, until_utc=None, *, now
     def _add(sid, status, assigned_raw, completed_raw, due, unit):
         rec = acc.get(sid)
         if rec is None:
-            rec = acc[sid] = {"delivered": 0, "submitted": 0, "overdue": [], "pending": []}
+            rec = acc[sid] = {"delivered": 0, "submitted": 0, "overdue": [], "pending": [], "recent": 0, "oldest": None}
         delivered = _in_win(assigned_raw)
         if delivered:
             rec["delivered"] += 1
@@ -36150,12 +36169,20 @@ def _weekly_report_homework_batch(student_ids, since_utc, until_utc=None, *, now
                 rec["submitted"] += 1
             return
         aj = _parse_db_dt(assigned_raw)
+        is_over = due is not None and due < today
+        if hi is not None and aj is not None and aj >= hi and not is_over:
+            return   # 窓の後 (次の週) に届いた未提出は、〆を過ぎていなければこの週のレポートに入れない
         akey = aj.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S") if aj else ""
-        if due is not None and due < today:
+        if is_over:
             rec["overdue"].append((due.isoformat(), akey, unit))
-            rec["pending"].append((akey, unit))
+            if due >= recent_due_floor:
+                rec["recent"] += 1
         elif delivered:
-            rec["pending"].append((akey, unit))
+            rec["recent"] += 1
+        # 未提出は全部 (前の週に届いた 〆なし / 〆がまだ先の分も = 点検 correct-F1)
+        rec["pending"].append((akey, unit))
+        if aj is not None and (rec["oldest"] is None or aj < rec["oldest"]):
+            rec["oldest"] = aj
 
     own = conn is None
     if own:
@@ -36199,7 +36226,7 @@ def _weekly_report_homework_batch(student_ids, since_utc, until_utc=None, *, now
     out = {}
     for sid, rec in acc.items():
         k, p = len(rec["overdue"]), len(rec["pending"])
-        if not (rec["delivered"] or rec["submitted"] or k):
+        if not (rec["delivered"] or rec["submitted"] or k or p):
             continue
         if k:
             src = [u for _d, _a, u in sorted(rec["overdue"], key=lambda x: (x[0], x[1]), reverse=True)]
@@ -36214,6 +36241,8 @@ def _weekly_report_homework_batch(student_ids, since_utc, until_utc=None, *, now
             if len(units) >= _WEEKLY_HW_UNITS_MAX:
                 break
         out[sid] = {"delivered": rec["delivered"], "submitted": rec["submitted"], "overdue": k, "pending": p,
+                    "pending_recent": int(rec["recent"]),
+                    "oldest_open_at": rec["oldest"].astimezone(timezone.utc).isoformat() if rec["oldest"] else None,
                     "units": units, "units_of": units_of if units else None}
     if out:
         paths = _homework_notify_link_paths(sorted(out))   # 1 回の SELECT (読めなければ mypage = AIなし枠は mypage が class.html へ送る)
@@ -37913,11 +37942,16 @@ ZERO_WEEK_REPORT_MAX_CONSECUTIVE = int(os.getenv("ZERO_WEEK_REPORT_MAX_CONSECUTI
 ZERO_WEEK_REPORT_CAP = int(os.getenv("ZERO_WEEK_REPORT_CAP", "24"))
 
 
-def _zero_week_report_decision(student_id: int, homework_pending: bool = False) -> Optional[dict]:
+def _zero_week_report_decision(student_id: int, homework_pending: bool = False, homework_since=None) -> Optional[dict]:
     """演習ゼロ週に軽量レポートを送るか。送るなら {days_since, last_active_date, recent_login, via_homework}、送らないなら None。
-    📝 2026-10-18 (塾長「③の週次レポートの1行も作っておいて」): homework_pending=True (未提出の宿題がある = 週の窓に届いて未提出か
-    〆を過ぎた未提出・cron が WEEKLY_REPORT_HOMEWORK_ZERO_WEEK のときだけ渡す) なら、一度も演習していない生徒・休眠層にも送る
-    (via_homework=True・演習の記録が無ければ days_since / last_active_date は None)。連続上限は同じ (家庭に届く回数は増やさない)。"""
+    📝 2026-10-18 (塾長「③の週次レポートの1行も作っておいて」): homework_pending=True (宿題の新しい知らせがある = 週の窓に届いて
+    未提出か、〆が直近 ZERO_WEEK_REPORT_ACTIVE_WINDOW_DAYS 日の 〆過ぎ = _weekly_report_homework_batch の pending_recent・cron が
+    WEEKLY_REPORT_HOMEWORK_ZERO_WEEK のときだけ渡す) なら、一度も演習していない生徒・休眠層にも送る
+    (via_homework=True・演習の記録が無ければ days_since / last_active_date は None)。
+    via_homework の上限は 2 つ: 今までの「29 日に MAX 週」と、「1 回の停止につき MAX 週」= 最後の演習と homework_since
+    (いちばん古い未提出が届いた時刻) の新しい方より後に送った週が MAX に達したら送らない。
+    ★2026-10-18 点検 sending-F1 / correct-F2: 29 日の上限だけだと、28 日の活動窓が切れた後も 29 日ずつ数え直して
+      「2 週送→3 週休→また送」が終わりなく続いた (休眠の家庭に 5 週に 2 回ずつ)。"""
     JST = timezone(timedelta(hours=9))
     today = datetime.now(JST).date()
     conn = db()
@@ -37959,6 +37993,24 @@ def _zero_week_report_decision(student_id: int, homework_pending: bool = False) 
         weeks_sent = (c.fetchone() or {"w": 0})["w"] or 0
         if int(weeks_sent) >= ZERO_WEEK_REPORT_MAX_CONSECUTIVE or int(n) >= 2 * ZERO_WEEK_REPORT_MAX_CONSECUTIVE:
             return None  # 連続上限
+        if via_homework:
+            # 📝 1 回の停止につき MAX 週 (宿題で入れた家庭だけ)。起点 = 最後の演習と、いちばん古い未提出が届いた時刻の新しい方
+            #   (どちらも無ければ全期間)。演習するか、いちばん古い未提出を出せば起点が進んで数え直す。
+            anchors = [d for d in (_parse_db_dt(last_at), _parse_db_dt(homework_since)) if d is not None]
+            if anchors:
+                c.execute(
+                    "SELECT COUNT(DISTINCT substr(CAST(sent_at AS TEXT), 1, 10)) AS w FROM notifications WHERE student_id = ? "
+                    "AND template IN ('weekly_report_zero_week', 'weekly_report_zero_week_parent') AND success = 1 AND sent_at > ?",
+                    (int(student_id), max(anchors).astimezone(timezone.utc)),
+                )
+            else:
+                c.execute(
+                    "SELECT COUNT(DISTINCT substr(CAST(sent_at AS TEXT), 1, 10)) AS w FROM notifications WHERE student_id = ? "
+                    "AND template IN ('weekly_report_zero_week', 'weekly_report_zero_week_parent') AND success = 1",
+                    (int(student_id),),
+                )
+            if int((c.fetchone() or {"w": 0})["w"] or 0) >= ZERO_WEEK_REPORT_MAX_CONSECUTIVE:
+                return None  # この停止のあいだに MAX 週送った
         # 保護者宛の「ログインできていない可能性」は、直近 7 日にログインが無いときだけ添える (review 指摘: 不安を煽らない)
         c.execute("SELECT last_login_at FROM students WHERE id = ?", (int(student_id),))
         srow = c.fetchone()
@@ -37992,14 +38044,23 @@ def _send_zero_week_report_email(to_email: str, student_name: str, zw: dict, is_
     _hw = zw.get("homework") or None
     _hw_text = _weekly_report_homework_line(_hw) if _hw else ""
     _hw_pending = bool(_hw_text and int((_hw or {}).get("pending") or 0) > 0)
+    _hw_submitted = int((_hw or {}).get("submitted") or 0) if _hw_text else 0
+    # ★2026-10-18 点検 family-F1: 今週の宿題を全部出した週 (未提出 0・提出 1 本以上) に「演習まで進まなかった・お声がけを」と頼まない。
+    #   解答用紙・✓完了の宿題は演習の記録 (question_attempts) にならないので、宿題を全部出した生徒にもこのメールが届く。
+    _hw_all_done = bool(_hw_text and not _hw_pending and _hw_submitted > 0)
+    _hw_ai_nashi = bool(_hw_text and (_hw or {}).get("link") == "class")   # AIなし枠 = 「今日の 1 問」は開けない (塾生アプリへ)
     _hw_url = ((_hw or {}).get("url") or _weekly_report_homework_url("mypage")) if _hw_text else ""
     if is_parent:
         _disp = safe_name or "お子さま"  # 氏名が空でも「さんの…」にならないように
         subject = f"【TRILLION AI コーチング】{_disp}さんの今週の学習レポート（演習 0 問）" if safe_name else "【TRILLION AI コーチング】今週の学習レポート（演習 0 問）"
         lead = (f"今週は {_disp}{'さん' if safe_name else ''}の演習の記録がありませんでした{_last_clause}。")
-        if zw.get("recent_login") and _hw_pending:
-            note = ("直近 1 週間のログインは確認できています。まだ提出していない宿題があります。"
-                    "下のボタンから宿題を開けます。お声がけいただけると助かります。")
+        if _hw_all_done:
+            note = ("今週の宿題は全部提出できています。"
+                    + ("" if _hw_ai_nashi else "マイページの演習も「今日は 1 問だけ」から再開できます。"))
+        elif _hw_pending and (zw.get("recent_login") or _hw_submitted > 0):
+            # 今週 宿題を出している (= アプリは開けている) ならログインの不安は書かない
+            note = (("直近 1 週間のログインは確認できています。" if zw.get("recent_login") else f"今週は宿題を {_hw_submitted} 本提出しています。")
+                    + "まだ提出していない宿題があります。下のボタンから宿題を開けます。お声がけいただけると助かります。")
         elif zw.get("recent_login"):
             note = ("直近 1 週間のログインは確認できています。今週は演習まで進まなかったようです。"
                     "お子さまがマイページを開けば「今日は 1 問だけ」から再開できます。お声がけいただけると助かります。")
@@ -38017,14 +38078,20 @@ def _send_zero_week_report_email(to_email: str, student_name: str, zw: dict, is_
         if _hw_pending:
             subject = "【AIコーチング】今週は演習 0 問でした。まだ出していない宿題があります"
             note = "まずは 1 本だけ開いて出してみましょう。"
-    if _hw_pending:
+        elif _hw_all_done:
+            subject = ("【AIコーチング】今週の宿題は全部出せました" if _hw_ai_nashi
+                       else "【AIコーチング】今週の宿題は全部出せました。演習は 1 問からどうですか？")
+            note = ("今週の宿題は全部出せました。おつかれさまです。"
+                    + ("" if _hw_ai_nashi else "演習も 1 問で十分です。解けば AI が明日からの「一手」をあなた向けに出し直します。"))
+    # 未提出がある / AIなし枠 (「今日の 1 問」は開けない) で全部出せた → ボタンは宿題を開く (AIなし枠は塾生アプリの宿題タブ)
+    if _hw_pending or (_hw_all_done and _hw_ai_nashi):
         cta = "📝 宿題を開く"
         cta_url = _hw_url
     _hw_block = ""
     if _hw_text:
         _hw_block = (f'<p style="background:#eff6ff; border:1px solid #bfdbfe; padding:0.8rem 1rem; border-radius:6px; font-size:0.92rem; color:#1e3a8a;">'
                      f'{_html.escape(_hw_text)}'
-                     + ("" if _hw_pending else f' <a href="{_html.escape(_hw_url)}" style="color:#1d4ed8;">宿題を開く</a>')
+                     + ("" if cta_url == _hw_url else f' <a href="{_html.escape(_hw_url)}" style="color:#1d4ed8;">宿題を開く</a>')
                      + '</p>\n')
     # 挨拶: 氏名が空でも読点始まりにならないように組む
     if is_parent:
@@ -38314,14 +38381,15 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
                 if _before_start_month(row["start_month"] if "start_month" in row.keys() else None):
                     skipped += 1
                     continue
-                # 📝 2026-10-18: 未提出の宿題 (週の窓に届いて未提出 / 〆を過ぎた未提出) がある生徒は、演習の記録が無い・休眠でも送る
-                #   (WEEKLY_REPORT_HOMEWORK_ZERO_WEEK・既定 ON)。連続上限・枠・dedup は同じ (下の第 2 パス)。
+                # 📝 2026-10-18: 宿題の新しい知らせ (週の窓に届いて未提出 / 〆が直近 28 日の 〆過ぎ = pending_recent) がある生徒は、
+                #   演習の記録が無い・休眠でも送る (WEEKLY_REPORT_HOMEWORK_ZERO_WEEK・既定 ON)。古い 〆過ぎだけでは送らない・
+                #   1 回の停止につき 2 週まで (homework_since = いちばん古い未提出が届いた時刻)。連続上限・枠・dedup は同じ (下の第 2 パス)。
                 _hw = hw_by_sid.get(int(row["id"]))
-                _hw_pending = bool(hw_zero_week_on and _hw and int(_hw.get("pending") or 0) > 0)
+                _hw_pending = bool(hw_zero_week_on and _hw and int(_hw.get("pending_recent") or 0) > 0)
                 if not ZERO_WEEK_REPORT_ENABLED:
                     zw = None
                 elif _hw_pending:
-                    zw = _zero_week_report_decision(row["id"], homework_pending=True)
+                    zw = _zero_week_report_decision(row["id"], homework_pending=True, homework_since=_hw.get("oldest_open_at"))
                 else:
                     zw = _zero_week_report_decision(row["id"])
                 if not zw:

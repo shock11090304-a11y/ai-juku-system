@@ -12,8 +12,11 @@
   [3] 〆を過ぎた: 宿題の期限・クラス自動宿題の題名の「〆M/D」が JST の今日より前の未提出だけ (今日が 〆 は過ぎていない・提出済みは数えない・
       古さで切らない)。3日ドリル・塾長のドリルには 〆 が無い
   [4] 単元: 〆を過ぎた未提出の単元 (〆の新しい順) を 3 つまで・同じ名前は 1 つ・【クラス名】を外す・20 字まで。〆過ぎが無ければ
-      未提出の単元を「（未提出: …）」で
-  [5] 1 行を出さない: 何も届かず・何も出さず・〆を過ぎた未提出も無い生徒 (古い未提出の 3日ドリルだけ・今日の1問だけ・何も無い)
+      未提出の単元を「（未提出: …）」で (前の週に届いた未提出も = 点検 correct-F1)
+  [5] 1 行を出さない: 何も届かず・何も出さず・未提出も無い生徒 (今日の1問だけ・何も無い)。前の週に届いた 3日ドリル (〆なし) や
+      〆がまだ先の宿題だけが残っている生徒には「…0 本（未提出: …）」で出す (点検 correct-F1)。
+      「今週は 0 問」の合図 (pending_recent) は窓の中に届いた未提出と 〆が直近 28 日の 〆過ぎだけ (境目 28 日ちょうど)・
+      oldest_open_at = いちばん古い未提出が届いた時刻
   [6] リンク: AIなし枠は class.html?tab=homework・AI 体験中と AIあり は mypage.html?focus=homework (宿題のお知らせと同じ判定)・
       LINE は &openExternalBrowser=1・# 付きは使わない
   [7] 文と描画: LINE の本文は 1 行が無ければ今までと 1 文字も同じ・あればレポートの中に 1 行とリンク。メールの HTML は escape する
@@ -23,10 +26,15 @@
   [10] cron (本番): 生徒コピー・保護者コピーの HTML に 1 行・LINE は前から受け取っている生徒だけ (「今週は 0 問」の生徒には LINE を送らない)・
        1 行の無い生徒のメール / LINE は今までどおり・演習の記録が無い生徒の「今週は 0 問」に 1 行と「宿題を開く」(AIなし枠は塾生アプリ)・
        記録が無い生徒には「最後の演習」を書かない・休眠の生徒は書く・受講開始前と連続上限の生徒は送らない・
+       古い 〆過ぎだけの休眠 / 記録なしの生徒と、同じ停止のあいだに 2 週送った生徒は送らない (点検 sending-F1 / correct-F2)・
        notifications の payload は数だけ (単元の名前は入れない)
   [11] 上限と重複: WEEKLY_REPORT_EMAIL_CAP・ZERO_WEEK_REPORT_CAP は今までどおり (通常レポートの席を奪わない・宿題で新しく入った家庭は
        前からの対象の後ろ = 枠を先に使わない)・6 日 dedup で 2 回目以降は何も送らない (メールも LINE も)・ログに生徒の名前と単元の名前を出さない
   [12] send-one (手動) も同じ 1 行・ソース (env の既定・DDL なし・CI 登録・CLAUDE.md)
+  [13] 「今週は 0 問」の文 (点検 family-F1): 宿題を全部出した週は「お声がけ」「演習まで進まなかった」と書かない・AIなし枠は
+       「今日の 1 問」を勧めずボタンは塾生アプリの宿題・今週 宿題を出していれば「ログインがありません」と書かない
+  [14] 0〜15 週を続けて回す (点検 sending-F1 / correct-F2): 古い 〆過ぎだけでは送らない・宿題で入れた家庭は 1 回の停止につき 2 週まで
+       (新しい宿題が毎週届いても)・演習するか いちばん古い未提出を出すと数え直す・env OFF は従来どおり
 
 実行:
     python3 scripts/health_check/test_weekly_report_homework_line.py
@@ -300,8 +308,10 @@ def main():
     r = B([W1], LO, HI, now_utc=NOW).get(W1) or {}
     check("届いた 2 本 (月曜 0:00 JST ちょうど と 日曜 23:59:59 JST・1 秒前と終わりちょうどは入らない)", r.get("delivered") == 2, r)
     check("提出 1 本 (前の週に届いた分も提出の時刻で数える・'T' 区切りも読む・境目の外は入らない)", r.get("submitted") == 1, r)
-    check("未提出の単元は窓の中に届いたものだけ (前の週 / 次の週は出ない)",
-          set(r.get("units") or []) == {"月曜0時", "日曜最後"} and r.get("units_of") == "pending", r)
+    check("未提出の単元: 窓の中に届いた分が先 (新しい順)・前の週に届いた未提出も入る・窓の後 (次の週) に届いた分は入らない",
+          r.get("units") == ["日曜最後", "月曜0時", "前の週"] and r.get("units_of") == "pending" and r.get("pending") == 3, r)
+    check("「今週は 0 問」の合図は窓の中に届いた未提出だけ (前の週の 〆なしは入らない)・いちばん古い未提出 = 前の週の分",
+          r.get("pending_recent") == 2 and r.get("oldest_open_at") == "2026-10-11T14:59:59+00:00", r)
     r_sun = B([W1], LO, None, now_utc=NOW).get(W1) or {}
     check("終わりなし (日曜の実行 = いままで) なら次の月曜 0:00 の分も入る", r_sun.get("delivered") == 3 and r_sun.get("submitted") == 2, r_sun)
 
@@ -319,6 +329,9 @@ def main():
     r = B([D1], LO, HI, now_utc=NOW).get(D1) or {}
     check("〆を過ぎた未提出 3 本 (昨日 (JST) の宿題・〆10/18 のクラス自動宿題・ずっと前の宿題 = 古さで切らない)", r.get("overdue") == 3, r)
     check("今日が 〆 / 提出済み / 〆の無い 3日ドリルは数えない", r.get("overdue") == 3 and "今日が期限" not in r.get("units", []), r)
+    check("合図 pending_recent 3 (昨日 〆 の宿題・窓の中に届いた 2 本)・6/8 の 〆過ぎ・古い 3日ドリル・〆が今日の宿題は合図にしない",
+          r.get("pending_recent") == 3 and r.get("pending") == 6, r)
+    check("oldest_open_at = いちばん古い未提出 (6/1 に出した宿題)", r.get("oldest_open_at") == "2026-06-01T01:00:00+00:00", r)
     r_utc = B([D1], LO, HI, now_utc=datetime.datetime(2026, 10, 18, 14, 0, tzinfo=UTC)).get(D1) or {}   # = 10/18 23:00 JST
     check("JST の 10/18 23:00 では 期限 10/18 の宿題・〆10/18 のドリルはまだ過ぎていない (〆過ぎは 6/8 の 1 本だけ)",
           r_utc.get("overdue") == 1, r_utc)
@@ -343,15 +356,45 @@ def main():
           and "未提出:" not in line_of(r_d1), line_of(r_d1))
 
     # ------------------------------------------------------------------
-    print("\n[5] 1 行を出さない生徒")
+    print("\n[5] 1 行を出さない生徒・前の週からの未提出だけの生徒 (点検 correct-F1)・合図の境目")
     E1 = fx.student("Empty Old", email="empty-old@example.org")
     fx.drill(E1, "weakness_routine_3d", assigned_at="2026-08-01 01:00:00", unit="古い3日ドリル")     # 古い未提出 (〆なし) だけ
     E2 = fx.student("Empty Today", email="empty-today@example.org")
     fx.drill(E2, "today_question", assigned_at="2026-10-14 01:00:00", unit="今日の1問")
     E3 = fx.student("Empty None", email="empty-none@example.org")
-    res = B([E1, E2, E3], LO, HI, now_utc=NOW)
-    check("古い未提出の 3日ドリルだけ・今日の1問だけ・何も無い生徒は入らない", not ({E1, E2, E3} & set(res)), res)
-    check("空の値の文は ''", line_of(None) == "" and line_of({"delivered": 0, "submitted": 0, "overdue": 0}) == "")
+    E4 = fx.student("Empty Done", email="empty-done@example.org")                                  # 前の週に届いて前の週に提出
+    fx.drill(E4, "admin", assigned_at="2026-10-05 01:00:00", unit="提出済み", status="completed", completed_at="2026-10-06 01:00:00")
+    res = B([E1, E2, E3, E4], LO, HI, now_utc=NOW)
+    check("今日の1問だけ・何も無い・前の週に出し終えた生徒は入らない", not ({E2, E3, E4} & set(res)), res)
+    check("前の週からの未提出 (〆なしの 3日ドリル) だけの生徒にも 1 行「…0 本（未提出: 古い3日ドリル）」・合図にはしない",
+          line_of(res.get(E1)) == "📝 今週の宿題: 届いた 0 本／提出 0 本／〆を過ぎた未提出 0 本（未提出: 古い3日ドリル）"
+          and (res.get(E1) or {}).get("pending_recent") == 0, res.get(E1))
+    # 10/18 19:00 JST の日曜の実行 (窓 = 10/12 0:00 JST 〜 いま): 10/08 JST に届いた 3日ドリル (次の 3日ドリルを止めている) と
+    #   10/10 に出した 〆10/25 の宿題が未提出 → 1 行に出る (前は {} = 何も届かなかった)
+    SUN = datetime.datetime(2026, 10, 18, 19, 0, tzinfo=JST).astimezone(UTC)
+    OA = fx.student("Open Older A", email="open-a@example.org")
+    fx.drill(OA, "weakness_routine_3d", assigned_at="2026-10-07 21:30:00", unit="仮定法")              # = 10/08 06:30 JST
+    fx.homework(OA, "週末までの宿題", created_at="2026-10-10 01:00:00", due="2026-10-25", topic="関係詞")
+    OC = fx.student("Open Older C", email="open-c@example.org")
+    fx.drill(OC, "weakness_routine_3d", assigned_at="2026-10-07 21:30:00", unit="仮定法")
+    fx.drill(OC, "admin", assigned_at="2026-10-13 01:00:00", unit="比較", status="completed", completed_at="2026-10-14 01:00:00")
+    res = B([OA, OC], LO, None, now_utc=SUN)
+    ra, rc = res.get(OA) or {}, res.get(OC) or {}
+    check("A: 前の週に届いた 3日ドリル + 〆がまだ先の宿題 → 1 行 (届いた 0・提出 0・〆過ぎ 0・未提出: 関係詞・仮定法)",
+          line_of(ra) == "📝 今週の宿題: 届いた 0 本／提出 0 本／〆を過ぎた未提出 0 本（未提出: 関係詞・仮定法）"
+          and ra.get("pending") == 2 and ra.get("pending_recent") == 0, ra)
+    check("C: 今週 1 本出しても、前の週からの未提出の単元を出す (全部出したように読ませない)",
+          line_of(rc) == "📝 今週の宿題: 届いた 1 本／提出 1 本／〆を過ぎた未提出 0 本（未提出: 仮定法）" and rc.get("pending") == 1, rc)
+    R1 = fx.student("Recent Due 28", email="recent-28@example.org")
+    fx.homework(R1, "28 日前が 〆", created_at="2026-09-01 01:00:00", due="2026-09-21", topic="倒置")       # 10/19 JST − 28 日
+    R2 = fx.student("Recent Due 29", email="recent-29@example.org")
+    fx.homework(R2, "29 日前が 〆", created_at="2026-09-01 01:00:00", due="2026-09-20", topic="倒置")
+    res = B([R1, R2], LO, HI, now_utc=NOW)
+    check("合図の境目: 〆が 28 日前は入る・29 日前は入らない (どちらも K には入る = 古さで切らない)",
+          (res.get(R1) or {}).get("pending_recent") == 1 and (res.get(R2) or {}).get("pending_recent") == 0
+          and (res.get(R1) or {}).get("overdue") == 1 and (res.get(R2) or {}).get("overdue") == 1, res)
+    check("空の値の文は ''", line_of(None) == "" and line_of({"delivered": 0, "submitted": 0, "overdue": 0}) == ""
+          and line_of({"delivered": 0, "submitted": 0, "overdue": 0, "pending": 0}) == "")
     check("生徒が 0 人なら {} (SELECT しない)", B([], LO, HI, now_utc=NOW) == {})
 
     # ------------------------------------------------------------------
@@ -423,7 +466,7 @@ def main():
     check("30 名分を数えた (クラス自動宿題の 〆10/16・宿題の期限 10/15 で 〆過ぎ 2 本)",
           all(res_many.get(s_, {}).get("overdue") == 2 for s_ in many[3:]), {s_: res_many.get(s_) for s_ in many[3:6]})
     # この節で作った生徒は cron の母集団から外す (下の cron の数を読みやすくする)
-    ex(mod, f"UPDATE students SET status = 'canceled' WHERE id IN ({','.join(str(x) for x in many + [U1, E1, E2, E3, LA, LB, LC, X1])})")
+    ex(mod, f"UPDATE students SET status = 'canceled' WHERE id IN ({','.join(str(x) for x in many + [U1, E1, E2, E3, E4, OA, OC, R1, R2, LA, LB, LC, X1])})")
 
     # ------------------------------------------------------------------
     # cron の生徒 (今 = 本物の時刻・窓は「3 日前から今まで」に差し替える = 曜日に関係なく同じ結果)
@@ -473,9 +516,23 @@ def main():
     fx.notification(Z6, "weekly_report_zero_week", 14)
     Z7 = fx.student("Family Z7", email="z7@example.org")                                                  # 5 日前に演習・宿題なし (前からの対象)
     fx.attempt(Z7, now - datetime.timedelta(days=5))
+    # ★点検 sending-F1 / correct-F2: 古い 〆過ぎだけの休眠 / 記録なしの家庭と、同じ停止のあいだに 2 週送った家庭には送らない
+    Z8 = fx.student("Family Z8", email="z8@example.org")                                                  # 休眠 (60 日前)・古い 〆過ぎだけ
+    fx.attempt(Z8, now - datetime.timedelta(days=60))
+    fx.homework(Z8, "休眠の古い宿題", created_at=u(now - datetime.timedelta(days=70)),
+                due=(today - datetime.timedelta(days=40)).isoformat(), topic="倒置")
+    Z9 = fx.student("Family Z9", email="z9@example.org")                                                  # 演習の記録なし・古い 〆過ぎだけ
+    fx.homework(Z9, "記録なしの古い宿題", created_at=u(now - datetime.timedelta(days=100)),
+                due=(today - datetime.timedelta(days=90)).isoformat(), topic="強調構文")
+    Z10 = fx.student("Family Z10", email="z10@example.org")                                               # 記録なし・新しい宿題もあるが、
+    fx.homework(Z10, "ずっと出していない宿題", created_at=u(now - datetime.timedelta(days=60)),               #   いちばん古い未提出が届いてから
+                due=(today - datetime.timedelta(days=50)).isoformat(), topic="話法")                       #   2 週送った (40・35 日前 = 29 日の外)
+    fx.drill(Z10, "admin", assigned_at=in_win, unit="話法")
+    fx.notification(Z10, "weekly_report_zero_week", 40)
+    fx.notification(Z10, "weekly_report_zero_week", 35)
     NAMES = ["Family P1", "Family P2", "Family P3", "Family P4", "Family Z1", "Family Z2", "Family Z3", "Family Z4",
-             "Family Z5", "Family Z6", "Family Z7"]
-    UNITS = ["時制", "仮定法", "比較", "関係詞", "分詞構文", "不定詞", "助動詞"]
+             "Family Z5", "Family Z6", "Family Z7", "Family Z8", "Family Z9", "Family Z10"]
+    UNITS = ["時制", "仮定法", "比較", "関係詞", "分詞構文", "不定詞", "助動詞", "古い3日ドリル", "倒置", "強調構文", "話法"]
 
     logbuf = io.StringIO()
     handler = logging.StreamHandler(logbuf)
@@ -509,6 +566,7 @@ def main():
     pv = {p["student_id"]: p for p in ((j or {}).get("previews") or [])} if isinstance(j, dict) else {}
     check("env OFF: 200・何も送らない", st == 200 and not wire.mails and not wire.lines and not wire.other, j)
     check("env OFF: 演習の記録が無い Z1・休眠の Z3 は「今週は 0 問」に入らない (従来どおり)", Z1 not in pv and Z3 not in pv, sorted(pv))
+    check("env OFF: Z8・Z9・Z10 も入らない", not ({Z8, Z9, Z10} & set(pv)), sorted(pv))
     check("env OFF: 前からの対象 Z4 は入り、1 行も付く", pv.get(Z4, {}).get("zero_week") is True
           and (pv.get(Z4, {}).get("homework") or {}).get("delivered") == 1 and pv.get(Z4, {}).get("zero_week_via_homework") is False, pv.get(Z4))
     check("env OFF: 応答に homework_zero_week_enabled False", isinstance(j, dict) and j.get("homework_zero_week_enabled") is False, j)
@@ -527,21 +585,30 @@ def main():
     check("P2 (AIなし枠): 届いた 1 (15問ミッション)・〆過ぎ 1 (記号の宿題)・リンクは塾生アプリ",
           (h2.get("delivered"), h2.get("submitted"), h2.get("overdue"), h2.get("link")) == (1, 0, 1, "class")
           and h2.get("units") == ["分詞構文"], h2)
-    check("P3 (宿題なし)・P4 (古い未提出だけ) は 1 行なし (homework None)", P3 in pv and pv[P3].get("homework") is None
-          and P4 in pv and pv[P4].get("homework") is None, (pv.get(P3), pv.get(P4)))
+    check("P3 (宿題なし) は 1 行なし (homework None)", P3 in pv and pv[P3].get("homework") is None, pv.get(P3))
+    h4 = (pv.get(P4) or {}).get("homework") or {}
+    check("P4 (前からの未提出 = 30 日前の 3日ドリルだけ) にも 1 行「…0 本（未提出: 古い3日ドリル）」(点検 correct-F1)",
+          h4.get("line") == "📝 今週の宿題: 届いた 0 本／提出 0 本／〆を過ぎた未提出 0 本（未提出: 古い3日ドリル）"
+          and h4.get("pending") == 1 and h4.get("pending_recent") == 0, h4)
     check("env ON: 演習の記録が無い Z1 が「今週は 0 問」に入る (via_homework・LINE は送らない)",
           pv.get(Z1, {}).get("zero_week") is True and pv.get(Z1, {}).get("zero_week_via_homework") is True
           and pv.get(Z1, {}).get("would_send_line") is False and (pv.get(Z1, {}).get("homework") or {}).get("link") == "class", pv.get(Z1))
     check("env ON: 休眠の Z3 も入る (〆過ぎ 1)", pv.get(Z3, {}).get("zero_week_via_homework") is True
           and (pv.get(Z3, {}).get("homework") or {}).get("overdue") == 1, pv.get(Z3))
     check("宿題の無い Z2・受講開始前の Z5・連続上限の Z6 は入らない", not ({Z2, Z5, Z6} & set(pv)), sorted(pv))
+    check("古い 〆過ぎだけの休眠 Z8・記録なし Z9 は入らない (合図は窓の中に届いた未提出と直近 28 日の 〆過ぎだけ = 点検 sending-F1)",
+          Z8 not in pv and Z9 not in pv, sorted(pv))
+    check("Z10 (新しい宿題はあるが、いちばん古い未提出が届いてから 2 週送った = 29 日の外でも) は入らない (点検 correct-F2)",
+          Z10 not in pv, sorted(pv))
     check("前からの対象 Z7 (宿題なし) は今までどおり入る・1 行なし", pv.get(Z7, {}).get("zero_week") is True and pv[Z7].get("homework") is None, pv.get(Z7))
-    check("集計: homework_lines 5 (P1・P2・Z1・Z3・Z4)・zero_week_homework 2 (Z1・Z3)",
-          isinstance(j, dict) and j.get("homework_lines") == 5 and j.get("zero_week_homework") == 2, j)
+    check("集計: homework_lines 6 (P1・P2・P4・Z1・Z3・Z4)・zero_week_homework 2 (Z1・Z3)",
+          isinstance(j, dict) and j.get("homework_lines") == 6 and j.get("zero_week_homework") == 2, j)
     tot = (j or {}).get("homework_totals") or {}
-    check("homework_totals (名前なしの数だけ・母集団の生徒の合計: P1・P2・Z1・Z3・Z4・Z5・Z6 = 7 名・届いた 8・〆過ぎ 3)",
-          tot.get("students") == 7 and tot.get("delivered") == 3 + 1 + 1 + 0 + 1 + 1 + 1 and tot.get("submitted") == 2
-          and tot.get("overdue") == 1 + 1 + 1, tot)
+    check("homework_totals (名前なしの数だけ・母集団の生徒の合計: P1・P2・P4・Z1・Z3・Z4・Z5・Z6・Z8・Z9・Z10 = 11 名・届いた 9・〆過ぎ 6)",
+          tot.get("students") == 11 and tot.get("delivered") == 3 + 1 + 1 + 0 + 1 + 1 + 1 + 1 and tot.get("submitted") == 2
+          and tot.get("overdue") == 1 + 1 + 1 + 3, tot)
+    pz = (pv.get(Z1) or {}).get("homework") or {}
+    check("dry-run の preview に合図の数 (pending_recent) も載る", pz.get("pending_recent") == 1, pz)
 
     # ------------------------------------------------------------------
     print("\n[10][11] cron の本番 (上限・重複・中身)")
@@ -563,7 +630,10 @@ def main():
     check("P2 (AIなし枠): 1 行と塾生アプリの宿題タブのリンク", len(m2) == 1 and "〆を過ぎた未提出 1 本（分詞構文）" in m2[0]["html"]
           and f'href="{BASE}/class.html?tab=homework"' in m2[0]["html"], m2[:1])
     m3, m4 = wire.mails_to("p3@example.org"), wire.mails_to("p4@example.org")
-    check("P3・P4: 1 行の無いレポート (今までどおり)", len(m3) == 1 and len(m4) == 1 and "今週の宿題" not in m3[0]["html"] + m4[0]["html"])
+    check("P3: 1 行の無いレポート (今までどおり)", len(m3) == 1 and "今週の宿題" not in m3[0]["html"])
+    check("P4: 前からの未提出の 1 行「（未提出: 古い3日ドリル）」と宿題のリンク", len(m4) == 1
+          and "〆を過ぎた未提出 0 本（未提出: 古い3日ドリル）" in m4[0]["html"] and f'href="{BASE}/mypage.html?focus=homework"' in m4[0]["html"],
+          m4[:1])
     lines = {ln["to"]: ln["text"] for ln in wire.lines}
     check("LINE は前から受け取っている P1・P2・P3 だけ (「今週は 0 問」の Z1 には送らない)", sorted(lines) == ["U-fx-p1", "U-fx-p2", "U-fx-p3"], sorted(lines))
     check("P1 の LINE: 1 行と mypage の宿題のリンク (&openExternalBrowser=1)",
@@ -573,8 +643,8 @@ def main():
     p3_line = lines.get("U-fx-p3", "")
     check("P3 の LINE は今までと同じ本文 (1 行なし)", "今週の宿題" not in p3_line and p3_line.endswith(
         "時間\n\n詳しくはマイページをご確認ください👇\n" + f"{BASE}/mypage.html"), p3_line)
-    check("A: homework_lines 5 (送った P1・P2 + 積んだ Z1・Z3・Z4)・homework_error なし",
-          isinstance(j, dict) and j.get("homework_lines") == 5 and j.get("homework_error") is None, j)
+    check("A: homework_lines 6 (送った P1・P2・P4 + 積んだ Z1・Z3・Z4)・homework_error なし",
+          isinstance(j, dict) and j.get("homework_lines") == 6 and j.get("homework_error") is None, j)
 
     mod.ZERO_WEEK_REPORT_CAP = 1
     try:
@@ -650,6 +720,140 @@ def main():
     wf = open(WORKFLOW, encoding="utf-8").read()
     check("CI (server-tests.yml) に登録", "test_weekly_report_homework_line.py" in wf)
     check("CLAUDE.md に 1 行の節", "WEEKLY_REPORT_HOMEWORK_ZERO_WEEK" in open(CLAUDE_MD, encoding="utf-8").read())
+
+    # ------------------------------------------------------------------
+    print("\n[13] 「今週は 0 問」の文 (宿題を全部出した週・AIなし枠・今週 宿題を出した生徒 = 点検 family-F1)")
+    FA = fx.student("Done Ai", email="done-ai@example.org")
+    FN = fx.student("Done Nashi", email="done-nashi@example.org", ai_disabled=1)
+    FP = fx.student("Part Done", email="part-done@example.org")
+    for s_ in (FA, FN):
+        fx.homework(s_, "記号の解答用紙の宿題", created_at="2026-10-13 01:00:00", due="2026-10-16", status="completed",
+                    completed_at="2026-10-14 01:00:00", sheet=True)
+        fx.homework(s_, "プリントの宿題", created_at="2026-10-13 02:00:00", status="completed", completed_at="2026-10-15 01:00:00")
+    fx.homework(FP, "出した宿題", created_at="2026-10-13 01:00:00", status="completed", completed_at="2026-10-14 01:00:00")
+    fx.homework(FP, "まだの宿題", created_at="2026-10-13 02:00:00", due="2026-10-25", topic="関係詞")
+    hwf = B([FA, FN, FP], LO, HI, now_utc=NOW)
+    ex(mod, f"UPDATE students SET status = 'canceled' WHERE id IN ({FA}, {FN}, {FP})")
+    check("前提: FA・FN は届いた 2・提出 2・未提出 0 / FP は提出 1・未提出 1",
+          all((hwf.get(x) or {}).get("submitted") == 2 and (hwf.get(x) or {}).get("pending") == 0 for x in (FA, FN))
+          and (hwf.get(FP) or {}).get("submitted") == 1 and (hwf.get(FP) or {}).get("pending") == 1, hwf)
+
+    def zmail(hw, is_parent, recent_login=True):
+        wire.clear()
+        zw_ = {"days_since": 10, "last_active_date": "2026-10-08", "recent_login": recent_login, "via_homework": False}
+        if hw is not None:
+            zw_["homework"] = hw
+        with patched(wire):
+            mod._send_zero_week_report_email("fixture-to@example.org", "Fixture Kid", zw_, is_parent=is_parent)
+        return (wire.mails[0] if wire.mails else {"subject": "", "html": ""})
+
+    pa = zmail(hwf.get(FA), True)
+    check("FA 保護者: 宿題を全部出した週は「お声がけ」「演習まで進まなかった」と書かず「全部提出できています」",
+          "お声がけ" not in pa["html"] and "演習まで進まなかった" not in pa["html"] and "今週の宿題は全部提出できています" in pa["html"]
+          and "提出 2 本" in pa["html"] and "「今日は 1 問だけ」から再開できます" in pa["html"], pa["html"][:900])
+    sa = zmail(hwf.get(FA), False)
+    check("FA 生徒: 件名と文が「全部出せました」・「久しぶりの日は」と書かない・ボタンは今日の 1 問のまま",
+          "今週の宿題は全部出せました" in sa["subject"] and "久しぶりの日は" not in sa["html"] and "今日の 1 問を解く" in sa["html"],
+          (sa["subject"], sa["html"][:900]))
+    pn = zmail(hwf.get(FN), True)
+    check("FN 保護者 (AIなし枠): 「今日は 1 問」を勧めない・ボタンは「📝 宿題を開く」(塾生アプリ)・リンクは 1 か所",
+          "今日は 1 問" not in pn["html"] and "お声がけ" not in pn["html"] and "📝 宿題を開く" in pn["html"]
+          and pn["html"].count(f"{BASE}/class.html?tab=homework") == 1, pn["html"][:900])
+    sn = zmail(hwf.get(FN), False)
+    check("FN 生徒 (AIなし枠): 件名「今週の宿題は全部出せました」・「今日の 1 問」は出さない・ボタンは塾生アプリの宿題",
+          sn["subject"].endswith("今週の宿題は全部出せました") and "今日の 1 問" not in sn["html"]
+          and f'href="{BASE}/class.html?tab=homework"' in sn["html"], (sn["subject"], sn["html"][:900]))
+    pl_ = zmail(hwf.get(FA), True, recent_login=False)
+    check("FA 保護者・直近 7 日のログインなし: 今週 宿題を出しているので「ログインがありません」と書かない",
+          "ログインがありません" not in pl_["html"] and "今週の宿題は全部提出できています" in pl_["html"], pl_["html"][:900])
+    pp = zmail(hwf.get(FP), True, recent_login=False)
+    check("FP 保護者・ログインなし・未提出あり: 「今週は宿題を 1 本提出しています。まだ提出していない宿題があります」",
+          "ログインがありません" not in pp["html"] and "今週は宿題を 1 本提出しています。まだ提出していない宿題があります" in pp["html"]
+          and "📝 宿題を開く" in pp["html"], pp["html"][:900])
+    p0 = zmail(None, True)
+    check("宿題の 1 行が無いメールは今までどおり (演習まで進まなかった・お声がけ)",
+          "今週は演習まで進まなかったようです" in p0["html"] and "お声がけいただけると助かります" in p0["html"] and "今週の宿題" not in p0["html"],
+          p0["html"][:900])
+    p00 = zmail(None, True, recent_login=False)
+    check("宿題の 1 行が無く・ログインなしは今までどおり「ログインがありません」", "ログインがありません" in p00["html"], p00["html"][:900])
+
+    # ------------------------------------------------------------------
+    print("\n[14] 0〜15 週を続けて回す (古い 〆過ぎだけでは送らない・1 回の停止につき 2 週・点検 sending-F1 / correct-F2)")
+    ex(mod, "UPDATE students SET status = 'canceled' WHERE status <> 'canceled'")
+    mod._weekly_report_window = lambda now_jst=None: (datetime.datetime.now(UTC) - datetime.timedelta(days=3), None)
+
+    def shift_week():
+        """DB の時刻を全部 7 日前へ (= 1 週間たった)。"""
+        for tbl, cols in (("notifications", ("sent_at",)), ("question_attempts", ("created_at",)),
+                          ("grammar_drill_assignments", ("assigned_at", "completed_at")), ("grammar_drills", ("created_at",)),
+                          ("homework_assignments", ("created_at", "completed_at")), ("events", ("created_at",)),
+                          ("students", ("last_login_at",))):
+            for col in cols:
+                ex(mod, f"UPDATE {tbl} SET {col} = datetime({col}, '-7 days') WHERE {col} IS NOT NULL AND {col} <> ''")
+        ex(mod, "UPDATE homework_assignments SET due_date = date(due_date, '-7 days') WHERE due_date IS NOT NULL AND due_date <> ''")
+
+    def simulate(env_value, tag):
+        if env_value is None:
+            os.environ.pop("WEEKLY_REPORT_HOMEWORK_ZERO_WEEK", None)
+        else:
+            os.environ["WEEKLY_REPORT_HOMEWORK_ZERO_WEEK"] = env_value
+        n0 = datetime.datetime.now(UTC)
+        t0 = n0.astimezone(JST).date()
+        sim = {}
+        for key in ("stale_never", "stale_stopped", "stream", "one_new", "stream_practice", "stream_oldest_done"):
+            sim[key] = fx.student(f"Sim {tag} {key}", email=f"sim-{tag}-{key.replace('_', '-')}@example.org")
+        for key in ("stale_never", "stale_stopped"):
+            fx.homework(sim[key], "ずっと前の宿題", created_at=u(n0 - datetime.timedelta(days=210)),
+                        due=(t0 - datetime.timedelta(days=200)).isoformat(), topic="架空の単元")
+        fx.attempt(sim["stale_stopped"], n0 - datetime.timedelta(days=8))   # 8 日前まで演習 (前からの対象)
+
+        def new_hw(sid):
+            nn = datetime.datetime.now(UTC)
+            fx.homework(sid, "毎週の宿題", created_at=u(nn - datetime.timedelta(days=1)),
+                        due=(nn.astimezone(JST).date() + datetime.timedelta(days=2)).isoformat(), topic="架空の単元")
+        weeks = {k: [] for k in sim}
+        for wk in range(16):
+            for key in ("stream", "stream_practice", "stream_oldest_done"):
+                if key == "stream_oldest_done" and wk == 7:
+                    # 7 週目: 残っていた宿題を全部出した (✓完了 = 演習の記録にはならない) → 起点が進む
+                    ex(mod, "UPDATE homework_assignments SET status = 'completed', completed_at = ? WHERE student_id = ? "
+                            "AND status <> 'completed'", (u(datetime.datetime.now(UTC) - datetime.timedelta(hours=1)), sim[key]))
+                new_hw(sim[key])
+            if wk == 0:
+                new_hw(sim["one_new"])
+            if wk == 8:
+                fx.attempt(sim["stream_practice"], datetime.datetime.now(UTC) - datetime.timedelta(hours=1))   # 8 週目に演習した
+            run_at = u(datetime.datetime.now(UTC) - datetime.timedelta(seconds=5))
+            st_, j_ = run()
+            if st_ != 200:
+                weeks.setdefault("_errors", []).append((wk, st_, str(j_)[:200]))
+            got = {r_["student_id"] for r_ in q(mod, "SELECT DISTINCT student_id FROM notifications WHERE success = 1 AND template IN "
+                                                      "('weekly_report_zero_week', 'weekly_report_zero_week_parent') AND sent_at >= ?",
+                                                  (run_at,))}
+            for key, sid in sim.items():
+                if sid in got:
+                    weeks[key].append(wk)
+            shift_week()
+        ex(mod, f"UPDATE students SET status = 'canceled' WHERE id IN ({','.join(str(x) for x in sim.values())})")
+        os.environ.pop("WEEKLY_REPORT_HOMEWORK_ZERO_WEEK", None)
+        return weeks
+
+    on = simulate(None, "on")
+    check("env 既定 (ON): 16 回とも 200", "_errors" not in on, on.get("_errors"))
+    check("ON: 演習の記録なし・古い 〆過ぎだけ → 一度も送らない (前は 0・1・5・6・10・11・15 週)", on["stale_never"] == [], on)
+    check("ON: 8 日前まで演習・古い 〆過ぎ → 0・1 週だけ (前からの 2 週・その後は休眠 = 古い 〆過ぎでは送らない)",
+          on["stale_stopped"] == [0, 1], on)
+    check("ON: 記録なし・新しい宿題が毎週届いて未提出 → 0・1 週だけ (1 回の停止につき 2 週・29 日ごとに数え直さない)",
+          on["stream"] == [0, 1], on)
+    check("ON: 記録なし・新しい宿題 1 本 → 0・1 週だけ", on["one_new"] == [0, 1], on)
+    check("ON: 8 週目に演習すると数え直す → 0・1・9・10 週 (演習の後の 2 週・その後は止まる)", on["stream_practice"] == [0, 1, 9, 10], on)
+    check("ON: 7 週目に残りを全部出すと (いちばん古い未提出が進む) 数え直す → 0・1・7・8 週", on["stream_oldest_done"] == [0, 1, 7, 8], on)
+    check("ON: どの生徒も 29 日 (5 週の窓) に 3 週以上は送らない",
+          all(sum(1 for w in ws if a <= w < a + 5) <= 2 for k, ws in on.items() if k != "_errors" for a in range(16)), on)
+    off = simulate("0", "off")
+    check("env OFF: 従来どおり (記録なしの生徒には送らない・8 日前まで演習なら 0・1 週・演習の後の 2 週)",
+          "_errors" not in off and off["stale_never"] == [] and off["stream"] == [] and off["one_new"] == []
+          and off["stream_oldest_done"] == [] and off["stale_stopped"] == [0, 1] and off["stream_practice"] == [9, 10], off)
 
     print()
     if FAILURES:
