@@ -495,6 +495,16 @@ jobs:
           python3 -m pip install --quiet httpx
           python3 scripts/health_check/test_weekly_report_dedup.py
 
+      # 📝 週次レポートの「今週の宿題」の 1 行 (2026-10-18 塾長「③の週次レポートの1行も作っておいて」): 届いた N／提出 M／〆を過ぎた未提出 K
+      #   (単元 3 つまで)・週はレポートと同じ JST の窓・クラス自動宿題 / 3日ドリル / 塾長のドリルと宿題 (今日の1問・初回診断は数えない)・
+      #   AIなし枠は塾生アプリの宿題タブ・LINE は前から受け取っている生徒のレポートの中だけ・演習の記録が無くても未提出があれば
+      #   「今週は 0 問」(WEEKLY_REPORT_HOMEWORK_ZERO_WEEK)・上限と 6 日 dedup は同じ・SELECT は生徒を 10 倍にしても同じ・ログに名前なし。
+      - name: 週次レポートの「今週の宿題」の 1 行 回帰テスト
+        if: ${{ !cancelled() }}
+        run: |
+          python3 -m pip install --quiet httpx
+          python3 scripts/health_check/test_weekly_report_homework_line.py
+
       # 📣 宿題・ドリルのお知らせはアプリの中で (2026-10-15 塾長決定「アプリを開けば分かる」): LINE は既定で送らない
       #   (HOMEWORK_NOTIFY_LINE)・メールは塾長が CEO で配ったときだけ (HOMEWORK_NOTIFY_EMAIL=manual)・自動配信は source='auto' で
       #   LINE もメールも 0・リンクは AIなし = class.html?tab=homework / AIあり・体験中 = mypage.html?focus=homework。

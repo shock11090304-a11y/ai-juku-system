@@ -749,6 +749,23 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
   メールの上限 `WEEKLY_REPORT_EMAIL_CAP` (既定 80・1 回の実行ごと) は変えていない (2026-10-15 の既定案は二重送信の修正だけ)。送り済みの家庭は `capped` に数えない。
   手動の即送信 `POST /api/weekly-reports/send-one` は dedup しない。ただし送った行が残るので、6 日以内の日曜はその生徒に送らない (LINE も)。
   回帰テスト `scripts/health_check/test_weekly_report_dedup.py`。
+- **📝 今週の宿題の 1 行** (2026-10-18 塾長「③の週次レポートの1行も作っておいて」= 成績を上げる提案 ③): 週次レポート (保護者 / 生徒コピーの HTML・LINE・
+  「今週は 0 問」メール・send-one) に「📝 今週の宿題: 届いた N 本／提出 M 本／〆を過ぎた未提出 K 本（単元 3 つまで）」+ 宿題を開くリンク。新しいメール・LINE は増やさない。
+  - 数え方は `_weekly_report_homework_batch` 1 か所 (読むだけ・全生徒でドリル 1・宿題 1 の SELECT = 500 件ずつの IN・リンク 1・cron の 1 回の実行で 1 回)。
+    週 = レポートと同じ `_weekly_report_window` (JST)。N = 配った日時が窓の中・M = 窓の中に出した本数 (前の週に届いた分も = M > N もある)・
+    K = いま未提出で 〆 (宿題の期限 / クラス自動宿題の題名の「〆M/D」= `_class_brief_title_due`) < JST の今日 (hw-notice.js と同じ・古さで切らない・3日ドリル / 塾長のドリルに 〆 は無い)。
+    数える = クラス自動宿題・3日ドリル・塾長のドリル (15問ミッションも)・塾長の宿題 (解答用紙も)。今日の1問・初回診断は数えない (`_CLASS_BRIEF_NOT_SELF_SQL`)。
+    単元 = 〆過ぎの単元 (無ければ窓の中に届いた未提出の単元を「（未提出: …）」) を新しい順に 3 つ。N・M・K が全部 0 の生徒は 1 行なし (今までと同じ本文)。
+  - リンク: AIなし枠 `class.html?tab=homework`・ほか `mypage.html?focus=homework` (`_homework_notify_link_paths`)。LINE は `&openExternalBrowser=1`。
+    LINE は前から受け取っている生徒 (連携済み・`need_line`) の `weekly_report` の中だけ (1 行が無ければ本文は 1 文字も変わらない)。「今週は 0 問」は LINE を送らない (今までどおり)。
+  - 「今週は 0 問」: 演習の記録が一度も無い・休眠 (28 日より前) の生徒でも、未提出 (窓の中に届いて未提出 / 〆過ぎ) があれば送る
+    (`WEEKLY_REPORT_HOMEWORK_ZERO_WEEK` 既定 `1`・`0` / off で従来どおり・呼ぶたびに読む・`_zero_week_report_decision(homework_pending=True)` → `via_homework`)。
+    ★上限 (`ZERO_WEEK_REPORT_CAP`・`WEEKLY_REPORT_EMAIL_CAP`・連続 2 週 = 29 日に 2 回まで)・6 日 dedup・受講開始前のスキップ・水曜の一声との重ね方は同じ。
+    第 2 パスは前からの対象を先に送り、`via_homework` の家庭は後ろ (枠を先に使って前から届いていた家庭を締め出さない)。
+    記録が無い生徒には「最後の演習」を書かない。未提出があるとボタンは「📝 宿題を開く」(AIなし枠は「今日の 1 問」を開けないため)。payload は数だけ (`hw` = n/m/k)。
+  - 応答 (events `weekly_reports_run` にも残る・名前なし): `homework_lines`・`zero_week_homework`・`homework_totals` {students, delivered, submitted, overdue}・
+    `homework_zero_week_enabled`・`homework_error` (数えられなければ 1 行なしで送る)。dry-run の preview に `homework` {delivered, submitted, overdue, pending, units, link, line}・`zero_week_via_homework`。
+  - 回帰テスト `scripts/health_check/test_weekly_report_homework_line.py` (CI `server-tests.yml`)。
 - **平日に `POST /api/cron/weekly-reports?dry_run=true` を叩くと「先週の完了週」で評価される** (`_weekly_report_window`)。
   日曜だけ「今週」。平日の dry run で対象外と出ても日曜に送られないとは限らない。
 - **mypage の初期化は補助スクリプトを最大 10 秒しか待たない** (`_ajWidgetWait`)。`slApiFetch` は既定 30 秒でタイムアウト
@@ -880,7 +897,8 @@ CEO の「📝 科目別 単元ドリル」が出題するプール。**問題�
 - **朝の順番 (JST)**: 3:00 DB バックアップ → 4:00 弱点集計 (`student_weakness`・合格スコア・events 掃除) →
   (日曜 5:00 週次弱点プリント = 既定で停止) → 5:30 🎯 3日ドリル → 6:00 🏫 クラス自動宿題 → 7:00 🎬 授業録画の割り当て。
   3日ドリルとクラス自動宿題は 4:00 の集計を読むので、それより前に回さない (`CLASS_HW_AUTO_HOUR_JST` は 5〜22 に丸める)。
-  夕方は 水曜 18:00 週半ばの一声・日曜 19:00 週次レポート (20:05 に GitHub Actions の予備が同じ API を叩く。メールも LINE も 6 日 dedup)。
+  夕方は 水曜 18:00 週半ばの一声・日曜 19:00 週次レポート (20:05 に GitHub Actions の予備が同じ API を叩く。メールも LINE も 6 日 dedup。
+  2026-10-18 から「📝 今週の宿題」の 1 行 = 家庭へ宿題を知らせる唯一の定期便・新しい通知ではない = 「続ける仕組み」の節)。
 - **1 人 1 経路** (振り分けは `_auto_delivery_ai_path` = `_ai_blocked_now` の 1 か所。SQL は広めの絞り込みだけ):
   - AIあり・AI 体験中 (`'ai'`) → 🎯 3日ドリル (`WEAKNESS_DRILL_ROUTINE_ENABLED`): 本人の弱点の単元から 10 問・生徒ごとに 3 日に 1 本。
   - AIなし (塾生アプリのみ・体験中でない) の通塾生 (`'ai_nashi'`) → 🏫 クラス自動宿題 (`CLASS_HW_AUTO_ENABLED`): 受講している英語のクラスの宿題・
