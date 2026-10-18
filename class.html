@@ -181,6 +181,8 @@
     .hw-notice.soon .hw-notice-go { color:#fdba74; }
     .chip-soon { background:rgba(251,146,60,0.20); border:1px solid rgba(251,146,60,0.55); color:#fed7aa; }
     .chip-new { background:rgba(236,72,153,0.20); border:1px solid rgba(236,72,153,0.55); color:#fbcfe8; }
+    /* 💾 単元ドリルの途中保存 (2026-10-18)。一覧のカードの「💾 途中 4/10」 */
+    .chip-draft { background:rgba(20,184,166,0.18); border:1px solid rgba(20,184,166,0.5); color:#99f6e4; }
 
     /* 📺 今週見るスタサプ: 講座名 (1 行で省略記号) と「第N講「題名」」(2 行まで) を分ける = スマホでも第N講が切れない。
        nowrap は使わない (長い題名が画面幅を押し広げない。日本語はどこでも折れる) */
@@ -256,6 +258,8 @@
   <script src="hw-notice.js?v=20261018a-due-open"></script>
   <!-- 📝 記号の解答用紙 (マーク・2026-10-18。mypage.html と共通)。変えたら両方の ?v= を上げる -->
   <script src="hw-sheet.js?v=20261018b-hw-sheet"></script>
+  <!-- 💾 単元ドリルの解答の途中保存 (2026-10-18。mypage.html と共通)。変えたら両方の ?v= を上げる -->
+  <script src="gd-draft.js?v=20261018a-gd-draft"></script>
   <script>
   (function () {
     const BACKEND_URL = (window.location.hostname === 'localhost' && window.location.port === '8090')
@@ -1312,14 +1316,66 @@
     function gdWireBack(root) {
       root.querySelectorAll('.gd-back').forEach(function (b) {
         b.addEventListener('click', function () {
-          // 解答中に戻ると選んだ答えは消える (下書き保存は無い) ので、1つでも答えていたら確認する
+          // 💾 解答中に戻っても、選んだ答えは gd-draft.js が残している (この端末 / 保存できない端末はこのページを閉じるまで) ので確認しない。
+          //   gd-draft.js が読めない端末だけ今までどおり (答えたぶんが消える) 確認する
           var f = document.getElementById('gdForm');
           if (f && f.querySelectorAll('input[type="radio"]:checked').length) {
-            if (!window.confirm('まだ提出していません。ここでやめると、答えたぶんが消えます。やめますか？')) return;
+            if (gdDraftLib() && gdCur) {
+              gdDraftSave(f);   // 今の答えで保存し直してから戻る
+              toast(gdCur.stored === 'stored' ? '💾 答えはこの端末に保存しました。続きから解けます'
+                : '💾 答えはこのページを閉じるまで残ります（この端末には保存できません）');
+            } else if (!window.confirm('まだ提出していません。ここでやめると、答えたぶんが消えます。やめますか？')) return;
           }
+          gdCur = null;
           hwLoaded = false; gdScrollTop(); loadHomework();
         });
       });
+    }
+    // 💾 単元ドリルの解答の途中保存 (2026-10-18 塾長「②の残りも作っておいて」= 提案 ②「解答を途中で保存できるようにします (端末の中だけ)」)。
+    //   選ぶたびに gd-draft.js がこの端末に保存し (localStorage 'aj_gd_draft_v1:<生徒ID>:<ドリルID>'・選んだ番号だけ・try/catch)、
+    //   開き直したら戻す (問題が直されていたらその問は戻さない)・提出できたら (409 の提出ずみでも) 消す・通信に失敗したら残す。
+    //   一覧のカードに「💾 途中 4/10」と「▶ 続きから解く」。gd-draft.js が読めない端末は今までどおり。
+    var gdCur = null;   // いま解いているドリル {id, qs, stored ('stored' | 'memory' | 'empty' | '')}
+    function gdDraftLib() { return window.AJGdDraft || null; }
+    function gdDraftProgress(it) {
+      var L = gdDraftLib();
+      if (!L || !it || !gdIsOpen(it)) return null;
+      try { return L.progress(hwSid(), it.drill_id); } catch (e) { return null; }
+    }
+    function gdDraftCollect(form) {
+      var answers = {};
+      form.querySelectorAll('input[type="radio"]:checked').forEach(function (inp) {
+        answers[inp.getAttribute('data-qid')] = Number(inp.value);
+      });
+      return answers;
+    }
+    function gdDraftSave(form) {
+      var L = gdDraftLib();
+      if (!L || !gdCur || !form) return;
+      try { gdCur.stored = L.save(hwSid(), gdCur.id, gdCur.qs, gdDraftCollect(form), null); } catch (e) { /* 保存できなくても解ける */ }
+    }
+    // 保存してある答えを今のフォームに戻す。戻した問の数
+    function gdDraftRestore(form, drillId, qs) {
+      var L = gdDraftLib();
+      if (!L || !form) return 0;
+      var d = null;
+      try { d = L.load(hwSid(), drillId, qs); } catch (e) { d = null; }
+      if (!d || !d.n) return 0;
+      var n = 0;
+      form.querySelectorAll('input[type="radio"]').forEach(function (inp) {
+        var qid = inp.getAttribute('data-qid');
+        if (qid == null || !_has.call(d.answers, qid) || String(d.answers[qid]) !== String(inp.value)) return;
+        inp.checked = true;
+        var lb = inp.closest ? inp.closest('.gd-choice') : null;
+        if (lb) lb.classList.add('sel');
+        n++;
+      });
+      return n;
+    }
+    function gdDraftClear(drillId) {
+      var L = gdDraftLib();
+      if (L) { try { L.clear(hwSid(), drillId); } catch (e) { /* noop */ } }
+      if (gdCur && String(gdCur.id) === String(drillId)) gdCur = null;
     }
 
     // タイトルが既に絵文字で始まるとき (「🎯弱点対策 …」等) に 📝 を足すと二重になるので付けない。
@@ -1391,6 +1447,8 @@
       var chip = done ? '<span class="chip chip-done">完了</span>' : '<span class="chip chip-open">未提出</span>';
       if (!done) chip += gdDueChip(it.due_date);   // ⏰ クラス自動宿題の 〆 (サーバの due_date)
       if (!done && hwIsNew(hwNewDrill, it.drill_id)) chip += ' <span class="chip chip-new">🆕 新着</span>';
+      var pg = done ? null : gdDraftProgress(it);   // 💾 この端末に途中まで答えてある
+      if (pg) chip += ' <span class="chip chip-draft">💾 ' + esc(gdDraftLib().progressLabel(pg)) + '</span>';
       var sj = gdSubjJa(it.subject);
       var title = String(it.title || 'ドリル');
       var subjChip = sj ? ' <span class="chip chip-subj">' + esc(sj) + '</span>' : '';
@@ -1402,7 +1460,7 @@
       var unitChip = unitDup ? '' : (' <span class="chip chip-topic">🎯 ' + esc(it.unit) + '</span>');
       var meta = gdMetaText(it);
       var actions = '<div class="row-actions"><button class="btn ' + (done ? 'btn-ghost' : 'btn-primary') + ' gd-open" data-id="'
-        + esc(String(it.drill_id)) + '">' + (done ? '🔁 解説を見る' : '▶ 解いて提出する') + '</button></div>';
+        + esc(String(it.drill_id)) + '">' + (done ? '🔁 解説を見る' : (pg ? '▶ 続きから解く' : '▶ 解いて提出する')) + '</button></div>';
       return '<div class="card">' + chip + subjChip + unitChip
         + '<div class="card-title">' + esc(gdTitle(it.title)) + '</div>'
         + '<div class="card-meta">' + meta + '</div>' + actions + '</div>';
@@ -1482,6 +1540,7 @@
     async function gdOpen(drillId) {
       var body = document.getElementById('homeworkBody');
       hwListShown = false;
+      gdCur = null;
       body.innerHTML = '<div class="loading">読み込み中…</div>';
       gdScrollTop();
       var data;
@@ -1492,6 +1551,9 @@
       }
       var drill = data.drill || {}, qs = data.questions || [];
       var review = (data.status === 'completed');
+      if (review) gdDraftClear(drillId);   // 💾 提出ずみ (別の端末で出した等) の下書きは使わない
+      var DL = gdDraftLib(), persist = false;
+      if (DL && !review) { try { persist = DL.canPersist(hwSid()); } catch (e) { persist = false; } }
       // ★ drill.level は 'standard,advanced' 等の内部コードなので生徒には出さない (単元だけ見せる)
       var head = gdBackHtml()
         + '<div class="gd-head"><div class="card-title" style="margin-top:0;">' + esc(gdTitle(drill.title)) + '</div>'
@@ -1503,7 +1565,8 @@
             + ((data.score_total && data.score_correct === data.score_total) ? '🎉 全問正解！解説でもう一度確認しておこう' : 'まちがえた問題（❌）の解説を読み直しましょう')
             + '</div>' + gdAiHintHtml() + '</div>'
           // 問題が0件のときは提出ボタン自体が出ないので、この案内文も出さない (矛盾防止)
-          : (qs.length ? '<div class="card-meta" style="margin-top:0.35rem;">全 ' + qs.length + ' 問。すべて答えてから「提出して採点する」を押してください。</div>' : ''))
+          : (qs.length ? '<div class="card-meta" style="margin-top:0.35rem;">全 ' + qs.length + ' 問。すべて答えてから「提出して採点する」を押してください。'
+            + (persist ? '<br>💾 答えはこの端末に自動で保存されます（途中でやめても続きから解けます）' : '') + '</div>' : ''))
         + '</div>';
       if (!qs.length) {
         body.innerHTML = head + '<div class="empty">このドリルには表示できる問題がありません。塾長にご連絡ください。</div>';
@@ -1532,7 +1595,12 @@
               var left = qs.length - form.querySelectorAll('input[type="radio"]:checked').length;
               m.textContent = left > 0 ? ('⚠ あと ' + left + ' 問') : '';
             }
+            gdDraftSave(form);   // 💾 選ぶたびにこの端末に保存
           });
+          // 💾 前に途中まで答えていたら戻す
+          gdCur = { id: drillId, qs: qs, stored: '' };
+          var restored = gdDraftRestore(form, drillId, qs);
+          if (restored) toast('💾 前に答えた ' + restored + ' 問を戻しました' + (qs.length > restored ? '（あと ' + (qs.length - restored) + ' 問）' : ''));
         }
         var sbtn = document.getElementById('gdSubmitBtn');
         if (sbtn) sbtn.addEventListener('click', function () { gdSubmit(drillId, qs.length, sbtn); });
@@ -1575,12 +1643,13 @@
           { method: 'POST', body: JSON.stringify({ answers: answers }) });
       } catch (e) {
         // 二重提出 (別端末で先に出した等) は失敗ではないので、提出ずみの画面を開き直す
-        if (e.status === 409) { toast('このドリルは提出ずみです'); hwLoaded = false; gdOpen(drillId); return; }
+        if (e.status === 409) { gdDraftClear(drillId); toast('このドリルは提出ずみです'); hwLoaded = false; gdOpen(drillId); return; }
         if (msg) msg.textContent = '❌ 提出できませんでした。' + gdErrMsg(e);
         btn.disabled = false; btn.textContent = '📤 提出して採点する';
         return;
       }
       hwLoaded = false;  // 一覧に戻ったら最新(完了扱い)で読み直す
+      gdDraftClear(drillId);   // 💾 出したので途中保存は消す (通信に失敗したときは上で戻る = 残す)
       // このドリルは提出済みになったので、一覧に戻る前にタブのバッジを減らしておく
       gdDrills.forEach(function (x) { if (String(x.drill_id) === String(drillId)) x.status = 'completed'; });
       hwNoticeAfterSubmit(null);   // ⏰ 出したドリルの 〆 の帯を消す

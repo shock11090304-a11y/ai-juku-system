@@ -4650,13 +4650,19 @@ function _renderDrillAsHwItem(item) {
   const scoreBlock = (!isOpen && item.score_total != null)
     ? `<div style="margin-top:8px; padding:8px 11px; background:rgba(52,211,153,0.08); border-left:3px solid #34d399; border-radius:6px; font-size:0.78rem; color:#6ee7b7;">✅ 完了 スコア ${_hwEscape(String(item.score_correct == null ? '?' : item.score_correct))}/${_hwEscape(String(item.score_total))}</div>`
     : '';
-  const cta = isOpen ? '▶ 解いて提出する' : '結果・解説を見る ▶';
+  // 💾 この端末に途中まで答えてある (gd-draft.js・class.html と共通) →「💾 途中 4/10」と「▶ 続きから解く」
+  let draftP = null;
+  if (isOpen && window.AJGdDraft) { try { draftP = window.AJGdDraft.progress(_hwSid(), item.drill_id); } catch (_) { draftP = null; } }
+  const draftBadge = draftP
+    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(20,184,166,0.18); color:#99f6e4; border:1px solid rgba(20,184,166,0.5); border-radius:8px; font-weight:bold;">💾 ${_hwEscape(window.AJGdDraft.progressLabel(draftP))}</span>`
+    : '';
+  const cta = isOpen ? (draftP ? '▶ 続きから解く' : '▶ 解いて提出する') : '結果・解説を見る ▶';
   const btnStyle = isOpen
     ? 'background:linear-gradient(135deg,#14b8a6,#10b981); color:#fff; border:0;'
     : 'background:rgba(255,255,255,0.05); color:#a1a1aa; border:1px solid rgba(255,255,255,0.12);';
   const btn = `<button type="button" data-hw-drill-open="${_hwEscape(item.drill_id)}" style="margin-top:10px; padding:8px 16px; ${btnStyle} border-radius:8px; font-weight:bold; font-size:0.86rem; cursor:pointer;">${cta}</button>`;
   return `<div class="hw-item hw-drill-item" style="padding:14px 16px; background:${isOpen ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isOpen ? 'rgba(20,184,166,0.3)' : 'rgba(255,255,255,0.06)'}; border-radius:10px; margin-bottom:10px;">
-    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">${newBadge}${typeBadge}${dueBadge}${unitBadge}${levelBadge}</div>
+    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">${newBadge}${typeBadge}${dueBadge}${draftBadge}${unitBadge}${levelBadge}</div>
     <div style="margin-top:8px; color:${isOpen ? '#fff' : '#a1a1aa'}; font-weight:bold; font-size:0.96rem;">${_gdRich(item.title)}</div>
     ${ptestNote}${scoreBlock}
     <div>${btn}</div>
@@ -4799,7 +4805,9 @@ async function initHomeworkSection() {
     } catch (_) { /* noop */ }
   }
   // 👀 宿題を開いた (2026-10-18 塾長「②の残りも作っておいて」= 塾長の 🗓 授業ブリーフの「👀 未開封」/「開いたが未提出」)。
-  //   解答用紙・PDF を開いた / 中身だけの宿題 (単元・プリント・解答用紙が無い = カードが中身) が宿題欄で見えた → POST /api/student/homework/{id}/opened
+  //   解答用紙・PDF を開いた / 中身だけの宿題 (プリント・解答用紙が無い = カードが中身) が宿題欄で見えた → POST /api/student/homework/{id}/opened
+  //   ★単元 (topic) のある宿題も中身だけに数える: マイページのカードには「📝 ドリルで解く」が無く、題名と説明と ✅ 完了する が宿題のすべて
+  //     (class.html はドリルのリンクを押したときに送るので単元のある宿題を除く。その規則をここに写すと、読んだ生徒が 👀 未開封 のままになる)
   //   (prefix は元から許可)。未提出の宿題だけ・このページで 1 件 1 回・返事は待たない・失敗しても何も出さない (サーバも 1 日 1 回まで)。
   //   ドリルを開いたことはサーバが GET /api/student/grammar-drill/{id} の中で記録する (ここでは送らない)
   const openedSent = {};
@@ -4814,7 +4822,7 @@ async function initHomeworkSection() {
   }
   function pingBareCards() {
     (hwItems || []).forEach((it) => {
-      if (it && it.status === 'open' && !it.topic && !(it.attachment_print && it.attachment_print.id != null) && _hwSheetState(it) === 'none') pingOpened(it);
+      if (it && it.status === 'open' && !(it.attachment_print && it.attachment_print.id != null) && _hwSheetState(it) === 'none') pingOpened(it);
     });
   }
   function hwItemById(id) { return (hwItems || []).find(it => it && String(it.id) === String(id)) || null; }
@@ -5358,8 +5366,58 @@ async function initGrammarDrillSection() {
     }
   }
 
+  // 💾 解答の途中保存 (2026-10-18 塾長「②の残りも作っておいて」= 提案 ②「解答を途中で保存できるようにします (端末の中だけ)」)。
+  //   選ぶたびに gd-draft.js (class.html と共通) がこの端末に保存し (localStorage 'aj_gd_draft_v1:<生徒ID>:<ドリルID>'・選んだ番号と
+  //   🤔 自信なしだけ・try/catch)、開き直したら戻す (問題が直されていたらその問は戻さない)・提出できたら (409 の提出ずみでも) 消す・
+  //   通信に失敗したら残す。gd-draft.js が読めない端末は今までどおり。
+  let cur = null;   // いま解いているドリル {id, qs}
+  function draftLib() { return window.AJGdDraft || null; }
+  function draftForm() { return list.querySelector('[data-gd-form]'); }
+  function draftSave() {
+    const L = draftLib(), form = draftForm();
+    if (!L || !cur || !form) return;
+    const answers = {}, unsure = [];
+    try {
+      form.querySelectorAll('input[type="radio"]:checked').forEach(inp => {
+        const qid = inp.getAttribute('data-gd-qid');
+        if (qid != null) answers[qid] = Number(inp.value);
+      });
+      form.querySelectorAll('input[data-gd-unsure]:checked').forEach(inp => {
+        const qid = inp.getAttribute('data-gd-unsure-qid');
+        if (qid != null) unsure.push(qid);
+      });
+      L.save(_hwSid(), cur.id, cur.qs, answers, unsure);
+    } catch (_) { /* 保存できなくても解ける */ }
+  }
+  // 保存してある答えを今のフォームに戻す。戻した問の数
+  function draftRestore(drillId, qs) {
+    const L = draftLib(), form = draftForm();
+    if (!L || !form) return 0;
+    let d = null;
+    try { d = L.load(_hwSid(), drillId, qs); } catch (_) { d = null; }
+    if (!d) return 0;
+    const has = Object.prototype.hasOwnProperty;
+    let n = 0;
+    form.querySelectorAll('input[type="radio"]').forEach(inp => {
+      const qid = inp.getAttribute('data-gd-qid');
+      if (qid == null || !has.call(d.answers, qid) || String(d.answers[qid]) !== String(inp.value)) return;
+      inp.checked = true; n++;
+    });
+    form.querySelectorAll('input[data-gd-unsure]').forEach(inp => {
+      const qid = inp.getAttribute('data-gd-unsure-qid');
+      if (qid != null && has.call(d.unsure, qid)) inp.checked = true;
+    });
+    return n;
+  }
+  function draftClear(drillId) {
+    const L = draftLib();
+    if (L) { try { L.clear(_hwSid(), drillId); } catch (_) { /* noop */ } }
+    if (cur && String(cur.id) === String(drillId)) cur = null;
+  }
+
   // ドリルを開く (GET /api/student/grammar-drill/{id}) — 宿題リストの「▶ 解いて提出する」から呼ばれる。
   async function openDrill(drillId) {
+    cur = null;
     section.style.display = 'block';  // 解答エリアを表示 (通常は非表示)
     try { section.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) { /* noop */ }
     list.innerHTML = `<div style="color:#71717a; text-align:center; padding:1.2rem 0; font-size:0.85rem;">⏳ 読み込み中...</div>`;
@@ -5378,6 +5436,7 @@ async function initGrammarDrillSection() {
     const meta = [drill.unit, _gdLevelJa(drill.level)].filter(Boolean).map(x => _gdEscape(x)).join(' ・ ');
 
     if (isCompleted) {
+      draftClear(drillId);   // 💾 提出ずみ (別の端末で出した等) の下書きは使わない
       // 完了済み → 復習表示 (your_answer / answer / explanation)
       const sc = (data.score_correct != null && data.score_total != null)
         ? `${data.score_correct}/${data.score_total}` : '';
@@ -5403,6 +5462,8 @@ async function initGrammarDrillSection() {
 
     // 未完了 → 解答フォーム
     const blocks = _gdBlocksWithPassages(questions, data.passages || {}, false, q => _gdRenderQuestionBlock(drillId, q, { review: false }));
+    let persist = false;
+    if (draftLib()) { try { persist = draftLib().canPersist(_hwSid()); } catch (_) { persist = false; } }
     list.innerHTML = `
       <div style="margin-bottom:12px;">
         <button type="button" data-gd-back="1" style="padding:7px 16px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; cursor:pointer; font-size:0.82rem;">← 一覧に戻る</button>
@@ -5412,12 +5473,21 @@ async function initGrammarDrillSection() {
         ${meta ? `<div style="font-size:0.8rem; color:#94a3b8; margin-top:3px;">${meta}</div>` : ''}
         <div style="font-size:0.78rem; color:#94a3b8; margin-top:6px;">全 ${questions.length} 問 — すべて答えてから「提出」を押してください。</div>
         <div style="font-size:0.76rem; color:#fbbf24; margin-top:4px;">🤔 勘で答えた問題は「自信なし」にチェック → 正解でも AI が弱点として記録し、復習に出します。</div>
+        ${persist ? '<div style="font-size:0.76rem; color:#5eead4; margin-top:4px;">💾 答えはこの端末に自動で保存されます（途中でやめても続きから解けます）</div>' : ''}
+        <div data-gd-draft-note style="font-size:0.78rem; color:#99f6e4; margin-top:4px; font-weight:bold;"></div>
       </div>
       <div data-gd-form="${_gdEscape(String(drillId))}">${blocks}</div>
       <div data-gd-submit-msg style="text-align:center; color:#fca5a5; font-size:0.82rem; min-height:1.1em; margin-bottom:8px;"></div>
       <div style="text-align:center;">
         <button type="button" data-gd-submit="${_gdEscape(String(drillId))}" data-gd-total="${questions.length}" style="padding:11px 28px; background:linear-gradient(135deg,#14b8a6,#10b981); color:#fff; border:0; border-radius:10px; font-weight:bold; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(20,184,166,0.3);">📤 提出して採点する</button>
       </div>`;
+    // 💾 前に途中まで答えていたら戻す
+    cur = { id: drillId, qs: questions };
+    const restored = draftRestore(drillId, questions);
+    if (restored) {
+      const note = list.querySelector('[data-gd-draft-note]');
+      if (note) note.textContent = `💾 前に答えた ${restored} 問を戻しました` + (questions.length > restored ? `（あと ${questions.length - restored} 問）` : '');
+    }
     _gdApplyKatex(list);
   }
 
@@ -5532,10 +5602,13 @@ async function initGrammarDrillSection() {
         body: JSON.stringify({ answers, unsure }),
       });
     } catch (e) {
-      if (msgEl) msgEl.textContent = '❌ 提出に失敗しました: ' + ((e && (e.message || e)) || '');
+      // 二重提出 (別の端末で先に出した等) は失敗ではない → 下書きを消して提出ずみの画面を開き直す (class.html と同じ)
+      if (e && e.status === 409) { draftClear(drillId); openDrill(drillId); return; }
+      if (msgEl) msgEl.textContent = '❌ 提出に失敗しました: ' + ((e && (e.message || e)) || '') + '（答えは消えていません。もう一度押してね）';
       if (btn) { btn.disabled = false; btn.textContent = '📤 提出して採点する'; }
       return;
     }
+    draftClear(drillId);   // 💾 出したので途中保存は消す
     // 🔁 誤答→復習カード連携 (2026-06-11 塾長指示「自走に必要なもの②」):
     // 間違えた問題を LB (忘却曲線) に登録し翌日「今日の復習」に自動で出す。
     // 正解した問題は「過去に間違えてカード化済み」の場合のみ前進させる (正解問題で復習を埋めない)。
@@ -5573,6 +5646,8 @@ async function initGrammarDrillSection() {
     _gdApplyKatex(list);
   }
 
+  // 💾 選ぶたびに (ラジオ・🤔 自信なし) この端末に保存
+  list.addEventListener('change', () => { if (cur) draftSave(); });
   // イベント委譲 (一覧の行クリック / 戻る / 提出)
   list.addEventListener('click', (e) => {
     const t = e.target;

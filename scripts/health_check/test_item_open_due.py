@@ -21,7 +21,7 @@
       ドリルと宿題のカードに「〆今日」「〆を過ぎました」・👀 の POST (中身だけの宿題は一覧に出たら・解答用紙・プリント・
       「📝 ドリルで解く」(keepalive)・提出済みは送らない・このページで 1 件 1 回・予定タブでは送らない)
   [6] mypage.js (偽の DOM・TZ=America/Los_Angeles): ドリルと宿題のカードの 〆 (端末の日付ではなく JST)・📌 要対応チップと欄のバッジの 〆・
-      👀 の POST (宿題欄が見えたら中身だけの宿題・解答用紙・PDF)
+      👀 の POST (宿題欄が見えたら中身だけの宿題 (単元のある宿題も = マイページには「📝 ドリルで解く」が無い)・解答用紙・PDF)
   [7] CEO の 🗓 授業ブリーフ (ceo.html の本物のコード): 「👀 未開封」「開いたが未提出 (M/D)」「👀 未開封 N」・null と古いサーバでは出さない・escape
   [8] ソース検査: ルートは /api/student/homework/ の下・許可集合は不変・hw-notice.js の ?v= が 2 ページでそろう・CI 登録
 
@@ -696,6 +696,25 @@ JS_MYPAGE_DUE_CASES = r"""
     await initHomeworkSection(); await flush();
     eq('〆今日だけ: チップ「⏰ 宿題 3 件（〆今日 1 件）」・バッジ「⏰ 〆今日 1 / 未完了 3」', [TODO.homework && TODO.homework.label, ELS['#homeworkBadge'].textContent],
        ['⏰ 宿題 3 件（〆今日 1 件）', '⏰ 〆今日 1 / 未完了 3']);
+    // (F1 2026-10-18 点検) 単元 (topic) のある宿題: マイページのカードには「📝 ドリルで解く」が無く、題名と説明が宿題のすべて
+    //   → 宿題欄が見えたら中身だけの宿題と同じく POST /opened (class.html の「単元のある宿題は除く」を写すと 👀 未開封 のまま)。
+    //   プリント・解答用紙つきは今までどおり、それを開いたときだけ
+    newSection(); TODO = {}; CALLS3 = [];
+    var MH_TOPIC = { id: 905, title: '関係代名詞の宿題', subject: 'english', topic: '関係代名詞', status: 'open', created_at: '2026-10-10 01:00:00', due_date: '2026-10-25' };
+    var MH_TOPIC_PRINT = { id: 906, title: '単元とプリントの宿題', subject: 'english', topic: '時制', status: 'open', created_at: '2026-10-10 01:00:00', due_date: null,
+                           attachment_print: { id: 56, title: '架空プリント2' } };
+    var MH_TOPIC_SHEET = { id: 907, title: '単元と解答用紙の宿題', subject: 'english', topic: '比較', status: 'open', created_at: '2026-10-10 01:00:00', due_date: null,
+                           answer_sheet: { mode: 'choice' } };
+    API['/api/student/grammar-drills'] = { ok: true, items: [] };
+    API['/api/student/homework'] = { ok: true, items: [MH_TOPIC, MH_TOPIC_PRINT, MH_TOPIC_SHEET], summary: { overdue: 0 }, answer_sheet_ready: true };
+    await initHomeworkSection(); await flush();
+    ok('単元のある宿題のカードは題名・説明・✅ 完了する だけ (開くリンクが無い = カードが中身)',
+       String(ELS['#homeworkList'].innerHTML).indexOf('dojo-drill') < 0 && String(ELS['#homeworkList'].innerHTML).indexOf('data-hw-complete="905"') >= 0);
+    var io2 = IO_LIST[IO_LIST.length - 1];
+    io2.cb([{ isIntersecting: true, intersectionRatio: 0.5, intersectionRect: { height: 400 } }]);
+    TIMERS[TIMERS.length - 1].fn();
+    await flush();
+    eq('単元のある宿題も、宿題欄が見えたら POST /opened (プリント・解答用紙つきは送らない)', myOpened(), ['/api/student/homework/905/opened']);
   } catch (e) {
     ok('例外なし', false, String((e && e.stack) || e));
   }
