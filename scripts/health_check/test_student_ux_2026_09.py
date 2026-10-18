@@ -208,11 +208,17 @@ def main():
     r = client.post("/api/cron/weekly-reports", headers={"X-Cron-Secret": CRON}); j = r.json()
     check("ZERO_WEEK_REPORT_ENABLED=0 なら従来どおり完全スキップ", not sent and j.get("zero_week") == 0, (sent, j))
     mod.ZERO_WEEK_REPORT_ENABLED = True
-    # 枠: ZERO_WEEK_REPORT_CAP=1 なら 1 通で止まり、残りは capped に数える (Z5 と Z8 の 2 家庭が待っている状態)
+    # 枠: 今日の残りが 1 通なら 1 通で止まり、残りは capped に数える (Z5 と Z8 の 2 家庭が待っている状態)。
+    #   ★2026-10-18 点検 sending-R1: 枠は日曜 1 日 (JST) で数える = 上の回で今日すでに送った「今週は 0 問」を引いた残り
     Z8 = mk(mod, "Student Z8", "z8@example.org"); add_attempt(mod, Z8, now - datetime.timedelta(days=4))
-    mod.ZERO_WEEK_REPORT_CAP = 1; sent.clear()
+    used = mod._weekly_report_sent_today()["zero_week"]
+    mod.ZERO_WEEK_REPORT_CAP = used + 1; sent.clear()
     r = client.post("/api/cron/weekly-reports", headers={"X-Cron-Secret": CRON}); j = r.json()
-    check("ZERO_WEEK_REPORT_CAP で通数が止まり capped に数える", len(sent) == 1 and j.get("zero_week") == 1 and j.get("capped", 0) >= 1, (sent, j))
+    check("ZERO_WEEK_REPORT_CAP で通数が止まり capped に数える (今日の残り 1 通)", used > 0 and len(sent) == 1 and j.get("zero_week") == 1
+          and j.get("capped", 0) >= 1 and j.get("zero_week_sent_today_before") == used, (used, sent, j))
+    sent.clear()
+    r = client.post("/api/cron/weekly-reports", headers={"X-Cron-Secret": CRON}); j = r.json()
+    check("同じ日にもう一度回しても (20:05 の予備) 枠は戻らず、枠で止めた家庭に送らない", not sent and j.get("capped", 0) >= 1, (sent, j))
     mod.ZERO_WEEK_REPORT_CAP = 24
     src_v = mod._weekly_report_verdict([{"name": "weekly_reports_run", "stale": False,
                                           "props": {"sent_email": 3, "sent_line": 0, "zero_week": 3, "skipped": 10, "zero_week_queued": 2}}])

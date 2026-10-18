@@ -37939,6 +37939,7 @@ ZERO_WEEK_REPORT_ACTIVE_WINDOW_DAYS = int(os.getenv("ZERO_WEEK_REPORT_ACTIVE_WIN
 ZERO_WEEK_REPORT_MAX_CONSECUTIVE = int(os.getenv("ZERO_WEEK_REPORT_MAX_CONSECUTIVE", "2"))
 # 1 回の日曜バッチで送るゼロ週メールの上限 (通数・生徒+保護者で 1 家庭 2 通)。通常レポートを全員分送った後の
 # 残り枠 (WEEKLY_REPORT_EMAIL_CAP) の範囲内でしか送らない = 通常レポートの席を奪わない (review 指摘)。
+# ★2026-10-18 点検 sending-R1: どちらの枠も JST の 1 日で数える (19:00 の本命と 20:05 の予備で分け合う = _weekly_report_sent_today)。
 ZERO_WEEK_REPORT_CAP = int(os.getenv("ZERO_WEEK_REPORT_CAP", "24"))
 
 
@@ -38306,6 +38307,31 @@ def _weekly_report_sent_templates(student_id: int) -> set:
         conn.close()
 
 
+def _weekly_report_sent_today(now: Optional[datetime] = None) -> dict:
+    """📭 2026-10-18 点検 sending-R1: JST の今日 0:00 以降に**成功した**週次レポートのメールの通数を 1 回の SELECT で返す
+    {"email": 生徒コピー + 保護者コピー + 「今週は 0 問」(生徒・保護者), "zero_week": 「今週は 0 問」(生徒・保護者)}。
+    「今週は 0 問」の第 2 パスの枠 (ZERO_WEEK_REPORT_CAP・WEEKLY_REPORT_EMAIL_CAP) を 1 回の実行ごとではなく日曜 1 日で数えるため
+    (19:00 の本命と 20:05 の予備は同じ JST の日・同じ UTC の日 = Resend の 1 日の枠も同じ)。失敗行 (success=0) と LINE は数えない
+    (失敗した分は今までどおり予備が送り直せる)。send-one (手動) の行も同じ日の Resend を使うので数える。
+    境は JST の今日 0:00 〜 明日 0:00 (_jst_day_start_utc_txt = naive UTC の文字列・notifications.sent_at の DEFAULT CURRENT_TIMESTAMP と
+    同じ形・Postgres でも同じ)。例外はそのまま上げる (呼び出し側は枠を数えられない回の「今週は 0 問」を送らない)。"""
+    now = now or datetime.now(timezone.utc)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT template, COUNT(*) AS n FROM notifications WHERE success = 1 AND sent_at >= ? AND sent_at < ? AND template IN "
+            "('weekly_report_email', 'weekly_report_parent_email', 'weekly_report_zero_week', 'weekly_report_zero_week_parent') "
+            "GROUP BY template",
+            (_jst_day_start_utc_txt(now, 0), _jst_day_start_utc_txt(now, -1)),
+        )
+        by = {r["template"]: int(r["n"] or 0) for r in c.fetchall()}
+    finally:
+        conn.close()
+    zw = by.get("weekly_report_zero_week", 0) + by.get("weekly_report_zero_week_parent", 0)
+    return {"email": zw + by.get("weekly_report_email", 0) + by.get("weekly_report_parent_email", 0), "zero_week": zw}
+
+
 @app.post("/api/cron/weekly-reports")
 def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False):
     """毎週日曜19時 (JST) にスケジューラから実行 (20:05 に GitHub Actions の予備が同じ API を叩く)。
@@ -38370,6 +38396,14 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
     _zero_week_queue = []  # 📭 (row, zw, student_to, parent_to) — 通常レポートの後に残り枠で送る
     # Resend 日次上限ガード: 他メール (ログイン/監視等) の枠を残す
     WEEKLY_REPORT_EMAIL_CAP = int(os.getenv("WEEKLY_REPORT_EMAIL_CAP", "80"))
+    # 📭 2026-10-18 点検 sending-R1: この実行の前に今日 (JST) 送れた週次レポートのメール (19:00 の本命・手動の実行・send-one)。
+    #   「今週は 0 問」の第 2 パスは 2 つの枠からこれを引く (下)。数えられなければ None = 第 2 パスは送らない (枠を守る側に倒す・
+    #   枠で止めた家庭は行を書かないので、次の実行 (20:05 の予備) が数えられれば送る)。通常レポートの第 1 パスは今までどおり 1 回の実行ごと。
+    try:
+        _wr_day = _weekly_report_sent_today()
+    except Exception as _wde:
+        _wr_day = None
+        log.warning(f"[WeeklyReport] 今日の送信数を数えられませんでした (「今週は 0 問」はこの回は送りません): {type(_wde).__name__}")
     for row in students:
         try:
             stats = _compute_weekly_stats(row["id"], days=7)
@@ -38551,10 +38585,13 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
     #   保護者宛は水曜の一声の対象外なので送る。
     #   📝 2026-10-18: 未提出の宿題で新しく入った家庭 (via_homework) は、前からの対象 (直近 28 日に演習があった家庭) の後に回す
     #   (枠 ZERO_WEEK_REPORT_CAP を先に使い切って、前から届いていた家庭を締め出さない。順番はそれぞれの中で今までどおり)。
+    #   ★2026-10-18 点検 sending-R1: 2 つの枠は日曜 1 日 (JST) で数える = この実行の前に今日送れた通数 (_wr_day) を引いた残りまで。
+    #   1 回の実行ごとに 0 から数えていたため、19:00 に枠で止めた家庭 (行を書かない) に 20:05 の予備がもう一度枠いっぱい送り、
+    #   日曜の Resend (無料枠 100 通/日・UTC の日) をログインコードの分まで使いうる上に、予備のログが毎週「本命で送れなかった分」と出ていた
+    #   (宿題で入れた家庭 = via_homework で列が長くなり、後ろの家庭ほど枠で止まる)。枠で止めた家庭は翌週に回す (送れなかった家庭は数えない)。
+    _zw_email_room = WEEKLY_REPORT_EMAIL_CAP - int(_wr_day["email"]) if _wr_day is not None else 0
+    _zw_room = ZERO_WEEK_REPORT_CAP - int(_wr_day["zero_week"]) if _wr_day is not None else 0
     for _zrow, _zw, _zw_student_to, _zw_parent_to in sorted(_zero_week_queue, key=lambda _q: bool(_q[1].get("via_homework"))):
-        if sent_email >= WEEKLY_REPORT_EMAIL_CAP or zero_week >= ZERO_WEEK_REPORT_CAP:
-            capped += 1  # 枠切れ: 以降の家庭は dedup クエリも撃たずに数えるだけ (人数単位)
-            continue
         # notifications の payload には宿題の数だけ (単元の名前・リンクは入れない)
         _zw_payload = {k: v for k, v in _zw.items() if k != "homework"}
         if _zw.get("homework"):
@@ -38572,15 +38609,18 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
                 _recent_tmpls = {r["template"] for r in _zd_c.fetchall()}
             finally:
                 _zd_conn.close()
-            for _zw_to, _zw_tmpl, _zw_is_parent in ((_zw_student_to, "weekly_report_zero_week", False),
-                                                    (_zw_parent_to, "weekly_report_zero_week_parent", True)):
-                if not _zw_to:
-                    continue
-                if _zw_tmpl in _recent_tmpls:
-                    continue  # 週 1 回 dedup
-                if not _zw_is_parent and "midweek_nudge" in _recent_tmpls:
-                    continue  # 水曜に一声が届いている生徒本人には重ねない
-                if sent_email >= WEEKLY_REPORT_EMAIL_CAP or zero_week >= ZERO_WEEK_REPORT_CAP:
+            # 送る宛先 (週 1 回 dedup・水曜に一声が届いている生徒本人には重ねない)。全部送り済みの家庭 (19:00 に送れた家庭を
+            #   20:05 にもう一度積んだ分など) は capped に数えない (通常レポートと同じ)。
+            _zw_todo = [(_to, _tm, _ip) for (_to, _tm, _ip) in ((_zw_student_to, "weekly_report_zero_week", False),
+                                                               (_zw_parent_to, "weekly_report_zero_week_parent", True))
+                        if _to and _tm not in _recent_tmpls and (_ip or "midweek_nudge" not in _recent_tmpls)]
+            if not _zw_todo:
+                continue
+            if sent_email >= _zw_email_room or zero_week >= _zw_room:
+                capped += 1  # 枠切れ (今日の残り): 家庭ごとに数えるだけ (人数単位・行は書かない = 翌週)
+                continue
+            for _zw_to, _zw_tmpl, _zw_is_parent in _zw_todo:
+                if sent_email >= _zw_email_room or zero_week >= _zw_room:
                     capped += 1
                     continue
                 if email_index > 0:
@@ -38615,6 +38655,10 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
         "skipped_dup": skipped_dup, "skipped_dup_line": skipped_dup_line,
         "zero_week": zero_week,  # 📭 うち「今週は 0 問」の軽量メール (生徒+保護者の通数・sent_email に含む)
         "zero_week_queued": len(_zero_week_queue),
+        # 📭 2026-10-18 点検 sending-R1: この実行の前に今日 (JST) 送れていた通数 (「今週は 0 問」の枠は日曜 1 日で数える)。
+        #   数えられなかった回は None (その回の「今週は 0 問」は送らない)
+        "email_sent_today_before": _wr_day["email"] if _wr_day is not None else None,
+        "zero_week_sent_today_before": _wr_day["zero_week"] if _wr_day is not None else None,
         "total_students": len(students),
         # 📝 2026-10-18: 今週の宿題の 1 行 (数だけ・名前なし = events weekly_reports_run にも残る)
         "homework_lines": homework_lines,
